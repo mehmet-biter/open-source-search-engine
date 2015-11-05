@@ -6322,26 +6322,28 @@ void PosdbTable::intersectLists10_r ( ) {
 	// TODO: consider skipping this pre-filter if it sucks, as it does
 	// for 'time enough for love'. it might save time!
 
-	// . if there's no way we can break into the winner's circle, give up!
-	// . this computes an upper bound for each query term
-	for ( int32_t i = 0 ; i < nnn ; i++ ) { // m_numQueryTermInfos ; i++ ) {
-		// skip negative termlists.
-		// now also skip gbfacet: operator terms
-		if ( qip[i].m_bigramFlags[0]&(BF_NEGATIVE|BF_FACET) ) continue;
-		// an upper bound on the score we could get
-		float maxScore = getMaxPossibleScore ( &qip[i], 0, 0, NULL );
-		// -1 means it has inlink text so do not apply this constraint
-		// to this docid because it is too difficult because we
-		// sum up the inlink text
-		if ( maxScore == -1.0 ) {
-			continue;
-		}
-		// if any one of these terms have a max score below the
-		// worst score of the 10th result, then it can not win.
-		if ( maxScore <= minWinningScore && ! secondPass ) {
-			docIdPtr += 6;
-			fail0++;
-			goto docIdLoop;
+	if ( ! secondPass ) {
+		// . if there's no way we can break into the winner's circle, give up!
+		// . this computes an upper bound for each query term
+		for ( int32_t i = 0 ; i < nnn ; i++ ) { // m_numQueryTermInfos ; i++ ) {
+			// skip negative termlists.
+			// now also skip gbfacet: operator terms
+			if ( qip[i].m_bigramFlags[0]&(BF_NEGATIVE|BF_FACET) ) continue;
+			// an upper bound on the score we could get
+			float maxScore = getMaxPossibleScore ( &qip[i], 0, 0, NULL );
+			// -1 means it has inlink text so do not apply this constraint
+			// to this docid because it is too difficult because we
+			// sum up the inlink text
+			if ( maxScore == -1.0 ) {
+				continue;
+			}
+			// if any one of these terms have a max score below the
+			// worst score of the 10th result, then it can not win.
+			if ( maxScore <= minWinningScore && ! secondPass ) {
+				docIdPtr += 6;
+				fail0++;
+				goto docIdLoop;
+			}
 		}
 	}
 
