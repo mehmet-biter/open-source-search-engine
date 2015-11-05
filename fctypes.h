@@ -232,12 +232,12 @@ bool saveTimeAdjustment ( ) ;
 #define canBeInTagName(c)      g_map_canBeInTagName[(unsigned char)c]
 #define is_control_a(c)        g_map_is_control[(unsigned char)c]
 #define is_binary_a(c)         g_map_is_binary[(unsigned char)c]
-#define is_wspace_a(c)         g_map_is_wspace[(unsigned char)c]
+#define is_wspace_a(c)         (((c)==32) || ((c)==9) || ((c)==10) || ((c)==13))
 #define is_vspace_a(c)         g_map_is_vspace[(unsigned char)c]
 #define is_hspace_a(c)         g_map_is_hspace[(unsigned char)c]
-#define is_ascii(c)           g_map_is_ascii[(unsigned char)c]
-#define is_ascii9(c)           g_map_is_ascii[(unsigned char)c]
-#define is_ascii3(c)           ((unsigned char)c<128 || g_map_is_ascii3[(unsigned char)c])
+#define is_ascii(c)            (((c)>=32) && ((c)<=126))
+#define is_ascii9(c)           (((c)>=32) && ((c)<=126))
+#define is_ascii3(c)           ((unsigned char)c<128)
 #define is_punct_a(c)          g_map_is_punct[(unsigned char)c]
 #define is_alnum_a(c)          g_map_is_alnum[(unsigned char)c]
 #define is_alpha_a(c)          g_map_is_alpha[(unsigned char)c]
