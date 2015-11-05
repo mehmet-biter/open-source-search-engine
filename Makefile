@@ -158,7 +158,7 @@ all: gb
 #	scp gb g8:/p/gb.new
 #	ssh g8 'cd /p/ ; ./gb stop ; ./gb installgb ; sleep 4 ; ./gb start'
 
-utils: addtest blaster2 dump hashtest makeclusterdb makespiderdb membustest monitor seektest urlinfo treetest dnstest dmozparse gbtitletest
+utils: blaster2 dump hashtest makeclusterdb makespiderdb membustest monitor seektest urlinfo treetest dnstest dmozparse gbtitletest
 
 # version:
 # 	echo -n "#define GBVERSION \"" > vvv
@@ -279,11 +279,6 @@ membustest: membustest.cpp
 	$(CC) -O0 -o membustest membustest.cpp $(STATIC) -lc
 mergetest: $(OBJS) mergetest.o
 	$(CC) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-addtest: $(OBJS) addtest.o
-	$(CC) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-addtest0: $(OBJS) addtest
-	bzip2 -fk addtest
-	scp addtest.bz2 gb0:/a/
 seektest: seektest.cpp
 	$(CC) -o seektest seektest.cpp -lpthread
 treetest: $(OBJ) treetest.o
@@ -333,7 +328,7 @@ gbtitletest: gbtitletest.o
 
 # comment this out for faster deb package building
 clean:
-	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest addtest monitor reindex convert maketestindex makespiderdb makeclusterdb urlinfo gbfilter dnstest thunder dmozparse gbtitletest gmon.* quarantine core core.*
+	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest monitor reindex convert maketestindex makespiderdb makeclusterdb urlinfo gbfilter dnstest thunder dmozparse gbtitletest gmon.* quarantine core core.*
 
 #.PHONY: GBVersion.cpp
 
