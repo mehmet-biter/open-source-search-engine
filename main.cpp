@@ -71,7 +71,6 @@
 #include "Msg22.h"
 //#include "Msg23.h"
 #include "Msg2a.h"
-#include "Msg36.h"
 #include "Msg39.h"
 #include "Msg40.h"    // g_resultsCache
 #include "Msg9b.h"
@@ -116,7 +115,6 @@
 #include "Ads.h"
 #include "LanguagePages.h"
 //#include "Msg3b.h"
-#include "ValidPointer.h"
 #include "RdbBuckets.h"
 //#include "PageTurk.h"
 //#include "QAClient.h"

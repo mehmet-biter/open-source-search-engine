@@ -4,7 +4,6 @@
 #define _IMAGES_H_
 
 #include "Msg0.h"
-#include "Msg36.h"
 #include "Msg13.h"
 #include "IndexList.h"
 #include "MsgC.h"
@@ -164,7 +163,7 @@ class Images {
 
 	// . for getting # of permalinks from same hopcount/site
 	// . we need at least 10 for the uniqueness test to be effective
-	Msg36     m_msg36;
+	//Msg36     m_msg36;
 	
 	// . for getting docids that have the image
 	// . for the uniqueness test

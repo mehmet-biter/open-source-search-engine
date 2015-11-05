@@ -2,7 +2,6 @@
 
 #include "Loop.h"
 #include "Entities.h"
-#include "UCWordIterator.h"
 #include "SafeBuf.h"
 #include "Xml.h"
 #include "XmlNode.h"
@@ -1675,8 +1674,6 @@ int32_t localToGlobalTimeSeconds ( int32_t local ) {
 	//	log("gb: Converting global time but clock not in sync.");
 	return local + (s_adjustment/1000);
 }
-
-#include "Timedb.h"
 
 
 static char s_tafile[1024];

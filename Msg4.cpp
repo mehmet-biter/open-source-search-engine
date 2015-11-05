@@ -4,7 +4,6 @@
 #include "Hostdb.h"
 #include "Msg0.h"      // for getRdb(char rdbId)
 #include "Msg4.h"
-#include "Tfndb.h"
 #include "Clusterdb.h"
 #include "Spider.h"
 //#include "Checksumdb.h"

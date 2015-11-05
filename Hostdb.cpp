@@ -16,7 +16,6 @@
 #include "Spider.h"
 #include "Clusterdb.h"
 #include "Datedb.h"
-#include "Tfndb.h"
 #include "Dns.h"
 #include "Revdb.h"
 

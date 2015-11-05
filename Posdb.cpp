@@ -672,7 +672,6 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 #include "Msg39.h"
 //#include "CollectionRec.h"
 #include "SearchInput.h"
-#include "Timedb.h"
 
 // global var
 TopTree *g_topTree;

@@ -10,7 +10,6 @@
 #include "Statsdb.h"
 #include "Hostdb.h"
 #include "SafeBuf.h"
-#include "SafeList.h"
 #include "Threads.h"
 
 class StateStatsdb {

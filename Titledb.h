@@ -24,7 +24,6 @@
 #include "Url.h"
 #include "Conf.h"
 #include "Xml.h"
-#include "DiskPageCache.h"
 
 // new key format:
 // . <docId>     - 38 bits

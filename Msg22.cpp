@@ -1,7 +1,7 @@
 #include "gb-include.h"
 
 #include "Msg22.h"
-#include "Tfndb.h"     // g_tfndb.makeKey()
+#include "Titledb.h"
 #include "UdpServer.h"
 
 static void handleRequest22 ( UdpSlot *slot , int32_t netnice ) ;
