@@ -11,6 +11,9 @@
 #include "Address.h" // getLatLonFromUserInput
 #include "PageResults.h"
 
+#include "third-party/cld2/public/compact_lang_det.h"
+#include "third-party/cld2/public/encodings.h"
+
 //char getFormatFromRequest ( class HttpRequest *hr ) ;
 
 SearchInput::SearchInput() {
@@ -440,13 +443,51 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	//char *qs1 = getLangAbbr(m_queryLang);
 
 	// this parm is in Parms.cpp and should be set
-	char *langAbbr = m_defaultSortLang;
+	const char *langAbbr = m_defaultSortLang;
 
 	// Parms.cpp sets it to an empty string, so make that null
 	// if Parms.cpp set it to NULL it seems it comes out as "(null)"
 	// i guess because we sprintf it or something.
 	if ( langAbbr && langAbbr[0] == '\0' )
 		langAbbr = NULL;
+
+	// detect language
+	if ( !langAbbr ) {
+		// detect language hints
+		const char* content_language_hint = ""; // HTTP header Content-Language: field
+		const char* tld_hint = ""; // hostname of a URL
+		int encoding_hint = CLD2::UNKNOWN_ENCODING; // encoding detector applied to the input document
+		CLD2::Language language_hint = CLD2::UNKNOWN_LANGUAGE; // any other context
+		CLD2::CLDHints cldhints = {content_language_hint, tld_hint, encoding_hint, language_hint};
+
+		int flags = 0;
+
+		CLD2::Language language3[3] = {CLD2::UNKNOWN_LANGUAGE};
+		int percent3[3] = {0};
+		double normalized_score3[3] = {0.0};
+
+		CLD2::ResultChunkVector *resultchunkvector = NULL;
+
+		int text_bytes = 0;
+		bool is_reliable = false;
+		int valid_prefix_bytes = 0;
+
+		CLD2::Language language = CLD2::ExtDetectLanguageSummaryCheckUTF8(m_sbuf1.getBufStart(),
+		                                                                  m_sbuf1.length(),
+		                                                                  true,
+		                                                                  &cldhints,
+		                                                                  flags,
+		                                                                  language3,
+		                                                                  percent3,
+		                                                                  normalized_score3,
+		                                                                  resultchunkvector,
+		                                                                  &text_bytes,
+		                                                                  &is_reliable,
+		                                                                  &valid_prefix_bytes);
+		if (language != CLD2::UNKNOWN_LANGUAGE) {
+			langAbbr = CLD2::LanguageCode(language);
+		}
+	}
 
 	// if &qlang was not given explicitly fall back to coll rec
 	if ( cr && ! langAbbr )
