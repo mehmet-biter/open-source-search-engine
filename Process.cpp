@@ -1931,8 +1931,6 @@ bool Process::saveBlockingFiles1 ( ) {
 	return true;
 }
 
-#include "PageTurk.h"
-
 bool Process::saveBlockingFiles2 ( ) {
 	// never if in read only mode
 	if ( g_conf.m_readOnlyMode ) return true;

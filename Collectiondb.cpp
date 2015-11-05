@@ -15,7 +15,6 @@
 #include "Placedb.h"
 #include "Tagdb.h"
 #include "Catdb.h"
-#include "Tfndb.h"
 #include "Spider.h"
 //#include "Checksumdb.h"
 #include "Clusterdb.h"
@@ -1743,7 +1742,6 @@ collnum_t Collectiondb::reserveCollNum ( ) {
 #include "Msg5.h"
 #include "Threads.h"
 #include "Datedb.h"
-#include "Timedb.h"
 #include "Spider.h"
 #include "Process.h"
 

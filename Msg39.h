@@ -9,7 +9,6 @@
 #include "UdpServer.h"      // UdpSlot type
 #include "Multicast.h"      // multicast send
 #include "Query.h"          // Query::set()
-#include "Msg37.h"          // getTermFreqs()
 #include "Msg2.h"           // getLists()
 #include "Posdb.h"
 #include "IndexList.h"

@@ -8,7 +8,6 @@
 #include "Tagdb.h"
 #include "Speller.h"
 #include "CountryCode.h"
-#include "ValidPointer.h"
 #include "Categories.h"
 #include "Linkdb.h"
 
