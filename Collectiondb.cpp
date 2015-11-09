@@ -1924,7 +1924,8 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 	m_collnum = i;
 	// set our collection name
 	m_collLen = gbstrlen ( coll );
-	strcpy ( m_coll , coll );
+	if ( coll != m_coll)
+		strcpy ( m_coll , coll );
 
 	if ( ! g_conf.m_doingCommandLine )
 		log(LOG_INFO,"db: Loading conf for collection %s (%"INT32")",coll,
