@@ -987,7 +987,7 @@ float getDiskUsage ( int64_t *diskAvail ) {
 		return -1.0; // unknown
 	}
 	char buf[2000];
-	int32_t r = read ( fd , buf , 2000 );
+	int32_t r = read ( fd , buf , sizeof(buf)-1 );
 	// did we get an error
 	if ( r <= 0 ) {
 		//m_errno = errno;
@@ -995,6 +995,7 @@ float getDiskUsage ( int64_t *diskAvail ) {
 		close ( fd );
 		return -1.0; // unknown
 	}
+	buf[(size_t)r] = '\0';
 	// clean up shop
 	close ( fd );
 
