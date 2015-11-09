@@ -75,9 +75,6 @@ DEFS = -D_REENTRANT_ $(CHECKFORMATSTRING) -I.
 
 HOST=$(shell hostname)
 
-#print_vars:
-#	$(HOST)
-
 FFF = /etc/redhat-release
 
 ifneq ($(wildcard $(FFF)),)
@@ -113,12 +110,10 @@ LIBS = ./libz.a ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a
 # are we a 32-bit architecture? use different libraries then
 else ifeq ($(ARCH), i686)
 CPPFLAGS= -m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable $(STATIC)
-#LIBS= -L. ./libz.a ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libstdc++.a -lpthread
 LIBS=  -lm -lpthread -lssl -lcrypto ./libiconv.a ./libz.a
 
 else ifeq ($(ARCH), i386)
 CPPFLAGS= -m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable $(STATIC)
-#LIBS= -L. ./libz.a ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libstdc++.a -lpthread
 LIBS=  -lm -lpthread -lssl -lcrypto ./libiconv.a ./libz.a
 
 else
@@ -126,7 +121,6 @@ else
 # Use -Wpadded flag to indicate padded structures.
 #
 CPPFLAGS = -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable $(STATIC)
-#LIBS= -L. ./libz.a ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libstdc++.a -lpthread
 # apt-get install libssl-dev (to provide libssl and libcrypto)
 # to build static libiconv.a do a './configure --enable$(STATIC)' then 'make'
 # in the iconv directory
@@ -154,11 +148,16 @@ endif
 
 all: gb
 
-#g8: gb
-#	scp gb g8:/p/gb.new
-#	ssh g8 'cd /p/ ; ./gb stop ; ./gb installgb ; sleep 4 ; ./gb start'
+utils: blaster2 dump hashtest makeclusterdb makespiderdb membustest monitor seektest urlinfo treetest dnstest dmozparse gbtitletest
 
-utils: addtest blaster2 dump hashtest makeclusterdb makespiderdb membustest monitor seektest urlinfo treetest dnstest dmozparse gbtitletest
+# third party libraries
+LIBFILES = libcld2_full.so
+LIBS += -Lthird-party/cld2/internal -lcld2_full
+CPPFLAGS += -Wl,-rpath=.
+
+libcld2_full.so:
+	cd third-party/cld2/internal && ./compile_libs.sh
+	ln -s third-party/cld2/internal/libcld2_full.so libcld2_full.so
 
 # version:
 # 	echo -n "#define GBVERSION \"" > vvv
@@ -279,11 +278,6 @@ membustest: membustest.cpp
 	$(CC) -O0 -o membustest membustest.cpp $(STATIC) -lc
 mergetest: $(OBJS) mergetest.o
 	$(CC) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-addtest: $(OBJS) addtest.o
-	$(CC) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-addtest0: $(OBJS) addtest
-	bzip2 -fk addtest
-	scp addtest.bz2 gb0:/a/
 seektest: seektest.cpp
 	$(CC) -o seektest seektest.cpp -lpthread
 treetest: $(OBJ) treetest.o
@@ -333,7 +327,7 @@ gbtitletest: gbtitletest.o
 
 # comment this out for faster deb package building
 clean:
-	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest addtest monitor reindex convert maketestindex makespiderdb makeclusterdb urlinfo gbfilter dnstest thunder dmozparse gbtitletest gmon.* quarantine core core.*
+	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest monitor reindex convert maketestindex makespiderdb makeclusterdb urlinfo gbfilter dnstest thunder dmozparse gbtitletest gmon.* quarantine core core.* $(LIBFILES)
 
 #.PHONY: GBVersion.cpp
 

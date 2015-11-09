@@ -9,3 +9,4 @@
 *.conf
 /diskusage
 *.cache
+libcld2_full.so

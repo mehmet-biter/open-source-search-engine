@@ -220,7 +220,7 @@ uint8_t getLanguageFromName(uint8_t *name) {
 	return(0);
 }
 
-uint8_t getLangIdFromAbbr ( char *abbr ) {
+uint8_t getLangIdFromAbbr ( const char *abbr ) {
 	int x;
 	for(x = 0; x < MAX_LANGUAGES && s_langAbbr[x]; x++)
 		if(!strcasecmp((char*)abbr, s_langAbbr[x])) return x;
