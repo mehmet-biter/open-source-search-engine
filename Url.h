@@ -12,6 +12,8 @@
 #define MAX_COLL_LEN  64
 
 #include "ip.h"      // atoip ( s,len)
+#include "SafeBuf.h"
+#include <cstddef>
 
 char *getPathFast  ( char *url );
 char *getFilenameFast ( char *url , int32_t *filenameLen ) ;
@@ -245,7 +247,6 @@ public:
 	//   is probably more accurate than this function.
 	bool isLinkLoop();
 
-	static uint32_t unitTests();
 	static char* getDisplayUrl(char* url, SafeBuf* sb);
 
 	// private:

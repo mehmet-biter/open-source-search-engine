@@ -8,6 +8,9 @@ VERSION=20
 
 CC=g++
 
+BASE_DIR=$(shell pwd)
+export BASE_DIR
+
 # remove dlstubs.o for CYGWIN
 OBJS =  UdpSlot.o Rebalance.o \
 	Msg13.o Mime.o \
@@ -152,22 +155,12 @@ utils: blaster2 dump hashtest makeclusterdb makespiderdb membustest monitor seek
 
 # third party libraries
 LIBFILES = libcld2_full.so
-LIBS += -Lthird-party/cld2/internal -lcld2_full
+LIBS += -L. -lcld2_full
 CPPFLAGS += -Wl,-rpath=.
 
 libcld2_full.so:
 	cd third-party/cld2/internal && ./compile_libs.sh
 	ln -s third-party/cld2/internal/libcld2_full.so libcld2_full.so
-
-# version:
-# 	echo -n "#define GBVERSION \"" > vvv
-# 	#date --utc >> vvv
-# 	date +%Y.%M.%d-%T-%Z >> vvv
-# 	head -c -1 vvv > Version.h
-# 	echo "\"" >> Version.h
-# 	#for Version.h dependency
-# 	#rm main.o
-# 	#rm PingServer.o
 
 vclean:
 	rm -f Version.o
@@ -197,6 +190,8 @@ gb: vclean $(OBJS) main.o $(LIBFILES)
 static: vclean $(OBJS) main.o $(LIBFILES)
 	$(CC) $(DEFS) $(CPPFLAGS) -static -o gb main.o $(OBJS) $(LIBS)
 
+libgb.a: $(OBJS)
+	ar rcs $@ $^
 
 # use this for compiling on CYGWIN: 
 # only for 32bit cygwin right now and
@@ -218,7 +213,6 @@ cygwin:
 	make DEFS="-DCYGWIN -D_REENTRANT_ $(CHECKFORMATSTRING) -I." LIBS=" -lz -lm -lpthread -lssl -lcrypto -liconv" gb
 
 
-
 gb32:
 	make CPPFLAGS="-m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable $(STATIC)" LIBS=" -L. ./libz.a ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libstdc++.a -lpthread " gb
 
@@ -227,6 +221,13 @@ gb32:
 
 #iana_charset.h: parse_iana_charsets.pl character-sets supported_charsets.txt
 #	./parse_iana_charsets.pl < character-sets
+
+.PHONY: test
+test: unittest
+
+.PHONY: unittest
+unittest:
+	make -C test unittest
 
 run_parser: test_parser
 	./test_parser ~/turkish.html
@@ -327,7 +328,8 @@ gbtitletest: gbtitletest.o
 
 # comment this out for faster deb package building
 clean:
-	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest monitor reindex convert maketestindex makespiderdb makeclusterdb urlinfo gbfilter dnstest thunder dmozparse gbtitletest gmon.* quarantine core core.* $(LIBFILES)
+	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest monitor reindex convert maketestindex makespiderdb makeclusterdb urlinfo gbfilter dnstest thunder dmozparse gbtitletest gmon.* quarantine core core.*
+	make -C test $@
 
 #.PHONY: GBVersion.cpp
 
