@@ -1198,8 +1198,6 @@ void sigvtalrmHandler ( int x , siginfo_t *info , void *y ) {
 
 }
 
-float g_cpuUsage = 0.0;
-
 void sigalrmHandler ( int x , siginfo_t *info , void *y ) {
 
 #ifdef PTHREADS
@@ -1213,14 +1211,6 @@ void sigalrmHandler ( int x , siginfo_t *info , void *y ) {
 
 	// stats
 	g_numAlarms++;
-
-	if ( ! g_inWaitState )
-		g_cpuUsage = .99 * g_cpuUsage + .01 * 100;
-	else
-		g_cpuUsage = .99 * g_cpuUsage + .01 * 000;
-
-	if ( g_profiler.m_realTimeProfilerRunning )
-		g_profiler.getStackFrame(0);
 
 	return;
 	/*
