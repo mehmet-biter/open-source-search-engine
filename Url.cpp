@@ -298,7 +298,6 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		// truncate the url, and keep it under max url length
 		uint32_t newUrlLen = encodedDomStart - encoded;
 
-<<<<<<< HEAD
 		while (p < pend) {
 			if ( ! *p ) {
 				break; // null?
@@ -308,16 +307,11 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 				// url encode utf8 characters now
 				char cs = getUtf8CharSize(p);
 
-=======
-		while(p < pend) {
-			if ( ! *p ) break; // null?
-			if(!is_ascii(*p)) {
-				//break;
-				// url encode utf8 characters now
-				char cs = getUtf8CharSize(p);
 				// bad utf8 char?
-				if ( cs <= 1 ) break;
->>>>>>> 5f1695f... fix url.cpp
+				if ( cs <= 1 ) {
+					break;
+				}
+
 				// too long?
 				if ( newUrlLen + 12 >= MAX_URL_LEN ) {
 					break;
