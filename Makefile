@@ -155,8 +155,7 @@ utils: blaster2 dump hashtest makeclusterdb makespiderdb membustest monitor seek
 
 # third party libraries
 LIBFILES = libcld2_full.so
-LIBS += -L. -lcld2_full
-CPPFLAGS += -Wl,-rpath=.
+LIBS += -Wl,-rpath=. -L. -lcld2_full
 
 libcld2_full.so:
 	cd third-party/cld2/internal && ./compile_libs.sh
