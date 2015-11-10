@@ -1,3 +1,6 @@
 [submodule "third-party/cld2"]
 	path = third-party/cld2
 	url = https://github.com/CLD2Owners/cld2.git
+[submodule "test/unit/googletest"]
+	path = test/unit/googletest
+	url = https://github.com/google/googletest

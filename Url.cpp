@@ -152,52 +152,72 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		     "Truncating to %i" , tlen , MAX_URL_LEN - 10 );
 		tlen = MAX_URL_LEN - 10;
 	}
+
 	// . skip over non-alnum chars (except - or /) in the beginning
 	// . if url begins with // then it's just missing the http: (slashdot)
 	// . watch out for hostname like: -dark-.deviantart.com(yes, it's real)
 	// . so all protocols are hostnames MUST start with alnum OR hyphen
-	while ( tlen > 0 && !is_alnum_a(*t) && *t!='-' && *t!='/'){t++;tlen--;}
+	while ( tlen > 0 && !is_alnum_a(*t) && *t != '-' && *t != '/') {
+		t++;
+		tlen--;
+	}
+
 	// . stop t at first space or binary char
 	// . url should be in encoded form!
 	int32_t i = 0;
 	int32_t nonAsciiPos = -1;
 	for ( i = 0 ; i < tlen ; i++ )	{
-		if ( is_wspace_a(t[i])   ) break; // no spaces allowed
+		if ( is_wspace_a(t[i]) ) {
+			break; // no spaces allowed
+		}
 
 		if ( ! is_ascii(t[i]) ) {
 			// Sometimes the length with the null is passed in, 
 			// so ignore nulls FIXME?
-			if( t[i] ) nonAsciiPos = i;
+			if( t[i] ) {
+				nonAsciiPos = i;
+			}
+
             break; // no non-ascii chars allowed
         }
 	}
 
-	
-	if(nonAsciiPos != -1) { 
-        // Try turning utf8 and latin1 encodings into punycode.
+	if (nonAsciiPos != -1) {
+		// Try turning utf8 and latin1 encodings into punycode.
 		// All labels(between dots) in the domain are encoded 
 		// separately.  We don't support encoded tlds, but they are 
 		// not widespread yet.
 		// If it is a non ascii domain it needs to take the form 
 		// xn--<punycoded label>.xn--<punycoded label>.../
 		char tmp = t[tlen];
-		if(t[tlen]) t[tlen] = 0;
+
+		if (t[tlen]) {
+			t[tlen] = 0;
+		}
+
 		log(LOG_DEBUG, "build: attempting to decode unicode url %s pos at %"INT32, t, nonAsciiPos);
-		if(tmp) t[tlen] = tmp;
-        char encoded [ MAX_URL_LEN ];
-        uint64_t encodedLen = MAX_URL_LEN;
-        char *encodedDomStart = encoded;
-        char *p = t;
-        char *pend = t+tlen;
+
+		if (tmp) {
+			t[tlen] = tmp;
+		}
+
+		char encoded [ MAX_URL_LEN ];
+		uint64_t encodedLen = MAX_URL_LEN;
+		char *encodedDomStart = encoded;
+		char *p = t;
+		char *pend = t+tlen;
 		
 		// Find the start of the domain
-		if(tlen > 7 && strncmp(p, "http://", 7) == 0) p += 7;
-		else if(tlen > 8 && strncmp(p, "https://", 8) == 0) p += 8;
+		if (tlen > 7 && strncmp(p, "http://", 7) == 0) {
+			p += 7;
+		} else if (tlen > 8 && strncmp(p, "https://", 8) == 0) {
+			p += 8;
+		}
 
 		gbmemcpy(encodedDomStart, t, p-t);
 		encodedDomStart += p-t;
 
-        while(p < pend && *p != '/') {
+		while (p < pend && *p != '/') {
 			char *labelStart = p;
 			uint32_t tmpBuf[MAX_URL_LEN];
 			int32_t tmpLen = 0;
@@ -211,18 +231,17 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 			bool labelIsAscii = true;
 
 			// Convert the domain to code points and copy it to tmpbuf to be punycoded
-			for(;p-labelStart<labelLen;
-				p += utf8Size(tmpBuf[tmpLen]), tmpLen++) {
-
+			for (;p-labelStart<labelLen; p += utf8Size(tmpBuf[tmpLen]), tmpLen++) {
 				labelIsAscii &= is_ascii(*p);
 				tmpBuf[tmpLen] = utf8Decode(p);
-				if(!tmpBuf[tmpLen]) { // invalid char?
+				if (!tmpBuf[tmpLen]) { // invalid char?
 					tryLatin1 = true;
 					break;
 				}
 			}
-			if(labelIsAscii) {
-				if(labelStart[labelLen] == '.') {
+
+			if (labelIsAscii) {
+				if (labelStart[labelLen] == '.') {
 					labelLen++;
 					p++;
 				}
@@ -231,10 +250,10 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 				continue;
 			}
 
-			if( tryLatin1 ) {
+			if (tryLatin1) {
 				// For latin1 urls
 				tmpLen = 0;
-				for(;tmpLen<labelLen;tmpLen++) {
+				for (; tmpLen<labelLen; tmpLen++) {
 					tmpBuf[tmpLen] = labelStart[tmpLen];
 				}
 			}
@@ -242,31 +261,30 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 			gbmemcpy(encodedDomStart, "xn--", 4);
 			encodedDomStart += 4;
 
-			punycode_status status = punycode_encode(tmpLen, tmpBuf, NULL, 
-												   &encodedLen, encodedDomStart);
+			punycode_status status = punycode_encode(tmpLen, tmpBuf, NULL, &encodedLen, encodedDomStart);
 			if ( status != 0 ) {
 				// Give up? try again?
 				log("build: Bad Engineer, failed to punycode international url %s", t);
 				return;
 			}
+
 			// We should check if what we encoded were valid url characters, no spaces, etc
 			// FIXME: should we exclude just the bad chars? I've seen plenty of urls with
 			// a newline in the middle.  Just discard the whole chunk for now
 			bool badUrlChars = false;
-			for(uint32_t i=0;i<encodedLen;i++) {
-				if(is_wspace_a(encodedDomStart[i])){
+			for (uint32_t i = 0; i < encodedLen; i++) {
+				if (is_wspace_a(encodedDomStart[i])){
 					badUrlChars = true;
 					break;
 				}
 			}
 
-			if(encodedLen == 0 || badUrlChars) {
+			if (encodedLen == 0 || badUrlChars) {
 				encodedDomStart -= 4; //don't need the xn--
 				p++;
 			} else {
 				encodedDomStart += encodedLen;
 				*encodedDomStart++ = *p++; // Copy in the . or the /
-
 			}
 		}
 		
@@ -277,19 +295,40 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		// truncate the url, and keep it under max url length
 		uint32_t newUrlLen = encodedDomStart - encoded;
 
-		while(p < pend) {
-			if(!isascii(*p)) break;
-			if(is_wspace_a(*p)) break;
-			if(newUrlLen >= MAX_URL_LEN) break;
+		while (p < pend) {
+			// encode non-ascii chars
+			if (!is_ascii(*p) || is_wspace_a(*p)) {
+				/// @todo should we convert non-ascii character or delete?
+
+				encoded[newUrlLen++] = '%';
+
+				// store first hex digit
+				unsigned char v = ((unsigned char)*p)/16;
+				v += ((v < 10) ? '0' : ('A' - 10));
+				encoded[newUrlLen++] = v;
+
+				// store second hex digit
+				v = ((unsigned char)*p) & 0x0f;
+				v += ((v < 10) ? '0' : ('A' - 10));
+				encoded[newUrlLen++] = v;
+
+				++p;
+				continue;
+			}
+
+			if (newUrlLen >= MAX_URL_LEN) {
+				break;
+			}
+
 			encoded[newUrlLen++] = *p++;
 		}
-
 
 		//gbmemcpy(encodedDomStart, p, restOfUrlLen);
 		encoded[newUrlLen] = '\0';
 		return this->set(encoded, newUrlLen, addWWW, stripSessionId, 
 						 stripPound, stripCommonFile, titleRecVersion);
     }
+
 	// truncate length to the first occurence of an unacceptable char
 	tlen = i;
 	// . decode characters that should not have been encoded
@@ -2512,46 +2551,6 @@ bool Url::hasMediaExtension ( ) {
 
 	return false;
 }
-
-uint32_t Url::unitTests() {
-	char* urls[] = {
-		"http://topbeskæring.dk/velkommen",
-		"www.Alliancefrançaise.nu",
-		"française.Alliance.nu",
-		"française.Alliance.nu/asdf",
-		"http://française.Alliance.nu/asdf",
-		"http://française.Alliance.nu/",
-		"幸运.龍.com",
-		"幸运.龍.com/asdf/运/abc",
-		"幸运.龍.com/asdf",
-		"http://幸运.龍.com/asdf",
-		"http://Беларуская.org/Акадэмічная",
-		"https://hi.Български.com",
-		"https://fakedomain.中文.org/asdf",
-		"https://gigablast.com/abc/文/efg",
-		"https://gigablast.com/?q=文",
-		"http://www.example.сайт",
-		"http://genocidearchiverwanda.org.rw/index.php/Category:Official_Communiqués",
-		"http://www.example.com/xn--fooled-you-into-trying-to-decode-this",
-		"http://www.example.сайт/xn--fooled-you-into-trying-to-decode-this",
-		"http://腕時計通販.jp/",
-		// Lets check some bad urls too:
-		"https://pypi.python\n\n\t\t\t\t.org/packages/source/p/pyramid/pyramid-1.5.tar.gz#md5=8747658dcbab709a9c491e43d3b0d58b"
-	};
-
-    StackBuf(sb);
-	uint32_t len = sizeof(urls) / sizeof(char*);
-	for(uint32_t i = 0; i < len; i++) {
-		Url u;
-		u.set(urls[i], strlen(urls[i]));
-		log("build:%s normalized to %s, printed to %s ", 
-            urls[i], u.getUrl(), Url::getDisplayUrl(u.getUrl(), &sb));
-        sb.reset();
-	}
-	//FIXME: need to return an error if there is a problem
-	return 0;
-}
-
 
 char* Url::getDisplayUrl(char* url, SafeBuf* sb) {
 	char* found;
