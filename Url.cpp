@@ -174,14 +174,15 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		if ( ! is_ascii(t[i]) ) {
 			// Sometimes the length with the null is passed in, 
 			// so ignore nulls FIXME?
-			if( t[i] ) {
+			if ( t[i] ) {
 				nonAsciiPos = i;
 			}
 
-            break; // no non-ascii chars allowed
-        }
+			break; // no non-ascii chars allowed
+		}
 	}
 
+	
 	if (nonAsciiPos != -1) {
 		// Try turning utf8 and latin1 encodings into punycode.
 		// All labels(between dots) in the domain are encoded 
@@ -262,9 +263,11 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 			encodedDomStart += 4;
 
 			punycode_status status = punycode_encode(tmpLen, tmpBuf, NULL, &encodedLen, encodedDomStart);
+
 			if ( status != 0 ) {
 				// Give up? try again?
-				log("build: Bad Engineer, failed to punycode international url %s", t);
+				log("build: Bad Engineer, failed to "
+				    "punycode international url %s", t);
 				return;
 			}
 
@@ -295,25 +298,40 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		// truncate the url, and keep it under max url length
 		uint32_t newUrlLen = encodedDomStart - encoded;
 
+<<<<<<< HEAD
 		while (p < pend) {
-			// encode non-ascii chars
-			if (!is_ascii(*p) || is_wspace_a(*p)) {
-				/// @todo should we convert non-ascii character or delete?
+			if ( ! *p ) {
+				break; // null?
+			}
 
-				encoded[newUrlLen++] = '%';
+			if(!is_ascii(*p)) {
+				// url encode utf8 characters now
+				char cs = getUtf8CharSize(p);
 
-				// store first hex digit
-				unsigned char v = ((unsigned char)*p)/16;
-				v += ((v < 10) ? '0' : ('A' - 10));
-				encoded[newUrlLen++] = v;
+=======
+		while(p < pend) {
+			if ( ! *p ) break; // null?
+			if(!is_ascii(*p)) {
+				//break;
+				// url encode utf8 characters now
+				char cs = getUtf8CharSize(p);
+				// bad utf8 char?
+				if ( cs <= 1 ) break;
+>>>>>>> 5f1695f... fix url.cpp
+				// too long?
+				if ( newUrlLen + 12 >= MAX_URL_LEN ) {
+					break;
+				}
 
-				// store second hex digit
-				v = ((unsigned char)*p) & 0x0f;
-				v += ((v < 10) ? '0' : ('A' - 10));
-				encoded[newUrlLen++] = v;
+				char stored = urlEncode ( &encoded[newUrlLen], 12 , p , cs );
+				p += cs;
+				newUrlLen += stored;
 
-				++p;
 				continue;
+			}
+
+			if (is_wspace_a(*p)) {
+				break;
 			}
 
 			if (newUrlLen >= MAX_URL_LEN) {

@@ -41,25 +41,25 @@ TEST(UrlTest, SetNonAsciiValid) {
 
 	const char* expected_normalized[] = {
 	    "http://xn--topbeskring-g9a.dk/velkommen",
-		"http://www.xn--alliancefranaise-npb.nu/",
-		"http://xn--franaise-v0a.alliance.nu/",
-		"http://xn--franaise-v0a.alliance.nu/asdf",
-		"http://xn--franaise-v0a.alliance.nu/asdf",
-		"http://xn--franaise-v0a.alliance.nu/",
-		"http://xn--lwt711i.xn--mi7a.com/",
-		"http://xn--lwt711i.xn--mi7a.com/asdf/%E8%BF%90/abc",
-		"http://xn--lwt711i.xn--mi7a.com/asdf",
-		"http://xn--lwt711i.xn--mi7a.com/asdf",
-		"http://xn--d0a6das0ae0bir7j.org/%D0%90%D0%BA%D0%B0%D0%B4%D1%8D%D0%BC%D1%96%D1%87%D0%BD%D0%B0%D1%8F",
-		"https://hi.xn--d0a6divjd1bi0f.com/",
-		"https://fakedomain.xn--fiq228c.org/asdf",
-		"https://gigablast.com/abc/%E6%96%87/efg",
-		"https://gigablast.com/?q=%E6%96%87",
-		"http://www.example.xn--80aswg/",
-		"http://genocidearchiverwanda.org.rw/index.php/Category:Official_Communiqu%C3%A9s",
-		"http://www.example.com/xn--fooled-you-into-trying-to-decode-this",
-		"http://www.example.xn--80aswg/xn--fooled-you-into-trying-to-decode-this",
-		"http://xn--kjvp61d69f6wc3zf.jp/"
+	    "http://www.xn--alliancefranaise-npb.nu/",
+	    "http://xn--franaise-v0a.alliance.nu/",
+	    "http://xn--franaise-v0a.alliance.nu/asdf",
+	    "http://xn--franaise-v0a.alliance.nu/asdf",
+	    "http://xn--franaise-v0a.alliance.nu/",
+	    "http://xn--lwt711i.xn--mi7a.com/",
+	    "http://xn--lwt711i.xn--mi7a.com/asdf/%E8%BF%90/abc",
+	    "http://xn--lwt711i.xn--mi7a.com/asdf",
+	    "http://xn--lwt711i.xn--mi7a.com/asdf",
+	    "http://xn--d0a6das0ae0bir7j.org/%D0%90%D0%BA%D0%B0%D0%B4%D1%8D%D0%BC%D1%96%D1%87%D0%BD%D0%B0%D1%8F",
+	    "https://hi.xn--d0a6divjd1bi0f.com/",
+	    "https://fakedomain.xn--fiq228c.org/asdf",
+	    "https://gigablast.com/abc/%E6%96%87/efg",
+	    "https://gigablast.com/?q=%E6%96%87",
+	    "http://www.example.xn--80aswg/",
+	    "http://genocidearchiverwanda.org.rw/index.php/Category:Official_Communiqu%C3%A9s",
+	    "http://www.example.com/xn--fooled-you-into-trying-to-decode-this",
+	    "http://www.example.xn--80aswg/xn--fooled-you-into-trying-to-decode-this",
+	    "http://xn--kjvp61d69f6wc3zf.jp/"
 	};
 
 	uint32_t len = sizeof(input_urls) / sizeof(input_urls[0]);
@@ -76,11 +76,13 @@ TEST(UrlTest, SetNonAsciiValid) {
 
 TEST(UrlTest, SetNonAsciiInValid) {
 	char* input_urls[] = {
+	    "http://www.fas.org/blog/ssp/2009/08/securing-venezuela\032s-arsenals.php",
 	    "https://pypi.python\n\n\t\t\t\t.org/packages/source/p/pyramid/pyramid-1.5.tar.gz",
 	    "http://undocs.org/ru/A/C.3/68/\vSR.48"
 	};
 
 	const char* expected_normalized[] = {
+	    "http://www.fas.org/blog/ssp/2009/08/securing-venezuela%1As-arsenals.php",
 	    "https://pypi.python/",
 		"http://undocs.org/ru/A/C.3/68/%0BSR.48"
 	};
