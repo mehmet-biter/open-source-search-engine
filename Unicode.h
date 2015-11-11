@@ -98,9 +98,19 @@ inline char getUtf8CharSize2 ( uint8_t *p ) {
 }
 
 inline char isSaneUtf8Char ( uint8_t *p ) {
-	return utf8_sane[p[0]];
+	if(p[0]<128)
+		return 1;
+	else
+		return utf8_sane[p[0]];
 }
 
+inline char isSaneUtf8Char ( char *p ) {
+	uint8_t c = (uint8_t)*p;
+	if(c<128)
+		return 1;
+	else
+		return utf8_sane[c];
+}
 
 // utf8 bytes. up to 4 bytes in a char:
 // 0xxxxxxx
