@@ -2843,7 +2843,7 @@ bool Rdb::addRecord ( collnum_t collnum,
 			// in addSpiderRequest(), like if its a dup and
 			// gets "nuked". (removed callEval arg since not
 			// really needed)
-			sc->addSpiderRequest ( sreq, g_now );
+			sc->addSpiderRequest ( sreq, gettimeofdayInMilliseconds() );
 		}
 		// otherwise repl
 		else {

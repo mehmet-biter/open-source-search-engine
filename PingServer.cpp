@@ -515,7 +515,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 	pi->m_tcpSocketsInUse = g_httpServer.m_tcp.m_numUsed;
 
 	// from Loop.cpp
-	pi->m_cpuUsage = 0.0; //old: g_cpuUsage;
+	pi->m_cpuUsage = 0.0;
 
 	// store hd temps
 	// gbmemcpy ( p , me->m_hdtemps , 4 * 2 );

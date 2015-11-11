@@ -57,12 +57,6 @@ int32_t g_numSigIOs = 0;
 int32_t g_numSigQueues = 0;
 int32_t g_numSigOthers = 0;
 
-// since we can't call gettimeofday() while in a sig handler, we use this
-// and update it periodically to keep it somewhat accurate
-int64_t g_now = 0;
-//int64_t g_nowGlobal = 0;
-int64_t g_nowApprox = 0;
-
 char g_inWaitState = false;
 
 // a global class extern'd in .h file
@@ -129,8 +123,8 @@ static void sigbadHandler ( int x , siginfo_t *info , void *y ) ;
 static void sigpwrHandler ( int x , siginfo_t *info , void *y ) ;
 static void sighupHandler ( int x , siginfo_t *info , void *y ) ;
 //static void sigioHandler  ( int x , siginfo_t *info , void *y ) ;
-static void sigalrmHandler( int x , siginfo_t *info , void *y ) ;
 static void sigvtalrmHandler( int x , siginfo_t *info , void *y ) ;
+static void sigprofHandler(int signo, siginfo_t *info, void *context);
 
 //int32_t g_fdWriteBits[MAX_NUM_FDS/32];
 //int32_t g_fdReadBits [MAX_NUM_FDS/32];
@@ -381,6 +375,8 @@ bool Loop::addSlot ( bool forReading , int fd, void *state,
 	s->m_tick      = tick;
 	// and the last called time for sleep wrappers only really
 	if ( fd == MAX_NUM_FDS ) s->m_lastCall = gettimeofdayInMilliseconds();
+	//isj: above comment is bogus. Proved with valgrind
+	s->m_lastCall = gettimeofdayInMilliseconds();
 	// debug msg
 	//log("Loop::registered fd=%i state=%"UINT32"",fd,state);
 	// if fd == MAX_NUM_FDS if it's a sleep callback
@@ -476,7 +472,6 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now ,
 
 	// . now call all the callbacks
 	// . most will re-register themselves (i.e. call registerCallback...()
-	//int64_t startTime = gettimeofdayInMilliseconds();
 	while ( s ) {
 		// skip this slot if he has no callback
 		if ( ! s->m_callback ) continue;
@@ -503,15 +498,6 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now ,
 		//int32_t address = 0;
 		// 		uint64_t profilerStart,profilerEnd;
 		// 		uint64_t statStart, statEnd;
-		/*
-		if(g_conf.m_profilingEnabled){
-			address=(int32_t)s->m_callback;
-			g_profiler.startTimer(address, 
-					      __PRETTY_FUNCTION__);
-		      //profilerStart=gettimeofdayInMillisecondsLocal();
-		      //statStart = gettimeofdayInMilliseconds();
-		}
-		*/
 		//startBlockedCpuTimer();
 
 		// log it now
@@ -564,24 +550,6 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now ,
 		s = s_callbacksNext;
 	}
 	s_callbacksNext = NULL;
-// 	int64_t now2 = gettimeofdayInMilliseconds();
-// 	int64_t took = now2 - startTime;
-
-// 	if(g_conf.m_profilingEnabled && took > 10) {	
-// 		g_stats.addStat_r ( 0      , 
-// 				    startTime, 
-// 				    now2,
-// 				    0 ,
-// 				    STAT_GENERIC,
-// 				    __PRETTY_FUNCTION__,__LINE__);
-
-
-// 		if(g_conf.m_sequentialProfiling) {
-// 			log(LOG_TIMING, 
-// 			    "admin: loop time to do %"INT32" callbacks: %"INT64" ms", 
-// 			    numCalled,took);
-// 		}
-// 	}
 
 	// log an error if nothing called
 	//if ( ! called ) log("Loop::callCallbacks: no callback for signal");
@@ -956,44 +924,16 @@ bool Loop::init ( ) {
 	if ( sigaction ( SIGPWR, &sa, 0 ) < 0 ) g_errno = errno;
 
 
-	//now set up our alarm for quickpoll
-	m_quickInterrupt.it_value.tv_sec = 0;
-	m_quickInterrupt.it_value.tv_usec = QUICKPOLL_INTERVAL * 1000;
-	m_quickInterrupt.it_interval.tv_sec = 0;
-	m_quickInterrupt.it_interval.tv_usec = QUICKPOLL_INTERVAL * 1000;
-
-
-	m_realInterrupt.it_value.tv_sec = 0;
-	// 1000 microseconds in a millisecond
-	m_realInterrupt.it_value.tv_usec = 1 * 1000;
-	m_realInterrupt.it_interval.tv_sec = 0;
-	m_realInterrupt.it_interval.tv_usec = 1 * 1000;
-
-
- 	m_noInterrupt.it_value.tv_sec = 0;
- 	m_noInterrupt.it_value.tv_usec = 0;
- 	m_noInterrupt.it_interval.tv_sec = 0;
- 	m_noInterrupt.it_interval.tv_usec = 0;
-	//m_realInterrupt.it_value.tv_sec = 0;
-	//m_realInterrupt.it_value.tv_usec = QUICKPOLL_INTERVAL * 1000;
-
-	// set the interrupts to off for now
-	//mdw:disableTimer();
-
-	// make this 10ms i guess
-	setitimer(ITIMER_REAL, &m_realInterrupt, NULL);
-	// this is 10ms
-	setitimer(ITIMER_VIRTUAL, &m_quickInterrupt, NULL);
-
-	sa.sa_sigaction = sigalrmHandler;
-	// it's gotta be real time, not virtual cpu time now
-	if ( sigaction ( SIGALRM, &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) return log("loop: sigaction: %s.", mstrerror(errno));
-
 	// block sigvtalarm
 	sa.sa_sigaction = sigvtalrmHandler;
 	if ( sigaction ( SIGVTALRM, &sa, 0 ) < 0 ) g_errno = errno;
 	if ( g_errno ) log("loop: sigaction SIGVTALRM: %s.", mstrerror(errno));
+
+	//SIGPROF is used by the profiler
+	sa.sa_sigaction = sigprofHandler;
+	if ( sigaction ( SIGPROF, &sa, NULL ) < 0 ) g_errno = errno;
+	// setitimer(ITIMER_PROF...) is called when profiling is enabled/disabled
+	// it has noticeable overhead so it must not be enabled by default.
 
 	// success
 	return true;
@@ -1048,7 +988,7 @@ void sigbadHandler ( int x , siginfo_t *info , void *y ) {
 	if ( g_threads.amThread() ) errno = 0x7fffffff;
 
 	// turn off sigalarms
-	g_loop.disableTimer();
+	g_loop.disableQuickpollTimer();
 
 	log("loop: sigbadhandler. disabling handler from recall.");
 	// . don't allow this handler to be called again
@@ -1133,8 +1073,6 @@ void sigvtalrmHandler ( int x , siginfo_t *info , void *y ) {
 		}
 	}
 
-	g_nowApprox += QUICKPOLL_INTERVAL; // 10 ms
-
 	// sanity check
 	if ( g_loop.m_inQuickPoll && 
 	     g_niceness != 0 &&
@@ -1186,7 +1124,7 @@ void sigvtalrmHandler ( int x , siginfo_t *info , void *y ) {
 	// we can see where the process was... that is a missed quick poll?
 	if ( g_process.m_lastHeartbeatApprox == 0 ) return;
 	if ( g_conf.m_maxHeartbeatDelay <= 0 ) return;
-	if ( g_nowApprox - g_process.m_lastHeartbeatApprox > 
+	if ( gettimeofdayInMilliseconds() - g_process.m_lastHeartbeatApprox > 
 	     g_conf.m_maxHeartbeatDelay ) {
 #ifndef PTHREADS
 		logf(LOG_DEBUG,"gb: CPU seems blocked. Forcing core.");
@@ -1198,42 +1136,13 @@ void sigvtalrmHandler ( int x , siginfo_t *info , void *y ) {
 
 }
 
-void sigalrmHandler ( int x , siginfo_t *info , void *y ) {
 
-#ifdef PTHREADS
-	// do not allow threads
-	// this call is very fast, can be called like 400M times per second
-	if ( g_threads.amThread() ) return;
-#endif
-
-	// so we don't call gettimeofday() thousands of times a second...
-	g_clockNeedsUpdate = true;
-
-	// stats
-	g_numAlarms++;
-
-	return;
-	/*
-	// . see where we are in the code
-	// . for computing cpu usage
-	// . if idling we will be in sigtimedwait() at the lowest level
-	Host *h = g_hostdb.m_myHost;
-	// if doing injects...
-	if ( ! h ) return;
-	// . i guess this means we were doing something... (otherwise idle)
-	// . this is KINDA like a 100 point sample, but it has crazy decay
-	//   logic built into it
-	if ( ! g_inWaitState )
-		h->m_pingInfo.m_cpuUsage = 
-			.99 * h->m_pingInfo.m_cpuUsage + .01 * 100;
-	else
-		h->m_pingInfo.m_cpuUsage = 
-			.99 * h->m_pingInfo.m_cpuUsage + .01 * 000;
-
-	if ( g_profiler.m_realTimeProfilerRunning )
-		g_profiler.getStackFrame(0);
-	*/
+static void sigprofHandler(int signo, siginfo_t *info, void *context)
+{
+	//This is called on SIGPROF meaning that profiling is enabled
+	g_profiler.getStackFrame();
 }
+
 
 /*
 static sigset_t s_rtmin;
@@ -1326,22 +1235,12 @@ bool Loop::runLoop ( ) {
 
 	m_isDoingLoop = true;
 
-	//mdw:enableTimer();
-
 	// . now loop forever waiting for signals
 	// . but every second check for timer-based events
 
  BIGLOOP:
 
-	g_now = gettimeofdayInMilliseconds();
-		
-	//set the time back to its exact value and reset
-	//the timer.
-	g_nowApprox = g_now;
-	// MDW: won't this hog cpu? just don't disable it in
-	//      Process::save2() any more and it should be ok
-	//enableTimer();
-	m_lastPollTime = g_now;
+	m_lastPollTime = gettimeofdayInMilliseconds();
 	m_needsToQuickPoll = false;
 
 
@@ -2062,7 +1961,6 @@ void Loop::doPoll ( ) {
 
 	// a Slot ptr
 	Slot *s;
-	g_now = gettimeofdayInMilliseconds();
 	/*
 	// call g_udpServer sig handlers for niceness -1 here
 	for ( int32_t i = 0 ; i < MAX_NUM_FDS ; i++ ) {	
@@ -2091,6 +1989,7 @@ void Loop::doPoll ( ) {
 
 
 	bool calledOne = false;
+	const int64_t now = gettimeofdayInMilliseconds();
 
 	// now keep this fast, too. just check fds we need to.
 	for ( int32_t i = 0 ; i < s_numReadFds ; i++ ) {
@@ -2105,7 +2004,7 @@ void Loop::doPoll ( ) {
 			log("loop: calling cback0 niceness=%"INT32" "
 			    "fd=%i", s->m_niceness , fd );
 		calledOne = true;
-		callCallbacks_ass (true,fd, g_now,0);//read?
+		callCallbacks_ass (true,fd, now,0);//read?
 	}
 	for ( int32_t i = 0 ; i < s_numWriteFds ; i++ ) {
 		if ( n == 0 ) break;
@@ -2119,7 +2018,7 @@ void Loop::doPoll ( ) {
 			log("loop: calling wcback0 niceness=%"INT32" fd=%i"
 			    , s->m_niceness , fd );
 		calledOne = true;
-		callCallbacks_ass (false,fd, g_now,0);//false=forRead?
+		callCallbacks_ass (false,fd, now,0);//false=forRead?
 	}
 
 	// handle returned threads for niceness 0
@@ -2143,7 +2042,7 @@ void Loop::doPoll ( ) {
 			log("loop: calling cback1 niceness=%"INT32" "
 			    "fd=%i", s->m_niceness , fd );
 		calledOne = true;
-		callCallbacks_ass (true,fd, g_now,1);//read?
+		callCallbacks_ass (true,fd, now,1);//read?
 	}
 
 	for ( int32_t i = 0 ; i < s_numWriteFds ; i++ ) {
@@ -2158,7 +2057,7 @@ void Loop::doPoll ( ) {
 			log("loop: calling wcback1 niceness=%"INT32" "
 			    "fd=%i", s->m_niceness , fd );
 		calledOne = true;
-		callCallbacks_ass (false,fd, g_now,1);//forread?
+		callCallbacks_ass (false,fd, now,1);//forread?
 	}
 
 	//if ( ! calledOne )
@@ -2220,19 +2119,17 @@ void Loop::doPoll ( ) {
 	// handle returned threads for all other nicenesses
 	g_threads.timedCleanUp(-4,MAX_NICENESS); // 4 ms
 
-	// set time
-	g_now = gettimeofdayInMilliseconds();
 	// call sleepers if they need it
 	// call this every (about) 1 second
-	int32_t elapsed = g_now - s_lastTime;
+	int32_t elapsed = gettimeofdayInMilliseconds() - s_lastTime;
 	// if someone changed the system clock on us, this could be negative
 	// so fix it! otherwise, times may NEVER get called in our lifetime
 	if ( elapsed < 0 ) elapsed = m_minTick;
 	if ( elapsed >= m_minTick ) {
 		// MAX_NUM_FDS is the fd for sleep callbacks
-		callCallbacks_ass ( true , MAX_NUM_FDS , g_now );
+		callCallbacks_ass ( true , MAX_NUM_FDS , gettimeofdayInMilliseconds() );
 		// note the last time we called them
-		s_lastTime = g_now;
+		s_lastTime = gettimeofdayInMilliseconds();
 		// handle returned threads for all other nicenesses
 		g_threads.timedCleanUp(-4,MAX_NICENESS); // 4 ms
 	}
@@ -2522,9 +2419,9 @@ void Loop::quickPoll(int32_t niceness, const char* caller, int32_t lineno) {
 		//		}
 		//		else return;
 	}
-	int64_t now = g_now;
+	int64_t now = gettimeofdayInMilliseconds();
 	//int64_t took = now - m_lastPollTime;
-	int64_t now2 = g_now;
+	int64_t now2 = gettimeofdayInMilliseconds();
 	int32_t gerrno = g_errno;
 
 	/*
@@ -2670,44 +2567,22 @@ void Loop::canQuickPoll(int32_t niceness) {
 	else         m_canQuickPoll = false;
 }
 
-void Loop::disableTimer() {
+void Loop::enableQuickpollTimer() {
+	m_canQuickPoll = true;
+	//	logf(LOG_WARN, "xxx enabling");
+//	setitimer(ITIMER_VIRTUAL, &m_quickInterrupt, NULL);
+}
+
+void Loop::disableQuickpollTimer() {
 	//logf(LOG_WARN,"xxx disabling");
 	m_canQuickPoll = false;
-	setitimer(ITIMER_VIRTUAL, &m_noInterrupt, NULL);
-	setitimer(ITIMER_REAL, &m_noInterrupt, NULL);
+//	setitimer(ITIMER_VIRTUAL, &m_noInterrupt, NULL);
 }
 
 int gbsystem(char *cmd ) {
-	// if ( ! g_conf.m_runAsDaemon )
-	// 	setitimer(ITIMER_REAL, &g_loop.m_noInterrupt, NULL);
-	g_loop.disableTimer();
+	g_loop.disableQuickpollTimer();
 	log("gb: running system(\"%s\")",cmd);
 	int ret = system(cmd);
-	g_loop.enableTimer();
-	// if ( ! g_conf.m_runAsDaemon )
-	// 	setitimer(ITIMER_REAL, &g_loop.m_realInterrupt, NULL);
+	g_loop.enableQuickpollTimer();
 	return ret;
 }
-	
-
-void Loop::enableTimer() {
-	m_canQuickPoll = true;
-	//	logf(LOG_WARN, "xxx enabling");
-	setitimer(ITIMER_VIRTUAL, &m_quickInterrupt, NULL);
-	setitimer(ITIMER_REAL, &m_realInterrupt, NULL);
-}
-
-
-
-
-//calling with a 0 niceness will turn off the timer interrupt
-// void Loop::setitimerInterval(int32_t niceness) {
-// 	if(niceness) {
-// 		setitimer(ITIMER_VIRTUAL, &m_quickInterrupt, NULL);
-// 		m_canQuickPoll = true;
-// 	}
-// 	else {
-// 		setitimer(ITIMER_VIRTUAL, &m_noInterrupt, NULL);
-// 		m_canQuickPoll = false;
-// 	}
-// }

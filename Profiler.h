@@ -211,11 +211,11 @@ class Profiler {
 						const uint32_t stackPtr,
 						uint32_t *ptr);
 
-	void getStackFrame(int sig);
+	void getStackFrame();
 
 	void startRealTimeProfiler();
 
-	void stopRealTimeProfiler(const bool keepData=false);
+	void stopRealTimeProfiler(bool keepData);
 
 	void cleanup();
 	

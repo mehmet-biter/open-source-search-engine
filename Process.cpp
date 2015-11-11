@@ -1175,7 +1175,7 @@ void heartbeatWrapper ( int fd , void *state ) {
 	// save this time so the sig alarm handler can see how long
 	// it has been since we've been called, so after 10000 ms it
 	// can dump core and we can see what is holding things up
-	g_process.m_lastHeartbeatApprox = g_nowApprox;
+	g_process.m_lastHeartbeatApprox = gettimeofdayInMilliseconds();
 }
 
 
@@ -1470,7 +1470,7 @@ bool Process::save2 ( ) {
 // . return false if blocked/waiting
 // . this is the SAVE BEFORE EXITING
 bool Process::shutdown2 ( ) {
-	g_loop.disableTimer();
+	g_loop.disableQuickpollTimer();
 	// only the main process can call this
 	if ( g_threads.amThread() ) return true;
 
@@ -1615,7 +1615,7 @@ bool Process::shutdown2 ( ) {
 		if ( ! udpUrgent ) return false;
 
 
-	g_profiler.stopRealTimeProfiler();
+	g_profiler.stopRealTimeProfiler(false);
 	g_profiler.cleanup();
 
 	// save the conf files and caches. these block the cpu.

@@ -16446,8 +16446,6 @@ void membustest ( int32_t nb , int32_t loops , bool readf ) {
 	// pre-read it so sbrk() can do its thing
 	for ( int32_t i = 0 ; i < n ; i++ ) buf[i] = 1;
 
-	g_clockNeedsUpdate = true;
-
 	// time stamp
 	int64_t t = gettimeofdayInMilliseconds_force();
 
@@ -16504,7 +16502,6 @@ void membustest ( int32_t nb , int32_t loops , bool readf ) {
 		goto loop;
 	}
 
-	g_clockNeedsUpdate = true;
 	// completed
 	int64_t now = gettimeofdayInMilliseconds_force();
 	fprintf(stderr,"memtest: now = %"INT64"\n",t);

@@ -1289,8 +1289,6 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 	}
 	// . now we have a regular dgram to process
 	// . get the timestamp in microseconds
-	// . change to g_now cuz this has to be async safe
-	//int64_t  now = gettimeofdayInMilliseconds();
 	// log msg
 	if ( g_conf.m_logDebugUdp ) {
 		int32_t hid = -1;
@@ -1330,7 +1328,7 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 		//#endif
 	}
 	// update time of last read
-	m_lastReadTime = g_now;
+	m_lastReadTime = gettimeofdayInMilliseconds();
 	// if it's passing us an g_errno then set our g_errno from it
 	if ( m_proto->hadError ( peek , peekSize ) ) {
 		// bitch if not dgramNum #0
@@ -1674,7 +1672,7 @@ void UdpSlot::readAck ( int sock , int32_t dgramNum , int64_t now ) {
 	// . make async safe
 	//int64_t now = gettimeofdayInMilliseconds();
 	// update lastRead time for this transaction
-	m_lastReadTime = g_now;
+	m_lastReadTime = gettimeofdayInMilliseconds();
 	// cease all resending
 	m_resendCount  = 0;
 	// reset the resendTime to the starting point before back-off scheme

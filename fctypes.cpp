@@ -9,8 +9,6 @@
 
 static bool g_clockInSync = false;
 
-bool g_clockNeedsUpdate = true;
-
 bool isClockInSync() { 
 	if ( g_hostdb.m_initialized && g_hostdb.m_hostId == 0 ) return true;
 	return g_clockInSync; 
@@ -1841,29 +1839,12 @@ int64_t gettimeofdayInMillisecondsSynced() {
 
 	int64_t now;
 
-	// the real tiem sigalrm interrupt in Loop.cpp sets this to
-	// true once per millisecond
-	if ( ! g_clockNeedsUpdate ) {
-		now = g_now;
-	}
-	else {
-		//if ( ! g_clockInSync ) 
-		//	log("gb: Getting global time but clock not in sync.");
-		// this isn't async signal safe...
-		struct timeval tv;
-		gettimeofday ( &tv , NULL );
-		now = (int64_t)(tv.tv_usec/1000)+((int64_t)tv.tv_sec)*1000;
-	}
-
-	// update g_nowLocal
-	if ( now > g_now ) g_now = now;
-
-	g_clockNeedsUpdate = false;
+	struct timeval tv;
+	gettimeofday ( &tv , NULL );
+	now = (int64_t)(tv.tv_usec/1000)+((int64_t)tv.tv_sec)*1000;
 
 	// adjust from Msg0x11 time adjustments
 	now += s_adjustment;
-	// update g_now if it is more accurate
-	//if ( now > g_nowGlobal ) g_nowGlobal = now;
 	return now;
 }
 
@@ -1882,12 +1863,8 @@ int64_t gettimeofdayInMillisecondsGlobalNoCore() {
 	struct timeval tv;
 	gettimeofday ( &tv , NULL );
 	int64_t now=(int64_t)(tv.tv_usec/1000)+((int64_t)tv.tv_sec)*1000;
-	// update g_nowLocal
-	if ( now > g_now ) g_now = now;
 	// adjust from Msg0x11 time adjustments
 	now += s_adjustment;
-	// update g_now if it is more accurate
-	//if ( now > g_nowGlobal ) g_nowGlobal = now;
 	return now;
 }
 
@@ -1903,40 +1880,20 @@ uint64_t gettimeofdayInMicroseconds(void) {
 
 // "local" means the time on this machine itself, NOT a timezone thing.
 int64_t gettimeofdayInMilliseconds() {
-	// if in a sig handler then return g_now
-	//if ( g_inSigHandler ) return g_now;
-	// i find that a pthread can call this function even though
-	// a signal handler is underway in the main thread!
-	if ( g_inSigHandler && ! g_threads.amThread() ) { 
-		char *xx = NULL; *xx = 0; }
-
-	// the real tiem sigalrm interrupt in Loop.cpp sets this to
-	// true once per millisecond
-	if ( ! g_clockNeedsUpdate )
-		return g_now;
-
-	g_clockNeedsUpdate = false;
-
 	// this isn't async signal safe...
 	struct timeval tv;
-	//g_loop.disableTimer();
 	gettimeofday ( &tv , NULL );
-	//g_loop.enableTimer();
 	int64_t now=(int64_t)(tv.tv_usec/1000)+((int64_t)tv.tv_sec)*1000;
-	// update g_nowLocal
-	if ( now > g_now ) g_now = now;
 	// adjust from Msg0x11 time adjustments
 	//now += s_adjustment;
 	// update g_now if it is more accurate
 	// . or don't, bad to update it here because it could be very different
 	//   from what it should be
-	//if ( now > g_now ) g_now = now;
 	return now;
 }
 
 
 int64_t gettimeofdayInMilliseconds_force ( ) {
-  g_clockNeedsUpdate = true;
   return gettimeofdayInMilliseconds();
 }
 
