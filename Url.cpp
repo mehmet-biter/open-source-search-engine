@@ -303,12 +303,12 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 				break; // null?
 			}
 
-			if(!is_ascii(*p)) {
+			if (!is_ascii(*p)) {
 				// url encode utf8 characters now
 				char cs = getUtf8CharSize(p);
 
 				// bad utf8 char?
-				if ( cs <= 1 ) {
+				if ( cs <= 0 ) {
 					break;
 				}
 
