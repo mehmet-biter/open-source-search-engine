@@ -74,8 +74,6 @@ class JsonItem {
 class Json {
  public:
 
-	void test();
-
 	JsonItem *parseJsonStringIntoJsonItems ( char *json , int32_t niceness );
 
 	bool printToString(SafeBuf& out);
