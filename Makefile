@@ -108,7 +108,7 @@ LIBS=  -lm -lpthread -lssl -lcrypto ./libiconv.a ./libz.a
 
 else ifeq ($(ARCH), x86_64)
 CPPFLAGS = -g -Wall -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable $(STATIC)
-LIBS=  -lm -lpthread -lssl -lcrypto ./libiconv64.a -lz
+LIBS=  -lm -lpthread -lssl -lcrypto ./libiconv64.a ./libz64.a
 
 else
 #
