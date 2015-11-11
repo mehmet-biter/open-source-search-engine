@@ -179,8 +179,7 @@ void operator delete (void *ptr) throw () {
 
 void operator delete [] ( void *ptr ) throw () {
 	// now just call this
-	// the 4 bytes are # of objects in the array
-	g_mem.gbfree ( ((char *)ptr-4) , -1 , NULL );
+	g_mem.gbfree ( (char *)ptr , -1 , NULL );
 }
 
 #define MINMEM 6000000
@@ -328,12 +327,7 @@ newmemloop:
 }
 
 
-//WARNING: Use this construct only when your datatype has a destructor!
-//the compiler checks to see if a destructor is defined, if it is it
-//will add 4 bytes to your requested size and put the number of objects
-//in those bytes and returns a mem ptr at the malloced address + 4.
-//this can screw up the subsequent call to addmem because the size and
-//ptrs are off.
+
 void * operator new [] (size_t size) throw (std::bad_alloc) {
 	// don't let electric fence zap us
 	if ( size == 0 ) return (void *)0x7fffffff;
@@ -419,9 +413,7 @@ newmemloop:
 		goto newmemloop;
 	}
 
-	//offset by 4 because that is metadata describing the number of objs
-	//in the array
-	g_mem.addMem ( (char*)mem+4 , size-4, "TMPMEM" , 1 );
+	g_mem.addMem ( (char*)mem , size, "TMPMEM" , 1 );
 
 	//if ( unlock ) mutexUnlock();
 	return mem;
@@ -1719,6 +1711,7 @@ void Mem::gbfree ( void *ptr , int size , const char *note ) {
 	if ( slot < 0 ) {
 		log(LOG_LOGIC,"mem: could not find slot (note=%s)",note);
 		log(LOG_LOGIC,"mem: FIXME!!!");
+abort();
 		// return for now so procog does not core all the time!
 		return;
 		//char *xx = NULL; *xx = 0;
