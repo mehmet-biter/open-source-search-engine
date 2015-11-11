@@ -4,7 +4,7 @@ GTEST_DIR = googletest/googletest
 BASE_DIR ?= ../..
 
 TARGET = GigablastTest
-OBJECTS = UrlTest.o
+OBJECTS = GigablastTest.o UrlTest.o
 
 .PHONY: all
 all: $(TARGET)
@@ -25,7 +25,7 @@ CPPFLAGS += -Wl,-rpath=. -Wl,-rpath=$(BASE_DIR)
 CPPFLAGS += -I$(BASE_DIR) -I$(GTEST_DIR)/include
 
 LIBS += -L./ -lgtest 
-LIBS += $(BASE_DIR)/libgb.a $(BASE_DIR)/libiconv64.a -lpthread -lssl -lcrypto -lz
+LIBS += $(BASE_DIR)/libgb.a $(BASE_DIR)/libiconv64.a $(BASE_DIR)/libz64.a -lpthread -lssl -lcrypto
 LIBS += -L$(BASE_DIR) -lcld2_full
 
 $(TARGET): libgtest.so libgb.a $(BASE_DIR)/libcld2_full.so $(OBJECTS)
