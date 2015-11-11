@@ -98,26 +98,17 @@ XMLDOCOPT := -O2
 endif
 
 
-ifeq ("titan","$(HOST)")
-# my machine, titan, runs the old 2.4 kernel, it does not use pthreads because
-# they were very buggy in 1999. Plus they are still kind of slow even today,
-# in 2013. So it just uses clone() and does its own "threading". Unfortunately,
-# the way it works is not even possible on newer kernels because they no longer
-# allow you to override the _errno_location() function. -- matt
-# -DMATTWELLS
-# turn off stack smash detection because it won't save and dump core when
-# stack gets smashed like it normally would when it gets a seg fault signal.
-CPPFLAGS = -m32 -g -Wall -pipe -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized $(STATIC) -DTITAN
-LIBS = ./libz.a ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a
-
-# are we a 32-bit architecture? use different libraries then
-else ifeq ($(ARCH), i686)
+ifeq ($(ARCH), i686)
 CPPFLAGS= -m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable $(STATIC)
 LIBS=  -lm -lpthread -lssl -lcrypto ./libiconv.a ./libz.a
 
 else ifeq ($(ARCH), i386)
 CPPFLAGS= -m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable $(STATIC)
 LIBS=  -lm -lpthread -lssl -lcrypto ./libiconv.a ./libz.a
+
+else ifeq ($(ARCH), x86_64)
+CPPFLAGS = -g -Wall -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable $(STATIC)
+LIBS=  -lm -lpthread -lssl -lcrypto ./libiconv64.a -lz
 
 else
 #
