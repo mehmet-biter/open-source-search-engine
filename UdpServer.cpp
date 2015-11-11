@@ -576,7 +576,6 @@ bool UdpServer::sendRequest ( char     *msg          ,
 		    (PTRTYPE)slot );
 	
 	// . get time 
-	// . returns g_now if we're in a signal handler
 	int64_t now = gettimeofdayInMillisecondsLocal();
 	// connect to the ip/port (udp-style: does not do much)
 	slot->connect ( m_proto, ip, port, h, hostId, transId, timeout, now ,
@@ -801,8 +800,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 void sendPollWrapper_ass ( int fd , void *state ) { 
 	UdpServer *THIS  = (UdpServer *)state;
 	// begin the read/send/callback loop
-	//THIS->process_ass ( g_now );
-	THIS->sendPoll_ass ( true , g_now );
+	THIS->sendPoll_ass ( true , gettimeofdayInMilliseconds() );
 }
 
 // . returns false and sets g_errno on error, true otherwise
@@ -1188,7 +1186,7 @@ void readPollWrapper_ass ( int fd , void *state ) {
 	// let everyone we're in a sigHandler
 	UdpServer *THIS  = (UdpServer *)state;
 	// begin the read/send/callback loop
-	THIS->process_ass ( g_now );
+	THIS->process_ass ( gettimeofdayInMilliseconds() );
 }
 
 // . reads everything from the network card

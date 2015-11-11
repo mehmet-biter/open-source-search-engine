@@ -719,7 +719,7 @@ bool log ( int32_t type , char *formatString , ...) {
 	va_start ( ap, formatString);
 	// debug hack for testing
 	if ( g_inSigHandler ) 
-		return g_log.logLater ( g_now , type , formatString , ap);
+		return g_log.logLater ( gettimeofdayInMilliseconds() , type , formatString , ap);
 	// print it into our buf now
 	vsnprintf ( buf , 1024*10 , formatString , ap );
 	va_end(ap);
@@ -744,7 +744,7 @@ bool log ( char *formatString , ... ) {
 	va_start ( ap, formatString);
 	// debug hack for testing
 	if ( g_inSigHandler ) 
-		return g_log.logLater ( g_now , LOG_WARN , formatString , ap);
+		return g_log.logLater ( gettimeofdayInMilliseconds() , LOG_WARN , formatString , ap);
 	// print it into our buf now
 	vsnprintf ( buf , 1024*10 , formatString , ap );
 	va_end(ap);
@@ -769,7 +769,7 @@ bool logf ( int32_t type , char *formatString , ...) {
 	va_start ( ap, formatString);
 	// debug hack for testing
 	if ( g_inSigHandler ) 
-		return g_log.logLater ( g_now , type , formatString , ap);
+		return g_log.logLater ( gettimeofdayInMilliseconds() , type , formatString , ap);
 	// print it into our buf now
 	vsnprintf ( buf , 1024*10 , formatString , ap );
 	va_end(ap);

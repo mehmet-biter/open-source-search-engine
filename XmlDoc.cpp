@@ -45507,9 +45507,9 @@ bool XmlDoc::clientClosedConnection ( ) {
 
 	if ( m_clientClosed ) return true;
 	
-	if ( g_now - m_lastCheckTime < 50 ) return m_clientClosed;
+	if ( gettimeofdayInMilliseconds() - m_lastCheckTime < 50 ) return m_clientClosed;
 
-	m_lastCheckTime = g_now;
+	m_lastCheckTime = gettimeofdayInMilliseconds();
 
 	char buffer[100];
 	if ( recv(m_seoSocket->m_sd,buffer,99,MSG_PEEK|MSG_DONTWAIT) == 0 ) {

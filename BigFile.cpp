@@ -1369,7 +1369,7 @@ bool readwrite_r ( FileState *fstate , ThreadEntry *t ) {
 		goto retry25;
 
 	// this is thread safe...
-	g_lastDiskReadCompleted = g_now; // gettimeofdayInMilliseconds_r();
+	g_lastDiskReadCompleted = gettimeofdayInMilliseconds();
 
 	// . if n is 0 that's strange!!
 	// . i think the fd will have been closed and re-opened on us if this

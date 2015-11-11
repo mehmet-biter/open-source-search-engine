@@ -6,7 +6,7 @@ Profiler::~Profiler(){return;}
 bool Profiler::reset(){return true;}
 bool Profiler::init(){return true;}
 char *Profiler::getFnName(PTRTYPE address,int32_t *nameLen){return NULL;}
-void Profiler::stopRealTimeProfiler(const bool keepData){return;}
+void Profiler::stopRealTimeProfiler(bool keepData){return;}
 void Profiler::cleanup(){return;}
 bool Profiler:: readSymbolTable(){return true;}
 bool sendPageProfiler ( class TcpSocket *s,class HttpRequest *r){return true;}
@@ -1237,7 +1237,7 @@ bool sendPageProfiler ( TcpSocket *s , HttpRequest *r ) {
 	else {
 		if(g_profiler.m_realTimeProfilerRunning) {
 			if(stopRt) {
-				g_profiler.stopRealTimeProfiler();
+				g_profiler.stopRealTimeProfiler(false);
 				g_profiler.m_ipBuf.purge();
 			}
 		} else if(startRt)   g_profiler.startRealTimeProfiler();
@@ -1443,24 +1443,13 @@ Profiler::checkMissedQuickPoll( FrameTrace *frame,
 extern int g_inMemcpy;
 
 void
-Profiler::getStackFrame(int sig) {
+Profiler::getStackFrame() {
 
-	// need to interrupt every 1ms to set this to true
-	g_clockNeedsUpdate = true;
-
-	// profile once every 5ms, not every 1ms
-	static int32_t s_count = 0;
-
-	// turn off after 60 seconds of profiling
+	// turn off automatically after 60000 samples
 	if ( m_totalFrames++ >= 60000 ) {
 		stopRealTimeProfiler(false);
 		return;
 	}
-
-	if ( ++s_count != 5 ) return;
-
-	s_count = 0;
-
 
 	// prevent cores.
 	// TODO: hack this to a function somehow...
@@ -1595,44 +1584,30 @@ Profiler::startRealTimeProfiler() {
 	init();
 	m_realTimeProfilerRunning = true;
 	m_totalFrames = 0;
-	// now Loop.cpp will call g_profiler.getStackFrame()
-	return;
 
-	struct itimerval value, ovalue;
-	int which = ITIMER_REAL;
-	//signal(SIGVTALRM, Profiler::getStackFrame);
-	//signal(SIGALRM, Profiler::getStackFrame);
+	//set up SIGPROF to be sent every 5 milliseconds
+	struct itimerval value;
 	value.it_interval.tv_sec = 0;
-	// 1000 microseconds is 1 millisecond
 	value.it_interval.tv_usec = 1000;
 	value.it_value.tv_sec = 0;
-	value.it_value.tv_usec = 1000;
-	setitimer( which, &value, &ovalue );
+	value.it_value.tv_usec = 5000;
+	if( setitimer( ITIMER_PROF, &value, NULL ) != 0) {
+		log(LOG_INIT, "admin: Profiler::startRealTimeProfiler(): setitimer() failed, errno=%d",errno);
+	}
 }
 
 void
-Profiler::stopRealTimeProfiler(const bool keepData) {
+Profiler::stopRealTimeProfiler(bool keepData) {
 	log(LOG_INIT, "admin: stopping real time profiler");
 	m_realTimeProfilerRunning = false;
 
-	return;
-
-
+	//disable SIGPROF
 	struct itimerval value;
-	int which = ITIMER_REAL;
-	// call the handler in Loop.cpp again
-	//signal(SIGALRM,sigalrmHandler);
-	getitimer( which, &value );
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_usec = 0;
 	value.it_value.tv_sec = 0;
 	value.it_value.tv_usec = 0;
-	setitimer( which, &value, NULL );
-	if(!keepData && m_frameTraces) {
-		mfree( 	m_frameTraces,
-			sizeof(FrameTrace) * MAX_FRAME_TRACES,
-			"FrameTraces");
-		m_rootFrame = NULL;
-		m_frameTraces = NULL;
-	}
+	setitimer( ITIMER_PROF, &value, NULL );
 }
 
 uint32_t
@@ -1775,6 +1750,7 @@ Profiler::printRealTimeInfo(SafeBuf *sb,
 		sb->safePrintf("</table><br><br>\n");
 		return true;
 	}
+log(LOG_INIT, "admin: @@@@2 printRealTimeInfo: stopping profiler");
 	stopRealTimeProfiler(true);
 
 	/*
