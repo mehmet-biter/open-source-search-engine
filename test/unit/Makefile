@@ -7,9 +7,10 @@ TARGET = GigablastTest
 OBJECTS = UrlTest.o
 
 .PHONY: all
-all: libgtest.so $(BASE_DIR)/libgb.a $(TARGET)
+all: $(TARGET)
 
-$(BASE_DIR)/libgb.a:
+.PHONY: libgb.a
+libgb.a:
 	make -C $(BASE_DIR) libgb.a
 
 $(BASE_DIR)/libcld2_full.so:
@@ -24,10 +25,10 @@ CPPFLAGS += -Wl,-rpath=. -Wl,-rpath=$(BASE_DIR)
 CPPFLAGS += -I$(BASE_DIR) -I$(GTEST_DIR)/include
 
 LIBS += -L./ -lgtest 
-LIBS += -lpthread -lssl -lcrypto $(BASE_DIR)/libgb.a $(BASE_DIR)/libz64.a $(BASE_DIR)/libiconv64.a
+LIBS += $(BASE_DIR)/libgb.a $(BASE_DIR)/libiconv64.a -lpthread -lssl -lcrypto -lz
 LIBS += -L$(BASE_DIR) -lcld2_full
 
-$(TARGET): $(BASE_DIR)/libgb.a $(BASE_DIR)/libcld2_full.so $(OBJECTS)
+$(TARGET): libgtest.so libgb.a $(BASE_DIR)/libcld2_full.so $(OBJECTS)
 	$(CXX) $(CPPFLAGS) $(OBJECTS) $(LIBS) -o $@
 
 .PHONY: test

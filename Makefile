@@ -318,7 +318,7 @@ gbtitletest: gbtitletest.o
 
 # comment this out for faster deb package building
 clean:
-	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest monitor reindex convert maketestindex makespiderdb makeclusterdb urlinfo gbfilter dnstest thunder dmozparse gbtitletest gmon.* quarantine core core.*
+	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest monitor reindex convert maketestindex makespiderdb makeclusterdb urlinfo gbfilter dnstest thunder dmozparse gbtitletest gmon.* quarantine core core.* libgb.a
 	make -C test $@
 
 #.PHONY: GBVersion.cpp
