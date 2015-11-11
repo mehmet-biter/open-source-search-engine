@@ -1139,13 +1139,10 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 		docsWanted = 10;
 		firstResultNum = 0;
 		nqterms        = 0;
-		rerankRuleset  = -1;
 		if ( THIS->m_msg ) docsWanted     = *(int32_t *)(THIS->m_msg);
 		if ( THIS->m_msg ) firstResultNum = *(int32_t *)(THIS->m_msg+4);
 		if ( THIS->m_msg ) nqterms        = *(int32_t *)(THIS->m_msg+8);
 		// never re-route if it has a rerank, those take forever
-		if ( THIS->m_msg ) rerankRuleset  = *(int32_t *)(THIS->m_msg+12);
-		if ( rerankRuleset >= 0 ) return;
 		// . how many milliseconds of waiting before we re-route?
 		// . 100 ms per doc wanted, but if they all end up 
 		//   clustering then docsWanted is no indication of the
