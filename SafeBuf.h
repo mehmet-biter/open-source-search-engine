@@ -175,7 +175,6 @@ public:
 	//int32_t  load(char *dir,char *filename) { 
 	//	return fillFromFile(dir,filename);};
 	bool  safeLatin1ToUtf8(char *s, int32_t len);
-	bool  safeUtf8ToLatin1(char *s, int32_t len);
 	void  detachBuf();
 	bool  insert ( class SafeBuf *c , int32_t insertPos ) ;
 	bool  insert ( char *s , int32_t insertPos ) ;
@@ -260,10 +259,7 @@ public:
 	bool  latin1Encode(char *s, int32_t len, bool htmlEncode=false,
 			   int32_t niceness=0);
     bool utf32Encode(UChar32* codePoints, int32_t cpLen);
-	//bool  utf16Encode(UChar *s, int32_t len, bool htmlEncode=false);
-	//bool  utf16Encode(char *s, int32_t len, bool htmlEncode=false) {
-	//	return utf16Encode((UChar*)s, len>>1, htmlEncode); };
-	//bool  utf32Encode(UChar32 c);
+
 	bool  htmlEncode(char *s, int32_t len,bool encodePoundSign,
 			 int32_t niceness=0 , int32_t truncateLen = -1 );
 	bool  javascriptEncode(char *s, int32_t len );

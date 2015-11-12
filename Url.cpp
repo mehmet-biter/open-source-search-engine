@@ -305,14 +305,10 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 
 			if (!is_ascii(*p)) {
 				// url encode utf8 characters now
-
-				// we use isSaneUtf8Char because getUtf8CharSize returns 1
-				// for both invalid UTF-8 characters and ascii characters
-				char cs = isSaneUtf8Char(p);
-
+				char cs = getUtf8CharSize(p);
 
 				// bad utf8 char?
-				if ( cs <= 0 ) {
+				if ( !isSaneUtf8Char(p) ) {
 					break;
 				}
 
