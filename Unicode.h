@@ -12,7 +12,7 @@ bool 	ucInit(char *path = NULL, bool verifyFiles = false);
 
 //////////////////////////////////////////////////////
 // Converters
-iconv_t gbiconv_open(char *tocode, char *fromcode) ;
+iconv_t gbiconv_open(const char *tocode, const char *fromcode) ;
 int gbiconv_close(iconv_t cd) ;
 
 int32_t 	ucToAny(char *outbuf, int32_t outbuflen, char *charset_out,
@@ -35,22 +35,6 @@ static int bytes_in_utf8_code[] = {
 	// 8 entries in this table are invalid, assume 1, not 0
 	2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
 	3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,1,1,1,1,1,1,1,1
-};
-
-static int utf8_sane[] = {
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-
-	// next two rows are all illegal, so return 1 byte
-	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-
-	// many for loop add this many bytes to iterate, so since the last
-	// 8 entries in this table are invalid, assume 1, not 0
-	2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-	3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0
 };
 
 // how many bytes is char pointed to by p?
@@ -86,6 +70,22 @@ inline char getUtf8CharSize2 ( uint8_t *p ) {
 	return 1;
 }
 
+static int utf8_sane[] = {
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+
+	// next two rows are all illegal, so return 1 byte
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
+	// many for loop add this many bytes to iterate, so since the last
+	// 8 entries in this table are invalid, assume 1, not 0
+	2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+	3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0
+};
+
 inline char isSaneUtf8Char ( uint8_t *p ) {
 	if(p[0]<128)
 		return 1;
@@ -93,7 +93,7 @@ inline char isSaneUtf8Char ( uint8_t *p ) {
 		return utf8_sane[p[0]];
 }
 
-inline char isSaneUtf8Char ( char *p ) {
+inline char isSaneUtf8Char ( const char *p ) {
 	uint8_t c = (uint8_t)*p;
 	if(c<128)
 		return 1;

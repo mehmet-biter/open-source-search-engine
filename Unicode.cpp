@@ -18,7 +18,7 @@ static bool openIconvDescriptors() ;
 // static int gbiconv_close(iconv_t cd) ;
 
 
-iconv_t gbiconv_open( char *tocode, char *fromcode) {
+iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 	// get hash for to/from
 	uint32_t hash1 = hash32Lower_a(tocode, gbstrlen(tocode), 0);
 	uint32_t hash2 = hash32Lower_a(fromcode, gbstrlen(fromcode),0);
@@ -443,14 +443,12 @@ bool openIconvDescriptors() {
 		if (!strncmp(charset, "Windows-31J", 13)){
 			csAlias = "CP932";
 		}
-		
-		//iconv_t cd1 = gbiconv_open("UTF-16LE", csAlias);
+
 		iconv_t cd1 = gbiconv_open("UTF-8", csAlias);
 		if (cd1 == (iconv_t)-1) {	
 		 	//return false;
 		}
 
-		//iconv_t cd2 = gbiconv_open(csAlias, "UTF-16LE");
 		iconv_t cd2 = gbiconv_open(csAlias, "UTF-8");
 		if (cd2 == (iconv_t)-1) {	
 			//return false;

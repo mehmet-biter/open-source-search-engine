@@ -14,42 +14,72 @@ bool mainShutdown(bool urgent){return true;}
 bool closeAll ( void *state , void (* callback)(void *state) ) { return true; }
 bool allExit ( ) { return true; }
 
+
+#include "Mem.h"
+
+int g_inMemcpy=0;
+bool g_recoveryMode = false;
+int32_t g_recoveryLevel = 0;
+
+bool sendPageSEO(TcpSocket *, HttpRequest *) __attribute__((weak));
+
+// make the stubs here. seo.o will override them
+bool sendPageSEO(TcpSocket *s, HttpRequest *hr) {
+	//	return g_httpServer.sendErrorReply(s,500,"Seo support not present");
+	return true;
+}
+
 int main (int argc, char **argv) {
-	if ( ! g_log.init( "foo.log" )        ) {
-		fprintf (stderr,"db: Log file init failed.\n" ); exit( 1 ); }
+	// initialize Gigablast variables
+	g_conf.m_maxMem = 1000000000LL;
+	g_mem.m_memtablesize = 8194*1024;
+	g_log.init("/dev/stdout");
+	g_conf.m_logDebugBuild = true;
+
 	// init our table for doing zobrist hashing
-	if ( ! hashinit() ) {
-		log("db: Failed to init hashtable." ); exit(1); }
-	//ucInit();
+	if (!hashinit()) {
+		log("db: Failed to init hashtable." );
+		exit(1);
+	}
+
+	if (!ucInit()) {
+		log("Unicode initialization failed!");
+		exit(1);
+	}
+
 	for (int i=2; i <= 2259 ; i++ ){
 		char *charset = get_charset_str(i);
-		if (!charset) continue;
+		if (!charset) {
+			continue;
+		}
 		
 		const char *csAlias = charset;
-		if (!strncmp(charset, "x-windows-949", 13))
+		if (!strncmp(charset, "x-windows-949", 13)) {
 			csAlias = "CP949";
+		}
 
-		if (!strncmp(charset, "Windows-31J", 13))
+		if (!strncmp(charset, "Windows-31J", 13)) {
 			csAlias = "CP932";
+		}
 		
 		// Treat all latin1 as windows-1252 extended charset
-		if (!strcmp(charset, "ISO-8859-1") )
+		if (!strcmp(charset, "ISO-8859-1") ) {
 			csAlias = "WINDOWS-1252";
+		}
 		
 		iconv_t cd1 = gbiconv_open("UTF-16LE", csAlias);
 
 		if (cd1 == (iconv_t)-1) {	
-			//printf("%8s %5d %50s\n",
-			//       "",i, csAlias);
+			//printf("boo: %8s %5d %50s\n", "",i, csAlias);
 			continue;
 		}
-		iconv_t cd2 = gbiconv_open(csAlias, "UTF-16LE");
 
+		iconv_t cd2 = gbiconv_open(csAlias, "UTF-16LE");
 		if (cd2 == (iconv_t)-1) {	
-			//printf("%8s %5d %50s\n",
-			//       "",i, csAlias);
+			//printf("boo: %8s %5d %50s\n", "",i, csAlias);
 			continue;
 		}
+
 // 		char *buf1 = "testing";
 // 		size_t incount = 7;
 // 		char buf2[256];
@@ -59,9 +89,10 @@ int main (int argc, char **argv) {
 
 // 		int res = iconv(cd1, &p1, &incount,&p2, &outcount);
 // 		if (res < 0 && errno) {
-// 			printf("oops1: %d (%s)\n",
-// 			       errno, strerror(errno)); continue;
+// 			printf("oops1: %d (%s)\n", errno, strerror(errno));
+//			continue;
 // 		}
+
 // 		char buf3[256];
 // 		incount = outcount;
 // 		outcount = 256;
@@ -69,18 +100,20 @@ int main (int argc, char **argv) {
 // 		p2 = buf3;
 // 		res = iconv(cd2, &p1, &incount,&p2, &outcount);
 // 		if (res < 0 && errno) {
-// 			printf("oops2: %d (%s)\n",
-// 			       errno, strerror(errno)); continue;
+// 			printf("oops2: %d (%s)\n", errno, strerror(errno));
+//			continue;
 
 // 		}
 
-//		printf("%08x %08x %5d %50s\n",
-//		       cd1, cd2, i, csAlias);
-		printf("%5d %50s\n",
-		       i, csAlias);
+		//printf("%08x %08x %5d %50s\n",cd1, cd2, i, csAlias);
+		printf("%5d %50s\n", i, csAlias);
 	}
-	if (gbiconv_open("UTF-8", "WINDOWS-1252") < 0) return false;
-	if (gbiconv_open("WINDOWS-1252", "UTF-8") < 0) return false;
 
-//	while(1); //keep files open so you can check with lsof
+	if (gbiconv_open("UTF-8", "WINDOWS-1252") < 0)  {
+		return false;
+	}
+
+	if (gbiconv_open("WINDOWS-1252", "UTF-8") < 0) {
+		return false;
+	}
 }
