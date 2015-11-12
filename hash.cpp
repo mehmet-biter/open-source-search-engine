@@ -114,7 +114,7 @@ uint32_t hash32 ( char *s, int32_t len, uint32_t startHash ) {
 	return h;
 }
 
-uint32_t hash32Lower_a ( char *s,int32_t len,uint32_t startHash){
+uint32_t hash32Lower_a ( const char *s,int32_t len,uint32_t startHash){
 	uint32_t h = startHash;
 	register int32_t i = 0;
 	while ( i < len ) {

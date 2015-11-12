@@ -30,7 +30,7 @@ uint32_t hash32           ( char *s, int32_t len,uint32_t startHash=0);
 uint32_t hash32h          ( uint32_t h1 , uint32_t h2 ) ;
 uint64_t      hash64h          ( uint64_t h1 , uint64_t h2 );
 uint32_t      hash32Fast       ( uint32_t h1 , uint32_t h2 ) ;
-uint32_t hash32Lower_a    ( char *s, int32_t len,uint32_t startHash=0);
+uint32_t hash32Lower_a    ( const char *s, int32_t len,uint32_t startHash=0);
 uint32_t hash32Lower_utf8  ( char *s, int32_t len,uint32_t startHash=0);
 uint32_t      hash32b          (char *s,int32_t len1,char *s2, int32_t len2);
 uint32_t      hash32_cont      ( char *s, char *slen,
