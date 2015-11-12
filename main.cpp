@@ -3123,6 +3123,7 @@ int main2 ( int argc , char *argv[] ) {
 	//	log("db: Threads init failed." ); return 1; }
 
 	g_log.m_logTimestamps = true;
+	g_log.m_logReadableTimestamps = true;	// BR: Should be configurable..
 
 	// log the version
 	log(LOG_INIT,"conf: Gigablast Version: %s",getVersion());
