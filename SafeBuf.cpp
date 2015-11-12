@@ -144,7 +144,7 @@ bool SafeBuf::safePrintf(char *formatString , ...) {
 }
 
 
-bool SafeBuf::safeMemcpy(char *s, int32_t len) {
+bool SafeBuf::safeMemcpy(const char *s, int32_t len) {
 	// put a silent \0 at the end
 	//int32_t tmp = len + m_length+1;
 	//if(tmp >= m_capacity ) {
@@ -2425,7 +2425,7 @@ bool SafeBuf::decodeJSON ( int32_t niceness ) {
 // . SO we do keep \" 
 // . so when indexing a doc we set decodeAll to FALSE, but if you want to 
 //   decode quotation marks as well then set decodeAll to TRUE!
-bool SafeBuf::safeDecodeJSONToUtf8 ( char *json, 
+bool SafeBuf::safeDecodeJSONToUtf8 ( const char *json,
 				     int32_t jsonLen, 
 				     int32_t niceness ) {
 
@@ -2433,8 +2433,8 @@ bool SafeBuf::safeDecodeJSONToUtf8 ( char *json,
 	int32_t need = jsonLen;
 
 	// count how many \u's we got
-	char *p = json;//m_buf;
-	char *pend = json + jsonLen;
+	const char *p = json;//m_buf;
+	const char *pend = json + jsonLen;
 	for ( ; p < pend ; p++ ) 
 		// for the 'x' and the ';'
 		if ( *p == '\\' && p[1] == 'u' ) need += 2;
@@ -2443,8 +2443,8 @@ bool SafeBuf::safeDecodeJSONToUtf8 ( char *json,
 	//SafeBuf dbuf;
 	if ( ! reserve ( need + 1) ) return false;
 
-	char *src = json;//m_buf;
-	char *srcEnd = json + jsonLen;
+	const char *src = json;//m_buf;
+	const char *srcEnd = json + jsonLen;
 
 	char *dst = m_buf + m_length;
 
@@ -2507,7 +2507,7 @@ bool SafeBuf::safeDecodeJSONToUtf8 ( char *json,
 				continue; 
 			}
 			// otherwise, decode. can do in place like this...
-			char *p = src + 2;
+			const char *p = src + 2;
 			// skip the /ug or /ugg or /uggg or /ugggg in its
 			// entirety i guess... to avoid infinite loop
 			if ( ! is_hex(p[0]) ) { src +=2; continue;}
@@ -2551,7 +2551,7 @@ bool SafeBuf::jsonEncode ( char *src , int32_t srcLen ) {
 }
 
 // encode into json
-bool SafeBuf::safeUtf8ToJSON ( char *utf8 ) {
+bool SafeBuf::safeUtf8ToJSON ( const char *utf8 ) {
 
 	if ( ! utf8 ) return true;
 
@@ -2560,7 +2560,7 @@ bool SafeBuf::safeUtf8ToJSON ( char *utf8 ) {
 	int32_t need = gbstrlen(utf8) * 2 + 1;
 	if ( ! reserve ( need ) ) return false;
 	// scan and copy
-	char *src = utf8;
+	const char *src = utf8;
 	// concatenate to what's already there
 	char *dst = m_buf + m_length;
 	for ( ; *src ; src++ ) {

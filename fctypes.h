@@ -92,7 +92,7 @@ bool is_urlchar(char s);
 int32_t htob ( char s ) ;
 char btoh ( char s ) ;
 // convert hex ascii string into binary
-void hexToBin ( char *src , int32_t srcLen , char *dst );
+void hexToBin ( const char *src , int32_t srcLen , char *dst );
 // convert binary number of size srcLen bytes into hex string in "dst"
 void binToHex ( unsigned char *src , int32_t srcLen , char *dst );
 

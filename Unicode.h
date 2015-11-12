@@ -62,7 +62,7 @@ inline char getUtf8CharSize ( uint8_t *p ) {
 		return bytes_in_utf8_code[c];
 }
 
-inline char getUtf8CharSize ( char *p ) {
+inline char getUtf8CharSize ( const char *p ) {
 	uint8_t c = (uint8_t)*p;
 	if(c<128)
 		return 1;

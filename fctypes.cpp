@@ -993,8 +993,8 @@ int64_t htoint32_tint32_t ( const char *s, int32_t len ) {
 }
 
 // convert hex ascii string into binary at "dst"
-void hexToBin ( char *src , int32_t srcLen , char *dst ) {
-	char *srcEnd = src + srcLen;
+void hexToBin ( const char *src , int32_t srcLen , char *dst ) {
+	const char *srcEnd = src + srcLen;
 	for ( ; src && src < srcEnd ; ) {
 		*dst  = htob(*src++);
 		*dst <<= 4;
