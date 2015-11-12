@@ -199,6 +199,44 @@ gb32:
 #	./parse_iana_charsets.pl < character-sets
 
 
+dist: DIST_DIR=gb-$(shell date +'%Y%m%d')-$(shell git rev-parse --short HEAD)
+dist: all
+	@mkdir $(DIST_DIR)
+	@cp -prL catcountry.dat \
+	badcattable.dat \
+	ucdata/ \
+	antiword \
+	antiword-dir/ \
+	html/ \
+	pdftohtml \
+	pstotext \
+	gb.pem \
+	gb \
+	libcld2_full.so \
+	pnmscale \
+	libnetpbm.so.10 \
+	bmptopnm \
+	giftopnm \
+	jpegtopnm \
+	ppmtojpeg \
+	libjpeg.so.62 \
+	pngtopnm \
+	libpng12.so.0 \
+	tifftopnm \
+	libtiff.so.4 \
+	LICENSE \
+	mysynonyms.txt \
+	wikititles.txt.part1 \
+	wikititles.txt.part2 \
+	wiktionary-buf.txt \
+	wiktionary-lang.txt \
+	wiktionary-syns.dat \
+	sitelinks.txt \
+	unifiedDict.txt \
+	$(DIST_DIR)
+	@tar -czvf $(DIST_DIR).tar.gz $(DIST_DIR)
+	@rm -rf $(DIST_DIR)
+
 # used for unit testing
 libgb.a: $(OBJS)
 	ar rcs $@ $^
