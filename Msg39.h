@@ -27,6 +27,7 @@ class Msg39Request {
 	Msg39Request () { reset(); };
 
 	void reset() {
+		memset(this, 0, sizeof(*this));
 		m_docsToGet               = 10;
 		m_niceness                = MAX_NICENESS;
 		m_maxAge                  = 0;
