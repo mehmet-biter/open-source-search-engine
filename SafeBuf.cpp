@@ -2552,54 +2552,106 @@ bool SafeBuf::jsonEncode ( char *src , int32_t srcLen ) {
 
 // encode into json
 bool SafeBuf::safeUtf8ToJSON ( const char *utf8 ) {
-
-	if ( ! utf8 ) return true;
+	if ( ! utf8 ) {
+		return true;
+	}
 
 	// how much space do we need?
 	// each single byte \t char for instance will need 2 bytes
 	int32_t need = gbstrlen(utf8) * 2 + 1;
-	if ( ! reserve ( need ) ) return false;
+	if ( ! reserve ( need ) ) {
+		return false;
+	}
+
 	// scan and copy
 	const char *src = utf8;
+
 	// concatenate to what's already there
 	char *dst = m_buf + m_length;
-	for ( ; *src ; src++ ) {
-		if ( *src == '\"' ) {
-			*dst++ = '\\';
-			*dst++ = '\"';
-			continue;
-		}
-		if ( *src == '\t' ) {
-			*dst++ = '\\';
-			*dst++ = 't';
-			continue;
-		}
-		if ( *src == '\n' ) {
-			*dst++ = '\\';
-			*dst++ = 'n';
-			continue;
-		}
-		if ( *src == '\r' ) {
-			*dst++ = '\\';
-			*dst++ = 'r';
-			continue;
-		}
-		if ( *src == '\f' ) {
-			*dst++ = '\\';
-			*dst++ = 'f';
-			continue;
-		}
-		if ( *src == '\\' ) {
-			*dst++ = '\\';
-			*dst++ = '\\';
+	char size;
+	for ( ; *src ; src += size ) {
+		size = getUtf8CharSize(src);
+
+		// remove invalid UTF-8 characters
+		if ( ! isValidUtf8Char(src) ) {
+			size = 1;
 			continue;
 		}
 
-		/// @todo remove invalid UTF-8 characters here
+		if ( size == 1 ) {
+			// remove invalid ascii control characters
+			if ((*src >= 1 && *src <= 7) ||
+			    (*src == 11) ||
+			    (*src >= 14 && *src <= 31)) {
+				continue;
+			}
 
-		*dst++ = *src;
+			// refer to: http://json.org/
+			// backspace (08)
+			if ( *src == '\b' ) {
+				*dst++ = '\\';
+				*dst++ = 'b';
+				continue;
+			}
 
+			// horizontal tab (09)
+			if ( *src == '\t' ) {
+				*dst++ = '\\';
+				*dst++ = 't';
+				continue;
+			}
+
+			// newline (10)
+			if ( *src == '\n' ) {
+				*dst++ = '\\';
+				*dst++ = 'n';
+				continue;
+			}
+
+			// formfeed (12)
+			if ( *src == '\f' ) {
+				*dst++ = '\\';
+				*dst++ = 'f';
+				continue;
+			}
+
+			// carriage return (13)
+			if ( *src == '\r' ) {
+				*dst++ = '\\';
+				*dst++ = 'r';
+				continue;
+			}
+
+			// quotation mark
+			if ( *src == '\"' ) {
+				*dst++ = '\\';
+				*dst++ = '\"';
+				continue;
+			}
+
+			// reverse solidus
+			if ( *src == '\\' ) {
+				*dst++ = '\\';
+				*dst++ = '\\';
+				continue;
+			}
+
+			// solidus
+			if ( *src == '/' ) {
+				*dst++ = '\\';
+				*dst++ = '/';
+				continue;
+			}
+
+			*dst++ = *src;
+			continue;
+		}
+
+		for (int i = 0; i < size; ++i) {
+			*dst++ = src[i];
+		}
 	}
+
 	// null term
 	*dst = '\0';
 

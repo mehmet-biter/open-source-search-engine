@@ -2,6 +2,7 @@
 #define UNICODEH
 
 #include <sys/types.h>
+#include <stdint.h>
 #include <limits.h>
 #include <stdio.h>
 #include "UnicodeProperties.h"
@@ -70,36 +71,57 @@ inline char getUtf8CharSize2 ( uint8_t *p ) {
 	return 1;
 }
 
-static int utf8_sane[] = {
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+// Code Points          1st Byte    2nd Byte    3rd Byte    4th Byte
+// U+0000..U+007F       00..7F
+// U+0080..U+07FF       C2..DF      80..BF
+// U+0800..U+0FFF       E0          A0..BF      80..BF
+// U+1000..U+FFFF       E1..EF      80..BF      80..BF
+// U+10000..U+3FFFF     F0          90..BF      80..BF      80..BF
+// U+40000..U+FFFFF     F1..F3      80..BF      80..BF      80..BF
+// U+100000..U+10FFFF   F4          80..8F      80..BF      80..BF
 
-	// next two rows are all illegal, so return 1 byte
-	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+bool inline isValidUtf8Char(const char *s) {
+	const uint8_t *u = (uint8_t*)s;
 
-	// many for loop add this many bytes to iterate, so since the last
-	// 8 entries in this table are invalid, assume 1, not 0
-	2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-	3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0
-};
+	if (u[0] >= 0x00 && u[0] <= 0x7F) { // U+0000..U+007F
+		return true;
+	} else if (u[0] >= 0xC2 && u[0] <= 0xDF) { // U+0080..U+07FF
+		if (u[1] >= 0x80 && u[1] <= 0xBF) {
+			return true;
+		}
+	} else if (u[0] == 0xE0) { // U+0800..U+0FFF
+		if ((u[1] >= 0xA0 && u[1] <= 0xBF) &&
+		    (u[2] >= 0x80 && u[2] <=0xBF)) {
+			return true;
+		}
+	} else if (u[0] >= 0xE1 && u[0] <= 0xEF) { // U+1000..U+FFFF
+		if ((u[1] >= 0x80 && u[1] <= 0xBF) &&
+			(u[2] >= 0x80 && u[2] <= 0xBF)) {
+			return true;
+		}
+	} else if (u[0] == 0xF0) { // U+10000..U+3FFFF
+		if ((u[1] >= 0x90 && u[1] <= 0xBF) &&
+			(u[2] >= 0x80 && u[2] <=0xBF) &&
+		    (u[3] >= 0x80 && u[3] <=0xBF)) {
+			return true;
+		}
+	} else if (u[0] >= 0xF1 && u[0] <= 0xF3) { // U+40000..U+FFFFF
+		if ((u[1] >= 0x80 && u[1] <= 0xBF) &&
+		    (u[2] >= 0x80 && u[2] <= 0xBF) &&
+		    (u[3] >= 0x80 && u[3] <= 0xBF)) {
+			return true;
+		}
+	} else if (u[0] == 0xF4) { // U+100000..U+10FFFF
+		if ((u[1] >= 0x80 && u[1] <= 0x8F) &&
+			(u[2] >= 0x80 && u[2] <=0xBF) &&
+		    (u[3] >= 0x80 && u[3] <=0xBF)) {
+			return true;
+		}
+	}
 
-inline char isSaneUtf8Char ( uint8_t *p ) {
-	if(p[0]<128)
-		return 1;
-	else
-		return utf8_sane[p[0]];
+	return false;
 }
 
-inline char isSaneUtf8Char ( const char *p ) {
-	uint8_t c = (uint8_t)*p;
-	if(c<128)
-		return 1;
-	else
-		return utf8_sane[c];
-}
 
 // utf8 bytes. up to 4 bytes in a char:
 // 0xxxxxxx

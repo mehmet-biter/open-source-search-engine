@@ -19689,34 +19689,14 @@ char **XmlDoc::getUtf8Content ( ) {
 	//
 	// fixes santaclarachorale.vbotickets.com/tickets/g.f._handels_israel_in_egypt/1062
 	// which has a 228,0x80,& sequence (3 chars, last is ascii)
-	uint8_t *x = (uint8_t *)m_expandedUtf8Content;
+	char *x = m_expandedUtf8Content;
 	char size;
 	for ( ; *x ; x += size ) {
 		QUICKPOLL(m_niceness);
 		size = getUtf8CharSize(x);
 		// ok, make it a space i guess if it is a bad utf8 char
-		if ( ! isSaneUtf8Char(x) ) {
+		if ( ! isValidUtf8Char(x) ) {
 			*x = ' ';
-			size = 1;
-			continue;
-		}
-		// skip if only one byte
-		if ( size == 1 ) continue;
-		// now each byte in the sequence must have 0x80 set...
-		if ( ! (x[1] & 0x80) ) {
-			x[0] = ' ';
-			size = 1;
-			continue;
-		}
-		if ( size == 2 ) continue;
-		if ( ! (x[2] & 0x80) ) {
-			x[0] = ' ';
-			size = 1;
-			continue;
-		}
-		if ( size == 3 ) continue;
-		if ( ! (x[3] & 0x80) ) {
-			x[0] = ' ';
 			size = 1;
 			continue;
 		}

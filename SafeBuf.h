@@ -119,10 +119,10 @@ public:
 #else
 	bool  safePrintf(char *formatString, ...);
 #endif
-	bool  safeMemcpy(void *s, int32_t len){return safeMemcpy((char *)s,len);};
+	bool  safeMemcpy(void *s, int32_t len){return safeMemcpy((char *)s,len);}
 	bool  safeMemcpy(const char *s, int32_t len);
 	bool  safeMemcpy_nospaces(char *s, int32_t len);
-	bool  safeMemcpy(SafeBuf *c){return safeMemcpy(c->m_buf,c->m_length);};
+	bool  safeMemcpy(SafeBuf *c){return safeMemcpy(c->m_buf,c->m_length);}
 	bool  safeMemcpy ( class Words *w , int32_t a , int32_t b ) ;
 	bool  safeStrcpy ( char *s ) ;
 	//bool  safeStrcpyPrettyJSON ( char *decodedJson ) ;
@@ -167,7 +167,7 @@ public:
 		// watch out for negative i's
 		if ( m_length < 0 ) m_length = 0; 
 	};
-	void  setLength(int32_t i) { m_length = i; };
+	void  setLength(int32_t i) { m_length = i; }
 	char *getNextLine ( char *p ) ;
 	int32_t  catFile(char *filename) ;
 	//int32_t  load(char *dir,char *filename) { 
