@@ -64,7 +64,7 @@ JsonItem *Json::getItem ( char *name ) {
 
 #include "Mem.h" // gbstrlen()
 
-JsonItem *Json::parseJsonStringIntoJsonItems ( char *json , int32_t niceness ) {
+JsonItem *Json::parseJsonStringIntoJsonItems (const char *json , int32_t niceness ) {
 
 	m_prev = NULL;
 
@@ -76,7 +76,7 @@ JsonItem *Json::parseJsonStringIntoJsonItems ( char *json , int32_t niceness ) {
 	if ( ! json ) return NULL;
 
 	// how much space will we need to avoid any reallocs?
-	char *p = json;
+	const char *p = json;
 	bool inQuote = false;
 	int32_t need = 0;
 	for ( ; *p ; p++ ) {
@@ -121,7 +121,7 @@ JsonItem *Json::parseJsonStringIntoJsonItems ( char *json , int32_t niceness ) {
 	// reset p
 	p = json;
 	// json maybe bad utf8 causing us to miss the \0 char, so use "pend"
-	char *pend = json + gbstrlen(json);
+	const char *pend = json + gbstrlen(json);
 
 	// scan
 	for ( ; p < pend ; p += size ) {
@@ -210,7 +210,7 @@ JsonItem *Json::parseJsonStringIntoJsonItems ( char *json , int32_t niceness ) {
 		// a quote?
 		if ( *p == '\"' ) {
 			// find end of quote
-			char *end = p + 1;
+			const char *end = p + 1;
 			for ( ; *end ; end++ ) {
 				// skip two chars if escaped
 				if ( *end == '\\' && end[1] ) {
@@ -221,11 +221,11 @@ JsonItem *Json::parseJsonStringIntoJsonItems ( char *json , int32_t niceness ) {
 				if ( *end == '\"' ) break;
 			}
 			// field?
-			char *x = end + 1;
+			const char *x = end + 1;
 			// skip spaces
 			for ( ; *x && is_wspace_a(*x) ; x++ );
 			// define the string
-			char *str  = p + 1;
+			const char *str  = p + 1;
 			int32_t  slen = end - str;
 			// . if a colon follows, it was a field
 			if ( *x == ':' ) {
@@ -330,12 +330,12 @@ JsonItem *Json::parseJsonStringIntoJsonItems ( char *json , int32_t niceness ) {
 		     // like .123 ?
 		     ( *p == '.' && is_digit(p[1]) ) ) {
 			// find end of the number
-			char *end = p + 1;
+			const char *end = p + 1;
 			// . allow '.' for decimal numbers
 			// . TODO: allow E for exponent
 			for ( ; *end && (is_digit(*end) || *end=='.');end++) ;
 			// define the string
-			char *str  = p;
+			const char *str  = p;
 			int32_t  slen = end - str;
 			// make a new one
 			ji = addNewItem();

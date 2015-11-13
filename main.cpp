@@ -1324,21 +1324,6 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	/*
-	//  test json parser error with bad json
-	Json jp;
-	char xxx[1024];
-	//sprintf(xxx,"\"categories\":[\"shop\"");
-	sprintf(xxx,"\"too small\"");
-	jp.parseJsonStringIntoJsonItems(xxx,0);
-	JsonItem *ji = jp.getFirstItem();
-	for ( ; ji ; ji = ji->m_next ) {
-		if ( ji->m_type != JT_NUMBER && ji->m_type != JT_STRING )
-			continue;
-	}
-	*/
-
-
-	/*
 	if ( strcmp ( cmd , "querytest" ) == 0){
 		if ( ! g_hostdb.init(hostsConf, hostId) ) {
 			log("db: hostdb init failed." ); return 1; }
@@ -3138,6 +3123,7 @@ int main2 ( int argc , char *argv[] ) {
 	//	log("db: Threads init failed." ); return 1; }
 
 	g_log.m_logTimestamps = true;
+	g_log.m_logReadableTimestamps = true;	// BR: Should be configurable..
 
 	// log the version
 	log(LOG_INIT,"conf: Gigablast Version: %s",getVersion());

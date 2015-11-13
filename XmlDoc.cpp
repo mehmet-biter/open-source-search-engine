@@ -15971,7 +15971,7 @@ SafeBuf *XmlDoc::getTokenizedDiffbotReply ( ) {
 	}
 
 	JsonItem *jsonItem = jp.getItem("objects");
-	char *array = NULL;
+	const char *array = NULL;
 	int32_t arrayLen = 0;
 	if ( jsonItem ) {
 		array = jsonItem->getArrayStart();

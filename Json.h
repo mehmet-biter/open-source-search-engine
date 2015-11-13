@@ -42,14 +42,14 @@ class JsonItem {
 	// for JT_String
 	int32_t m_valueLen;
 
-	char *m_valueArray;
+	const char *m_valueArray;
 
 	// for JT_String
-	int32_t  getValueLen() { return m_valueLen; };
+	int32_t  getValueLen() { return m_valueLen; }
 
 	// for arrays (JT_ARRAY), hack the char ptr into m_valueLong
-	char *getArrayStart() { return m_valueArray;}; //(char *)m_valueLong; }
-	int32_t  getArrayLen  () { return m_valueLen; };
+	const char *getArrayStart() { return m_valueArray;}
+	int32_t  getArrayLen  () { return m_valueLen; }
 
 	// for JT_String
 	char *getValue () { 
@@ -74,7 +74,7 @@ class JsonItem {
 class Json {
  public:
 
-	JsonItem *parseJsonStringIntoJsonItems ( char *json , int32_t niceness );
+	JsonItem *parseJsonStringIntoJsonItems ( const char *json , int32_t niceness );
 
 	bool printToString(SafeBuf& out);
 

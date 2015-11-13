@@ -142,6 +142,7 @@ class Log {
 	bool          m_disabled;
 
 	bool m_logTimestamps;
+	bool m_logReadableTimestamps;
 
 	char *getFilename() { return m_filename; };
 

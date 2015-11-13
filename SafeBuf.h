@@ -89,9 +89,7 @@ public:
 
 	bool convertJSONtoXML ( int32_t niceness , int32_t startConvertPos );
 
-	bool safeDecodeJSONToUtf8 ( char *json, int32_t jsonLen, 
-				    int32_t niceness);
-	//			    bool decodeAll = false );
+	bool safeDecodeJSONToUtf8 ( const char *json, int32_t jsonLen, int32_t niceness);
 
 	bool decodeJSONToUtf8 ( int32_t niceness );
 	bool decodeJSON ( int32_t niceness );
@@ -122,14 +120,14 @@ public:
 	bool  safePrintf(char *formatString, ...);
 #endif
 	bool  safeMemcpy(void *s, int32_t len){return safeMemcpy((char *)s,len);};
-	bool  safeMemcpy(char *s, int32_t len);
+	bool  safeMemcpy(const char *s, int32_t len);
 	bool  safeMemcpy_nospaces(char *s, int32_t len);
 	bool  safeMemcpy(SafeBuf *c){return safeMemcpy(c->m_buf,c->m_length);};
 	bool  safeMemcpy ( class Words *w , int32_t a , int32_t b ) ;
 	bool  safeStrcpy ( char *s ) ;
 	//bool  safeStrcpyPrettyJSON ( char *decodedJson ) ;
-	bool  safeUtf8ToJSON ( char *utf8 ) ;
-	bool jsonEncode ( char *utf8 ) { return safeUtf8ToJSON(utf8); };
+	bool  safeUtf8ToJSON ( const char *utf8 ) ;
+	bool jsonEncode ( const char *utf8 ) { return safeUtf8ToJSON(utf8); }
 	bool jsonEncode ( char *utf8 , int32_t utf8Len );
 
 	bool  csvEncode ( char *s , int32_t len , int32_t niceness = 0 );
@@ -175,7 +173,6 @@ public:
 	//int32_t  load(char *dir,char *filename) { 
 	//	return fillFromFile(dir,filename);};
 	bool  safeLatin1ToUtf8(char *s, int32_t len);
-	bool  safeUtf8ToLatin1(char *s, int32_t len);
 	void  detachBuf();
 	bool  insert ( class SafeBuf *c , int32_t insertPos ) ;
 	bool  insert ( char *s , int32_t insertPos ) ;
@@ -260,10 +257,7 @@ public:
 	bool  latin1Encode(char *s, int32_t len, bool htmlEncode=false,
 			   int32_t niceness=0);
     bool utf32Encode(UChar32* codePoints, int32_t cpLen);
-	//bool  utf16Encode(UChar *s, int32_t len, bool htmlEncode=false);
-	//bool  utf16Encode(char *s, int32_t len, bool htmlEncode=false) {
-	//	return utf16Encode((UChar*)s, len>>1, htmlEncode); };
-	//bool  utf32Encode(UChar32 c);
+
 	bool  htmlEncode(char *s, int32_t len,bool encodePoundSign,
 			 int32_t niceness=0 , int32_t truncateLen = -1 );
 	bool  javascriptEncode(char *s, int32_t len );

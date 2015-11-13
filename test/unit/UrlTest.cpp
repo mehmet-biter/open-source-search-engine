@@ -49,15 +49,14 @@ TEST(UrlTest, SetNonAsciiValid) {
 	    "http://xn--kjvp61d69f6wc3zf.jp/"
 	};
 
-	uint32_t len = sizeof(input_urls) / sizeof(input_urls[0]);
-	for (uint32_t i = 0; i < len; i++) {
+	ASSERT_EQ(sizeof(input_urls), sizeof(expected_normalized));
+
+	size_t len = sizeof(input_urls) / sizeof(input_urls[0]);
+	for (size_t i = 0; i < len; i++) {
 		Url url;
 		url.set(input_urls[i], strlen(input_urls[i]));
 
 		EXPECT_STREQ(expected_normalized[i], (const char*)url.getUrl());
-
-		//StackBuf(sb);
-		//EXPECT_STREQ(input_urls[i], Url::getDisplayUrl(url.getUrl(), &sb));
 	}
 }
 
@@ -74,15 +73,13 @@ TEST(UrlTest, SetNonAsciiInValid) {
 		"http://undocs.org/ru/A/C.3/68/%0BSR.48"
 	};
 
-	//StackBuf(sb);
-	uint32_t len = sizeof(input_urls) / sizeof(input_urls[0]);
-	for (uint32_t i = 0; i < len; i++) {
+	ASSERT_EQ(sizeof(input_urls), sizeof(expected_normalized));
+
+	size_t len = sizeof(input_urls) / sizeof(input_urls[0]);
+	for (size_t i = 0; i < len; i++) {
 		Url url;
 		url.set(input_urls[i], strlen(input_urls[i]));
 
 		EXPECT_STREQ(expected_normalized[i], (const char*)url.getUrl());
-
-		//StackBuf(sb);
-		//EXPECT_STREQ(input_urls[i], Url::getDisplayUrl(url.getUrl(), &sb));
 	}
 }

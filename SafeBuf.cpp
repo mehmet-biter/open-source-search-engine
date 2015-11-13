@@ -7,21 +7,6 @@
 #include "Words.h"
 #include "Sections.h"
 
-//static uint32_t utf8Decode ( char *p, char **next = NULL );
-
-// // table for decoding utf8...says how many bytes in the character
-// // based on value of first byte.  0 is an illegal value
-// static int bytes_in_code[] = {
-// 	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-// 	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-// 	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-// 	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-// 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-// 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-// 	2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-// 	3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0
-// };
-
 SafeBuf::SafeBuf(int32_t initSize, char *label ) {
 	if(initSize <= 0) initSize = 1;
 	m_capacity = initSize;
@@ -159,7 +144,7 @@ bool SafeBuf::safePrintf(char *formatString , ...) {
 }
 
 
-bool SafeBuf::safeMemcpy(char *s, int32_t len) {
+bool SafeBuf::safeMemcpy(const char *s, int32_t len) {
 	// put a silent \0 at the end
 	//int32_t tmp = len + m_length+1;
 	//if(tmp >= m_capacity ) {
@@ -605,8 +590,6 @@ bool SafeBuf::safeLatin1ToUtf8(char *s, int32_t len) {
 		unsigned char c = (unsigned char)s[i];
 		// check if this expands to 2 chars
 		if ( c >= 0x80 ) tmp++;
-		//windows-1252 extensions
-		//if (c >= 130 && c < 160) tmp++;
 	}
 	// make sure we have room
 	if ( tmp >= m_capacity ) {
@@ -616,23 +599,7 @@ bool SafeBuf::safeLatin1ToUtf8(char *s, int32_t len) {
 	}
 	// convert it over
 	char *p = m_buf + m_length;
-	/*
-#if 0
-	for (int32_t i = 0; i < len; i++) {
-		unsigned char c = (unsigned char)s[i];
-		if (c < 0x80) {
-			*p = c;
-			p++;
-		}
-		else {
-			*p = (char)(0xc0 | (c >> 6 & 0x1f));
-			p++;
-			*p = (char)(0x80 | (c & 0x3f));
-			p++;
-		}
-	}
-#else
-	*/
+
 	// use the iconv function
 	p += latin1ToUtf8(p, m_capacity-m_length, s, len);
 	//#endif
@@ -641,43 +608,6 @@ bool SafeBuf::safeLatin1ToUtf8(char *s, int32_t len) {
 	m_length = p - m_buf;
 	return true;
 }
-
-// safely print the string, converting Utf8 to Latin1
-/*
-bool SafeBuf::safeUtf8ToLatin1(char *s, int32_t len) {
-	// JAB: const-ness for the optimizer
-	char *next = NULL;
-	const char *current = s;
-	int32_t count = 0;
-	while (current && current <(s+len)) {
-		utf8Decode(current,&next);
-		// increment past this utf8 char
-		current = next;
-		count++;
-	}
-	// make sure we have room
-	if ( m_length + count >= m_capacity ) {
-		if (!reserve( 2 * m_capacity + count))
-			return false;
-	}
-	// convert it over
-	char *p = m_buf + m_length;
-	current = s;
-	while (current && current <(s+len)){
-		// get the decoded char
-		int32_t c32 = utf8Decode(current,&next);
-		// if it's under 256, print it, otherwise print ?
-		if ( c32 < 256 ) *p = (char)c32;
-		else             *p = '?';
-		// increment past this utf8 char
-		current = next;
-		p++;
-	}
-	// set the new length
-	m_length += count;
-	return true;
-}
-*/
 
 // a special replace
 bool SafeBuf::insert ( SafeBuf *c , int32_t insertPos ) {
@@ -854,12 +784,9 @@ bool  SafeBuf::utf8Encode2(char *s, int32_t len, bool encodeHTML,int32_t nicenes
 	int32_t tmp = m_length;
 	if ( m_encoding == csUTF8 ) {
 		if (! safeMemcpy(s,len)) return false;
-	}
-	//else if ( m_encoding == csISOLatin1 ) {
-	//	if (! safeUtf8ToLatin1(s,len)) return false;
-	//}
-	else
+	} else {
 		return false;
+	}
 	if (!encodeHTML) return true;
 	return htmlEncode(m_length-tmp,niceness);
 }
@@ -880,27 +807,6 @@ bool SafeBuf::utf32Encode(UChar32* codePoints, int32_t cpLen) {
     return true;
 }
 
-/*
-bool SafeBuf::utf32Encode(UChar32 c) {
-	if(!reserve2x(8)) return false;
-
-	if ( m_encoding == csUTF8 ) {
-		m_length += ::utf8Encode(c, m_buf + m_length);
-		return true;
-	}
-	if ( m_encoding == csISOLatin1 ) {
-		if(c < 128) {
-			*(m_buf + m_length++) = (char)c;
-		}
-		else {
-			*(m_buf + m_length++) = '?';
-		}
-		return true;
-	}
-	return false;
-}
-*/
-
 bool  SafeBuf::latin1Encode(char *s, int32_t len, bool encodeHTML,int32_t niceness) {
 	int32_t tmp = m_length;
 	switch(m_encoding) {
@@ -917,41 +823,11 @@ bool  SafeBuf::latin1Encode(char *s, int32_t len, bool encodeHTML,int32_t nicene
 	return htmlEncode(m_length-tmp,niceness);
 }
 
-/*
-bool  SafeBuf::utf16Encode(UChar *s, int32_t len, bool encodeHTML){
-	int32_t used=0;
-	// string could be up to 4 bytes per character
-	if (!reserve( len*4))
-		return false;	
-
-	switch(m_encoding) {
-	case csUTF8:
-		used = utf16ToUtf8(m_buf+m_length, 
-				   m_capacity-m_length,
-				   s,len);
-		m_length += used;
-		break;
-	case csISOLatin1:
-		used = utf16ToLatin1(m_buf+m_length, 
-				   m_capacity-m_length,
-				   s,len);
-		m_length += used;
-		break;
-	default:
-		return false;
-	}
-	if (!encodeHTML) return (used > 0);
-	return htmlEncode(used);
-}
-*/
-
 bool  SafeBuf::utf8CdataEncode(char *s, int32_t len) {
 	int32_t len1 = m_length;
 	bool r;
 	if ( m_encoding == csUTF8 )
 		r = safeMemcpy(s,len);
-	//else if ( m_encoding == csISOLatin1 ) 
-	//	r = safeUtf8ToLatin1(s,len);
 	else
 		return false;
 	if ( !r ) return false;
@@ -966,76 +842,6 @@ bool  SafeBuf::utf8CdataEncode(char *s, int32_t len) {
 	}
 	return true;
 }
-
-/*
-bool  SafeBuf::latin1CdataEncode(char *s, int32_t len) {
-	int32_t len1 = m_length;
-	bool r;
-	switch(m_encoding) {
-	case csUTF8:
-		r = safeLatin1ToUtf8(s,len);
-		break;
-	case csISOLatin1:
-		r = safeMemcpy(s,len);
-		break;
-	default:
-		return false;
-	}
-	if ( !r ) return false;
-	// check the written section for bad characters
-	int32_t p = len1;
-	while ( p < m_length-2 ) {
-		if ( m_buf[p]==']' && m_buf[p+1]==']' && m_buf[p+2]=='>') {
-			// rewrite the > as &gt
-			safeReplace("&gt", 3, p+2, 1);
-		}
-		p++;
-	}
-	return true;
-}
-*/
-
-/*
-bool  SafeBuf::utf16CdataEncode(UChar *s, int32_t len){
-	int32_t len1 = m_length;
-	int32_t used;
-	bool r;
-
-	// string could be up to 4 bytes per character
-	if (!reserve( len*4))
-		return false;	
-	
-	switch(m_encoding) {
-	case csUTF8:
-		used = utf16ToUtf8(m_buf+m_length, 
-				   m_capacity-m_length,
-				   s,len);
-		m_length += used;
-		r = (used > 0);
-		break;
-	case csISOLatin1:
-		used = utf16ToLatin1(m_buf+m_length, 
-				   m_capacity-m_length,
-				   s,len);
-		m_length += used;
-		r = (used > 0);
-		break;
-	default:
-		return false;
-	}
-	if ( !r ) return false;
-	// check the written section for bad characters
-	int32_t p = len1;
-	while ( p < m_length-2 ) {
-		if ( m_buf[p]==']' && m_buf[p+1]==']' && m_buf[p+2]=='>') {
-			// rewrite the > as &gt
-			safeReplace("&gt", 3, p+2, 1);
-		}
-		p++;
-	}
-	return true;
-}
-*/
 
 bool  SafeBuf::latin1HtmlEncode(char *s, int32_t len,int32_t niceness) {
 	int32_t len1 = m_length;
@@ -1071,51 +877,6 @@ bool  SafeBuf::latin1HtmlEncode(char *s, int32_t len,int32_t niceness) {
 	}
 	return true;
 }
-
-/*
-bool  SafeBuf::utf16HtmlEncode(UChar *s, int32_t len){
-	int32_t len1 = m_length;
-	int32_t used;
-	bool r;
-	switch(m_encoding) {
-	case csUTF8:
-		used = utf16ToUtf8(m_buf+m_length, 
-				   m_capacity-m_length,
-				   s,len);
-		m_length += used;
-		r = (used > 0);
-		break;
-	case csISOLatin1:
-		used = utf16ToLatin1(m_buf+m_length, 
-				   m_capacity-m_length,
-				   s,len);
-		m_length += used;
-		r = (used > 0);
-		break;
-	default:
-		return false;
-	}
-	if ( !r ) return false;
-	// check the written section for bad characters
-	int32_t p = len1;
-	while ( p < m_length ) {
-		if ( m_buf[p]=='>' ) {
-			// rewrite the > as &gt
-			safeReplace("&gt;", 4, p, 1);
-		}
-		else if ( m_buf[p]=='<' ) {
-			// rewrite the < as &lt
-			safeReplace("&lt;", 4, p, 1);
-		}
-		else if ( m_buf[p]=='&' ) {
-			// rewrite the & as &amp;
-			safeReplace("&amp;", 5, p, 1);
-		}
-		p++;
-	}
-	return true;
-}
-*/
 
 bool SafeBuf::cdataEncode ( char *s ) {
 	return safeCdataMemcpy(s,gbstrlen(s));
@@ -1540,8 +1301,7 @@ bool SafeBuf::urlEncode (char *s , int32_t slen,
 			safeMemcpy("%27",3);
 			continue;
 		}
-		// encode if not fit for display
-		//if ( ! is_ascii ( *s ) ) goto encode;
+
 		// skip if no encoding required
 		if ( s_ut[(unsigned char)*s] == 0 ) {
 			pushChar(*s); 
@@ -1553,28 +1313,6 @@ bool SafeBuf::urlEncode (char *s , int32_t slen,
 			continue; 
 		}
 
-		/*
-		switch ( *s ) {
-		case ' ': goto encode;
-		case '&': goto encode;
-		case '"': goto encode;
-		case '+': goto encode;
-		case '%': goto encode;
-		case '#': goto encode;
-		case ':': goto encode;
-		case '/': goto encode;
-		// encoding < and > are more for displaying on an
-		// html page than sending to an http server
-		case '>': goto encode;
-		case '<': goto encode;
-		case '?': if ( requestPath ) break;
-			  goto encode;
-		}
-		// otherwise, no need to encode
-		pushChar(*s);
-		continue;
-	encode:
-		*/
 		// space to +
 		if ( *s == ' ' ) { pushChar('+'); continue; }
 		pushChar('%');
@@ -1686,39 +1424,6 @@ char& SafeBuf::operator[](int32_t i) {
 	return m_buf[i];
 }
 
-// for decoding Utf8
-// uint32_t utf8Decode ( char *p, char **next = NULL ) {
-// 	int num_bytes = bytes_in_code[*p];
-// 	if (!num_bytes){
-// 		// ill-formed byte sequence
-// 		// lets just return an invalid character and go on to the next
-// 		if (next) *next = p+1;
-// 		return (uint32_t)0xffffffff;
-// 	}      
-// 	if (next){
-// 		*next = p + num_bytes;
-// 	}                                        
-// 	switch(num_bytes){
-// 	case 1:
-// 		return (uint32_t)*p;
-// 	case 2:
-// 		return (uint32_t)((*p & 0x1f)<<6 |
-// 		(*(p+1) & 0x3f));
-// 	case 3:
-// 		return (uint32_t)((*p & 0x0f)<<12 |
-// 		(*(p+1) & 0x3f)<<6 |
-// 		(*(p+2) & 0x3f));
-// 	case 4:
-// 		return (uint32_t)((*p & 0x07)<<18 |
-// 		(*(p+1) & 0x3f)<<12 |
-// 		(*(p+2) & 0x3f)<<6 |
-// 		(*(p+3) & 0x3f));
-// 	default:
-// 		return (uint32_t) -1;
-// 	};
-// }
-
-
 bool SafeBuf::printKey(char* key, char ks) {
 	switch (ks) {
 	case 12:
@@ -1796,11 +1501,6 @@ bool SafeBuf::safePrintFilterTagsAndLines ( char *p , int32_t plen ,
 		gbmemcpy ( dst , p , size );
 		dst += size;
 	}
-	// sanity scan
-	//char *end = m_buf + m_length;
-	//for ( char *s = m_buf ; s < end ; s++ )
-	//	if ( *s == '<' )
-	//		log("hey");
 	
 	// update length now
 	m_length = dst - m_buf;
@@ -2725,7 +2425,7 @@ bool SafeBuf::decodeJSON ( int32_t niceness ) {
 // . SO we do keep \" 
 // . so when indexing a doc we set decodeAll to FALSE, but if you want to 
 //   decode quotation marks as well then set decodeAll to TRUE!
-bool SafeBuf::safeDecodeJSONToUtf8 ( char *json, 
+bool SafeBuf::safeDecodeJSONToUtf8 ( const char *json,
 				     int32_t jsonLen, 
 				     int32_t niceness ) {
 
@@ -2733,8 +2433,8 @@ bool SafeBuf::safeDecodeJSONToUtf8 ( char *json,
 	int32_t need = jsonLen;
 
 	// count how many \u's we got
-	char *p = json;//m_buf;
-	char *pend = json + jsonLen;
+	const char *p = json;//m_buf;
+	const char *pend = json + jsonLen;
 	for ( ; p < pend ; p++ ) 
 		// for the 'x' and the ';'
 		if ( *p == '\\' && p[1] == 'u' ) need += 2;
@@ -2743,8 +2443,8 @@ bool SafeBuf::safeDecodeJSONToUtf8 ( char *json,
 	//SafeBuf dbuf;
 	if ( ! reserve ( need + 1) ) return false;
 
-	char *src = json;//m_buf;
-	char *srcEnd = json + jsonLen;
+	const char *src = json;//m_buf;
+	const char *srcEnd = json + jsonLen;
 
 	char *dst = m_buf + m_length;
 
@@ -2807,7 +2507,7 @@ bool SafeBuf::safeDecodeJSONToUtf8 ( char *json,
 				continue; 
 			}
 			// otherwise, decode. can do in place like this...
-			char *p = src + 2;
+			const char *p = src + 2;
 			// skip the /ug or /ugg or /uggg or /ugggg in its
 			// entirety i guess... to avoid infinite loop
 			if ( ! is_hex(p[0]) ) { src +=2; continue;}
@@ -2842,99 +2542,6 @@ bool SafeBuf::safeDecodeJSONToUtf8 ( char *json,
 	return true;
 }
 
-
-
-/*
-bool SafeBuf::decodeJSONToUtf8 ( int32_t niceness ) {
-
-	//char *x = strstr(m_buf,"Chief European");
-	//if ( x )
-	//	log("hey");
-
-	int32_t saved = m_length;
-	// reset for calling the function below
-	m_length = 0;
-
-	return safeDecodeJSONToUtf8 ( m_buf , saved , niceness );
-}
-*/
-
-// . REALLY just a print vanity function. makes json output prettier
-//
-// . after converting JSON to utf8 above we sometimes want to go back.
-// . just print that out. encode \n's and \r's back to \\n \\r
-//   and backslash to a \\ ... etc.
-// . but if they originally had a \u<backslash> encoding and we decoded
-//   it to a backslash, here it will be re-encoded as (double backslash)
-// . like wise if that originally had a \u<quote> encoding we should
-//   have decoded it as a \"!
-// . this does not need to be super fast because it will be used for
-//   showing cached pages or dumping out the json objects from a crawl for
-//   diffbot
-// . really we could leave the newlines decoded etc, but it is prettier
-//   for printing
-/*
-bool SafeBuf::safeStrcpyPrettyJSON ( char *decodedJson ) {
-	// how much space do we need?
-	// each single byte \t char for instance will need 2 bytes
-	int32_t need = gbstrlen(decodedJson) * 2 + 1;
-	if ( ! reserve ( need ) ) return false;
-	// scan and copy
-	char *src = decodedJson;
-	// concatenate to what's already there
-	char *dst = m_buf + m_length;
-	for ( ; *src ; src++ ) {
-
-		if ( *src == '\t' ) {
-			*dst++ = '\\';
-			*dst++ = 't';
-			continue;
-		}
-		if ( *src == '\n' ) {
-			*dst++ = '\\';
-			*dst++ = 'n';
-			continue;
-		}
-		if ( *src == '\r' ) {
-			*dst++ = '\\';
-			*dst++ = 'r';
-			continue;
-		}
-		if ( *src == '\f' ) {
-			*dst++ = '\\';
-			*dst++ = 'f';
-			continue;
-		}
-		// do not decode the \ if it's in \" because we did not
-		// decode the \" back into " above because we can't afford
-		// to lose that info and for indexing purposes it does not
-		// index extra crap (like the 'n' in \n), 
-		// so it's ok to not decode it.
-		if ( *src == '\\' && src[1] != '\"' && src[1] !='/' ) {
-			*dst++ = '\\';
-			*dst++ = '\\';
-			continue;
-		}
-		// mdw: why was this commented out?
-		// we converted '\/' above to a single / so we must undo here
-		if ( *src == '/' ) {
-			*dst++ = '\\';
-			*dst++ = '/';
-			continue;
-		}
-
-		*dst++ = *src;
-
-	}
-	// null term
-	*dst = '\0';
-
-	m_length = dst - m_buf;
-
-	return true;
-}
-*/
-
 bool SafeBuf::jsonEncode ( char *src , int32_t srcLen ) {
 	char c = src[srcLen];
 	src[srcLen] = 0;
@@ -2944,7 +2551,7 @@ bool SafeBuf::jsonEncode ( char *src , int32_t srcLen ) {
 }
 
 // encode into json
-bool SafeBuf::safeUtf8ToJSON ( char *utf8 ) {
+bool SafeBuf::safeUtf8ToJSON ( const char *utf8 ) {
 
 	if ( ! utf8 ) return true;
 
@@ -2953,7 +2560,7 @@ bool SafeBuf::safeUtf8ToJSON ( char *utf8 ) {
 	int32_t need = gbstrlen(utf8) * 2 + 1;
 	if ( ! reserve ( need ) ) return false;
 	// scan and copy
-	char *src = utf8;
+	const char *src = utf8;
 	// concatenate to what's already there
 	char *dst = m_buf + m_length;
 	for ( ; *src ; src++ ) {
@@ -2987,11 +2594,8 @@ bool SafeBuf::safeUtf8ToJSON ( char *utf8 ) {
 			*dst++ = '\\';
 			continue;
 		}
-		//if ( *src == '\/' ) {
-		//	*dst++ = '\\';
-		//	*dst++ = '/';
-		//	continue;
-		//}
+
+		/// @todo remove invalid UTF-8 characters here
 
 		*dst++ = *src;
 
@@ -3103,79 +2707,6 @@ bool SafeBuf::linkify ( int32_t niceness , int32_t startPos ) {
 
 	return true;
 }
-
-/*
-bool SafeBuf::brify ( char *s , int32_t slen , int32_t niceness ) {
-	// count the xml tags so we know how much buf to allocated
-	char *p = s;
-	char *pend = s + slen;
-	int32_t count = 0;
-	for ( ; p < pend ; p++ ) {
-		QUICKPOLL(niceness);
-		if ( *p == '<'  ) count += 6; // assume '>' too!
-		if ( *p == '\n' ) count += 3; // <br>
-		if ( *p == '\t' ) count += 17; // &nbsp;
-	}
-	// include \0
-	int32_t need = slen + 1;
-	// then < has a > and each is expanded to &lt; or &gt;
-	need += count ;
-	// reserve that
-	if ( ! reserve ( need ) ) return false;
-	// point to dst buf
-	char *dst = m_buf;
-	bool inXmlTag = false;
-	// copy over now
-	p = s;
-	for ( ; p < pend ; p++ ) {
-		QUICKPOLL(niceness);
-		// make > into &gt; then break out
-		if ( inXmlTag && *p == '>' ) {
-			gbmemcpy ( dst , "&gt;", 4 );
-			dst += 4;
-			inXmlTag = false;
-			continue;
-		}
-		// translate \n to br for xml docs
-		if ( *p == '\n' ) {
-			gbmemcpy ( dst , "<br>", 4 );
-			dst += 4;
-			continue;
-		}
-		// translate \n to br for xml docs
-		if ( *p == '\t' ) {
-			gbmemcpy ( dst , "&nbsp;&nbsp;&nbsp;", 18 );
-			dst += 18;
-			continue;
-		}
-		// copy over if nothing special
-		if ( *p != '<' ) {
-			*dst++ = *p;
-			continue;
-		}
-		// get tag id (will be 0 for </>)
-		char *tagName;
-		if ( p[1] == '/' ) tagName = p + 2;
-		else               tagName = p + 1;
-		NodeType *nt;
-		getTagId ( tagName , &nt );
-		// keep html tags
-		if ( nt && ! nt->m_isXmlTag ) {
-			*dst++ = '<';
-			continue;
-		}
-		// ok, it's an xml tag so use &lt;
-		gbmemcpy ( dst, "&lt;", 4 );
-		dst += 4;
-		inXmlTag = true;
-	}
-	// store \0 but do not count towards m_length
-	*dst = '\0';
-	// update length
-	m_length = dst - m_buf;
-	return true;
-}
-*/
 
 bool SafeBuf::brify2 ( char *s , int32_t cols , char *sep , bool isHtml ) {
 	return brify ( s, gbstrlen(s), 0 , cols , sep , isHtml ); 

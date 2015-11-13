@@ -129,17 +129,6 @@ OBJS:=$(OBJS) seo.o
 endif
 
 
-
-# let's keep the libraries in the repo for easier bug reporting and debugging
-# in general if we can. the includes are still in /usr/include/ however...
-# which is kinda strange but seems to work so far.
-#LIBS= -L. ./libz.a ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libgcc.a ./libpthread.a ./libc.a ./libstdc++.a 
-
-
-
-#SRCS := $(OBJS:.o=.cpp) main.cpp
-
-
 all: gb
 
 utils: blaster2 dump hashtest makeclusterdb makespiderdb membustest monitor seektest urlinfo treetest dnstest dmozparse gbtitletest
@@ -180,9 +169,6 @@ gb: vclean $(OBJS) main.o $(LIBFILES)
 static: vclean $(OBJS) main.o $(LIBFILES)
 	$(CC) $(DEFS) $(CPPFLAGS) -static -o gb main.o $(OBJS) $(LIBS)
 
-libgb.a: $(OBJS)
-	ar rcs $@ $^
-
 # use this for compiling on CYGWIN: 
 # only for 32bit cygwin right now and
 # you have to install the packages that have these libs.
@@ -212,6 +198,49 @@ gb32:
 #iana_charset.h: parse_iana_charsets.pl character-sets supported_charsets.txt
 #	./parse_iana_charsets.pl < character-sets
 
+
+dist: DIST_DIR=gb-$(shell date +'%Y%m%d')-$(shell git rev-parse --short HEAD)
+dist: all
+	@mkdir $(DIST_DIR)
+	@cp -prL catcountry.dat \
+	badcattable.dat \
+	ucdata/ \
+	antiword \
+	antiword-dir/ \
+	html/ \
+	pdftohtml \
+	pstotext \
+	gb.pem \
+	gb \
+	libcld2_full.so \
+	pnmscale \
+	libnetpbm.so.10 \
+	bmptopnm \
+	giftopnm \
+	jpegtopnm \
+	ppmtojpeg \
+	libjpeg.so.62 \
+	pngtopnm \
+	libpng12.so.0 \
+	tifftopnm \
+	libtiff.so.4 \
+	LICENSE \
+	mysynonyms.txt \
+	wikititles.txt.part1 \
+	wikititles.txt.part2 \
+	wiktionary-buf.txt \
+	wiktionary-lang.txt \
+	wiktionary-syns.dat \
+	sitelinks.txt \
+	unifiedDict.txt \
+	$(DIST_DIR)
+	@tar -czvf $(DIST_DIR).tar.gz $(DIST_DIR)
+	@rm -rf $(DIST_DIR)
+
+# used for unit testing
+libgb.a: $(OBJS)
+	ar rcs $@ $^
+
 .PHONY: test
 test: unittest
 
@@ -240,12 +269,6 @@ gbchksum: gbchksum.o
 	g++ -g -Wall -o $@ gbchksum.o
 create_ucd_tables: $(OBJS) create_ucd_tables.o
 	g++ $(DEFS) $(CPPFLAGS) -o $@ create_ucd_tables.o $(OBJS) $(LIBS)
-
-ucd.o: ucd.cpp ucd.h
-
-ucd.cpp: parse_ucd.pl
-	./parse_ucd.pl UNIDATA/UnicodeData.txt ucd
-
 
 ipconfig: ipconfig.o
 	$(CC) $(DEFS) $(CPPFLAGS) -o $@ $@.o -lc
@@ -287,24 +310,6 @@ reindex: $(OBJS) reindex.o
 	$(CC) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 convert: $(OBJS) convert.o
 	$(CC) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-maketestindex: $(OBJS) maketestindex.o
-	$(CC) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-makespiderdb: $(OBJS) makespiderdb.o
-	$(CC) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-makespiderdb0: makespiderdb
-	bzip2 -fk makespiderdb
-	scp makespiderdb.bz2 gb0:/a/
-makeclusterdb: $(OBJS) makeclusterdb.o
-	$(CC) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-makeclusterdb0: makeclusterdb
-	bzip2 -fk makeclusterdb
-	scp makeclusterdb.bz2 gb0:/a/
-	ssh gb0 'cd /a/ ; rm makeclusterdb ; bunzip2 makeclusterdb.bz2'
-makefix: $(OBJS) makefix.o
-	$(CC) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-makefix0: makefix
-	bzip2 -fk makefix
-	scp makefix.bz2 gb0:/a/
 urlinfo: $(OBJS) urlinfo.o
 	$(CC) $(DEFS) $(CPPFLAGS) -o $@ $(OBJS) urlinfo.o $(LIBS)
 
@@ -321,15 +326,10 @@ clean:
 	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest monitor reindex convert maketestindex makespiderdb makeclusterdb urlinfo gbfilter dnstest thunder dmozparse gbtitletest gmon.* quarantine core core.* libgb.a
 	make -C test $@
 
-#.PHONY: GBVersion.cpp
-
 convert.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 
 StopWords.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
-
-Places.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 
 Loop.o:
@@ -356,20 +356,9 @@ matches2.o:
 linkspam.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 
-Matchers.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
-
-HtmlParser.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
-
-
 # Url::set() seems to take too much time
 Url.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -c $*.cpp 
-
-# Sitedb has that slow matching code
-Sitedb.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 
 Catdb.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
@@ -423,14 +412,6 @@ RdbBase.o:
 #Speller.o:
 #	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 
-# O2 seems slightly faster than O2 on this for some reason
-# O2 is almost twice as fast as no O
-IndexTable.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
-
-IndexTable2.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
-
 Posdb.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 
@@ -451,8 +432,6 @@ Words.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 Unicode.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
-UCWordIterator.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 UCPropTable.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 UnicodeProperties.o:
@@ -465,15 +444,7 @@ Pops.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 Bits.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
-Scores.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 Sections.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
-Weights.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
-neighborhood.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
-TermTable.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 # why was this commented out?
 Summary.o:
@@ -481,24 +452,8 @@ Summary.o:
 Title.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 
-# fast relate topics generation
-Msg24.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
-
-Msg1a.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
-
-Msg1b.o:
-	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
-
 SafeBuf.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp 
-
-Msg1c.o:
-	$(CC) $(DEFS) $(CPPFLAGS)  -c $*.cpp 
-
-Msg1d.o:
-	$(CC) $(DEFS) $(CPPFLAGS)  -c $*.cpp 
 
 AutoBan.o:
 	$(CC) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp 
@@ -506,13 +461,7 @@ AutoBan.o:
 Profiler.o:
 	$(CC) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp 
 
-HtmlCarver.o:
-	$(CC) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp 
-
 HashTableT.o:
-	$(CC) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp 
-
-Timedb.o:
 	$(CC) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp 
 
 HashTableX.o:
@@ -522,37 +471,17 @@ HashTableX.o:
 Spider.o:
 	$(CC) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp 
 
-SpiderCache.o:
-	$(CC) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp 
-
-DateParse.o:
-	$(CC) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp 
-
-#DateParse2.o:
-#	$(CC) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp 
-
 test_parser2.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp 
 
 Language.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp 
 
-WordsWindow.o:
-	$(CC) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp 
-
-AppendingWordsWindow.o:
-	$(CC) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp 
-
 PostQueryRerank.o:
 	$(CC) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp 
 
 sort.o:
 	$(CC) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp 
-
-# SiteBonus.o:
-# 	$(CC) $(DEFS) $(CPPFLAGS)  -O3 -c $*.cpp 
-Msg6a.o:
-	$(CC) $(DEFS) $(CPPFLAGS)  -O3 -c $*.cpp 
 
 # Stupid gcc-2.95 stabs debug can't handle such a big file.
 # add -m32 flag to this line if you need to make a 32-bit gb.

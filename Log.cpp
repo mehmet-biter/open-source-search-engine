@@ -43,6 +43,7 @@ Log::Log () {
 	m_needsPrinting = false; 
 	m_disabled = false;
 	m_logTimestamps = false;
+	m_logReadableTimestamps = true;
 }
 
 Log::~Log () { 
@@ -292,15 +293,26 @@ bool Log::logR ( int64_t now , int32_t type , char *msg , bool asterisk ,
 	// print timestamp, hostid, type
 
 	if ( m_logTimestamps ) {
-		if ( g_hostdb.m_numHosts <= 999 ) 
-			sprintf ( p , "%"UINT64" %03"INT32" ",
-				  now , g_hostdb.m_hostId );
-		else if ( g_hostdb.m_numHosts <= 9999 ) 
-			sprintf ( p , "%"UINT64" %04"INT32" ",
-				  now , g_hostdb.m_hostId );
-		else if ( g_hostdb.m_numHosts <= 99999 ) 
-			sprintf ( p , "%"UINT64" %05"INT32" ",
-				  now , g_hostdb.m_hostId );
+                if( m_logReadableTimestamps )
+                {
+                        time_t now_t = (time_t)(now / 1000);
+                        struct tm *stm = localtime(&now_t);
+
+                        sprintf ( p , "%04d%02d%02d-%02d%02d%02d-%03d %04"INT32" ", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(now%1000), g_hostdb.m_hostId );
+                }
+                else
+                {
+                if ( g_hostdb.m_numHosts <= 999 )
+                        sprintf ( p , "%"UINT64" %03"INT32" ",
+                                  now , g_hostdb.m_hostId );
+                else if ( g_hostdb.m_numHosts <= 9999 )
+                        sprintf ( p , "%"UINT64" %04"INT32" ",
+                                  now , g_hostdb.m_hostId );
+                else if ( g_hostdb.m_numHosts <= 99999 )
+                        sprintf ( p , "%"UINT64" %05"INT32" ",
+                                  now , g_hostdb.m_hostId );
+                }
+
 		p += gbstrlen ( p );
 	}
 
