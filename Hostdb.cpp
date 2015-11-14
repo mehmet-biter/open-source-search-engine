@@ -1695,6 +1695,7 @@ Host *Hostdb::getLeastLoadedInShard ( uint32_t shardNum , char niceness ) {
 	// we should never return a nospider/noquery host depending on
 	// the niceness, so return bestDead
 	if(minOutstandingRequestsIndex == -1) return bestDead;//shard;
+
 	return &shard[minOutstandingRequestsIndex];
 }
 

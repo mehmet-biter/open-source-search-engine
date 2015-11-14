@@ -1210,6 +1210,11 @@ bool ipWasBanned ( TcpSocket *ts , const char **msg , Msg13Request *r ) {
 		*msg = "status 999 request denied";
 		return true;
 	}
+	// let's add this new one
+	if ( httpStatus == 503 ) {
+		*msg = "status 503 service unavailable";
+		return true;
+	}
 
 	// if it has link to "google.com/recaptcha"
 	// TODO: use own gbstrstr so we can do QUICKPOLL(niceness)
