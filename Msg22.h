@@ -22,12 +22,12 @@ public:
 	char      m_inUse           :1;
 	char      m_url[MAX_URL_LEN+1];
 
+	Msg22Request();
+	
 	int32_t getSize () {
 		return (m_url - (char *)&m_docId) + 1+gbstrlen(m_url); };
 	int32_t getMinSize() {
 		return (m_url - (char *)&m_docId) + 1; };
-
-	Msg22Request() { m_inUse = 0; }
 };
 
 class Msg22 {

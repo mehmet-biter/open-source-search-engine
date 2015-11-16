@@ -6,6 +6,14 @@
 
 static void handleRequest22 ( UdpSlot *slot , int32_t netnice ) ;
 
+Msg22Request::Msg22Request()
+{
+	//use memset() to clear out the padding bytes in the structure
+	memset(this, 0, sizeof(*this));
+	m_inUse = 0;
+}
+
+
 bool Msg22::registerHandler ( ) {
         // . register ourselves with the udp server
         // . it calls our callback when it receives a msg of type 0x23
