@@ -308,7 +308,7 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 				char cs = getUtf8CharSize(p);
 
 				// bad utf8 char?
-				if ( !isSaneUtf8Char(p) ) {
+				if ( !isValidUtf8Char(p) ) {
 					break;
 				}
 
