@@ -103,7 +103,7 @@ class Msg20Request {
 	
 	FacetValHash_t m_facetValHash;
 
-	char       m_justGetFacets : 1         ;
+	unsigned char       m_justGetFacets : 1         ;
 
 	// for sending msg20 request to another network
 	//int32_t       m_hostIP;
@@ -136,54 +136,54 @@ class Msg20Request {
 	char       m_linksPerIpHost            ; 
 	char       m_flags                     ;
 
-	char       m_highlightQueryTerms       :1;
-	char       m_highlightDates            :1; // for event dates
-	char       m_wcache                    :1;
-	//char     m_checkSitedb               :1;
-	char       m_getImageUrl               :1;
-	char       m_ratInSummary              :1;
-	char       m_countOutlinks             :1;
-	char       m_considerTitlesFromBody    :1;
-	char       m_getSummaryVector          :1;
-	char       m_showBanned                :1;
-	//char       m_excludeLinkText           :1;
-	//char       m_excludeMetaText           :1;
-	//char       m_hackFixWords              :1;
-	//char       m_hackFixPhrases            :1;
-	char       m_includeCachedCopy         :1;
-	char       m_getSectionVotingInfo      :1; // in JSON for now
-	char       m_getMatches                :1;
-	char       m_useLinkdbForInlinks       :1;
-	char       m_getTermListBuf            :1;
-	//char     m_getInlinks                :1; // use m_getLinkInfo!
-	char       m_getOutlinks               :1;
-	char       m_getTitleRec               :1; // sets ptr_tr in reply
-	char       m_maxInlinks                :1;
-	char       m_getGigabitVector          :1;
-	char       m_doLinkSpamCheck           :1;
-	char       m_isLinkSpam                :1; // Msg25 uses for storage
-	char       m_isSiteLinkInfo            :1; // site link info?
-	char       m_isDebug                   :1;
+	unsigned char       m_highlightQueryTerms       :1;
+	unsigned char       m_highlightDates            :1; // for event dates
+	unsigned char       m_wcache                    :1;
+	//unsigned char     m_checkSitedb               :1;
+	unsigned char       m_getImageUrl               :1;
+	unsigned char       m_ratInSummary              :1;
+	unsigned char       m_countOutlinks             :1;
+	unsigned char       m_considerTitlesFromBody    :1;
+	unsigned char       m_getSummaryVector          :1;
+	unsigned char       m_showBanned                :1;
+	//unsigned char       m_excludeLinkText           :1;
+	//unsigned char       m_excludeMetaText           :1;
+	//unsigned char       m_hackFixWords              :1;
+	//unsigned char       m_hackFixPhrases            :1;
+	unsigned char       m_includeCachedCopy         :1;
+	unsigned char       m_getSectionVotingInfo      :1; // in JSON for now
+	unsigned char       m_getMatches                :1;
+	unsigned char       m_useLinkdbForInlinks       :1;
+	unsigned char       m_getTermListBuf            :1;
+	//unsigned char     m_getInlinks                :1; // use m_getLinkInfo!
+	unsigned char       m_getOutlinks               :1;
+	unsigned char       m_getTitleRec               :1; // sets ptr_tr in reply
+	unsigned char       m_maxInlinks                :1;
+	unsigned char       m_getGigabitVector          :1;
+	unsigned char       m_doLinkSpamCheck           :1;
+	unsigned char       m_isLinkSpam                :1; // Msg25 uses for storage
+	unsigned char       m_isSiteLinkInfo            :1; // site link info?
+	unsigned char       m_isDebug                   :1;
 	// if true, calls Msg25 and fills in ptr_linkInfo/size_linkInfo
-	char       m_computeLinkInfo           :1;
+	unsigned char       m_computeLinkInfo           :1;
 	// if true, just calls TitleRec::getLinkInfo() to set ptr_linkInfo
-	char       m_getLinkInfo               :1;
+	unsigned char       m_getLinkInfo               :1;
 	// if this is true we will not compute the title, etc. of BAD inlinks
 	// deemed link spam
-	char       m_onlyNeedGoodInlinks       :1;
+	unsigned char       m_onlyNeedGoodInlinks       :1;
 	// if true, sets ptr_linkText, etc.
-	char       m_getLinkText               :1;
+	unsigned char       m_getLinkText               :1;
 	// if this is true then we set ptr_turkForm to be an input form
 	// for turking this event summary and title
-	char       m_getTurkForm               :1;
-	char       m_showTurkInstructions      :1;
-	char       m_isTurkSpecialQuery        :1;
-	char       m_isMasterAdmin                   :1;
+	unsigned char       m_getTurkForm               :1;
+	unsigned char       m_showTurkInstructions      :1;
+	unsigned char       m_isTurkSpecialQuery        :1;
+	unsigned char       m_isMasterAdmin                   :1;
 	// . this is for buzz.
 	// . this says to compute the <absScore2> tag in their xml feed.
 	// . the document receives a score of 0 if it does not match the query
 	// . can we just keep it a binary score? let's try that. 
-	char       m_checkForQueryMatch        :1;
+	unsigned char       m_checkForQueryMatch        :1;
 
 	// serialize() converts these ptrs into offsets in m_buf[]
 	// and deserialize() converts them back into ptrs on the receiver's end

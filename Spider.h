@@ -560,19 +560,19 @@ class SpiderRequest {
 	// the new add url control will allow user to control link spidering
 	// on each url they add. they can also specify file:// instead of
 	// http:// to index local files. so we have to allow file://
-	/* char    m_onlyAddSameDomainLinks        :1; */
-	/* char    m_onlyAddSameSubdomainLinks     :1; */
-	/* char    m_onlyDoNotAddLinksLinks        :1; // max hopcount 1 */
-	/* char    m_onlyDoNotAddLinksLinksLinks   :1; // max hopcount 2 */
-	char    m_ignoreDocUnchangedError:1;//reserved2a:1;
-	char    m_recycleContent:1;//m_reserved2b:1;
-	char    m_hasMediaExtension:1; // reserved2c:1;
-	char    m_hasMediaExtensionValid:1;
+	/* unsigned char    m_onlyAddSameDomainLinks        :1; */
+	/* unsigned char    m_onlyAddSameSubdomainLinks     :1; */
+	/* unsigned char    m_onlyDoNotAddLinksLinks        :1; // max hopcount 1 */
+	/* unsigned char    m_onlyDoNotAddLinksLinksLinks   :1; // max hopcount 2 */
+	unsigned char    m_ignoreDocUnchangedError:1;//reserved2a:1;
+	unsigned char    m_recycleContent:1;//m_reserved2b:1;
+	unsigned char    m_hasMediaExtension:1; // reserved2c:1;
+	unsigned char    m_hasMediaExtensionValid:1;
 
-	char    m_reserved2e:1;
-	char    m_reserved2f:1;
-	char    m_reserved2g:1;
-	char    m_reserved2h:1;
+	unsigned char    m_reserved2e:1;
+	unsigned char    m_reserved2f:1;
+	unsigned char    m_reserved2g:1;
+	unsigned char    m_reserved2h:1;
 
 
 	//int32_t    m_hopCount;
@@ -895,7 +895,7 @@ class SpiderReply {
 	//
 
 	// XmlDoc::isSpam() returned true for it!
-	//char    m_isSpam:1; 
+	//unsigned char    m_isSpam:1; 
 	// was the page in rss format?
 	int32_t    m_isRSS:1;
 	// was the page a permalink?

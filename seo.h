@@ -319,11 +319,11 @@ public:
 	int16_t m_replyingHostId;
 	// was the query added from the m_extraQueryBuf which is set
 	// from the user-supplied textarea
-	char  m_isManuallyAdded:1; 
-	//char  m_hasFullScore:1;
+	unsigned char  m_isManuallyAdded:1; 
+	//unsigned char  m_hasFullScore:1;
 	// is it first in a linked list of msg99replies for the same query
 	// but different m_myDocId? (for related queries algo)
-	char  m_isFirst:1;
+	unsigned char  m_isFirst:1;
 	// score of the query
 	float     m_myScore;                
 	// docid of related query, set after getting reply
@@ -384,7 +384,7 @@ public:
 	int32_t  m_trafficSum;
 	// is it a related term? i.e. from a related query as opposed to
 	// a matching query. i.e. not contained by our doc..
-	char m_isRelatedTerm:1;
+	unsigned char m_isRelatedTerm:1;
 
 	//
 	// the following members are set by get*SCORED*InsertableTerms():
@@ -572,7 +572,7 @@ public:
 	int16_t m_relatedDocIdNum;
 
 	// a flag. the head of the linked list?
-	char  m_isFirst:1;
+	unsigned char  m_isFirst:1;
 
 	// . sort by this first then by m_totalRelatedQueryImportance
 	// . the lower this value, the higher this query will be displayed

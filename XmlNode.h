@@ -86,10 +86,10 @@ class XmlNode {
 	//int32_t       m_xmlParentTagNum;  // set by Xml class
 	int16_t      m_depth;            // set by Xml class (xml depth only)
 	nodeid_t   m_nodeId;           // 0 for text,1 for xml tag, 1+ for html
-	char       m_hasBackTag:1;
-	char       m_isBreaking:1;     // does tag (if it is) line break?
-	char       m_isVisible:1;
-	char       m_isSelfLink:1;  // an a href tag link to self?
+	unsigned char       m_hasBackTag:1;
+	unsigned char       m_isBreaking:1;     // does tag (if it is) line break?
+	unsigned char       m_isVisible:1;
+	unsigned char       m_isSelfLink:1;  // an a href tag link to self?
 	int32_t       m_pairTagNum;    // paired opening or closing tag
 	// . "m_linkNum" references a link in Links.cpp
 	// . use for <a href> xml nodes only right now
