@@ -5717,6 +5717,7 @@ void QueryTerm::constructor ( ) {
 	m_langIdBits = 0;
 	m_langIdBitsValid = false;
 	m_numDocsThatHaveFacet = 0;
+	m_numAlnumWordsInSynonym = 1;
 }
 
 bool QueryTerm::isSplit() {
