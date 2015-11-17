@@ -9758,6 +9758,7 @@ bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 		char tmp2[512];
 		SafeBuf newUrl(tmp2, 512);
 		replaceParm ( mi->m_cgi , &newUrl , hr );
+		newUrl += '\0';
 
 		// print each item in there
 		sb->safePrintf("<a href=%s>"
