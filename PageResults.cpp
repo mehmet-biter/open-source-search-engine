@@ -3635,7 +3635,7 @@ bool printTimeAgo ( SafeBuf *sb, time_t ts , char *prefix , SearchInput *si ) {
 	// for printing
 	int32_t mins = 1000;
 	int32_t hrs  = 1000;
-	int32_t days ;
+	int32_t days = 1000;
 	if ( ts > 0 ) {
 		mins = (int32_t)((now - ts)/60);
 		hrs  = (int32_t)((now - ts)/3600);
