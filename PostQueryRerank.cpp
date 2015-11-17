@@ -53,6 +53,7 @@ PostQueryRerank::PostQueryRerank ( ) {
 	//m_querysLoc = 0;
 
 	m_maxUrlLen = 0;
+	m_cvtUrl = NULL;
 	m_pageUrl   = NULL;
 
 	m_now = time(NULL);
