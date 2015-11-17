@@ -20898,6 +20898,10 @@ char *XmlDoc::getIsSiteRoot ( ) {
 	if ( ! site || site == (char *)-1 ) return (char *)site;
 	// get our url without the http:// or https://
 	char *u = getFirstUrl()->getHost();
+	if ( ! u ) {
+		g_errno = EBADURL;
+		return NULL;
+	}
 	// assume valid now
 	m_isSiteRootValid = true;
 	// get it
@@ -21808,7 +21812,12 @@ bool XmlDoc::logIt ( SafeBuf *bb ) {
 	// like how we index it, do not include the filename. so we can
 	// have a bunch of pathdepth 0 urls with filenames like xyz.com/abc.htm
 	if ( m_firstUrlValid ) {
-		int32_t pd = m_firstUrl.getPathDepth(false);
+		int32_t pd = -1;
+		// fix core
+		if ( m_firstUrl.m_url &&
+		     m_firstUrl.m_ulen > 0 &&
+		     m_firstUrl.m_path )
+			pd = m_firstUrl.getPathDepth(false);
 		sb->safePrintf("pathdepth=%"INT32" ",pd);
 	}
 	else {
