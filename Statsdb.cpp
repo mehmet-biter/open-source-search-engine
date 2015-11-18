@@ -383,6 +383,7 @@ bool Statsdb::addStat ( int32_t        niceness ,
 		uint32_t t1 = tx / 1000;
 
 		StatKey sk;
+		memset(&sk,0,sizeof(sk));
 		sk.m_zero      = 0x01; // make it a positive key
 		sk.m_time1     = t1;
 		sk.m_labelHash = labelHash;
@@ -409,6 +410,7 @@ bool Statsdb::addStat ( int32_t        niceness ,
 		else {
 			StatData tmp;
 			// init it
+			memset(&tmp,0,sizeof(tmp));
 			tmp.m_totalOps      = 0.0;
 			tmp.m_totalQuantity = 0.0;
 			tmp.m_totalTime     = 0.0;
