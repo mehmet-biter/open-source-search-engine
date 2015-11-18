@@ -743,6 +743,12 @@ bool CommandMergeSpiderdb ( char *rec ) {
 	return true;
 }
 
+bool CommandMergeLinkdb ( char *rec ) {
+        forceMergeAll ( RDB_LINKDB ,1);
+        //g_spiderdb.getRdb()->attemptMerge    (1,true);
+        return true;
+}
+
 
 bool CommandDiskPageCacheOff ( char *rec ) {
 	g_process.resetPageCaches();
@@ -10357,6 +10363,20 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
+
+
+        m->m_title = "tight merge linkdb";
+        m->m_desc  = "Merges all outstanding linkdb files.";
+        m->m_cgi   = "lmerge";
+        m->m_type  = TYPE_CMD;
+        m->m_func  = CommandMergeLinkdb;
+        m->m_cast  = 1;
+        m->m_group = 0;
+        m->m_page  = PAGE_MASTER;
+        m->m_obj   = OBJ_CONF;
+        m++;
+
+
 
 	m->m_title = "clear kernel error message";
 	m->m_desc  = "Clears the kernel error message. You must do this "
