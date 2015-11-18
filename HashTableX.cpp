@@ -17,6 +17,7 @@ void HashTableX::constructor() {
 	m_txtBuf = NULL;
 	m_useKeyMagic = false;
 	m_ks = 0;
+	m_ds = 0;
 	m_allowGrowth = true;
 	m_numSlots = 0;
 	m_numSlotsUsed = 0;
@@ -34,6 +35,7 @@ HashTableX::HashTableX () {
 	m_txtBuf = NULL;
 	m_useKeyMagic = false;
 	m_ks = 0;
+	m_ds = 0;
 	
 	reset();
 }
