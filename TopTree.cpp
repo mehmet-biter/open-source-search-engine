@@ -43,6 +43,7 @@ void TopTree::reset ( ) {
 	m_headNode = -1;
 	m_lowNode  = -1;
 	m_highNode = -1;
+	m_pickRight = 0;
 	m_t2.reset();
 }
 
