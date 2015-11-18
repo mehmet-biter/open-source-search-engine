@@ -1711,7 +1711,7 @@ void Mem::gbfree ( void *ptr , int size , const char *note ) {
 	if ( slot < 0 ) {
 		log(LOG_LOGIC,"mem: could not find slot (note=%s)",note);
 		log(LOG_LOGIC,"mem: FIXME!!!");
-abort();
+//Do NOT abort here... Let it run, otherwise it dies during merges.  abort();
 		// return for now so procog does not core all the time!
 		return;
 		//char *xx = NULL; *xx = 0;
