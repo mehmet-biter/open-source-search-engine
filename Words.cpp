@@ -47,9 +47,9 @@ bool Words::set ( char *s, int32_t slen, int32_t version,
 	}
 
 	char c = s[slen];
-	s[slen]='\0';
+	if ( c != '\0' ) s[slen]='\0';
 	bool status = set ( s , version, computeWordIds , niceness );
-	s[slen] = c;
+	if ( c != '\0' ) s[slen] = c;
 	return status;
 }
 
