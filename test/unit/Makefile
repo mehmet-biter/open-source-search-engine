@@ -4,7 +4,7 @@ GTEST_DIR = googletest/googletest
 BASE_DIR ?= ../..
 
 TARGET = GigablastTest
-OBJECTS = GigablastTest.o JsonTest.o UnicodeTest.o UrlTest.o
+OBJECTS = GigablastTest.o JsonTest.o UnicodeTest.o UrlTest.o WordsTest.o
 
 .PHONY: all
 all: $(TARGET)
@@ -12,6 +12,9 @@ all: $(TARGET)
 .PHONY: libgb.a
 libgb.a:
 	make -C $(BASE_DIR) libgb.a
+
+ucdata:
+	ln -s $(BASE_DIR)/$@ .
 
 $(BASE_DIR)/libcld2_full.so:
 	make -C $(BASE_DIR) libcld2_full.so
@@ -32,7 +35,7 @@ $(TARGET): libgtest.so libgb.a $(BASE_DIR)/libcld2_full.so $(OBJECTS)
 	$(CXX) $(CPPFLAGS) $(OBJECTS) $(LIBS) -o $@
 
 .PHONY: test
-test: all
+test: all ucdata
 	./$(TARGET)
 
 .PHONY: clean
