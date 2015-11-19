@@ -107,8 +107,6 @@ int32_t countWords ( char *p , int32_t niceness ) {
 	return count+10;
 }
 
-static bool s_tested = false;
-
 bool Words::set ( Xml *xml, 
 		  bool computeWordIds , 
 		  int32_t niceness ,
@@ -119,34 +117,6 @@ bool Words::set ( Xml *xml,
 	reset();
 	m_xml = xml;
 	m_version = xml->getVersion();
-	//m_version = xml->getVersion();
-
-	// quick test
-	if ( ! s_tested ) {
-		// only do once
-		s_tested = true;
-		// set c to a curling quote in unicode
-		int32_t c = 0x201c; // 0x235e;
-		// encode it into utf8
-		char dst[5];
-		// point to it
-		char *p = dst;
-		// put space in there
-		*p++ = ' ';
-		// "numBytes" is how many bytes it stored into 'dst"
-		int32_t numBytes = utf8Encode ( c , p );
-		// must be 2 bytes i guess
-		if ( numBytes != 3 ) { char *xx=NULL; *xx=0; }
-		// check it
-		int32_t size = getUtf8CharSize(p);
-		if ( size != 3 ) { char *xx=NULL; *xx=0; }
-		// is that punct
-		if ( ! is_punct_utf8 ( p ) ) { char *xx=NULL;*xx=0; }
-		// make sure can pair across
-		//unsigned char bits = getPunctuationBits  ( dst , 4 );
-		// must be able to pair across
-		//if ( ! ( bits & D_CAN_PAIR_ACROSS ) ) { char *xx=NULL;*xx=0;}
-	}
 
 	// if xml is empty, bail
 	if   ( ! xml->getContent() ) return true;
