@@ -203,7 +203,7 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		}
 
 		char encoded [ MAX_URL_LEN ];
-		uint64_t encodedLen = MAX_URL_LEN;
+		size_t encodedLen = MAX_URL_LEN;
 		char *encodedDomStart = encoded;
 		char *p = t;
 		char *pend = t+tlen;
@@ -2586,7 +2586,7 @@ char* Url::getDisplayUrl(char* url, SafeBuf* sb) {
 
 			char* encodedStart = found + 4;
 			uint32_t decoded [ MAX_URL_LEN];
-			uint64_t decodedLen = MAX_URL_LEN - 1 ;
+			size_t decodedLen = MAX_URL_LEN - 1 ;
 			char* labelEnd = encodedStart;
 			while( labelEnd < domEnd && *labelEnd != '/' &&  *labelEnd != '.' ) 
 				labelEnd++;
