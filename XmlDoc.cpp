@@ -46149,7 +46149,13 @@ SafeBuf *XmlDoc::getRelatedDocIdsScored ( ) {
 	//   getRelatedQueryLinks() which make a new xmldoc. then it can
 	//   call newxd->getTermListBuf() instead of us passing it in.
 	// . so each host has a bin, a host bin
-#ifdef __APPLE__
+
+// Compatibility with non-clang compilers
+#ifndef __has_feature
+#define __has_feature(x) 0
+#endif
+
+#if defined(__APPLE__) || (defined(__clang__) && !__has_feature(cxx_runtime_array))
 	SafeBuf hostBin[MAX_HOSTS];
 #else
 	SafeBuf hostBin[g_hostdb.m_numHosts];
