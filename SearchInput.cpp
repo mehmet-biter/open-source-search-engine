@@ -2,11 +2,9 @@
 
 #include "SearchInput.h"
 #include "Parms.h"         // g_parms
-//#include "CollectionRec.h" // cr
 #include "Pages.h"         // g_msg
 #include "LanguageIdentifier.h"
 #include "CountryCode.h"
-#include "geo_ip_table.h"
 #include "Users.h"
 #include "Address.h" // getLatLonFromUserInput
 #include "PageResults.h"
@@ -182,8 +180,6 @@ void SearchInput::copy ( class SearchInput *si ) {
 	gbmemcpy ( (char *)this , (char *)si , sizeof(SearchInput) );
 }
 
-class SearchInput *g_si = NULL;
-
 bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 
 	// store list of collection #'s to search here. usually just one.
@@ -318,7 +314,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	//////
 
 	// get the format. "xml" "html" "json" --> FORMAT_HTML, FORMAT_CSV ...
-	char tmpFormat = m_hr.getReplyFormat();//getFormatFromRequest ( &m_hr);
+	char tmpFormat = m_hr.getReplyFormat();
 	// now override automatic defaults for special cases
 	if ( tmpFormat != FORMAT_HTML ) {
 		m_familyFilter            = 0;
@@ -343,7 +339,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	// and set from the http request. will set m_coll, etc.
 	g_parms.setFromRequest ( &m_hr , sock , cr , (char *)this , OBJ_SI );
 
-
 	if ( m_streamResults &&
 	     tmpFormat != FORMAT_XML &&
 	     tmpFormat != FORMAT_CSV &&
@@ -366,7 +361,9 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	//////
 
 	// set m_isMasterAdmin to zero if no correct ip or password
-	if ( ! g_conf.isMasterAdmin ( sock , &m_hr ) ) m_isMasterAdmin = 0;
+	if ( ! g_conf.isMasterAdmin ( sock , &m_hr ) ) {
+		m_isMasterAdmin = 0;
+	}
 
 	// collection admin?
 	m_isCollAdmin = g_conf.isCollAdmin ( sock , &m_hr );
@@ -404,32 +401,10 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	//   m_qe (encoded query)
 	//   m_rtl (right to left like hebrew)
 	//   m_highlightQuery
-	if ( ! setQueryBuffers (r) )
+	if ( ! setQueryBuffers (r) ) {
 		return log("query: setQueryBuffers: %s",mstrerror(g_errno));
-
-	/* --- Virtual host language detection --- */
-	/*
-	if(r->getHost()) {
-		bool langset = getLanguageFromAbbr(m_defaultSortLanguage);
-		char *cp;
-		if(!langset && (cp = strrchr(r->getHost(), '.'))) {
-			uint8_t lang = getLanguageFromUserAgent(++cp);
-			if(lang) {
-				// char langbuf[128];
-		// sprintf(langbuf, "qlang=%s\0", getLanguageAbbr(lang));
-			//m_defaultSortLanguage = getLanguageAbbr(lang);
-                                char *tmp = getLanguageAbbr(lang);
-                                strncpy(m_defaultSortLanguage, tmp, 6);
-				// log(LOG_INFO,
-			//	getLanguageString(lang), r->getHost(), this);
-			}
-		}
 	}
-	*/
-	/* --- End Virtual host language detection --- */
 
-
-	//char *qs1 = m_defaultSortLanguage;
 
 	// this overrides though
 	//int32_t qlen2;
@@ -448,8 +423,9 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	// Parms.cpp sets it to an empty string, so make that null
 	// if Parms.cpp set it to NULL it seems it comes out as "(null)"
 	// i guess because we sprintf it or something.
-	if ( langAbbr && langAbbr[0] == '\0' )
+	if ( langAbbr && langAbbr[0] == '\0' ) {
 		langAbbr = NULL;
+	}
 
 	// detect language
 	if ( !langAbbr ) {
@@ -462,9 +438,9 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 
 		int flags = 0;
 
-		CLD2::Language language3[3] = {CLD2::UNKNOWN_LANGUAGE};
-		int percent3[3] = {0};
-		double normalized_score3[3] = {0.0};
+		CLD2::Language language3[3] = {CLD2::UNKNOWN_LANGUAGE, CLD2::UNKNOWN_LANGUAGE, CLD2::UNKNOWN_LANGUAGE};
+		int percent3[3] = {};
+		double normalized_score3[3] = {};
 
 		CLD2::ResultChunkVector *resultchunkvector = NULL;
 
@@ -484,18 +460,24 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 		                                                                  &text_bytes,
 		                                                                  &is_reliable,
 		                                                                  &valid_prefix_bytes);
+//		log("query: lang0: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[0]), percent3[0], normalized_score3[0]);
+//		log("query: lang1: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[1]), percent3[1], normalized_score3[1]);
+//		log("query: lang2: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[2]), percent3[2], normalized_score3[2]);
+
 		if (language != CLD2::UNKNOWN_LANGUAGE) {
 			langAbbr = CLD2::LanguageCode(language);
 		}
 	}
 
 	// if &qlang was not given explicitly fall back to coll rec
-	if ( cr && ! langAbbr )
+	if (cr && !langAbbr) {
 		langAbbr = cr->m_defaultSortLanguage2;
+	}
 
 	// if no coll rec use language unknown
-	if ( ! langAbbr )
+	if (!langAbbr) {
 		langAbbr = "xx";
+	}
 
 	log(LOG_INFO,"query: using default lang of %s", langAbbr );
 
@@ -506,9 +488,9 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	if ( m_queryLangId == langUnknown &&
 	     langAbbr &&
 	     langAbbr[0] &&
-	     langAbbr[0]!='x' )
-		log("query: qlang of \"%s\" is NOT SUPPORTED. using "
-		    "langUnknown, \"xx\".",langAbbr);
+	     langAbbr[0]!='x' ) {
+		log("query: qlang of '%s' is NOT SUPPORTED. using langUnknown, 'xx'.", langAbbr);
+	}
 
 	int32_t maxQueryTerms = cr->m_maxQueryTerms;
 
@@ -522,10 +504,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 		m_hqq.set2 ( m_query , m_queryLangId , true,maxQueryTerms);
 
 	// log it here
-	log(LOG_INFO,
-	    "query: got query %s (len=%i)"
-	    ,m_sbuf1.getBufStart()
-	    ,m_sbuf1.length());
+	log(LOG_INFO, "query: got query %s (len=%i)" ,m_sbuf1.getBufStart() ,m_sbuf1.length());
 
 	// . now set from m_qbuf1, the advanced/composite query buffer
 	// . returns false and sets g_errno on error (ETOOMANYOPERANDS)
@@ -572,15 +551,9 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 		m_hideAllClustered = false;
 
 	// sanity check
-	if(m_firstResultNum < 0) m_firstResultNum = 0;
-
-	// DEBUG: temp hack
-	// static bool first = true;
-	//  if ( first ) { 
-	//  	first = false;
-	//  	m_firstResultNum = 10;
-	//  }
-
+	if(m_firstResultNum < 0) {
+		m_firstResultNum = 0;
+	}
 
 	// . if query has url: or site: term do NOT use cache by def.
 	// . however, if spider is off then use the cache by default
@@ -1184,10 +1157,6 @@ uint8_t SearchInput::detectQueryLanguage(void) {
 	if(!lang && m_q)
 		lang = g_langId.guessLanguageFromQuery(m_q);
 
-	// guess from IP addr of the requester
-	if(!lang && m_queryIP)
-		lang = g_langId.guessLanguageFromIP(m_queryIP);
-
 	// Save for later
 	m_langHint = lang;
 
@@ -1195,10 +1164,6 @@ uint8_t SearchInput::detectQueryLanguage(void) {
 		m_country = g_countryCode.getIndexOfAbbr(m_gbcountry);
 
 	if(!m_country) {
-		// Now guess country of the query.
-		char *codep = g_langId.findGeoIP(m_queryIP, geoIPNumRows - 1, 0);
-		if(codep) m_country = g_countryCode.getIndexOfAbbr(codep);
-
 		// Many doofuses just download firefox and don't set it
 		// up properly, so this takes second place to the IP search.
 		if(!m_country)

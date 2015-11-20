@@ -98,28 +98,6 @@ class LanguageIdentifier {
 		/// @return the language, or langUknown
 		///
 		uint8_t guessLanguageFromUserAgent(char *str);
-		/// Find a language for a given IP address.
-		///
-		/// @param address the address
-		///
-		/// @return the language ID, or langUnknown
-		///
-		uint8_t guessLanguageFromIP(uint32_t address);
-
-		/// Find a country code for a given IP address.
-		///
-		/// This probably should not be called from user code,
-		/// but it may be useful in some situations.
-		///
-		/// @param address the IP address as an unsigned int
-		/// @param max optional, highest entry to search
-		/// @param min optional, lowest entry to search
-		/// @param *ldepth to be filled in by the highest depth of recursion
-		///
-		/// @return country code on success, or NULL (or "zz") on failure
-		///
-		char *findGeoIP(uint32_t address, uint32_t max,
-				uint32_t min = 0, uint32_t *ldepth = NULL);
 
 		/// Find an address in DMOZ for the language.
 		///
@@ -174,7 +152,6 @@ class LanguageIdentifier {
 			int pageLimit /* = 512 */);
 
 	uint8_t guessCountryTLD(const char *url);
-	uint8_t guessCountryIP(uint32_t ip);
 
 	uint8_t guessCountryFromUserAgent(char *ua);
 };

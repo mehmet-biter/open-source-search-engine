@@ -4,7 +4,6 @@
 #include "gb-include.h"
 #include "LanguageIdentifier.h"
 #include "LangList.h"
-#include "geo_ip_table.h"
 #include "Tagdb.h"
 #include "Speller.h"
 #include "CountryCode.h"
@@ -481,73 +480,6 @@ uint8_t LanguageIdentifier::guessLanguageFromUserAgent(char *str) {
 	return(langUnknown);
 }
 
-// non-recursive bisect search
-char *LanguageIdentifier::findGeoIP(uint32_t address, uint32_t max,
-		uint32_t min, uint32_t *ldepth) {
-#if 0
-	uint32_t limit = max;
-	register uint32_t median;
-
-	if(aGeoIP[0].firstAddr > address || aGeoIP[max].lastAddr < address) {
-		return("ob");
-	}
-
-	do {
-		// extra debugging steps
-		if(ldepth) {
-			*ldepth += 1;
-			if(*ldepth > limit) {
-				log(LOG_INFO, "build: findGeoIP(): depth exceeded limit.\n");
-				return("zz");
-			}
-		}
-
-		median = (max+min)/2;
-
-		// check if narrowed all the way
-		if(median == max || median == min) {
-			break;
-		}
-
-		// bisect down?
-		if(aGeoIP[median].firstAddr > address) {
-			max = median;
-			continue;
-		}
-
-		// bisect up?
-		if(aGeoIP[median].lastAddr < address) {
-			min = median;
-			continue;
-		}
-
-		// in range, pop out
-		break;
-
-	} while(max > min);
-
-	if(aGeoIP[median].firstAddr <= address && aGeoIP[median].lastAddr >= address)
-		return(aGeoIP[median].cCode);
-
-#endif // 0
-	return("zz");
-}
-
-uint8_t LanguageIdentifier::guessLanguageFromIP(uint32_t address) {
-	return langUnknown; // temp change
-	uint32_t ldepth = 0;
-	char *code = findGeoIP(address, geoIPNumRows - 1, 0, &ldepth);
-	if(!code) return(langUnknown);
-	if(code[0] == 'z' && code[1] == 'z') return(langUnknown);
-	if(code[0] == 'o' && code[1] == 'b') return(langUnknown);
-
-	// return unknown for some ambiguous results
-	if(code[0] == 'e' && code[1] == 'u') return(langUnknown);
-	if(code[0] == 'c' && code[1] == 'a') return(langUnknown);
-
-	return(getLanguageFromCountryCode(code));
-}
-
 uint8_t LanguageIdentifier::guessLanguageFromDMOZ(char *addr) {
 	return(g_categories->findLanguage(addr));
 }
@@ -930,15 +862,6 @@ uint8_t LanguageIdentifier::guessCountryTLD(const char *url) {
 		country = g_countryCode.getIndexOfAbbr(code);
 		if(country) return(country);
 	}
-	return(country);
-}
-
-uint8_t LanguageIdentifier::guessCountryIP(uint32_t ip) {
-	// Lookup IP address
-	uint8_t country = 0;
-	char *codep = findGeoIP(ip, geoIPNumRows - 1, 0);
-	if(!codep) return(0);
-	country = g_countryCode.getIndexOfAbbr(codep);
 	return(country);
 }
 
