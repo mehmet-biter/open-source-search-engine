@@ -4,3 +4,6 @@
 test:
 	py.test $(TEST_ARGS)
 
+.PHONY: clean
+clean:
+
