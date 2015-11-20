@@ -32969,10 +32969,9 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// . it must get into the results form indexdb corruption?
 	// . this filtering method is/was known as the "BIG HACK"
 	if ( m_req->size_qbuf > 1 ) {
-		reply->m_hasAllQueryTerms = true;
-	//	Matches *mm = getMatches();
-	//	if ( ! mm || mm == (Matches *)-1 ) return (Msg20Reply *)mm;
-	//	reply->m_hasAllQueryTerms = mm->m_matchesQuery;
+		Matches *mm = getMatches();
+		int32_t numInlinks = getLinkInfo1()->getNumLinkTexts( );
+		reply->m_hasAllQueryTerms = mm->docHasQueryTerms(numInlinks);
 	}
 
 	// breathe
