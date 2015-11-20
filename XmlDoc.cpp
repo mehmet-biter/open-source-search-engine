@@ -3466,10 +3466,10 @@ bool XmlDoc::readMoreWarc() {
 	}
 
 
-    g_loop.disableTimer();
+    g_loop.disableQuickpollTimer();
     errno = 0;
     int bytesRead = fread(m_fptrEnd, 1, toRead, m_pipe);
-    g_loop.enableTimer();
+    g_loop.enableQuickpollTimer();
 
 	// if(bytesRead > 0) {
 	// 	log("build: warc pipe read %"INT32" more bytes of the pipe. errno = %s, buf space = %"INT64 " processed = %"INT64 " skipAhead=%"INT64, 
