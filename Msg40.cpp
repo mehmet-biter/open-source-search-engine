@@ -419,48 +419,48 @@ bool Msg40::getResults ( SearchInput *si      ,
 	if ( g_conf.m_logTimingQuery || m_si->m_debug ) 
 		m_startTime = gettimeofdayInMilliseconds();
 
-	// use cache?
-	bool useCache = m_si->m_rcache;
-
-	// turn it off for now until we cache the scoring tables
-	log("db: cache is disabled until we cache scoring tables");
-	useCache = false;
-	// if searching multiple collections do not cache for now
-	if ( m_si->m_collnumBuf.length() > (int32_t)sizeof(collnum_t) ) 
-		useCache=false;
-
-	// . try setting from cache first
-	// . cacher --> "do we READ from cache?"
-	if ( useCache ) {
-		// make the key based on query and other input parms in msg40
-		key_t key = m_si->makeKey ( );
-		// this should point to the cached rec, if any
-		m_cachePtr = NULL;
-		m_cacheSize = 0;
-		// this returns false if blocked, true otherwise
-		if ( ! m_msg17.getFromCache ( SEARCHRESULTS_CACHEID,
-					      key ,
-					      &m_cachePtr,
-					      &m_cacheSize,
-					      // use first collection #
-					      m_si->m_firstCollnum,
-					      this , 
-					      gotCacheReplyWrapper ,
-					      m_si->m_niceness ,
-					      1 ) )
-			return false;
-		// reset g_errno, we're just a cache
-		g_errno = 0;
-		bool status = gotCacheReply();
-
-		if ( status && m_si->m_streamResults ) {
-			log("msg40: setting streamresults to false. "
-			    "was in cache.");
-			m_si->m_streamResults = false;
-		}
-
-		return status;
-	}
+	// // use cache?
+	// bool useCache = m_si->m_rcache;
+	// 
+	// // turn it off for now until we cache the scoring tables
+	// log("db: cache is disabled until we cache scoring tables");
+	// useCache = false;
+	// // if searching multiple collections do not cache for now
+	// if ( m_si->m_collnumBuf.length() > (int32_t)sizeof(collnum_t) ) 
+	// 	useCache=false;
+	// 
+	// // . try setting from cache first
+	// // . cacher --> "do we READ from cache?"
+	// if ( useCache ) {
+	// 	// make the key based on query and other input parms in msg40
+	// 	key_t key = m_si->makeKey ( );
+	// 	// this should point to the cached rec, if any
+	// 	m_cachePtr = NULL;
+	// 	m_cacheSize = 0;
+	// 	// this returns false if blocked, true otherwise
+	// 	if ( ! m_msg17.getFromCache ( SEARCHRESULTS_CACHEID,
+	// 				      key ,
+	// 				      &m_cachePtr,
+	// 				      &m_cacheSize,
+	// 				      // use first collection #
+	// 				      m_si->m_firstCollnum,
+	// 				      this , 
+	// 				      gotCacheReplyWrapper ,
+	// 				      m_si->m_niceness ,
+	// 				      1 ) )
+	// 		return false;
+	// 	// reset g_errno, we're just a cache
+	// 	g_errno = 0;
+	// 	bool status = gotCacheReply();
+	// 
+	// 	if ( status && m_si->m_streamResults ) {
+	// 		log("msg40: setting streamresults to false. "
+	// 		    "was in cache.");
+	// 		m_si->m_streamResults = false;
+	// 	}
+	// 
+	// 	return status;
+	// }
 
 	// keep going
 	bool status = prepareToGetDocIds ( );
@@ -3102,18 +3102,18 @@ bool Msg40::gotSummary ( ) {
 		return true;
 	}
 
-	if ( ! m_msg3a.m_rrr.m_getDocIdScoringInfo ) {
-		// make key based on the hash of certain vars in SearchInput
-		key_t k = m_si->makeKey();
-		// cache it
-		m_msg17.storeInCache ( SEARCHRESULTS_CACHEID ,
-				       k                     ,
-				       p                     , // rec
-				       tmpSize               , // recSize
-				       m_firstCollnum ,//m_si->m_coll2
-				       m_si->m_niceness      ,
-				       3                     ); //timeout=3secs
-	}
+	// if ( ! m_msg3a.m_rrr.m_getDocIdScoringInfo ) {
+	// 	// make key based on the hash of certain vars in SearchInput
+	// 	key_t k = m_si->makeKey();
+	// 	// cache it
+	// 	m_msg17.storeInCache ( SEARCHRESULTS_CACHEID ,
+	// 			       k                     ,
+	// 			       p                     , // rec
+	// 			       tmpSize               , // recSize
+	// 			       m_firstCollnum ,//m_si->m_coll2
+	// 			       m_si->m_niceness      ,
+	// 			       3                     ); //timeout=3secs
+	// }
 
 	// free it, cache will copy it into its ring buffer
 	if ( p != tmpBuf ) mfree ( p , tmpSize , "Msg40Cache" );

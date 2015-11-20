@@ -6511,7 +6511,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rcd";
 	m->m_off   = (char *)&cr.m_rcache - x;
 	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
+	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
