@@ -24,6 +24,7 @@ libgtest.so:
 	ln -s $(GTEST_DIR)/$@ .
 
 CPPFLAGS += -ggdb
+CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wl,-rpath=. -Wl,-rpath=$(BASE_DIR)
 CPPFLAGS += -I$(BASE_DIR) -I$(GTEST_DIR)/include
 
