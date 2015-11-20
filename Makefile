@@ -232,6 +232,7 @@ dist: all
 	sitelinks.txt \
 	unifiedDict.txt \
 	$(DIST_DIR)
+	@cp third-party/cld2/LICENSE $(DIST_DIR)/LICENSE-3RD-PARTY-CLD2
 	@tar -czvf $(DIST_DIR).tar.gz $(DIST_DIR)
 	@rm -rf $(DIST_DIR)
 
@@ -240,11 +241,15 @@ libgb.a: $(OBJS)
 	ar rcs $@ $^
 
 .PHONY: test
-test: unittest
+test: unittest systemtest
 
 .PHONY: unittest
 unittest:
-	make -C test unittest
+	make -C test $@
+
+.PHONY: systemtest
+systemtest:
+	make -C test $@
 
 run_parser: test_parser
 	./test_parser ~/turkish.html

@@ -1,4 +1,4 @@
-.DEFAULT_GOAL := all
+.DEFAULT_GOAL := test
 
 GTEST_DIR = googletest/googletest
 BASE_DIR ?= ../..
@@ -36,7 +36,7 @@ $(TARGET): libgtest.so libgb.a $(BASE_DIR)/libcld2_full.so $(OBJECTS)
 
 .PHONY: test
 test: all ucdata
-	./$(TARGET)
+	./$(TARGET) $(TEST_ARGS)
 
 .PHONY: clean
 clean:
