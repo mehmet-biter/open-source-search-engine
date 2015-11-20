@@ -66,7 +66,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	CountryCode.o DailyMerge.o CatRec.o Tagdb.o \
 	Users.o Images.o Wiki.o Wiktionary.o Scraper.o \
 	Dates.o Sections.o SiteGetter.o Syncdb.o qa.o \
-	Placedb.o Address.o Test.o GeoIP.o GeoIPCity.o Synonyms.o \
+	Placedb.o Address.o Test.o Synonyms.o \
 	Cachedb.o Monitordb.o dlstubs.o PageCrawlBot.o Json.o PageBasic.o \
 	Punycode.o Version.o
 
@@ -485,11 +485,6 @@ PostQueryRerank.o:
 
 sort.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
-
-# Stupid gcc-2.95 stabs debug can't handle such a big file.
-# add -m32 flag to this line if you need to make a 32-bit gb.
-#geo_ip_table.o: geo_ip_table.cpp geo_ip_table.h
-#	$(CXX) $(DEFS) -Wall -pipe -c $*.cpp
 
 # dpkg-buildpackage calls 'make binary' to create the files for the deb pkg
 # which must all be stored in ./debian/gb/

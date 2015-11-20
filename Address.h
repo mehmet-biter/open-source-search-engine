@@ -73,16 +73,6 @@ int32_t memcpy2 ( char *dst , char *src , int32_t bytes , bool filterCommas ,
 	       // do not store more than this many bytes into dst
 	       int32_t dstMaxBytes = -1 ) ;
 
-bool getIPLocation ( int32_t   ip     ,
-		     double *lat    ,
-		     double *lon    ,
-		     double *radius ,
-		     char  **city  ,
-		     char  **state ,
-		     char  **ctry  ,
-		     char   *buf   ,
-		     int32_t    bufSize ) ;
-
 bool getLatLonFromUserInput ( float *radius,
 			      char *where ,
 			      float *cityLat ,
@@ -817,7 +807,6 @@ extern char getTimeZoneFromAddr ( char *addr , char *useDST ) ;
 // state is two letter state abbr
 extern char getTimeZone2 ( char *city , char *state , char *useDST );
 extern char getTimeZone3 ( uint32_t cid32 , char *useDST );
-extern char getTimeZoneFromUserIP ( int32_t uip , int32_t niceness , char *useDST ) ;
 extern char getTimeZoneFromLatLon ( float lat , float lon , int32_t niceness ,
 				    char *useDST ) ;
 extern uint32_t getNearestCityId ( float lat , float lon , int32_t niceness ,

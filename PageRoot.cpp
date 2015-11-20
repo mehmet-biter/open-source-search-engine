@@ -16,7 +16,6 @@
 #include "LanguageIdentifier.h"
 #include "LanguagePages.h"
 #include "Users.h"
-#include "Address.h" // getIPLocation
 #include "Proxy.h"
 
 //char *printNumResultsDropDown ( char *p, int32_t n, bool *printedDropDown);
@@ -377,34 +376,10 @@ bool expandHtml (  SafeBuf& sb,
 			if ( where && ! where[0] ) where = NULL;
 			// skip over the %where
 			i += 5;
-			// if empty, base it on IP
-			if ( ! where ) {
-				double lat;
-				double lon;
-				double radius;
-				char *city,*state,*ctry;
-				// use this by default
-				int32_t ip = r->m_userIP;
-				// ip for testing?
-				int32_t iplen;
-				char *ips = r->getString("uip",&iplen);
-				if ( ips ) ip = atoip(ips);
-				// returns true if found in db
-				char buf[128];
-				getIPLocation ( ip ,
-						&lat , 
-						&lon , 
-						&radius,
-						&city ,
-						&state ,
-						&ctry  ,
-						buf    ,
-						128    ) ;
-				if ( city && state )
-					sb.safePrintf("%s, %s",city,state);
-			}
-			else
+
+			if (where) {
 				sb.dequote (where,whereLen);
+			}
 			continue;
 		}
 		if ( head[i+1] == 'w' &&
@@ -978,7 +953,6 @@ bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
 }
 
 bool printWebHomePage ( SafeBuf &sb , HttpRequest *r , TcpSocket *sock ) {
-
 	SearchInput si;
 	si.set ( sock , r );
 
@@ -986,7 +960,9 @@ bool printWebHomePage ( SafeBuf &sb , HttpRequest *r , TcpSocket *sock ) {
 	// they won't fit into the http request, the browser will reject
 	// sending such a large request with "GET"
 	char *method = "GET";
-	if ( si.m_sites && gbstrlen(si.m_sites)>800 ) method = "POST";
+	if ( si.m_sites && gbstrlen(si.m_sites)>800 ) {
+		method = "POST";
+	}
 
 	// if the provided their own
 	CollectionRec *cr = g_collectiondb.getRec ( r );
