@@ -465,8 +465,6 @@
 		<Unit filename="gbtitletest.cpp" />
 		<Unit filename="geneaology.cpp" />
 		<Unit filename="generateSuperMergeCode.cpp" />
-		<Unit filename="geo_ip_table.cpp" />
-		<Unit filename="geo_ip_table.h" />
 		<Unit filename="getsample.cpp" />
 		<Unit filename="hash.cpp" />
 		<Unit filename="hash.h" />

@@ -184,6 +184,7 @@ static WebPage s_pages[] = {
 	  sendPageGeneric , 0 ,NULL,NULL,
 	  PG_MASTERADMIN|PG_ACTIVE},
 
+#ifndef PRIVACORE_SAFE_VERSION
 	{ PAGE_ADDCOLL   , "admin/addcoll" , 0 , "add collection"  ,  1 , 0 ,
 	  //USER_MASTER , 
 	  "add a new collection",
@@ -208,6 +209,7 @@ static WebPage s_pages[] = {
 	  //USER_MASTER ,
 	  sendPageGeneric , 0 ,NULL,NULL,
 	  PG_MASTERADMIN |PG_ACTIVE},
+#endif
 
 	{ PAGE_FILTERS   , "admin/filters", 0 , "url filters" ,  1 ,M_POST,
 	  "prioritize urls for spidering",
@@ -1734,6 +1736,7 @@ bool printGigabotAdvice ( SafeBuf *sb ,
 		"</td></tr></table>";
 
 	char *advice = NULL;
+#ifndef PRIVACORE_SAFE_VERSION
 	if ( page == PAGE_ADDCOLL )
 		advice =
 			"STEP 1 of 3. "
@@ -1752,6 +1755,7 @@ bool printGigabotAdvice ( SafeBuf *sb ,
 			// "Do not deviate from this path or you may "
 			// "be blasted."
 			;
+#endif
 	if ( page == PAGE_BASIC_SETTINGS )
 		advice = 
 			"STEP 2 of 3. "
@@ -2455,9 +2459,11 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 		if ( i == PAGE_TITLEDB ) continue;
 		if ( i == PAGE_IMPORT ) continue;
 		// move these links to the coll nav bar on the left
+#ifndef PRIVACORE_SAFE_VERSION
 		if ( i == PAGE_ADDCOLL ) continue;
 		if ( i == PAGE_DELCOLL ) continue;
 		if ( i == PAGE_CLONECOLL ) continue;
+#endif
 
 		// ignore collection passwords if 
 		// g_conf.m_useCollectionPasswords is false
@@ -2643,7 +2649,7 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb     ,
 		sb->safePrintf ( "<center><nobr><b>Collections</b></nobr>"
 				 "</center>\n");
 
-
+#ifndef PRIVACORE_SAFE_VERSION
 	sb->safePrintf( "<center>"
 			"<nobr>"
 			"<font size=-1>"
@@ -2657,6 +2663,18 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb     ,
 			, coll
 			, coll
 			);
+#else
+
+	sb->safePrintf(	"<center>"
+			"<font size=-1>"
+			"Privacore production version. Unsafe features disabled."
+			"</font>"
+			"</center>"
+			);
+			
+
+
+#endif
 
 	char *color = "red";
 	//if ( page >= PAGE_CGIPARMS ) color = "red";

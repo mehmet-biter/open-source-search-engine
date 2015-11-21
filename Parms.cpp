@@ -316,6 +316,7 @@ bool CommandRemoveUrlFiltersRow ( char *rec ) {
 	return true;
 }
 
+#ifndef PRIVACORE_SAFE_VERSION
 // after we add a new coll, or at anytime after we can clone it
 bool CommandCloneColl ( char *rec ) {
 
@@ -354,12 +355,15 @@ bool CommandCloneColl ( char *rec ) {
 
 	return true;
 }
+#endif
+
 
 // customCrawl:
 // 0 for regular collection
 // 1 for custom crawl
 // 2 for bulk job
 // . returns false if blocks true otherwise
+#ifndef PRIVACORE_SAFE_VERSION
 bool CommandAddColl ( char *rec , char customCrawl ) {
 
 	// caller must specify collnum
@@ -418,12 +422,15 @@ bool CommandAddColl1 ( char *rec ) { // custom crawl
 bool CommandAddColl2 ( char *rec ) { // bulk job
 	return CommandAddColl ( rec , 2 );
 }
+#endif
 
 bool CommandResetProxyTable ( char *rec ) {
 	// from SpiderProxy.h
 	return resetProxyStats();
 }
 
+
+#ifndef PRIVACORE_SAFE_VERSION
 // . returns true and sets g_errno on error
 // . returns false if would block
 bool CommandDeleteColl ( char *rec , WaitEntry *we ) {
@@ -471,6 +478,9 @@ bool CommandDeleteColl2 ( char *rec , WaitEntry *we ) {
 	// delete is successful
 	return true;
 }
+#endif
+
+
 
 bool CommandForceNextSpiderRound ( char *rec ) {
 
@@ -516,6 +526,8 @@ bool CommandForceNextSpiderRound ( char *rec ) {
 	return true;
 }
 
+
+#ifndef PRIVACORE_SAFE_VERSION
 // . returns true and sets g_errno on error
 // . returns false if would block
 bool CommandRestartColl ( char *rec , WaitEntry *we ) {
@@ -573,7 +585,9 @@ bool CommandRestartColl ( char *rec , WaitEntry *we ) {
 	// all done
 	return true;
 }
+#endif
 
+#ifndef PRIVACORE_SAFE_VERSION
 // . returns true and sets g_errno on error
 // . returns false if would block
 bool CommandResetColl ( char *rec , WaitEntry *we ) {
@@ -631,6 +645,8 @@ bool CommandResetColl ( char *rec , WaitEntry *we ) {
 
 	return true;
 }
+#endif
+
 
 bool CommandParserTestInit ( char *rec ) {
 	// enable testing for all other hosts
@@ -1335,7 +1351,9 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 
 	int32_t page = g_pages.getDynamicPageNumber ( r );
 
+#ifndef PRIVACORE_SAFE_VERSION
 	int32_t  fromIp   = s->m_ip;
+#endif
 
 	char format = r->getReplyFormat();
 	/*
@@ -1390,7 +1408,9 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 	//if ( page == PAGE_PRIORITIES ) tt = "Priority Controls";
 	//if ( page == PAGE_RULES      ) tt = "Site Rules";
 	//if ( page == PAGE_SYNC       ) tt = "Sync";
+#ifndef PRIVACORE_SAFE_VERSION
 	if ( page == PAGE_REPAIR     ) tt = "Rebuild Controls";
+#endif
 	//if ( page == PAGE_ADFEED     ) tt = "Ad Feed Controls";
 
 	// special messages for spider controls
@@ -1429,8 +1449,10 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 	// . only one page for all collections, we have a parm that is
 	//   a comma-separated list of the collections to repair. leave blank
 	//   to repair all collections.
+#ifndef PRIVACORE_SAFE_VERSION
 	if ( page == PAGE_REPAIR )
 		g_repair.printRepairStatus ( sb , fromIp );
+#endif
 	
 	// start the table
 	sb->safePrintf( 
@@ -2078,7 +2100,9 @@ bool Parms::printParm ( SafeBuf* sb,
 		     page == PAGE_SPIDERPROXIES ||
 		     page == PAGE_FILTERS ||
 		     page == PAGE_MASTERPASSWORDS ||
+#ifndef PRIVACORE_SAFE_VERSION
 		     page == PAGE_REPAIR ||
+#endif
 		     page == PAGE_LOG ) {
 			sb->safePrintf ( "\t\t<currentValue><![CDATA[");
 			SafeBuf xb;
@@ -2111,7 +2135,9 @@ bool Parms::printParm ( SafeBuf* sb,
 		     page == PAGE_SPIDERPROXIES ||
 		     page == PAGE_FILTERS ||
 		     page == PAGE_MASTERPASSWORDS ||
+#ifndef PRIVACORE_SAFE_VERSION
 		     page == PAGE_REPAIR ||
+#endif
 		     page == PAGE_LOG ) {
 			sb->safePrintf ( "\t\t\"currentValue\":\"");
 			SafeBuf js;
@@ -4936,59 +4962,7 @@ void Parms::init ( ) {
 
 	InjectionRequest ir;
 
-	/*
-	m->m_title = "delete collection";
-	m->m_desc  = "A collection name to delete. You can specify multiple "
-		"&delColl= parms in the request to delete multiple "
-		"collections.";
-	m->m_cgi   = "delColl";
-	m->m_page  = PAGE_DELCOLL;
-	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
-	m->m_def   = NULL;
-	m->m_flags = 0;//PF_API | PF_REQUIRED;
-	m->m_off   = (char *)&gr.m_coll - (char *)&gr;
-	m++;
-
-	m->m_title = "delete collection";
-	m->m_desc  = "A collection name to delete. You can specify multiple "
-		"&delColl= parms in the request to delete multiple "
-		"collections.";
-	// camelcase as opposed to above lowercase
-	m->m_cgi   = "delcoll";
-	m->m_page  = PAGE_DELCOLL;
-	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
-	m->m_def   = NULL;
-	m->m_flags = PF_API | PF_REQUIRED;
-	m->m_off   = (char *)&gr.m_coll - (char *)&gr;
-	m++;
-
-	m->m_title = "add collection";
-	m->m_desc  = "A collection name to add.";
-	// camelcase support
-	m->m_cgi   = "addColl";
-	m->m_page  = PAGE_ADDCOLL;
-	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
-	m->m_def   = NULL;
-	m->m_flags = PF_API | PF_REQUIRED;
-	m->m_off   = (char *)&gr.m_coll - (char *)&gr;
-	m++;
-
-	m->m_title = "add collection";
-	m->m_desc  = "A collection name to add.";
-	// lowercase support
-	m->m_cgi   = "addcoll";
-	m->m_page  = PAGE_ADDCOLL;
-	m->m_obj   = OBJ_GBREQUEST;
-	m->m_type  = TYPE_CHARPTR;//SAFEBUF;
-	m->m_def   = NULL;
-	m->m_flags = PF_HIDDEN;
-	m->m_off   = (char *)&gr.m_coll - (char *)&gr;
-	m++;
-	*/
-
+#ifndef PRIVACORE_SAFE_VERSION
 	m->m_title = "collection";
 	m->m_desc  = "Clone settings INTO this collection.";
 	m->m_cgi   = "c";
@@ -4999,6 +4973,7 @@ void Parms::init ( ) {
 	m->m_flags = PF_API | PF_REQUIRED;
 	m->m_off   = (char *)&gr.m_coll - (char *)&gr;
 	m++;
+#endif
 
 	m->m_title = "collection";
 	m->m_desc  = "Use this collection.";
@@ -5932,6 +5907,7 @@ void Parms::init ( ) {
 	m++;
 	*/
 
+#ifndef PRIVACORE_SAFE_VERSION
 	m->m_title = "restart collection";
 	m->m_desc  = "Remove all documents from the collection and re-add "
 		"seed urls from site list.";
@@ -5944,6 +5920,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_CMD;
 	m->m_func2 = CommandRestartColl;
 	m++;
+#endif
 
 	///////////////////////////////////////////
 	// SITE LIST
@@ -6304,6 +6281,7 @@ void Parms::init ( ) {
 	m->m_flags = PF_REBUILDURLFILTERS;
 	m++;
 
+#ifndef PRIVACORE_SAFE_VERSION
 	m->m_title = "delete collection";
 	m->m_desc  = "delete a collection";
 	m->m_cgi   = "delete";
@@ -6373,7 +6351,10 @@ void Parms::init ( ) {
 	m->m_cast  = 1;
 	m->m_flags = PF_API | PF_REQUIRED;
 	m++;
+#endif
 
+
+#ifndef PRIVACORE_SAFE_VERSION
 	//
 	// CLOUD SEARCH ENGINE SUPPORT
 	//
@@ -6412,6 +6393,7 @@ void Parms::init ( ) {
 	m->m_func  = CommandAddColl2;
 	m->m_cast  = 1;
 	m++;
+#endif
 
 	m->m_title = "in sync";
 	m->m_desc  = "signify in sync with host 0";
@@ -10029,7 +10011,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-
+#ifndef PRIVACORE_SAFE_VERSION
 	m->m_title = "allow cloud users";
 	m->m_desc  = "Can guest users create and administer "
 		"a collection? Limit: 1 "
@@ -10042,7 +10024,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
-
+#endif
 
 	m->m_title = "auto save frequency";
 	m->m_desc  = "Save data in memory to disk after this many minutes "
@@ -10289,6 +10271,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+#ifndef PRIVACORE_SAFE_VERSION
 	m->m_title = "rebalance shards";
 	m->m_desc  = "Tell all hosts to scan all records in all databases, "
 		"and move "
@@ -10302,6 +10285,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
+#endif
 
 	m->m_title = "dump to disk";
 	m->m_desc  = "Flushes all records in memory to the disk on all hosts.";
@@ -16501,6 +16485,7 @@ void Parms::init ( ) {
 	m++;
 
 
+#ifndef PRIVACORE_SAFE_VERSION
 	m->m_title = "reset collection";
 	m->m_desc  = "Remove all documents from the collection and turn "
 		"spiders off.";
@@ -16523,6 +16508,7 @@ void Parms::init ( ) {
 	m->m_func2 = CommandRestartColl;
 	m->m_cast  = 1;
 	m++;
+#endif
 
 	/*
 	m->m_title = "new spidering enabled";
@@ -18722,6 +18708,7 @@ void Parms::init ( ) {
 	///////////////////////////////////////////
 	//  PAGE REPAIR CONTROLS
 	///////////////////////////////////////////
+#ifndef PRIVACORE_SAFE_VERSION
 
 	m->m_title = "rebuild mode enabled";
 	m->m_desc  = "If enabled, gigablast will rebuild the rdbs as "
@@ -19075,7 +19062,7 @@ void Parms::init ( ) {
 	m->m_group = 0;
 	m++;
 	*/
-
+#endif
 	///////////////////////////////////////////
 	//          END PAGE REPAIR              //
 	///////////////////////////////////////////
@@ -20968,12 +20955,15 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 		// isMasterAdmin may be false, so see if they have permission
 		// for the "val" collection for this one...
 		bool hasPerm = false;
+#ifndef PRIVACORE_SAFE_VERSION
 		if ( m->m_page == PAGE_DELCOLL &&
 		     strcmp(m->m_cgi,"delcoll") == 0 ) {
 			// permission override for /admin/delcoll cmd & parm
 			hasPerm = g_conf.isCollAdminForColl (sock,hr,val);
 		}
+#endif
 
+#ifndef PRIVACORE_SAFE_VERSION
 		// if this IP c-block as already added a collection then do not
 		// allow it to add another.
 		if ( m->m_page == PAGE_ADDCOLL &&
@@ -20990,6 +20980,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 			}
 			hasPerm = true;
 		}
+#endif
 
 		// master controls require root permission
 		if ( m->m_obj == OBJ_CONF && ! isMasterAdmin ) {
@@ -21050,6 +21041,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 	// store it in the collection rec to ensure that the same
 	// IP address cannot add more than one collection.
 	//
+#ifndef PRIVACORE_SAFE_VERSION
 	if ( sock && page == PAGE_ADDCOLL ) {
 		char *ipStr = iptoa(sock->m_ip);
 		int32_t occNum;
@@ -21064,6 +21056,7 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 					   um ) )
 			return false;
 	}
+#endif
 
 
 	//

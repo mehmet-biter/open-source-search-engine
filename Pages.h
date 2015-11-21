@@ -16,6 +16,7 @@ bool printRedBox  ( SafeBuf *mb ,
 // for PageEvents.cpp and Accessdb.cpp
 //#define RESULTSWIDTHSTR "550px"
 
+#include "gb-include.h"	// For PRIVACORE_SAFE_VERSION
 #include "TcpSocket.h"
 #include "HttpRequest.h"
 #include "HttpServer.h"
@@ -351,10 +352,13 @@ enum {
 	PAGE_LOG         ,
 	PAGE_COLLPASSWORDS2 ,//BASIC_SECURITY ,
 	PAGE_MASTERPASSWORDS , // 19
+#ifndef PRIVACORE_SAFE_VERSION
 	PAGE_ADDCOLL     , //20	 
 	PAGE_DELCOLL     , 
 	PAGE_CLONECOLL   ,
 	PAGE_REPAIR      ,
+#endif
+
 	//PAGE_SITES , // site filters
 	PAGE_FILTERS     ,
 	PAGE_INJECT      , 
