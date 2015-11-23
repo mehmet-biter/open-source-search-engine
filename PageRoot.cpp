@@ -2497,6 +2497,11 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	// this will fill in GigablastRequest so all the parms we need are set
 	//setInjectionRequestFromParms ( sock , hr , cr , ir );
 
+	int32_t collLen;
+	char *coll = hr->getString ( "c" , &collLen ,NULL );
+	if ( ! coll ) coll = g_conf.m_defaultColl;
+	ir->m_collnum = g_collectiondb.getCollnum ( coll );
+
 	ir->ptr_url = hr->getString("u",NULL);
 	if ( ! ir->ptr_url ) ir->ptr_url = hr->getString("url",NULL);
 	if ( ! ir->ptr_url ) ir->ptr_url = hr->getString("urls",NULL);
