@@ -97,13 +97,13 @@ bool Wiktionary::test ( ) {
 	// get language
 	char *pipe = strstr ( input, "|" );
 	if ( ! pipe ) {
-		fprintf(stderr,"lang = %s\n",getLangAbbr(langId));
+		fprintf(stderr,"lang = %s\n",getLanguageAbbr(langId));
 		str = input;
 	}
 	else {
 		*pipe = '\0';
 		langId = getLangIdFromAbbr ( input );
-		fprintf(stderr,"lang = %s\n",getLangAbbr(langId));
+		fprintf(stderr,"lang = %s\n",getLanguageAbbr(langId));
 		str = pipe + 1;
 	}
 	//wid = hash64Lower_utf8(str);
@@ -166,13 +166,13 @@ bool Wiktionary::test2 ( ) {
 	// get language
 	char *pipe = strstr ( input, "|" );
 	if ( ! pipe ) {
-		fprintf(stderr,"lang = %s\n",getLangAbbr(langId));
+		fprintf(stderr,"lang = %s\n",getLanguageAbbr(langId));
 		str = input;
 	}
 	else {
 		*pipe = '\0';
 		langId = getLangIdFromAbbr ( input );
-		fprintf(stderr,"lang = %s\n",getLangAbbr(langId));
+		fprintf(stderr,"lang = %s\n",getLanguageAbbr(langId));
 		str = pipe + 1;
 	}
 	//wid = hash64Lower_utf8(str);
@@ -1209,7 +1209,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 				langId = i;
 				if ( debug ) 
 					fprintf(stderr,"%s -> (%s)\n",
-						word,getLangAbbr(langId));
+						word,getLanguageAbbr(langId));
 				addWord ( word, 0 , langId , NULL);
 				goto lineLoop;
 			}
@@ -1219,7 +1219,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 			langId = langUnknown;
 			if ( debug ) 
 				fprintf(stderr,"%s -> (%s)\n",
-					word,getLangAbbr(langId));
+					word,getLanguageAbbr(langId));
 			addWord ( word, 0 , langId , NULL );
 		}
 
@@ -1313,7 +1313,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 			fprintf(stderr,"%s|%s -> %s"
 				"\n"
 				//"(%s)\n",
-				,getLangAbbr(langId) 
+				,getLanguageAbbr(langId) 
 				,word // TITLE!
 				,wp
 				);
@@ -1709,7 +1709,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 			//"(%s)\n",
 			,word // TITLE!
 			,normBuf // baseform! // start
-			//getLangAbbr(langId) 
+			//getLanguageAbbr(langId) 
 			);
 	addWord ( word, flag , langId , normBuf ); // start );
 	// try another line
@@ -1755,7 +1755,7 @@ bool Wiktionary::addWord ( char *word ,
 	if ( ! m_dedup.isInTable ( &lk64 ) ) {
 		m_dedup.addKey ( &lk64 );
 		m_langBuf.safePrintf ( "%s|%s\n",
-				       getLangAbbr(langId),
+				       getLanguageAbbr(langId),
 				       word);
 	}
 
@@ -2007,7 +2007,7 @@ bool Wiktionary::compile ( ) {
 			dd.addKey ( &wid );
 			// first first time lead with a "<langAbbr>|"
 			if ( count == 0 ) {
-				m_synBuf.safeStrcpy(getLangAbbr(langId));
+				m_synBuf.safeStrcpy(getLanguageAbbr(langId));
 				m_synBuf.pushChar('|');
 			}
 			// first is the wid (6 bytes) then pop (2 bytes)

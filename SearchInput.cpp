@@ -415,7 +415,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 
 	//m_queryLang = detectQueryLanguage();
 
-	//char *qs1 = getLangAbbr(m_queryLang);
+	//char *qs1 = getLanguageAbbr(m_queryLang);
 
 	// this parm is in Parms.cpp and should be set
 	const char *langAbbr = m_defaultSortLang;
@@ -430,17 +430,68 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	// detect language
 	if ( !langAbbr ) {
 		// detect language hints
-		const char* content_language_hint = ""; // HTTP header Content-Language: field
-		const char* tld_hint = ""; // hostname of a URL
+
+		// language tag format:
+		//   Language-Tag = Primary-tag *( "-" Subtag )
+		//   Primary-tag = 1*8ALPHA
+		//   Subtag = 1*8ALPHA
+		char content_language_hint[64] = {}; // HTTP header Content-Language: field
+		{
+			bool valid_qlang = false;
+			const char* qlang = r->getString("fx_qlang");
+			if (qlang) {
+				// validate lang
+				if (strlen(qlang) <= 17) {
+					valid_qlang = true;
+					strcat(content_language_hint, qlang);
+				}
+			}
+
+			const char* blang = r->getString("fx_blang");
+			if (blang) {
+				// validate lang
+				if (strlen(blang) <= 17) {
+					if (valid_qlang) {
+						strcat(content_language_hint, ", ");
+					}
+
+					strcat(content_language_hint, blang);
+				}
+			}
+		}
+
+		const char* tld_hint = NULL; // hostname of a URL
+		{
+			// use fx_fetld if available; if not, try with fx_country
+			const char* fe_domain = r->getString("fx_fetld");
+			if (fe_domain) {
+				const char *pos = strrchr(fe_domain, '.');
+				if (pos) {
+					if (((fe_domain + strlen(fe_domain)) - pos) == 3) {
+						tld_hint = pos + 1;
+					}
+				}
+			}
+
+			if (!tld_hint) {
+				tld_hint = r->getString("fx_country");
+			}
+		}
+
 		int encoding_hint = CLD2::UNKNOWN_ENCODING; // encoding detector applied to the input document
 		CLD2::Language language_hint = CLD2::UNKNOWN_LANGUAGE; // any other context
+
+		//log("query: cld2: using content_language_hint='%s' tld_hint='%s'", content_language_hint, tld_hint);
+
 		CLD2::CLDHints cldhints = {content_language_hint, tld_hint, encoding_hint, language_hint};
 
 		int flags = 0;
+		flags |= CLD2::kCLDFlagBestEffort;
 
-		CLD2::Language language3[3] = {CLD2::UNKNOWN_LANGUAGE, CLD2::UNKNOWN_LANGUAGE, CLD2::UNKNOWN_LANGUAGE};
-		int percent3[3] = {};
-		double normalized_score3[3] = {};
+		// this is initialized by CLD2 library
+		CLD2::Language language3[3];
+		int percent3[3];
+		double normalized_score3[3];
 
 		CLD2::ResultChunkVector *resultchunkvector = NULL;
 
@@ -460,9 +511,10 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 		                                                                  &text_bytes,
 		                                                                  &is_reliable,
 		                                                                  &valid_prefix_bytes);
-//		log("query: lang0: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[0]), percent3[0], normalized_score3[0]);
-//		log("query: lang1: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[1]), percent3[1], normalized_score3[1]);
-//		log("query: lang2: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[2]), percent3[2], normalized_score3[2]);
+
+		//log("query: cld2: lang0: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[0]), percent3[0], normalized_score3[0]);
+		//log("query: cld2: lang1: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[1]), percent3[1], normalized_score3[1]);
+		//log("query: cld2: lang2: %s(%d%% %3.0fp)", CLD2::LanguageCode(language3[2]), percent3[2], normalized_score3[2]);
 
 		if (language != CLD2::UNKNOWN_LANGUAGE) {
 			langAbbr = CLD2::LanguageCode(language);
@@ -489,7 +541,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	     langAbbr &&
 	     langAbbr[0] &&
 	     langAbbr[0]!='x' ) {
-		log("query: qlang of '%s' is NOT SUPPORTED. using langUnknown, 'xx'.", langAbbr);
+		log("query: langAbbr of '%s' is NOT SUPPORTED. using langUnknown, 'xx'.", langAbbr);
 	}
 
 	int32_t maxQueryTerms = cr->m_maxQueryTerms;
@@ -1140,41 +1192,3 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 
 	return true;
 }
-
-/*
-uint8_t SearchInput::detectQueryLanguage(void) {
-	uint8_t lang = 0;
-	// Check to see if default language is set.
-	// This should override everything else.
-	//if(m_defaultSortLanguage)
-	//		lang = getLanguageFromAbbr(m_defaultSortLanguage);
-
-	// Set query language from User Agent string, if possible
-	if(!lang && m_hr.getUserAgent())
-		lang= g_langId.guessLanguageFromUserAgent(m_hr.getUserAgent());
-
-	// guess from query terms
-	if(!lang && m_q)
-		lang = g_langId.guessLanguageFromQuery(m_q);
-
-	// Save for later
-	m_langHint = lang;
-
-	if(m_gbcountry && m_gbcountryLen > 0)
-		m_country = g_countryCode.getIndexOfAbbr(m_gbcountry);
-
-	if(!m_country) {
-		// Many doofuses just download firefox and don't set it
-		// up properly, so this takes second place to the IP search.
-		if(!m_country)
-			m_country = g_langId.guessCountryFromUserAgent(m_hr.getUserAgent());
-
-	}
-
-	return(lang);
-}
-*/
-
-//char getFormatFromRequest ( HttpRequest *r ) {
-//
-//}

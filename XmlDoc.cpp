@@ -29342,7 +29342,7 @@ SafeBuf *XmlDoc::getSpiderStatusDocMetaList2 ( SpiderReply *reply1 ) {
 	// we forced the langid valid above
 	if ( m_langIdValid && m_contentLen )
 		jd.safePrintf("\"gbssLanguage\":\"%s\",\n",
-			      getLangAbbr(m_langId));
+			      getLanguageAbbr(m_langId));
 
 	if ( m_contentTypeValid && m_contentLen )
 		jd.safePrintf("\"gbssContentType\":\"%s\",\n",
@@ -31519,10 +31519,10 @@ bool XmlDoc::hashLanguage ( HashTableX *tt ) {
 	if ( ! hashString ( s, slen, &hi ) ) return false;
 
 	// try lang abbreviation
-	sprintf(s , "%s ", getLangAbbr(langId) );
+	sprintf(s , "%s ", getLanguageAbbr(langId) );
 	// go back to broken way to try to fix parsing consistency bug
 	// by adding hashLanguageString() function below
-	//sprintf(s , "%s ", getLangAbbr(langId) );
+	//sprintf(s , "%s ", getLanguageAbbr(langId) );
 	if ( ! hashString ( s, slen, &hi ) ) return false;
 
 	return true;
@@ -31542,7 +31542,7 @@ bool XmlDoc::hashLanguageString ( HashTableX *tt ) {
 
 	// try lang abbreviation
 	char s[32];
-	int32_t slen = sprintf(s , "%s ", getLangAbbr(langId) );
+	int32_t slen = sprintf(s , "%s ", getLanguageAbbr(langId) );
 	// go back to broken way to try to fix parsing consistency bug
 	if ( ! hashString ( s, slen, &hi ) ) return false;
 
@@ -37154,7 +37154,7 @@ bool printLangBits ( SafeBuf *sb , TermDebugInfo *tp ) {
 		int64_t mask = 1LL << j;
 		//if ( j == tp->m_langId )
 		//	sb->safePrintf("[%s]",
-		//		       getLangAbbr(tp->m_langId));
+		//		       getLanguageAbbr(tp->m_langId));
 		if ( ! (tp->m_langBitVec64 & mask) ) continue;
 		char langId = j+1;
 		// match in langvec? that means even if the
@@ -37164,7 +37164,7 @@ bool printLangBits ( SafeBuf *sb , TermDebugInfo *tp ) {
 		// algo in setLangVector.
 		if ( langId == tp->m_langId )
 			sb->safePrintf("<b>");
-		sb->safePrintf("%s ", getLangAbbr(langId) );
+		sb->safePrintf("%s ", getLanguageAbbr(langId) );
 		if ( langId == tp->m_langId )
 			sb->safePrintf("</b>");
 		printed = true;
@@ -39273,7 +39273,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 			       //, (int32_t)MAXDIVERSITYRANK
 			       , (int32_t)MAXWORDSPAMRANK
 			       , getLanguageString (m_langId)
-			       , getLangAbbr(m_langId)
+			       , getLanguageAbbr(m_langId)
 			       );
 		// encode it
 		SafeBuf ue;
@@ -39424,7 +39424,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 				       ,tp[i]->m_wordNum
 				       );
 
-		//char *abbr = getLangAbbr(tp[i]->m_langId);
+		//char *abbr = getLanguageAbbr(tp[i]->m_langId);
 		//if ( tp[i]->m_langId == langTranslingual ) abbr ="??";
 		//if ( tp[i]->m_langId == langUnknown      ) abbr ="--";
 		//if ( tp[i]->m_synSrc ) abbr = "";

@@ -2569,7 +2569,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 		sb->safePrintf("\t\t<queryLanguageAbbr>"
 			       "<![CDATA[%s]]>"
 			       "</queryLanguageAbbr>\n"
-			       , getLangAbbr(si->m_queryLangId) );
+			       , getLanguageAbbr(si->m_queryLangId) );
 		sb->safePrintf("\t\t<queryLanguage>"
 			       "<![CDATA[%s]]>"
 			       "</queryLanguage>\n"
@@ -2617,7 +2617,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 				for ( int i = 0 ; i < langLast ; i++ ) {
 					uint64_t bit = (uint64_t)1 << i;
 					if ( ! (qt->m_langIdBits&bit))continue;
-					char *str = getLangAbbr(i);
+					char *str = getLanguageAbbr(i);
 					if ( ! first ) sb->pushChar(',');
 					first = false;
 					sb->safeStrcpy ( str );
@@ -2661,7 +2661,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 		sb->jsonEncode(q->m_orig);
 		sb->safePrintf("\",\n");
 		sb->safePrintf("\t\"queryLanguageAbbr\":\"");
-		sb->jsonEncode ( getLangAbbr(si->m_queryLangId) );
+		sb->jsonEncode ( getLanguageAbbr(si->m_queryLangId) );
 		sb->safePrintf("\",\n");
 		sb->safePrintf("\t\"queryLanguage\":\"");
 		sb->jsonEncode ( getLanguageString(si->m_queryLangId) );
@@ -2703,7 +2703,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 				for ( int i = 0 ; i < langLast ; i++ ) {
 					uint64_t bit = (uint64_t)1 << i;
 					if ( ! (qt->m_langIdBits&bit))continue;
-					char *str = getLangAbbr(i);
+					char *str = getLanguageAbbr(i);
 					if ( ! first ) sb->pushChar(',');
 					first = false;
 					sb->jsonEncode ( str );
@@ -5224,7 +5224,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			      "</language>\n", 
 			      getLanguageString(mr->m_language));
 		sb->safePrintf("\t\t<langAbbr>%s</langAbbr>\n", 
-			      getLangAbbr(mr->m_language));
+			      getLanguageAbbr(mr->m_language));
 		char *charset = get_charset_str(mr->m_charset);
 		if(charset)
 			sb->safePrintf("\t\t<charset><![CDATA[%s]]>"
@@ -5236,7 +5236,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->safePrintf("\t\t\"language\":\"%s\",\n",
 			      getLanguageString(mr->m_language));
 		sb->safePrintf("\t\t\"langAbbr\":\"%s\",\n",
-			      getLangAbbr(mr->m_language));
+			      getLanguageAbbr(mr->m_language));
 		char *charset = get_charset_str(mr->m_charset);
 		if(charset)
 			sb->safePrintf("\t\t\"charset\":\"%s\",\n",charset);
@@ -9384,7 +9384,7 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		for ( int32_t i = 0 ; i < langLast ; i++ ) {
 			s_mi[n].m_menuNum  = 2;
 			s_mi[n].m_title    = getLanguageString(i);
-			char *abbr = getLangAbbr(i);
+			char *abbr = getLanguageAbbr(i);
 			snprintf(s_mi[n].m_tmp,10,"qlang=%s",abbr);
 			s_mi[n].m_cgi      = s_mi[n].m_tmp;
 			s_mi[n].m_icon     = g_flagBytes[i]; //base64encoded

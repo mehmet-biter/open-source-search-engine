@@ -77,12 +77,10 @@ enum {
 };
 
 uint8_t getLangIdFromAbbr ( const char *abbr ) ;
-uint8_t getLangIdFromAbbrN ( const char *abbr ) ;
-char *getLangAbbr ( uint8_t langId ) ;
 
 void  	 languageToString ( unsigned char lang , char *buf );
 char* 	 getLanguageString ( unsigned char lang);
-char*    getLanguageAbbr ( unsigned char lang);
+char*    getLanguageAbbr ( unsigned char langId);
 
 bool     isAdult( char *s, int32_t slen, char **loc = NULL );
 

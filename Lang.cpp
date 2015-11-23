@@ -90,32 +90,29 @@ static char *s_langAbbr[] = {
 };
 
 uint8_t getLangIdFromAbbr ( const char *abbr ) {
-	int x;
-	for(x = 0; x < MAX_LANGUAGES && s_langAbbr[x]; x++)
-		if(!strcasecmp((char*)abbr, s_langAbbr[x])) return x;
-	// english?
-	if ( ! strcasecmp((char *)abbr,"en_uk")) return langEnglish;
-	if ( ! strcasecmp((char *)abbr,"en_us")) return langEnglish;
-	//char *xx=NULL;*xx=0;
-	return langUnknown;//0;
-}
-
-uint8_t getLangIdFromAbbrN ( const char *abbr ) {
 	for (int x = 0; x < MAX_LANGUAGES && s_langAbbr[x]; ++x) {
-		if (!strncasecmp((char*)abbr, s_langAbbr[x], strlen(s_langAbbr[x]))) {
+		if (!strcasecmp((char*)abbr, s_langAbbr[x])) {
 			return x;
 		}
 	}
 
-	return langUnknown;
-}
+	// english?
+	if ( ! strcasecmp((char *)abbr,"en_uk")) {
+		return langEnglish;
+	}
 
-char *getLangAbbr ( uint8_t langId ) {
-	return s_langAbbr[langId]; 
+	if ( ! strcasecmp((char *)abbr,"en_us")) {
+		return langEnglish;
+	}
+
+	return langUnknown;;
 }
 
 char* getLanguageAbbr ( unsigned char langId ) {
-	if ( langId >= sizeof(s_langAbbr)/sizeof(char *) ) return NULL;
+	if ( langId >= sizeof(s_langAbbr)/sizeof(char *) ) {
+		return NULL;
+	}
+
 	return s_langAbbr[langId];
 }
 

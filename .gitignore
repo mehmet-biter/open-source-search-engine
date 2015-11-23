@@ -10,3 +10,5 @@
 /diskusage
 *.cache
 libcld2_full.so
+Make.depend
+log000*
