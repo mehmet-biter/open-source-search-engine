@@ -458,7 +458,7 @@ bool HashTableX::load ( char *dir, char *filename, char **tbuf, int32_t *tsize )
 	off += 4;
 
 	if ( numSlots < 0 || numSlotsUsed < 0 ) {
-		log("htable: bogus saved hashtable file %s%s.",dir,filename);
+		log("htable: bogus saved hashtable file %s%s.",pdir,filename);
 		return false;
 	}
 
@@ -469,7 +469,7 @@ bool HashTableX::load ( char *dir, char *filename, char **tbuf, int32_t *tsize )
 			return false;
 		log("htable: reading hashtable from %s%s: "
 		    "bogus keysize of %"INT32"",
-		    dir,filename,ks );
+		    pdir,filename,ks );
 		return false;
 	}
 
