@@ -46,6 +46,7 @@
 #include "Rebalance.h"
 #include "SpiderProxy.h"
 #include "PageInject.h"
+#include "Timezone.h"
 
 // the query log hashtable defined in XmlDoc.cpp
 //extern HashTableX g_qt;
@@ -2101,6 +2102,7 @@ void Process::resetAll ( ) {
 	resetStopWordTables();
 	//resetSynonymTables();
 	resetDateTables();
+	resetTimezoneTables();
 	resetTestIpTable();
 }
 

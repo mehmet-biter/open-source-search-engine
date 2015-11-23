@@ -4,6 +4,7 @@
 
 #include "HttpMime.h"
 #include "HashTable.h"
+#include "Timezone.h"
 
 // . convert these values to strings
 // . these must be 1-1 with the #define's in HttpMime.h
@@ -250,7 +251,6 @@ time_t atotime ( char *s ) {
 	return atotime3 ( s );
 }
 
-#include "Dates.h" // for getTimeZone()
 
 // #1: Sun, 06 Nov 1994 08:49:37 GMT  ;RFC 822, updated by RFC 1123
 time_t atotime1 ( char *s ) {
