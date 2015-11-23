@@ -6,6 +6,7 @@
 #include "HashTable.h"
 #include "Categories.h"
 #include "LanguageIdentifier.h"
+#include "Threads.h"
 
 // record for unified language/country hash table
 typedef union catcountryrec_t {

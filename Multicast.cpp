@@ -1052,7 +1052,6 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 	int32_t docsWanted;
 	int32_t firstResultNum;
 	int32_t nqterms;
-	int32_t rerankRuleset;
 	int32_t wait;
 	char exact;
 	//int32_t hid = -1;

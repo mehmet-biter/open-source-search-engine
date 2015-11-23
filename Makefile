@@ -45,7 +45,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Speller.o \
 	PingServer.o StopWords.o TopTree.o \
 	Parms.o Pages.o \
-	Unicode.o iana_charset.o Iso8859.o \
+	Unicode.o iana_charset.o \
 	SearchInput.o \
 	Categories.o Msg2a.o PageCatdb.o PageDirectory.o \
 	SafeBuf.o Datedb.o \
@@ -56,7 +56,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	PageLogView.o Msg1f.o Blaster.o MsgC.o \
 	PageSpam.o Proxy.o PageThreads.o Linkdb.o \
 	matches2.o LanguageIdentifier.o \
-	Language.o Repair.o Process.o \
+	Repair.o Process.o \
 	Abbreviations.o \
 	RequestTable.o TuringTest.o Msg51.o \
 	Msg40.o Msg4.o SpiderProxy.o \
@@ -476,9 +476,6 @@ Spider.o:
 
 test_parser2.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
-
-Language.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
 
 PostQueryRerank.o:
 	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp

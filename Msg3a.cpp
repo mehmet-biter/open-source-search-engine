@@ -11,8 +11,6 @@
 static void gotReplyWrapper3a     ( void *state , void *state2 ) ;
 //static void gotRerankedDocIds     ( void *state );
 
-int32_t *g_ggg = NULL;
-
 Msg3a::Msg3a ( ) {
 	constructor();
 }

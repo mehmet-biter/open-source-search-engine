@@ -2,9 +2,9 @@
 #define _PAGERESULTS_H_
 
 #include "SafeBuf.h"
-#include "Language.h" // MAX_FRAG_SIZE
 #include "Msg40.h"
 #include "Msg0.h"
+#include "Speller.h" // MAX_FRAG_SIZE
 
 // height of each search result div in the widget
 #define RESULT_HEIGHT 120

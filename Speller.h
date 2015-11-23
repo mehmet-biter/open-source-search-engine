@@ -9,11 +9,15 @@
 #ifndef _SPELLER_H_
 #define _SPELLER_H_
 
+#define MAX_FRAG_SIZE 1024
+
 // max int32_t returned by getPhrasePopularity() function
 #define MAX_PHRASE_POP 16800
 
 #include "StopWords.h"
-#include "Language.h"
+#include "Query.h"
+#include "Multicast.h"
+
 // . the height and width of m_stable[][] that takes a letter pair as an index
 // . valid chars are returned by isValidChar() routine
 // . we use A-Z, 0-9, space, hyphen, apostrophe and \0... that's it
@@ -48,7 +52,7 @@ class StateFrag{
 	char  m_c;
 	bool  m_narrowPhrase;
 	int32_t  m_numNarrowPhrases;
-	char  m_narrowPhrases[MAX_NARROW_SEARCHES][MAX_FRAG_SIZE];
+	//char  m_narrowPhrases[MAX_NARROW_SEARCHES][MAX_FRAG_SIZE];
 };
 
 
@@ -99,10 +103,10 @@ class Speller {
 	bool findNext( char *s, char *send, char **nextWord, bool *isPorn,
 			unsigned char langId, int32_t encodeType );
 
-	int32_t checkDict ( char *s, int32_t slen, char encodeType, 
-			 unsigned char lang = langEnglish ){
-		return m_language[lang].checkDict(s,slen,encodeType);
-	}
+//	int32_t checkDict ( char *s, int32_t slen, char encodeType,
+//			 unsigned char lang = langEnglish ){
+//		return m_language[lang].checkDict(s,slen,encodeType);
+//	}
 
 	// should be same hash algo to make wordId
 	bool isInDict ( uint64_t wordId ) {
@@ -137,11 +141,10 @@ class Speller {
 			int32_t  wplen  [MAX_FRAG_SIZE] ,
 			bool *isstop                   );
 
-	Language m_language[MAX_LANGUAGES];
+//	Language m_language[MAX_LANGUAGES];
 
 	char *getRandomWord() ;
 	bool loadUnifiedDict();
-	bool createUnifiedDict ();
 
 	void dictLookupTest ( char *ff );
 
