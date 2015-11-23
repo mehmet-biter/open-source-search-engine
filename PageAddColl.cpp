@@ -19,6 +19,11 @@ bool sendPageDelColl ( TcpSocket *s , HttpRequest *r ) {
 }
 
 bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
+#ifdef PRIVACORE_SAFE_VERSION
+	g_errno = EBADENGINEER;
+	char *msg = "Function disabled by PRIVACORE_SAFE_VERSION define";
+	return g_httpServer.sendErrorReply(s,g_errno,msg,NULL);
+#else
 	// get collection name
 	//int32_t  nclen;
 	//char *nc   = r->getString ( "nc" , &nclen );
@@ -334,10 +339,15 @@ skip:
 	g_pages.printAdminBottom ( &p );
 	int32_t bufLen = p.length();
 	return g_httpServer.sendDynamicPage (s,p.getBufStart(),bufLen);
+#endif
 }
 
 bool sendPageCloneColl ( TcpSocket *s , HttpRequest *r ) {
-
+#ifdef PRIVACORE_SAFE_VERSION
+        g_errno = EBADENGINEER;
+        char *msg = "Function disabled by PRIVACORE_SAFE_VERSION define";
+        return g_httpServer.sendErrorReply(s,g_errno,msg,NULL);
+#else
 	char format = r->getReplyFormat();
 
 	char *coll = r->getString("c");
@@ -398,7 +408,7 @@ bool sendPageCloneColl ( TcpSocket *s , HttpRequest *r ) {
 	g_pages.printAdminBottom ( &p );
 	int32_t bufLen = p.length();
 	return g_httpServer.sendDynamicPage (s,p.getBufStart(),bufLen);
-
+#endif
 }
 
 
