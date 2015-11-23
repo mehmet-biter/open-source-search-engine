@@ -63,17 +63,6 @@ unsigned char hash8 ( char *s , int32_t len ) {
 	return h;
 }
 
-uint16_t hash16 ( char *s , int32_t len ) {
-	uint16_t h = 0;
-	register int32_t i = 0;
-	while ( i < len ) {
-		h ^= (uint16_t) g_hashtab [(unsigned char)i]
-			[(unsigned char)s[i]];
-		i++;
-	}
-	return h;
-}
-
 uint32_t hash32n ( char *s ) {
 	uint32_t h = 0;
 	register int32_t i = 0;
@@ -177,12 +166,6 @@ uint32_t hash32h ( uint32_t h1 , uint32_t h2 ) {
 uint64_t hash64h ( uint64_t h1 , uint64_t h2 ) {
 	//just a non-inline version
 	return hash64(h1,h2);
-}
-
-void hash2string ( uint64_t h , char *buf ) {
-	//	sprintf(buf, "%016lx", h );
-	sprintf(buf   , "%08"PRIX32, (uint32_t)(h >> 32) );
-	sprintf(buf+10, "%08"PRIX32, (uint32_t)h );
 }
 
 // only utf8 allowed now

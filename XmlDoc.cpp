@@ -10879,7 +10879,6 @@ bool XmlDoc::addGigabits(Words *ww,int64_t docId,Sections *sections,
 			// . Speller::getPopularity() should use this same
 			//   method so we can get popularities of the gigabits!
 			//h = hash32Fast ( wids[j] & 0xffffffff , h );
-			//h = hash64Fast ( wids[j] , h );
 		}
 		// if we added something... skip whole phrase, if any
 		if ( capPhrase ) {
@@ -30472,9 +30471,6 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 		hashSingleTerm ( tau->getBufStart(),tau->length(),&hi);
 	}
 		
-	// use hash of url as score so we can get a # of docs per site est.
-	//uint16_t score = hash16 ( fu->getUrl() , fu->getUrlLen() );
-
 	setStatus ( "hashing inurl colon" );
 
 	//
