@@ -532,9 +532,9 @@ install:
 #	[ -s $@ ] || rm -f $@
 #-include $(SRCS:.cpp=.d)
 
+.PHONY: depend
 depend:
 	@echo "generating dependency information"
-	( $(CXX) -MM $(DEFS) $(DPPFLAGS) *.cpp > Make.depend ) || \
 	$(CXX) -MM $(DEFS) $(DPPFLAGS) *.cpp > Make.depend
 
 -include Make.depend
