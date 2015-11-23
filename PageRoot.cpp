@@ -1851,49 +1851,6 @@ bool sendPageRoot ( TcpSocket *s , HttpRequest *r, char *cookie ) {
 		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno)); 
 	}
 
-
-	// get the collection rec
-	/*
-	CollectionRec *cr = g_collectiondb.getRec ( coll );
-	uint8_t *hp = NULL;
-	int32_t  hpLen;
-	int64_t  docsInColl = -1;
-	if ( ! cr ) {
-		// use the default 
-		Parm *pp = g_parms.getParm ( "hp" );
-		if ( ! pp ) {
-			g_errno = ENOTFOUND;
-			g_msg = " (error: no such collection)";		
-			return g_httpServer.sendErrorReply(s,500,
-							   mstrerror(g_errno));
-		}
-		hp       = (uint8_t*)pp->m_def;
-		if ( hp ) hpLen = uint8strlen ( hp );
-		if ( hpLen <= 0 || ! hp )
-			log(LOG_INFO,"http: No root page html present.");
-	} else {
-		if(cr->m_useLanguagePages) {
-			uint8_t lang = g_langId.guessGBLanguageFromUrl(r->getHost());
-			if(lang && (hp = g_languagePages.getLanguagePage(lang)) != NULL) {
-					hpLen = uint8strlen(hp);
-					// Set sort language as well
-					// This might not be a good idea, as it
-					// overrides any other setting. May be
-					// better to let the user agent string
-					// tell us what the user wants.
-					strcpy(cr->m_defaultSortLanguage,
-							getLanguageAbbr(lang));
-			}
-		}
-		if(!hp) {
-			hp    = (uint8_t*)cr->m_htmlRoot;
-			hpLen = cr->m_htmlRootLen;
-		}
-		//RdbBase *base = getRdbBase ( RDB_CHECKSUMDB , coll );
-		RdbBase *base = getRdbBase ( (uint8_t)RDB_CLUSTERDB , coll );
-		if ( base ) docsInColl = base->getNumGlobalRecs();
-	}
-	*/
 	// print the page out
 	/*
 	expandRootHtml     ( sb, 

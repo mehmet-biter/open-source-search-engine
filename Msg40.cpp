@@ -25,7 +25,7 @@ bool printHttpMime ( class State0 *st ) ;
 
 //static void handleRequest40              ( UdpSlot *slot , int32_t netnice );
 //static void gotExternalReplyWrapper      ( void *state , void *state2 ) ;
-static void gotCacheReplyWrapper         ( void *state );
+//static void gotCacheReplyWrapper         ( void *state );
 static void gotDocIdsWrapper             ( void *state );
 static bool gotSummaryWrapper            ( void *state );
 //static void didTaskWrapper               ( void *state );
@@ -508,15 +508,15 @@ bool Msg40::gotExternalReply ( ) {
 */
 		
 // msg17 calls this after it gets a reply
-void gotCacheReplyWrapper ( void *state ) {
-	Msg40 *THIS = (Msg40 *)state;
-	// reset g_errno, we're just a cache
-	g_errno = 0;
-	// handle the reply
-	if ( ! THIS->gotCacheReply() ) return;
-	// otherwise, call callback
-	THIS->m_callback ( THIS->m_state );
-}
+//void gotCacheReplyWrapper ( void *state ) {
+//	Msg40 *THIS = (Msg40 *)state;
+//	// reset g_errno, we're just a cache
+//	g_errno = 0;
+//	// handle the reply
+//	if ( ! THIS->gotCacheReply() ) return;
+//	// otherwise, call callback
+//	THIS->m_callback ( THIS->m_state );
+//}
 
 bool Msg40::gotCacheReply ( ) {
 	// if not found, get the result the hard way
