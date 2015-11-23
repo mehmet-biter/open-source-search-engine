@@ -175,26 +175,8 @@ uint32_t hash32h ( uint32_t h1 , uint32_t h2 ) {
 }
 
 uint64_t hash64h ( uint64_t h1 , uint64_t h2 ) {
-	// treat the 16 bytes as a string now instead of multiplying them
-	uint64_t h = 0;
-	h ^= g_hashtab [ 0] [ ((unsigned char *)&h1)[0] ] ;
-	h ^= g_hashtab [ 1] [ ((unsigned char *)&h1)[1] ] ;
-	h ^= g_hashtab [ 2] [ ((unsigned char *)&h1)[2] ] ;
-	h ^= g_hashtab [ 3] [ ((unsigned char *)&h1)[3] ] ;
-	h ^= g_hashtab [ 4] [ ((unsigned char *)&h1)[4] ] ;
-	h ^= g_hashtab [ 5] [ ((unsigned char *)&h1)[5] ] ;
-	h ^= g_hashtab [ 6] [ ((unsigned char *)&h1)[6] ] ;
-	h ^= g_hashtab [ 7] [ ((unsigned char *)&h1)[7] ] ;
-
-	h ^= g_hashtab [ 8] [ ((unsigned char *)&h2)[0] ] ;
-	h ^= g_hashtab [ 9] [ ((unsigned char *)&h2)[1] ] ;
-	h ^= g_hashtab [10] [ ((unsigned char *)&h2)[2] ] ;
-	h ^= g_hashtab [11] [ ((unsigned char *)&h2)[3] ] ;
-	h ^= g_hashtab [12] [ ((unsigned char *)&h2)[4] ] ;
-	h ^= g_hashtab [13] [ ((unsigned char *)&h2)[5] ] ;
-	h ^= g_hashtab [14] [ ((unsigned char *)&h2)[6] ] ;
-	h ^= g_hashtab [15] [ ((unsigned char *)&h2)[7] ] ;
-	return h;
+	//just a non-inline version
+	return hash64(h1,h2);
 }
 
 void hash2string ( uint64_t h , char *buf ) {
