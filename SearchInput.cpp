@@ -441,7 +441,8 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 			const char* qlang = r->getString("fx_qlang");
 			if (qlang) {
 				// validate lang
-				if (strlen(qlang) <= 17) {
+				size_t len = strlen(qlang);
+				if (len > 0 && len <= 17) {
 					valid_qlang = true;
 					strcat(content_language_hint, qlang);
 				}
@@ -450,7 +451,8 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 			const char* blang = r->getString("fx_blang");
 			if (blang) {
 				// validate lang
-				if (strlen(blang) <= 17) {
+				size_t len = strlen(blang);
+				if (len > 0 && len <= 17) {
 					if (valid_qlang) {
 						strcat(content_language_hint, ", ");
 					}
