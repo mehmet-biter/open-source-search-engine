@@ -141,25 +141,6 @@ libcld2_full.so:
 
 vclean:
 	rm -f Version.o
-	@echo ""
-	@echo "*****"
-	@echo ""
-	@echo "If make fails on Ubuntu then first run:"
-	@echo ""
-	@echo "sudo apt-get update ; sudo apt-get install make g++ libssl-dev"
-	@echo ""
-	@echo ""
-	@echo "If make fails on RedHat then first run:"
-	@echo ""
-	@echo "sudo yum install gcc-c++"
-	@echo ""
-	@echo ""
-	@echo "If make fails on CentOS then first run:"
-	@echo ""
-	@echo "sudo yum install gcc-c++ openssl-devel"
-	@echo ""
-	@echo "*****"
-	@echo ""
 
 gb: vclean $(OBJS) main.o $(LIBFILES)
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ main.o $(OBJS) $(LIBS)
