@@ -71,15 +71,18 @@ inline char getUtf8CharSize2 ( uint8_t *p ) {
 	return 1;
 }
 
-// Code Points          1st Byte    2nd Byte    3rd Byte    4th Byte
-// U+0000..U+007F       00..7F
-// U+0080..U+07FF       C2..DF      80..BF
-// U+0800..U+0FFF       E0          A0..BF      80..BF
-// U+1000..U+FFFF       E1..EF      80..BF      80..BF
-// U+10000..U+3FFFF     F0          90..BF      80..BF      80..BF
-// U+40000..U+FFFFF     F1..F3      80..BF      80..BF      80..BF
-// U+100000..U+10FFFF   F4          80..8F      80..BF      80..BF
-
+// Valid UTF-8 code points
+// +--------------------+----------+----------+----------+----------+
+// | Code Points        | 1st Byte | 2nd Byte | 3rd Byte | 4th Byte |
+// +--------------------+----------+----------+----------+----------+
+// | U+0000..U+007F     | 00..7F   |          |          |          |
+// | U+0080..U+07FF     | C2..DF   | 80..BF   |          |          |
+// | U+0800..U+0FFF     | E0       | A0..BF   | 80..BF   |          |
+// | U+1000..U+FFFF     | E1..EF   | 80..BF   | 80..BF   |          |
+// | U+10000..U+3FFFF   | F0       | 90..BF   | 80..BF   | 80..BF   |
+// | U+40000..U+FFFFF   | F1..F3   | 80..BF   | 80..BF   | 80..BF   |
+// | U+100000..U+10FFFF | F4       | 80..8F   | 80..BF   | 80..BF   |
+// +--------------------+----------+----------+----------+----------+
 bool inline isValidUtf8Char(const char *s) {
 	const uint8_t *u = (uint8_t*)s;
 
@@ -122,6 +125,55 @@ bool inline isValidUtf8Char(const char *s) {
 	return false;
 }
 
+// Refer to:
+// http://www.unicode.org/charts/
+// http://www.unicode.org/Public/UNIDATA/Blocks.txt
+
+// Emoji & Pictographs
+// 2600–26FF: Miscellaneous Symbols
+// 2700–27BF: Dingbats
+// 1F300–1F5FF: Miscellaneous Symbols and Pictographs
+// 1F600–1F64F: Emoticons
+// 1F650–1F67F: Ornamental Dingbats
+// 1F680–1F6FF: Transport and Map Symbols
+// 1F900–1F9FF: Supplemental Symbols and Pictographs
+
+// Game Symbols
+// 1F000–1F02F: Mahjong Tiles
+// 1F030–1F09F: Domino Tiles
+// 1F0A0–1F0FF: Playing Cards
+
+// +--------------------+----------+----------+----------+----------+
+// | Code Points        | 1st Byte | 2nd Byte | 3rd Byte | 4th Byte |
+// +--------------------+----------+----------+----------+----------+
+// | U+2600..U+27BF     | E2       | 98..9E   | 80..BF   |          |
+// | U+1F000..U+1F0FF   | F0       | 9F       | 80..83   | 80..BF   |
+// | U+1F300..U+1F6FF   | F0       | 9F       | 8C..98   | 80..BF   |
+// | U+1F900..U+1F9FF   | F0       | 9F       | A4..A7   | 80..BF   |
+// +--------------------+----------+----------+----------+----------+
+bool inline isUtf8UnwantedSymbols(const char *s) {
+	const uint8_t *u = (uint8_t*)s;
+
+	if (u[0] == 0xE2) { // U+2600..U+27BF
+		if ((u[1] >= 0x98 && u[1] <= 0x9E) &&
+		    (u[2] >= 0x80 && u[2] <= 0xBF)) {
+		    return true;
+		}
+	} else if (u[0] == 0xF0 && u[1] == 0x9F) {
+		if ((u[2] >= 0x80 && u[2] <= 0x83) &&
+		    (u[3] >= 0x80 && u[3] <= 0xBF)) { // U+1F000..U+1F0FF
+		    return true;
+		} else if ((u[2] >= 0x8C && u[2] <= 0x98) &&
+		           (u[3] >= 0x80 && u[3] <= 0xBF)) { // U+1F300..U+1F6FF
+			return true;
+		} else if ((u[2] >= 0xA4 && u[2] <= 0xA7) &&
+		           (u[3] >= 0x80 && u[3] <= 0xBF)) { // U+1F900..U+1F9FF
+			return true;
+		}
+	}
+
+	return false;
+}
 
 // utf8 bytes. up to 4 bytes in a char:
 // 0xxxxxxx
