@@ -1948,7 +1948,9 @@ bool Process::saveBlockingFiles1 ( ) {
 
 bool Process::saveBlockingFiles2 ( ) {
 	// never if in read only mode
-	if ( g_conf.m_readOnlyMode ) return true;
+	if ( g_conf.m_readOnlyMode ) {
+		return true;
+	}
 
 	// the spider dup request cache
 	//g_spiderCache.m_dupCache.save( false ); // use threads?
@@ -1960,14 +1962,16 @@ bool Process::saveBlockingFiles2 ( ) {
 	//g_templateTable.save( g_hostdb.m_dir , "turkedtemplates.dat" );
 
 	// the robots.txt cache
-        Msg13::getHttpCacheRobots()->save( false ); // use threads?
+	Msg13::getHttpCacheRobots()->save( false ); // use threads?
 
-        // save our caches
-        for ( int32_t i = 0; i < MAX_GENERIC_CACHES; i++ ) {
-                if ( g_genericCache[i].useDisk() )
+	// save our caches
+	for ( int32_t i = 0; i < MAX_GENERIC_CACHES; i++ ) {
+		if ( g_genericCache[i].useDisk() ) {
 			// do not use threads
 			g_genericCache[i].save( false );
-        }
+		}
+	}
+
 	// save dead wait cache
 	//if ( g_deadWaitCache.useDisk     () ) 
 	//	g_deadWaitCache    .save ();
@@ -1975,15 +1979,19 @@ bool Process::saveBlockingFiles2 ( ) {
 	//	g_forcedCache      .save ( false ); // use threads?
 	//if ( g_alreadyAddedCache.useDisk () ) 
 	//	g_alreadyAddedCache.save ( false ); // use threads?
-        // save dns caches
-        RdbCache *c ;
-	c = g_dns.getCache();
-        if ( c->useDisk() ) c->save( false ); // use threads?
+
+	// save dns caches
+	RdbCache *c = g_dns.getCache();
+	if (c && c->useDisk()) {
+		c->save( false ); // use threads?
+	}
+
 	// save quota cache
 	//c = &g_qtable;
         //if ( c->useDisk() ) c->save( false ); // use threads?
 	// save current spidering process, "spiderrestore.dat"
 	//g_spiderLoop.saveCurrentSpidering();
+
 	// save autoban stuff
 	g_autoBan.save();
 
@@ -1991,7 +1999,7 @@ bool Process::saveBlockingFiles2 ( ) {
 	// i.e. file offsets
 	saveImportStates();
 
-        // this one too
+	// this one too
 	//      g_classifier.save();
         //g_siteBonus.save();
 	// save state for top docs
