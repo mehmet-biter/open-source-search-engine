@@ -27,7 +27,6 @@
 //#include "Synonyms.h"
 //#include "Weights.h"
 #include "Xml.h"
-#include "LangList.h"
 #include "SafeBuf.h"
 #include "Images.h"
 #include "Sections.h"

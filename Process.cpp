@@ -31,7 +31,6 @@
 #include "Spider.h"
 #include "Profiler.h"
 //#include "PageNetTest.h"
-#include "LangList.h"
 #include "AutoBan.h"
 //#include "SiteBonus.h"
 #include "Msg4.h"
@@ -2043,7 +2042,6 @@ void Process::resetAll ( ) {
 	g_ucCombiningClass.reset();
 	g_ucScripts       .reset();
 	g_profiler        .reset();
-	g_langList        .reset();
 	g_autoBan         .reset();
 	//g_qtable          .reset();
 	//g_pageTopDocs     .destruct();

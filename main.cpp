@@ -3010,7 +3010,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! g_wiktionary.test() ) return 1;
 	if ( ! g_wiki.load() ) return 1;
 	if ( ! g_speller.init() && g_conf.m_isLive ) return 1;
-	if ( ! g_langList.loadLists ( ) ) log("init: loadLists Failed");
 	if ( ! loadQueryLog() ) return 1;
 	return 0;
 	*/
@@ -3438,13 +3437,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 	*/
-
-	// load language lists
-	if ( !g_langList.loadLists ( ) ) {
-		log("init: LangList loadLists Failed" );
-		//not really fatal, so carry on.
-		//return 1;
-	}
 
 	// the query log split. only for seo tools, so only do if
 	// we are running in Matt Wells's datacenter.
@@ -6127,7 +6119,6 @@ void resetAll ( ) {
 	g_pageNetTest.destructor();
 	resetDecompTables();
 	resetCompositionTable();
-	g_langList.reset();
 	g_autoBan.reset();
 	resetPageAddUrl();
 	resetHttpMime();

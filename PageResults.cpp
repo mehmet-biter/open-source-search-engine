@@ -20,7 +20,6 @@
 #include "sort.h"
 #include "LanguageIdentifier.h"
 #include "LanguagePages.h"
-#include "LangList.h"
 #include "CountryCode.h"
 #include "Unicode.h"
 #include "XmlDoc.h" // GigabitInfo class

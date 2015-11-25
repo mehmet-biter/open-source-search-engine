@@ -3,7 +3,6 @@
 
 #include "gb-include.h"
 #include "LanguageIdentifier.h"
-#include "LangList.h"
 #include "Tagdb.h"
 #include "Speller.h"
 #include "CountryCode.h"
