@@ -1447,8 +1447,10 @@ bool RdbCache::save ( bool useThreads ) {
 }
 
 void threadDoneWrapper ( void *state , ThreadEntry *te ) {
-	RdbCache *THIS = (RdbCache *)state;
-	THIS->threadDone ( );
+	if (state) {
+		RdbCache *THIS = (RdbCache *)state;
+		THIS->threadDone ( );
+	}
 }
 
 void RdbCache::threadDone ( ) {
