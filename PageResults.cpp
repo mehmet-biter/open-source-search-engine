@@ -4,7 +4,6 @@
 //#include "CollectionRec.h"
 #include "Stats.h"
 #include "Statsdb.h"
-#include "Ads.h"
 #include "Query.h"
 #include "Speller.h"
 #include "Msg40.h"

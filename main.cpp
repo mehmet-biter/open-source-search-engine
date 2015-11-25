@@ -75,7 +75,6 @@
 #include "linkspam.h"
 #include "Process.h"
 #include "sort.h"
-#include "Ads.h"
 #include "RdbBuckets.h"
 #include "Placedb.h"
 #include "Test.h"
