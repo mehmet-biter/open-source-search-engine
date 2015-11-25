@@ -18,8 +18,8 @@ def gb(request):
     # verify gb is running
     try:
         requests.get('http://' + gb_config.host + ':' + gb_config.port)
-    except requests.exceptions.ConnectionError as e:
-        pytest.fail(msg=e)
+    except requests.exceptions.ConnectionError:
+        pytest.skip('Gigablast instance down')
 
     def finalize():
         pass

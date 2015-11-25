@@ -35,9 +35,13 @@ LIBS += -L$(BASE_DIR) -lcld2_full
 $(TARGET): libgtest.so libgb.a $(BASE_DIR)/libcld2_full.so $(OBJECTS)
 	$(CXX) $(CPPFLAGS) $(OBJECTS) $(LIBS) -o $@
 
+.PHONY: check
+check: TARGET_PRE="valgrind"
+check: test
+
 .PHONY: test
 test: all ucdata
-	./$(TARGET) $(TEST_ARGS)
+	$(TARGET_PRE) ./$(TARGET) $(TEST_ARGS)
 
 .PHONY: clean
 clean:
