@@ -14,7 +14,6 @@
 #include "Query.h"        // MAX_QUERY_LEN
 #include "SafeBuf.h"
 #include "LanguageIdentifier.h"
-#include "LanguagePages.h"
 #include "Users.h"
 #include "Proxy.h"
 

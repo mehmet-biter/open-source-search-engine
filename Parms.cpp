@@ -24,7 +24,6 @@
 #include "Process.h"
 #include "Repair.h"
 #include "Ads.h"
-#include "LanguagePages.h"
 #include "PingServer.h"
 #include "Users.h"
 #include "Proxy.h"
@@ -810,11 +809,6 @@ bool CommandSaveAndExit ( char *rec ) {
 bool CommandUrgentSaveAndExit ( char *rec ) {
 	// "true" means urgent
 	g_process.shutdown ( true );
-	return true;
-}
-
-bool CommandReloadLanguagePages ( char *rec ) {
-	g_languagePages.reloadPages();
 	return true;
 }
 
@@ -11724,13 +11718,6 @@ void Parms::init ( ) {
 	m++;
 
 	/*
-	m->m_title = "reload language pages";
-	m->m_desc  = "Reloads language specific pages.";
-	m->m_cgi   = "rlpages";
-	m->m_type  = TYPE_CMD;
-	m->m_func  = CommandReloadLanguagePages;
-	m->m_cast  = 0;
-	m++;
 
 	m->m_title = "proxy port";
 	m->m_desc  = "Retrieve pages from the proxy on "

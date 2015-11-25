@@ -60,7 +60,6 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Abbreviations.o \
 	RequestTable.o TuringTest.o Msg51.o \
 	Msg40.o Msg4.o SpiderProxy.o \
-	LanguagePages.o \
 	Statsdb.o PageStatsdb.o \
 	PostQueryRerank.o Msge0.o Msge1.o \
 	CountryCode.o DailyMerge.o CatRec.o Tagdb.o \

@@ -76,7 +76,6 @@
 #include "Process.h"
 #include "sort.h"
 #include "Ads.h"
-#include "LanguagePages.h"
 #include "RdbBuckets.h"
 #include "Placedb.h"
 #include "Test.h"
@@ -2578,9 +2577,6 @@ int main2 ( int argc , char *argv[] ) {
 	// log how much mem we can use
 	//log(LOG_INIT,"conf: Max mem allowed to use is %"INT64"\n",
 	//g_conf.m_maxMem);
-
-	// load the language specific pages
-	g_languagePages.reloadPages();
 
 	// init the loop, needs g_conf
 	if ( ! g_loop.init() ) {
