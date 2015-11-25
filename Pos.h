@@ -20,7 +20,6 @@ class Pos {
 	void reset();
 
 	bool set    ( class Words  *words   ,
-		      class Sections *sections ,
 		      char         *f      = NULL ,
 		      char         *fend   = NULL ,
 		      int32_t         *flen   = NULL ,
@@ -33,12 +32,11 @@ class Pos {
 	// . filter out xml words [a,b] into plain text, stores into "p"
 	// . will not exceed "pend"
 	// . returns number of BYTES stored into "p"
-	int32_t filter ( char         *p     ,
+	int32_t filter (char         *p     ,
 		      char         *pend  ,
 		      class Words  *words ,
 		      int32_t          a     =  0 ,
-		      int32_t          b     = -1 ,
-		      class Sections *sections = NULL );
+		      int32_t          b     = -1 );
 
 	int32_t getMemUsed () { return m_bufSize; };
 

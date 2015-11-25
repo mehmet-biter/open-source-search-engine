@@ -429,7 +429,6 @@ bool Summary::set2 ( Xml      *xml                ,
 		// who is the winning match?
 		maxm = &matches->m_matches[maxi];
 		Words         *ww      = maxm->m_words;
-		Sections      *ss      = maxm->m_sections;
 		// we now use "m_swbits" for the summary bits since they are
 		// of size sizeof(swbit_t), a int16_t at this point
 		swbit_t       *bb      = maxm->m_bits->m_swbits;
@@ -494,7 +493,7 @@ bool Summary::set2 ( Xml      *xml                ,
 		// . removes back to back spaces
 		// . converts html entities
 		// . filters in stores words in [a,b) interval
-		int32_t len = pos->filter(p, pend, ww, maxa, maxb, ss);
+		int32_t len = pos->filter(p, pend, ww, maxa, maxb);
 
 		// break out if did not fit
 		if ( len == 0 ) break;
@@ -581,9 +580,9 @@ bool Summary::set2 ( Xml      *xml                ,
 		Sections *ss;
 		// get it from the summary
 		if      ( matches->getMatchGroup(MF_METASUMM ,&wp,&pp,&ss) )
-			p += pp->filter(p,pend, wp, 0, wp->m_numWords, ss );
+			p += pp->filter(p,pend, wp, 0, wp->m_numWords );
 		else if ( matches->getMatchGroup(MF_METADESC,&wp,&pp,&ss) )
-			p += pp->filter(p,pend, wp, 0, wp->m_numWords, ss );
+			p += pp->filter(p,pend, wp, 0, wp->m_numWords );
 		if ( p != m_summary ){
 			m_summaryExcerptLen[0] = p - m_summary;
 			m_numExcerpts = 1;
@@ -1037,28 +1036,31 @@ bool Summary::getDefaultSummary ( Xml    *xml,
 		return true;
 	}
 
-	bool inTitle  = false;
-	//bool inHeader = false;
-	bool inTable  = false;
-	bool inList   = false;
 	bool inLink   = false;
-	bool inStyle  = false;
-	int scoreMult = 1;
 	char *pend = m_summary + maxSummaryLen - 2;
 	int32_t start = -1,  numConsecutive = 0;
-	int32_t bestStart = -1, bestEnd = -1, longestConsecutive = 0;
+	int32_t bestStart = -1;
+	int32_t bestEnd = -1;
+	int32_t longestConsecutive = 0;
 	int32_t lastAlnum = -1;
 	// google seems to index SEC_MARQUEE, so i took that out of here
 	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_TITLE;
 	// int16_tcut
 	nodeid_t  *tids = words->m_tagIds;
 	int64_t *wids = words->getWordIds();
+
 	// get the section ptr array 1-1 with the words, "sp"
 	Section **sp = NULL;
-	if ( sections ) sp = sections->m_sectionPtrs;
+	if ( sections ) {
+		sp = sections->m_sectionPtrs;
+	}
+
 	for (int32_t i = 0;i < words->getNumWords(); i++){
 		// skip if in bad section
-		if ( sp && (sp[i]->m_flags & badFlags) ) continue;
+		if ( sp && (sp[i]->m_flags & badFlags) ) {
+			continue;
+		}
+
 		if (start > 0 && bestStart == start &&
 		    ( words->m_words[i] - words->m_words[start] ) >= 
 		    ( maxSummaryLen - 8 )){
@@ -1068,9 +1070,9 @@ bool Summary::getDefaultSummary ( Xml    *xml,
 			break;
 		}
 		if (words->isAlnum(i) ) {
-		//    (scores->getScore(i) * scoreMult) > 0){
-			if (!inLink)
+			if (!inLink) {
 				numConsecutive++;
+			}
 			lastAlnum = i;
 			if (start < 0) start = i;
 			continue;
@@ -1079,34 +1081,27 @@ bool Summary::getDefaultSummary ( Xml    *xml,
 		// we gotta tag?
 		if ( tid ) {
 			// ignore <p> tags
-			if ( tid == TAG_P ) continue; 
+			if ( tid == TAG_P ) {
+				continue;
+			}
+
 			// is it a front tag?
 			if ( tid && ! (tids[i] & BACKBIT) ) {
-				if ( tid == TAG_STYLE )
-					inStyle = true;
-				else if ( tid == TAG_TITLE ) 
-					inTitle = true;
-				else if ( tid == TAG_OL || tid == TAG_UL )
-					inList = true;
-				else if ( tid == TAG_A )
+				if ( tid == TAG_A ) {
 					inLink = true;
+				}
 			}
 			else if ( tid ) {
-				if ( tid == TAG_STYLE )
-					inStyle = false;
-				else if ( tid == TAG_TITLE ) 
-					inTitle = false;
-				else if ( tid == TAG_OL || tid == TAG_UL )
-					inList = false;
-				else if ( tid == TAG_A )
+				if ( tid == TAG_A ) {
 					inLink = false;
+				}
 			}
-			if (inTitle||inList||inTable||inStyle) scoreMult = -1;
-			else                                   scoreMult =  1;
+
 			if ( ! isBreakingTagId(tid) )	
 				continue;
+		} else if ( ! wids[i] ) {
+			continue;
 		}
-		else if ( ! wids[i] ) continue;
 			
 		// end of consecutive words
 		if ( numConsecutive > longestConsecutive ) {
@@ -1118,10 +1113,7 @@ bool Summary::getDefaultSummary ( Xml    *xml,
 		numConsecutive = 0;
 	}
 	if (bestStart >= 0 && bestEnd > bestStart){
-		int32_t len = pos->filter(p, pend-10, words, 
-				       bestStart, 
-				       bestEnd, 
-				       sections);//cores);
+		int32_t len = pos->filter(p, pend-10, words, bestStart, bestEnd);
 		p += len;
 		if ( len > 0 && p + 3 + 2 < pend ){
 			// space first?

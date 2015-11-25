@@ -12370,7 +12370,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	t = gettimeofdayInMilliseconds_force();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		//if ( ! words.set ( &xml , true , true ) )
-		if ( ! pos.set ( &words , NULL ) )
+		if ( ! pos.set ( &words ) )
 			return log("build: speedtestxml: pos set: %s",
 				   mstrerror(g_errno));
 	// print time it took

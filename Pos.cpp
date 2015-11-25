@@ -20,10 +20,9 @@ void Pos::reset() {
 
 // . the interval is half-open [a,b)
 // . do not print out any alnum word with negative score
-int32_t Pos::filter( char *p, char *pend, class Words *words, int32_t a, 
-		  int32_t b, Sections *sections ) {
+int32_t Pos::filter( char *p, char *pend, class Words *words, int32_t a, int32_t b ) {
 	int32_t plen = 0;
-	set ( words , sections , p , pend, &plen , a , b );
+	set ( words , p , pend, &plen , a , b );
 	return plen;
 }
 
@@ -33,12 +32,11 @@ int32_t Pos::filter( char *p, char *pend, class Words *words, int32_t a,
 // . returns false and sets g_errno on error
 // . if f is non-NULL store filtered words into there. back to back spaces
 //   are eliminated.
-bool Pos::set ( Words  *words  ,
-		Sections *sections ,
+bool Pos::set (Words  *words  ,
 		char   *f   ,
 		char   *fend,
 		int32_t   *len ,
-		int32_t    a   , 
+		int32_t    a   ,
 		int32_t    b   ,
 		char   *buf ,
 		int32_t    bufSize ) {

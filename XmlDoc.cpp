@@ -7323,7 +7323,7 @@ Pos *XmlDoc::getPos ( ) {
 	//if ( !sections ||sections==(Sections *)-1) return(Pos *)sections;
 	// now set what we need
 	//if ( ! m_pos.set ( ww , sections ) ) return NULL;
-	if ( ! m_pos.set ( ww , NULL ) ) return NULL;
+	if ( ! m_pos.set ( ww ) ) return NULL;
 	// we got it
 	m_posValid = true;
 	return &m_pos;
@@ -33598,7 +33598,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	if ( p + len + 1 < pend ) {
 		// store it
 		// FILTER the html entities!!
-		int32_t len2 = pos->filter(p,pend,ww,a,b,NULL);//ss);
+		int32_t len2 = pos->filter(p,pend,ww,a,b);
 		// ensure NULL terminated
 		p[len2] = '\0';
 		// store in reply. it will be serialized when sent.
@@ -34012,10 +34012,6 @@ Title *XmlDoc::getTitle ( ) {
 	if ( ! xml || xml == (Xml *)-1 ) return (Title *)xml;
 	Words *ww = getWords();
 	if ( ! ww || ww == (Words *)-1 ) return (Title *)ww;
-	Sections *sections = getSections();
-	if ( ! sections ||sections==(Sections *)-1) return (Title *)sections;
-	Pos *pos = getPos();
-	if ( ! pos || pos == (Pos *)-1 ) return (Title *)pos;
 	Query *q = getQuery();
 	if ( ! q ) return (Title *)q;
 	CollectionRec *cr = getCollRec();
@@ -34026,16 +34022,13 @@ Title *XmlDoc::getTitle ( ) {
 	if ( titleMaxLen > 256 ) titleMaxLen = 256;
 
 	m_titleValid = true;
+
 	if ( ! m_title.setTitle ( this        ,
 				  xml         ,
 				  ww          ,
-				  sections    ,
-				  pos         ,
 				  titleMaxLen ,
 				  0xffff      ,
-				  NULL        ,
 				  q           ,
-				  cr        ,
 				  m_niceness  ) )
 		return NULL;
 	return &m_title;
@@ -34474,7 +34467,7 @@ SafeBuf *XmlDoc::getSampleForGigabits ( ) {
 		int32_t  len = pp[b+1] - pp[a];
 		// if match would send us over, we are done
 		if ( p + len >= pend ) break;
-		len = pos->filter(p,pend,m->m_words,a,b,m->m_sections);
+		len = pos->filter(p,pend,m->m_words,a,b);
 		// for debug (mdw)
 		//log("query: gigabitsample#%"INT32"=%s",i,p);
 		p += len;

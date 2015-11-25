@@ -797,7 +797,7 @@ bool Matches::addMatches ( char      *s         ,
 	if ( ! bp->setForSummary ( wp ) )
 		return false;
 	// position vector
-	if ( ! pb->set ( wp , sp ) )
+	if ( ! pb->set ( wp ) )
 		return false;
 	// record the start
 	int32_t startNumMatches = m_numMatches;

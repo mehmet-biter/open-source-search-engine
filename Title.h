@@ -34,25 +34,21 @@ class Title {
 	// . does not consult words with scores of 0 (unless a meta tag)
 	// . maxTitleChars is in chars (a utf16 char is 2 bytes or more)
 	// . maxTitleChars of -1 means no max
-	bool setTitle ( class XmlDoc   *xd            ,
+	bool setTitle (class XmlDoc   *xd            ,
 			class Xml      *xml           ,
-			class Words    *words         , 
-			class Sections *sections      ,
-			class Pos      *pos           ,
+			class Words    *words         ,
 			int32_t            maxTitleChars ,
 			int32_t            maxTitleWords ,
-			SafeBuf *pbuf,
-			Query          *q , // = NULL,
-			CollectionRec  *cr , // = NULL ,
+			Query          *q , // = NULL ,
 			int32_t niceness );
 
 
-	char *getTitle     ( ) { return m_title; };
-	int32_t  getTitleLen ( ) { return m_titleBytes; }; // does NOT include \0
+	char *getTitle     ( ) { return m_title; }
+	int32_t  getTitleLen ( ) { return m_titleBytes; } // does NOT include \0
 
 
-	bool copyTitle ( class Words *words, class Pos *pos,
-			 int32_t  t0, int32_t  t1 , class Sections *sections );
+	bool copyTitle (class Words *words,
+			 int32_t  t0, int32_t  t1 );
 
 	//int32_t getTitleScore( Words *w, int32_t t0, int32_t t1, int32_t *numFoundQTerms,
 	//		    int32_t *alphaWordCount = NULL );
@@ -72,25 +68,19 @@ class Title {
 	// For weighting title scores with query terms
 	Query *m_query;
 
-
 	int32_t  m_maxTitleChars;
-	int32_t  m_maxTitleWords;
 
 	int32_t m_titleTagStart ;
 	int32_t m_titleTagEnd   ;
 
  private:
 
-	bool setTitle4 ( class XmlDoc   *xd            ,
+	bool setTitle4 (class XmlDoc   *xd            ,
 			 class Xml      *xml           ,
-			 class Words    *words         , 
-			 class Sections *sections      , 
-			 class Pos      *pos           ,
+			 class Words    *words         ,
 			 int32_t            maxTitleChars ,
 			 int32_t            maxTitleWords ,
-			 SafeBuf        *pbuf          ,
-			 Query          *q             ,
-			 CollectionRec  *cr            );
+			 Query          *q             );
 
 };
 
