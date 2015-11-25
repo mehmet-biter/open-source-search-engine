@@ -1586,16 +1586,18 @@ void HttpRequest::parseFieldsMultipart ( char *s , int32_t slen ) {
 
 }
 
-#include "Facebook.h"
-
 // . the url being reuqested
 // . removes &code= facebook cruft
 bool HttpRequest::getCurrentUrl ( SafeBuf &cu ) {
 	// makre sure we got enough room
 	if ( ! cu.reserve ( m_hostLen + 64 + m_plen + 1 + 1 ) ) return false;
+
 	// need a "Host: "
 	char *host = m_host;
-	if ( ! host ) host = APPSUBDOMAIN;
+	if ( ! host ) {
+		host = "www.eventguru.com";
+	}
+
 	cu.safePrintf("http");
 	if ( m_isSSL ) cu.pushChar('s');
 	cu.safePrintf("://%s",host);

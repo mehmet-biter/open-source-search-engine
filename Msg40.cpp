@@ -11,7 +11,6 @@
 #include "sort.h"
 #include "matches2.h"
 #include "XmlDoc.h" // computeSimilarity()
-//#include "Facebook.h" // msgfb
 #include "Speller.h"
 #include "Wiki.h"
 #include "HttpServer.h"

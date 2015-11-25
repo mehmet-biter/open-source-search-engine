@@ -32,12 +32,8 @@
 #include "Test.h"
 #include "Synonyms.h"
 //#include "Revdb.h"
-#ifdef _USETURKS_
-//#include "PageTurk.h"
-#endif
 #include "PageInject.h"
 #include "HttpServer.h"
-#include "Facebook.h"
 #include "Posdb.h"
 #include "Highlight.h"
 #include "Wiktionary.h"
@@ -7587,11 +7583,6 @@ Sections *XmlDoc::getSections ( ) {
 	// get the sections without implied sections
 	Sections *ss = getImpliedSections();
 	if ( ! ss || ss==(void *)-1) return (Sections *)ss;
-
-	// hash the turk votes (each vote maps a contenthash or taghash to
-	// a value) and use these to set sections sentence flags, etc.
-	//HashTableX *tvt = getTurkVotingTable ();
-	//if ( ! tvt || tvt == (void *)-1 ) return (Sections *)tvt;
 
 	// returns NULL if our url is root!
 	//HashTableX *rvt = getRootVotingTable();
@@ -40236,11 +40227,6 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	// get comma separated list of email address on page
 	char *emails = getEmailBuf ( );
 	if ( ! emails || emails == (void *)-1 ) return (SafeBuf *)emails;
-
-#ifdef _USETURKS_
-	//HashTableX *tvt = getTurkVotingTable ();
-	//if ( ! tvt || tvt == (void *)-1 ) return (SafeBuf *)tvt;
-#endif
 
 	//
 	// init stuff

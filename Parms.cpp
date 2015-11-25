@@ -18536,20 +18536,6 @@ void Parms::init ( ) {
 	m->m_group = 0;
 	m->m_priv  = 2;
 	m++;
-
-	m->m_title = "turk tags to display";
-	m->m_desc  = "Tell pageturk to display the tag questions "
-	             "for the comma seperated tag names."
-		     " no space allowed.";
-        m->m_cgi   = "ttags";
-	m->m_xml   = "turkTags";
-	m->m_type  = TYPE_STRING;
-	m->m_size  = 256;
-	m->m_def   = "blog,spam,news";
-	m->m_off   = (char *)&cr.m_turkTags - x;
-	m->m_group = 0;
-	m->m_priv  = 2;
-	m++;
 	*/
 
 	/*
@@ -19254,9 +19240,7 @@ void Parms::init ( ) {
 		"<br>"
 		" Ex: 1. master user -> *:*:master:master:1:*:english<br>"
 		" 2. public user -> *:*:public:1234:0:index.html"
-		",get,search,login,dir:english<br>"
-		"3. turk user ->  66.28.58.122:main:turk:1234:0:pageturkhome,"
-		"pageturk,pageturkget,get,login:english";
+		",get,search,login,dir:english<br>";
 	m->m_cgi = "users";
 	m->m_xml = "users";
 	m->m_off = (char *)&g_conf.m_users - g;

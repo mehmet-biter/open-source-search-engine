@@ -3343,10 +3343,6 @@ int main2 ( int argc , char *argv[] ) {
 	//   the wrong data files.
 	//if ( ! checkDataParity() ) return 1;
 
-	// init pageturk
-	//if ( ! g_pageTurk.init()  ){
-	//	log("db: PageTurk init failed. "); return 1;}
-
 	// init the vector cache
 	/*
 	if ( ! g_vectorCache.init ( g_conf.m_maxVectorCacheMem,
@@ -5731,8 +5727,7 @@ bool registerMsgHandlers1(){
 
 	if ( ! Msg22::registerHandler() ) return false;
 	//Msg2e msg2e;    if ( ! msg2e.registerHandler () ) return false;
-	// msg hanlder for pageturk
-	//Msg60 msg60;    if ( ! msg60.registerHandler () ) return false;
+
 	return true;
 }
 

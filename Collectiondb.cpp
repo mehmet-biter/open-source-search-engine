@@ -1075,8 +1075,6 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 	return true;
 }
 
-//#include "PageTurk.h"
-
 /*
 // . reset a collection
 // . returns false if blocked and will call callback

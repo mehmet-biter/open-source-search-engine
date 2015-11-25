@@ -7,7 +7,6 @@
 //#include "Thesaurus.h" // SynonymLinkGroup structure
 #include "PostQueryRerank.h" // for ComTopInDmozRec
 //#include "DateParse.h" // TimeZoneInfo structure
-//#include "PageTurk.h" // TurkUserState structure
 #include "types.h"
 
 template<class Key_t, class Val_t> 
@@ -553,7 +552,6 @@ template class HashTableT<int32_t,uint64_t>;
 template class HashTableT<uint32_t, char>;
 template class HashTableT<uint64_t, bool>;
 //template class HashTableT<uint32_t, int32_t>;
-//template class HashTableT<int32_t, TurkUserState>;
 template class HashTableT<int32_t, float>;
 //template class HashTableT<uint64_t,SiteRec>;
 //#include "Spider.h"
