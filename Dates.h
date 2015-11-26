@@ -10,10 +10,6 @@
 time_t getYearMonthStart ( int32_t y , int32_t m ) ;
 time_t getDOWStart ( int32_t y , int32_t m, int32_t dowArg, int32_t count ) ;
 int32_t getNumDaysInMonth ( int32_t month , int32_t year ) ; // leap year?
-// dow is 0 to 6
-char *getDOWName ( int32_t dow ) ;
-// month is 0 to 11
-char *getMonthName ( int32_t month ) ;
 
 
 typedef int64_t dateflags_t;
@@ -396,15 +392,6 @@ public:
 	void printText2 ( class SafeBuf *sb , class Words *words ,
 			 bool inHtml = true ) ;
 
-	bool printTextNorm ( class SafeBuf *sb , class Words *words ,
-			     bool inHtml = true , class Event *ev = NULL ,
-			     class SafeBuf *intbuf = NULL ) ;
-
-	bool printTextNorm2 ( class SafeBuf *sb , class Words *words ,
-			      bool inHtml = true , class Event *ev = NULL ,
-			      class SafeBuf *intbuf = NULL ) ;
-
-
 	void print ( class SafeBuf  *sb       ,
 		     class Sections *ss       ,
 		     class Words    *ww       ,
@@ -417,17 +404,6 @@ public:
 
 	bool addDoNotPrintDates ( class HashTableX *dnp );
 	bool addDoNotPrintRecursive ( datetype_t dt , class HashTableX *dnp ) ;
-	//int32_t getTextOffset ( int32_t num , int32_t *retEndOff, class Words *words);
-
-	// . is part of our compound date in this section?
-	// . flag which date types are in "si" and return that
-	// . used by Events.cpp to set EventDesc::m_flags so we
-	//   can show that in the summary on the search results
-	//   page.
-	//datetype_t getDateTypesInSection ( class Section *si );
-
-	//bool printNormalized2 ( class SafeBuf *sb , int32_t nicess ,
-	//			class Words *words );
 };
 
 
@@ -629,18 +605,7 @@ public:
 	SafeBuf m_cbuf;
 
 	int32_t getDateNum ( class Date *di ) ;
-	int32_t printDateNeighborhood ( class Date *di , class Words *w ) ;
 	bool printDates ( class SafeBuf *sb ) ;
-	int32_t printDates2 ( ) ;
-	// gdb can call this one:
-	int32_t print ( class Date *d );
-
-	bool getDateOffsets ( Date *date ,
-			      int32_t  num , 
-			      int32_t *dateStartOff ,
-			      int32_t *dateEndOff   ,
-			      int32_t *dateSentStartOff ,
-			      int32_t *dateSentEndOff ) ;
 
 	// returns false and sets g_errno on error
 	int32_t parseTimeOfDay3 ( class Words *w                 ,

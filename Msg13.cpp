@@ -47,12 +47,7 @@ static void gotHttpReply2 ( void *state ,
 static void passOnReply     ( void *state , UdpSlot *slot ) ;
 
 bool hasIframe           ( char *reply, int32_t replySize , int32_t niceness );
-int32_t hasGoodDates        ( char *content, 
-			   int32_t contentLen, 
-			   Xml *xml, 
-			   Words *words,
-			   char ctype,
-			   int32_t niceness );
+
 char getContentTypeQuick ( HttpMime *mime, char *reply, int32_t replySize , 
 			   int32_t niceness ) ;
 int32_t convertIntoLinks    ( char *reply, int32_t replySize , Xml *xml , 
@@ -149,18 +144,6 @@ bool Msg13::getDoc ( Msg13Request *r,
 
 	// reset in case we are being reused
 	reset();
-	
-	/*
-	char buf[1024];
-	char *s = "<td class=\"smallfont\" align=\"right\">November 14th, 2011 10:06 AM</td>\r\n\t\t";
-	strcpy(buf,s);
-	Xml xml;
-	int32_t status = hasGoodDates ( buf ,
-				     gbstrlen(buf),
-				     &xml , 
-				     CT_HTML,
-				     0 );
-	*/
 
 	// set these even though we are not doing events, so we can use
 	// the event spider proxies on scproxy3
@@ -2541,138 +2524,6 @@ bool hasIframe ( char *reply, int32_t replySize , int32_t niceness ) {
 		return true;
 	}
 	return false;
-}
-
-// . returns -1 with g_errno set on error
-// . returns 0 if has no future date
-// . returns 1 if does have future date
-// . TODO: for each street/city/state address, whether it is inlined or not,
-//   look it up in zak's db that has all the street names and their city/state.
-//   if it's in there then set AF_VERIFIED_STREET i guess...
-int32_t hasGoodDates ( char *content ,
-		    int32_t  contentLen , 
-		    Xml *xml , 
-		    Words *words,
-		    char ctype ,
-		    int32_t niceness ) {
-	// now scan the text nodes for dates i guess...
-	Dates dates;
-	if ( ! dates.parseDates ( words ,
-				  DF_FROM_BODY ,
-				  NULL , // bits
-				  NULL , // sections
-				  niceness ,
-				  NULL ,
-				  ctype ) )
-		return -1;
-	// get the current year/month/etc in utc
-	time_t now = getTimeLocal();
-	struct tm *timeStruct = gmtime ( &now );
-	int32_t year = 1900 + timeStruct->tm_year;
-	// day of month. starts at 1.
-	int32_t day  = timeStruct->tm_mday;
-	// 0 is january. but we use 1 for january in Dates.cpp, so add 1.
-	int32_t month = timeStruct->tm_mon + 1;
-
-	bool gotTOD      = false;
-	bool gotMonthDow = false;
-
-	Date *d1 = NULL;
-	Date *d2 = NULL;
-
-	// scan the dates we got, looking for certain types
-	for ( int32_t i = 0 ; i < dates.m_numDatePtrs ; i++ ) {
-		// int16_tcut
-		Date *di = dates.m_datePtrs[i];
-		// skip if nuked
-		if ( ! di ) continue;
-		// int16_tcut
-		datetype_t dt = di->m_hasType;
-		// must be a tod month or dow
-		if ( !(dt & (DT_TOD|DT_MONTH|DT_DOW)) ) continue;
-		// get the date's year
-		int32_t diyear = di->m_maxYear;
-		if ( (int32_t)di->m_year <= 0 ) diyear = 0;
-		// if it has a year but it is old, forget it
-		if ( diyear > 0 && diyear < year ) continue;
-		// get the date's month
-		int32_t dimonth = di->m_month;
-		// if has no year but, assuming it was this year, the month
-		// and monthday is over
-		if ( diyear == year && // this year,before or nonr
-		     dimonth == month && // this month
-		     di->m_dayNum > 0 &&
-		     di->m_dayNum <= day ) 
-			continue;
-		// the same, but month is any before
-		if ( diyear == year && 
-		     dimonth > 0 &&
-		     dimonth < month ) continue;
-		// an unknown year (clock detector kinda)
-		if ( diyear == 0 &&
-		     dimonth == month &&
-		     di->m_dayNum > 0 &&
-		     di->m_dayNum <= day )
-			continue;
-		// recently past date PROBABLY...
-		if ( diyear == 0 &&
-		     dimonth > 0 &&
-		     dimonth < month &&
-		     // but more than 3 months back might be referring to
-		     // NEXT YEAR!!! so cap it at that
-		     dimonth > month - 3 )
-			continue;
-		// got one
-		if ( dt & DT_TOD ) {
-			gotTOD = true;
-			if ( ! d1 ) d1 = di;
-		}
-		if ( dt & (DT_MONTH|DT_DOW) ) {
-			gotMonthDow = true;
-			if ( ! d2 ) d2 = di;
-		}
-	}
-	// none found!
-	if ( ! gotTOD      ) return 0;
-	if ( ! gotMonthDow ) return 0;
-
-	Addresses aa;
-	if ( ! aa.set ( NULL     , // sections
-			words    ,
-			NULL     , // bits
-			NULL     , // tag rec
-			NULL     , // url
-			0        , // docid
-			0     , // collnum
-			0        , // domhash32
-			0        , // ip
-			niceness ,
-			NULL     , // pbuf, safebuf
-			NULL     , // state
-			NULL     , // callback
-			ctype    ,
-			NULL     , // siteTitleBuf
-			0        , // siteTitleBufSize
-			NULL     )) // xmldoc ptr
-		// return -1 with g_errno set on error
-		return -1;
-	// scan the addresses
-	for ( int32_t i = 0 ; i < aa.m_am.getNumPtrs() ; i++ ) {
-		// breathe
-                QUICKPOLL(niceness);
-		// get it
-		Address *ad = (Address *)aa.m_am.getPtr(i);
-		// inlined?
-		bool inlined = (ad->m_flags & AF_INLINED);
-		// that is good enough
-		if ( inlined ) return 1;
-		// verified somehow?
-		bool vs  = ( ad->m_flags & AF_VERIFIED_STREET);
-		// that is good too, although how did it get verified?
-		if ( vs ) return 1;
-	}
-	// ok, nothing inlined or verified...
-	return 0;
 }
 
 char getContentTypeQuick ( HttpMime *mime,

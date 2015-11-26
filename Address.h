@@ -67,46 +67,11 @@ public:
 	char *m_name2;
 };
 
-bool printTesterPage ( SafeBuf &sb ) ;
-
 int32_t memcpy2 ( char *dst , char *src , int32_t bytes , bool filterCommas ,
 	       // do not store more than this many bytes into dst
 	       int32_t dstMaxBytes = -1 ) ;
 
-bool getLatLonFromUserInput ( float *radius,
-			      char *where ,
-			      float *cityLat ,
-			      float *cityLon ,
-			      float *stateLat,
-			      float *stateLon,
-			      float *countryLat,
-			      float *countryLon,
-			      //double *radius ,
-			      // if zip code supplied, we set zipLat/zipLon
-			      // to the centroid of the zipcode
-			      float  *zipLat ,
-			      float  *zipLon ,
-			      float  *userLat ,
-			      float  *userLon ,
-			      class PlaceDesc **retCityDesc,
-			      class PlaceDesc **retStateDesc,
-			      class PlaceDesc **retCountryDesc,
-			      char   *timeZone ,
-			      char   *useDST,
-			      // country of search based on ip (two letters)
-			      uint8_t ipCrid,
-			      char   *gbaddressBuf ,
-			      int32_t    gbaddressBufSize );
-
 bool getLatLon ( uint32_t cityId , double *lat , double *lon ) ;
-bool getCityLatLonFromAddrStr ( char *addr , double *lat , double *lon ) ;
-
-uint8_t getCountryIdFromAddrStr ( char *addr ) ;
-
-uint32_t getCityIdFromAddr ( char *addr ) ;
-
-bool getCityLatLonFromAddress ( class Address *aa , double *lat , double *lon);
-bool getZipLatLonFromAddress ( class Address *aa, float *lat, float *lon );
 
 bool hashPlaceName ( HashTableX *nt1,
 		     Words *words,
@@ -114,7 +79,6 @@ bool hashPlaceName ( HashTableX *nt1,
 		     int32_t b ,
 		     uint64_t v ) ;
 
-class Place *getZipPlace   ( int32_t a , int32_t alnumPos , class Words *words );
 class Place *getCityPlace  ( int32_t a , int32_t alnumPos , class Words *words );
 class Place *getStatePlace ( int32_t a , int32_t alnumPos , class Words *words );
 
@@ -295,13 +259,6 @@ class Address {
 		    int32_t              version   ,
 		    int32_t              niceness  ) ;
 
-	//bool addToTagRec ( class TagRec *gr , 
-	//		   int32_t ip , 
-	//		   int32_t timestamp ,
-	//		   char *origUrl ,  // = NULL
-	//		   int32_t maxAddrBytes , // = -1 ,
-	//		   char *tagName ) ;
-
 	int32_t getStoredSize ( int32_t olen , bool includeHash );
 	bool serializeVerified ( class SafeBuf *sb ) ;
 	int32_t serialize ( char *buf , 
@@ -407,24 +364,9 @@ class Address {
 	// . flags set in a Msg2c reply byte
 	// . we OR these into m_flags above
 	char m_replyFlags;
-	// bookends in word space
-	//int32_t m_a;
-	//int32_t m_b;
 
 	// extra stuff, AF_HAS_REQUIRED_CITY,...
 	char m_flags3;
-
-	// range of words in the body
-	//int32_t m_wordStart;
-	//int32_t m_wordEnd;
-
-	// the scores
-	//float m_scoreBase;
-	//float m_scoreNameBeforeStreet;
-	//float m_scoreDistanceNameToStreet;
-	//float m_scoreOldVoteMod;
-	//float m_scoreNewVoteMod;
-	//float m_scoreDistanceNameToStreetValue;
 
 	key128_t m_placedbKey;
 
@@ -532,7 +474,7 @@ class PlaceMem {
 	~PlaceMem();
 	void reset();
 
-	int32_t  getNumPtrs ( ) { return m_numPlacePtrs; };
+	int32_t  getNumPtrs ( ) { return m_numPlacePtrs; }
 
 	void *getPtr ( int32_t ptrNum ) {
 		if ( ptrNum >= m_numPlacePtrs ) { char *xx=NULL;*xx=0; }
@@ -541,7 +483,7 @@ class PlaceMem {
 
 	// sometimes we remove Places. two ways to do this:
 	void rewind     ( int32_t numPtrsToRewind ) {
-		return setNumPtrs ( m_numPlacePtrs - numPtrsToRewind); };
+		return setNumPtrs ( m_numPlacePtrs - numPtrsToRewind); }
 
 	void setNumPtrs ( int32_t newNumPtrs      );
 
@@ -640,32 +582,13 @@ class Addresses {
 
 	void setAmbiguousFlags ( ) ;
 
-	// . used by XmlDoc.cpp to update tagRec
-	// . adds all m_na addresses to the TagRec
-	//bool addToTagRec ( TagRec *gr , int32_t ip , int32_t timestamp ,
-	//		   char *origUrl , // = NULL ,
-	//		   int32_t maxAddrBytes , // = -1 ) ;
-	//		   char *tagName );
-
-	/*
-	int32_t addProperPlaces  ( int32_t         a             , 
-				int32_t         b             ,
-				int32_t         maxAlnumCount ,
-				class Place *pp            , 
-				int32_t         maxPlaces     ,
-				int32_t         np            ,
-				pbits_t      flags         ,
-				int32_t         alnumPos      ,
-				int32_t         forcedEnd     );
-	*/
-
 	int32_t cityAdm1Follows ( int32_t a ) ;
 
 	int32_t setFromTag ( Address *a, class Tag *tag, PlaceMem *placeMem );
 
-	int32_t getNumAddresses ( ) { return m_am.getNumPtrs(); };
-	int32_t getNumNonDupAddresses ( ) { return m_numNonDupAddresses; };
-	int32_t getNumVenues ( ) { return m_numVenues; };
+	int32_t getNumAddresses ( ) { return m_am.getNumPtrs(); }
+	int32_t getNumNonDupAddresses ( ) { return m_numNonDupAddresses; }
+	int32_t getNumVenues ( ) { return m_numVenues; }
 
 	class Place *getAssociatedPlace ( int32_t i ) ;
 
@@ -787,38 +710,17 @@ extern int32_t getDayOfWeek ( int64_t h ) ;
 extern bool setFromStr ( Address *a, char *s, pbits_t flags , 
 			 class PlaceMem *placeMem ,
 			 int32_t niceness ) ;
-extern void setFromStr2 ( char  *addr   ,
-			  char **name1  ,
-			  char **name2  ,
-			  char **suite  ,
-			  char **street ,
-			  char **city   ,
-			  char **adm1   ,
-			  char **zip    ,
-			  char **country,
-			  double *lat    ,
-			  double *lon    );
-			  //int32_t  *tzoff  ) ;
 
 #define UNKNOWN_TIMEZONE 100
 
 extern bool getIsDST ( int32_t nowUTC , char timezone ) ;
-extern char getTimeZoneFromAddr ( char *addr , char *useDST ) ;
 // state is two letter state abbr
 extern char getTimeZone2 ( char *city , char *state , char *useDST );
 extern char getTimeZone3 ( uint32_t cid32 , char *useDST );
-extern char getTimeZoneFromLatLon ( float lat , float lon , int32_t niceness ,
-				    char *useDST ) ;
 extern uint32_t getNearestCityId ( float lat , float lon , int32_t niceness ,
 				   float *distInMiles = NULL ) ;
 
 extern uint64_t getHashFromAddr ( char *addr ) ;
-
-extern bool getZipLatLonFromStr ( char  *addrStr ,
-				  float *zipLat  ,
-				  float *zipLon  ) ;
-
-PlaceDesc *getPlaceDescBuf ();
 
 // . IndDesc = Indicator Descriptor
 // . indicators are words or phrases that indicate a possible Place
@@ -848,31 +750,25 @@ public:
 	// . PDF_CITY|PDF_COUNTRY|PDF_STATE
 	// . only one flag can be set
 	char m_flags;
+
 	// one per country
 	uint8_t m_crid;
+
 	// population
 	int32_t m_population;
-	// the id assigned by the geonames ppl for looking up in
-	// alternateNames.txt
-	//int32_t m_geoId;
+
 	// the lat lon of the place centroid
 	float m_lat;
 	float m_lon;
+
 	// from -12 to + 12 i guess
 	char  m_timeZoneOffset;
+
 	// the official name. offset into g_pbuf/g_pbufSize
 	int32_t  m_officialNameOffset;
+
 	// the two letter state code
 	char  m_adm1[2];
-
-	char *getOfficialName ( ) ;
-	char *getStateName ( ) ;
-	const char *getCountryName ( ) ;
-
-	// first is "oh," or or "nm," or "<adm1>," then its a
-	// list like "us-fi-nl=egypt,de-es=egypti,."
-	// that has all the names of the place
-	//char *m_data;
 };
 
 PlaceDesc *getPlaceDesc ( uint64_t placeHash64 , 

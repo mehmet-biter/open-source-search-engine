@@ -14,7 +14,6 @@
 #include "Query.h"
 //#include "LinkInfo.h"
 #include "Tagdb.h" // TagRec
-#include "Events.h" // EventIdBits
 
 // values for SummaryLine::m_flags
 //#define SL_TRUNCATED 0x0100
@@ -370,7 +369,6 @@ public:
 	uint64_t   m_eventAddressHash64  ; // event address hash
 	uint64_t   m_eventTitleHash64    ; // event title hash
 	int32_t       m_eventTitleOff       ; // offset of first word in title
-	evflags_t  m_eventFlags          ;
 	char       m_timeZoneOffset      ; // in hours
 	char       m_useDST              ; // does event place use dst?
 	int32_t       m_nextStart           ; // next occ starts at this time_t

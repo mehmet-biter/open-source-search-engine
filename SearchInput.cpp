@@ -6,7 +6,6 @@
 #include "LanguageIdentifier.h"
 #include "CountryCode.h"
 #include "Users.h"
-#include "Address.h" // getLatLonFromUserInput
 #include "PageResults.h"
 
 #include "third-party/cld2/public/compact_lang_det.h"
