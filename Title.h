@@ -47,22 +47,14 @@ class Title {
 	int32_t  getTitleLen ( ) { return m_titleBytes; } // does NOT include \0
 
 
-	bool copyTitle (class Words *words,
-			 int32_t  t0, int32_t  t1 );
+	bool copyTitle (class Words *words, int32_t  t0, int32_t  t1 );
 
-	//int32_t getTitleScore( Words *w, int32_t t0, int32_t t1, int32_t *numFoundQTerms,
-	//		    int32_t *alphaWordCount = NULL );
-	
-	float getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
-			      Words  *w2 , int32_t t0 , int32_t t1 );
-
-	//static int cmpInLinkerScore(const void *A, const void *B);
+	float getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 , Words  *w2 , int32_t t0 , int32_t t1 );
 
 	char *m_title;
 	int32_t  m_titleBytes; // in bytes. does NOT include \0
 	int32_t  m_titleAllocSize;
 	char  m_localBuf [ TITLE_LOCAL_SIZE ];
-	bool  m_htmlEncoded;
 	char  m_niceness;
 
 	int32_t  m_maxTitleChars;

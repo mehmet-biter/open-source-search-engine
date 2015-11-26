@@ -290,7 +290,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 	float  scores  [MAX_TIT_CANDIDATES];
 	Words *cptrs   [MAX_TIT_CANDIDATES];
 	int32_t   types   [MAX_TIT_CANDIDATES];
-	char   htmlEnc [MAX_TIT_CANDIDATES];
 	int32_t   parent  [MAX_TIT_CANDIDATES];
 
 	// record the scoring algos effects
@@ -365,7 +364,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 			cptrs   [n] = &tw[ti];
 			as      [n] = 0;
 			bs      [n] = tw[ti].getNumWords();
-			htmlEnc [n] = false;
 			// score higher if same host
 			if ( sh ) scores[n] = 1.05;
 			// do not count so high if remote!
@@ -404,7 +402,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 		cptrs   [n] = &tw[ti];
 		as      [n] = 0;
 		bs      [n] = tw[ti].getNumWords();
-		htmlEnc [n] = isHtmlEnc;
 		// increment since we are using it
 		ti++;
 		// base score for rss title
@@ -513,7 +510,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 		cptrs   [n] = &tw[ti];
 		as      [n] = 0;
 		bs      [n] = tw[ti].getNumWords();
-		htmlEnc [n] = false;
 		scores  [n] = 3.0; // not ALWAYS solid gold!
 		types   [n] = TT_TITLEATT;
 		// we are using the words class
@@ -681,7 +677,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 		cptrs   [n] = WW;
 		as      [n] = start;
 		bs      [n] = i;
-		htmlEnc [n] = true;
 		if ( tid == TAG_B     ) types      [n] = TT_BOLDTAG;
 		if ( tid == TAG_H1    ) types      [n] = TT_HTAG;
 		if ( tid == TAG_H2    ) types      [n] = TT_HTAG;
@@ -756,7 +751,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 		if (i <= NW && numWords < maxTitleWords ) t1 = i;
 		// set the ptrs
 		cptrs   [n] =  WW;
-		htmlEnc [n] =  true;
 		// this is the last resort i guess...
 		scores  [n] =  0.5;
 		types   [n] =  TT_FIRSTLINE;
@@ -804,7 +798,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 		cptrs   [n] = &tw[ti];
 		as      [n] = 0;
 		bs      [n] = tw[ti].getNumWords();
-		htmlEnc [n] = false;
 		scores  [n] = 1.0;
 		types   [n] = TT_URLPATH;
 		// increment since we are using it
@@ -968,7 +961,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 			// . well, only one more if this is not the 1st time
 			if ( ! prev ) {
 				cptrs   [n] = cptrs   [i];
-				htmlEnc [n] = htmlEnc [i];
 				scores  [n] = scores  [i];
 				types   [n] = types   [i];
 				as      [n] = lasta;
@@ -979,7 +971,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 			}
 			// the 2nd one
 			cptrs   [n] = cptrs   [i];
-			htmlEnc [n] = htmlEnc [i];
 			scores  [n] = scores  [i];
 			types   [n] = types   [i];
 			as      [n] = e + 1;
@@ -990,7 +981,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 
 			// now add in the last pair as a whole token
 			cptrs   [n] = cptrs   [i];
-			htmlEnc [n] = htmlEnc [i];
 			scores  [n] = scores  [i];
 			types   [n] = types   [i];
 			as      [n] = lasta;
@@ -1331,9 +1321,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 	if ( ! copyTitle(w, a, b) ) {
 		return false;
 	}
-
-	// save these
-	m_htmlEncoded = htmlEnc [winner];
 
 	//logf(LOG_DEBUG,"title: took12=%"INT64"",gettimeofdayInMilliseconds()-x);
 	//x = gettimeofdayInMilliseconds();
