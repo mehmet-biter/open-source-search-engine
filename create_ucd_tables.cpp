@@ -55,6 +55,9 @@ int main(int argc, char **argv) {
 	UCProps props = 0;
 	g_ucProps.setValue(0, &props);
 
+	// Download data from:
+	//   ftp://ftp.unicode.org/Public/UNIDATA/
+
 	loadUnidataProps("UNIDATA/DerivedNormalizationProps.txt", handleDerivedNormalizationProps);
 	loadUnidataProps("UNIDATA/UnicodeData.txt", handleUnicodeData);
 
@@ -74,8 +77,6 @@ int main(int argc, char **argv) {
 	saveUnicodeTable(&g_ucProps, "ucdata/properties.dat");
 	printf("scripts size: %lu\n", g_ucScripts.getSize());
 	saveUnicodeTable(&g_ucScripts, "ucdata/scripts.dat");
-	printf("combining class size: %lu\n", g_ucCombiningClass.getSize());
-	saveUnicodeTable(&g_ucCombiningClass, "ucdata/combiningclass.dat");
 
 	// JAB: we now have Kompatible and Canonical decompositions
 	saveKDecompTable();
@@ -85,7 +86,6 @@ int main(int argc, char **argv) {
 	if (loadUnicodeTable(&g_ucUpperMap,"ucdata/uppermap.dat") &&
 	    loadUnicodeTable(&g_ucLowerMap,"ucdata/lowermap.dat") &&
 	    loadUnicodeTable(&g_ucProps,"ucdata/properties.dat") &&
-	    loadUnicodeTable(&g_ucCombiningClass,"ucdata/combiningclass.dat") &&
 	    loadUnicodeTable(&g_ucScripts,"ucdata/scripts.dat") &&
 	    // JAB: we now have Kompatible and Canonical decompositions
 	    loadDecompTables()){
@@ -100,6 +100,7 @@ int main(int argc, char **argv) {
 	}
 }
 
+// ftp://ftp.unicode.org/Public/3.0-Update/UnicodeData-3.0.0.html
 void handleUnicodeData(u_int32_t line, char **col, u_int32_t colCount) {
 
 	UChar32 codePoint = strtol(col[0], NULL, 16);
@@ -110,7 +111,6 @@ void handleUnicodeData(u_int32_t line, char **col, u_int32_t colCount) {
 // 	}
 	char *name = col[1];
 	char *category = col[2];
-	u_char combiningClass = strtol(col[3], NULL, 10);
 	char *decompStr = col[5];
 	UChar32 ucMapping = strtol(col[12],NULL, 16);
 	UChar32 lcMapping = strtol(col[13],NULL, 16);
@@ -128,8 +128,6 @@ void handleUnicodeData(u_int32_t line, char **col, u_int32_t colCount) {
 		g_ucLowerMap.setValue(codePoint, (void*)&lcMapping);
 	if (ucMapping) 
 		g_ucUpperMap.setValue(codePoint, (void*)&ucMapping);
-	if (combiningClass)
-		g_ucCombiningClass.setValue(codePoint, (void*)&combiningClass);
 
 	if (decompStr && decompStr[0]){
 		

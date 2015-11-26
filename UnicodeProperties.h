@@ -77,7 +77,6 @@ extern UCPropTable g_ucUpperMap;
 extern UCPropTable g_ucCategory;
 extern UCPropTable g_ucScripts;
 extern UCPropTable g_ucKDIndex;
-extern UCPropTable g_ucCombiningClass;
 
 
 extern char *g_ucScriptNames[];
@@ -279,12 +278,6 @@ inline UChar32 ucToLower(UChar32 c) {
 inline UChar32 ucToUpper(UChar32 c){
 	void *p = g_ucUpperMap.getValue(c);
 	if (!p || !*(UChar32*)p) return c;
-	return *(UChar32*)p;
-}
-
-inline unsigned char ucCombiningClass(UChar32 c){
-	void *p = g_ucCombiningClass.getValue(c);
-	if (!p) return 0;
 	return *(UChar32*)p;
 }
 

@@ -10,7 +10,6 @@ UCPropTable g_ucProps(sizeof(UCProps), 8);
 UCPropTable g_ucScripts(sizeof(UCScript), 10);
 UCPropTable g_ucKDIndex(sizeof(int32_t), 8);
 // JAB: we now have Kompatible and Canonical decomposition
-UCPropTable g_ucCombiningClass(sizeof(u_char), 9);
 
 // Kompatible Decomposition
 static char 	  *s_ucKDData = NULL;

@@ -144,12 +144,7 @@ bool ucInit(char *path, bool verifyFiles){
 			      VERIFY_UNICODE_CHECKSUMS, 
 			      CHKSUM_PROPERTIES))
 		goto failed;
-	strcpy(file, path);
-	strcat(file, "/ucdata/combiningclass.dat");
-	if (!loadUnicodeTable(&g_ucCombiningClass, file, 
-			      VERIFY_UNICODE_CHECKSUMS, 
-			      CHKSUM_COMBININGCLASS))
-		goto failed;
+
 	strcpy(file, path);
 	strcat(file, "/ucdata/scripts.dat");
 	if (!loadUnicodeTable(&g_ucScripts, file, 

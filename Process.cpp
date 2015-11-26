@@ -83,7 +83,6 @@ char *g_files[] = {
 	"catcountry.dat",
 	"badcattable.dat",
 
-	"ucdata/combiningclass.dat",
 	"ucdata/kd_data.dat",
 	"ucdata/kdmap.dat",
 	"ucdata/lowermap.dat",
@@ -2036,7 +2035,6 @@ void Process::resetAll ( ) {
 	g_ucUpperMap      .reset();
 	g_ucLowerMap      .reset();
 	g_ucProps         .reset();
-	g_ucCombiningClass.reset();
 	g_ucScripts       .reset();
 	g_profiler        .reset();
 	g_autoBan         .reset();
