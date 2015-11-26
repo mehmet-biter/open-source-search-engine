@@ -5,14 +5,7 @@
 #include "Sections.h"
 #include "Msg20.h"
 
-Summary::Summary()
-            : m_summaryLocs(m_summaryLocBuf, 
-			    MAX_SUMMARY_LOCS*sizeof(uint64_t)),
-	      m_summaryLocsPops(m_summaryLocPopsBuf, 
-				MAX_SUMMARY_LOCS*sizeof(int32_t)) {
-	//m_buf = NULL;
-	m_bitScoresBuf = NULL;
-	m_bitScoresBufSize = 0;
+Summary::Summary() {
 	m_wordWeights = NULL;
 	m_buf4 = NULL;
 	reset();
@@ -21,24 +14,10 @@ Summary::Summary()
 Summary::~Summary() { reset(); }
 
 void Summary::reset() {
-	//if ( m_buf && m_freeBuf )
-	//	mfree ( m_buf, m_bufMaxLen, "Summary" );
-	if ( m_bitScoresBuf ){
-		mfree ( m_bitScoresBuf, m_bitScoresBufSize,
-			"SummaryBitScore" );
-		m_bitScoresBuf = NULL;
-		m_bitScoresBufSize = 0;
-	}
+
 	m_summaryLen = 0;
 	m_displayLen = 0;
-	//m_bufMaxLen = 0;
-	//m_bufLen = 0;
-	//m_buf = NULL;
-	m_isNormalized = false;
-	//m_freeBuf = true;
 	m_numExcerpts = 0;
-	m_summaryLocs.reset();
-	m_summaryLocsPops.reset();
 	if ( m_wordWeights && m_wordWeights != (float *)m_tmpBuf ) {
 		mfree ( m_wordWeights , m_wordWeightSize , "sumww");
 		m_wordWeights = NULL;
@@ -105,12 +84,6 @@ bool Summary::set2 ( Xml      *xml                ,
 		g_errno = EBUFTOOSMALL; 
 		return log("query: More than 256 summary lines requested.");
 	}
-
-	// . MORE BIG HACK
-	// . since we're working with fielded query terms we must check BIG
-	//   HACK here in case the fielded query term is the ONLY query 
-	//   term.
-	// . LOGIC MOVED INTO MATCHES.CPP
 
 	// Nothing to match...print beginning of content as summary
 	if ( matches->m_numMatches == 0 && maxNumLines > 0 ) {
@@ -586,12 +559,6 @@ bool Summary::set2 ( Xml      *xml                ,
 	return true;
 }
 
-// MDW: this logic moved mostly to Bits::setForSummary() and
-// Summary::set2(). See the gigawiki url to see the rules for summary
-// generation: http://10.5.1.202:237/eng_wiki/index.php/Eng:Projects
-// i removed this whole function so use git diff to see it later if you
-// need to. setSummaryScores() is obsoleted.
-
 // . return the score of the highest-scoring window containing match #m
 // . window is defined by the half-open interval [a,b) where a and b are 
 //   word #'s in the Words array indicated by match #m
@@ -960,18 +927,18 @@ bool Summary::getDefaultSummary ( Xml    *xml,
 	m_summaryLen = 0;
 
 	// try the meta summary tag
-	if ( m_summaryLen <= 0 )
-		m_summaryLen = xml->getMetaContent ( p , maxSummaryLen , 
-						     "summary",7);
+	if ( m_summaryLen <= 0 ) {
+		m_summaryLen = xml->getMetaContent ( p , maxSummaryLen , "summary",7);
+	}
 
 	// the meta descr
-	if ( m_summaryLen <= 0 )
-		m_summaryLen = xml->getMetaContent(p,maxSummaryLen,
-						   "description",11);
+	if ( m_summaryLen <= 0 ) {
+		m_summaryLen = xml->getMetaContent(p,maxSummaryLen, "description",11);
+	}
 
-
-	if ( m_numDisplayLines > 0 )
+	if ( m_numDisplayLines > 0 ) {
 		m_displayLen = m_summaryLen;
+	}
 
 	if ( m_summaryLen > 0 ) {
 		m_summaryExcerptLen[0] = m_summaryLen;

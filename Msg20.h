@@ -326,7 +326,6 @@ public:
 	char       m_isFiltered          ;
 	char       m_eventExpired        ;
 	char       m_hasLinkToOurDomOrHost;
-	//char     m_isNormalized        ;
 	char       m_urlFilterNum        ;
 	char       m_hopcount            ;
 	//char       m_flags3              ;

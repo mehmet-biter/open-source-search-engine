@@ -41,11 +41,10 @@
 #define MAX_SUMMARY_LOCS 16
 
 class Summary {
-
- public:
-
+public:
 	Summary();
 	~Summary();
+
 	void reset();
 
 	// this should eventually replace set()
@@ -95,7 +94,6 @@ class Summary {
 	int32_t  m_summaryLen;
 	int32_t  m_summaryExcerptLen [ MAX_SUMMARY_EXCERPTS ];
 	int32_t  m_numExcerpts;
-	bool  m_isNormalized;
 
 	// if getting more lines for deduping than we need for displaying,
 	// how big is that part of the summary to display?
@@ -105,19 +103,8 @@ class Summary {
 
 	int32_t  m_maxNumCharsPerLine;
 
-	int32_t m_titleVersion;
-
 	// ptr to the query
 	Query     *m_q;
-
-	// pub date list offsets
-	bool m_useDateLists;
-	bool m_exclDateList;
-	int32_t m_begPubDateList;
-	int32_t m_endPubDateList;
-
-	char *m_bitScoresBuf;
-	int32_t  m_bitScoresBufSize;
 
 	float *m_wordWeights;
 	int32_t m_wordWeightSize;
@@ -126,11 +113,6 @@ class Summary {
 	char *m_buf4;
 	int32_t m_buf4Size;
 	char m_tmpBuf4[128];
-
-	char    m_summaryLocBuf[MAX_SUMMARY_LOCS*sizeof(uint64_t)];
-	SafeBuf m_summaryLocs;
-	char    m_summaryLocPopsBuf[MAX_SUMMARY_LOCS*sizeof(int32_t)];
-	SafeBuf m_summaryLocsPops;
 };
 
 #endif
