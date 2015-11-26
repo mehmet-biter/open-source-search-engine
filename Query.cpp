@@ -2073,8 +2073,7 @@ bool Query::setQWords ( char boolFlag ,
 	//   their own separate Word, so tell "words" we're setting a query
 	//Words words;
 	if ( ! words.set ( m_sb.getBufStart() , m_sb.length() ,
-			   //buf , m_bufLen,
-			    TITLEREC_CURRENT_VERSION, true, true ) )
+			    TITLEREC_CURRENT_VERSION, true, 1 ) )
 		return log("query: Had error parsing query: %s.",
 			   mstrerror(g_errno));
 	int32_t numWords = words.getNumWords();
