@@ -32655,64 +32655,25 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		if ( ! gr || gr == (void *)-1 ) return (Msg20Reply *)gr;
 	}
 
-	//reply-> ptr_tagRec = (char *)gr;
-	//reply->size_tagRec = gr->getSize();
-
-	// we use this instead of nowGlobal
-	//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
-
 	// this should be valid, it is stored in title rec
 	if ( m_contentHash32Valid ) reply->m_contentHash32 = m_contentHash32;
 	else                        reply->m_contentHash32 = 0;
 
-	// if this page is potential spam, toss it!
-	//char *isSpam = getIsSpam();
-	//if ( ! isSpam || isSpam == (char *)-1 ) return (Msg20Reply *)isSpam;
-
 	if ( ! m_checkedUrlFilters ) {
-		// do it
-		//int32_t *rn = getRegExpNum2(-1);
-		//if ( ! rn || rn == (int32_t *)-1 ) return (Msg20Reply *)rn;
 		// do not re-check
 		m_checkedUrlFilters = true;
 
-		// a non-www url?
-		/*
-
-		  now we allow domain-only urls in the index, so this is 
-		  hurting us...
-
-		if ( ! m_req->m_getLinkText ) {
-			Url tmp;
-			tmp.set ( ptr_firstUrl );
-			if ( tmp.getHostLen() == tmp.getDomainLen() ) {
-				// set m_errno
-				reply->m_errno = EDOCFILTERED;
-				// tmp debug
-				log("xmldoc: filtering non www url %s",
-				    ptr_firstUrl);
-				// and this
-				reply->m_isFiltered = true;
-				// give back the url at least
-				reply->ptr_ubuf = getFirstUrl()->getUrl();
-				reply->size_ubuf =getFirstUrl()->getUrlLen()+1;
-				// validate
-				m_replyValid = true;
-				// and return
-				return reply;
-			}
-		}
-		*/
-
-		// get this
-		//time_t nowGlobal = getTimeGlobal();
 		// get this
 		SpiderRequest sreq;
 		SpiderReply   srep;
-		setSpiderReqForMsg20 ( &sreq , &srep );//, *isSpam );
+		setSpiderReqForMsg20 ( &sreq , &srep );
+
 		int32_t spideredTime = getSpideredTime();
 		int32_t langIdArg = -1;
-		if ( m_langIdValid ) langIdArg = m_langId;
+		if ( m_langIdValid ) {
+			langIdArg = m_langId;
+		}
+
 		// get it
 		int32_t ufn;
 		ufn=::getUrlFilterNum(&sreq,&srep,spideredTime,true,
@@ -32727,10 +32688,13 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 		// save it
 		reply->m_urlFilterNum = ufn;
+
 		// get spider priority if ufn is valid
 		int32_t pr = 0; 
-		//if ( ufn >= 0 ) pr = cr->m_spiderPriorities[ufn];
-		if ( cr->m_forceDelete[ufn] ) pr = -3;
+
+		if ( cr->m_forceDelete[ufn] ) {
+			pr = -3;
+		}
 
 		// this is an automatic ban!
 		if ( gr && gr->getLong("manualban",0))
@@ -32784,54 +32748,30 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// breathe
 	QUICKPOLL ( m_niceness );
 
-	// truncate content length if we should
-	// this was hurting our linkdb lookups! do not do it for those!
-	/*
-	if ( size_utf8Content > cr->m_contentLenMaxForSummary &&
-	// fix for link text fetching!
-	     ! req->m_getLinkText ) {
-		logf(LOG_DEBUG,"summary: truncating doc of len %"INT32" to %"INT32" for "
-		     "generating summary",
-		     size_utf8Content,cr->m_contentLenMaxForSummary);
-		size_utf8Content = cr->m_contentLenMaxForSummary ;
-		// null term just in case
-		ptr_utf8Content[size_utf8Content-1] = '\0';
-	}
-	*/
 	// do they want a summary?
 	if ( m_req->m_numSummaryLines>0 && ! reply->ptr_displaySum ) {
 		char *hsum = getHighlightedSummary();
 
-		if ( ! hsum || hsum == (void *)-1 ) return (Msg20Reply *)hsum;
-		//Summary *s = getSummary();
-		//if ( ! s || s == (void *)-1 ) return (Msg20Reply *)s;
-		//int32_t sumLen = m_finalSummaryBuf.length();
+		if ( ! hsum || hsum == (void *)-1 ) {
+			return (Msg20Reply *)hsum;
+		}
+
 		// is it size and not length?
 		int32_t hsumLen = 0;
+
 		// seems like it can return 0x01 if none...
 		if ( hsum == (char *)0x01 ) hsum = NULL;
+
 		// get len. this is the HIGHLIGHTED summary so it is ok.
 		if ( hsum ) hsumLen = gbstrlen(hsum);
+
 		// must be \0 terminated. not any more, it can be a subset
 		// of a larger summary used for deduping
 		if ( hsumLen > 0 && hsum[hsumLen] ) { char *xx=NULL;*xx=0; }
-		// assume size is 0
-		//int32_t sumSize = 0;
-		// include the \0 in size
-		//if ( sum ) sumSize = sumLen + 1;
-		// do not get any more than "me" lines/excerpts of summary
-		//int32_t max = m_req->m_numSummaryLines;
+
 		// grab stuff from it!
-		//reply->m_proximityScore = s->getProximityScore();
-		reply-> ptr_displaySum = hsum;//s->getSummary();
-		reply->size_displaySum = hsumLen+1;//sumSize;//s->getSummaryLen
-		// this is unhighlighted for deduping, and it might be longer
-		// . seems like we are not using this for deduping but using
-		//   the gigabit vector in Msg40.cpp, so take out for now
-		//reply-> ptr_dedupSum = s->m_summary;
-		//reply->size_dedupSum = s->m_summaryLen+1;
-		//if ( s->m_summaryLen == 0 ) reply->size_dedupSum = 0;
-		//reply->m_diversity      = s->getDiversity();
+		reply-> ptr_displaySum = hsum;
+		reply->size_displaySum = hsumLen+1;
 	}
 
 	reply->m_numAlnumWords = 0;
@@ -34037,6 +33977,7 @@ Summary *XmlDoc::getSummary () {
 	uint8_t *ct = getContentType();
 	if ( ! ct || ct == (void *)-1 ) return (Summary *)ct;
 
+	/// @todo fill in summary for XML document
 	if ( *ct == CT_JSON || *ct == CT_XML ) {
 		m_summaryValid = true;
 		return &m_summary;
@@ -34076,7 +34017,6 @@ Summary *XmlDoc::getSummary () {
 		// request more lines than we will display
 		numLines = cr->m_summDedupNumLines;
 
-	// int16_tcut
 	Summary *s = &m_summary;
 
 	// time cpu set time
@@ -34133,7 +34073,6 @@ char *XmlDoc::getHighlightedSummary ( ) {
 
 	// get the summary
 	char *sum    = s->getSummary();
-	//int32_t  sumLen = s->getSummaryLen();
 	int32_t sumLen = s->getSummaryDisplayLen();
 
 	//sum[sumLen] = 0;

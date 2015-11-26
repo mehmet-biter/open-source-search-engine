@@ -49,7 +49,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	SearchInput.o \
 	Categories.o Msg2a.o PageCatdb.o PageDirectory.o \
 	SafeBuf.o Datedb.o \
-	UCNormalizer.o UCPropTable.o UnicodeProperties.o \
+	UCPropTable.o UnicodeProperties.o \
 	Pops.o Title.o Pos.o \
 	Profiler.o \
 	AutoBan.o Msg3a.o HashTableT.o HashTableX.o \
@@ -418,8 +418,6 @@ Unicode.o:
 UCPropTable.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
 UnicodeProperties.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
-UCNormalizer.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
 Pos.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp

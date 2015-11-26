@@ -2068,7 +2068,6 @@ void Process::resetAll ( ) {
 	s_table32.reset();
 
 	resetDecompTables();
-	//resetCompositionTable();
 	//resetMsg6();
 	resetPageAddUrl();
 	resetHttpMime();

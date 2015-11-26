@@ -1,7 +1,5 @@
 #include "gb-include.h"
 
-#include "UCNormalizer.h"
-
 #include "Mem.h"
 #include "HashTable.h"
 #include "iana_charset.h"
@@ -158,11 +156,13 @@ bool ucInit(char *path, bool verifyFiles){
 			      VERIFY_UNICODE_CHECKSUMS, 
 			      CHKSUM_SCRIPTS))
 		goto failed;
+
 	// MDW: do we need this for converting from X to utf8? or for
 	// the is_alnum(), etc. functions?
-	if (!loadDecompTables(path) ||
-	    !initCompositionTable())
+	if (!loadDecompTables(path)) {
 		goto failed;
+	}
+
 	//s_convTable.set(1024);
 	if ( ! s_convTable.set(4,sizeof(iconv_t),1024,NULL,0,false,0,"cnvtbl"))
 		goto failed;
