@@ -50,7 +50,6 @@ bool ucIsWordChar(UChar32 c);
 bool ucIsIgnorable(UChar32 c);
 bool ucIsExtend(UChar32 c);
 
-bool isNFKC(UChar *s, int32_t len);
 UCScript ucGetScript(UChar32 c);
 
 
@@ -74,7 +73,6 @@ UCScript ucGetScript(UChar32 c);
 extern UCPropTable g_ucProps;
 extern UCPropTable g_ucLowerMap;
 extern UCPropTable g_ucUpperMap;
-extern UCPropTable g_ucCategory;
 extern UCPropTable g_ucScripts;
 extern UCPropTable g_ucKDIndex;
 

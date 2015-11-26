@@ -115,8 +115,6 @@ void handleUnicodeData(u_int32_t line, char **col, u_int32_t colCount) {
 	UChar32 ucMapping = strtol(col[12],NULL, 16);
 	UChar32 lcMapping = strtol(col[13],NULL, 16);
 
-	// Set general category
-	//g_ucCategory.setValue(codePoint, (void*)category);
 	UCProps props = ucProperties(codePoint);
 	if (category[0] == 'L') props |= UC_ALPHA | UC_WORDCHAR;
 	else if (category[0] == 'N') props |= UC_DIGIT | UC_WORDCHAR;
