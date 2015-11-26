@@ -1,9 +1,6 @@
 #include "Summary.h"
-#include "Speller.h"
 #include "Words.h"
-//#include "AppendingWordsWindow.h"
 #include "Sections.h"
-#include "Msg20.h"
 
 Summary::Summary() {
 	m_wordWeights = NULL;

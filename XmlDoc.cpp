@@ -41,6 +41,8 @@
 //#include <regex.h>
 #include "PingServer.h"
 #include "Parms.h"
+#include "Domains.h"
+#include "matches2.h"
 
 extern int g_inMemcpy;
 

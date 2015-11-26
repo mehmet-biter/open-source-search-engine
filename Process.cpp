@@ -45,6 +45,7 @@
 #include "SpiderProxy.h"
 #include "PageInject.h"
 #include "Timezone.h"
+#include "CountryCode.h"
 
 // the query log hashtable defined in XmlDoc.cpp
 //extern HashTableX g_qt;

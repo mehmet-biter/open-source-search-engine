@@ -3,16 +3,15 @@
 #ifndef _TITLE_H_
 #define _TITLE_H_
 
-#include "SafeBuf.h"
 #include "Query.h"
 
 #define TITLE_LOCAL_SIZE 2048
 
 class Title {
- public:
-
+public:
 	Title();
 	~Title();
+
 	void reset();
 
 	// . set m_title to the title of the document represented by "xd"
@@ -59,7 +58,7 @@ class Title {
 	int32_t m_titleTagStart ;
 	int32_t m_titleTagEnd   ;
 
- private:
+private:
 
 	bool setTitle4 (class XmlDoc *xd,
 	                class Xml *xml,

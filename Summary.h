@@ -22,19 +22,11 @@
 
 #include "gb-include.h"
 #include "Unicode.h"
-#include "matches2.h"
 #include "Query.h"
 #include "Xml.h"
-#include "Mem.h"
-//#include "LinkInfo.h" // BIG HACK support
 #include "Words.h"
-#include "Bits.h"
 #include "Pos.h"
 #include "Matches.h"
-#include "HashTableT.h"
-//#include "Places.h"
-#include "Domains.h"
-#include "CountryCode.h"
 
 #define MAX_SUMMARY_LEN 1024*20
 #define MAX_SUMMARY_EXCERPTS 1024

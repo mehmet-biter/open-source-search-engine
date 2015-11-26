@@ -1,6 +1,7 @@
 //-*- coding: utf-8 -*-
 
 #include "Proxy.h"
+#include "CountryCode.h"
 
 class Address *g_address; // for debug
 
