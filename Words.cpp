@@ -56,15 +56,13 @@ bool Words::set ( char *s, int32_t slen, int32_t version,
 // a quickie
 // this url gives a m_preCount that is too low. why?
 // http://go.tfol.com/163/speed.asp
-int32_t countWords ( char *p , int32_t plen , int32_t niceness ) {
+int32_t countWords ( char *p , int32_t plen ) {
 	char *pend  = p + plen;
 	int32_t  count = 1;
  loop:
 
 	// sequence of punct
 	for  ( ; p < pend && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
-		// breathe
-		QUICKPOLL ( niceness );
 		// in case being set from xml tags, count as words now
 		if ( *p=='<') count++; 
 	}
@@ -72,8 +70,7 @@ int32_t countWords ( char *p , int32_t plen , int32_t niceness ) {
 
 	// sequence of alnum
 	for  ( ; p < pend && is_alnum_utf8 (p) ; p += getUtf8CharSize(p) )
-		// breathe
-		QUICKPOLL ( niceness );
+		;
 
 	count++;
 
@@ -82,14 +79,12 @@ int32_t countWords ( char *p , int32_t plen , int32_t niceness ) {
 	return count+10;
 }
 
-int32_t countWords ( char *p , int32_t niceness ) {
+int32_t countWords ( char *p ) {
 	int32_t  count = 1;
  loop:
 
 	// sequence of punct
 	for  ( ; *p && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
-		// breathe
-		QUICKPOLL ( niceness );
 		// in case being set from xml tags, count as words now
 		if ( *p=='<') count++; 
 	}
@@ -97,8 +92,7 @@ int32_t countWords ( char *p , int32_t niceness ) {
 
 	// sequence of alnum
 	for  ( ; *p && is_alnum_utf8 (p) ; p += getUtf8CharSize(p) )
-		// breathe
-		QUICKPOLL ( niceness );
+		;
 
 	count++;
 
@@ -133,7 +127,7 @@ bool Words::set ( Xml *xml,
 	char *end   = xml->getNode(node2-1) + xml->getNodeLen(node2-1);
 	int32_t  size  = end - start;
 
-	m_preCount = countWords( start , size , niceness );
+	m_preCount = countWords( start , size );
 
 	// allocate based on the approximate count
 	if ( ! allocateWordBuffers(m_preCount, true)) return false;
@@ -188,7 +182,7 @@ bool Words::set11 ( char *s , char *send , int32_t niceness ) {
 	*send = '\0';
 	// determine rough upper bound on number of words by counting
 	// punct/alnum boundaries
-	m_preCount = countWords ( s , niceness );
+	m_preCount = countWords ( s );
 	// true = tagIds
 	bool status = allocateWordBuffers(m_preCount,true);
 	// deal with error now
@@ -212,7 +206,7 @@ bool Words::setxi ( char *s , char *buf, int32_t bufSize, int32_t niceness ) {
 	m_localBufSize2 = bufSize;
 	// determine rough upper bound on number of words by counting
 	// punct/alnum boundaries
-	m_preCount = countWords ( s , niceness );
+	m_preCount = countWords ( s );
 	if (!allocateWordBuffers(m_preCount)) return false;
 	bool computeWordIds = true;
 	return addWords(s,0x7fffffff, computeWordIds, niceness );
@@ -241,7 +235,7 @@ bool Words::set ( char *s , int32_t version,
 	m_version = version;
 	// determine rough upper bound on number of words by counting
 	// punct/alnum boundaries
-	m_preCount = countWords ( s , niceness );
+	m_preCount = countWords ( s );
 	if (!allocateWordBuffers(m_preCount)) return false;
 	
 	return addWords(s,0x7fffffff, computeWordIds, niceness );
