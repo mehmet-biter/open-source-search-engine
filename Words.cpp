@@ -388,14 +388,12 @@ bool Words::addWords(char *s,int32_t nodeLen,bool computeWordIds, int32_t nicene
 		if ( i-j >= 2 && ! is_digit(s[i-2]) ) goto nogo;
 		if ( i-j >= 3 && ! is_digit(s[i-3]) ) goto nogo;
 		// scan forward
-	subloop:
-		if ( s[i] == ',' &&
-		     is_digit(s[i+1]) &&
-		     is_digit(s[i+2]) &&
-		     is_digit(s[i+3]) &&
-		     ! is_digit(s[i+4]) ) {
+		while ( s[i] == ',' &&
+		        is_digit(s[i+1]) &&
+		        is_digit(s[i+2]) &&
+		        is_digit(s[i+3]) &&
+		        ! is_digit(s[i+4]) ) {
 			i += 4;
-			goto subloop;
 		}
 	}
 
@@ -581,16 +579,12 @@ bool Words::set2 ( Xml *xml,
 	register char *p = (char *)xml->getContent();
 	if ( *p ) p++;
 	register int32_t x = 0;
- ploop:
-	//if ( is_alnum(*(p-1)) ^ is_alnum(*p) ) x++;
-	//if ( is_alnum(*p ) ) x++;
-	//x += g_map_is_alpha[*p] ;
-	if ( is_alnum_utf8(p) ) x++;
-	//if ( isalnum(*p) ) x++;
-	//if ( g_map_is_alpha[*p] ) x++;
-	//x++;
-	p++;
-	if ( *p ) goto ploop;
+
+	do {
+		if ( is_alnum_utf8(p) )
+			x++;
+		p++;
+	} while ( *p );
 
 	m_preCount = x;
 	m_preCount = xml->getContentLen() / 2;
@@ -945,19 +939,21 @@ int32_t Words::getWordAt ( char *p ) { // int32_t charPos ) {
 	int32_t step = m_numWords / 2;
 	int32_t i = m_numWords / 2 ;
 
- loop:
-
-	// divide it by 2 each time
-	step >>= 1;
-	// always at least one
-	if ( step <= 0 ) step = 1;
-	// is it a hit?
-	if ( p >= m_words[i] && p < m_words[i] + m_wordLens[i] )
-		return i;
-	// compare
-	if ( m_words[i] < p ) i += step;
-	else                  i -= step;
-	goto loop;
+	for (;;) {
+		// divide it by 2 each time
+		step >>= 1;
+		// always at least one
+		if ( step <= 0 )
+			step = 1;
+		// is it a hit?
+		if ( p >= m_words[i] && p < m_words[i] + m_wordLens[i] )
+			return i;
+		// compare
+		if ( m_words[i] < p )
+			i += step;
+		else
+			i -= step;
+	}
 	return -1;
 }
 
