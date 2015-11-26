@@ -60,50 +60,22 @@ void Summary::reset() {
 // returns false and sets g_errno on error
 bool Summary::set2 ( Xml      *xml                ,
 		     Words    *words              ,
-		     Bits     *bits               ,
 		     Sections *sections           ,
 		     Pos      *pos                ,
 		     Query    *q                  ,
 		     int64_t *termFreqs         ,
-		     float    *affWeights         , // 1-1 with qterms
-		     //char     *coll               ,
-		     //int32_t      collLen            ,
-		     bool      doStemming         ,
 		     int32_t      maxSummaryLen      , 
 		     int32_t      maxNumLines        ,
 		     int32_t      numDisplayLines    ,
 		     int32_t      maxNumCharsPerLine ,
-		     //int32_t      bigSampleRadius    ,
-		     //int32_t      bigSampleMaxLen    ,
-		     bool      ratInSummary       ,
-		     //TitleRec *tr                 ,
 		     Url      *f                  ,
-		     //bool     allowPunctInPhrase  ,
-		     //bool      excludeLinkText    ,
-		     //bool      excludeMetaText    ,
-		     //bool      hackFixWords       ,
-		     //bool      hackFixPhrases     ,
-		     //float    *queryProximityScore,
 		     Matches  *matches            ,
 		     char     *titleBuf           ,
 		     int32_t      titleBufLen        ) {
 
-	//m_proximityScore = -1;
-
-	// pointless, possibly caller in Msg20 is just interested in
-	// Msg20Request::m_computeLinkInfo or m_setLinkInfo. NO! we need
-	// to see if it has all the query terms...
-	//if ( maxNumLines <= 0 ) return true;
-
 	m_numDisplayLines = numDisplayLines;
 	m_displayLen      = 0;
 
-	//m_useDateLists   = useDateLists;
-	//m_exclDateList   = exclDateList;
-	//m_begPubDateList = begPubDateList;
-	//m_endPubDateList = endPubDateList;
-	//m_diversity      = 1.0;
-	// int64_t start = gettimeofdayInMilliseconds();
 	// assume we got maxnumlines of summary
 	if ( (maxNumCharsPerLine+6)*maxNumLines > maxSummaryLen ) {
 		//maxNumCharsPerLine = (maxSummaryLen-10)/maxNumLines;
@@ -128,14 +100,6 @@ bool Summary::set2 ( Xml      *xml                ,
 			   "bytes.",(int32_t)MAX_SUMMARY_LEN);
 	}
 
-	// . hash query word ids into a small hash table
-	// . we use this to see what words in the document are query terms
-	//int32_t qscores [ MAX_QUERY_TERMS ];
-
-	// and if we found each query term or not
-	//int32_t nt  = q->getNumNonFieldedSingletonTerms();
-	//int32_t nqt = q->getNumTerms();
-
 	// do not overrun the final*[] buffers
 	if ( maxNumLines > 256 ) { 
 		g_errno = EBUFTOOSMALL; 
@@ -149,33 +113,31 @@ bool Summary::set2 ( Xml      *xml                ,
 	// . LOGIC MOVED INTO MATCHES.CPP
 
 	// Nothing to match...print beginning of content as summary
-	if ( matches->m_numMatches == 0 && maxNumLines > 0 )
+	if ( matches->m_numMatches == 0 && maxNumLines > 0 ) {
 		return getDefaultSummary ( xml,
 					   words,
 					   sections, // scores,
 					   pos,
 					   //bigSampleRadius,
 					   maxSummaryLen );
-	
-	/*int64_t end = gettimeofdayInMilliseconds();
-	if ( end - start > 2 )
-		log ( LOG_WARN,"summary: took %"INT64" ms to finish big hack",
-		      end - start );
-		      start = gettimeofdayInMilliseconds();*/
-	//
+	}
+
 	int32_t need1 = q->m_numWords * sizeof(float);
 	m_wordWeightSize = need1;
-	if ( need1 < 128 )
+	if ( need1 < 128 ) {
 		m_wordWeights = (float *)m_tmpBuf;
-	else
+	} else {
 		m_wordWeights = (float *)mmalloc ( need1 , "wwsum" );
-	if ( ! m_wordWeights ) return false;
+	}
 
-
+	if ( ! m_wordWeights ) {
+		return false;
+	}
 
 	// zero out all word weights
-	for ( int32_t i = 0 ; i < q->m_numWords; i++ )
+	for ( int32_t i = 0 ; i < q->m_numWords; i++ ) {
 		m_wordWeights[i] = 0.0;
+	}
 
 	// query terms
 	int32_t numTerms = q->getNumTerms();
@@ -211,27 +173,25 @@ bool Summary::set2 ( Xml      *xml                ,
 			//"query word num %"INT32" termnum %"INT32" freq %f max %f",
 			//ndx,i,m_wordWeights[ndx],maxTermFreq);
 		}
-	} 
-	else {
-		for ( int32_t i = 0 ; i < q->m_numWords; i++ )
+	} else {
+		for ( int32_t i = 0 ; i < q->m_numWords; i++ ) {
 			m_wordWeights[i] = 1.0;
+		}
 	}
 
 	if ( g_conf.m_logDebugSummary ) {
 		for ( int32_t i = 0 ; i < q->m_numWords; i++ ) {
 			int64_t tf = -1;
-			if ( termFreqs ) tf = termFreqs[i];
-			log("sum: u=%s wordWeights[%"INT32"]=%f tf=%"INT64"",
-			    f->m_url,i,m_wordWeights[i],tf);
+			if ( termFreqs ) {
+				tf = termFreqs[i];
+			}
+			log("sum: u=%s wordWeights[%"INT32"]=%f tf=%"INT64"", f->m_url,i,m_wordWeights[i],tf);
 		}
 	}
 
 	// convenience
 	m_maxNumCharsPerLine = maxNumCharsPerLine;
-	//m_qscores            = qscores;
 	m_q                  = q;
-
-	//m_proximityScore = 0;
 
 	bool hadEllipsis = false;
 
@@ -243,8 +203,9 @@ bool Summary::set2 ( Xml      *xml                ,
 	char *p, *pend;
 
 	// if just computing absScore2...
-	if ( maxNumLines <= 0 )//&& bigSampleRadius <= 0 )
-		return true;//return matches->m_hasAllQueryTerms;
+	if ( maxNumLines <= 0 ) {
+		return true;
+	}
 
 	p    = m_summary;
 	pend = m_summary + maxSummaryLen;
@@ -252,11 +213,16 @@ bool Summary::set2 ( Xml      *xml                ,
 
 	int32_t need2 = (1+1+1) * m_q->m_numWords;
 	m_buf4Size = need2;
-	if ( need2 < 128 )
+	if ( need2 < 128 ) {
 		m_buf4 = m_tmpBuf4;
-	else
+	} else {
 		m_buf4 = (char *)mmalloc ( need2 , "stkbuf" );
-	if ( ! m_buf4 ) return false;
+	}
+
+	if ( ! m_buf4 ) {
+		return false;
+	}
+
 	char *x = m_buf4;
 	char *retired = x;
 	x += m_q->m_numWords;
@@ -272,9 +238,11 @@ bool Summary::set2 ( Xml      *xml                ,
 	memset ( retired, 0, m_q->m_numWords * sizeof(char) );
 
 	// some query words are already matched in the title
-	for ( int32_t i = 0 ; i < m_q->m_numWords ; i++ )
-		if ( matches->m_qwordFlags[i] & MF_TITLEGEN )
+	for ( int32_t i = 0 ; i < m_q->m_numWords ; i++ ) {
+		if ( matches->m_qwordFlags[i] & MF_TITLEGEN ) {
 			retired [ i ] = 1;
+		}
+	}
 
 	// 
 	// Loop over all words that match a query term. The matching words
@@ -283,10 +251,10 @@ bool Summary::set2 ( Xml      *xml                ,
 	// of those over all the matching terms.
 	//
 	int32_t numFinal;
-	for ( numFinal = 0; numFinal < maxNumLines; numFinal++ ){
-
-		if ( numFinal == m_numDisplayLines )
+	for ( numFinal = 0; numFinal < maxNumLines; numFinal++ ) {
+		if ( numFinal == m_numDisplayLines ) {
 			m_displayLen = p - m_summary;
+		}
 
 		// reset these at the top of each loop
 		Match     *maxm;
@@ -295,29 +263,22 @@ bool Summary::set2 ( Xml      *xml                ,
 		int32_t       maxb = 0;
 		int32_t       maxi  = -1;
 		int32_t       lasta = -1;
-		//char       maxGotIt [ MAX_QUERY_WORDS ];
 
 		if(lastNumFinal == numFinal) {
 			if(maxLoops-- <= 0) {
-				log(LOG_WARN, "query: got infinite loop "
-				    "bug, query is %s url is %s",
-				    m_q->m_orig,
-				    f->getUrl());
+				log(LOG_WARN, "query: got infinite loop bug, query is %s url is %s", m_q->m_orig, f->getUrl());
 				break;
 			}
 		}
 		lastNumFinal = numFinal;
-		// int64_t stget = gettimeofdayInMilliseconds();
-		// does the max that we found have a new query word that was
-		// not already in the summary?
-		//int32_t maxFoundNew = 0;
+
 		// loop through all the matches and see which is best
 		for ( int32_t i = 0 ; i < matches->m_numMatches ; i++ ) {
 			int32_t       a , b;
 			// reset lasta if we changed words class
-			if ( i > 0 && matches->m_matches[i-1].m_words !=
-			     matches->m_matches[i].m_words )
+			if ( i > 0 && matches->m_matches[i-1].m_words != matches->m_matches[i].m_words ) {
 				lasta = -1;
+			}
 
 			// only use matches in title, etc.
 			mf_t flags = matches->m_matches[i].m_flags;
@@ -621,12 +582,6 @@ bool Summary::set2 ( Xml      *xml                ,
 	m_summaryLen = p - m_summary;
 
 	if ( m_summaryLen > 50000 ) { char*xx=NULL;*xx=0; }
-
-	// it may not have all query terms if rat=0 (Require All Terms=false)
-	// so use Matches::m_matchesQuery instead of Matches::m_hasAllQTerms
-	//if ( ! matches->m_matchesQuery )
-	//	log("query: msg20: doc %s missing query terms for q=%s",
-	//	    f->getUrl(),m_q->m_orig );
 
 	return true;
 }

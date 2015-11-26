@@ -32944,9 +32944,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// breathe
 	QUICKPOLL ( m_niceness );
 
-	int32_t nowUTC2 = m_req->m_nowUTC;
-	if ( m_req->m_clockSet ) nowUTC2 = m_req->m_clockSet;
-
 	// . summary vector for deduping
 	// . does not compute anything if we should not! (svSize will be 0)
 	if ( ! reply->ptr_vbuf &&
@@ -33010,7 +33007,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	// get full image url. but not if we already have a thumbnail...
 	if ( ! reply->ptr_imgUrl&&!reply->ptr_imgData&&!m_req->m_getLinkText){
-		// && m_req->m_getImageUrl ) {
 		char **iu = getImageUrl();
 		if ( ! iu || iu == (char **)-1 ) return (Msg20Reply *)iu;
 		reply-> ptr_imgUrl = *iu;
@@ -33020,7 +33016,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	// get thumbnail image DATA
 	if ( ! reply->ptr_imgData && ! m_req->m_getLinkText ) { 
-		// && m_req->m_getImageUrl ) {
 		reply-> ptr_imgData = ptr_imageData;
 		reply->size_imgData = size_imageData;
 	}
@@ -34052,8 +34047,6 @@ Summary *XmlDoc::getSummary () {
 	if ( ! ww || ww == (Words *)-1 ) return (Summary *)ww;
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (Summary *)xml;
-	Bits *bits = getBitsForSummary();
-	if ( ! bits || bits == (Bits *)-1 ) return (Summary *)bits;
 	Sections *sections = getSections();
 	if ( ! sections ||sections==(Sections *)-1) return (Summary *)sections;
 	Pos *pos = getPos();
@@ -34097,15 +34090,12 @@ Summary *XmlDoc::getSummary () {
 
 	// compute the summary
 	bool status;
-	status = s->set2( xml                              ,
+	status = s->set2( xml                      ,
 			  ww                               ,
-			  bits                             ,
 			  sections                         ,
 			  pos                              ,
 			  q                                ,
 			  (int64_t *)m_req->ptr_termFreqs  ,
-			  (float     *)m_req->ptr_affWeights ,
-			  false                            , // doStemming
 			  m_req->m_summaryMaxLen           ,
 			  numLines                         ,
 			  // . displayLines, # lines we are displaying
@@ -34113,9 +34103,7 @@ Summary *XmlDoc::getSummary () {
 			  //   length of the summary to display
 			  m_req->m_numSummaryLines         ,
 			  m_req->m_summaryMaxNumCharsPerLine,
-			  m_req->m_ratInSummary            ,
 			  getFirstUrl()                    ,
-			  //&reply->m_queryProximityScore ,
 			  mm                               ,
 			  tbuf                             ,
 			  tbufLen                          );
