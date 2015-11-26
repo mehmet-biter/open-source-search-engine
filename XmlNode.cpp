@@ -348,8 +348,7 @@ int32_t getTagLen ( char *node ) { // , int32_t version ) {
 		     node[i] != '\"' &&
 		     node[i] != '\''  )
 			continue;
-		// this is about 1.3 times faster than above (with -O2 on both)
-		//if ( ! is_tag_control_char ( node[i] ) ) continue;
+
 		if ( node[i] == '<' ) break;
 		if ( node[i] == '>' ) {
 			break;

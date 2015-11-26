@@ -97,20 +97,8 @@ void hexToBin ( const char *src , int32_t srcLen , char *dst );
 void binToHex ( unsigned char *src , int32_t srcLen , char *dst );
 
 // the _a suffix denotes an ascii string
-bool is_lower2_a  (char *s,int32_t len) ;
-bool is_lower1_a  (char *s) ;
-bool is_ascii2    (char *s,int32_t len) ;
-bool is_alnum2_a  (char *s,int32_t len) ;
-bool has_alpha_a  (char *s , char *send ) ;
 bool has_alpha_utf8(char *s, char *send ) ;
-bool is_alpha2_a  (char *s,int32_t len) ;
-bool is_num       (char *s,int32_t len) ;
-bool is_upper2_a  (char *s,int32_t len) ;
-bool is_cap_a     (char *s,int32_t len) ;
 bool is_cap_utf8  (char *s,int32_t len) ;
-
-bool is_vowel_a ( char s );
-bool has_vowel_a ( char *s , int32_t slen );
 
 // does it have at least one upper case character in it?
 bool has_upper_a  (char *s,int32_t len) ;
@@ -192,14 +180,9 @@ extern const unsigned char g_map_to_lower[];
 extern const unsigned char g_map_to_upper[];
 extern const unsigned char g_map_to_ascii[];
 extern const char g_map_is_upper[];
-extern const char g_map_canBeInTagName[];
-extern const char g_map_is_control[];
 extern const char g_map_is_binary[];
-extern const char g_map_is_vspace[];
-extern const char g_map_is_hspace[];
 extern const char g_map_is_lower[];
 extern const char g_map_is_ascii[];
-extern const char g_map_is_iso[];
 extern const char g_map_is_punct[];
 extern const char g_map_is_alnum[];
 extern const char g_map_is_alpha[];
@@ -218,21 +201,15 @@ bool loadTimeAdjustment ( ) ;
 bool saveTimeAdjustment ( ) ;
 
 // . convert "c" to lower case
-#define is_vowel_a(c)          g_map_is_vowel[(unsigned char)c]
 #define is_lower_a(c)          g_map_is_lower[(unsigned char)c]
 #define to_lower_a(c)          g_map_to_lower[(unsigned char)c]
 #define is_upper_a(c)          g_map_is_upper[(unsigned char)c]
 #define to_upper_a(c)          g_map_to_upper[(unsigned char)c]
 // c is latin1 in this case:
 #define to_ascii(c)            g_map_to_ascii[(unsigned char)c]
-#define canBeInTagName(c)      g_map_canBeInTagName[(unsigned char)c]
-#define is_control_a(c)        g_map_is_control[(unsigned char)c]
 #define is_binary_a(c)         g_map_is_binary[(unsigned char)c]
 #define is_wspace_a(c)         (((c)==32) || ((c)==9) || ((c)==10) || ((c)==13))
-#define is_vspace_a(c)         g_map_is_vspace[(unsigned char)c]
-#define is_hspace_a(c)         g_map_is_hspace[(unsigned char)c]
 #define is_ascii(c)            (((c)>=32) && ((c)<=126))
-#define is_ascii9(c)           (((c)>=32) && ((c)<=126))
 #define is_ascii3(c)           ((unsigned char)c<128)
 #define is_punct_a(c)          g_map_is_punct[(unsigned char)c]
 #define is_alnum_a(c)          g_map_is_alnum[(unsigned char)c]
@@ -240,17 +217,8 @@ bool saveTimeAdjustment ( ) ;
 #define is_digit(c)            g_map_is_digit[(unsigned char)c]
 #define is_hex(c)              g_map_is_hex[(unsigned char)c]
 #define is_tagname_char(c)     g_map_is_tagname_char[(unsigned char)c]
-#define is_tag_control_char(c) g_map_is_tag_control_char[(unsigned char)c]
-#define is_matchskip_a(c)      g_map_is_matchskip[(unsigned char)c]
 
 inline bool is_upper_utf8 ( char *s );
-
-inline bool has_vowel_a ( char *s , int32_t slen ) {
-	char *send = s + slen;
-	for ( ; s < send ; s++ )
-		if ( is_vowel_a(*s) ) return true;
-	return false;
-};
 
 /*
 // is character, "s", used in textual hexadecimal representation?
@@ -276,62 +244,9 @@ inline char btoh ( char s ) {
 	return (s - 10) + 'a';
 }
 
-// have to put an extra "s" on function name to avoid macro conflict
-inline bool is_lower_as(char *s,int32_t len) {
-	for (int32_t i=0;i<len;i++)
-		if (!is_lower_a(s[i]))
-			return false;
-	return true;
-}
-
-// have to put an extra "s" on function name to avoid macro conflict
-inline bool is_lower_as(char *s) {
-	for (int32_t i=0;s[i];i++)
-		if (!is_lower_a(s[i]))
-			return false;
-	return true;
-}
-
 inline bool is_ascii2_a(char *s,int32_t len) {
 	for (int32_t i=0;i<len;i++)
 		if (!is_ascii(s[i]))
-			return false;
-	return true;
-}
-
-inline bool is_alnum2_a(char *s,int32_t len) {
-	for (int32_t i=0;i<len;i++)
-		if (!is_alnum_a(s[i]))
-			return false;
-	return true;
-}
-
-inline bool is_alpha2_a(char *s,int32_t len) {
-	for (int32_t i=0;i<len;i++)
-		if (!is_alpha_a(s[i]))
-			return false;
-	return true;
-}
-
-inline bool is_num(char *s,int32_t len) {
-	for (int32_t i=0;i<len;i++)
-		if (!is_digit(s[i]))
-			return false;
-	return true;
-}
-
-inline bool is_upper2_a (char *s,int32_t len) {
-	for (int32_t i=0;i<len;i++)
-		if (!is_upper_a(s[i]))
-			return false;
-	return true;
-}
-
-inline bool is_cap_a (char *s,int32_t len) {
-	if (!is_upper_a(s[0]))
-		return false;
-	for (int32_t i=1;i<len;i++)
-		if (!is_lower_a(s[i]))
 			return false;
 	return true;
 }
