@@ -350,60 +350,61 @@ bool Summary::set2 ( Xml      *xml                ,
 
 
 		// all done if no winner was made
-		if ( maxi == -1 ) break;
-
-		// sanity check
-		//if ( maxa == -1 || maxb == -1 ) { char *xx = NULL; *xx = 0; }
-		if ( maxa == -1 ) break;
-		if ( maxb == -1 ) break;
+		if ( maxi == -1 || maxa == -1 || maxb == -1) {
+			break;
+		}
 
 		// who is the winning match?
 		maxm = &matches->m_matches[maxi];
-		Words         *ww      = maxm->m_words;
+		Words *ww = maxm->m_words;
 		// we now use "m_swbits" for the summary bits since they are
 		// of size sizeof(swbit_t), a int16_t at this point
-		swbit_t       *bb      = maxm->m_bits->m_swbits;
+		swbit_t *bb = maxm->m_bits->m_swbits;
 
 		// this should be impossible
-		if ( maxa > ww->m_numWords || maxb > ww->m_numWords ){
+		if ( maxa > ww->m_numWords || maxb > ww->m_numWords ) {
 			log ( LOG_WARN,"query: summary starts or ends after "
 			      "document is over! maxa=%"INT32" maxb=%"INT32" nw=%"INT32"",
 			      maxa, maxb, ww->m_numWords );
 			maxa = ww->m_numWords - 1;
 			maxb = ww->m_numWords;
-			//char *xx = NULL; *xx = 0;
 		}
 
 		// assume we do not preceed with ellipsis "..."
 		bool needEllipsis = true;
 		
-		// rule of thumb, don't use ellipsis if the first letter is 
-		// capital, or a non letter
+
 		char *c = ww->m_words[maxa]+0;
-		if      ( ! is_alpha_utf8(c) ) needEllipsis = false;
-		else if (   is_upper_utf8(c) ) needEllipsis = false;
 
-		// is punct word before us pair acrossable? if so then we
-		// probably are not the start of a sentence.
-		if ( bb[maxa] & D_STARTS_SENTENCE ) needEllipsis = false;
-
-		// or if into the sample and previous excerpt had an ellipsis
-		// do not bother using one for us.
-		if ( p > m_summary && hadEllipsis ) needEllipsis = false;
+		// rule of thumb, don't use ellipsis if the first letter is capital, or a non letter
+		// is punct word before us pair acrossable? if so then we probably are not the start of a sentence.
+		// or if into the sample and previous excerpt had an ellipsis do not bother using one for us.
+		if ( !is_alpha_utf8(c) || is_upper_utf8(c) ||
+		     (bb[maxa] & D_STARTS_SENTENCE) ||
+		     (p > m_summary && hadEllipsis)) {
+			needEllipsis = false;
+		}
 
 		if ( needEllipsis ) {
 			// break out if no room for "..."
-			//int32_t elen;
-			if ( p + 4 + 2 > pend ) break;
+			if ( p + 4 + 2 > pend ) {
+				break;
+			}
+
 			// space first?
-			if ( p > m_summary ) *p++ = ' ';
+			if ( p > m_summary ) {
+				*p++ = ' ';
+			}
 			gbmemcpy ( p , "... " , 4 );
 			p += 4;
 		}
 
 		// separate summary excerpts with a single space.
 		if ( p > m_summary ) {
-			if ( p + 2 > pend ) break;
+			if ( p + 2 > pend ) {
+				break;
+			}
+
 			*p++ = ' ';
 		}
 
@@ -427,7 +428,10 @@ bool Summary::set2 ( Xml      *xml                ,
 		int32_t len = pos->filter(p, pend, ww, maxa, maxb);
 
 		// break out if did not fit
-		if ( len == 0 ) break;
+		if ( len == 0 ) {
+			break;
+		}
+
 		// don't consider it if it is a substring of the title
 		if ( len == titleBufLen &&
 		     strncasestr(titleBuf, p, titleBufLen, len) ) {
@@ -448,7 +452,9 @@ bool Summary::set2 ( Xml      *xml                ,
 		// now we just indicate which query terms we got
 		for ( int32_t i = 0 ; i < m_q->m_numWords ; i++ ) {
 			// do not breach
-			if ( retired[i] >= 100 ) continue;
+			if ( retired[i] >= 100 ) {
+				continue;
+			}
 			retired [ i ] += maxGotIt [ i ];
 		}
 	
@@ -456,9 +462,10 @@ bool Summary::set2 ( Xml      *xml                ,
 		// zero out scores of the winning sample so we don't get them 
 		// again. use negative one billion to ensure that we don't get
 		// them again
-		for ( int32_t j = maxa ; j < maxb ; j++ )
+		for ( int32_t j = maxa ; j < maxb ; j++ ) {
 			// mark it as used
 			bb[j] |= D_USED;
+		}
 
 		// if we ended on punct that can be paired across we need
 		// to add an ellipsis
@@ -470,16 +477,11 @@ bool Summary::set2 ( Xml      *xml                ,
 
 		// try to put in a small summary excerpt if we have atleast
 		// half of the normal excerpt length left
-		if ( maxExcerptLen == m_maxNumCharsPerLine && 
-		     //pos->m_pos[maxb] - pos->m_pos[maxa] 
-		     len <= ( m_maxNumCharsPerLine / 2 + 1 ) ){
+		if ( maxExcerptLen == m_maxNumCharsPerLine && len <= ( m_maxNumCharsPerLine / 2 + 1 ) ){
 			maxExcerptLen = m_maxNumCharsPerLine / 2;
-			// don't count it in the finals since we try to get a
-			// small excerpt
+			// don't count it in the finals since we try to get a small excerpt
 			numFinal--;
-		}
-		else if ( m_numExcerpts < MAX_SUMMARY_EXCERPTS &&
-			  m_numExcerpts >= 0 ) {
+		} else if ( m_numExcerpts < MAX_SUMMARY_EXCERPTS && m_numExcerpts >= 0 ) {
 			m_summaryExcerptLen[m_numExcerpts] = p - m_summary;
 			m_numExcerpts++;
 			// also reset maxExcerptLen
@@ -488,9 +490,10 @@ bool Summary::set2 ( Xml      *xml                ,
 	
 	skip:
 		// zero out the scores so they will not be used in others
-		for ( int32_t j = maxa ; j < maxb ; j++ )
+		for ( int32_t j = maxa ; j < maxb ; j++ ) {
 			// mark it
 			bb[j] |= D_USED;
+		}
 	}
 
 	if ( numFinal <= m_numDisplayLines )

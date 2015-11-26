@@ -9267,7 +9267,7 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 	if ( tlen < 0 ) tlen = 0;
 
 	// put summary into there
-	int32_t slen = s->m_summaryLen;
+	int32_t slen = s->getSummaryLen();
 
 	// allocate space
 	int32_t need = tlen + 1 + slen + 1;
@@ -9282,7 +9282,7 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 	//if ( len > avail ) len = avail - 10;
 	//gbmemcpy ( p , s->m_summary , len );
 	//p += len;
-	sb.safeMemcpy ( s->m_summary , slen );
+	sb.safeMemcpy ( s->getSummary() , slen );
 	// null terminate it
 	//*p = '\0';
 	sb.nullTerm();

@@ -21,7 +21,7 @@
 #define _SUMMARY_H_
 
 #include "gb-include.h"
-#include "Unicode.h"
+//#include "Unicode.h"
 #include "Query.h"
 #include "Xml.h"
 #include "Words.h"
@@ -31,6 +31,9 @@
 #define MAX_SUMMARY_LEN 1024*20
 #define MAX_SUMMARY_EXCERPTS 1024
 #define MAX_SUMMARY_LOCS 16
+
+class Sections;
+class Matches;
 
 class Summary {
 public:
@@ -58,6 +61,10 @@ public:
 
 	// this is NULL terminated
 	char *getSummary    ( ) { return m_summary;    }
+	int32_t getSummaryDisplayLen() { return m_displayLen; }
+	int32_t getSummaryLen() { return m_summaryLen; }
+
+private:
 
 	//////////////////////////////////////////////////////////////////
 	//
@@ -65,21 +72,16 @@ public:
 	//
 	//////////////////////////////////////////////////////////////////
 
-	bool getDefaultSummary ( Xml      *xml,
-				 Words    *words,
-				 class Sections *sections ,
-				 Pos      *pos,
-				 //int32_t      bigSampleRadius,
-				 int32_t      maxSummaryLen );
+	bool getDefaultSummary (Xml *xml, Words *words, Sections *sections , Pos *pos, int32_t maxSummaryLen );
 
-	int64_t getBestWindow ( class Matches *matches ,
-				  int32_t           mn      ,
-				  int32_t          *lasta   ,
-				  int32_t          *besta   ,
-				  int32_t          *bestb   ,
-				  char          *gotIt   ,
-				  char          *retired ,
-				  int32_t           maxExcerptLen );
+	int64_t getBestWindow (Matches *matches,
+	                       int32_t mn,
+	                       int32_t *lasta,
+	                       int32_t *besta,
+	                       int32_t *bestb,
+	                       char *gotIt,
+	                       char *retired,
+	                       int32_t maxExcerptLen );
 
 	// null terminate and store the summary here.
 	char  m_summary      [ MAX_SUMMARY_LEN ];
@@ -91,7 +93,6 @@ public:
 	// how big is that part of the summary to display?
 	int32_t m_numDisplayLines;
 	int32_t m_displayLen;
-	int32_t getSummaryDisplayLen() { return m_displayLen; }
 
 	int32_t  m_maxNumCharsPerLine;
 
