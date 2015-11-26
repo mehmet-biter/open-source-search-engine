@@ -59,44 +59,44 @@ bool Words::set ( char *s, int32_t slen, int32_t version,
 int32_t countWords ( char *p , int32_t plen ) {
 	char *pend  = p + plen;
 	int32_t  count = 1;
- loop:
 
-	// sequence of punct
-	for  ( ; p < pend && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
-		// in case being set from xml tags, count as words now
-		if ( *p=='<') count++; 
-	}
-	count++;
+	while ( p < pend ) {
+		// sequence of punct
+		for  ( ; p < pend && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
+			// in case being set from xml tags, count as words now
+			if ( *p=='<') count++; 
+		}
+		count++;
 
-	// sequence of alnum
-	for  ( ; p < pend && is_alnum_utf8 (p) ; p += getUtf8CharSize(p) )
-		;
+		// sequence of alnum
+		for  ( ; p < pend && is_alnum_utf8 (p) ; p += getUtf8CharSize(p) )
+			;
 
-	count++;
+		count++;
 
-	if ( p < pend ) goto loop;
+	};
 	// some extra for good meaure
 	return count+10;
 }
 
 int32_t countWords ( char *p ) {
 	int32_t  count = 1;
- loop:
 
-	// sequence of punct
-	for  ( ; *p && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
-		// in case being set from xml tags, count as words now
-		if ( *p=='<') count++; 
+	while ( *p ) {
+		// sequence of punct
+		for  ( ; *p && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
+			// in case being set from xml tags, count as words now
+			if ( *p=='<') count++; 
+		}
+		count++;
+
+		// sequence of alnum
+		for  ( ; *p && is_alnum_utf8 (p) ; p += getUtf8CharSize(p) )
+			;
+
+		count++;
+
 	}
-	count++;
-
-	// sequence of alnum
-	for  ( ; *p && is_alnum_utf8 (p) ; p += getUtf8CharSize(p) )
-		;
-
-	count++;
-
-	if ( *p ) goto loop;
 	// some extra for good meaure
 	return count+10;
 }
