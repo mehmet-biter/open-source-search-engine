@@ -82,9 +82,7 @@ char *g_files[] = {
 	
 	"catcountry.dat",
 	"badcattable.dat",
-	
-	"ucdata/cd_data.dat",
-	"ucdata/cdmap.dat",
+
 	"ucdata/combiningclass.dat",
 	"ucdata/kd_data.dat",
 	"ucdata/kdmap.dat",

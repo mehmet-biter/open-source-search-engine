@@ -17,8 +17,6 @@ bool loadUnicodeTable(UCPropTable *table, char *filename, bool useChecksum = fal
 bool saveUnicodeTable(UCPropTable *table, char *filename);
 // JAB: we now have Kompatible and Canonical decomposition tables
 bool saveKDecompTable(char *baseDir = NULL) ;
-bool saveCDecompTable(char *baseDir = NULL) ;
-// JAB: we now have Kompatible and Canonical decomposition tables
 bool loadDecompTables(char *baseDir = NULL) ;
 void resetDecompTables() ;
 
@@ -26,12 +24,6 @@ bool     setKDValue(UChar32 c, UChar32* decomp, int32_t decompCount,
 		    bool fullComp = false);
 UChar32 *getKDValue(UChar32 c, int32_t *decompCount, bool *fullComp = NULL);
 int32_t     recursiveKDExpand(UChar32 c, UChar32 *buf, int32_t bufSize);
-		       
-// JAB: we now have Kompatible and Canonical decomposition tables
-bool     setCDValue(UChar32 c, UChar32* decomp, int32_t decompCount,
-		    bool fullComp = false);
-UChar32 *getCDValue(UChar32 c, int32_t *decompCount);
-int32_t     recursiveCDExpand(UChar32 c, UChar32 *buf, int32_t bufSize);
 
 UCProps ucProperties(UChar32 c);
 bool    ucIsAlpha(UChar32 c);

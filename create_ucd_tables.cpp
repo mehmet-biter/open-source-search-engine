@@ -18,7 +18,6 @@ void handleUnicodeData(u_int32_t, char **col, u_int32_t colCount);
 void handleDerivedCoreProps(u_int32_t, char **col, u_int32_t colCount);
 void handleDerivedNormalizationProps(u_int32_t, char **col, u_int32_t colCount);
 void handlePropList(u_int32_t, char **col, u_int32_t colCount);
-void handleNormalizationTest(u_int32_t, char **col, u_int32_t colCount);
 void handleScripts(u_int32_t, char **col, u_int32_t colCount);
 void decomposeHangul();
 
@@ -27,6 +26,19 @@ void decomposeHangul();
 // static int g_decompCount = 0;
 static int g_canonicalDecompCount = 0;
 static int g_excludeCount = 0;
+
+
+int g_inMemcpy=0;
+bool g_recoveryMode = false;
+int32_t g_recoveryLevel = 0;
+
+bool sendPageSEO(TcpSocket *, HttpRequest *) __attribute__((weak));
+
+// make the stubs here. seo.o will override them
+bool sendPageSEO(TcpSocket *s, HttpRequest *hr) {
+	//	return g_httpServer.sendErrorReply(s,500,"Seo support not present");
+	return true;
+}
 
 int main(int argc, char **argv) {
 	// Avoid SEGV
@@ -43,46 +55,30 @@ int main(int argc, char **argv) {
 	UCProps props = 0;
 	g_ucProps.setValue(0, &props);
 
-	loadUnidataProps("UNIDATA/DerivedNormalizationProps.txt",
-		handleDerivedNormalizationProps);
-	loadUnidataProps("UNIDATA/UnicodeData.txt",
-		handleUnicodeData);
+	loadUnidataProps("UNIDATA/DerivedNormalizationProps.txt", handleDerivedNormalizationProps);
+	loadUnidataProps("UNIDATA/UnicodeData.txt", handleUnicodeData);
 
 	decomposeHangul(); // set up algorithmic hangul decomps
  	printf("%d canonical deompositions\n", g_canonicalDecompCount);
 	printf("%d code points excluded\n", g_excludeCount);
 
-	loadUnidataProps("UNIDATA/DerivedCoreProperties.txt",
-		handleDerivedCoreProps);
-	loadUnidataProps("UNIDATA/PropList.txt",
-		handlePropList);
-	loadUnidataProps("UNIDATA/Scripts.txt",
-		handleScripts);
+	loadUnidataProps("UNIDATA/DerivedCoreProperties.txt", handleDerivedCoreProps);
+	loadUnidataProps("UNIDATA/PropList.txt", handlePropList);
+	loadUnidataProps("UNIDATA/Scripts.txt", handleScripts);
 	
-	printf("lower case map size: %d\n", g_ucLowerMap.getSize());
+	printf("lower case map size: %lu\n", g_ucLowerMap.getSize());
 	saveUnicodeTable(&g_ucLowerMap, "ucdata/lowermap.dat");
-	printf("upper case map size: %d\n", g_ucUpperMap.getSize());
+	printf("upper case map size: %lu\n", g_ucUpperMap.getSize());
 	saveUnicodeTable(&g_ucUpperMap, "ucdata/uppermap.dat");
-//	printf("categorymap size: %d\n", g_ucCategory.getSize());
-//	saveUnicodeTable(&g_ucCategory, "ucdata/categories.dat");
-	printf("properties size: %d\n", g_ucProps.getSize());
+	printf("properties size: %lu\n", g_ucProps.getSize());
 	saveUnicodeTable(&g_ucProps, "ucdata/properties.dat");
-	printf("scripts size: %d\n", g_ucScripts.getSize());
+	printf("scripts size: %lu\n", g_ucScripts.getSize());
 	saveUnicodeTable(&g_ucScripts, "ucdata/scripts.dat");
-	printf("combining class size: %d\n", g_ucCombiningClass.getSize());
+	printf("combining class size: %lu\n", g_ucCombiningClass.getSize());
 	saveUnicodeTable(&g_ucCombiningClass, "ucdata/combiningclass.dat");
 
 	// JAB: we now have Kompatible and Canonical decompositions
 	saveKDecompTable();
-	saveCDecompTable();
-
-	
-	if (!initCompositionTable()) {
-		log("Error initializing Full Composition table\n");
-		exit(1);
-	}
-	loadUnidataProps("UNIDATA/NormalizationTest.txt",
-			 handleNormalizationTest);
 
 	g_mem.printMem();
 
@@ -95,11 +91,11 @@ int main(int argc, char **argv) {
 	    loadDecompTables()){
 		printf("tables reloaded successfully\n\n");
 
-		printf("lower case map size: %d\n", g_ucLowerMap.getSize());
-		printf("upper case map size: %d\n", g_ucUpperMap.getSize());
-		printf("properties size: %d\n", g_ucProps.getSize());
-		printf("scripts size: %d\n", g_ucScripts.getSize());
-		printf("Kompat Decomp size: %d\n", g_ucKDIndex.getSize());
+		printf("lower case map size: %lu\n", g_ucLowerMap.getSize());
+		printf("upper case map size: %lu\n", g_ucUpperMap.getSize());
+		printf("properties size: %lu\n", g_ucProps.getSize());
+		printf("scripts size: %lu\n", g_ucScripts.getSize());
+		printf("Kompat Decomp size: %lu\n", g_ucKDIndex.getSize());
 		exit(0);
 	}
 }
@@ -118,7 +114,7 @@ void handleUnicodeData(u_int32_t line, char **col, u_int32_t colCount) {
 	char *decompStr = col[5];
 	UChar32 ucMapping = strtol(col[12],NULL, 16);
 	UChar32 lcMapping = strtol(col[13],NULL, 16);
-	
+
 	// Set general category
 	//g_ucCategory.setValue(codePoint, (void*)category);
 	UCProps props = ucProperties(codePoint);
@@ -154,7 +150,7 @@ void handleUnicodeData(u_int32_t line, char **col, u_int32_t colCount) {
 			p = pend+1;
 		}
 
-//  		printf ("Code Point U+%04"XINT32", %s: %s (%d chars)\n", 
+//  		printf ("Code Point U+%04"XINT32", %s: %s (%d chars)\n",
 //  			codePoint, name, kompat?"(Kompatable)":"", decompCount);
 // 		g_decompCount++;
 // 		if (decompStr[0] != '<')
@@ -169,15 +165,12 @@ void handleUnicodeData(u_int32_t line, char **col, u_int32_t colCount) {
 			fullComp = true;
 		}
 		setKDValue(codePoint, decomp, decompCount, fullComp);
-	    	// JAB: we now have Kompatible and Canonical decompositions
-		if (!kompat)
-			setCDValue(codePoint, decomp, decompCount);
 	}
 }
 
 void handlePropList(u_int32_t line, char **col, u_int32_t colCount) {
 	//printf("Line %"INT32": ", line);
-	//for (u_int32_t i=0;i<colCount;i++) 
+	//for (u_int32_t i=0;i<colCount;i++)
 	//	printf("'%s' ", col[i]);
 	//printf("\n");
 	char *range = NULL;
@@ -298,77 +291,6 @@ void handleScripts(u_int32_t, char **col, u_int32_t colCount){
 
 }
 
-void handleNormalizationTest(u_int32_t line, char **col, u_int32_t colCount) {
-	//NFKC Test:
-	// c4 == NFKC(c1) == NFKC(c2) == NFKC(c3) == NCFK(c4) == NFKC(c5)
-	UChar c[5][32]; int32_t len[5];
-	
-	if (colCount < 5) {
-		//log("Line %"INT32": only %"INT32" columns!", line, colCount);
-		return;
-	}
-	for (uint32_t i = 0 ; i < 5 ; i++) {
-		char *p = col[i];
-		int clen = gbstrlen(p);
-		UChar *q = c[i];
-		while (p < col[i]+clen) {
-			char *pend = p;
-			while (*pend && *pend != ' ') pend++;
-			*pend = '\0';
-			UChar32 d = strtol(p, NULL, 16);
-			q += utf16Encode(d, q);
-			p = pend+1;
-		}
-		len[i] = q - c[i];
-		
-	}
-	for (uint32_t i = 0; i < 5 ; i++ ) {
-		UChar normString[256];
-		int32_t normLen = ucNormalizeNFKD(normString, 256, 
-					       c[i], len[i]);
-		//ucDebug(normString, normLen);
-		if (ucStrCmp(normString, normLen, c[4], len[4])){
-			printf("Line %"INT32" col %"INT32": KD Normalization failed: \n bad: \"",
-			       line, i+1);
-			UChar *p = normString;
-			while(p < normString+normLen) {
-				UChar32 d = utf16Decode(p, &p);
-				ucPutc(d);
-			}
-			printf("\"\ngood: \"");
-
-			p = c[4];
-			while(p < c[4]+len[4]) {
-				UChar32 d = utf16Decode(p, &p);
-				ucPutc(d);
-			}
-			printf("\"\n");
-			continue;
-		}
-
-
-		normLen = ucNormalizeNFKC(normString, 256, 
-					       c[i], len[i]);
-
-		if (ucStrCmp(normString, normLen, c[3], len[3])){
-			printf("Line %"INT32" col %"INT32": KC Normalization failed: \n bad: \"",
-			       line, i+1);
-			UChar *p = normString;
-			while(p < normString+normLen) {
-				UChar32 d = utf16Decode(p, &p);
-				ucPutc(d);
-			}
-			printf("\"\ngood: \"");
-
-			p = c[3];
-			while(p < c[3]+len[3]) {
-				UChar32 d = utf16Decode(p, &p);
-				ucPutc(d);
-			}
-			printf("\"\n");
-		}
-	}
-}
 bool loadUnidataProps(char *filename, 
 		      void (*handler)(u_int32_t, char**, u_int32_t)) {
 	printf("Loading %s\n", filename);
@@ -471,7 +393,5 @@ void decomposeHangul() {
 		decomp[1] = second;
 		g_canonicalDecompCount++;
 		setKDValue(value, decomp, 2, true);
-	    	// JAB: we now have Kompatible and Canonical decompositions
-		setCDValue(value, decomp, 2);
 	}
 }

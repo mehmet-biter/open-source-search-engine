@@ -44,12 +44,6 @@ class Collectiondb  {
 	// does nothing
 	void reset() ;
 
-	// . this loads all the recs from host #0 
-	// . returns false and sets errno on error
-	// . each collection as a CollectionRec class for it and
-	//   is loaded up from the appropriate config file
-	bool init ( );
-
 	// this loads all the recs from host #0 
 	//bool load ( bool isDump = false );
 
