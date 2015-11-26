@@ -48,23 +48,6 @@ class Summary {
 	~Summary();
 	void reset();
 
-	// . like above but flattens the xml for you then calls the above
-	// . returns false and sets errno on error
-	bool set ( class Xml   *xml                ,
-		   class Query *q                  ,
-		   int64_t   *termFreqs          ,
-		   bool         doStemming         ,
-		   int32_t         maxSummaryLen      , 
-		   int32_t         maxNumLines        ,
-		   int32_t         maxNumCharsPerLine ,
-		   //int32_t         bigSampleRadius    ,
-		   //int32_t         bigSampleMaxLen    ,
-		   bool         ratInSummary = false ,
-		   class Url   *f = NULL      );
-		   //bool         excludeAnchText = false,
-		   //bool         hackFixWords = false,
-		   //bool         hackFixPhrases = false ) ;
-
 	// this should eventually replace set()
 	bool set2 ( class Xml      *xml                ,
 		    class Words    *words              ,
@@ -98,17 +81,13 @@ class Summary {
 
 
 	// this is NULL terminated
-	char *getSummary    ( ) { return m_summary;    };
-	int32_t  getSummaryLen ( ) { return m_summaryLen; };
+	char *getSummary    ( ) { return m_summary;    }
+	int32_t  getSummaryLen ( ) { return m_summaryLen; }
 
 	// me = "max excerpts". we truncate the summary if we need to.
 	// XmlDoc.cpp::getSummary(), likes to request more excerpts than are 
 	// actually displayed so it has a bigger summary for deduping purposes.
 	int32_t  getSummaryLen ( int32_t me ) ;
-
-	// for related topics.. sample surrounding the query terms
-	//char *getBigSampleBuf ( ) { return m_buf; };
-	//int32_t  getBigSampleLen ( ) { return m_bufLen; };
 
 	void truncateSummaryForExcerpts ( int32_t  numExcerpts  ,
 					  int32_t  maxSummaryLen,
@@ -116,55 +95,6 @@ class Summary {
 					  int32_t *dmozSummLens ,
 					  int32_t  numCatids    ,
 					  bool *sumFromDmoz  );
-	
-	//float getDiversity() {return m_diversity;}
-	//float getProximityScore() { return m_proximityScore; };
-
-	// for places in summary
-	/*
-	bool      scanForLocations      ( );
-	int32_t      getNumSummaryLocs     ( ) {
-		return m_summaryLocs.length()/sizeof(uint64_t); };
-	int32_t      getSummaryLocsSize    ( ) {
-	        return m_summaryLocs.length(); }
-	uint64_t *getSummaryLocs        ( ) {
-		return (uint64_t *)m_summaryLocs.getBufStart(); };
-	int32_t      getSummaryLocsPopsSize( ) {
-	        return m_summaryLocsPops.length(); }
-	int32_t     *getSummaryLocsPops    ( ) {
-		return (int32_t *)m_summaryLocsPops.getBufStart(); };
-	*/
-	
-	// private:
-
-	// . content is an html/xml doc
-	// . we highlight "query" in "content" as best as we can
-	// . returns false and sets errno on error
-	// . CAUTION: this is destructive on "doc"
-	// . stores bigSample into "doc" which should be "m_buf"
-	//   and sets bytes stored into *bigSampleLen
-	/*
-	bool set ( char      *doc                ,
-		   int32_t       docLen             ,
-		   Query     *q                  ,
-		   int64_t *termFreqs          ,
-		   bool       doStemming         ,
-		   int32_t       maxSummaryLen      , 
-		   int32_t       maxNumLines        ,
-		   int32_t       maxNumCharsPerLine ,
-		   //int32_t       bigSampleRadius    ,
-		   //int32_t       bigSampleMaxLen    ,
-		   //int32_t      *bigSampleLen       ,
-		   char      *foundTermVector    );
-	*/
-		
-	// BIG HACK support
-	//bool allQTermsFound( Query *q, TitleRec *tr, Xml *xml, 
-	//		     class Matches *matches, 
-	//		     qvec_t reqMask, qvec_t negMask,
-	//		     bool excludeLinkText, 
-	//		     bool excludeMetaText, 
-	//		     bool allowPunctInPhrase );
 
 	//////////////////////////////////////////////////////////////////
 	//
@@ -178,18 +108,6 @@ class Summary {
 				 Pos      *pos,
 				 //int32_t      bigSampleRadius,
 				 int32_t      maxSummaryLen );
-
-	void setSummaryScores ( class Matches *matches   , 
-				//Words         *words     , 
-				//Scores        *scores    ,  
-				//Pos           *pos       ,
-				//int32_t           numNeedles,
-				//Needle        *needles   ,
-				Query         *q         ,
-				float         *phraseAffWeights ,
-				//int32_t          *docSummaryScore,
-				//int32_t          *queryInSectionScore,
-				int32_t           commentStart );
 
 	int64_t getBestWindow ( class Matches *matches ,
 				  int32_t           mn      ,
@@ -206,24 +124,6 @@ class Summary {
 	void reduceQueryScores   ( class Matches *matches, 
 				   int32_t m, int32_t a, int32_t b ) ;
 	void reduceScoreForWords ( class Matches *matches, int32_t qtn ) ;
-
-	// a wrapper basically for the set0 below
-	bool set0 ( char *doc, int32_t docLen, Query *q, class Msg20Request *mr);
-
-	// . the old string based summary generator -- ULTRA FAST!
-	// . resurrected from /gb/datil2-release.git/src/Summary.cpp
-	// . returns false with g_errno set on error
-	bool set1 ( char      *doc                ,
-		    int32_t       docLen             ,
-		    Query     *q                  ,
-		    int32_t       maxSummaryLen      ,
-		    int32_t       maxNumLines        ,
-		    int32_t       maxNumCharsPerLine ,
-		    int32_t       bigSampleRadius    ,
-		    int32_t       bigSampleMaxLen    ,
-		    int32_t      *bigSampleLen       ,
-		    char      *foundTermVector    ,
-		    int64_t *termFreqs          ) ;
 
 	// null terminate and store the summary here.
 	char  m_summary      [ MAX_SUMMARY_LEN ];
