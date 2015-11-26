@@ -67,19 +67,6 @@ class Summary {
 
 	// this is NULL terminated
 	char *getSummary    ( ) { return m_summary;    }
-	int32_t  getSummaryLen ( ) { return m_summaryLen; }
-
-	// me = "max excerpts". we truncate the summary if we need to.
-	// XmlDoc.cpp::getSummary(), likes to request more excerpts than are 
-	// actually displayed so it has a bigger summary for deduping purposes.
-	int32_t  getSummaryLen ( int32_t me ) ;
-
-	void truncateSummaryForExcerpts ( int32_t  numExcerpts  ,
-					  int32_t  maxSummaryLen,
-					  char *dmozSumms    ,
-					  int32_t *dmozSummLens ,
-					  int32_t  numCatids    ,
-					  bool *sumFromDmoz  );
 
 	//////////////////////////////////////////////////////////////////
 	//
@@ -102,13 +89,6 @@ class Summary {
 				  char          *gotIt   ,
 				  char          *retired ,
 				  int32_t           maxExcerptLen );
-				  //int32_t           numFindableQWords,
-				  //char          *represented,
-				  //int32_t          *foundNew );
-
-	void reduceQueryScores   ( class Matches *matches, 
-				   int32_t m, int32_t a, int32_t b ) ;
-	void reduceScoreForWords ( class Matches *matches, int32_t qtn ) ;
 
 	// null terminate and store the summary here.
 	char  m_summary      [ MAX_SUMMARY_LEN ];
@@ -116,12 +96,6 @@ class Summary {
 	int32_t  m_summaryExcerptLen [ MAX_SUMMARY_EXCERPTS ];
 	int32_t  m_numExcerpts;
 	bool  m_isNormalized;
-	// hold the big sample here
-	//char *m_buf;
-	//int32_t  m_bufMaxLen;
-	//int32_t  m_bufLen;
-	//bool  m_freeBuf;
-        //char  m_localBuf[10032];
 
 	// if getting more lines for deduping than we need for displaying,
 	// how big is that part of the summary to display?
@@ -136,22 +110,15 @@ class Summary {
 	// ptr to the query
 	Query     *m_q;
 
-	// query scores
-	//int32_t *m_qscores;
-
 	// pub date list offsets
 	bool m_useDateLists;
 	bool m_exclDateList;
 	int32_t m_begPubDateList;
 	int32_t m_endPubDateList;
 
-	//float m_diversity;
-
-	//float m_proximityScore;
-
 	char *m_bitScoresBuf;
 	int32_t  m_bitScoresBufSize;
-	//float m_wordWeights[MAX_QUERY_WORDS];
+
 	float *m_wordWeights;
 	int32_t m_wordWeightSize;
 	char m_tmpBuf[128];

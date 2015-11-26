@@ -182,12 +182,7 @@ bool Title::setTitle ( XmlDoc   *xd,
 		return true;
 	}
 
-	bool status = setTitle4 ( xd ,
-				  xml ,
-				  words ,
-				  maxTitleChars ,
-				  maxTitleWords ,
-				  q);
+	bool status = setTitle4 ( xd, xml, words, maxTitleChars, maxTitleWords, q);
 
 	int64_t took = gettimeofdayInMilliseconds() - startTime;
 	if ( took > 5 ) {
@@ -299,9 +294,10 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 	//float  inCommonCandBoost[MAX_TIT_CANDIDATES];
 
 	// reset these
-	for ( int32_t i = 0 ; i < MAX_TIT_CANDIDATES ; i++ )
+	for ( int32_t i = 0 ; i < MAX_TIT_CANDIDATES ; i++ ) {
 		// assume no parent
 		parent[i] = -1;
+	}
 
 	// xml and words class for each link info, rss item
 	Xml   tx[MAX_TIT_CANDIDATES];
@@ -422,8 +418,12 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 
 	// process the imported link info
 	info = *xd->getLinkInfo2();
+
 	// only process it once though, use the flag "didit" to control that
-	if ( ! didit && info ) { didit = true; goto fooloop; }
+	if ( ! didit && info ) {
+		didit = true;
+		goto fooloop;
+	}
 
 
 	// . set the flags array

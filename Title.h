@@ -2,16 +2,13 @@
 
 #ifndef _TITLE_H_
 #define _TITLE_H_
+
 #include "SafeBuf.h"
 #include "Query.h"
-//#include "CollectionRec.h"
 
 #define TITLE_LOCAL_SIZE 2048
 
-class LinkInfo;
-
 class Title {
-
  public:
 
 	Title();
@@ -39,7 +36,7 @@ class Title {
 			class Words    *words         ,
 			int32_t            maxTitleChars ,
 			int32_t            maxTitleWords ,
-			Query          *q , // = NULL ,
+			Query          *q ,
 			int32_t niceness );
 
 

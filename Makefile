@@ -58,7 +58,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	matches2.o LanguageIdentifier.o \
 	Repair.o Process.o \
 	Abbreviations.o \
-	RequestTable.o TuringTest.o Msg51.o \
+	TuringTest.o Msg51.o \
 	Msg40.o Msg4.o SpiderProxy.o \
 	Statsdb.o PageStatsdb.o \
 	PostQueryRerank.o Msge0.o Msge1.o \

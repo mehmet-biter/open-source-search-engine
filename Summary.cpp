@@ -586,18 +586,6 @@ bool Summary::set2 ( Xml      *xml                ,
 	return true;
 }
 
-// . usually we get more summary lines than displayed so that the summary
-//   deduped, XmlDoc::getSummaryVector(), has adequate sample space
-// . "max excerpts". we truncate the summary if we need to.
-//   XmlDoc.cpp::getSummary(), likes to request more excerpts than are 
-//   actually displayed so it has a bigger summary for deduping purposes.
-int32_t Summary::getSummaryLen ( int32_t maxLines ) {
-	int32_t len = 0;
-	for ( int32_t i = 0 ; i < m_numExcerpts && i < maxLines ; i++ ) 
-		len += m_summaryExcerptLen[i];
-	return len;
-}
-
 // MDW: this logic moved mostly to Bits::setForSummary() and
 // Summary::set2(). See the gigawiki url to see the rules for summary
 // generation: http://10.5.1.202:237/eng_wiki/index.php/Eng:Projects
