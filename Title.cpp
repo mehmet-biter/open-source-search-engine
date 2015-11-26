@@ -59,7 +59,6 @@ static inline int s_max(const int x, const int y) {
 Title::Title() {
 	m_title = NULL;
 	m_titleBytes = 0;
-	m_query = NULL;
 }
 
 Title::~Title() {
@@ -67,36 +66,43 @@ Title::~Title() {
 }
 
 void Title::reset() {
-	if ( m_title && m_title != m_localBuf ) 
+	if ( m_title && m_title != m_localBuf ) {
 		mfree ( m_title , m_titleAllocSize , "Title" );
+	}
+
 	m_title = NULL;
 	m_titleBytes = 0;
 	m_titleAllocSize = 0;
-	m_query = NULL;
 	m_titleTagStart = -1;
 	m_titleTagEnd   = -1;
 }
 
 // returns false and sets g_errno on error
-bool Title::setTitle ( XmlDoc   *xd            ,
-		       Xml      *xml           ,
-		       Words    *words         ,
-		       int32_t      maxTitleChars ,
-		       int32_t      maxTitleWords ,
-		       Query    *q,
-		       int32_t niceness ) {
+bool Title::setTitle ( XmlDoc   *xd,
+                       Xml      *xml,
+                       Words    *words,
+                       int32_t  maxTitleChars ,
+                       int32_t  maxTitleWords ,
+                       Query    *q,
+                       int32_t niceness ) {
 
 	// if this is too big the "first line" algo can be huge!!!
 	// and really slow everything way down with a huge title candidate
-	if ( maxTitleWords > 128 ) maxTitleWords = 128;
+	if ( maxTitleWords > 128 ) {
+		maxTitleWords = 128;
+	}
 
 	m_niceness = niceness;
 
 	// make Msg20.cpp faster if it is just has
 	// Msg20Request::m_setForLinkInfo set to true, no need
 	// to extricate a title.
-	if ( maxTitleChars <= 0 ) return true;
-	if ( maxTitleWords <= 0 ) return true;
+	if ( maxTitleChars <= 0 ) {
+		return true;
+	}
+	if ( maxTitleWords <= 0 ) {
+		return true;
+	}
 
 	int64_t startTime = gettimeofdayInMilliseconds();
 
@@ -107,11 +113,15 @@ bool Title::setTitle ( XmlDoc   *xd            ,
 
 	// if we are a json object
 	if ( ! xd->m_contentTypeValid ) { char *xx=NULL;*xx=0; }
-	char *val = NULL;
+
+
+
 	// look for the "title:" field in json then use that
-	SafeBuf jsonTitle;
-	int32_t vlen = 0;
 	if ( xd->m_contentType == CT_JSON ) {
+		char *val = NULL;
+		SafeBuf jsonTitle;
+		int32_t vlen = 0;
+
 		// int16_tcut
 		char *s = xd->ptr_utf8Content;
 		char *jt;
@@ -120,46 +130,55 @@ bool Title::setTitle ( XmlDoc   *xd            ,
 			jsonTitle.safeDecodeJSONToUtf8 (jt, vlen, m_niceness);
 			jsonTitle.nullTerm();
 		}
+
 		// if we got a product, try getting price
 		int32_t oplen;
 		char *op = getJSONFieldValue(s,"offerPrice",&oplen);
 		if ( op && oplen ) {
-			if ( ! is_digit(op[0]) ) { op++; oplen--; }
+			if ( ! is_digit(op[0]) ) {
+				op++;
+				oplen--;
+			}
+
 			float price = atof2(op,oplen);
 			// print without decimal point if ends in .00
-			if ( (float)(int32_t)price == price )
-				jsonTitle.safePrintf(", &nbsp; $%"INT32"",
-						     (int32_t)price);
-			else
+			if ( (float)(int32_t)price == price ) {
+				jsonTitle.safePrintf(", &nbsp; $%"INT32"", (int32_t)price);
+			} else {
 				jsonTitle.safePrintf(", &nbsp; $%.02f",price);
+			}
 		}
 		if ( jsonTitle.length() ) {
 			val = jsonTitle.getBufStart();
 			vlen = jsonTitle.length();
 		}
-	}
-	// if we had a title: field in the json...
-	if ( val && vlen > 0 ) {
-		char *dst = NULL;
-		m_titleBytes = vlen;
-		if ( m_titleBytes+1 <  TITLE_LOCAL_SIZE )
-			dst = m_localBuf;
-		else {
-			dst = (char *)mmalloc ( m_titleBytes+1,"titdst" );
-			if ( ! dst ) return false;
-			m_titleAllocSize = m_titleBytes+1;
-		}
-		m_title = dst;
-		gbmemcpy ( dst , val , m_titleBytes );
-		dst[m_titleBytes] = '\0';
-		return true;
-	}
 
-	// json content, if has no explicit title field, has no title then
-	if ( xd->m_contentType == CT_JSON ) {
+		// if we had a title: field in the json...
+		if ( val && vlen > 0 ) {
+			char *dst = NULL;
+			m_titleBytes = vlen;
+			if ( m_titleBytes+1 <  TITLE_LOCAL_SIZE )
+				dst = m_localBuf;
+			else {
+				dst = (char *)mmalloc ( m_titleBytes+1,"titdst" );
+				if ( ! dst ) {
+					return false;
+				}
+
+				m_titleAllocSize = m_titleBytes+1;
+			}
+			m_title = dst;
+			gbmemcpy ( dst , val , m_titleBytes );
+			dst[m_titleBytes] = '\0';
+
+			return true;
+		}
+
+		// json content, if has no explicit title field, has no title then
 		m_localBuf[0] = '\0';
 		m_title = m_localBuf;
 		m_titleBytes = 0;
+
 		return true;
 	}
 
@@ -1677,12 +1696,22 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	for ( ; src < srcEnd ; src += cs , dst += cs ) {
 		// get src size
 		cs = getUtf8CharSize ( src );
+
 		// break if we are full!
-		if ( dst + cs >= dstEnd ) break;
+		if ( dst + cs >= dstEnd ) {
+			break;
+		}
+
 		// or hit our max char limit
-		if ( charCount++ >= m_maxTitleChars ) break;
+		if ( charCount++ >= m_maxTitleChars ) {
+			break;
+		}
+
 		// remember last punct for cutting purposes
-		if ( ! is_alnum_utf8 ( src ) ) lastp = dst;
+		if ( ! is_alnum_utf8 ( src ) ) {
+			lastp = dst;
+		}
+
 		// encode it as an html entity if asked to
 		if ( *src == '<' && convertHtmlEntities ) {
 			if ( dst + 4 >= dstEnd ) break;
@@ -1690,6 +1719,7 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 			dst += 4 - cs;
 			continue;
 		}
+
 		// encode it as an html entity if asked to
 		if ( *src == '>' && convertHtmlEntities ) {
 			if ( dst + 4 >= dstEnd ) break;
@@ -1697,9 +1727,13 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 			dst += 4 - cs;
 			continue;
 		}
+
 		// if more than 1 byte in char, use gbmemcpy
-		if ( cs == 1 ) *dst = *src;
-		else           gbmemcpy ( dst , src , cs );
+		if ( cs == 1 ) {
+			*dst = *src;
+		} else {
+			gbmemcpy ( dst , src , cs );
+		}
 	}
 
 	// null term always
@@ -1710,8 +1744,7 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 		if ( lastp ) {
 			gbmemcpy ( lastp , "...\0" , 4 );
 			dst = lastp + 3;
-		}
-		else {
+		} else {
 			gbmemcpy ( dst   , "...\0" , 4 );
 			dst += 3;
 		}

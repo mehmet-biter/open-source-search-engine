@@ -65,9 +65,6 @@ class Title {
 	bool  m_htmlEncoded;
 	char  m_niceness;
 
-	// For weighting title scores with query terms
-	Query *m_query;
-
 	int32_t  m_maxTitleChars;
 
 	int32_t m_titleTagStart ;
@@ -75,12 +72,12 @@ class Title {
 
  private:
 
-	bool setTitle4 (class XmlDoc   *xd            ,
-			 class Xml      *xml           ,
-			 class Words    *words         ,
-			 int32_t            maxTitleChars ,
-			 int32_t            maxTitleWords ,
-			 Query          *q             );
+	bool setTitle4 (class XmlDoc *xd,
+	                class Xml *xml,
+	                class Words *words,
+	                int32_t maxTitleChars,
+	                int32_t maxTitleWords,
+	                Query *q);
 
 };
 
