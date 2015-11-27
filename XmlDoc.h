@@ -84,7 +84,6 @@
 
 #define XD_MAX_AD_IDS         5
 
-double getTrafficPercent ( int32_t rank ) ;
 
 bool setLangVec ( class Words *words , 
 		  class SafeBuf *langBuf , 
@@ -506,7 +505,6 @@ class XmlDoc {
 	void setStatus ( char *s ) ;
 	void setCallback ( void *state, void (*callback) (void *state) ) ;
 	void setCallback ( void *state, bool (*callback) (void *state) ) ;
-	bool addToSpiderdb ( ) ;
 	void getRevisedSpiderRequest ( class SpiderRequest *revisedReq );
 	void getRebuiltSpiderRequest ( class SpiderRequest *sreq ) ;
 	bool indexDoc ( );
@@ -597,7 +595,6 @@ class XmlDoc {
 	class RdbList *getDupList ( ) ;
 	class RdbList *getLikedbListForReq ( );
 	class RdbList *getLikedbListForIndexing ( );
-	int32_t addLikedbRecords ( bool justGetSize ) ;
 	char *getIsDup ( ) ;
 	char *isDupOfUs ( int64_t d ) ;
 	uint32_t *getGigabitVectorScorelessHash ( ) ;
@@ -992,10 +989,6 @@ class XmlDoc {
 
 	// funcs that update our tagdb tagrec, m_tagRec, and also update tagdb
 	bool *updateVenueAddresses ( );
-
-	// called by msg0 handler to add posdb termlists into g_termListCache
-	// for faster seo pipeline
-	bool cacheTermLists();
 
  public:
 
@@ -1839,7 +1832,6 @@ class XmlDoc {
 	//int32_t  *getTopWordsVector( bool includeSynonyms );
 	SafeBuf *getTermId32Buf();
 	SafeBuf *getTermInfoBuf();
-	SafeBuf *getNewTermInfoBuf();
 	SafeBuf *getMatchingQueryBuf();
 	SafeBuf *getQueryLinkBuf(SafeBuf *docIdListBuf,bool doMatchingQueries);
 	//SafeBuf *getMatchingQueriesScored();
@@ -1875,9 +1867,6 @@ class XmlDoc {
 				class SafeBuf *tmpBuf ,
 				class SafeBuf *missingTermBuf ) ;
 
-
-	SafeBuf *getMissingTermBuf ();
-	SafeBuf *getMatchingTermBuf ();
 	SafeBuf *getTermIdSortedPosdbListBuf();
 	SafeBuf *getWordPosSortedPosdbListBuf();
 	SafeBuf *getTermListBuf(); // list of posdb termlists for caching
@@ -1897,10 +1886,6 @@ class XmlDoc {
 				     bool storeCounts,
 				     Words *words ,
 				     bool includeSynonyms );
-	//void gotMsg99Reply ( UdpSlot *slot );
-	//void gotMsg98Reply ( UdpSlot *slot );
-	void gotMsg95Reply ( UdpSlot *slot );
-	//void gotMsg3aReplyForMainUrl  ( );
 	void gotMsg3aReplyForFullQuery( );
 	//void gotMsg3aReplyForFullQueryCached ( char *cachedRec ,
 	//				       class Msg99Reply *qp );
@@ -1909,16 +1894,6 @@ class XmlDoc {
 	//void pumpSocketWriteBuf ( );
 	//HashTableX *getMatchingQueryHashTable();
 	HashTableX *getMatchingQueryOffsetTable();
-
-	int32_t getNumInsertableTerms ( );
-	class SafeBuf *getInsertableTerms ( );
-	class SafeBuf *getScoredInsertableTerms ( );
-	//class SafeBuf *getInsertableWordFreqInfoBuf ();
-	bool processMsg95Replies();
-	void setWordPosInfosTrafficGain ( class InsertableTerm *it );
-	int32_t getTrafficGain( class QueryChange *qc ) ;
-	// print in xml
-	bool printScoredInsertableTerms ( SafeBuf *sbuf ) ;
 
 
 	HashTableX m_tidTable32;
@@ -2093,7 +2068,6 @@ class XmlDoc {
 	Msg1    m_msg1;
 	bool    m_allHashed;
 	bool checkCachedb ( );
-	bool storeScoredInsertableTermsIntoCachedb ( ) ;
 	bool storeRelatedQueriesIntoCachedb ( ) ;
 	bool storeRelatedDocIdsIntoCachedb ( ) ;
 	bool storeMatchingQueriesIntoCachedb ( ) ; // only the top 1000 or so

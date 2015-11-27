@@ -299,10 +299,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// but always local if only one host
 	if ( g_hostdb.getNumHosts() == 1 ) isLocal = true;
 
-	// force a msg0 if doing a docid restrictive query like
-	// gbdocid:xxxx|<query> so we call cacheTermLists() 
-	//if ( singleDocIdQuery ) isLocal = false;
-
 	// . if the group is local then do it locally
 	// . Msg5::getList() returns false if blocked, true otherwise
 	// . Msg5::getList() sets g_errno on error
@@ -970,9 +966,6 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	if ( g_errno ) {
 		us->sendErrorReply ( slot , EBADRDBID ); return;}
 
-	// is this being called from callWaitingHandlers()
-	//bool isRecall = (netnice == 99);
-
 	// . get the rdb we need to get the RdbList from
 	// . returns NULL and sets g_errno on error
 	//Msg0 msg0;
@@ -983,170 +976,6 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 
 	// keep track of stats
 	rdb->readRequestGet ( requestSize );
-
-	/*
-	// keep track of stats
-	if ( ! isRecall ) rdb->readRequestGet ( requestSize );
-
-	int64_t singleDocId2 = 0LL;
-	if ( rdbId == RDB_POSDB && maxCacheAge ) {
-		int64_t d1 = g_posdb.getDocId(startKey);
-		int64_t d2 = g_posdb.getDocId(endKey);
-		if ( d1+1 == d2 ) singleDocId2 = d1;
-	}
-
-	// have we parsed this docid and cached its termlists?
-	bool shouldBeCached2 = false;
-	if ( singleDocId2 && 
-	     isDocIdInTermListCache ( singleDocId2 , coll ) ) 
-		shouldBeCached2 = true;
-
-	// if in the termlist cache, send it back right away
-	char *trec;
-	int32_t trecSize;
-	if ( singleDocId2 &&
-	     getRecFromTermListCache(coll,
-				     startKey,
-				     endKey,
-				     maxCacheAge,
-				     &trec,
-				     &trecSize) ) {
-		// if in cache send it back!
-		us->sendReply_ass(trec,trecSize,trec,trecSize,slot);
-		return;
-	}
-
-	// if should be cached but was not found then it's probably a
-	// synonym form not in the doc content. make an empty list then.
-	if ( shouldBeCached2 ) {
-		// send back an empty termlist
-		us->sendReply_ass(NULL,0,NULL,0,slot);
-		return;
-	}
-
-	// MUST be in termlist cache! if not in there it is a probably
-	// a synonym term termlist of a word in the doc.
-	if ( isRecall ) {
-		// send back an empty termlist
-		us->sendReply_ass(NULL,0,NULL,0,slot);
-		return;
-	}
-	
-	// init waiting table?
-	static bool s_waitInit = false;
-	if ( ! s_waitInit ) {
-		// do not repeat
-		s_waitInit = true;
-		// niceness = 0
-		if ( ! g_waitingTable.set(8,4,2048,NULL,0,true,0,"m5wtbl")){
-			log("msg5: failed to init waiting table");
-			// error kills us!
-			us->sendErrorReply ( slot , EBADRDBID ); 
-			return;
-		}
-	}
-
-	// wait in waiting table?
-	if ( singleDocId2 && g_waitingTable.isInTable ( &singleDocId2 ) ) {
-		g_waitingTable.addKey ( &singleDocId2 , &slot );
-		return;
-	}
-
-	// if it's for a special gbdocid: query then cache ALL termlists
-	// for this docid into g_termListCache right now
-	if ( singleDocId2 ) {
-		// have all further incoming requests for this docid
-		// wait in the waiting table
-		g_waitingTable.addKey ( &singleDocId2 , &slot );
-		// load the title rec and store its posdb termlists in cache
-		XmlDoc *xd;
-		try { xd = new ( XmlDoc ); }
-		catch ( ... ) {
-			g_errno = ENOMEM;
-			us->sendErrorReply ( slot , g_errno );
-			return;
-		}
-		mnew ( xd, sizeof(XmlDoc),"msg0xd");
-		// always use niceness 1 now even though we use niceness 0
-		// to make the cache hits fast
-		//niceness = 1;
-		// . load the old title rec first and just recycle all
-		// . typically there might be a few hundred related docids
-		//   each with 50,000 matching queries on average to evaluate
-		//   with the gbdocid:xxxx| restriction?
-		if ( ! xd->set3 ( singleDocId2 , coll , niceness ) ) {
-			us->sendErrorReply ( slot , g_errno ); return;}
-		// init the new xmldoc
-		xd->m_callback1 = callWaitingHandlers;
-		xd->m_state     = xd;
-		// . if this blocks then return
-		// . should call loadOldTitleRec() and get JUST the posdb recs
-		//   by setting m_useTitledb, etc. to false. then it should
-		//   make posdb termlists with the compression using
-		//   RdbList::addRecord() and add those lists to 
-		//   g_termListCache
-		if ( ! xd->cacheTermLists ( ) ) return;
-		// otherwise, it completed right away!
-		callWaitingHandlers ( xd );
-		return;
-	}
-	*/
-
-	/*
-	// init special sectiondb cache?
-	if ( rdbId == RDB_SECTIONDB && ! s_initCache ) {
-		// try to init cache
-		if ( ! s_sectiondbCache.init ( 20000000 , // 20MB max mem
-					       -1       , // fixed data size
-					       false    , // support lists?
-					       20000    , // 20k max recs
-					       false    , // use half keys?
-					       "secdbche", // dbname
-					       false, // load from disk?
-					       sizeof(key128_t), //cachekeysize
-					       0 , // data key size
-					       20000 )) // numPtrs max
-			log("msg0: failed to init sectiondb cache: %s",
-			    mstrerror(g_errno));
-		else
-			s_initCache = true;
-	}
-
-	// check the sectiondb cache
-	if ( rdbId == RDB_SECTIONDB ) {
-		//int64_t sh48 = g_datedb.getTermId((key128_t *)startKey);
-		// use the start key now!!!
-		char *data;
-		int32_t  dataSize;
-		if (s_sectiondbCache.getRecord ( coll,
-						 startKey,//&sh48,
-						 &data,
-						 &dataSize,
-						 true, // docopy?
-						 600, // maxage (10 mins)
-						 true, // inc counts?
-						 NULL, // cachedtime
-						 true // promoteRec?
-						 )){
-			// debug
-			//log("msg0: got sectiondblist in cache datasize=%"INT32"",
-			//    dataSize);
-			// send that back
-			g_udpServer.sendReply_ass ( data            ,
-						    dataSize        ,
-						    data            ,
-						    dataSize        ,
-						    slot            ,
-						    60              ,
-						    NULL            ,
-						    doneSending_ass ,
-						    -1              ,
-						    -1              ,
-						    true            );
-			return;
-		}
-	}
-	*/
 
 	// . do a local get
 	// . create a msg5 to get the list

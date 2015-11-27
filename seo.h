@@ -294,76 +294,6 @@ public:
 
 };	
 
-/*
-// . this is basically a MATCHING QUERY
-// . it could match our main url, or it could match a related docid; it is 
-//   used for both
-// . we get one of these back in response to a Msg99Request
-// . we send the Msg99Requests out in batch in XmlDoc.cpp::sendBin()
-// . it gives us a query that matches the termlists in Msg99Request which
-//   are from our docid
-class Msg99Reply {
-public:
-	// . just pass this whole thing back
-	// . crap, but the query part is bogus and so are the
-	//   query termids... because they are beyond the class's fixed size
-	QueryLogEntry m_queryLogEntry;
-	// estimated # searches the query gets per day
-	//int32_t  m_gigablastTraffic; 
-	//int32_t  m_googleTraffic;
-	// offset into g_qbuf on that host that query string came from
-	// NO! now it is to the full query entry which has the # of terms,
-	// the pop and the termids followed by the string!
-	int32_t  m_qbufOffset;
-	// replying host's hostid
-	int16_t m_replyingHostId;
-	// was the query added from the m_extraQueryBuf which is set
-	// from the user-supplied textarea
-	unsigned char  m_isManuallyAdded:1; 
-	//unsigned char  m_hasFullScore:1;
-	// is it first in a linked list of msg99replies for the same query
-	// but different m_myDocId? (for related queries algo)
-	unsigned char  m_isFirst:1;
-	// score of the query
-	float     m_myScore;                
-	// docid of related query, set after getting reply
-	int64_t m_myDocId;
-	// hmmm. what's this? the top 300 or so scoring docids, set by
-	// getMatchingQueriesScoredForThisUrl() .
-	//class TopDocIds *m_topDocIds;
-	int32_t m_topDocIdsBufOffset;
-
-	TopDocIds *getTopDocIds ( SafeBuf *topDocIdsBuf ) {
-		if ( m_topDocIdsBufOffset < 0 ) return NULL;
-		char *p = topDocIdsBuf->getBufStart();
-		p += m_topDocIdsBufOffset;
-		return (TopDocIds *)p;
-	};
-
-	// this is set in handleRequest99() in seo.cpp
-	//float m_minTop50Score;
-	// this is also set in handleRequest99() in seo.cpp and used
-	// in XmlDoc::getMatchingQueriesScoredForFullQuery()
-	// for doing related docids, because we do not want to dedup
-	// related queries if they are basically the same like
-	// "search+engine" is too similar to "search+engines" so this
-	// will allow us to skip them because they yield like the exact
-	// same related docids!!!!
-	int64_t m_querySynBaseHash64;
-	// . how important is this query to the main url?
-	// . now a function of m_numTotalResultsInSlice and query's traffic
-	// . this is set when processing the msg99replies in 
-	//   XmlDoc.cpp::getMatchingQueriesScoredForThisUrl()
-	float m_queryImportance;
-	// and the query string itself
-	char  m_queryStr[0];
-	
-	int32_t getSize() { return (int32_t)sizeof(Msg99Reply)+
-				 gbstrlen(m_queryStr)+
-				 1; };
-};
-*/
-
 // this is the term being inserted into a document. it may affect the
 // document's ranking for multiple queries depending on what position it is
 // inserted into. that ranking info should be described by the m_queryChanges
@@ -592,20 +522,6 @@ public:
 		rds = (RelatedDocId *)relatedDocIdBuf->getBufStart();
 		return &rds[m_relatedDocIdNum];
 	};
-
-	/*
-	class QueryLink *getNext ( SafeBuf *queryLinkBuf ) {
-		if ( m_nextOff == -1 ) return NULL;
-		char *base = queryLinkBuf->getBufStart();
-		return (QueryLink *)(base + m_nextOff);
-	};
-
-	class QueryLink *getTail ( SafeBuf *queryLinkBuf ) {
-		if ( m_tailOff == -1 ) return NULL;
-		char *base = queryLinkBuf->getBufStart();
-		return (QueryLink *)(base + m_tailOff);
-	};
-	*/
 
 	class QueryLogEntry *getQueryLogEntry ( SafeBuf *stringBuf) {
 		char *base = stringBuf->getBufStart();
