@@ -92,8 +92,6 @@ bool registerMsgHandlers3 ( ) ;
 // makes a default conf file and saves into confFilename
 //void makeNewConf ( int32_t hostId , char *confFilename );
 
-void getPageWrapper ( int fd , void *state ) ;
-
 void allExitWrapper ( int fd , void *state ) ;
 
 //bool QuerySerializeTest( char *ff ); 	// Query.cpp
@@ -3635,10 +3633,6 @@ int main2 ( int argc , char *argv[] ) {
 	//if ( ! initCityLists_new() ) {
 	//	log("events: city lists init failed"); return 1; }
 
-	// . get a doc every hour from gigablast.com as a registration thang
-	// . security, man
-	//if((int32_t) g_conf.m_mainExternalIp != atoip ( "207.114.174.29" ,14) ) 
-	g_loop.registerSleepCallback(5000, NULL, getPageWrapper);
 	// save our rdbs every 5 seconds and save rdb if it hasn't dumped
 	// in the last 10 mins
 	//if ( ! g_loop.registerSleepCallback(5, NULL, saveRdbs ) ) {
@@ -5640,28 +5634,6 @@ void tryMergingWrapper ( int fd , void *state ) {
 }
 */
 
-// as a security measure so we know who is using gigablast get a page
-void getPageWrapper ( int fd , void *state ) {
-	//Url u;
-	//u.set ( "http://www.gigablast.com/register.html"         ,
-	//	gbstrlen("http://www.gigablast.com/register.html") );
-	// dns servers might not be working, so do this one
-	//u.set ( "http://207.114.174.29/register.html" ,
-	//	gbstrlen("http://207.114.174.29/register.html") );
-	//u.set ( "http://64.62.168.40/register.html" ,
-	//	gbstrlen("http://64.62.168.40/register.html") );
-	if ( ! g_conf.m_isLive ) return;
-
-	char *s = "http://www.gigablast.com/register.html";
-	//u.set ( s , gbstrlen(s) );
-	g_httpServer.getDoc ( s,0, 0, -1 , 0 , NULL , NULL , 30*1000 , 0 , 0 ,
-			      20*1024 , 20*1024 );
-	// now do this every hour
-	g_loop.unregisterSleepCallback( NULL, getPageWrapper);
-	// do it every 10 hours now
-	g_loop.registerSleepCallback(1000LL*60LL*60LL*10LL, NULL, 
-				     getPageWrapper);
-}
 
 // take snapshot of g_stats
 //void takeSnapshotWrapper( int status, void *state) {g_statsdb.takeSnapshot();}
