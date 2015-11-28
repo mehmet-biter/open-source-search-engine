@@ -216,6 +216,10 @@ dist: all
 	@tar -czvf $(DIST_DIR).tar.gz $(DIST_DIR)
 	@rm -rf $(DIST_DIR)
 
+# doxygen
+doc:
+	doxygen doxygen/doxygen_config.conf
+
 # used for unit testing
 libgb.a: $(OBJS)
 	ar rcs $@ $^
