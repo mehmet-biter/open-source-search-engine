@@ -193,9 +193,9 @@ bool HttpServer::getDoc ( char   *url      ,
 
 	int32_t  hostLen ;
 	int32_t  port = defPort;
-	char *host = NULL;
-	if ( ! ip || useHttpTunnel ) 
-		host = getHostFast ( url , &hostLen , &port );
+
+	// we should try to get port from URL even when IP is set
+	char *host = getHostFast ( url , &hostLen , &port );
 
 	// this returns false and sets g_errno on error
 	if ( ! fullRequest ) {
