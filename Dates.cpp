@@ -2496,7 +2496,6 @@ bool Dates::setPart1 ( //char       *u        ,
 		Words ww;
 		if ( ! ww.set ( date                     ,
 				dateLen                  ,
-				TITLEREC_CURRENT_VERSION ,
 				true                     , // compute Ids?
 				m_niceness               ))
 			// return false with g_errno set on error

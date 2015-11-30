@@ -3804,7 +3804,6 @@ bool setHashes ( Place *p , Words *ww , int32_t niceness ) {
 		// return false with g_errno set on error
 		if ( ! tmp.set ( p->m_str , 
 				 p->m_strlen ,
-				 TITLEREC_CURRENT_VERSION ,
 				 true ,
 				 niceness ) ) return false;
 		// set it up

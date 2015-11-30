@@ -214,7 +214,7 @@ void parse_doc_8859_1(char *s, int len, bool doHash,char *charset)
 	Words words;
 
 	// just tokenize words
-	words.set(false, text_buf, TITEREC_CURRENT_VERSION, doHash);
+	words.set(false, text_buf, doHash);
 	free(text_buf);
 }
 
@@ -236,7 +236,7 @@ void parse_doc_icu(char *s, int len, bool doHash, char *charset){
 				   doFilterSpaces,
 				   false);
 	Words w;
-	w.set(true,false, text_buf, textLen, TITLEREC_CURRENT_VERSION,doHash);
+	w.set(true,false, text_buf, textLen, doHash);
 	free(text_buf);
 }
 

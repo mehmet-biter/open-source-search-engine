@@ -122,7 +122,6 @@ bool Wiki::loadText ( int32_t fileSize ) {
 		Words w;
 		if ( ! w.set ( p            , // s
 			       eol - p      , // slen
-			       TITLEREC_CURRENT_VERSION ,
 			       true         , // computeIds?
 			       MAX_NICENESS ) ) 
 			return false;
@@ -557,7 +556,6 @@ void Wiki::doneReadingWiki ( ) {
 		Words w;
 		if ( ! w.set ( p            , // s
 			       eol - p      , // slen
-			       TITLEREC_CURRENT_VERSION ,
 			       true         , // computeIds?
 			       MAX_NICENESS ) ) {
 			m_errno = g_errno;

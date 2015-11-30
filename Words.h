@@ -43,8 +43,6 @@ unsigned char getCharacterLanguage ( char *utf8Char ) ;
 
 #define NUM_LANGUAGE_SAMPLES 1000
 
-//#define TITLEREC_CURRENT_VERSION 114
-
 // this bit is set in the tag id to indicate a back tag
 #define BACKBIT     ((nodeid_t)0x8000)
 #define BACKBITCOMP ((nodeid_t)0x7fff)
@@ -59,28 +57,27 @@ class Words {
 	// . there is typically no html in "s"
 	// . html tags are NOT parsed out
 	bool set ( char *s , 
-		   int32_t version , // = TITLEREC_CURRENT_VERSION , 
 		   bool computeIds , // = true ,
 		   int32_t niceness ); // = 0);
 
-	// assume TITLEREC_CURRENT_VERSION and computeIds is true
+	// assume computeIds is true
 	bool set9 ( char *s , int32_t niceness ) {
-		return set ( s , TITLEREC_CURRENT_VERSION, true , niceness);};
+		return set ( s , true , niceness);}
 
 	bool setxi ( char *s , char *buf, int32_t bufSize, int32_t niceness ) ;
 
 	bool setx ( char *s , int32_t slen , int32_t niceness ) {
-		return set ( s,slen,TITLEREC_CURRENT_VERSION,true,niceness);};
+		return set ( s,slen,true,niceness);}
 
 	bool set11 ( char *s , char *send , int32_t niceness ) ;
 
 	// . similar to above
 	// . but we temporarily stick a \0 @ s[slen] for parsing purposes
-	bool set ( char *s , int32_t slen , int32_t version, 
+	bool set ( char *s , int32_t slen ,
 		   bool computeIds ,
 		   int32_t niceness = 0);
 
-	bool set3 ( char *s ) {return set(s,TITLEREC_CURRENT_VERSION,true,0);};
+	bool set3 ( char *s ) {return set(s,true,0);};
 
 	// . new function to set directly from an Xml, rather than extracting
 	//   text first
@@ -111,7 +108,6 @@ class Words {
 		    int32_t            prefixLen2  ,
 		    bool            useStems    ,
 		    bool            hashUniqueOnly ,
-		    int32_t            titleRecVersion ,
 		    class Phrases  *phrases                ,//= NULL  ,
 		    bool            hashWordIffNotInPhrase ,//= false,
 		    int32_t            niceness               );//= 0);
@@ -387,7 +383,6 @@ class Words {
 	int32_t           m_numAlnumWords;
 
 	int32_t           m_totalLen;  // of all words
-	int32_t           m_version; // titlerec version
 
 	bool           m_hasTags;
 

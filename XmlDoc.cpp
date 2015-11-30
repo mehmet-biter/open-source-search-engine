@@ -9016,7 +9016,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 	Words   words;
 	Bits    bits;
 	Phrases phrases;
-	if ( ! words.set   ( s , slen , m_version , true , m_niceness ) ) 
+	if ( ! words.set   ( s , slen , true , m_niceness ) ) 
 		return false;
 	if ( ! bits.set    ( &words , m_version , m_niceness ) )
 		return false;
@@ -35231,7 +35231,7 @@ bool XmlDoc::hashString3( char       *s              ,
 	Phrases phrases;
 	//Weights weights;
 	//Synonyms synonyms;
-	if ( ! words.set   ( s , slen , version , true , niceness ) ) 
+	if ( ! words.set   ( s , slen , true , niceness ) ) 
 		return false;
 	if ( ! bits.set    ( &words , version , niceness ) )
 		return false;
@@ -42548,7 +42548,6 @@ SafeBuf *XmlDoc::getTermInfoBuf ( ) {
 		Words ww2;
 		if ( ! ww2.set ( k->getLinkText()   ,
 				 k->size_linkText-1, // len
-				 TITLEREC_CURRENT_VERSION ,
 				 true              , // computeIds
 				 m_niceness        ))// niceness
 			// g_errno set on error, return NULL
@@ -42592,7 +42591,6 @@ SafeBuf *XmlDoc::getTermInfoBuf ( ) {
 		Words ww2;
 		if ( ! ww2.set ( k->getLinkText()   ,
 				 k->size_linkText-1, // len
-				 TITLEREC_CURRENT_VERSION ,
 				 true              , // computeIds
 				 m_niceness        ))// niceness
 			// g_errno set on error, return NULL

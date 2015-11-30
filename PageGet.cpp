@@ -595,7 +595,6 @@ bool processLoop ( void *state ) {
 	Words qw;
 	qw.set ( q            ,  // content being highlighted, utf8
 		 qlen         ,  // content being highlighted, utf8
-		 TITLEREC_CURRENT_VERSION,
 		 true         ,  // computeIds
 		 false        ); // hasHtmlEntities?
 	// . assign scores of 0 to query words that should be ignored

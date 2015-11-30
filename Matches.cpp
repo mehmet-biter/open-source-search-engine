@@ -785,7 +785,6 @@ bool Matches::addMatches ( char      *s         ,
 	// set the words class for this match group
 	if ( ! wp->set ( s                        ,
 			 slen                     , // in bytes
-			 TITLEREC_CURRENT_VERSION ,
 			 true                     , // computeIds?
 			 niceness                 ))
 		return false;

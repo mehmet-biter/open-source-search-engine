@@ -10618,7 +10618,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	t = gettimeofdayInMilliseconds_force();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		//if ( ! words.set ( &xml , true , true ) )
-		if ( ! words.set ( content , TITLEREC_CURRENT_VERSION,
+		if ( ! words.set ( content ,
 				   true, 0 ) )
 			return log("build: speedtestxml: words set: %s",
 				   mstrerror(g_errno));
@@ -10819,7 +10819,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 				     false     ); // use <stop index> tag?
 		if ( ! bufLen ) return log("build: speedtestxml: getText: %s",
 					   mstrerror(g_errno));
-		if ( ! words.set ( buf,TITLEREC_CURRENT_VERSION,true,0) )
+		if ( ! words.set ( buf,true,0) )
 			return log("build: speedtestxml: words set: %s",
 				   mstrerror(g_errno));
 	}

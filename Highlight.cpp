@@ -92,7 +92,6 @@ int32_t Highlight::set ( SafeBuf *sb,
 	Words words;
 	if ( ! words.set ( content      , 
 			   contentLen   , 
-			   TITLEREC_CURRENT_VERSION,
 			   true         , // computeId
 			   true         ) ) // has html entites?
 		return -1;

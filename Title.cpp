@@ -352,7 +352,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 			// now the words.
 			if ( ! tw[ti].set ( k->getLinkText() ,
 					    k->size_linkText-1, // len
-					    TITLEREC_CURRENT_VERSION ,
 					    true              , // computeIds
 					    0                 ))// niceness
 				return false;
@@ -390,7 +389,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 		// now set words to that
 		if ( ! tw[ti].set ( ts                       ,
 				    tslen                    ,
-				    TITLEREC_CURRENT_VERSION ,
 				    true       , // compute wordIds?
 				    0          ))// niceness
 			return false;
@@ -502,7 +500,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 		// ok, process it
 		if ( ! tw[ti].set ( atitle            ,
 				    atlen             , // len
-				    TITLEREC_CURRENT_VERSION ,
 				    true              , // computeIds
 				    0                 ))// niceness
 			return false;
@@ -790,7 +787,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 		// now set words to that
 		if ( ! tw[ti].set ( p                        , // string
 				    pend - p                 , // len
-				    TITLEREC_CURRENT_VERSION ,
 				    true       , // compute wordIds?
 				    0          ))// niceness
 			return false;

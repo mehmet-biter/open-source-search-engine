@@ -36,7 +36,7 @@ void Words::reset ( ) {
 	m_localBufSize2 = 0;
 }
 
-bool Words::set ( char *s, int32_t slen, int32_t version, 
+bool Words::set ( char *s, int32_t slen,
 		  bool computeWordIds,
 		  int32_t niceness) {
 	// bail if nothing
@@ -48,7 +48,7 @@ bool Words::set ( char *s, int32_t slen, int32_t version,
 
 	char c = s[slen];
 	if ( c != '\0' ) s[slen]='\0';
-	bool status = set ( s , version, computeWordIds , niceness );
+	bool status = set ( s , computeWordIds , niceness );
 	if ( c != '\0' ) s[slen] = c;
 	return status;
 }
@@ -110,7 +110,6 @@ bool Words::set ( Xml *xml,
 	if ( m_xml == xml ) { char *xx=NULL;*xx=0; }
 	reset();
 	m_xml = xml;
-	m_version = xml->getVersion();
 
 	// if xml is empty, bail
 	if   ( ! xml->getContent() ) return true;
@@ -172,7 +171,6 @@ bool Words::set ( Xml *xml,
 
 bool Words::set11 ( char *s , char *send , int32_t niceness ) {
 	reset();
-	m_version = TITLEREC_CURRENT_VERSION;
 	m_s = s;
 	// this will make addWords() scan for tags
 	m_hasTags = true;
@@ -199,7 +197,6 @@ bool Words::setxi ( char *s , char *buf, int32_t bufSize, int32_t niceness ) {
 	// prevent setting with the same string
 	if ( m_s == s ) { char *xx=NULL;*xx=0; }
 	reset();
-	m_version = TITLEREC_CURRENT_VERSION;
 	// save for sanity check
 	m_s = s;
 	m_localBuf2 = buf;
@@ -220,7 +217,7 @@ bool Words::setxi ( char *s , char *buf, int32_t bufSize, int32_t niceness ) {
 // . doesn't do tags, only text nodes in "xml"
 // . our definition of a word is as close to English as we can get it
 // . BUT we also consider a string of punctuation characters to be a word
-bool Words::set ( char *s , int32_t version, 
+bool Words::set ( char *s ,
 		  bool computeWordIds ,
 		  int32_t niceness ) {
 
@@ -228,11 +225,9 @@ bool Words::set ( char *s , int32_t version,
 	if ( m_s == s ) { char *xx=NULL;*xx=0; }
 
 	reset();
-	m_version = version;
 	// save for sanity check
 	m_s = s;
 
-	m_version = version;
 	// determine rough upper bound on number of words by counting
 	// punct/alnum boundaries
 	m_preCount = countWords ( s );
@@ -574,8 +569,6 @@ bool Words::set2 ( Xml *xml,
 		   int32_t niceness) {
 	reset();
 	m_xml = xml;
-	m_version = xml->getVersion();
-	m_version = xml->getVersion();
 	register char *p = (char *)xml->getContent();
 	if ( *p ) p++;
 	register int32_t x = 0;
@@ -762,13 +755,6 @@ int32_t Words::getLanguage( Sections *sections ,
 			 int32_t maxSamples,
 			 int32_t niceness,
 			 int32_t *langScore) {
-	// calculate scores if not given
-	//Scores calcdScores;
-	//if ( ! scores ) {
-	//	if ( ! calcdScores.set( this,m_version,false ) )
-	//		return -1;
-	//	scores = &calcdScores;
-	//}
 
 	// . take a random sample of words and look them up in the
 	//   language dictionary
