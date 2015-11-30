@@ -481,11 +481,6 @@ inline bool ucIsWordChar(UChar32 c) {
 // don't allow "> in our input boxes
 int32_t cleanInput(char *outbuf, int32_t outbufSize, char *inbuf, int32_t inbufLen);
 
-// not in math.h?
-inline double round(double x) {
-	return floor(x+0.5);
-}
-
 // like strcpy but return the length and always null terminates
 // dst should be of size maxDstLen + 1
 inline int32_t setstr ( char *dst,
