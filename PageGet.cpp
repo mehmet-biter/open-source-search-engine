@@ -166,6 +166,8 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	// save the query
 	if ( q && qlen > 0 )
 		st->m_qsb.safeStrcpy ( q );
+	else
+		st->m_qsb.safeStrcpy ( "" );
 	
 	st->m_qlen = qlen;
 	//st->m_seq      = seq;
@@ -688,7 +690,7 @@ bool processLoop ( void *state ) {
 	
 	// identify start of <title> tag we wrote out
 	char *sbstart = sb->getBufStart();
-	char *sbend   = sb->getBufEnd();
+	char *sbend   = sb->getBufPtr();
 	char *titleStart = NULL;
 	char *titleEnd   = NULL;
 
