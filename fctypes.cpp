@@ -530,13 +530,6 @@ const char g_map_is_vowel[] = {
 		0,0,0,0,0,0,0,0, // 240
 		0,0,0,0,0,0,0,0};
 
-// seems like this should be defined, but it isn't
-int32_t strnlen ( const char *s , int32_t maxLen ) {
-	int32_t i ;
-	for ( i = 0 ; i < maxLen ; i++ ) if ( ! s[i] ) return i;
-	return i;
-}
-
 char *strncasestr( char *haystack, int32_t haylen, char *needle){
 	int32_t matchLen = 0;
 	int32_t needleLen = gbstrlen(needle);

@@ -25,8 +25,6 @@ int32_t printTime ( int32_t ttt );
 time_t mktime_utc ( struct tm *ttt ) ;
 
 class SafeBuf;
-// seems like this should be defined, but it isn't
-int32_t strnlen ( const char *s , int32_t maxLen );
 // this too
 char *strncasestr( char *haystack, int32_t haylen, char *needle);
 
