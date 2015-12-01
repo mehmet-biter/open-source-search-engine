@@ -9,6 +9,8 @@
 #ifndef _MYLOG_H_
 #define _MYLOG_H_
 
+
+
 // THE TYPES OF LOG MESSAGES
 // logs information pertaining to more complicated procedures, like
 // the merging and dumping of data for the "db" component, or what urls are 

@@ -133,6 +133,9 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 //#else
 //		     bool      allowPageCache ) {
 //#endif
+
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+
 	// this is obsolete! mostly, but we need it for PageIndexdb.cpp to 
 	// show a "termlist" for a given query term in its entirety so you 
 	// don't have to check each machine in the network. if this is true it
@@ -151,6 +154,15 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	list->reset();
 	// get keySize of rdb
 	m_ks = getKeySizeFromRdbId ( rdbId );
+	
+	if( g_conf.m_logDebugDetailed ) 
+	{
+		log("%s:%s: rdbId. [%d]", __FILE__,__FUNCTION__, (int)rdbId);
+		log("%s:%s: m_ks.. [%d]", __FILE__,__FUNCTION__, (int)m_ks);
+		log("%s:%s: hostId [%"INT64"]", __FILE__,__FUNCTION__, hostId);
+	}
+	
+	
 	// if startKey > endKey, don't read anything
 	//if ( startKey > endKey ) return true;
 	if ( KEYCMP(startKey,endKey,m_ks)>0 ) { char *xx=NULL;*xx=0; }//rettrue
@@ -160,6 +172,8 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// no longer accept negative minrecsize
 	if ( minRecSizes < 0 ) {
 		g_errno = EBADENGINEER;
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
+
 		log(LOG_LOGIC,
 		    "net: msg0: Negative minRecSizes no longer supported.");
 		char *xx=NULL;*xx=0;
@@ -221,6 +235,10 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// how is this used?
 	//if ( forceLocalIndexdb ) m_groupId = g_hostdb.m_groupId;
 	if ( forceLocalIndexdb ) m_shardNum = getMyShardNum();
+
+
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: shardNum [%"INT32"]", __FILE__,__FUNCTION__, m_shardNum);
+
 
 	// . store these parameters
 	// . get a handle to the rdb in case we can satisfy locally
@@ -303,7 +321,11 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// . Msg5::getList() returns false if blocked, true otherwise
 	// . Msg5::getList() sets g_errno on error
 	// . don't do this if m_hostId was specified
-	if ( isLocal ) { // && !g_conf.m_interfaceMachine ) {
+	if ( isLocal ) 
+	{ 
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: isLocal", __FILE__,__FUNCTION__);
+		
+		
 		if ( msg5 ) {
 			m_msg5 = msg5;
 			m_deleteMsg5 = false;
@@ -627,10 +649,15 @@ skip:
 		m_errno = g_errno;
 		m->reset();
 		if ( m_numRequests > 0 )
+		{
+			if( g_conf.m_logDebugDetailed ) log("%s:%s: END - returning false", __FILE__,__FUNCTION__);
+			
 			return false;
+		}
 //#else
 //		m_mcast.reset();
 //#endif
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END - returning true", __FILE__,__FUNCTION__);
 		return true;
 	}
 //#ifdef SPLIT_INDEXDB
@@ -638,16 +665,24 @@ skip:
 
 //#endif
 	// we blocked
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: END - returning false", __FILE__,__FUNCTION__);
+
 	return false;
 }
 
 // . this is called when we got a local RdbList
 // . we need to call it to call the original caller callback
-void gotListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
+void gotListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) 
+{
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+
 	Msg0 *THIS = (Msg0 *) state;
 	THIS->reset(); // delete m_msg5
 	THIS->m_callback ( THIS->m_state );//, THIS->m_list );
+
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
 }
+
 
 // . return false if you want this slot immediately nuked w/o replying to it
 void gotSingleReplyWrapper ( void *state , UdpSlot *slot ) {
@@ -666,7 +701,10 @@ void gotSingleReplyWrapper ( void *state , UdpSlot *slot ) {
 	THIS->m_callback ( THIS->m_state );// THIS->m_list );
 }
 
-void gotMulticastReplyWrapper0 ( void *state , void *state2 ) {
+void gotMulticastReplyWrapper0 ( void *state , void *state2 ) 
+{
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+
 	Msg0 *THIS = (Msg0 *)state;
 //#ifdef SPLIT_INDEXDB
 	//if ( g_hostdb.m_indexSplits > 1 ) {
@@ -711,7 +749,9 @@ void gotMulticastReplyWrapper0 ( void *state , void *state2 ) {
 	THIS->m_callback ( THIS->m_state );//, THIS->m_list );
 	//}
 //#endif
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
 }
+
 
 /*
 //#ifdef SPLIT_INDEXDB
@@ -818,7 +858,11 @@ void Msg0::gotSplitReply ( ) {
 
 // . returns false and sets g_errno on error
 // . we are responsible for freeing reply/replySize
-void Msg0::gotReply ( char *reply , int32_t replySize , int32_t replyMaxSize ) {
+void Msg0::gotReply ( char *reply , int32_t replySize , int32_t replyMaxSize ) 
+{
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+	
+	
 	// timing debug
 	if ( g_conf.m_logTimingNet && m_rdbId==RDB_POSDB && m_startTime > 0 )
 		log(LOG_TIMING,"net: msg0: Got termlist, termId=%"UINT64". "
@@ -868,7 +912,9 @@ void Msg0::gotReply ( char *reply , int32_t replySize , int32_t replyMaxSize ) {
 	//cache->addList ( m_startKey , m_list ) ;
 	// reset g_errno -- we don't care if cache coulnd't add it
 	//g_errno = 0;
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
 }
+
 
 // this conflicts with the State0 class in PageResults.cpp, so make it State00
 class State00 {
@@ -921,6 +967,10 @@ void callWaitingHandlers ( void *state ) {
 // . MUST call g_udpServer::sendReply or sendErrorReply() so slot can
 //   be destroyed
 void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
+
+
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN. Got request for an RdbList", __FILE__,__FUNCTION__);
+
 	// if niceness is 0, use the higher priority udpServer
 	UdpServer *us = &g_udpServer;
 	//if ( netnice == 0 ) us = &g_udpServer2;
@@ -962,17 +1012,34 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	CollectionRec *xcr = g_collectiondb.getRec ( collnum );
 	if ( ! xcr ) g_errno = ENOCOLLREC;
 	
+	if( g_conf.m_logDebugDetailed )	
+	{
+		log("%s:%s: rdbId....... %d", __FILE__,__FUNCTION__, (int)rdbId);
+		log("%s:%s: key size.... %d", __FILE__,__FUNCTION__, (int)ks);
+		log("%s:%s: startFileNum %"INT32"", __FILE__,__FUNCTION__, startFileNum);
+		log("%s:%s: numFiles.... %"INT32"", __FILE__,__FUNCTION__, numFiles);
+	}
+	
 	// error set from XmlDoc::cacheTermLists()?
-	if ( g_errno ) {
-		us->sendErrorReply ( slot , EBADRDBID ); return;}
+	if ( g_errno ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Invalid collection", __FILE__,__FUNCTION__);
+		us->sendErrorReply ( slot , EBADRDBID ); 
+		return;
+	}
 
 	// . get the rdb we need to get the RdbList from
 	// . returns NULL and sets g_errno on error
 	//Msg0 msg0;
 	//Rdb *rdb = msg0.getRdb ( rdbId );
 	Rdb *rdb = getRdbFromId ( rdbId );
-	if ( ! rdb ) { 
-		us->sendErrorReply ( slot , EBADRDBID ); return;}
+	if ( ! rdb ) 
+	{ 
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Invalid rdbId", __FILE__,__FUNCTION__);
+		
+		us->sendErrorReply ( slot , EBADRDBID ); 
+		return;
+	}
 
 	// keep track of stats
 	rdb->readRequestGet ( requestSize );
@@ -1033,16 +1100,27 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 				     NULL,//&st0->m_msg5b ,
 				     false,
 				     allowPageCache ) )
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. m_msg5.getList returned false", __FILE__,__FUNCTION__);
 		return;
+	}
+
 	// call wrapper ouselves
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: Calling gotListWrapper", __FILE__,__FUNCTION__);
+
 	gotListWrapper ( st0 , NULL , NULL );
+
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
 }
 
 #include "Sections.h" // SectionVote
 
 // . slot should be auto-nuked upon transmission or error
 // . TODO: ensure if this sendReply() fails does it really nuke the slot?
-void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
+void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) 
+{
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+	
 	// get the state
 	State00 *st0 = (State00 *)state;
 	// extract the udp slot and list and msg5
@@ -1281,7 +1359,10 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
 				    -1              ,
 				    -1              ,
 				    true            );
+				    
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
 }	
+
 
 // . this may be called from a signal handler
 // . we call from a signal handler to keep msg21 zippy

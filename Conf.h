@@ -697,6 +697,7 @@ class Conf {
 	bool  m_logDebugUnicode ;
 	bool  m_logDebugRepair  ;
 	bool  m_logDebugDate    ;
+	bool  m_logDebugDetailed;
 	// expensive timing messages
 	bool m_logTimingAddurl  ;
 	bool m_logTimingAdmin   ;

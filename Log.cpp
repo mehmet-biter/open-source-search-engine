@@ -183,6 +183,7 @@ bool Log::shouldLog ( int32_t type , char *msg ) {
 		return false;
 	}
 	if ( type != LOG_DEBUG ) return true;
+		
 	if (msg[0]=='a'&&msg[2]=='d' ) return g_conf.m_logDebugAddurl ;
 	if (msg[0]=='a'&&msg[2]=='m' ) return g_conf.m_logDebugAdmin  ;
 	if (msg[0]=='b'&&msg[1]=='u' ) return g_conf.m_logDebugBuild  ;
@@ -221,6 +222,8 @@ bool Log::shouldLog ( int32_t type , char *msg ) {
 	if (msg[0]=='t'&&msg[1]=='o'&&msg[3]!='D' ) 
 		return g_conf.m_logDebugTopics;
 	if (msg[0]=='d'&&msg[1]=='a' ) return g_conf.m_logDebugDate;
+	if (msg[0]=='d'&&msg[1]=='d' ) return g_conf.m_logDebugDetailed;
+		
 	return true;
 }
 

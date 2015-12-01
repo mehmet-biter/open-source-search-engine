@@ -2464,34 +2464,96 @@ key_t Dns::getKey ( char *hostname , int32_t hostnameLen ) {
 // . MsgC uses this to see which host is responsible for this key
 //   which is just a hash96() of the hostname (see getKey() above)
 // . returns -1 if not host available to send request to
-Host *Dns::getResponsibleHost ( key_t key ) {
+Host *Dns::getResponsibleHost ( key_t key ) 
+{
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+
 	// just keep this on this cluster now
 	Hostdb *hostdb = &g_hostdb;
 	// get the hostNum that should handle this
 	int32_t hostId = key.n1 % hostdb->getNumHosts();
+
+
+	if( g_conf.m_logDebugDetailed ) 
+	{
+		log("%s:%s: numHosts: %"UINT32"", __FILE__,__FUNCTION__,hostdb->getNumHosts());
+		log("%s:%s: key.n1: %"UINT32"", __FILE__,__FUNCTION__,key.n1);
+		log("%s:%s: hostId: %"UINT32"", __FILE__,__FUNCTION__,hostId);
+	}
+	
+
 	// return it if it is alive
 	Host* h = hostdb->getHost ( hostId );
-	if ( h->m_spiderEnabled && ! hostdb->isDead ( hostId ) ) return h;
+	
+	if ( h->m_spiderEnabled && ! hostdb->isDead ( hostId ) ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Spidering enabled and not dead. Returning.", __FILE__,__FUNCTION__);
+		return h;
+	}
+		
+		
+		
 	// how many are up?
 	int32_t numAlive = hostdb->getNumHostsAlive();
+
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: Above is dead. numAlive: %"UINT32"", __FILE__,__FUNCTION__, numAlive);
+
+
 	// NULL if none
-	if ( numAlive == 0 ) return NULL;
+	if ( numAlive == 0 ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: None alive. return NULL", __FILE__,__FUNCTION__);
+		return NULL;
+	}
+	
 	// try another hostNum
 	int32_t hostNum = key.n1 % numAlive;
+
+	if( g_conf.m_logDebugDetailed ) 
+	{
+		log("%s:%s: hostNum: %"INT32"", __FILE__,__FUNCTION__, hostNum);
+		log("%s:%s: m_numHosts: %"INT32"", __FILE__,__FUNCTION__, hostdb->m_numHosts);
+	}
+	
+	
+	
 	// otherwise, chain to him
 	int32_t count = 0;
-	for ( int32_t i = 0 ; i < hostdb->m_numHosts ; i++ ) {
+	for ( int32_t i = 0 ; i < hostdb->m_numHosts ; i++ ) 
+	{
 		// get the ith host
 		Host *host = &hostdb->m_hosts[i];
-		if ( !host->m_spiderEnabled )  continue;
+		if ( !host->m_spiderEnabled )  
+		{
+			if( g_conf.m_logDebugDetailed ) log("%s:%s: i: %"INT32" - spidering disabled", __FILE__,__FUNCTION__, i);
+			continue;
+		}
+		
 		// skip him if he is dead
-		if ( hostdb->isDead ( host ) ) continue;
+		if ( hostdb->isDead ( host ) ) 
+		{
+			if( g_conf.m_logDebugDetailed ) log("%s:%s: i: %"INT32" - dead", __FILE__,__FUNCTION__, i);
+			continue;
+		}
+			
 		// count it if alive, continue if not our number
-		if ( count++ != hostNum ) continue;
+		if ( count++ != hostNum ) 
+		{
+			if( g_conf.m_logDebugDetailed ) log("%s:%s: i: %"INT32" - not our host (%"INT32")", __FILE__,__FUNCTION__, i, hostNum);
+			
+			continue;
+		}
 		// we got a match, we cannot use hostNum as the hostId now
 		// because the host with that hostId might be dead
+		
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. i: %"INT32" - Match!", __FILE__,__FUNCTION__, i);
+		
 		return host;
 	}
+	
+
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Return EHOSTDEAD. None found", __FILE__,__FUNCTION__);
+
 	g_errno = EHOSTDEAD;
 	return NULL;
 }
