@@ -1,5 +1,4 @@
 import pytest
-import gigablast
 
 
 @pytest.mark.parametrize('query, fx_qlang, fx_blang, fx_fetld, fx_country, expected_lang', [
@@ -21,11 +20,9 @@ import gigablast
     ('Smurfene',    '',         '',         '',         '',         'is'),  # wrong
     ('Smurfene',    '',         'en-US',    '',         '',         'en'),  # wrong
     ('Smurfene',    '',         'no-NO',    '',         '',         'no'),
-    ('Smurfene',    '',         '',         '',         'no',       'no')
+    ('Smurfene',    '',         '',         '',         'no',       'no'),
 ])
-def test_search_language_hint(gb, query, fx_qlang, fx_blang, fx_fetld, fx_country, expected_lang):
-    gb_search = gigablast.GigablastSearch(gb)
-
+def test_search_language_hint(gb_api, query, fx_qlang, fx_blang, fx_fetld, fx_country, expected_lang):
     payload = {}
 
     # add language hints
@@ -34,6 +31,6 @@ def test_search_language_hint(gb, query, fx_qlang, fx_blang, fx_fetld, fx_countr
     payload.update({'fx_fetld': fx_fetld})
     payload.update({'fx_country': fx_country})
 
-    result = gb_search.search(query, payload)
+    result = gb_api.search(query, payload)
 
     assert result['queryInfo']['queryLanguageAbbr'] == expected_lang

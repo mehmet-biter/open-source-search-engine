@@ -32,83 +32,65 @@ int32_t Pos::filter( char *p, char *pend, class Words *words, int32_t a, int32_t
 // . returns false and sets g_errno on error
 // . if f is non-NULL store filtered words into there. back to back spaces
 //   are eliminated.
-bool Pos::set (Words  *words  ,
-		char   *f   ,
-		char   *fend,
-		int32_t   *len ,
-		int32_t    a   ,
-		int32_t    b   ,
-		char   *buf ,
-		int32_t    bufSize ) {
-
+bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int32_t b, char *buf, int32_t bufSize ) {
 	// free m_buf in case this is a second call
-	if ( ! f ) reset();
+	if ( ! f ) {
+		reset();
+	}
 
-	int32_t        nw    = words->getNumWords();
-	int32_t       *wlens = words->m_wordLens;
-	nodeid_t   *tids  = words->getTagIds(); // m_tagIds;
-	char      **wp    = words->m_words;
-	//int32_t       *ss    = NULL;
-	//int64_t  *wids  = words->m_wordIds;
-	//if ( scores ) ss  = scores->m_scores;
+	int32_t nw = words->getNumWords();
+	int32_t *wlens = words->m_wordLens;
+	nodeid_t *tids = words->getTagIds(); // m_tagIds;
+	char **wp = words->m_words;
 
 	// save start point for filtering
 	char *fstart = f;
 
 	// -1 is the default value
-	if ( b == -1 ) b = nw;
+	if ( b == -1 ) {
+		b = nw;
+	}
 
 	// alloc array if need to
 	int32_t need = (nw+1) * 4;
 
 	// do not destroy m_pos/m_numWords if only filtering into a buffer
-	if ( f ) goto skip;
+	if ( !f ) {
+		m_needsFree = false;
 
-	m_needsFree = false;
-
-	m_buf = m_localBuf;
-	if ( need > POS_LOCALBUFSIZE && need < bufSize ) 
-		m_buf = buf;
-	else if ( need > POS_LOCALBUFSIZE ) {
-		m_buf = (char *)mmalloc(need,"Pos");
-		m_needsFree = true;
+		m_buf = m_localBuf;
+		if ( need > POS_LOCALBUFSIZE && need < bufSize )
+			m_buf = buf;
+		else if ( need > POS_LOCALBUFSIZE ) {
+			m_buf = (char *)mmalloc(need,"Pos");
+			m_needsFree = true;
+		}
+		// bail on error
+		if ( ! m_buf ) return false;
+		m_bufSize = need;
+		m_pos      = (int32_t *)m_buf;
+		m_numWords = nw;
 	}
-	// bail on error
-	if ( ! m_buf ) return false;
-	m_bufSize = need;
-	m_pos      = (int32_t *)m_buf;
-	m_numWords = nw;
 
- skip:
 	// this is the CHARACTER count. 
 	int32_t pos = 0;
 	bool trunc = false;
 	char *p , *pend;
-	//char *nextp;
-	//int32_t  skip;
 
 	char* lastBreak = NULL;
-	// utf8 char
-	//int32_t c;
-	// its size in bytes
-	//char cs;
-
-	// int16_tcut
-	//Section **sp = NULL;
-	//if ( sections ) sp = sections->m_sectionPtrs;
-
-	//int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_MARQUEE;
 
 	// flag for stopping back-to-back spaces. only count those as one char.
 	bool lastSpace = false;
- 	int32_t maxCharSize = 4; // we are utf8 
+	int32_t maxCharSize = 4; // we are utf8
 	for ( int32_t i = a ; i < b ; i++ ) {
-		if (trunc) break;
-		// set pos for the ith word to "pos"
-		if ( ! f ) m_pos[i] = pos;
+		if (trunc) {
+			break;
+		}
 
-		// if inside a bad tag, skip it
-		//if ( sp && (sp[i]->m_flags & badFlags) ) continue;
+		// set pos for the ith word to "pos"
+		if ( ! f ) {
+			m_pos[i] = pos;
+		}
 
 		// is tag?
 		if ( tids && tids[i] ) {
@@ -130,35 +112,44 @@ bool Pos::set (Words  *words  ,
 			}
 			// if had a previous breaking tag and no non-tag
 			// word after it, do not count back-to-back spaces
-			if ( lastSpace ) continue;
+			if ( lastSpace ) {
+				continue;
+			}
+
 			// if had a br tag count it as a '.'
-			if ( tids[i] ) { // == 20 ) { // <br> 
+			if ( tids[i] ) { // <br>
 				// are we filtering?
 				if ( f && f != fstart ) {
 					if ((fend-f>2*maxCharSize)) {
 						*f++ = '.';
 						*f++ = ' ';
+					} else {
+						trunc = true;
 					}
-					else trunc = true;
 				}
-				// count as double periods
-				//pos += 3;
+
 				// no, just single period.
 				pos += 2;
 				lastSpace = true;
+
 				continue;
 			}
+
 			// are we filtering?
 			if ( f ) {
 				if ((fend-f > maxCharSize)) {
 					*f++ = ' ';
+				} else {
+					trunc = true;
 				}
-				else trunc = true;
 			}
+
 			// count as a single space
 			pos++;
+
 			// do not allow back-to-back spaces
 			lastSpace = true;
+
 			continue;
 		}
 		
@@ -171,52 +162,71 @@ bool Pos::set (Words  *words  ,
 		for ( ; p < pend ; p += cs ) {
 			// get size
 			cs = getUtf8CharSize(p);
+
 			// do not count space if one before
 			if ( is_wspace_utf8 (p) ) {
-				if ( lastSpace ) continue;
+				if ( lastSpace ) {
+					continue;
+				}
+
 				lastSpace = true;
+
 				// are we filtering?
 				if ( f ) {
 					if (fend-f > 1 ) {
 						lastBreak = f;
 						*f++ = ' ';
+					} else {
+						trunc = true;
 					}
-					else trunc = true;
 				}
+
 				pos++;
 				continue;
 			}
 			if ( f ) {
-				if (fend-f > cs){
+				if (fend-f > cs) {
 					// change '|' to commas
-					if ( *p == '|' )
+					if ( *p == '|' ) {
 						*f++ = ',';
-					else if ( cs == 1 )
+					} else if ( cs == 1 ) {
 						*f++ = *p;
-					else {
+					} else {
 						gbmemcpy(f,p,cs);
 						f += cs;
 					}
 				}
-				else trunc = true;
+				else {
+					trunc = true;
+				}
 			}
 
 			pos++; 
 			lastSpace = false;
 		}
 	}
+
 	if (trunc) {
 		if(lastBreak == NULL) {
 			*len = 0;
 			return false;
  		}
- 		else if(f) f = lastBreak;
+		else if (f) {
+			f = lastBreak;
+		}
 	}
+
 	// set pos for the END of the last word here (used in Summary.cpp)
-	if ( ! f ) m_pos[nw] = pos;
-	// NULL terminate f
-	else { *len = f - fstart; }
-	if ( fend-f > maxCharSize) { *f = '\0';}
+	if ( ! f ) {
+		m_pos[nw] = pos;
+	} else { // NULL terminate f
+		*len = f - fstart;
+	}
+
+	if ( fend-f > maxCharSize) {
+		*f = '\0';
+	}
+
 	// Success
 	return true;
 }

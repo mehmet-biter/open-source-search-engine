@@ -1,5 +1,6 @@
 #include "gb-include.h"
 
+#include "Query.h"
 #include "Title.h"
 #include "Words.h"
 #include "Sections.h"
@@ -7,9 +8,7 @@
 #include "Pos.h"
 #include "Titledb.h" // TITLEREC_CURRENT_VERSION
 #include "Profiler.h"
-#include "sort.h"
 #include "HashTable.h"
-//#include "CollectionRec.h"
 #include "Indexdb.h"
 #include "XmlDoc.h"
 
@@ -36,26 +35,6 @@
 // path somehow so similarity is higher
 
 
-/*
-static int32_t isHeadlineClass(Xml *xml, Words *words, int32_t wordIndex);
-
-// . List of title tags
-// . do not include bold cuz  
-//   http://www.groovanauts.com/board/showthread.php?threadid=41718
-//   gets "Username" as the title!
-static char s_titleTags[] = { TAG_TITLE, TAG_H1, TAG_H2, TAG_H3}; //,TAG_B };
-	
-static inline int s_min(const int x, const int y) {
-	if(x < y) return x;
-	return y;
-}
-
-static inline int s_max(const int x, const int y) {
-	if(x > y) return x;
-	return y;
-}
-*/
-
 Title::Title() {
 	m_title = NULL;
 	m_titleBytes = 0;
@@ -78,29 +57,17 @@ void Title::reset() {
 }
 
 // returns false and sets g_errno on error
-bool Title::setTitle ( XmlDoc   *xd,
-                       Xml      *xml,
-                       Words    *words,
-                       int32_t  maxTitleChars ,
-                       int32_t  maxTitleWords ,
-                       Query    *q,
-                       int32_t niceness ) {
-
+bool Title::setTitle ( XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars, Query *q, int32_t niceness ) {
 	// if this is too big the "first line" algo can be huge!!!
 	// and really slow everything way down with a huge title candidate
-	if ( maxTitleWords > 128 ) {
-		maxTitleWords = 128;
-	}
+	int32_t maxTitleWords = 128;
 
 	m_niceness = niceness;
 
 	// make Msg20.cpp faster if it is just has
 	// Msg20Request::m_setForLinkInfo set to true, no need
 	// to extricate a title.
-	if ( maxTitleChars <= 0 ) {
-		return true;
-	}
-	if ( maxTitleWords <= 0 ) {
+	if ( maxTitleChars <= 0 || maxTitleWords <= 0 ) {
 		return true;
 	}
 
@@ -235,42 +202,13 @@ bool isWordQualified ( char *wp , int32_t wlen ) {
 // TODO: do not accumulate boosts from a parent
 // and its kids, subtitles...
 //
-bool Title::setTitle4 ( XmlDoc   *xd            ,
-			Xml      *XML           ,
-			Words    *WW            ,
-			int32_t      maxTitleChars ,
-			int32_t      maxTitleWords ,
-			Query    *q) {
-
+bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxTitleWords, Query *q) {
 	m_maxTitleChars = maxTitleChars;
 
 	// assume no title
 	reset();
 
 	int32_t NW = WW->getNumWords();
-
-	// array of candidate tags
-	static char s_candTags[512];
-	static char s_flag = 0;
-	if ( s_flag == 0 ) {
-		// do not re-do
-		s_flag = 1;
-		// reset
-		memset ( s_candTags , 0 , 512 );
-	}
-
-	// set each time since we "unset" below if we've no "article content"
-	s_candTags [ TAG_B     ] = 1;
-	s_candTags [ TAG_H1    ] = 1;
-	s_candTags [ TAG_H2    ] = 1;
-	s_candTags [ TAG_H3    ] = 1;
-	s_candTags [ TAG_DIV   ] = 1;
-	s_candTags [ TAG_TD    ] = 1;
-	s_candTags [ TAG_P     ] = 1;
-	s_candTags [ TAG_FONT  ] = 1;
-	s_candTags [ TAG_TITLE ] = 1;
-	// we only allow candidates in <a> tags if it is a self link!
-	s_candTags [ TAG_A     ] = 1;
 
 	//
 	// now get all the candidates
@@ -279,13 +217,13 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 	// . allow up to 100 title CANDIDATES
 	// . "as" is the word # of the first word in the candidate
 	// . "bs" is the word # of the last word IN the candidate PLUS ONE
-	int32_t   n = 0;
-	int32_t   as      [MAX_TIT_CANDIDATES];
-	int32_t   bs      [MAX_TIT_CANDIDATES];
-	float  scores  [MAX_TIT_CANDIDATES];
-	Words *cptrs   [MAX_TIT_CANDIDATES];
-	int32_t   types   [MAX_TIT_CANDIDATES];
-	int32_t   parent  [MAX_TIT_CANDIDATES];
+	int32_t n = 0;
+	int32_t as[MAX_TIT_CANDIDATES];
+	int32_t bs[MAX_TIT_CANDIDATES];
+	float scores[MAX_TIT_CANDIDATES];
+	Words *cptrs[MAX_TIT_CANDIDATES];
+	int32_t types[MAX_TIT_CANDIDATES];
+	int32_t parent[MAX_TIT_CANDIDATES];
 
 	// record the scoring algos effects
 	//float  baseScore        [MAX_TIT_CANDIDATES];
@@ -311,6 +249,7 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 	int32_t rcount = 0;
 
 	LinkInfo *info = xd->getLinkInfo1();
+
 	// a flag to control subloop jumping
 	char didit = false;
 
@@ -345,10 +284,10 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 			char *p    = k->getLinkText();
 			int32_t  plen = k->size_linkText - 1;
 			if ( ! verifyUtf8 ( p , plen ) ) {
-				log("title: set4 bad link text from url=%s",
-				    k->getUrl());
+				log("title: set4 bad link text from url=%s", k->getUrl());
 				continue;
 			}
+
 			// now the words.
 			if ( ! tw[ti].set ( k->getLinkText() ,
 					    k->size_linkText-1, // len
@@ -423,7 +362,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 		goto fooloop;
 	}
 
-
 	// . set the flags array
 	// . indicates what words are in title candidates already, but
 	//   that is set below
@@ -431,16 +369,25 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 	//   like words that are in a link that is not a self link
 	// . alloc for it
 	char *flags = NULL;
-	char  localBuf[10000];
+	char localBuf[10000];
+
 	int32_t  need = WW->getNumWords();
-	if ( need <= 10000 ) flags = (char *)localBuf;
-	else                 flags = (char *)mmalloc(need,"TITLEflags");
-	if ( ! flags ) return false;
+	if ( need <= 10000 ) {
+		flags = (char *)localBuf;
+	} else {
+		flags = (char *)mmalloc(need,"TITLEflags");
+	}
+
+	if ( ! flags ) {
+		return false;
+	}
+
 	// clear it
 	memset ( flags , 0 , need );
 
 	// check tags in body
 	nodeid_t *tids = WW->getTagIds();
+
 	// scan to set link text flags
 	// loop over all "words" in the html body
 	char inLink   = false;
@@ -448,73 +395,116 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 	for ( int32_t i = 0 ; i < NW ; i++ ) {
 		// breathe
 		QUICKPOLL(m_niceness);
+
 		// if in a link that is not self link, cannot be in a candidate
-		if ( inLink && ! selfLink ) flags[i] |= 0x02;
+		if ( inLink && ! selfLink ) {
+			flags[i] |= 0x02;
+		}
+
 		// out of a link
-		if ( tids[i] == (TAG_A | BACKBIT) ) inLink = false;
+		if ( tids[i] == (TAG_A | BACKBIT) ) {
+			inLink = false;
+		}
+
 		// if not start of <a> tag, skip it
-		if ( tids[i] != TAG_A ) continue;
+		if ( tids[i] != TAG_A ) {
+			continue;
+		}
+
 		// flag it
 		inLink = true;
+
 		// get the node in the xml
 		int32_t xn = WW->m_nodes[i];
+
 		// is it a self link?
 		int32_t len;
 		char *link = XML->getString(xn,"href",&len);
+
 		// . set the url class to this
 		// . TODO: use the base url in the doc
-		Url u; u.set(link, len, true, false );
+		Url u;
+		u.set(link, len, true, false );
+
 		// compare
-		if ( u.equals ( xd->getFirstUrl() ) ) 
-			selfLink = true;
-		else           
-			selfLink = false;
+		selfLink = u.equals ( xd->getFirstUrl() );
+
 		// skip if not selfLink
-		if ( ! selfLink ) continue;
+		if ( ! selfLink ) {
+			continue;
+		}
+
 		// if it is a selflink , check for an "onClock" tag in the
 		// anchor tag to fix that Mixx issue for:
 		// http://www.npr.org/templates/story/story.php?storyId=5417137
+
 		int32_t  oclen;
-		char *oc = NULL;
-		if ( ! oc ) oc = XML->getString(xn,"onclick",&oclen);
-		if ( ! oc ) oc = XML->getString(xn,"onClick",&oclen);
+		char *oc = XML->getString(xn,"onclick",&oclen);
+
+		if ( ! oc ) {
+			oc = XML->getString(xn,"onClick",&oclen);
+		}
+
 		// assume not a self link if we see that...
-		if ( oc ) selfLink = false;
+		if ( oc ) {
+			selfLink = false;
+		}
+
 		// if this <a href> link has a "title" attribute, use that
 		// instead! that thing is solid gold.
 		int32_t  atlen;
 		char *atitle = XML->getString(xn,"title",&atlen);
+
 		// stop and use that, this thing is gold!
-		if ( ! atitle || atlen <= 0 ) continue;
+		if ( ! atitle || atlen <= 0 ) {
+			continue;
+		}
+
 		// craziness? ignore it...
-		if ( atlen > 400 ) continue;
+		if ( atlen > 400 ) {
+			continue;
+		}
+
 		// if it contains permanent or permalink, ignore it!
-		if ( strncasestr ( atitle,"permalink", atlen))continue;
-		if ( strncasestr ( atitle,"permanent", atlen))continue;
+		if ( strncasestr ( atitle, "permalink", atlen ) || strncasestr ( atitle,"permanent", atlen)) {
+			continue;
+		}
+
 		// do not count the link text as viable
 		selfLink = false;
+
 		// aw, dammit
-		if ( ti >= MAX_TIT_CANDIDATES ) continue;
+		if ( ti >= MAX_TIT_CANDIDATES ) {
+			continue;
+		}
+
 		// other dammit
-		if ( n >= MAX_TIT_CANDIDATES ) break;
+		if ( n >= MAX_TIT_CANDIDATES ) {
+			break;
+		}
+
 		// ok, process it
-		if ( ! tw[ti].set ( atitle            ,
-				    atlen             , // len
-				    true              , // computeIds
-				    0                 ))// niceness
+		if ( ! tw[ti].set ( atitle, atlen, true, 0 )) {
 			return false;
+		}
+
 		// set the bookends, it is the whole thing
 		cptrs   [n] = &tw[ti];
 		as      [n] = 0;
 		bs      [n] = tw[ti].getNumWords();
 		scores  [n] = 3.0; // not ALWAYS solid gold!
 		types   [n] = TT_TITLEATT;
+
 		// we are using the words class
 		ti++;
+
 		// advance
 		n++;
+
 		// break out if too many already. save some for below.
-		if ( n + 20 >= MAX_TIT_CANDIDATES ) break;
+		if ( n + 20 >= MAX_TIT_CANDIDATES ) {
+			break;
+		}
 	}
 
 	//logf(LOG_DEBUG,"title: took2=%"INT64"",gettimeofdayInMilliseconds()-x);
@@ -523,130 +513,160 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 	//int64_t *wids = WW->getWordIds();
 	// . find the last positive scoring guy
 	// . do not consider title candidates after "r" if "r" is non-zero
-	// . FIXES http://larvatusprodeo.net/2009/01/07/partisanship-politics-
-	//         and-participation/
-	/*
-	int32_t r = NW - 1;
-	if ( ! SS ) r = 0;
-	for ( ; r > 0 ; r-- ) {
-		// skip if no word
-		if ( wids[r] == 0LL ) continue;
-		if ( SS->m_scores[r] > 0 ) break;
-	}
-	// if it is zero that means we had none! so consider all titles!
-	if ( r == 0 ) r = NW;
-	*/
-
-	// do we have a valid article even?
-	//bool validArticle = false;
-	// this must be something
-	//if ( seca < secb ) validArticle = true;
+	// . FIXES http://larvatusprodeo.net/2009/01/07/partisanship-politics-and-participation/
 
 	// the candidate # of the title tag
 	int32_t tti = -1;
 
-	// if no "article content", ignore these tags
-	//if ( secb == -1 ) {
-		s_candTags [ TAG_B     ] = 0;
-		s_candTags [ TAG_H1    ] = 0;
-		s_candTags [ TAG_H2    ] = 0;
-		s_candTags [ TAG_H3    ] = 0;
-		s_candTags [ TAG_DIV   ] = 0;
-		s_candTags [ TAG_TD    ] = 0;
-		s_candTags [ TAG_P     ] = 0;
-		s_candTags [ TAG_FONT  ] = 0;
-	//}
-
 	// allow up to 4 tags from each type
 	char table[512];
+
 	// sanity check
 	if ( getNumXmlNodes() > 512 ) { char *xx=NULL;*xx=0; }
+
 	// clear table counts
 	memset ( table , 0 , 512 );
-	// ignore "titles" in script or style tags
-	bool ignore = false;
+
 	// the first word
-	char *wstart = NULL; if ( NW > 0 ) wstart = WW->getWord(0);
+	char *wstart = NULL;
+	if ( NW > 0 ) {
+		wstart = WW->getWord(0);
+	}
+
 	// loop over all "words" in the html body
 	for ( int32_t i = 0 ; i < NW ; i++ ) {
 		// come back up here if we encounter another "title-ish" tag
 		// within our first alleged "title-ish" tag
 	subloop:
+		// stop after 30k of text
+		if ( WW->getWord(i) - wstart > 200000 ) {
+			break; // 1106
+		}
+
 		// get the tag id minus the back tag bit
 		nodeid_t tid = tids[i] & BACKBITCOMP;
+
+
 		// pen up and pen down for these comment like tags
 		if ( tid == TAG_SCRIPT || tid == TAG_STYLE ) {
-			// if start of it flag it
-			if ( tids[i] & BACKBIT ) ignore = false;
-			else                     ignore = true;
+			// ignore "titles" in script or style tags
+			if ( ! (tids[i] & BACKBIT) ) {
+				continue;
+			}
 		}
-		// stop after 30k of text
-		if ( WW->getWord(i) - wstart > 200000 ) 
-			break; // 1106
-		// keep going if in script or style tag
-		if ( ignore ) continue;
+
 		// skip if not a good tag.
-		if ( ! s_candTags[tid] ) continue;
-		// must NOT be a back tag
-		if ( tids[i] & BACKBIT ) continue;
-		// skip if we hit our limit
-		if ( table[tid] >= 4 ) continue;
-		// after the document body we can only have "self link" titles
-		//if ( validArticle && i >= secb && tid != 2 ) continue;
-		// when using pdftohtml, the title tag is the filename
-		if ( tid == TAG_TITLE && *xd->getContentType() == CT_PDF )
+		if (tid != TAG_TITLE && tid != TAG_A) {
 			continue;
+		}
+
+		// must NOT be a back tag
+		if ( tids[i] & BACKBIT ) {
+			continue;
+		}
+
+		// skip if we hit our limit
+		if ( table[tid] >= 4 ) {
+			continue;
+		}
+
 		// skip over tag/word #i
 		i++;
+
 		// no words in links, unless it is a self link
-		if ( i < NW && (flags[i] & 0x02) ) continue;
+		if ( i < NW && (flags[i] & 0x02) ) {
+			continue;
+		}
+
 		// the start should be here
 		int32_t start = -1;
+
 		// do not go too far
 		int32_t max = i + 200;
+
 		// find the corresponding back tag for it
 		for (  ; i < NW && i < max ; i++ ) {
 			// hey we got it, BUT we got no alnum word first
 			// so the thing was empty, so loop back to subloop
 			if ( (tids[i] & BACKBITCOMP) == tid  &&   
 			     (tids[i] & BACKBIT    ) && 
-			     start == -1 )
+			     start == -1 ) {
 				goto subloop;
+			}
+
 			// if we hit another title-ish tag, loop back up
-			if ( s_candTags [ tids[i] & BACKBITCOMP ] ) {
+			if ( (tids[i] & BACKBITCOMP) == TAG_TITLE || (tids[i] & BACKBITCOMP) == TAG_A ) {
 				// if no alnum text, restart at the top
-				if ( start == -1 ) 
+				if ( start == -1 ) {
 					goto subloop;
+				}
+
 				// otherwise, break out and see if title works
 				break;
 			}
+
 			// if we hit a breaking tag...
 			if ( isBreakingTagId ( tids[i] & BACKBITCOMP ) &&
 			     // do not consider <span> tags breaking for 
 			     // our purposes. i saw a <h1><span> setup before.
-			     tids[i] != TAG_SPAN )
+			     tids[i] != TAG_SPAN ) {
 				break;
+			}
+
 			// skip if not alnum word
-			if ( ! WW->isAlnum(i) ) continue;
-			// if in link and score is 0 stop
-			//if ( SS && SS->m_scores[i] <= 0 ) break;
+			if ( ! WW->isAlnum(i) ) {
+				continue;
+			}
+
 			// if we hit an alnum word, break out
-			if ( start == -1 ) start = i;
+			if ( start == -1 ) {
+				start = i;
+			}
 		}
+
 		// if no start was found, must have had a 0 score in there
-		if ( start == -1 ) continue;
+		if ( start == -1 ) {
+			continue;
+		}
+
 		// if we exhausted the doc, we are done
-		if ( i >= NW ) 
+		if ( i >= NW ) {
 			break;
+		}
+
 		// skip if way too big!
-		if ( i >= max ) continue;
+		if ( i >= max ) {
+			continue;
+		}
+
 		// if was too long do not consider a title
-		if ( i - start > 300 ) continue;
-		// if not a back tag, that is bad too
-		//if ( ! WW->isBackTag(i) ) continue;
+		if ( i - start > 300 ) {
+			continue;
+		}
+
 		// . skip if too many bytes
 		// . this does not include the length of word #i, but #(i-1)
-		if ( WW->getStringSize ( start , i ) > 1000 ) continue;
+		if ( WW->getStringSize ( start , i ) > 1000 ) {
+			continue;
+		}
+
+		// when using pdftohtml, the title tag is the filename when PDF property does not have title tag
+		if ( tid == TAG_TITLE && *(xd->getContentType()) == CT_PDF ) {
+			// skip if title == '/in.[0-9]*'
+			char* title_start = WW->getWord(start);
+			char* title_end = WW->getWord(i);
+			size_t title_size = title_end - title_start;
+			const char* result = strnstr2(title_start, title_size, "/in.");
+			if (result != NULL) {
+				char* endp = NULL;
+
+				// do some further verification to avoid screwing up title
+				if ((strtoll(result + 4, &endp, 10) > 0) && (endp == title_end)) {
+					continue;
+				}
+			}
+		}
+
 		// count it
 		table[tid]++;
 
@@ -654,64 +674,77 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 		// first positive scoring guy in a section. this might
 		// hurt the "Hamlet" thing though...
 
-		// MDW: well we now uses Sections, so commented this out
-		//if ( SS && SS->m_scores[start] > 0 ) table[tid] = 100;
-
 		// store a point to the title tag guy. Msg20.cpp needs this
 		// because the zak's proximity algo uses it in Summary.cpp
 		// and in Msg20.cpp
-		if ( tid == TAG_TITLE &&
-		     // only get the first one! often the 2nd on is in
-		     // an iframe!! which we now expand into here.
-		     m_titleTagStart == -1 ) {
+
+		// only get the first one! often the 2nd on is in an iframe!! which we now expand into here.
+		if ( tid == TAG_TITLE && m_titleTagStart == -1 ) {
 			m_titleTagStart = start;
 			m_titleTagEnd   = i;
+
 			// save the candidate # because we always use this
 			// as the title if we are a root
-			if ( tti < 0 ) tti = n;
+			if ( tti < 0 ) {
+				tti = n;
+			}
 		}
+
 		// point to words class of the body that was passed in to us
-		cptrs   [n] = WW;
-		as      [n] = start;
-		bs      [n] = i;
-		if ( tid == TAG_B     ) types      [n] = TT_BOLDTAG;
-		if ( tid == TAG_H1    ) types      [n] = TT_HTAG;
-		if ( tid == TAG_H2    ) types      [n] = TT_HTAG;
-		if ( tid == TAG_H3    ) types      [n] = TT_HTAG;
-		if ( tid == TAG_TITLE ) types      [n] = TT_TITLETAG;
-		if ( tid == TAG_DIV   ) types      [n] = TT_DIVTAG;
-		if ( tid == TAG_TD    ) types      [n] = TT_TDTAG;
-		if ( tid == TAG_P     ) types      [n] = TT_PTAG;
-		if ( tid == TAG_FONT  ) types      [n] = TT_FONTTAG;
-		if ( tid == TAG_A     ) types      [n] = TT_ATAG;
-		// the score
-		if      ( tid == TAG_B     ) scores[n] = 1.0;
-		else if ( tid == TAG_H1    ) scores[n] = 1.8;
-		else if ( tid == TAG_H2    ) scores[n] = 1.7;
-		else if ( tid == TAG_H3    ) scores[n] = 1.6;
-		else if ( tid == TAG_TITLE ) scores[n] = 3.0;
-		else if ( tid == TAG_DIV   ) scores[n] = 1.0;
-		else if ( tid == TAG_TD    ) scores[n] = 1.0;
-		else if ( tid == TAG_P     ) scores[n] = 1.0;
-		else if ( tid == TAG_FONT  ) scores[n] = 1.0;
-		// . self link is very powerful
-		// . BUT
-		//   http://www.npr.org/templates/story/story.php?storyId=5417137
-		//   doesn't use it right! so use
-		//   1.3 instead of 3.0. that has an "onClick" thing in the
-		//   <a> tag, so check for that!
-		// this was bad for
-		// http://www.spiritualwoman.net/?cat=191
-		// so i am demoting from 3.0 to 1.5
-		else if ( tid == TAG_A     ) scores[n] = 1.5;
+		cptrs[n] = WW;
+		as[n] = start;
+		bs[n] = i;
+		if ( tid == TAG_B ) {
+			types[n] = TT_BOLDTAG;
+			scores[n] = 1.0;
+		} else if ( tid == TAG_H1 ) {
+			types[n] = TT_HTAG;
+			scores[n] = 1.8;
+		} else if ( tid == TAG_H2 ) {
+			types[n] = TT_HTAG;
+			scores[n] = 1.7;
+		} else if ( tid == TAG_H3 ) {
+			types[n] = TT_HTAG;
+			scores[n] = 1.6;
+		} else if ( tid == TAG_TITLE ) {
+			types[n] = TT_TITLETAG;
+			scores[n] = 3.0;
+		} else if ( tid == TAG_DIV ) {
+			types[n] = TT_DIVTAG;
+			scores[n] = 1.0;
+		} else if ( tid == TAG_TD ) {
+			types[n] = TT_TDTAG;
+			scores[n] = 1.0;
+		} else if ( tid == TAG_P ) {
+			types[n] = TT_PTAG;
+			scores[n] = 1.0;
+		} else if ( tid == TAG_FONT ) {
+			types[n] = TT_FONTTAG;
+			scores[n] = 1.0;
+		} else if ( tid == TAG_A ) {
+			types[n] = TT_ATAG;
+			// . self link is very powerful BUT
+			//   http://www.npr.org/templates/story/story.php?storyId=5417137
+			//   doesn't use it right! so use
+			//   1.3 instead of 3.0. that has an "onClick" thing in the
+			//   <a> tag, so check for that!
+			// this was bad for
+			// http://www.spiritualwoman.net/?cat=191
+			// so i am demoting from 3.0 to 1.5
+			scores[n] = 1.5;
+		}
 
 		// count it
 		n++;
+
 		// start loop over at tag #i, for loop does an i++, so negate
 		// that so this will work
 		i--;
+
 		// break out if too many already. save some for below.
-		if ( n + 10 >= MAX_TIT_CANDIDATES ) break;
+		if ( n + 10 >= MAX_TIT_CANDIDATES ) {
+			break;
+		}
 	}
 
 	//logf(LOG_DEBUG,"title: took3=%"INT64"",gettimeofdayInMilliseconds()-x);
@@ -719,95 +752,128 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 
 	// sanity check
 	if ( ! xd->m_contentTypeValid ) { char *xx=NULL;*xx=0; }
+
 	// to handle text documents, throw in the first line of text
 	// as a title candidate, just make the score really low
-	bool textDoc = false;
-	if ( xd->m_contentType == CT_UNKNOWN ) textDoc = true;
-	if ( xd->m_contentType == CT_TEXT    ) textDoc = true;
-	// make "i" point to first alphabetical word in the document
-	int32_t i ; for ( i = 0 ; textDoc && i < NW && !WW->isAlpha(i) ; i++);
-	// if we got a first alphabetical word, then assume that to be the
-	// start of our title
-	if ( textDoc && i < NW && n < MAX_TIT_CANDIDATES ) {
-		// first word in title is "t0"
-		int32_t t0 = i;
-		// find end of first line
-		int32_t numWords = 0;
-		// set i to the end now. we MUST find a \n to terminate the
-		// title, otherwise we will not have a valid title
-		while (i < NW &&
-		       numWords < maxTitleWords &&
-		       (WW->isAlnum(i) ||
-			!WW->hasChar(i, '\n'))){ 
-			if(WW->isAlnum(i)) numWords++;
-			i++;
+	bool textDoc = (xd->m_contentType == CT_UNKNOWN || xd->m_contentType == CT_TEXT);
+
+	if (textDoc) {
+		// make "i" point to first alphabetical word in the document
+		int32_t i ;
+
+		for ( i = 0 ; i < NW && !WW->isAlpha(i) ; i++);
+
+		// if we got a first alphabetical word, then assume that to be the start of our title
+		if ( i < NW && n < MAX_TIT_CANDIDATES ) {
+			// first word in title is "t0"
+			int32_t t0 = i;
+			// find end of first line
+			int32_t numWords = 0;
+
+			// set i to the end now. we MUST find a \n to terminate the
+			// title, otherwise we will not have a valid title
+			while (i < NW && numWords < maxTitleWords && (WW->isAlnum(i) || !WW->hasChar(i, '\n'))) {
+				if(WW->isAlnum(i)) {
+					numWords++;
+				}
+
+				++i;
+			}
+
+			// "t1" is the end
+			int32_t t1 = -1;
+
+			// we must have found our \n in order to set "t1"
+			if (i <= NW && numWords < maxTitleWords ) {
+				t1 = i;
+			}
+
+			// set the ptrs
+			cptrs   [n] =  WW;
+
+			// this is the last resort i guess...
+			scores  [n] =  0.5;
+			types   [n] =  TT_FIRSTLINE;
+			as      [n] =  t0;
+			bs      [n] =  t1;
+
+			// add it as a candidate if t0 and t1 were valid
+			if (t0 >= 0 && t1 > t0) {
+				n++;
+			}
 		}
-		// "t1" is the end
-		int32_t t1 = -1; 
-		// we must have found our \n in order to set "t1"
-		if (i <= NW && numWords < maxTitleWords ) t1 = i;
-		// set the ptrs
-		cptrs   [n] =  WW;
-		// this is the last resort i guess...
-		scores  [n] =  0.5;
-		types   [n] =  TT_FIRSTLINE;
-		as      [n] =  t0;
-		bs      [n] =  t1;
-		// add it as a candidate if t0 and t1 were valid
-		if (t0 >= 0 && t1 > t0) n++;
 	}
 
 	//logf(LOG_DEBUG,"title: took4=%"INT64"",gettimeofdayInMilliseconds()-x);
 	//x = gettimeofdayInMilliseconds();
 
-	// now add the last url path to contain underscores or hyphens
-	char *pstart = xd->getFirstUrl()->getPath();
-	// get first url
-	Url *fu = xd->getFirstUrl();
-	// start at the end
-	char *p = fu->getUrl() + fu->getUrlLen();
-	// end pointer
-	char *pend = NULL;
-	// come up here for each path component
-	while ( p >= pstart ) {
-		// save end
-		pend = p;
-		// skip over /
-		if ( *p == '/' ) p--;
-		// now go back to next /
-		int32_t count = 0;
-		for ( ; p >= pstart && *p !='/' ; p-- ) 
-			if ( *p == '_' || *p == '-' ) count++;
-		// did we get it?
-		if ( count > 0 ) break;
-	}
+	{
+		// now add the last url path to contain underscores or hyphens
+		char *pstart = xd->getFirstUrl()->getPath();
 
-	// did we get any?
-	if ( p > pstart && n < MAX_TIT_CANDIDATES ) {
-		// now set words to that
-		if ( ! tw[ti].set ( p                        , // string
-				    pend - p                 , // len
-				    true       , // compute wordIds?
-				    0          ))// niceness
-			return false;
-		// point to that
-		cptrs   [n] = &tw[ti];
-		as      [n] = 0;
-		bs      [n] = tw[ti].getNumWords();
-		scores  [n] = 1.0;
-		types   [n] = TT_URLPATH;
-		// increment since we are using it
-		ti++;
-		// advance
-		n++;
+		// get first url
+		Url *fu = xd->getFirstUrl();
+
+		// start at the end
+		char *p = fu->getUrl() + fu->getUrlLen();
+
+		// end pointer
+		char *pend = NULL;
+
+		// come up here for each path component
+		while ( p >= pstart ) {
+			// save end
+			pend = p;
+
+			// skip over /
+			if ( *p == '/' ) {
+				p--;
+			}
+
+			// now go back to next /
+			int32_t count = 0;
+			for ( ; p >= pstart && *p !='/' ; p-- ) {
+				if ( *p == '_' || *p == '-' ) {
+					count++;
+				}
+			}
+
+			// did we get it?
+			if ( count > 0 ) {
+				break;
+			}
+		}
+
+		// did we get any?
+		if ( p > pstart && n < MAX_TIT_CANDIDATES ) {
+			// now set words to that
+			if ( ! tw[ti].set ( p, (pend - p), true, 0 )) {
+				return false;
+			}
+
+			// point to that
+			cptrs   [n] = &tw[ti];
+			as      [n] = 0;
+			bs      [n] = tw[ti].getNumWords();
+			scores  [n] = 1.0;
+			types   [n] = TT_URLPATH;
+
+			// increment since we are using it
+			ti++;
+
+			// advance
+			n++;
+		}
 	}
 
 	// save old n
 	int32_t oldn = n;
-	// . do not split titles if we are a root url
-	// . maps.yahoo.com was getting "Maps" for the title
+
+	// . do not split titles if we are a root url maps.yahoo.com was getting "Maps" for the title
 	Url *tu = xd->getFirstUrl();
-	if ( tu->isRoot    ()           ) oldn = -2;
+	if ( tu->isRoot() ) {
+		oldn = -2;
+	}
 
 	// point to list of \0 separated titles
 	char *rootTitleBuf    = NULL;
@@ -815,196 +881,203 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 
 	bool doRootTitleRemoval = false;
 
-	if ( ! xd->ptr_rootTitleBuf ) doRootTitleRemoval = false;
+	if ( ! xd->ptr_rootTitleBuf ) {
+		doRootTitleRemoval = false;
+	}
 
 	// get the root title if we are not root!
-	if ( doRootTitleRemoval ) { // xd->ptr_rootTitleBuf ) {
+	if ( doRootTitleRemoval ) {
 		// it should not block
 		char **px = xd->getFilteredRootTitleBuf();
+
 		// error?
-		if ( ! px ) return false;
+		if ( ! px ) {
+			return false;
+		}
+
 		// should never block! should be set from title rec basically
 		if ( px == (void *)-1 ) { char *xx=NULL;*xx=0; }
+
 		// point to list of \0 separated titles
 		rootTitleBuf    = *px;
 		rootTitleBufEnd =  *px + xd->m_filteredRootTitleBufSize;
 	}
 
-
-	Matches m;
-	if ( rootTitleBuf && q ) m.setQuery ( q );
-
-	// debug hack for 'spiritual books for women query'
-	//rootTitleBuf = "Forbes.com";
-	//rootTitleBufEnd = rootTitleBuf + gbstrlen(rootTitleBuf);
-
-	// convert into an array
-	int32_t nr = 0;
-	char *pr = rootTitleBuf;
-	char *rootTitles[20];
-	int32_t  rootTitleLens[20];
-	// loop over each root title segment
-	for ( ; pr && pr < rootTitleBufEnd ; pr += gbstrlen(pr) + 1 ) {
-		// if we had a query...
-		if ( q ) {
-			// reset it
-			m.reset();
-			// see if root title segment has query terms in it
-			m.addMatches ( pr,
-				       gbstrlen(pr),
-				       MF_TITLEGEN  ,
-				       xd->m_docId  ,
-				       m_niceness   );
-			// if matches query, do NOT add it, we only add it for
-			// removing from the title of the page...
-			if ( m.getNumMatches() ) continue;
+	{
+		Matches m;
+		if ( rootTitleBuf && q ) {
+			m.setQuery ( q );
 		}
-		// point to it. it should start with an alnum already
-		// since it is the "filtered" list of root titles...
-		// if not, fix it in xmldoc then.
-		rootTitles   [nr] = pr;
-		rootTitleLens[nr] = gbstrlen(pr);
-		// advance
-		nr++;
-		// no breaching
-		if ( nr >= 20 ) break;
-	}
 
-	// TODO: fix this... put the isSiteRoot bit in title rec?
-	//if ( tu->isSiteRoot(xd->m_coll) ) oldn = -2;
+		// convert into an array
+		int32_t nr = 0;
+		char *pr = rootTitleBuf;
+		char *rootTitles[20];
+		int32_t  rootTitleLens[20];
 
-	// now split up candidates in children candidates by tokenizing
-	// using :, | and - as delimters. 
-	// the hyphen must have a space on at least one side, so "cd-rom" does
-	// not create a pair of tokens...
-	// FIX: for the title:
-	// Best Careers 2009: Librarian - US News and World Report
-	// we need to recognize "Best Careers 2009: Librarian" as a subtitle
-	// otherwise we don't get it as the title. so my question is are we
-	// going to have to do all the permutations at some point? for now
-	// let's just add in pairs...
-	for ( int32_t i = 0 ; i < oldn && n + 3 < MAX_TIT_CANDIDATES ; i++ ) {
-		// stop if no root title segments
-		if ( nr <= 0 ) break;
-		// get the word info
-		Words *w = cptrs[i];
-		int32_t   a = as[i];
-		int32_t   b = bs[i];
-		// init
-		int32_t lasta = a;
-		char prev  = false;
-		// char length in bytes
-		//int32_t charlen = 1;
-		// see how many we add
-		int32_t added = 0;
-		char *skipTo = NULL;
-		bool qualified = true;
-		// . scan the words looking for a token
-		// . sometimes the candidates end in ": " so put in "k < b-1"
-		// . made this from k<b-1 to k<b to fix 
-		//   "Hot Tub Time Machine (2010) - IMDb" to strip IMDb
-		for ( int32_t k = a ; k < b && n + 3 < MAX_TIT_CANDIDATES; k++){
-			// get word
-			char *wp = w->getWord(k);
-			// skip if not alnum
-			if ( ! w->isAlnum(k) ) {
-				// in order for next alnum word to
-				// qualify for "clipping" if it matches
-				// the root title, there has to be more
-				// than just spaces here, some punct.
-				// otherwise title
-				// "T. D. Jakes: Biography from Answers.com"
-				// becomes
-				// "T. D. Jakes: Biography from"
-				qualified=isWordQualified(wp,w->getWordLen(k));
-				continue;
+		// loop over each root title segment
+		for ( ; pr && pr < rootTitleBufEnd ; pr += gbstrlen(pr) + 1 ) {
+			// if we had a query...
+			if ( q ) {
+				// reset it
+				m.reset();
+
+				// see if root title segment has query terms in it
+				m.addMatches ( pr, gbstrlen(pr), MF_TITLEGEN, xd->m_docId, m_niceness );
+
+				// if matches query, do NOT add it, we only add it for
+				// removing from the title of the page...
+				if ( m.getNumMatches() ) {
+					continue;
+				}
 			}
-			// gotta be qualified!
-			if ( ! qualified ) continue;
-			// skip if in root title
-			if ( skipTo && wp < skipTo ) continue;
-			// does this match any root page title segments?
-			int32_t j; 
-			for ( j = 0 ; j < nr ; j++ ) {
-				// . compare to root title
-				// . break out if we matched!
-				if ( ! strncmp( wp,
-						rootTitles[j],
-						rootTitleLens[j] ) )
-					break;
-			}
-			// if we did not match a root title segment,
-			// keep on chugging
-			if ( j >= nr ) continue;
-			// . we got a root title match!
-			// . skip over
-			skipTo = wp + rootTitleLens[j];
-			// must land on qualified punct then!!
-			int32_t e = k+1;
-			for ( ; e<b && w->m_words[e]<skipTo ; e++ );
-			// ok, word #e must be a qualified punct
-			if ( e<b &&
-			     ! isWordQualified(w->getWord(e),w->getWordLen(e)))
-				// assume no match then!!
-				continue;
-			// if we had a previous guy, reset the end of the
-			// previous candidate
-			if ( prev ) {
-				bs[n-2] = k;
-				bs[n-1] = k;
-			}
-			// . ok, we got two more candidates
-			// . well, only one more if this is not the 1st time
-			if ( ! prev ) {
+			// point to it. it should start with an alnum already
+			// since it is the "filtered" list of root titles...
+			// if not, fix it in xmldoc then.
+			rootTitles   [nr] = pr;
+			rootTitleLens[nr] = gbstrlen(pr);
+			// advance
+			nr++;
+			// no breaching
+			if ( nr >= 20 ) break;
+		}
+
+		// TODO: fix this... put the isSiteRoot bit in title rec?
+		//if ( tu->isSiteRoot(xd->m_coll) ) oldn = -2;
+
+		// now split up candidates in children candidates by tokenizing
+		// using :, | and - as delimters.
+		// the hyphen must have a space on at least one side, so "cd-rom" does
+		// not create a pair of tokens...
+		// FIX: for the title:
+		// Best Careers 2009: Librarian - US News and World Report
+		// we need to recognize "Best Careers 2009: Librarian" as a subtitle
+		// otherwise we don't get it as the title. so my question is are we
+		// going to have to do all the permutations at some point? for now
+		// let's just add in pairs...
+		for ( int32_t i = 0 ; i < oldn && n + 3 < MAX_TIT_CANDIDATES ; i++ ) {
+			// stop if no root title segments
+			if ( nr <= 0 ) break;
+			// get the word info
+			Words *w = cptrs[i];
+			int32_t   a = as[i];
+			int32_t   b = bs[i];
+			// init
+			int32_t lasta = a;
+			char prev  = false;
+			// char length in bytes
+			//int32_t charlen = 1;
+			// see how many we add
+			int32_t added = 0;
+			char *skipTo = NULL;
+			bool qualified = true;
+			// . scan the words looking for a token
+			// . sometimes the candidates end in ": " so put in "k < b-1"
+			// . made this from k<b-1 to k<b to fix
+			//   "Hot Tub Time Machine (2010) - IMDb" to strip IMDb
+			for ( int32_t k = a ; k < b && n + 3 < MAX_TIT_CANDIDATES; k++){
+				// get word
+				char *wp = w->getWord(k);
+				// skip if not alnum
+				if ( ! w->isAlnum(k) ) {
+					// in order for next alnum word to
+					// qualify for "clipping" if it matches
+					// the root title, there has to be more
+					// than just spaces here, some punct.
+					// otherwise title
+					// "T. D. Jakes: Biography from Answers.com"
+					// becomes
+					// "T. D. Jakes: Biography from"
+					qualified=isWordQualified(wp,w->getWordLen(k));
+					continue;
+				}
+				// gotta be qualified!
+				if ( ! qualified ) continue;
+				// skip if in root title
+				if ( skipTo && wp < skipTo ) continue;
+				// does this match any root page title segments?
+				int32_t j;
+				for ( j = 0 ; j < nr ; j++ ) {
+					// . compare to root title
+					// . break out if we matched!
+					if ( ! strncmp( wp, rootTitles[j], rootTitleLens[j] ) ) {
+						break;
+					}
+				}
+
+				// if we did not match a root title segment,
+				// keep on chugging
+				if ( j >= nr ) continue;
+				// . we got a root title match!
+				// . skip over
+				skipTo = wp + rootTitleLens[j];
+				// must land on qualified punct then!!
+				int32_t e = k+1;
+				for ( ; e<b && w->m_words[e]<skipTo ; e++ );
+				// ok, word #e must be a qualified punct
+				if ( e<b &&
+				     ! isWordQualified(w->getWord(e),w->getWordLen(e)))
+					// assume no match then!!
+					continue;
+				// if we had a previous guy, reset the end of the
+				// previous candidate
+				if ( prev ) {
+					bs[n-2] = k;
+					bs[n-1] = k;
+				}
+				// . ok, we got two more candidates
+				// . well, only one more if this is not the 1st time
+				if ( ! prev ) {
+					cptrs   [n] = cptrs   [i];
+					scores  [n] = scores  [i];
+					types   [n] = types   [i];
+					as      [n] = lasta;
+					bs      [n] = k;
+					parent  [n] = i;
+					n++;
+					added++;
+				}
+				// the 2nd one
+				cptrs   [n] = cptrs   [i];
+				scores  [n] = scores  [i];
+				types   [n] = types   [i];
+				as      [n] = e + 1;
+				bs      [n] = bs      [i];
+				parent  [n] = i;
+				n++;
+				added++;
+
+				// now add in the last pair as a whole token
 				cptrs   [n] = cptrs   [i];
 				scores  [n] = scores  [i];
 				types   [n] = types   [i];
 				as      [n] = lasta;
-				bs      [n] = k;
+				bs      [n] = bs      [i];
 				parent  [n] = i;
 				n++;
 				added++;
-			}
-			// the 2nd one
-			cptrs   [n] = cptrs   [i];
-			scores  [n] = scores  [i];
-			types   [n] = types   [i];
-			as      [n] = e + 1;
-			bs      [n] = bs      [i];
-			parent  [n] = i;
-			n++;
-			added++;
 
-			// now add in the last pair as a whole token
-			cptrs   [n] = cptrs   [i];
-			scores  [n] = scores  [i];
-			types   [n] = types   [i];
-			as      [n] = lasta;
-			bs      [n] = bs      [i];
-			parent  [n] = i;
-			n++;
-			added++;
+				// nuke the current candidate then since it got
+				// split up to not contain the root title...
+				//cptrs[i] = NULL;
+
+				// update this
+				lasta = k+1;
+
+				// if we encounter another delimeter we will have to revise bs[n-1], so note that
+				prev = true;
+			}
 
 			// nuke the current candidate then since it got
 			// split up to not contain the root title...
-			//cptrs[i] = NULL;
+			if ( added ) {
+				scores[i] = 0.001;
+				//cptrs[i] = NULL;
+			}
 
-			// update this
-			lasta = k+1;
-			// if we encounter another delimeter we will have
-			// to revise bs[n-1], so note that
-			prev = true;
+			// erase the pair if that there was only one token
+			if ( added == 3 ) n--;
 		}
-
-		// nuke the current candidate then since it got
-		// split up to not contain the root title...
-		if ( added ) {
-			scores[i] = 0.001;
-			//cptrs[i] = NULL;
-		}
-
-		// erase the pair if that there was only one token
-		if ( added == 3 ) n--;
 	}
 
 	//logf(LOG_DEBUG,"title: took5=%"INT64"",gettimeofdayInMilliseconds()-x);
@@ -1021,54 +1094,75 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// point to the words
 		Words *w = cptrs[i];
+
 		// skip if got nuked above
-		if ( ! w ) continue;
+		if ( ! w ) {
+			continue;
+		}
+
 		// the word ptrs
 		char **wptrs = w->getWordPtrs();
+
 		// skip if empty
-		if ( w->getNumWords() <= 0 ) continue;
+		if ( w->getNumWords() <= 0 ) {
+			continue;
+		}
+
 		// get the word boundaries
 		int32_t a = as[i];
 		int32_t b = bs[i];
+
 		// record the boosts
 		float ncb = 1.0;
-		float qtb = 1.0;
+		//float qtb = 1.0;
+
 		// a flag
 		char uncapped = false;
 		// scan the words in this title candidate
 		for ( int32_t j = a ; j < b ; j++ ) {
 			// skip stop words
-			if ( w->isQueryStopWord(j,xd->m_langId) ) continue;
+			if ( w->isQueryStopWord(j,xd->m_langId) ) {
+				continue;
+			}
+
 			// punish if uncapitalized non-stopword
-			if ( ! w->isCapitalized(j) ) uncapped = true;
+			if ( ! w->isCapitalized(j) ) {
+				uncapped = true;
+			}
+
 			// skip if no query
-			if ( ! q ) continue;
-			// convert the word id into a term id
-			//int64_ttermid=g_indexdb.getTermId(0,w->getWordId(j));
+			if ( ! q ) {
+				continue;
+			}
+
 			int64_t wid = w->getWordId(j);
+
 			// reward if in the query
 			if ( q->getWordNum(wid) >= 0 ) {
-				qtb       *= 1.5;
+				//qtb       *= 1.5;
 				scores[i] *= 1.5;
 			}
 		}
-		// . only punish once if missing a capitalized word
-		// . hurts us for:
-		//   http://content-uk.cricinfo.com/ausvrsa2008_09/engine/
-		//   current/match/351682.html
+
+		// . only punish once if missing a capitalized word hurts us for:
+		//   http://content-uk.cricinfo.com/ausvrsa2008_09/engine/current/match/351682.html
 		if ( uncapped ) {
-			ncb       *= 1.00;//0.85;
-			scores[i] *= 1.00;//0.85;
+			ncb *= 1.00;
+			scores[i] *= 1.00;
 		}
+
 		// punish if a http:// title thingy
-		char *s    = wptrs[a];//w->getWord(a);
-		int32_t  size = w->getStringSize(a,b);
-		if ( size > 9 && memcmp("http://",s,7)==0 )
+		char *s = wptrs[a];
+		int32_t size = w->getStringSize(a,b);
+		if ( size > 9 && memcmp("http://", s, 7) == 0 ) {
 			ncb *= .10;
-		if ( size > 14 && memcmp("h\0t\0t\0p\0:\0/\0/",s,14)==0 )
+		}
+		if ( size > 14 && memcmp("h\0t\0t\0p\0:\0/\0/", s, 14) == 0 ) {
 			ncb *= .10;
+		}
+
 		// set these guys
-		scores     [i] *= ncb;
+		scores[i] *= ncb;
 		//noCapsBoost[i]  = ncb;
 		//qtermsBoost[i]  = qtb;
 	}
@@ -1081,49 +1175,62 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// point to the words
 		Words *w1 = cptrs[i];
+
 		// skip if got nuked above
-		if ( ! w1 ) continue;
-		int32_t   a1 = as   [i];
-		int32_t   b1 = bs   [i];	
-		//int32_t   nw1 = b1 - a1;
-		// reset our array
-		//int32_t found[512];
-		// sanity check
-		//if ( nw1 > 512 ) { char *xx=NULL;*xx=0; };
-		//memset ( found , 0 , 4*512);
+		if ( ! w1 ) {
+			continue;
+		}
+
+		int32_t a1 = as[i];
+		int32_t b1 = bs[i];
+
 		// reset some flags
 		char localFlag1 = 0;
 		char localFlag2 = 0;
+
 		// record the boost
-		float iccb = 1.0;
+		//float iccb = 1.0;
+
 		// total boost
 		float total = 1.0;
-		//int32_t count = 0;
+
 		// to each other candidate
 		for ( int32_t j = 0 ; j < n ; j++ ) {
 			// not to ourselves
-			if ( j == i ) continue;
+			if ( j == i ) {
+				continue;
+			}
+
 			// or our derivatives
-			if ( parent[j] == i ) continue;
+			if ( parent[j] == i ) {
+				continue;
+			}
+
 			// or derivates to their parent
-			if ( parent[i] == j ) continue;
+			if ( parent[i] == j ) {
+				continue;
+			}
+
 			// only check parents now. do not check kids.
 			// this was only for when doing percent contained
 			// not getSimilarity() per se
 			//if ( parent[j] != -1 ) continue;
-			//
+
 			// TODO: do not accumulate boosts from a parent
 			// and its kids, subtitles...
 			//
 			// do not compare type X to type Y
 			if ( types[i] == TT_TITLETAG ) {
-				if ( types[j] == TT_TITLETAG      ) continue;
+				if ( types[j] == TT_TITLETAG ) {
+					continue;
+				}
 			}
+
 			// do not compare a div candidate to another div cand
 			// http://friendfeed.com/foxiewire?start=30
 			// likewise, a TD to another TD
-			// http://content-uk.cricinfo.com/ausvrsa2008_09/
-			// engine/match/351681.html ... etc.
+			// http://content-uk.cricinfo.com/ausvrsa2008_09/engine/match/351681.html
+			// ... etc.
 			if ( types[i] == TT_BOLDTAG ||
 			     types[i] == TT_HTAG    ||
 			     types[i] == TT_DIVTAG  ||
@@ -1143,8 +1250,6 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 			// . but for the sake of 
 			//   http://larvatusprodeo.net/2009/01/07/partisanship-politics-and-participation/
 			//   i put bold tags back
-			//if ( types[i] == TT_BOLDTAG ) 
-			//	if ( types[j] == TT_BOLDTAG       ) continue;
 
 			if ( types[i] == TT_LINKTEXTLOCAL ) {
 				if ( types[j] == TT_LINKTEXTLOCAL ) continue;
@@ -1152,13 +1257,20 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 			if ( types[i] == TT_RSSITEMLOCAL ) {
 				if ( types[j] == TT_RSSITEMLOCAL ) continue;
 			}
+
 			// only compare to one local link text for each i
-			if ( types[j] == TT_LINKTEXTLOCAL && localFlag1 )
+			if ( types[j] == TT_LINKTEXTLOCAL && localFlag1 ) {
 				continue;
-			if ( types[j] == TT_RSSITEMLOCAL  && localFlag2 )
+			}
+			if ( types[j] == TT_RSSITEMLOCAL  && localFlag2 ) {
 				continue;
-			if ( types[j] == TT_LINKTEXTLOCAL ) localFlag1 = 1;
-			if ( types[j] == TT_RSSITEMLOCAL  ) localFlag2 = 1;
+			}
+			if ( types[j] == TT_LINKTEXTLOCAL ) {
+				localFlag1 = 1;
+			}
+			if ( types[j] == TT_RSSITEMLOCAL  ) {
+				localFlag2 = 1;
+			}
 
 			// not link title attr to link title attr either
 			// fixes http://www.spiritualwoman.net/?cat=191
@@ -1168,6 +1280,7 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 
 			// get our words
 			Words *w2 = cptrs[j];
+
 			// skip if got nuked above
 			if ( ! w2 ) continue;
 			int32_t   a2 = as   [j];
@@ -1175,7 +1288,7 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 
 			// how similar is title #i to title #j ?
 			float fp = getSimilarity ( w2 , a2 , b2 , w1 , a1 , b1 );
-			                          // TODO: scores1 , scores2 );
+
 			// error?
 			if ( fp == -1.0 ) return false;
 
@@ -1190,6 +1303,7 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 			else if ( fp >= .60 ) boost = 1.1;
 			else if ( fp >= .50 ) boost = 1.08;
 			else if ( fp >= .40 ) boost = 1.04;
+
 			// limit total
 			total *= boost;
 			if ( total > 100.0 ) break;
@@ -1197,43 +1311,15 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 			// good so give more!
 			// actually, that would hurt:
 			// http://michellemalkin.com/2008/12/29/gag-worthy/
-			/*
-			if ( types[j] == TT_URLPATH ) {
-				float delta = boost - 1.0;
-				// double the delta boost
-				boost = boost + delta;
-			}
-			*/
-			// . boost by that!
-			// . if 100% similar give x3.0
-			// . if 0% similar x1.0
-			//float boost = 1.0 + (2.0 * fp);
-			//float boost = ((1.0 + fp)*(1.0 + fp));
+
 			// custom boosting!
 			if ( fp > 0.0 && g_conf.m_logDebugTitle )
 				logf(LOG_DEBUG,"title: i=%"INT32" j=%"INT32" fp=%.02f "
 				     "b=%.02f", i,j,fp,boost);
 			// apply it
 			scores[i] *= boost;
-			iccb      *= boost;
+			//iccb      *= boost;
 		}
-
-		// . boost from words that word found in other candidates
-		// . TODO: dedup the found vector so we don't count the same
-		//   word twice!!
-		/*
-		float boost = 1.0;
-		for ( int32_t k = 0 ; k < nw1 ; k++ ) {
-			// skip punct
-			if ( found[k] == -1 ) continue;
-			// boost or punish
-			if ( found[k] ) boost *= 1.20;
-			else            boost *= 0.85;
-		}
-		// assigne
-		scores           [i] = boost;
-		inCommonCandBoost[i] = boost;
-		*/
 
 		//inCommonCandBoost[i] = iccb;
 	}
@@ -1249,18 +1335,22 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 		// point to the words
 		int32_t       a1    = as   [i];
 		int32_t       b1    = bs   [i];
+
 		// . loop through this candidates words
 		// . TODO: use memset here?
-		for ( int32_t j = a1 ; j <= b1 && j < NW ; j++ )
+		for ( int32_t j = a1 ; j <= b1 && j < NW ; j++ ) {
 			// flag it
 			flags[j] |= 0x01;
+		}
 	}
 
 	//logf(LOG_DEBUG,"title: took8=%"INT64"",gettimeofdayInMilliseconds()-x);
 	//x = gettimeofdayInMilliseconds();
 
 	// free our stuff
-	if ( flags!=localBuf ) mfree (flags,need, "TITLEflags");
+	if ( flags!=localBuf ) {
+		mfree (flags, need, "TITLEflags");
+	}
 
 	//logf(LOG_DEBUG,"title: took10=%"INT64"",gettimeofdayInMilliseconds()-x);
 	//x = gettimeofdayInMilliseconds();
@@ -1270,16 +1360,29 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 	int32_t  winner = -1;
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// skip if got nuked
-		if ( ! cptrs[i] ) continue;
-		if ( winner != -1 && scores[i] <= max ) continue;
+		if ( ! cptrs[i] ) {
+			continue;
+		}
+
+		if ( winner != -1 && scores[i] <= max ) {
+			continue;
+		}
+
 		// url path's cannot be titles in and of themselves
-		if ( types[i] == TT_URLPATH ) continue;
+		if ( types[i] == TT_URLPATH ) {
+			continue;
+		}
+
 		// skip if empty basically, like if title was exact
 		// copy of root, then the whole thing got nuked and
 		// some empty string added, where a > b
-		if ( as[i] >= bs[i] ) continue;
+		if ( as[i] >= bs[i] ) {
+			continue;
+		}
+
 		// got one
 		max = scores[i];
+
 		// save it
 		winner = i;
 	}
@@ -1288,10 +1391,23 @@ bool Title::setTitle4 ( XmlDoc   *xd            ,
 	//x = gettimeofdayInMilliseconds();
 
 	// if we are a root, always pick the title tag as the title
-	if ( oldn == -2 && tti >= 0 ) winner = tti;
+	if ( oldn == -2 && tti >= 0 ) {
+		winner = tti;
+	}
 
 	// if no winner, all done. no title
-	if ( winner == -1 ) return true;
+	if ( winner == -1 ) {
+		// last resort use file name
+		if ((*(xd->getContentType()) == CT_PDF) && (xd->getFirstUrl()->getFilenameLen() != 0)) {
+			Words w;
+			w.set3(xd->getFirstUrl()->getFilename());
+			if (!copyTitle(&w, 0, w.getNumWords())) {
+				return false;
+			}
+		}
+
+		return true;
+	}
 
 	// point to the words class of the winner
 	Words *w = cptrs[winner];
@@ -1650,9 +1766,10 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	char *srcEnd = end;
 
 	// include a \" or \'
-	if ( t0>0 && 
-	     (src[-1] == '\'' || src[-1] == '\"' ) )
+	if ( t0>0 && (src[-1] == '\'' || src[-1] == '\"' ) ) {
 		src--;
+	}
+
 	// and remove terminating | or :
 	for ( ; 
 	      srcEnd > src && 

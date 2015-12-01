@@ -2738,7 +2738,7 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 
 	if ( format == FORMAT_JSON ) {
 		sb->safePrintf("{"
-			       "\"response:{\n"
+			       "\"response\":{\n"
 			       "\t\"statusCode\":%"INT32",\n"
 			       "\t\"statusMsg\":\"%s\",\n"
 			       "\t\"jobCreationTimeUTC\":%"INT32",\n"
@@ -2758,7 +2758,7 @@ bool printCrawlDetails2 (SafeBuf *sb , CollectionRec *cx , char format ) {
 			       );
 		sb->safePrintf("\t\"currentTime\":%"UINT32",\n",
 			       (uint32_t)getTimeGlobal() );
-		sb->safePrintf("\t\"currentTimeUTC\":%"UINT32",\n",
+		sb->safePrintf("\t\"currentTimeUTC\":%"UINT32"\n",
 			       (uint32_t)getTimeGlobal() );
 		sb->safePrintf("\t}\n");
 		sb->safePrintf("}\n");

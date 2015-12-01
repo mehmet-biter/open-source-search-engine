@@ -17,7 +17,8 @@ def gb(request):
 
     # verify gb is running
     try:
-        requests.get('http://' + gb_config.host + ':' + gb_config.port)
+        api = gigablast.GigablastAPI(gb_config)
+        api.status()
     except requests.exceptions.ConnectionError:
         pytest.skip('Gigablast instance down')
 
@@ -26,3 +27,14 @@ def gb(request):
 
     request.addfinalizer(finalize)
     return gb_config
+
+
+@pytest.fixture(scope='function')
+def gb_api(request, gb):
+    api = gigablast.GigablastAPI(gb)
+
+    def finalize():
+        api.finalize()
+
+    request.addfinalizer(finalize)
+    return api

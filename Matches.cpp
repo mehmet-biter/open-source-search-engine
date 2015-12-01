@@ -344,10 +344,10 @@ bool Matches::set ( XmlDoc   *xd         ,
 			    niceness ) )
 		return false;
 
-	// also use the title from the title tag, because sometimes 
-	// it does not equal "tt->getTitle()"
-	int32_t  a     = tt->m_titleTagStart;
-	int32_t  b     = tt->m_titleTagEnd;
+	// also use the title from the title tag, because sometimes it does not equal "tt->getTitle()"
+	int32_t  a     = tt->getTitleTagStart();
+	int32_t  b     = tt->getTitleTagEnd();
+
 	char *start = NULL;
 	char *end   = NULL;
 	if ( a >= 0 && b >= 0 && b>a ) {

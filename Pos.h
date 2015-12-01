@@ -38,8 +38,6 @@ class Pos {
 		      int32_t          a     =  0 ,
 		      int32_t          b     = -1 );
 
-	int32_t getMemUsed () { return m_bufSize; };
-
 	// . the position in CHARACTERS of word i is given by m_pos[i]
 	// . this is NOT the byte position. you can have 2, 3 or even 4
 	//   byte characters in utf8. the purpose here is for counting 

@@ -3081,7 +3081,7 @@ bool XmlDoc::indexDoc2 ( ) {
 	//if ( m_forceDelete  ) m_decCount = true;
 
 	// fix for the exact quota bug found on eurekster collection. bug 229
-	// if we're not a new doc, then don't increment the count because 
+	// if we're not a new doc, then don't increment the count because
 	// we have been already counted as the old doc. MDW: i added the
 	// condition that if decCount is true we need to update the count!
 	if ( *isIndexed && ! m_decCount ) return logIt();
@@ -3106,12 +3106,12 @@ bool XmlDoc::indexDoc2 ( ) {
 	if ( m_msg16.m_termIdHost == 0 ) { char *xx = NULL; *xx = 0; }
 	if ( m_msg16.m_termIdDom  == 0 ) { char *xx = NULL; *xx = 0; }
 
-	// . Msg36 gets the correct count from disk and puts it in cache. It 
+	// . Msg36 gets the correct count from disk and puts it in cache. It
 	//   doesn't try to increment or decrement the quotas in cache, because
 	//   then it would have to be done on all twins, and also the correct
-	//   split will have to be found. 
-	// . Actually, we should only use the cache on one host to hold the 
-	//   sum of all splits. This will be the authority cache. 
+	//   split will have to be found.
+	// . Actually, we should only use the cache on one host to hold the
+	//   sum of all splits. This will be the authority cache.
 	if ( ! m_updatedCounts ) {
 		// only call this once
 		m_updatedCounts = true;
@@ -9247,7 +9247,7 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 	//int32_t avail = 5000;
 	//int32_t len;
 	// put title into there
-	int32_t tlen = ti->m_titleBytes - 1;
+	int32_t tlen = ti->getTitleLen() - 1;
 	//if ( len > avail ) len = avail - 10;
 	if ( tlen < 0 ) tlen = 0;
 
@@ -9260,7 +9260,7 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 
 	//gbmemcpy ( p , ti->m_title , len );
 	//p += len;
-	sb.safeMemcpy ( ti->m_title , tlen );
+	sb.safeMemcpy ( ti->getTitle() , tlen );
 	// space separting the title from summary
 	if ( tlen > 0 ) sb.pushChar(' ');
 
@@ -21547,7 +21547,7 @@ int32_t *XmlDoc::getSpiderPriority ( ) {
 	return &m_priority;
 }
 
-bool XmlDoc::logIt ( SafeBuf *bb ) {
+bool XmlDoc::logIt (SafeBuf *bb ) {
 
 	// set errCode
 	int32_t errCode = m_indexCode;
@@ -33774,31 +33774,47 @@ SafeBuf *XmlDoc::getHeaderTagBuf() {
 	
 
 Title *XmlDoc::getTitle ( ) {
-	if ( m_titleValid ) return &m_title;
+	if ( m_titleValid ) {
+		return &m_title;
+	}
+
 	// need a buncha crap
 	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (Title *)xml;
+	if ( ! xml || xml == (Xml *)-1 ) {
+		return (Title *)xml;
+	}
+
 	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (Title *)ww;
+	if ( ! ww || ww == (Words *)-1 ) {
+		return (Title *)ww;
+	}
+
 	Query *q = getQuery();
-	if ( ! q ) return (Title *)q;
-	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
-	int32_t titleMaxLen = cr->m_titleMaxLen;
-	if ( m_req ) titleMaxLen = m_req->m_titleMaxLen;
+	if ( ! q ) {
+		return (Title *)q;
+	}
+
+	int32_t titleMaxLen = 256;
+	if ( m_req ) {
+		titleMaxLen = m_req->m_titleMaxLen;
+	} else {
+		CollectionRec *cr = getCollRec();
+		if (cr) {
+			titleMaxLen = cr->m_titleMaxLen;
+		}
+	}
+
 	// limit for speed, some guys have a 100k word title!
-	if ( titleMaxLen > 256 ) titleMaxLen = 256;
+	if ( titleMaxLen > 256 ) {
+		titleMaxLen = 256;
+	}
 
 	m_titleValid = true;
 
-	if ( ! m_title.setTitle ( this        ,
-				  xml         ,
-				  ww          ,
-				  titleMaxLen ,
-				  0xffff      ,
-				  q           ,
-				  m_niceness  ) )
+	if ( ! m_title.setTitle( this, xml, ww, titleMaxLen, q, m_niceness) ) {
 		return NULL;
+	}
+
 	return &m_title;
 }
 
@@ -33857,9 +33873,9 @@ Summary *XmlDoc::getSummary () {
 	m_cpuSummaryStartTime = start;
 
 	// make sure summary does not include title
-	char *tbuf    = ti->m_title;
+	char *tbuf    = ti->getTitle();
 	// this does not include the terminating \0
-	int32_t  tbufLen = ti->m_titleBytes;
+	int32_t  tbufLen = ti->getTitleLen();
 
 	// compute the summary
 	bool status;
