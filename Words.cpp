@@ -29,7 +29,6 @@ void Words::reset ( ) {
 	m_buf = NULL;
 	m_bufSize = 0;
 	m_tagIds = NULL;
-	m_s = NULL;
 	m_numTags = 0;
 	m_hasTags = false;
 	m_localBuf2 = NULL;
@@ -171,7 +170,6 @@ bool Words::set ( Xml *xml,
 
 bool Words::set11 ( char *s , char *send , int32_t niceness ) {
 	reset();
-	m_s = s;
 	// this will make addWords() scan for tags
 	m_hasTags = true;
 	// save it
@@ -194,11 +192,7 @@ bool Words::set11 ( char *s , char *send , int32_t niceness ) {
 }
 
 bool Words::setxi ( char *s , char *buf, int32_t bufSize, int32_t niceness ) {
-	// prevent setting with the same string
-	if ( m_s == s ) { char *xx=NULL;*xx=0; }
 	reset();
-	// save for sanity check
-	m_s = s;
 	m_localBuf2 = buf;
 	m_localBufSize2 = bufSize;
 	// determine rough upper bound on number of words by counting
@@ -221,12 +215,7 @@ bool Words::set ( char *s ,
 		  bool computeWordIds ,
 		  int32_t niceness ) {
 
-	// prevent setting with the same string
-	if ( m_s == s ) { char *xx=NULL;*xx=0; }
-
 	reset();
-	// save for sanity check
-	m_s = s;
 
 	// determine rough upper bound on number of words by counting
 	// punct/alnum boundaries

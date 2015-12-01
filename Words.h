@@ -386,9 +386,6 @@ class Words {
 
 	bool           m_hasTags;
 
-	// sanity checkes for performance
-	char *m_s;
-
 	int32_t m_numTags;
 };
 
