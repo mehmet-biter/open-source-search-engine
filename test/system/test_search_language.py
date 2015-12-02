@@ -6,6 +6,7 @@ import pytest
     ('øl',          '',         '',         '',         '',         'en'),  # wrong
     ('øl',          'da',       '',         '',         '',         'da'),
     ('øl',          'da',       'en-US',    '',         '',         'da'),
+    ('øl',          'en',       'da-DK',    'findx.dk', 'dk',       'en'),  # make sure only fx_qlang is used when set
     ('øl',          '',         'en-US',    'findx.dk', '',         'en'),  # wrong
     ('øl',          '',         'en-US',    '',         'dk',       'en'),  # wrong
     ('Smølferne',   '',         '',         '',         '',         'da'),
@@ -21,6 +22,10 @@ import pytest
     ('Smurfene',    '',         'en-US',    '',         '',         'en'),  # wrong
     ('Smurfene',    '',         'no-NO',    '',         '',         'no'),
     ('Smurfene',    '',         '',         '',         'no',       'no'),
+    ('kanin',       '',         '',         '',         '',         'tl'),  # wrong
+    ('kanin',       '',         'da-dk',    '',         '',         'da'),
+    ('kanin',       'da',       '',         '',         '',         'da'),
+    ('kanin',       '',         '',         '',         'dk',       'tl'),  # wrong
 ])
 def test_search_language_hint(gb_api, query, fx_qlang, fx_blang, fx_fetld, fx_country, expected_lang):
     payload = {}

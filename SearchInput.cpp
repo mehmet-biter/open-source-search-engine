@@ -435,34 +435,31 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 		//   Primary-tag = 1*8ALPHA
 		//   Subtag = 1*8ALPHA
 		char content_language_hint[64] = {}; // HTTP header Content-Language: field
+		const char* tld_hint = NULL; // hostname of a URL
+
+		bool valid_qlang = false;
 		{
-			bool valid_qlang = false;
 			const char* qlang = r->getString("fx_qlang");
 			if (qlang) {
 				// validate lang
-				size_t len = strlen(qlang);
-				if (len > 0 && len <= 17) {
+				if (strlen(qlang) == 2) {
 					valid_qlang = true;
 					strcat(content_language_hint, qlang);
 				}
 			}
+		}
 
+		// only use other hints if fx_qlang is not set
+		if (!valid_qlang) {
 			const char* blang = r->getString("fx_blang");
 			if (blang) {
 				// validate lang
 				size_t len = strlen(blang);
 				if (len > 0 && len <= 17) {
-					if (valid_qlang) {
-						strcat(content_language_hint, ", ");
-					}
-
 					strcat(content_language_hint, blang);
 				}
 			}
-		}
 
-		const char* tld_hint = NULL; // hostname of a URL
-		{
 			// use fx_fetld if available; if not, try with fx_country
 			const char* fe_domain = r->getString("fx_fetld");
 			if (fe_domain) {
