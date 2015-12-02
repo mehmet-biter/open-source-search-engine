@@ -1717,8 +1717,6 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 // . returns false on error and sets g_errno
 bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	// skip initial punct
-	//int64_t  *wids      = w->m_wordIds;
-	//nodeid_t *tids      = w->m_tagIds;
 	char      **wp        = w->m_words;
 	int32_t       *wlens     = w->m_wordLens;
 	int32_t        nw        = w->m_numWords;
@@ -1727,10 +1725,15 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	if ( t1 < t0 ) { char *xx = NULL; *xx = 0; }
 
 	// don't breech number of words
-	if ( t1 > nw ) t1 = nw;
+	if ( t1 > nw ) {
+		t1 = nw;
+	}
 
 	// no title?
-	if ( nw == 0 || t0 == t1 ) { reset(); return true; }
+	if ( nw == 0 || t0 == t1 ) {
+		reset();
+		return true;
+	}
 
 	char *end = wp[t1-1] + wlens[t1-1] ;
 
@@ -1752,12 +1755,14 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 		m_title = (char *)mmalloc ( need , "Title" );
 		m_titleAllocSize = need;
 	}
+
 	// return false if could not alloc mem to hold the title
 	if ( ! m_title ) {
 		m_titleBytes = 0;
 		log("query: Could not alloc %"INT32" bytes for title.",need);
 		return false;
 	}
+
 	// save for freeing later
 	m_titleAllocSize = need;
 
@@ -1766,7 +1771,7 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	char *srcEnd = end;
 
 	// include a \" or \'
-	if ( t0>0 && (src[-1] == '\'' || src[-1] == '\"' ) ) {
+	if ( t0 > 0 && ( src[-1] == '\'' || src[-1] == '\"' ) ) {
 		src--;
 	}
 
@@ -1783,14 +1788,16 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 
 	// store in here
 	char *dst    = m_title;
+
 	// leave room for "...\0"
 	char *dstEnd = m_title + m_titleAllocSize - 4;
+
 	// size of character in bytes, usually 1
 	char cs ;
+
 	// point to last punct char
 	char *lastp = dst;//NULL;
-	// convert them always for now
-	bool convertHtmlEntities = true;
+
 	int32_t charCount = 0;
 	// copy the node @p into "dst"
 	for ( ; src < srcEnd ; src += cs , dst += cs ) {
@@ -1807,22 +1814,34 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 			break;
 		}
 
+		// skip unwanted character
+		if (isUtf8UnwantedSymbols(src)) {
+			dst -= cs;
+			continue;
+		}
+
 		// remember last punct for cutting purposes
 		if ( ! is_alnum_utf8 ( src ) ) {
 			lastp = dst;
 		}
 
 		// encode it as an html entity if asked to
-		if ( *src == '<' && convertHtmlEntities ) {
-			if ( dst + 4 >= dstEnd ) break;
+		if ( *src == '<' ) {
+			if ( dst + 4 >= dstEnd ) {
+				break;
+			}
+
 			gbmemcpy ( dst , "&lt;" , 4 );
 			dst += 4 - cs;
 			continue;
 		}
 
 		// encode it as an html entity if asked to
-		if ( *src == '>' && convertHtmlEntities ) {
-			if ( dst + 4 >= dstEnd ) break;
+		if ( *src == '>' ) {
+			if ( dst + 4 >= dstEnd ) {
+				break;
+			}
+
 			gbmemcpy ( dst , "&gt;" , 4 );
 			dst += 4 - cs;
 			continue;
