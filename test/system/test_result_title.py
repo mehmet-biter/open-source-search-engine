@@ -15,6 +15,9 @@ import os
     ('data/html/title_emoticon_start.html',     False,  'The quick brown fox jumps over the lazy dog'),
     ('data/html/title_emoticon_middle.html',    False,  'The quick brown fox jumps over the lazy dog'),
     ('data/html/title_emoticon_end.html',       False,  'The quick brown fox jumps over the lazy dog'),
+
+    # test title
+    ('data/html/title_exist.html',              False,  'Title for html (in title)'),
 ])
 def test_title(gb_api, httpserver, filename, is_default_page, expected_title):
     httpserver.serve_content(content=open(filename, 'rb').read(),
