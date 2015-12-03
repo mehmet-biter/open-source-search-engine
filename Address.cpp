@@ -6612,11 +6612,6 @@ bool Addresses::set2 ( ) {
 		//   Sections::addSentences() to deal with sentences that
 		//   unevenly span multiple sections like in aliconference.com
 		//   and abqtango.com
-		int32_t a = ss->m_senta;
-		int32_t b = ss->m_sentb;
-		// use this i guess
-		if ( isTicketDate ( a , b , m_wids , m_bits , m_niceness ) ) 
-			street->m_flags2 |= PLF2_TICKET_PLACE;
 	}
 	
 
@@ -11167,20 +11162,6 @@ bool setFromStr ( Address *a, char *s, pbits_t flags ,
 	return true;
 }
 
-// . year is like "2011" or whatever
-// . assume we are in greenwhich england (timezone=+0)
-// . BUT apply the american daylight start/end times
-// . currently in affect from 2nd sunday in march to first sunday in nov @ 2am
-void getDSTInterval ( int32_t year , int32_t *a , int32_t *b ) {
-	// find the 2nd sunday in march for this year
-	*a = getDOWStart ( year, 3, 1, 2); // 3=march 1=sunday, 2=2nd
-	// 2am?
-	*a += 2*3600;
-	// the end point now
-	*b = getDOWStart ( year, 11, 1, 1); // 11=nov 1=sunday 1=1st
-	// 2am
-	*b += 2*3600;
-}
 // . nowUTC is # secs elapsed since epoch in UTC (no DST)
 // . currently in affect from 2nd sunday in march to first sunday in nov @ 2am
 bool getIsDST ( int32_t nowUTC , char timezone2 ) {

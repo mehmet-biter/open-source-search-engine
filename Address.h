@@ -705,7 +705,6 @@ class Addresses {
 	RdbCache m_latLonCache;
 };
 
-extern void getDSTInterval ( int32_t year, int32_t *a , int32_t *b );
 extern int32_t getDayOfWeek ( int64_t h ) ;
 extern bool setFromStr ( Address *a, char *s, pbits_t flags , 
 			 class PlaceMem *placeMem ,

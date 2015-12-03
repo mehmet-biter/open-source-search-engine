@@ -2102,7 +2102,6 @@ void Process::resetAll ( ) {
 	resetMsg13Caches();
 	resetStopWordTables();
 	//resetSynonymTables();
-	resetDateTables();
 	resetTimezoneTables();
 	resetTestIpTable();
 }

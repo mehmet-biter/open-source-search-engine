@@ -274,10 +274,6 @@ void XmlDoc::reset ( ) {
 	
 	m_printedMenu = false;
 
-	// for hashing CT_STATUS docs consistently, this might be invalid
-	// so call it 0
-	m_pubDate = 0;
-
 	m_tmpBuf2.purge();
 	m_gotFacets = false;
 
@@ -734,7 +730,6 @@ void XmlDoc::reset ( ) {
 	m_sections.reset();
 	//m_weights.reset();
 	m_countTable.reset();
-	m_dates.reset();
 	m_addresses.reset();
 
 	// other crap
@@ -1809,7 +1804,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_spideredTimeValid           = true;
 	m_indexedTimeValid            = true;
 
-	m_pubDateValid                = true;
 	m_firstIndexedValid   	      = true;
 	m_outlinksAddedDateValid      = true;
 	m_charsetValid                = true;
@@ -4641,15 +4635,6 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 	// i think an oom error is not being caught by Sections.cpp properly
 	if ( g_errno ) { char *xx=NULL;*xx=0; }
 
-	Dates *dp = getDates();
-	if ( ! dp && g_errno == EBUFOVERFLOW ) {
-		g_errno = 0;
-		m_indexCode      = EBUFOVERFLOW;
-		m_indexCodeValid = true;
-		return &m_indexCode;
-	}
-	if ( ! dp || dp == (Dates *)-1 ) return (int32_t *)dp;
-
 	// make sure address buffers did not overflow
 	Addresses *aa = getAddresses ();
 	if ( (! aa && g_errno == EBUFOVERFLOW) ||
@@ -4814,10 +4799,6 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 	uint8_t *langId = getLangId();
 	if ( ! langId || langId == (uint8_t *)-1 ) return (char *) langId;
 
-	int32_t *datedbDate = getPubDate();
-	if ( ! datedbDate || datedbDate == (int32_t *)-1 ) 
-		return (char *)datedbDate;
-
 	getHostHash32a();
 	getContentHash32();
 
@@ -4862,9 +4843,6 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 	//int32_t *numBannedOutlinks = getNumBannedOutlinks();
 	// set this
 	//m_numBannedOutlinks8 = score32to8 ( *numBannedOutlinks );
-
-	Dates *dp = getDates();
-	if ( ! dp || dp == (Dates *)-1 ) return (char *)dp;
 
 	// . before storing this into title Rec, make sure all tags 
 	//   are valid and tagRec is up to date
@@ -5369,7 +5347,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	//if ( ! m_versionValid                ) { char *xx=NULL;*xx=0; }
 	if ( ! m_ipValid                     ) { char *xx=NULL;*xx=0; }
 	if ( ! m_spideredTimeValid           ) { char *xx=NULL;*xx=0; }
-	if ( ! m_pubDateValid                ) { char *xx=NULL;*xx=0; }
 	if ( ! m_firstIndexedDateValid       ) { char *xx=NULL;*xx=0; }
 	if ( ! m_outlinksAddedDateValid      ) { char *xx=NULL;*xx=0; }
 	if ( ! m_charsetValid                ) { char *xx=NULL;*xx=0; }
@@ -5424,7 +5401,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 		if ( ! m_expandedUtf8ContentValid    ) { char *xx=NULL;*xx=0; }
 	}
 	if ( ! m_utf8ContentValid            ) { char *xx=NULL;*xx=0; }
-	if ( ! m_datesValid                  ) { char *xx=NULL;*xx=0; }
 	// why do we need valid sections for a titlerec? we no longer user
 	// ptr_sectiondbData...
 	//if ( ! m_sectionsValid               ) { char *xx=NULL;*xx=0; }
@@ -6402,220 +6378,6 @@ void XmlDoc::gotWikiResults ( UdpSlot *slot ) {
 	m_wikiDocIdsValid = true;
 }
 
-int32_t *XmlDoc::getPubDate ( ) {
-	if ( m_pubDateValid ) return (int32_t *)&m_pubDate;
-	// get date parse
-	Dates *dp = getDates();
-	if ( ! dp || dp == (Dates *)-1 ) return (int32_t *)dp;
-	// got it
-	m_pubDateValid = true;
-	m_pubDate      = dp->getPubDate();
-	// print it once for page parser. we now do this in XmlDoc::print()
-	//if ( m_pbuf ) m_dates.printPubDates ( m_pbuf );
-	if ( m_pubDate == (uint32_t)-1 ) return (int32_t *)&m_pubDate;
-	// for parsing date
-	//int32_t currentTime = getTimeGlobal();
-	// this must be valid
-	//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
-	int32_t spideredTime = getSpideredTime();
-	// get doc age
-	//float age = currentTime - m_pubDate;
-	float age = spideredTime - m_pubDate;
-	return (int32_t *)&m_pubDate;
-}
-
-Dates *XmlDoc::getDates ( ) {
-	if ( m_datesValid ) return &m_dates;
-	// skip for now
-	m_datesValid = true;
-	return &m_dates;
-
-	// set status. we can time status changes with this routine!
-	setStatus ( "getting dates");
-
-	Dates *dd = getSimpleDates();
-	// bail on error
-	if ( ! dd ) {
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
-		return NULL;
-	}
-
-	// need addresses
-	Addresses *aa = getAddresses ();
-	if ( ! aa || aa == (void *)-1 ) return (Dates *)aa;
-
-	char *isRoot = getIsSiteRoot();
-	if ( ! isRoot || isRoot == (char *)-1 ) return (Dates *)isRoot;
-
-	// . get root doc, from titlerec is ok ( TODO: make sure from titlerec)
-	// . TODO: make sure to save in titledb too???
-	// . we need this now too
-	// . now set DF_IN_ROOTDOC on dates that were in the same section but
-	//   in the root doc. 
-	// . if we are not the root, we use the root title rec to see if 
-	//   the website repeats the store hours on every page. in that case
-	// . TODO: a special cache just fo rholding "svt" for root pages. 
-	//   should be highly efficient!!!
-	//XmlDoc     *rd  = NULL;
-
-	// setPart2() needs the implied sections set, so set them
-	Sections *sections = getSections(); 
-	if ( !sections ||sections==(Sections *)-1) return(Dates *)sections;
-
-	//SectionVotingTable *osvt = getOldSectionVotingTable();
-	//if ( ! osvt || osvt == (void *)-1 ) return (Dates *)osvt;
-
-	// table should be empty if we are the root!
-	//HashTableX *rvt = getRootVotingTable();
-	//if ( ! rvt || rvt == (void *)-1 ) return (Dates *)rvt;
-	char *isRSS   = getIsRSS();
-	if ( ! isRSS || isRSS == (void *)-1 ) return (Dates *)isRSS;
-
-	uint8_t *ctype = getContentType();
-	if ( ! ctype || ctype == (void *)-1 ) return (Dates *)ctype;
-
-	bool isXml = false;
-	if ( *isRSS ) isXml = true;
-	if ( *ctype == CT_XML ) isXml = true;
-
-	int32_t minPubDate = -1;
-	int32_t maxPubDate = -1;
-	// parentPrevSpiderTime is 0 if that was the first time that the
-	// parent was spidered, in which case isNewOutlink will always be set
-	// for every outlink it had!
-	if ( m_sreqValid &&
-	     m_sreq.m_isNewOutlink && 
-	     m_sreq.m_parentPrevSpiderTime ) {
-		// pub date is somewhere between these two times
-		minPubDate = m_sreq.m_parentPrevSpiderTime;
-		//maxPubDate = m_sreq.m_addedTime;
-		maxPubDate = m_sreq.m_discoveryTime;
-	}
-
-	// now set part2 , returns false and sets g_errno on error
-	if ( ! m_dates.setPart2 ( aa , minPubDate, maxPubDate,//osvt,
-				  isXml , *isRoot )) {
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
-		// note it
-		log("doc: dates2: %s",mstrerror(g_errno));
-		// this just means we ran out of stack space to parse
-		// out all the dates, so ignore and continue... that way
-		// Spider.cpp does not give up and keep retrying us over
-		// and over again
-		//if ( g_errno == EBUFOVERFLOW ) g_errno = 0;
-		// on all other errors, return NULL
-		if ( g_errno ) return NULL;
-	}
-	// debug EBADENGINEER error
-	if ( g_errno ) { char *xx=NULL;*xx=0; }
-
-	// overflow? does not set g_errno. at least clear all so we do not
-	// get a messed up partial representation.
-	//if ( m_dates.m_overflowed ) {
-	//	log("doc: date overflow for %s",m_firstUrl.m_url);
-	//	m_dates.reset();
-	//}
-
-	// only call it once
-	m_datesValid = true;
-	// return it
-	return &m_dates;
-}
-
-Dates *XmlDoc::getSimpleDates ( ) {
-
-	if ( m_simpleDatesValid ) return &m_dates;
-	// note that
-	setStatus("get dates part 1");
-	// try the current url
-	Url *u = getCurrentUrl();
-	// and ip
-	int32_t *ip = getIp();
-	if ( ! ip || ip == (int32_t *)-1 ) return (Dates *)ip;
-	// the docid
-	int64_t *d = getDocId();
-	if ( ! d || d == (int64_t *)-1 ) return (Dates *)d;
-	// the site hash
-	int32_t *sh32 = getSiteHash32();
-	if ( ! sh32 || sh32 == (int32_t *)-1 ) return (Dates *)sh32;
-	// words
-	Words *words = getWords();
-	if ( ! words || words == (Words *)-1 ) return (Dates *)words;
-	// we set the D_IS_IN_DATE flag for these bits
-	Bits *bits = getBits(); if ( ! bits ) return NULL;
-	// sections. is it ok that these do not include implied sections?
-	Sections *sections = getExplicitSections();
-	if (!sections||sections==(Sections *)-1) return (Dates *)sections;
-	// link info (this is what we had the problem with)
-	LinkInfo *info1 = getLinkInfo1(); 
-	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (Dates *)info1;
-	//int32_t *sv = getPageSampleVector();
-	//if ( ! sv || sv == (int32_t *)-1 ) return (Dates *)sv;
-	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (Dates *)xml;
-	// this must be valid, cuz Dates.cpp uses it!
-	//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0;}
-	// . get the xml doc of the previously stored title rec
-	// . Dates will compare the two docs to check for clocks, etc.
-	XmlDoc **pod = getOldXmlDoc ( );
-	if ( ! pod || pod == (XmlDoc **)-1 ) return (Dates *)pod;
-	Url **redir = getRedirUrl();
-	if ( ! redir || redir == (Url **)-1 ) return (Dates *)redir;
-	//char *ru = NULL;
-	//if ( *redir ) ru = (*redir)->getUrl();
-
-	// this should deserialize from its title rec data
-	//Dates *odp = NULL;
-	//if ( *pod ) odp = (*pod)->getDates ();
-	// the key in this table is the date tagHash and occNum, and the
-	// value is the timestamp of the date. this is used by the clock
-	// detection algorithm to compare a date in the previous version
-	// of this web page to see if it changed and is therefore a clock then.
-	// HashTableX *cct = NULL;
-	// if ( *pod ) cct = (*pod)->getClockCandidatesTable();
-	// this should be valid
-	uint8_t ctype = *getContentType();
-	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
-	// this now returns false and sets g_errno on error, true on success
-	if ( ! m_dates.setPart1 ( u , //->getUrl(),
-				  *redir, // ru         ,
-				  ctype      ,
-				  *ip        ,
-				  *d         ,
-				  *sh32      ,
-				  xml        ,
-				  words      ,
-				  // set D_IS_IN_DATE flag so Address.cpp
-				  // can avoid such word in addresses!
-				  bits       ,
-				  sections   ,
-				  info1      ,
-				  //sv       ,
-				  //odp      , // old dates
-				  NULL , // cct        ,
-				  this       , // us
-				  *pod       , // old XmlDoc
-				  cr->m_coll     ,
-				  m_niceness )) {
-		// sanity check
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
-		// note it
-		log("doc: dates1: %s",mstrerror(g_errno));
-		// this just means we ran out of stack space to parse
-		// out all the dates, so ignore and continue... that way
-		// Spider.cpp does not give up and keep retrying us over
-		// and over again
-		//if ( g_errno == EBUFOVERFLOW ) g_errno = 0;
-		// on all other errors, return NULL
-		if ( g_errno ) return NULL;
-	}
-	// only call it once
-	m_simpleDatesValid = true;
-	// return it
-	return &m_dates;
-}
-
 /*
 // returns NULL and sets g_errno on error, returns -1 if blocked
 HashTableX *XmlDoc::getClockCandidatesTable ( ) {
@@ -6691,44 +6453,6 @@ HashTableX *XmlDoc::getClockCandidatesTable ( ) {
 	return &m_clockCandidatesTable;
 }
 */
-
-// a date of -1 means not found or unknown
-int32_t XmlDoc::getUrlPubDate ( ) {
-	if ( m_urlPubDateValid ) return m_urlPubDate;
-	// need a first url. caller should have called setFirstUrl()
-	if ( ! m_firstUrlValid ) { char *xx=NULL;*xx=0; }
-	// use Dates
-	//Dates dp;
-	// -1 means unknown
-	m_urlPubDate = -1;
-	//m_urlAge     = -1;
-	// try the FIRST url
-	Url *u = getFirstUrl();
-	// get last url we redirected to
-	Url **redir = getRedirUrl();
-	if ( ! redir || redir == (Url **)-1 ) {char *xx=NULL;*xx=0;}
-
- subloop:
-	// . try to get the date just from the url
-	// . this will be zero if none found
-	m_urlPubDate = parseDateFromUrl ( u->getUrl() );
-	// we are kosher
-	m_urlPubDateValid = true;
-	// if we are unknown try last/redir url, if any
-	if ( m_urlPubDate == 0 && *redir && u != *redir ) {
-		u = *redir;
-		goto subloop;
-	}
-	// if we got a valid pub date from the url, set "m_urlAge"
-	if ( m_urlPubDate == 0 ) return m_urlPubDate;
-	// note it
-	log ( LOG_DEBUG, "date: Got url pub date: %"UINT32"", 
-	      (uint32_t)m_urlPubDate );
-	// set the age
-	//m_urlAge = getTimeGlobal() - m_urlPubDate;
-	//if ( m_urlAge < 0 ) m_urlAge = 0;
-	return m_urlPubDate;
-}
 
 // . use Dates to extract pub date from the url itself if pub date exists
 // . an age of "-1" means unknown
@@ -7446,7 +7170,6 @@ Sections *XmlDoc::getExplicitSections ( ) {
 				m_masterState ,    // state
 				m_masterLoop  ,    // callback
 				*ct           ,
-				&m_dates      ,
 				NULL          ,    // sd // sections data
 				true          ,    // sections data valid?
 				NULL          ,    // sv // for m_nsvt
@@ -7502,34 +7225,6 @@ Sections *XmlDoc::getImpliedSections ( ) {
 	if ( ! ct ) return NULL;
 
 	if ( ! m_firstUrlValid ) { char *xx=NULL;*xx=0; }
-
-	// now we need basic date types to add implied sections that
-	// have a dow/dom header and tod brother sections
-
-	// THIS WAS in getExplicitSections() but now m_wids is NULL.
-	// m_wids is set in setPart1() called by XmlDoc::getSimpleDates(),
-	// which calls getExplicitSections().
-	// . This was called for the benefit of Sections::addImpliedSections()
-	//   but now getAddresses() which we call below ends up calling
-	//   getSimpleDates() which calls m_dates.setPart1() which calls
-	//   m_dates.parseDates() so this is no longer needed i guess.
-	/*
-	if ( ! m_dates.parseDates ( words , DF_FROM_BODY , bits,
-				    sections, m_niceness , &m_firstUrl ,
-				    *ct )) {
-		// sanity check
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
-		// note it
-		log("doc: dates3: %s",mstrerror(g_errno));
-		// this just means we ran out of stack space to parse
-		// out all the dates, so ignore and continue... that way
-		// Spider.cpp does not give up and keep retrying us over
-		// and over again
-		//if ( g_errno == EBUFOVERFLOW ) g_errno = 0;
-		// on all other errors, return NULL
-		if ( g_errno ) return NULL;
-	}
-	*/
 
 	// if we got no sections it was bad html. so don't go any further
 	// lest we core in other code..
@@ -7735,9 +7430,6 @@ SectionVotingTable *XmlDoc::getNewSectionVotingTable ( ) {
 	// need sections
 	Sections *ss = getSections(); 
 	if ( ! ss || ss==(Sections *)-1 ) return (SectionVotingTable *)ss;
-	// and dates
-	Dates *dp = getDates();
-	if ( ! dp || dp == (Dates *)-1 ) return (SectionVotingTable *)dp;
 	// hash of all adjacent tag pairs
 	uint32_t *tph = getTagPairHash32 ( ) ;
 	if ( ! tph || tph == (uint32_t *)-1 ) return (SectionVotingTable *)tph;
@@ -7756,8 +7448,6 @@ SectionVotingTable *XmlDoc::getNewSectionVotingTable ( ) {
 	// . this adds keys of the hash of each tag xpath
 	// . and it adds keys of the hash of each tag path PLUS its innerhtml
 	if ( ! ss->addVotes ( &m_nsvt , *tph ) ) return NULL;
-	// tally the section votes from the dates
-	if ( ! dp->addVotes ( &m_nsvt ) ) return NULL;
 	// our new section voting table is now valid, and ready to be added
 	// to sectiondb by calling SectionVotingTable::hash()
 	m_nsvtValid = true;
@@ -13613,26 +13303,9 @@ Spam *XmlDoc::getSpam ( ) {
 // this means any tod now
 bool *XmlDoc::getHasTOD ( ) {
 	if ( m_hasTODValid ) return &m_hasTOD2;
-	// scan the dates
-	Dates *dp = getDates() ;
-	if ( ! dp || dp == (Dates *)-1 ) return (bool *)dp;
 	// assume not
 	m_hasTOD2 = false;
 	m_hasTOD  = false;
-	// scan the dates
-	for ( int32_t i = 0 ; i < dp->m_numDatePtrs ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get date
-		Date *di = dp->m_datePtrs[i];
-		// skip if got nuked
-		if ( ! di ) continue;
-		// tod?
-		if ( !(di->m_hasType & DT_TOD) ) continue;
-		// got one
-		m_hasTOD2 = true;
-		m_hasTOD  = true;
-	}
 	// it is now valid
 	m_hasTODValid = true;
 	return &m_hasTOD2;
@@ -13716,13 +13389,6 @@ Addresses *XmlDoc::getAddresses ( ) {
 	//if ( ! m_siteTitleBufValid ) { char *xx=NULL;*xx=0; }
 	char **fbuf = getFilteredRootTitleBuf();
 	if ( ! fbuf || fbuf == (void *)-1 ) return (Addresses *)fbuf;
-
-	// this will set D_IS_IN_DATE in the Bits::m_bits[] array which
-	// Addresses::set() uses to avoid having addresses that are really
-	// just dates!
-	Dates *dd = getSimpleDates();
-	// return NULL on error
-	if ( ! dd ) return (Addresses *)NULL;
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
@@ -21934,15 +21600,6 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("%s(%"UINT32") ", tmp,(uint32_t)spideredTime);
 	}
 
-	// print new pubdate
-	if ( m_pubDateValid && m_pubDate!=(uint32_t)-1 && m_pubDate!=0 ) {
-		char tmp[64];
-		time_t ts = (time_t)m_pubDate;
-		struct tm *timeStruct = gmtime ( &ts );
-		strftime ( tmp, 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct );
-		sb->safePrintf("pubdate=%s ", tmp );
-	}
-
 	if ( m_linkInfo1Valid && ptr_linkInfo1 && ptr_linkInfo1->hasRSSItem())
 		sb->safePrintf("hasrssitem=1 ");
 
@@ -22026,20 +21683,6 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	     m_oldDoc &&
 	     strcmp(ptr_site,m_oldDoc->ptr_site) )
 		sb->safePrintf("oldsite=%s ",m_oldDoc->ptr_site);
-
-	// . print old pubdate
-	// . -1 means unsupported, 0 means could not find one
-	// . only print if different now! good for grepping changes
-	if ( m_oldDocValid && m_oldDoc && 
-	     m_oldDoc->m_pubDate!= (uint32_t)-1 && 
-	     m_oldDoc->m_pubDate !=0 &&
-	     m_oldDoc->m_pubDate != m_pubDate ) {
-		char tmp[64];
-		time_t ts = m_oldDoc->m_pubDate;
-		struct tm *timeStruct = gmtime ( &ts );
-		strftime ( tmp, 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct );
-		sb->safePrintf("oldpubdate=%s ",tmp );
-	}
 
 	if ( m_isAdultValid )
 		sb->safePrintf("isadult=%"INT32" ",(int32_t)m_isAdult);
@@ -24403,18 +24046,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( nd ) na = getAddresses();
 	//if ( od ) oa = od->getAddresses();
 
-	// get dates ready for hashing
-	Dates *ndp = NULL;
-	//Dates *odp = NULL;
-	if ( nd ) {
-		ndp = nd->getDates();
-		if ( ! ndp || ndp==(void *)-1) return (char *)ndp;
-	}
-	//if ( od ) {
-	//	odp = od->getDates();
-	//	if ( ! odp || odp==(void *)-1) return (char *)odp;
-	//}
-
 	// need firstip if adding a rebuilt spider request
 	if ( m_useSecondaryRdbs && ! m_isDiffbotJSONObject && m_useSpiderdb ) {
 		int32_t *fip = getFirstIp();
@@ -24772,10 +24403,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//   of EDOCNOTOLD, from tfndb as well
 	//if ( ! od && ! nd ) { char *xx=NULL;*xx=0; }
 
-
-	// what pub dates do the old and new doc have? -1 means none.
-	int32_t date1 = -1; if ( nd ) date1 = nd->m_pubDate;
-	//int32_t date2 = -1; if ( od ) date2 = od->m_pubDate;
 
 	// now we also add the title rec. true = ownsCbuf? ret NULL on error
 	// with g_errno set.
@@ -26031,10 +25658,8 @@ void XmlDoc::copyFromOldDoc ( XmlDoc *od ) {
 	m_hopCountValid      = true;
 	m_crawlDelayValid    = true;
 	
-	m_pubDate       = od->m_pubDate;
 	m_langId        = od->m_langId;
 
-	m_pubDateValid      = true;
 	m_langIdValid       = true;
 	
 	// so get sitenuminlinks doesn't crash when called by getNewSpiderReply
@@ -26424,7 +26049,8 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			m_srep.m_crawlDelayMS = m_crawlDelay;// * 1000;
 		else
 			m_srep.m_crawlDelayMS = -1;
-		if ( m_pubDateValid     ) m_srep.m_pubDate = m_pubDate;
+		//if ( m_pubDateValid     ) m_srep.m_pubDate = m_pubDate;
+		                          m_srep.m_pubDate = 0;
 		if ( m_langIdValid      ) m_srep.m_langId = m_langId;
 		if ( m_isRSSValid       ) m_srep.m_isRSS = m_isRSS;
 		if ( m_isPermalinkValid ) m_srep.m_isPermalink =m_isPermalink;
@@ -26491,7 +26117,8 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		if ( m_indexCode == EDOCUNCHANGED && 
 		     m_oldDocValid &&
 		     m_oldDoc ) {
-			m_srep.m_pubDate        = m_oldDoc->m_pubDate;
+			//m_srep.m_pubDate        = m_oldDoc->m_pubDate;
+			m_srep.m_pubDate        = 0;
 			m_srep.m_langId         = m_oldDoc->m_langId;
 			m_srep.m_isRSS          = m_oldDoc->m_isRSS;
 			m_srep.m_isPermalink    = m_oldDoc->m_isPermalink;
@@ -26555,10 +26182,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 
 
-	int32_t *pubDate = getPubDate();
-	if ( ! pubDate || pubDate == (int32_t *)-1 ) 
-		return (SpiderReply *)pubDate;
-
 	uint8_t *langId = getLangId();
 	if ( ! langId || langId == (uint8_t *)-1 )
 		return (SpiderReply *)langId;
@@ -26587,7 +26210,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	//if(! m_sreqValid                ) { char *xx=NULL;*xx=0; }
 	if ( ! m_siteNumInlinksValid       ) { char *xx=NULL;*xx=0; }
 	if ( ! m_hopCountValid             ) { char *xx=NULL;*xx=0; }
-	if ( ! m_pubDateValid              ) { char *xx=NULL;*xx=0; }
 	if ( ! m_langIdValid               ) { char *xx=NULL;*xx=0; }
 	if ( ! m_isRSSValid                ) { char *xx=NULL;*xx=0; }
 	if ( ! m_isPermalinkValid          ) { char *xx=NULL;*xx=0; }
@@ -26633,7 +26255,8 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// . EUDPTIMEDOUT, EDNSTIMEDOUT, ETCPTIMEDOUT, EDNSDEAD, EBADIP,
 	//   ENETUNREACH,EBADMIME,ECONNREFUED,ECHOSTUNREACH
 	m_srep.m_siteNumInlinks       = m_siteNumInlinks;
-	m_srep.m_pubDate              = *pubDate;
+	//m_srep.m_pubDate              = *pubDate;
+	m_srep.m_pubDate              = 0;
 	// this was replaced by m_contentHash32
 	//m_srep.m_newRequests          = 0;
 	m_srep.m_langId               = *langId;
@@ -26699,7 +26322,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 	//if ( ! m_domHash32Valid            ) { char *xx=NULL;*xx=0; }
 	//if ( ! m_siteNumInlinksValid       ) { char *xx=NULL;*xx=0; }
 	if ( ! m_hopCountValid             ) { char *xx=NULL;*xx=0; }
-	if ( ! m_pubDateValid              ) { char *xx=NULL;*xx=0; }
 	if ( ! m_langIdValid               ) { char *xx=NULL;*xx=0; }
 	if ( ! m_isRSSValid                ) { char *xx=NULL;*xx=0; }
 	if ( ! m_isPermalinkValid          ) { char *xx=NULL;*xx=0; }
@@ -32865,7 +32487,8 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	reply->m_urlHash48        = getFirstUrlHash48();
 	reply->m_contentLen       = size_utf8Content;
 	reply->m_lastSpidered     = getSpideredTime();//m_spideredTime;
-	reply->m_datedbDate       = m_pubDate;
+	//reply->m_datedbDate       = m_pubDate;
+	reply->m_datedbDate       = 0;
 	reply->m_firstIndexedDate = m_firstIndexedDate;
 	reply->m_firstSpidered    = m_firstIndexedDate;
 	reply->m_contentType      = m_contentType;
@@ -34374,7 +33997,6 @@ SafeBuf *XmlDoc::getSampleForGigabitsJSON ( ) {
 			NULL,//m_masterState ,    // state
 			NULL,//m_masterLoop  ,    // callback
 			CT_JSON, // *ct           ,
-			NULL,//&m_dates      ,
 			NULL          ,    // sd // sections data
 			true          ,    // sections data valid?
 			NULL          ,    // sv // for m_nsvt
@@ -37215,10 +36837,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 
 
-	char *ddd;
-	time_t datedbDate  = (time_t)m_pubDate;
-	if ( datedbDate != -1 ) ddd = asctime ( gmtime(&datedbDate ));
-	else                    ddd = "---";
+	char *ddd = "---";
 
 	char strLanguage[128];
 	languageToString(m_langId, strLanguage);
@@ -37272,8 +36891,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 	char *ipString = iptoa(m_ip);
 	char *estimated = "";
-	if ( datedbDate & 0x01 ) // tr->datedbDateIsEstimated() )
-		estimated = "<nobr><b>[estimated from bisection]</b></nobr>";
 
 	//char *ls = getIsLinkSpam();
 	Links *links = getLinks();
@@ -37325,7 +36942,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 		  "</td></tr>\n",
 
 		  ddd , 
-		  (uint32_t)datedbDate , 
+		  0 , 
 		  estimated ,
 
 		  m_oldTitleRecSize,
@@ -37519,20 +37136,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	aa->print(sb,uh64);
 	
 
-
-	//
-	// PRINT PUB DATE CANDIDATES
-	//
-
-	// print stored pub date candidates which we indexed as clock
-	// or not clock!
-	Dates *dp = getDates() ;
-	// should never block!
-	if ( dp == (void *)-1 ) { char *xx=NULL;*xx=0; }
-	// print it out
-	if ( dp ) dp->printDates ( sb );
-
-	//return true;
 
 	//
 	// PRINT SECTIONS

@@ -288,7 +288,7 @@ class XmlDoc {
 	//time_t    m_maxPubDate;
 	uint32_t  m_indexedTime; // slightly > m_spideredTime (time_t)
 	uint32_t  m_reserved32;
-	uint32_t  m_pubDate;    // aka m_datedbDate // time_t
+	uint32_t  reserved3; //was: m_pubDate;    // aka m_datedbDate // time_t
 	//time_t  m_nextSpiderTime;
 	uint32_t    m_firstIndexedDate; // time_t
 	uint32_t    m_outlinksAddedDate; // time_t
@@ -355,7 +355,8 @@ class XmlDoc {
 	uint16_t  m_reserved815:1;
 	uint16_t  m_reserved816:1;
 
-
+	//end of titlerec binary compatibility header
+	
 	char      *ptr_firstUrl;
 	char      *ptr_redirUrl;
 	//char    *ptr_tagRecData;
@@ -540,12 +541,8 @@ class XmlDoc {
 
 	int64_t **getWikiDocIds ( ) ;
 	void gotWikiResults ( class UdpSlot *slot );
-	int32_t *getPubDate ( ) ;
 	//class DateParse2 *getDateParse2 ( ) ;
-	class Dates *getSimpleDates();
-	class Dates *getDates();
 	//class HashTableX *getClockCandidatesTable();
-	int32_t getUrlPubDate ( ) ;
 	int32_t getOutlinkAge ( int32_t outlinkNum ) ;
 	char *getIsPermalink ( ) ;
 	char *getIsUrlPermalinkFormat ( ) ;
@@ -1452,8 +1449,6 @@ class XmlDoc {
 	bool m_linkInfo1Valid;
 	bool m_linkSiteHashesValid;
 	//bool m_dateParse2Valid;
-	bool m_simpleDatesValid;
-	bool m_datesValid;
 	bool m_sectionsReplyValid;
 	bool m_sectionsVotesValid;
 	bool m_sectiondbDataValid;
@@ -1549,7 +1544,6 @@ class XmlDoc {
 	//Msg40 m_msg40;
 	//DateParse2 m_dateParse2;
 	bool m_printedMenu;
-	Dates m_dates;
 	//HashTableX m_clockCandidatesTable;
 	//SafeBuf m_cctbuf;
 	int32_t m_urlPubDate;

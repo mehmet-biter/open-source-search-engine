@@ -74,7 +74,6 @@ void Sections::reset() {
 	m_firstSent = NULL;
 	m_lastSent  = NULL;
 	m_sectionPtrs = NULL;
-	m_firstDateValid = false;
 	m_alnumPosValid = false;
 }
 
@@ -126,7 +125,6 @@ bool Sections::set ( Words     *w                       ,
 		     void      *state                   ,
 		     void     (*callback)(void *state)  ,
 		     uint8_t    contentType             ,
-		     Dates     *dates                   ,
 		     // from XmlDoc::ptr_sectionsData in a title rec
 		     char      *sectionsData            ,
 		     bool       sectionsDataValid       ,
@@ -148,7 +146,6 @@ bool Sections::set ( Words     *w                       ,
 	// save it
 	m_words           = w;
 	m_bits            = bits;
-	m_dates           = dates;
 	m_url             = url;
 	m_docId           = docId;
 	m_siteHash64      = siteHash64;
@@ -2509,91 +2506,6 @@ bool Sections::addImpliedSections ( Addresses *aa ) {
 	// that event title in which case we'd have to rely on 
 	// implied sections... so let's do this right...
 	
-	// scan the dates and set a section's SEC_HAS_DOM/DOW
-	// and SEC_HAS_TOD for all the sections containing it either directly
-	// or indirectly
-	for ( int32_t i = 0 ; i < m_dates->m_numTotalPtrs ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		Date *di = m_dates->m_totalPtrs[i];
-		// skip if nuked. part of a compound, or in bad section.
-		if ( ! di ) continue;
-		// must be in body
-		if ( ! ( di->m_flags & DF_FROM_BODY ) ) continue;
-		// ignore, otherwise the trumba sections get messed up
-		// because we use the official timestamps (with the "T" in
-		// them) as a month for adding implied sections!
-		if ( di->m_flags5 & DF5_IGNORE ) 
-			continue;
-		// skip if compound, list, range, telescope
-		if ( di->m_numPtrs != 0 ) continue;
-		// sanity check
-		if ( di->m_a < 0 ) { char *xx=NULL;*xx=0; }
-		// int16_tcut
-		datetype_t dt = di->m_hasType;
-		// need a DOW, DOM or TOD
-		sec_t flags = 0;
-		// get smallesst containing section
-		Section *sa = m_sectionPtrs [ di->m_a];
-		// . ignore <option> tags etc. to fix burtstikilounge.com
-		// . was causing "Nov 2009" to be a date brother with
-		//   its daynums in the calendar select tag dropdown
-		if ( sa->m_flags & badFlags ) continue;
-
-		// are we a header?
-		//bool header = false;
-		//if ( sa->m_flags & SEC_HEADING ) header = true;
-		//if ( sa->m_flags & SEC_HEADING_CONTAINER) header = true;
-
-		// day of month is good
-		//if ( header && (dt & DT_MONTH) && (dt & DT_DAYNUM) ) 
-		// allow non-header guys in so we can pick up setence-y 
-		// sections. the additional logic in getDelimScore() should
-		// cover us...
-		// ALLOWING just daynum messes up stubhub.com because we
-		// think every little number in every xml tag is a daynum!
-		if ( (dt & DT_DAYNUM) ) // && (dt != DT_DAYNUM) ) // && (dt & DT_MONTH) ) 
-			flags |= SEC_HAS_DOM;
-		if ( dt & DT_MONTH )
-			flags |= SEC_HAS_MONTH;
-		// or day of week
-		//if ( header && (dt & DT_DOW) )
-		// require it be strong so things like "Hillbilly Thursday"
-		// in southgatehouse.com which is a band name i think does
-		// not cause SEC_DATE_BOUNDARY to be set for that list of
-		// brothers, thereby killing its sections ability to telescope
-		// to its day of month.
-		if ( (di->m_flags & DF_HAS_STRONG_DOW) &&  // dt & DT_DOW)
-		     // do not count "before 4th Saturday" for folkmads.org
-		     // because it is not really a dow in this sense
-		     !(di->m_flags & DF_ONGOING) )
-			flags |= SEC_HAS_DOW;
-		// to fix santafeplayhouse.org they have some headers
-		// that are like "Thursday Pay What You Wish Performances"
-		if ( dt & DT_DOW ) 
-			flags |= SEC_HAS_DOW;
-		// tod is good (ignore "before 11pm" for this)
-		if ( di->m_flags & (DF_AFTER_TOD|DF_EXACT_TOD) )
-			flags |= SEC_HAS_TOD;
-		// skip fuzzies - is DF_FUZZY set for this? in parseDates?
-		if ( dt == DT_DAYNUM && (di->m_flags & DF_FUZZY) )
-			continue;
-		// any date?
-		//flags |= SEC_HAS_DATE;
-		// skip if none
-		if ( ! flags ) continue;
-		// mark all sections
-		for ( ; sa ; sa = sa->m_parent ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// if already set, stop
-			if ( (sa->m_flags & flags) == flags ) break;
-			// set it
-			sa->m_flags |= flags;
-		}
-	}
-			
 	// this is needed by setSentFlags()
 	//setNextSentPtrs();
 
@@ -4613,7 +4525,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 
 	// for checking if title contains phone #
 	//HashTableX *pt = m_dates->getPhoneTable   ();		
-	m_dates->setPhoneXors();
 	// int16_tcut
 	wbit_t *bits = m_bits->m_bits;
 
@@ -10499,13 +10410,6 @@ bool Sections::addSentenceSections ( ) {
 				     ! m_isRSSExt &&
 				     j+1<m_nw &&
 				     m_wids[j+1] &&
-				     // can't be in a date range
-				     // date bits are not valid here because
-				     // we are now called from ::set() without
-				     // dates because dates need sentence 
-				     // sections now to set DF_FUZZY for years
-				     ( !isDateType(&prevWid)||
-				       !isDateType(&m_wids[j+1])) &&
 				     //( ! (bb[lastWidPos] & D_IS_IN_DATE) ||
 				     //  ! (bb[j+1] & D_IS_IN_DATE)       ) &&
 				     // fix for $10 - $12
@@ -10677,20 +10581,6 @@ bool Sections::addSentenceSections ( ) {
 				if ( (prevWid == h_am ||
 				      prevWid == h_pm ) )
 					isAmPm = true;
-				if ( isAmPm &&
-				     verbCount >= 1 &&
-				     next < max &&
-				     m_words->isCapitalized(next) &&
-				     // exclude "5 p.m. Friday" (santafe.org)
-				     ! isDateType(&nwid) )
-					// end the sentence
-					break;
-				// do not end sentence if like
-				// "8 am. Fridays", otherwise it would end
-				// without this statement since am is lower
-				// case and Fridays is capitalized
-				if ( isAmPm && isDateType(&nwid) )
-					goto redo;
 
 				// was previous word/abbr capitalized?
 				// if so, assume period does not end sentence.
@@ -14737,31 +14627,6 @@ bool Sections::containsTagId ( Section *si, nodeid_t tagId ) {
 }
 
 bool Sections::setTableStuff ( ) {
-	char tbuf[1024];
-	HashTableX tdups;
-	tdups.set(4,0,64,tbuf,1024,false,m_niceness,"tdupt");
-	for ( int32_t i = 0 ; i < m_dates->m_numDatePtrs ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		Date *di = m_dates->m_datePtrs[i];
-		// skip if none
-		if ( ! di ) continue;
-		// get section
-		Section *si = di->m_section;
-		// skip if not in body
-		if ( ! si ) continue;
-		// need to be in a table
-		Section *ts = si->m_tableSec;
-		// skip if none
-		if ( ! ts ) continue;
-		// if already did, forget it!
-		if ( tdups.isInTable ( &ts ) ) continue;
-		// add it
-		if ( ! tdups.addKey ( &ts ) ) return false;
-		// do it
-		if ( ! setTableDateHeaders ( ts ) ) return false;
-	}
 	return true;
 }
 
@@ -14779,140 +14644,6 @@ bool Sections::setTableStuff ( ) {
 //   was in the header row/col
 bool Sections::setTableDateHeaders ( Section *ts ) {
 
-	// skip if only one row and column
-	if ( ! ( ts->m_flags & SEC_MULTIDIMS ) ) return true;
-
-	char adtbuf[1000];
-	HashTableX adt;
-	adt.set ( 4 , 0 , 64 , adtbuf, 1000, false,m_niceness,"adttab");
-
-	// sanity check
-	//if ( ! m_firstDateValid ) { char *xx=NULL;*xx=0; }
-	// return right away if table contains no dates
-	//int32_t dn = ts->m_firstDate - 1;
-	//if ( dn < 0 ) return true;
-	int32_t dn = 0;
-
-	Section *headerCol = NULL;
-	Section *headerRow = NULL;
-
-	for ( int32_t i = dn ; i < m_dates->m_numDatePtrs ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		Date *di = m_dates->m_datePtrs[i];
-		// skip if nuked. part of a compound, or in bad section.
-		if ( ! di ) continue;
-		// must be in table
-		if ( di->m_a < ts->m_a ) continue;
-		// stop if out of table
-		if ( di->m_a >= ts->m_b ) break;
-		// sanity check
-		if ( di->m_a < 0 ) continue;
-		// if it is a single tod then make sure not like "8.32"
-		if ( di->m_flags & DF_FUZZY ) continue;
-		// get date's section
-		Section *si = di->m_section;
-		// must be in that table.. in subtable?? then skip...
-		if ( si->m_tableSec != ts ) continue;
-
-		// get the table cell section
-		Section *cell = si;
-		for ( ; cell ; cell = cell->m_parent ) {
-			QUICKPOLL(m_niceness);
-			if ( cell->m_tagId == TAG_TD ) break;
-			if ( cell->m_tagId == TAG_TH ) break;
-		}
-		// how does this happen?
-		if ( ! cell ) continue;
-		// . do not add our hash if not just a date
-		// . we are not header material if more than just a date
-		wbit_t *bb = NULL;
-		if ( m_bits ) bb = m_bits->m_bits;
-		bool hasWord = false;
-		for ( int32_t j = cell->m_a ; j < cell->m_b ; j++ ) {
-			QUICKPOLL(m_niceness);
-			if ( ! bb ) break;
-			if ( ! m_wids[j] ) continue;
-			if ( bb[j] & D_IS_IN_DATE ) continue;
-			hasWord = true;
-			break;
-		}
-		// we are not date header material if we got more than
-		// just a date in our td/th cell
-		if ( hasWord ) continue;
-
-		// get date types
-		datetype_t dt = di->m_hasType;
-		// see if same date type in prev row or col
-		int32_t row = si->m_rowNum;
-		int32_t col = si->m_colNum;
-		int32_t prevRow = row - 1;
-		int32_t prevCol = col - 1;
-		int32_t h;
-		// zero is invalid row
-		if ( prevRow >= 1 && ! headerCol ) {
-			h = hash32h ( prevRow , col );
-			h = hash32h ( (int32_t)(PTRTYPE)ts , h );
-			h = hash32h ( dt , h ); // datetype
-			if ( adt.isInTable ( &h ) ) {
-				headerCol = cell;
-				//break;
-			}
-		}
-		// zero is invalid col
-		if ( prevCol >= 1 && ! headerRow ) {
-			h = hash32h ( row , prevCol );
-			h = hash32h ( (int32_t)(PTRTYPE)ts , h );
-			h = hash32h ( dt , h ); // datetype
-			if ( adt.isInTable ( &h ) ) {
-				headerRow = cell;
-				//break;
-			}
-		}
-		// add our hash
-		h = hash32h ( row , col );
-		h = hash32h ( (int32_t)(PTRTYPE)ts , h );
-		h = hash32h ( dt , h ); // datetype
-		if ( ! adt.addKey ( &h ) ) return false;
-	}
-	// set flags in all cells of table
-	sec_t sef = 0;
-	if ( headerCol ) sef |= SEC_HASDATEHEADERCOL;
-	if ( headerRow ) sef |= SEC_HASDATEHEADERROW;
-	// bail if none
-	if ( ! sef ) return true;
-	// just set on table now to avoid confusion
-	ts->m_flags |= sef;
-
-	// . set DF_ISTABLEHEADER on dates in the headrow and headcol
-	// . then we can set SF_RECURRING if its a dow because its a 
-	//   weekly schedule then
-	// . we are setting implied sections so we do not have telescoped
-	//   dates at this point.
-	for ( int32_t i = dn ; i < m_dates->m_numDatePtrs ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		Date *di = m_dates->m_datePtrs[i];
-		// skip if nuked. part of a compound, or in bad section.
-		if ( ! di ) continue;
-		// in row?
-		Section *ds = di->m_section;
-		// must be in body
-		if ( ! ds ) continue;
-		// stop if beyond table
-		if ( ds->m_a >= ts->m_b ) break;
-		// must be in table
-		if ( ds->m_tableSec != ts ) continue;
-		// is date in a header column?
-		if ( headerCol && headerCol->m_colNum == ds->m_colNum )
-			di->m_flags |= DF_TABLEDATEHEADERCOL;
-		// is date in a header row?
-		if ( headerRow && headerRow->m_rowNum == ds->m_rowNum )
-			di->m_flags |= DF_TABLEDATEHEADERROW;
-	}
-		
 	return true;
 }
 
@@ -15782,9 +15513,6 @@ bool Sections::printSectionDiv ( Section *sk , char format ) { // bool forProCog
 			acount++;
 		}
 		// print those out
-		if ( sk->m_dateBits )
-			m_sbuf->safePrintf("datebits=0x%"XINT32" ",
-					   (int32_t)sk->m_dateBits);
 		if ( sk->m_phoneXor ) 
 			m_sbuf->safePrintf("phonexor=0x%"XINT32" ",sk->m_phoneXor);
 		if ( sk->m_emailXor ) 

@@ -10664,11 +10664,6 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	    (double)(e - t)/100.0,words.m_numWords,docId);
 
 
-	Dates dates;
-	if (!dates.parseDates(&words,DF_FROM_BODY,NULL,NULL,0,NULL,CT_HTML) ) 
-		return log("build: speedtestxml: parsedates: %s",
-			   mstrerror(g_errno));
-
 	Sections sections;
 	// computeWordIds from xml
 	words.set ( &xml , true , true ) ;
@@ -10682,7 +10677,6 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 		if ( ! sections.set (&words,&phrases,&bits,NULL,0,0,
 				     NULL,0,NULL,NULL,
 				     0, // contenttype
-				     &dates ,
 				     NULL, // sectionsdata
 				     false, // sectionsdatavalid
 				     NULL, // sectionsdata2

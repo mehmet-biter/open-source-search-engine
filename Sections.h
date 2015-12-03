@@ -4,7 +4,7 @@
 #include "HashTableX.h"
 #include "Msg0.h"
 #include "IndexList.h"
-#include "Dates.h" // datetype_t
+#include "Bits.h"
 #include "Words.h"
 #include "Rdb.h"
 //#include "DiskPageCache.h"
@@ -578,9 +578,6 @@ public:
 	//class Date *m_datePtr;
 	int32_t m_firstDate;
 
-	//datetype_t m_hasType;
-	datetype_t m_dateBits;
-
 	char m_used;
 
 	//int32_t m_numTods;
@@ -679,7 +676,6 @@ class Sections {
 		   void           *state       ,
 		   void          (*callback)(void *state) ,
 		   uint8_t         contentType ,
-		   class Dates    *dates       ,
 		   char           *sectionsData,
 		   bool            sectionsDataValid ,
 		   char           *sectionsData2,
@@ -779,15 +775,12 @@ class Sections {
 	bool setRegistrationBits ( ) ;
 	bool m_setRegBits ;
 
-	void setSectionFlagsForDate ( class Date *di , sec_t flag ) ;
-
 	bool m_alnumPosValid;
 
 	// save it
 	class Words *m_words    ;
 	class Bits  *m_bits     ;
 	class Url   *m_url      ;
-	class Dates *m_dates    ;
 	int64_t    m_docId    ;
 	int64_t    m_siteHash64 ;
 	//int64_t    m_tagPairHash;
@@ -873,8 +866,6 @@ class Sections {
 	SafeBuf m_sectionPtrBuf;
 
 	int32_t m_numSentenceSections;
-
-	bool m_firstDateValid;
 
 	// . the section ptrs sorted by Section::m_a
 	// . since we set SEC_FAKE from splitSections() those new sections
