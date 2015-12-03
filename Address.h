@@ -712,7 +712,6 @@ extern bool setFromStr ( Address *a, char *s, pbits_t flags ,
 
 #define UNKNOWN_TIMEZONE 100
 
-extern bool getIsDST ( int32_t nowUTC , char timezone ) ;
 // state is two letter state abbr
 extern char getTimeZone2 ( char *city , char *state , char *useDST );
 extern char getTimeZone3 ( uint32_t cid32 , char *useDST );

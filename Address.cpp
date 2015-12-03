@@ -11162,54 +11162,6 @@ bool setFromStr ( Address *a, char *s, pbits_t flags ,
 	return true;
 }
 
-// . nowUTC is # secs elapsed since epoch in UTC (no DST)
-// . currently in affect from 2nd sunday in march to first sunday in nov @ 2am
-bool getIsDST ( int32_t nowUTC , char timezone2 ) {
-	// mod the time
-	time_t mod = (time_t)nowUTC ;
-	// add if known
-	if ( timezone2 != UNKNOWN_TIMEZONE ) {
-		// sanity check, make sure its the offset, not in seconds
-		if ( timezone2 >  13 ) { char *xx=NULL;*xx=0; }
-		if ( timezone2 < -13 ) { char *xx=NULL;*xx=0; }
-		mod += timezone2*3600;
-	}
-	// get DOW now
-	struct tm *timeStruct = gmtime ( &mod );
-	// certain months are always dst. jan = 0. goes from 0 to 11.
-	int32_t mon = timeStruct->tm_mon;
-	// feb=1,mar=2,apr=3,may=4,jun=5,jul=6,aug=7,sep=8,oct=9,nov=10,dec=11
-	if ( mon >= 3 && mon <= 9 ) return true;
-	// not in dec
-	if ( mon == 11 ) return false;
-	// not in jan or feb
-	if ( mon >= 0 && mon <= 1 ) return false;
-	// get dow. 0 to 6. 0 being sunday.
-	int32_t dow = timeStruct->tm_wday;
-	// what # of dow are we? i.e. xth monday, where x=dowCount
-	int32_t dowCount = 1 + timeStruct->tm_mday / 7;
-	// for march, if we are the 2nd dow, and not sunday, return true
-	if ( mon == 2 ) {
-		if ( dowCount <= 1 ) return false;
-		if ( dowCount >= 3 ) return true;
-		if ( dowCount == 2 && dow != 0 ) return true;
-		// if before 2nd sunday at 2am, not yet summer time
-		if ( dowCount == 2 && dow == 0 )
-			return ( timeStruct->tm_hour >= 2 );
-	}
-	// november
-	if ( mon == 10 ) {
-		if ( dowCount >= 2 ) return false;
-		if ( dowCount == 1 && dow != 0 ) return false;
-		// if before 1st sunday at 2am, it is still summer time
-		if ( dowCount == 1 && dow == 0 )
-			return ( timeStruct->tm_hour < 2 );
-	}
-	// how did we get here?
-	char *xx=NULL;*xx=0;
-	return false;
-}
-
 class CityStateDesc {
 public:
 	float m_latitude;
