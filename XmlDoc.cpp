@@ -6412,7 +6412,6 @@ int32_t *XmlDoc::getPubDate ( ) {
 	m_pubDate      = dp->getPubDate();
 	// print it once for page parser. we now do this in XmlDoc::print()
 	//if ( m_pbuf ) m_dates.printPubDates ( m_pbuf );
-	// set m_ageInDays
 	if ( m_pubDate == (uint32_t)-1 ) return (int32_t *)&m_pubDate;
 	// for parsing date
 	//int32_t currentTime = getTimeGlobal();
@@ -6422,10 +6421,6 @@ int32_t *XmlDoc::getPubDate ( ) {
 	// get doc age
 	//float age = currentTime - m_pubDate;
 	float age = spideredTime - m_pubDate;
-	// convert to days (could be negative if in the future)
-	m_ageInDays = age / (3600*24.0);
-	// fix it if negative
-	if ( m_ageInDays < 0.0 ) m_ageInDays = 0.0;
 	return (int32_t *)&m_pubDate;
 }
 

@@ -1552,7 +1552,6 @@ class XmlDoc {
 	Dates m_dates;
 	//HashTableX m_clockCandidatesTable;
 	//SafeBuf m_cctbuf;
-	float m_ageInDays;
 	int32_t m_urlPubDate;
 	//int32_t m_urlAge;
 	char m_isUrlPermalinkFormat;
