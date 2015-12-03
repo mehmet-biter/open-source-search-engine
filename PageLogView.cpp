@@ -328,17 +328,13 @@ void gotRemoteLogWrapper(void *state, UdpSlot *slot) {
 
 		
 		int32_t matchNum = -1;
-		if(strnstr(st->m_readBufPtrs[ndx], 
-			   s_magicStr, 
-			   lineLen)) {
+		if(strnstr2(st->m_readBufPtrs[ndx], lineLen, s_magicStr)) {
 			goto skipPrint;
 		}
 
 		for(int32_t i = 0; i < 8; i++) {
 			if(!st->m_filters[i]) continue;
-			if(strnstr(st->m_readBufPtrs[ndx], 
-				   st->m_filterStr[i], 
-				   lineLen)){
+			if(strnstr2(st->m_readBufPtrs[ndx], lineLen, st->m_filterStr[i])){
 				matchNum = i;
 				break;
 			}

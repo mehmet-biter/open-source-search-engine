@@ -45,7 +45,7 @@ public:
 	// this should eventually replace set()
 	bool set2 (class Xml      *xml                ,
 		    class Words    *words              ,
-		    class Sections *sections           ,
+		    Sections *sections           ,
 		    class Pos      *pos                ,
 		    class Query    *q                  ,
 		    int64_t      *termFreqs          ,

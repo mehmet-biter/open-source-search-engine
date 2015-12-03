@@ -1027,8 +1027,8 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	if ( strncmp ( path , "/crawlbot/download/" ,19 ) == 0 ||
 	     // add 4 to length of needle to account for /vXX.
 	     // GET /v3/crawl/download/
-	     (pathLen >= 20 && strnstr(path, "/crawl/download/", 20)) ||
-	     (pathLen >= 19 && strnstr(path, "/bulk/download/", 19)) )
+	     (pathLen >= 20 && strnstr2(path, 20, "/crawl/download/")) ||
+	     (pathLen >= 19 && strnstr2(path, 19, "/bulk/download/")) )
 		return sendBackDump ( s , r );
 
 	// "GET /download/mycoll_urls.csv"
@@ -1084,7 +1084,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 
 	// for adding to browser list of search engines
 	if ( strncmp ( path, "/eventguru.xml", 14 ) == 0 )  {
-		SafeBuf sb(256);
+		SafeBuf sb(256, "HttpServer");
 		sb.safePrintf(
 			      "<OpenSearchDescription xmlns=\"http://a9.com/-/spec/opensearch/1.1/\" xmlns:moz=\"http://www.mozilla.org/2006/browser/search/\">\n"
 			      "<ShortName>Event Guru</ShortName>\n"

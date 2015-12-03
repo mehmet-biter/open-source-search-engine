@@ -4,7 +4,7 @@ GTEST_DIR = googletest/googletest
 BASE_DIR ?= ../..
 
 TARGET = GigablastTest
-OBJECTS = GigablastTest.o JsonTest.o UnicodeTest.o UrlTest.o WordsTest.o
+OBJECTS = GigablastTest.o FctypesTest.o JsonTest.o UnicodeTest.o UrlTest.o WordsTest.o
 
 .PHONY: all
 all: $(TARGET)

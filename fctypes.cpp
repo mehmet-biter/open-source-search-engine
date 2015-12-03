@@ -551,24 +551,31 @@ char *strncasestr( char *haystack, int32_t haylen, char *needle){
 	return NULL;
 }
 
-char *strnstr2( char *haystack, int32_t haylen, char *needle){
+char *strnstr2( char *haystack, int32_t haylen, char *needle) {
 	int32_t matchLen = 0;
 	int32_t needleLen = gbstrlen(needle);
-	for (int32_t i = 0; i < haylen;i++){
+	for (int32_t i = 0; i < haylen; ++i) {
 		char c1 = (haystack[i]);
 		char c2 = (needle[matchLen]);
 		if ( c1 != c2 ){
 			// no match
-			matchLen = 0;
+			if (matchLen != 0) {
+				i -= matchLen;
+				matchLen = 0;
+			}
 			continue;
 		}
+
 		// we matched another character
 		matchLen++;
-		if (matchLen < needleLen) continue;
-		
+		if (matchLen < needleLen) {
+			continue;
+		}
+
 		// we've matched the whole string
 		return haystack + i - matchLen + 1;
 	}
+
 	return NULL;
 }
 

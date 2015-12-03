@@ -6,6 +6,7 @@
 #include <sys/time.h>  // gettimeofday()
 #include <math.h>      // floor()
 #include "Unicode.h"
+#include "types.h"
 
 // we have to leave this as 32 bits for now because the termlists store
 // the hash value as 32 bits in posdb
@@ -27,9 +28,6 @@ time_t mktime_utc ( struct tm *ttt ) ;
 class SafeBuf;
 // this too
 char *strncasestr( char *haystack, int32_t haylen, char *needle);
-
-// this is also done below
-char *strnstr2( char *haystack, int32_t haylen, char *needle);
 
 // just like sprintf(s,"%"UINT64"",n), but we insert commas
 int32_t ulltoa ( char *s , uint64_t n ) ;
@@ -136,11 +134,12 @@ bool      atob        ( const char *s, int32_t len ) ;
 char *strncasestr ( char *haystack , char *needle , int32_t haystackSize ) ;
 char *strncasestr ( char *haystack , char *needle , 
 		    int32_t haystackSize, int32_t needleSize ) ;
-char *strnstr ( char *haystack , char *needle , int32_t haystackSize ) ;
 
 // independent of case
 char *gb_strcasestr ( char *haystack , char *needle );
 char *gb_strncasestr ( char *haystack , int32_t haystackSize , char *needle ) ;
+
+char *strnstr2( char *haystack, int32_t haylen, char *needle);
 
 // updates our static var, s_adjustment to keep our clock in sync to hostId #0
 void settimeofdayInMillisecondsGlobal ( int64_t newTime ) ;

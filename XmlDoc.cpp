@@ -33820,13 +33820,17 @@ Title *XmlDoc::getTitle ( ) {
 
 
 Summary *XmlDoc::getSummary () {
-	if ( m_summaryValid ) return &m_summary;
+	if ( m_summaryValid ) {
+		return &m_summary;
+	}
 
-	// xml and json docs have empty summaries for now
 	uint8_t *ct = getContentType();
-	if ( ! ct || ct == (void *)-1 ) return (Summary *)ct;
+	if ( ! ct || ct == (void *)-1 ) {
+		return (Summary *)ct;
+	}
 
 	/// @todo fill in summary for XML document
+	// xml and json docs have empty summaries for now
 	if ( *ct == CT_JSON || *ct == CT_XML ) {
 		m_summaryValid = true;
 		return &m_summary;
@@ -33834,25 +33838,53 @@ Summary *XmlDoc::getSummary () {
 
 	// need a buncha crap
 	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (Summary *)ww;
+	if ( ! ww || ww == (Words *)-1 ) {
+		return (Summary *)ww;
+	}
+
 	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (Summary *)xml;
+	if ( ! xml || xml == (Xml *)-1 ) {
+		return (Summary *)xml;
+	}
+
 	Sections *sections = getSections();
-	if ( ! sections ||sections==(Sections *)-1) return (Summary *)sections;
+	if ( ! sections ||sections==(Sections *)-1) {
+		return (Summary *)sections;
+	}
+
 	Pos *pos = getPos();
-	if ( ! pos || pos == (Pos *)-1 ) return (Summary *)pos;
-	char *site = getSite ();
-	if ( ! site || site == (char *)-1 ) return (Summary *)site;
+	if ( ! pos || pos == (Pos *)-1 ) {
+		return (Summary *)pos;
+	}
+	char *site = getSite();
+	if ( ! site || site == (char *)-1 ) {
+		return (Summary *)site;
+	}
+
 	int64_t *d = getDocId();
-	if ( ! d || d == (int64_t *)-1 ) return (Summary *)d;
+	if ( ! d || d == (int64_t *)-1 ) {
+		return (Summary *)d;
+	}
+
 	Matches *mm = getMatches();
-	if ( ! mm || mm == (Matches *)-1 ) return (Summary *)mm;
+	if ( ! mm || mm == (Matches *)-1 ) {
+		return (Summary *)mm;
+	}
+
 	Title *ti = getTitle();
-	if ( ! ti || ti == (Title *)-1 ) return (Summary *)ti;
+	if ( ! ti || ti == (Title *)-1 ) {
+		return (Summary *)ti;
+	}
+
 	Query *q = getQuery();
-	if ( ! q ) return (Summary *)q;
+	if ( ! q ) {
+		return (Summary *)q;
+	}
+
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) {
+		return NULL;
+	}
 	
 	// . get the highest number of summary lines that we need
 	// . the summary vector we generate for doing summary-based deduping
@@ -33862,9 +33894,10 @@ Summary *XmlDoc::getSummary () {
 	if ( cr->m_percentSimilarSummary >   0  &&
 	     cr->m_percentSimilarSummary < 100  &&
 	     m_req->m_getSummaryVector            &&
-	     cr->m_summDedupNumLines > numLines   )
+	     cr->m_summDedupNumLines > numLines   ) {
 		// request more lines than we will display
 		numLines = cr->m_summDedupNumLines;
+	}
 
 	Summary *s = &m_summary;
 
@@ -33872,14 +33905,8 @@ Summary *XmlDoc::getSummary () {
 	int64_t start = gettimeofdayInMilliseconds();
 	m_cpuSummaryStartTime = start;
 
-	// make sure summary does not include title
-	char *tbuf    = ti->getTitle();
-	// this does not include the terminating \0
-	int32_t  tbufLen = ti->getTitleLen();
-
 	// compute the summary
-	bool status;
-	status = s->set2( xml                      ,
+	bool status = s->set2( xml                 ,
 			  ww                               ,
 			  sections                         ,
 			  pos                              ,
@@ -33894,11 +33921,13 @@ Summary *XmlDoc::getSummary () {
 			  m_req->m_summaryMaxNumCharsPerLine,
 			  getFirstUrl()                    ,
 			  mm                               ,
-			  tbuf                             ,
-			  tbufLen                          );
+			  ti->getTitle()                   ,
+			  ti->getTitleLen()                );
 
 	// error, g_errno should be set!
-	if ( ! status ) return NULL;
+	if ( ! status ) {
+		return NULL;
+	}
 
 	m_summaryValid = true;
 
@@ -34550,7 +34579,7 @@ int64_t **XmlDoc::getAdVector ( ) {
 			// try to match this needle
 			char *match = needles[k];
 			// try to get a match
-			char *p = strnstr ( buf, match , len );
+			char *p = strnstr2 ( buf, len, match );
 			// go again
 			if ( ! p ) continue;
 			// do not exceed the script area
@@ -34574,7 +34603,7 @@ int64_t **XmlDoc::getAdVector ( ) {
 			int32_t adClientLen = p - pbegin;
 
 			if ( k == 2 ) {
-				p = strnstr(p,".doubleclick.net/",pend-p);
+				p = strnstr2(p, (pend-p), ".doubleclick.net/");
 				if ( ! p ) continue;
 				p += 17;
 				// look for doubleclick ads

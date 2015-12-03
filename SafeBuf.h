@@ -17,7 +17,7 @@ class SafeBuf {
 public:
 	//*TRUCTORS
 	SafeBuf();
-	SafeBuf(int32_t initSize, char *label = NULL);
+	SafeBuf(int32_t initSize, char *label);
 
 	void constructor();
 	void destructor ();

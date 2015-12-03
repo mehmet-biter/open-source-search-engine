@@ -5139,8 +5139,8 @@ char *Proxy::storeLoginBar ( char *reply ,
 
 	// fix overreading!
 	// fix the fucking content-length in the mime...
-	char *mp = strnstr(newReply,"Content-Length:",*newReplySize);
-	if ( ! mp ) mp = strnstr(newReply,"Content-length:",*newReplySize);
+	char *mp = strnstr2(newReply,*newReplySize,"Content-Length:");
+	if ( ! mp ) mp = strnstr2(newReply,*newReplySize,"Content-length:");
 	if ( ! mp ) {
 		log("proxy: fuck, no content-length: in mime");
 		int32_t len = *newReplySize;

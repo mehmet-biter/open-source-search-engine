@@ -9613,7 +9613,7 @@ bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 		// }
 
 		// is it in the url
-		char *match = strnstr ( src , mi->m_cgi , srcLen );
+		char *match = strnstr2 ( src , srcLen, mi->m_cgi );
 
 		// or if empty quotes it is the true header like
 		// for 'hide spider log' option
