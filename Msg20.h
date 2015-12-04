@@ -209,31 +209,6 @@ class Msg20Request {
 	char       m_buf[0] ;
 };
 
-// the Msg20Reply::ptr_eventSummaryLines is a list of these classes
-class SummaryLine {
- public:
-	int32_t  m_totalSize;
-	//int32_t  m_pageOff;
-	int32_t  m_pageOff1;
-	int32_t  m_pageOff2;
-	int32_t  m_firstDatePageOff;
-	// so we know if two summary lines are adjacent. then we do not
-	// insert the "..." between them when displaying.
-	int32_t  m_alnumPosA;
-	int32_t  m_alnumPosB;
-	// copied from EventDesc::m_dflags. might also include some tags
-	// that we add in XmlDoc::getEventSummary(), like EDF_TRUNCATED
-	int32_t  m_flags;
-	// if two summary lines are adjacent then do not print the ... between
-	// in the serps, will look cleaner...
-	//int32_t  m_alnumWordA;
-	//int32_t  m_alnumWordB;
-	char  m_buf[0];
-};
-
-// values for m_flags3
-//#define F3_STORE_HOURS 0x01
-
 class Msg20Reply {
 public:
 
