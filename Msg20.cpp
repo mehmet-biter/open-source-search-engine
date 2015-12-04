@@ -59,7 +59,7 @@ void Msg20::reset() {
 		char *xx=NULL;*xx=0; 
 	}
 	m_launched = false;
-	if ( m_request && m_request   != m_requestBuf )
+	if ( m_request )
 		mfree ( m_request , m_requestSize  , "Msg20rb1" );
 	freeReply();
 	//if ( m_r ) m_r->destructor();
@@ -109,13 +109,9 @@ void Msg20::copyFrom ( Msg20 *src ) {
 
 	// make sure it does not free it!
 	src->m_r = NULL;
-	// why would we need to re-do the request? dunno, pt to it just in case
-	if ( src->m_request == src->m_requestBuf ) 
-		m_request = m_requestBuf;
+	m_request = NULL;
 	// make sure destructor does not free this
 	src->m_request = NULL;
-	// but should free its request, m_request, if it does not point to
-	// src->m_requestBuf[], but an allocated buffer
 	src->destructor();
 }
 
@@ -235,14 +231,8 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	if ( hostNum >= nc ) { char *xx = NULL; *xx = 0; }
 	int32_t firstHostId = cand [ hostNum ]->m_hostId ;
 
-	// . make buffer m_request to hold the request
-	// . tries to use m_requestBuf[] if it is big enough to hold it
-	// . allocs a new buf if MAX_MSG20_REQUEST_SIZE is too small
-	// . serializes the request into m_request
-	// . sets m_requestSize to the size of the serialized request
 	m_requestSize = 0;
-	m_request = req->serialize ( &m_requestSize, m_requestBuf ,
-				     MAX_MSG20_REQUEST_SIZE );
+	m_request = req->serialize ( &m_requestSize );
 	// . it sets g_errno on error and returns NULL
 	// . we MUST call gotReply() here to set m_gotReply
 	//   otherwise Msg40.cpp can end up looping forever
@@ -319,7 +309,7 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 	if ( m_r ) { char *xx = NULL; *xx = 0; }
 
 	// free our serialized request buffer to save mem
-	if ( m_request && m_request   != m_requestBuf ) {
+	if ( m_request ) {
 		mfree ( m_request , m_requestSize  , "Msg20rb2" );
 		m_request = NULL;
 	}
@@ -650,16 +640,11 @@ int32_t Msg20Request::getStoredSize ( ) {
 
 // . return ptr to the buffer we serialize into
 // . return NULL and set g_errno on error
-char *Msg20Request::serialize ( int32_t *retSize     ,
-				char *userBuf     ,
-				int32_t  userBufSize ) {
+char *Msg20Request::serialize ( int32_t *retSize ) {
 	// make a buffer to serialize into
-	char *buf  = NULL;
 	int32_t  need = getStoredSize();
-	// big enough?
-	if ( need <= userBufSize ) buf = userBuf;
 	// alloc if we should
-	if ( ! buf ) buf = (char *)mmalloc ( need , "Msg20Ra" );
+	char *buf = (char *)mmalloc ( need , "Msg20Ra" );
 	// bail on error, g_errno should be set
 	if ( ! buf ) return NULL;
 	// set how many bytes we will serialize into

@@ -26,10 +26,8 @@
 
 // MAX_QUERY_LEN is pretty big and Msg40 contains 50 or so Msg20s so let's
 // cut down on memory usage here.
-//#define MAX_MSG20_REQUEST_SIZE (500+500)
 //#define MSG20_MAX_REPLY_SIZE   (1*1024)
 // see what happens if we eliminate these bufs
-#define MAX_MSG20_REQUEST_SIZE (1)
 #define MSG20_MAX_REPLY_SIZE   (1)
 
 #define REQ20FLAG1_USEDATELISTS  0x01
@@ -65,9 +63,7 @@ class Msg20Request {
 	};
 
 	int32_t  getStoredSize ( );
-	char *serialize     ( int32_t *sizePtr     ,
-			      char *userBuf     ,
-			      int32_t  userBufSize ) ;
+	char *serialize     ( int32_t *sizePtr );
 	int32_t  deserialize   ( );
 
 	char       m_version                   ; // non-zero default
@@ -626,7 +622,6 @@ class Msg20 {
 	// "m_request = r->serialize(&m_requestSize,m_requestBuf)"
 	char  *m_request;
 	int32_t   m_requestSize;
-	char   m_requestBuf[MAX_MSG20_REQUEST_SIZE];
 
 	// this is cast to m_replyPtr
 	Msg20Reply *m_r ;
