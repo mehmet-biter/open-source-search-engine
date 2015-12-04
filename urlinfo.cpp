@@ -16,10 +16,12 @@
 bool mainShutdown ( bool urgent ) { return true; }
 bool closeAll ( void *state , void (* callback)(void *state) ) {return true;}
 bool allExit ( ) { return true; }
-//int32_t g_qbufNeedSave = false;
-//SafeBuf g_qbuf;
+
 bool sendPageSEO(class TcpSocket *s, class HttpRequest *hr) {return true;}
-char g_recoveryMode;
+
+int g_inMemcpy=0;
+bool g_recoveryMode = false;
+int32_t g_recoveryLevel = 0;
 
 int main ( int argc , char *argv[] ) {
 	bool addWWW = true;
@@ -130,11 +132,11 @@ int main ( int argc , char *argv[] ) {
 	sg.getSite ( u.getUrl() ,
 		     NULL , // tagrec
 		     0 , // timestamp
-		     NULL, // coll
+		     0, // coll
 		     0 , // niceness
-		     //false , // addtags
 		     NULL , // state
 		     NULL ); // callback
+
 	if ( sg.m_siteLen )
 		printf("site: %s\n",sg.m_site);
 

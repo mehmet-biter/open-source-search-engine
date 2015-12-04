@@ -1,32 +1,31 @@
 import pytest
 import mimetypes
-import os
 
 
-@pytest.mark.parametrize('filename, is_default_page, expected_title', [
-    # filename                                  is_default_page                expected_title
+@pytest.mark.parametrize('filename, url, expected_title', [
+    # filename                              url                 expected_title
 
     # test pdf
-    ('data/office/title_word_no_prop.pdf',      False,  'title_word_no_prop.pdf'),
-    ('data/office/title_word_no_prop.pdf',      True,   ''),
-    ('data/office/title_word_with_prop.pdf',    False,  'Title for Microsoft Word (in title)'),
+    ('office/title_word_no_prop.pdf',       'title.pdf',        'title.pdf'),
+    ('office/title_word_no_prop.pdf',       '',                 ''),
+    ('office/title_word_no_prop.pdf',       't.pdf?v=1&b=user', 't.pdf'),
+    ('office/title_word_with_prop.pdf',     'title.pdf',        'Title for Microsoft Word (in title)'),
+    ('office/title_word_with_prop.pdf',     '',                 'Title for Microsoft Word (in title)'),
 
     # test emoticon
-    ('data/html/title_emoticon_start.html',     False,  'The quick brown fox jumps over the lazy dog'),
-    ('data/html/title_emoticon_middle.html',    False,  'The quick brown fox jumps over the lazy dog'),
-    ('data/html/title_emoticon_end.html',       False,  'The quick brown fox jumps over the lazy dog'),
+    ('html/title_emoticon_start.html',      '',                 'The quick brown fox jumps over the lazy dog'),
+    ('html/title_emoticon_middle.html',     '',                 'The quick brown fox jumps over the lazy dog'),
+    ('html/title_emoticon_end.html',        '',                 'The quick brown fox jumps over the lazy dog'),
 
     # test title
-    ('data/html/title_exist.html',              False,  'Title for html (in title)'),
+    ('html/title_exist.html',               '',                 'Title for html (in title)'),
 ])
-def test_title(gb_api, httpserver, filename, is_default_page, expected_title):
-    httpserver.serve_content(content=open(filename, 'rb').read(),
+def test_title(gb_api, httpserver, filename, url, expected_title):
+    httpserver.serve_content(content=open('data/' + filename, 'rb').read(),
                              headers={'content-type': mimetypes.guess_type(filename)[0]})
 
     # format url
-    file_url = httpserver.url + '/'
-    if not is_default_page:
-        file_url += os.path.basename(filename)
+    file_url = httpserver.url + '/' + url
 
     # add url
     assert gb_api.add_url(file_url) == True

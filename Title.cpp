@@ -555,6 +555,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 			}
 		}
 
+		/// @todo we should allow more tags than just title/link
 		// skip if not a good tag.
 		if (tid != TAG_TITLE && tid != TAG_A) {
 			continue;
@@ -659,7 +660,6 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 			const char* result = strnstr2(title_start, title_size, "/in.");
 			if (result != NULL) {
 				char* endp = NULL;
-
 				// do some further verification to avoid screwing up title
 				if ((strtoll(result + 4, &endp, 10) > 0) && (endp == title_end)) {
 					continue;
@@ -1083,8 +1083,6 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 	//logf(LOG_DEBUG,"title: took5=%"INT64"",gettimeofdayInMilliseconds()-x);
 	//x = gettimeofdayInMilliseconds();
 
-
-	// set base score
 	//for ( int32_t i = 0 ; i < n ; i++ ) baseScore[i] = scores[i];
 	
 	//
@@ -1163,6 +1161,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 
 		// set these guys
 		scores[i] *= ncb;
+
 		//noCapsBoost[i]  = ncb;
 		//qtermsBoost[i]  = qtb;
 	}
@@ -1318,6 +1317,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 				     "b=%.02f", i,j,fp,boost);
 			// apply it
 			scores[i] *= boost;
+
 			//iccb      *= boost;
 		}
 
@@ -1400,12 +1400,11 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 		// last resort use file name
 		if ((*(xd->getContentType()) == CT_PDF) && (xd->getFirstUrl()->getFilenameLen() != 0)) {
 			Words w;
-			w.set3(xd->getFirstUrl()->getFilename());
+			w.set(xd->getFirstUrl()->getFilename(), xd->getFirstUrl()->getFilenameLen(), true);
 			if (!copyTitle(&w, 0, w.getNumWords())) {
 				return false;
 			}
 		}
-
 		return true;
 	}
 
@@ -1437,12 +1436,11 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 	//logf(LOG_DEBUG,"title: took12=%"INT64"",gettimeofdayInMilliseconds()-x);
 	//x = gettimeofdayInMilliseconds();
 
-	return true;
+	//return true;
 
 	//log("title: candidates for %s",xd->getFirstUrl()->getUrl() );
 
 	/*
-
 	// debug logging
 	SafeBuf sb;
 	SafeBuf *pbuf = &sb;
@@ -1461,7 +1459,6 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 			 "<td>format penalty</td>"
 			 "<td>query term boost</td>"
 			 "<td>candidate intersection boost</td>"
-			 "<td>body intersection boost</td>"
 			 "<td>FINAL SCORE</td>"
 			 "<td>title</td>"
 			 "</tr>\n" );
@@ -1525,10 +1522,11 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 	pbuf->safePrintf("</table>\n<br>\n");
 
 	// log these for now
-	log("title: %s",sb.getBufStart());
+	log("query: title: %s",sb.getBufStart());
+	*/
 
 	return true;
-	*/
+
 }
 
 // . returns 0.0 to 1.0
