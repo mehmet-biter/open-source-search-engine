@@ -1613,12 +1613,10 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		req.m_state              = this;
 		req.m_callback           = gotSummaryWrapper;
 		req.m_niceness           = m_si->m_niceness;
-		req.m_summaryMode        = m_si->m_summaryMode;
 		// need to see if it is banned, etc.
 		//req.m_checkSitedb        = 1;
 		// 0 means not, 1 means is (should never be 2 at this point)
 		req.m_boolFlag           = m_si->m_boolFlag;
-		req.m_allowPunctInPhrase = m_si->m_allowPunctInPhrase;
 		req.m_showBanned         = m_si->m_showBanned;
 		//req.m_excludeLinkText    = m_si->m_excludeLinkText ;
 		//req.m_excludeMetaText    = m_si->m_excludeMetaText ;
@@ -1648,12 +1646,6 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		if(m_si->m_isMasterAdmin && m_si->m_format == FORMAT_HTML )
 			req.m_getGigabitVector   = true;
 		else    req.m_getGigabitVector   = false;
-		req.m_flags              = 0;
-		if ( m_postQueryRerank.isEnabled() ) {
-			req.m_flags |= REQ20FLAG1_PQRENABLED;
-			if (m_si->m_pqr_demFactLocSummary > 0)
-				req.m_flags |= REQ20FLAG1_PQRLOCENABLED;
-		}
 		if ( m_si->m_pqr_demFactCommonInlinks > 0.0 )
 			//req.m_getInlinks = true;
 			req.m_getLinkInfo = true;

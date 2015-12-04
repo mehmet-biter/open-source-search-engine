@@ -224,7 +224,6 @@ class SearchInput {
         char   m_dedupURL;
 	int32_t   m_percentSimilarSummary;   // msg40
 	char   m_showBanned;
-	char   m_allowPunctInPhrase;
 	char   m_excludeLinkText;
 	char   m_excludeMetaText;
 	char   m_doBotDetection;

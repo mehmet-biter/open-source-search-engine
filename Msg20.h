@@ -46,7 +46,6 @@ class Msg20Request {
 		m_maxNumCharsPerLine = 50;
 		m_numSummaryLines    = 2;
 		m_expected           = false;
-		m_allowPunctInPhrase = true;
 		m_docId              = -1LL; // set docid to "invalid"
 		m_boolFlag           = 2   ; // autodetect if query boolean
 		m_titleMaxLen        = 64  ;
@@ -63,7 +62,6 @@ class Msg20Request {
 	char       m_version                   ; // non-zero default
 	char       m_numSummaryLines           ; // non-zero default
 	char       m_expected                  ; // non-zero default
-	char       m_allowPunctInPhrase        ; // non-zero default
 	bool       m_getHeaderTag              ;
 	void      *m_state                     ;
 	void      *m_state2                    ; // used by Msg25.cpp
@@ -71,7 +69,6 @@ class Msg20Request {
 	bool    (* m_callback)( void *m_state );
 	void    (* m_callback2)( void *m_state );
 	int64_t  m_docId                     ;
-	Hostdb    *m_hostdb                    ;
 	int32_t       m_niceness                  ;
 	char       m_boolFlag                  ;
 	int32_t       m_titleMaxLen               ;
@@ -100,30 +97,10 @@ class Msg20Request {
 
 	// if titleRec not from this ruleset, return g_errno = EDOCFILTERED
 	//int32_t       m_rulesetFilter             ;
-	// add this many seconds to clock to simulate event search going
-	// forward or backward in time
-	int32_t       m_clockOff;
-	// we force the clock time to this if "clockset" is a non-zero cgi parm
-	time_t     m_clockSet;
-	// pass in the same time in UTC we used for the intersection algo
-	time_t     m_nowUTC;
-	int32_t       m_turkIp;
 	// language the query is in (ptr_qbuf)
 	uint8_t    m_langId;
-	// . if not 0 then return the event from the docid with that eventId
-	// . include the title and text of the event, and the address
-	//   serialized using Address::serialize(), and all the start dates
-	//   from now onward
-	int32_t       m_eventId                   ;
 	// we now use the numeric collection # and not the ptr_coll
 	collnum_t  m_collnum;
-	// set this to true when you pass in m_eventIdBits...
-	char       m_getEventSummary           ;
-	char       m_summaryMode               ;
-	// typically we allow 1 vote per ip or host i guess, but buzz should
-	// allow for up to 4, for better influence determination.
-	char       m_linksPerIpHost            ; 
-	char       m_flags                     ;
 
 	unsigned char       m_highlightQueryTerms       :1;
 	unsigned char       m_highlightDates            :1; // for event dates
@@ -263,7 +240,6 @@ public:
 	int64_t  m_docId               ;
 	int64_t  m_urlHash48           ;
 	uint64_t   m_eventHash64         ;
-	int32_t       m_eventId             ;
 	uint64_t   m_eventDateHash64     ;
 	uint32_t   m_adch32              ; // event address/data content hash
 	uint32_t   m_adth32              ; // event address/data tag hash
@@ -578,14 +554,6 @@ class Msg20 {
 
 	int64_t getRequestDocId () { return m_requestDocId; };
 	int64_t m_requestDocId;
-
-	// and this is copied from the msg20request
-	int32_t m_eventId;
-
-	// when we merge two msg20 replies in Msg40.cpp keep track of the
-	// event ids via this bit vector so if the click on the [cached] page
-	// link we can highlight the relevant event sections.
-	//EventIdBits m_eventIdBits;
 
 	int32_t getStoredSize ( ) { 
 		if ( ! m_r ) return 0; 

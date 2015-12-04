@@ -131,16 +131,8 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	m_callback     = req->m_callback;
 	m_callback2    = req->m_callback2;
 	m_expected     = req->m_expected;
-	m_eventId      = req->m_eventId;
 
-	// clear this
-	//m_eventIdBits.clear();
-	// set this
-	//if ( req->m_eventId ) m_eventIdBits.addEventId(req->m_eventId);
-
-	Hostdb *hostdb = req->m_hostdb;
-	// ensure hostdb has a host in it
-	if ( ! hostdb ) hostdb = &g_hostdb;
+	Hostdb *hostdb = &g_hostdb;
 	// does this ever happen?
 	if ( hostdb->getNumHosts() <= 0 ) {
 		log("build: hosts2.conf is not in working directory, or "

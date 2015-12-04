@@ -9594,17 +9594,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_SI;
 	m++;
 
-	m->m_title = "allow punctuation in query phrases";
-	m->m_desc  = "allow punctuation in query phrases";
-	m->m_off   = (char *)&si.m_allowPunctInPhrase - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_cgi   = "apip";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
 	/*
 	m->m_title = "use ad feed num";
 	m->m_desc  = "use ad feed num";
