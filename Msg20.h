@@ -238,25 +238,15 @@ public:
 	int32_t       m_wordPosStart        ;
 	int64_t  m_domHash             ;
 	int64_t  m_docId               ;
-	int64_t  m_urlHash48           ;
-	uint64_t   m_eventHash64         ;
-	uint64_t   m_eventDateHash64     ;
-	uint32_t   m_adch32              ; // event address/data content hash
-	uint32_t   m_adth32              ; // event address/data tag hash
 	int32_t       m_firstSpidered       ;
 	int32_t       m_lastSpidered        ;
 	int32_t       m_lastModified        ;
 	int32_t       m_datedbDate          ;
 	int32_t       m_firstIndexedDate    ; // for the url/document as a whole
 	int32_t       m_discoveryDate       ; // for the inlink in question...
-	int32_t       m_numAlnumWords       ;
-	//int32_t       m_numAttendees        ;
-	//int32_t       m_numLikers           ;
-        bool       m_datedbDateIsEstimated;
 	int32_t       m_errno               ; // LinkInfo uses it for LinkTextRepl
 	collnum_t  m_collnum             ; // collection # we came from
 	char       m_sumFromDmoz         ; // unused
-	int32_t       m_hostHash            ;
 	char       m_noArchive           ;
 	char       m_contentType         ;
 	//char       m_docQuality          ;

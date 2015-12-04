@@ -32224,10 +32224,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->size_displaySum = hsumLen+1;
 	}
 
-	reply->m_numAlnumWords = 0;
-	if ( m_wordsValid )
-		reply->m_numAlnumWords = m_words.m_numAlnumWords;
-
 	// . we filter out search results that do not have all the query terms
 	// . Matches.cpp checks the link text, dmoz, etc. for all query terms
 	// . it must get into the results form indexdb corruption?
@@ -32484,7 +32480,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	reply->m_firstIp          = *fip;
 	reply->m_domHash          = getDomHash32();//domHash;
 	reply->m_docId            = m_docId;
-	reply->m_urlHash48        = getFirstUrlHash48();
 	reply->m_contentLen       = size_utf8Content;
 	reply->m_lastSpidered     = getSpideredTime();//m_spideredTime;
 	//reply->m_datedbDate       = m_pubDate;
@@ -32492,7 +32487,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	reply->m_firstIndexedDate = m_firstIndexedDate;
 	reply->m_firstSpidered    = m_firstIndexedDate;
 	reply->m_contentType      = m_contentType;
-	reply->m_hostHash         = getHostHash32a();
 	//reply->m_contentHash      = *getContentHash32();
 	reply->m_language         = m_langId;
 	reply->m_country          = *getCountryId();
