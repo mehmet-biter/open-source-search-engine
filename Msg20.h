@@ -261,8 +261,6 @@ public:
 	int32_t  deserialize ( ) ;
 	int32_t  serialize ( char *buf , int32_t bufSize );
 
-	char *getAttendeeUrl ( int32_t i ) { return ""; };
-	char *getLikerUrl    ( int32_t i ) { return ""; };
 
 	bool  sendReply ( class XmlDoc *xd ) ;
 
