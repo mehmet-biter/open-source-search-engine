@@ -713,7 +713,6 @@ class Msg20 {
 	void *m_state3;
 
 	void *m_owningParent;
-	char m_constructedId;
 
 	// PostQueryRerank storage area for printing out in PageResults.cpp
 	float m_pqr_old_score        ;

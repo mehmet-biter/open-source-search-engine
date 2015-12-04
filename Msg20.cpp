@@ -16,7 +16,6 @@ void Msg20::constructor () {
 	m_launched = false;
 	m_ii = -1;
 	m_owningParent = (void *)0x012345;
-	m_constructedId = 5;
 	reset();
 	m_mcast.constructor();
 }
