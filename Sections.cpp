@@ -2483,10 +2483,6 @@ bool Sections::addImpliedSections ( Addresses *aa ) {
 
 	m_aa = aa;
 
-	// int16_tcut
-	sec_t badFlags =SEC_MARQUEE|SEC_STYLE|SEC_SCRIPT|SEC_SELECT|
-		SEC_HIDDEN|SEC_NOSCRIPT;
-
 
 	// now we use m_numTotalPtrs, not m_numDatePtrs:
 	// for santafeplayhouse.org one compound date spans
