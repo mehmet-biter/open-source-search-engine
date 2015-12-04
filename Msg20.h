@@ -24,12 +24,6 @@
 
 #define MSG20_CURRENT_VERSION 0
 
-// MAX_QUERY_LEN is pretty big and Msg40 contains 50 or so Msg20s so let's
-// cut down on memory usage here.
-//#define MSG20_MAX_REPLY_SIZE   (1*1024)
-// see what happens if we eliminate these bufs
-#define MSG20_MAX_REPLY_SIZE   (1)
-
 #define REQ20FLAG1_USEDATELISTS  0x01
 #define REQ20FLAG1_EXCLDATELIST  0x02
 #define REQ20FLAG1_EXCLQTINANCH  0x04
@@ -630,7 +624,6 @@ class Msg20 {
 	//char  *m_replyPtr;
 	int32_t   m_replySize;
 	int32_t   m_replyMaxSize;
-	//char   m_replyBuf[MSG20_MAX_REPLY_SIZE];
 	// i guess Msg40.cpp looks at this flag
 	char   m_gotReply;
 	// set if we had an error

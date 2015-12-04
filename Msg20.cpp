@@ -257,8 +257,8 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 			      req->m_niceness   ,
 			      false             , // real time?
 			      firstHostId       , // first hostid
-			      NULL,//m_replyBuf        ,
-			      0,//MSG20_MAX_REPLY_SIZE,//m_replyMaxSize
+			      NULL              , // reply buffer
+			      0                 , // reply buffer size
 			      false             , // free reply buf?
 			      false             , // do disk load balancing?
 			      -1                , // max cache age
