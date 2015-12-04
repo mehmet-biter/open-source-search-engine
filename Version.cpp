@@ -27,6 +27,17 @@ char *getVersion ( ) {
 	return s_vbuf;
 }
 
-//#define GBVERSION "2014.00.19-12:00:27-MST"
-//#define GBVERSION __DATE__ __TIME__ 
+#define STRINGIFY(x) #x
+#define TO_STRING(x) STRINGIFY(x)
 
+#ifndef GIT_COMMIT_ID
+#define GIT_COMMIT_ID unknown
+#endif
+
+void printVersion() {
+	fprintf(stdout,"Gigablast Version    : %s\n", getVersion());
+	fprintf(stdout,"Gigablast Git commit : %s\n", TO_STRING(GIT_COMMIT_ID));
+}
+
+#undef STRINGIFY
+#undef TO_STRING

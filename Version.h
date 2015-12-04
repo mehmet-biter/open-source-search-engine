@@ -4,4 +4,6 @@
 int32_t getVersionSize () ;
 char *getVersion ( ) ;
 
+void printVersion();
+
 #endif

@@ -967,11 +967,7 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "-h" ) == 0 ) goto printHelp;
 	// version
 	if ( strcmp ( cmd , "-v" ) == 0 ) {
-		fprintf(stdout,"Gigablast Version: %s\n",getVersion());
-		fprintf(stdout,"Gigablast Architecture: %"INT32"-bit\n",arch);
-	//	fprintf(stderr,"Gigablast %s\nMD5KEY: %s\n"
-	//		"TAG: %s\nPATH:   %s\n",
-	//		GBVersion, GBCommitID, GBTag, GBBuildPath); 
+		printVersion();
 		return 0; 
 	}
 

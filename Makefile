@@ -69,55 +69,31 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Cachedb.o Monitordb.o dlstubs.o PageCrawlBot.o Json.o PageBasic.o \
 	Punycode.o Version.o
 
-CHECKFORMATSTRING = -D_CHECK_FORMAT_STRING_
+# common flags
+DEFS = -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I.
+CPPFLAGS = -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable
+LIBS = -lm -lpthread -lssl -lcrypto
 
-DEFS = -D_REENTRANT_ $(CHECKFORMATSTRING) -I.
+# to build static libiconv.a do a './configure --enable-static' then 'make' in the iconv directory
 
-HOST=$(shell hostname)
-
-FFF = /etc/redhat-release
-
-ifneq ($(wildcard $(FFF)),)
-OS_RHEL := true
-STATIC :=
-XMLDOCOPT := -O2
-else
-OS_DEB := true
-# let's remove static now by default to be safe because we don't always
-# detect red hat installs like on aws. do 'make static' to make as static.
-#STATIC := -static
-STATIC :=
-# MDW: i get some parsing inconsistencies when running the first qa injection
-# test if this is -O3. strange.
-# now debian jesse doesn't like -O3, it will core right away when spidering
-# so change this to -O2 from -O3 as well.
-XMLDOCOPT := -O2
-endif
-
-
+# platform specific flags
 ifeq ($(ARCH), i686)
-CPPFLAGS= -m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable $(STATIC)
-LIBS=  -lm -lpthread -lssl -lcrypto ./libiconv.a ./libz.a
+CPPFLAGS += -m32
+LIBS += ./libiconv.a ./libz.a
 
 else ifeq ($(ARCH), i386)
-CPPFLAGS= -m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable $(STATIC)
-LIBS=  -lm -lpthread -lssl -lcrypto ./libiconv.a ./libz.a
+CPPFLAGS += -m32
+LIBS +=  ./libiconv.a ./libz.a
 
 else ifeq ($(ARCH), x86_64)
-CPPFLAGS = -ggdb -Wall -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable $(STATIC)
-LIBS=  -lm -lpthread -lssl -lcrypto ./libiconv64.a ./libz64.a
+CPPFLAGS +=
+LIBS += ./libiconv64.a ./libz64.a
 
 else
-#
-# Use -Wpadded flag to indicate padded structures.
-#
-CPPFLAGS = -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable $(STATIC)
-# apt-get install libssl-dev (to provide libssl and libcrypto)
-# to build static libiconv.a do a './configure --enable$(STATIC)' then 'make'
-# in the iconv directory
-LIBS=  -lm -lpthread -lssl -lcrypto ./libiconv64.a ./libz64.a
-
+CPPFLAGS +=
+LIBS += ./libiconv64.a ./libz64.a
 endif
+
 
 # if you have seo.cpp link that in. This is not part of the open source
 # distribution but is available for interested parties.
@@ -164,11 +140,11 @@ static: vclean $(OBJS) main.o $(LIBFILES)
 # 7. DEVEL > git: Distributed version control system
 # 8. EDITORS > emacs
 cygwin:
-	make DEFS="-DCYGWIN -D_REENTRANT_ $(CHECKFORMATSTRING) -I." LIBS=" -lz -lm -lpthread -lssl -lcrypto -liconv" gb
+	make DEFS="-DCYGWIN -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I." LIBS=" -lz -lm -lpthread -lssl -lcrypto -liconv" gb
 
 
 gb32:
-	make CPPFLAGS="-m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable $(STATIC)" LIBS=" -L. ./libz.a ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libstdc++.a -lpthread " gb
+	make CPPFLAGS="-m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable" LIBS=" -L. ./libz.a ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libstdc++.a -lpthread " gb
 
 #iana_charset.cpp: parse_iana_charsets.pl character-sets supported_charsets.txt
 #	./parse_iana_charsets.pl < character-sets
@@ -239,23 +215,23 @@ run_parser: test_parser
 	./test_parser ~/turkish.html
 
 test_parser: $(OBJS) test_parser.o Makefile
-	g++ $(DEFS) $(CPPFLAGS) -o $@ test_parser.o $(OBJS) $(LIBS)
+	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ test_parser.o $(OBJS) $(LIBS)
 test_parser2: $(OBJS) test_parser2.o Makefile
-	g++ $(DEFS) $(CPPFLAGS) -o $@ test_parser2.o $(OBJS) $(LIBS)
+	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ test_parser2.o $(OBJS) $(LIBS)
 
 test_hash: test_hash.o $(OBJS)
-	g++ $(DEFS) $(CPPFLAGS) -o $@ test_hash.o $(OBJS) $(LIBS)
+	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ test_hash.o $(OBJS) $(LIBS)
 test_norm: $(OBJS) test_norm.o
-	g++ $(DEFS) $(CPPFLAGS) -o $@ test_norm.o $(OBJS) $(LIBS)
+	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ test_norm.o $(OBJS) $(LIBS)
 test_convert: $(OBJS) test_convert.o
-	g++ $(DEFS) $(CPPFLAGS) -o $@ test_convert.o $(OBJS) $(LIBS)
+	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ test_convert.o $(OBJS) $(LIBS)
 
 supported_charsets: $(OBJS) supported_charsets.o supported_charsets.txt
-	g++ $(DEFS) $(CPPFLAGS) -o $@ supported_charsets.o $(OBJS) $(LIBS)
+	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ supported_charsets.o $(OBJS) $(LIBS)
 gbchksum: gbchksum.o
-	g++ -g -Wall -o $@ gbchksum.o
+	$(CXX) -g -Wall -o $@ gbchksum.o
 create_ucd_tables: $(OBJS) create_ucd_tables.o
-	g++ $(DEFS) $(CPPFLAGS) -o $@ create_ucd_tables.o $(OBJS) $(LIBS)
+	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ create_ucd_tables.o $(OBJS) $(LIBS)
 
 ipconfig: ipconfig.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o -lc
@@ -266,7 +242,7 @@ udptest: $(OBJS) udptest.o
 dnstest: $(OBJS) dnstest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 thunder: thunder.o
-	$(CXX) $(DEFS) $(CPPFLAGS) $(STATIC) -o $@ $@.o
+	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o
 threadtest: threadtest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o -lpthread
 memtest: memtest.o
@@ -276,7 +252,7 @@ hashtest: hashtest.cpp
 hashtest0: hashtest
 	scp hashtest gb0:/a/
 membustest: membustest.cpp
-	$(CXX) -O0 -o membustest membustest.cpp $(STATIC) -lc
+	$(CXX) -O0 -o membustest membustest.cpp -lc
 mergetest: $(OBJS) mergetest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 seektest: seektest.cpp
@@ -303,7 +279,7 @@ urlinfo: $(OBJS) urlinfo.o
 dmozparse: $(OBJS) dmozparse.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 gbfilter: gbfilter.cpp
-	g++ -g -o gbfilter gbfilter.cpp $(STATIC) -lc
+	$(CXX) -g -o gbfilter gbfilter.cpp -lc
 gbtitletest: gbtitletest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 
@@ -365,7 +341,7 @@ Linkdb.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
 
 #XmlDoc.o:
-#	$(CXX) $(DEFS) $(CPPFLAGS) $(XMLDOCOPT) -c $*.cpp
+#	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
 
 # final gigabit generation in here:
 Msg40.o:
@@ -464,6 +440,9 @@ PostQueryRerank.o:
 
 sort.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
+
+Version.o:
+	$(CXX) $(DEFS) $(CPPFLAGS) -DGIT_COMMIT_ID=$(shell git rev-parse HEAD) -c $*.cpp
 
 # dpkg-buildpackage calls 'make binary' to create the files for the deb pkg
 # which must all be stored in ./debian/gb/
