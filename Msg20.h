@@ -345,34 +345,6 @@ public:
 	//int32_t       m_siteNumUniqueCBlocks;
 
 	int32_t       m_numOutlinks         ; // replaced m_linkCount
-	int32_t       m_tmp                 ; // used by Msg40.cpp for event merge
-	//float      m_diversity           ;
-	uint32_t   m_tagVectorHash       ; // zak's hash of html template
-	uint32_t   m_gigabitVectorHash   ; // zak's hash of the gigabits
-
-	uint32_t   m_eventSummaryHash    ;
-	double     m_eventGeocoderLat    ; // lat/lon of the event
-	double     m_eventGeocoderLon    ;
-	uint64_t   m_eventAddressHash64  ; // event address hash
-	uint64_t   m_eventTitleHash64    ; // event title hash
-	int32_t       m_eventTitleOff       ; // offset of first word in title
-	char       m_timeZoneOffset      ; // in hours
-	char       m_useDST              ; // does event place use dst?
-	int32_t       m_nextStart           ; // next occ starts at this time_t
-	int32_t       m_nextEnd             ; // end - start is how long it is
-	int32_t       m_prevStart           ;
-	int32_t       m_prevEnd             ;
-	int32_t       m_displayStartTime    ; // the event times to display
-	int32_t       m_displayEndTime      ;
-
-	double     m_balloonLat;
-	double     m_balloonLon;
-	char       m_balloonLetter;
-
-	// . hash of all the event start times from now until 60 days from now
-	// . used by Msg40.cpp for merging event summaries deemed to be the
-	//   same event
-	uint32_t   m_timeIntervalHash;
 
 	// these are just storage for LinkInfo::set() to use
 	//int32_t       m_linkTextScoreWeight ;

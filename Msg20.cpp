@@ -360,8 +360,6 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 	m_r->m_parentOwner = (void *)this;
 	m_r->m_constructorId = 2;
 
-	// reset this since constructor never called
-	m_r->m_tmp = 0;
 	// we own it now
 	m_ownReply = true;
 	// deserialize it, sets g_errno on error??? not yet TODO!
@@ -517,7 +515,6 @@ bool gotReplyWrapperxd ( void *state ) {
 Msg20Reply::Msg20Reply ( ) {
 	// this is free in destructor, so clear it here
 	//ptr_eventSummaryLines = NULL;
-	m_tmp = 0;
 
 	m_parentOwner = NULL;
 	m_constructorId = 0;
@@ -742,7 +739,6 @@ int32_t Msg20Reply::deserialize ( ) {
 	// point to our string buffer
 	char *p = m_buf;
 	// reset this since constructor never called
-	m_tmp = 0;
 	// then store the strings!
 	int32_t  *sizePtr = &size_tbuf;
 	int32_t  *sizeEnd = &size_note;
