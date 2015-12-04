@@ -13737,6 +13737,8 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 	// . TODO: do not update on error???
 	for ( ; ptr < end ; ptr++ ) {
 
+		QUICKPOLL ( slot->m_niceness );
+
 		// get collnum
 		collnum_t collnum = (collnum_t)(ptr->m_collnum);
 
@@ -13802,6 +13804,12 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 	// loop over 
 	for ( int32_t x = 0 ; x < g_collectiondb.m_numRecs ; x++ ) {
 
+		QUICKPOLL ( slot->m_niceness );
+
+		// a niceness 0 routine could have nuked it?
+		if ( x >= g_collectiondb.m_numRecs )
+			break;
+
 		CollectionRec *cr = g_collectiondb.m_recs[x];
 		if ( ! cr ) continue;
 
@@ -13824,6 +13832,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 		if ( ! cia ) continue;
 
 		for ( int32_t k = 0 ; k < g_hostdb.m_numHosts; k++ ) {
+			QUICKPOLL ( slot->m_niceness );
 			// get the CrawlInfo for the ith host
 			CrawlInfo *stats = &cia[k];
 			// point to the stats for that host
@@ -14104,7 +14113,7 @@ void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
 
-	  QUICKPOLL(MAX_NICENESS);
+		QUICKPOLL(slot->m_niceness);
 
 		CollectionRec *cr = g_collectiondb.m_recs[i];
 		if ( ! cr ) continue;
