@@ -100,10 +100,8 @@ void rmTest();
 
 int g_inMemcpy=0;
 
-static void dumpTitledb  ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
-			   int64_t docId , char justPrintDups ,
-			   bool dumpSentences ,
-			   bool dumpWords );
+static void dumpTitledb  (char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
+			   int64_t docId , bool justPrintDups );
 static int32_t dumpSpiderdb ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
 			   char printStats , int32_t firstIp );
 static void dumpSectiondb( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
@@ -282,16 +280,14 @@ extern void tryToSyncWrapper ( int fd , void *state ) ;
 int main2 ( int argc , char *argv[] ) ;
 
 int main ( int argc , char *argv[] ) {
-
-	//fprintf(stderr,"Starting gb.\n");
-
 	int ret = main2 ( argc , argv );
 
-	if ( ret ) fprintf(stderr,"Failed to start gb. Exiting.\n");
+	if ( ret ) {
+		fprintf(stderr,"Failed to start gb. Exiting.\n");
+	}
 }
 
 int main2 ( int argc , char *argv[] ) {
-
 	g_conf.m_runAsDaemon = false;
 	g_conf.m_logToFile = false;
 
@@ -2426,42 +2422,30 @@ int main2 ( int argc , char *argv[] ) {
 				termId = atoll1(targ);
 			}
 		}
-		if      ( argv[cmdarg+1][0] == 't' ) {
+		if ( argv[cmdarg+1][0] == 't' ) {
 			int64_t docId = 0LL;
-			if ( cmdarg+6 < argc ) docId = atoll1(argv[cmdarg+6]);
-			bool justPrintSentences = false;
-			bool justPrintWords     = false;
-			// support "ts"
-			if ( argv[cmdarg+1][1] == 's' )
-				justPrintSentences = true;
-			// support "tw"
-			if ( argv[cmdarg+1][1] == 'w' )
-				justPrintWords = true;
+			if ( cmdarg+6 < argc ) {
+				docId = atoll1(argv[cmdarg+6]);
+			}
 
-			dumpTitledb (coll,startFileNum,numFiles,includeTree,
-				     docId,0,
-				     justPrintSentences,
-				     justPrintWords);
+			dumpTitledb (coll, startFileNum, numFiles, includeTree, docId, false);
 
 		}
 		else if ( argv[cmdarg+1][0] == 'D' ) {
 			int64_t docId = 0LL;
-			if ( cmdarg+6 < argc ) docId = atoll1(argv[cmdarg+6]);
-			dumpTitledb(coll,startFileNum,numFiles,includeTree,
-				     docId,1,false,false);
+			if ( cmdarg+6 < argc ) {
+				docId = atoll1(argv[cmdarg+6]);
+			}
+
+			dumpTitledb (coll, startFileNum, numFiles, includeTree, docId, true);
 		}
 		else if ( argv[cmdarg+1][0] == 'w' )
 		       dumpWaitingTree(coll);
 		else if ( argv[cmdarg+1][0] == 'x' )
 			dumpDoledb  (coll,startFileNum,numFiles,includeTree);
 		else if ( argv[cmdarg+1][0] == 's' ) {
-			//int32_t  isNew    = 1;
-			//int32_t  priority = -1;
 			char  printStats = 0;
 			int32_t firstIp = 0;
-			//char *coll     = NULL;
-			//if(cmdarg+6 < argc ) isNew    = atol(argv[cmdarg+6]);
-			//if(cmdarg+7 < argc ) priority = atol(argv[cmdarg+7]);
 			if ( cmdarg+6 < argc ){
 				printStats= atol(argv[cmdarg+6]);
 				// it could be an ip instead of printstats
@@ -2470,13 +2454,11 @@ int main2 ( int argc , char *argv[] ) {
 					firstIp = atoip(argv[cmdarg+6]);
 				}
 			}
-			//if ( cmdarg+7 < argc ) coll     = argv[cmdarg+7];
-			int32_t ret = dumpSpiderdb ( coll,startFileNum,numFiles,
-						  includeTree ,
-						  printStats ,
-						  firstIp );
-			if ( ret == -1 ) 
+
+			int32_t ret = dumpSpiderdb ( coll, startFileNum, numFiles, includeTree, printStats, firstIp );
+			if ( ret == -1 ) {
 				fprintf(stdout,"error dumping spiderdb\n");
+			}
 		}
 		else if ( argv[cmdarg+1][0] == 'B' )
 		       dumpSectiondb(coll,startFileNum,numFiles,includeTree);
@@ -2541,14 +2523,6 @@ int main2 ( int argc , char *argv[] ) {
 #endif
 #endif
 		/*
-		else if      ( argv[cmdarg+1][0] == 'c' ) {
-			int64_t docId = 0LL;
-			if ( cmdarg+6 < argc ) docId = atoll1(argv[cmdarg+6]);
-			dumpCachedRecs (coll,startFileNum,numFiles,includeTree,
-					docId);
-		}
-		*/
-		/*
 		else if      ( argv[cmdarg+1][0] == 'R' ) {
 			int64_t docId = 0LL;
 			if ( cmdarg+6 < argc ) docId = atoll1(argv[cmdarg+6]);
@@ -2591,25 +2565,6 @@ int main2 ( int argc , char *argv[] ) {
 		g_log.m_disabled = true;
 		return 0;
 	}
-
-	//log("db: RLIMIT_NOFILE = %"INT32"",(int32_t)rlim.rlim_max);
-	//exit(0);
-	// . disable o/s's and hard drive's read ahead 
-	// . set multcount to 16 --> 1 interrupt for every 16 sectors read
-	// . multcount of 16 reduces OS overhead by 30%-50% (more throughput) 
-	// . use hdparm -i to find max mult count
-	// . -S 100 means turn off spinning if idle for 500 seconds
-	// . this should be done in /etc/rc.sysinit or /etc/sysconfig/harddisks
-	//system("hdparm -a 0 -A 0 -m 16 -S 100 /dev/hda");
-	//system("hdparm -a 0 -A 0 -m 16 -S 100 /dev/hdb");
-	//system("hdparm -a 0 -A 0 -m 16 -S 100 /dev/hdc");
-	//system("hdparm -a 0 -A 0 -m 16 -S 100 /dev/hdd");
-	//system ("rm /gigablast/*.dat");
-	//system ("rm /gigablast/*.map");
-
-	//if ( g_hostdb.m_hostId == 0 ) g_conf.m_logDebugUdp = 1;
-	//g_conf.m_spideringEnabled = 1;
-	//g_conf.m_logDebugBuild = 1;
 
 	// temp merge test
 	//RdbList list;
@@ -3471,68 +3426,6 @@ int main2 ( int argc , char *argv[] ) {
 	// allow saving of conf again
 	g_conf.m_save = true;
 
-	// test speed of select statement used in Loop::doPoll()
-	// descriptor bits for calling select()
-	/*
-	fd_set readfds;
-	fd_set writefds;
-	fd_set exceptfds;
-	// clear fds for select()
-	FD_ZERO ( &readfds   );
-	FD_ZERO ( &writefds  );
-	FD_ZERO ( &exceptfds );
-	timeval v;
-	v.tv_sec  = 0;
-	v.tv_usec = 1; 
-	// set descriptors we should watch
-	for ( int32_t i = 0 ; i < MAX_NUM_FDS ; i++ ) {
-		if ( g_loop.m_readSlots [i] ) {
-			FD_SET ( i , &readfds   );
-			FD_SET ( i , &exceptfds );
-		}
-		if ( g_loop.m_writeSlots[i] ) {
-			FD_SET ( i , &writefds );
-			FD_SET ( i , &exceptfds );
-		}
-	}
-	// . poll the fd's searching for socket closes
-	// . this takes 113ms with the FD_SET() stuff, and 35ms without
-	//   for doing 10,000 loops... pretty fast.
-	int64_t t1 = gettimeofdayInMilliseconds();
-	int32_t i = 0;
-	for ( i = 0 ; i < 10000 ; i++ ) {
-		// descriptor bits for calling select()
-		fd_set readfds;
-		fd_set writefds;
-		fd_set exceptfds;
-		// clear fds for select()
-		FD_ZERO ( &readfds   );
-		FD_ZERO ( &writefds  );
-		FD_ZERO ( &exceptfds );
-		timeval v;
-		v.tv_sec  = 0;
-		v.tv_usec = 1; 
-		// set descriptors we should watch
-		for ( int32_t i = 0 ; i < MAX_NUM_FDS ; i++ ) {
-			if ( g_loop.m_readSlots [i] ) {
-				FD_SET ( i , &readfds   );
-				FD_SET ( i , &exceptfds );
-			}
-			if ( g_loop.m_writeSlots[i] ) {
-				FD_SET ( i , &writefds );
-				FD_SET ( i , &exceptfds );
-			}
-		}
-
-		int32_t n = select (MAX_NUM_FDS,&readfds,&writefds,&exceptfds,&v);
-		if ( n >= 0 ) continue;
-		log("loop: select: %s.",strerror(g_errno));
-		break;
-	}
-	int64_t t2 = gettimeofdayInMilliseconds();
-	log(LOG_INFO,"loop: %"INT32" selects() called in %"INT64" ms.",i,t2-t1);
-	*/
-
 	//spamTest();
 
 	// flush stats
@@ -3664,13 +3557,7 @@ bool doCmd ( const char *cmd , int32_t hostId , char *filename ,
 	// set stuff so http server client-side works right
 	g_conf.m_httpMaxSockets = 512;
 	sprintf ( g_conf.m_spiderUserAgent ,"Gigabot/1.0");
-	// then webserver, client side only
-	//if ( ! g_httpServer.init( -1, -1 ) ) 
-	//	return log("db: HttpServer init failed." ); 
-	// no, we just need udp server
-	//if ( ! g_udpServer.init( 6345/*port*/,&g_dp,-1/*niceness*/,
-	//			  10000000,10000000,20,1000) ) {
-	//	log("admin: UdpServer init failed." ); return false; }
+
 	// register sleep callback to get started
 	if ( ! g_loop.registerSleepCallback(1, NULL, doCmdAll , 0 ) )
 		return log("admin: Loop init failed.");
@@ -3692,19 +3579,7 @@ bool doCmd ( const char *cmd , int32_t hostId , char *filename ,
 	return true;
 }
 
-//static Msg28       s_msg28;
-//static TcpSocket   s_s;
-
 void doneCmdAll ( void *state ) {
-	/*
-	if ( s_sendToProxies ){
-		if ( ! g_loop.registerSleepCallback(1, NULL, doCmdAll,0 ) ){
-			log("admin: Loop init failed.");
-			exit ( 0 );
-		}
-		return;
-	}
-	*/
 	log("cmd: completed command");
 	exit ( 0 );
 }
@@ -3762,24 +3637,6 @@ void doCmdAll ( int fd, void *state ) {
 	}
 	// wait for it
 	log("cmd: sent command");
-	/*
-	bool status = true;
-	if ( s_sendToHosts ){
-		s_sendToHosts = false;
-		status = s_msg28.massConfig ( &s_s, &s_r, s_hostId, NULL, 
-					      doneCmdAll,false,
-					      false,s_hostId2);
-	}
-	else if ( s_sendToProxies ){
-		s_sendToProxies = false;
-		status = s_msg28.massConfig ( &s_s, &s_r, s_hostId, NULL, 
-					      doneCmdAll,false,
-					      true,s_hostId2);
-	}
-	g_loop.unregisterSleepCallback ( NULL, doCmdAll );
-	// if we did not block, call the callback directly
-	if ( status ) doneCmdAll(NULL);
-	*/
 }
 
 // copy a collection from one network to another (defined by 2 hosts.conf's)
@@ -3866,29 +3723,6 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 		// if a match, ensure same group
 		if ( h2->m_ip != h->m_ip ) continue;
 		if ( strcmp ( h2->m_dir , h->m_dir ) != 0 ) continue;
-		// bitch if twins not preserved when scaling
-		//if ( h2->m_group != h->m_group ) {
-		/*
-		if ( (h2->m_groupId & hdb1->m_groupMask) != 
-		     (h->m_groupId & hdb1->m_groupMask) )  {
-			log("Twins not preserved when scaling. New hosts.conf "
-			    "must have same twins as old hosts.conf. That is, "
-			    "if two hosts were in the same group (GRP) in the "
-			    "old hosts.conf, they must be in the same group "
-			    "in the new hosts.conf");
-			return -1;
-		}
-		// bitch if a major group change
-		if ( (h2->m_group & (hdb1->m_numGroups - 1)) ==
-		     h->m_group ) continue;
-		log ("hostId #%"INT32" (in group #%"INT32") in %s is not in a "
-		     "derivative group of "
-		     "hostId #%"INT32" (in group #%"INT32") in old hosts.conf.",
-		     h2->m_hostId,h2->m_group,
-		     newHostsConf,
-		     h->m_hostId,h->m_group);
-		return -1;
-		*/
 	}
 	}
 
@@ -3912,82 +3746,6 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 		// get old group (groupId1) and new group (groupId2)
 		shard1 = hdb1->getShardNum ( RDB_TITLEDB , k );//, hdb1 );
 		shard2 = hdb2->getShardNum( RDB_TITLEDB , k );//, hdb2 );
-		/*
-		// ensure groupId2 is derivative of groupId1
-		if ( (groupId2 & hdb1->m_groupMask) != groupId1 ) {
-			log("Bad engineer. Group id 0x%"XINT32" not derivative of "
-			    "group id 0x%"XINT32" for titledb.",groupId2,groupId1);
-			return -1;
-		}
-		*/
-
-		/*
-		// get old group (groupId1) and new group (groupId2)
-		groupId1 = hdb1->getGroupId ( RDB_SPIDERDB , k );
-		groupId2 = hdb2->getGroupId ( RDB_SPIDERDB , k );
-		// ensure groupId2 is derivative of groupId1
-		if ( (groupId2 & hdb1->m_groupMask) != groupId1 ) {
-			log("Bad engineer. Group id 0x%"XINT32" not derivative of "
-			    "group id 0x%"XINT32" for spiderdb.",
-			    groupId2,groupId1);
-			return -1;
-		}
-
-		// get old group (groupId1) and new group (groupId2)
-		groupId1 = hdb1->getGroupId ( RDB_POSDB , k );
-		groupId2 = hdb2->getGroupId ( RDB_POSDB , k );
-		// ensure groupId2 is derivative of groupId1
-		if ( (groupId2 & hdb1->m_groupMask) != groupId1 ) {
-			log("Bad engineer. Group id 0x%"XINT32" not derivative of "
-			    "group id 0x%"XINT32" for posdb.",
-			    groupId2,groupId1);
-			return -1;
-		}
-
-		// get old group (groupId1) and new group (groupId2)
-		groupId1 = hdb1->getGroupId ( RDB_CLUSTERDB , k );
-		groupId2 = hdb2->getGroupId ( RDB_CLUSTERDB , k );
-		// ensure groupId2 is derivative of groupId1
-		if ( (groupId2 & hdb1->m_groupMask) != groupId1 ) {
-			log("Bad engineer. Group id 0x%"XINT32" not derivative of "
-			    "group id 0x%"XINT32" for clusterdb.",
-			    groupId2,groupId1);
-			return -1;
-		}
-
-		// get old group (groupId1) and new group (groupId2)
-		groupId1 = hdb1->getGroupId ( RDB_TAGDB , k );
-		groupId2 = hdb2->getGroupId ( RDB_TAGDB , k );
-		// ensure groupId2 is derivative of groupId1
-		if ( (groupId2 & hdb1->m_groupMask) != groupId1 ) {
-			log("Bad engineer. Group id 0x%"XINT32" not derivative of "
-			    "group id 0x%"XINT32" for tagdb.",
-			    groupId2,groupId1);
-			return -1;
-		}
-
-		// get old group (groupId1) and new group (groupId2)
-		groupId1 = hdb1->getGroupId ( RDB_SECTIONDB , k );
-		groupId2 = hdb2->getGroupId ( RDB_SECTIONDB , k );
-		// ensure groupId2 is derivative of groupId1
-		if ( (groupId2 & hdb1->m_groupMask) != groupId1 ) {
-			log("Bad engineer. Group id 0x%"XINT32" not derivative of "
-			    "group id 0x%"XINT32" for sectiondb.",
-			    groupId2,groupId1);
-			return -1;
-		}
-
-		// get old group (groupId1) and new group (groupId2)
-		groupId1 = hdb1->getGroupId ( RDB_LINKDB , k );
-		groupId2 = hdb2->getGroupId ( RDB_LINKDB , k );
-		// ensure groupId2 is derivative of groupId1
-		if ( (groupId2 & hdb1->m_groupMask) != groupId1 ) {
-			log("Bad engineer. Group id 0x%"XINT32" not derivative of "
-			    "group id 0x%"XINT32" for linkdb.",
-			    groupId2,groupId1);
-			return -1;
-		}
-		*/
 	}
 
 	// . now copy all titleRecs in old hosts to all derivatives
@@ -4018,24 +3776,7 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 		if ( done[j] ) continue;
 		// mark as done
 		done[j] = 1;
-		/*
-		// . don't copy to a twin in the old hosts.conf
-		// . WE MUST preserve twins when scaling for this to work
-		if ( h2->m_group == h->m_group ) {
-			// only skip host h2 if he's in old hosts.conf 
-			// somewhere. does newhosts.conf contain hosts from
-			// old hosts.conf?
-			int32_t k = 0;
-			for ( k = 0 ; k < hdb1->m_numHosts ; k++ ) {
-				Host *h3 = &hdb1->m_hosts[k];
-				if ( h2->m_ip == h3->m_ip &&
-				     strcmp ( h2->m_dir , h3->m_dir ) == 0 ) 
-					break;
-			}
-			if ( k < hdb1->m_numHosts ) 
-				continue;
-		}
-		*/
+
 		// skip local copies for now!!
 		//if ( h->m_ip == h2->m_ip ) continue;
 
@@ -5053,9 +4794,7 @@ bool mainShutdown ( bool urgent ) {
 //
 
 void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTree,
-		  int64_t docid , char justPrintDups ,
-		  bool justPrintSentences, 
-		  bool justPrintWords ) {
+                  int64_t docid , bool justPrintDups) {
 
 	if (!ucInit(g_hostdb.m_dir, true)) {
 		log("Unicode initialization failed!");
