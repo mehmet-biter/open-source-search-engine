@@ -252,9 +252,7 @@ public:
 	//int32_t       m_sitePop             ; // set for m_computeLinkInfo
 	int32_t       m_midDomHash          ; // set for m_getLinkText
 	int32_t       m_adIdHash            ; // set for m_getLinkText
-	int32_t       m_timeLinkSpam        ; // set for m_getLinkText
 	void         *m_parentOwner;
-	char          m_constructorId;
 
 	char       m_isLinkSpam          ; // set for m_getLinkText
 	char       m_outlinkInContent    ; // set for m_getLinkText

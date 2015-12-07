@@ -350,7 +350,6 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 	m_r = (Msg20Reply *)rp;
 
 	m_r->m_parentOwner = (void *)this;
-	m_r->m_constructorId = 2;
 
 	// we own it now
 	m_ownReply = true;
@@ -509,7 +508,6 @@ Msg20Reply::Msg20Reply ( ) {
 	//ptr_eventSummaryLines = NULL;
 
 	m_parentOwner = NULL;
-	m_constructorId = 0;
 
 	// seems to be an issue... caused a core with bogus size_dbuf
 	int32_t *sizePtr = &size_tbuf;
@@ -610,7 +608,6 @@ int32_t Msg20::deserialize ( char *buf , int32_t bufSize ) {
 		g_errno = ECORRUPTDATA; return -1; }
 	m_r = (Msg20Reply *)buf;
 	m_r->m_parentOwner = (void *)this;
-	m_r->m_constructorId = 1;
 	// do not free "buf"/"m_r"
 	m_ownReply = false;
 	return m_r->deserialize ( );

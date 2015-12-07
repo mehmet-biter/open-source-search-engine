@@ -32824,8 +32824,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		// sanity
 		if ( reply->m_isLinkSpam && ! note )
 			log("linkspam: missing note for d=%"INT64"!",m_docId);
-		// store times... nah, might have yielded cpu!
-		reply->m_timeLinkSpam = 0;
 	}
 
 	// breathe
