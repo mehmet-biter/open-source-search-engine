@@ -5277,25 +5277,27 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	char *coll = "UNKNOWN";
 	if ( scr ) coll = scr->m_coll;
 
-	if ( printCached && cr->m_clickNScrollEnabled ) 
-		sb->safePrintf ( " - <a href=/scroll.html?page="
-				"get?"
-				"q=%s&c=%s&d=%"INT64">"
-				"cached</a>\n",
-				 st->m_qesb.getBufStart() , coll ,
-				mr->m_docId );
-	else if ( printCached )
-		sb->safePrintf ( "<a href=\""
-				"/get?"
-				"q=%s&"
-				"qlang=%s&"
-				"c=%s&d=%"INT64"&cnsp=0\">"
-				"cached</a>\n", 
-				 st->m_qesb.getBufStart() , 
-				// "qlang" parm
-				si->m_defaultSortLang,
-				coll , 
-				mr->m_docId ); 
+	if ( si->m_format == FORMAT_HTML ) {
+		if ( printCached && cr->m_clickNScrollEnabled ) 
+			sb->safePrintf ( " - <a href=/scroll.html?page="
+					"get?"
+					"q=%s&c=%s&d=%"INT64">"
+					"cached</a>\n",
+					 st->m_qesb.getBufStart() , coll ,
+					mr->m_docId );
+		else if ( printCached )
+			sb->safePrintf ( "<a href=\""
+					"/get?"
+					"q=%s&"
+					"qlang=%s&"
+					"c=%s&d=%"INT64"&cnsp=0\">"
+					"cached</a>\n", 
+					 st->m_qesb.getBufStart() , 
+					// "qlang" parm
+					si->m_defaultSortLang,
+					coll , 
+					mr->m_docId ); 
+	}
 
 	// the new links
 	if ( si->m_format == FORMAT_HTML && g_conf.m_isMattWells && 1 == 0 ) {
