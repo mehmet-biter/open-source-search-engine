@@ -520,16 +520,32 @@ int32_t getContentTypeFromStr ( char *s ) {
 		*send = '\0';
 	}
 
-	
-	// -1 means unknown
-	//int32_t ct = -1;
 	int32_t ct = CT_UNKNOWN;
-	// html
-	if      (!strcasecmp(s,"text/html"               ) ) ct = CT_HTML;
-	else if (!strcasecmp(s,"text/plain"              ) ) ct = CT_TEXT;
-	else if (!strcasecmp(s,"text/xml"                ) ) ct = CT_XML;
-	else if (!strcasecmp(s,"text/txt"                ) ) ct = CT_TEXT;
-	else if (!strcasecmp(s,"text"                    ) ) ct = CT_TEXT;
+	if ( !strncasecmp(s, "text/", 5) ) {
+		if ( !strcasecmp(s,"text/html") ) {
+			ct = CT_HTML;
+		} else if ( !strcasecmp(s,"text/plain" ) ) {
+			ct = CT_TEXT;
+		} else if ( !strcasecmp(s,"text/xml" ) ) {
+			ct = CT_XML;
+		} else if ( !strcasecmp(s,"text/txt" ) ) {
+			ct = CT_TEXT;
+		} else if ( !strcasecmp(s,"text/javascript" ) ) {
+			ct = CT_JS;
+		} else if ( !strcasecmp(s,"text/x-js" ) ) {
+			ct = CT_JS;
+		} else if ( !strcasecmp(s,"text/js" ) ) {
+			ct = CT_JS;
+		} else if ( !strcasecmp(s,"text/css" ) ) {
+			ct = CT_CSS;
+		} else if ( !strcasecmp(s,"text/x-vcard" ) ) {
+			// . semicolon separated list of info, sometimes an element is html
+			// . these might have an address in them...
+			ct = CT_HTML;
+		} else {
+			ct = CT_TEXT;
+		}
+	}
 	else if (!strcasecmp(s,"text"                    ) ) ct = CT_TEXT;
 	else if (!strcasecmp(s,"txt"                     ) ) ct = CT_TEXT;
 	else if (!strcasecmp(s,"application/xml"         ) ) ct = CT_XML;
@@ -549,18 +565,14 @@ int32_t getContentTypeFromStr ( char *s ) {
 	else if (!strcasecmp(s,"application/postscript"  ) ) ct = CT_PS;
 	else if (!strcasecmp(s,"application/warc"        ) ) ct = CT_WARC;
 	else if (!strcasecmp(s,"application/arc"         ) ) ct = CT_ARC;
-        else if (!strcasecmp(s,"image/gif"               ) ) ct = CT_GIF;
-        else if (!strcasecmp(s,"image/jpeg"              ) ) ct = CT_JPG;
-        else if (!strcasecmp(s,"image/png"               ) ) ct = CT_PNG;
-        else if (!strcasecmp(s,"image/tiff"              ) ) ct = CT_TIFF;
-        else if (!strncasecmp(s,"image/",6               ) ) ct = CT_IMAGE;
+	else if (!strcasecmp(s,"image/gif"               ) ) ct = CT_GIF;
+	else if (!strcasecmp(s,"image/jpeg"              ) ) ct = CT_JPG;
+	else if (!strcasecmp(s,"image/png"               ) ) ct = CT_PNG;
+	else if (!strcasecmp(s,"image/tiff"              ) ) ct = CT_TIFF;
+	else if (!strncasecmp(s,"image/",6               ) ) ct = CT_IMAGE;
 	else if (!strcasecmp(s,"application/javascript"  ) ) ct = CT_JS;
 	else if (!strcasecmp(s,"application/x-javascript") ) ct = CT_JS;
 	else if (!strcasecmp(s,"application/x-gzip"      ) ) ct = CT_GZ;
-	else if (!strcasecmp(s,"text/javascript"         ) ) ct = CT_JS;
-	else if (!strcasecmp(s,"text/x-js"               ) ) ct = CT_JS;
-	else if (!strcasecmp(s,"text/js"                 ) ) ct = CT_JS;
-	else if (!strcasecmp(s,"text/css"                ) ) ct = CT_CSS;
 	else if (!strcasecmp(s,"application/json"        ) ) ct = CT_JSON;
 	// facebook.com:
 	else if (!strcasecmp(s,"application/vnd.wap.xhtml+xml") ) ct =CT_HTML;
@@ -569,9 +581,6 @@ int32_t getContentTypeFromStr ( char *s ) {
 	else if (!strcasecmp(s,"application/binary" ) ) ct = CT_UNKNOWN;
 	else if (!strcasecmp(s,"application/x-tar" ) ) ct = CT_UNKNOWN;
 	else if ( !strncmp ( s , "audio/",6)  ) ct = CT_UNKNOWN;
-	// . semicolon separated list of info, sometimes an element is html
-	// . these might have an address in them...
-	else if (!strcasecmp(s,"text/x-vcard" )  ) ct = CT_HTML;
 
 	return ct;
 }

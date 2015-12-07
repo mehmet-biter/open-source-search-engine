@@ -13,3 +13,6 @@ gb
 libcld2_full.so
 Make.depend
 log000*
+urlinfo
+create_ucd_tables
+libgb.a

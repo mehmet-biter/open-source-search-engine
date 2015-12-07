@@ -17,6 +17,10 @@ class GigablastAPI:
         def doc_force_delete():
             return 'Doc force deleted'
 
+        @staticmethod
+        def record_not_found():
+            return 'Record not found'
+
     def __init__(self, gb_config):
         self._config = gb_config
         self._add_urls = set()
@@ -95,6 +99,22 @@ class GigablastAPI:
             return self._check_http_status(e, self._HTTPStatus.doc_force_delete())
 
         return False
+
+    def get(self, doc_id, payload=None):
+        if not payload:
+            payload = {}
+
+        self._apply_default_payload(payload)
+
+        payload.update({'d': doc_id})
+
+        try:
+            response = requests.get(self._get_url('get'), params=payload)
+            return response.json()
+        except requests.exceptions.ConnectionError as e:
+            if self._check_http_status(e, self._HTTPStatus.record_not_found()):
+                import json
+                return json.loads('{"response":{"statusCode":32771,"statusMsg":"Record not found"}}')
 
     def search(self, query, payload=None):
         if not payload:
