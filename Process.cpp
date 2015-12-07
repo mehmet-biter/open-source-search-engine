@@ -1991,7 +1991,6 @@ bool Process::saveBlockingFiles2 ( ) {
 
 	// this one too
 	//      g_classifier.save();
-        //g_siteBonus.save();
 	
 	// save the turk url cache, urls and user states
 	//g_pageTurk.saveCache();

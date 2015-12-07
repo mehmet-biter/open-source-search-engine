@@ -715,8 +715,7 @@ void CatRec::printFormattedRec(SafeBuf *sb) {
 		       "<tr><td>Username:        </td><td>%s</td></tr>\n"
 		       "<tr><td>Site Quality:    </td><td>%"INT32"</td></tr>\n"
 		       "<tr><td>Spam Status:     </td><td>%s</td></tr>\n"
-		       "<tr><td>Adult Level:     </td><td>%s</td></tr>\n"
-		       "<tr><td>Alexa Rank:      </td><td>%"INT32"</td></tr>\n",
+		       "<tr><td>Adult Level:     </td><td>%s</td></tr>\n",
 		       m_site.getUrl(),
 		       (int32_t)m_filenum,
 		       m_hadRec?"YES":"NO",
@@ -726,8 +725,7 @@ void CatRec::printFormattedRec(SafeBuf *sb) {
 		       m_username,
 		       (int32_t)m_siteQuality,
 		       getSpamStr(),
-		       getAdultStr(),
-		       g_siteBonus.getAlexaRanking(&m_site));
+		       getAdultStr());
 
 	for(int32_t i = 0;i < m_numTypes; i++) {
 		sb->safePrintf("<tr><td>%s:</td><td>%"INT32"</td></tr>\n",
@@ -751,8 +749,7 @@ char* CatRec::printFormattedRec(char* p) {
 		     "<tr><td>Comment:         </td><td>%s</td></tr>\n"
 		     "<tr><td>Username:        </td><td>%s</td></tr>\n"
 		     "<tr><td>Spam Status:     </td><td>%s</td></tr>\n"
-		     "<tr><td>Adult Level:     </td><td>%s</td></tr>\n"
-		     "<tr><td>Alexa Rank:      </td><td>%"INT32"</td></tr>\n",
+		     "<tr><td>Adult Level:     </td><td>%s</td></tr>\n",
 		     m_site.getUrl(),
 		     (int32_t)m_filenum,
 		     m_hadRec?"YES":"NO",
@@ -761,8 +758,7 @@ char* CatRec::printFormattedRec(char* p) {
 		     m_comment,
 		     m_username,
 		     getSpamStr(),
-		     getAdultStr(),
-		     g_siteBonus.getAlexaRanking(&m_site));
+		     getAdultStr());
 
 	for(int32_t i = 0;i < m_numTypes; i++) {
 		p += sprintf(p, 
@@ -841,7 +837,6 @@ char* CatRec::printXmlRec(char* p) {
 		     "\t<siteQuality>%"INT32"</siteQuality>\n"
 		     "\t<spamStatus><![CDATA[%s]]></spamStatus>\n"
 		     "\t<adultLevel><![CDATA[%s]]></adultLevel>\n"
-		     "\t<alexaRank>%"INT32"</alexaRank>\n"
 		     "\t<banned>%i</banned>\n",
 		     m_site.getUrl(),
 		     (int32_t)m_filenum,
@@ -853,7 +848,6 @@ char* CatRec::printXmlRec(char* p) {
 		     (int32_t)m_siteQuality,
 		     getSpamStr(),
 		     getAdultStr(),
-		     g_siteBonus.getAlexaRanking(&m_site),
 		     m_xml->getBool("isBanned", false));
 	return p;
 }
@@ -869,7 +863,6 @@ void CatRec::printXmlRec( SafeBuf *sb ) {
                        "\t<siteQuality>%"INT32"</siteQuality>\n"
                        "\t<spamStatus><![CDATA[%s]]></spamStatus>\n"
                        "\t<adultLevel><![CDATA[%s]]></adultLevel>\n"
-                       "\t<alexaRank>%"INT32"</alexaRank>\n"
                        "\t<banned>%i</banned>\n",
                        m_site.getUrl(),
                        (int32_t)m_filenum,
@@ -881,7 +874,6 @@ void CatRec::printXmlRec( SafeBuf *sb ) {
                        (int32_t)m_siteQuality,
                        getSpamStr(),
                        getAdultStr(),
-                       g_siteBonus.getAlexaRanking(&m_site),
                        m_xml->getBool("isBanned", false));
 }
 

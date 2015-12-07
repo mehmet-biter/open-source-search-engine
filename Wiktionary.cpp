@@ -252,8 +252,7 @@ bool Wiktionary::load() {
 	//close ( fd2 );
 	close ( fd3 );
 	close ( fd4 );
-	// save text size for getRandomPhrase() function below
-	//m_txtSize = stats1.st_size;
+
 	// if we got a newer binary version, use that
 	if ( ! errno3 && ! errno4 && 
 	     // load from binaries if orig txt is not there OR our

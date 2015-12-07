@@ -2569,6 +2569,7 @@ int main2 ( int argc , char *argv[] ) {
 	//g_speller.init();
 	//if ( !g_speller.init ( ) ) return 1;
 	g_errno = 0;
+
 	//g_speller.test ( );
 	//exit(-1);
 	/*
@@ -2587,10 +2588,9 @@ int main2 ( int argc , char *argv[] ) {
 
 	// make sure port is available, no use loading everything up then
 	// failing because another process is already running using this port
-	//if ( ! g_udpServer.testBind ( g_hostdb.getMyPort() ) )
-	if ( ! g_httpServer.m_tcp.testBind(g_hostdb.getMyHost()->m_httpPort,
-					   true)) // printmsg?
+	if ( ! g_httpServer.m_tcp.testBind(g_hostdb.getMyHost()->m_httpPort, true)) {
 		return 1;
+	}
 
 	int32_t *ips;
 
@@ -3046,13 +3046,9 @@ int main2 ( int argc , char *argv[] ) {
 	int32_t nce = g_countryCode.getNumEntries();
 	//log(LOG_INFO, "cat: Loaded %"INT32" entries from Category country table.",
 	//		g_countryCode.getNumEntries());
-	if ( nce != 544729 )
-		log("cat: unsupported catcountry.dat file with %"INT32" entries",
-		    nce);
-
-	
-	//g_siteBonus.init();
-
+	if ( nce != 544729 ) {
+		log("cat: unsupported catcountry.dat file with %"INT32" entries", nce);
+	}
 
 	if(!g_autoBan.init()) {
 		log("autoban: init failed.");
@@ -13179,8 +13175,6 @@ static int ip_dcmp  (const void *p1, const void *p2);
 static int dom_fcmp (const void *p1, const void *p2);
 static int dom_lcmp (const void *p1, const void *p2);
 // JAB: warning abatement
-//static int lnk_hcmp (const void *p1, const void *p2);
-// JAB: warning abatement
 //static int lnk_fcmp (const void *p1, const void *p2);
 
 void countdomains( char* coll, int32_t numRecs, int32_t verbosity, int32_t output ) {
@@ -14131,35 +14125,6 @@ int dom_lcmp (const void *p1, const void *p2) {
 
 // JAB: warning abatement
 #if 0
-// Sort by domain name a-z
-int lnk_hcmp (const void *p1, const void *p2) {
-	int32_t len, n1, n2; 
-	struct lnk_info *li1;
-	struct lnk_info *li2;
-
-	*(((unsigned char *)(&n1))+0) = *(((char *)p1)+0);
-	*(((unsigned char *)(&n1))+1) = *(((char *)p1)+1);
-	*(((unsigned char *)(&n1))+2) = *(((char *)p1)+2);
-	*(((unsigned char *)(&n1))+3) = *(((char *)p1)+3);
-
-	*(((unsigned char *)(&n2))+0) = *(((char *)p2)+0);
-	*(((unsigned char *)(&n2))+1) = *(((char *)p2)+1);
-	*(((unsigned char *)(&n2))+2) = *(((char *)p2)+2);
-	*(((unsigned char *)(&n2))+3) = *(((char *)p2)+3);
-
-
-	li1 = (struct lnk_info *)n1;
-	li2 = (struct lnk_info *)n2;
-
-	if( li1->domLen < li2->domLen ) len = li1->domLen;
-	else len = li2->domLen;
-
-	return strncasecmp( li1->dom, li2->dom, len );
-}
-#endif
-
-// JAB: warning abatement
-#if 0
 // Sort by frequency of link use, 9-0
 int lnk_fcmp (const void *p1, const void *p2) {
 	//int32_t n1, n2;
@@ -14458,15 +14423,6 @@ void testSpamRules(char *coll,
 		words.set(&xml, true, 0);
 
 		log(LOG_WARN, "looking at %s", tr.getUrl()->getUrl());
-		//g_siteBonus.isSerp ( tr.getUrl(), &xml, &links, &words);
-		g_siteBonus.getNegativeQualityWeight (tr.getUrl(), 
-						      &xml, 
-						      &links, 
-					  &words, 
-					  coll,
-						      //NULL,//siterec
-					  NULL,//safebuf
-					  0);  //niceness
 
 	}
 	startKey = *(key_t *)list.getLastKey();
