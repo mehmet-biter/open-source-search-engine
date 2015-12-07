@@ -738,12 +738,6 @@ bool isLinkSpam ( Url *linker,
 		*note = ".biz tld";
 		return true;
 	}
-	//int32_t ip = tr->getIp();
-	char *ips = (char *)&ip;
-	if ( ips[0]==70 && ips[1]>=80 && ips[1]<=89 ) {
-		*note = "70.8*. ip";
-		return true;
-	}
 
 	// if this page fails zak's page quality algo, do not let it vote
 	// like if from .biz or lots of hyphens in the url or an ip-based 
