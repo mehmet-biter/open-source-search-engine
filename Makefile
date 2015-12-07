@@ -63,7 +63,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Statsdb.o PageStatsdb.o \
 	PostQueryRerank.o Msge0.o Msge1.o \
 	CountryCode.o DailyMerge.o CatRec.o Tagdb.o \
-	Users.o Images.o Wiki.o Wiktionary.o Scraper.o \
+	Users.o Images.o Wiki.o Wiktionary.o \
 	Timezone.o Sections.o SiteGetter.o Syncdb.o qa.o \
 	Placedb.o Address.o Test.o Synonyms.o \
 	Cachedb.o Monitordb.o dlstubs.o PageCrawlBot.o Json.o PageBasic.o \
@@ -278,15 +278,13 @@ urlinfo: $(OBJS) urlinfo.o
 
 dmozparse: $(OBJS) dmozparse.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-gbfilter: gbfilter.cpp
-	$(CXX) -g -o gbfilter gbfilter.cpp -lc
 gbtitletest: gbtitletest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 
 
 # comment this out for faster deb package building
 clean:
-	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest monitor reindex convert maketestindex makespiderdb makeclusterdb urlinfo gbfilter dnstest thunder dmozparse gbtitletest gmon.* quarantine core core.* libgb.a
+	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest monitor reindex convert maketestindex makespiderdb makeclusterdb urlinfo dnstest thunder dmozparse gbtitletest gmon.* quarantine core core.* libgb.a
 	make -C test $@
 
 convert.o:

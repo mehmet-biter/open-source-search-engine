@@ -43,7 +43,6 @@
 #include "Speller.h"       // g_speller
 #include "Wiki.h"          // g_wiki
 #include "Wiktionary.h"    // g_wiktionary
-#include "Scraper.h"       // g_scraper
 #include "Categories.h"
 #include "CountryCode.h"
 #include "Pos.h"
@@ -3050,10 +3049,8 @@ int main2 ( int argc , char *argv[] ) {
 	//	log( "init: Quality Agent init failed." );
 	//}
 
-	if ( ! g_scraper.init() ) return 1;
-
 	//if ( ! DateParse::init()  ) {
-	//	log("db: DateParse init failed." ); return 1; 
+	//	log("db: DateParse init failed." ); return 1;
 	//}
 
 	//countdomains was HERE, moved up to access more mem.
