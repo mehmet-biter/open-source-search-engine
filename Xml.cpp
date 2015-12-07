@@ -6,7 +6,6 @@
 #include "Unicode.h" // for html entities that return unicode
 #include "Titledb.h"
 #include "Words.h"
-//#include "DateParse2.h"
 
 Xml::Xml  () { 
 	m_xml = NULL; 

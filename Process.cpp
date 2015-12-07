@@ -1992,8 +1992,6 @@ bool Process::saveBlockingFiles2 ( ) {
 	// this one too
 	//      g_classifier.save();
         //g_siteBonus.save();
-	// save state for top docs
-	//g_pageTopDocs.saveStateToDisk();
 	
 	// save the turk url cache, urls and user states
 	//g_pageTurk.saveCache();
@@ -2034,8 +2032,6 @@ void Process::resetAll ( ) {
 	g_profiler        .reset();
 	g_autoBan         .reset();
 	//g_qtable          .reset();
-	//g_pageTopDocs     .destruct();
-	//g_pageNetTest     .destructor();
 
 	for ( int32_t i = 0; i < MAX_GENERIC_CACHES; i++ )
 		g_genericCache[i].reset();

@@ -6,7 +6,6 @@
 #include "Dns.h"
 //#include "Thesaurus.h" // SynonymLinkGroup structure
 #include "PostQueryRerank.h" // for ComTopInDmozRec
-//#include "DateParse.h" // TimeZoneInfo structure
 #include "types.h"
 
 template<class Key_t, class Val_t> 

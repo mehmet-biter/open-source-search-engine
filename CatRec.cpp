@@ -3,7 +3,6 @@
 #include "CatRec.h"
 //#include "SiteBonus.h"
 #include "Lang.h"
-//#include "DateParse.h"
 
 //static int32_t getY(Xml *xml, int32_t n0,int32_t n1,int32_t X,
 //		 char *strx,char *stry,int32_t def);
@@ -922,15 +921,4 @@ char* CatRec::getAdultStr() {
 
 }
 
-
-char *CatRec::getPubDateFmtStr() {
-	int32_t fmt = getScoreForType(SiteType::DATE_FORMAT);
-	switch (fmt) {
-	case DateParse::DATE_FMT_AMER:
-		return "American";
-	case DateParse::DATE_FMT_EURO:
-		return "European";
-	}
-	return "Unknown/Ambiguous";
-}
 */

@@ -541,7 +541,6 @@ class XmlDoc {
 
 	int64_t **getWikiDocIds ( ) ;
 	void gotWikiResults ( class UdpSlot *slot );
-	//class DateParse2 *getDateParse2 ( ) ;
 	//class HashTableX *getClockCandidatesTable();
 	int32_t getOutlinkAge ( int32_t outlinkNum ) ;
 	char *getIsPermalink ( ) ;
@@ -1448,7 +1447,6 @@ class XmlDoc {
 	bool m_isWWWDupValid;
 	bool m_linkInfo1Valid;
 	bool m_linkSiteHashesValid;
-	//bool m_dateParse2Valid;
 	bool m_sectionsReplyValid;
 	bool m_sectionsVotesValid;
 	bool m_sectiondbDataValid;
@@ -1542,7 +1540,6 @@ class XmlDoc {
 	//Query m_wq; 
 	//SearchInput m_si;
 	//Msg40 m_msg40;
-	//DateParse2 m_dateParse2;
 	bool m_printedMenu;
 	//HashTableX m_clockCandidatesTable;
 	//SafeBuf m_cctbuf;

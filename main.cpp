@@ -93,8 +93,6 @@ bool registerMsgHandlers3 ( ) ;
 
 void allExitWrapper ( int fd , void *state ) ;
 
-//bool QuerySerializeTest( char *ff ); 	// Query.cpp
-
 void rmTest();
 
 int g_inMemcpy=0;
@@ -201,8 +199,6 @@ bool ramdiskTest();
 void countdomains( char* coll, int32_t numRecs, int32_t verb, int32_t output );
 
 UdpProtocol g_dp; // Default Proto
-
-//void zlibtest ( );
 
 // installFlag konstants 
 typedef enum {
@@ -649,14 +645,6 @@ int main2 ( int argc , char *argv[] ) {
 			"\tgets the popularities of the entries in the "
 			"<file>. Used to only check performance of "
 			"getPhrasePopularity.\n\n"
-
-			//"stemmertest <file>\n"
-			//"\truns the stemmer on words in <file>.\n\n"
-		
-			//"queryserializetest <file>\n"
-			//"\tserializes every query in <file> and tracks "
-			//"statistics, as well as \t\nverifying consistency; "
-			//"takes raw strings or URLs as input\n\n"
 
 			// less common things
 			"gendict <coll> [numWordsToDump]\n\tgenerate "
@@ -3035,22 +3023,8 @@ int main2 ( int argc , char *argv[] ) {
 		//return 1;
 	}
 
-	//if( !g_pageTopDocs.init() ) {
-	//	log( "init: PageTopDocs init failed." );
-	//	return 1;
-	//}
-
-	//if( !g_pageNetTest.init() ) {
-	//	log( "init: PageNetTest init failed." );
-	//	return 1;
-	//}
-
 	//if(!Msg6a::init()) {
 	//	log( "init: Quality Agent init failed." );
-	//}
-
-	//if ( ! DateParse::init()  ) {
-	//	log("db: DateParse init failed." ); return 1;
 	//}
 
 	//countdomains was HERE, moved up to access more mem.
@@ -3088,12 +3062,6 @@ int main2 ( int argc , char *argv[] ) {
 	//if(!g_classifier.restore()) {
 	//	log("classifier: init failed.");
 	//	//return 1;
-	//}
-
-	// deprecated in favor of Msg13-based throttling
-	//if ( !g_msg6.init() ) {
-	//	log ( "init: msg6 init failed." );
-	//	return 1;
 	//}
 
 	// if(!g_profiler.init()) {
@@ -3211,26 +3179,31 @@ int main2 ( int argc , char *argv[] ) {
 	//			  20       ,   // pollTime in ms
 	//			  1000     )){ // max udp slots
 	//	log("db: UdpServer2 init failed." ); return 1; }
+
 	// start pinging right away
 	if ( ! g_pingServer.init() ) {
 		log("db: PingServer init failed." ); return 1; }
+
 	// start up repair loop
 	if ( ! g_repair.init() ) {
 		log("db: Repair init failed." ); return 1; }
+
 	// start up repair loop
 	if ( ! g_dailyMerge.init() ) {
 		log("db: Daily merge init failed." ); return 1; }
+
 	// . then dns Distributed client
 	// . server should listen to a socket and register with g_loop
 	// . Only the distributed cache shall call the dns server.
 	if ( ! g_dns.init( h9->m_dnsClientPort ) ) {
 		log("db: Dns distributed client init failed." ); return 1; }
+
 	// . then dns Local client
 	//if ( ! g_dnsLocal.init( 0 , false ) ) {
 	//	log("db: Dns local client init failed." ); return 1; }
+
 	// . then webserver
 	// . server should listen to a socket and register with g_loop
-	// again:
 	if ( ! g_httpServer.init( h9->m_httpPort, h9->m_httpsPort ) ) {
 		log("db: HttpServer init failed. Another gb already "
 		    "running?" ); 
@@ -3254,8 +3227,7 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! registerMsgHandlers() ) {
 		log("db: registerMsgHandlers failed" ); return 1; }
 
-	// for Events.cpp event extraction we need to parse out "places" from 
-	// each doc
+	// for Events.cpp event extraction we need to parse out "places" from each doc
 	//if ( ! initPlaceDescTable ( ) ) {
 	//	log("events: places table init failed"); return 1; }
 
@@ -3292,35 +3264,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	// gb stemmertest
-	//if ( strcmp ( cmd , "stemmertest" ) == 0 ) {
-	//	if ( argc != cmdarg + 2 ) goto printHelp;
-	//	g_stemmer.test ( argv[cmdarg + 1] );
-	//	return 0;
-	//}
-
-	// gb queryserializetest
-	/*
-	if ( strcmp ( cmd , "queryserializetest" ) == 0 ) {
-		if ( argc != cmdarg + 2 ) goto printHelp;
-		int64_t starttime = gettimeofdayInMilliseconds();
-		QuerySerializeTest( argv[cmdarg + 1] );
-		log(LOG_INFO, "query: took %"INT64"msecs for query serialize" \
-			"test on %s", gettimeofdayInMilliseconds() - starttime,
-			argv[cmdarg + 1]);
-		return 0;
-	}
-	*/
-
-#ifdef _LIMIT10_
-	// how many pages have we indexed so far?
-	//int64_t numPages = g_titledb.getRdb()->getNumGlobalRecs();
-	int64_t numPages = g_clusterdb.getRdb()->getNumGlobalRecs();
-	if ( numPages > 10123466 ) 
-		log("WARNING: Over 10 million documents are in the index. "
-		     "You have exceeded the terms of your license. "
-		     "Please contact mwells@gigablast.com for a new license.");
-#endif
 	// bdflush needs to be turned off because we need to control the
 	// writes directly. we do this by killing the write thread.
 	// we kill it when we need to do important reads, otherwise, if
@@ -3338,13 +3281,6 @@ int main2 ( int argc , char *argv[] ) {
 	//log("REMINDER: remove mem leack checking");
 	//log("REMINDER: put thread back in Msg39");
 
-	// . now check with gigablast.com (216.243.113.1) to see if we 
-	//   are licensed, for now, just get the doc
-	// . TODO: implement this (GET /license.html \r\n
-	//                         Host: www.gigablast.com\r\n\r)
-
-	// do the zlib test
-	//zlibtest();
 	// . now m_minToMerge might have changed so try to do a merge
 	// . only does one merge at a time
 	// . other rdb's will sleep and retry until it's their turn
@@ -3352,6 +3288,7 @@ int main2 ( int argc , char *argv[] ) {
 	//g_loop.registerSleepCallback ( 1000 ,
 	//			       NULL ,
 	//			       tryMergingWrapper );
+
 	// . register a callback to try to merge everything every 2 seconds
 	// . do not exit if we couldn't do this, not a huge deal
 	// . put this in here instead of Rdb.cpp because we don't want
@@ -3371,29 +3308,6 @@ int main2 ( int argc , char *argv[] ) {
 	// try to sync parms (and collection recs) with host 0
 	if ( ! g_loop.registerSleepCallback(1000,NULL,tryToSyncWrapper,0))
 		return false;
-
-	//if( !g_loop.registerSleepCallback(2000,(void *)1,controlDumpTopDocs) )
-	//	log("db: Failed to init dump TopDocs sleep callback.");
-
-        // MTS: removing nettest, this breaks NetGear switches when all links
-        //      are transmitting full bore and full duplex.
-	//if( !g_loop.registerSleepCallback(2000,(void *)1,controlNetTest) )
-	//	log("db: Failed to init network test sleep callback.");
-	
-	//if( !g_loop.registerSleepCallback(60000,(void *)1,takeSnapshotWrapper))
-	//	log("db: Failed to init Statsdb snapshot sleep callback.");
-
-	// check to make sure we have the latest parms
-	//Msg3e msg3e;  
-	//msg3e.checkForNewParms();
-
-	// this stuff is similar to alden's msg3e but will sync collections
-	// that were added/deletede
-	//if ( ! g_parms.syncParmsWithHost0() ) {
-	//	log("parms: error syncing parms: %s",mstrerror(g_errno));
-	//	return 0;
-	//}
-
 
 	if(g_recoveryMode) {
 		//now that everything is init-ed send the message.

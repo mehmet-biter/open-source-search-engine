@@ -123,8 +123,6 @@ class CatRec {
 	bool isKidSafe()            { return m_adultLevel == RATED_G;   }
 	char* getAdultStr();
 
-	char *getPubDateFmtStr();
-
 	int32_t          getTimeStamp()   { return m_timeStamp; }
 	char         *getComment()     { return m_comment; }
 	char         *getUsername()    { return m_username; }
