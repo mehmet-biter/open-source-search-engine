@@ -251,8 +251,6 @@ int injectFile ( char *filename , char *ips ,
 int injectFileTest ( int32_t  reqLen  , int32_t hid ); // generates the file
 void membustest ( int32_t nb , int32_t loops , bool readf ) ;
 
-bool dosOpen(int32_t targetIp, uint16_t port, int numSocks);
-
 //void tryMergingWrapper ( int fd , void *state ) ;
 
 void saveRdbs ( int fd , void *state ) ;
@@ -306,12 +304,6 @@ int main2 ( int argc , char *argv[] ) {
 	// malloc test for efence
 	//char *ff = (char *)mmalloc(100,"efence");
 	//ff[100] = 1;
-
-	// Begin Pointer Check setup
-	//uint32_t firstArg = 0;
-	//ValidPointer vpointerObject((void*)&firstArg);
-	//vpointerObject.isValidPointer(&vpointerObject); // whiny compiler
-	// End Pointer Check setup
 
 	if (argc < 0) {
 	printHelp:
@@ -698,10 +690,6 @@ int main2 ( int argc , char *argv[] ) {
 			"ramdisktest\n\t"
 			"test ramdisk functionality\n\n"
 
-			"dosopen <ip> <port> <numThreads>\n"
-			"\tOpen  numThreads tcp sockets to ip:port and just "
-			"sit there.  For testingthe robustness of gb.\n\n"
-
 			"xmldiff [-td] <file1> <file2>\n"
 			"\tTest xml diff routine on file1 and file2.\n"
 			"\t-t: only show diffs in tag structure.\n"
@@ -789,21 +777,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "-v" ) == 0 ) {
 		printVersion();
 		return 0; 
-	}
-
-	if ( strcmp ( cmd , "dosopen" ) == 0 ) {	
-		int32_t ip;
-		int16_t port = 8000;
-		int32_t numSockets = 100;
-		if ( cmdarg + 1 < argc ) 
-			ip = atoip(argv[cmdarg+1],gbstrlen(argv[cmdarg+1]));
-		else goto printHelp;
-		if ( cmdarg + 2 < argc ) 
-			port = (int16_t)atol ( argv[cmdarg+2] );
-		if ( cmdarg + 3 < argc ) 
-			numSockets = atol ( argv[cmdarg+3] );
-
-		return dosOpen(ip, port, numSockets);
 	}
 
 	//send an email on startup for -r, like if we are recovering from an
@@ -13085,55 +13058,6 @@ bool ramdiskTest() {
 
 	close ( fd);
 	return true;
-}
-
-void  dosOpenCB( void *state, TcpSocket *s);
-
-bool dosOpen(int32_t targetIp, uint16_t port, int numSocks) {
-	TcpServer tcpClient;
-	if ( ! g_loop.init() ) return log("loop: Loop init "
-					  "failed.");
-	// init the tcp server, client side only
-	if ( ! tcpClient.init( NULL , // requestHandlerWrapper       ,
-			       getMsgSize, 
-			       NULL , // getMsgPiece                 ,
-			       0    // port, only needed for server
-			       ) ) {
-		
-		return log("tcp: Tcp init failed.");
-	}
-
-	int32_t launched = 0;
-
-	char* ebuf = "";
-	for( int32_t i = 0; i < numSocks; i++) {
-		if(!tcpClient.sendMsg( targetIp      ,
-				      port    ,
-				      ebuf,
-				      0,
-				      0,
-				      0,
-				      NULL,
-				      dosOpenCB,
-				      600 * 60 * 24,
-				      -1,
-				      -1)) {
-			launched++;
-		}
-	}
-
-	//printf("DOS version 5.2\n RAM: 000640K\n HIMEM: 1012\n\n");
-	log("init: dos launched %"INT32" simultaneous requests.", launched);
-
-
-	if ( ! g_loop.runLoop() ) return log("tcp: inject: Loop "
-					     "run failed.");
-
-	return true;
-}
-
-void  dosOpenCB( void *state, TcpSocket *s) {
-	log("init: dos timeout");
 }
 
 // CountDomains Structures and function definitions
