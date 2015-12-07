@@ -4796,6 +4796,17 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	}
 
 
+	// print the [cached] link?
+	bool printCached;
+	if ( mr->m_contentLen <= 0 )
+		printCached = false; //nothing to show
+	else if ( isAdmin )
+		printCached = true; //admin can bypass noarchive tag
+	else if( mr->m_noArchive )
+		printCached = false; //page doesn't want to be archived. honour that.
+	else
+		printCached = true;
+
 	/////
 	//
 	// print content type after title
@@ -5150,6 +5161,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// . might have merged a bunch together
 		sb->safePrintf("\t\t\"docId\":%"INT64",\n",mr->m_docId );
 		sb->safePrintf("\t\t\"docScore\":%f,\n",docScore);
+		sb->safePrintf("\t\t\"cacheAvailable\":%s,\n", printCached?"true":"false");
 	}
 
 	if ( si->m_format == FORMAT_JSON && mr->m_contentType != CT_STATUS ) {
@@ -5257,13 +5269,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	if ( si->m_format == FORMAT_HTML ) sb->safePrintf("<br>\n");
 
 	//char *coll = si->m_cr->m_coll;
-
-	// print the [cached] link?
-	bool printCached = true;
-	if ( mr->m_noArchive       ) printCached = false;
-	if ( isAdmin               ) printCached = true;
-	if ( mr->m_contentLen <= 0 ) printCached = false;
-	if ( si->m_format != FORMAT_HTML ) printCached = false;
 
 	// get collnum result is from
 	//collnum_t collnum = si->m_cr->m_collnum;
