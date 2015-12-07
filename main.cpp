@@ -104,8 +104,6 @@ static void dumpTitledb  ( char *coll,int32_t sfn,int32_t numFiles,bool includeT
 			   int64_t docId , char justPrintDups ,
 			   bool dumpSentences ,
 			   bool dumpWords );
-//static void dumpTfndb    (char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
-//			   bool verify);
 static int32_t dumpSpiderdb ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
 			   char printStats , int32_t firstIp );
 static void dumpSectiondb( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
@@ -217,8 +215,6 @@ typedef enum {
 	ifk_installgbrcp ,
 	ifk_installconf ,
 	ifk_gendbs ,
-	ifk_fixtfndb ,
-	ifk_gentfndb ,
 	ifk_installcat,
 	ifk_installnewcat,
 	ifk_genclusterdb ,
@@ -672,19 +668,8 @@ int main2 ( int argc , char *argv[] ) {
 			"dictionary used for spellchecker "
 			"from titledb files in collection <coll>. Use "
 			"first [numWordsToDump] words.\n\n"
-			//#ifndef _LARS_
-			//"gendbs <coll> [hostId]\n\tgenerate missing spiderdb, "
-			//"tfndb files from titledb files.\n\n"
-
-			//"gentfndb <coll> [hostId]\n\tgenerate missing tfndb. "
-			//"titledb disk dumps and tight merges are no "
-			//"longer necessary. Also "
-			//"generates tfndb from spiderdb. tfndb-saved.dat "
-			//"and all tfndb* files in the collection subdir "
-			//"must not exist, so move them to a temp dir.\n\n"
-
-			//"fixtfndb <coll> [hostId]\n\tremove tfndb recs "
-			//"referring to non-existent titledb recs.\n\n"
+			//"gendbs <coll> [hostId]\n\tgenerate missing spiderdb "
+			//"files from titledb files.\n\n"
 
 			//"genclusterdb <coll> [hostId]\n\tgenerate missing "
 			//"clusterdb.\n\n"
@@ -865,8 +850,6 @@ int main2 ( int argc , char *argv[] ) {
 
 	// gb gendbs, preset the hostid at least
 	if ( //strcmp ( cmd , "gendbs"   ) == 0 ||
-	     //strcmp ( cmd , "gentfndb" ) == 0 ||
-	     //strcmp ( cmd , "fixtfndb" ) == 0 ||
 	     strcmp ( cmd , "dumpmissing" ) == 0 ||
 	     strcmp ( cmd , "dumpdups" ) == 0 ||
 	     //strcmp ( cmd , "gencatdb" ) == 0 ||
@@ -887,18 +870,6 @@ int main2 ( int argc , char *argv[] ) {
 
 	// set it for g_hostdb and for logging
 	//g_hostdb.m_hostId = hostId;
-
-	//if ( strcmp ( cmd , "gzip" ) == 0 ) {
-	//	if ( argc > cmdarg+1 ) gbgzip(argv[cmdarg+1]);
-	//	else goto printHelp;
-	//	return 0;
-	//}
-
-	//if ( strcmp ( cmd , "gunzip" ) == 0 ) {
-	//	if ( argc > cmdarg+1 ) gbgunzip(argv[cmdarg+1]);
-	//	else goto printHelp;
-	//	return 0;
-	//}
 
 	// these tests do not need a hosts.conf
 	/*
@@ -1599,13 +1570,6 @@ int main2 ( int argc , char *argv[] ) {
 	//			 argv[cmdarg+1] ); // coll
 	if( strcmp(cmd, "distributeC") == 0 && cmdarg +2 == argc )
 		return install ( ifk_distributeC, -1, NULL, argv[cmdarg+1] );
-	//if ( strcmp ( cmd , "gentfndb" ) == 0 && cmdarg + 2 == argc )
-	//	return install ( ifk_gentfndb , -1 , NULL , 
-	//			 argv[cmdarg+1] ); // coll
-
-	//if ( strcmp ( cmd , "fixtfndb" ) == 0 && cmdarg + 2 == argc )
-	//	return install ( ifk_fixtfndb , -1 , NULL , 
-	//			 argv[cmdarg+1] ); // coll
 
 	//if ( strcmp ( cmd, "genclusterdb" ) == 0 && cmdarg + 2 == argc )
 	//	return install ( ifk_genclusterdb , -1 , NULL ,
@@ -2486,10 +2450,6 @@ int main2 ( int argc , char *argv[] ) {
 			dumpTitledb(coll,startFileNum,numFiles,includeTree,
 				     docId,1,false,false);
 		}
-		//else if(argv[cmdarg+1][0] == 'v' && argv[cmdarg+1][1] =='u' )
-		//	dumpTfndb   (coll,startFileNum,numFiles,includeTree,1);
-		//else if ( argv[cmdarg+1][0] == 'u' )
-		//	dumpTfndb   (coll,startFileNum,numFiles,includeTree,0);
 		else if ( argv[cmdarg+1][0] == 'w' )
 		       dumpWaitingTree(coll);
 		else if ( argv[cmdarg+1][0] == 'x' )
@@ -2683,12 +2643,6 @@ int main2 ( int argc , char *argv[] ) {
 	goto spellLoop;
 	*/
 
-	//if ( strcmp ( cmd , "fixtfndb" ) == 0 ) {	
-	//	char *coll = argv[cmdarg+1];
-	//	// clean out tfndb*.dat
-	//	fixTfndb ( coll ); // coll
-	//}
-
 	// make sure port is available, no use loading everything up then
 	// failing because another process is already running using this port
 	//if ( ! g_udpServer.testBind ( g_hostdb.getMyPort() ) )
@@ -2699,7 +2653,6 @@ int main2 ( int argc , char *argv[] ) {
 	int32_t *ips;
 
 	//if ( strcmp ( cmd , "gendbs"       ) == 0 ) goto jump;
-	//if ( strcmp ( cmd , "gentfndb"     ) == 0 ) goto jump;
 	if ( strcmp ( cmd , "gencatdb"     ) == 0 ) goto jump;
 	//if ( strcmp ( cmd , "genclusterdb" ) == 0 ) goto jump;
 	//	if ( cmd && ! is_digit(cmd[0]) ) goto printHelp;
@@ -2975,28 +2928,16 @@ int main2 ( int argc , char *argv[] ) {
 	//if ( ! g_syncdb.init() ) {
 	//	log("db: Syncdb init failed." ); return 1; }
 
-	// if generating spiderdb/tfndb, boost minfiles
+	// if generating spiderdb, boost minfiles
 	//if ( strcmp ( cmd, "gendbs" ) == 0 ) {
 	//	// don't let spider merge all the time!
 	//	g_conf.m_spiderdbMinFilesToMerge = 20;
-	//	g_conf.m_tfndbMinFilesToMerge    = 5;
 	//	// set up spiderdb
 	//	g_conf.m_spiderdbMaxTreeMem = 200000000; // 200M
 	//	g_conf.m_maxMem = 2950000000LL; // 2G
 	//	g_mem.m_maxMem  = 2950000000LL; // 2G
 	//}
 
-	//if ( strcmp ( cmd, "gentfndb" ) == 0 ) {
-	//	g_conf.m_tfndbMinFilesToMerge = 20;
-	//	// set up tfndb
-	//	g_conf.m_tfndbMaxTreeMem = 200000000; // 200M
-	//	g_conf.m_maxMem = 2000000000LL; // 2G
-	//	g_mem.m_maxMem  = 2000000000LL; // 2G
-	//}
-
-	// then tfndb
-	//if ( ! g_tfndb.init()   ) {
-	//	log("db: Tfndb init failed." ); return 1; }
 	// then spiderdb
 	if ( ! g_spiderdb.init()   ) {
 		log("db: Spiderdb init failed." ); return 1; }
@@ -3073,12 +3014,6 @@ int main2 ( int argc , char *argv[] ) {
 	//	char *coll = argv[cmdarg+1];
 	//	// generate the dbs
 	//	genDbs ( coll ); // coll
-	//	g_log.m_disabled = true;
-	//	return 0;
-	//}
-	//if ( strcmp ( cmd , "gentfndb" ) == 0 ) {
-	//	char *coll = argv[cmdarg+1];
-	//	genTfndb ( coll );
 	//	g_log.m_disabled = true;
 	//	return 0;
 	//}
@@ -4059,7 +3994,7 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 	// . going from 8 (3bits) hosts to 32 (5bits), for instance, old 
 	//   group id #0 would copy to group ids 0,8,16 and 24.
 	// . 000 --> 00000(#0), 01000(#8), 10000(#16), 11000(#24)
-	// . titledb and tfndb determine groupId by mod'ding the docid
+	// . titledb determine groupId by mod'ding the docid
 	//   contained in their most significant key bits with the number
 	//   of groups.  see Titledb.h::getGroupId(docid)
 	// . indexdb and tagdb mask the hi bits of the key with 
@@ -4147,9 +4082,6 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 
 		/*
 		fprintf(stderr,"scp %s:%s/titledb* %s:%s\n",
-			iptoa( h->m_ip), h->m_dir  ,
-			iptoa(h2->m_ip), h2->m_dir );
-		fprintf(stderr,"scp %s:%s/tfndb* %s:%s\n",
 			iptoa( h->m_ip), h->m_dir  ,
 			iptoa(h2->m_ip), h2->m_dir );
 		fprintf(stderr,"scp %s:%s/indexdb* %s:%s\n",
@@ -5134,7 +5066,6 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 		log("db: Failed to init hashtable." ); return ; }
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
 	//g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
-	//g_conf.m_tfndbMaxDiskPageCacheMem = 0;
 	g_titledb.init ();
 	//g_collectiondb.init(true);
 	g_titledb.getRdb()->addRdbBase1(coll);
@@ -5245,7 +5176,6 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 		int32_t blen = gbstrlen(ipbuf);
 		while ( blen < 15 ) ipbuf[blen++]=' ';
 		ipbuf[blen]='\0';
-		//int32_t  ext = g_tfndb.makeExt ( u );
 		//int32_t nc = xd->size_catIds / 4;//tr.getNumCatids();
 		if ( justPrintDups ) {
 			// print into buf
@@ -5272,7 +5202,6 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 				sprintf(ttt,
 					"n1=%08"XINT32" n0=%016"XINT64" docId=%012"INT64" "
 					//hh=%07"XINT32" ch=%08"XINT32" "
-					//"e=%02"XINT32" "
 					"size=%07"INT32" "
 					"ch32=%010"UINT32" "
 					"clen=%07"INT32" "
@@ -5297,7 +5226,6 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 					docId ,
 					//hostHash ,
 					//contentHash ,
-					//(int32_t)ext ,
 					recSize - 16 ,
 					xd->m_contentHash32,
 					xd->size_utf8Content,//tr.getContentLen
@@ -5694,7 +5622,6 @@ int32_t dumpSpiderdb ( char *coll,
 
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
 	//g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
-	//g_conf.m_tfndbMaxDiskPageCacheMem = 0;
 	g_spiderdb.init ();
 	//g_collectiondb.init(true);
 	g_spiderdb.getRdb()->addRdbBase1(coll );
@@ -6047,15 +5974,11 @@ int32_t dumpSpiderdb ( char *coll,
 // . for cleaning up indexdb
 // . print out docids in indexdb but not in our titledb, if they should be
 void dumpMissing ( char *coll ) {
-	// load tfndb, assume it is a perfect reflection of titledb
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	//g_conf.m_tfndbMaxDiskPageCacheMem = 0;
 	//g_conf.m_indexdbMaxCacheMem = 0;
 	//g_conf.m_clusterdbMaxDiskPageCacheMem = 0;
 
-	//g_tfndb.init ();
-	//g_collectiondb.init(true); // isDump?
-	//g_tfndb.getRdb()->addRdbBase1 ( coll );
+	g_collectiondb.loadAllCollRecs();
 	g_titledb.init();
 	g_titledb.getRdb()->addRdbBase1 ( coll );
 	// if titledb has stuff in memory, do not do this, it needs to
@@ -6067,8 +5990,7 @@ void dumpMissing ( char *coll ) {
 		     "click on \"dump to disk\" in the Master Controls.");
 		return;
 	}
-	// . just get the docids from tfndb...
-	// . this tfndb rec count is for ALL colls!! DOH!
+
 	// MDW FIX THIS RIGHT!
 	int64_t numRecs = 12345;//g_tfndb.getRdb()->getNumTotalRecs();
 	int64_t oldNumSlots = (numRecs * 100) / 80;
@@ -6235,11 +6157,10 @@ void dumpMissing ( char *coll ) {
 		// get his docid
 		uint64_t d = g_indexdb.getDocId(k);
 		// otherwise, report him if not in tfndb
-		//int32_t n = (uint32_t)d & mask;
 		int32_t n = (uint32_t)d % numSlots;
 		while ( slots[n] && slots[n] != d )
 			if ( ++n >= numSlots ) n = 0;
-		// if he was not in tfndb when he should have been, 
+		// if he was not in tfndb when he should have been,
 		// print him on stdout
 		if ( slots[n] == d ) continue;
 		// is he in the repeat table?
@@ -6265,7 +6186,6 @@ void dumpMissing ( char *coll ) {
 // . for cleaning up indexdb
 // . print out docids in the same termlist multiple times
 void dumpDups ( char *coll ) {
-	// load tfndb, assume it is a perfect reflection of titledb
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
 	//g_conf.m_indexdbMaxCacheMem = 0;
 
@@ -6817,16 +6737,13 @@ void removeDocIds  ( char *coll , char *filename ) {
 	//	g_conf.m_indexdbMinFilesToMerge = 100;
 	if ( g_conf.m_clusterdbMinFilesToMerge < 100 )
 		g_conf.m_clusterdbMinFilesToMerge = 100;
-	//g_conf.m_tfndbMaxDiskPageCacheMem = 0;
 	//g_conf.m_clusterdbMaxDiskPageCacheMem = 0;
 	//g_conf.m_indexdbMaxCacheMem = 0;
 	//g_conf.m_clusterdbMaxCacheMem = 0;
 
-	//g_tfndb.init();
 	g_indexdb.init ();
 	g_clusterdb.init();
 	//g_collectiondb.init(true);
-	//g_tfndb.getRdb()->addRdbBase1 ( coll );
 	g_indexdb.getRdb()->addRdbBase1 ( coll );
 	g_clusterdb.getRdb()->addRdbBase1 ( coll );
 	// this what set to 2 on me before, triggering a huge merge
@@ -7063,212 +6980,8 @@ void removeDocIds  ( char *coll , char *filename ) {
 	logf(LOG_INFO,"db: Finished removing docids from clusterdb. Saving.");
 	r->close ( NULL , NULL , false , false );
 
-
-
-
-
-	//
-	//
-	// SCAN TFNDB and remove missing docids
-	// one twin might have the docid, while the other doesn't,
-	// so make sure to remove it from both.
-	//
-	//
-
-	logf(LOG_INFO,"db: Scanning tfndb and removing recs.");
-	r = 0;//g_tfndb.getRdb();
-	count = 0;
-	scanned = 0;
-	recs = 0;
-	removed = 0;
-	tree = &r->m_tree;
-	//CollectionRec *cr = g_collectiondb.getRec(coll);
-
- loop6:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_TFNDB     ,
-			      cr->m_collnum      ,
-			      &list         ,
-			      startKey      ,
-			      endKey        ,
-			      minRecSizes   ,
-			      true          , // includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      0             , // startFileNum  ,
-			      -1            , // numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         )){// err correction?
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) return;
-	// something to log
-	scanned += list.getListSize();
-	if ( scanned >= 100000000 ) {
-		count += scanned;
-		scanned = 0;
-		logf(LOG_INFO,"db: Scanned %"INT64" bytes. Scanned %"INT64" records. "
-		     "Removed %"INT64" records.",count,recs,removed);
-	}
-	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		recs++;
-		if ( (recs & ymask) == 0x00 ) sched_yield();
-		key_t k    = list.getCurrentKey();
-		// skip deletes
-		if ( (k.n0 & 0x01) == 0x00 ) continue;
-		uint64_t d = 0;//g_tfndb.getDocId(&k);
-		// see if docid is in delete list
-		int32_t n = (uint32_t)d & mask;
-		while ( slots[n] && slots[n] != d )
-			if ( ++n >= numSlots ) n = 0;
-		// skip him if we should not delete him
-		if ( slots[n] != d ) continue;
-		// otherwise, remove him
-		// make him a delete, turn off his last bit (the del bit)
-		k.n0 &= 0xfffffffffffffffeLL;
-		if ( ! r->addRecord ( collnum , (char *)&k , NULL , 0 , 0) ) {
-			log("db: Could not delete record.");
-			return;
-		}
-		removed++;
-		// dump tree?
-		if ( tree->getNumAvailNodes() <= 0 ) {
-			// this should block
-			r->dumpTree(0);
-		}
-	}
-
-	startKey = *(key_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
-	// watch out for wrap around
-	if ( startKey >= *(key_t *)list.getLastKey() ) goto loop6;
-
-	logf(LOG_INFO,"db: Scanned %"INT64" bytes. Scanned %"INT64" records. "
-	     "Removed %"INT64" records.",count+scanned,recs,removed);
-
-	logf(LOG_INFO,"db: Finished removing docids from tfndb. Saving.");
-	r->close ( NULL , NULL , false , false );
-
-
-
-
-
 	return;
 }
-
-
-
-/*
-// . g_hostdb.m_hostId should be set correctly
-bool fixTfndb ( char *coll ) {
-	// get the list of tfns
-	g_titledb.init();
-	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	g_tfndb.init ();
-	g_collectiondb.init(true); // isDump?
-	g_tfndb.getRdb()->addRdbBase1 ( coll );
-	g_titledb.getRdb()->addRdbBase1 ( coll );
-	RdbBase *base = getRdbBase ( RDB_TITLEDB , coll );
-	int32_t nf = base->getNumFiles();
-
-	key_t startKey ;
-	key_t endKey   ;
-	startKey.setMin();
-	endKey.setMax();
-	// turn off threads
-	g_threads.disableThreads();
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
-	Msg5 msg5;
-	RdbList list;
-
-	BigFile *f = NULL;
-	RdbMap  *m = NULL;
-	int64_t offset = 0LL;
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_TFNDB     ,
-			      coll          ,
-			      &list         ,
-			      startKey      ,
-			      endKey        ,
-			      minRecSizes   ,
-			      false         , // includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      0             , // startFileNum  ,
-			      -1            , // numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         )){// err correction?
-		log(LOG_LOGIC,"db: getList did not block.");
-		exit(-1);
-	}
-	// all done if empty
-	if ( list.isEmpty() ) goto done;
-	// create new tfndb*.dat file to hold the negative keys
-	if ( ! f ) {
-		RdbBase *base = getRdbBase ( RDB_TFNDB , coll );
-	        int32_t fn = base->addNewFile ( -1 ); // id2
-		if ( fn < 0 ) {
-			log("fixtfndb: Failed to create new file for "
-			    "tfndb.");
-			exit(-1);
-		}
-		f = base->m_files [ fn ];
-		m = base->m_maps  [ fn ];
-		f->open ( O_RDWR | O_CREAT | O_EXCL , NULL );
-		log(LOG_INFO,"fixtfndb: writing fixes to %s",f->getFilename());
-	}
-
-	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		// get the tfn
-		key_t k   = list.getCurrentKey();
-		int32_t  tfn = g_tfndb.getTitleFileNum ( k );
-		if ( tfn == 255 ) continue;
-		// skip if negative
-		if ( (k.n0 & 0x01LL) == 0x00 ) continue;
-		int32_t  i = 0;
-		for ( ; i < nf ; i++ ) if ( base->m_fileIds2[i] == tfn ) break;
-		if ( i < nf ) continue;
-		// does not correspond to a tfn, remove it
-		int64_t docId = g_tfndb.getDocId        ( k );
-		int32_t      e     = g_tfndb.getExt          ( k );
-		int32_t  clean = 0  ; if ( g_tfndb.isClean ( k ) ) clean= 1;
-		int32_t  half  = 0  ; if ( k.n0 & 0x02           ) half = 1;
-		char *dd    = "" ; if ( (k.n0 & 0x01) == 0    ) dd   =" (del)";
-		fprintf(stdout,
-			"%016"XINT64" docId=%012"INT64" "
-			"e=0x%08"XINT32" tfn=%03"INT32" clean=%"INT32" half=%"INT32" %s\n",
-			k.n0,docId,e,tfn,clean,half,dd);
-		// make negative
-		k.n0 &= 0xfffffffffffffffeLL;
-		f->write ( &k , sizeof(key_t) , offset );
-		offset += sizeof(key_t);
-		//m->addRecord ( k , NULL , 0 );
-	}
-	startKey = *(key_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
-	// watch out for wrap around
-	if ( startKey >= *(key_t *)list.getLastKey() ) goto loop;
- done:
-	if ( ! f ) return true;
-	// write map
-	//m->writeMap();
-	f->close();
-	exit(1);
-	return true;
-}
-*/
 
 // . diff with indexdb in sync/ dir
 // . returns false if they differ, true otherwise
@@ -7940,111 +7653,6 @@ bool trietest ( ) {
 		}
 	}
 	return false;
-}
-*/
-
-/*
-
-bool gbgzip (char *filename) {
-	File f;
-	File w;
-	char outfile[1024];
-	*(outfile + snprintf(outfile,1023,"%s.gz",filename)) = '\0';
-	f.set (".",filename);
-	w.set (".",outfile);
-	if ( f.doesExist() && f.open ( O_RDONLY ) &&
-	     w.open (  O_RDWR | O_CREAT )) {}
-	else return log("FATAL: could not open "
-			"file for reading:%s",
-			filename);
-	g_conf.m_maxMem = 2000000000LL;
-	g_mem.m_maxMem  = 2000000000LL;
-
-	int64_t fileSize = f.getFileSize();
-	if(g_conf.m_maxMem < fileSize)
-		return log("FATAL: file too large:%s",
-			   filename);
-	char* srcbuf = (char*)mmalloc(fileSize,"gzip src");
-	int64_t dstbufSize = (int64_t)(fileSize*1.001 + 32);
-	char* dstbuf = (char*)mmalloc(dstbufSize,"gzip dst");
-	if(srcbuf == NULL || dstbuf == NULL) 
-		return log("FATAL: file too large:%s, out of memory.",
-			   filename);
-	int32_t unsigned int written = dstbufSize;
-	f.read ( srcbuf , fileSize , 0);	
-	int32_t err = gbcompress( (unsigned char*)dstbuf    ,
-			       &written,
-			       (unsigned char*)srcbuf    ,
-			       (uint32_t)fileSize ,
-			       ET_GZIP);
-	if(written == 0 || err != Z_OK)
-		if ( err == Z_BUF_ERROR ) 
-		return log("FATAL: could not write file srclen=%"INT64", "
-			   "dstlen=0, %s%s",
-			   fileSize, mstrerror(g_errno),
-			   err == Z_BUF_ERROR?", buffer too small":"");
-
-	w.write ( dstbuf , written , 0);
-	sync(); // f.flush ( );
-	return true;
-}
-
-
-bool gbgunzip (char *filename) {
-	//make the output filename:
-	char outfile[1024];
-	int32_t filenamelen = gbstrlen(filename);
-	int32_t outfilelen = filenamelen - 3;
-	if(strcmp(filename + outfilelen, ".gz") != 0)
-		return log("FATAL: could not open "
-			   "file, not a .gz:%s",
-			   filename);
-
-	gbmemcpy(outfile, filename, outfilelen);
-	outfile[outfilelen] = '\0';
-
-	//open our input and output files right away
-	File f;
-	File w;
-	f.set (filename);
-	w.set (outfile);
-	if ( f.doesExist() && f.open ( O_RDONLY ) &&
-	     w.open (  O_RDWR | O_CREAT )) {}
-	else return log("FATAL: could not open "
-			"file for reading:%s",
-			filename);
-	g_conf.m_maxMem = 2000000000LL;
-	g_mem.m_maxMem  = 2000000000LL;
-
-	int64_t fileSize = f.getFileSize();
-	if(g_conf.m_maxMem < fileSize)
-		return log("FATAL: file too large:%s",
-			   filename);
-	char* srcbuf = (char*)mmalloc(fileSize,"gzip src");
-	if(srcbuf == NULL) 
-		return log("FATAL: file too large:%s, out of memory.",
-			   filename);
-	
-	f.read ( srcbuf , fileSize , 0);	
-	int32_t dstbufSize = getGunzippedSize(srcbuf,fileSize);
-	char* dstbuf = (char*)mmalloc(dstbufSize,"gzip dst");
-	if(dstbuf == NULL) 
-		return log("FATAL: file too large:%s, out of memory.",
-			   filename);
-	int32_t unsigned int written = dstbufSize;
- 	int32_t err = gbuncompress( (unsigned char*)dstbuf    ,
-				 &written                  ,
-				 (unsigned char*)srcbuf    ,
-				 (uint32_t)fileSize);
-	if(written == 0 || err != Z_OK)
- 		if ( err == Z_BUF_ERROR ) 
- 		return log("FATAL: could not write file srclen=%"INT64", "
-			   "dstlen=0, %s%s",
- 			   fileSize, mstrerror(g_errno),
- 			   err == Z_BUF_ERROR?", buffer too small":"");
- 	w.write ( dstbuf , written , 0);
- 	sync(); // f.flush ( );
- 	return true;
 }
 */
 
@@ -9550,7 +9158,6 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	g_conf.m_maxMem = 2000000000LL; // 2G
 	//g_mem.m_maxMem  = 2000000000LL; // 2G
 	//g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
-	//g_conf.m_tfndbMaxDiskPageCacheMem = 0;
 	//g_conf.m_titledbMaxTreeMem = 1024*1024*10;
 	g_titledb.init ();
 	//g_collectiondb.init(true);
@@ -13268,10 +12875,6 @@ void saveRdbs ( int fd , void *state ) {
 	last = rdb->getLastWriteTime();
 	if ( now - last > delta )
 		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	//rdb = g_tfndb.getRdb();
-	//last = rdb->getLastWriteTime();
-	//if ( now - last > delta )
-	//	if ( ! rdb->close(NULL,NULL,false,false)) return;
 	rdb = g_spiderdb.getRdb();
 	last = rdb->getLastWriteTime();
 	if ( now - last > delta )
@@ -13396,49 +12999,6 @@ bool checkDataParity ( ) {
 	}
 
 	log ( LOG_INFO, "db: Titledb passed verification successfully. (%"INT32")",
-			count );
-	// CHECK TFNDB
-	log ( LOG_INFO, "db: Verifying Tfndb..." );
-	if ( ! msg5.getList ( RDB_TFNDB     ,
-			      coll          ,
-			      &list         ,
-			      startKey      ,
-			      endKey        ,
-			      64000         , // minRecSizes   ,
-			      true          , // includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      0             , // startFileNum  ,
-			      -1            , // numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         ))// err correction?
-		return log("db: HEY! it did not block");
-
-	count = 0;
-	got   = 0;
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		key_t k = list.getCurrentKey();
-		// skip negative keys
-		if ( (k.n0 & 0x01) == 0x00 ) continue;
-		count++;
-		// verify the group
-		uint32_t shardNum = getShardNum ( RDB_TFNDB , &k );
-		if ( groupId == g_hostdb.m_groupId ) got++;
-	}
-	if ( got != count ) {
-		log ("db: Out of first %"INT32" records in tfndb, only %"INT32" passed "
-		     "verification.",count,got);
-		// exit if NONE, we probably got the wrong data
-		if ( got == 0 ) return log("db: Are you sure you have the "
-					   "right "
-					   "data in the right directory? "
-					   "Exiting.");
-		return log ( "db: Exiting due to Tfndb inconsistency." );
-	}
-	log ( LOG_INFO, "db: Tfndb passed verification successfully. (%"INT32")",
 			count );
 
 	// DONE
@@ -13929,233 +13489,6 @@ bool dosOpen(int32_t targetIp, uint16_t port, int numSocks) {
 void  dosOpenCB( void *state, TcpSocket *s) {
 	log("init: dos timeout");
 }
-
-
-
-
-// to get some of the hosts that were added to sitesearch.gigablast.com
-// but not added in May or Apr: (this adds www. to domains that need it)
-// ./gb dump t main 0 -1 0 >& foo
-// grep ch= foo | grep -v " May-" | grep -v " Apr-" | awk '{print $13}' | urlinfo | grep "host: " | awk '{print $2}' | sort | uniq > added
-
-// then the sites that have been searched:
-// grep "search site" log0* | awk '{print $7}' | sort | uniq | urlinfo | grep "host: " | awk '{print $2}' | sort | uniq > searched
-
-// then to print out the hosts that have not been searched in a while and 
-// should be removed from the sitesearch index
-// diff added searched | grep "< " | awk '{print $2}' > toban
-
-/*
-void dumpCachedRecs (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTree,
-		     int64_t docid) {
-	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
-	g_conf.m_tfndbMaxDiskPageCacheMem = 0;
-	g_titledb.init ();
-	g_collectiondb.init(true);
-	g_titledb.getRdb()->addRdbBase1 ( coll );
-	key_t startKey ;
-	key_t endKey   ;
-	key_t lastKey  ;
-	startKey.setMin();
-	endKey.setMax();
-	lastKey.setMin();
-	startKey = g_titledb.makeFirstTitleRecKey ( docid );
-	// turn off threads
-	g_threads.disableThreads();
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
-	Msg5 msg5;
-	Msg5 msg5b;
-	Msg5 msg5c;
-	RdbList list;
-	RdbList ulist;
-
-	g_tfndb.init ();
-	g_collectiondb.init(true);
-	g_tfndb.getRdb()->addRdbBase1 ( coll );
-
-	int64_t lastDocId = 0;
-	int32_t compressBufSize = 0;
-	char* compressBuf = NULL;
-	fprintf(stderr, "Dumping Records:\n");
-	int32_t filenum = 0;
-	char filename[64];
-	sprintf(filename, "%s-%"INT32".ddmp", coll, filenum);
-	//int FD = open(filename, O_CREAT|O_WRONLY, S_IROTH);
-	int32_t numDumped = 0;
-	uint32_t bytesDumped = 0;
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_TITLEDB   ,
-			      coll          ,
-			      &list         ,
-			      startKey      ,
-			      endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      NULL          , // cache key ptr
-			      0             , // retry num
-			      -1            , // maxRetries
-			      true          , // compensate for merge
-			      -1LL          , // sync point
-			      &msg5b        )){
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) return;
-	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		key_t k       = list.getCurrentKey();
-		char *rec     = list.getCurrentRec();
-		int32_t  recSize = list.getCurrentRecSize();
-		int64_t docId       = g_titledb.getDocIdFromKey ( k );
-		if ( k <= lastKey ) 
-			log("key out of order. "
-			    "lastKey.n1=%"XINT32" n0=%"XINT64" "
-			    "currKey.n1=%"XINT32" n0=%"XINT64" ",
-			    lastKey.n1,lastKey.n0,
-			    k.n1,k.n0);
-		lastKey = k;
-		// print deletes
-// 		if ( (k.n0 & 0x01) == 0) {
-// 			fprintf(stderr,"n1=%08"XINT32" n0=%016"XINT64" docId=%012"INT64" "
-// 			       "hh=%07"XINT32" ch=%08"XINT32" (del)\n", 
-// 			       k.n1 , k.n0 , docId , hostHash , contentHash );
-// 			continue;
-// 		}
-		// uncompress the title rec
-		TitleRec tr;
-		if ( ! tr.set ( rec , recSize , false ) )
-			continue;
-		
-		lastDocId = tr.getDocId();
-		// extract the url
-		Url *u = tr.getUrl();
-		int32_t  ext = g_tfndb.makeExt ( u );
-
-		key_t uk1 ;
-		key_t uk2 ;
-		uk1 = g_tfndb.makeMinKey ( docId );
-		uk2 = g_tfndb.makeMaxKey ( docId );
-
-		if(! msg5c.getList ( RDB_TFNDB         ,
-				     coll              ,
-				     &ulist            ,
-				     uk1               , // startKey
-				     uk2               , // endKey
-				     0x7fffffff        , // minRecSizes
-				     true              , // includeTree?
-				     false             , // addToCache?
-				     0                 , // max cache age
-				     0                 , // startFileNum
-				     -1                , // numFiles (-1 =all)
-				     NULL              ,
-				     NULL              ,
-				     0                 , //nice
-				     false             )) { //error correct
-			log(LOG_LOGIC,"db: getList did not block.");
-			return;
-		}
-		if(g_errno) {
-			log(LOG_LOGIC,"db: tfndb getList had error: %s", 
-				mstrerror(g_errno));
-		}
-		bool found = false;
-		for ( ulist.resetListPtr(); 
-		      ! ulist.isExhausted() ; 
-		      ulist.skipCurrentRecord() ) {
-
-			key_t k = ulist.getCurrentKey();
-
-			if ( g_tfndb.getExt ( k ) == ext ) {
-				found = true;
-				break;
-			}
-		}
-		
-		if(!found) {
-			//fprintf(stderr, "skipping %s %"INT64"\n", u->getUrl(), docId);
-			continue;
-		}
-
-		int32_t needSize = (int32_t)(tr.getContentLen() * 1.01 + 12);
-		if(needSize > compressBufSize) {
-			char* newBuf = (char*)mrealloc(compressBuf, compressBufSize, needSize, "recDump");
-			if(!newBuf) {
-				log(LOG_WARN,"dump:couldn't dump this record:%s, no memory", u->getUrl());
-				continue;
-			}
-			compressBufSize = needSize;
-			compressBuf = newBuf;
-		}
-
-		uint32_t destLen = compressBufSize;
-		
-		int status = compress((unsigned char*)compressBuf, 
-				      &destLen,
-				      (unsigned char*)tr.getContent(),
-				      (uint32_t)tr.getContentLen());
-		
-		if(status != Z_OK) {
-			log(LOG_WARN,"dump:couldn't dump this record:"
-			    "%s, compress failed", u->getUrl());
-			continue;
-		}
-		
-		
-		int32_t totSize = 2*sizeof(int32_t) + destLen + u->getUrlLen()+1;
-		int32_t conLen  = tr.getContentLen();
-		
-		//fprintf(stderr, "%"INT32" %s %"INT32" %"INT32"\ng", totSize, u->getUrl(), conLen, destLen);
-
-		write(FD, (char*)&totSize, sizeof(int32_t));
-		write(FD, u->getUrl(), u->getUrlLen() + 1);
-		write(FD, (char*)&conLen, sizeof(int32_t));
-		write(FD, (char*)&(destLen), sizeof(int32_t));
-		write(FD, compressBuf, destLen);
-		numDumped++;
-		bytesDumped += totSize;
-// 		if(numDumped == 1000) {
-// 			//change this later!!!!!!!!!!
-// 			int32_t zero = 0;
-// 			write(FD, &zero, sizeof(int32_t));
-// 			return;
-// 		}
-	}
-	fprintf(stderr, "dumped %"INT32" records (%"INT32" bytes).\n",numDumped, bytesDumped);
-	startKey = *(key_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
-	// watch out for wrap around
-
-	if ( startKey < *(key_t *)list.getLastKey() ) {
-		int32_t zero = 0;
-		write(FD, &zero, sizeof(int32_t));
-		return;
-	}
-
-	//start a new file if this one gets too big
-	if(bytesDumped > 1000000000) {
-		filenum++;
-		sprintf(filename, "%s-%"INT32".ddmp", coll, filenum);
-		close(FD);
-		//FD = open(filename, O_CREAT|O_WRONLY, S_IROTH);
-		bytesDumped = 0;
-		fprintf(stderr, "Started new file: %s. starts at docId: %"INT64".\n",filename, lastDocId);
-	}
-	goto loop;
-}
-*/
 
 // CountDomains Structures and function definitions
 struct lnk_info {
@@ -15370,7 +14703,6 @@ void testSpamRules(char *coll,
 	//int32_t collLen = gbstrlen(coll);
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
 	g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
-	g_conf.m_tfndbMaxDiskPageCacheMem = 0;
 	g_titledb.init ();
 	g_collectiondb.init(true);
 	g_titledb.getRdb()->addRdbBase1 ( coll );
@@ -15395,9 +14727,7 @@ void testSpamRules(char *coll,
 		log("Unicode initialization failed!");
 	}
 
-	g_tfndb.init ();
 	g_collectiondb.init(true);
-	g_tfndb.getRdb()->addRdbBase1 ( coll );
 
  loop:
 	// use msg5 to get the list, should ALWAYS block since no threads
