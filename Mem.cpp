@@ -1820,21 +1820,6 @@ key_t ntohkey ( key_t key ) {
 	return newKey;
 }
 
-// this can be sped up drastiaclly if needed
-uint32_t reverseBits ( uint32_t x ) {
-	// init groupId
-	uint32_t y = 0;
-	// go through each bit in hostId
-	for ( int32_t srcBit = 0 ; srcBit < 32 ; srcBit++ ) {
-		// get status of bit # srcBit
-		bool isOn = x & (1 << srcBit);
-		// set destination bit in the groupId
-		if ( isOn ) y |= (1 << (31 - srcBit) );
-	}
-	// return the bit reversal of x
-	return y;
-}
-
 // like above, but we start copying at HIGH bit so you can
 // shift your recs without interference
 int32_t Mem::printBits  ( void *src, int32_t srcBits , int32_t nb ) {

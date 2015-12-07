@@ -51,8 +51,6 @@ uint32_t      getHighestLitBitValue   ( uint32_t      bits ) ;
 uint64_t getHighestLitBitValueLL ( uint64_t bits ) ;
 
 
-uint32_t reverseBits ( uint32_t x ) ;
-
 inline int gbstrlen ( const char *s ) {
 	if ( ! s ) { char *xx=NULL;*xx=0; }
 	return strlen(s);
