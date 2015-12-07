@@ -35,7 +35,7 @@ uint32_t      hash32_cont      ( char *s, char *slen,
 				 uint32_t startHash , int32_t *conti );
 uint64_t      hash64n          ( char *s, uint64_t startHash =0LL);
 uint64_t      hash64           ( uint64_t h1,uint64_t h2);
-uint64_t      hash64           ( char *s,int32_t len,uint64_t startHash=0);
+uint64_t      hash64           ( const char *s,int32_t len,uint64_t startHash=0);
 uint64_t      hash64_cont      ( char *s,int32_t len,
 				 uint64_t startHash,int32_t *conti);
 uint64_t      hash64b          ( char *s,         uint64_t startHash=0);
@@ -74,7 +74,7 @@ inline uint64_t hash64b ( char *s , uint64_t startHash ) {
 	return h;
 }
 
-inline uint64_t hash64 ( char *s, int32_t len, 
+inline uint64_t hash64 ( const char *s, int32_t len, 
 				   uint64_t startHash ) {
 	uint64_t h = startHash;
 	int32_t i = 0;

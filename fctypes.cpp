@@ -15,28 +15,6 @@ bool isClockInSync() {
 }
 
 
-bool print96 ( char *k ) {
-        key_t *kp = (key_t *)k;
-        printf("n1=0x%"XINT32" n0=0x%"XINT64"\n",(int32_t)kp->n1,(int64_t)kp->n0);
-	return true;
-}
-
-bool print96 ( key_t *kp ) {
-        printf("n1=0x%"XINT32" n0=0x%"XINT64"\n",(int32_t)kp->n1,(int64_t)kp->n0);
-	return true;
-}
-
-bool print128 ( char *k ) {
-        key128_t *kp = (key128_t *)k;
-        printf("n1=0x%"XINT64" n0=0x%"XINT64"\n",(int64_t)kp->n1,(int64_t)kp->n0);
-	return true;
-}
-
-bool print128 ( key128_t *kp ) {
-        printf("n1=0x%"XINT64" n0=0x%"XINT64"\n",(int64_t)kp->n1,(int64_t)kp->n0);
-	return true;
-}
-
 // . put all the maps here now
 // . convert "c" to lower case
 	const unsigned char g_map_to_lower[] = {
@@ -530,7 +508,7 @@ const char g_map_is_vowel[] = {
 		0,0,0,0,0,0,0,0, // 240
 		0,0,0,0,0,0,0,0};
 
-char *strncasestr( char *haystack, int32_t haylen, char *needle){
+char *strncasestr( char *haystack, int32_t haylen, const char *needle){
 	int32_t matchLen = 0;
 	int32_t needleLen = gbstrlen(needle);
 	for (int32_t i = 0; i < haylen;i++){
@@ -551,7 +529,7 @@ char *strncasestr( char *haystack, int32_t haylen, char *needle){
 	return NULL;
 }
 
-char *strnstr2( char *haystack, int32_t haylen, char *needle) {
+char *strnstr2( char *haystack, int32_t haylen, const char *needle) {
 	int32_t matchLen = 0;
 	int32_t needleLen = gbstrlen(needle);
 	for (int32_t i = 0; i < haylen; ++i) {
@@ -755,8 +733,8 @@ void hexToBin ( const char *src , int32_t srcLen , char *dst ) {
 	if ( src != srcEnd ) { char *xx=NULL;*xx=0; }
 }
 
-void binToHex ( unsigned char *src , int32_t srcLen , char *dst ) {
-	unsigned char *srcEnd = src + srcLen;
+void binToHex ( const unsigned char *src , int32_t srcLen , char *dst ) {
+	const unsigned char *srcEnd = src + srcLen;
 	for ( ; src && src < srcEnd ; ) {
 		*dst++ = btoh(*src>>4);
 		*dst++ = btoh(*src&15);
@@ -771,7 +749,7 @@ void binToHex ( unsigned char *src , int32_t srcLen , char *dst ) {
 
 // . like strstr but haystack may not be NULL terminated
 // . needle, however, IS null terminated
-char *strncasestr ( char *haystack , char *needle , int32_t haystackSize ) {
+char *strncasestr ( char *haystack , const char *needle , int32_t haystackSize ) {
 	int32_t needleSize = gbstrlen(needle);
 	int32_t n = haystackSize - needleSize ;
 	for ( int32_t i = 0 ; i <= n ; i++ ) {
@@ -789,7 +767,7 @@ char *strncasestr ( char *haystack , char *needle , int32_t haystackSize ) {
 
 // . like strstr but haystack may not be NULL terminated
 // . needle, however, IS null terminated
-char *strncasestr ( char *haystack , char *needle , 
+char *strncasestr ( char *haystack , const char *needle , 
 		    int32_t haystackSize, int32_t needleSize ) {
 	int32_t n = haystackSize - needleSize ;
 	for ( int32_t i = 0 ; i <= n ; i++ ) {
@@ -821,7 +799,7 @@ char *strnstr ( char *haystack , char *needle , int32_t haystackSize ) {
 }
 
 // independent of case
-char *gb_strcasestr ( char *haystack , char *needle ) {
+char *gb_strcasestr ( char *haystack , const char *needle ) {
 	int32_t needleSize   = gbstrlen(needle);
 	int32_t haystackSize = gbstrlen(haystack);
 	int32_t n = haystackSize - needleSize ;
@@ -839,7 +817,7 @@ char *gb_strcasestr ( char *haystack , char *needle ) {
 }
 
 
-char *gb_strncasestr ( char *haystack , int32_t haystackSize , char *needle ) {
+char *gb_strncasestr ( char *haystack , int32_t haystackSize , const char *needle ) {
 	// temp term
 	char c = haystack[haystackSize];
 	haystack[haystackSize] = '\0';
@@ -852,34 +830,34 @@ char *gb_strncasestr ( char *haystack , int32_t haystackSize , char *needle ) {
 // . store "t" into "s"
 // . returns bytes stored into "s"
 // . NULL terminates "s" if slen > 0
-int32_t saftenTags ( char *s , int32_t slen , char *t , int32_t tlen ) {
-	char *start = s ;
+int32_t saftenTags ( char *dst , int32_t dstlen , const char *src , int32_t srclen ) {
+	char *start = dst ;
 	// bail if slen is 0
-	if ( slen <= 0 ) return 0;
+	if ( dst <= 0 ) return 0;
 	// leave a char for the \0
-	char *send  = s + slen - 1;
-	char *tend  = t + tlen;
-	for ( ; t < tend && s + 4 < send ; t++ ) {
-		if ( *t == '<' ) {
-			*s++ = '&';
-			*s++ = 'l';
-			*s++ = 't';
-			*s++ = ';';
+	char *dstend  = dst + dstlen - 1;
+	const char *srcend  = src + srclen;
+	for ( ; src < srcend && dst + 4 < dstend ; src++ ) {
+		if ( *src == '<' ) {
+			*dst++ = '&';
+			*dst++ = 'l';
+			*dst++ = 't';
+			*dst++ = ';';
 			continue;
 		}			
-		if ( *t == '>' ) {
-			*s++ = '&';
-			*s++ = 'g';
-			*s++ = 't';
-			*s++ = ';';
+		if ( *src == '>' ) {
+			*dst++ = '&';
+			*dst++ = 'g';
+			*dst++ = 't';
+			*dst++ = ';';
 			continue;
 		}			
-		*s++ = *t;
+		*dst++ = *src;
 	}
-	// NULL terminate "s"
-	*s = '\0';
+	// NULL terminate "dst"
+	*dst = '\0';
 	// return # of bytes, excluding \0, stored into s
-	return s - start;
+	return dst - start;
 }
 
 // . if "doSpecial" is true, then we change &lt;, &gt; and &amp; to
@@ -888,11 +866,11 @@ int32_t saftenTags ( char *s , int32_t slen , char *t , int32_t tlen ) {
 //   UnicodeData.txt:22E7;GREATER-THAN BUT NOT EQUIVALENT TO;Sm;0;ON;;;;;Y;
 //   UnicodeData.txt:E0026;TAG AMPERSAND;Cf;0;BN;;;;;N;;;;;
 //   UnicodeData.txt:235E;APL FUNCTIONAL SYMBOL QUOTE QUAD;So;0;L;;;;;N;;;;; 
-int32_t htmlDecode ( char *dst , char *src , int32_t srcLen , bool doSpecial ,
+int32_t htmlDecode ( char *dst , const char *src , int32_t srcLen , bool doSpecial ,
 		  int32_t niceness ) {
 	if ( srcLen == 0 ) return 0;
 	char *start  = dst;
-	char *srcEnd = src + srcLen;
+	const char *srcEnd = src + srcLen;
 	for ( ; src < srcEnd ; ) {
 		// breathe
 		QUICKPOLL(niceness);
@@ -995,44 +973,12 @@ int32_t htmlDecode ( char *dst , char *src , int32_t srcLen , bool doSpecial ,
 	return dst - start;
 }
 
-// cdata 
-int32_t cdataDecode ( char *dst , char *src , int32_t niceness ) {
-	if ( ! src ) return 0;
-	char *start  = dst;
-	for ( ; *src ; ) {
-		// breathe
-		QUICKPOLL(niceness);
-		// utf8 support?
-		char size = getUtf8CharSize(src);
-		// see SafeBuf::cdataEncode() we do the opposite here
-		if ( src[0] != ']' ||
-		     src[1] != ']' ||
-		     src[2] != '&' ||
-		     src[3] != 'g' ||
-		     src[4] != 't' ) {
-			if ( size == 1 ) { *dst++ = *src++; continue; }
-			gbmemcpy ( dst , src , size );
-			src += size;
-			dst += size;
-			continue;
-			//*dst++ = *src++; continue; }
-		}
-		// make it ]]>
-		gbmemcpy ( dst , "]]>" , 3 );
-		src += 5;
-		dst += 3;
-	}
-	// NULL term
-	*dst = '\0';
-	return dst - start;
-}
-
 // . make something safe as an form input value by translating the quotes
 // . store "t" into "s" and return bytes stored
 // . does not do bounds checking
-int32_t dequote ( char *s , char *send , char *t , int32_t tlen ) {
+int32_t dequote ( char *s , char *send , const char *t , int32_t tlen ) {
 	char *start = s;
-	char *tend = t + tlen;
+	const char *tend = t + tlen;
 	for ( ; t < tend && s < send ; t++ ) {
 		if ( *t == '"' ) {
 			if ( s + 5 >= send ) return 0;
@@ -1051,129 +997,71 @@ int32_t dequote ( char *s , char *send , char *t , int32_t tlen ) {
 	return s - start;
 }
 
-bool dequote ( SafeBuf* sb , char *t , int32_t tlen ) {
-	char *tend = t + tlen;
-	for ( ; t < tend; t++ ) {
-		if ( *t == '"' ) {
-			sb->safeMemcpy("&#34;", 5);
-			continue;
-		}
-		*sb += *t;		
-	}
-	*sb += '\0';
-	return true;
-}
-
-//int32_t dequote ( char *s , char *t ) {
-//	return dequote ( s , t , gbstrlen ( t ) );
-//}
 
 // . entity-ize a string so it's safe for html output
 // . store "t" into "s" and return bytes stored
 // . does bounds checking
-char *htmlEncode ( char *s , char *send , char *t , char *tend , bool pound ,
-		   int32_t niceness ) {
-	for ( ; t < tend ; t++ ) {
+char *htmlEncode ( char *dst, char *dstend, const char *src, const char *srcend,
+		   bool pound, int32_t niceness ) {
+	for ( ; src < srcend ; src++ ) {
 		QUICKPOLL(niceness);
-		if ( s + 7 >= send ) { *s = '\0'; return s; }
-		if ( *t == '"' ) {
-			*s++ = '&';
-			*s++ = '#';
-			*s++ = '3';
-			*s++ = '4';
-			*s++ = ';';
+		if ( dst + 7 >= dstend ) { *dst = '\0'; return dst; }
+		if ( *src == '"' ) {
+			*dst++ = '&';
+			*dst++ = '#';
+			*dst++ = '3';
+			*dst++ = '4';
+			*dst++ = ';';
 			continue;
 		}
-		if ( *t == '<' ) {
-			*s++ = '&';
-			*s++ = 'l';
-			*s++ = 't';
-			*s++ = ';';
+		if ( *src == '<' ) {
+			*dst++ = '&';
+			*dst++ = 'l';
+			*dst++ = 't';
+			*dst++ = ';';
 			continue;
 		}
-		if ( *t == '>' ) {
-			*s++ = '&';
-			*s++ = 'g';
-			*s++ = 't';
-			*s++ = ';';
+		if ( *src == '>' ) {
+			*dst++ = '&';
+			*dst++ = 'g';
+			*dst++ = 't';
+			*dst++ = ';';
 			continue;
 		}
-		if ( *t == '&' ) {
-			*s++ = '&';
-			*s++ = 'a';
-			*s++ = 'm';
-			*s++ = 'p';
-			*s++ = ';';
+		if ( *src == '&' ) {
+			*dst++ = '&';
+			*dst++ = 'a';
+			*dst++ = 'm';
+			*dst++ = 'p';
+			*dst++ = ';';
 			continue;
 		}
-		if ( *t == '#' && pound ) {
-			*s++ = '&';
-			*s++ = '#';
-			*s++ = '0';
-			*s++ = '3';
-			*s++ = '5';
-			*s++ = ';';
+		if ( *src == '#' && pound ) {
+			*dst++ = '&';
+			*dst++ = '#';
+			*dst++ = '0';
+			*dst++ = '3';
+			*dst++ = '5';
+			*dst++ = ';';
 			continue;
 		}
-		*s++ = *t;		
+		*dst++ = *src;		
 	}
-	*s = '\0';
-	return s;
+	*dst = '\0';
+	return dst;
 }
 
-
-// . entity-ize a string so it's safe for html output
-// . store "t" into "s" and return true on success
-bool htmlEncode ( SafeBuf* s , char *t , char *tend , bool pound ,
-		  int32_t niceness ) {
-	for ( ; t < tend ; t++ ) {
-		QUICKPOLL(niceness);
-		if ( *t == '"' ) {
-			s->safeMemcpy("&#34;", 5);
-			continue;
-		}
-		if ( *t == '<' ) {
-			s->safeMemcpy("&lt;", 4);
-			continue;
-		}
-		if ( *t == '>' ) {
-			s->safeMemcpy("&gt;", 4);
-			continue;
-		}
-		if ( *t == '&' ) {
-			s->safeMemcpy("&amp;", 5);
-			continue;
-		}
-		if ( *t == '#' && pound ) {
-			s->safeMemcpy("&#035;", 6);
-			continue;
-		}
-		// our own specially decoded entites!
-		if ( *t == '+' && t[1]=='!' && t[2]=='-' ) {
-			s->safeMemcpy("&lt;",4);
-			continue;
-		}
-		// our own specially decoded entites!
-		if ( *t == '-' && t[1]=='!' && t[2]=='+' ) {
-			s->safeMemcpy("&gt;",4);
-			continue;
-		}
-		*s += *t;
-	}
-	*s += '\0';
-	return true;
-}
 
 // . convert "-->%22 , &-->%26, +-->%2b, space-->+, ?-->%3f is that it?
 // . convert so we can display as a cgi PARAMETER within a url
 // . used by HttPage2 (cached web page) to encode the query into a url
 // . used by PageRoot to do likewise
 // . returns bytes written into "d" not including terminating \0
-int32_t urlEncode ( char *d , int32_t dlen , char *s , int32_t slen, bool requestPath ) {
+int32_t urlEncode ( char *d , int32_t dlen , const char *s , int32_t slen, bool requestPath ) {
 	char *dstart = d;
 	// subtract 1 to make room for a terminating \0
 	char *dend = d + dlen - 1;
-	char *send = s + slen;
+	const char *send = s + slen;
 	for ( ; s < send && d < dend ; s++ ) {
 		if ( *s == '\0' && requestPath ) {
 			*d++ = *s;
@@ -1221,48 +1109,9 @@ int32_t urlEncode ( char *d , int32_t dlen , char *s , int32_t slen, bool reques
 	return d - dstart;
 }
 
-// determine the length of the encoded url, does NOT include NULL
-int32_t urlEncodeLen ( char *s , int32_t slen , bool requestPath ) {
-	int32_t  dLen = 0;
-	char *send = s + slen;
-	for ( ; s < send ; s++ ) {
-		if ( *s == '\0' && requestPath ) {
-			dLen++;
-			continue;
-		}
-		// encode if not fit for display
-		if ( ! is_ascii ( *s ) ) goto encode;
-		switch ( *s ) {
-		case ' ': goto encode;
-		case '&': goto encode;
-		case '"': goto encode;
-		case '+': goto encode;
-		case '%': goto encode;
-		case '#': goto encode;
-		// encoding < and > are more for displaying on an
-		// html page than sending to an http server
-		case '>': goto encode;
-		case '<': goto encode;
-		case '?': if ( requestPath ) break;
-			  goto encode;
-		}
-		// otherwise, no need to encode
-		dLen++;
-		continue;
-	encode:
-		// space to +
-		if ( *s == ' ' ) { dLen++; continue; }
-		// hex code
-		dLen += 3; // %XX
-	}
-	//dLen++; // NULL TERM
-	// and return the length
-	return dLen;
-}
-
 // . decodes "s/slen" and stores into "dest"
 // . returns the number of bytes stored into "dest"
-int32_t urlDecode ( char *dest , char *s , int32_t slen ) {
+int32_t urlDecode ( char *dest , const char *s , int32_t slen ) {
 	int32_t j = 0;
 	for ( int32_t i = 0 ; i < slen ; i++ ) {
 		if ( s[i] == '+' ) { dest[j++]=' '; continue; }
@@ -1282,7 +1131,7 @@ int32_t urlDecode ( char *dest , char *s , int32_t slen ) {
 }
 
 
-int32_t urlDecodeNoZeroes ( char *dest , char *s , int32_t slen ) {
+int32_t urlDecodeNoZeroes ( char *dest , const char *s , int32_t slen ) {
 	int32_t j = 0;
 	for ( int32_t i = 0 ; i < slen ; i++ ) {
 		if ( s[i] == '+' ) { dest[j++]=' '; continue; }
@@ -1306,91 +1155,6 @@ int32_t urlDecodeNoZeroes ( char *dest , char *s , int32_t slen ) {
 		i += 2;
 	}
 	return j;
-}
-
-// . like above, but only decodes chars that should not have been encoded
-// . will also encode binary chars
-int32_t urlNormCode ( char *d , int32_t dlen , char *s , int32_t slen ) {
-	// save start of detination buffer for returning the length
-	char *dstart = d;
-	// subtract 1 for NULL termination
-	char *dend = d + dlen - 1;
-	char *send = s + slen;
-	for ( ; s < send && d < dend ; s++ ) {
-		// if its non-ascii, encode it so it displays correctly
-		if ( ! is_ascii ( *s ) ) {
-			// break if no room to encode it
-			if ( d + 2 >= dend ) break;
-			// store it encoded
-			*d++ = '%';
-			// store first hex digit
-			unsigned char v = ((unsigned char)*s)/16 ;
-			if ( v < 10 ) v += '0';
-			else          v += 'A' - 10;
-			*d++ = v;
-			// store second hex digit
-			v = ((unsigned char)*s) & 0x0f ;
-			if ( v < 10 ) v += '0';
-			else          v += 'A' - 10;
-			*d++ = v;
-			continue;
-		}
-		// store it
-		*d++ = *s;
-		// but it might be something encoded that should not have been
-		if ( *s != '%' ) continue;
-		// it requires to following chars to decode
-		if ( s + 2 >= send ) continue;
-		// if two chars after are not hex chars, it's not an encoding
-		if ( ! is_hex ( s[1] ) ) continue;
-		if ( ! is_hex ( s[2] ) ) continue;
-		// convert hex chars to values
-		unsigned char a = htob ( s[1] ) * 16; 
-		unsigned char b = htob ( s[2] )     ;
-		unsigned char v = a + b;
-		// don't decode if it decodes in these chars
-		switch ( v ) {
-		case ' ': continue;
-		case '&': continue;
-		case '"': continue;
-		case '+': continue;
-		case '%': continue;
-		case '>': continue;
-		case '<': continue;
-		case '?': continue;
-		case '=': continue;
-		}
-		// otherwise, it's fine to decode it
-		d[-1] = (char) (a + b);
-		// skip over those 2 chars as well as leading '%'
-		s += 2;
-	}
-	// NULL terminate
-	*d = '\0';
-	// return length
-	return d - dstart ;
-}
-
-// approximate # of non-punct words
-int32_t getNumWords ( char *s ) {
-	int32_t count = 0;
- loop:
-	// skip punct
-	while ( ! is_alnum_a(*s) ) s++;
-	// bail if done
-	if ( !*s ) return count;
-	// count a word
-	count++;
-	// skip word
-	while ( is_alnum_a(*s) ) s++;
-	// watch for ' letter punct
-	if ( *s=='\'' && is_alnum_a(*(s+1))  && !is_alnum_a(*(s+2)) ) {
-		// skip apostrophe
-		s++;
-		// skip rest of word
-		while ( is_alnum_a(*s) ) s++;
-	}
-	goto loop;
 }
 
 static int64_t s_adjustment = 0;
@@ -1428,7 +1192,7 @@ static char s_tafile[1024];
 static bool s_hasFileName = false;
 
 // returns false and sets g_errno on error
-bool setTimeAdjustmentFilename ( char *dir, char *filename ) {
+bool setTimeAdjustmentFilename ( const char *dir, const char *filename ) {
 	s_hasFileName = true;
 	int32_t len1 = gbstrlen(dir);
 	int32_t len2 = gbstrlen(filename);
@@ -1935,7 +1699,7 @@ bool is_urlchar(char s) {
 	return false;
 }
 // don't allow "> in our input boxes
-int32_t cleanInput(char *outbuf, int32_t outbufSize, char *inbuf, int32_t inbufLen){
+int32_t cleanInput(char *outbuf, int32_t outbufSize, const char *inbuf, int32_t inbufLen){
 	char *p = outbuf;
 	int32_t numQuotes=0;
 	int32_t lastQuote = 0;
@@ -2168,57 +1932,11 @@ bool deserializeMsg2 ( char    **firstStrPtr , // ptr_url
 	return true;
 }
 
-// print it to stdout for debugging Dates.cpp
-int32_t printTime ( time_t ttt ) {
-	//char *s = ctime(&ttt);
-	// print in UTC!
-	char *s = asctime ( gmtime(&ttt) );
-	// strip \n
-	s[gbstrlen(s)-1] = '\0';
-	fprintf(stderr,"%s UTC\n",s);
-	return 0;
-}
-
-// this uses our local timezone which is MST, so we need to tell
-// it to use UTC somehow...
-time_t mktime_utc ( struct tm *ttt ) {
-	time_t local = mktime ( ttt );
-	// bad?
-	if ( local < 0 ) return local;
-	/*
-	// sanity check
-	static char s_mm = 1;
-	static int32_t s_localOff;
-	if ( s_mm ) {
-		s_mm = 0;
-		struct tm ff;
-		ff.tm_mon  = 0;
-		ff.tm_year = 70;
-		ff.tm_mday  = 1;
-		ff.tm_hour = 0;
-		ff.tm_min  = 0;
-		ff.tm_sec  = 0;
-		int32_t qq = mktime ( &ff );
-		//fprintf(stderr,"qq=%"INT32"\n",qq);
-		// . set this then
-		// . we subtract s_localOff to further mktime() returns to
-		//   get it into utc
-		s_localOff = qq;
-		// sanity
-		if ( s_localOff != timezone ) { char *xx=NULL;*xx=0; }
-	}
-	*/
-	// see what our timezone is!
-	//fprintf(stderr,"%"INT32"=tz\n",timezone);
-	// mod that
-	return local - timezone;
-}
-
-bool verifyUtf8 ( char *txt , int32_t tlen ) {
+bool verifyUtf8 ( const char *txt , int32_t tlen ) {
 	if ( ! txt  || tlen <= 0 ) return true;
 	char size;
-	char *p = txt;
-	char *pend = txt + tlen;
+	const char *p = txt;
+	const char *pend = txt + tlen;
 	for ( ; p < pend ; p += size ) {
 		size = getUtf8CharSize(p);
 		// skip if ascii
@@ -2240,7 +1958,7 @@ bool verifyUtf8 ( char *txt , int32_t tlen ) {
 	return true;
 }
 
-bool verifyUtf8 ( char *txt ) {
+bool verifyUtf8 ( const char *txt ) {
 	int32_t tlen = gbstrlen(txt);
 	return verifyUtf8(txt,tlen);
 }
