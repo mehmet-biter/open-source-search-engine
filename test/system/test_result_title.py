@@ -39,7 +39,7 @@ def test_title_emoticon(gb_api, httpserver, filename, expected_title):
     verify_title(gb_api, httpserver, 'data/html/' + filename, expected_title)
 
 
-@pytest.mark.parametrize('filename, custom_filename, expected_title', [
+@pytest.mark.parametrize('filename, expected_title, custom_filename', [
     # filename                          expected_title                              custom_filename
     ('title_word_no_prop.pdf',          'title.pdf',                                'title.pdf'),
     ('title_word_no_prop.pdf',          '',                                         ''),
