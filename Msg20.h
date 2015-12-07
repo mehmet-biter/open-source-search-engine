@@ -168,7 +168,6 @@ public:
 	// array of Msg20s.
 	//void clearBigSample ( ) { size_sbuf = 0; };
 	void clearOutlinks  ( ) { 
-		size_obuf = 0; 
 		size_linkText = 0;
 		size_surroundingText = 0;
 		//size_linkInfo = 0;
@@ -188,7 +187,6 @@ public:
 		return s;
 	};
 
-	char       m_version             ;
 	int32_t       m_ip                  ;
 	int32_t       m_firstIp             ;
 	int32_t       m_wordPosStart        ;
@@ -202,14 +200,12 @@ public:
 	int32_t       m_discoveryDate       ; // for the inlink in question...
 	int32_t       m_errno               ; // LinkInfo uses it for LinkTextRepl
 	collnum_t  m_collnum             ; // collection # we came from
-	char       m_sumFromDmoz         ; // unused
 	char       m_noArchive           ;
 	char       m_contentType         ;
 	//char       m_docQuality          ;
 	char       m_siteRank            ;
 	char       m_isBanned            ;
 	char       m_isFiltered          ;
-	char       m_eventExpired        ;
 	char       m_hasLinkToOurDomOrHost;
 	char       m_urlFilterNum        ;
 	char       m_hopcount            ;
@@ -249,7 +245,6 @@ public:
 	//int32_t       m_linkTextLinkerQualityBoost ;
 	//int32_t       m_linkTextNumWordsBoost    ;
 	//int32_t       m_linkTextBaseScore   ;
-	char      *m_linkTextNote        ;
 
 	//int32_t       m_pagePop             ; // set for m_computeLinkInfo
 	//int32_t     m_siteRootPagePop     ; // set for m_computeLinkInfo
@@ -261,9 +256,7 @@ public:
 	void         *m_parentOwner;
 	char          m_constructorId;
 
-	char       m_inlinkWeight        ; // set for m_getLinkText
 	char       m_isLinkSpam          ; // set for m_getLinkText
-	char       m_isAnomaly           ; // set for m_getLinkText
 	char       m_outlinkInContent    ; // set for m_getLinkText
 	char       m_outlinkInComment    ; // set for m_getLinkText
 	char       m_hasAllQueryTerms    ; // set for m_getLinkText (buzz)
@@ -282,25 +275,16 @@ public:
 	char       *ptr_ubuf                 ; // url buffer
 	char       *ptr_rubuf                ; // redirect url buffer
 	char       *ptr_displaySum           ; // summary for displaying
-	char       *ptr_dedupSum             ; // summary for deduping
 	char       *ptr_dbuf                 ; // display metas \0 separated
 	//char     *ptr_sbuf                 ; // big sample buf for gigabits
 	char       *ptr_gigabitSample        ;
-	char       *ptr_obuf                 ; // outlinks buf, \0 separated
 	char       *ptr_mbuf                 ; // match offsets
 	char       *ptr_vbuf                 ; // summary vector
-	char       *ptr_tvbuf                ; // title vector
-	char       *ptr_gbvecbuf             ; // gigabit vector
 	char       *ptr_imgUrl               ; // youtube/metacafe vid thumb
 	char       *ptr_imgData              ; // for encoded images
 	char       *ptr_facetBuf             ;
 	//char       *ptr_eventEnglishTime     ; // "every saturday [[]] jan"
 	//char       *ptr_eventDateIntervals   ;
-	char       *ptr_likedbList           ;
-
-	char       *ptr_matchedQueryWords    ;
-	char       *ptr_numMatchedQueryWords ;
-	char       *ptr_matchedTypes         ;
 
 	int32_t       *ptr_catIds               ;
 	int32_t       *ptr_indCatIds            ;
@@ -313,8 +297,6 @@ public:
 	//char     *ptr_tagRec               ;
 	char       *ptr_site                 ;
 	char       *ptr_gbAdIds              ;
-	char       *ptr_summLocs             ;
-	char       *ptr_summLocsPops         ;
 
 	// . if m_computeLinkInfo is true this is computed using Msg25 (fresh)
 	// . if m_setLinkInfo is true this is just set from the titleRec
@@ -336,7 +318,6 @@ public:
 	char       *ptr_rssItem              ; // set for m_getLinkText
 	char       *ptr_categories           ;
 	char       *ptr_gigabitQuery         ; // , separated list of gigabits
-	int32_t    *ptr_gigabitScores        ; // 1-1 with the terms in query
 	char       *ptr_content              ; // page content in utf8
 	char       *ptr_sectionVotingInfo    ; // in JSON
 	char       *ptr_tr                   ; // like just using msg22
@@ -382,25 +363,16 @@ public:
 	int32_t       size_ubuf                 ;
 	int32_t       size_rubuf                ;
 	int32_t       size_displaySum           ;
-	int32_t       size_dedupSum             ;
 	int32_t       size_dbuf                 ;
 	//int32_t     size_sbuf                 ;
 	int32_t       size_gigabitSample        ; // includes \0
-	int32_t       size_obuf                 ;
 	int32_t       size_mbuf                 ;
 	int32_t       size_vbuf                 ;
-	int32_t       size_tvbuf                ;
-	int32_t       size_gbvecbuf             ;
 	int32_t       size_imgUrl               ; // youtube/metacafe vid thumb
 	int32_t       size_imgData              ;
 	int32_t       size_facetBuf             ;
 	//int32_t       size_eventEnglishTime     ;
 	//int32_t       size_eventDateIntervals   ;
-	int32_t       size_likedbList           ;
-
-	int32_t       size_matchedQueryWords    ;
-	int32_t       size_numMatchedQueryWords ;
-	int32_t       size_matchedTypes         ;
 
 	int32_t       size_catIds               ;
 	int32_t       size_indCatIds            ;
@@ -413,8 +385,6 @@ public:
 	//int32_t     size_tagRec               ;
 	int32_t       size_site                 ;
 	int32_t       size_gbAdIds              ;
-	int32_t       size_summLocs             ;
-	int32_t       size_summLocsPops         ;
 
 	int32_t       size_linkInfo;//inlinks              ;
 	int32_t       size_outlinks             ;
@@ -428,7 +398,6 @@ public:
 	int32_t       size_rssItem              ;
 	int32_t       size_categories           ;
 	int32_t       size_gigabitQuery         ;
-	int32_t       size_gigabitScores        ;
 	int32_t       size_content              ; // page content in utf8
 	int32_t       size_sectionVotingInfo    ; // in json, includes \0
 	int32_t       size_tr                   ;
