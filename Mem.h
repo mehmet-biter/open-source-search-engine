@@ -56,20 +56,6 @@ uint32_t reverseBits ( uint32_t x ) ;
 // async signal safe functions
 //void memcpy_ass ( register void *dest , register const void *src , int32_t len ) ;
 void memset_ass ( register void *dst , register const char c , int32_t len ) ;
-void memset_nice ( register void *dst , register const char c , int32_t len ,
-		   int32_t niceness ) ;
-
-// . "*Bits" is bit offset in *
-// . nb is the # of bits to compare or copy
-// . returns -1 if dst < src, 0 if equal, +1 if dst > src
-// . bit #0 is the least significant bit on this little endian machine
-// . TODO: should we speed this up?
-int32_t membitcmp  ( void *dst, int32_t dstBits, void *src, int32_t srcBits, int32_t nb );
-// like above byt returns # of bits in common
-int32_t membitcmp2 ( void *dst, int32_t dstBits, void *src, int32_t srcBits, int32_t nb );
-// two bit copies, membitcpy1 starts copying at low bit, 2 at high bit
-void membitcpy1 ( void *dst, int32_t dstBits, void *src, int32_t srcBits, int32_t nb );
-void membitcpy2 ( void *dst, int32_t dstBits, void *src, int32_t srcBits, int32_t nb );
 
 inline int gbstrlen ( const char *s ) {
 	if ( ! s ) { char *xx=NULL;*xx=0; }

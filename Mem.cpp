@@ -1835,101 +1835,8 @@ uint32_t reverseBits ( uint32_t x ) {
 	return y;
 }
 
-// . returns -1 if dst < src, 0 if equal, +1 if dst > src
-// . bit #0 is the least significant bit on this little endian machine
-// . TODO: should we speed this up?
-int32_t membitcmp ( void *dst     ,
-		 int32_t  dstBits ,   // bit offset into "dst"
-		 void *src     ,
-		 int32_t  srcBits ,   // bit offset into "src"
-		 int32_t  nb      ) { // # bits to compare
-	char *s;
-	char *d;
-	char  smask;
-	char  dmask;
-	for ( int32_t b = nb - 1 ; b >= 0 ; b-- ) {
-		s     =(char *)src + ((b + srcBits) >> 3 );
-		d     =(char *)dst + ((b + dstBits) >> 3 );
-		smask = 0x01 << ((b + srcBits) & 0x07);
-		dmask = 0x01 << ((b + dstBits) & 0x07);
-		if ( *s & smask ) { if ( ! (*d &  dmask) ) return -1; }
-		else              { if (    *d &  dmask  ) return  1; }
-	}
-	return 0;
-}
-
-// . returns # of bits in common
-// . bit #0 is the least significant bit on this little endian machine
-// . TODO: should we speed this up?
-int32_t membitcmp2 ( void *dst     ,
-		  int32_t  dstBits ,   // bit offset into "dst"
-		  void *src     ,
-		  int32_t  srcBits ,   // bit offset into "src"
-		  int32_t  nb      ) { // # bits to compare
-	char *s;
-	char *d;
-	char  smask;
-	char  dmask;
-	int32_t  nc = 0;
-	for ( int32_t b = nb - 1 ; b >= 0 ; b-- ) {
-		s     =(char *)src + ((b + srcBits) >> 3 );
-		d     =(char *)dst + ((b + dstBits) >> 3 );
-		smask = 0x01 << ((b + srcBits) & 0x07);
-		dmask = 0x01 << ((b + dstBits) & 0x07);
-		if ( *s & smask ) { if ( ! (*d &  dmask) ) return nc; }
-		else              { if (    *d &  dmask  ) return nc; }
-		nc++;
-	}
-	return nc;
-}
-
-// . bit #0 is the least significant bit on this little endian machine
-// . TODO: should we speed this up?
-// . we start copying at LOW bit
-void membitcpy1 ( void *dst     ,
-		  int32_t  dstBits ,   // bit offset into "dst"
-		  void *src     ,
-		  int32_t  srcBits ,   // bit offset into "src"
-		  int32_t  nb      ) { // # bits to copy
-	// debug msg
-	//log("nb=%"INT32"",nb);
-	// if src and dst overlap, it matters if b moves up or down
-	char *s;
-	char *d;
-	char  smask;
-	char  dmask;
-	for ( int32_t b = 0 ; b < nb ; b++ ) {
-		s     =(char *)src + ((b + srcBits) >> 3 );
-		d     =(char *)dst + ((b + dstBits) >> 3 );
-		smask = 0x01 << ((b + srcBits) & 0x07);
-		dmask = 0x01 << ((b + dstBits) & 0x07);
-		if ( *s & smask ) *d |=  dmask;
-		else              *d &= ~dmask;
-	}
-}
-
 // like above, but we start copying at HIGH bit so you can
 // shift your recs without interference
-void membitcpy2 ( void *dst     ,
-		  int32_t  dstBits ,   // bit offset into "dst"
-		  void *src     ,
-		  int32_t  srcBits ,   // bit offset into "src"
-		  int32_t  nb      ) { // # bits to copy
-	// if src and dst overlap, it matters if b moves up or down
-	char *s;
-	char *d;
-	char  smask;
-	char  dmask;
-	for ( int32_t b = nb - 1 ; b >= 0 ; b-- ) {
-		s     =(char *)src + ((b + srcBits) >> 3 );
-		d     =(char *)dst + ((b + dstBits) >> 3 );
-		smask = 0x01 << ((b + srcBits) & 0x07);
-		dmask = 0x01 << ((b + dstBits) & 0x07);
-		if ( *s & smask ) *d |=  dmask;
-		else              *d &= ~dmask;
-	}
-}
-
 int32_t Mem::printBits  ( void *src, int32_t srcBits , int32_t nb ) {
 	char *s;
 	char  smask;
@@ -1953,24 +1860,6 @@ void memset_ass ( register void *dest , register const char c , int32_t len ) {
 	// JAB: gcc-3.4 did not like the cast in the previous version
 	// while ( dest < end ) *((char *)dest)++ = c;
 	while ( d < end ) { *d++ = c; }
-}
-
-void memset_nice( register void *dest , register const char c , int32_t len ,
-		  int32_t niceness ) {
-	char *end  = (char *)dest + len;
-	// JAB: so... the optimizer should take care of the extra
-	// register declaration for d, below...  see note below.
-	register char *d    = (char *)dest;
-	// JAB: gcc-3.4 did not like the cast in the previous version
-	// while ( dest < end ) *((char *)dest)++ = c;
- loop:
-	register char *seg = d + 5000;
-	if ( seg > end ) seg = end;
-	QUICKPOLL ( niceness );
-	while ( d < seg ) { *d++ = c; }
-	QUICKPOLL ( niceness );
-	// do more?
-	if ( d < end ) goto loop;
 }
 
 
