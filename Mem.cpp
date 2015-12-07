@@ -1851,17 +1851,6 @@ int32_t Mem::printBits  ( void *src, int32_t srcBits , int32_t nb ) {
 	return 0;
 }
 
-// ass = async signal safe, dumb ass
-void memset_ass ( register void *dest , register const char c , int32_t len ) {
-	register char *end  = (char *)dest + len;
-	// JAB: so... the optimizer should take care of the extra
-	// register declaration for d, below...  see note below.
-	register char *d    = (char *)dest;
-	// JAB: gcc-3.4 did not like the cast in the previous version
-	// while ( dest < end ) *((char *)dest)++ = c;
-	while ( d < end ) { *d++ = c; }
-}
-
 
 // . TODO: avoid byteCopy by copying remnant bytes
 // . ass = async signal safe, dumb ass

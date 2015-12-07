@@ -12,21 +12,11 @@
 // fix on 64-bit architectures so sizeof(uint96_t) is 12, not 16!
 //#pragma pack(0)
 
-//#define gbmemcpy memcpy_ass
-//#define memset memset_ass
-
 extern int g_inMemcpy;
 
-//#define gbmemcpy(xx,yy,zz) {g_inMemcpy=1;memcpy(xx,yy,zz);g_inMemcpy=0;}
-
-// use bcopy() since when doing real-time profiling in Profiler.cpp
-// it interrupts the code with a signal and then calls backtrace() which
-// itself calls memcpy(). so if it interrupted the code in an memcpy()
-// it causes a segfault because memcpy() is not async safe.
-#define gbmemcpy(xx,yy,zz) {bcopy(yy,xx,zz); }
-
-// i guess use bcopy for this now too!
-#define memcpy_ass(xx,yy,zz) {bcopy(yy,xx,zz); }
+//The two gbmem* functions below are legacy. Don't use them in new code
+#define gbmemcpy(xx,yy,zz) memcpy(xx,yy,zz)
+#define memcpy_ass(xx,yy,zz) memcpy(xx,yy,zz)
 
 
 

@@ -166,7 +166,7 @@ void UdpSlot::connect ( UdpProtocol    *proto    ,
 	// we will clear on demand using m_numBitsInitialized logic
 	// in UdpSlot.h
 	int32_t size = (char *)&m_sentBits2 - (char *)this ;
-	memset_ass ( (char *)this , 0 , size );
+	memset ( (char *)this , 0 , size );
 	// store this info
 	m_proto    = proto    ;
 	m_ip       = ip       ; // keep in network order
@@ -777,9 +777,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		g_udpServer.m_outsiderBytesOut   += dgramSize;
 	}
 
-	// not async signal safe
-	//bzero ( &(to.sin_zero) , 8 );
-	memset_ass ( (char *)&(to.sin_zero), 0 , 8 );
+	memset ( (char *)&(to.sin_zero), 0 , 8 );
 	// debug msg
 	//log("sendto");
 	// debug msg
@@ -1091,9 +1089,7 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 	//		to.sin_addr.s_addr = m_host->m_ip;
 	//}
 
-	// not async sig safe
-	//bzero ( &(to.sin_zero) , 8 );
-	memset_ass ( (char *)&(to.sin_zero), 0 , 8 );
+	memset ( (char *)&(to.sin_zero), 0 , 8 );
 	// stat count
 	if ( cancelTrans ) g_cancelAcksSent++;
 	// . this socket should be non-blocking (i.e. return immediately)
