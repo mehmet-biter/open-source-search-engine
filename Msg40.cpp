@@ -1110,8 +1110,6 @@ bool Msg40::reallocMsg20Buf ( ) {
 			p += sizeof(Msg20);
 			// init it
 			tmp[i]->constructor();
-			// set this now
-			tmp[i]->m_owningParent = (void *)this;
 			// count it
 			pcount++;
 			// skip it if it is a new docid, we do not have a Msg20
@@ -1268,8 +1266,6 @@ bool Msg40::reallocMsg20Buf ( ) {
 		m_msg20[i] = (Msg20 *)p;
 		// call its constructor
 		m_msg20[i]->constructor();
-		// set this now
-		m_msg20[i]->m_owningParent = (void *)this;
 		// point to the next Msg20
 		p += sizeof(Msg20);
 		// remember num to free in reset() function
@@ -6185,7 +6181,6 @@ Msg20 *Msg40::getUnusedMsg20 ( ) {
 		Msg20 *ma = (Msg20 *)m_unusedBuf.getBufStart();
 		for ( int32_t i = 0 ; i < (int32_t)MAX2 ; i++ ) {
 			ma[i].constructor();
-			ma[i].m_owningParent = (void *)this;
 			// if we don't update length then Msg40::resetBuf2() 
 			// will fail to call Msg20::destructor on them
 			m_unusedBuf.m_length += sizeof(Msg20);

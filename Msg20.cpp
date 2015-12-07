@@ -15,7 +15,6 @@ void Msg20::constructor () {
 	m_inProgress = false;
 	m_launched = false;
 	m_ii = -1;
-	m_owningParent = (void *)0x012345;
 	reset();
 	m_mcast.constructor();
 }
@@ -44,8 +43,6 @@ void Msg20::reset() {
 
 	//log("msg20: resetting msg20=0x%"PTRFMT" reply=0x%"PTRFMT"",
 	//    (PTRTYPE)this,(PTRTYPE)m_r);
-
-	if ( ! m_owningParent ) { char *xx=NULL;*xx=0; }
 
 	// not allowed to reset one in progress
 	if ( m_inProgress ) { 
@@ -119,8 +116,6 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 
 	// reset ourselves in case recycled
 	reset();
-
-	if ( ! m_owningParent ) { char *xx=NULL;*xx=0; }
 
 	// consider it "launched"
 	m_launched = true;

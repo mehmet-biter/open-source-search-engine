@@ -536,8 +536,6 @@ class Msg20 {
 	void     (*m_callback2) ( void *state );
 	void      *m_state;
 
-	void *m_owningParent;
-
 	// PostQueryRerank storage area for printing out in PageResults.cpp
 	float m_pqr_old_score        ;
 	float m_pqr_factor_diversity ;
