@@ -49,7 +49,7 @@ TEST(JsonTest, EncodeValid) {
 	const char *expected_encoded[] = {
 	    "hello\\tworld",
 	    "apple\\norange",
-	    "a\\\"b\\\\c\\/",
+	    "a\\\"b\\\\c/",
 	    "\\b\\f\\r"
 	};
 

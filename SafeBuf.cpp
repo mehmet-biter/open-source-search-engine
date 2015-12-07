@@ -2645,13 +2645,6 @@ bool SafeBuf::safeUtf8ToJSON ( const char *utf8 ) {
 				continue;
 			}
 
-			// solidus
-			if ( *src == '/' ) {
-				*dst++ = '\\';
-				*dst++ = '/';
-				continue;
-			}
-
 			*dst++ = *src;
 			continue;
 		}
