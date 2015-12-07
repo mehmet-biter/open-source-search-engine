@@ -1574,8 +1574,6 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		//req.ptr_q2buf             = m_si->m_sbuf3.getBufStart();
 		//req.size_q2buf            = q3size;
 		
-		req.m_isMasterAdmin             = m_si->m_isMasterAdmin;
-
 		//req.m_rulesetFilter      = m_si->m_ruleset;
 
 		//req.m_getTitleRec         = m_si->m_getTitleRec;
@@ -1655,15 +1653,9 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		//   more stale, but does not take extra time or resources
 		// . we "default" to the realtime stuff... i.e. since buzz
 		//   is already using "&inlinks=1"
-		if ( m_si->m_displayInlinks == 1 ) 
-			req.m_computeLinkInfo = true;
 		if ( m_si->m_displayInlinks == 2 ) 
 			//req.m_getInlinks    = true;
 			req.m_getLinkInfo     = true;
-		if ( m_si->m_displayInlinks == 3 ) 
-			req.m_computeLinkInfo = true;
-		if ( m_si->m_displayInlinks == 4 ) 
-			req.m_computeLinkInfo = true;
 		if ( m_si->m_displayOutlinks )
 			req.m_getOutlinks     = true;
 

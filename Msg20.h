@@ -70,7 +70,6 @@ class Msg20Request {
 	int32_t       m_bigSampleRadius           ;
 	int32_t       m_bigSampleMaxLen           ;
 	int32_t       m_maxCacheAge               ;
-	int32_t       m_maxLinks                  ;
 	int32_t       m_discoveryDate             ;
 
 	// special shit so we can remove an inlinker to a related docid
@@ -83,10 +82,6 @@ class Msg20Request {
 
 	unsigned char       m_justGetFacets : 1         ;
 
-	// for sending msg20 request to another network
-	//int32_t       m_hostIP;
-	//int32_t       m_hostUDPPort;
-
 	// if titleRec not from this ruleset, return g_errno = EDOCFILTERED
 	//int32_t       m_rulesetFilter             ;
 	// language the query is in (ptr_qbuf)
@@ -95,12 +90,8 @@ class Msg20Request {
 	collnum_t  m_collnum;
 
 	unsigned char       m_highlightQueryTerms       :1;
-	unsigned char       m_highlightDates            :1; // for event dates
 	unsigned char       m_wcache                    :1;
 	//unsigned char     m_checkSitedb               :1;
-	unsigned char       m_getImageUrl               :1;
-	unsigned char       m_ratInSummary              :1;
-	unsigned char       m_countOutlinks             :1;
 	unsigned char       m_considerTitlesFromBody    :1;
 	unsigned char       m_getSummaryVector          :1;
 	unsigned char       m_showBanned                :1;
@@ -111,19 +102,15 @@ class Msg20Request {
 	unsigned char       m_includeCachedCopy         :1;
 	unsigned char       m_getSectionVotingInfo      :1; // in JSON for now
 	unsigned char       m_getMatches                :1;
-	unsigned char       m_useLinkdbForInlinks       :1;
 	unsigned char       m_getTermListBuf            :1;
 	//unsigned char     m_getInlinks                :1; // use m_getLinkInfo!
 	unsigned char       m_getOutlinks               :1;
 	unsigned char       m_getTitleRec               :1; // sets ptr_tr in reply
-	unsigned char       m_maxInlinks                :1;
 	unsigned char       m_getGigabitVector          :1;
 	unsigned char       m_doLinkSpamCheck           :1;
 	unsigned char       m_isLinkSpam                :1; // Msg25 uses for storage
 	unsigned char       m_isSiteLinkInfo            :1; // site link info?
 	unsigned char       m_isDebug                   :1;
-	// if true, calls Msg25 and fills in ptr_linkInfo/size_linkInfo
-	unsigned char       m_computeLinkInfo           :1;
 	// if true, just calls TitleRec::getLinkInfo() to set ptr_linkInfo
 	unsigned char       m_getLinkInfo               :1;
 	// if this is true we will not compute the title, etc. of BAD inlinks
@@ -131,31 +118,14 @@ class Msg20Request {
 	unsigned char       m_onlyNeedGoodInlinks       :1;
 	// if true, sets ptr_linkText, etc.
 	unsigned char       m_getLinkText               :1;
-	// if this is true then we set ptr_turkForm to be an input form
-	// for turking this event summary and title
-	unsigned char       m_getTurkForm               :1;
-	unsigned char       m_showTurkInstructions      :1;
-	unsigned char       m_isTurkSpecialQuery        :1;
-	unsigned char       m_isMasterAdmin                   :1;
-	// . this is for buzz.
-	// . this says to compute the <absScore2> tag in their xml feed.
-	// . the document receives a score of 0 if it does not match the query
-	// . can we just keep it a binary score? let's try that. 
-	unsigned char       m_checkForQueryMatch        :1;
 
 	// serialize() converts these ptrs into offsets in m_buf[]
 	// and deserialize() converts them back into ptrs on the receiver's end
 	char      *ptr_qbuf          ;
 	char      *ptr_hqbuf         ;
-	//char      *ptr_q2buf         ;
-	char      *ptr_turkUser      ;
 	char      *ptr_ubuf          ; // url buffer
-	char      *ptr_rubuf         ; // redirect url buffer
 	char      *ptr_termFreqs     ;
-	char      *ptr_affWeights    ;
 	char      *ptr_linkee        ; // used by Msg25 for getting link text
-	//char      *ptr_coll          ;
-	//char      *ptr_imgUrl        ;
 	char      *ptr_displayMetas  ;
 
 	// . from here down: automatically set in Msg20Request::serialize() 
@@ -164,15 +134,9 @@ class Msg20Request {
 	//   so that serialize()/deserialize() still work
 	int32_t       size_qbuf         ;
 	int32_t       size_hqbuf        ;
-	//int32_t       size_q2buf        ;
-	int32_t       size_turkUser     ;
 	int32_t       size_ubuf         ; // url buffer
-	int32_t       size_rubuf        ; // redirect url buffer
 	int32_t       size_termFreqs    ;
-	int32_t       size_affWeights   ;
 	int32_t       size_linkee       ; // size includes terminating \0
-	//int32_t       size_coll         ; // size includes terminating \0
-	//int32_t       size_imgUrl       ;
 	int32_t       size_displayMetas ; // size includes terminating \0
 
 	char       m_buf[0] ;
