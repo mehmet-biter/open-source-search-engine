@@ -13090,12 +13090,9 @@ struct ip_info {
 	int32_t           numDom;
 };
 
-// JAB: warning abatement
-//static int ip_hcmp  (const void *p1, const void *p2);
 static int ip_fcmp  (const void *p1, const void *p2);
 static int ip_dcmp  (const void *p1, const void *p2);
-// JAB: warning abatement
-//static int dom_hcmp (const void *p1, const void *p2);
+
 static int dom_fcmp (const void *p1, const void *p2);
 static int dom_lcmp (const void *p1, const void *p2);
 // JAB: warning abatement
@@ -13879,43 +13876,6 @@ void countdomains( char* coll, int32_t numRecs, int32_t verbosity, int32_t outpu
 	goto loop;	
 }
 
-// JAB: warning abatement
-#if 0
-// Sort by IP address 9->0
-int ip_hcmp (const void *p1, const void *p2) {
-	int32_t n1, n2;
-	struct ip_info *ii1;
-	struct ip_info *ii2;
-	int64_t n3 = 0;
-	int64_t n4 = 0;
-
-	*(((unsigned char *)(&n1))+0) = *(((char *)p1)+0);
-	*(((unsigned char *)(&n1))+1) = *(((char *)p1)+1);
-	*(((unsigned char *)(&n1))+2) = *(((char *)p1)+2);
-	*(((unsigned char *)(&n1))+3) = *(((char *)p1)+3);
-
-	*(((unsigned char *)(&n2))+0) = *(((char *)p2)+0);
-	*(((unsigned char *)(&n2))+1) = *(((char *)p2)+1);
-	*(((unsigned char *)(&n2))+2) = *(((char *)p2)+2);
-	*(((unsigned char *)(&n2))+3) = *(((char *)p2)+3);
-
-	ii1 = (struct ip_info *)n1;
-	ii2 = (struct ip_info *)n2;
-
-	*(((unsigned char *)(&n3))+3) = *(((char *)ii1->ip)+0);
-	*(((unsigned char *)(&n3))+2) = *(((char *)ii1->ip)+1);
-	*(((unsigned char *)(&n3))+1) = *(((char *)ii1->ip)+2);
-	*(((unsigned char *)(&n3))+0) = *(((char *)ii1->ip)+3);
-
-	*(((unsigned char *)(&n2))+3) = *(((char *)ii2->ip)+0);
-	*(((unsigned char *)(&n2))+2) = *(((char *)ii2->ip)+1);
-	*(((unsigned char *)(&n2))+1) = *(((char *)ii2->ip)+2);
-	*(((unsigned char *)(&n2))+0) = *(((char *)ii2->ip)+3);
-
-	return (n4 - n3)/100;
-}
-#endif
-
 // Sort by IP frequency in pages 9->0
 int ip_fcmp (const void *p1, const void *p2) {
 	//int32_t n1, n2;
@@ -13966,34 +13926,6 @@ int ip_dcmp (const void *p1, const void *p2) {
 	
 	return ii2->numDom-ii1->numDom;
 }
-
-// JAB: warning abatement
-#if 0
-// Sort by Host name, a->z
-int dom_hcmp (const void *p1, const void *p2) {
-	int32_t len, n1, n2;
-	struct dom_info *di1;
-	struct dom_info *di2;
-
-	*(((unsigned char *)(&n1))+0) = *(((char *)p1)+0);
-	*(((unsigned char *)(&n1))+1) = *(((char *)p1)+1);
-	*(((unsigned char *)(&n1))+2) = *(((char *)p1)+2);
-	*(((unsigned char *)(&n1))+3) = *(((char *)p1)+3);
-
-	*(((unsigned char *)(&n2))+0) = *(((char *)p2)+0);
-	*(((unsigned char *)(&n2))+1) = *(((char *)p2)+1);
-	*(((unsigned char *)(&n2))+2) = *(((char *)p2)+2);
-	*(((unsigned char *)(&n2))+3) = *(((char *)p2)+3);
-
-	di1 = (struct dom_info *)n1;
-	di2 = (struct dom_info *)n2;
-
-	if( di1->domLen < di2->domLen ) len = di1->domLen;
-	else len = di2->domLen;
-
-	return strncasecmp( di1->dom, di2->dom, len );
-}
-#endif
 
 // Sort by page frequency in titlerec 9->0
 int dom_fcmp (const void *p1, const void *p2) {
