@@ -54,52 +54,6 @@ void Msg5::reset() {
 	m_treeList.freeList();
 }
 
-/*
-//key_t makeCacheKey ( key_t startKey     ,
-//void  makeCacheKey ( key_t startKey     ,
-//		     key_t endKey       ,
-void  makeCacheKey ( char *startKey     ,
-		     char *endKey       ,
-		     bool  includeTree  ,
-		     int32_t  minRecSizes  ,
-		     int32_t  startFileNum ,
-		     //int32_t  numFiles     ) {
-		     int32_t  numFiles     ,
-		     char *cacheKeyPtr  ,
-		     char  ks           ) { // keySize
-	//key_t cacheKey;
-	//cacheKey = startKey ;
-	//cacheKey = hash96 (       endKey       , cacheKey );
-	//cacheKey = hash96 ( (int32_t)includeTree  , cacheKey );
-	//cacheKey = hash96 ( (int32_t)minRecSizes  , cacheKey );
-	//cacheKey = hash96 ( (int32_t)startFileNum , cacheKey );
-	//cacheKey = hash96 ( (int32_t)numFiles     , cacheKey );
-	if ( ks == 12 ) {
-		key_t cacheKey = *(key_t *)startKey;
-		cacheKey = hash96  ( *(key_t *)endKey   , cacheKey );
-		cacheKey = hash96  ( (int32_t)includeTree  , cacheKey );
-		cacheKey = hash96  ( (int32_t)minRecSizes  , cacheKey );
-		cacheKey = hash96  ( (int32_t)startFileNum , cacheKey );
-		cacheKey = hash96  ( (int32_t)numFiles     , cacheKey );
-		*(key_t *)cacheKeyPtr = cacheKey;
-	}
-	else {
-		key128_t cacheKey = *(key128_t *)startKey;
-		cacheKey = hash128 ( *(key128_t *)endKey, cacheKey );
-		cacheKey = hash128 ( (int32_t)includeTree  , cacheKey );
-		cacheKey = hash128 ( (int32_t)minRecSizes  , cacheKey );
-		cacheKey = hash128 ( (int32_t)startFileNum , cacheKey );
-		cacheKey = hash128 ( (int32_t)numFiles     , cacheKey );
-		*(key128_t *)cacheKeyPtr = cacheKey;
-	}
-	//return cacheKey;
-}
-*/
-
-//#include "Checksumdb.h"
-
-//HashTableX g_waitingTable;
-
 // . return false if blocked, true otherwise
 // . set g_errno on error
 // . fills "list" with the requested list

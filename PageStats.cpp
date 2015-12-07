@@ -9,7 +9,6 @@
 #include "Cachedb.h"
 #include "Monitordb.h"
 #include "Catdb.h"
-//#include "Checksumdb.h"
 #include "Clusterdb.h"
 #include "Statsdb.h"
 #include "Linkdb.h"

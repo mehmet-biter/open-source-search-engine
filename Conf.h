@@ -228,15 +228,6 @@ class Conf {
 	// dup vector cache max mem
 	int32_t  m_maxVectorCacheMem;
 
-	// checksumdb for doc deduping, each rec is 12-16 bytes
-	//int32_t  m_checksumdbMaxTreeMem; 
-	//int32_t  m_checksumdbMaxCacheMem; 
-	//int32_t  m_checksumdbMaxDiskPageCacheMem; 
-	//int32_t  m_checksumdbMinFilesToMerge;
-	// size of Checksumdb keys for this host
-	//int32_t m_checksumdbKeySize;
-	//bool  m_checksumdbSaveCache;
-
 	// for holding urls that have been entered into the spider queue
 	//int32_t  m_tfndbMaxTreeMem   ;
 	//int32_t  m_tfndbMaxDiskPageCacheMem ; // for the DiskPageCache class only
@@ -547,7 +538,6 @@ class Conf {
 	bool   m_syncIndexdb;
 	bool   m_syncTitledb;
 	bool   m_syncSpiderdb;
-	//bool   m_syncChecksumdb;
 	bool   m_syncSitedb;
 	bool   m_syncLogging;
 	bool   m_syncDoUnion;
@@ -827,7 +817,6 @@ class Conf {
 	char  m_rebuildPosdb    ;
 	//char  m_rebuildNoSplits   ;
 	//char  m_rebuildDatedb     ;
-	//char  m_rebuildChecksumdb ;
 	char  m_rebuildClusterdb  ;
 	char  m_rebuildSpiderdb   ;
 	//char  m_rebuildSitedb     ;

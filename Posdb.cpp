@@ -5,7 +5,6 @@
 #include "Indexdb.h"
 #include "Url.h"
 #include "Clusterdb.h"
-//#include "Checksumdb.h"
 #include "Threads.h"
 #include "Posdb.h"
 #include "Rebalance.h"

@@ -3,7 +3,6 @@
 #include "Msg1.h"
 #include "Clusterdb.h"
 #include "Spider.h"
-//#include "Checksumdb.h"
 #include "Datedb.h"
 #include "Rdb.h"
 //#include "Indexdb.h"
@@ -265,8 +264,6 @@ bool Msg1::sendSomeOfList ( ) {
 		groupId = g_datedb.getGroupIdFromKey((key128_t *)firstKey);
 	else if ( m_rdbId == RDB_TITLEDB)
 		groupId = g_titledb.getGroupIdFromKey((key_t *)firstKey);
-	else if ( m_rdbId == RDB_CHECKSUMDB)
-		groupId = g_checksumdb.getGroupId ( firstKey );
 	else if ( m_rdbId == RDB_SPIDERDB )
 		groupId = g_spiderdb.getGroupId ( (key_t *)firstKey );
 	else if ( m_rdbId == RDB_TFNDB )
@@ -280,8 +277,6 @@ bool Msg1::sendSomeOfList ( ) {
 		groupId = g_datedb.getGroupIdFromKey((key128_t *)firstKey);
 	else if ( m_rdbId == RDB2_TITLEDB2)
 		groupId = g_titledb.getGroupIdFromKey((key_t *)firstKey);
-	else if ( m_rdbId == RDB2_CHECKSUMDB2)
-		groupId = g_checksumdb.getGroupId ( firstKey );
 	else if ( m_rdbId == RDB2_SPIDERDB2 )
 		groupId = g_spiderdb.getGroupId ( (key_t *)firstKey );
 	else if ( m_rdbId == RDB2_TFNDB2 )
@@ -318,10 +313,6 @@ bool Msg1::sendSomeOfList ( ) {
 		switch ( m_rdbId ) {
 		case RDB_TITLEDB: 
 			if(g_titledb.getGroupIdFromKey((key_t *)key)!=groupId) 
-			goto done;
-			break;
-		case RDB_CHECKSUMDB:
-			if(g_checksumdb.getGroupId (         key)!=groupId)
 			goto done;
 			break;
 		case RDB_SPIDERDB: 
@@ -872,71 +863,3 @@ void tryAgainWrapper ( int fd , void *state ) {
 	handleRequest1 ( slot , -2 ); // slot->getNiceness() );
 	return;
 }
-
-//if split is true, it can still be overrriden by the parm in g_conf
-//if false, we don't split index and date lists, other dbs are unaffected
-/*
-uint32_t getGroupId ( char rdbId , char *key, bool split ) {
-
-	if ( split ) {
-	// try to put those most popular ones first for speed
-	if      ( rdbId == RDB_INDEXDB )
-		return g_indexdb.getGroupIdFromKey((key_t *)key);
-	else if ( rdbId == RDB_DATEDB )
-		return g_datedb.getGroupIdFromKey((key128_t *)key);
-	else if ( rdbId == RDB_LINKDB )
-		return g_linkdb.getGroupId((key128_t *)key);
-	else if ( rdbId == RDB_TFNDB )
-		return g_tfndb.getGroupId    ( (key_t *)key );
-	else if ( rdbId == RDB_TITLEDB)
-		return g_titledb.getGroupIdFromKey((key_t *)key);
-	//else if ( rdbId == RDB_CHECKSUMDB)
-	//	return g_checksumdb.getGroupId ( key );
-	else if ( rdbId == RDB_SPIDERDB )
-		return g_spiderdb.getGroupId ( (key_t *)key );
-	else if ( rdbId == RDB_CLUSTERDB )
-		return g_clusterdb.getGroupIdFromKey((key_t *)key);
-	else if ( rdbId == RDB_TAGDB )
-		return g_tagdb.getGroupId((key_t *)key);
-	else if ( rdbId == RDB_CATDB )
-		return g_tagdb.getGroupId((key_t *)key);
-
-	else if ( rdbId == RDB2_INDEXDB2 )
-		return g_indexdb.getGroupIdFromKey((key_t *)key);
-	else if ( rdbId == RDB2_DATEDB2 )
-		return g_datedb.getGroupIdFromKey((key128_t *)key);
-	else if ( rdbId == RDB2_TITLEDB2)
-		return g_titledb.getGroupIdFromKey((key_t *)key);
-	//else if ( rdbId == RDB2_CHECKSUMDB2)
-	//	return g_checksumdb.getGroupId ( key );
-	else if ( rdbId == RDB2_SPIDERDB2 )
-		return g_spiderdb.getGroupId ( (key_t *)key );
-	else if ( rdbId == RDB2_TFNDB2 )
-		return g_tfndb.getGroupId    ( (key_t *)key );
-	else if ( rdbId == RDB2_CLUSTERDB2 )
-		return g_clusterdb.getGroupIdFromKey((key_t *)key);
-	else if ( rdbId == RDB2_LINKDB2 )
-		return g_linkdb.getGroupId((key128_t *)key);
-	else if ( rdbId == RDB2_SITEDB2 )
-		return g_tagdb.getGroupId((key_t *)key);
-	else if ( rdbId == RDB2_CATDB2 )
-		return g_tagdb.getGroupId((key_t *)key);
-	// core -- must be provided
-	char *xx = NULL; *xx = 0;
-	//groupId=key.n1 & g_hostdb.m_groupMask;
-	return (((key_t *)key)->n1) & g_hostdb.m_groupMask;
-	}
-
-	if ( rdbId == RDB_INDEXDB )
-		return g_indexdb.getNoSplitGroupId((key_t *)key);
-	if ( rdbId == RDB_DATEDB )
-		return g_datedb.getNoSplitGroupId((key128_t *)key);
-	if ( rdbId == RDB2_INDEXDB2 )
-		return g_indexdb.getNoSplitGroupId((key_t *)key);
-	if ( rdbId == RDB2_DATEDB2 )
-		return g_datedb.getNoSplitGroupId((key128_t *)key);
-	// nobody else can be "no split" i guess
-	char *xx = NULL; *xx = 0;
-	return 0;
-}
-*/

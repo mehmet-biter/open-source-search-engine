@@ -9,7 +9,6 @@
 #include "Collectiondb.h"
 //#include "CollectionRec.h"
 #include "Clusterdb.h"    // for getting # of docs indexed
-//#include "Checksumdb.h"   // should migrate to this one, though
 #include "Pages.h"
 #include "Query.h"        // MAX_QUERY_LEN
 #include "SafeBuf.h"
@@ -434,8 +433,6 @@ bool expandHtml (  SafeBuf& sb,
 			continue;
 		}
 		if ( head[i+1] == 'N' ) { 
-			// now we got the %N, insert the global doc count
-			//int64_t c=g_checksumdb.getRdb()->getNumGlobalRecs();
 			//now each host tells us how many docs it has in itsping
 			int64_t c = g_hostdb.getNumGlobalRecs();
 			c += g_conf.m_docCountAdjustment;

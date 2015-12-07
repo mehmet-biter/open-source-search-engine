@@ -3,7 +3,6 @@
 #include "Rdb.h"
 //#include "Msg35.h"
 //#include "Tfndb.h"
-//#include "Checksumdb.h"
 #include "Clusterdb.h"
 #include "Hostdb.h"
 #include "Tagdb.h"
@@ -1332,7 +1331,6 @@ void RdbBase::doneWrapper4 ( ) {
 	g_linkdb.getRdb()->attemptMerge     ( 1 , false );
 	//g_sectiondb.getRdb()->attemptMerge  ( 1 , false );
 	g_tagdb.getRdb()->attemptMerge      ( 1 , false );
-	//g_checksumdb.getRdb()->attemptMerge ( 1 , false );
 	g_titledb.getRdb()->attemptMerge    ( 1 , false );
 	g_doledb.getRdb()->attemptMerge     ( 1 , false );
 	g_catdb.getRdb()->attemptMerge      ( 1 , false );
@@ -1527,9 +1525,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	//	m_minToMerge = cr->m_sectiondbMinFilesToMerge;
 	//if ( cr && m_rdb == g_sectiondb.getRdb() ) 
 	//	m_minToMerge = cr->m_sectiondbMinFilesToMerge;
-	//if ( cr && m_rdb == g_checksumdb.getRdb() ) 
-	//	m_minToMerge = cr->m_checksumdbMinFilesToMerge;
-	//if ( cr && m_rdb == g_clusterdb.getRdb() ) 
+	//if ( cr && m_rdb == g_clusterdb.getRdb() )
 	//	m_minToMerge = cr->m_clusterdbMinFilesToMerge;
 	//if ( cr && m_rdb == g_datedb.getRdb() ) 
 	//	m_minToMerge = cr->m_datedbMinFilesToMerge;
@@ -1565,7 +1561,6 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	//if ( m_rdb == g_posdb2.getRdb    () ) m_minToMerge = 10;
 	//if ( m_rdb == g_spiderdb2.getRdb   () )	m_minToMerge = 20;
 	//if ( m_rdb == g_sectiondb2.getRdb  () )	m_minToMerge = 200;
-	//if ( m_rdb == g_checksumdb2.getRdb () )	m_minToMerge = 20;
 	//if ( m_rdb == g_clusterdb2.getRdb  () )	m_minToMerge = 20;
 	//if ( m_rdb == g_datedb2.getRdb     () )	m_minToMerge = 20;
 	//if ( m_rdb == g_tfndb2.getRdb      () )	m_minToMerge = 2;

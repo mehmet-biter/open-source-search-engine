@@ -289,9 +289,6 @@ bool Threads::init ( ) {
 
 	// make multiplier higher for raids, can do more seeks
 	//int32_t m = 1;
-	//#ifdef _LARS_
-	//m = 3;
-	//#endif
 	// register the types of threads here instead of in main.cpp
 	//if ( ! g_threads.registerType ( DISK_THREAD     ,m*20/*maxThreads*/))
 	// try running blaster with 5 threads and you'll

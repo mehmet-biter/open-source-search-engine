@@ -3,7 +3,6 @@
 #include "Indexdb.h"
 #include "Url.h"
 #include "Clusterdb.h"
-//#include "Checksumdb.h"
 #include "Threads.h"
 
 // a global class extern'd in .h file
@@ -485,13 +484,7 @@ int64_t Indexdb::getTermFreq ( collnum_t collnum , int64_t termId ) {
 	//log("numRecs=%"UINT64"",numRecs);
 
 	// . see PageRoot.cpp for explanation of this:
-	// . so starting with Lars we'll use checksumdb
-	//#ifdef _LARS_
-	//int64_t trecs = g_checksumdb.getRdb()->getNumGlobalRecs();
 	int64_t trecs = g_clusterdb.getRdb()->getNumGlobalRecs();
-	//#else
-	//int64_t trecs = g_clusterdb.getRdb()->getNumGlobalRecs() ;
-	//#endif
 	if ( numRecs > trecs ) numRecs = trecs;
 
 	// TODO: watch out for explosions! (if all scores are the same...)

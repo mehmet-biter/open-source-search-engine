@@ -43,7 +43,6 @@ Parms g_parms;
 #include "Tagdb.h"
 #include "Indexdb.h"
 #include "Datedb.h"
-//#include "Checksumdb.h"
 #include "Clusterdb.h"
 #include "Collectiondb.h"
 
@@ -714,7 +713,6 @@ bool CommandMerge ( char *rec ) {
 	forceMergeAll ( RDB_SPIDERDB ,1);
 	forceMergeAll ( RDB_LINKDB ,1);
 	// most of these are probably already in good shape
-	//g_checksumdb.getRdb()->attemptMerge (1,true);
 	// g_clusterdb.getRdb()->attemptMerge  (1,true); // niceness, force?
 	// g_tagdb.getRdb()->attemptMerge     (1,true);
 	// g_catdb.getRdb()->attemptMerge      (1,true);
@@ -775,7 +773,6 @@ bool CommandForceIt ( char *rec ) {
 }
 
 bool CommandDiskDump ( char *rec ) {
-	//g_checksumdb.getRdb()->dumpTree ( 1 ); // niceness
 	g_clusterdb.getRdb()->dumpTree  ( 1 );
 	g_tagdb.getRdb()->dumpTree     ( 1 );  
 	g_catdb.getRdb()->dumpTree      ( 1 );
@@ -5128,17 +5125,6 @@ void Parms::init ( ) {
 	m++;
 	*/
 
-	/*
-	m->m_title = "checksumdb key size";
-	m->m_desc  = "This determines the key size for checksums. " 
-		     "Must be set for every host.";
-	//m->m_cgi   = "";
-	m->m_off   = (char *)&g_conf.m_checksumdbKeySize - g;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "12";
-	m++;
-	*/
-
 	// just a comment in the conf file
 	m->m_desc  = 
     "Below the various Gigablast databases are configured.\n"
@@ -5362,52 +5348,18 @@ void Parms::init ( ) {
 	m++;
 
 	/*
-	m->m_title = "checksumdb max tree mem";
-	m->m_desc  = "Checksumdb is used for deduping same-site urls at "
-		"index time.";
-	m->m_off   = (char *)&g_conf.m_checksumdbMaxTreeMem - g;
-	m->m_def   = "1000000"; 
-	m->m_type  = TYPE_LONG;
-	m++;
-
-	m->m_title = "checksumdb max cache mem";
-	m->m_desc  = "";
-	m->m_off   = (char *)&g_conf.m_checksumdbMaxCacheMem - g;
-	m->m_def   = "2000000"; 
-	m->m_type  = TYPE_LONG;
-	m++;
-
-	m->m_title = "checksumdb max page cache mem";
-	m->m_desc  = "";
-	m->m_off =(char *)&g_conf.m_checksumdbMaxDiskPageCacheMem-g;
-	m->m_def   = "1000000"; 
-	m->m_type  = TYPE_LONG;
-	m++;
-
-	// this is overridden by collection
-	m->m_title = "checksumdb min files to merge";
-	m->m_desc  = "";
-	m->m_off   = (char *)&g_conf.m_checksumdbMinFilesToMerge- g;
-	//m->m_def   = "2"; 
-	m->m_def   = "-1"; // -1 means to use collection rec
-	m->m_type  = TYPE_LONG;
-	m->m_save  = 0;
-	m++;
-	*/
-
-	/*
 	m->m_title = "tfndb max tree mem";
 	m->m_desc  = "Tfndb holds small records for each url in Spiderdb or "
 		"Titledb.";
 	m->m_off   = (char *)&g_conf.m_tfndbMaxTreeMem - g;
-	m->m_def   = "1000000"; 
+	m->m_def   = "1000000";
 	m->m_type  = TYPE_LONG;
 	m++;
 
 	m->m_title = "tfndb max page cache mem";
 	m->m_desc  = "";
 	m->m_off   = (char *)&g_conf.m_tfndbMaxDiskPageCacheMem - g;
-	m->m_def   = "5000000"; 
+	m->m_def   = "5000000";
 	m->m_type  = TYPE_LONG;
 	m++;
 	*/
@@ -5417,7 +5369,7 @@ void Parms::init ( ) {
 	m->m_title = "tfndb min files to merge";
 	m->m_desc  = "";
 	m->m_off   = (char *)&g_conf.m_tfndbMinFilesToMerge - g;
-	m->m_def   = "2"; 
+	m->m_def   = "2";
 	m->m_type  = TYPE_LONG;
 	m->m_save  = 0;
 	m++;
@@ -5427,21 +5379,21 @@ void Parms::init ( ) {
 	m->m_title = "spiderdb max tree mem";
 	m->m_desc  = "Spiderdb holds urls to be spidered.";
 	m->m_off   = (char *)&g_conf.m_spiderdbMaxTreeMem - g;
-	m->m_def   = "1000000"; 
+	m->m_def   = "1000000";
 	m->m_type  = TYPE_LONG;
 	m++;
 
 	m->m_title = "spiderdb max cache mem";
 	m->m_desc  = "";
 	m->m_off   = (char *)&g_conf.m_spiderdbMaxCacheMem - g;
-	m->m_def   = "0"; 
+	m->m_def   = "0";
 	m->m_type  = TYPE_LONG;
 	m++;
 
 	m->m_title = "spiderdb max page cache mem";
 	m->m_desc  = "";
 	m->m_off   =(char *)&g_conf.m_spiderdbMaxDiskPageCacheMem-g;
-	m->m_def   = "500000"; 
+	m->m_def   = "500000";
 	m->m_type  = TYPE_LONG;
 	m++;
 
@@ -5449,7 +5401,7 @@ void Parms::init ( ) {
 	m->m_title = "spiderdb min files to merge";
 	m->m_desc  = "";
 	m->m_off   = (char *)&g_conf.m_spiderdbMinFilesToMerge - g;
-	//m->m_def   = "2"; 
+	//m->m_def   = "2";
 	m->m_def   = "-1"; // -1 means to use collection rec
 	m->m_type  = TYPE_LONG;
 	m->m_save  = 0;
@@ -5480,7 +5432,7 @@ void Parms::init ( ) {
 	/*
 	m->m_title = "indexdb max tree mem";
 	m->m_desc  = "Indexdb holds the terms extracted from spidered "
-		"documents."; 
+		"documents.";
 	m->m_off   = (char *)&g_conf.m_indexdbMaxTreeMem - g;
 	m->m_def   = "10000000";
 	m->m_type  = TYPE_LONG;
@@ -5516,7 +5468,7 @@ void Parms::init ( ) {
 	m->m_title = "indexdb min files to merge";
 	m->m_desc  = "";
 	m->m_off   = (char *)&g_conf.m_indexdbMinFilesToMerge - g;
-	//m->m_def   = "6"; 
+	//m->m_def   = "6";
 	m->m_def   = "-1"; // -1 means to use collection rec
 	m->m_type  = TYPE_LONG;
 	m->m_save  = 0;
@@ -5525,21 +5477,21 @@ void Parms::init ( ) {
 	m->m_title = "indexdb max index list age";
 	m->m_desc  = "";
 	m->m_off   = (char *)&g_conf.m_indexdbMaxIndexListAge - g;
-	m->m_def   = "60"; 
+	m->m_def   = "60";
 	m->m_type  = TYPE_LONG;
 	m++;
 
 	//m->m_title = "indexdb truncation limit";
 	//m->m_desc  = "";
 	//m->m_off   = (char *)&g_conf.m_indexdbTruncationLimit - g;
-	//m->m_def   = "50000000"; 
+	//m->m_def   = "50000000";
 	//m->m_type  = TYPE_LONG;
 	//m++;
 
 	m->m_title = "indexdb save cache";
 	m->m_desc  = "";
 	m->m_off   = (char *)&g_conf.m_indexdbSaveCache - g;
-	m->m_def   = "0"; 
+	m->m_def   = "0";
 	m->m_type  = TYPE_BOOL;
 	m++;
 	*/
@@ -5547,7 +5499,7 @@ void Parms::init ( ) {
 	/*
 	m->m_title = "datedb max tree mem";
 	m->m_desc  = "Datedb holds the terms extracted from spidered "
-		"documents."; 
+		"documents.";
 	m->m_off   = (char *)&g_conf.m_datedbMaxTreeMem - g;
 	m->m_def   = "10000000";
 	m->m_type  = TYPE_LONG;
@@ -5564,7 +5516,7 @@ void Parms::init ( ) {
 	m->m_title = "datedb min files to merge";
 	m->m_desc  = "";
 	m->m_off   = (char *)&g_conf.m_datedbMinFilesToMerge - g;
-	//m->m_def   = "8"; 
+	//m->m_def   = "8";
 	m->m_def   = "-1"; // -1 means to use collection rec
 	m->m_type  = TYPE_LONG;
 	m->m_save  = 0;
@@ -5573,14 +5525,14 @@ void Parms::init ( ) {
 	m->m_title = "datedb max index list age";
 	m->m_desc  = "";
 	m->m_off   = (char *)&g_conf.m_datedbMaxIndexListAge - g;
-	m->m_def   = "60"; 
+	m->m_def   = "60";
 	m->m_type  = TYPE_LONG;
 	m++;
 
 	m->m_title = "datedb save cache";
 	m->m_desc  = "";
 	m->m_off   = (char *)&g_conf.m_datedbSaveCache - g;
-	m->m_def   = "0"; 
+	m->m_def   = "0";
 	m->m_type  = TYPE_BOOL;
 	m++;
 	*/
@@ -5658,7 +5610,7 @@ void Parms::init ( ) {
 	m->m_desc  = "Use buckets for in memory recs for indexdb, datedb, "
 		"and linkdb.";
 	m->m_off   = (char *)&g_conf.m_useBuckets - g;
-	m->m_def   = "1"; 
+	m->m_def   = "1";
 	m->m_type  = TYPE_BOOL;
 	m++;
 	*/
@@ -5689,14 +5641,14 @@ void Parms::init ( ) {
 	//m->m_title = "search results max cache age";
 	//m->m_desc  = "Maximum age to cache search results page in seconds.";
 	//m->m_off   = (char *)&g_conf.m_searchResultsMaxCacheAge - g;
-	//m->m_def   = "86400"; 
+	//m->m_def   = "86400";
 	//m->m_type  = TYPE_LONG;
 	//m++;
 
 	//m->m_title = "search results save cache";
 	//m->m_desc  = "Should the search results cache be saved to disk?";
 	//m->m_off   = (char *)&g_conf.m_searchResultsSaveCache - g;
-	//m->m_def   = "0"; 
+	//m->m_def   = "0";
 	//m->m_type  = TYPE_BOOL;
 	//m++;
 
@@ -5739,14 +5691,14 @@ void Parms::init ( ) {
 	//m->m_desc  = "Max linkers to a doc that are sampled to determine "
 	//	"quality and for gathering link text.";
 	//m->m_off   = (char *)&g_conf.m_maxIncomingLinksToSample - g;
-	//m->m_def   = "100"; 
+	//m->m_def   = "100";
 	//m->m_type  = TYPE_LONG;
 	//m++;
 
 	//m->m_title = "allow async signals";
 	//m->m_desc  = "Allow software interrupts?";
 	//m->m_off   = (char *)&g_conf.m_allowAsyncSignals - g;
-	//m->m_def   = "1"; 
+	//m->m_def   = "1";
 	//m->m_type  = TYPE_BOOL;
 	//m++;
 
@@ -5758,7 +5710,7 @@ void Parms::init ( ) {
 		"qa subdir then it returns a 404.";
 	m->m_cgi   = "qabuildmode";
 	m->m_off   = (char *)&g_conf.m_qaBuildMode - g;
-	m->m_def   = "0"; 
+	m->m_def   = "0";
 	m->m_type  = TYPE_BOOL;
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
@@ -5786,7 +5738,7 @@ void Parms::init ( ) {
 		"doing a merge at a time. This prevents query response time "
 		"from suffering too much.";
 	m->m_off   = (char *)&g_conf.m_useMergeToken - g;
-	m->m_def   = "1"; 
+	m->m_def   = "1";
 	m->m_type  = TYPE_BOOL;
 	m++;
 	*/
@@ -5797,7 +5749,7 @@ void Parms::init ( ) {
 		"again soon.";
 	m->m_off   = (char *)&g_conf.m_doSpellChecking - g;
 	m->m_cgi   = "dospellchecking";
-	m->m_def   = "1"; 
+	m->m_def   = "1";
 	m->m_type  = TYPE_BOOL;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
@@ -5934,8 +5886,8 @@ void Parms::init ( ) {
 	m->m_flags = PF_NOSAVE ;
 	m++;
 	*/
-	
-	
+
+
 	///////////////////////////////////////////
 	// SYNC CONTROLS
 	///////////////////////////////////////////
@@ -17137,134 +17089,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	/*
-	m->m_title = "hours before adding unspiderable url to spiderdb";
-	m->m_desc  = "Hours to wait after trying to add an unspiderable url "
-		"to spiderdb again.";
-	m->m_cgi   = "dwma";
-	m->m_off   = (char *)&cr.m_deadWaitMaxAge - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "24";
-	m++;
-	*/
-
-	//m->m_title = "link text anomaly threshold";
-	//m->m_desc  = "Prevent pages from link voting for "
-	//	"another page if its link text has a "
-	//	"word which doesn't occur in at least this "
-	//	"many other link texts. (set to 1 to disable)";
-	//m->m_cgi   = "ltat";
-	//m->m_off   = (char *)&cr.m_linkTextAnomalyThresh - x;
-	//m->m_type  = TYPE_LONG;
-	//m->m_def   = "2";
-	//m++;
-
-	/*
-	m->m_title = "enforce domain quotas on new docs";
-	m->m_desc  = "If this is true then new documents will be removed "
-		"from the index if the quota for their domain "
-		"has been breeched.";
-	m->m_cgi   = "enq";
-	m->m_off   = (char *)&cr.m_enforceNewQuotas - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m++;
-
-	m->m_title = "enforce domain quotas on indexed docs";
-	m->m_desc  = "If this is true then indexed documents will be removed "
-		"from the index if the quota for their domain has been "
-		"breeched.";
-	m->m_cgi   = "eoq";
-	m->m_off   = (char *)&cr.m_enforceOldQuotas - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "use exact quotas";
-	m->m_desc  = "Does not use approximations so will do more disk seeks "
-		"and may impact indexing performance significantly.";
-	m->m_cgi   = "ueq";
-	m->m_off   = (char *)&cr.m_exactQuotas - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "restrict indexdb for spidering";
-	m->m_desc  = "If this is true then only the root indexb file is "
-		"searched for linkers. Saves on disk seeks, "
-		"but may use older versions of indexed web pages.";
-	m->m_cgi   = "ris";
-	m->m_off   = (char *)&cr.m_restrictIndexdbForSpider - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m++;
-	*/
-
-	/*
-	m->m_title = "indexdb max total files to merge";
-	m->m_desc  = "Do not merge more than this many files during a single "
-		"merge operation. Merge does not scale well to numbers above "
-		"50 or so.";
-	m->m_cgi   = "mttftm";
-	m->m_off   = (char *)&cr.m_indexdbMinTotalFilesToMerge - x;
-	m->m_def   = "50"; 
-	//m->m_max   = 100;
-	m->m_type  = TYPE_LONG;
-	m++;
-
-	m->m_title = "indexdb min files needed to trigger merge";
-	m->m_desc  = "Merge is triggered when this many indexdb data files "
-		"are on disk.";
-	m->m_cgi   = "miftm";
-	m->m_off   = (char *)&cr.m_indexdbMinFilesToMerge - x;
-	m->m_def   = "6"; // default to high query performance, not spider
-	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "datedb min files needed to trigger to merge";
-	m->m_desc  = "Merge is triggered when this many datedb data files "
-		"are on disk.";
-	m->m_cgi   = "mdftm";
-	m->m_off   = (char *)&cr.m_datedbMinFilesToMerge - x;
-	m->m_def   = "5";
-	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "spiderdb min files needed to trigger to merge";
-	m->m_desc  = "Merge is triggered when this many spiderdb data files "
-		"are on disk.";
-	m->m_cgi   = "msftm";
-	m->m_off   = (char *)&cr.m_spiderdbMinFilesToMerge - x;
-	m->m_def   = "2";
-	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "checksumdb min files needed to trigger to merge";
-	m->m_desc  = "Merge is triggered when this many checksumdb data files "
-		"are on disk.";
-	m->m_cgi   = "mcftm";
-	m->m_off   = (char *)&cr.m_checksumdbMinFilesToMerge - x;
-	m->m_def   = "2";
-	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "clusterdb min files needed to trigger to merge";
-	m->m_desc  = "Merge is triggered when this many clusterdb data files "
-		"are on disk.";
-	m->m_cgi   = "mclftm";
-	m->m_off   = (char *)&cr.m_clusterdbMinFilesToMerge - x;
-	m->m_def   = "2";
-	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
-	m++;
-	*/
-
 	m->m_title = "linkdb min files needed to trigger to merge";
 	m->m_desc  = "Merge is triggered when this many linkdb data files "
 		"are on disk. Raise this when initially growing an index "
@@ -18785,33 +18609,6 @@ void Parms::init ( ) {
 	m->m_group = 0;
 	m++;
 
-	/*
-	m->m_title = "recycle imported link info";
-	m->m_desc  = "If enabled, gigablast will recycle the imported "
-		"link info when rebuilding titledb.";
-	m->m_cgi   = "rrlit"; // repair full rebuild
-	m->m_off   = (char *)&g_conf.m_rebuildRecycleLinkInfo2 - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "1";
-	m->m_group = 0;
-	m++;
-	*/
-
-	/*
-	m->m_title = "remove bad pages";
-	m->m_desc  = "If enabled, gigablast just scans the titledb recs "
-		"in the given collection and removes those that are "
-		"banned or filtered according to the url filters table. It "
-		"will also lookup in tagdb.";
-	m->m_cgi   = "rbadp";
-	m->m_off   = (char *)&g_conf.m_removeBadPages - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "0";
-	m++;
-	*/
-
 	m->m_title = "rebuild titledb";
 	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
 	m->m_cgi   = "rrt"; // repair rebuild titledb
@@ -18821,28 +18618,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "0";
 	m++;
-
-	/*
-	m->m_title = "rebuild tfndb";
-	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
-	m->m_cgi   = "rru"; // repair rebuild tfndb
-	m->m_off   = (char *)&g_conf.m_rebuildTfndb - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "rebuild indexdb";
-	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
-	m->m_cgi   = "rri";
-	m->m_off   = (char *)&g_conf.m_rebuildIndexdb - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-	*/
 
 	m->m_title = "rebuild posdb";
 	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
@@ -18854,39 +18629,6 @@ void Parms::init ( ) {
 	m->m_def   = "0";
 	m->m_group = 0;
 	m++;
-
-	/*
-	m->m_title = "rebuild no splits";
-	m->m_desc  = "If enabled, gigablast will just re-add the no split "
-		"lists from all the current title recs back into indexdb.";
-	m->m_cgi   = "rns";
-	m->m_off   = (char *)&g_conf.m_rebuildNoSplits - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "rebuild datedb";
-	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
-	m->m_cgi   = "rrd";
-	m->m_off   = (char *)&g_conf.m_rebuildDatedb - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "rebuild checksumdb";
-	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
-	m->m_cgi   = "rrch";
-	m->m_off   = (char *)&g_conf.m_rebuildChecksumdb - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-	*/
 
 	m->m_title = "rebuild clusterdb";
 	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
@@ -18910,18 +18652,6 @@ void Parms::init ( ) {
 	m->m_group = 0;
 	m++;
 
-	/*
-	m->m_title = "rebuild tagdb";
-	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
-	m->m_cgi   = "rrsi";
-	m->m_off   = (char *)&g_conf.m_rebuildSitedb - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-	*/
-
 	m->m_title = "rebuild linkdb";
 	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
 	m->m_cgi   = "rrld";
@@ -18932,58 +18662,6 @@ void Parms::init ( ) {
 	m->m_def   = "0";
 	m->m_group = 0;
 	m++;
-
-	/*
-	m->m_title = "rebuild tagdb";
-	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
-	m->m_cgi   = "rrtgld";
-	m->m_off   = (char *)&g_conf.m_rebuildTagdb - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "rebuild placedb";
-	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
-	m->m_cgi   = "rrpld";
-	m->m_off   = (char *)&g_conf.m_rebuildPlacedb - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "rebuild timedb";
-	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
-	m->m_cgi   = "rrtmd";
-	m->m_off   = (char *)&g_conf.m_rebuildTimedb - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "rebuild sectiondb";
-	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
-	m->m_cgi   = "rrsnd";
-	m->m_off   = (char *)&g_conf.m_rebuildSectiondb - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "rebuild revdb";
-	m->m_desc  = "If enabled, gigablast will rebuild this rdb";
-	m->m_cgi   = "rrrvd";
-	m->m_off   = (char *)&g_conf.m_rebuildRevdb - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-	*/
 
 	m->m_title = "rebuild root urls";
 	m->m_desc  = "If disabled, gigablast will skip root urls.";
@@ -19006,23 +18684,6 @@ void Parms::init ( ) {
 	m->m_group = 0;
 	m++;
 
-	/*
-	m->m_title = "skip tagdb lookup";
-	m->m_desc  = "When rebuilding spiderdb and scanning it for new "
-		"spiderdb records, should a tagdb lookup be performed? "
-		"Runs much much "
-		"faster without it. Will also keep the original doc quality "
-		"and "
-		"spider priority in tact.";
-	m->m_cgi   = "rssl";
-	m->m_off   = (char *)&g_conf.m_rebuildSkipSitedbLookup - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_obj   = OBJ_CONF;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m++;
-	*/
 #endif
 	///////////////////////////////////////////
 	//          END PAGE REPAIR              //

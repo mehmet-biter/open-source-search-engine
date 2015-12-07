@@ -51,7 +51,6 @@ public:
 	//bool getRootQuality ( );
 	//bool addToSpiderdb2 ( ) ; 
 	//bool addToTfndb2 ( ); 
-	//bool addToChecksumdb2 ( );
 	//bool addToClusterdb2 ( );
 	//bool addToIndexdb2 ( );
 	//bool addToIndexdb2b( );
@@ -115,7 +114,6 @@ public:
 	int32_t       m_priority;
 	uint64_t   m_contentHash;
 	//key_t      m_tfndbKey;
-	//char       m_checksumdbKey[32];
 	key_t      m_clusterdbKey ;
 	key_t      m_spiderdbKey;
 	char       m_srBuf[SR_BUFSIZE];
@@ -175,7 +173,6 @@ public:
 	//char       m_rebuildNoSplits   ;
 	//char       m_rebuildDatedb     ;
 	//char       m_rebuildTfndb      ;
-	//char     m_rebuildChecksumdb ;
 	char       m_rebuildClusterdb  ;
 	char       m_rebuildSpiderdb   ;
 	char       m_rebuildSitedb     ;

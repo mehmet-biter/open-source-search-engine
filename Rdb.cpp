@@ -1,7 +1,6 @@
 #include "gb-include.h"
 
 #include "Rdb.h"
-//#include "Checksumdb.h"
 #include "Clusterdb.h"
 #include "Hostdb.h"
 #include "Tagdb.h"
@@ -1990,7 +1989,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	}
 	// if we are well into repair mode, level 2, do not add anything
 	// to spiderdb or titledb... that can mess up our titledb scan.
-	// we always rebuild tfndb, clusterdb, checksumdb and spiderdb
+	// we always rebuild tfndb, clusterdb and spiderdb
 	// but we often just repair titledb, indexdb and datedb because 
 	// they are bigger. it may add to indexdb/datedb
 	if ( g_repair.isRepairActive() &&
@@ -2008,7 +2007,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	       //m_rdbId == RDB_DATEDB     ||
 	       m_rdbId == RDB_CLUSTERDB  ||
 	       m_rdbId == RDB_LINKDB     ||
-	       //m_rdbId == RDB_CHECKSUMDB ||
 	       m_rdbId == RDB_DOLEDB     ||
 	       m_rdbId == RDB_SPIDERDB   ||
 	       m_rdbId == RDB_REVDB      ) ) {
@@ -3140,7 +3138,6 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_titledb.getRdb   () ) return RDB_TITLEDB;
 	if ( rdb == g_sectiondb.getRdb () ) return RDB_SECTIONDB;
 	if ( rdb == g_placedb.getRdb   () ) return RDB_PLACEDB;
-	//if ( rdb == g_checksumdb.getRdb() ) return RDB_CHECKSUMDB;
 	if ( rdb == g_spiderdb.getRdb  () ) return RDB_SPIDERDB;
 	if ( rdb == g_doledb.getRdb    () ) return RDB_DOLEDB;
 	//if ( rdb == g_tfndb.getRdb     () ) return RDB_TFNDB;
@@ -3162,7 +3159,6 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_titledb2.getRdb   () ) return RDB2_TITLEDB2;
 	if ( rdb == g_sectiondb2.getRdb () ) return RDB2_SECTIONDB2;
 	if ( rdb == g_placedb2.getRdb   () ) return RDB2_PLACEDB2;
-	//if ( rdb == g_checksumdb2.getRdb() ) return RDB2_CHECKSUMDB2;
 	if ( rdb == g_spiderdb2.getRdb  () ) return RDB2_SPIDERDB2;
 	//if ( rdb == g_tfndb2.getRdb     () ) return RDB2_TFNDB2;
 	if ( rdb == g_clusterdb2.getRdb () ) return RDB2_CLUSTERDB2;
@@ -3186,7 +3182,6 @@ char isSecondaryRdb ( uint8_t rdbId ) {
 	case RDB2_TITLEDB2   : return true;
 	case RDB2_SECTIONDB2 : return true;
 	case RDB2_PLACEDB2   : return true;
-	//case RDB2_CHECKSUMDB2: return true;
 	case RDB2_SPIDERDB2  : return true;
 	case RDB2_TFNDB2     : return true;
 	case RDB2_CLUSTERDB2 : return true;
@@ -3350,37 +3345,6 @@ RdbBase *getRdbBase ( uint8_t rdbId , collnum_t collnum ) {
 	if ( rdb->m_isCollectionLess ) collnum = (collnum_t) 0;
 	return rdb->getBase(collnum);
 }
-
-// get group responsible for holding record with this key
-/*
-RdbCache *getCache ( uint8_t rdbId ) {
-	if ( rdbId == RDB_INDEXDB )
-		return g_indexdb.getRdb()->getCache();
-	if ( rdbId == RDB_DATEDB )
-		return g_datedb.getRdb()->getCache();
-	if ( rdbId == RDB_TITLEDB)
-		return g_titledb.getRdb()->getCache();
-	if ( rdbId == RDB_SECTIONDB)
-		return g_sectiondb.getRdb()->getCache();
-	if ( rdbId == RDB_PLACEDB)
-		return g_placedb.getRdb()->getCache();
-	//if ( rdbId == RDB_CHECKSUMDB)
-	//	return g_checksumdb.getRdb()->getCache();
-	if ( rdbId == RDB_SPIDERDB )
-		return g_spiderdb.getRdb()->getCache();
-	if ( rdbId == RDB_DOLEDB )
-		return g_doledb.getRdb()->getCache();
-	if ( rdbId == RDB_TFNDB )
-		return g_tfndb.getRdb()->getCache();
-	if ( rdbId == RDB_CLUSTERDB )
-		return g_clusterdb.getRdb()->getCache();
-	if ( rdbId == RDB_STATSDB )
-		return g_statsdb.getRdb()->getCache();
-	if ( rdbId == RDB_LINKDB )
-		return g_linkdb.getRdb()->getCache();
-	return NULL;
-}
-*/
 
 // calls addList above
 bool Rdb::addList ( char *coll , RdbList *list, int32_t niceness ) {

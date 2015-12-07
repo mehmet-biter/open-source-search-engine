@@ -16,7 +16,6 @@
 #include "Tagdb.h"
 #include "Catdb.h"
 #include "Spider.h"
-//#include "Checksumdb.h"
 #include "Clusterdb.h"
 #include "Spider.h"
 #include "Repair.h"
@@ -220,8 +219,6 @@ bool Collectiondb::cleanTrees ( ) {
 	//r = g_revdb.getRdb();
 	//r->m_tree.cleanTree    ((char **)r->m_bases);
 	//r = g_sectiondb.getRdb();
-	//r->m_tree.cleanTree    ((char **)r->m_bases);
-	//r = g_checksumdb.getRdb();
 	//r->m_tree.cleanTree    ((char **)r->m_bases);
 	//r = g_tfndb.getRdb();
 	//r->m_tree.cleanTree    ((char **)r->m_bases);
@@ -800,7 +797,6 @@ bool Collectiondb::addRdbBasesForCollRec ( CollectionRec *cr ) {
 	//if ( ! g_sectiondb.getRdb()->addRdbBase1  ( coll ) ) goto hadError;
 	if ( ! g_tagdb.getRdb()->addRdbBase1        ( coll ) ) goto hadError;
 	//if ( ! g_catdb.getRdb()->addRdbBase1      ( coll ) ) goto hadError;
-	//if ( ! g_checksumdb.getRdb()->addRdbBase1 ( coll ) ) goto hadError;
 	//if ( ! g_tfndb.getRdb()->addRdbBase1      ( coll ) ) goto hadError;
 	if ( ! g_clusterdb.getRdb()->addRdbBase1    ( coll ) ) goto hadError;
 	if ( ! g_linkdb.getRdb()->addRdbBase1       ( coll ) ) goto hadError;
@@ -1005,7 +1001,6 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 	//if ( deleteTurkdb ) {
 	//}
 	//g_catdb.getRdb()->delColl      ( coll );
-	//g_checksumdb.getRdb()->delColl ( coll );
 	g_spiderdb.getRdb()->delColl   ( coll );
 	g_doledb.getRdb()->delColl     ( coll );
 	//g_tfndb.getRdb()->delColl      ( coll );

@@ -100,7 +100,6 @@ void rmTest();
 
 int g_inMemcpy=0;
 
-//#ifndef _LARS_
 static void dumpTitledb  ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
 			   int64_t docId , char justPrintDups ,
 			   bool dumpSentences ,
@@ -131,7 +130,7 @@ static void dumpDoledb  ( char *coll,int32_t sfn,int32_t numFiles,bool includeTr
 void dumpDatedb   ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree, 
 		    int64_t termId , bool justVerify ) ;
 void dumpClusterdb       ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
-//void dumpChecksumdb      ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
+
 //void dumpStatsdb 	 ( int32_t startFileNum, int32_t numFiles, bool includeTree,
 //			   int test );
 			   
@@ -675,7 +674,7 @@ int main2 ( int argc , char *argv[] ) {
 			"first [numWordsToDump] words.\n\n"
 			//#ifndef _LARS_
 			//"gendbs <coll> [hostId]\n\tgenerate missing spiderdb, "
-			//"tfndb and checksumdb files from titledb files.\n\n"
+			//"tfndb files from titledb files.\n\n"
 
 			//"gentfndb <coll> [hostId]\n\tgenerate missing tfndb. "
 			//"titledb disk dumps and tight merges are no "
@@ -694,7 +693,6 @@ int main2 ( int argc , char *argv[] ) {
 			//"date range terms in all title recs.\n\n"
 
 			//"update\tupdate titledb0001.dat\n\n"
-			//"mergechecksumdb\tmerge checksumdb flat files\n\n"
 			"treetest\n\ttree insertion speed test\n\n"
 
 			"bucketstest [dbname]\n\tcompare speed and accuracy of "
@@ -779,7 +777,6 @@ int main2 ( int argc , char *argv[] ) {
 			"\n"
 
 			"\t<db> is D to dump duplicate docids in titledb.\n"
-			"\t<db> is c to dump checksumdb.\n"
 			"\t<db> is S to dump tagdb.\n"
 			"\t<db> is W to dump tagdb for wget.\n"
 			"\t<db> is x to dump doledb.\n"
@@ -791,137 +788,6 @@ int main2 ( int argc , char *argv[] ) {
 			"\t<db> is Z to dump statsdb all keys and "
 			"data samples.\n"
 			"\t<db> is L to dump linkdb.\n"
-
-			/*
-			"dump <V> [C [X [Y [Z [T]]]]]\n\tdump a db in "
-			//#endif
-			"working directory.\n"
-			//#ifndef _CLIENT_
-			//#ifndef _METALINCS_
-			//"\tV is u to dump tfndb.\n"
-			"\tV is d to dump datedb.\n"
-			//#endif
-			//#endif
-			"\tV is s to dump spiderdb. set [T] to 1 to print "
-			"new stats. 2 to print old stats. T is ip of firstip."
-			"\n"
-			"\tV is t to dump titledb.\n"
-			//"\tV is ts to dump sentences from events.\n"
-			//"\tV is tw to dump words from events.\n"
-			"\tV is D to dump duplicate docids in titledb.\n"
-			"\tV is c to dump checksumdb.\n"
-			"\tV is S to dump tagdb.\n"
-			"\tV is W to dump tagdb for wget.\n"
-			//"\tV is V to dump revdb.\n"
-			"\tV is x to dump doledb.\n"
-			"\tV is w to dump waiting tree.\n"
-			"\tV is B to dump sectiondb.\n"
-			"\tV is C to dump catdb.\n"
-			"\tV is l to dump clusterdb.\n"
-			"\tV is z to dump statsdb all keys.\n"
-			"\tV is Z to dump statsdb all keys and data samples.\n"
-			"\tV is L to dump linkdb.\n"
-			//"\tV is u to dump tfndb.\n"
-			//"\tV is vu to verify tfndb.\n"
-			"\tC is the name of the collection.\n"
-			"\tX is start file num.    (default  0)\n"
-			"\tY is num files.         (default -1)\n"
-			"\tZ is 1 to include tree. (default  1)\n"
-			//#ifndef _CLIENT_
-			//#ifndef _METALINCS_
-			//#ifndef _GLOBALSPEC_
-			"\tT is the termid to dump. Applies only to indexdb.\n"
-			//#endif
-			//#endif
-			//#endif
-			"\tT is the first docId to dump. Applies only to "
-			"titledb. "
-			//"(default none)\n\n"
-			"\tV is c to dump cached recs.\n"
-
-			"\n"
-			
-
-			"dump s [X [Y [Z [C]]]\n"
-			"\tdump spider in working directory.\n"
-			"\tC is the collection name.       (default  none)\n"
-			"\tX is start file num.            (default  0)\n"
-			"\tY is num files.                 (default -1)\n"
-			"\tZ is 1 to include tree.         (default  1)\n"
-			//"\tA is 1 for new urls, 0 for old. (default  1)\n"
-			//"\tA is -1 to dump all urls in all queues.\n"
-			//"\tB is priority of urls.          (default -1)\n"
-			//"\tB is -1 to dump all priorities\n"
-			"\tC is 1 to just show the stats.  (default  0)\n"
-			"\n"
-			*/
-
-
-			//"dump i X Y Z t\n\tdump indexdb termId t in working "
-			//"directory.\n"
-			//"\tX is start file num.     (default  0)\n"
-			//"\tY is num files.          (default -1)\n"
-			//"\tZ is 1 to include tree.  (default  1)\n"
-			//"\tt is the termid to dump. (default none)\n\n"
-			//#ifndef _CLIENT_
-			//#ifndef _METALINCS_
-			/*
-			"dump I [X [V]]\n\tdump indexdb in working "
-			"directory at "
-			"an offset.\n"
-			//#endif
-			//#endif
-			"\tX is the file NAME.      (default  NULL)\n"
-			"\tV is the start offset.   (default  0)\n"
-			*/
-			/*
-			"\n"
-			"dumpmissing <coll> [hostId]\n\t"
-			"dump the docIds in indexdb but not "
-			"in tfndb/titledb to stderr. "
-			" Used for passing in to removedocids.\n"
-			"\n"
-
-			"dumpdups <coll> [hostId]\n\t"
-			"dump the docIds in duplicated in indexdb when "
-			"they should not be to stderr. Usually a sign "
-			"of mis-indexing. Used for passing in to "
-			"removedocids.\n"
-			"\n"
-
-			"removedocids <coll> <fileOfDocIds> "
-			"[hostId|hostId1-hostId2]"
-			"\n\tremoves the docids in fileOfDocIds from indexdb, "
-			"clusterdb, checksumdb and tfndb. Effectively "
-			"completely deleting that docid. "
-			"fileOfDocIds contains one "
-			"docId per line, and nothing more.\n"
-			"\n"
-
-			"setnote <hostid> <note>"
-			"\n\tsets the note for host with hostid <hostid> to "
-			"the given note <note>.\n"
-			"\n"
-
-			"setsparenote <spareid> <note>"
-			"\n\tsets the note for spare with spareid <spareid> to "
-			"the given note <note>.\n"
-			"\n"
-
-			"replacehost <hostid> <spareid>"
-			"\n\treplaces host with hostid <hostid> with the "
-			"spare that has the spareid <spareid>.  the host "
-			"being replaced should already be shut down or dead.\n"
-			"\n"
-
-			"synchost <hostid>"
-			"\n\trecopies this host from its twin. host directory "
-			"must be empty and the host must be marked as dead "
-			"in the current gb. Use synchost2 to use secondary "
-			"IPs.\n"
-			"\n"
-			*/
-			//#endif
 			);
 		SafeBuf sb2;
 		sb2.brify2 ( sb.getBufStart() , 60 , "\n\t" , false );
@@ -931,24 +797,10 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	//SafeBuf tt;
-	//tt.base64Encode("any carnal pleas",16);
-	//fprintf(stderr,"%s\n",tt.getBufStart());
-	//exit(0);
-
-	// get hosts.conf file
-	//char *hostsConf = "./hosts.conf";
-	//int32_t hostId = -1;
 	int32_t  cmdarg = 0;
-	//char *workingDir = NULL;
-	//if(argc >= 3 && argv[1][0]=='-'&&argv[1][1]=='w'&&argv[1][2]=='\0') {
-	// 	//hostsConf = argv[2];
-	// 	workingDir = argv[2];
-	// 	cmdarg    = 3;
-	// }
-		
+
 	// get command
-	//if ( argc <= cmdarg ) goto printHelp;
+
 	// it might not be there, might be a simple "./gb" 
 	char *cmd = "";
 	if ( argc >= 2 ) {
@@ -971,25 +823,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 0; 
 	}
 
-	// print overview
-	//if ( strcmp ( cmd , "-o" ) == 0 ) {
-	//	//printOverview ( );
-	//	return 0;
-	//}
-
-	//bool hadHostId = false;
- 	// assume our hostId is the command!
-	// now we advance 'cmd' past the hostId if we detect
-	// the presence of more args.
-	// WE NO LONGER do it this way...
-	// if ( is_digit(argv[cmdarg][0]) ) {
-	// 	hostId = atoi(argv[cmdarg]);
-	// 	if(argc > cmdarg+1) {
-	// 		cmd = argv[++cmdarg];
-	// 	}
-	// 	hadHostId = true;
-	// }
-
 	if ( strcmp ( cmd , "dosopen" ) == 0 ) {	
 		int32_t ip;
 		int16_t port = 8000;
@@ -1004,10 +837,6 @@ int main2 ( int argc , char *argv[] ) {
 
 		return dosOpen(ip, port, numSockets);
 	}
-
-	//SafeBuf sb;
-	//char *str = "fun glassblowing now";
-	//sb.truncateLongWords ( str , strlen(str),10);
 
 	//send an email on startup for -r, like if we are recovering from an
 	//unclean shutdown.
@@ -1033,25 +862,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "emailmandrill" ) == 0 ) {
 		testMandrill = true;
 	}
-
-	/*
-	class foo {
-	public:
-		int32_t poo;
-	};
-	class fart {
-	public:
-		int16_t fart3;
-		char fart1;
-		char fart2;
-	};
-	foo xxx;
-	xxx.poo = 38123;
-	fart *yyy = (fart *)&xxx;
-	fprintf(stderr,"fart1=%"INT32" fart2=%"INT32" fart3=%"INT32"\n",
-		(int32_t)yyy->fart1,(int32_t)yyy->fart2,(int32_t)yyy->fart3);
-	exit(0);
-	*/
 
 	// gb gendbs, preset the hostid at least
 	if ( //strcmp ( cmd , "gendbs"   ) == 0 ||
@@ -1862,57 +1672,6 @@ int main2 ( int argc , char *argv[] ) {
 		injectFileTest ( reqLen , hostId );
 		return 0;
 	}
-	// gb updatetitledb
-	/*
-	if ( strcmp ( cmd , "updatetitledb" ) == 0 ) {
-		if ( cmdarg+1 != argc ) goto printHelp;
-		log(LOG_INIT,"db: *-*-*-* Updating Titledb et al.");
-		g_conf.m_spiderdbMinFilesToMerge   = 5;
-		g_conf.m_tfndbMaxDiskPageCacheMem      = 0;
-		//g_conf.m_checksumdbMaxDiskPageCacheMem = 0;
-		g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
-		//g_conf.m_tfndbMaxTreeMem = 100*1024*1024;
-		// . re-write all the keys so that they contain the site and
-		//   content hashes in the low bits
-		// . there should only be one file for this since we don't 
-		//   support  negatives
-		fixTitleRecs ( "" ); // coll
-		return 0;
-	}
-	*/
-	// this is a hack too!
-	/*
-	if ( strcmp ( cmd , "mergechecksumdb" ) == 0 ) {
-		if ( cmdarg+1 != argc ) goto printHelp;
-		log(LOG_INIT,"db: *-*-*-* Merging checksumdb flat files.");
-		int32_t old = g_conf.m_checksumdbMinFilesToMerge ;
-		g_conf.m_checksumdbMinFilesToMerge = 50;
-		// set up checksumdb
-		g_conf.m_checksumdbMaxTreeMem = 50000000; // 50M
-		g_conf.m_maxMem = 1000000000LL; // 1G
-		g_mem.m_maxMem  = 1000000000LL; // 1G
-		// init it
-		if ( ! g_checksumdb.init ( ) ) {
-			log("db: Checksumdb init failed for merge." ); 
-			return 1; 
-		}
-		g_collectiondb.init(true);
-		g_checksumdb.getRdb()->addRdbBase1 ( "finalmerge" );
-		// no, otherwise won't be able to load into tree!
-		//g_conf.m_checksumdbMaxTreeMem = 50*1024*1024;
-		mergeChecksumFiles();
-		// reset so when we save value goes back to original
-		g_conf.m_checksumdbMinFilesToMerge = old;
-		// save tree to disk
-		Rdb *r = g_checksumdb.getRdb();
-		r->m_tree.fastSave ( r->getDir()    ,
-				     r->m_dbname    , // &m_saveFile ,
-				     false          , // useThread   ,
-				     NULL           , // this        ,
-				     NULL           );// doneSaving ) ) 
-		return 0;
-	}
-	*/
 	/*
 	// gb inject <file> <ip:port> [startdocid]
 	// gb inject titledb <newhosts.conf> [startdocid]
@@ -2797,8 +2556,6 @@ int main2 ( int argc , char *argv[] ) {
 				     0,RDB_CATDB);
 		else if ( argv[cmdarg+1][0] == 'l' )
 			dumpClusterdb (coll,startFileNum,numFiles,includeTree);
-		//else if ( argv[cmdarg+1][0] == 'c' )
-		//	dumpChecksumdb(coll,startFileNum,numFiles,includeTree);
 		//else if ( argv[cmdarg+1][0] == 'z' )
 		//	dumpStatsdb(startFileNum,numFiles,includeTree,2);
 		//else if ( argv[cmdarg+1][0] == 'Z' )
@@ -3218,7 +2975,7 @@ int main2 ( int argc , char *argv[] ) {
 	//if ( ! g_syncdb.init() ) {
 	//	log("db: Syncdb init failed." ); return 1; }
 
-	// if generating spiderdb/tfndb/checksumdb, boost minfiles
+	// if generating spiderdb/tfndb, boost minfiles
 	//if ( strcmp ( cmd, "gendbs" ) == 0 ) {
 	//	// don't let spider merge all the time!
 	//	g_conf.m_spiderdbMinFilesToMerge = 20;
@@ -3251,11 +3008,6 @@ int main2 ( int argc , char *argv[] ) {
 		log("db: SpiderCache init failed." ); return 1; }
 	if ( ! g_test.init() ) {
 		log("db: test init failed" ); return 1; }
-
-	// then checksumdb
-	//if ( ! g_checksumdb.init()   ) {
-	//	log("db: Checksumdb init failed." ); return 1; }
-	
 
 	// ensure clusterdb tree is big enough for quicker generation
 	//if ( strcmp ( cmd, "genclusterdb" ) == 0 ) {
@@ -4222,11 +3974,6 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 		for ( int32_t ki = 0 ; ki < MAX_KEY_BYTES ; ki++ )
 			k[ki] = rand() & 0xff;
 
-		//char *k2;
-		//if ( g_conf.m_checksumdbKeySize == 12 )
-		//	k2 = (char *)&k;
-		//else
-		//	k2 = (char *)&k16;
 		// get old group (groupId1) and new group (groupId2)
 		shard1 = hdb1->getShardNum ( RDB_TITLEDB , k );//, hdb1 );
 		shard2 = hdb2->getShardNum( RDB_TITLEDB , k );//, hdb2 );
@@ -4238,20 +3985,7 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 			return -1;
 		}
 		*/
-		/*
-		// get old group (groupId1) and new group (groupId2)
-		//groupId1 = g_checksumdb.getGroupId ( k , &g_hostdb );
-		//groupId2 = g_checksumdb.getGroupId ( k , &hdb );
-		groupId1 = hdb1->g_checksumdb.getGroupId ( k2 , hdb1 );
-		groupId2 = hdb2->g_checksumdb.getGroupId ( k2 , hdb2 );
-		// ensure groupId2 is derivative of groupId1
-		if ( (groupId2 & hdb1->m_groupMask) != groupId1 ) {
-			log("Bad engineer. Group id 0x%"XINT32" not derivative of "
-			    "group id 0x%"XINT32" for checksumdb.",
-			    groupId2,groupId1);
-			return -1;
-		}
-		*/
+
 		/*
 		// get old group (groupId1) and new group (groupId2)
 		groupId1 = hdb1->getGroupId ( RDB_SPIDERDB , k );
@@ -4424,9 +4158,6 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 		fprintf(stderr,"scp %s:%s/spiderdb* %s:%s\n",
 			iptoa( h->m_ip), h->m_dir  ,
 			iptoa(h2->m_ip), h2->m_dir );
-		fprintf(stderr,"scp %s:%s/checksumdb* %s:%s\n",
-			iptoa( h->m_ip), h->m_dir  ,
-			iptoa(h2->m_ip), h2->m_dir );
 		fprintf(stderr,"scp %s:%s/clusterdb* %s:%s\n",
 			iptoa( h->m_ip), h->m_dir  ,
 			iptoa(h2->m_ip), h2->m_dir );
@@ -4450,81 +4181,6 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 	if ( hostId2 == -1 ) hostId2 = hostId;
 
 	char tmp[1024];
-	/*
-	int32_t i,j;
-	if( installFlag == ifk_distributeC ) {
-		int32_t numGroups = g_hostdb.getNumShards();
-
-		char tmp2[100];
-		uint32_t groupId1, groupId2;
-		int32_t numHostsPerGroup = g_hostdb.getNumHostsPerShard();
-		log("distribute copying files to twins for each host");
-		for(i=0;i<numGroups;i++) {
-			groupId1 = g_hostdb.getGroupId(i);
-			Host *h1 = g_hostdb.getGroup(groupId1);
-			int32_t baseHostId = h1->m_hostId;	
-			Host *h2  = h1;
-			h2++;
-			
-			for(j=1; j< numHostsPerGroup; j++) {
-				sprintf(tmp, 
-					"scp %s:%schecksumg%"INT32"h%"INT32"db ",
-					iptoa(h1->m_ip),
-					h1->m_dir,baseHostId,
-					(int32_t)h1->m_hostId);
-				sprintf(tmp2, "%s:%s &",
-						iptoa(h2->m_ip),
-						h2->m_dir);
-				strcat(tmp,tmp2);
-				log("distribute %s",tmp);
-				system(tmp);
-				h2++;
-
-			}
-
-		}
-
-
-		for(i=1;i<numGroups;i++) {
-			log("distribute i=%"INT32"",i);
-
-			for(j=0;j<numGroups;j++) {
-				groupId1 = g_hostdb.getGroupId(j);
-				Host *h1 = g_hostdb.getGroup(groupId1);
-				
-				
-
-				groupId2 = g_hostdb.getGroupId((j+i)%numGroups);
-				Host *h2 = g_hostdb.getGroup(groupId2);
-				
-
-				int32_t baseHostId = h2->m_hostId;
-				for(int k=0;k<numHostsPerGroup; k++) {
-				sprintf(tmp, 
-					"scp %s:%schecksumg%"INT32"h%"INT32"db ",
-					iptoa(h1->m_ip),
-					h1->m_dir,baseHostId,
-					(int32_t)h1->m_hostId);
-				if(j == numGroups-1 && k == numHostsPerGroup-1) 
-					sprintf(tmp2, "%s:%s ",
-						iptoa(h2->m_ip),
-						h2->m_dir);
-				else
-					sprintf(tmp2, "%s:%s &",
-						iptoa(h2->m_ip),
-						h2->m_dir);
-				strcat(tmp,tmp2);
-				log("distribute %s",tmp);
-				system(tmp);
-				h2++;
-	
-				}
-			}
-		}
-
-	return 0;
-	}
-*/
 
 	if ( installFlag == ifk_proxy_start ) {
 		for ( int32_t i = 0; i < g_hostdb.m_numProxyHosts; i++ ) {
@@ -4804,70 +4460,6 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 			log(LOG_INIT,"admin: %s", tmp);
 			system ( tmp );
 		}
-		/*
-		if      ( installFlag == ifk_install2 ) {
-			// don't copy to ourselves
-			//if ( h2->m_hostId == h->m_hostId ) continue;
-			sprintf(tmp,
-				"rcp -r "
-				"%sgb "
-				//"%sgbfilter "
-				"%shosts.conf "
-				"%shosts2.conf "
-				"%sgb.conf "
-				"%stmpgb "
-				//"%scollections.dat "
-				"%sgb.pem "
-				"%sdict "
-				"%sucdata "
-				"%stop100000Alexa.txt "
-				//"%slanglist "
-				"%santiword "
-				"%s.antiword "
-				"badcattable.dat "
-				"catcountry.dat "
-				"%spdftohtml "
-				"%spstotext "
-				"%sxlhtml "
-				"%sppthtml "
-				//"%stagdb*.xml "
-				"%shtml "
-				"%scat "
-				"%s:%s",
-				dir,
-				dir,
-				dir,
-				dir,
-				dir,
-				dir,
-				dir,
-				dir,
-				dir,
-				dir,
-				dir,
-				dir,
-				dir,
-				dir,
-				dir,
-				dir,
-				dir,
-				//iptoa(h2->m_ip2),
-				iptoa(h2->m_ipShotgun),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"rcp %sgb.conf %s:%sgb.conf",
-				dir ,
-				//h->m_hostId ,
-				//iptoa(h2->m_ip),
-				iptoa(h2->m_ipShotgun),
-				h2->m_dir);
-			        //h2->m_hostId);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-		}
-		*/
 		else if ( installFlag == ifk_installgb ) {
 			// don't copy to ourselves
 			//if ( h2->m_hostId == h->m_hostId ) continue;
@@ -4989,41 +4581,6 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 			// execute it
 			system ( tmp );
 		}
-		/*
-		// SEQUENTIALLY start
-		else if ( installFlag == ifk_start2 ) {
-			// . save old log now, too
-			char tmp2[1024];
-			tmp2[0]='\0';
-			// let's do this for everyone now
-			//if ( h2->m_hostId == 0 )
-			sprintf(tmp2,
-				"mv ./log%03"INT32" ./log%03"INT32"-`date '+"
-				"%%Y_%%m_%%d-%%H:%%M:%%S'` ; " ,
-				h2->m_hostId   ,
-				h2->m_hostId   );
-			// . assume conf file name gbHID.conf
-			// . assume working dir ends in a '/'
-			char *amp = " &";
-			if ( i > 0 && (i%5) == 0 ) amp = "";
-			sprintf(tmp,
-				"ssh %s \"cd %s ; "
-				"cp -f gb gb.oldsave ; "
-				"mv -f gb.installed gb ; %s"
-				"./gb %"INT32" >& ./log%03"INT32" &\"%s",
-				iptoa(h2->m_ipShotgun),
-				h2->m_dir      ,
-				tmp2           ,
-				//h2->m_dir      ,
-				h2->m_hostId   ,
-				h2->m_hostId   ,
-				amp );
-			// log it
-			log(LOG_INIT,"admin: %s", tmp);
-			// execute it
-			system ( tmp );
-		}
-		*/
 		// start up a dummy cluster using hosts.conf ports + 1
 		else if ( installFlag == ifk_tmpstart ) {
 			// . assume conf file name gbHID.conf
@@ -5074,7 +4631,7 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 				// if gb still running, then do not try to
 				// run it again. we
 				// probably double-called './gb start'.
-				// so see if the port is bound to. 
+				// so see if the port is bound to.
 				// "./gb isportinuse %i ; "
 				// "if [ \\$? -eq 1 ] ; then "
 				// "echo \"gb or something else "
@@ -5165,7 +4722,7 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 
 				// move the log file
 				//"mv ./log%03"INT32" ./log%03"INT32"-\\`date '+"
-				//"%%Y_%%m_%%d-%%H:%%M:%%S'\\` ; " 
+				//"%%Y_%%m_%%d-%%H:%%M:%%S'\\` ; "
 
 				"./gb -d "//%"INT32" "
 				//"\\$ADDARGS "
@@ -5174,7 +4731,7 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 
 				//"EXITSTATUS=\\$? ; "
 				//"ADDARGS='-r' ; "
-				//"} " 
+				//"} "
  				//"done >& /dev/null & \" %s",
 				"\" %s",
 				iptoa(h2->m_ip),
@@ -5196,98 +4753,6 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 			// execute it
 			system ( tmp );
 		}
-		/*
-		else if ( installFlag == ifk_gendbs ) {
-			// . save old log now, too
-			char tmp2[1024];
-			tmp2[0]='\0';
-			// let's do this for everyone now
-			//if ( h2->m_hostId == 0 )
-			sprintf(tmp2,
-				"mv ./log%03"INT32" ./log%03"INT32"-`date '+"
-				"%%Y_%%m_%%d-%%H:%%M:%%S'` ; " ,
-				h2->m_hostId   ,
-				h2->m_hostId   );
-			// . assume conf file name gbHID.conf
-			// . assume working dir ends in a '/'
-			sprintf(tmp,
-				"ssh %s \"cd %s ; %s"
-				"./gb -c %shosts.conf gendbs %s %"INT32" >&"
-				"./log%03"INT32" &\" &",
-				iptoa(h2->m_ip),
-				h2->m_dir      ,
-				tmp2           ,
-				h2->m_dir      ,
-				coll           ,
-				h2->m_hostId   ,
-				h2->m_hostId   );
-			// log it
-			log(LOG_INFO,"installM %s",tmp);
-			log(LOG_INIT,"admin: %s", tmp);
-			// execute it
-			system ( tmp );
-		}
-
-
-		else if ( installFlag == ifk_fixtfndb ) {
-			// . save old log now, too
-			char tmp2[1024];
-			tmp2[0]='\0';
-			// let's do this for everyone now
-			//if ( h2->m_hostId == 0 )
-			sprintf(tmp2,
-				"mv ./log%03"INT32" ./log%03"INT32"-`date '+"
-				"%%Y_%%m_%%d-%%H:%%M:%%S'` ; " ,
-				h2->m_hostId   ,
-				h2->m_hostId   );
-			// . assume conf file name gbHID.conf
-			// . assume working dir ends in a '/'
-			sprintf(tmp,
-				"ssh %s \"cd %s ; %s"
-				"./gb -c %shosts.conf fixtfndb %s %"INT32" >&"
-				"./log%03"INT32" &\" &",
-				iptoa(h2->m_ip),
-				h2->m_dir      ,
-				tmp2           ,
-				h2->m_dir      ,
-				coll           ,
-				h2->m_hostId   ,
-				h2->m_hostId   );
-			// log it
-			log(LOG_INIT,"admin: %s", tmp);
-			// execute it
-			system ( tmp );
-		}
-		else if ( installFlag == ifk_gentfndb ) {
-			// . save old log now, too
-			char tmp2[1024];
-			tmp2[0]='\0';
-			// let's do this for everyone now
-			//if ( h2->m_hostId == 0 )
-			sprintf(tmp2,
-				"mv ./log%03"INT32" ./log%03"INT32"-`date '+"
-				"%%Y_%%m_%%d-%%H:%%M:%%S'` ; " ,
-				h2->m_hostId   ,
-				h2->m_hostId   );
-			// . assume conf file name gbHID.conf
-			// . assume working dir ends in a '/'
-			sprintf(tmp,
-				"ssh %s \"cd %s ; %s"
-				"./gb -c %shosts.conf gentfndb %s %"INT32" >&"
-				"./log%03"INT32" &\" &",
-				iptoa(h2->m_ip),
-				h2->m_dir      ,
-				tmp2           ,
-				h2->m_dir      ,
-				coll           ,
-				h2->m_hostId   ,
-				h2->m_hostId   );
-			// log it
-			log(LOG_INIT,"admin: %s", tmp);
-			// execute it
-			system ( tmp );
-		}
-		*/
 		else if ( installFlag == ifk_installcat ) {
 			// . copy catdb files to all hosts
 			// don't copy to ourselves
@@ -5434,32 +4899,6 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 			// execute it
 			system ( tmp );
 		}
-		/*
-		// SEQUENTIAL rcps
-		else if ( installFlag == ifk_installgb2 ) {
-			// don't copy to ourselves
-			//if ( h2->m_hostId == h->m_hostId ) continue;
-			char *amp = " &";
-			if ( i > 0 && (i%5) == 0 ) amp = "";
-
-			File f;
-			char *target = "gb.new";
-			f.set(h2->m_dir,target);
-			if ( ! f.doesExist() ) target = "gb";
-
-			sprintf(tmp,
-				"rcp "
-				"%s%s "
-				"%s:%s/gb.installed %s",
-				dir,
-				target ,
-				iptoa(h2->m_ipShotgun),
-				h2->m_dir,
-				amp);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-		}
-		*/
 		// dsh
 		else if ( installFlag == ifk_dsh ) {
 			// don't copy to ourselves
@@ -5613,34 +5052,12 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 	return 0;
 }
 
-// . only call this once at start up
-// . this wrapper logic is now in Rdb.cpp, attemptMergeAll()
-/*
-void tryMergingWrapper ( int fd , void *state ) {
-	g_tagdb.getRdb()->attemptMerge     ( 1 , false );
-	g_catdb.getRdb()->attemptMerge     ( 1 , false );
-	g_indexdb.getRdb()->attemptMerge    ( 1 , false );
-	g_datedb.getRdb()->attemptMerge     ( 1 , false );
-	g_titledb.getRdb()->attemptMerge    ( 1 , false );
-	g_tfndb.getRdb()->attemptMerge      ( 1 , false );
-	g_spiderdb.getRdb()->attemptMerge   ( 1 , false );
-	g_checksumdb.getRdb()->attemptMerge ( 1 , false );
-	g_clusterdb.getRdb()->attemptMerge  ( 1 , false );
-	g_loop.unregisterSleepCallback ( NULL , tryMergingWrapper );
-}
-*/
-
-
-// take snapshot of g_stats
-//void takeSnapshotWrapper( int status, void *state) {g_statsdb.takeSnapshot();}
-
 bool registerMsgHandlers ( ) {
 	if (! registerMsgHandlers1()) return false;
 	if (! registerMsgHandlers2()) return false;
 	if (! registerMsgHandlers3()) return false;
-	//if ( ! Msg9a::registerHandler() ) return false;
 	if ( ! g_pingServer.registerHandler() ) return false;
-	//if ( ! g_accessdb.registerHandler () ) return false;
+
 	// in SpiderProxy.cpp...
 	initSpiderProxyStuff();
 	return true;
@@ -5648,15 +5065,10 @@ bool registerMsgHandlers ( ) {
 
 bool registerMsgHandlers1(){
 	Msg20 msg20;	if ( ! msg20.registerHandler () ) return false;
-	//Msg22 msg22;	if ( ! msg22.registerHandler () ) return false;
-	//Msg23 msg23;	if ( ! msg23.registerHandler () ) return false;
 	Msg2a msg2a;    if ( ! msg2a.registerHandler () ) return false;
-	//Msg36 msg36;	if ( ! msg36.registerHandler () ) return false;
-	//Msg30 msg30;    if ( ! msg30.registerHandler () ) return false;
 	MsgC  msgC ;    if ( ! msgC.registerHandler  () ) return false;
 
 	if ( ! Msg22::registerHandler() ) return false;
-	//Msg2e msg2e;    if ( ! msg2e.registerHandler () ) return false;
 
 	return true;
 }
@@ -5664,23 +5076,10 @@ bool registerMsgHandlers1(){
 bool registerMsgHandlers2(){
 	Msg0  msg0 ;	if ( ! msg0.registerHandler  () ) return false;
 	Msg1  msg1 ;	if ( ! msg1.registerHandler  () ) return false;
-	//Msg6  msg6 ;    if ( ! msg6.registerHandler  () ) return false;
-	//Msg7  msg7 ;	if ( ! msg7.registerHandler  () ) return false;
-	//Msg8a  msg8a ;if ( ! msg8a.registerHandler  () ) return false;
 	Msg8b  msg8b ;  if ( ! msg8b.registerHandler  () ) return false;
-	//Msg10 msg10;	if ( ! msg10.registerHandler () ) return false;	
-	//Msg11 msg11;	if ( ! msg11.registerHandler () ) return false;	
-	//Msg12 msg12;	if ( ! msg12.registerHandler () ) return false;	
-	//Msg13 msg13;	if ( ! msg13.registerHandler () ) return false;	
-	//MsgE  msge ;  if ( ! msge.registerHandler  () ) return false;
-	//Speller speller;if ( ! speller.registerHandler()) return false;
-
-	//Syncdb::registerHandlers();
 
 	if ( ! Msg13::registerHandler() ) return false;
-	//if ( ! MsgF ::registerHandler() ) return false;
 
-	//if(! g_udpServer.registerHandler(0x10,handleRequest10)) return false;
 	if ( ! g_udpServer.registerHandler(0xc1,handleRequestc1)) return false;
 	if ( ! g_udpServer.registerHandler(0x39,handleRequest39)) return false;
 	if ( ! g_udpServer.registerHandler(0x2c,handleRequest2c)) return false;
@@ -5701,94 +5100,20 @@ bool registerMsgHandlers2(){
 	if ( ! g_udpServer.registerHandler(0x07,handleRequest7)) return false;
 
 	return true;
-
-	/*
-	// VALGRIND does not like this huge stack waster, aka, Msg39
-	Msg39 *msg39; 
-	// Ha HA!!!
-	//msg39 = new Msg39();
-	msg39 = new ( Msg39 );
-	mnew (msg39 , sizeof(Msg39) , "mainmsg39" );
-	bool ret = msg39->registerHandler ();
-	mdelete (msg39 , sizeof(Msg39) , "mainmsg39" );
-	delete msg39;
-	return ret;
-	*/
 }
 
 bool registerMsgHandlers3(){
 	Msg17 msg17;    if ( ! msg17.registerHandler () ) return false;
-	//Msg34 msg34;    if ( ! msg34.registerHandler () ) return false;
-	//Msg35 msg35;    if ( ! msg35.registerHandler () ) return false;
-	//Msg24 msg24;    if ( ! msg24.registerHandler () ) return false;
-	//Msg40 msg40;    if ( ! msg40.registerHandler () ) return false;
-	//MsgB  msgb;     if ( ! msgb.registerHandler  () ) return false;
-       	//Msg3e msg3e;    if ( ! msg3e.registerHandler () ) return false;
-	//Msg42 msg42;    if ( ! msg42.registerHandler () ) return false;
-	//Msg33 msg33;    if ( ! msg33.registerHandler () ) return false;
-	//if ( ! g_pingServer.registerHandler() ) return false;
-	//if ( ! Msg1c::init() ) return false;
 	if ( ! Msg40::registerHandler() ) return false;
 	return true;
 }
-
-/*
-void makeNewConf ( int32_t hostId , char *confFilename ) {
-	// read in the conf file
-	//	if ( ! g_conf.init ( confFilename ) ) {
-	g_conf.init ( confFilename ) ;
-	// minimal non-default description into conf
-	char buf[1024];
-	sprintf ( buf , 
-		  "<hostId> %"INT32"</>" 
-		  "<dnsIp>209.157.102.11</>"  // ns2.best.com
-		  , hostId );
-	// add it -- the rest will be filled in as defaults
-	g_conf.add ( buf );
-	// save it
-	g_conf.save ();
-}
-*/
 
 bool mainShutdown ( bool urgent ) {
 	return g_process.shutdown(urgent);
 }
 
-//#include "./libmpm/mp_malloc.h"
-/*
-void zlibtest() {
-	char *ptrs[1000];
-	int32_t  lens[1000];
-	for ( int32_t j = 0 ; j < 220000 ; j++ ) {
-		log("pass=%"INT32"",j);
-		Msg0 *m = new (Msg0);
-		delete (m);
-	}
-	return;
-	for ( int32_t j = 0 ; j < 120000 ; j++ ) {
-		log("pass=%"INT32"",j);
-		// malloc 1,000 bufs of size about 100-64k each
-		for ( int32_t i = 0 ; i < 100 ; i++ ) {
-			int32_t  bufSize = 1000 + (rand() % 65000);
-			ptrs[i] = (char *)mmalloc ( bufSize , "ztest" );
-			if ( ! ptrs[i] ) {
-				log("no mem!"); exit(-1); }
-			lens[i] = bufSize;
-			// simple write
-			for ( int32_t k = 0 ; k < bufSize ; k+=900 ) 
-			ptrs[i][k] = 'a' + (rand() % 64);
-		}
-		// now free them
-		for ( int32_t i = 0 ; i < 100 ; i++ ) 
-			mfree (ptrs[i] , lens[i] , "ztest" );
-	}
-}
-*/
-
 #include "Rdb.h"
 #include "Xml.h"
-//#include "Tfndb.h"
-//#include "Checksumdb.h"
 #include "Threads.h"
 
 //
@@ -5808,7 +5133,6 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 	if ( ! hashinit() ) {
 		log("db: Failed to init hashtable." ); return ; }
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	//g_conf.m_checksumdbMaxDiskPageCacheMem = 0;
 	//g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
 	//g_conf.m_tfndbMaxDiskPageCacheMem = 0;
 	g_titledb.init ();
@@ -6133,79 +5457,7 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 	if ( startKey < *(key_t *)list.getLastKey() ) return;
 	goto loop;
 }
-/*
-void dumpTfndb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTree ,
-		bool verify) {
-	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	//g_conf.m_checksumdbMaxDiskPageCacheMem = 0;
-	//g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
-	g_conf.m_tfndbMaxDiskPageCacheMem = 0;
-	g_tfndb.init ();
-	//g_collectiondb.init(true);
-	g_tfndb.getRdb()->addRdbBase1(coll );
-	key_t startKey ;
-	key_t endKey   ;
-	startKey.setMin();
-	endKey.setMax();
-	// turn off threads
-	g_threads.disableThreads();
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
-	Msg5 msg5;
-	RdbList list;
-	key_t oldk; oldk.setMin();
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_TFNDB     ,
-			      coll          ,
-			      &list         ,
-			      startKey      ,
-			      endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         )){// err correction?
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) return;
-	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		key_t k    = list.getCurrentKey();
-		if ( verify ) {
-			if ( oldk > k ) 
-				fprintf(stdout,"got bad key order. "
-					"%"XINT32"/%"XINT64" > %"XINT32"/%"XINT64"\n",
-					oldk.n1,oldk.n0,k.n1,k.n0);
-			oldk = k;
-			continue;
-		}
-		int64_t docId = g_tfndb.getDocId        ( &k );
-		//int32_t      e     = g_tfndb.getExt          ( k );
-		int32_t      tfn   = g_tfndb.getTfn ( &k );
-		//int32_t  clean = 0  ; if ( g_tfndb.isClean ( k ) ) clean= 1;
-		int32_t  half  = 0  ; if ( k.n0 & 0x02           ) half = 1;
-		char *dd    = "" ; if ( (k.n0 & 0x01) == 0    ) dd   =" (del)";
-		fprintf(stdout,
-			"%08"XINT32" %016"XINT64" docId=%012"INT64" "
-			"tfn=%03"INT32" half=%"INT32" %s\n",
-			k.n1,k.n0,docId,tfn,half,dd);
-	}
-	startKey = *(key_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
-	// watch out for wrap around
-	if ( startKey < *(key_t *)list.getLastKey() ) return;
-	goto loop;
-}
-*/
+
 void dumpWaitingTree (char *coll ) {
 	RdbTree wt;
 	if (!wt.set(0,-1,true,20000000,true,"waittree2",
@@ -6246,7 +5498,6 @@ void dumpWaitingTree (char *coll ) {
 
 void dumpDoledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTree){
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	//g_conf.m_checksumdbMaxDiskPageCacheMem = 0;
 	//g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
 	//g_conf.m_doledbMaxDiskPageCacheMem = 0;
 	g_doledb.init ();
@@ -6442,7 +5693,6 @@ int32_t dumpSpiderdb ( char *coll,
 	}
 
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	//g_conf.m_checksumdbMaxDiskPageCacheMem = 0;
 	//g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
 	//g_conf.m_tfndbMaxDiskPageCacheMem = 0;
 	g_spiderdb.init ();
@@ -7565,25 +6815,19 @@ void removeDocIds  ( char *coll , char *filename ) {
 	// do not merge so much
 	//if ( g_conf.m_indexdbMinFilesToMerge < 100 )
 	//	g_conf.m_indexdbMinFilesToMerge = 100;
-	//if ( g_conf.m_checksumdbMinFilesToMerge < 100 )
-	//	g_conf.m_checksumdbMinFilesToMerge = 100;
 	if ( g_conf.m_clusterdbMinFilesToMerge < 100 )
 		g_conf.m_clusterdbMinFilesToMerge = 100;
 	//g_conf.m_tfndbMaxDiskPageCacheMem = 0;
-	//g_conf.m_checksumdbMaxDiskPageCacheMem = 0;
 	//g_conf.m_clusterdbMaxDiskPageCacheMem = 0;
 	//g_conf.m_indexdbMaxCacheMem = 0;
-	//g_conf.m_checksumdbMaxCacheMem = 0;
 	//g_conf.m_clusterdbMaxCacheMem = 0;
 
 	//g_tfndb.init();
 	g_indexdb.init ();
-	//g_checksumdb.init();
 	g_clusterdb.init();
 	//g_collectiondb.init(true);
 	//g_tfndb.getRdb()->addRdbBase1 ( coll );
 	g_indexdb.getRdb()->addRdbBase1 ( coll );
-	//g_checksumdb.getRdb()->addRdbBase1 ( coll );
 	g_clusterdb.getRdb()->addRdbBase1 ( coll );
 	// this what set to 2 on me before, triggering a huge merge
 	// every dump!!! very bad, i had to gdb to each process and set
@@ -7606,23 +6850,6 @@ void removeDocIds  ( char *coll , char *filename ) {
 	key_t endKey;
 	startKey.setMin();
 	endKey.setMax();
-
-	// compatability with checksumdb's variable size keys
-	/*
-	int32_t cKeySize = g_conf.m_checksumdbKeySize;
-	char startKey2[16];
-	char endKey2[16];
-
-	// initialize checksumdb specific keys
-	if (cKeySize == 16) {
-		((key128_t *)startKey2)->setMin();
-		((key128_t *)endKey2)->setMax();
-	}
-	else {
-		KEYSET( startKey2, (char *)&startKey, cKeySize );
-		KEYSET( endKey2, (char *)&endKey, cKeySize );
-	}
-	*/
 
 	g_threads.disableThreads();
 	Rdb *r = g_indexdb.getRdb();
@@ -7746,115 +6973,6 @@ void removeDocIds  ( char *coll , char *filename ) {
 	// save the tree man!
 	logf(LOG_INFO,"db: Finished removing docids from indexdb. Saving.");
 	r->close ( NULL , NULL , false , false );
-
-
-	//
-	//
-	// SCAN CHECKSUMDB and remove missing docids
-	//
-	//
-	/*
-	logf(LOG_INFO,"db: Scanning checksumdb and removing recs.");
-	r = g_checksumdb.getRdb();
-	count = 0;
-	scanned = 0;
-	recs = 0;
-	removed = 0;
-	tree = &r->m_tree;
-
- loop4:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_CHECKSUMDB,
-			      coll          ,
-			      &list         ,
-			      //startKey      ,
-			      //endKey        ,
-			      startKey2     ,
-			      endKey2       ,
-			      minRecSizes   ,
-			      true          , // includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      0             , // startFileNum  ,
-			      -1            , // numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         )){// err correction?
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) return;
-	// something to log
-	scanned += list.getListSize();
-	if ( scanned >= 100000000 ) {
-		count += scanned;
-		scanned = 0;
-		logf(LOG_INFO,"db: Scanned %"INT64" bytes. Scanned %"INT64" records. "
-		     "Removed %"INT64" records.",count,recs,removed);
-	}
-	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		recs++;
-		if ( (recs & ymask) == 0x00 ) sched_yield();
-
-		//key_t k = list.getCurrentKey();
-		char k[16];
-		list.getCurrentKey( k );
-		// skip deletes
-		//if ( (k.n0 & 0x01) == 0x00 ) continue;
-		if ( (((key_t *)k)->n0 & 0x01) == 0x00 ) continue;
-		uint64_t d = g_checksumdb.getDocId( k );
-		// see if docid is in delete list
-		int32_t n = (uint32_t)d & mask;
-		while ( slots[n] && slots[n] != d )
-			if ( ++n >= numSlots ) n = 0;
-		// skip him if we should not delete him
-		if ( slots[n] != d ) continue;
-		// otherwise, remove him
-		// make him a delete, turn off his last bit (the del bit)
-		//k.n0 &= 0xfffffffffffffffeLL;
-		((key_t *)k)->n0 &= 0xfffffffffffffffeLL;
-		if ( ! r->addRecord ( collnum , k , NULL , 0 , 0) ) {
-			log("db: Could not delete record.");
-			return;
-		}
-		removed++;
-		// dump tree?
-		if ( tree->getNumAvailNodes() <= 0 ) {
-			// this should block
-			r->dumpTree(0);
-		}
-	}
-
-	//startKey = *(key_t *)list.getLastKey();
-	//startKey += (uint32_t) 1;
-	list.getLastKey( startKey2 );
-	if ( cKeySize == 12 )
-		*((key_t *)startKey2) += (uint32_t) 1;
-	else if ( cKeySize == 16 )
-		*((key128_t *)startKey2) += (uint32_t) 1;
-
-	// watch out for wrap around
-	//if ( startKey >= *(key_t *)list.getLastKey() ) goto loop4; 
-	if ( KEYCMP(startKey2, list.getLastKey(), cKeySize) >= 0 )
-		goto loop4;
-
-	logf(LOG_INFO,"db: Scanned %"INT64" bytes. Scanned %"INT64" records. "
-	     "Removed %"INT64" records.",count+scanned,recs,removed);
-
-	// this should block
-	//r->dumpTree(0);
-
-	logf(LOG_INFO,"db: Finished removing docids from checksumdb. Saving.");
-	r->close ( NULL , NULL , false , false );
-	*/
-
-
-
-
 
 	//
 	//
@@ -8047,7 +7165,6 @@ void removeDocIds  ( char *coll , char *filename ) {
 
 
 /*
-// . also makes checksumdb
 // . g_hostdb.m_hostId should be set correctly
 bool fixTfndb ( char *coll ) {
 	// get the list of tfns
@@ -10432,7 +9549,6 @@ void dumpTagdb (char *coll,int32_t startFileNum,int32_t numFiles,
 bool parseTest ( char *coll , int64_t docId , char *query ) {
 	g_conf.m_maxMem = 2000000000LL; // 2G
 	//g_mem.m_maxMem  = 2000000000LL; // 2G
-	//g_conf.m_checksumdbMaxDiskPageCacheMem = 0;
 	//g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
 	//g_conf.m_tfndbMaxDiskPageCacheMem = 0;
 	//g_conf.m_titledbMaxTreeMem = 1024*1024*10;
@@ -12168,137 +11284,6 @@ void dumpStatsdb( int32_t startFileNum, int32_t numFiles, bool includeTree,
 }
 */
 
-/*
-void dumpChecksumdb( char *coll,
-		     int32_t startFileNum,
-		     int32_t numFiles,
-		     bool includeTree ) {
-	// this is confidential data format
-#ifdef _CLIENT_
-	return;
-#endif
-#ifdef _METALINCS_
-	return;
-#endif
-	g_checksumdb.init ();
-	g_collectiondb.init(true);
-	g_checksumdb.getRdb()->addRdbBase1 ( coll );
-
-	//key_t startKey ;
-	//key_t endKey   ;
-	//startKey.setMin();
-	//endKey.setMax();
-	int32_t cKeySize = g_conf.m_checksumdbKeySize;	
-
-	char startKey[16];
-	char endKey[16];
-
-	if ( cKeySize == 12 ) {
-		((key_t *)startKey)->setMin();
-		((key_t *)endKey)->setMax();
-	}
-	else if ( cKeySize == 16 ) {
-		((key128_t *)startKey)->setMin();
-		((key128_t *)endKey)->setMax();
-	}
-
-	// turn off threads
-	g_threads.disableThreads();
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
-
-	//// bail if not
-	//if ( g_checksumdb.getRdb()->getNumFiles() <= startFileNum ) {
-	//	printf("Request file #%"INT32" but there are only %"INT32" "
-	//	       "checksumdb files\n",startFileNum,
-	//	       g_checksumdb.getRdb()->getNumFiles());
-	//	return;
-	//}
-
-	Msg5 msg5;
-	Msg5 msg5b;
-	RdbList list;
-
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_CHECKSUMDB ,
-			      coll          ,
-			      &list         ,
-			      startKey      ,
-			      endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         )){// err correction?
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() )
-		return;
-	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		uint32_t hosthash;	
-
-		//key_t k = list.getCurrentKey();
-		char k[16];
-		list.getCurrentKey( k );
-		// is it a delete?
-		char *dd = "";
-		//if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
-		if ( (((key_t *)k)->n0 & 0x01) == 0x00 ) dd = " (delete)";
-
-		char kBuf[20];
-		//uint32_t hosthash = (k.n1 >> 8) & 0xffff;
-		// . check keys size before doing assignments
-		if ( cKeySize == 12 ) {
-			// get the language string
-			hosthash = (((key_t *)k)->n1 >> 8) & 0xffff;
-			sprintf( kBuf, "%08"XINT32"", ((key_t *)k)->n1);
-		}
-		else if ( cKeySize == 16 ) {
-			// get the language string
-			// . some extra manipulation needed to retrieve the
-			// . host hash from the 16-byte key
-			hosthash = ((((key128_t *)k)->n1 >> 38 ) & 0x3ff   ) | 
-				   ((((key128_t *)k)->n1 << 2) & 0x3fffc00 ); 
-			sprintf( kBuf, "%016"XINT64"", ((key128_t *)k)->n1);
-		}
-		// print it
-		printf("k.n1=%s k.n0=%016"XINT64" "
-		       "docId=%012"INT64" quality=%d hosthash=0x%04"XINT32"%s\n",
-		       kBuf, ((key_t *)k)->n0,
-		       g_checksumdb.getDocId( k ) ,
-		       (int)g_checksumdb.getDocQuality( k ),
-		       hosthash ,
-		       dd );
-		continue;
-	}
-	
-	//startKey = *(key_t *)list.getLastKey();
-	KEYSET( startKey, list.getLastKey(), cKeySize );
-	//startKey += (uint32_t) 1;
-	// must check key size before assignments
-	if ( cKeySize == 12 )
-		*((key_t *)startKey) += (uint32_t) 1;
-	else
-		*((key128_t *)startKey) += (uint32_t) 1;
-	// watch out for wrap around
-	//if ( startKey < *(key_t *)list.getLastKey() ) return;
-	if ( KEYCMP( startKey, list.getLastKey(), cKeySize ) < 0 )
-		return;
-
-	goto loop;
-}
-*/
-
 void dumpLinkdb ( char *coll,
 		  int32_t startFileNum,
 		  int32_t numFiles,
@@ -12856,7 +11841,6 @@ int injectFile ( char *filename , char *ips ,
 
 		// so we do not try to merge files, or write any data:
 		g_dumpMode = true;
-		//g_conf.m_checksumdbMaxDiskPageCacheMem = 0;
 		//g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
 		//g_conf.m_urldbMaxDiskPageCacheMem = 0;
 
@@ -14292,10 +13276,6 @@ void saveRdbs ( int fd , void *state ) {
 	last = rdb->getLastWriteTime();
 	if ( now - last > delta )
 		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	//rdb = g_checksumdb.getRdb();
-	//last = rdb->getLastWriteTime();
-	//if ( now - last > delta )
-	//	if ( ! rdb->close(NULL,NULL,false,false)) return;
 	rdb = g_clusterdb.getRdb();
 	last = rdb->getLastWriteTime();
 	if ( now - last > delta )
@@ -14969,7 +13949,6 @@ void  dosOpenCB( void *state, TcpSocket *s) {
 void dumpCachedRecs (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTree,
 		     int64_t docid) {
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	//g_conf.m_checksumdbMaxDiskPageCacheMem = 0;
 	g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
 	g_conf.m_tfndbMaxDiskPageCacheMem = 0;
 	g_titledb.init ();
@@ -16390,7 +15369,6 @@ void testSpamRules(char *coll,
 		   int64_t docid) {
 	//int32_t collLen = gbstrlen(coll);
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	//g_conf.m_checksumdbMaxDiskPageCacheMem = 0;
 	g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
 	g_conf.m_tfndbMaxDiskPageCacheMem = 0;
 	g_titledb.init ();

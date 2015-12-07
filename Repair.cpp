@@ -438,7 +438,6 @@ void Repair::initScan ( ) {
 	//m_rebuildNoSplits   = g_conf.m_rebuildNoSplits;
 	//m_rebuildDatedb     = g_conf.m_rebuildDatedb;
 	//m_rebuildTfndb      = g_conf.m_rebuildTfndb;
-	//m_rebuildChecksumdb = g_conf.m_rebuildChecksumdb;
 	m_rebuildClusterdb  = g_conf.m_rebuildClusterdb;
 	m_rebuildSpiderdb   = g_conf.m_rebuildSpiderdb;
 	m_rebuildLinkdb     = g_conf.m_rebuildLinkdb;
@@ -506,7 +505,6 @@ void Repair::initScan ( ) {
 		m_rebuildIndexdb    = false;
 		//m_rebuildNoSplits   = false;
 		m_rebuildDatedb     = false;
-		//m_rebuildChecksumdb = false;
 		m_rebuildClusterdb  = false;
 		m_rebuildSpiderdb   = false;
 		m_rebuildLinkdb     = false;
@@ -526,7 +524,6 @@ void Repair::initScan ( ) {
 		m_rebuildIndexdb    = false;
 		m_rebuildDatedb     = false;
 		m_rebuildTfndb      = false;
-		//m_rebuildChecksumdb = false;
 		m_rebuildClusterdb  = false;
 		m_rebuildSpiderdb   = false;
 		m_rebuildLinkdb     = false;
@@ -547,7 +544,6 @@ void Repair::initScan ( ) {
 		//m_rebuildNoSplits   = false;
 		m_rebuildDatedb     = false;
 		m_rebuildTfndb      = false;
-		//m_rebuildChecksumdb = false;
 		m_rebuildClusterdb  = false;
 		m_rebuildSpiderdb   = false;
 		//m_rebuildSitedb     = false;
@@ -636,7 +632,6 @@ void Repair::initScan ( ) {
 	if ( m_rebuildPosdb      ) weight += 100.0;
 	//if ( m_rebuildDatedb     ) weight +=  80.0;
 	if ( m_rebuildClusterdb  ) weight +=   1.0;
-	//if ( m_rebuildChecksumdb ) weight +=   1.0;
 	if ( m_rebuildSpiderdb   ) weight +=   5.0;
 	if ( m_rebuildLinkdb     ) weight +=  20.0;
 	if ( m_rebuildTagdb      ) weight +=   5.0;
@@ -650,7 +645,6 @@ void Repair::initScan ( ) {
 	int32_t posdbMem    = 0;
 	//int32_t datedbMem     = 0;
 	int32_t clusterdbMem  = 0;
-	//int32_t checksumdbMem = 0;
 	int32_t spiderdbMem   = 0;
 	int32_t linkdbMem     = 0;
 	//int32_t tagdbMem      = 0;
@@ -666,7 +660,6 @@ void Repair::initScan ( ) {
 	if ( m_rebuildPosdb      ) posdbMem    = (int32_t)((100.0 * tt)/weight);
 	//if(m_rebuildDatedb     ) datedbMem     = (int32_t)(( 80.0 * tt)/weight);
 	if ( m_rebuildClusterdb  ) clusterdbMem  = (int32_t)((  1.0 * tt)/weight);
-	//if(m_rebuildChecksumdb ) checksumdbMem = (int32_t)((  1.0 * tt)/weight);
 	if ( m_rebuildSpiderdb   ) spiderdbMem   = (int32_t)((  5.0 * tt)/weight);
 	if ( m_rebuildLinkdb     ) linkdbMem     = (int32_t)(( 20.0 * tt)/weight);
 	//if ( m_rebuildTagdb    ) tagdbMem      = (int32_t)((  5.0 * tt)/weight);
@@ -710,8 +703,6 @@ void Repair::initScan ( ) {
 	//	if ( ! g_datedb2.init2     ( datedbMem     ) ) goto hadError;
 	if ( m_rebuildClusterdb )
 		if ( ! g_clusterdb2.init2  ( clusterdbMem  ) ) goto hadError;
-	//if ( m_rebuildChecksumdb )
-	//	if ( ! g_checksumdb2.init2 ( checksumdbMem ) ) goto hadError;
 	if ( m_rebuildSpiderdb )
 		if ( ! g_spiderdb2.init2   ( spiderdbMem   ) ) goto hadError;
 	//if ( m_rebuildSitedb )
@@ -851,7 +842,6 @@ void Repair::getNextCollToRepair ( ) {
 		newRec->m_indexdbMinFilesToMerge = 100;
 		newRec->m_datedbMinFilesToMerge = 100;
 		newRec->m_spiderdbMinFilesToMerge = 100;
-		//newRec->m_checksumdbMinFilesToMerge = 100;
 		newRec->m_clusterdbMinFilesToMerge = 100;
 		// do we use this one?
 		newRec->m_linkdbMinFilesToMerge = 10;
@@ -897,11 +887,6 @@ void Repair::getNextCollToRepair ( ) {
 		if ( ! g_clusterdb2.getRdb()->addRdbBase1 ( coll ) &&
 		     g_errno != EEXIST ) goto hadError;
 	}
-
-	//if ( m_rebuildChecksumdb ) {
-	//	if ( ! g_checksumdb2.addColl ( coll ) &&
-	//	     g_errno != EEXIST ) goto hadError;
-	//}
 
 	if ( m_rebuildSpiderdb ) {
 		if ( ! g_spiderdb2.getRdb()->addRdbBase1 ( coll ) &&
@@ -1096,8 +1081,6 @@ bool Repair::loop ( void *state ) {
 	// set this to on
 	g_process.m_repairNeedsSave = true;
 
-	// . titledb scan
-	// . build g_checksumdb2, g_spiderdb2, g_clusterdb2, g_tfndb2
  loop1:
 
 	if ( g_process.m_mode == EXIT_MODE )
@@ -1292,11 +1275,6 @@ void Repair::updateRdbs ( ) {
 		rdb2 = g_clusterdb2.getRdb();
 		rdb1->updateToRebuildFiles ( rdb2 , m_cr->m_coll );
 	}
-	//if ( m_rebuildChecksumdb ) {
-	//	rdb1 = g_checksumdb.getRdb();
-	//	rdb2 = g_checksumdb2.getRdb();
-	//	rdb1->updateToRebuildFiles ( rdb2 , m_cr->m_coll );
-	//}
 	if ( m_rebuildSpiderdb ) {
 		rdb1 = g_spiderdb.getRdb();
 		rdb2 = g_spiderdb2.getRdb();
@@ -2564,8 +2542,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 	//else                       rr[4] = "N";
 	if ( m_rebuildClusterdb )  rr[5] = "Y";
 	else                       rr[5] = "N";
-	//if ( m_rebuildChecksumdb ) rr[6] = "Y";
-	//else                       rr[6] = "N";
 	if ( m_rebuildSpiderdb )   rr[7] = "Y";
 	else                       rr[7] = "N";
 	//if ( m_rebuildSitedb )     rr[8] = "Y";
@@ -2628,9 +2604,6 @@ bool Repair::printRepairStatus ( SafeBuf *sb , int32_t fromIp ) {
 
 			 "<tr bgcolor=#%s><td><b>rebuild clusterdb</b></td>"
 			 "<td>%s</td></tr>\n"
-
-			 //"<tr bgcolor=#%s><td><b>rebuild checksumdb</b></td>"
-			 //"<td>%s</td></tr>\n"
 
 			 "<tr bgcolor=#%s><td><b>rebuild spiderdb</b></td>"
 			 "<td>%s</td></tr>\n" 

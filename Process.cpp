@@ -2,7 +2,6 @@
 
 #include "Process.h"
 #include "Rdb.h"
-//#include "Checksumdb.h"
 #include "Clusterdb.h"
 #include "Hostdb.h"
 #include "Tagdb.h"
@@ -91,9 +90,6 @@ char *g_files[] = {
 	"ucdata/scripts.dat",
 	"ucdata/uppermap.dat",
 	
-	// called by gb via system() to convert non-html doc to html
-	//"gbfilter",  
-	
 	// need for checking hard drive temperature
 	//"/usr/sbin/hddtemp",
 	
@@ -105,7 +101,6 @@ char *g_files[] = {
 	// 'gbfilter' calls these filters to convert various doc types
 	// into html before being fed to parser
 	"antiword" ,  // msword
-	"pdftohtml",  // pdf
 	"pstotext" ,  // postscript
 	//"ppthtml"  ,  // powerpoint
 
@@ -508,7 +503,6 @@ bool Process::init ( ) {
 	m_rdbs[m_numRdbs++] = g_posdb2.getRdb    ();
 	//m_rdbs[m_numRdbs++] = g_datedb2.getRdb     ();
 	m_rdbs[m_numRdbs++] = g_spiderdb2.getRdb   ();
-	//m_rdbs[m_numRdbs++] = g_checksumdb2.getRdb ();
 	m_rdbs[m_numRdbs++] = g_clusterdb2.getRdb  ();
 	//m_rdbs[m_numRdbs++] = g_tagdb2.getRdb     ();
 	//m_rdbs[m_numRdbs++] = g_statsdb2.getRdb    ();
@@ -2115,21 +2109,6 @@ void Process::resetPageCaches ( ) {
 		if ( ! rpc ) continue;
 		rpc->reset();
 	}
-		
-	// g_posdb           .getDiskPageCache()->reset();
-	// //g_datedb          .getDiskPageCache()->reset();
-	// g_linkdb          .getDiskPageCache()->reset();
-	// g_titledb         .getDiskPageCache()->reset();
-	// g_sectiondb       .getDiskPageCache()->reset();
-	// g_tagdb           .getDiskPageCache()->reset();
-	// g_spiderdb        .getDiskPageCache()->reset();
-	// //g_tfndb           .getDiskPageCache()->reset();
-	// //g_checksumdb      .getDiskPageCache()->reset();
-	// g_clusterdb       .getDiskPageCache()->reset();
-	// g_catdb           .getDiskPageCache()->reset();
-	// //g_placedb         .getDiskPageCache()->reset();
-	// g_doledb          .getDiskPageCache()->reset();
-	// //g_statsdb	  .getDiskPageCache()->reset();
 }
 
 // ============================================================================

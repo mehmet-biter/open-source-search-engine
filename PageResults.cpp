@@ -2498,7 +2498,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	// save how many docs are in this collection
 	int64_t docsInColl = -1;
-	//RdbBase *base = getRdbBase ( RDB_CHECKSUMDB , si->m_coll );
 	RdbBase *base = getRdbBase ( (uint8_t)RDB_CLUSTERDB , st->m_collnum );
 	//if ( base ) docsInColl = base->getNumGlobalRecs();
 	//docsInColl = g_hostdb.getNumGlobalRecs ( );
