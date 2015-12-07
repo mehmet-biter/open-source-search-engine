@@ -536,10 +536,6 @@ class Msg20 {
 	void     (*m_callback2) ( void *state );
 	void      *m_state;
 
-	// used by MsgE to store its data
-	void *m_state2;
-	void *m_state3;
-
 	void *m_owningParent;
 
 	// PostQueryRerank storage area for printing out in PageResults.cpp
