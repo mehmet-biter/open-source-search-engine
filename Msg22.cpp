@@ -193,7 +193,6 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 			      gotReplyWrapper22 ,
 			      timeout         , // 60 second time out
 			      r->m_niceness   , // nice, reply size can be huge
-			      false           , // realtime?
 			      firstHostId     , // first hostid
 			      NULL            , // replyBuf
 			      0               , // replyBufMaxSize

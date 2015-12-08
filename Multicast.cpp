@@ -95,7 +95,6 @@ bool Multicast::send ( char         *msg              ,
 		       void          (*callback) (void *state , void *state2),
 		       int32_t          totalTimeout     , // in seconds
 		       int32_t          niceness         ,
-		       bool          realtime         ,
 		       int32_t          firstHostId      ,
 		       char         *replyBuf         ,
 		       int32_t          replyBufMaxSize  ,
@@ -139,11 +138,8 @@ bool Multicast::send ( char         *msg              ,
 	m_callback         = callback;
 	m_totalTimeout     = totalTimeout; // in seconds
 	m_niceness         = niceness;
-	m_realtime         = realtime;
 	// this can't be -1 i guess
 	if ( totalTimeout <= 0 ) { char *xx=NULL;*xx=0; }
-	// don't use this anymore!
-	if ( m_realtime ) { char *xx = NULL; *xx = 0; }
 	m_replyBuf         = replyBuf;
 	m_replyBufMaxSize  = replyBufMaxSize;
 	m_startTime        = getTime();
@@ -282,10 +278,8 @@ void Multicast::sendToGroup ( ) {
 		m_errnos [i] = 0;
 		// if niceness is 0, use the higher priority udpServer
 		UdpServer *us = &g_udpServer;
-		if ( m_realtime ) us = &g_udpServer2;
 		// send to the same port as us!
 		int16_t destPort = h->m_port;
-		//if ( m_realtime ) destPort = h->m_port2;
 
 		// if from hosts2.conf pick the best ip!
 		int32_t  bestIp  = h->m_ip;
@@ -923,10 +917,8 @@ bool Multicast::sendToHost ( int32_t i ) {
 	Host *h = m_hostPtrs[i];
 	// if niceness is 0, use the higher priority udpServer
 	UdpServer *us = &g_udpServer;
-	if ( m_realtime ) us = &g_udpServer2;
 	// send to the same port as us!
 	int16_t destPort = h->m_port;
-	//if ( m_realtime ) destPort = h->m_port2;
 
 	// if from hosts2.conf pick the best ip!
 	int32_t  bestIp   = h->m_ip;
@@ -1605,7 +1597,6 @@ void Multicast::destroySlotsInProgress ( UdpSlot *slot ) {
 		m_slots[i]->m_sendBufAlloc = NULL;
 		// if niceness is 0, use the higher priority udpServer
 		UdpServer *us = &g_udpServer;
-		if ( m_realtime ) us = &g_udpServer2;
 		// . stamp him so he doesn't have a better ping than host of #i
 		// . timedOut=true -->only stamp him if it makes his ping worse
 		//int32_t      hostId       = m_slots[i]->m_hostId;

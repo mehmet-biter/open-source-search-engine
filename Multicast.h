@@ -91,7 +91,6 @@ class Multicast {
 		    void      (*callback)(void *state,void *state2),
 		    int32_t        totalTimeout    , // usually 60 seconds 
 		    int32_t        niceness        = MAX_NICENESS ,
-		    bool        realTimeUdp     = false ,
 		    int32_t        firstHostId     = -1 ,// first host to try
 		    char       *replyBuf        = NULL ,
 		    int32_t        replyBufMaxSize = 0 ,
@@ -199,7 +198,6 @@ class Multicast {
 	bool        m_registeredSleep2;
 
 	int32_t        m_niceness;
-	bool        m_realtime;
 
 	// . last sending of the request to ONE host in a group (pick & send)
 	// . in milliseconds

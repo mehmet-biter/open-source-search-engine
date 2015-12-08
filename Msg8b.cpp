@@ -129,7 +129,6 @@ bool Msg8b::getCatRec  ( Url     *url              ,
 				      gotMulticastReplyWrapper8b,
 				      3600*24*365,   // timeout, one year
 				      m_niceness,
-				      false,         // realtime
 				      -1,	     // firstHostId
 				      NULL,          // reply buf
 				      0,             // reply size

@@ -15666,7 +15666,6 @@ bool Msg2c::launchRequests ( ) {
 			 gotMsg2cReplyWrapper ,
 			 180            , // total timeout
 			 m_niceness     ,
-			 false          , // realtime udp
 			 h->m_hostId    ,
 			 NULL,//&a->m_replyFlags , // replyBuf
 			 0,//1              , // replyBufMaxSize 

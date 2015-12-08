@@ -546,7 +546,6 @@ bool Msg3a::gotCacheReply ( ) {
 				   gotReplyWrapper3a ,
 				   timeout           , // in seconds
 				   m_r->m_niceness   ,
-				   false             , // realtime?
 				   firstHostId, // -1// bestHandlingHostId ,
 				   NULL              , // m_replyBuf   ,
 				   0                 , // MSG39REPLYSIZE,

@@ -7898,7 +7898,6 @@ SectionStats *XmlDoc::getSectionStats ( uint32_t secHash32 ,
 			       gotReplyWrapper39 ,
 			       30                , //timeout in secs
 			       m_niceness,//m_r->m_niceness   ,
-			       false             , // realtime?
 			       -1, // firstHostId, // -1// bestHandlingHostId ,
 			       NULL              , // m_replyBuf   ,
 			       0                 , // MSG39REPLYSIZE,

@@ -616,7 +616,6 @@ skip:
 			      gotMulticastReplyWrapper0 ,
 			      timeout      , // timeout in seconds (was 30)
 			      niceness     ,
-			      realtime     ,
 			      firstHostId  ,
 //#ifdef SPLIT_INDEXDB
 //			      &replyBuf[i*replyBufMaxSize] ,

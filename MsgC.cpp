@@ -213,7 +213,6 @@ bool MsgC::getIp(char  *hostname    , int32_t   hostnameLen ,
 			    gotReplyWrapper ,
 			    timeout    , // timeout in secs
 			    niceness   , // niceness
-			    false      , // realtime udp
 			    firstHostId,// first host to try
 			    NULL       , // reply buf
 			    0          , // replybuf max size

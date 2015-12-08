@@ -241,7 +241,6 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 			      gotReplyWrapper20 ,
 			      timeout           , // 60 second time out
 			      req->m_niceness   ,
-			      false             , // real time?
 			      firstHostId       , // first hostid
 			      NULL              , // reply buffer
 			      0                 , // reply buffer size

@@ -561,7 +561,6 @@ skip:
 			    gotReplyWrapper1 ,
 			    60         , // timeout in secs
 			    m_niceness , // niceness 
-			    false    , // realtime
 			    -1    , // first host to try
 			    NULL  , // replyBuf        = NULL ,
 			    0     , // replyBufMaxSize = 0 ,
