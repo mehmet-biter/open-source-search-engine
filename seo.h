@@ -11,9 +11,6 @@
 
 bool setQueryInfo ( char *qstr , class QueryInfo *qi ) ;
 
-// so main.cpp can register it
-void runSEOQueryLoop ( int fd , void *state ) ;
-
 void handleRequest8e ( class UdpSlot *slot , int32_t netnice ) ;
 void handleRequest4f ( class UdpSlot *slot , int32_t netnice ) ;
 void handleRequest95 ( class UdpSlot *slot , int32_t netnice ) ;

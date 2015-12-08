@@ -32,14 +32,6 @@ int g_inMemcpy=0;
 bool g_recoveryMode = false;
 int32_t g_recoveryLevel = 0;
 
-bool sendPageSEO(TcpSocket *, HttpRequest *) __attribute__((weak));
-
-// make the stubs here. seo.o will override them
-bool sendPageSEO(TcpSocket *s, HttpRequest *hr) {
-	//	return g_httpServer.sendErrorReply(s,500,"Seo support not present");
-	return true;
-}
-
 int main(int argc, char **argv) {
 	// Avoid SEGV
 

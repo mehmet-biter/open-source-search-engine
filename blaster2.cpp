@@ -16,7 +16,6 @@ static void startSpidering ( ) ;
 static void gotDocWrapper ( void *state , TcpSocket *s ) ;
 static void sleepWrapper ( int fd , void *state ) ;
 
-bool sendPageSEO(TcpSocket *s, HttpRequest *hr) {return true;}
 bool g_recoveryMode;
 int g_inMemcpy;
 int32_t g_recoveryLevel;

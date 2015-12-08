@@ -146,17 +146,12 @@ int copyFiles ( char *dstDir ) ;
 //
 //////
 bool loadQueryLog() __attribute__((weak));
-void runSEOQueryLoop ( int fd, void *state ) __attribute__((weak));
-bool sendPageSEO(TcpSocket *, HttpRequest *) __attribute__((weak));
 void handleRequest8e(UdpSlot *, int32_t netnice ) __attribute__((weak));
 void handleRequest4f(UdpSlot *, int32_t netnice ) __attribute__((weak));
 void handleRequest95(UdpSlot *, int32_t netnice ) __attribute__((weak));
 
 // make the stubs here. seo.o will override them
 bool loadQueryLog() { return true; } 
-void runSEOQueryLoop ( int fd, void *state ) { return; }
-bool sendPageSEO(TcpSocket *s, HttpRequest *hr) {
-	return g_httpServer.sendErrorReply(s,500,"Seo support not present"); }
 void handleRequest8e(UdpSlot *, int32_t netnice ) {return; }
 void handleRequest4f(UdpSlot *, int32_t netnice ) {return; }
 void handleRequest95(UdpSlot *, int32_t netnice ) {return; }
@@ -839,25 +834,6 @@ int main2 ( int argc , char *argv[] ) {
 	}
 	*/
 
-	/*
-	char cmd3[2048];
-	snprintf(cmd3,2047, 
-		 "ulimit -v 25000  ; "
-		 "ulimit -t 30 ; "
-		 "ulimit -a; "
-		 "export ANTIWORDHOME=%s/antiword-dir ; "
-		 "rm poo.txt ; "
-		 "timeout 10s nice -n 19 %s/antiword %s> %s" , 
-		 "/home/mwells/master-testing/" , 
-		 "/home/mwells/master-testing/" , 
-		 "/home/mwells/testing/poo.doc",
-		 "/home/mwells/master-testing/poo.txt ; " 
-		 "cat poo.txt"
-		 );
-	system(cmd3);
-	exit(-1);
-	*/
-
 	if ( strcmp ( cmd , "bucketstest" ) == 0 ) {
 		if ( argc > cmdarg+1 ) bucketstest(argv[cmdarg+1]);
 		else if( argc == cmdarg+1 ) bucketstest(NULL);
@@ -1076,16 +1052,20 @@ int main2 ( int argc , char *argv[] ) {
 	// let's ensure our core file can dump
 	struct rlimit lim;
 	lim.rlim_cur = lim.rlim_max = RLIM_INFINITY;
-	if ( setrlimit(RLIMIT_CORE,&lim) )
+	if ( setrlimit(RLIMIT_CORE,&lim) ) {
 		log("db: setrlimit: %s.", mstrerror(errno) );
+	}
+
 	// limit fds
 	// try to prevent core from systems where it is above 1024
 	// because our FD_ISSET() libc function will core! (it's older)
 	int32_t NOFILE = 1024;
 	lim.rlim_cur = lim.rlim_max = NOFILE;
-	if ( setrlimit(RLIMIT_NOFILE,&lim))
+	if ( setrlimit(RLIMIT_NOFILE,&lim)) {
 		log("db: setrlimit RLIMIT_NOFILE %"INT32": %s.",
 		    NOFILE,mstrerror(errno) );
+	}
+
 	struct rlimit rlim;
 	getrlimit ( RLIMIT_NOFILE,&rlim);
 	if ( (int32_t)rlim.rlim_max > NOFILE || (int32_t)rlim.rlim_cur > NOFILE ) {
@@ -1097,28 +1077,26 @@ int main2 ( int argc , char *argv[] ) {
 	g_pages.init ( );
 
 	bool isProxy = false;
-	if ( strcmp( cmd , "proxy" ) == 0 && 
-	     strcmp( argv[cmdarg+1] , "load" ) == 0 ) {
+	if ( strcmp( cmd , "proxy" ) == 0 && strcmp( argv[cmdarg+1] , "load" ) == 0 ) {
 		isProxy = true;
-		// we need to parse out the hostid too!
-		//if ( cmdarg + 2 < argc ) hostId = atoi ( argv[cmdarg+2] );
-	}		
+	}
 
 	// this is just like starting up a gb process, but we add one to
 	// each port, we are a dummy machine in the dummy cluster.
 	// gb -w <workingdir> tmpstart [hostId]
 	char useTmpCluster = 0;
-	if ( strcmp ( cmd , "tmpstart" ) == 0 )
+	if ( strcmp ( cmd , "tmpstart" ) == 0 ) {
 		useTmpCluster = 1;
+	}
+
 	// gb -w <workingdir> tmpstop [hostId]
-	if ( strcmp ( cmd , "tmpstop" ) == 0 )
+	if ( strcmp ( cmd , "tmpstop" ) == 0 ) {
 		useTmpCluster = 1;
-	// gb -w <workingdir> tmpstarthost <hostId>
+	}
+
+	// gb -w <workingdir> tmpstarthost
 	if ( strcmp ( cmd , "tmpstarthost" ) == 0 ) {
 		useTmpCluster = 1;
-		// we need to parse out the hostid too!
-		//if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		//else goto printHelp;
 	}
 
 	// gb inject <file> <ip:port> [startdocid]
@@ -1145,8 +1123,6 @@ int main2 ( int argc , char *argv[] ) {
 	//
 	// get current working dir that the gb binary is in. all the data
 	// files should in there too!!
-	//
-	//if ( ! workingDir ) workingDir = getcwd2 ( argv[0] );
 	char *workingDir = getcwd2 ( argv[0] );
 	if ( ! workingDir ) {
 		fprintf(stderr,"could not get working dir. Exiting.\n");
@@ -1159,12 +1135,9 @@ int main2 ( int argc , char *argv[] ) {
 	// load up hosts.conf
 	// . it will determine our hostid based on the directory path of this
 	//   gb binary and the ip address of this server
-	if ( ! g_hostdb.init(-1, // we don't know it!!!hostId, 
-			     NULL, 
-			     isProxy,
-			     useTmpCluster,
-			     workingDir)){
-		log("db: hostdb init failed." ); return 1; }
+	if ( ! g_hostdb.init(-1, NULL, isProxy, useTmpCluster, workingDir)) {
+		log("db: hostdb init failed." ); return 1;
+	}
 
 	Host *h9 = g_hostdb.m_myHost;
 
@@ -1174,20 +1147,17 @@ int main2 ( int argc , char *argv[] ) {
 	if ( g_hostdb.m_myHost->m_hostId != 0 ) {
 		// host #0 does not need this, everyone syncs with him
 		setTimeAdjustmentFilename(g_hostdb.m_dir , "clockadjust.dat");
+
 		// might as well load it i guess
 		loadTimeAdjustment();
 	}
 
-	// the supporting network, used by gov.gigablast.com to get link text
-	// from the larger main index. g_hostdb2. we don't care if this load
-	// fails or not.
-	//char h2[128];
-	//sprintf ( h2 , "%shosts2.conf" , g_hostdb.m_dir );
-	//if ( ! g_hostdb2.init(h2, 0 ,"external") ) {
-	//	log("db: hosts2.conf hostdb init failed." ); return 1; }
 	// init our table for doing zobrist hashing
 	if ( ! hashinit() ) {
-		log("db: Failed to init hashtable." ); return 1; }
+		log("db: Failed to init hashtable." );
+		return 1;
+	}
+
 	// . hashinit() calls srand() w/ a fixed number
 	// . let's mix it up again
 	srand ( time(NULL) );
@@ -1196,7 +1166,6 @@ int main2 ( int argc , char *argv[] ) {
 	// down to where we set this back to true
 	g_conf.m_save = false;
 	
-
 	//
 	// run our smoketests
 	//
@@ -1524,8 +1493,10 @@ int main2 ( int argc , char *argv[] ) {
 	//if ( strcmp ( cmd , "gendbs" ) == 0 && cmdarg + 2 == argc )
 	//	return install ( ifk_gendbs , -1 , NULL , 
 	//			 argv[cmdarg+1] ); // coll
-	if( strcmp(cmd, "distributeC") == 0 && cmdarg +2 == argc )
+
+	if( strcmp(cmd, "distributeC") == 0 && cmdarg +2 == argc ) {
 		return install ( ifk_distributeC, -1, NULL, argv[cmdarg+1] );
+	}
 
 	//if ( strcmp ( cmd, "genclusterdb" ) == 0 && cmdarg + 2 == argc )
 	//	return install ( ifk_genclusterdb , -1 , NULL ,
@@ -1533,12 +1504,13 @@ int main2 ( int argc , char *argv[] ) {
 
 	// . dumpmissing <coll> [hostid]
 	// . if hostid not there, ssh to all using install()
-	if ( strcmp ( cmd, "dumpmissing" ) == 0 && cmdarg + 2 == argc ) 
-		return install ( ifk_dumpmissing , -1 , NULL ,
-				 argv[cmdarg+1] ); // coll
-	if ( strcmp ( cmd, "dumpdups" ) == 0 && cmdarg + 2 == argc ) 
-		return install ( ifk_dumpdups , -1 , NULL ,
-				 argv[cmdarg+1] ); // coll
+	if ( strcmp ( cmd, "dumpmissing" ) == 0 && cmdarg + 2 == argc ) {
+		return install ( ifk_dumpmissing , -1 , NULL , argv[cmdarg+1] ); // coll
+	}
+
+	if ( strcmp ( cmd, "dumpdups" ) == 0 && cmdarg + 2 == argc ) {
+		return install ( ifk_dumpdups , -1 , NULL , argv[cmdarg+1] ); // coll
+	}
 
 	// . gb removedocids <coll> <docIdsFilename> [hostid1-hostid2]
 	// . if hostid not there, ssh to all using install()
@@ -1575,23 +1547,40 @@ int main2 ( int argc , char *argv[] ) {
 	// gb ping [hostId] [clientPort]
 	if ( strcmp ( cmd , "ping" ) == 0 ) {
 		int32_t hostId = 0;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
+		if ( cmdarg + 1 < argc ) {
+			hostId = atoi ( argv[cmdarg+1] );
+		}
+
 		uint16_t port = 2050;
-		if ( cmdarg + 2 < argc ) 
+		if ( cmdarg + 2 < argc ) {
 			port = (uint16_t)atoi ( argv[cmdarg+2] );
+		}
+
 		pingTest ( hostId , port );
+
 		return 0;
 	}
+
 	// gb injecttest <requestLen> [hostId]
 	if ( strcmp ( cmd , "injecttest" ) == 0 ) {
-		if ( cmdarg+1 >= argc ) goto printHelp;
+		if ( cmdarg+1 >= argc ) {
+			goto printHelp;
+		}
+
 		int32_t hostId = 0;
-		if ( cmdarg + 2 < argc ) hostId = atoi ( argv[cmdarg+2] );
+		if ( cmdarg + 2 < argc ) {
+			hostId = atoi ( argv[cmdarg+2] );
+		}
+
 		int32_t reqLen = atoi ( argv[cmdarg+1] );
-		if ( reqLen == 0 ) goto printHelp;
+		if ( reqLen == 0 ) {
+			goto printHelp;
+		}
+
 		injectFileTest ( reqLen , hostId );
 		return 0;
 	}
+
 	/*
 	// gb inject <file> <ip:port> [startdocid]
 	// gb inject titledb <newhosts.conf> [startdocid]
@@ -1626,14 +1615,17 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 	*/
+
 	// gb dsh
 	if ( strcmp ( cmd , "dsh" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		//int32_t hostId = -1;
-		if ( cmdarg+1 >= argc ) goto printHelp;
+		if ( cmdarg+1 >= argc ) {
+			goto printHelp;
+		}
+
 		char *cmd = argv[cmdarg+1];
-		return install ( ifk_dsh , -1,NULL,NULL,-1, cmd );
+		return install ( ifk_dsh , -1, NULL, NULL, -1, cmd );
 	}
+
 	// gb dsh2
 	if ( strcmp ( cmd , "dsh2" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1642,12 +1634,14 @@ int main2 ( int argc , char *argv[] ) {
 		char *cmd = argv[cmdarg+1];
 		return install ( ifk_dsh2 , -1,NULL,NULL,-1, cmd );
 	}
+
 	// gb copyfiles, like gb install but takes a dir not a host #
 	if ( strcmp ( cmd , "copyfiles" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
 		char *dir = argv[cmdarg+1];
 		return copyFiles ( dir );
 	}
+
 	// gb install
 	if ( strcmp ( cmd , "install" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1659,13 +1653,7 @@ int main2 ( int argc , char *argv[] ) {
 			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
 		return install ( ifk_install , h1 , NULL , NULL , h2 );
 	}
-	// gb install
-	// if ( strcmp ( cmd , "install2" ) == 0 ) {	
-	// 	// get hostId to install TO (-1 means all)
-	// 	int32_t hostId = -1;
-	// 	if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-	// 	return install ( ifk_install2 , hostId );
-	// }
+
 	// gb installgb
 	if ( strcmp ( cmd , "installgb" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1673,6 +1661,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
 		return install ( ifk_installgb , hostId );
 	}
+
 	// gb installgbrcp
 	if ( strcmp ( cmd , "installgbrcp" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1680,6 +1669,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
 		return install ( ifk_installgbrcp , hostId );
 	}
+
 	// gb installgb
 	if ( strcmp ( cmd , "installgb2" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1687,6 +1677,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
 		return install ( ifk_installgb2 , hostId );
 	}
+
 	// gb installtmpgb
 	if ( strcmp ( cmd , "installtmpgb" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1694,6 +1685,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
 		return install ( ifk_installtmpgb , hostId );
 	}
+
 	// gb installconf
 	if ( strcmp ( cmd , "installconf" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1701,6 +1693,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
 		return install ( ifk_installconf , hostId );
 	}
+
 	// gb installconf2
 	if ( strcmp ( cmd , "installconf2" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1708,6 +1701,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
 		return install ( ifk_installconf2 , hostId );
 	}
+
 	// gb installcat
 	if ( strcmp ( cmd , "installcat" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1715,6 +1709,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
 		return install ( ifk_installcat , hostId );
 	}
+
 	// gb installcat2
 	if ( strcmp ( cmd , "installcat2" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1722,6 +1717,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
 		return install ( ifk_installcat2 , hostId );
 	}
+
 	// gb installnewcat
 	if ( strcmp ( cmd , "installnewcat" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1729,6 +1725,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
 		return install ( ifk_installnewcat , hostId );
 	}
+
 	// gb installnewcat2
 	if ( strcmp ( cmd , "installnewcat2" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1736,6 +1733,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
 		return install ( ifk_installnewcat2 , hostId );
 	}
+
 	// gb start [hostId]
 	if ( strcmp ( cmd , "start" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1753,13 +1751,11 @@ int main2 ( int argc , char *argv[] ) {
 				return install ( ifk_kstart , h1, 
 						 NULL,NULL,h2 );
 		}
-		// if it is us, do it
-		//if ( hostId != -1 ) goto mainStart;
-		//
+
 		// default to keepalive start for now!! (was ifk_start)
-		//
 		return install ( ifk_kstart , hostId );
 	}
+
 	// gb astart [hostId] (non-keepalive start)
 	if ( strcmp ( cmd , "nstart" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1778,6 +1774,7 @@ int main2 ( int argc , char *argv[] ) {
 		//if ( hostId != -1 ) goto mainStart;
 		return install ( ifk_start , hostId );
 	}
+
 	// gb tmpstart [hostId]
 	if ( strcmp ( cmd , "tmpstart" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1796,6 +1793,7 @@ int main2 ( int argc , char *argv[] ) {
 		//if ( hostId != -1 ) goto mainStart;
 		return install ( ifk_tmpstart, hostId );
 	}
+
 	if ( strcmp ( cmd , "tmpstop" ) == 0 ) {	
 		int32_t hostId = -1;
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
@@ -1814,6 +1812,7 @@ int main2 ( int argc , char *argv[] ) {
 			       true , //sendtohosts
 			       false );//sendtoproxies
 	}
+
 	// gb start2 [hostId]
 	if ( strcmp ( cmd , "start2" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -1832,6 +1831,7 @@ int main2 ( int argc , char *argv[] ) {
 		//if ( hostId != -1 ) goto mainStart;
 		return install ( ifk_start2 , hostId );
 	}
+
 	//keep alive start... not!
 	if ( strcmp ( cmd , "dstart" ) == 0 ) {	
 		int32_t hostId = -1;
@@ -1847,6 +1847,7 @@ int main2 ( int argc , char *argv[] ) {
 		}
 		return install ( ifk_dstart , hostId );
 	}
+
 	if ( strcmp ( cmd , "kstop" ) == 0 ) {	
 		//same as stop, here for consistency
 		int32_t hostId = -1;
@@ -1867,30 +1868,37 @@ int main2 ( int argc , char *argv[] ) {
 			       false );//sendtoproxies
 
 	}
+
 	// gb backupcopy [hostId] <backupSubdirName>
 	if ( strcmp ( cmd , "backupcopy" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
 		return install ( ifk_backupcopy , -1 , argv[cmdarg+1] );
 	}
+
 	// gb backupmove [hostId] <backupSubdirName>
 	if ( strcmp ( cmd , "backupmove" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
 		return install ( ifk_backupmove , -1 , argv[cmdarg+1] );
 	}
+
 	// gb backupmove [hostId] <backupSubdirName>
 	if ( strcmp ( cmd , "backuprestore" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
 		return install ( ifk_backuprestore, -1 , argv[cmdarg+1] );
 	}
+
 	// gb scale <hosts.conf>
 	if ( strcmp ( cmd , "scale" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
 		return scale ( argv[cmdarg+1] , true );
 	}
+
+	// gb collinject
 	if ( strcmp ( cmd , "collinject" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
 		return collinject ( argv[cmdarg+1] );
 	}
+
 	// gb collcopy <hosts.conf> <coll> <collnum>>
 	if ( strcmp ( cmd , "collcopy" ) == 0 ) {	
 		if ( cmdarg + 4 != argc ) goto printHelp;
@@ -1899,6 +1907,7 @@ int main2 ( int argc , char *argv[] ) {
 		int32_t  collnum   = atoi(argv[cmdarg+3]);
 		return collcopy ( hostsconf , coll , collnum );
 	}
+
 	// gb stop [hostId]
 	if ( strcmp ( cmd , "stop" ) == 0 ) {	
 		int32_t hostId = -1;
@@ -1918,6 +1927,7 @@ int main2 ( int argc , char *argv[] ) {
 			       true , //sendtohosts
 			       false );//sendtoproxies
 	}
+
 	// gb save [hostId]
 	if ( strcmp ( cmd , "save" ) == 0 ) {	
 		int32_t hostId = -1;
@@ -1937,6 +1947,7 @@ int main2 ( int argc , char *argv[] ) {
 			       true , //sendtohosts
 			       false );//sendtoproxies
 	}
+
 	// gb spidersoff [hostId]
 	if ( strcmp ( cmd , "spidersoff" ) == 0 ) {	
 		int32_t hostId = -1;
@@ -1945,6 +1956,7 @@ int main2 ( int argc , char *argv[] ) {
 			       true , //sendtohosts
 			       false );//sendtoproxies
 	}
+
 	// gb spiderson [hostid]
 	if ( strcmp ( cmd , "spiderson" ) == 0 ) {	
 		int32_t hostId = -1;
@@ -1953,6 +1965,7 @@ int main2 ( int argc , char *argv[] ) {
 			       true , //sendtohosts
 			       false );//sendtoproxies
 	}
+
 	// gb cacheoff [hostId]
 	if ( strcmp ( cmd , "cacheoff" ) == 0 ) {	
 		int32_t hostId = -1;
@@ -1978,6 +1991,7 @@ int main2 ( int argc , char *argv[] ) {
 			       true , //sendtohosts
 			       false );//sendtoproxies
 	}
+
 	// gb pmerge [hostId]
 	if ( strcmp ( cmd , "pmerge" ) == 0 ) {	
 		int32_t hostId = -1;
@@ -1997,6 +2011,7 @@ int main2 ( int argc , char *argv[] ) {
 			       true , //sendtohosts
 			       false );//sendtoproxies
 	}
+
 	// gb smerge [hostId]
 	if ( strcmp ( cmd , "smerge" ) == 0 ) {	
 		int32_t hostId = -1;
@@ -2016,6 +2031,7 @@ int main2 ( int argc , char *argv[] ) {
 			       true , //sendtohosts
 			       false );//sendtoproxies
 	}
+
 	// gb tmerge [hostId]
 	if ( strcmp ( cmd , "tmerge" ) == 0 ) {	
 		int32_t hostId = -1;
@@ -2035,6 +2051,7 @@ int main2 ( int argc , char *argv[] ) {
 			       true , //sendtohosts
 			       false );//sendtoproxies
 	}
+
 	// gb merge [hostId]
 	if ( strcmp ( cmd , "merge" ) == 0 ) {	
 		int32_t hostId = -1;
@@ -2182,10 +2199,11 @@ int main2 ( int argc , char *argv[] ) {
 	// ad inifinitum, look got "sigbadhandler" at the end of the 
 	// last 5 logs in the last 60 seconds. if we see that then something
 	// is prevent is from starting up so give up and exit gracefully
-	if ( g_recoveryMode && isRecoveryFutile () )
+	if ( g_recoveryMode && isRecoveryFutile () ) {
 		// exiting with 0 means no error and should tell our
 		// keep alive loop to not restart us and exit himself.
 		exit (0);
+	}
 
 
 	// HACK: enable logging for Conf.cpp, etc.
@@ -2197,17 +2215,20 @@ int main2 ( int argc , char *argv[] ) {
 	// . now that hosts.conf has more of the burden, all gbHID.conf files
 	//   can be identical
  	if ( ! g_conf.init ( h9->m_dir ) ) { // , h->m_hostId ) ) {
-		log("db: Conf init failed." ); return 1; }
+		log("db: Conf init failed." );
+		return 1;
+	}
+
 	//if ( ! g_hostdb.validateIps ( &g_conf ) ) {
 	//	log("db: Failed to validate ips." ); return 1;}
 	//if ( ! g_hostdb2.validateIps ( &g_conf ) ) {
 	//	log("db: Failed to validate ips." ); return 1;}
 
 	// put in read only mode
-	if ( useTmpCluster )
+	if ( useTmpCluster ) {
 		g_conf.m_readOnlyMode = true;
-	if ( useTmpCluster )
 		g_conf.m_sendEmailAlerts = false;
+	}
 
 	// log how much mem we can use
 	//log(LOG_INIT,"conf: Max mem allowed to use is %"INT64"\n",
@@ -2215,11 +2236,9 @@ int main2 ( int argc , char *argv[] ) {
 
 	// init the loop, needs g_conf
 	if ( ! g_loop.init() ) {
-		log("db: Loop init failed." ); return 1; }
-
-
-	// test the inifinite keep alive bug fix. is recovery futile bug.
-	//char *xx=NULL;*xx=0; 
+		log("db: Loop init failed." );
+		return 1;
+	}
 
 	// the new way to save all rdbs and conf
 	// if g_process.m_powerIsOn is false, logging will not work, so init
@@ -2285,11 +2304,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "dump" ) == 0 && argc > cmdarg + 1 &&
 	     argv[cmdarg+1][0]=='I')  {		
 
-		//if ( ! hadHostId ) {
-		//	log("you must supply hostid in the dump cmd");
-		//	return 0;
-		//}
-
 		int32_t      fileNum = 0;
 		int64_t off     = 0LL;
 		char     *NAME = NULL;
@@ -2308,12 +2322,7 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	if ( strcmp ( cmd , "dump" ) == 0 && argc > cmdarg + 1 &&
-	     argv[cmdarg+1][0]=='T')  {		
-
-		//if ( ! hadHostId ) {
-		//	log("you must supply hostid in the dump cmd");
-		//	return 0;
-		//}
+	     argv[cmdarg+1][0]=='T')  {
 
 		int32_t      fileNum = 0;
 		int64_t off     = 0LL;
@@ -2326,6 +2335,7 @@ int main2 ( int argc , char *argv[] ) {
 	}
 #endif
 #endif
+
 	// . gb dump [dbLetter][coll][fileNum] [numFiles] [includeTree][termId]
 	// . spiderdb is special:
 	//   gb dump s [coll][fileNum] [numFiles] [includeTree] [0=old|1=new]
@@ -3266,13 +3276,6 @@ int main2 ( int argc , char *argv[] ) {
 	// . niceness is 1
 	if ( ! g_loop.registerSleepCallback(2000,(void *)1,attemptMergeAll,1))
 		log("db: Failed to init merge sleep callback.");
-
-	// SEO MODULE
-	// . only use if we are in Matt Wells's data center
-	//   and have access to the seo tools
-	if ( g_conf.m_isMattWells &&
-	     ! g_loop.registerSleepCallback(2000,(void *)1,runSEOQueryLoop))
-		log("db: Failed to register seo query loop");
 
 	// try to sync parms (and collection recs) with host 0
 	if ( ! g_loop.registerSleepCallback(1000,NULL,tryToSyncWrapper,0))

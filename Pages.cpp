@@ -356,18 +356,6 @@ static WebPage s_pages[] = {
 	//  "get queries a url matches",
 	//  sendPageMatchingQueries   , 2 } ,
 
-#ifndef CYGWIN
-	{ PAGE_SEO, "seo",0,"seo" ,  0 , 0 ,
-	  "SEO info",
-	  sendPageSEO   , 2 ,NULL,NULL,
-	  PG_NOAPI|PG_MASTERADMIN},
-#else
-	{ PAGE_SEO, "seo",0,"seo" ,  0 , 0 ,
-	  "SEO info",
-	  sendPageResults  , 0 ,NULL,NULL,
-	  PG_NOAPI|PG_MASTERADMIN},
-#endif
-
 	{ PAGE_ACCESS    , "admin/access" , 0 , "access" ,  1 , M_POST,
 	  //USER_ADMIN | USER_MASTER   , 
 	  "access password, ip, admin ips etc. all goes in here",
@@ -597,7 +585,6 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 	if ( page == PAGE_ROOT ) publicPage = true;
 	// do not deny /NM/Albuquerque urls
 	if ( page == PAGE_RESULTS ) publicPage = true;
-	if ( page == PAGE_SEO ) publicPage = true;
 	if ( page == PAGE_ADDURL ) publicPage = true;
 	if ( page == PAGE_GET ) publicPage = true;
 	if ( page == PAGE_CRAWLBOT ) publicPage = true;
@@ -2261,10 +2248,6 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 		// top or bottom
 		//if (   top && i >= PAGE_CGIPARMS ) continue;
 		//if ( ! top && i  < PAGE_CGIPARMS ) continue;
-
-		// skip seo link
-		if ( ! g_conf.m_isMattWells && i == PAGE_SEO ) 
-			continue;
 
 		// skip page autoban link
 		if ( ! g_conf.m_isMattWells && i == PAGE_AUTOBAN )

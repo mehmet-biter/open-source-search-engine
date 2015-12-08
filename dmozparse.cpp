@@ -21,8 +21,6 @@
 bool closeAll ( void *state , void (* callback)(void *state) ) { return true; }
 bool allExit ( ) { return true; };
 
-bool sendPageSEO(TcpSocket *s, HttpRequest *hr) {return true;}
-
 //int32_t g_qbufNeedSave = false;
 //SafeBuf g_qbuf;
 

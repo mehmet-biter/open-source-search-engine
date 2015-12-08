@@ -74,7 +74,6 @@ bool sendPageFilters  ( TcpSocket *s , HttpRequest *r );
 bool sendPageReindex  ( TcpSocket *s , HttpRequest *r );
 bool sendPageInject   ( TcpSocket *s , HttpRequest *r );
 //bool sendPageMatchingQueries ( TcpSocket *s , HttpRequest *r );
-bool sendPageSEO      ( TcpSocket *s , HttpRequest *r );
 bool sendPageAccess   ( TcpSocket *s , HttpRequest *r );
 bool sendPageSearch2  ( TcpSocket *s , HttpRequest *r );
 bool sendPageAddUrl2  ( TcpSocket *s , HttpRequest *r );
@@ -396,7 +395,6 @@ enum {
 	PAGE_SPIDERDB    , 
 	//PAGE_PRIORITIES  ,  // priority queue controls
 	//PAGE_KEYWORDS    ,
-	PAGE_SEO         ,
 	PAGE_ACCESS      ,  //40	
 	PAGE_SEARCHBOX   ,
 	PAGE_PARSER      ,
