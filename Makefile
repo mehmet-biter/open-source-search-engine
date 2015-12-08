@@ -162,7 +162,6 @@ dist: all
 	antiword \
 	antiword-dir/ \
 	html/ \
-	pdftohtml \
 	pstotext \
 	gb.pem \
 	gb \
