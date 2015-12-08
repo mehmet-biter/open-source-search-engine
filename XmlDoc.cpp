@@ -10,7 +10,6 @@
 #include "Clusterdb.h" // g_clusterdb
 #include "Categories.h" // g_categories
 #include "iana_charset.h"
-//#include "Checksumdb.h"
 //#include "Msg24.h"
 #include "Stats.h"
 #include "Sanity.h"
@@ -18421,38 +18420,30 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	// int16_tcut
 	char *wdir = g_hostdb.m_dir;
 
-	// . open a pipe to pdf2html program
-	// . the output will go to stdout
-	char cmd[2048];
-	// different commands to filter differt ctypes
-	// -i     : ignore images
-	// -stdout: send output to stdout
-	// -c     : generate complex document
-	// Google generates complex docs, but the large ones are horribly slow
-	// in the browser, but docs with 2 cols don't display right w/o -c.
-	// damn, -stdout doesn't work when -c is specified.
-	// These ulimit sizes are max virtual memory in kilobytes. let's
-	// keep them to 25 Megabytes
-	if      ( ctype == CT_PDF ) 
-		snprintf(cmd,2047 ,"ulimit -v 25000 ; ulimit -t 30 ; timeout 30s nice -n 19 %s/pdftohtml -q -i -noframes -stdout %s > %s", wdir , in ,out );
-	else if ( ctype == CT_DOC ) 
+	char cmd[2048] = {};
+
+	if (ctype == CT_PDF) {
+		snprintf(cmd, 2047, "%sgbconvert.sh %s %s %s", wdir, g_contentTypeStrings[ctype], in, out);
+	} else if ( ctype == CT_DOC ) {
 		// "wdir" include trailing '/'? not sure
-		snprintf(cmd,2047, "ulimit -v 25000 ; ulimit -t 30 ; export ANTIWORDHOME=%s/antiword-dir ; timeout 30s nice -n 19 %s/antiword %s> %s" , wdir , wdir , in , out );
-	else if ( ctype == CT_XLS )
-		snprintf(cmd,2047, "ulimit -v 25000 ; ulimit -t 30 ; timeout 10s nice -n 19 %s/xlhtml %s > %s" , wdir , in , out );
+		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30 ; export ANTIWORDHOME=%s/antiword-dir ; timeout 30s nice -n 19 %s/antiword %s> %s" , wdir , wdir , in , out );
+	} else if ( ctype == CT_XLS ) {
+		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30 ; timeout 10s nice -n 19 %s/xlhtml %s > %s" , wdir , in , out );
 	// this is too buggy for now... causes hanging threads because it
 	// hangs, so i added 'timeout 10s' but that only works on newer
 	// linux version, so it'll just error out otherwise.
-	else if ( ctype == CT_PPT )
-		snprintf(cmd,2047, "ulimit -v 25000 ; ulimit -t 30 ; timeout 10s nice -n 19 %s/ppthtml %s > %s" , wdir , in , out );
-	else if ( ctype == CT_PS  )
-		snprintf(cmd,2047, "ulimit -v 25000 ; ulimit -t 30; timeout 10s nice -n 19 %s/pstotext %s > %s" , wdir , in , out );
-	else { char *xx=NULL;*xx=0; }
+	} else if ( ctype == CT_PPT ) {
+		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30 ; timeout 10s nice -n 19 %s/ppthtml %s > %s" , wdir , in , out );
+	} else if ( ctype == CT_PS  ) {
+		snprintf(cmd, 2047, "ulimit -v 25000 ; ulimit -t 30; timeout 10s nice -n 19 %s/pstotext %s > %s" , wdir , in , out );
+	} else {
+		char *xx=NULL;*xx=0;
+	}
 
 	// breach sanity check
 	//if ( gbstrlen(cmd) > 2040 ) { char *xx=NULL;*xx=0; }
 
-	// exectue it
+	// execute it
 	int retVal = gbsystem ( cmd );
 	if ( retVal == -1 )
 		log("gb: system(%s) : %s",

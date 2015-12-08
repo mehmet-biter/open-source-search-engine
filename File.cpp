@@ -127,7 +127,7 @@ void File::destructor ( ) {
 	//m_filename.destructor();
 }
 
-void File::set ( char *dir , char *filename ) {
+void File::set ( const char *dir , const char *filename ) {
 	if ( ! dir ) { set ( filename ); return; }
 	char buf[1024];
 	if ( dir[gbstrlen(dir)-1] == '/' )
@@ -137,7 +137,7 @@ void File::set ( char *dir , char *filename ) {
 	set ( buf );
 }
 
-void File::set ( char *filename ) {
+void File::set ( const char *filename ) {
 	// reset m_filename
 	m_filename[0] = '\0';
 	//m_filename.reset();

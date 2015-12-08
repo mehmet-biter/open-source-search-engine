@@ -67,8 +67,8 @@ class File {
 	// . useful for unlink/rename/reserve/...
 	// . IMPORTANT: if bytes were already reserved can only increase the 
 	//   reserve, not decrease
-	void set ( char *dir , char *filename );
-	void set ( char *filename );
+	void set ( const char *dir , const char *filename );
+	void set ( const char *filename );
 
 	// returns false and sets errno on error, returns true on success
 	bool rename ( char *newFilename );

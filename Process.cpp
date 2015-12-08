@@ -90,19 +90,11 @@ char *g_files[] = {
 	"ucdata/scripts.dat",
 	"ucdata/uppermap.dat",
 	
-	// need for checking hard drive temperature
-	//"/usr/sbin/hddtemp",
-	
-	// used by tagdb i guess
-	//"top100000Alexa.txt",
-	
-	//"7za" ,  // 7-zip compression
+	"gbcheck.sh",
+	"gbconvert.sh",
 
-	// 'gbfilter' calls these filters to convert various doc types
-	// into html before being fed to parser
 	"antiword" ,  // msword
 	"pstotext" ,  // postscript
-	//"ppthtml"  ,  // powerpoint
 
 	// required for SSL server support for both getting web pages
 	// on https:// sites and for serving https:// pages
@@ -110,13 +102,6 @@ char *g_files[] = {
 
 	// the main binary!
 	"gb",
-	
-	//"dict/unifiedDict",
-	//"dict/thesaurus.txt",
-	
-	// for spell checking
-	//"dict/en/en_phonet.dat",
-	//"dict/en/en.query.phonet",
 	
 	"antiword-dir/8859-1.txt",
 	"antiword-dir/8859-10.txt",
@@ -158,6 +143,7 @@ char *g_files[] = {
 	"libnetpbm.so.10",
 	"libpng12.so.0",
 	"libtiff.so.4",
+
 	"libcld2_full.so",
 
 	"LICENSE",
@@ -167,8 +153,6 @@ char *g_files[] = {
 	"tifftopnm",
 
 	"mysynonyms.txt",
-
-	//"smartctl",
 
 	"wikititles.txt.part1",
 	"wikititles.txt.part2",
@@ -181,17 +165,6 @@ char *g_files[] = {
 	"sitelinks.txt",
 
 	"unifiedDict.txt",
-	//"unifiedDict-buf.txt",
-	//"unifiedDict-map.dat",
-	
-	//
-	// this junk can be generated
-	//
-	//"wikiwords.dat",//enwikitionary.xml",
-	//"zips.dat",
-	//"timezones.dat",
-	//"aliases.dat",
-	//"cities.dat",
 	
 	NULL
 };
@@ -231,80 +204,29 @@ bool Process::getFilesToCopy ( char *srcDir , SafeBuf *buf ) {
 }
 
 
-bool Process::checkFiles ( char *dir ) {
-
-	/*
-	// check these by hand since you need one or the other
-	File f1;
-	File f2;
-	File f3;
-	File f4;
-	f1.set ( dir , "allCountries.txt" );
-	f2.set ( dir , "postalCodes.txt" );
-	//f3.set ( dir , "places.dat" );
-	f4.set ( dir , "zips.dat" );
-	if ( //( ! f3.doesExist() || ! f4.doesExist() ) && 
-	    ( ! f4.doesExist() ) && 
-	     ( ! f1.doesExist() || ! f2.doesExist() ) ) {
-		log("db: need either (%s and %s) or (%s and %s)",
-		    f3.getFilename() ,
-		    f4.getFilename() ,
-		    f1.getFilename() ,
-		    f2.getFilename() );
-		//return false;
-	}
-	*/
-
-	// check for email subdir
-	//f1.set ( dir , "/html/email/");
-	//if ( ! f1.doesExist() ) {
-	//	log("db: email subdir missing. add html/email");
-	//	return false;
-	//}
-
+bool Process::checkFiles ( const char *dir ) {
 	// make sure we got all the files
-	//if ( ! g_conf.m_isLive ) return true;
 	bool needsFiles = false;
 
 	for ( int32_t i = 0 ; i < (int32_t)sizeof(g_files)/4 ; i++ ) {
 		// terminate?
-		if ( ! g_files[i] ) break;
+		if ( ! g_files[i] ) {
+			break;
+		}
+
 		File f;
-		char *dd = dir;
-		if ( g_files[i][0] != '/' )
+		const char *dd = dir;
+		if ( g_files[i][0] != '/' ) {
 			f.set ( dir , g_files[i] );
-		else {
+		} else {
 			f.set ( g_files[i] );
 			dd = "";
 		}
+
 		if ( ! f.doesExist() ) {
-			log("db: %s%s file missing."
-			    ,dd,g_files[i]);
-			//log("db: %s%s missing. Copy over from "
-			//    "titan:/gb/conf/%s",dd,g_files[i],g_files[i]);
-
-			// i like to debug locally without having to load this!
-			//if ( ! g_conf.m_isLive &&
-			//     ! strcmp(g_files[i],"dict/unifiedDict") )
-			//     continue;
-
-			// get subdir in working dir
-			//char subdir[512];
-			//char *p = g_files[i];
-			//char *last = NULL;
-			//for ( ; *p ; p++ ) 
-			//	if ( *p == '/' ) last = p;
-
-			// try copying
-			//char cmd[1024];
-			//sprintf(cmd,"cp -p /home/mwells/gigablast/%s "
-			//	"%s%s",g_files[i],g_hostdb.m_dir,g_files[i]);
-			//log("db: trying to copy: \"%s\"",cmd);
-			//system(cmd);
-
+			log("db: %s%s file missing.", dd, g_files[i]);
 			needsFiles = true;
 		}
-			
 	}
 
 	if ( needsFiles ) {
@@ -312,132 +234,15 @@ bool Process::checkFiles ( char *dir ) {
 		return false;
 	}
 
-	//if ( needsFiles ) {
-	//  log("db: use 'apt-get install -y netpbm' to install "
-	//      "pnmfiles");
-	//  return false;
-	//}
-
-	// . check for tagdb files tagdb0.xml to tagdb50.xml
-	// . MDW - i am phased these annoying files out 100%
-	//for ( int32_t i = 0 ; i <= 50 ; i++ ) {
-	//	char tmp[100];
-	//	sprintf ( tmp , "tagdb%"INT32".xml" , i );
-	//	File f;
-	//	f.set ( dir , tmp );
-	//	if ( ! f.doesExist() ) 
-	//		return log("db: %s%s missing. Copy over from "
-	//			   "titan:/gb/conf/%s",dir,tmp,tmp);
-	//}
-
-
-	if ( ! g_conf.m_isLive ) return true;
-
-	m_swapEnabled = 0;
-
-	// first check to make sure swap is off
-	SafeBuf psb;
-	if ( psb.fillFromFile("/proc/swaps") < 0 ) {
-		log("gb: failed to read /proc/swaps");
-		//if ( ! g_errno ) g_errno = EBADENGINEER;
-		//return true;
-		// if we don't know if swap is enabled or not, use -1
-		m_swapEnabled = -1;
+	{
+		char cmd[2048] = {};
+		snprintf(cmd, 2047, "%sgbcheck.sh", dir);
+		int ret = gbsystem ( cmd );
+		if ( WEXITSTATUS(ret) != 0 ) {
+			log("db: gbcheck failed with status=%d", WEXITSTATUS(ret));
+			return false;
+		}
 	}
-
-	/*
-	File f;
-	f.set ("/proc/swaps");
-	int32_t size = f.getFileSize() ;
-	char *buf = (char *)mmalloc ( size+1, "S99" );
-	if ( ! buf ) return false;
-	if ( ! f.open ( O_RDONLY ) ) 
-		return log("gb: failed to open %s",f.getFilename());
-	if ( size != f.read ( buf , size , 0 ) ) 
-		return log("gb: failed to read %s: %s",f.getFilename() ,
-			   mstrerror(g_errno));
-	buf[size] = '\0';
-	*/
-
-	// we should redbox this! or at least be on the optimizations page
-	if ( m_swapEnabled == 0 ) {
-		char *buf = psb.getBufStart();
-		if ( strstr ( buf,"dev" ) )
-			//return log("gb: can not start live gb with swap "
-			//"enabled.");
-			m_swapEnabled = 1;
-	}
-
-	// . make sure elvtune is being set right
-	// . must be in /etc/rcS.d/S99local
-	/*
-	f.set ("/etc/rcS.d/S99local" );
-	size = f.getFileSize() ;
-	buf = (char *)mmalloc ( size+1, "S99" );
-	if ( ! buf ) return false;
-	if ( ! f.open ( O_RDONLY ) ) 
-		return log("gb: failed to open %s",f.getFilename());
-	if ( size != f.read ( buf , size , 0 ) ) 
-		return log("gb: failed to read %s",f.getFilename() );
-	buf[size]='\0';
-	if ( ! strstr (buf,"\n/usr/sbin/elvtune -w 32 /dev/sda") ||
-	     ! strstr (buf,"\n/usr/sbin/elvtune -w 32 /dev/sdb") ||
-	     ! strstr (buf,"\n/usr/sbin/elvtune -w 32 /dev/sdc") ||
-	     ! strstr (buf,"\n/usr/sbin/elvtune -w 32 /dev/sdd")   )
-		// just note it now and do not exit since 2.6's elevator
-		// tuning is totally different. NO! we are not using 2.6
-		// cuz it sux...
-		return log("gb: %s does not contain "
-			   "/usr/sbin/elvtune -w 32 /dev/sd[a-d]" ,
-			   f.getFilename());
-	mfree ( buf , size+1, "S99" );
-	*/
-
-	// now that we are open source skip the checks below
-	return true;
-
-	// check kernel version
-	FILE *fd;
-	fd = fopen ( "/proc/version" , "r" );
-	if ( ! fd ) {
-		log("gb: could not open /proc/version to check kernel version:%s",
-		    strerror(errno));
-		return false;
-	}
-	// read in version
-	char vbuf[4000];
-	fgets ( vbuf , 3900 , fd );
-	fclose ( fd );
-	// compare it
-	if ( strcmp ( vbuf , "Linux version 2.4.31-bigcore "
-		      "(jolivares@voyager) (gcc version 2.95.4 20011002 "
-		      "(Debian prerelease)) #2 SMP Fri Apr 14 12:48:46 "
-		      "MST 2006\n") == 0 ) 
-		return true;
-	if ( strcmp ( vbuf , "Linux version 2.4.31-bigcore "
-		      "(msabino@voyager) (gcc version 2.95.4 20011002 "
-		      "(Debian prerelease)) #7 SMP Mon Aug 21 18:09:30 "
-		      "MDT 2006\n")  == 0 )
-		return true;
-	// this one is for the dual and quad core machines i think
-	if ( strcmp ( vbuf , "Linux version 2.4.34-e755 (jolivares@titan) "
-		      "(gcc version 2.95.4 20011002 (Debian prerelease)) "
-		      "#22 SMP Tue May 15 02:22:43 MDT 2007\n")==0 )
-		return true;
-	// temp hack test
-	//if ( strcmp ( vbuf , "Linux version 2.6.30 (mwells@titan) (gcc "
-	//	      "version 4.1.2 20061115 (prerelease) (Debian 4.1.1-"
-	//	      "21)) #4 SMP Thu Jun 18 12:56:50 MST 2009\n")==0 )
-	//	return true;
-	// this is used for router0 and router1
-	if ( g_hostdb.m_myHost->m_isProxy &&
-	     strcmp ( vbuf , "Linux version 2.6.25.10 (mwells@titan) "
-		      "(gcc version 4.1.2 20061115 (prerelease) "
-		      "(Debian 4.1.1-21)) #9 SMP Sun Oct 12 15:23:40 "
-		      "MST 2008\n")== 0)
-		return true;
-	log("gb: kernel version is not an approved version.");
-	//return false;
 
 	return true;
 }

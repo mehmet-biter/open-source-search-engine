@@ -16,8 +16,8 @@ char *g_contentTypeStrings [] = {
 	"pdf"  ,
 	"doc"  ,
 	"xls"  ,
-        "ppt"  ,
-        "ps"   , // 8
+	"ppt"  ,
+	"ps"   , // 8
 	"gif"  , // 9
 	"jpg"  , // 10
 	"png"  , // 11

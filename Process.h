@@ -19,7 +19,7 @@ class Process {
  public:
 
 	bool getFilesToCopy ( char *srcDir , class SafeBuf *buf ) ;
-	bool checkFiles ( char *dir );
+	bool checkFiles ( const char *dir );
 
 	// . the big save command
 	// . does not save everything, just the important stuff
@@ -97,7 +97,6 @@ class Process {
 	int32_t  m_desiredFanState;
 	float m_diskUsage;
 	int64_t m_diskAvail;
-	char m_swapEnabled;
 };
 
 extern Process g_process;

@@ -2214,7 +2214,7 @@ int main2 ( int argc , char *argv[] ) {
 	//   name gbHID.conf
 	// . now that hosts.conf has more of the burden, all gbHID.conf files
 	//   can be identical
- 	if ( ! g_conf.init ( h9->m_dir ) ) { // , h->m_hostId ) ) {
+	if ( ! g_conf.init ( h9->m_dir ) ) {
 		log("db: Conf init failed." );
 		return 1;
 	}
@@ -2536,6 +2536,15 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
+	// start up log file
+	if ( ! g_log.init( g_hostdb.m_logFilename ) ) {
+		fprintf (stderr,"db: Log file init failed. Exiting.\n" );
+		return 1;
+	}
+
+	g_log.m_logTimestamps = true;
+	g_log.m_logReadableTimestamps = true;	// @todo BR: Should be configurable..
+
 	// temp merge test
 	//RdbList list;
 	//list.testIndexMerge();
@@ -2544,13 +2553,12 @@ int main2 ( int argc , char *argv[] ) {
 	if ( checkDirPerms ( g_hostdb.m_dir ) < 0 ) return 1;
 
 	// . make sure we have critical files
-	// . make sure elvtune is in the /etc/rcS.d/S99local if need be
-	//if ( ! checkFiles ( g_hostdb.m_dir ) ) return 1;
 	if ( ! g_process.checkFiles ( g_hostdb.m_dir ) ) return 1;
 
 	// load the appropriate dictionaries
 	//g_speller.init();
 	//if ( !g_speller.init ( ) ) return 1;
+
 	g_errno = 0;
 
 	//g_speller.test ( );
@@ -2601,11 +2609,6 @@ int main2 ( int argc , char *argv[] ) {
 	return 0;
 	*/
 
-	// start up log file
-	if ( ! g_log.init( g_hostdb.m_logFilename )        ) {
-		fprintf (stderr,"db: Log file init failed. Exiting.\n" ); 
-		return 1; 
-	}
 
 	// in case we do not have one, we need it for Images.cpp
 	if ( ! makeTrashDir() ) {
@@ -2648,9 +2651,6 @@ int main2 ( int argc , char *argv[] ) {
 	// not stderr
 	//if ( ( ! cmd || !cmd[0]) && ! g_threads.init()     ) {
 	//	log("db: Threads init failed." ); return 1; }
-
-	g_log.m_logTimestamps = true;
-	g_log.m_logReadableTimestamps = true;	// BR: Should be configurable..
 
 	// log the version
 	log(LOG_INIT,"conf: Gigablast Version: %s",getVersion());
