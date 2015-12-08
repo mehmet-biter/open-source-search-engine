@@ -508,13 +508,6 @@ bool Proxy::handleRequest (TcpSocket *s){
 	if ( g_isYippy && ! strncmp(path,"/master",7) ) 
 		handleIt = true;
 
-	/*
-	if ( ! strncmp(path,"/blog.html"   ,10) ) handleIt = false;
-	if ( ! strncmp(path,"/terms.html"  ,11) ) handleIt = false;
-	if ( ! strncmp(path,"/privacy.html",13) ) handleIt = false;
-	if ( ! strncmp(path,"/account.html",13) ) handleIt = false;
-	if ( ! strncmp(path,"/bio.html",13) ) handleIt = false;
-	*/
 	// our new cached page representation format
 	if ( ! strncmp(path,"/?id="        ,5 ) ) handleIt = false;
 
@@ -4480,16 +4473,16 @@ bool Proxy::printAccountingInfoPage ( StateUser *su , SafeBuf *errmsg ) {
 		       "<tr>"
 		       "<td><nobr>User ID</nobr></td>"
 		       "<td>%"INT32"</td>"
-		       "<td>See the <a href=/searchfeed.html>XML Search "
-		       "Feed</a> page or the <a href=/seoapi.html>SEO API</a> "
+		       "<td>See the XML Search "
+		       "Feed page or the SEO API "
 		       "page for details on using this.</td>"
 		       "</tr>"
 
 		       "<tr>"
 		       "<td><nobr>XML Feed Code</nobr></td>"
 		       "<td>%s</td>"
-		       "<td>See the <a href=/searchfeed.html>XML Search "
-		       "Feed</a> page or the <a href=/seoapi.html>SEO API</a> "
+		       "<td>See the XML Search "
+		       "Feed page or the SEO API "
 		       "page for details on using this.</td>"
 		       "</tr>"
 

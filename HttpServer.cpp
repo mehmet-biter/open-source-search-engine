@@ -1082,32 +1082,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	//	return handleDiffbotRequest ( s , r );
 
 
-	// for adding to browser list of search engines
-	if ( strncmp ( path, "/eventguru.xml", 14 ) == 0 )  {
-		SafeBuf sb(256, "HttpServer");
-		sb.safePrintf(
-			      "<OpenSearchDescription xmlns=\"http://a9.com/-/spec/opensearch/1.1/\" xmlns:moz=\"http://www.mozilla.org/2006/browser/search/\">\n"
-			      "<ShortName>Event Guru</ShortName>\n"
-			      "<Description>Event Guru</Description>\n"
-			      "<InputEncoding>UTF-8</InputEncoding>\n"
-			      "<SyndicationRight>limited</SyndicationRight>\n"
-			      "<Image width=\"16\" height=\"16\" type=\"image/x-icon\">http://www.eventguru.com/favicon.ico</Image>\n"
-			      "<Url type=\"text/html\" method=\"GET\" template=\"http://www.eventguru.com/?q={searchTerms}\"/>\n"
-			      //"<Url type=\"application/x-suggestions+json\" template=\"http://www.eventguru.com/autocomplete?term={searchTerms}&lang={language?}&form=opensearch\"/>\n"
-			      "<Url type=\"application/opensearchdescription+xml\" rel=\"self\" template=\"http://www.eventguru.com/eventguru.xml\"/>\n"
-			      "<moz:SearchForm>http://www.eventguru.com/</moz:SearchForm>\n"
-			      "</OpenSearchDescription>\n"
-			      );
-		return g_httpServer.sendDynamicPage(s,
-						    sb.getBufStart(),
-						    sb.length(),
-						    0, false, 
-						    "text/xml",
-						    -1, NULL,
-						    "UTF-8");
-	}
-
-
 	// if it's gigablast.com, www.gigablast.com, ... do int16_tcut
 	bool isGigablast = false;
 	if ( strcasecmp ( h , "www.gigablast.com" ) == 0 ) isGigablast = true;
@@ -1197,71 +1171,11 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	if ( n == PAGE_RESULTS ) // || n == PAGE_ROOT )
 		return sendPageResults ( s , r );
 
-	// . redirect eventwidget.com search traffic to results
-	// . i think this is a zombie bot click farm!
-	// . i did a check and its pretty worthless!!
-	//if ( ! strncmp ( path ,"/search.cfm", pathLen ) )
-	//	return sendPageEvents ( s , r );		
-	
-	// let's try without this for now
-	//if ( g_loop.m_inQuickPoll && niceness ) {
-	//	//log(LOG_WARN, "saving request for later. %"INT32" %"INT32" %"INT32"",
-	//	//	    (int32_t)s, (int32_t)r, n);
-	//	addToQueue(s, r, n);
-	//	if(g_errno) 
-	//		return g_httpServer.sendErrorReply(s,505,
-	//						   mstrerror(g_errno));
-	//	return true;
-	//}
-	//g_loop.canQuickPoll(niceness);
-
-	// for flurbit.com old layout
-	//if ( ! strncmp ( path ,"/addevent", pathLen ) ) {
-	//	if ( ! isNewSite ) return sendPageAddEvent2 ( s , r );
-	//	else               return sendPageAddEvent  ( s , r );
-	//}
-
-	// prints out stats for widgetmasters so they can see the traffic
-	// they sent to us...
-	//if ( ! strncmp ( path ,"/account", pathLen ) ) {
-	//	return sendPageAccount ( s , r );
-	//}
-
-
 	// . if not dynamic this will be -1
 	// . sendDynamicReply() returns false if blocked, true otherwise
 	// . it sets g_errno on error
 	if ( n >= 0 ) return g_pages.sendDynamicReply ( s , r , n );
 
-
-	//if ( ! strncmp ( path ,"/widget.html", pathLen ) )
-	//	return sendPageWidget ( s , r );
-
-	// use a standard robots. do not allow someone to forget to have
-	// that file in place!! let google hit us now that browse.html
-	// is dynamic and the urls seem static so they should be digested
-	// by google bot
-	//if ( ! strncmp ( path ,"/robots.txt", pathLen ) )
-	//	return sendPageRobotsTxt ( s , r );
-
-	//if ( ! strncmp ( path ,"/sitemap.xml", pathLen ) )
-	//	return sendPageSiteMap ( s , r );
-
-	//if ( ! isNewSite ) {
-	//	// for the old flurbit layout
-	//	if ( ! strncmp ( path ,"/browse.html", pathLen ) )
-	//		return sendPageBrowse ( s , r );
-	//}
-
-	// comment out for old flurbit layout
-	//if ( ! strncmp ( path ,"/help.html", pathLen ) )
-	//	return sendPageAbout ( s , r , path );
-
-	//if ( ! strncmp ( path ,"/adv.html", pathLen ) )
-	//	return sendPageAdvanced ( s , r );
-
-	//if ( ! strncmp ( path ,"/about.html", pathLen ) )
-	//	return sendPageAbout ( s , r );
 
 	if ( ! strncmp ( path ,"/help.html", pathLen ) )
 		return sendPageHelp ( s , r );
@@ -1274,22 +1188,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	if ( ! strncmp ( path ,"/adv.html", pathLen ) )
 		return sendPagePretty ( s , r,"adv.html","advanced");
 
-	// who uses gigablast?
-	if ( ! strncmp ( path ,"/users.html", pathLen ) )
-		return sendPagePretty ( s , r,"users.html","users"); // special
-
-	if ( ! strncmp ( path ,"/about.html", pathLen ) )
-		return sendPagePretty ( s , r , "about.html","about" );
-
-	// decorate the plain html page, news.html, with our nav chrome
-	if ( ! strncmp ( path ,"/blog.html", pathLen ) )
-		return sendPagePretty ( s , r , "blog.html", "blog");
-
-	// decorate the plain html page with our nav chrome
-	if ( ! strncmp ( path ,"/searchfeed.html", pathLen ) )
-		return sendPagePretty ( s , r , "searchfeed.html", "feed");
-
-
 	// decorate the plain html page, rants.html, with our nav chrome
 	if ( ! strncmp ( path ,"/faq.html", pathLen ) )
 		return sendPagePretty ( s , r , "faq.html", "faq");
@@ -1299,18 +1197,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// decorate the plain html pages with our nav chrome
 	if ( ! strncmp ( path ,"/developer.html", pathLen ) )
 		return sendPagePretty ( s , r , "developer.html", "developer");
-	if ( ! strncmp ( path ,"/compare.html", pathLen ) )
-		return sendPagePretty ( s , r , "compare.html", "compare");
-
-	if ( ! strncmp ( path ,"/contact.html", pathLen ) )
-		return sendPagePretty ( s , r , "contact.html", "contact");
-
-	if ( ! strncmp ( path ,"/bio.html", pathLen ) )
-		return sendPagePretty ( s , r , "bio.html", "bio");
-
-	if ( ! strncmp ( path ,"/appliance.html", pathLen ) )
-		return sendPagePretty ( s , r , "appliance.html", "appliance");
-
 
 	if ( ! strncmp ( path ,"/api.html", pathLen ) )
 		return sendPageAPI ( s , r  );

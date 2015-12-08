@@ -2031,104 +2031,28 @@ bool Pages::printAdminBottom2 ( SafeBuf *sb ) {
 	return status;
 }
 
-/*
-char *Pages::printTail ( char *p , char *pend , bool isLocal ) {
-	// don't breech the buffer
-	if ( p + 2000 >= pend ) return p;
-	// now print the tail
-	sprintf ( p , 
-		  //"\n<center><br><br><font color=#c62939 size=-1><b>"
-		  "\n<center><b>"
-		  "<p class=nav><a href=\"/about.html\">"
-		  "About</a> &nbsp; &nbsp;");
-	p += gbstrlen ( p );
-
-	if ( g_conf.m_addUrlEnabled ) {
-		sprintf(p,"<a href=\"/addurl\">"
-			"Add a Url</a> &nbsp; &nbsp; ");
-		p += gbstrlen ( p );
-	}
-
-	//sprintf ( p , 
-	//	  "<a href=\"/careers.html\">"
-	//	  "Careers</a> &nbsp; &nbsp;");
-	//p += gbstrlen ( p );
-
-	sprintf ( p , 
-		  "<a href=\"/contact.html\">"
-		  "Contact</a> &nbsp; &nbsp;");
-	p += gbstrlen ( p );
-
-	sprintf ( p , 
-		  "<a href=\"/help.html\">Help</a> &nbsp; &nbsp;"
-		  //"<a href=\"/press.html\">Press</a> &nbsp; &nbsp; " 
-		  //"<a href=\"/clients.html\">Clients</a> &nbsp; &nbsp; "
-		  "<a href=\"/products.html\">Services</a> &nbsp; &nbsp;");
-	p += gbstrlen ( p );
-
-	// print admin link only if we are the master admin by ip or password
-	//if ( ! pwd ) pwd = "";
-	//if ( user == USER_MASTER ) 
-	//if ( g_users.hasPermission(username,PAGE_MASTER) )
-	if ( isLocal )
-		sprintf ( p , "[<a href=\"/master?\">Admin"
-			  "</a>] &nbsp; &nbsp; " );
-	//else              
-	//	sprintf ( p , "<a href=\"/login\">Login"
-	//		  "</a> &nbsp; &nbsp; " );
-	p += gbstrlen ( p );
-
-	sprintf ( p , "</p></b></center></body></html>" );
-	p += gbstrlen ( p );
-	// return length of bytes we stored
-	return p ;
-}
-*/
-
 bool Pages::printTail ( SafeBuf* sb, bool isLocal ) {
 	// now print the tail
 	sb->safePrintf (
-		  //"\n<center><br><br><font color=#c62939 size=-1><b>"
 		  "\n<center><b>"
-		  "<p class=nav><a href=\"/about.html\">"
-		  "About</a> &nbsp; &nbsp;");
+		  "<p class=nav>");
 
 	if ( g_conf.m_addUrlEnabled ) {
 		sb->safePrintf("<a href=\"/addurl\">"
 			"Add a Url</a> &nbsp; &nbsp; ");
 	}
 
-	//sb->safePrintf (
-	//	  "<a href=\"/careers.html\">"
-	//	  "Careers</a> &nbsp; &nbsp;");
-
 	sb->safePrintf (
-		  "<a href=\"/contact.html\">"
-		  "Contact</a> &nbsp; &nbsp;");
+		  "<a href=\"/help.html\">Help</a> &nbsp; &nbsp;");
 
-	sb->safePrintf (
-		  "<a href=\"/help.html\">Help</a> &nbsp; &nbsp;"
-		  //"<a href=\"/press.html\">Press</a> &nbsp; &nbsp; " 
-		  //"<a href=\"/clients.html\">Clients</a> &nbsp; &nbsp; "
-		  "<a href=\"/products.html\">Products</a> &nbsp; &nbsp;");
-
-	// print admin link only if we are the master admin by ip or password
-	//if ( ! pwd ) pwd = "";
-	//if (g_users.hasPermission(username,PAGE_MASTER) )
 	if ( isLocal )
 		sb->safePrintf ( "[<a href=\"/master\">Admin"
 			  "</a>] &nbsp; &nbsp; " );
-	//else              
-	//	sprintf ( p , "<a href=\"/login\">Login"
-	//		  "</a> &nbsp; &nbsp; " );
 
 	sb->safePrintf ( "</p></b></center></body></html>" );
 	// return length of bytes we stored
 	return true ;
 }
-
-
-
 
 bool Pages::printColors ( SafeBuf *sb, char* bodyJavascript ) {
 	// print font and color stuff
@@ -2153,69 +2077,6 @@ bool Pages::printColors ( SafeBuf *sb, char* bodyJavascript ) {
 		  bodyJavascript);
 	return true;
 }
-/*
-char *Pages::printColors ( char *p , char *pend, char* bodyJavascript ) {
-	// print font and color stuff
-	sprintf ( p , 
-		  "<body text=#000000 bgcolor=#"
-		  BGCOLOR
-		  " link=#000000 vlink=#000000 alink=#000000 %s>\n" 
-		  "<style>"
-		  "body,td,p,.h{font-family:arial,sans-serif; "
-		  "font-size: 15px;} "
-		  //".h{font-size: 20px;} .h{color:} "
-		  //".q{text-decoration:none; color:#0000cc;}"
-		  "</style>\n",
-		  bodyJavascript );
-	p += gbstrlen ( p );
-	return p;
-}
-
-char *Pages::printColors2 ( char *p , char *pend ) {
-	// print font and color stuff
-	sprintf ( p , 
-		  "<body text=#000000 bgcolor=#"
-		  BGCOLOR
-		  " link=#000000 vlink=#000000 alink=#000000 onLoad=sf()>"
-		  "<style><!--"
-		  "body,td,a,p,.h{font-family:arial,sans-serif "
-		  "font-size: 15px;} "
-		  //".h{font-size: 20px;} .h{color:} "
-		  //".q{text-decoration:none; color:#0000cc;}"
-		  "a:link,.w,a.w:link,.w a:link{color:#00c}"
-		  "a:visited,.fl:visited{color:#551a8b}"
-		  "a:active,.fl:active{color:#f00}"
-
-		  "//--></style>\n"
-
-		  "<style><!--"
-		  "body,td,div,.p,a{font-family:arial,sans-serif }"
-		  "div,td{color:#000}"
-		  ".f,.fl:link{color:#6f6f6f}"
-		  "a:link,.w,a.w:link,.w a:link{color:#00c}"
-		  "a:visited,.fl:visited{color:#551a8b}"
-		  "a:active,.fl:active{color:#f00}"
-		  ".t a:link,.t a:active,.t a:visited,.t{color:#ffffff}"
-		  ".t{background-color:#3366cc}"
-		  ".h{color:#3366cc;font-size:14px}"
-		  ".i,.i:link{color:#a90a08}"
-		  ".a,.a:link{color:#008000}"
-		  ".z{display:none}"
-		  "div.n {margin-top: 1ex}"
-		  ".n a{font-size:10pt; color:#000}"
-		  ".n .i{font-size:10pt; font-weight:bold}"
-		  ".q a:visited,.q a:link,.q a:active,.q {text-decoration: "
-		  "none; color: #00c;}"
-		  ".b{font-size: 12pt; color:#00c; font-weight:bold}"
-		  ".ch{cursor:pointer;cursor:hand}"
-		  "//-->"
-		  "</style>" 
-
-		  );
-	p += gbstrlen ( p );
-	return p;
-}
-*/
 
 bool Pages::printColors3 ( SafeBuf *sb ) {
 	// print font and color stuff
@@ -2228,17 +2089,6 @@ bool Pages::printColors3 ( SafeBuf *sb ) {
 		  );
 	return true;
 }
-/*
-char *Pages::printFocus ( char *p , char *pend ) {
-	// print the logo in upper right corner
-	sprintf ( p , 
-		  "<script><!--"
-		  "function sf(){document.f.q.focus();}"
-		  "// --></script>\n" );
-	p += gbstrlen ( p );
-	return p;
-}
-*/
 
 bool Pages::printLogo ( SafeBuf *sb, char *coll ) {
 	// print the logo in upper right corner
@@ -2250,20 +2100,6 @@ bool Pages::printLogo ( SafeBuf *sb, char *coll ) {
 		  "</a>\n",coll);
 	return true;
 }
-
-/*
-char *Pages::printLogo ( char *p , char *pend , char *coll ) {
-	// print the logo in upper right corner
-	if ( ! coll ) coll = "";
-	sprintf ( p , 
-		  "<a href=\"/?c=%s\">"
-		  "<img width=\"295\" height=\"64\" border=\"0\" "
-		  "alt=\"Gigablast\" src=\"/logo-small.png\" />"
-		  "</a>\n",coll);
-	p += gbstrlen ( p );
-	return p;
-}
-*/
 
 bool Pages::printHostLinks ( SafeBuf* sb     ,
 			     int32_t     page   ,
