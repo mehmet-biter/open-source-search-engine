@@ -22,30 +22,28 @@ extern uint64_t g_hashtab[256][256];
 
 bool hashinit ();
 
-unsigned char hash8            ( char *s , int32_t len ) ;
-uint64_t      hash64n_nospaces ( char *s , int32_t len ) ;
-uint32_t hash32n          ( char *s ) ;
-uint32_t hash32           ( char *s, int32_t len,uint32_t startHash=0);
+unsigned char hash8            ( const char *s , int32_t len ) ;
+uint64_t      hash64n_nospaces ( const char *s , int32_t len ) ;
+uint32_t hash32n          ( const char *s ) ;
+uint32_t hash32           ( const char *s, int32_t len,uint32_t startHash=0);
 uint32_t hash32h          ( uint32_t h1 , uint32_t h2 ) ;
 uint64_t      hash64h          ( uint64_t h1 , uint64_t h2 );
 uint32_t      hash32Fast       ( uint32_t h1 , uint32_t h2 ) ;
 uint32_t hash32Lower_a    ( const char *s, int32_t len,uint32_t startHash=0);
-uint32_t hash32Lower_utf8  ( char *s, int32_t len,uint32_t startHash=0);
-uint32_t      hash32_cont      ( char *s, char *slen,
+uint32_t hash32Lower_utf8  ( const char *s, int32_t len,uint32_t startHash=0);
+uint32_t      hash32_cont      ( const char *s, char *slen,
 				 uint32_t startHash , int32_t *conti );
-uint64_t      hash64n          ( char *s, uint64_t startHash =0LL);
+uint64_t      hash64n          ( const char *s, uint64_t startHash =0LL);
 uint64_t      hash64           ( uint64_t h1,uint64_t h2);
 uint64_t      hash64           ( const char *s,int32_t len,uint64_t startHash=0);
-uint64_t      hash64_cont      ( char *s,int32_t len,
-				 uint64_t startHash,int32_t *conti);
-uint64_t      hash64b          ( char *s,         uint64_t startHash=0);
-uint64_t      hash64Lower_a    ( char *s, int32_t len, uint64_t startHash = 0 );
-uint64_t      hash64Lower_utf8 ( char *s, int32_t len, uint64_t startHash = 0 );
-uint64_t      hash64Lower_utf8_nospaces ( char *s, int32_t len );
-uint64_t      hash64Lower_utf8 ( char *s );
-uint64_t      hash64Lower_utf8_cont ( char *s, int32_t len, uint64_t startHash ,
-				      int32_t *conti );
-uint96_t      hash96           ( char *s, int32_t slen,uint96_t sh=(uint96_t)0);
+uint64_t      hash64_cont      ( const char *s, int32_t len, uint64_t startHash, int32_t *conti);
+uint64_t      hash64b          ( const char *s, uint64_t startHash = 0);
+uint64_t      hash64Lower_a    ( const char *s, int32_t len, uint64_t startHash = 0 );
+uint64_t      hash64Lower_utf8 ( const char *s, int32_t len, uint64_t startHash = 0 );
+uint64_t      hash64Lower_utf8_nospaces ( const char *s, int32_t len );
+uint64_t      hash64Lower_utf8 ( const char *p );
+uint64_t      hash64Lower_utf8_cont ( const char *p, int32_t len, uint64_t startHash, int32_t *conti );
+uint96_t      hash96           ( const char *s, int32_t slen, u_int96_t startHash = (u_int96_t )0);
 uint96_t      hash96           ( uint96_t  h1 ,  uint96_t h2 );
 uint96_t      hash96           ( int32_t       h1 ,  uint96_t h2 );
 uint128_t     hash128          ( uint128_t h1 ,  uint128_t h2 );
@@ -56,15 +54,15 @@ uint32_t hashLong         ( uint32_t x ) ;
 // . these hash all punct as a space, except for hyphen and single quote!
 // . these lower-case all alnum chars, even crazy utf8 chars that can be cap'd
 // . these only take utf8 strings
-uint32_t hash32d ( char *s, char *send );
-uint64_t hash64d ( char *s, int32_t slen );
+uint32_t hash32d ( const char *s, const char *send );
+uint64_t hash64d ( const char *s, int32_t slen );
 
-inline uint32_t hash32d ( char *s, int32_t slen ) { return hash32d ( s , s+slen); };
+inline uint32_t hash32d ( const char *s, int32_t slen ) { return hash32d ( s , s+slen); };
 
 uint64_t       hash64Upper_a    ( char *s, int32_t len, uint64_t startHash = 0 );
 
 
-inline uint64_t hash64b ( char *s , uint64_t startHash ) {
+inline uint64_t hash64b ( const char *s , uint64_t startHash ) {
 	uint64_t h = startHash;
 	int32_t i = 0;
 	while ( s[i] ) {
@@ -85,7 +83,7 @@ inline uint64_t hash64 ( const char *s, int32_t len,
 	return h;
 }
 
-inline uint64_t hash64_cont ( char *s, int32_t len, 
+inline uint64_t hash64_cont ( const char *s, int32_t len, 
 					uint64_t startHash ,
 					int32_t *conti ) {
 	uint64_t h = startHash;
@@ -131,7 +129,7 @@ inline uint64_t hash64 (uint64_t h1,uint64_t h2){
 }
 
 
-inline uint64_t hash64Lower_a ( char *s, int32_t len, 
+inline uint64_t hash64Lower_a ( const char *s, int32_t len, 
 					uint64_t startHash ) {
 	uint64_t h = startHash;
 	int32_t i = 0;
@@ -144,10 +142,10 @@ inline uint64_t hash64Lower_a ( char *s, int32_t len,
 }
 
 // utf8
-inline uint64_t hash64Lower_utf8 ( char *p, int32_t len, uint64_t startHash ) {
+inline uint64_t hash64Lower_utf8 ( const char *p, int32_t len, uint64_t startHash ) {
 	uint64_t h = startHash;
 	uint8_t i = 0;
-	char *pend = p + len;
+	const char *pend = p + len;
 	char cs;
 	UChar32 x;
 	UChar32 y;
@@ -202,10 +200,10 @@ inline uint64_t hash64Lower_utf8 ( char *p, int32_t len, uint64_t startHash ) {
 	return h;
 }
 
-inline uint64_t hash64Lower_utf8_nospaces ( char *p, int32_t len  ) {
+inline uint64_t hash64Lower_utf8_nospaces ( const char *p, int32_t len  ) {
 	uint64_t h = 0LL;
 	uint8_t i = 0;
-	char *pend = p + len;
+	const char *pend = p + len;
 	char cs;
 	UChar32 x;
 	UChar32 y;
@@ -253,13 +251,13 @@ inline uint64_t hash64Lower_utf8_nospaces ( char *p, int32_t len  ) {
 }
 
 
-inline uint64_t hash64Lower_utf8_cont ( char *p, 
+inline uint64_t hash64Lower_utf8_cont ( const char *p, 
 					int32_t len, 
 					uint64_t startHash ,
 					int32_t *conti ) {
 	uint64_t h = startHash;
 	uint8_t i = *conti;
-	char *pend = p + len;
+	const char *pend = p + len;
 	char cs;
 	UChar32 x;
 	UChar32 y;
@@ -316,11 +314,11 @@ inline uint64_t hash64Lower_utf8_cont ( char *p,
 	return h;
 }
 
-inline uint32_t hash32_cont ( char *p, int32_t plen,
+inline uint32_t hash32_cont ( const char *p, int32_t plen,
 			      uint32_t startHash , int32_t *conti ) {
 	uint32_t h = startHash;
 	uint8_t i = *conti;
-	char *pend = p + plen;
+	const char *pend = p + plen;
 	for ( ; p < pend ; p++ ) {
 		h ^= (uint32_t)g_hashtab [i++] [(uint8_t)(*p)];
 	}
@@ -331,13 +329,13 @@ inline uint32_t hash32_cont ( char *p, int32_t plen,
 
 
 // utf8
-inline uint32_t hash32Lower_utf8 ( char *p, int32_t len, 
+inline uint32_t hash32Lower_utf8 ( const char *p, int32_t len, 
 					uint32_t startHash ) {
 	return (uint32_t) hash64Lower_utf8 ( p , len , startHash );
 }
 
 // exactly like above but p is NULL terminated for sure
-inline uint64_t hash64Lower_utf8 ( char *p ) {
+inline uint64_t hash64Lower_utf8 ( const char *p ) {
 	uint64_t h = 0;
 	uint8_t i = 0;
 	UChar32 x;
@@ -401,7 +399,7 @@ inline uint64_t hash64Upper_a ( char *s , int32_t len ,
 // supporting only iso charsets for now
 //char getClean( UChar32 c );
 uint8_t getClean_a ( char c ) ;
-UChar32 getClean_utf8 ( char *src ) ;
+UChar32 getClean_utf8 ( const char *src ) ;
 
 
 inline uint32_t hashLong ( uint32_t x ) {

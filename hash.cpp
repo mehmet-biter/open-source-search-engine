@@ -52,7 +52,7 @@ bool hashinit () {
 }
 
 // TODO: ensure this wraps over properly
-unsigned char hash8 ( char *s , int32_t len ) {
+unsigned char hash8 ( const char *s , int32_t len ) {
 	unsigned char h = 0;
 	register int32_t i = 0;
 	while ( i < len ) {
@@ -63,7 +63,7 @@ unsigned char hash8 ( char *s , int32_t len ) {
 	return h;
 }
 
-uint32_t hash32n ( char *s ) {
+uint32_t hash32n ( const char *s ) {
 	uint32_t h = 0;
 	register int32_t i = 0;
 	while ( s[i] ) {
@@ -74,14 +74,14 @@ uint32_t hash32n ( char *s ) {
 	return h;
 }
 
-uint64_t hash64n ( char *s, uint64_t startHash ) {
+uint64_t hash64n ( const char *s, uint64_t startHash ) {
 	uint64_t h = startHash;
 	for ( register int32_t i = 0 ; s[i] ; i++ )
 		h ^= g_hashtab [(unsigned char)i] [(unsigned char)s[i]];
 	return h;
 }
 
-uint64_t hash64n_nospaces ( char *s, int32_t len ) {
+uint64_t hash64n_nospaces ( const char *s, int32_t len ) {
 	uint64_t h = 0LL;
 	int32_t k = 0;
 	for ( register int32_t i = 0 ; i<len ; i++ ) {
@@ -92,7 +92,7 @@ uint64_t hash64n_nospaces ( char *s, int32_t len ) {
 	return h;
 }
 
-uint32_t hash32 ( char *s, int32_t len, uint32_t startHash ) {
+uint32_t hash32 ( const char *s, int32_t len, uint32_t startHash ) {
 	uint32_t h = startHash;
 	register int32_t i = 0;
 	while ( i < len ) {
@@ -114,7 +114,7 @@ uint32_t hash32Lower_a ( const char *s,int32_t len,uint32_t startHash){
 	return h;
 }
 
-u_int96_t hash96 ( char *s, int32_t slen, u_int96_t startHash ) {
+u_int96_t hash96 ( const char *s, int32_t slen, u_int96_t startHash ) {
 	u_int96_t h;
 	h.n0 = hash64 ( s , slen , startHash.n0 );
 	h.n1 = hash32 ( s , slen , startHash.n1 );
@@ -169,14 +169,14 @@ uint64_t hash64h ( uint64_t h1 , uint64_t h2 ) {
 }
 
 // only utf8 allowed now
-uint32_t hash32d ( char *p, char *pend ) {
+uint32_t hash32d ( const char *p, const char *pend ) {
 	return (uint32_t)hash64d ( p , pend - p);
 }
 
 // . only utf8 allowed now
 // . stole this from hash.h hash64LowerE()
-uint64_t hash64d ( char *p, int32_t plen ) {
-	char *pend = p + plen;
+uint64_t hash64d ( const char *p, int32_t plen ) {
+	const char *pend = p + plen;
 	uint64_t h = 0;
 	uint8_t  i = 0;
 	char     cs = 0;
@@ -230,7 +230,7 @@ uint8_t getClean_a ( char c ) {
 }
 
 
-UChar32 getClean_utf8 ( char *src ) {
+UChar32 getClean_utf8 ( const char *src ) {
 	// do ascii fast
 	if ( is_ascii ( *src ) ) return (UChar32)getClean_a(*src);
 	// otherwise, lower case it
