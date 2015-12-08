@@ -18049,13 +18049,17 @@ uint16_t getCharsetFast ( HttpMime *mime,
 
 
 uint16_t *XmlDoc::getCharset ( ) {
-	if ( m_charsetValid ) return &m_charset;
+	if ( m_charsetValid ) {
+		return &m_charset;
+	}
 
 	// . get ptr to filtered content
 	// . we can't get utf8 content yet until we know what charset this
 	//   junk is so we can convert it!
 	char **fc = getFilteredContent();
-	if ( ! fc || fc == (void *)-1 ) return (uint16_t *)fc;
+	if ( ! fc || fc == (void *)-1 ) {
+		return (uint16_t *)fc;
+	}
 
 	// scan document for two things:
 	// 1.  charset=  (in a <meta> tag)
@@ -18070,6 +18074,13 @@ uint16_t *XmlDoc::getCharset ( ) {
 
 	// check in http mime for charset
 	HttpMime *mime = getMime();
+	if (mime && mime->getContentType() == CT_PDF) {
+		// assume UTF-8
+		m_charset = csUTF8;
+		m_charsetValid = true;
+
+		return &m_charset;
+	}
 
 	m_charset = getCharsetFast ( mime , 
 				     m_firstUrl.getUrl(),

@@ -9,7 +9,7 @@ convert_file() {
 
 	case "${filetype}" in
 	pdf)
-		pdftohtml -q -i -noframes -stdout "${input}" > "${output}"
+		pdftohtml -q -i -noframes -env UTF-8 -stdout "${input}" > "${output}"
 		exit $?
 		;;
 	doc)
