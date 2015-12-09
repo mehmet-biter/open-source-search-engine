@@ -107,15 +107,6 @@ bool checkRegex ( SafeBuf *regex ,
 // Address::m_flags for that address on the web page.
 int32_t makeSimpleWordVector ( char *s, int32_t *vbuf, int32_t vbufSize, int32_t niceness);
 
-// this is used for making the event summary/title vectors as well as in
-// Msg40.cpp where it merges events and does not want to repetitively display
-// the same summary lines for an event
-bool getWordVector ( char *s , 
-		     HashTableX *ht , 
-		     uint32_t *d ,
-		     int32_t *nd ,
-		     int32_t ndmax ) ;
-
 bool getDensityRanks ( int64_t *wids , 
 		       int32_t nw,
 		       //int32_t wordStart , 
@@ -155,16 +146,6 @@ bool isSimilar_sorted ( int32_t   *vec0 ,
 			// they must be this similar or more to return true
 			int32_t percentSimilar,
 			int32_t    niceness ) ;
-
-// this is called by Msg40.cpp to set "top"
-int32_t intersectGigabits ( Msg20       **mp          ,   // search results
-			 int32_t          nmp         ,
-			 uint8_t       langId      ,   // searcher's langId
-			 int32_t          maxTop      ,
-			 int32_t          docsToScan  ,
-			 int32_t          minDocCount , // must be in this # docs
-			 class GigabitInfo  *top   ,
-			 int32_t          niceness    ) ;
 
 int32_t getDirtyPoints ( char *s , int32_t len , int32_t niceness , char *logUrl ) ;
 
@@ -1420,7 +1401,6 @@ class XmlDoc {
 	bool m_siteSpiderQuotaValid;
 	bool m_oldDocValid;
 	bool m_extraDocValid;
-	bool m_ahrefsDocValid;
 	//bool m_contactDocValid;
 	bool m_rootDocValid;
 	//bool m_gatewayDocValid;
@@ -1605,7 +1585,6 @@ class XmlDoc {
 	//int32_t m_numBannedOutlinks;
 	class XmlDoc *m_oldDoc;
 	class XmlDoc *m_extraDoc;
-	class XmlDoc *m_ahrefsDoc;
 	//class XmlDoc *m_contactDoc;
 	class XmlDoc *m_rootDoc;
 	//class XmlDoc *m_gatewayDoc;
@@ -2082,10 +2061,6 @@ class XmlDoc {
 	//char *m_outlinkIsIndexedVector;
 	//Msge2 m_msge2;
 
-	bool m_doneWithAhrefs;
-	bool m_useAhrefs;
-	bool m_reallyInjectLinks;
-	int32_t m_downloadLevel;
 	int32_t m_numRegExs;
 	//char m_isSiteRoot;
 	int8_t *m_outlinkHopCountVector;
@@ -2451,7 +2426,7 @@ class XmlDoc {
 			    HashTableX *domDedupTable ,
 			    void *finalState , 
 			    void (* finalCallback)(void *));
-	bool injectAhrefsLinks();
+
 	bool doInjectLoop ( );
 	void doneInjecting ( class XmlDoc *xd );
 	int32_t  m_i;

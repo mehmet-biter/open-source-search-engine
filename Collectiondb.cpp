@@ -19,7 +19,6 @@
 #include "Clusterdb.h"
 #include "Spider.h"
 #include "Repair.h"
-#include "Users.h"
 #include "Parms.h"
 
 void testRegex ( ) ;
@@ -823,45 +822,6 @@ bool Collectiondb::addRdbBasesForCollRec ( CollectionRec *cr ) {
 }
 
 
-
-/*
-bool Collectiondb::isAdmin ( HttpRequest *r , TcpSocket *s ) {
-	if ( r->getLong("admin",1) == 0 ) return false;
-	if ( g_conf.isMasterAdmin ( s , r ) ) return true;
-	char *c = r->getString ( "c" );
-	CollectionRec *cr = getRec ( c );
-	if ( ! cr ) return false;
-	return g_users.hasPermission ( r , PAGE_SEARCH );
-	//return cr->hasPermission ( r , s );
-}
-
-void savingCheckWrapper1 ( int fd , void *state ) {
-	WaitEntry *we = (WaitEntry *)state;
-	// no state?
-	if ( ! we ) { log("colldb: we1 is null"); return; }
-	// unregister too
-	g_loop.unregisterSleepCallback ( state,savingCheckWrapper1 );
-	// if it blocked again i guess tree is still saving
-	if ( ! g_collectiondb.resetColl ( we->m_coll ,
-					  we ,
-					  we->m_purgeSeeds))
-		return;
-	// all done
-	we->m_callback ( we->m_state );
-}
-
-void savingCheckWrapper2 ( int fd , void *state ) {
-	WaitEntry *we = (WaitEntry *)state;
-	// no state?
-	if ( ! we ) { log("colldb: we2 is null"); return; }
-	// unregister too
-	g_loop.unregisterSleepCallback ( state,savingCheckWrapper2 );
-	// if it blocked again i guess tree is still saving
-	if ( ! g_collectiondb.deleteRec ( we->m_coll , we ) ) return;
-	// all done
-	we->m_callback ( we->m_state );
-}
-*/
 
 /*
 // delete all records checked in the list
@@ -3377,8 +3337,6 @@ bool CollectionRec::isAssassin ( int32_t ip ) {
 // . does this password work for this collection?
 bool CollectionRec::hasPermission ( char *p, int32_t plen , int32_t ip ) {
 	// just return true
-	// collection permission is checked from Users::verifyColl 
-	// in User::getUserType for every request
 	return true;
 
 	// scan the passwords

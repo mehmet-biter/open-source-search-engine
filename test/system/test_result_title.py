@@ -52,8 +52,8 @@ def test_title_emoticon(gb_api, httpserver, filename, expected_title):
     ('title_word_with_prop.pdf',        'Title for Microsoft Word (in title)',      'title.pdf'),
     ('title_word_with_prop.pdf',        'Title for Microsoft Word (in title)',      ''),
 ])
-def test_title_office_pdf(gb_api, httpserver, filename, expected_title, custom_filename):
-    verify_title(gb_api, httpserver, 'data/office/' + filename, expected_title,
+def test_title_pdf(gb_api, httpserver, filename, expected_title, custom_filename):
+    verify_title(gb_api, httpserver, 'data/pdf/' + filename, expected_title,
                  custom_filename=custom_filename, delay=1.5)
 
 
@@ -61,6 +61,6 @@ def test_title_office_pdf(gb_api, httpserver, filename, expected_title, custom_f
     # filename                  expected_title              content_type
     ('unicode_chinese.pdf',     '香實發望情無難響',           'application/pdf;charset=big5'),
 ])
-def test_title_libre_unicode(gb_api, httpserver, filename, content_type, expected_title):
-    verify_title(gb_api, httpserver, 'data/libre/' + filename, expected_title,
+def test_title_pdf_unicode(gb_api, httpserver, filename, content_type, expected_title):
+    verify_title(gb_api, httpserver, 'data/pdf/' + filename, expected_title,
                  content_type=content_type, delay=2.5)

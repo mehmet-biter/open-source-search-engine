@@ -13,7 +13,6 @@
 #include "SafeBuf.h"
 #include "linkspam.h"
 #include "CountryCode.h"
-#include "Users.h"
 #include "Tagdb.h"
 #include "Spider.h"
 
@@ -110,10 +109,6 @@ bool gotTitleRec ( void *state ) {
 	// print standard header
 	sb.reserve2x ( 32768 );
 	g_pages.printAdminTop (&sb, st->m_socket, &st->m_r );
-	//PAGE_TITLEDB,
-	//		       st->m_username,//NULL ,
-	//		       st->m_coll , st->m_pwd , s->m_ip , qs );
-	// int16_tcut
 	XmlDoc *xd = &st->m_xd;
 
 	// . deal with errors

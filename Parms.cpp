@@ -24,7 +24,6 @@
 #include "Process.h"
 #include "Repair.h"
 #include "PingServer.h"
-#include "Users.h"
 #include "Proxy.h"
 #include "hash.h"
 #include "Test.h"
@@ -2031,20 +2030,6 @@ bool Parms::printParm ( SafeBuf* sb,
 			bool isCollAdmin ,
 			TcpSocket *sock ) {
 	bool status = true;
-	// do not print if no permissions
-	//if ( m->m_perms != 0 && !g_users.hasPermission(username,m->m_perms) )
-	//	return status;
-	//if ( m->m_perms != 0 && (m->m_perms & user) == 0 ) return status;
-	// do not print some if #define _CLIENT_ is true
-	//#ifdef _GLOBALSPEC_
-	//if ( m->m_priv == 2 ) return status;
-	//if ( m->m_priv == 3 ) return status;
-	//#elif _CLIENT_
-	//if ( m->m_priv ) return status;
-	//#elif _METALINCS_
-	//if ( m->m_priv == 2 ) return status;
-	//if ( m->m_priv == 3 ) return status;
-	//#endif
 	// priv of 4 means do not print at all
 	if ( m->m_priv == 4 ) return true;
 
@@ -10711,28 +10696,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	/*
-	m->m_title = "send email alerts to zak";
-	m->m_desc  = "Sends to zak@gigablast.com.";
-	m->m_cgi   = "seatz";
-	m->m_off   = (char *)&g_conf.m_sendEmailAlertsToZak - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_priv  = 2;
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "send email alerts to sabino";
-	m->m_desc  = "Sends to cell phone.";
-	m->m_cgi   = "seatms";
-	m->m_off   = (char *)&g_conf.m_sendEmailAlertsToSabino - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_priv  = 2;
-	m->m_group = 0;
-	m++;
-	*/
-
 	m->m_title = "dead host timeout";
 	m->m_desc  = "Consider a host in the Gigablast network to be dead if "
 		"it does not respond to successive pings for this number of "
@@ -18868,36 +18831,6 @@ void Parms::init ( ) {
 	m->m_plen = (char *)&g_conf.m_superTurksLen - g;
 	m->m_page = PAGE_MASTERPASSWORDS;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m++;
-	*/
-
-	/*
-	m->m_title = "Users";
-	m->m_desc = "Add users here. The format is "
-		"collection:ip:username:password:relogin:pages:tagnames"
-		" Username and password cannot be blank."
-		" You can specify "
-		"* for collection to indicate all collections. "
-		" * can be used in IP as wildcard. "
-		" * in pages means user has access to all pages. Also"
-		" you can specify individual pages. A \'-\' sign at the"
-		" start of page means user is not allowed to access that"
-		" page. Please refer the page reference table at the bottom "
-		"of this page for available pages. If you want to just login "
-		" once and avoid relogin for gb shutdowns then set relogin=1,"
-		" else set it to 0. If relogin is 1 your login will never expire either."
-		"<br>"
-		" Ex: 1. master user -> *:*:master:master:1:*:english<br>"
-		" 2. public user -> *:*:public:1234:0:index.html"
-		",get,search,login,dir:english<br>";
-	m->m_cgi = "users";
-	m->m_xml = "users";
-	m->m_off = (char *)&g_conf.m_users - g;
-	m->m_type = TYPE_STRINGBOX;
-	m->m_perms = PAGE_MASTER;
-	m->m_size = USERS_TEXT_SIZE;
-	m->m_plen = (char *)&g_conf.m_usersLen - g;
-	m->m_page = PAGE_MASTERPASSWORDS;
 	m++;
 	*/
 

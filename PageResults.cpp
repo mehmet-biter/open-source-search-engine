@@ -277,7 +277,7 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	//int32_t xml = hr->getLong("xml",0);
 
 	// what format should search results be in? default is html
-	char format = hr->getReplyFormat();//getFormatFromRequest ( hr );
+	char format = hr->getReplyFormat();
 
 	// get the dmoz catid if given
 	//int32_t searchingDmoz = hr->getLong("dmoz",0);
@@ -723,15 +723,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	return status2;
 }
 
-// if returned json result is > maxagebeforedownload then we redownload the
-// page and if its checksum has changed we return empty results
-void doneRedownloadingWrapper ( void *state ) {
-	// cast our State0 class from this
-	State0 *st = (State0 *) state;
-	// resume
-	gotResults ( st );
-}
-
 /*
 void gotSpellingWrapper( void *state ){
 	// cast our State0 class from this
@@ -754,20 +745,6 @@ void gotResultsWrapper ( void *state ) {
 	st->m_gotResults = true;
 	gotState (st);
 }
-
-/*
-void gotAdsWrapper ( void *state ) {
-	// cast our State0 class from this
-	State0 *st = (State0 *) state;
-	// mark as gotten
-	st->m_gotAds = true;
-	// log the error first
-	if ( g_errno ) log("query: adclient: %s.",mstrerror(g_errno));
-	// clear any error cuz ads aren't needed
-	g_errno = 0;
-	gotState (st);;
-}
-*/
 
 void gotState ( void *state ){
 	// cast our State0 class from this
@@ -1265,90 +1242,6 @@ bool gotResults ( void *state ) {
 	 	return sendReply(st,NULL);
 	}
 
-
-
-
-	//char *coll = cr->m_coll;
-
-	/*
-	//
-	// BEGIN REDOWNLOAD LOGIC
-	//
-
-	////////////
-	//
-	// if caller wants a certain freshness we might have to redownload the
-	// parent url to get the new json
-	//
-	////////////
-	// get the first result
-	Msg20 *m20first = msg40->m_msg20[0];
-	int32_t mabr = st->m_hr.getLong("maxagebeforeredownload",-1);
-	if ( mabr >= 0 && 
-	     numResults > 0 &&
-	     // only do this once
-	     ! st->m_didRedownload &&
-	     // need at least one result
-	     m20first &&
-	     // get the last spidered time from the msg20 reply of that result
-	     m20first->m_r->m_lastSpidered - now > mabr ) {
-		// make a new xmldoc to do the redownload
-		XmlDoc *xd;
-		try { xd = new (XmlDoc); }
-		catch ( ... ) {
-			g_errno = ENOMEM;
-			log("query: Failed to alloc xmldoc.");
-		}
-		if ( g_errno ) return sendReply (st,NULL);
-		mnew ( xd , sizeof(XmlDoc) , "mabrxd");
-		// save it
-		st->m_xd = xd;
-		// get this
-		st->m_oldContentHash32 = m20rep->m_contentHash32;
-		// do not re-do redownload
-		st->m_didRedownload = true;
-		// set it
-		xd->setUrl(parentUrl);
-		xd->setCallback ( st , doneRedownloadingWrapper );
-		// get the checksum
-		if ( xd->getContentChecksum32Fast() == (void *)-1 )
-			// return false if it blocked
-			return false;
-		// error?
-		if ( g_errno ) return sendReply (st,NULL);
-		// how did this not block
-		log("page: redownload did not would block adding parent");
-	}
-	     
-	// if we did the redownload and checksum changed, return 0 results
-	if ( st->m_didRedownload ) {
-		// get the doc we downloaded
-		XmlDoc *xd = st->m_xd;
-		// get it
-		int32_t newHash32 = xd->getContentHash32();
-		// log it
-		if ( newHash32 != st->m_oldContentHash32 ) 
-			// note it in logs for now
-			log("results: content changed for %s",xd->m_firstUrl.m_url);
-		// free it
-		mdelete(xd, sizeof(XmlDoc), "mabrxd" );
-		delete xd;
-		// null it out so we don't try to re-free
-		st->m_xd = NULL;
-		// if content is significantly different, return 0 results
-		if ( newHash32 != st->m_oldContentHash32 ) {
-			SafeBuf sb;
-			// empty json i guess
-			sb.safePrintf("[]\n");
-			return sendReply(st,sb.getBufStart());
-		}
-		// otherwise, print the diffbot json results, they are still valid
-	}
-
-	//
-	// END REDOWNLOAD LOGIC
-	//
-	*/
 
 	//
 	// BEGIN ADDING URL
@@ -8027,43 +7920,6 @@ bool printDmozRadioButtons ( SafeBuf *sb , int32_t catId ) {
 		      );
 	return true;
 }
-
-/*
-// print the search options under a dmoz search box
-bool printDirectorySearchType ( SafeBuf& sb, int32_t sdirt ) {
-	// default to entire directory
-	if (sdirt < 1 || sdirt > 4)
-		sdirt = 3;
-
-	// by default search the whole thing
-	sb->safePrintf("<input type=\"radio\" name=\"sdirt\" value=\"3\"");
-	if (sdirt == 3) sb->safePrintf(" checked>");
-	else            sb->safePrintf(">");
-	sb->safePrintf("Entire Directory<br>\n");
-	// entire category
-	sb->safePrintf("<input type=\"radio\" name=\"sdirt\" value=\"1\"");
-	if (sdirt == 1) sb->safePrintf(" checked>");
-	else            sb->safePrintf(">");
-	sb->safePrintf("Entire Category<br>\n");
-	// base category only
-	sb->safePrintf("<nobr><input type=\"radio\" name=\"sdirt\" value=\"2\"");
-	if (sdirt == 2) sb->safePrintf(" checked>");
-	else            sb->safePrintf(">"); 
-	sb->safePrintf("Pages in Base Category</nobr><br>\n");
-	// sites in base category
-	sb->safePrintf("<input type=\"radio\" name=\"sdirt\" value=\"7\"");
-	if (sdirt == 7) sb->safePrintf(" checked>");
-	else            sb->safePrintf(">");
-	sb->safePrintf("Sites in Base Category<br>\n");
-	// sites in entire category
-	sb->safePrintf("<input type=\"radio\" name=\"sdirt\" value=\"6\"");
-	if (sdirt == 6) sb->safePrintf(" checked>");
-	else            sb->safePrintf(">");
-	sb->safePrintf("Sites in Entire Category<br>\n");
-	// end it
-	return true;
-}
-*/
 
 // return 1 if a should be before b
 int csvPtrCmp ( const void *a, const void *b ) {

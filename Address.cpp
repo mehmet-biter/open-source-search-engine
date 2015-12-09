@@ -3,8 +3,6 @@
 #include "Proxy.h"
 #include "CountryCode.h"
 
-class Address *g_address; // for debug
-
 #define CRID_ANY 0
 #define CRID_US  226
 
@@ -85,75 +83,19 @@ bool getBestLatLon ( RdbList *list      ,
 		     int32_t     winnerSnh ) ;
 char *getLatLonPtrFromStr ( char *data ) ;
 void getLatLonFromStr ( char *data , double *lat , double *lon);
-char *getStateAbbr ( uint64_t bit ) ;
 int64_t getWordXorHash ( char *s ) ;
-int64_t getWordXorHash2 ( char *s ) ;
 int32_t getStateOffset ( int64_t *h ) ;
 class StateDesc *getStateDescFromBits ( uint64_t bit ) ;
 // returns 0 if not a state:
 uint64_t getStateBitFromHash ( int64_t *h ) ;
 static bool setHashes ( class Place *p , Words *ww , int32_t niceness ) ;
 
-static bool    addIndicator ( char *s     , char bit , float boost );
-static bool    addIndicator ( int64_t h , char bit , float boost );
 static void    printPlaces  ( PlaceMem *pm , SafeBuf *pbuf ,
 			      class Sections *sections ,
 			      class Address *base ) ;
 
-//
-// new stuff
-//
-static bool generatePlacesFile ( ) ;
-static bool loadPlaces ( ) ;
-class PlaceDesc *getState_new ( uint64_t pd64 , uint8_t crid , int32_t niceness );
-PlaceDesc *getState2_new ( char *state , uint8_t crid , int32_t niceness ) ;
-class PlaceDesc *getCity_new ( uint64_t ch64 , 
-			       char *stateAbbr ,
-			       uint8_t crid ,
-			       int32_t niceness ) ;
-class PlaceDesc *getCity2_new ( char *city ,
-				char *stateAbbr ,
-				uint8_t crid ,
-				int32_t niceness ) ;
-PlaceDesc *getCity3_new ( uint64_t ch64 , 
-			  uint64_t stateHash64,
-			  uint8_t crid ,
-			  int32_t niceness ) ;
-bool getLongestPlaceName_new ( int32_t i,
-			       int32_t alnumPos,
-			       Words *w,
-			       // must match! PDF_CITY|STATE|COUNTRY
-			       uint8_t placeType,
-			       uint8_t crid, // can be CRID_ANY
-			       char *stateAbbr, // can be NULL
-			       uint64_t *placeHash64,
-			       int32_t *placeAlnumA,
-			       int32_t *placeAlnumB,
-			       int32_t *placeA,
-			       int32_t *placeB ,
-			       // set to most popular match
-			       PlaceDesc **pdp ) ;
-bool getZip_new ( int32_t a , 
-		  int32_t alnumPos , 
-		  Words *words ,
-		  uint64_t *zipHash64 ,
-		  uint64_t *zipCityHash64 ,
-		  uint64_t *zipStateHash64 ,
-		  int32_t *zipAlnumA,
-		  int32_t *zipAlnumB,
-		  int32_t *zipA,
-		  int32_t *zipB ,
-		  float *zipLat,
-		  float *zipLon) ;
-
-PlaceDesc *getMostPopularPlace_new ( int64_t cityHash64, 
-				     uint8_t crid ,
-				     uint8_t placeType,
-				     int32_t niceness );
-
 char *g_pbuf = NULL;
 int32_t  g_pbufSize = 0;
-HashTableX g_nameTable;
 
 HashTableX g_indicators;
 static HashTableX g_timeZones;
@@ -177,9 +119,6 @@ public:
 	char     m_data[];
 };
 
-//bool setFromStr(Address *a,char *s,pbits_t flags , 
-//		Place *places , int32_t *np , int32_t maxPlaces, int32_t niceness );
-
 static uint64_t  getAddressHash ( Place *street ,
 				  Place *city   ,
 				  Place *adm1   ,
@@ -190,12 +129,8 @@ static void gotMsg2cReplyWrapper ( void *state , void *state2 ) ;
 static void gotList2c            ( void *state , RdbList *xxx , Msg5 *yyy ) ;
 static void sendBackAddress ( class State2c *st ) ;
 
-Place *g_pa = NULL;
-
 #define MIN_POP_COUNT 500
 
-//#define MAX_STREETS 300
-//#define MAX_PLACES  3500
 // i raised from 15 to 25 since "Virginia Beach" city was not being picked up
 // on socialmediabeach.com
 #define MAX_CITIES  25
@@ -210,8 +145,6 @@ public:
 	// . remove the "CC." country code prefixing each 
 	// . example from that file: "NL.09 Utrecht\n"
 	char m_adm1[2];
-	// a single byte country id (converted to from a 2 char country id)
-	//uint8_t m_crid;
 	// hash of the city it is in
 	int64_t m_cityHash;
 	// offset into g_cityBuf of the city name
@@ -221,9 +154,6 @@ public:
 	// lat/lon of centroid. for sorting by dist when user's zip is known
 	float m_latitude;
 	float m_longitude;
-
-	//void reset() {m_crid = 0; m_adm1[0] = m_adm1[1] = 0;};
-        void reset() {m_adm1Bits = 0;m_adm1[0]=0; m_adm1[1]=0;};
 };
 
 
@@ -1088,8 +1018,6 @@ void verifiedWrapper ( void *state ) {
 	THIS->m_callback ( THIS->m_state );
 }
 
-Address *g_aa = NULL;
-
 // . return false with g_errno set on error
 // . take the msg2c replies we got in m_sb.m_buf or in m_addressReply,
 //   which is a save of m_sb.m_buf in the titleRec (XmlDoc), and use
@@ -1335,28 +1263,6 @@ bool Addresses::updateAddresses ( ) {
 			// it's a match!
 			aa->m_flags |= AF_VERIFIED_PLACE_NAME_1;
 	}
-
-
-	/*
-	// loop over all addresses
-	for ( int32_t i = 0 ; i < m_am.getNumPtrs() ; i++ ) {
-		// get address
-		Address *a = &m_addresses[i];
-		// get the reply byte
-		char *replyFlags = (char *)m_avt.getValue(&a->m_avtKey);
-		// skip if not there
-		if ( ! replyFlags ) continue;
-		// grab em
-		a->m_flags |= *replyFlags;
-		// skip if not ambiguous
-		//if ( ! ( a->m_flags & AF_AMBIGUOUS ) ) continue;
-		// needs to have verified at least the street/city/ctry
-		//if ( ! ( a->m_flags & AF_VERIFIED_STREET ) ) continue;
-		// ok, remove the ambiguous flag
-		//a->m_flags &= ~AF_AMBIGUOUS;
-	}
-	*/
-
 
 	// . now re-set the AF_AMBIGUIOUS flags
 	// . we do this again now that we have set a lot of Address::m_flags
@@ -1771,7 +1677,6 @@ bool Addresses::updateAddresses ( ) {
 		// scan match table for best matches
 		int32_t dups = 0;
 		Address *best = NULL;
-		int32_t bestScore = 0;
 		Section *bestContainer = NULL;
 		int32_t bestnn = -1;
 		// int16_tcut
@@ -1814,7 +1719,6 @@ bool Addresses::updateAddresses ( ) {
 
 			// we got one, or tied for max
 			if ( ! best ) {
-				bestScore     = score;
 				best          = matcher;
 				bestContainer = sm;
 				bestnn        = nn;
@@ -1823,7 +1727,6 @@ bool Addresses::updateAddresses ( ) {
 
 			// if our container is smaller we win!
 			if ( bestContainer->contains ( sm ) ) {
-				bestScore     = score;
 				best          = matcher;
 				bestContainer = sm;
 				dups          = 0;
@@ -2926,15 +2829,7 @@ bool Addresses::updateAddresses ( ) {
 		Coordinate cc;
 		cc.lat = ad->m_latitude;
 		cc.lon = ad->m_longitude;
-		// get it as a hash
-		//int64_t h1 = *(int64_t *)((double *)&ad->m_latitude);
-		//int64_t h2 = *(int64_t *)((double *)&ad->m_latitude);
-		//int64_t h = hash64 ( h1 , h2 );
-		//double pr = ad->m_latitude*ad->m_longitude;
-		//int64_t h = *(int64_t *) &pr;
-		// mix it up some more
-		//h = hash64 ( h , h1 );
-		//h = hash64 ( h , h2 );
+
 		// if another entry that has this same lat/lon exists but
 		// different address hash, then nuke them all!
 		uint64_t *addrHash = (uint64_t *) dat.getValue ( &cc );
@@ -3147,74 +3042,6 @@ bool Addresses::updateAddresses ( ) {
 	}
 
 
-
-
-
-	////////////////////////////////
-	//
-	// normalize m_latitude and m_longitude to be from 0 to 360
-	// no! - just do in Events::hash() now
-	//
-	////////////////////////////////
-	/*
-	for ( int32_t i = 0 ; i < m_am.getNumPtrs() ; i++ ) {
-		// breathe 
-		QUICKPOLL(m_niceness);
-		// get address
-		Address *ad = &m_addresses[i];
-		// skip address if no lat/lon
-		if ( ad->m_latitude == NO_LATITUDE    ) continue;
-		if ( ad->m_latitude == AMBIG_LATITUDE ) continue;
-		ad->m_latitude  += 180.0;
-		ad->m_longitude += 180.0;
-	}
-	*/
-
-
-	////////////////////
-	//
-	// set Address::m_timeZoneOffset (from GMT)
-	//
-	////////////////////
-	/*
-	for ( int32_t i = 0 ; i < m_am.getNumPtrs() ; i++ ) {
-		// breathe 
-		QUICKPOLL(m_niceness);
-		// get it
-		Address *aa = &m_addresses[i];
-		Place *city = aa->m_city;
-		Place *zip  = aa->m_zip;
-		Place *adm1 = aa->m_adm1;
-		// and city hash
-		uint64_t cityHash = 0;
-		if      ( city ) cityHash = city->m_hash;
-		else if ( zip  ) cityHash = zip->m_cityHash;
-		if ( ! cityHash ) { char *xx=NULL;*xx=0; }
-		// need this
-		char *adm1Str = NULL;
-		if      ( adm1 ) adm1Str = adm1->m_adm1;
-		else if ( zip  ) adm1Str = zip->m_adm1;
-		else if ( city && city->m_adm1[0] ) adm1Str = city->m_adm1;
-		else    { char *xx=NULL;*xx=0; }
-		// sanity check
-		if ( is_upper_a(adm1Str[0]) ) { char *xx=NULL;*xx=0; }
-		if ( is_upper_a(adm1Str[1]) ) { char *xx=NULL;*xx=0; }
-		uint32_t adm1Hash32 = (uint32_t)*((uint16_t *)adm1Str);
-		uint32_t cityHash32 = (uint32_t)cityHash;
-		// combine the two hashes
-		uint32_t cityStateHash = hash32h(cityHash32,adm1Hash32);
-		// get timezone
-		int32_t slot = g_timeZones.getSlot ( &cityStateHash );
-		// call it 0 if not good
-		aa->m_timeZoneOffset = 0;
-		// otherwise, set m_timeZoneOffset appropriately
-		if ( slot >= 0 )
-			aa->m_timeZoneOffset = *(char *)g_timeZones.
-				getValueFromSlot(slot);
-	}
-	*/
-
-
 	//////////////////////////
 	//
 	// set Section::m_firstPlaceNum
@@ -3255,216 +3082,6 @@ bool Addresses::updateAddresses ( ) {
 	return true;
 }
 
-
-static void gotGeocoderReply ( void *state , TcpSocket *s ) {
-	// get us
-	Addresses *THIS = (Addresses *)state;
-	// process it
-	THIS->processGeocoderReply ( s );
-	// call callback
-	THIS->m_callback ( THIS->m_state );
-}
-
-// . set m_geocoderLat/m_geocoderLon
-// . returns false if blocks
-// . returns true with g_errno set on error
-// . only call from Events.cpp if we have 1+ valid event that will be
-//   indexed...
-bool Addresses::setGeocoderLatLons ( void *state, 
-				     void (*callback) (void *state) ) {
-
-	// only call this once unless we get reset()
-	if ( m_calledGeocoder ) return true;
-	m_calledGeocoder = true;
-
-	m_callback = callback;
-	m_state    = state;
-
-	// store candidates to select from here
-	int32_t cands[MAX_GEOCODERS];
-	int32_t nc = 0;
-	// select a geocoder by IP
-	for ( int32_t i = 0 ; i < MAX_GEOCODERS ; i++ ) {
-		// check ip
-		if ( ! g_conf.m_geocoderIps[i] ) continue;
-		// add to candidates
-		cands[nc++] = g_conf.m_geocoderIps[i];
-	}
-	// if none, bail, we do not do this
-	if ( nc <= 0 ) return true;
-
-	int32_t need = 0;
-	// loop over each valid address we and add to request size
-	for ( int32_t i = 0 ; i < m_am.getNumPtrs() ; i++ ) {
-		// breathe 
-		QUICKPOLL(m_niceness);
-		// get it
-		Address *aa = (Address *)m_am.getPtr(i);
-		// reset
-		aa->m_geocoderLat = 999;
-		aa->m_geocoderLon = 999;
-		// is inlined or verified?
-		if ( ! ( aa->m_flags3 & AF2_VALID ) ) continue;
-		// only do it if used in event now
-		if ( ! ( aa->m_flags3 & AF2_USEDINEVENT ) ) continue;
-		// skip if lat/lon address
-		if ( aa->m_flags3 & AF2_LATLON ) {
-			// just inherit that
-			aa->m_geocoderLat = aa->m_latitude;
-			aa->m_geocoderLon = aa->m_longitude;
-			continue;
-		}
-		// check the cache first!!! used by Repair.cpp to speed up!!
-		int64_t key64 = aa->m_hash;
-		double *recs;
-		int32_t    recSize;
-		bool inCache = m_latLonCache.getRecord ( (collnum_t) 0,
-							 (char *)&key64 ,
-							 (char **)&recs ,
-							 &recSize ,
-							 false ,
-							 3600 ,
-							 false );
-		if ( inCache && recs && recs[0] != 999 ) {
-			aa->m_geocoderLat = recs[0];
-			aa->m_geocoderLon = recs[1];
-			continue;
-		}
-
-		// request needs street,state,city (and zip if there)
-		need += aa->m_street->m_strlen + 1;
-		// get city length
-		if ( aa->m_city ) need += aa->m_city->m_strlen;
-		else if ( aa->m_zip ) need += strlen(aa->m_zip->m_cityStr);
-		else if ( aa->m_flags3 & AF2_LATLON );
-		else { char *xx=NULL;*xx=0; }
-		if ( aa->m_zip ) need += 2 + aa->m_zip->m_strlen;
-		//need += aa->m_adm1->m_strlen + 1;
-		need += 2; // use state abbr
-		need += 20; // addrXXX=...&
-	}
-
-	// if none valid, vail
-	if ( need == 0 ) return true;
-
-	// need url cruft "http://..../"
-	need += 100;
-
-	char sbuf[5024];
-	char *requestBuf = NULL;
-	if ( need < 5024  ) requestBuf = sbuf;
-	if ( ! requestBuf ) requestBuf = (char *)mmalloc(need,"geocode");
-	if ( ! requestBuf ) return true;
-
-	// make the url
-	char *p = requestBuf;
-	// select a geocoder randomly
-	int32_t r = rand() % nc;
-	// to request manually:
-	// http://10.5.66.11:5678/json/+2935-D+Louisiana+NE,+Albuquerque,+NM
-	// http://10.5.66.11:5678/txt/+2935-D+Louisiana+NE,+Albuquerque,+NM
-	// make the request
-	p += sprintf(p,"POST /xml? HTTP/1.0\r\n"
-		     "Accept: */*\r\n"
-		     "Host: %s:5678\r\n"
-		     "Content-Length: xxxxxx\r\n"
-		     "\r\n",
-		     iptoa(cands[r]));
-
-	int32_t num = 1;
-	char *contentStart = p;
-	// loop over each valid address we and add to request size
-	for ( int32_t i = 0 ; i < m_am.getNumPtrs() ; i++ ) {
-		// breathe 
-		QUICKPOLL(m_niceness);
-		// get it
-		Address *aa = (Address *)m_am.getPtr(i);
-		// is inlined or verified?
-		if ( ! ( aa->m_flags3 & AF2_VALID ) ) continue;
-		// only do it if used in event now
-		if ( ! ( aa->m_flags3 & AF2_USEDINEVENT ) ) continue;
-		// skip if we got it already in the cache above
-		if ( aa->m_geocoderLat != 999 ) continue;
-		// for debugging
-		//char *start = p;
-		// request needs street,state,city (and zip if there)
-		p += sprintf(p,"addr%"INT32"=",num++);
-		gbmemcpy(p,aa->m_street->m_str,aa->m_street->m_strlen);
-		p += aa->m_street->m_strlen;
-		*p++ = ',';
-		*p++ = ' ';
-		if ( aa->m_city ) {
-			gbmemcpy(p,aa->m_city->m_str,aa->m_city->m_strlen);
-			p += aa->m_city->m_strlen;
-		}
-		else if ( aa->m_zip ) {
-			int32_t clen = strlen(aa->m_zip->m_cityStr);
-			gbmemcpy(p,aa->m_zip->m_cityStr,clen);
-			p += clen;
-		}
-		else if ( aa->m_flags3 & AF2_LATLON );
-		else { char *xx=NULL; *xx=0; }
-		*p++ = ' ';
-		// get state abbr
-		if      ( aa->m_adm1 ) {
-			gbmemcpy(p,aa->m_adm1->m_adm1,2);
-		}
-		else if ( aa->m_zip )  {
-			gbmemcpy(p,aa->m_zip->m_adm1,2);
-		}
-		else if ( aa->m_flags3 & AF2_LATLON );
-		else { char *xx=NULL;*xx=0; }
-		p += 2;
-		// zip if we got it, seems to help geocoder sometimes
-		if ( aa->m_zip ) {
-			*p++ = ' ';
-			int32_t zlen = aa->m_zip->m_strlen;
-			gbmemcpy(p,aa->m_zip->m_str,zlen);
-			p += zlen;
-		}
-		*p++ = '&';
-		// log debug
-		//log("addr: GET %s",start);
-	}
-	// null term
-	*p = '\0';
-
-	// fix content-length
-	char *qq = strstr(requestBuf,"xxxxxx");
-	if ( ! qq ) { char *xx=NULL;*xx=0; }
-	if ( p-contentStart > 999999 ) { char *xx=NULL;*xx=0; }
-	sprintf(qq,"%06"INT32"",(int32_t)(p-contentStart));
-	qq[6]='\r'; // sprintf might have written a \0, so put \r back
-
-	// finish it
-	//p += sprintf(p," HTTP/1.0\r\n\r\n");
-	// size of it
-	int32_t reqLen = p - requestBuf;
-	// sanity
-	if ( reqLen >= need ) { char *xx=NULL;*xx=0; }
-	// send it off to get back xml reply
-	bool status = g_httpServer.getDoc( cands[r]         , // ip
-					   5678             , // port
-					   requestBuf       ,
-					   reqLen           ,
-					   this             ,
-					   gotGeocoderReply ,
-					   60*1000          , // timeout 60s
-					   -1               , // no max
-					   -1               );// no max
-	// free the request since it mdups it
-	if ( requestBuf != sbuf ) mfree ( requestBuf , need , "geocode" );
-	// return false if it blocked
-	if ( ! status ) return false;
-	// error? ENOMEM?
-	if ( g_errno ) {
-		log("addr: get geocoder lat lon: %s",mstrerror(g_errno));
-		return true;
-	}
-	// otherwise, should always block!
-	char *xx=NULL;*xx=0;
-	return true;
-}
 
 // process it
 bool Addresses::processGeocoderReply ( TcpSocket *s ) {
@@ -3601,24 +3218,6 @@ bool Addresses::processGeocoderReply ( TcpSocket *s ) {
 	return true;
 }
 
-void Address::getLatLon( double *lat, double *lon ) {
-	// use geocoder if valid
-	if ( m_geocoderLat != NO_LATITUDE && m_geocoderLon != NO_LONGITUDE ) {
-		*lat = (double)m_geocoderLat;
-		*lon = (double)m_geocoderLon;
-		return;
-	}
-	// use other guy otherwise
-	if ( m_latitude != NO_LATITUDE && m_longitude != NO_LONGITUDE ) {
-		*lat = (double)m_latitude;
-		*lon = (double)m_longitude;
-		return;
-	}
-	// otherwise, no go
-	*lat = NO_LATITUDE;
-	*lon = NO_LONGITUDE;
-}
-
 bool hashPlaceName ( HashTableX *nt1,
 		     Words *words,
 		     int32_t a ,
@@ -3677,18 +3276,11 @@ Place *Addresses::getAssociatedPlace ( int32_t i ) {
 	Section *si = m_sections->m_sectionPtrs[i];
 	// scan addresses also in this section
 	for ( ; si ; si = si->m_parent ) {
-		// key mixing now
-		//int32_t key = hash32h((int32_t)si,456789);
-		// ok, now telescope our section out until we
-		// find the address
-		//int32_t slot = pt->getSlot ( &key );
 		// get it
 		int32_t pi = si->m_firstPlaceNum;
-		// telescope if none
-		//if ( slot < 0 ) continue;
+
 		if ( pi < 0 ) continue;
-		// count them
-		//int32_t count = 0;
+
 		int64_t lasth = 0LL;
 		Place *lastpp = NULL;
 		// . scan the addresses in section "si"
@@ -3722,59 +3314,11 @@ Place *Addresses::getAssociatedPlace ( int32_t i ) {
 			// count them
 			//count++;
 		}
-		// if multiple stop, we can not be sure with
-		// which address we are associated
-		//if ( count >= 2 ) 
-		//	break;
-		//if ( slot >= 0 )
-		//	break;
-		//if ( ! lastpp )
-		//	break;
-		// get that address
-		//Place *pa = *(Place **)pt->getValue(&key);
-		// this returns NULL if we had multiple possible addresses
+
 		return lastpp; // pa;
 	}
 	return NULL;
 }
-
-// . array for setting s_lc hashtable
-// . these are words that can be lower case in a place name
-// . fixes "Santa Maria de la Paz Catholic Church" not being a place name
-static char      *s_lcWords[] = {
-        "de",
-        "la",
-
-        "at",
-        "be",
-        "by",
-        "of",
-        "on",
-        "or",
-        "in",
-
-        "re", // you're
-        "to",
-        "vs",
-        "the",
-        "and",
-        "are",
-        "for",
-
-	"s", // Slim's
-
-	"y", // spanish "Pupuseria y Restaurant Salvado"
-	"del", // spanish "this" "Bosque del Apache National Wildfile Refuge"
-	"del", // spanish "of" "Casa de las Chimeneas"
-	"las", // spanish "the"
-
-        "not",
-        "from",
-        "ll",    // they'll this'll that'll you'll
-        "ve",    // would've should've
-	NULL
-};
-
 
 // returns false with g_errno set on error
 bool setHashes ( Place *p , Words *ww , int32_t niceness ) {
@@ -3964,20 +3508,6 @@ bool setHashes ( Place *p , Words *ww , int32_t niceness ) {
 	// keep this as it is
 	p->m_wordHash64 = h;
 
-	// . if we are a city look up in g_places and see if we are an
-	//   alias for a different city name
-	// . fix "abq" so it maps to albuquerque
-	// . we now fixed getAddressHash() so this logic is not needed
-	//if ( p->m_type == PT_CITY ) { // && (p->m_flags & PF_IS_ALIAS) ) {
-	//	// convert hash to alias hash
-	//	int64_t *newh = (int64_t *)g_aliases.getValue ( &h );
-	//	// set that to h now
-	//	if ( newh ) p->m_hash = *newh;
-	//	// could not find this city in the table... strange
-	//	return true;
-	//}
-
-
 	// done if not street
 	if ( p->m_type != PT_STREET ) return true;
 
@@ -3993,18 +3523,14 @@ bool setHashes ( Place *p , Words *ww , int32_t niceness ) {
 	p->m_streetIndHash = h4;
 
 	// if we are a "fake" street
-	if ( p->m_flags2 & PLF2_IS_NAME )
+	if ( p->m_flags2 & PLF2_IS_NAME ) {
 		// PROBLEM: the street "6201 San Antonio Dr NE" is matching the
 		// place name "San Antonio" so let's mix up "h" a little when
 		// we are using "place names" in place of the street
 		// ALSO, lets revert it back to "h" not "h1", since "h1" is
 		// probably zero since i added that extra "continue" above.
 		p->m_hash = h ^ 0x123456;
-
-	// . sanity check
-	// . no! the word "The" has a hash of 0, and we don't add it
-	//   from the caller's point
-	//if ( p->m_hash == 0LL ) { char *xx=NULL;*xx=0; }
+	}
 
 	// done if a fake street
 	if ( p->m_flags2 & PLF2_IS_NAME ) return true;
@@ -4059,7 +3585,6 @@ bool setHashes ( Place *p , Words *ww , int32_t niceness ) {
 }
 
 static HashTableX s_lc;
-//static char s_lcbuf[2000];
 static HashTableX s_jobTable;
 
 #define MAX_ALNUMS_IN_NAME 16
@@ -4078,14 +3603,6 @@ bool Addresses::set2 ( ) {
 	// it is the spider compression proxy...
 	Section  **sp = NULL;
 	if ( m_sections ) sp = m_sections->m_sectionPtrs;
-	// int16_tcut
-	//Sections *ss = m_sections;
-	// reset # of addresses we got
-	//m_na = 0;
-	// and streets
-	//m_ns = 0;
-	// and cities, states, zips
-	//m_np = 0;
 
 	// place mem and street mem and address mem
 	m_pm.reset();
@@ -4144,23 +3661,6 @@ bool Addresses::set2 ( ) {
 		dc++;
 	}
 
-	/*
-	// . inherit from what abyznewslinks.com says about our place
-	// . tag format =  "city=x;adm1=*;adm2=*;country=*"
-	if ( ( tag = m_gr->getTag("abyznewslinks.address") ) &&
-	     // skip if not a "address" tag (ci=contactInfo)
-	     tag->m_type == tt ) {
-		// get str
-		char *str = tag->m_data;
-		// . set address, da[dc], from tag "tag"
-		// . flags to OR into Place::m_bits
-		if ( ! setFromStr ( &da[dc] , str,PLF_FROMTAG,m_niceness)) 
-			return false;
-		// advance
-		dc++;
-	}
-	*/
-
 	// now use the default venue address, should be more accurate?
 	tt = getTagTypeFromStr ( "venueaddress" );
 	// taken from TagRec::getTag() function
@@ -4195,12 +3695,6 @@ bool Addresses::set2 ( ) {
 		break;
 	}
 
-	// let's use the meta description as well.
-	// should get jonson gallery on collectorsguide.com
-	//char *md = m_xd->getMetaDescription();
-	
-
-
 	// . if section flag is one of these, ignore the words in it
 	// . google seems to index marquee, so i took SEC_MARQUEE out
 	// . SEC_HIDDEN applies to text and tags in style=display:none tags.
@@ -4212,11 +3706,6 @@ bool Addresses::set2 ( ) {
 	// BEGIN STREET NAME IDENTIFICATION
 	//
 	//
-
-	// fill this array
-	//Place streets[MAX_STREETS];
-	//Place *streets = m_streets;
-	//int32_t qx = 0;
 
 	// the copyright symbol in utf8 (see Entities.cpp for the code)
 	char copy[3];
@@ -4230,12 +3719,7 @@ bool Addresses::set2 ( ) {
 	char     **wptrs = ww->getWordPtrs();
 	int32_t      *wlens = ww->getWordLens();
 	nodeid_t   *tids = ww->getTagIds();
-	// . if section flag is one of these, ignore the words in it
-	// . google seems to index marquee, so i took SEC_MARQUEE out
-	// . SEC_HIDDEN applies to text and tags in style=display:none tags.
-	//int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_HIDDEN|
-	//	SEC_NOSCRIPT;
-	// int16_tcut
+
 	wbit_t *bits = NULL;
 	if ( m_bits ) bits = m_bits->m_bits;
 
@@ -4403,26 +3887,7 @@ bool Addresses::set2 ( ) {
 			//m_ns = m_ns;
 			if ( ! addIntersection(i,alnumPosArg) )
 				return false;
-			/*
-			// show it
-			int32_t a = i - 8;
-			int32_t b = i + 8;
-			if ( a < 0 ) a = 0;
-			if ( m_ns != old ) {
-				a = m_streets[m_ns-1].m_a;
-				b = m_streets[m_ns-1].m_b;
-			}
-			char *str = m_wptrs[a];
-			int32_t ss = m_words->getStringSize ( a , b );
-			SafeBuf pp;
-			char c = str[ss];
-			str[ss] = 0;
-			char *gs = "bad";
-			if ( m_ns != old ) gs = "GOOD";
-			log("intersect: %s \"%s\"", gs,str);
-			str[ss] = c;
-			*/
-			//m_ns = m_ns;
+
 			int32_t ns = m_sm.getNumPtrs();
 			// if no intersection added, keep on going
 			if ( ns == old ) continue;
@@ -4542,7 +4007,6 @@ bool Addresses::set2 ( ) {
 		//bool leftEnd  = false;
 		// keep an accumulative hash of all the wids in the phrase
 		bool firstWasDir    =  false; // 1st word is a direction?
-		bool hadCornerDir   =  false;
 		char uc             = -1; // are we capitalized?
 		int32_t alphaCount     =  0;
 		int32_t indCountStreet =  0;
@@ -4555,33 +4019,7 @@ bool Addresses::set2 ( ) {
 		int32_t commaCount     =  0;
 		int32_t alnumsInPhrase =  0;
 		int64_t lastIndStreetHash = 0LL;
-		// hash of the non indicator alpha words in street name
-		//int64_t h1             =  0;
-		// . includes hash of directional indicators
-		// . we only use this if street name is a directional indicator
-		//int64_t h2             =  0;
-		//int64_t h2b            =  0;
-		//int64_t h3             =  0;
-		//int64_t h4             =  0;
-		// word id of previous word
-		//int64_t pi = 0LL;
-		// punct right before us is a left bookend
-		//if ( i-1 >= 0 && wlens[i-1] >= 2 ) leftEnd = true;
-		//if ( i-1 >= 0 && wptrs[i-1][0] != ' ' && 
-		//     getUtf8CharSize(wptrs[i-1])==1) leftEnd = true;
-		// if we are a number that is good too
-		//if ( is_digit(wptrs[i][0]) ) leftEnd = true;
-		// or a number is before us
-		//if ( i-1 >= 0 && is_digit(wptrs[i-1][0]) ) leftEnd = true;
-		// or tag is before us, no alnumword in between us and the tag
-		//if ( i-1 >= 0 && tids[i-1] ) leftEnd = true;
-		//if ( i-2 >= 0 && tids[i-2] ) leftEnd = true;
-		// if we are cap'd and word before us is not let that be a 
-		// delimeter as well
-		//if (i-2>= 0 && isCap && wids[i-2] &&!ww->isCapitalized(i-2)) 
-		//	leftEnd = true;
-		// need a delimeter on the left
-		//if ( ! leftEnd ) { atPreceeds = false; continue; }
+
 		// save it
 		int32_t ns_stack = m_sm.getNumPtrs();//m_ns;
 		// a flag for "1025 1/2 Lomas Blvd NE..."
@@ -4706,21 +4144,7 @@ bool Addresses::set2 ( ) {
 				if(k==wlens[j]) continue;
 				// '/' is ok if part of a fraction!
 				if( j == fractionj ) continue;
-				// . allow commas in foreign street addresses
-				// . brazil street address: 
-				//   "Rua Afonso Canargo, 805"
-				//if ( wptrs[j][0]==',' && wptrs[j][1]==' ' &&
-				//     is_digit(wptrs[j][2]) && 
-				//     j>0 && !is_digit(wptrs[j][-1]) ) {
-				//	commaCount++;
-				//	continue;
-				//}
-				//if ( wptrs[j][0]==' ' && wptrs[j][1]==',' &&
-				//     is_digit(wptrs[j][2]) &&
-				//     j>0 && !is_digit(wptrs[j][-1]) ) {
-				//	commaCount++;
-				//	continue;
-				//}
+
 				// . comma allowed only b4 directional indicatr
 				// . "131 Monroe  St, NE"
 				// . no because we got a false positive:
@@ -5035,47 +4459,6 @@ bool Addresses::set2 ( ) {
 			// street has 2 or less numbers though!
 			if ( numCount >= 3 ) break;
 
-			// . if we are the 2nd number in the street name
-			//   we must follow a "highway" or "state route" or
-			//   "state road" or such abbreviation... 
-			// . if we are "3rd" that should not be considered a 
-			//   num so isNum should be false for that,
-			//   but we might have 3<sup>rd</sup>
-			// . this screws ups "Corrales Office Plaza, 
-			//   3611 NM 528 NW, Ste. B, ABQ 87114" and makes us
-			//   thinks the road is "528 NW" and "3611 NM" is
-			//   part of the place name
-			/*
-			if ( isNum && numCount == 2 ) {
-				// assume not ok!
-				bool ok = false;
-				// are we ok?
-				if ( i-2>=0 && wids[i-2]==h_hwy     ) 
-					ok = true;
-				if ( i-2>=0 && wids[i-2]==h_highway ) 
-					ok = true;
-				if ( i-4>=0 && 
-				     wids[i-4]==h_state &&
-				     wids[i-2]==h_road   ) 
-					ok = true;
-				if ( i-4>=0 && 
-				     wids[i-4]==h_state &&
-				     wids[i-2]==h_route  ) 
-					ok = true;
-				// get next alnum word, should be
-				// the "th" in "4 th street" for example
-				int32_t nn = i + 2;
-				if ( nn<nw &&  tids[nn] ) nn++;
-				if ( nn<nw && !wids[nn] ) nn++;
-				if ( nn<nw && wids[nn]==h_st )	ok = true;
-				if ( nn<nw && wids[nn]==h_nd )	ok = true;
-				if ( nn<nw && wids[nn]==h_rd )	ok = true;
-				if ( nn<nw && wids[nn]==h_th )	ok = true;
-				if ( ! ok ) 
-					break;
-			}
-			*/
-
 
 			// . fix "4701 wyoming blvd. NE abq nm 87111"
 			// . watch out for "501 elizabeth st. S.E."
@@ -5123,22 +4506,8 @@ bool Addresses::set2 ( ) {
 				indCountDir++;
 				isDir = true;
 				if ( alphaCount == 1 ) firstWasDir = true;
-				// se? ne? nw? sw?
-				if ( wlens[j] == 2 ) hadCornerDir = true;
-				// northeast? etc.
-				if ( wlens[j] >= 9 ) hadCornerDir = true;
 				lastWasDir = true;
 			}
-
-			// . fix "1024 4th st sw <span>edit</span>" for
-			//   mapquest.com url
-			// . this caught "330 Tijeras Ave NW Ofc Albuquerque,"
-			// . and "1664 Bridge Boulevard Southwest Rea" but i
-			//   don't know what ofc and rea mean??
-			// . crap we lost "10000 NW Coors Blvd" which is a
-			//   type-o
-			//if ( hadCornerDir && ! id && alphaCount >= 2 )
-			//	break;
 
 			// stop "KELLY S #7 JUAN TABO 1418 JUAN TABO NE"
 			// from giving "7 JUAN TABO 1418 JUAN TABO NE" street
@@ -5156,39 +4525,7 @@ bool Addresses::set2 ( ) {
 			     wids[j] != h_th )
 				break;
 
-			// get synonym of word id
-			//int64_t *swid = getSynonymWord ( &wids[j] , &pi );
-			// word id of previous word
-			//pi = wids[j];
-			// this too
-			//if ( id ) h4 = *swid;//wids[j];
-			// . update this. 
-			// . exclude numbers from this!
-			// . allow other numbers if no alpha word before them!
-			// . exclude directional indicators from this
-			// . but allow directional indicators if right after 
-			//   the street number though
-			//if ( j > i &&
-			//     ( ! isDir || j == i + 2 ) &&
-			//     // commenting this out hurts "100 3/4 road"
-			//     // but it helps "2001 1/2 montgomery blvd"
-			//     //( ! isNum || alphaCount == 0 ) &&
-			//     ! isNum &&
-			//     ! isStreetInd ) {
-			//	// mix it up
-			//	h1 <<= 1;
-			//	// xor it
-			//	h1 ^= *swid;//wids[j];
-			//}
-			// fix "2804 hwy 250" from excluding the "250"
-			//if ( isNum && alphaCount > 0 ) {
-			//	// mix it up
-			//	h1 <<= 1;
-			//	// xor it
-			//	h1 ^= *swid;//wids[j];
-			//}
 			// count stop words
-			//if ( ! id && ww->isStopWord(j) ) stopCount++;
 			if ( ! id && s_lc.isInTable(&wids[j]) ) stopCount++;
 
 			// need at least one number to be a street address
@@ -5446,20 +4783,12 @@ bool Addresses::set2 ( ) {
 			street->m_type    = PT_STREET;
 			street->m_str     = wptrs[i];
 			street->m_strlen  = plen;
-			//street->m_adm1[0] = 0;
-			//street->m_adm1[1] = 0;
 			street->m_adm1Bits= 0LL;
-			//street->m_crid     = 0;
 			street->m_flags2  = 0;
 			street->m_bits    = 0;
 			street->m_address = NULL;
 			street->m_alias   = NULL;
-			// only use the purer hash if it is non-zero
-			//if      ( h1 ) street->m_hash = h1;
-			//else if ( h2 ) street->m_hash = h2;
-			//else           street->m_hash = h2b;
-			//street->m_streetNumHash = h3;
-			//street->m_streetIndHash = h4;
+
 			// set its m_hash member
 			setHashes ( street , m_words , m_niceness );
 			// prevent overlap with next street
@@ -5488,17 +4817,7 @@ bool Addresses::set2 ( ) {
 				ps    ->m_flags2 |= PLF2_COLLISION;
 				street->m_flags2 |= PLF2_COLLISION;
 			}
-
-			// had an indicator? ave rd or direction
-			//if ( indCountDir ||  indCountStreet )
-			//	street->m_flags2 |= PLF2_HAD_INDICATOR;
-			// point to next street
-			//m_ns++;
-			// stop if overflowing
-			//if ( m_ns >= MAX_STREETS ) break;
 		}
-		// nuke this
-		//atPreceeds = false;
 	// end i loop - go to next potential start of a phrase
 	}
 
@@ -5667,15 +4986,6 @@ bool Addresses::set2 ( ) {
 		// set this
 		if ( pc ) ignoreUntil = pc->m_b;
 		if ( ps ) ignoreUntil = ps->m_b;
-
-		// prevent breach
-		// leave some room for adding places below...
-		//if ( m_np + 200 > MAX_PLACES ) {
-		//	log("addr: too many cities/state to store in places "
-		//	    "array. truncating.");
-		//	break;
-		//	//char *xx=NULL;*xx=0;
-		//}
 
 		bool inTitle = false;
 		// do not do this if called from msg13 and have no sections
@@ -6253,8 +5563,6 @@ bool Addresses::set2 ( ) {
 		//if ( m_ns >= MAX_STREETS ) break;
 		// ok, we got a candidate, reset this
 		lastWasBreak = 0;
-		//int64_t h = 0LL;
-		int64_t pi = 0LL;
 		bool prevUpper = false;
 		bool prevAdded = false; // added prev to the street array?
 		// count em
@@ -6308,12 +5616,6 @@ bool Addresses::set2 ( ) {
 			// lowercase non-stopword stops our train
 			//if ( ! isUpper && ! ww->isStopWord(j) ) break;
 			if ( ! isUpper && ! s_lc.isInTable(&wids[j]) ) break;
-			// . convert place name word into base word
-			// . synonyms
-			// . converts 4th to fourth, theatre to theater, etc.
-			//int64_t *hw = getSynonymWord ( &wids[j] , &pi );
-			// wordid of previous word
-			pi = wids[j];
 			// shift and store
 			h <<= 1LL;
 			// xor it in
@@ -7022,11 +6324,9 @@ bool Addresses::set2 ( ) {
 
 		// "end" is the word # of first word in the street address
 		int32_t end      = street->m_a;
-		int32_t endAlnum = street->m_alnumA;
 		// but if we had a suite before... skip over it
 		if ( gotSuiteBefore ) {
 			end      = suiteBefore->m_a;
-			endAlnum = suiteBefore->m_alnumA;
 		}
 
 		///////////////////////
@@ -8171,18 +7471,7 @@ bool Addresses::set2 ( ) {
 			startAlnum++;
 			start += 2;
 		}
-		// do not scan past this then
-		int32_t max = nw;
-		if ( as < m_sm.getNumPtrs() ) max = sss->m_a;
 
-		// NO NO we had "124 ST BTWN 5 AVE AND MT MORRIS PARK WEST"
-		// for www.nycgovparks.org/facilities/playgrounds and
-		// the street was "124 ST BTWN 5 AVE" and the intersection
-		// "AVE AND MT MORRIS PARK WEST" intersected with that
-		// street and caused this to core!
-		// sanity check
-		//if ( max <= street->m_b ) { char *xx=NULL;*xx=0; }
-		
 		//
 		// begin parsing out city/adm1/ctry/zip after street name
 		//
@@ -8558,46 +7847,10 @@ bool Addresses::set2 ( ) {
 			if ( ! adm1 && ! zip ) continue;
 
 
-		
-			// . how to fix "1024 4th St SW in downtown 
-			//   Albuquerque" which has no adm1?
-			// . get the adm1/state from the city, BUT
-			//   only if city is UNIQUE!!!
-			/*
-			if ( ! adm1 && city->m_bits & PLF_UNIQUE ) {
-				tap.m_crid     = city->m_crid;
-				tap.m_str     = city->m_adm1;
-				tap.m_strlen  = 2;
-				tap.m_adm1[0] = city->m_adm1[0];
-				tap.m_adm1[1] = city->m_adm1[1];
-				adm1 = &tap;
-				//continue;
-			}
-			*/
-			// this is required
-			//if ( ! adm1 ) continue;
-
-			//if ( ! name ) continue;
-
 			// quickly check adm1 vs. city
-			//if ( adm1->m_adm1[0] != city->m_adm1[0] ) continue;
-			//if ( adm1->m_adm1[1] != city->m_adm1[1] ) continue;
-			//if ( adm1->m_crid     != city->m_crid     ) continue;
 			if ( adm1 && city &&
 			     !(adm1->m_adm1Bits & city->m_adm1Bits)) 
 				continue;
-
-			/*
-			// sanity check
-			if ( zip && ! zip->m_hash ) { char *xx=NULL;*xx=0; }
-			// cancel out bad zips
-			if ( zip && adm1 && adm1->m_adm1Bits!=zip->m_adm1Bits)
-				zip = NULL;//continue;
-			//if ( adm1->m_crid   !=zip->m_crid    )continue;
-			// cut the int64_t to a int32_t for this compare
-			if ( zip && city && city->m_hash != zip->m_cityHash ) 
-				zip = NULL;//continue;
-			*/
 
 			/*
 			// debug
@@ -8666,70 +7919,6 @@ bool Addresses::set2 ( ) {
 		}
 		// end the BIG LOOP
 	}
-
-	// CRAP! this algo was causing many streets to be ignored on
-	// http://www.estrelladelnortevineyard.com/SFV_retloc.php
-	// because it has like "main st" and "central" in multiple cities!
-	// so comment this algo out and try to think of a better way
-	/*
-	//
-	// now if all street names are the same but with a 
-	// different city then i would say nuke them! cuz it 
-	// can be a list of some kind of statistic per city, 
-	// like 
-	// Amsterdam Netherlands (114 events) 
-	// Anaheim CA United States (249 events)
-	// Ann Arbor MI United States (155 events) 
-	// Atlanta GA United States (708 events) 
-	// on http://events.mapchannels.com/
-	//
-	//
-	// only allow one city to use a streetHash
-	HashTableX su; 
-	char subuf[2000];
-	// set allowDups to true!!!!
-	su.set ( 8 , 8 , 0 , subuf , 2000 , true , m_niceness );
-	for ( int32_t i = 0 ; i < m_am.getNumPtrs() ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		Address *a = (Address *)m_am.getPtr(i);
-		// skip if not inlined
-		if ( ! ( a->m_flags & AF_INLINED ) ) continue;
-		// get street hash
-		int64_t sh = a->m_street->m_hash;
-		// get city hash
-		int64_t ch = a->m_city.m_hash;
-		// hash it. return false with g_errno set on error
-		if ( ! su.addKey ( &sh , &ch ) ) return false;
-	}
-	for ( int32_t i = 0 ; i < m_am.getNumPtrs() ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		Address *a = (Address *)m_am.getPtr(i);
-		// skip if not inlined
-		if ( ! ( a->m_flags & AF_INLINED ) ) continue;
-		// get street hash
-		int64_t sh = a->m_street->m_hash;
-		// how many different cities have this same street?
-		int32_t slot = su.getSlot ( &sh );
-		// reset count
-		int32_t count = 0;
-		// multiple places might have this hash
-		for ( ; slot>=0 ; slot = su.getNextSlot ( slot , &sh ) ) {
-			// count it
-			count++;
-		}
-		// if only 1 city had this street name, keep it
-		if ( count <= 1 ) continue;
-		// otherwise, ignore this address
-		a->m_flags &= ~AF_INLINED;
-		a->m_flags |=  AF_IGNORE;
-	}
-	// free mem just in case
-	su.reset();
-	*/
 
 	// bustout:
 	//
@@ -8824,20 +8013,6 @@ Place *getCityPlace ( int32_t a , int32_t alnumPos , Words *words ) {
 		p.m_hash      = h;
 		p.m_cityHash  = h;
 		p.m_bits      = 0;
-		/*
-		// if city is unique, set its adm1Hash
-		if ( p.m_adm1Bits & CF_UNIQUE ) {
-			// get it
-			char *ap = getStateAbbr ( p.m_adm1Bits );
-			// set it
-			p.m_adm1[0] = ap[0];
-			p.m_adm1[1] = ap[1];
-		}
-		else {
-			p.m_adm1[0] = 0;
-			p.m_adm1[1] = 0;
-		}
-		*/
 		// note it
 		retp = &p;
 		// see if we can beat it though
@@ -9951,208 +9126,6 @@ void Addresses::print ( SafeBuf *pbuf , int64_t uh64 ) {
 
 }
 
-// . looks up each word/phrase in our table of known places
-// . table incudes cities, countries, states (adm1), counties, zipcodes
-/*
-int32_t Addresses::addProperPlaces ( int32_t    a             ,
-				  int32_t    b             , 
-				  int32_t    maxAlnumCount ,
-				  Place  *places        , 
-				  int32_t    maxPlaces     ,
-				  int32_t    np            ,
-				  pbits_t flags         ,
-				  // this count excludes "a"?
-				  int32_t    alnumPos ,
-				  int32_t    forcedEnd ) {
-	// int16_tcuts
-	Words     *ww    = m_words;
-	int32_t       nw    = ww->getNumWords();
-	int64_t *wids  = ww->getWordIds();
-	char     **wptrs = ww->getWordPtrs();
-	int32_t      *wlens = ww->getWordLens();
-	nodeid_t   *tids = ww->getTagIds();
-	// "4 miles" and "miles" does not mean "miles, california", the city
-	int64_t h_miles     = hash64 ( "miles",5);
-	int64_t h_mi        = hash64 ( "mi",2);
-	int64_t h_kilometers= hash64 ( "kilometers",10);
-	int64_t h_km        = hash64 ( "km",2);
-	// reset this count again
-	int32_t alnumCount = 0;
-	// after the street is an optional city
-	for ( int32_t j = a ; j<b && alnumCount<maxAlnumCount ; j++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// skip if not alnum
-		if ( ! wids[j] ) continue;
-		// count alnums
-		alnumCount++;
-		// skip "miles" in "4 miles"
-		if ( wids[j] == h_miles && j-2>= 0 && is_digit(wptrs[j-2][0]))
-			continue;
-		if ( wids[j] == h_mi    && j-2>= 0 && is_digit(wptrs[j-2][0]))
-			continue;
-		if ( wids[j] == h_km    && j-2>= 0 && is_digit(wptrs[j-2][0]))
-			continue;
-		if ( wids[j] == h_kilometers&&j-2>=0&&is_digit(wptrs[j-2][0]))
-			continue;
-		// . skip if only one char
-		// . no! might be like "N. M." to be "new mexico"
-		//if ( wlens[j] == 1 ) continue;
-		// . skip if two chars and not capitalized
-		// . no! misses "123 main st, albuquerque, nm"
-		//if ( wlens[j] == 2 && ! is_upper_utf8(wptrs[j]) ) continue;
-		// try just doing caps only for now
-		if ( is_lower_utf8(wptrs[j]) ) continue;
-		// do not skip too far
-		int32_t max = j + 6;
-		// truncate?
-		if ( max > nw ) max = nw;
-		// init hash
-		int64_t h = 0LL;
-		// the alnumcount for this
-		int32_t subcount = 0;
-		// scan for city/adm1/zip after this street address
-		for ( int32_t k = j ; k < max ; k++ ) {
-			// stop if tag
-			if ( tids[k] ) {
-				// skip non-breaking tags
-				if ( !isBreakingTagId(tids[k]) ) continue;
-				// allow <br> too since microsoft front page
-				// inserts those to break a line
-				if ( tids[k] == TAG_BR ) continue;
-				// other tags, stop us
-				break;
-			}
-			// is it punct?
-			if ( ! wids[k] ) {
-				// . big punct is a show stopper
-				// . no, we had "New\n   Mexico"
-				//if ( wlens[k] >= 4 ) break;
-				// just skip otherwise
-				continue;
-			}
-			// count it
-			subcount++;
-			// mix it up
-			h <<= 1;
-			// hash it into our ongoing hash
-			h ^= wids[k];
-			// look it up
-			int32_t slot = g_cities.getSlot(&h);
-			// length
-			int32_t plen = (wptrs[k] + wlens[k]) - wptrs[j];
-			// skip otherwise
-			if ( forcedEnd >= 0 && k < forcedEnd ) continue;
-			// clear this
-			//int32_t cityCount = 0;
-			// init
-			Place *pp;
-			// multiple places might have this hash
-			for ( ; slot>=0 ; slot=g_cities.getNextSlot(slot,&h)){
-				// get the place
-				PlaceDesc *pd =(PlaceDesc *)g_cities.
-					getValueFromSlot(slot);
-
-				// it might be an alias to another slot!
-				int32_t slot2 = -1;
-				if ( pd->m_bits & PLF_ALIAS ) {
-					// get the slot we alias
-					slot2 = pd->getSlot();
-					// sanity check
-					if ( slot2 < 0 ) {char *xx=NULL;*xx=0;}
-					// re-get
-			     pd=(PlaceDesc *)g_cities.getValueFromSlot(slot2);
-				}
-
-				// skip if not a recognized place
-				if ( pd->m_type != PT_CITY &&
-				     pd->m_type != PT_STATE &&
-				     //pd->m_type != PT_ZIP  &&
-				     pd->m_type != PT_CTRY   )
-					continue;
-				// city count
-				//if(pd->m_type == PT_CITY) cityCount++;
-				// skip if full
-				if ( np >= maxPlaces ) continue;
-				// point to the right place to store into
-				pp = &places[np];
-				// sanity check
-				if ( ! h ) { char *xx=NULL;*xx=0; }
-				// make a place
-				pp->m_a       = j;
-				pp->m_b       = k+1;
-				pp->m_alnumA  = alnumPos + alnumCount;
-				pp->m_alnumB  = alnumPos + alnumCount+subcount;
-				pp->m_type    = pd->m_type;
-				pp->m_str     = wptrs[j];
-				pp->m_strlen  = plen;
-				pp->m_hash    = h;
-
-				// . use the aliased city, etc. if we had it
-				// . that way when we lookup this place in
-				//   placedb it will use the right hash
-				if ( slot2 >= 0 )
-		  pp->m_hash = *(int64_t *)g_cities.getKeyFromSlot(slot2);
-
-				pp->m_adm1[0] = pd->m_adm1[0];
-				pp->m_adm1[1] = pd->m_adm1[1];
-				pp->m_crid     = pd->m_crid;
-				pp->m_bits    = PLF_INFILE | flags ;
-				// we use these for zip codes mostly
-				pp->m_cityHash= 0;//pd->m_cityHash;
-				// inc it
-				np++;
-				// sanity check
-				if ( np >= maxPlaces ) {char*xx=NULL;*xx=0;}
-			}
-
-			// only one word for zip code
-			if ( k != j ) continue;
-
-			//
-			// check if zip code
-			//
-
-			// look it up
-			slot = g_zips.getSlot(&h);
-			// multiple places might have this hash
-			for ( ; slot>=0 ; slot=g_zips.getNextSlot(slot,&h)){
-				// get the place
-				ZipDesc *zd =(ZipDesc *)g_zips.
-					getValueFromSlot(slot);
-				// skip if full
-				if ( np >= maxPlaces ) continue;
-				// point to the right place to store into
-				pp = &places[np];
-				// sanity check
-				if ( ! h ) { char *xx=NULL;*xx=0; }
-				// make a place
-				pp->m_a       = j;
-				pp->m_b       = k+1;
-				pp->m_alnumA  = alnumPos + alnumCount;
-				pp->m_alnumB  = alnumPos + alnumCount+subcount;
-				pp->m_type    = PT_ZIP;
-				pp->m_str     = wptrs[j];
-				pp->m_strlen  = plen;
-				pp->m_hash    = h;
-				pp->m_adm1[0] = zd->m_adm1[0];
-				pp->m_adm1[1] = zd->m_adm1[1];
-				pp->m_crid     = zd->m_crid;
-				pp->m_bits    = PLF_INFILE | flags ;
-				// we use these for zip codes mostly
-				pp->m_cityHash= zd->m_cityHash;
-				pp->m_cityStr = g_cityBuf + zd->m_cityOffset;
-				// inc it
-				np++;
-				// sanity check
-				if ( np >= maxPlaces ) {char*xx=NULL;*xx=0;}
-			}
-		}
-	}
-	return np;
-}
-*/
-
 uint32_t getCityId32 ( uint64_t cityHash64, char *adm1Str ) {
 	// sanity checks
 	//if ( is_upper_a(adm1Str[0]) ) { char *xx=NULL;*xx=0; }
@@ -10373,18 +9346,13 @@ bool Addresses::addAddress ( Place   *name1   ,
 	if ( ! cityHash ) return true;
 
 	// set these
-	uint64_t adm1Bits;
 	char    *adm1Str = NULL;
 	if      ( adm1 ) {
-		adm1Bits = adm1->m_adm1Bits;
 		adm1Str  = adm1->m_adm1;
 	}
 	else if ( zip ) {
-		adm1Bits = zip->m_adm1Bits;
 		adm1Str  = zip->m_adm1;
 	}
-	//else if ( city && (city->m_adm1Bits & CF_UNIQUE ) ) 
-	//	adm1Bits = city->m_adm1Bits;
 	else 
 		return true;
 
@@ -11015,23 +9983,6 @@ bool setFromStr ( Address *a, char *s, pbits_t flags ,
 			p->m_adm1[0] = start[0];
 			p->m_adm1[1] = start[1];
 		}
-		/*
-		// we got a parenthetical?
-		char *parens = NULL;
-		// skip semicolon
-		if ( *s && *s == '(' ) {
-			// what is this from now?
-			char *xx=NULL;*xx=0;
-			// skip parens
-			s++;
-			// mark it
-			parens = s;
-			// skip to end
-			for ( ; *s && *s != ';' ; s++ );
-		}
-		*/
-		// skip semicolon
-		//if ( *s && *s == ';' ) s++;
 		// store it in Address class if not NULL
 		if ( ! p->m_str ) continue;
 
@@ -11040,16 +9991,6 @@ bool setFromStr ( Address *a, char *s, pbits_t flags ,
 
 		// clear these
 		p->m_flags2 = 0;
-
-		// two letter country code in parentheses
-		//if ( i == 7 && parens && parens[2] == ')' )
-		//	p->m_crid = getCountryId ( parens );
-		// . two letter admin code in parentheses
-		// . usually only city names and zip codes have this
-		//if ( i != 7 && parens && parens[2] == ')' ) {
-		//	p->m_adm1[0] = parens[0];
-		//	p->m_adm1[1] = parens[1];
-		//}
 
 		// and make the word non-overlappable
 		p->m_a = -3;
@@ -11070,53 +10011,6 @@ bool setFromStr ( Address *a, char *s, pbits_t flags ,
 		if ( i == 1 && (flags & PLF_FROMTAG) ) continue;
 		// nor suite
 		if ( i == 2 && (flags & PLF_FROMTAG) ) continue;
-
-		// and make the word non-overlappable
-		//p->m_a = -3;
-		//p->m_b = -2;
-
-		// save these
-		//if ( i == 4 ) city = p;
-		//if ( i == 5 ) adm1 = p;
-
-		// if we are a city OR a zip code, we must set m_hash since 
-		// addAddress() uses it to check for dups!
-		/*
-		if ( i == 4 || i == 5 ) {
-			Words w; 
-			// i guess just use "version" of 0
-			if ( ! w.set (p->m_str , p->m_strlen,0,true,niceness)) 
-				return false;
-			// int16_tcut
-			int64_t *wids = w.getWordIds();
-			// zero out the hash
-			int64_t h = 0LL;
-			// loop em
-			for ( int32_t j = 0 ; j < w.m_numWords ; j++ ) {
-				// skip if not alnum
-				if ( ! wids[j] ) continue;
-				// mix it up
-				h <<= 1;
-				// xor it in
-				h ^= wids[j];
-			}
-			// set that hash
-			p->m_hash = h;
-		}
-		*/
-		// update crid
-		if ( i == 7 ) {
-			/*
-			// get numeric id
-			uint8_t crid = getCountryId(p->m_str);
-			// set it 
-			p->m_crid = crid;
-			// and for adm1
-			adm1->m_crid = crid;
-			// and city
-			city->m_crid = crid;
-			*/
-		}
 	}
 
 	// if it was a lat/lon only contact address it will not have a
@@ -11355,200 +10249,6 @@ int latcmp ( const void *arg1 , const void *arg2 ) {
 	return 0;
 }
 
-//int loncmp ( const void *arg1 , const void *arg2 ) {
-//	// get the addresses
-//	CityDesc *cd1 = *(CityDesc **)arg1;
-//	CityDesc *cd2 = *(CityDesc **)arg2;
-//	// simple compare
-//	return ( cd1->m_longitude - cd2->m_longitude );
-//}
-
-// . our data is used by getNearestCityId
-// . about 123k cities, sort them by lat in one list, lon in the other
-// . 4 bytes per entry, we are talking 1.2MB for both lists
-bool initCityLists ( ) {
-	// scan city table
-	int32_t ns = g_timeZones.m_numSlots;
-	// need this
-	int32_t used = g_timeZones.m_numSlotsUsed;
-	// how much space to alloc?
-	int32_t need = used * 4;
-	// alloc it
-	char *space = (char *)mmalloc(need,"latlist");
-	if ( ! space ) return false;
-	char *p = space;
-	s_latList = (int32_t *)p;
-	s_latListSize = need;
-	//p += 4 * used;
-	//s_lonList = (CityDesc **)p;
-	// reset
-	s_ni = 0;
-	// scan the slots
-	for ( int32_t i = 0 ; i < ns ; i++ ) {
-		// skip empties
-		if ( ! g_timeZones.m_flags[i] ) continue;
-		// get it
-		CityStateDesc *csd;
-		csd = (CityStateDesc *)g_timeZones.getValueFromSlot(i);
-		// add to the list
-		s_latList[s_ni] = i;
-		//s_lonList[s_ni] = cd;
-		s_ni++;
-	}
-	// now sort each list
-	gbqsort ( s_latList , s_ni , 4 , latcmp , 0 );
-	//gbqsort ( s_lonList , s_ni , 4 , loncmp , 0 );
-	return true;
-}
-
-char Address::getTimeZone ( char *useDST ) {
-
-	// need this
-	char *adm1Str = NULL;
-	char *cityStr = NULL;
-	if      ( m_adm1 ) adm1Str = m_adm1->m_adm1;
-	else if ( m_zip  ) { 
-		cityStr = m_zip->m_cityStr;
-		adm1Str = m_zip->m_adm1;
-	}
-	else if ( m_city && m_city->m_adm1[0] ) {
-		adm1Str = m_city->m_adm1;
-	}
-	// this sets m_cityId32 to the nearest city to the lat/lon
-	else if ( (m_flags3 & AF2_LATLON) && m_cityId32 ) ;
-	// if we failed to set city id because no city was nearby
-	// then just guess based on lat/lon
-	else if ( m_flags3 & AF2_LATLON ) {
-		// ASSUME THEY USE IT! WE DON'T KNOW REALLY!!
-		if ( useDST ) *useDST = 1;
-		char timeZone = (char)(int32_t)(m_longitude / (360.0/24.0));
-		if ( timeZone < -12 || timeZone > 12 ) { char *xx=NULL;*xx=0;}
-		return timeZone;
-	}
-	else    { char *xx=NULL;*xx=0; }
-	// normalize this
-	//char aa[3];
-	//aa[0] = to_lower_a(adm1Str[0]);
-	//aa[1] = to_lower_a(adm1Str[1]);
-	//aa[2] = 0;
-	// hash state hash
-	//uint32_t adm1Hash32 = (uint32_t)*((uint16_t *)aa);
-	//uint32_t cityHash32 = (uint32_t)m_cityHash;
-	// combine the two hashes
-	//uint32_t cityStateHash = hash32h(cityHash32,adm1Hash32);
-
-	// use this now
-	//uint32_t cid32 = (uint32_t)m_cityId64;
-	
-	// now lookup timezone
-	int32_t slot = g_timeZones.getSlot ( &m_cityId32 );
-	// return 0 if not found
-	if ( slot < 0 ) {
-		// nte it
-		if ( cityStr && adm1Str ) {
-			log("addr: could not find timezone in g_timezones, "
-			    "trying to call getTimeZone2");
-			char tzoff = getTimeZone2 ( cityStr, adm1Str, useDST );
-			if ( tzoff != UNKNOWN_TIMEZONE )
-				return tzoff;
-		}
-		log("addr: got unknown timezone for addr");
-		*useDST = 1;
-		return UNKNOWN_TIMEZONE;
-	}
-	// otherwise, set m_timeZoneOffset appropriately
-	CityStateDesc *csd;
-	csd = (CityStateDesc *)g_timeZones.getValueFromSlot(slot);
-	char tzoff = csd->m_timeZoneOffset;
-	if ( tzoff < - 13 || tzoff > 13 ) { char *xx=NULL;*xx=0; }
-	*useDST = csd->m_useDST;
-	return tzoff;
-}
-
-/*
-bool Addresses::addToTagRec ( TagRec *gr , int32_t ip , int32_t timestamp ,
-			      char *origUrl , int32_t maxAddrBytes ,
-			      char *tagName ) {
-	// inherit Places that all the Addresses in the list agree on
-	for ( int32_t i = 0 ; i < m_am.getNumPtrs() ; i++ ) {
-		// get it
-		Address *ai = (Address *)m_am.getPtr(i);
-		// do not add this to tagdb if not inlined!
-		if ( ! ( ai->m_flags & AF_INLINED ) ) continue;
-		// add address #i
-		if ( ! ai->addToTagRec (gr,ip,timestamp,origUrl,
-					maxAddrBytes,tagName) ) 
-			return false;
-	}
-	return true;
-}
-
-// can xmldoc use this for venue addresses?
-bool Address::addToTagRec ( TagRec *gr , int32_t ip , int32_t timestamp ,
-			    char *origUrl , int32_t maxAddrBytes ,
-			    char *tagName ) {
-
-	//
-	// we are no longer storing contact info addresses
-	//
-	//return true;
-
-	// use ; as delimter
-	char buf[5003];
-	// . size includes the terminating \0
-	// . include the Address::m_hash for deduping in XmlDoc.cpp
-	int32_t size = serialize ( buf , 5000 , origUrl , false , true );
-	// returns -1 and sets g_errno on error
-	if ( size < 0 ) return false;
-
-	//
-	// point to end of data excluding the origUrl for deduping
-	//
-	char *end1 = buf + size - 1;
-	for ( ; end1 > buf && *end1 != ';' ; end1-- ) ;
-	// the length without that
-	int32_t len1 = end1 - buf;
-
-	//
-	// how many address bytes are we using currently? only need to 
-	// compute this if we have a limit, i.e. "maxAddrBytes" >= 0
-	//
-	// count those bytes
-	int32_t used = 0;
-	if ( maxAddrBytes >= 0 ) {
-		// our tag type
-		int32_t tt = getTagTypeFromStr ( tagName );//"contactaddress" );
-		// taken from TagRec::getTag() function
-		Tag *tag = gr->getFirstTag();
-		// loop over all contact info addresses in the TagRec
-		for ( ; tag ; tag = gr->getNextTag(tag) ){
-			// skip if not a "address" tag (ci=contactInfo)
-			if ( tag->m_type != tt ) continue;
-			// get str
-			used += tag->m_dataSize;
-			// point to end of data excluding the origUrl for
-			// deduping contact addresses in the tag rec
-			char *end2 = tag->m_data + tag->m_dataSize - 1;
-			for ( ; end2 > tag->m_data && *end2 != ';' ; end2-- ) ;
-			// get lengths
-			int32_t len2 = end2 - tag->m_data;
-			// is it a dup?
-			if ( len1 != len2 ) continue;
-			if ( memcmp(tag->m_data, buf, len1 ) ) continue;
-			// it was a dup!
-			return true;
-		}
-	}
-	// can we fit it? if not, do not add it
-	if ( maxAddrBytes >= 0 && used + size > maxAddrBytes ) return true;
-
-	// store it
-	//int32_t now = getTimeGlobal();
-	// returns false and sets g_errno on error
-	return gr->addTag (tagName,timestamp,"xmldoc",ip,buf,size);
-}
-*/
-
 // . hash city and state together then lookup in g_timeZones table
 // . name1;name2;suite;street;city;adm1;zip;country;domhash;ip;origurl;lat;lon;hash\0
 // . uint32_t getCityHash32 ( char *addr , uint32_t *adm1Hash ) {
@@ -11675,23 +10375,6 @@ int32_t Address::getStoredSize ( int32_t ulen , bool includeHash ) {
 	// timezoneoffset
 	//need += 4;
 	return need;
-}
-
-bool Address::serializeVerified ( SafeBuf *sb ) {
-	// get min # of bytes needed
-	int32_t need = getStoredSize ( 0 , false );
-	// make room
-	if ( ! sb->reserve ( need ) ) return false;
-	// store it here
-	char *buf = sb->getBuf();
-	// do it
-	int32_t written = serialize ( buf , need , NULL , true , false );
-	// sanity check
-	if ( written > need ) { char *xx=NULL;*xx=0; }
-	// update it
-	sb->incrementLength ( written );
-	// success
-	return true;
 }
 
 // . returns -1 and sets g_errno on error
@@ -11937,37 +10620,13 @@ int32_t Address::serialize ( char *buf , int32_t bufSize , char *origUrl ,
 }
 
 
-int32_t Address::print ( ) {
-	return print2 ( 0,NULL,0);
-}
-
 int32_t Address::print2 ( int32_t i , SafeBuf *pbuf , int64_t uh64 ) { 
 
 	// print out each candidate for debug
 	SafeBuf sb;
 
-	//bool validAddr = ( (m_flags) & AF_INLINED );
-	// old sanity checker to ensure div ids were unique
-	//static bool s_init = false;
-	//static HashTableX ht;
-	//if ( ! s_init ) {
-	//	s_init = true;
-	//	ht.set ( 4 , 4 , 128 , NULL , 0 , false , 2 );
-	//}
-	//if ( validAddr ) {
-	//	if ( ht.isInTable ( &m_divId) ) { char *xx=NULL;*xx=0; }
-	//	ht.addKey ( &m_divId );
-	//}
-
 	// print out to a table?
 	if ( pbuf ) {
-		// dump it
-		// . for the sake of doing delta diffs in Test.cpp
-		//   eliminate the number!
-		//pbuf->safePrintf ( "<td>%"INT32"/%"INT32"</td>", num ,m_street.m_a);
-		//if ( m_street.m_a >= 0 )
-		//	pbuf->safePrintf ( "<td>%"INT32"</td>", m_street.m_a);
-		//else
 		int32_t napos = -1;
 		if ( m_name1 ) napos = m_name1->m_a;
 
@@ -11975,9 +10634,6 @@ int32_t Address::print2 ( int32_t i , SafeBuf *pbuf , int64_t uh64 ) {
 		if ( m_street ) stra = m_street->m_a;
 		pbuf->safePrintf ( "<td>%"INT32"/%"INT32"</td>", napos,stra );
 		
-		//pbuf->safePrintf ( "<td>%.06f</td>", m_score );
-		//pbuf->safePrintf("<td>0x%"XINT32"</td>", m_section->m_tagHash);
-
 		printEssentials ( pbuf , false , uh64 );
 
 		// print flags
@@ -12030,21 +10686,13 @@ int32_t Address::print2 ( int32_t i , SafeBuf *pbuf , int64_t uh64 ) {
 			pbuf->safePrintf("afterat ");
 		if ( m_street &&(m_street->m_flags2 & PLF2_TICKET_PLACE) )
 			pbuf->safePrintf("ticketplace ");
-		// when the event hours are not "store hours" we flag the
-		// place name so as to avoid it as the event title in
-		// Events.cpp
-		//if ( m_name1 && (m_name1->m_flags2 & PLF2_STORE_NAME) )
-		//	pbuf->safePrintf("storename ");
 
-		//if ( (m_flags) & AF_VERIFIED_STREET_IND )
-		//	pbuf->safePrintf("verifiedstreetind ");
 		if ( !(m_flags) )
 			pbuf->safePrintf("&nbsp;");
 		pbuf->safePrintf("</nobr></td>");
 
 		// print the address ptr, but make it an offset so
 		// it doesn't show up on the test qa run diffs
-		//int32_t offset = this - base;
 		int32_t offset = i;
 		pbuf->safePrintf("<td>%"UINT32"</td>",(int32_t)offset);
 
@@ -12124,34 +10772,6 @@ int32_t Address::print2 ( int32_t i , SafeBuf *pbuf , int64_t uh64 ) {
 				 nh1,nh2
 				 );
 		
-
-		/*
-		char *b1 = "&nbsp;";
-		char *b2 = "&nbsp;";
-		char *b3 = "&nbsp;";
-		if ( m_flags & AF_VERIFIED_STREET     ) b1 = "yes";
-		if ( m_flags & AF_VERIFIED_STREET_NUM ) b2 = "yes";
-		if ( m_flags & AF_VERIFIED_PLACE_NAME ) b3 = "yes";
-		pbuf->safePrintf("<td>%s</td>",b1);
-		pbuf->safePrintf("<td>%s</td>",b2);
-		pbuf->safePrintf("<td>%s</td>",b3);
-		*/
-
-		/*
-		pbuf->safePrintf("<td>%.02f</td>",
-				 m_scoreBase);
-		pbuf->safePrintf("<td>%.02f</td>",
-				 m_scoreNameBeforeStreet);
-		pbuf->safePrintf("<td>%.02f</td>",
-				 m_scoreDistanceNameToStreet);
-		pbuf->safePrintf("<td>%.02f</td>",
-				 m_scoreOldVoteMod);
-		pbuf->safePrintf("<td>%.02f</td>",
-				 m_scoreNewVoteMod);
-		pbuf->safePrintf("<td>%.02f</td>",
-				 m_scoreDistanceNameToStreetValue);
-		*/
-
 		// wrap up the table row
 		pbuf->safePrintf ( "</tr>\n");
 
@@ -12171,10 +10791,6 @@ int32_t Address::print2 ( int32_t i , SafeBuf *pbuf , int64_t uh64 ) {
 		sb.safePrintf(" street[%"INT32"]=",m_street->m_a);
 		sb.safeMemcpy(m_street->m_str,m_street->m_strlen);
 	}
-	//if ( m_zip ) {
-	//	sb.safePrintf(" zip=");
-	//	sb.safeMemcpy(m_zip->m_str,m_zip->m_strlen);
-	//}
 	if ( m_suite ) {
 		sb.safePrintf(" suite=");
 		sb.safeMemcpy(m_suite->m_str,m_suite->m_strlen);
@@ -12193,14 +10809,6 @@ int32_t Address::print2 ( int32_t i , SafeBuf *pbuf , int64_t uh64 ) {
 		sb.safePrintf(" zip=");
 		sb.safeMemcpy(m_zip->m_str,m_zip->m_strlen);
 	}
-	//if ( m_adm2 && m_adm2->m_str ) {
-	//	sb.safePrintf(" adm2=");
-	//	sb.safeMemcpy(m_adm2->m_str,m_adm2->m_strlen);
-	//}
-	//if ( m_ctry->m_str ) {
-	//	sb.safePrintf(" country=");
-	//	sb.safeMemcpy(m_ctry->m_str,m_ctry->m_strlen);
-	//}
 
 	sb.safePrintf(" score2=%"INT32"",m_score2);
 
@@ -12209,9 +10817,6 @@ int32_t Address::print2 ( int32_t i , SafeBuf *pbuf , int64_t uh64 ) {
 		sb.safePrintf("inlined ");
 	else
 		sb.safePrintf("notinlined ");
-	// means that we are inlined and the city FOLLOWS the state
-	//if ( (m_flags) & AF_BADORDER )
-	//	sb.safePrintf("badorder ");
 	if ( (m_flags) & AF_AMBIGUOUS ) 
 		sb.safePrintf("ambig ");
 	if ( (m_flags) & AF_VERIFIED_STREET ) 
@@ -12229,13 +10834,8 @@ int32_t Address::print2 ( int32_t i , SafeBuf *pbuf , int64_t uh64 ) {
 	if ( m_street && (m_street->m_flags2 & PLF2_AFTER_AT ))
 		sb.safePrintf("afterat ");
 
-	//sb.safePrintf(" a=%"INT32" b=%"INT32"",m_a,m_b);
-
 	// null term
 	sb.safeMemcpy ( "\0",1 );
-	//sb.safePrintf(" =");
-	//sb.safeMemcpy(m_->m_str,m_->m_strlen);
-	//logf(LOG_DEBUG,"events: addr score=%.06f %s",
 	logf(LOG_DEBUG,"events: %s",
 	     sb.getBufStart() );
 
@@ -12682,19 +11282,6 @@ void printPlaces ( PlaceMem *pm , SafeBuf *pbuf , Sections *sections,
 		if ( f == of )
 			f += sprintf(f,"&nbsp;");
 
-		/*
-		if ( flags & IND_NAME      ) 
-			f += sprintf ( f , "ind_name " );
-		if ( flags & IND_SUITE     ) 
-			f += sprintf ( f , "ind_suite " );
-		if ( flags & IND_STREET    ) 
-			f += sprintf ( f , "ind_street " );
-		if ( flags & IND_DIR       ) 
-			f += sprintf ( f , "ind_dir " );
-		*/
-		//if ( flags & IND_BITS      ) 
-		//	f += sprintf ( f , "ind_bits " );
-
 		// add state
 		//if ( pi->m_adm1[0] && pi->m_adm1[1] ) 
 		//	f += sprintf(f,"adm1=%c%c ",
@@ -12712,15 +11299,7 @@ void printPlaces ( PlaceMem *pm , SafeBuf *pbuf , Sections *sections,
 		// get section
 		Section *sn = NULL;
 		if ( pi->m_a >= 0 ) sn = sp [ pi->m_a ];
-		int32_t depth = -1;
-		if ( sn ) depth = sn->m_depth;
 		// sectio number
-		int32_t secNum = -1;
-		int32_t parentSecNum = -1;
-		if ( sn ) secNum = (int32_t)(sn - sp[0]);
-		Section *parent = NULL;
-		if ( sn ) parent = sn->m_parent;
-		if ( parent ) parentSecNum = (int32_t)(parent - sp[0]);
 		int32_t secHash = 0;
 		if ( sn ) secHash = sn->m_turkTagHash32;
 		// print the address we are in or the address we alias
@@ -12773,9 +11352,6 @@ void printPlaces ( PlaceMem *pm , SafeBuf *pbuf , Sections *sections,
 					   (int32_t)pi->m_b ,
 					   (int32_t)pi->m_alnumA ,
 					   (int32_t)pi->m_alnumB ,
-					   //(int32_t)depth ,
-					   //secNum,
-					   //parentSecNum,
 					   secHash);
 		}
 		else
@@ -12819,151 +11395,6 @@ public:
 	// down to 99 so that "sf" maps to "san francisco" by default.
 	int32_t  m_pop;
 };
-
-static AliasDesc s_cityList[] = {
-	//{"abq","albquerque"}
-	//,{"alb","albquerque"}
-	//,{"albq","albquerque"}
-
-	{"ny","new york city","ny","ny",1000}
-	,{"nyc","new york city","ny","ny",1000}
-	,{"n y c","new york city","ny","ny",1000}
-	,{"la","los angeles","ca","ca",1000}
-	,{"lax","los angeles","ca","ca",1000}
-	,{"chi","chicago","il","il",1000}
-	,{"hou","houston","tx","tx",1000}
-	,{"phx","phoenix","az","az",1000}
-	,{"phoex","phoenix","az","az",1000}
-	,{"phi","philadelphia","pa","pa",1000}
-	,{"sa","san antonio","tx","tx",1000}
-	,{"sd","san diego","ca","ca",1000}
-	,{"dal","dallas","tx","tx",1000}
-	,{"sj","san jose","ca","ca",1000}
-	,{"det","detroit","mi","mi",1000}
-	,{"jax","jacksonville","fl","fl",1000}
-	,{"j-ville","jacksonville","fl","fl",1000}
-	,{"indy","indianapolis","in","in",1000}
-	,{"sf","san francisco","ca","ca",1000}
-	,{"san fran","san francisco","ca","ca",1000}
-	,{"sf","santa fe","nm","ca",99}
-	,{"cols","columbus","oh","oh",1000}
-	,{"colo","columbus","oh","oh",1000}
-	,{"atx","austin","tx","tx",1000}
-	,{"mem","memphis","tn","tn",1000}
-	,{"fw","fort worth","tx","tx",1000}
-	,{"ft worth","fort worth","tx","tx",1000}
-	,{"balto","baltimore","md","md",1000}
-	,{"clt","charlotte","nc","nc",1000}
-
-	,{"ept","El Paso","tx","tx",1000}
-	,{"elp","El Paso","tx","tx",1000} // airport
-	,{"bos","Boston","ma","ma",1000} // airport
-	,{"sea","Seattle","wa","wa",1000}
-	,{"mil","Milwaukee","wi","wi",1000}
-	,{"milw","Milwaukee","wi","wi",1000}
-	,{"mke","Milwaukee","wi","wi",1000}
-	,{"den","Denver","co","co",1000}
-	,{"denv","Denver","co","co",1000}
-	,{"lv","Las Vegas","nv","nv",1000} // postal
-	,{"las","Las Vegas","nv","nv",1000} // airport
-	,{"nash","Nashville","tn","tn",1000}
-	,{"nashv","Nashville","tn","tn",1000}
-	,{"bna","Nashville","tn","tn",1000}
-	,{"okc","Oklahoma City","ok","ok",1000}
-	,{"pdx","Portland","or","or",1000}
-	,{"port","Portland","or","or",1000}
-	,{"tuc","Tucson","az","az",1000}
-	,{"tucs","Tucson","az","az",1000}
-	,{"abq","Albuquerque","nm","nm",1000}
-	,{"alb","Albuquerque","nm","nm",1000}
-	,{"albq","Albuquerque","nm","nm",1000}
-	,{"q-town","Albuquerque","nm","nm",1000}
-	,{"atl","Atlanta","ga","ga",1000}
-	,{"lbc","Long Beach","ca","ca",1000}
-	,{"lb","Long Beach","ca","ca",1000}
-	,{"frs","Fresno","ca","ca",1000}
-	,{"sacto","Sacramento","ca","ca",1000}
-	,{"smf","Sacramento","ca","ca",1000} // airport
-	//,{"","Mesa","","",1000}
-	,{"kc","Kansas City","ks","ks",1000}
-	,{"cle","Cleveland","oh","oh",1000}
-	,{"cleve","Cleveland","oh","oh",1000}
-	,{"vab","Virginia Beach","va","va",1000}
-	,{"oma","Omaha","ne","ne",1000}
-	,{"mi","Miami","fl","fl",1000}
-	,{"oak","Oakland","ca","ca",1000}
-	//,{"","Tulsa","","",1000}
-	,{"hon","Honolulu","hi","hi",1000}
-	,{"hnl","Honolulu","hi","hi",1000}
-	,{"hono","Honolulu","hi","hi",1000}
-	,{"mpls","Minneapolis","mn","mn",1000}
-	,{"anc","Arlington","va","va",1000}
-	,{"wh","Wichita","ks","ks",1000}
-	//,{"","Raleigh","","",1000}
-	,{"stl","Saint Louis","mo","mo",1000}
-	,{"st louis","saint louis","mo","mo",1000}
-	,{"sna","Santa Ana","ca","ca",1000}
-	,{"aoc","Anaheim","ca","ca",1000} // anaheim orange county
-	,{"tpa","Tampa","fl","fl",1000}
-	,{"cinti","Cincinnati","oh","oh",1000}
-	,{"cincy","Cincinnati","oh","oh",1000}
-	,{"pitt","Pittsburgh","pa","pa",1000}
-	,{"pit","Pittsburgh","pa","pa",1000}
-	,{"pgh","Pittsburgh","pa","pa",1000}
-	,{"pitts","Pittsburgh","pa","pa",1000}
-	,{"bfd","Bakersfield","ca","ca",1000}
-	//,{"","Aurora","","",1000}
-	//,{"","Toledo","","",1000}
-	//,{"","Riverside","","",1000}
-	,{"sto","Stockton","ca","ca",1000}
-	,{"cctx","Corpus Christi","tx","tx",1000}
-	,{"cor chr","Corpus Christi","tx","tx",1000}
-	//,{"","Newark","","",1000}
-	,{"anch","Anchorage","ak","ak",1000}
-	,{"buff","Buffalo","ny","ny",1000}
-	,{"stpaul","Saint Paul","mn","mn",1000}
-	,{"st paul","Saint Paul","mn","mn",1000}
-	//,{"","Plano","","",1000}
-	,{"fwa","Fort Wayne","in","in",1000} // airport
-	//,{"ftw","Fort Wayne","","",1000} 
-	,{"ft wayne","Fort Wayne","in","in",1000} // airport
-	,{"st petersburg","saint petersburg","fl","fl",1000}
-	//,{"","Glendale","","",1000}
-	,{"jc","Jersey City","nj","nj",1000}
-	//,{"","Lincoln","","",1000}
-	//,{"","Henderson","","",1000}
-	//,{"","Chandler","","",1000}
-	//,{"","Greensboro","","",1000}
-	//,{"","Scottsdale","","",1000}
-	,{"br","Baton Rouge","la","la",1000}
-	,{"bham","Birmingham","al","al",1000}
-	,{"b ham","Birmingham","al","al",1000}
-	,{"nflk","Norfolk","va","va",1000}
-	,{"madsn","Madison","wi","wi",1000}
-	,{"no","New Orleans","la","la",1000}
-	,{"north hempstead","Town of North Hempstead","ny","ny",1000}
-	,{"n hempstead","Town of North Hempstead","ny","ny",1000}
-	,{"n hemp","Town of North Hempstead","ny","ny",1000}
-	,{"north hemp","Town of North Hempstead","ny","ny",1000}
-	,{"chesp","Chesapeake","va","va",1000}
-	//,{"","Orlando","","",1000}
-	//,{"","Garland","","",1000}
-	//,{"","Hialeah","","",1000}
-	//,{"","Laredo","","",1000}
-	,{"cv","Chula Vista","ca","ca",1000}
-	//,{"","Lubbock","","",1000}
-	//,{"","Reno","","",1000}
-	//,{"","Akron","","",1000}
-	//,{"","Durham","","",1000}
-	,{"roch","Rochester","ny","ny",1000}
-	//,{"","Modesto","","",1000}
-	,{"mont","Montgomery","al","al",1000}
-	//,{"","Fremont","","",1000}
-	//,{"","Shreveport","","",1000}
-	//,{"","Arlington","","",1000}
-	//,{"","Glendale","","",1000}
-};	 
-
 
 bool addCity ( uint64_t ch64 , 
 	       char *adm1 ,
@@ -13071,2079 +11502,6 @@ bool addAlias ( char *alias ,
 	addCity ( ah , adm1Str , pop , maxPops );
 	return true;
 }
-
-bool initPlaceDescTable ( ) {
-
-	// sanity check
-	if ( s_init ) { char *xx=NULL;*xx=0; }
-
-	// bail if not indexing events
-	//if ( ! g_conf.m_indexEventsOnly ) return true;
-	return true;
-
-	// . make this table
-	// . has words that can be lower case in a place name
-	//s_lc.set ( 8 , 0 , 0 , s_lcbuf , 2000 , false , 0 ,"plnametbl");
-	// stock the table (StopWords.cpp function)
-	if ( ! initWordTable ( &s_lc , s_lcWords , 
-			       //sizeof(s_lcWords),
-			       "plnametbl")){
-		char *xx=NULL;*xx=0; }
-
-	// we are init now
-	s_init = true;
-
-	// init indicator table
-	g_indicators.set ( 6                 ,  // keySize
-			   sizeof(IndDesc)   ,  // dataSize
-			   0                 ,  // initial # slots 
-			   NULL              ,  // initial buf
-			   0                 ,  // initial buf size
-			   false             ,  // allowDup keys?
-			   0                 ,  // niceness
-			   "indictbl"        );
-	
-	// load inidcator table
-	//bool loadedIndicators = false;
-	/*
-	if ( g_indicators.load ( g_hostdb.m_dir , "indicators.dat" ) ) {
-		loadedIndicators = true;
-		int64_t h = hash64 ( "highway" , 7 );
-		// test the indicators
-		if ( g_indicators.getSlot ( &h ) < 0 ){char *xx=NULL;*xx=0; }
-		// test the indicators
-		h = hash64Lower_a ( "N" , 1 );
-		if ( g_indicators.getSlot ( &h ) < 0 ){char *xx=NULL;*xx=0; }
-	}
-	*/
-	// fix it
-	//loadedIndicators = true;
-
-	// keep these separate so we do not have to recompute any time we
-	// add or substract to/from this list
-	addIndicator ( "airport"       , IND_NAME , 1.0 );	
-	addIndicator ( "airstrip"       , IND_NAME , 1.0 );	
-	addIndicator ( "area"       , IND_NAME , 1.0 );	
-	addIndicator ( "arena"       , IND_NAME , 1.0 );	
-	addIndicator ( "arroyo"       , IND_NAME , 1.0 );	
-	addIndicator ( "bank"       , IND_NAME , 1.0 );	
-	addIndicator ( "banks"       , IND_NAME , 1.0 );	
-	addIndicator ( "bar"       , IND_NAME , 1.0 );	
-	addIndicator ( "pub"       , IND_NAME , 1.0 );	
-	addIndicator ( "brewpub"       , IND_NAME , 1.0 );	
-	addIndicator ( "atrium"       , IND_NAME , 1.0 );	
-	addIndicator ( "base"       , IND_NAME , 1.0 );	
-	addIndicator ( "basin"       , IND_NAME , 1.0 );	
-	addIndicator ( "bay"       , IND_NAME , 1.0 );	
-	addIndicator ( "beach"       , IND_NAME , 1.0 );	
-	addIndicator ( "bluff"       , IND_NAME , 1.0 );	
-	addIndicator ( "bog"       , IND_NAME , 1.0 );	
-	addIndicator ( "boundary"       , IND_NAME , 1.0 );	
-	addIndicator ( "branch"       , IND_NAME , 1.0 );	
-	addIndicator ( "bridge"       , IND_NAME , 1.0 );	
-	addIndicator ( "brook"       , IND_NAME , 1.0 );	
-	addIndicator ( "building"       , IND_NAME , 1.0 );	
-	addIndicator ( "bunker"       , IND_NAME , 1.0 );	
-	addIndicator ( "burro"       , IND_NAME , 1.0 );	
-	addIndicator ( "butte"       , IND_NAME , 1.0 );	
-	addIndicator ( "cabin"       , IND_NAME , 1.0 );	
-	addIndicator ( "camp"       , IND_NAME , 1.0 );	
-	addIndicator ( "campground"       , IND_NAME , 1.0 );	
-	addIndicator ( "campgrounds"       , IND_NAME , 1.0 );	
-	addIndicator ( "campus"       , IND_NAME , 1.0 );	
-	addIndicator ( "canal"       , IND_NAME , 1.0 );	
-	addIndicator ( "canyon"       , IND_NAME , 1.0 );	
-	addIndicator ( "casa"       , IND_NAME , 1.0 );	
-	addIndicator ( "castle"       , IND_NAME , 1.0 );	
-	addIndicator ( "cathedral"       , IND_NAME , 1.0 );	
-	addIndicator ( "cave"       , IND_NAME , 1.0 );	
-	addIndicator ( "cemetery"       , IND_NAME , 1.0 );	
-	addIndicator ( "center"       , IND_NAME , 1.0 );	
-	addIndicator ( "centre"       , IND_NAME , 1.0 );	
-	// "channel 13 news"?
-	//addIndicator ( "channel"       , IND_NAME , 1.0 );	
-	addIndicator ( "chapel"       , IND_NAME , 1.0 );	
-	addIndicator ( "church"       , IND_NAME , 1.0 );	
-	// "bible study circle"
-	//addIndicator ( "circle"       , IND_NAME , 1.0 );	
-	addIndicator ( "cliffs"       , IND_NAME , 1.0 );	
-	addIndicator ( "clinic"       , IND_NAME , 1.0 );	
-	addIndicator ( "college"       , IND_NAME , 1.0 );	
-	addIndicator ( "company"       , IND_NAME , 1.0 );	
-	addIndicator ( "complex"       , IND_NAME , 1.0 );	
-	addIndicator ( "corner"       , IND_NAME , 1.0 );	
-	addIndicator ( "cottage"       , IND_NAME , 1.0 );	
-	addIndicator ( "course"       , IND_NAME , 1.0 );	 // golf
-	addIndicator ( "courthouse"       , IND_NAME , 1.0 );	
-	addIndicator ( "courtyard"       , IND_NAME , 1.0 );	
-	addIndicator ( "cove"       , IND_NAME , 1.0 );	
-	addIndicator ( "creek"       , IND_NAME , 1.0 );	
-	addIndicator ( "dam"       , IND_NAME , 1.0 );	
-	addIndicator ( "den"       , IND_NAME , 1.0 );	
-	addIndicator ( "department"       , IND_NAME , 1.0 );	
-	addIndicator ( "depot"       , IND_NAME , 1.0 );	
-	addIndicator ( "dome"       , IND_NAME , 1.0 );	
-	addIndicator ( "downs"       , IND_NAME , 1.0 );	
-	addIndicator ( "fair"       , IND_NAME , 1.0 );	
-	addIndicator ( "fairgrounds"       , IND_NAME , 1.0 );	
-	addIndicator ( "fairground"       , IND_NAME , 1.0 );	
-	addIndicator ( "falls"       , IND_NAME , 1.0 );	
-	addIndicator ( "farm"       , IND_NAME , 1.0 );	
-	addIndicator ( "farms"       , IND_NAME , 1.0 );	
-	addIndicator ( "field"       , IND_NAME , 1.0 );	
-	addIndicator ( "fields"       , IND_NAME , 1.0 );	
-	addIndicator ( "flat"       , IND_NAME , 1.0 );	
-	addIndicator ( "flats"       , IND_NAME , 1.0 );	
-	addIndicator ( "forest"       , IND_NAME , 1.0 );	
-	addIndicator ( "fort"       , IND_NAME , 1.0 );	
-	addIndicator ( "fountain"       , IND_NAME , 1.0 );	
-	addIndicator ( "garden"       , IND_NAME , 1.0 );	
-	addIndicator ( "gardens"       , IND_NAME , 1.0 );	
-	addIndicator ( "gate"       , IND_NAME , 1.0 );	
-	addIndicator ( "glacier"       , IND_NAME , 1.0 );	
-	addIndicator ( "graveyard"       , IND_NAME , 1.0 );	
-	addIndicator ( "gulch"       , IND_NAME , 1.0 );	
-	addIndicator ( "gully"       , IND_NAME , 1.0 );	
-	addIndicator ( "hacienda"       , IND_NAME , 1.0 );	
-	addIndicator ( "hall"       , IND_NAME , 1.0 );	
-	addIndicator ( "halls"       , IND_NAME , 1.0 );	
-	addIndicator ( "harbor"       , IND_NAME , 1.0 );	
-	addIndicator ( "harbour"       , IND_NAME , 1.0 );	
-	addIndicator ( "hatchery"       , IND_NAME , 1.0 );	
-	addIndicator ( "headquarters"       , IND_NAME , 1.0 );	
-	addIndicator ( "heights"       , IND_NAME , 1.0 );	
-	addIndicator ( "heliport"       , IND_NAME , 1.0 );	
-	addIndicator ( "hill"       , IND_NAME , 1.0 );	
-	addIndicator ( "hillside"       , IND_NAME , 1.0 );	
-	addIndicator ( "hilton"       , IND_NAME , 1.0 );	
-	addIndicator ( "historical"       , IND_NAME , 1.0 );	
-	addIndicator ( "historic"       , IND_NAME , 1.0 );	
-	addIndicator ( "holy"       , IND_NAME , 1.0 );	
-	addIndicator ( "home"       , IND_NAME , 1.0 );	
-	addIndicator ( "homestead"       , IND_NAME , 1.0 );	
-	addIndicator ( "horn"       , IND_NAME , 1.0 );	
-	addIndicator ( "hospital"       , IND_NAME , 1.0 );	
-	addIndicator ( "hotel"       , IND_NAME , 1.0 );	
-	addIndicator ( "house"       , IND_NAME , 1.0 );	
-	addIndicator ( "howard"       , IND_NAME , 1.0 );	 // johnson's
-	addIndicator ( "inlet"       , IND_NAME , 1.0 );	
-	addIndicator ( "inn"       , IND_NAME , 1.0 );	
-	addIndicator ( "institute"       , IND_NAME , 1.0 );	
-	addIndicator ( "international"       , IND_NAME , 1.0 );	
-	addIndicator ( "isla"       , IND_NAME , 1.0 );	
-	addIndicator ( "island"       , IND_NAME , 1.0 );	
-	addIndicator ( "isle"       , IND_NAME , 1.0 );	
-	addIndicator ( "islet"       , IND_NAME , 1.0 );	
-	addIndicator ( "junction"       , IND_NAME , 1.0 );	
-	addIndicator ( "knoll"       , IND_NAME , 1.0 );	
-	addIndicator ( "lagoon"       , IND_NAME , 1.0 );	
-	addIndicator ( "laguna"       , IND_NAME , 1.0 );	
-	addIndicator ( "lake"       , IND_NAME , 1.0 );	
-	addIndicator ( "landing"       , IND_NAME , 1.0 );	
-	addIndicator ( "ledge"       , IND_NAME , 1.0 );	
-	addIndicator ( "lighthouse"       , IND_NAME , 1.0 );	
-	addIndicator ( "lodge"       , IND_NAME , 1.0 );	
-	addIndicator ( "lookout"       , IND_NAME , 1.0 );	
-	addIndicator ( "mall"       , IND_NAME , 1.0 );	 // added
-	addIndicator ( "manor"       , IND_NAME , 1.0 );	
-	addIndicator ( "marina"       , IND_NAME , 1.0 );	
-	addIndicator ( "meadow"       , IND_NAME , 1.0 );	
-	addIndicator ( "mine"       , IND_NAME , 1.0 );	
-	addIndicator ( "mines"       , IND_NAME , 1.0 );	
-	addIndicator ( "monument"       , IND_NAME , 1.0 );	
-	addIndicator ( "motel"       , IND_NAME , 1.0 );	
-	addIndicator ( "museum"       , IND_NAME , 1.0 );	
-	addIndicator ( "office"       , IND_NAME , 1.0 );	
-	addIndicator ( "outlet"       , IND_NAME , 1.0 );	
-	addIndicator ( "palace"       , IND_NAME , 1.0 );	
-	addIndicator ( "park"       , IND_NAME , 1.0 );	
-	addIndicator ( "peaks"       , IND_NAME , 1.0 );	
-	addIndicator ( "peninsula"       , IND_NAME , 1.0 );	
-	addIndicator ( "pit"       , IND_NAME , 1.0 );	
-
-	addIndicator ( "place"       , IND_STREET , 1.0 ); // leroy place
-	addIndicator ( "pl"          , IND_STREET , 1.0 );	 // place
-
-	addIndicator ( "plains"       , IND_NAME , 1.0 );	
-	addIndicator ( "plant"       , IND_NAME , 1.0 );	
-	addIndicator ( "plantation"       , IND_NAME , 1.0 );	
-	addIndicator ( "plateau"       , IND_NAME , 1.0 );	
-	addIndicator ( "playa"       , IND_NAME , 1.0 );	
-	addIndicator ( "plaza"       , IND_NAME , 1.0 );	
-	addIndicator ( "point"       , IND_NAME , 1.0 );	
-	addIndicator ( "pointe"       , IND_NAME , 1.0 );	
-	addIndicator ( "pond"       , IND_NAME , 1.0 );	
-	addIndicator ( "port"       , IND_NAME , 1.0 );	
-	addIndicator ( "ramada"       , IND_NAME , 1.0 );	
-	addIndicator ( "ranch"       , IND_NAME , 1.0 );	
-	addIndicator ( "rancho"       , IND_NAME , 1.0 );	
-	addIndicator ( "range"       , IND_NAME , 1.0 );	
-	addIndicator ( "reef"       , IND_NAME , 1.0 );	
-	addIndicator ( "refure"       , IND_NAME , 1.0 );	
-	addIndicator ( "reserve"       , IND_NAME , 1.0 );	
-	addIndicator ( "reservoir"       , IND_NAME , 1.0 );	
-	addIndicator ( "residence"       , IND_NAME , 1.0 );	
-	addIndicator ( "resort"       , IND_NAME , 1.0 );	
-	//addIndicator ( "rio"       , IND_NAME , 1.0 );	
-	//addIndicator ( "river"       , IND_NAME , 1.0 );	
-	//addIndicator ( "riverside"       , IND_NAME , 1.0 );	
-	//addIndicator ( "riverview"       , IND_NAME , 1.0 );	
-	// was getting "rock bands"
-	//addIndicator ( "rock"       , IND_NAME , 1.0 );	
-	addIndicator ( "sands"       , IND_NAME , 1.0 );	 // added
-	addIndicator ( "sawmill"       , IND_NAME , 1.0 );	
-	addIndicator ( "school"       , IND_NAME , 1.0 );	
-	// try to fix hadcolon algo for
-	// The+Webb+Schools:+Calendars+...
-	addIndicator ( "schools"       , IND_NAME , 1.0 );	
-	addIndicator ( "schoolhouse"       , IND_NAME , 1.0 );	
-	addIndicator ( "shore"       , IND_NAME , 1.0 );	
-	addIndicator ( "spa"       , IND_NAME , 1.0 );	
-	addIndicator ( "spring"       , IND_NAME , 1.0 );	
-	addIndicator ( "springs"       , IND_NAME , 1.0 );	
-	addIndicator ( "stadium"       , IND_NAME , 1.0 );	
-	addIndicator ( "station"       , IND_NAME , 1.0 );	
-	addIndicator ( "strip"       , IND_NAME , 1.0 );	
-	addIndicator ( "suites"       , IND_NAME , 1.0 );	
-	addIndicator ( "temple"       , IND_NAME , 1.0 );	
-	addIndicator ( "terrace"       , IND_NAME , 1.0 );	
-	addIndicator ( "tower"       , IND_NAME , 1.0 );	
-	//addIndicator ( "trail"       , IND_NAME , 1.0 );	
-	addIndicator ( "travelodge"       , IND_NAME , 1.0 );	
-	addIndicator ( "triangle"       , IND_NAME , 1.0 );	
-	addIndicator ( "tunnel"       , IND_NAME , 1.0 );	
-	addIndicator ( "university"       , IND_NAME , 1.0 );	
-	//addIndicator ( "valley"       , IND_NAME , 1.0 );	
-	addIndicator ( "wall"       , IND_NAME , 1.0 );	
-	addIndicator ( "ward"       , IND_NAME , 1.0 );	
-	addIndicator ( "waterhole"       , IND_NAME , 1.0 );	
-	addIndicator ( "waters"       , IND_NAME , 1.0 );	
-	addIndicator ( "well"       , IND_NAME , 1.0 );	
-	addIndicator ( "wells"       , IND_NAME , 1.0 );	
-	addIndicator ( "wilderness"       , IND_NAME , 1.0 );	
-	addIndicator ( "windmill"       , IND_NAME , 1.0 );	
-	addIndicator ( "woodland"       , IND_NAME , 1.0 );	
-	addIndicator ( "woods"       , IND_NAME , 1.0 );	
-
-	
-	// good stuff i added
-	// some from http://www.geonames.org/export/codes.html
-	addIndicator ( "gallery"       , IND_NAME , 1.0 );	
-	addIndicator ( "theater"       , IND_NAME , 1.0 );	
-	addIndicator ( "theatre"       , IND_NAME , 1.0 );	
-	addIndicator ( "playhouse"       , IND_NAME , 1.0 );	
-	addIndicator ( "saloon"       , IND_NAME , 1.0 );	
-	addIndicator ( "nightclub"       , IND_NAME , 1.0 );	
-	addIndicator ( "lounge"       , IND_NAME , 1.0 );	
-	addIndicator ( "ultralounge"       , IND_NAME , 1.0 );	
-	addIndicator ( "brewery"       , IND_NAME , 1.0 );	
-	addIndicator ( "chophouse"       , IND_NAME , 1.0 );	
-	addIndicator ( "tavern"       , IND_NAME , 1.0 );	
-	addIndicator ( "company"       , IND_NAME , 1.0 );	
-	addIndicator ( "rotisserie"       , IND_NAME , 1.0 );	
-	addIndicator ( "bistro"       , IND_NAME , 1.0 );	
-	addIndicator ( "parlor"       , IND_NAME , 1.0 );	
-	addIndicator ( "studio"       , IND_NAME , 1.0 );	
-	addIndicator ( "studios"       , IND_NAME , 1.0 );	
-	// albuquerque publishing co., int16_t for "company"
-	addIndicator ( "co"       , IND_NAME , 0.9 );
-	addIndicator ( "bureau"   , IND_NAME , 1.0 );	
-	addIndicator ( "estates"   , IND_NAME , 1.0 );	
-	addIndicator ( "dockyard"       , IND_NAME , 1.0 );	
-	addIndicator ( "gym"       , IND_NAME , 1.0 );	
-	addIndicator ( "synagogue"       , IND_NAME , 1.0 );	
-	addIndicator ( "shrine"       , IND_NAME , 1.0 );	
-	addIndicator ( "mosque"       , IND_NAME , 1.0 );	
-	addIndicator ( "store"       , IND_NAME , 1.0 );	
-	addIndicator ( "mercantile"       , IND_NAME , 1.0 );	
-	addIndicator ( "mart"       , IND_NAME , 1.0 );	
-	addIndicator ( "amphitheatre"       , IND_NAME , 1.0 );	
-	addIndicator ( "kitchen"       , IND_NAME , 1.0 );	
-	addIndicator ( "casino"       , IND_NAME , 1.0 );	
-	addIndicator ( "diner"       , IND_NAME , 1.0 );	
-	addIndicator ( "eatery"       , IND_NAME , 1.0 );	
-	addIndicator ( "shop"       , IND_NAME , 1.0 );	
-	addIndicator ( "inc"       , IND_NAME , 1.0 );	 // incorporated
-	addIndicator ( "incorporated" , IND_NAME , 1.0 );
-	addIndicator ( "corporation" , IND_NAME , 1.0 );
-	addIndicator ( "limited"       , IND_NAME , 1.0 );	
-	addIndicator ( "llc"       , IND_NAME , 1.0 );	
-	addIndicator ( "foundation"       , IND_NAME , 1.0 );	
-	addIndicator ( "warehouse"       , IND_NAME , 1.0 );	
-	addIndicator ( "roadhouse"       , IND_NAME , 1.0 );	
-	addIndicator ( "foods"       , IND_NAME , 1.0 );	
-	addIndicator ( "cantina"       , IND_NAME , 1.0 );	
-	addIndicator ( "steakhouse"       , IND_NAME , 1.0 );	
-	addIndicator ( "smokehouse"       , IND_NAME , 1.0 );	
-	addIndicator ( "deli"       , IND_NAME , 1.0 );	
-	addIndicator ( "enterprises"       , IND_NAME , 1.0 );	
-	addIndicator ( "repair"       , IND_NAME , 1.0 );	
-	addIndicator ( "service"       , IND_NAME , 1.0 );	
-	addIndicator ( "services"       , IND_NAME , 1.0 );	
-	addIndicator ( "systems"       , IND_NAME , 1.0 );	
-	addIndicator ( "salon"       , IND_NAME , 1.0 );	
-	addIndicator ( "boutique"       , IND_NAME , 1.0 );	
-	addIndicator ( "preschool"       , IND_NAME , 1.0 );	
-	addIndicator ( "galleries"       , IND_NAME , 1.0 );	
-	addIndicator ( "bakery"       , IND_NAME , 1.0 );	
-	addIndicator ( "factory"       , IND_NAME , 1.0 );	
-	addIndicator ( "llp"       , IND_NAME , 1.0 );	
-	addIndicator ( "attorney"       , IND_NAME , 1.0 );	
-	addIndicator ( "association"       , IND_NAME , 1.0 );	
-	addIndicator ( "solutions"       , IND_NAME , 1.0 );	
-	addIndicator ( "facility"       , IND_NAME , 1.0 );	
-	addIndicator ( "cannery"       , IND_NAME , 1.0 );	
-	addIndicator ( "mill"       , IND_NAME , 1.0 );	
-	addIndicator ( "quarry"       , IND_NAME , 1.0 );	
-	addIndicator ( "monastery"       , IND_NAME , 1.0 );	
-	addIndicator ( "observatory"       , IND_NAME , 1.0 );	
-	addIndicator ( "nursery"       , IND_NAME , 1.0 );	
-	addIndicator ( "pagoda"       , IND_NAME , 1.0 );	
-	addIndicator ( "pier"       , IND_NAME , 1.0 );	
-	addIndicator ( "prison"       , IND_NAME , 1.0 );	
-	addIndicator ( "post"       , IND_NAME , 1.0 );	
-	addIndicator ( "ruin"       , IND_NAME , 1.0 );	
-	addIndicator ( "ruins"       , IND_NAME , 1.0 );	
-	addIndicator ( "storehouse"       , IND_NAME , 1.0 );	
-	addIndicator ( "square"       , IND_NAME , 1.0 );	
-	addIndicator ( "tomb"       , IND_NAME , 1.0 );	
-	addIndicator ( "wharf"       , IND_NAME , 1.0 );	
-	addIndicator ( "zoo"       , IND_NAME , 1.0 );	
-	addIndicator ( "mesa"       , IND_NAME , 1.0 );	
-	addIndicator ( "pass"       , IND_NAME , 1.0 );	
-	addIndicator ( "passage"       , IND_NAME , 1.0 );	
-	addIndicator ( "peak"       , IND_NAME , 1.0 );	
-	addIndicator ( "vineyard"       , IND_NAME , 1.0 );	
-	addIndicator ( "grove"       , IND_NAME , 1.0 );	
-	//addIndicator ( ""       , IND_NAME , 1.0 );	
-
-
-
-	// maple street dance space
-	addIndicator ( "space"       , IND_NAME , 1.0 );	
-	addIndicator ( "library"       , IND_NAME , 1.0 );	
-	addIndicator ( "school"       , IND_NAME , 1.0 );	
-	addIndicator ( "church"       , IND_NAME , 1.0 );	
-	addIndicator ( "park"       , IND_NAME , 1.0 );	
-	addIndicator ( "house"       , IND_NAME , 1.0 );	
-	// markets are sometimes more of events than place names
-	addIndicator ( "market"       , IND_NAME , 0.5 );	
-	addIndicator ( "marketplace"       , IND_NAME , 0.75 );	
-	addIndicator ( "university"       , IND_NAME , 1.0 );	
-	addIndicator ( "center"       , IND_NAME , 1.0 );	
-	addIndicator ( "restaurant"       , IND_NAME , 1.0 );	
-	//addIndicator ( "bar"       , IND_NAME , 1.0 );	
-	addIndicator ( "grill"       , IND_NAME , 1.0 );	
-	addIndicator ( "grille"       , IND_NAME , 1.0 );	
-	addIndicator ( "cafe"       , IND_NAME , 1.0 );	
-	addIndicator ( "cabana"       , IND_NAME , 1.0 );	
-	addIndicator ( "shack"       , IND_NAME , 1.0 );	
-	addIndicator ( "shoppe"       , IND_NAME , 1.0 );	
-	addIndicator ( "collesium"       , IND_NAME , 1.0 );	
-	addIndicator ( "colliseum"       , IND_NAME , 1.0 );	
-	addIndicator ( "pavilion"       , IND_NAME , 1.0 );	
-	// cafe with accent mark
-	char tmp[64];
-	sprintf(tmp,"caf"); tmp[3]=0xc3; tmp[4]=0xa9; tmp[5]=0;
-	addIndicator ( tmp      , IND_NAME , 1.0 );	
-
-	// Less effective place name indicators
-	addIndicator ( "club"       , IND_NAME , 0.5 );	
-
-
-
-	// . now add some more indicators to g_cities hash table
-	// . TODO: get these in other languages. use wikipedia page!
-	addIndicator ( "suite"       , IND_SUITE , 1.0 );
-	addIndicator ( "ste"         , IND_SUITE , 1.0 );
-	addIndicator ( "room"        , IND_SUITE , 1.0 );
-	addIndicator ( "pier"        , IND_SUITE , 1.0 );
-	addIndicator ( "department"  , IND_SUITE , 0.5 );
-	addIndicator ( "rm"          , IND_SUITE , 1.0 );
-	addIndicator ( "floor"       , IND_SUITE , 1.0 );
-	addIndicator ( "bldg"        , IND_SUITE , 1.0 );
-	addIndicator ( "bld"        , IND_SUITE , 1.0 );
-	addIndicator ( "building"    , IND_SUITE , 1.0 );
-	addIndicator ( "apartment"   , IND_SUITE , 1.0 );
-	addIndicator ( "apt"         , IND_SUITE , 1.0 );
-	addIndicator ( "po"          , IND_SUITE , 1.0 ); 
-	addIndicator ( "pobox"       , IND_SUITE , 1.0 ); 
-	//addIndicator("p.o. box"    , IND_SUITE , 1.0 ); 
-	addIndicator ( "box"         , IND_SUITE , 1.0 ); 
-	addIndicator ( "postbus"     , IND_SUITE , 1.0 ); // european
-	addIndicator ( "post"        , IND_SUITE , 1.0 ); // european
-	addIndicator ( "bus"         , IND_SUITE , 1.0 ); // european
-	addIndicator ( "private"     , IND_SUITE , 1.0 ); // australia
-	addIndicator ( "box"         , IND_SUITE , 1.0 ); // australia
-
-	// TODO: get these in other languages. use wikipedia page!
-	addIndicator (  "north" , IND_DIR , 1.0 );
-	addIndicator (  "east"  , IND_DIR , 1.0 );
-	addIndicator (  "south" , IND_DIR , 1.0 );
-	addIndicator (  "west"  , IND_DIR , 1.0 );
-
-	addIndicator (  "northeast" , IND_DIR , 1.0 );
-	addIndicator (  "northwest" , IND_DIR , 1.0 );
-	addIndicator (  "southeast" , IND_DIR , 1.0 );
-	addIndicator (  "southwest" , IND_DIR , 1.0 );
-
-	addIndicator (  "north" , IND_DIR , 1.0 );
-	addIndicator (  "east"  , IND_DIR , 1.0 );
-	addIndicator (  "south" , IND_DIR , 1.0 );
-	addIndicator (  "west"  , IND_DIR , 1.0 );
-
-	addIndicator (  "n"     , IND_DIR , 1.0 );
-	addIndicator (  "s"     , IND_DIR , 1.0 );
-	addIndicator (  "e"     , IND_DIR , 1.0 );
-	addIndicator (  "w"     , IND_DIR , 1.0 );
-	addIndicator (  "ne"    , IND_DIR , 1.0 );
-	addIndicator (  "nw"    , IND_DIR , 1.0 );
-	addIndicator (  "se"    , IND_DIR , 1.0 );
-	addIndicator (  "sw"    , IND_DIR , 1.0 );
-
-	// TODO: get in other languages
-	addIndicator (  "highway"   , IND_STREET , 1.0 );
-	addIndicator (  "hghway"    , IND_STREET , 1.0 );
-	addIndicator (  "hiway"     , IND_STREET , 1.0 );
-	addIndicator (  "hway"      , IND_STREET , 1.0 );
-	addIndicator (  "hwy"       , IND_STREET , 1.0 );
-
-	// county road
-	//addIndicator (  "cr"       , IND_STREET , 1.0 );
-	// state route
-	//addIndicator (  "route"       , IND_STREET , 1.0 );
-
-	addIndicator (  "avenue"    , IND_STREET , 1.0 );
-	addIndicator (  "ave"       , IND_STREET , 1.0 );
-	addIndicator (  "drive"     , IND_STREET , 1.0 );
-	addIndicator (  "dr"        , IND_STREET , 1.0 );
-	addIndicator (  "ln"        , IND_STREET , 1.0 );
-	addIndicator (  "lane"      , IND_STREET , 1.0 );
-	addIndicator (  "blvd"      , IND_STREET , 1.0 );
-	addIndicator (  "boulevard" , IND_STREET , 1.0 );
-	addIndicator (  "street"    , IND_STREET , 1.0 );
-	addIndicator (  "st"        , IND_STREET , 1.0 );
-	addIndicator (  "circle"    , IND_STREET , 1.0 );
-	addIndicator (  "place"     , IND_STREET , 1.0 );
-	addIndicator (  "parkway"   , IND_STREET , 1.0 );
-	addIndicator (  "pkway"     , IND_STREET , 1.0 );
-	addIndicator (  "pkwy"      , IND_STREET , 1.0 );
-	addIndicator (  "straße", IND_STREET , 1.0 ); //!test this!
-	addIndicator (  "strasse"   , IND_STREET , 1.0 );
-	addIndicator (  "sr"   , IND_STREET , 1.0 ); // state route
-
-	addIndicator (  "trail"      , IND_STREET , 1.0 );
-	// 80 mosby's run
-	addIndicator (  "run"      , IND_STREET , 1.0 );
-	addIndicator (  "entrada"  , IND_STREET , 1.0 );
-
-	// these were taken from http://en.wikipedia.org/wiki/Street_name
-	addIndicator ( "Autobahn" , IND_STREET , 1.0 );
-	addIndicator ( "Auto-estrada" , IND_STREET , 1.0 );
-	addIndicator ( "Autoroute" , IND_STREET , 1.0 );
-	addIndicator ( "Autostrada" , IND_STREET , 1.0 );
-	addIndicator ( "Autostrasse" , IND_STREET , 1.0 );
-	addIndicator ( "Byway" , IND_STREET , 1.0 );
-	addIndicator ( "Expressway" , IND_STREET , 1.0 );
-	addIndicator ( "Freeway" , IND_STREET , 1.0 );
-	addIndicator ( "Motorway" , IND_STREET , 1.0 );
-	addIndicator ( "Pike" , IND_STREET , 1.0 );
-	addIndicator ( "Avenue" , IND_STREET , 1.0 );
-	addIndicator ( "Boulevard" , IND_STREET , 1.0 );
-	addIndicator ( "Road" , IND_STREET , 1.0 );
-	addIndicator ( "rd" , IND_STREET , 1.0 );
-	addIndicator ( "Street" , IND_STREET , 1.0 );
-	
-	addIndicator ( "Alley" , IND_STREET , 1.0 );
-	addIndicator ( "Bay" , IND_STREET , 1.0 );
-	addIndicator ( "Drive" , IND_STREET , 1.0 );
-	addIndicator ( "Fairway" , IND_STREET , 1.0 );
-	addIndicator ( "Gardens" , IND_STREET , 1.0 );
-	addIndicator ( "Gate" , IND_STREET , 1.0 );
-	addIndicator ( "Grove" , IND_STREET , 1.0 );
-	addIndicator ( "Heights" , IND_STREET , 1.0 );
-	addIndicator ( "Highlands" , IND_STREET , 1.0 );
-	addIndicator ( "Knoll" , IND_STREET , 1.0 );
-	addIndicator ( "Lane" , IND_STREET , 1.0 );
-	addIndicator ( "Manor" , IND_STREET , 1.0 );
-	addIndicator ( "Mews" , IND_STREET , 1.0 );
-	addIndicator ( "Passage" , IND_STREET , 1.0 );
-	addIndicator ( "Pathway" , IND_STREET , 1.0 );
-	addIndicator ( "Place" , IND_STREET , 1.0 );
-	addIndicator ( "Row" , IND_STREET , 1.0 );
-	addIndicator ( "Terrace" , IND_STREET , 1.0 );
-	addIndicator ( "Trail" , IND_STREET , 1.0 );
-	addIndicator ( "View" , IND_STREET , 1.0 );
-	addIndicator ( "Way" , IND_STREET , 1.0 );
-	
-	addIndicator ( "Close" , IND_STREET , 1.0 );
-	addIndicator ( "Court" , IND_STREET , 1.0 );
-	addIndicator ( "Cove" , IND_STREET , 1.0 );
-	addIndicator ( "Croft" , IND_STREET , 1.0 );
-	addIndicator ( "Garth" , IND_STREET , 1.0 );
-	addIndicator ( "Green" , IND_STREET , 1.0 );
-	addIndicator ( "Lawn" , IND_STREET , 1.0 );
-	addIndicator ( "Nook" , IND_STREET , 1.0 );
-	addIndicator ( "Place" , IND_STREET , 1.0 );
-	
-	addIndicator ( "Circle" , IND_STREET , 1.0 );
-	addIndicator ( "Crescent" , IND_STREET , 1.0 );
-	addIndicator ( "Loop" , IND_STREET , 1.0 );
-	addIndicator ( "Lp" , IND_STREET , 1.0 ); // abbreviation for loop
-	addIndicator ( "Oval" , IND_STREET , 1.0 );
-	addIndicator ( "Quadrant" , IND_STREET , 1.0 );
-	addIndicator ( "Square" , IND_STREET , 1.0 );
-	
-	addIndicator ( "Canyon" , IND_STREET , 1.0 );
-	addIndicator ( "Causeway" , IND_STREET , 1.0 );
-	addIndicator ( "Grade" , IND_STREET , 1.0 );
-	addIndicator ( "Hill" , IND_STREET , 1.0 );
-	addIndicator ( "Mount" , IND_STREET , 1.0 );
-	addIndicator ( "Parkway" , IND_STREET , 1.0 );
-	addIndicator ( "Rise" , IND_STREET , 1.0 );
-	addIndicator ( "Vale" , IND_STREET , 1.0 );
-	
-	addIndicator ( "Approach" , IND_STREET , 1.0 );
-	addIndicator ( "Bypass" , IND_STREET , 1.0 );
-	addIndicator ( "Esplanade" , IND_STREET , 1.0 );
-	addIndicator ( "Frontage road" , IND_STREET , 1.0 );
-	addIndicator ( "Parade" , IND_STREET , 1.0 );
-	addIndicator ( "Park" , IND_STREET , 1.0 );
-	addIndicator ( "Plaza" , IND_STREET , 1.0 );
-	addIndicator ( "Promenade" , IND_STREET , 1.0 );
-	addIndicator ( "Quay" , IND_STREET , 1.0 );
-	addIndicator ( "Stravenue" , IND_STREET , 1.0 );
-	// was matching intersection "8k run and walk"
-	//addIndicator ( "Walk" , IND_STREET , 1.0 );
-	// italy?
-	addIndicator ( "via" , IND_STREET , 1.0 );
-	
-
-	// try to load places.dat. the new junk first
-	if ( ! loadPlaces ( ) ) return false;
-
-	// we do zips separate now! use wordId as the key
-	if ( ! g_zips.set ( 8,sizeof(ZipDesc),0,NULL,0,true,0,"tbl-zipcodes")){
-		char *xx=NULL;*xx=0; }
-
-	// zip codes reference city strings stored in this buffer
-	char *cityBuf     = NULL;
-	int32_t  cityBufSize = 0;
-	// load zip code table
-	bool loadedZips = false;
-	if ( g_zips.load ( g_hostdb.m_dir,"zips.dat",&cityBuf,&cityBufSize)) {
-		// sanity check
-		//if ( g_zips.m_numSlotsUsed != 89471 ) { char*xx=NULL;*xx=0;}
-		if ( g_zips.m_numSlotsUsed != 43595 ) { char*xx=NULL;*xx=0;}
-		loadedZips = true;
-		int64_t h = hash64 ( "87109" , 5 );
-		// test the zips table
-		if ( g_zips.getSlot ( &h ) < 0 ){char *xx=NULL;*xx=0; }
-		// . assign it
-		// . ZipDesc::m_cityOffset reference this buffer
-		g_cityBuf     = cityBuf;
-		g_cityBufSize = cityBufSize;
-	}
-
-	// . quickly set the states
-	// . map each name of a state to its index into s_states[] array
-	g_states.set ( 8 , 4 , 256 , NULL , 0 , false , 0 ,"adm1tbl");
-	int32_t size = sizeof(s_states);
-	// item count
-	int32_t n = (int32_t)size/ sizeof(StateDesc); 
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// get it
-		StateDesc *sd = &s_states[i];
-		// get hash of abbr
-		int64_t h = hash64n ( sd->m_adm1 );
-		// make the value
-		//int32_t val = 0;
-		// shift up
-		//val <<= 8;
-		// or in the position
-		//val |= i;
-		// no dups
-		if ( g_states.isInTable ( &h ) ) { char *xx=NULL;*xx=0; }
-		// store it
-		if ( ! g_states.addKey ( &h , &sd ) ) { char*xx=NULL;*xx=0; }
-		// stop if done
-		if ( ! sd->m_name1 ) continue;
-		// then the second name
-		h = getWordXorHash ( sd->m_name1 );
-		// must be there
-		if ( ! h ) { char *xx=NULL;*xx=0; }
-		// flag it
-		//val = 1;
-		// shift up
-		//val <<= 8;
-		// or in the position
-		//val |= i;
-		// no dups
-		if ( g_states.isInTable ( &h ) ) { char *xx=NULL;*xx=0; }
-		// store it
-		if ( ! g_states.addKey ( &h , &sd ) ) { char*xx=NULL;*xx=0; }
-		// and the second name
-		if ( ! sd->m_name2 ) continue;
-		// then the second name
-		h = getWordXorHash ( sd->m_name2 );
-		// must be there
-		if ( ! h ) { char *xx=NULL;*xx=0; }
-		// flag it as second name
-		//val = 2;
-		// shift up
-		//val <<= 8;
-		// or in the position
-		//val |= i;
-		// no dups
-		if ( g_states.isInTable ( &h ) ) { char *xx=NULL;*xx=0; }
-		// store it
-		if ( ! g_states.addKey ( &h , &sd ) ) { char*xx=NULL;*xx=0; }
-	}
-
-	// . timezone table
-	// . hash of city and adm1 is the key
-	// . maps to a one byte timezone offset, usually negative
-	g_timeZones.set ( 4         ,
-			  sizeof(CityStateDesc),// 1 byte date timezone offset
-			  0         ,
-			  NULL      ,
-			  0         ,
-			  false     , // dups?
-			  0         , // niceness
-			  "tbl-tzs" );
-
-
-	if ( loadedZips && !g_timeZones.load(g_hostdb.m_dir,"timezones.dat")){
-		log("places: failed to load timezones.dat");
-		loadedZips = false;
-	}
-
-	int32_t vv = 185747;
-	if ( g_timeZones.m_numSlotsUsed && g_timeZones.m_numSlotsUsed!=vv){
-		log("places: bad timezones.dat file %"INT32" != %"INT32"",
-		    g_timeZones.m_numSlotsUsed,vv);
-		return false;
-	}
-	// sanity
-	if ( g_timeZones.m_numSlotsUsed ) {
-		char udst;
-		char tzoff;
-		tzoff = getTimeZone2 ( "houston", "tx", &udst );
-		if ( tzoff == UNKNOWN_TIMEZONE ) { char *xx=NULL;*xx=0; }
-		if ( tzoff != -5 ) { char *xx=NULL;*xx=0; }
-		tzoff = getTimeZone2 ( "woods hole", "ma", &udst );
-		if ( tzoff == UNKNOWN_TIMEZONE ) { char *xx=NULL;*xx=0; }
-		tzoff = getTimeZone2 ( "albuquerque", "nm", &udst );
-		if ( tzoff == UNKNOWN_TIMEZONE ) { char *xx=NULL;*xx=0; }
-	}
-
-
-	// map a cityHash/state of an aliased city name to a normalized cityId
-	if ( ! g_aliases.set(4,4,128,NULL,0,false,0,"aliastab") )
-		return false;
-
-	// load the aliases
-	if ( loadedZips && g_aliases.load ( g_hostdb.m_dir , "aliases.dat")){
-		// match this
-		int32_t na = 11663;//11462;
-		// sanity check
-		if ( g_aliases.m_numSlotsUsed != na){char*xx=NULL;*xx=0;}
-	}
-
-	// . init the hash table
-	// . use an 8-byte hash for the key
-	// . xor the wids together for quick lookups
-	// . all subphrases that include the first word of the place name will
-	//   be hashed, that way we know if we should hash further
-	// . also, we should allow dups!
-	// . use a 6 byte key (truncated wordId) to use up less space!
-	g_cities.set ( 8                 ,  // keySize
-		       sizeof(CityDesc)  ,  // adm1 bit vector + mostpopcity
-		       0                 ,  // initial # slots 
-		       NULL              ,  // initial buf
-		       0                 ,  // initial buf size
-		       true              ,  // allowDup keys?
-		       0                 ,  // niceness
-		       "tbl-places"      );
-
-	// try to load the binary hash table first
-	if ( loadedZips && g_cities.load ( g_hostdb.m_dir , "cities.dat" ) ) {
-		// sanity check
-		int32_t nc = 123347; // 123141;
-		if ( g_cities.m_numSlotsUsed != nc){char*xx=NULL;*xx=0;}
-		// another test
-		char *str;
-		//char *str = "nm";
-		//str = "madrid";
-		//int64_t h = hash64 (str,gbstrlen(str));
-		int64_t h = 0;
-		//h =  hash64 ("santa",5);
-		//h ^= hash64 ("n",1);
-		h =  hash64n ("jemez");
-
-		h <<= 1;
-		//h ^= hash64 ("fe",2);
-		//h ^= hash64 ("m",1);
-		h ^= hash64n("springs");
-
-		//str = "santa fe";
-		//str = "n.m.";
-		str = "jemez springs";
-
-		//h = hash64 ( "abq",3);
-		//str = "abq";
-
-		//h = hash64 ( "alb",3);
-		//str = "alb";
-
-		//str = "albuquerque";
-		//h = hash64 ( str,gbstrlen(str) );
-
-		str = "new york";
-		h = getWordXorHash ( str );
-
-
-		// make sure we got madrid nm
-		//int32_t slot = g_cities.getSlot ( &h );
-
-		//if ( slot < 0 ) { char *xx=NULL;*xx=0; }
-
-		CityDesc *cd = (CityDesc *)g_cities.getValue(&h);
-		if ( ! cd ) { char *xx=NULL;*xx=0; }
-	
-		uint64_t abits = getAdm1Bits ( "ny" );
-		if ( ! ( cd->m_adm1Bits & abits ) ) { char *xx=NULL;*xx=0;}
-
-		// check city ids
-		int64_t abqh1 = getWordXorHash("abq");
-		int64_t abqh2 = getWordXorHash("albuquerque");
-		uint32_t cid1 = getCityId32(abqh1,"nm");
-		uint32_t cid2 = getCityId32(abqh2,"nm");
-		if ( cid1 != cid2 ) { char *xx=NULL;*xx=0; }
-
-		// get nm
-		int64_t hnm = getWordXorHash("new mexico");
-		// get state descriptor
-		int32_t pos = getStateOffset ( &hnm );
-		// sanity
-		if ( pos < 0 ) { char *xx=NULL;*xx=0; }
-		// make bit mask
-		uint64_t mask = 1LL << pos;
-		// and in nm
-		if ( ! ((cd->m_adm1Bits) & mask) ) { char *xx=NULL;*xx=0;}
-		/*
-		// a nested loop
-		for ( ; slot >= 0 ; slot = g_cities.getNextSlot(slot,&h)) {
-			// get the place
-			pd = (PlaceDesc *)g_cities.getValueFromSlot(slot);
-
-			// map to alias?
-			if ( pd->m_bits & PLF_ALIAS )
-pd=(PlaceDesc *)g_cities.getValueFromSlot(pd->getSlot());
-
-			if ( ! is_ascii(pd->m_adm1[0]) ||
-			     ! is_ascii(pd->m_adm1[1]) ) {
-				char *xx=NULL;*xx=0; }
-			// print it
-			log("places: h=%s adm1=%c%c ctry=%s",
-			    str,
-			    pd->m_adm1[0],
-			    pd->m_adm1[1],
-			    g_countryCode.getName(pd->m_crid-1));
-		}
-		*/
-		// now hash for zip code
-		//h = hash64Lower_a("BC",2);
-		//int64_t h1 = hash64("n",1);
-		//int64_t h2 = hash64("m",1);
-		//int64_t h3 = (h1<<1LL) ^ h2;
-
-		char *zstr = "87102";
-		h = hash64 ( zstr,gbstrlen(zstr));
-		//h = hash64 ("78404",5);
-		//slot = g_cities.getSlot ( &h );
-		int32_t slot = g_zips.getSlot ( &h );
-
-		//char *city="Corpus Christi";
-		char *city="Albuquerque";
-		int64_t ch = hash64Lower_utf8(city,gbstrlen(city));
-		//int32_t ch = (int32_t)(th64&0xffffffff);
-		log("places: %s hash = %"UINT64"",city,ch);
-		// a nested loop
-		for ( ; slot >= 0 ; slot = g_zips.getNextSlot(slot,&h)) {
-			// get the place
-			ZipDesc *zd;
-			zd = (ZipDesc *)g_zips.getValueFromSlot(slot);
-			// convert adm1 bit to adm1 code
-			StateDesc *sd = getStateDescFromBits(zd->m_adm1Bits);
-			// must be there
-			if ( ! sd ) { char *xx=NULL;*xx=0; }
-			//if(!is_ascii(zd->m_adm1[0]) ) {char *xx=NULL;*xx=0;}
-			// print it
-			log("places: h=%s cityhash=%"UINT64" adm1=%s "//adm1=%c%c "
-			    "pd=0x%"PTRFMT"",
-			    zstr,
-			    zd->m_cityHash,
-			    sd->m_name1,
-			    //zd->m_adm1[0],
-			    //zd->m_adm1[1],
-			    //g_countryCode.getName(zd->m_crid-1),
-			    (PTRTYPE)zd);
-			if ( zd->m_cityHash != ch ) { char*xx=NULL;*xx=0; }
-		}
-		// exit until we get "nm" and "bc" for british columbia!!!
-		//log("hey hey!!!!!!!!!!!!!!!!! fix me you");
-		//exit(-1);
-		// otherwise, we passed
-		//if ( loadedIndicators ) return true;
-		return true;
-		//loadedCities = true;
-	}
-
-	// let them know that we are creating it
-	logf(LOG_INFO,"places: creating cities.dat");
-
-	g_cities.reset();
-	g_zips.reset();
-	g_timeZones.reset();
-	g_aliases.reset();
-	//g_states.reset();
-
-	// init with 8M slots
-	//g_cities.set ( 6,sizeof(PlaceDesc),6950000,NULL,0,true,0);
-	// 1M since doing USA only now. now cities.dat is only 12MB not 100MB
-	// uses 731k slots
-	//g_cities.set ( 8,sizeof(PlaceDesc),100000,NULL,0,true,0,"placestbl");
-
-	// this now maps just a city to the state/adm1 bit vector of the states
-	// it is in... AND the one byte timezone offset
-	g_cities.set ( 8,sizeof(CityDesc),100000,NULL,0,false,0,"placestbl");
-
-	// we do zips separate now! use wordId as the key (89k used)
-	if ( ! g_zips.set ( 8,sizeof(ZipDesc),10000,NULL,0,true,0,"zipstbl")) {
-		char *xx=NULL;*xx=0; }
-
-	if (!g_timeZones.set(4,sizeof(CityStateDesc),100000,NULL,0,false,0,
-			     "tbl99")){ char *xx=NULL;*xx=0;}
-
-	// map a cityHash/state of an aliased city name to a normalized cityId
-	if ( ! g_aliases.set(4,4,128,NULL,0,false,0,"aliastab") )
-		return false;
-
-
-	// keep track of max population for each city name and the state
-	// in which that max population occurs
-	HashTableX maxPops;
-	maxPops.set (8,4,100000,NULL,0,false,0,"poptbl");
-
-
-	//////////////////////////////////////////////////////////////
-	//
-	// LOAD THE allCountries.txt file
-	//
-	//////////////////////////////////////////////////////////////
-
-	// geonameid         : integer id of record in geonames database
-	// name              : name of geographical point (utf8) varchar(200)
-	// asciiname         : name of geographical point in plain ascii 
-	//                     characters, varchar(200)
-	// alternatenames    : alternatenames, comma separated varchar(4000) 
-	//                     (varchar(5000) for SQL Server)
-	// latitude          : latitude in decimal degrees (wgs84)
-	// longitude         : longitude in decimal degrees (wgs84)
-	// feature class     : see http://www.geonames.org/export/codes.html, 
-	//                     char(1)
-	// feature code      : see http://www.geonames.org/export/codes.html, 
-	//                     varchar(10)
-	// country code      : ISO-3166 2-letter country code, 2 characters
-	// cc2               : alternate country codes, comma separated, 
-	//                     ISO-3166 2-letter country code, 60 characters
-	// admin1 code       : fipscode (subject to change to iso code), 
-	//                     isocode for the us and ch, see file 
-	//                     admin1Codes.txt for display names of this code;
-	//                     varchar(20)
-	// admin2 code       : code for the second administrative division, a 
-	//                     county in the US, see file admin2Codes.txt; 
-	//                     varchar(80)
-	// admin3 code       : code for third level administrative division, 
-	//                     varchar(20)
-	// admin4 code       : code for fourth level administrative division, 
-	//                     varchar(20)
-	// population        : bigint (4 byte int)
-	// elevation         : in meters, integer
-	// gtopo30           : average elevation of 30'x30' (ca 900mx900m) 
-	//                     area in meters, integer
-	// timezone          : the timezone id (see file timeZone.txt)
-	// modification date : date of last modification in yyyy-MM-dd format
-
-
-	// . make the filename to open
-	// . downloadeded from http://geonames.org/allCountries.zip ?
-	// . sample line = 
-	//   3038840 Serrat de Ventader Serrat de Ventader         42.4833333
-	//   1.4333333       T       MT AD           00
-	char ff[1024];
-	sprintf ( ff , "%sallCountries.txt", g_hostdb.m_dir );
-	// places.txt is just the United States
-	//sprintf ( ff , "%splaces.txt", g_hostdb.m_dir );
-	logf(LOG_INFO,"places: reading %s",ff);
-	FILE *fd = fopen ( ff, "r" );
-	if ( ! fd )
-		return log("places: failed to open %s: %s",ff,strerror(errno));
-
-
-
-	// count how many times we see each word for purposes of establishing
-	// the most common indicators of a place. i.e. "center", "square",...
-	//HashTableX ct;
-	// init with 8M places too
-	//ct.set ( 8 , 4 , 9300000,NULL,0,false,0 ,"addrcmmn");
-
-	// similar to "ct" but we incorporate latitude/longitude to restrict
-	// voting in order to remove "local words", like Edisto!
-	//HashTableX gvt;
-	//gvt.set ( 8 , 0 , 30000 ,NULL,0,false,0,"addrgvt" );
-
-	HashTableX popTable;
-	popTable.set ( 4,4,30000,NULL,0,false,0,"poptab");
-
-
-	int32_t badEntry = 0;
-
-	int32_t line = 0;
-
-	//int32_t MAX = 0;
-
-	// . go through the places in allCountries.txt
-	// . format described in /gb/geo/geonames/readme.txt
-	char buf[10000];
-	// for debuging
-	char *dbuf = buf;
-
-	//char  topBuf[1000000];
-	//char *topBufPtr = topBuf;
-	// map a wid to a string ptr with this table, "st"
-	HashTableX st;
-	st.set ( 8 , 4 , 30000 , NULL,0,false,0 ,"addrst");
-
-	while ( fgets ( buf , 10000 , fd ) ) {
-		// tmp debug for postalCodes.txt
-		//break;
-		// length of line, including the terminating \n
-		int32_t wlen = gbstrlen(buf) ;
-		// sanity check
-		if ( wlen >= 9000 ) { char *xx=NULL;*xx=0; }
-		// skip if empty
-		if ( wlen <= 0 ) continue;
-		// null terminate it, instead of \n
-		buf[wlen-1]='\0';
-
-		// debug point
-		//char *poo = strstr(buf,"Town of North Hempstead" ); if (poo)
-		//	log("hey");
-
-		// log it
-		if ( (line % 10000) == 0 )
-			log(LOG_INFO,"places: read line #%"INT32" out of "
-			    "6,900,574 (%"INT32" places added)",line,
-			    g_cities.m_numSlotsUsed);
-		line++;
-
-		// country id
-		uint8_t crid = 0;
-		// country code
-		char cc[3];
-		cc[0] = 0;
-		cc[1] = 0;
-		// admin1code
-		char a1[2];
-		// admin2code
-		//char a2[2];
-		// reset
-		a1[0] = a1[1] = 0;
-		// descriptive bits
-		//pbits_t bits = 0;
-		// place type
-		placetype_t ptype = 0;
-		// official name of the place
-		char *name = NULL;
-		// the ascii version
-		char *ascii = NULL;
-		// comma-separated abbreviations and alternative names
-		char *alt = NULL;
-		// stop after this char ptr
-		char *stop = NULL;
-		double latitude = 0.0;
-		double longitude = 0.0;
-		// population of the city/place
-		int32_t pop = 0;
-		// count tabs
-		int32_t tabs = 0;
-		// point to the beginning of the line
-		char *p = buf;
-		char tzoff = 0;
-		char useDST; // daylight savings time
-		// debug point
-		//if ( strncmp(buf,"2241297\t", 8) ==0 ) 
-		//if ( strncmp(buf,"3856157\t", 8) ==0 ) 
-		//	log("gotit");
-
-		// parse out the tab delimeted things from the line
-		for ( ; *p ; p++ ) {
-			// skip if no tab
-			if ( *p != '\t' ) continue;
-			// count tabs
-			tabs++;
-			// point "s" to right after the tab
-			char *s = p + 1;
-			// done?
-			if ( ! *s ) break;
-			// after first tab is the official place name
-			if ( tabs == 1 ) name  = s;
-			// then the name in ascii
-			if ( tabs == 2 ) ascii = s;
-			// then comma-separated list of alternative names
-			if ( tabs == 3 ) alt   = s;
-			// the latitude
-			if ( tabs == 4 ) {
-				// a stopping point for "alt"
-				stop  = s;
-				// get it
-				latitude = atof(s);
-			}
-			// the longitude
-			if ( tabs == 5 ) {
-				// get it
-				longitude = atof(s);
-			}
-			// . the category of place is after the 6th tab
-			// . the specific type of place is after the 7th tab
-			// . see http://www.geonames.org/export/codes.html
-			// . to save mem, only hash certain types...
-			if ( tabs == 7 ) {
-				// this is usually a state in the U.S.
-				if      ( ! strncmp(s,"ADM1",4) ) 
-					ptype = 0;//PT_STATE;
-				// this is usually a county in the U.S.
-				else if ( ! strncmp(s,"ADM2",4) ) 
-					ptype = 0;//PT_ADM2;
-				// this is usually a county in the U.S.
-				else if ( ! strncmp(s,"ADM3",4) ) 
-					ptype = 0;//PT_ADM3;
-				// this is usually a county in the U.S.
-				else if ( ! strncmp(s,"ADM4",4) ) 
-					ptype = 0;//PT_ADM4;
-				// populated place = city
-				else if ( ! strncmp(s,"PPL" ,3) ) 
-					ptype = PT_CITY;
-				// town of, township, etc.
-				// town of north hempstead
-				// . crap! this gets a different san jose!
-				else if ( ! strncmp(s,"ADMD" ,4) ) 
-					ptype = PT_CITY;
-				// locality
-				else if ( ! strncmp(s,"LCTY" ,4) ) 
-					ptype = PT_CITY;
-				// independent political entity
-				else if ( ! strncmp(s,"PCLIX" ,4) ) 
-					ptype = PT_CITY;
-				else if ( ! strncmp(s,"P\t" ,2) ) 
-					ptype = PT_CITY;
-				// independent political entity = country
-				else if ( ! strncmp(s,"PCLI",4) ) 
-					ptype = PT_COUNTRY;
-				// allow schools (popular meeting place)
-				else if ( ! strncmp(s,"SCH",3) )
-					ptype = 0;//PT_SCH;
-				// and parks (popular meeting place)
-				else if ( ! strncmp(s,"PRK",3) )
-					ptype = 0;//PT_PRK;
-			}
-			// . country code (two letters)
-			// . sometimes things like a gulf of aden has no
-			//   associated country code!
-			if ( tabs == 8 && s[0] != '\t' ) { 
-				cc[0] = to_lower_a(s[0]); 
-				cc[1] = to_lower_a(s[1]); 
-				cc[2] = 0;
-				crid = getCountryId ( cc );
-				// sanity check
-				if ( s[2]!='\t'&&s[2]) { char *xx=NULL;*xx=0;}
-				continue;
-			}
-			// alternate country code (two letters)
-			if ( tabs == 9 && ! crid && s[0] != '\t' ) {
-				cc[0] = to_lower_a(s[0]); 
-				cc[1] = to_lower_a(s[1]); 
-				cc[2] = 0;
-				crid = getCountryId ( cc );
-			}
-
-			// . admin1 code (two letters)
-			// . readme.txt says varchar(20) but
-			//   /gb/geo/admin1Codes.txt seems to say 2 chars
-			// . actually i have seen 3 letter ones... but they
-			//   if truncated to two chars would be unique in their
-			//   respective country. i.e. GB.ENG, GB.NIR, ...
-			// . BUT for GR.ESYE11 through GR.ESYE14, ... just use
-			//   the last two chars!
-			if ( tabs == 10 ) {
-				// usually these 2 chars are digits!
-				a1[0] = to_lower_a(s[0]); 
-				a1[1] = to_lower_a(s[1]); 
-				// panic!
-				if ( s[2] == '\t' ) continue;
-				// watch out for GReece
-				if ( cc[0] != 'g' ) continue;
-				if ( cc[1] != 'r' ) continue;
-				// and its "states" (admin1 codes)
-				if ( a1[0] != 'e' ) continue;
-				if ( a1[1] != 's' ) continue;
-				// use the last two for this guy!
-				s += 4;
-				if ( ! is_digit(s[0]) ) continue;
-				if ( ! is_digit(s[1]) ) continue;
-				a1[0] = s[0];
-				a1[1] = s[1];
-			}
-			// pop is timezone - 3
-			if ( tabs == 14 ) {
-				// get it
-				pop = atol(s);
-			}
-			// timezone
-			if ( tabs == 17 ) {
-				char *tzname = p + 1;
-				// assume we use daylights savings time
-				useDST = 1;
-				// assume not found
-				tzoff = 0;
-				// find the end, a tab i guess or wsapce
-				char *e = tzname;
-				for ( ; *e && ! is_wspace_a(*e) ; e++ );
-				// temp null term
-				char saved = *e;
-				*e = '\0';
-				// convert to timezone offset
-				if ( ! strcmp(tzname,"America/Chicago") )
-					tzoff = -6;
-				else if ( ! strcmp(tzname,"America/Anchorage"))
-					tzoff = -9;
-				else if ( ! strcmp(tzname,"America/Indiana/Knox"))
-					tzoff = -5;
-				else if ( ! strcmp(tzname,"America/Kentucky/Monticello"))
-					tzoff = -5;
-				else if ( ! strcmp(tzname,"America/Boise"))
-					tzoff = -7;
-				else if ( ! strcmp(tzname,"America/Indiana/Indianapolis"))
-					tzoff = -5;
-				else if ( ! strcmp(tzname,"America/Indiana/Marengo"))
-					tzoff = -5;
-				else if ( ! strcmp(tzname,"America/Indiana/Petersburg"))
-					tzoff = -6;
-				else if ( ! strcmp(tzname,"America/Indiana/Tell_City"))
-					tzoff = -6;
-
-				else if ( ! strcmp(tzname,"America/Indiana/Vevay"))
-					tzoff = -5;
-				else if ( ! strcmp(tzname,"America/Indiana/Vincennes"))
-					tzoff = -5;
-				else if ( ! strcmp(tzname,"America/Indiana/Winamac"))
-					tzoff = -5;
-				else if ( ! strcmp(tzname,"America/Juneau"))
-					tzoff = -9;
-				else if ( ! strcmp(tzname,"America/Kentucky/Louisville"))
-					tzoff = -5;
-				else if ( ! strcmp(tzname,"America/Menominee"))
-					tzoff = -6;
-				else if ( ! strcmp(tzname,"America/Nome"))
-					tzoff = -9;
-				else if ( ! strcmp(tzname,"America/North_Dakota/Center"))
-					tzoff = -6;
-				else if ( ! strcmp(tzname,"America/North_Dakota/New_Salem"))
-					tzoff = -6;
-				else if ( ! strcmp(tzname,"America/Shiprock"))
-					tzoff = -7;
-				else if ( ! strcmp(tzname,"America/Yakutat"))
-					// could not find this - guessing
-					tzoff = -9;
-
-				else if ( ! strcmp(tzname,"America/Detroit"))
-					tzoff = -5;
-				else if ( !strcmp(tzname,"America/St_Thomas")){
-					tzoff = -4;
-					useDST = 0;
-				}
-				else if ( ! strcmp(tzname,"Pacific/Kwajalein"))
-					tzoff = -12;
-
-
-				else if ( ! strcmp(tzname,"America/Adak"))
-					tzoff = -10;
-				else if ( ! strcmp(tzname,"America/Phoenix")){
-					tzoff = -7; useDST = 0; }
-				else if ( ! strcmp(tzname,"America/Denver"))
-					tzoff = -7;
-				else if (!strcmp(tzname,"America/Los_Angeles"))
-					tzoff = -8;
-				else if ( ! strcmp(tzname,"America/New_York"))
-					tzoff = -5;
-				else if ( ! strcmp(tzname,"Pacific/Honolulu")){
-					tzoff = -10; useDST = 0; }
-				// amchitka in alasakn aleutian islands...
-				else if ( ! tzname[0] ) 
-					tzoff = 0;
-				else {
-					char *xx=NULL;*xx=0; }
-				// restore
-				*e = saved;
-			}
-		}
-
-		// break point
-		//if ( name && strncasecmp(name,"Madrid\t",7)==0 )
-		//	log("hey");
-
-		// skip if not a place we are interested in
-		//if ( ! bits ) 
-		//	continue;
-
-		if ( ! crid ) {
-			badEntry++;
-			log("places: bad country for "
-			        "for %s",dbuf);
-			continue;
-		}
-
-		// must have all 4 things here:
-		if ( !a1[0] || ! name ) {
-			//log("places: %s does not have country of adm1",name);
-			badEntry++;
-			continue;
-		}
-
-		// skip all NON-USA places now that we are specializing
-		// no, now we had facebook events from all over, if they
-		// have a lat/lon! yeah, so let foreign cities through...
-		//if ( crid != CRID_US )continue;
-
-		// only store cities for now
-		if ( ! ptype ) continue;
-		// sanity check
-		if ( ! is_ascii(a1[0]) || ! is_ascii(a1[1]) ) {
-			//log("places: bad %s",name);
-			badEntry++;
-			continue;
-		}
-		// what is this???? i see "00"
-		if ( is_digit(a1[0]) ) continue;
-
-		uint64_t h_washington =  hash64n ("washington");
-		uint64_t h_dc =  hash64n ("dc");
-		uint64_t h_d  =  hash64n ("d");
-		uint64_t h_c  =  hash64n ("c");
-		uint64_t h_wdc = h_washington;
-		h_wdc <<= 1;
-		h_wdc ^= h_dc;
-		uint64_t h_wdc2 = h_washington;
-		h_wdc2 <<= 1;
-		h_wdc2 ^= h_d;
-		h_wdc2 <<= 1;
-		h_wdc2 ^= h_c;
-		
-		// set nameEnd/asciiEnd/altEnd
-		char *nameEnd = name;
-		for (;nameEnd;nameEnd++)
-			if(*nameEnd ==','||*nameEnd=='\t'||!*nameEnd ) break;
-		char *asciiEnd = ascii;
-		for (;asciiEnd;asciiEnd++)
-			if(*asciiEnd ==','||*asciiEnd=='\t'||!*asciiEnd)break;
-		char *altEnd = alt;
-		for ( ; altEnd ; altEnd++ ) 
-			if (*altEnd==','||*altEnd=='\t'||!*altEnd) break;
-		// null terms
-		*nameEnd  = '\0';
-		*asciiEnd = '\0';
-		*altEnd   = '\0';
-
-		// ok, now we need to grab the place id in the file and
-		// use that to reference the alt names table we hashed up
-		// top. because that includes the language code of the
-		// altname!!!
-		// then we need to make a string like
-		// cs.en.nb.nn.sk=Egypt,fy.nl=Egypte,fi=Egypti
-		// and store that into a buffer for each place. then the
-		// city desc needs to references that buffer. we also hash
-		// every alt name to point to the same CityDesc or CountryDesc
-		// or StateDesc whichever type of place it is...
-		//
-		// MDW LEFT OFF HERE
-
-		uint64_t h = getWordXorHash ( name );
-
-		// hashes we added, to dedup
-		//HashTableX dt;
-		//char buf[10000];
-		//dt.set ( 6,0,100,buf,10000,false,0);
-
-		// do not add "washington, dc" as a city, treat
-		// dc as a state!!
-		if ( h == h_wdc ) 
-			continue;
-		if ( h == h_wdc2 ) 
-			continue;
-		// no dups!
-		//if ( dt.isInTable(&h ) ) continue;
-		// add it
-		//if ( ! dt.addKey(&h) ) { char *xx=NULL;*xx=0; }
-
-		// normalize this
-		char adm1[3];
-		adm1[0] = to_lower_a(a1[0]);
-		adm1[1] = to_lower_a(a1[1]);
-		adm1[2] = 0;
-
-		// use this now
-		uint32_t cid32 = (uint32_t)getCityId32(h,a1);
-
-		// we add 100 to the timeZoneOffset to indicate it 
-		// does not use DST
-		//if ( useDST == 0 ) tzoff += 100;
-
-		// already in there?
-		int32_t slot = g_timeZones.getSlot ( &cid32 );
-		if ( slot >= 0 ) {
-			CityStateDesc *csd ;
-			csd = (CityStateDesc *)g_timeZones.
-				getValueFromSlot(slot);
-			char tv = csd->m_timeZoneOffset;
-			if ( tv != tzoff ) { 
-				log("places: bad city timezone "
-				    "csh=%"UINT32" z: %s",
-				    (uint32_t)cid32,
-				    name);
-				//char *xx=NULL;*xx=0; }
-			}
-			// get the pop from this
-			int32_t cpop = *(int32_t *)popTable.getValue ( &cid32 );
-			// if already in there, and this has more pop,
-			// then use it!
-			if ( pop > cpop ) {
-				csd->m_latitude       = latitude;
-				csd->m_longitude      = longitude;
-				popTable.addKey ( &cid32, &pop );
-			}
-		}
-		// timezone table maps city/state pair to a tzoffset
-		else {
-			// for each city/state pair we must store its
-			// lat/lon now too
-			CityStateDesc csd;
-			csd.m_timeZoneOffset = tzoff;
-			csd.m_useDST         = useDST;
-			csd.m_latitude       = latitude;
-			csd.m_longitude      = longitude;
-			g_timeZones.addKey ( &cid32 , &csd );
-			popTable.addKey ( &cid32, &pop );
-		}
-		
-
-		// add city name to the temporary hashtable of CityDescriptors.
-		// later we will serialize it into g_cityDescBuf and make
-		// the g_city hash table map ptrs into that. i think
-		// we can save it in cities.dat because HashTableX provides
-		// the mechanism for that.
-		addCity ( h , adm1 , pop , &maxPops );
-
-		// if the ascii hash is different, add as alias
-		addAlias ( ascii, adm1, h,pop, &maxPops );
-		// and the alt hash
-		addAlias ( alt, adm1, h,pop, &maxPops );
-
-		// now add the alternate names of this city
-		// as aliases, not just to g_cities, but also to
-		// g_aliases
-		int32_t len = gbstrlen(name);
-		if ( strncmp(name,"Township of ",12) == 0 )
-			addAlias ( name + 12,adm1,h,pop,&maxPops);
-		if ( strncmp(name,"Town of ",8) == 0 )
-			addAlias ( name + 8 ,adm1,h,pop,&maxPops );
-		if ( strncmp(name,"City of ",7) == 0 )
-			addAlias ( name + 7 ,adm1,h,pop,&maxPops );
-		if ( strncmp(ascii,"Township of ",12) == 0 )
-			addAlias ( ascii + 12,adm1,h,pop,&maxPops);
-		if ( strncmp(ascii,"Town of ",8) == 0 )
-			addAlias ( ascii + 8 ,adm1,h,pop,&maxPops );
-		if ( strncmp(ascii,"City of ",7) == 0 )
-			addAlias ( ascii + 7 ,adm1,h,pop,&maxPops );
-		// "New York City" equals "New York"
-		char *tail = name+len-5;
-		if ( len >=6 && strncmp(tail," City",5)==0) {
-			*tail = '\0';
-			addAlias ( name ,adm1,h,pop,&maxPops );
-			*tail = ' ';
-		}
-		tail = ascii+len-5;
-		if ( len >=6 && strncmp(tail," City",5)==0) {
-			*tail = '\0';
-			addAlias ( ascii ,adm1,h,pop,&maxPops );
-			*tail = ' ';
-		}
-	}
-
-	/*
-	// now scan each city in g_cities and set their CF_SINGLE_STATE
-	// flag if they only have one state
-	for ( int32_t i = 0 ; i < g_cities.m_numSlots ; i++ ) {
-		// skip empty slots
-		if ( ! g_cities.m_flags[i] ) continue;
-		// get the data value
-		uint64_t *bv = (uint64_t *)g_cities.getValueFromSlot(i);
-		// count bits on
-		int32_t nb = getNumBitsOn(*bv);
-		// sanity check
-		if ( nb == 0 ) { char *xx=NULL;*xx=0; }
-		// if only 1 set this flag
-		if ( nb == 1 ) *bv |= CF_UNIQUE;
-	}
-	*/
-
-	// close that file
-	fclose(fd);
-
-	//logf(LOG_INFO,"places: allCountries.txt had %"INT32" bad entries.",
-	logf(LOG_INFO,"places: places.txt had %"INT32" bad entries.",
-	     badEntry);
-
-	// reset for this file
-	badEntry = 0;
-
-	//////////////////////////////////////////////////////////////
-	//
-	// LOAD THE postalCodes.txt file
-	//
-	//////////////////////////////////////////////////////////////
-
-	//country code      :iso country code, 2 characters
-	//postal code       :varchar(10)
-	//place name        :varchar(180)
-	//admin name1       :1. order subdivision (state) varchar(100)
-	//admin code1       :1. order subdivision (state) varchar(20)
-	//admin name2       :2. order subdivision (county/province) varchar(100
-	//admin code2       :2. order subdivision (county/province) varchar(20)
-	//admin name3       :3. order subdivision (community) varchar(100)
-	//latitude          :estimated latitude (wgs84)
-	//longitude         :estimated longitude (wgs84)
-	//accuracy          :accuracy of lat/lng from 1=estimated to 6=centroid
-
-	//
-	// crap canadian state abbreviations are not in allCountries.txt
-	// so use the "admin code1" in the postalCodes.txt file!
-	//
-
-	// . now read in the zip codes
-	// . make the filename to open
-	sprintf ( ff , "%spostalCodes.txt", g_hostdb.m_dir );
-	logf(LOG_INFO,"places: reading %s",ff);
-	fd = fopen ( ff, "r" );
-	if ( ! fd )
-		return log("places: failed to open %s: %s",ff,strerror(errno));
-
-	// make the city buf
-	SafeBuf sb;
-
-	line = 0;
-
-	// . go through the places in allCountries.txt
-	// . format described in /gb/geo/geonames/readme.txt
-	while ( fgets ( buf , 10000 , fd ) ) {
-		// length of line, including the terminating \n
-		int32_t wlen = gbstrlen(buf) ;
-		// sanity check
-		if ( wlen >= 9000 ) { char *xx=NULL;*xx=0; }
-		// skip if empty
-		if ( wlen <= 0 ) continue;
-		// null terminate it, instead of \n
-		buf[wlen-1]='\0';
-
-		// log it
-		if ( (line % 10000) == 0 )
-			log(LOG_INFO,"places: read postal line #%"INT32" out of "
-			    "848,226 (%"INT32" places added)",line,
-			    g_cities.m_numSlotsUsed);
-		line++;
-
-		// country id
-		uint8_t crid = 0;
-		// admin1code
-		char a1[2];
-		// reset
-		a1[0] = a1[1] = 0;
-
-		// count tabs
-		int32_t tabs = 0;
-		// point to the beginning of the line
-		char *p = buf;
-		// isoalte the zip code
-		char *zip       = NULL;
-		char *cityName  = NULL;
-		char *a1name    = NULL;
-		char *a2name    = NULL;
-		//char *zipEnd = NULL;
-		// parse out the tab delimeted things from the line
-		for ( ; *p ; p++ ) {
-			// a temp var
-			char *s = p;
-			// put country code here
-			char cc[3];
-			// first is country code
-			if ( p == buf ) {
-				cc[0] = to_lower_a(s[0]); 
-				cc[1] = to_lower_a(s[1]); 
-				cc[2] = 0;
-				// sanity check
-				if ( s[2] != '\t' ) { char *xx=NULL;*xx=0;}
-				// to id
-				crid = getCountryId ( cc );
-				// must be valid
-				//if ( ! crid ) { char *xx=NULL;*xx=0; }
-				// there is a "gg" in there!
-				if ( ! crid ) break;
-				continue;
-			}
-			// skip if no tab
-			if ( *p != '\t' ) continue;
-			// count tabs
-			tabs++;
-			// after first tab is the POSTAL CODE
-			if ( tabs == 1 ) {
-				zip = p + 1;
-				continue;
-			}
-			if ( tabs == 2 ) {
-				// terminate zip for Words::set() below
-				*p = '\0';
-				cityName = p + 1;
-				continue;
-			}
-			if ( tabs == 3 ) {
-				// terminate for cityName
-				*p = '\0';
-				a1name = p + 1;
-				continue;
-			}
-			// . after 4th tab is admin code1
-			// . admin1 code (two letters)
-			// . readme.txt says varchar(20) but
-			//   /gb/geo/admin1Codes.txt seems to say 2 chars
-			// . actually i have seen 3 letter ones... but they
-			//   if truncated to two chars would be unique in their
-			//   respective country. i.e. GB.ENG, GB.NIR, ...
-			// . BUT for GR.ESYE11 through GR.ESYE14, ... just use
-			//   the last two chars!
-			if ( tabs == 4 ) {
-				// terminate for a1name
-				*p = '\0';
-				// usually these 2 chars are digits!
-				a1[0] = to_lower_a(p[1]); 
-				a1[1] = to_lower_a(p[2]); 
-				// one letter province/state code?
-				if ( p[2] == '\t' ) {
-					a1[1] = 0;
-					continue;
-				}
-				// panic!
-				if ( p[3] == '\t' ) continue;
-				// watch out for GReece
-				if ( cc[0] != 'g' ) continue;
-				if ( cc[1] != 'r' ) continue;
-				// and its "states" (admin1 codes)
-				if ( a1[0] != 'e' ) continue;
-				if ( a1[1] != 's' ) continue;
-				// use the last two for this guy!
-				s += 4;
-				if ( ! is_digit(s[0]) ) continue;
-				if ( ! is_digit(s[1]) ) continue;
-				a1[0] = s[0];
-				a1[1] = s[1];
-			}
-			if ( tabs == 5 ) {
-				// terminate for cityName
-				//*p = '\0';
-				a2name = p + 1;
-				continue;
-			}
-			if ( tabs == 6 ) {
-				// terminate for a2name
-				*p = '\0';
-				continue;
-			}
-		}
-
-		// if we got an illegit adm1 code try convert the admin 1 name
-		bool legit = true;
-		if ( !a1[0] ) 
-			legit = false;
-		if ( !is_ascii(a1[0]) ) 
-			legit = false;
-		if ( !is_ascii(a1[1]) ) 
-			legit = false;
-		// empty is NULL
-		if ( a1name    && ! *a1name    ) a1name = NULL;
-		if ( a2name    && ! *a2name    ) a2name = NULL;
-		if ( cityName  && ! *cityName  ) cityName = NULL;
-		//if ( is_ascii(a1[0])&&is_ascii(a1[1])&&is_ascii(a1[2]) ) 
-		//	legit = false;
-		// do we got this?
-		//if ( ! legit && ! a1name ) continue;
-		// not a chance to save ourselves if no adm1 name given
-		if ( ! legit && ! a1name && ! a2name && ! cityName ) {
-			badEntry++;
-			continue;
-		}
-
-		// now we must have a valid a1name because as we have found
-		// the adm1 code in postalCodes.txt does not always correspond
-		// to those in allCountries.txt. like "british columbia" is
-		// "02" in allCountries.txt and "bc" in postalCodes.txt.
-		if ( ! a1name ) {
-			badEntry++;
-			continue;
-		}
-
-		//
-		// skip all NON-USA places now that we are specializing
-		//
-		if ( crid != CRID_US )
-			continue;
-
-		/*
-		// try to convert it
-		PlaceDesc *tpd ;
-		int32_t ss;
-		int64_t th;
-		int64_t *twids;
-		Words tw;
-
-		// make a city hash that would match Place::m_hash
-		//int64_t cityHash = hashStringXor ( cityName );
-
-		//int64_t tmpHash ;
-		//tmpHash = hash64Lower_utf8 ( cityName , gbstrlen(cityName) ) ;
-		//int32_t cityHash = (int32_t)(ch & 0xffffffff);
-		//if ( strncmp(cityName,"Budlake",7)==0 ) 
-		//	log("hey");
-		if ( ! legit ) {
-			char *use = NULL;
-			if ( ! use ) use = a2name;
-			if ( ! use ) use = a1name;
-			if ( ! use ) use = cityName;
-			if ( ! use ) { char *xx=NULL;*xx=0; }
-			// hash each alnum word in there
-		redo:
-			if ( ! use ) { char *xx=NULL;*xx=0; }
-			// hash the name
-			int64_t uh = hashStringXor ( use );
-			// see if we got it
-			City *c = (City *) g_cities.getValue ( &uh );
-			// set adm1 i guess
-			if ( c ) {
-				legit = true;
-				adm1Bits = c->m_adm1Bits;
-			}
-			// a nested loop
-			for ( ; ss >= 0 ; ss = g_cities.getNextSlot(ss,&th)) {
-				// get the place
-				tpd=(PlaceDesc *)g_cities.getValueFromSlot(ss);
-				// must be our ctry
-				if ( tpd->m_crid != crid ) continue;
-				// got it
-				a1[0] = tpd->m_adm1[0];
-				a1[1] = tpd->m_adm1[1];
-				legit = true;
-				break;
-			}
-			// if still not found, try the other
-			if ( ! legit && use && use == a2name && a1name ) {
-				use = a1name;
-				goto redo;
-			}
-			if ( ! legit && use && use == a1name && cityName ) {
-				use = cityName;
-				goto redo;
-			}
-		}
-		*/
-
-		static int32_t s_printed = 0;
-		// sanity  check
-		if ( ! legit ) {
-			if ( ++s_printed < 100 )
-			log("places: bad adm1 for "
-			    "zip=\"%s\" cityName=\"%s\" "
-			    "adm1Name=\"%s\" adm2Name=\"%s\"",
-			    zip, cityName,a1name,a2name);
-			badEntry++;
-			continue;
-		}
-
-		// the two-letter adm1 in postalCodes.txt sometimes differs
-		// from those in allCountries.txt. like, for example, 
-		// British Columbia has adm1 code of "02" in allCountries.txt
-		// but it is "bc" in postalCodes.txt.
-		// so let's hash the full adm1 name in postalCodes.txt in order
-		// to get the proper adm1 from allCountries.txt.
-
-		if ( ! a1name ) continue;
-		// hash the proper name of the adm1
-		int64_t HH = getWordXorHash ( a1name );
-		// skip if empty
-		if ( HH == 0 ) continue;
-		// now get state
-		int32_t pos = getStateOffset ( &HH );
-		// skip if could not match it to an adm1 in allCountries.txt
-		// by the full name of the adm1
-		if ( pos < 0 ) { char *xx=NULL;*xx=0; }//continue;
-
-		// set it
-		ZipDesc zd;
-		//zd.m_crid   = crid;
-		// set the state's bit. each state has its own unique bit
-		zd.m_adm1Bits = 1LL << pos;
-		zd.m_adm1[0] = a1[0];
-		zd.m_adm1[1] = a1[1];
-		zd.m_cityHash = getWordXorHash ( cityName );
-		// centroid lat/lon now
-		zd.m_latitude = 999.0;
-		zd.m_longitude = 999.0;
-
-		// sanity check
-		if ( ! zd.m_cityHash ) { char *xx=NULL;*xx=0; }
-
-		// offset to current position
-		int32_t cityOffset = sb.length();
-		// store it
-		int32_t cityNameLen = gbstrlen(cityName);
-		sb.safeMemcpy ( cityName , cityNameLen );
-		sb.safeMemcpy ( "\0", 1 ); // null terminate
-		// update zd
-		zd.m_cityOffset = cityOffset;
-
-		int64_t zh = getWordXorHash ( zip );
-		// skip if bad
-		if ( ! zh ) { badEntry++; continue; }
-
-		// sanity check
-		//if ( g_zips.isInTable ( &zh ) ) { 
-		//	// both willowbrook,Il and hinsdale,IL have the
-		//	// same zip code!
-		//	//char *xx=NULL;*xx=0; }
-		//	continue;
-		//}
-		// debug point
-		//if ( zh == 70799779105646092LL ) 
-		//	log("hey");
-
-		if ( ! g_zips.addKey ( &zh , &zd ) ) return false;
-
-	}
-	// close that file
-	fclose(fd);
-
-	//
-	// now open zipcode.csv and add the lat/lon of each zip code
-	// from http://www.boutell.com/zipcodes/zipcode.zip
-	//
-	sprintf ( ff , "%szipcode.csv", g_hostdb.m_dir );
-	logf(LOG_INFO,"places: reading %s",ff);
-	fd = fopen ( ff, "r" );
-	if ( ! fd )
-		return log("places: failed to open %s: %s",ff,strerror(errno));
-	line = 0;
-	// go through the zipcodes in zipcode.csv, one per line
-	while ( fgets ( buf , 10000 , fd ) ) {
-		// length of line, including the terminating \n
-		int32_t wlen = gbstrlen(buf) ;
-		// sanity check
-		if ( wlen >= 9000 ) { char *xx=NULL;*xx=0; }
-		// skip if empty
-		if ( wlen <= 0 ) continue;
-		// null terminate it, instead of \n
-		buf[wlen-1]='\0';
-		// log it
-		if ( (line % 10000) == 0 )
-			log(LOG_INFO,"places: read line #%"INT32"",line);
-		line++;
-		// for debug
-		char *p = buf;
-		// lat is after 7th quote, lon is after 9th quote
-		int32_t qcount = 0;
-		float latitude = 999.0;
-		float longitude = 999.0;
-		char *zip = NULL;
-		for ( ; *p ; p++ ) {
-			if ( *p == '\"' ) qcount++;
-			else              continue;
-			if ( qcount == 1 ) zip = p+1;
-			if ( qcount == 7 ) latitude  = atof (p+1);
-			if ( qcount == 9 ) longitude = atof (p+1);
-		}
-		if ( ! zip ) continue;
-		// must be numeric (disregard line 1 that has "zip")
-		if ( ! is_digit(zip[0]) ) continue;
-		// null term
-		if ( zip[6] != '\"' ) zip[6] = '\0';
-		else { char *xx=NULL;*xx=0; }
-		// look it up
-		int64_t zh = getWordXorHash ( zip );
-		// skip if bad
-		ZipDesc *zd = (ZipDesc *)g_zips.getValue ( &zh );
-		// must be there
-		if ( ! zd ) { 
-			logf(LOG_INFO,"places: could not find zip %s",zip);
-			continue;
-		}
-		// set it
-		zd->m_latitude = latitude;
-		zd->m_longitude = longitude;
-	}
-	fclose(fd);
-
-	// 
-	// scan all zips and make sure all have lat/lon
-	//
-	int32_t missed = 0;
-	for ( int32_t i = 0 ; i < g_zips.m_numSlotsUsed ; i++ ) {
-		// skip i fempty bucket
-		if ( ! g_zips.m_flags[i] ) continue;
-		// get it
-		ZipDesc *zd = (ZipDesc *)g_zips.getValueFromSlot(i);
-		// check it
-		if ( zd->m_latitude  == 999.0 ||
-		     zd->m_longitude == 999.0    ) 
-			missed++;
-	}
-	logf(LOG_INFO,"places: missed lat/lon for %"INT32" zipcodes",missed);
-
-
-	logf(LOG_INFO,"places: postalCodes.txt had %"INT32" bad entries.",
-	     badEntry);
-
-	/*
-	// convert the indicator count table into g_indicators for IND_NAME
-	// and add them into g_indicators now
-	for ( int32_t i = 0 ; i < ct.m_numSlots ; i++ ) {
-		// skip if empty
-		if ( ct.m_flags[i] == 0 ) continue;
-		// this is a count table
-		int32_t count = *(int32_t *)ct.getValueFromSlot ( i );
-		// skip if not popular
-		if ( count < MIN_POP_COUNT ) continue;
-		// skip for now
-		continue;
-		// make into score
-		//float boost = 1.0 + (9.0 * (float)count / (float)MAX);
-		//float boost = 1.00;
-		// increment for every count
-		//for ( int32_t j = 10 ; j < count ; j++ )
-		//	boost *= 1.002;
-		// limit it to 1.5 for now...
-		//if ( boost > 1.5 ) boost = 1.5;
-		// get wid
-		//int64_t *wid = (int64_t *)ct.getKey ( i );
-		// . add it
-		// . use a boost of just 0.25 for now
-		//if(! addIndicator ( *wid , IND_NAME , 0.25 ) ) // boost ) ) 
-		//	return log("places: failed to make indicators.");
-		// debug
-		//char *str = *(char **)st.getValue ( wid );
-		// show it
-		//logf (LOG_DEBUG,"events: top place %s boost=%.02f",
-		//     str,boost);
-	}
-	*/
-
-	//////////////////////////////////////////////////////////////
-	//
-	// add the aliases
-	//
-	//////////////////////////////////////////////////////////////
-
-	logf(LOG_INFO,"places: making aliases.dat");
-
-	// . abbreviations for popular cities
-	// . now we use the s_cityList array
-	int32_t ncl = (int32_t)sizeof(s_cityList)/ sizeof(AliasDesc);
-	for ( int32_t i = 0 ; i < ncl ; i++ ) {
-		char      *s1   = s_cityList[i].m_s1;
-		char      *s2   = s_cityList[i].m_s2;
-		// use this now
-		uint64_t h1 = getWordXorHash(s1);
-		uint64_t h2 = getWordXorHash(s2);
-		// skip if the same
-		if ( h1 == h2 ) continue;
-		// sanity check
-		if ( h1 == 0 ) { char *xx=NULL;*xx=0; }
-		if ( h2 == 0 ) { char *xx=NULL;*xx=0; }
-		// get it
-		CityDesc *cdp2 = (CityDesc *)g_cities.getValue ( &h2 );
-		// must be there
-		if ( ! cdp2 ) { char *xx=NULL;*xx=0; }
-
-		// . add it as an alias for h2
-		// . will add to g_aliases table which maps our 
-		//   cityHash and adm1Str to the normalized cityHash
-		// . also adds to g_cities which maps a normalized city
-		//   hash to a bit vector of states that contain a city
-		//   by that name
-		addAlias ( s1 , s_cityList[i].m_adm1,h2,
-			   s_cityList[i].m_pop,&maxPops);
-
-		// you know addAlias() now adds this junk to g_cities...!
-		/*
-		// get our special cdp
-		CityDesc *cdp1 = (CityDesc *)g_cities.getValue ( &h1 );
-		// if not there, add one
-		if ( ! cdp1 ) {
-			// make CityDesc to add
-			CityDesc cd;
-			// . we choose most pop state for this alias
-			// . so "SF" has two entries in s_cityList and the
-			//   "mostPopState" is "ca" for both
-			char *ss = s_cityList[i].m_mostPopStateAbbr;
-			// get this
-			StateDesc *tsd = getStateDesc(ss);
-			// convert to index
-			int32_t si = tsd - &s_states[0];
-			// sanity
-			if ( si < 0 ) { char *xx=NULL;*xx=0; }
-			// store it
-			cd.m_mostPopularState = si;
-			// and the bits indicating states we are in
-			cd.m_adm1Bits         = cdp2->m_adm1Bits;
-			if ( ! g_cities.addKey(&h1,&cd) ){ char*xx=NULL;*xx=0;}
-			// flag it as an alias so getCityId32() knows to
-			// look it up special...
-			//cd.m_adm1Bits |= 0x8000000000000000LL;
-			continue;
-		}
-		// then update bits
-		cdp1->m_adm1Bits |= cdp2->m_adm1Bits;
-		*/
-	}
-	     
-
-
-	// save it
-	logf(LOG_INFO,"places: saving timezones.dat");
-
-	if ( ! g_timeZones.save ( g_hostdb.m_dir , "timezones.dat" ) )
-		return log("places: failed to save timezones.dat");
-
-	// save it
-	logf(LOG_INFO,"places: saving cities.dat");
-
-	if ( ! g_cities.save ( g_hostdb.m_dir , "cities.dat" ) )
-		return log("places: failed to save cities.dat");
-
-	logf(LOG_INFO,"places: saving aliases.dat");
-
-	if ( ! g_aliases.save ( g_hostdb.m_dir , "aliases.dat" ) )
-		return log("places: failed to save aliases.dat");
-
-	logf(LOG_INFO,"places: saving zips.dat");
-
-	char *tbuf     = sb.getBufStart();
-	int32_t  tbufSize = sb.length();
-	if ( ! g_zips.save ( g_hostdb.m_dir , "zips.dat",tbuf,tbufSize ) )
-		return log("places: failed to save zips.dat");
-
-	// let this memlose
-	g_cityBuf     = tbuf;
-	g_cityBufSize = tbufSize;
-	// do not let "sb" free it
-	//sb.m_buf      = NULL;
-	sb.detachBuf();
-
-	//if ( ! g_indicators.save ( g_hostdb.m_dir, "indicators.dat" ) )
-	//	return log("places: failed to save indicators.dat");
-
-
-	//////////////////////////////////////////////////////////////
-	//
-	// LOAD THE planet-090421.osm file to get street names
-	//
-	//////////////////////////////////////////////////////////////
-
-	/*
-	// init indicator table
-	g_streets.set ( 7                 ,  // keySize
-			0                 ,
-			0                 ,  // initial # slots 
-			NULL              ,  // initial buf
-			0                 ,  // initial buf size
-			false             ,  // allowDup keys?
-			0                 ); // niceness
-	
-	// load inidcator table
-	if ( g_streets.load ( g_hostdb.m_dir , "streetnames.dat" ) ) 
-		return true;
-
-	// . open the unholy planet-090421.osm file to create streetnames.dat
-	// . see http://wiki.openstreetmap.org/wiki/Data_Primitives to
-	//   explain a bit about this xml file
-	// . http://wiki.openstreetmap.org/wiki/Map_Features
-	// . http://wiki.openstreetmap.org/wiki/Develop
-	// . http://code.google.com/apis/maps/documentation/examples/
-	sprintf ( ff , "%splanet-090421.osm", g_hostdb.m_dir );
-	logf(LOG_INFO,"places: reading %s",ff);
-	FILE *fd = fopen ( ff, "r" );
-	if ( ! fd )
-		return log("places: failed to open %s: %s",ff,strerror(errno));
-	*/
-
-
-	return true;
-}
-
-// . "boost" is how much to boost the Place's score by if it has this indicator
-bool addIndicator ( char *s , char bit , float indScore ) {
-	// hash it
-	int64_t h = hash64Lower_utf8 ( s , gbstrlen(s) );
-	return addIndicator ( h , bit , indScore );
-}
-
-bool addIndicator ( int64_t h , char bit , float indScore ) {
-	// plaza is two types of indicator, street and name
-	IndDesc *pid = (IndDesc *)g_indicators.getValue (&h);
-	// if there, augment the bits
-	if ( pid ) {
-		pid->m_bit |= bit;
-		return true;
-	}
-	// add in some indicators of our own
-	IndDesc id;
-	// set bit, should only be one
-	id.m_bit = bit;
-	id.m_indScore = indScore;
-	// add it. should gbmemcpy "pd"
-	return g_indicators.addKey ( &h , &id ) ;
-}
-
-// "baseScore" should be event id
-bool Address::hash ( int32_t        baseScore ,
-		     HashTableX *dt        ,
-		     uint32_t    date      ,
-		     Words      *words     , 
-		     Phrases    *phrases   , 
-		     SafeBuf    *pbuf      ,
-		     HashTableX *wts       ,
-		     SafeBuf    *wbuf      ,
-		     int32_t        version   ,
-		     int32_t        niceness  ) {
-	return true;
-}
-
 
 // . returns false and sets g_errno on error
 bool Addresses::hashForPlacedb ( int64_t   docId    ,
@@ -16956,7 +13314,6 @@ bool Addresses::addIntersection ( int32_t i , int32_t alnumPos ) {
 	int32_t wcount2 = 0;
 	int32_t j2 = i;
 	bool hadStreetInd = false;
-	bool hadDirInd = false;
 	int32_t numPos2 = -1;
 	int32_t lastBeforeNum2 = -1;
 	int32_t routePos2 = -1;
@@ -16988,7 +13345,6 @@ bool Addresses::addIntersection ( int32_t i , int32_t alnumPos ) {
 			good2 = true;
 		}
 		else if ( id && (id->m_bit & IND_DIR ) ) {
-			hadDirInd = true;
 			// fix "Central Ave SE and Richmond SE  Albuquerque"
 			if ( m_wlens[j] == 2 ) 
 				hadCornerDirInd2 = true;
@@ -17112,9 +13468,6 @@ bool Addresses::addIntersection ( int32_t i , int32_t alnumPos ) {
 	street->m_type    = PT_STREET;
 	street->m_str     = m_wptrs[j1];
 	street->m_strlen  = m_wptrs[j2]-m_wptrs[j1]+m_wlens[j2];
-	//street->m_adm1[0] = 0;
-	//street->m_adm1[1] = 0;
-	//street->m_crid    = 0;
 	street->m_flags2  = PLF2_INTERSECTION;
 	street->m_bits    = 0;
 	street->m_address = NULL;
@@ -17122,13 +13475,6 @@ bool Addresses::addIntersection ( int32_t i , int32_t alnumPos ) {
 	// set its m_hash member
 	setHashes ( street , m_words , m_niceness );
 
-	// prevent overlap with next street
-	//lastb = m_street->m_b;
-	// . need to know this for getting place name
-	// . place name must also be in upper case if 
-	//   the street is...
-	// . TODO: do we need this???? mdw
-	//if ( uc == 1 ) m_street->m_bits |= PLF_HAS_UPPER;
 	// set some bits
 	for ( int32_t k = a ; m_bits && k < b ; k++ )
 		m_bits->m_bits[k] |= D_IS_IN_STREET;
@@ -17207,19 +13553,7 @@ bool Addresses::isInStreet ( int32_t j ) {
 		if (m_wptrs[j][0]=='-'&&j>0&&m_wids[j-1]==h_i&&j+1<m_nw&&
 		    is_digit(m_wptrs[j+1][0]) )
 			return true;
-		// fix "3650-A Hwy 528..."
-		//if(m_wptrs[j][0]=='-'&&m_wlens[j]==1&&j==i+1&&
-		//   j+1<m_nw&&m_wlens[j+1]==1&&
-		//   is_alpha_a(m_wptrs[j+1][0])) return true;
-		// "620-624 Central Ave SW." (El Rey) 
-		//if ( hasRange &&j==i+1 ) return true;
-		// fix for 4909-15 Hawkins NE" for ceder.net
-		//if(j+1<m_nw&&
-		//   m_wlens[j+1]==2&&is_digit(m_wptrs[j+1][0])&&
-		//   m_wlens[j-1]>=4&&is_digit(m_wptrs[j-1][0]) ) {
-		//	hasHyphenAddress = true;
-		//	return true;
-		//}
+
 		// sequence of whitespace is ok
 		int32_t k;	for(k=0;k<m_wlens[j];k++)
 			if(!is_wspace_a(m_wptrs[j][k])) break;
@@ -17262,10 +13596,6 @@ bool Addresses::isInStreet ( int32_t j ) {
 	if ( m_bits && (m_bits->m_bits[j] & D_IS_IN_DATE) )
 		return false;
 
-	// . otherwise we are alphanumeric
-	// . more than 10 is too many for a street
-	//if ( alnumsInPhrase++ >= 10 ) return false;
-
 	// stop at "at"
 	if ( m_wids[j] == h_at )
 		return false;
@@ -17290,27 +13620,12 @@ bool Addresses::isInStreet ( int32_t j ) {
 	if ( m_wids[j] == h_intersection )
 		return false;
 
-	int64_t postWid = 0LL;
-	int32_t maxj = j+15; if ( j > m_nw ) j = m_nw;
-	for ( int32_t pi = j + 1 ; pi < maxj ; pi++ ) {
-		if ( ! m_wids[pi] ) continue;
-		postWid = m_wids[pi];
-		break;
-	}
-
-	// skip if indicator
-	//IndDesc *id=(IndDesc *)g_indicators.getValue(&m_wids[j]);
-	//if ( id && (id->m_bit & IND_STREET) ) return true;
-	//if ( id && (id->m_bit & IND_DIR   ) ) return true;
-
 	return true;
 }
 
 uint64_t getAdm1Bits ( char *stateAbbr ) {
-	//if ( stateAbbr[2] ) { char *xx=NULL;*xx=0; }
 	uint64_t h64 = hash64Lower_a( stateAbbr , 2 );
 	StateDesc **sdp = (StateDesc **)g_states.getValue(&h64);
-	//uint16_t *val = (uint16_t *)g_states.getValue ( &h64 );
 	// this happens if we have a foreign latlon only address in the contact
 	// address tags and we call setFromStr() on that. obviously
 	// foreign states will not be in here! so allow this for now and
@@ -17328,14 +13643,6 @@ StateDesc *getStateDesc ( char *stateAbbr ) {
 	if ( ! sdp ) return NULL;
 	return *sdp;
 }
-
-StateDesc *getStateDescByNum ( int32_t i ) {
-	// sto breach;
-	if ( i >= (int32_t)sizeof(s_states)/ (int32_t)sizeof(StateDesc)) return NULL;
-	if ( i < 0 ) return NULL;
-	return &s_states[i];
-}
-
 
 inline int32_t getStateOffset ( int64_t *h ) {
 	StateDesc **sdp = (StateDesc **)g_states.getValue(h);
@@ -17366,25 +13673,6 @@ StateDesc *getStateDescFromBits ( uint64_t bit ) {
 	return NULL;
 }
 
-char *getStateAbbr ( uint64_t bit ) {
-	// clear the unique bit
-	//bit &= ~ CF_UNIQUE;
-	// use this for speed
-	int32_t pos = getBitPosLL((uint8_t *)&bit);
-	// must be there
-	return s_states[pos].m_adm1;
-}
-
-int64_t getWordXorHash2 ( char *s , int32_t slen ) {
-	// tmp save
-	char c = s[slen];
-	s[slen] = '\0';
-	int64_t h = getWordXorHash(s);
-	// put back
-	s[slen] = c;
-	return h;
-}
-
 int64_t getWordXorHash ( char *s ) {
 	Words tmp;
 	tmp.set9 ( s , 0 );
@@ -17397,104 +13685,6 @@ int64_t getWordXorHash ( char *s ) {
 		h ^= wids[i];
 	}
 	return h;
-}
-
-bool getLatLon ( uint32_t cityId , double *lat , double *lon ) {
-	// now lookup timezone
-	int32_t slot = g_timeZones.getSlot ( &cityId );
-	// return 0 if not found
-	if ( slot < 0 ) return false;
-	// otherwise, set m_timeZoneOffset appropriately
-	CityStateDesc *csd;
-	csd = (CityStateDesc *)g_timeZones.getValueFromSlot(slot);
-	*lat = csd->m_latitude;
-	*lon = csd->m_longitude;
-	return true;
-}
-
-// or numeric lat/lon
-float getLatLonSpecial ( char *p , 
-			 char *bufStart, 
-			 char *bufEnd , 
-			 char *found ) {
-	// assume none
-	*found = 0;
-	// must start with digit
-	if ( ! is_digit(*p) ) return 0.0;
-	// set start
-	char *start = p;
-	// negative sign?
-	if ( p>bufStart && p[-1] == '-' ) start--;
-	// reset counts
-	int32_t digitCount = 0;
-	int32_t decimalCount = 0;
-	// do not scan so far
-	char *pmax = p + 20;
-	if ( pmax > bufEnd ) pmax = bufEnd;
-	// scan until no digit or period
-	for ( ; p < pmax ; p++ ) {
-		// count the digits
-		if ( is_digit(*p) ) {
-			digitCount++;
-			continue;
-		}
-		// decimal point is ok
-		if ( *p == '.' ) {
-			decimalCount++;
-			continue;
-		}
-		// stop on other crap
-		break;
-	}
-	//  give up if less than 3 digits encountered
-	if ( digitCount <  3 ) return 0.0;
-	// some pages have no period in it
-	// and we just have to assume the first
-	// 3 digits are before the period. like for
-	// switchboard.com urls
-	if ( decimalCount >= 2 ) return 0.0;
-	// convert
-	double dval = atod2(start,p-start);
-	// fix switchboard.com stuff which has no decimal pt
-	if ( decimalCount == 0 ) {
-		// how many digits to left of decimal
-		int32_t left = 3;
-		// make a divisor
-		double ddd = 1;
-		for ( int32_t vv = 0 ; vv<digitCount-left; vv++)
-			ddd *= 10;
-		// fix it
-		dval /= ddd;
-	}
-	// bail if bad
-	if ( dval < -180.0 || dval > 180.0 ) return 0.0;
-	// in the usual decimal it is
-	// lat from  24.450000 to   60 (juneau alask) // 47.4666666
-	// lon from -71.083333 to -114.1333333
-	//char type = 0;
-	//if      ( dval >=  24.45 && dval <=  60.0 ) type = 1; // lat
-	//else if ( dval >= -140.0 && dval <= -66.1 ) type = 2; // lon
-	//else log("query: lat/lon point not in our scope. fix!");
-	//if ( type == 0 ) return 0.0;
-
-	*found = 1;//type;
-	return dval;
-}
-
-// . like ";;5815 Wyoming Blvd NE;Albuquerque;87109;NM;;;" ???
-char *getZipPtrFromStr ( char *data , int32_t *zipLen ) {
-	// now point to latitude,longitude
-	// skip city,state,zip,something,hash,ip
-	char *zipPtr = data;
-	int32_t scount = 0;
-	for ( ; scount < 6 ; zipPtr++ )
-		if ( *zipPtr == ';' ) scount++;
-	// get length
-	char *end = zipPtr + 1;
-	for ( ; *end != ';' ; end++ );
-	*zipLen = end - zipPtr ;
-	// pts past that ';'
-	return zipPtr;
 }
 
 // if you just want to call setStr() and have it use stack mem to
@@ -17713,881 +13903,9 @@ void resetAddressTables ( ) {
 	s_syn.reset();
 	s_jobTable.reset();
 	s_doyTable.reset();
-	g_nameTable.reset();
 	if ( g_pbuf ) mfree ( g_pbuf, g_pbufSize , "placbuf");
 }
 
-///////////////////////////////////////////////////
-//
-// NEW PLACES LOGIC
-//
-// Use this for the new functions:
-
-// If user enters 'berlin': (try to get in country of m_ipCrid first)
-// If user enters 'berlin, germany':
-// PlaceDesc *getMostPopularCity_new ( uint64_t cityHash64,char crid)
-//   Algorithm: scan list of cities in that country and choose the most
-//   populated one in that country.
-
-// If user enters 'berlin': (next, try to get most popular in world)
-// PlaceDesc *getMostPopularCity_new ( uint64_t cityHash64 , 0 = crid );
-
-// If user enters 'berlin, <adm1>'  or 'cincinnati, ohio'.
-// PlaceDesc *getCityInState_new ( uint64_t cityHash64,uint64_t stateHash64);
-//   Algorithm: get list of all places that are states with stateHash64, and
-//   record list as the two-letter state codes. Then scan the cities with
-//   cityHash64 and see which has one of the state codes in that list.
-
-// If user enters 'germany' or 'republic of chad'
-// PlaceDesc *getCountryPlace ( int32_t a, int32_t alnumPos, Words *w );
-
-// need this
-// PlaceDesc *getCountryDescFromId ( uint8_t crid );
-
-// For getting the timezone from a lat/lon in a foreign country:
-// PlaceDesc *getNearestCity_new ( float lat , float lon );
-
-
-///////////////////////////////////////////////////
-
-
-// . maps a hash of a word or phrase to a PlaceDesc ptr
-// . dups are allowed - one key can map to multiple PlaceDescriptors
-//HashTableX g_nameTable;
-
-bool loadPlaces ( ) {
-
-	// map 64bit name hash to a place dec ptr. allowdups= true.
-	// niceness = 0.
-	g_nameTable.set ( 8 , // 64 bit key hash
-			  4 , // placedec ptr
-			  0 , // no initial slots
-			  NULL , // no intiial buf
-			  0 ,  // zero initial buf size
-			  true , // allow dups?
-			  0 , // niceness
-			  "nametab" );
-
-
-	if ( g_proxy.isProxy() ) return true;
-
-	// log it
-	log("places: loading places.dat");
-
-	// try to load from disk
-	if ( g_nameTable.load ( g_hostdb.m_dir , 
-				"places.dat" , 
-				&g_pbuf ,
-				&g_pbufSize ) ) {
-		// test it out
-		PlaceDesc *pd = getCity2_new ( "abq", "nm", CRID_US,0);
-		if ( ! pd ) { char *xx=NULL;*xx=0; }
-		// make sure "nm" brings up new mexico
-		pd = getState2_new ( "nm", CRID_US,0);
-		if ( ! pd ) { char *xx=NULL;*xx=0; }
-		// scan for integrity
-		pd = (PlaceDesc *)g_pbuf;
-		//PlaceDesc *pdend = (PlaceDesc *)(g_pbuf+g_pbufSize);
-		for ( ; ; pd++ ) {
-			// stop if we enter the name buf space
-			if ( ((char *)pd)[0] == 'u' &&
-			     ((char *)pd)[1] == 'n' &&
-			     ! strcmp((char *)pd,"unknown name" ) )
-				break;
-			// sanity
-			if ( pd->m_lat < -180.0 ) { char *xx=NULL;*xx=0; }
-			if ( pd->m_lat >  180.0 ) { char *xx=NULL;*xx=0; }
-			if ( pd->m_lon < -180.0 ) { char *xx=NULL;*xx=0; }
-			if ( pd->m_lon >  180.0 ) { char *xx=NULL;*xx=0; }
-		}
-		return true;
-	}
-
-	// error?
-	log("places: failed to load places.dat: %s",mstrerror(g_errno));
-
-	// try making it
-	return generatePlacesFile ( );
-}
-
-bool generatePlacesFile ( ) {
-
-	log("places: generating places.dat file");
-
-	char buf[10000];
-
-
-	//
-	// MAKE TIMEZONE TABLE for referencing
-	//
-	// scan allCountries.txt
-	char pcmd[1024];
-	sprintf(pcmd,"cat %s/timeZones.txt",g_hostdb.m_dir);
-	FILE *pf = popen ( pcmd , "r" );
-	if ( ! pf ) { 
-		g_errno = errno; 
-		return log("places: could not open timeZones.txt");
-	}
-	class TZVal {
-	public:
-		char m_tzoff;
-		char m_useDST;
-	};
-	HashTableX tztab;
-	tztab.set ( 8 , sizeof(TZVal),0,NULL,0,false,0,"tztab");
-	// read in the lines
-	while ( fgets ( buf , 10000 , pf ) ) {
-		// null terminate it, instead of \n
-		buf[gbstrlen(buf)-1]='\0';
-		// parse it up. timezonestr\ttzoff1|tzoffdst
-		char  timeZoneStr[64]; // Europe/Andorra
-		int32_t  off1;
-		int32_t  off2; // dst
-		sscanf ( buf , 
-			 "%s\t" // timezone name
-			 "%"INT32"\t" // off1
-			 "%"INT32"" // off2
-			 , timeZoneStr
-			 , &off1
-			 , &off2
-			 );
-		// make a table
-		int64_t tzh64 = getWordXorHash ( timeZoneStr );
-		// make the value
-		TZVal tzval;
-		tzval.m_tzoff = off1;
-		if ( off1 != off2 ) tzval.m_useDST = 1;
-		else                tzval.m_useDST = 0;
-		tztab.addKey ( &tzh64 , &tzval );
-	}
-		
-
-
-
-	// . map a geoId to ptr to the PlaceDesc in the g_placeBuf
-	// . a temporary table really...
-	HashTableX places;
-	places.set ( 4, 4, 5000000 , NULL ,0 , false, 0,"gpht");
-
-	// official names of each place
-	SafeBuf nameBuf;
-	nameBuf.reserve ( 10*1024*1024 );
-	// this is actually required and we check for it to avoid
-	// overruning our PlaceDesc when we scan those. we need this
-	// to set "pdend" for the PlaceDesc scan because we concatenate
-	// the nameBuf to the end of the placeBuf. so basically
-	// places.dat holds those two conjoined buffers ...
-	nameBuf.safePrintf("unknown name");
-	nameBuf.pushChar('\0');
-
-	int32_t zero = 0;
-
-	// reserve 100MB
-	SafeBuf placeBuf;
-	placeBuf.reserve ( 100*1024*1024 );
-
-	HashTableX dedup;
-	dedup.set ( 8,4,100000,NULL,0,false,0,"pddptb");
-
-	// this will have to be remade
-	sprintf(pcmd,"unlink %s/citylatlist.dat",g_hostdb.m_dir);
-	system(pcmd);
-
-	// scan allCountries.txt
-	sprintf(pcmd,"cat %s/allCountries.txt",g_hostdb.m_dir);
-	pf = popen ( pcmd , "r" );
-	if ( ! pf ) { g_errno = errno; return false; }
-
-	// limit g_nameTable from getting too big! otherwise places.dat
-	// is 550MB on disk and in memory!!! with this is it 200MB.
-	// otherwise it grows to 32M slots...
-	g_nameTable.m_maxSlots = 8388608; // 1<<23
-
-	// read in the lines
-	while ( fgets ( buf , 10000 , pf ) ) {
-		// null terminate it, instead of \n
-		buf[gbstrlen(buf)-1]='\0';
-		// parse it up. id|name|lat|lon|abbr
-		/*
-		int32_t  geoId;
-		char  name[512];
-		float lat;
-		float lon;
-		char  code     [16];
-		char  countryAbbr[32];
-		char  stateAbbr[32];
-		int32_t  population = 0;
-		char  timeZoneStr[64]; // Europe/Andorra
-		*/
-		// convert all tabs to \0
-		char *p = buf;
-		for ( ; *p ; p++ ) if ( *p == '\t' ) *p = '\0';
-		// see /geo/geonames/index.html for format description
-		p = buf;
-		int32_t geoId = atol(p); p += strlen(p) + 1;
-		//if ( geoId == 1850147 )
-		//	log("hey");
-		char *officialName = p; p += strlen(p) + 1; // official name
-		char *asciiName = p; p += strlen(p) + 1; // asciname
-		char *altNames = p; p += strlen(p)+1; // altnames
-		float lat;
-		// sometimes allCountries.txt leaves out "altNames" field!
-		// so detect if this field is a latitude or not...
-		bool hadAlpha  = false;
-		bool hadDigit  = false;
-		bool hadPeriod = false;
-		char *tmp = altNames;
-		for ( ; *tmp ; tmp++ ) {
-			if ( is_alpha_a(*tmp) ) hadAlpha = true;
-			if ( is_digit  (*tmp) ) hadDigit = true;
-			if ( *tmp == '.' ) hadPeriod = true;
-		}
-		// need a digit and no alphas to be a latitude
-		bool isLat = false;
-		if ( hadDigit && ! hadAlpha && hadPeriod ) isLat = true;
-		if ( isLat ) {
-			lat = atof ( altNames );
-		}
-		else {
-			lat = atof(p); 
-			p += strlen(p) + 1;
-		}
-		float lon = atof ( p ); p += strlen(p) + 1;
-		p += strlen(p) + 1; // code class
-		char *code = p; p += strlen(p)+1; // code type
-		char *countryAbbr = p; p += strlen(p)+1;
-		p += strlen(p)+1; // altCountry
-		char *stateAbbr =  p; p += strlen(p)+1;
-		p += strlen(p)+1; // adm2
-		p += strlen(p)+1; // adm3
-		p += strlen(p)+1; // adm4
-		int32_t population = atol(p); p += strlen(p)+1;
-		p += strlen(p)+1; // elevation
-		p += strlen(p)+1; // avg elevation
-		char *timeZoneStr = p; p += strlen(p)+1;
-		p += strlen(p)+1; // moddate
-
-		// debug point
-		//if ( geoId == 5381396 )
-		//	log("hey");
-
-		// skip if no timezone for now
-		if ( ! timeZoneStr[0] ) {
-			log("places: no timezone for geoid=%"INT32" name=%s",
-			    geoId,officialName);
-			continue;
-		}
-		
-		// reserve space
-		//placeBuf.reserve ( 1024 );
-		// not allowed to grow since we use dedup table now
-		if ( placeBuf.getAvail() < (int32_t)sizeof(PlaceDesc) ) {
-			char *xx=NULL;*xx=0;}
-
-		// make a new country desc
-		PlaceDesc *pd = (PlaceDesc *)placeBuf.getBuf();
-		//
-		// see http://www.geonames.org/export/codes.html
-		//
-		
-		// exceptions: 
-		// "122 Mile House" ...
-		if  ( ! strncmp( code,"PPLL",4)) continue;
-		// a basic city
-		if      ( ! strncmp( code,"PPL",3)) pd->m_flags = PDF_CITY;
-		// locality
-		else if ( ! strcmp ( code ,"LCTY")) pd->m_flags = PDF_CITY;
-		// . town of, township, town of north hempstead
-		// . crap! this gets a different san jose!
-		// . avoid "City of Cincinnati" etc.. crap
-		// . BUT allow town of north hempstead through (5129081)
-		else if ( ! strcmp ( code ,"ADMD") && geoId == 5129081 )
-			pd->m_flags = PDF_CITY;
-		// independent political entity
-		else if ( ! strcmp ( code,"PCLIX")) pd->m_flags = PDF_CITY;
-		// another city i guess
-		else if ( ! strcmp ( code , "P" ) ) pd->m_flags = PDF_CITY;
-		// states
-		else if ( ! strcmp ( code ,"ADM1")) pd->m_flags = PDF_STATE;
-		// countries
-		else if ( ! strcmp ( code ,"PCLI")) pd->m_flags = PDF_COUNTRY;
-		// otherwise, skip it!
-		else continue;
-
-		// . sanity
-		// . these were messing up our raw lat/lon processing
-		//   in searchinput.cpp because we thought that a direct
-		//   lat/lon in the wherebox was a city name because there was
-		//   a city name that was "35", which was our latitude entered!
-		if ( pd->m_flags == PDF_CITY && is_digit(officialName[0]) ){
-			log("places: bad city name: %s",officialName);
-			continue;
-		}
-
-		// a bunch of cities do not have states...
-		//if ( pd->m_flags != PDF_COUNTRY && 
-		//     ( ! stateAbbr[0] || ! stateAbbr[0] ) ) {
-		//	log("hey %s",officialName);
-		//	continue;
-		//}
-
-		// get country id
-		pd->m_crid = getCountryId ( countryAbbr );
-		// geoid for looking up in alternateNames.txt
-		//pd->m_geoId = geoId;
-		// lat and lon
-		pd->m_lat = lat;
-		pd->m_lon = lon;
-		pd->m_population = population;
-		// skip over it (not allowed to grow anymore!)
-		//placeBuf.advance ( sizeof(PlaceDesc) );
-		placeBuf.m_length += (int32_t)sizeof(PlaceDesc);
-		// . point to that. we'll store <adm1>,<name> in there now
-		// . we need to somehow append alternate names later
-		//pd->m_data = placeBuf.getBuf();
-		// store adm1 in m_data[]
-		pd->m_adm1[0] = to_lower_a(stateAbbr[0]);
-		pd->m_adm1[1] = to_lower_a(stateAbbr[1]);
-		// if greece... use last two
-		if ( to_lower_a(countryAbbr[0]) == 'g' &&
-		     to_lower_a(countryAbbr[1]) == 'r' &&
-		     pd->m_adm1[0] == 'e' &&
-		     pd->m_adm1[1] == 's' &&
-		     is_digit(stateAbbr[4]) &&
-		     is_digit(stateAbbr[5]) ) {
-			// store the last two letter's for greece
-			pd->m_adm1[0] = to_lower_a(stateAbbr[4]);
-			pd->m_adm1[1] = to_lower_a(stateAbbr[5]);
-		}
-		// hash timezone string
-		uint64_t tzh64 = getWordXorHash ( timeZoneStr );
-		//look it up in our table made from /geo/geonames/timeZones.txt
-		TZVal *tzv = (TZVal *)tztab.getValue ( &tzh64 );
-		if ( ! tzv ) { char *xx=NULL;*xx=0 ;}
-		// from -12 to + 12 i guess
-		pd->m_timeZoneOffset = tzv->m_tzoff;
-		// now the daylightsavings time flag
-		if ( tzv->m_useDST ) pd->m_flags |= PDF_USE_DST;
-		// . add to table using the name as the key
-		// . i think this table is just for generation since
-		//   we'll use the g_namesTable to map place names to
-		//   the PlaceDesc.
-		places.addKey(&geoId,&pd);
-		// store OFFSETS in nametable
-		int32_t placeDescOffset = (char *)pd - placeBuf.getBufStart();
-
-		// we need to add the official name here because it's not
-		// always in alternateNames.txt... 
-		uint64_t nh64a = getWordXorHash ( officialName );
-		uint64_t dedupKeya = nh64a ^ (uint32_t)placeDescOffset;
-		// skip if in there
-		if ( ! dedup.isInTable(&dedupKeya) ) {
-			// make this name's hash point to its PlaceDesc
-			if ( ! g_nameTable.addKey ( &nh64a, &placeDescOffset)) 
-				return false;
-			// do not add dup combos
-			dedup.addKey ( &dedupKeya , &zero );
-		}
-
-		// hmmm... we need nh64 to be ascii for adding to nameBuf...
-		uint64_t exactHash64 = hash64n ( officialName );
-		// also make this name's hash point to the
-		// name itself so we can convert a lat/lon into
-		// a place name, based on getNearestCity_new()
-		if ( ! dedup.isInTable ( &exactHash64 ) ) {
-			// nameBuf
-			int32_t nameOffset = nameBuf.length();
-			// store it
-			int32_t olen = gbstrlen(officialName);
-			nameBuf.safeMemcpy ( officialName , olen );
-			nameBuf.pushChar('\0');
-			// store offset
-			pd->m_officialNameOffset = nameOffset;
-			// do not repeat!
-			dedup.addKey ( &exactHash64 , &nameOffset );
-		}
-		else {
-			// i guess we already added this name before so
-			// point to where we added it
-			int32_t off = *(int32_t *)dedup.getValue ( &exactHash64 );
-			// use that then
-			pd->m_officialNameOffset = off;
-		}
-
-		//
-		// also add the ascii too, it seems a lot of times that
-		// is not given in the alternateNames.txt file either!!!!
-		//
-		uint64_t nh64b = getWordXorHash ( asciiName );
-		uint64_t dedupKeyb = nh64b ^ (uint32_t)placeDescOffset;
-		// skip if in there
-		if ( ! dedup.isInTable(&dedupKeyb) ) {
-			// make this name's hash point to its PlaceDesc
-			if ( ! g_nameTable.addKey ( &nh64b, &placeDescOffset)) 
-				return false;
-			// do not add dup combos
-			dedup.addKey ( &dedupKeyb , &zero );
-		}
-
-
-		// skip if not state
-		if ( ! ( pd->m_flags & PDF_STATE) ) continue;
-		// skip if is numeric for now... strange...
-		//if ( is_digit(stateAbbr[0]) ) continue;
-		if ( ! stateAbbr[0] ) continue;
-		// if we are a state, add our abbreviation here as well!
-		// does this convert to lowercase? yes... it should
-		uint64_t nh64c = getWordXorHash ( stateAbbr );
-		// make another dedupkey
-		uint64_t dedupKeyc = nh64c ^ (uint32_t)placeDescOffset;
-		// check that as well
-		if ( dedup.isInTable(&dedupKeyc) ) continue;
-		if ( ! g_nameTable.addKey ( &nh64c , &placeDescOffset ) ) 
-			return false;
-		// do not add dup combos
-		dedup.addKey ( &dedupKeyc , &zero );
-	}
-	// close the pipe
-	pclose(pf);
-
-	// . now scan in the alternateNames.txt
-	// . add to the hashtablex g_nameTable
-	// . key is word xor hash of the name
-	// . value is ptr to the PlaceDesc in placeBuf
-	// . allow dups since a single name can point to multiple unique places
-	sprintf(pcmd,"cat %s/alternateNames.txt",g_hostdb.m_dir);
-	pf = popen ( pcmd , "r" );
-	if ( ! pf ) { g_errno = errno; return false; }
-
-	// read in the lines
-	while ( fgets ( buf , 10000 , pf ) ) {
-		// null terminate it, instead of \n
-		buf[gbstrlen(buf)-1]='\0';
-		// convert all tabs to \0
-		char *p = buf;
-		for ( ; *p ; p++ ) if ( *p == '\t' ) *p = '\0';
-		// parse it up. id|name|lat|lon|abbr
-		p = buf;
-		p += strlen(p) + 1; // some number
-		int32_t geoId = atol(p); p += strlen(p) + 1;
-		p += strlen(p) + 1; // langIdStr
-		char *altName = p; p += strlen(p) + 1; 
-		p += strlen(p) + 1; // is preferred name
-		p += strlen(p) + 1; // is int16_t ?name
-		// now hash up that name
-		uint64_t nh64d = getWordXorHash ( altName );
-		// find the place desc for it
-		PlaceDesc **ppd = (PlaceDesc **)places.getValue ( &geoId );
-		// this won't be there if its not a city,ctry,state, etc.
-		// or timezone was missing above
-		if ( ! ppd ) continue;
-		// cast it otherwise
-		PlaceDesc *pd = *ppd;
-		// store OFFSETS in nametable
-		int32_t placeDescOffset = (char *)pd - placeBuf.getBufStart();
-		// do not add dup combos
-		uint64_t dedupKeyd = nh64d ^ (uint32_t)placeDescOffset;
-		if ( dedup.isInTable ( &dedupKeyd ) ) continue;
-		// use that
-		if ( ! g_nameTable.addKey ( &nh64d , &placeDescOffset ) ) 
-			return false;
-		// do not add dup combos
-		dedup.addKey ( &dedupKeyd , &zero ) ;
-	}
-	pclose(pf);
-
-	// set this temporarily so getState_new() etc. works for now
-	g_pbuf = placeBuf.getBufStart();
-
-	// . add in state aliases for states in the US
-	// . "wash" = "washington" "ore = oregeon" etc.
-	int32_t n = (int32_t)sizeof(s_states)/ sizeof(StateDesc);
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// get it
-		StateDesc *sd = &s_states[i];
-		// skip if none
-		if ( ! sd->m_name2 ) continue;
-		// get original name
-		uint64_t nh64 = getWordXorHash ( sd->m_name1 );
-		// get the PlaceDesc. this will scan all the matches and
-		// get the one that is a state in the US
-		PlaceDesc *pd = getState_new ( nh64 , CRID_US , 0 );
-		// must be there
-		if ( ! pd ) { char *xx=NULL;*xx=0; }
-		// make key (d.c. colo. n.m.)
-		uint64_t anh64 = getWordXorHash ( sd->m_name2 );
-		// store OFFSETS in nametable
-		int32_t offset = (char *)pd - placeBuf.getBufStart();
-		// add the alias
-		if ( ! g_nameTable.addKey ( &anh64 , &offset ) ) return false;
-	}
-
-	// add our CITY aliases i.e. "abq" or "nyc" for cities in the US
-	n = (int32_t)sizeof(s_cityList)/ sizeof(AliasDesc);
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// get it
-		AliasDesc *ad = &s_cityList[i];
-		// get the PlaceDesc. this will scan all the matches and
-		// get the one that is a state in the US
-		PlaceDesc *pd = getCity2_new(ad->m_s2, ad->m_adm1 , CRID_US,0);
-		// must be there
-		if ( ! pd ) { char *xx=NULL;*xx=0; }
-		// make key (d.c. colo. n.m.)
-		uint64_t ach64 = getWordXorHash ( ad->m_s1 );
-		// store OFFSETS in nametable
-		int32_t offset = (char *)pd - placeBuf.getBufStart();
-		// add the alias
-		if ( ! g_nameTable.addKey ( &ach64 , &offset ) ) return false;
-	}
-
-	// size of placeBuf
-	int32_t placeBufLength = placeBuf.length();
-	// concatenate nameBuf to placeBuf for saving to disk
-	if ( ! placeBuf.cat ( nameBuf ) ) return false;
-	// adjust all PlaceDesc::m_officialNameOffset vars to compensate for 
-	// this concatenation
-	PlaceDesc *pd = (PlaceDesc *)placeBuf.getBufStart();
-	PlaceDesc *pdend = (PlaceDesc *)(((char *)pd) + placeBufLength);
-	for ( ; pd < pdend ; pd++ ) 
-		pd->m_officialNameOffset += placeBufLength;
-	
-	// test it out
-	PlaceDesc *pd2 = getCity2_new ( "abq", "nm", CRID_US,0);
-	if ( ! pd2 ) { char *xx=NULL;*xx=0; }
-
-	int64_t ph64 = getWordXorHash ( "Tokyo" );
-	pd2 = getMostPopularPlace_new ( ph64 ,CRID_ANY ,PDF_CITY,0 );
-	if ( ! pd2 ) { char *xx=NULL;*xx=0; }
-
-	// pasadena texas is more popular than california!
-	ph64 = getWordXorHash ( "Pasadena" );
-	pd2 = getMostPopularPlace_new ( ph64 ,CRID_US ,PDF_CITY,0 );
-	//if ( pd2->m_population != 144618 ) { char *xx=NULL;*xx=0; }
-	if ( ! pd2 ) { char *xx=NULL;*xx=0; }
-
-	// . now the g_nameTable points into the buffer of PlaceDesc, save it
-	// . HashTableX can save the buffer too now!
-	if ( ! g_nameTable.save ( g_hostdb.m_dir ,
-				  "places.dat" ,
-				  placeBuf.getBufStart() ,
-				  placeBuf.length() ) )
-		return false;
-
-	// ok, try loading now
-	placeBuf.purge();
-	g_nameTable.reset();
-
-	log("places: loading generated table places.dat from disk");
-
-	return g_nameTable.load ( g_hostdb.m_dir , "places.dat" , 
-				  &g_pbuf , 
-				  &g_pbufSize );
-}
-
-// get the state in this country
-PlaceDesc *getState_new ( uint64_t pd64 , uint8_t crid , int32_t niceness ) {
-	int32_t slot = g_nameTable.getSlot ( &pd64 );
-	// scan the slots
-	for ( ; slot >= 0 ; slot = g_nameTable.getNextSlot(slot,&pd64) ) {
-		// breathe
-		QUICKPOLL(niceness);
-		// get the placedesc
-		int32_t offset = *(int32_t *)g_nameTable.getValueFromSlot(slot);
-		PlaceDesc *pd = (PlaceDesc *)(g_pbuf + offset);
-		// skip if not a state
-		if ( ! (pd->m_flags & PDF_STATE ) ) continue;
-		// skip if not right country
-		if ( pd->m_crid != crid ) continue;
-		// we got it!
-		return pd;
-	}
-	return NULL;
-}
-
-// get the state in this country
-PlaceDesc *getState2_new ( char *state , uint8_t crid , int32_t niceness ) {
-	uint64_t sh64 = getWordXorHash ( state );
-	return getState_new ( sh64, crid,niceness);
-}
-
-PlaceDesc *getCity_new ( uint64_t ch64 , 
-			 char *stateAbbr ,
-			 uint8_t crid ,
-			 int32_t niceness ) {
-
-	// sanity
-	if ( ! is_lower_a(stateAbbr[0]) ) { char *xx=NULL;*xx=0; }
-	if ( ! is_lower_a(stateAbbr[1]) ) { char *xx=NULL;*xx=0; }
-
-	int32_t slot = g_nameTable.getSlot ( &ch64 );
-	// scan the slots
-	for ( ; slot >= 0 ; slot = g_nameTable.getNextSlot(slot,&ch64) ) {
-		// breathe
-		QUICKPOLL(niceness);
-		// get the placedesc
-		int32_t offset = *(int32_t *)g_nameTable.getValueFromSlot(slot);
-		PlaceDesc *pd = (PlaceDesc *)(g_pbuf + offset);
-		// skip if not a city
-		if ( ! (pd->m_flags & PDF_CITY ) ) continue;
-		// skip if not right country
-		if ( crid != CRID_ANY && pd->m_crid != crid ) continue;
-		// or right state
-		if ( stateAbbr[0] != pd->m_adm1[0] ) continue;
-		if ( stateAbbr[1] != pd->m_adm1[1] ) continue;
-		// we got it!
-		return pd;
-	}
-	return NULL;
-}
-
-PlaceDesc *getCity2_new ( char *city ,
-			  char *stateAbbr ,
-			  uint8_t crid ,
-			  int32_t niceness ) {
-	uint64_t ch64 = getWordXorHash ( city );
-	return getCity_new ( ch64, stateAbbr,crid,niceness);
-}
-
-PlaceDesc *getCity3_new ( uint64_t ch64 , 
-			  uint64_t stateHash64,
-			  uint8_t crid ,
-			  int32_t niceness ) {
-
-	int32_t slot1 = g_nameTable.getSlot ( &ch64 );
-	// scan the slots
-	for ( ; slot1 >= 0 ; slot1 = g_nameTable.getNextSlot(slot1,&ch64) ) {
-		// breathe
-		QUICKPOLL(niceness);
-		// get the placedesc
-		int32_t offset1 = *(int32_t *)g_nameTable.getValueFromSlot(slot1);
-		PlaceDesc *pd1 = (PlaceDesc *)(g_pbuf + offset1);
-		// skip if not a city
-		if ( ! (pd1->m_flags & PDF_CITY ) ) continue;
-		// skip if not right country
-		if ( crid != CRID_ANY && pd1->m_crid != crid ) continue;
-		// see if we got a state that matches "stateHash64" and
-		// "pd->m_adm1"
-		int32_t slot2 = g_nameTable.getSlot ( &stateHash64 );
-		for ( ; slot2 >= 0 ; 
-		      slot2=g_nameTable.getNextSlot(slot2,&stateHash64)) {
-			// breathe
-			QUICKPOLL(niceness);
-			// get the placedesc
-			int32_t offset2;
-			offset2 = *(int32_t *)g_nameTable.getValueFromSlot(slot2);
-			PlaceDesc *pd2 = (PlaceDesc *)(g_pbuf + offset2);
-			// skip if not a city
-			if ( ! (pd2->m_flags & PDF_CITY ) ) continue;
-			// skip if not right country
-			if ( crid != CRID_ANY && pd2->m_crid != crid) continue;
-			// matching abbr?
-			if ( pd2->m_adm1[0] != pd1->m_adm1[0] ) continue;
-			if ( pd2->m_adm1[1] != pd1->m_adm1[1] ) continue;
-			// it's a match!
-			return pd1;
-		}
-	}
-	return NULL;
-}
-
-
-bool getLongestPlaceName_new ( int32_t a,
-			       int32_t alnumPos,
-			       Words *words,
-			       // must match! PDF_CITY|STATE|COUNTRY
-			       uint8_t placeType,
-			       uint8_t crid,
-			       char *stateAbbr,
-			       uint64_t *placeHash64,
-			       int32_t *placeAlnumA,
-			       int32_t *placeAlnumB,
-			       int32_t *placeA,
-			       int32_t *placeB ,
-			       // set to most popular match
-			       PlaceDesc **pdp ) {
-	// assume none
-	if ( placeHash64 ) *placeHash64 = 0LL;
-	// init hash to zero
-	int64_t h = 0LL;
-	// max count
-	int32_t count = 0;
-	// record start
-	int32_t startAlnumPos = alnumPos;
-	// fix this
-	alnumPos--;
-	// for some filtering
-	static bool s_flag = false;
-	static int64_t h_university;
-	static int64_t h_of;
-	if ( ! s_flag ) {
-		s_flag = true;
-		h_university = hash64n("university");
-		h_of         = hash64n("of");
-	}
-	// int16_tcut
-	int32_t nw = words->m_numWords;
-	int32_t wcount = 0;
-	// loop over words in [a,b)
-	for ( int32_t k = a ; k < nw ; k++ ) {
-		// or 15 words is good enough too!
-		if ( ++wcount >= 20 ) break;
-		// skip if not alnum
-		if ( ! words->isAlnum(k) ) continue;
-		// count it
-		alnumPos++;
-		// only up to 4 words in a place name
-		if ( ++count >= 5 ) break;
-		// get the hash of potential place name
-		int64_t wid = words->m_wordIds[k];
-		// int16_tcut
-		int32_t  wlen = words->m_wordLens[k];
-		char *wptr = words->m_words[k];
-		// if it ended in apostrophe s then fix that
-		if ( wlen > 2 &&
-		     wptr[wlen-2]=='\'' && 
-		     to_lower_a(wptr[wlen-1]) == 's' )
-			// hash the word without the 's
-			wid = hash64Lower_utf8(wptr,wlen-2);
-		// mix it up
-		h <<= 1;
-		// hash it into our ongoing hash
-		h ^= wid;
-		// ignore "University" if "of" follows
-		if ( h == h_university && 
-		     k + 2 < nw &&
-		     words->m_wordIds[k+2] == h_of )
-			continue;
-		// get it. just get the most popular that matches
-		PlaceDesc *pd = getPlaceDesc ( h,placeType,crid,stateAbbr,0);
-		if ( ! pd ) continue;
-		// check for "county" (santa fe county is not a city name)
-		if ( k + 2 < nw && words->m_wordIds[k+2] == h_county ) {
-			// nuke it
-			if ( placeHash64 ) *placeHash64 = 0LL;
-			return true;
-		}
-		// int16_tcuts
-		//char **wptrs = words->getWords();
-		//int32_t  *wlens = words->getWordLens();
-		// set the place
-		*placeA = a;
-		*placeB = k+1;
-		*placeAlnumA = startAlnumPos;
-		*placeAlnumB = alnumPos+1;
-		if ( placeHash64 ) *placeHash64 = h;
-		if ( pdp ) *pdp = pd;
-	}
-	return true;
-}
-
-// . placeType is like PDF_CITY or PDF_STATE or PDF_COUNTRY
-// . return most popular i guess
-PlaceDesc *getPlaceDesc ( uint64_t placeHash64 , 
-			  uint8_t placeType ,
-			  uint8_t crid,
-			  char *stateAbbr,
-			  int32_t niceness ) {
-	int32_t maxPop = -1;
-	PlaceDesc *best = NULL;
-	int32_t slot = g_nameTable.getSlot ( &placeHash64 );
-	// scan the slots
-	for ( ; slot >= 0 ; slot = g_nameTable.getNextSlot(slot,&placeHash64)){
-		// breathe
-		QUICKPOLL(niceness);
-		// get the placedesc
-		int32_t offset = *(int32_t *)g_nameTable.getValueFromSlot(slot);
-		PlaceDesc *pd = (PlaceDesc *)(g_pbuf + offset);
-		// skip if not the right type of place
-		if ( ! (pd->m_flags & placeType ) ) continue;
-		// crid too match?
-		if ( crid != CRID_ANY && pd->m_crid != crid ) continue;
-		// state match?
-		if ( stateAbbr && pd->m_adm1[0] != stateAbbr[0] ) continue;
-		if ( stateAbbr && pd->m_adm1[1] != stateAbbr[1] ) continue;
-		// get pop
-		if ( pd->m_population <= maxPop ) continue;
-		// otherwise, a new max
-		maxPop = pd->m_population;
-		// save it
-		best = pd;
-	}
-	return best;
-}
-
-bool getZip_new ( int32_t a , 
-		  int32_t alnumPos , 
-		  Words *words ,
-		  uint64_t *zipHash64 ,
-		  uint64_t *zipCityHash64 ,
-		  uint64_t *zipStateHash64 ,
-		  int32_t *zipAlnumA,
-		  int32_t *zipAlnumB,
-		  int32_t *zipA,
-		  int32_t *zipB,
-		  float *zipLat,
-		  float *zipLon ) {
-	// assume none
-	if ( zipHash64 ) *zipHash64 = 0LL;
-	// must be a number
-	if ( ! is_digit(words->m_words[a][0]) ) return true;
-	// make hash
-	int64_t h = 0 ^ words->m_wordIds[a];
-	// check for zip code
-	int32_t slot = g_zips.getSlot(&h);
-	// skip if not
-	if ( slot < 0 ) return true;
-	// get the place
-	ZipDesc *zd =(ZipDesc *)g_zips.getValueFromSlot(slot);
-	// set state hash
-	if ( zipStateHash64 ) *zipStateHash64 = hash64(zd->m_adm1,2,0LL);
-	// and city hash
-	if ( zipCityHash64 ) *zipCityHash64 = zd->m_cityHash;
-	*zipA = a;
-	*zipB = a+1;
-	*zipAlnumA = alnumPos;
-	*zipAlnumB = alnumPos+1;
-	if ( zipHash64 ) *zipHash64 = h;
-	*zipLat = zd->m_latitude;
-	*zipLon = zd->m_longitude;
-	return true;
-}
-
-PlaceDesc *getMostPopularPlace_new ( int64_t placeHash64, 
-				     uint8_t crid ,
-				     uint8_t placeType,
-				     int32_t niceness ) {
-	int32_t maxPop = -1;
-	PlaceDesc *best = NULL;
-	int32_t slot = g_nameTable.getSlot ( &placeHash64 );
-	// scan the slots
-	for ( ; slot >= 0; slot = g_nameTable.getNextSlot(slot,&placeHash64)){
-		// breathe
-		QUICKPOLL(niceness);
-		// get the placedesc
-		int32_t offset = *(int32_t *)g_nameTable.getValueFromSlot(slot);
-		PlaceDesc *pd = (PlaceDesc *)(g_pbuf + offset);
-		// skip if not a the right type of place
-		if ( ! (pd->m_flags & placeType ) ) continue;
-		// skip if not right country
-		if ( crid != CRID_ANY && pd->m_crid != crid ) continue;
-		// get pop
-		if ( pd->m_population <= maxPop ) continue;
-		// otherwise, a new max
-		maxPop = pd->m_population;
-		// save it
-		best = pd;
-	}
-	return best;
-}
-
-//
-// . the new getNearestCity_new() function
-// . copied from getNearestCity() function above
-//
-
-//static int32_t *s_latList2 = NULL;
-//static int32_t  s_latListSize2 = 0;
-//static int32_t  s_ni2 = 0;
 static SafeBuf s_cityLatList;
 
 
@@ -18752,111 +14070,3 @@ PlaceDesc *getNearestCity_new ( float  lat ,
 	// return that then
 	return minpd2;
 }
-
-
-int latcmp_new ( const void *arg1 , const void *arg2 ) {
-	int32_t off1 = *(int32_t *)arg1;
-	int32_t off2 = *(int32_t *)arg2;
-	// get the addresses
-	PlaceDesc *cd1;
-	PlaceDesc *cd2;
-	cd1 = (PlaceDesc *)(g_pbuf + off1);
-	cd2 = (PlaceDesc *)(g_pbuf + off2);
-	// simple compare
-	if ( cd1->m_lat < cd2->m_lat ) return -1;
-	if ( cd1->m_lat > cd2->m_lat ) return  1;
-	return 0;
-}
-
-bool testCityList ( ) {
-	PlaceDesc *pd;
-	char *name;
-
-	pd = getNearestCity_new ( 35.596035,-106.052246,0,NULL);
-	if ( ! pd ) { char *xx=NULL;*xx=0; }
-	name = pd->m_officialNameOffset + g_pbuf;
-	if ( strcmp ( name , "Santa Fe" ) ) { char *xx=NULL;*xx=0; }
-
-	// try this. make sure this is albuquerque
-	pd = getNearestCity_new ( 35.08449 ,-106.6511,0,NULL);
-	if ( ! pd ) { char *xx=NULL;*xx=0; }
-	name = pd->m_officialNameOffset + g_pbuf;
-	if ( strcmp ( name , "Albuquerque" ) ) { char *xx=NULL;*xx=0; }
-
-	return true;
-}
-
-// . our data is used by getNearestCityId
-// . about 123k cities, sort them by lat in one list, lon in the other
-// . 4 bytes per entry, we are talking 1.2MB for both lists
-bool initCityLists_new ( ) {
-
-	// bail if not indexing events
-	//if ( ! g_conf.m_indexEventsOnly ) return true;
-	return true;
-
-	log ("places: loading citylatlist.dat");
-
-	// first try to load the list of city offsets into g_pbuf 
-	// which are pre-sorted
-	if ( s_cityLatList.fillFromFile(g_hostdb.m_dir,"citylatlist.dat")>=1) {
-		// test it out right quick
-		testCityList();
-		return true;
-	}
-
-	// scan the buffer of placeDescriptors
-	PlaceDesc *pd    = (PlaceDesc *) g_pbuf;
-	PlaceDesc *pdend ;//= (PlaceDesc *)(g_pbuf + g_pbufSize);
-
-	// find the real end of it!
-	for ( pdend = pd ; ; pdend++ ) {
-		// stop if we enter the name buf space
-		if ( ((char *)pdend)[0] == 'u' &&
-		     ((char *)pdend)[1] == 'n' &&
-		     ! strcmp((char *)pdend,"unknown name" ) )
-			break;
-	}
-
-	// count how many cities we got
-	int32_t cityCount = 0;
-	for ( ; pd < pdend ; pd++ ) 
-		if ( pd->m_flags & PDF_CITY ) cityCount++;
-
-	// . alloc for the "ptrs" which will really be offsets into g_pbuf
-	// . use offsets so we can save/load to/from disk easily
-	int32_t need = cityCount * 4;
-	// alloc it
-	if ( ! s_cityLatList.reserve ( need ) ) return false;
-	// point into it so we can fill it up
-	int32_t *latList = (int32_t *)s_cityLatList.getBufStart();
-	int32_t nc = 0;
-
-	pd = (PlaceDesc *)g_pbuf;
-	// scan the cities again
-	for ( ; pd < pdend ; pd++ ) {
-		// skip if not city
-		if ( ! (pd->m_flags & PDF_CITY ) ) continue;
-		// get offset
-		int32_t cityOffset = ((char *)pd) - g_pbuf;
-		// add to the list
-		latList[nc++] = cityOffset;
-	}
-	// sanity
-	if ( cityCount != nc ) { char *xx=NULL;*xx=0; }
-	// now sort each list
-	gbqsort ( latList , nc , 4 , latcmp_new , 0 );
-
-	// update length
-	s_cityLatList.m_length = nc * 4;
-
-	// test it out right quick
-	testCityList();
-
-	log ("places: saving citylatlist.dat");
-	// save it
-	s_cityLatList.saveToFile(g_hostdb.m_dir,"citylatlist.dat");
-
-	return true;
-}
-

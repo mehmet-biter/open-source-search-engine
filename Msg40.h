@@ -193,10 +193,6 @@ class Msg40 {
 	// advanced gigabit/topic attributes
 	int32_t getTopicDocIdCount(int32_t i){return m_gigabitInfos[i].m_numDocs; };
 	int32_t       getTopicPop(int32_t  i){return m_gigabitInfos[i].m_pop; };
-	// intersectGigabits() in Msg40.cpp fills these in when we call it
-	// from Msg40.cpp
-	GigabitInfo m_gigabitInfos[50];
-	int32_t m_numGigabitInfos;
 	*/
 
 	int32_t getNumGigabits (){return m_gigabitBuf.length()/sizeof(Gigabit);};

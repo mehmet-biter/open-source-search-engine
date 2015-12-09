@@ -3,17 +3,10 @@
 #define _GB_ADDRESS_H_
 
 // values for Place::m_bits
-//#define PLF_PARTIAL  0x001 // hash in the next word and try again!
-#define PLF_UNIQUE     0x001 // city name is unique in the usa
-//#define PLF_AMBIGUOUS0x002 // might be multiple things. 2+ place bits set
-//#define PLF_ALIAS      0x002 // use PlaceDescAlias class!!
 #define PLF_INFILE     0x004 // is in allCountries/postalCodes.txt
-//#define PLF_INHERITED  0x008
-//#define PLF_FROMZIP    0x008 // inherited from zip adm1 or city
 #define PLF_FROMTAG    0x010 // a place from a TagRec Tag
 #define PLF_ABBR       0x020 // allCountries.txt, "NM" is for "New Mexico"
 #define PLF_FROMTITLE  0x040 // from the title tag
-//#define PLF_ALT      0x080 // allCountries.txt alias/alternative name
 #define PLF_HAS_UPPER  0x080 // does it have an upper-case word in it?
 
 
@@ -41,12 +34,9 @@
 
 // . indicators. words or phrases that indicate a possible place name, suite,
 // . these ARE NOT places unto themselves
-// . IND_NAME = a common word in the places in allCountries.txt
-#define IND_NAME       0x01
 #define IND_SUITE      0x02
 #define IND_STREET     0x04
 #define IND_DIR        0x08
-#define IND_BITS       0x0f
 
 #define NO_LATITUDE  999.0
 #define NO_LONGITUDE 999.0
@@ -71,8 +61,6 @@ int32_t memcpy2 ( char *dst , char *src , int32_t bytes , bool filterCommas ,
 	       // do not store more than this many bytes into dst
 	       int32_t dstMaxBytes = -1 ) ;
 
-bool getLatLon ( uint32_t cityId , double *lat , double *lon ) ;
-
 bool hashPlaceName ( HashTableX *nt1,
 		     Words *words,
 		     int32_t a ,
@@ -96,9 +84,6 @@ int64_t *getSynonymWord ( int64_t *h , int64_t *prevId , bool isStreet );
 void handleRequest2c ( class UdpSlot *slot , int32_t nicenessWTF ) ;
 
 // called by main.cpp
-bool initPlaceDescTable ( ) ;
-bool initCityLists      ( ) ;
-bool initCityLists_new  ( ) ;
 void resetAddressTables ( ) ;
 
 typedef uint8_t pbits_t;
@@ -107,7 +92,6 @@ typedef uint8_t pflags_t;
 
 uint64_t getAdm1Bits ( char *stateAbbr ) ;
 class StateDesc *getStateDesc ( char *stateAbbr ) ;
-StateDesc *getStateDescByNum ( int32_t i ) ;
 
 // . values for Place::m_type
 // . now a place can be multiple types
@@ -137,10 +121,6 @@ class Place {
 	int32_t m_alnumA;
 	int32_t m_alnumB;
 
-	// list of all the Places that are compatible with this Place
-	//Place **m_brothers;
-	//int32_t    m_numBrothers;
-
 	// see above for these bit values
 	placetype_t m_type;
 
@@ -165,8 +145,6 @@ class Place {
 	// these are for streets only
 	uint64_t m_streetNumHash;
 	uint64_t m_streetIndHash;
-	// index into allCountries.txt, -1 means none
-	//int32_t m_index;
 	// the string, "words" not intact if setting from tag (setFromTag())
 	char *m_str;
 	int32_t  m_strlen;
@@ -183,33 +161,11 @@ class Place {
 	// are we a name and part of an unverified address?
 	class Address *m_unverifiedAddress;
 
-	char *m_siteTitleBuf;
-	int32_t  m_siteTitleBufSize;
-
-	// uesd by Events.cpp as a temporary storage
-	int32_t m_eventDescOff;
-
 	// . what city is the place in
 	// . used for zip codes mostly
 	uint64_t m_cityHash;
 	// this points into g_cityBuf
 	char *m_cityStr;
-	// this is \0\0 if not applicable
-	//char m_adm1[2];
-
-	// . what states this place is in
-	// . like for "springfield" being in multiple states
-	// . use the STATE_NM etc values above
-	//uint64_t m_adm1Bits;
-
-	// and the *country* id
-	uint8_t m_crid;
-	// boost based on indicators only.
-	//float m_indScore;
-	// tag hash of section we are in
-	//int32_t m_tagHash;
-	// we can only pair up with a Place if its m_a < this m_rangeb
-	//int32_t m_rangeb;
 
 	// do we intersect place "p" ?
 	bool intersects ( class Place *p ) {
@@ -248,19 +204,7 @@ class Place {
 // an address consists of a set of Places of different types
 class Address {
  public:
-	bool hash ( int32_t              baseScore ,
-		    class HashTableX *dt        ,
-		    uint32_t          date      ,
-		    class Words      *words     , 
-		    class Phrases    *phrases   , 
-		    class SafeBuf    *pbuf      ,
-		    class HashTableX *wts       ,
-		    class SafeBuf    *wbuf      ,
-		    int32_t              version   ,
-		    int32_t              niceness  ) ;
-
 	int32_t getStoredSize ( int32_t olen , bool includeHash );
-	bool serializeVerified ( class SafeBuf *sb ) ;
 	int32_t serialize ( char *buf , 
 			 int32_t bufSize , 
 			 char *origUrl ,
@@ -271,11 +215,6 @@ class Address {
 				  bool useName1 ,
 				  bool useName2 );
 
-	void setDivId ( ) ;
-
-	//int64_t makeAddressVotingTableKey ( );
-
-	int32_t print  ( );
 	int32_t print2 ( int32_t i, SafeBuf *pbuf , int64_t uh64 );
 	void printEssentials ( SafeBuf *pbuf , bool forEvents ,
 			       int64_t uh64 );
@@ -283,8 +222,6 @@ class Address {
 	void reset() {
 		m_name1 = m_name2 = m_suite = m_street = NULL;
 		m_city = m_zip = m_adm1 = NULL;
-		//m_cityHash = 0;
-		//m_adm1Bits = 0;
 		m_hash = 0LL;
 	};
 
@@ -354,8 +291,6 @@ class Address {
 	double m_geocoderLat;
 	double m_geocoderLon;
 
-	void getLatLon ( double *lat , double *lon );
-
 	// score of the address
 	//float m_score;
 	// . bit flags
@@ -382,8 +317,6 @@ class Address {
 	uint64_t m_hash;
 	// score of address for deduping based on m_hash
 	int32_t m_score2;
-
-	char getTimeZone ( char *useDST );
 
 	// these are used by msg2c to verify addresses in placedb
 	int32_t m_reqBufNum;
@@ -584,11 +517,8 @@ class Addresses {
 
 	int32_t cityAdm1Follows ( int32_t a ) ;
 
-	int32_t setFromTag ( Address *a, class Tag *tag, PlaceMem *placeMem );
-
 	int32_t getNumAddresses ( ) { return m_am.getNumPtrs(); }
 	int32_t getNumNonDupAddresses ( ) { return m_numNonDupAddresses; }
-	int32_t getNumVenues ( ) { return m_numVenues; }
 
 	class Place *getAssociatedPlace ( int32_t i ) ;
 
@@ -631,12 +561,9 @@ class Addresses {
 	RdbList         m_list;
 	class Url      *m_url;
 	int64_t       m_docId;
-	//char           *m_coll;
 	collnum_t m_collnum;
-	int64_t       m_termId;
 	int32_t            m_domHash32;
 	int32_t            m_ip;
-	//int32_t            m_tagPairHash;
 	class Sections *m_sections;
 	class Words    *m_words;
 	char          **m_wptrs;
@@ -652,15 +579,9 @@ class Addresses {
 	void          (* m_callback) (void *state );
 	uint8_t         m_contentType;
 
-	// address verification table (set by msg2c intially)
-	//HashTableX      m_avt;
 	// table serialize into this buffer which we alloc
 	char *m_buf;
 	int32_t  m_bufSize;
-	// this is XmlDoc::ptr_addressReply
-	//char           *m_addressReply;
-	//int32_t            m_addressReplySize;
-	//bool            m_addressReplyValid;
 
 	bool m_firstBreach;
 
@@ -671,15 +592,9 @@ class Addresses {
 
 	class XmlDoc *m_xd;
 	
-	// XmlDoc sets its ptr_addressReply to this for storing in title rec
-	//char *getAddressReply ( int32_t *size ) {
-	//	*size = m_sb.length();	return m_sb.getBufStart(); };
-
 	// this sets the m_avt table from the m_addresses[]
 	bool updateAddresses();
 
-	bool setGeocoderLatLons ( void *state, 
-				  void (*callback) (void *state) );
 	bool processGeocoderReply ( class TcpSocket *s );
 	bool m_calledGeocoder;
 
@@ -690,9 +605,6 @@ class Addresses {
 	int32_t    m_sortedSize;
 	int32_t    m_numSorted;
 	bool    m_sortedValid;
-	//class HashTableX *getPlaceTable();
-	//bool m_ptValid;
-	//HashTableX m_pt;
 
 	// # of inlined or verified addresses out of the m_na we have
 	int32_t m_numValid;
@@ -768,12 +680,6 @@ public:
 	// the two letter state code
 	char  m_adm1[2];
 };
-
-PlaceDesc *getPlaceDesc ( uint64_t placeHash64 , 
-			  uint8_t placeType ,
-			  uint8_t crid,
-			  char *stateAbbr,
-			  int32_t niceness ) ;
 
 PlaceDesc *getNearestCity_new ( float  lat , 
 				float  lon , 

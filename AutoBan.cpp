@@ -6,7 +6,6 @@
 #include "Pages.h"
 #include "Loop.h"
 #include "sort.h"
-#include "Users.h"
 
 AutoBan g_autoBan;
 void resetHash(int fd, void *state);
@@ -801,9 +800,6 @@ bool sendPageAutoban ( TcpSocket *s , HttpRequest *r ) {
 bool AutoBan::printTable( TcpSocket *s , HttpRequest *r ) {
 	SafeBuf sb(512 * 512,"autobbuf");
 	//read in all of the possible cgi parms off the bat:
-	//int32_t  user     = g_pages.getUserType( s , r );
-	//char *username = g_users.getUsername(r);
-	//char *pwd  = r->getString ("pwd");
 
 	char *coll = r->getString ("c");
 

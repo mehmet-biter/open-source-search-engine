@@ -11,7 +11,6 @@
 #include "Pages.h"
 #include "SiteGetter.h"
 #include "HashTableX.h"
-#include "Users.h"
 #include "Process.h"
 #include "Rebalance.h"
 
@@ -1071,7 +1070,6 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 	//reset();
 	// get the username from the cookie
 	//char *user = r->getStringFromCookie ( "username" , NULL );
-	//char *user = g_users.getUsername ( r );
 	// try from form
 	//if ( ! user ) user = r->getString ("username",NULL);
 	// if no user, don't bother!
@@ -4105,9 +4103,7 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 	mnew ( st , sizeof(State12) , "PageTagdb" );
 	//st->m_isMasterAdmin    = isAdmin;
 	//st->m_isAssassin = isAssassin;
-	// . Commented by Gourav
-	// .  Reason:user perm no longer used
-	//st->m_userType   = g_pages.getUserType ( s , req );
+
 	// assume we've nothing to add
 	st->m_adding = false;
 	// save the socket
@@ -4158,7 +4154,6 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 	// . just get from cookie so it is not broadcast over the web via a 
 	//   referral url
 	//st->m_username = r->getStringFromCookie("username");
-	//st->m_username = g_users.getUsername(r);
 
 	// are we coming from a local machine?
 	st->m_isLocal = r->isLocal();

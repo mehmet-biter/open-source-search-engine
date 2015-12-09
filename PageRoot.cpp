@@ -5,19 +5,14 @@
 #include "Spider.h"
 #include "Tagdb.h"
 #include "Dns.h"
-//#include "PageResults.h" // for query buf, g_qbuf
 #include "Collectiondb.h"
-//#include "CollectionRec.h"
 #include "Clusterdb.h"    // for getting # of docs indexed
 #include "Pages.h"
 #include "Query.h"        // MAX_QUERY_LEN
 #include "SafeBuf.h"
 #include "LanguageIdentifier.h"
-#include "Users.h"
 #include "Proxy.h"
 
-//char *printNumResultsDropDown ( char *p, int32_t n, bool *printedDropDown);
-bool printNumResultsDropDown ( SafeBuf& sb, int32_t n, bool *printedDropDown);
 //static char *printTopDirectory ( char *p, char *pend );
 static bool printTopDirectory ( SafeBuf& sb , char format );
 
@@ -64,71 +59,6 @@ bool printFamilyFilter ( SafeBuf& sb , bool familyFilterOn ) {
 		       s1 , s2 );
 	//return p;
 }
-
-//char *printNumResultsDropDown ( char *p , int32_t n , bool *printedDropDown ) {
-bool printNumResultsDropDown ( SafeBuf& sb , int32_t n , bool *printedDropDown ) {
-	if ( n!=10 && n!=20 && n!=30 && n!=50 && n!=100 )
-		//return p;
-		return true;
-	*printedDropDown = true;
-	char *d1 = "";
-	char *d2 = "";
-	char *d3 = "";
-	char *d4 = "";
-	char *d5 = "";
-	if ( n == 10 ) d1 = " selected";
-	if ( n == 20 ) d2 = " selected";
-	if ( n == 30 ) d3 = " selected";
-	if ( n == 50 ) d4 = " selected";
-	if ( n ==100 ) d5 = " selected";
-	//p += sprintf ( p , 
-	return sb.safePrintf (
-		       "<select name=n>\n"
-		       "<option value=10%s>10\n"
-		       "<option value=20%s>20\n"
-		       "<option value=30%s>30\n"
-		       "<option value=50%s>50\n"
-		       "<option value=100%s>100\n"
-		       "</select>",
-		       d1,d2,d3,d4,d5);
-	//return p;
-}
-
-//char *printDirectorySearchType ( char *p, int32_t sdirt ) {
-bool printDirectorySearchType ( SafeBuf& sb, int32_t sdirt ) {
-	// default to entire directory
-	if (sdirt < 1 || sdirt > 4)
-		sdirt = 3;
-
-	// by default search the whole thing
-	sb.safePrintf("<input type=\"radio\" name=\"sdirt\" value=\"3\"");
-	if (sdirt == 3) sb.safePrintf(" checked>");
-	else            sb.safePrintf(">");
-	sb.safePrintf("Entire Directory<br>\n");
-	// entire category
-	sb.safePrintf("<input type=\"radio\" name=\"sdirt\" value=\"1\"");
-	if (sdirt == 1) sb.safePrintf(" checked>");
-	else            sb.safePrintf(">");
-	sb.safePrintf("Entire Category<br>\n");
-	// base category only
-	sb.safePrintf("<nobr><input type=\"radio\" name=\"sdirt\" value=\"2\"");
-	if (sdirt == 2) sb.safePrintf(" checked>");
-	else            sb.safePrintf(">"); 
-	sb.safePrintf("Pages in Base Category</nobr><br>\n");
-	// sites in base category
-	sb.safePrintf("<input type=\"radio\" name=\"sdirt\" value=\"7\"");
-	if (sdirt == 7) sb.safePrintf(" checked>");
-	else            sb.safePrintf(">");
-	sb.safePrintf("Sites in Base Category<br>\n");
-	// sites in entire category
-	sb.safePrintf("<input type=\"radio\" name=\"sdirt\" value=\"6\"");
-	if (sdirt == 6) sb.safePrintf(" checked>");
-	else            sb.safePrintf(">");
-	sb.safePrintf("Sites in Entire Category<br>\n");
-	// end it
-	return true;
-}
-
 
 #include "SearchInput.h"
 
@@ -427,35 +357,10 @@ bool expandHtml (  SafeBuf& sb,
 			i += 1;
 			continue;
 		}
-		/*
-		if ( head[i+1] == 'T' ) { 
-			// . print the final tail
-			// . only print admin link if we're local
-			//int32_t  user = g_pages.getUserType ( s , r );
-			//char *username = g_users.getUsername(r);
-			//char *pwd  = r->getString ( "pwd" );
-			char *p    = (char*) sb.getBuf();
-			int32_t  plen = sb.getAvail();
-			//p = g_pages.printTail ( p , p + plen , user , pwd );
-			char *n = g_pages.printTail(p , p + plen ,
-						    r->isLocal());
-			sb.incrementLength(n - p);
-			// skip over %T
-			i += 1;
-			continue;
-		}
-		*/
 		// print the drop down menu for selecting the # of reslts
 		if ( head[i+1] == 'D' ) {
 			// skip over %D
 			i += 1;
-			// skip if not enough buffer
-			//if ( p + 1000 >= pend ) continue; 
-			// # results
-			//int32_t n = r->getLong("n",10);
-			//bool printedDropDown;
-			//p = printNumResultsDropDown(p,n,&printedDropDown);
-			//printNumResultsDropDown(sb,n,&printedDropDown);
 			continue;
 		}
 		if ( head[i+1] == 'H' ) { 
@@ -496,17 +401,6 @@ bool expandHtml (  SafeBuf& sb,
 				//p += gbstrlen ( p );	
 				sb.safePrintf("\">\n");
 			}
-
-			// pass this crap on so zak can do searches
-			//char *username = g_users.getUsername(r);
-			// this is null because not in the cookie and we are
-			// logged in
-			//char *pwd  = r->getString ( "pwd" );
-			//sb.safePrintf("<input type=hidden name=pwd "
-			//"value=\"%s\">\n",
-			//pwd);
-			//sb.safePrintf("<input type=hidden name=username "
-			//	      "value=\"%s\">\n",username);
 
 			// skip over %H
 			i += 1;
@@ -1643,7 +1537,6 @@ bool printTopDirectory ( SafeBuf& sb , char format ) {
 #include "TuringTest.h"
 #include "AutoBan.h"
 //#include "CollectionRec.h"
-#include "Users.h"
 #include "Spider.h"
 
 //static bool sendReply        ( void *state  , bool addUrlEnabled );
@@ -2256,183 +2149,6 @@ bool canSubmit ( uint32_t h , int32_t now , int32_t maxAddUrlsPerIpDomPerDay ) {
 void resetPageAddUrl ( ) {
 	s_htable.reset();
 }
-
-/*
-bool sendPageAdvanced ( TcpSocket *sock , HttpRequest *hr ) {
-
-	SafeBuf sb;
-
-	CollectionRec *cr = g_collectiondb.getRec ( hr );
-
-	printFrontPageShell ( &sb , "advanced" , cr , true );
-
-	sb.safePrintf("<br><br>\n");
-	sb.safePrintf("<br><br><br>\n");
-
-	// submit to https now
-	sb.safePrintf("<form method=GET "
-		      "action=/search name=f>\n" );
-
-	char *coll = "";
-	if ( cr ) coll = cr->m_coll;
-	if ( cr )
-		sb.safePrintf("<input type=hidden name=c value=\"%s\">",
-			      cr->m_coll);
-
-
-	sb.safePrintf(
-	"<script type=text/javascript>"
-	"<!--"
-	"function x(){document.f.q.focus();}"
-	"// -->"
-	"</script>"
-	"</head>"
-	""
-
-	"<body onload=x()>"
-
-	//"<form method=get action=/search>"
-
-	"	<table width=605 border=0 align=center cellpadding=5 cellspacing=3>"
-	"		<tbody>"
-	"			<tr align=left valign=middle>"
-	"			<th colspan=3>Search for...</th>"
-	"			</tr>"
-	"			<tr align=left valign=middle>"
-	"				<td><strong>all</strong> of these words</td>"
-	"				<td><input type=text name=plus size=40 />"
-
-	"</td><td>"
-
-			"<div onclick=document.f.submit(); "
-
-			" onmouseover=\""
-			"this.style.backgroundColor='lightgreen';"
-			"this.style.color='black';\""
-			" onmouseout=\""
-			"this.style.backgroundColor='green';"
-			"this.style.color='white';\" "
-
-			"style=border-radius:28px;"
-			"cursor:pointer;"
-			"cursor:hand;"
-			"border-color:white;"
-			"border-style:solid;"
-			"border-width:3px;"
-			"padding:12px;"
-			"width:20px;"
-			"height:20px;"
-			"display:inline-block;"
-			"background-color:green;color:white;>"
-			"<b style=margin-left:-5px;font-size:18px;"
-			">GO</b>"
-			"</div>"
-	"</td>"
-	"			</tr>"
-	"			<tr align=left valign=middle>"
-	"				<td>this <strong>exact phrase</strong></td>"
-	"				<td colspan=2><input type=text name=quote1 size=40 /></td>"
-	"			</tr>"
-	"			<tr align=left valign=middle>"
-	"				<td>and this <strong>exact phrase</strong></td>"
-	"				<td colspan=2><input type=text name=quote2 size=40 /></td>"
-	"			</tr>"
-	"			<tr align=left valign=middle>"
-	"				<td><strong>any</strong> of these words</td>"
-	"				<td colspan=2><input type=text name=q size=40 /></td>"
-	"			</tr>"
-	"			<tr align=left valign=middle>"
-	"				<td><strong>none</strong> of these words</td>"
-	"				<td colspan=2><input type=text name=minus size=40 /></td>"
-	"			</tr>"
-	""
-	"			<tr align=left valign=middle>"
-	"				<td>In this language:"
-	"				</td>"
-	"				<td colspan=2>"
-	"				<select name=gblang>"
-	"				<option value=0>Any</option>"
-	"				<option value=1>English</option>"
-	"<option value=2>French</option>	"
-	"<option value=3>Spanish</option>"
-	"<option value=4>Russian</option>"
-	"<option value=5>Turkish</option>"
-	"<option value=6>Japanese</option>"
-	"<option value=7>ChineseTrad</option>"
-	"<option value=8>ChineseSimp</option>"
-	"<option value=9>Korean</option>"
-	"<option value=10>German</option>"
-	"<option value=11>Dutch</option>"
-	"<option value=12>Italian</option>"
-	"<option value=13>Finnish</option>"
-	"<option value=14>Swedish</option>"
-	"<option value=15>Norwegian</option>"
-	"<option value=16>Portuguese</option>"
-	"<option value=17>Vietnamese</option>"
-	"<option value=18>Arabic</option>"
-	"<option value=19>Hebrew</option>"
-	"<option value=20>Indonesian</option>"
-	"<option value=21>Greek</option>"
-	"<option value=22>Thai</option>"
-	"<option value=23>Hindi</option>"
-	"<option value=24>Bengala</option>"
-	"<option value=25>Polish</option>"
-	"<option value=26>Tagalog</option>"
-	"				</select>"
-	"				</td>"
-	"			</tr>"
-	""
-	""
-	"			<tr align=left valign=middle>"
-	"				<td>Restrict to this URL</td>"
-	"				<td colspan=2><input type=text name=url size=40 /></td>"
-	"			</tr>"
-	"			<tr align=left valign=middle>"
-	"				<td>Pages that link to this URL</td>"
-	"				<td colspan=2><input type=text name=link size=40 /></td>"
-	"			</tr>"
-	"			<tr align=left valign=middle>"
-	"				<td>Site Clustering</td>"
-	"				<td colspan=2><input type=radio name=sc value=1 checked=checked />yes&nbsp;&nbsp;&nbsp;<input type=radio name=sc value=0 />no</td>"
-	"			</tr>"
-	"			<tr align=left valign=middle>"
-	"				<td>Number of summary excerpts</td>"
-	"				<td colspan=2><input type=radio name=ns value=0 />0&nbsp;&nbsp;&nbsp;<input type=radio name=ns value=1 />1&nbsp;&nbsp;&nbsp;<input type=radio name=ns value=2 />2&nbsp;&nbsp;&nbsp;<input type=radio name=ns value=3 checked=checked />3&nbsp;&nbsp;&nbsp;<input type=radio name=ns value=4 />4&nbsp;&nbsp;&nbsp;<input type=radio name=ns value=5 />5</td>"
-	"			</tr>"
-	"			<tr align=left valign=middle>"
-	"				<td>Results per Page</td>"
-	"				<td colspan=2><input type=radio name=n value=10 checked=checked />10&nbsp;&nbsp;<input type=radio name=n value=20 />20&nbsp;&nbsp;<input type=radio name=n value=30 />30&nbsp;&nbsp;<input type=radio name=n value=40 />40&nbsp;&nbsp;<input type=radio name=n value=50 />50&nbsp;&nbsp;<input type=radio name=n value=100 />100</td>"
-	"			</tr>"
-	"			<tr align=left valign=middle>"
-	"				<td>Restrict to these Sites</td>"
-	"				<td colspan=2><textarea rows=10 cols=40 name=sites></textarea></td>"
-	"			</tr>"
-	"	  </tbody>"
-	"	</table>"
-		      );
-
-
-
-	sb.safePrintf("</form>\n");
-	sb.safePrintf("<br>\n");
-	sb.safePrintf("\n");
-	sb.safePrintf("<br><br>\n");
-
-	printNav ( sb , hr );
-
-	g_httpServer.sendDynamicPage (sock, 
-				      sb.getBufStart(), 
-				      sb.length(),
-				      3600, // cachetime
-				      false,// post?
-				      "text/html",
-				      200, // http status
-				      NULL, // cookie
-				      "UTF-8");
-
-	return true;
-}
-*/
 
 bool sendPageHelp ( TcpSocket *sock , HttpRequest *hr ) {
 

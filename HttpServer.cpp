@@ -5,7 +5,6 @@
 #include "Collectiondb.h"
 #include "HashTable.h"
 #include "Stats.h"
-#include "Users.h"
 #include "XmlDoc.h" // gbzip
 #include "UdpServer.h"
 #include "Proxy.h"
@@ -36,8 +35,6 @@ static void getSSLMsgPieceWrapper ( int fd , void *state /*sockDesc*/ );
 static int32_t getMsgPiece           ( TcpSocket *s );
 static void gotDocWrapper         ( void *state, TcpSocket *s );
 static void handleRequestfd       ( UdpSlot *slot , int32_t niceness ) ;
-
-//bool sendPageAbout ( TcpSocket *s , HttpRequest *r , char *path ) ;
 
 static int32_t s_numOutgoingSockets = 0;
 
@@ -665,7 +662,6 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 	// is this the admin
 	//bool isAdmin       = g_collectiondb.isAdmin ( &r , s );
 	// i guess assume MASTER admin...
-	//bool isAdmin = g_users.hasPermission ( &r , PAGE_MASTER , s );
 	bool isAdmin = r.isLocal();
 	// never proxy admin pages for security reasons
 	if ( s->m_udpSlot ) isAdmin = false;

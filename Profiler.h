@@ -175,22 +175,7 @@ class Profiler {
 		      const char *caller,
 		      bool isThread=false);
 
-	bool printInfo(SafeBuf *sb,
-		       //int32_t user, 
-		       char *username,
-		       char *pwd, 
-		       char *coll, 
-		       int sorts,
-		       int sort10,
-		       int qpreset,
-		       int profilerreset);
-	bool printRealTimeInfo(SafeBuf *sb,
-			       //int32_t user,
-			       char *username,
-			       char *pwd,
-			       char *coll,
-			       int realTimeSortMode,
-			       int realTimeShowAll);
+	bool printRealTimeInfo(SafeBuf *sb, char *coll);
 	void resetLastQpoll() {m_lastQpoll = "main loop"; m_lastQpollLine =0;}
 
 	char *getFnName(PTRTYPE address,int32_t *nameLen=NULL);

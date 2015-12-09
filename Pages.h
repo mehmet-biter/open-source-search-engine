@@ -38,9 +38,7 @@ extern char *g_msg;
 // . these are all defined in Page*.cpp files
 // . these are called to send a dynamic page
 bool sendPageWidgets ( TcpSocket *socket , HttpRequest *hr ) ;
-bool sendPageBasicSettings   ( TcpSocket *s , HttpRequest *r );
 bool sendPageBasicStatus     ( TcpSocket *s , HttpRequest *r );
-//bool sendPageBasicDiffbot    ( TcpSocket *s , HttpRequest *r );
 
 bool printGigabotAdvice ( SafeBuf *sb , int32_t page , HttpRequest *hr ,
 			  char *gerrmsg ) ;
@@ -48,56 +46,32 @@ bool printGigabotAdvice ( SafeBuf *sb , int32_t page , HttpRequest *hr ,
 bool sendPageRoot     ( TcpSocket *s , HttpRequest *r );
 bool sendPageRoot     ( TcpSocket *s , HttpRequest *r, char *cookie );
 bool sendPageResults  ( TcpSocket *s , HttpRequest *r );
-//bool sendPageWidget   ( TcpSocket *s , HttpRequest *r );
-//bool sendPageEvents   ( TcpSocket *s , HttpRequest *r );
 bool sendPageAddUrl   ( TcpSocket *s , HttpRequest *r );
 bool sendPageGet      ( TcpSocket *s , HttpRequest *r );
 bool sendPageLogin    ( TcpSocket *s , HttpRequest *r );
 bool sendPageStats    ( TcpSocket *s , HttpRequest *r );
 bool sendPageHosts    ( TcpSocket *s , HttpRequest *r );
 bool sendPageSockets  ( TcpSocket *s , HttpRequest *r );
-bool sendPageLog      ( TcpSocket *s , HttpRequest *r );
-bool sendPageMaster   ( TcpSocket *s , HttpRequest *r );
-bool sendPageSitedb   ( TcpSocket *s , HttpRequest *r );
-//bool sendPageSync     ( TcpSocket *s , HttpRequest *r );
 bool sendPagePerf     ( TcpSocket *s , HttpRequest *r );
-bool sendPageIndexdb  ( TcpSocket *s , HttpRequest *r );
 bool sendPageTitledb  ( TcpSocket *s , HttpRequest *r );
 bool sendPageParser   ( TcpSocket *s , HttpRequest *r );
-bool sendPageSecurity ( TcpSocket *s , HttpRequest *r );
 bool sendPageAddColl  ( TcpSocket *s , HttpRequest *r );
 bool sendPageDelColl  ( TcpSocket *s , HttpRequest *r );
 bool sendPageCloneColl( TcpSocket *s , HttpRequest *r );
-//bool sendPageOverview ( TcpSocket *s , HttpRequest *r );
 bool sendPageSpiderdb ( TcpSocket *s , HttpRequest *r );
-bool sendPageFilters  ( TcpSocket *s , HttpRequest *r );
 bool sendPageReindex  ( TcpSocket *s , HttpRequest *r );
 bool sendPageInject   ( TcpSocket *s , HttpRequest *r );
-//bool sendPageMatchingQueries ( TcpSocket *s , HttpRequest *r );
-bool sendPageAccess   ( TcpSocket *s , HttpRequest *r );
-bool sendPageSearch2  ( TcpSocket *s , HttpRequest *r );
 bool sendPageAddUrl2  ( TcpSocket *s , HttpRequest *r );
 bool sendPageGeneric  ( TcpSocket *s , HttpRequest *r ); // in Parms.cpp
 bool sendPageCatdb    ( TcpSocket *s , HttpRequest *r );
 bool sendPageDirectory ( TcpSocket *s , HttpRequest *r );
-bool sendPageSpamr     ( TcpSocket *s , HttpRequest *r );
 bool sendPageAutoban   ( TcpSocket *s , HttpRequest *r );
-//bool sendPageTopDocs   ( TcpSocket *s , HttpRequest *r );
-bool sendPageTopics    ( TcpSocket *s , HttpRequest *r );
-//bool sendPageSpiderLocks ( TcpSocket *s , HttpRequest *r );
 bool sendPageLogView    ( TcpSocket *s , HttpRequest *r );
 bool sendPageProfiler   ( TcpSocket *s , HttpRequest *r );
 bool sendPageReportSpam ( TcpSocket *s , HttpRequest *r );
-bool sendPageSpam       ( TcpSocket *s , HttpRequest *r );
 bool sendPageThreads    ( TcpSocket *s , HttpRequest *r );
-bool sendPageNetTest    ( TcpSocket *s , HttpRequest *r );
 bool sendPageAPI        ( TcpSocket *s , HttpRequest *r );
-bool sendPageAdvanced   ( TcpSocket *s , HttpRequest *r );
-bool sendPageAbout      ( TcpSocket *s , HttpRequest *r );
 bool sendPageHelp       ( TcpSocket *s , HttpRequest *r );
-bool sendPageWordVec    ( TcpSocket *s , HttpRequest *r );
-bool sendPageQualityAgent   ( TcpSocket *s , HttpRequest *r );
-bool sendPageThesaurus  ( TcpSocket *s , HttpRequest *r );
 bool sendPageGraph      ( TcpSocket *s , HttpRequest *r );
 bool sendPageQA ( TcpSocket *sock , HttpRequest *hr ) ;
 

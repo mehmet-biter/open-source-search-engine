@@ -47,8 +47,6 @@ struct QueuedRequest {
 typedef void (*tcp_callback_t)(void *, TcpSocket *);
 int32_t getMsgSize ( char *buf , int32_t bufSize , TcpSocket *s );
 
-bool sendPageAddEvent ( TcpSocket *s , HttpRequest *r );
-
 class HttpServer {
 
  public:

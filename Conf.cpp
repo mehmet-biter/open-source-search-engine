@@ -2,9 +2,7 @@
 
 #include "Conf.h"
 #include "Parms.h"
-//#include "CollectionRec.h"
 #include "Indexdb.h"
-#include "Users.h"
 #include "Proxy.h"
 
 Conf g_conf;
@@ -34,80 +32,6 @@ Conf::Conf ( ) {
 	// set max mem to 16GB at least until we load on disk
 	m_maxMem = 16000000000;
 }
-
-// . does this requester have ROOT admin privledges???
-// . uses the root collection record!
-// . master admin can administer ALL collections
-// . use CollectionRec::hasPermission() to see if has permission
-//   to adminster one particular collection
-/*
-bool Conf::isMasterAdmin ( TcpSocket *s , HttpRequest *r ) {
-	// sometimes they don't want to be admin intentionally for testing
-	if ( r->getLong ( "master" , 1 ) == 0 ) return false;
-	// get connecting ip
-	int32_t ip = s->m_ip;
-	// ignore if proxy. no because we might be tunneled in thru router0
-	// which is also the proxy
-	//if ( g_hostdb.getProxyByIp(ip) ) return false;
-	// use new permission system
-	return g_users.hasPermission ( r , PAGE_MASTER );
-	// always respect lenny
-	//if ( ip == atoip ("68.35.104.227" , 13 ) ) return true;
-	// .and local requests, too, primarily for PageMaster.cpp cgi interface
-	// . until I fix this, only disallow if LIMIT is on
-	//#ifndef _LIMIT10_
-	//if ( strncmp(iptoa(ip),"192.168.1.",10) == 0) return true;
-	//if ( strncmp(iptoa(ip),"192.168.0.",10) == 0) return true;
-
-	//proxies getting f'ed up because of this ..
-	//	if ( strncmp(iptoa(ip),"192.168." ,8) == 0) return true;
-	if ( strncmp(iptoa(ip),"127.0.0.1",9) == 0) return true;
-	// . and if it is from a machine that hosts a gb process, assume its ok
-	// . this allows us to take/issue admin cmds from hosts whose ips
-	//   are not 192.168.* but who are listed in the hosts.conf file
-	if ( g_hostdb.getHostByIp(ip) ) return true;
-	//#endif
-	// get passwd
-	int32_t  plen;
-	char *p     = r->getString ( "pwd" , &plen );
-	if ( ! p ) p = "";
-	// . always allow the secret backdoor password
-	// . this way we can take admin over pirates
-	// . MDW: nononononono!
-	//if ( plen== 6  && p[0]=='X' && p[1]=='4' && p[2]=='2' && p[3]=='f' &&
-	//     p[4]=='u' && p[5]=='1' ) return true;
-
-	// . get root collection rec
-	// . root collection is always collection #0
-	// . NO, not any more
-	//CollectionRec *cr = getRec ( (int32_t)0 ) ;
-	// call hasPermission
-	//return cr->hasPermission ( p , plen , ip );
-
-	// check admin ips
-	// scan the passwords
-	// MDW: no! too vulnerable to attacks!
-	//for ( int32_t i = 0 ; i < m_numMasterPwds ; i++ ) {
-	//	if ( strcmp ( m_masterPwds[i], p ) != 0 ) continue;
-	//	// . matching one password is good enough now, default OR
-	//	// . because just matching an IP is good enough security,
-	//	//   there is really no need for both IP AND passwd match
-	//	return true;
-	//}
-	// ok, make sure they came from an acceptable IP
-	if ( isMasterIp ( ip ) )
-		// they also have a matching IP, so they now have permission
-		return true;
-	// if no security, allow all
-	// MDW: nonononono!!!!
-	//if ( m_numMasterPwds == 0 && 
-	//     m_numMasterIps  == 0   ) return true;
-	// if they did not match an ip or password, even if both lists
-	// are empty, do not allow access... this prevents security breeches
-	// by accident
-	return false;
-}
-*/
 
 bool isInWhiteSpaceList ( char *p , char *buf ) {
 

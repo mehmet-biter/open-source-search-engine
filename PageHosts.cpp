@@ -5,7 +5,6 @@
 #include "Pages.h"
 #include "Indexdb.h"
 #include "sort.h"
-#include "Users.h"
 
 static int defaultSort    ( const void *i1, const void *i2 );
 static int pingSort1      ( const void *i1, const void *i2 );
@@ -115,15 +114,6 @@ skipReplaceHost:
 		sb.safePrintf("<META HTTP-EQUIV=\"refresh\" "
 			      "content=\"%"INT32"\"\\>", 
 			      refreshRate);
-
-	// ignore
-	//char *username = g_users.getUsername ( r );
-	//char *password = NULL;
-	//User *user = NULL;
-	//if ( username ) user = g_users.getUser (username );
-	//if ( user     ) password = user->m_password;
-	//if ( ! password ) password = "";
-	//if ( ! username ) username = "";
 
 	// print standard header
 	// 	char *pp    = sb.getBuf();

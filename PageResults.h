@@ -82,31 +82,7 @@ bool printTermPairs ( SafeBuf *sb , class Query *q , class PairScore *ps ) ;
 bool printSingleTerm ( SafeBuf *sb , class Query *q , class SingleScore *ss );
 
 
-bool printEventAddress ( SafeBuf *sb , char *addrStr , class SearchInput *si ,
-			 double *lat , double *lon , bool isXml ,
-			 // use this for printing distance if lat/lon above
-			 // is invalid. only for non-xml printing though.
-			 float zipLat ,
-			 float zipLon ,
-			 double eventGeocoderLat,
-			 double eventGeocoderLon,
-			 char *eventBestPlaceName );
-
 bool printDMOZCrumb ( SafeBuf *sb , int32_t catId , bool xml ) ;
 bool printDMOZSubTopics ( SafeBuf *sb, int32_t catId, bool inXml ) ;
-
-bool printEventCountdown2 ( SafeBuf *sb ,
-			    SearchInput *si,
-		       int32_t now ,
-		       int32_t timeZoneOffset ,
-		       char useDST,
-		       int32_t nextStart ,
-		       int32_t nextEnd ,
-		       int32_t prevStart ,
-		       int32_t prevEnd ,
-		       bool storeHours ,
-			    bool onlyPrintIfSoon ) ;
-
-char **getEventCategories();
 
 #endif

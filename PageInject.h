@@ -17,7 +17,6 @@ bool resumeImports ( ) ;
 void saveImportStates ( ) ;
 
 #include "XmlDoc.h"
-#include "Users.h"
 #include "Parms.h"
 
 
@@ -98,7 +97,6 @@ public:
 	TcpSocket *m_socket;
 	SafeBuf    m_sb;
 	char m_round;
-	char m_useAhrefs;
 	HashTableX m_linkDedupTable;
 
 	// referenced by InjectionRequest::ptr_content

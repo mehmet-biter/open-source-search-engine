@@ -38,7 +38,6 @@
 //#include "Placedb.h"
 #include "Wiki.h"
 #include "Wiktionary.h"
-#include "Users.h"
 #include "Proxy.h"
 #include "Rebalance.h"
 #include "SpiderProxy.h"
@@ -1705,9 +1704,6 @@ bool Process::saveBlockingFiles1 ( ) {
 	// save our place during a rebalance
 	g_rebalance.saveRebalanceFile();
 
-	// save the login table
-	g_users.save();
-
 	// save stats on spider proxies if any
 	saveSpiderProxyStats();
 
@@ -1889,9 +1885,6 @@ void Process::resetAll ( ) {
 	// query log buffer
 	g_qbuf.reset();
 	g_profiler.reset();
-	g_testResultsTree.reset();
-	g_users.m_ht.reset();
-	g_users.m_loginTable.reset();
 	resetAddressTables();
 	resetMsg13Caches();
 	resetStopWordTables();

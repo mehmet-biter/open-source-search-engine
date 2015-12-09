@@ -54,7 +54,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Profiler.o \
 	AutoBan.o Msg3a.o HashTableT.o HashTableX.o \
 	PageLogView.o Msg1f.o Blaster.o MsgC.o \
-	PageSpam.o Proxy.o PageThreads.o Linkdb.o \
+	Proxy.o PageThreads.o Linkdb.o \
 	matches2.o LanguageIdentifier.o \
 	Repair.o Process.o \
 	Abbreviations.o \
@@ -63,7 +63,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Statsdb.o PageStatsdb.o \
 	PostQueryRerank.o Msge0.o Msge1.o \
 	CountryCode.o DailyMerge.o CatRec.o Tagdb.o \
-	Users.o Images.o Wiki.o Wiktionary.o \
+	Images.o Wiki.o Wiktionary.o \
 	Timezone.o Sections.o SiteGetter.o Syncdb.o qa.o \
 	Placedb.o Address.o Test.o Synonyms.o \
 	Cachedb.o Monitordb.o dlstubs.o PageCrawlBot.o Json.o PageBasic.o \
@@ -71,6 +71,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 
 # common flags
 DEFS = -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I.
+#CPPFLAGS = -g -Wall -Wextra -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -DPTHREADS
 CPPFLAGS = -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable
 LIBS = -lm -lpthread -lssl -lcrypto
 
@@ -232,8 +233,6 @@ gbchksum: gbchksum.o
 create_ucd_tables: $(OBJS) create_ucd_tables.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ create_ucd_tables.o $(OBJS) $(LIBS)
 
-ipconfig: ipconfig.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o -lc
 blaster2: $(OBJS) blaster2.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 udptest: $(OBJS) udptest.o
@@ -258,10 +257,6 @@ seektest: seektest.cpp
 	$(CXX) -o seektest seektest.cpp -lpthread
 treetest: $(OBJ) treetest.o
 	$(CXX) $(DEFS) -O2 $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-treetest0: treetest
-	bzip2 -fk treetest
-	scp treetest.bz2 gb0:/a/
-	ssh gb0 'cd /a/ ; rm treetest ; bunzip2 treetest.bz2'
 nicetest: nicetest.o
 	$(CXX) -o nicetest nicetest.cpp
 

@@ -24,7 +24,6 @@
 #include "Revdb.h"
 #include "Tagdb.h"
 #include "Catdb.h"
-#include "Users.h"
 #include "Spider.h"
 #include "Clusterdb.h"
 #include "Sections.h"
@@ -145,13 +144,11 @@ int copyFiles ( char *dstDir ) ;
 // if seo.o is being linked to it needs to override these weak stubs:
 //
 //////
-bool loadQueryLog() __attribute__((weak));
 void handleRequest8e(UdpSlot *, int32_t netnice ) __attribute__((weak));
 void handleRequest4f(UdpSlot *, int32_t netnice ) __attribute__((weak));
 void handleRequest95(UdpSlot *, int32_t netnice ) __attribute__((weak));
 
 // make the stubs here. seo.o will override them
-bool loadQueryLog() { return true; } 
 void handleRequest8e(UdpSlot *, int32_t netnice ) {return; }
 void handleRequest4f(UdpSlot *, int32_t netnice ) {return; }
 void handleRequest95(UdpSlot *, int32_t netnice ) {return; }
@@ -1340,10 +1337,6 @@ int main2 ( int argc , char *argv[] ) {
 		if (!g_proxy.initProxy (proxyId, udpPort, 0, &g_dp))
 			return log("proxy: init failed");
 
-		// initialize Users
-		if ( ! g_users.init()  ){
-			log("db: Users init failed. "); return 1;}
-
 		// then statsdb
 		if ( ! g_isYippy && ! g_statsdb.init() ) {
 			log("db: Statsdb init failed." ); return 1; }
@@ -1351,10 +1344,6 @@ int main2 ( int argc , char *argv[] ) {
 		// init our table for doing zobrist hashing
 		if ( ! hashinit() ) {
 			log("db: Failed to init hashtable." ); return 1; }
-
-		// Msg13.cpp now uses the address class so it needs this
-		//if ( ! initPlaceDescTable ( ) ) {
-		//	log("events: places table init failed"); return 1; }
 
 	tryagain:
 		if ( ! g_proxy.initHttpServer( httpPort, httpsPort ) ) {
@@ -1376,10 +1365,6 @@ int main2 ( int argc , char *argv[] ) {
 		
 		//we should save gb.conf right ?
 		g_conf.m_save = true;
-
-		// initiazlie Users
-		//if ( ! g_users.init()  ){
-		//log("db: Users init failed. "); return 1;}
 
 		if ( ! g_loop.runLoop()    ) {
 			log("db: runLoop failed." ); 
@@ -2605,7 +2590,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! g_wiktionary.test() ) return 1;
 	if ( ! g_wiki.load() ) return 1;
 	if ( ! g_speller.init() && g_conf.m_isLive ) return 1;
-	if ( ! loadQueryLog() ) return 1;
 	return 0;
 	*/
 
@@ -2761,10 +2745,6 @@ int main2 ( int argc , char *argv[] ) {
 	// the wiki titles
 	if ( ! g_wiki.load() ) return 1;
 
-	// the query log split
-	//if ( ! loadQueryLog() ) return 1;
-
-
  jump:
 	// force give up on dead hosts to false
 	g_conf.m_giveupOnDeadHosts = 0;
@@ -2840,9 +2820,6 @@ int main2 ( int argc , char *argv[] ) {
 	// the catdb, it's an instance of tagdb, pass RDB_CATDB
 	if ( ! g_catdb.init()   ) {
 		log("db: Catdb1 init failed." ); return 1; }
-	// initialize Users
-	if ( ! g_users.init()  ){
-		log("db: Users init failed. "); return 1;}
 
 	// int64_t uu = gettimeofdayInMilliseconds();
 	// for ( int i = 0 ; i < 10000000 ; i++ )
@@ -2997,14 +2974,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 	*/
-
-	// the query log split. only for seo tools, so only do if
-	// we are running in Matt Wells's datacenter.
-	if ( g_conf.m_isMattWells && ! loadQueryLog() ) {
-		log("init: failed to load query log. continuing with seo "
-		    "support.");
-		//return 1;
-	}
 
 	//if(!Msg6a::init()) {
 	//	log( "init: Quality Agent init failed." );
@@ -3205,19 +3174,6 @@ int main2 ( int argc , char *argv[] ) {
 	// . now register all msg handlers with g_udp server
 	if ( ! registerMsgHandlers() ) {
 		log("db: registerMsgHandlers failed" ); return 1; }
-
-	// for Events.cpp event extraction we need to parse out "places" from each doc
-	//if ( ! initPlaceDescTable ( ) ) {
-	//	log("events: places table init failed"); return 1; }
-
-	// init our city lists for mapping a lat/lon to nearest cityid
-	// for getting the timezone for getting all events "today".
-	// city lists are used by the get
-	//if ( ! initCityLists() ) {
-	//	log("events: city lists init failed"); return 1; }
-
-	//if ( ! initCityLists_new() ) {
-	//	log("events: city lists init failed"); return 1; }
 
 	// save our rdbs every 5 seconds and save rdb if it hasn't dumped
 	// in the last 10 mins

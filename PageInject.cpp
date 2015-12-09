@@ -3,7 +3,6 @@
 #include "PageInject.h"
 #include "HttpServer.h"
 #include "Pages.h"
-#include "Users.h"
 #include "XmlDoc.h"
 #include "PageParser.h"
 #include "Repair.h"
@@ -1169,14 +1168,6 @@ bool Msg7::scrapeQuery ( ) {
 
 	// disregard this
 	m_xd->m_useRobotsTxt = false;
-
-	// this will tell it to index ahrefs first before indexing
-	// the doc. but do NOT do this if we are from ahrefs.com
-	// ourselves to avoid recursive explosion!!
-	if ( m_useAhrefs )
-		m_xd->m_useAhrefs = true;
-
-	m_xd->m_reallyInjectLinks = true;//ir->m_injectLinks;
 
 	//
 	// rather than just add the links of the page to spiderdb,
