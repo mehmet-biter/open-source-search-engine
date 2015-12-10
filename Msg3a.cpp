@@ -1,11 +1,11 @@
 #include "gb-include.h"
 
 #include "Msg3a.h"
-//#include "Msg3b.h"
 #include "Wiki.h"
 #include "sort.h"
 
 #include "Stats.h"
+#include "HashTableT.h"
 
 static void gotReplyWrapper3a     ( void *state , void *state2 ) ;
 //static void gotRerankedDocIds     ( void *state );

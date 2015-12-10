@@ -74,27 +74,17 @@ char s_termList[1024];
 // . if "useAnchors" is true we do click and scroll
 // . if "isQueryTerms" is true, we do typical anchors in a special way
 int32_t Highlight::set ( SafeBuf *sb,
-		      //char        *buf          ,
-		      //int32_t         bufLen       ,
 		      char        *content      ,
 		      int32_t         contentLen   ,
-		      // primary language of the document (for synonyms)
-		      char         docLangId    ,
 		      Query       *q            ,
-		      bool         doStemming   ,
-		      bool         useAnchors   ,
-		      const char  *baseUrl      ,
 		      const char  *frontTag     ,
 		      const char  *backTag      ,
-		      int32_t         fieldCode    ,
 		      int32_t         niceness      ) {
 
 	Words words;
-	if ( ! words.set ( content      , 
-			   contentLen   , 
-			   true         , // computeId
-			   true         ) ) // has html entites?
+	if ( ! words.set ( content, contentLen, true, true ) ) {
 		return -1;
+	}
 
 	int32_t version = TITLEREC_CURRENT_VERSION;
 
@@ -104,14 +94,6 @@ int32_t Highlight::set ( SafeBuf *sb,
 	Phrases phrases;
 	if ( !phrases.set(&words,&bits,true,false,version,niceness))return -1;
 
-	//SafeBuf langBuf;
-	//if ( !setLangVec ( &words , &langBuf , niceness )) return 0;
-	//uint8_t *langVec = (uint8_t *)langBuf.getBufStart();
-
-	// make synonyms
-	//Synonyms syns;
-	//if(!syns.set(&words,NULL,docLangId,&phrases,niceness,NULL)) return 0;
-
 	Matches matches;
 	matches.setQuery ( q );
 
@@ -120,54 +102,24 @@ int32_t Highlight::set ( SafeBuf *sb,
 	// store
 	m_numMatches = matches.getNumMatches();
 
-	return set ( sb , 
-		     //buf         ,
-		     //bufLen      , 
-		     &words      ,
-		     &matches    ,
-		     doStemming  ,
-		     useAnchors  ,
-		     baseUrl     ,
-		     frontTag    ,
-		     backTag     ,
-		     fieldCode   ,
-		     q		 );
+	return set ( sb, &words, &matches, frontTag, backTag, q);
 }
 
 // New version
 int32_t Highlight::set ( SafeBuf *sb ,
-		      //char        *buf        ,
-		      //int32_t         bufLen     ,
 		      Words       *words      ,
 		      Matches     *matches    ,
-		      bool         doStemming ,
-		      bool         useAnchors ,
-		      const char  *baseUrl    ,
 		      const char  *frontTag   ,
 		      const char  *backTag    ,
-		      int32_t         fieldCode  ,
 		      Query	  *q	      ) {
 	// save stuff
 	m_frontTag    = frontTag;
 	m_backTag     = backTag;
-	m_doStemming  = doStemming;
-	m_didErrMsg   = false;
-	m_fieldCode   = fieldCode;
-	// should we do click and scroll
-	m_useAnchors  = useAnchors;
-	m_baseUrl     = baseUrl;
-	// . set the anchor counts to 1000*i+1 for each possible query term num
-	// . yes, i know, why +1? because we're assuming the query terms
-	//   have been highlighted before us 
-	//for ( int32_t i = 0 ; i < MAX_QUERY_TERMS ; i++ ) 
-	//	m_anchorCounts[i] = 1000*i + 1;
+
 	// set lengths of provided front/back highlight tags
 	if ( m_frontTag ) m_frontTagLen = gbstrlen ( frontTag );
 	if ( m_backTag  ) m_backTagLen  = gbstrlen ( backTag  );
-	// point to buffer to store highlighted text into
-	//m_buf    = buf;
-	//m_bufLen = bufLen;
-	//m_bufPtr = buf;
+
 	m_sb = sb;
 
 	// label it

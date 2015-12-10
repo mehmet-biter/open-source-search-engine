@@ -2579,28 +2579,27 @@ bool HttpServer::hasPermission ( int32_t ip , HttpRequest *r ,
 // . sets g_errno on error
 // . cacheTime default is 0, which tells browser to use local caching rules
 // . status should be 200 for all replies except POST which is 201
-bool HttpServer::sendDynamicPage ( TcpSocket *s           ,
-				   char      *page        ,
-				   int32_t       pageLen     ,
-				   int32_t       cacheTime   ,
-				   bool       POSTReply   ,
-				   char      *contentType ,
-				   int32_t       httpStatus  ,
-				   char      *cookie      ,
-				   char      *charset      ,
-				   HttpRequest *hr ) {
+bool HttpServer::sendDynamicPage ( TcpSocket *s, char *page, int32_t pageLen, int32_t cacheTime,
+                                   bool POSTReply, char *contentType, int32_t httpStatus,
+                                   char *cookie, char *charset, HttpRequest *hr) {
 	// how big is the TOTAL page?
 	int32_t contentLen = pageLen; // headerLen + pageLen + tailLen;
 	// get the time for a mime
-	time_t now ;//= getTimeGlobal();
-	if ( isClockInSync() ) now = getTimeGlobal();
-	else                   now = getTimeLocal();
+	time_t now;
+	if ( isClockInSync() ) {
+		now = getTimeGlobal();
+	} else {
+		now = getTimeLocal();
+	}
+
 	// guess contentype
 	char *ct = contentType;
 	if ( ! ct ) {
-		if ( page && pageLen > 10 && strncmp(page,"<?xml",5)==0)
+		if ( page && (pageLen > 10) && (strncmp(page, "<?xml", 5) == 0)) {
 			ct = "text/xml";
+		}
 	}
+
 	// make a mime for this contentLen (no partial send)
 	HttpMime m;
 	// . the default is a cacheTime of -1, which means NOT to cache at all
@@ -2619,139 +2618,8 @@ bool HttpServer::sendDynamicPage ( TcpSocket *s           ,
 		     httpStatus  ,
 		     cookie      );
 
-	return sendReply2 ( m.getMime(),m.getMimeLen(),page,pageLen,s,
-			    false, hr);
-
-
-	/*
-	// get mime length
-	int32_t mimeLen = m.getMimeLen();
-	// 0 content length for POST replies
-	//if ( POSTReply ) { *page='X'; }; //contentLen = 0; pageLen = 0; }
-	// get total bytes to send
-	int32_t sendBufAlloc = mimeLen + contentLen;
-	// int16_tcut
-	int32_t ht = g_hostdb.m_myHost->m_type;
-	// did requester want a compressed reply?
-	char *rb = s->m_readBuf;
-	// special forwarding case
-	if ( (ht & HT_PROXY) && *rb == 'Z' ) sendBufAlloc = pageLen;
-	// extra room?
-	//if ( s->m_udpSlot ) sendBufSize += 12;
-	// make a sendBuf
-	char *sendBuf    ;
-	//if ( sendBufSize <= TCP_READ_BUF_SIZE )
-	//	sendBuf = s->m_tmpBuf;
-	//else 
-	sendBuf = (char *) mmalloc ( sendBufAlloc , "HttpServer2");
-	// destroy s on mmalloc() error and return
-	if ( ! sendBuf ) 
-		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));
-	// p is a moving ptr into "sendBuf"
-	unsigned char *p    = (unsigned char *)sendBuf;
-	unsigned char *pend = (unsigned char *)sendBuf + sendBufAlloc;
-	// by default assign size to what was allocated
-	int32_t sendBufSize = sendBufAlloc;
-	// we swap out the GET for a ZET
-	bool doCompression = ( *rb == 'Z' );
-	// only grunts do the compression now to prevent proxy overload
-	if ( ! ( ht & HT_GRUNT) ) doCompression = false;
-
-	// if we are fielding a request for a qcproxy's 0xfd request,
-	// then compress the reply before sending back.
-	if ( doCompression ) {
-		// store uncompressed size1 and size1
-		*(int32_t *)p = mimeLen + pageLen; p += 4;
-		// bookmarks
-		int32_t *saved1 = (int32_t *)p; p += 4;
-		int32_t *saved2 = (int32_t *)p; p += 4;
-		uint32_t  used1 = pend - p;
-		int err1 = gbcompress ( p , &used1, 
-					(unsigned char *)m.getMime(),mimeLen );
-		if ( err1 != Z_OK )
-			log("http: error compressing mime reply.");
-		p += used1;
-		// update bookmark
-		*saved1 = used1;
-		// then store the page content
-		uint32_t used2 = pend - p;
-		int err2 = gbcompress(p,&used2,(unsigned char *)page,pageLen );
-		if ( err2 != Z_OK )
-			log("http: error compressing content reply.");
-		p += used2;
-		// update bookmark
-		*saved2 = used2;
-		// note it
-		logf(LOG_DEBUG,"http: compressing. after=%"INT32"",
-		     (int32_t)(((char *)p)-sendBuf));
-		// change size
-		sendBufSize = (char *)p - sendBuf;
-	}
-	// if we are a proxy, and not a compression proxy, then just forward
-	// the blob as-is if it is a "ZET" (GET-compressed=ZET)
-	else if ( (ht & HT_PROXY) && *rb == 'Z' ) {
-		gbmemcpy ( sendBuf , page , pageLen );
-		// sanity check
-		if ( sendBufSize != pageLen ) { char *xx=NULL;*xx=0; }
-		// note it
-		logf(LOG_DEBUG,"http: forwarding. pageLen=%"INT32"",pageLen);
-	}
-	else {
-		// copy mime into sendBuf first
-		gbmemcpy ( p , m.getMime() , mimeLen );
-		p += mimeLen;
-		// then the page
-		gbmemcpy ( p , page , pageLen );
-		p += pageLen;
-		// sanity check
-		if ( sendBufSize != pageLen+mimeLen ) { char *xx=NULL;*xx=0;}
-	}
-
-	// . send if off
-	// . returns false if blocked, true otherwise
-	// . sets g_errno on error
-	//if ( ! m_tcp.sendMsg ( s           , 
-	if (  ! tcp->sendMsg ( s           , 
-			       sendBuf     ,
-			       sendBufAlloc,
-			       sendBufSize ,
-			       sendBufSize ,
-			       NULL        , 
-			       cleanUp     ) ) return false;
-	// . free all if sendReply() did not block
-	// . socket should have been reset() (destroyed on g_errno) byTcpServer
-	// . TcpServer will free bufs on recycle/destruction
-	// mfree ( sendBuf , sendBufSize );
-	return true;
-	*/
+	return sendReply2 ( m.getMime(), m.getMimeLen(), page, pageLen, s, false, hr);
 }
-
-
-/*
-bool HttpServer::addToQueue(TcpSocket *s, HttpRequest *r, int32_t page) {
-	if(m_lastSlotUsed == MAX_REQUEST_QUEUE) {
-		//not enough room to handle another request!
-		g_errno = ETRYAGAIN;
-		return false;
-	}
-	QueuedRequest* qr = &m_requestQueue[m_lastSlotUsed++];
-	qr->m_s = s;
-	qr->m_r.copy(r);
-	qr->m_page = page;
-	return true;
-}
-
-
-bool HttpServer::callQueuedPages() {
-	if(m_lastSlotUsed == 0) return true;
-	for(int32_t i = 0; i < m_lastSlotUsed; i++) {
-		QueuedRequest* qr = &m_requestQueue[i];
-		g_pages.sendDynamicReply (qr->m_s , &qr->m_r , qr->m_page);
-	}
-	m_lastSlotUsed = 0;
-	return true;
-}
-*/
 
 TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 	//int64_t start = gettimeofdayInMilliseconds();
@@ -2776,14 +2644,14 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 	int32_t newSize = *(int32_t*)(s->m_readBuf + s->m_readOffset - 4);
 
 	if(newSize < 0 || newSize > 500*1024*1024) {
-		log("http: got bad gzipped reply1 of size=%"INT32".",
-		    newSize );
-		g_errno = ECORRUPTHTTPGZIP;//CORRUPTDATA;//EBADREPLYSIZE;
+		log("http: got bad gzipped reply1 of size=%"INT32".", newSize );
+		g_errno = ECORRUPTHTTPGZIP;
 		return s;
 	}
+
 	//if the content is just the gzip header and footer, then don't
 	//bother unzipping
-	if(newSize == 0) {
+	if (newSize == 0) {
 		s->m_readOffset = mime.getMimeLen();
 		return s;
 	}

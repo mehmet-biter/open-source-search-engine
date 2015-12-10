@@ -33261,23 +33261,10 @@ Summary *XmlDoc::getSummary () {
 	m_cpuSummaryStartTime = start;
 
 	// compute the summary
-	bool status = s->set2( xml                 ,
-			  ww                               ,
-			  sections                         ,
-			  pos                              ,
-			  q                                ,
-			  (int64_t *)m_req->ptr_termFreqs  ,
-			  m_req->m_summaryMaxLen           ,
-			  numLines                         ,
-			  // . displayLines, # lines we are displaying
-			  // . Summary::getDisplayLen() will return the
-			  //   length of the summary to display
-			  m_req->m_numSummaryLines         ,
-			  m_req->m_summaryMaxNumCharsPerLine,
-			  getFirstUrl()                    ,
-			  mm                               ,
-			  ti->getTitle()                   ,
-			  ti->getTitleLen()                );
+	bool status = s->set( xml, ww, sections, pos, q, (int64_t *)m_req->ptr_termFreqs,
+	                      m_req->m_summaryMaxLen, numLines, m_req->m_numSummaryLines,
+	                      m_req->m_summaryMaxNumCharsPerLine, getFirstUrl(), mm,
+	                      ti->getTitle(), ti->getTitleLen());
 
 	// error, g_errno should be set!
 	if ( ! status ) {
@@ -33290,25 +33277,23 @@ Summary *XmlDoc::getSummary () {
 }
 
 char *XmlDoc::getHighlightedSummary ( ) {
-
 	if ( m_finalSummaryBufValid ) {
-		//char *fsum = m_finalSummaryBuf.getBufStart();
-		//if ( ! fsum ) fsum = (char *)0x01;
 		return m_finalSummaryBuf.getBufStart();
 	}
 
 	Summary *s = getSummary();
-
-	if ( ! s || s == (void *)-1 ) return (char *)s;
+	if ( ! s || s == (void *)-1 ) {
+		return (char *)s;
+	}
 
 	Query *q = getQuery();
-	if ( ! q ) return (char *)q;
+	if ( ! q ) {
+		return (char *)q;
+	}
 
 	// get the summary
 	char *sum    = s->getSummary();
 	int32_t sumLen = s->getSummaryDisplayLen();
-
-	//sum[sumLen] = 0;
 
 	// assume no highlighting?
 	if ( ! m_req->m_highlightQueryTerms || sumLen == 0 ) {
@@ -33316,32 +33301,14 @@ char *XmlDoc::getHighlightedSummary ( ) {
 		m_finalSummaryBuf.nullTerm();
 		m_finalSummaryBufValid = true;
 		return m_finalSummaryBuf.getBufStart();
-		//char *fsum = m_finalSummaryBuf.getBufStart();
-		//if ( ! fsum ) fsum = (char *)0x01;
-		//return fsum;
 	}
 
 	if ( ! m_langIdValid ) { char *xx=NULL;*xx=0; }
 
-	//char tt[5000];
 	Highlight hi;
 	StackBuf(hb);
 	// highlight the query in it
-	int32_t hlen = hi.set ( &hb,
-			     //tt ,
-			     //4999 ,
-			     sum,
-			     sumLen,
-			     m_langId,
-			     q,
-			     false  , // doStemming?
-			     false  , //click&scroll?
-			     NULL   , // base url
-			     "<b>"  , // front tag
-			     "</b>" , // back tag
-			     0,
-			     m_niceness );
-
+	int32_t hlen = hi.set ( &hb, sum, sumLen, q, "<b>", "</b>", m_niceness );
 
 	// highlight::set() returns 0 on error
 	if ( hlen < 0 ) {
@@ -33351,15 +33318,11 @@ char *XmlDoc::getHighlightedSummary ( ) {
 	}
 
 	// store into our safebuf then
-	m_finalSummaryBuf.safeMemcpy ( &hb );//tt , hlen + 1 );
+	m_finalSummaryBuf.safeMemcpy ( &hb );
 	m_finalSummaryBufValid = true;
 	m_finalSummaryBuf.nullTerm();
 
 	return m_finalSummaryBuf.getBufStart();
-
-	//char *fsum = m_finalSummaryBuf.getBufStart();
-	//if ( ! fsum ) fsum = (char *)0x01;
-	//return fsum;
 }
 
 

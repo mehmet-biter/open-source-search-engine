@@ -21,72 +21,42 @@
 #define _SUMMARY_H_
 
 #include "gb-include.h"
-//#include "Unicode.h"
-#include "Query.h"
-#include "Xml.h"
-#include "Words.h"
-#include "Pos.h"
-#include "Matches.h"
 
 #define MAX_SUMMARY_LEN 1024*20
 #define MAX_SUMMARY_EXCERPTS 1024
-#define MAX_SUMMARY_LOCS 16
 
 class Sections;
 class Matches;
+class Xml;
+class Words;
+class Pos;
+class Query;
+class Url;
 
 class Summary {
 public:
 	Summary();
 	~Summary();
 
-	void reset();
+	bool set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q, int64_t *termFreqs,
+	          int32_t maxSummaryLen, int32_t numDisplayLines, int32_t maxNumLines, int32_t maxNumCharsPerLine,
+	          Url *f, Matches *matches, char *titleBuf, int32_t titleBufLen);
 
-	// this should eventually replace set()
-	bool set2 (class Xml      *xml                ,
-		    class Words    *words              ,
-		    Sections *sections           ,
-		    class Pos      *pos                ,
-		    class Query    *q                  ,
-		    int64_t      *termFreqs          ,
-		    int32_t            maxSummaryLen      ,
-		    int32_t            numDisplayLines    ,
-		    int32_t            maxNumLines        ,
-		    int32_t            maxNumCharsPerLine ,
-		    class Url      *f ,
-		    class Matches  *matches            = NULL ,
-		    char           *titleBuf           = NULL ,
-		    int32_t            titleBufLen        = 0    );
-
-
-	// this is NULL terminated
-	char *getSummary    ( ) { return m_summary;    }
-	int32_t getSummaryDisplayLen() { return m_displayLen; }
-	int32_t getSummaryLen() { return m_summaryLen; }
+	char *getSummary();
+	int32_t getSummaryDisplayLen();
+	int32_t getSummaryLen();
 
 private:
 
-	//////////////////////////////////////////////////////////////////
-	//
-	// THE NEW SUMMARY GENERATOR routines below here
-	//
-	//////////////////////////////////////////////////////////////////
-
 	bool getDefaultSummary (Xml *xml, Words *words, Sections *sections , Pos *pos, int32_t maxSummaryLen );
 
-	int64_t getBestWindow (Matches *matches,
-	                       int32_t mn,
-	                       int32_t *lasta,
-	                       int32_t *besta,
-	                       int32_t *bestb,
-	                       char *gotIt,
-	                       char *retired,
-	                       int32_t maxExcerptLen );
+	int64_t getBestWindow (Matches *matches, int32_t mn, int32_t *lasta, int32_t *besta, int32_t *bestb,
+	                       char *gotIt, char *retired, int32_t maxExcerptLen );
 
 	// null terminate and store the summary here.
-	char  m_summary      [ MAX_SUMMARY_LEN ];
+	char  m_summary[ MAX_SUMMARY_LEN ];
 	int32_t  m_summaryLen;
-	int32_t  m_summaryExcerptLen [ MAX_SUMMARY_EXCERPTS ];
+	int32_t  m_summaryExcerptLen[ MAX_SUMMARY_EXCERPTS ];
 	int32_t  m_numExcerpts;
 
 	// if getting more lines for deduping than we need for displaying,
@@ -101,7 +71,7 @@ private:
 
 	float *m_wordWeights;
 	int32_t m_wordWeightSize;
-	char m_tmpBuf[128];
+	char m_tmpWordWeightsBuf[128];
 
 	char *m_buf4;
 	int32_t m_buf4Size;

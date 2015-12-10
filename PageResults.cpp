@@ -910,32 +910,11 @@ static bool printGigabitContainingSentences ( State0 *st,
 		// let's highlight with gigabits and query terms
 		SafeBuf tmpBuf;
 		Highlight h;
-		h.set ( &tmpBuf , // print it out here
-			s , // content
-			e - s , // len
-			si->m_queryLangId , // from m_defaultSortLang
-			gigabitQuery , // the gigabit "query" in quotes
-			true , // stemming? -- unused
-			false , // use anchors?
-			NULL , // baseurl
-			"<u>", // front tag
-			"</u>", // back tag
-			0 , // fieldCode
-			0  ); // niceness
+		h.set ( &tmpBuf , s , e - s , gigabitQuery, "<u>", "</u>", 0 );
+
 		// now highlight the original query as well but in black bold
 		SafeBuf tmpBuf2;
-		h.set ( &tmpBuf2 , // print it out here
-			tmpBuf.getBufStart() , // content
-			tmpBuf.length() , // len
-			si->m_queryLangId , // from m_defaultSortLang
-			&si->m_q , // the regular query
-			true , // stemming? -- unused
-			false , // use anchors?
-			NULL , // baseurl
-			"<b>" , // front tag
-			"</b>", // back tag
-			0 , // fieldCode
-			0  ); // niceness
+		h.set ( &tmpBuf2, tmpBuf.getBufStart(), tmpBuf.length(), &si->m_q, "<b>", "</b>", 0  );
 		
 
 		int32_t dlen; char *dom = getDomFast(reply->ptr_ubuf,&dlen);
@@ -977,20 +956,12 @@ static bool printGigabitContainingSentences ( State0 *st,
 
 		fi->m_printed = 1;
 		saveOffset = sb->length();
-		if ( format == FORMAT_HTML )
+		if ( format == FORMAT_HTML ) {
 			sb->safePrintf(" <a href=/get?c=%s&cnsp=0&"
 				       "strip=0&d=%"INT64">",
 				       cr->m_coll,reply->m_docId);
-
-		if ( format == FORMAT_HTML )
 			sb->safeMemcpy(dom,dlen);
-
-		if ( format == FORMAT_HTML )
 			sb->safePrintf("</a>\n");
-
-		//lastDocId = reply->m_docId;
-
-		if ( first && format == FORMAT_HTML ) {
 			sb->safePrintf("</div>");
 		}
 
@@ -1001,6 +972,7 @@ static bool printGigabitContainingSentences ( State0 *st,
 		if ( first ) {
 			first = false;
 			second = true;
+
 			// print first gigabit all over again but in 2nd div
 			goto again;
 		}
@@ -1050,56 +1022,12 @@ static bool printGigabitContainingSentences ( State0 *st,
 			dst[k] = src[k];
 	}
 
-	//s_gigabitCount++;
-
 	if ( printedSecond ) {
 		sb->safePrintf("</div>");
 	}
 
 	return true;
 }
-
-/*
-// print all sentences containing this gigabit
-static bool printGigabit ( State0 *st,
-			   SafeBuf *sb , 
-			   Msg40 *msg40 , 
-			   Gigabit *gi , 
-			   SearchInput *si ) {
-
-	//static int32_t s_gigabitCount = 0;
-
-	sb->safePrintf("<nobr><b>");
-	//"<img src=http://search.yippy.com/"
-	//"images/new/button-closed.gif><b>");
-
-	HttpRequest *hr = &st->m_hr;
-
-	// make a new query
-	sb->safePrintf("<a href=\"/search?gigabits=1&q=");
-	sb->urlEncode(gi->m_term,gi->m_termLen);
-	sb->safeMemcpy("+|+",3);
-	char *q = hr->getString("q",NULL,"");
-	sb->urlEncode(q);
-	sb->safePrintf("\">");
-	sb->safeMemcpy(gi->m_term,gi->m_termLen);
-	sb->safePrintf("</a></b>");
-	sb->safePrintf(" <font color=gray size=-1>");
-	//int32_t numOff = sb->m_length;
-	// now the # of pages not nuggets
-	sb->safePrintf("(%"INT32")",gi->m_numPages);
-	sb->safePrintf("</font>");
-	sb->safePrintf("</b>");
-	if ( si->m_isMasterAdmin ) 
-		sb->safePrintf("[%.0f]{%"INT32"}",
-			      gi->m_gbscore,
-			      gi->m_minPop);
-	// that's it for the gigabit
-	sb->safePrintf("<br>");
-
-	return true;
-}
-*/
 
 class StateAU {
 public:
@@ -3629,20 +3557,11 @@ bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 
 		Highlight hi;
 		SafeBuf hb;
-		int32_t hlen = hi.set ( &hb,//tt , 
-				     //ttend - tt , 
-				str, 
-				strLen , 
-				mr->m_language, // docLangId
-				&si->m_hqq , // highlight query CLASS
-				false  , // doStemming?
-				false  , // use click&scroll?
-				NULL   , // base url
-				frontTag,
-				backTag,
-				0,
-				0 ); // niceness
-		if ( hlen <= 0 ) continue;
+		int32_t hlen = hi.set ( &hb, str, strLen , &si->m_hqq, frontTag, backTag, 0 );
+		if ( hlen <= 0 ) {
+			continue;
+		}
+
 		// skip it if nothing highlighted
 		if ( hi.getNumMatches() == 0 ) continue;
 
@@ -4466,7 +4385,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// print the url in the href tag
 		sb->safeMemcpy ( url , newLen ); 
 		// then finish the a href tag and start a bold for title
-		sb->safePrintf ( ">");//<font size=+0>" );
+		sb->safePrintf ( ">");
 	}
 
 
@@ -4513,9 +4432,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	
 
 	int32_t hlen;
-	//copy all summary and title excerpts for this result into here
-	//char tt[1024*32];
-	//char *ttend = tt + 1024*32;
+
 	char *frontTag = 
 		"<font style=\"color:black;background-color:yellow\">" ;
 	char *backTag = "</font>";
@@ -4534,51 +4451,30 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	char tmp3[1024];
 	SafeBuf hb(tmp3, 1024);
 	if ( str && strLen && si->m_doQueryHighlighting ) {
-		hlen = hi.set ( &hb,
-				//tt , 
-				//ttend - tt , 
-				str, 
-				strLen , 
-				mr->m_language, // docLangId
-				&si->m_hqq , // highlight query CLASS
-				false  , // doStemming?
-				false  , // use click&scroll?
-				NULL   , // base url
-				frontTag,
-				backTag,
-				0,
-				0 ); // niceness
+		hlen = hi.set ( &hb, str, strLen, &si->m_hqq, frontTag, backTag, 0);
+
 		// reassign!
 		str = hb.getBufStart();
 		strLen = hb.getLength();
-		//if (!sb->utf8Encode2(tt, hlen)) return false;
-		// if ( si->m_format != FORMAT_JSON )
-		// 	if ( ! sb->brify ( hb.getBufStart(),
-		// 			   hb.getLength(),
-		// 			   0,
-		// 			   cols) ) return false;
 	}
 
 	// . use "UNTITLED" if no title
 	// . msg20 should supply the dmoz title if it can
-	if ( strLen == 0 && 
-	     si->m_format != FORMAT_XML && 
-	     si->m_format != FORMAT_JSON ) {
+	if ( strLen == 0 &&  si->m_format != FORMAT_XML &&  si->m_format != FORMAT_JSON ) {
 		str = "<i>UNTITLED</i>";
 		strLen = gbstrlen(str);
 	}
 
-	if ( str && 
-	     strLen && 
+	if ( str &&  strLen &&
 	     ( si->m_format == FORMAT_HTML ||
 	       si->m_format == FORMAT_WIDGET_IFRAME ||
 	       si->m_format == FORMAT_WIDGET_APPEND ||
 	       si->m_format == FORMAT_WIDGET_AJAX ) 
 	     ) {
-		// determine if TiTle wraps, if it does add a <br> count for
-		// each wrap
-		//if (!sb->utf8Encode2(str , strLen )) return false;
-		if ( ! sb->brify ( str,strLen,0,cols) ) return false;
+		// determine if TiTle wraps, if it does add a <br> count for each wrap
+		if ( ! sb->brify ( str,strLen,0,cols) ) {
+			return false;
+		}
 	}
 
 	// close up the title tag
@@ -4621,8 +4517,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			sb->jsonEncode(hp);
 			sb->safePrintf("\",\n");
 		}
-		// it is a \0 separated list of headers generated from
-		// XmlDoc::getHeaderTagBuf()
+		// it is a \0 separated list of headers generated from XmlDoc::getHeaderTagBuf()
 		hp += gbstrlen(hp) + 1;
 	}
 
@@ -4747,11 +4642,12 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	// summary deduping purposes (see "pss" parm in Parms.cpp) we do not
 	// get it as int16_t as request. so use mr->m_sumPrintSize here
 	// not mr->size_sum
-	strLen = mr->size_displaySum - 1;//-1;
+	strLen = mr->size_displaySum - 1;//
 
 	// this includes the terminating \0 or \0\0 so back up
-	if ( strLen < 0 ) strLen  = 0;
-	//send = str + strLen;
+	if ( strLen < 0 ) {
+		strLen  = 0;
+	}
 
 	// dmoz summary might override if we are showing a dmoz topic page
 	if ( dmozSummary2 && (si->m_catId>0 || strLen<=0) ) {
@@ -4760,17 +4656,21 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	}
 
 	bool printSummary = true;
-	// do not print summaries for widgets by default unless overridden
-	// with &summary=1
+
+	// do not print summaries for widgets by default unless overridden with &summary=1
 	int32_t defSum = 0;
+
 	// if no image then default the summary to on
-	if ( ! mr->ptr_imgData ) defSum = 1;
+	if ( ! mr->ptr_imgData ) {
+		defSum = 1;
+	}
 
 	if ( (si->m_format == FORMAT_WIDGET_IFRAME ||
 	      si->m_format == FORMAT_WIDGET_APPEND ||
 	      si->m_format == FORMAT_WIDGET_AJAX ) && 
-	     hr->getLong("summaries",defSum) == 0 ) 
+	     hr->getLong("summaries",defSum) == 0 ) {
 		printSummary = false;
+	}
 
 	if ( printSummary &&
 	     (si->m_format == FORMAT_WIDGET_IFRAME ||
@@ -4821,7 +4721,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	// . will print the "Search in Category" link too
 	//
 	////////////
-	//Msg20Reply *mr = m20->getMsg20Reply();
 	int32_t nCatIds = mr->getNumCatIds();
 	for (int32_t i = 0; i < nCatIds; i++) {
 		int32_t catid = ((int32_t *)(mr->ptr_catIds))[i];
