@@ -155,8 +155,6 @@ class Multicast {
 	// . m_slots[] is our list of concurrent transactions
 	// . we delete all the slots only after cast is done
 	int32_t        m_startTime;   // seconds since the epoch
-	// so Msg3a can time response
-	int64_t   m_startTimeMS;
 
 	// # of replies we've received
 	int32_t        m_numReplies;
