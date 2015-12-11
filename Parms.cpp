@@ -11229,7 +11229,7 @@ void Parms::init ( ) {
 		"change to take affect.";
 	m->m_cgi   = "ueh";
 	m->m_off   = (char *)&g_conf.m_useEtcHosts - g;
-	m->m_def   = "0"; 
+	m->m_def   = "1"; 
 	m->m_type  = TYPE_BOOL;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
