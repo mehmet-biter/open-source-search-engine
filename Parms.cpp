@@ -2456,11 +2456,6 @@ bool Parms::printParm ( SafeBuf* sb,
 		// s is NULL for GigablastRequest parms
 		if ( ! s && m->m_def && m->m_def[0]=='1' )
 			val = " checked";
-		// in case it is not checked, submit that!
-		// if it gets checked this should be overridden then
-		sb->safePrintf("<input type=hidden name=%s value=0>"
-			       , cgi );
-		//else
 		sb->safePrintf("<input type=checkbox value=1 ");
 		//"<nobr><input type=button ");
 		if ( m->m_page == PAGE_FILTERS)
