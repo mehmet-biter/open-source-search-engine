@@ -8,20 +8,16 @@
 #include "Matches.h"
 
 Summary::Summary()
-    : m_summary{}
-    , m_summaryLen(0)
-    , m_summaryExcerptLen{0}
+    : m_summaryLen(0)
     , m_numExcerpts(0)
     , m_numDisplayLines(0)
     , m_displayLen(0)
     , m_maxNumCharsPerLine(0)
     , m_q(NULL)
     , m_wordWeights(NULL)
-    , m_wordWeightSize(NULL)
-    , m_tmpWordWeightsBuf{}
+    , m_wordWeightSize(0)
     , m_buf4(NULL)
-    , m_buf4Size(0)
-    , m_tmpBuf4{} {
+    , m_buf4Size(0) {
 }
 
 Summary::~Summary() {
@@ -149,10 +145,6 @@ bool Summary::set ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query 
 			if (m_wordWeights[ndx] < .10) {
 				m_wordWeights[ndx] = .10;
 			}
-
-			//log(LOG_WARN,
-			//"query word num %"INT32" termnum %"INT32" freq %f max %f",
-			//ndx,i,m_wordWeights[ndx],maxTermFreq);
 		}
 	} else {
 		for ( int32_t i = 0 ; i < q->m_numWords; i++ ) {
@@ -268,7 +260,6 @@ bool Summary::set ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query 
 			if ( flags & MF_METASUMM ) skip = false;
 			if ( flags & MF_METADESC ) skip = false;
 			if ( flags & MF_BODY     ) skip = false;
-			if ( flags & MF_DMOZSUMM ) skip = false;
 			if ( flags & MF_RSSDESC  ) skip = false;
 			if ( skip ) continue;
 
