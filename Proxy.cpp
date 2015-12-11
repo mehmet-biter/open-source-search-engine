@@ -14,10 +14,6 @@ char *g_secret_api_key  = NULL;
 Proxy g_proxy;
 
 
-// turn this off now
-//bool g_isYippy = true;
-bool g_isYippy = false;
-
 #define MINCHARGE 5.00
 
 
@@ -37,7 +33,6 @@ struct StateControl{
 	int32_t m_accessType;
 
 	int32_t m_pageNum;
-	bool m_isYippySearch;
 	int64_t m_start;
 	int32_t m_reqNum;
 	SafeBuf m_sb;
@@ -298,8 +293,6 @@ void proxyHandlerWrapper ( TcpSocket *s ){
 	g_proxy.handleRequest (s);
 }
 
-static int32_t s_yippySearchesOut = 0;
-
 bool Proxy::handleRequest (TcpSocket *s){
 
 	// if we are a spider compression proxy, do not really act like
@@ -492,10 +485,6 @@ bool Proxy::handleRequest (TcpSocket *s){
 
 	if ( strncmp(path,"/seoapi",7) == 0 ) handleIt = true;
 
-	// we're just a tcp proxy if yippy
-	if ( g_isYippy ) 
-		handleIt = false;
-
 	// special pages. any html page will now need to call
 	// msgfb to get the user info, like the name "Matt Wells" to
 	// post in the black bar, so we can't really do this on the
@@ -503,10 +492,6 @@ bool Proxy::handleRequest (TcpSocket *s){
 	//if ( pathLen >= 7 && strnstr(path,".html",pathLen) ) handleIt =false;
 	// same for xml... (eventguru.xml search provider list)
 	//if ( pathLen >= 7 && strnstr(path,".xml",pathLen) ) handleIt = false;
-
-	// for stats pages etc for yippy proxy
-	if ( g_isYippy && ! strncmp(path,"/master",7) ) 
-		handleIt = true;
 
 	// our new cached page representation format
 	if ( ! strncmp(path,"/?id="        ,5 ) ) handleIt = false;
@@ -589,22 +574,6 @@ bool Proxy::handleRequest (TcpSocket *s){
 		return true;
 	}
 
-	// limit yippy's "GET /search" requests to 50 out...
-	int32_t ymax = 150; // 150;//50;//25; 300 for one process is good
-	ymax = g_conf.m_maxYippyOut;
-	bool isYippySearch = false;
-	if ( g_isYippy && ! strncmp(path,"/search?",8) )
-		isYippySearch = true;
-
-	// is it a search request from a toolbar? we do not want to fuck
-	// with those requests with the anti-bot code below
-	bool isYippyToolBarRequest = false;
-	if ( g_isYippy && isYippySearch ) {
-		int32_t iflen;
-		char *ifs = hr.getString("input-form",&iflen,NULL);
-		if ( ! ifs ) isYippyToolBarRequest = true;
-	}
-
 	// just a safety catch
 	if ( max < 20 ) max = 20;
 
@@ -626,55 +595,6 @@ bool Proxy::handleRequest (TcpSocket *s){
 		g_stats.m_closedSockets++;; 
 		return g_httpServer.sendErrorReply ( s , 500 , 
 						     "Too many sockets open.");
-	}
-
-	//
-	// yippy traffic control
-	//
-	if ( isYippySearch && s_yippySearchesOut >= ymax ) {
-		//
-		// log a note
-		//
-		bool banned = false;
-		int32_t yqLen;
-		char *yq = hr.getString("query",&yqLen,NULL);
-		if ( ! yq ) yq = "";
-		if( ! isYippyToolBarRequest &&
-		    !g_autoBan.hasPerm(s->m_ip, 
-				      NULL,0,//code, codeLen, 
-				      0,0,//uip, uipLen, 
-				      s, &hr, NULL,//&testBuf,
-				      true ) )  { // justCheck )) 
-			banned = true;
-			log("proxy: got banned search req cutoff %s (%s)",
-			    iptoa(s->m_ip),yq);
-		}
-		else
-			log("proxy: got cutoff search req %s (%s)",
-			    iptoa(s->m_ip),yq);
-
-
-		if ( ! banned ) {
-			static int32_t s_last = 0;
-			static int32_t s_count = 0;
-			int32_t now = getTimeLocal();
-			if ( now - s_last < 5 ) 
-				s_count++;
-			else {
-				log("query: Too many oustanding yippy search "
-				    "requests, %"INT32". closing socket on %s. "
-				    "(repeats=%"INT32")",
-				    ymax,
-				    iptoa(s->m_ip),s_count);
-				s_count = 0;
-				s_last = now;
-			}
-		}
-		g_stats.m_closedSockets++;
-		return g_httpServer.sendErrorReply ( s , 500 , 
-						"Too many search requests. "
-						     "Please reload your "
-						     "browser to try again.");
 	}
 
 	/////
@@ -802,15 +722,6 @@ bool Proxy::handleRequest (TcpSocket *s){
 					      false ); // justCheck
 		if ( ! good ) banned = true;
 	}
-	// special yippy logging case
-	if ( banned && isYippySearch ) {
-		// log it
-		int32_t yqLen;
-		char *yq = hr.getString("query",&yqLen,NULL);
-		if ( ! yq ) yq = "";
-		log("proxy: got banned search req %s (%s)",
-		    iptoa(s->m_ip),yq);
-	}
 	// print the turing test if autoban gave us one
 	if ( banned ) {
 		g_msg = " (error: autoban rejected.)";
@@ -922,75 +833,6 @@ bool Proxy::handleRequest (TcpSocket *s){
 
 	// assume we are not doing a search query (stripe load balancing)
 	stC->m_stripe = -1;
-
-	stC->m_isYippySearch = isYippySearch;
-
-	// log it
-	if ( isYippySearch ) {
-		int32_t yqLen;
-		char *yq = hr.getString("query",&yqLen,NULL);
-		if ( ! yq ) yq = "";
-		log("proxy: got ok search req %s (%s)",  iptoa(s->m_ip),yq);
-	}
-
-	// yippy tcp proxy?
-	int32_t x;
-	char *sendBuf      ;
-	int32_t  sendBufSize  ;
-	int32_t  sendBufUsed  ;
-	int32_t  msgTotalSize ;
-	int32_t  timeout      ;
-	if ( g_isYippy ) {
-		// make it sticky, based on ip
-		uint32_t iph = hash32((char *)&stC->m_s->m_ip,4);
-		x = iph % 4;
-		char *hn[] = { "10.36.14.4" , // teaski1
-			       "10.36.14.5" , // teaski2
-			       "10.36.14.17" , // teaski3
-			       "10.36.14.44" }; // teaski4
-		char *host = hn[x];
-		// debug
-		//host = "www2.gigablast.com";
-		SafeBuf *sb = &stC->m_sb;
-		sb->safeMemcpy(s->m_readBuf,s->m_readBufSize);
-		sendBuf      = sb->getBufStart();
-		sendBufSize  = sb->length();
-		sendBufUsed  = sb->length();
-		msgTotalSize = sb->length();
-		// make it a int32_t time so we are less likely to overload
-		// the teaski servers, wait for reply from reach one...
-		timeout      = 60 * 1000; // in milliseconds
-		// note it
-		//log("proxy: sending request \"%s\" to %s",sendBuf,host);
-		static int32_t s_reqNum = 0;
-		stC->m_reqNum = s_reqNum;
-		s_reqNum++;
-		stC->m_start = gettimeofdayInMilliseconds();
-		// debug log debug
-		//log("proxy: forwarding reqNum=%"INT32" from %s to %s",
-		//    stC->m_reqNum,iptoa(stC->m_s->m_ip),host);
-		// only allow so many outstanding to avoid overloading
-		// the teaski servers
-		if ( stC->m_isYippySearch ) 
-			s_yippySearchesOut++;
-		// forward to a teaski
-		if ( ! g_httpServer.m_tcp.sendMsg ( host, // hostname
-						    gbstrlen(host),
-						    80,
-						    sendBuf,
-						    sendBufSize,
-						    sendBufUsed,
-						    msgTotalSize,
-						    stC,
-						    gotTcpReplyWrapper,
-						    timeout,
-						    -1,
-						    -1))
-		     return false;
-		// it did not block, wtf?
-		return true;
-	}
-
 
 	// we need to know how many terms (excluding synonyms)
 	// so we can do stripe load balancing by number of query terms.
@@ -1270,8 +1112,7 @@ bool Proxy::forwardRequest ( StateControl *stC ) {
 	//
 	if ( //! stC->m_ch && 
 	     sendToNewEngine &&
-	     stC->m_pageNum != PAGE_DIRECTORY &&
-	     ! g_isYippy ) {
+	     stC->m_pageNum != PAGE_DIRECTORY ) {
 		dstIp = atoip("10.5.54.154",11);
 		dstPort = 9000; // udp (not dns)
 		dstId = -1; // not a host in our hosts.conf
@@ -1740,13 +1581,13 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 void freeStateControl ( StateControl *stC ){
 	if ( ! stC ) return;
 
-	if ( ! g_isYippy && stC->m_hostId >= 0 ) {
+	if ( stC->m_hostId >= 0 ) {
 		g_proxy.m_numOutstanding[stC->m_hostId]--;
 		uncountStripe ( stC );
 	}
 
 	// free the reply buffer
-	if ( stC->m_slot && ! g_isYippy ) {
+	if ( stC->m_slot ) {
 		// save reply so we can free it when this state is freed
 		char *reply = stC->m_slotReadBuf;
 		int32_t  size  = stC->m_slotReadBufMaxSize;
@@ -2023,9 +1864,6 @@ void gotTcpReplyWrapper ( void *state , TcpSocket *s ) {
 	// does not do a copy like httpserver
 	s->m_sendBuf = NULL;
 
-	if ( stC->m_isYippySearch ) 
-		s_yippySearchesOut--;
-	
 	// get the reply from the teaski machine
 	char *reply = s->m_readBuf;
 	int32_t replySize = s->m_readOffset;

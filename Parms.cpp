@@ -10430,18 +10430,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	if ( g_isYippy ) {
-	m->m_title = "Max outstanding search requests out for yippy";
-	m->m_desc  = "Max outstanding search requests out for yippy";
-	m->m_cgi   = "ymo";
-	m->m_off   = (char *)&g_conf.m_maxYippyOut - g;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "150";
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-	}
-
 	m->m_title = "free queries per day ";
 	m->m_desc  = "Non-customers get this many queries per day before"
 		"being autobanned";

@@ -1286,14 +1286,8 @@ int main2 ( int argc , char *argv[] ) {
 			exit(1);
 		}
 
-		int32_t yippyPort;
-		if ( g_isYippy ) {
-			yippyPort = proxyId;
-			proxyId = 0;
-		}
 		Host *h = g_hostdb.getProxy( proxyId );
 		uint16_t httpPort = h->m_httpPort;
-		if ( g_isYippy ) httpPort = yippyPort;
 		uint16_t httpsPort = h->m_httpsPort;
 		//we need udpserver for addurl and udpserver2 for pingserver
 		uint16_t udpPort  = h->m_port;
@@ -1316,7 +1310,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( ! g_process.checkNTPD() ) 
 			return log("db: ntpd not running on proxy");
 
-		if ( ! g_isYippy && !ucInit(g_hostdb.m_dir))
+		if ( !ucInit(g_hostdb.m_dir))
 			return log("db: Unicode initialization failed!");
 
 		// load speller unifiedDict for spider compression proxy
@@ -1338,7 +1332,7 @@ int main2 ( int argc , char *argv[] ) {
 			return log("proxy: init failed");
 
 		// then statsdb
-		if ( ! g_isYippy && ! g_statsdb.init() ) {
+		if ( ! g_statsdb.init() ) {
 			log("db: Statsdb init failed." ); return 1; }
 
 		// init our table for doing zobrist hashing
@@ -2769,7 +2763,7 @@ int main2 ( int argc , char *argv[] ) {
 	// . collectiondb, does not use rdb, loads directly from disk
 	// . do this up here so RdbTree::fixTree() can fix RdbTree::m_collnums
 	// . this is a fake init, cuz we pass in "true"
-	if ( ! g_isYippy && ! g_collectiondb.loadAllCollRecs() ) {
+	if ( ! g_collectiondb.loadAllCollRecs() ) {
 		log("db: Collectiondb load failed." ); return 1; }
 
 	// a hack to rename files that were not renamed because of a bug

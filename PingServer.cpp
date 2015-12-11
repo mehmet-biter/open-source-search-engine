@@ -193,8 +193,6 @@ void PingServer::sendPingsToAll ( ) {
 	// stop for now
 	//return;
 
-	if ( g_isYippy ) return;
-
 	// if we are the query/spider compr. proxy then do not send out pings
 	if ( g_hostdb.m_myHost->m_type & HT_QCPROXY ) return;
 	if ( g_hostdb.m_myHost->m_type & HT_SCPROXY ) return;

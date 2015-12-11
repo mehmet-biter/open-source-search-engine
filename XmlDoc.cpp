@@ -2727,8 +2727,6 @@ bool XmlDoc::indexDoc ( ) {
 // . sets g_errno on error and returns true
 bool XmlDoc::indexDoc2 ( ) {
 
-	if ( g_isYippy ) return true;
-
 	// if anything blocks, this will be called when it comes back
 	if ( ! m_masterLoop ) {
 		m_masterLoop  = indexDocWrapper;

@@ -724,8 +724,6 @@ class Conf {
 	//char m_superTurks [ USERS_TEXT_SIZE ];
 	//int32_t m_superTurksLen;
 
-	int32_t m_maxYippyOut;
-
 	char  m_doAutoBan;
 	int32_t  m_banIpsLen;
 	char  m_banIps   [ AUTOBAN_TEXT_SIZE ];

@@ -252,23 +252,6 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 	}
 		
 
-	// ignore if yippy
-	if ( g_isYippy ) {
-		//g_conf.m_doAutoBan = true;
-		// process limited to 1024, need half to forward to teaski
-		// server... close least used will deal with the loris attack
-		//g_conf.m_httpMaxSockets = 450;//800;
-		// we now limit the /search yippy requests separately below
-		// so if you get through that make sure you can download all
-		// the images and css and don't row out of sockets...
-		g_conf.m_httpMaxSockets = 475;
-		// rich wants 8 and 30
-		g_conf.m_numFreeQueriesPerMinute = 7;//20;//8;//5;
-		g_conf.m_numFreeQueriesPerDay = 30;//500;//30;//20;//30;//70;
-		g_conf.m_logAutobannedQueries = false;
-		status = true;
-	}
-
 	// update g_mem
 	//g_mem.m_maxMem = g_conf.m_maxMem;
 	if ( ! g_mem.init ( ) ) return false;

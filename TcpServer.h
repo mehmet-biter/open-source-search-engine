@@ -33,8 +33,6 @@
 // raised from 5k to 15k in case we are a spider compression proxy
 #define MAX_TCP_SOCKS 15000
 
-extern bool g_isYippy;
-
 class TcpServer {
 
 	friend class HttpServer;

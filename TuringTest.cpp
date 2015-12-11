@@ -414,36 +414,6 @@ bool TuringTest::printTest( SafeBuf* sb ) {
 	// preformatted code
 	sb->safePrintf ("</pre></center>\n" );
 
-	// if not yippy, done
-	if ( ! g_isYippy ) return true;
-
-	// print yippy metric script
-	sb->safePrintf(
-		      "<script type=\"text/javascript\"> sc_project=3394836;sc_invisible=1;sc_partition=37;sc_security=\"8697821e\";</script>"
-
-
-//"<script type=\"text/javascript\" src=\"http://www.statcounter.com/counter/counter.js\"></script>"
-//"<noscript><div class=\"statcounter\"><a title=\"site stats\" href=\"http://www.statcounter.com/\" target=\"_blank\"><img class=\"statcounter\" src=\"http://c38.statcounter.com/3394836/0/8697821e/1/\" alt=\"site stats\" /></a></div></noscript>"
-
-"<script type=\"text/javascript\">  _qoptions={qacct:\"p-23mw4mzOPpYNI\"};</script><script type=\"text/javascript\" src=\"http://edge.quantserve.com/quant.js\"></script><noscript><img src=\"http://pixel.quantserve.com/pixel/p-23mw4mzOPpYNI.gif\" style=\"display: none;\" border=\"0\" height=\"1\" width=\"1\" alt=\"Quantcast\" /></noscript><script type=\"text/javascript\" src=\"http://edge.quantserve.com/quant.js\"></script><script type=\"text/javascript\">_qacct=\"p-ba3RuZkrv17Fw\";quantserve();</script><noscript><img src=\"http://pixel.quantserve.com/pixel/p-ba3RuZkrv17Fw.gif\" style=\"display: none\" height=\"1\" width=\"1\" alt=\"Quantcast\" /></noscript>");
-
-	/*
-	sb->safePrintf("<!-- Index Platform: Pop Under -->\n"
-		       "<script type=\"text/javascript\"><!--\n");
-
-	sb->safePrintf("var casaleD=new Date();var casaleR=(casaleD.getTime()%%8673806982)+Math.random();\n");
-
-	sb->safePrintf(
-		       "var casaleU=escape(window.location.href);\n"
-		       "var casaleHost=' type=\"text/javascript\" src=\"http://as.casalemedia.com/s?s=';\n"
-		       "document.write('<scr'+'ipt'+casaleHost+'138069&amp;u=');\n");
-	
-	sb->safePrintf("document.write(casaleU+'&amp;f=1&amp;id='+casaleR+'\">"
-		       "<\\/scr'+'ipt>');\n"
-		       "//--></script>\n");
-	*/
-
-	// report
 	return true;
 }
 
