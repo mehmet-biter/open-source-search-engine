@@ -17,8 +17,6 @@ Proxy g_proxy;
 #define MINCHARGE 5.00
 
 
-static void gotTcpReplyWrapper ( void *state , TcpSocket *s ) ;
-
 static void proxyHandlerWrapper ( TcpSocket *s );
 //static void gotReplyWrapperPage( void *state, TcpSocket *s );
 static void gotHttpReplyWrapper ( void *state, UdpSlot *slot ) ;
@@ -1852,101 +1850,6 @@ void Proxy::printRequest(TcpSocket *s, HttpRequest *r,
 	      took, contentLen, r->getRequest(),content);
 
 	mfree ( p , contentLen+1, "proxycont");
-}
-
-// for yippy only!
-void gotTcpReplyWrapper ( void *state , TcpSocket *s ) {
-
-	class StateControl *stC = (StateControl *)state;
-
-	// i guess s->m_sendBuf is in StateControl::m_sb safebuf so 
-	// avoid double free. it directly called TcpServer::sendMsg which
-	// does not do a copy like httpserver
-	s->m_sendBuf = NULL;
-
-	// get the reply from the teaski machine
-	char *reply = s->m_readBuf;
-	int32_t replySize = s->m_readOffset;
-	//int64_t took = gettimeofdayInMilliseconds() - stC->m_start;
-
-	if ( ! reply ) {
-		g_errno = EBADREPLY;
-		replySize = 0;
-		char ipbuf[64];
-		sprintf(ipbuf,"%s",iptoa(s->m_ip));
-		char ipbuf2[64];
-		sprintf(ipbuf2,"%s",iptoa(stC->m_s->m_ip));
-		char *creq = "";
-		if ( stC->m_s &&
-		     stC->m_s->m_readBuf &&
-		     stC->m_s->m_readOffset )
-			creq = stC->m_s->m_readBuf;
-		log("proxy: got a zero length reply from %s. err=%s "
-		    "client=%s clientreq=%s",
-		    ipbuf,
-		    mstrerror(g_errno),
-		    ipbuf2,
-		    creq );
-		// debug log debug
-		//log("proxy: returning reply to %s replysize=%"INT32" "
-		//    "reqnum=%"INT32" (took=%"INT64"ms)",
-		//    iptoa(stC->m_s->m_ip),
-		//    replySize,stC->m_reqNum,took);
-		g_httpServer.sendErrorReply(stC->m_s,500,mstrerror(g_errno));
-		freeStateControl(stC);
-		return;
-	}
-
-
-	if ( g_errno ) {
-		log("proxy: got error in reply from %s. err=%s",
-		    iptoa(s->m_ip),mstrerror(g_errno));
-		// debug log debug
-		//log("proxy: returning reply to %s replysize=%"INT32" "
-		//    "reqnum=%"INT32" (took=%"INT64"ms) (err=%s)",
-		//    iptoa(stC->m_s->m_ip),
-		//    replySize,stC->m_reqNum,took,mstrerror(g_errno));
-		g_httpServer.sendErrorReply(stC->m_s,500,mstrerror(g_errno));
-		freeStateControl(stC);
-		return;
-	}
-
-	/*
-	// debug log debug
-	int32_t max;
-	char c;
-	if ( reply ) {
-		max = 1500;
-		if ( replySize < max ) max = replySize;
-		max--;
-		if ( max < 0 ) max = 0;
-		c = reply[max];
-		reply[max] = 0;
-	}
-
-	//log("proxy: returning reply back to client. size=%"INT32" reply=%s",
-	//    replySize,reply);
-
-	log("proxy: returning  reqNum=%"INT32" for  %s replysize=%"INT32" "
-	    "(took=%"INT64"ms)",
-	    stC->m_reqNum,
-	    iptoa(stC->m_s->m_ip),
-	    replySize,took);
-
-	if ( reply )
-		reply[max] = c;
-	*/
-
-	// . forward the teaski reply back to client's browser
-	// . it should free the reply buf when done
-	g_httpServer.sendReply2(NULL, // mime
-				0, // mimelen
-				reply, // content
-				replySize, // contentlen
-				stC->m_s,
-				true); // already compressed?
-
-	freeStateControl(stC);
 }
 
 ///////////////////////////
