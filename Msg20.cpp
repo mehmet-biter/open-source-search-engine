@@ -251,7 +251,6 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 			      0                 , // bogus rdbId
 			      -1                , // minRecSizes(unknownRDsize)
 			      true              , // sendToSelf
-			      true              , // retry forever
 			      hostdb            )) {
 		// sendto() sometimes returns "Network is down" so i guess
 		// we just had an "error reply".

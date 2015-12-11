@@ -105,7 +105,6 @@ bool Multicast::send ( char         *msg              ,
 		       char          rdbId            ,
 		       int32_t          minRecSizes      ,
 		       bool          sendToSelf       ,
-		       bool          retryForever     ,
 		       class Hostdb *hostdb           ,
 		       int32_t          redirectTimeout  ,
 		       class Host   *firstHost        ) {
@@ -150,10 +149,7 @@ bool Multicast::send ( char         *msg              ,
 	m_registeredSleep  = false;
 	m_registeredSleep2 = false;
 	m_sendToSelf       = sendToSelf;
-	m_retryForever     = retryForever;
 	m_sentToTwin       = false;
-	// turn it off until it is debugged
-	m_retryForever     = false;
 	m_hostdb           = hostdb;
 	if ( ! m_hostdb ) m_hostdb = &g_hostdb;
 	m_retryCount       = 0;
@@ -1504,29 +1500,6 @@ void Multicast::closeUpShop ( UdpSlot *slot ) {
 	if ( m_registeredSleep2 ) {
 		g_loop.unregisterSleepCallback ( this , sleepWrapper1b );
 		m_registeredSleep2 = false;
-	}
-	// ok, now if infiniteLoop is true, we must retry. this helps us
-	// alot if one host is under such sever load that any disk read
-	// returns ETRYAGAIN because there is no room in the thread queue.
-	// do not retry on persistent error, only on temporary ones.
-	if ( m_retryForever                &&
-	     g_errno                       &&
-	     g_errno != ENOTFOUND          && 
-	     g_errno != EMISSINGQUERYTERMS &&
-	     g_errno != EBADENGINEER         ) {
-		log("net: Multicast retrying request send in 2 seconds.");
-		m_retryCount++;
-		// bail if already registered
-		if ( m_registeredSleep2 ) return;
-		// try the whole shebang again every 2 seconds
-		if ( ! g_loop.registerSleepCallback (2000,this,sleepWrapper1b,
-						     m_niceness))
-			log("net: Failed to register sleep callback to "
-			    "resend multicast request. Giving up. Retry "
-			    "failed.");
-		else
-			m_registeredSleep2 = true;
-		return;
 	}
 	if ( ! g_errno && m_retryCount > 0 ) 
 	       log("net: Multicast succeeded after %"INT32" retries.",m_retryCount);

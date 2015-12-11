@@ -101,7 +101,6 @@ class Multicast {
 		    char        rdbId           =  0   , // bogus rdbId
 		    int32_t        minRecSizes     = -1   ,// unknown read size
 		    bool        sendToSelf      = true ,// if we should.
-		    bool        retryForever    = true ,// for pick & send
 		    class Hostdb *hostdb        = NULL ,
 		    int32_t        redirectTimeout = -1 ,
 		    class Host *firstProxyHost  = NULL );
@@ -220,7 +219,6 @@ class Multicast {
 	// Msg1 might be able to add data to our tree to save a net trans.
 	bool        m_sendToSelf;
 
-	bool        m_retryForever;
 	int32_t        m_retryCount;
 
 	char        m_sentToTwin;
