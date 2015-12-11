@@ -34,7 +34,6 @@
 #include "Msge1.h"
 //#include "Msge2.h"
 #include "Msg4.h"
-#include "Msg8b.h"
 
 #include "SearchInput.h"
 #include "Msg40.h"
@@ -56,7 +55,6 @@
 #include "Query.h"
 #include "Title.h"
 #include "Summary.h"
-#include "Msg8b.h"
 #include "Address.h"
 #include "zlib.h" // Z_OK
 #include "Spider.h" // SpiderRequest/SpiderReply definitions
@@ -231,38 +229,35 @@ public:
 
 class XmlDoc {
 
- public:
+public:
 
-	// . variable size rdb records all start with key then dataSize
-	// . do not do that here since we compress our record's data!!
-	//key_t m_titleRecKey;
-	//int32_t  m_dataSize;
+	/// @warning Do NOT change. titlerec binary compatibility header
 
 	//
 	// BEGIN WHAT IS STORED IN THE TITLE REC (Titledb.h)
 	//
 
-
 	// headerSize = this->ptr_firstUrl - this->m_headerSize
 	uint16_t  m_headerSize; 
 	uint16_t  m_version;
+
 	// these flags are used to indicate which ptr_ members are present:
 	uint32_t  m_internalFlags1;
 	int32_t      m_ip;
 	int32_t      m_crawlDelay;
+
 	// . use this to quickly detect if doc is unchanged
 	// . we can avoid setting Xml and Words classes etc...
 	int32_t      m_contentHash32;
-	// like the above but hash of all tags in TagRec for this url
-	//int32_t      m_tagHash32;
+
 	// this is a hash of all adjacent tag pairs for templated identificatn
 	uint32_t  m_tagPairHash32;
 	int32_t      m_siteNumInlinks;
-	//int32_t      m_siteNumInlinksUniqueIp; // m_siteNumInlinksFresh
-	//int32_t      m_siteNumInlinksUniqueCBlock; // m_sitePop;
+
 	int32_t    m_reserved1;
 	int32_t    m_reserved2;
 	uint32_t   m_spideredTime; // time_t
+
 	// just don't throw away any relevant SpiderRequests and we have
 	// the data that m_minPubDate and m_maxPubDate provided
 	//time_t    m_minPubDate;
@@ -273,17 +268,16 @@ class XmlDoc {
 	//time_t  m_nextSpiderTime;
 	uint32_t    m_firstIndexedDate; // time_t
 	uint32_t    m_outlinksAddedDate; // time_t
+
 	uint16_t  m_charset; // the ORIGINAL charset, we are always utf8!
 	uint16_t  m_countryId;
-	//uint16_t  m_reserved1;//titleWeight;
-	//uint16_t  m_reserved2;//headerWeight;
-	//int32_t      m_siteNumInlinksTotal;
+
 	int32_t      m_reserved3;
-	//uint16_t  m_reserved3;//urlPathWeight;
+
 	uint8_t   m_metaListCheckSum8; // bring it back!!
 	char      m_reserved3b;
-	uint16_t  m_bodyStartPos;//m_reserved4;//externalLinkTextWeight;
-	uint16_t  m_reserved5;//internalLinkTextWeight;
+	uint16_t  m_bodyStartPos;
+	uint16_t  m_reserved5;
 
 	// a new parm from reserved6. need to know the count so we can
 	// delete the json objects derived from this page if we want to
@@ -292,14 +286,9 @@ class XmlDoc {
 	// the new ones i guess.
 	uint16_t  m_diffbotJSONCount;
 
-	// these do not include header/footer (dup) addresses
-	//int16_t   m_numAddresses;
 	int16_t   m_httpStatus; // -1 if not found (empty http reply)
 	
-	//int8_t  m_nextSpiderPriority;
 	int8_t    m_hopCount;
-	//int8_t  m_metalistChecksum; // parser checksum
-	//uint8_t m_numBannedOutlinks8;
 	uint8_t   m_langId;
 	uint8_t   m_rootLangId;
 	uint8_t   m_contentType;
@@ -337,10 +326,12 @@ class XmlDoc {
 	uint16_t  m_reserved816:1;
 
 	//end of titlerec binary compatibility header
-	
+
+	/// @warning Do NOT change the structure of the following until m_dummyEnd.
+	/// check in XmlDoc::set2 (sanity check. must match exactly)
+
 	char      *ptr_firstUrl;
 	char      *ptr_redirUrl;
-	//char    *ptr_tagRecData;
 	char      *ptr_rootTitleBuf;
 	int32_t      *ptr_gigabitHashes;
 	int32_t      *ptr_gigabitScores;
@@ -354,16 +345,8 @@ class XmlDoc {
 	char      *ptr_dmozSumms;
 	char      *ptr_dmozAnchors;
 	char      *ptr_utf8Content;
-	//char    *ptr_sectionsReply; // votes read from sectiondb - m_osvt
-	//char    *ptr_sectionsVotes; // our local votes - m_nsvt
-	//char    *ptr_addressReply;
-	//char      *ptr_clockCandidatesData;
 	char      *ptr_metadata;
-	// . serialization of the sectiondb and placedb lists
-	// . that way we can store just these and not have to store the content
-	//   of the entire page if we do not need to
-	//char    *ptr_sectiondbData;
-	//char    *ptr_placedbData;
+
 	// do not let SiteGetter change this when we re-parse!
 	char      *ptr_site;
 	LinkInfo  *ptr_linkInfo1;
@@ -375,7 +358,6 @@ class XmlDoc {
 
 	int32_t       size_firstUrl;
 	int32_t       size_redirUrl;
-	//int32_t     size_tagRecData;
 	int32_t       size_rootTitleBuf;
 	int32_t       size_gigabitHashes;
 	int32_t       size_gigabitScores;
@@ -389,13 +371,7 @@ class XmlDoc {
 	int32_t       size_dmozSumms;
 	int32_t       size_dmozAnchors;
 	int32_t       size_utf8Content;
-	//int32_t     size_sectionsReply;
-	//int32_t     size_sectionsVotes;
-	//int32_t     size_addressReply;
-	//int32_t       size_clockCandidatesData;
 	int32_t       size_metadata;
-	//int32_t     size_sectiondbData;
-	//int32_t     size_placedbData;
 	int32_t       size_site;
 	int32_t       size_linkInfo1;
 	int32_t       size_linkdbData;
@@ -410,22 +386,6 @@ class XmlDoc {
 	//
 
  public:
-
-	// . returns false and sets errno on error
-	// . once you call this you can call setMetaList() below
-	// . sets all the contained parser classes, Words, Xml, etc. if they
-	//   have not already been set! that way Msg16/Msg14 can set bits
-	//   and pieces here and there and we do not reset what it's done
-	// . our m_xml will contain ptrs into titleRec's content, be careful
-	// . if titleRec gets freed we should be freed too
-	//bool set ( char           *titleRec                    ,
-	//	   class SafeBuf  *pbuf         = NULL         ,
-	//	   int32_t            niceness     = MAX_NICENESS ,
-	//	   bool            justSetLinks = false        );
-
-	// . used by Msg16 to set the Xml to get meta redirect tag's content
-	// . used by Msg16 to get <META NAME="ROBOTS" CONTENT="index,follow">
-	// . this should be set by Msg16 so it can get meta redirect url
 
 
 	void print   ( );
@@ -510,15 +470,6 @@ class XmlDoc {
 	bool setSpiderStatusDocMetaList ( SafeBuf *jd , int64_t ssDocId ) ;
 	SafeBuf m_spiderStatusDocMetaList;
 	char *getIsAdult ( ) ;
-	int32_t **getIndCatIds ( ) ;
-	int32_t **getCatIds ( ) ;
-	class CatRec *getCatRec ( ) ;
-
-	int32_t *getNumDmozEntries() ;
-	char **getDmozTitles ( ) ;
-	char **getDmozSummaries ( ) ;
-	char **getDmozAnchors ( ) ;
-	bool setDmozInfo () ;
 
 	int64_t **getWikiDocIds ( ) ;
 	void gotWikiResults ( class UdpSlot *slot );
@@ -797,7 +748,6 @@ class XmlDoc {
 	bool hashZipCodes ( class HashTableX *table ) ;
 	bool hashMetaZip ( class HashTableX *table ) ;
 	bool hashContentType ( class HashTableX *table ) ;
-	bool hashDMOZCategories ( class HashTableX *table ) ;
 	bool hashLinks ( class HashTableX *table ) ;
 	bool getUseTimeAxis ( ) ;
 	SafeBuf *getTimeAxisUrl ( );
@@ -835,7 +785,6 @@ class XmlDoc {
 	void set20 ( Msg20Request *req ) ;
 	class Msg20Reply *getMsg20Reply ( ) ;
 	char **getDiffbotPrimaryImageUrl ( ) ;
-	char **getImageUrl() ;
 	class MatchOffsets *getMatchOffsets () ;
 	Query *getQuery() ;
 	Matches *getMatches () ;
@@ -1336,13 +1285,7 @@ class XmlDoc {
 	bool m_titleRecKeyValid;
 	bool m_adVectorValid;
 	bool m_wikiDocIdsValid;
-	bool m_catIdsValid;
 	bool m_versionValid;
-	bool m_indCatIdsValid;
-	bool m_dmozTitlesValid;
-	bool m_dmozSummsValid;
-	bool m_dmozAnchorsValid;
-	bool m_dmozInfoValid;
 	bool m_rawUtf8ContentValid;
 	bool m_expandedUtf8ContentValid;
 	bool m_utf8ContentValid;
@@ -1378,7 +1321,6 @@ class XmlDoc {
 	bool m_hasAddressValid;
 	bool m_hasTODValid;
 	//bool m_hasSiteVenueValid;
-	bool m_catRecValid;
 	bool m_urlPubDateValid;
 	bool m_isUrlPermalinkFormatValid;
 	bool m_percentChangedValid;
@@ -1515,7 +1457,7 @@ class XmlDoc {
 	// more stuff
 	//char *m_utf8Content;
 	//int32_t m_utf8ContentLen;
-	CatRec m_catRec;
+
 	// use this stuff for getting wiki docids that match our doc's gigabits
 	//Query m_wq; 
 	//SearchInput m_si;
@@ -2103,14 +2045,10 @@ class XmlDoc {
 	char m_isErrorPage;
 	char m_isHijacked;
 	//char m_isVisible;
-	//char m_dmozBuf[12000];
-	SafeBuf m_dmozBuf;
-	int32_t m_numDmozEntries;
 
 	// stuff
 	char *m_statusMsg;
 	Msg4  m_msg4;
-	Msg8b m_msg8b;
 	bool  m_incCount;
 	bool  m_decCount;
 

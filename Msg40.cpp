@@ -15,6 +15,7 @@
 #include "Wiki.h"
 #include "HttpServer.h"
 #include "PageResults.h"
+#include "HashTable.h"
 
 // increasing this doesn't seem to improve performance any on a single
 // node cluster....

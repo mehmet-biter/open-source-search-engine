@@ -8,7 +8,6 @@
 #include "Conf.h"
 #include "Query.h"     // getFieldCode()
 #include "Clusterdb.h" // g_clusterdb
-#include "Categories.h" // g_categories
 #include "iana_charset.h"
 //#include "Msg24.h"
 #include "Stats.h"
@@ -322,7 +321,6 @@ void XmlDoc::reset ( ) {
 
 	m_isDiffbotJSONObject = false;
 
-	m_dmozBuf.purge();
 	m_fakeIpBuf.purge();
 	m_fakeTagRecPtrBuf.purge();
 
@@ -745,7 +743,6 @@ void XmlDoc::reset ( ) {
 	m_mime.reset();
 	m_tagRec.reset();
 	m_newTagBuf.reset();
-	m_catRec.reset();
 	//m_clockCandidatesTable.reset();
 	//m_cctbuf.reset();
 	m_dupList.reset();
@@ -827,9 +824,6 @@ void XmlDoc::reset ( ) {
 	m_spamCheckDisabled        = false;
 	m_useRobotsTxt             = true;
 	m_redirectFlag             = false;
-
-	// Scraper.cpp sets this to true
-	//m_isScraping               = false;
 
 	m_allowSimplifiedRedirs    = false;
 
@@ -933,6 +927,17 @@ void XmlDoc::reset ( ) {
 	m_hasMetadata = false;
 	ptr_metadata = NULL;
 	size_metadata = 0;
+
+	ptr_catIds = NULL;
+	size_catIds = 0;
+	ptr_indCatIds = NULL;
+	size_indCatIds = 0;
+	ptr_dmozTitles = NULL;
+	size_dmozTitles = 0;
+	ptr_dmozSumms = NULL;
+	size_dmozSumms = 0;
+	ptr_dmozAnchors = NULL;
+	size_dmozAnchors = 0;
 }
 
 // . set the url with the intention of adding it or deleting it from the index
@@ -1840,10 +1845,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_adVectorValid               = true;
 	m_wikiDocIdsValid             = true;
 	m_imageDataValid              = true;
-	m_catIdsValid                 = true;
-	m_indCatIdsValid              = true;
-	// ptr_dmozTitles/Summs/Anchors valid:
-	m_dmozInfoValid               = true;
 	m_utf8ContentValid            = true;
 	//m_sectionsReplyValid          = true;
 	//m_sectionsVotesValid          = true;
@@ -3882,7 +3883,6 @@ bool XmlDoc::indexWarcOrArc ( ) {
 	ir->m_doConsistencyTesting = false;
 	ir->m_charset = 0;
 
-	ir->ptr_queryToScrape = NULL;
 	ir->ptr_contentFile = NULL;
 	ir->ptr_diffbotReply = NULL;
 
@@ -4752,129 +4752,9 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 	//if ( ! ad || ad == (void *)-1 ) return (char *)ad;
 	uint8_t *rl = getRootLangId();
 	if ( ! rl || rl == (void *)-1 ) return (char *)rl;
-	int32_t **pcids = getCatIds();
-	if ( ! pcids || pcids == (void *)-1) return (char *)pcids;
-	// get dmoz ptr_dmozTitles, ptr_dmozSumms, ptr_dmozAnchors
-	if ( ! setDmozInfo() ) return (char *)-1;
 
 	m_prepared = true;
 	return (char *)1;
-}
-
-#define MAX_DMOZ_TITLES 10
-
-int32_t *XmlDoc::getNumDmozEntries() {
-	// MDW: wth is this?
-	//int32_t **getDmozCatIds();
-	int32_t nc = size_catIds / 4;
-	if ( nc > MAX_DMOZ_TITLES ) nc = MAX_DMOZ_TITLES;
-	m_numDmozEntries = nc;
-	return &m_numDmozEntries;
-}
-// list of \0 terminated titles, etc. use getNumDmozTitles() to get #
-char **XmlDoc::getDmozTitles ( ) {
-	// returns false if blocked
-	if ( ! setDmozInfo() ) return (char **)-1;
-	if ( g_errno ) return NULL;
-	return &ptr_dmozTitles;
-}
-char **XmlDoc::getDmozSummaries ( ) {
-	// returns false if blocked
-	if ( ! setDmozInfo() ) return (char **)-1;
-	if ( g_errno ) return NULL;
-	return &ptr_dmozSumms;
-}
-char **XmlDoc::getDmozAnchors ( ) {
-	// returns false if blocked
-	if ( ! setDmozInfo() ) return (char **)-1;
-	if ( g_errno ) return NULL;
-	return &ptr_dmozAnchors;
-}
-
-
-// returns false if blocked, true otherwise. sets g_errno on error & rets true
-bool XmlDoc::setDmozInfo () {
-
-	if ( m_dmozInfoValid ) return true;
-
-	g_errno = 0;
-
-	// return true and set g_errno on error
-	if ( ! m_dmozBuf.reserve(12000) ) {
-		log("xmldoc: error getting dmoz info: %s",mstrerror(g_errno));
-		// ensure log statement does not clear g_errno
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
-		return true;
-	}
-
-	// start here
-	char *dmozBuf = m_dmozBuf.getBufStart();
-
-	char *titles  = dmozBuf;
-	char *summs   = dmozBuf+5000;
-	char *anchors = dmozBuf+10000;
-	// the end of it
-	char *dtend = dmozBuf + 5000;
-	char *dsend = dmozBuf + 10000;
-	char *daend = dmozBuf + 12000;
-	// point into those bufs
-	char *dt = titles;
-	char *ds = summs;
-	char *da = anchors;
-	// MDW: i limit this to 10 to save stack space!
-	int32_t nc = size_catIds / 4;
-	if ( nc > MAX_DMOZ_TITLES ) nc = MAX_DMOZ_TITLES;
-	for (int32_t i = 0; i < nc ; i++) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// temp stuff
-		int32_t dtlen = 0;
-		int32_t dslen = 0;
-		unsigned char dalen = 0;
-
-		// . store all dmoz info separated by \0's into titles[] buffer
-		// . crap, this does a disk read and blocks on that
-		//
-		// . TODO: make it non-blocking!!!!
-		//
-		g_categories->getTitleAndSummary ( m_firstUrl.getUrl(),
-						   m_firstUrl.getUrlLen(),
-						   ptr_catIds[i],
-						   dt,//&titles[titlesLen],
-						   &dtlen,//&titleLens[i],
-						   dtend-dt,
-						   ds,//&summs[summsLen],
-						   &dslen,//&summLens[i],
-						   dsend-ds,
-						   da,//&anchors[anchorsLen],
-						   &dalen,//&anchorLens[i],
-						   daend-da,
-						   m_niceness);
-		// advance ptrs
-		dt += dtlen;
-		ds += dslen;
-		da += dalen;
-		// null terminate
-		*dt++ = 0;
-		*ds++ = 0;
-		*ds++ = 0;
-	}
-
-	// if empty, make it a \0 to keep in sync with the rest
-	if ( dt == titles  ) *dt++ = '\0';
-	if ( ds == summs   ) *ds++ = '\0';
-	if ( da == anchors ) *da++ = '\0';
-
-	// set these
-	ptr_dmozTitles   = titles;
-	ptr_dmozSumms    = summs;
-	ptr_dmozAnchors  = anchors;
-	size_dmozTitles  = dt - titles;
-	size_dmozSumms   = ds - summs;
-	size_dmozAnchors = da - anchors;
-
-	m_dmozInfoValid = true;
-	return true;
 }
 
 // . create and store the titlerec into "buf".
@@ -4890,101 +4770,6 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 
 	// start seting members in THIS's header before compression
 	m_version           = TITLEREC_CURRENT_VERSION;
-
-	// tag rec must have "sitenuminlinks" in it
-	//if (! m_newTagRec.getTag("sitenuminlinks") ) { char *xx=NULL;*xx=0; }
-	// we often update m_oldTagRec above by calling updateRootLangId(), etc
-	// so update the size our of tag rec here
-	//size_tagRecData = m_oldTagRec.getSize();
-	// and sanity check this
-	//if( ptr_tagRecData != (char *)&m_oldTagRec ) { char *xx=NULL;*xx=0; }
-
-	// lookup dmoz title and summary for this site
-	//int32_t          titleLens  [10];
-	//int32_t          summLens   [10];
-	//unsigned char anchorLens [10];
-	//int32_t          titlesLen  = 0;
-	//int32_t          summsLen   = 0;
-	//int32_t          anchorsLen = 0;
-	//char          titles     [10*1024];
-	//char          summs      [10*4096];
-	//char          anchors    [10* 256];
-
-	/*
-
-	  MDW oct 12 2013 -
-	  why is this here? we should store this info at spider time?
-
-	char *titles  = m_dmozBuf;
-	char *summs   = m_dmozBuf+5000;
-	char *anchors = m_dmozBuf+10000;
-	// the end of it
-	char *dtend = m_dmozBuf + 5000;
-	char *dsend = m_dmozBuf + 10000;
-	char *daend = m_dmozBuf + 12000;
-	// point into those bufs
-	char *dt = titles;
-	char *ds = summs;
-	char *da = anchors;
-	// MDW: i limit this to 10 to save stack space!
-	int32_t nc = size_catIds / 4;
-	if ( nc > 10 ) nc = 10;
-	for (int32_t i = 0; i < nc ; i++) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// temp stuff
-		int32_t dtlen = 0;
-		int32_t dslen = 0;
-		unsigned char dalen = 0;
-
-		// . store all dmoz info separated by \0's into titles[] buffer
-		// . crap, this does a disk read and blocks on that
-		//
-		// . TODO: make it non-blocking!!!!
-		//
-		g_categories->getTitleAndSummary ( m_firstUrl.getUrl(),
-						   m_firstUrl.getUrlLen(),
-						   ptr_catIds[i],
-						   dt,//&titles[titlesLen],
-						   &dtlen,//&titleLens[i],
-						   dtend-dt,
-						   ds,//&summs[summsLen],
-						   &dslen,//&summLens[i],
-						   dsend-ds,
-						   da,//&anchors[anchorsLen],
-						   &dalen,//&anchorLens[i],
-						   daend-da,
-						   m_niceness);
-		// advance ptrs
-		dt += dtlen;
-		ds += dslen;
-		da += dalen;
-		// null terminate
-		if ( dtlen>0 && dt[dtlen-1]!='\0' ) { *dt++=0; dtlen++; }
-		if ( dslen>0 && ds[dslen-1]!='\0' ) { *ds++=0; dslen++; }
-		if ( dalen>0 && da[dalen-1]!='\0' ) { *da++=0; dalen++; }
-		// must always be something!
-		if ( dtlen==0 ) {*dt++=0; dtlen++;}
-		if ( dslen==0 ) {*ds++=0; dslen++;}
-		if ( dalen==0 ) {*da++=0; dalen++;}
-	}
-
-	// set these
-	ptr_dmozTitles   = titles;
-	ptr_dmozSumms    = summs;
-	ptr_dmozAnchors  = anchors;
-	size_dmozTitles  = dt - titles;
-	size_dmozSumms   = ds - summs;
-	size_dmozAnchors = da - anchors;
-	*/
-
-	// set our crap that is not necessarily set
-	//ptr_firstUrl   = m_firstUrl.getUrl();
-	//ptr_redirUrl   = m_redirUrl.getUrl();
-	//ptr_tagRecData = (char *)&m_oldTagRec;
-
-	// this must be valid now
-	//if ( ! m_skipIndexingValid ) { char *xx=NULL;*xx=0; }
 
 	// set this
 	m_headerSize = (char *)&ptr_firstUrl - (char *)&m_headerSize;
@@ -5270,9 +5055,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if ( ! m_adVectorValid               ) { char *xx=NULL;*xx=0; }
 	if ( ! m_wikiDocIdsValid             ) { char *xx=NULL;*xx=0; }
 	if ( ! m_imageDataValid              ) { char *xx=NULL;*xx=0; }
-	if ( ! m_catIdsValid                 ) { char *xx=NULL;*xx=0; }
-	if ( ! m_indCatIdsValid              ) { char *xx=NULL;*xx=0; }
-	if ( ! m_dmozInfoValid               ) { char *xx=NULL;*xx=0; }
 	// if m_recycleContent is true, these are not valid
 	if ( ! m_recycleContent ) {
 		if ( ! m_rawUtf8ContentValid         ) { char *xx=NULL;*xx=0; }
@@ -5848,21 +5630,6 @@ char *XmlDoc::getIsAdult ( ) {
 	// call that
 	setStatus ("getting is adult bit");
 
-	int32_t **pici = getIndCatIds();
-	if ( ! pici || pici == (void *)-1 ) return (char *)pici;
-
-	// check categories
-	for ( int32_t i = 0 ; i < size_indCatIds / 4 ; i++ ) {
-		int32_t ic = ptr_indCatIds[i];
-		// skip if not an adult category
-		if ( ! g_categories->isIdAdult ( ic ) ) continue;
-		// got it
-		m_isAdult      = true;
-		m_isAdult2     = true;
-		m_isAdultValid = true;
-		return &m_isAdult2;
-	}
-
 	// . if any of the wiki docids we are in are adult.... then we are
 	// . we set the top bit of wiki docids to indicate if adult
 	//for ( int32_t i = 0 ; i < size_wikiDocIds / 8 ; i++ ) {
@@ -6007,77 +5774,6 @@ int32_t getDirtyPoints ( char *s , int32_t slen , int32_t niceness , char *url )
 
 
 	return points;
-}
-
-
-int32_t **XmlDoc::getIndCatIds ( ) {
-	// if XmlDoc was set from a titleRec it should validate this
-	if ( m_indCatIdsValid ) return &ptr_indCatIds;
-	// otherwise, we must compute them!
-	CatRec *cat = getCatRec ();
-	// blocked or error?
-	if ( ! cat || cat == (CatRec *)-1 ) return (int32_t **)cat;
-	// set this
-	ptr_indCatIds    = cat->m_indCatids;
-	size_indCatIds   = cat->m_numIndCatids * 4;
-	m_indCatIdsValid = true;
-	// parse that up
-	return &ptr_indCatIds;
-}
-
-int32_t **XmlDoc::getCatIds ( ) {
-	// if XmlDoc was set from a titleRec it should validate this
-	if ( m_catIdsValid ) return &ptr_catIds;
-	// otherwise, we must compute them!
-	CatRec *cat = getCatRec ();
-	// blocked or error?
-	if ( ! cat || cat == (CatRec *)-1 ) return (int32_t **)cat;
-	// set this
-	ptr_catIds    = cat->m_catids;
-	size_catIds   = cat->m_numCatids * 4;
-	m_catIdsValid = true;
-	// parse that up
-	return &ptr_catIds;
-}
-
-CatRec *XmlDoc::getCatRec ( ) {
-	// return what we got
-	if ( m_catRecValid ) return &m_catRec;
-	// call that
-	setStatus ("getting dmoz cat rec");
-	// callback?
-	if ( m_calledMsg8b ) {
-		// return NULL on error
-		if ( g_errno ) return NULL;
-		// otherwise, success
-		m_catRecValid = true;
-		return &m_catRec;
-	}
-	// consider it called
-	m_calledMsg8b = true;
-	// assume empty and skip the call for now
-	m_catRec.reset();
-	m_catRecValid = true;
-	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
-	// let's bring dmoz back
-	//return &m_catRec;
-	// compute it otherwise
-	if ( ! m_msg8b.getCatRec ( &m_firstUrl    ,
-				   cr->m_coll         ,
-				   gbstrlen(cr->m_coll) ,
-				   true           ,  // use canonical name?
-				   m_niceness     ,
-				   &m_catRec      ,  // store here
-				   m_masterState  ,  // state
-				   m_masterLoop   )) // callback
-		// return -1 if we blocked
-		return (CatRec *)-1;
-	// error?
-	if ( g_errno ) return NULL;
-	// we got it somehow without blocking... local cached lookup?
-	m_catRecValid = true;
-	return &m_catRec;
 }
 
 void gotWikiResultsWrapper ( void *state , UdpSlot *slot ) {
@@ -6747,8 +6443,6 @@ uint8_t *XmlDoc::getLangId ( ) {
 	//if ( ! links || links == (Links *)-1 ) return (uint8_t *)links;
 	//LinkInfo *info1    = getLinkInfo1();
 	//if ( ! info1 || info1 == (LinkInfo *)-1 ) return (uint8_t *)info1;
-	//CatRec *cat = getCatRec ();
-	//if ( ! cat || cat == (CatRec *)-1) return (uint8_t *)cat;
 	uint8_t *lv = getLangVector();
 	if ( ! lv || lv == (void *)-1 ) return (uint8_t *)lv;
 
@@ -8351,9 +8045,6 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 	// this ensures m_contentLen is set
 	//char **content = getContent();
 	//if ( ! content || content == (char **)-1 ) return (Links *)content;
-	// this will set ptr_indCatIds and size_indCatIds
-	int32_t **pici = getIndCatIds();
-	if ( ! pici || pici == (void *)-1 ) return (Links *)pici;
 	char *ict = getIsContentTruncated();
 	if ( ! ict || ict == (char *)-1 ) return (Links *)ict;
 	int32_t *sni = getSiteNumInlinks();
@@ -8413,8 +8104,6 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 	// . apply link spam settings
 	// . set the "spam bits" in the Links class
 	setLinkSpam ( *ip                ,
-		      ptr_indCatIds      ,
-		      size_indCatIds / 4 ,
 		      u                  , // linker url
 		      *sni               ,
 		      xml                ,
@@ -10653,9 +10342,6 @@ Url **XmlDoc::getRedirUrl() {
 	Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 ) return (Url **)cu;
 
-	// this call set size_catIds
-	int32_t **pcids = getCatIds();
-	if ( ! pcids || pcids == (void *)-1) return (Url **)pcids;
 	// get local link info
 	LinkInfo   *info1 = getLinkInfo1();
 	// error or blocked
@@ -10690,8 +10376,7 @@ Url **XmlDoc::getRedirUrl() {
 	// a hack for removing session ids already in there. for
 	// brilliantshopper's bs4 collection and gk0 cluster
 	//bool forceRedirect = false;
-	if ( size_catIds == 0 &&
-	     // must not have an actual redirect url in there
+	if ( // must not have an actual redirect url in there
 	     ! loc &&
 	     // must be a valid http status
 	     httpStatus == 200 &&
@@ -10749,7 +10434,6 @@ Url **XmlDoc::getRedirUrl() {
 	//if ( loc != &tmp ) tmp.set ( loc , false );
 
 	bool keep = false;
-	if ( size_catIds > 0               ) keep = true;
 	if ( info1->hasLinkText()          ) keep = true;
 	if ( info2 && info2->hasLinkText() ) keep = true;
 
@@ -10837,42 +10521,6 @@ Url **XmlDoc::getRedirUrl() {
 		return &m_redirUrlPtr;
 	}
 
-	// if redirecting to the same domain, then do not add "www.".
-	// this way we can take care of slashdot.org, etc.
-	//bool addwww = false;
-	// but never modify if in dmoz, keep it pure
-	//if ( size_catIds > 0 ) addwww = false;
-	// debug msg
-	//if ( strcmp(m_redirUrl.getUrl(),url->getUrl())== 0 )
-	//	log("Redirect error: same url");
-	//bool stripSessId = (size_catIds == 0);
-	// . reset m_redirUrl now (do not addWWW for slashdot.org, etc)
-	// . we now add "www." UNLESS it's a redirect from the same
-	//   domain or firstUrl is in catdb
-	//tmp.set( loc->getUrl(),loc->getUrlLen(),addwww,stripSessId);
-	/*
-	// get this
-	bool sameHostLinks = false;
-	if ( *pi >= 0 ) sameHostLinks =cr->m_pq_spiderSameHostnameLinks[*pi];
-	// get first url ever
-	Url *f = getFirstUrl();
-	// . for same host links, addwww for comparing
-	// . so if we are doing google.com and it redirects to
-	//   www.google.com then we will allow that... and vice versa
-	if ( sameHostLinks ) {
-		Url u1;
-		Url u2;
-		u1.set ( loc->getUrl  () , loc->getUrlLen(), true ); // addwww?
-		u2.set ( f->getUrl()     , f->getUrlLen () , true ); // addwww?
-		// host must match if we are restricted to a particular host
-		if ( u1.getHostLen() != u2.getHostLen() ||
-		     strncmp ( u1.getHost() , u2.getHost() ,
-			       u1.getHostLen () ) != 0 )  {
-			m_redirError = EDOCBADREDIRECTURL;
-			return &m_redirUrlPtr;
-		}
-	}
-	*/
 	// get first url ever
 	Url *f = getFirstUrl();
 	// breathe
@@ -10894,9 +10542,6 @@ Url **XmlDoc::getRedirUrl() {
 	// simpler if old has cgi and new does not
 	if ( f->isCgi() && ! loc->isCgi() )
 		simplifiedRedir = true;
-	// if we're a dmoz page, don't do this, unless just a / case,no
-	if ( size_catIds > 0 )
-		simplifiedRedir = false;
 	// simpler if new one is same as old but has a '/' at the end
 	if ( rlen == ulen+1 && r[rlen-1]=='/' && strncmp(r,u,ulen)==0)
 		simplifiedRedir = true;
@@ -10929,23 +10574,6 @@ Url **XmlDoc::getRedirUrl() {
 	// or if disabled then follow the redirect
 	if ( ! cr->m_useSimplifiedRedirects )
 		allowSimplifiedRedirs = true;
-
-	// . if the redir url is simpler, but has no hostname we
-	//   prepend a "www." to it
-	// . this should avoids www.russ.ru and russ.ru from being
-	//   in the index at the same time and causing url: collisions
-	/*
-	if ( size_catIds == 0 &&
-	     simplifiedRedir &&
-	     loc->getDomainLen() == loc->getHostLen  () )
-		loc->set (loc->getUrl(),
-			 loc->getUrlLen(),
-			 true, //false, addwww?
-			 stripSessId );
-	*/
-	// if not allow, do not do them... except for the two below
-	//if ( ! m_useSimplifiedRedirects || m_isDirColl )
-	//	simplifiedRedir = false;
 
 	// special hack for nytimes.com. do not consider simplified redirs
 	// because it uses a cookie along with redirs to get to the final
@@ -11086,22 +10714,15 @@ uint16_t *XmlDoc::getCountryId ( ) {
 	setStatus ( "getting country id" );
 
 	// get it
-	CatRec *cat = getCatRec ();
-	if ( ! cat || cat == (CatRec *)-1) return (uint16_t *)cat;
-        // MDW: i limit this to 10 to save stack space!
 	Url *u = getCurrentUrl();
 	if ( ! u || u == (void *)-1) return (uint16_t *)u;
+
 	// use the url's tld to guess the country
 	uint16_t country = g_langId.guessCountryTLD ( u->getUrl ( ) );
-	// . 0 means no country i guess. try dmoz next.
-	// . limit to 10 of them
-	int32_t nc = cat->m_numCatids;
-	for ( int32_t i = 0; ! country && i < nc && i < 10 ; i++) {
-		int32_t catid = cat->m_catids[i];
-		country = g_countryCode.getCountryFromDMOZ ( catid );
-	}
+
 	m_countryIdValid = true;
 	m_countryId      = country;
+
 	return &m_countryId;
 }
 
@@ -11402,9 +11023,6 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 	// dmoz catids of the original url to see if we should set m_indexCode
 	// to something bad or not. to avoid these unnecessary lookups we
 	// set these to NULL and validate them
-	m_extraDoc->ptr_catIds              = NULL;
-	m_extraDoc->size_catIds             = 0;
-	m_extraDoc->m_catIdsValid           = true;
 	m_extraDoc->ptr_linkInfo1           = &s_dummy;
 	m_extraDoc->size_linkInfo1          = 0;
 	m_extraDoc->m_linkInfo1Valid        = true;
@@ -11586,9 +11204,6 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 
 	// like m_contactDoc we avoid unnecessary lookups in call to
 	// getRedirUrl() by validating these empty members
-	m_rootDoc->ptr_catIds              = NULL;
-	m_rootDoc->size_catIds             = 0;
-	m_rootDoc->m_catIdsValid           = true;
 	m_rootDoc->ptr_linkInfo1           = &s_dummy;
 	m_rootDoc->size_linkInfo1          = 0;
 	m_rootDoc->m_linkInfo1Valid        = true;
@@ -27993,7 +27608,6 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	if ( ! hashDateNumbers   ( table ) ) return NULL;
 	if ( ! hashMetaTags      ( table ) ) return NULL;
 	if ( ! hashMetaZip       ( table ) ) return NULL;
-	if ( ! hashDMOZCategories( table ) ) return NULL;
 	if ( ! hashCharset       ( table ) ) return NULL;
 	if ( ! hashRSSInfo       ( table ) ) return NULL;
 	if ( ! hashPermalink     ( table ) ) return NULL;
@@ -30574,116 +30188,6 @@ bool XmlDoc::searchboxToGigablast ( ) {
 	return m_xml.hasGigablastForm();
 }
 
-// . bring back support for dmoz integration
-// . when clicking on a "search within this category" it does a gbpdcat:<catid>
-//   search to capture all pages that have that dmoz category as one of their
-//   parent topics
-bool XmlDoc::hashDMOZCategories ( HashTableX *tt ) {
-
-	getDmozTitles();
-
-
-	char *titlePtr = ptr_dmozTitles;
-	char *sumPtr   = ptr_dmozSumms;
-	//char *anchPtr  = ptr_dmozAnchors;
-
-	char  buf[128];
-
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_hashGroup = HASHGROUP_INTAG;
-
-	int32_t *catIds = (int32_t *)ptr_catIds;
-	int32_t numCatIds = size_catIds / 4;
-	// go through the catIds and hash them
-	for (int32_t i = 0; i < numCatIds; i++) {
-		// write the catid as a string
-		sprintf(buf, "%"UINT32"", (uint32_t)catIds[i]);
-		// term prefix for hashing
-		hi.m_prefix = "gbcatid";
-		// hash it
-		hashString ( buf , gbstrlen(buf) , &hi );
-		// we also want to hash the parents
-		int32_t currCatId    = catIds[i];
-		int32_t currParentId = catIds[i];
-		int32_t currCatIndex;
-		// loop to the Top, Top = 1
-		while ( currCatId > 1 ) {
-			// hash the parent
-			sprintf(buf, "%"UINT32"", (uint32_t)currParentId);
-			hi.m_prefix = "gbpcatid";
-			hashString ( buf , gbstrlen(buf), &hi );
-			// next cat
-			currCatId = currParentId;
-			// get the index for this cat
-			currCatIndex = g_categories->getIndexFromId(currCatId);
-			if ( currCatIndex <= 0 ) break;
-			// get the parent for this cat
-			currParentId =
-				g_categories->m_cats[currCatIndex].m_parentid;
-		}
-
-		// do not hash titles or summaries if "index article content
-		// only" parm is on
-		//if ( tr->eliminateMenus() ) continue;
-
-		// hash dmoz title
-		hi.m_prefix = NULL;
-		// call this DMOZ title as regular title i guess
-		hi.m_hashGroup = HASHGROUP_TITLE;
-		// hash the DMOZ title
-		hashString ( titlePtr , gbstrlen(titlePtr), &hi );
-		// next title
-		titlePtr += gbstrlen(titlePtr) + 1;
-
-		// hash DMOZ summary
-		hi.m_prefix = NULL;
-		// call this DMOZ summary as body i guess
-		hi.m_hashGroup = HASHGROUP_BODY;
-		// hash the DMOZ summary
-		hashString ( sumPtr , gbstrlen(sumPtr), &hi );
-		// next summary
-		sumPtr += gbstrlen(sumPtr) + 1;
-	}
-
-	int32_t numIndCatIds = size_indCatIds / 4;
-	int32_t *indCatIds   = (int32_t *)ptr_indCatIds;
-	// go through the INDIRECT catIds and hash them
-	for (int32_t i = 0 ; i < numIndCatIds; i++) {
-
-		// write the catid as a string
-		sprintf(buf, "%"UINT32"", (uint32_t)indCatIds[i]);
-		// use prefix
-		hi.m_prefix = "gbicatid";
-		hi.m_hashGroup = HASHGROUP_INTAG;
-		// hash it
-		hashString ( buf , gbstrlen(buf), &hi );
-
-		// we also want to hash the parents
-		int32_t currCatId    = indCatIds[i];
-		int32_t currParentId = indCatIds[i];
-		int32_t currCatIndex;
-		// loop to the Top, Top = 1
-		while (currCatId > 1) {
-			// hash the parent
-			sprintf(buf, "%"UINT32"", (uint32_t)currParentId);
-			// new prefix
-			hi.m_prefix = "gbipcatid";
-			// hash it
-			hashString ( buf , gbstrlen(buf), &hi );
-			// next cat
-			currCatId = currParentId;
-			// get the index for this cat
-			currCatIndex = g_categories->getIndexFromId(currCatId);
-			if ( currCatIndex <= 0 ) break;
-			// get the parent for this cat
-			currParentId =
-				g_categories->m_cats[currCatIndex].m_parentid;
-		}
-	}
-	return true;
-}
-
 bool XmlDoc::hashLanguage ( HashTableX *tt ) {
 
 	setStatus ( "hashing language" );
@@ -32134,15 +31638,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		*/
 	}
 
-	// get full image url. but not if we already have a thumbnail...
-	if ( ! reply->ptr_imgUrl&&!reply->ptr_imgData&&!m_req->m_getLinkText){
-		char **iu = getImageUrl();
-		if ( ! iu || iu == (char **)-1 ) return (Msg20Reply *)iu;
-		reply-> ptr_imgUrl = *iu;
-		reply->size_imgUrl = 0;
-		if ( *iu ) reply->size_imgUrl = gbstrlen(*iu)+1;
-	}
-
 	// get thumbnail image DATA
 	if ( ! reply->ptr_imgData && ! m_req->m_getLinkText ) {
 		reply-> ptr_imgData = ptr_imageData;
@@ -32239,47 +31734,17 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	reply->ptr_ubuf             = getFirstUrl()->getUrl();
 	reply->ptr_rubuf            = ru;
-	reply->ptr_catIds           = ptr_catIds;
-	reply->ptr_indCatIds        = ptr_indCatIds;
-	reply->ptr_dmozTitles       = ptr_dmozTitles;
-	reply->ptr_dmozSumms        = ptr_dmozSumms;
-	reply->ptr_dmozAnchors      = ptr_dmozAnchors;
 	reply->ptr_metadataBuf      = ptr_metadata;
 
 
 	reply->size_ubuf             = getFirstUrl()->getUrlLen() + 1;
 	reply->size_rubuf            = rulen;
-	reply->size_catIds           = size_catIds;
-	reply->size_indCatIds        = size_indCatIds;
-	reply->size_dmozTitles       = size_dmozTitles;
-	reply->size_dmozSumms        = size_dmozSumms;
-	reply->size_dmozAnchors      = size_dmozAnchors;
 	reply->size_metadataBuf      = size_metadata;
 
 
 	// breathe
 	QUICKPOLL( m_req->m_niceness );
 
-	/*
-	// truncate if necessary (buzz)
-	int32_t maxLen = 150000;
-	// truncate it?
-	bool trunc = true;
-	// not if getting link text
-	if ( req->m_getLinkText  ) trunc = false;
-	// or outlinks
-	if ( req->m_getOutlinks  ) trunc = false;
-	// or any niceness 1+ for that matter, that indicates a build operation
-	if ( req->m_niceness > 0 ) trunc = false;
-	// this is causing us to get EMISSINGQUERYTERMS errors!!!
-	trunc = false;
-	// MDW: int16_ten for speed test
-	//int32_t maxLen = 1000;
-	if ( trunc && contentLen > maxLen+1 ) {
-		contentLen =  maxLen;
-		content      [maxLen  ] = '\0';
-	}
-	*/
 
 	// check the tag first
 	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
@@ -32543,8 +32008,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		// get it. does not block.
 		reply->m_isLinkSpam = ::isLinkSpam ( linker ,
 						     m_ip ,
-						     ptr_indCatIds ,
-						     size_indCatIds / 4 ,
 						     m_siteNumInlinks,
 						     &m_xml,
 						     links,
@@ -32552,7 +32015,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 						     &note ,
 						     &linkeeUrl , // url ,
 						     linkNode ,
-						     cr->m_coll ,
 						     m_niceness );
 		// store it
 		if ( note ) {
@@ -32833,90 +32295,6 @@ char **XmlDoc::getDiffbotPrimaryImageUrl ( ) {
 	m_imageUrl2 = m_imageUrlBuf2.getBufStart();
 	return &m_imageUrl2;
 }
-
-// get the image url SPECIFIED by the page, so there is no guesswork here
-// unlike with the Images.cpp class
-char **XmlDoc::getImageUrl() {
-	// return if valid
-	if ( m_imageUrlValid ) return &m_imageUrl;
-	// get first url
-	Url *f = getFirstUrl();
-	if ( ! f || f == (Url *)-1 ) return (char **)f;
-
-	// assume none
-	m_imageUrl      = NULL;
-	m_imageUrlValid = true;
-
-	// we use getDiffbotPrimaryImageUrl() above for doing thumbs
-	if ( m_isDiffbotJSONObject || m_contentType == CT_JSON )
-		return &m_imageUrl;
-
-	// all done if not youtube or meta cafe
-	char *host = f->getHost();
-	char  found = 0;
-	if ( ! strncmp ( host , "www.youtube.com/"  , 16 ) ) found = 1;
-	if ( ! strncmp ( host , "youtube.com/"      , 12 ) ) found = 1;
-	if ( ! strncmp ( host , "www.metacafe.com/" , 17 ) ) found = 2;
-	if ( ! strncmp ( host , "metacafe.com/"     , 13 ) ) found = 2;
-	if ( ! found ) return &m_imageUrl;
-	// char ptr
-	char *u = f->getUrl();
-	// make it
-	if ( found == 1 ) {
-		char *s = strstr(u,"v=");
-		// if url does not contain a "v=" then forget it
-		if ( ! s ) return &m_imageUrl;
-		// point to the id
-		s += 2;
-		//m_imageUrl = m_imageUrlBuf;
-		//char    *p = m_imageUrlBuf;
-		m_imageUrlBuf.safeStrcpy("http://img.youtube.com/vi/");
-		// do not break
-		//char *pend = m_imageUrlBuf + 80;
-		// copy the id/number
-		//for ( ; is_digit(*s) && p < pend ; ) *p++ = *s++;
-		for ( ; is_digit(*s) ; s++ )
-			m_imageUrlBuf.pushChar(*s);
-		// wrap it up
-		m_imageUrlBuf.safeStrcpy ( "/2.jpg" );
-		// size includes \0;
-		//m_imageUrlSize = p - m_imageUrl ;
-		// sanity check
-		//if ( m_imageUrlSize > 100 ) { char *xx=NULL;*xx=0; }
-		m_imageUrl = m_imageUrlBuf.getBufStart();
-		return &m_imageUrl;
-	}
-	// must be meta cafe now
-	// http://www.metacafe.com/watch/559561/surfer_girls_vol_2/
-	// http://s2.mcstatic.com/thumb/559561.jpg
-	// scan url path for first digit
-	for ( char *t = f->getPath() ; *t ; t++ ) {
-		// look for digit
-		if ( ! is_digit ( *t ) ) t++;
-		// grab that
-		int32_t id = atol ( t );
-		// skip ifnot good
-		if ( id <= 0 ) continue;
-		// make the url
-		//m_imageUrl = m_imageUrlBuf;
-		//char    *p = m_imageUrlBuf;
-		//gbmemcpy ( p , "http://s2.mcstatic.com/thumb/" , 29 );
-		//p += 29;
-		//p += sprintf ( p , "%"INT32"" , id );
-		//gbmemcpy ( p , ".jpg\0" , 5 );
-		//p += 5;
-		m_imageUrlBuf.safePrintf("http://s2.mcstatic."
-					 "com/thumb/%"INT32".jpg", id);
-		m_imageUrl = m_imageUrlBuf.getBufStart();
-		// size includes \0;
-		//m_imageUrlSize = p - m_imageUrl ;
-		// sanity check
-		//if ( m_imageUrlSize > 100 ) { char *xx=NULL;*xx=0; }
-		break;
-	}
-	return &m_imageUrl;
-}
-
 
 MatchOffsets *XmlDoc::getMatchOffsets () {
 	// return it if it is set
@@ -33987,8 +33365,6 @@ char *XmlDoc::getIsLinkSpam ( ) {
 	if ( ! links || links == (Links *)-1 ) return (char *)links;
 	int32_t *ip = getIp();
 	if ( ! ip || ip == (int32_t *)-1 ) return (char *)ip;
-	int32_t **pici = getIndCatIds();
-	if ( ! pici || pici == (void *)-1 ) return (char *)pici;
 	//LinkInfo *info1 = getLinkInfo1();
 	//if ( ! info1 || info1 == (LinkInfo *)-1 ) return (char *)info1;
 	int32_t *sni = getSiteNumInlinks();
@@ -34007,8 +33383,6 @@ char *XmlDoc::getIsLinkSpam ( ) {
 	m_isLinkSpamValid = true;
 	m_isLinkSpam = ::isLinkSpam ( getFirstUrl(), // linker
 				      *ip ,
-				      ptr_indCatIds ,
-				      size_indCatIds / 4 ,
 				      *sni ,
 				      xml,
 				      links,
@@ -34016,7 +33390,6 @@ char *XmlDoc::getIsLinkSpam ( ) {
 				      &m_note ,
 				      NULL , // &linkee , // url ,
 				      -1 , // linkNode ,
-				      cr->m_coll ,
 				      m_niceness );
 	// set shadow
 	m_isLinkSpam2 = (bool)m_isLinkSpam;
@@ -36709,50 +36082,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 			sb->safePrintf ( "<br>\n");
 		}
 		sb->safePrintf ( "</tr>\n");
-	}
-
-	// print dmoz stuff
-	int32_t numCatIds    = size_catIds/4;
-	int32_t numIndCatIds = size_indCatIds/4;
-	sb->safePrintf( "<tr><td>Number of Category IDs</td>"
-		       "<td>%"INT32"</td></tr>\n",  numCatIds );
-	char *dtp = ptr_dmozTitles;
-	char *dsp = ptr_dmozSumms;
-	char *dap = ptr_dmozAnchors;
-	for (int32_t i = 0; i < numCatIds; i++) {
-		// print the ID
-		sb->safePrintf( "<tr><td>ID #%"INT32"</td><td>%"INT32"</td></tr>\n",
-			       i, ptr_catIds[i]);
-		// print the title
-		if ( dtp ) {
-			sb->safePrintf( "<tr><td>Title #%"INT32" </td><td>",i);
-			sb->safeMemcpy( dtp,gbstrlen(dtp) );
-			sb->safePrintf( "</td></tr>\n");
-			dtp += gbstrlen(dtp) + 1;
-		}
-		// print the summary
-		if ( dsp ) {
-			sb->safePrintf( "<tr><td>Summary #%"INT32"</td><td>", i);
-			sb->safeMemcpy( dsp , gbstrlen(dsp ) ) ;
-			sb->safePrintf( "</td></tr>\n");
-			dsp += gbstrlen ( dsp ) + 1;
-		}
-		// print the anchor
-		if ( dap ) {
-			sb->safePrintf( "<tr><td>Anchor #%"INT32"</td><td>",i);
-			sb->safeMemcpy( dap , gbstrlen(dap) );
-			sb->safePrintf( "</td></tr>\n");
-			dap += gbstrlen ( dap ) + 1;
-		}
-	}
-	sb->safePrintf( "<tr><td>Number of Indirect Category IDs</td>"
-			"<td>%"INT32"</td></tr>\n",   numIndCatIds);
-
-	for (int32_t i = 0; i < numIndCatIds; i++) {
-		// print the ID
-		sb->safePrintf( "<tr><td>Indirect ID #%"INT32"</td>"
-				"<td>%"INT32"</td></tr>\n",
-				i, ptr_indCatIds[i]);
 	}
 
 	if ( info1 ) {

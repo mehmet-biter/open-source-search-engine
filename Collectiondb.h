@@ -342,11 +342,6 @@ class CollectionRec {
 	void sentLocalCrawlInfoToHost ( int32_t hostId );
 	void localCrawlInfoUpdate();
 
-	// . can this ip perform a search or add url on this collection?
-	// . mamma.com provides encapsulated ips of their queriers so we
-	//   can ban them by ip
-	bool hasSearchPermission ( class TcpSocket *s , int32_t encapIp = 0 );
-
 	// how many bytes would this record occupy in raw binary format?
 	//int32_t getStoredSize () { return m_recSize; };
 
@@ -907,9 +902,6 @@ class CollectionRec {
 	//int32_t  m_numSearchPwds;
 	//char  m_searchPwds [ MAX_SEARCH_PASSWORDS ][ PASSWORD_MAX_LEN+1 ];
 
-	//int32_t  m_numBanIps;
-	//int32_t  m_banIps [ MAX_BANNED_IPS ];
-
 	//int32_t  m_numSearchIps;
 	//int32_t  m_searchIps [ MAX_SEARCH_IPS ];
 
@@ -1130,13 +1122,8 @@ class CollectionRec {
 	// for news collection. uses changes in Msg20.cpp.
 	char m_onlyUseLinkTextForTitle;
 
-	// dmoz title and summary display options
-	char m_useDmozForUntitled;
-	char m_showDmozSummary;
 	char m_overrideSpiderErrorsForCatdb;
 	char m_showAdultCategoryOnTop;
-	char m_displayDmozCategories;
-	char m_displayIndirectDmozCategories;
 	char m_displaySearchCategoryLink;
 
 	// show <docsInColl>, <tag>s, etc. in PageResults::printXml()
@@ -1220,14 +1207,14 @@ class CollectionRec {
 
 	// JAB - only compile a regex one time... lazy algorithm...
 	//regex_t* m_pRegExParser  [ MAX_FILTERS ];
-       
+
         // . ad parameters
 	/*
         int32_t m_adPINumAds;
         char m_adPIEnable;
         char m_adPIFormat   [MAX_HTML_LEN + 1];
         int32_t m_adPIFormatLen;
-        int32_t m_adSSNumAds; 
+        int32_t m_adSSNumAds;
         char m_adSSEnable;
         char m_adSSFormat   [MAX_HTML_LEN + 1];
         int32_t m_adSSFormatLen;

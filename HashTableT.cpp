@@ -557,5 +557,3 @@ template class HashTableT<int32_t, float>;
 //template class HashTableT<uint64_t,DomSlot>;
 //template class HashTableT<int32_t,IpSlot>;
 //template class HashTableT<uint32_t,float>;
-#include "AutoBan.h"
-template class HashTableT<int32_t,CodeVal>;

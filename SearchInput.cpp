@@ -1138,52 +1138,11 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 
 	//m_displayQueryLen = gbstrlen(m_displayQuery);//p-m_displayQuery
 
-
 	//log("query: got query %s",m_sbuf1.getBufStart());
 	//log("query: got display query %s",m_displayQuery);
 
 	// urlencoded display query
 	m_qe.urlEncode ( m_displayQuery );
-
-	// urlEncode(m_qe,
-	// 	  MAX_QUERY_LEN*2,
-	// 	  m_displayQuery,
-	// 	  gbstrlen(m_displayQuery));
-	
-
-
-
-	//////////
-	//
-	// show DMOZ BREADCRUMB if doing a 
-	// "gbpcatid:<catid> |" (Search restricted to category)
-	// "gbcatid:<catid>"    (DMOZ urls in that topic, c=dmoz3)
-	//
-	//////////
-	int32_t pcatId = -1;
-	int32_t dcatId  = -1;
-	// get the final query
-	char *q =m_sbuf1.getBufStart();
-
-	if ( q ) sscanf(q,"gbpcatid:%"INT32"",&pcatId);
-	if ( q ) sscanf(q,"gbcatid:%"INT32"",&dcatId);
-	// pick the one that is valid
-	int32_t catId = -1;
-	if ( pcatId >= 0 ) catId = pcatId;
-	if ( dcatId >= 0 ) catId = dcatId;
-	
-	//////
-	//
-	// save catid into the state
-	m_catId = catId;
-	//
-	///////
-
-	// are we a right to left language like hebrew?
-	if ( catId > 0 && g_categories->isIdRTL(catId) )
-		m_isRTL = true;
-	else
-		m_isRTL = false;
 
 	return true;
 }

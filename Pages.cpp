@@ -6,7 +6,6 @@
 #include "Collectiondb.h"
 //#include "CollectionRec.h"
 #include "Tagdb.h"
-#include "Categories.h"
 #include "Proxy.h"
 #include "PageParser.h" // g_inPageParser
 #include "Rebalance.h"
@@ -14,26 +13,9 @@
 
 // a global class extern'd in Pages.h
 Pages g_pages;
-//const char *GBVersion;
+
 // error message thingy used by HttpServer.cpp for logging purposes
 char *g_msg;
-
-/*
-class WebPage {
- public:
-	char  m_pageNum;  // see enum array below for this
-	char *m_filename;
-	int32_t  m_flen;
-	char *m_name;     // for printing the links to the pages in admin sect.
-	bool  m_cast;     // broadcast input to all hosts?
-	bool  m_usePost;  // use a POST request/reply instead of GET?
-	                  // used because GET's input is limited to a few k.
-	//char  m_perm;     // permissions, see USER_* #define's below
-	char *m_desc; // page description
-	bool (* m_function)(TcpSocket *s , HttpRequest *r);
-	int32_t  m_niceness;
-};
-*/
 
 // . list of all dynamic pages, their path names, permissions and callback
 //   functions that generate that page
@@ -41,31 +23,6 @@ class WebPage {
 //   otherwise you'll get a malformed error when running
 static int32_t s_numPages = 0;
 static WebPage s_pages[] = {
-
-	/*
-	// dummy pages 
-	{ PAGE_NOHOSTLINKS	, "nohostlinks",   0, "host links", 0, 0, 
-	  "dummy page - if set in the users row then host links will not be "
-	  " shown",
-	  NULL, 0 ,NULL,NULL,
-	  PG_NOAPI},
-
-	{ PAGE_ADMIN           , "colladmin",   0, "master=0", 0, 0,
-	  "dummy page - if set in the users row then user will have master=0 and "
-	  " collection links will be highlighted in red",
-	  NULL, 0 ,NULL,NULL,
-	  PG_NOAPI},  
-
-	//{ PAGE_QUALITY         , "quality",     0, "quality",  0, 0,
-	//  "dummy page - if set in the users row then  \"Quality Control\""
-	//  " will be printed besides the logo for certain pages",
-	//  NULL, 0 ,NULL,NULL,PG_NOAPI},
-	{ PAGE_PUBLIC   	, "public",   0, "public", 0, 0,
-	  "dummy page - if set in the users row then page function is"
-	  " called directly and not through g_parms.setFromRequest", 
-	  NULL, 0 ,NULL,NULL,PG_NOAPI},
-	*/
-
 	// publicly accessible pages
 	{ PAGE_ROOT      , "index.html"    , 0 , "root" , 0 , 0 ,
 	  "search page to query",
@@ -77,10 +34,6 @@ static WebPage s_pages[] = {
 	  sendPageResults, 0 ,NULL,NULL,
 	  PG_ACTIVE},
 
-	//{ PAGE_WIDGET   , "widget"        , 0 , "widget" , 0 , 0 ,
-	//  "widget page",
-	//  sendPageWidget, 0 ,NULL,NULL,PG_NOAPI},
-
 	// this is the public addurl, /addurl, if you are using the 
 	// api use PAGE_ADDURL2 which is /admin/addurl. so we set PG_NOAPI here
 	{ PAGE_ADDURL    , "addurl"       , 0 , "add url" , 0 , 0 ,
@@ -89,26 +42,16 @@ static WebPage s_pages[] = {
 	  PG_NOAPI|PG_ACTIVE},
 
 	{ PAGE_GET       , "get"           , 0 , "get" ,  0 , 0 ,
-	  //USER_PUBLIC | USER_MASTER | USER_ADMIN | USER_CLIENT, 
 	  "gets cached web page",
 	  sendPageGet  , 0 ,NULL,NULL,
 	  PG_ACTIVE},
 
 	{ PAGE_LOGIN     , "login"         , 0 , "login" ,  0 , 0 ,
-	  //USER_PUBLIC | USER_MASTER | USER_ADMIN | USER_SPAM | USER_CLIENT, 
 	 "login",
 	 sendPageLogin, 0 ,NULL,NULL,
 	  PG_NOAPI|PG_ACTIVE},
 
-	{ PAGE_DIRECTORY , "dir"           , 0 , "directory" , 0 , 0 ,
-	  //USER_PUBLIC | USER_MASTER | USER_ADMIN | USER_CLIENT, 
-	  "directory",
-	  // until api is ready, take this out of the menu
-	  sendPageDirectory , 0 ,NULL,NULL,
-	  PG_NOAPI|PG_ACTIVE},
-
 	{ PAGE_REPORTSPAM , "reportspam"   , 0 , "report spam" , 0 , 0 ,
-	  //USER_PUBLIC | USER_MASTER | USER_ADMIN |  USER_PROXY | USER_CLIENT 
 	  "report spam",
 	  sendPageReportSpam , 0 ,NULL,NULL,PG_NOAPI},
 
@@ -121,10 +64,6 @@ static WebPage s_pages[] = {
 	  "basic status", sendPageBasicStatus  , 0 ,NULL,NULL,
 	  PG_STATUS|PG_COLLADMIN|PG_ACTIVE},
 
-	//{ PAGE_BASIC_DIFFBOT, "admin/diffbot", 0 , "diffbot",1, 0 , 
-	//  "Basic diffbot page.",  sendPageBasicDiffbot  , 0 ,
-	//NULL,NULL,PG_NOAPI},
-
 	{ PAGE_COLLPASSWORDS,
 	  "admin/collectionpasswords", 0,"collection passwords",0,0,
 	  "passwords", sendPageGeneric  , 0 ,NULL,NULL,
@@ -135,24 +74,20 @@ static WebPage s_pages[] = {
 	  PG_NOAPI|PG_ACTIVE},
 
 	{ PAGE_HOSTS     , "admin/hosts"   , 0 , "hosts" ,  0 , 0 ,
-	  //USER_MASTER | USER_PROXY,
 	  "hosts status", sendPageHosts    , 0 ,NULL,NULL,
 	  PG_STATUS|PG_MASTERADMIN|PG_ACTIVE},
 
 	{ PAGE_MASTER    , "admin/master"  , 0 , "master controls" ,  1 , 0 , 
-	  //USER_MASTER | USER_PROXY ,
 	  "master controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_MASTERADMIN|PG_ACTIVE},
 
 	// use POST for html head/tail and page root html. might be large.
 	{ PAGE_SEARCH    , "admin/search"   , 0 , "search controls" ,1,M_POST,
-	  //USER_ADMIN | USER_MASTER   , 
 	  "search controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_ACTIVE},
 
 	// use post now for the "site list" which can be big
 	{ PAGE_SPIDER    , "admin/spider"   , 0 , "spider controls" ,1,M_POST,
-	  //USER_ADMIN | USER_MASTER | USER_PROXY   ,
 	  "spider controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_COLLADMIN|PG_ACTIVE},
 
@@ -161,7 +96,6 @@ static WebPage s_pages[] = {
 	  PG_MASTERADMIN|PG_ACTIVE } ,
 
 	{ PAGE_LOG       , "admin/log"     , 0 , "log controls"     ,  1 , 0 ,
-	  //USER_MASTER | USER_PROXY,
 	  "log controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_MASTERADMIN|PG_ACTIVE},
 
@@ -173,26 +107,22 @@ static WebPage s_pages[] = {
 
 	{ PAGE_MASTERPASSWORDS, "admin/masterpasswords", 
 	  0 , "master passwords" ,  1 , 0 ,
-	  //USER_MASTER | USER_PROXY ,
 	  "master passwords", 
 	  sendPageGeneric , 0 ,NULL,NULL,
 	  PG_MASTERADMIN|PG_ACTIVE},
 
 #ifndef PRIVACORE_SAFE_VERSION
 	{ PAGE_ADDCOLL   , "admin/addcoll" , 0 , "add collection"  ,  1 , 0 ,
-	  //USER_MASTER , 
 	  "add a new collection",
 	  sendPageAddColl  , 0 ,NULL,NULL,
 	  PG_MASTERADMIN|PG_ACTIVE},
 
 	{ PAGE_DELCOLL   , "admin/delcoll" , 0 , "delete collections" ,  1 ,0,
-	  //USER_MASTER , 
 	  "delete a collection",
 	  sendPageDelColl  , 0 ,NULL,NULL,
 	  PG_COLLADMIN|PG_ACTIVE},
 
 	{ PAGE_CLONECOLL, "admin/clonecoll" , 0 , "clone collection" ,  1 ,0,
-	  //USER_MASTER , 
 	  "clone one collection's settings to another",
 	  sendPageCloneColl  , 0 ,NULL,NULL,
 	  PG_MASTERADMIN|PG_ACTIVE},
@@ -200,7 +130,6 @@ static WebPage s_pages[] = {
 	// let's replace this with query reindex for the most part
 	{ PAGE_REPAIR    , "admin/rebuild"   , 0 , "rebuild" ,  1 , 0 ,
 	  "rebuild data",
-	  //USER_MASTER ,
 	  sendPageGeneric , 0 ,NULL,NULL,
 	  PG_MASTERADMIN |PG_ACTIVE},
 #endif
@@ -211,7 +140,6 @@ static WebPage s_pages[] = {
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},
 
 	{ PAGE_INJECT    , "admin/inject"   , 0 , "inject url" , 0,M_MULTI ,
-	  //USER_ADMIN | USER_MASTER   ,
 	  "inject url in the index here",
 	  sendPageInject   , 2 ,NULL,NULL,
 	  PG_ACTIVE} ,
@@ -223,38 +151,32 @@ static WebPage s_pages[] = {
 	  PG_COLLADMIN|PG_ACTIVE},
 
 	{ PAGE_REINDEX   , "admin/reindex"  , 0 , "query reindex" ,  0 , 0 ,
-	  //USER_ADMIN | USER_MASTER, 
 	  "query delete/reindex",
 	  sendPageReindex  , 0 ,NULL,NULL,
 	  PG_COLLADMIN|PG_ACTIVE},
 
 	// master admin pages
 	{ PAGE_STATS     , "admin/stats"   , 0 , "stats" ,  0 , 0 ,
-	  //USER_MASTER | USER_PROXY , 
 	  "general statistics",
 	  sendPageStats    , 0 ,NULL,NULL,
 	  PG_STATUS|PG_MASTERADMIN|PG_ACTIVE},
 
 	{ PAGE_GRAPH , "admin/graph"  , 0 , "graph"  ,  0 , 0 ,
-	  //USER_MASTER , 
 	  "query stats graph",
 	  sendPageGraph  , 2  ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
 	{ PAGE_PERF      , "admin/perf"    , 0 , "performance"     ,  0 , 0 ,
-	  //USER_MASTER | USER_PROXY ,
 	  "function performance graph",
 	  sendPagePerf     , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
 	{ PAGE_SOCKETS   , "admin/sockets" , 0 , "sockets" ,  0 , 0 ,
-	  //USER_MASTER | USER_PROXY,
 	  "sockets",
 	  sendPageSockets  , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
 	{ PAGE_LOGVIEW    , "admin/logview"   , 0 , "log view" ,  0 , 0 ,
-	  //USER_MASTER ,  
 	  "logview",
 	  sendPageLogView  , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
@@ -264,21 +186,13 @@ static WebPage s_pages[] = {
 //	  "sync",
 //	  sendPageGeneric  , 0 ,NULL,NULL,PG_NOAPI},
 
-	{ PAGE_AUTOBAN    ,"admin/autoban" , 0 , "autoban" ,  1 , M_POST ,
-	  //USER_MASTER | USER_PROXY , 
-	  "autobanned ips",
-	  sendPageAutoban   , 0 ,NULL,NULL,
-	  PG_NOAPI|PG_MASTERADMIN},
-
 	// deactivate until works on 64-bit... mdw 12/14/14
 	{ PAGE_PROFILER    , "admin/profiler"   , 0 , "profiler" ,  0 ,M_POST,
-	  //USER_MASTER , 
 	  "profiler",
 	  sendPageProfiler   , 0 ,NULL,NULL,
 	  PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
 	{ PAGE_THREADS    , "admin/threads"   , 0 , "threads" ,  0 , 0 ,
-	  //USER_MASTER ,
 	  "threads",
 	  sendPageThreads  , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
@@ -300,16 +214,9 @@ static WebPage s_pages[] = {
 	  PG_NOAPI|PG_MASTERADMIN},
 
 	{ PAGE_API , "admin/api"         , 0 , "api" , 0 , 0 ,
-	  //USER_MASTER | USER_ADMIN , 
 	  "api",  
 	  sendPageAPI , 0 ,NULL,NULL,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},
-
-	{ PAGE_RULES  , "admin/siterules", 0 , "site rules", 1, M_POST,
-	  //USER_ADMIN | USER_MASTER   , 
-	  "site rules",
-	  sendPageGeneric , 0,NULL,NULL,
-	  PG_NOAPI},
 
 	{ PAGE_TITLEDB   , "admin/titledb" , 0 , "titledb"         ,  0 , 0,
 	  "titledb",
@@ -323,7 +230,6 @@ static WebPage s_pages[] = {
 	  PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
 	{ PAGE_SPIDERDB  , "admin/spiderdb" , 0 , "spider queue" ,  0 , 0 ,
-	  //USER_ADMIN | USER_MASTER   , 
 	  "spider queue",
 	  sendPageSpiderdb , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
@@ -337,51 +243,20 @@ static WebPage s_pages[] = {
 	//  "get queries a url matches",
 	//  sendPageMatchingQueries   , 2 } ,
 
-	{ PAGE_ACCESS    , "admin/access" , 0 , "access" ,  1 , M_POST,
-	  //USER_ADMIN | USER_MASTER   , 
-	  "access password, ip, admin ips etc. all goes in here",
-	  sendPageGeneric  , 0 ,NULL,NULL,
-	  PG_NOAPI|PG_MASTERADMIN},
-
 	{ PAGE_SEARCHBOX , "admin/searchbox", 0 , "search" ,  0 , 0 ,
-	  //USER_ADMIN | USER_MASTER   , 
 	  "search box",
 	  sendPageResults  , 0 ,NULL,NULL,
 	  PG_NOAPI},
 
 	{ PAGE_PARSER    , "admin/parser"  , 0 , "parser"          , 0,M_POST,
-	  //USER_MASTER ,
 	  "page parser",
 	  sendPageParser   , 2 ,NULL,NULL,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},
 
 	{ PAGE_SITEDB    , "admin/tagdb"  , 0 , "tagdb"  ,  0 , M_POST,
-	  //USER_MASTER | USER_ADMIN,
 	  "add/remove/get tags for sites/urls",
 	  sendPageTagdb ,  0 ,NULL,NULL,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},	  
-
-	{ PAGE_CATDB     , "admin/catdb"   , 0 , "catdb"           ,  0,M_POST,
-	  //USER_MASTER | USER_ADMIN,
-	  "catdb",
-	  sendPageCatdb    , 0 ,NULL,NULL,
-	  PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
-
-	//{ PAGE_LOGIN2    , "admin/login"         , 0 , "login" ,  0 , 0,
-	//  //USER_PUBLIC | USER_MASTER | USER_ADMIN | USER_SPAM | USER_CLIENT, 
-	//"login link - also logoffs user",
-	//  sendPageLogin,0}
-//	{ PAGE_TOPDOCS , "admin/topdocs"  , 0 , "top docs" ,  1 , 1 ,
-//	  //USER_ADMIN | USER_MASTER, 
-//	  "top documents",
-//	  sendPageTopDocs , 0 ,NULL,NULL,PG_NOAPI},
-	//{ PAGE_ADFEED  , "admin/adfeed"  , 0 , "ad feed" ,  1 , 1 ,
-	//  //USER_ADMIN | USER_MASTER,
-	//  "ad feed control",
-	//  sendPageGeneric , 0 ,NULL,NULL,PG_NOAPI},
- 	//{ PAGE_TURK2    , "pageturkhome"       , 0 , "page turk" , 0 , 0 ,
-	//  "page turk home",
-        //  sendPageTurkHome, 0 }
 };
 
 WebPage *Pages::getPage ( int32_t page ) {
@@ -459,55 +334,13 @@ int32_t Pages::getDynamicPageNumber ( HttpRequest *r ) {
 	if ( pathLen == 10 && strncmp ( path , "search.csv" , 10 ) == 0 ) {
 		path = "search"; pathLen = gbstrlen(path); }
 
-	// if it is like /GA/Atlanta then call sendPageResults
-	// and that should be smart enough to set the m_where in
-	// SearchInput.cpp from the path!!
-	// this messes up /qa/* files
-	// if ( path && 
-	//      // "filename" does not start with '/' for some reason
-	//      //path[0] &&
-	//      //path[0] == '/' &&
-	//      path[0] &&
-	//      is_alpha_a(path[0]) &&
-	//      is_alpha_a(path[1]) &&
-	//      pathLen<64 &&
-	//      // "GET /NM"
-	//      (path[2] == '/' || path[2]=='\0' || path[2]==' ') )
-	// 	return PAGE_RESULTS;
-
 	// go down the list comparing the pathname to dynamic page names
 	for ( int32_t i = 0 ; i < s_numPages ; i++ ) {
 		if ( pathLen != s_pages[i].m_flen ) continue;
 		if ( strncmp ( path , s_pages[i].m_filename , pathLen ) == 0 )
 			return i;
 	}
-	// check to see if the path is a category
-	path    = r->getPath();
-	pathLen = r->getPathLen();
-	// truncate if we would breech
-	if ( pathLen >= MAX_HTTP_FILENAME_LEN )
-		pathLen = MAX_HTTP_FILENAME_LEN - 1;
-	// decode the path
-	char decodedPath[MAX_HTTP_FILENAME_LEN];
-	int32_t decodedPathLen = urlDecode(decodedPath, path, pathLen);
-	// remove cgi
-	for (int32_t i = 0; i < decodedPathLen; i++) {
-		if (decodedPath[i] == '?') {
-			decodedPathLen = i;
-			break;
-		}
-	}
-	// sanity
-	if ( ! g_categories ) log("process: no categories loaded");
 
-	//
-	// dmoz - look it up for a category
-	//
-	if ( g_categories &&
-	     g_categories->getIndexFromPath(decodedPath, decodedPathLen) >= 0)
-		return PAGE_DIRECTORY;
-	// just go to PAGE_DIRECTORY for other request
-	//return PAGE_DIRECTORY;
 	// not found in our list of dynamic page filenames
 	return -1;
 }
@@ -552,10 +385,6 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 	if ( page == PAGE_ADDURL ) publicPage = true;
 	if ( page == PAGE_GET ) publicPage = true;
 	if ( page == PAGE_CRAWLBOT ) publicPage = true;
-	if ( page == PAGE_DIRECTORY ) publicPage = true;
-
-	// get our host
-	//Host *h = g_hostdb.m_myHost;
 
 	// now use this...
 	bool isMasterAdmin = g_conf.isMasterAdmin ( s , r );
@@ -572,12 +401,6 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 	////////////////////
 	////////////////////
 
-	// no longer, we let anyone snoop around to check out the gui
-	//char guest = r->getLong("guest",0);
-
-	//if ( ! publicPage && ! isMasterAdmin && ! guest )
-	//	return sendPageLogin ( s , r );
-
 	g_errno = 0;
 
 	WebPage *pg = &s_pages[page];
@@ -591,8 +414,6 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 		return g_httpServer.sendErrorReply ( s , 505 , 
 						     "Page not active");
 	}
-
-
 
 	if ( page == PAGE_CRAWLBOT && ! isMasterAdmin )
 		log("pages: accessing a crawlbot page without admin privs. "
@@ -613,10 +434,8 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 	// if not the root admin only all user to change settings, etc.
 	// if the collection rec is a guest collection. i.e. in the cloud.
 	//
-	//bool isMasterAdmin = g_conf.isMasterAdmin(sock,hr);
 	bool isRootColl = false;
 	if ( cr && strcmp(cr->m_coll,"main")==0 ) isRootColl = true;
-	if ( cr && strcmp(cr->m_coll,"dmoz")==0 ) isRootColl = true;
 	if ( cr && strcmp(cr->m_coll,"demo")==0 ) isRootColl = true;
 
 
@@ -800,14 +619,8 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 			   char        *qs   ,
 			   char* bodyJavascript) {
 	int32_t  page   = getDynamicPageNumber ( r );
-	char *username = NULL;
-	//char *coll   = r->getString ( "c"   );
-	//if ( ! coll ) coll = "main";
 	char *coll = g_collectiondb.getDefaultColl(r);
-
 	bool status = true;
-
-	char *pwd = NULL;
 
 	sb->safePrintf("<html>\n");
 
@@ -897,21 +710,14 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
         bool isBasic = false;
 	if ( page == PAGE_BASIC_SETTINGS ) isBasic = true;
 	if ( page == PAGE_BASIC_STATUS ) isBasic = true;
-	//if ( page == PAGE_BASIC_DIFFBOT ) isBasic = true;
-	//if ( page == PAGE_BASIC_SEARCH  ) isBasic = true;
 	if ( page == PAGE_COLLPASSWORDS ) isBasic = true;
 	if ( page == PAGE_BASIC_SEARCH ) isBasic = true;
 
 
 	// collections box
 	sb->safePrintf(
-		       //"<TR>"
-		       //"<TD valign=top>"
 		       "<div "
 		       "style=\""
-		       //"max-height:600px;"
-		       //"max-width:200px;"
-		       //"min-width:200px;"
 
 		       "width:190px;"
 
@@ -926,8 +732,6 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 		       "border-style:solid;"
 		       "margin-right:-3px;"
 		       "border-right-color:white;"
-		       //"border-width:2px;"
-		       //"border-color:#606060;"
 		       "overflow-y:auto;"
 		       "overflow-x:hidden;"
 		       "line-height:23px;"
@@ -937,7 +741,7 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 		       );
 
 	// collection navbar
-	status&=printCollectionNavBar ( sb, page , username, coll,pwd, qs,s,r);
+	status&=printCollectionNavBar ( sb, page , coll, qs,s,r);
 
 	// count the statuses
 	int32_t emptyCount = 0;
@@ -1083,15 +887,9 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 		       );
 
 	// print the hosts navigation bar
-	status &= printHostLinks ( sb, page , 
-				   username , pwd ,
-				   coll, NULL, s->m_ip, qs );
+	status &= printHostLinks ( sb, page , coll, s->m_ip, qs );
 
-	//if ( g_hostdb.getNumHosts() > 1 )
 	sb->safePrintf("<br><br>");
-
-	// end table
-	//sb->safePrintf ("</td></tr></table><br/>\n");//<br/>\n");
 
 	SafeBuf mb;
 	bool added = printRedBox ( &mb , s , r );
@@ -1099,28 +897,6 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 	// print emergency msg box
 	if ( added )
 		sb->safePrintf("%s",mb.getBufStart());
-
-	//
-	// print breadcrumb. main > Basic > Settings
-	//
-	/*
-	char *menu = "advanced";
-	if ( isBasic ) menu = "basic";
-	sb->safePrintf("<br>");
-	sb->safePrintf("<b><font color=gray size=+2>"
-		       "%s &gt; %s &gt; %s "
-		       "&nbsp; "
-		       "</font>"
-		       "</b>"
-		       //"<a href=/%s?c=%s&showparms=1&format=xml>xml</a> "
-		       //"<a href=/%s?c=%s&showparms=1&format=json>json</a> "
-		       "<br><br>\n", 
-		       coll, menu, s_pages[page].m_name
-		       //,s_pages[page].m_filename , coll
-		       //,s_pages[page].m_filename , coll
-		       );
-	*/
-
 
 	// print Basic | Advanced links
 	printTopNavButton("BASIC",
@@ -1186,15 +962,6 @@ bool printGigabotAdvice ( SafeBuf *sb ,
 	if ( ! guide ) return true;
 
 	sb->safePrintf("<input type=hidden name=guide value=1>\n");
-
-	// we only show to guest users. if we are logged in as master admin
-	// then skip this step.
-	//if ( hr->isGuestAdmin() )
-	//	return false;
-
-	// also, only show if running in matt's data cetner
-	//if ( ! g_conf.m_isMattWells )
-	//	return true;
 
 	// gradient class
 	// yellow box
@@ -1384,10 +1151,6 @@ bool Pages::printAdminBottom ( SafeBuf *sb ) {
 	return status;
 }
 
-bool Pages::printAdminBottom2 ( SafeBuf *sb, HttpRequest *r ) {
-	return printAdminBottom2 ( sb );
-}
-
 bool Pages::printAdminBottom2 ( SafeBuf *sb ) {
 	bool status = true;
 	sb->safePrintf ( "</div>\n</body>\n</html>\n" );
@@ -1441,18 +1204,6 @@ bool Pages::printColors ( SafeBuf *sb, char* bodyJavascript ) {
 	return true;
 }
 
-bool Pages::printColors3 ( SafeBuf *sb ) {
-	// print font and color stuff
-	sb->safePrintf (
-		  "<body text=\"#000000\" bgcolor=\"#"
-		  BGCOLOR
-		  "\" link=\"#000000\" vlink=\"#000000\" "
-		  "alink=\"#000000\" onload=\"javascript:st_init()\">\n"
-		  // onLoad=sf()>"
-		  );
-	return true;
-}
-
 bool Pages::printLogo ( SafeBuf *sb, char *coll ) {
 	// print the logo in upper right corner
 	if ( ! coll ) coll = "";
@@ -1466,25 +1217,16 @@ bool Pages::printLogo ( SafeBuf *sb, char *coll ) {
 
 bool Pages::printHostLinks ( SafeBuf* sb     ,
 			     int32_t     page   ,
-			     char    *username ,
-			     char    *password ,
 			     char    *coll   ,
-			     char    *pwd    ,
 			     int32_t     fromIp ,
 			     char    *qs     ) {
 	bool status = true;
-
-	// ignore
-	if ( ! username ) username = "";
-	if ( ! password ) password = "";
 
 	int32_t total = 0;
 	// add in hosts
 	total += g_hostdb.m_numHosts;
 	// and proxies
 	total += g_hostdb.m_numProxyHosts;	
-	// don't print host buttons if only 1 host
-	//if ( total <= 1 ) return status;
 
 	sb->safePrintf (  //"&nbsp; &nbsp; &nbsp; "
 			  "<a style=text-decoration:none; href=/admin/hosts>"
@@ -1598,21 +1340,7 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 	// visible window... so just try 1000px max
 	sb->safePrintf("<div style=max-width:800px;>");
 
-	// int arch = 32;
-	// if ( __WORDSIZE == 64 ) arch = 64;
-	// if ( __WORDSIZE == 128 ) arch = 128;
-
-	//int32_t matt1 = atoip ( MATTIP1 , gbstrlen(MATTIP1) );
-	//int32_t matt2 = atoip ( MATTIP2 , gbstrlen(MATTIP2) );
 	for ( int32_t i = PAGE_BASIC_SETTINGS ; i < s_numPages ; i++ ) {
-		// skip page autoban link
-		if ( ! g_conf.m_isMattWells && i == PAGE_AUTOBAN )
-			continue;
-
-		// profiler.cpp only works for 32-bit elf headers right now
-		//if ( i == PAGE_PROFILER && arch != 32 )
-		//	continue;
-
 		// is this page basic?
 		bool pageBasic = false;
 		if ( i >= PAGE_BASIC_SETTINGS &&
@@ -1623,16 +1351,12 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 		// under the advanced menu...
 		if ( isBasic != pageBasic ) continue;
 
-
 		// ignore these for now
-		//if ( i == PAGE_SECURITY ) continue;
-		if ( i == PAGE_ACCESS ) continue;
-		//if ( i == PAGE_INDEXDB ) continue;
-		if ( i == PAGE_RULES ) continue;
 		if ( i == PAGE_API ) continue;
 		if ( i == PAGE_SEARCHBOX ) continue;
 		if ( i == PAGE_TITLEDB ) continue;
 		if ( i == PAGE_IMPORT ) continue;
+
 		// move these links to the coll nav bar on the left
 #ifndef PRIVACORE_SAFE_VERSION
 		if ( i == PAGE_ADDCOLL ) continue;
@@ -1645,27 +1369,6 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 		if ( ! g_conf.m_useCollectionPasswords &&
 		     (i == PAGE_COLLPASSWORDS||i == PAGE_COLLPASSWORDS2) )
 			continue;
-
-		// put this back in
-		//if ( i == PAGE_HOSTS ) continue;
-
-		// print "url download" before "inject url"
-		// GET /mycollname_urls.csv
-		/* nah, keep this in basic > status
-		if ( i == PAGE_INJECT ) {
-			sb->safePrintf (
-					"<b>"
-					"<a style=text-decoration:none; "
-					"href=\"/download/%s_urls.txt\">"
-					"<nobr>"
-					"data downloads"
-					"</nobr>"
-					"</a>"
-					"</b>"
-					" &nbsp; \n",
-					coll );
-		}		
-		*/
 
 		if ( cr && ! cr->m_isCustomCrawl && i == PAGE_CRAWLBOT )
 			continue;
@@ -1683,7 +1386,6 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 				       buf,s_pages[i].m_name);
 		else if ( page == i )
 			sb->safePrintf(
-				       //"<span style=\"white-space:nowrap\">"
 				       "<b>"
 				       "<a style=text-decoration:none; "
 				       "href=\"/%s?c=%s%s\">"
@@ -1694,7 +1396,6 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 				       "</font>"
 				       "</a>"
 				       "</b>"
-				       //"</span>"
 				       " &nbsp; "
 				       "\n"
 				       ,s_pages[i].m_filename
@@ -1704,7 +1405,6 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 				       );
 		else
 			sb->safePrintf(
-				       //"<span style=\"white-space:nowrap\">"
 				       "<b>"
 				       "<a style=text-decoration:none; "
 				       "href=\"/%s?c=%s%s\">"
@@ -1713,68 +1413,22 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 				       "</nobr>"
 				       "</a>"
 				       "</b>"
-				       //"</span>"
 				       " &nbsp; \n"
 				       ,s_pages[i].m_filename
 				       ,coll
 				       ,buf
 				       ,s_pages[i].m_name);
-		// print <br> after the last master admin control
-		/*
-		if ( i == PAGE_DELCOLL && user == USER_MASTER ) {
-			// . if no collection do not print anything else
-			// . no, we accept as legit (print out as "main")
-			//if ( ! coll[0] ) break;
-			if ( g_collectiondb.m_numRecsUsed == 0 ) break;
-			// or if no collection selected, same thing
-			if ( ! coll[0] ) break;
-			sprintf ( p , "<br><br>\n");
-			p += gbstrlen(p);
-		}
-		*/
 	}
-
-	// print documentation links
-	/*
-	if ( ! isBasic )
-		sb->safePrintf(" <a style=text-decoration:none "
-			       "href=/faq.html>"
-			       "<b>"
-			       "admin guide"
-			       "</b></a> "
-
-			       "&nbsp; "
-
-			       " <a style=text-decoration:none; "
-			       "href=/developer.html>"
-			       "<b>dev guide</b></a>" 
-
-			       );
-	*/
 	
 	sb->safePrintf("</div>");
-
-	//sb->safePrintf("</center>" );
-	//sb->safePrintf("<br/>" );
-	//sb->safePrintf("<br/>" );
 
 	return status;
 }
 
-
-
-
-bool Pages::printCollectionNavBar ( SafeBuf *sb     ,
-				    int32_t  page     ,
-				    //int32_t  user     ,
-				    char *username,
-				    char *coll     ,
-				    char *pwd      ,
-				    char *qs       ,
-				    TcpSocket *sock ,
-				    HttpRequest *hr ) {
+bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, char *coll, char *qs,
+                                    TcpSocket *sock, HttpRequest *hr ) {
 	bool status = true;
-	//if ( ! pwd ) pwd = "";
+
 	if ( ! qs  ) qs  = "";
 
 	// if not admin just print collection name
@@ -1842,8 +1496,6 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb     ,
 #endif
 
 	char *color = "red";
-	//if ( page >= PAGE_CGIPARMS ) color = "red";
-	//else                         color = "black";
 
 	// style for printing collection names
 	sb->safePrintf("<style>.x{text-decoration:none;font-weight:bold;}"

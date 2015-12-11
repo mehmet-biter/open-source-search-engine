@@ -22,7 +22,6 @@ Profiler g_profiler;
 #include "sort.h"
 Profiler g_profiler;
 
-
 uint32_t *indexTable;
 uint32_t *keyTable;
 uint64_t *valueTableUll;

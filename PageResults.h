@@ -41,8 +41,6 @@ public:
 	TcpSocket   *m_socket;
 	Msg0         m_msg0;
 	int64_t    m_startTime;
-	//Ads          m_ads;
-	bool         m_gotAds;
 	bool         m_gotResults;
 	char         m_spell  [MAX_FRAG_SIZE]; // spelling recommendation
 	bool         m_gotSpell;
@@ -71,18 +69,9 @@ bool printSearchResultsHeader ( class State0 *st ) ;
 bool printResult ( class State0 *st,  int32_t ix , int32_t *numPrintedSoFar );
 bool printSearchResultsTail ( class State0 *st ) ;
 
-
-
-
-bool printDmozRadioButtons ( SafeBuf *sb , int32_t catId ) ;
-bool printLogoAndSearchBox ( SafeBuf *sb , class HttpRequest *hr, int32_t catId ,
-			     SearchInput *si );
+bool printLogoAndSearchBox (SafeBuf *sb , class HttpRequest *hr, SearchInput *si );
 
 bool printTermPairs ( SafeBuf *sb , class Query *q , class PairScore *ps ) ;
 bool printSingleTerm ( SafeBuf *sb , class Query *q , class SingleScore *ss );
-
-
-bool printDMOZCrumb ( SafeBuf *sb , int32_t catId , bool xml ) ;
-bool printDMOZSubTopics ( SafeBuf *sb, int32_t catId, bool inXml ) ;
 
 #endif

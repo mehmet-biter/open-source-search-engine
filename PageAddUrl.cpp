@@ -204,39 +204,24 @@ bool sendReply ( void *state , bool addUrlEnabled ) {
 	// page is not more than 32k
 	char buf[1024*32+MAX_URL_LEN*2];
 	SafeBuf sb(buf, 1024*32+MAX_URL_LEN*2);
-	
-	//char rawbuf[1024*8];
-	//SafeBuf rb(rawbuf, 1024*8);	
-	//rb.safePrintf("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-	//rb.safePrintf("<status>\n");
-	//CollectionRec *cr = g_collectiondb.getRec ( gr->m_coll );
-	
-	// collection name
 
+	// collection name
 	char tt [ 128 ];
 	tt[0] = '\0';
 
 	g_pages.printAdminTop ( &sb , sock , &gr->m_hr );
 
-	// display url
-	//char *url = gr->m_urlsBuf;
-	//if ( url && ! url[0] ) url = NULL;
-
 	// watch out for NULLs
 	if ( ! url ) url = "http://";
 
 	// if there was an error let them know
-	//char msg[MAX_URL_LEN + 1024];
 	SafeBuf mbuf;
-	//char *pm = "";
+
 	if ( g_errno ) {
 		mbuf.safePrintf("<center><font color=red>");
 		mbuf.safePrintf("Error adding url(s): <b>%s[%i]</b>", 
 				mstrerror(g_errno) , g_errno);
 		mbuf.safePrintf("</font></center>");
-		//pm = msg;
-		//rb.safePrintf("Error adding url(s): %s[%i]", 
-		//	      mstrerror(g_errno) , g_errno);
 	}
 	else if ( printUrl ) {
 		mbuf.safePrintf("<center><font color=red>");
@@ -246,13 +231,6 @@ bool sendReply ( void *state , bool addUrlEnabled ) {
 				 "queue "
 				 "successfully<br><br>");
 		mbuf.safePrintf("</font></center>");
-		//rb.safePrintf("%s added to spider "
-		//	      "queue successfully", url );
-		//pm = msg;
-		//url = "http://";
-		//else
-		//	pm = "Don't forget to <a href=/gigaboost.html>"
-		//		"Gigaboost</a> your URL.";
 	}
 
 

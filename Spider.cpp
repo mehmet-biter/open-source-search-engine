@@ -9390,7 +9390,6 @@ void removeExpiredLocks ( int32_t hostId ) {
 	static time_t s_lastTime = 0;
 
 	int32_t nowGlobal = getTimeGlobalNoCore();
-	int32_t niceness = MAX_NICENESS;
 
 	// only do this once per second at the most
 	if ( nowGlobal <= s_lastTime ) return;
@@ -9413,7 +9412,7 @@ void removeExpiredLocks ( int32_t hostId ) {
 	//   we get the lock, but we avoided the negative doledb key.
 	for ( int32_t i = 0 ; i < ns ; i++ ) {
 		// breathe
-		QUICKPOLL(niceness);
+		QUICKPOLL(MAX_NICENESS);
 		// skip if empty
 		if ( ! ht->m_flags[i] ) continue;
 		// cast lock

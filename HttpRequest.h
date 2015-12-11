@@ -155,8 +155,6 @@ class HttpRequest {
 
 	bool hasField ( char *field );
 
-	bool isGuestAdmin ( ) ;
-
 	// are we a redir? if so return non-NULL
 	char      *getRedir    ( ) { return m_redir;    };
 	int32_t       getRedirLen ( ) { return m_redirLen; };

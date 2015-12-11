@@ -206,37 +206,6 @@ bool Proxy::initProxy ( int32_t proxyId, uint16_t udpPort,
 	//strcpy ( g_conf.m_email1MX   , "gbmxrec-vtext.com");
 	strcpy ( g_conf.m_email1MX   , "10.5.54.47");
 
-
-
-
-
-	//if ( ! g_hostdb2.validateIps ( &g_conf ) ) {
-	//	log("db: Failed to validate ips." ); return 1;}
-
-	// init the loop, needs g_conf
-	//if ( ! g_loop.init() ) {
-	//	log("db: Loop init failed." ); return false; }
-	
-	// . autoban must be on
-	// . MDW: why? leave it alone. not good for buzz.
-	//g_conf.m_doAutoBan = true;
-	if (!g_autoBan.init()){
-		log("autoban: init failed.");
-		return false;
-	}
-	
-	//for pingserver
-	//if ( ! g_hostdb.validateIps ( &g_conf ) ) {
-	//	log("db: Failed to validate ips." ); return 1;}
-	
-	//if ( ! g_udpServer.init( udpPort ,dp,2/*niceness*/,
-	//			  10000000 ,   // readBufSIze
-	//			  10000000 ,   // writeBufSize
-	//			  60       ,   // pollTime in ms
-	//			  10000     )){ // max udp slots
-	//	log("db: UdpServer init failed." ); return 0; 
-	//}
-
 	// start pinging right away, udpServer has already been init'ed
 	if ( ! g_pingServer.init() ) {
 		log("db: PingServer init failed." ); return false; 
@@ -248,17 +217,6 @@ bool Proxy::initProxy ( int32_t proxyId, uint16_t udpPort,
 	//Also have to init pages because we need to know which requests to
 	//forward. html/gif's, etc can be taken care here itself.
 	g_pages.init ( );
-	// load up the dmoz categories here
-	char structureFile[256];
-	sprintf(structureFile, "%scatdb/gbdmoz.structure.dat", g_hostdb.m_dir);
-	g_categories = &g_categories1;
-	if (g_categories->loadCategories(structureFile) != 0) {
-		log("cat: Loading Categories From %s Failed.",
-		    structureFile);
-		//return 1;
-	}
-	log(LOG_INFO, "cat: Loaded Categories From %s.",
-	structureFile);
 
 	Msg13 msg13;	if ( ! msg13.registerHandler () ) return false;	
 
@@ -468,7 +426,6 @@ bool Proxy::handleRequest (TcpSocket *s){
 	//if ( n == PAGE_ROOT      ) handleIt = false;
 	if ( n == PAGE_GET       ) handleIt = false;
 	if ( n == PAGE_RESULTS   ) handleIt = false;
-	if ( n == PAGE_DIRECTORY ) handleIt = false;
 
 	// proxy now handles the shell addurl page, the actual request
 	// made by the ajax in the shell to add the url has a &id= in it
@@ -692,64 +649,6 @@ bool Proxy::handleRequest (TcpSocket *s){
 		UI = ui;
 	}
 
-        ////////
-	//
-	// the almighty autoban
-	// 
-	////////
-
-	bool doAutoBan = true;//g_conf.m_doAutoBan;
-	// if doing gigablast, only do autoban on PAGE_RESULTS
-	if ( n != PAGE_RESULTS ) doAutoBan = false;
-	// if they provided a valid code do not do autoban. if the code
-	// was invalid we will have returned an error msg above
-	if ( code ) doAutoBan = false;
-	// assume not banned
-	bool banned = false;
-	// only check it for search results that have no valid "code"
-	char testBufSpace[2048];
-	SafeBuf testBuf(testBufSpace, 2048);
-	if ( doAutoBan ) {
-		int32_t uipLen;
-		char *uip = hr.getString("uip", &uipLen, NULL);
-                int32_t  ip  = s->m_ip;
-		bool good = g_autoBan.hasPerm(ip, 
-					      NULL,0,//code, codeLen, 
-					      uip, uipLen, 
-					      s, &hr, &testBuf,
-					      false ); // justCheck
-		if ( ! good ) banned = true;
-	}
-	// print the turing test if autoban gave us one
-	if ( banned ) {
-		g_msg = " (error: autoban rejected.)";
-		// this is the turing test i guess in testBuf
-		if( testBuf.length() > 0 ) {
-			printRequest(s, &hr);
-			//g_stats.m_numSuccess++;
-			return g_httpServer.
-				sendDynamicPage(s, 
-						testBuf.getBufStart(),
-						testBuf.length(), 
-						0);
-		}
-		printRequest(s, &hr);
-		//g_stats.m_numSuccess++;
-		int32_t rawFormat = hr.getLong("xml", 0); // was "raw"
-		// support old raw=9 crap as well
-		rawFormat = hr.getLong("raw",rawFormat);
-		if ( rawFormat > 0 )
-			return g_httpServer.sendQueryErrorReply
-				(s,402, mstrerror(EBUYFEED),
-				 rawFormat, g_errno, 
-				 "You have exceeded the allowed "
-				 "amount of free searches. You can buy "
-				 "credits by creating an account at "
-				 "https://www.gigablast.com/account");
-		// if html format just return msg ...
-		return g_httpServer.sendErrorReply(s,500,mstrerror(EBUYFEED));
-	}
-
 	// hash the code
 	int32_t ch3 = 0; if ( code ) ch3 = hash32n ( code );
 	
@@ -784,7 +683,6 @@ bool Proxy::handleRequest (TcpSocket *s){
 		int32_t bs;
 		bool st;
 		st=g_httpServer.sendErrorReply(s,500,mstrerror(g_errno),&bs);
-		g_autoBan.decRequestCount ( ch3 , bs );
 		return s;
 	}
 
@@ -1086,39 +984,8 @@ bool Proxy::forwardRequest ( StateControl *stC ) {
 		dstId   = -1;
 	}
 
-	// . default is to use the old engine. 
-	// . only precise=1 uses new engine.
-	HttpRequest *hr = &stC->m_hr;
-	bool sendToNewEngine = false;
-	int32_t precise = hr->getLong("precise",-1);
-	if ( precise == 1 ) sendToNewEngine = true;
-	// or if precise not given, an no code, send to new engine
-	if ( precise == -1 && ! stC->m_ch ) sendToNewEngine = true;
-	// if precise not given, and a code, sent to fast engine
-	if ( precise == -1 &&   stC->m_ch ) sendToNewEngine = false;
-	// explicit precise?
-	if ( precise == 0 ) sendToNewEngine = false;
-	// if no code (not a search feed) then do new engine
-	//if ( ! stC->m_ch ) sendToNewEngine = true;
-#ifndef _USE_GK144_
-	sendToNewEngine = false;
-#endif
-
-	//
-	// . HACK: always send to gk144 unless code= is specified
-	// . test on www2.gigablast.com proxy first...
-	//
-	if ( //! stC->m_ch && 
-	     sendToNewEngine &&
-	     stC->m_pageNum != PAGE_DIRECTORY ) {
-		dstIp = atoip("10.5.54.154",11);
-		dstPort = 9000; // udp (not dns)
-		dstId = -1; // not a host in our hosts.conf
-	}
-
 	// rewrite &xml=1 as &raw=8 so old search engine sends back xml
-	if ( ! sendToNewEngine && 
-	     req[0]=='G' && 
+	if ( req[0]=='G' &&
 	     req[1]=='E' && 
 	     req[2]=='T' &&
 	     req[3] == ' ' ) {
@@ -1201,8 +1068,7 @@ bool Proxy::forwardRequest ( StateControl *stC ) {
 	//if not, we've got an error
 	g_httpServer.sendErrorReply(s,500,mstrerror(g_errno)); 
 	freeStateControl(stC);
-	// we send out what we read, s->m_readOffset bytes
-	g_autoBan.decRequestCount ( stC->m_ch , s->m_readOffset );
+
 	return true;
 }
 	    
@@ -1210,7 +1076,6 @@ void gotHttpReplyWrapper ( void *state, UdpSlot *slot ) { // TcpSocket *s ){
 	g_proxy.gotReplyPage(state,slot);
 }
 
-//void Proxy::gotReplyPage ( void *state, TcpSocket *s ){
 void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 
 	StateControl *stC = (StateControl *) state;
@@ -1223,9 +1088,6 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 	// . AND this is what we forwaded to a host in the flock
 	// . we can free this because it reference the tcp buffer
 	slot->m_sendBufAlloc = NULL;
-
-	// decrement the oustanding request count
-	g_autoBan.decRequestCount ( stC->m_ch , slot->m_readBufSize );
 
 	// . try another host if this one times out
 	// . if it is dead before we send to it then it will not ACK our

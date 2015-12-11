@@ -83,14 +83,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 		    "collection \"%s\".",coll);
 		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));
 	}
-	// does this collection ban this IP?
-	if ( ! cr->hasSearchPermission ( s ) ) {
-		g_errno = ENOPERM;
-		//log("PageGet::sendDynamicReply0: permission denied for %s",
-		//    iptoa(s->m_ip) );
-		g_msg = " (error: permission denied)";
-		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));
-	}
+
 	// . get fields from cgi field of the requested url
 	// . get the search query
 	int32_t  qlen = 0;

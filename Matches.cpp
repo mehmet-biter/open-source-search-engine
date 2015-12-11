@@ -361,35 +361,6 @@ bool Matches::set ( XmlDoc   *xd         ,
 			return false;
 	}
 
-	// add in dmoz stuff
-	char *dt     = xd->ptr_dmozTitles;
-	char *ds     = xd->ptr_dmozSumms;
-	int32_t  nd     = xd->size_catIds / 4;
-	for ( int32_t i = 0 ; i < nd ; i++ ) {
-		// sanity check
-		if ( ! dt[0] ) break;
-		// add each dmoz title
-		if ( ! addMatches ( dt           ,
-				    gbstrlen(dt)   ,
-				    MF_DMOZTITLE ,
-				    xd->m_docId  ,
-				    niceness     ))
-			return false;
-		// skip
-		dt += gbstrlen(dt) + 1;
-		// sanity check
-		if ( ! ds[0] ) break;
-		// and the summary
-		if ( ! addMatches ( ds           ,
-				    gbstrlen(ds)   ,
-				    MF_DMOZSUMM  ,
-				    xd->m_docId  ,
-				    niceness     ))
-			return false;
-		// skip
-		ds += gbstrlen(ds) + 1;
-	}
-
 	// now add in the meta tags
 	int32_t     n     = bodyXml->getNumNodes();
 	XmlNode *nodes = bodyXml->getNodes();

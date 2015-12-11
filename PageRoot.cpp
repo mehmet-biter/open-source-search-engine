@@ -13,23 +13,6 @@
 #include "LanguageIdentifier.h"
 #include "Proxy.h"
 
-//static char *printTopDirectory ( char *p, char *pend );
-static bool printTopDirectory ( SafeBuf& sb , char format );
-
-// this prints the last five queries
-//static int32_t printLastQueries ( char *p , char *pend ) ;
-
-//static char *expandRootHtml ( char *p    , int32_t plen    ,
-/*
-static bool expandRootHtml  ( SafeBuf& sb,
-			      uint8_t *html , int32_t htmlLen ,
-			      char *q    , int32_t qlen    ,
-			      HttpRequest *r ,
-			      TcpSocket   *s ,
-			      int64_t docsInColl ,
-			      CollectionRec *cr ) ;
-*/
-
 bool sendPageRoot ( TcpSocket *s, HttpRequest *r ){
 	return sendPageRoot ( s, r, NULL );
 }
@@ -406,19 +389,11 @@ bool expandHtml (  SafeBuf& sb,
 			i += 1;
 			continue;
 		}
-		// %t, print Top Directory section
-		if ( head[i+1] == 't' ) {
-			i += 1;
-			//p = printTopDirectory ( p, pend );
-			printTopDirectory ( sb , FORMAT_HTML );
-			continue;
-		}
 
 		// MDW
 
 		if ( head[i+1] == 'F' ) {
 			i += 1;
-			//p = printTopDirectory ( p, pend );
 			if ( ! method ) method = "GET";
 			sb.safePrintf("<form method=%s action=\"/search\" "
 				      "name=\"f\">\n",method);
@@ -427,28 +402,22 @@ bool expandHtml (  SafeBuf& sb,
 
 		if ( head[i+1] == 'L' ) {
 			i += 1;
-			//p = printTopDirectory ( p, pend );
 			printLogo ( sb , si );
 			continue;
 		}
 
 		if ( head[i+1] == 'f' ) {
 			i += 1;
-			//p = printTopDirectory ( p, pend );
 			printFamilyFilter ( sb , si->m_familyFilter );
 			continue;
 		}
 
 		if ( head[i+1] == 'R' ) {
 			i += 1;
-			//p = printTopDirectory ( p, pend );
 			printRadioButtons ( sb , si );
 			continue;
 		}
 
-		// MDW
-
-		// *p++ = head[i];
 		sb.safeMemcpy((char*)&head[i], 1);
 		continue;
 	}
@@ -695,18 +664,15 @@ bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
 
 	sb->safePrintf("<html>\n");
 	sb->safePrintf("<head>\n");
-	//sb->safePrintf("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf8\">");
+
 	sb->safePrintf("<meta name=\"description\" content=\"A powerful, new search engine that does real-time indexing!\">\n");
 	sb->safePrintf("<meta name=\"keywords\" content=\"search, search engine, search engines, search the web, fresh index, green search engine, green search, clean search engine, clean search\">\n");
-	//char *title = "An Alternative Open Source Search Engine";
+
 	char *title = "An Alternative Open Source Search Engine";
-	if ( strcasecmp(tabName,"search") ) title = tabName;
-	// if ( pageNum == 1 ) title = "Directory";
-	// if ( pageNum == 2 ) title = "Advanced";
-	// if ( pageNum == 3 ) title = "Add Url";
-	// if ( pageNum == 4 ) title = "About";
-	// if ( pageNum == 5 ) title = "Help";
-	// if ( pageNum == 6 ) title = "API";
+	if ( strcasecmp(tabName,"search") ) {
+		title = tabName;
+	}
+
 	sb->safePrintf("<title>Gigablast - %s</title>\n",title);
 	sb->safePrintf("<style><!--\n");
 	sb->safePrintf("body {\n");
@@ -717,9 +683,6 @@ bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
 	sb->safePrintf("letter-spacing: 0.04em;\n");
 	sb->safePrintf("}\n");
 	sb->safePrintf("a {text-decoration:none;}\n");
-	//sb->safePrintf("a:link {color:#00c}\n");
-	//sb->safePrintf("a:visited {color:#551a8b}\n");
-	//sb->safePrintf("a:active {color:#f00}\n");
 	sb->safePrintf(".bold {font-weight: bold;}\n");
 	sb->safePrintf(".bluetable {background:#d1e1ff;margin-bottom:15px;font-size:12px;}\n");
 	sb->safePrintf(".url {color:#008000;}\n");
@@ -742,8 +705,6 @@ bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
 	sb->safePrintf("function x(){document.f.q.focus();}\n");
 	sb->safePrintf("// --></script>\n");
 	sb->safePrintf("<body onload=\"x()\">\n");
-	//sb->safePrintf("<body>\n");
-	//g_proxy.insertLoginBarDirective ( &sb );
 
 	//
 	// DIVIDE INTO TWO PANES, LEFT COLUMN and MAIN COLUMN
@@ -754,11 +715,9 @@ bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
 		      "cellpadding=0>"
 		      "\n<TR>\n");
 
-
 	// . also prints <TD>...</TD>
 	// . false = isSearchResultsPage?
 	printLeftColumnRocketAndTabs ( sb , false , cr , tabName );
-
 
 	//
 	// now the MAIN column
@@ -767,15 +726,10 @@ bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
 
 	sb->safePrintf("<br><br>");
 
-	if ( ! printGigablast )
-		return true;
-
-	sb->safePrintf("<a href=/><img border=0 width=470 "
-		      "height=44 src=/gigablast.jpg></a>\n");
-
-	// sb->safePrintf("<br>"
-	// 	      "<img border=0 width=470 "
-	// 	      "height=15 src=/bar.jpg>\n");
+	if ( printGigablast ) {
+		sb->safePrintf("<a href=/><img border=0 width=470 "
+			      "height=44 src=/gigablast.jpg></a>\n");
+	}
 
 	return true;
 }
@@ -817,36 +771,11 @@ bool printWebHomePage ( SafeBuf &sb , HttpRequest *r , TcpSocket *sock ) {
 	printFrontPageShell ( &sb , searchType , cr , true );
 
 
-	//sb.safePrintf("<br><br>\n");
-	// try to avoid using https for images. it is like 10ms slower.
-
-	// if ( g_conf.m_isMattWells )
-	// 	sb.safePrintf("<center><a href=/><img border=0 width=500 "
-	// 		      "height=122 src=http://www.gigablast.com/logo-"
-	// 		      "med.jpg></a>\n");
-	// else
-
-
 	sb.safePrintf("<br><br>\n");
 	sb.safePrintf("<br><br><br>\n");
-	/*
-	sb.safePrintf("<b>web</b> &nbsp;&nbsp;&nbsp;&nbsp; ");
-	if ( g_conf.m_isMattWells )
-		sb.safePrintf("<a href=http://www.gigablast.com/seo>seo</a> "
-			      "&nbsp;&nbsp;&nbsp;&nbsp; "
-			      );
-	sb.safePrintf( "<a href=\"/Top\">directory</a> "
-		      "&nbsp;&nbsp;&nbsp;&nbsp; \n");
-	sb.safePrintf("<a href=/adv.html>advanced search</a>");
-	sb.safePrintf(" &nbsp;&nbsp;&nbsp;&nbsp; ");
-	sb.safePrintf("<a href=/addurl title=\"Instantly add your url to "
-		      "Gigablast's index\">add url</a>");
-	sb.safePrintf("\n");
-	sb.safePrintf("<br><br>\n");
-	*/
+
 	// submit to https now
-	sb.safePrintf("<form method=%s "
-		      "action=/search name=f>\n", method);
+	sb.safePrintf("<form method=%s action=/search name=f>\n", method);
 
 	if ( cr )
 		sb.safePrintf("<input type=hidden name=c value=\"%s\">",
@@ -1091,6 +1020,7 @@ bool printAddUrlHomePage ( SafeBuf &sb , char *url , HttpRequest *r ) {
 		char *root = "";
 		if ( g_conf.m_isMattWells )
 			root = "http://www.gigablast.com";
+
 		sb.safePrintf("<br>"
 			      "<br>"
 			      "<div id=msgbox>"
@@ -1136,103 +1066,6 @@ bool printAddUrlHomePage ( SafeBuf &sb , char *url , HttpRequest *r ) {
 }
 
 
-bool printDirHomePage ( SafeBuf &sb , HttpRequest *r ) {
-
-	char format = r->getReplyFormat();
-	if ( format != FORMAT_HTML )
-		return printTopDirectory ( sb , format );
-
-	CollectionRec *cr = g_collectiondb.getRec ( r );
-
-	printFrontPageShell ( &sb , "directory" , cr , true );
-
-	sb.safePrintf("<br><br>\n");
-	sb.safePrintf("<br><br><br>\n");
-
-	// submit to https now
-	sb.safePrintf("<form method=GET "
-		      "action=/search name=f>\n");
-
-	if ( cr )
-		sb.safePrintf("<input type=hidden name=c value=\"%s\">",
-			      cr->m_coll);
-
-
-	// put search box in a box
-	sb.safePrintf("<div style="
-		      "background-color:#%s;" // fcc714;"
-		      "border-style:solid;"
-		      "border-width:3px;"
-		      "border-color:blue;"
-		      //"background-color:blue;"
-		      "padding:20px;"
-		      "border-radius:20px;"
-		      ">"
-		      ,GOLD
-		      );
-
-
-	sb.safePrintf("<input name=q type=text "
-		      "style=\""
-		      //"width:%"INT32"px;"
-		      "height:26px;"
-		      "padding:0px;"
-		      "font-weight:bold;"
-		      "padding-left:5px;"
-		      //"border-radius:10px;"
-		      "margin:0px;"
-		      "border:1px inset lightgray;"
-		      "background-color:#ffffff;"
-		      "font-size:18px;"
-		      "\" "
-
-		      "size=40 value=\"\">&nbsp; &nbsp;"
-
-		      //"<input type=\"submit\" value=\"Search\">\n");
-
-		      "<div onclick=document.f.submit(); "
-
-		      " onmouseover=\""
-		      "this.style.backgroundColor='lightgreen';"
-		      "this.style.color='black';\""
-		      " onmouseout=\""
-		      "this.style.backgroundColor='green';"
-		      "this.style.color='white';\" "
-
-		      "style=border-radius:28px;"
-		      "cursor:pointer;"
-		      "cursor:hand;"
-		      "border-color:white;"
-		      "border-style:solid;"
-		      "border-width:3px;"
-		      "padding:12px;"
-		      "width:20px;"
-		      "height:20px;"
-		      "display:inline-block;"
-		      "background-color:green;color:white;>"
-		      "<b style=margin-left:-5px;font-size:18px;>GO</b>"
-		      "</div>"
-		      "\n"
-		      );
-
-	sb.safePrintf("</div>\n");
-
-	sb.safePrintf("\n");
-	sb.safePrintf("</form>\n");
-	sb.safePrintf("<br>\n");
-	sb.safePrintf("\n");
-
-
-	printTopDirectory ( sb , FORMAT_HTML );
-
-	sb.safePrintf("<br><br>\n");
-
-	printNav ( sb , r);
-
-	return true;
-}
-
-
 // . returns false if blocked, true otherwise
 // . sets errno on error
 // . make a web page displaying the config of this host
@@ -1256,18 +1089,6 @@ bool sendPageRoot ( TcpSocket *s , HttpRequest *r, char *cookie ) {
 		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno)); 
 	}
 
-	// print the page out
-	/*
-	expandRootHtml     ( sb, 
-			     hp , hpLen ,
-			     q , qlen , r , s , docsInColl ,
-			     cr );
-	*/
-
-
-	//if ( ! strcmp(coll,"dmoz" ) )
-	//	printDirHomePage(sb,r);
-	//else
 	printWebHomePage(sb,r,s);
 
 
@@ -1302,231 +1123,6 @@ bool sendPageRoot ( TcpSocket *s , HttpRequest *r, char *cookie ) {
 					      r);
 }
 
-// . store into "p"
-// . returns bytes stored into "p"
-// . used for entertainment purposes
-/*
-int32_t printLastQueries ( char *p , char *pend ) {
-	// if not 512 bytes left, bail
-	if ( pend - p < 512 ) return 0;
-	// return w/ no table if no queries have been added to g_qbuf yet
-	if ( ! g_nextq == -1 ) return 0;
-	// remember start for returning # of bytes stored
-	char *start = p;
-	// begin table (no border)
-	sprintf (p,"<br><table border=0><tr><td><center>Last %"INT32" queries:"
-		 "</td></tr>", (int32_t)QBUF_NUMQUERIES );
-	p += gbstrlen ( p );		
-	// point to last query added
-	int32_t n = g_nextq - 1;
-	// . wrap it if we need to
-	// . QBUF_NUMQUERIES is defined to be 5 in PageResults.h
-	if ( n < 0 ) n = QBUF_NUMQUERIES - 1;
-	// . print up to five queries
-	// . queries are stored by advancing g_nextq, so "i" should go backward
-	int32_t count = 0;
-	for ( int32_t i = n ; count < QBUF_NUMQUERIES ; count++ , i-- ) {
-		// wrap i if we need to
-		if ( i == -1 ) i = QBUF_NUMQUERIES - 1;
-		// if this query is empty, skip it (might be uninitialized)
-		if ( g_qbuf[i][0] == '\0' ) continue;
-		// point to the query (these are NULL terminated)
-		char *q    = g_qbuf[i];
-		int32_t  qlen = gbstrlen(q);
-		// bail if too big 
-		if ( p + qlen + 32 + 1024 >= pend ) return p - start;
-		// otherwise, print this query to the page
-		sprintf ( p , "<tr><td><a href=/cgi/0.cgi?q=" );
-		p += gbstrlen ( p );
-		// store encoded query as cgi parm
-		p += urlEncode ( p , q , qlen );
-		// end a href tag
-		*p++ = '>';
-		// . then print the actual query to the page
-		// . use htmlEncode so nobody can abuse it
-		p += saftenTags ( p , pend - p , q , qlen );
-		// wrap it up
-		sprintf ( p , "</a></td></tr>" );
-		p += gbstrlen ( p );		
-	}
-	// end the table
-	sprintf ( p , "</table>");
-	p += gbstrlen ( p );
-	// return bytes written
-	return p - start;
-}
-*/
-
-
-//char *printTopDirectory ( char *p, char *pend ) {
-bool printTopDirectory ( SafeBuf& sb , char format ) {
-
-	int32_t nr = g_catdb.getRdb()->getNumTotalRecs();
-
-	// if no recs in catdb, print instructions
-	if ( nr == 0 && format == FORMAT_HTML)
-		return sb.safePrintf("<center>"
-				     "<b>DMOZ functionality is not set up.</b>"
-				     "<br>"
-				     "<br>"
-				     "<b>"
-				     "Please follow the set up "
-				     "<a href=/faq.html#dmoz>"
-				     "instructions"
-				     "</a>."
-				     "</b>"
-				     "</center>");
-
-	// send back an xml/json error reply
-	if ( nr == 0 && format != FORMAT_HTML ) {
-		g_errno = EDMOZNOTREADY;
-		return false;
-	}
-
-	//char topList[4096];
-	//sprintf(topList, 
-	return sb.safePrintf (
-	"<center>"
-	"<table cellspacing=\"4\" cellpadding=\"4\"><tr><td valign=top>\n"
-	"<b><a href=\"/Top/Arts/\">Arts</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Arts/Movies/\">Movies</a>, "
-	"<a href=\"/Top/Arts/Television/\">Television</a>, "
-	"<a href=\"/Top/Arts/Music/\">Music</a>..."
-	"</small>\n"
-	"</td><td valign=top>"
-	"<b><a href=\"/Top/Business/\">Business</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Business/Employment/\">Jobs</a>, "
-	"<a href=\"/Top/Business/Real_Estate/\">Real Estate</a>, "
-	"<a href=\"/Top/Business/Investing/\">Investing</a>..."
-	"</small>\n"
-	"</td><td valign=top>"
-	"<b><a href=\"/Top/Computers/\">Computers</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Computers/Internet/\">Internet</a>, "
-	"<a href=\"/Top/Computers/Software/\">Software</a>, "
-	"<a href=\"/Top/Computers/Hardware/\">Hardware</a>..."
-	"</small>\n"
-	"</td></tr><tr><td valign=top>"
-	"<b><a href=\"/Top/Games/\">Games</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Games/Video_Games/\">Video Games</a>, "
-	"<a href=\"/Top/Games/Roleplaying/\">RPGs</a>, "
-	"<a href=\"/Top/Games/Gambling/\">Gambling</a>..."
-	"</small>\n"
-	"</td><td valign=top>"
-	"<b><a href=\"/Top/Health/\">Health</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Health/Fitness/\">Fitness</a>, "
-	"<a href=\"/Top/Health/Medicine/\">Medicine</a>, "
-	"<a href=\"/Top/Health/Alternative/\">Alternative</a>..."
-	"</small>\n"
-	"</td><td valign=top>"
-	"<b><a href=\"/Top/Home/\">Home</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Home/Family/\">Family</a>, "
-	"<a href=\"/Top/Home/Consumer_Information/\">Consumers</a>, "
-	"<a href=\"/Top/Home/Cooking/\">Cooking</a>..."
-	"</small>\n"
-	"</td></tr><tr><td valign=top>"
-	//"<b><a href=\"/Top/Kids_and_Teens/\">"
-	//"<font color=\"#ff0000\">K</font>"
-	//"<font color=\"339900\">i</font>"
-	//"<font color=\"#ff6600\">d</font>"
-	//"<font color=\"#0066ff\">s</font>"
-	//" and Teens</a></b><br>"
-	"<b><a href=\"/Top/Kids_and_Teens/\">Kids and Teens</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Kids_and_Teens/Arts/\">Arts</a>, "
-	"<a href=\"/Top/Kids_and_Teens/School_Time/\">School Time</a>, "
-	"<a href=\"/Top/Kids_and_Teens/Teen_Life/\">Teen Life</a>..."
-	"</small>\n"
-	"</td><td valign=top>"
-	"<b><a href=\"/Top/News/\">News</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/News/Media/\">Media</a>, "
-	"<a href=\"/Top/News/Newspapers/\">Newspapers</a>, "
-	"<a href=\"/Top/News/Weather/\">Weather</a>..."
-	"</small>\n"
-	"</td><td valign=top>"
-	"<b><a href=\"/Top/Recreation/\">Recreation</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Recreation/Travel/\">Travel</a>, "
-	"<a href=\"/Top/Recreation/Food/\">Food</a>, "
-	"<a href=\"/Top/Recreation/Outdoors/\">Outdoors</a>, "
-	"<a href=\"/Top/Recreation/Humor/\">Humor</a>..."
-	"</small>\n"
-	"</td></tr><tr><td valign=top>"
-	"<b><a href=\"/Top/Reference/\">Reference</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Reference/Maps/\">Maps</a>, "
-	"<a href=\"/Top/Reference/Education/\">Education</a>, "
-	"<a href=\"/Top/Reference/Libraries/\">Libraries</a>..."
-	"</small>\n"
-	"</td><td valign=top>"
-	"<b><a href=\"/Top/Regional/\">Regional</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Regional/North_America/United_States/\">US</a>, "
-	"<a href=\"/Top/Regional/North_America/Canada/\">Canada</a>, "
-	"<a href=\"/Top/Regional/Europe/United_Kingdom/\">UK</a>, "
-	"<a href=\"/Top/Regional/Europe/\">Europe</a>..."
-	"</small>\n"
-	"</td><td valign=top>"
-	"<b><a href=\"/Top/Science/\">Science</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Science/Biology/\">Biology</a>, "
-	"<a href=\"/Top/Science/Social_Sciences/Psychology/\">Psychology</a>, "
-	"<a href=\"/Top/Science/Physics/\">Physics</a>..."
-	"</small>\n"
-	"</td></tr><tr><td valign=top>"
-	"<b><a href=\"/Top/Shopping/\">Shopping</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Shopping/Vehicles/Autos/\">Autos</a>, "
-	"<a href=\"/Top/Shopping/Clothing/\">Clothing</a>, "
-	"<a href=\"/Top/Shopping/Gifts/\">Gifts</a>..."
-	"</small>\n"
-	"</td><td valign=top>"
-	"<b><a href=\"/Top/Society/\">Society</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Society/People/\">People</a>, "
-	"<a href=\"/Top/Society/Religion_and_Spirituality/\">Religion</a>, "
-	"<a href=\"/Top/Society/Issues/\">Issues</a>..."
-	"</small>\n"
-	"</td><td valign=top>"
-	"<b><a href=\"/Top/Sports/\">Sports</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/Sports/Baseball/\">Baseball</a>, "
-	"<a href=\"/Top/Sports/Soccer/\">Soccer</a>, "
-	"<a href=\"/Top/Sports/Basketball/\">Basketball</a>..."
-	"</small>\n"
-	"</td></tr>"
-	"<tr><td colspan=3 valign=top>"
-	"<b><a href=\"/Top/World/\">World</a></b><br>"
-	"<small>"
-	"<a href=\"/Top/World/Deutsch/\">Deutsch</a>, "
-	"<a href=\"/Top/World/Espa%%c3%%b1ol/\">Espa%c%col</a>, "
-	"<a href=\"/Top/World/Fran%%c3%%a7ais/\">Fran%c%cais</a>, "
-	"<a href=\"/Top/World/Italiano/\">Italiano</a>, "
-	"<a href=\"/Top/World/Japanese/\">Japanese</a>, "
-	"<a href=\"/Top/World/Nederlands/\">Nederlands</a>, "
-	"<a href=\"/Top/World/Polska/\">Polska</a>, "
-	"<a href=\"/Top/World/Dansk/\">Dansk</a>, "
-	"<a href=\"/Top/World/Svenska/\">Svenska</a>..."
-	"</small>\n"
-	"</td></tr></table></center>\n",
-	195, 177, 195, 167);
-	// make sure there's room
-	//int32_t topListLen = gbstrlen(topList);
-	//if (pend - p <= topListLen+1)
-	//	return p;
-	// copy it in
-	//gbmemcpy(p, topList, topListLen);
-	//p += topListLen;
-	//*p = '\0';
-	//return p;
-}
-
 /////////////////
 //
 // ADD URL PAGE
@@ -1535,26 +1131,12 @@ bool printTopDirectory ( SafeBuf& sb , char format ) {
 
 #include "PageInject.h"
 #include "TuringTest.h"
-#include "AutoBan.h"
-//#include "CollectionRec.h"
 #include "Spider.h"
 
-//static bool sendReply        ( void *state  , bool addUrlEnabled );
 static bool canSubmit        (uint32_t h, int32_t now, int32_t maxUrlsPerIpDom);
-
-//static void addedStuff ( void *state );
 
 void resetPageAddUrl ( ) ;
 
-/*
-class State2 {
-public:
-	Url        m_url;
-	//char      *m_buf;
-	//int32_t       m_bufLen;
-	//int32_t       m_bufMaxLen;
-};
-*/
 
 class State1i {
 public:
@@ -1629,14 +1211,6 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 		g_msg = " (error: no collection)";
 		return g_httpServer.sendErrorReply(sock,500,"no coll rec");
 	}
-	// . make sure the ip is not banned
-	// . we may also have an exclusive list of IPs for private collections
-	if ( ! cr->hasSearchPermission ( sock ) ) {
-		g_errno = ENOPERM;
-		g_msg = " (error: permission denied)";
-	       return g_httpServer.sendErrorReply(sock,500,mstrerror(g_errno));
-	}
-
 
 	//
 	// if no url, print the main homepage page
@@ -1776,25 +1350,6 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	// assume they answered turing test correctly
 	st1->m_goodAnswer = true;
 
-	// get ip of submitter
-	//uint32_t h = ipdom ( s->m_ip );
-	// . use top 2 bytes now, some isps have large blocks
-	// . if this causes problems, then they can do pay for inclusion
-	uint32_t h = iptop ( sock->m_ip );
-	int32_t codeLen;
-	char* code = hr->getString("code", &codeLen);
-	if(g_autoBan.hasCode(code, codeLen, sock->m_ip)) {
-		int32_t uipLen = 0;
-		char* uip = hr->getString("uip",&uipLen);
-		int32_t hip = 0;
-		//use the uip when we have a raw query to test if 
-		//we can submit
-		if(uip) {
-			hip = atoip(uip, uipLen);
-			h = iptop( hip );
-		}
-	}
-
 	st1->m_strip = hr->getLong("strip",0);
 	// . Remember, for cgi, if the box is not checked, then it is not 
 	//   reported in the request, so set default return value to 0
@@ -1808,6 +1363,8 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	// . mdw: made force on the default
 	st1->m_forceRespider = hr->getLong("force",1); // 0);
 
+
+	uint32_t h = iptop ( sock->m_ip );
 	int32_t now = getTimeGlobal();
 	// . allow 1 submit every 1 hour
 	// . restrict by submitter domain ip

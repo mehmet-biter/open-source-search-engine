@@ -84,9 +84,8 @@ bool Conf::isCollAdmin2 ( TcpSocket *sock ,
 
 	//int32_t page = g_pages.getDynamicPageNumber(hr);
 
-	// never for main or dmoz! must be root!
+	// never for main! must be root!
 	if ( strcmp(cr->m_coll,"main")==0 ) return false;
-	if ( strcmp(cr->m_coll,"dmoz")==0 ) return false;
 
 	if ( ! g_conf.m_useCollectionPasswords) return false;
 
@@ -304,30 +303,6 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 	//g_conf.m_testSearchEnabled = false;
 
 
-	/*
-	//
-	// are we running in Matt Wells's data center?
-	// if so, we want to be able to use the seo tools that are not part
-	// of the open source. we also want to be able to control the
-	// data center fans for optimal cooling.
-	//
-	// get hostname from /etc/host
-	SafeBuf sb; 
-	sb.fillFromFile("/etc/hostname");
-	g_errno = 0;
-	bool priv = false;
-	char *hh = sb.getBufStart();
-	// cut off tail
-	sb.removeLastChar('\n');
-	sb.removeLastChar('\n');
-	if ( hh && strcmp(hh,"galileo") == 0) priv = true;
-	if ( hh && strcmp(hh,"sputnik") == 0) priv = true;
-	if ( hh && strcmp(hh,"titan") == 0) priv = true;
-	if ( hh && hh[0]=='g' && hh[1]=='k' && is_digit(hh[2]) ) priv = true;
-	//if(hh[0]=='s' && hh[1]=='p' && is_digit(hh[2])) ) priv = true;
-	if ( priv ) g_conf.m_isMattWells = true;
-	else        g_conf.m_isMattWells = false;
-	*/
 	g_conf.m_isMattWells = false;
 
 #ifdef MATTWELLS
@@ -373,11 +348,6 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 
 void Conf::setRootIps ( ) {
 
-	//m_numDns = 16;
-	//for ( int32_t i = 0; i < m_numDns; i++ )
-	//	m_dnsPorts[i] = 53;
-	//m_numDns = 0;
-
 	// set m_numDns based on Conf::m_dnsIps[] array
 	int32_t i; for ( i = 0; i < 16 ; i++ ) {
 		m_dnsPorts[i] = 53;
@@ -386,27 +356,14 @@ void Conf::setRootIps ( ) {
 	m_numDns = i;
 
 
-	// hardcode google for now...
-	//m_dnsIps[0] = atoip("8.8.8.8",7);
-	//m_dnsIps[1] = atoip("8.8.4.4",7);
-	//m_numDns = 2;
 	Host *h = g_hostdb.getMyHost();
-	//char *ipStr = "10.5.0.3";
-	//char *ipStr = "10.5.56.78"; // gk268 now on roadrunner
-	//char *ipStr = "10.5.56.77"; // gk267 now cnsp-routed bind9 server
-	// now sp1 for speed (quad processor)
-	//char *ipStr = "10.5.66.11";
+
 	// fail back to google public dns
 	char *ipStr = "8.8.8.8";
-	// try google first dibs. NO! they are unresponsive after a while
-	//char *ipStr = "8.8.4.4";
-	// for some reason scproxy2 local bind9 not responding to us!!! fix!
-	//if ( h->m_type & HT_SCPROXY ) ipStr = "127.0.0.1";
-	//if ( h->m_type & HT_PROXY ) ipStr = "127.0.0.1";
+
 	if ( h->m_type & HT_SCPROXY ) ipStr = "8.8.8.8"; 
 	if ( h->m_type & HT_PROXY ) ipStr = "8.8.8.8"; 
-	// if we are a proxy, notably a spider compression proxy...
-	//if ( g_proxy.isProxy() ) ipStr = "127.0.0.1";
+
 	if ( m_numDns == 0 ) {
 		m_dnsIps[0] = atoip( ipStr , gbstrlen(ipStr) );
 		m_dnsPorts[0] = 53;
@@ -416,38 +373,9 @@ void Conf::setRootIps ( ) {
 
 	// default this to off on startup for now until it works better
 	m_askRootNameservers = false;
+
 	// and return as well
 	return;
-
-	char *rootIps[] = {
-		"192.228.79.201",
-		"192.33.4.12",
-		"128.8.10.90",
-		//"192.203.230.10", ping timedout
-		"192.5.5.241",
-		//"192.112.36.4", ping timedout
-		//"128.63.2.53", ping timedout
-		//"192.36.148.17",
-		"192.58.128.30",
-		"193.0.14.129",
-		//"198.32.64.12",
-		"199.7.83.42", // new guy
-		"202.12.27.33",
-		"198.41.0.4"
-	};
-
-	int32_t n = sizeof(rootIps)/sizeof(char *);
-	if ( n > MAX_RNSIPS ) {
-		log("admin: Too many root nameserver ips. Truncating.");
-		n = MAX_RNSIPS;
-	}
-	m_numRns = n;
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		m_rnsIps  [i] = atoip(rootIps[i],gbstrlen(rootIps[i]));
-		m_rnsPorts[i] = 53;
-		log(LOG_INIT,"dns: Using root nameserver #%"INT32" %s.",
-		    i,iptoa(m_rnsIps[i]));
-	}
 }
 
 // . parameters can be changed on the fly so we must save Conf

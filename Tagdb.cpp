@@ -3,7 +3,6 @@
 #include <sys/stat.h>
 #include "Titledb.h"
 #include "Tagdb.h"
-#include "Categories.h"
 #include "Unicode.h"
 #include "Threads.h"
 #include "Msg1.h"

@@ -6,6 +6,7 @@
 #include "XmlDoc.h" // score32to8()
 #include "Rebalance.h"
 #include "Process.h"
+#include "HashTable.h"
 
 Linkdb g_linkdb;
 Linkdb g_linkdb2;

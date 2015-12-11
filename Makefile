@@ -25,11 +25,10 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Threads.o Titledb.o HashTable.o \
 	TcpServer.o Summary.o \
 	Spider.o \
-	Catdb.o \
 	RdbTree.o RdbScan.o RdbMerge.o RdbMap.o RdbMem.o RdbBuckets.o \
 	RdbList.o RdbDump.o RdbCache.o Rdb.o RdbBase.o \
-	Query.o Phrases.o Multicast.o Msg9b.o\
-	Msg8b.o Msg5.o \
+	Query.o Phrases.o Multicast.o \
+	Msg5.o \
 	Msg39.o Msg3.o \
 	Msg22.o \
 	Msg20.o Msg2.o \
@@ -47,12 +46,11 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Parms.o Pages.o \
 	Unicode.o iana_charset.o \
 	SearchInput.o \
-	Categories.o Msg2a.o PageCatdb.o PageDirectory.o \
 	SafeBuf.o Datedb.o \
 	UCPropTable.o UnicodeProperties.o \
 	Pops.o Title.o Pos.o \
 	Profiler.o \
-	AutoBan.o Msg3a.o HashTableT.o HashTableX.o \
+	Msg3a.o HashTableT.o HashTableX.o \
 	PageLogView.o Msg1f.o Blaster.o MsgC.o \
 	Proxy.o PageThreads.o Linkdb.o \
 	matches2.o LanguageIdentifier.o \
@@ -62,7 +60,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Msg40.o Msg4.o SpiderProxy.o \
 	Statsdb.o PageStatsdb.o \
 	PostQueryRerank.o Msge0.o Msge1.o \
-	CountryCode.o DailyMerge.o CatRec.o Tagdb.o \
+	CountryCode.o DailyMerge.o Tagdb.o \
 	Images.o Wiki.o Wiktionary.o \
 	Timezone.o Sections.o SiteGetter.o Syncdb.o qa.o \
 	Placedb.o Address.o Test.o Synonyms.o \
@@ -105,7 +103,7 @@ endif
 
 all: gb
 
-utils: blaster2 dump hashtest makeclusterdb makespiderdb membustest monitor seektest urlinfo treetest dnstest dmozparse gbtitletest
+utils: blaster2 dump hashtest makeclusterdb makespiderdb membustest monitor seektest urlinfo treetest dnstest gbtitletest
 
 # third party libraries
 LIBFILES = libcld2_full.so
@@ -272,15 +270,13 @@ convert: $(OBJS) convert.o
 urlinfo: $(OBJS) urlinfo.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $(OBJS) urlinfo.o $(LIBS)
 
-dmozparse: $(OBJS) dmozparse.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 gbtitletest: gbtitletest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 
 
 # comment this out for faster deb package building
 clean:
-	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest monitor reindex convert maketestindex makespiderdb makeclusterdb urlinfo dnstest thunder dmozparse gbtitletest gmon.* quarantine core core.* libgb.a
+	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest monitor reindex convert maketestindex makespiderdb makeclusterdb urlinfo dnstest thunder gbtitletest gmon.* quarantine core core.* libgb.a
 	make -C test $@
 
 convert.o:
@@ -401,7 +397,6 @@ Bits.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
 Sections.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
-# why was this commented out?
 Summary.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
 Title.o:
@@ -409,9 +404,6 @@ Title.o:
 
 SafeBuf.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
-
-AutoBan.o:
-	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp
 
 Profiler.o:
 	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp

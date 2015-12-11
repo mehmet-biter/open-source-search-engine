@@ -1103,9 +1103,7 @@ bool Msg3a::mergeLists ( ) {
 			       128,NULL,0,false,
 			       m_r->m_niceness,"fhtqt")) 
 			return true;
-		// debug note
-		// log("results: alloc fhtqt of %"PTRFMT" for st0=%"PTRFMT,
-		//     (PTRTYPE)ht->m_buf,(PTRTYPE)m_q->m_st0Ptr);
+
 		// sanity
 		if ( ! ht->m_isWritable ) {
 			log("msg3a: queryterm::constructor not called?");

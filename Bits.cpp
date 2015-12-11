@@ -29,8 +29,7 @@ void Bits::reset() {
 // . set bits for each word
 // . these bits are used for phrasing and by spam detector
 // . returns false and sets errno on error
-bool Bits::set ( Words *words , char titleRecVersion , int32_t niceness ,
-		 char *buf , int32_t bufSize ) {
+bool Bits::set ( Words *words , char titleRecVersion , int32_t niceness , char *buf , int32_t bufSize ) {
 	reset();
 	// save words so printBits works
 	m_words = words;

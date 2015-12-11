@@ -1,20 +1,15 @@
 #include "gb-include.h"
 
 #include "Collectiondb.h"
-//#include "CollectionRec.h"
 #include "Xml.h"
 #include "Url.h"
 #include "Loop.h"
 #include "Spider.h"  // for calling SpiderLoop::collectionsUpdated()
 #include "Posdb.h"
-//#include "Indexdb.h"
 #include "Datedb.h"
 #include "Titledb.h"
-//#include "Revdb.h"
-//#include "Sections.h"
 #include "Placedb.h"
 #include "Tagdb.h"
-#include "Catdb.h"
 #include "Spider.h"
 #include "Clusterdb.h"
 #include "Spider.h"
@@ -787,16 +782,9 @@ bool Collectiondb::addRdbBasesForCollRec ( CollectionRec *cr ) {
 	if ( g_dumpMode ) return true;
 
 	// tell rdbs to add one, too
-	//if ( ! g_indexdb.getRdb()->addRdbBase1    ( coll ) ) goto hadError;
 	if ( ! g_posdb.getRdb()->addRdbBase1        ( coll ) ) goto hadError;
-	//if ( ! g_datedb.getRdb()->addRdbBase1     ( coll ) ) goto hadError;
-	
 	if ( ! g_titledb.getRdb()->addRdbBase1      ( coll ) ) goto hadError;
-	//if ( ! g_revdb.getRdb()->addRdbBase1      ( coll ) ) goto hadError;
-	//if ( ! g_sectiondb.getRdb()->addRdbBase1  ( coll ) ) goto hadError;
 	if ( ! g_tagdb.getRdb()->addRdbBase1        ( coll ) ) goto hadError;
-	//if ( ! g_catdb.getRdb()->addRdbBase1      ( coll ) ) goto hadError;
-	//if ( ! g_tfndb.getRdb()->addRdbBase1      ( coll ) ) goto hadError;
 	if ( ! g_clusterdb.getRdb()->addRdbBase1    ( coll ) ) goto hadError;
 	if ( ! g_linkdb.getRdb()->addRdbBase1       ( coll ) ) goto hadError;
 	if ( ! g_spiderdb.getRdb()->addRdbBase1     ( coll ) ) goto hadError;
@@ -945,25 +933,14 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 	// CAUTION: tree might be in the middle of saving
 	// we deal with this in Process.cpp now
 
-	// remove from spider cache, tell it to sync up with collectiondb
-	//g_spiderCache.reset1();
 	// . TODO: remove from g_sync
 	// . remove from all rdbs
-	//g_indexdb.getRdb()->delColl    ( coll );
 	g_posdb.getRdb()->delColl    ( coll );
-	//g_datedb.getRdb()->delColl     ( coll );
 
 	g_titledb.getRdb()->delColl    ( coll );
-	//g_revdb.getRdb()->delColl      ( coll );
-	//g_sectiondb.getRdb()->delColl  ( coll );
 	g_tagdb.getRdb()->delColl ( coll );
-	// let's preserve the tags... they have all the turk votes in them
-	//if ( deleteTurkdb ) {
-	//}
-	//g_catdb.getRdb()->delColl      ( coll );
 	g_spiderdb.getRdb()->delColl   ( coll );
 	g_doledb.getRdb()->delColl     ( coll );
-	//g_tfndb.getRdb()->delColl      ( coll );
 	g_clusterdb.getRdb()->delColl  ( coll );
 	g_linkdb.getRdb()->delColl     ( coll );
 
@@ -1750,22 +1727,7 @@ CollectionRec::CollectionRec() {
 		MAX_FILTERS*sizeof(*m_spiderPriorities) );
 	memset ( m_harvestLinks,0,MAX_FILTERS);
 	memset ( m_forceDelete,0,MAX_FILTERS);
-	//memset( m_rulesets, 0, MAX_FILTERS*sizeof(*m_rulesets) );
-	//for ( int i = 0; i < MAX_SEARCH_PASSWORDS; i++ ) {
-	//	*(m_searchPwds[i]) = '\0';
-	//}
-	//for ( int i = 0; i < MAX_ADMIN_PASSWORDS; i++ ) {
-	//	*(m_adminPwds[i]) = '\0';
-	//}
-	//memset( m_banIps, 0, MAX_BANNED_IPS*sizeof(*m_banIps) );
-	//memset( m_searchIps, 0, MAX_SEARCH_IPS*sizeof(*m_searchIps) );
-	//memset( m_spamIps, 0, MAX_SPAM_IPS*sizeof(*m_spamIps) );
-	//memset( m_adminIps, 0, MAX_ADMIN_IPS*sizeof(*m_adminIps) );
 
-	//for ( int i = 0; i < MAX_FILTERS; i++ ) {
-	//	//m_pRegExParser[i] = NULL;
-	//	*(m_regExs[i]) = '\0';
-	//}
 	m_numRegExs = 0;
 
 	//m_requests = 0;
@@ -3372,72 +3334,6 @@ bool CollectionRec::hasPermission ( char *p, int32_t plen , int32_t ip ) {
 	//if ( m_numAdminIps > 0 ) return false;
 	// otherwise, they made it
 	//return true;
-}
-
-// can this ip perform a search or add url on this collection?
-bool CollectionRec::hasSearchPermission ( TcpSocket *s , int32_t encapIp ) {
-	// get the ip
-	int32_t ip = 0; if ( s ) ip = s->m_ip;
-	// and the ip domain
-	int32_t ipd = 0; if ( s ) ipd = ipdom ( s->m_ip );
-	// and top 2 bytes for the israel isp that has this huge block
-	int32_t ipt = 0; if ( s ) ipt = iptop ( s->m_ip );
-	// is it in the ban list?
-	/*
-	for ( int32_t i = 0 ; i < m_numBanIps ; i++ ) {
-		if ( isIpTop ( m_banIps[i] ) ) {
-			if ( m_banIps[i] == ipt ) return false;
-			continue;
-		}
-		// check for ip domain match if this banned ip is an ip domain
-		if ( isIpDom ( m_banIps[i] ) ) {
-			if ( m_banIps[i] == ipd ) return false; 
-			continue;
-		}
-		// otherwise it's just a single banned ip
-		if ( m_banIps[i] == ip ) return false;
-	}
-	*/
-	// check the encapsulate ip if any
-	// 1091771468731 0 Aug 05 23:51:08 63.236.25.77 GET 
-	// /search?code=mammaXbG&uip=65.87.190.39&n=15&raw=8&q=farm+insurance
-	// +nj+state HTTP/1.0
-	/*
-	if ( encapIp ) {
-		ipd = ipdom ( encapIp );
-		ip  = encapIp;
-		for ( int32_t i = 0 ; i < m_numBanIps ; i++ ) {
-			if ( isIpDom ( m_banIps[i] ) ) {
-				if ( m_banIps[i] == ipd ) return false; 
-				continue;
-			}
-			if ( isIpTop ( m_banIps[i] ) ) {
-				if ( m_banIps[i] == ipt ) return false;
-				continue;
-			}
-			if ( m_banIps[i] == ip ) return false;
-		}
-	}
-	*/
-
-	return true;
-	/*
-	// do we have an "only" list?
-	if ( m_numSearchIps == 0 ) return true;
-	// it must be in that list if we do
-	for ( int32_t i = 0 ; i < m_numSearchIps ; i++ ) {
-		// check for ip domain match if this banned ip is an ip domain
-		if ( isIpDom ( m_searchIps[i] ) ) {
-			if ( m_searchIps[i] == ipd ) return true;
-			continue;
-		}
-		// otherwise it's just a single ip
-		if ( m_searchIps[i] == ip ) return true;
-	}
-	*/
-
-	// otherwise no permission
-	return false;
 }
 
 bool expandRegExShortcuts ( SafeBuf *sb ) ;

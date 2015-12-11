@@ -4,16 +4,12 @@
 #include "Clusterdb.h"
 #include "Hostdb.h"
 #include "Tagdb.h"
-#include "Catdb.h"
 #include "Indexdb.h"
 #include "Posdb.h"
 #include "Cachedb.h"
 #include "Monitordb.h"
-//#include "Datedb.h"
 #include "Titledb.h"
 #include "Spider.h"
-//#include "Tfndb.h"
-//#include "Sync.h"
 #include "Spider.h"
 #include "Repair.h"
 #include "Process.h"
@@ -24,7 +20,6 @@
 #include "Spider.h"
 #include "Revdb.h"
 #include "hash.h"
-//#include "CollectionRec.h"
 
 void attemptMergeAll ( int fd , void *state ) ;
 
@@ -219,20 +214,6 @@ bool Rdb::init ( char          *dir                  ,
 	// we can't merge more than MAX_RDB_FILES files at a time
 	if ( minToMerge > MAX_RDB_FILES ) minToMerge = MAX_RDB_FILES;
 	m_minToMerge = minToMerge;
-	// . if we're in read only mode, don't bother with *ANY* trees
-	// . no, let's bother with them now because we are missing 
-	//   search results running the tmp cluster ('./gb tmpstart')
-	/*
-	if ( g_conf.m_readOnlyMode ) {
-		// make sure to set m_ks for m_tree
-		m_tree.m_ks = m_ks;
-		// add the single dummy collection for catdb
-		if ( g_catdb.getRdb() == this ) return g_catdb.addColl ( NULL);
-		//goto preload;
-		return true; 
-	}
-	*/
-	//;
 		
 	m_useTree = true;
 	if (//g_conf.m_useBuckets &&
@@ -322,9 +303,6 @@ bool Rdb::init ( char          *dir                  ,
 	// rather than here because then if we disable an rdb we don't
 	// have to mess with code here as well:
 
-	// add the single dummy collection for catdb
-	//if ( g_catdb.getRdb() == this ) 
-	//	return g_catdb.addColl ( NULL );
 	// we now call g_*db.addColl(NULL) for Statsdb::init(),
 	// Cachedb::init(), ... directly
 	//if ( g_statsdb.getRdb() == this ) 
@@ -1861,100 +1839,6 @@ void attemptMergeAll2 ( ) {
 	s_lastCollnum++;
 
 	goto tryLoop;
-
-	/* 
-
-	   MDW: linked list approach is too prone to error. just try to 
-	   merge 1000 collection recs  in a call and keep a cursor.
-
-	CollectionRec *last = NULL;
-	CollectionRec *cr;
-
- rebuild:
-
-	//
-	// . if the first time then build the linked list
-	// . or if we set s_needsBuild to false, like above, re-build it
-	//
-	if ( s_needsBuild ) {
-		s_mergeHead = NULL;
-		s_mergeTail = NULL;
-	}
-	for ( int32_t i=0 ; s_needsBuild && i<g_collectiondb.m_numRecs ; i++) {
-		// we need this quickpoll for when we got 20,000+ collections
-		QUICKPOLL ( niceness );
-		cr = g_collectiondb.getRec(i);//m_recs[i];
-		if ( ! cr ) continue;
-		// add it
-		if ( ! s_mergeHead ) s_mergeHead = cr;
-		if ( last ) last->m_nextLink = cr;
-		cr->m_prevLink = last;
-		cr->m_nextLink = NULL;
-		s_mergeTail = cr;
-		last = cr;
-	}
-	s_needsBuild = false;
-
-	bool force = false;
-
-	// . just scan the linked list that we now maintain
-	// . if a collection is deleted then we remove it from this list too!
-	cr = s_mergeHead;
-	while ( cr ) {
-		QUICKPOLL(niceness);
-		// this is a requirement in RdbBase::attemptMerge() so check
-		// for it here so we can bail out early
-		if ( g_numThreads > 0 ) break;
-		// sanity
-		CollectionRec *vr = g_collectiondb.getRec(cr->m_collnum);
-		if ( vr != cr ) {
-			log("rdb: attemptmergeall: bad collnum %i. how "
-			    "did this happen?",
-			    (int)cr->m_collnum);
-			s_needsBuild = true;
-			goto rebuild;
-		}
-		// pre advance
-		CollectionRec *next = cr->m_nextLink;
-		// try to merge the next guy in line, in the linked list
-		RdbBase *base ;
-		base = cr->getBasePtr(RDB_POSDB);
-		// args = niceness, forceMergeAll, doLog, minToMergeOverride
-		// if RdbBase::attemptMerge() returns true that means it
-		// launched a merge and it will call attemptMergeAll2() when
-		// the merge completes.
-		if ( base && base->attemptMerge(niceness,force,true) ) 
-			return;
-		base = cr->getBasePtr(RDB_TITLEDB);
-		if ( base && base->attemptMerge(niceness,force,true) ) 
-			return;
-		base = cr->getBasePtr(RDB_TAGDB);
-		if ( base && base->attemptMerge(niceness,force,true) ) 
-			return;
-		base = cr->getBasePtr(RDB_LINKDB);
-		if ( base && base->attemptMerge(niceness,force,true) ) 
-			return;
-		base = cr->getBasePtr(RDB_SPIDERDB);
-		if ( base && base->attemptMerge(niceness,force,true) ) 
-			return;
-		// hey, why was it in the list? remove it. we also remove
-		// guys if the collection gets deleted in Collectiondb.cpp,
-		// so this is a function.
-		removeFromMergeLinkedList ( cr );
-		cr = next;
-	}
-
-	// every 60 seconds try to merge collectionless rdbs
-	static int32_t s_count = 0;
-	if ( ++s_count == 30 ) {
-		s_count = 0;
-		// try to merge collectionless rdbs like statsdb/catdb
-		// RdbBase *base1 = g_catdb.getRdb()->getBase(0);
-		// if ( base1 ) base1->attemptMerge(niceness,force,true);
-		// RdbBase *base2 = g_statsdb.getRdb()->getBase(0);
-		// if ( base2 ) base2->attemptMerge(niceness,force,true);
-	}
-	*/
 }
 
 // . return false and set g_errno on error
@@ -2586,13 +2470,6 @@ bool Rdb::addRecord ( collnum_t collnum,
 	}
 	*/
 
-	// debug testing
-	//if ( m_rdbId == RDB_CATDB ) {
-	//	// show key
-	//	log("rdb: adding key=%s to tree n=%"INT32"",KEYSTR(key,12) ,n);
-	//}
-
-
 	//jumpdown:
 
 	// if it exists then annihilate it
@@ -3098,17 +2975,13 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB_SYNCDB    ] = g_syncdb.getRdb();
 		s_table9 [ RDB_SPIDERDB  ] = g_spiderdb.getRdb();
 		s_table9 [ RDB_DOLEDB    ] = g_doledb.getRdb();
-		//s_table9 [ RDB_TFNDB     ] = g_tfndb.getRdb();
 		s_table9 [ RDB_CLUSTERDB ] = g_clusterdb.getRdb();
-		s_table9 [ RDB_CATDB     ] = g_catdb.getRdb();
-		//s_table9 [ RDB_DATEDB    ] = g_datedb.getRdb();
 		s_table9 [ RDB_LINKDB    ] = g_linkdb.getRdb();
 		s_table9 [ RDB_CACHEDB   ] = g_cachedb.getRdb();
 		s_table9 [ RDB_SERPDB    ] = g_serpdb.getRdb();
 		s_table9 [ RDB_MONITORDB ] = g_monitordb.getRdb();
 		s_table9 [ RDB_STATSDB   ] = g_statsdb.getRdb();
 		s_table9 [ RDB_REVDB     ] = g_revdb.getRdb();
-		//s_table9 [ RDB_FAKEDB    ] = NULL;
 		s_table9 [ RDB_PARMDB    ] = NULL;
 
 		s_table9 [ RDB2_INDEXDB2   ] = g_indexdb2.getRdb();
@@ -3117,9 +2990,7 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB2_SECTIONDB2 ] = g_sectiondb2.getRdb();
 		s_table9 [ RDB2_PLACEDB2   ] = g_placedb2.getRdb();
 		s_table9 [ RDB2_SPIDERDB2  ] = g_spiderdb2.getRdb();
-		//s_table9 [ RDB2_TFNDB2     ] = g_tfndb2.getRdb();
 		s_table9 [ RDB2_CLUSTERDB2 ] = g_clusterdb2.getRdb();
-		//s_table9 [ RDB2_DATEDB2    ] = g_datedb2.getRdb();
 		s_table9 [ RDB2_LINKDB2    ] = g_linkdb2.getRdb();
 		s_table9 [ RDB2_REVDB2     ] = g_revdb2.getRdb();
 		s_table9 [ RDB2_TAGDB2     ] = g_tagdb2.getRdb();
@@ -3131,16 +3002,13 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 // the opposite of the above
 char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_tagdb.getRdb    () ) return RDB_TAGDB;
-	if ( rdb == g_catdb.getRdb     () ) return RDB_CATDB;
 	if ( rdb == g_indexdb.getRdb   () ) return RDB_INDEXDB;
 	if ( rdb == g_posdb.getRdb   () ) return RDB_POSDB;
-	//if ( rdb == g_datedb.getRdb    () ) return RDB_DATEDB;
 	if ( rdb == g_titledb.getRdb   () ) return RDB_TITLEDB;
 	if ( rdb == g_sectiondb.getRdb () ) return RDB_SECTIONDB;
 	if ( rdb == g_placedb.getRdb   () ) return RDB_PLACEDB;
 	if ( rdb == g_spiderdb.getRdb  () ) return RDB_SPIDERDB;
 	if ( rdb == g_doledb.getRdb    () ) return RDB_DOLEDB;
-	//if ( rdb == g_tfndb.getRdb     () ) return RDB_TFNDB;
 	if ( rdb == g_clusterdb.getRdb () ) return RDB_CLUSTERDB;
 	if ( rdb == g_statsdb.getRdb   () ) return RDB_STATSDB;
 	if ( rdb == g_linkdb.getRdb    () ) return RDB_LINKDB;
@@ -3149,45 +3017,35 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_monitordb.getRdb () ) return RDB_MONITORDB;
 	if ( rdb == g_syncdb.getRdb    () ) return RDB_SYNCDB;
 	if ( rdb == g_revdb.getRdb     () ) return RDB_REVDB;
-	//if ( rdb == g_sitedb.getRdb    () ) return RDB_SITEDB;
-	//if ( rdb == g_tagdb2.getRdb    () ) return RDB2_SITEDB2;
-	if ( rdb == g_catdb.getRdb     () ) return RDB_CATDB;
 	if ( rdb == g_indexdb2.getRdb   () ) return RDB2_INDEXDB2;
 	if ( rdb == g_posdb2.getRdb   () ) return RDB2_POSDB2;
-	//if ( rdb == g_datedb2.getRdb    () ) return RDB2_DATEDB2;
 	if ( rdb == g_tagdb2.getRdb     () ) return RDB2_TAGDB2;
 	if ( rdb == g_titledb2.getRdb   () ) return RDB2_TITLEDB2;
 	if ( rdb == g_sectiondb2.getRdb () ) return RDB2_SECTIONDB2;
 	if ( rdb == g_placedb2.getRdb   () ) return RDB2_PLACEDB2;
 	if ( rdb == g_spiderdb2.getRdb  () ) return RDB2_SPIDERDB2;
-	//if ( rdb == g_tfndb2.getRdb     () ) return RDB2_TFNDB2;
 	if ( rdb == g_clusterdb2.getRdb () ) return RDB2_CLUSTERDB2;
-	//if ( rdb == g_statsdb2.getRdb   () ) return RDB2_STATSDB2;
 	if ( rdb == g_linkdb2.getRdb    () ) return RDB2_LINKDB2;
 	if ( rdb == g_revdb2.getRdb     () ) return RDB2_REVDB2;
 
-//	if ( rdb == g_userdb.getRdb    () ) return 7;
 	log(LOG_LOGIC,"db: getIdFromRdb: no rdbId for %s.",rdb->m_dbname);
 	return 0;
 }
 
 char isSecondaryRdb ( uint8_t rdbId ) {
 	switch ( rdbId ) {
-	//case RDB2_SITEDB2    : return true;
         case RDB2_CATDB2     : return true;
-	case RDB2_INDEXDB2   : return true;
-	case RDB2_POSDB2   : return true;
-		//case RDB2_DATEDB2    : return true;
-	case RDB2_TAGDB2     : return true;
-	case RDB2_TITLEDB2   : return true;
-	case RDB2_SECTIONDB2 : return true;
-	case RDB2_PLACEDB2   : return true;
-	case RDB2_SPIDERDB2  : return true;
-	case RDB2_TFNDB2     : return true;
-	case RDB2_CLUSTERDB2 : return true;
-	case RDB2_REVDB2     : return true;
-	//case RDB2_STATSDB2   : return true;
-	case RDB2_LINKDB2 : return true;
+		case RDB2_INDEXDB2   : return true;
+		case RDB2_POSDB2   : return true;
+		case RDB2_TAGDB2     : return true;
+		case RDB2_TITLEDB2   : return true;
+		case RDB2_SECTIONDB2 : return true;
+		case RDB2_PLACEDB2   : return true;
+		case RDB2_SPIDERDB2  : return true;
+		case RDB2_TFNDB2     : return true;
+		case RDB2_CLUSTERDB2 : return true;
+		case RDB2_REVDB2     : return true;
+		case RDB2_LINKDB2 : return true;
 	}
 	return false;
 }

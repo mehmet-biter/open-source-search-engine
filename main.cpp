@@ -23,7 +23,6 @@
 #include "Titledb.h"
 #include "Revdb.h"
 #include "Tagdb.h"
-#include "Catdb.h"
 #include "Spider.h"
 #include "Clusterdb.h"
 #include "Sections.h"
@@ -42,7 +41,6 @@
 #include "Speller.h"       // g_speller
 #include "Wiki.h"          // g_wiki
 #include "Wiktionary.h"    // g_wiktionary
-#include "Categories.h"
 #include "CountryCode.h"
 #include "Pos.h"
 #include "Title.h"
@@ -55,16 +53,13 @@
 #include "Msg13.h"
 #include "Msg20.h"
 #include "Msg22.h"
-#include "Msg2a.h"
 #include "Msg39.h"
 #include "Msg40.h"    // g_resultsCache
-#include "Msg9b.h"
 #include "Msg17.h"
 #include "Parms.h"
 #include "Pages.h"
 #include "Unicode.h"
 
-#include "AutoBan.h"
 #include "Msg1f.h"
 #include "Profiler.h"
 #include "Blaster.h"
@@ -78,6 +73,7 @@
 #include "Test.h"
 #include "seo.h"
 #include "SpiderProxy.h"
+#include "HashTable.h"
 
 // call this to shut everything down
 bool mainShutdown ( bool urgent ) ;
@@ -1368,30 +1364,6 @@ int main2 ( int argc , char *argv[] ) {
 		// disable any further logging so final log msg is clear
 		g_log.m_disabled = true;
 		return 0;
-	}
-
-	if(strcmp(cmd, "catlang") == 0) {
-		log(LOG_INFO, "cat: Building the DMOZ category language tables...\n");
-		g_categories->initLangTables();
-		log(LOG_INFO, "cat: Done.\n");
-		return(0);
-	}
-
-	if(strcmp(cmd, "catcountry") == 0) {
-		// Load categories and generate country table
-		char structureFile[256];
-		g_conf.m_maxMem = 1000000000LL; // 1G
-		//g_mem.m_maxMem  = 1000000000LL; // 1G
-		sprintf(structureFile, "%scatdb/gbdmoz.structure.dat", g_hostdb.m_dir);
-		g_categories = &g_categories1;
-		if (g_categories->loadCategories(structureFile) != 0) {
-			log("cat: Loading Categories From %s Failed.", structureFile);
-			return(0);
-		}
-		log(LOG_INFO, "cat: Building the DMOZ category country table...\n");
-		g_countryCode.createHashTable();
-		log(LOG_INFO, "cat: Done.\n");
-		return(0);
 	}
 
   	if ( strcmp ( cmd , "blaster" ) == 0 ) {
@@ -2791,48 +2763,15 @@ int main2 ( int argc , char *argv[] ) {
 	// allow adds to statsdb rdb tree
 	g_process.m_powerIsOn = true;
 
-	// then indexdb
-	//if ( ! g_indexdb.init()    ) {
 	//	log("db: Indexdb init failed." ); return 1; }
 	if ( ! g_posdb.init()    ) {
 		log("db: Posdb init failed." ); return 1; }
-	// for sorting results by date
-	//if ( ! g_datedb.init()    ) {
-	//	log("db: Datedb init failed." ); return 1; }
-	// for sorting events by time
-	//if ( ! g_timedb.init()    ) {
-	//	log("db: Datedb init failed." ); return 1; }
 	// then titledb
 	if ( ! g_titledb.init()    ) {
 		log("db: Titledb init failed." ); return 1; }
-	// then revdb
-	//if ( ! g_revdb.init()    ) {
-	//	log("db: Revdb init failed." ); return 1; }
 	// then tagdb
 	if ( ! g_tagdb.init()     ) {
 		log("db: Tagdb init failed." ); return 1; }
-	// the catdb, it's an instance of tagdb, pass RDB_CATDB
-	if ( ! g_catdb.init()   ) {
-		log("db: Catdb1 init failed." ); return 1; }
-
-	// int64_t uu = gettimeofdayInMilliseconds();
-	// for ( int i = 0 ; i < 10000000 ; i++ )
-	// 	bool x = g_threads.amThread();
-	// int64_t uu2 = gettimeofdayInMilliseconds();
-	// log("tod: took %"INT64,uu2-uu);
-
-	//if ( ! g_syncdb.init() ) {
-	//	log("db: Syncdb init failed." ); return 1; }
-
-	// if generating spiderdb, boost minfiles
-	//if ( strcmp ( cmd, "gendbs" ) == 0 ) {
-	//	// don't let spider merge all the time!
-	//	g_conf.m_spiderdbMinFilesToMerge = 20;
-	//	// set up spiderdb
-	//	g_conf.m_spiderdbMaxTreeMem = 200000000; // 200M
-	//	g_conf.m_maxMem = 2950000000LL; // 2G
-	//	g_mem.m_maxMem  = 2950000000LL; // 2G
-	//}
 
 	// then spiderdb
 	if ( ! g_spiderdb.init()   ) {
@@ -2969,52 +2908,14 @@ int main2 ( int argc , char *argv[] ) {
 	}
 	*/
 
-	//if(!Msg6a::init()) {
-	//	log( "init: Quality Agent init failed." );
-	//}
-
-	//countdomains was HERE, moved up to access more mem.
-
-	// load up the dmoz categories here
-	char structureFile[256];
-	sprintf(structureFile, "%scatdb/gbdmoz.structure.dat", g_hostdb.m_dir);
-	g_categories = &g_categories1;
-	if (g_categories->loadCategories(structureFile) != 0) {
-		log("cat: Loading Categories From %s Failed.",
-		    structureFile);
-		//return 1;
-	}
-	log(LOG_INFO, "cat: Loaded Categories From %s.",
-	    structureFile);
-
 	// Load the category language table
 	g_countryCode.loadHashTable();
 	int32_t nce = g_countryCode.getNumEntries();
-	//log(LOG_INFO, "cat: Loaded %"INT32" entries from Category country table.",
-	//		g_countryCode.getNumEntries());
+
 	if ( nce != 544729 ) {
 		log("cat: unsupported catcountry.dat file with %"INT32" entries", nce);
 	}
 
-	if(!g_autoBan.init()) {
-		log("autoban: init failed.");
-		return 1;
-	}
-
-	//if(!g_classifier.restore()) {
-	//	log("classifier: init failed.");
-	//	//return 1;
-	//}
-
-	// if(!g_profiler.init()) {
-	// 	log("profiler: init failed.");
-	// }
-	// g_profiler.readSymbolTable();
-
-	//exit(0);
-	// diff with indexdb in sync/ dir
-	//syncIndexdb ( );
-	//exit(-1);
 	// init the cache in Msg40 for caching search results
 	// if cache not initialized now then do it now
 	int32_t maxMem = g_conf.m_searchResultsMaxCacheMem;
@@ -4314,16 +4215,6 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 				iptoa(h2->m_ip),
 				h2->m_dir);
 			log(LOG_INIT,"admin: %s", tmp);
-			//system ( tmp );
-			//sprintf(tmp,
-			//	"scp "
-			//	"%scatdb/gbdmoz.content.dat.diff "
-			//	"%s:%scatdb/gbdmoz.content.dat.diff",
-			//	dir,
-			//	iptoa(h2->m_ip),
-			//	h2->m_dir);
-			//log(LOG_INIT,"admin: %s", tmp);
-			//system ( tmp );
 		}
 		else if ( installFlag == ifk_installnewcat ) {
 			// . copy catdb files to all hosts
@@ -4571,7 +4462,6 @@ bool registerMsgHandlers ( ) {
 
 bool registerMsgHandlers1(){
 	Msg20 msg20;	if ( ! msg20.registerHandler () ) return false;
-	Msg2a msg2a;    if ( ! msg2a.registerHandler () ) return false;
 	MsgC  msgC ;    if ( ! msgC.registerHandler  () ) return false;
 
 	if ( ! Msg22::registerHandler() ) return false;
@@ -4582,7 +4472,6 @@ bool registerMsgHandlers1(){
 bool registerMsgHandlers2(){
 	Msg0  msg0 ;	if ( ! msg0.registerHandler  () ) return false;
 	Msg1  msg1 ;	if ( ! msg1.registerHandler  () ) return false;
-	Msg8b  msg8b ;  if ( ! msg8b.registerHandler  () ) return false;
 
 	if ( ! Msg13::registerHandler() ) return false;
 
@@ -8510,7 +8399,7 @@ void dumpTagdb (char *coll,int32_t startFileNum,int32_t numFiles,
 	g_tagdb.init ();
 	//g_collectiondb.init(true);
 	if ( rdbId == RDB_TAGDB ) g_tagdb.getRdb()->addRdbBase1(coll );
-	if ( rdbId == RDB_CATDB ) g_catdb.init();
+
 	key128_t startKey ;
 	key128_t endKey   ;
 	startKey.setMin();
@@ -8591,24 +8480,7 @@ void dumpTagdb (char *coll,int32_t startFileNum,int32_t numFiles,
 			printf("corrupt tagdb rec k.n0=%"UINT64"",k.n0);
 			continue;
 		}
-		// catdb?
-		if ( rdbId == RDB_CATDB ) {
-			// for debug!
-			CatRec crec;
-			crec.set ( NULL,
-				   data ,
-				   size ,
-				   false);
-			fprintf(stdout,
-				"key=%s caturl=%s #catids=%"INT32" "
-				"version=%"INT32"\n"
-			       ,KEYSTR(&k,12)
-			    ,crec.m_url
-			    ,(int32_t)crec.m_numCatids
-			    ,(int32_t)crec.m_version
-			    );
-			continue;
-		}
+
 		// parse it up
 		//TagRec *tagRec = (TagRec *)rec; 
 		Tag *tag = (Tag *)rec;
@@ -12427,14 +12299,6 @@ void saveRdbs ( int fd , void *state ) {
 	last = rdb->getLastWriteTime();
 	if ( now - last > delta )
 		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	rdb = g_catdb.getRdb();
-	last = rdb->getLastWriteTime();
-	if ( now - last > delta )
-		if ( ! rdb->close(NULL,NULL,false,false)) return;
-	//rdb = g_indexdb.getRdb();
-	//last = rdb->getLastWriteTime();
-	//if ( now - last > delta )
-	//	if ( ! rdb->close(NULL,NULL,false,false)) return;
 	rdb = g_posdb.getRdb();
 	last = rdb->getLastWriteTime();
 	if ( now - last > delta )

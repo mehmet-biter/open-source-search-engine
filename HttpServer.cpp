@@ -9,6 +9,7 @@
 #include "UdpServer.h"
 #include "Proxy.h"
 #include "PageCrawlBot.h"
+#include "Parms.h"
 
 // a global class extern'd in .h file
 HttpServer g_httpServer;

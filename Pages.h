@@ -63,9 +63,6 @@ bool sendPageReindex  ( TcpSocket *s , HttpRequest *r );
 bool sendPageInject   ( TcpSocket *s , HttpRequest *r );
 bool sendPageAddUrl2  ( TcpSocket *s , HttpRequest *r );
 bool sendPageGeneric  ( TcpSocket *s , HttpRequest *r ); // in Parms.cpp
-bool sendPageCatdb    ( TcpSocket *s , HttpRequest *r );
-bool sendPageDirectory ( TcpSocket *s , HttpRequest *r );
-bool sendPageAutoban   ( TcpSocket *s , HttpRequest *r );
 bool sendPageLogView    ( TcpSocket *s , HttpRequest *r );
 bool sendPageProfiler   ( TcpSocket *s , HttpRequest *r );
 bool sendPageReportSpam ( TcpSocket *s , HttpRequest *r );
@@ -148,12 +145,6 @@ class Pages {
 
 	bool broadcastRequest ( TcpSocket *s , HttpRequest *r , int32_t page ) ;
 
-	// . returns USER_PUBLIC, USER_MASTER, USER_ADMIN or USER_SPAM
-	// . used to determine if the client browser has the permission
-	//int32_t getUserType ( TcpSocket *s , HttpRequest *r ) ;
-
-
-
 	bool getNiceness ( int32_t page );
 
 	//
@@ -167,122 +158,30 @@ class Pages {
 					 char        *qs = NULL,
 					 char* bodyJavascript = "" );
 
-
-	bool printAdminTop2 	       ( SafeBuf     *sb   ,
-					 TcpSocket   *s    ,
-					 HttpRequest *r    ,
-					 char        *qs      = NULL,
-					 char	     *scripts = NULL,
-					 int32_t	      scriptsLen = 0);
-
-	bool printAdminTop2            ( SafeBuf *sb    ,
-					 int32_t    page   ,
-					 //int32_t    user   ,
-					 char   *username,
-					 char   *coll   ,
-					 char   *pwd    ,
-					 int32_t    fromIp ,
-					 char        *qs      = NULL,
-					 char	     *scripts = NULL,
-					 int32_t	      scriptsLen = 0);
-
 	void printFormTop(  SafeBuf *sb, HttpRequest *r );
 	void printFormData( SafeBuf *sb, TcpSocket *s, HttpRequest *r );
 
-	//char *printAdminBottom       ( char *p, char *pend, HttpRequest *r );
-	//char *printAdminBottom       ( char *p, char *pend);
 	bool  printAdminBottom         ( SafeBuf *sb, HttpRequest *r );
 	bool  printAdminBottom         ( SafeBuf *sb);
-	bool  printAdminBottom2        ( SafeBuf *sb, HttpRequest *r );
 	bool  printAdminBottom2        ( SafeBuf *sb);
-	bool  printTail                ( SafeBuf* sb, 
-					 bool isLocal );
+	bool  printTail                ( SafeBuf* sb, bool isLocal );
 	bool printSubmit ( SafeBuf *sb ) ;
-					 //int32_t user , 
-					 //char *username,
-					 //char *pwd );
-	//char *printTail                ( char *p    ,
-	//				 char *pend ,
-	//				 bool isLocal );
-	//int32_t  user ,
-	//char *username,
-	//char *pwd  ) ;
-	bool  printColors              ( SafeBuf *sb , char* bodyJavascript = "" ) ;
-	//char *printColors              ( char *p , char *pend , 
-	//				 char* bodyJavascript = "");
 
-	//char *printColors2           ( char *p , char *pend ) ;
-	bool  printColors3	       ( SafeBuf *sb ) ;
-	//char *printFocus             ( char *p , char *pend ) ;
+	bool  printColors              ( SafeBuf *sb , char* bodyJavascript = "" ) ;
 	bool  printLogo                ( SafeBuf *sb, char *coll ) ;
-	//char *printLogo              ( char *p , char *pend , char *coll ) ;
-	bool  printHostLinks           ( SafeBuf *sb  ,
-					 int32_t  page   ,
-					 char *username ,
-					 char *password ,
-					 char *coll   ,
-					 char *pwd    ,
-					 int32_t  fromIp ,
-					 char *qs = NULL ) ;
-	/*
-	char *printHostLinks           ( char *p      ,
-					 char *pend   ,
-					 int32_t  page   ,
-					 char *coll   ,
-					 char *pwd    ,
-					 int32_t  fromIp ,
-					 char *qs = NULL ) ;
-	*/
+	bool  printHostLinks (SafeBuf *sb, int32_t  page, char *coll, int32_t fromIp, char *qs) ;
+
 	bool  printAdminLinks          ( SafeBuf *sb, 
 					 int32_t  page ,
 					 char *coll ,
 					 bool isBasic );
-	/*
-	char *printAdminLinks          ( char *p    , 
-					 char *pend , 
-					 int32_t  page ,
-					 //int32_t  user ,
-					 char *username,
-					 char *coll ,
-					 char *pwd  ,
-					 bool  top  ) ;
-	*/
-	bool  printCollectionNavBar ( SafeBuf *sb     ,
+
+	bool  printCollectionNavBar (SafeBuf *sb     ,
 				      int32_t  page     ,
-				      //int32_t  user     ,
-				      char *username,
 				      char *coll     ,
-				      char *pwd      ,
 				      char *qs       ,
 				      TcpSocket *sock ,
 				      HttpRequest *hr );
-	/*
-	char *printCollectionNavBar    ( char *p    ,
-					 char *pend , 
-					 int32_t  page ,
-					 //int32_t  user ,
-					 char *username,
-					 char *coll ,
-					 char *pwd  ,
-					 char *qs = NULL );
-	*/
-	/*
-	bool printRulesetDropDown ( SafeBuf *sb        ,
-				    int32_t  user         ,
-				    char *cgi          ,
-				    int32_t  selectedNum  ,
-				    int32_t  subscript    );
-
-	char *printRulesetDropDown     ( char *p           , 
-					 char *pend        ,
-					 int32_t  user        ,
-					 char *cgi         ,
-					 int32_t  selectedNum ,
-					 int32_t  subscript   ) ;
-
-	char *printRulesetDescriptions ( char *p , char *pend , int32_t user ) ;
-	bool  printRulesetDescriptions ( SafeBuf *sb , int32_t user ) ;
-	*/
 };
 
 extern class Pages g_pages;
@@ -291,28 +190,18 @@ extern class Pages g_pages;
 // . each dynamic page has a number
 // . some pages also have urls like /search to mean page=0
 enum {
-	// dummy pages
-	//PAGE_NOHOSTLINKS = 0,
-	//PAGE_ADMIN     ,
-	//PAGE_QUALITY   ,
-	//PAGE_PUBLIC    ,
 
 	// public pages
 	PAGE_ROOT        =0,
 	PAGE_RESULTS     ,
-	//PAGE_WIDGET,
 	PAGE_ADDURL      , // 5
 	PAGE_GET         ,
 	PAGE_LOGIN       ,
-	PAGE_DIRECTORY   ,
 	PAGE_REPORTSPAM  ,
-	//PAGE_WORDVECTOR  ,
 
 	// basic controls page /admin/basic
 	PAGE_BASIC_SETTINGS , //10
-	PAGE_BASIC_STATUS , 
-	//PAGE_BASIC_SEARCH , // TODO
-	//PAGE_BASIC_DIFFBOT , // TODO
+	PAGE_BASIC_STATUS ,
 	PAGE_COLLPASSWORDS ,//BASIC_SECURITY ,
 	PAGE_BASIC_SEARCH ,
 
@@ -332,56 +221,33 @@ enum {
 	PAGE_REPAIR      ,
 #endif
 
-	//PAGE_SITES , // site filters
 	PAGE_FILTERS     ,
 	PAGE_INJECT      , 
 	PAGE_ADDURL2     , // 26
 	PAGE_REINDEX     ,	
 
 	PAGE_STATS       , // 10
-	PAGE_GRAPH       , // PAGE_STATSDB	 ,
+	PAGE_GRAPH       ,
 	PAGE_PERF        ,
 	PAGE_SOCKETS     ,
 
 	PAGE_LOGVIEW     ,
-//	PAGE_SYNC        , 
-	PAGE_AUTOBAN     , // 20
-	//PAGE_SPIDERLOCKS ,
 	PAGE_PROFILER    ,
 	PAGE_THREADS     ,
-
-//	PAGE_THESAURUS   , 
 
 	PAGE_QA,
 	PAGE_IMPORT,
 
-	// . non master-admin pages (collection controls)
-	// . PAGE_OVERVIEW acts as a cutoff point (search Parms.cpp for it)
-	//PAGE_OVERVIEW    ,  //25
 	PAGE_API ,
 
-	PAGE_RULES       ,
-	//	PAGE_INDEXDB     ,  //30
-	PAGE_TITLEDB     ,  
-	//PAGE_STATSDB	 ,
+	PAGE_TITLEDB     ,
 
 	PAGE_CRAWLBOT    , // 35
-	PAGE_SPIDERDB    , 
-	//PAGE_PRIORITIES  ,  // priority queue controls
-	//PAGE_KEYWORDS    ,
-	PAGE_ACCESS      ,  //40	
+	PAGE_SPIDERDB    ,
 	PAGE_SEARCHBOX   ,
 	PAGE_PARSER      ,
 	PAGE_SITEDB      ,  
-	PAGE_CATDB       ,
 	PAGE_LOGIN2      ,
-//	PAGE_TOPDOCS     ,
-// 	PAGE_TOPICS      ,
-// 	PAGE_SPAM        ,
-//	PAGE_QAGENT      ,
-//	PAGE_NETTEST     ,
-	//PAGE_ADFEED      ,
-//	PAGE_TURK2       ,
 	PAGE_INFO        , 
 	PAGE_NONE     	};
 	

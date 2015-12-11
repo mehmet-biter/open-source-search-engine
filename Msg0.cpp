@@ -4,7 +4,6 @@
 #include "Clusterdb.h"
 #include "Stats.h"
 #include "Tagdb.h"
-#include "Catdb.h"
 #include "Posdb.h"
 #include "Titledb.h"
 #include "Spider.h"
