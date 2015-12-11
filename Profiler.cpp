@@ -23,8 +23,6 @@ Profiler g_profiler;
 Profiler g_profiler;
 
 
-static int decend_cmpUll ( const void *h1 , const void *h2 );
-static int decend_cmpF ( const void *h1 , const void *h2 );
 uint32_t *indexTable;
 uint32_t *keyTable;
 uint64_t *valueTableUll;
@@ -760,35 +758,6 @@ bool Profiler::endTimer(int32_t address,
 	}
 	return true;
 }
-
-//backwards so we get highest scores first.
-static int decend_cmpUll ( const void *h1 , const void *h2 ) {
-        uint32_t tmp1, tmp2;
-        tmp1 = *(uint32_t *)h1;
-	tmp2 = *(uint32_t *)h2;
-	if (valueTableUll[tmp1]>valueTableUll[tmp2]) {
-		return -1;	
-	}
-        else if(valueTableUll[tmp1]<valueTableUll[tmp2]){
-		return 1;
-	}
-	else return 0;
-}
-
-//backwards so we get highest scores first.
-static int decend_cmpF ( const void *h1 , const void *h2 ) {
-        uint32_t tmp1, tmp2;
-        tmp1 = *(uint32_t *)h1;
-	tmp2 = *(uint32_t *)h2;
-	if (valueTableF[tmp1]>valueTableF[tmp2]) {
-		return -1;	
-	}
-        else if(valueTableF[tmp1]<valueTableF[tmp2]){
-		return 1;
-	}
-	else return 0;
-}
-
 
 char* Profiler::getFnName( PTRTYPE address,int32_t *nameLen){
 	FnInfo *fnInfo;
