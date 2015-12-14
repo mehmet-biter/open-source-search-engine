@@ -1773,7 +1773,6 @@ bool Process::saveBlockingFiles2 ( ) {
 void Process::resetAll ( ) {
 	g_log             .reset();
 	g_hostdb          .reset();
-	g_hostdb2         .reset();
 	g_spiderLoop      .reset();
 
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {

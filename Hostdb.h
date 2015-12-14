@@ -724,7 +724,6 @@ class Hostdb {
 };
 
 extern class Hostdb g_hostdb;
-extern class Hostdb g_hostdb2;
 
 extern Host     *g_listHosts [ MAX_HOSTS * 4 ];
 extern uint32_t  g_listIps   [ MAX_HOSTS * 4 ];
