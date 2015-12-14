@@ -223,7 +223,6 @@ bool MsgC::getIp(char  *hostname    , int32_t   hostnameLen ,
 			    0          , // rdbId
 			    -1         , // minRecSizes
 			    true       , // sendtoself
-			    NULL       , // hostdb
 			    -1         , // redirecttimeout
 			    firstHost  )){ // firstProxyHost
 		//did not block, error

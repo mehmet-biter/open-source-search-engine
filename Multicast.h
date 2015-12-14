@@ -101,7 +101,6 @@ class Multicast {
 		    char        rdbId           =  0   , // bogus rdbId
 		    int32_t        minRecSizes     = -1   ,// unknown read size
 		    bool        sendToSelf      = true ,// if we should.
-		    class Hostdb *hostdb        = NULL ,
 		    int32_t        redirectTimeout = -1 ,
 		    class Host *firstProxyHost  = NULL );
 
@@ -140,7 +139,6 @@ class Multicast {
 	uint8_t     m_msgType;
 	bool        m_ownMsg;
 	//uint32_t m_groupId;
-	bool        m_sendToWholeGroup;
 	void       *m_state;
 	void       *m_state2;
 	void       (* m_callback)( void *state , void *state2 );
@@ -162,11 +160,9 @@ class Multicast {
 	Host       *m_hostPtrs[16];
 	int32_t        m_numHosts;
 
-	class Hostdb *m_hostdb;
-
 	// . hostIds that we've tried to send to but failed
 	// . pickBestHost() skips over these hostIds
-	char        m_retired    [MAX_HOSTS_PER_GROUP];
+	bool        m_retired    [MAX_HOSTS_PER_GROUP];
 
 	// we can have up to 8 hosts per group
 	UdpSlot    *m_slots      [MAX_HOSTS_PER_GROUP]; 
