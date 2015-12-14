@@ -157,7 +157,7 @@ class Multicast {
 	// . the group we're sending to or picking from
 	// . up to MAX_HOSTS_PER_GROUP hosts
 	// . m_retired, m_slots, m_errnos correspond with these 1-1
-	Host       *m_hostPtrs[16];
+	Host       *m_hostPtrs[MAX_HOSTS_PER_GROUP];
 	int32_t        m_numHosts;
 
 	// . hostIds that we've tried to send to but failed
