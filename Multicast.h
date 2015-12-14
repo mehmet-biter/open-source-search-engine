@@ -139,9 +139,7 @@ class Multicast {
 	int32_t        m_msgSize;
 	uint8_t     m_msgType;
 	bool        m_ownMsg;
-	int32_t        m_numGroups;
 	//uint32_t m_groupId;
-	uint32_t m_shardNum;
 	bool        m_sendToWholeGroup;
 	void       *m_state;
 	void       *m_state2;
@@ -192,7 +190,6 @@ class Multicast {
 	bool        m_ownReadBuf;
 	// are we registered for a callback every 1 second
 	bool        m_registeredSleep;
-	bool        m_registeredSleep2;
 
 	int32_t        m_niceness;
 
@@ -200,8 +197,6 @@ class Multicast {
 	// . in milliseconds
 	int64_t   m_lastLaunch;
 	Host       *m_lastLaunchHost;
-	// how many launched requests are current outstanding
-	int32_t        m_numLaunched;
 
 	// only free m_reply if this is true
 	bool        m_freeReadBuf;
@@ -211,10 +206,7 @@ class Multicast {
 	// Msg34 stuff -- for disk load balancing
 	//Msg34 m_msg34;
 	//bool  m_doDiskLoadBalancing;
-	key_t m_cacheKey           ;
-	int32_t  m_maxCacheAge        ;
 	char  m_rdbId              ;
-	int32_t  m_minRecSizes        ;
 
 	// Msg1 might be able to add data to our tree to save a net trans.
 	bool        m_sendToSelf;
