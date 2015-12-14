@@ -565,7 +565,7 @@ loop:
 	// . returns -1 if we've sent to all of them in our group, m_hosts
 	//else i = pickBestHost ( (uint32_t)key , firstHostId );
 	//else i = pickBestHost ( key , -1 , false ); // firstHostId
-	else i = pickBestHost ( key , firstHostId , false ); // firstHostId
+	else i = pickBestHost ( key , firstHostId );
 	
 	// do not resend to retired hosts
 	if ( m_retired[i] ) i = -1;
@@ -610,8 +610,7 @@ loop:
 // . pick the fastest host from m_hosts based on avg roundtrip time for ACKs
 // . skip hosts in our m_retired[] list of hostIds
 // . returns -1 if none left to pick
-int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ,
-			       bool preferLocal ) {
+int32_t Multicast::pickBestHost ( uint32_t key , int32_t firstHostId ) {
 	// debug msg
 	//log("pickBestHost manually");
 	// bail if no hosts
@@ -765,17 +764,6 @@ int32_t Multicast::pickBestHost ( ) {
 	return mini;
 }
 */
-
-// . pick a random host
-// . returns -1 if we already sent to that host (he's retired)
-int32_t Multicast::pickRandomHost ( ) {
-	// select one of the dead hosts at random
-	int32_t i = rand() % m_numHosts ;
-	// if he's retired return -1
-	if ( m_retired[i] ) return -1;
-	// otherwise, he's a valid candidate
-	return i;
-}
 
 // . returns false and sets error on g_errno
 // . returns true if kicked of the request (m_msg)

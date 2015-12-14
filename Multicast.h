@@ -122,11 +122,7 @@ class Multicast {
 	// keep these public so C wrapper can call them
 	bool sendToHostLoop ( int32_t key, int32_t hostNumToTry, int32_t firstHostId );
 	bool sendToHost    ( int32_t i ); 
-	int32_t pickBestHost2 ( uint32_t key , int32_t hostNumToTry ,
-			     bool preferLocal );
-	int32_t pickBestHost  ( uint32_t key , int32_t hostNumToTry ,
-			     bool preferLocal );
-	int32_t pickRandomHost( ) ;
+	int32_t pickBestHost  ( uint32_t key , int32_t hostNumToTry );
 	void gotReply1     ( UdpSlot *slot ) ;
 	void closeUpShop   ( UdpSlot *slot ) ;
 
