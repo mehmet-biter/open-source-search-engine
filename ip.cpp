@@ -2,9 +2,9 @@
 
 #include "ip.h"
 
-int32_t atoip ( char *s , int32_t slen ) {
+int32_t atoip ( const char *s , int32_t slen ) {
 	// point to it
-	char *p = s;
+	const char *p = s;
 	// copy into buffer and NULL terminate
 	char buf[1024];
 	if ( s[slen] ) {
@@ -25,7 +25,7 @@ int32_t atoip ( char *s , int32_t slen ) {
 	return 0; 
 }
 
-int32_t atoip ( char *s ) {
+int32_t atoip ( const char *s ) {
 	// convert to int
 	struct in_addr in;
 	in.s_addr = 0;

@@ -23,8 +23,8 @@
 //#define MATTIP3 "68.35.27.72"
 #define MATTIP3 "64.139.94.202"
 
-int32_t  atoip ( char *s , int32_t slen );
-int32_t  atoip ( char *s );//, int32_t slen );
+int32_t  atoip ( const char *s , int32_t slen );
+int32_t  atoip ( const char *s );//, int32_t slen );
 char *iptoa ( int32_t ip );
 // . get domain of ip address
 // . first byte is the host (little endian)
