@@ -32,6 +32,12 @@ bool  isPingServer ( char *s ) ;
 // . used by Links.cpp for fast parsing and SiteGetter.cpp too
 char *getHost ( char *s , int32_t *hostLen ) ;
 
+// . returns the scheme of a normalized url pointed to by "s"
+// . i.e. "s" must start with the protocol (i.e. http:// or https:// etc.)
+// . used by SiteGetter.cpp too
+char *getScheme( char *s , int32_t *hostLen );
+
+
 // . get the path end of a normalized url
 // . used by SiteGetter.cpp
 // . if num==0 just use "www.xyz.com" as site (the hostname)
@@ -99,9 +105,6 @@ public:
 	bool isWarc ( );
 	bool isArc ( );
 
-	// does it end in .xml, .rdb or .rss, etc. kinda thing
-	//bool isRSSFormat ( ) ;
-
 	// is it http://rpc.weblogs.com/int16_tChanges.xml, etc.?
 	bool isPingServer ( ) ;
 
@@ -165,25 +168,6 @@ public:
 		if ( m_scheme[4] != 's' ) return false;
 		return true;
 	};
-
-
-	// . are we a site root?
-	// . i.e. does this url == hometown.com/users/fred/ , etc.
-	// . does not take into account whether we have a subdomain or domain
-	//bool isSiteRoot(char *coll,
-	//		class TagRec *tagRec = NULL ,
-	//		char **retSite=NULL,
-	//		int32_t *retSiteLen=NULL);
-
-	// . returns the site and sets *siteLen
-	// . returns NULL and sets g_errno on error
-	// . returns NULL without g_errno set if our domain is invalid
-	// . sets "*isDefault" to true if we just returned the default site,
-	//   otherwise false
-	//char *getSite ( int32_t *siteLen , char *coll , 
-	//		bool defaultToHostname , 
-	//		class TagRec *tagRec = NULL ,
-	//		bool *isDefault = NULL );
 
 	// used by buzz i guess
 	//int32_t  getSiteHash32   ( char *coll );
@@ -299,10 +283,6 @@ public:
 	// anchor
 	char   *m_anchor;
 	int32_t    m_anchorLen;
-	
-	// Base site url
-	//char *m_site;
-	//int32_t m_siteLen;
 };
 
 #endif

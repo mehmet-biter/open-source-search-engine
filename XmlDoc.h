@@ -391,7 +391,6 @@ class XmlDoc {
 	char      *ptr_tagRecData;
 	LinkInfo  *ptr_linkInfo2;
 
-
 	int32_t       size_firstUrl;
 	int32_t       size_redirUrl;
 	//int32_t     size_tagRecData;
@@ -427,6 +426,10 @@ class XmlDoc {
 	//
 	// END WHAT IS STORED IN THE TITLE REC (Titledb.h)
 	//
+
+	char		*ptr_scheme;	
+	int32_t		size_scheme;	
+
 
  public:
 
@@ -678,6 +681,8 @@ class XmlDoc {
 	class LinkInfo *getLinkInfo1 ( ) ;
 	class LinkInfo **getLinkInfo2 ( ) ;
 	char *getSite ( ) ;
+	char *getScheme ( ) ;	
+	
 	void  gotSite ( ) ;
 	int64_t *getSiteHash64 ( ) ;
 	int32_t *getSiteHash32 ( ) ;

@@ -5,7 +5,10 @@
 #include "Msg0.h"
 #include "Tagdb.h"
 
-#define MAX_SITE_LEN 256
+#define MAX_SITE_LEN 	256
+#define MAX_SCHEME_LEN 	16
+
+
 
 class SiteGetter {
 
@@ -64,6 +67,10 @@ public:
 	// points into provided "u->m_url" buffer
 	char   m_site[MAX_SITE_LEN+1];
 	int32_t   m_siteLen;
+
+	char   m_scheme[MAX_SCHEME_LEN+1];
+	int32_t   m_schemeLen;
+
 
 	//bool   m_isIndependentSubsite;
 

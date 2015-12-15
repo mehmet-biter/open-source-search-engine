@@ -140,12 +140,16 @@ void Url::set (Url *baseUrl,char *s,int32_t len,bool addWWW,bool stripSessionId,
 // . url should be ENCODED PROPERLY for this to work properly
 void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
                 bool stripPound , bool stripCommonFile , 
-		int32_t titleRecVersion ) {
+		int32_t titleRecVersion ) 
+{
 	reset();
-	// debug
-	//t = "http://www.ac.uk/../../news/.asp";
-	//tlen = gbstrlen(t);
-	if ( ! t || tlen == 0 ) return ;
+
+
+	if ( ! t || tlen == 0 ) 
+	{
+		return;
+	}
+	
 	// we may add a "www." a trailing backslash and \0, ...
 	if ( tlen > MAX_URL_LEN - 10 ) {
 		log( LOG_LIMIT,"db: Encountered url of length %"INT32". "
@@ -375,16 +379,6 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 	gbmemcpy ( s , t , tlen );
 	s[len]='\0';
 
-	// make http:////www.xyz.com into http://www.xyz.com
-	// if ( len > 14 && s[7]=='/' && ! strncasecmp ( s , "http:////" ,9) ){
-	// 	gbmemcpy (s+7,s+9,len-9+1);
-	// 	len -= 2;
-	// }
-	// if ( len > 14 && s[8]=='/' && ! strncasecmp ( s ,"https:////",10)){
-	// 	gbmemcpy (s+8,s+10,len-9+1);
-	// 	len -= 2;
-	// }
-
 	// . remove session ids from s
 	// . ';' most likely preceeds a session id
 	// . http://www.b.com/p.jhtml;jsessionid=J4QMFWBG1SPRVWCKUUXCJ0W?pp=1
@@ -392,25 +386,8 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 	// . http://www.b.com/?PHPSESSID=737aec14eb7b360983d4fe39395&p=1
 	// . http://www.b.com/cat.cgi/process?mv_session_id=xrf2EY3q&p=1
 	// . http://www.b.com/default?SID=f320a739cdecb4c3edef67e&p=1
-	if ( stripSessionId ) {
-		// CHECK FOR A SESSION ID USING SEMICOLONS
-		// or don't...bad for dmoz urls and apparently has ligit use
-//		int32_t i = 0;
-//		while ( s[i] && s[i]!=';' ) i++;
-//		// did we get a semi colon?
-//		if ( s[i] == ';' ) {
-//			// i is start of it
-//			int32_t a = i;
-//			// find the end of the session id
-//			int32_t b = i + 1;
-//			while ( s[b] && s[b] != '?' ) b++;
-//			// remove the session id by covering it up
-//			memmove ( &s[a] , &s[b] , len - b );
-//			// reduce length
-//			len -= (b-a);
-//			// NULL terminate
-//			s[len] = '\0';
-//		}
+	if ( stripSessionId ) 
+	{
 		// CHECK FOR A SESSION ID USING QUERY STRINGS
 		char *p = s;
 		while ( *p && *p != '?' && *p != ';' ) p++;
@@ -584,13 +561,22 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 
 	// replace the "\" with "/" -- a common mistake
 	int32_t j;
-	for ( j = 0 ; s[j] ; j++) if (s[j]=='\\') s[j]='/';
+	for ( j = 0 ; s[j] ; j++) 
+	{
+		if (s[j]=='\\') 
+		{
+			s[j]='/';
+		}
+	}
+		
 	// . dig out the protocol/scheme for this s (check for ://)
 	// . protocol may only have alnums and hyphens in it
 	for ( i = 0 ; s[i] && (is_alnum_a(s[i]) || s[i]=='-') ; i++ );
+	
 	// if we have a legal protocol, then set "m_scheme", "slen" and "sch" 
 	// and advance i to the m_host
-	if ( i + 2 < len && s[i]==':' && s[i+1]=='/' && s[i+2]=='/') {
+	if ( i + 2 < len && s[i]==':' && s[i+1]=='/' && s[i+2]=='/') 
+	{
 		// copy lowercase protocol to "m_url"
 		to_lower3_a ( s , i + 3 , m_url ); 
 		m_scheme = m_url;
@@ -598,7 +584,9 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		m_ulen   = i + 3;
 		i += 3;
 	}
-	else if (i + 2 < len && s[i]==':' && s[i+1]=='/'&& is_alnum_a(s[i+2])){
+	else 
+	if (i + 2 < len && s[i]==':' && s[i+1]=='/'&& is_alnum_a(s[i+2]))
+	{
 		// copy lowercase protocol to "m_url"
 		to_lower3_a ( s , i + 2 , m_url ); 
 		// add in needed /
@@ -608,22 +596,10 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		m_ulen   = i + 3;
 		i += 2;
 	}
-	// callto:+441202300007  (skype links)
-	// mailto:blah@blah.com
-	/*
-	else if ( i+1 < len && s[i]==':' && version >= 62 ) {
-		// copy lowercase protocol to "m_url"
-		to_lower3_a ( s , i + 1 , m_url ); 
-		// add in needed /
-		m_url[i+2]='/';
-		m_scheme = m_url;
-		m_slen   = i;
-		m_ulen   = i + 3;
-		i += 2;
-	}
-	*/
-	// otherwise we had no syntactically correct protocol
-	else {
+	else 
+	{
+		log(LOG_DEBUG, "build: Url:set no scheme found, defaulting to http://");
+		
 		gbmemcpy ( m_url,"http://" , 7 );
 		m_scheme = m_url;
 		m_slen   = 4;
@@ -836,10 +812,6 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		m_url[m_ulen+1+anchorLen] = '\0';
 	}
  done:
-	// debug msg
-	//log("--------------%s has domain \"",s);
-	//for (int32_t k=0;k <m_dlen; k++ ) log("%c",m_domain[k]);
-	//log("\"\n");
 	// check for iterative stablization
 	static int32_t flag = 0;
 	if ( flag == 1 ) return;
@@ -888,12 +860,6 @@ bool Url::isRoot() {
 	// for now we'll let all thos *.deviantart.com names clog us up
 	// because i don't want to dis' stuff like espn.go.com
 	return true;
-	// get just the hostname w/o the domain (includes '.' following name)
-	//int32_t nameLen = m_hlen - m_dlen ;
-	//if ( nameLen   <= 0   ) return true;
-	//if ( nameLen   != 4   ) return false; // "www."
-	//if ( strncmp ( m_host , "www" , 3 ) != 0 ) return false;
-	//return true;
 }
 
 // a super root url is a root url where the hostname is NULL or "www"
@@ -1126,16 +1092,6 @@ char *Url::getPathComponent ( int32_t num , int32_t *clen ) {
 	goto loop;
 }
 
-//char *Url::getPathEnd ( int32_t num ) {
-//	// get component
-//	int32_t  pclen = 0;
-//	char *pc    = getPathComponent ( num , &pclen );
-//	// return the end of it
-//	return pc + pclen;
-//}
-
-
-
 
 
 bool Url::isHostWWW ( ) {
@@ -1249,150 +1205,6 @@ bool Url::isSpam ( char *s , int32_t slen ) {
 	logf ( LOG_DEBUG,"build: failed to find sequence of words to "
 	      "prove %s was not porn.", s );
 	return true;
-
-	/*	if ( strstr ( s , "upskirt"     ) ) return true;
-	if ( strstr ( s , "downblouse") ) return true;
-	if ( strstr ( s , "adult"     ) ) return true;
-	if ( strstr ( s , "shemale"   ) ) return true;
-	if ( strstr ( s , "spank"     ) ) return true;
-	if ( strstr ( s , "dildo"     ) ) return true;
-	if ( strstr ( s , "shaved"    ) ) return true;
-	if ( strstr ( s , "bdsm"      ) ) return true;
-	if ( strstr ( s , "voyeur"    ) ) return true;
-	if ( strstr ( s , "shemale"   ) ) return true;
-	if ( strstr ( s , "fisting"   ) ) return true;
-	if ( strstr ( s , "escorts"   ) ) return true;
-	if ( strstr ( s , "vibrator"  ) ) return true;
-	if ( strstr ( s , "rgasm"     ) ) return true; // 0rgasm
-	if ( strstr ( s , "orgy"      ) ) return true; 
-	if ( strstr ( s , "orgies"    ) ) return true; 
-	if ( strstr ( s , "masturbat" ) ) return true; 
-	if ( strstr ( s , "stripper"  ) ) return true; 
-	if ( strstr ( s , "lolita"    ) ) return true; 
-	//if ( strstr ( s , "hardcore"  ) ) return true; ps2hardcore.co.uk
-	if ( strstr ( s , "softcore"  ) ) return true;
-	if ( strstr ( s , "whore"     ) ) return true;
-	if ( strstr ( s , "slut"      ) ) return true;
-	if ( strstr ( s , "smut"      ) ) return true;
-	if ( strstr ( s , "tits"      ) ) return true;
-	if ( strstr ( s , "lesbian"   ) ) return true;
-	if ( strstr ( s , "swinger"   ) ) return true;
-	if ( strstr ( s , "fetish"    ) ) return true;
-	if ( strstr ( s , "housewife" ) ) return true;
-	if ( strstr ( s , "housewive" ) ) return true;
-	if ( strstr ( s , "nude"      ) ) return true;
-	if ( strstr ( s , "bondage"   ) ) return true;
-	if ( strstr ( s , "centerfold") ) return true;
-	if ( strstr ( s , "incest"    ) ) return true;
-	if ( strstr ( s , "pedophil"  ) ) return true;
-	if ( strstr ( s , "pedofil"   ) ) return true;
-	// hornyear.com
-	if ( strstr ( s , "horny"     ) ) return true;
-	if ( strstr ( s , "pussy"     ) ) return true;
-	if ( strstr ( s , "pussies"   ) ) return true;
-	if ( strstr ( s , "penis"     ) ) return true;
-	if ( strstr ( s , "vagina"    ) ) return true;
-	if ( strstr ( s , "phuck"     ) ) return true;
-	if ( strstr ( s , "blowjob"   ) ) return true;
-	if ( strstr ( s , "gangbang"  ) ) return true;
-	if ( strstr ( s , "xxx"       ) ) return true;
-	if ( strstr ( s , "porn"      ) ) return true;
-	if ( strstr ( s , "felch"     ) ) return true;
-	if ( strstr ( s , "cunt"      ) ) return true;
-	if ( strstr ( s , "bestial"   ) ) return true;
-	if ( strstr ( s , "beastial"  ) ) return true;
-	//if ( strstr ( s , "oral"    ) ) return true; // moral, doctorial, ...
-	// these below may have legit meanings
-	if ( strstr ( s , "kink"      ) ) {
-		if ( strstr ( s , "kinko"     ) ) return false; // the store
-		return true;
-	}
-	if ( strstr ( s , "sex"     ) ) {
-		// sexton, sextant, sextuplet, sextet
-		if ( strstr ( s , "sext"    ) ) return false; 
-		if ( strstr ( s , "middlesex" ) ) return false;
-		if ( strstr ( s , "sussex"    ) ) return false;
-		if ( strstr ( s , "essex"     ) ) return false;
-		if ( strstr ( s , "deusex"    ) ) return false; // video game
-		if ( strstr ( s , "sexchange" ) ) return false; // businessexh
-		if ( strstr ( s , "sexpress"  ) ) return false; // *express
-		if ( strstr ( s , "sexpert"   ) ) return false; // *expert
-		if ( strstr ( s , "sexcel"    ) ) return false; // *excellence
-		if ( strstr ( s , "sexist"    ) ) return false; // existence
-		if ( strstr ( s , "sexile"    ) ) return false; // existence
-		if ( strstr ( s , "harassm"   ) ) return false; // harassment
-		if ( strstr ( s , "sexperi"   ) ) return false; // experience
-		if ( strstr ( s , "transex"   ) ) return false; // transexual
-		if ( strstr ( s , "sexual"    ) ) return false; // abuse,health
-		if ( strstr ( s , "sexpo"     ) ) return false; // expo,expose
-		if ( strstr ( s , "exoti"     ) ) return false; // exotic(que)
-		if ( strstr ( s , "sexclu"    ) ) return false; // exclusive/de
-		return true;
-	}
-	// www.losAnaLos.de
-	// sanalcafe.net
-	if ( strstr ( s , "anal") ) {
-		if ( strstr ( s , "analog"    ) ) return false; // analogy
-		if ( strstr ( s , "analy"     ) ) return false; // analysis
-		if ( strstr ( s , "canal"     ) ) return false;
-		if ( strstr ( s , "kanal"     ) ) return false; // german
-		if ( strstr ( s , "banal"     ) ) return false;
-		return true;
-	}
-	if ( strstr ( s , "cum") ) {
-		if ( strstr ( s , "circum"    ) ) return false; // circumvent
-		if ( strstr ( s , "magn"      ) ) return false; // magna cum
-		if ( strstr ( s , "succu"     ) ) return false; // succumb
-		if ( strstr ( s , "cumber"    ) ) return false; // encumber
-		if ( strstr ( s , "docum"     ) ) return false; // document
-		if ( strstr ( s , "cumul"     ) ) return false; // accumulate
-		if ( strstr ( s , "acumen"    ) ) return false; // acumen
-		if ( strstr ( s , "cucum"     ) ) return false; // cucumber
-		if ( strstr ( s , "incum"     ) ) return false; // incumbent
-		if ( strstr ( s , "capsicum"  ) ) return false; 
-		if ( strstr ( s , "modicum"   ) ) return false; 
-		if ( strstr ( s , "locum"     ) ) return false; // slocum
-		if ( strstr ( s , "scum"      ) ) return false; 
-		if ( strstr ( s , "accu"      ) ) return false; // compounds!
-		// arcum.de
-		// cummingscove.com
-		// cumchristo.org
-		return true;
-	}
-	//if ( strstr ( s , "lust"       ) ) {
-	//	if ( strstr ( s , "illust"  ) ) return false; // illustrated
-	//	if ( strstr ( s , "clust"   ) ) return false; // cluster
-	//	if ( strstr ( s , "blust"   ) ) return false; // bluster
-	//	if ( strstr ( s , "lustrad" ) ) return false; // balustrade
-	//	// TODO: plusthemes.com wanderlust
-	//	return true;
-	//}
-	// brettwatt.com
-	//if ( strstr ( s , "twat"      ) ) {
-	//	if ( strstr ( s , "watch"   ) ) return false; // wristwatch
-	//	if ( strstr ( s , "atwater" ) ) return false;
-	//	if ( strstr ( s , "water"   ) ) return false; // sweetwater
-	//	return true;
-	//}
-	if ( strstr ( s, "clit" ) && ! strstr ( s, "heraclitus") ) return true;
-	// fuckedcompany.com is ok
-	if ( strstr ( s, "fuck" ) && ! strstr ( s, "fuckedcomp") ) return true;
-	if ( strstr ( s, "boob" ) && ! strstr ( s, "booboo"    ) ) return true;
-	if ( strstr ( s, "wank" ) && ! strstr ( s, "swank"     ) ) return true;
-	// fick is german for fuck (fornication under consent of the king)
-	if ( strstr ( s, "fick" ) && ! strstr ( s, "fickle") &&
-	     ! strstr ( s , "traffick" ) ) return true;
-	// sclerotic
-	// buerotipp.de
-	if ( strstr ( s, "eroti") && ! strstr ( s, "sclero"    ) ) return true;
-	// albaberlin.com
-	// babelfish.altavista.com
-	if ( strstr ( s, "babe" ) && ! strstr ( s, "toyland"   ) &&
-	     ! strstr ( s , "babel") ) return true;
-	// what is gaya.dk?
-	if ( strstr ( s , "gay" ) && ! strstr ( s, "gaylord"   ) ) return true;
-	// url appears to be ok
-	return false;*/
 }
 
 
@@ -1756,241 +1568,6 @@ bool Url::isIp() {
 	return atoip ( m_host , m_hlen ); 
 }
 
-/*
-bool Url::isSiteRoot ( char *coll , TagRec *tagRec ,
-		       char **retSite , int32_t *retSiteLen ) {
-	int32_t  siteLen;
-	// use the DOMAIN as the default site
-	char *site = getSite ( &siteLen , coll , false , tagRec );
-	// check end of site
-	char *send = site + siteLen;
-	// our end
-	char *uend = m_url + m_ulen;
-	// backup over an ending '/'
-	if ( uend[-1] == '/' ) uend--;
-	// set it
-	if ( retSite    ) *retSite    = site;
-	if ( retSiteLen ) *retSiteLen = siteLen;
-	// if before our end, we are not a site root
-	return (uend <= send);
-}
-
-// . a "site" is a set of urls controlled/regulated primarily by the same 
-//   entity.
-// . this returns the smallest site containing the url, m_url
-// . so fred.blogspot.com is considered a site regulated by "fred"
-// . BUT blogspot.com is a larger site regulated by blogspot
-// . the default site is the domain
-// . returns NULL and sets g_errno on error
-// . if "defaultToHostname" is true we default to the hostname
-//   as opposed to the domain name.
-char *Url::getSite ( int32_t *siteLen , char *coll , bool defaultToHostname ,
-		     TagRec *tagRec ,
-		     bool *isDefault ) {
-	// clear just in case
-	g_errno = 0;
-	// convenience vars
-	char *p;
-	int32_t  len = 0;
-	// assume we return the default
-	if ( isDefault ) *isDefault = true;
-
-	int32_t sitepathdepth = -1;
-	// we may have a defined path depth
-	Tag *tag = NULL;
-	// see if we do
-	if ( tagRec ) tag = tagRec->getTag("sitepathdepth");
-	// sanity check
-	if ( tag && tag->m_dataSize != 1 ) { char *xx=NULL;*xx=0; }
-	// if there, get the sitepathdepth value it contains
-	if ( tag ) sitepathdepth = (int32_t)tag->m_data[0];
-
-	// . deal with site indicators
-	// . these are applied to all domains uniformly
-	// . if it is xyz.com/users/  use xyz.com/users/fred/ as the site
-	p = m_path;
-	// a lot of times these were not indivual blogs, but the blog subsite
-	// of a site... http://dccc.org/blog/P4575/
-	//if ( strncasecmp(p,"/blogs/"       , 7) == 0 ) len = 7;
-	//if ( strncasecmp(p,"/blog/"        , 6) == 0 ) len = 6;
-	// commented out a bunch cuz they were profiles mostly, not blogs...
-	if ( strncasecmp(p,"/~"            , 2) == 0 ) len = 2;
-	// assume this is a username. skip the first /
-	if ( sitepathdepth == 1                      ) len = 1;
-	//if ( strncasecmp(p,"/users/"       , 7) == 0 ) len = 7;
-	//if ( strncasecmp(p,"/user/"        , 6) == 0 ) len = 6;
-	//if ( strncasecmp(p,"/members/"     , 9) == 0 ) len = 9;
-	//if ( strncasecmp(p,"/membres/"     , 9) == 0 ) len = 9;
-	//if ( strncasecmp(p,"/member/"      , 8) == 0 ) len = 8;
-	//if ( strncasecmp(p,"/membre/"      , 8) == 0 ) len = 8;
-	//if ( strncasecmp(p,"/member.php?u=",14) == 0 ) len = 14;
-	// point to after the /users/, /blogs/, /user/, /blog/ or /~xxx/
-	p += len;
-	// assume there is NOT an alpha char after this
-	char username = false;
-	// . skip to next / OR ?
-	// . stop at . or -, because we do not allow those in usernames and
-	//   they are often indicative of filenames without file extensions
-	while ( len && *p && *p!= '/'&&*p!='?'&&*p!='.'&&*p!='-'&&*p!='_') {
-		if ( is_alpha_a(*p) ) username = true;
-		p++;
-	}
-	// if we hit this, not a username
-	if ( *p=='.' || *p == '-' || *p == '_' ) username = false;
-	// did we get a match?
-	// . www.cits.ucsb.edu/users/michael-osborne
-	// . www.cits.ucsb.edu/users/michael-osborne/
-	// . after /blog/ or /~ should be another / or \0, not a period,
-	//   because that indicates probably a filename, which is not right,
-	//   because we are expecting a username!
-	if ( username ) {
-		// include the '/'
-		if ( *p == '/' ) p++;
-		// get length
-		*siteLen = p - m_host;
-		// not the default
-		if ( isDefault ) *isDefault = false;
-		// return the site
-		return m_host;
-	}
-
-
-	// assume none
-	*siteLen = 0;
-	// . the default site is the domain
-	// . if domain is invalid, site/siteLen will be NULL/0
-	if ( ! getDomain() ) return NULL;
-	// check the Site Filters table
-	CollectionRec *cr = NULL; if ( coll ) cr = g_collectiondb.getRec(coll);
-	// the default site is the domain
-	char *site;
-	if ( defaultToHostname ) { site = m_host  ; *siteLen = m_hlen; }
-	else                     { site = m_domain; *siteLen = m_dlen; }
-	// g_errno should be set
-	if ( ! cr ) return site;
-
-	// initialize the hash table if it needs to be
-	if ( cr->m_updateSiteRulesTable ) {
-		logf ( LOG_INFO, "db: Updating Site Filters Table" );
-		// fill in the hash tables with domain hashes
-		cr->m_siteRulesTable.reset();
-		cr->m_siteRulesTable.set(cr->m_numSiteExpressions*2);
-		for ( int32_t i = 0; i < cr->m_numSiteExpressions ; i++ ) {
-			Url f;
-			char *u    = cr->m_siteExpressions[i];
-			int32_t  ulen = gbstrlen ( u );
-			// do not add "www."
-			f.set(u,ulen,false);
-			// hash the whole hostname (might be just domain)
-			int32_t h = hash32 ( f.getHost(), f.getHostLen() );
-			// also hash scheme and port
-			h = hash32 ( f.getScheme() , f.getSchemeLen() , h );
-			h = hash32 ( h , f.getPort() );
-			// add to the table
-			cr->m_siteRulesTable.addKey(h, i+1);
-		}
-		// unset the update flag
-		cr->m_updateSiteRulesTable = 0;
-	}
-
-	// . you can only have on entry per domain or subdomain in the table!
-	// . that entry will be a domain or a subdomain
-	// . so check for both in the hash table
-	int32_t t = 2;
-loop:
-	t--;
-	// return the DEFAULT SITE if no matches
-	if ( t < 0 ) return site;
-	// check hash table for this domain or subdomain
-	int32_t h ;
-	if ( t == 1 ) h = hash32 ( getHost  () , getHostLen  () );
-	else          h = hash32 ( getDomain() , getDomainLen() );
-	// also hash scheme and port
-	h = hash32 ( getScheme(), getSchemeLen(), h);
-	h = hash32 ( h, getPort());
-	// is it in the table?
-	int32_t s = cr->m_siteRulesTable.getSlot(h);
-	// if not found, try the domain next
-	if ( s < 0 ) goto loop;
-
-
-	// found, grab the index #
-	int32_t i = cr->m_siteRulesTable.getValueFromSlot(s) - 1;
-	// . see if the url properly matches a filter
-	// . do NOT add "www." to the domain/subdomain of the filter url
-	char *e = cr->m_siteExpressions[i];
-	Url f; f.set (e,gbstrlen(e),false);
-	// what is the rule #? if rule is 0, that means the "hostname" rule
-	// otherwise this specifies a path depth that defines the site...
-	int32_t r = cr->m_siteRules[i];
-	// get the full hostname of it
-	//char *h    = f.getHost();
-	//int32_t  hlen = f.getHostLen();
-	// get its hostname (might just be a domain name)
-	char *sub    = f.getHost();
-	int32_t  subLen = f.getUrlLen() - f.getSchemeLen() - 3;
-	// assume we did not match it
-	char matched = 0;
-	// is the filtered url "f" a "substring" of us?
-	if ( strncmp ( getHost  () , sub , subLen ) == 0 ) matched = 1;
-	if ( strncmp ( getDomain() , sub , subLen ) == 0 ) matched = 2;
-	// must also match scheme and port
-	if ( getPort() != f.getPort()                    ) matched = false;
-	if ( getSchemeLen() != f.getSchemeLen()          ) matched = false;
-	if ( strncmp(getScheme(), f.getScheme(),m_slen)  ) matched = false;
-	// if really not a match try again
-	if ( ! matched ) goto loop;
-	// . we got a match
-	// . if r == 0 then the hostname is the site for this rule
-	// . so return the hostname as the site
-	if ( r == 0 ) {
-		// not the default
-		if ( isDefault ) *isDefault = false;
-		*siteLen = m_hlen;
-		return     m_host;
-	}
-	// . otherwise, it is path depth based
-	// . m_path starts off point to "/"
-	p = m_path;
-	// if empty, no good, no site. return the DEFAULT SITE
-	if ( ! p ) return site;
-	// do not count the first "/"
-	p++;
-	// how many /'s to count to?
-	int32_t  count ;
-	// count them
-	for ( count = r ; count > 0 ; count-- ) {
-		// inc p
-		while ( *p && *p !='/' ) p++;
-		// done?
-		if ( ! *p ) break;
-		// skip passed the '/'
-		p++;
-	}
-	// if count not accomplished, no site. return the DEFAULT SITE.
-	if ( count > 0 ) return site;
-	// not the default
-	if ( isDefault ) *isDefault = false;
-	// otherwise we got the site
-	if ( matched == 1 ) {
-		// use the host, since we matched that
-		*siteLen = p - m_host;
-		// return it
-		return m_host;
-	}
-	// otherwise, use domain
-	*siteLen = p - m_domain;
-	return m_domain;
-}
-
-int32_t Url::getSiteHash32 ( char *coll ) {
-	int32_t siteLen;
-	// prefer domain as default, not hostname
-	char *site = getSite ( &siteLen , coll , false );
-	return hash32 ( site , siteLen );
-}
-*/
-
 int32_t Url::getHash32WithWWW ( ) {
 	uint32_t hh = hash32n ( "www." );
 	int32_t conti = 4;
@@ -2281,23 +1858,6 @@ bool isPermalinky ( char *u ) {
 	return true;
 }
 
-/*
-bool Url::isRSSFormat ( ) {
-	// if it ends in .rss, .xml or .rdf ASSUME rss
-	bool isRSS = false;
-	char *e    = getExtension();
-	int32_t  elen = getExtensionLen();
-	if ( elen == 3 && strcmp(e,"rss")==0 ) isRSS = true;
-	if ( elen == 3 && strcmp(e,"xml")==0 ) isRSS = true;
-	if ( elen == 3 && strcmp(e,"rdf")==0 ) isRSS = true;
-	// . but if it has wlwmanifest, then not!
-	// . i don't know what those are, but they are not rss feeds
-	if ( strstr ( getPath(), "wlwmanifest" ) ) isRSS = false;
-	// same goes for foaf
-	if ( strstr ( getPath(), "foaf" ) ) isRSS = false;
-	return isRSS;
-}
-*/
 
 // is it http://rpc.weblogs.com/int16_tChanges.xml, etc.?
 bool Url::isPingServer ( ) {
@@ -2335,6 +1895,23 @@ char *getHost ( char *s , int32_t *hostLen ) {
 	// return it
 	return host;
 }
+
+// "s" point to the start of a normalized url (includes http://, etc.)
+char *getScheme ( char *s , int32_t *schemeLen ) 
+{
+	char *div = strstr(s, "://");
+	
+	if( !div )
+	{
+		*schemeLen=0;
+		return "";
+	}
+
+	*schemeLen = div - s;
+	return s;
+}
+
+
 
 char *getFilenameFast ( char *s , int32_t *filenameLen ) {
 	// skip proto

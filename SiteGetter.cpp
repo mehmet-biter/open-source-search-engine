@@ -68,9 +68,12 @@ static void gotSiteListWrapper ( void *state ) ;
 //static void addedTagWrapper    ( void *state ) ;
 
 SiteGetter::SiteGetter ( ) {
-	m_siteLen = 0;
-	m_site[0] = '\0';
-	m_errno = 0;
+	m_siteLen 	= 0;
+	m_site[0] 	= '\0';
+	m_errno 	= 0;
+	
+	m_schemeLen = 0;
+	m_scheme[0] = '\0';
 }
 
 SiteGetter::~SiteGetter ( ) {
@@ -112,6 +115,10 @@ bool SiteGetter::getSite ( char   *url      ,
 	// reset
 	m_siteLen = 0;
 	m_site[0] = '\0';
+	
+	m_schemeLen = 0;
+	m_scheme[0] = '\0';
+	
 	m_allDone  = false;
 	m_addedTag.reset();
 
@@ -463,6 +470,21 @@ bool SiteGetter::setSite ( ) {
 		g_errno = EURLTOOBIG;
 		return true;
 	}
+
+
+	// . get the scheme of our normalized url
+	// . assume the hostname is the site
+	int32_t schemeLen;
+	char *scheme = ::getScheme ( m_url , &schemeLen );
+
+	if( schemeLen < MAX_SCHEME_LEN )
+	{
+		gbmemcpy(m_scheme, scheme, schemeLen);
+		m_scheme[schemeLen] = '\0';
+		m_schemeLen = schemeLen;
+	}
+
+
 
 	char *x = m_site;
 	// check it

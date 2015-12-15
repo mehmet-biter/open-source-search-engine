@@ -4779,30 +4779,11 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 	char *mysite = getSite();
 	if ( ! mysite || mysite == (void *)-1 ) return (char *)mysite;
 
-	// if we are a root page, update tagdb with the root lang id
-	//bool *status1 = updateRootLangId();
-	//if ( ! status1 || status1 == (void *)-1 ) return (char *)status1;
-
-	// if we are a root page, update tagdb with the root lang id
-	//bool *status2 = updateSiteTitleBuf();
-	//if ( ! status2 || status2 == (void *)-1 ) return (char *)status2;
-
-	// if we found some default venue addresses on page, add to tagdb
-	//bool *status3 = updateVenueAddresses();
-	//if ( ! status3 || status3 == (void *)-1 ) return (char *)status3;
-
-	// add "firstip" to tag rec if we need to
-	//bool *status4 = updateFirstIp();
-	//if ( ! status4 || status4 == (void *)-1 ) return (char *)status4;
-
 	uint8_t *langId = getLangId();
 	if ( ! langId || langId == (uint8_t *)-1 ) return (char *) langId;
 
 	getHostHash32a();
 	getContentHash32();
-
-	//Images *images = getImages();
-	//if ( ! images || images == (Images *)-1 ) return (char *)images;
 
 	char **id = getThumbnailData();
 	if ( ! id || id == (void *)-1 ) return (char *)id;
@@ -4814,13 +4795,6 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 	if ( ! spiderLinks || spiderLinks == (char *)-1 ) 
 		return (char *)spiderLinks;
 
-	//int32_t *nextSpiderTime = getNextSpiderTime();
-	//if ( ! nextSpiderTime || nextSpiderTime == (int32_t *)-1 ) 
-	//	return (char *)nextSpiderTime;
-
-	//int8_t *nextSpiderPriority = getNextSpiderPriority();
-	//if ( ! nextSpiderPriority || nextSpiderPriority == (void *)-1 ) 
-	//	return (char *)nextSpiderPriority;
 
 	int32_t *firstIndexedDate = getFirstIndexedDate();
 	if ( ! firstIndexedDate || firstIndexedDate == (int32_t *)-1 ) 
@@ -5011,101 +4985,6 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 
 	// start seting members in THIS's header before compression
 	m_version           = TITLEREC_CURRENT_VERSION;
-
-	// tag rec must have "sitenuminlinks" in it
-	//if (! m_newTagRec.getTag("sitenuminlinks") ) { char *xx=NULL;*xx=0; }
-	// we often update m_oldTagRec above by calling updateRootLangId(), etc
-	// so update the size our of tag rec here
-	//size_tagRecData = m_oldTagRec.getSize();
-	// and sanity check this
-	//if( ptr_tagRecData != (char *)&m_oldTagRec ) { char *xx=NULL;*xx=0; }
-
-	// lookup dmoz title and summary for this site
-	//int32_t          titleLens  [10];
-	//int32_t          summLens   [10];
-	//unsigned char anchorLens [10];
-	//int32_t          titlesLen  = 0;
-	//int32_t          summsLen   = 0;
-	//int32_t          anchorsLen = 0;
-	//char          titles     [10*1024];
-	//char          summs      [10*4096];
-	//char          anchors    [10* 256];
-
-	/*
-
-	  MDW oct 12 2013 -
-	  why is this here? we should store this info at spider time?
-	  
-	char *titles  = m_dmozBuf;
-	char *summs   = m_dmozBuf+5000;
-	char *anchors = m_dmozBuf+10000;
-	// the end of it
-	char *dtend = m_dmozBuf + 5000;
-	char *dsend = m_dmozBuf + 10000;
-	char *daend = m_dmozBuf + 12000;
-	// point into those bufs
-	char *dt = titles;
-	char *ds = summs;
-	char *da = anchors;
-	// MDW: i limit this to 10 to save stack space!
-	int32_t nc = size_catIds / 4;
-	if ( nc > 10 ) nc = 10;
-	for (int32_t i = 0; i < nc ; i++) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// temp stuff
-		int32_t dtlen = 0;
-		int32_t dslen = 0;
-		unsigned char dalen = 0;
-
-		// . store all dmoz info separated by \0's into titles[] buffer
-		// . crap, this does a disk read and blocks on that
-		//
-		// . TODO: make it non-blocking!!!!
-		//
-		g_categories->getTitleAndSummary ( m_firstUrl.getUrl(),
-						   m_firstUrl.getUrlLen(),
-						   ptr_catIds[i],
-						   dt,//&titles[titlesLen],
-						   &dtlen,//&titleLens[i],
-						   dtend-dt,
-						   ds,//&summs[summsLen],
-						   &dslen,//&summLens[i],
-						   dsend-ds,
-						   da,//&anchors[anchorsLen],
-						   &dalen,//&anchorLens[i],
-						   daend-da,
-						   m_niceness);
-		// advance ptrs
-		dt += dtlen;
-		ds += dslen;
-		da += dalen;
-		// null terminate
-		if ( dtlen>0 && dt[dtlen-1]!='\0' ) { *dt++=0; dtlen++; }
-		if ( dslen>0 && ds[dslen-1]!='\0' ) { *ds++=0; dslen++; }
-		if ( dalen>0 && da[dalen-1]!='\0' ) { *da++=0; dalen++; }
-		// must always be something!
-		if ( dtlen==0 ) {*dt++=0; dtlen++;}
-		if ( dslen==0 ) {*ds++=0; dslen++;}
-		if ( dalen==0 ) {*da++=0; dalen++;}
-	}
-
-	// set these
-	ptr_dmozTitles   = titles;
-	ptr_dmozSumms    = summs;
-	ptr_dmozAnchors  = anchors;
-	size_dmozTitles  = dt - titles;
-	size_dmozSumms   = ds - summs;
-	size_dmozAnchors = da - anchors;
-	*/
-
-	// set our crap that is not necessarily set
-	//ptr_firstUrl   = m_firstUrl.getUrl();
-	//ptr_redirUrl   = m_redirUrl.getUrl();
-	//ptr_tagRecData = (char *)&m_oldTagRec;
-
-	// this must be valid now
-	//if ( ! m_skipIndexingValid ) { char *xx=NULL;*xx=0; }
 
 	// set this
 	m_headerSize = (char *)&ptr_firstUrl - (char *)&m_headerSize;
@@ -5309,28 +5188,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 		m_masterState = this;
 	}
 
-	/*
-	// parsing knobs
-	if ( ! m_titleWeightValid ) {
-		// TODO: watchout for overruns!! these are 16-bits only!
-		//m_eliminateMenus       = cr->m_eliminateMenus;
-		m_titleWeight            = cr->m_titleWeight;
-		m_headerWeight           = cr->m_headerWeight;
-		m_urlPathWeight          = cr->m_urlPathWeight;
-		m_externalLinkTextWeight = cr->m_externalLinkTextWeight;
-		m_internalLinkTextWeight = cr->m_internalLinkTextWeight;
-		m_conceptWeight          = cr->m_conceptWeight;
-		//int32_t  siteNumInlinksBoost    = cr->m_siteNumInlinksBoost;
-		// validate these
-		//m_eliminateMenusValid       = true;
-		m_titleWeightValid            = true;
-		m_headerWeightValid           = true;
-		m_urlPathWeightValid          = true;
-		m_externalLinkTextWeightValid = true;
-		m_internalLinkTextWeightValid = true;
-		m_conceptWeightValid          = true;
-	}
-	*/
 
 	/////////
 	//
@@ -5352,32 +5209,17 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if ( ! m_countryIdValid              ) { char *xx=NULL;*xx=0; }
 	if ( ! m_httpStatusValid             ) { char *xx=NULL;*xx=0; }
 
-	/*
-	if ( ! m_titleWeightValid            ) { char *xx=NULL;*xx=0; }
-	if ( ! m_headerWeightValid           ) { char *xx=NULL;*xx=0; }
-	if ( ! m_urlPathWeightValid          ) { char *xx=NULL;*xx=0; }
-	if ( ! m_externalLinkTextWeightValid ) { char *xx=NULL;*xx=0; }
-	if ( ! m_internalLinkTextWeightValid ) { char *xx=NULL;*xx=0; }
-	if ( ! m_conceptWeightValid          ) { char *xx=NULL;*xx=0; }
-	*/
-
 	if ( ! m_siteNumInlinksValid         ) { char *xx=NULL;*xx=0; }
-	// if ( ! m_siteNumInlinksUniqueIpValid     ) { char *xx=NULL;*xx=0; }
-	// if ( ! m_siteNumInlinksUniqueCBlockValid ) { char *xx=NULL;*xx=0; }
-	// if ( ! m_siteNumInlinksTotalValid )        { char *xx=NULL;*xx=0; }
-	//if ( ! m_sitePopValid                ) { char *xx=NULL;*xx=0; }
 	if ( ! m_rootLangIdValid             ) { char *xx=NULL;*xx=0; }
 
 	if ( ! m_hopCountValid               ) { char *xx=NULL;*xx=0; }
 	if ( ! m_metaListCheckSum8Valid      ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_numBannedOutlinksValid    ) { char *xx=NULL;*xx=0; }
 	if ( ! m_langIdValid                 ) { char *xx=NULL;*xx=0; }
 	if ( ! m_contentTypeValid            ) { char *xx=NULL;*xx=0; }
 
 	if ( ! m_isRSSValid                  ) { char *xx=NULL;*xx=0; }
 	if ( ! m_isPermalinkValid            ) { char *xx=NULL;*xx=0; }
 	if ( ! m_isAdultValid                ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_eliminateMenusValid         ) { char *xx=NULL;*xx=0; }
 	if ( ! m_spiderLinksValid            ) { char *xx=NULL;*xx=0; }
 	if ( ! m_isContentTruncatedValid     ) { char *xx=NULL;*xx=0; }
 	if ( ! m_isLinkSpamValid             ) { char *xx=NULL;*xx=0; }
@@ -5385,7 +5227,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	// buffers
 	if ( ! m_firstUrlValid               ) { char *xx=NULL;*xx=0; }
 	if ( ! m_redirUrlValid               ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_metaRedirUrlValid           ) { char *xx=NULL;*xx=0; }
 	if ( ! m_tagRecValid                 ) { char *xx=NULL;*xx=0; }
 	if ( ! m_gigabitHashesValid          ) { char *xx=NULL;*xx=0; }
 	if ( ! m_adVectorValid               ) { char *xx=NULL;*xx=0; }
@@ -5394,28 +5235,18 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if ( ! m_catIdsValid                 ) { char *xx=NULL;*xx=0; }
 	if ( ! m_indCatIdsValid              ) { char *xx=NULL;*xx=0; }
 	if ( ! m_dmozInfoValid               ) { char *xx=NULL;*xx=0; }
-	// if m_recycleContent is true, these are not valid
 	if ( ! m_recycleContent ) {
 		if ( ! m_rawUtf8ContentValid         ) { char *xx=NULL;*xx=0; }
 		if ( ! m_expandedUtf8ContentValid    ) { char *xx=NULL;*xx=0; }
 	}
 	if ( ! m_utf8ContentValid            ) { char *xx=NULL;*xx=0; }
-	// why do we need valid sections for a titlerec? we no longer user
-	// ptr_sectiondbData...
-	//if ( ! m_sectionsValid               ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_sectionsReplyValid          ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_addressReplyValid          ) { char *xx=NULL;*xx=0; }
 	if ( ! m_siteValid                   ) { char *xx=NULL;*xx=0; }
 	if ( ! m_linkInfo1Valid              ) { char *xx=NULL;*xx=0; }
 	if ( ! m_linkInfo2Valid              ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_sectiondbDataValid          ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_placedbDataValid            ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_clockCandidatesDataValid    ) { char *xx=NULL;*xx=0; }
 
 	// do we need these?
 	if ( ! m_hostHash32aValid            ) { char *xx=NULL;*xx=0; }
 	if ( ! m_contentHash32Valid          ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_tagHash32Valid              ) { char *xx=NULL;*xx=0; }
 	if ( ! m_tagPairHash32Valid          ) { char *xx=NULL;*xx=0; }
 	// sanity checks
 	if ( ! m_addressesValid              ) { char *xx=NULL;*xx=0; }
@@ -5461,13 +5292,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	char *cbuf = m_titleRecBuf.getBufStart();
 	m_titleRecKey = *(key_t *)cbuf;
 	m_titleRecKeyValid = true;
-
-	// we are legit
-	//m_freeTitleRec    = true;
-	//m_titleRec        = cbuf;
-	// key + dataSize + ubufSize + compressedData
-	//m_titleRecSize    = sizeof(key_t)+ 4 + 4 + size;
-	//m_titleRecAllocSize = need2;
 
 	// now valid. congratulations!
 	m_titleRecBufValid   = true;
@@ -5984,16 +5808,6 @@ char *XmlDoc::getIsAdult ( ) {
 		return &m_isAdult2;
 	}
 
-	// . if any of the wiki docids we are in are adult.... then we are
-	// . we set the top bit of wiki docids to indicate if adult
-	//for ( int32_t i = 0 ; i < size_wikiDocIds / 8 ; i++ ) {
-	//	int64_t d = ptr_wikiDocIds[i];
-	//	if ( ! ( d & 0x8000000000000000 ) ) continue;
-	//	// got it
-	//	m_isAdult      = true;
-	//	m_isAdultValid = true;
-	//	return &m_isAdult;
-	//}
 
 	// need the content
 	char **u8 = getUtf8Content();
@@ -6006,13 +5820,6 @@ char *XmlDoc::getIsAdult ( ) {
 	int32_t total = getDirtyPoints ( ptr_utf8Content, size_utf8Content - 1 ,
 				      m_niceness , m_firstUrl.m_url );
 
-	// then the url
-	//char *u = getFirstUrl()->getUrl();
-	//total += getDirtyPoints ( u , gbstrlen(u) );
-
-	// and redir url
-	//char *r = getRedirUrl()->getUrl();
-	//total += getDirtyPoints ( r , gbstrlen(r) );
 
 	// debug msg
 	int64_t took = gettimeofdayInMilliseconds() - start;
@@ -6377,129 +6184,6 @@ void XmlDoc::gotWikiResults ( UdpSlot *slot ) {
 	m_wikiDocIdsValid = true;
 }
 
-/*
-// returns NULL and sets g_errno on error, returns -1 if blocked
-HashTableX *XmlDoc::getClockCandidatesTable ( ) {
-	// return if valid
-	if ( m_clockCandidatesTableValid ) return &m_clockCandidatesTable;
-	// otherwise, deserialize?
-	if ( m_clockCandidatesDataValid ) {
-		// and table is now valid
-		m_clockCandidatesTableValid = true;
-		// return empty table if ptr is NULL. take this out then.
-		if(!ptr_clockCandidatesData ) return &m_clockCandidatesTable;
-		// otherwise, deserialize
-		m_clockCandidatesTable.deserialize(ptr_clockCandidatesData ,
-						     size_clockCandidatesData,
-		 				     m_niceness );
-		// and return that
-		return &m_clockCandidatesTable;
-	}
-
-	// no longer using this since we got ptr_metadata
-	return &m_clockCandidatesTable;
-
-	// otherwise, get our dates
-	Dates *dp = getDates();
-	if ( ! dp || dp == (Dates *)-1 ) return (HashTableX *)dp;
-	// reset table just in case
-	m_clockCandidatesTable.reset();
-	// if no dates, bail
-	if ( dp->m_numDatePtrs == 0 ) {
-		m_clockCandidatesTableValid = true;
-		m_clockCandidatesDataValid  = true;
-		// ptr_clockCandidatesData  = NULL;
-		// size_clockCandidatesData = 0;
-		return &m_clockCandidatesTable;
-	}
-	// and set size to 32 buckets to start
-	if ( ! m_clockCandidatesTable.set (8,4,32,NULL,0,false,m_niceness,
-					   "clockcands") ) 
-		return NULL;
-	// now stock the table
-	for ( int32_t i = 0 ; i < dp->m_numDatePtrs ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get date
-		Date *di = dp->m_datePtrs[i];
-		// skip if got nuked
-		if ( ! di ) continue;
-		// make the key
-		int64_t key ;
-		// lower 32 bits is taghash
-		key = di->m_tagHash;
-		// upper 32 bits is occNum
-		key |= ((int64_t)(di->m_occNum)) << 32;
-		// timestamp is the val
-		int32_t val = di->m_timestamp;
-		// then store it
-		if ( ! m_clockCandidatesTable.addKey ( &key , &val ) )
-			return NULL;
-	}
-	// that is now valid
-	m_clockCandidatesTableValid = true;
-	// how many bytes to serialize?
-	int32_t need = m_clockCandidatesTable.getStoredSize();
-	// now make the ptr valid
-	if ( ! m_cctbuf.reserve ( need ) ) return NULL;
-	// store it in there
-	m_clockCandidatesTable.serialize ( &m_cctbuf );
-	// point to it
-	// ptr_clockCandidatesData  = m_cctbuf.getBufStart();
-	// size_clockCandidatesData = need;
-	// that is valid now
-	m_clockCandidatesDataValid = true;
-	return &m_clockCandidatesTable;
-}
-*/
-
-// . use Dates to extract pub date from the url itself if pub date exists
-// . an age of "-1" means unknown
-/*
-int32_t XmlDoc::getOutlinkAge ( int32_t outlinkNum ) {
-	// use Dates
-	Dates dp;
-	// sanity
-	if ( outlinkNum < 0 ) { char *xx=NULL;*xx=0; }
-	// get it
-	char *us = m_links.getLinkPtr(outlinkNum);
-	// for now set this, until we mod Dates to use normalized 
-	// string urls
-	Url u;
-	u.set ( us );
-	// try to get the date just from the url
-	if ( ! dp.set ( &u         ,
-			0          , // ip
-			0LL        , // m_newDocId
-			0          , // siteHash
-			NULL       , // Xml
-			NULL       , // Words
-			NULL       , // Bits
-			NULL       , // Sections
-		        NULL       , // LinkInfo
-			NULL       , // pageSampleVec
-			NULL       , // old date parse2
-			NULL       , // m_newDoc
-			NULL       , // m_oldDoc
-			m_coll     ,
-			0          , // defaultTimeZone
-			m_niceness )){
-		// should never block!
-		char *xx=NULL; *xx= 0; }
-	// this will be -1 if no date was found in the url
-	int32_t urlPubDate = dp.getPubDate();
-	// if we got a valid pub date from the url, set "m_urlAge"
-	if ( urlPubDate == -1 ) return -1;
-	// note it
-	//log ( LOG_DEBUG, "date: Got url pub date: %"UINT32"", m_urlDate );
-	// set the age
-	int32_t age = getTimeGlobal() - urlPubDate;
-	// keep positive
-	if ( age < 0 ) age = 0;
-	// return it
-	return age;
-}
-*/
 
 
 // . sets g_errno on error and returns NULL
@@ -6864,12 +6548,6 @@ uint8_t *XmlDoc::getLangId ( ) {
 	// if sectinos is still NULL - try lang id without sections then,
 	// reset g_errno
 	g_errno = 0;
-	//Links *links  = getLinks();
-	//if ( ! links || links == (Links *)-1 ) return (uint8_t *)links;
-	//LinkInfo *info1    = getLinkInfo1(); 
-	//if ( ! info1 || info1 == (LinkInfo *)-1 ) return (uint8_t *)info1;
-	//CatRec *cat = getCatRec ();
-	//if ( ! cat || cat == (CatRec *)-1) return (uint8_t *)cat;
 	uint8_t *lv = getLangVector();
 	if ( ! lv || lv == (void *)-1 ) return (uint8_t *)lv;
 
@@ -7058,39 +6736,6 @@ Phrases *XmlDoc::getPhrases ( ) {
 	return &m_phrases;
 }
 
-/*
-Synonyms *XmlDoc::getSynonyms ( ) {
-	// return if already set
-	if ( m_synonymsValid ) return &m_synonyms;
-	// this will set it if necessary
-	Words *words = getWords();
-	if ( ! words || words == (Words *)-1 ) return (Synonyms *)words;
-	Phrases *phrases = getPhrases ();
-	if ( ! phrases || phrases == (void *)-1 ) return (Synonyms *)phrases;
-	uint8_t *lv = getLangVector();
-	if ( ! lv || lv == (void *)-1 ) return (Synonyms *)lv;
-	// primary language of the document
-	uint8_t *langId = getLangId();
-	if ( ! langId || langId == (uint8_t *)-1 ) return (Synonyms *) langId;
-	// . now set what we need
-	// . provide a buf for which synonyms can be stored if we need to
-	SafeBuf *synBuf = NULL;
-	if ( m_pbuf || m_storeTermListInfo ) synBuf = &m_synBuf;
-
-	// force on for printing out the synonyms in the loop below
-	//synBuf = &m_synBuf;
-
-	if ( ! m_synonyms.set ( words,
-				(char *)lv,
-				(char)*langId,phrases,
-				m_niceness,synBuf) )
-		return NULL;
-
-	// we got it
-	m_synonymsValid = true;
-	return &m_synonyms;
-}
-*/
 
 Sections *XmlDoc::getExplicitSections ( ) {
 	// these sections might or might not have the implied sections in them
@@ -7108,18 +6753,7 @@ Sections *XmlDoc::getExplicitSections ( ) {
 	// use the old title rec to make sure we parse consistently!
 	XmlDoc **pod = getOldXmlDoc ( );
 	if ( ! pod || pod == (XmlDoc **)-1 ) return (Sections *)pod;
-	// int16_tcut
-	//XmlDoc *od = *pod;
-	// if the serialized section is valid, use that
-	//char *sd = NULL;
-	//bool valid = false;
-	//if ( od && od->m_sectionsReplyValid ) valid = true;
-	//if ( valid                          ) sd = od->ptr_sectionsReply;
-	// shouldn't we use the section data in ptr_sections for this???
-	//bool valid = m_sectionsReplyValid ;
-	//char        *sd = NULL;
-	//if ( valid ) sd = ptr_sectionsReply;
-	// this will set it if necessary
+
 	Words *words = getWords();
 	// returns NULL on error, -1 if blocked
 	if ( ! words || words == (Words *)-1 ) return (Sections *)words;
@@ -7146,9 +6780,6 @@ Sections *XmlDoc::getExplicitSections ( ) {
 	if ( ! cr ) return NULL;
 
 	setStatus ( "getting sections");
-
-	//char *sv = NULL;
-	//if ( m_setFromTitleRec ) sv = ptr_sectionsVotes;
 
 	// debug time to find a slow url
 	int64_t start = gettimeofdayInMillisecondsLocal();
@@ -7280,90 +6911,6 @@ Sections *XmlDoc::getSections ( ) {
 	// start here
 	Section *si;
 
-	/*
-	// get first sentence in doc
-	si = ss->m_firstSent;
-	// do not bother scanning if no votes
-	if ( osvt->getNumVotes() <= 0 ) si = NULL;
-	// scan the sentence sections and or in the bits we should
-	for ( ; si ; si = si->m_nextSent ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// combine section tagHash with contentHashAll to get
-		// the "modified tagHash"
-		int32_t modified = si->m_tagHash ^ si->m_contentHash;
-		// save this
-		float dups = osvt->getNumSampled (modified,SV_TAGCONTENTHASH);
-		// . getNumSampled() combines both m_nsvt and m_osvt so it 
-		//   includes ourselves... NO!... let's change this!
-		//   the osvt should not include votes from us!
-		//   it strips those outin SectionVotingTable::addListOfVotes()
-		// . if it is a print-friendly version of the same page then
-		//   one of the two should have been deduped and not indexed,
-		//   so be strict with adhering to no more than 1!
-		if ( dups > 0 ) si->m_flags |= SEC_DUP;
-		// . content hash must be unique!
-		// . can detect texty bios repeated throughout the site
-		// . this is the hash of the words directly in the section
-		// . HACK: the contentHash is the "tagHash" for this call
-		// . SectionVote::m_numSampled is how many sections over all
-		//   docs we indexed from this site have this m_contentHash
-		// . note that it is not restricted to pages with the same
-		//   tagPairHash as us (i.e. pages with similar layouts)
-		//   therefore it is very flexible!!! it is only restricted
-		//   to pages with our same site hash.
-		// . getNumSampled() combines both m_nsvt and m_osvt so it 
-		//   includes ourselves
-		// . if it is a print-friendly version of the same page then
-		//   one of the two should have been deduped and not indexed,
-		//   so be strict with adhering to no more than 1!
-		if ( dups > 0 ) continue;
-		// . must be in a unique section
-		// . if the section has siblings, skip it!
-		if ( si->m_numOccurences > 1  ) continue;
-		// . eliminate dynamic menus
-		// . like "related posts" menus
-		// . therefore require that we must be "texty" ...
-		// . i.e. be like 80% plain text and no more than 20% link text
-		// . vote on this since in some cases article may be mostly
-		//   just all in anchor text on a few article pages, but on
-		//   other pages it is well-behaved
-		if ( osvt->getScore ( si->m_tagHash, SV_TEXTY) < .80 ) 
-			continue;
-		// . check for comment sections
-		// . these are text and the content is unique
-		// . BUT the section tagHash is typically repeated at least
-		//   once on some other pages (HOPEFULLY!!!!)
-		// . if we only require there be X other pages from this site
-		//   with the same layout, we might get unlucky in that each
-		//   page has 1 or less comments!!! how to fix???
-		// . anyway, we ask for the max # sampled from all of the votes
-		//   here because if just one page has 2+ copies of this
-		//   section enum tag hash, that is enough to be a comment
-		//   section
-		// . SV_TEXTY_MAX_SAMPLED is a statistic compiled from the 
-		//   voters and does not actually exist in sectiondb per se. 
-		//   we add this statistic transparently in addVote() below
-		// . it just gets the num sampled from the voter that had the
-		//   maximum m_numSampled value, because we don't want an
-		//   average in this case
-		if ( osvt->getNumSampled(si->m_tagHash,SV_TEXTY_MAX_SAMPLED)>0)
-			continue;
-		// set it
-		si->m_flags |= SEC_ARTICLE;
-		// tally it up
-		//m_numAlnumWordsInArticle += si->m_exclusive;
-		// and another flag
-		//m_hadArticle = true;
-	}
-	*/
-
-	//
-	// . how many other pages from this site have our tagpairhash?
-	// . that is all the unique adjacent tag pair hashes xor'd together
-	// . kind of represents the template of the webpage, ideally
-	//
-	//int32_t numSimLayouts = osvt->getNumSampled ( *tph , SV_TAGPAIRHASH );
 
 	///////////////////////////////////////
 	//
@@ -7468,13 +7015,6 @@ Sections *XmlDoc::getSectionsWithDupStats ( ) {
 	int32_t *sh32 = getSiteHash32();
 	if ( ! sh32 || sh32 == (int32_t *)-1 ) return (Sections *)sh32;
 	uint32_t siteHash32 = (uint32_t)*sh32;
-
-	//int64_t *shp64 = getSiteHash64();
-	//if ( ! shp64 || shp64 == (void *)-1 ) return (Sections *)shp64;
-	//int64_t siteHash48 = *shp64 & 0x0000ffffffffffffLL;
-
-	// first time called? then init m_nextSection.
-	//Section *si = m_si;
 
 	// if this is -1, we are called for the first time
 	if ( m_si == (void *)-1 ) {
@@ -11589,7 +11129,15 @@ void XmlDoc::nukeDoc ( XmlDoc *nd ) {
 static LinkInfo s_dummy;
 
 XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
-	if ( m_extraDocValid ) return &m_extraDoc;
+	
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN [%s]", __FILE__,__FUNCTION__, u);
+		
+	if ( m_extraDocValid ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. m_extraDocValid is true", __FILE__,__FUNCTION__);
+		return &m_extraDoc;
+	}
+		
 	// note that
 	setStatus ( "getting new doc" );
 	// we need a valid first ip first!
@@ -11600,7 +11148,12 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 	// sanity check
 	if ( ! u || ! u[0] ) { char *xx=NULL;*xx=0; }//return &m_extraDoc;
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END - collection not found", __FILE__,__FUNCTION__);
+		return NULL;
+	}
+	
 	// . if *otr is NULL that means not found
 	// . return a NULL old XmlDoc in that case as well?
 	// . make a new one
@@ -11608,6 +11161,7 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 	try { m_extraDoc = new ( XmlDoc ); }
 	catch ( ... ) {
 		g_errno = ENOMEM;
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END - out of memory", __FILE__,__FUNCTION__);
 		return NULL;
 	}
 	mnew ( m_extraDoc , sizeof(XmlDoc),"xmldoc2");
@@ -11632,7 +11186,10 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 				  cr->m_coll       ,
 				  NULL         , // SafeBuf
 				  m_niceness   ))
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. set4 failed", __FILE__,__FUNCTION__);
 		return NULL;
+	}
 
 	// share our masterloop and state!
 	m_extraDoc->m_masterLoop  = m_masterLoop;
@@ -11694,8 +11251,11 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 
 	// i guess we are valid now
 	m_extraDocValid = true;
+	
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: END.", __FILE__,__FUNCTION__);
 	return &m_extraDoc;
 }
+
 
 bool XmlDoc::getIsPageParser ( ) {
 	if ( m_isPageParserValid ) return m_isPageParser;
@@ -11713,6 +11273,7 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	// help avoid mem leaks
 	if ( m_rootDoc ) { char *xx=NULL;*xx=0; }
 	// note it
+	
 	setStatus ( "getting root doc");
 	// are we a root?
 	char *isRoot = getIsSiteRoot();
@@ -11724,8 +11285,23 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 		return &m_rootDoc;
 	}
 	// get our site root
-	char *mysite = getSite();
-	if ( ! mysite || mysite == (void *)-1 ) return (XmlDoc **)mysite;
+	char *_mysite = getSite();
+	if ( ! _mysite || _mysite == (void *)-1 ) return (XmlDoc **)_mysite;
+		
+
+	// BR 20151215: Prefix domain with the scheme, otherwise it will later
+	// prefix with http:// in Url::set even for https sites.
+	char sitebuf[MAX_SITE_LEN + MAX_SCHEME_LEN+4];	// +4 = :// + 0-terminator
+	char *mysite 	= sitebuf;
+	char *myscheme 	= getScheme();
+	if( myscheme )
+	{
+		mysite += sprintf(mysite, "%s://", myscheme);
+	}
+	sprintf(mysite, "%s", _mysite);
+	mysite = sitebuf;
+
+		
 	// otherwise, we gotta get it!
 	char **rtr = getRootTitleRec ( );
 	if ( ! rtr || rtr == (char **)-1 ) return (XmlDoc **)rtr;
@@ -13861,15 +13437,30 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 
 	setStatus ( "getting site link info" );
 
-	if ( m_siteLinkInfoValid ) 
+	if ( m_siteLinkInfoValid )
+	{
 		//return msg25.m_linkInfo;
 		return (LinkInfo *)m_mySiteLinkInfoBuf.getBufStart();
+	}
+	
 	char *mysite = getSite();
-	if ( ! mysite || mysite == (void *)-1 ) return (LinkInfo *)mysite;
+	if ( ! mysite || mysite == (void *)-1 ) 
+	{
+		return (LinkInfo *)mysite;
+	}
+	
 	int32_t *fip = getFirstIp();
-	if ( ! fip || fip == (int32_t *)-1) return (LinkInfo *)fip;
+	if ( ! fip || fip == (int32_t *)-1) 
+	{
+		return (LinkInfo *)fip;
+	}
+	
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) 
+	{
+		return NULL;
+	}
+	
 	// can we be cancelled?
 	bool canBeCancelled = true;
 	// not if pageparser though
@@ -14392,8 +13983,16 @@ int32_t *XmlDoc::getFinalCrawlDelay() {
 // . getting a robots.txt is not trivial since we need to follow redirects,
 //   so we make use of the powerful XmlDoc class for this
 bool *XmlDoc::getIsAllowed ( ) {
+	
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+	
 	// return if we got it
-	if ( m_isAllowedValid ) return &m_isAllowed;
+	if ( m_isAllowedValid ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Valid. Allowed=%s", __FILE__,__FUNCTION__,(m_isAllowed?"true":"false"));
+		return &m_isAllowed;
+	}
+		
 	// could be turned off for everyone
 	if ( ! m_useRobotsTxt ) {
 		m_isAllowed      = true;
@@ -14402,6 +14001,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		m_crawlDelay      = -1;
 		//log("xmldoc: skipping robots.txt lookup for %s",
 		//    m_firstUrl.m_url);
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. !m_useRobotsTxt", __FILE__,__FUNCTION__);
 		return &m_isAllowed;
 	}
 
@@ -14410,12 +14010,14 @@ bool *XmlDoc::getIsAllowed ( ) {
 	if ( m_setFromTitleRec ) {
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Allowed, m_setFromTitleRec", __FILE__,__FUNCTION__);
 		return &m_isAllowed;
 	}
 
 	if ( m_recycleContent ) {
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Allowed, m_recycleContent", __FILE__,__FUNCTION__);
 		return &m_isAllowed;
 	}
 
@@ -14425,6 +14027,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	     strncmp ( m_firstUrl.getDomain() , "archive.org" , 11 ) == 0 ) {
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Allowed, archive.org", __FILE__,__FUNCTION__);
 		return &m_isAllowed;
 	}
 		
@@ -14442,6 +14045,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		m_crawlDelayValid = true;
 		// make it super fast...
 		m_crawlDelay      = 0;
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Allowed, WE are robots.txt", __FILE__,__FUNCTION__);
 		return &m_isAllowed;
 	}
 
@@ -14461,10 +14065,12 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// if ip does not exist on the dns, do not try to download robots.txt
 	// it is pointless... this can happen in the dir coll and we basically
 	// have "m_siteInCatdb" set to true
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: IP=%s", __FILE__,__FUNCTION__, iptoa(*ip));
+
+
 	if ( *ip == 1 || *ip == 0 || *ip == -1 ) {
 		// note this
-		log("build: robots.txt ip is %s for url=%s. allowing for now.",
-		    fu->getUrl(),iptoa(*ip));
+		log("build: robots.txt ip is %s for url=%s. allowing for now.", iptoa(*ip), fu->getUrl());
 		// just core for now
 		//char *xx=NULL;*xx=0;
 		m_isAllowed      = true;
@@ -14474,20 +14080,44 @@ bool *XmlDoc::getIsAllowed ( ) {
 		// is invalid in getNewSpiderReply()
 		m_crawlDelayValid = true;
 		m_crawlDelay      = -1;
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. We allow it. FIX?", __FILE__,__FUNCTION__);
 		return &m_isAllowed;
 	}
 
 	// we need this so getExtraDoc does not core
 	int32_t *pfip = getFirstIp();
-	if ( ! pfip || pfip == (void *)-1 ) return (bool *)pfip;
+	if ( ! pfip || pfip == (void *)-1 ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. No first IP, return %s", __FILE__,__FUNCTION__, ((bool *)pfip?"true":"false"));
+		return (bool *)pfip;
+	}
+
+	
+	// get the current url after redirects
+	Url *cu = getCurrentUrl();
+	if ( ! cu || cu == (void *)-1 ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. No current URL, return %s", __FILE__,__FUNCTION__, ((bool *)cu?"true":"false"));
+		return (bool *)cu;
+	}
+		
 
 	// set m_extraUrl to the robots.txt url
 	char buf[MAX_URL_LEN+1];
 	char *p = buf;
-	p += sprintf ( p , "http://" );
-	// get the current url after redirects
-	Url *cu = getCurrentUrl();
-	if ( ! cu || cu == (void *)-1 ) return (bool *)cu;
+	if ( ! cu->getScheme() ) 
+	{ 
+		p += sprintf ( p , "http://" );
+	}
+	else
+	{
+		gbmemcpy ( p , cu->getScheme() , cu->getSchemeLen() );
+		p += cu->getSchemeLen();
+		p += sprintf(p,"://");
+	}
+		
+		
+		
 	// sanity
 	if ( ! cu->getHost() ) { char *xx=NULL;*xx=0; }
 	gbmemcpy ( p , cu->getHost() , cu->getHostLen() );
@@ -14501,13 +14131,21 @@ bool *XmlDoc::getIsAllowed ( ) {
 	p += sprintf ( p , "/robots.txt" );
 	m_extraUrl.set ( buf );
 
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: m_extraUrl [%s]", __FILE__,__FUNCTION__, buf);
+
+
 	// . maxCacheAge = 3600 seconds = 1 hour for robots.txt
 	// . if this is non-zero then msg13 should store it as well!
 	// . for robots.txt it should only cache the portion of the doc
 	//   relevant to our user agent!
 	// . getHttpReply() should use msg13 to get cached reply!
 	XmlDoc **ped = getExtraDoc ( m_extraUrl.getUrl() , 3600 );
-	if ( ! ped || ped == (void *)-1 ) return (bool *)ped;
+	if ( ! ped || ped == (void *)-1 ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. getExtraDoc (ped) failed, return %s", __FILE__,__FUNCTION__, ((bool *)ped?"true":"false"));
+		return (bool *)ped;
+	}
+	
 	// assign it
 	XmlDoc *ed = *ped;
 	// return NULL on error with g_errno set
@@ -14517,8 +14155,13 @@ bool *XmlDoc::getIsAllowed ( ) {
 		// log it -- should be rare?
 		log("doc: had error getting robots.txt: %s",
 		    mstrerror(g_errno));
+
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Return NULL, ed failed", __FILE__,__FUNCTION__);
+
 		return NULL;
 	}
+	
+	
 	// inherit this
 	//if ( ! m_useIpsTxtFile ) ed->m_useIpsTxtFile = false;
 	// . steal m_firstIp from us to avoid tag rec lookup
@@ -14532,10 +14175,21 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// . now try the content
 	// . should call getHttpReply
 	char **pcontent = ed->getContent();
-	if ( ! pcontent || pcontent == (void *)-1 ) return (bool *)pcontent;
+	if ( ! pcontent || pcontent == (void *)-1 ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. pcontent failed, return %s", __FILE__,__FUNCTION__, ((bool *)pcontent?"true":"false"));
+		return (bool *)pcontent;
+	}
+	
 	// get the mime
 	HttpMime *mime = ed->getMime();
-	if ( ! mime || mime == (HttpMime *)-1 ) return (bool *)mime;
+	if ( ! mime || mime == (HttpMime *)-1 ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. mime failed, return %s", __FILE__,__FUNCTION__, ((bool *)mime?"true":"false"));
+		return (bool *)mime;
+	}
+
+	
 	// get this
 	int32_t contentLen = ed->m_contentLen;
 	// save this
@@ -14569,7 +14223,10 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// if not success, assume no robots.txt
 	else*/
 
-	if ( mime->getHttpStatus() != 200 ) {
+	if ( mime->getHttpStatus() != 200 ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. httpStatus != 200. Return %s", __FILE__,__FUNCTION__, (m_isAllowed?"true":"false"));
+
 		// nuke it to save mem
 		nukeDoc ( ed );
 		return &m_isAllowed;
@@ -14596,13 +14253,18 @@ bool *XmlDoc::getIsAllowed ( ) {
 			       &cacheStart              , 
 			       &cacheLen                ,
 			       &hadAllowOrDisallow        );
+
+
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: isAllowed2 returned %s for our bot", __FILE__,__FUNCTION__, (allowed?"true":"false"));
+
 	// save it
 	savedCrawlDelay = m_crawlDelay;
 	// . if didn't find our user agent so check for * as a user-agent
 	// . www.wikihow.com/robots.txt just has "Gigabot: crawl-delay:10\n"
 	//   and then a "User-Agent: *" after that with the disallows, so
 	//   i added the hadAllowDisallow parm
-	if ( ! uaFound || ! hadAllowOrDisallow ) 
+	if ( ! uaFound || ! hadAllowOrDisallow )
+	{
 		allowed = isAllowed2 ( cu                  , 
 				       "*"                 ,
 				       content             ,
@@ -14613,6 +14275,11 @@ bool *XmlDoc::getIsAllowed ( ) {
 				       &cacheStart         , 
 				       &cacheLen           ,
 				       &hadAllowOrDisallow   );
+				       
+		if( g_conf.m_logDebugDetailed ) log("%s:%s: isAllowed2 returned %s for '*' bot", __FILE__,__FUNCTION__, (allowed?"true":"false"));
+	}
+	
+	
 	// bring back?
 	if ( savedCrawlDelay != -1 ) m_crawlDelay = savedCrawlDelay;
 	// nuke it to save mem
@@ -14620,6 +14287,9 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// we are legit
 	m_isAllowed      = allowed;
 	m_isAllowedValid = true;
+
+	if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Returning %s", __FILE__,__FUNCTION__, (m_isAllowed?"true":"false") );
+
 	return &m_isAllowed;
 }
 
@@ -15124,8 +14794,16 @@ void XmlDoc::gotSite ( ) {
 	// this sets g_errno on error
 	ptr_site    = m_siteGetter.m_site;
 	size_site   = m_siteGetter.m_siteLen+1; // include \0
+	
 	// sanity check -- must have a site
 	if ( ! g_errno && size_site <= 1 ) { char *xx=NULL;*xx=0; }
+
+	// BR 20151215: Part of fix that avoids defaultint to http:// when getting
+	// robots.txt and root document of a https:// site.
+	ptr_scheme    = m_siteGetter.m_scheme;
+	size_scheme   = m_siteGetter.m_schemeLen+1; // include \0
+
+		
 	// sitegetter.m_errno might be set!
 	m_siteValid = true;
 	// must be valid
@@ -15157,6 +14835,17 @@ int32_t *XmlDoc::getSiteHash32 ( ) {
 }
 
 
+char *XmlDoc::getScheme ( ) {
+	// was there a problem getting site?
+	if ( m_siteValid && m_siteGetter.m_errno ) {
+		g_errno = m_siteGetter.m_errno;
+		return NULL;
+	}
+	// ok, return it
+	if ( m_siteValid ) return ptr_scheme;//m_siteGetter.m_scheme;
+		
+	return "";
+}
 
 
 void gotDiffbotReplyWrapper ( void *state , TcpSocket *s ) {
@@ -15343,43 +15032,6 @@ void gotDiffbotReplyWrapper ( void *state , TcpSocket *s ) {
 	if ( ! cr ) countIt = false;
 	if ( THIS->m_diffbotReplyError ) countIt = false;
 
-	/*
-
-	  // solution for bug #2092 but probably not really needed so
-	  // commented out.
-
-	// if doing /vxxx/analzye?mode=xxxx then ensure matches
-	bool isAnalyze = false;
-	if ( countIt && 
-	     THIS->m_diffbotApiUrlValid &&
-	     strstr ( THIS->m_diffbotApiUrl.getBufStart(), "/analyze?") )
-		isAnalyze = true;
-
-	char *mode = NULL;
-	if ( isAnalyze ) {
-		mode = strstr (THIS->m_diffbotApiUrl.getBufStart(), "mode=");
-		if ( mode ) mode += 5;
-		// find end of it
-	}
-
-	char *pageType = NULL;
-	int32_t pageTypeLen;
-	if ( mode && 
-	     THIS->m_diffbotReplyValid && 
-	     THIS->m_diffbotReply.length() > 5 ) {
-		char *reply = THIS->m_diffbotReply.getBufStart();
-		pageType = strstr ( reply , "\"type\":\"" );
-		if ( pageType ) pageType += 8;
-		char *e = pageType;
-		for ( ; *e && *e != '\"' ; e++ );
-		pageTypeLen = e - pageType;
-	}
-
-	// if it does not match, do not count it
-	if ( mode && pageType && strncmp ( mode , pageType , pageTypeLen ) ) 
-		countIt = false;
-	*/
-
 	// increment this counter on a successful reply from diffbot
 	if ( countIt ) { // ! THIS->m_diffbotReplyError && cr ) {
 		// mark this flag
@@ -15414,16 +15066,6 @@ void gotDiffbotReplyWrapper ( void *state , TcpSocket *s ) {
 		int32_t need = pageLen + 1;// + au->length() + 1;
 		if ( ! THIS->m_diffbotReply.reserve ( need ) ) 
 			goto skip;
-		// first store the url we used on first line
-		//THIS->m_diffbotReply.safeMemcpy ( au->getBufStart(),
-		//				  au->length() );
-		//THIS->m_diffbotReply.pushChar('\n');
-		// convert the \u1f23 to utf8 (\n and \r as well)
-		// crap, this decodes \\\\\" to \\" which is causing
-		// the json parser to believe it is an encoded \ then
-		// a REAL quote... but quote is contained...
-		//THIS->m_diffbotReply.safeDecodeJSONToUtf8 ( page , pageLen ,
-		//					    THIS->m_niceness );
 
 		// do not do that any more then, jsonparse can call it
 		// on a per string basis
@@ -15469,21 +15111,6 @@ SafeBuf *XmlDoc::getDiffbotApiUrl ( ) {
 	m_diffbotApiUrl.nullTerm();
 	m_diffbotApiUrlValid = true;
 
-	// this now automatically sets m_diffbotApiUrl and m_diffbotApiUrlValid
-	// in case the url filters table changes while spidering this!!!
-	// gotta be careful of that.
-	//int32_t *ufn = getUrlFilterNum();
-	//if ( ! ufn || ufn == (void *)-1 ) return (SafeBuf *)ufn;
-
-	// ensure it does set it!
-	//if ( ! m_diffbotApiUrlValid ) { char *xx=NULL;*xx=0; }
-
-	//m_diffbotApiNum = cr->m_spiderDiffbotApiNum[*ufn];
-
-	// sanity check
-	//if ( m_diffbotApiNum < 0 ) { char *xx=NULL;*xx=0; }
-
-	//m_diffbotApiNumValid = true;
 	return &m_diffbotApiUrl;
 }
 
@@ -15841,12 +15468,6 @@ SafeBuf *XmlDoc::getTokenizedDiffbotReply ( ) {
 		}
 	}
 
-	// now show the items. debug!
-	//p = tbuf->getBufStart();
-	//for ( ; p < tbuf->getBuf() ; p += gbstrlen(p) + 1 )
-	//	fprintf(stderr,"ITEM\n%s\n\n",p);
-	
-
 	m_tokenizedDiffbotReplyPtr = tbuf;
 	m_tokenizedDiffbotReplyValid = true;
 	return m_tokenizedDiffbotReplyPtr;
@@ -16016,24 +15637,6 @@ SafeBuf *XmlDoc::getDiffbotReply ( ) {
 	}
 	
 
-	// when respidering an "old" doc, never call this. we already
-	// have the diffbot replies xyz.com/-diffbot-0 and xyz.com/-diffbot-1
-	// etc.
-	//if ( m_setFromTitleRec ) { char *xx = NULL; *xx = 0; }
-
-	// sanity check. no! barfs on legit url with -diffbot- in it
-	//if ( strstr(m_firstUrl.m_url,"-diffbot-") ) {
-	//	char *xx=NULL; *xx = 0; }
-
-	// we should not "process" (i.e. send to diffbot) urls that do
-	// not match the supplied CollectionRec::m_diffbotUrlProcessPattern
-	// let's just put a checkbox in the url filters box for this!
-	// i.e. Send to Diffbot? [X]
-	//if ( m_useDiffbot && ! doesUrlMatchDiffbotProcessPattern() ) {
-	//	m_diffbotReplyValid = true;
-	//	return &m_diffbotReply;
-	//}
-
 	// empty content, do not send to diffbot then
 	char **u8 = getUtf8Content();
 	if ( ! u8 || u8 == (char **)-1 ) return (SafeBuf *)u8;
@@ -16146,74 +15749,6 @@ SafeBuf *XmlDoc::getDiffbotReply ( ) {
 	// make sure to null term the headers
 	if ( headers.length() && ! headers.nullTerm() ) return NULL;
 
-	//char *path = "api";
-	//if ( strcmp(cr->m_diffbotApi.getBufStart(),"product") == 0 )
-	//	path = "v2";
-	
-	//
-	// DIFFBOT injection interface TODO
-	//
-	// if we are intercepting a direct injection diffbot request
-	// then we will probably take the exact same parms provided and
-	// just relay them to diffbot here. maybe Diffbot.cpp can set
-	// the original diffbot.com request url in this xmldoc class that
-	// is being inject using the url encoded in that request.
-	//
-
-	// url can be on the stack since httpserver.cpp makes an http mime
-	// from this url
-	//SafeBuf diffbotUrl;
-	
-	// TODO: make sure "api" works as hostname for not just product...
-	//diffbotUrl.safePrintf("http://www.diffbot.com/");
-	// skip extra '/'?
-	//char *api = au->getBufStart();
-	//int32_t apiLen = au->length();
-	//if ( api && api[0] == '/' ) { api++; apiLen--; }
-	// append the custom url. i.e. /api/analyze?mode=auto&u=
-	//if ( api ) diffbotUrl.safeMemcpy ( api , apiLen );
-
-	// reset it in case we are a re-call from gotDiffbotReplyWrapper()
-	// if g_errno == ECONNRESET
-	m_diffbotUrl.reset();
-	// store the api url into here
-	m_diffbotUrl.safeMemcpy ( apiUrl.getUrl() , apiUrl.getUrlLen() );
-
-	// . m_diffbotApi Is like "article" or "product" etc.
-	// . if classify is true we always return the classification 
-	//   of the page in the JSON. like "type":"frontpage" regardless
-	//   of the "api" specified.
-	// . otherwise, if classify is false empty json will be returned
-	//   if there is no json objects of the specified page type, "api"
-	// . BUT if api is "all" return all types of json objects
-	// . SHOULD we return "type" in the json output?
-	/*
-	if ( *an == DBA_ALL )
-		diffbotUrl.safePrintf("analyze?mode=auto&" );
-	else if ( *an == DBA_ARTICLE_FORCE )
-		diffbotUrl.safePrintf("article?");
-	else if ( *an == DBA_ARTICLE_AUTO )
-		diffbotUrl.safePrintf("analyze?mode=article&");
-	else if ( *an == DBA_PRODUCT_FORCE )
-		diffbotUrl.safePrintf("product?");
-	else if ( *an == DBA_PRODUCT_AUTO )
-		diffbotUrl.safePrintf("analyze?mode=product&");
-	else if ( *an == DBA_IMAGE_FORCE )
-		diffbotUrl.safePrintf("image?");
-	else if ( *an == DBA_IMAGE_AUTO )
-		diffbotUrl.safePrintf("analyze?mode=image&");
-	else if ( *an == DBA_FRONTPAGE_FORCE )
-		diffbotUrl.safePrintf("frontpage?");
-	else if ( *an == DBA_FRONTPAGE_AUTO )
-		diffbotUrl.safePrintf("analyze?mode=frontpage&");
-	else {
-		log("build: unknown diffbot api num = %"INT32". assuming all",*an );
-		diffbotUrl.safePrintf("analyze?mode=auto&" );
-	}
-	*/
-
-	//CollectionRec *cr = getCollRec();
-	//if ( ! cr ) return NULL;
 
 	// add a '?' if none
 	if ( ! strchr ( apiUrl.getUrl() , '?' ) )

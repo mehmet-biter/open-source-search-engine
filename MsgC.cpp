@@ -59,8 +59,10 @@ bool MsgC::getIp(char  *hostname    , int32_t   hostnameLen ,
 	// debug
 	//char c = hostname[hostnameLen];
 	//if ( c != 0 ) hostname[hostnameLen] = 0;
-	log(LOG_DEBUG,"dns: msgc: getting ip (sendtoproxy=%"INT32") for %s.",
-	    (int32_t)forwardToProxy,hostname);
+	log(LOG_DEBUG,"dns: msgc: getting ip (sendtoproxy=%"INT32") for [%s]",
+	    (int32_t)forwardToProxy, hostname);
+	    
+	    
 	//if ( c != 0 ) hostname[hostnameLen] = c;
 	// if url is already in a.b.c.d format return that
 	if ( is_digit(hostname[0]) ) {
@@ -71,15 +73,15 @@ bool MsgC::getIp(char  *hostname    , int32_t   hostnameLen ,
 		//if ( *ip == 3 ) { char *xx=NULL;*xx=0; }
 		if ( *ip != 0 ) return true;
 	}
+	
 	// key is hash of the hostname
 	//key_t key = hash96 ( hostname , hostnameLen );
 	key_t key = g_dns.getKey ( hostname , hostnameLen );
+	
 	// is it in the /etc/hosts file?
 	if ( g_conf.m_useEtcHosts && g_dns.isInFile ( key , ip ))return 1;
-	// debug msg
-	//char tmp[2048];
-	//gbmemcpy ( tmp , hostname , hostnameLen );
-	//tmp [ hostnameLen ] = '\0';
+		
+		
 	// . try getting from the cache first
 	// . this returns true if was in the cache and sets *ip to the ip
 	// . ip is set to 0 for non-existent domains, and -1 if there was
@@ -93,15 +95,6 @@ bool MsgC::getIp(char  *hostname    , int32_t   hostnameLen ,
 		return true;
 	}
 
-	// hack for speed
-	//char *is = "216.184.2.32"; // alibi.com
-	//char *is = "74.201.80.152";// events.kgoradio.com
-	//char *is = "208.50.192.246"; // livenation
-	//char *is = "66.151.232.17"; // publicbroadcasting.net DON'T USE!!
-	//char *is = "64.84.23.68"; // events.kqed.org
-	//log("HACKING ip to %s !!!!!!!!!!!!!!!!!!!!",is);
-	//*ip = atoip (is,gbstrlen(is));
-	//return true;
 
 	// So its not in the local dns cache, so lets look in the 
 	// s_localDnsCache. For that I need to pass the url
@@ -329,8 +322,11 @@ void gotProxyReplyWrapper ( void *state , int32_t ipArg ) {
 	// get ip from the proxy reply
 	int32_t ip = THIS->gotReply();
 	// debug
-	log(LOG_DEBUG,"dns: msgc: got reply from proxy of %s for %s.",
-	    iptoa(*THIS->m_ipPtr),THIS->m_u.getUrl());
+	log(LOG_DEBUG,"dns: msgc: got reply from proxy of %s for %s [%s].",
+	    iptoa(*THIS->m_ipPtr),
+	    THIS->m_u.getUrl(), 
+	    THIS->m_u.getScheme());
+	    
 	UdpSlot *slot = THIS->m_slot;
 	// free the msgc we used to communicate with the proxy
 	mdelete ( THIS , sizeof(MsgC), "proxmsgc");
