@@ -356,11 +356,11 @@ void Conf::setRootIps ( ) {
 
 	Host *h = g_hostdb.getMyHost();
 
-	// fail back to google public dns
-	char *ipStr = "8.8.8.8";
+	// fail back to public dns
+	const char *ipStr = PUBLICLY_AVAILABLE_DNS1;
 
-	if ( h->m_type & HT_SCPROXY ) ipStr = "8.8.8.8"; 
-	if ( h->m_type & HT_PROXY ) ipStr = "8.8.8.8"; 
+	if ( h->m_type & HT_SCPROXY ) ipStr = PUBLICLY_AVAILABLE_DNS1; 
+	if ( h->m_type & HT_PROXY ) ipStr = PUBLICLY_AVAILABLE_DNS1; 
 
 	if ( m_numDns == 0 ) {
 		m_dnsIps[0] = atoip( ipStr , gbstrlen(ipStr) );

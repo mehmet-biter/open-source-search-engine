@@ -11590,13 +11590,13 @@ void Parms::init ( ) {
 
 	m->m_title = "dns 0";
 	m->m_desc  = "IP address of the primary DNS server. Assumes UDP "
-		"port 53. REQUIRED FOR SPIDERING! Use Google's "
-		"public DNS 8.8.8.8 as default.";
+		"port 53. REQUIRED FOR SPIDERING! Use <company>'s "
+		"public DNS " PUBLICLY_AVAILABLE_DNS1 " as default.";
 	m->m_cgi   = "pdns";
 	m->m_off   = (char *)&g_conf.m_dnsIps[0] - g;
 	m->m_type  = TYPE_IP;
 	// default to google public dns #1
-	m->m_def   = "8.8.8.8";
+	m->m_def   = (char*)PUBLICLY_AVAILABLE_DNS1;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11605,12 +11605,12 @@ void Parms::init ( ) {
 	m->m_desc  = "IP address of the secondary DNS server. Assumes UDP "
 	"port 53. Will be accessed in conjunction with the primary "
 	"dns, so make sure this is always up. An ip of 0 means "
-	"disabled. Google's secondary public DNS is 8.8.4.4.";
+	"disabled. <company>'s secondary public DNS is " PUBLICLY_AVAILABLE_DNS2 ".";
 	m->m_cgi   = "sdns";
 	m->m_off   = (char *)&g_conf.m_dnsIps[1] - g;
 	m->m_type  = TYPE_IP;
 	// default to google public dns #2
-	m->m_def   = "8.8.4.4";
+	m->m_def   = (char*)PUBLICLY_AVAILABLE_DNS2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;

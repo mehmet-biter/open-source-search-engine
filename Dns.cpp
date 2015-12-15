@@ -1212,8 +1212,6 @@ bool Dns::sendToNextDNS ( DnsState *ds , int32_t timeout ) {
 	return false;
 }
 
-#define BACKUPDNS "8.8.8.8"
-//#define BACKUPDNS "64.22.106.82"
 
 void gotIpWrapper ( void *state , UdpSlot *slot ) {
 	DnsState *ds = (DnsState *) state;
@@ -1255,15 +1253,14 @@ void gotIpWrapper ( void *state , UdpSlot *slot ) {
 			    iptoa(slot->m_ip));
 		}
 		// try again? yes, if we timed out on router1's bind9
-		int32_t len = gbstrlen(BACKUPDNS);
-		if ( ds->m_dnsIps[0][0] != atoip(BACKUPDNS,len) ) {
+		if ( ds->m_dnsIps[0][0] != atoip(PUBLICLY_AVAILABLE_DNS1) ) {
 			g_errno = ETRYAGAIN;
 			//ds->m_depth++;
 			// note it
 			log("dns: trying backup-dns %s (old=%s)",
-			    BACKUPDNS,iptoa(ds->m_dnsIps[0][0]));
+			    PUBLICLY_AVAILABLE_DNS1,iptoa(ds->m_dnsIps[0][0]));
 			// try google's public dns
-			ds->m_dnsIps[0][0] = atoip(BACKUPDNS,len);
+			ds->m_dnsIps[0][0] = atoip(PUBLICLY_AVAILABLE_DNS1);
 		}
 	}
 	// debug msg
@@ -1291,8 +1288,8 @@ void gotIpWrapper ( void *state , UdpSlot *slot ) {
 		// mdw
 		if ( (g_errno == EUDPTIMEDOUT || g_errno == EDNSTIMEDOUT) &&
 		     // do not do this if we our hitting our local bind9 
-		     // server. this was adding google's 8.8.8.8 and it
-		     // was then logging "skipping ip 8.8.8.8 - timed out"
+		     // server. this was adding public DNS server
+		     // was then logging "skipping ip x.x.x.x - timed out"
 		     // and we were missing out!
 		     g_conf.m_askRootNameservers ) {
 			int32_t timestamp = getTime();
@@ -1374,7 +1371,7 @@ void returnIp ( DnsState *ds , int32_t ip ) {
 	bool cache = false;
 	// no longer cache these! i think the spider should evenly sample
 	// every other IP address before returning to the timed out IP address...
-	// ideally. plus i added the google public dns 8.8.8.8 as a secondary
+	// ideally. plus i added the <company>'s public dns x.x.x.x as a secondary
 	// dns ip to fallback to in the case of timeouts i guess... so make
 	// sure that's what it does.
 	// CRAP, we lookup the dns entry of all the outlinks, so we need this,
