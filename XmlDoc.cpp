@@ -13666,22 +13666,16 @@ bool *XmlDoc::getIsAllowed ( ) {
 	m_isAllowed      = true;
 	m_isAllowedValid = true;
 
-	// put in a crawldelay test for diffbot
-	/*
-	SafeBuf tmp;
-	if ( strstr(m_firstUrl.getUrl(),"diffbot.com") ) {
-		tmp.safePrintf("User-Agent: *\n"
-			       "Crawl-Delay: 10.1\n"
-			       );
-		content = tmp.getBufStart();
-		contentLen = tmp.getLength();
-	}
-
-	// if not success, assume no robots.txt
-	else*/
 
 	if ( mime->getHttpStatus() != 200 ) 
 	{
+		// BR 20151215: Do not allow spidering if we cannot read robots.txt EXCEPT
+		// if the error code is 404 (Not Found).
+		if( mime->getHttpStatus() != 404 )
+		{
+			m_isAllowed = false;
+		}
+		
 		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. httpStatus != 200. Return %s", __FILE__,__FUNCTION__, (m_isAllowed?"true":"false"));
 
 		// nuke it to save mem
@@ -13689,8 +13683,6 @@ bool *XmlDoc::getIsAllowed ( ) {
 		return &m_isAllowed;
 	}
 
-	// get the url we lookup
-	//Url *cu = getCurrentUrl();
 
 	// this is set to true if our userAgent was found explicitly
 	bool uaFound;

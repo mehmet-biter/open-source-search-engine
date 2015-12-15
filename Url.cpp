@@ -598,8 +598,6 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 	}
 	else 
 	{
-		log(LOG_DEBUG, "build: Url:set no scheme found, defaulting to http://");
-		
 		gbmemcpy ( m_url,"http://" , 7 );
 		m_scheme = m_url;
 		m_slen   = 4;
