@@ -138,7 +138,6 @@ class Multicast {
 	void       *m_state;
 	void       *m_state2;
 	void       (* m_callback)( void *state , void *state2 );
-	int32_t       m_timeoutPerHost; // in seconds
 	int32_t       m_totalTimeout;   // in seconds
 
 	class UdpSlot *m_slot;
