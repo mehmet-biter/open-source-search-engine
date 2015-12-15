@@ -7,22 +7,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-// what are my IPs?
-
-// comcast home
-//#define MATTIP1 "68.35.104.227"
-//#define MATTIP1 "69.240.75.134"
-//#define MATTIP1 "68.42.43.180"
-#define MATTIP1 "68.35.74.178"
-
-// local network
-//#define MATTIP2 "192.168.1.2"
-#define MATTIP2 "10.1.10.84"
-
-// outbound from work network
-//#define MATTIP3 "68.35.27.72"
-#define MATTIP3 "64.139.94.202"
-
 int32_t  atoip ( const char *s , int32_t slen );
 int32_t  atoip ( const char *s );//, int32_t slen );
 char *iptoa ( int32_t ip );

@@ -179,8 +179,6 @@ bool Conf::isMasterIp ( uint32_t ip ) {
 	// 	if ( m_connectIps[i] == (int32_t)ip )
 	// 		return true;
 
-	//if ( ip == atoip("10.5.0.2",8) ) return true;
-
 	char *p = iptoa(ip);
 	char *buf = m_connectIps.getBufStart();
 

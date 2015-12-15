@@ -3760,22 +3760,6 @@ bool Parms::setFromFile ( void *THIS        ,
 		g_conf.m_connectIps.nullTerm();
 	}
 
-	/*
-
-	  // no! now we warn with a redbox alert
-
-	// always make sure we got some admin security
-	if ( g_conf.m_numMasterIps <= 0 && g_conf.m_numMasterPwds <= 0 ) {
-		//log(LOG_INFO,
-		//    "conf: No master IP or password provided. Using default "
-		//    "password 'footbar23'." );
-		//g_conf.m_masterIps[0] = atoip ( "64.139.94.202", 13 );
-		//g_conf.m_numMasterIps = 1;
-		strcpy ( g_conf.m_masterPwds[0] , "footbar23" );
-		g_conf.m_numMasterPwds = 1;
-	}
-	*/
-
 	return true;
 }
 
