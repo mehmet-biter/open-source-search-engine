@@ -635,7 +635,7 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 	i = j;
 	// NULL terminate m_host for getTLD(), getDomain() and strchr() below
 	m_host [ m_hlen ] = '\0';
-	// use ip as domain if we're just an ip address like 1.2.3.4
+	// use ip as domain if we're just an ip address like 192.0.2.1
 	if ( m_ip ) {
 		// ip address has no tld, or mid domain
 		m_tld    = NULL;

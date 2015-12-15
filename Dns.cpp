@@ -2078,15 +2078,10 @@ int32_t Dns::gotIp ( UdpSlot *slot , DnsState *ds ) {
 		// . ips should be in network order
 		uint32_t ip ; gbmemcpy ( (char *)&ip , rr , 4 );
 
-		// verisign's ip is a does not exist
-		if ( (int32_t)ip == 0x0b6e5e40) { //atoip ( "64.94.110.11",12)) {
-			log( LOG_INFO,
-			     "dns: Nameserver (%s) got Verislime's IP. "
-			     "Assuming domain name "
-			     "does not exist.", iptoa ( slot->m_ip ) );
-			addToCache ( ds->m_hostnameKey , 0 );
-			return 0;
-		}
+		// TODO: detect bogus responses such as those from Verisign's SiteFinder "service" where unknown domains resolved to a fixed IP-address.
+		// if ... something ...
+		//    addToCache ( ds->m_hostnameKey , 0 );
+		//    return 0;
 
 		// this is no longer needed since ppl use gb to spider 
 		// internal intranets now, not just the web. however, be

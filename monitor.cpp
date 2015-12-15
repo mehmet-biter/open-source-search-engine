@@ -111,8 +111,6 @@ int main ( int argc , char *argv[] ) {
 
 	g_isFlurbit = (bool)strstr(g_host,"flurbit.com");
 	if ( ! g_isFlurbit ) 
-		g_isFlurbit = (bool)strstr(g_host,"69.64.70.68");
-	if ( ! g_isFlurbit ) 
 		g_isFlurbit = (bool)strstr(g_host,"eventguru.com");
 	if ( ! g_isFlurbit ) 
 		g_isFlurbit = (bool)strstr(g_host,"eventwidget.com");
@@ -342,7 +340,6 @@ void sleepWrapper ( int fd , void *state ) {
 	//port = 5699;
 	
 	if( g_type[g_qn]== TYPE_BUZZ) {
-		//host = "66.231.188.239";
 		port = 8000;
 		sprintf(query,"/search?q=%s&usecache=0"
 			"&pwd=natoma",g_queries[g_qn]);

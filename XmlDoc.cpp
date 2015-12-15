@@ -13051,12 +13051,6 @@ int32_t *XmlDoc::getIp ( ) {
 	}
 
 
-	// fakeit for now
-	//log("FAKING IT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-	//m_ip = atoip("74.201.80.152",13);
-	//m_ipValid = true;
-	//return &m_ip;
-
 	// get the best url
 	Url *u = getCurrentUrl();
 	if ( ! u || u == (void *)-1 ) return (int32_t *)u;

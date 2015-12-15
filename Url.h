@@ -242,7 +242,7 @@ public:
 	char   *m_scheme;           
 	int32_t    m_slen;
 
-	// points into "url" (a.com, www.yahoo.com, 1.2.3.4, ...)(allLowercase)
+	// points into "url" (a.com, www.yahoo.com, 192.0.2.1, ...)(allLowercase)
 	char   *m_host;             
 	int32_t    m_hlen;
 

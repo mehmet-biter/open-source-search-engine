@@ -576,7 +576,7 @@ int32_t getY ( int64_t X , int64_t *x , int64_t *y , int32_t n ) ;
 #endif
 
 // Lookup order for the url hostname.domainname.com/mydir/mypage.html 
-// (aka 1.2.3.4/mydir/mypage.html):
+// (aka 192.0.2.4/mydir/mypage.html):
 
 //  . hostname.domainname.com/mydir/mypage.html
 //  . hostname.domainname.com/mydir/
@@ -584,7 +584,7 @@ int32_t getY ( int64_t X , int64_t *x , int64_t *y , int32_t n ) ;
 //  .          domainname.com/mydir/mypage.html
 //  .          domainname.com/mydir/
 //  .          domainname.com
-//  .          1.2.3.4       /mydir/mypage.html
-//  .          1.2.3.4       /mydir/
-//  .          1.2.3.4                
-//  .          1.2.3
+//  .          192.0.2.4       /mydir/mypage.html
+//  .          192.0.2.4       /mydir/
+//  .          192.0.2.4                
+//  .          192.0.2

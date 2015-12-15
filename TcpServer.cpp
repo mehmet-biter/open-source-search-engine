@@ -2656,14 +2656,6 @@ TcpSocket *TcpServer::acceptSocket ( ) {
 	//log("tcp: accept socket fd=%i (open=%"INT32")",newsd,
 	//m_numOpen-m_numClosed);
 
-	// ban assholes
-	//if(g_autoBan.isBanned(name.sin_addr.s_addr)) return NULL;
-	//if ( (int32_t)name.sin_addr.s_addr == atoip ("194.205.122.42",14) ) {
-		//log("banned ip=%s", iptoa(name.sin_addr.s_addr));
-	//	close(newsd); 
-	//	return NULL;
-	//}
-
 	// . wrap a new TcpSocket around "newsd"
 	// . on error wrapSocket() will call ::close(newsd) for you
 	// . wrapSocket() also registers callbacks for newsd

@@ -9,7 +9,7 @@
 // . returns ptr into host that marks the domain name
 char *getDomain ( char *host , int32_t hostLen , char *tld , int32_t *dlen );
 
-// when host is like 1.2.3.4 use this one
+// when host is like 192.0.2.1  use this one
 char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen );
 
 // used by getDomain() above

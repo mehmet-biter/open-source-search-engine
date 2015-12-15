@@ -1722,7 +1722,7 @@ bool sendAdminEmail ( Host  *h,
 	//if ( !ts->sendMsg ( g_conf.m_smtpHost,
 	//		    gbstrlen(g_conf.m_smtpHost),
 	//		    g_conf.m_smtpPort,
-	char *ip = emailServIp;//"66.154.102.229"; // gf39, mail server ip
+	char *ip = emailServIp; // gf39, mail server ip
 	// use backup if there
 	//char ipString[64];
 	//if ( g_emailServIPBackup ) {

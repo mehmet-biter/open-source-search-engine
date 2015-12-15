@@ -8624,8 +8624,8 @@ void Parms::init ( ) {
 
 	m->m_title = "spider proxy ips";
 	m->m_desc  = "List of white space-separated spider proxy IPs. Put "
-		"in IP:port format. Example <i>1.2.3.4:80 4.5.6.7:99</i>. "
-		"You can also use <i>username:password@1.2.3.4:80</i>. "
+		"in IP:port format. Example <i>192.0.2.1:80 198.51.100.2:99</i>. "
+		"You can also use <i>username:password@192.0.2.1:80</i>. "
 		"If a proxy itself times out when downloading through it "
 		"it will be perceived as a normal download timeout and the "
 		"page will be retried according to the url filters table, so "
@@ -10294,7 +10294,7 @@ void Parms::init ( ) {
 		m->m_cgi   = "smip";
 	m->m_off   = (char *)&g_conf.m_sendmailIp - g;
 	m->m_type  = TYPE_STRING;
-	m->m_def   = "10.5.54.47";
+	m->m_def   = "";
 	m->m_size  = MAX_MX_LEN;
 	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -11476,7 +11476,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rnsa";
 	m->m_off   = (char *)&g_conf.m_rnsIps[0] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "192.228.79.201";
+	m->m_def   = "";
 	m++;
 
 	m->m_title = "dns root name server 2";
@@ -11485,7 +11485,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rnsb";
 	m->m_off   = (char *)&g_conf.m_rnsIps[1] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "192.33.4.12";
+	m->m_def   = "";
 	m++;
 	
 	m->m_title = "dns root name server 3";
@@ -11494,7 +11494,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rnsc";
 	m->m_off   = (char *)&g_conf.m_rnsIps[2] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "128.8.10.90";
+	m->m_def   = "";
 	m++;
 	
 	m->m_title = "dns root name server 4";
@@ -11503,7 +11503,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rnsd";
 	m->m_off   = (char *)&g_conf.m_rnsIps[3] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "192.203.230.10";
+	m->m_def   = "";
 	m++;
 	
 	m->m_title = "dns root name server 5";
@@ -11512,7 +11512,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rnse";
 	m->m_off   = (char *)&g_conf.m_rnsIps[4] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "192.5.5.241";
+	m->m_def   = "";
 	m++;
 	
 	m->m_title = "dns root name server 6";
@@ -11521,7 +11521,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rnsf";
 	m->m_off   = (char *)&g_conf.m_rnsIps[5] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "192.112.36.4";
+	m->m_def   = "";
 	m++;
 	
 	m->m_title = "dns root name server 7";
@@ -11530,7 +11530,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rnsg";
 	m->m_off   = (char *)&g_conf.m_rnsIps[6] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "128.63.2.53";
+	m->m_def   = "";
 	m++;
 
 	m->m_title = "dns root name server 8";
@@ -11539,7 +11539,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rnsh";
 	m->m_off   = (char *)&g_conf.m_rnsIps[7] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "192.36.148.17";
+	m->m_def   = "";
 	m++;
 
 	m->m_title = "dns root name server 9";
@@ -11548,7 +11548,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rnsi";
 	m->m_off   = (char *)&g_conf.m_rnsIps[8] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "192.58.128.30";
+	m->m_def   = "";
 	m++;
 
 	m->m_title = "dns root name server 10";
@@ -11557,7 +11557,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rnsj";
 	m->m_off   = (char *)&g_conf.m_rnsIps[9] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "193.0.14.129";
+	m->m_def   = "";
 	m++;
 
 	m->m_title = "dns root name server 11";
@@ -11566,7 +11566,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rnsk";
 	m->m_off   = (char *)&g_conf.m_rnsIps[10] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "198.32.64.12";
+	m->m_def   = "";
 	m++;
 
 	m->m_title = "dns root name server 12";
@@ -11575,7 +11575,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rnsl";
 	m->m_off   = (char *)&g_conf.m_rnsIps[11] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "202.12.27.33";
+	m->m_def   = "";
 	m++;
 
 	m->m_title = "dns root name server 13";
@@ -11584,7 +11584,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rnsm";
 	m->m_off   = (char *)&g_conf.m_rnsIps[12] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "198.41.0.4";
+	m->m_def   = "";
 	m++;
 	*/
 
@@ -11777,7 +11777,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "gca";
 	m->m_off   = (char *)&g_conf.m_geocoderIps[0] - g;
 	m->m_type  = TYPE_IP;
-	m->m_def   = "10.5.66.11"; // sp1
+	m->m_def   = "0.0.0.0"; // sp1
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -18279,7 +18279,7 @@ void Parms::init ( ) {
 	//	"also used to allow access to the HTTP server even if it "
 	//	"was disabled in the Master Controls. IPs that have 0 has "
 	//	"their Least Significant Byte are treated as wildcards for "
-	//	"IP blocks. That is, 1.2.3.0 means 1.2.3.*.";
+	//	"IP blocks. That is, 192.0.2.0 means 1.2.3.*.";
 	m->m_desc  = "Whitespace separated list of Ips. "
 		"Any IPs in this list will have administrative access "
 		"to Gigablast and all collections.";

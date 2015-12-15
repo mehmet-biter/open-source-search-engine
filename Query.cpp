@@ -3812,8 +3812,8 @@ struct QueryField g_fields[] = {
 	{"ip", 
 	 FIELD_IP, 
 	 true,
-	 "ip:1.2.3.4",
-	 "Matches all documents whose IP is 1.2.3.4.",
+	 "ip:192.0.2.1",
+	 "Matches all documents whose IP is192.0.2.1.",
 	 NULL,
 	 0 },
 
@@ -4704,7 +4704,7 @@ struct QueryField g_fields[] = {
 	{"gbssIp",
 	 FIELD_GENERIC,
 	 false,
-	 "gbssIp:1.2.3.4",
+	 "gbssIp:192.0.2.1",
 	 "The IP address of the document being indexed. Is 0.0.0.0 "
 	 "if unknown.",
 	 NULL,
@@ -4927,9 +4927,9 @@ struct QueryField g_fields[] = {
 	{"ip2", 
 	 FIELD_IP, 
 	 true,
-	 "ip2:1.2.3.4",
+	 "ip2:192.0.2.1",
 	 "Matches all the special spider status "
-	 "documents whose IP is 1.2.3.4.",
+	 "documents whose IP is 192.0.2.1.",
 	 NULL,
 	 0 },
 

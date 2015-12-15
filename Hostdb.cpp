@@ -161,19 +161,6 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	int32_t status = f.doesExist();
 	int32_t numRead;
 
-	// skip config file for yippy
-	/*
-	if ( g_isYippy ) {
-		m_bufSize = sprintf(m_buf,
-				    "port-offset: 0\n"
-				    "index-splits: 1\n"
-				    "working-dir: /home/emily/\n"
-				    "proxy 10.36.14.10 \n"
-				    );
-		goto skip;
-	}
-	*/
-
 	// return false on error (g_errno should be set)
 	if ( status <= -1 ) return false;
 	// return false if the conf file does not exist
@@ -2722,18 +2709,18 @@ bool Hostdb::createHostsConf( char *cwd ) {
 	sb.safePrintf("# different ports for each gb instance since they are all on the same\n");
 	sb.safePrintf("# server.\n");
 	sb.safePrintf("#\n");
-	//sb.safePrintf("# Use './gb 2' to run as the host on IP 1.2.3.8 for example.\n");
+	//sb.safePrintf("# Use './gb 2' to run as the host on IP 192.0.2.8 for example.\n");
 	sb.safePrintf("#\n");
-	sb.safePrintf("#0 5998 7000 8000 9000 1.2.3.4 1.2.3.5 /home/mwells/host0/\n");
-	sb.safePrintf("#1 5997 7001 8001 9001 1.2.3.4 1.2.3.5 /home/mwells/host1/\n");
-	sb.safePrintf("#2 5996 7002 8002 9002 1.2.3.4 1.2.3.5 /home/mwells/host2/\n");
-	sb.safePrintf("#3 5995 7003 8003 9003 1.2.3.4 1.2.3.5 /home/mwells/host3/\n");
+	sb.safePrintf("#0 5998 7000 8000 9000 192.0.2.4 192.0.2.5 /home/mwells/host0/\n");
+	sb.safePrintf("#1 5997 7001 8001 9001 192.0.2.4 192.0.2.5 /home/mwells/host1/\n");
+	sb.safePrintf("#2 5996 7002 8002 9002 192.0.2.4 192.0.2.5 /home/mwells/host2/\n");
+	sb.safePrintf("#3 5995 7003 8003 9003 192.0.2.4 192.0.2.5 /home/mwells/host3/\n");
 	sb.safePrintf("\n");
 	sb.safePrintf("# A four-node cluster on four different servers:\n");
-	sb.safePrintf("#0 5998 7000 8000 9000 1.2.3.4 1.2.3.5 /home/mwells/gigablast/\n");
-	sb.safePrintf("#1 5998 7000 8000 9000 1.2.3.6 1.2.3.7 /home/mwells/gigablast/\n");
-	sb.safePrintf("#2 5998 7000 8000 9000 1.2.3.8 1.2.3.9 /home/mwells/gigablast/\n");
-	sb.safePrintf("#3 5998 7000 8000 9000 1.2.3.10 1.2.3.11 /home/mwells/gigablast/\n");
+	sb.safePrintf("#0 5998 7000 8000 9000 192.0.2.4 192.0.2.5 /home/mwells/gigablast/\n");
+	sb.safePrintf("#1 5998 7000 8000 9000 192.0.2.6 192.0.2.7 /home/mwells/gigablast/\n");
+	sb.safePrintf("#2 5998 7000 8000 9000 192.0.2.8 192.0.2.9 /home/mwells/gigablast/\n");
+	sb.safePrintf("#3 5998 7000 8000 9000 192.0.2.10 192.0.2.11 /home/mwells/gigablast/\n");
 	sb.safePrintf("\n");
 	sb.safePrintf("\n");
 	sb.safePrintf("#\n");
@@ -2773,8 +2760,8 @@ bool Hostdb::createHostsConf( char *cwd ) {
 	sb.safePrintf("# First  column is \"proxy\" and followed by the standard columns described above\n");
 	sb.safePrintf("#\n");
 	sb.safePrintf("# Example:\n");
-	sb.safePrintf("# A proxy will be running on 10.5.66.18:\n");
-	sb.safePrintf("#proxy 6001 7001 8001 9001 10.5.66.18\n");
+	sb.safePrintf("# A proxy will be running on 192.0.2.1:\n");
+	sb.safePrintf("#proxy 6001 7001 8001 9001 192.0.2.1\n");
 	*/
 
 	log("%shosts.conf does not exist, creating.",cwd);

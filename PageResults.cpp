@@ -2681,9 +2681,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 	// BEGIN PRINT THE RESULTS
 	//
 
-	//sb->safePrintf("<iframe src=\"http://10.5.54.154:8000/\"></iframe>");
-	//sb->safePrintf("<iframe src=\"http://www.google.com/cse?cx=013269018370076798483%3A8eec3papwpi&ie=UTF-8&q=poop\"></iframe>");
-
 	/*
 	sb->safePrintf(
 
@@ -2700,8 +2697,8 @@ bool printSearchResultsHeader ( State0 *st ) {
 		      "var client = new XMLHttpRequest();\n"
 		      "client.onreadystatechange = handler;\n"
 		      //"var url='http://www.google.com/search?q=test';\n"
-		      //"var url='http://10.5.54.154:8000/';\n"
-		      "var url='http://10.5.1.203:8000/';\n"
+		      //"var url='http://192.0.2.154:8000/';\n"
+		      "var url='http://198.51.100.203:8000/';\n"
 		      "client.open('GET', url );\n"
 		      "client.send();\n"
 		      "\">CLICK ME</div>\n"

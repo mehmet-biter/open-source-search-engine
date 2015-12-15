@@ -202,9 +202,8 @@ bool Proxy::initProxy ( int32_t proxyId, uint16_t udpPort,
 	// was messages.alltel.com
 	strcpy ( g_conf.m_email1Addr , "5054503518@vtext.com");
 	strcpy ( g_conf.m_email1From , "sysadmin@gigablast.com");
-	// got ip 69.78.67.53 for 'smtp-sl.vtext.com'
 	//strcpy ( g_conf.m_email1MX   , "gbmxrec-vtext.com");
-	strcpy ( g_conf.m_email1MX   , "10.5.54.47");
+	strcpy ( g_conf.m_email1MX   , "");
 
 	// start pinging right away, udpServer has already been init'ed
 	if ( ! g_pingServer.init() ) {
@@ -509,7 +508,6 @@ bool Proxy::handleRequest (TcpSocket *s){
 		// if we are gk267 then redirect to https://www2.gigablast.com/
 		//
 		static int32_t s_ip2 = 0;
-		if ( ! s_ip2 ) s_ip2 = atoip("10.5.56.77");
 		if ( (int32_t)g_hostdb.m_myIp == s_ip2 )
 			redir = "https://www2.gigablast.com/";
 		redirLen = gbstrlen(redir);

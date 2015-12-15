@@ -22,7 +22,6 @@ int main ( int argc , char *argv[] ) {
 	// convert to int
 	struct in_addr in;
 	in.s_addr = 0;
-	//inet_aton ( "207.114.174.29" , &in );
 	inet_aton ( "192.168.1.10" , &in );
 
 	to.sin_addr.s_addr =  in.s_addr;

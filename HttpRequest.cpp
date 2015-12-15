@@ -909,9 +909,6 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 	 if ( sock && sock->m_ip == 16777343 )
 		 m_isLocal = true;
 
-	 // . also if we're coming from lenny at my house consider it local
-	 // . this is a security risk, however... TODO: FIX!!!
-	 //if ( sock->m_ip == atoip ("68.35.105.199" , 13 ) ) m_isMasterAdmin = true;
 	 // . TODO: now add any cgi data from a POST.....
 	 // . look after the mime
 	 //char *d = NULL;
