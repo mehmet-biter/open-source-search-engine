@@ -878,26 +878,7 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 		 m_isLocal = true;
 	 if ( sock && strncmp(iptoa(sock->m_ip),"10.",3) == 0) 
 		 m_isLocal = true;
-	 // steve cook's comcast at home:
-	 // if ( sock && strncmp(iptoa(sock->m_ip),"68.35.100.143",13) == 0) 
-	 // m_isLocal = true;
-	 // procog's ip
-	 // if ( sock && strncmp(iptoa(sock->m_ip),"216.168.36.21",13) == 0) 
-	 //	 m_isLocal = true;
 
-	 // diffbot comcast
-	 if ( sock && strncmp(iptoa(sock->m_ip),"50.168.3.61",11) == 0) 
-	 	 m_isLocal = true;
-	 // matt comcast
-	 if ( sock && strncmp(iptoa(sock->m_ip),"75.160.49.8",11) == 0) 
-	 	 m_isLocal = true;
-	 // matt comcast #2
-	 if ( sock && strncmp(iptoa(sock->m_ip),"69.181.136.143",14) == 0) 
-	 	 m_isLocal = true;
-	 // titan
-	 if ( sock && strncmp(iptoa(sock->m_ip),"66.162.42.131",13) == 0) 
-	 	 m_isLocal = true;
-	 
 	 // gotta scan all ips in hosts.conf as well...
 	 // if we are coming from any of our own hosts.conf c blocks
 	 // consider ourselves local
@@ -924,25 +905,9 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 	 // 	 break;
 	 // }
 
-	 // roadrunner ip
-	 // if ( sock && strncmp(iptoa(sock->m_ip),"66.162.42.131",13) == 0) 
-	 //	 m_isLocal = true;
-
-	 // cnsp ip
-	 //if ( sock && strncmp(iptoa(sock->m_ip),"67.130.216.27",13) == 0) 
-	 //	 m_isLocal = true;
-
-	 // emily parker
-	 //if ( sock && strncmp(iptoa(sock->m_ip),"69.92.68.202",12) == 0) 
-	 //m_isLocal = true;
-	 
-
 	 // 127.0.0.1
 	 if ( sock && sock->m_ip == 16777343 )
 		 m_isLocal = true;
-	 // steve cook's webserver
-	 //if ( sock && strncmp(iptoa(sock->m_ip),"216.168.36.21",13) == 0) 
-	 //	 m_isLocal = true;
 
 	 // . also if we're coming from lenny at my house consider it local
 	 // . this is a security risk, however... TODO: FIX!!!

@@ -3667,7 +3667,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 		// set the min of all in our list
 		//if ( score < minScore ) { minScore = score; minj = np; }
 		// i've seen this become NULL at line 753 on gb1 below for
-		// /search?code=mammaXbG&uip=12.41.126.39&n=15&raw=8&q=
+		// /search?code=mammaXbG&uip=192.0.2.1&n=15&raw=8&q=
 		//  manhattan,+ny 
 		// so let's try it again and try to find out why maybe
 		if ( gb->m_termLen <= 0 ) {

@@ -179,8 +179,6 @@ bool Conf::isMasterIp ( uint32_t ip ) {
 	// 	if ( m_connectIps[i] == (int32_t)ip )
 	// 		return true;
 
-	//if ( ip == atoip("10.5.0.2",8) ) return true;
-
 	char *p = iptoa(ip);
 	char *buf = m_connectIps.getBufStart();
 
@@ -349,7 +347,7 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 void Conf::setRootIps ( ) {
 
 	// set m_numDns based on Conf::m_dnsIps[] array
-	int32_t i; for ( i = 0; i < 16 ; i++ ) {
+	int32_t i; for ( i = 0; i < MAX_DNSIPS ; i++ ) {
 		m_dnsPorts[i] = 53;
 		if ( ! g_conf.m_dnsIps[i] ) break;
 	}

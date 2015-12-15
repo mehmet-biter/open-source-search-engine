@@ -8,12 +8,6 @@
 // . make a web page displaying the config of this host
 // . call g_httpServer.sendDynamicPage() to send it
 bool sendPagePerf ( TcpSocket *s , HttpRequest *r ) {
-	// if ip is not from matt wells, don't print this stuff, too sensitive
-	//int32_t matt1 = atoip ( MATTIP1 , gbstrlen(MATTIP1) );
-	//int32_t matt2 = atoip ( MATTIP2 , gbstrlen(MATTIP2) );
-	// allow connection if i'm running this on lenny, too
-	//if ( s->m_ip != matt1 && s->m_ip != matt2 )
-	//	return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));
 	//int32_t refreshLen = 0;
 	//if(r->getString ( "refresh" , &refreshLen) ) {
 	//	g_stats.dumpGIF ();
