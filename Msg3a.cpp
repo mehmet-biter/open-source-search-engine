@@ -1,11 +1,11 @@
 #include "gb-include.h"
 
 #include "Msg3a.h"
-//#include "Msg3b.h"
 #include "Wiki.h"
 #include "sort.h"
 
 #include "Stats.h"
+#include "HashTableT.h"
 
 static void gotReplyWrapper3a     ( void *state , void *state2 ) ;
 //static void gotRerankedDocIds     ( void *state );
@@ -546,7 +546,6 @@ bool Msg3a::gotCacheReply ( ) {
 				   gotReplyWrapper3a ,
 				   timeout           , // in seconds
 				   m_r->m_niceness   ,
-				   false             , // realtime?
 				   firstHostId, // -1// bestHandlingHostId ,
 				   NULL              , // m_replyBuf   ,
 				   0                 , // MSG39REPLYSIZE,
@@ -1104,9 +1103,7 @@ bool Msg3a::mergeLists ( ) {
 			       128,NULL,0,false,
 			       m_r->m_niceness,"fhtqt")) 
 			return true;
-		// debug note
-		// log("results: alloc fhtqt of %"PTRFMT" for st0=%"PTRFMT,
-		//     (PTRTYPE)ht->m_buf,(PTRTYPE)m_q->m_st0Ptr);
+
 		// sanity
 		if ( ! ht->m_isWritable ) {
 			log("msg3a: queryterm::constructor not called?");

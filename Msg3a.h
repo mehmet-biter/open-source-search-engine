@@ -2,9 +2,6 @@
 #define _MSG3A_H_
 
 #include "Msg39.h"
-//#include "Stats.h"
-//#include "Thesaurus.h"
-//#include "PostQueryRerank.h" // rscore_t
 #include "Msg0.h"
 #include "Msg1.h"
 

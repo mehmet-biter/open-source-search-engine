@@ -15,6 +15,7 @@
 #include "Wiki.h"
 #include "HttpServer.h"
 #include "PageResults.h"
+#include "HashTable.h"
 
 // increasing this doesn't seem to improve performance any on a single
 // node cluster....
@@ -2901,22 +2902,6 @@ bool Msg40::gotSummary ( ) {
 		}
 
 
-		/*
-		int32_t ng;
-		ng = intersectGigabits ( //m_msg3a.m_q->m_orig       ,
-					//m_msg3a.m_q->m_origLen    ,
-					m_msg20                     ,
-					m_msg3a.m_numDocIds,//m_numContiguous
-					//m_msg3a.getClusterLevels(),
-					//m_si->m_topicGroups       ,
-					//m_si->m_numTopicGroups    ,
-					m_si->m_langHint            ,
-					tg->m_maxTopics             ,
-					tg->m_docsToScanForTopics   ,
-					tg->m_minDocCount           ,
-					m_gigabitInfos              ,
-					m_si->m_niceness            );
-		*/
 		// ng is -1 on error, g_errno should be set
 		//if ( ng == -1 ) return true;
 		// otherwise, it is legit!

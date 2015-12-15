@@ -20,12 +20,8 @@ Profiler g_profiler;
 #include "Profiler.h"
 #include "Stats.h"
 #include "sort.h"
-#include "Users.h"
 Profiler g_profiler;
 
-
-static int decend_cmpUll ( const void *h1 , const void *h2 );
-static int decend_cmpF ( const void *h1 , const void *h2 );
 uint32_t *indexTable;
 uint32_t *keyTable;
 uint64_t *valueTableUll;
@@ -762,413 +758,6 @@ bool Profiler::endTimer(int32_t address,
 	return true;
 }
 
-bool Profiler::printInfo(SafeBuf *sb,char *username, //int32_t user, 
-                         char *pwd, char *coll, 
-			 int sorts,int sort10, int qpreset,
-			 int profilerreset) {
-	// sort by max blocked time by default
-	if ( sorts == 0 ) sorts = 8;
-
-	int32_t slot;
-	uint32_t key(0);
-	int32_t numSlots = m_fn.getNumSlots();
-	int32_t numSlotsUsed = m_fn.getNumSlotsUsed();
-	FnInfo *fnInfo;
-
-	if ( profilerreset ) {
-		for ( int32_t i = 0; i < m_fn.getNumSlots(); i++ ){
-			//key=m_fn.getKey(i);
-			//if (key!=0){
-			if ( ! m_fn.isEmpty(i) ) {
-				fnInfo=(FnInfo *)m_fn.getValueFromSlot(i);
-				// set everything to 0
-					fnInfo->m_timesCalled = 0;
-					fnInfo->m_totalTimeTaken = 0;
-					fnInfo->m_maxTimeTaken = 0;
-					fnInfo->m_numCalledFromThread = 0;
-					fnInfo->m_maxBlockedTime = 0;
-			}		
-		}
-	}
-
-
-	sb->safePrintf(  "<center>\n<table %s>\n"
-			 "<tr class=hdrow><td colspan=9>"
-			 "<center><b>Profiler "//- Since Startup</b></center>"
-			 "<a href=\"/admin/profiler?c=%s"//"
-			 "&profilerreset=1\">"
-			 "(reset)</a></b></center>"
-			 "</td></tr>\n",
-			 TABLE_STYLE,
-			 coll);
-
-       	sb->safePrintf("<tr bgcolor=#%s>"
-		       "<td><b>Address</b></td><td><b>Function</b></td>"
-		       , LIGHT_BLUE);
-	sb->safePrintf("<td><b><a href=/admin/profiler?sorts=3&c=%s>"
-		       "Times Called</a></b></td></td>",coll);
-	sb->safePrintf("<td><b><a href=/admin/profiler?sorts=4&c=%s>"
-		       "Total Time(msec)</a></b></td></td>",coll);
-	sb->safePrintf("<td><b><a href=/admin/profiler?sorts=5&c=%s>"
-		       "Avg Time(msec)</b></a></td>",coll);
-	sb->safePrintf("<td><b><a href=/admin/profiler?sorts=6&c=%s>"
-		       "Max Time(msec)</a></b></td>",coll);
-	sb->safePrintf("<td><b><a href=/admin/profiler?sorts=7&c=%s>"
-		       "Times from Thread</a></b></td>",coll);
-	sb->safePrintf("<td><b><a href=/admin/profiler?sorts=8&c=%s>"
-		       "Max Blocked Time</a></b></td>",coll);
-// 	sb->safePrintf("<td><b><a href=/admin/profiler?sorts=8&c=%s>"
-// 		       "Between Quick Polls</a></b></td></tr>",coll);
-
-	indexTable=(uint32_t*) 
-		mcalloc(numSlotsUsed*sizeof(uint32_t),"ProfilerW");
-	keyTable=(uint32_t*) mcalloc
-		(numSlotsUsed*sizeof(uint32_t),"ProfilerX");
-	if(sorts==5 ||sort10==5)
-		valueTableF=(float*) 
-			mcalloc(numSlotsUsed*sizeof(float),"ProfilerY");
-	else
-		valueTableUll=(uint64_t*) 
-			mcalloc(numSlotsUsed*sizeof(uint64_t),
-				"ProfilerY");
-	int32_t numFnsCalled=0;
-	for (int32_t i=0;i<numSlots;i++){
-		//key=m_fn.getKey(i);
-		//if (key!=0){
-		if ( !m_fn.isEmpty(i) ) {
-			fnInfo=(FnInfo *)m_fn.getValueFromSlot(i);
-			// To save calculating time, just store functions
-			// that have been called
-			if(fnInfo->m_timesCalled!=0){
-				keyTable[numFnsCalled]=key;
-				indexTable[numFnsCalled]=numFnsCalled;
-				switch(sorts){
-				case 3:valueTableUll[numFnsCalled] = fnInfo->
-					       m_timesCalled;
-					break;
-				case 4:valueTableUll[numFnsCalled] = fnInfo->
-					       m_totalTimeTaken;
-					break;
-				case 5:// sorting float values till the 4th
-					// dec place
-					valueTableF[numFnsCalled] = ((float)fnInfo->m_totalTimeTaken)/((float)fnInfo->m_timesCalled);
-					break;
-				case 6:valueTableUll[numFnsCalled] = fnInfo->
-					       m_maxTimeTaken;
-					break;
-				case 7:valueTableUll[numFnsCalled] = fnInfo->
-					       m_numCalledFromThread;
-					break;
-				case 8:valueTableUll[numFnsCalled] = fnInfo->
-					       m_maxBlockedTime;
-					break;
-					//For now for any other value of slot
-					// so that we don't error
-				default:valueTableUll[numFnsCalled] = fnInfo->
-						m_numCalledFromThread;
-				}
-				numFnsCalled++;
-			}
-		}
-	}
-	if (sorts==5)
-		gbqsort(indexTable,numFnsCalled,sizeof(uint32_t),
-		      decend_cmpF);
-	else
-		gbqsort(indexTable,numFnsCalled,sizeof(uint32_t),
-		      decend_cmpUll);
-
-	//Now print the sorted values
-	for (int32_t i=0;i<numFnsCalled;i++){
-		slot=m_fn.getSlot(&keyTable[indexTable[i]]);
-		fnInfo=(FnInfo *)m_fn.getValueFromSlot(slot);
-		//Don't print functions that have not been called
-		sb->safePrintf("<tr><td>%"XINT32"</td><td>%s</td><td>%"INT32"</td><td>%"INT32"</td>"
-			       "<td>%.4f</td><td>%"INT32"</td><td>%"INT32"</td><td>%"INT32"</td>"
-			       "</tr>",
-			       keyTable[indexTable[i]],
-			       fnInfo->m_fnName,
-			       fnInfo->m_timesCalled,
-			       fnInfo->m_totalTimeTaken,
-			       ((float)fnInfo->m_totalTimeTaken)/((float)fnInfo->m_timesCalled),
-			       fnInfo->m_maxTimeTaken,
-			       fnInfo->m_numCalledFromThread, 
-			       fnInfo->m_maxBlockedTime);
-	}
-
-	sb->safePrintf("</table><br><br>");
-
-
-
-	//Now to print the table of functions called in the last 10 seconds
-	sb->safePrintf(  "<center>\n<table %s>\n"
-			 "<tr class=hdrow><td colspan=8>"
-			 "<center><b>Profiler - Last 10 seconds</b></center>"
-			 "</td></tr>\n",TABLE_STYLE);
-       	sb->safePrintf("<tr bgcolor=#%s>"
-		       "<td><b>Address</b></td><td><b>Function</b></td>",
-		       LIGHT_BLUE);
-	sb->safePrintf("<td><b><a href=/admin/profiler?sort10=3&c=%s&"
-		       ">"
-		       "Times Called</a></b></td></td>",coll);
-	sb->safePrintf("<td><b><a href=/admin/profiler?sort10=4&c=%s&"
-		       ">"
-		       "Total Time(msec)</a></b></td></td>",coll);
-	sb->safePrintf("<td><b><a href=/admin/profiler?sort10=5&c=%s&"
-		       ">"
-		       "Avg Time(msec)</b></a></td>",coll);
-	sb->safePrintf("<td><b><a href=/admin/profiler?sort10=6&c=%s&"
-		       ">"
-		       "Max Time(msec)</a></b></td>",coll);
-	sb->safePrintf("<td><b><a href=/admin/profiler?sort10=7&c=%s&"
-		       ">"
-		       "Times From Thread</a></b></td></tr>",coll);
-	uint64_t now=gettimeofdayInMillisecondsLocal();
-	int32_t numFnsCalled10=0;;
-	for(int32_t i=0;i<numFnsCalled;i++){
-		uint64_t timesCalled=0;
-		uint64_t totalTimeTaken=0;
-		uint64_t maxTimeTaken=0;
-		uint64_t numCalledFromThread=0;
-		//If hashtable is less than 10 secs old, use it
-		for(int32_t j=0;j<11;j++){
-			if ((now-m_fnTime[i]) < 10000){
-				//From the keyTable, we know the keys of the
-				// functions that have been called
-				slot=m_fnTmp[j].getSlot(&keyTable[i]);
-				if (slot>=0){
-					fnInfo=(FnInfo *)m_fnTmp[j].
-						getValueFromSlot(slot);
-					totalTimeTaken += fnInfo->
-						m_totalTimeTaken;
-					timesCalled += fnInfo->m_timesCalled;
-					if( ( fnInfo->m_maxTimeTaken) > 
-					   maxTimeTaken )
-						maxTimeTaken = fnInfo->
-							m_maxTimeTaken;
-					numCalledFromThread += fnInfo->
-						m_numCalledFromThread;
-				}
-			}
-		}
-		//After getting all the info, put it in table for sorting
-		//Only print those functions that have been called
-		if (timesCalled==0) continue;
-		//Simply overwriting all the stuff
-		keyTable[numFnsCalled10]=keyTable[i];
-		indexTable[numFnsCalled10]=numFnsCalled10;
-		switch(sort10){
-		case 0:break;
-		case 3:valueTableUll[numFnsCalled10]=timesCalled;
-			break;
-		case 4:valueTableUll[numFnsCalled10]=totalTimeTaken;;
-			break;
-		case 5:valueTableF[numFnsCalled10]=((float)totalTimeTaken)/((float)timesCalled);
-			break;
-		case 6:valueTableUll[numFnsCalled10]=maxTimeTaken;
-			break;
-		//For now for any other value of slot so that we don't error
-		default:valueTableUll[numFnsCalled10]=numCalledFromThread;
-		}
-		numFnsCalled10++;
-	}
-
-	if (sort10==5)
-		gbqsort(indexTable,numFnsCalled10,sizeof(uint32_t),
-		      decend_cmpF);
-	else
-		gbqsort(indexTable,numFnsCalled10,sizeof(uint32_t),
-		      decend_cmpUll);
-
-	for(int32_t i=0;i<numFnsCalled10;i++){
-		uint64_t timesCalled=0;		
-		uint64_t totalTimeTaken=0;
-		uint64_t maxTimeTaken=0;
-		uint64_t numCalledFromThread=0;
-		//If hashtable is less than 10 secs old, continue
-		for(int32_t j=0;j<11;j++){
-			if ((now-m_fnTime[i])<10000){
-				// From the keyTable, we know the keys of the
-				// functions that have been called
-				slot=m_fnTmp[j].
-					getSlot(&keyTable[indexTable[i]]);
-				if (slot>=0){
-					fnInfo=(FnInfo *)m_fnTmp[j].
-						getValueFromSlot(slot);
-					totalTimeTaken += fnInfo->
-						m_totalTimeTaken;
-					timesCalled += fnInfo->m_timesCalled;
-					if( ( fnInfo->m_maxTimeTaken)> 
-					    maxTimeTaken )
-						maxTimeTaken = fnInfo->
-							m_maxTimeTaken;
-					numCalledFromThread += fnInfo->
-						m_numCalledFromThread;
-				}
-			}
-		}
-		//Only print those functions that have been called
-		if (timesCalled==0) continue;
-		slot=m_fn.getSlot(&keyTable[indexTable[i]]);
-		fnInfo=(FnInfo *)m_fn.getValueFromSlot(slot);
-		//Don't print functions that have not been called
-		sb->safePrintf("<tr><td>%"XINT32"</td><td>%s</td><td>%"INT64"</td>"
-			       "<td>%"INT64"</td>"
-			       "<td>%.4f</td><td>%"INT64"</td><td>%"INT64"</td></tr>",
-			       keyTable[indexTable[i]],
-			       fnInfo->m_fnName,
-			       timesCalled,
-			       totalTimeTaken,
-			       ((float)totalTimeTaken)/((float)timesCalled),
-			       maxTimeTaken,
-			       numCalledFromThread);
-	}
-	sb->safePrintf("</table><br><br>");
-
-	
-	
-	mfree(indexTable,numSlotsUsed*sizeof(uint32_t),"ProfilerX");
-	mfree(keyTable,numSlotsUsed*sizeof(uint32_t),"ProfilerX");
-	if (sorts==5 || sort10==5)
-		mfree(valueTableF,
-		      numSlotsUsed*sizeof(float),
-		      "ProfilerY");
-	else
-		mfree(valueTableUll,
-		      numSlotsUsed*sizeof(uint64_t),
-		      "ProfilerY");
-
-
-
-	if(qpreset) {
-		m_quickpolls.clear();
-		m_lastQPUsed = 0;
-	}
-
-	numSlots = m_quickpolls.getNumSlots();
-	numSlotsUsed = m_quickpolls.getNumSlotsUsed();
-	sb->safePrintf("<center>\n<table %s>\n"
-		       "<tr class=hdrow><td colspan=5>"
-		       "<center><b>Triggered Quickpolls "
-		       "<a href=\"/admin/profiler?c=%s"
-		       "&qpreset=1\">"
-		       "(reset)</a></b></center>"
-		       "</td></tr>\n",
-		       TABLE_STYLE,
-		       coll);
-
-	sb->safePrintf("<tr bgcolor=#%s>"
-		       "<td><b>Between Functions</b></td>"
-		       "<td><b>max blocked(msec)</b></td>"
-		       "<td><b>avg time(msec)</b></td>"
-		       "<td><b>times triggered</b></td>"
-		       "<td><b>total(msec)</b></td>"
-		       "</tr>"
-		       , LIGHT_BLUE );
-
-	if(numSlotsUsed == 0) {
-		sb->safePrintf("</table>");
-		return true;
-	}
-
-	valueTableUll = (uint64_t*)
-		mcalloc(numSlotsUsed * sizeof(uint64_t),"ProfilerZ");
-	if(!valueTableUll) {
-		sb->safePrintf("</table>");
-		return true;
-	}
-
-	indexTable = (uint32_t*)mcalloc(numSlotsUsed * 
-					     sizeof(uint32_t),
-					     "ProfilerZ");
-	if(!indexTable) {
-		mfree(indexTable,   
-		      numSlotsUsed*sizeof(uint32_t),
-		      "ProfilerZ");
-		sb->safePrintf("</table>");
-		return true;
-	}
-
-	keyTable = (uint32_t*)mcalloc(numSlotsUsed * 
-					   sizeof(uint32_t),
-					   "ProfilerZ");
-	if(!keyTable) {
-		mfree(indexTable,   
-		      numSlotsUsed*sizeof(uint32_t),
-		      "ProfilerZ");
-		mfree(valueTableUll,
-		      numSlotsUsed*sizeof(uint64_t),
-		      "ProfilerZ");
-		sb->safePrintf("</table>");
-		return true;
-	}
-
-	int32_t j = 0;
-	for (int32_t i = 0; i < numSlots; i++) {
-		//if((key = m_quickpolls.getKey(i)) == 0) continue;
-		if ( m_quickpolls.isEmpty(i) ) continue;
-		QuickPollInfo* q = *(QuickPollInfo **)m_quickpolls.getValueFromSlot(i);
-		int32_t took = q->m_maxTime;
-		valueTableUll[j] = took;
-		indexTable[j] = j; 
-		keyTable[j] = i; 
-		j++;
-	}
-	gbqsort(indexTable, j, sizeof(uint32_t), decend_cmpUll);
-	
-	for (int32_t i = 0; i < numSlotsUsed; i++){
-		int32_t slot = keyTable[indexTable[i]];
-		//key = m_quickpolls.getKey(slot);
-		QuickPollInfo* q = *(QuickPollInfo **)m_quickpolls.getValueFromSlot(slot);
-		sb->safePrintf("<tr><td>%s:%"INT32"<br>%s:%"INT32"</td>"
-			       "<td>%"INT32"</td>"
-			       "<td>%f</td>"
-			       "<td>%"INT32"</td>"
-			       "<td>%"INT32"</td>"
-			       "</tr>",
-			       q->m_caller,  q->m_lineno, q->m_last, 
-			       q->m_lastlineno,q->m_maxTime,
-			       (float)q->m_timeAcc / q->m_times,
-			       q->m_times,
-			       q->m_timeAcc);
-	}
-	sb->safePrintf("</table>");
-
-	mfree(valueTableUll,numSlotsUsed*sizeof(uint64_t),"ProfilerZ");
-	mfree(indexTable,   numSlotsUsed*sizeof(uint32_t),"ProfilerZ");
-	mfree(keyTable,     numSlotsUsed*sizeof(uint32_t),"ProfilerZ");
-	return true;
-}
-
-//backwards so we get highest scores first.
-static int decend_cmpUll ( const void *h1 , const void *h2 ) {
-        uint32_t tmp1, tmp2;
-        tmp1 = *(uint32_t *)h1;
-	tmp2 = *(uint32_t *)h2;
-	if (valueTableUll[tmp1]>valueTableUll[tmp2]) {
-		return -1;	
-	}
-        else if(valueTableUll[tmp1]<valueTableUll[tmp2]){
-		return 1;
-	}
-	else return 0;
-}
-
-//backwards so we get highest scores first.
-static int decend_cmpF ( const void *h1 , const void *h2 ) {
-        uint32_t tmp1, tmp2;
-        tmp1 = *(uint32_t *)h1;
-	tmp2 = *(uint32_t *)h2;
-	if (valueTableF[tmp1]>valueTableF[tmp2]) {
-		return -1;	
-	}
-        else if(valueTableF[tmp1]<valueTableF[tmp2]){
-		return 1;
-	}
-	else return 0;
-}
-
-
 char* Profiler::getFnName( PTRTYPE address,int32_t *nameLen){
 	FnInfo *fnInfo;
 	int32_t slot=m_fn.getSlot(&address);
@@ -1185,26 +774,14 @@ bool sendPageProfiler ( TcpSocket *s , HttpRequest *r ) {
 	SafeBuf sb;
 	sb.reserve2x(32768);
 
-	
-
 	//read in all of the possible cgi parms off the bat:
-	//int32_t  user     = g_pages.getUserType( s , r );
-	char *username = g_users.getUsername(r);
-	//char *pwd  = r->getString ("pwd");
-
 	char *coll = r->getString ("c");
 	int32_t collLen;
 	if ( ! coll || ! coll[0] ) {
-		//coll    = g_conf.m_defaultColl;
 		coll = g_conf.getDefaultColl( r->getHost(), r->getHostLen() );
 	}
+
 	collLen = gbstrlen(coll);
-	int sorts=(int) r->getLong("sorts",0);
-	int sort10=(int)r->getLong("sort10",0);
-	int qpreset=(int)r->getLong("qpreset",0);
-	int profilerreset=(int)r->getLong("profilerreset",0);
-	int realTimeSortMode=(int)r->getLong("rtsort",2);
-	int realTimeShowAll=(int)r->getLong("rtall",0);
 	int startRt=(int)r->getLong("rtstart",0);
 	int stopRt=(int)r->getLong("rtstop",0);
 	
@@ -1213,47 +790,29 @@ bool sendPageProfiler ( TcpSocket *s , HttpRequest *r ) {
 	// no permmission?
 	bool isMasterAdmin = g_conf.isMasterAdmin ( s , r );
 	bool isCollAdmin = g_conf.isCollAdmin ( s , r );
-	if ( ! isMasterAdmin &&
-	     ! isCollAdmin ) {
-		//g_errno = ENOPERM;
-		//g_httpServer.sendErrorReply(s,g_errno,mstrerror(g_errno));
-		//return true;
-		sorts = 0;
-		sort10 = 0;
-		qpreset = 0;
-		profilerreset = 0;
-		realTimeSortMode = 2;
-		realTimeShowAll = 0;
+	if ( ! isMasterAdmin && ! isCollAdmin ) {
 		startRt = 0;
 		stopRt = 0;
 	}
 
-
-	
-	if (!g_conf.m_profilingEnabled)
-		sb.safePrintf("<font color=#ff0000><b><centeR>"
+	if (!g_conf.m_profilingEnabled) {
+		sb.safePrintf("<font color=#ff0000><b><center>"
 			      "Sorry, this feature is temporarily disabled. "
 			      "Enable it in MasterControls.</center></b></font>");
-	else {
-		if(g_profiler.m_realTimeProfilerRunning) {
-			if(stopRt) {
+	} else {
+		if (g_profiler.m_realTimeProfilerRunning) {
+			if (stopRt) {
 				g_profiler.stopRealTimeProfiler(false);
 				g_profiler.m_ipBuf.purge();
 			}
-		} else if(startRt)   g_profiler.startRealTimeProfiler();
+		} else if (startRt) {
+			g_profiler.startRealTimeProfiler();
+		}
 				
-		g_profiler.printRealTimeInfo(&sb,
-					     username,
-					     NULL,
-					     coll,
-					     realTimeSortMode,
-					     realTimeShowAll);
-		// g_profiler.printInfo(&sb,username,NULL,coll,sorts,sort10, qpreset,
-		// 		     profilerreset);
+		g_profiler.printRealTimeInfo(&sb, coll);
 	}
 
-	return g_httpServer.sendDynamicPage ( s , (char*) sb.getBufStart() ,
-						sb.length() ,-1 , false);
+	return g_httpServer.sendDynamicPage ( s, (char*)sb.getBufStart(), sb.length(), -1, false);
 }
 
 FrameTrace *
@@ -1732,13 +1291,7 @@ int cmpPathBucket (const void *A, const void *B) {
 }
 
 bool
-Profiler::printRealTimeInfo(SafeBuf *sb,
-			    //int32_t user,
-			    char *username,
-			    char *pwd,
-			    char *coll,
-			    int realTimeSortMode,
-			    int realTimeShowAll) {
+Profiler::printRealTimeInfo(SafeBuf *sb, char *coll) {
 	if(!m_realTimeProfilerRunning) {
 		sb->safePrintf("<table %s>",TABLE_STYLE);
 		sb->safePrintf("<tr class=hdrow><td colspan=7>"
@@ -1753,42 +1306,8 @@ Profiler::printRealTimeInfo(SafeBuf *sb,
 log(LOG_INIT, "admin: @@@@2 printRealTimeInfo: stopping profiler");
 	stopRealTimeProfiler(true);
 
-	/*
-	if(hitEntries)
-		mfree(hitEntries, sizeof(HitEntry)*rtNumEntries, "hitEntries");
-	//rtNumEntries = 0;
-	//for(int32_t i = 0; i < realTimeProfilerData.getNumSlots(); ++i) {
-	//	uint32_t key = realTimeProfilerData.getKey(i);
-	//	if(realTimeProfilerData.getValuePointer(key))
-	//		++rtNumEntries;
-	//}
-	rtNumEntries = realTimeProfilerData.getNumUsedSlots();
-	if(!rtNumEntries) {
-		sb->safePrintf("<table %s>",TABLE_STYLE);
-		sb->safePrintf("<tr class=hdrow><td colspan=7>"
-			 "<center><b>Real Time Profiler started, refresh page "
-			 "after some time."
-			 "<a href=\"/admin/profiler?c=%s"
-			 "&rtstop=1\">"
-			 "(Stop)</a></b></center>"
-			       "</td></tr>\n",coll);
-		sb->safePrintf("</table><br><br>\n");
-		startRealTimeProfiler();
-		return true;
-	}
-	*/
-
 
 	sb->safePrintf("<table %s>",TABLE_STYLE);
-	// char *showMessage;
-	// int rtall;
-	// if(realTimeShowAll) {
-	// 	showMessage = "(show only 10)";
-	// 	rtall = 0;
-	// } else {
-	// 	showMessage = "(show all)";
-	// 	rtall = 1;
-	// }
 	sb->safePrintf("<tr class=hdrow>"
 		       "<td colspan=7>"
 			 "<b>Top 100 Profiled Line Numbers "
@@ -1807,32 +1326,6 @@ log(LOG_INIT, "admin: @@@@2 printRealTimeInfo: stopping profiler");
 		       "</td></tr>\n"
 		       //,coll
 		       );
-	/*
-	rtall = !rtall;
-
-	sb->safePrintf("<tr><td><b>"
-		       "Function</b></td>");
-
-	sb->safePrintf("<td><b><a href=/admin/profiler?rtsort=2&c=%s&"
-		       "&rtall=%i>"
-		       "Hits per Func</b></a></td>",coll,rtall);
-
-	sb->safePrintf("<td><b><a href=/admin/profiler?rtsort=0&c=%s&"
-		       "&rtall=%i>"
-		       "Missed QUICKPOLL calls<br>per Func</b></a></td>",
-		       coll,rtall);
-
-	sb->safePrintf("<td><b><a href=/admin/profiler?rtsort=1&c=%s&"
-		       "&rtall=%i>"
-		       "Base Address</b></a></td>",coll,rtall);
-
-	sb->safePrintf("<td><b>Hits per Line</b></td>"
-
-		       "<td><b>Line Address</b></td>"
-
-		       "<td><b>Missed QUICKPOLL calls<br>"
-		       "per Line</b></td></tr>");
-	*/
 
 	// system call to get the function names and line numbers
 	// just dump the buffer

@@ -9,7 +9,6 @@
 //#include "TitleRec.h"
 #include "Unicode.h"
 #include "matches2.h"
-#include "Categories.h"
 
 bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
 		   char **note ) ;
@@ -261,8 +260,6 @@ static Needle s_needles2[] = {
 //   the outlink is a spam link or not
 // . returns true on success, false on error
 bool setLinkSpam ( int32_t       ip                 ,
-		   int32_t      *indCatIds          ,
-		   int32_t       numIndCatIds       ,
 		   Url       *linker             ,
 		   int32_t       siteNumInlinks     ,
 		   Xml       *xml                ,
@@ -291,47 +288,8 @@ bool setLinkSpam ( int32_t       ip                 ,
 	     siteNumInlinks < 20 )
 		return links->setAllSpamBits("low quality .biz linker");
 
-	// if has an outlink to dmoz-identified porn, all outlinks are spam
-	int32_t *ids  = indCatIds;//NULL
-	int32_t  nids = numIndCatIds;//0;
-	//if ( tr ) ids  = tr->getIndCatids();
-	//if ( tr ) nids = tr->getNumIndCatids();
-	for ( int32_t j = 0 ; j < nids ; j++ ) 
-		if ( g_categories && g_categories->isIdAdult ( ids[j] ) )
-			return links->setAllSpamBits("dmoz porn");
-
 	QUICKPOLL( niceness );
-	// do we contain a dmoz subpath in our url? that would indicate that
-	// we are probably a dmoz mirror!
-	char *zstart = linker->getPath();
-	int32_t  zlen   = linker->getPathLen();
-	char *zend   = zstart + zlen;
-	// start at the end of the path
-	char *z      = zend-1;
-	// back up to previous /
-	for ( ; z > zstart && *z != '/' ; z-- );
-	// make that the new end
-	zend = z + 1;
-	// need at least 2 path components before checking... keep count
-	int32_t  zcount = 2;
-	// begin the loop
-	while ( z > zstart ) {
-		// . backup until we hit the previous /
-		for ( z-- ; z > zstart && *z != '/' ; z-- );
-		// debug
-		//char tmp[2000];
-		//gbmemcpy(tmp,z,zend-z);
-		//tmp[zend-z]=0;
-		//log("build: path=%s",tmp);
-		// look it up
-		// "/Arts/" --> 1
-		if ( --zcount > 0 ) continue;
-		if ( g_categories->getIndexFromPath (z, zend-z) < 0 ) continue;
-		// consider ourselves a dmoz mirror and discount all outlinks
-		return links->setAllSpamBits("dmoz subpath in url");
-	}
 
-	QUICKPOLL( niceness );
 	// guestbook in hostname - domain?
 	char *hd  = linker->getHost();
 	char *hd2 = linker->getDomain();
@@ -638,9 +596,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 	// edu, gov, etc. can have link chains
 	if ( tldLen >= 3 && strncmp ( tld, "edu" , 3) == 0 ) return true;
 	if ( tldLen >= 3 && strncmp ( tld, "gov" , 3) == 0 ) return true;
-	// . allow sites in dmoz to have link chains, too
-	// . no, there are too many spam porn sites in dmoz
-	//if ( tr->getNumIndCatids() || tr->getNumCatids()   ) return false;
 
 	// if linker is naughty, he cannot vote... how did he make it in?
 	if ( linker->isSpam() )
@@ -655,17 +610,10 @@ bool setLinkSpam ( int32_t       ip                 ,
 		if ( links->isInternalDom(i) ) continue;
 		// otherwise, normalize it...
 		Url uu; uu.set ( links->getLink(i), links->getLinkLen(i) );
-		char          *h     = uu.getUrl();
-		// include the trailing /
-		char          *hend  = uu.getHost() + uu.getHostLen() + 1;
-		uint32_t  hhash = hash32 ( h , hend - h );
-		if ( g_categories && g_categories->isInBadCat ( hhash ) ) {
-			links->setAllSpamBits("links to dmoz filth");
-			log(LOG_DEBUG,"build: %s is filthy.",uu.getUrl());
-			return true;
-		}
+
 		// take a break
 		QUICKPOLL ( niceness );
+
 		// . is it near sporny links? (naughty domains or lotsa -'s)
 		// . if we are in a list of ads, chances are good the true
 		//   nature of the ads will emerge...
@@ -696,8 +644,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 
 bool isLinkSpam ( Url *linker, 
 		  int32_t ip ,
-		  int32_t *indCatIds ,
-		  int32_t  numIndCatIds ,
 		  int32_t siteNumInlinks ,
 		  //TitleRec *tr, 
 		  Xml *xml, 
@@ -707,7 +653,6 @@ bool isLinkSpam ( Url *linker,
 		  Url *linkee , 
 		  // node position of the linkee in the linker's content
 		  int32_t  linkNode ,
-		  char *coll     ,
 		  int32_t  niceness ) {
 	// it is critical to get inlinks from all pingserver xml
 	// pages regardless if they are often large pages. we
@@ -769,64 +714,6 @@ bool isLinkSpam ( Url *linker,
 		*note ="doc too big";
 		return true; 
 	}
-	// if it has a link to dmoz.org then we are probably a dmoz mirror 
-	// because we are required to have a link to dmoz if a mirror
-	bool checkForDmoz = true;
-	bool checkForAmazon = true;
-	if ( linkee && 
-	     linkee->getDomainLen() == 8 &&
-	     linkee->getDomain() )
-		if ( strncmp ( linkee->getDomain() , "dmoz.org" , 8 ) == 0 ||
-		     strncmp ( linkee->getDomain() , "dmoz.com" , 8 ) == 0 )
-			checkForDmoz = false;
-
-	if ( linker && 
-	     linker->getDomainLen() == 8 &&
-	     linker->getDomain() )
-		if ( strncmp ( linker->getDomain() , "dmoz.org" , 8 ) == 0 ||
-		     strncmp ( linker->getDomain() , "dmoz.com" , 8 ) == 0 )
-			checkForDmoz = false;
-
-	// does the url of the linker have a dmoz path in it?
-	char *zstart = linker->getPath();
-	int32_t  zlen   = linker->getPathLen();
-	char *zend   = zstart + zlen;
-	// start at the end of the path
-	char *z      = zend-1;
-	// back up to previous /
-	for ( ; z > zstart && *z != '/' ; z-- );
-	// make that the new end
-	zend = z + 1;
-	// need at least 2 path components before checking... keep count
-	int32_t  zcount = 2;
-	// begin the loop
-	while ( checkForDmoz && z > zstart ) {
-		// . backup until we hit the previous /
-		for ( z-- ; z > zstart && *z != '/' ; z-- );
-		// debug
-		//char tmp[2000];
-		//gbmemcpy(tmp,z,zend-z);
-		//tmp[zend-z]=0;
-		//log("build: path=%s",tmp);
-		// look it up
-		// "/Arts/" --> 1
-		if ( --zcount > 0 ) continue;
-		if ( g_categories->getIndexFromPath (z, zend-z) < 0 ) continue;
-		*note = "has dmoz path";
-		return true;
-	}
-
-	QUICKPOLL( niceness );
-
-	// if it has a link to amazon.com
-	// because we are required to have a link to dmoz if a mirror
-	if ( linkee && linkee->getDomain() &&
-	     strncmp ( linkee->getDomain(), "amazon.com" , 10 ) == 0 )
-		checkForAmazon = false;
-
-	if ( linker && linker->getDomain() &&
-	     strncmp ( linker->getDomain(), "amazon.com" , 10 ) == 0 )
-		checkForAmazon = false;
 
 	// guestbook in hostname - domain?
 	char *hd  = linker->getHost();
@@ -851,9 +738,6 @@ bool isLinkSpam ( Url *linker,
 	QUICKPOLL(niceness);
 
 	int32_t plen = linker->getPathLen();
-
-	// if very spammy!!
-	// if ( spam
 
 	// if the page has just one rel=nofollow tag then we know they
 	// are not a guestbook
@@ -968,11 +852,6 @@ bool isLinkSpam ( Url *linker,
 
 	char *linkPos = NULL;
 	if ( linkNode >= 0 ) linkPos = xml->getNode ( linkNode );
-
-	//if ( strstr ( linker->getUrl() , "usa_apartments1.htm") ) {
-	//	log("hey");
-	//	sleep(7);
-	//}
 
 	// loop:
 	// do not call them "bad links" if our link occurs before any
@@ -1124,57 +1003,10 @@ bool isLinkSpam ( Url *linker,
 		return false;//true;
 	}
 
-	// . allow sites in dmoz to have it too
-	// . no, there are too many spam porn sites in dmoz
-	int32_t *ids  = indCatIds;
-	int32_t  nids = numIndCatIds;
-	//if ( tr ) ids  = indCatIds;//tr->getIndCatids();
-	//if ( tr ) nids = numIndCatids;//tr->getNumIndCatids();
-	for ( int32_t j = 0 ; j < nids ; j++ ) 
-		if ( g_categories && g_categories->isIdAdult ( ids[j] ) ) {
-			*note = "dmoz porn"; 
-			return true;
-		}
-
 	QUICKPOLL( niceness );
 	// . if they link to any adult site, consider them link spam
 	// . just consider a 100 link radius around linkNode
 	int32_t nl = links->getNumLinks();
-	int32_t linkNum =links->findLinkNum(linkee->getUrl(),linkee->getUrlLen());
-	int32_t i0 = linkNum - 100;
-	int32_t i1 = linkNum + 100;
-	if ( i0 < 0  ) i0 = 0;
-	if ( i1 > nl ) i1 = nl;
-	for ( int32_t i = i0 ; i < i1 ; i++ ) {
-		if ( ! g_categories ) continue;
-		Url uu; uu.set ( links->getLink(i), links->getLinkLen(i) );
-		char *h    = uu.getUrl();
-		// include the trailing /
-		char *hend = uu.getHost() + uu.getHostLen() + 1;
-		uint32_t hhash = hash32 ( h , hend - h );
-		if ( g_categories->isInBadCat ( hhash ) ) {
-			*note = "links to dmoz filth";
-			log(LOG_DEBUG,"build: %s is filthy.",uu.getUrl());
-			return true;
-		}
-		QUICKPOLL( niceness );
-
-		// . is it near sporny links? (naughty domains or lotsa -'s)
-		// . if we are in a list of ads, chances are good the true
-		//   nature of the ads will emerge...
-		if ( i == linkNum      ) continue;
-		if ( i - linkNum >=  4 ) continue;
-		if ( i - linkNum <= -4 ) continue;
-		if ( ! uu.isSpam()     ) continue;
-		*note = "near sporny outlink";
-		log(LOG_DEBUG,"build: %s is sporny.",uu.getUrl());
-		return true;
-	}
-
-
-	// . allow sites in dmoz to have it too
-	// . no, there are too many spam porn sites in dmoz
-	//if ( tr->getNumIndCatids() || tr->getNumCatids()   ) return false;
 
 	// init these before the loop
 	int32_t  hlen  = linkee->getHostLen();
@@ -1188,7 +1020,6 @@ bool isLinkSpam ( Url *linker,
 	QUICKPOLL( niceness );
 
 	// return true right away if it is a link chain
-	//if ( tr->getDocQuality() < 60 &&
 	if ( siteNumInlinks < 1000 && 
 	     isLinkChain ( xml , linker, linkee , x , note ) ) 
 		return true;
@@ -1417,229 +1248,4 @@ bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
 	else                                 *note = "link chain middle";
 
 	return true;
-}
-
-/*
-//we want to find the position of the linkee in the linker's xml class
-//if it is in a series of links without vertical space in the end of
-//the document, then we won't count it
-bool isLinkSpam2 ( Url *linkee, TitleRec *tr, Xml *xml, Links *links ,
-		   int32_t maxDocLen ) {
-	int32_t linkNum = links->findLinkNum(linkee->getUrl(), 
-					  linkee->getUrlLen());
-	if(linkNum < 0) return false;
-
-	int32_t thisXmlNode;
-	int32_t nextXmlNode;
-	int32_t numInARow = 1;
-	int32_t needInARow = 3;
-
-	int32_t thisLink = linkNum;
-	int32_t nextLink = thisLink + 1;
-	int16_t nodeId;
-	int32_t i;
-	int32_t len;
-	char *c;
-	char *cend;
-
- goRight:
-	if(nextLink >= links->getNumLinks()) {
-		//we can only go left from here.
-		//log(LOG_WARN, "links: endotheline");
-		goto goLeft;
-	}
-	thisXmlNode = links->getNodeNum(thisLink);
-	nextXmlNode = links->getNodeNum(nextLink);
-	 
-	 //skip link text
-	 for ( i=thisXmlNode; i < nextXmlNode ; i++ ) {
-		 if(xml->isBackTag(i)) break;
-	 }
-	//could we find link text close tag?
-	if(i == nextXmlNode) {
-		//log(LOG_WARN, "links: couldn't find it");
-		goto goLeft;
-	}
-	for (; i < nextXmlNode ; i++ ) {
-		nodeId = xml->getNodeId(i);
-		if(nodeId == TAG_BR  ||//br
-		   nodeId == TAG_TR ||//tr
-		   nodeId == TAG_LI) {//li
-			//log(LOG_WARN, "links: breaking tag");
-			goto goLeft;
-		}
-		//do we have a rel="nofollow" link which isn't in the 
-		//links class.  If so, skip past it's link text.
-		if(nodeId == TAG_A) {
-			for ( ; i < nextXmlNode ; i++ ) {
-				if(xml->isBackTag(i)) break;
-			}
-			if(i == nextXmlNode) goto goLeft;
-		}
-
-		if(nodeId != TAG_TEXTNODE && nodeId != TAG_B) continue;
-		c = xml->getNode(i); 
-		len = xml->getNodeLen(i); 
-		cend  = c + len;
-
-		while (c < cend) {
-			if(*c == '&') 
-				while (c < cend && *c != ';') c++;
-			if(is_alnum_utf8(c)) {
-				//log(LOG_WARN, "links: stupid %c", *c);
-				goto goLeft;
-			}
-			c++;
-		}
-	}
-	
-
-	//ok, so we got to the next link without
-	//breaking, try getting the next link
-	numInARow++;
-	if(numInARow >= needInARow) goto goLeft;
-
-	thisLink++;
-	nextLink++;
-	goto goRight; 
-
- goLeft:
-	//log(LOG_WARN, "links: numinarow %"INT32" linkee %s , linker %s",
-	//numInARow, linkee->getUrl(), tr->getUrl()->getUrl());
-	if(numInARow >= needInARow) return true;
-
-	//get out if we've already tried going left
-	if(thisLink < linkNum) return false;
-
-	needInARow = needInARow - numInARow;
-	thisLink = linkNum - needInARow;
-	nextLink = thisLink + 1;
-	if(thisLink < 0) return false;
-	goto goRight;
-
-
- 	return false;
-}
-*/
-
-static Needle s_needles3[] = {
-	// this often directly precedes the comment section
-	{"[trackback"                   , 0 , 1 , 1 , 0 , NULL , 0 , NULL } ,
-	{"class=\"comtext"              , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"class=\"comment"              , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"class=\"coment"               , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"class=\"trackback"            , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"class=\"ping"                 , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"class=\"followup"             , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"class=\"response"             , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	// this can signify a blog entry, not just a comment
-	//{"class=\"entry"              , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	// these seem to be more indicative of posted comments
-	{"class=\"posted"               , 0 , 8 , 1 , 0 , NULL , 0 },
-	{"id=\"posted"                  , 0 , 8 , 1 , 0 , NULL , 0 },
-	{"name=\"posted"                , 0 , 8 , 1 , 0 , NULL , 0 },
-	// annoying little textbox thingy
-	{"class=\"shoutbox"             , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"id=\"comment"                 , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"id=\"coment"                  , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"id=\"trackback"               , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"id=\"ping"                    , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"id=\"followup"                , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"id=\"response"                , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"name=\"comment"               , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"name=\"coment"                , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"name=\"trackback"             , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"name=\"ping"                  , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"name=\"followup"              , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	{"name=\"response"              , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
-	// message boards
-	{"anonymous user"               , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	{"anonymer user"                , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	{"date posted"                  , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	{"post your notice"             , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	//{"edit this page"               , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	// edit</a><br>
-	{"edit<a]br"                    , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	// link to edit a comment
-	{">edit</a"                     , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	// these often indicate blog entries, not just comments
-	//{"reply with quote"             , 0 , 9 , 0 , 0 , NULL , 0 , NULL } ,
-	//{">post a reply"                , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	//{"post reply"                   , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	//{"submit post"                  , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	//{">post message"                , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	//{">post a comment"              , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	//{">leave a comment"             , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	//{">post comments"               , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	// Comments</font> (0) after each posted entry...
-	//{">comments<"                 , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	{"comments: <"                  , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	{"comments:<"                   , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	//{"comment:"                   , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	{"reacties:"                    , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	{"comentarios:"                 , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	{"comentários:"                 , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	{">message:"                    , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	{">mensagem:"                   , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	{">faca seu comentario"         , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	{">faça seu comentário"         , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	// comment add in german
-	{">Kommentar hinzuf"            , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	{">add my comment"              , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	// title of the text area box
-	{">your comment"                , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	{"your comment<"                , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	{">comment by"                  , 0 , 10, 1 , 0 , NULL , 0 , NULL } ,
-	{">scrivi un commento"          , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	{">scrivi il tuo commento"      , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	{"add comment"                  , 0 , 10, 0 , 0 , NULL , 0 , NULL } ,
-	{"trackbacks for the art"       , 0 , 12, 1 , 0 , NULL , 0 , NULL } ,
-	{"these trackbacks have been re", 0 , 13, 1 , 0 , NULL , 0 , NULL } ,
-	{"trackback pings"              , 0 , 13, 1 , 0 , NULL , 0 , NULL } ,
-	{"read the rest of this com"    , 0 , 13, 1 , 0 , NULL , 0 , NULL } ,
-	// that was the opinion of ...
-	{"das war die meinung von"      , 0 , 13, 1 , 0 , NULL , 0 , NULL } ,
-	//{"add new comment"              , 0 , 14, 0 , 0 , NULL , 0 },
-	//{"add message"                  , 0 , 14, 0 , 0 , NULL , 0 },
-	// tagboard software allows free submits. it has this in 
-	// an html comment tag...
-	{"2002 natali ardianto"         , 0 , 14, 0 , 0 , NULL , 0 , NULL } ,
-	// guestbooks
-	//{"guestbook</title"             , 0 , 13, 0 , 0 , NULL , 0 , NULL } ,
-	//{"gastenboek</title"            , 0 , 13, 0 , 0 , NULL , 0 , NULL } ,
-};
-
-// gives you where the comment section starts
-// looks for only the first comment section
-char *getCommentSection ( char *haystack     ,
-			  int32_t  haystackSize ,
-			  int32_t  niceness     ){
-
-	// get our page quality, it serves as a threshold for some algos
-	//char quality = tr->getNewQuality();
-
-	//char *linkPos = NULL;
-	//if ( linkNode >= 0 ) linkPos = xml->getNode ( linkNode );
-
-	//if ( strstr ( linker->getUrl() , "usa_apartments1.htm") ) {
-	//	log("hey");
-	//	sleep(7);
-	//}
-
-	// loop:
-	// do not call them "bad links" if our link occurs before any
-	// comment section. our link's position therefore needs to be known,
-	// that is why we pass in linkPos. 
-	// "n" is the number it matches.
-	//int32_t numNeedles1 = sizeof(s_needles3)/sizeof(Needle);
-	return getMatches2 ( s_needles3  ,
-			     sizeof(s_needles3)/sizeof(Needle),
-			     haystack    ,
-			     haystackSize,
-			     NULL        ,
-			     NULL        ,
-			     true        ,// stopAtFirstMatch
-			     NULL        , // hadPreMatch?
-			     false       , // save quick tables?
-			     niceness    );
 }

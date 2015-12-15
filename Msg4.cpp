@@ -918,7 +918,6 @@ bool sendBuffer ( int32_t hostId , int32_t niceness ) {
 			   // having been resent by us!
 			   999999999   , // timeout in secs
 			   MAX_NICENESS, // niceness
-			   false      , // realtime
 			   -1         , // first host to try
 			   NULL       , // replyBuf        = NULL ,
 			   0          , // replyBufMaxSize = 0 ,

@@ -55,9 +55,6 @@ static pid_t s_pid = 0;
 // a global class extern'd in .h file
 UdpServer g_udpServer;
 
-// this is the high priority udpServer, it's requests are handled first
-UdpServer g_udpServer2;
-
 // . how many dgrams constitute a big msg that should use the token system?
 // . if msg use this or more dgrams, use the token system
 // . i've effectively disabled the token scheme by setting this to 1000
@@ -270,8 +267,6 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto, int32_t niceness,
 	m_numUsedSlotsIncoming   = 0;
 	// clear this
 	m_isShuttingDown = false;
-	// and this
-	m_isSuspended    = false;
 	// set up shared mem
 	//if ( ! useSharedMem() ) return false;
 	// . TODO: IMPORTANT: FIX this to read and save from disk!!!!
@@ -513,12 +508,6 @@ bool UdpServer::sendRequest ( char     *msg          ,
 		    "Making 9999999.");
 		timeout = 9999999;
 		char *xx=NULL;*xx=0;
-	}
-	// if we're hot request size is limited
-	if ( this == &g_udpServer2  && msgSize > TMPBUFSIZE ) {
-		g_errno = EBUFTOOSMALL;
-		return log(LOG_LOGIC,"udp: sendrequest: Request too big for "
-			   "asynchronous udp server to read.");
 	}
 	// . we only allow niceness 0 or 1 now
 	// . this niceness is only used for makeCallbacks_ass()
@@ -839,14 +828,11 @@ bool UdpServer::doSending_ass (UdpSlot *slot,bool allowResends,int64_t now) {
  loop:
 	int32_t status = 0;
 	// . don't do any sending until we leave the wait state
-	// . we may get suspended at ANY time since suspender is HOT
-	if ( m_isSuspended ) return true;
 
 	// if it is suspended, don't allow any thru except Msg0's that are
 	// sending replies because they need permission from Msg21 to do that
 	// and they might deadlock with this permission token if we suspend 
 	// them. HACK!
-	//if ( m_isSuspended ) goto done;
 	//     slot->m_msgType != 0x00 ) goto done;
 	//     slot->m_msgType != 0x30 ) return true;
 
@@ -924,9 +910,6 @@ bool UdpServer::sendPoll_ass ( bool allowResends , int64_t now ) {
 	bool something = false;
  getNextSlot:
 	// . don't do any sending until we leave the wait state
-	// . we can be suspended in the middle of this loop by a HOT high
-	//   priority server
-	if ( m_isSuspended ) return false;
 	// or if is shutting down
 	if ( m_isShuttingDown ) return false;
 	// . get the next slot to send on
@@ -1015,8 +998,6 @@ UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
 		//if ( isEmpty(i) ) continue;
 		// get the ith slot
 		//slot = &m_slots[i];
-		// if we're suspended, only allow Msg0 slots
-		//if ( m_isSuspended ) continue;
 		//     slot->m_msgType != 0x00 ) continue;
 		//     slot->m_msgType != 0x30  ) continue;
 		// . we don't allow time out on slots waiting for us to send
@@ -1315,7 +1296,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		  ! isLocal &&
 		  ! g_hostdb.isIpInNetwork ( ip ) &&
 		  ! g_conf.isMasterIp ( ip ) &&
-		  ! g_hostdb2.isIpInNetwork ( ip ) &&
 		  ! g_conf.isConnectIp ( ip ) ) {
 		// bitch, wait at least 5 seconds though
 		static int32_t s_lastTime = 0;
@@ -1689,8 +1669,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 			//log("in waiting up to %"INT32"",m_requestsInWaiting );
 			//log("in waiting up to %"INT32" (0x%hhx) ",
 			//     m_requestsInWaiting, slot->m_msgType );
-			// suspend the low priority server
-			if ( this == &g_udpServer2 ) g_udpServer.suspend();
 		}
 
 	}
@@ -1874,57 +1852,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	//return 1;
 }		
 
-// . g_udpServer2::getEmptyUdpSlot() calls g_udpServer.suspend() to  suspend 
-//   the low priority udp server
-// . !!!!!we might be in a signal handler, so be careful!!!!!!!!!!!!!!!
-void UdpServer::suspend ( ) {
-	// disable for now, i don't think its a good thing, instead
-	// we should just not call low priority (niceness >= 1) msg callbacks
-	// or handlers before those of high priority, ?or when a high
-	// priority thread is launched?
-	return;
-	// return if already suspended
-	if ( m_isSuspended ) return;
-	// debug msg
-	if ( g_conf.m_logDebugUdp )
-		log(LOG_DEBUG,"udp: SUSPENDING UDPSERVER.");
-	// otherwise suspend ourselves
-	m_isSuspended = true;
-	// suspend any merges going on, not just from indexdb
-	//g_indexdb.getRdb()->suspendAllMerges();
-	// we got a new request, so suspend any low priority threads
-	// iff we're a high priority server
-	//g_threads.suspendLowPriorityThreads();
-}
-
-// this is called by the high priority udp server when it's empty and
-// the low priority udp server was waiting for it to be empty
-void UdpServer::resume ( ) {
-	// if we weren't suspended, ignore it
-	if ( ! m_isSuspended ) return;
-	// can't be called from signal handler!
-	if ( g_inSigHandler ) return;
-	// sanity check
-	char *xx=NULL;*xx=0;
-	// debug msg
-	if ( g_conf.m_logDebugUdp ) 
-		log(LOG_DEBUG,"udp: RESUMING UDPSERVER.");
-	// we are no longer suspened
-	m_isSuspended = false;
-	// get time now
-	int64_t now = gettimeofdayInMillisecondsLocal();
-	// send as much as we can now that m_isSuspended is false
-	sendPoll_ass ( true , now );
-	// resume any merge that was going on
-	//g_indexdb.getRdb()->resumeAllMerges();
-	// resume the low priority threads
-	//g_threads.resumeLowPriorityThreads();
-	// now do reading/sending/timeouting/etc.
-	timePoll();
-	// call callbacks that may have been delayed
-	makeCallbacks_ass ( -1 );
-}
-
 // . try calling makeCallback_ass() on all slots
 // . return true if we called one
 // . this is basically double entrant!!! CAUTION!!!
@@ -1946,9 +1873,6 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 		log(LOG_DEBUG,"udp: makeCallbacks_ass: start. nice=%"INT32" "
 		    "inquickpoll=%"INT32"",
 		    niceness,(int32_t)g_loop.m_inQuickPoll);
-	// bail if suspended
-	if ( m_isSuspended ) return false;
-
 
 	// . if there are active high priority threads, do not 
 	//   call low priority callbacks. in that case
@@ -2274,16 +2198,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// . BUT, we are always allowed to call Msg0's m_callback2 so we can
 	//   give back the bandwidth token (via Msg21) HACK!
 	// . undo this for now
-	//if ( m_isSuspended && msgType != 0x01 ) return ;
-	// mdw if ( m_isSuspended ) return ;
 
-	/*
-	if ( m_isSuspended ) {
-		if ( slot->m_msgType   != 0x00  ) return;
-		//     slot->m_msgType   != 0x30  ) return;
-		if ( slot->m_callback2 == NULL  ) return;
-	}
-	*/
 	// watch out for illegal msgTypes
 	//if ( msgType < 0 ) {
 	//	log(LOG_LOGIC,"udp: makeCallback_ass: Illegal msgType."); 
@@ -2822,8 +2737,6 @@ void UdpServer::timePoll ( ) {
 	// bail if no slots in use
 	//if ( m_topUsedSlot < 0 ) return;
 	if ( ! m_head2 ) return;
-	// return if suspended
-	if ( m_isSuspended ) return;
 	// debug msg
 	//if ( g_conf.m_logDebugUdp ) log("enter timePoll");
 	// only repeat once
@@ -2876,8 +2789,6 @@ void UdpServer::timePoll ( ) {
 // . just nuke the REQUEST-reception slots that have timed out
 // . returns true if we timed one out OR reset one for resending
 bool UdpServer::readTimeoutPoll ( int64_t now ) {
-	// bail if we are in a wait state
-	if ( m_isSuspended ) return false;
 	// did we do something? assume not.
 	bool something = false;
 	// loop over occupied slots
@@ -2918,10 +2829,6 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		//if ( isEmpty(i) ) continue;
 		// get the slot
 		//UdpSlot *slot = &m_slots[i];
-		// skip if we're suspended, unless it is a special slot. HACK!
-		//if ( m_isSuspended ) continue ;
-		//     slot->m_msgType != 0x00 ) continue;
-		//     slot->m_msgType != 0x30  ) continue;
 		// if the reading is completed, but we haven't generated a
 		// reply yet, then continue because when reply is generated
 		// UdpServer::sendReply(slot) will be called and we don't
@@ -3140,9 +3047,6 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 		// debug msg, good for msg routing distribution, too
 		//log("in waiting down to %"INT32" (0x%hhx) ",
 		//     m_requestsInWaiting, slot->m_msgType );
-		// resume the low priority udp server
-		if ( m_requestsInWaiting <= 0 && this == &g_udpServer2 )
-			g_udpServer.resume();	
 	}
 
 	// don't let sig handler look at slots while we are destroying them
@@ -3494,8 +3398,6 @@ void UdpServer::freeUdpSlot_ass ( UdpSlot *slot ) {
 	//if ( i >= m_topUsedSlot ) 
 	//	while ( m_topUsedSlot >= 0 && isEmpty(m_topUsedSlot) ) 
 	//		m_topUsedSlot--;
-	// the low priority server may have been waiting for high to finish
-	//if ( m_topUsedSlot < 0 && this==&g_udpServer2 ) g_udpServer.resume();
 	// if we turned 'em off then turn 'em back on
 	if ( flipped ) interruptsOn();
 }
@@ -3536,8 +3438,6 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 		// check for port match
 		if ( this == &g_udpServer && slot->m_port != oldHost->m_port )
 			continue;
-		//if(this== &g_udpServer2 && slot->m_port != oldHost->m_port2 )
-		//	continue;
 		// . match, replace the slot ip/port with the newHost
 		// . first remove the old hashed key for this slot
 		// . get bucket number in hash table

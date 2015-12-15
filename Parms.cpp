@@ -3,16 +3,12 @@
 #include "Parms.h"
 #include "File.h"
 #include "Conf.h"
-//#include "CollectionRec.h"
 #include "TcpSocket.h"
 #include "HttpRequest.h"
 #include "Pages.h"         // g_pages
 #include "Tagdb.h"        // g_tagdb
-#include "Catdb.h"
 #include "Collectiondb.h"
 #include "HttpMime.h"      // atotime()
-//#include "Msg28.h"
-//#include "Sync.h"
 #include "Indexdb.h" // for MIN_TRUNC
 #include "SearchInput.h"
 #include "Unicode.h"
@@ -24,7 +20,6 @@
 #include "Process.h"
 #include "Repair.h"
 #include "PingServer.h"
-#include "Users.h"
 #include "Proxy.h"
 #include "hash.h"
 #include "Test.h"
@@ -715,7 +710,6 @@ bool CommandMerge ( char *rec ) {
 	// most of these are probably already in good shape
 	// g_clusterdb.getRdb()->attemptMerge  (1,true); // niceness, force?
 	// g_tagdb.getRdb()->attemptMerge     (1,true);
-	// g_catdb.getRdb()->attemptMerge      (1,true);
 	// //g_tfndb.getRdb()->attemptMerge      (1,true);
 	// g_spiderdb.getRdb()->attemptMerge   (1,true);
 	// // these 2 will probably need the merge the most
@@ -775,13 +769,9 @@ bool CommandForceIt ( char *rec ) {
 bool CommandDiskDump ( char *rec ) {
 	g_clusterdb.getRdb()->dumpTree  ( 1 );
 	g_tagdb.getRdb()->dumpTree     ( 1 );  
-	g_catdb.getRdb()->dumpTree      ( 1 );
-	//g_tfndb.getRdb()->dumpTree      ( 1 );   
 	g_spiderdb.getRdb()->dumpTree   ( 1 );
 	g_posdb.getRdb()->dumpTree    ( 1 );
-	//g_datedb.getRdb()->dumpTree     ( 1 );
 	g_titledb.getRdb()->dumpTree    ( 1 );
-	//g_sectiondb.getRdb()->dumpTree  ( 1 );
 	g_statsdb.getRdb()->dumpTree    ( 1 );
 	g_linkdb.getRdb() ->dumpTree    ( 1 );
 	g_errno = 0;
@@ -1273,14 +1263,6 @@ bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 	// so we need to call those functions here...
 	//
 
-	// if we were an addurl page..
-	//if ( page == PAGE_ADDURL2 ) {
-	//	// this returns false if blocked and it should re-call
-	//	// sendPageGeneric when completed
-	//	if ( ! processAddUrlRequest ( s , r ) )
-	//		return false;
-	//}
-
 	char *bodyjs = NULL;
 	if ( page == PAGE_BASIC_SETTINGS )
 		bodyjs =" onload=document.getElementById('tabox').focus();";
@@ -1390,18 +1372,12 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 	if ( page == PAGE_ADDURL2    ) tt = "Add Urls";
 	if ( page == PAGE_SPIDER     ) tt = "Spider Controls";
 	if ( page == PAGE_SEARCH     ) tt = "Search Controls";
-	if ( page == PAGE_ACCESS     ) tt = "Access Controls";
 	if ( page == PAGE_FILTERS    ) tt = "Url Filters";
 	if ( page == PAGE_BASIC_SETTINGS ) tt = "Settings";
 	if ( page == PAGE_COLLPASSWORDS ) tt = "Collection Passwords";
-	//if ( page == PAGE_SITES ) tt = "Site List";
-	//if ( page == PAGE_PRIORITIES ) tt = "Priority Controls";
-	//if ( page == PAGE_RULES      ) tt = "Site Rules";
-	//if ( page == PAGE_SYNC       ) tt = "Sync";
 #ifndef PRIVACORE_SAFE_VERSION
 	if ( page == PAGE_REPAIR     ) tt = "Rebuild Controls";
 #endif
-	//if ( page == PAGE_ADFEED     ) tt = "Ad Feed Controls";
 
 	// special messages for spider controls
 	char *e1 = "";
@@ -1946,10 +1922,10 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 		}
 
 		// arrays always have blank line for adding stuff
-		if ( m->m_max > 1 )
-		     // not for PAGE_PRIORITIES!
-		     //m->m_page != PAGE_PRIORITIES )
+		if ( m->m_max > 1 ) {
 			size++;
+		}
+
 		// if m_rowid of consecutive parms are the same then they
 		// are all printed in the same row, otherwise the inner loop
 		// has no effect
@@ -2031,20 +2007,6 @@ bool Parms::printParm ( SafeBuf* sb,
 			bool isCollAdmin ,
 			TcpSocket *sock ) {
 	bool status = true;
-	// do not print if no permissions
-	//if ( m->m_perms != 0 && !g_users.hasPermission(username,m->m_perms) )
-	//	return status;
-	//if ( m->m_perms != 0 && (m->m_perms & user) == 0 ) return status;
-	// do not print some if #define _CLIENT_ is true
-	//#ifdef _GLOBALSPEC_
-	//if ( m->m_priv == 2 ) return status;
-	//if ( m->m_priv == 3 ) return status;
-	//#elif _CLIENT_
-	//if ( m->m_priv ) return status;
-	//#elif _METALINCS_
-	//if ( m->m_priv == 2 ) return status;
-	//if ( m->m_priv == 3 ) return status;
-	//#endif
 	// priv of 4 means do not print at all
 	if ( m->m_priv == 4 ) return true;
 
@@ -2471,11 +2433,6 @@ bool Parms::printParm ( SafeBuf* sb,
 		// s is NULL for GigablastRequest parms
 		if ( ! s && m->m_def && m->m_def[0]=='1' )
 			val = " checked";
-		// in case it is not checked, submit that!
-		// if it gets checked this should be overridden then
-		sb->safePrintf("<input type=hidden name=%s value=0>"
-			       , cgi );
-		//else
 		sb->safePrintf("<input type=checkbox value=1 ");
 		//"<nobr><input type=button ");
 		if ( m->m_page == PAGE_FILTERS)
@@ -5174,7 +5131,7 @@ void Parms::init ( ) {
 	// m->m_title = "tagdb max page cache mem";
 	// m->m_desc  = "";
 	// m->m_off   = (char *)&g_conf.m_tagdbMaxDiskPageCacheMem - g;
-	// m->m_def   = "200000"; 
+	// m->m_def   = "200000";
 	// m->m_type  = TYPE_LONG;
 	// m->m_flags = PF_NOSYNC|PF_NOAPI;
 	// m->m_page  = PAGE_NONE;
@@ -5184,72 +5141,23 @@ void Parms::init ( ) {
 	//m->m_title = "tagdb max cache mem";
 	//m->m_desc  = "";
 	//m->m_off   = (char *)&g_conf.m_tagdbMaxCacheMem - g;
-	//m->m_def   = "128000"; 
+	//m->m_def   = "128000";
 	//m->m_type  = TYPE_LONG;
 	//m++;
 
 	//m->m_title = "tagdb min files to merge";
 	//m->m_desc  = "";
 	//m->m_off   = (char *)&g_conf.m_tagdbMinFilesToMerge - g;
-	//m->m_def   = "2"; 
+	//m->m_def   = "2";
 	//m->m_type  = TYPE_LONG;
 	//m->m_save  = 0;
 	//m++;
-
-	m->m_title = "catdb max tree mem";
-	m->m_desc  = "A catdb record "
-		"assigns a url or site to DMOZ categories. Each catdb record "
-		"is about 100 bytes.";
-	m->m_off   = (char *)&g_conf.m_catdbMaxTreeMem - g;
-	m->m_def   = "1000000"; 
-	m->m_type  = TYPE_LONG;
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	// m->m_title = "catdb max page cache mem";
-	// m->m_desc  = "";
-	// m->m_off   = (char *)&g_conf.m_catdbMaxDiskPageCacheMem - g;
-	// m->m_def   = "25000000";
-	// m->m_type  = TYPE_LONG;
-	// m->m_flags = PF_NOSYNC|PF_NOAPI;
-	// m->m_page  = PAGE_NONE;
-	// m->m_obj   = OBJ_CONF;
-	// m++;
-
-	m->m_title = "catdb max cache mem";
-	m->m_desc  = "";
-	m->m_off   = (char *)&g_conf.m_catdbMaxCacheMem - g;
-	m->m_def   = "0"; 
-	m->m_type  = TYPE_LONG;
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	/*
-	m->m_title = "catdb min files to merge";
-	m->m_desc  = "";
-	m->m_off   = (char *)&g_conf.m_catdbMinFilesToMerge - g;
-	m->m_def   = "2"; 
-	m->m_type  = TYPE_LONG;
-	m->m_save  = 0;
-	m++;
-
-	m->m_title = "revdb max tree mem";
-	m->m_desc  = "Revdb holds the meta list we added for this doc.";
-	m->m_off   = (char *)&g_conf.m_revdbMaxTreeMem - g;
-	m->m_def   = "30000000"; 
-	m->m_type  = TYPE_LONG;
-	m++;
-	*/
 
 	/*
 	m->m_title = "timedb max tree mem";
 	m->m_desc  = "Timedb holds event time intervals";
 	m->m_off   = (char *)&g_conf.m_timedbMaxTreeMem - g;
-	m->m_def   = "30000000"; 
+	m->m_def   = "30000000";
 	m->m_type  = TYPE_LONG;
 	m++;
 	*/
@@ -5259,14 +5167,14 @@ void Parms::init ( ) {
 	m->m_desc  = "Titledb holds the compressed documents that have been "
 		"indexed.";
 	m->m_off   = (char *)&g_conf.m_titledbMaxTreeMem - g;
-	m->m_def   = "10000000"; 
+	m->m_def   = "10000000";
 	m->m_type  = TYPE_LONG;
 	m++;
 
 	m->m_title = "titledb max cache mem";
 	m->m_desc  = "";
 	m->m_off   = (char *)&g_conf.m_titledbMaxCacheMem - g;
-	m->m_def   = "1000000"; 
+	m->m_def   = "1000000";
 	m->m_type  = TYPE_LONG;
 	m++;
 
@@ -5280,7 +5188,7 @@ void Parms::init ( ) {
 	m->m_title = "titledb save cache";
 	m->m_desc  = "";
 	m->m_off   = (char *)&g_conf.m_titledbSaveCache - g;
-	m->m_def   = "0"; 
+	m->m_def   = "0";
 	m->m_type  = TYPE_BOOL;
 	m++;
 	*/
@@ -7244,49 +7152,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "demotion for pages where smallest "
-		"catid has a lot of super topics";
-	m->m_desc  = "Demotion factor for pages where smallest "
-		"catid has a lot of super topics. "
-		"Page will be penalized by the number of super topics "
-		"multiplied by this factor divided by the max value given "
-		"below. "
-		"Generally, the page will not be demoted more than this "
-		"factor as a percent. "
-		"Note: pages with no catid are demoted by this factor as "
-		"a percent so as not to penalize pages with a catid. "
-		"0 means no demotion. "
-		"A safe range is between 0 and 0.25. ";
-	m->m_cgi   = "pqrsuper";
-	m->m_off   = (char *)&cr.m_pqr_demFactCatidHasSupers - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "max value for pages where smallest catid has a lot "
-		"of super topics";
-	m->m_desc  = "Max number of super topics. "
-		"Pages whose smallest catid that has more super "
-		"topics than this will be demoted by the maximum amount "
-		"given by the factor above as a percent. "
-		"This should be set to a value representing a very high "
-		"number of super topics for a category id. "
-		"Lower values increase the difference between how much each "
-		"additional path demotes. ";
-	m->m_cgi   = "pqrsuperm";
-	m->m_off   = (char *)&cr.m_pqr_maxValCatidHasSupers - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "11";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "demotion for larger pages";
 	m->m_desc  = "Demotion factor for larger pages. "
 		"Page will be penalized by its size times this factor "
@@ -7482,31 +7347,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_pqr_maxValOthFromHost - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "12";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "initial demotion for pages with common "
-		"topics in dmoz as other results";
-	m->m_desc  = "Initial demotion factor for pages with common "
-		"topics in dmoz as other results. "
-		"Pages will be penalized by the number of common topics "
-		"in dmoz times this factor divided by the max value "
-		"given below. "
-		"Generally, a page will not be demoted by more than this "
-		"factor as a percent. "
-		"Note: this factor is decayed by the factor specified in "
-		"the parm below, decay for pages with common topics in "
-		"dmoz as other results, as the number of pages with "
-		"common topics in dmoz increases. "
-		"0 means no demotion. "
-		"A safe range is between 0 and 0.35. ";
-	m->m_cgi   = "pqrctid";
-	m->m_off   = (char *)&cr.m_pqr_demFactComTopicInDmoz - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
 	m->m_group = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
@@ -10434,53 +10274,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "autoban IPs which violate the queries per day quotas";
-	m->m_desc  = "Keep track of ips which do queries, disallow "
-		"non-customers from hitting us too hard.";
-	m->m_cgi   = "ab";
-	m->m_off   = (char *)&g_conf.m_doAutoBan - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	if ( g_isYippy ) {
-	m->m_title = "Max outstanding search requests out for yippy";
-	m->m_desc  = "Max outstanding search requests out for yippy";
-	m->m_cgi   = "ymo";
-	m->m_off   = (char *)&g_conf.m_maxYippyOut - g;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "150";
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-	}
-
-	m->m_title = "free queries per day ";
-	m->m_desc  = "Non-customers get this many queries per day before"
-		"being autobanned";
-	m->m_cgi   = "nfqpd";
-	m->m_off   = (char *)&g_conf.m_numFreeQueriesPerDay - g;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "1024";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "free queries per minute ";
-	m->m_desc  = "Non-customers get this many queries per minute before"
-		"being autobanned";
-	m->m_cgi   = "nfqpm";
-	m->m_off   = (char *)&g_conf.m_numFreeQueriesPerMinute - g;
-	m->m_type  = TYPE_CHAR;
-	m->m_def   = "30";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "max heartbeat delay in milliseconds";
 	m->m_desc  = "If a heartbeat is delayed this many milliseconds "
 		"dump a core so we can see where the CPU was. "
@@ -10710,28 +10503,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
-
-	/*
-	m->m_title = "send email alerts to zak";
-	m->m_desc  = "Sends to zak@gigablast.com.";
-	m->m_cgi   = "seatz";
-	m->m_off   = (char *)&g_conf.m_sendEmailAlertsToZak - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_priv  = 2;
-	m->m_group = 0;
-	m++;
-
-	m->m_title = "send email alerts to sabino";
-	m->m_desc  = "Sends to cell phone.";
-	m->m_cgi   = "seatms";
-	m->m_off   = (char *)&g_conf.m_sendEmailAlertsToSabino - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_priv  = 2;
-	m->m_group = 0;
-	m++;
-	*/
 
 	m->m_title = "dead host timeout";
 	m->m_desc  = "Consider a host in the Gigablast network to be dead if "
@@ -11283,7 +11054,7 @@ void Parms::init ( ) {
 		"change to take affect.";
 	m->m_cgi   = "ueh";
 	m->m_off   = (char *)&g_conf.m_useEtcHosts - g;
-	m->m_def   = "0"; 
+	m->m_def   = "1"; 
 	m->m_type  = TYPE_BOOL;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -12867,98 +12638,6 @@ void Parms::init ( ) {
 
 
 	///////////////////////////////////////////
-	// ACCESS CONTROLS
-	///////////////////////////////////////////
-
-	/*
-	// ARRAYS
-	// each will have its own table, title will be in first row
-	// of that table, 2nd row is description, then one row per
-	// element in the array, then a final row for adding new elements
-	// if not exceeding our m->m_max limit.
-	m->m_title = "Passwords Required to Search this Collection";
-	m->m_desc  ="Passwords allowed to perform searches on this collection."
-		" If no passwords are specified, then anyone can search it.";
-	m->m_cgi   = "searchpwd";
-	m->m_xml   = "searchPassword";
-	m->m_max   = MAX_SEARCH_PASSWORDS;
-	m->m_off   = (char *)cr.m_searchPwds - x;
-	m->m_type  = TYPE_STRINGNONEMPTY;
-	m->m_size  = PASSWORD_MAX_LEN+1; // string size max
-	m->m_page  = PAGE_ACCESS;
-	m->m_def   = "";
-	m++;
-
-	m->m_title = "IPs Banned from Searching this Collection";
-	m->m_desc  = "These IPs are not allowed to search this collection or "
-		"use add url. Useful to keep out miscreants. Use zero for the "
-		"last number of the IP to ban an entire IP domain.";
-	m->m_cgi   = "bip";
-	m->m_xml   = "bannedIp";
-	m->m_max   = MAX_BANNED_IPS;
-	m->m_off   = (char *)cr.m_banIps - x;
-	m->m_type  = TYPE_IP;
-	m->m_def   = "";
-	m++;
-
-	m->m_title = "Only These IPs can Search this Collection";
-	m->m_desc  = "Only these IPs are allowed to search the collection and "
-		"use the add url facilities. If you'd like to make your "
-		"collection publically searchable then do not add any IPs "
-		"here.Use zero for the "
-		"last number of the IP to restrict to an entire "
-		"IP domain, i.e. 1.2.3.0.";
-	m->m_cgi   = "searchip";
-	m->m_xml   = "searchIp";
-	m->m_max   = MAX_SEARCH_IPS;
-	m->m_off   = (char *)cr.m_searchIps - x;
-	m->m_type  = TYPE_IP;
-	m->m_def   = "";
-	m++;
-
-	m->m_title = "Spam Assassin IPs";
-	m->m_desc  = "Browsers coming from these IPs are deemed to be spam "
-		  "assassins and have access to a subset of the controls to "
-		"ban and remove domains and IPs from the index.";
-	m->m_cgi   = "assip";
-	m->m_xml   = "assassinIp";
-	m->m_max   = MAX_SPAM_IPS;
-	m->m_off   = (char *)cr.m_spamIps - x;
-	m->m_type  = TYPE_IP;
-	m->m_def   = "";
-	m++;
-
-	m->m_title = "Admin Passwords";
-	m->m_desc  = "Passwords allowed to edit this collection record. "
-		"First password can only be deleted by the master "
-		"administrator. If no password of Admin IP is given at time "
-		"of creation then the default password of 'footbar23' will "
-		"be assigned.";
-	m->m_cgi   = "apwd";
-	m->m_xml   = "adminPassword";
-	m->m_max   = MAX_ADMIN_PASSWORDS;
-	m->m_off   = (char *)cr.m_adminPwds - x;
-	m->m_type  = TYPE_STRINGNONEMPTY;
-	m->m_size  = PASSWORD_MAX_LEN+1;
-	m->m_def   = "";
-	m++;
-
-	m->m_title = "Admin IPs";
-	m->m_desc  = "If someone connects from one of these IPs and provides "
-		"a password from the table above then they will have full "
-		"administrative priviledges for this collection. If you "
-		"specified no Admin Passwords above then they need only "
-		"connect from an IP in this table to get the privledges. ";
-	m->m_cgi   = "adminip";
-	m->m_xml   = "adminIp";
-	m->m_max   = MAX_ADMIN_IPS;
-	m->m_off   = (char *)cr.m_adminIps - x;
-	m->m_type  = TYPE_IP;
-	m->m_def   = "";
-	m++;
-	*/
-
-	///////////////////////////////////////////
 	// URL FILTERS
 	///////////////////////////////////////////
 
@@ -13530,37 +13209,6 @@ void Parms::init ( ) {
 	///////////////////////////////////////////
 	// SITEDB FILTERS
 	///////////////////////////////////////////
-
-	/*
-	m->m_title = "site expression";
-	m->m_desc  = "The site of a url is a substring of that url, which "
-		"defined a set of urls which are all primarily controlled "
-		"by the same entity. The smallest such site of a url is "
-		"returned, because a url can have multiple sites. Like "
-		"fred.blogspot.com is a site and the blogspot.com site "
-		"contains that site.";
-	m->m_cgi   = "sdbfe";
-	m->m_xml   = "siteExpression";
-	m->m_max   = MAX_SITE_EXPRESSIONS;
-	m->m_off   = (char *)cr.m_siteExpressions - x;
-	m->m_type  = TYPE_STRINGNONEMPTY;
-	m->m_size  = MAX_SITE_EXPRESSION_LEN+1;
-	m->m_page  = PAGE_RULES;
-	m->m_rowid = 1; // if we START a new row
-	m->m_def   = "";
-	m++;
-
-	m->m_title = "site rule";
-	m->m_cgi   = "sdbsrs";
-	m->m_xml   = "siteRule";
-	m->m_max   = MAX_SITE_EXPRESSIONS;
-	m->m_off   = (char *)cr.m_siteRules - x;
-	m->m_type  = TYPE_SITERULE;
-	m->m_page  = PAGE_RULES;
-	m->m_rowid = 1;
-	m->m_def   = "0";
-	m++;
-	*/
 
 	/*
 	m->m_title = "siterec default ruleset";
@@ -14939,20 +14587,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&ir.ptr_url - (char *)&ir;
 	m++;
 
-
-	m->m_title = "query to scrape";
-	m->m_desc  = "Scrape popular search engines for this query "
-		"and inject their links. You are not required to supply "
-		"the <i>url</i> parm if you supply this parm.";
-	m->m_cgi   = "qts";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_CHARPTR;
-	m->m_def   = NULL;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_INJECT;
-	m->m_off   = (char *)&ir.ptr_queryToScrape - (char *)&ir;
-	m++;
-
 	m->m_title = "inject links";
 	m->m_desc  = "Should we inject the links found in the injected "
 		"content as well?";
@@ -15859,32 +15493,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-
-	m->m_title = "display dmoz categories in results";
-	m->m_desc  = "If enabled, results in dmoz will display their "
-		"categories on the results page.";
-	m->m_cgi   = "ddc";
-	m->m_off   = (char *)&cr.m_displayDmozCategories - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "display indirect dmoz categories in results";
-	m->m_desc  = "If enabled, results in dmoz will display their "
-		"indirect categories on the results page.";
-	m->m_cgi   = "didc";
-	m->m_off   = (char *)&cr.m_displayIndirectDmozCategories - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "display Search Category link to query category of result";
 	m->m_desc  = "If enabled, a link will appear next to each category "
 		"on each result allowing the user to perform their query "
@@ -15893,32 +15501,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_displaySearchCategoryLink - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "use dmoz for untitled";
-	m->m_desc  = "Yes to use DMOZ given title when a page is untitled but "
-		     "is in DMOZ.";
-	m->m_cgi   = "udfu";
-	m->m_off   = (char *)&cr.m_useDmozForUntitled - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "show dmoz summaries";
-	m->m_desc  = "Yes to always show DMOZ summaries with search results "
-		     "that are in DMOZ.";
-	m->m_cgi   = "udsm";
-	m->m_off   = (char *)&cr.m_showDmozSummary - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
 	m->m_group = 0;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
@@ -15936,18 +15518,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
 	m++;
-
-	/*
-	m->m_title = "show sensitive info in xml feed";
-	m->m_desc  = "If enabled, we show certain tagb tags for each "
-		"search result, allow &amp;inlinks=1 cgi parms, show "
-		"<docsInColl>, etc. in the xml feed. Created for buzzlogic.";
-	m->m_cgi   = "sss";
-	m->m_off   = (char *)&cr.m_showSensitiveStuff - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m++;
-	*/
 
 	m->m_title = "display indexed date";
 	m->m_desc  = "Display the indexed date along with results.";
@@ -18691,95 +18261,6 @@ void Parms::init ( ) {
 
 
 	///////////////////////////////////////////
-	//  AUTOBAN CONTROLS
-	//  
-	///////////////////////////////////////////
-
-	m->m_title = "ban IPs";
-	m->m_desc  = "add Ips here to bar them from accessing this "
-		"gigablast server.";
-	m->m_cgi   = "banIps";
-	m->m_xml   = "banIps";
-	m->m_off   = (char *)g_conf.m_banIps - g;
-	m->m_type  = TYPE_STRINGBOX;
-	m->m_page  = PAGE_AUTOBAN;
-	m->m_obj   = OBJ_CONF;
-	m->m_size  = AUTOBAN_TEXT_SIZE;
-	m->m_group = 1;
-	m->m_def   = "";
-	m->m_plen  = (char *)&g_conf.m_banIpsLen - g; // length of string
-	m++;
-
-	m->m_title = "allow IPs";
-	m->m_desc  = "add Ips here to give them an infinite query quota.";
-	m->m_cgi   = "allowIps";
-	m->m_xml   = "allowIps";
-	m->m_off   = (char *)g_conf.m_allowIps - g;
-	m->m_type  = TYPE_STRINGBOX;
-	m->m_page  = PAGE_AUTOBAN;
-	m->m_size  = AUTOBAN_TEXT_SIZE;
-	m->m_group = 1;
-	m->m_def   = "";
-	m->m_plen  = (char *)&g_conf.m_allowIpsLen - g; // length of string
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "valid search codes";
-	m->m_desc  = "Don't try to autoban queries that have one "
-		"of these codes. Also, the code must be valid for us "
-		"to use &uip=IPADDRESS as the IP address of the submitter "
-		"for purposes of autoban AND purposes of addurl daily quotas.";
-	m->m_cgi   = "validCodes";
-	m->m_xml   = "validCodes";
-	m->m_off   = (char *)g_conf.m_validCodes - g;
-	m->m_type  = TYPE_STRINGBOX;
-	m->m_page  = PAGE_AUTOBAN;
-	m->m_size  = AUTOBAN_TEXT_SIZE;
-	m->m_group = 1;
-	m->m_def   = "";
-	m->m_plen  = (char *)&g_conf.m_validCodesLen - g; // length of string
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "Extra Parms";
-	m->m_desc  = "Append extra default parms to queries that match "
-		"certain substrings.  Format: text to match in url, "
-		"followed by a space, then the list of extra parms as "
-		"they would appear appended to the url.  "
-		"One match per line.";
-	m->m_cgi   = "extraParms";
-	m->m_xml   = "extraParms";
-	m->m_off   = (char *)g_conf.m_extraParms - g;
-	m->m_type  = TYPE_STRINGBOX;
-	m->m_page  = PAGE_AUTOBAN;
-	m->m_size  = AUTOBAN_TEXT_SIZE;
-	m->m_group = 1;
-	m->m_def   = "";
-	m->m_plen  = (char *)&g_conf.m_extraParmsLen - g; // length of string
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "ban substrings";
-	m->m_desc  = "ban any query that matches this list of "
-		"substrings.  Must match all comma-separated strings "
-		"on the same line.  ('\\n' = OR, ',' = AND)";
-	m->m_cgi   = "banRegex";
-	m->m_xml   = "banRegex";
-	m->m_off   = (char *)g_conf.m_banRegex - g;
-	m->m_type  = TYPE_STRINGBOX;
-	m->m_page  = PAGE_AUTOBAN;
-	m->m_size  = AUTOBAN_TEXT_SIZE;
-	m->m_group = 1;
-	m->m_def   = "";
-	m->m_plen  = (char *)&g_conf.m_banRegexLen - g; // length of string
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	/////////////
-	// END AUTOBAN CONTROLS
-	/////////////
-
-	///////////////////////////////////////////
 	// ROOT PASSWORDS page
 	///////////////////////////////////////////
 
@@ -18868,36 +18349,6 @@ void Parms::init ( ) {
 	m->m_plen = (char *)&g_conf.m_superTurksLen - g;
 	m->m_page = PAGE_MASTERPASSWORDS;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m++;
-	*/
-
-	/*
-	m->m_title = "Users";
-	m->m_desc = "Add users here. The format is "
-		"collection:ip:username:password:relogin:pages:tagnames"
-		" Username and password cannot be blank."
-		" You can specify "
-		"* for collection to indicate all collections. "
-		" * can be used in IP as wildcard. "
-		" * in pages means user has access to all pages. Also"
-		" you can specify individual pages. A \'-\' sign at the"
-		" start of page means user is not allowed to access that"
-		" page. Please refer the page reference table at the bottom "
-		"of this page for available pages. If you want to just login "
-		" once and avoid relogin for gb shutdowns then set relogin=1,"
-		" else set it to 0. If relogin is 1 your login will never expire either."
-		"<br>"
-		" Ex: 1. master user -> *:*:master:master:1:*:english<br>"
-		" 2. public user -> *:*:public:1234:0:index.html"
-		",get,search,login,dir:english<br>";
-	m->m_cgi = "users";
-	m->m_xml = "users";
-	m->m_off = (char *)&g_conf.m_users - g;
-	m->m_type = TYPE_STRINGBOX;
-	m->m_perms = PAGE_MASTER;
-	m->m_size = USERS_TEXT_SIZE;
-	m->m_plen = (char *)&g_conf.m_usersLen - g;
-	m->m_page = PAGE_MASTERPASSWORDS;
 	m++;
 	*/
 

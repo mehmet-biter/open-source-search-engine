@@ -19,32 +19,19 @@ class Highlight {
 	// . we highlight Query "q" in "xml" as best as we can
 	// . store highlighted text into "buf"
 	// . return length stored into "buf"
-	int32_t set ( //char        *buf          ,
-		   //int32_t         bufLen       ,
-		  SafeBuf *sb,
+	int32_t set (SafeBuf *sb,
 		   char        *content      ,
-		   int32_t         contentLen   , 
-		   char         docLangId    ,
+		   int32_t         contentLen   ,
 		   Query       *q            ,
-		   bool         doStemming   ,
-		   bool         useAnchors   , // = false ,
-		   const char  *baseUrl      , // = NULL  ,
 		   const char  *frontTag     , // = NULL  ,
 		   const char  *backTag      , // = NULL  ,
-		   int32_t         fieldCode    , // = 0     ,
 		   int32_t         niceness    ) ;
 	
-	int32_t set ( //char        *buf        ,
-		  //int32_t         bufLen     ,
-		  SafeBuf *sb ,
+	int32_t set (SafeBuf *sb ,
 		   Words       *words      ,
 		   Matches     *matches    ,
-		   bool         doStemming ,
-		   bool         useAnchors = false ,
-		   const char  *baseUrl    = NULL  ,
 		   const char  *frontTag   = NULL  ,
 		   const char  *backTag    = NULL  ,
-		   int32_t         fieldCode  = 0     ,
 		   Query       *q	   = NULL  ) ;
 
 	int32_t getNumMatches() { return m_numMatches; }
@@ -53,33 +40,15 @@ class Highlight {
 
 	bool highlightWords ( Words *words , Matches *m , Query *q=NULL );
 
-	// null terminate and store the highlighted content in m_buf
-	//char    *m_buf ;
-	//int32_t     m_bufLen;
-	//char    *m_bufPtr;
-	//char    *m_bufEnd;
 	class SafeBuf *m_sb;
 
-	//Words    m_words;
 	Matches  m_matches;
-	//Xml     *m_xml;
 	const char    *m_frontTag;
 	const char    *m_backTag;
 	int32_t     m_frontTagLen;
 	int32_t     m_backTagLen;
-	bool     m_doStemming;
-
-	bool     m_useAnchors;  // click and scroll technology for cached pages
-	//int32_t     m_anchorCounts [ MAX_QUERY_TERMS ];
-	const char    *m_baseUrl;
 
 	int32_t m_numMatches;
-	
-	// so we don't repeat the same buf overflow error msg a gazillion times
-	bool     m_didErrMsg;
-	// . field code of the text excerpt to highlight
-	// . only query terms with this fieldCode will be highlighted
-	int32_t     m_fieldCode;
 };
 
 #endif

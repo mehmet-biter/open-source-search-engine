@@ -250,11 +250,6 @@ class UdpServer {
 	// . set g_errno on error
 	bool shutdown ( bool urgent );
 
-	// the high priority udp server suspends/resumes the low priority one
-	// when it has/doesn't-have pending requests/replies
-	void suspend ();
-	void resume  ();
-	bool isSuspended        () { return m_isSuspended; };
 	bool needBottom         () { return m_needBottom; }   
 
 	UdpSlot *getUdpSlotNum   ( int32_t  i ) { return &m_slots[i]; };
@@ -381,8 +376,6 @@ class UdpServer {
 
 	//did we have to give back control before we called all of the 
 	bool   m_needBottom;
-	// are we suspended so the high priority server can be more efficient?
-	bool   m_isSuspended;
 	// . how many requests are we handling at this momment
 	// . does not include requests whose replies we are sending, only
 	//   those whose replies have not yet been generated
@@ -466,9 +459,6 @@ class UdpServer {
 };
 
 extern class UdpServer g_udpServer;
-
-// this is the high priority udpServer, it's requests are handled first
-extern class UdpServer g_udpServer2;
 
 extern int32_t g_dropped;
 extern int32_t g_corruptPackets;

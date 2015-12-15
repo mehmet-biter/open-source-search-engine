@@ -127,17 +127,13 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	m_callback2    = req->m_callback2;
 	m_expected     = req->m_expected;
 
-	Hostdb *hostdb = &g_hostdb;
 	// does this ever happen?
-	if ( hostdb->getNumHosts() <= 0 ) {
+	if ( g_hostdb.getNumHosts() <= 0 ) {
 		log("build: hosts2.conf is not in working directory, or "
 		    "contains no valid hosts.");
 		g_errno = EBADENGINEER;
 		return true;
 	}
-
-	// do not re-route to twins if accessing an external network
-	if ( hostdb != &g_hostdb ) req->m_expected = false;
 
 	if ( req->m_docId < 0 && ! req->ptr_ubuf ) {
 		log("msg20: docid<0 and no url for msg20::getsummary");
@@ -148,7 +144,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	// get groupId from docId, if positive
 	uint32_t shardNum;
 	if ( req->m_docId >= 0 ) 
-		shardNum = hostdb->getShardNumFromDocId(req->m_docId);
+		shardNum = g_hostdb.getShardNumFromDocId(req->m_docId);
 	else {
 		int64_t pdocId = g_titledb.getProbableDocId(req->ptr_ubuf);
 		shardNum = getShardNumFromDocId(pdocId);
@@ -160,8 +156,8 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	if ( req->m_niceness == 0 ) timeout = 20;
 
 	// get our group
-	int32_t  allNumHosts = hostdb->getNumHostsPerShard();
-	Host *allHosts    = hostdb->getShard ( shardNum );//getGroup(groupId );
+	int32_t  allNumHosts = g_hostdb.getNumHostsPerShard();
+	Host *allHosts    = g_hostdb.getShard ( shardNum );//getGroup(groupId );
 
 	// put all alive hosts in this array
 	Host *cand[32];
@@ -241,7 +237,6 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 			      gotReplyWrapper20 ,
 			      timeout           , // 60 second time out
 			      req->m_niceness   ,
-			      false             , // real time?
 			      firstHostId       , // first hostid
 			      NULL              , // reply buffer
 			      0                 , // reply buffer size
@@ -251,9 +246,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 			      0                 , // cacheKey
 			      0                 , // bogus rdbId
 			      -1                , // minRecSizes(unknownRDsize)
-			      true              , // sendToSelf
-			      true              , // retry forever
-			      hostdb            )) {
+			      true              )) { // sendToSelf
 		// sendto() sometimes returns "Network is down" so i guess
 		// we just had an "error reply".
 		log("msg20: error sending mcast %s",mstrerror(g_errno));

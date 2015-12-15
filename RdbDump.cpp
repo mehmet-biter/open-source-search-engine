@@ -2,12 +2,8 @@
 
 #include "RdbDump.h"
 #include "Rdb.h"
-//#include "Tfndb.h"
-//#include "Sync.h"
 #include "Collectiondb.h"
-//#include "CollectionRec.h"
 #include "Tagdb.h"
-//#include "Catdb.h"
 #include "Statsdb.h"
 
 extern void dumpDatedb   ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree, 
@@ -65,16 +61,6 @@ bool RdbDump::set ( //char     *coll          ,
 	// causing a merge on catdb (collectionless) to screw up
 	if ( ! rdb ) m_doCollCheck = false;
 
-	/*
-	if ( ! coll && g_catdb.getRdb() == rdb )
-		strcpy(m_coll, "catdb");
-	else if ( ! coll && g_statsdb.getRdb() == rdb )
-		strcpy(m_coll, "statsdb");
-	else if ( ! coll && g_accessdb.getRdb() == rdb )
-		strcpy(m_coll, "accessdb");
-	*/
-	//else
-	//	strcpy ( m_coll , coll );
 	m_file          = file;
 	m_id2           = id2;
 	m_isTitledb     = isTitledb;
@@ -311,17 +297,7 @@ bool RdbDump::dumpTree ( bool recall ) {
 
 	// this list will hold the list of nodes/recs from m_tree
 	m_list = &m_ourList;
-	// convert coll to collnum
-	//collnum_t collnum = g_collectiondb.getCollnum ( m_coll );
-	// a collnum of -1 is for collectionless rdbs
-	//if ( collnum < 0 ) {
-	//	//if ( g_catdb->getRdb() == m_rdb )
-	//	if ( ! m_rdb->m_isCollectionLess ) {
-	//		char *xx=NULL;*xx=0; //return true;
-	//	}
-	//	g_errno = 0;
-	//	collnum = 0;
-	//}
+
 	// getMemOccupiedForList2() can take some time, so breathe
 	int32_t niceness = 1;
  loop:
@@ -955,118 +931,6 @@ bool RdbDump::doneReadingForVerify ( ) {
 	log(LOG_TIMING,"db: dump: deleteList: took %"INT64"",t2-t1);
 	return true;
 }
-/*
-static void tryAgainWrapper ( int fd , void *state ) ;
-
-// returns false if blocks, true otherwise
-bool RdbDump::updateTfndbLoop () {
-	// only if dumping titledb 
-	if ( ! m_isTitledb ) return true;
-	// . start from beginning in case last add failed
-	// . this may result in some dups if we get re-called, but that's ok
-	m_list->resetListPtr();
-	// point to it
-	Rdb *tdb = g_tfndb.getRdb();
-	// is it the secondary/repair rdb used by Repair.cpp?
-	if ( m_rdb == g_titledb2.getRdb () ) tdb = g_tfndb2.getRdb();
-	// get collection number
-	collnum_t collnum = g_collectiondb.getCollnum ( m_coll );
-	// bail if collection gone
-	if ( collnum < (collnum_t)0 ) {
-		//if ( g_catdb->getRdb() == m_rdb )
-		if ( strcmp ( m_coll, "catdb" ) == 0 )
-			collnum = 0;
-		else if ( strcmp ( m_coll, "statsdb" ) == 0 )
-			collnum = 0;
-		else {
-			log("Collection \"%s\" removed during dump.",m_coll);
-			return true;
-		}
-	}
- loop:
-	// get next
-	if ( m_list->isExhausted() ) return true;
-	// get the TitleRec key
-	//key_t k = m_list->getCurrentKey();
-	char k[MAX_KEY_BYTES];
-	m_list->getCurrentKey(k);
-	//char *rec     = m_list->getCurrentRec();
-	//int32_t  recSize = m_list->getCurrentRecSize();
-	// advance for next call
-	m_list->skipCurrentRecord();
-	// skip if a delete
-	if ( KEYNEG(k) ) goto loop;
-	// . otherwise, this is the "final" titleRec for this docid because
-	//   Msg5/RdbList::merge_r() should have removed it if it is not the
-	//   ultimate titleRec for this docid, because RdbList::merge_r()
-	//   takes a "tfndbList" as input just to weed out titleRecs that
-	//   are not supported by a tfndb record
-	// . make the tfndb key
-	int64_t d = g_titledb.getDocIdFromKey ((key_t *) k );
-	//int32_t e = g_titledb.getHostHash ( (key_t *)k );
-	int64_t uh48 = g_titledb.getUrlHash48 ( (key_t *)k );
-	int32_t tfn = m_id2;
-	// delete=false
-	key_t tk = g_tfndb.makeKey ( d, uh48, tfn, false );
-	KEYSET(m_tkey,(char *)&tk,sizeof(key_t));
-	// debug msg
-	//logf(LOG_DEBUG,"db: rdbdump: updateTfndbLoop: tbadd docId=%"INT64" "
-	//    "tfn=%03"INT32"", g_tfndb.getDocId((key_t *)m_tkey ),
-	//    (int32_t)g_tfndb.getTitleFileNum((key_t *)m_tkey));
-	// . add it, returns false and sets g_errno on error
-	// . this will override any existing tfndb record for this docid
-	//   because RdbList.cpp uses a special key compare function (cmp2)
-	//   to ignore the tfn bits on tfndb keys, so we get the newest/latest
-	//   tfndb key after the merge.
-	if ( tdb->addRecord ( collnum , m_tkey , NULL , 0 , 0) ) goto loop;
-	// return true with g_errno set for most errors, that's bad
-	if ( g_errno != ETRYAGAIN && g_errno != ENOMEM ) {
-		log("db: Had error adding record to tfndb: %s.",
-		    mstrerror(g_errno));
-		return true;
-	}
-	// try starting a dump, Rdb::addRecord() does not do this like it
-	// should, only Rdb::addList() does
-	if ( tdb->needsDump() ) {
-		log(LOG_INFO,"db: Dumping tfndb while merging titledb.");
-		// . CAUTION! must use niceness one because if we go into
-		//   urgent mode all niceness 2 stuff will freeze up until
-		//   we exit urgent mode! so when tfndb dumps out too much
-		//   stuff he'll go into urgent mode and freeze himself
-		if ( ! tdb->dumpTree ( 1 ) ) // niceness
-			log("db: Error dumping tfndb to disk: %s.",
-			    mstrerror(g_errno));
-	}
-	// debug msg
-	//log("db: Had error when trying to dump tfndb: %s. Retrying.",
-	//    mstrerror(g_errno));
-	// retry for the remaining two types of errors
-	if ( ! g_loop.registerSleepCallback(1000,this,tryAgainWrapper)) {
-		log("db: Failed to retry. Very bad.");
-		return true;
-	}
-	// wait for sleep
-	return false;
-}
-
-void tryAgainWrapper ( int fd , void *state ) {
-	// debug msg
-	log(LOG_INFO,"db: Trying to update tfndb again.");
-	// stop waiting
-	g_loop.unregisterSleepCallback ( state , tryAgainWrapper );
-	// bitch about errors
-	if ( g_errno ) log(LOG_LOGIC,"db: dump: Could not unregister "
-			   "retry callback: %s.",mstrerror(g_errno));
-	// get THIS ptr from state
-	RdbDump *THIS = (RdbDump *)state;
-	// continue loop, this returns false if it blocks
-	if ( ! THIS->updateTfndbLoop() ) return;
-	// don't add to map, we already did
-	if ( ! THIS->doneDumpingList ( false ) ) return;
-	// continue dumping the tree or give control back to caller
-	THIS->continueDumping ( );
-}
-*/
 
 // continue dumping the tree
 void doneWritingWrapper ( void *state ) {

@@ -382,7 +382,6 @@ extern class Linkdb g_linkdb2;
 #include "SafeBuf.h"
 #include "HashTableX.h"
 #include "Msg22.h"
-#include "CatRec.h"
 
 #define MAX_LINKERS 3000
 

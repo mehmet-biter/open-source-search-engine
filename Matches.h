@@ -36,8 +36,6 @@ typedef int32_t mf_t;
 #define MF_METASUMM                   0x0080 // in meta summary
 #define MF_METADESC                   0x0100 // in meta description
 #define MF_METAKEYW                   0x0200 // in meta keywords
-#define MF_DMOZTITLE                  0x0400 
-#define MF_DMOZSUMM                   0x0800 
 #define MF_RSSTITLE                   0x1000 
 #define MF_RSSDESC                    0x2000 
 #define MF_URL                        0x4000  // in url

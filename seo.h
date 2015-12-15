@@ -14,30 +14,11 @@ bool setQueryInfo ( char *qstr , class QueryInfo *qi ) ;
 void handleRequest8e ( class UdpSlot *slot , int32_t netnice ) ;
 void handleRequest4f ( class UdpSlot *slot , int32_t netnice ) ;
 void handleRequest95 ( class UdpSlot *slot , int32_t netnice ) ;
-bool loadQueryLog();
 
 int64_t getSynBaseHash64 ( char *qstr , uint8_t langId ) ;
 
 extern char *g_secret_tran_key;
 extern char *g_secret_api_key;
-
-/*
-class Msg3fRequest {
- public:
-
-	// document language:
-	uint8_t m_langId3f; 
-	int32_t    m_niceness;
-
-	// first is coll
-	char *ptr_coll;
-	// termlistbuf for doing msg39 queries
-	char *ptr_termListBuf;
-	
-	int32_t  size_coll;
-	int32_t  size_termListBuf;
-};
-*/
 
 // when we insert an insertable term into a document, how does it affect
 // the document's ranking for a particular query?
@@ -118,16 +99,6 @@ public:
 };
 
 
-/*	
-class WordFreqInfo {
- public:
-	// 32 bit termid
-	int64_t m_wordId64;
-	// it's term freq
-	int64_t m_wordFreq64;
-};
-*/
-
 // used to get matching queries for the main url or a related docid
 class Msg95Request {
 
@@ -196,41 +167,6 @@ public:
 	int32_t      m_topSiteHashes26[NUM_RESULTS_FOR_RELATED_DOCIDS];
 };
 
-
-/*
-class Msg99Request {
-public:
-	char  m_justGetQueryOffsets;
-	char *ptr_twids;
-	char *ptr_coll;
-	char *ptr_posdbTermList;
-	int32_t  size_twids;
-	int32_t  size_coll;
-	int32_t  size_posdbTermList;
-	char  m_buf[0];
-};
-
-class QueryInfo {
-public:
-	// stuff for setting importance
-	int16_t m_numUniqueWordForms;
-	int16_t m_numRepeatWordForms;
-	int16_t m_numControlWordForms;
-	float m_smallestNormTermFreq;
-	// hash of wids in query. see Query::getHash() function.
-	int64_t m_queryExactHash64; 
-	// hash of smallest syn of each wid in qry
-	int64_t m_querySynBaseHash64; 
-	// this is set by setQueryImportance()
-	float m_queryImportance;
-	// . how many docids are in our linked list, QueryRel::m_next
-	// . only used by getRelatedQuery*() functions
-	int32_t  m_docIdVotes;
-	// . score from combining all in linked list
-	// . only used by getRelatedQuery*() functions
-	float m_myScoreRelated;
-};
-*/
 
 #define MAX_MATCHING_QUERIES 300
 // only store this many of the top-scoring related docids

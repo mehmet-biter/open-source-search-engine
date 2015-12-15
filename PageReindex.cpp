@@ -14,7 +14,6 @@
 #include "Msg3a.h"
 #include "Msg40.h"
 #include "sort.h"
-#include "Users.h"
 #include "Spider.h"
 #include "Revdb.h"
 #include "XmlDoc.h"

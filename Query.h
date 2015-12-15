@@ -888,9 +888,6 @@ class Query {
 		return NULL;
 	};
 
-	// for debugging fhtqt mem leak
-	char *m_st0Ptr;
-
 	// silly little functions that support the BIG HACK
 	//int32_t getNumNonFieldedSingletonTerms() { return m_numTermsSpecial; };
 	//int32_t getTermsFound ( Query *q , char *foundTermVector ) ;

@@ -186,12 +186,6 @@ class Conf {
 
 	//bool m_makeAllFilesGroupWritable;
 
-	// catdb parameters
-	int32_t  m_catdbMaxTreeMem;
-	//int32_t  m_catdbMaxDiskPageCacheMem;
-	int32_t  m_catdbMaxCacheMem;
-	//int32_t  m_catdbMinFilesToMerge;
-
 	int32_t  m_revdbMaxTreeMem;
 	int32_t  m_timedbMaxTreeMem;
 
@@ -716,29 +710,6 @@ class Conf {
 	// this takes a ~100+ ms, very expensive, so it is just meant for
 	// testing.
 	bool m_generateVectorAtQueryTime;
-
-	//Users
-	char m_users [ USERS_TEXT_SIZE ];
-	int32_t m_usersLen;
-
-	//char m_superTurks [ USERS_TEXT_SIZE ];
-	//int32_t m_superTurksLen;
-
-	int32_t m_maxYippyOut;
-
-	char  m_doAutoBan;
-	int32_t  m_banIpsLen;
-	char  m_banIps   [ AUTOBAN_TEXT_SIZE ];
-	int32_t  m_allowIpsLen;
-	char  m_allowIps [ AUTOBAN_TEXT_SIZE ];
-	int32_t  m_validCodesLen;
-	char  m_validCodes[ AUTOBAN_TEXT_SIZE ];
-	int32_t  m_banRegexLen;
-	char  m_banRegex [ AUTOBAN_TEXT_SIZE ];
-	int32_t  m_extraParmsLen;
-	char  m_extraParms [ AUTOBAN_TEXT_SIZE ];
-	unsigned char  m_numFreeQueriesPerMinute;
-	uint32_t  m_numFreeQueriesPerDay;
 
 	char m_redirect[MAX_URL_LEN];
         char m_useCompressionProxy;

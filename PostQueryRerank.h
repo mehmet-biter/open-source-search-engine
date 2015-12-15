@@ -136,8 +136,7 @@ private:
 	rscore_t rerankNoCatId ( rscore_t score,
 			     int32_t numCatIds,
 			     int32_t numIndCatIds );
-	rscore_t rerankSmallestCatIdHasSuperTopics ( rscore_t score,
-						 Msg20 *msg20 );
+
 	inline 
 	rscore_t rerankPageSize ( rscore_t score,
 			      int32_t docLen );

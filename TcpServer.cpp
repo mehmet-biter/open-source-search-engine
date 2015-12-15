@@ -4,7 +4,6 @@
 #include "Stats.h"
 #include "Profiler.h"
 #include "PingServer.h"
-//#include "AutoBan.h"
 #include "Hostdb.h"
 
 // . TODO: deleting nodes from under Loop::callCallbacks is dangerous!!

@@ -1,11 +1,8 @@
 #include "UdpServer.h"
-//#include "HttpServer.h"
 #include "Stats.h"
-#include "AutoBan.h"
 #include "Pages.h"
 #include "UdpProtocol.h"
 #include "PingServer.h"
-//#include "Msg3c.h"
 #include <sys/resource.h>  // setrlimit
 
 #define MAX_STRIPES 8

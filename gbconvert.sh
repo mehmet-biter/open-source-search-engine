@@ -1,4 +1,4 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 
 convert_file() {
     # read input
@@ -9,7 +9,7 @@ convert_file() {
 
 	case "${filetype}" in
 	pdf)
-		pdftohtml -q -i -noframes -stdout "${input}" > "${output}"
+		pdftohtml -q -i -noframes -enc UTF-8 -stdout "${input}" > "${output}"
 		exit $?
 		;;
 	doc)

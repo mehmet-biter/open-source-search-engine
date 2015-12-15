@@ -8,8 +8,6 @@
 //#include "TermTable.h"
 
 bool setLinkSpam ( int32_t             ip                 ,
-                   int32_t            *indCatIds          ,
-                   int32_t             numIndCatIds       ,
                    class Url       *linker             ,
                    int32_t             siteNumInlinks     ,
 		   class Xml       *xml                ,
@@ -19,8 +17,6 @@ bool setLinkSpam ( int32_t             ip                 ,
 
 bool isLinkSpam  ( class Url       *linker         ,
 		   int32_t             ip             ,
-		   int32_t            *indCatIds      ,
-		   int32_t             numIndCatIds   ,
 		   int32_t             siteNumInlinks ,
 		   class Xml       *xml            ,
 		   class Links     *links          ,
@@ -28,11 +24,6 @@ bool isLinkSpam  ( class Url       *linker         ,
 		   char           **note           , 
 		   Url             *linkee         ,
 		   int32_t             linkNode       , 
-		   char            *coll           ,
 		   int32_t             niceness       );
 
-char *getCommentSection ( char *haystack     ,
-			  int32_t  haystackSize ,
-			  bool  isUnicode    ,
-			  int32_t  niceness     );
 #endif

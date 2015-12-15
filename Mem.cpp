@@ -69,8 +69,6 @@ bool g_inMemFunction = false;
 
 class Mem g_mem;
 
-extern bool g_isYippy;
-
 bool freeCacheMem();
 
 #if defined(EFENCE) || defined(EFENCE_SIZE) || defined(SPECIAL)
@@ -1050,10 +1048,6 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 		log(
 		    "mem: rmMem: Freeing %"INT32" should be %"INT32". (%s)",
 		    size,s_sizes[h],note);
-		if ( g_isYippy ) {
-			size = s_sizes[h];
-			goto keepgoing;
-		}
 #ifndef _VALGRIND_
 		char *xx = NULL;
 		*xx = 0;
@@ -1064,7 +1058,6 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 		return false;
 	}
 
- keepgoing:
 	// debug
 	if ( (size > MINMEM && g_conf.m_logDebugMemUsage) || size>=100000000 )
 		log(LOG_INFO,"mem: rmMem (%"INT32"): "

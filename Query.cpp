@@ -25,22 +25,14 @@ Query::Query ( ) {
 }
 
 void Query::constructor ( ) {
-	//m_bmap      = NULL;
 	m_bitScores = NULL;
 	m_qwords      = NULL;
 	m_numWords = 0;
-	//m_expressions = NULL;
 	m_qwordsAllocSize      = 0;
-	//m_expressionsAllocSize = 0;
 	m_qwords               = NULL;
 	m_numTerms = 0;
 	m_containingParent = NULL;
-	m_st0Ptr = NULL;
-	// we have to manually call this because Query::constructor()
-	// might have been called explicitly
-	//for ( int32_t i = 0 ; i < MAX_QUERY_TERMS ; i++ )
-	//	m_qterms[i].constructor();
-	//m_expressions          = NULL;
+
 	reset ( );
 }
 
@@ -61,10 +53,7 @@ void Query::reset ( ) {
 	 	// get it
 		QueryTerm *qt = &m_qterms[i];
 		HashTableX *ht = &qt->m_facetHashTable;
-		// debug note
-		// log("results: free fhtqt of %"PTRFMT" for q=%"PTRFMT 
-		//     " st0=%"PTRFMT,
-		//     (PTRTYPE)ht->m_buf,(PTRTYPE)this,(PTRTYPE)m_st0Ptr);
+
 		ht->reset();
 		qt->m_facetIndexBuf.purge();
 	}
@@ -313,35 +302,6 @@ bool Query::set2 ( char *query        ,
 			m_sb.safePrintf ( " LeFtB RiGhB ");
 			i = i + 2;
 			continue;
-		}
-		char *q = &(query[i]);
-		// Skip old buzz permalink keywords
-		if (*q == 'g' && *(q+1) == 'b'){
-			// do not skip anymore, Msg5e.cpp needs this
-			/*
-			if (*(q+2) == 'p' && *(q+3) == 'e' && *(q+4) == 'r' 
-			    && *(q+5) == 'm' && *(q+6) == 'a' && *(q+7) == 'l' 
-			    && *(q+8) == 'i' && *(q+9) == 'n' && *(q+10) == 'k' 
-			    && *(q+11) == ':' && *(q+12) =='1'){
-				//i += 12;
-				static bool s_printed = false;
-				if ( ! s_printed )
-					logf(LOG_DEBUG,"query: skipping "
-					     "gbpermalink term for buzz.");
-				if ( ! s_printed ) s_printed = true;
-				continue;
-			}
-			*/
-			if (*(q+2)=='k' && *(q+3)=='e' && *(q+4) == 'y'
-				 && *(q+5)=='w' && *(q+6)=='o' && *(q+7) == 'r'
-				 && *(q+8) == 'd' && *(q+9) == ':' 
-				 && *(q+10)=='r' && *(q+11)=='3' && *(q+12)=='6' 
-				 && *(q+13) == 'p' && *(q+14) == '1'){
-				//logf(LOG_DEBUG,"query: skipping funky "
-				//     "keyword term for buzz.");
-				i += 14;
-				continue;
-			}
 		}
  
 		// TODO: copy altavista's operators here? & | !
@@ -3211,7 +3171,7 @@ bool Query::setQWords ( char boolFlag ,
 		// no punct, alnum only
 		if ( words.isPunct(i) ) continue;
 		// skip if not a stop word
-		if ( ! bits.m_bits[i] & D_IS_STOPWORD ) continue;
+		if ( ! (bits.m_bits[i] & D_IS_STOPWORD) ) continue;
 		// continue if you can still pair across prev punct word
 		if ( bits.m_bits[i-1] & D_CAN_PAIR_ACROSS ) continue;
 		// otherwise, we can now start a phrase

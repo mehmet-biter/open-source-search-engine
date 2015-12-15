@@ -91,7 +91,6 @@ class Multicast {
 		    void      (*callback)(void *state,void *state2),
 		    int32_t        totalTimeout    , // usually 60 seconds 
 		    int32_t        niceness        = MAX_NICENESS ,
-		    bool        realTimeUdp     = false ,
 		    int32_t        firstHostId     = -1 ,// first host to try
 		    char       *replyBuf        = NULL ,
 		    int32_t        replyBufMaxSize = 0 ,
@@ -102,8 +101,6 @@ class Multicast {
 		    char        rdbId           =  0   , // bogus rdbId
 		    int32_t        minRecSizes     = -1   ,// unknown read size
 		    bool        sendToSelf      = true ,// if we should.
-		    bool        retryForever    = true ,// for pick & send
-		    class Hostdb *hostdb        = NULL ,
 		    int32_t        redirectTimeout = -1 ,
 		    class Host *firstProxyHost  = NULL );
 
@@ -125,11 +122,7 @@ class Multicast {
 	// keep these public so C wrapper can call them
 	bool sendToHostLoop ( int32_t key, int32_t hostNumToTry, int32_t firstHostId );
 	bool sendToHost    ( int32_t i ); 
-	int32_t pickBestHost2 ( uint32_t key , int32_t hostNumToTry ,
-			     bool preferLocal );
-	int32_t pickBestHost  ( uint32_t key , int32_t hostNumToTry ,
-			     bool preferLocal );
-	int32_t pickRandomHost( ) ;
+	int32_t pickBestHost  ( uint32_t key , int32_t hostNumToTry );
 	void gotReply1     ( UdpSlot *slot ) ;
 	void closeUpShop   ( UdpSlot *slot ) ;
 
@@ -141,10 +134,7 @@ class Multicast {
 	int32_t        m_msgSize;
 	uint8_t     m_msgType;
 	bool        m_ownMsg;
-	int32_t        m_numGroups;
 	//uint32_t m_groupId;
-	uint32_t m_shardNum;
-	bool        m_sendToWholeGroup;
 	void       *m_state;
 	void       *m_state2;
 	void       (* m_callback)( void *state , void *state2 );
@@ -156,8 +146,6 @@ class Multicast {
 	// . m_slots[] is our list of concurrent transactions
 	// . we delete all the slots only after cast is done
 	int32_t        m_startTime;   // seconds since the epoch
-	// so Msg3a can time response
-	int64_t   m_startTimeMS;
 
 	// # of replies we've received
 	int32_t        m_numReplies;
@@ -165,14 +153,12 @@ class Multicast {
 	// . the group we're sending to or picking from
 	// . up to MAX_HOSTS_PER_GROUP hosts
 	// . m_retired, m_slots, m_errnos correspond with these 1-1
-	Host       *m_hostPtrs[16];
+	Host       *m_hostPtrs[MAX_HOSTS_PER_GROUP];
 	int32_t        m_numHosts;
-
-	class Hostdb *m_hostdb;
 
 	// . hostIds that we've tried to send to but failed
 	// . pickBestHost() skips over these hostIds
-	char        m_retired    [MAX_HOSTS_PER_GROUP];
+	bool        m_retired    [MAX_HOSTS_PER_GROUP];
 
 	// we can have up to 8 hosts per group
 	UdpSlot    *m_slots      [MAX_HOSTS_PER_GROUP]; 
@@ -196,17 +182,13 @@ class Multicast {
 	bool        m_ownReadBuf;
 	// are we registered for a callback every 1 second
 	bool        m_registeredSleep;
-	bool        m_registeredSleep2;
 
 	int32_t        m_niceness;
-	bool        m_realtime;
 
 	// . last sending of the request to ONE host in a group (pick & send)
 	// . in milliseconds
 	int64_t   m_lastLaunch;
 	Host       *m_lastLaunchHost;
-	// how many launched requests are current outstanding
-	int32_t        m_numLaunched;
 
 	// only free m_reply if this is true
 	bool        m_freeReadBuf;
@@ -216,15 +198,11 @@ class Multicast {
 	// Msg34 stuff -- for disk load balancing
 	//Msg34 m_msg34;
 	//bool  m_doDiskLoadBalancing;
-	key_t m_cacheKey           ;
-	int32_t  m_maxCacheAge        ;
 	char  m_rdbId              ;
-	int32_t  m_minRecSizes        ;
 
 	// Msg1 might be able to add data to our tree to save a net trans.
 	bool        m_sendToSelf;
 
-	bool        m_retryForever;
 	int32_t        m_retryCount;
 
 	char        m_sentToTwin;

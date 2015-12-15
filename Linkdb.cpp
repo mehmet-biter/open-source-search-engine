@@ -6,6 +6,7 @@
 #include "XmlDoc.h" // score32to8()
 #include "Rebalance.h"
 #include "Process.h"
+#include "HashTable.h"
 
 Linkdb g_linkdb;
 Linkdb g_linkdb2;
@@ -630,7 +631,6 @@ bool getLinkInfo ( SafeBuf   *reqBuf              ,
 			    // it blocks for some reason.
 			    9999998     , // timeout in seconds (was 30)
 			    req->m_niceness ,
-			    false, // realtime     ,
 			    hostId )) {// firstHostId  ,
 		log("linkdb: Failed to send multicast for %s err=%s",
 		    u.getUrl(),mstrerror(g_errno));

@@ -1,12 +1,9 @@
 #include "gb-include.h"
 
 #include "Rdb.h"
-//#include "Msg35.h"
-//#include "Tfndb.h"
 #include "Clusterdb.h"
 #include "Hostdb.h"
 #include "Tagdb.h"
-#include "Catdb.h"
 #include "Posdb.h"
 #include "Cachedb.h"
 #include "Monitordb.h"
@@ -18,10 +15,8 @@
 #include "Linkdb.h"
 #include "Syncdb.h"
 #include "Collectiondb.h"
-//#include "CollectionRec.h"
 #include "Repair.h"
 #include "Rebalance.h"
-//#include "Msg3.h" // debug include
 
 // how many rdbs are in "urgent merge" mode?
 int32_t g_numUrgentMerges = 0;
@@ -1311,41 +1306,6 @@ void RdbBase::doneWrapper4 ( ) {
 	if ( m_isMerging ) m_rdb->m_numMergesOut--;
 	// exit merge mode
 	m_isMerging = false;
-	// return the merge token, no need for a callback
-	//g_msg35.releaseToken ( );
-	// the rename has completed at this point, so tell sync table in mem
-	//g_sync.addOp ( OP_CLOSE , m_files[x] , 0 );
-	// unlink old merge filename from sync table
-	//g_sync.addOp ( OP_UNLINK , m_oldname , 0 );
-	// . now in case dump dumped many files while we were merging
-	//   we should see if they need to be merged now
-	// . Msg35 may bitch if our get request arrives before our release
-	//   request! he may think we're a dup request but that should not
-	//   happen since we don't allow getToken() to be called if we are
-	//   merging or have already made a request for it.
-	//attemptMerge ( 1/*niceness*/ , false /*don't force it*/ ) ;
-	// try all in case they were waiting (and not using tokens)
-	//g_tfndb.getRdb()->attemptMerge      ( 1 , false );
-	/*
-	g_clusterdb.getRdb()->attemptMerge  ( 1 , false );
-	g_linkdb.getRdb()->attemptMerge     ( 1 , false );
-	//g_sectiondb.getRdb()->attemptMerge  ( 1 , false );
-	g_tagdb.getRdb()->attemptMerge      ( 1 , false );
-	g_titledb.getRdb()->attemptMerge    ( 1 , false );
-	g_doledb.getRdb()->attemptMerge     ( 1 , false );
-	g_catdb.getRdb()->attemptMerge      ( 1 , false );
-	//g_clusterdb.getRdb()->attemptMerge  ( 1 , false );
-	g_statsdb.getRdb()->attemptMerge    ( 1 , false );
-	g_syncdb.getRdb()->attemptMerge     ( 1 , false );
-	g_cachedb.getRdb()->attemptMerge     ( 1 , false );
-	g_serpdb.getRdb()->attemptMerge     ( 1 , false );
-	g_monitordb.getRdb()->attemptMerge     ( 1 , false );
-	//g_linkdb.getRdb()->attemptMerge     ( 1 , false );
-	//g_indexdb.getRdb()->attemptMerge    ( 1 , false );
-	g_posdb.getRdb()->attemptMerge    ( 1 , false );
-	//g_datedb.getRdb()->attemptMerge     ( 1 , false );
-	g_spiderdb.getRdb()->attemptMerge   ( 1 , false );
-	*/
 
 	// try to merge more when we are done
 	attemptMergeAll2 ( );
@@ -1373,20 +1333,6 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 	// ensure last file is NULL (so BigFile knows the end of m_files)
 	m_files [ m_numFiles ] = NULL;
 }
-
-/*
-void attemptMergeWrapper ( int fd , void *state ) {
-	Rdb *THIS = (Rdb *) state;
-	// keep sleeping if someone else still merging
-	if ( g_merge.isMerging() ) return;
-	// if no one else merging, stop the sleep-retry cycle
-	//g_loop.unregisterSleepCallback ( state , attemptMergeWrapper );
-	// now it's our turn
-	THIS->attemptMerge ( 1, THIS->m_nextMergeForced );// 1=niceness
-}
-*/
-
-//static void gotTokenForMergeWrapper ( void *state ) ;
 
 // . the DailyMerge.cpp will set minToMergeOverride for titledb, and this
 //   overrides "forceMergeAll" which is the same as setting 
@@ -2440,14 +2386,10 @@ int64_t RdbBase::getNumTotalRecs ( ) {
 	else {
 		// i've seen this happen when adding a new coll i guess
 		if ( ! m_buckets ) return 0;
+
 		//these routines are slow because they count every time.
 		numPositiveRecs += m_buckets->getNumKeys(m_collnum);
-		//numPositiveRecs += m_buckets->getNumPositiveKeys(m_collnum);
-		//numNegativeRecs += m_buckets->getNumNegativeKeys(m_collnum);
 	}
-	//int64_t total = numPositiveRecs - numNegativeRecs;
-	//if ( total < 0 ) return 0LL;
-	//return total;
 	return numPositiveRecs - numNegativeRecs;
 }
 

@@ -10,7 +10,6 @@
 #include "Pages.h"
 #include "Tagdb.h"
 #include "XmlDoc.h"
-#include "PageResults.h" // printEventAddress()...
 
 // TODO: redirect to host that has the titleRec locally
 
@@ -50,8 +49,6 @@ public:
 	bool       m_includeBaseHref;
 	bool       m_queryHighlighting;
 	int32_t       m_strip;
-	bool       m_clickAndScroll;
-	bool	   m_clickNScroll; // new click 'n' scroll
 	bool	   m_cnsPage;      // Are we in the click 'n' scroll page?
 	bool	   m_printDisclaimer;
 	bool       m_netTestResults;
@@ -86,14 +83,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 		    "collection \"%s\".",coll);
 		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));
 	}
-	// does this collection ban this IP?
-	if ( ! cr->hasSearchPermission ( s ) ) {
-		g_errno = ENOPERM;
-		//log("PageGet::sendDynamicReply0: permission denied for %s",
-		//    iptoa(s->m_ip) );
-		g_msg = " (error: permission denied)";
-		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));
-	}
+
 	// . get fields from cgi field of the requested url
 	// . get the search query
 	int32_t  qlen = 0;
@@ -141,7 +131,6 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	st->m_includeBaseHref   = r->getLong ("ibh"   , false );
 	st->m_queryHighlighting = r->getLong ("qh"    , true  );
 	st->m_strip             = r->getLong ("strip" , 0     );
-	st->m_clickAndScroll    = r->getLong ("cas"   , true  );
 	st->m_cnsPage           = r->getLong ("cnsp"  , true );
 	char *langAbbr = r->getString("qlang",NULL);
 	st->m_langId = langUnknown;
@@ -152,14 +141,6 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	strncpy ( st->m_coll , coll , MAX_COLL_LEN+1 );
 	// store query for query highlighting
 	st->m_netTestResults    = r->getLong ("rnettest", false );
-	//if( st->m_netTestResults ) {
-	//	mdelete ( st , sizeof(State2) , "PageGet1" );
-	//	delete ( st );
-	//	return sendPageNetResult( s );
-	//}
-	//if ( q && qlen > 0 ) strcpy ( st->m_q , q );
-	//else                 st->m_q[0] = '\0';
-
 	st->m_qsb.setBuf ( st->m_qtmpBuf,128,0,false );
 	st->m_qsb.setLabel ( "qsbpg" );
 
@@ -170,9 +151,8 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 		st->m_qsb.safeStrcpy ( "" );
 	
 	st->m_qlen = qlen;
-	//st->m_seq      = seq;
 	st->m_rtq      = rtq;
-	st->m_boolFlag = r->getLong ("bq", 2 /*default is 2*/ );
+	st->m_boolFlag = r->getLong ("bq", 2);
 	st->m_isBanned = false;
 	st->m_noArchive = false;
 	st->m_socket = s;
@@ -180,12 +160,14 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	// default to 0 niceness
 	st->m_niceness = 0;
 	st->m_r.copy ( r );
-	//st->m_cr = cr;
+
 	st->m_printDisclaimer = true;
-	if ( st->m_cnsPage )
+	if ( st->m_cnsPage ) {
 		st->m_printDisclaimer = false;
-	if ( st->m_strip ) // ! st->m_evbits.isEmpty() ) 
+	}
+	if ( st->m_strip ) {
 		st->m_printDisclaimer = false;
+	}
 	
 	// should we cache it?
 	char useCache = r->getLong ( "usecache" ,  1 );
@@ -619,20 +601,9 @@ bool processLoop ( void *state ) {
 	// CNS: if ( ! st->m_clickNScroll ) {
 	// and highlight the matches
 	if ( printDisclaimer ) {
-		hilen = hi.set ( //p       ,
-				 //avail   ,
-				sb ,
-				 &qw     , // words to highlight
-				 &m      , // matches relative to qw
-				 false   , // doSteming
-				 false   , // st->m_clickAndScroll , 
-				 (char *)thisUrl );// base url for ClcknScrll
-		//p += hilen;
-		// now an hr
-		//gbmemcpy ( p , "</span></table></table>\n" , 24 );   p += 24;
+		hilen = hi.set ( sb, &qw, &m );
 		sb->safeStrcpy("</span></table></table>\n");
 	}
-
 
 	bool includeHeader = st->m_includeHeader;
 
@@ -801,22 +772,24 @@ bool processLoop ( void *state ) {
 
 	// is the content preformatted?
 	bool pre = false;
-	if ( ctype == CT_TEXT ) pre = true ; // text/plain
-	if ( ctype == CT_DOC  ) pre = true ; // filtered msword
-	if ( ctype == CT_PS   ) pre = true ; // filtered postscript
 
-	if ( format == FORMAT_XML ) pre = false;
-	if ( format == FORMAT_JSON ) pre = false;
-
-	// if it is content-type text, add a <pre>
-	if ( pre ) {//p + 5 < bufEnd && pre ) {
-		sb->safePrintf("<pre>");
-		//p += 5;
+	if ( format == FORMAT_XML || format == FORMAT_JSON ) {
+		pre = false;
+	} else {
+		if ( ctype == CT_TEXT || ctype == CT_DOC || ctype == CT_PS ) {
+			pre = true ;
+		}
 	}
 
-	if ( st->m_strip == 1 )
-		contentLen = stripHtml( content, contentLen, 
-					(int32_t)xd->m_version, st->m_strip );
+	// if it is content-type text, add a <pre>
+	if ( pre ) {
+		sb->safePrintf("<pre>");
+	}
+
+	if ( st->m_strip == 1 ) {
+		contentLen = stripHtml( content, contentLen, (int32_t)xd->m_version, st->m_strip );
+	}
+
 	// it returns -1 and sets g_errno on error, line OOM
 	if ( contentLen == -1 ) {
 		//if ( buf ) mfree ( buf , bufMaxSize , "PageGet2" );	
@@ -828,52 +801,37 @@ bool processLoop ( void *state ) {
 
 	// if no highlighting, skip it
 	bool queryHighlighting = st->m_queryHighlighting;
-	if ( st->m_strip == 2 ) queryHighlighting = false;
-
-	// do not do term highlighting if json
-	if ( xd->m_contentType == CT_JSON )
+	if ( st->m_strip == 2 || xd->m_contentType == CT_JSON || xd->m_contentType == CT_STATUS ) {
 		queryHighlighting = false;
-	if ( xd->m_contentType == CT_STATUS )
-		queryHighlighting = false;
+	}
 
 	SafeBuf tmp;
 	SafeBuf *xb = sb;
-	if ( format == FORMAT_XML ) xb = &tmp;
-	if ( format == FORMAT_JSON ) xb = &tmp;
+	if ( format == FORMAT_XML || format == FORMAT_JSON ) {
+		xb = &tmp;
+	}
 	
 
 	if ( ! queryHighlighting ) {
 		xb->safeMemcpy ( content , contentLen );
 		xb->nullTerm();
-		//p += contentLen ;
 	}
 	else {
 		// get the content as xhtml (should be NULL terminated)
-		//Words *ww = xd->getWords();
-		if ( ! xml.set ( content , contentLen , false ,
-				 0 , false , TITLEREC_CURRENT_VERSION ,
-				 false , 0 , CT_HTML ) ) { // niceness is 0
-			//if ( buf ) mfree ( buf , bufMaxSize , "PageGet2" );
-			return sendErrorReply ( st , g_errno );
-		}			
-		if ( ! ww.set ( &xml , true , 0 ) ) { // niceness is 0
-			//if ( buf ) mfree ( buf , bufMaxSize , "PageGet2" );
+		if ( ! xml.set ( content, contentLen, false , 0, false, TITLEREC_CURRENT_VERSION, false, 0, CT_HTML ) ) {
 			return sendErrorReply ( st , g_errno );
 		}
-		// sanity check
-		//if ( ! xd->m_wordsValid ) { char *xx=NULL;*xx=0; }
-		// how much space left in p?
-		//avail = bufEnd - p;
+
+		if ( ! ww.set ( &xml, true, 0 ) ) {
+			return sendErrorReply ( st , g_errno );
+		}
 
 		Matches m;
 		m.setQuery ( &qq );
 		m.addMatches ( &ww );
-		hilen = hi.set ( xb , // p , avail , 
-				 &ww , &m ,
-				 false /*doStemming?*/ ,  
-				 st->m_clickAndScroll , 
-				 thisUrl /*base url for click & scroll*/);
-		//p += hilen;
+
+		hilen = hi.set ( xb, &ww, &m);
+
 		log(LOG_DEBUG, "query: Done highlighting cached page content");
 	}
 
@@ -893,9 +851,8 @@ bool processLoop ( void *state ) {
 
 
 	// if it is content-type text, add a </pre>
-	if ( pre ) { // p + 6 < bufEnd && pre ) {
+	if ( pre ) {
 		sb->safeMemcpy ( "</pre>" , 6 );
-		//p += 6;
 	}
 
 	// calculate bufLen
@@ -936,28 +893,23 @@ bool processLoop ( void *state ) {
 	// xml is usually buggy and this throws browser off
 	//if ( ctype == CT_XML ) contentType = "text/xml";
 
-	if ( xd->m_contentType == CT_JSON )
+	if ( xd->m_contentType == CT_JSON || xd->m_contentType == CT_STATUS) {
 		contentType = "application/json";
-
-	if ( xd->m_contentType == CT_STATUS )
-		contentType = "application/json";
-
-	if ( xd->m_contentType == CT_XML )
+	} else if ( xd->m_contentType == CT_XML ) {
 		contentType = "test/xml";
+	}
 
-	if ( format == FORMAT_XML ) contentType = "text/xml";
-	if ( format == FORMAT_JSON ) contentType = "application/json";
+	if ( format == FORMAT_XML ) {
+		contentType = "text/xml";
+	} else if ( format == FORMAT_JSON ) {
+		contentType = "application/json";
+	}
 
 	// safebuf, sb, is a member of "st" so this should copy the buffer
 	// when it constructs the http reply, and we gotta call delete(st)
 	// AFTER this so sb is still valid.
-	bool status = g_httpServer.sendDynamicPage (s,
-						    //buf,bufLen,
-						    sb->getBufStart(),
-						    sb->getLength(),
-						    -1,false,
-						    contentType,
-						     -1, NULL, "utf8" );
+	bool status = g_httpServer.sendDynamicPage (s, sb->getBufStart(), sb->getLength(), -1, false,
+	                                            contentType, -1, NULL, "utf8" );
 
 	// nuke state2
 	mdelete ( st , sizeof(State2) , "PageGet1" );

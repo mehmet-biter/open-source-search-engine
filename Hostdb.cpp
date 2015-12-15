@@ -23,9 +23,6 @@
 
 // a global class extern'd in .h file
 Hostdb g_hostdb;
-// the supplemental network used to get titleRecs from by gov.gigablast.com
-// for harvesting link text from the larger index
-Hostdb g_hostdb2;
 
 //HashTableT <uint64_t, uint32_t> g_hostTableUdp;
 //HashTableT <uint64_t, uint32_t> g_hostTableTcp;
@@ -181,8 +178,6 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	if ( status <= -1 ) return false;
 	// return false if the conf file does not exist
 	if ( status ==  0 ) { 
-		// hosts2.conf is not necessary
-		if ( this == &g_hostdb2 ) return true;
 		g_errno = ENOHOSTSFILE; 
 		// if doing localhosts.conf now try hosts.conf
 		// if ( ! triedEtc ) { //strcmp(filename,"hosts.conf") == 0 ) {
@@ -1030,7 +1025,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		// assume dead until we can ping it
 		//m_hosts[i].m_ping = DEAD_HOST_PING + 1;
 		// but we're not dead
-		//if ((this == &g_hostdb2) || (m_hosts[i].m_hostId == hostId)) {
+		//if ((m_hosts[i].m_hostId == hostId)) {
 		//	m_hosts[i].m_ping        = 0;
 		//	m_hosts[i].m_pingShotgun = 0;
 		//	m_hosts[i].m_loadAvg     = g_process.getLoadAvg();
@@ -1347,18 +1342,11 @@ bool Hostdb::hashHosts ( ) {
 
 bool Hostdb::hashHost (	bool udp , Host *h , uint32_t ip , uint16_t port ) {
 
-	// if we are g_hostdb2, do not add if host is in g_hostdb
-	// otherwise PingServer.cpp updates hdtemps, etc. on the wrong host
 	Host *hh = NULL;
 	if ( udp ) hh = getHost ( ip , port );
-	if ( hh && this == &g_hostdb2 ) return true;
-
-	// no proxies from hosts2.conf
-	if ( this == &g_hostdb2 && h->m_isProxy ) return true;
 
 	// debug
 	char *hs = "unknown.conf";
-	if ( this == &g_hostdb2 ) hs = "hosts2.conf";
 	if ( this == &g_hostdb  ) hs = "hosts.conf";
 	
 	//logf(LOG_INFO,"db: adding %s ip=%s port=%"INT32" isUdp=%"INT32"",// (%s)",
@@ -1969,7 +1957,6 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	g_listNumTotal = 0;
 	// now restock everything
 	g_hostdb.hashHosts();
-	g_hostdb2.hashHosts();
 
 	//validateIps(&g_conf);
 	// replace ips in udp server
@@ -2573,17 +2560,7 @@ uint32_t Hostdb::getShardNum ( char rdbId,void *k ) { // ,bool split ) {
 		uint64_t d = g_revdb.getDocId( (key_t *)k );
 		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
 	}
-	//else if ( rdbId == RDB_FAKEDB ) {
-	//	// HACK:!!!!!!  this is a trick!!! it is us!!!
-	//	return g_hostdb.m_myHost->m_groupId;
-	//}
 
-	//else if ( rdbId == RDB_CATDB || rdbId == RDB2_CATDB2 ) {
-	//	return m_map [(*(uint16_t *)((char *)k + 10))>>3];
-	//}
-	else if ( rdbId == RDB_CATDB || rdbId == RDB2_CATDB2 ) {
-		return m_map [(*(uint16_t *)((char *)k + 10))>>3];
-	}
 	// core -- must be provided
 	char *xx = NULL; *xx = 0;
 	//groupId=key.n1 & g_hostdb.m_groupMask;

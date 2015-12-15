@@ -15,7 +15,6 @@
 #include "iana_charset.h"
 #include "Pos.h"
 #include "Bits.h"
-#include "AutoBan.h"
 #include "sort.h"
 #include "LanguageIdentifier.h"
 #include "CountryCode.h"
@@ -43,23 +42,14 @@ bool printCSVHeaderRow ( SafeBuf *sb , State0 *st , int32_t ct ) ;
 
 bool printJsonItemInCSV ( char *json , SafeBuf *sb , class State0 *st ) ;
 
-bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps ,
-		      Msg20Reply *mr , Msg40 *msg40 , bool first ) ;
+bool printPairScore (SafeBuf *sb , SearchInput *si , PairScore *ps , Msg20Reply *mr ) ;
 
 bool printScoresHeader ( SafeBuf *sb ) ;
 
 bool printMetaContent ( Msg40 *msg40 , int32_t i ,State0 *st, SafeBuf *sb );
 
-bool printSingleScore ( SafeBuf *sb , SearchInput *si , SingleScore *ss ,
-			Msg20Reply *mr , Msg40 *msg40 ) ;
-
-bool printDmozEntry ( SafeBuf *sb ,
-		      int32_t catId ,
-		      bool direct ,
-		      char *dmozTitle ,
-		      char *dmozSummary ,
-		      char *dmozAnchor ,
-		      SearchInput *si );
+bool printSingleScore (SafeBuf *sb , SearchInput *si , SingleScore *ss ,
+			Msg20Reply *mr ) ;
 
 bool sendReply ( State0 *st , char *reply ) {
 
@@ -273,66 +263,10 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	// . need to pre-query the directory first to get the sites to search
 	//   this will likely have just been cached so it should be quick
 	// . then need to construct a site search query
-	//int32_t rawFormat = hr->getLong("xml", 0); // was "raw"
 	//int32_t xml = hr->getLong("xml",0);
 
 	// what format should search results be in? default is html
-	char format = hr->getReplyFormat();//getFormatFromRequest ( hr );
-
-	// get the dmoz catid if given
-	//int32_t searchingDmoz = hr->getLong("dmoz",0);
-
-	//
-	// DO WE NEED TO ALTER cr->m_siteListBuf for a widget?
-	//
-	// when a wordpress user changes the "Websites to Include" for
-	// her widget, it should send a /search?sites=xyz.com&wpid=xxx
-	// request here... 
-	// so we need to remove her old sites and add in her new ones.
-	// 
-	/*
-	  
-	  MDW TURN BACK ON IN A DAY. do indexing or err pages first.
-
-	// get wordpressid supplied with all widget requests
-	char *wpid = hr->getString("wpid");
-	// we have to add set &spidersites=1 which all widgets should do
-	if ( wpid ) {
-		// this returns NULL if cr->m_siteListBuf would be unchanged
-		// because we already have the whiteListBuf sites in there
-		// for this wordPressId (wpid)
-		SafeBuf newSiteListBuf;
-		makeNewSiteList( &si->m_whiteListBuf,
-				 cr->m_siteListBuf ,
-				 wpid ,
-				 &newSiteListBuf);
-		// . update the list of sites to crawl/search & show in widget
-		// . if they give an empty list then allow that, stops crawling
-		SafeBuf parmList;
-		g_parms.addNewParmToList1 ( &parmList,
-					    cr->m_collnum,
-					    newSiteListBuf,
-					    0,
-					    "sitelist");
-		// send the parms to all hosts in the network
-		g_parms.broadcastParmList ( &parmList , 
-					    NULL,//s,// state is socket i guess
-					    NULL);//doneBroadcastingParms2 );
-		// nothing left to do now
-		return g_httpServer.sendDynamicPage(s,
-						    "OK",//sb.getBufStart(),
-						    2,//sb.length(),
-						    cacheTime,//0,
-						    false, // POST?
-						    "text/html", 
-						    200,  // httpstatus
-						    NULL, // cookie
-						    "UTF-8"); // charset
-	}
-	*/
-	
-
-
+	char format = hr->getReplyFormat();
 
 	//
 	// . send back page frame with the ajax call to get the real
@@ -350,26 +284,29 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 		printCSSHead ( &sb ,format );
 		sb.safePrintf(
 			      "<body "
-
 			      "onLoad=\""
 			      "var client = new XMLHttpRequest();\n"
 			      "client.onreadystatechange = handler;\n"
-			      //"var url='http://10.5.1.203:8000/search?q="
 			      "var url='/search?q="
 			      );
+
 		int32_t  qlen;
 		char *qstr = hr->getString("q",&qlen,"",NULL);
 		// . crap! also gotta encode apostrophe since "var url='..."
 		// . true = encodeApostrophes?
 		sb.urlEncode2 ( qstr , true );
+
 		// progate query language
 		char *qlang = hr->getString("qlang",NULL,NULL);
 		if ( qlang ) sb.safePrintf("&qlang=%s",qlang);
+
 		// propagate "admin" if set
 		int32_t admin = hr->getLong("admin",-1);
 		if ( admin != -1 ) sb.safePrintf("&admin=%"INT32"",admin);
+
 		// propagate showing of banned results
 		if ( hr->getLong("sb",0) ) sb.safePrintf("&sb=1");
+
 		// propagate list of sites to restrict query to
 		int32_t sitesLen;
 		char *sites = hr->getString("sites",&sitesLen,NULL);
@@ -437,7 +374,8 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 		// 
 		// logo header
 		//
-		printLogoAndSearchBox ( &sb , hr , -1,NULL ); // catId = -1
+		printLogoAndSearchBox ( &sb , hr , NULL );
+
 		//
 		// script to populate search results
 		//
@@ -518,19 +456,22 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 
 	// make a new state
 	State0 *st;
-	try { st = new (State0); }
-	catch ( ... ) {
+	try {
+		st = new (State0);
+	} catch ( ... ) {
 		g_errno = ENOMEM;
 		log("query: Query failed. "
 		    "Could not allocate %"INT32" bytes for query. "
 		    "Returning HTTP status of 500.",(int32_t)sizeof(State0));
 		g_stats.m_numFails++;
+
 		return g_httpServer.sendQueryErrorReply
 			(s,500,mstrerror(g_errno),
 			 format, g_errno, "Query failed.  "
 			 "Could not allocate memory to execute a search.  "
 			 "Please try later." );
 	}
+
 	mnew ( st , sizeof(State0) , "PageResults2" );
 
 	// init some stuff
@@ -554,24 +495,18 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	// . parse it up
 	// . this returns false and sets g_errno and, maybe, g_msg on error
 	SearchInput *si = &st->m_si;
-	if ( ! si->set ( s ,
-			 // si just copies the ptr into the httprequest
-			 // into stuff like SearchInput::m_defaultSortLanguage
-			 // so do not use the "hr" on the stack. SearchInput::
-			 // m_hr points to the hr we pass into
-			 // SearchInput::set
-			 &st->m_hr ) ) {
-			 //&st->m_q ) ) {
+
+	// si just copies the ptr into the httprequest
+    // into stuff like SearchInput::m_defaultSortLanguage
+    // so do not use the "hr" on the stack. SearchInput::
+    // m_hr points to the hr we pass into
+    // SearchInput::set
+	if ( ! si->set ( s , &st->m_hr ) ) {
 		log("query: set search input: %s",mstrerror(g_errno));
 		if ( ! g_errno ) g_errno = EBADENGINEER;
 		return sendReply ( st, NULL );
 	}
 
-	// for debug
-	si->m_q.m_st0Ptr = (char *)st;
-
-	int32_t  codeLen = 0;
-	char *code = hr->getString("code", &codeLen, NULL);
 	// allow up to 1000 results per query for paying clients
 	CollectionRec *cr = si->m_cr;
 
@@ -617,30 +552,10 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 
 	// assume we'll block
 	st->m_gotResults = false;
-	st->m_gotAds     = false;
 	st->m_gotSpell   = false;
 
 	// reset
 	st->m_printedHeaderRow = false;
-
-	int32_t ip = s->m_ip;
-	int32_t uipLen;
-	char *uip = hr->getString("uip", &uipLen, NULL);
-	char testBufSpace[2048];
-	SafeBuf testBuf(testBufSpace, 1024);
-	if( g_conf.m_doAutoBan &&
-	    !g_autoBan.hasPerm(ip, 
-			       code, codeLen, 
-			       uip, uipLen, 
-			       s, 
-			       hr,
-			       &testBuf,
-			       false)) { // just check? no incrementing counts
-		if ( uip )
-			log("results: returning EBUYFEED for uip=%s",uip);
-		g_errno = EBUYFEED;
-		return sendReply(st,NULL);
-	}
 
 	// for now disable queries
 	if ( ! g_conf.m_queryingEnabled ) {
@@ -654,25 +569,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	// 	g_errno = EQUERYINGDISABLED;
 	// 	return sendReply(st,NULL);
 	// }
-		
-	// LAUNCH ADS
-	// . now get the ad space for this query
-	// . don't get ads if we're not on the first page of results
-	// . query must be NULL terminated
-	st->m_gotAds = true;
-	/*
-	if (si->m_adFeedEnabled && ! si->m_xml && si->m_docsWanted > 0) {
-                int32_t pageNum = (si->m_firstResultNum/si->m_docsWanted) + 1;
-		st->m_gotAds = st->m_ads.
-			getAds(si->m_displayQuery    , //query
-			       si->m_displayQueryLen , //q len
-			       pageNum               , //page num
-                               si->m_queryIP         ,
-			       si->m_coll2           , //coll
-			       st                    , //state
-			       gotAdsWrapper         );//clbk
-        }
-	*/
 
 	// LAUNCH SPELLER
 	// get our spelling correction if we should (spell checker)
@@ -713,23 +609,14 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 
 	//log("results: debug: new state=%"PTRFMT,(PTRTYPE)st);
 
-	// wait for ads and spellcheck and results?
-	if ( !st->m_gotAds || !st->m_gotSpell || !st->m_gotResults )
+	// wait for spellcheck and results?
+	if ( !st->m_gotSpell || !st->m_gotResults )
 		return false;
 	// otherwise call gotResults which returns false if blocked, true else
 	// and sets g_errno on error
 	bool status2 = gotResults ( st );
 
 	return status2;
-}
-
-// if returned json result is > maxagebeforedownload then we redownload the
-// page and if its checksum has changed we return empty results
-void doneRedownloadingWrapper ( void *state ) {
-	// cast our State0 class from this
-	State0 *st = (State0 *) state;
-	// resume
-	gotResults ( st );
 }
 
 /*
@@ -755,24 +642,10 @@ void gotResultsWrapper ( void *state ) {
 	gotState (st);
 }
 
-/*
-void gotAdsWrapper ( void *state ) {
-	// cast our State0 class from this
-	State0 *st = (State0 *) state;
-	// mark as gotten
-	st->m_gotAds = true;
-	// log the error first
-	if ( g_errno ) log("query: adclient: %s.",mstrerror(g_errno));
-	// clear any error cuz ads aren't needed
-	g_errno = 0;
-	gotState (st);;
-}
-*/
-
 void gotState ( void *state ){
 	// cast our State0 class from this
 	State0 *st = (State0 *) state;
-	if ( !st->m_gotAds || !st->m_gotSpell || !st->m_gotResults )
+	if ( !st->m_gotSpell || !st->m_gotResults )
 		return;
 	// we're ready to go
 	gotResults ( state );
@@ -933,32 +806,11 @@ static bool printGigabitContainingSentences ( State0 *st,
 		// let's highlight with gigabits and query terms
 		SafeBuf tmpBuf;
 		Highlight h;
-		h.set ( &tmpBuf , // print it out here
-			s , // content
-			e - s , // len
-			si->m_queryLangId , // from m_defaultSortLang
-			gigabitQuery , // the gigabit "query" in quotes
-			true , // stemming? -- unused
-			false , // use anchors?
-			NULL , // baseurl
-			"<u>", // front tag
-			"</u>", // back tag
-			0 , // fieldCode
-			0  ); // niceness
+		h.set ( &tmpBuf , s , e - s , gigabitQuery, "<u>", "</u>", 0 );
+
 		// now highlight the original query as well but in black bold
 		SafeBuf tmpBuf2;
-		h.set ( &tmpBuf2 , // print it out here
-			tmpBuf.getBufStart() , // content
-			tmpBuf.length() , // len
-			si->m_queryLangId , // from m_defaultSortLang
-			&si->m_q , // the regular query
-			true , // stemming? -- unused
-			false , // use anchors?
-			NULL , // baseurl
-			"<b>" , // front tag
-			"</b>", // back tag
-			0 , // fieldCode
-			0  ); // niceness
+		h.set ( &tmpBuf2, tmpBuf.getBufStart(), tmpBuf.length(), &si->m_q, "<b>", "</b>", 0  );
 		
 
 		int32_t dlen; char *dom = getDomFast(reply->ptr_ubuf,&dlen);
@@ -1000,20 +852,12 @@ static bool printGigabitContainingSentences ( State0 *st,
 
 		fi->m_printed = 1;
 		saveOffset = sb->length();
-		if ( format == FORMAT_HTML )
+		if ( format == FORMAT_HTML ) {
 			sb->safePrintf(" <a href=/get?c=%s&cnsp=0&"
 				       "strip=0&d=%"INT64">",
 				       cr->m_coll,reply->m_docId);
-
-		if ( format == FORMAT_HTML )
 			sb->safeMemcpy(dom,dlen);
-
-		if ( format == FORMAT_HTML )
 			sb->safePrintf("</a>\n");
-
-		//lastDocId = reply->m_docId;
-
-		if ( first && format == FORMAT_HTML ) {
 			sb->safePrintf("</div>");
 		}
 
@@ -1024,6 +868,7 @@ static bool printGigabitContainingSentences ( State0 *st,
 		if ( first ) {
 			first = false;
 			second = true;
+
 			// print first gigabit all over again but in 2nd div
 			goto again;
 		}
@@ -1073,56 +918,12 @@ static bool printGigabitContainingSentences ( State0 *st,
 			dst[k] = src[k];
 	}
 
-	//s_gigabitCount++;
-
 	if ( printedSecond ) {
 		sb->safePrintf("</div>");
 	}
 
 	return true;
 }
-
-/*
-// print all sentences containing this gigabit
-static bool printGigabit ( State0 *st,
-			   SafeBuf *sb , 
-			   Msg40 *msg40 , 
-			   Gigabit *gi , 
-			   SearchInput *si ) {
-
-	//static int32_t s_gigabitCount = 0;
-
-	sb->safePrintf("<nobr><b>");
-	//"<img src=http://search.yippy.com/"
-	//"images/new/button-closed.gif><b>");
-
-	HttpRequest *hr = &st->m_hr;
-
-	// make a new query
-	sb->safePrintf("<a href=\"/search?gigabits=1&q=");
-	sb->urlEncode(gi->m_term,gi->m_termLen);
-	sb->safeMemcpy("+|+",3);
-	char *q = hr->getString("q",NULL,"");
-	sb->urlEncode(q);
-	sb->safePrintf("\">");
-	sb->safeMemcpy(gi->m_term,gi->m_termLen);
-	sb->safePrintf("</a></b>");
-	sb->safePrintf(" <font color=gray size=-1>");
-	//int32_t numOff = sb->m_length;
-	// now the # of pages not nuggets
-	sb->safePrintf("(%"INT32")",gi->m_numPages);
-	sb->safePrintf("</font>");
-	sb->safePrintf("</b>");
-	if ( si->m_isMasterAdmin ) 
-		sb->safePrintf("[%.0f]{%"INT32"}",
-			      gi->m_gbscore,
-			      gi->m_minPop);
-	// that's it for the gigabit
-	sb->safePrintf("<br>");
-
-	return true;
-}
-*/
 
 class StateAU {
 public:
@@ -1265,90 +1066,6 @@ bool gotResults ( void *state ) {
 	 	return sendReply(st,NULL);
 	}
 
-
-
-
-	//char *coll = cr->m_coll;
-
-	/*
-	//
-	// BEGIN REDOWNLOAD LOGIC
-	//
-
-	////////////
-	//
-	// if caller wants a certain freshness we might have to redownload the
-	// parent url to get the new json
-	//
-	////////////
-	// get the first result
-	Msg20 *m20first = msg40->m_msg20[0];
-	int32_t mabr = st->m_hr.getLong("maxagebeforeredownload",-1);
-	if ( mabr >= 0 && 
-	     numResults > 0 &&
-	     // only do this once
-	     ! st->m_didRedownload &&
-	     // need at least one result
-	     m20first &&
-	     // get the last spidered time from the msg20 reply of that result
-	     m20first->m_r->m_lastSpidered - now > mabr ) {
-		// make a new xmldoc to do the redownload
-		XmlDoc *xd;
-		try { xd = new (XmlDoc); }
-		catch ( ... ) {
-			g_errno = ENOMEM;
-			log("query: Failed to alloc xmldoc.");
-		}
-		if ( g_errno ) return sendReply (st,NULL);
-		mnew ( xd , sizeof(XmlDoc) , "mabrxd");
-		// save it
-		st->m_xd = xd;
-		// get this
-		st->m_oldContentHash32 = m20rep->m_contentHash32;
-		// do not re-do redownload
-		st->m_didRedownload = true;
-		// set it
-		xd->setUrl(parentUrl);
-		xd->setCallback ( st , doneRedownloadingWrapper );
-		// get the checksum
-		if ( xd->getContentChecksum32Fast() == (void *)-1 )
-			// return false if it blocked
-			return false;
-		// error?
-		if ( g_errno ) return sendReply (st,NULL);
-		// how did this not block
-		log("page: redownload did not would block adding parent");
-	}
-	     
-	// if we did the redownload and checksum changed, return 0 results
-	if ( st->m_didRedownload ) {
-		// get the doc we downloaded
-		XmlDoc *xd = st->m_xd;
-		// get it
-		int32_t newHash32 = xd->getContentHash32();
-		// log it
-		if ( newHash32 != st->m_oldContentHash32 ) 
-			// note it in logs for now
-			log("results: content changed for %s",xd->m_firstUrl.m_url);
-		// free it
-		mdelete(xd, sizeof(XmlDoc), "mabrxd" );
-		delete xd;
-		// null it out so we don't try to re-free
-		st->m_xd = NULL;
-		// if content is significantly different, return 0 results
-		if ( newHash32 != st->m_oldContentHash32 ) {
-			SafeBuf sb;
-			// empty json i guess
-			sb.safePrintf("[]\n");
-			return sendReply(st,sb.getBufStart());
-		}
-		// otherwise, print the diffbot json results, they are still valid
-	}
-
-	//
-	// END REDOWNLOAD LOGIC
-	//
-	*/
 
 	//
 	// BEGIN ADDING URL
@@ -2281,7 +1998,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 	}
 
 	if ( ! g_conf.m_isMattWells && si->m_format == FORMAT_HTML ) {
-		printLogoAndSearchBox ( sb,&st->m_hr,-1,si); // catId = -1
+		printLogoAndSearchBox ( sb, &st->m_hr, si );
 	}
 
 	// the calling function checked this so it should be non-null
@@ -2461,58 +2178,22 @@ bool printSearchResultsHeader ( State0 *st ) {
 			       g_hostdb.m_numShards );
 	}
 
-
-
-
-	//bool xml = si->m_xml;
-
-
-	// if they are doing a search in dmoz, catId will be > 0.
-	//if (  si->m_directCatId >= 0 ) {
-	//	printDMOZCrumb ( sb , si->m_directCatId , xml );
-	//}
-
-
-	///////////
-	//
-	// show DMOZ subcategories if doing either a
-	// "gbpcatid:<catid> |" (Search restricted to category)
-	// "gbcatid:<catid>"    (DMOZ urls in that topic)
-	//
-	// The search gbcatid: results should be sorted by siterank i guess
-	// since it is only search a single term: gbcatid:<catid> so we can
-	// put our stars back onto that and should be sorted by them.
-	//
-	///////////
-	/*
-	if ( si->m_catId >= 0 ) {
-		// print the subtopcis in this topic. show as links above
-		// the search results
-		printDMOZSubTopics ( sb, si->m_catId , xml );//st, xml );
-		// ok, for now just print the dmoz topics since our search
-		// results will be empty... until populated!
-		//g_categories->printUrlsInTopic ( &sb , si->m_catId );
-	}
-	*/
-
-
 	// save how many docs are in this collection
 	int64_t docsInColl = -1;
 	RdbBase *base = getRdbBase ( (uint8_t)RDB_CLUSTERDB , st->m_collnum );
-	//if ( base ) docsInColl = base->getNumGlobalRecs();
-	//docsInColl = g_hostdb.getNumGlobalRecs ( );
+
 	// estimate it
-	if ( base ) docsInColl = base->getNumGlobalRecs();
-	// multiply by # of *unique* shards
-	// no because it already does this i think
-	//docsInColl *= g_hostdb.getNumShards();
+	if ( base ) {
+		docsInColl = base->getNumGlobalRecs();
+	}
+
 	// include number of docs in the collection corpus
 	if ( docsInColl >= 0LL ) {
-	    if ( si->m_format == FORMAT_XML)
-	        sb->safePrintf ( "\t<docsInCollection>%"INT64""
-	                "</docsInCollection>\n", docsInColl );
-	    else if ( st->m_header && si->m_format == FORMAT_JSON)
+		if ( si->m_format == FORMAT_XML) {
+	        sb->safePrintf ( "\t<docsInCollection>%"INT64"</docsInCollection>\n", docsInColl );
+		} else if ( st->m_header && si->m_format == FORMAT_JSON) {
             sb->safePrintf("\"docsInCollection\":%"INT64",\n", docsInColl);
+		}
 	}
 
  	int32_t numResults = msg40->getNumResults();
@@ -2741,8 +2422,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 	}			
 
 
-
-
 	// when streaming results we lookup the facets last
 	if ( si->m_format != FORMAT_HTML && ! si->m_streamResults &&
 	     st->m_header ) 
@@ -2772,17 +2451,13 @@ bool printSearchResultsHeader ( State0 *st ) {
 	}
 
 	// debug
-	if ( si->m_debug )
-		logf(LOG_DEBUG,"query: Displaying up to %"INT32" results.",
-		     numResults);
-
-	// tell browser again
-	//if ( si->m_format == FORMAT_HTML )
-	//	sb->safePrintf("<meta http-equiv=\"Content-Type\" "
-	//		      "content=\"text/html; charset=utf-8\">\n");
+	if ( si->m_debug ) {
+		logf(LOG_DEBUG,"query: Displaying up to %"INT32" results.", numResults);
+	}
 
 	// get some result info from msg40
 	int32_t firstNum   = msg40->getFirstResultNum() ;
+
 	// numResults may be more than we requested now!
 	int32_t n = msg40->getDocsWanted();
 	if ( n > numResults )  n = numResults;
@@ -2793,8 +2468,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 	//   we use this for highlighting purposes
 	Query qq;
 	qq.set2 ( si->m_displayQuery, langUnknown , si->m_queryExpansion );
-	//	 si->m_boolFlag,
-	//         true ); // keepAllSingles?
 
 	if ( g_errno ) return false;//sendReply (st,NULL);
 
@@ -2802,30 +2475,21 @@ bool printSearchResultsHeader ( State0 *st ) {
 	if ( numResults > 0 ) dpx = msg40->getScoreInfo(0);
 
 	if ( si->m_format == FORMAT_XML && dpx ) {
-		// # query terms used!
-		//int32_t nr = dpx->m_numRequiredTerms;
 		float max = 0.0;
+
 		// max pairwise
 		float lw = getHashGroupWeight(HASHGROUP_INLINKTEXT);
+
 		// square that location weight
 		lw *= lw;
+
 		// assume its an inlinker's text, who has rank 15!!!
 		lw *= getLinkerWeight(MAXSITERANK);
-		// double loops
-		/*
-		for ( int32_t i = 0 ; i< nr ; i++ ) {
-			SingleScore *ssi = &dpx->m_singleScores[i];
-			float tfwi = getTermFreqWeight(ssi->m_listSize);
-			for ( int32_t j = i+1; j< nr ; j++ ) {
-				SingleScore *ssj = &dpx->m_singleScores[j];
-				float tfwj =getTermFreqWeight(ssj->m_listSize);
-				max += (lw * tfwi * tfwj)/3.0;
-			}
-		}
-		*/
+
 		// single weights
 		float maxtfw1 = 0.0;
 		int32_t maxi1;
+
 		// now we can have multiple SingleScores for the same term!
 		// because we take the top MAX_TOP now and add them to
 		// get the term's final score.
@@ -2865,36 +2529,12 @@ bool printSearchResultsHeader ( State0 *st ) {
 	      numResults,gettimeofdayInMilliseconds()-st->m_startTime,
 	      qq.getQuery());
 
-	//Highlight h;
-
-	//st->m_qe[0] = '\0';
 	st->m_qesb.nullTerm();
 
 	// encode query buf
-	//char qe[MAX_QUERY_LEN+1];
 	char *dq    = si->m_displayQuery;
-	//int32_t  dqlen = si->m_displayQueryLen;
-	if ( dq ) st->m_qesb.urlEncode(dq);
-
-	// how many results were requested?
-	//int32_t docsWanted = msg40->getDocsWanted();
-
-	// store html head into p, but stop at %q
-	//char *head = cr->m_htmlHead;
-	//int32_t  hlen = cr->m_htmlHeadLen;
-	//if ( ! si->m_xml ) sb->safeMemcpy ( head , hlen );
-
-
-	// ignore imcomplete or invalid multibyte or wide characters errors
-	//if ( g_errno == EILSEQ ) {
-	//	log("query: Query error: %s. Ignoring.", mstrerror(g_errno));
-	//	g_errno = 0;
-	//}
-
-	// secret search backdoor
-	if ( qlen == 7 && q[0]=='3' && q[1]=='b' && q[2]=='Y' &&
-	     q[3]=='6' && q[4]=='u' && q[5]=='2' && q[6]=='Z' ) {
-		sb->safePrintf ( "<br><b>You owe me!</b><br><br>" );
+	if ( dq ) {
+		st->m_qesb.urlEncode(dq);
 	}
 
 	// print it with commas into "thbuf" and null terminate it
@@ -2904,10 +2544,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 	char inbuf[128];
 	ulltoa ( inbuf , docsInColl );
 
-        Query qq3;
-	//Query *qq2;
-	//bool firstIgnored;
-	//bool isAdmin = si->m_isMasterAdmin;
 	bool isAdmin = (si->m_isMasterAdmin || si->m_isCollAdmin);
 	if ( si->m_format != FORMAT_HTML ) isAdmin = false;
 
@@ -2924,8 +2560,10 @@ bool printSearchResultsHeader ( State0 *st ) {
 				 "kick in.");
 	}
 	else if ( moreFollow && si->m_format == FORMAT_HTML ) {
-		if ( isAdmin && si->m_docsToScanForReranking > 1 )
+		if ( isAdmin && si->m_docsToScanForReranking > 1 ) {
 			sb->safePrintf ( "PQR'd " );
+		}
+
 		sb->safePrintf ("Results <b>%"INT32"</b> to <b>%"INT32"</b> of "
 			       "exactly <b>%s</b> from an index "
 			       "of about %s pages" , 
@@ -2974,7 +2612,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	// sometimes ppl search for "www.whatever.com" so ask them if they
 	// want to search for url:www.whatever.com
-	if ( numResults > 0  && si->m_format == FORMAT_HTML && url && url ==q){
+	if ( numResults > 0  && si->m_format == FORMAT_HTML && url && url == q){
 		sb->safePrintf("<br><br>"
 			      "Did you mean to "
 			      "search for the url "
@@ -2993,179 +2631,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 	// print "in collection ***" if we had a collection
 	if (collLen>0 && numResults>0 && !isMain && si->m_format==FORMAT_HTML )
 		sb->safePrintf (" in collection <b>%s</b>",coll);
-
-
-	//char *pwd = si->m_pwd;
-	//if ( ! pwd ) pwd = "";
-
-	/*
-	if ( si->m_format == FORMAT_HTML )
-		sb->safePrintf(" &nbsp; <u><b><font color=blue><a onclick=\""
-			      "for (var i = 0; i < %"INT32"; i++) {"
-			      "var nombre;"
-			      "nombre = 'r' + i;"
-			      "var e = document.getElementById(nombre);"
-			      "if ( e == null ) continue;"
-			      "if ( e.style.display == 'none' ){"
-			      "e.style.display = '';"
-			      "}"
-			      "else {"
-			      "e.style.display = 'none';"
-			      "}"
-			      "}"
-			      "\">"
-			      "[show scores]"
-			      "</a></font></b></u> ",
-			      numResults );
-	*/
-
-	/*
-	// convenient admin link
-	if ( isAdmin ) {
-		sb->safePrintf(" &nbsp; "
-			      ""
-			      "<a style=color:green; "
-			       "href=\"/admin/settings?c=%s\">"
-			      "admin"
-			      "</a>",coll);
-		// print reindex link
-		// get the filename directly
-		char *langStr = si->m_defaultSortLang;
-		if ( numResults>0 )
-			sb->safePrintf (" &nbsp; "
-					""
-					"<a style=color:green; "
-					"href=\"/admin/reindex?c=%s&"
-					"qlang=%s&q=%s\">"
-					"respider these results"
-					"</a>"
-					" ",coll, langStr , st->m_qe );
-		sb->safePrintf (" &nbsp; "
-			       ""
-			       "<a style=color:green; "
-				"href=\"/admin/inject?c=%s&qts=%s\">"
-			       "scrape google/bing</a>"
-			       " ", coll , st->m_qe );
-		sb->safePrintf (" &nbsp; "
-			       ""
-			       "<a style=color:green; "
-				"href=\"/search?sb=1&c=%s&"
-			       "qlang=%s&q=%s\">"
-			       "show banned results</a>"
-			       " ", coll , langStr , st->m_qe );
-
-		sb->safePrintf (" &nbsp; "
-			       ""
-			       "<a style=color:green; "
-				"href=\"/admin/api?&c=%s\">api</a>"
-				, coll );
-		sb->safePrintf (" &nbsp; "
-			       ""
-			       "<a style=color:green; "
-				"href=\"/search?format=xml&c=%s&"
-			       "qlang=%s&q=%s\">"
-			       "xml</a>"
-			       " ", coll , langStr , st->m_qe );
-		sb->safePrintf (" &nbsp; "
-			       ""
-			       "<a style=color:green; "
-				"href=\"/search?format=json&c=%s&"
-			       "qlang=%s&q=%s\">"
-			       "json</a>"
-			       " ", coll , langStr , st->m_qe );
-		sb->safePrintf (" &nbsp; "
-			       ""
-			       "<a style=color:green; "
-				"href=\"/search?admin=0&c=%s&"
-			       "qlang=%s&q=%s\">"
-			       "hide admin links</a>"
-			       " ", coll , langStr , st->m_qe );
-	}
-
-	// if its an ip: or site: query, print ban link
-	if ( isAdmin && strncmp(si->m_displayQuery,"ip:",3)==0) {
-		// get the ip
-		char *ips = si->m_displayQuery + 3;
-		// copy to buf, append a ".0" if we need to
-		char buf [ 32 ];
-		int32_t i ;
-		int32_t np = 0;
-		for ( i = 0 ; i<29 && (is_digit(ips[i])||ips[i]=='.'); i++ ){
-			if ( ips[i] == '.' ) np++;
-			buf[i]=ips[i];
-		}
-		// if not enough periods bail
-		if ( np <= 1 ) goto skip2;
-		if ( np == 2 ) { buf[i++]='.'; buf[i++]='0'; }
-		buf[i] = '\0';
-		// search ip back or forward
-		int32_t ip = atoip(buf,i);
-		sb->safePrintf ("&nbsp "
-			       "<a style=color:green; "
-				"href=\"/search?q=ip%%3A%s&c=%s&n=%"INT32"\">"
-			       "[prev %s]</a>" , 
-			       iptoa(ip-0x01000000),coll,docsWanted,
-			       iptoa(ip-0x01000000));
-		sb->safePrintf ("&nbsp "
-			       "<a style=color:green; "
-				"href=\"/search?q=ip%%3A%s&c=%s&n=%"INT32"\">"
-			       "[next %s]</a>" , 
-			       iptoa(ip+0x01000000),coll,docsWanted,
-			       iptoa(ip+0x01000000));
-	}
-	// if its an ip: or site: query, print ban link
-	if ( isAdmin && strncmp(si->m_displayQuery,"site:",5)==0) {
-		// get the ip
-		char *start = si->m_displayQuery + 5;
-		char *sp = start;
-		while ( *sp && ! is_wspace_a(*sp) ) sp++;
-		char c = *sp;
-		// get the filename directly
-		sb->safePrintf (" &nbsp; "
-			       ""
-			       "<a style=color:green; href=\"/admin/tagdb?"
-			       "tagtype0=manualban&"
-			       "tagdata0=1&"
-			       "c=%s\">"
-			       "[ban %s]</a>"
-				" ",coll , start );
-		*sp = c;
-	}
-	if ( isAdmin && strncmp(si->m_displayQuery,"gbad:",5)==0) {
-		// get the ip
-		char *start = si->m_displayQuery + 5;
-		char *sp = start;
-		while ( *sp && ! is_wspace_a(*sp) ) sp++;
-		char c = *sp;
-		*sp = '\0';
-		sb->safePrintf (" &nbsp; "
-			       ""
-			       "<a style=color:green; href=\"/admin/tagdb?"
-			       //"tagid0=%"INT32"&"
-			       "tagtype0=manualban&"
-			       "tagdata0=1&"
-			       "c=%s"
-			       "&u=%s-gbadid.com\">"
-			       "[ban %s]</a>"
-				" ", coll , start , start );
-		*sp = c;
-	}
- skip2:
-
-	// cache switch for admin
-	if ( isAdmin && msg40->getCachedTime() > 0 ) {
-		// get the filename directly
-		sb->safePrintf(" &nbsp; "
-			      ""
-			      "<a style=color:green; href=\"/search?c=%s",
-			      coll );
-		// finish it
-		sb->safePrintf("&q=%s&rcache=0&seq=0&rtq=0\">"
-			      "[cache off]</a>"
-			      " ", st->m_qe );
-	}
-	*/
-
 
 
 	printIgnoredWords ( sb , si );
@@ -3736,20 +3201,11 @@ bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 
 		Highlight hi;
 		SafeBuf hb;
-		int32_t hlen = hi.set ( &hb,//tt , 
-				     //ttend - tt , 
-				str, 
-				strLen , 
-				mr->m_language, // docLangId
-				&si->m_hqq , // highlight query CLASS
-				false  , // doStemming?
-				false  , // use click&scroll?
-				NULL   , // base url
-				frontTag,
-				backTag,
-				0,
-				0 ); // niceness
-		if ( hlen <= 0 ) continue;
+		int32_t hlen = hi.set ( &hb, str, strLen , &si->m_hqq, frontTag, backTag, 0 );
+		if ( hlen <= 0 ) {
+			continue;
+		}
+
 		// skip it if nothing highlighted
 		if ( hi.getNumMatches() == 0 ) continue;
 
@@ -3852,100 +3308,8 @@ bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 	return true;
 }
 
-//
-// . print a dmoz topic for the given numeric catid UNDER search result
-// . print "Search in Category" link as well
-//
-static bool printDMOZCategoryUnderResult ( SafeBuf *sb , 
-					   SearchInput *si, 
-					   int32_t catid ,
-					   State0 *st ) {
-
-	char format = si->m_format;
-	// these are handled in the <dmozEntry> logic below now
-	if ( format != FORMAT_HTML ) return true;
-
-	// if ( format == FORMAT_XML ) {
-	// 	sb->safePrintf("\t\t<dmozCat>\n"
-	// 		       "\t\t\t<dmozCatId>%"INT32"</dmozCatId>\n"
-	// 		       "\t\t\t<dmozCatStr><![CDATA["
-	// 		       ,catid);
-	// 	// print the name of the dmoz category
-	// 	char xbuf[256];
-	// 	SafeBuf xb(xbuf,256,0,false);
-	// 	g_categories->printPathFromId(&xb, catid, false,si->m_isRTL); 
-	// 	sb->cdataEncode(xb.getBufStart());
-	// 	sb->safePrintf("]]></dmozCatStr>\n");
-	// 	sb->safePrintf("\t\t</dmozCat>\n");
-	// 	return true;
-	// }
-
-	// if ( format == FORMAT_JSON ) {
-	// 	sb->safePrintf("\t\t\"dmozCat\":{\n"
-	// 		       "\t\t\t\"dmozCatId\":%"INT32",\n"
-	// 		       "\t\t\t\"dmozCatStr\":\""
-	// 		       ,catid);
-	// 	// print the name of the dmoz category
-	// 	char xbuf[256];
-	// 	SafeBuf xb(xbuf,256,0,false);
-	// 	g_categories->printPathFromId(&xb, catid, false,si->m_isRTL);
-	// 	sb->jsonEncode(xb.getBufStart());
-	// 	sb->safePrintf("\"\n"
-	// 		       "\t\t},\n");
-
-
-	// 	return true;
-	// }
-
-	//uint8_t queryLanguage = langUnknown;
-	uint8_t queryLanguage = si->m_queryLangId;
-	// Don't print category if not in native language category
-	// Note that this only trims out "World" cats, not all
-	// of them. Some of them may still sneak in.
-	//if(si->m_langHint)
-	//	queryLanguage = si->m_langHint;
-	if(queryLanguage != langUnknown) {
-		char tmpbuf[1024];
-		SafeBuf langsb(tmpbuf, 1024);
-		g_categories->printPathFromId(&langsb, catid, false);
-		char *ptr = langsb.getBufStart();
-		uint8_t lang = g_langId.findLangFromDMOZTopic(ptr + 7);
-		if(!strncmp("World: ", ptr, 6) &&
-		   lang != langUnknown &&
-		   lang != queryLanguage)
-			// do not print it if not in our language
-			return true;
-	}
-	//////
-	//
-	// print a link to apply your query to this DMOZ category
-	//
-	//////
-	sb->safePrintf("<a href=\"/search?s=0&q=gbipcatid%%3A%"INT32"",catid);
-	sb->urlEncode("|",1);
-	sb->urlEncode(si->m_sbuf1.getBufStart(),si->m_sbuf1.length());
-	sb->safePrintf("\">Search in Category</a>: ");
-	
-	// setup the host of the url
-	//if ( dmozHost )
-	//	sb->safePrintf("<a href=\"http://%s/", dmozHost );
-	//else
-	sb->safePrintf("<a href=\"/");
-	// print link
-	g_categories->printPathFromId(sb, catid, true,si->m_isRTL);
-	sb->safePrintf("/\">");
-	// print the name of the dmoz category
-	sb->safePrintf("<font color=#c62939>");
-	g_categories->printPathFromId(sb, catid, false,si->m_isRTL);
-	sb->safePrintf("</font></a><br>");
-	//++tr.brCount;
-	return true;
-}
-
-
 // use this for xml as well as html
 bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
-
 	SafeBuf *sb = &st->m_sb;
 
 	HttpRequest *hr = &st->m_hr;
@@ -3971,14 +3335,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	int64_t d = msg40->getDocId(ix);
 	// this is normally a double, but cast to float
 	float docScore = (float)msg40->getScore(ix);
-
-	// do not print if it is a summary dup or had some error
-	// int32_t level = (int32_t)msg40->getClusterLevel(ix);
-	// if ( level != CR_OK &&
-	//      level != CR_INDENT )
-	// 	return true;
-	
-
 
 	if ( si->m_docIdsOnly ) {
 		if ( si->m_format == FORMAT_XML )
@@ -4217,11 +3573,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->removeLastChar('\n');
 		sb->safePrintf("</pre>\n");
 		sb->safePrintf("</td></tr></table>");
-		// replace \n with <br>
-		// sb->safeReplace2 ( "\n" , 1 ,
-		// 		   "<br>" , 4 ,
-		// 		   0,//niceness ,
-		// 		   off );
+
 		// inc it
 		*numPrintedSoFar = *numPrintedSoFar + 1;
 		// just in case
@@ -4255,19 +3607,15 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	bool isAdmin = (si->m_isMasterAdmin || si->m_isCollAdmin);
 	if ( si->m_format == FORMAT_XML ) isAdmin = false;
 
-	//uint64_t lastSiteHash = siteHash;
 	if ( indent && si->m_format == FORMAT_HTML ) 
 		sb->safePrintf("<blockquote>"); 
 
 	// print the rank. it starts at 0 so add 1
-	if ( si->m_format == FORMAT_HTML && si->m_streamResults )
-		//sb->safePrintf("<table><tr><td valign=top>%"INT32".</td><td>",
-		//	       ix+1 );
+	if ( si->m_format == FORMAT_HTML && si->m_streamResults ) {
 		sb->safePrintf("<table><tr><td>");
-	else if ( si->m_format == FORMAT_HTML )
-		//sb->safePrintf("<table><tr><td valign=top>%"INT32".</td><td>",
-		//	      ix+1 + si->m_firstResultNum );
+	} else if ( si->m_format == FORMAT_HTML ) {
 		sb->safePrintf("<table><tr><td>");
+	}
 
 	if ( si->m_showBanned ) {
 		if ( err == EDOCBANNED   ) err = 0;
@@ -4297,47 +3645,13 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		//*numPrintedSoFar = *numPrintedSoFar + 1;
 		return true;
 	}
-	
-	// the score if admin
-	/*
-	if ( isAdmin ) {
-		int32_t level = (int32_t)msg40->getClusterLevel(ix);
-		// print out score
-		sb->safePrintf ( "s=%.03f "
-				"docid=%"UINT64" "
-				"sitenuminlinks=%"INT32"%% "
-				"hop=%"INT32" "
-				"cluster=%"INT32" "
-				"summaryLang=%s "
-				"(%s)<br>",
-				(float)msg40->getScore(ix) ,
-				mr->m_docId,
-				(int32_t )mr->m_siteNumInlinks,
-				(int32_t)mr->m_hopcount,
-				level ,
-				getLanguageString(mr->m_summaryLanguage),
-				g_crStrings[level]);
-	}
-	*/
 
 	char *diffbotSuffix = strstr(url,"-diffbotxyz");
-
-	// print youtube and metacafe thumbnails here
-	// http://www.youtube.com/watch?v=auQbi_fkdGE
-	// http://img.youtube.com/vi/auQbi_fkdGE/2.jpg
-	// get the thumbnail url
-	if ( mr->ptr_imgUrl && 
-	     si->m_format == FORMAT_HTML &&
-	     // if we got thumbnail use that not this
-	     ! mr->ptr_imgData )
-		sb->safePrintf ("<a href=%s><img src=%s></a>",
-				   url,mr->ptr_imgUrl);
 
 	// if we have a thumbnail show it next to the search result,
 	// base64 encoded. do NOT do this for the WIDGET, only for search
 	// results in html/xml.
 	if ( (si->m_format == FORMAT_HTML || si->m_format == FORMAT_XML ) &&
-	     //! mr->ptr_imgUrl &&
 	     si->m_showImages && mr->ptr_imgData ) {
 		ThumbnailArray *ta = (ThumbnailArray *)mr->ptr_imgData;
 		ThumbnailInfo *ti = ta->getThumbnailInfo(0);
@@ -4384,8 +3698,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	int32_t newdx = 0;
 
 	// print image for widget
-	if ( //mr->ptr_imgUrl && 
-	     ( si->m_format == FORMAT_WIDGET_IFRAME ||
+	if ( ( si->m_format == FORMAT_WIDGET_IFRAME ||
 	       si->m_format == FORMAT_WIDGET_AJAX ||
 	       si->m_format == FORMAT_WIDGET_APPEND ) ) {
 
@@ -4436,12 +3749,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       , (int32_t)PADDING
 			       //, bgcolor
 			       );
-		// if ( mr->ptr_imgUrl )
-		// 	sb->safePrintf("background-repeat:no-repeat;"
-		// 		       "background-size:%"INT32"px 140px;"
-		// 		       "background-image:url('%s');"
-		// 		       , widgetwidth - 2*8 // padding is 8px
-		// 		       , mr->ptr_imgUrl);
 		if ( mr->ptr_imgData ) {
 			ThumbnailArray *ta = (ThumbnailArray *)mr->ptr_imgData;
 			ThumbnailInfo *ti = ta->getThumbnailInfo(0);
@@ -4527,8 +3834,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       //"2px -2px 0 #000 "
 			       //"-2px -2px 0 #000;"
 			       "\">");
-		//sb->safePrintf ("<img width=50 height=50 src=%s></a>",
-		//		   mr->ptr_imgUrl);
 		// then title over image
 	}
 
@@ -4573,7 +3878,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// print the url in the href tag
 		sb->safeMemcpy ( url , newLen ); 
 		// then finish the a href tag and start a bold for title
-		sb->safePrintf ( ">");//<font size=+0>" );
+		sb->safePrintf ( ">");
 	}
 
 
@@ -4584,45 +3889,10 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	char  *str  = mr->ptr_tbuf;//msg40->getTitle(i);
 	int32_t strLen = mr->size_tbuf - 1;// msg40->getTitleLen(i);
 	if ( ! str || strLen < 0 ) strLen = 0;
-
-	/////
-	//
-	// are we printing a dmoz category page?
-	// get the appropriate dmoz title/summary to use since the same
-	// url can exist in multiple topics (catIds) with different
-	// titles summaries.
-	//
-	/////
-
-	char *dmozSummary2 = NULL;
-	// TODO: just get the catid from httprequest directly?
-	if ( si->m_catId > 0 ) { // si->m_cat_dirId > 0) {
-		// . get the dmoz title and summary
-		// . if empty then just a bunch of \0s, except for catIds
-	        Msg20Reply *mr = m20->getReply();
-		char *dmozTitle  = mr->ptr_dmozTitles;
-		dmozSummary2 = mr->ptr_dmozSumms;
-		char *dmozAnchor = mr->ptr_dmozAnchors;
-		int32_t *catIds     = mr->ptr_catIds;
-		int32_t numCats = mr->size_catIds / 4;
-		// loop through looking for the right ID
-		for (int32_t i = 0; i < numCats ; i++ ) {
-			// assign shit if we match the dmoz cat we are showing
-			if ( catIds[i] ==  si->m_catId) break;
-			dmozTitle +=gbstrlen(dmozTitle)+1;
-			dmozSummary2 +=gbstrlen(dmozSummary2)+1;
-			dmozAnchor += gbstrlen(dmozAnchor)+1;
-		}
-		// now make the title the dmoz title
-		str = dmozTitle;
-		strLen = gbstrlen(str);
-	}
 	
 
 	int32_t hlen;
-	//copy all summary and title excerpts for this result into here
-	//char tt[1024*32];
-	//char *ttend = tt + 1024*32;
+
 	char *frontTag = 
 		"<font style=\"color:black;background-color:yellow\">" ;
 	char *backTag = "</font>";
@@ -4641,51 +3911,30 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	char tmp3[1024];
 	SafeBuf hb(tmp3, 1024);
 	if ( str && strLen && si->m_doQueryHighlighting ) {
-		hlen = hi.set ( &hb,
-				//tt , 
-				//ttend - tt , 
-				str, 
-				strLen , 
-				mr->m_language, // docLangId
-				&si->m_hqq , // highlight query CLASS
-				false  , // doStemming?
-				false  , // use click&scroll?
-				NULL   , // base url
-				frontTag,
-				backTag,
-				0,
-				0 ); // niceness
+		hlen = hi.set ( &hb, str, strLen, &si->m_hqq, frontTag, backTag, 0);
+
 		// reassign!
 		str = hb.getBufStart();
 		strLen = hb.getLength();
-		//if (!sb->utf8Encode2(tt, hlen)) return false;
-		// if ( si->m_format != FORMAT_JSON )
-		// 	if ( ! sb->brify ( hb.getBufStart(),
-		// 			   hb.getLength(),
-		// 			   0,
-		// 			   cols) ) return false;
 	}
 
 	// . use "UNTITLED" if no title
 	// . msg20 should supply the dmoz title if it can
-	if ( strLen == 0 && 
-	     si->m_format != FORMAT_XML && 
-	     si->m_format != FORMAT_JSON ) {
+	if ( strLen == 0 &&  si->m_format != FORMAT_XML &&  si->m_format != FORMAT_JSON ) {
 		str = "<i>UNTITLED</i>";
 		strLen = gbstrlen(str);
 	}
 
-	if ( str && 
-	     strLen && 
+	if ( str &&  strLen &&
 	     ( si->m_format == FORMAT_HTML ||
 	       si->m_format == FORMAT_WIDGET_IFRAME ||
 	       si->m_format == FORMAT_WIDGET_APPEND ||
 	       si->m_format == FORMAT_WIDGET_AJAX ) 
 	     ) {
-		// determine if TiTle wraps, if it does add a <br> count for
-		// each wrap
-		//if (!sb->utf8Encode2(str , strLen )) return false;
-		if ( ! sb->brify ( str,strLen,0,cols) ) return false;
+		// determine if TiTle wraps, if it does add a <br> count for each wrap
+		if ( ! sb->brify ( str,strLen,0,cols) ) {
+			return false;
+		}
 	}
 
 	// close up the title tag
@@ -4728,72 +3977,9 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			sb->jsonEncode(hp);
 			sb->safePrintf("\",\n");
 		}
-		// it is a \0 separated list of headers generated from
-		// XmlDoc::getHeaderTagBuf()
+		// it is a \0 separated list of headers generated from XmlDoc::getHeaderTagBuf()
 		hp += gbstrlen(hp) + 1;
 	}
-
-	// print all dmoz info for xml/json. 
-	// seems like both direct and indirect dmoz entries here.
-	if ( mr->size_catIds > 0 &&
-	     ( si->m_format == FORMAT_JSON ||
-	       si->m_format == FORMAT_XML ) ) {
-
-		char *dmozTitle   = mr->ptr_dmozTitles;
-		char *dmozSummary = mr->ptr_dmozSumms;
-		char *dmozAnchor  = mr->ptr_dmozAnchors;
-		int32_t *catIds      = mr->ptr_catIds;
-		int32_t  numCats     = mr->size_catIds / 4;
-		// loop through looking for the right ID
-		for (int32_t i = 0; i < numCats ; i++ ) {
-			printDmozEntry ( sb,
-					 catIds[i],
-					 true,
-					 dmozTitle,
-					 dmozSummary,
-					 dmozAnchor ,
-					 si );
-			dmozTitle   += gbstrlen(dmozTitle  ) + 1;
-			dmozSummary += gbstrlen(dmozSummary) + 1;
-			dmozAnchor  += gbstrlen(dmozAnchor ) + 1;
-		}
-	}
-
-	if ( mr->size_indCatIds > 0 &&
-	     ( si->m_format == FORMAT_JSON ||
-	       si->m_format == FORMAT_XML ) ) {
-		// print INDIRECT dmoz entries as well
-		int32_t nIndCatids = mr->size_indCatIds / 4;
-		 for ( int32_t i = 0; i < nIndCatids; i++ ) {
-		 	int32_t catId = ((int32_t *)(mr->ptr_indCatIds))[i];
-			if ( si->m_format == FORMAT_XML )
-				sb->safePrintf("\t\t<indirectDmozCatId>"
-					       "%"INT32"</indirectDmozCatId>\n",
-					       catId);
-			if ( si->m_format == FORMAT_JSON )
-				sb->safePrintf("\t\t\"indirectDmozCatId\":"
-					       "%"INT32",\n",catId);
-		 }
-		// print INDIRECT dmoz entries as well
-		// int32_t nIndCatids = mr->size_indCatIds / 4;
-		// dmozTitle   = mr->ptr_indDmozTitles;
-		// dmozSummary = mr->ptr_dmozSumms;
-		// dmozAnchor  = mr->ptr_dmozAnchors;
-		// for ( int32_t i = 0; i < nIndCatids; i++ ) {
-		// 	int32_t catId = ((int32_t *)(mr->ptr_indCatIds))[i];
-		// 	printDmozEntry ( sb ,
-		// 			 catId ,
-		// 			 false,
-		// 			 dmozTitle,
-		// 			 dmozSummary,
-		// 			 dmozAnchor ,
-		// 			 si );
-		// 	dmozTitle   += gbstrlen(dmozTitle  ) + 1;
-		// 	dmozSummary += gbstrlen(dmozSummary) + 1;
-		// 	dmozAnchor  += gbstrlen(dmozAnchor ) + 1;
-		// }
-	}
-
 
 	// print the [cached] link?
 	bool printCached;
@@ -4854,30 +4040,29 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	// summary deduping purposes (see "pss" parm in Parms.cpp) we do not
 	// get it as int16_t as request. so use mr->m_sumPrintSize here
 	// not mr->size_sum
-	strLen = mr->size_displaySum - 1;//-1;
+	strLen = mr->size_displaySum - 1;//
 
 	// this includes the terminating \0 or \0\0 so back up
-	if ( strLen < 0 ) strLen  = 0;
-	//send = str + strLen;
-
-	// dmoz summary might override if we are showing a dmoz topic page
-	if ( dmozSummary2 && (si->m_catId>0 || strLen<=0) ) {
-		str = dmozSummary2;
-		strLen = gbstrlen(dmozSummary2);
+	if ( strLen < 0 ) {
+		strLen  = 0;
 	}
 
 	bool printSummary = true;
-	// do not print summaries for widgets by default unless overridden
-	// with &summary=1
+
+	// do not print summaries for widgets by default unless overridden with &summary=1
 	int32_t defSum = 0;
+
 	// if no image then default the summary to on
-	if ( ! mr->ptr_imgData ) defSum = 1;
+	if ( ! mr->ptr_imgData ) {
+		defSum = 1;
+	}
 
 	if ( (si->m_format == FORMAT_WIDGET_IFRAME ||
 	      si->m_format == FORMAT_WIDGET_APPEND ||
 	      si->m_format == FORMAT_WIDGET_AJAX ) && 
-	     hr->getLong("summaries",defSum) == 0 ) 
+	     hr->getLong("summaries",defSum) == 0 ) {
 		printSummary = false;
+	}
 
 	if ( printSummary &&
 	     (si->m_format == FORMAT_WIDGET_IFRAME ||
@@ -4920,38 +4105,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	/////////
 	if ( mr->ptr_dbuf && mr->size_dbuf>1 )
 		printMetaContent ( msg40 , ix,st,sb);
-
-
-	////////////
-	//
-	// . print DMOZ topics under the summary
-	// . will print the "Search in Category" link too
-	//
-	////////////
-	//Msg20Reply *mr = m20->getMsg20Reply();
-	int32_t nCatIds = mr->getNumCatIds();
-	for (int32_t i = 0; i < nCatIds; i++) {
-		int32_t catid = ((int32_t *)(mr->ptr_catIds))[i];
-		printDMOZCategoryUnderResult(sb,si,catid,st);
-	}
-	// skipCatsPrint:
-	// print the indirect category Ids
-	int32_t nIndCatids = mr->size_indCatIds / 4;
-	//if ( !cr->m_displayIndirectDmozCategories )
-	//	goto skipCatsPrint2;
-	for ( int32_t i = 0; i < nIndCatids; i++ ) {
-		int32_t catid = ((int32_t *)(mr->ptr_indCatIds))[i];
-		// skip it if it's a regular category
-		//bool skip = false;
-		int32_t d; for ( d = 0; d < nCatIds; d++) {
-			if (  catid == mr->ptr_catIds[i] ) break;
-		}
-		// skip if the indirect catid matched a directed catid
-		if ( d < nCatIds ) continue;
-		// otherwise print it
-		printDMOZCategoryUnderResult(sb,si,catid,st);
-	}
-
 
 	///////////
 	//
@@ -5297,45 +4450,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 					coll , 
 					mr->m_docId ); 
 	}
-
-	// the new links
-	if ( si->m_format == FORMAT_HTML && g_conf.m_isMattWells && 1 == 0 ) {
-		//sb->safePrintf(" - <a href=\"/scoring?"
-		//	      "c=%s&\">scoring</a>",
-		//	      coll );
-		//sb->safePrintf(" - <a href=\"/print?c=%s&",coll);
-		if ( g_conf.m_isMattWells )
-			sb->safePrintf(" - <a href=\"/seo?");//c=%s&",coll);
-		else
-			sb->safePrintf(" - <a href=\"https://www.gigablast."
-				      "com/seo?");//c=%s&",coll);
-		//sb->safePrintf("d=%"INT64"",mr->m_docId);
-		sb->safePrintf("u=");
-		sb->urlEncode ( url , gbstrlen(url) , false );
-		//sb->safePrintf("&page=1\">seo</a>" );
-		sb->safePrintf("\"><font color=red>seo</font></a>" );
-	}
-
-	// only display re-spider link if addurl is enabled
-	//if ( isAdmin &&
-	//     g_conf.m_addUrlEnabled &&
-	//     cr->m_addUrlEnabled      ) {
-	/*
-	if ( si->m_format == FORMAT_HTML ) {
-		// the [respider] link
-		// save this for seo iframe!
-		sb->safePrintf (" - <a href=\"/admin/inject?u=" );
-		// encode the url now
-		sb->urlEncode ( url , urlLen );
-		// then collection
-		if ( coll ) {
-			sb->safeMemcpy ( "&c=" , 3 );
-			sb->safeMemcpy ( coll , gbstrlen(coll) );
-		}
-		//sb->safePrintf ( "&force=1\">reindex</a>" );
-		sb->safePrintf ( "\">reindex</a>" );
-	}
-	*/
 
 	// unhide the divs on click
 	int32_t placeHolder = -1;
@@ -5820,12 +4934,9 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	int32_t nr = dp->m_numRequiredTerms;
 	if ( nr == 1 ) nr = 0;
 	// print breakout tables here for distance matrix
-	//SafeBuf bt;
 	// final score calc
 	char tmp[1024];
 	SafeBuf ft(tmp, 1024);;
-	// int16_tcut
-	//Query *q = si->m_q;
 
 	// put in a hidden div so you can unhide it
 	if ( si->m_format == FORMAT_HTML )
@@ -5860,7 +4971,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		lastTermNum1 = fps->m_qtermNum1;
 		lastTermNum2 = fps->m_qtermNum2;
 		bool firstTime = true;
-		bool first = true;
 		// print all pairs for this combo
 		for ( int32_t j = i ; j < dp->m_numPairs ; j++ ) {
 			// get it
@@ -5878,9 +4988,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				firstTime = false;
 			}
 			// print it
-			printPairScore ( sb , si , ps , mr , msg40 , first );
-			// not first any more!
-			first = false;
+			printPairScore ( sb , si , ps , mr );
+
 			// add it up
 			totalPairScore += ps->m_finalScore;
 		}
@@ -5961,8 +5070,10 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				printScoresHeader ( sb );
 				firstTime = false;
 			}
+
 			// print it
-			printSingleScore ( sb , si , ss , mr , msg40 );
+			printSingleScore ( sb , si , ss , mr );
+
 			// add up
 			totalSingleScore += ss->m_finalScore;
 		}
@@ -6195,32 +5306,13 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 
 
-bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps ,
-		      Msg20Reply *mr , Msg40 *msg40 , bool first ) {
+bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg20Reply *mr) {
 
 	// int16_tcut
 	Query *q = &si->m_q;
 
-	//SafeBuf ft;
-
-	// store in final score calc
-	//if ( ft.length() ) ft.safePrintf(" + ");
-	//ft.safePrintf("%f",ps->m_finalScore);
-	
 	int32_t qtn1 = ps->m_qtermNum1;
 	int32_t qtn2 = ps->m_qtermNum2;
-	
-	/*
-	  unsigned char drl1 = ps->m_diversityRankLeft1;
-	  unsigned char drl2 = ps->m_diversityRankLeft2;
-	  float dvwl1 = getDiversityWeight(dr1);
-	  float dvwl2 = getDiversityWeight(dr2);
-	  
-	  unsigned char drr1 = ps->m_diversityRankRight1;
-	  unsigned char drr2 = ps->m_diversityRankRight2;
-	  float dvwr1 = getDiversityWeight(dr1);
-	  float dvwr2 = getDiversityWeight(dr2);
-	*/
 	
 	unsigned char de1 = ps->m_densityRank1;
 	unsigned char de2 = ps->m_densityRank2;
@@ -6260,31 +5352,19 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps ,
 		syn2 = "yes";
 		sw2  = SYNONYM_WEIGHT;
 	}
-	
-	
-	//char  bf1  = ps->m_bflags1;
-	//char  bf2  = ps->m_bflags2;
+
 	char *bs1  = "no";
 	char *bs2  = "no";
-	//if ( bf1 & BF_HALFSTOPWIKIBIGRAM ) bs1 = "yes";
-	//if ( bf2 & BF_HALFSTOPWIKIBIGRAM ) bs2 = "yes";
 	if ( ps->m_isHalfStopWikiBigram1 ) bs1 = "yes";
 	if ( ps->m_isHalfStopWikiBigram2 ) bs2 = "yes";
 	float wbw1 = 1.0;
 	float wbw2 = 1.0;
 	if ( ps->m_isHalfStopWikiBigram1 ) wbw1 = WIKI_BIGRAM_WEIGHT;
 	if ( ps->m_isHalfStopWikiBigram2 ) wbw2 = WIKI_BIGRAM_WEIGHT;
-	
-	//int64_t sz1 = ps->m_listSize1;
-	//int64_t sz2 = ps->m_listSize2;
-	//int64_t tf1 = ps->m_termFreq1;//sz1 / 10;
-	//int64_t tf2 = ps->m_termFreq2;//sz2 / 10;
-	
+
 	QueryTerm *qt1 = &q->m_qterms[qtn1];
 	QueryTerm *qt2 = &q->m_qterms[qtn2];
 
-	//int64_t tf1 = msg40->m_msg3a.m_termFreqs[qtn1];
-	//int64_t tf2 = msg40->m_msg3a.m_termFreqs[qtn2];
 	int64_t tf1 = qt1->m_termFreq;
 	int64_t tf2 = qt2->m_termFreq;
 	float tfw1 = ps->m_tfWeight1;
@@ -6310,36 +5390,6 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps ,
 	
 	if ( si->m_format == FORMAT_XML ) {
 		sb->safePrintf("\t\t<pairInfo>\n");
-		
-		
-		/*
-		  sb->safePrintf("\t\t\t<diversityRankLeft1>%"INT32""
-		  "</diversityRankLeft1>\n",
-		  (int32_t)drl1);
-		  sb->safePrintf("\t\t\t<diversityRankRight1>%"INT32""
-		  "</diversityRankRight1>\n",
-		  (int32_t)drr1);
-		  sb->safePrintf("\t\t\t<diversityWeightLeft1>%f"
-		  "</diversityWeightLeft1>\n",
-		  dvwl1);
-		  sb->safePrintf("\t\t\t<diversityWeightRight1>%f"
-		  "</diversityWeightRight1>\n",
-		  dvwr1);
-		  
-		  
-		  sb->safePrintf("\t\t\t<diversityRankLeft2>%"INT32""
-		  "</diversityRankLeft2>\n",
-		  (int32_t)drl2);
-		  sb->safePrintf("\t\t\t<diversityRankRight2>%"INT32""
-		  "</diversityRankRight2>\n",
-		  (int32_t)drr2);
-		  sb->safePrintf("\t\t\t<diversityWeightLeft2>%f"
-		  "</diversityWeightLeft2>\n",
-		  dvwl2);
-		  sb->safePrintf("\t\t\t<diversityWeightRight2>%f"
-		  "</diversityWeightRight2>\n",
-		  dvwr2);
-		*/
 		
 		sb->safePrintf("\t\t\t<densityRank1>%"INT32""
 			      "</densityRank1>\n",
@@ -6380,11 +5430,7 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps ,
 			      "</wordPos1>\n", wp1 );
 		sb->safePrintf("\t\t\t<wordPos2>%"INT32""
 			      "</wordPos2>\n", wp2 );
-		//int32_t wordDist = wp2 - wp1;
-		//if ( wordDist < 0 ) wordDist *= -1;
-		//sb->safePrintf("\t\t\t<wordDist>%"INT32""
-		//	      "</wordDist>\n",wdist);
-		
+
 		sb->safePrintf("\t\t\t<isSynonym1>"
 			      "<![CDATA[%s]]>"
 			      "</isSynonym1>\n",
@@ -6449,9 +5495,6 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps ,
 				      "</inlinkId2>\n",
 				      k->m_siteHash);
 		}
-
-
-
 
 		// term freq
 		sb->safePrintf("\t\t\t<termFreq1>%"INT64""
@@ -6601,48 +5644,6 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps ,
 		sb->safePrintf("\t\t</pairInfo>\n");
 		return true; // continue;
 	}
-	
-	
-	// print out the entire details i guess
-	//sb->safePrintf("<td>%.02f</td>"
-	//	      ,ps->m_finalScore
-	//	      );
-	// . print out the breakout tables then
-	// . they should pop-up when the user 
-	//   mouses over a cell in the distance matrix
-	//sb->safePrintf("<table border=1>"
-	//	      "<tr><td colspan=100>"
-	//	      "<center><b>");
-	//if ( q->m_qterms[qtn1].m_isPhrase )
-	//	sb->pushChar('\"');
-	//sb->safeMemcpy ( q->m_qterms[qtn1].m_term ,
-	//		q->m_qterms[qtn1].m_termLen );
-	//if ( q->m_qterms[qtn1].m_isPhrase )
-	//	sb->pushChar('\"');
-	//sb->safePrintf("</b> vs <b>");
-	//if ( q->m_qterms[qtn2].m_isPhrase )
-	//	sb->pushChar('\"');
-	//sb->safeMemcpy ( q->m_qterms[qtn2].m_term ,
-	//		q->m_qterms[qtn2].m_termLen );
-	//if ( q->m_qterms[qtn2].m_isPhrase )
-	//	sb->pushChar('\"');
-	//sb->safePrintf("</b></center></td></tr>");
-	// then print the details just like the
-	// single term table below
-	//sb->safePrintf("<tr>"
-	//	      "<td>term</td>"
-	//	      "<td>location</td>"
-	//	      "<td>wordPos</td>"
-	//	      "<td>synonym</td>"
-	//	      "<td>wikibigram</td>"
-	//	      //"<td>diversityRank/weight</td>"
-	//	      "<td>densityRank</td>"
-	//	      "<td>wordSpamRank</td>"
-	//	      "<td>inlinkSiteRank</td>"
-	//	      "<td>termFreq</td>"
-	//	      "<td>inWikiPhrase/qdist</td>"
-	//	      "</tr>" 
-	//	      );
 
 	//
 	// print first term in first row
@@ -6660,23 +5661,22 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps ,
 		      "\">"
 		      );
 	sb->safePrintf("%.04f</a></td>",ps->m_finalScore);
-	//sb->safeMemcpy ( q->m_qterms[qtn1].m_term ,
-	//		q->m_qterms[qtn1].m_termLen );
-	//sb->safePrintf("</td>");
+
 	sb->safePrintf("<td>"
 		      "%s <font color=orange>"
 		      "%.01f</font></td>"
 		      , getHashGroupString(hg1)
 		      , hgw1 );
+
 	// the word position
 	sb->safePrintf("<td>");
-		      //"<a href=\"/print?d="
-		      //"&page=4&recycle=1&"
 
 	if ( g_conf.m_isMattWells )
 		sb->safePrintf("<a href=\"/seo?d=");
 	else
 		sb->safePrintf("<a href=\"/get?d=");
+
+	sb->safePrintf("<a href=\"/get?d=");
 
 	sb->safePrintf("%"INT64""
 		       "&page=4"
@@ -6689,28 +5689,12 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps ,
 		       ,(int32_t)ps->m_wordPos1
 		       ,si->m_cr->m_coll
 		       ,(int32_t)ps->m_wordPos1);
-	// is synonym?
-	//if ( sw1 != 1.00 )
-		sb->safePrintf("<td>%s <font color=blue>%.02f"
-			      "</font></td>",syn1,sw1);
-	//else
-	//	sb->safePrintf("<td>&nbsp;</td>");
 
-	
-	// wikibigram?/weight
-	//if ( wbw1 != 1.0 )
-		sb->safePrintf("<td>%s <font color=green>%.02f"
-			      "</font></td>",bs1,wbw1);
-	//else
-	//	sb->safePrintf("<td>&nbsp;</td>");
+	sb->safePrintf("<td>%s <font color=blue>%.02f</font></td>",syn1,sw1);
 
-	
-	// diversity -
-	// not needed for term pair algo
-	//sb->safePrintf("<td>%"INT32"/<font color=green>"
-	//	      "%f</font></td>",
-	//	      (int32_t)dr1,dvw1);
-	
+	sb->safePrintf("<td>%s <font color=green>%.02f</font></td>",bs1,wbw1);
+
+
 	// density
 	sb->safePrintf("<td>%"INT32" <font color=purple>"
 		      "%.02f</font></td>",
@@ -6744,19 +5728,15 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps ,
 	// print 2nd term in 2nd row
 	//
 	sb->safePrintf("<tr><td>");
-	//sb->safeMemcpy ( q->m_qterms[qtn2].m_term ,
-	//		q->m_qterms[qtn2].m_termLen );
-	//sb->safePrintf("</td>");
-	sb->safePrintf(//"<td>"
+
+	sb->safePrintf(
 		      "%s <font color=orange>"
 		      "%.01f</font></td>"
 		      , getHashGroupString(hg2)
 		      , hgw2 );
+
 	// the word position
 	sb->safePrintf("<td>");
-		      //"<a href=\"/print?d="
-		      //"%"INT64""
-		      //"&page=4&recycle=1&"
 
 	if ( g_conf.m_isMattWells )
 		sb->safePrintf("<a href=\"/seo?d=");
@@ -6772,26 +5752,10 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps ,
 		      ,(int32_t)ps->m_wordPos2
 		      ,si->m_cr->m_coll
 		      ,(int32_t)ps->m_wordPos2);
-	
-	// is synonym?
-	//if ( sw2 != 1.00 )
-		sb->safePrintf("<td>%s <font color=blue>%.02f"
-			      "</font></td>",syn2,sw2);
-	//else
-	//	sb->safePrintf("<td>&nbsp;</td>");
 
-	// wikibigram?/weight
-	//if ( wbw2 != 1.0 )
-		sb->safePrintf("<td>%s <font color=green>%.02f"
-			      "</font></td>",bs2,wbw2);
-	//else
-	//	sb->safePrintf("<td>&nbsp;</td>");
+	sb->safePrintf("<td>%s <font color=blue>%.02f</font></td>",syn2,sw2);
 
-	
-	// diversity
-	//sb->safePrintf("<td>%"INT32"/<font color=green>"
-	//	      "%f</font></td>",
-	//	      (int32_t)dr2,dvw2);
+	sb->safePrintf("<td>%s <font color=green>%.02f</font></td>",bs2,wbw2);
 	
 	// density
 	sb->safePrintf("<td>%"INT32" <font color=purple>"
@@ -6822,13 +5786,7 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps ,
 	// end the row
 	sb->safePrintf("</tr>");
 	sb->safePrintf("<tr><td ");
-	// last row is the computation of score
-	//static bool s_first = true;
-	if ( first ) {
-		//static int32_t s_count = 0;
-		//s_first = false;
-		//sb->safePrintf("id=poo%"INT32" ",s_count);
-	}
+
 	sb->safePrintf("colspan=50>" //  style=\"display:none\">"
 		      "%.03f "
 		      "= "
@@ -6967,10 +5925,7 @@ bool printScoresHeader ( SafeBuf *sb ) {
 	return true;
 }
 
-bool printSingleScore ( SafeBuf *sb , 
-			SearchInput *si , 
-			SingleScore *ss ,
-			Msg20Reply *mr , Msg40 *msg40 ) {
+bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Msg20Reply *mr ) {
 
 	// int16_tcut
 	Query *q = &si->m_q;
@@ -7303,550 +6258,17 @@ bool printSingleScore ( SafeBuf *sb ,
 	return true;
 }
 
-////////
-//
-// . print the directory subtopics
-// . show these when we are in a directory topic browsing dmoz
-// . just a list of all the topics/categories
-//
-////////
-bool printDMOZSubTopics ( SafeBuf *sb, int32_t catId, bool inXml ) {
-
-	if ( catId <= 0 ) return true;
-
-	int32_t currType;
-	bool first;
-	bool nextColumn;
-	int32_t maxPerColumn;
-	int32_t currInColumn;
-	int32_t currIndex;
-	char *prefixp;
-	int32_t prefixLen;
-	char *catName;
-	int32_t catNameLen;
-	char encodedName[2048];
-
-	//SearchInput *si = &st->m_si;
-
-	bool isRTL = g_categories->isIdRTL ( catId );
-
-	SafeBuf subCatBuf;
-	// stores a list of SubCategories into "subCatBuf"
-	int32_t numSubCats = g_categories->generateSubCats ( catId , &subCatBuf );
-
-	// . get the subcategories for a given categoriy
-	// . msg2b::gernerateDirectory() was launched in Msg40.cpp
-	//int32_t numSubCats      = st->m_msg40.m_msg2b.m_numSubCats;
-	//SubCategory *subCats = st->m_msg40.m_msg2b.m_subCats;
-	//char *catBuffer      = st->m_msg40.m_msg2b.m_catBuffer;
-	//bool showAdultOnTop  = st->m_si.m_cr->m_showAdultCategoryOnTop;
-
-
-	// just print <hr> if no sub categories
-	if (inXml) {
-		sb->safePrintf ( "\t<directory>\n"
-				"\t\t<dirId>%"INT32"</dirId>\n"
-				"\t\t<dirName><![CDATA[",
-				catId);//si.m_cat_dirId );
-		g_categories->printPathFromId ( sb, 
-						catId, // st->m_si.m_cat_dirId,
-						true );
-		sb->safePrintf ( "]]></dirName>\n");
-		sb->safePrintf ( "\t\t<dirIsRTL>%"INT32"</dirIsRTL>\n",
-				(int32_t)isRTL);
-	}
-
-	char *p    = subCatBuf.getBufStart();
-	char *pend = subCatBuf.getBuf();
-	SubCategory *ptrs[MAX_SUB_CATS];
-	int32_t count = 0;
-
-	if (numSubCats <= 0)
-		goto dirEnd;
-	// print out the cats
-	currType = 0;
-
-	// first make ptrs to them
-	for ( ; p < pend ; ) {
-		SubCategory *cat = (SubCategory *)p;
-		ptrs[count++] = cat;
-		p += cat->getRecSize();
-		// do not breach
-		if ( count >= MAX_SUB_CATS ) break;
-	}
-
-
-	for (int32_t i = 0; i < count ; i++ ) {
-		SubCategory *cat = ptrs[i];
-		first = false;
-		catName = cat->getName();//&catBuffer[subCats[i].m_nameOffset];
-		catNameLen = cat->m_nameLen;//subCats[i].m_nameLen;
-		// this is the last topic in the dmoz dir path
-		// so if the dmoz topic is Top/Arts/Directories then
-		// the prefixp is "Directories"
-		prefixp = cat->getPrefix();//&catBuffer[subCats[i].m_prefixOffset];
-		prefixLen = cat->m_prefixLen;//subCats[i].m_prefixLen;
-		// skip bad categories
-		currIndex=g_categories->getIndexFromPath(catName,catNameLen);
-		if (currIndex < 0)
-			continue;
-		// skip top adult category if we're supposed to
-		/*
-		if ( !inXml && 
-		     st->m_si.m_catId == 1 && 
-		     si->m_familyFilter &&
-		     g_categories->isIndexAdultStart ( currIndex ) )
-			continue;
-		*/
-		// check for room
-		//if (p + subCats[i].m_prefixLen*2 +
-		//	subCats[i].m_nameLen*2 +
-		//	512 > pend){
-		//	goto diroverflow;
-		//}
-		// print simple xml tag for inXml
-		if (inXml) {
-			switch ( cat->m_type ) {
-			case SUBCAT_LETTERBAR:
-				sb->safePrintf ( "\t\t<letterbar><![CDATA[" );
-				sb->safePrintf ( "]]>" );
-				sb->safePrintf ( "<urlcount>%"INT32"</urlcount>",
-					g_categories->getNumUrlsFromIndex(
-						currIndex) );
-				sb->safePrintf ( "</letterbar>\n" );
-				break;
-			case SUBCAT_NARROW2:
-				sb->safePrintf ( "\t\t<narrow2><![CDATA[" );
-				sb->utf8Encode2 ( catName, catNameLen );
-				sb->safePrintf ( "]]>");
-				sb->safePrintf ( "<urlcount>%"INT32"</urlcount>",
-					g_categories->getNumUrlsFromIndex(
-						currIndex) );
-				sb->safePrintf ( "</narrow2>\n" );
-				break;
-			case SUBCAT_NARROW1:
-				sb->safePrintf ( "\t\t<narrow1><![CDATA[" );
-				sb->utf8Encode2 ( catName, catNameLen );
-				sb->safePrintf ( "]]>" );
-				sb->safePrintf ( "<urlcount>%"INT32"</urlcount>",
-					g_categories->getNumUrlsFromIndex(
-						currIndex) );
-				sb->safePrintf ( "</narrow1>\n" );
-				break;
-			case SUBCAT_NARROW:
-				sb->safePrintf ( "\t\t<narrow><![CDATA[" );
-				sb->utf8Encode2 ( catName, catNameLen );
-				sb->safePrintf ( "]]>" );
-				sb->safePrintf ( "<urlcount>%"INT32"</urlcount>",
-					g_categories->getNumUrlsFromIndex(
-						currIndex) );
-				sb->safePrintf ( "</narrow>\n" );
-				break;
-			case SUBCAT_SYMBOLIC2:
-				sb->safePrintf ( "\t\t<symbolic2><![CDATA[" );
-				sb->utf8Encode2 ( prefixp, prefixLen  );
-				sb->safePrintf ( ":" );
-				sb->utf8Encode2 ( catName, catNameLen );
-				sb->safePrintf ( "]]>" );
-				sb->safePrintf ( "<urlcount>%"INT32"</urlcount>",
-					g_categories->getNumUrlsFromIndex(
-						currIndex) );
-				sb->safePrintf ( "</symbolic2>\n" );
-				break;
-			case SUBCAT_SYMBOLIC1:
-				sb->safePrintf ( "\t\t<symbolic1><![CDATA[" );
-				sb->utf8Encode2 ( prefixp, prefixLen  );
-				sb->safePrintf ( ":" );
-				sb->utf8Encode2 ( catName, catNameLen );
-				sb->safePrintf ( "]]>" );
-				sb->safePrintf ( "<urlcount>%"INT32"</urlcount>",
-					g_categories->getNumUrlsFromIndex(
-						currIndex) );
-				sb->safePrintf ( "</symbolic1>\n" );
-				break;
-			case SUBCAT_SYMBOLIC:
-				sb->safePrintf ( "\t\t<symbolic><![CDATA[" );
-				sb->utf8Encode2 ( prefixp, prefixLen  );
-				sb->safePrintf ( ":" );
-				sb->utf8Encode2 ( catName, catNameLen );
-				sb->safePrintf ( "]]>" );
-				sb->safePrintf ( "<urlcount>%"INT32"</urlcount>",
-					g_categories->getNumUrlsFromIndex(
-						currIndex) );
-				sb->safePrintf ( "</symbolic>\n" );
-				break;
-			case SUBCAT_RELATED:
-				sb->safePrintf ( "\t\t<related><![CDATA[" );
-				sb->utf8Encode2 ( catName, catNameLen );
-				sb->safePrintf ( "]]>" );
-				sb->safePrintf ( "<urlcount>%"INT32"</urlcount>",
-					g_categories->getNumUrlsFromIndex(
-						currIndex) );
-				sb->safePrintf ( "</related>\n" );
-				break;
-			case SUBCAT_ALTLANG:
-				sb->safePrintf ( "\t\t<altlang><![CDATA[" );
-				sb->utf8Encode2 ( prefixp, prefixLen  );
-				sb->safePrintf ( ":" );
-				sb->utf8Encode2 ( catName, catNameLen );
-				sb->safePrintf ( "]]>" );
-				sb->safePrintf ( "<urlcount>%"INT32"</urlcount>",
-					g_categories->getNumUrlsFromIndex(
-						currIndex) );
-				sb->safePrintf ( "</altlang>\n");
-				break;
-			}
-			continue;
-		}
-		// print type header
-		if ( cat->m_type - currType >= 10) {
-			// end the last type
-			if (currType == SUBCAT_LETTERBAR)
-				sb->safePrintf(" ]</center>\n");
-			else if (currType != 0)
-				sb->safePrintf ( "\n</span></ul></td></tr>"
-						"</table>\n" );
-			// start the new type
-			switch (cat->m_type) {
-			case SUBCAT_LETTERBAR:
-				sb->safePrintf ( "<span class=\"directory\">"
-						"<center>[ " );
-				break;
-			case SUBCAT_NARROW2:
-			case SUBCAT_SYMBOLIC2:
-			case SUBCAT_NARROW1:
-			case SUBCAT_SYMBOLIC1:
-			case SUBCAT_NARROW:
-			case SUBCAT_SYMBOLIC:
-				sb->safePrintf("<hr>\n");
-				break;
-			case SUBCAT_RELATED:
-				if (currType == 0 ||
-				    currType == SUBCAT_LETTERBAR)
-					sb->safePrintf("<hr>");
-				else
-					sb->safePrintf("<br>");
-				if (isRTL)
-					sb->safePrintf("<span dir=ltr>");
-				sb->safePrintf ( "<b>Related Categories:"
-						"</b>" );
-				if (isRTL)
-					sb->safePrintf("</span>");
-				break;
-			case SUBCAT_ALTLANG:
-				if (currType == 0 ||
-				    currType == SUBCAT_LETTERBAR)
-					sb->safePrintf("<hr>");
-				else
-					sb->safePrintf("<br>");
-				if (isRTL)
-					sb->safePrintf("<span dir=ltr>");
-				sb->safePrintf ( "<b>This category in other"
-						" languages:</b>");
-				if (isRTL)
-					sb->safePrintf("</span>");
-				break;
-			}
-			currType = ( cat->m_type/10)*10;
-			first = true;
-			nextColumn = false;
-			currInColumn = 0;
-			if (currType == SUBCAT_LETTERBAR ||
-			    currType == SUBCAT_RELATED)
-				maxPerColumn = 999;
-			else {
-				// . check how many columns we'll use for this
-				//   type
-				int32_t numInType = 1;
-				for (int32_t j = i+1; j < numSubCats; j++) {
-					if ( ptrs[j]->m_type - currType >= 10)
-						break;
-					numInType++;
-				}
-				// column for every 5, up to 3 columns
-				int32_t numColumns = numInType/5;
-				if ( numInType%5 > 0 ) numColumns++;
-				if ( currType == SUBCAT_ALTLANG &&
-				     numColumns > 4)
-					numColumns = 4;
-				else if (numColumns > 3)
-					numColumns = 3;
-				// max number of links per column
-				maxPerColumn = numInType/numColumns;
-				if (numInType%numColumns > 0)
-					maxPerColumn++;
-			}
-		}
-		// start the sub cat
-		if (first) {
-			if (currType != SUBCAT_LETTERBAR)
-				sb->safePrintf ( "<table border=0>"
-						"<tr><td valign=top>"
-						"<ul><span class=\"directory\">"
-						"\n<li>");
-		}
-		// check for the next column
-		else if (nextColumn) {
-			sb->safePrintf ( "\n</span></ul></td><td valign=top>"
-					"<ul><span class=\"directory\">"
-					"\n<li>");
-			nextColumn = false;
-		}
-		// or just next link
-		else {
-			if (currType == SUBCAT_LETTERBAR)
-				sb->safePrintf("| ");
-			else
-				sb->safePrintf("<li>");
-		}
-		// print out the prefix as a link
-		//if ( p + catNameLen + 16 > pend ) {
-		//	goto diroverflow;
-		//}
-		sb->safePrintf("<a href=\"/");
-		sb->utf8Encode2(catName, catNameLen);
-		sb->safePrintf("/\">");
-		// prefix...
-		//if ( p + prefixLen + 512 > pend ) {
-		//	goto diroverflow;
-		//}
-		if (currType != SUBCAT_ALTLANG)
-			sb->safePrintf("<b>");
-		else {
-			// check for coded <b> or <strong> tags, remove
-			if (prefixLen >= 19 &&
-			    strncasecmp(prefixp, "&lt;b&gt;", 9) == 0 &&
-			    strncasecmp(prefixp + (prefixLen-10), 
-				    "&lt;/b&gt;", 10) == 0) {
-				prefixp += 9;
-				prefixLen -= 19;
-			}
-			else if (prefixLen >= 29 &&
-			    strncasecmp(prefixp, "&lt;strong&gt;", 14) == 0 &&
-			    strncasecmp(prefixp + (prefixLen-15), 
-				    "&lt;/strong&gt;", 15) == 0) {
-				prefixp += 14;
-				prefixLen -= 29;
-			}
-		}
-		if (currType == SUBCAT_RELATED) {
-			// print the full path
-			if (g_categories->isIndexRTL(currIndex))
-				sb->safePrintf("<span dir=ltr>");
-			g_categories->printPathFromIndex (
-							sb,
-							currIndex,
-							false,
-							isRTL);
-		}
-		else {
-			char *encodeEnd = htmlEncode ( encodedName,
-						       encodedName + 2047,
-						       prefixp,
-						       prefixp + prefixLen );
-			prefixp = encodedName;
-			prefixLen = encodeEnd - encodedName;
-			//if ( p + prefixLen + 512 > pend ) {
-			//	goto diroverflow;
-			//}
-			for (int32_t c = 0; c < prefixLen; c++) {
-				if (*prefixp == '_')
-					//*p = ' ';
-					sb->safePrintf(" ");
-				else
-					//*p = *prefixp;
-					sb->utf8Encode2(prefixp, 1);
-				//p++;
-				prefixp++;
-			}
-		}
-		//if ( p + 512 > pend ) {
-		//	goto diroverflow;
-		//}
-		// end the link
-		if (currType != SUBCAT_ALTLANG)
-			sb->safePrintf("</b>");
-		sb->safePrintf("</a>");
-		// print an @ for symbolic links
-		if ( (cat->m_type % 10) == 1)
-			sb->safePrintf("@");
-		// print number of urls under here
-		if ( cat->m_type != SUBCAT_LETTERBAR) { 
-			sb->safePrintf("&nbsp&nbsp<i>");
-			if (isRTL)
-				sb->safePrintf ( "<span dir=ltr>(%"INT32")"
-						"</span></i>",
-					g_categories->getNumUrlsFromIndex(
-						currIndex) );
-			else
-				sb->safePrintf ( "(%"INT32")</i>",
-					g_categories->getNumUrlsFromIndex(
-						currIndex) );
-		}
-		// next line/letter
-		if ( cat->m_type == SUBCAT_LETTERBAR) {
-			sb->safePrintf(" ");
-			continue;
-		}
-		// check for next column
-		currInColumn++;
-		if (currInColumn >= maxPerColumn) {
-			currInColumn = 0;
-			nextColumn = true;
-		}
-	}
-	//if ( p + 512 > pend ) {
-	//	goto diroverflow;
-	//}
-	// end the last type
-	if (!inXml) {
-		if (currType == SUBCAT_LETTERBAR)
-			sb->safePrintf(" ]</center>\n");
-		else
-			sb->safePrintf("</ul></td></tr></table>\n");
-	}
-dirEnd:
-	if (inXml)
-		sb->safePrintf("\t</directory>\n");
-	else {
-		sb->safePrintf("</span>");
-		sb->safePrintf("<hr>\n");//<br>\n");
-	}
-
-	return true;
-}
-
-bool printDMOZCrumb ( SafeBuf *sb , int32_t catId , bool xml ) {
-
-	// catid -1 means error
-	if ( catId <= 0 ) return true;
-
-	int32_t dirIndex = g_categories->getIndexFromId(catId);
-	//  dirIndex = g_categories->getIndexFromId(si->m_cat_sdir);
-	if (dirIndex < 0) dirIndex = 0;
-	//   display the directory bread crumb
-	//if( (si->m_cat_dirId > 0 && si->m_isMasterAdmin && !si->m_isFriend)
-	//     || (si->m_cat_sdir > 0 && si->m_cat_sdirt != 0) )
-	//	sb->safePrintf("<br><br>");
-	// int16_tcut. rtl=Right To Left language format.
-	bool rtl = g_categories->isIdRTL ( catId ) ;
-	//st->m_isRTL = rtl;
-	if ( ! xml ) {
-		sb->safePrintf("\n<font size=4><b>");
-		if ( rtl ) sb->safePrintf("<span dir=ltr>");
-		//sb->safePrintf("<a href=\"/Top\">Top</a>: ");
-	}
-	// put crumbin xml?
-	if ( xml ) 
-		sb->safePrintf("<breacdcrumb><![CDATA[");
-	// display the breadcrumb in xml or html?
-	g_categories->printPathCrumbFromIndex(sb,dirIndex,rtl);
-	
-	if ( xml )
-		sb->safePrintf("]]></breadcrumb>\n" );
-	
-	// how many urls/entries in this topic?
-	int32_t nu =g_categories->getNumUrlsFromIndex(dirIndex);
-
-	// print the num
-	if ( ! xml ) {
-		sb->safePrintf("</b>&nbsp&nbsp<i>");
-		if ( rtl )
-			sb->safePrintf("<span dir=ltr>(%"INT32")</span>",nu);
-		else
-			sb->safePrintf("(%"INT32")", nu);
-		sb->safePrintf("</i></font><br><br>\n");
-	}
-	return true;
-}
-
-bool printDmozRadioButtons ( SafeBuf *sb , int32_t catId ) ;
-
 bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr,
 			   bool printGigablast ) ;
 
 // if catId >= 1 then print the dmoz radio button
-bool printLogoAndSearchBox ( SafeBuf *sb , HttpRequest *hr , int32_t catId ,
-			     SearchInput *si ) {
-
+bool printLogoAndSearchBox ( SafeBuf *sb, HttpRequest *hr, SearchInput *si ) {
 	char *root = "";
+
 	if ( g_conf.m_isMattWells )
 		root = "http://www.gigablast.com";
 
 	// now make a TABLE, left PANE contains gigabits and stuff
-
-
-	/*
-	sb->safePrintf(
-		      // logo and menu table
-		      "<table border=0 cellspacing=5>"
-		      //"style=color:blue;>"
-		      "<tr>"
-
-		      // take out logo now that we have the circle rocket
-		      // "<td rowspan=2 valign=top>"
-		      // "<a href=/>"
-		      // "<img "
-		      // "border=0 "
-		      // "src=%s/logo-small.png "
-		      // "height=64 width=295>"
-		      // "</a>"
-		      // "</td>"
-		      
-		      "<td>"
-		      //, root
-		      );
-	*/
-
-
-	if ( catId >= 0 ) {
-		CollectionRec *cr = g_collectiondb.getRec ( hr );
-		printFrontPageShell ( sb , "directory",cr,true);//PAGE_DIRECTOR
-	}
-
-	/*
-	// menu above search box
-	sb->safePrintf(
-		      "<br>"
-		      
-		      " &nbsp; "
-		      );
-
-	if ( catId <= 0 )
-		sb->safePrintf("<b title=\"Search the web\">web</b>");
-	else
-		sb->safePrintf("<a title=\"Search the web\" href=/>web</a>");
-
-
-	sb->safePrintf(" &nbsp;&nbsp;&nbsp;&nbsp; "  );
-
-
-	if ( g_conf.m_isMattWells ) {
-		//  SEO functionality not included yet - so redir to gigablast.
-		if ( g_conf.m_isMattWells )
-			sb->safePrintf("<a title=\"Rank higher in "
-				      "Google\" href='/seo'>");
-		else
-			sb->safePrintf("<a title=\"Rank higher in "
-				      "Google\" href='https://www.gigablast."
-				      "com/seo'>");
-	
-		sb->safePrintf(
-			      "seo</a>"
-			      " &nbsp;&nbsp;&nbsp;&nbsp; "
-			      );
-	}
-
-
-	if (catId <= 0 )
-		sb->safePrintf("<a title=\"Browse the DMOZ directory\" "
-			      "href=/Top>"
-			      "directory"
-			      "</a>" );
-	else
-		sb->safePrintf("<b title=\"Browse the DMOZ directory\">"
-			      "directory</b>");
-	*/
 
 	char *coll = hr->getString("c");
 	if ( ! coll ) coll = "";
@@ -7855,29 +6277,11 @@ bool printLogoAndSearchBox ( SafeBuf *sb , HttpRequest *hr , int32_t catId ,
 	// they won't fit into the http request, the browser will reject
 	// sending such a large request with "GET"
 	char *method = "GET";
-	if ( si && si->m_sites && gbstrlen(si->m_sites)>800 ) method = "POST";
-
+	if ( si && si->m_sites && gbstrlen(si->m_sites)>800 ) {
+		method = "POST";
+	}
 
 	sb->safePrintf(
-
-		       //" &nbsp;&nbsp;&nbsp;&nbsp; "
-		      
-		      // i'm not sure why this was removed. perhaps
-		      // because it is not working yet because of
-		      // some bugs...
-		      // "<a title=\"Advanced web search\" "
-		      // "href=/adv.html>"
-		      // "advanced"
-		      // "</a>"
-		      
-		      // " &nbsp;&nbsp;&nbsp;&nbsp;"
-		      
-		      // "<a title=\"Add your url to the index\" "
-		      // "href=/addurl>"
-		      // "add url"
-		      // "</a>"
-		      
-		       //"<br><br>"
 		      //
 		      // search box
 		      //
@@ -7945,8 +6349,6 @@ bool printLogoAndSearchBox ( SafeBuf *sb , HttpRequest *hr , int32_t catId ,
 		sb->htmlEncode ( si->m_displayQuery );
 
 	sb->safePrintf ("\">"
-			//"<input type=submit value=\"Search\" border=0>"
-
 			"&nbsp; &nbsp;"
 
 			"<div onclick=document.f.submit(); "
@@ -7974,96 +6376,18 @@ bool printLogoAndSearchBox ( SafeBuf *sb , HttpRequest *hr , int32_t catId ,
 			"</div>"
 			);
 
-
-	// print "Search [ ] sites  [ ] pages in this topic or below"
-	if ( catId >= 0 ) {
-		sb->safePrintf("<br>");
-		printDmozRadioButtons(sb,catId);
-	}
-
 	sb->safePrintf(	"</div>"
 			"<br>"
 			"<br>"
 		       );
 
-	/*
-	else {
-		sb->safePrintf("Try your search on: "
-			      "&nbsp;&nbsp; "
-			      "<a href=https://www.google"
-			      ".com/search?q="
-			      );
-		sb->urlEncode ( qstr );
-		sb->safePrintf (">google</a> &nbsp;&nbsp;&nbsp;&nbsp; "
-			       "<a href=http://www.bing.com/sea"
-			       "rch?q=");
-		sb->urlEncode ( qstr );		
-		sb->safePrintf (">bing</a>");
-	}
-	*/
 
-	// do not print filter bar if showing a dmoz topic
-	if ( catId < 0 )
-		printSearchFiltersBar ( sb , hr );
+	printSearchFiltersBar ( sb , hr );
 	
 
-	sb->safePrintf( "</form>\n"
-		       // 	"</td>"
-		       // "</tr>"
-		       // "</table>\n"
-		       );
+	sb->safePrintf( "</form>\n" );
 	return true;
 }
-
-bool printDmozRadioButtons ( SafeBuf *sb , int32_t catId ) {
-	sb->safePrintf("Search "
-		      "<input type=radio name=prepend "
-		      "value=gbipcatid:%"INT32" checked> sites "
-		      "<input type=radio name=prepend "
-		      "value=gbpcatid:%"INT32"> pages "
-		      "in this topic or below"
-		      , catId
-		      , catId
-		      );
-	return true;
-}
-
-/*
-// print the search options under a dmoz search box
-bool printDirectorySearchType ( SafeBuf& sb, int32_t sdirt ) {
-	// default to entire directory
-	if (sdirt < 1 || sdirt > 4)
-		sdirt = 3;
-
-	// by default search the whole thing
-	sb->safePrintf("<input type=\"radio\" name=\"sdirt\" value=\"3\"");
-	if (sdirt == 3) sb->safePrintf(" checked>");
-	else            sb->safePrintf(">");
-	sb->safePrintf("Entire Directory<br>\n");
-	// entire category
-	sb->safePrintf("<input type=\"radio\" name=\"sdirt\" value=\"1\"");
-	if (sdirt == 1) sb->safePrintf(" checked>");
-	else            sb->safePrintf(">");
-	sb->safePrintf("Entire Category<br>\n");
-	// base category only
-	sb->safePrintf("<nobr><input type=\"radio\" name=\"sdirt\" value=\"2\"");
-	if (sdirt == 2) sb->safePrintf(" checked>");
-	else            sb->safePrintf(">"); 
-	sb->safePrintf("Pages in Base Category</nobr><br>\n");
-	// sites in base category
-	sb->safePrintf("<input type=\"radio\" name=\"sdirt\" value=\"7\"");
-	if (sdirt == 7) sb->safePrintf(" checked>");
-	else            sb->safePrintf(">");
-	sb->safePrintf("Sites in Base Category<br>\n");
-	// sites in entire category
-	sb->safePrintf("<input type=\"radio\" name=\"sdirt\" value=\"6\"");
-	if (sdirt == 6) sb->safePrintf(" checked>");
-	else            sb->safePrintf(">");
-	sb->safePrintf("Sites in Entire Category<br>\n");
-	// end it
-	return true;
-}
-*/
 
 // return 1 if a should be before b
 int csvPtrCmp ( const void *a, const void *b ) {
@@ -8571,74 +6895,6 @@ bool printJsonItemInCSV ( char *json , SafeBuf *sb , State0 *st ) {
 	return true;
 }
 
-bool printDmozEntry ( SafeBuf *sb ,
-		      int32_t catId ,
-		      bool direct ,
-		      char *dmozTitle ,
-		      char *dmozSummary ,
-		      char *dmozAnchor ,
-		      SearchInput *si ) {
-
-	// assign shit if we match the dmoz cat we are showing
-	//if ( catIds[i] ==  si->m_catId) break;
-	if ( si->m_format == FORMAT_XML ) {
-		sb->safePrintf("\t\t<dmozEntry>\n");
-		sb->safePrintf("\t\t\t<dmozCatId>%"INT32""
-			       "</dmozCatId>\n",catId);
-		sb->safePrintf("\t\t\t<directCatId>%"INT32"</directCatId>\n",
-			       (int32_t)direct);
-		// print the name of the dmoz category
-		sb->safePrintf("\t\t\t<dmozCatStr><![CDATA[");
-		char xbuf[256];
-		SafeBuf xb(xbuf,256,0,false);
-		g_categories->printPathFromId(&xb, 
-					      catId,
-					      false,
-					      si->m_isRTL); 
-		sb->cdataEncode(xb.getBufStart());
-		sb->safePrintf("]]></dmozCatStr>\n");
-		sb->safePrintf("\t\t\t<dmozTitle><![CDATA[");
-		sb->cdataEncode(dmozTitle);
-		sb->safePrintf("]]></dmozTitle>\n");
-		sb->safePrintf("\t\t\t<dmozSum><![CDATA[");
-		sb->cdataEncode(dmozSummary);
-		sb->safePrintf("]]></dmozSum>\n");
-		sb->safePrintf("\t\t\t<dmozAnchor><![CDATA[");
-		sb->cdataEncode(dmozAnchor);
-		sb->safePrintf("]]></dmozAnchor>\n");
-		sb->safePrintf("\t\t</dmozEntry>\n");
-		return true;
-	}
-	if ( si->m_format == FORMAT_JSON ) {
-		sb->safePrintf("\t\t\"dmozEntry\":{\n");
-		sb->safePrintf("\t\t\t\"dmozCatId\":%"INT32",\n",
-			       catId);
-		sb->safePrintf("\t\t\t\"directCatId\":%"INT32",\n",(int32_t)direct);
-		// print the name of the dmoz category
-		sb->safePrintf("\t\t\t\"dmozCatStr\":\"");
-		char xbuf[256];
-		SafeBuf xb(xbuf,256,0,false);
-		g_categories->printPathFromId(&xb, 
-					      catId,
-					      false,
-					      si->m_isRTL); 
-		sb->jsonEncode(xb.getBufStart());
-		sb->safePrintf("\",\n");
-		sb->safePrintf("\t\t\t\"dmozTitle\":\"");
-		sb->jsonEncode(dmozTitle);
-		sb->safePrintf("\",\n");
-		sb->safePrintf("\t\t\t\"dmozSum\":\"");
-		sb->jsonEncode(dmozSummary);
-		sb->safePrintf("\",\n");
-		sb->safePrintf("\t\t\t\"dmozAnchor\":\"");
-		sb->jsonEncode(dmozAnchor);
-		sb->safePrintf("\"\n");
-		sb->safePrintf("\t\t},\n");
-		return true;
-	}
-	return true;
-}
-
 class MenuItem {
 public:
 	int32_t  m_menuNum;
@@ -8973,30 +7229,6 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_menuNum  = 10;
 		s_mi[n].m_title    = "Show User View";
 		s_mi[n].m_cgi      = "admin=0";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		s_mi[n].m_menuNum  = 11;
-		s_mi[n].m_title    = "Action";
-		s_mi[n].m_cgi      = "";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		s_mi[n].m_menuNum  = 11;
-		s_mi[n].m_title    = "Respider all results";
-		s_mi[n].m_cgi      = "";//"/admin/reindex";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		s_mi[n].m_menuNum  = 11;
-		s_mi[n].m_title    = "Delete all results";
-		s_mi[n].m_cgi      = "";//"/admin/reindex";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		s_mi[n].m_menuNum  = 11;
-		s_mi[n].m_title    = "Scrape from google/bing";
-		s_mi[n].m_cgi      = "";//"/admin/inject";
 		s_mi[n].m_icon     = NULL;
 		n++;
 

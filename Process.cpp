@@ -5,40 +5,28 @@
 #include "Clusterdb.h"
 #include "Hostdb.h"
 #include "Tagdb.h"
-#include "Catdb.h"
 #include "Posdb.h"
 #include "Cachedb.h"
 #include "Monitordb.h"
 #include "Datedb.h"
 #include "Titledb.h"
-//#include "Revdb.h"
 #include "Sections.h"
 #include "Spider.h"
 #include "Statsdb.h"
-//#include "Tfndb.h"
 #include "Threads.h"
 #include "PingServer.h"
 #include "Dns.h"
 #include "Repair.h"
 #include "RdbCache.h"
 #include "Spider.h"
-//#include "Classifier.h"
-//#include "PageTopDocs.h"
 #include "HttpServer.h"
 #include "Speller.h"
-//#include "Thesaurus.h"
 #include "Spider.h"
 #include "Profiler.h"
-//#include "PageNetTest.h"
-#include "AutoBan.h"
-//#include "SiteBonus.h"
 #include "Msg4.h"
 #include "Msg5.h"
-//#include "Syncdb.h"
-//#include "Placedb.h"
 #include "Wiki.h"
 #include "Wiktionary.h"
-#include "Users.h"
 #include "Proxy.h"
 #include "Rebalance.h"
 #include "SpiderProxy.h"
@@ -281,38 +269,25 @@ bool Process::init ( ) {
 	// . primary rdbs
 	// . let's try to save tfndb first, that is the most important,
 	//   followed by titledb perhaps...
-	//m_rdbs[m_numRdbs++] = g_tfndb.getRdb       ();
 	m_rdbs[m_numRdbs++] = g_titledb.getRdb     ();
-	//m_rdbs[m_numRdbs++] = g_revdb.getRdb       ();
 	m_rdbs[m_numRdbs++] = g_sectiondb.getRdb   ();
 	m_rdbs[m_numRdbs++] = g_posdb.getRdb     ();
-	//m_rdbs[m_numRdbs++] = g_datedb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_spiderdb.getRdb    ();
 	m_rdbs[m_numRdbs++] = g_clusterdb.getRdb   (); 
 	m_rdbs[m_numRdbs++] = g_tagdb.getRdb      ();
-	m_rdbs[m_numRdbs++] = g_catdb.getRdb       ();
 	m_rdbs[m_numRdbs++] = g_statsdb.getRdb     ();
 	m_rdbs[m_numRdbs++] = g_linkdb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_cachedb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_serpdb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_monitordb.getRdb      ();
-	//m_rdbs[m_numRdbs++] = g_placedb.getRdb     ();
 	// save what urls we have been doled
 	m_rdbs[m_numRdbs++] = g_doledb.getRdb      ();
-	//m_rdbs[m_numRdbs++] = g_syncdb.getRdb      ();
-	// secondary rdbs (excludes catdb)
-	//m_rdbs[m_numRdbs++] = g_tfndb2.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_titledb2.getRdb    ();
-	//m_rdbs[m_numRdbs++] = g_revdb2.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_sectiondb2.getRdb  ();
 	m_rdbs[m_numRdbs++] = g_posdb2.getRdb    ();
-	//m_rdbs[m_numRdbs++] = g_datedb2.getRdb     ();
 	m_rdbs[m_numRdbs++] = g_spiderdb2.getRdb   ();
 	m_rdbs[m_numRdbs++] = g_clusterdb2.getRdb  ();
-	//m_rdbs[m_numRdbs++] = g_tagdb2.getRdb     ();
-	//m_rdbs[m_numRdbs++] = g_statsdb2.getRdb    ();
 	m_rdbs[m_numRdbs++] = g_linkdb2.getRdb     ();
-	//m_rdbs[m_numRdbs++] = g_placedb2.getRdb    ();
 	m_rdbs[m_numRdbs++] = g_tagdb2.getRdb      ();
 	/////////////////
 	// CAUTION!!!
@@ -396,8 +371,6 @@ bool Process::isAnyTreeSaving ( ) {
 }
 
 void powerMonitorWrapper ( int fd , void *state ) {
-	if ( g_isYippy ) return;
-
 	// only if in matt wells datacenter
 	if ( ! g_conf.m_isMattWells ) 
 		return;
@@ -1705,9 +1678,6 @@ bool Process::saveBlockingFiles1 ( ) {
 	// save our place during a rebalance
 	g_rebalance.saveRebalanceFile();
 
-	// save the login table
-	g_users.save();
-
 	// save stats on spider proxies if any
 	saveSpiderProxyStats();
 
@@ -1787,9 +1757,6 @@ bool Process::saveBlockingFiles2 ( ) {
 	// save current spidering process, "spiderrestore.dat"
 	//g_spiderLoop.saveCurrentSpidering();
 
-	// save autoban stuff
-	g_autoBan.save();
-
 	// if doing titlerec imports in PageInject.cpp, save cursors,
 	// i.e. file offsets
 	saveImportStates();
@@ -1806,7 +1773,6 @@ bool Process::saveBlockingFiles2 ( ) {
 void Process::resetAll ( ) {
 	g_log             .reset();
 	g_hostdb          .reset();
-	g_hostdb2         .reset();
 	g_spiderLoop      .reset();
 
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
@@ -1814,19 +1780,12 @@ void Process::resetAll ( ) {
 		rdb->reset();
 	}
 
-	g_catdb           .reset();
 	g_collectiondb    .reset();
-	g_categories1     .reset();
-	g_categories2     .reset();
-	//g_robotdb       .reset();
 	g_dns             .reset();
 	g_udpServer       .reset();
-	//g_dnsServer       .reset();
-	//g_udpServer2    .reset();
 	g_httpServer      .reset();
 	g_loop            .reset();
 	g_speller         .reset();
-	//g_thesaurus       .reset();
 	g_spiderCache     .reset();
 	g_threads         .reset();
 	g_ucUpperMap      .reset();
@@ -1834,8 +1793,6 @@ void Process::resetAll ( ) {
 	g_ucProps         .reset();
 	g_ucScripts       .reset();
 	g_profiler        .reset();
-	g_autoBan         .reset();
-	//g_qtable          .reset();
 
 	for ( int32_t i = 0; i < MAX_GENERIC_CACHES; i++ )
 		g_genericCache[i].reset();
@@ -1889,9 +1846,6 @@ void Process::resetAll ( ) {
 	// query log buffer
 	g_qbuf.reset();
 	g_profiler.reset();
-	g_testResultsTree.reset();
-	g_users.m_ht.reset();
-	g_users.m_loginTable.reset();
 	resetAddressTables();
 	resetMsg13Caches();
 	resetStopWordTables();

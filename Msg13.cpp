@@ -11932,6 +11932,8 @@ char *getRandUserAgent ( int32_t urlIp , int32_t proxyIp , int32_t proxyPort ) {
 	return s_agentList[n];
 }
 
+#include "Pages.h"
+
 bool printHammerQueueTable ( SafeBuf *sb ) {
 
 	char *title = "Queued Download Requests";

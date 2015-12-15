@@ -17,7 +17,6 @@ bool resumeImports ( ) ;
 void saveImportStates ( ) ;
 
 #include "XmlDoc.h"
-#include "Users.h"
 #include "Parms.h"
 
 
@@ -48,7 +47,6 @@ class InjectionRequest {
 	uint32_t  m_lastSpidered;
 
 	char *ptr_url;
-	char *ptr_queryToScrape;
 	char *ptr_contentDelim;
 	char *ptr_contentFile;
 	char *ptr_contentTypeStr;
@@ -57,7 +55,6 @@ class InjectionRequest {
 	char *ptr_metadata;
 
 	int32_t size_url;
-	int32_t size_queryToScrape;
 	int32_t size_contentDelim;
 	int32_t size_contentFile;
 	int32_t size_contentTypeStr;
@@ -98,7 +95,6 @@ public:
 	TcpSocket *m_socket;
 	SafeBuf    m_sb;
 	char m_round;
-	char m_useAhrefs;
 	HashTableX m_linkDedupTable;
 
 	// referenced by InjectionRequest::ptr_content
@@ -126,8 +122,6 @@ public:
 	class XmlDoc *m_stashxd;
 
 	void reset();
-
-	bool scrapeQuery ( );
 
 	void gotUdpReply ( class UdpSlot *slot ) ;
 

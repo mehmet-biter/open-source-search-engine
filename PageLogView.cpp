@@ -5,7 +5,6 @@
 #include "SafeBuf.h" 
 #include "Msg1f.h"
 #include "Parms.h"
-#include "Users.h"
 #define  MAX_LOG_WINDOW 8192
 
 static void gotRemoteLogWrapper(void *state, UdpSlot *slot);
@@ -48,10 +47,6 @@ bool sendPageLogView    ( TcpSocket *s , HttpRequest *r ) {
 	SafeBuf *p = &st->m_sb;
 	p->reserve2x(65535);
 	
- 	//int32_t  user     = g_pages.getUserType( s , r );
- 	//char *username = g_users.getUsername(r);
-	//char *pwd  = r->getString ("pwd");
- 	//char *coll = r->getString ("c");
 	int32_t refreshRate = r->getLong("rr", 0);
 	int32_t sampleSize  =  r->getLong("ss", 2048);
 	if(refreshRate > 0) 

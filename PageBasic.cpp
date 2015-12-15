@@ -13,54 +13,11 @@ bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
 // 5 seconds
 #define DEFAULT_WIDGET_RELOAD 1000
 
-//bool printSitePatternExamples ( SafeBuf *sb , HttpRequest *hr ) ;
-
 ///////////
 //
 // main > Basic > Settings
 //
 ///////////
-/*
-bool sendPageBasicSettings ( TcpSocket *socket , HttpRequest *hr ) {
-
-	char  buf [ 128000 ];
-	SafeBuf sb(buf,128000);
-
-	// true = usedefault coll?
-	CollectionRec *cr = g_collectiondb.getRec ( hr , true );
-	if ( ! cr ) {
-		g_httpServer.sendErrorReply(socket,500,"invalid collection");
-		return true;
-	}
-
-	// process any incoming request
-	handleSettingsRequest ( socket , hr );
-
-	// . print standard header 
-	// . this prints the <form tag as well
-	g_pages.printAdminTop ( &sb , socket , hr );
-
-
-	g_parms.printParms ( &sb , socket , hr );
-
-
-	printSitePatternExamples ( &sb , hr );
-
-	// wrap up the form, print a submit button
-	g_pages.printAdminBottom ( &sb );
-
-
-	return g_httpServer.sendDynamicPage ( socket,
-					      sb.getBufStart() ,
-					      sb.length()      , 
-					      -1               ,
-					      false,//POSTReply        ,
-					      NULL             , // contType
-					      -1               , // httpstatus
-					      NULL,//cookie           ,
-					      NULL             );// charset
-}
-*/
 
 class PatternData {
 public:

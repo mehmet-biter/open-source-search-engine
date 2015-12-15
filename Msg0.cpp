@@ -4,7 +4,6 @@
 #include "Clusterdb.h"
 #include "Stats.h"
 #include "Tagdb.h"
-#include "Catdb.h"
 #include "Posdb.h"
 #include "Titledb.h"
 #include "Spider.h"
@@ -616,7 +615,6 @@ skip:
 			      gotMulticastReplyWrapper0 ,
 			      timeout      , // timeout in seconds (was 30)
 			      niceness     ,
-			      realtime     ,
 			      firstHostId  ,
 //#ifdef SPLIT_INDEXDB
 //			      &replyBuf[i*replyBufMaxSize] ,

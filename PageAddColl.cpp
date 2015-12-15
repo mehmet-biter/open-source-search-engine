@@ -4,8 +4,6 @@
 #include "TcpSocket.h"
 #include "HttpRequest.h"
 #include "Collectiondb.h"
-//#include "CollectionRec.h"
-#include "Users.h"
 #include "Parms.h"
 
 bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) ;
@@ -159,27 +157,7 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 				"getElementById('acbox').focus();");
 
 
-	// gigabot error?
-	//if ( gmsg ) 
-	//	p.safePrintf("Gigabot says: %s<br><br>",gmsg);
-
-
-
-	//int32_t  page     = g_pages.getDynamicPageNumber ( r );
-	//char *coll     = r->getString    ( "c"    );
-	//char *pwd      = r->getString    ( "pwd" );
-	//char *username = g_users.getUsername( r );
-	//int32_t  user = g_pages.getUserType ( s , r );
-	//if ( ! coll )  coll = "";
-
-	//if ( ! nc   )    nc = "";
-	//if ( ! pwd  )   pwd = "";
-
 	if ( g_errno ) msg = mstrerror(g_errno);
-
-
-
-
 
 	if ( msg && ! guide ) {
 		char *cc = "deleting";

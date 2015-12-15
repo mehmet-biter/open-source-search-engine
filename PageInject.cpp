@@ -3,7 +3,6 @@
 #include "PageInject.h"
 #include "HttpServer.h"
 #include "Pages.h"
-#include "Users.h"
 #include "XmlDoc.h"
 #include "PageParser.h"
 #include "Repair.h"
@@ -98,9 +97,6 @@ void setInjectionRequestFromParms ( TcpSocket *sock ,
 
 	if ( ir->ptr_contentDelim && ! ir->ptr_contentDelim[0] )
 		ir->ptr_contentDelim = NULL;
-
-	if ( ir->ptr_queryToScrape && ! ir->ptr_queryToScrape[0] ) 
-		ir->ptr_queryToScrape = NULL;
 
 	if ( ir->ptr_url && ! ir->ptr_url[0] ) 
 		ir->ptr_url = NULL;
@@ -373,15 +369,6 @@ bool sendPageInject ( TcpSocket *sock , HttpRequest *hr ) {
 	InjectionRequest *ir = &msg7->m_injectionRequest;
 	setInjectionRequestFromParms (sock, &msg7->m_hr, cr, ir );
 
-	// a scrape request?
-	if ( ir->ptr_queryToScrape ) {
-		//char *uf="http://www.google.com/search?num=50&"
-		//	"q=%s&scoring=d&filter=0";
-		msg7->m_linkDedupTable.set(4,0,512,NULL,0,false,0,"ldtab");
-		if ( ! msg7->scrapeQuery ( ) ) return false;
-		return sendHttpReply ( msg7 );
-	}
-
 	// if no url do not inject
 	if ( ! ir->ptr_url )
 		return sendHttpReply ( msg7 );
@@ -598,17 +585,12 @@ bool sendHttpReply ( void *state ) {
 	g_pages.printAdminTop ( &sb, sock , &msg7->m_hr );
 
 	// print a response msg if rendering the page after a submission
-	if ( g_errno )
-		sb.safePrintf ( "<center>Error injecting url: <b>%s[%i]</b>"
-				"</center>", 
-				mstrerror(g_errno) , g_errno);
-	else if ( (ir->ptr_url && ir->ptr_url[0]) ||
-		  (ir->ptr_queryToScrape&&ir->ptr_queryToScrape[0]) )
-		sb.safePrintf ( "<center><b>Sucessfully injected %s"
-				"</center><br>"
-				, ir->ptr_url
-				//, xd->m_firstUrl.m_url
-				);
+	if ( g_errno ) {
+		sb.safePrintf ( "<center>Error injecting url: <b>%s[%i]</b></center>",
+		                mstrerror(g_errno) , g_errno);
+	} else if ( ir->ptr_url && ir->ptr_url[0] ) {
+		sb.safePrintf ( "<center><b>Sucessfully injected %s</center><br>", ir->ptr_url);
+	}
 
 
 	// print the table of injection parms
@@ -1011,196 +993,6 @@ void handleRequest7Import ( UdpSlot *slot , int32_t netnice ) {
 	//return true;
 	if ( g_errno ) g_udpServer.sendErrorReply(slot,g_errno);
 	else           g_udpServer.sendReply_ass(NULL,0,NULL,0,slot);
-}
-
-
-
-///////////////
-//
-// SCRAPE GOOGLE
-//
-// and inject the serps
-//
-///////////////
-
-
-void doneInjectingLinksWrapper ( void *state ) {
-	Msg7 *msg7 = (Msg7 *)state;
-	SafeBuf *sb = &msg7->m_sb;
-	// copy the serps into ou rbuf
-	if ( ! g_errno ) {
-		// print header
-		if ( sb->length() == 0 ) {
-			// print header of page
-			sb->safePrintf("<?xml version=\"1.0\" "
-				       "encoding=\"UTF-8\" ?>\n"
-				       "<response>\n" );
-		}
-		// serp header
-		if ( msg7->m_round == 1 )
-			sb->safePrintf("\t<googleResults>\n");
-		else
-			sb->safePrintf("\t<bingResults>\n");
-		// print results
-		sb->safeMemcpy(&msg7->m_xd->m_serpBuf);
-		// end that
-		if ( msg7->m_round == 1 )
-			sb->safePrintf("\t</googleResults>\n");
-		else
-			sb->safePrintf("\t</bingResults>\n");
-	}
-	// do bing now
-	if ( msg7->m_round == 1 ) {
-		// return if it blocks
-		if ( ! msg7->scrapeQuery() ) return;
-	}
-
-	// otherwise, parse out the search results so steve can display them
-	if ( g_errno )
-		sb->safePrintf("<error><![CDATA[%s]]></error>\n",
-			       mstrerror(g_errno));
-	// print header of page
-	sb->safePrintf("</response>\n");
-	// page is not more than 32k
-	//char buf[1024*32];
-	//char *p = buf;
-	// return docid and hostid
-	//p += sprintf ( p , "scraping status ");
-	// print error msg out, too or "Success"
-	//p += sprintf ( p , "%s", mstrerror(g_errno));
-	TcpSocket *sock = msg7->m_socket;
-	g_httpServer.sendDynamicPage ( sock, 
-				       sb->getBufStart(),
-				       sb->length(),
-				       -1/*cachetime*/);
-	// hopefully sb buffer is copied becaues this will free it:
-	mdelete ( msg7, sizeof(Msg7) , "PageInject" );
-	delete (msg7);
-}
-
-// . "uf" is printf url format to scrape with a %s for the query
-// . example: uf="http://www.google.com/search?num=50&q=%s&scoring=d&filter=0";
-bool Msg7::scrapeQuery ( ) {
-
-	// advance round now in case we return early
-	m_round++;
-
-	InjectionRequest *ir = &m_injectionRequest;
-
-	// error?
-	char *qts = ir->ptr_queryToScrape;
-	if ( ! qts ) { char *xx=NULL;*xx=0; }
-
-	if ( gbstrlen(qts) > 500 ) {
-		g_errno = EQUERYTOOBIG;
-		return true;
-	}
-
-	// first encode the query
-	SafeBuf ebuf;
-	ebuf.urlEncode ( qts ); // queryUNEncoded );
-	ebuf.nullTerm();
-
-	char *uf;
-	if ( m_round == 1 )
-		// set to 1 for debugging
-		uf="http://www.google.com/search?num=20&"
-			"q=%s&scoring=d&filter=0";
-		//uf = "https://startpage.com/do/search?q=%s";
-		//uf = "http://www.google.com/"
-		//	"/cse?cx=013269018370076798483%3A8eec3papwpi&"
-		//	"ie=UTF-8&q=%s&"
-		//	"num=20";
-	else
-		uf="http://www.bing.com/search?q=%s";
-
-	// skip bing for now
-	//if ( m_round == 2 )
-	//	return true;
-	//if ( m_round == 1 )
-	//	return true;
-		
-	// make the url we will download
-	char ubuf[2048];
-	sprintf ( ubuf , uf , ebuf.getBufStart() );
-
-	// log it
-	log("inject: SCRAPING %s",ubuf);
-
-	SpiderRequest sreq;
-	sreq.reset();
-	// set the SpiderRequest
-	strcpy(sreq.m_url, ubuf);
-	// . tell it to only add the hosts of each outlink for now!
-	// . that will be passed on to when XmlDoc calls Links::set() i guess
-	// . xd will not reschedule the scraped url into spiderdb either
-	sreq.m_isScraping = 1;
-	sreq.m_fakeFirstIp = 1;
-	int32_t firstIp = hash32n(ubuf);
-	if ( firstIp == 0 || firstIp == -1 ) firstIp = 1;
-	sreq.m_firstIp = firstIp;
-	// parent docid is 0
-	sreq.setKey(firstIp,0LL,false);
-
-	//char *coll2 = ir->m_coll;
-	CollectionRec *cr = g_collectiondb.getRec ( ir->m_collnum );//coll2 );
-
-	// need to make a new one now
-	XmlDoc *xd;
-	try { xd = new (XmlDoc); }
-	catch ( ... ) { 
-		g_errno = ENOMEM;
-		log("PageInject: scrape failed: new(%i): %s", 
-		    (int)sizeof(XmlDoc),mstrerror(g_errno));
-		return true;
-	}
-	mnew ( xd, sizeof(XmlDoc) , "PageInject" );
-
-	// save it
-	m_xd = xd;
-
-	// forceDEl = false, niceness = 0
-	m_xd->set4 ( &sreq , NULL , cr->m_coll , NULL , 0 ); 
-
-	//m_xd.m_isScraping = true;
-
-	// download without throttling
-	//m_xd.m_throttleDownload = false;
-
-	// disregard this
-	m_xd->m_useRobotsTxt = false;
-
-	// this will tell it to index ahrefs first before indexing
-	// the doc. but do NOT do this if we are from ahrefs.com
-	// ourselves to avoid recursive explosion!!
-	if ( m_useAhrefs )
-		m_xd->m_useAhrefs = true;
-
-	m_xd->m_reallyInjectLinks = true;//ir->m_injectLinks;
-
-	//
-	// rather than just add the links of the page to spiderdb,
-	// let's inject them!
-	//
-	m_xd->setCallback ( this , doneInjectingLinksWrapper );
-
-	// niceness is 0
-	m_linkDedupTable.set(4,0,512,NULL,0,false,0,"ldtab2");
-
-	// do we actually inject the links, or just scrape?
-	if ( ! m_xd->injectLinks ( &m_linkDedupTable ,
-				  NULL,
-				  this , 
-				  doneInjectingLinksWrapper ) ) 
-		return false;
-	// otherwise, just download the google/bing search results so we
-	// can display them in xml
-	//else if ( m_xd.getUtf8Content() == (char **)-1 )
-	//	return false;
-		
-	// print reply..
-	//printReply();
-	return true;
 }
 
 ///////////////////////////////////////

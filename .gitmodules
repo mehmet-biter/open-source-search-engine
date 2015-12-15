@@ -4,5 +4,5 @@
 	ignore = dirty
 [submodule "test/unit/googletest"]
 	path = test/unit/googletest
-	url = https://github.com/google/googletest
+	url = https://github.com/google/googletest.git
 	ignore = dirty

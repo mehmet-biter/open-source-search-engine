@@ -218,8 +218,6 @@ public:
 	int16_t      m_charset             ;
 	// for use by caller
 	class Msg20Reply *m_nextMerged   ;
-	//int32_t     m_numCatIds           ; // use size_catIds
-	//int32_t     m_numIndCatIds        ; // use size_indCatIds
 	int32_t       m_contentLen          ; // was m_docLen
 	int32_t       m_contentHash32       ;  // for deduping diffbot json objects streaming
 	//int32_t     m_docSummaryScore     ;
@@ -274,25 +272,14 @@ public:
 	char       *ptr_rubuf                ; // redirect url buffer
 	char       *ptr_displaySum           ; // summary for displaying
 	char       *ptr_dbuf                 ; // display metas \0 separated
-	//char     *ptr_sbuf                 ; // big sample buf for gigabits
 	char       *ptr_gigabitSample        ;
 	char       *ptr_mbuf                 ; // match offsets
 	char       *ptr_vbuf                 ; // summary vector
-	char       *ptr_imgUrl               ; // youtube/metacafe vid thumb
 	char       *ptr_imgData              ; // for encoded images
 	char       *ptr_facetBuf             ;
-	//char       *ptr_eventEnglishTime     ; // "every saturday [[]] jan"
-	//char       *ptr_eventDateIntervals   ;
 
 	int32_t       *ptr_catIds               ;
 	int32_t       *ptr_indCatIds            ;
-	//char     *ptr_dmozTitleLens        ;
-	char       *ptr_dmozTitles           ;
-	//char     *ptr_dmozSummLens         ;
-	char       *ptr_dmozSumms            ;
-	//char     *ptr_dmozAnchorLens       ;
-	char       *ptr_dmozAnchors          ;
-	//char     *ptr_tagRec               ;
 	char       *ptr_site                 ;
 	char       *ptr_gbAdIds              ;
 
@@ -324,31 +311,6 @@ public:
 	char       *ptr_templateVector       ;
 	char       *ptr_metadataBuf;
 
-	// . for eventIds include the title and text of the event, and the addr
-	//   serialized using Address::serialize(), and all the start dates
-	//   from now onward
-	// . contains serialized EventReply classes
-	// . usually just one, but if multiple events that had different
-	//   addresses from this same docid matched the query, then we will 
-	//   have multiple EventReply classes in this buf
-	//char       *ptr_eventSummaryLines    ;
-	//char       *ptr_eventAddr            ;
-	//char       *ptr_eventTagsFromContent ;
-	//char       *ptr_eventTagsFromTagdb   ;
-	//char       *ptr_eventBestPlaceName   ;
-
-	// . if Msg20Request::m_forTurk is true then the ptr_turkForm will
-	//   be a little input form that lists every line in the title and
-	//   description of the event along with controls that allow the turk
-	//   to turn descriptions on/off and pick different titles.
-	// . when they submit their changes then it should basically add
-	//   the turk tag hashes of each line to tagdb, but only if changed
-	//   by the turk.
-	// . i guess it should submit directly to tagdb...
-	// . then we should do a query reindex on all docs with that 
-	//   tagformathash
-	//char       *ptr_turkForm;
-
 	char       *ptr_note                 ; // reason why it cannot vote
 
 	// . add new size_* parms after size_tbuf and before
@@ -362,25 +324,14 @@ public:
 	int32_t       size_rubuf                ;
 	int32_t       size_displaySum           ;
 	int32_t       size_dbuf                 ;
-	//int32_t     size_sbuf                 ;
 	int32_t       size_gigabitSample        ; // includes \0
 	int32_t       size_mbuf                 ;
 	int32_t       size_vbuf                 ;
-	int32_t       size_imgUrl               ; // youtube/metacafe vid thumb
 	int32_t       size_imgData              ;
 	int32_t       size_facetBuf             ;
-	//int32_t       size_eventEnglishTime     ;
-	//int32_t       size_eventDateIntervals   ;
 
 	int32_t       size_catIds               ;
 	int32_t       size_indCatIds            ;
-	//int32_t     size_dmozTitleLens        ;
-	int32_t       size_dmozTitles           ;
-	//int32_t     size_dmozSummLens         ;
-	int32_t       size_dmozSumms            ;
-	//int32_t     size_dmozAnchorLens       ;
-	int32_t       size_dmozAnchors          ;
-	//int32_t     size_tagRec               ;
 	int32_t       size_site                 ;
 	int32_t       size_gbAdIds              ;
 
@@ -404,14 +355,6 @@ public:
 	int32_t       size_templateVector       ;
 	int32_t       size_metadataBuf          ;
 
-	//int32_t       size_eventSummaryLines    ;
-	//int32_t       size_eventAddr            ;
-	//int32_t       size_eventTagsFromContent ;
-	//int32_t       size_eventTagsFromTagdb   ;
-	//int32_t       size_eventBestPlaceName   ;
-
-	//int32_t       size_turkForm             ;
-
 	// CAUTION: do not add any parms below size_note!!!
 	int32_t       size_note                 ;
 
@@ -420,22 +363,9 @@ public:
 	//   depends on the size of that udp reply
 	char       m_buf[0];
 
-	int32_t      getNumCatIds    (){return size_catIds/4; };
-	int32_t      getNumIndCatIds (){return size_indCatIds/4; };
 	int32_t      getCatId        (int32_t i){return ((int32_t *)ptr_catIds)[i]; };
 	int32_t      getIndCatId     (int32_t i){return ((int32_t *)ptr_indCatIds)[i];};
 
-	//int32_t      getDmozTitleLen    (int32_t i){
-	//	return ((int32_t *)ptr_dmozTitleLens)[i];};
-	//int32_t      getDmozSummLen     (int32_t i){
-	//	return ((int32_t *)ptr_dmozSummLens)[i]; };
-	//int32_t      getDmozAnchorLen   (int32_t i){
-	//	return (int32_t)((uint8_t *)ptr_dmozAnchorLens)[i];};
-	//int32_t   *getCatIds       (){return (int32_t *)ptr_catIds; };
-	//int32_t   *getIndCatIds    (){return (int32_t *)ptr_indCatIds; };
-	//int32_t   *getTitleLens    (){return (int32_t *)ptr_dmozTitleLens;};
-	//int32_t   *getSummLens     (){return (int32_t *)ptr_dmozSummLens; };
-	//uint8_t*getAnchorLens   (){return(uint8_t *)ptr_dmozAnchorLens;};
 };
 
 class Msg20 {

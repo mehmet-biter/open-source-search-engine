@@ -3,12 +3,10 @@
 #include "Indexdb.h"     // makeKey(int64_t docId)
 #include "Datedb.h"
 #include "Titledb.h"
-//#include "Revdb.h"
 #include "Spider.h"
 #include "Tagdb.h"
 #include "Cachedb.h"
 #include "Monitordb.h"
-#include "Catdb.h"
 #include "Clusterdb.h"
 #include "Statsdb.h"
 #include "Linkdb.h"
@@ -17,16 +15,12 @@
 #include "UdpServer.h"
 #include "Msg40.h"       // g_resultsCache
 #include "Pages.h"
-//#include "Msg36.h" // g_qtable
 #include "Stats.h"
 #include <sys/time.h>      // getrlimit()
 #include <sys/resource.h>  // getrlimit()
-//#include "GBVersion.h"
-//#include "Msg10.h" // g_deadWaitCache
 #include "Proxy.h"
 #include "Placedb.h"
 #include "Sections.h"
-//#include "Msg0.h" // g_termlistCache
 #include "Msg13.h"
 #include "Msg3.h"
 
@@ -1840,22 +1834,13 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	// make the rdbs
 	Rdb *rdbs[] = {
 		g_posdb.getRdb(),
-		//g_datedb.getRdb(),
 		g_titledb.getRdb(),
-		//g_revdb.getRdb(),
 		g_spiderdb.getRdb(),
 		g_doledb.getRdb() ,
-		//g_tfndb.getRdb(),
 		g_tagdb.getRdb(),
 		g_clusterdb.getRdb(),
 		g_linkdb.getRdb(),
-		//g_cachedb.getRdb(),
-		//g_serpdb.getRdb(),
-		//g_monitordb.getRdb(),
 		g_statsdb.getRdb(),
-		g_catdb.getRdb()
-		//g_placedb.getRdb() ,
-		//g_sectiondb.getRdb()
 	};
 	int32_t nr = sizeof(rdbs) / sizeof(Rdb *);
 

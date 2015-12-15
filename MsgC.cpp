@@ -206,7 +206,6 @@ bool MsgC::getIp(char  *hostname    , int32_t   hostnameLen ,
 			    gotReplyWrapper ,
 			    timeout    , // timeout in secs
 			    niceness   , // niceness
-			    false      , // realtime udp
 			    firstHostId,// first host to try
 			    NULL       , // reply buf
 			    0          , // replybuf max size
@@ -217,8 +216,6 @@ bool MsgC::getIp(char  *hostname    , int32_t   hostnameLen ,
 			    0          , // rdbId
 			    -1         , // minRecSizes
 			    true       , // sendtoself
-			    true       , // retryforever
-			    NULL       , // hostdb
 			    -1         , // redirecttimeout
 			    firstHost  )){ // firstProxyHost
 		//did not block, error
