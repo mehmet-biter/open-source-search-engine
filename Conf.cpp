@@ -349,7 +349,7 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 void Conf::setRootIps ( ) {
 
 	// set m_numDns based on Conf::m_dnsIps[] array
-	int32_t i; for ( i = 0; i < 16 ; i++ ) {
+	int32_t i; for ( i = 0; i < MAX_DNSIPS ; i++ ) {
 		m_dnsPorts[i] = 53;
 		if ( ! g_conf.m_dnsIps[i] ) break;
 	}
