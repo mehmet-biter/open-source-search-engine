@@ -43,7 +43,7 @@ Log::Log () {
 	m_port = 777; 
 	m_needsPrinting = false; 
 	m_disabled = false;
-	m_logTimestamps = false;
+	m_logTimestamps = true;
 	m_logReadableTimestamps = true;
 }
 
@@ -368,9 +368,9 @@ bool Log::logR ( int64_t now , int32_t type , char *msg , bool asterisk ,
 			continue;
 		}
 		// convert \n's and \r's to spaces
-		if ( *ttp == '\n' ) *ttp = ' ';
-		if ( *ttp == '\r' ) *ttp = ' ';
-		if ( *ttp == '\t' ) *ttp = ' ';
+//		if ( *ttp == '\n' ) *ttp = ' ';
+//		if ( *ttp == '\r' ) *ttp = ' ';
+//		if ( *ttp == '\t' ) *ttp = ' ';
 	}
 
 	// . if filesize would be too big then make a new log file
@@ -751,8 +751,10 @@ bool log ( char *formatString , ... ) {
 	// print it into our buf now
 	vsnprintf ( buf , 1024*10 , formatString , ap );
 	va_end(ap);
+	
 	// pass buf to g_log
-	g_log.logR ( 0 , LOG_WARN , buf , false );
+	// ### BR 20151217: Default to DEBUG if no log level given
+	g_log.logR ( 0 , LOG_DEBUG , buf , false );
 	// always return false
 	return false;
 }
@@ -782,3 +784,118 @@ bool logf ( int32_t type , char *formatString , ...) {
 	return false;
 }
 
+
+
+void hexdump(void const *data, const unsigned int len, char *dest, const int dest_len)
+{
+    unsigned int i;
+    unsigned int r,c;
+    
+   
+    if (!data || len <= 0)
+    {
+		return;
+	}
+
+    int	dest_used = 0;
+    char *destptr = dest;
+
+    
+    char line[80]; // line length is actually 78 + null terminator
+    char *lptr;
+    
+    for (r=0,i=0; (r<(len/16+(len%16!=0))) && (dest_len - (dest_used+80)>= 0); r++,i+=16)
+    {
+    	lptr = line;
+       	lptr += sprintf(lptr, "\n%04X:   ",i); 
+	
+        for (c=i; c<i+8; c++) /* left half of hex dump */
+        {
+		    if (c<len)
+		    {
+	        	lptr += sprintf(lptr, "%02X ",((unsigned char const *)data)[c]);
+	        }
+		    else
+		    {
+				lptr += sprintf(lptr, "   "); /* pad if short line */
+			}
+		}
+
+		lptr += sprintf(lptr, "  ");
+	
+		
+		for (c=i+8; c<i+16; c++) /* right half of hex dump */
+		{
+		    if (c<len)
+		    {
+				lptr += sprintf(lptr, "%02X ",((unsigned char const *)data)[c]);
+			}
+		    else
+		    {
+				lptr += sprintf(lptr, "   "); /* pad if short line */
+			}
+		}
+		
+		lptr += sprintf(lptr, "   ");
+		
+		for (c=i; c<i+16; c++) /* ASCII dump */
+		{
+		    if (c<len)
+		    {
+				if (((unsigned char const *)data)[c]>=32 &&
+				    ((unsigned char const *)data)[c]<127)
+				{
+				    lptr += sprintf(lptr, "%c",((char const *)data)[c]);
+				}
+				else
+				{
+				    lptr += sprintf(lptr, "."); /* put this for non-printables */
+				}
+			}    
+		    else
+		    {
+				lptr += sprintf(lptr, " "); /* pad if short line */
+			}
+		}
+		
+		destptr += sprintf(destptr, "%s", line);
+		dest_used = destptr - dest;
+    }
+
+	destptr += sprintf(destptr, "\n");
+}
+
+
+bool loghex( int32_t type, void const *data, const unsigned int len, char *formatString , ...) {
+	
+	if ( g_log.m_disabled ) return false;
+		
+	// do not log it if we should not
+	// is it congestion?
+	if ( g_errno == ENOSLOTS && ! g_conf.m_logNetCongestion ) return false;
+		
+	// this is the argument list (variable list)
+	va_list   ap;
+	// can we log if we're a sig handler? don't take changes
+	// print msg into this buf
+	char buf[1024*10];
+	// copy the error into the buffer space
+	va_start ( ap, formatString);
+	// debug hack for testing
+	if ( g_inSigHandler ) 
+	{
+		// give up..
+		return false;
+	}
+	// print it into our buf now
+	vsnprintf ( buf , 1024*10 , formatString , ap );
+	va_end(ap);
+	
+	int written = strlen(buf);
+	hexdump(data, len, &buf[written], (1024*10)-written);
+	
+	// pass buf to g_log
+	g_log.logR ( 0 , type , buf , false);
+	// always return false
+	return false;
+}

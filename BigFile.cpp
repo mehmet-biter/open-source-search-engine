@@ -50,6 +50,15 @@ BigFile::BigFile () {
 	g_lastDiskReadStarted = 0;
 	g_lastDiskReadCompleted = 0;
 	g_diskIsStuck = false;
+
+	// init rest to avoid logging junk
+	m_isUnlink=false;	
+	m_part=-1;
+	m_partsRemaining=-1;
+	memset(m_tinyBuf, 0, sizeof(m_tinyBuf));
+	memset(m_littleBuf, 0, sizeof(m_littleBuf));
+	memset(m_tmpBaseBuf, 0, sizeof(m_tmpBaseBuf));
+	
 	//memset ( m_littleBuf , 0 , LITTLEBUFSIZE );
 	// avoid a malloc for small files.
 	// this way we can save in memory RdbMaps upon a core, even malloc/free
@@ -60,12 +69,57 @@ BigFile::BigFile () {
 	//m_fileBuf.setLength ( m_fileBuf.getCapacity() );
 }
 
+
+
+
+void BigFile::logAllData(int32_t log_type)
+{
+	log(log_type, "Dumping BigFile at %p", this);
+
+	struct tm *stm = localtime(&m_lastModified);
+	
+	log(log_type, "m_flags................: %"INT32"", m_flags);
+	log(log_type, "m_usePartFiles.........: [%s]", m_usePartFiles?"true":"false");
+	log(log_type, "m_maxParts.............: %"INT32"", m_maxParts);
+	log(log_type, "m_numParts.............: %d", m_numParts);
+	log(log_type, "m_vfd..................: %"INT32"", m_vfd);
+	log(log_type, "m_fileSize.............: %"INT64"", m_fileSize);
+	log(log_type, "m_lastModified.........: %04d%02d%02d-%02d%02d%02d", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec);
+	
+	log(log_type, "m_numThreads...........: %"INT32"", m_numThreads);
+	log(log_type, "m_isClosing............: [%s]", m_isClosing?"true":"false");
+	log(log_type, "m_isUnlink.............: [%s]", m_isUnlink?"true":"false");
+	log(log_type, "m_part.................: %"INT32"", m_part);
+	log(log_type, "m_partsRemaining.......: %"INT32"", m_partsRemaining);
+
+	loghex( log_type, m_tinyBuf, sizeof(m_tinyBuf), 		"m_tinyBuf..............: (hex dump)");
+	loghex( log_type, m_littleBuf, sizeof(m_littleBuf), 	"m_littleBuf............: (hex dump)");
+	loghex( log_type, m_tmpBaseBuf, sizeof(m_tmpBaseBuf),	"m_tmpBaseBuf...........: (hex dump)");
+	
+	// SafeBufs
+	loghex( log_type, m_dir.getBufStart(), m_dir.getBufUsed(),                  			"m_dir..................: (hex dump)");
+	loghex( log_type, m_baseFilename.getBufStart(), m_baseFilename.getBufUsed(),      		"m_baseFilename.........: (hex dump)");
+	loghex( log_type, m_newBaseFilename.getBufStart(), m_newBaseFilename.getBufUsed(),      "m_newBaseFilename......: (hex dump)");
+	loghex( log_type, m_newBaseFilenameDir.getBufStart(), m_newBaseFilenameDir.getBufUsed(),"m_newBaseFilenameDir...: (hex dump)");
+	
+	log(log_type, "g_lastDiskReadStarted..: %"INT64"", g_lastDiskReadStarted);
+	log(log_type, "g_lastDiskReadCompleted: %"INT64"", g_lastDiskReadCompleted);
+	log(log_type, "g_unlinkRenameThreads..: %"INT32"", g_unlinkRenameThreads);
+	log(log_type, "g_diskIsStuck..........: [%s]", g_diskIsStuck?"true":"false");
+}
+
+
+
 // we alternate parts into "dirname" and "stripeDir"
 // . return false and set g_errno on error
 bool BigFile::set ( char *dir , char *baseFilename , char *stripeDir ) {
+
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. dir [%s] baseFilename [%s] stripeDir [%s]", __FILE__,__FUNCTION__,dir, baseFilename, stripeDir);
+
 	// reset filsize
 	m_fileSize = -1;
 	m_lastModified = -1;
+	
 	// m_baseFilename contains the "dir" in it
 	//sprintf(m_baseFilename ,"%s/%s", dirname  , baseFilename );
 
@@ -80,8 +134,18 @@ bool BigFile::set ( char *dir , char *baseFilename , char *stripeDir ) {
 	// use this 32 byte char buf to avoid a malloc if possible
 	m_baseFilename.setBuf (m_tmpBaseBuf,32,0,false);
 
-	if ( ! m_dir.safeStrcpy          ( dir          ) ) return false;
-	if ( ! m_baseFilename.safeStrcpy ( baseFilename ) ) return false;
+	if ( ! m_dir.safeStrcpy          ( dir          ) ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. Return false, m_dir.safeStrcpy failed", __FILE__,__FUNCTION__);
+		return false;
+	}
+	
+	if ( ! m_baseFilename.safeStrcpy ( baseFilename ) ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. Return false, m_baseFilename.safeStrcpy failed", __FILE__,__FUNCTION__);
+		return false;
+	}
+
 
 	//strcpy ( m_baseFilename , baseFilename  );
 	//strcpy ( m_dir          , dir           );
@@ -93,11 +157,21 @@ bool BigFile::set ( char *dir , char *baseFilename , char *stripeDir ) {
 
 	m_filePtrsBuf.reset();
 
+
 	// now add parts from both directories
-	if ( ! addParts ( dir       ) ) return false;
+	if ( ! addParts ( dir       ) ) 
+	{
+		log(LOG_WARN,"%s:%s: END. addParts failed", __FILE__,__FUNCTION__);
+		return false;
+	}
+	
 	//if ( ! addParts ( m_stripeDir ) ) return false;
+	
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. Return true - OK", __FILE__,__FUNCTION__);
 	return true;
 }
+
+
 
 bool BigFile::reset ( ) {
 	// RdbMap calls BigFile (m_file)::reset() so we need to free
@@ -124,14 +198,25 @@ bool BigFile::reset ( ) {
 	
 
 bool BigFile::addParts ( char *dirname ) {
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. [%s]", __FILE__,__FUNCTION__, dirname);
+	
 	// if dirname is NULL return true
-	if ( ! dirname || ! dirname[0] ) return true;
+	if ( ! dirname || ! dirname[0] ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END - No dirname", __FILE__,__FUNCTION__);
+		return true;
+	}
+	
 	// . now set the names of all the Files that we consist of
 	// . get the directory entry and find out what parts we have
 	Dir dir;
 	dir.set ( dirname );
 	// set our directory class
-	if (!dir.open()) return log("disk: openDir (\"%s\") failed",dirname);
+	if (!dir.open()) 
+	{
+		return log(LOG_ERROR, "disk: openDir (\"%s\") failed",dirname);
+	}
+	
 	// match files with this pattern in the directory
 	char pattern[256];
 	sprintf(pattern,"%s*", m_baseFilename.getBufStart() );
@@ -140,24 +225,46 @@ bool BigFile::addParts ( char *dirname ) {
 	// . set our m_files array
 	// . addFile() will return false on problems
 	// . the lower the fileId the older the file (w/ exception of #0)
+	
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: Look for [%s]", __FILE__,__FUNCTION__, pattern);
+	
 	char *filename;
-	while ( ( filename = dir.getNextFilename ( pattern ) ) ) {
+	while ( ( filename = dir.getNextFilename ( pattern ) ) ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s:   Checking [%s]", __FILE__,__FUNCTION__, filename);
+		
 		// if filename len is exactly blen it's part 0
 		int32_t flen = gbstrlen(filename);
 		int32_t part = -1;
-		if ( flen == blen ) part = 0;
-		// some files have the same first X chars, like 
-		// indexdb.store-info-bak but are not part files
-		else if ( flen > blen && strncmp(filename+blen,".part",5)!=0) 
+		if ( flen == blen )
+		{
+			 part = 0;
+			// some files have the same first X chars, like 
+			// indexdb.store-info-bak but are not part files
+			if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s:   Default to part 0", __FILE__,__FUNCTION__);
+		}
+		else 
+		if ( flen > blen && strncmp(filename+blen,".part",5)!=0) 
+		{
+			if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s:   No good.", __FILE__,__FUNCTION__);
 			continue;
-		// otherwise must end in .part%i
-		else if (flen - blen < 6 ) {
-			log ("disk: Part extension too small for \"%s\". "
+			// otherwise must end in .part%i
+
+		}
+		else 
+		if (flen - blen < 6 ) 
+		{
+			log("disk: Part extension too small for \"%s\". "
 			     "Must end in .partN to be valid.",
 			     filename);
 			continue;
 		}
-		else part = atoi ( filename + blen + 5 );
+		else 
+		{
+			part = atoi ( filename + blen + 5 );
+			if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s:   Detected part %"INT32"", __FILE__,__FUNCTION__, part);
+		}
+		
 		// ensure not too big
 		// if ( part >= MAX_PART_FILES ) {
 		// 	log ("disk: Part number of %"INT32" is too big for "
@@ -166,18 +273,29 @@ bool BigFile::addParts ( char *dirname ) {
 		// 	continue;
 		// }
 		// make this part file
-		if ( ! addPart ( part ) ) return false;
+		if ( ! addPart ( part ) ) 
+		{
+			 log(LOG_ERROR,"%s:%s: END. addPart failed, returning false.", __FILE__,__FUNCTION__);
+			return false;
+		}
 	}
+	
 	// now set the names of all our files
 	//for ( int32_t n = 0 ; n < MAX_PART_FILES ; n++ ) 
 	//m_files[n].set ( makeFilename ( n, m_baseFilename ) );
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END - OK", __FILE__,__FUNCTION__);
 	return true;
 }
+
+
 
 // WE CAN'T REALLOC the safebuf because there might be a thread 
 // referencing the file ptr. so let's just keep the m_filePtrs[] array
 // and realloc on that.
-bool BigFile::addPart ( int32_t n ) {
+bool BigFile::addPart ( int32_t n ) 
+{
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN [%"INT32"]", __FILE__,__FUNCTION__, n);
+	
 	// if ( n >= MAX_PART_FILES ) 
 	// 	return log("disk: Part number %"INT32" > %"INT32".",
 	// 		   n,(int32_t)MAX_PART_FILES);
@@ -185,8 +303,12 @@ bool BigFile::addPart ( int32_t n ) {
 	// . n's come in NOT necessarily in order!!!
 	int32_t need = (n+1) * sizeof(File *);
 	// capacity must be length always for this
-	if ( m_filePtrsBuf.getCapacity() != m_filePtrsBuf.getLength() ) {
-		char *xx=NULL;*xx=0;}
+	if ( m_filePtrsBuf.getCapacity() != m_filePtrsBuf.getLength() ) 
+	{
+		log(LOG_ERROR, "%s:%s: Capacity/Length mismatch when adding part %"INT32"", __FILE__,__FUNCTION__, n);
+		logAllData(LOG_ERROR);
+		char *xx=NULL;*xx=0;
+	}
 
 	// init using tiny buf to save a malloc for small files
 	if ( m_filePtrsBuf.getCapacity() == 0 ) {
@@ -202,10 +324,14 @@ bool BigFile::addPart ( int32_t n ) {
 	// . true = clear new mem new new file ptrs are null because
 	//   there may be gaps or not exist because the BigFile was being
 	//   merged.
-	if ( delta > 0 && ! m_filePtrsBuf.reserve ( delta ,"bfbuf",true ) ) {
-		log("file: failed to reserve %i more mem for part",delta);
+	if ( delta > 0 && ! m_filePtrsBuf.reserve ( delta ,"bfbuf",true ) ) 
+	{
+		log(LOG_ERROR, "%s:%s: Failed to reserve %"INT32" more mem for part", __FILE__,__FUNCTION__, delta);
+		logAllData(LOG_ERROR);
 		return false;
 	}
+	
+	
 	// make length the capacity. so if buf is resized in call to
 	// SafeBuf::reserve() it will copy over all of the old buf to new buf
 	m_filePtrsBuf.setLength ( m_filePtrsBuf.getCapacity() );
@@ -222,23 +348,35 @@ bool BigFile::addPart ( int32_t n ) {
 
 	File *f = NULL;
 
-	if ( m_numParts == 0 ) {
+	if ( m_numParts == 0 ) 
+	{
 		f = (File *)m_littleBuf;
-		if ( LITTLEBUFSIZE < sizeof(File) ) {
-			log("file: littlebufsize too small.");
+		if ( LITTLEBUFSIZE < sizeof(File) ) 
+		{
+			log(LOG_ERROR, "%s:%s: LITTLEBUFSIZE too small", __FILE__,__FUNCTION__);
+			logAllData(LOG_ERROR);
 			char *xx=NULL;*xx=0; 
 		}
 		f->constructor();
 	}
-	else {
-		try { f = new (File); }
-		catch ( ... ) { 
+	else 
+	{
+		try 
+		{ 
+			f = new (File); 
+		}
+		catch ( ... ) 
+		{ 
 			g_errno = ENOMEM;
-			return log("BigFile: new(%i): %s",(int)sizeof(File), 
-				   mstrerror(g_errno)); 
+
+			//### BR 20151217: Fix. Previously returned the return code from log(...)
+			log(LOG_ERROR, "%s:%s: new failed. size: %i, err [%s]", __FILE__,__FUNCTION__, (int)sizeof(File), mstrerror(g_errno)); 
+			logAllData(LOG_ERROR);
+			return false;
 		}
 		mnew ( f , sizeof(File) , "BigFile" );
 	}
+	
 	char buf[1024];
 	// make the filename for this new File class
 	makeFilename_r ( m_baseFilename.getBufStart() , NULL, n , buf , 1024 );
@@ -248,7 +386,14 @@ bool BigFile::addPart ( int32_t n ) {
 	filePtrs [ n ] = f;
 	m_numParts++;
 	// set maxPart
-	if ( n+1 > m_maxParts ) m_maxParts = n+1;
+	if ( n+1 > m_maxParts ) 
+	{
+		m_maxParts = n+1;
+		
+		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG, "%s:%s: New m_maxParts: %"INT32"", __FILE__,__FUNCTION__, m_maxParts);
+	}
+	
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END - OK, returning true", __FILE__,__FUNCTION__);
 	return true;
 }
 
@@ -1263,6 +1408,8 @@ bool readwrite_r ( FileState *fstate , ThreadEntry *t ) {
 		errno = EBUFTOOSMALL;
 		return log( "disk: read buf is NULL. malloc failed?");
 	}
+	
+	
 	// how many total bytes to write?
 	int32_t       bytesToGo = fstate->m_bytesToGo; //- fstate->m_bytesDone;
 	// how many bytes we've written so far

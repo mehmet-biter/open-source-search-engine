@@ -79,7 +79,7 @@ public:
 	// when we started for graphing purposes (in milliseconds)
 	int64_t       m_startTime;
 	int64_t       m_doneTime;
-	char m_usePartFiles;
+	bool 			m_usePartFiles;
 	// this is used for calling DiskPageCache::addPages() when done 
 	// with the read/write
 	//class DiskPageCache *m_pc;
@@ -319,6 +319,8 @@ class BigFile {
 
 	bool addPart ( int32_t n ) ;
 
+	void logAllData(int32_t log_type);
+
 	//bool unlinkPart ( int32_t n , bool block );
 
 	File *getFile2 ( int32_t n ) { 
@@ -362,9 +364,9 @@ class BigFile {
 	//bool             m_vfdAllowed;
 
 	// prevent circular calls to BigFile::close() with this
-	char m_isClosing;
+	bool m_isClosing;
 
-	char m_usePartFiles;
+	bool m_usePartFiles;
 
 	int64_t m_fileSize;
 

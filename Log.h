@@ -95,6 +95,8 @@ bool log ( char *formatString , ... )
 	__attribute__ ((format(printf, 1, 2)));
 bool logf ( int32_t type , char *formatString , ... )
 	__attribute__ ((format(printf, 2, 3)));
+bool loghex( int32_t type, void const *data, const unsigned int len, char *formatString , ...)
+	__attribute__ ((format(printf, 4, 5)));
 #else
 // may also syslog and fprintf the msg.
 // ALWAYS returns FALSE (i.e. 0)!!!! so you can say return log.log(...)
@@ -103,7 +105,10 @@ bool log ( int32_t type , char *formatString , ... ) ;
 bool log ( char *formatString , ... ) ;
 // force it to be logged, even if off on log controls panel
 bool logf ( int32_t type , char *formatString , ... ) ;
+bool loghex( int32_t type, void const *data, const unsigned int len, char *formatString , ...);
 #endif
+
+
 
 class Log { 
 
