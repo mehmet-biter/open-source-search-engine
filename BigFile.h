@@ -333,10 +333,6 @@ class BigFile {
 	// if part file not created, will create it
 	//File *getPartFile2 ( int32_t n ) { return getFile2(n); }
 
-	// . put a signal on the queue to do reading/writing
-	// . we call readwrite ( FileState *) when we handle the signal
-	void addSig ( FileState *fstate ) ;
-
 	bool reset ( );
 
 	// for basefilename to avoid an alloc
