@@ -166,8 +166,11 @@ const char *getTypeString ( int32_t type ) {
 #define MAX_LINE_LEN 20048
 
 bool Log::shouldLog ( int32_t type , char *msg ) {
-	// always log warnings
-	if ( type == LOG_WARN ) return true;
+	// always log errors/warnings
+	if ( (type == LOG_WARN) || (type == LOG_ERROR) ) {
+		return true;
+	}
+
 	if ( type == LOG_INFO ) return g_conf.m_logInfo;
 	// treat INIT as INFO
 	//if ( type == LOG_INIT   && ! g_conf.m_logInfo      ) return true;
