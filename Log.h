@@ -16,8 +16,13 @@
 // the merging and dumping of data for the "db" component, or what urls are 
 // being spidered for the "build" component.
 #define LOG_INFO     0x0001
+
 // the default log message type. also logs slow performance.
 #define LOG_WARN     0x0004
+
+// the default log message type. also logs slow performance.
+#define LOG_ERROR    0x0008
+
 // programmer error. sanity check. always on.
 #define LOG_LOGIC    0x0010  
 

@@ -2,6 +2,7 @@
 
 #include "Mem.h"
 #include <sys/types.h>  // pid_t/getpid()
+#include <sys/syscall.h>
 #include "Loop.h"
 #include "Conf.h"
 #include "Process.h"
@@ -142,23 +143,26 @@ bool Log::init ( char *filename ) {
 		m_filename);
 	return false;
 }
-/*
+
+
 static const char *getTypeString ( int32_t type ) ;
 
 const char *getTypeString ( int32_t type ) {
 	switch ( type ) {
-	case LOG_INFO  : return "INFO ";
-	case LOG_WARN  : return "WARN ";
-	case LOG_LOGIC : return "LOGIC";
-	case LOG_REMIND: return "REMND";
-	case LOG_DEBUG : return "DEBUG";
-	case LOG_TIMING: return "TIME ";
-	case LOG_INIT  : return "INIT ";
-	case LOG_LIMIT : return "LIMIT";
-	default: return "     ";
+	case LOG_INFO  : return "INF";
+	case LOG_WARN  : return "WRN";
+	case LOG_ERROR : return "ERR";
+	case LOG_LOGIC : return "LOG";
+	case LOG_REMIND: return "REM";
+	case LOG_DEBUG : return "DBG";
+	case LOG_TIMING: return "TIM";
+	case LOG_INIT  : return "INI";
+	case LOG_LIMIT : return "LIM";
+	default: return "UNK";
 	}
 }
-*/
+
+
 #define MAX_LINE_LEN 20048
 
 bool Log::shouldLog ( int32_t type , char *msg ) {
@@ -278,64 +282,48 @@ bool Log::logR ( int64_t now , int32_t type , char *msg , bool asterisk ,
 	// a tmp buffer
 	char tt [ MAX_LINE_LEN ];
 	char *p    = tt;
-	//char *pend = tt + MAX_LINE_LEN;
-	/*
-	// print timestamp, hostid, type
-	if ( g_hostdb.m_numHosts <= 999 ) 
-		sprintf ( p , "%"UINT64" %03"INT32" %s ",
-			  now , g_hostdb.m_hostId , getTypeString(type) );
-	else if ( g_hostdb.m_numHosts <= 9999 ) 
-		sprintf ( p , "%"UINT64" %04"INT32" %s ",
-			  now , g_hostdb.m_hostId , getTypeString(type) );
-	else if ( g_hostdb.m_numHosts <= 99999 ) 
-		sprintf ( p , "%"UINT64" %05"INT32" %s ",
-			  now , g_hostdb.m_hostId , getTypeString(type) );
-	*/
 
 
-	// print timestamp, hostid, type
+	if ( m_logTimestamps ) 
+	{
+        if( m_logReadableTimestamps )
+        {
+            time_t now_t = (time_t)(now / 1000);
+            struct tm *stm = localtime(&now_t);
 
-	if ( m_logTimestamps ) {
-                if( m_logReadableTimestamps )
-                {
-                        time_t now_t = (time_t)(now / 1000);
-                        struct tm *stm = localtime(&now_t);
-
-                        sprintf ( p , "%04d%02d%02d-%02d%02d%02d-%03d %04"INT32" ", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(now%1000), g_hostdb.m_hostId );
-                }
-                else
-                {
-                if ( g_hostdb.m_numHosts <= 999 )
-                        sprintf ( p , "%"UINT64" %03"INT32" ",
-                                  now , g_hostdb.m_hostId );
-                else if ( g_hostdb.m_numHosts <= 9999 )
-                        sprintf ( p , "%"UINT64" %04"INT32" ",
-                                  now , g_hostdb.m_hostId );
-                else if ( g_hostdb.m_numHosts <= 99999 )
-                        sprintf ( p , "%"UINT64" %05"INT32" ",
-                                  now , g_hostdb.m_hostId );
-                }
-
-		p += gbstrlen ( p );
+            p += sprintf ( p , "%04d%02d%02d-%02d%02d%02d-%03d %04"INT32" ", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(now%1000), g_hostdb.m_hostId );
+        }
+        else
+        {
+            if ( g_hostdb.m_numHosts <= 999 )
+                    p += sprintf ( p , "%"UINT64" %03"INT32" ",
+                              now , g_hostdb.m_hostId );
+            else if ( g_hostdb.m_numHosts <= 9999 )
+                    p += sprintf ( p , "%"UINT64" %04"INT32" ",
+                              now , g_hostdb.m_hostId );
+            else if ( g_hostdb.m_numHosts <= 99999 )
+                    p += sprintf ( p , "%"UINT64" %05"INT32" ",
+                              now , g_hostdb.m_hostId );
+        }
 	}
 
-	// msg resource
-	char *x = msg;
-	//int32_t cc = 7;
-	// the first 7 bytes or up to the : must be ascii
-	//while ( p < pend && *x && is_alnum_a(*x) ) { *p++ = *x++; cc--; }
-	// space pad
-	//while ( cc-- > 0 ) *p++ = ' ';
-	// ignore the label for now...
-	// MDW... no i like it
-	//while ( p < pend && *x && is_alnum_a(*x) ) { x++; cc--; }
-	// thread id if in "thread"
+
+	// Get thread id. pthread_self instead?
+	long tid=syscall(SYS_gettid);
+	p += sprintf(p, "%06ld ", tid);
+
+	// Log level
+	p += sprintf(p, "%s ", getTypeString(type));
+	
+
 	if ( pid != s_pid && s_pid != (pthread_t)-1 ) {
 		//sprintf ( p , "[%"INT32"] " , (int32_t)getpid() );
 		sprintf ( p , "[%"UINT64"] " , (uint64_t)pid );
 		p += gbstrlen ( p );
 	}
+
 	// then message itself
+	char *x = msg;
 	int32_t avail = (MAX_LINE_LEN) - (p - tt) - 1;
 	if ( msgLen > avail ) msgLen = avail;
 	if ( *x == ':' ) x++;
