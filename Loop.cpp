@@ -12,6 +12,7 @@
 #include "Stats.h"
 
 #include <execinfo.h>
+#include <sys/auxv.h>
 
 // raised from 5000 to 10000 because we have more UdpSlots now and Multicast
 // will call g_loop.registerSleepCallback() if it fails to get a UdpSlot to
@@ -948,28 +949,34 @@ void sigpwrHandler ( int x , siginfo_t *info , void *y ) {
 	g_loop.m_shutdown = 3;
 }
 
-void printStackTrace () {
-	logf(LOG_DEBUG,"gb: Printing stack trace. use 'addr2line -e gb' to decode the hex below.");
+void printStackTrace (bool print_location) {
+	logf(LOG_ERROR, "gb: Printing stack trace");
 
 	if ( g_inMemFunction ) {
-		logf(LOG_DEBUG,"gb: in mem function not doing backtrace");
+		logf(LOG_ERROR, "gb: in mem function not doing backtrace");
 		return;
 	}
 
 	static void *s_bt[200];
 	size_t sz = backtrace(s_bt, 200);
 
+	// find ourself
+	const char* process = (const char*)getauxval(AT_EXECFN);
+
 	for( size_t i = 0; i < sz; ++i ) {
 		char cmd[256];
-		sprintf(cmd,"addr2line -e gb 0x%"XINT64"", (uint64_t)s_bt[i]);
+		sprintf(cmd,"addr2line -e %s 0x%"XINT64"", process, (uint64_t)s_bt[i]);
 		logf(LOG_ERROR, "%s", cmd);
 
-		FILE *output = gbpopen(cmd);
-		if ( output ) {
-			while ( ! feof(output) ) {
-				char buf[256];
-				if ( fgets(buf, 256, output) ) {
-					logf(LOG_ERROR, "%s", buf);
+		if (print_location) {
+			FILE *output = gbpopen(cmd);
+			if ( output ) {
+				while ( ! feof(output) ) {
+					char buf[256];
+					if ( fgets(buf, 256, output) ) {
+						buf[strlen(buf) - 1] = '\0';
+						logf(LOG_ERROR, "%s", buf);
+					}
 				}
 			}
 		}

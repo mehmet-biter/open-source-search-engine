@@ -25,7 +25,7 @@ FILE* gbpopen(char* cmd);
 /**
  * Print stack trace
  */
-void printStackTrace ();
+void printStackTrace (bool print_location = false);
 
 #define sleep(a) { char *xx=NULL;*xx=0; }
 //#define sleep(a) logf(LOG_INFO,"sleep: sleep"); 
