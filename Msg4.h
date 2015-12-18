@@ -22,28 +22,6 @@ bool isInMsg4LinkedList ( class Msg4 *msg4 ) ;
 class Msg4 {
 
  public:
-	/*
-	bool addList ( RdbList *list                   ,
-		       char     rdbId                  ,
-		       char    *coll                   ,
-		       void    *state                  ,
-		       void  (* callback)(void *state) ,
-		       int32_t     niceness               ,
-		       bool     forceLocal = false     ,
-		       bool     splitList  = true      );
-
-	bool addList ( RdbList   *list                   ,
-		       char       rdbId                  ,
-		       collnum_t  collnum                ,
-		       void      *state                  ,
-		       void    (* callback)(void *state) ,
-		       int32_t       niceness               ,
-		       bool       forceLocal = false     ,
-		       bool       splitList  = true      );
-
-	bool storeList ( RdbList *list , char rdbId , collnum_t collnum ) ;
-	*/
-
 	// meta list format =
 	// (rdbId | 0x08) then rdb record [if nosplit]
 	// (rdbId | 0x00) then rdb record [if split  ]

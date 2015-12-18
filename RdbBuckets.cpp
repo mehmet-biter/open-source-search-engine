@@ -1983,22 +1983,6 @@ bool RdbBuckets::fastSave ( char    *dir       ,
 	// no adding to the tree now
 	m_isSaving = true;
 
-	/*
-// skip thread call if we should
-	if ( ! useThread ) goto skip;
-	// make this a thread now
-	if ( g_threads.call ( SAVETREE_THREAD   , // threadType
-			      1                 , // niceness
-			      this              , 
-			      threadDoneBucketsWrapper ,
-			      saveBucketsWrapper) ) return false;
-	// if it failed
-	if ( ! g_threads.m_disabled ) 
-		log("db: Thread creation failed. Blocking while "
-		    "saving buckets. Hurts performance.");
- skip:
-	*/
-
 	// . this returns false and sets g_errno on error
 	// . must now lock for each bucket when saving that bucket, but
 	//   release lock to breathe between buckets

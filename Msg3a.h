@@ -8,12 +8,7 @@
 // 90MB for 32 nodes we got now with about 1.3B docs
 #define DEFAULT_POSDB_READSIZE 90000000
 
-void setTermFreqWeights ( collnum_t collnum, // char *coll,
-			  class Query *q );
-			  //int64_t *termFreqs, 
-			  //float *termFreqWeights ) ;
-
-//#define MSG3A_TMP_BUFSIZE (MAX_RESULTS*18)
+void setTermFreqWeights ( collnum_t collnum, class Query *q );
 
 // ALWAYS get at least 20 docids so we can do better ranking
 #define MIN_DOCS_TO_GET 20
@@ -122,11 +117,6 @@ public:
 	// this is now in here so Msg40 can send out one Msg3a per
 	// collection if it wants to search an entire token
 	Msg39Request m_rrr;
-
-	// use msg37 to get TermFreqs
-	//Msg37      m_msg37;
-	//int64_t  m_termFreqs      [MAX_QUERY_TERMS];
-	//float      m_termFreqWeights[MAX_QUERY_TERMS];
 
 	// a multicast class to send the request, one for each split
 	Multicast  m_mcast[MAX_SHARDS];

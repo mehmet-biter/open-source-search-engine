@@ -712,23 +712,6 @@ rscore_t PostQueryRerank::rerankLanguageAndCountry ( rscore_t score,
 						 uint8_t summaryLang,
 						 uint16_t country ,
 						     Msg20 *msg20 ) { 
-	//log( LOG_DEBUG, "query:in PQR::rerankLanguageAndCountry("
-	//     "score:%"INT32", lang:%"INT32", summLang:%"INT32", country:%"INT32")"
-	//     "[langSortingIsOn:%"INT32"; langUnkWeight:%3.3f; langWeight:%3.3f; "
-	//     "&qlang=%"INT32"; &lang=%"INT32"; "
-	//     "&qcountry=%"INT32"; &gbcountry=%"INT32"; "
-	//     "queryLangs:%lld; pageLangs:%lld] AWL",
-	//     score, (int32_t)lang, (int32_t)summaryLang, (int32_t)country,
-	//     (int32_t)m_si->m_enableLanguageSorting,
-	//     m_si->m_languageUnknownWeight,
-	//     m_si->m_languageWeightFactor,
-	//     (int32_t)m_si->m_langHint,
-	//     (int32_t)m_si->m_language,
-	//     (int32_t)m_si->m_countryHint,
-	//     (int32_t)m_si->m_country,
-	//     g_countryCode.getLanguagesWritten( m_si->m_countryHint ),
-	//     g_countryCode.getLanguagesWritten( country ) );
-	
 	// if lsort is off, skip
 	if ( ! m_si->m_enableLanguageSorting ) return score;
 
