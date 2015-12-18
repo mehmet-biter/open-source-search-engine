@@ -222,38 +222,6 @@ bool Msg3::readList  ( char           rdbId         ,
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) return true;
 
-	// if caller specified exactly
-	/*
-	m_syncPoint = syncPoint;
-	if ( syncPoint != -1 && syncPoint != 0 ) {
-		// . store them all
-		// . what if we merged one of these files (or are merging)???
-		// . then sync class should not discard syncpoints until no
-		//   longer syncing and we'll know about it
-		// . this should compensate for merges by including any files
-		//   that are merging a file in m_fileNums
-		m_numFileNums = g_sync.getFileNums ( m_rdbId       ,
-						     m_coll        ,
-						     m_syncPoint   ,
-						     m_fileNums    , 
-						     MAX_RDB_FILES );
-		log("NOOOOOO. we do not alloc if we go to skip!!");
-		char *xx = NULL; *xx = 0;
-		// bring back the comment below... i removed it because i added
-		// "int32_t chunk" et al below and didn't want to move them.
-		//if ( m_numFileNums > 0 ) goto skip;
-		log("net: Trying to read data in %s from files generated after"
-		    " a sync point %"UINT64" in \"sync\" file, but none found.",
-		    base->m_dbname,m_syncPoint);
-		return true;
-	}
-	// should we read all?
-	if ( m_syncPoint == 0 ) {
-		numFiles     = -1;
-		startFileNum =  0;
-	}
-	*/
-
 	// store the file numbers in the array, these are the files we read
 	m_numFileNums = 0;
 

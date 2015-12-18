@@ -238,7 +238,6 @@ void Collectiondb::updateTime() {
 
 #include "Statsdb.h"
 #include "Cachedb.h"
-#include "Syncdb.h"
 
 // same as addOldColl()
 bool Collectiondb::addExistingColl ( char *coll, collnum_t collnum ) {
@@ -811,69 +810,6 @@ bool Collectiondb::addRdbBasesForCollRec ( CollectionRec *cr ) {
 	log("db: error registering coll: %s",mstrerror(g_errno));
 	return false;
 }
-
-
-
-/*
-// delete all records checked in the list
-bool Collectiondb::deleteRecs ( HttpRequest *r ) {
-	for ( int32_t i = 0 ; i < r->getNumFields() ; i++ ) {
-		char *f = r->getField ( i );
-		if ( strncmp ( f , "del" , 3 ) != 0 ) continue;
-		char *coll = f + 3;
-		//if ( ! is_digit ( f[3] )            ) continue;
-		//int32_t h = atol ( f + 3 );
-		deleteRec ( coll , NULL );
-	}
-	return true;
-}
-*/
-
-/*
-// . delete a collection
-// . this uses blocking unlinks, may make non-blocking later
-// . returns false if blocked, true otherwise
-bool Collectiondb::deleteRec ( char *coll , WaitEntry *we ) {
-	// force on for now
-	//deleteTurkdb = true;
-	// no spiders can be out. they may be referencing the CollectionRec
-	// in XmlDoc.cpp... quite likely.
-	//if ( g_conf.m_spideringEnabled ||
-	//     g_spiderLoop.m_numSpidersOut > 0 ) {
-	//	log("admin: Can not delete collection while "
-	//	    "spiders are enabled or active.");
-	//	return false;
-	//}
-	// ensure it's not NULL
-	if ( ! coll ) {
-		log(LOG_LOGIC,"admin: Collection name to delete is NULL.");
-		g_errno = ENOTFOUND;
-		return true;
-	}
-	// find the rec for this collection
-	collnum_t collnum = getCollnum ( coll );
-	return deleteRec2 ( collnum , we );
-}
-*/
-
-// if there is an outstanding disk read thread or merge thread then
-// Spider.cpp will handle the delete in the callback.
-// this is now tryToDeleteSpiderColl in Spider.cpp
-/*
-void Collectiondb::deleteSpiderColl ( SpiderColl *sc ) {
-
-	sc->m_deleteMyself = true;
-
-	// if not currently being accessed nuke it now
-	if ( ! sc->m_msg5.m_waitingForList &&
-	     ! sc->m_msg5b.m_waitingForList &&
-	     ! sc->m_msg1.m_mcast.m_inUse ) {
-		mdelete ( sc, sizeof(SpiderColl),"nukecr2");
-		delete ( sc );
-		return;
-	}
-}
-*/
 
 /// this deletes the collection, not just part of a reset.
 bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {

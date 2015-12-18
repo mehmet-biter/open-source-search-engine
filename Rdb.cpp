@@ -14,7 +14,6 @@
 #include "Repair.h"
 #include "Process.h"
 #include "Statsdb.h"
-#include "Syncdb.h"
 #include "Sections.h"
 #include "Placedb.h"
 #include "Spider.h"
@@ -315,8 +314,6 @@ bool Rdb::init ( char          *dir                  ,
 	//	return g_accessdb.addColl ( NULL );
 	//else if ( g_facebookdb.getRdb() == this ) 
 	//	return g_facebookdb.addColl ( NULL );
-	//if ( g_syncdb.getRdb() == this ) 
-	//	return g_syncdb.addColl ( NULL );
 
 	// set this for use below
 	//*(int64_t *)m_gbcounteventsTermId =
@@ -1156,8 +1153,6 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	if ( g_conf.m_isWikipedia && m_rdbId == RDB_INDEXDB )
 		return true;
 
-
-
 	// never dump doledb any more. it's rdbtree only.
 	if ( m_rdbId == RDB_DOLEDB )
 		return true;
@@ -1183,31 +1178,6 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	// if it has been less than 3 seconds since our last failed attempt
 	// do not try again to avoid flooding our log
 	if ( getTime() - s_lastTryTime < 3 ) return true;
-	// or bail if we are trying to dump titledb while titledb is being
-	// merged because we do not want merge to overwrite tfndb recs written
-	// by dump using RdbDump::updateTfndbLoop()
-	//if ( m_rdbId == RDB_TITLEDB && g_merge.isMerging() && 
-	//     g_merge.m_rdbId == RDB_TITLEDB ) {
-	//	s_lastTryTime = getTime();
-	//	log(LOG_INFO,"db: Can not dump titledb while titledb is "
-	//	    "being merged.");
-	//	return true;
-	//}
-
-	// or if in repair mode, (not full repair mode) do not mess with any 
-	// files in any coll unless they are secondary rdbs...
-	// this might affect us even though we have spidering paused to
-	// rebuild one specific collection. the other collection spiders
-	// are still going on...
-	/*
-	if ( g_repair.isRepairActive() && 
-	     //! g_repair.m_fullRebuild &&
-	     //! g_repair.m_rebuildNoSplits &&
-	     //! g_repair.m_removeBadPages &&
-	     ! ::isSecondaryRdb ( m_rdbId ) && 
-	     m_rdbId != RDB_TAGDB )
-		return true;
-	*/
 
 	// do not dump if a tfndb merge is going on, because the tfndb will
 	// lose its page cache and all the "adding links" will hog up all our
@@ -1243,22 +1213,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	int32_t max = MAX_RDB_FILES - 2;
 	// but less if titledb, because it uses a tfn
 	if ( m_isTitledb && max > 240 ) max = 240;
-	// . keep the number of files down
-	// . dont dump all the way up to the max, leave one open for merging
-	/*
-	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
-		if ( ! cr ) continue;
-		// if swapped out, this will be NULL, so skip it
-		RdbBase *base = cr->getBasePtr(m_rdbId);
-		//RdbBase *base = getBase(i);
-		if ( base && base->m_numFiles >= max ) {
-			base->attemptMerge (1,false);//niceness,forced?
-			g_errno = ETOOMANYFILES;
-			break;
-		}
-	}
-	*/
+
 	// . wait for all unlinking and renaming activity to flush out
 	// . we do not want to dump to a filename in the middle of being
 	//   unlinked
@@ -1279,76 +1234,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	}
 	// remember niceness for calling setDump()
 	m_niceness = niceness;
-	// . suspend any merge going on, saves state to disk
-	// . is resumed when dump is completed
-	// m_merge.suspendMerge();
-	// allocate enough memory for the map of this file
-	//int32_t fileSize = m_tree.getMemOccupiedForList(); 
-	// . this returns false and sets g_errno on error
-	// . we return false if g_errno was set
-	//if ( ! m_maps[n]->setMapSizeFromFileSize ( fileSize ) ) return false;
-	// with titledb we can dump in 5meg chunks w/o worrying about
-	// RdbTree::deleteList() being way slow
-	/*
-	int32_t numUsedNodes  = m_tree.getNumUsedNodes();
-	int32_t totalOverhead = m_tree.getRecOverhead() * numUsedNodes;
-	int32_t recSizes      = m_tree.getMemOccupied() - totalOverhead;
-	// add the header, key plus dataSize, back in
-	int32_t headerSize = sizeof(key_t);
-	if ( m_fixedDataSize == -1 ) headerSize += 4;
-	recSizes += headerSize * numUsedNodes;
-	// get the avg rec size when serialized for a dump
-	int32_t avgRecSize;
-	if   ( numUsedNodes > 0 ) avgRecSize = recSizes / numUsedNodes;
-	else                      avgRecSize = 12;
-	// the main problem is here is that RdbTree::deleteList() is slow
-	// as a function of the number of nodes
-	int32_t bufSize = 17000 * avgRecSize;
-	//if ( bufSize > 5*1024*1024 ) bufSize = 5*1024*1024;
-	// seems like RdbTree::getList() takes 2+ seconds when getting a 5meg
-	// list of titlerecs... why?
-	if ( bufSize > 400*1024 ) bufSize = 400*1024;
-	if ( bufSize < 200*1024 ) bufSize = 200*1024;
-	*/
-	// ok, no longer need token to dump!!!
 
-
-	/*
-	// bail if already waiting for it
-	if ( m_waitingForTokenForDump ) return true;
-	// debug msg
-	log("Rdb: %s: getting token for dump", m_dbname);
-
-
-	// don't repeat
-	m_waitingForTokenForDump = true;
-	// . get token before dumping
-	// . returns true and sets g_errno on error
-	// . returns true if we always have the token (just one host in group)
-	// . returns false if blocks (the usual case)
-	// . higher priority requests always supercede lower ones
-	// . ensure we only call this once per dump we need otherwise, 
-	//   gotTokenForDumpWrapper() may be called multiple times
-	if ( ! g_msg35.getToken ( this , gotTokenForDumpWrapper,1) ) //priority
-		return true ;
-	// bitch if we got token because there was an error somewhere
-	if ( g_errno ) {
-		log("Rdb::dumpTree:getToken: %s",mstrerror(g_errno));
-		g_errno = 0 ;
-	}
-	return gotTokenForDump();
-}
-
-void gotTokenForDumpWrapper ( void *state ) {
-	Rdb *THIS = (Rdb *)state;
-	THIS->gotTokenForDump();
-}
-
-// returns false and sets g_errno on error
-bool Rdb::gotTokenForDump ( ) {
-	// no longer waiting for it
-	m_waitingForTokenForDump = false;
-	*/
 	// debug msg
 	log(LOG_INFO,"db: Dumping %s to disk. nice=%"INT32"",m_dbname,niceness);
 
@@ -1401,10 +1287,6 @@ bool Rdb::gotTokenForDump ( ) {
 			RdbBucket *b = m_buckets.m_buckets[i];
 			collnum_t cn = b->getCollnum();
 			int32_t nk = b->getNumKeys();
-			// for ( int32_t j = 0 ; j < nk; j++ ) {
-			// 	cr = g_collectiondb.m_recs[cn];
-			// 	if ( cr ) cr->m_treeCount++;
-			// }
 			cr = g_collectiondb.m_recs[cn];
 			if ( cr ) cr->m_treeCount += nk;
 		}
@@ -1872,14 +1754,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	if ( list->isExhausted() ) return true;
 	// sanity check
 	if ( list->m_ks != m_ks ) { char *xx = NULL; *xx = 0; }
-	// . do not add data to indexdb if we're in urgent merge mode!
-	// . sender will wait and try again
-	// . this is killing us! we end up adding a bunch of recs to sectiondb
-	//   over and over again, the same recs! since msg4 works like that...
-	//if ( m_bases[collnum]->m_mergeUrgent ) {
-	//	g_errno = ETRYAGAIN;
-	//	return false;
-	//}
 	// we now call getTimeGlobal() so we need to be in sync with host #0
 	if ( ! isClockInSync () ) {
 		// log("rdb: can not add data because clock not in sync with "
@@ -2988,7 +2862,6 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB_TITLEDB   ] = g_titledb.getRdb();
 		s_table9 [ RDB_SECTIONDB ] = g_sectiondb.getRdb();
 		s_table9 [ RDB_PLACEDB   ] = g_placedb.getRdb();
-		s_table9 [ RDB_SYNCDB    ] = g_syncdb.getRdb();
 		s_table9 [ RDB_SPIDERDB  ] = g_spiderdb.getRdb();
 		s_table9 [ RDB_DOLEDB    ] = g_doledb.getRdb();
 		s_table9 [ RDB_CLUSTERDB ] = g_clusterdb.getRdb();
@@ -3031,7 +2904,6 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_cachedb.getRdb   () ) return RDB_CACHEDB;
 	if ( rdb == g_serpdb.getRdb    () ) return RDB_SERPDB;
 	if ( rdb == g_monitordb.getRdb () ) return RDB_MONITORDB;
-	if ( rdb == g_syncdb.getRdb    () ) return RDB_SYNCDB;
 	if ( rdb == g_revdb.getRdb     () ) return RDB_REVDB;
 	if ( rdb == g_indexdb2.getRdb   () ) return RDB2_INDEXDB2;
 	if ( rdb == g_posdb2.getRdb   () ) return RDB2_POSDB2;

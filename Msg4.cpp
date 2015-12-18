@@ -8,11 +8,9 @@
 #include "Spider.h"
 #include "Datedb.h"
 #include "Rdb.h"
-//#include "Indexdb.h"
 #include "Profiler.h"
 #include "Repair.h"
 #include "Multicast.h"
-#include "Syncdb.h"
 
 //////////////
 //
@@ -1179,11 +1177,6 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		return;
 	}
 
-	bool skipSyncdb = false;
-
-	// skip syncdb if we are just one host!
-	if ( g_hostdb.m_numHosts == 1 ) skipSyncdb = true;
-
 	// if we did not sync our parms up yet with host 0, wait...
 	if ( g_hostdb.m_hostId != 0 && ! g_parms.m_inSyncWithHost0 ) {
 		// limit logging to once per second
@@ -1200,41 +1193,15 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		return; 
 	}
 
-	// OK, just to get the ball rolling let's delay using/debugging
-	// syncdb until after launch in order to move up the launch date.
-	// we are going to be running solid states so there should be a lot
-	// fewer hardware issues...
-	skipSyncdb = true;
-
-	if ( skipSyncdb ) {
-		// this returns false with g_errno set on error
-	        if ( ! addMetaList ( readBuf , slot ) ) {
-		     us->sendErrorReply(slot,g_errno);
-		     return; 
-		}
-		// good to go
-		us->sendReply_ass ( NULL , 0 , NULL , 0 , slot ) ;
-		return;
+	// this returns false with g_errno set on error
+       if ( ! addMetaList ( readBuf , slot ) ) {
+	     us->sendErrorReply(slot,g_errno);
+	     return; 
 	}
 
-	// . add to syncdb tree
-	// . a key_t is now before the "used"
-	// . this returns false and sets g_errno if we could not add it to 
-	//   syncdb OR if there were some msg4 requests we should have got 
-	//   before this one!
-	// . in the first case it will set g_errno to ETRYAGAIN probably,
-	//   but if out of order it will just set g_errno to EOUTOFSYNC i guess
-	if ( ! g_syncdb.gotMetaListRequest ( slot ) ) {
-		us->sendErrorReply(slot,g_errno);return; }
-
-	// . chalk it up
-	// . it may have multiple different rdb items in the list now!
-	//rdb->sentReplyAdd ( 0 );
-
-	// . send an empty (non-error) reply as verification
-	// . slot should be auto-nuked on transmission/timeout of reply
-	// . udpServer should free the readBuf
+	// good to go
 	us->sendReply_ass ( NULL , 0 , NULL , 0 , slot ) ;
+	return;
 }
 
 

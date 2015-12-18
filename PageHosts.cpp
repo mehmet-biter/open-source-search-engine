@@ -96,7 +96,6 @@ bool sendPageHosts ( TcpSocket *s , HttpRequest *r ) {
 		if ( syncHost == -1 ) goto skipReplaceHost;
 		// call sync
 		g_hostdb.syncHost(syncHost, false);
-		//g_syncdb.syncHost ( syncHost );
 	}
 	if ( syncHost == 2 ) {
 		// get the host id to sync
@@ -104,7 +103,6 @@ bool sendPageHosts ( TcpSocket *s , HttpRequest *r ) {
 		if ( syncHost == -1 ) goto skipReplaceHost;
 		// call sync
 		g_hostdb.syncHost(syncHost, true);
-		//g_syncdb.syncHost ( syncHost );
 	}
 
 skipReplaceHost:

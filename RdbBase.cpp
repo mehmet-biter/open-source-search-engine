@@ -13,7 +13,6 @@
 #include "Spider.h"
 #include "Statsdb.h"
 #include "Linkdb.h"
-#include "Syncdb.h"
 #include "Collectiondb.h"
 #include "Repair.h"
 #include "Rebalance.h"
@@ -211,22 +210,6 @@ bool RdbBase::init ( char  *dir            ,
 		}
 		// make a special "stats" dir for it if necessary
 		sprintf ( tmp , "%saccess" , dir );
-		if ( ::mkdir ( tmp ,
-			       // S_IRUSR | S_IWUSR | S_IXUSR | 
-			       // S_IRGRP | S_IWGRP | S_IXGRP | 
-			       // S_IROTH | S_IXOTH ) == -1 && errno != EEXIST )
-			return log( "db: Failed to make directory %s: %s.",
-				    tmp, mstrerror( errno ) );
-	}
-	// syncdb is collection independent
-	else if ( strcmp ( dbname , "syncdb" ) == 0 ) {
-		// sanity check, statsdb should always be zero
-		if ( collnum != (collnum_t) 0 ) {
-			log ( "db: collnum not zero for syncdb." );
-			char *xx = NULL; *xx = 0;
-		}
-		// make a special "stats" dir for it if necessary
-		sprintf ( tmp , "%ssyncdb" , dir );
 		if ( ::mkdir ( tmp ,
 			       // S_IRUSR | S_IWUSR | S_IXUSR | 
 			       // S_IRGRP | S_IWGRP | S_IXGRP | 
@@ -1052,7 +1035,7 @@ bool RdbBase::incorporateMerge ( ) {
 	log(LOG_INFO,
 	    "merge: Merge succeeded. %s (#%"INT32") has %"INT64" positive "
 	     "and %"INT64" negative recs.", m_files[x]->getFilename(), x, tp, tn);
-	if ( m_rdb == g_posdb.getRdb() ) // || m_rdb == g_tfndb.getRdb() )
+	if ( m_rdb == g_posdb.getRdb() )
 		log(LOG_INFO,"merge: Removed %"INT64" dup keys.",
 		     m->getDupsRemoved() );
 	// . bitch if bad news
@@ -1467,9 +1450,9 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		m_minToMerge = cr->m_titledbMinFilesToMerge;
 	//if ( cr && m_rdb == g_spiderdb.getRdb() ) 
 	//	m_minToMerge = cr->m_spiderdbMinFilesToMerge;
-	//if ( cr && m_rdb == g_sectiondb.getRdb() ) 
+	//if ( cr && m_rdb == g_sectiondb.getRdb() )
 	//	m_minToMerge = cr->m_sectiondbMinFilesToMerge;
-	//if ( cr && m_rdb == g_sectiondb.getRdb() ) 
+	//if ( cr && m_rdb == g_sectiondb.getRdb() )
 	//	m_minToMerge = cr->m_sectiondbMinFilesToMerge;
 	//if ( cr && m_rdb == g_clusterdb.getRdb() )
 	//	m_minToMerge = cr->m_clusterdbMinFilesToMerge;
@@ -1478,8 +1461,6 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	//if ( cr && m_rdb == g_statsdb.getRdb() )
 	//if ( m_rdb == g_statsdb.getRdb() )
 	//	m_minToMerge = g_conf.m_statsdbMinFilesToMerge;
-	if ( m_rdb == g_syncdb.getRdb() )
-		m_minToMerge = g_syncdb.m_rdb.m_minToMerge;
 	if ( cr && m_rdb == g_linkdb.getRdb() )
 		m_minToMerge = cr->m_linkdbMinFilesToMerge;
 	if ( cr && m_rdb == g_cachedb.getRdb() )
