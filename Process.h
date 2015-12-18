@@ -10,8 +10,6 @@
 
 
 #include "HttpRequest.h"
-//#include "Msg28.h"
-
 #include "PageInject.h" // resumeImports() function
 
 class Process {
@@ -27,9 +25,14 @@ class Process {
 
 	// . this will save everything and exit
 	// . urgent is true if we cored
-	bool shutdown ( bool   urgent,
-			void  *state = NULL,
-			void (*callback) (void *state ) = NULL);
+	bool shutdown ( bool urgent, void  *state = NULL, void (*callback) (void *state ) = NULL);
+
+	/**
+	 * Abort process
+	 *
+	 * @param save_on_abort Save data to disk on abort
+	 */
+	void abort ( bool save_on_abort = false );
 
 	bool checkNTPD();
 
@@ -84,7 +87,6 @@ class Process {
 	bool        m_powerIsOn;
 	int64_t   m_powerOffTime;
 	HttpRequest m_r;
-	//Msg28       m_msg28;
 	bool        m_exiting;
 	bool        m_calledSave;
 

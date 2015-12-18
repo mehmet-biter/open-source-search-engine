@@ -34,20 +34,15 @@
 #include "Timezone.h"
 #include "CountryCode.h"
 
-// the query log hashtable defined in XmlDoc.cpp
-//extern HashTableX g_qt;
-
 // normally in seo.cpp, but here so it compiles
 SafeBuf    g_qbuf;
 int32_t       g_qbufNeedSave = 0;
 bool g_inAutoSave;
 
 // for resetAll()
-//#include "Msg6.h"
 extern void resetPageAddUrl    ( );
 extern void resetHttpMime      ( );
 extern void reset_iana_charset ( );
-//extern void resetAdultBit      ( );
 extern void resetDomains       ( );
 extern void resetEntities      ( );
 extern void resetQuery         ( );
@@ -218,7 +213,7 @@ bool Process::checkFiles ( const char *dir ) {
 	}
 
 	if ( needsFiles ) {
-		log("db: Missing files. See above. Exiting.");
+		log(LOG_ERROR, "db: Missing files. See above. Exiting.");
 		return false;
 	}
 
@@ -227,7 +222,7 @@ bool Process::checkFiles ( const char *dir ) {
 		snprintf(cmd, 2047, "%sgbcheck.sh", dir);
 		int ret = gbsystem ( cmd );
 		if ( WEXITSTATUS(ret) != 0 ) {
-			log("db: gbcheck failed with status=%d", WEXITSTATUS(ret));
+			log(LOG_ERROR, "db: gbcheck failed with status=%d", WEXITSTATUS(ret));
 			return false;
 		}
 	}
@@ -1022,13 +1017,28 @@ int64_t Process::getTotalDocsIndexed() {
 
 void processSleepWrapper ( int fd , void *state ) {
 
-        if ( g_process.m_mode == EXIT_MODE ) {g_process.shutdown2(); return; }
-        if ( g_process.m_mode == SAVE_MODE ) {g_process.save2    (); return; }
-        if ( g_process.m_mode == LOCK_MODE ) {g_process.save2    (); return; }
-	if ( g_process.m_mode != NO_MODE   )                         return;
+	if ( g_process.m_mode == EXIT_MODE ) {
+		g_process.shutdown2();
+		return;
+	}
+
+	if ( g_process.m_mode == SAVE_MODE ) {
+		g_process.save2();
+		return;
+	}
+
+	if ( g_process.m_mode == LOCK_MODE ) {
+		g_process.save2();
+		return;
+	}
+
+	if ( g_process.m_mode != NO_MODE ) {
+		return;
+	}
 
 	// update global rec count
-        static int32_t s_rcount = 0;
+	static int32_t s_rcount = 0;
+
 	// every 2 seconds
 	if ( ++s_rcount >= 4 ) {
 		s_rcount = 0;
@@ -1136,17 +1146,49 @@ bool Process::save ( ) {
 	return save2();
 }
 
-bool Process::shutdown ( bool urgent ,
-			 void  *state,
-			 void (*callback) (void *state )) {
+void Process::abort ( bool save_on_abort ) {
+	static const char* file_name = "./fatal_error";
+
+	bool force_abort = false;
+
+	// write fatal_error file
+	int fd = open(file_name, O_WRONLY | O_CREAT, getFileCreationFlags() );
+	if ( !fd ) {
+		log(LOG_ERROR, "process: Unable to create file '%s'", file_name);
+
+		// we can't create file, so make sure we exit gb restart loop
+		force_abort = true;
+	}
+
+	printStackTrace();
+
+	// follow usual segfault logic, only when required & we can create file
+	// if we can't create file, and we follow the usual logic, we risk not blocking startup
+	if ( save_on_abort && !force_abort ) {
+		shutdown(true);
+	}
+
+	// let's ensure our core file can dump
+	rlimit lim;
+	lim.rlim_cur = lim.rlim_max = RLIM_INFINITY;
+	if ( setrlimit(RLIMIT_CORE, &lim) ) {
+		log(LOG_ERROR, "gb: setrlimit: %s", mstrerror(errno) );
+	}
+
+	abort();
+}
+
+bool Process::shutdown ( bool urgent, void  *state, void (*callback) (void *state )) {
 	// bail if doing something already
 	if ( m_mode != 0 ) {
 		// if already in exit mode, just return
-		if ( m_mode == EXIT_MODE )
+		if ( m_mode == EXIT_MODE ) {
 			return true;
+		}
+
 		// otherwise, log it!
-		log("process: shutdown called, but mode is %"INT32"",
-		    (int32_t)m_mode);
+		log("process: shutdown called, but mode is %"INT32"", (int32_t)m_mode);
+
 		return true;
 	}
 
@@ -1155,15 +1197,17 @@ bool Process::shutdown ( bool urgent ,
 
 	m_calledSave = false;
 
-	// check memory buffers for overruns/underrunds to see if that
-	// caused this core
-	if ( urgent ) g_mem.printBreeches(false);
+	// check memory buffers for overruns/underrunds to see if that caused this core
+	if ( urgent ) {
+		g_mem.printBreeches(false);
+	}
 
-	if(!shutdown2()) {
+	if (!shutdown2()) {
 		m_callbackState = state;
 		m_callback = callback;
 		return false;
 	}
+
 	return true;
 }
 
@@ -1254,21 +1298,20 @@ bool Process::save2 ( ) {
 // . this is the SAVE BEFORE EXITING
 bool Process::shutdown2 ( ) {
 	g_loop.disableQuickpollTimer();
+
 	// only the main process can call this
 	if ( g_threads.amThread() ) return true;
 
-	if ( m_urgent )
-		log(LOG_INFO,"gb: Shutting down urgently. "
-		    "Timed try #%"INT32".",
-		    m_try++);
-	else
-		log(LOG_INFO,"gb: Shutting down. Timed try #%"INT32".",
-		    m_try++);
-
+	if ( m_urgent ) {
+		log(LOG_INFO,"gb: Shutting down urgently. Timed try #%"INT32".", m_try++);
+	} else {
+		log(LOG_INFO,"gb: Shutting down. Timed try #%"INT32".", m_try++);
+	}
 
 	// switch to urgent if having problems
-	if ( m_try >= 10 )
+	if ( m_try >= 10 ) {
 		m_urgent = true;
+	}
 
 	// turn off statsdb so it does not try to add records for these writes
 	g_statsdb.m_disabled = true;
@@ -1303,16 +1346,12 @@ bool Process::shutdown2 ( ) {
 	//int32_t n = g_threads.getNumThreadsOutOrQueued() ;
 	int32_t n = g_threads.getNumWriteThreadsOut();
 	if ( n != 0 && ! m_urgent ) {
-		log(LOG_INFO,"gb: Has %"INT32" write threads out. Waiting for "
-		    "them to finish.",n);
+		log(LOG_INFO,"gb: Has %"INT32" write threads out. Waiting for them to finish.", n);
 		return false;
-	}
-	else if ( ! s_printed && ! m_urgent ) {
+	} else if ( ! s_printed && ! m_urgent ) {
 		s_printed = true;
 		log(LOG_INFO,"gb: No write threads out.");
 	}
-
-
 
 	// disable all spidering
 	// we can exit while spiders are in the queue because
@@ -1427,6 +1466,7 @@ bool Process::shutdown2 ( ) {
 	if ( m_urgent ) {
 		// log it
 		log("gb: Dumping core after saving.");
+
 		// at least destroy the page caches that have shared memory
 		// because they seem to not clean it up
 		//resetPageCaches();
@@ -1434,8 +1474,9 @@ bool Process::shutdown2 ( ) {
 		// let's ensure our core file can dump
 		struct rlimit lim;
 		lim.rlim_cur = lim.rlim_max = RLIM_INFINITY;
-		if ( setrlimit(RLIMIT_CORE,&lim) )
+		if ( setrlimit(RLIMIT_CORE, &lim) ) {
 			log("gb: setrlimit: %s.", mstrerror(errno) );
+		}
 
 		// this is the trick: it will trigger the core dump by
 		// calling the original SIGSEGV handler.
@@ -1813,10 +1854,6 @@ void Process::resetAll ( ) {
 
 	// termfreq cache in Posdb.cpp
 	g_termFreqCache.reset();
-	// in Msg0.cpp
-	//g_termListCache.reset();
-	// in msg5.cpp
-	//g_waitingTable.reset();
 
 	g_wiktionary.reset();
 
@@ -1827,40 +1864,27 @@ void Process::resetAll ( ) {
 	s_table32.reset();
 
 	resetDecompTables();
-	//resetMsg6();
 	resetPageAddUrl();
 	resetHttpMime();
 	reset_iana_charset();
-	//resetAdultBit();
 	resetDomains();
 	resetEntities();
 	resetQuery();
 	resetStopWords();
 	resetAbbrTable();
 	resetUnicode();
-	//resetMsg20Cache();
-	//resetMsg12();
-	//resetLoadAvg();
 
 	// reset other caches
-	//g_robotdb.m_rdbCache.reset();
 	g_dns.reset();
-	//g_alreadyAddedCache.reset();
-	//g_forcedCache.reset();
-	// Msg20.cpp's parser cache
-	//resetMsg20Cache();
 	g_spiderCache.reset();
 	g_spiderLoop.reset();
 	g_wiki.reset();
-	// query log table
-	//g_qt.reset();
 	// query log buffer
 	g_qbuf.reset();
 	g_profiler.reset();
 	resetAddressTables();
 	resetMsg13Caches();
 	resetStopWordTables();
-	//resetSynonymTables();
 	resetTimezoneTables();
 	resetTestIpTable();
 }
