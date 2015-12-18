@@ -214,7 +214,8 @@ bool BigFile::addParts ( char *dirname ) {
 	// set our directory class
 	if (!dir.open()) 
 	{
-		return log(LOG_ERROR, "disk: openDir (\"%s\") failed",dirname);
+		log(LOG_ERROR, "disk: openDir (\"%s\") failed",dirname);
+		return false;
 	}
 	
 	// match files with this pattern in the directory
@@ -273,7 +274,7 @@ bool BigFile::addParts ( char *dirname ) {
 		// 	continue;
 		// }
 		// make this part file
-		if ( ! addPart ( part ) ) 
+		if( !addPart(part) ) 
 		{
 			 log(LOG_ERROR,"%s:%s: END. addPart failed, returning false.", __FILE__,__FUNCTION__);
 			return false;
@@ -397,9 +398,11 @@ bool BigFile::addPart ( int32_t n )
 	return true;
 }
 
+
 bool BigFile::doesExist ( ) {
 	return m_numParts;
 }
+
 
 // if we can open it with a valid fd, then it exists
 bool BigFile::doesPartExist ( int32_t n ) {
@@ -411,16 +414,9 @@ bool BigFile::doesPartExist ( int32_t n ) {
 	return false;
 }
 
+
 static int64_t s_vfd = 0;
 
-// do not use part files for this open so we can open regular really >2GB
-// sized files with it
-// bool BigFile::open2 ( int flags , 
-// 		      void *pc ,
-// 		      int64_t maxFileSize ,
-// 		      int permissions ) {
-// 	return open ( flags , pc , maxFileSize , permissions , false );
-// }
 
 // . overide File::open so we can set m_numParts
 // . set maxFileSize when opening a new file for writing and using 
@@ -481,19 +477,17 @@ void BigFile::makeFilename_r ( char *baseFilename    ,
 	char *xx=NULL; *xx=0;
 }
 
-//int BigFile::getfdByOffset ( int64_t offset ) {
-//	return getfd ( offset / MAX_PART_SIZE , true /*forReading?*/ );
-//}
 
 // . get the fd of the nth file
 // . will try to open the file if it hasn't yet been opened
-int BigFile::getfd ( int32_t n , bool forReading ) { // , int64_t *vfd ) {
+int BigFile::getfd ( int32_t n , bool forReading ) { 
 
 	// boundary check
-	if ( n >= m_maxParts && ! addPart ( n ) ) {
-		log("disk: Part number %"INT32" > %"INT32". fd "
-		    "not available.",
-		    n,m_maxParts);
+	if ( n >= m_maxParts && ! addPart ( n ) ) 
+	{
+		log(LOG_ERROR, "disk: Part number %"INT32" > %"INT32". fd not available.",
+		    n, m_maxParts);
+		    
 		// return -1 to indicate can't do it
 		return -1;
 	}
@@ -518,11 +512,13 @@ int BigFile::getfd ( int32_t n , bool forReading ) { // , int64_t *vfd ) {
 	// get it's file descriptor
 	int fd = f->getfd ( ) ;
 	if ( fd >= -1 ) return fd;
+
 	// otherwise, fd is -2 and it's never been opened?!?!
 	g_errno = EBADENGINEER;
 	log(LOG_LOGIC,"disk: fd is -2.");
 	return -1;
 }
+
 
 // . return -2 on error
 // . return -1 if does not exist
@@ -555,6 +551,7 @@ int64_t BigFile::getFileSize ( ) {
 	return totalSize;
 }
 
+
 // . return -2 on error
 // . return -1 if does not exist
 // . otherwise returns the oldest of the last mod dates of all the part files
@@ -581,6 +578,7 @@ time_t BigFile::getLastModifiedTime ( ) {
 	return m_lastModified;
 }
 
+
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 // . we need a ptr to the ptr to this BigFile so if we get deleted and
@@ -600,6 +598,7 @@ bool BigFile::read  ( void       *buf    ,
 			   fs  , state, callback , niceness , allowPageCache ,
 			   hitDisk , allocOff );
 }
+
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
@@ -623,6 +622,7 @@ bool BigFile::write ( void       *buf    ,
 			   fs  , state, callback , niceness , allowPageCache ,
 			   true , 0 );
 }
+
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
@@ -1096,6 +1096,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	return true;
 }
 
+
 // . this should be called from the main process after getting our call OUR callback here
 void doneWrapper ( void *state , ThreadEntry *t ) {
 
@@ -1398,6 +1399,7 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	return NULL;
 }
 
+
 // . returns false and sets errno on error, true on success
 // . don't log shit when you're in a thread anymore
 // . if we receive a cancel sig while in pread/pwrite it will return -1
@@ -1589,44 +1591,219 @@ bool readwrite_r ( FileState *fstate , ThreadEntry *t ) {
 	goto loop;
 }
 
+
 ////////////////////////////////////////
 // non-blocking unlink/rename code
 ////////////////////////////////////////
 
-bool BigFile::unlink ( ) {
-	return unlinkRename ( NULL , -1 , false, NULL, NULL );
+bool BigFile::unlink ( ) 
+{
+	bool rc;
+	
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. filename [%s]", __FILE__,__FUNCTION__, getFilename());
+
+
+	//### BR 20151218: Hard coded check to help us debug file deletion problem
+	if( strstr(getFilename(),"posdb0001") )
+	{
+		log(LOG_ERROR,"%s:%s: TRYING TO unlink posdb0001!!", __FILE__,__FUNCTION__);
+		logAllData(LOG_ERROR);
+
+		g_process.abort(false);
+		return false;
+	}
+	
+	rc=unlinkRename( NULL , -1 , false, NULL, NULL );
+	if( !rc )
+	{
+		log(LOG_ERROR,"%s:%s: unlink failed. filename [%s]", __FILE__,__FUNCTION__, getFilename());
+		logAllData(LOG_ERROR);
+	}
+	
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. returning [%s]", __FILE__,__FUNCTION__, rc?"true":"false");
+	return rc;
 }
 
-bool BigFile::move ( char *newDir ) {
-	return rename ( m_baseFilename.getBufStart() , newDir );
+
+
+bool BigFile::move ( char *newDir ) 
+{
+	bool rc;
+	
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. filename [%s] newDir [%s]", __FILE__,__FUNCTION__, getFilename(), newDir);
+
+	//### BR 20151218: Hard coded check to help us debug file deletion problem
+	if( strstr(getFilename(),"posdb0001") )
+	{
+		log(LOG_ERROR,"%s:%s: TRYING TO move posdb0001!!", __FILE__,__FUNCTION__);
+		logAllData(LOG_ERROR);
+
+		g_process.abort(false);
+		return false;
+	}
+
+	
+	rc = rename( m_baseFilename.getBufStart() , newDir );
+	if( !rc )
+	{
+		log(LOG_ERROR,"%s:%s: move failed. filename [%s] newDir [%s]", __FILE__,__FUNCTION__, getFilename(), newDir);
+		logAllData(LOG_ERROR);
+	}
+	
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. returning [%s]", __FILE__,__FUNCTION__, rc?"true":"false");
+	return rc;
 }
 
-bool BigFile::rename ( char *newBaseFilename , char *newBaseFilenameDir ) {
-	return unlinkRename ( newBaseFilename, -1, false, NULL, NULL ,
-			      newBaseFilenameDir );
-}
-bool BigFile::chopHead ( int32_t part ) {
-	return unlinkRename ( NULL, part, false, NULL, NULL );
+
+bool BigFile::rename(char *newBaseFilename , char *newBaseFilenameDir ) 
+{
+	bool rc;
+
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. newBaseFilename [%s] newBaseFilenameDir [%s]", __FILE__,__FUNCTION__, newBaseFilename, newBaseFilenameDir);
+
+
+	//### BR 20151218: Hard coded check to help us debug file deletion problem
+	if( strstr(getFilename(),"posdb0001") )
+	{
+		log(LOG_ERROR,"%s:%s: TRYING TO rename posdb0001!!", __FILE__,__FUNCTION__);
+		logAllData(LOG_ERROR);
+
+		g_process.abort(false);
+		return false;
+	}
+	
+	rc=unlinkRename ( newBaseFilename, -1, false, NULL, NULL, newBaseFilenameDir );
+	if( !rc )
+	{
+		log(LOG_ERROR,"%s:%s: rename failed. newBaseFilename [%s] newBaseFilenameDir [%s]", __FILE__,__FUNCTION__, newBaseFilename, newBaseFilenameDir);
+		logAllData(LOG_ERROR);
+	}
+	
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. returning [%s]", __FILE__,__FUNCTION__, rc?"true":"false");
+	return rc;
 }
 
-bool BigFile::unlink ( void (* callback) ( void *state ) , 
-		       void *state ) {
-	return unlinkRename ( NULL , -1 , true, callback , state );
+
+bool BigFile::chopHead(int32_t part ) 
+{
+	bool rc;
+
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. part %"INT32"", __FILE__,__FUNCTION__, part);
+	
+	//### BR 20151218: Hard coded check to help us debug file deletion problem
+	if( strstr(getFilename(),"posdb0001") )
+	{
+		log(LOG_ERROR,"%s:%s: TRYING TO chopHead ON posdb0001!! part=%"INT32"", __FILE__,__FUNCTION__, part);
+		logAllData(LOG_ERROR);
+
+		g_process.abort(false);
+		return false;
+	}
+
+	
+	rc=unlinkRename ( NULL, part, false, NULL, NULL );
+	if( !rc )
+	{
+		log(LOG_ERROR,"%s:%s: chopHead failed. part %"INT32"", __FILE__,__FUNCTION__, part);
+		logAllData(LOG_ERROR);
+	}
+	
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. returning [%s]", __FILE__,__FUNCTION__, rc?"true":"false");
+	return rc;
 }
 
-bool BigFile::rename ( char *newBaseFilename ,
-		       void (* callback) ( void *state ) , 
-		       void *state ) {
-	return unlinkRename ( newBaseFilename, -1, true, callback, state);
+
+bool BigFile::unlink(void (* callback) ( void *state ) , void *state ) 
+{
+	bool rc;
+
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN.", __FILE__,__FUNCTION__);
+
+
+	//### BR 20151218: Hard coded check to help us debug file deletion problem
+	if( strstr(getFilename(),"posdb0001") )
+	{
+		log(LOG_ERROR,"%s:%s: TRYING TO unlink posdb0001!! (callback)", __FILE__,__FUNCTION__);
+		logAllData(LOG_ERROR);
+
+		g_process.abort(false);
+		return false;
+	}
+
+	
+	rc=unlinkRename ( NULL , -1 , true, callback , state );
+	if( !rc )
+	{
+		log(LOG_ERROR,"%s:%s: unlink (callback) failed. filename [%s]", __FILE__,__FUNCTION__, getFilename());
+		logAllData(LOG_ERROR);
+	}
+	
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. returning [%s]", __FILE__,__FUNCTION__, rc?"true":"false");
+	return rc;
 }
 
-bool BigFile::chopHead ( int32_t part , 
-			 void (* callback) ( void *state ) , 
-			 void *state ) {
+
+bool BigFile::rename(char *newBaseFilename, void (*callback)(void *state), void *state) 
+{
+	bool rc;
+
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. filename [%s] newBaseFilename [%s]", __FILE__,__FUNCTION__, getFilename(), newBaseFilename);
+
+
+	//### BR 20151218: Hard coded check to help us debug file deletion problem
+	if( strstr(getFilename(),"posdb0001") )
+	{
+		log(LOG_ERROR,"%s:%s: TRYING TO rename posdb0001!! (callback)", __FILE__,__FUNCTION__);
+		logAllData(LOG_ERROR);
+
+		g_process.abort(false);
+		return false;
+	}
+
+	
+	rc=unlinkRename ( newBaseFilename, -1, true, callback, state);
+	if( !rc )
+	{
+		log(LOG_ERROR,"%s:%s: rename (callback) failed. filename [%s] newBaseFilename [%s]", __FILE__,__FUNCTION__, getFilename(), newBaseFilename);
+		logAllData(LOG_ERROR);
+	}
+	
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. returning [%s]", __FILE__,__FUNCTION__, rc?"true":"false");
+	return rc;
+}
+
+
+bool BigFile::chopHead(int32_t part, void (*callback)(void *state), void *state) 
+{
+	bool rc;
+
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. part %"INT32"", __FILE__,__FUNCTION__, part);
+	
+	
+	//### BR 20151218: Hard coded check to help us debug file deletion problem
+	if( strstr(getFilename(),"posdb0001") )
+	{
+		log(LOG_ERROR,"%s:%s: TRYING TO chopHead ON posdb0001!! (callback) part %"INT32"", __FILE__,__FUNCTION__, part);
+		logAllData(LOG_ERROR);
+		g_process.abort(false);
+		return false;
+	}
+	
+		
 	//for ( int32_t i = 0 ; i < part ; i++ ) 
 	// set return value to false if we blocked somewhere
-	return unlinkRename ( NULL, part, true, callback, state );
+	rc=unlinkRename ( NULL, part, true, callback, state );
+	if( !rc )
+	{
+		log(LOG_ERROR,"%s:%s: chopHead (callback) failed. part %"INT32"", __FILE__,__FUNCTION__, part);
+		logAllData(LOG_ERROR);
+	}
+	
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. returning [%s]", __FILE__,__FUNCTION__, rc?"true":"false");
+	return rc;
 }
+
+
 
 static void *renameWrapper_r   ( void *state , ThreadEntry *t ) ;
 static void *unlinkWrapper_r   ( void *state , ThreadEntry *t ) ;

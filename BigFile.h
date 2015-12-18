@@ -144,18 +144,8 @@ class BigFile {
 		     int64_t maxFileSize = -1 ,
 		     int permissions    = 
 		     S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
-	//bool usePartFiles = true );
 
-	// this will set usepartfiles to false! so use this to open large
-	// warc or arc files
-	//bool open2  ( int flags , 
-	//	     //class DiskPageCache *pc = NULL ,
-	//	     void *pc = NULL ,
-	//	     int64_t maxFileSize = -1 ,
-	//	     int permissions    = 
-	//	      S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH );
-
-	
+	void logAllData(int32_t log_type);
 
 	int getFlags() { return m_flags; };
 
@@ -306,6 +296,7 @@ class BigFile {
 
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
+private:	
 	bool unlinkRename ( char *newBaseFilename             ,
 			    int32_t  part                        ,
 			    bool  useThread                   ,
@@ -313,33 +304,22 @@ class BigFile {
 			    void *state                       ,
 			    char *newBaseFilenameDir = NULL   ) ;
 
+
 	// . add all parts from this directory
 	// . called by set() above for normal dir as well as stripe dir
 	bool addParts ( char *dirname ) ;
 
 	bool addPart ( int32_t n ) ;
 
-	void logAllData(int32_t log_type);
-
-	//bool unlinkPart ( int32_t n , bool block );
-
-	File *getFile2 ( int32_t n ) { 
-		if ( n >= m_maxParts ) return NULL;
-		File **filePtrs = (File **)m_filePtrsBuf.getBufStart();
-		File *f = filePtrs[n];
-		//if ( ! f ->calledSet() ) return NULL;
-		// this will be NULL if addPart(n) never called
-		return f;
-	};
-
-	// if part file not created, will create it
-	//File *getPartFile2 ( int32_t n ) { return getFile2(n); }
-
-	bool reset ( );
 
 	// for basefilename to avoid an alloc
 	char m_tmpBaseBuf[32];
 
+
+	//int32_t m_permissions;
+	int32_t m_flags;
+
+public:
 	// our most important the directory and filename
 	SafeBuf m_dir      ;//    [256];
 	SafeBuf m_baseFilename ;//[256];
@@ -350,9 +330,16 @@ class BigFile {
 	// if first char in this dir is 0 then use m_dir
 	SafeBuf m_newBaseFilenameDir ;//[256];
 
+	File *getFile2 ( int32_t n ) { 
+		if ( n >= m_maxParts ) return NULL;
+		File **filePtrs = (File **)m_filePtrsBuf.getBufStart();
+		File *f = filePtrs[n];
+		//if ( ! f ->calledSet() ) return NULL;
+		// this will be NULL if addPart(n) never called
+		return f;
+	};
 
-	//int32_t m_permissions;
-	int32_t m_flags;
+	bool reset ( );
 
 	// determined in open() override
 	int       m_numParts;

@@ -1,8 +1,10 @@
 #include "gb-include.h"
 
 #include "Mem.h"
-#include <sys/types.h>  // pid_t/getpid()
+#if defined(__linux__)
+#include <sys/types.h>
 #include <sys/syscall.h>
+#endif
 #include "Loop.h"
 #include "Conf.h"
 #include "Process.h"
@@ -311,9 +313,10 @@ bool Log::logR ( int64_t now , int32_t type , char *msg , bool asterisk ,
 	}
 
 
+
 	// Get thread id. pthread_self instead?
-	long tid=syscall(SYS_gettid);
-	p += sprintf(p, "%06ld ", tid);
+	unsigned tid=(unsigned)syscall(SYS_gettid);
+	p += sprintf(p, "%06u ", tid);
 
 	// Log level
 	p += sprintf(p, "%s ", getTypeString(type));
