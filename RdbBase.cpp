@@ -819,7 +819,7 @@ int32_t RdbBase::addFile ( int32_t id , bool isNew , int32_t mergeNum ,
 		File *ff = f->getFile2(j);//m_files[j];
 		if ( ! ff ) continue;
 		if ( ff->getFileSize() == MAX_PART_SIZE ) continue;
-		log ( "db: File %s/%s has length %"INT64", but it should be %"INT64". "
+		log ( "db: File %s %s has length %"INT64", but it should be %"INT64". "
 		      "You should move it to a temporary directory "
 		      "and restart. It probably happened when the power went "
 		      "out and a file delete operation failed to complete.",
