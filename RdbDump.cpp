@@ -783,25 +783,54 @@ bool RdbDump::doneReadingForVerify ( ) {
 	// . careful, map is NULL if we're doing unordered dump
 	if ( m_addToMap && m_map && ! m_map->addList ( m_list ) ) {
 		// keys  out of order in list from tree?
-		if ( g_errno == ECORRUPTDATA ) {
-			log("db: trying to fix tree or buckets");
-			if ( m_tree ) m_tree->fixTree();
+		if ( g_errno == ECORRUPTDATA ) 
+		{
+			log(LOG_ERROR,"%s:%s: m_map->addList resulted in ECORRUPTDATA", __FILE__, __func__);
+			
+			if ( m_tree ) 
+			{
+				log(LOG_ERROR,"%s:%s: trying to fix tree", __FILE__, __func__);
+				m_tree->fixTree();
+			}
+				
 			//if ( m_buckets ) m_buckets->fixBuckets();
-			if ( m_buckets ) { char *xx=NULL;*xx=0; }
-			if ( triedToFix ) { char *xx=NULL;*xx=0; }
+			if ( m_buckets ) 
+			{ 
+				log(LOG_ERROR,"%s:%s: Contains buckets, cannot fix this yet", __FILE__, __func__);
+				
+				// char *xx=NULL;*xx=0; 			//### <<<<  BR 20151218: CORE SEEN HERE
+				g_process.shutdownAbort(false);
+				return false;
+			}
+			
+			
+			if ( triedToFix ) 
+			{ 
+				log(LOG_ERROR,"%s:%s: already tried to fix, exiting hard", __FILE__, __func__);
+				
+				// char *xx=NULL;*xx=0;
+				g_process.shutdownAbort(false);
+				return false;
+			}
+
 			triedToFix = true;
 			goto tryAgain;
 		}
+		
 		g_errno = ENOMEM; 
-		log("db: Failed to add data to map.");
 		// undo the offset update, the write failed, the parent
 		// should retry. i know RdbMerge.cpp does, but not sure
 		// what happens when Rdb.cpp is dumping an RdbTree
 		//m_offset -= m_bytesToWrite ;
 		// this should never happen now since we call prealloc() above
-		char *xx = NULL; *xx = 0;
+
+		log(LOG_ERROR,"%s:%s: Failed to add data to map, exiting hard", __FILE__, __func__);
+		g_process.shutdownAbort(false);
+
+//		char *xx = NULL; *xx = 0;
 		return true;
 	}
+
 
 	// debug msg
 	int64_t now = gettimeofdayInMilliseconds();

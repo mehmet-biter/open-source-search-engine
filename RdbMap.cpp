@@ -123,20 +123,20 @@ bool RdbMap::writeMap ( bool allDone ) {
 
 
 	if ( g_conf.m_readOnlyMode ) {
-		log(LOG_DEBUG, "%s:%s: Read-only mode, not writing map. filename [%s]",
+		log(LOG_DEBUG, "%s:%s: END. Read-only mode, not writing map. filename [%s]. Returning true.",
 		    __FILE__, __func__, m_file.getFilename());
 		return true;
 	}
 
 	if ( ! m_needToWrite ) {
-		log(LOG_DEBUG, "%s:%s: no need, not writing map. filename [%s]",
+		log(LOG_DEBUG, "%s:%s: END. no need, not writing map. filename [%s]. Returning true.",
 		    __FILE__, __func__, m_file.getFilename());
 		return true;
 	}
 
 	// open a new file
 	if ( ! m_file.open ( O_RDWR | O_CREAT | O_TRUNC ) ) {
-		log(LOG_ERROR, "%s:%s: Could not open %s for writing: %s.",
+		log(LOG_ERROR, "%s:%s: END. Could not open %s for writing: %s. Returning true.",
 		    __FILE__, __func__, m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
@@ -172,6 +172,14 @@ bool RdbMap::writeMap2 ( ) {
 	// the current disk offset
 	int64_t offset = 0LL;
 	g_errno = 0;
+
+	if( g_conf.m_logDebugDetailed ) {
+		log(LOG_DEBUG, " m_offset.........: %"INT64"", m_offset);
+		log(LOG_DEBUG, " m_fileStartOffset: %"INT64"", m_fileStartOffset);
+		log(LOG_DEBUG, " m_numPositiveRecs: %"INT64"", m_numPositiveRecs);
+		log(LOG_DEBUG, " m_numNegativeRecs: %"INT64"", m_numNegativeRecs);
+		loghex(LOG_DEBUG, m_lastKey, m_ks, " m_lastKey........: (hexdump)");
+	}
 	
 	// first 8 bytes are the size of the DATA file we're mapping
 	m_file.write ( &m_offset , 8 , offset );
@@ -224,6 +232,12 @@ bool RdbMap::writeMap2 ( ) {
 
 	offset += m_ks;
 
+
+	if( g_conf.m_logDebugDetailed ) {
+		log(LOG_DEBUG, "%s:%s: Writing %"INT32" segments", __FILE__, __func__, m_numSegments);
+	}
+
+
 	// . now store the map itself
 	// . write the segments (keys/offsets) from the map file
 	for ( int32_t i = 0 ; i < m_numSegments ; ++i ) {
@@ -236,7 +250,7 @@ bool RdbMap::writeMap2 ( ) {
 	}
 
 	if( g_conf.m_logDebugDetailed ) {
-		log(LOG_DEBUG, "%s:%s: END", __FILE__, __func__);
+		log(LOG_DEBUG, "%s:%s: END - OK, returning true.", __FILE__, __func__);
 	}
 
 	return true;
@@ -337,7 +351,7 @@ bool RdbMap::verifyMap ( BigFile *dataFile )
 		diff = diff * -1LL;
 	}
 
-	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. diff: %"INT64"", __FILE__,__FUNCTION__, diff);
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: diff: %"INT64"", __FILE__,__FUNCTION__, diff);
 
 	// . return false if file size does not match
 	// . i've seen this happen before
