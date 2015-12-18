@@ -27,12 +27,16 @@ class Process {
 	// . urgent is true if we cored
 	bool shutdown ( bool urgent, void  *state = NULL, void (*callback) (void *state ) = NULL);
 
+	static const char *getAbortFileName() {
+		return "./fatal_error";
+	}
+
 	/**
 	 * Abort process
 	 *
 	 * @param save_on_abort Save data to disk on abort
 	 */
-	void abort ( bool save_on_abort = false );
+	void shutdownAbort ( bool save_on_abort = false );
 
 	bool checkNTPD();
 

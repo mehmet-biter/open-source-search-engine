@@ -1146,21 +1146,19 @@ bool Process::save ( ) {
 	return save2();
 }
 
-void Process::abort ( bool save_on_abort ) {
-	static const char* file_name = "./fatal_error";
-
+void Process::shutdownAbort ( bool save_on_abort ) {
 	bool force_abort = false;
 
 	// write fatal_error file
-	int fd = open(file_name, O_WRONLY | O_CREAT, getFileCreationFlags() );
+	int fd = open(getAbortFileName(), O_WRONLY | O_CREAT, getFileCreationFlags() );
 	if ( !fd ) {
-		log(LOG_ERROR, "process: Unable to create file '%s'", file_name);
+		log(LOG_ERROR, "process: Unable to create file '%s'", getAbortFileName());
 
 		// we can't create file, so make sure we exit gb restart loop
 		force_abort = true;
 	}
 
-	printStackTrace();
+	printStackTrace(true);
 
 	// follow usual segfault logic, only when required & we can create file
 	// if we can't create file, and we follow the usual logic, we risk not blocking startup

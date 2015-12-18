@@ -4,7 +4,7 @@ GTEST_DIR = googletest/googletest
 BASE_DIR ?= ../..
 
 TARGET = GigablastTest
-OBJECTS = GigablastTest.o FctypesTest.o JsonTest.o UnicodeTest.o UrlTest.o WordsTest.o
+OBJECTS = GigablastTest.o FctypesTest.o JsonTest.o ProcessTest.o UnicodeTest.o UrlTest.o WordsTest.o
 
 .PHONY: all
 all: $(TARGET)
@@ -45,4 +45,4 @@ test: all ucdata
 
 .PHONY: clean
 clean:
-	rm -f *.o $(TARGET)
+	rm -f *.o $(TARGET) core.*
