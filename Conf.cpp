@@ -7,7 +7,7 @@
 
 Conf g_conf;
 
-static bool s_setUmask = false;;
+static bool s_setUmask = false;
 
 mode_t getFileCreationFlags() {
 	if ( ! s_setUmask ) {
