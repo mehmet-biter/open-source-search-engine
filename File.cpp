@@ -6,6 +6,7 @@
 
 #include "File.h"
 #include "Threads.h"
+#include "Process.h"
 
 // THE FOLLOWING IS ALL STATIC 'CUZ IT'S THE FD POOL
 // if someone is using a file we must make sure this is true...
@@ -1109,7 +1110,7 @@ bool File::unlink ( )
 	{
 		log(LOG_ERROR,"%s:%s: TRYING TO unlink posdb0001!!", __FILE__,__FUNCTION__);
 
-		g_process.abort(false);
+		g_process.shutdownAbort(false);
 		return false;
 	}
 
