@@ -18186,25 +18186,6 @@ FILE *XmlDoc::getUtf8ContentInFile () {
 
 	setStatus ("wgetting archive file");
 
-	// if ( m_calledWgetThread ) {
-
-	// 	char filename[2048];
-	// 	snprintf ( filename,
-	// 		   2048,
-	// 		   "gbarchivefile%"UINT32"",
-	// 		   (int32_t)(int64_t)this);
-
-	// 	m_file.set ( g_hostdb.m_dir , filename );
-	// 	m_fileSize = m_file.getFileSize();
-	// 	m_fileValid = true;
-	// 	*fileSizeArg = m_fileSize;
-	// 	m_file.open(O_RDONLY);
-	// 	// explicitly set it to false now to make it harder for
-	// 	// it not to be true because that messes things up
-	// 	m_file.m_usePartFiles = false;
-	// 	return &m_file;
-	// }
-
 	// before calling the system wget thread we gotta set the cookiebuf
 	// HACK: for archive.org
 	// if getting a page from archive.org then append the cookie
