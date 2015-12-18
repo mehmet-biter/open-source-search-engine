@@ -12,7 +12,7 @@
 static int       s_isInitialized = false;
 
 /*
-// We have up to 5k virtual descriptors, each is mapped to a real descriptor 
+// We have up to 5k virtual descriptors, each is mapped to a real descriptor
 // or -1. We gotta store the filename to re-open one if it was closed.
 // 5 ints = 20 bytes = 20k
 static int       s_fds           [ MAX_NUM_VFDS ]; // the real fd
@@ -26,8 +26,8 @@ static char    s_unlinking  [ MAX_NUM_FDS ]; // is being unlinked/renamed
 static char    s_open       [ MAX_NUM_FDS ]; // is opened?
 static File   *s_filePtrs   [ MAX_NUM_FDS ];
 
-// . how many open files are we allowed?? hardcode it! 
-// . rest are used for sockets 
+// . how many open files are we allowed?? hardcode it!
+// . rest are used for sockets
 // . we use 512 for sockets as of now
 // . this linux kernel has 1024 fd's
 // . i saw the tcp server using 211 sockets when spidering, must be doing
@@ -95,7 +95,7 @@ File::~File ( ) {
 }
 
 void File::constructor ( ) {
-	m_fd = -1; 
+	m_fd = -1;
 	// initialize m_maxFileSize and the virtual fd table
 	if ( ! s_isInitialized ) initialize ();
 	// we are not being renamed
@@ -142,19 +142,19 @@ void File::set ( const char *filename ) {
 	m_filename[0] = '\0';
 	//m_filename.reset();
 	// return if NULL
-	if ( ! filename ) { 
+	if ( ! filename ) {
 		log ( LOG_LOGIC,"disk: Provided filename is NULL");
 		return;
 	}
 	// bail if too long
 	int32_t len = gbstrlen ( filename );
 	// account for terminating '\0'
-	if ( len + 1 >= MAX_FILENAME_LEN ) { 
+	if ( len + 1 >= MAX_FILENAME_LEN ) {
 	 	log ( "disk: Provdied filename %s length of %"INT32" "
 		      "is bigger "
 	 	      "than %"INT32".",filename,len,
-		      (int32_t)MAX_FILENAME_LEN-1); 
-	 	return; 
+		      (int32_t)MAX_FILENAME_LEN-1);
+	 	return;
 	}
 	// if we already had another file open then we must close it first.
 	if ( m_fd >= 0 ) close();
@@ -171,11 +171,11 @@ bool File::rename ( char *newFilename ) {
 	// close ourselves if we were open... why? historical reasons?
 	close();
 	// do the rename
-	if ( ::rename ( getFilename() , newFilename ) != 0 ) 
+	if ( ::rename ( getFilename() , newFilename ) != 0 )
 		return false;
 	// sync it to disk in case power goes out
 	sync();
-	//return log("file::rename: from %s to %s failed", 
+	//return log("file::rename: from %s to %s failed",
 	//m_filename , newFilename );
 	// set to our new name
 	set ( newFilename );
@@ -192,9 +192,9 @@ void rmFileFromLinkedList ( File *f ) {
 		s_activeHead = f->m_nextActive;
 	if ( s_activeTail == f )
 		s_activeTail = f->m_prevActive;
-	if ( f->m_prevActive ) 
+	if ( f->m_prevActive )
 		f->m_prevActive->m_nextActive = f->m_nextActive;
-	if ( f->m_nextActive ) 
+	if ( f->m_nextActive )
 		f->m_nextActive->m_prevActive = f->m_prevActive;
 	// and so we do not try to re-excise it
 	f->m_prevActive = NULL;
@@ -239,29 +239,29 @@ bool File::open ( int flags , int permissions ) {
 	// save these in case we need to reopen in getfd()
 	m_flags       = flags;
 	//m_permissions = permissions;
-	// just override and use system settings so we can get the group 
+	// just override and use system settings so we can get the group
 	// writable/readable/executable bits if set that way in g_conf
 	//m_permissions = getFileCreationFlags();
 	m_calledOpen  = true;
 	// sanity check
 	//int32_t ss = 0;
-	//for ( int32_t i = 0 ; i < MAX_NUM_VFDS ; i++ ) 
+	//for ( int32_t i = 0 ; i < MAX_NUM_VFDS ; i++ )
 	//	if (s_fds [ i ] >= 0 && s_writing[i] ) ss++;
 	//log("got %"INT32" doing writes",ss);
-	
+
 	// we must assign this to a virtual descriptor
-	// scan down our list looking for an m_fd of -2 (available) [-1 means 
+	// scan down our list looking for an m_fd of -2 (available) [-1 means
 	//    used but but not really open]
 	//int i;
 	//for ( i = 0 ; i < MAX_NUM_VFDS ; i++ ) if (s_fds [ i ] == -2 ) break;
 	// can these fools use all 5k fd's?
 	// if ( i >= MAX_NUM_VFDS ) {
 	// 	g_errno = EBADENGINEER;
-	// 	return log ( 
+	// 	return log (
 	// 		     "disk: All %"INT32" virtual fd's are in use. Panic.",
 	// 		     (int32_t)MAX_NUM_VFDS);
 	// }
-	// remember OUR virtual file descriptor for successive calls to 
+	// remember OUR virtual file descriptor for successive calls to
 	// read/write/...
 	//m_vfd      = i;
 	// we are not open at this point, but no longer available at least
@@ -281,8 +281,8 @@ bool File::open ( int flags , int permissions ) {
 // . returns number of bytes written
 // . returns -1 on error
 // . may return < numBytesToWrite if non-blocking
-int File::write ( void *buf             , 
-		  int32_t  numBytesToWrite , 
+int File::write ( void *buf             ,
+		  int32_t  numBytesToWrite ,
 		  int32_t  offset          ) {
 	// safety catch!
 	if ( g_conf.m_readOnlyMode ) {
@@ -292,10 +292,10 @@ int File::write ( void *buf             ,
 	}
 	// this return -2 if never opened, -1 on error, fd on success
 	int fd = getfd();
-	if ( fd < 0 ) { 
-		g_errno = EBADENGINEER; 
+	if ( fd < 0 ) {
+		g_errno = EBADENGINEER;
 		log("disk: write: fd is negative");
-		return -1; 
+		return -1;
 	}
 	// write it
 	int n;
@@ -303,7 +303,7 @@ int File::write ( void *buf             ,
 	if ( offset < 0 ) n = ::write ( fd , buf , numBytesToWrite );
 	else              n =  pwrite ( fd , buf , numBytesToWrite , offset );
 	// valgrind
-	if ( n < 0 && errno == EINTR ) goto retry21;	
+	if ( n < 0 && errno == EINTR ) goto retry21;
 	// update linked list
 	//promoteInLinkedList ( this );
 	// copy errno to g_errno
@@ -311,21 +311,21 @@ int File::write ( void *buf             ,
 	// cancel blocking errors - not really errors
 	if ( g_errno == EAGAIN ) { g_errno = 0; n = 0; }
 	// log an error
-	if ( n < 0 ) 
-		log("disk: write(%s) : %s" ,  
+	if ( n < 0 )
+		log("disk: write(%s) : %s" ,
 		    getFilename(), strerror ( g_errno ) );
 	return n;
 }
 
-int File::read ( void *buf            , 
-		 int32_t  numBytesToRead , 
+int File::read ( void *buf            ,
+		 int32_t  numBytesToRead ,
 		 int32_t  offset         ) {
 	// this return -2 if never opened, -1 on error, fd on success
 	int fd = getfd();
-	if ( fd < 0 ) { 
-		g_errno = EBADENGINEER; 
+	if ( fd < 0 ) {
+		g_errno = EBADENGINEER;
 		log("disk: read: fd is negative");
-		return -1; 
+		return -1;
 	}
 	// do the read
 	int n ;
@@ -333,15 +333,15 @@ int File::read ( void *buf            ,
 	if ( offset < 0 ) n = ::read  ( fd , buf , numBytesToRead );
 	else              n =  pread  ( fd , buf , numBytesToRead , offset );
 	// valgrind
-	if ( n < 0 && errno == EINTR ) goto retry9;	
+	if ( n < 0 && errno == EINTR ) goto retry9;
 	// update linked list
 	//promoteInLinkedList ( this );
 	// copy errno to g_errno
 	if ( n < 0 ) g_errno = errno;
 	// cancel blocking errors - not really errors
 	if ( g_errno == EAGAIN ) { g_errno = 0; n = 0; }
-	if ( n < 0 ) 
-		log("disk: read(%s) : %s" ,  
+	if ( n < 0 )
+		log("disk: read(%s) : %s" ,
 		    getFilename(), strerror ( g_errno ) );
 	return n;
 }
@@ -352,7 +352,7 @@ int32_t File::getCurrentPos ( ) {
 }
 
 bool File::isNonBlocking () {
-	// return true if never opened! 
+	// return true if never opened!
 	//if ( m_vfd < 0 ) return false;
 	// what was the actual file descriptor it represented?
 	//int fd = s_fds [ m_vfd ];
@@ -369,15 +369,15 @@ bool File::isNonBlocking () {
 //               i inc'd s_closeCountds[fd] right after the call to ::open()
 //               BUT what if it is opened by a socket???!?!?!?! Then the
 //               read should have got EBADF i guess...
-// . otherwise, any read for this fd might fail with BADFD if it got closed 
-//   before or during the read. in that case BigFile should retry 
+// . otherwise, any read for this fd might fail with BADFD if it got closed
+//   before or during the read. in that case BigFile should retry
 // . PROBLEM #2: yeah, but if its a write, what then? if opened for writing,
 //               NEVER allow the fd to be closed in closeLeastUsed()!!!
 //               because if merge and dump going on at same time, and both get
 //               their fds closed in closedLeastUsed(), then merge reopens his
 //               file but with dumps fd, and a dump in mid thread using the
 //               same old fd writes, he will write to the merge file!!!
-void File::close1_r ( ) { 
+void File::close1_r ( ) {
 	// assume no close
 	m_closedIt = false;
 
@@ -417,12 +417,12 @@ void File::close1_r ( ) {
 	s_unlinking [ m_fd ] = 1;
  again:
 	if ( m_fd == 0 ) log("disk: closing1 fd of 0");
-	if ( ::close(m_fd) == 0 ) { 
-		m_closedIt = true; 
+	if ( ::close(m_fd) == 0 ) {
+		m_closedIt = true;
 		// close2() needs to see m_fd so it can set flags...
 		// so m_fd MUST be intact
 		//m_fd = -1;
-		return; 
+		return;
 	}
 	log("disk: close(%i): %s.",m_fd,strerror(errno));
 	if ( errno == EINTR ) goto again;
@@ -430,7 +430,7 @@ void File::close1_r ( ) {
 
 // . just update the counts
 // . BigFile.cpp calls this when done unlinking/renaming this file
-void File::close2 ( ) { 
+void File::close2 ( ) {
 	// if already gone, bail. this could be a closed map file, m_vfd=-1.
 	if ( m_fd < 0 ) {
 		// -1 just means it was already closed, probably this is
@@ -466,7 +466,7 @@ void File::close2 ( ) {
 	// excise from linked list of active files
 	//rmFileFromLinkedList ( this );
 	// mark this virtual file descriptor as available.
-	//s_fds [ m_vfd ] = -2;           
+	//s_fds [ m_vfd ] = -2;
 
 	// save this for stuff below
 	int fd = m_fd;
@@ -476,7 +476,7 @@ void File::close2 ( ) {
 	m_fd = -1;
 
 	// mark it as closed
-	// CAUTION: since we closed the fd in a thread in close1_r() it may 
+	// CAUTION: since we closed the fd in a thread in close1_r() it may
 	// have been returned for another file, so check here. make sure we are
 	// still considered the 'owner'. if not then we were supplanted in
 	// File::getfd() and s_numOpenFiles-- was called there as well so
@@ -493,7 +493,7 @@ void File::close2 ( ) {
 
 	// to keep our sanityCheck() from coring, only decrement this
 	// if we owned it still
-	s_numOpenFiles--; 
+	s_numOpenFiles--;
 	// no more virtual file descriptor
 	//m_vfd = -1;
 	//s_closeCounts [ fd ]++;
@@ -515,7 +515,7 @@ void File::close2 ( ) {
 bool File::close ( ) {
 	// return true if not open
 	if ( m_fd < 0 ) return true;
-	// flush any changes 
+	// flush any changes
 	//flush ( );
 	// what was the actual file descriptor it represented?
 	//int fd = s_fds [ m_vfd ];
@@ -530,7 +530,7 @@ bool File::close ( ) {
 	//if ( fd < 0 ) return true;
 	// panic!
 	if ( s_writing [ m_fd ] )
-		return log(LOG_LOGIC,"disk: In write mode and closing 2."); 
+		return log(LOG_LOGIC,"disk: In write mode and closing 2.");
 	// if already being unlinked, skip
 	if ( s_unlinking [ m_fd ] )
 		return log(LOG_LOGIC,"disk: In unlink mode and closing 2.");
@@ -547,10 +547,10 @@ bool File::close ( ) {
 		g_errno = errno;
 		return log("disk: fcntl(%s) : %s",
 			   getFilename(),strerror(g_errno));
-	} 
+	}
 	// . tally up another close for this fd, if any
-	// . so if an open happens int16_tly here after, and 
-	//   gets this fd, then any read that was started 
+	// . so if an open happens int16_tly here after, and
+	//   gets this fd, then any read that was started
 	//   before that open will know it!
 	//s_closeCounts [ fd ]++;
 	// otherwise we gotta really close it
@@ -561,11 +561,11 @@ bool File::close ( ) {
 	if ( m_fd == 0 ) log("disk: closing2 fd of 0");
 	int status = ::close ( m_fd );
 	if ( status == -1 && errno == EINTR ) goto again;
-	// there was a closing error if status is non-zero. --- not checking 
+	// there was a closing error if status is non-zero. --- not checking
 	// the error may lead to silent loss of data --- see "man 2 close"
 	if ( status != 0 ) {
-		log("disk: close(%s) : %s" ,getFilename(),mstrerrno(g_errno)); 
-		return false; 
+		log("disk: close(%s) : %s" ,getFilename(),mstrerrno(g_errno));
+		return false;
 	}
 	// sanity
 	if ( ! s_open[m_fd] ) { char *xx=NULL;*xx=0; }
@@ -574,7 +574,7 @@ bool File::close ( ) {
 	s_filePtrs    [ m_fd ] = NULL;
 	s_closeCounts [ m_fd ]++;
 	// otherwise decrease the # of open files
-	s_numOpenFiles--; 
+	s_numOpenFiles--;
 	// debug log
 	if ( g_conf.m_logDebugDisk )
 		log("disk: close0 fd %i for %s #openfiles=%i",
@@ -585,7 +585,7 @@ bool File::close ( ) {
 	//rmFileFromLinkedList ( this );
 	// return true blue
 	if ( g_conf.m_logDebugDisk ) sanityCheck();
-	return true; 
+	return true;
 }
 
 int File::getfdNoOpen ( ) {
@@ -599,7 +599,7 @@ int File::getfdNoOpen ( ) {
 // . get the fd of this file
 // . if it was closed by us we reopen it
 // . may re-open a virtual fd whose real fd was closed
-// . if we hit our max # of real fds allowed we'll have to close 
+// . if we hit our max # of real fds allowed we'll have to close
 //   the least used of those so we can open this one
 // . return -2 if never been opened
 // . return -1 on other errors
@@ -609,14 +609,14 @@ int File::getfd () {
 	if ( ! m_calledOpen ) { // m_vfd < 0 ) {
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"disk: getfd: Must call open() first.");
-		char *xx=NULL; *xx=0; 
+		char *xx=NULL; *xx=0;
 		return -2;
 	}
 
 	// if someone closed our fd, why didn't our m_fd get set to -1 ??!?!?!!
 	if ( m_fd >= 0 && m_closeCount != s_closeCounts[m_fd] ) {
 		log(LOG_DEBUG,"disk: invalidating existing fd %i "
-		    "for %s this=0x%"PTRFMT" ccSaved=%i ccNow=%i", 
+		    "for %s this=0x%"PTRFMT" ccSaved=%i ccNow=%i",
 		    (int)m_fd,getFilename(),(PTRTYPE)this,
 		    (int)m_closeCount,
 		    (int)s_closeCounts[m_fd]);
@@ -629,11 +629,11 @@ int File::getfd () {
 	// get the real fd from the virtual fd
 	//int fd = s_fds [ m_vfd ];
 	// return true if it's already opened
-	if ( m_fd >=  0 ) { 
+	if ( m_fd >=  0 ) {
 		// debug msg
 		if ( g_conf.m_logDebugDisk )
 			log(LOG_DEBUG,"disk: returning existing fd %i for %s "
-			    "this=0x%"PTRFMT" ccSaved=%i ccNow=%i", 
+			    "this=0x%"PTRFMT" ccSaved=%i ccNow=%i",
 			    (int)m_fd,getFilename(),(PTRTYPE)this,
 			    (int)m_closeCount,
 			    (int)s_closeCounts[m_fd]);
@@ -675,12 +675,12 @@ int File::getfd () {
 		// valgrind
 		if ( fd == -1 && errno == EINTR ) goto retry7;
 		// 0 means stdout, right? why am i seeing it get assigned???
-		if ( fd == 0 ) 
+		if ( fd == 0 )
 			log("disk: Got fd of 0 when opening %s.",
 			    getFilename());
 		if ( fd == 0 )
 		       fd=::open(getFilename(),m_flags,getFileCreationFlags());
-		if ( fd == 0 ) 
+		if ( fd == 0 )
 			log("disk: Got fd of 0 when opening2 %s.",
 			    getFilename());
 		if ( fd >= MAX_NUM_FDS )
@@ -689,7 +689,7 @@ int File::getfd () {
 
 		// if we got someone else's fd that called close1_r() in a
 		// thread but did not have time to call close2() to fix
-		// up these member vars, then do it here. close2() will 
+		// up these member vars, then do it here. close2() will
 		// see that s_filePtrs[fd] does not equal the file ptr any more
 		// and it will not update s_numOpenFiles in that case.
 		if ( fd >= 0 && s_open [ fd ] ) {
@@ -758,7 +758,7 @@ int File::getfd () {
 	//s_fds [ m_vfd ] = fd;
 	m_fd = fd;
 	// 0 means stdout, right? why am i seeing it get assigned???
-	if ( fd == 0 ) 
+	if ( fd == 0 )
 		log("disk: Found fd of 0 when opening %s.",getFilename());
 	// reset
 	s_writing   [ fd ] = 0;
@@ -773,6 +773,7 @@ int File::getfd () {
 	//addFileToLinkedList ( this );
 	return fd;
 }
+
 
 // close the least used of all the file descriptors.
 // we don't touch files opened for writing, however.
@@ -799,8 +800,8 @@ bool File::closeLeastUsed () {
 		// re-open another file which gets garbled!
 		if ( s_writing [ i ] ) { writing++; continue; }
 		// do not close guys being unlinked they are in the middle
-		// of being closed ALREADY in close1_r(). There should only be 
-		// like one unlink thread allowed to be active at a time so we 
+		// of being closed ALREADY in close1_r(). There should only be
+		// like one unlink thread allowed to be active at a time so we
 		// don't have to worry about it hogging all the fds.
 		if ( s_unlinking [ i ] ) { unlinking++; continue; }
 		// when we got like 1000 reads queued up, it uses a *lot* of
@@ -855,7 +856,7 @@ bool File::closeLeastUsed () {
 	*/
 
 	// if nothing to free then return false
-	if ( mini == -1 ) 
+	if ( mini == -1 )
 		return log("File: closeLeastUsed: failed. All %"INT32" "
 			   "descriptors "
 			   "are unavailable to be closed and re-used to read "
@@ -887,8 +888,8 @@ bool File::closeLeastUsed () {
 	}
 
 	// . tally up another close for this fd, if any
-	// . so if an open happens shortly here after, and 
-	//   gets this fd, then any read that was started 
+	// . so if an open happens shortly here after, and
+	//   gets this fd, then any read that was started
 	//   before that open will know it!
 	//s_closeCounts [ fd ]++;
 	// otherwise we gotta really close it
@@ -938,13 +939,14 @@ bool File::closeLeastUsed () {
 	}
 
 
-	if ( status == -1 ) 
+	if ( status == -1 )
 		return log("disk: close(%i) : %s", fd , strerror(errno));
 
 	if ( g_conf.m_logDebugDisk ) sanityCheck();
 
 	return true;
-}	
+}
+
 
 int64_t getFileSize ( char *filename ) {
 
@@ -1008,33 +1010,11 @@ int64_t getFileSize_cygwin ( char *filename ) {
 // . returns -2 on error
 // . returns -1 if does not exist
 // . otherwise returns file size in bytes
-int64_t File::getFileSize ( ) {
-
-	// allow the substitution of another filename
-        //struct stat stats;
-
-        //stats.st_size = 0;
-
-        //int status = stat ( m_filename , &stats );
-
+int64_t File::getFileSize ( ) 
+{
 	return ::getFileSize ( getFilename() );
-
-        // return the size if the status was ok
-        //if ( status == 0 ) return stats.st_size;
-
-	// copy errno to g_errno
-	//g_errno = errno;
-
-        // return 0 and reset g_errno if it just does not exist
-        //if ( g_errno == ENOENT ) { g_errno = 0; return 0; }
-
-        // resource temporarily unavailable (for newer libc)
-        //if ( g_errno == EAGAIN ) { g_errno = 0; return 0; }
-
-        // log & return -1 on any other error
-        //log("disk: error getFileSize(%s) : %s",m_filename,strerror(g_errno));
-        //return -1;
 }
+
 
 // . return 0 on error
 time_t File::getLastModifiedTime ( ) {
@@ -1077,38 +1057,80 @@ int32_t File::doesExist ( ) {
 	if ( ! g_errno ) {
 		log("process: you tried to overload __errno_location() "
 		    "but were unsuccessful. you need to be using pthreads.");
-		char *xx=NULL;*xx=0; 
+		char *xx=NULL;*xx=0;
 	}
         log("disk: error stat3(%s): %s", getFilename() , strerror(g_errno));
         return -1;
 }
 
-bool File::unlink ( ) {
+
+bool File::unlink ( )
+{
+	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. filename [%s]", __FILE__,__FUNCTION__, getFilename());
+
 	// safety catch!
 	if ( g_conf.m_readOnlyMode )
+	{
 		return logf(LOG_DEBUG,"disk: Trying to unlink "
 			    "while in read only mode.");
+
+	}
+
 	// give the fd back to the pull, free the m_vfd
 	close ();
+
 	// avoid unneccessary unlinking
 	int32_t status = doesExist();
 	// return true if we don't exist anyway
-	if ( status == 0 ) return true;
+	if ( status == 0 )
+	{
+		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END - file did not exist. Return true.", __FILE__,__FUNCTION__);
+		return true;
+	}
+
 	// return false and set g_errno on error
-	if ( status  < 0 ) return false;
+	if ( status  < 0 )
+	{
+		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END - Error %"INT32" calling doesExists. Return false.", __FILE__,__FUNCTION__, status);
+		return false;
+	}
+
+
 	// . log it so we can see what happened to timedb!
 	// . don't log startup unlinks of "tmpfile"
 	if ( ! strstr(getFilename(),"tmpfile") )
+	{
 		log(LOG_INFO,"disk: unlinking %s", getFilename() );
+	}
+
+
+	//### BR 20151218: Hard coded check to help us debug file deletion problem
+	if( strstr(getFilename(),"posdb0001") )
+	{
+		log(LOG_ERROR,"%s:%s: TRYING TO unlink posdb0001!!", __FILE__,__FUNCTION__);
+
+		g_process.abort(false);
+		return false;
+	}
+
 	// remove ourselves from the disk
-	if ( ::unlink ( getFilename() ) == 0 ) return true;
+	if ( ::unlink ( getFilename() ) == 0 )
+	{
+		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. END - OK, returning true.", __FILE__,__FUNCTION__);
+		return true;
+	}
+
 	// sync it to disk in case power goes out
 	sync();
 	// copy errno to g_errno
 	g_errno = errno;
+
 	// return false and set g_errno on error
-	return log("disk: unlink(%s) : %s" , getFilename(),strerror(g_errno));
+	log(LOG_ERROR,"%s:%s: Unlinking [%s] caused error [%s]. Returning false.", __FILE__,__FUNCTION__, getFilename(),strerror(g_errno));
+	return false;
 }
+
+
 
 bool File::flush ( ) {
 	//int fd =s_fds[m_vfd];
@@ -1131,7 +1153,7 @@ int32_t File::lseek ( int32_t offset , int whence ) {
 	// copy errno to g_errno
 	g_errno = errno;
 
-	log("disk: lseek ( %s(%i) , %"INT32" , whence ): %s" , getFilename() , 
+	log("disk: lseek ( %s(%i) , %"INT32" , whence ): %s" , getFilename() ,
 	      m_fd, offset , strerror ( g_errno ) );
 
 	return -1;
@@ -1156,7 +1178,7 @@ bool File::initialize ( ) {
 		s_filePtrs    [ i ] = NULL;
 	}
 
-	// for ( int32_t i = 0 ; i < MAX_NUM_FDS ; i++ ) 
+	// for ( int32_t i = 0 ; i < MAX_NUM_FDS ; i++ )
 	// 	s_closeCounts[i] = 0;
 
 	s_isInitialized = true;
@@ -1177,9 +1199,9 @@ char *File::getExtension ( ) {
 	return &f[i+1];
 }
 
-// We do not close the fd in closeLeastUsed() for fear of getting it 
-// reassigned mid-thread and getting a write into a file that should not 
-// have had it. this can be *VERY* bad. like if one file is being merged 
+// We do not close the fd in closeLeastUsed() for fear of getting it
+// reassigned mid-thread and getting a write into a file that should not
+// have had it. this can be *VERY* bad. like if one file is being merged
 // into and a file being dumped. both lose their fd from closeLeastUsed()
 // and the merge guy gets a new fd which happens to be the old fd of the
 // dump, so when the dump thread lets its write go it writes into the merge
