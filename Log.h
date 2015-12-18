@@ -164,8 +164,6 @@ class Log {
 
 	char   *m_filename;
 	int     m_fd;
-	char   *m_hostname;
-	int     m_port;
 
 	int64_t m_logFileSize;
 	bool makeNewLogFile ( );

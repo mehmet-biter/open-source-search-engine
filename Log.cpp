@@ -39,8 +39,6 @@ void Log::setPid ( ) {
 Log::Log () { 
 	m_fd = -1; 
 	m_filename = NULL; 
-	m_hostname = NULL; 
-	m_port = 777; 
 	m_needsPrinting = false; 
 	m_disabled = false;
 	m_logTimestamps = true;
@@ -106,14 +104,10 @@ bool Log::init ( char *filename ) {
 	g_dbuf = (char*)mmalloc(g_dbufSize,"Log: DebugBuffer");
 	if (!g_dbuf) fprintf(stderr, "Unable to init debug buffer");
 #endif
-	//	m_hostname  = g_conf.m_hostname;
-	//	m_port      = port;
+
 	// is there a filename to log our errors to?
 	m_filename = filename;
 	if ( ! m_filename ) return true;
-
-	// skip this for now
-	//return true;
 
 	//
 	// RENAME log000 to log000-2013_11_04-18:19:32
@@ -277,9 +271,9 @@ bool Log::logR ( int64_t now , int32_t type , char *msg , bool asterisk ,
 		return false;
 	}
 
-	//if ( now == 0 ) now  = g_nowApprox;
 	// chop off any spaces at the end of the msg.
 	while ( is_wspace_a ( msg [ msgLen - 1 ] ) && msgLen > 0 ) msgLen--;
+
 	// get this pid
 	pthread_t pid = getpidtid();
 	// a tmp buffer
