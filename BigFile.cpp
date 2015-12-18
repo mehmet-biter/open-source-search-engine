@@ -1609,7 +1609,7 @@ bool BigFile::unlink ( )
 		log(LOG_ERROR,"%s:%s: TRYING TO unlink posdb0001!!", __FILE__,__FUNCTION__);
 		logAllData(LOG_ERROR);
 
-		g_process.abort(false);
+		g_process.shutdownAbort(false);
 		return false;
 	}
 	
@@ -1638,7 +1638,7 @@ bool BigFile::move ( char *newDir )
 		log(LOG_ERROR,"%s:%s: TRYING TO move posdb0001!!", __FILE__,__FUNCTION__);
 		logAllData(LOG_ERROR);
 
-		g_process.abort(false);
+		g_process.shutdownAbort(false);
 		return false;
 	}
 
@@ -1668,7 +1668,7 @@ bool BigFile::rename(char *newBaseFilename , char *newBaseFilenameDir )
 		log(LOG_ERROR,"%s:%s: TRYING TO rename posdb0001!!", __FILE__,__FUNCTION__);
 		logAllData(LOG_ERROR);
 
-		g_process.abort(false);
+		g_process.shutdownAbort(false);
 		return false;
 	}
 	
@@ -1696,7 +1696,7 @@ bool BigFile::chopHead(int32_t part )
 		log(LOG_ERROR,"%s:%s: TRYING TO chopHead ON posdb0001!! part=%"INT32"", __FILE__,__FUNCTION__, part);
 		logAllData(LOG_ERROR);
 
-		g_process.abort(false);
+		g_process.shutdownAbort(false);
 		return false;
 	}
 
@@ -1726,7 +1726,7 @@ bool BigFile::unlink(void (* callback) ( void *state ) , void *state )
 		log(LOG_ERROR,"%s:%s: TRYING TO unlink posdb0001!! (callback)", __FILE__,__FUNCTION__);
 		logAllData(LOG_ERROR);
 
-		g_process.abort(false);
+		g_process.shutdownAbort(false);
 		return false;
 	}
 
@@ -1756,7 +1756,7 @@ bool BigFile::rename(char *newBaseFilename, void (*callback)(void *state), void 
 		log(LOG_ERROR,"%s:%s: TRYING TO rename posdb0001!! (callback)", __FILE__,__FUNCTION__);
 		logAllData(LOG_ERROR);
 
-		g_process.abort(false);
+		g_process.shutdownAbort(false);
 		return false;
 	}
 
@@ -1785,7 +1785,7 @@ bool BigFile::chopHead(int32_t part, void (*callback)(void *state), void *state)
 	{
 		log(LOG_ERROR,"%s:%s: TRYING TO chopHead ON posdb0001!! (callback) part %"INT32"", __FILE__,__FUNCTION__, part);
 		logAllData(LOG_ERROR);
-		g_process.abort(false);
+		g_process.shutdownAbort(false);
 		return false;
 	}
 	
