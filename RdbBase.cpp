@@ -937,37 +937,6 @@ int32_t RdbBase::addFile ( int32_t id , bool isNew , int32_t mergeNum ,
 	return i;
 }
 
-/*
-// this is obsolete now
-// returns -1 and sets g_errno if none available
-int32_t RdbBase::getAvailId2 ( ) {
-	// . otherwise we're titledb, find an available second id
-	// . store id2s here as we find them
-	char f[MAX_RDB_FILES]; 
-	memset ( f , 0 , MAX_RDB_FILES );
-	int32_t i;
-	for ( i = 0 ; i < m_numFiles ; i++ ) {
-		// sanity check
-		if ( m_fileIds2[i] < 0 || m_fileIds2[i] >= MAX_RDB_FILES ) {
-			char *xx = NULL; *xx = 0; }
-		// flag it as used
-		f [ m_fileIds2[i] ] = 1;
-	}
-	// find the first available one
-	for ( i = 0 ; i < MAX_RDB_FILES ; i++ ) if ( f[i] == 0 ) break;
-	// . error if none! return -1 on error
-	// . 255 is reserved in tfndb for urls just in spiderdb or in 
-	//   titledb tree
-	if ( i >= MAX_RDB_FILES || i >= 255 ) {
-		log(LOG_LOGIC,"db: No more secondary ids available for "
-		    "new titledb file. All in use. This should never happen. "
-		    "Are your hard drives extremely slow?");
-		return -1;
-	}
-	return i;
-}
-*/
-
 int32_t RdbBase::addNewFile ( int32_t id2 ) {
 
 	int32_t fileId = 0;
@@ -988,56 +957,61 @@ bool RdbBase::incorporateMerge ( ) {
 	// some int16_thand variable notation
 	int32_t a = m_mergeStartFileNum;
 	int32_t b = m_mergeStartFileNum + m_numFilesToMerge;
+
 	// shouldn't be called if no files merged
 	if ( a == b ) {
 		// unless resuming after a merge completed and we exited
 		// but forgot to finish renaming the final file!!!!
 		log("merge: renaming final file");
+
 		// decrement this count
-		if ( m_isMerging ) m_rdb->m_numMergesOut--;
+		if ( m_isMerging ) {
+			m_rdb->m_numMergesOut--;
+		}
+
 		// exit merge mode
 		m_isMerging = false;
-		// return the merge token, no need for a callback
-		//g_msg35.releaseToken ( );
-		//return true; 
 	}
+
 	// file #x is the merge file
 	int32_t x = a - 1; 
+
 	// . we can't just unlink the merge file on error anymore
 	// . it may have some data that was deleted from the original file
 	if ( g_errno ) {
 		log("db: Merge failed for %s, Exiting.", m_dbname);
-		// print mem table
-		//g_mem.printMem();
-		// we don't have a recovery system in place, so save state
-	        // and dump core
+
+		// we don't have a recovery system in place, so save state and dump core
 		char *p = NULL;
 		*p = 0;
-		//m_isMerging = false;
-		// return the merge token, no need for a callback
-		//g_msg35.releaseToken ( );
+
 		return true;
 	}
+
 	// note
 	log(LOG_INFO,"db: Writing map %s.",m_maps[x]->getFilename());
+
 	// . ensure we can save the map before deleting other files
 	// . sets g_errno and return false on error
 	// . allDone = true
-	m_maps[x]->writeMap( true );
+	bool status = m_maps[x]->writeMap( true );
+	if ( !status ) {
+		// unable to write, let's abort
+		g_process.shutdownAbort();
+	}
 
-	// tfndb has his own merge class since titledb merges write tfndb recs
 	RdbMerge *m = &g_merge;
-	//if ( m_rdb == g_tfndb.getRdb() ) m = &g_merge2;
 
 	// print out info of newly merged file
 	int64_t tp = m_maps[x]->getNumPositiveRecs();
 	int64_t tn = m_maps[x]->getNumNegativeRecs();
-	log(LOG_INFO,
-	    "merge: Merge succeeded. %s (#%"INT32") has %"INT64" positive "
-	     "and %"INT64" negative recs.", m_files[x]->getFilename(), x, tp, tn);
-	if ( m_rdb == g_posdb.getRdb() )
-		log(LOG_INFO,"merge: Removed %"INT64" dup keys.",
-		     m->getDupsRemoved() );
+	log(LOG_INFO, "merge: Merge succeeded. %s (#%"INT32") has %"INT64" positive "
+	    "and %"INT64" negative recs.", m_files[x]->getFilename(), x, tp, tn);
+
+	if ( m_rdb == g_posdb.getRdb() ) {
+		log(LOG_INFO,"merge: Removed %"INT64" dup keys.", m->getDupsRemoved() );
+	}
+
 	// . bitch if bad news
 	// . sanity checks to make sure we didn't mess up our data from merging
 	// . these cause a seg fault on problem, seg fault should save and
@@ -1048,24 +1022,19 @@ bool RdbBase::incorporateMerge ( ) {
 	// . i just re-added some partially indexed urls so indexdb will
 	//   have dup overwrites now too!!
 	if ( tp > m_numPos ) {
-		log(LOG_INFO,"merge: %s gained %"INT64" positives.",
-		     m_dbname , tp - m_numPos );
-			//char *xx = NULL; *xx = 0;
+		log(LOG_INFO,"merge: %s gained %"INT64" positives.", m_dbname , tp - m_numPos );
 	}
+
 	if ( tp < m_numPos - m_numNeg ) {
-		log(LOG_INFO,"merge: %s: lost %"INT64" positives",
-		     m_dbname , m_numPos - tp );
-		//char *xx = NULL; *xx = 0;
+		log(LOG_INFO,"merge: %s: lost %"INT64" positives", m_dbname , m_numPos - tp );
 	}
+
 	if ( tn > m_numNeg ) {
-		log(LOG_INFO,"merge: %s: gained %"INT64" negatives.",
-		     m_dbname , tn - m_numNeg );
-		//char *xx = NULL; *xx = 0;
+		log(LOG_INFO,"merge: %s: gained %"INT64" negatives.", m_dbname , tn - m_numNeg );
 	}
+
 	if ( tn < m_numNeg - m_numPos ) {
-		log(LOG_INFO,"merge: %s: lost %"INT64" negatives.",
-		     m_dbname , m_numNeg - tn );
-		//char *xx = NULL; *xx = 0;
+		log(LOG_INFO,"merge: %s: lost %"INT64" negatives.", m_dbname , m_numNeg - tn );
 	}
 
 	// assume no unlinks blocked
@@ -1074,9 +1043,12 @@ bool RdbBase::incorporateMerge ( ) {
 	// . before unlinking the files, ensure merged file is the right size!!
 	// . this will save us some anguish
 	m_files[x]->m_fileSize = -1;
+
 	int64_t fs = m_files[x]->getFileSize();
+
 	// get file size from map
 	int64_t fs2 = m_maps[x]->getFileSize();
+
 	// compare, if only a key off allow that. that is an artificat of
 	// generating a map for a file screwed up from a power outage. it
 	// will end on a non-key boundary.
@@ -1096,51 +1068,52 @@ bool RdbBase::incorporateMerge ( ) {
 	for ( int32_t i = a ; i < b ; i++ ) {
 		// incase we are starting with just the
 		// linkdb0001.003.dat file and not the stuff we merged
-		if ( ! m_files[i] ) continue;
+		if ( ! m_files[i] )
+			continue;
+
 		// debug msg
 		log(LOG_INFO,"merge: Unlinking merged file %s/%s (#%"INT32").",
 		    m_files[i]->getDir(),m_files[i]->getFilename(),i);
-		// . append it to "sync" state we have in memory
-		// . when host #0 sends a OP_SYNCTIME signal we dump to disk
-		//g_sync.addOp ( OP_UNLINK , m_files[i] , 0 );
+
 		// . these links will be done in a thread
 		// . they will save the filename before spawning so we can
 		//   delete the m_files[i] now
 		if ( ! m_files[i]->unlink ( doneWrapper , this ) ) {
-			m_numThreads++; g_numThreads++; }
-		// debug msg
-		// MDW this cores if file is bad... if collection
-		// got delete from under us i guess!!
-		else log(LOG_INFO,"merge: Unlinked %s (#%"INT32").",
-			 m_files[i]->getFilename(),i);
-		// debug msg
-		log(LOG_INFO,"merge: Unlinking map file %s (#%"INT32").",
-		     m_maps[i]->getFilename(),i);
-		if ( ! m_maps[i]->unlink  ( doneWrapper , this ) ) {
-			m_numThreads++; g_numThreads++; }
+			m_numThreads++; g_numThreads++;
+		} else {
 			// debug msg
-		else log(LOG_INFO,"merge: Unlinked %s (#%"INT32").",
-			 m_maps[i]->getFilename(),i);
-		//if ( i == a ) continue;
-		//delete (m_files[i]);
-		//delete (m_maps[i]);
+			// MDW this cores if file is bad... if collection got delete from under us i guess!!
+			log(LOG_INFO,"merge: Unlinked %s (#%"INT32").", m_files[i]->getFilename(), i);
+		}
+
+		// debug msg
+		log(LOG_INFO,"merge: Unlinking map file %s (#%"INT32").", m_maps[i]->getFilename(),i);
+
+		if ( ! m_maps[i]->unlink  ( doneWrapper , this ) ) {
+			m_numThreads++; g_numThreads++;
+		} else {
+			// debug msg
+			log(LOG_INFO,"merge: Unlinked %s (#%"INT32").", m_maps[i]->getFilename(), i);
+		}
 	}
 
 	// save for re-use
 	m_x = x;
 	m_a = a;
+
 	// save the merge file name so we can unlink from sync table later
 	strncpy ( m_oldname , m_files[x]->getFilename() , 254 );
-	// . let sync table know we closed the old file we merged to
-	// . no, keep it around until after the rename finishes
-	//g_sync.addOp ( OP_CLOSE , m_files[x] , 0 );	
 
 	// wait for the above unlinks to finish before we do this rename
 	// otherwise, we might end up doing this rename first and deleting
 	// it!
 	
 	// if we blocked on all, keep going
-	if ( m_numThreads == 0 ) { doneWrapper2 ( ); return true; }
+	if ( m_numThreads == 0 ) {
+		doneWrapper2 ( );
+		return true;
+	}
+
 	// . otherwise we blocked
 	// . we are now unlinking
 	// . this is so Msg3.cpp can avoid reading the [a,b) files
@@ -2454,17 +2427,27 @@ int32_t RdbBase::getFileNumFromName ( char *fname ) {
 }
 
 void RdbBase::closeMaps ( bool urgent ) {
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ )
-		m_maps[i]->close ( urgent );
+	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
+		bool status = m_maps[i]->close ( urgent );
+		if ( !status ) {
+			// unable to write, let's abort
+			g_process.shutdownAbort();
+		}
+	}
 }
 
-void RdbBase::saveMaps ( bool useThread ) {
+void RdbBase::saveMaps() {
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
 		if ( ! m_maps[i] ) {
-			log("base: map for file #%i is null",i);
+			log("base: map for file #%i is null", i);
 			continue;
 		}
-		m_maps[i]->writeMap ( false );
+
+		bool status = m_maps[i]->writeMap ( false );
+		if (!status) {
+			// unable to write, let's abort
+			g_process.shutdownAbort();
+		}
 	}
 }
 

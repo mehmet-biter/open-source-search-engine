@@ -50,7 +50,7 @@ class Process {
 	bool isRdbDumping       ( ) ;
 	bool isRdbMerging       ( ) ;
 	bool saveRdbTrees       ( bool useThread , bool shuttingDown ) ;
-	bool saveRdbMaps        ( bool useThread ) ;
+	bool saveRdbMaps();
 	bool saveRdbCaches      ( bool useThread ) ;
 	bool saveBlockingFiles1 ( ) ;
 	bool saveBlockingFiles2 ( ) ;

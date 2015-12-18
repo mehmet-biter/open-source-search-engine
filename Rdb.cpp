@@ -830,56 +830,23 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent ,
 	// in case the got their heads chopped (RdbMap::chopHead()) which
 	// we do to save disk space while merging.
 	// try to save the cache, may not save
-	//if ( m_isReallyClosing&&m_cache.useDisk() ) m_cache.save ( m_dbname);
 	if ( m_isReallyClosing ) {
 		// now loop over bases
 		for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-			//CollectionRec *cr = g_collectiondb.m_recs[i];
-			// there can be holes if one was deleted
-			//if ( ! cr ) continue;
 			// shut it down
 			RdbBase *base = getBase ( i );
-			//if ( m_bases[i] ) m_bases[i]->closeMaps ( m_urgent );
-			if ( base ) base->closeMaps ( m_urgent );
+			if ( base ) {
+				base->closeMaps ( m_urgent );
+			}
 		}
-		//for ( int32_t i = 0 ; i < m_numFiles ; i++ )
-		//	// this won't write it if it doesn't need to
-		//	if ( m_maps[i] ) m_maps[i]->close ( m_urgent );
 	}
-	// if TREE doesn't need save return
-	//if ( ! m_needsSave ) { 
-	//	m_isSaving=false; 
-	//	if ( m_isReallyClosing ) m_isClosed = true;
-	//	return true; 
-	//}
-	// HACK: this seems to get called 20x per second!! when merging
-	//return log ( 0 , "Rdb::close: waiting for merge to finish.");
-	// suspend any merge going on, can be resumed later,saves state to disk
-	//s_merge.suspendMerge();
-	// . if there are no nodes in the tree then don't dump it
-	// . NO! because we could have deleted all the recs and the old saved
-	//   version is still on disk -- it needs to be overwritten!!
-	//if ( m_tree.getNumUsedNodes() <= 0 ) { m_isClosed=true; return true;}
+
 	// save it using a thread?
 	bool useThread ;
 	if      ( m_urgent          ) useThread = false;
 	else if ( m_isReallyClosing ) useThread = false;
 	else                          useThread = true ;
 
-	// create an rdb file name to save tree to
-	//char filename[256];
-	//sprintf(filename,"%s-saving.dat",m_dbname);
-	//m_saveFile.set ( getDir() , filename );
-	// log msg
-	//log (0,"Rdb: saving to %s",filename );
-	// close it
-	// open it up
-	//m_saveFile.open ( O_RDWR | O_CREAT ) ;
-	// . assume save not needed
-	// . but if data should come in while we are saving then we'll
-	//   need to save again
-	//m_needsSave = false;
-	// . use the new way now
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 	if(m_useTree) {
@@ -897,21 +864,7 @@ bool Rdb::close ( void *state , void (* callback)(void *state ), bool urgent ,
 					    doneSavingWrapper ) ) 
 			return false;
 	}
-	//log("Rdb::close: save FAILED");
-	// . dump tree into this file
-	// . only blocks if niceness is 0
-	/*
-	if ( ! m_dump.set (  &m_saveFile     ,
-			     &m_tree         ,
-			     NULL            , // RdbMap
-			     NULL            , // RdbCache
-			     1024*100        , // 100k write buf
-			     false           , // put keys in order? no!
-			     m_dedup         ,
-			     0               , // niceness of dump
-			     this            , // state
-			     doneSavingWrapper) ) return false;
-	*/
+
 	// we saved it w/o blocking OR we had an g_errno
 	doneSaving();
 	return true;
@@ -1024,20 +977,19 @@ bool Rdb::saveTree ( bool useThread ) {
 	}
 }
 
-bool Rdb::saveMaps ( bool useThread ) {
-	//for ( int32_t i = 0 ; i < m_numBases ; i++ )
-	//	if ( m_bases[i] ) m_bases[i]->saveMaps ( useThread );
+bool Rdb::saveMaps () {
 	// now loop over bases
 	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
 		CollectionRec *cr = g_collectiondb.m_recs[i];
-		if ( ! cr ) continue;
+		if ( ! cr ) {
+			continue;
+		}
+
 		// if swapped out, this will be NULL, so skip it
 		RdbBase *base = cr->getBasePtr(m_rdbId);
-		// shut it down
-		//RdbBase *base = getBase(i);
-		//if ( m_bases[i] ) m_bases[i]->closeMaps ( m_urgent );
-		//if ( base ) base->closeMaps ( m_urgent );
-		if ( base ) base->saveMaps ( useThread );
+		if ( base ) {
+			base->saveMaps();
+		}
 	}
 	return true;
 }

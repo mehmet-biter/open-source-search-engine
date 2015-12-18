@@ -58,9 +58,15 @@ if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. dir [%s], mapFilena
 
 bool RdbMap::close ( bool urgent ) {
 	bool status = true;
-	if ( /*mdw m_numPages > 0 &&*/ m_needToWrite ) status=writeMap(false);
+	if ( m_needToWrite ) {
+		status = writeMap(false);
+	}
+
 	// clears and frees everything
-	if ( ! urgent ) reset ();
+	if ( ! urgent ) {
+		reset ();
+	}
+
 	return status;
 }
 
@@ -110,52 +116,58 @@ void RdbMap::reset ( ) {
 }
 
 
-bool RdbMap::writeMap ( bool allDone )
-{
-	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. filename [%s]", __FILE__,__FUNCTION__, m_file.getFilename());
+bool RdbMap::writeMap ( bool allDone ) {
+	if ( g_conf.m_logDebugDetailed ) {
+		log(LOG_DEBUG, "%s:%s: BEGIN. filename [%s]", __FILE__, __func__, m_file.getFilename());
+	}
 
 
-	if ( g_conf.m_readOnlyMode )
-	{
-		log(LOG_DEBUG,"%s:%s: Read-only mode, not writing map. filename [%s]", __FILE__,__FUNCTION__, m_file.getFilename());
+	if ( g_conf.m_readOnlyMode ) {
+		log(LOG_DEBUG, "%s:%s: Read-only mode, not writing map. filename [%s]",
+		    __FILE__, __func__, m_file.getFilename());
 		return true;
 	}
 
-	// return true if nothing to write out
-	// mdw if ( m_numPages <= 0 ) return true;
-	if ( ! m_needToWrite )
-	{
-		log(LOG_DEBUG,"%s:%s: no need, not writing map. filename [%s]", __FILE__,__FUNCTION__, m_file.getFilename());
+	if ( ! m_needToWrite ) {
+		log(LOG_DEBUG, "%s:%s: no need, not writing map. filename [%s]",
+		    __FILE__, __func__, m_file.getFilename());
 		return true;
 	}
 
 	// open a new file
-	if ( ! m_file.open ( O_RDWR | O_CREAT | O_TRUNC ) )
-	{
-		log(LOG_ERROR,"%s:%s: Could not open %s for writing: %s.",__FILE__,__FUNCTION__,m_file.getFilename(),mstrerror(g_errno));
+	if ( ! m_file.open ( O_RDWR | O_CREAT | O_TRUNC ) ) {
+		log(LOG_ERROR, "%s:%s: Could not open %s for writing: %s.",
+		    __FILE__, __func__, m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
 	   
 			   
 	// write map data
 	bool status = writeMap2 ( );
-	// on success, we don't need to write it anymore
-	if ( status ) m_needToWrite = false;
-	// . close map
-	// . no longer since we use BigFile
-	//m_file.close ( );
-	// map is done so save some memory
-	if ( allDone ) reduceMemFootPrint () ;
 
-	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. filename [%s], returning %s", __FILE__,__FUNCTION__, m_file.getFilename(), status?"true":"false");
-	// return status
+	// on success, we don't need to write it anymore
+	if ( status ) {
+		m_needToWrite = false;
+	}
+
+	// map is done so save some memory
+	if ( allDone ) {
+		reduceMemFootPrint ();
+	}
+
+	if( g_conf.m_logDebugDetailed ) {
+		log(LOG_DEBUG, "%s:%s: END. filename [%s], returning %s",
+		    __FILE__, __func__, m_file.getFilename(), status ? "true" : "false");
+	}
+
 	return status;
 }
 
 
-bool RdbMap::writeMap2 ( ) 
-{
-	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. filename [%s]", __FILE__,__FUNCTION__, m_file.getFilename());
+bool RdbMap::writeMap2 ( ) {
+	if( g_conf.m_logDebugDetailed ) {
+		log(LOG_DEBUG, "%s:%s: BEGIN. filename [%s]", __FILE__, __func__, m_file.getFilename());
+	}
 	
 	// the current disk offset
 	int64_t offset = 0LL;
@@ -163,68 +175,70 @@ bool RdbMap::writeMap2 ( )
 	
 	// first 8 bytes are the size of the DATA file we're mapping
 	m_file.write ( &m_offset , 8 , offset );
-	if ( g_errno ) 
-	{
-		log(LOG_ERROR,"%s:%s: Failed to write to %s (m_offset): %s",__FILE__,__FUNCTION__,m_file.getFilename(),mstrerror(g_errno));
+	if ( g_errno )  {
+		log(LOG_ERROR, "%s:%s: Failed to write to %s (m_offset): %s",
+		    __FILE__, __func__, m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
 	
 	offset += 8;
+
 	// when a BigFile gets chopped, keep up a start offset for it
 	m_file.write ( &m_fileStartOffset , 8 , offset );
-	if ( g_errno ) 
-	{
-		log(LOG_ERROR,"%s:%s: Failed to write to %s (m_fileStartOffset): %s",__FILE__,__FUNCTION__, m_file.getFilename(),mstrerror(g_errno));
+
+	if ( g_errno ) {
+		log(LOG_ERROR, "%s:%s: Failed to write to %s (m_fileStartOffset): %s",
+		    __FILE__, __func__, m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
 	
 	offset += 8;
+
 	// store total number of non-deleted records
 	m_file.write ( &m_numPositiveRecs , 8 , offset );
-	if ( g_errno ) 
-	{
-		log(LOG_ERROR,"%s:%s: Failed to write to %s (m_numPositiveRecs): %s",__FILE__,__FUNCTION__, m_file.getFilename(),mstrerror(g_errno));
+	if ( g_errno ) {
+		log(LOG_ERROR,"%s:%s: Failed to write to %s (m_numPositiveRecs): %s",
+		    __FILE__, __func__, m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
 
 	offset += 8;
+
 	// store total number of deleted records
 	m_file.write ( &m_numNegativeRecs , 8 , offset );
-	if ( g_errno ) 
-	{
-		log(LOG_ERROR,"%s:%s: Failed to write to %s (m_numNegativeRecs): %s",__FILE__,__FUNCTION__, m_file.getFilename(),mstrerror(g_errno));
+	if ( g_errno ) {
+		log(LOG_ERROR,"%s:%s: Failed to write to %s (m_numNegativeRecs): %s",
+		    __FILE__, __func__, m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
 
 	offset += 8;
+
 	// store last key in map
-	//m_file.write ( &m_lastKey , 12 , offset );
 	m_file.write ( m_lastKey , m_ks , offset );
-	if ( g_errno ) 
-	{
-		log(LOG_ERROR,"%s:%s: Failed to write to %s (m_lastKey): %s",__FILE__,__FUNCTION__, m_file.getFilename(),mstrerror(g_errno));
+	if ( g_errno ) {
+		log(LOG_ERROR,"%s:%s: Failed to write to %s (m_lastKey): %s",
+		    __FILE__, __func__, m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
 
-	//offset += 12;
 	offset += m_ks;
 
 	// . now store the map itself
 	// . write the segments (keys/offsets) from the map file
-	for ( int32_t i = 0 ; i < m_numSegments ; i++ ) 
-	{
+	for ( int32_t i = 0 ; i < m_numSegments ; ++i ) {
 		offset = writeSegment ( i , offset );
-		if ( offset<=0 ) 
-		{
-			log(LOG_ERROR,"%s:%s: Failed to write to %s (m_numSegments, segment %"INT32"): %s",__FILE__,__FUNCTION__, m_file.getFilename(), i, mstrerror(g_errno));
+		if ( offset<=0 ) {
+			log(LOG_ERROR, "%s:%s: Failed to write to %s (m_numSegments, segment %"INT32"): %s",
+			    __FILE__, __func__, m_file.getFilename(), i, mstrerror(g_errno));
 			return false;
 		}
 	}
-	// . make sure it happens now!
-	// . no, we use O_SYNC
-	//m_file.flush();
-	
-	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END", __FILE__,__FUNCTION__);
+
+	if( g_conf.m_logDebugDetailed ) {
+		log(LOG_DEBUG, "%s:%s: END", __FILE__, __func__);
+	}
+
 	return true;
 }
 

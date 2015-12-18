@@ -1250,7 +1250,9 @@ bool Process::save2 ( ) {
 	// . save all rdb maps if they need it
 	// . will return true if no rdb map needs a save
 	// . save these last since maps can be auto-regenerated at startup
-	if ( ! saveRdbMaps ( useThreads ) ) return false;
+	if ( ! saveRdbMaps() ) {
+		return false;
+	}
 
 	// . save the conf files and caches. these block the cpu.
 	// . save these first since more important than the stuff below
@@ -1397,8 +1399,11 @@ bool Process::shutdown2 ( ) {
 
 	// . save all rdb maps if they need it
 	// . will return true if no rdb map needs a save
-	if ( ! saveRdbMaps ( useThreads ) ) 
-		if ( ! m_urgent ) return false;
+	if ( ! saveRdbMaps() ) {
+		if ( ! m_urgent ) {
+			return false;
+		}
+	}
 
 	int64_t now = gettimeofdayInMillisecondsLocal();
 	if ( m_firstShutdownTime == 0 ) m_firstShutdownTime = now;
@@ -1673,15 +1678,18 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 
 // . returns false if blocked, true otherwise
 // . calls callback when done saving
-bool Process::saveRdbMaps ( bool useThread ) {
+bool Process::saveRdbMaps() {
 	// never if in read only mode
-	if ( g_conf.m_readOnlyMode ) return true;
-	useThread = false;
+	if ( g_conf.m_readOnlyMode ) {
+		return true;
+	}
+
 	// loop over all Rdbs and save them
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		Rdb *rdb = m_rdbs[i];
-		rdb->saveMaps ( useThread );
+		rdb->saveMaps();
 	}
+
 	// everyone is done saving
 	return true;
 }
@@ -1749,10 +1757,6 @@ bool Process::saveBlockingFiles1 ( ) {
 	// . eventually this may replace "spiderrestore.dat"
 	if ( g_repair.isRepairActive() ) saveAddsInProgress ( "repair-" );
 	else                             saveAddsInProgress ( NULL      );
-
-	// . save the syncdb quicktree and insync.dat file, very important!!
-	// . must do this LAST so we truly no if in sync or not!!
-	//g_syncdb.save();
 
 	// in fctypes.cpp. save the clock offset from host #0's clock so
 	// our startup is fast again

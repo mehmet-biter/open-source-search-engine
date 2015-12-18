@@ -298,7 +298,7 @@ class Rdb {
 	bool isSavingTree ( ) ;
 
 	bool saveTree  ( bool useThread ) ;
-	bool saveMaps  ( bool useThread ) ;
+	bool saveMaps();
 	//bool saveCache ( bool useThread ) ;
 
 	// . load the tree named "saved.dat", keys must be out of order because
