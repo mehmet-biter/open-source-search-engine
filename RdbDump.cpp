@@ -6,9 +6,9 @@
 #include "Tagdb.h"
 #include "Statsdb.h"
 
-extern void dumpDatedb   ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree, 
+extern void dumpDatedb   ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
 			   int64_t termId , bool justVerify ) ;
-extern void dumpPosdb    ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree, 
+extern void dumpPosdb    ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
 			   int64_t termId , bool justVerify ) ;
 
 void doneReadingForVerifyWrapper ( void *state ) ;
@@ -114,12 +114,12 @@ bool RdbDump::set ( //char     *coll          ,
 	// . NOTE: MAX_PART_SIZE in BigFile must be defined to be bigger than
 	//   anything we actually dump since we only anticipate spanning 1 file
 	//   and so only register the first file's fd for write callbacks
-	//if ( m_tree && m_tree->getMaxMem() > MAX_PART_SIZE ) 
+	//if ( m_tree && m_tree->getMaxMem() > MAX_PART_SIZE )
 	//return log("RdbDump::dump: tree bigger than file part size");
 	// . open the file nonblocking, sync with disk, read/write
 	// . NOTE: O_SYNC doesn't work too well over NFS
 	// . we need O_SYNC when dumping trees only because we delete the
-	//   nodes/records as we dump them 
+	//   nodes/records as we dump them
 	// . ensure this sets g_errno for us
 	// . TODO: open might not block! fix that!
 	int32_t flags = O_RDWR | O_CREAT ;
@@ -169,7 +169,7 @@ bool RdbDump::set ( //char     *coll          ,
 	// NEVER getting set and resulted in corruption in RdbMem.cpp.
 	m_rdb->m_inDumpLoop = true;
 
-	// . start dumping the tree 
+	// . start dumping the tree
 	// . return false if it blocked
 	if ( ! dumpTree ( false ) ) return false;
 	// no longer dumping
@@ -184,7 +184,7 @@ void RdbDump::reset ( ) {
 		mfree ( m_verifyBuf , m_verifyBufSize , "RdbDump4");
 		m_verifyBuf = NULL;
 	}
-}	
+}
 
 void RdbDump::doneDumping ( ) {
 
@@ -266,7 +266,7 @@ void        tryAgainWrapper2 ( int fd , void *state ) {
 // . sets g_errno on error
 // . dumps the RdbTree, m_tree, into m_file
 // . also sets and writes the RdbMap for m_file
-// . we methodically get RdbLists from the RdbTree 
+// . we methodically get RdbLists from the RdbTree
 // . dumped recs are ordered by key if "orderedDump" was true in call to set()
 //   otherwise, lists are ordered by node #
 // . we write each list of recs to the file until the whole tree has been done
@@ -275,6 +275,20 @@ void        tryAgainWrapper2 ( int fd , void *state ) {
 //   deleting it from the tree to keep the cache in sync. NO we do NOT!
 // . called again by writeBuf() when it's done writing the whole list
 bool RdbDump::dumpTree ( bool recall ) {
+
+	if( g_conf.m_logDebugDetailed ) {
+		log(LOG_DEBUG,"%s:%s: BEGIN", __FILE__,__func__);
+		log(LOG_DEBUG,"%s:%s: recall.: %s", __FILE__,__func__, recall?"true":"false");
+		char *s = "none";
+		if ( m_rdb )
+		{
+			s = getDbnameFromId(m_rdb->m_rdbId);
+			log(LOG_DEBUG,"%s:%s: m_rdbId: %02x", __FILE__,__func__, m_rdb->m_rdbId);
+		}
+		log(LOG_DEBUG,"%s:%s: name...: [%s]", __FILE__,__func__, s);
+	}
+
+
 	// set up some vars
 	//int32_t  nextNode;
 	//key_t maxEndKey;
@@ -300,18 +314,33 @@ bool RdbDump::dumpTree ( bool recall ) {
 
 	// getMemOccupiedForList2() can take some time, so breathe
 	int32_t niceness = 1;
+
  loop:
 	// if the lastKey was the max end key last time then we're done
-	if ( m_rolledOver     ) return true;
+	if ( m_rolledOver     )
+	{
+		if( g_conf.m_logDebugDetailed ) {
+			log(LOG_DEBUG,"%s:%s: END - m_rolledOver, returning true", __FILE__,__func__);
+		}
+		return true;
+	}
+
 	// this is set to -1 when we're done with our unordered dump
-	if ( m_nextNode == -1 ) return true;
+	if ( m_nextNode == -1 )
+	{
+		if( g_conf.m_logDebugDetailed ) {
+			log(LOG_DEBUG,"%s:%s: END - m_nextNode, returning true", __FILE__,__func__);
+		}
+		return true;
+	}
+
 	// . NOTE: list's buffer space should be re-used!! (TODO)
 	// . "lastNode" is set to the last node # in the list
 	bool status = true;
 	//if ( ! m_orderedDump ) {
 	//	status = ((RdbTree *)m_tree)->getListUnordered ( m_nextNode ,
 	//							 m_maxBufSize ,
-	//							 m_list , 
+	//							 m_list ,
 	//							 &nextNode );
 	//	// this is -1 when no more nodes are left
 	//	m_nextNode = nextNode;
@@ -331,24 +360,41 @@ bool RdbDump::dumpTree ( bool recall ) {
 		//log("RdbDump:: getting list");
 		m_t1 = gettimeofdayInMilliseconds();
 		if(m_tree)
+		{
+			if( g_conf.m_logDebugDetailed ) {
+				log(LOG_DEBUG,"%s:%s: m_tree", __FILE__,__func__);
+			}
+
 			status = m_tree->getList ( m_collnum       ,
-					   m_nextKey     , 
+					   m_nextKey     ,
 					   maxEndKey     ,
 					   m_maxBufSize  , // max recSizes
-					   m_list        , 
+					   m_list        ,
 					   &m_numPosRecs   ,
 					   &m_numNegRecs   ,
 					   m_useHalfKeys ,
 						   niceness );
-		else if(m_buckets)
+		}
+		else
+		if(m_buckets)
+		{
+			if( g_conf.m_logDebugDetailed ) {
+				log(LOG_DEBUG,"%s:%s: m_buckets", __FILE__,__func__);
+			}
+
 			status = m_buckets->getList ( m_collnum,
-					   m_nextKey     , 
+					   m_nextKey     ,
 					   maxEndKey     ,
 					   m_maxBufSize  , // max recSizes
-					   m_list        , 
+					   m_list        ,
 					   &m_numPosRecs   ,
 					   &m_numNegRecs   ,
 					   m_useHalfKeys );
+		}
+
+		if( g_conf.m_logDebugDetailed ) {
+			log(LOG_DEBUG,"%s:%s: status: %s", __FILE__,__func__, status?"true":"false");
+		}
 
 
 		// don't dump out any neg recs if it is our first time dumping
@@ -375,9 +421,11 @@ bool RdbDump::dumpTree ( bool recall ) {
 		log(LOG_INFO,"db: Get list took %"INT64" ms. "
 		    "%"INT32" positive. %"INT32" negative.",
 		    t2 - m_t1 , m_numPosRecs , m_numNegRecs );
+
 		// keep a total count for reporting when done
 		m_totalPosDumped += m_numPosRecs;
 		m_totalNegDumped += m_numNegRecs;
+
 		// . check the list we got from the tree for problems
 		// . ensures keys are ordered from lowest to highest as well
 		//#ifdef GBSANITYCHECK
@@ -389,6 +437,7 @@ bool RdbDump::dumpTree ( bool recall ) {
 					      false , // sleep on problem?
 					      m_rdb->m_rdbId );
 		}
+
 		// if list is empty, we're done!
 		if ( status && m_list->isEmpty() ) {
 			// consider that a rollover?
@@ -396,6 +445,7 @@ bool RdbDump::dumpTree ( bool recall ) {
 				m_rolledOver = true;
 			return true;
 		}
+
 		// get the last key of the list
 		lastKey = m_list->getLastKey();
 		// advance m_nextKey
@@ -411,23 +461,41 @@ bool RdbDump::dumpTree ( bool recall ) {
 	}
 	// . return true on error, g_errno should have been set
 	// . this is probably out of memory error
+
 	if ( ! status ) {
 	hadError:
-		log("db: Had error getting data for dump: %s. Retrying.", 
-		    mstrerror(g_errno));
+		log(LOG_ERROR, "%s:%s: db: Had error getting data for dump: %s. Retrying.",
+		    __FILE__, __func__, mstrerror(g_errno));
 		// debug msg
 		//log("RdbDump::getList: sleeping and retrying");
+
 		// retry for the remaining two types of errors
-		if (!g_loop.registerSleepCallback(1000,this,tryAgainWrapper2)){
-			log(
-			    "db: Retry failed. Could not register callback.");
+		if (!g_loop.registerSleepCallback(1000,this,tryAgainWrapper2))
+		{
+			log("db: Retry failed. Could not register callback.");
+
+			if( g_conf.m_logDebugDetailed ) {
+				log(LOG_DEBUG,"%s:%s: END - retry failed, returning true", __FILE__,__func__);
+			}
 			return true;
+		}
+
+		if( g_conf.m_logDebugDetailed ) {
+			log(LOG_DEBUG,"%s:%s: END - returning false", __FILE__,__func__);
 		}
 		// wait for sleep
 		return false;
 	}
+
 	// if list is empty, we're done!
-	if ( m_list->isEmpty() ) return true;
+	if ( m_list->isEmpty() )
+	{
+		if( g_conf.m_logDebugDetailed ) {
+			log(LOG_DEBUG,"%s:%s: END - list empty, returning true", __FILE__,__func__);
+		}
+		return true;
+	}
+
 	// . set m_firstKeyInQueue and m_lastKeyInQueue
 	// . this doesn't work if you're doing an unordered dump, but we should
 	//   not allow adds when closing
@@ -437,14 +505,31 @@ bool RdbDump::dumpTree ( bool recall ) {
 	// . write this list to disk
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
+
 	// . if this blocks it should call us (dumpTree() back)
-	if ( ! dumpList ( m_list , m_niceness , false ) ) return false;
+	if ( ! dumpList ( m_list , m_niceness , false ) )
+	{
+		if( g_conf.m_logDebugDetailed ) {
+			log(LOG_DEBUG,"%s:%s: END - after dumpList, returning false", __FILE__,__func__);
+		}
+		return false;
+	}
+
 	// close up shop on a write/dumpList error
-	if ( g_errno ) return true;
+	if ( g_errno )
+	{
+		if( g_conf.m_logDebugDetailed ) {
+			log(LOG_DEBUG,"%s:%s: END - g_errno set [%"INT32"], returning true", __FILE__,__func__, g_errno);
+		}
+
+		return true;
+	}
+
 	// . if dumpList() did not block then keep on truckin'
 	// . otherwise, wait for callback of dumpTree()
 	goto loop;
 }
+
 
 static void doneWritingWrapper ( void *state ) ;
 
@@ -462,7 +547,7 @@ bool RdbDump::dumpList ( RdbList *list , int32_t niceness , bool recall ) {
 	m_list = list;
 	// nothing to do if list is empty
 	if ( m_list->isEmpty() ) return true;
-	// we're now in dump mode again 
+	// we're now in dump mode again
 	m_isDumping = true;
 	//#ifdef GBSANITYCHECK
 	// don't check list if we're dumping an unordered list from tree!
@@ -547,7 +632,7 @@ bool RdbDump::dumpList ( RdbList *list , int32_t niceness , bool recall ) {
 	//   on when they can be on
 	// . IMPORTANT: calling m_list->resetListPtr() will mess this HACK up!!
 	if ( m_useHalfKeys && m_orderedDump && m_offset > 0 && ! m_hacked12 ) {
-		//key_t k = m_list->getCurrentKey();	
+		//key_t k = m_list->getCurrentKey();
 		char k[MAX_KEY_BYTES];
 		m_list->getCurrentKey(k);
 		// . same top 6 bytes as last key we added?
@@ -627,7 +712,7 @@ bool RdbDump::dumpList ( RdbList *list , int32_t niceness , bool recall ) {
 				      niceness         );
 	// debug msg
 	//log("RdbDump dumped %"INT32" bytes, done=%"INT32"\n",
-	//	m_bytesToWrite,isDone); 
+	//	m_bytesToWrite,isDone);
 	// return false if it blocked
 	if ( ! isDone ) return false;
 	// done writing
@@ -643,6 +728,11 @@ bool RdbDump::dumpList ( RdbList *list , int32_t niceness , bool recall ) {
 // . delete list from tree, incorporate list into cache, add to map
 // . returns false if blocked, true otherwise, sets g_errno on error
 bool RdbDump::doneDumpingList ( bool addToMap ) {
+	if( g_conf.m_logDebugDetailed ) {
+		log(LOG_DEBUG,"%s:%s: BEGIN", __FILE__,__func__);
+	}
+
+
 	// we can get suspended when gigablast is shutting down, in which
 	// case the map may have been deleted. only RdbMerge suspends its
 	// m_dump class, not Rdb::m_dump. return false so caller nevers
@@ -657,14 +747,15 @@ bool RdbDump::doneDumpingList ( bool addToMap ) {
 	//   i don't remember, just do it on *all* errors for now!
 	//if ( g_errno == EFILECLOSED || g_errno == EBADFD ) {
 	if ( g_errno && ! m_isSuspended ) {
-		log(LOG_INFO,"db: Had error dumping data: %s. Retrying.",
-		    mstrerror(g_errno));
+		log(LOG_WARN,"%s:%s: db: Had error dumping data: %s. Retrying.",
+		    __FILE__, __func__, mstrerror(g_errno));
+
 		// . deal with the EBADF bug, it will loop forever on this
 		// . i still don't know how the fd gets closed and s_fds[vfd]
 		//   is not set to -1?!?!?!
 		if ( g_errno == EBADF ) {
 			// note it
-			log(LOG_LOGIC,"db: setting fd for vfd to -1.");
+			log(LOG_LOGIC,"%s:%s: db: setting fd for vfd to -1.", __FILE__, __func__);
 			// mark our fd as not there...
 			//int32_t i=(m_offset-m_bytesToWrite) / MAX_PART_SIZE;
 			// sets s_fds[vfd] to -1
@@ -673,24 +764,44 @@ bool RdbDump::doneDumpingList ( bool addToMap ) {
 			// 	releaseVfd ( m_file->m_files[i]->m_vfd );
 		}
 		//log("RdbDump::doneDumpingList: retrying.");
-		return dumpList ( m_list , m_niceness , true );
+		bool rc = dumpList ( m_list , m_niceness , true );
+
+		if( g_conf.m_logDebugDetailed ) {
+			log(LOG_DEBUG,"%s:%s: END. Returning %s", __FILE__,__func__, rc?"true":"false");
+		}
+		return rc;
 	}
+
 	// bail on error
 	if ( g_errno ) {
-		log("db: Had error dumping data: %s.", mstrerror(g_errno));
+		log(LOG_ERROR, "%s:%s: db: Had error dumping data: %s.",
+			__FILE__, __func__, mstrerror(g_errno));
+
 		//log("RdbDump::doneDumpingList: %s",mstrerror(g_errno));
+
+		if( g_conf.m_logDebugDetailed ) {
+			log(LOG_DEBUG,"%s:%s: END - returning true", __FILE__,__func__);
+		}
 		return true;
 	}
+
 	// . don't delete the list if we were dumping an unordered list
 	// . we only dump unordered lists when we do a save
 	// . it saves time not having to delete the list and it also allows
 	//   us to do saves without deleting our data! good!
-	if ( ! m_orderedDump ) return true; //--turn this off until save works
+	if ( ! m_orderedDump )
+	{
+		if( g_conf.m_logDebugDetailed ) {
+			log(LOG_DEBUG,"%s:%s: END - not m_orderedDump. Returning true", __FILE__,__func__);
+		}
+
+		return true; //--turn this off until save works
+	}
 
 	// save for verify routine
 	m_addToMap = addToMap;
 
-	// should we verify what we wrote? useful for preventing disk 
+	// should we verify what we wrote? useful for preventing disk
 	// corruption from those pesky Western Digitals and Maxtors?
 	if ( g_conf.m_verifyWrites ) {
 		// a debug message, if log disk debug messages is enabled
@@ -703,7 +814,7 @@ bool RdbDump::doneDumpingList ( bool addToMap ) {
 			m_verifyBufSize = 0;
 		}
 		if ( ! m_verifyBuf ) {
-			m_verifyBuf = (char *)mmalloc ( m_bytesToWrite , 
+			m_verifyBuf = (char *)mmalloc ( m_bytesToWrite ,
 							"RdbDump3" );
 			m_verifyBufSize = m_bytesToWrite;
 		}
@@ -719,12 +830,27 @@ bool RdbDump::doneDumpingList ( bool addToMap ) {
 					     m_niceness      );
 		// debug msg
 		//log("RdbDump dumped %"INT32" bytes, done=%"INT32"\n",
-		//	m_bytesToWrite,isDone); 
+		//	m_bytesToWrite,isDone);
 		// return false if it blocked
-		if ( ! isDone ) return false;
+		if ( ! isDone )
+		{
+			if( g_conf.m_logDebugDetailed ) {
+				log(LOG_DEBUG,"%s:%s: END - isDone is false. returning false", __FILE__,__func__);
+			}
+
+			return false;
+		}
 	}
-	return doneReadingForVerify();
+
+
+	bool rc=doneReadingForVerify();
+
+	if( g_conf.m_logDebugDetailed ) {
+		log(LOG_DEBUG,"%s:%s: END - after doneReadingForVerify. Returning %s", __FILE__,__func__, rc?"true":"false");
+	}
+	return rc;
 }
+
 
 void doneReadingForVerifyWrapper ( void *state ) {
 	RdbDump *THIS = (RdbDump *)state;
@@ -736,10 +862,15 @@ void doneReadingForVerifyWrapper ( void *state ) {
 	THIS->continueDumping ( );
 }
 
+
 bool RdbDump::doneReadingForVerify ( ) {
+	if( g_conf.m_logDebugDetailed ) {
+		log(LOG_DEBUG,"%s:%s: BEGIN", __FILE__,__func__);
+	}
 
 	// if someone reset/deleted the collection we were dumping...
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
+
 	// . do not do this for statsdb/catdb which always use collnum of 0
 	// . RdbMerge also calls us but gives a NULL m_rdb so we can't
 	//   set m_isCollectionless to false
@@ -747,8 +878,8 @@ bool RdbDump::doneReadingForVerify ( ) {
 		g_errno = ENOCOLLREC;
 		// m_file is invalid if collrec got nuked because so did
 		// the Rdbbase which has the files
-		log("db: lost collection while dumping to disk. making "
-		    "map null so we can stop.");
+		log(LOG_ERROR,"%s:%s: db: lost collection while dumping to disk. making "
+		    "map null so we can stop.", __FILE__, __func__);
 		m_map = NULL;
 	}
 
@@ -757,20 +888,37 @@ bool RdbDump::doneReadingForVerify ( ) {
 	if ( m_verifyBuf && g_conf.m_verifyWrites &&
 	     memcmp(m_verifyBuf,m_buf,m_bytesToWrite) != 0 &&
 	     ! g_errno ) {
-		log("disk: Write verification of %"INT32" bytes to file %s "
+		log(LOG_ERROR, "%s:%s: disk: Write verification of %"INT32" bytes to file %s "
 		    "failed at offset=%"INT64". Retrying.",
+		    __FILE__,
+		    __func__,
 		    m_bytesToWrite,
 		    m_file->getFilename(),
 		    m_offset - m_bytesToWrite);
 		// try writing again
-		return dumpList ( m_list , m_niceness , true );
+		bool rc=dumpList ( m_list , m_niceness , true );
+
+		if( g_conf.m_logDebugDetailed ) {
+			log(LOG_DEBUG,"%s:%s: END - after retrying dumpList. Returning %s", __FILE__,__func__, rc?"true":"false");
+		}
+		return rc;
 	}
+
+
 	// time dump to disk (and tfndb bins)
 	int64_t t ;
 	// start timing on first call only
 	if ( m_addToMap ) t = gettimeofdayInMilliseconds();
 	// sanity check
-	if ( m_list->m_ks != m_ks ) { char *xx = NULL; *xx = 0; }
+	if ( m_list->m_ks != m_ks )
+	{
+//		char *xx = NULL; *xx = 0;
+
+		log(LOG_ERROR,"%s:%s: Sanity check failed. m_list->m_ks [%02x]!= m_ks [%02x]",
+			__FILE__,__func__, m_list->m_ks, m_ks);
+		g_process.shutdownAbort(false);
+		return false;
+	}
 
 	bool triedToFix = false;
 
@@ -783,31 +931,33 @@ bool RdbDump::doneReadingForVerify ( ) {
 	// . careful, map is NULL if we're doing unordered dump
 	if ( m_addToMap && m_map && ! m_map->addList ( m_list ) ) {
 		// keys  out of order in list from tree?
-		if ( g_errno == ECORRUPTDATA ) 
+		if ( g_errno == ECORRUPTDATA )
 		{
 			log(LOG_ERROR,"%s:%s: m_map->addList resulted in ECORRUPTDATA", __FILE__, __func__);
-			
-			if ( m_tree ) 
+
+			if ( m_tree )
 			{
 				log(LOG_ERROR,"%s:%s: trying to fix tree", __FILE__, __func__);
 				m_tree->fixTree();
 			}
-				
+
 			//if ( m_buckets ) m_buckets->fixBuckets();
-			if ( m_buckets ) 
-			{ 
+			if ( m_buckets )
+			{
 				log(LOG_ERROR,"%s:%s: Contains buckets, cannot fix this yet", __FILE__, __func__);
-				
+
+				m_list->printList(LOG_ERROR);	//@@@@@@ EXCESSIVE
+
 				// char *xx=NULL;*xx=0; 			//### <<<<  BR 20151218: CORE SEEN HERE
 				g_process.shutdownAbort(false);
 				return false;
 			}
-			
-			
-			if ( triedToFix ) 
-			{ 
+
+
+			if ( triedToFix )
+			{
 				log(LOG_ERROR,"%s:%s: already tried to fix, exiting hard", __FILE__, __func__);
-				
+
 				// char *xx=NULL;*xx=0;
 				g_process.shutdownAbort(false);
 				return false;
@@ -816,8 +966,8 @@ bool RdbDump::doneReadingForVerify ( ) {
 			triedToFix = true;
 			goto tryAgain;
 		}
-		
-		g_errno = ENOMEM; 
+
+		g_errno = ENOMEM;
 		// undo the offset update, the write failed, the parent
 		// should retry. i know RdbMerge.cpp does, but not sure
 		// what happens when Rdb.cpp is dumping an RdbTree
@@ -897,7 +1047,14 @@ bool RdbDump::doneReadingForVerify ( ) {
 	//if ( m_orderedDump ) m_list->checkList_r ( false , true );
 
 	// if we're NOT dumping a tree then return control to RdbMerge
-	if ( ! m_tree && !m_buckets ) return true;
+	if ( ! m_tree && !m_buckets )
+	{
+		if( g_conf.m_logDebugDetailed ) {
+			log(LOG_DEBUG,"%s:%s: END - !m_tree && !m_buckets, returning true", __FILE__,__func__);
+		}
+		return true;
+	}
+
 
 	// . merge the writeBuf into the cache at this point or after deleting
 	// . m_list should have it's m_lastKey set since we got called from
@@ -912,11 +1069,11 @@ bool RdbDump::doneReadingForVerify ( ) {
 	//   writing could have been deleted from the tree. To prevent
 	//   problems we should only delete nodes that are present in tree...
 	// . actually i fixed that problem by not deleting any nodes that
-	//   might be in the middle of being dumped 
+	//   might be in the middle of being dumped
 	// . i changed Rdb::addNode() and Rdb::deleteNode() to do this
 	// . since we made it here m_list MUST be ordered, therefore
 	//   let's try the new, faster deleteOrderedList and let's not do
-	//   balancing to make it even faster 
+	//   balancing to make it even faster
 	// . balancing will be restored once we're done deleting this list
 	// debug msg
 	//log("RdbDump:: deleting list");
@@ -958,8 +1115,14 @@ bool RdbDump::doneReadingForVerify ( ) {
 	// debug msg
 	int64_t t2 = gettimeofdayInMilliseconds();
 	log(LOG_TIMING,"db: dump: deleteList: took %"INT64"",t2-t1);
+
+	if( g_conf.m_logDebugDetailed ) {
+		log(LOG_DEBUG,"%s:%s: END - OK, returning true", __FILE__,__func__);
+	}
+
 	return true;
 }
+
 
 // continue dumping the tree
 void doneWritingWrapper ( void *state ) {
@@ -997,14 +1160,14 @@ void RdbDump::continueDumping() {
 	// go back now if we were NOT dumping a tree
 	if ( ! (m_tree || m_buckets) ) {
 		m_isDumping = false;
-		m_callback ( m_state );		
+		m_callback ( m_state );
 		return;
 	}
 	// . continue dumping the tree
 	// . return if this blocks
 	// . if the collrec was deleted or reset then g_errno will be
 	//   ENOCOLLREC and we want to skip call to dumpTree(
-	if ( g_errno != ENOCOLLREC && ! dumpTree ( false ) ) 
+	if ( g_errno != ENOCOLLREC && ! dumpTree ( false ) )
 		return;
 	// close it up
 	doneDumping ( );
@@ -1027,7 +1190,7 @@ bool RdbDump::load ( Rdb *rdb ,  int32_t fixedDataSize, BigFile *file ,
 		     class DiskPageCache *pc ) {
         //m_tree          = tree;
 	// return true if the file does not exist
-	if ( file->doesExist() <= 0 ) return true; 
+	if ( file->doesExist() <= 0 ) return true;
 	// open the file read only
 	if ( ! file->open ( O_RDONLY , pc ) )
 	       return log("db: Could not open %s: %s.",file->getFilename(),
@@ -1078,7 +1241,7 @@ bool RdbDump::load ( Rdb *rdb ,  int32_t fixedDataSize, BigFile *file ,
 				   file->getFilename(),mstrerror(g_errno));
 		}
 
-		// we must dup the data so the tree can free it		
+		// we must dup the data so the tree can free it
 		//char *copy = mdup ( p , dataSize ,"RdbDump");
 		// add the node
 		//if ( m_tree->addNode ( key , copy , dataSize ) < 0 ) {

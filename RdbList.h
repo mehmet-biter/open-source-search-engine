@@ -405,7 +405,7 @@ class RdbList {
 	bool removeBadData_r ( ) ;
 
 	// . print out the list (uses log())
-	int printList ();
+	int printList ( int32_t logtype=LOG_INFO);
 
 	void  setListPtrs ( char *p , char *hi ) {m_listPtr=p;m_listPtrHi=hi;};
 

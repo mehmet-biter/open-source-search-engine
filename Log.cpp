@@ -63,17 +63,17 @@ void Log::reset ( ) {
 #endif
 }
 
-// for example, RENAME log000 to log000-2013_11_04-18:19:32
+// for example, RENAME log000 to log000-20131104-181932
 bool renameCurrentLogFile ( ) {
 	File f;
 	char tmp[16];
 	sprintf(tmp,"log%03"INT32"",g_hostdb.m_hostId);
 	f.set ( g_hostdb.m_dir , tmp );
-	// make new filename like log000-2013_11_04-18:19:32
+	// make new filename like log000-20131104-181932
 	time_t now = getTimeLocal();
 	tm *tm1 = gmtime((const time_t *)&now);
 	char tmp2[64];
-	strftime(tmp2,64,"%Y_%m_%d-%T",tm1);
+	strftime(tmp2,64,"%Y%m%d-%H%M%S",tm1);
 	SafeBuf newName;
 	if ( ! newName.safePrintf ( "%slog%03"INT32"-%s",
 				    g_hostdb.m_dir,
@@ -148,6 +148,7 @@ const char *getTypeString ( int32_t type ) {
 	case LOG_INFO  : return "INF";
 	case LOG_WARN  : return "WRN";
 	case LOG_ERROR : return "ERR";
+	case LOG_TRACE : return "TRC";
 	case LOG_LOGIC : return "LOG";
 	case LOG_REMIND: return "REM";
 	case LOG_DEBUG : return "DBG";
@@ -162,8 +163,8 @@ const char *getTypeString ( int32_t type ) {
 #define MAX_LINE_LEN 20048
 
 bool Log::shouldLog ( int32_t type , char *msg ) {
-	// always log errors/warnings
-	if ( (type == LOG_WARN) || (type == LOG_ERROR) ) {
+	// always log errors/warnings/logic/trace (if trace gets through to here, it is enabled)
+	if ( (type == LOG_WARN) || (type == LOG_LOGIC) || (type == LOG_ERROR) || (type == LOG_TRACE)) {
 		return true;
 	}
 

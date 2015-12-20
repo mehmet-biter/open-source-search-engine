@@ -18973,6 +18973,15 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "log trace info for network messages (excessive!)";
+	m->m_cgi   = "trcmsg";
+	m->m_off   = (char *)&g_conf.m_logTraceMsg - g;
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_priv  = 1;
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
 
 
 	m->m_title = "log timing messages for build";

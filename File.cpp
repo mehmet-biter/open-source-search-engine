@@ -1117,7 +1117,7 @@ bool File::unlink ( )
 	// remove ourselves from the disk
 	if ( ::unlink ( getFilename() ) == 0 )
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. END - OK, returning true.", __FILE__,__FUNCTION__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END - OK, returning true.", __FILE__,__FUNCTION__);
 		return true;
 	}
 
@@ -1127,7 +1127,7 @@ bool File::unlink ( )
 	g_errno = errno;
 
 	// return false and set g_errno on error
-	log(LOG_ERROR,"%s:%s: Unlinking [%s] caused error [%s]. Returning false.", __FILE__,__FUNCTION__, getFilename(),strerror(g_errno));
+	log(LOG_ERROR,"%s:%s: END. Unlinking [%s] caused error [%s]. Returning false.", __FILE__,__FUNCTION__, getFilename(),strerror(g_errno));
 	return false;
 }
 

@@ -30,6 +30,11 @@
 #define LOG_REMIND   0x0020  
 // for debugging. generally disabled.
 #define LOG_DEBUG    0x0040  
+
+// for tracing. generally disabled. Enabled for specific code
+// sections through config UI
+#define LOG_TRACE    0x0080
+
 // times various subroutines for debugging performance.
 #define LOG_TIMING   0x0100
 

@@ -3,6 +3,7 @@
 #include "RdbMap.h"
 #include "BigFile.h"
 #include "IndexList.h"
+#include "Process.h"
 
 RdbMap::RdbMap() {
 	m_numSegments = 0;
@@ -485,17 +486,21 @@ bool RdbMap::verifyMap2 ( ) {
 		log("db:    k.n1=%016"XINT64" n0=%016"XINT64"",KEY1(k,m_ks),KEY0(k));
 		log("db: m_numPages = %"INT32"",m_numPages);
 
-		SafeBuf cmd;
-		cmd.safePrintf("mv %s/%s %s/trash/",
-			       m_file.getDir(),
-			       m_file.getFilename(),
-			       g_hostdb.m_dir);
-		log("db: %s",cmd.getBufStart() );
-		gbsystem ( cmd.getBufStart() );
+		log(LOG_ERROR,"%s:%s: Previous versions would have move %s/%s to trash!!", 
+			__FILE__,__func__,m_file.getDir(), m_file.getFilename());
 
-		//exit(0);
+//ORG		SafeBuf cmd;
+//ORG		cmd.safePrintf("mv %s/%s %s/trash/",
+//ORG			       m_file.getDir(),
+//ORG			       m_file.getFilename(),
+//ORG			       g_hostdb.m_dir);
+//ORG		log("db: %s",cmd.getBufStart() );
+//ORG		gbsystem ( cmd.getBufStart() );
+
 		// make the bash shell restart us by returning a 1 error code
+		g_process.shutdownAbort(false);
 		exit(1);
+
 
 		//char *xx=NULL;*xx=0;
 		// was k too small?
@@ -680,11 +685,11 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 	// we need to call writeMap() before we exit
 	m_needToWrite = true;
 
-#ifdef GBSANITYCHECK
+//@@@#ifdef GBSANITYCHECK
 	// debug
-	log("db: addmap k=%s keysize=%"INT32" offset=%"INT64" pagenum=%"INT32"",
+	log(LOG_TRACE,"db: addmap k=%s keysize=%"INT32" offset=%"INT64" pagenum=%"INT32"",
 	    KEYSTR(key,m_ks),recSize,m_offset,pageNum);
-#endif
+//@@@#endif
 
 	// we now call RdbList::checkList_r() in RdbDump::dumpList()
 	// and that checks the order of the keys
@@ -701,10 +706,11 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 		// do not log more than once per second
 		if ( getTime() == m_lastLogTime ) goto skip;
 		m_lastLogTime = getTime();
+		
 		//pageNum > 0 && getKey(pageNum-1) > getKey(pageNum) ) {
-		log(LOG_LOGIC,"build: RdbMap: added key out of order. "
-		    "count=%"INT64" file=%s/%s.",m_badKeys,
-		    m_file.getDir(),m_file.getFilename());
+		log(LOG_LOGIC,"build: RdbMap: added key out of order. count=%"INT64" file=%s/%s.",
+			m_badKeys, m_file.getDir(), m_file.getFilename());
+			
 		//log(LOG_LOGIC,"build: k.n1=%"XINT32" %"XINT64"  lastKey.n1=%"XINT32" %"XINT64"",
 		//    key.n1,key.n0,m_lastKey.n1,m_lastKey.n0 );
 		log(LOG_LOGIC,"build: offset=%"INT64"",
@@ -713,6 +719,7 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 		    KEYSTR(m_lastKey,m_ks));
 		log(LOG_LOGIC,"build: k2=%s",
 		    KEYSTR(key,m_ks));
+		    
 		if ( m_generatingMap ) {
 			g_errno = ECORRUPTDATA;
 			return false;
@@ -720,6 +727,8 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 		// if being called from RdbDump.cpp...
 		g_errno = ECORRUPTDATA;
 		return false;
+		
+		
 		//char *xx=NULL;*xx=0;
 		// . during a merge, corruption can happen, so let's core
 		//   here until we figure out how to fix it.
@@ -872,10 +881,10 @@ bool RdbMap::addList ( RdbList *list ) {
 	}
 	*/
 
-#ifdef GBSANITYCHECK
+//@@@#ifdef GBSANITYCHECK
 	// print the last key from lasttime
 	log("map: lastkey=%s",KEYSTR(m_lastKey,m_ks));
-#endif
+//@@@#endif
 
 	//key_t key;
 	char  key[MAX_KEY_BYTES];

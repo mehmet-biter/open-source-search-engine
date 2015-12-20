@@ -1120,6 +1120,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	// bail if already dumping
 	//if ( m_dump.isDumping() ) return true;
 	if ( m_inDumpLoop ) return true;
+		
 	// . if tree is saving do not dump it, that removes things from tree
 	// . i think this caused a problem messing of RdbMem before when
 	//   both happened at once
@@ -1127,6 +1128,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	else if(m_buckets.isSaving()) return true;
 	// . if Process is saving, don't start a dump
 	if ( g_process.m_mode == SAVE_MODE ) return true;
+
 	// if it has been less than 3 seconds since our last failed attempt
 	// do not try again to avoid flooding our log
 	if ( getTime() - s_lastTryTime < 3 ) return true;
@@ -1139,6 +1141,7 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 		log(LOG_INFO,"db: Can not dump while tfndb is being merged.");
 		return true;
 	}
+
 	// . do not dump tfndb if indexdb is dumping
 	// . i haven't tried this yet, but it might help
 	//if ( m_rdbId == RDB_TFNDB && g_indexdb.isDumping() ) {
@@ -1159,10 +1162,13 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 		    "db: %s tree not 90 percent full but dumping.",m_dbname);
 		//return true;
 	}
+
 	// reset g_errno -- don't forget!
 	g_errno = 0;
+
 	// get max number of files
 	int32_t max = MAX_RDB_FILES - 2;
+
 	// but less if titledb, because it uses a tfn
 	if ( m_isTitledb && max > 240 ) max = 240;
 
@@ -1195,11 +1201,13 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 
 	// only try to fix once per dump session
 	int64_t start = m_lastWrite; //gettimeofdayInMilliseconds();
+
 	// do not do chain testing because that is too slow
 	if ( m_useTree && ! m_tree.checkTree ( false /* printMsgs?*/, false/*chain?*/) ) {
 		log("db: %s tree was corrupted in memory. Trying to fix. "
 		    "Your memory is probably bad. Please replace it.",
 		    m_dbname);
+
 		// if fix failed why even try to dump?
 		if ( ! m_tree.fixTree() ) {
 			// only try to dump every 3 seconds
