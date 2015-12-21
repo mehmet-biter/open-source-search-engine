@@ -456,8 +456,7 @@ bool processLoop ( void *state ) {
 			  //"<BASE HREF=\"%s\">"
 			  //"<table border=1 width=100%%>"
 			  //"<tr><td>"
-			  "<table border=\"1\" bgcolor=\"#"
-			  BGCOLOR
+			  "<table border=\"1\" bgcolor=\"#ffffff"
 			  "\" cellpadding=\"10\" "
 			  //"id=\"gbcnsdisctable\" class=\"gbcnsdisctable_v\""
 			  "cellspacing=\"0\" width=\"100%%\" color=\"#ffffff\">"

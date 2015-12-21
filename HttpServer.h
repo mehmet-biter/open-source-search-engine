@@ -20,12 +20,6 @@
 #ifndef _HTTPSERVER_H_
 #define _HTTPSERVER_H_
 
-//#define BGCOLOR "89e3A9" // green
-#define BGCOLOR "ffffff" // white
-//#define BGCOLOR "d0cfc0" // gray
-//#define BGCOLOR "d0d0d9"   // blue gray
-//#define BGCOLOR "d0cfd0" // gray
-//#define BGCOLOR "d6ced6" // bluish gray
 #define MAX_DOWNLOADS (MAX_TCP_SOCKS-50)
 
 #include "TcpServer.h"
@@ -114,18 +108,6 @@ class HttpServer {
 		      //bool    respectDownloadLimit = false );
 
 	bool gotDoc ( int32_t n , TcpSocket *s );
-
-	// just make a request with size set to 0 and it'll do a HEAD request
-	/*
-	bool getMime ( char  *url       ,
-		       int32_t   timeout   ,
-		       int32_t   proxyIp   ,
-		       int16_t  proxyPort ,
-		       void  *state     ,
-		       void  (* callback) ( void *state , TcpSocket *s )) {
-		return getDoc (url,0,0,0,state,callback,
-			       timeout,proxyIp,proxyPort,-1,-1); };
-	*/
 
 	// . this is public so requestHandlerWrapper() can call it
 	// . if it returns false "s" will be destroyed w/o a reply
@@ -228,9 +210,6 @@ class HttpServer {
 
 	int64_t m_bytesDownloaded;
 	int64_t m_uncompressedBytes;
-
-	//QueuedRequest m_requestQueue[MAX_REQUEST_QUEUE];
-	//int32_t          m_lastSlotUsed;
 
 };
 

@@ -1183,8 +1183,7 @@ bool Pages::printTail ( SafeBuf* sb, bool isLocal ) {
 bool Pages::printColors ( SafeBuf *sb, char* bodyJavascript ) {
 	// print font and color stuff
 	sb->safePrintf (
-		  "<body text=#000000 bgcolor=#"
-		  BGCOLOR
+		  "<body text=#000000 bgcolor=#ffffff"
 		  " link=#000000 vlink=#000000 alink=#000000 "
 		  "style=margin:0px;padding:0px; "
 		  "%s>\n" 
