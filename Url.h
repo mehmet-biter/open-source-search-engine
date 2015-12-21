@@ -100,11 +100,6 @@ public:
 	bool isBadExtension(int32_t xxx);
 	bool isSet()            { return m_ulen != 0; }
 
-	// is this url a warc or arc url? i.e. ends in .warc or .arc or
-	// .warc.gz or .arc.gz?
-	bool isWarc ( );
-	bool isArc ( );
-
 	// is it http://rpc.weblogs.com/int16_tChanges.xml, etc.?
 	bool isPingServer ( ) ;
 
