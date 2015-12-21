@@ -9321,7 +9321,7 @@ uint16_t *XmlDoc::getCountryId ( ) {
 	if ( ! u || u == (void *)-1) return (uint16_t *)u;
 
 	// use the url's tld to guess the country
-	uint16_t country = g_langId.guessCountryTLD ( u->getUrl ( ) );
+	uint16_t country = LanguageIdentifier::guessCountryTLD ( u->getUrl ( ) );
 
 	m_countryIdValid = true;
 	m_countryId      = country;

@@ -1,18 +1,5 @@
-
-// See docs in language.h
-
-#include "gb-include.h"
 #include "LanguageIdentifier.h"
-#include "Tagdb.h"
-#include "Speller.h"
 #include "CountryCode.h"
-#include "Linkdb.h"
-
-LanguageIdentifier g_langId;
-
-LanguageIdentifier::LanguageIdentifier() {
-	return;
-}
 
 uint8_t LanguageIdentifier::guessCountryTLD(const char *url) {
 	uint8_t country = 0;
