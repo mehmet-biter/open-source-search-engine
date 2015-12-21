@@ -961,75 +961,6 @@ void print_string ( char *s , int32_t len ) {
 	while ( i < len ) printf("%c",s[i++]);
 }
 
-bool Url::isExtensionIndexable () {
-	// assume no extension is html
-	if ( m_elen == 0   ) return true;
-	if ( ! m_extension ) return true;
-	// no matter what the extension, if it has cgi parms, let it through.
-	if ( m_query ) return true;
-	// now we index source code
-	if ( m_elen == 1 ) {
-		if ( m_extension[0] == 'c' ) return true;
-		if ( m_extension[0] == 'h' ) return true;
-	}
-	else if ( m_elen == 2 ) {
-		if ( strncasecmp ( m_extension , "ps", 2 ) == 0 ) return true;
-		// perl is used like cgi
-		if ( strncasecmp ( m_extension , "pl", 2 ) == 0 ) return true;
-		return false;
-	}
-	else if ( m_elen == 3 ) {
-		if ( strncasecmp ( m_extension , "htm", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "asp", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "xml", 3 ) == 0 ) return true;
-		// rss has a Content-Type of xml usually
-		if ( strncasecmp ( m_extension , "rss", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "cgi", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "dll", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "jsp", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "php", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "txt", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "pdf", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "doc", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "xls", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "ppt", 3 ) == 0 ) return true;
-		// now we index source code
-		if ( strncasecmp ( m_extension , "cpp", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "hpp", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "vbs", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "frm", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "bas", 3 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "jsp", 3 ) == 0 ) return true;
-		// probably cold fusion template file. seems to be text/html
-		if ( strncasecmp ( m_extension , "cfm", 3 ) == 0 ) return true;
-		//http://news.bbc.co.uk/2/hi/science/nature/default.stm
-		if ( strncasecmp ( m_extension , "stm", 3 ) == 0 ) return true;
-		// rdf for rss feeds
-		if ( strncasecmp ( m_extension , "rdf", 3 ) == 0 ) return true;
-		return false;
-	}
-	else if ( m_elen == 4 ) {
-		if ( strncasecmp ( m_extension , "html",4 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "phtm",4 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "shtm",4 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "fcgi",4 ) == 0 ) return true;
-		if ( strncasecmp ( m_extension , "aspx",4 ) == 0 ) return true;
-		// php3 and php4 etc.
-		if ( strncasecmp ( m_extension , "php" ,3 ) == 0 ) return true;
-		// now we index source code
-		if ( strncasecmp ( m_extension , "java",4 ) == 0 ) return true;
-		return false;
-	}
-	else if ( m_elen == 5 ) {
-		if ( strncasecmp ( m_extension, "shtml", 5) == 0 ) return true;
-		if ( strncasecmp ( m_extension, "jhtml", 5) == 0 ) return true;
-		if ( strncasecmp ( m_extension, "phtml", 5) == 0 ) return true;
-		if ( strncasecmp ( m_extension, "story", 5) == 0 ) return true;
-		return false;
-	}
-	return false;
-}
-
 // . return url w/o http://
 // . without trailing / if path is just "/"
 // . without "www." if in hostname and "rmWWW" is true
@@ -1393,8 +1324,6 @@ static bool s_badExtInitialized;
 
 //returns True if the extension is listed as bad
 bool Url::isBadExtension ( int32_t version ) {
-	//	return !isExtensionIndexable();
-	
 	if ( ! m_extension || m_elen == 0 ) return false;
 	if(!s_badExtInitialized) { //if hash has not been created-create one
 		int32_t i=0;

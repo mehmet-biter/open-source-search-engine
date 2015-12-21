@@ -93,7 +93,6 @@ public:
 	// a super root url is a root url where the hostname is NULL or "www"
 	bool isSuperRoot         (); 
 	bool isCgi               () { return m_query ; };
-	bool isExtensionIndexable(); // html, htm, cgi, asp, shtml, ...
 
 	//returns True if the extension is in the list of 
 	//badExtensions - extensions not to be parsed
