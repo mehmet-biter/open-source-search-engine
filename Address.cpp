@@ -3082,142 +3082,6 @@ bool Addresses::updateAddresses ( ) {
 	return true;
 }
 
-
-// process it
-bool Addresses::processGeocoderReply ( TcpSocket *s ) {
-
-	if ( g_errno ) {
-		log("addr: geocoder reply: %s",mstrerror(g_errno));
-		g_errno = EBADGEOCODERREPLY;
-		return true;
-	}
-	// get reply
-	char *reply      = s->m_readBuf;
-	//int32_t  replyAlloc = s->m_readBufSize;
-	//int32_t  replySize  = s->m_readOffset;
-
-	// same for an empty reply
-	if ( ! reply || s->m_readBufSize == 0 ) {
-		g_errno = EBADGEOCODERREPLY;
-		log("addr: geocoder returned empty reply: %s",
-		    mstrerror(g_errno));
-		return true;
-	}
-		
-	// breathe
-	QUICKPOLL(m_niceness);
-
-	int32_t num = 0;
-	// loop over each valid address we and add to request size
-	for ( int32_t i = 0 ; i < m_am.getNumPtrs() ; i++ ) {
-		// breathe 
-		QUICKPOLL(m_niceness);
-		// get it
-		Address *aa = (Address *)m_am.getPtr(i);
-		// is inlined or verified?
-		if ( ! ( aa->m_flags3 & AF2_VALID ) ) continue;
-		// only do it if used in event now
-		if ( ! ( aa->m_flags3 & AF2_USEDINEVENT ) ) continue;
-		// skip if we got it already in the cache above
-		if ( aa->m_geocoderLat != 999 ) continue;
-		// inc it
-		num++;
-		// make the tag name
-		char tagName[32];
-		sprintf(tagName,"<addr%"INT32">",num);
-		// ok now get that reply
-		char *p = strstr(reply,tagName);
-		// not found?
-		if ( ! p ) {
-			log("addr: missing geocoder reply for addr #%"INT32"",num);
-			continue;
-		}
-		// get end tag of it
-		char endTagName[32];
-		sprintf(endTagName,"</addr%"INT32">",num);
-		char *end = strstr(p,endTagName);
-		// strange!
-		if ( ! end ) {
-			log("addr: missing geocoder endtag for addr #%"INT32"",num);
-			continue;
-		}
-		// tmp shutoff
-		char c = *end;
-		*end = '\0';
-
-		// set official latitude, this
-		double lastLat = NO_LATITUDE;
-		// ok, got it, grab all possible lat/lons for it
-		for ( char *s = strstr(p,"<lat>"); s ; s=strstr(s+1,"<lat>")){
-			// breathe
-			QUICKPOLL(m_niceness);
-			// get that
-			double lat = atof(s+5);
-			// had a last? if so, and they do not match, then
-			// give up because i'm not sure which is right
-			if ( lastLat != NO_LATITUDE && lat  != lastLat ) {
-				lastLat = NO_LATITUDE;
-				break;
-			}
-			// mark this
-			lastLat = lat;
-		}
-
-		// same for longitude
-		double lastLon = NO_LONGITUDE;
-		// ok, got it, grab all possible lon/lons for it
-		for ( char *s = strstr(p,"<lon>"); s ; s=strstr(s+1,"<lon>")){
-			// breathe
-			QUICKPOLL(m_niceness);
-			// get that
-			double lon = atof(s+5);
-			// had a last? if so, and they do not match, then
-			// give up because i'm not sure which is right
-			if ( lastLon != NO_LONGITUDE && lon  != lastLon ) {
-				lastLon = NO_LONGITUDE;
-				break;
-			}
-			// mark this
-			lastLon = lon;
-		}
-		
-		// put back for next address's reply
-		*end = c;
-
-		// skip if not good
-		if ( lastLat == NO_LATITUDE  || lastLon == NO_LONGITUDE ) {
-			// log it now
-			SafeBuf sb;
-			sb.safeMemcpy(aa->m_street->m_str,
-				      aa->m_street->m_strlen);
-			if ( aa->m_city ) {
-				sb.pushChar(',');
-				sb.safeMemcpy(aa->m_city->m_str,
-					      aa->m_city->m_strlen);
-			}
-			if ( aa->m_adm1 ) {
-				sb.pushChar(',');
-				sb.safeMemcpy(aa->m_adm1->m_str,
-					      aa->m_adm1->m_strlen);
-			}
-			if ( aa->m_zip && aa->m_zip->m_strlen ) {
-				sb.pushChar(',');
-				sb.safeMemcpy(aa->m_zip->m_str,
-					      aa->m_zip->m_strlen);
-			}
-			log("addr: geocoder failed on %s",sb.getBufStart());
-			continue;
-		}
-		// otherwise, set it!
-		aa->m_geocoderLat = lastLat;
-		aa->m_geocoderLon = lastLon;
-	}
-
-	// free when done
-	//mfree ( reply , replyAlloc , "geocodrp");
-	return true;
-}
-
 bool hashPlaceName ( HashTableX *nt1,
 		     Words *words,
 		     int32_t a ,
@@ -10545,12 +10409,6 @@ int32_t Address::serialize ( char *buf , int32_t bufSize , char *origUrl ,
 	}
 	*p++ = ';';
 
-	// use country code from "crid"
-	//char *cn = (char *)g_countryCode.getAbbr(m_adm1->m_crid-1);
-	//if ( cn ) { 
-	//	gbmemcpy(p,cn,gbstrlen(cn));
-	//	p += gbstrlen(cn);
-	//}
 	if ( m_flags3 & AF2_LATLON ) {
 		if ( pd && pd->m_crid ) {
 			char *cc = getCountryCode(pd->m_crid);
@@ -11081,19 +10939,6 @@ void Address::printEssentials ( SafeBuf *pbuf , bool forEvents ,
 
 
 	pbuf->safePrintf("<td><nobr>");
-	/*
-	// ctry is special
-	char *ctry = m_ctry->m_str;
-	if ( forEvents && m_alias ) ctry = m_alias->m_ctry->m_str;
-	if ( ! ctry ) {
-		Place *cp = &m_adm1;
-		char *cn = (char *)g_countryCode.getName(cp->m_crid-1);
-		if ( cn ) pbuf->safeMemcpy ( cn,gbstrlen(cn) );
-		else pbuf->safePrintf("unknown");
-	}
-	else
-		pbuf->safePrintf("%s",ctry);
-	*/
 	pbuf->safePrintf("</nobr></td>");
 
 	double lat = m_latitude;
@@ -11286,11 +11131,6 @@ void printPlaces ( PlaceMem *pm , SafeBuf *pbuf , Sections *sections,
 		//if ( pi->m_adm1[0] && pi->m_adm1[1] ) 
 		//	f += sprintf(f,"adm1=%c%c ",
 		//		     pi->m_adm1[0],pi->m_adm1[1]);
-
-		// add country
-		//if ( pi->m_crid )
-		//	f += sprintf(f,"ctry=%s ",
-		//		     g_countryCode.getName(pi->m_crid-1) );
 
 		*f = '\0';
 

@@ -595,7 +595,6 @@ class Addresses {
 	// this sets the m_avt table from the m_addresses[]
 	bool updateAddresses();
 
-	bool processGeocoderReply ( class TcpSocket *s );
 	bool m_calledGeocoder;
 
 	// set Section::m_firstPlaceNum which indexes into m_sorted[]
