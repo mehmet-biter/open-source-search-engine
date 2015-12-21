@@ -359,37 +359,6 @@ public:
 	MsgC       m_msgc;
 };
 
-bool TcpServer::sendMsg ( char  *url ,
-			  char  *sendBuf  ,
-			  int32_t   sendBufSize ,
-			  int32_t   sendBufUsed ,
-			  int32_t   msgTotalSize ,
-			  void  *state    ,
-			  void  (* callback )( void *state , TcpSocket *s ) ,
-			  int32_t   timeout ,
-			  int32_t   maxTextDocLen ,  // -1 for no max
-			  int32_t   maxOtherDocLen ) {
-
-	Url u;
-	u.set ( url );
-	char *host = u.getHost();
-	int32_t  hostLen = u.getHostLen();
-	int32_t  port = u.getPort();
-	return sendMsg ( host ,
-			 hostLen ,
-			 port ,
-			 sendBuf ,
-			 sendBufSize ,
-			 sendBufUsed ,
-			 msgTotalSize ,
-			 state ,
-			 callback ,
-			 timeout ,
-			 maxTextDocLen ,
-			 maxOtherDocLen );
-}
-
-
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 // . we do not copy "sendBuf"

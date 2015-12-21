@@ -85,18 +85,6 @@ class TcpServer {
 		       int32_t   maxTextDocLen ,  // -1 for no max
 		       int32_t   maxOtherDocLen );
 
-	bool sendMsg ( char *url ,
-		       char  *sendBuf  ,
-		       int32_t   sendBufSize ,
-		       int32_t   sendBufUsed ,
-		       int32_t   msgTotalSize ,
-		       void  *state    ,
-		       void  (* callback )( void *state, TcpSocket *s ) ,
-		       int32_t   timeout   , // 60*1000 
-		       int32_t   maxTextDocLen ,  // -1 for no max
-		       int32_t   maxOtherDocLen );
-		       
-
 	bool sendChunk ( class TcpSocket *s ,
 			 class SafeBuf *sb ,
 			 void *state ,
