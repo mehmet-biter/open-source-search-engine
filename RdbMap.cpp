@@ -685,11 +685,11 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 	// we need to call writeMap() before we exit
 	m_needToWrite = true;
 
-//@@@#ifdef GBSANITYCHECK
+#ifdef GBSANITYCHECK
 	// debug
 	log(LOG_TRACE,"db: addmap k=%s keysize=%"INT32" offset=%"INT64" pagenum=%"INT32"",
 	    KEYSTR(key,m_ks),recSize,m_offset,pageNum);
-//@@@#endif
+#endif
 
 	// we now call RdbList::checkList_r() in RdbDump::dumpList()
 	// and that checks the order of the keys
@@ -881,10 +881,10 @@ bool RdbMap::addList ( RdbList *list ) {
 	}
 	*/
 
-//@@@#ifdef GBSANITYCHECK
+#ifdef GBSANITYCHECK
 	// print the last key from lasttime
 	log("map: lastkey=%s",KEYSTR(m_lastKey,m_ks));
-//@@@#endif
+#endif
 
 	//key_t key;
 	char  key[MAX_KEY_BYTES];
