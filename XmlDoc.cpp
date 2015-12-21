@@ -112,7 +112,6 @@ XmlDoc::XmlDoc() {
 	m_wasContentInjected = false;
 
 	// warc parsing stuff
-	m_msg7 = NULL;
 
 	//m_coll  = NULL;
 	m_ubuf = NULL;
@@ -197,12 +196,6 @@ void XmlDoc::reset ( ) {
 		m_diffbotProxyReply = NULL;
 	}
 
-	if ( m_msg7 ) {
-		mdelete ( m_msg7 , sizeof(Msg7) , "xdmsg7" );
-		delete ( m_msg7 );
-		m_msg7 = NULL;
-	}
-	m_anyContentPtr = NULL;
 	m_savedChar = '\0';
 
 

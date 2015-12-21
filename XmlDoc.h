@@ -989,10 +989,6 @@ public:
 	SafeBuf  m_zbuf;
 	SafeBuf  m_kbuf;
 
-	// warc parsing member vars
-	class Msg7 *m_msg7;
-	char *m_anyContentPtr;
-	
 	// used by msg7 to store udp slot
 	class UdpSlot *m_injectionSlot;
 
