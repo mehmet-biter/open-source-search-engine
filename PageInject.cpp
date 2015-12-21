@@ -773,11 +773,7 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 			       ir->m_lastSpidered ,
 			       // the ip of the url being injected.
 			       // use 0 if unknown and it won't be valid.
-			       ir->m_injectDocIp ,
-				   ir->ptr_contentDelim,
-				   ir->ptr_metadata,
-				   ir->size_metadata,
-				   ir->size_content - 1 // there should be a null in that last byte
+			       ir->m_injectDocIp
 			       ) )
 		// we blocked...
 		return;

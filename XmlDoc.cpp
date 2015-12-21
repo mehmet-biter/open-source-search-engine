@@ -105,8 +105,6 @@ char *getJSONObjectEnd ( char *p , int32_t niceness ) ;
 void doneReadingArchiveFileWrapper ( int fd, void *state );
 
 XmlDoc::XmlDoc() {
-	m_readThreadOut = false;
-	for ( int32_t i = 0 ; i < MAXMSG7S ; i++ ) m_msg7s[i] = NULL;
 	m_esbuf.setLabel("exputfbuf");
 	for ( int32_t i = 0 ; i < MAX_XML_DOCS ; i++ ) m_xmlDocs[i] = NULL;
 	m_freed = false;
@@ -115,15 +113,6 @@ XmlDoc::XmlDoc() {
 
 	// warc parsing stuff
 	m_msg7 = NULL;
-	m_warcError = 0;
-	m_arcError = 0;
-	m_doneInjectingWarc = false;
-	m_numInjectionsOut = 0;
-	m_fptr = NULL;
-	m_fptrEnd = NULL;
-	m_fileBuf = NULL;
-	m_warcContentPtr = NULL;
-	m_calledWgetThread = false;
 
 	//m_coll  = NULL;
 	m_ubuf = NULL;
@@ -187,8 +176,6 @@ XmlDoc::XmlDoc() {
 	//m_mcasts = NULL;
 	//for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ )
 	//	m_currentBinPtrs[i] = NULL;
-	m_registeredWgetReadCallback = false;
-	m_pipe = NULL;
 	reset();
 };
 
@@ -210,52 +197,13 @@ void XmlDoc::reset ( ) {
 		m_diffbotProxyReply = NULL;
 	}
 
-	if ( m_readThreadOut )
-		log("build: deleting xmldoc class that has a read thread out "
-		    "on a warc file");
-
-	if ( m_fileValid ) {
-		m_file.close();
-		m_file.unlink();
-	}
-
-	if ( m_fileBuf )
-		mfree ( m_fileBuf , m_fileBufAllocSize , "fbdd");
-
-	for ( int i = 0 ; i < MAXMSG7S ; i++ ) {
-		Msg7 *msg7 = m_msg7s[i];
-		if ( ! msg7 ) continue;
-        if(msg7->m_inUse) {
-            log("build: archive: reseting xmldoc when msg7s are outstanding");
-
-        }
-		mdelete ( msg7 , sizeof(Msg7) , "xdmsg7" );
-		delete ( msg7 );
-		m_msg7s[i] = NULL;
-	}
-
 	if ( m_msg7 ) {
 		mdelete ( m_msg7 , sizeof(Msg7) , "xdmsg7" );
 		delete ( m_msg7 );
 		m_msg7 = NULL;
 	}
-	m_warcContentPtr = NULL;
-	m_arcContentPtr = NULL;
 	m_anyContentPtr = NULL;
 	m_savedChar = '\0';
-	m_contentDelim = NULL;
-
-	if(m_registeredWgetReadCallback && m_pipe) {
-		log("build:came back from sleep callback");
-		g_loop.unregisterReadCallback( fileno(m_pipe), this,doneReadingArchiveFileWrapper);
-		m_registeredWgetReadCallback = false;
-	}
-
-	if(m_pipe) {
-		int32_t retCode = fclose(m_pipe);
-		log("we closed the warc pipe on reset with error %s", mstrerror(retCode));
-		m_pipe = NULL;
-	}
 
 
 
@@ -924,10 +872,6 @@ void XmlDoc::reset ( ) {
 	void *pxend = &size_firstUrl;
 	memset ( px , 0 , (char *)pxend - (char *)px );
 
-	m_hasMetadata = false;
-	ptr_metadata = NULL;
-	size_metadata = 0;
-
 	ptr_catIds = NULL;
 	size_catIds = 0;
 	ptr_indCatIds = NULL;
@@ -1211,11 +1155,7 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		    int32_t        forcedIp ,
 		    uint8_t        contentType ,
 		    uint32_t       spideredTime ,
-		    bool           contentHasMimeArg ,
-		    char          *contentDelim,
-		    char          *metadata ,
-			uint32_t       metadataLen,
-			int32_t        payloadLen
+		    bool           contentHasMimeArg
 ) {
 
 	// sanity check
@@ -1241,24 +1181,9 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 	if ( sreq->m_forceDelete )
 		m_deleteFromIndex = true;
 
-	// if we are a container doc then we need the content delimeter,
-	// unless if we are a warc or arc, then we know how those delimit
-	// already.
-	m_contentDelim = contentDelim;
-	m_contentDelimValid = true;
-
-	bool contentHasMime = contentHasMimeArg;
-	// but if we are a container doc then this parm applies to each subdoc
-	// not to us, so turn it off for this part.
-	if ( isContainerDoc() )	{
-		contentHasMime    = false;
-		m_subDocsHaveMime = contentHasMimeArg;
-	}
-
-
 	char *utf8Content = utf8ContentArg;
 
-	if ( contentHasMime && utf8Content ) {
+	if ( utf8Content ) {
 		// get length of it all
 		int32_t clen = gbstrlen(utf8Content);
 		// return true on error with g_errno set
@@ -1272,10 +1197,6 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		m_mimeValid = true;
 		// advance
 		utf8Content = m_mime.getContent();
-
-		if(payloadLen != -1) {
-			payloadLen -= m_mime.getContent() - utf8ContentArg;
-		}
 	}
 
 	// use this to avoid ip lookup if it is not zero
@@ -1294,11 +1215,8 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		//   sentence formation stops at the ';' in the "&amp;" and
 		//   we also index "amp" which is bad.
 		m_content             = utf8Content;
-        if(payloadLen != -1) {
-            m_contentLen = payloadLen;
-        }
-		else if ( m_mimeValid && m_mime.m_contentLen > 0) {
-            m_contentLen = m_mime.m_contentLen;
+		if ( m_mimeValid && m_mime.m_contentLen > 0) {
+			m_contentLen = m_mime.m_contentLen;
 		} else {
 			m_contentLen = gbstrlen(utf8Content);
 		}
@@ -1481,11 +1399,6 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 	// can replace the rebuild tool. try to recycle on global index.
 	if ( m_sreqValid )
 		m_recycleContent = m_sreq.m_recycleContent;
-
-	m_hasMetadata = (bool)metadata;
-
-	ptr_metadata = metadata;
-	size_metadata = metadataLen;
 
 	return true;
 }
@@ -2117,11 +2030,7 @@ bool XmlDoc::injectDoc ( char *url ,
 
 			 uint32_t firstIndexed,
 			 uint32_t lastSpidered ,
-			 int32_t injectDocIp ,
-			 char *contentDelim,
-			 char *metadata,
-             uint32_t metadataLen,
-			 int32_t  payloadLen
+			 int32_t injectDocIp
 			 ) {
 
 
@@ -2195,12 +2104,7 @@ bool XmlDoc::injectDoc ( char *url ,
 		      injectDocIp, // 0,//forcedIp ,
 		      contentType ,
 		      lastSpidered,//lastSpidered overide
-		      contentHasMimeArg ,
-              contentDelim,
-              metadata,
-			  metadataLen,
-			  payloadLen
-                  )) {
+		      contentHasMimeArg )) {
 		// g_errno should be set if that returned false
 		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
 		return true;
@@ -2763,25 +2667,6 @@ bool XmlDoc::indexDoc2 ( ) {
 	// maybe a callback had g_errno set?
 	if ( g_errno ) return true;
 
-	if ( m_firstUrlValid && (m_firstUrl.isArc() ||  m_firstUrl.isWarc())) {
-		// this returns false if it would block and callback will be
-		// called
-		if ( ! indexWarcOrArc ( ) )
-			return false;
-		logIt();
-		// all done! no need to add the parent doc.
-		return true;
-	}
-
-	if ( isContainerDoc() ) {
-		// m_delimeter should be set!
-		if ( ! indexContainerDoc () )
-			return false;
-		logIt();
-		// all done! no need to add the parent doc.
-		return true;
-	}
-
 	// . now get the meta list from it to add
 	// . returns NULL and sets g_errno on error
 	char *metaList = getMetaList ( );
@@ -3037,217 +2922,6 @@ bool isRobotsTxtFile ( char *u , int32_t ulen ) {
 	return false;
 }
 
-// does this doc consist of a sequence of smaller sub-docs?
-// if so we'll index the subdocs and not the container doc itself.
-bool XmlDoc::isContainerDoc ( ) {
-	if ( m_firstUrlValid && m_firstUrl.isWarc() ) return true;
-	if ( m_firstUrlValid && m_firstUrl.isArc () ) return true;
-	//if ( ! m_contentDelimValid ) { char *xx=NULL;*xx=0; }
-	//if ( m_contentDelim ) return true;
-	if ( m_contentDelimValid && m_contentDelim ) return true;
-	return false;
-}
-
-// returns false if would block, true otherwise. returns true and sets g_errno on err
-bool XmlDoc::indexContainerDoc ( ) {
-
-	if ( ! m_contentDelim ) {
-		log("build: can not index container doc. no delimeter.");
-		g_errno = EBADENGINEER;
-		return true;
-	}
-
-	// int8_t *hc = getHopCount();
-	// if ( ! hc ) return true; // error?
-	// if ( hc == (void *)-1 ) return false;
-	// first download
-	// in the case of a list of delimeted http server replies let's
-	// not convert into utf8 here but just use as-is
-	char **cpp = getContent();//getUtf8Content();
-	// return true with g_errno set on error
-	if ( ! cpp ) {
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
-		return true;
-	}
-	// would block? return false then
-	if ( cpp == (void *)-1 )
-		return false;
-
-	// need this. it is almost 1MB in size, so alloc it
-	if ( ! m_msg7 ) {
-		try { m_msg7 = new ( Msg7 ); }
-		catch ( ... ) {
-			g_errno = ENOMEM;
-			return true;
-		}
-		mnew ( m_msg7 , sizeof(Msg7),"xdmsg7");
-	}
-
-	// inject input parms:
-	InjectionRequest *ir = &m_msg7->m_injectionRequest;
-	// the cursor for scanning the subdocs
-	if ( ! m_anyContentPtr ) {
-		// init the content cursor to point to the first subdoc
-		m_anyContentPtr = *cpp;
-		// but skip over initial separator if there. that is a
-		// faux pau
-		int32_t dlen = gbstrlen(m_contentDelim);
-		if ( strncmp(m_anyContentPtr,m_contentDelim,dlen) == 0 )
-			m_anyContentPtr += dlen;
-		// init the input parms
-		memset ( ir , 0 , sizeof(InjectionRequest) );
-		// reset it
-		ir->m_spiderLinks = false;
-		ir->m_injectLinks = false;
-		ir->m_hopCount = 0;//*hc + 1;
-		if ( ! m_collnumValid ) { char *xx=NULL;*xx=0; }
-		ir->m_collnum = m_collnum;
-		// will this work on a content delimeterized doc?
-		ir->m_deleteUrl = m_deleteFromIndex;
-		// each subdoc will have a mime since it is an arc
-		ir->m_hasMime = m_subDocsHaveMime;//true;
-	}
-
- subdocLoop:
-
-	QUICKPOLL ( m_niceness );
-
-	// EOF?
-	if ( m_anyContentPtr == (char *)-1 ) {
-		m_indexCode = 0;//m_warcError;
-		m_indexCodeValid = true;
-		return true;
-	}
-
-	// we had \0 terminated the end of the previous record, so put back
-	if ( m_savedChar && ! *m_anyContentPtr ) {
-		*m_anyContentPtr = m_savedChar;
-		m_anyContentPtr += gbstrlen(m_contentDelim);
-	}
-
-
-	// index this subdoc
-	ir->ptr_content = m_anyContentPtr;
-
-	// . should have the url as well.
-	// . the url, ip etc. are on a single \n terminated line for an arc!
-	char *separator = strstr(m_anyContentPtr,m_contentDelim);
-
-
-
-	if ( separator ) {
-		m_savedChar = *separator;
-		m_anyContentPtr = separator;
-		*m_anyContentPtr = '\0';
-		//ir->size_content = separator - ir->ptr_content;
-	}
-
-	// if no separator found, this is our last injection
-	if ( ! separator ) {
-		m_anyContentPtr = (char *)-1;
-	}
-
-
-	// these are not defined. will be autoset in set4() i guess.
-	ir->m_firstIndexed = 0;
-	ir->m_lastSpidered = 0;
-
-	bool setUrl = false;
-
-	// HOWEVER, if an hasmime is true and an http:// follows
-	// the delimeter then use that as the url...
-	// this way we can specify our own urls.
-	if ( ir->m_hasMime ) {
-		char *du = ir->ptr_content;
-		//du += gbstrlen(delim);
-		if ( du && is_wspace_a ( *du ) ) du++;
-		if ( du && is_wspace_a ( *du ) ) du++;
-		if ( du && is_wspace_a ( *du ) ) du++;
-		if ( ir->m_hasMime &&
-		     (strncasecmp( du,"http://",7) == 0 ||
-		      strncasecmp( du,"https://",8) == 0 ) ) {
-			// flag it
-			setUrl = true;
-			// find end of it
-			char *uend = du + 7;
-			for ( ; *uend && ! is_wspace_a(*uend) ; uend++ );
-			// inject that then
-			m_injectUrlBuf.reset();
-			m_injectUrlBuf.safeMemcpy ( du , uend - du );
-			m_injectUrlBuf.nullTerm();
-			// and point to the actual http mime then
-			// well, skip that space, right
-			ir->ptr_content = uend + 1;
-			ir->ptr_url = m_injectUrlBuf.getBufStart();
-			ir->size_url = m_injectUrlBuf.length()+1; // include \0
-			// if (!strncmp(ir->ptr_url,"http://www.focusinfo.com/"
-			// 	       "products/mxprodv" ,40) )
-			// 	log("hey");
-		}
-	}
-
-
-	QUICKPOLL ( m_niceness );
-
-	// make the url from parent url
-	// use hash of the content
-	int64_t ch64 = hash64n ( ir->ptr_content , 0LL );
-
-	// need this for an injection
-	ir->size_content = gbstrlen(ir->ptr_content) + 1;// improve this?
-
-
-	QUICKPOLL ( m_niceness );
-
-	if ( ! setUrl ) {
-		// reset it
-		m_injectUrlBuf.reset();
-		// by default append a -<ch64> to the provided url
-		m_injectUrlBuf.safePrintf("%s-%"UINT64"",
-					  m_firstUrl.getUrl(),ch64);
-		ir->ptr_url = m_injectUrlBuf.getBufStart();
-		ir->size_url = m_injectUrlBuf.length()+1; // include \0
-	}
-
-
-	bool status = m_msg7->sendInjectionRequestToHost ( ir ,
-							   m_masterState ,
-							   m_masterLoop ) ;
-
-	// it would block, callback will be called later
-	if ( status )
-		return false;
-
-	QUICKPOLL ( m_niceness );
-
-	// error?
-	if ( g_errno ) {
-		log("build: index flatfile error %s",mstrerror(g_errno));
-		return NULL;
-	}
-	else
-		log("build: index flatfile did not block");
-
-	// loop it up
-	goto subdocLoop;
-
-}
-
-
-void doneInjectingArchiveRec ( void *state ) {
-	Msg7 *THIS = (Msg7 *)state;
-	THIS->m_inUse = false;
-	XmlDoc *xd = THIS->m_stashxd;
-	xd->m_numInjectionsOut--;
-	log("build: archive: injection thread returned. %"INT32" out now.",
-	    xd->m_numInjectionsOut);
-	// reset g_errno so it doesn't error out in ::indexDoc() when
-	// we are injecting a ton of these msg7s and then xmldoc ends up
-	// getting reset and when a msg7 reply comes back in, we core
-	g_errno = 0;
-	xd->m_masterLoop ( xd );
-}
-
 void doneReadingArchiveFileWrapper ( int fd, void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// . go back to the main entry function
@@ -3256,715 +2930,6 @@ void doneReadingArchiveFileWrapper ( int fd, void *state ) {
 
 	THIS->m_masterLoop ( THIS->m_masterState );
 }
-
-
-#define MAXWARCRECSIZE 5000000
-
-bool XmlDoc::readMoreWarc() {
-    // We read everything we can off the pipe in a sleep timer.
-    // When we have enough to start processing, we call the
-    // processing function.
-    // If reading gets too far ahead of the processing and we can
-    // no longer buffer the read, then we save the offset of what
-    // we processed, free the readbuffer and restart the pipe and
-    // skip until the offset we last processed
-
-	if(!m_calledWgetThread) {
-		m_pipe = getUtf8ContentInFile();
-	}
-
-	// return true with g_errno set on error
-	if ( ! m_pipe ) {
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
-        log("We don't have the warc pipe.");
-		return true;
-	}
-
-    int64_t leftOver = 0;
-    int64_t skipAhead = 0;
-
-    // How much is unprocessed
-    if(m_fptr != m_fptrEnd) {
-        leftOver = m_fptrEnd - m_fptr;
-    }
-	if(leftOver < 0) {
-        // Happens when we skip a record which is too big
-		skipAhead = - leftOver;
-		leftOver = 0;
-		m_fptr = m_fileBuf;
-		m_fptrEnd = m_fileBuf;
-	}
-
-	// We don't want to be memmoving the buffer up for every single
-	// document we process so only do it when we need it.
-	if(leftOver > MAXWARCRECSIZE) return false;
-
-	int64_t bytesRemaining = m_fileBufAllocSize - (m_fptrEnd - m_fileBuf) - 1;
-    // Scoot up everything we haven't processed
-    if(bytesRemaining < MAXWARCRECSIZE) {
-        //log("scooting up by left over %"INT64, leftOver);
-        // count everything we've processed
-        m_bytesStreamed += m_fptr - m_fileBuf;
-        memmove(m_fileBuf, m_fptr, leftOver);
-        m_fptr = m_fileBuf;
-        m_fptrEnd = m_fileBuf + leftOver;
-        *m_fptrEnd = '\0';
-		bytesRemaining += leftOver;
-    }
-
-	int64_t toRead = m_fileBufAllocSize - leftOver - 1;
-	if(toRead > bytesRemaining) toRead = bytesRemaining;
-
-	if(toRead == 0) {
-		//log("build: not enough room to read, lets process the buffer" );
-		return false;
-	}
-
-
-    g_loop.disableQuickpollTimer();
-    errno = 0;
-    int bytesRead = fread(m_fptrEnd, 1, toRead, m_pipe);
-    g_loop.enableQuickpollTimer();
-
-	// if(bytesRead > 0) {
-	// 	log("build: warc pipe read %"INT32" more bytes of the pipe. errno = %s, buf space = %"INT64 " processed = %"INT64 " skipAhead=%"INT64,
-	// 		bytesRead, mstrerror(errno),toRead, m_bytesStreamed, skipAhead);
-	// }
-
-    if(bytesRead <= 0 && errno != EAGAIN) {
-        // if(errno == EAGAIN){
-        //     log("build: fd is not ready, lets process the buffer" );
-        //     return false;
-        // } else {
-			if(m_registeredWgetReadCallback) {
-				//log("build:came back from read callback");
-				g_loop.unregisterReadCallback(fileno(m_pipe), this,doneReadingArchiveFileWrapper);
-				m_registeredWgetReadCallback = false;
-			}
-
-            if(m_pipe) {
-                int32_t retCode = fclose(m_pipe);
-				if(retCode) {
-					log("we closed the pipe with error %s", mstrerror(retCode));
-				}
-                m_pipe = NULL;
-            }
-
-            //log("build: warc problem pipe terminated %s", mstrerror(errno));
-            m_hasMoreToRead = false;
-            return false;
-        // }
-    }
-    //m_fptr = m_fileBuf;
-    m_fptrEnd = m_fptrEnd + bytesRead;
-    *m_fptrEnd = '\0';
-	m_fptr += skipAhead;
-
-    return false;
-}
-
-
-// . returns false if would block, true otherwise.
-// . returns true and sets g_errno on err
-// . injectwarc
-bool XmlDoc::indexWarcOrArc ( ) {
-	// This can be a busy loop if we have max injections out but we
-	// are getting a read ready callback.  Should we unregister
-	// when max injections are out and then reregister when we have room?
-	int32_t max = g_hostdb.m_numHosts * 2;
-	if ( max > MAXMSG7S ) max = MAXMSG7S;
-	if ( m_numInjectionsOut >= max ) return false;
-
-    char ctype;
-	if ( m_firstUrl.isWarc() ) {
-        ctype = CT_WARC;
-	} else {
-        ctype = CT_ARC;
-    }
-
-	int8_t *hc = getHopCount();
-	if ( ! hc ) return true; // error?
-	if ( hc == (void *)-1 ) return false;
-
-    if ( ! m_fileBuf ) {
-        // Do this exacly once.
-        m_fileBufAllocSize = (5 * MAXWARCRECSIZE) + 1;
-        m_fileBuf=(char *)mmalloc(m_fileBufAllocSize ,"sibuf");
-        m_fptr = m_fileBuf;
-        m_fptrEnd = m_fileBuf;
-        m_bytesStreamed = 0;
-        m_hasMoreToRead = true;
-    }
-
-    if ( ! m_fileBuf ) {
-        log("build: failed to alloc buf to read archive file %s",m_firstUrl.getUrl());
-        return true;
-    }
-
-    if(m_hasMoreToRead) readMoreWarc();
-
-	setStatus ("injecting archive records");
-
-	QUICKPOLL ( m_niceness );
-
-	// did an inject return?
-	if ( m_doneInjectingWarc ) {
-	warcDone:
-		// log("build: done parsing %"INT64" bytes of archive file %s. left over =%"INT32 "done injecting %"INT32 " hasmoretoread %"INT32,
-		// 	m_bytesStreamed + m_fptrEnd - m_fileBuf,
-		//     m_firstUrl.getUrl(),
-		// 	(int32_t)(m_fptrEnd - m_fptr),
-		// 	(int32_t)m_doneInjectingWarc,
-		// 	(int32_t)m_hasMoreToRead);
-
-		m_doneInjectingWarc = true;
-
-		// return if all injects have returned.
-		if ( m_numInjectionsOut == 0) { // && !m_hasMoreToRead
-			g_errno = m_warcError;
-			m_indexCode = m_warcError;
-			m_indexCodeValid = true;
-
-			return true;
-		}
-		log("build: waiting for injection threads to return.");
-		// we would block
-		return false;
-	}
-
-    // Dup strings into here so we don't write nulls into our buffer, sometimes we have
-    // to rewind over a rec and we want the buf to be the same every time.
-	char scratchSpace[1024*10];
-	SafeBuf scratch(scratchSpace, 1024*10);
- loop:
-	scratch.reset();
-
-	QUICKPOLL ( m_niceness );
-
-	if ( max > MAXMSG7S ) max = MAXMSG7S;
-	// wait for one to come back before launching another msg7
-	if ( m_numInjectionsOut >= max ) {
-		// Don't need to read anymore so don't call us
-		if(m_registeredWgetReadCallback && m_pipe && m_fptr < m_fptrEnd) {
-			g_loop.unregisterReadCallback(fileno(m_pipe), this,doneReadingArchiveFileWrapper);
-			m_registeredWgetReadCallback = false;
-		}
-		return false;
-	}
-
-	char *realStart = m_fptr;
-
-	// need at least say 100k for warc header
-	if ( m_fptr + 100000 > m_fptrEnd && m_hasMoreToRead )  {
-		//log("build need more of the record to process so sleeping.");
-
-		if(!m_registeredWgetReadCallback) {
-			if(!g_loop.registerReadCallback ( fileno(m_pipe),
-											  this ,
-											  doneReadingArchiveFileWrapper,
-											  m_niceness    )) {
-				log("build: failed to register warc read callback." );
-				return true;
-			}
-			log("build: reregistered the read callback. need more");
-			m_registeredWgetReadCallback = true;
-		}
-        return false;
-	}
-
-	int64_t  recTime       = 0;
-	char    *recIp         = NULL;
-	char    *recUrl        = NULL;
-	char    *recContent    = NULL;
-	int64_t  recContentLen = 0;
-	// what we skip over
-	uint64_t recSize       = 0;
-
-	//
-	// set recUrl, recIp, recTime, recContent, recContentLen and recSize
-	//
-    //log("buf size is %"INT64 " four chars %c%c%c%c%c%c",
-    //m_fptrEnd-m_fptr, m_fptr[0], m_fptr[1], m_fptr[2], m_fptr[3],m_fptr[4],m_fptr[5]);
-
-	if ( ctype == CT_WARC ) {
-		// find "WARC/1.0" or whatever
-		char *whp = m_fptr;
-		if( ! whp ) {
-			// FIXME: shouldn't get here with a NULL
-			log("build: No buffer for file=%s",  m_firstUrl.getUrl());
-			goto warcDone;
-		}
-		// we do terminate last warc rec with \0 so be aware of that...
-		int32_t maxCount = 10;
-		for ( ; *whp && strncmp(whp,"WARC/",5) && --maxCount>0; whp++);
-		// none?
-		if ( ! *whp ) {
-			log("build: could not find WARC/1 header start for "
-			    "file=%s",  m_firstUrl.getUrl());
-			// we don't really need this and since we force the
-			// http reply to end in \0 before calling inject2() on
-			// it it gets messed up
-			goto warcDone;
-		}
-
-		char *warcHeader = whp;
-
-		// find end of warc mime HEADER not the content
-		char *warcHeaderEnd = strstr(warcHeader,"\r\n\r\n");
-		if ( ! warcHeaderEnd ) {
-			log("build: could not find end of WARC header for "
-			    "file=%s.",
-			    m_firstUrl.getUrl());
-			goto warcDone;
-		}
-		// \0 term for strstrs below
-		char tmp = *warcHeaderEnd;
-		*warcHeaderEnd = '\0';
-
-		char *warcLen  = strstr(warcHeader,"Content-Length:");
-		char *warcUrl  = strstr(warcHeader,"WARC-Target-URI:");
-		char *warcType = strstr(warcHeader,"WARC-Type:");
-		char *warcDate = strstr(warcHeader,"WARC-Date:");
-		char *warcIp   = strstr(warcHeader,"WARC-IP-Address:");
-		char *warcCon  = strstr(warcHeader,"Content-Type:");
-
-
-		// advance
-		if ( warcLen  ) warcLen  += 15;
-		if ( warcUrl  ) warcUrl  += 16;
-		if ( warcType ) warcType += 10;
-		if ( warcIp   ) warcIp   += 17;
-		if ( warcCon  ) warcCon  += 13;
-		if ( warcDate ) warcDate += 10;
-
-		// skip initial spaces spaces
-		for ( ; warcUrl  && is_wspace_a(*warcUrl ) ; warcUrl ++ );
-		for ( ; warcLen  && is_wspace_a(*warcLen ) ; warcLen ++ );
-		for ( ; warcType && is_wspace_a(*warcType) ; warcType++ );
-		for ( ; warcDate && is_wspace_a(*warcDate) ; warcDate++ );
-		for ( ; warcIp   && is_wspace_a(*warcIp  ) ; warcIp  ++ );
-		for ( ; warcCon  && is_wspace_a(*warcCon ) ; warcCon ++ );
-
-		// get Content-Length: of WARC header for its content
-		if ( ! warcLen ) {
-			// this is a critical stop.
-			log("build: warc problem: could not find WARC Content-Length:");
-			goto warcDone;
-		}
-
-		//
-		// advance m_fptr to point to the next warc record in case we
-		// end up calling 'goto loop' below
-		//
-		recContent    = warcHeaderEnd + 4;
-		recContentLen = atoll(warcLen);
-
-		//log("build content len was %"INT64, recContentLen);
-		char    *warcContentEnd = recContent + recContentLen;
-		recSize = (warcContentEnd - realStart);
-
-		recUrl = warcUrl;
-
-		// point to the next warc record
-		m_fptr += recSize;
-		*warcHeaderEnd = tmp;
-
-		//log("skipping %"UINT64, recSize);
-		// advance the file offset to the next record as well
-
-		// get WARC-Type:
-		// revisit  (if url was already done before)
-		// request (making a GET or DNS request)
-		// response (reponse to a GET or dns request)
-		// warcinfo (crawling parameters, robots: obey, etc)
-		// metadata (fetchTimeMs: 263, hopsFromSeed:P,outlink:)
-		if ( ! warcType ) {
-			log("build: could not find WARC-Type:");
-			goto loop;
-		}
-		//http://www.mpaa.org/Resources/5bec4ac9-a95e-443b-987b-bff6fb5455a9.pdf
-		// get Content-Type:
-		// application/warc-fields (fetch time, hops from seed)
-		// application/http; msgtype=request  (the GET request)
-		// application/http; msgtype=response (the GET reply)
-		if ( ! warcCon ) {
-			log("build: could not find Content-Type:");
-			goto loop;
-		}
-
-		if ( ! warcUrl ) {
-			// no URI?
-			log("build: could not find url");
-			goto loop;
-		}
-
-		// if WARC-Type: is not response, skip it. so if it
-		// is a revisit then skip it i guess.
-		if ( strncmp ( warcType,"response", 8 ) != 0) {
-			//log("build: was not type response %s *****%s*****", warcUrl, warcType);
-
-			// read another warc record
-			goto loop;
-		}
-
-		// warcConType needs to be
-		// application/http; msgtype=response
-		if ( !(strncmp(warcCon,"application/http; msgtype=response",34) == 0 ||
-			   strncmp(warcCon,"application/http;msgtype=response",33) == 0)) {
-			// read another warc record
-			//log("build: wrong content type %s ---%s---", warcUrl, warcCon);
-			goto loop;
-		}
-
-		recTime = 0;
-		if ( warcDate ) recTime = atotime ( warcDate );
-		recIp = warcIp;
-	}
-	// END WARC SPECIFIC PARSING
-
-	//
-	// set recUrl, recIp, recTime, recContent, recContentLen and recSize
-	//
-	if ( ctype == CT_ARC ) {
-		// find \n\nhttp://
-		char *whp = m_fptr;
-		for ( ; *whp ; whp++ ) {
-			if ( whp[0] != '\n' ) continue;
-			if ( strncmp(whp+1,"http://",7) == 0) break;
-			if ( strncmp(whp+1,"https://",8) == 0) break;
-		}
-		// none?
-		if ( ! *whp ) {
-			log("build: arc: could not find next \\nhttp:// in "
-			    "arc file %s",m_firstUrl.getUrl());
-			goto warcDone;
-		}
-		char *arcHeader = whp;
-		// find end of arc header not the content
-		char *arcHeaderEnd = strstr(arcHeader+1,"\n");
-		if ( ! arcHeaderEnd ) {
-			log("build: warc problem: could not find end of ARC header. file=%s",
-                m_firstUrl.getUrl());
-			goto warcDone;
-		}
-		// \0 term for strstrs below
-		char tmp = *arcHeaderEnd;
-		*arcHeaderEnd = '\0';
-		char *arcContent = arcHeaderEnd + 1;
-		// parse arc header line
-		char *url = arcHeader + 1;
-		char *hp = url;
-		for ( ; *hp && *hp != ' ' ; hp++ );
-		if ( ! *hp ) {
-            log("build: warc problem: bad arc header 1.file=%s", m_firstUrl.getUrl());
-            goto warcDone;
-        }
-		url = scratch.pushStr(url,  hp-url);
-		hp++;
-
-		char *ipStr = hp;
-		for ( ; *hp && *hp != ' ' ; hp++ );
-		if ( ! *hp ) {
-            log("build: warc problem: bad arc header 2.file=%s", m_firstUrl.getUrl());
-            goto warcDone;
-        }
-		ipStr  = scratch.pushStr(ipStr, hp - ipStr);
-		hp++;
-
-		char *timeStr = hp;
-		for ( ; *hp && *hp != ' ' ; hp++ );
-		if ( ! *hp ) {
-            log("build: warc problem: bad arc header 3.file=%s", m_firstUrl.getUrl());
-            goto warcDone;
-        }
-		timeStr = scratch.pushStr(timeStr, hp - timeStr);
-		hp++;
-
-		char *arcConType = hp;
-		for ( ; *hp && *hp != ' ' ; hp++ );
-		if ( ! *hp ) {
-            log("build: warc problem: bad arc header 4.file=%s", m_firstUrl.getUrl());
-            goto warcDone;
-        }
-		arcConType = scratch.pushStr(arcConType, hp - arcConType);
-		hp++;
-
-		char *arcContentLenStr = hp;
-		// get arc content len
-		int64_t arcContentLen = atoll(arcContentLenStr);
-		char *arcContentEnd = arcContent + arcContentLen;
-		//uint64_t oldOff = s_off;
-		recSize = (arcContentEnd - realStart);
-		// point to the next arc record
-		m_fptr += recSize;
-		*arcHeaderEnd = tmp;
-		// advance the file offset to the next record as well
-		// arcConType needs to indexable
-		int32_t ct = getContentTypeFromStr ( arcConType );
-		if ( ct != CT_HTML &&
-		     ct != CT_TEXT &&
-		     ct != CT_XML &&
-			 ct != CT_PDF &&
-			 ct != CT_XLS &&
-			 ct != CT_PPT &&
-			 ct != CT_PS  &&
-			 ct != CT_DOC &&
-		     ct != CT_JSON ) {
-			// read another arc record
-			log("build: was not indexable response %s", arcConType);
-			goto loop;
-		}
-		// convert to timestamp
-		// this time structure, once filled, will help yield a time_t
-		struct tm t;
-		// DAY OF MONTH
-		t.tm_mday = atol2 ( timeStr + 6 , 2 );
-		// MONTH
-		t.tm_mon = atol2 ( timeStr + 4  , 2 );
-		// YEAR - # of years since 1900
-		t.tm_year = atol2 ( timeStr     , 4 ) - 1900 ;
-		// TIME
-		t.tm_hour = atol2 ( timeStr +  8 , 2 );
-		t.tm_min  = atol2 ( timeStr + 10 , 2 );
-		t.tm_sec  = atol2 ( timeStr + 12 , 2 );
-		// unknown if we're in  daylight savings time
-		t.tm_isdst = -1;
-		// translate using mktime
-		recTime = timegm ( &t );
-		// set content as well
-		recContent = arcContent;
-		recContentLen = arcContentLen;
-		recUrl = url;
-		recIp = ipStr;
-	}
-	// END ARC SPECIFIC PARSING
-
-
-
-	// must be http not dns:
-	// url must start with http:// or https://
-	// it's probably like WARC-Target-URI: dns:www.xyz.com
-	// so it is a dns response
-	if ( strncmp(recUrl,"http://" ,7) != 0 &&
-	     strncmp(recUrl,"https://",8) != 0 )
-		goto loop;
-
-	// get length of it, null term it
-	char *recUrlEnd = recUrl;
-	for ( ; *recUrlEnd && ! is_wspace_a(*recUrlEnd) ; recUrlEnd++ );
-	int32_t recUrlLen = recUrlEnd - recUrl;
-	//*recUrlEnd = '\0';
-
-	// skip if robots.txt
-	if ( isRobotsTxtFile( recUrl , recUrlLen ) )
-		goto loop;
-
-	// how can there be no more to read?
-	if ( m_fptr > m_fptrEnd && ! m_hasMoreToRead ) {
-		log("build: warc problem: archive file %s exceeded file length.",
-            m_firstUrl.getUrl());
-		goto warcDone;
-	}
-
-	// if we fall outside of the current read buf, read next rec if too big
-	if ( m_fptr > m_fptrEnd && recSize > MAXWARCRECSIZE ) {
-		log("build: skipping archive file of %"INT64" "
-		    "bytes which is too big",recSize);
-
-		if(!m_registeredWgetReadCallback) {
-			if(!g_loop.registerReadCallback ( fileno(m_pipe),
-											  this ,
-											  doneReadingArchiveFileWrapper,
-											  m_niceness    )) {
-				log("build: failed to register warc read callback." );
-				return true;
-			}
-			log("build: reregistered the read callback. skip bigrec");
-			m_registeredWgetReadCallback = true;
-		}
-		return false;
-	}
-
-	// don't read the next record, read THIS one again, we can fit it
-	if ( m_fptr > m_fptrEnd ) {
-        //log("build: record end is past the end of what we read by %"INT64 "  %"UINT64,  m_fptrEnd - m_fptr, recSize);
-        m_fptr -= recSize;
-
-		if(!m_registeredWgetReadCallback) {
-			if(!g_loop.registerReadCallback ( fileno(m_pipe),
-											  this ,
-											  doneReadingArchiveFileWrapper,
-											  m_niceness    )) {
-				log("build: failed to register warc read callback." );
-				return true;
-			}
-			log("build: reregistered the read callback. reread this record");
-			m_registeredWgetReadCallback = true;
-		}
-
-
-        return false;
-	}
-
-	char    *httpReply     = recContent;
-	int64_t  httpReplySize = recContentLen;
-
-	// should be a mime that starts with GET or POST
-	HttpMime m;
-	if ( ! m.set ( httpReply , httpReplySize , NULL ) ) {
-		log("build: archive: failed to set http mime at in "
-		    "file");
-		goto loop;
-	}
-
-	// check content type
-	int ct2 = m.getContentType();
-	if ( ct2 != CT_HTML &&
-	     ct2 != CT_TEXT &&
-	     ct2 != CT_XML &&
-	     ct2 != CT_PDF &&
-		 ct2 != CT_XLS &&
-		 ct2 != CT_PPT &&
-		 ct2 != CT_PS  &&
-	     ct2 != CT_DOC &&
-	     ct2 != CT_JSON ) {
-		//log("build:got wrong type %"INT32, (int32_t)ct2);
-		goto loop;
-	}
-
-	// grab an available msg7
-	Msg7 *msg7 = NULL;
-	for ( int32_t i = 0 ; i < MAXMSG7S ; i++ ) {
-		msg7 = m_msg7s[i];
-		// if we got an available one stop
-		if ( msg7 ) {
-			if( msg7->m_inUse ) continue;
-			break; // reuse this one.
-		}
-		// ok, create one, 1MB each about
-		try { msg7 = new ( Msg7 ); }
-		catch ( ... ) {g_errno=ENOMEM;m_warcError=g_errno;return true;}
-		mnew ( msg7 , sizeof(Msg7),"xdmsgs7");
-
-		// store it for re-use
-		m_msg7s[i] = msg7;
-		break;
-	}
-
-    if(!msg7 || msg7->m_inUse) {
-        // shouldn't happen, but it does... why?
-        log("build: archive: Ran out of msg7s to inject doc.");
-        return false;
-    }
-
-	// inject input parms:
-	InjectionRequest *ir = &msg7->m_injectionRequest;
-	// reset it
-	ir->m_hopCount = *hc + 1;
-	if ( ! m_collnumValid ) { char *xx=NULL;*xx=0; }
-	ir->m_collnum = m_collnum;
-	// will this work on a content delimeterized doc?
-	ir->m_deleteUrl = m_deleteFromIndex;
-	// each subdoc will have a mime since it is a warc
-	ir->m_hasMime = true;
-	// it has a mime so we shouldn't need to set this
-	ir->ptr_contentTypeStr = NULL;
-	// we are injecting a single page, not a container file
-	ir->ptr_contentDelim = NULL;
-	// miscelleaneous. faster than memsetting the whole gr class (32k)
-	ir->m_getSections = 0;
-	ir->m_gotSections = 0;
-	ir->m_spiderLinks = false;
-	ir->m_injectLinks = false;
-	ir->m_shortReply = false;
-	ir->m_newOnly = false;
-	ir->m_recycle = false;
-	ir->m_dedup = true;
-	ir->m_doConsistencyTesting = false;
-	ir->m_charset = 0;
-
-	ir->ptr_contentFile = NULL;
-	ir->ptr_diffbotReply = NULL;
-
-
-	// Stick the capture date in the metadata
-	StackBuf(newKey);
-	newKey.safePrintf("\"gbcapturedate\":%"INT64, recTime);
-	SafeBuf newMetadata(newKey.length() * 2 + size_metadata, "ModifiedMetadata");
-
-	newMetadata.safeMemcpy(ptr_metadata, size_metadata);
-	Json::prependKey(newMetadata, newKey.getBufStart());
-
-	ir->ptr_metadata = newMetadata.getBufStart();
-	ir->size_metadata = newMetadata.length();
-
-	newMetadata.nullTerm();
-	// set 'timestamp' for injection
-	ir->m_firstIndexed = recTime;
-	ir->m_lastSpidered = recTime;
-
-
-	// set 'ip' for injection
-
-	ir->m_injectDocIp = 0;
-	// get the record IP address from the warc header if there
-	if ( recIp ) {
-		// get end of ip
-		char *ipEnd = recIp;
-		// skip digits and periods
-		while ( *ipEnd && ! is_wspace_a(*ipEnd) ) ipEnd++;
-		// we now have the ip address for doing ip: searches
-		// this func is in ip.h
-		ir->m_injectDocIp = atoip ( recIp, ipEnd-recIp );
-	}
-
-	// we end up repopulating m_fileBuf to read the next warc sometimes
-	// so do not destroy the content we are injecting from the original
-	// m_fileBuf. so we have to copy it.
-	msg7->m_contentBuf.reset();
-	msg7->m_contentBuf.reserve ( httpReplySize + 5 );
-	msg7->m_contentBuf.safeMemcpy ( httpReply , httpReplySize );
-	msg7->m_contentBuf.nullTerm();
-
-	// set 'content' for injection
-	ir->ptr_content = msg7->m_contentBuf.getBufStart();
-	ir->size_content = msg7->m_contentBuf.getLength() + 1;
-
-
-
-	// set the rest of the injection parms
-	ir->m_hopCount     = -1;
-	ir->m_newOnly        = 0;
-	// all warc records have the http mime
-	ir->m_hasMime        = true;
-
-	ir->ptr_url          = recUrl;
-	ir->size_url         = recUrlLen+1;
-
-	// stash this
-	msg7->m_stashxd = this;
-
-	QUICKPOLL ( m_niceness );
-
-	// log it
-    *recUrlEnd = '\0';
-	log("build: archive: injecting archive url %s",recUrl);
-
-	QUICKPOLL ( m_niceness );
-
-	if (msg7->sendInjectionRequestToHost(ir,msg7,doneInjectingArchiveRec)){
-		m_numInjectionsOut++;
-		msg7->m_inUse = true;
-		goto loop;
-	}
-
-	log("build: index archive: msg7 inject: %s",
-	    mstrerror(g_errno));
-
-	goto loop;
-}
-
-
 
 
 void getTitleRecBufWrapper ( void *state ) {
@@ -9661,17 +8626,6 @@ bool XmlDoc::addGigabits(Words *ww,int64_t docId,Sections *sections,
 }
 
 
-char* XmlDoc::getMetadata(int32_t* retlen) {
-	if(!m_hasMetadata) {
-		*retlen = 0;
-		return NULL;
-	}
-
-	*retlen = size_metadata;
-	return ptr_metadata;
-
-}
-
 // . "docId" is the document Id that "h" came from
 // . if being called at query time we often get called on each search result!
 // . if being called at parse/index time we are being called on a single docId
@@ -9981,9 +8935,6 @@ Url **XmlDoc::getRedirUrl() {
 		// let's just parse out the meta tag by hand
 		bool checkMeta = true;
 		if ( isRobotsTxt ) checkMeta = false;
-		// if we are a doc that consists of a sequence of sub-docs that
-		// we are indexing/injecting then don't do this check.
-		if ( isContainerDoc() ) checkMeta = false;
 		if ( checkMeta ) {
 			Url **mrup = getMetaRedirUrl();
 			if ( ! mrup || mrup == (void *)-1) return (Url **)mrup;
@@ -17777,23 +16728,6 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		return &m_expandedUtf8Content;
 	}
 
-	bool skip = m_skipIframeExpansion;
-
-	// if we are a warc, arc or doc that consists of a sequence of
-	// sub-docs that we are indexing/injecting then skip iframe expansion
-	if ( isContainerDoc() )
-		skip = true;
-
-	// or if this is set to true
-	if ( skip ) {
-		m_expandedUtf8Content     = m_rawUtf8Content;
-		m_expandedUtf8ContentSize = m_rawUtf8ContentSize;
-		m_expandedUtf8ContentValid = true;
-		return &m_expandedUtf8Content;
-	}
-
-
-
 	uint8_t *ct = getContentType();
 	if ( ! ct || ct == (void *)-1 ) return (char **)ct;
 
@@ -18096,149 +17030,6 @@ void *systemStartWrapper_r ( void *state , ThreadEntry *t ) {
 void systemDoneWrapper ( void *state , ThreadEntry *t ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	THIS->m_masterLoop ( THIS->m_masterState );
-}
-
-// we download large files to a file on disk, like warcs and arcs
-FILE *XmlDoc::getUtf8ContentInFile () {
-
-	setStatus ("wgetting archive file");
-
-	// before calling the system wget thread we gotta set the cookiebuf
-	// HACK: for archive.org
-	// if getting a page from archive.org then append the cookie
-	// so we have the proper permissions
-	static bool s_triedToLoadCookie = false;
-	char *x = m_firstUrl.getUrl();
-	// only go out 20 chars looking for start of .archive.org/
-	char *xend = x + 25;
-	bool isArchiveOrg = false;
-	for ( ; x < xend && *x ; x++ ) {
-		if ( x[ 0] != '.' && x[0] != '/' ) continue; // /archive.org?
-		if ( x[ 1] != 'a' ) continue;
-		if ( x[ 2] != 'r' ) continue;
-		if ( x[ 3] != 'c' ) continue;
-		if ( x[ 4] != 'h' ) continue;
-		if ( x[ 5] != 'i' ) continue;
-		if ( x[ 6] != 'v' ) continue;
-		if ( x[ 7] != 'e' ) continue;
-		if ( x[ 8] != '.' ) continue;
-		if ( x[ 9] != 'o' ) continue;
-		if ( x[10] != 'r' ) continue;
-		if ( x[11] != 'g' ) continue;
-		if ( x[12] != '/' ) continue;
-		isArchiveOrg = true;
-		break;
-	}
-
-	if ( isArchiveOrg && ! s_triedToLoadCookie ) {
-		// try to load it up if haven't tried yet
-		s_triedToLoadCookie = true;
-		SafeBuf tmp;
-		//int32_t loaded = tmp.load ( "/home/mwells/.config/internetarchive.yml");
-		int32_t loaded = tmp.load ( "auth/internetarchive.yml");
-		if(loaded <= 0) {
-			if ( ! g_errno ) g_errno = EDOCTOOBIG;
-			log("gb: failed to load auth/internetarchive.yml: "
-			    "%s",mstrerror(g_errno));
-			// do not restart gb in a loop, so return 0 to shell
-			exit(0);
-			//return NULL;
-			// FIXME
-			char *xx=NULL;*xx=0;
-		}
-		char *s = tmp.getBufStart();
-		char *line;
-		char *lineEnd;
-		line = strstr ( s , "logged-in-user: " );
-		if ( line ) lineEnd = strstr(line,"\n");
-		if ( lineEnd ) {
-			s_cookieBuf.safePrintf("logged-in-user=");
-			line += 16;
-			s_cookieBuf.safeMemcpy(line,lineEnd-line);
-			s_cookieBuf.pushChar(';');
-			s_cookieBuf.pushChar(' ');
-			s_cookieBuf.nullTerm();
-		}
-		line = strstr ( s , "logged-in-sig: " );
-		if ( line ) lineEnd = strstr(line,"\n");
-		if ( lineEnd ) {
-			s_cookieBuf.safePrintf("logged-in-sig=");
-			line += 15;
-			s_cookieBuf.safeMemcpy(line,lineEnd-line);
-			//s_cookieBuf.pushChar(';');
-			//s_cookieBuf.pushChar(' ');
-			s_cookieBuf.nullTerm();
-		}
-	}
-
-	// if we loaded something use it
-	if ( isArchiveOrg && s_cookieBuf.length() ) {
-		//cookie = s_cookieBuf.getBufStart();
-		log("http: using archive cookie %s",s_cookieBuf.getBufStart());
-		// and set user-agent too
-		// userAgent = "python-requests/2.3.0 "
-		// 	"CPython/2.7.3 Linux/3.5.0-32-generic";
-	}
-
-	char cmd[MAX_URL_LEN+256];
-	snprintf( cmd,
-		  MAX_URL_LEN+256,
-			  "set -o pipefail|"
-			  "wget --limit-rate=10M -O- --header=\"Cookie: %s\" \"%s\"|" //
-			  "zcat|"
-			  "mbuffer -t -m 10M -o-", //this is useful but we need a new version of mbuffer -W 30
-			  s_cookieBuf.getBufStart() ,
-              m_firstUrl.getUrl());
-
-	log("build: wget: %s",cmd );
-
-	FILE* fh = gbpopen(cmd);
-
-	int	fd = fileno(fh);
-	int flags = fcntl(fd, F_GETFL, 0);
-	if(fcntl(fd, F_SETFL, flags | O_NONBLOCK)) {
-        log("build: could not set wget stream to nonblocking %s",
-			m_firstUrl.getUrl());
-		//error
-	}
-
-	if(!g_loop.registerReadCallback ( fd,
-									  this ,
-									  doneReadingArchiveFileWrapper,
-									  m_niceness    )) {
-		log("build: failed to register warc read callback." );
-		return NULL;
-	}
-	m_registeredWgetReadCallback = true;
-
-
-	log("build: called popen");
-
-	m_calledWgetThread = true;
-    m_hasMoreToRead = true;
-
-	return fh;
-
-	//	return getUtf8ContentInFile ( fileSizeArg );
-
-
-	// . callThread returns true on success, in which case we block
-	// if ( g_threads.call ( FILTER_THREAD        ,
-	// 		      MAX_NICENESS         ,
-	// 		      (void *)this                 , // this
-	// 		      systemDoneWrapper    ,
-	// 					  systemStartWrapper_r ) )
-	// 	// would block, wait for thread
-	// 	return (BigFile *)-1;
-	// // failed?
-	// log("build: failed to launch wget thread");
-	// If we run it in this thread then if we are fetching
-	// a local url it will block forever.
-	// systemStartWrapper_r(this,NULL);
-	// return getUtf8ContentInFile ( fileSizeArg );
-	//g_errno = ETHREADSDISABLED;
-
-	//return NULL;
 }
 
 // . get the final utf8 content of the document
@@ -22337,21 +21128,9 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		size_linkInfo1 = 0;
 		m_linkInfo1Valid = false;
 
-		bool indexNewTimeStamp = false;
-		if ( getUseTimeAxis() &&
-		     od &&
-		     m_hasMetadata &&
-		     *indexCode == EDOCUNCHANGED
-		     //m_spideredTimeValid &&
-		     //od->m_spideredTime != m_spideredTime
-		     )
-			indexNewTimeStamp = true;
-
-
-
 		// . if not using spiderdb we are done at this point
 		// . this happens for diffbot json replies (m_dx)
-		if ( ! m_useSpiderdb && ! indexNewTimeStamp ) {
+		if ( ! m_useSpiderdb ) {
 			m_metaList = NULL;
 			m_metaListSize = 0;
 			return (char *)0x01;
@@ -22390,18 +21169,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// blocked?
 		if (spiderStatusDocMetaList==(void *)-1)
 			return (char *)-1;
-
-		// . now append the new stuff.
-		// . we overwrite the old titlerec with the new one that has
-		//   some more json in the ptr_metaInfo buffer so we hash
-		//   its new timestamp. 'gbspiderdate' and any info from
-		//   the meta info given in the injection request if there.
-		//   this allows you to tag each document, even multiple
-		//   versions of the same url with the same content. so if
-		//   you spider the doc again and it is unchanged since last
-		//   time we still index some of this meta stuff.
-		if ( indexNewTimeStamp )
-			appendNewMetaInfo (spiderStatusDocMetaList,forDelete);
 
 		// need to alloc space for it too
 		int32_t len = spiderStatusDocMetaList->length();
@@ -27206,93 +25973,6 @@ int32_t XmlDoc::getBoostFromSiteNumInlinks ( int32_t inlinks ) {
 	return boost1;
 }
 
-bool XmlDoc::appendNewMetaInfo ( SafeBuf *metaList , bool forDelete ) {
-
-	// set4() called from the inject sets these two things for meta data
-	// which is basically json that augments the doc, tags it with stuff
-	if ( ! m_hasMetadata ) return true;
-	if ( ! ptr_metadata  ) return true;
-
-	XmlDoc **pod = getOldXmlDoc ( );
-	if ( ! pod ) { char *xx=NULL;*xx=0; }
-	if ( pod == (XmlDoc **)-1 ) { char *xx=NULL;*xx=0; }
-	// this is non-NULL if it existed
-	XmlDoc *od = *pod;
-
-	// wtf?
-	if ( ! od ) return true;
-
-
-	// dedup. if already in there, do not re-add it
-	if ( strstr ( od->ptr_metadata , ptr_metadata ) )
-		return true;
-
-	SafeBuf md;
-
-	// copy over and append
-	if ( ! md.safeMemcpy ( od->ptr_metadata , od->size_metadata ) )
-		return false;
-	// remove trailing \0 if there
-	md.removeLastChar ( '\0' );
-	// separate from the new stuff
-	if ( ! md.safePrintf(",\n") )
-		return false;
-
-	if ( ! md.safeMemcpy ( ptr_metadata , size_metadata ) )
-		return false;
-
-	if ( ! md.nullTerm ( ) )
-		return false;
-	// update his meta data
-	od->ptr_metadata = md.getBufStart();
-	od->size_metadata = md.length();
-
-	int32_t nw = od->size_metadata * 4;
-
-	HashTableX tt1;
-	int32_t need4 = nw * 4 + 5000;
-	if ( ! tt1.set ( 18 , 4 , need4,NULL,0,false,m_niceness,"posdb-i2"))
-		return false;
-
-	od->hashMetaData ( &tt1 );
-
-	// store the posdb keys from tt1 into our safebuf, tmp
-	SafeBuf sb;
-	if ( m_usePosdb && ! addTable144 ( &tt1 , od->m_docId , &sb ) )
-		return false;
-
-	// this could use time axis so that is taken into account
-	int64_t uh48 = getFirstUrlHash48();
-
-	// and re-formulate (and compress) his new title rec
-	SafeBuf trec;
-	if ( ! od->setTitleRecBuf ( &trec , od->m_docId , uh48 ) )
-		return false;
-
-	// force the title rec key to be the same
-	// if ( od->m_titleRecKeyValid && trec.getLength() >= sizeof(key_t) ) {
-	// 	char *p = trec.getBufStart();
-	// 	*(key_t *)p = od->m_titleRecKey;
-	// }
-	// else {
-	// 	log("build: old titlerec invalid docid=%"INT64,od->m_docId);
-	// }
-
-	// store the posdb keys in the meta list
-	if ( m_usePosdb && ! metaList->safeMemcpy ( &sb ) )
-		return false;
-
-	// store the updated titlerec into the meta list
-	if ( m_useTitledb && ! metaList->pushChar(RDB_TITLEDB) )
-		return false;
-	if ( m_useTitledb && ! metaList->safeMemcpy(&trec) )
-		return false;
-
-	m_updatedMetaData = true;
-
-	return true;
-}
-
 // . this is kinda hacky because it uses a short XmlDoc on the stack
 // . no need to hash this stuff for regular documents since all the terms
 //   are fielded by gberrorstr, gberrornum or gbisreply.
@@ -28158,40 +26838,6 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 
 
 bool XmlDoc::hashMetaData ( HashTableX *tt ) {
-
-	if ( ! ptr_metadata || !ptr_metadata[0] ) return true;
-
-	Json jp;
-
-	if ( ! jp.parseJsonStringIntoJsonItems (ptr_metadata, m_niceness)) {
-		log("XmlDoc had error parsing json in metadata %s",
-		    ptr_metadata);
-		return false;
-	}
-
-	// set up the hashing parms
-	HashInfo hi;
-	hi.m_hashGroup = HASHGROUP_INMETATAG;
-	hi.m_tt        = tt;
-	hi.m_desc      = "meta data";
-	hi.m_useCountTable = false;
-
-	// always reset to word pos to 0 now when hashing a json field
-	// since it shouldn't matter because they are in a field so we
-	// have to search like myfield:whatever. this way we can
-	// augment ptr_metadata on an EDOCUNCHANGED error and
-	// not end up with undeleteable data in posdb. if we have
-	// duplicate fields in our doc and our doc is json, we could have
-	// some word position conflicts, which kinda sucks, but can be
-	// avoided becomes this is HASHGROUP_INMETATAG, but should really
-	// be HASHGROUP_INMETADATA just to be sure.
-	int32_t saved =  m_dist;
-	m_dist = 0;
-
-	hashJSONFields2 ( tt , &hi , &jp , false );
-
-	m_dist = saved;
-
 	return true;
 }
 
@@ -31280,7 +29926,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	reply->ptr_ubuf             = getFirstUrl()->getUrl();
 	reply->ptr_rubuf            = ru;
-	reply->ptr_metadataBuf      = ptr_metadata;
+	reply->ptr_metadataBuf      = NULL;
 
 
 	reply->size_ubuf             = getFirstUrl()->getUrlLen() + 1;
@@ -35603,7 +34249,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 		  (int32_t)m_countryId,
 		  g_countryCode.getName(m_countryId),
 		  m_useTimeAxis,
-		  ptr_metadata);
+		  "");
 
 
 	// print the new, unstored, gigabit vector
@@ -46661,13 +45307,6 @@ bool XmlDoc::storeFacetValues ( char *qs , SafeBuf *sb , FacetValHash_t fvh ) {
 	if ( ! m_contentTypeValid ) { char *xx=NULL;*xx=0; }
 
 	storeFacetValuesSite ( qs, sb, fvh );
-
-	if ( m_hasMetadata) {
-		Json jpMetadata;
-		if (jpMetadata.parseJsonStringIntoJsonItems (ptr_metadata, m_niceness)) {
-			storeFacetValuesJSON ( qs, sb, fvh, &jpMetadata );
-		}
-	}
 
 	// if "qa" is a gbxpathsitehash123456 type of beastie then we
 	// gotta scan the sections

@@ -312,7 +312,7 @@ public:
 	uint16_t  m_sentToDiffbot:1;
 	uint16_t  m_gotDiffbotSuccessfulReply:1;
 	uint16_t  m_useTimeAxis:1; // m_reserved804:1;
-	uint16_t  m_hasMetadata:1;
+	uint16_t  m_reserved805:1;
 	uint16_t  m_reserved806:1;
 	uint16_t  m_reserved807:1;
 	uint16_t  m_reserved808:1;
@@ -423,13 +423,7 @@ public:
 		    int32_t             forcedIp = 0 ,
 		    uint8_t          contentType = CT_HTML ,
 		    uint32_t           spideredTime = 0 , // time_t
-		    bool             contentHasMime = false ,
-		    // for container docs, what is the separator of subdocs?
-		    char            *contentDelim = NULL,
-			char *metadata = NULL,
-			uint32_t metadataLen = 0,
-			// for injected docs we have the recv, buffer size don't exceed that
-			int32_t payloadLen = -1) ;
+		    bool             contentHasMime = false );
 
 	// we now call this right away rather than at download time!
 	int32_t getSpideredTime();
@@ -454,11 +448,7 @@ public:
 	void getRebuiltSpiderRequest ( class SpiderRequest *sreq ) ;
 	bool indexDoc ( );
 	bool indexDoc2 ( );
-	bool isContainerDoc ( );
-	bool indexContainerDoc ( );
 
-	bool readMoreWarc();
-	bool indexWarcOrArc ( ) ;
 	key_t *getTitleRecKey() ;
 	//char *getSkipIndexing ( );
 	char *prepareToMakeTitleRec ( ) ;
@@ -466,7 +456,6 @@ public:
 	bool setTitleRecBuf ( SafeBuf *buf , int64_t docId, int64_t uh48 );
 	// sets m_titleRecBuf/m_titleRecBufValid/m_titleRecKey[Valid]
 	SafeBuf *getTitleRecBuf ( );
-	bool appendNewMetaInfo ( SafeBuf *metaList , bool forDelete ) ;
 	SafeBuf *getSpiderStatusDocMetaList ( class SpiderReply *reply ,
 					      bool forDelete ) ;
 	SafeBuf *getSpiderStatusDocMetaList2 ( class SpiderReply *reply ) ;
@@ -534,7 +523,6 @@ public:
 	char *getMetaDescription( int32_t *mdlen ) ;
 	char *getMetaSummary ( int32_t *mslen ) ;
 	char *getMetaKeywords( int32_t *mklen ) ;
-	char *getMetadata(int32_t* retlen);
 	bool addGigabits ( char *s , int64_t docId , uint8_t langId ) ;
 	bool addGigabits2 ( char *s,int32_t slen,int64_t docId,uint8_t langId);
 	bool addGigabits ( class Words *ww , 
@@ -638,7 +626,6 @@ public:
 	char **getExpandedUtf8Content ( ) ;
 	char **getUtf8Content ( ) ;
 	// we download large files to a file on disk, like warcs and arcs
-	FILE *getUtf8ContentInFile ( );
 	int32_t *getContentHash32 ( ) ;
 	int32_t *getContentHashJson32 ( ) ;
 	//int32_t *getTagHash32 ( ) ;
@@ -1004,34 +991,8 @@ public:
 
 	// warc parsing member vars
 	class Msg7 *m_msg7;
-	class Msg7 *m_msg7s[MAXMSG7S];
-	char *m_warcContentPtr;
-	char *m_arcContentPtr;
 	char *m_anyContentPtr;
-	char *m_contentDelim;
-	SafeBuf m_injectUrlBuf;
-	bool m_subDocsHaveMime;
-	int32_t m_warcError ;
-	int32_t m_arcError ;
-	bool m_doneInjectingWarc ;
-
-	int64_t m_bytesStreamed;
-	char *m_fileBuf ;
-	int32_t m_fileBufAllocSize;
-	bool    m_registeredWgetReadCallback;
-	char *m_fptr ;
-	char *m_fptrEnd ;
-
-	FILE* m_pipe;
 	
-	BigFile m_file;
-	int64_t m_fileSize;
-	FileState m_fileState;
-	bool m_readThreadOut;
-	bool m_hasMoreToRead;
-	int32_t m_numInjectionsOut;
-	bool m_calledWgetThread;
-
 	// used by msg7 to store udp slot
 	class UdpSlot *m_injectionSlot;
 
@@ -1158,8 +1119,6 @@ public:
 	char     m_addedSpiderReplySizeValid;
 	char     m_addedStatusDocSizeValid;
 	char     m_downloadStartTimeValid;
-	char     m_contentDelimValid;
-	char     m_fileValid;
 	//char   m_docQualityValid;
 	char     m_siteValid;
 	char     m_startTimeValid;
@@ -2357,12 +2316,7 @@ public:
 
 			 uint32_t firstIndexedTime = 0,
 			 uint32_t lastSpideredDate = 0 ,
-			 int32_t  injectDocIp = 0 ,
-			 // for container docs consisting of subdocs to inject
-			 char *contentDelim = NULL,
-			 char* metadata = NULL,
-             uint32_t metadataLen = 0,
-             int32_t  payloadLen = -1);
+			 int32_t  injectDocIp = 0 );
 
 
 	bool injectLinks  ( HashTableX *linkDedupTable ,
