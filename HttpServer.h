@@ -29,8 +29,7 @@
 
 #define DEFAULT_HTTP_PROTO "HTTP/1.0"
 
-//this is for low priority requests which come in while we are
-//in a quickpoll
+//this is for low priority requests which come in while we are in a quickpoll
 #define MAX_REQUEST_QUEUE 128
 struct QueuedRequest {
 	HttpRequest  m_r;
@@ -49,9 +48,7 @@ class HttpServer {
 	void reset();
 
 	// returns false if initialization was unsuccessful
-	bool init ( int16_t port,
-		    int16_t sslPort ,
-		    void handlerWrapper ( TcpSocket *s) = NULL);
+	bool init( int16_t port, int16_t sslPort, void handlerWrapper( TcpSocket *s ) = NULL );
 
 	// . returns false if blocked, true otherwise
 	// . sets errno on error
@@ -82,7 +79,6 @@ class HttpServer {
 		      int32_t    maxTextDocLen  ,
 		      int32_t    maxOtherDocLen ,
 		      char   *userAgent = NULL ,
-		      //bool    respectDownloadLimit = false ,
 		      // . say HTTP/1.1 instead of 1.0 so we can communicate
 		      //   with room alert...
 		      // . we do not support 1.1 that is why you should always
@@ -95,17 +91,6 @@ class HttpServer {
 		      char *fullRequest = NULL ,
 		      char *postContent = NULL ,
 		      char *proxyUsernamePwdAuth = NULL );
-
-	bool getDoc ( int32_t ip,
-		      int32_t port,
-		      char *request,
-		      int32_t requestLen,
-		      void   *state    ,
-		      void   (* callback)( void *state , TcpSocket *s ) ,
-		      int32_t    timeout  ,
-		      int32_t    maxTextDocLen  ,
-		      int32_t    maxOtherDocLen );
-		      //bool    respectDownloadLimit = false );
 
 	bool gotDoc ( int32_t n , TcpSocket *s );
 
@@ -152,8 +137,13 @@ class HttpServer {
 				HttpRequest *hr = NULL );
 
 	// for PageSockets
-	TcpServer *getTcp()    { return &m_tcp; };
-	TcpServer *getSSLTcp() { return &m_ssltcp; };
+	TcpServer *getTcp() {
+		return &m_tcp;
+	}
+
+	TcpServer *getSSLTcp() {
+		return &m_ssltcp;
+	}
 
 	// we contain our own tcp server
 	TcpServer m_tcp;
