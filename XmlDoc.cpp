@@ -869,12 +869,14 @@ void XmlDoc::reset ( ) {
 	size_catIds = 0;
 	ptr_indCatIds = NULL;
 	size_indCatIds = 0;
-	ptr_dmozTitles = NULL;
-	size_dmozTitles = 0;
-	ptr_dmozSumms = NULL;
-	size_dmozSumms = 0;
-	ptr_dmozAnchors = NULL;
-	size_dmozAnchors = 0;
+	ptr_unused1 = NULL;
+	size_unused1 = 0;
+	ptr_unused2 = NULL;
+	size_unused2 = 0;
+	ptr_unused3 = NULL;
+	size_unused3 = 0;
+	ptr_unused5 = NULL;
+	size_unused5 = 0;
 }
 
 // . set the url with the intention of adding it or deleting it from the index
@@ -29924,7 +29926,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	reply->size_ubuf             = getFirstUrl()->getUrlLen() + 1;
 	reply->size_rubuf            = rulen;
-	reply->size_metadataBuf      = size_metadata;
+	reply->size_metadataBuf      = 0;
 
 
 	// breathe

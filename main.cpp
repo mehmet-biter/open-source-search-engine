@@ -4829,7 +4829,7 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 			//ms,
 			(int32_t)xd->m_hopCount,
 			shard,
-			xd->size_metadata,
+			0,
 			//(int32_t)xd->m_isDiffbotJSONObject,
 			ru,
 			u->getUrl() );

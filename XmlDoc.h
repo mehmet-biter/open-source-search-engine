@@ -341,11 +341,11 @@ public:
 	char      *ptr_imageData;
 	int32_t      *ptr_catIds;
 	int32_t      *ptr_indCatIds;
-	char      *ptr_dmozTitles;
-	char      *ptr_dmozSumms;
-	char      *ptr_dmozAnchors;
+	char      *ptr_unused1;
+	char      *ptr_unused2;
+	char      *ptr_unused3;
 	char      *ptr_utf8Content;
-	char      *ptr_metadata;
+	char      *ptr_unused5;
 
 	// do not let SiteGetter change this when we re-parse!
 	char      *ptr_site;
@@ -366,11 +366,11 @@ public:
 	int32_t       size_imageData;
 	int32_t       size_catIds;
 	int32_t       size_indCatIds;
-	int32_t       size_dmozTitles;
-	int32_t       size_dmozSumms;
-	int32_t       size_dmozAnchors;
+	int32_t       size_unused1;
+	int32_t       size_unused2;
+	int32_t       size_unused3;
 	int32_t       size_utf8Content;
-	int32_t       size_metadata;
+	int32_t       size_unused5;
 	int32_t       size_site;
 	int32_t       size_linkInfo1;
 	int32_t       size_linkdbData;
