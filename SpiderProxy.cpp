@@ -982,12 +982,8 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 	}
 
 	// send the proxy ip/port/LBid back to user
-	g_udpServer.sendReply_ass ( udpSlot->m_tmpBuf , // msg
-				    sizeof(ProxyReply) , // msgSize
-				    udpSlot->m_tmpBuf , // alloc
-				    sizeof(ProxyReply) , 
-				    udpSlot , 
-				    60 ) ; // 60s timeout
+	g_udpServer.sendReply_ass( udpSlot->m_tmpBuf, sizeof( ProxyReply ), udpSlot->m_tmpBuf,
+							   sizeof( ProxyReply ), udpSlot );
 }
 	
 // . use msg 0x55 to say you are done using the proxy
@@ -1030,13 +1026,7 @@ void returnProxy ( Msg13Request *preq , UdpSlot *udpSlot ) {
 	if ( ! udpSlot ) return;
 
 	// gotta send reply back
-	g_udpServer.sendReply_ass ( 0,
-				    0 , // msgSize
-				    0 , // alloc
-				    0 , 
-				    udpSlot , 
-				    60 ) ; // 60s timeout
-
+	g_udpServer.sendReply_ass( 0, 0, 0, 0, udpSlot );
 }
 
 // call this at startup to register the handlers

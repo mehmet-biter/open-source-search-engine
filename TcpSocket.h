@@ -64,7 +64,10 @@ class TcpSocket {
 	class TcpServer *m_this;
 
 	int         m_sd;               // socket descriptor
-	char       *m_hostname;         // may be NULL
+
+	char *m_hostname;
+	int32_t m_hostnameSize; // include null terminator
+
  	int64_t   m_startTime;        // time the send/read started
 	int64_t   m_lastActionTime;   // of send or receive or connect
 

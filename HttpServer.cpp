@@ -286,31 +286,14 @@ bool HttpServer::getDoc ( char   *url      ,
 		// . send it away
 		// . callback will be called on completion of transaction
 		// . be sure to free "req/reqSize" in callback() somewhere
-		if ( ip )
-			return m_tcp.sendMsg ( ip             ,
-				       port           ,
-				       req            , 
-				       reqSize        ,
-				       reqSize        ,
-				       reqSize        , // msgTotalSize
-				       state          , 
-				       callback       ,
-				       timeout        ,
-				       maxTextDocLen  ,
-				       maxOtherDocLen );
+		if ( ip ) {
+			return m_tcp.sendMsg( host, hostLen, ip, port, req, reqSize, reqSize, reqSize, state, callback,
+								  timeout, maxTextDocLen, maxOtherDocLen );
+		}
+
 		// otherwise pass the hostname
-		return m_tcp.sendMsg ( host           ,
-				       hostLen        ,
-				       port           ,
-				       req            , 
-				       reqSize        ,
-				       reqSize        ,
-				       reqSize        , // msgTotalSize
-				       state          , 
-				       callback       ,
-				       timeout        ,
-				       maxTextDocLen  ,
-				       maxOtherDocLen );
+		return m_tcp.sendMsg( host, hostLen, port, req, reqSize, reqSize, reqSize, state, callback, timeout,
+							  maxTextDocLen, maxOtherDocLen );
 	}
 	// if too many downloads already, return error
 	//if ( respectDownloadLimit &&
@@ -347,39 +330,24 @@ bool HttpServer::getDoc ( char   *url      ,
 	// . be sure to free "req/reqSize" in callback() somewhere
 	// . if using an http proxy, then ip should be valid here...
 	if ( ip ) {
-		if ( ! tcp->sendMsg (  ip             ,
-				       port           ,
-				       req            , 
-				       reqSize        ,
-				       reqSize        ,
-				       reqSize        , // msgTotalSize
-				       (void*)n       ,
-				       gotDocWrapper  ,
-				       timeout        ,
-				       maxTextDocLen  ,
-				       maxOtherDocLen ,
-				       useHttpTunnel  ) )
+		if ( !tcp->sendMsg( host, hostLen, ip, port, req, reqSize, reqSize, reqSize, (void *)n, gotDocWrapper,
+							timeout, maxTextDocLen, maxOtherDocLen, useHttpTunnel ) ) {
 			return false;
+		}
+
 		// otherwise we didn't block
 		states[n]    = NULL;
 		callbacks[n] = NULL;
 		s_numOutgoingSockets--;
 		return true;
 	}
+
 	// otherwise pass the hostname
-	if ( ! tcp->sendMsg (  host           ,
-			       hostLen        ,
-			       port           ,
-			       req            , 
-			       reqSize        ,
-			       reqSize        ,
-			       reqSize        , // msgTotalSize
-			       (void*)n       ,
-			       gotDocWrapper  ,
-			       timeout        ,
-			       maxTextDocLen  ,
-			       maxOtherDocLen ) )
+	if ( !tcp->sendMsg( host, hostLen, port, req, reqSize, reqSize, reqSize, (void *)n, gotDocWrapper,
+	                    timeout, maxTextDocLen, maxOtherDocLen ) ) {
 		return false;
+	}
+
 	// otherwise we didn't block
 	states[n]    = NULL;
 	callbacks[n] = NULL;
@@ -1320,16 +1288,14 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	int32_t totalToSend = mimeLen + bytesToSend;
 
 	//s->m_state = NULL; // do we need this? yes, cuz s is NULL for cleanUp
-	if ( s && s->m_state == f ) s->m_state = NULL;
 
-	//if ( ! m_tcp.sendMsg ( s           , 
-	if (  ! tcp->sendMsg ( s           , 
-			       sendBuf     ,
-			       sendBufSize ,
-			       mimeLen     ,
-			       totalToSend ,
-			       f           , // callback data for getMsgPiece()
-			       cleanUp     ) ) return false;
+	if ( s && s->m_state == f ) {
+		s->m_state = NULL;
+	}
+
+	if ( !tcp->sendMsg( s, sendBuf, sendBufSize, mimeLen, totalToSend, f, cleanUp ) ) {
+		return false;
+	}
 
 	// . otherwise sendMsg() blocked, so return false
 	// . just return false if we don't need to read from f
@@ -1478,27 +1444,6 @@ bool HttpServer::sendReply2 ( char *mime,
 		if ( sendBufSize != contentLen+mimeLen) { char *xx=NULL;*xx=0;}
 	}
 
-	// . store the login/logout links after <body> tag
-	// . only proxy should provide a non-null hr right now
-	/*
-	if ( hr ) {
-		int32_t newReplySize;
-		char *newReply = g_proxy.storeLoginBar ( sendBuf, 
-							 sendBufSize, 
-							 sendBufAlloc,
-							 mimeLen,
-							 &newReplySize,
-							 hr );
-		// different? no, we free it in storeloginbar
-		//if ( newReply != sendBuf )
-		//	mfree ( sendBuf , sendBufSize ,"sbufa" );
-		// and do it
-		sendBuf      = newReply;
-		sendBufSize  = newReplySize;
-		sendBufAlloc = newReplySize;
-	}
-	*/
-
 	// . send it away
 	// . this returns false if blocked, true otherwise
 	// . this sets g_errno on error
@@ -1507,14 +1452,10 @@ bool HttpServer::sendReply2 ( char *mime,
 	// . it's passed to cleanUp() on completion/error before socket
 	//   is recycled/destroyed
 	// . this will call getMsgPiece() to fill up sendBuf from file
-	if (  ! tcp->sendMsg ( s           , 
-			       sendBuf     ,
-			       sendBufAlloc ,
-			       sendBufSize ,
-			       sendBufSize ,
-			       NULL        ,   // data for callback
-			       NULL        ) ) // callback
+	if ( !tcp->sendMsg( s, sendBuf, sendBufAlloc, sendBufSize, sendBufSize, NULL, NULL ) ) {
 		return false;
+	}
+
 	// it didn't block or there was an error
 	return true;
 }
@@ -3466,12 +3407,6 @@ void gotSquidProxiedContent ( void *state ) {
 	//   acting like a squid proxy, send it back...
 	// . this should free the reply when done
 	TcpServer *tcp = &g_httpServer.m_tcp;
-	tcp->sendMsg ( sock ,
-		       reply ,  // sendbuf
-		       replyAllocSize ,  // bufsize
-		       replySize , // used
-		       replySize , // msgtotalsize
-		       NULL , // state
-		       NULL ); // donesendingcallback
+	tcp->sendMsg( sock, reply, replyAllocSize, replySize, replySize, NULL, NULL );
 }
 

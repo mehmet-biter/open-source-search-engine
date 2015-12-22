@@ -370,12 +370,7 @@ void handleRequest17 ( UdpSlot *slot , int32_t niceness  ) {
 
 	// . set the msg40 from the cached record
 	// . UdpServer should free "rec" when he's done sending it
-	us->sendReply_ass ( buf     , 
-			    bufSize ,
-			    buf     , // alloc
-			    bufSize , // allocSize
-			    slot    ,
-			    2       ); // timeout in 2 secs
+	us->sendReply_ass( buf, bufSize, buf, bufSize, slot );
 }
 
 static int32_t s_numInProgress = 0;

@@ -128,12 +128,12 @@ void sendReply ( UdpSlot *slot , Msg39 *msg39 , char *reply , int32_t replyLen ,
 	int32_t err = g_errno;
 	g_errno = 0;
 	// send an error reply if g_errno is set
-	if ( err ) us->sendErrorReply ( slot , err ) ; 
-	else       us->sendReply_ass ( reply    , 
-				       replyLen , 
-				       reply    , 
-				       replyMaxSize , 
-				       slot     );
+	if ( err ) {
+		us->sendErrorReply( slot, err );
+	} else {
+		us->sendReply_ass( reply, replyLen, reply, replyMaxSize, slot );
+	}
+
 	// always delete ourselves when done handling the request
 	if ( msg39 ) {
 		mdelete ( msg39 , sizeof(Msg39) , "Msg39" );

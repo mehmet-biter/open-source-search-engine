@@ -72,26 +72,16 @@ class TcpServer {
 	// . that is, when both m_sendBuf and m_readBuf have been filled
 	// . callback is also called on error
 	// . default timeout of 60 secs of no read OR no write
-	bool sendMsg ( char  *hostname ,
-		       int32_t   hostnameLen ,
-		       int16_t  port     ,
-		       char  *sendBuf  ,
-		       int32_t   sendBufSize ,
-		       int32_t   sendBufUsed ,
-		       int32_t   msgTotalSize ,
-		       void  *state    ,
-		       void  (* callback )( void *state, TcpSocket *s ) ,
-		       int32_t   timeout   , // 60*1000 
-		       int32_t   maxTextDocLen ,  // -1 for no max
-		       int32_t   maxOtherDocLen );
+	bool sendMsg( char *hostname, int32_t hostnameLen, int16_t port, char *sendBuf, int32_t sendBufSize,
+				  int32_t sendBufUsed, int32_t msgTotalSize, void *state,
+				  void ( *callback )( void *state, TcpSocket *s ), int32_t timeout, int32_t maxTextDocLen,
+				  int32_t maxOtherDocLen );
 
-	bool sendChunk ( class TcpSocket *s ,
-			 class SafeBuf *sb ,
-			 void *state ,
-			 // call this function when done sending this chunk
-			 // so that it can read another chunk and call 
-			 // sendChunk() again.
-			 void (* doneSendingWrapper)(void *state,TcpSocket *));
+	bool sendChunk( class TcpSocket *s, class SafeBuf *sb, void *state,
+					// call this function when done sending this chunk
+					// so that it can read another chunk and call
+					// sendChunk() again.
+					void ( *doneSendingWrapper )( void *state, TcpSocket * ) );
 
 	// . returns false if blocked, true otherwise
 	// . sets errno on error
@@ -102,33 +92,18 @@ class TcpServer {
 	// . after completion/done this will call reseTcpSocket()
 	// . upon successful transmision of "msg" we shift socket into readMode
 	// . default timeout of 60 secs of no read OR no write
-	bool sendMsg ( int32_t   ip      ,
-		       int16_t  port    ,
-		       char  *sendBuf  ,
-		       int32_t   sendBufSize ,
-		       int32_t   sendBufUsed ,
-		       int32_t   msgTotalSize ,
-		       void   *state   ,
-		       void  (* callback )( void *state , TcpSocket *s ) ,
-		       int32_t   timeout   , // 60*1000 
-		       int32_t   maxTextDocLen ,  // -1 for no max
-		       int32_t   maxOtherDocLen ,
-		       bool   useHttpTunnel = false );
+	bool sendMsg( char *hostname, int32_t hostnameLen, int32_t ip, int16_t port, char *sendBuf,
+				  int32_t sendBufSize, int32_t sendBufUsed, int32_t msgTotalSize, void *state,
+				  void ( *callback )( void *state, TcpSocket *s ), int32_t timeout, int32_t maxTextDocLen,
+				  int32_t maxOtherDocLen, bool useHttpTunnel = false );
 
 	// . send request over an available (pre-connected) TcpSocket
 	// . destroys the socket on error
 	// . calls callback on completion of transaction
 	// . default timeout of 60 secs of no read OR no write
-	bool sendMsg ( TcpSocket *s            , 
-		       char      *sendBuf  ,
-		       int32_t       sendBufSize ,
-		       int32_t       sendBufUsed ,
-		       int32_t       msgTotalSize ,
-		       void      *state        ,
-		       void      (* callback )( void *state , TcpSocket *s ),
-		       int32_t       timeout = 60*1000 ,
-		       int32_t       maxTextDocLen = -1 , // -1 for no max
-		       int32_t       maxOtherDocLen = -1 );
+	bool sendMsg( TcpSocket *s, char *sendBuf, int32_t sendBufSize, int32_t sendBufUsed, int32_t msgTotalSize,
+				  void *state, void ( *callback )( void *state, TcpSocket *s ), int32_t timeout = 60 * 1000,
+				  int32_t maxTextDocLen = -1, int32_t maxOtherDocLen = -1 );
 
 	// . the following public funcs are public so C wrappers can call them
 	// . you should not call them

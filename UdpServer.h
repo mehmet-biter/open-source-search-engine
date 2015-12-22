@@ -148,20 +148,16 @@ class UdpServer {
 			    int32_t      msgSize    ,
 			    char     *alloc      ,
 			    int32_t      allocSize  ,
-			    UdpSlot  *slot       ,
-			    int32_t      timeout    = 60   , // in seconds
+			    UdpSlot  *slot       , // in seconds
 			    void     *state      = NULL , // callback state
 			    void (* callback2)(void *state,UdpSlot *slot)=NULL,
 			    int16_t     backoff    = -1 ,
 			    int16_t     maxWait    = -1 ,
-			    bool      isCallback2Hot = false ,
-			    bool      useSameSwitch  = false );
+			    bool      isCallback2Hot = false );
 
 	// . propagate an errno to the requesting machine
 	// . his callback will be called with errno set to "errnum"
-	void sendErrorReply ( UdpSlot   *slot     , 
-			      int32_t       errnum   , 
-			      int32_t       timeout  = 60 /*seconds*/ );
+	void sendErrorReply( UdpSlot *slot, int32_t errnum );
 
 	// . too many transactions going on?
 	// . this is just an estimate...

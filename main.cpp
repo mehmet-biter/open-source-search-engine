@@ -11201,17 +11201,9 @@ void doInject ( int fd , void *state ) {
 	}
 
 	// now inject it
-	bool status = s_tcp.sendMsg ( ip   ,
-				      port ,
-				      req    ,
-				      reqAlloc ,//Len ,
-				      reqLen ,
-				      reqLen ,
-				      NULL   ,
-				      injectedWrapper ,
-				      9999*60*1000      , // timeout, 60days
-				      -1              , // maxTextDocLen
-				      -1              );// maxOtherDocLen
+	bool status = s_tcp.sendMsg( NULL, 0, ip, port, req, reqAlloc, reqLen, reqLen, NULL, injectedWrapper,
+								 9999 * 60 * 1000, -1, -1 );
+
 	// launch another if blocked
 	//if ( ! status ) return;
 	if ( ! status ) {
@@ -11587,24 +11579,17 @@ void doInjectWarc ( int64_t fsize ) {
 	log("inject: injecting to %s:%i WARC url %s",iptoa(ip),(int)port,url);
 
 	// now inject it
-	bool status = s_tcp.sendMsg ( ip   ,
-				      port ,
-				      req.getBufStart()    ,
-				      req.getCapacity(),
-				      req.length(),
-				      req.length(),
-				      NULL   ,
-				      injectedWrapper ,
-				      // because it seems some sockets get stuck and
-				      // they have no reply but the host they are
-				      // connected to no longer has the connection
-				      // open. and the readbuf is empty, but the send
-				      // buf has been sent and it appears the inject
-				      // when through. just the reply was never
-				      // sent back for some reason.
-				      5*60*1000     , // timeout, 5 mins
-				      -1              , // maxTextDocLen
-				      -1              );// maxOtherDocLen
+	bool status = s_tcp.sendMsg( NULL, 0, ip, port, req.getBufStart(), req.getCapacity(), req.length(),
+								 req.length(), NULL, injectedWrapper,
+								 // because it seems some sockets get stuck and
+								 // they have no reply but the host they are
+								 // connected to no longer has the connection
+								 // open. and the readbuf is empty, but the send
+								 // buf has been sent and it appears the inject
+								 // when through. just the reply was never
+								 // sent back for some reason.
+								 5 * 60 * 1000, // timeout, 5 mins
+								 -1, -1 );
 
 	int realMax = 10;
 	if ( s_hosts2.getNumHosts() > 1 )
@@ -11941,24 +11926,17 @@ void doInjectArc ( int64_t fsize ) {
 	    ,arcContentLen);
 
 	// now inject it
-	bool status = s_tcp.sendMsg ( ip   ,
-				      port ,
-				      req.getBufStart()    ,
-				      req.getCapacity(),
-				      req.length(),
-				      req.length(),
-				      NULL   ,
-				      injectedWrapper ,
-				      // because it seems some sockets get stuck and
-				      // they have no reply but the host they are
-				      // connected to no longer has the connection
-				      // open. and the readbuf is empty, but the send
-				      // buf has been sent and it appears the inject
-				      // when through. just the reply was never
-				      // sent back for some reason.
-				      5*60*1000     , // timeout, 5 mins
-				      -1              , // maxTextDocLen
-				      -1              );// maxOtherDocLen
+	bool status = s_tcp.sendMsg( NULL, 0, ip, port, req.getBufStart(), req.getCapacity(), req.length(),
+								 req.length(), NULL, injectedWrapper,
+								 // because it seems some sockets get stuck and
+								 // they have no reply but the host they are
+								 // connected to no longer has the connection
+								 // open. and the readbuf is empty, but the send
+								 // buf has been sent and it appears the inject
+								 // when through. just the reply was never
+								 // sent back for some reason.
+								 5 * 60 * 1000, // timeout, 5 mins
+								 -1, -1 );
 
 	int realMax = 10;
 	if ( s_hosts2.getNumHosts() > 1 )

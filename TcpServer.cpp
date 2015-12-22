@@ -369,48 +369,42 @@ public:
 //   call g_loop.callCallbacks(sd) or something
 // . those bytes should be stored in m_sendBuf, but not overwrite what 
 //   has not been sent yet
-bool TcpServer::sendMsg ( char  *hostname ,
-			  int32_t   hostnameLen ,
-			  int16_t  port     ,
-			  char  *sendBuf  ,
-			  int32_t   sendBufSize ,
-			  int32_t   sendBufUsed ,
-			  int32_t   msgTotalSize ,
-			  void  *state    ,
-			  void  (* callback )( void *state , TcpSocket *s ) ,
-			  int32_t   timeout ,
-			  int32_t   maxTextDocLen ,  // -1 for no max
-			  int32_t   maxOtherDocLen ) {
-	// a quickie
-	char *h    = hostname;
-	int32_t  hlen = hostnameLen;
+bool TcpServer::sendMsg( char *hostname, int32_t hostnameLen, int16_t port, char *sendBuf,
+						 int32_t sendBufSize, int32_t sendBufUsed, int32_t msgTotalSize, void *state,
+						 void ( *callback )( void *state, TcpSocket *s ), int32_t timeout,
+						 int32_t maxTextDocLen, int32_t maxOtherDocLen ) {
 	// make sure hostname not too big
-	if ( hlen >= 254 ) { 
-		g_errno = EBUFTOOSMALL; 
-		log(LOG_LOGIC,"tcp: tcpserver: sendMsg: hostname length is "
-		    "too big. it's %"INT32", max is 254." , hostnameLen );
-		mfree ( sendBuf , sendBufSize ,"TcpServer");
-		return true; 
+	if ( hostnameLen >= 254 ) {
+		g_errno = EBUFTOOSMALL;
+		log( LOG_LOGIC, "tcp: tcpserver: sendMsg: hostname length is too big. it's %" INT32 ", max is 254.",
+			 hostnameLen );
+		mfree( sendBuf, sendBufSize, "TcpServer" );
+		return true;
 	}
+
 	// . make a state for calling dns server
 	// . TODO: speed up by checking dns cache first
 	// . TODO: use a TcpSocket structure instead of TcpState to hold this
 	// . return true and set g_errno on error
 	// . malloc() should set g_errno on error
-	//TcpState *tst=(TcpState *) mmalloc (sizeof(TcpState),"TcpServerTS");
 	TcpState *tst;
-	try { tst = new (TcpState); }
-	// bail on failure
-	catch ( ... ) { 
-		mfree(sendBuf,sendBufSize,"TcpServer"); 
+	try {
+		tst = new ( TcpState );
+	} catch ( ... ) {
+		// bail on failure
+		mfree( sendBuf, sendBufSize, "TcpServer" );
 		return true;
 	}
+
 	// register this mem with g_mem
 	mnew ( tst , sizeof(TcpState) , "TcpServer" );
+
 	// fill up our temporary state structure
-	gbmemcpy ( tst->m_hostname , h , hlen );
+	gbmemcpy ( tst->m_hostname , hostname , hostnameLen );
+
 	// NULL terminate the hostname in tst
-	tst->m_hostname [ hlen ] = '\0';
+	tst->m_hostname [ hostnameLen ] = '\0';
+
 	// set the other members of tst
 	tst->m_port           = port;
 	tst->m_sendBuf        = sendBuf;
@@ -423,36 +417,31 @@ bool TcpServer::sendMsg ( char  *hostname ,
 	tst->m_timeout        = timeout;
 	tst->m_maxTextDocLen  = maxTextDocLen;
 	tst->m_maxOtherDocLen = maxOtherDocLen;
-
-	//very bad. was passing this local var ptr to msgc which blocks!
-	//	int32_t ip;
 	tst->m_ip = 0;
 
 	// debug
-	log(LOG_DEBUG,"tcp: Getting IP for %s using msgc.",
-	    tst->m_hostname );
+	log( LOG_DEBUG, "tcp: Getting IP for %s using msgc.", tst->m_hostname );
+
 	int32_t status;
-	// if no hosts we are being called by monitor.cpp
-	if ( g_hostdb.m_numHosts == 0 ||
-	     // or if we are spider proxy...
-	     g_hostdb.m_myHost->m_isProxy )
-		status = g_dns.getIp ( h ,
-				       hlen ,
-				       &(tst->m_ip),
-				       tst ,
-				       gotTcpServerIpWrapper );
-	// . this returns false if blocks, true otherwise
-	// . it also sets g_errno on error
-	// . seems like this single msgc's multicast was being shared by
-	//   the multiple calls, too... use a private msgc now
-	else 
-		status = tst->m_msgc.getIp(h,hlen,&(tst->m_ip),tst,
-					   gotTcpServerIpWrapper);
+	// if no hosts we are being called by monitor.cpp or if we are spider proxy...
+	if ( g_hostdb.m_numHosts == 0 || g_hostdb.m_myHost->m_isProxy ) {
+		status = g_dns.getIp( hostname, hostnameLen, &( tst->m_ip ), tst, gotTcpServerIpWrapper );
+	} else {
+		// . this returns false if blocks, true otherwise
+		// . it also sets g_errno on error
+		// . seems like this single msgc's multicast was being shared by
+		//   the multiple calls, too... use a private msgc now
+		status = tst->m_msgc.getIp( hostname, hostnameLen, &( tst->m_ip ), tst, gotTcpServerIpWrapper );
+	}
+
 	// return false if blocked
-	if ( status == 0 ) return false;
+	if ( status == 0 ) {
+		return false;
+	}
+
 	// . gotIp() returns false if blocked, true otherwise
 	// . sets g_errno on error
-	return gotTcpServerIp ( tst , tst->m_ip ) ;
+	return gotTcpServerIp( tst, tst->m_ip );
 }
 
 // called by Dns class when ip (or g_errno) is ready
@@ -483,40 +472,42 @@ void gotTcpServerIpWrapper ( void *state , int32_t ip ) {
 // . sets g_errno on error
 bool TcpServer::gotTcpServerIp ( TcpState *tst , int32_t ip ) {
 	// debug
-	log(LOG_DEBUG,"tcp: Got ip of %s for %s err=%s.", 
-	    iptoa(ip),tst->m_hostname , mstrerror(g_errno) );
+	log( LOG_DEBUG, "tcp: Got ip of %s for %s err=%s.", iptoa( ip ), tst->m_hostname, mstrerror( g_errno ) );
+
 	// set g_errno if unable to get ip for this hostname
-	if ( ip == 0 ) g_errno = EBADIP;
-	// free "ts" and return true on error
-	if ( g_errno   ) {
-		// we are responsible for freeing the send buffer
-		mfree ( tst->m_sendBuf , tst->m_sendBufSize ,"TcpServer");
-		//mfree(tst,sizeof(TcpState),"TcpServer"); 
-		mdelete ( tst , sizeof(TcpState) , "TcpServer" );
-		delete ( tst ) ;
-		return true; 
+	if ( ip == 0 ) {
+		g_errno = EBADIP;
 	}
+
+	// free "ts" and return true on error
+	if ( g_errno ) {
+		// we are responsible for freeing the send buffer
+		mfree( tst->m_sendBuf, tst->m_sendBufSize, "TcpServer" );
+		mdelete( tst, sizeof( TcpState ), "TcpServer" );
+		delete ( tst );
+
+		return true;
+	}
+
 	// . now call the ip-based sendMsg()
 	// . this return false if blocked, true otherwise
 	// . it also sets g_errno on error
-	bool status =  sendMsg ( ip                  ,
-				 tst->m_port         ,
-				 tst->m_sendBuf      ,
-				 tst->m_sendBufSize  ,
-				 tst->m_sendBufUsed  ,
-				 tst->m_msgTotalSize ,
-				 tst->m_state        , 
-				 tst->m_callback     ,
-				 tst->m_timeout      ,
-				 tst->m_maxTextDocLen  ,
-				 tst->m_maxOtherDocLen );
-	//mfree ( tst , sizeof(TcpState),"TcpServer");
+	bool status = sendMsg( tst->m_hostname, strlen( tst->m_hostname ), ip, tst->m_port, tst->m_sendBuf,
+						   tst->m_sendBufSize, tst->m_sendBufUsed, tst->m_msgTotalSize, tst->m_state,
+						   tst->m_callback, tst->m_timeout, tst->m_maxTextDocLen, tst->m_maxOtherDocLen );
 	mdelete ( tst , sizeof(TcpState) , "TcpServer" );
 	delete ( tst ) ;
+
 	// return false if this send blocked
-	if ( ! status ) return false;
+	if ( !status ) {
+		return false;
+	}
+
 	// if no error then we've blocked on waiting for the reply
-	if ( ! g_errno  ) return false;
+	if ( !g_errno ) {
+		return false;
+	}
+
 	// otherwise, return true on error
 	return true;
 }
@@ -525,43 +516,36 @@ bool TcpServer::gotTcpServerIp ( TcpState *tst , int32_t ip ) {
 // . sets g_errno on error
 // . NOTE: should not be called by user since does not copy "msg"
 // . NOTE: we do not copy "msg" so keep it on your stack
-bool TcpServer::sendMsg ( int32_t   ip       ,
-			  int16_t  port     ,
-			  char  *sendBuf  ,
-			  int32_t   sendBufSize ,
-			  int32_t   sendBufUsed ,
-			  int32_t   msgTotalSize ,
-			  void  *state    ,
-			  void  (* callback )( void *state, TcpSocket *s) ,
-			  int32_t   timeout ,
-			  int32_t   maxTextDocLen ,  // -1 for no max
-			  int32_t   maxOtherDocLen ,
-			  bool   useHttpTunnel ) {
-
+bool TcpServer::sendMsg( char *hostname, int32_t hostnameLen, int32_t ip, int16_t port, char *sendBuf,
+						 int32_t sendBufSize, int32_t sendBufUsed, int32_t msgTotalSize, void *state,
+						 void ( *callback )( void *state, TcpSocket *s ), int32_t timeout,
+						 int32_t maxTextDocLen, int32_t maxOtherDocLen, bool useHttpTunnel ) {
 	// debug
 	log(LOG_DEBUG,"tcp: Getting doc for ip=%s.", iptoa(ip));
+
 	// . get an unused socket that's pre-connected to this ip/port
 	// . returns NULL if it can't
 	TcpSocket *s = getAvailableSocket ( ip , port );
+
 	// . sendMsg(...) returns false if blocked, true otherwise
 	// . it also sets g_errno on error
-	if ( s ) return sendMsg ( s            ,
-				  sendBuf      ,
-				  sendBufSize  ,
-				  sendBufUsed  ,
-				  msgTotalSize ,
-				  state        ,
-				  callback     ,
-				  timeout      ,
-				  maxTextDocLen ,  // -1 for no max
-				  maxOtherDocLen );
+	if ( s ) {
+		return sendMsg( s, sendBuf, sendBufSize, sendBufUsed, msgTotalSize, state, callback, timeout,
+						maxTextDocLen, maxOtherDocLen );
+	}
+
 	// . otherwise, create a new socket
 	// . returns NULL and sets g_errno on error
 	// . adds socket to array for us and sets the fd non-blocking, etc.
 	s = getNewSocket ( );
+
 	// return true if s is NULL and g_errno was set by getNewSocket()
 	// might set g_errno to EOUTOFSOCKETS
-	if ( ! s ) { mfree ( sendBuf , sendBufSize,"TcpServer"); return true; }
+	if ( !s ) {
+		mfree( sendBuf, sendBufSize, "TcpServer" );
+		return true;
+	}
+
 	// debug to find why sockets getting diffbot replies get commandeered.
 	// we think that they are using an sd used by a streaming socket,
 	// who closed, but then proceed to use TcpSocket class as if he 
@@ -577,6 +561,14 @@ bool TcpServer::sendMsg ( int32_t   ip       ,
 	s->m_state            = state;
 	s->m_callback         = callback;
 	s->m_this             = this;
+
+	if ( hostname ) {
+		s->m_hostnameSize     = hostnameLen + 1;
+		s->m_hostname = (char *)mmalloc( s->m_hostnameSize, "TcpSocket" );
+		memcpy( s->m_hostname, hostname, hostnameLen );
+		s->m_hostname[hostnameLen] = '\0';
+	}
+
 	s->m_ip               = ip;
 	s->m_port             = port;
 	s->m_sockState        = ST_CONNECTING;
@@ -596,7 +588,9 @@ bool TcpServer::sendMsg ( int32_t   ip       ,
 	s->m_tunnelMode       = 0;
 
 	// if http request starts with "CONNECT ..." then enter tunnel mode
-	if ( useHttpTunnel ) s->m_tunnelMode = 1;
+	if ( useHttpTunnel ) {
+		s->m_tunnelMode = 1;
+	}
 
 	// . call the connect routine to try to connect it asap
 	// . this does not block however
@@ -605,9 +599,14 @@ bool TcpServer::sendMsg ( int32_t   ip       ,
 	// . it should destroy socket on error
 	// . TODO: ensure this always blocks, otherwise we must redo this code
 	connectSocket ( s ) ;
+
 	// . destroy s on error and return true since we did not block
 	// . this will close the socket descriptor and make the callback
-	if ( g_errno ) { destroySocket ( s ); return true; }
+	if ( g_errno ) {
+		destroySocket( s );
+		return true;
+	}
+
 	// . we're blocking on the reply so return false always
 	// . reply can't be gotten until readSocket() is called
 	return false;
@@ -620,30 +619,17 @@ bool TcpServer::sendMsg ( int32_t   ip       ,
 // . "s" must be a pre-connected (available) TcpSocket
 // . this is called by m_requestHander() to send a reply
 // . this is called by sendMsg(ip,...) above to send a request
-bool TcpServer::sendMsg ( TcpSocket *s            , 
-			  char      *sendBuf      ,
-			  int32_t       sendBufSize  ,
-			  int32_t       sendBufUsed  ,
-			  int32_t       msgTotalSize ,
-			  void      *state        ,
-			  void     (* callback)(void *state,TcpSocket *s) ,
-			  int32_t       timeout      ,
-			  int32_t       maxTextDocLen ,  // -1 for no max
-			  int32_t       maxOtherDocLen ) {
+bool TcpServer::sendMsg( TcpSocket *s, char *sendBuf, int32_t sendBufSize, int32_t sendBufUsed,
+						 int32_t msgTotalSize, void *state, void ( *callback )( void *state, TcpSocket *s ),
+						 int32_t timeout, int32_t maxTextDocLen, int32_t maxOtherDocLen ) {
 	//reset any previous g_errno so we don't think it was our call to write
 	g_errno = 0;
 
 	// HACK: the proxy encapsulates http requests in udp datagrams with
 	//       msgtype 0xfd. so do a udp reply in that case to the proxy.
 	if ( s->m_udpSlot ) {
-		g_udpServer.sendReply_ass ( sendBuf      ,
-					    sendBufUsed  ,
-					    sendBuf      ,
-					    sendBufSize  ,
-					    s->m_udpSlot ,
-					    timeout      , // timeout?
-					    state        ,
-					    NULL         );// callback
+		g_udpServer.sendReply_ass( sendBuf, sendBufUsed, sendBuf, sendBufSize, s->m_udpSlot, state, NULL );
+
 		// we now free the read buffer here since PageDirectory.cpp
 		// might have reallocated it.
 		if ( s->m_readBuf ) 
@@ -774,11 +760,10 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 	// now make a new socket descriptor
 	int sd = socket ( AF_INET , SOCK_STREAM , 0 ) ;
 
-	if ( g_conf.m_logDebugTcp )
-		logf (LOG_DEBUG,"tcp: ...... created new socket sd=%"INT32"",
-		      (int32_t)sd);
+	if ( g_conf.m_logDebugTcp ) {
+		logf( LOG_DEBUG, "tcp: ...... created new socket sd=%" INT32 "", (int32_t)sd );
+	}
 
-	//if ( sd == 0 ) log ( "tcp: socket3 gave sd=0");
 	while ( sd == 0 ) {
 		errno = 0;
 		int newSock = socket ( AF_INET, SOCK_STREAM, 0 );
@@ -821,7 +806,8 @@ TcpSocket *TcpServer::getNewSocket ( ) {
 	// . create a new TcpSocket around this socket descriptor
 	// . returns NULL and sets g_errno on error
 	// . use a maximum niceness for spidering
-	TcpSocket *s = wrapSocket ( sd , MAX_NICENESS , false /*incoming?*/) ;
+	TcpSocket *s = wrapSocket( sd, MAX_NICENESS, false );
+
 	// . close sd on failure 
 	// . TODO: ensure this blocks even if sd was set nonblock by wrapSock()
 	if ( ! s ) { 
@@ -864,34 +850,34 @@ TcpSocket *TcpServer::getSocket  ( int sd ) {
 TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming ) {
 	// debug
 	//logf(LOG_DEBUG,"tcp: wrapsocket sd=%"INT32"",sd);
-	// refuse to wrap it if too many used already
-	//log(LOG_WARN, "incoming socket %"INT32" incoming %"INT32" %"INT32" %"INT32"", sd, (int32_t)isIncoming,
-	//    m_numIncomingUsed , *m_maxSocketsPtr);
-	if ( isIncoming && m_numIncomingUsed >= *m_maxSocketsPtr )
+
+	if ( isIncoming && m_numIncomingUsed >= *m_maxSocketsPtr ) {
 		if ( ! closeLeastUsed () ) {
 			// note it in the log
 			int32_t now = getTimeLocal();
 			static int32_t s_last = 0;
 			static int32_t s_count = 0;
-			if ( now - s_last < 5 && s_last ) 
+			if ( now - s_last < 5 && s_last ) {
 				s_count++;
-			else {
-				log("tcp: Out of sockets. Max sockets = %"INT32". "
-				    "(msgslogged=%"INT32")[2]",
-				    *m_maxSocketsPtr,s_count);
+			} else {
+				log( "tcp: Out of sockets. Max sockets = %" INT32 ". (msgslogged=%" INT32 ")[2]",
+					 *m_maxSocketsPtr, s_count );
 				s_count = 0;
 				s_last = now;
 			}
 			// another stat
 			g_stats.m_closedSockets++;
 			g_errno = EOUTOFSOCKETS; 
+
 			// send email alert
-			g_pingServer.sendEmailMsg ( &s_lastTime ,
-						    "out of sockets on https");
+			g_pingServer.sendEmailMsg( &s_lastTime, "out of sockets on https" );
+
 			// in case sendEmailMsg resets g_errno somehow
 			g_errno = EOUTOFSOCKETS; 
 			return NULL;
 		}
+	}
+
 	// sanity check
 	if ( sd < 0 || sd >= MAX_TCP_SOCKS ) {
 		log(LOG_LOGIC,"tcp: Got bad sd of %"INT32".",(int32_t)sd);
@@ -905,10 +891,9 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 		g_errno = EOUTOFSOCKETS; 
 		return NULL;
 	}
-	// alloc a new TcpSocket
-	//TcpSocket *s=(TcpSocket *) mcalloc (sizeof (TcpSocket),"TcpServerC");
-	//if ( ! s ) return NULL;
+
 	TcpSocket *s = &m_actualSockets[sd];
+
 	// . sanity check, it should be clear always! it means "in use" or not
 	// . this has happened a few times lately...
 	if ( s->m_startTime != 0 ) {
@@ -920,41 +905,41 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 			log("tcp: close3(%"INT32") = %s",(int32_t)sd,mstrerror(errno));
 		else {
 			m_numClosed++;
-			// log("tcp: closing sock %i (%"INT32")",sd,
-			//     m_numOpen-m_numClosed);
+			// log("tcp: closing sock %i (%"INT32")",sd, m_numOpen-m_numClosed);
 		}
+
 		// send email alert
-		g_pingServer.sendEmailMsg ( &s_lastTime ,
-					    "out of sockets on https3");
-		//sleep(10000);
+		g_pingServer.sendEmailMsg ( &s_lastTime , "out of sockets on https3");
+
 		// in case sendEmailMsg resets g_errno somehow
 		g_errno = EOUTOFSOCKETS; 
 		return NULL;
 	}
-	// save this i guess
-	//int32_t saved = s->m_numDestroys;
+
 	// clear it
 	memset ( s , 0 , sizeof(TcpSocket) );
+
 	// restore
-	//s->m_numDestroys = saved;
+
 	// store sd in our TcpSocket
 	s->m_sd = sd;
+
 	// store the last action time as now (used for timeout'ing sockets)
 	s->m_startTime      = gettimeofdayInMilliseconds();
 	s->m_shutdownStart  = 0;
+
 	// just make sure this is not 0 because we use it to mean "in use"
-	if ( s->m_startTime == 0 ) s->m_startTime = 1;
+	if ( s->m_startTime == 0 ) {
+		s->m_startTime = 1;
+	}
 	s->m_lastActionTime = s->m_startTime;
+
 	// set if it's incoming connection or not
 	s->m_isIncoming = isIncoming;
+
 	// turn this off
 	s->m_streamingMode = false;
-	// . a 30 sec timeout, we don't want slow guys using all our sockets
-	// . they could easily flood us anyway though
-	// . we need to wait possibly a few minutes for a large inject of
-	//   100's of MBs to finish, so make it 10 minutes
-	//s->m_timeout = 30*1000;
-	//s->m_timeout = 10*60*1000;
+
 	// we have code that closes the sockets when it needs to i think
 	// so let's go to 100 minutes so we can deal with reranked queries
 	// (Msg3b) that take like an hour.
@@ -971,67 +956,38 @@ TcpSocket *TcpServer::wrapSocket ( int sd , int32_t niceness , bool isIncoming )
 	m_tcpSockets [ sd ] = s ;
 	if ( sd > m_lastFilled ) m_lastFilled = sd;
 	m_numUsed++;
+
 	// count connections to us separately for limiting to m_maxSockets
-	if ( isIncoming ) m_numIncomingUsed++;
-	// . we should also set TCP_CORK
-	// . NOTE: we must unset this when we've written out the last bytes
-	//         to the send buffer
-	/*
-	  cygwin doesn't recognize TCP_CORK
- retry:
-	parm = 1;
-	if ( setsockopt ( sd , SOL_TCP , TCP_CORK , &parm , sizeof(int)) < 0) {
-		// valgrind
-		if ( errno == EINTR ) goto retry;
-		// copy errno to g_errno
-		g_errno = errno;
-		log("tcp: Failed to set TCP_CORK on socket: setsockopt: %s.",
-		    mstrerror(g_errno));
-		goto hadError;
+	if ( isIncoming ) {
+		m_numIncomingUsed++;
 	}
-	*/
-	// try this to fix bug of not sending all data to browser
-	//struct linger ggg;
-	//ggg.l_onoff = 1; // non-zero to linger on close
-	//ggg.l_linger = 1000; // time to linger
-	//if ( setsockopt ( sd , SOL_SOCKET , SO_LINGER , &ggg , sizeof(ggg)) < 0) {
-	//	// copy errno to g_errno
-	//	g_errno = errno;
-	//	log("tcp: Failed to set SO_LINGER on socket: setsockopt: %s.",
-	//	    mstrerror(g_errno));
-	//	goto hadError;
-	//}
-	
+
 	// save this in here too
 	s->m_niceness = niceness;
+
 	// . now we must successfully register it
 	// . this also sets the sock to nonblocking, etc...
 	// . TODO: we'd have to set timestamps in Loop to check for timeou
 	// . use niceness levels of 0 so this server-to-browser traffic takes
 	//   precedence over spider traffic
-	if (!g_loop.registerReadCallback (sd,this,readSocketWrapper,niceness))
-		goto hadError;
-	// what does thie really mean? shouldn't we only register for write
-	// if a write we did failed because the buffer was full?.
-	// let's do this after the connection request is accepted!
-	// MDW: try this again
-	//if(!g_loop.registerWriteCallback(sd,this,writeSocketWrapper,
-	//niceness)){
-	//   	g_loop.unregisterReadCallback(sd,this , readSocketWrapper  );
-	//   	goto hadError;
-	// }
-	// return "s" on success
-	return s;
+	if (g_loop.registerReadCallback (sd,this,readSocketWrapper,niceness)) {
+		return s;
+	}
+
 	// otherwise, free "s" and return NULL
- hadError:
 	log("tcp: Had error preparing socket: %s.",mstrerror(g_errno));
 	m_tcpSockets [ sd ] = NULL;
+
 	// clear it, this means no longer in use
 	s->m_startTime = 0LL;
-	//mfree ( s , sizeof(TcpSocket) ,"TcpServer" ); 
+
 	// uncount
 	m_numUsed--;
-	if ( isIncoming ) m_numIncomingUsed--;
+
+	if ( isIncoming ) {
+		m_numIncomingUsed--;
+	}
+
 	return NULL; 
 }
 
@@ -1675,16 +1631,6 @@ void writeSocketWrapper ( int sd , void *state ) {
 		}
 		// return on coonection error or if still trying to connect
 		if ( status != 1 ) {
-			// hopefully this will let us know when the socket is
-			// connected and ready for writing to.
-			// if(!g_loop.registerWriteCallback(s->m_sd,
-			// 				 THIS,
-			// 				 writeSocketWrapper,
-			// 				 s->m_niceness)){
-			// 	log("tcp: failed to reg write callback for "
-			// 	    "sd=%i", s->m_sd);
-			// 	//goto hadError;
-			// }
 			return;
 		}
 		// now try to send on it
@@ -2014,74 +1960,66 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 	to.sin_addr.s_addr =  s->m_ip;
 	to.sin_port        = htons ((uint16_t)( s->m_port));
 	bzero ( &(to.sin_zero) , 8 ); // TODO: bzero too slow?
-	if ( g_conf.m_logDebugTcp )
-		log("........... TcpServer connecting %i to %s port "
-		    "%"UINT32"\n",
-		    s->m_sd,iptoa(s->m_ip), (uint32_t)(uint16_t)s->m_port );
+	if ( g_conf.m_logDebugTcp ) {
+		log( "........... TcpServer connecting %i to %s port %" UINT32 "", s->m_sd, iptoa( s->m_ip ),
+			 ( uint32_t )(uint16_t)s->m_port );
+	}
+
  retry3:
 	// connect to the socket. This should be non-blocking!
 	if ( ::connect ( s->m_sd, (sockaddr *)&to, sizeof(to) ) == 0 ) {
 		// debug msg
-		if ( g_conf.m_logDebugTcp )
-			log("........... TcpServer connected %i to %s "
-			    "port %"UINT32"\n", s->m_sd, iptoa(s->m_ip), 
-			    (uint32_t)(uint16_t)s->m_port );
+		if ( g_conf.m_logDebugTcp ) {
+			log( "........... TcpServer connected %i to %s port %" UINT32 "", s->m_sd, iptoa( s->m_ip ),
+				 ( uint32_t )(uint16_t)s->m_port );
+		}
+
 		// don't listen for writing any more
 		if ( s->m_writeRegistered ) {
-			g_loop.unregisterWriteCallback(s->m_sd,
-						       this,
-						       writeSocketWrapper);
+			g_loop.unregisterWriteCallback( s->m_sd, this, writeSocketWrapper );
 			s->m_writeRegistered = false;
 		}
+
 		// hey it was successful!
 		goto connected;
 	}
+
 	// valgrind. interrupted system call?
-	if ( errno == EINTR ) goto retry3;
+	if ( errno == EINTR ) {
+		goto retry3;
+	}
+
 	// copy errno to g_errno
 	g_errno = errno;
-	// hey! it's alrady connected! 
-	// i'm not sure that is what this means... MDW 2/16/2015
-	// i think it means the connect request was already initiated.
-	if ( g_errno == EALREADY    ) {
-		if ( g_conf.m_logDebugTcp )
-			log("........... TcpServer got EALREADY, "
-			    "so must be in progress sd=%i",s->m_sd);
-		g_errno = EINPROGRESS;
-		/*
-		// debug msg
-		if ( g_conf.m_logDebugTcp )
-			log("........... TcpServer already connected %i to "
-			    "%s port %i\n", s->m_sd, iptoa(s->m_ip),s->m_port);
-		// we are already connected, stop waiting for writability
-		if ( s->m_writeRegistered ) {
-			g_loop.unregisterWriteCallback(s->m_sd,
-						       this,
-						       writeSocketWrapper);
-			s->m_writeRegistered = false;
+
+	if ( g_errno == EALREADY ) {
+		if ( g_conf.m_logDebugTcp ) {
+			log( "........... TcpServer got EALREADY, so must be in progress sd=%i", s->m_sd );
 		}
-		g_errno = 0;
-		goto connected;
-		*/
+
+		g_errno = EINPROGRESS;
 	}
+
 	// we blocked with the EINPROGRESS g_errno
 	if ( g_errno == EINPROGRESS ) { 
 		g_errno = 0;
 		// note that
-		if ( g_conf.m_logDebugTcp )
+		if ( g_conf.m_logDebugTcp ) {
 			log("tcp: connection is in progress sd=%i",s->m_sd);
+		}
+
 		// according to 'man connect' select() needs to listen
 		// for writability
-		if ( s->m_writeRegistered ) return 0; 
+		if ( s->m_writeRegistered ) {
+			return 0;
+		}
+
 		// make select() listen on this fd for when it can write
-		if ( ! g_loop.registerWriteCallback(s->m_sd,
-						    this,
-						    writeSocketWrapper,
-						    s->m_niceness)){
-			log("tcp: failed to reg write callback2 for "
-			    "sd=%i", s->m_sd);
+		if ( !g_loop.registerWriteCallback( s->m_sd, this, writeSocketWrapper, s->m_niceness ) ) {
+			log("tcp: failed to reg write callback2 for sd=%i", s->m_sd);
 			return -1;
 		}
+
 		s->m_writeRegistered = true;
 		return 0;
 	}
@@ -2097,13 +2035,20 @@ connected:
 	if ( m_useSSL ) {
 		// enter handshake mode now
 		s->m_sockState = ST_SSL_HANDSHAKE;
+
 		// i guess state is special
 		int r = sslHandshake ( s );
+
 		// there was an error
-		if (r == -1 ) return -1;
+		if ( r == -1 ) {
+			return -1;
+		}
+
 		// i guess it would block. this should register
 		// the write callback if we need to do a write operation still
-		if ( r == 0 ) return 0;
+		if ( r == 0 ) {
+			return 0;
+		}
 	}
 
 	// change state so this doesn't get called again
@@ -2134,29 +2079,22 @@ void TcpServer::destroySocket ( TcpSocket *s ) {
 
 	// sanity check
 	if ( s->m_udpSlot ) { 
-		log("tcp: sending back error on udp slot err=%s",
-		    mstrerror(g_errno));
-		//char *sendBuf = "Error. destroying sock.";
-		//int32_t sendBufUsed = gbstrlen(sendBuf);
-		int32_t timeout = 30*1000;
+		log("tcp: sending back error on udp slot err=%s", mstrerror(g_errno));
+
 		// sen back the error i guess
-		g_udpServer.sendReply_ass ( NULL,//sendBuf      ,
-					    0,//sendBufUsed  ,
-					    NULL,//sendBuf      ,
-					    0,//sendBufSize  ,
-					    s->m_udpSlot ,
-					    timeout      , // timeout?
-					    NULL,//state        ,
-					    NULL         );// callback
+		g_udpServer.sendReply_ass( NULL, 0, NULL, 0, s->m_udpSlot, NULL, NULL );
+
 		// we now free the read buffer here since PageDirectory.cpp
 		// might have reallocated it.
-		if ( s->m_readBuf ) 
+		if ( s->m_readBuf ) {
 			mfree (s->m_readBuf, s->m_readBufSize,"TcpUdp");
+		}
+
 		// free it! we allocated in HttpServer.cpp handleRequestfd()
 		mfree ( s , sizeof(TcpSocket) , "tcpudp" );
+
 		// assume did not block
 		return;
-		//char *xx=NULL;*xx = 0; }
 	}
 
 	// . you cannot destroy socket's who have called a handler and the
@@ -2352,9 +2290,20 @@ void TcpServer::recycleSocket ( TcpSocket *s ) {
 	//if ( s->m_readBuf == s->m_tmpBuf ) s->m_readBuf = NULL;
 	//if ( s->m_sendBuf == s->m_tmpBuf ) s->m_sendBuf = NULL;
 	// always free read/send buffers
-	if ( s->m_readBuf ) mfree (s->m_readBuf, s->m_readBufSize,"TcpServer");
+	if ( s->m_readBuf ) {
+		mfree (s->m_readBuf, s->m_readBufSize,"TcpServer");
+	}
+
 	// always free the sendBuf 
-	if ( s->m_sendBuf ) mfree (s->m_sendBuf, s->m_sendBufSize,"TcpServer");
+	if ( s->m_sendBuf ) {
+		mfree (s->m_sendBuf, s->m_sendBufSize,"TcpServer");
+	}
+
+	// always free the hostname
+	if ( s->m_hostname ) {
+		mfree( s->m_hostname, s->m_hostnameSize, "TcpSocket" );
+	}
+
 	// hey! there shouldn't be any should there? TODO! figure out.
 	// debug msg
 	//log("........... TcpServer recycling sock #%i\n",s->m_sd);
@@ -2362,6 +2311,8 @@ void TcpServer::recycleSocket ( TcpSocket *s ) {
 	// NULLify all data in TcpSocket, except ip/port
 	s->m_callback          = NULL;
 	s->m_state             = NULL;
+	s->m_hostname          = NULL;
+	s->m_hostnameSize      = 0;
 	s->m_sendBuf           = NULL;
 	s->m_sendBufSize       = 0;
 	s->m_sendOffset        = 0;
@@ -2784,16 +2735,12 @@ void TcpServer::cancel ( void *state ) {
 
 #include "SafeBuf.h"
 
-bool TcpServer::sendChunk ( TcpSocket *s ,
-			    SafeBuf *sb ,
-			    void *state ,
-			    // call this function when done sending this chunk
-			    // so that it can read another chunk and call 
-			    // sendChunk() again.
-			    void (* doneSendingWrapper)( void *,TcpSocket *)){
-
-	log("tcp: sending chunk of %"INT32" bytes sd=%i", sb->length() ,
-	    s->m_sd );
+bool TcpServer::sendChunk( TcpSocket *s, SafeBuf *sb, void *state,
+						   // call this function when done sending this chunk
+						   // so that it can read another chunk and call
+						   // sendChunk() again.
+						   void ( *doneSendingWrapper )( void *, TcpSocket * ) ) {
+	log( "tcp: sending chunk of %" INT32 " bytes sd=%i", sb->length(), s->m_sd );
 
 	// if socket had shit on there already, free that memory
 	// just like TcpServer::destroySocket would
@@ -2808,48 +2755,11 @@ bool TcpServer::sendChunk ( TcpSocket *s ,
 	s->m_totalToSend       = 0;
 	s->m_totalSent         = 0;
 
-	//
-	// caller must set it to true on all but the last thing they send!!
-	//
-	// let it know not to close the socket while this is set
-	//if ( ! lastChunk ) s->m_streamingMode = true;
-	//else               s->m_streamingMode = false;
-	//s->m_streamingMode = true;
-
-
-	/*
-
-	g_conf.m_logDebugTcp = true;
-
-	int32_t term = 20;
-	if ( sb->length() < term ) term = sb->length();
-	char *cp = sb->getBufStart() + term;
-	char c = *cp;
-	*cp = '\0';
-	log("tcp: chunkstart=%s",sb->getBufStart());
-	*cp = c;
-
-	int32_t minus = 20;
-	if ( sb->length() < minus ) minus = sb->length() ;
-	log("tcp: chunkend=%s",sb->getBuf() - minus);
-	*/
-
-	// char *p = sb->getBufStart();
-	// char *pend = p + sb->length();
-	// for ( ; p < pend ; p++ ) {
-	// 	if ( *p == '\0' ) { char *xx=NULL;*xx=0; }
-	// }
-
 	// . start the send process
 	// . returns false if send did not complete
 	// . returns true and sets g_errno on error
-	if (  ! sendMsg ( s ,
-			  sb->getBufStart(), // sendBuf     ,
-			  sb->getCapacity(),//sendBufSize ,
-			  sb->length(),//sendBufSize ,
-			  sb->length(), // msgtotalsize
-			  state       ,   // data for callback
-			  doneSendingWrapper  ) ) { // callback
+	if ( !sendMsg( s, sb->getBufStart(), sb->getCapacity(), sb->length(), sb->length(), state,
+				   doneSendingWrapper ) ) {
 		// do not free sendbuf we are transmitting it
 		sb->detachBuf();
 		return false;
@@ -2859,7 +2769,9 @@ bool TcpServer::sendChunk ( TcpSocket *s ,
 	sb->detachBuf();
 
 	// a problem?
-	if ( g_errno ) return true;
+	if ( g_errno ) {
+		return true;
+	}
 
 	return true;
 }
@@ -2867,15 +2779,19 @@ bool TcpServer::sendChunk ( TcpSocket *s ,
 
 // returns -1 on error with g_errno set. returns 0 if would block. 1 if done.
 int TcpServer::sslHandshake ( TcpSocket *s ) {
-
 	if ( s->m_sockState != ST_SSL_HANDSHAKE ) { char *xx=NULL;*xx=0; }
 
 	// steal from ssl tcp server i guess in case we are not it
 	if ( ! s->m_ssl ) {
 		s->m_ssl = SSL_new(g_httpServer.m_ssltcp.m_ctx);
 		SSL_set_fd(s->m_ssl, s->m_sd);
-		//int64_t now1 = gettimeofdayInMilliseconds();
 		SSL_set_connect_state(s->m_ssl);
+	}
+
+	// set hostname for SNI
+	if ( s->m_hostname ) {
+		/// @todo what do we do if we can't set TLS servername extension?
+		SSL_set_tlsext_host_name(s->m_ssl, s->m_hostname);
 	}
 
 	// SSL_connect() calls malloc()
@@ -2883,13 +2799,10 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 	int r = SSL_connect(s->m_ssl);
 	g_inMemFunction = false;
 
-	if ( g_conf.m_logDebugTcp )
-		log("tcp: ssl handshake on sd=%"INT32" r=%i",
-		    (int32_t)s->m_sd,r);
+	if ( g_conf.m_logDebugTcp ) {
+		log( "tcp: ssl handshake on sd=%" INT32 " r=%i", (int32_t)s->m_sd, r );
+	}
 
-	//int64_t now2 = gettimeofdayInMilliseconds();
-	//int64_t took = now2 - now1 ;
-	//if ( took >= 2 ) log("tcp: ssl_connect took %"INT64"ms", took);
 	if (!s->m_ssl) {
 		log("ssl: SSL is NULL after connect.");
 		char *xx = NULL; *xx = 0;
@@ -2908,25 +2821,15 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 
 	char *sslMsg = getSSLError(s->m_ssl, r);
 
-	// if ( sslError == SSL_ERROR_SSL ) {
-	// 	log("tcp: ssl handhshake already completed sd=%i?",s->m_sd);
-	// 	// ok, it completed, go into writing mode
-	// 	s->m_sockState = ST_WRITING;
-	// 	return 1;
-	// }
-
-	if ( sslError != SSL_ERROR_WANT_READ &&
-	     sslError != SSL_ERROR_WANT_WRITE &&
-	     sslError != SSL_ERROR_NONE ) {
-
-		log("tcp: ssl: Error on Connect (%"INT32"). r=%i ip=%s msg=%s",
-		    (int32_t)sslError,r,iptoa(s->m_ip),sslMsg);
+	if ( sslError != SSL_ERROR_WANT_READ && sslError != SSL_ERROR_WANT_WRITE && sslError != SSL_ERROR_NONE ) {
+		log( "tcp: ssl: Error on Connect (%" INT32 "). r=%i ip=%s msg=%s", (int32_t)sslError, r,
+			 iptoa( s->m_ip ), sslMsg );
 
 		g_errno = ESSLERROR;
 		// note in log
-		log("tcp: ssl: try running "
-		    "'openssl s_client -connect www.hostnamehere.com:443 "
-		    "-debug' to debug the webserver on the other side.");
+		log( "tcp: ssl: try running 'openssl s_client -connect www.hostnamehere.com:443 -debug' "
+		     "to debug the webserver on the other side." );
+
 		// make sure read callback is registered
 		// g_loop.registerReadCallback (s->m_sd,this,readSocketWrapper,
 		// 			     s->m_niceness);
@@ -2936,22 +2839,24 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 		return -1;
 	}
 
-	if ( g_conf.m_logDebugTcp )
-		log("tcp: ssl: Error on Connect (%"INT32"). r=%i ip=%s msg=%s",
-		    (int32_t)sslError,r,iptoa(s->m_ip),sslMsg);
+	if ( g_conf.m_logDebugTcp ) {
+		log( "tcp: ssl: sslConnect (%" INT32 "). r=%i ip=%s msg=%s", (int32_t)sslError, r, iptoa( s->m_ip ),
+			 sslMsg );
+	}
 
 	if ( sslError <= 0 ) { char *xx=NULL;*xx=0; }
 
-	if ( g_conf.m_logDebugTcp )
-		log("tcp: ssl handshake returned r=%i",r);
+	if ( g_conf.m_logDebugTcp ) {
+		log( "tcp: ssl handshake returned r=%i", r );
+	}
 
 	// read callbacks are always registered and if we need a read
 	// hopefully it will be called. TODO: verify this...
 	if ( sslError == SSL_ERROR_WANT_READ ) {
-		if ( g_conf.m_logDebugTcp )
-			log("tcp: ssl handshake is not want write sd=%i",
-			    s->m_sd);
-		//logSSLError(s->m_ssl, r);
+		if ( g_conf.m_logDebugTcp ) {
+			log( "tcp: ssl handshake is not want write sd=%i", s->m_sd );
+		}
+
 		return 0;
 	}
 

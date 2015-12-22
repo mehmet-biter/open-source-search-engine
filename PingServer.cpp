@@ -904,17 +904,8 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		// set "useSameSwitch" to true so even if shotgunning is on
 		// the udp server will send the reply back to the same ip/port
 		// from which we got the request
-		g_udpServer.sendReply_ass ( NULL , // msg
-					     0    , // msgSize
-					     NULL , // alloc
-					     0    , // alloc Size
-					     slot ,
-					     60   , // timeout in seconds
-					     NULL , // state
-					     NULL , // callback
-					     500  , // backoff in ms
-					     1000 , // max wait for backoff
-					     true );// use same switch?
+		g_udpServer.sendReply_ass( NULL, 0, NULL, 0, slot, NULL, NULL, 500, 1000, true );
+
 		return;
 	}
 
@@ -1256,18 +1247,7 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		    "version info.", requestSize);
 	}
 	// always send back an empty reply
-	g_udpServer.sendReply_ass ( reply     , // msg
-				     replySize , // msgSize
-				     NULL , // alloc
-				     0    , // alloc Size
-				     slot ,
-				     60   , // timeout in seconds
-				     NULL , // state
-				     NULL , // callback
-				     500  , // backoff in ms
-				     1000 , // max wait for backoff
-				     true );// use same switch?
-
+	g_udpServer.sendReply_ass( reply, replySize, NULL, 0, slot, NULL, NULL, 500, 1000, true );
 
 	// . now in PingServer.cpp for hostid 0 it checks
 	//   the urlsindexed from each host if g_conf.m_testParserEnabled
@@ -1729,21 +1709,14 @@ bool sendAdminEmail ( Host  *h,
 	//	iptoa(ipString,g_emailMX1IPBackup);
 	//	ip = ipString;
 	//}
-	if ( !ts->sendMsg ( ip,
-			    gbstrlen(ip),
-			    25, // smtp (send mail transfer protocol) port
-			    buf,
-			    PAGER_BUF_SIZE,
-			    buffLen,
-			    buffLen,
-			    h,
-			    gotDocWrapper,
-			    60*1000,
-			    100*1024,
-			    100*1024 ) )
+	if ( !ts->sendMsg( ip, gbstrlen( ip ), 25, buf, PAGER_BUF_SIZE, buffLen, buffLen, h, gotDocWrapper,
+	                   60 * 1000, 100 * 1024, 100 * 1024 ) ) {
 		return false;
+	}
+
 	// we did not block, so update h->m_emailCode
 	gotDocWrapper ( h , NULL );
+
 	// we did not block
 	return true;
 }
@@ -2266,34 +2239,6 @@ bool sendEmail ( class EmailInfo *ei ) {
 	// in the cluster.
 	ei->m_mxIp = atoip(g_conf.m_sendmailIp);
 
-	/*
-	// prepend a special marker so Dns.cpp returns the mx record
-	ei->m_mxDomain.safePrintf("gbmxrec-%s",dom);
-
-	// get mx ip. returns false if would block.
-	if ( ! g_dns.getIp ( ei->m_mxDomain.getBufStart() ,
-			     ei->m_mxDomain.getLength() ,
-			     &ei->m_mxIp,
-			     ei ,
-			     gotMxIpWrapper ) )
-		return false;
-
-	return gotMxIp ( ei );
-}
-
-// returns false if blocked, true otherwise
-bool gotMxIp ( EmailInfo *ei ) {
-
-	// error?
-	if ( g_errno ) {
-		log("crawlbot: error getting MX IP to send email alert for "
-		    "%s = %s",
-		    ei->m_mxDomain.getBufStart(),
-		    mstrerror(g_errno));
-		return true;
-	}
-	*/
-
 	// wtf?
 	if ( ei->m_mxIp == 0 ) {
 		log("crawlbot: got bad MX ip of 0 for %s",
@@ -2328,18 +2273,9 @@ bool gotMxIp ( EmailInfo *ei ) {
 	// make a temp string
 	SafeBuf mxIpStr;
 	mxIpStr.safePrintf("%s",iptoa(ei->m_mxIp) );
-	if ( !ts->sendMsg ( mxIpStr.getBufStart(),
-			    mxIpStr.length(),
-			    25, // smtp (send mail transfer protocol) port
-			    sb.getBufStart(),
-			    sb.getCapacity(),
-			    sb.getLength(),
-			    sb.getLength(),
-			    ei,//NULL,//h,
-			    doneSendingEmailWrapper,
-			    60*1000,
-			    100*1024,
-			    100*1024 ) ) {
+	if ( !ts->sendMsg( mxIpStr.getBufStart(), mxIpStr.length(), 25, sb.getBufStart(), sb.getCapacity(),
+					   sb.getLength(), sb.getLength(), ei, doneSendingEmailWrapper, 60 * 1000, 100 * 1024,
+					   100 * 1024 ) ) {
 		// tcpserver will free it, so prevent double free with detach
 		sb.detachBuf();
 		return false;

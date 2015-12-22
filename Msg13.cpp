@@ -2223,9 +2223,7 @@ void passOnReply ( void *state , UdpSlot *slot ) {
 	if ( reply == g_fakeReply ) replyAllocSize = 0;
 	//int32_t  replyAllocSize = slot->m_readBufSize;
 	// just forward it on
-	g_udpServer.sendReply_ass (reply,replySize,
-				   reply,replyAllocSize,
-				   r->m_udpSlot);
+	g_udpServer.sendReply_ass( reply, replySize, reply, replyAllocSize, r->m_udpSlot );
 }
 
 //

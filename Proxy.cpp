@@ -372,14 +372,10 @@ bool Proxy::handleRequest (TcpSocket *s){
 		//   is recycled/destroyed
 		// . this will call getMsgPiece() to fill up sendBuf from file
 		TcpServer *tcp = s->m_this;
-		if (  ! tcp->sendMsg ( s           , 
-				       sendBuf     ,
-				       sendBufSize ,
-				       sendBufSize ,
-				       sendBufSize ,
-				       NULL        ,   // data for callback
-				       NULL        ) ) // callback
+		if ( !tcp->sendMsg( s, sendBuf, sendBufSize, sendBufSize, sendBufSize, NULL, NULL ) ) {
 			return false;
+		}
+
 		// it didn't block or there was an error
 		return true;
 	}
@@ -1243,16 +1239,10 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 					    stC->m_numQueryTerms );
 			g_stats.m_numSuccess++;
 		}
-		// forward it to the qcproxy. true -> do not re-compress!
-		//g_httpServer.sendReply2(NULL,0,reply,size,stC->m_s,true);
+
 		// let tcp server free it when done
-		g_httpServer.m_tcp.sendMsg ( stC->m_s ,
-					     reply ,
-					     size ,
-					     size ,
-					     size ,
-					     NULL ,
-					     NULL );
+		g_httpServer.m_tcp.sendMsg( stC->m_s, reply, size, size, size, NULL, NULL );
+
 		// free mem
 		freeStateControl(stC);
 		return;
@@ -1419,16 +1409,14 @@ void Proxy::gotReplyPage ( void *state, UdpSlot *slot ) {
 	// . try this one instead
 	// . returns false if blocked
 	TcpServer *tcp = &g_httpServer.m_tcp;
+
 	// are we using ssl?
-	if ( stC->m_s->m_ssl ) tcp = &g_httpServer.m_ssltcp;
-	tcp->sendMsg ( stC->m_s ,
-		       newReply , 
-		       newReplySize ,
-		       newReplySize ,
-		       newReplySize ,
-		       NULL,
-		       NULL);
-	
+	if ( stC->m_s->m_ssl ) {
+		tcp = &g_httpServer.m_ssltcp;
+	}
+
+	tcp->sendMsg( stC->m_s, newReply, newReplySize, newReplySize, newReplySize, NULL, NULL );
+
 	// do not let udpslot free that we are sending it off
 	//slot->m_readBuf = NULL;
 	

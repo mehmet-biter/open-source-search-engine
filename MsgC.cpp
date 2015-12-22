@@ -422,11 +422,7 @@ void gotMsgCIpWrapper( void *state, int32_t ip){
 	// an actual checksum
 	*(int32_t *)p = hash32h ( ip , 0 ); p += 4;
 
-	g_udpServer.sendReply_ass ( reply    ,
-				    replySize       ,
-				    NULL    ,
-				    0       ,
-				    slot    ,
-				    2       ); // timeout in 2 secs
+	g_udpServer.sendReply_ass( reply, replySize, NULL, 0, slot );
+
 	return;
 }

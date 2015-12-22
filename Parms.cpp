@@ -20757,13 +20757,7 @@ void handleRequest3fLoop ( void *weArg ) {
 			// note it
 			log("parms: sending early parm update reply");
 			// wait for reply to be sent and ack'd
-			g_udpServer.sendReply_ass ( NULL,0,
-						    NULL,0,
-						    we->m_slot,
-						    8, // timeout in secs
-						    // come back here when done
-						    we ,
-						    handleRequest3fLoop2 );
+			g_udpServer.sendReply_ass( NULL, 0, NULL, 0, we->m_slot, we, handleRequest3fLoop2 );
 			return;
 		}
 
@@ -20871,10 +20865,12 @@ void handleRequest3fLoop ( void *weArg ) {
 		log("parms: sending parm update reply");
 
 	// send back reply now. empty reply for the most part
-	if ( we->m_errno && ! we->m_sentReply )
-		g_udpServer.sendErrorReply ( we->m_slot,we->m_errno,0 );
-	else if ( ! we->m_sentReply )
-		g_udpServer.sendReply_ass ( NULL,0,NULL,0,we->m_slot);
+	if ( we->m_errno && !we->m_sentReply ) {
+		g_udpServer.sendErrorReply( we->m_slot, we->m_errno );
+	} else if ( !we->m_sentReply ) {
+		g_udpServer.sendReply_ass( NULL, 0, NULL, 0, we->m_slot );
+	}
+
 	// all done
 	mfree ( we , sizeof(WaitEntry) , "weparm" );
 	return;
@@ -20896,10 +20892,11 @@ void handleRequest3f ( UdpSlot *slot , int32_t niceness ) {
 	// make a new waiting entry
 	WaitEntry *we ;
 	we = (WaitEntry *) mmalloc ( sizeof(WaitEntry),"weparm");
-	if ( ! we ) {
-		g_udpServer.sendErrorReply(slot,g_errno,60);
+	if ( !we ) {
+		g_udpServer.sendErrorReply( slot, g_errno );
 		return;
 	}
+
 	we->m_slot = slot;
 	we->m_callback = handleRequest3fLoop;
 	we->m_parmPtr = parmRecs;
@@ -21031,12 +21028,11 @@ bool Parms::syncParmsWithHost0 ( ) {
 // . sends CMD "addcoll" and "delcoll" cmd parms as well
 // . include an "insync" command parm as last parm
 void handleRequest3e ( UdpSlot *slot , int32_t niceness ) {
-
 	// right now we must be host #0
-	if ( g_hostdb.m_hostId != 0 ) { 
-		g_errno = EBADENGINEER; 
+	if ( g_hostdb.m_hostId != 0 ) {
+		g_errno = EBADENGINEER;
 	hadError:
-		g_udpServer.sendErrorReply(slot,g_errno,60);
+		g_udpServer.sendErrorReply( slot, g_errno );
 		return;
 	}
 

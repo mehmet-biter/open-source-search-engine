@@ -621,9 +621,7 @@ bool UdpServer::sendRequest ( char     *msg          ,
 }
 
 // returns false and sets g_errno on error, true otherwise
-void UdpServer::sendErrorReply ( UdpSlot *slot     , 
-				 int32_t     errnum   , 
-				 int32_t     timeout  ) {
+void UdpServer::sendErrorReply( UdpSlot *slot, int32_t errnum ) {
 	// not in sig handler
 	//if ( g_inSigHandler ) return;
 	// bitch if it is 0
@@ -644,7 +642,7 @@ void UdpServer::sendErrorReply ( UdpSlot *slot     ,
 	*(int32_t *)msg = htonl(errnum) ;
 	// set the m_localErrno in "slot" so it will set the dgrams error bit
 	slot->m_localErrno = errnum;
-	sendReply_ass ( msg , 4 , msg , 4 , slot , timeout );
+	sendReply_ass ( msg , 4 , msg , 4 , slot );
 }
 
 // . destroys slot on error or completion (frees m_readBuf,m_sendBuf)
@@ -654,13 +652,11 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 				char    *alloc      ,
 				int32_t     allocSize  ,
 				UdpSlot *slot       ,
-				int32_t     timeout    , // in seconds
 				void    *state      ,
 				void (* callback2)(void *state, UdpSlot *slot),
 				int16_t    backoff    ,
 				int16_t    maxWait    ,
-				bool     isCallback2Hot ,
-				bool     useSameSwitch  ) {
+				bool     isCallback2Hot) {
 	// the callback should be NULL
 	if ( slot->m_callback ) {
 		g_errno = EBADENGINEER;
