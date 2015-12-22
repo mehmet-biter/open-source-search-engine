@@ -101,6 +101,14 @@ OBJS:=$(OBJS) seo.o
 endif
 
 
+# generate git version
+DIRTY=
+ifneq ($(shell git diff --shortstat 2> /dev/null),)
+	DIRTY=-dirty
+endif
+GIT_VERSION=$(shell git rev-parse HEAD)$(DIRTY)
+
+
 all: gb
 
 utils: blaster2 dump hashtest makeclusterdb makespiderdb membustest monitor seektest urlinfo treetest dnstest gbtitletest
@@ -228,8 +236,6 @@ test_convert: $(OBJS) test_convert.o
 
 supported_charsets: $(OBJS) supported_charsets.o supported_charsets.txt
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ supported_charsets.o $(OBJS) $(LIBS)
-gbchksum: gbchksum.o
-	$(CXX) -g -Wall -o $@ gbchksum.o
 create_ucd_tables: $(OBJS) create_ucd_tables.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ create_ucd_tables.o $(OBJS) $(LIBS)
 
@@ -247,8 +253,6 @@ memtest: memtest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o
 hashtest: hashtest.cpp
 	$(CXX) -O3 -o hashtest hashtest.cpp
-hashtest0: hashtest
-	scp hashtest gb0:/a/
 membustest: membustest.cpp
 	$(CXX) -O0 -o membustest membustest.cpp -lc
 mergetest: $(OBJS) mergetest.o
@@ -423,7 +427,7 @@ sort.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
 
 Version.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -DGIT_COMMIT_ID=$(shell git rev-parse HEAD) -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) -DGIT_COMMIT_ID=$(GIT_VERSION) -c $*.cpp
 
 # dpkg-buildpackage calls 'make binary' to create the files for the deb pkg
 # which must all be stored in ./debian/gb/
