@@ -90,6 +90,26 @@ bool Summary::set ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query 
 		return log("query: More than 256 summary lines requested.");
 	}
 
+	// short circuit when URL is root
+	if ( f->isRoot() ) {
+		m_summaryLen = xml->getMetaContent( m_summary, maxSummaryLen, "summary", 7 );
+
+		// the meta description
+		if ( m_summaryLen <= 0 ) {
+			m_summaryLen = xml->getMetaContent( m_summary, maxSummaryLen, "description", 11 );
+		}
+
+		if ( m_numDisplayLines > 0 ) {
+			m_displayLen = m_summaryLen;
+		}
+
+		if ( m_summaryLen > 0 ) {
+			m_summaryExcerptLen[0] = m_summaryLen;
+			m_numExcerpts = 1;
+			return true;
+		}
+	}
+
 	// Nothing to match...print beginning of content as summary
 	if ( matches->m_numMatches == 0 && maxNumLines > 0 ) {
 		return getDefaultSummary ( xml, words, sections, pos, maxSummaryLen );
