@@ -167,7 +167,6 @@ bool bucketstest ( char *dbname ) ;
 bool hashtest    ( ) ;
 // how fast to parse the content of this docId?
 bool parseTest ( char *coll , int64_t docId , char *query );
-//bool carveTest ( uint32_t radius, char *fname, char* query );
 bool summaryTest1   ( char *rec, int32_t listSize, char *coll , int64_t docId ,
 		      char *query );
 //bool summaryTest2   ( char *rec, int32_t listSize, char *coll , int64_t docId ,
@@ -879,36 +878,6 @@ int main2 ( int argc , char *argv[] ) {
 		parseTest( coll, docid, query );
 		return 0;
 	}
-
-	/*
-        if ( strcmp ( cmd , "carvetest"  ) == 0 ) {
-		 if ( ! g_hostdb.init(hostsConf, hostId) ) {
-		 	log("db: hostdb init failed." ); return 1; }
-		 if ( ! hashinit() ) {
-		 	log("db: Failed to init hashtable." ); return 1; }
-		if (!ucInit(g_hostdb.m_dir)) {
-			log("Unicode initialization failed!");
-			return 1;
-		}
-		if (cmdarg+2 >= argc) {
-			log("usage: gb carvetest qt1 ..." ); return 2; }
-		uint32_t radius = atoi(argv[cmdarg+1]);
-		char* fname = argv[cmdarg+2];
-		char buf[65535];
-		*buf = '\0';
-		int virgin = 1;
-		for (int i = cmdarg+3; i < argc; i++) {
-			if (!virgin)
-				strcat(buf, " ");
-			else
-				virgin = 0;
-			strcat(buf, argv[i]);
-		}
-		printf("file: '%s' query: '%s'\n", fname, buf);
-		carveTest(radius, fname, buf);
-		return 0;
-	}
-	*/
 
 	if ( strcmp ( cmd , "booltest" ) == 0 ){
 		//if ( ! g_hostdb.init(hostId) ) {
@@ -9011,37 +8980,6 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	return true;
 }	
 
-/*
-bool carveTest ( uint32_t radius, char *fname, char* query ) {
-	Query q;
-	q.set(query, 0); // boolflag
-	FILE* f = fopen(fname, "rb");
-	if (f == NULL) {
-		fprintf(stderr, "unable to open: '%s' %d\n",
-		fname, errno);
-		return false;
-	}
-	char buf[128*1024];
-	int bytes = fread(buf, 1, sizeof(buf), f);
-	if (bytes < 1) {
-		fprintf(stderr, "unable to read: '%s' %d\n",
-		fname, errno);
-		fclose(f);
-		return false;
-	}
-	buf[bytes] = '\0';
-	log(LOG_INFO, "carve[%d]: %s", bytes, buf);
-	HtmlCarver carver(csISOLatin1, radius);
-	char out[128*1024];
-	int carvedbytes;
-	carvedbytes = carver.AsciiAndCarveNoTags(
-			(uint8_t*) buf, (uint32_t) bytes,
-			(uint8_t*) out, sizeof(out) - 1, q);
-	out[carvedbytes] = '\0';
-	fprintf(stderr, "carved[%d]: '%s'\n", carvedbytes, out);
-	return true;
-}
-*/
 bool summaryTest1   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
 		      char *query ) {
 
@@ -9238,164 +9176,6 @@ bool summaryTest2   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
 	return true;
 }
 
-bool summaryTest3   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
-		      char *query ) {
-
-	//log(LOG_DEBUG, "HTML mem %d %d %d",
-	//	g_mem.m_used, g_mem.m_numAllocated, g_mem.m_numTotalAllocated);
-
-	//int32_t collLen = gbstrlen(coll);
-	CollectionRec *cr = g_collectiondb.getRec ( coll );
-
-	// start the timer
-	int64_t t = gettimeofdayInMilliseconds_force();
-
-	int32_t titleMaxLen               = cr->m_titleMaxLen;
-	int32_t summaryMaxLen             = cr->m_summaryMaxLen;
-	int32_t numSummaryLines           = cr->m_summaryMaxNumLines;
-	int32_t summaryMaxNumCharsPerLine = cr->m_summaryMaxNumCharsPerLine;
-	// these are arbitrary (taken from Msg24.cpp)
-	int32_t bigSampleRadius           = 100;
-	int32_t bigSampleMaxLen           = 4000;
-	bool ratInSummary              = false;
-
-	Query q;
-	q.set ( query , 0 ); // boolFlag
-
-	unsigned char *content ;
-	int32_t  contentLen ;
-
-	// loop parse
-	for ( int32_t i = 0 ; i < 100 ; i++ ) {
-
-		// 4ms
-		TitleRec tr;
-		tr.set (rec, listSize, false);
-		// get content
-		char *html    = tr.getContent();
-		int32_t htmlLen = tr.getContentLen();
-
-		HtmlCarver parser(tr.getCharset(), 256);
-		unsigned char carved[128 * 1024];
-		int32_t carvedMax = sizeof(carved);
-		// choose this one to convert to utf8 prior to carving
-		//int32_t carvedLen = parser.Utf8AndCarve((unsigned char*) content,
-		// choose this one to emulate documents that are stored in utf8
-
-		// set this to whatever makes sense for your test...
-		switch (2)
-		{
-		case 1:
-			//log(LOG_DEBUG, "HTML utf8 summary");
-			contentLen = parser.Utf8AndCarve(
-					(unsigned char*) html, htmlLen,
-					carved, carvedMax, q);
-			content = carved;
-			break;
-		case 2:
-			//log(LOG_DEBUG, "HTML fast ascii summary");
-			contentLen = parser.AsciiAndCarveNoTags(
-					(unsigned char*) html, htmlLen,
-					carved, carvedMax, q);
-			content = carved;
-			break;
-		case 0:
-		default:
-			//log(LOG_DEBUG, "HTML compatible summary");
-			content = (unsigned char*) html;
-			contentLen = htmlLen;
-			break;
-		}
-
-		// time it
-		//logf(LOG_TIMING,"query: summary step 1");
-		// now parse into xhtml (takes 15ms on lenny)
-		// 1ms
-		Xml xml;
-		xml.set ( tr.getCharset() , (char*) content, contentLen , 
-			  false, 0, false, tr.getVersion() );
-		// time it
-		//logf(LOG_TIMING,"query: summary step 2");
-		// 7ms
-		Words ww;
-		ww.set ( &xml ,
-			 true , // compute word ids?
-			 true );// has html entities?
-
-		// time it
-		// 0ms
-		//logf(LOG_TIMING,"query: summary step 3");
-		//int32_t  sfn = tr.getSiteFilenum();
-		//Xml  *sx  = g_tagdb.getSiteXml ( sfn , coll , collLen );
-		// time it
-		//logf(LOG_TIMING,"query: summary step 4");
-		// 5ms
-		Sections ss;
-		ss.set ( &ww ,NULL,0,NULL,NULL,&tr);
-
-		// time it
-		//logf(LOG_TIMING,"query: summary step 5");
-
-		// 3.5ms
-		Pos pos;
-		pos.set ( &ww , &ss );
-
-		// time it
-		//logf(LOG_TIMING,"query: summary step 6");
-
-		// .5ms
-		Title tt;
-		// use hard title? false!
-		tt.setTitle(&tr,&xml,&ww,&ss,&pos,titleMaxLen,0xffff,NULL);
-		char *tbuf    = tt.getTitle();
-		int32_t  tbufLen = tt.m_titleBytes;
-		// sanity check
-		if ( ! tbuf && tbufLen ) { char *xx = NULL; *xx = 0; }
-
-		// time it
-		//logf(LOG_TIMING,"query: summary step 7");
-		// 1ms
-		Bits bb;
-		if ( ! bb.setForSummary ( &ww ) ) return false;
-		// time it
-		//logf(LOG_TIMING,"query: summary step 8");
-
-		// 8-9ms
-		Summary s;
-		bool status;
-		status = s.set2 ( &xml                      , 
-				  &ww                       ,
-				  &bb                       ,
-				  &ss                       ,
-				  &pos                      ,
-				  &q                        ,
-				  NULL                      , // termFreqs
-				  NULL                      , // affWeights
-				  coll                      ,
-				  collLen                   ,
-				  false                     , // doStemming? 
-				  summaryMaxLen             ,
-				  numSummaryLines           ,
-				  summaryMaxNumCharsPerLine ,
-				  bigSampleRadius           ,
-				  bigSampleMaxLen           ,
-				  ratInSummary              ,
-				  &tr                       );
-		// time it
-		//logf(LOG_TIMING,"query: summary step 9");
-	}
-
-	// print time it took
-	int64_t e = gettimeofdayInMilliseconds_force();
-	log("build: V3  Summary/Title/Gigabits generation took %.3f ms for "
-	    "docId %"INT64".",
-	    (double)(e - t)/100.0,docId);
-	double bpms = contentLen/((double)(e-t)/100.0);
-	log("build: %.3f bytes/msec", bpms);
-	//log(LOG_DEBUG, "HTML mem %d %d %d",
-	//	g_mem.m_used, g_mem.m_numAllocated, g_mem.m_numTotalAllocated);
-	return true;
-}
 */
 
 void dumpIndexdbFile ( int32_t fn , int64_t off , char *ff , int32_t ks ,
