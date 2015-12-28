@@ -646,3 +646,9 @@ warcinjector:
 	-rm -r /home/zak/.pex/install/inject-*
 	cd script && pex -v . gevent gevent-socketio requests pyopenssl ndg-httpsclient pyasn1 multiprocessing -e inject -o warc-inject --inherit-path --no-wheel
 
+
+
+.PHONY: cleandb
+cleandb:
+	rm -rf coll.main.?
+	rm -f *-saved.dat spiderproxystats.dat addsinprogress.dat
