@@ -4568,6 +4568,24 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				 mr->m_docId ); 
 	}
 
+	if ( si->m_format == FORMAT_HTML ) {
+		sb->safePrintf ( " - <a style=color:blue; href=\""
+				 "/get?"
+				 // show rainbow sections
+				 "page=5&"
+				 //"q=%s&"
+				 //"qlang=%s&"
+				 "c=%s&"
+				 "d=%"INT64"&"
+				 "cnsp=0\">"
+				 "term info</a>\n", 
+				 //st->m_qe , 
+				 // "qlang" parm
+				 //si->m_defaultSortLang,
+				 coll , 
+				 mr->m_docId ); 
+	}
+
 	// this stuff is secret just for local guys! not any more
 	if ( si->m_format == FORMAT_HTML ) {
 		// now the ip of url
