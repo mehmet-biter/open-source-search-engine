@@ -158,17 +158,6 @@ class Posdb {
 		       bool               isDelKey       ,
 		       bool               shardByTermId  );
 
-	// make just the 6 byte key
-	void makeKey48 ( char              *kp             ,
-			 int32_t               wordPos        ,
-			 char               densityRank    ,
-			 char               diversityRank  ,
-			 char               wordSpamRank   ,
-			 char               hashGroup      ,
-			 char               langId         ,
-			 bool               isSynonym      ,
-			 bool               isDelKey       );
-
 
 	int printList ( RdbList &list ) ;
 

@@ -331,43 +331,6 @@ bool Posdb::verify ( char *coll ) {
 }
 
 
-// make just the 6 byte key
-void Posdb::makeKey48 ( char              *vkp            ,
-			int32_t               wordPos        ,
-			char               densityRank    ,
-			char               diversityRank  ,
-			char               wordSpamRank   ,
-			char               hashGroup      ,
-			char               langId         ,
-			bool               isSynonym      ,
-			bool               isDelKey       ) {
-
-	uint32_t kk = wordPos;// = (uint32_t *)(vkp + 2 );
-	//*kp = wordPos;
-	// GGGG bits
-	kk <<= 4;
-	kk |= hashGroup;
-	// ssss bits (wordspamrank)
-	kk <<= 4;
-	kk |= wordSpamRank;
-	// vvvv bits
-	kk <<= 4;
-	kk |= diversityRank;
-	// FF bits (is syn etc.)
-	kk <<= 2;
-	if ( isSynonym ) kk |= 0x01;
-	// store it
-	*(uint32_t *)(vkp + 2) = kk;
-	// ppppp density rank bits, etc.
-	vkp[1] = ((unsigned char)densityRank) << 3;
-	// positive key bit and compression bits.
-	vkp[0] = 0x01 | 0x04;
-	// one maverick langid bit, the 6th bit
-	// TODO: do we need this???
-	if ( langId & 0x20 ) vkp[0] |= 0x08;
-}
-
-
 // . see Posdb.h for format of the 12 byte key
 // . TODO: substitute var ptrs if you want extra speed
 void Posdb::makeKey ( void              *vkp            ,
