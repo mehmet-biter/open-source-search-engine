@@ -69,13 +69,13 @@ bool renameCurrentLogFile ( ) {
 	char tmp[16];
 	sprintf(tmp,"log%03"INT32"",g_hostdb.m_hostId);
 	f.set ( g_hostdb.m_dir , tmp );
-	// make new filename like log000-20131104-181932
+	// make new filename like log000-bak20131104-181932
 	time_t now = getTimeLocal();
 	tm *tm1 = gmtime((const time_t *)&now);
 	char tmp2[64];
 	strftime(tmp2,64,"%Y%m%d-%H%M%S",tm1);
 	SafeBuf newName;
-	if ( ! newName.safePrintf ( "%slog%03"INT32"-%s",
+	if ( ! newName.safePrintf ( "%slog%03"INT32"-bak%s",
 				    g_hostdb.m_dir,
 				    g_hostdb.m_hostId,
 				    tmp2 ) ) {
@@ -112,9 +112,9 @@ bool Log::init ( char *filename ) {
 	if ( ! m_filename ) return true;
 
 	//
-	// RENAME log000 to log000-2013_11_04-18:19:32
+	// RENAME log000 to log000-20131104-181932
 	//
-	if ( g_conf.m_runAsDaemon ) {
+	if ( g_conf.m_logToFile ) {
 		// returns false on error
 		if ( ! renameCurrentLogFile() ) return false;
 	}
@@ -376,7 +376,7 @@ bool Log::logR ( int64_t now , int32_t type , char *msg , bool asterisk ,
 
 	// . if filesize would be too big then make a new log file
 	// . should make a new m_fd
-	if ( m_logFileSize + tlen+1 > MAXLOGFILESIZE && g_conf.m_runAsDaemon )
+	if ( m_logFileSize + tlen+1 > MAXLOGFILESIZE && g_conf.m_logToFile )
 		makeNewLogFile();
 
 	if ( m_fd >= 0 ) {

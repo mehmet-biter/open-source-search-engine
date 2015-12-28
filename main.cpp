@@ -3568,8 +3568,8 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 			// let's do this for everyone now
 			//if ( h2->m_hostId == 0 )
 			sprintf(tmp2,
-				"mv ./proxylog ./proxylog-`date '+"
-				"%%Y_%%m_%%d-%%H:%%M:%%S'` ; " );
+				"mv ./proxylog ./proxylog-bak`date '+"
+				"%%Y%%m%%d-%%H%%M%%S'` ; " );
 			// . assume conf file name gbHID.conf
 			// . assume working dir ends in a '/'
 			sprintf(tmp,
@@ -4023,8 +4023,8 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 				"mv -f gb.installed gb ; "
 
 				// move the log file
-				"mv ./log%03"INT32" ./log%03"INT32"-\\`date '+"
-				"%%Y_%%m_%%d-%%H:%%M:%%S'\\` ; " 
+				"mv ./log%03"INT32" ./log%03"INT32"-bak\\`date '+"
+				"%%Y%%m%%d-%%H%%M%%S'\\` ; " 
 
 				// indicate -l so we log to a logfile
 				"./gb -l "//%"INT32" "
