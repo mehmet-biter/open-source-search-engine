@@ -328,7 +328,6 @@ void XmlDoc::reset ( ) {
 	}
 
 	m_numLinkRequestsOut = 0;
-	m_seoDebug = 0;
 	//m_seoInfoSetFromCache = false;
 	m_checkedCachedb = false;
 	m_processedCachedbReply = false;
@@ -42813,15 +42812,6 @@ SafeBuf *XmlDoc::getRecommendedLinksBuf ( ) {
 			}
 		}
 
-		// debug it
-		if ( m_seoDebug >= 2 )
-			log("seo: getting inlinks to related docid=%"INT64" "
-			    "weight=%f "
-			    "url=%s",
-			    rd->m_docId,
-			    rd->m_relatedWeight,
-			    rd->getUrl(&m_relatedTitleBuf));
-
 		// just get his linkdb list!
 		Msg0 *array = (Msg0 *)m_tmpMsg0Buf.getBufStart();
 		Msg0 *msg0 = &array[m_rdCursor];
@@ -43280,18 +43270,10 @@ bool XmlDoc::gotLinkerTitle ( Msg20 *msg20 ) {
 	Msg20Reply *reply = msg20->getReply();
 	// skip if linked to our site!
 	if ( reply->m_hasLinkToOurDomOrHost ) {
-		if ( m_seoDebug >= 2 )
-			log("seo: inlinker %s links to our "
-			    "domain. ignoring.",
-			    reply->ptr_ubuf);
 		return true;
 	}
 	// or if banned/filtered.. then skip
 	if ( reply->m_errno ) {
-		if ( m_seoDebug >= 2 )
-			log("seo: inlinker %s had error: %s",
-			    reply->ptr_ubuf,
-			    mstrerror(reply->m_errno));
 		return true;
 	}
 	// wtf?
@@ -44120,11 +44102,6 @@ bool XmlDoc::setRelatedDocIdWeightAndRank ( RelatedDocId *rd ) {
 			if(jIsSubQueryOfi&&
 			   iIsSubQueryOfj&&
 			   queryWeights[j]>.02){
-				// debug?
-				if ( m_seoDebug >= 2 )
-				log("seo: %s ISDUPOF %s",
-				    qpj->m_orig,
-				    qpi->m_orig);
 				// the dup weight is .02
 				queryWeights[j] *= .1; // = .02
 			}
@@ -44134,11 +44111,6 @@ bool XmlDoc::setRelatedDocIdWeightAndRank ( RelatedDocId *rd ) {
 			else if ( jIsSubQueryOfi &&
 			     ! iIsSubQueryOfj &&
 			     queryWeights[j] > .05 ) {
-				// debug?
-				if ( m_seoDebug >= 2 )
-				log("seo: %s SUBQUERYOF %s",
-				    qpj->m_orig,
-				    qpi->m_orig);
 				// the subquery weight is .05
 				queryWeights[j] *= 0.1; // = 5.0;//.05;
 			}
@@ -44147,11 +44119,6 @@ bool XmlDoc::setRelatedDocIdWeightAndRank ( RelatedDocId *rd ) {
 			else if ( iIsSubQueryOfj &&
 			     ! jIsSubQueryOfi &&
 			     queryWeights[i] > .05 ) {
-				// debug?
-				if ( m_seoDebug >= 2 )
-				log("seo: %s SUBQUERYOF %s",
-				    qpi->m_orig,
-				    qpj->m_orig);
 				// the subquery weight is .05
 				// increase to 5.0 to try to drown out the
 				// anomaly queries promoting poker sites
@@ -44175,15 +44142,6 @@ bool XmlDoc::setRelatedDocIdWeightAndRank ( RelatedDocId *rd ) {
 	for ( int32_t i = 0 ; i < qc ; i++ ) {
 		totalWeight += queryWeights[i];
 		qnPtrs[i]->m_queryScoreWeight = queryWeights[i];
-		//Msg99Reply *ptr = replyPtrs[i];
-		Query *qp = &queries[i];
-		char *qstr = qp->m_orig;//ptr->m_queryStr;
-		// log it
-		if ( m_seoDebug >= 2 )
-			log("seo: docid=%"INT64" weight=%f qry=%s",
-			    rd->m_docId,
-			    queryWeights[i],
-			    qstr);
 	}
 
 

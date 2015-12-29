@@ -1865,7 +1865,6 @@ public:
 	int32_t m_numMsg95Requests;
 	int32_t m_numMsg95Replies;
 	int32_t m_qcursor;
-	char m_seoDebug;
 	char m_progressBar;
 	bool m_readFromCachedb;
 	bool m_writeToCachedb;
