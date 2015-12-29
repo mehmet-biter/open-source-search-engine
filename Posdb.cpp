@@ -3366,28 +3366,6 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 		//	score /= s_hashGroupWeights[hg1];
 		// mod by distance
 		score /= (dist + 1.0);
-		// log it for debug
-		if ( ! m_msg2 && m_r->m_seoDebug >= 2 )
-		log("seo: "
-		    "gottermpairscore=%.05f "
-		    "term1=%"INT32" "
-		    "term2=%"INT32" "
-		    "wpos1=%"INT32" "
-		    "wpos2=%"INT32" "
-		    "hg1=%s "
-		    "hg2=%s "
-		    "dr1=%"INT32" "
-		    "dr2=%"INT32" "
-		    ,score
-		    ,i
-		    ,j
-		    ,p1
-		    ,p2
-		    ,getHashGroupString(hg1)
-		    ,getHashGroupString(hg2)
-		    ,(int32_t)g_posdb.getDensityRank(wpi)
-		    ,(int32_t)g_posdb.getDensityRank(wpj)
-		    );
 		// tmp hack
 		//score *= (dist+1.0);
 		// best?
@@ -6750,13 +6728,6 @@ void PosdbTable::intersectLists10_r ( ) {
 		pdcs = &dcs;
 	}
 
-	// log out what the min-scoring pair is if doing debug
-	if ( ! m_msg2 && m_r->m_seoDebug ) { //g_conf.m_logDebugSEOInserts ) {
-		dcs.reset();
-		pdcs = &dcs;
-	}
-
-
 	// second pass already sets m_docId above
 	if ( ! secondPass && m_msg2 ) {
 		// docid ptr points to 5 bytes of docid shifted up 2
@@ -6784,12 +6755,6 @@ void PosdbTable::intersectLists10_r ( ) {
 		// next key is 6
 		if ( psize > 12 && g_posdb.getKeySize(plist+12) != 6){
 			char *xx=NULL;*xx=0; }
-		// show it
-		//if ( ! m_msg2 && m_r->m_seoDebug ) {
-		//	log("seo: dumping mergedlist #%"INT32"",i);
-		//	printTermList(i,plist,psize);
-		//	log("seo: DONE dumping mergedlist #%"INT32"",i);
-		//}
 	}
 
 
@@ -7514,7 +7479,7 @@ void PosdbTable::intersectLists10_r ( ) {
 
 	// . seoDebug hack so we can set "dcs"
 	// . we only come here if we actually made it into m_topTree
-	if ( secondPass || m_r->m_seoDebug ) {
+	if ( secondPass ) {
 		dcs.m_siteRank   = siteRank;
 		dcs.m_finalScore = score;
 		// a double can capture an int without dropping any bits,
@@ -7534,8 +7499,6 @@ void PosdbTable::intersectLists10_r ( ) {
 			m_scoreInfoBuf.m_length = lastLen;
 		// save that
 		int32_t len = m_scoreInfoBuf.m_length;
-		// just in case?
-		if ( m_r->m_seoDebug ) m_scoreInfoBuf.reset();
 		// show it, 190255775595
 		//log("posdb: storing score info for d=%"INT64"",m_docId);
 		// copy into the safebuf for holding the scoring info
@@ -7666,22 +7629,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	}
 	
  advance:
-
-	if ( ! m_msg2 && m_r->m_seoDebug ) { //g_conf.m_logDebugSEOInserts ) {
-		// fix it
-		DocIdScore *nds = (DocIdScore *)m_scoreInfoBuf.getBufStart();
-		// set this... this is done in msg3a normally, but if doing
-		// seo shit we gotta do it here. since only running on one 
-		// docid we can do this
-		if ( nds->m_pairsOffset != 0 &&
-		     nds->m_numPairs ) { char *xx=NULL;*xx=0; }
-		if ( nds->m_singlesOffset != 0 &&
-		     nds->m_numSingles ) { char *xx=NULL;*xx=0; }
-		nds->m_pairScores = 
-			(PairScore *)m_pairScoreBuf.getBufStart();
-		nds->m_singleScores =
-			(SingleScore *)m_singleScoreBuf.getBufStart();
-	}
 
 	if ( ! m_msg2 ) {
 		// if doing this for seo.cpp

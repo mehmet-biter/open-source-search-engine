@@ -53,7 +53,6 @@ class Msg39Request {
 		m_useQueryStopWords       = true;
 		//m_useNewAlgo              = true;
 		m_doMaxScoreAlgo          = true;
-		m_seoDebug                = false;
 		m_useSeoResultsCache      = false;
 		
 		ptr_readSizes             = NULL;
@@ -107,7 +106,6 @@ class Msg39Request {
 	// flags
 	char    m_queryExpansion;
 	char    m_debug;
-	char    m_seoDebug;
 	char    m_useSeoResultsCache;
 	char    m_doSiteClustering;
 	char    m_hideAllClustered;
