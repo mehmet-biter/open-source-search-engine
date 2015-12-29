@@ -18,6 +18,7 @@
 //      7 = inneighborhood
 //      8 = internalinlinktext
 //      9 = inurl
+//     10 = inmenu
 //
 //   F: 0 = original term
 //      1 = conjugate/sing/plural
