@@ -260,7 +260,6 @@ bool Sections::set ( Words     *w                       ,
 	// separate buf now for section ptr for each word
 	if ( ! m_sectionPtrBuf.reserve ( nw *sizeof(Section *)) ) return true;
 	m_sectionPtrs = (Section **)m_sectionPtrBuf.getBufStart();
-	m_sectionPtrsEnd = (Section **)m_sectionPtrBuf.getBufEnd();
 
 	// allocate m_sectionBuf
 	m_sections = NULL;

@@ -831,7 +831,6 @@ class Sections {
 
 	// these are 1-1 with the Words::m_words[] array
 	class Section **m_sectionPtrs;
-	class Section **m_sectionPtrsEnd;
 
 	// save this too
 	int32_t m_nw ;
@@ -1071,11 +1070,6 @@ class SectionVotingTable {
 		    class HashTableX *dt , 
 		    uint64_t siteHash64 ,
 		    int32_t niceness ) ;
-
-
-	bool addVote1 ( Section *sn , int32_t sectionType , float score ) {
-		if ( ! sn ) return true;
-		return addVote3 ( sn->m_tagHash,sectionType,score,1);};
 
 	bool addVote2 ( int32_t tagHash, int32_t sectionType , float score ) {
 		return addVote3 ( tagHash,sectionType,score,1);};
