@@ -545,12 +545,10 @@ void Test::stopIt ( ) {
 	int32_t  uevents[5000];
 	SafeBuf tmp;
 
-	int32_t niceness = MAX_NICENESS;
-
 	// advance to next url
 	for ( ; m_urlPtr < m_urlEnd ; m_urlPtr = next ) {
 		// breathe
-		QUICKPOLL(niceness);
+		QUICKPOLL(MAX_NICENESS);
 		// we converted all non-url chars into \0's so skip those!
 		for ( ; m_urlPtr<m_urlEnd && !*m_urlPtr ; m_urlPtr++ );
 		// breach check
@@ -608,7 +606,7 @@ void Test::stopIt ( ) {
 		// loop over all the runs now, starting with latest run first
 		for ( int32_t ri = m_runId ; ri >= start ; ri-- ) {
 
-			QUICKPOLL(niceness);
+			QUICKPOLL(MAX_NICENESS);
 
 			// the diff filename
 			char pdiff[200];
@@ -661,7 +659,7 @@ void Test::stopIt ( ) {
 				fs = f.getFileSize();
 			}
 
-			QUICKPOLL(niceness);
+			QUICKPOLL(MAX_NICENESS);
 
 			// this means 0 . it just has the <pre> tag in it!
 			if ( fs < 0 || fs == 6 ) fs = 0;
@@ -739,7 +737,7 @@ void Test::stopIt ( ) {
 				uhb2 = "**</b></font>";
 			}
 
-			QUICKPOLL(niceness);
+			QUICKPOLL(MAX_NICENESS);
 
 			char *e1 = "<td>";
 			char *e2 = "</td>";
@@ -820,7 +818,7 @@ void Test::stopIt ( ) {
 	flag = 0;
 	// sort the url tables
 	for ( int32_t i = 0 ; i < un - 1 ; i++ ) {
-		QUICKPOLL(niceness);
+		QUICKPOLL(MAX_NICENESS);
 		if ( usort[i] >  usort[i+1] ) continue;
 		if ( usort[i] == usort[i+1] ) 
 			if ( udiff[i] >= udiff[i+1] ) continue;
