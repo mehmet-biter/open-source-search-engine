@@ -849,7 +849,7 @@ char *Xml::getMetaContentPointer ( char *field    ,
 	// find the first meta summary node
 	for ( int32_t i = 0 ; i < m_numNodes ; i++ ) {
 		// continue if not a meta tag
-		if ( m_nodes[i].m_nodeId != 68 ) continue;
+		if ( m_nodes[i].m_nodeId != TAG_META ) continue;
 		// . does it have a type field that's "summary"
 		// . <meta name=summary content="...">
 		// . <meta http-equiv="refresh" content="0;URL=http://y.com/">
@@ -895,7 +895,7 @@ int32_t Xml::getMetaContent (char *buf, int32_t bufLen, char *field, int32_t fie
 		// breathe
 		QUICKPOLL(m_niceness);
 		// continue if not a meta tag
-		if ( m_nodes[i].m_nodeId != 68 ) continue;
+		if ( m_nodes[i].m_nodeId != TAG_META ) continue;
 		// . does it have a type field that's "summary"
 		// . <meta name=summary content="...">
 		// . <meta http-equiv="refresh" content="0;URL=http://y.com/">
@@ -969,7 +969,7 @@ bool Xml::hasGigablastForm(char **url, int32_t *urlLen) {
 	// find the first meta summary node
 	for ( int32_t i = 0 ; i < m_numNodes ; i++ ) {
 		// continue if not a FORM tag
-		if ( m_nodes[i].m_nodeId != 40 ) continue;
+		if ( m_nodes[i].m_nodeId != TAG_FORM ) continue;
 		// <form method=get action=/cgi/0.cgi name=f>
 		int32_t len;
 		char *s = getString ( i , "action" , &len );

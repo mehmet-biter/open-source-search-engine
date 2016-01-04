@@ -70,7 +70,7 @@ class Xml {
 	bool      isTag         ( int32_t n ) {return m_nodes[n].isTag(); };
 	bool      isBreakingTag ( int32_t n ) {return m_nodes[n].m_isBreaking;};
 	bool      isBackTag     ( int32_t n ) {return m_nodes[n].m_node[1]=='/';};
-	bool      isXmlTag      ( int32_t n ) {return m_nodes[n].m_nodeId == 1;};
+	bool      isXmlTag      ( int32_t n ) {return m_nodes[n].m_nodeId == TAG_XMLTAG;};
 	char     *getNode       ( int32_t n ) {return m_nodes[n].m_node; };
 	int32_t      getNodeLen    ( int32_t n ) {return m_nodes[n].m_nodeLen;};
 	nodeid_t  getNodeId     ( int32_t n ) {return m_nodes[n].m_nodeId;};

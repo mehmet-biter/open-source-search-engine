@@ -4778,7 +4778,7 @@ void XmlDoc::gotWikiResults ( UdpSlot *slot ) {
 	float     score = 0.0;
 	int64_t docId = 0LL;
 	for ( int32_t i = 0 ; i + 1 < nn ; i++ ) {
-		if ( nodes[i].m_nodeId != 1 ) continue;
+		if ( nodes[i].m_nodeId != TAG_XMLTAG ) continue;
 		// tagname is <docid>?
 		if ( nodes[i].m_tagNameLen == 5 &&
 		     nodes[i].m_tagName[0] == 'd' &&
@@ -7171,7 +7171,7 @@ int32_t *XmlDoc::getPostLinkTextVector ( int32_t linkNode ) {
 	// repeated and will skew our "similarities"
 	for ( ; linkNode < nn ; linkNode++ ) {
 		// stop if we hit </a> or <a>
-		if ( (nodes[linkNode].m_nodeId & BACKBITCOMP) != 2 ) continue;
+		if ( (nodes[linkNode].m_nodeId & BACKBITCOMP) != TAG_A ) continue;
 		// advance over the </a> or <a>
 		linkNode++;
 		// then stop, we will start gathering link text here
@@ -15705,7 +15705,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 	// find the first meta summary node
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// continue if not a meta tag
-		if ( nodes[i].m_nodeId != 68 ) continue;
+		if ( nodes[i].m_nodeId != TAG_META ) continue;
 		// only get content for <meta http-equiv=..>
 		int32_t tagLen;
 		char *tag ;
@@ -26706,7 +26706,7 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 	// find the first meta summary node
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// continue if not a meta tag
-		if ( nodes[i].m_nodeId != 68 ) continue;
+		if ( nodes[i].m_nodeId != TAG_META ) continue;
 		// only get content for <meta name=..> not <meta http-equiv=..>
 		int32_t tagLen;
 		char *tag = m_xml.getString ( i , "name" , &tagLen );
@@ -45442,7 +45442,7 @@ bool XmlDoc::storeFacetValuesXml(char *qs, SafeBuf *sb, FacetValHash_t fvh ) {
 	for ( i = 0 ; i < xml->m_numNodes ; i++ ) {
 
 		// skip text nodes
-		if ( xml->m_nodes[i].m_nodeId == 0 ) continue;
+		if ( xml->m_nodes[i].m_nodeId == TAG_TEXTNODE ) continue;
 
 		// assemble the full parent name
 		// like "tag1.tag2.tag3"

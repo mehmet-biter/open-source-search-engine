@@ -1582,7 +1582,7 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t s
 		// if strip is 4, just remove the script tag
 		if( strip == 4 ){
 			if ( id ){
-				if ( id == 83 ){
+				if ( id == TAG_SCRIPT ){
 					skipIt ^= 1;
 					continue;
 				}
@@ -1597,9 +1597,9 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t s
 				// . we dont want anything in between:
 				//   - script tags (83)
 				//   - style tags  (111)
-				if ((id == 83) || (id == 111)) skipIt ^= 1;
+				if ((id == TAG_SCRIPT) || (id == TAG_STYLE)) skipIt ^= 1;
 				// save img to have alt text kept.
-				if ( id == 54  ) goto keepit;
+				if ( id == TAG_IMG  ) goto keepit;
 				continue;
 			}
 			else {
@@ -1613,7 +1613,7 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t s
 		else                fk = g_nodes[id].m_filterKeep2;
 		// if tag is <link ...> only keep it if it has
 		// rel="stylesheet" or rel=stylesheet
-		if ( strip == 2 && id == 62 ) { // <link> tag id
+		if ( strip == 2 && id == TAG_LINK ) { // <link> tag id
 			int32_t   fflen;
 			char *ff = nodes[i].getFieldValue ( "rel" , &fflen );
 			if ( ff && fflen == 10 &&
@@ -1650,7 +1650,7 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t s
 		// replace images with their alt text
 		int32_t vlen;
 		char *v;
-		if ( id == 54 ) {
+		if ( id == TAG_IMG ) {
 			v = nodes[i].getFieldValue("alt", &vlen );
 			// try title if no alt text
 			if ( ! v )
@@ -1659,7 +1659,7 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t s
 			continue;
 		}
 		// remove background image from body,table,td tags
-		if ( id == 19 || id == 93 || id == 95 ) {
+		if ( id == TAG_BODY || id == TAG_TABLE || id == TAG_TD ) {
 			v = nodes[i].getFieldValue("background", &vlen);
 			// remove background, just sabotage it
 			if ( v ) v[-4] = 'x';
