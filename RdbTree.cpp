@@ -187,7 +187,7 @@ void RdbTree::reset ( ) {
 	m_needsSave = false;
 	// now free all the overhead structures of this tree
 	int32_t n = m_numNodes;
-	// free array of collectio numbers (int16_ts for now)
+	// free array of collectio numbers (shorts for now)
 	if ( m_collnums) mfree ( m_collnums, sizeof(collnum_t) *n,m_allocName);
 	// free the array of keys
 	if ( m_keys  ) mfree ( m_keys  , m_ks      * n , m_allocName ); 
@@ -2845,7 +2845,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile   *f          ,
 	//if ( max >= MAX_COLLS ) { char *xx = NULL; *xx = 0; }
 	// define ending node for all loops
 	int32_t end = start + n ;
-	// int16_tcut
+	// shortcut
 	CollectionRec **recs = g_collectiondb.m_recs;
 	// store into tree in the appropriate nodes
 	for ( int32_t i = start ; i < end ; i++ ) {

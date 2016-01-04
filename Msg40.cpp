@@ -919,7 +919,7 @@ bool Msg40::gotDocIds ( ) {
 
 	// do not bother getting topics if we will be re-called below so we
 	// will be here again!
-	//if ( numVisible       < m_docsToGet && // are we int16_t?
+	//if ( numVisible       < m_docsToGet && // are we short?
 	//     m_msg3a.m_tier+1 < MAX_TIERS   && // do we have a tier to go to?
 	//     ! m_msg3a.m_isDiskExhausted      )// SOME more data on disk?
 	//	return launchMsg20s ( false );
@@ -1025,7 +1025,7 @@ bool Msg40::mergeDocIdsIntoBaseMsg3a() {
 	Msg3a *maxmp = NULL;
 
 	for ( int32_t i = 0 ; i < m_numCollsToSearch ; i++ ) {
-		// int16_tcut
+		// shortcut
 		Msg3a *mp = m_msg3aPtrs[i];
 		// get cursor
 		int32_t cursor = mp->m_cursor;
@@ -1557,7 +1557,7 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 			     (PTRTYPE)this,i,m_msg3a.m_docIds[i]);
 		// launch it
 		m_numRequests++;
-		// keep for-loops int16_ter with this
+		// keep for-loops shorter with this
 		//if ( i > m_maxiLaunched ) m_maxiLaunched = i;
 		
 		//getRec(m_si->m_coll2,m_si->m_collLen2);
@@ -2310,7 +2310,7 @@ bool Msg40::gotSummary ( ) {
 	int64_t startTime = gettimeofdayInMilliseconds();
 	int64_t took;
 
-	// int16_tcut
+	// shortcut
 	//Query *q = m_msg3a.m_q;
 	Query *q = &m_si->m_q;
         
@@ -2832,7 +2832,7 @@ bool Msg40::gotSummary ( ) {
 	// 'cd rom' and the phrase term will be 'cdrom' which is a good one
 	// to use for gigabits! plus we got synonyms now!
 	for ( int32_t i = 0 ; i < q->m_numTerms ; i++ ) {
-		// int16_tcut
+		// shortcut
 		QueryTerm *qt = &q->m_qterms[i];
 		// assume ignored
 		qt->m_popWeight = 0;
@@ -3725,7 +3725,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 		// if we get replaced by a longer guy, remember him
 		//int32_t replacerj = -1;
 		// . a longer term than encapsulates us can eliminate us
-		// . or, if we're the longer, we eliminate the int16_ter
+		// . or, if we're the longer, we eliminate the shorter
 		for ( int32_t j = i + 1 ; j < numPtrs ; j++ ) {
 			// get it
 			Gigabit *gj = ptrs[j];
@@ -3737,7 +3737,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 			// if page count not the same let it coexist
 			if ( gi->m_numPages != gj->m_numPages ) 
 				continue;
-			// if we are the int16_ter, nuke the longer guy
+			// if we are the shorter, nuke the longer guy
 			// that contains us because we have a higher score
 			// since ptrs are sorted by score then length.
 			if ( gi->m_termLen < gj->m_termLen ) {
@@ -3746,7 +3746,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 				gi->m_term[gi->m_termLen] = '\0';
 				char c2 = gj->m_term[gj->m_termLen];
 				gj->m_term[gj->m_termLen] = '\0';
-				// if int16_ter is contained
+				// if shorter is contained
 				char *s;
 				s = gb_strcasestr (gj->m_term, gi->m_term);
 				// un-null term longer
@@ -3782,7 +3782,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 					logf(LOG_DEBUG,"%s",msg.getBufStart());
 				}
 
-				// int16_ter gets our score (we need to sort)
+				// shorter gets our score (we need to sort)
 				// not yet! let him finish, then replace him!!
 				//replacerj = j;
 				gj->m_termLen = 0;
@@ -3797,7 +3797,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 				char c2 = gj->m_term[gj->m_termLen];
 				gj->m_term[gj->m_termLen] = '\0';
 				// . otherwise, we are the longer
-				// . we can nuke any int16_ter below us, all
+				// . we can nuke any shorter below us, all
 				//   scores
 				char *s;
 				s = gb_strcasestr ( gi->m_term,gj->m_term );
@@ -3862,7 +3862,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 		Gigabit *gi = ptrs[i];
 		// skip if nuked already
 		if ( gi->m_termLen == 0 ) continue;
-		// int16_tcut
+		// shortcut
 		char *s = gi->m_term;
 		int32_t slen = gi->m_termLen;
 		// compare
@@ -3882,7 +3882,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 			gi->m_termLen = 0;
 	}
 
-	// now after longer topics replaced the int16_ter topics which they
+	// now after longer topics replaced the shorter topics which they
 	// contained, remove the longer topics if they have too many words
 	// remove common phrases
 	for ( int32_t i = 0 ; i < numPtrs ; i++ ) {
@@ -4746,7 +4746,7 @@ void hashExcerpt ( Query *q ,
 	//
 
 	for ( ; i < nw ; i++ ) {
-		// int16_tcut
+		// shortcut
 		WordInfo *wi = &wis[i];
 		// must start with a QTR-scoring word (aac)
 		if ( wi->m_proxScore <= 0.0 ) continue;
@@ -5457,7 +5457,7 @@ bool Msg40::computeFastFacts ( ) {
 			      10000,false,0,"qrttbl") )
 		return false;
 	for ( int32_t i = 0 ; i < q->m_numTerms ; i++ ) {
-		// int16_tcut
+		// shortcut
 		QueryTerm *qt = &q->m_qterms[i];
 		// skip if no weight!
 		if ( qt->m_popWeight <= 0.0 ) continue;

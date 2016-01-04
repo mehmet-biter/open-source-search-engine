@@ -603,7 +603,7 @@ bool Addresses::set ( Sections  *sections    ,
 	if ( ! s_setHashes ) {
 		// flag it
 		s_setHashes = true;
-		// int16_tcuts
+		// shortcuts
 		h_i    = hash64n ("i");
 		h_court      = hash64n ("court");
 		h_interstate = hash64n ("interstate");
@@ -922,7 +922,7 @@ bool Addresses::set ( Sections  *sections    ,
 		// . now use it, i.e. replace ourselves with its info
 		// . this logic is from above.
 		//
-		// int16_tcuts
+		// shortcuts
 		Place *name1  = &a->m_name1;
 		Place *street = &a->m_street;
 		// street name was name1
@@ -1065,7 +1065,7 @@ bool Addresses::updateAddresses ( ) {
 		if ( replySize < 0 ) { char *xx=NULL;*xx=0; }
 		// sanity check
 		if ( p > pend ) { char *xx=NULL;*xx=0; }
-		// int16_tcut
+		// shortcut
 		Address *a = (Address *)m_am.getPtr(addrNum);
 		// make sure never got a reply for this
 		if ( a->m_flags & AF_GOT_REPLY ) { char *xx=NULL;*xx=0; }
@@ -1168,7 +1168,7 @@ bool Addresses::updateAddresses ( ) {
 			return false;
 		}
 
-		// int16_tcuts
+		// shortcuts
 		//Place *name1  = a->m_name1;
 		//Place *street = a->m_street;
 		// now we just ptr swap
@@ -1293,7 +1293,7 @@ bool Addresses::updateAddresses ( ) {
 	// set it
 	m_uniqueStreetHashes = count;
 
-	// int16_tcuts
+	// shortcuts
 	int32_t x , y;
 	wbit_t *bits = m_bits->m_bits;
 	unsigned char vflags = 0;
@@ -1679,7 +1679,7 @@ bool Addresses::updateAddresses ( ) {
 		Address *best = NULL;
 		Section *bestContainer = NULL;
 		int32_t bestnn = -1;
-		// int16_tcut
+		// shortcut
 		char vmask1 = 0;
 		vmask1 |= AF_VERIFIED_PLACE_NAME_1;
 		vmask1 |= AF_VERIFIED_PLACE_NAME_2;
@@ -1827,7 +1827,7 @@ bool Addresses::updateAddresses ( ) {
 			if ( ! fullMatch ) continue;
 		}
 
-		// int16_tcut
+		// shortcut
 		char vmask2 = 0;
 		vmask2 |= AF_VERIFIED_PLACE_NAME_1;
 		vmask2 |= AF_VERIFIED_PLACE_NAME_2;
@@ -3276,7 +3276,7 @@ bool setHashes ( Place *p , Words *ww , int32_t niceness ) {
 		// is street a place name in disguise? if so, continue
 		if ( p->m_flags2 & PLF2_IS_NAME ) continue;
 
-		// int16_tcut
+		// shortcut
 		bool isNum = ww->isNum2(i);
 		// count it
 		if ( ! isNum ) alphaCount++;
@@ -3461,7 +3461,7 @@ bool Addresses::set2 ( ) {
 
 	bool printed = false;
 
-	// int16_tcuts
+	// shortcuts
 	int32_t       nw = m_words->getNumWords();
 	// msg13 provides a NULL sections ptr. it can't set them for speed!
 	// it is the spider compression proxy...
@@ -3577,7 +3577,7 @@ bool Addresses::set2 ( ) {
 	copy[1] = 0xa9;
 	copy[2] = 0x00;
 
-	// int16_tcuts
+	// shortcuts
 	Words     *ww    = m_words;
 	int64_t *wids  = ww->getWordIds();
 	char     **wptrs = ww->getWordPtrs();
@@ -3687,7 +3687,7 @@ bool Addresses::set2 ( ) {
 			}
 			// skip if no good
 			if ( j < 0 ) continue;
-			// int16_tcuts
+			// shortcuts
 			int32_t a = i;
 			int32_t b = j+1;
 			// add the street
@@ -4191,7 +4191,7 @@ bool Addresses::set2 ( ) {
 			// assume not
 			bool isDir = false;
 			bool isStreetInd = false;
-			// int16_tcut
+			// shortcut
 			bool isNum = ww->isNum2(j);
 			// set "lastWasNum"
 			if ( isNum ) lastWasNum = true;
@@ -4623,7 +4623,7 @@ bool Addresses::set2 ( ) {
 			//if ( ns > 0 && i == streets[ns-1].m_a ) ns--;
 			// length of current street (place)
 			//int32_t plen = (wptrs[j] + wlens[j]) - wptrs[i];
-			// int16_t cut
+			// shortcut
 			int32_t a = i;
 			int32_t b = j+1;
 
@@ -4755,7 +4755,7 @@ bool Addresses::set2 ( ) {
 
 		// must be a zip
 		if ( is_digit(m_wptrs[i][0]) ) {
-			// int16_tcut
+			// shortcut
 			// this crashed for h=70799779105646092LL
 			// word="60527"
 			int64_t h = m_wids[i];
@@ -4856,7 +4856,7 @@ bool Addresses::set2 ( ) {
 		if ( sp && (sp[i]->m_flags & SEC_IN_TITLE) ) inTitle = true;
 
 		if ( pc ) {
-			// int16_tcut
+			// shortcut
 			Place *p = (Place *)m_pm.getMem(sizeof(Place));
 			if ( ! p ) return false;
 			// ok, good to add
@@ -4868,7 +4868,7 @@ bool Addresses::set2 ( ) {
 		}
 
 		if ( ps ) {
-			// int16_tcut
+			// shortcut
 			Place *p = (Place *)m_pm.getMem(sizeof(Place));
 			if ( ! p ) return false;
 			// ok, good to add
@@ -5487,7 +5487,7 @@ bool Addresses::set2 ( ) {
 			// save it
 			int64_t savedWid2 = lastWid2;
 			lastWid2 = wids[j];
-			// do not int16_ten "Center of Arts" to "Center" because
+			// do not shorten "Center of Arts" to "Center" because
 			// it is causing the "Performing Arts Center of the 
 			// the Steinbeck Institute of Art" to be an alias for
 			// "San Jose Performing Arts Center" because 
@@ -5818,7 +5818,7 @@ bool Addresses::set2 ( ) {
 	//
 
 	// . make a 5 lists, one for each place type, to hold all the 
-	//   Places in the int16_tlist[] array we just created
+	//   Places in the shortlist[] array we just created
 	// . include Places in the tagRec and title as well
 	// . use a NULL ptr to indicate "no place"
 	// . then do a 6-way nested loop over all the combos
@@ -5874,7 +5874,7 @@ bool Addresses::set2 ( ) {
 	// save for popping
 	//int32_t np_stack = m_np;
 	
-	// int16_tcut
+	// shortcut
 	char **w = wptrs;
 
 	HashTableX dat;
@@ -7306,7 +7306,7 @@ bool Addresses::set2 ( ) {
 		int32_t startAlnum = xstreet->m_alnumB;
 		// as = "After Street"
 		int32_t as = X + 1; 
-		// int16_tcut
+		// shortcut
 		int32_t ns = m_sm.getNumPtrs();
 		// scan the streets after street #X
 		for ( ; as < ns ; as++ ) {
@@ -7349,7 +7349,7 @@ bool Addresses::set2 ( ) {
 		int32_t sa = xstreet->m_a;
 		if ( sa < 0 ) { char *xx=NULL;*xx=0; }
 
-		// int16_tcut
+		// shortcut
 		Place *st = xstreet;//&streets[X];
 
 		// are we a street or place name in the title?
@@ -7597,7 +7597,7 @@ bool Addresses::set2 ( ) {
 			// we only use i1b for default addresses in da[]
 			if ( i1b > 0 && i1 == 0 ) continue;
 
-			// int16_tcuts
+			// shortcuts
 			Place   *adm1   =  padm1  [i2];
 			//Place *ctry   =  pctry  [i4];
 			Place   *zip    =  pzip   [i5];
@@ -7820,7 +7820,7 @@ Place *getCityPlace ( int32_t a , int32_t alnumPos , Words *words ) {
 		h_university = hash64n("university");
 		h_of         = hash64n("of");
 	}
-	// int16_tcut
+	// shortcut
 	int32_t nw = words->m_numWords;
 	int32_t wcount = 0;
 	// loop over words in [a,b)
@@ -7835,7 +7835,7 @@ Place *getCityPlace ( int32_t a , int32_t alnumPos , Words *words ) {
 		if ( ++count >= 5 ) break;
 		// get the hash of potential place name
 		int64_t wid = words->m_wordIds[k];
-		// int16_tcut
+		// shortcut
 		int32_t  wlen = words->m_wordLens[k];
 		char *wptr = words->m_words[k];
 		// if it ended in apostrophe s then fix that
@@ -7862,7 +7862,7 @@ Place *getCityPlace ( int32_t a , int32_t alnumPos , Words *words ) {
 		// check for "county" (santa fe county is not a city name)
 		if ( k + 2 < nw && words->m_wordIds[k+2] == h_county ) 
 			return NULL;
-		// int16_tcuts
+		// shortcuts
 		char **wptrs = words->getWords();
 		int32_t  *wlens = words->getWordLens();
 		// set the place
@@ -7895,7 +7895,7 @@ Place *getStatePlace ( int32_t a , int32_t alnumPos , Words *words ) {
 	int32_t startAlnumPos = alnumPos;
 	// fix this
 	alnumPos--;
-	// int16_tcut
+	// shortcut
 	int32_t nw = words->getNumWords();
 	// loop over words in [a,b)
 	for ( int32_t k = a ; k < nw ; k++ ) {
@@ -7907,7 +7907,7 @@ Place *getStatePlace ( int32_t a , int32_t alnumPos , Words *words ) {
 		if ( ++count >= 4 ) break;
 		// get the hash of potential place name
 		int64_t wid = words->m_wordIds[k];
-		// int16_tcut
+		// shortcut
 		int32_t  wlen = words->m_wordLens[k];
 		char *wptr = words->m_words[k];
 		// if it ended in apostrophe s then fix that
@@ -7924,7 +7924,7 @@ Place *getStatePlace ( int32_t a , int32_t alnumPos , Words *words ) {
 		int32_t pos = getStateOffset ( &h );
 		// skip if not a state
 		if ( pos < 0 ) continue;
-		// int16_tcuts
+		// shortcuts
 		char **wptrs = words->getWords();
 		int32_t  *wlens = words->getWordLens();
 		// otherwise, set it
@@ -8933,11 +8933,11 @@ void Addresses::print ( SafeBuf *pbuf , int64_t uh64 ) {
 	pbuf->safePrintf("<a name=events>\n");
 
 	// Spider.cpp when storing parse.* file will also store an
-	// abbreviate file called parse-int16_tdisplay.* consisting only
+	// abbreviate file called parse-shortdisplay.* consisting only
 	// of these div tags for rendering within the qa.html file! that
 	// way the qa person can easily check/uncheck all the checkboxes
 	// right in the qa.html file
-	pbuf->safePrintf("<div class=int16_tdisplay>\n");
+	pbuf->safePrintf("<div class=shortdisplay>\n");
 
 	// print checkbox to indicate if events are wrong
 	pbuf->safePrintf ( "<!--ignore-->" // ignore for Test.cpp diff
@@ -8981,7 +8981,7 @@ void Addresses::print ( SafeBuf *pbuf , int64_t uh64 ) {
 		aa->print2 ( i,pbuf , uh64 );//&m_addresses[0]);
 	}
 	pbuf->safePrintf("</table>\n");
-	pbuf->safePrintf("</div class=int16_tdisplay>\n");
+	pbuf->safePrintf("</div class=shortdisplay>\n");
 	pbuf->safePrintf("<i>NOTE: a name must be VERIFIED before it will "
 			 "be a KEY in placedb. So you generally need two "
 			 "places inlining the same name before that will "
@@ -9727,7 +9727,7 @@ bool setFromStr ( Address *a, char *s, pbits_t flags ,
 		  int32_t niceness ) {
 	// clear it up
 	a->reset();
-	// int16_tcuts
+	// shortcuts
 	//Place *city = NULL;
 	//Place *adm1 = NULL;
 	a->m_latitude  = NO_LATITUDE;
@@ -9933,7 +9933,7 @@ public:
 char getTimeZone2 ( char *city , char *state , char *useDST ) {
 	// get the words
 	//Words ww; ww.set3 ( city );
-	// int16_tcut
+	// shortcut
 	//int64_t *wids = ww.m_wordIds;
 	// limit hash
 	//int32_t count = 0;
@@ -11134,7 +11134,7 @@ void printPlaces ( PlaceMem *pm , SafeBuf *pbuf , Sections *sections,
 
 		*f = '\0';
 
-		// int16_tcut
+		// shortcut
 		Section **sp = sections->m_sectionPtrs;
 		// get section
 		Section *sn = NULL;
@@ -11627,7 +11627,7 @@ void Msg2c::reset() {
 	m_replies = 0;
 	// all done if never initialized the multicasts
 	if ( ! m_initializedInUse ) return;
-	// int16_tcut
+	// shortcut
 	int32_t max = (int32_t)MAX_ADDR_REQUESTS_OUT;
 	// call DEstructors on multicasts
 	for ( int32_t i = 0 ; i < max ; i++ ) {
@@ -12153,7 +12153,7 @@ void gotList2c ( void *state , RdbList *xxx , Msg5 *yyy ) {
 	// and the 4 bytes before for the # of votes for that lat/lon
 	int32_t need = 1 + 4 + sizeof(double)*2;
 
-	// int16_tcut
+	// shortcut
 	RdbList *list = &st->m_list;
 
 	while ( ! list->isExhausted() ) {
@@ -12416,7 +12416,7 @@ void gotList2c ( void *state , RdbList *xxx , Msg5 *yyy ) {
 // like "Tingley Colesium", so this sends back the address
 void sendBackAddress ( State2c *st ) {
 
-	// int16_tcut
+	// shortcut
 	RdbList *list = &st->m_list;
 	// winning street address
 	char *winner = NULL;

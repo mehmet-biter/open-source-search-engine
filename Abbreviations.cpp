@@ -247,7 +247,7 @@ static bool initTable ( HashTableX *table, char *words[], int32_t size ) {
 
 bool isAbbr ( int64_t h , bool *hasWordAfter ) {
 	if ( ! s_abbrInitialized ) {
-		// int16_tcut
+		// shortcut
 		HashTableX *t = &s_abbrTable;
 		// set up the hash table
 		int32_t n = ((int32_t)sizeof(s_abbrs99))/ ((int32_t)sizeof(Abbr));

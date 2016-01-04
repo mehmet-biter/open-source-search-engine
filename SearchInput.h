@@ -243,7 +243,7 @@ class SearchInput {
 
 	char   m_adFeedEnabled;
 
-	// intersection speed up int16_tcut? "&fi=1", defaults to on
+	// intersection speed up shortcut? "&fi=1", defaults to on
 	char   m_fastIntersection;
 
 	// stream results back on socket in streaming mode, usefule when 

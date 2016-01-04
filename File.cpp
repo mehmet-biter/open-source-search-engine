@@ -550,7 +550,7 @@ bool File::close ( ) {
 			   getFilename(),strerror(g_errno));
 	}
 	// . tally up another close for this fd, if any
-	// . so if an open happens int16_tly here after, and
+	// . so if an open happens shortly here after, and
 	//   gets this fd, then any read that was started
 	//   before that open will know it!
 	//s_closeCounts [ fd ]++;

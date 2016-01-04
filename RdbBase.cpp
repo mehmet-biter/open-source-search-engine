@@ -954,7 +954,7 @@ static void doneWrapper ( void *state ) ;
 // . called after the merge has successfully completed
 // . the final merge file is always file #0 (i.e. "indexdb0000.dat/map")
 bool RdbBase::incorporateMerge ( ) {
-	// some int16_thand variable notation
+	// some shorthand variable notation
 	int32_t a = m_mergeStartFileNum;
 	int32_t b = m_mergeStartFileNum + m_numFilesToMerge;
 
@@ -1631,7 +1631,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		// set a flag so we don't keep printing the above msg
 		m_inWaiting = true;
 		// . if it fails then sleep until it works
-		// . wait int16_ter to try and sneak a merge in if our
+		// . wait shorter to try and sneak a merge in if our
 		//   buffer is so small that we're always dumping!
 		//   should the next merge we do be forced?
 		g_loop.registerSleepCallback (5000,this,attemptMergeWrapper);

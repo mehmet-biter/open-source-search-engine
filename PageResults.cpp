@@ -1044,7 +1044,7 @@ bool gotResults ( void *state ) {
 		return true;
 	}
 
-	// int16_tcuts
+	// shortcuts
 	//char        *coll    = si->m_coll2;
 	//int32_t         collLen = si->m_collLen2;
 
@@ -3320,7 +3320,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	}
 
 
-	// int16_tcuts
+	// shortcuts
 	SearchInput *si    = &st->m_si;
 	Msg40       *msg40 = &st->m_msg40;
 
@@ -5323,7 +5323,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg20Reply *mr) {
 
-	// int16_tcut
+	// shortcut
 	Query *q = &si->m_q;
 
 	int32_t qtn1 = ps->m_qtermNum1;
@@ -5942,7 +5942,7 @@ bool printScoresHeader ( SafeBuf *sb ) {
 
 bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Msg20Reply *mr ) {
 
-	// int16_tcut
+	// shortcut
 	Query *q = &si->m_q;
 
 	//SafeBuf ft;
@@ -7286,7 +7286,7 @@ bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 
 	// try to set first based on what's in the url
 	for ( int32_t i = 0 ; i < s_num ; i++ ) {
-		// int16_tcut
+		// shortcut
 		MenuItem *mi = &s_mi[i];
 		// skip if not our item
 		if ( mi->m_menuNum != menuNum ) continue;
@@ -7328,7 +7328,7 @@ bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 
 	for ( int32_t i = 0 ; i < s_num ; i++ ) {
 
-		// int16_tcut
+		// shortcut
 		MenuItem *mi = &s_mi[i];
 
 		// skip if not our item

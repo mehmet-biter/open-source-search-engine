@@ -968,7 +968,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	//	return handleDiffbotRequest ( s , r );
 
 
-	// if it's gigablast.com, www.gigablast.com, ... do int16_tcut
+	// if it's gigablast.com, www.gigablast.com, ... do shortcut
 	bool isGigablast = false;
 	if ( strcasecmp ( h , "www.gigablast.com" ) == 0 ) isGigablast = true;
 	if ( strcasecmp ( h , "gigablast.com"     ) == 0 ) isGigablast = true;
@@ -1140,7 +1140,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// set the filepath/name
 	char fullPath[512];
 	bool isQAFile = false;
-	// if it's gigablast.com, www.gigablast.com, ... do int16_tcut
+	// if it's gigablast.com, www.gigablast.com, ... do shortcut
 	//if ( strcasecmp ( h , "www.gigablast.com" ) == 0 ) goto skip;
 	//if ( strcasecmp ( h , "gigablast.com"     ) == 0 ) goto skip;
 	if ( isGigablast ) goto skip;
@@ -1341,7 +1341,7 @@ bool HttpServer::sendReply2 ( char *mime,
 			      HttpRequest *hr ) {
 
 	char *rb = s->m_readBuf;
-	// int16_tcut
+	// shortcut
 	int32_t ht = g_hostdb.m_myHost->m_type;
 	// get the server this socket uses
 	TcpServer *tcp = s->m_this;

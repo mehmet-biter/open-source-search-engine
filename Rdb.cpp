@@ -1834,7 +1834,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 
 	// set this for event interval records
 	m_nowGlobal = 0;//getTimeGlobal();
-	// int16_tcut this too
+	// shortcut this too
 	CollectionRec    *cr = g_collectiondb.getRec(collnum);
 	m_sortByDateTablePtr = &cr->m_sortByDateTable;
 
@@ -2279,7 +2279,7 @@ bool Rdb::addRecord ( collnum_t collnum,
 			if ( sc ) {
 				// remove the local lock on this
 				HashTableX *ht = &g_spiderLoop.m_lockTable;
-				// int16_tcut 
+				// shortcut 
 				int64_t uh48=g_doledb.getUrlHash48(&doleKey);
 				// check tree
 				int32_t slot = ht->getSlot ( &uh48 );
@@ -2571,7 +2571,7 @@ bool Rdb::addRecord ( collnum_t collnum,
 		}
 		// otherwise repl
 		else {
-			// int16_tcut - cast it to reply
+			// shortcut - cast it to reply
 			SpiderReply *rr = (SpiderReply *)sreq;
 			// log that. why isn't this undoling always
 			if ( g_conf.m_logDebugSpider )

@@ -181,7 +181,7 @@ bool Multicast::send ( char         *msg              ,
 	else { // if ( firstHost && (firstHost->m_type & HT_SCPROXY) ) {
 		int32_t np = 0;
 		for ( int32_t i = 0 ; i < g_hostdb.m_numProxyHosts ; i++ ) {
-			// int16_tcut
+			// shortcut
 			Host *h = g_hostdb.getProxy(i);
 			if ( ! (h->m_type & HT_SCPROXY ) ) continue;
 			// stop breaching

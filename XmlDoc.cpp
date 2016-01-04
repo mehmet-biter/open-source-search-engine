@@ -3794,7 +3794,7 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 	//if ( ! cbuf ) return false;
 	// return false on error
 	if ( ! tbuf->reserve ( need2 ,"titbuf" ) ) return false;
-	// int16_tcut
+	// shortcut
 	char *cbuf = tbuf->getBufStart();
 	// set cbuf sizes, we set cbufSize below to fit exactly used buf
 	//int32_t cbufMaxSize = need2;
@@ -6332,7 +6332,7 @@ SectionVotingTable *XmlDoc::getOldSectionVotingTable ( ) {
 		uint64_t termId = *siteHash64 & TERMID_MASK;
 		// end key is always the same
 		key128_t end = g_datedb.makeEndKey ( termId , 0 );
-		// int16_tcut
+		// shortcut
 		Msg0 *m = &m_msg0;
 		// get the group this list is in (split = false)
 		uint32_t shardNum;
@@ -6748,7 +6748,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	// this was in Weights.cpp, but now it is here...
 	//
 
-	// int16_tcut
+	// shortcut
 	HashTableX *ct = &m_countTable;
 
 	// reset the counts, just in case set() below does not
@@ -6826,7 +6826,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	for ( Inlink *k=NULL ; info1 && (k=info1->getNextInlink(k)) ; ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
-		// int16_tcuts
+		// shortcuts
 		char *p;
 		int32_t  plen;
 		// hash link text (was hashPwids())
@@ -7020,7 +7020,7 @@ uint32_t *XmlDoc::getTagPairHash32 ( ) {
 	Words *words = getWords();
 	if ( ! words || words == (Words *)-1 ) return (uint32_t *)words;
 
-        // int16_tcuts
+        // shortcuts
 	//int64_t *wids  = words->getWordIds  ();
         nodeid_t    *tids  = words->getTagIds   ();
         int32_t           nw  = words->getNumWords ();
@@ -7250,7 +7250,7 @@ int32_t XmlDoc::computeVector ( Sections *sections, Words *words, uint32_t *vec 
 	// skip if no article section. then we have no vector.
 	if ( sections && ! sections->m_hadArticle ) return 0;
 
-	// int16_tcuts
+	// shortcuts
 	int32_t       nw     = words->getNumWords();
 	//int32_t     nt     = words->m_numTags;
 	int64_t *wids   = words->getWordIds();
@@ -8113,7 +8113,7 @@ char *XmlDoc::isDupOfUs ( int64_t d ) {
 
 	// . if the old dup doc is of lower quality than the new doc that
 	//   we are checking, then that one should be removed, not us!
-	//   if they are equal, we keep the int16_ter url of the two
+	//   if they are equal, we keep the shorter url of the two
 	// . dd was set from title rec so these numInlinks should be taken
 	//   from the TagRec in ptr_tagRecData, and therefore NOT BLOCK!
 	if ( *dd.getSiteNumInlinks() <  *getSiteNumInlinks() )
@@ -8488,7 +8488,7 @@ bool XmlDoc::addGigabits(Words *ww,int64_t docId,Sections *sections,
 	if ( sections ) sp = sections->m_sectionPtrs;
 	// not if we don't have any identified sections
 	if ( sections && sections->m_numSections <= 0 ) sp = NULL;
-	// int16_tcuts
+	// shortcuts
 	int64_t  *wids  = ww->m_wordIds;
 	char      **wptrs = ww->m_words;
 	int32_t       *wlens = ww->m_wordLens;
@@ -8791,7 +8791,7 @@ Url *XmlDoc::getFirstUrl() {
 	// get the old xml doc from the old title rec
 	XmlDoc **pod = getOldXmlDoc ( );
 	if ( ! pod || pod == (void *)-1 ) return (Url *)pod;
-	// int16_tcut
+	// shortcut
 	XmlDoc *od = *pod;
 	// now set it
 	setFirstUrl ( od->ptr_firstUrl , false );
@@ -8875,7 +8875,7 @@ Url **XmlDoc::getRedirUrl() {
 
 	// set a mime on the stack
 	HttpMime mime;
-	// int16_tcut
+	// shortcut
 	int32_t LEN = m_httpReplySize - 1;
 	// sanity check
 	if ( LEN > 0 && ! m_httpReply ) { char *xx=NULL;*xx=0; }
@@ -9133,7 +9133,7 @@ Url **XmlDoc::getRedirUrl() {
 	char *u   = f->getUrl();
 	int32_t rlen = loc->getUrlLen();
 	int32_t ulen = f->getUrlLen();
-	// simpler if new path depth is int16_ter
+	// simpler if new path depth is shorter
 	if ( loc->getPathDepth (true) < f->getPathDepth (true) )
 		simplifiedRedir = true;
 	// simpler if old has cgi and new does not
@@ -9371,7 +9371,7 @@ uint8_t *XmlDoc::getRootLangId ( ) {
  		// . allow for a one hour cache of the titleRec
 		XmlDoc **prd = getRootXmlDoc( 3600 );
 		if ( ! prd || prd == (void *)-1 ) return (uint8_t *)prd;
-		// int16_tcut
+		// shortcut
 		XmlDoc *rd = *prd;
 		// . if no root doc, then assume language unknown
 		// . this happens if we are injecting because we do not want
@@ -10525,11 +10525,11 @@ int32_t getIsContacty ( Url *url ,
 		// . TODO: use alt text if only an image in the link!!!!!
 		// . return -1 if it fails with g_errno set
 		if ( ! ww.setx ( txt , tlen , niceness) ) return (char)-1;
-		// int16_tcut
+		// shortcut
 		int32_t nw = ww.getNumWords();
 		// skip if too big
 		if ( nw >= 30 ) continue;
-		// int16_tcut
+		// shortcut
 		int64_t *wids = ww.getWordIds();
 		// reset alnumcount
 		int32_t count = 0;
@@ -10658,7 +10658,7 @@ char *XmlDoc::getIsThisDocContacty() {
 	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (char *)info1;
 	// get the first url
 	Url *fu = getFirstUrl();
-	// int16_tcut
+	// shortcut
 	int32_t hops = *hc;
 	// check it
 	m_isContacty = getIsContacty ( fu ,
@@ -10749,7 +10749,7 @@ char *XmlDoc::getEmailBuf ( ) {
 	// count # of official contacts we got
 	int32_t official = 0;
 
-	// int16_tcuts
+	// shortcuts
 	int64_t  *wids  = ww->m_wordIds;
 	char      **wptrs = ww->m_words;
 	int32_t       *wlens = ww->m_wordLens;
@@ -11911,7 +11911,7 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 	// m_usePageLinkBuf any more
 	if ( sb ) onlyNeedGoodInlinks = false;
 
-	// int16_tcut
+	// shortcut
 	//Msg25 *m = &m_msg25;
 	if ( ! getLinkInfo ( &m_tmpBuf11,
 			     &m_mcast11,
@@ -11980,7 +11980,7 @@ int32_t *XmlDoc::getIp ( ) {
 		// get the old xml doc from the old title rec
 		XmlDoc **pod = getOldXmlDoc ( );
 		if ( ! pod || pod == (void *)-1 ) return (int32_t *)pod;
-		// int16_tcut
+		// shortcut
 		XmlDoc *od = *pod;
 		// set it
 		if ( od ) {
@@ -12921,7 +12921,7 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 		}
 		// do not redo it
 		m_calledMsg25 = true;
-		// int16_tcut
+		// shortcut
 		//Msg25 *m = &m_msg25;
 		// can we be cancelled?
 		bool canBeCancelled = true;
@@ -13096,7 +13096,7 @@ LinkInfo **XmlDoc::getLinkInfo2 ( ) {
 	if ( ! m_calledMsg25b ) {
 		// do not redo it
 		m_calledMsg25b = true;
-		// int16_tcut
+		// shortcut
 		Msg25 *m = &m_msg25;
 		// can we be cancelled?
 		bool canBeCancelled = true;
@@ -14607,7 +14607,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 	// sanity check
 	if ( ! m_masterLoop ) { char *xx=NULL;*xx=0; }
 
-	// int16_tcut. this will return the redirUrl if it is non-empty.
+	// shortcut. this will return the redirUrl if it is non-empty.
 	Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 ) return (char **)cu;
 
@@ -15014,7 +15014,7 @@ char **XmlDoc::gotHttpReply ( ) {
 	// clear this i guess
 	g_errno = 0;
 
-	// int16_tcut - convert size to length
+	// shortcut - convert size to length
 	int32_t LEN = m_httpReplySize - 1;
 
 	m_isContentTruncated  = false;
@@ -15042,7 +15042,7 @@ char *XmlDoc::getIsContentTruncated ( ) {
 		// get the old xml doc from the old title rec
 		XmlDoc **pod = getOldXmlDoc ( );
 		if ( ! pod || pod == (void *)-1 ) return (char *)pod;
-		// int16_tcut
+		// shortcut
 		XmlDoc *od = *pod;
 		// this is non-NULL if it existed
 		if ( od ) {
@@ -15117,7 +15117,7 @@ int64_t *XmlDoc::getDownloadEndTime ( ) {
 		// get the old xml doc from the old title rec
 		XmlDoc **pod = getOldXmlDoc ( );
 		if ( ! pod || pod == (void *)-1 ) return (int64_t *)pod;
-		// int16_tcut
+		// shortcut
 		XmlDoc *od = *pod;
 		// this is non-NULL if it existed
 		if ( od ) {
@@ -15176,7 +15176,7 @@ HttpMime *XmlDoc::getMime () {
 		// get the old xml doc from the old title rec
 		XmlDoc **pod = getOldXmlDoc ( );
 		if ( ! pod || pod == (void *)-1 ) return (HttpMime *)pod;
-		// int16_tcut
+		// shortcut
 		XmlDoc *od = *pod;
 		// . this is non-NULL if it existed
 		// . fake it for now
@@ -15192,7 +15192,7 @@ HttpMime *XmlDoc::getMime () {
 	m_mime.setHttpStatus ( 200 );
 	m_mime.setContentType ( CT_HTML );
 
-	// int16_tcut
+	// shortcut
 	int32_t LEN = m_httpReplySize - 1;
 
 	// validate it
@@ -15238,7 +15238,7 @@ char **XmlDoc::getContent ( ) {
 		// get the old xml doc from the old title rec
 		XmlDoc **pod = getOldXmlDoc ( );
 		if ( ! pod || pod == (void *)-1 ) return (char **)pod;
-		// int16_tcut
+		// shortcut
 		XmlDoc *od = *pod;
 		// this is non-NULL if it existed
 		if ( od ) {
@@ -16320,7 +16320,7 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	pthread_t id = getpidtid();
 	// sanity check
 	if ( ! m_contentTypeValid ) { char *xx=NULL;*xx=0; }
-	// int16_tcut
+	// shortcut
 	int32_t ctype = m_contentType;
 
 	// assume none
@@ -16371,7 +16371,7 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	// close the file
 	close ( fd );
 
-	// int16_tcut
+	// shortcut
 	char *wdir = g_hostdb.m_dir;
 
 	char cmd[2048] = {};
@@ -17043,7 +17043,7 @@ char **XmlDoc::getUtf8Content ( ) {
 		// get the old xml doc from the old title rec
 		XmlDoc **pod = getOldXmlDoc ( );
 		if ( ! pod || pod == (void *)-1 ) return (char **)pod;
-		// int16_tcut
+		// shortcut
 		XmlDoc *od = *pod;
 		// this is non-NULL if it existed
 		if ( od ) {
@@ -18521,7 +18521,7 @@ int8_t *XmlDoc::getOutlinkHopCountVector ( ) {
 	// hop count of parent
 	int8_t *ph = getHopCount();
 	if ( ! ph || ph == (void *)-1 ) return (int8_t *)ph;
-	// int16_tcut
+	// shortcut
 	int32_t n = links->getNumLinks();
 	// sanity check
 	if ( m_outlinkHopCountVector ) { char *xx=NULL;*xx=0; }
@@ -19056,7 +19056,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("pageinlinks=%04"INT32" ",
 			       m_sreq.m_pageNumInlinks);
 
-	// int16_tcut
+	// shortcut
 	int64_t uh48 = hash64b ( m_firstUrl.m_url );
 	// mask it
 	uh48 &= 0x0000ffffffffffffLL;
@@ -20238,7 +20238,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 			// look it up
 
 
-			// int16_tcut
+			// shortcut
 			HashTableX *wt = m_wts;
 
 			// point to keys, termids?
@@ -20427,7 +20427,7 @@ bool XmlDoc::doesUrlMatchDiffbotCrawlPattern() {
 	if ( ucr && regexec(ucr,url,0,NULL,0) )
 		return false;
 
-	// int16_tcut
+	// shortcut
 	char *ucp = cr->m_diffbotUrlCrawlPattern.getBufStart();
 	if ( ucp && ! ucp[0] ) ucp = NULL;
 
@@ -21590,7 +21590,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 	bool spideringLinks = *spiderLinks3;
 
-	// int16_tcut
+	// shortcut
 	XmlDoc *nd = this;
 
 	///////////////////////////////////
@@ -22920,7 +22920,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		m_addedStatusDocSizeValid = true;
 	}
 
-	// int16_tcut
+	// shortcut
 	saved = m_p;
 
 	// sanity check
@@ -23512,7 +23512,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	//bool siteHasVenue = (bool)vt;
 
 
-	// int16_tcut
+	// shortcut
 	Url *fu = NULL;
 	// watch out for titlerec lookup errors for docid based spider reqs
 	if ( m_firstUrlValid ) fu = getFirstUrl();
@@ -23722,7 +23722,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			// just carry the contentHash32 forward for the other
 			// errors like EDNSTIMEDOUT or whatever.
 			m_srep.m_contentHash32 = m_sreq.m_contentHash32;
-			// int16_tcuts
+			// shortcuts
 			SpiderReply   *n = &m_srep;
 			SpiderRequest *o = &m_sreq;
 			// more stuff
@@ -24193,7 +24193,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	if ( fu && fu->isPingServer() ) isParentPingServer = true;
 	if ( cu && cu->isPingServer() ) isParentPingServer = true;
 
-	// int16_tcut
+	// shortcut
 	bool isScraping = false;
 	//bool useTestSpiderDir = (m_sreqValid && m_sreq.m_useTestSpiderDir);
 
@@ -25429,7 +25429,7 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	//int64_t *pch64 = getLooseContentHash64();
 	if ( ! pch64 || pch64 == (void *)-1 ) { char *xx=NULL;*xx=0; }
 
-	// int16_tcut
+	// shortcut
 	Url *fu = getFirstUrl();
 
 	if ( ! hashVectors ( tt ) ) return false;
@@ -27004,7 +27004,7 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 
 	setStatus ( "hashing links" );
 
-	// int16_tcuts
+	// shortcuts
 	bool isRSSFeed = *getIsRSS();
 	Url *cu = getCurrentUrl() ;
 	Url *ru = *getRedirUrl() ;
@@ -29290,7 +29290,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	//safeStack[0] = 0;
 	//safeStack[90000] = 0;
 
-	// int16_tcut
+	// shortcut
 	Msg20Reply *reply = &m_reply;
 
 	m_niceness = m_req->m_niceness;
@@ -29981,7 +29981,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	//int64_t y[] = {10,30,2000,3000,4000,5000,6000,7000};
 	// sanity check
 	//if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
-	// int16_tcut
+	// shortcut
 	//int32_t sni = m_siteNumInlinks;// *getSiteNumInlinks();
 	// get the final link text weight as a percentage
 	//int32_t ltw = getY ( m_siteNumInlinks , x , y , 8 );
@@ -30062,7 +30062,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	//
 	// TODO: for getting siteinlinks just match the site in the url
-	// not the full url... and maybe match the one with the int16_test path.
+	// not the full url... and maybe match the one with the shortest path.
 	//
 
 	// . get the link text
@@ -30526,8 +30526,6 @@ Matches *XmlDoc::getMatches () {
 	if ( ! pos || pos == (Pos *)-1 ) return (Matches *)pos;
 	Title *ti = getTitle();
 	if ( ! ti || ti == (Title *)-1 ) return (Matches *)ti;
-	//Synonyms *syn = getSynonyms();
-	//if ( ! syn || syn == (void *)-1 ) return (Matches *)syn;
 	Phrases *phrases = getPhrases();
 	if ( ! phrases || phrases == (void *)-1 ) return (Matches *)phrases;
 
@@ -30536,20 +30534,15 @@ Matches *XmlDoc::getMatches () {
 
 	// set it up
 	m_matches.setQuery ( q );
+
 	// returns false and sets g_errno on error
-	if ( ! m_matches.set ( this       ,
-			       ww         ,
-			       //syn        ,
-			       phrases ,
-			       ss         ,
-			       bits       ,
-			       pos        ,
-			       xml        ,
-			       ti         ,
-			       m_niceness ) )
+	if ( !m_matches.set( this, ww, phrases, ss, bits, pos, xml, ti, m_niceness ) ) {
 		return NULL;
+	}
+
 	// we got it
 	m_matchesValid = true;
+
 	return &m_matches;
 }
 
@@ -31869,7 +31862,7 @@ bool XmlDoc::hashSingleTerm ( int64_t termId , HashInfo *hi ) {
 				      false,&m_wbuf,m_wts,false) )
 		return false;
 
-	// int16_tcut
+	// shortcut
 	HashTableX *dt = hi->m_tt;
 	// sanity check
 	if ( dt->m_ks != sizeof(key_t) ) { char *xx=NULL;*xx=0; }
@@ -31912,7 +31905,7 @@ bool storeTerm ( char       *s        ,
 
 	// store prefix
 	int32_t poff = wbuf->length();
-	// int16_tcut
+	// shortcut
 	char *p = hi->m_prefix;
 	// add the prefix too!
 	if ( p  && ! wbuf->safeMemcpy(p,gbstrlen(p)+1)) return false;
@@ -31922,7 +31915,7 @@ bool storeTerm ( char       *s        ,
 
 	// store description
 	int32_t doff = wbuf->length();
-	// int16_tcut
+	// shortcut
 	char *d = hi->m_desc;
 	// add the desc too!
 	if ( d && ! wbuf->safeMemcpy(d,gbstrlen(d)+1) ) return false;
@@ -31974,7 +31967,7 @@ bool storeTerm ( char       *s        ,
 	if ( weights && ! isPhrase ) wscores = weights->m_ww;
 	if ( weights &&   isPhrase ) wscores = weights->m_pw;
 
-	// int16_tcut
+	// shortcut
 	int32_t i = wordNum;
 
 	if ( weights && ! weights->m_rvw ) { char *xx=NULL;*xx=0; }
@@ -32037,7 +32030,7 @@ bool XmlDoc::hashSingleTerm ( char       *s         ,
 	// call the other guy now
 	//return hashSingleTerm ( final , hi );
 
-	// int16_tcut
+	// shortcut
 	HashTableX *dt = hi->m_tt;
 	// sanity check
 	if ( dt->m_ks != sizeof(key144_t) ) { char *xx=NULL;*xx=0; }
@@ -32280,7 +32273,7 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 	// mess us up
 	if ( ! hi->m_useSections ) sections = NULL;
 
-	// int16_tcuts
+	// shortcuts
 	uint64_t *wids    = (uint64_t *)words->getWordIds();
 	//nodeid_t *tids    = words->m_tagIds;
 	uint64_t *pids2   = (uint64_t *)phrases->m_phraseIds2;
@@ -33765,7 +33758,7 @@ int cmptp (const void *v1, const void *v2) {
 	int32_t n = strncasecmp ( s1 , s2 , min );
 	if ( n ) return n;
 	// . if length same, we are tied
-	// . otherwise, prefer the int16_ter
+	// . otherwise, prefer the shorter
 	return ( len1 - len2 );
 }
 
@@ -33830,7 +33823,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	int64_t uh64 = hash64(u->getUrl(),u->getUrlLen());
 
 
-	// int16_tcut
+	// shortcut
 	char *fu = ptr_firstUrl;
 
 	char *allowed = "???";
@@ -34531,7 +34524,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	// BEGIN PRINT HASHES TERMS
 	//
 
-	// int16_tcut
+	// shortcut
 	HashTableX *wt = m_wts;
 
 	// use the keys to hold our list of ptrs to TermDebugInfos for sorting!
@@ -34930,7 +34923,7 @@ bool XmlDoc::printDocForProCog ( SafeBuf *sb , HttpRequest *hr ) {
 
 bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 
-	// int16_tcut
+	// shortcut
 	char *fu = ptr_firstUrl;
 
 	// sanity check
@@ -35853,7 +35846,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 	// BEGIN PRINT HASHES TERMS (JUST POSDB)
 	//
 
-	// int16_tcut
+	// shortcut
 	HashTableX *wt = m_wts;
 
 	// use the keys to hold our list of ptrs to TermDebugInfos for sorting!
@@ -36226,7 +36219,7 @@ char **XmlDoc::getRootTitleBuf ( ) {
  		// . allow for a one hour cache of the titleRec
 		XmlDoc **prd = getRootXmlDoc( 3600 );
 		if ( ! prd || prd == (void *)-1 ) return (char **)prd;
-		// int16_tcut
+		// shortcut
 		XmlDoc *rd = *prd;
 		// . if no root doc, then assume no root title
 		// . this happens if we are injecting because we do not want
@@ -36388,7 +36381,7 @@ char **XmlDoc::getFilteredRootTitleBuf ( ) {
 	if ( dst > m_filteredRootTitleBuf && dst[-1] != '\0' )
 		*dst++ = '\0';
 
-	// int16_tcut
+	// shortcut
 	char *str     = m_filteredRootTitleBuf;
 	int32_t  strSize = dst - m_filteredRootTitleBuf;
 
@@ -36566,7 +36559,7 @@ char **XmlDoc::getTitleBuf ( ) {
 		Words w;
 		// return NULL on error with g_errno set
 		if ( ! w.setx ( txt , tlen , m_niceness ) ) return NULL;
-		// int16_tcut
+		// shortcut
 		int64_t *wids = w.getWordIds();
 		// init hash
 		int64_t h = 0LL;
@@ -36800,7 +36793,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	if ( g_conf.m_logDebugLinkInfo )
 		log("xmldoc: adding tags for mysite=%s",mysite);
 
-	// int16_tcut
+	// shortcut
 	//TagRec *tr = &m_newTagRec;
 	// current time
 	int32_t now = getTimeGlobal();
@@ -37224,14 +37217,14 @@ char *XmlDoc::getWordSpamVec ( ) {
 	//if ( m_isLinkText   ) return true;
 	//if ( m_isCountTable ) return true;
 
-	// int16_tcuts
+	// shortcuts
 	//Words *words = m_words;
 	//Bits  *bits  = m_bits;
 
 	// if 20 words totally spammed, call it all spam?
 	m_numRepeatSpam = 20;
 
-	// int16_tcut
+	// shortcut
 	int32_t sni = m_siteNumInlinks;
 	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
 
@@ -38630,7 +38623,7 @@ bool XmlDoc::doInjectLoop ( ) {
 		sx = last;
 		// telescope section up one i guess
 		//sx = sx->m_parent;
-		// int16_tcut
+		// shortcut
 		wbit_t *bits = bp->m_bits;
 		// if still same first alnum, go another
 		//for ( ; sx ; sx = sx->m_parent ) {
@@ -39192,7 +39185,7 @@ SafeBuf *XmlDoc::getTermInfoBuf ( ) {
 				 m_niceness        ))// niceness
 			// g_errno set on error, return NULL
 			return NULL;
-		// int16_tcuts on link text
+		// shortcuts on link text
 		if ( ! addUniqueWordsToBuf( NULL,
 					    NULL, // dedup table
 					    NULL, // filter table
@@ -39924,7 +39917,7 @@ bool XmlDoc::checkCachedb ( ) {
 				int64_t off =(int64_t)(it->m_firstQueryChange);
 				// fix this
 				char *buf = m_queryChangeBuf.getBufStart();
-				// int16_tcut
+				// shortcut
 				QueryChange *fqc = (QueryChange *)(buf+off);
 				// -1 means NULL
 				if ( off == -1 ) fqc = NULL;
@@ -40725,7 +40718,7 @@ void XmlDoc::gotMsg3aReplyForFullQuery ( ) {
 	log("%s",msg);
 
 	/*
-	// int16_tcut. pumpSocket() sends the contents of this to m_seoSocket
+	// shortcut. pumpSocket() sends the contents of this to m_seoSocket
 	SafeBuf *sb = &m_socketWriteBuf;
 
 	sb->safePrintf(
@@ -40915,7 +40908,7 @@ SafeBuf *XmlDoc::getMatchingQueriesScoredForFullQuery ( ) {
 
 	QueryLogEntry *qe = qk->getQueryLogEntry(&m_matchingQueryStringBuf);
 
-	// int16_tcut
+	// shortcut
 	//int64_t h64 = qk->m_querySynBaseHash64;
 	int64_t h64 = getSynBaseHash64 ( qe->getQueryString(),qe->m_langId);
 
@@ -40933,7 +40926,7 @@ SafeBuf *XmlDoc::getMatchingQueriesScoredForFullQuery ( ) {
 		goto loop;
 	}
 
-	// int16_tcut
+	// shortcut
 	char *qstr = qk->getQueryString(&m_matchingQueryStringBuf);
 
 	// sanity
@@ -40942,7 +40935,7 @@ SafeBuf *XmlDoc::getMatchingQueriesScoredForFullQuery ( ) {
 	// TODO: use whatever language the query is!!!
 	uint8_t langId = langEnglish;
 
-	// int16_tcut
+	// shortcut
 	int32_t qlen = gbstrlen(qstr);
 
 	//int32_t collLen = gbstrlen(cr->m_coll);
@@ -41347,7 +41340,7 @@ SafeBuf *XmlDoc::getRelatedDocIdsScored ( ) {
 		RelatedDocId *rds = (RelatedDocId *)rdbuf;
 		int32_t nr = m_relatedDocIdBuf.length() / sizeof(RelatedDocId);
 		for ( int32_t i = 0 ; i < nr ; i++ ) {
-			// int16_tcut
+			// shortcut
 			RelatedDocId *rd = &rds[i];
 			// now score it since we have all the serpscores for
 			// all top matching queries.
@@ -41382,7 +41375,7 @@ SafeBuf *XmlDoc::getRelatedDocIdsScored ( ) {
 			return NULL;
 		// scan each related docid in the top 300 or so
 		for ( int32_t i = 0 ; i < nr ; i++ ) {
-			// int16_tcut
+			// shortcut
 			RelatedDocId *rd = &rds[i];
 			// store ptrs to query nums so we can sort them
 			QueryNumLinkedNode *links[1024];
@@ -41484,7 +41477,7 @@ SafeBuf *XmlDoc::getRelatedDocIdsScored ( ) {
 			// if all dead, just pick this one i guess
 			if ( ++count >= nh ) break;
 		}
-		// int16_tcut
+		// shortcut
 		SafeBuf *hbin = &hostBin[hostId];
 		// if bin is empty initialize
 		if ( hbin->length() == 0 ) {
@@ -41508,7 +41501,7 @@ SafeBuf *XmlDoc::getRelatedDocIdsScored ( ) {
 	// shotgun out the msg4f requests now
 	for ( int32_t i = 0 ;
 	      ! m_sentMsg4fRequests && i < g_hostdb.getNumHosts() ; i++ ) {
-		// int16_tcut
+		// shortcut
 		SafeBuf *hbin = &hostBin[i];
 		// get that host
 		Host *host = g_hostdb.getHost(i);
@@ -41616,7 +41609,7 @@ SafeBuf *XmlDoc::getRelatedDocIdsWithTitles ( ) {
 
 	// scan the msg20s we allocated to see if any got a reply
 	for ( int32_t i = 0 ; i < numMsg20s ; i++ ) {
-		// int16_tcut
+		// shortcut
 		Msg20 *msg20 = &mp[i];
 		// skip if never launched
 		if ( ! msg20->m_launched ) continue;
@@ -41626,7 +41619,7 @@ SafeBuf *XmlDoc::getRelatedDocIdsWithTitles ( ) {
 		Msg20Reply *reply = msg20->getReply(); // m_r
 		// get the corresponding related docid
 		int32_t hisCursor = msg20->m_hack2;
-		// int16_tcut
+		// shortcut
 		RelatedDocId *rd = &rds[hisCursor];
 		// ok, it has a reply. could be NULL if g_errno was set.
 		if ( ! setRelatedDocIdInfoFromMsg20Reply ( rd , reply ) )
@@ -41641,7 +41634,7 @@ SafeBuf *XmlDoc::getRelatedDocIdsWithTitles ( ) {
 	for ( int32_t i = 0 ; i < numMsg20s ; i++ ) {
 		// no more related docids left to launch?
 		if ( m_rdCursor >= numRelated ) break;
-		// int16_tcut
+		// shortcut
 		Msg20 *msg20 = &mp[i];
 		// skip if already launched/inuse
 		if ( msg20->m_inProgress ) continue;
@@ -41713,7 +41706,7 @@ bool XmlDoc::setRelatedDocIdInfoFromMsg20Reply ( RelatedDocId *rd ,
 	// . if reply is NULL then g_errno MUST be set
 	if ( ! error ) error = reply->m_errno;
 
-	// int16_tcuts
+	// shortcuts
 	char *urlStr = NULL;
 	char *titleStr = NULL;
 	char *siteStr = NULL;
@@ -41895,7 +41888,7 @@ bool XmlDoc::addTermsFromQuery ( char *qstr,
 		int64_t th64 = 0LL;
 		//int32_t alnumWordCount = 0;
 		for ( int32_t j = start ; j < start + nwk ; j++ ) {
-			// int16_tcut
+			// shortcut
 			QueryWord *qw = &qq.m_qwords[j];
 			// skip punct
 			if ( qw->m_wordId == 0 ) continue;
@@ -41959,7 +41952,7 @@ bool XmlDoc::addTermsFromQuery ( char *qstr,
 		// . if first time in scoretable, add stuff
 		// . store the string, each word separately
 		for ( int32_t j = start ; j < start + nwk ; j++ ) {
-			// int16_tcut
+			// shortcut
 			QueryWord *qw = &qq.m_qwords[j];
 			// point to word as string
 			char *str = qw->m_word;
@@ -42613,7 +42606,7 @@ static void gotLinkInfoReplyWrapper ( void *state ) {
 //   intact because they have the titles we need!
 // . return false on error, true otherwise
 bool XmlDoc::processLinkInfoMsg20Reply ( Msg25 *msg25 ) {
-	// int16_tcut
+	// shortcut
 	//LinkInfo *info = msg25->getLinkInfo ();
 	// store into our buffer
 	//bool status ;
@@ -42814,7 +42807,7 @@ SafeBuf *XmlDoc::getRecommendedLinksBuf ( ) {
 		// consider it outstanding
 		m_numLinkRequestsOut++;
 
-		// int16_tcut, piggyback on the msg0
+		// shortcut, piggyback on the msg0
 		RdbList *list = &msg0->m_handyList;
 		//RdbList list2;
 
@@ -43119,7 +43112,7 @@ SafeBuf *XmlDoc::lookupTitles ( ) {
 
 	// scan the msg20s we allocated to see if any got a reply
 	for ( int32_t i = 0 ; i < numMsg20s ; i++ ) {
-		// int16_tcut
+		// shortcut
 		Msg20 *msg20 = &msg20s[i];
 		// skip if never launched
 		if ( ! msg20->m_launched ) continue;
@@ -43196,7 +43189,7 @@ SafeBuf *XmlDoc::lookupTitles ( ) {
 
 	// we called gotLinkerTitle() on all msg20s, so destroy them
 	for ( int32_t i = 0 ; i < numMsg20s ; i++ ) {
-		// int16_tcut
+		// shortcut
 		Msg20 *msg20 = &msg20s[i];
 		// free
 		msg20->destructor();
@@ -43965,7 +43958,7 @@ bool XmlDoc::setRelatedDocIdWeightAndRank ( RelatedDocId *rd ) {
 		*/
 
 		//int32_t qlen = gbstrlen(qstr);
-		// int16_tcuts
+		// shortcuts
 		Query      *qp = &queries[qc];
 		HashTableX *ht = &htables[qc];
 		// this is currently a int64_t bit vector
@@ -43984,7 +43977,7 @@ bool XmlDoc::setRelatedDocIdWeightAndRank ( RelatedDocId *rd ) {
 		qp->set2 ( qstr , qlangId , true );
 		// hash it up
 		for ( int32_t i = 0 ; i < qp->m_numTerms ; i++ ) {
-			// int16_tcut
+			// shortcut
 			QueryTerm *qt = &qp->m_qterms[i];
 			// bigrams imply 2 explicit bits, one from each term
 			// in the bigram. synonym terms should share the same
@@ -44019,7 +44012,7 @@ bool XmlDoc::setRelatedDocIdWeightAndRank ( RelatedDocId *rd ) {
 			qvec_t totalVec = 0LL;
 			// is it a dup?
 			for ( int32_t k = 0 ; k < qpj->m_numTerms ; k++ ) {
-				// int16_tcut
+				// shortcut
 				QueryTerm *qt = &qpj->m_qterms[k];
 				// see if in there
 				char *val ;
@@ -44049,7 +44042,7 @@ bool XmlDoc::setRelatedDocIdWeightAndRank ( RelatedDocId *rd ) {
 			totalVec = 0LL;
 			// is it a dup?
 			for ( int32_t k = 0 ; k < qpi->m_numTerms ; k++ ) {
-				// int16_tcut
+				// shortcut
 				QueryTerm *qt = &qpi->m_qterms[k];
 				// see if in there
 				char *val;
@@ -44511,7 +44504,7 @@ SafeBuf *XmlDoc::getQueryLinkBuf(SafeBuf *docIdList, bool doMatchingQueries) {
 		m_numMsg20Requests = 0;
 		// launch all!
 		for ( int32_t i = 0 ; i < numMsg20s ; i++ ) {
-			// int16_tcut
+			// shortcut
 			Msg20 *msg20 = &mp[i];
 			// get current related docid
 			//RelatedDocId *rd = &rds[i];
@@ -44612,7 +44605,7 @@ SafeBuf *XmlDoc::getQueryLinkBuf(SafeBuf *docIdList, bool doMatchingQueries) {
 		/*
 		// then store each termlistbuf from each msg20
 		for ( int32_t i = 0 ; doRelatedQueries && i < numDocIds ; i++ ) {
-			// int16_tcut
+			// shortcut
 			Msg20 *mp = &mps[i];
 			Msg20Reply *rep = mp->getReply();
 			if ( rep ) {
@@ -44656,7 +44649,7 @@ SafeBuf *XmlDoc::getQueryLinkBuf(SafeBuf *docIdList, bool doMatchingQueries) {
 
 		// we've formulated the 8e request, no need for msg20s anymore
 		//for ( int32_t i = 0 ; doRelatedQueries && i < numDocIds ; i++ ){
-		//	// int16_tcut
+		//	// shortcut
 		//	Msg20 *mp = &mps[i];
 		//	mp->destructor();
 		//}
@@ -44781,7 +44774,7 @@ SafeBuf *XmlDoc::getQueryLinkBuf(SafeBuf *docIdList, bool doMatchingQueries) {
 
 	// store max into m_queryLinkBuf and m_queryLinkStringBuf
 	if ( maxi >= 0 ) {
-		// int16_tcut
+		// shortcut
 		QueryLink *best = (QueryLink *)bestPtr[maxi];
 		// get # to copy
 		int32_t toCopy = sizeof(QueryLink);

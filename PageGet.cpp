@@ -352,7 +352,7 @@ bool processLoop ( void *state ) {
 	char *content    = xd->ptr_utf8Content;
 	int32_t  contentLen = xd->size_utf8Content - 1;
 
-	// int16_tcut
+	// shortcut
 	char strip = st->m_strip;
 
 	// alloc buffer now
@@ -593,7 +593,6 @@ bool processLoop ( void *state ) {
 	// now set m.m_matches[] to those words in qw that match a query word
 	// or phrase in qq.
 	m.setQuery ( &qq );
-	//m.addMatches ( &qw , &ss , true );
 	m.addMatches ( &qw );
 	int32_t hilen = 0;
 

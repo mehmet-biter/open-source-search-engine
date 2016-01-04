@@ -140,8 +140,8 @@ public:
 	//bool  pushLong ( int32_t val ) { return safeMemcpy((char *)&val,4); }
 	bool  cat(SafeBuf& c);
 	// . only cat the sections/tag that start with "tagFilter"
-	// . used by Spider.cpp to dump <div class=int16_tdisplay> sections
-	//   to parse-int16_tdisplay.uh64.runid.txt for displaying the
+	// . used by Spider.cpp to dump <div class=shortdisplay> sections
+	//   to parse-shortdisplay.uh64.runid.txt for displaying the
 	//   validation checkboxes in qa.html
 	bool  cat2 ( SafeBuf& c,char *tagFilter1,char *tagFilter2);
 	void  reset() { m_length = 0; }
@@ -210,7 +210,7 @@ public:
 
 	// . like "1 minute ago" "5 hours ago" "3 days ago" etc.
 	// . "ts" is the delta-t in seconds
-	bool printTimeAgo ( int32_t ts , int32_t now , bool int16_thand = false ) ;
+	bool printTimeAgo (int32_t ts , int32_t now , bool shorthand = false ) ;
 
 	// . a function for adding Tags to buffer, like from Tagdb.cpp
 	// . if safebuf is a buffer of Tags from Tagdb.cpp

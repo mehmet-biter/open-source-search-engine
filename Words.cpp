@@ -767,7 +767,7 @@ int32_t Words::getLanguage( Sections *sections ,
 	// . avoid words in these bad sections
 	// . google seems to index SEC_MARQUEE so i took that out of badFlags
 	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT;
-	// int16_tcuts
+	// shortcuts
 	int64_t *wids  = m_wordIds;
 	int32_t      *wlens = m_wordLens;
 	char     **wptrs = m_words;

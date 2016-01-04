@@ -608,7 +608,7 @@ class SpiderRequest {
 	unsigned    m_isRSSExt:1;
 	// is url in a format known to be a permalink format?
 	unsigned    m_isUrlPermalinkFormat:1;
-	// is url "rpc.weblogs.com/int16_tChanges.xml"?
+	// is url "rpc.weblogs.com/shortChanges.xml"?
 	unsigned    m_isPingServer:1;
 	// . are we a delete instruction? (from Msg7.cpp as well)
 	// . if you want it to be permanently banned you should ban or filter

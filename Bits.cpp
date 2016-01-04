@@ -87,7 +87,7 @@ bool Bits::set ( Words *words , char titleRecVersion , int32_t niceness , char *
 		QUICKPOLL ( m_niceness );
 
 		if ( tagIds && tagIds[i] ) {
-			// int16_tcut
+			// shortcut
 			nodeid_t tid = tagIds[i] & BACKBITCOMP;
 			// count the <br>s, we can't pair across more than 1
 			if ( g_nodes[tid].m_isBreaking ) 

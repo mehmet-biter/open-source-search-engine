@@ -652,7 +652,7 @@ static void sendReplyWrapper ( void *state ) {
 	Msg25Request *mr = m25->m_req25;
 	// get udp slot for sending back reply
 	UdpSlot *slot2 = mr->m_udpSlot;
-	// int16_tcut
+	// shortcut
 	SafeBuf *info = m25->m_linkInfoBuf;
 	// steal this buffer
 	char *reply1 = info->getBufStart();
@@ -1375,7 +1375,7 @@ bool Msg25::gotTermFreq ( bool msg42Called ) {
 	// when MODE_PAGELINKINFO we must have a site quality for that site
 	if ( m_siteNumInlinks < 0 ) {char *xx=NULL;*xx=0; }
 
-	// int16_tcut
+	// shortcut
 	int32_t n = m_siteNumInlinks;
 	if      ( n >= 1000 ) {m_spamWeight = 90; m_maxSpam = 4000;}
 	else if ( n >=  900 ) {m_spamWeight = 80; m_maxSpam = 3000;}
@@ -2088,7 +2088,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	     r->size_linkText <= 0 && 
 	     r->size_rssItem  <= 0 && 
 	     // allow if from a ping server because like 
-	     // rpc.weblogs.com/int16_tChanges.xml so we can use
+	     // rpc.weblogs.com/shortChanges.xml so we can use
 	     // "inlink==xxx" in the url filters to assign any page linked
 	     // to by a pingserver into a special spider queue. then we can
 	     // spider that page quickly and get its xml feed url, and then

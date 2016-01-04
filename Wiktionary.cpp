@@ -878,7 +878,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 			name = p + 7;
 		if ( ! strncasecmp(p-9 ,"genitive form of",16) )
 			name = p + 7;
-		if ( ! strncasecmp(p-10 ,"int16_tened form of",17) )
+		if ( ! strncasecmp(p-10 ,"shortened form of",17) )
 			name = p + 7;
 		if ( ! strncasecmp(p-10 ,"inflected form of",17) )
 			name = p + 7;
@@ -1556,7 +1556,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 		if ( ! strcmp(s,"capitalized form") ) continue;
 		if ( ! strcmp(s,"obsolete capitalization") ) continue;
 		if ( ! strcmp(s,"archaic form") ) continue;
-		if ( ! strcmp(s,"int16_tened form") ) continue;
+		if ( ! strcmp(s,"shortened form") ) continue;
 		if ( ! strcmp(s,"reduced form") ) continue;
 		if ( ! strcmp(s,"unstressed form") ) continue;
 		if ( ! strcmp(s,"lowercase form") ) continue;

@@ -606,7 +606,7 @@ bool Msg5::needsRecall ( ) {
 	// sanity check
 	if ( ! base && ! g_errno ) { char *xx=NULL;*xx=0; }
 	// . return true if we're done reading
-	// . sometimes we'll need to read more because Msg3 will int16_ten the
+	// . sometimes we'll need to read more because Msg3 will shorten the
 	//   endKey to better meat m_minRecSizes but because of 
 	//   positive/negative record annihilation on variable-length
 	//   records it won't read enough

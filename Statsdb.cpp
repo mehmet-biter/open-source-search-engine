@@ -582,7 +582,7 @@ static void gotListWrapper ( void *state , RdbList *list, Msg5 *msg5 ) ;
 
 // returns false if blocked, true otherwise
 bool Statsdb::gifLoop ( ) {
-	// int16_tcut
+	// shortcut
 	Msg5 *m = &m_msg5;
 
 	//#ifndef _USEPLOTTER_

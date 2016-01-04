@@ -360,7 +360,7 @@ bool Msg39::controlLoop ( ) {
 		m_phase++;
 		// the starting docid...
 		int64_t d0 = m_ddd;
-		// int16_tcut
+		// shortcut
 		int64_t delta = MAX_DOCID / (int64_t)m_r->m_numDocIdSplits;
 		// advance to point to the exclusive endpoint
 		m_ddd += delta;
@@ -621,7 +621,7 @@ bool Msg39::getLists () {
 	for ( int32_t i = 0 ; i < m_tmpq.getNumTerms() ; i++ ) {
 		// breathe
 		QUICKPOLL ( m_r->m_niceness );
-		// int16_tcuts
+		// shortcuts
 		QueryTerm *qterm = &m_tmpq.m_qterms[i];
 		char *sk = qterm->m_startKey;
 		char *ek = qterm->m_endKey;
@@ -941,7 +941,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 		return true;
 	}
 
-	// if msg2 had ALL empty lists we can cut it int16_t
+	// if msg2 had ALL empty lists we can cut it short
 	if ( m_posdbTable.m_topTree->m_numNodes == 0 ) {
 		//estimateHitsAndSendReply ( );
 		return true;
@@ -1414,7 +1414,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		mr.m_nqt = nqt;
 		// the m_errno if any
 		mr.m_errno = m_errno;
-		// int16_tcut
+		// shortcut
 		PosdbTable *pt = &m_posdbTable;
 		// the score info, in no particular order right now
 		mr.ptr_scoreInfo  = pt->m_scoreInfoBuf.getBufStart();

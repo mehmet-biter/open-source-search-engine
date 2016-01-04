@@ -893,7 +893,7 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 		// you have to set this for tryToDeleteSpiderColl to
 		// actually have a shot at deleting it
 		sc->m_deleteMyself = true;
-		// cr will be invalid int16_tly after this
+		// cr will be invalid shortly after this
 		// MDW: this is causing the core...
 		// use fake ptrs for easier debugging
 		//sc->m_cr = (CollectionRec *)0x99999;//NULL;
@@ -3866,7 +3866,7 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 	return rebuildUrlFiltersDiffbot();
 }
 
-// for some reason the libc we use doesn't support these int16_tcuts,
+// for some reason the libc we use doesn't support these shortcuts,
 // so expand them to something it does support
 bool expandRegExShortcuts ( SafeBuf *sb ) {
 	if ( ! sb->safeReplace3 ( "\\d" , "[0-9]" ) ) return false;

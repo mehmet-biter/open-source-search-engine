@@ -450,7 +450,7 @@ void Test::stopIt ( ) {
 
 	// take diffs between this run and the last run for confparms
 	for ( int32_t i = m_runId ; i > start ; i-- ) {
-		// int16_tcut
+		// shortcut
 		char *dir = g_hostdb.m_dir;
 		// make diff filename
 		char diff1[200];
@@ -563,7 +563,7 @@ void Test::stopIt ( ) {
 		char *u = m_urlPtr;
 		// get hash
 		int64_t h = hash64 ( u , gbstrlen(u) );
-		// int16_tcut
+		// shortcut
 		char *dir = g_hostdb.m_dir;
 
 
@@ -679,7 +679,7 @@ void Test::stopIt ( ) {
 				testDir,h,ri);
 			char validate[200];
 			sprintf(validate,
-				"/%s/parse-int16_tdisplay.%"UINT64".%"INT32".html",
+				"/%s/parse-shortdisplay.%"UINT64".%"INT32".html",
 				testDir,h,ri);
 			// use red font for current run that has a diff!
 			char *t1 = "";
@@ -785,11 +785,11 @@ void Test::stopIt ( ) {
 			// only fill "sd" for the most recent guy
 			if ( ri != m_runId ) continue;
 
-			// now concatenate the parse-int16_tdisplay file
+			// now concatenate the parse-shortdisplay file
 			// to this little table so qa admin can check/uncheck
 			// validation checkboxes for addresses and events
 			//sprintf(cfile,
-			//	"%s/test/parse-int16_tdisplay.%"UINT64".%"INT32".html",
+			//	"%s/test/parse-shortdisplay.%"UINT64".%"INT32".html",
 			//	g_hostdb.m_dir,h,ri);
 			//sd.fillFromFile ( cfile );
 		}

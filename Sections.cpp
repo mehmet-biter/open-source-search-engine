@@ -161,7 +161,7 @@ bool Sections::set ( Words     *w                       ,
 
 	if ( w->getNumWords() <= 0 ) return true;
 
-	// int16_tcuts
+	// shortcuts
 	int64_t   *wids  = w->getWordIds  ();
 	nodeid_t    *tids  = w->getTagIds   ();
 	int32_t           nw  = w->getNumWords ();
@@ -744,7 +744,7 @@ bool Sections::set ( Words     *w                       ,
 				// we had no matching tag, or it was unbalanced
 				// but i do not know which...!
 				sn->m_flags |= SEC_OPEN_ENDED;
-				// cut our end int16_ter
+				// cut our end shorter
 				sn->m_b = ps->m_b;
 				// our TXF_MATCHED bit should still be set
 				// for spp->m_flags, so try to match ANOTHER
@@ -1124,7 +1124,7 @@ bool Sections::set ( Words     *w                       ,
 		Section *sn = &m_sections[i];
 		// get it
 		int32_t ws = sn->m_a;
-		// int16_tcut
+		// shortcut
 		nodeid_t tid = tids[ws];
 
 		// set SEC_IN_FRAME
@@ -1348,7 +1348,7 @@ bool Sections::set ( Words     *w                       ,
 		Section *sn = &m_sections[i];
 		// get word start into "ws"
 		int32_t ws = sn->m_a;
-		// int16_tcut
+		// shortcut
 		nodeid_t tid = tids[ws];
 		// sanity check, <a> guys are not sections
 		//if ( tid == TAG_A &&
@@ -3887,7 +3887,7 @@ void initGenericTable ( int32_t niceness ) {
 // it to be fuzzy since it is not header material
 bool Sections::setSentFlagsPart1 ( ) {
 
-	// int16_tcut
+	// shortcut
 	wbit_t *bits = m_bits->m_bits;
 
 	static int64_t h_i;
@@ -4491,7 +4491,7 @@ bool Sections::setSentFlagsPart2 ( ) {
 			s_ext.addKey ( &h );
 		}
 	}
-	// int16_tcut
+	// shortcut
 	Sections *ss = this;
 
 	// init table
@@ -4521,7 +4521,7 @@ bool Sections::setSentFlagsPart2 ( ) {
 
 	// for checking if title contains phone #
 	//HashTableX *pt = m_dates->getPhoneTable   ();		
-	// int16_tcut
+	// shortcut
 	wbit_t *bits = m_bits->m_bits;
 
 	bool afterColon = false;
@@ -6272,7 +6272,7 @@ int32_t hasTitleWords ( sentflags_t sflags ,
 	int32_t *wlens = words->getWordLens();
 	int32_t  nw = words->getNumWords();
 
-	// . int16_tcut
+	// . shortcut
 	// . we are also called from dates.cpp and m_bits is NULL!
 	wbit_t *bits = NULL;
 	if ( bitsClass ) bits = bitsClass->m_bits;
@@ -7931,10 +7931,10 @@ bool Sections::isPlaceOrBusinessWord ( int32_t i ) {
 */
 
 void Sections::setSentPrettyFlag ( Section *si ) {
-	// int16_tcut
+	// shortcut
 	sentflags_t sflags = si->m_sentFlags;
 
-	// int16_tcut
+	// shortcut
 	wbit_t *bits = m_bits->m_bits;
 
 	static int64_t h_click;
@@ -10019,7 +10019,7 @@ bool Sections::addSentenceSections ( ) {
 		SEC_HIDDEN|
 		SEC_NOSCRIPT;
 
-	// int16_tcut
+	// shortcut
 	Section **sp = m_sectionPtrs;
 
 	static bool s_init = false;
@@ -10090,12 +10090,12 @@ bool Sections::addSentenceSections ( ) {
 
 	// need D_IS_IN_URL bits to be valid
 	m_bits->setInUrlBits ( m_niceness );
-	// int16_tcut
+	// shortcut
 	wbit_t *bb = m_bits->m_bits;
 	/*
-	// int16_tcut
+	// shortcut
 	Date **datePtrs = m_dates->m_datePtrs;
-	// int16_tcut. this should not include telescoped dates!!!
+	// shortcut. this should not include telescoped dates!!!
 	int32_t maxnd = m_dates->m_numDatePtrs;
 	// set up nd to reference first date in the document
 	int32_t nd = 0;
@@ -10172,7 +10172,7 @@ bool Sections::addSentenceSections ( ) {
 			}
 			// tag?
 			if ( m_tids[j] ) {
-				// int16_tcut
+				// shortcut
 				nodeid_t tid = m_tids[j] & BACKBITCOMP;
 
 				// "shelter: 123-4567"
@@ -11547,7 +11547,7 @@ bool Sections::splitSections ( char *delimeter , int32_t dh ) {
 		// . or if we equal start of section
 		// . it was created, not processed
 		//if ( sn->m_a == i ) continue;
-		// int16_tcut
+		// shortcut
 		//Section *sk ;
 		// what section # is section "sn"?
 		int32_t offset = sn - m_sections;
@@ -11721,7 +11721,7 @@ bool Sections::...( ) {
 	gid = getGroupId ( RDB_SECTIONDB , (char *)&m_startKey, false );
 	// we need a group # from the groupId
 	int32_t split = g_hostdb.getGroupNum ( gid );
-	// int16_tcut
+	// shortcut
 	Msg0 *m = &m_msg0;
 
  loop:
@@ -11975,7 +11975,7 @@ void Sections::setNextBrotherPtrs ( bool setContainer ) {
 		// we already set their m_next/prevBrother members in the
 		// swoggleTable() function
 		//if ( si->m_tagId == TAG_TC ) continue;
-		// int16_tcut
+		// shortcut
 		//Section *si = &m_sections[i];
 		// assume none
 		//si->m_nextBrother = NULL;
@@ -12311,7 +12311,7 @@ void Sections::getArticleRange ( int32_t *start , int32_t *end ) {
 	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
-		// int16_tcut
+		// shortcut
 		Section *sn = &m_sections[i];
 		// skip if not article section
 		if ( ! ( sn->m_flags & SEC_ARTICLE ) ) continue;
@@ -12449,7 +12449,7 @@ char *Sections::respiderLineWaiters ( char *metaList    ,
 				      //int32_t  ip          ,
 				      //int32_t  priority    ) {
 	
-	// int16_tcut
+	// shortcut
 	char *p    = metaList;
 	char *pend = metaListEnd;
 
@@ -12886,7 +12886,7 @@ bool Sections::print ( SafeBuf *sbuf ,
 			sprintf(ttt,"0x%"XINT32"",modified);
 			xs = ttt;
 		}
-		// int16_tcut
+		// shortcut
 		Section *parent = sn->m_parent;
 		int32_t pswn = -1;
 		int32_t pewn = -1;
@@ -13583,7 +13583,7 @@ bool Sections::setMenus ( ) {
 	// . this bits array is 1-1 with the words
 	m_bits->setInLinkBits(this);
 
-	// int16_tcut
+	// shortcut
 	wbit_t *bb = m_bits->m_bits;
 
 	sec_t flag;
@@ -13956,7 +13956,7 @@ bool Sections::setMenus ( ) {
 	for ( int32_t i = 0 ; i + 1 < m_numSections ; i++ ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
-		// int16_tcut
+		// shortcut
 		Section *si = &m_sections[i];
 		// get container
 		Section *c = si->m_listContainer;
@@ -14553,7 +14553,7 @@ void Sections::setTagHashes ( ) {
 		// parent section could have SEC_FAKE flag set because it is
 		// a br section added afterwards.
 		//Section *sn = m_sorted[i]; // sections[i];
-		// int16_tcut
+		// shortcut
 		int64_t bh = (int64_t)sn->m_baseHash;
 		//int64_t fh = sn->m_tagId;
 		// sanity check
@@ -14801,7 +14801,7 @@ bool Sections::swoggleTable ( int32_t dn , Section *ts ) {
 		// its a doubly linked list
 		//si->m_next->m_prev = si->m_prev;
 		//si->m_prev->m_next = si->m_next;
-		// int16_tcut
+		// shortcut
 		int32_t colnum = si->m_colNum;
 		// cram everything into last column in case of too many cols
 		if ( colnum >= MAXCOLS ) colnum = MAXCOLS-1;
@@ -15089,7 +15089,7 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 			sprintf(ttt,"0x%"XINT32"",modified);
 			xs = ttt;
 		}
-		// int16_tcut
+		// shortcut
 		Section *parent = sn->m_parent;
 		int32_t pswn = -1;
 		int32_t pewn = -1;
@@ -15937,7 +15937,7 @@ bool Sections::setRegistrationBits ( ) {
 	// this maps a section ptr to the dates it contains
 	//HashTableX *tt = m_dates->getTODTable ();
 
-	// int16_tcut
+	// shortcut
 	//int64_t *wids = m_wids;
 
 	m_bits->setInLinkBits ( this ); // m_sections );
@@ -15970,7 +15970,7 @@ bool Sections::setRegistrationBits ( ) {
 		}
 		*/
 
-		// int16_tcut
+		// shortcut
 		int64_t wid = m_wids[j];
 
 		// "ictickets office" for http://www.ictickets.com/Event/
@@ -16233,7 +16233,7 @@ bool Sections::setRegistrationBits ( ) {
 		if ( ! sk ) { char *xx=NULL;*xx=0; }
 
 
-		// int16_tcut
+		// shortcut
 		Section **sp = m_sectionPtrs;		
 
 		//
@@ -16513,7 +16513,7 @@ bool Sections::setFormTableBits ( ) {
 		QUICKPOLL ( m_niceness );
 		// must be sentence
 		//if ( ! ( si->m_flags & SEC_SENTENCE ) ) continue;
-		// int16_tcut
+		// shortcut
 		sentflags_t sf = si->m_sentFlags;
 		// . fortable field must not end in period
 		// . i.e. "Good For Kids:"
@@ -16663,7 +16663,7 @@ bool Sections::setTableRowsAndCols ( Section *tableSec ) {
 		}
 		// must not be within another table in our table
 		if ( p != tableSec ) continue;
-		// int16_tcut
+		// shortcut
 		nodeid_t tid = ss->m_tagId;
 		// . ok, we are a section the the table "tableSec" now
 		// . row?
@@ -17200,7 +17200,7 @@ bool Sections::setListFlags ( ) {
 	for ( Section *si = m_firstSent ; si ; si = si->m_nextSent ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
-		// int16_tcut
+		// shortcut
 		sentflags_t sf = si->m_sentFlags;
 		// . fortable field must not end in period
 		// . i.e. "Good For Kids:"

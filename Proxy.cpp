@@ -1763,7 +1763,7 @@ UserInfo *Proxy::getUserInfoForFeedAccess ( HttpRequest *hr ) {
 		UserInfo *uis = (UserInfo *)m_userInfoBuf.getBufStart();
 		int32_t ni = m_userInfoBuf.length() / sizeof(UserInfo) ;
 		for ( int32_t i = 0 ; i < ni && i < 5 ; i++ ) {
-			// int16_tcut
+			// shortcut
 			UserInfo *ui = &uis[i];
 			// must be an "old" user like others
 			if ( ! (ui->m_flags & (UIF_OLDUSER|UIF_ADMIN))) 
@@ -2222,7 +2222,7 @@ UserInfo *Proxy::getLoggedInUserInfo2 ( HttpRequest *hr ,
 	int32_t ni = m_userInfoBuf.length() / sizeof(UserInfo) ;
 	UserInfo *ui;
 	int32_t i; for ( i = 0 ; i < ni ; i++ ) {
-		// int16_tcut
+		// shortcut
 		ui = &uis[i];
 		// login with existing session id?
 		if ( sessionId64 ) {
@@ -2307,7 +2307,7 @@ UserInfo *Proxy::getLoggedInUserInfo ( StateUser *su , SafeBuf *errmsg ) {
 	UserInfo *uis = (UserInfo *)m_userInfoBuf.getBufStart();
 	int32_t ni = m_userInfoBuf.length() / sizeof(UserInfo) ;
 	int32_t i; for ( i = 0 ; i < ni ; i++ ) {
-		// int16_tcut
+		// shortcut
 		UserInfo *ui = &uis[i];
 		// skip if not admin
 		if ( ! ( ui->m_flags & UIF_ADMIN ) ) continue;
@@ -2351,7 +2351,7 @@ bool Proxy::doesUsernameExist ( char *user ) {
 	UserInfo *uis = (UserInfo *)m_userInfoBuf.getBufStart();
 	int32_t ni = m_userInfoBuf.length() / sizeof(UserInfo) ;
 	int32_t i; for ( i = 0 ; i < ni ; i++ ) {
-		// int16_tcut
+		// shortcut
 		UserInfo *ui = &uis[i];
 		// skip if no match
 		if ( strcmp ( ui->m_login , user ) ) continue;
@@ -3864,7 +3864,7 @@ bool Proxy::loadUserBufs ( ) {
 	UserInfo *uis = (UserInfo *)m_userInfoBuf.getBufStart();
 	int32_t ni = m_userInfoBuf.length() / sizeof(UserInfo) ;
 	int32_t i; for ( i = 0 ; i < ni ; i++ ) {
-		// int16_tcut
+		// shortcut
 		UserInfo *ui = &uis[i];
 		if ( ui->m_pending == 0.0 ) continue;
 		log("proxy: erasing pending=%.02f for uid=%"INT32"",
@@ -3884,7 +3884,7 @@ bool Proxy::loadUserBufs ( ) {
 		return false;
 	}
 	for ( int32_t i = 0 ; i < ns ; i++ ) {
-		// int16_tcut
+		// shortcut
 		SummaryRec *sr = &ss[i];
 		// get the offset
 		int32_t sumOff = ((char *)sr) - m_sumBuf.getBufStart();
@@ -4353,7 +4353,7 @@ bool Proxy::printAccountingInfoPage ( StateUser *su , SafeBuf *errmsg ) {
 	printedSomething = false;
 	// now print out the cursors for each month in reverse!
 	for ( int32_t i = numCursors - 1 ; i >= 0 ; i-- ) {
-		// int16_tcut
+		// shortcut
 		SummaryRec *cursor = &cursors[i];
 		// 0 is not a valid access type
 		if ( cursor->m_accessType == 0 ) continue;
@@ -4777,7 +4777,7 @@ void Proxy::printUsers ( SafeBuf *sb ) {
 	UserInfo *uis = (UserInfo *)m_userInfoBuf.getBufStart();
 	int32_t ni = m_userInfoBuf.length() / sizeof(UserInfo) ;
 	int32_t i; for ( i = 0 ; i < ni ; i++ ) {
-		// int16_tcut
+		// shortcut
 		UserInfo *ui = &uis[i];
 		// begin new row?
 		if ( i % 5 == 0 ) {

@@ -972,7 +972,7 @@ bool UdpServer::sendPoll_ass ( bool allowResends , int64_t now ) {
 // . slot may have dgrams or ACKs to send
 // . sets g_errno to ETIMEDOUT if that slot is timed out as well as set
 //   that slot's m_doneSending to true
-// . let's send the int16_test first, but weight by how long it's been waiting!
+// . let's send the shortest first, but weight by how long it's been waiting!
 // . f(x) = a*(now - startTime) + b/msgSize
 // . verified that this is not interruptible
 UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
@@ -1277,7 +1277,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	if ( ip == g_hostdb.getLoopbackIp() ) ip = g_hostdb.getMyIp();
 	// is it local?
 	bool isLocal = false;
-	// int16_tcut
+	// shortcut
         uint8_t *p = (uint8_t *)&ip;
         // this is local
         if ( p[0] == 10 ) isLocal = true;
@@ -1445,7 +1445,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		// . if we're shutting down do not accept new connections
 		// . just ignore
 		if ( m_isShuttingDown ) goto discard; // return 1;
-		// int16_tcut
+		// shortcut
 		bool isProxy = g_proxy.isProxy();
 		// do not read any incoming request if half the slots are
 		// being used for incoming requests right now. we don't want

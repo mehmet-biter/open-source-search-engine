@@ -256,7 +256,7 @@ bool Msg13::getDoc ( Msg13Request *r,
 
 bool Msg13::forwardRequest ( ) {
 
-	// int16_tcut
+	// shortcut
 	Msg13Request *r = m_request;
 
 	//
@@ -365,7 +365,7 @@ bool Msg13::forwardRequest ( ) {
 }
 
 void gotForwardedReplyWrapper ( void *state , UdpSlot *slot ) {
-	// int16_tcut
+	// shortcut
 	Msg13 *THIS = (Msg13 *)state;
 	// return if this blocked
 	if ( ! THIS->gotForwardedReply ( slot ) ) return;
@@ -404,7 +404,7 @@ bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSi
 	m_replyBuf     = NULL;
 	m_replyBufSize = 0;
 
-	// int16_tcut
+	// shortcut
 	Msg13Request *r = m_request;
 
 	//log("msg13: reply=%"XINT32" replysize=%"INT32" g_errno=%s",
@@ -851,7 +851,7 @@ void downloadTheDocForReals2 ( Msg13Request *r ) {
 }
 
 void gotProxyHostReplyWrapper ( void *state , UdpSlot *slot ) {
-	// int16_tcut
+	// shortcut
 	Msg13Request *r = (Msg13Request *)state;
 	//Msg13 *THIS = r->m_parent;
 	// don't let udpserver free the request, it's our m_urlIp
@@ -2077,7 +2077,7 @@ void gotHttpReply2 ( void *state ,
 		g_errno = 0;
 	}
 
-	// int16_tcut
+	// shortcut
 	UdpServer *us = &g_udpServer;
 
 	// how many have this key?
@@ -3244,7 +3244,7 @@ bool setProxiedUrlFromSquidProxiedRequest ( Msg13Request *r ) {
 	// this is actually the entire http request mime, not a url
 	//char *squidProxiedReqBuf = r->ptr_url;
 
-	// int16_tcut. this is the actual squid request like
+	// shortcut. this is the actual squid request like
 	// "CONNECT www.youtube.com:443 HTTP/1.1\r\nProxy-COnnection: ... "
 	// or
 	// "GET http://www.youtube.com/..."

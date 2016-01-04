@@ -99,7 +99,7 @@ public:
 	bool isBadExtension(int32_t xxx);
 	bool isSet()            { return m_ulen != 0; }
 
-	// is it http://rpc.weblogs.com/int16_tChanges.xml, etc.?
+	// is it http://rpc.weblogs.com/shortChanges.xml, etc.?
 	bool isPingServer ( ) ;
 
 	void setPort             (uint16_t port ) { m_port = port; };
@@ -185,7 +185,7 @@ public:
 	// . without trailing / if path is just "/"
 	// . without "www." if in hostname and "rmWWW" is true
 	// . returns length
-	// . if "buf" is NULL just returns the int16_thand-form length
+	// . if "buf" is NULL just returns the shorthand-form length
 	char *getShorthandUrl    ( bool rmWWW , int32_t *len );
 
 	// count the path components (root url as 0 path components)

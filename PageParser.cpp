@@ -564,7 +564,7 @@ bool processLoop ( void *state ) {
 	// error?
 	if ( g_errno ) return sendErrorReply ( st , g_errno );
 
-	// int16_tcut
+	// shortcut
 	SafeBuf *xbuf = &st->m_xbuf;
 
 	if ( st->m_u && st->m_u[0] ) {
@@ -874,7 +874,7 @@ bool gotXmlDoc ( void *state ) {
 	// error?
 	if ( g_errno ) return sendErrorReply ( st , g_errno );
 
-	// int16_tcut
+	// shortcut
 	SafeBuf *xbuf = &st->m_xbuf;
 
 	bool printIt = false;

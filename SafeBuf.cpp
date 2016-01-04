@@ -1774,7 +1774,7 @@ bool SafeBuf::truncateLongWords ( char *s , int32_t srcLen , int32_t minmax ) {
 				if ( ! is_alnum_utf8(x) ) break;
 			}
 
-			// bail on truncation if completing it would be int16_ter
+			// bail on truncation if completing it would be shorter
 			// than adding the ellipsis
 			if ( *x && x < xend ) {
 				// scan for next space
@@ -1786,7 +1786,7 @@ bool SafeBuf::truncateLongWords ( char *s , int32_t srcLen , int32_t minmax ) {
 			}
 					
 
-			// if we had a nice break point at "src" or int16_tly
+			// if we had a nice break point at "src" or shortly
 			// thereafter, then break right after that!
 			if ( *x && x < xend ) {
 				gbmemcpy ( dst , src , x - src );
@@ -3211,7 +3211,7 @@ bool SafeBuf::base64Decode ( char *src , int32_t srcLen , int32_t niceness ) {
 
 
 // "ts" is a delta-t in seconds
-bool SafeBuf::printTimeAgo ( int32_t ago , int32_t now , bool int16_thand ) {
+bool SafeBuf::printTimeAgo ( int32_t ago , int32_t now , bool shorthand ) {
 	// Jul 23, 1971
 	if ( ! reserve2x(200) ) return false;
 	// for printing
@@ -3230,7 +3230,7 @@ bool SafeBuf::printTimeAgo ( int32_t ago , int32_t now , bool int16_thand ) {
 	}
 	bool printed = false;
 	// print the time ago
-	if ( int16_thand ) {
+	if ( shorthand ) {
 		if ( mins==0 ) safePrintf("%"INT32" secs ago",secs);
 		else if ( mins ==1)safePrintf("%"INT32" min ago",mins);
 		else if (mins<60)safePrintf ( "%"INT32" mins ago",mins);

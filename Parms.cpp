@@ -2192,7 +2192,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		// print all headers
 		for ( int32_t k = mm ; 
 		      k<m_numParms && m_parms[k].m_rowid==m->m_rowid; k++ ) {
-			// parm int16_tcut
+			// parm shortcut
 			Parm *mk = &m_parms[k];
 			// not if printing json
 			//if ( format != FORMAT_HTML )continue;//isJSON )
@@ -20721,7 +20721,7 @@ void handleRequest3fLoop ( void *weArg ) {
 	// process them
 	char *p = we->m_parmPtr;
 	for ( ; p < we->m_parmEnd ; ) {
-		// int16_tcut
+		// shortcut
 		char *rec = p;
 		// get size
 		int32_t dataSize = *(int32_t *)(rec+sizeof(key96_t));
@@ -22157,7 +22157,7 @@ bool printUrlExpressionExamples ( SafeBuf *sb ) {
 			  "If the url has an inlinker which contains the "
 			  "given substring, then this rule is matched. "
 			  "We use this like <i>inlink=www.weblogs.com/"
-			  "int16_tChanges.xml</i> to detect if a page is in "
+			  "shortChanges.xml</i> to detect if a page is in "
 			  "the ping server or not, and if it is, then we "
 			  "assign it to a slower-spidering queue, because "
 			  "we can reply on the ping server for updates. Saves "

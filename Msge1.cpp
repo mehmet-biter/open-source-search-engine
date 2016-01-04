@@ -302,7 +302,7 @@ bool Msge1::sendMsgC ( int32_t i , char *host , int32_t hlen ) {
 	// look up in our m_testBuf.
 	if ( m_coll && ! strcmp(m_coll,"qatest123") ) {
 		bool found = false;
-		// int16_tcut
+		// shortcut
 		//char *p = m_urlPtrs[n];
 		// do we got it?
 		//bool status = getTestIp ( p , &m_ipBuf[n], &found);
@@ -454,7 +454,7 @@ bool Msge1::addTag ( int32_t i ) {
 		// should never have error
 		char *xx=NULL;*xx=0; }
 
-	// int16_tcut
+	// shortcut
 	Msg9a *m9 = &m_msg9as[i];
 	// . now add to "firstip" in tagdb
 	// . borrow the ith msg9a (only 40 bytes each)

@@ -684,7 +684,7 @@ void handleRequest54 ( UdpSlot *udpSlot , int32_t niceness ) {
 	}
 	
 
-	// int16_tcut
+	// shortcut
 	int32_t urlIp = preq->m_urlIp;
 
 	// send to a proxy that is up and has the least amount

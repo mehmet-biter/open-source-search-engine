@@ -89,7 +89,7 @@ bool Title::setTitle ( XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars
 		SafeBuf jsonTitle;
 		int32_t vlen = 0;
 
-		// int16_tcut
+		// shortcut
 		char *s = xd->ptr_utf8Content;
 		char *jt;
 		jt = getJSONFieldValue(s,"title",&vlen);

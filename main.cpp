@@ -5206,7 +5206,7 @@ int32_t dumpSpiderdb ( char *coll,
 		// skip bogus shit
 		if ( sreq->m_firstIp == 0 || sreq->m_firstIp==-1 ) continue;
 
-		// int16_tcut
+		// shortcut
 		int32_t domHash = sreq->m_domHash32;
 		// . is it in the domain table?
 		// . keeps count of how many urls per domain

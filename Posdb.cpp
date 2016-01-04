@@ -3190,7 +3190,7 @@ float PosdbTable::getSingleTermScore ( int32_t i,
 	sum *= m_freqWeights[i];
 	sum *= m_freqWeights[i];
 
-	// int16_tcut
+	// shortcut
 	//char *maxp = bestwpi[k];
 
 	// if terms is a special wiki half stop bigram
@@ -4808,7 +4808,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 }
 
 void PosdbTable::rmDocIdVotes ( QueryTermInfo *qti ) {
-	// int16_tcut
+	// shortcut
 	char *bufStart = m_docIdVoteBuf.getBufStart();
 
 	register char *dp = NULL;
@@ -4984,7 +4984,7 @@ void PosdbTable::addDocIdVotes ( QueryTermInfo *qti , int32_t   listGroupNum) {
 	// sanity check, we store this in a single byte below for voting
 	if ( listGroupNum >= 256 ) { char *xx=NULL;*xx=0; }
 
-	// int16_tcut
+	// shortcut
 	char *bufStart = m_docIdVoteBuf.getBufStart();
 
 	register char *dp = NULL;
@@ -6119,7 +6119,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		topCursor = m_topTree->getPrev ( topCursor );
 		// count how many so we do not exceed requested #
 		numProcessed++;
-		// int16_tcut
+		// shortcut
 		m_docId = tn->m_docId;
 		// skip if not in our range! the top tree now holds
 		// all the winners from previous docid ranges. msg39
@@ -6195,7 +6195,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) continue;
 		// do each sublist
 		for ( int32_t j = 0 ; j < qti->m_numNewSubLists ; j++ ) {
-			// int16_tcuts
+			// shortcuts
 			register char *xc    = qti->m_cursor[j];
 			register char *xcEnd = qti->m_newSubListEnd[j];
 			// exhausted? (we can't make cursor NULL because
@@ -6308,7 +6308,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	// now to speed up 'time enough for love' query which does not
 	// have many super high scoring guys on top we need a more restrictive
 	// filter than getMaxPossibleScore() so let's pick one query term,
-	// the one with the int16_test termlist, and see how close it gets to
+	// the one with the shortest termlist, and see how close it gets to
 	// each of the other query terms. then score each of those pairs.
 	// so quickly record the word positions of each query term into
 	// a ring buffer of 4096 slots where each slot contains the
@@ -6344,7 +6344,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		}
 	}
 	// now get query term closest to query term # m_minListi which
-	// is the query term # with the int16_test termlist
+	// is the query term # with the shortest termlist
 	// get closest term to m_minListi and the distance
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// skip the man

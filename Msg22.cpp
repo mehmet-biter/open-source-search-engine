@@ -222,7 +222,7 @@ void gotReplyWrapper22 ( void *state1 , void *state2 ) {
 void Msg22::gotReply ( ) {
 	// save g_errno
 	m_errno = g_errno;
-	// int16_tcut
+	// shortcut
 	Msg22Request *r = m_r;
 	// back
 	m_outstanding = false;
@@ -341,7 +341,7 @@ static void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) ;
 //void gotUrlListWrapper     ( void *state , RdbList *list , Msg5 *msg5 ) ;
 
 void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
-	// int16_tcut
+	// shortcut
 	UdpServer *us = &g_udpServer;
 	// get the request
 	Msg22Request *r = (Msg22Request *)slot->m_readBuf;
@@ -474,7 +474,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
        QUICKPOLL ( r->m_niceness );
        
        /*
-       // int16_tcut
+       // shortcut
        Rdb *tdb = g_titledb.getRdb();
 
        // init this
@@ -610,7 +610,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 static void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) ;
 
 void gotUrlListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) {
-	// int16_tcuts
+	// shortcuts
 	State22   *st = (State22 *)state;
 	UdpServer *us = &g_udpServer;
 
@@ -632,7 +632,7 @@ void gotUrlListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) {
 		return;
 	}
 
-	// int16_tcuts
+	// shortcuts
 	RdbList      *ulist = &st->m_ulist;
 	Msg22Request *r     = st->m_r;
 	char         *coll  = g_collectiondb.getCollName ( r->m_collnum );
@@ -842,7 +842,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 	State22 *st = (State22 *)state;
 	// if niceness is 0, use the higher priority udpServer
 	UdpServer *us = &g_udpServer;
-	// int16_tcut
+	// shortcut
 	Msg22Request *r = st->m_r;
 	// breathe
 	QUICKPOLL(r->m_niceness);

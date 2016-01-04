@@ -182,7 +182,7 @@ void UdpSlot::connect ( UdpProtocol    *proto    ,
 	m_queuedTime = -1;
 	// is it a local ip?
 	bool isLocal = false;
-	// int16_tcut
+	// shortcut
 	uint8_t *p = (uint8_t *)&m_ip;
 	// this is local
 	if ( p[0] == 10 ) isLocal = true;
@@ -554,7 +554,7 @@ void UdpSlot::setResendTime() {
 	}
 	// is it a local ip?
 	bool isLocal = false;
-	// int16_tcut
+	// shortcut
 	uint8_t *p = (uint8_t *)&m_ip;
 	// this is local
 	if ( p[0] == 10 ) isLocal = true;

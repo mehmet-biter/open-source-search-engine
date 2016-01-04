@@ -1120,7 +1120,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 			log("msg4: waiting to sync with "
 			    "host #0 before accepting data");
 		}
-		// tell send to try again int16_tly
+		// tell send to try again shortly
 		g_errno = ETRYAGAIN;
 		us->sendErrorReply(slot,g_errno);
 		
@@ -1177,7 +1177,7 @@ bool addMetaList ( char *p , UdpSlot *slot ) {
 	collnum_t collnum = *(collnum_t *)p; p += sizeof(collnum_t);
 	char      rdbId   = *(char      *)p; p += 1;
 	int32_t      recSize = *(int32_t      *)p; p += 4;
-	// int16_tcut
+	// shortcut
 	//UdpServer *us = &g_udpServer;
 	// . get the rdb to which it belongs, use Msg0::getRdb()
 	// . do not call this for every rec if we do not have to

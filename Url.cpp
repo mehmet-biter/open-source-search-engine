@@ -981,7 +981,7 @@ char *Url::getShorthandUrl  ( bool rmWWW , int32_t *len ) {
 	if ( m_plen == 1 && m_path[0]=='/'  && m_query == NULL ) ulen--;
 	// set the length
 	*len = ulen;
-	// return the url int16_thand
+	// return the url shorthand
 	return u;
 }
 
@@ -1721,22 +1721,22 @@ bool isPermalinky ( char *u ) {
 }
 
 
-// is it http://rpc.weblogs.com/int16_tChanges.xml, etc.?
+// is it http://rpc.weblogs.com/shortChanges.xml, etc.?
 bool Url::isPingServer ( ) {
-	if ( strcmp ( m_url , "http://rpc.weblogs.com/int16_tChanges.xml") == 0 )
+	if ( strcmp ( m_url , "http://rpc.weblogs.com/shortChanges.xml") == 0 )
 		return true;
 	// testing page
-	if ( strcmp ( m_url , "http://127.0.0.1:8000/int16_tChanges.xml") == 0 )
+	if ( strcmp ( m_url , "http://127.0.0.1:8000/shortChanges.xml") == 0 )
 		return true;
 	// default
 	return false;
 }
 
 bool isPingServer ( char *s ) {
-	if ( strstr ( s , "rpc.weblogs.com/int16_tChanges.xml") )
+	if ( strstr ( s , "rpc.weblogs.com/shortChanges.xml") )
 		return true;
 	// testing page
-	if ( strstr ( s , "127.0.0.1:8000/int16_tChanges.xml") )
+	if ( strstr ( s , "127.0.0.1:8000/shortChanges.xml") )
 		return true;
 	// default
 	return false;

@@ -295,7 +295,7 @@ top:
 
 	// we need a group #. the column #.
 	//int32_t split = g_hostdb.getGroupNum ( gid );
-	// int16_tcut
+	// shortcut
 	Msg0 *m = &m_msg0;
 	// get the list. returns false if blocked.
 	if ( ! m->getList ( -1                 , // hostId

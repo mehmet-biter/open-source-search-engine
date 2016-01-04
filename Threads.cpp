@@ -1148,7 +1148,7 @@ bool ThreadQueue::isHittingFile ( BigFile *bf ) {
 		//if ( ! t->m_isLaunched ) continue;
 		// must be a read
 		if ( t->m_startRoutine != readwriteWrapper_r ) continue;
-		// int16_tcut
+		// shortcut
 		FileState *fs = (FileState *)t->m_state;
 		// get bigfile ptr
 		if ( fs->m_this == bf ) return true;
@@ -1184,7 +1184,7 @@ void ThreadQueue::bailOnReads ( ) {
 		if ( t->m_callback == ohcrap ) continue;
 		// must be a read
 		if ( t->m_startRoutine != readwriteWrapper_r ) continue;
-		// int16_tcut
+		// shortcut
 		FileState *fs = (FileState *)t->m_state;
 		// do not stop writes
 		if ( fs->m_doWrite ) continue;
@@ -2343,7 +2343,7 @@ bool ThreadQueue::launchThread2 ( ) {
 		// be active/launched at any one time
 		if ( niceness >= 1 && total >= max ) continue;
 
-		// int16_tcut
+		// shortcut
 		ThreadEntry *t = &m_entries[i];
 
 		// what is this guy's read size?

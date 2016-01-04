@@ -594,7 +594,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 	// use "m_swbits" not "m_bits", that is what Bits::setForSummary() uses
 	swbit_t *bb = m->m_bits->m_swbits;
 
-	// int16_tcut
+	// shortcut
 	if ( m->m_sections ) {
 		sp = m->m_sections->m_sectionPtrs;
 	}
@@ -986,7 +986,7 @@ bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Po
 	int32_t lastAlnum = -1;
 	// google seems to index SEC_MARQUEE, so i took that out of here
 	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_TITLE;
-	// int16_tcut
+	// shortcut
 	nodeid_t  *tids = words->m_tagIds;
 	int64_t *wids = words->getWordIds();
 

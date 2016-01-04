@@ -3123,7 +3123,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 		// the table headers so SpiderRequest::printToTable() works
 		if ( ! SpiderRequest::printTableHeaderSimple(&sb,true) ) 
 			return false;
-		// int16_tcut
+		// shortcut
 		XmlDoc **docs = g_spiderLoop.m_docs;
 		// row count
 		int32_t j = 0;

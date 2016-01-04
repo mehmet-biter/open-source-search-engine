@@ -415,7 +415,7 @@ void Msg51::gotClusterRec ( Msg0 *msg0 ) { //, RdbList *list ) {
 	// it is legit, set to CR_OK
 	m_clusterLevels[ci] = CR_OK;
 
-	// int16_tcut
+	// shortcut
 	RdbCache *c = &s_clusterdbQuickCache;
 	
 	// . init the quick cache

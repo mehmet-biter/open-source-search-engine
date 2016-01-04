@@ -708,7 +708,7 @@ char *HashTableX::serialize ( int32_t *bufSize ) {
 	return buf;
 }
 
-// int16_tcut
+// shortcut
 int32_t HashTableX::serialize ( SafeBuf *sb ) {
 	int32_t nb = serialize ( sb->getBuf() , sb->getAvail() );
 	// update sb
@@ -718,7 +718,7 @@ int32_t HashTableX::serialize ( SafeBuf *sb ) {
 
 // returns # bytes written into "buf"
 int32_t HashTableX::serialize ( char *buf , int32_t bufSize ) {
-	// int16_tcuts
+	// shortcuts
 	char *p    = buf;
 	//char *pend = buf + bufSize;
 	// how much for table?
@@ -781,7 +781,7 @@ bool HashTableX::deserialize ( char *buf , int32_t bufSize , int32_t niceness ) 
 	// clear it
 	reset();
 
-	// int16_tcuts
+	// shortcuts
 	char *p    = buf;
 	//char *pend = buf + bufSize;
 

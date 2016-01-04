@@ -430,7 +430,7 @@ class HashTableX {
 	// return buffer we allocated and stored into. return -1 on error
 	// with g_errno set.
 	char *serialize ( int32_t *bufSize ) ;
-	// int16_tcut
+	// shortcut
 	int32_t serialize ( class SafeBuf *sb );
 	// returns # bytes written into "buf"
 	int32_t serialize ( char *buf , int32_t bufSize );

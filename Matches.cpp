@@ -290,17 +290,8 @@ void Matches::setQuery ( Query *q ) {
 // . we can also use this to replace the proximity algo setup where it
 //   fills in the matrix for title, link text, etc.
 // . returns false and sets g_errno on error
-bool Matches::set ( XmlDoc   *xd         ,
-		    Words    *bodyWords  ,
-		    //Synonyms *bodySynonyms,
-		    Phrases  *bodyPhrases ,
-		    Sections *bodySections ,
-		    Bits     *bodyBits   ,
-		    Pos      *bodyPos    ,
-		    Xml      *bodyXml    ,
-		    Title    *tt         ,
-		    int32_t      niceness   ) {
-
+bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections *bodySections, Bits *bodyBits,
+				   Pos *bodyPos, Xml *bodyXml, Title *tt, int32_t niceness ) {
 	// don't reset query info!
 	reset2();
 
@@ -310,38 +301,16 @@ bool Matches::set ( XmlDoc   *xd         ,
 	// . first add all the matches in the body of the doc
 	// . add it first since it will kick out early if too many matches
 	//   and we get all the explicit bits matched
-	if ( ! addMatches ( bodyWords ,
-			    //bodySynonyms ,
-			    bodyPhrases ,
-			    bodySections ,
-			    //addToMatches ,
-			    bodyBits   ,
-			    bodyPos    ,
-			    0          , // fieldCode of words, 0 for no field
-			    true       , // allowPunctInPhrase,
-			    false      , // exclQTOnlyinAnchTxt,
-			    0          , // qvec_t  reqMask      ,
-			    0          , // qvec_t  negMask      ,
-			    1          , // int32_t    diversityWeight,
-			    xd->m_docId,
-			    MF_BODY        ) )
+	if ( !addMatches( bodyWords, bodyPhrases, bodySections, bodyBits, bodyPos, xd->m_docId, MF_BODY ) )
 		return false;
 
 	// add the title in
-	if ( ! addMatches ( tt->getTitle()      , 
-			    tt->getTitleLen()  ,
-			    MF_TITLEGEN         ,
-			    xd->m_docId         ,
-			    niceness            ))
+	if ( !addMatches( tt->getTitle(), tt->getTitleLen(), MF_TITLEGEN, xd->m_docId, niceness ) )
 		return false;
 
 	// add in the url terms
 	Url  *turl = xd->getFirstUrl();
-	if ( ! addMatches ( turl->m_url ,
-			    turl->m_ulen ,
-			    MF_URL ,
-			    xd->m_docId ,
-			    niceness ) )
+	if ( !addMatches( turl->m_url, turl->m_ulen, MF_URL, xd->m_docId, niceness ) )
 		return false;
 
 	// also use the title from the title tag, because sometimes it does not equal "tt->getTitle()"
@@ -353,11 +322,7 @@ bool Matches::set ( XmlDoc   *xd         ,
 	if ( a >= 0 && b >= 0 && b>a ) {
 		start = bodyWords->getWord(a);
 		end   = bodyWords->getWord(b-1) + bodyWords->getWordLen(b-1);
-		if ( ! addMatches ( start           ,
-				    end - start     ,
-				    MF_TITLETAG     ,
-				    xd->m_docId     ,
-				    niceness        ))
+		if ( !addMatches( start, end - start, MF_TITLETAG, xd->m_docId, niceness ) )
 			return false;
 	}
 
@@ -387,11 +352,7 @@ bool Matches::set ( XmlDoc   *xd         ,
 		char *s = bodyXml->getString ( i , "content" , &len );
 		if ( ! s || len <= 0 ) continue;
 		// wordify
-		if ( ! addMatches ( s                , 
-				    len              ,
-				    flag             ,
-				    xd->m_docId      ,
-				    niceness         ) )
+		if ( !addMatches( s, len, flag, xd->m_docId, niceness ) )
 			return false;
 	}
 
@@ -405,56 +366,50 @@ bool Matches::set ( XmlDoc   *xd         ,
 	Inlink *k = NULL;
 	for ( ; (k = info->getNextInlink(k)) ; ) {
 		// does it have link text? skip if not.
-		if ( k->size_linkText <= 1 ) continue;
+		if ( k->size_linkText <= 1 ) {
+			continue;
+		}
+
 		// set the flag, the type of match
 		mf_t flags = MF_LINK;
-		//if ( k->m_isAnomaly ) flags = MF_ALINK;
+
 		// add it in
-		if ( ! addMatches ( k->getLinkText() ,
-				    k->size_linkText - 1 ,
-				    flags                ,
-				    xd->m_docId          ,
-				    niceness             ))
+		if ( !addMatches( k->getLinkText(), k->size_linkText - 1, flags, xd->m_docId, niceness ) ) {
 			return false;
+		}
 
 		// skip if no neighborhood text
 		//if ( k->size_surroundingText <= 1 ) continue;
 
 		// set flag for that
 		flags = MF_HOOD;
-		//if ( k->m_isAnomaly ) flags = MF_AHOOD;
+
 		// add it in
-		if ( ! addMatches ( k->getSurroundingText() ,
-				    k->size_surroundingText - 1 ,
-				    flags                       ,
-				    xd->m_docId                 ,
-				    niceness                    ))
+		if ( !addMatches( k->getSurroundingText(), k->size_surroundingText - 1, flags, xd->m_docId,
+		                  niceness ) ) {
 			return false;
+		}
 
 		// parse the rss up into xml
 		Xml rxml;
-		if ( ! k->setXmlFromRSS ( &rxml , niceness ) ) return false;
+		if ( ! k->setXmlFromRSS ( &rxml , niceness ) ) {
+			return false;
+		}
 
 		// add rss description
 		bool isHtmlEncoded;
 		int32_t rdlen;
 		char *rd = rxml.getRSSDescription ( &rdlen , &isHtmlEncoded );
-		if ( ! addMatches ( rd               ,
-				    rdlen            ,
-				    MF_RSSDESC       ,
-				    xd->m_docId      ,
-				    niceness         ))
+		if ( !addMatches( rd, rdlen, MF_RSSDESC, xd->m_docId, niceness ) ) {
 			return false;
+		}
 
 		// add rss title
 		int32_t rtlen;
 		char *rt = rxml.getRSSTitle       ( &rtlen , &isHtmlEncoded );
-		if ( ! addMatches ( rt               ,
-				    rtlen            ,
-				    MF_RSSTITLE      ,
-				    xd->m_docId      ,
-				    niceness         ))
+		if ( !addMatches( rt, rtlen, MF_RSSTITLE, xd->m_docId, niceness ) ) {
 			return false;
+		}
 	}
 
 	// now repeat for imported link text!
@@ -466,275 +421,11 @@ bool Matches::set ( XmlDoc   *xd         ,
 		if ( info ) goto loop;
 	}
 
-	/*
-	// convenience
-	Query *q = m_q;
-
-	// any error we have will be this
-	g_errno = EMISSINGQUERYTERMS;
-
-	// . add in match bits from query!
-	// . used for the BIG HACK
-	for( int32_t i = 0; i < q->m_numTerms ; i++ ) {
-		// get it
-		QueryTerm *qt = &q->m_qterms[i];			
-
-		bool   isNeg = qt->m_termSign == '-';
-		qvec_t ebit  = qt->m_explicitBit;
-		// save it
-		int32_t fc = qt->m_fieldCode;
-		// . length stops at space for fielded terms
-		// . get word
-		QueryWord *w = qt->m_qword;
-		// get word index
-		int32_t wi = w - q->m_qwords;
-		// point to word
-		char *qw = q->m_qwords[wi].m_word;
-		// total length
-		int32_t qwLen = 0;
-		// keep including more words until not in field anymore
-		for ( ; wi < q->m_numWords ; wi++ ) {
-			if ( q->m_qwords[wi].m_fieldCode != fc ) break;
-			// include its length
-			qwLen += q->m_qwords[wi].m_wordLen;
-		}
-		if( !qw || !qwLen )
-			return log( "query: Error, no query word found!" );
-		char tmp[512];
-		//int32_t tmpLen;
-		//tmpLen = utf16ToUtf8( tmp, 512, qw, qwLen );
-		int32_t tmpLen = qwLen;
-		if ( tmpLen > 500 ) tmpLen = 500;
-		gbmemcpy ( tmp , qw , tmpLen );
-		tmp[tmpLen] = '\0';
-		log(LOG_DEBUG,"query: term#=%"INT32" fieldLen=%"INT32":%s",i,tmpLen,tmp);
-
-		if ( fc == FIELD_GBLANG ) {
-			char lang = atoi( tmp );
-			log( LOG_DEBUG, "query: TitleRec "
-			     "Lang=%i", *xd->getLangId() );
-			if( q->m_isBoolean ) {
-				if (*xd->getLangId() == lang) 
-					m_explicitsMatched |= ebit;
-				continue;
-			}
-			if ( isNeg && (*xd->getLangId() == lang)){
-				if( q->m_hasUOR ) continue;
-				return log("query: Result contains "
-					   "-gblang: term, filtering. "
-					   " q=%s", q->m_orig);
-			}
-			else if(   !isNeg 
-				   && (*xd->getLangId() != lang)){
-				if( q->m_hasUOR ) continue;
-				return log("query: Result is missing "
-					   "gblang: term, filtering. "
-					   "q=%s", q->m_orig);
-			}
-			else 
-				m_explicitsMatched |= ebit;
-		}
-
-		else if ( fc == FIELD_GBCOUNTRY ) {
-			unsigned char country ;
-			country = g_countryCode.getIndexOfAbbr(tmp);
-			log( LOG_DEBUG, "query: TitleRec "
-			     "Country=%i", *xd->getCountryId() );
-			if ( q->m_isBoolean ) {
-				if ( *xd->getCountryId() == country) 
-					m_explicitsMatched |= ebit;
-				continue;
-			}
-			if ( isNeg && (*xd->getCountryId() == country)){
-				if( q->m_hasUOR ) continue;
-				return log("query: Result contains "
-				    "-gbcountry: term, filtering. "
-				    " q=%s", q->m_orig);
-			}
-			else if ( !isNeg  && (*xd->getCountryId() != country)){
-				if( q->m_hasUOR ) continue;
-				return log("query: Result is missing "
-				    "gbcountry: term, filtering. "
-				    "q=%s", q->m_orig);
-			}
-			else 
-				m_explicitsMatched |= ebit;
-		}
-		else if( fc == FIELD_SITE ) {
-			// . Site Colon Field Terms:
-			//   1.) match tld first (if only tld)
-			//   2.) match domain (contains tld) 
-			//   3.) match host (sub-domain)
-			//   4.) match path
-			//   * 1 is the minimal specificity for
-			//     a site: query.  2,3, and 4 are 
-			//     only required if specified in 
-			//     query
-			bool  fail = false;
-			Url  *turl   = xd->getFirstUrl();
-			char *ttld   = turl->getTLD();
-			int32_t  ttlen  = turl->getTLDLen();
-			char *tdom   = turl->getDomain();
-			int32_t  tdlen  = turl->getDomainLen();
-			char *thost  = turl->getHost();
-			int32_t  thlen  = turl->getHostLen();
-			char *tpath  = turl->getPath();
-			int32_t  tplen  = turl->getPathLen();
-			//bool  hasWWW = turl->isHostWWW();
-			log( LOG_DEBUG, "query: TitleRec "
-			     "Site=%s", tdom );
-			// . Check to see if site: is querying 
-			//   only a TLD, then we can't put it
-			//   into Url.
-			if(isTLD(tmp, tmpLen)) {
-				if(ttlen != tmpLen ||
-				   strncmp(ttld, tmp, tmpLen))
-					fail = true;
-			}
-			else {
-				Url qurl;
-				// false --> add www?
-				qurl.set( tmp, tmpLen, false);//hasWWW );
-				char *qdom  = qurl.getDomain();
-				int32_t  qdlen = qurl.
-					getDomainLen();
-				char *qhost = qurl.getHost();
-				int32_t  qhlen = qurl.getHostLen();
-				char *qpath = qurl.getPath();
-				int32_t  qplen = qurl.getPathLen();
-				
-				if(tdlen != qdlen || 
-				   strncmp(tdom, qdom, qdlen))
-					fail = true;
-				if(!fail && 
-				   qhlen != qdlen && 
-				   (thlen != qhlen ||
-				    strncmp(thost, 
-					    qhost, qhlen)))
-					fail = true;
-				if(!fail && qplen > 1 && 
-				   (tplen < qplen ||
-				    strncmp(tpath, 
-					    qpath, qplen)))
-					fail = true;
-			}
-			if( q->m_isBoolean){
-				if ( ! fail ) 
-					m_explicitsMatched |= ebit;
-				continue;
-			}
-		
-			if( fail && !isNeg ){
-				if( q->m_hasUOR ) continue;
-				return log("query: Result is missing "
-					   "site: term, filtering. " 
-					   "q=%s", q->m_orig);
-			}
-			else if( !fail && isNeg ){
-				if( q->m_hasUOR ) continue;
-				return log("query: Result contains "
-					   "-site: term, filtering. "
-					   "q=%s", q->m_orig );
-			}
-			else 
-				m_explicitsMatched |= ebit;
-		}
-		else if ( fc == FIELD_IP ) {
-			int32_t  ip = *xd->getIp();
-			char *oip = iptoa( ip );
-			log(LOG_DEBUG, "query: TitleRec Ip=%s", oip );
-			int32_t olen = gbstrlen(oip);
-			bool matched = false;
-			if (olen>=tmpLen && strncmp(oip,tmp,tmpLen)==0 )
-				matched = true;
-			if( q->m_isBoolean){
-				if (matched) m_explicitsMatched |= ebit;
-				continue;
-			}
-			if ( ! matched && ! isNeg ) {
-				if( q->m_hasUOR ) continue;
-				return log("query: Result is missing ip: term,"
-					   " filtering. q=%s", q->m_orig );
-			}
-			else if ( matched && isNeg ) {
-				if( q->m_hasUOR ) continue;
-				return log("query: Result contains -ip: term, "
-					   "filtering. q=%s", q->m_orig );
-			}
-			else 
-				m_explicitsMatched |= ebit;
-		}
-
-		else if ( fc == FIELD_URL ) {
-			char *url  = xd->getFirstUrl()->getUrl();
-			int32_t  slen = xd->getFirstUrl()->getUrlLen();
-			Url u;
-			// do not force add the "www." cuz titleRec does not
-			u.set( tmp, tmpLen, false );//true );
-			char * qs  = u.getUrl();
-			int32_t   qsl = u.getUrlLen();
-			log( LOG_DEBUG, "query: TitleRec Url=%s",  url );
-			if( qsl > slen ) qsl = slen;
-			int32_t result = strncmp( url, qs, qsl );
-			if( q->m_isBoolean){
-				if (result) 
-					m_explicitsMatched |= ebit;
-				continue;
-			}
-			if( result && !isNeg ){
-				if( q->m_hasUOR ) continue;
-				return log("query: Result is missing "
-					   "url: term, filtering. q=%s",
-					   q->m_orig );
-			}
-			else if( !result && isNeg ){
-				if( q->m_hasUOR ) continue;
-				return log("query: Result contains "
-					   "-url: term, filtering. "
-					   "q=%s", q->m_orig );
-			}
-			else 
-				m_explicitsMatched |= ebit;
-		}
-
-	}
-	
-	// clear just in case
-	g_errno = 0;
-
-	// what bits are not matchable
-	qvec_t unmatchable = m_q->m_matchRequiredBits -m_matchableRequiredBits;
-	// modify what we got
-	qvec_t matched = m_explicitsMatched | unmatchable;
-	// need to set Query::m_bmap before calling getBitScore()
-	if ( ! m_q->m_bmapIsSet ) m_q->setBitMap();
-	// if boolean, do the truth table
-	int32_t bitScore = m_q->getBitScore ( matched );
-	// assume we are missing some. if false, may still be in the results
-	// if we have rat=0 (Require All Terms = false)
-	m_hasAllQueryTerms = false;
-	// assume not a match. if this is false big hack excludes from results
-	m_matchesQuery = false;
-	// see Query.h for these bits defined. do not include 0x80 because
-	// we may not have any forced bits...
-	if ( bitScore & (0x20|0x40) ) m_matchesQuery = true;
-	// it may not have all the query terms because of rat=0
-	if ( (matched & m_q->m_matchRequiredBits)== m_q->m_matchRequiredBits ){
-		m_hasAllQueryTerms = true;
-		m_matchesQuery     = true;
-	}
-	*/
-
 	// that should be it
 	return true;
 }
 
-bool Matches::addMatches ( char      *s         ,
-			   int32_t       slen      ,
-			   mf_t       flags     ,
-			   int64_t  docId     ,
-			   int32_t       niceness  ) {
-
+bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int64_t docId, int32_t niceness ) {
 	// . do not breach
 	// . happens a lot with a lot of link info text
 	if ( m_numMatchGroups >= MAX_MATCHGROUPS ) {
@@ -775,21 +466,7 @@ bool Matches::addMatches ( char      *s         ,
 	int32_t n = m_numMatchGroups;
 	// . add all the Match classes from this match group
 	// . this increments m_numMatchGroups on success
-	bool status = addMatches ( wp   ,
-				   //NULL , // synonyms
-				   NULL , // phrases
-				   sp   ,
-				   //true , // addToMatches
-				   bp   , // bits
-				   pb   , // pos
-				   0    , // fieldCode
-				   true , // allowPunctInPhrase?
-				   false , // excludeQTOnlyInAnchTxt?
-				   0     , // reqMask
-				   0     , // negMask
-				   1     , // diversityWeight
-				   docId ,
-				   flags );// docId
+	bool status = addMatches( wp, NULL, sp, bp, pb, docId, flags );
 
 	// if this matchgroup had some, matches, then keep it
 	if ( m_numMatches > startNumMatches ) return status;
@@ -827,20 +504,11 @@ bool Matches::getMatchGroup ( mf_t       matchFlag ,
 // . TODO: support stemming later. each word should then have multiple ids.
 // . add to our m_matches[] array iff addToMatches is true, otherwise we just
 //   set the m_foundTermVector for doing the BIG HACK described in Summary.cpp
-bool Matches::addMatches ( Words    *words               ,
-			   //Synonyms *syn                 ,
-			   Phrases  *phrases             ,
-			   Sections *sections            ,
-			   Bits     *bits                ,
-			   Pos      *pos                 ,
-			   int32_t      fieldCode           , // of words,0=none
-			   bool      allowPunctInPhrase  ,
-			   bool      exclQTOnlyinAnchTxt ,
-			   qvec_t    reqMask             ,
-			   qvec_t    negMask             ,
-			   int32_t      diversityWeight     ,
-			   int64_t docId               ,
-			   mf_t      flags               ) { 
+bool Matches::addMatches( Words *words, Phrases *phrases, Sections *sections, Bits *bits, Pos *pos,
+						  int64_t docId, mf_t flags ) {
+
+	bool allowPunctInPhrase = true;
+	int32_t diversityWeight = 1;
 
 	// if no query term, bail.
 	if ( m_numSlots <= 0 ) return true;
@@ -856,15 +524,11 @@ bool Matches::addMatches ( Words    *words               ,
 		return true;
 	}
 
-	// int16_tcut
+	// shortcut
 	Section *sp = NULL;
-	if ( sections ) sp = sections->m_sections;
-
-	// we've added a lot of matches, if we don't need anymore
-	// to confirm the big hack then break out
-	//if ( m_numMatches >= MAX_MATCHES &&
-	//     ( m_explicitsMatched & m_matchableRequiredBits ) ) 
-	//	return true;
+	if ( sections ) {
+		sp = sections->m_sections;
+	}
 
 	mf_t eflag = 0;
 
@@ -877,25 +541,22 @@ bool Matches::addMatches ( Words    *words               ,
 	m_numMatchGroups++;
 
 	int64_t *pids = NULL;
-	if ( phrases ) pids = phrases->getPhraseIds2();
+	if ( phrases ) {
+		pids = phrases->getPhraseIds2();
+	}
 
 	// set convenience vars
-	uint32_t  mask    = m_numSlots - 1;
-	int64_t     *wids    = words->getWordIds();
-	int32_t          *wlens   = words->getWordLens();
-	char         **wptrs   = words->getWords();
-	// swids = word ids where accent marks, etc. are stripped 
-	//int64_t     *swids   = words->getStripWordIds();
-	nodeid_t      *tids    = words->getTagIds();
-	int32_t           nw      = words->m_numWords;
-	//int32_t          *wscores = NULL;
-	//if ( scores )  wscores = scores->m_scores;
-	int32_t           n;//,n2 ;
-	int32_t           matchStack = 0;
-	int64_t      nextMatchWordIdMustBeThis = 0;
-	int32_t           nextMatchWordPos = 0;
-	int32_t           lasti   = -3;
-	//bool           inAnchTag = false;
+	uint32_t mask = m_numSlots - 1;
+	int64_t *wids = words->getWordIds();
+	int32_t *wlens = words->getWordLens();
+	char **wptrs = words->getWords();
+	nodeid_t *tids = words->getTagIds();
+	int32_t nw = words->m_numWords;
+	int32_t n;
+	int32_t matchStack = 0;
+	int64_t nextMatchWordIdMustBeThis = 0;
+	int32_t nextMatchWordPos = 0;
+	int32_t lasti = -3;
 
 	int32_t dist = 0;
 
@@ -926,16 +587,12 @@ bool Matches::addMatches ( Words    *words               ,
 		}
 		// account for both the back and the front tags
 		s_tab[i     ] = step;
-		//s_tab[i|0x80] = step;
 	}
 	s_tableInit = true;
 
 	// google seems to index SEC_MARQUEE so i took that out of here
 	int32_t badFlags =SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_TITLE;
 
-	//int32_t anum;
-	//int64_t *aids;
-	//int32_t j;
 	int32_t qwn;
 	int32_t numQWords;
 	int32_t numWords;
@@ -981,16 +638,6 @@ bool Matches::addMatches ( Words    *words               ,
 
 		// clear this
 		eflag = 0;
-
-		// . zero score words cannot match query terms either
-		// . BUT if score is -1 that means it is in a <select> or
-		//   a <marquee> tag (see Scores.cpp)
-		// . FIX: neg word terms cannot be in quotes!!
-		//for( int32_t j = 0; j < m_numNegTerms; j++ ) {
-		//	if(     wids[i] == m_qtableNegIds[j] 
-		//	    || swids[i] == m_qtableNegIds[j] ) 
-		//		m_foundNegTermVector[j] = 1;
-		//}
 
 		// NO NO, a score of -1 means in a select tag, and
 		// we do index that!! so only skip if wscores is 0 now.
@@ -1074,12 +721,8 @@ bool Matches::addMatches ( Words    *words               ,
 			if ( qw->m_phraseId == pids[i] ) {
 				// might match more if we had more query
 				// terms in the quote
-				numWords = getNumWordsInMatch( words, 
-							       i, 
-							       n, 
-							       &numQWords, 
-							       &qwn, 
-							 allowPunctInPhrase );
+				numWords = getNumWordsInMatch( words, i, n, &numQWords, &qwn, allowPunctInPhrase );
+
 				// this is 0 if we were an unmatched quote
 				if ( numWords <= 0 ) continue;
 				// we matched a bigram in the document
@@ -1116,8 +759,7 @@ bool Matches::addMatches ( Words    *words               ,
 		//   in both cases will included unmatched punctuation words
 		//   and tags in between matching words.
 		numQWords = 0;
-		numWords = getNumWordsInMatch( words, i, n, &numQWords, 
-					       &qwn, allowPunctInPhrase );
+		numWords = getNumWordsInMatch( words, i, n, &numQWords, &qwn, allowPunctInPhrase );
 		// this is 0 if we were an unmatched quote
 		if ( numWords <= 0 ) continue;
 
@@ -1153,23 +795,6 @@ bool Matches::addMatches ( Words    *words               ,
 				if ( m_numMatches < 0 ) m_numMatches = 0;
 				// don't forget to reset the match stack
 				matchStack = 0;	
-
-				/*
-				//
-				// count him at least for big hack though
-				//
-				// incorporate the explicit bit of this term
-				QueryTerm *qt = qw->m_queryWordTerm;
-				// are we in quotes?
-				if ( ! qt ) qt = qw->m_queryPhraseTerm;
-				// record it as matched. this is used for the 
-				// BIG HACK
-				if ( qt ) m_explicitsMatched |= 
-				      qt->m_explicitBit | qt->m_implicitBits;
-				//
-				// done BIG HACK fix
-				//
-				*/
 
 				continue; 
 			}
@@ -1212,95 +837,30 @@ bool Matches::addMatches ( Words    *words               ,
 		// record word # of last match
 		lasti = i;
 
-		// . we MUST map the QueryWords to their respective QueryTerms
-		// . that is done already pretty much in Query.cpp
-		// . this allows us to set our m_foundTermVector[] as well as
-		//   compute the termFreq for our matching quote
-		// . MDW: WHAT IS THIS?????
-		/*
-		//int64_t  max = -1;
-		for ( int32_t j = qwn ; j < qwn + numQWords && 
-			      // if the word is repeated twice in two different
-			      // phrases, qwn sometimes ends up in the later,
-			      // phrase which may have less words in it than
-			      // the other, so check for breech here
-			      j < m_q->m_numWords ; j++ ) {
-			// get the ith query word
-			QueryWord *qw = &m_q->m_qwords[j];
-			// does it have a query word or phrase term?
-			QueryTerm *qt1 = qw->m_queryWordTerm ;
-			QueryTerm *qt2 = qw->m_queryPhraseTerm;
-			int32_t qtn1 = -1;
-			int32_t qtn2 = -1;
-			if ( qt1 ) qtn1 = qt1 - m_q->m_qterms;
-			if ( qt2 ) qtn2 = qt2 - m_q->m_qterms;
-
-			// we must match X words to match the phrase!
-			if ( numWords <= 1 ) qt2 = NULL;
-
-			// MDW: why do this here instead of below where we
-			// actually add the Match?
-			if ( qt1 &&
-			     !(exclQTOnlyinAnchTxt && inAnchTag) )
-			   m_explicitsMatched |= qt1->m_matchesExplicitBits;
-			if ( qt2 && 
-			     !(exclQTOnlyinAnchTxt && inAnchTag) ) {
-			   m_explicitsMatched |= qt2->m_matchesExplicitBits;
-			   m_explicitsMatched |= qt2->m_implicitBits;
-			}
-			// . set the score
-			// . MDW: these scores are set in Summary.cpp based on
-			//   tf, etc. i think it should handle this , not us
-			if ( ! m_tscores           ) continue;
-			if ( max == -1 && qt1           ) max=m_tscores[qtn1];
-			if ( max == -1 && qt2           ) max=m_tscores[qtn2];
-			if ( qt1 && m_tscores[qtn1]>max ) max=m_tscores[qtn1];
-			if ( qt2 && m_tscores[qtn2]>max ) max=m_tscores[qtn2];
+		if (m_detectSubPhrases) {
+			detectSubPhrase(words, i, numWords, qwn, diversityWeight);
 		}
-		*/
 
-		if(m_detectSubPhrases) 
-			detectSubPhrase(words, i, numWords, qwn, 
-					diversityWeight);
-		// . if not adding to m_matches, keep going
-		// . MDW: why wouldn't we add to the matches array?
-		//if ( ! addToMatches ) continue;
-		// don't store it in our m_matches array if the max is negative
-		// i.e. we matched a '-' unwanted word
-		/*
-		if ( max < -1 ) {
-			log("query: found neg word in doc! should be taken "
-			    "care of in summary and doc should not be "
-			    "displayed! query=%s docId=%"INT64"",
-			    m_q->m_orig, docId);
-			return false;
-		}
-		// sanity check
-		if ( m_tscores && max == -1 ) { 
-			g_errno = EBADENGINEER;
-			log("query: bad matches error. fix me! query=%s "
-			    "docId=%"INT64"", m_q->m_orig, docId);
-			return false;
-			char *xx = NULL; *xx = 0; 
-		}
-		*/
 		// otherwise, store it in our m_matches[] array
 		Match *m = &m_matches[m_numMatches];
-		// use the max score of all query terms we contain as our score
-		//if ( max >= 0 ) m->m_score = max;
+
 		// the word # in the doc, and how many of 'em are in the match
 		m->m_wordNum  = i;
 		m->m_numWords = numWords;
+
 		// the word # in the query, and how many of 'em we match
 		m->m_qwordNum  = qwn;
 		m->m_numQWords = numQWords;
+
 		// get the first query word # of this match
-		//QueryWord *qw = &m_q->m_qwords[qwn];
 		qw = &m_q->m_qwords[qwn];
+
 		// get its color. for highlighting under different colors.
 		m->m_colorNum = qw->m_colorNum;
+
 		// sanity check
 		if ( m->m_colorNum < 0 ) { char *xx = NULL; *xx = 0; }
+
 		// convenience, used by Summary.cpp
 		m->m_words    = words;
 		m->m_sections = sections;
@@ -1308,64 +868,29 @@ bool Matches::addMatches ( Words    *words               ,
 		m->m_pos      = pos;
 		m->m_dist     = dist;
 		m->m_flags    = flags | eflag ;
-		// this is used by the proximity algorithm in Summary.cpp
-		//m->m_crossedSection = false;
+
 		// add to our vector. we want to know where each QueryWord
 		// is. i.e. in the title, link text, meta tag, etc. so
 		// the proximity algo in Summary.cpp can use that info.
 		m_qwordFlags[qwn] |= flags;
 
-		// loop over the query words in the match and add in all
-		// their explicit bits. fixes www.gmail.com query which
-		// matches query words, and we assume it is in quotes...
-		/*
-		for ( int32_t qi = qwn ; qi < qwn + numQWords ; qi++ ) {
-			// get it
-			QueryWord *ww = &m_q->m_qwords[qi];
-			// incorporate the explicit bit of this term
-			QueryTerm *qt = ww->m_queryWordTerm;
-			// are we in quotes?
-			if ( ! qt ) qt = ww->m_queryPhraseTerm;
-			// record it as matched. this is used for the BIG HACK
-			if ( qt ) m_explicitsMatched |= 
-				      qt->m_explicitBit | qt->m_implicitBits;
-		}
-		*/
-
 		// advance
 		m_numMatches++;
-		// i think we use "dist" for the proximity algo now, but what
-		// was it used for before?
-		//dist = 0;
-		// reset stack
-		// no! we need to be able to pop off this match if it
-		// requires the next query term to follow it, like in the
-		// case of a query stop word...
-		//matchStack = 0;
+
+
 		// we get atleast MAX_MATCHES
-		if ( m_numMatches < MAX_MATCHES ) continue;
-		// we've added a lot of matches, if we don't need anymore
-		// to confirm the big hack then break out
-		//if ( m_explicitsMatched & m_matchableRequiredBits ) {
-		//	log(LOG_DEBUG,
-		//	    "query: found all query terms for big hack after "
-		//	    "%"INT32" matches. docId=%"INT64"", m_numMatches, docId);
-		//	break;
-		//}
-		//bool hadPhrases ;
-		//bool hadWords   ;
-		//int32_t matchedBits = getTermsFound2 (&hadPhrases,&hadWords);
-		//if ( (matchedBits & reqMask) == reqMask && 
-		//     !(matchedBits & negMask) ) {
-		//	log("query: found all query terms for big hack after "
-		//	    "%"INT32" matches. docId=%"INT64"", m_numMatches, docId);
-		//	break;
-		//}
+		if ( m_numMatches < MAX_MATCHES ) {
+			continue;
+		}
+
 		// don't breech MAX_MATCHES_FOR_BIG_HACK
-		if ( m_numMatches < MAX_MATCHES_FOR_BIG_HACK ) continue;
-		
-		log("query: Exceed match buffer of %"INT32" matches. docId=%"INT64"",
-		    (int32_t)MAX_MATCHES_FOR_BIG_HACK, docId);
+		if ( m_numMatches < MAX_MATCHES_FOR_BIG_HACK ) {
+			continue;
+		}
+
+		log( "query: Exceed match buffer of %" INT32 " matches. docId=%" INT64 "",
+			 (int32_t)MAX_MATCHES_FOR_BIG_HACK, docId );
+
 		break;
 	}
 
@@ -1377,13 +902,8 @@ bool Matches::addMatches ( Words    *words               ,
 }
 
 // . word #i in the doc matches slot #n in the hash table
-int32_t Matches::getNumWordsInMatch ( Words *words     ,
-				   int32_t   wn        , 
-				   int32_t   n         , 
-				   int32_t  *numQWords ,
-				   int32_t  *qwn       ,
-				   bool   allowPunctInPhrase ) {
-
+int32_t Matches::getNumWordsInMatch( Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
+									 bool allowPunctInPhrase ) {
 	// is it a two-word synonym?
 	if ( m_qtableFlags[n] & 0x08 ) {
 		// get the word following this

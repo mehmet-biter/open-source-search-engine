@@ -345,7 +345,7 @@ bool Msg3a::gotCacheReply ( ) {
 	// reset replies received count
 	m_numReplies  = 0;
 	m_skippedShards = 0;
-	// int16_tcut
+	// shortcut
 	int32_t n = m_q->m_numTerms;
 
 	/////////////////////////////
@@ -1022,7 +1022,7 @@ bool Msg3a::mergeLists ( ) {
 	*/
 
 
-	// int16_tcut
+	// shortcut
 	//int32_t numSplits = m_numHosts;//indexdbSplit;
 
 	// . point to the various docids, etc. in each shard reply
@@ -1149,7 +1149,7 @@ bool Msg3a::mergeLists ( ) {
 
 		// the end point
 		char *pend = p + ((4+sizeof(FacetEntry)) * nh);
-		// int16_tcut
+		// shortcut
 		HashTableX *ft = &qt->m_facetHashTable;
 		// now compile the facet hash list into there
 		for ( ; p < pend ; ) {

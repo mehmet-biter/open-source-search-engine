@@ -863,7 +863,7 @@ extern RdbCache g_termFreqCache;
 inline char *getWordPosList ( int64_t docId , char *list , int32_t listSize ) {
 	// make step divisible by 6 initially
 	int32_t step = (listSize / 12) * 6;
-	// int16_tcut
+	// shortcut
 	char *listEnd = list + listSize;
 	// divide in half
 	char *p = list + step;

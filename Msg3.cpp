@@ -1282,7 +1282,7 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 	// . compute bytes of records in [startKey,minKey-1] for each map
 	// . this includes negative records so we may have annihilations
 	//   when merging into "diskList" and get less than what we wanted
-	//   but endKey should be int16_tened, so our caller will know to call
+	//   but endKey should be shortened, so our caller will know to call
 	//   again if he wants more
 	int32_t recSizes = 0;
 	for ( int32_t i = 0 ; i < m_numFileNums ; i++ ) {

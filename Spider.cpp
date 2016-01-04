@@ -1047,7 +1047,7 @@ SpiderColl *SpiderCache::getSpiderCollIffNonNull ( collnum_t collnum ) {
 	// "coll" must be invalid
 	if ( collnum < 0 ) return NULL;
 	if ( collnum >= g_collectiondb.m_numRecs ) return NULL;
-	// int16_tcut
+	// shortcut
 	CollectionRec *cr = g_collectiondb.m_recs[collnum];
 	// empty?
 	if ( ! cr ) return NULL;
@@ -1121,7 +1121,7 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	//if ( m_spiderColls [ collnum ] ) return m_spiderColls [ collnum ];
 	// if spidering disabled, do not bother creating this!
 	//if ( ! g_conf.m_spideringEnabled ) return NULL;
-	// int16_tcut
+	// shortcut
 	CollectionRec *cr = g_collectiondb.m_recs[collnum];
 	// collection might have been reset in which case collnum changes
 	if ( ! cr ) return NULL;
@@ -1423,7 +1423,7 @@ bool SpiderColl::makeDoleIPTable ( ) {
 		log(LOG_LOGIC,"spider: getList did not block.");
 		return false;
 	}
-	// int16_tcut
+	// shortcut
 	int32_t minSize=(int32_t)(sizeof(SpiderRequest)+sizeof(key_t)+4-MAX_URL_LEN);
 	// all done if empty
 	if ( list.isEmpty() ) goto done;
@@ -1909,7 +1909,7 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 	//////
 	int64_t lockKey = makeLockTableKey ( srep );
 	
-	// int16_tcut
+	// shortcut
 	HashTableX *ht = &g_spiderLoop.m_lockTable;
 	UrlLock *lock = (UrlLock *)ht->getValue ( &lockKey );
 	time_t nowGlobal = getTimeGlobal();
@@ -2945,7 +2945,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	RdbTree *wt = &m_waitingTree;
 	if ( wt->m_isSaving || ! wt->m_isWritable ) return;
 
-	// int16_tcut
+	// shortcut
 	RdbList *list = &m_list2;
 	// ensure we point to the top of the list
 	list->resetListPtr();
@@ -3955,7 +3955,7 @@ bool SpiderColl::scanListForWinners ( ) {
 	if ( wt->m_isSaving || ! wt->m_isWritable )
 		return true;
 
-	// int16_tcut
+	// shortcut
 	RdbList *list = &m_list;
 	// ensure we point to the top of the list
 	list->resetListPtr();
@@ -4365,8 +4365,8 @@ bool SpiderColl::scanListForWinners ( ) {
 		     srep && 
 
 		     // no! for bulk jobs and crawl jobs we ALWAYS retry
-		     // on errors... tmp errors, but this is just a int16_tcut
-		     // so only take this int16_tcut if there is no error
+		     // on errors... tmp errors, but this is just a shortcut
+		     // so only take this shortcut if there is no error
 		     // and repeat is 0.0.
 		     // ... CRAP we do not want error'ed urls to resuscitate
 		     // and job that is not already in progress if it is not
@@ -6866,7 +6866,7 @@ void SpiderLoop::spiderDoledUrls ( ) {
 			goto subloop;
 		}
 
-		// int16_tcut
+		// shortcut
 		CrawlInfo *ci = &cr->m_localCrawlInfo;
 
 		// . if nothing left to spider...
@@ -6965,7 +6965,7 @@ void SpiderLoop::spiderDoledUrls ( ) {
 		if ( m_sc->m_spidersOut >= maxSpiders )
 			goto subloop;
 
-		// int16_tcut
+		// shortcut
 		SpiderColl *sc = cr->m_spiderColl;
 
 		if ( sc && sc->m_doleIpTable.isEmpty() )
@@ -7113,7 +7113,7 @@ void SpiderLoop::spiderDoledUrls ( ) {
 	//	goto loop;
 	//}
 
-	// int16_tcut
+	// shortcut
 	//CollectionRec *cr = m_sc->m_cr;
 	// sanity
 	if ( cr != m_sc->getCollectionRec() ) { char *xx=NULL;*xx=0; }
@@ -7295,7 +7295,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	// unlock
 	m_gettingDoledbList = false;
 
-	// int16_tcuts
+	// shortcuts
 	CollectionRec *cr = m_sc->getCollectionRec();
 	CrawlInfo *ci = &cr->m_localCrawlInfo;
 
@@ -7621,7 +7621,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	// there confirmation has not come through yet, so it's still
 	// in doledb.
 	HashTableX *ht = &g_spiderLoop.m_lockTable;
-	// int16_tcut
+	// shortcut
 	int64_t lockKey = makeLockTableKey ( sreq );
 	// get the lock... only avoid if confirmed!
 	int32_t slot = ht->getSlot ( &lockKey );
@@ -7675,7 +7675,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	// . if this is currently locked for spidering by us or another
 	//   host (or by us) then return true here
 	HashTableX *ht = &g_spiderLoop.m_lockTable;
-	// int16_tcut
+	// shortcut
 	//int64_t uh48 = sreq->getUrlHash48();
 	// get the lock key
 	uint64_t lockKey ;
@@ -7808,7 +7808,7 @@ bool SpiderLoop::gotDoledbList2 ( ) {
 	// assume not an empty read
 	//m_sc->m_encounteredDoledbRecs = true;
 
-	// int16_tcut
+	// shortcut
 	//char *coll = m_sc->m_cr->m_coll;
 	// sometimes the spider coll is reset/deleted while we are
 	// trying to get the lock in spiderUrl9() so let's use collnum
@@ -7964,7 +7964,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// we store this in msg12 for making a fakedb key
 	//collnum_t collnum = g_collectiondb.getCollnum ( coll );
 
-	// int16_tcut
+	// shortcut
 	int64_t lockKeyUh48 = makeLockTableKey ( sreq );
 
 	//uint64_t lockKey ;
@@ -8461,7 +8461,7 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 		//   or whatever, so don't save in those cases...???????
 		sb.dumpToFile ( fn );
 		// just dump the <div class=shotdisplay> tags into this file
-		sprintf(fn,"%s/%s/parse-int16_tdisplay.%"UINT64".%"UINT32".html",
+		sprintf(fn,"%s/%s/parse-shortdisplay.%"UINT64".%"UINT32".html",
 			g_hostdb.m_dir,testDir,h,g_test.m_runId);
 		// output to a special file
 		SafeBuf tmp;
@@ -8475,8 +8475,8 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 		tmp.safeStrcpy ( xd->getCheckboxScript() );
 		// concatenate just these sections in "sb" to "tmp"
 		tmp.cat2 ( sb , 
-			   "<div class=int16_tdisplay>" ,
-			   "</div class=int16_tdisplay>" );
+			   "<div class=shortdisplay>" ,
+			   "</div class=shortdisplay>" );
 		// header stuff
 		tmp.safePrintf("\n</body></html>\n");
 		// then dump
@@ -9165,7 +9165,7 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 	// breathe
 	QUICKPOLL ( niceness );
 
-	// int16_tcut
+	// shortcut
 	char *reply = udpSlot->m_tmpBuf;
 
 	//
@@ -9287,7 +9287,7 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 		    lr->m_lockKeyUh48, (int32_t)lr->m_removeLock);
 	// get time
 	int32_t nowGlobal = getTimeGlobal();
-	// int16_tcut
+	// shortcut
 	HashTableX *ht = &g_spiderLoop.m_lockTable;
 
 	int32_t hostId = g_hostdb.getHostId ( udpSlot->m_ip , udpSlot->m_port );
@@ -9406,7 +9406,7 @@ void removeExpiredLocks ( int32_t hostId ) {
 	// only do this once per second at the most
 	if ( nowGlobal <= s_lastTime ) return;
 
-	// int16_tcut
+	// shortcut
 	HashTableX *ht = &g_spiderLoop.m_lockTable;
 
  restart:
@@ -9657,7 +9657,7 @@ bool sendPage ( State11 *st ) {
 	//if ( ! g_errno ) { char *xx=NULL;*xx=0; }
 	//SafeBuf sb; sb.safePrintf("Error = %s",mstrerror(g_errno));
 
-	// int16_tcut
+	// shortcut
 	SafeBuf *sbTable = &st->m_safeBuf;
 
 	// generate a query string to pass to host bar
@@ -9727,7 +9727,7 @@ bool sendPage ( State11 *st ) {
 			);
 	// the table headers so SpiderRequest::printToTable() works
 	if ( ! SpiderRequest::printTableHeader ( &sb , true ) ) return false;
-	// int16_tcut
+	// shortcut
 	XmlDoc **docs = g_spiderLoop.m_docs;
 	// count # of spiders out
 	int32_t j = 0;
@@ -11400,7 +11400,7 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 	//if ( bad ) 
 	//	log("hey");
 
-	// int16_tcut
+	// shortcut
 	char *ucp = cr->m_diffbotUrlCrawlPattern.getBufStart();
 	char *upp = cr->m_diffbotUrlProcessPattern.getBufStart();
 
@@ -11963,7 +11963,7 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 
 
 		// . check to see if a page is linked to by
-		//   www.weblogs.com/int16_tChanges.xml and if it is we put
+		//   www.weblogs.com/shortChanges.xml and if it is we put
 		//   it into a queue that has a respider rate no faster than
 		//   30 days, because we don't need to spider it quick since
 		//   it is in the ping server!
@@ -12411,7 +12411,7 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			// this happens if INJECTING a url from the
 			// "add url" function on homepage
 			if ( ! valPtr ) a=0;//continue;//{char *xx=NULL;*xx=0;}
-			// int16_tcut
+			// shortcut
 			else a = *valPtr;
 			//log("siteadds=%"INT32" for %s",a,sreq->m_url);
 			// what is the provided value in the url filter rule?
@@ -12492,7 +12492,7 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			int32_t a;
 			if ( ! valPtr ) a = 0;//{ char *xx=NULL;*xx=0; }
 			else a = *valPtr;
-			// int16_tcut
+			// shortcut
 			//log("sitepgs=%"INT32" for %s",a,sreq->m_url);
 			// what is the provided value in the url filter rule?
 			int32_t b = atoi(s);
@@ -12524,7 +12524,7 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 		     p[9] == 'e' &&
 		     p[10] == 's' ) {
 			// need a quota table for this. this only happens
-			// when trying to int16_tcut things to avoid adding
+			// when trying to shortcut things to avoid adding
 			// urls to spiderdb... like XmlDoc.cpp calls
 			// getUrlFtilerNum() to see if doc is banned or
 			// if it should harvest links.
@@ -12745,7 +12745,7 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 		if ( *p=='h' && strncmp(p, "hopcount", 8) == 0){
 			// skip if not valid
 			if ( ! sreq->m_hopCountValid ) continue;
-			// int16_tcut
+			// shortcut
 			int32_t a = sreq->m_hopCount;
 			// make it point to the priority
 			int32_t b = atoi(s);
@@ -12774,7 +12774,7 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			int32_t a = 0;
 			// if no spider reply we can't match this rule!
 			if ( ! srep ) continue;
-			// int16_tcut
+			// shortcut
 			if ( srep ) a = srep->m_spideredTime;
 			// make it point to the retry count
 			int32_t b ;
@@ -12840,7 +12840,7 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			if ( isForMsg20 ) continue;
 			// reply based
 			if ( ! srep ) continue;
-			// int16_tcut
+			// shortcut
 			int32_t a = srep->m_errCount;
 			// make it point to the retry count
 			int32_t b = atoi(s);
@@ -12869,7 +12869,7 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			if ( isForMsg20 ) continue;
 			// reply based
 			if ( ! srep ) continue;
-			// int16_tcut
+			// shortcut
 			int32_t a = srep->m_errCode;
 			// make it point to the retry count
 			int32_t b = atoi(s);
@@ -12954,7 +12954,7 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 		/*
 		// retryNum >= 2 [&&] ...
 		if ( *p=='r' && strncmp(p, "retrynum", 8) == 0){
-			// int16_tcut
+			// shortcut
 			int32_t a = sr->m_retryNum;
 			// make it point to the priority
 			int32_t b = atoi(s);
@@ -13020,7 +13020,7 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			if ( ! srep ) continue;
 			// skip for msg20
 			if ( isForMsg20 ) continue;
-			// int16_tcut
+			// shortcut
 			float a = srep->m_percentChangedPerDay;
 			// make it point to the priority
 			float b = atof(s);
@@ -13045,7 +13045,7 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			if ( isOutlink ) return -1;
 			// must have a reply
 			if ( ! srep ) continue;
-			// int16_tcut (errCode doubles as g_errno)
+			// shortcut (errCode doubles as g_errno)
 			int32_t a = srep->m_errCode;
 			// make it point to the priority
 			int32_t b = atoi(s);
@@ -13070,7 +13070,7 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			if ( isOutlink ) return -1;
 			// must have a reply
 			if ( ! srep ) continue;
-			// int16_tcut
+			// shortcut
 			int32_t age;
 			if ( srep->m_pubDate <= 0 ) age = -1;
 			else age = nowGlobal - srep->m_pubDate;
@@ -13394,7 +13394,7 @@ void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs )
 		if ( g_spiderdb.isSpiderReply ( (key128_t *)rec ) ) {
 			// cast it
 			SpiderReply *srep = (SpiderReply *)rec;
-			// int16_tcut
+			// shortcut
 			int64_t uh48 = srep->getUrlHash48();
 			// crazy?
 			if ( ! uh48 ) { 
@@ -13431,10 +13431,10 @@ void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs )
 			continue;
 		}
 
-		// int16_tcut
+		// shortcut
 		SpiderRequest *sreq = (SpiderRequest *)rec;
 
-		// int16_tcut
+		// shortcut
 		int64_t uh48 = sreq->getUrlHash48();
 
 		// crazy?
@@ -14153,7 +14153,7 @@ void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 		CollectionRec *cr = g_collectiondb.m_recs[i];
 		if ( ! cr ) continue;
 
-		// int16_tcut
+		// shortcut
 		CrawlInfo *ci = &cr->m_localCrawlInfo;
 
 		// this is now needed for alignment by the receiver

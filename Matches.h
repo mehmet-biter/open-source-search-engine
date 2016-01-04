@@ -29,9 +29,7 @@ typedef int32_t mf_t;
 #define MF_TITLEGEN                   0x0001 // in generated title?
 #define MF_TITLETAG                   0x0002
 #define MF_LINK                       0x0004 // in non-anomalous link text
-//#define MF_ALINK                      0x0008 // in anomalous link text
 #define MF_HOOD                       0x0010 // in non-anomalous neighborhood
-//#define MF_AHOOD                      0x0020 // in anomalous neighborhood
 #define MF_BODY                       0x0040 // in body
 #define MF_METASUMM                   0x0080 // in meta summary
 #define MF_METADESC                   0x0100 // in meta description
@@ -80,43 +78,20 @@ class Matches {
 
  public:
 
-	void setQuery ( Query *q );//, int32_t *tscores = NULL ) ;
+	void setQuery ( Query *q );
 
-	bool set ( class XmlDoc   *xd           ,
-		   class Words    *bodyWords    ,
-		   //class Synonyms *bodySynonyms ,
-		   class Phrases  *bodyPhrases ,
-		   class Sections *bodySections ,
-		   class Bits     *bodyBits     ,
-		   class Pos      *bodyPos      ,
-		   class Xml      *xml          ,
-		   class Title    *tt           ,
-		   int32_t            niceness     ) ;
+	bool set( class XmlDoc *xd, class Words *bodyWords, class Phrases *bodyPhrases,
+			  class Sections *bodySections, class Bits *bodyBits, class Pos *bodyPos, class Xml *xml,
+			  class Title *tt, int32_t niceness );
 
-	bool addMatches ( char      *s         ,
-			  int32_t       slen      ,
-			  mf_t       flags     ,
-			  int64_t  docId     ,
-			  int32_t       niceness  ) ;
+	bool addMatches( char *s, int32_t slen, mf_t flags, int64_t docId, int32_t niceness );
 
 	// . this sets the m_matches[] array
 	// . m_matches[i] is -1 if it matches no term in the query
 	// . m_matches[i] is X if it matches term #X in the query
 	// . returns false and sets errno on error
-	bool addMatches ( Words    *words                      ,
-			  //class Synonyms *syn           = NULL ,
-			  class Phrases  *phrases       = NULL ,
-			  Sections *sections            = NULL ,
-			  Bits     *bits                = NULL ,
-			  Pos      *pos                 = NULL ,
-			  int32_t      fieldCode           = 0    , // wrds,0=none
-			  bool      allowPunctInPhrase  = true ,
-			  bool      exclQTOnlyInAnchTxt = false,
-			  qvec_t    reqMask             = 0    ,
-			  qvec_t    negMask             = 0    ,
-			  int32_t      diversityWeight     = 1    ,
-			  int64_t docId               = 0    ,
-			  mf_t      flags               = 0    );
+	bool addMatches( Words *words, class Phrases *phrases = NULL, Sections *sections = NULL,
+					 Bits *bits = NULL, Pos *pos = NULL, int64_t docId = 0, mf_t flags = 0 );
 
 	// this is NULL terminated
 	//char getTermNum  ( int32_t i ) { return m_termNums[i]; };
@@ -227,15 +202,7 @@ class Matches {
 	int64_t *m_pids3;
 	int64_t *m_pids4;
 	int64_t *m_pids5;
-
-	// MDW: i am hoping we do not need this, it is really only useful
-	// for the words in the body of the document!!
-	//Sections m_sectionsArray [MAX_MATCHGROUPS];
-
-	bool getMatchGroup ( mf_t       matchFlag ,
-			     Words    **wp        ,
-			     Pos      **pp        ,
-			     Sections **sp        );
+	bool getMatchGroup( mf_t matchFlag, Words **wp, Pos **pp, Sections **sp );
 
 	//qvec_t m_explicitsMatched;
 	//qvec_t m_matchableRequiredBits;
