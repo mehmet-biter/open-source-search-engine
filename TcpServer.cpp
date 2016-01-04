@@ -530,6 +530,39 @@ bool TcpServer::sendMsg( char *hostname, int32_t hostnameLen, int32_t ip, int16_
 	// . sendMsg(...) returns false if blocked, true otherwise
 	// . it also sets g_errno on error
 	if ( s ) {
+		bool delete_hostname = false;
+		bool copy_hostname = false;
+
+		// verify that hostname is the same
+		if ( hostname ) {
+			if ( s->m_hostname ) {
+				if ( strncmp(hostname, s->m_hostname, hostnameLen) != 0 ) {
+					delete_hostname = true;
+					copy_hostname = true;
+				}
+			} else {
+				copy_hostname = true;
+			}
+		} else {
+			if ( s->m_hostname ) {
+				delete_hostname = true;
+			}
+		}
+
+		if ( delete_hostname ) {
+			mfree( s->m_hostname, s->m_hostnameSize, "TcpSocket" );
+			s->m_hostname = NULL;
+			s->m_hostnameSize = 0;
+
+		}
+
+		if ( copy_hostname ) {
+			s->m_hostnameSize     = hostnameLen + 1;
+			s->m_hostname = (char *)mmalloc( s->m_hostnameSize, "TcpSocket" );
+			memcpy( s->m_hostname, hostname, hostnameLen );
+			s->m_hostname[hostnameLen] = '\0';
+		}
+
 		return sendMsg( s, sendBuf, sendBufSize, sendBufUsed, msgTotalSize, state, callback, timeout,
 						maxTextDocLen, maxOtherDocLen );
 	}
