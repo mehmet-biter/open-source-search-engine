@@ -589,49 +589,49 @@ class SpiderRequest {
 	// our bit flags
 	//
 
-	int32_t    m_hopCountValid:1;
+	unsigned    m_hopCountValid:1;
 	// are we a request/reply from the add url page?
-	int32_t    m_isAddUrl:1; 
+	unsigned    m_isAddUrl:1;
 	// are we a request/reply from PageReindex.cpp
-	int32_t    m_isPageReindex:1; 
+	unsigned    m_isPageReindex:1;
 	// are we a request/reply from PageInject.cpp
-	int32_t    m_isPageInject:1; 
+	unsigned    m_isPageInject:1;
 	// or from PageParser.cpp directly
-	int32_t    m_isPageParser:1; 
+	unsigned    m_isPageParser:1;
 	// should we use the test-spider-dir for caching test coll requests?
-	//int32_t    m_useTestSpiderDir:1;
-	int32_t    m_parentIsSiteMap:1;
+	//unsigned    m_useTestSpiderDir:1;
+	unsigned    m_parentIsSiteMap:1;
 	// . is the url a docid (not an actual url)
 	// . could be a "query reindex"
-	int32_t    m_urlIsDocId:1;
+	unsigned    m_urlIsDocId:1;
 	// does m_url end in .rss .xml .atom? or a related rss file extension?
-	int32_t    m_isRSSExt:1;
+	unsigned    m_isRSSExt:1;
 	// is url in a format known to be a permalink format?
-	int32_t    m_isUrlPermalinkFormat:1;
+	unsigned    m_isUrlPermalinkFormat:1;
 	// is url "rpc.weblogs.com/int16_tChanges.xml"?
-	int32_t    m_isPingServer:1; 
+	unsigned    m_isPingServer:1;
 	// . are we a delete instruction? (from Msg7.cpp as well)
 	// . if you want it to be permanently banned you should ban or filter
 	//   it in the urlfilters/tagdb. so this is kinda useless...
-	int32_t    m_forceDelete:1; 
+	unsigned    m_forceDelete:1;
 	// are we a fake spider rec? called from Test.cpp now!
-	int32_t    m_isInjecting:1; 
+	unsigned    m_isInjecting:1;
 	// are we a respider request from Sections.cpp
-	//int32_t    m_fromSections:1;
+	//unsigned    m_fromSections:1;
 	// a new flag. replaced above. did we have a corresponding SpiderReply?
-	int32_t    m_hadReply:1;
+	unsigned    m_hadReply:1;
 	// are we scraping from google, etc.?
-	int32_t    m_isScraping:1; 
+	unsigned    m_isScraping:1;
 	// page add url can be updated to store content for the web page
 	// into titledb or something to simulate injections of yore. we can
 	// use that content as the content of the web page. the add url can
 	// accept it from a form and we store it right away into titledb i
 	// guess using msg4, then we look it up when we spider the url.
-	int32_t    m_hasContent:1;
+	unsigned    m_hasContent:1;
 	// is first ip a hash of url or docid or whatever?
-	int32_t    m_fakeFirstIp:1;
+	unsigned    m_fakeFirstIp:1;
 	// www.xxx.com/*? or xxx.com/*?
-	int32_t    m_isWWWSubdomain:1;
+	unsigned    m_isWWWSubdomain:1;
 
 	//
 	// these "parent" bits are invalid if m_parentHostHash32 is 0!
@@ -640,17 +640,17 @@ class SpiderRequest {
 
 	// if the parent was respidered and the outlink was there last time
 	// and is there now, then this is "0", otherwise, this is "1"
-	int32_t    m_isNewOutlink      :1;
-	int32_t    m_sameDom           :1;
-	int32_t    m_sameHost          :1;
-	int32_t    m_sameSite          :1;
-	int32_t    m_wasParentIndexed  :1;
-	int32_t    m_parentIsRSS       :1;
-	int32_t    m_parentIsPermalink :1;
-	int32_t    m_parentIsPingServer:1;
-	int32_t    m_parentHasAddress  :1;
+	unsigned    m_isNewOutlink      :1;
+	unsigned    m_sameDom           :1;
+	unsigned    m_sameHost          :1;
+	unsigned    m_sameSite          :1;
+	unsigned    m_wasParentIndexed  :1;
+	unsigned    m_parentIsRSS       :1;
+	unsigned    m_parentIsPermalink :1;
+	unsigned    m_parentIsPingServer:1;
+	unsigned    m_parentHasAddress  :1;
 	// is this outlink from content or menu?
-	int32_t    m_isMenuOutlink     :1; 
+	unsigned    m_isMenuOutlink     :1;
 
 
 	// 
@@ -658,60 +658,60 @@ class SpiderRequest {
 	//
 
 	// was it in google's index?
-	int32_t    m_inGoogle:1;
+	unsigned    m_inGoogle:1;
 	// expires after a certain time or if ownership changed
 	// did it have an inlink from a really nice site?
-	int32_t    m_hasAuthorityInlink :1;
-	int32_t    m_hasContactInfo     :1;
-	int32_t    m_isContacty         :1;
-	int32_t    m_hasSiteVenue       :1;
+	unsigned    m_hasAuthorityInlink :1;
+	unsigned    m_hasContactInfo     :1;
+	unsigned    m_isContacty         :1;
+	unsigned    m_hasSiteVenue       :1;
 
 
 	// are the 3 bits above valid? 
 	// if site ownership changes might be invalidated. 
 	// "inGoogle" also may expire after so int32_t too
-	int32_t    m_inGoogleValid           :1;
-	int32_t    m_hasAuthorityInlinkValid :1;
-	int32_t    m_hasContactInfoValid     :1;
-	int32_t    m_isContactyValid         :1;
-	int32_t    m_hasAddressValid         :1;
-	//int32_t    m_matchesUrlCrawlPattern  :1;
-	//int32_t    m_matchesUrlProcessPattern:1;
-	int32_t    m_hasTODValid             :1;
-	int32_t    m_hasSiteVenueValid       :1;
-	int32_t    m_siteNumInlinksValid     :1;
+	unsigned    m_inGoogleValid           :1;
+	unsigned    m_hasAuthorityInlinkValid :1;
+	unsigned    m_hasContactInfoValid     :1;
+	unsigned    m_isContactyValid         :1;
+	unsigned    m_hasAddressValid         :1;
+	//unsigned    m_matchesUrlCrawlPattern  :1;
+	//unsigned    m_matchesUrlProcessPattern:1;
+	unsigned    m_hasTODValid             :1;
+	unsigned    m_hasSiteVenueValid       :1;
+	unsigned    m_siteNumInlinksValid     :1;
 
 	// . only support certain tags in url filters now i guess
 	// . use the tag value from most recent SpiderRequest only
 	// . the "deep" tag is popular for hitting certain sites hard
-	//int32_t    m_tagDeep:1;
+	//unsigned    m_tagDeep:1;
 	// we set this to one from Diffbot.cpp when urldata does not
 	// want the url's to have their links spidered. default is to make
 	// this 0 and to not avoid spidering the links.
-	int32_t    m_avoidSpiderLinks:1;
+	unsigned    m_avoidSpiderLinks:1;
 	// for identifying address heavy sites...
-	//int32_t    m_tagYellowPages:1;
+	//unsigned    m_tagYellowPages:1;
 	// when indexing urls for dmoz, i.e. the urls outputted from
 	// 'dmozparse urldump -s' we need to index them even if there
 	// was a ETCPTIMEDOUT because we have to have indexed the same
 	// urls that dmoz has in it in order to be identical to dmoz.
-	int32_t    m_ignoreExternalErrors:1;
+	unsigned    m_ignoreExternalErrors:1;
 
 	// called XmlDoc::set4() from PageSubmit.cpp?
-	//int32_t    m_isPageSubmit:1;
+	//unsigned    m_isPageSubmit:1;
 
 	//
 	// INTERNAL USE ONLY
 	//
 
 	// are we in the m_orderTree/m_doleTables/m_ipTree
-	//int32_t    m_inOrderTree:1;
+	//unsigned    m_inOrderTree:1;
 	// are we doled out?
-	//int32_t    m_doled:1;
+	//unsigned    m_doled:1;
 	// are we a re-add of a spiderrequest already in spiderdb added
 	// from xmldoc.cpp when done spidering so that the spider request
 	// gets back in the cache quickly?
-	//int32_t    m_readd:1;
+	//unsigned    m_readd:1;
 
 	// . what url filter num do we match in the url filters table?
 	// . determines our spider priority and wait time
@@ -897,57 +897,57 @@ class SpiderReply {
 	// XmlDoc::isSpam() returned true for it!
 	//unsigned char    m_isSpam:1; 
 	// was the page in rss format?
-	int32_t    m_isRSS:1;
+	unsigned    m_isRSS:1;
 	// was the page a permalink?
-	int32_t    m_isPermalink:1;
+	unsigned    m_isPermalink:1;
 	// are we a pingserver page?
-	int32_t    m_isPingServer:1; 
+	unsigned    m_isPingServer:1;
 	// did we delete the doc from the index?
-	//int32_t    m_deleted:1;  
+	//unsigned    m_deleted:1;
 	// was it in the index when we were done?
-	int32_t    m_isIndexed:1;
+	unsigned    m_isIndexed:1;
 
 	// 
 	// these bits also in SpiderRequest
 	//
 
 	// was it in google's index?
-	int32_t    m_inGoogle:1;
+	unsigned    m_inGoogle:1;
 	// did it have an inlink from a really nice site?
-	int32_t    m_hasAuthorityInlink:1;
+	unsigned    m_hasAuthorityInlink:1;
 	// does it have contact info
-	int32_t    m_hasContactInfo:1;
-	int32_t    m_isContacty    :1;
-	int32_t    m_hasAddress    :1;
-	int32_t    m_hasTOD        :1;
+	unsigned    m_hasContactInfo:1;
+	unsigned    m_isContacty    :1;
+	unsigned    m_hasAddress    :1;
+	unsigned    m_hasTOD        :1;
 
 	// make this "INvalid" not valid since it was set to 0 before
 	// and we want to be backwards compatible
-	int32_t    m_isIndexedINValid :1;
-	//int32_t    m_hasSiteVenue  :1;
+	unsigned    m_isIndexedINValid :1;
+	//unsigned    m_hasSiteVenue  :1;
 
 	// expires after a certain time or if ownership changed
-	int32_t    m_inGoogleValid           :1;
-	int32_t    m_hasContactInfoValid     :1;
-	int32_t    m_hasAuthorityInlinkValid :1;
-	int32_t    m_isContactyValid         :1;
-	int32_t    m_hasAddressValid         :1;
-	int32_t    m_hasTODValid             :1;
-	//int32_t    m_hasSiteVenueValid       :1;
-	int32_t    m_reserved2               :1;
-	int32_t    m_siteNumInlinksValid     :1;
+	unsigned    m_inGoogleValid           :1;
+	unsigned    m_hasContactInfoValid     :1;
+	unsigned    m_hasAuthorityInlinkValid :1;
+	unsigned    m_isContactyValid         :1;
+	unsigned    m_hasAddressValid         :1;
+	unsigned    m_hasTODValid             :1;
+	//unsigned    m_hasSiteVenueValid       :1;
+	unsigned    m_reserved2               :1;
+	unsigned    m_siteNumInlinksValid     :1;
 	// was the request an injection request
-	int32_t    m_fromInjectionRequest    :1; 
+	unsigned    m_fromInjectionRequest    :1;
 	// did we TRY to send it to the diffbot backend filter? might be err?
-	int32_t    m_sentToDiffbotThisTime   :1;
-	int32_t    m_hadDiffbotError         :1;
+	unsigned    m_sentToDiffbotThisTime   :1;
+	unsigned    m_hadDiffbotError         :1;
 	// . was it in the index when we started?
 	// . we use this with m_isIndexed above to adjust quota counts for
 	//   this m_siteHash32 which is basically just the subdomain/host
 	//   for SpiderColl::m_quotaTable
-	int32_t    m_wasIndexed              :1;
+	unsigned    m_wasIndexed              :1;
 	// this also pertains to m_isIndexed as well:
-	int32_t    m_wasIndexedValid         :1;
+	unsigned    m_wasIndexedValid         :1;
 
 	// how much buf will we need to serialize ourselves?
 	int32_t getRecSize () { return m_dataSize + 4 + sizeof(key128_t); }
