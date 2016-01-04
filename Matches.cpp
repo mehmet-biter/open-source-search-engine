@@ -22,7 +22,6 @@
 //       scores array itself. just access it with Match::m_queryWordNum.
 
 Matches::Matches ( ) {
-	m_detectSubPhrases = false;
 	m_numMatchGroups = 0;
 	m_qwordFlags = NULL;
 	m_qwordAllocSize = 0;
@@ -506,12 +505,10 @@ bool Matches::getMatchGroup ( mf_t       matchFlag ,
 //   set the m_foundTermVector for doing the BIG HACK described in Summary.cpp
 bool Matches::addMatches( Words *words, Phrases *phrases, Sections *sections, Bits *bits, Pos *pos,
 						  int64_t docId, mf_t flags ) {
-
-	bool allowPunctInPhrase = true;
-	int32_t diversityWeight = 1;
-
 	// if no query term, bail.
-	if ( m_numSlots <= 0 ) return true;
+	if ( m_numSlots <= 0 ) {
+		return true;
+	}
 
 	// . do not breach
 	// . happens a lot with a lot of link info text
@@ -721,7 +718,7 @@ bool Matches::addMatches( Words *words, Phrases *phrases, Sections *sections, Bi
 			if ( qw->m_phraseId == pids[i] ) {
 				// might match more if we had more query
 				// terms in the quote
-				numWords = getNumWordsInMatch( words, i, n, &numQWords, &qwn, allowPunctInPhrase );
+				numWords = getNumWordsInMatch( words, i, n, &numQWords, &qwn, true );
 
 				// this is 0 if we were an unmatched quote
 				if ( numWords <= 0 ) continue;
@@ -759,7 +756,7 @@ bool Matches::addMatches( Words *words, Phrases *phrases, Sections *sections, Bi
 		//   in both cases will included unmatched punctuation words
 		//   and tags in between matching words.
 		numQWords = 0;
-		numWords = getNumWordsInMatch( words, i, n, &numQWords, &qwn, allowPunctInPhrase );
+		numWords = getNumWordsInMatch( words, i, n, &numQWords, &qwn, true );
 		// this is 0 if we were an unmatched quote
 		if ( numWords <= 0 ) continue;
 
@@ -837,10 +834,6 @@ bool Matches::addMatches( Words *words, Phrases *phrases, Sections *sections, Bi
 		// record word # of last match
 		lasti = i;
 
-		if (m_detectSubPhrases) {
-			detectSubPhrase(words, i, numWords, qwn, diversityWeight);
-		}
-
 		// otherwise, store it in our m_matches[] array
 		Match *m = &m_matches[m_numMatches];
 
@@ -876,7 +869,6 @@ bool Matches::addMatches( Words *words, Phrases *phrases, Sections *sections, Bi
 
 		// advance
 		m_numMatches++;
-
 
 		// we get atleast MAX_MATCHES
 		if ( m_numMatches < MAX_MATCHES ) {
@@ -1079,152 +1071,6 @@ int32_t Matches::getNumWordsInMatch( Words *words, int32_t wn, int32_t n, int32_
 
 	return wn - wn0 + 1;
 }
-
-/*
-int32_t Matches::getTermsFound ( bool  *hadPhrases , 
-			      bool  *hadWords   ) {
-	*hadPhrases = true;
-	*hadWords   = true;
-	int32_t n      = m_q->getNumTerms();
-	int32_t count  = 0;
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// do not count query stop words if not in quotes
-		//if ( m_q->m_qterms[i].m_isQueryStopWord &&
-		//     ! m_q->m_qterms[i].m_inQuotes        ) 
-		//	continue;
-		if ( m_foundTermVector[i] ) { count++; continue; }
-		// if we missed a phrase, flag it
-		if ( m_q->m_qterms[i].m_inQuotes ) *hadPhrases = false;
-		else                               *hadWords   = false;
-	}
-	return count;
-}
-*/
-
-// new version for explicit bit mask
-/*
-uint32_t Matches::getTermsFound2(bool *hadPhrases, bool *hadWords) {
-	*hadPhrases = true;
-	*hadWords   = true;
-	int32_t n      = m_q->getNumTerms();
-	//int32_t count  = 0;
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		QueryTerm *qt = &m_q->m_qterms[i];
-		if (qt->m_fieldCode) continue;
-		if (qt->m_isPhrase && qt->m_termSign == 0) continue;
-		if ( m_explicitsMatched & qt->m_explicitBit ) continue;
-		// if we missed a phrase, flag it
-		if ( qt->m_inQuotes ) *hadPhrases = false;
-		else                  *hadWords   = false;
-	}
-	return m_explicitsMatched;
-
-}
-*/
-
-/*
-void Matches::setSubPhraseDetection() {
-	char* pbuf = m_subPhraseBuf;
-	m_pre.set(128, pbuf , m_htSize);
-	pbuf += m_htSize;
-	m_post.set(128, pbuf, m_htSize);
-	m_detectSubPhrases = true;
-
-	m_leftDiversity = 0;
-	m_rightDiversity = 0;
-
-	int64_t h = hash64LowerE("www",3);
-	m_pre.addKey(h, LONG_MIN);
-}
-*/
-
-void Matches::detectSubPhrase(Words* words, 
-			      int32_t matchWordNum,
-			      int32_t numMatchedWords,
-			      int32_t queryWordNum ,
-			      int32_t diversityWeight ) {
-
-	int32_t       nw        = words->getNumWords();
-	int64_t *wids      = words->getWordIds();
-
-	// . Hash the preceding word
-	int32_t prevWord = matchWordNum - 2;
-	//skip entities
-	while(prevWord > 0 && wids[prevWord] == 0) prevWord--;
-
-	int64_t wid;
-	int32_t slot;
-	if(prevWord < 0 || wids[prevWord] == 0) {
-		//word begins this section
-		m_leftDiversity += diversityWeight;
-	}
-	else if(queryWordNum == 0 ||
-		m_q->m_qwords[queryWordNum-1].m_rawWordId != wids[prevWord]) {
-		//prev word is valid and is not prev query word
-		wid = wids[prevWord];
-		slot = m_pre.getSlot(wid);
-		int32_t val;
-		if(slot == -1) {
-			m_pre.addKey(wid, 1);
-			m_leftDiversity += diversityWeight;
-		}
-		else {
-			val = m_pre.getValueFromSlot(slot);
-			//our exempt words are negative
-			if(val < 0) m_leftDiversity += diversityWeight;
-		}
-	}
-
-	// . Hash the trailing word
-	//n words + n-1 punctuation separators.
-	int32_t nextWord = matchWordNum + 2 * numMatchedWords ;
-	int32_t nextQueryWord = queryWordNum + numMatchedWords;
-
-
-	//skip entities
-	while(nextWord < nw && wids[nextWord] == 0) nextWord++;
-
-	if(nextWord >= nw || wids[nextWord] == 0) { 
-		//word ends this section
-		m_rightDiversity += diversityWeight;
-	}
-	else if(nextQueryWord >= m_q->m_numWords ||
-		m_q->m_qwords[nextQueryWord].m_rawWordId != wids[nextWord]) {
-		//next word is valid and is not the next query word
-		wid = wids[nextWord]; 
-		slot = m_post.getSlot(wid);
-		int32_t val;
-		if(slot == -1) {
-			m_post.addKey(wid, 1);
-			m_rightDiversity += diversityWeight;
-		}
-		else {
-			val = m_post.getValueFromSlot(slot);
-			if(val < 0) m_rightDiversity += diversityWeight; 
-		}
-	}
-}
-
-float Matches::getDiversity() {
-	float retval = m_leftDiversity;
-	if(m_rightDiversity < retval) retval = m_rightDiversity;
-	//0 means we did not get a match, doc will be big hacked out
-	//1 means not diverse at all
-	if(retval <= 1) return 0; 
-	return logf(retval);
-}
-
-
-/*
-bool Matches::negTermsFound ( ) {
-
-	for( int32_t i = 0; i < m_numNegTerms; i++ ) {
-		if( m_foundNegTermVector[i] ) return true;
-	}
-	
-	return false;
-}
-*/
 
 bool Matches::docHasQueryTerms(int32_t totalInlinks) {
     // Loop through all matches keeping a count of query term matches 

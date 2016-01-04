@@ -163,16 +163,6 @@ class Matches {
 	int32_t m_qwordAllocSize;
 	char m_tmpBuf[128];
 
-	//stuff for detecting whether a match is part of a larger phrase
-	void setSubPhraseDetection();
-	void detectSubPhrase(Words* w, 
-			     int32_t matchWordNum,
-			     int32_t numMatchedWords,
-			     int32_t queryWordNum,
-			     int32_t diversityWeight );
-	float getDiversity();
-
-	bool m_detectSubPhrases;
 	int32_t m_leftDiversity;
 	int32_t m_rightDiversity;
 
