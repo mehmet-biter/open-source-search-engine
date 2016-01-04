@@ -323,11 +323,6 @@ class RdbTree {
 	// this is called by a thread
 	bool fastSave_r() ;
 
-	// to fix lar's machine
-	bool oldLoad  ( BigFile *f , RdbMem *memStack ) ;
-	int32_t oldLoadBlock ( BigFile *f, int32_t remainingNodes , RdbMem *stack,
-			    int64_t offset );
-
 	int32_t getMinUnusedNode () { return m_minUnusedNode; };
 
 	bool checkTree  ( bool printMsgs , bool doChainTest );
