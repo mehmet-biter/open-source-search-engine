@@ -1909,10 +1909,6 @@ void XmlDoc::setStatus ( char *s ) {
 	if ( s == s_last ) return;
 
 	bool timeIt = false;
-	// if ( m_sreqValid &&
-	//      m_sreq.m_isInjecting &&
-	//      m_sreq.m_isPageInject )
-	// 	timeIt = true;
 	if ( g_conf.m_logDebugBuildTime )
 		timeIt = true;
 
@@ -2790,7 +2786,6 @@ bool XmlDoc::indexDoc2 ( ) {
 	// case, but for now disable to make things faster. profiler
 	// indicates too much msg4 activity.
 	//if ( m_contentInjected ) flush = true;
-	//if ( m_sreqValid && m_sreq.m_isPageInject ) flush = true;
 
 	// to keep our qa runs consistent
 	if ( strcmp(cr->m_coll,"qatest123") == 0 ) flush = true;
@@ -12048,7 +12043,6 @@ int32_t *XmlDoc::getIp ( ) {
 	// injected?
 	if ( m_sreqValid && m_sreq.m_isInjecting  ) delay = 0;
 	if ( m_sreqValid && m_sreq.m_isPageParser ) delay = 0;
-	if ( m_sreqValid && m_sreq.m_isScraping   ) delay = 0;
 	if ( m_sreqValid && m_sreq.m_fakeFirstIp  ) delay = 0;
 	// . don't do the delay when downloading extra doc, robots.txt etc.
 	// . this also reports a status msg of "getting new doc" when it
@@ -14785,7 +14779,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 	if ( td ) strncpy ( r->m_testDir, td, 31);
 
 	//r->m_isPageParser = getIsPageParser();
-	//r->m_isPageInject = ( m_sreqValid && m_sreq.m_isInjecting );
 
 	// if current url IS NOT EQUAL to first url then set redir flag
 	if ( strcmp(cu->m_url,m_firstUrl.m_url) )
@@ -14808,10 +14801,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 		// only get it if modified since last spider time
 		r->m_ifModifiedSince = od->m_spideredTime;
 	}
-
-	// tell msg13 he is scraping...
-	if ( m_sreqValid && m_sreq.m_isScraping )
-		r->m_isScraping = 1;
 
 	// if doing frame expansion on a doc we just downloaded as the
 	// spider proxy, we are asking ourselves now to download the url
@@ -21077,8 +21066,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		}
 		// all done!
 		bool addReply = true;
-		// Scraper.cpp uses this
-		if ( m_sreqValid && m_sreq.m_isScraping ) addReply = false;
 		// page parser calls set4 and sometimes gets a dns time out!
 		if ( m_sreqValid && m_sreq.m_isPageParser ) addReply = false;
 		// return nothing if done
@@ -21882,7 +21869,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			if ( firstIp == -1 || firstIp == 0 ) firstIp = 1;
 			sreq.setKey( firstIp,0LL, false );
 			sreq.m_isInjecting   = 1;
-			sreq.m_isPageInject  = 1;
 			sreq.m_hopCount      = m_hopCount;
 			sreq.m_hopCountValid = m_hopCountValid;
 			sreq.m_fakeFirstIp   = 1;
@@ -22778,8 +22764,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// spawn a spider of this url again unless there is already a REPLY
 	// in spiderdb!!! crazy...
 	bool addReply = true;
-	// Scraper.cpp uses this
-	if ( m_sreqValid && m_sreq.m_isScraping ) addReply = false;
 	// save it
 	saved = m_p;
 	// now add the new rescheduled time
@@ -24210,7 +24194,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	if ( cu && cu->isPingServer() ) isParentPingServer = true;
 
 	// int16_tcut
-	bool isScraping = (m_sreqValid && m_sreq.m_isScraping);
+	bool isScraping = false;
 	//bool useTestSpiderDir = (m_sreqValid && m_sreq.m_useTestSpiderDir);
 
 	CollectionRec *cr = getCollRec();
@@ -38781,7 +38765,6 @@ bool XmlDoc::doInjectLoop ( ) {
 		if ( firstIp == -1 || firstIp == 0 ) firstIp = 1;
 		sreq.setKey( firstIp,0LL, false );
 		sreq.m_isInjecting   = 1;
-		sreq.m_isPageInject  = 1;
 		sreq.m_hopCount      = 0;//hopCount;
 		sreq.m_hopCountValid = 1;
 		sreq.m_fakeFirstIp   = 1;

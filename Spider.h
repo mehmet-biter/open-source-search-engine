@@ -595,7 +595,7 @@ class SpiderRequest {
 	// are we a request/reply from PageReindex.cpp
 	unsigned    m_isPageReindex:1;
 	// are we a request/reply from PageInject.cpp
-	unsigned    m_isPageInject:1;
+	unsigned    m_reserved3a:1;
 	// or from PageParser.cpp directly
 	unsigned    m_isPageParser:1;
 	// should we use the test-spider-dir for caching test coll requests?
@@ -621,13 +621,13 @@ class SpiderRequest {
 	// a new flag. replaced above. did we have a corresponding SpiderReply?
 	unsigned    m_hadReply:1;
 	// are we scraping from google, etc.?
-	unsigned    m_isScraping:1;
+	unsigned    m_reserved3b:1;
 	// page add url can be updated to store content for the web page
 	// into titledb or something to simulate injections of yore. we can
 	// use that content as the content of the web page. the add url can
 	// accept it from a form and we store it right away into titledb i
 	// guess using msg4, then we look it up when we spider the url.
-	unsigned    m_hasContent:1;
+	unsigned    m_reserved3c:1;
 	// is first ip a hash of url or docid or whatever?
 	unsigned    m_fakeFirstIp:1;
 	// www.xxx.com/*? or xxx.com/*?
@@ -664,7 +664,7 @@ class SpiderRequest {
 	unsigned    m_hasAuthorityInlink :1;
 	unsigned    m_hasContactInfo     :1;
 	unsigned    m_isContacty         :1;
-	unsigned    m_hasSiteVenue       :1;
+	unsigned    m_reserved3d         :1;
 
 
 	// are the 3 bits above valid? 
@@ -674,11 +674,11 @@ class SpiderRequest {
 	unsigned    m_hasAuthorityInlinkValid :1;
 	unsigned    m_hasContactInfoValid     :1;
 	unsigned    m_isContactyValid         :1;
-	unsigned    m_hasAddressValid         :1;
+	unsigned    m_reserved3e              :1;
 	//unsigned    m_matchesUrlCrawlPattern  :1;
 	//unsigned    m_matchesUrlProcessPattern:1;
-	unsigned    m_hasTODValid             :1;
-	unsigned    m_hasSiteVenueValid       :1;
+	unsigned    m_reserved3f              :1;
+	unsigned    m_reserved3g              :1;
 	unsigned    m_siteNumInlinksValid     :1;
 
 	// . only support certain tags in url filters now i guess
@@ -924,7 +924,6 @@ class SpiderReply {
 	// make this "INvalid" not valid since it was set to 0 before
 	// and we want to be backwards compatible
 	unsigned    m_isIndexedINValid :1;
-	//unsigned    m_hasSiteVenue  :1;
 
 	// expires after a certain time or if ownership changed
 	unsigned    m_inGoogleValid           :1;
@@ -933,7 +932,6 @@ class SpiderReply {
 	unsigned    m_isContactyValid         :1;
 	unsigned    m_hasAddressValid         :1;
 	unsigned    m_hasTODValid             :1;
-	//unsigned    m_hasSiteVenueValid       :1;
 	unsigned    m_reserved2               :1;
 	unsigned    m_siteNumInlinksValid     :1;
 	// was the request an injection request

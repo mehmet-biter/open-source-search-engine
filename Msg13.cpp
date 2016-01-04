@@ -2251,7 +2251,6 @@ bool getTestDoc ( char *u , TcpSocket *ts , Msg13Request *r ) {
 	//if ( r->m_testParserEnabled ) td = "test-parser";
 	//if ( r->m_isPageParser      ) td = "test-page-parser";
 	char *td = r->m_testDir;
-	//if ( r->m_isPageInject      ) td = "test-page-inject";
 	//if ( ! td ) td = "test-page-parser";
 	if ( ! td[0] ) { char *xx=NULL;*xx=0; }
 	// make http reply filename
@@ -2400,7 +2399,6 @@ bool addTestDoc ( int64_t urlHash64 , char *httpReply , int32_t httpReplySize ,
 	//if ( r->m_testSpiderEnabled ) td = "test-spider";
 	//if ( r->m_testParserEnabled ) td = "test-parser";
 	//if ( r->m_isPageParser      ) td = "test-page-parser";
-	//if ( r->m_isPageInject      ) td = "test-page-inject";
 	char *td = r->m_testDir;
 	if ( ! td[0] ) { char *xx=NULL;*xx=0; }
 	// make that into a filename
@@ -2684,7 +2682,6 @@ bool getIframeExpandedContent ( Msg13Request *r , TcpSocket *ts ) {
 	if ( firstIp == -1 || firstIp == 0 ) firstIp = 1;
 	sreq.setKey( firstIp,0LL, false );
 	sreq.m_isInjecting   = 1; 
-	sreq.m_isPageInject  = 1;
 	sreq.m_hopCount      = 0;//m_hopCount;
 	sreq.m_hopCountValid = 1;
 	sreq.m_fakeFirstIp   = 1;

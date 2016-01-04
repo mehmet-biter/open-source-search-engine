@@ -939,7 +939,6 @@ bool Test::injectLoop ( ) {
 	// MDW: this was replaced by m_isParentSiteMap bit.
 	//if ( g_conf.m_testSpiderEnabled ) m_sreq.m_useTestSpiderDir = 1;
 	// use this later
-	m_sreq.m_hasContent = 0;
 	// injected requests use this as the spider time i guess
 	// so we can sort them by this
 	m_sreq.m_addedTime = ++s_count;

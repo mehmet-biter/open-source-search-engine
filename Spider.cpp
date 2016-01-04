@@ -185,8 +185,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 
 	if ( m_parentHasAddress ) sb->safePrintf("PARENTHASADDRESS ");
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
-	if ( m_isScraping ) sb->safePrintf("ISSCRAPING ");
-	if ( m_hasContent ) sb->safePrintf("HASCONTENT ");
 	if ( m_inGoogle ) sb->safePrintf("INGOOGLE ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 	if ( m_hasContactInfo ) sb->safePrintf("HASCONTACTINFO ");
@@ -399,8 +397,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , char *status ,
 
 	if ( m_parentHasAddress ) sb->safePrintf("PARENTHASADDRESS ");
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
-	if ( m_isScraping ) sb->safePrintf("ISSCRAPING ");
-	if ( m_hasContent ) sb->safePrintf("HASCONTENT ");
 	if ( m_inGoogle ) sb->safePrintf("INGOOGLE ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 	if ( m_hasContactInfo ) sb->safePrintf("HASCONTACTINFO ");
@@ -518,7 +514,6 @@ int32_t SpiderRequest::printToTableSimple ( SafeBuf *sb , char *status ,
 	if ( m_parentHasAddress ) sb->safePrintf("PARENTHASADDRESS ");
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
 	if ( m_isScraping ) sb->safePrintf("ISSCRAPING ");
-	if ( m_hasContent ) sb->safePrintf("HASCONTENT ");
 	if ( m_inGoogle ) sb->safePrintf("INGOOGLE ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 	if ( m_hasContactInfo ) sb->safePrintf("HASCONTACTINFO ");
@@ -13522,7 +13517,6 @@ void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs )
 		     // necessary. mdw commented out.
 		     //oldReq->m_wasParentIndexed != sreq->m_wasParentIndexed||
 		     oldReq->m_isInjecting   != sreq->m_isInjecting   ||
-		     oldReq->m_hasContent    != sreq->m_hasContent    ||
 		     oldReq->m_isAddUrl      != sreq->m_isAddUrl      ||
 		     oldReq->m_isPageReindex != sreq->m_isPageReindex ||
 		     oldReq->m_forceDelete   != sreq->m_forceDelete    )
