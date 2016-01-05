@@ -185,7 +185,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 
 	if ( m_parentHasAddress ) sb->safePrintf("PARENTHASADDRESS ");
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
-	if ( m_inGoogle ) sb->safePrintf("INGOOGLE ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 	if ( m_hasContactInfo ) sb->safePrintf("HASCONTACTINFO ");
 
@@ -397,7 +396,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , char *status ,
 
 	if ( m_parentHasAddress ) sb->safePrintf("PARENTHASADDRESS ");
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
-	if ( m_inGoogle ) sb->safePrintf("INGOOGLE ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 	if ( m_hasContactInfo ) sb->safePrintf("HASCONTACTINFO ");
 
@@ -11906,26 +11904,6 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			goto checkNextRule;
 		}
 
-		if ( strncmp(p,"ingoogle",8) == 0 ) {
-			if ( isOutlink ) return -1;
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// skip if not valid (pageaddurl? injection?)
-			if ( ! sreq->m_inGoogleValid ) continue;
-			// if no match continue
-			if ( (bool)sreq->m_inGoogle == val ) continue;
-			// allow "!isindexed" if no SpiderReply at all
-			if ( ! srep && val == 0 ) continue;
-			// skip
-			p += 8;
-			// skip to next constraint
-			p = strstr(p, "&&");
-			// all done?
-			if ( ! p ) return i;
-			p += 2;
-			goto checkNextRule;
-		}
-
 
 		// . check to see if a page is linked to by
 		//   www.weblogs.com/shortChanges.xml and if it is we put
@@ -13430,7 +13408,6 @@ void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs )
 			if ( sreq->m_fakeFirstIp ) continue;
 
 			SpiderReply *old = oldRep;
-			sreq->m_inGoogle           = old->m_inGoogle;
 			sreq->m_hasAuthorityInlink = old->m_hasAuthorityInlink;
 			sreq->m_hasContactInfo     = old->m_hasContactInfo;
 			//sreq->m_hasSiteVenue       = old->m_hasSiteVenue;

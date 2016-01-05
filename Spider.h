@@ -652,7 +652,7 @@ class SpiderRequest {
 	//
 
 	// was it in google's index?
-	unsigned    m_inGoogle:1;
+	unsigned    m_reserved3h:1;
 	// expires after a certain time or if ownership changed
 	// did it have an inlink from a really nice site?
 	unsigned    m_hasAuthorityInlink :1;
@@ -660,11 +660,7 @@ class SpiderRequest {
 	unsigned    m_isContacty         :1;
 	unsigned    m_reserved3d         :1;
 
-
-	// are the 3 bits above valid? 
-	// if site ownership changes might be invalidated. 
-	// "inGoogle" also may expire after so int32_t too
-	unsigned    m_inGoogleValid           :1;
+	unsigned    m_reserved3i              :1;
 	unsigned    m_hasAuthorityInlinkValid :1;
 	unsigned    m_hasContactInfoValid     :1;
 	unsigned    m_isContactyValid         :1;
@@ -906,7 +902,7 @@ class SpiderReply {
 	//
 
 	// was it in google's index?
-	unsigned    m_inGoogle:1;
+	unsigned    m_reserved3:1;
 	// did it have an inlink from a really nice site?
 	unsigned    m_hasAuthorityInlink:1;
 	// does it have contact info
@@ -920,7 +916,7 @@ class SpiderReply {
 	unsigned    m_isIndexedINValid :1;
 
 	// expires after a certain time or if ownership changed
-	unsigned    m_inGoogleValid           :1;
+	unsigned    m_reserved4               :1;
 	unsigned    m_hasContactInfoValid     :1;
 	unsigned    m_hasAuthorityInlinkValid :1;
 	unsigned    m_isContactyValid         :1;

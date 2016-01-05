@@ -23215,10 +23215,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 
 	// TODO: expire these when "ownershipchanged" tag is newer!!
-	if ( gr->getTag ( "ingoogle"        ) ) {
-		m_srep.m_inGoogle      = 1;
-		m_srep.m_inGoogleValid = 1;
-	}
+
 	if ( gr->getTag ( "authorityinlink" ) )
 		m_srep.m_hasAuthorityInlink = 1;
 	// automatically valid either way
@@ -23351,13 +23348,11 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			SpiderReply   *n = &m_srep;
 			SpiderRequest *o = &m_sreq;
 			// more stuff
-			n->m_inGoogle           = o->m_inGoogle;
 			n->m_hasContactInfo     = o->m_hasContactInfo;
 			n->m_isContacty         = o->m_isContacty;
 			n->m_hasAuthorityInlink = o->m_hasAuthorityInlink;
 			n->m_isPingServer       = o->m_isPingServer;
 			// the validator flags
-			n->m_inGoogleValid       = o->m_inGoogleValid;
 			n->m_hasContactInfoValid = o->m_hasContactInfoValid;
 			n->m_isContactyValid     = o->m_isContactyValid;
 			n->m_hasAuthorityInlinkValid =
@@ -23555,7 +23550,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	//m_srep.m_hasSiteVenue  = *hasSiteVenue;
 
 	// validate all
-	m_srep.m_inGoogleValid           = 1;
 	m_srep.m_hasContactInfoValid     = 1;
 	m_srep.m_hasAuthorityInlinkValid = 1;
 	m_srep.m_isContactyValid         = 1;
@@ -24170,10 +24164,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			ksr.m_hasContactInfoValid = true;
 		}
 
-		if ( gr->getTag("ingoogle" ) ) {
-			ksr.m_inGoogle      = 1;
-			ksr.m_inGoogleValid = true;
-		}
 		// the mere existence of these tags is good
 		if ( gr->getTag("authorityinlink"))ksr.m_hasAuthorityInlink =1;
 		ksr.m_hasAuthorityInlinkValid = true;
