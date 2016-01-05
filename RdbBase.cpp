@@ -1447,7 +1447,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 
 	// if we are reblancing this coll then keep merges tight so all
 	// the negative recs annihilate with the positive recs to free
-	// up disk space since we could be int16_t on disk space.
+	// up disk space since we could be short on disk space.
 	//if ( g_rebalance.m_isScanning &&
 	//     // if might have moved on if not able to merge because
 	//     // another was merging... so do this anyway...
@@ -1871,7 +1871,7 @@ void RdbBase::gotTokenForMerge ( ) {
 
 	// if we are reblancing this coll then keep merges tight so all
 	// the negative recs annihilate with the positive recs to free
-	// up disk space since we could be int16_t on disk space.
+	// up disk space since we could be short on disk space.
 	//if ( g_rebalance.m_isScanning &&
 	//     // if might have moved on if not able to merge because
 	//     // another was merging... so do this anyway...

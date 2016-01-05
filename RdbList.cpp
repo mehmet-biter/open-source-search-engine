@@ -475,7 +475,7 @@ bool RdbList::prepareForMerge ( RdbList **lists         ,
 	// tack on a bit because rdbs that use compression like clusterdb,
 	// posdb, etc. in the merge_r() code check for buffer break and
 	// they use a full key size! so add that on here! otherwise, they
-	// exit before getting the full mintomerge and come up int16_t
+	// exit before getting the full mintomerge and come up short
 	grow += m_ks;
 
 	if ( growList ( grow ) ) return true;

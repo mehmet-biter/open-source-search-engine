@@ -1806,7 +1806,7 @@ bool RdbMap::generateMap ( BigFile *f ) {
 		// is it something absurd? (over 40 Megabytes?)
 		/*
 		if ( recSize > 40*1024*1024 ) {
-			// now just cut it int16_t
+			// now just cut it short
 			//g_errno = ECORRUPTDATA;
 			log(
 			    "RdbMap::generateMap: Insane rec size of "

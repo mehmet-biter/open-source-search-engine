@@ -3239,7 +3239,7 @@ char *Msg25::isDup ( Msg20Reply *r , Msg20Reply *p ) {
 	//int32_t p1 = 0;
 	//int32_t p2 = 0;
 	//int32_t p3 = 0;
-	// int16_t cut
+	// shortcut
 	//int32_t ni = m_niceness;
 	//if ( v1 && x1 && nv1 >= 2 && nx1 >= 2 )
 	//	p1 = (int32_t)computeSimilarity (v1,x1,NULL,NULL,NULL,ni);

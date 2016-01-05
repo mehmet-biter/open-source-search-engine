@@ -141,7 +141,7 @@ gbqsort(	void*	aa,
 	//char *a = aa;
 	char *a = (char*) aa;
 
-	// JAB: int16_t-circuit if no action required
+	// JAB: short-circuit if no action required
 	if (n < 1) {
 		return;
 	}

@@ -657,7 +657,7 @@ int connectSock ( char *host , uint16_t port ) {
 	*/
 	pid_t pid = getpid();
 	char cmd[256];
-	sprintf(cmd,"/usr/bin/dig +int16_t  %s | tail -1 > /tmp/ip.%"UINT32"",
+	sprintf(cmd,"/usr/bin/dig +short  %s | tail -1 > /tmp/ip.%"UINT32"",
 		host,(int32_t)pid);
 	system ( cmd );
 	char filename[256];

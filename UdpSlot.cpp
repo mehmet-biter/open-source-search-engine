@@ -59,7 +59,7 @@ int32_t g_cancelAcksRead = 0;
 // let it all spray out like a wild hose
 //#define RESEND_0 30
 
-// . for int16_t msgs we can resend more rapidly
+// . for short msgs we can resend more rapidly
 // . it doesn't help to go lower than 20ms cuz that's sigtimedwait()'s limit
 //#define RESEND_0_SHORT 20
 // keep it to 40ms due to kernel time slicing problems
@@ -571,7 +571,7 @@ void UdpSlot::setResendTime() {
 	// . these times may change every time we receive an ACK for this host
 	// . the new resend time is like double
 	if ( m_niceness == 0 ) {
-		// if size is int16_t we typically use smaller resend time
+		// if size is short we typically use smaller resend time
 		if ( m_dgramsToSend <= 1 ) m_resendTime = RESEND_0_SHORT;
 		else                       m_resendTime = RESEND_0;
 		// save for checking for overflow

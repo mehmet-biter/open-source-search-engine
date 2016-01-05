@@ -858,7 +858,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 		// # Short form of [[hippopotamus]].
 		if ( ! strncasecmp(p-5 ,"past form of",12) )
 			name = p + 7;
-		if ( ! strncasecmp(p-6 ,"int16_t form of",13) )
+		if ( ! strncasecmp(p-6 ,"short form of",13) )
 			name = p + 7;
 		if ( ! strncasecmp(p-6 ,"tense form of",13) )
 			name = p + 7;
@@ -1005,7 +1005,7 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 
 	// . scan from title to next title
 	// . if it contains "Shavian" then bail! those are stupid
-	//   shavian script characters. one of them is int16_t for "of"
+	//   shavian script characters. one of them is short for "of"
 	//   so it shows up in of's synset!
 	char c;
 	if ( nextTitle ) {c = *nextTitle;*nextTitle = '\0';}

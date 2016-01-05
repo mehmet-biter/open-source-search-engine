@@ -3984,7 +3984,7 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 		return NULL;
 
 	// set this member down here because we can't set it in "xd"
-	// because it is too int16_t of an xmldoc stub
+	// because it is too short of an xmldoc stub
 	m_versionValid = true;
 
 	// breathe
@@ -6876,7 +6876,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 		// add the word
 		if ( wids[i] == 0LL ) continue;
 		// skip if in repeated fragment
-		// . NO, we do not use this for these int16_t strings
+		// . NO, we do not use this for these short strings
 		//if ( ww[i] == 0 ) continue;
 		// accumulate the wid with a score of 1 each time it occurs
 		if ( ! ct->addTerm ( &wids[i] ) ) return false;
@@ -7446,7 +7446,7 @@ int32_t makeSimpleWordVector (char *s,int32_t *vbuf,int32_t vbufSize,int32_t nic
 	if ( ! w.set9 ( s , niceness ) ) return -1;
 	// skip if no words
 	if ( w.m_numWords == 0 ) return 0;
-	// int16_t cut
+	// shortcut
 	int64_t *wids = w.m_wordIds;
 	int64_t  pid  = 0LL;
 	// count insertions
@@ -34333,7 +34333,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	//}
 
 
-	// cut it int16_t for debugging
+	// cut it short for debugging
 	logf(LOG_DEBUG,"xmldoc: FIX ME remove return");
 
 	//return true;

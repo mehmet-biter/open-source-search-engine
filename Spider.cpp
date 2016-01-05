@@ -8682,7 +8682,7 @@ bool Msg12::getLocks ( int64_t uh48, // probDocId ,
 	// cache time
 	int32_t ct = 120;
 
-	// if docid based assume it was a query reindex and keep it int16_t!
+	// if docid based assume it was a query reindex and keep it short!
 	// otherwise we end up waiting 120 seconds for a query reindex to
 	// go through on a docid we just spidered. TODO: use m_urlIsDocId
 	// MDW: check this out
@@ -8720,7 +8720,7 @@ bool Msg12::getLocks ( int64_t uh48, // probDocId ,
 	// the one responsible for locking.
 	Host *hosts = g_hostdb.getMyShard();
 
-	// int16_t cut
+	// shortcut
 	UdpServer *us = &g_udpServer;
 
 
@@ -9009,7 +9009,7 @@ bool Msg12::removeAllLocks ( ) {
 	// i.e. our group! because we check our local lock table to see
 	// if a doled url is locked before spidering it ourselves.
 	//Host *hosts = g_hostdb.getMyGroup();
-	// int16_t cut
+	// shortcut
 	UdpServer *us = &g_udpServer;
 	// set the hi bit though for this one
 	//m_lockKey |= 0x8000000000000000LL;
@@ -9078,7 +9078,7 @@ bool Msg12::confirmLockAcquisition ( ) {
 	// i.e. our shard! because we check our local lock table to see
 	// if a doled url is locked before spidering it ourselves.
 	//Host *hosts = g_hostdb.getMyShard();
-	// int16_t cut
+	// shortcut
 	UdpServer *us = &g_udpServer;
 	// get # of hosts in each mirror group
 	int32_t hpg = g_hostdb.getNumHostsPerShard();
@@ -9160,7 +9160,7 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 	// get request
 	char *request = udpSlot->m_readBuf;
 	int32_t  reqSize = udpSlot->m_readBufSize;
-	// int16_t cut
+	// shortcut
 	UdpServer *us = &g_udpServer;
 	// breathe
 	QUICKPOLL ( niceness );
@@ -9632,7 +9632,7 @@ bool printList ( State11 *st ) {
 	}
 	// need to load more?
 	if ( st->m_count >= st->m_numRecs ||
-	     // if list was a partial, this priority is int16_t then
+	     // if list was a partial, this priority is short then
 	     list->getListSize() < st->m_minRecSizes ) {
 		// . try next priority
 		// . if below 0 we are done
@@ -13615,7 +13615,7 @@ void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
 		Host *h = g_hostdb.getHost(i);
 		// skip if dead. no! we need replies from all hosts
-		// otherwise our counts could be int16_t and we might end up
+		// otherwise our counts could be short and we might end up
 		// re-spidering stuff even though we've really hit maxToCrawl
 		//if ( g_hostdb.isDead(i) ) {
 		//	if ( g_conf.m_logDebugSpider )

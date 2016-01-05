@@ -731,7 +731,7 @@ bool Sections::set ( Words     *w                       ,
 
 			// if our parent got closed before "sn" closed because
 			// it hit its back tag before we hit ours, then we
-			// must cut ourselves int16_t and try to match this
+			// must cut ourselves short and try to match this
 			// back tag to another front tag on the stack
 			Section *ps = sn->m_parent;
 			for ( ; ps != rootSection ; ps = ps->m_parent ) {
@@ -753,8 +753,8 @@ bool Sections::set ( Words     *w                       ,
 					char *xx=NULL;*xx=0; }
 				// ok, try to match this back tag with another
 				// front tag on the stack, because the front
-				// tag we had selected got cut int16_t because
-				// its parent forced it to cut int16_t.
+				// tag we had selected got cut short because
+				// its parent forced it to cut short.
 				goto subloop;
 			}
    
@@ -2295,7 +2295,7 @@ bool Sections::set ( Words     *w                       ,
 	// now set SENT_LIST flags on m_sentFlags
 	//
 	// try to capture sentences that are not menus but are a list of
-	// things. if the sentence itself has a list of int16_t items, or a bunch
+	// things. if the sentence itself has a list of short items, or a bunch
 	// of commas, then also set the SEC_LIST flag on it. or if sentence
 	// is part of a sequence of sentences that are a list of sentences then
 	// set it for them as well. typically such sentences will be separated
@@ -3988,7 +3988,7 @@ bool Sections::setSentFlagsPart1 ( ) {
 		// name for "Ragnar Bohlin" and "Malin Christennsson" whose
 		// first sentence was for the most part properly capitalized
 		// just by sheer luck because it used proper nouns and was
-		// int16_t.
+		// short.
 		bool endsInPeriod = false;
 		char *p = NULL;
 		//if ( si->m_b < m_nw ) p = m_wptrs[si->m_b];
@@ -10679,7 +10679,7 @@ bool Sections::addSentenceSections ( ) {
 			lastGuy = pp;
 			// . i'd say blow up "pp" until its contains "start"
 			// . but if before it contains start it breaches
-			//   [senta,sentb) then we have to cut things int16_t
+			//   [senta,sentb) then we have to cut things short
 			for ( ; pp ; pp = pp->m_parent ) {
 				// breathe
 				QUICKPOLL(m_niceness);
@@ -14421,7 +14421,7 @@ bool Sections::setHeadingBit ( ) {
 			}
 			// skip stop words
 			if ( m_words->isStopWord(i) ) continue;
-			// . skip int16_t words
+			// . skip short words
 			// . November 4<sup>th</sup> for facebook.com
 			if ( m_wlens[i] <= 2 ) continue;
 			// is it lower?
@@ -16248,7 +16248,7 @@ bool Sections::setRegistrationBits ( ) {
 		// sections. like "Performance Dates" for santafeplayhouse.org.
 		// and for adobetheater.org we should stop at the </tr> tag
 		// so we can pick up that "Friday from 9 AM to 4 PM" that
-		// we were missing because "sb" stopped int16_t.
+		// we were missing because "sb" stopped short.
 
 		for ( int32_t i = j ; i < sk->m_b ; i++ ) {
 			// breathe

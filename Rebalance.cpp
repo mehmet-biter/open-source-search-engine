@@ -356,7 +356,7 @@ bool Rebalance::scanRdb ( ) {
 
 	// . if this rdb is merging wait until merge is done
 	// . we will be dumping out a lot of negative recs and if we are
-	//   int16_t on disk space we need to merge them in immediately with
+	//   short on disk space we need to merge them in immediately with
 	//   all our data so that they annihilate quickly with the positive
 	//   keys in there to free up more disk
 	RdbBase *base = rdb->getBase ( m_collnum );

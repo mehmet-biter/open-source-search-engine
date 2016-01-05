@@ -4562,7 +4562,7 @@ void hashExcerpt ( Query *q ,
 				if ( wi->m_isQueryTerm ||
 				     wi->m_isCommonWord ||
 				     wlen[i] <= 3) {
-				    // common word, query terms, int16_t words
+				    // common word, query terms, short words
 				    // are all second class citizens when it
 				    // comes to scoring: they get a small
 				    // bonus, to ensure that they are
@@ -4613,7 +4613,7 @@ void hashExcerpt ( Query *q ,
 				if ( wi->m_isQueryTerm || 
 				     wi->m_isCommonWord || 
 				    wlen[i] <= 3) {
-				    // common word, query terms, int16_t words
+				    // common word, query terms, short words
 				    // are all second class citizens when it
 				    // comes to scoring: they get a small
 				    // bonus, to ensure that they are
@@ -4657,7 +4657,7 @@ void hashExcerpt ( Query *q ,
 			if ( wi->m_isQueryTerm || 
 			     wi->m_isCommonWord || 
 			     wlen[i] <= 3) {
-			    // common word, query terms, int16_t words
+			    // common word, query terms, short words
 			    // are all second class citizens when it
 			    // comes to scoring: they get a small
 			    // bonus, to ensure that they are
@@ -4881,7 +4881,7 @@ void hashExcerpt ( Query *q ,
 			if ( j > i ) {
 				// advance phrase length
 				wwlen += wlen[j-1] + wlen[j];
-				// . cut phrase int16_t if too much punct between
+				// . cut phrase short if too much punct between
 				//   the current word, j, and the last one, j-2
 				// . but allow for abbreviations or initials
 				//   of single letters, like 'harry s. truman'.

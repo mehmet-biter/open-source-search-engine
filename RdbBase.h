@@ -417,7 +417,7 @@ class RdbBase {
 	// do we need to dump to disk?
 	//bool      m_needsSave;
 
-	// . when we dump list to an rdb file, can we use int16_t keys?
+	// . when we dump list to an rdb file, can we use short keys?
 	// . currently exclusively used by indexdb
 	bool      m_useHalfKeys;
 

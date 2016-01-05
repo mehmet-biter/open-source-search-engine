@@ -132,7 +132,7 @@ class RdbCache *getDiskPageCache ( char rdbId ) {
 // . we try to shrink the endKey if minRecSizes is >= 0 in order to
 //   avoid excessive reading
 // . by shrinking the endKey we cannot take into account the size of deleted
-//   records, so therefore we may fall int16_t of "minRecSizes" in actuality,
+//   records, so therefore we may fall short of "minRecSizes" in actuality,
 //   in fact, the returned list may even be empty with a shrunken endKey
 // . we merge all lists read from disk into the provided "list"
 // . caller should call Msg3.getList(int32_t i) and Msg3:getNumLists() to retrieve

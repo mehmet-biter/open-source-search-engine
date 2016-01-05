@@ -60,7 +60,7 @@ void Msg5::reset() {
 // . we want at least "minRecSizes" bytes of records, but not much more
 // . we want all our records to have keys in the [startKey,endKey] range
 // . final merged list should try to have a size of at least "minRecSizes"
-// . if may fall int16_t if not enough records were in [startKey,endKey] range
+// . if may fall short if not enough records were in [startKey,endKey] range
 // . endKey of list will be set so that all records from startKey to that
 //   endKey are in the list
 // . a minRecSizes of 0x7fffffff means virtual inifinty, but it also has 
@@ -630,7 +630,7 @@ bool Msg5::needsRecall ( ) {
 	// if this is NOT the first round and the sum of all our list sizes
 	// did not increase, then we hit the end...
 	//
-	// i think this is sometimes stopping us int16_t. we need to verify
+	// i think this is sometimes stopping us short. we need to verify
 	// that each list (from tree and files) is exhausted... which
 	// the statement above does... !!! it was causing us to miss urls
 	// in doledb and think a collection was done spidering. i think
