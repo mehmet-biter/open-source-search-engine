@@ -57,8 +57,7 @@ bool RdbMem::init ( Rdb *rdb , int32_t memToAlloc , char keySize ,
 	if ( ! m_mem ) 	return log("RdbMem::init: %s", mstrerror(g_errno));
 	m_memSize = memToAlloc;
 	// rush it into mem for real
-	int32_t n = m_memSize / 4;
-	for ( int32_t i = 0 ; i < n ; i++ ) ((int32_t *)m_mem)[i] = 0;
+	memset(m_mem, memToAlloc, 0);
 	// set up primary/secondary mem ptrs
 	m_ptr1 = m_mem;
 	// secondary mem initially grow downward
