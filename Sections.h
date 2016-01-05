@@ -713,9 +713,6 @@ class Sections {
 	void printFlags ( class SafeBuf *sbuf , class Section *sn ,
 			  bool justEvents ) ;
 
-	bool swoggleTables ( ) ;
-	bool swoggleTable ( int32_t dn , class Section *ts ) ;
-	
 	bool printVotingInfoInJSON ( SafeBuf *sb ) ;
 
 	bool print2 ( SafeBuf *sbuf ,
