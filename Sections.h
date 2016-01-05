@@ -679,7 +679,6 @@ class Sections {
 		   char           *sectionsData,
 		   bool            sectionsDataValid ,
 		   char           *sectionsData2,
-		   //uint64_t        tagPairHash ,
 		   char           *buf         ,
 		   int32_t            bufSize     ) ;
 
@@ -688,22 +687,9 @@ class Sections {
 
 	bool verifySections ( ) ;
 
-	// . the start and end word # of the article range
-	// . all article content is in [start,end)
-	//void getArticleRange ( int32_t *start , int32_t *end );
-
-	// add docid-based forced spider recs into the metalist
-	//char *respiderLineWaiters ( char *metaList    ,
-	//			    char *metaListEnd );
-				    // these are from the parent
-				    //Url  *url         ,
-				    //int32_t  ip          ,
-				    //int32_t  priority    ) ;
-
 	int32_t getStoredSize ( ) ;
 	static int32_t getStoredSize ( char *p ) ;
 	int32_t serialize     ( char *p ) ;
-	//int32_t getMemUsed ( ) { return m_sectionsBufSize; };
 
 	bool growSections ( );
 

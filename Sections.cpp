@@ -2500,12 +2500,11 @@ bool Sections::addImpliedSections ( Addresses *aa ) {
 	// santafeplayhouse.org might not have had "Thursdays" in
 	// that event title in which case we'd have to rely on 
 	// implied sections... so let's do this right...
-	
-	// this is needed by setSentFlags()
-	//setNextSentPtrs();
 
 	// returns false and sets g_errno on error
-	if ( ! setSentFlagsPart2 ( ) ) return false;
+	if ( ! setSentFlagsPart2 ( ) ) {
+		return false;
+	}
 
 
 	// i would say <hr> is kinda like an <h0>, so do it first
@@ -4727,11 +4726,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		int32_t priceWordCount = 0;
 		bool hadAt = false;
 
-		// punish for huge # of words
-		//if ( si->m_alnumPosB - si->m_alnumPosA + 1 >= 15 ) {
-		//	tflags |= SENT_TOO_MANY_WORDS;
-		//}
-
 		// watchout if in a table. the last table column header
 		// should not be applied to the first table cell in the
 		// next row! was screwing up
@@ -5161,67 +5155,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		if ( ! hasSpace ) 
 			si->m_sentFlags |= SENT_HASNOSPACE;
 
-		/*
-		// if all words one in address, penalize
-		if ( inAddress && ! notInAddress ) {
-			//tscore *= .76;
-			//dscore *= .76;
-			// since it is a street or city, nuke it harder, 
-			// harder than a mixed case sentence really... which
-			// is .15.
-			// now http://www.cabq.gov/library/branches.html is
-			// getting the street addresses as titles because
-			// the sub header is nuked so hard from MULT_EVENTS
-			// so nuke this even harder
-			// generic words
-			//tscore *= .001;//.12;
-			//dscore *= .001;//.12;
-			// if generic that means we are not store hours
-			// and this is something we do not want in the title
-			if ( tflags & SENT_GENERIC_WORDS )
-			     tscore *= .99;
-			// a slight hit now, no hurts, blackbird
-			//tscore *= .99;
-			tflags |= SENT_IN_ADDRESS;
-		}
-
-		// . if some words in address, penalize less
-		// . fixes newmexico.org urls which have
-		//   "45th Annual Rockhound Roundup - Gem & Mineral Show - 
-		//    Deming, NM - 09:00 AM" where Deming, NM is in address
-		//    but the rest are not. it caused us to prefer the
-		//    section "Thursday, 11 March, 2010" as the title and
-		//    we wound up not getting an outlinked title bit set
-		//    (EV_OUTLINKED_TITLE)
-		if ( inAddress && notInAddress ) {
-			// hurt salsapower.com title from
-			// "Intermediate Salsa class on Saturdays at 11 a.m. 
-			//  at the Harwood 1114 7th Street NW ts=50.0 ds=50.0 
-			//  inaddress" to "Alb, NM" with weight of .50, so i
-			// changed to no penalty.
-			// BUT without a penalty we get event titles like
-			// "Albuquerque, NM 87104-1133" from trumba that
-			// have extended zip codes not recognized as being
-			// 100% in an address. and we get
-			// "P.O.B. 4321, zip 87196" from unm.edu that are
-			// quite address-y but not 100% recognized as all
-			// address words by us!
-			// . BUT we are missing some nice titles for 
-			//   abqtango.com like "Dance to Live Tango Music, 
-			//   Fridays, 10:00pm-Midnight at the Roasted Bean 
-			//   Cafe", so let's only penalize if there is no
-			//   "at" in the title
-			if ( ! hadAt ) {
-				// generic words
-				//tscore *= .90;
-				//dscore *= .90;
-				// slightly - no, hurts blackbird
-				//tscore *= .99;
-			}
-			tflags |= SENT_IN_ADDRESS;
-		}
-		*/
-
 		// punish just a tiny amount to fix 
 		// http://www.when.com/albuquerque-nm/venues which is using
 		// the place name as the title and not the real event title
@@ -5324,14 +5257,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		       m_wptrs[senta][-1] == '[' ) )
 			si->m_sentFlags |= SENT_PARENS_START; // STRANGE_PUNCT;
 
-		// . if one lower case and most are upper, we can ignore
-		// . fixes mistakes
-		// . fixes "Welcome to the Academy store" for wholefoods.com
-		//if ( lowerCount == 1 && upperCount >= 2 ) lowerCount = 0;
-		// punish if not title case
-		//if ( lowerCount )
-		//	si->m_sentFlags |= SENT_MIXED_CASE;
-
 		// if in a tag of its own that's great! like being in a header
 		// tag kind of
 		Section *sp = si->m_parent;
@@ -5348,36 +5273,8 @@ bool Sections::setSentFlagsPart2 ( ) {
 		if ( si->m_sentFlags & SENT_IN_HEADER )
 			si->m_sentFlags |= SENT_IN_TAG;
 
-		// if sent to left of us starts the parent tag and a colon
-		// separates us, then set both our SENT_IN_TAG bits.
-		// fixes newmexico.org where event title is "Looking Ahead: 
-		// Portraits from the Mott-Warsh Collection, Las Cruces"
-		/*
-		int32_t cc = si->m_a - 1;
-		Section *leftSent = NULL;
-		if ( cc - 1 >= 0 ) leftSent = ss->m_sectionPtrs [ cc - 1 ];
-		if ( leftSent && 
-		     (leftSent->m_flags & SEC_SENTENCE) &&
-		     m_words->hasChar(cc,':') &&
-		     sp->m_firstWordPos == leftSent->m_firstWordPos &&
-		     sp->m_lastWordPos  == si->m_lastWordPos ) {
-			si->m_sentFlags       |= SENT_IN_TAG;
-			leftSent->m_sentFlags |= SENT_IN_TAG;
-		}
-		*/
 	}
 
-
-	// are we a trumba.com url? we trust the event titles for those
-	//char *dom  = m_url->getDomain();
-	//int32_t  dlen = m_url->getDomainLen();
-	//bool  isTrumba = false;
-	//bool  isFacebook = false;
-	//if ( dlen == 10 && strncmp ( dom , "trumba.com" , 10 ) == 0 )
-	//	isTrumba = true;
-	//if ( dlen == 12 && strncmp ( dom , "facebook.com" , 12 ) == 0 )
-	//	isFacebook = true;
-		
 	//bool lastSentenceHadColon = false;
 	// . score each section that directly contains text.
 	// . have a score for title and score for description
@@ -5486,60 +5383,12 @@ bool Sections::setSentFlagsPart2 ( ) {
 			// must be p or hr tag etc.
 			si->m_sentFlags |= SENT_BEFORE_SPACER;
 
-
 		// location sandwich? punish
 		// "2000 Mountain Rd NW, Old Town, Albuquerque, NM 87104"
 		// for collectorsguide.com.
 		if ( (bits[sa  ] & D_IS_IN_ADDRESS) &&
 		     (bits[sb-1] & D_IS_IN_ADDRESS) )
 			si->m_sentFlags |= SENT_LOCATION_SANDWICH;
-
-
-
-		// . has colon at the end of it?
-		// . but do allow "hours:" etc to be a title...
-		// . that fixes www.thewoodencow.com's store hours "event"
-		/*
-		if ( m_words->hasChar(sb-1,':') &&
-		     (sb-2<0 || m_wids[sb-2]!=h_hours) ) {
-			// just slight penalty, no hurts us!
-			// "*Practica*: 9-10pm"
-			si->m_sentFlags |= SENT_HAS_COLON;
-			lastSentenceHadColon = true;
-		}
-		else if ( sb<m_nw && m_words->hasChar(sb,':') &&
-		     (sb-1<0 || m_wids[sb-1]!=h_hours) ) {
-			si->m_sentFlags |= SENT_HAS_COLON;
-			lastSentenceHadColon = true;
-		}
-
-		// negate if title: etc.
-		if ( m_wids[sb-1] == h_title )
-			lastSentenceHadColon = false;
-		if ( m_wids[sb-1] == h_event )
-			lastSentenceHadColon = false;
-		// . or if 2+ words in sentence
-		// . but still "Doves: For Divorced, Widowed and Separated"
-		//   title suffers for http://www.trumba.com/calendars/
-		//   KRQE_Calendar.rss
-		if ( sb - sa >= 2 )
-			lastSentenceHadColon = false;
-		// negate if "Saturdays: 5-6:30pm All Levels African w/ ..."
-		// to fix texasdrums.drums.org url
-		if ( bits[sa] & D_IS_IN_DATE )
-			lastSentenceHadColon = false;
-		*/
-
-		// . dup slam
-		// . make it 2 to 1 to fix trumba.com
-		//if ( si->m_votesForDup > 2 * si->m_votesForNotDup )
-		//	si->m_sentFlags |= SENT_DUP_SECTION;
-
-		// this crap is set in XmlDoc.cpp
-		//if ( si->m_votesForDup >  2 * si->m_votesForNotDup && 
-		//     si->m_votesForDup >= 1 &&
-		//     ! (si->m_flags & SEC_HAS_NONFUZZYDATE) ) 
-		//	si->m_sentFlags |= SENT_DUP_SECTION;
 
 		// . second title slam
 		// . need to telescope up for this i think
@@ -5580,21 +5429,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		// . fixes meetup.com
 		if ( si->m_flags & SEC_IN_HEADER )
 			si->m_sentFlags |= SENT_IN_HEADER;
-
-		// lost a title because of SENT_MIXED_TEXT 
-		// "Tango Club of Albuquerque (Argentine Tango)". should we
-		// split up the sentence when it ends in a parenthetical to 
-		// fix that? let's take this out then see it can remove good
-		// titles...
-		//if ( (si->m_flags & SEC_LINK_TEXT) &&
-		//     (si->m_flags & SEC_PLAIN_TEXT) ) {
-		//	si->m_sentFlags |= SENT_MIXED_TEXT;
-		//}
-
-		// same goes for being in a menu sentence
-		//if ( si->m_flags & SEC_MENU_SENTENCE ) {
-		//	si->m_sentFlags |= SENT_MIXED_TEXT;
-		//}
 
 		// . now fix trumba.com which has <title> tag for each event
 		// . if parent section is title tag or has "title" in it
@@ -5656,64 +5490,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 			// once is good enough
 			break;
 		}
-
-		/*
-		// get biggest
-		Section *biggest = NULL;
-		// loop over this
-		Section *pp = si;
-		int32_t ca = si->m_firstWordPos;
-		int32_t cb = si->m_lastWordPos;
-		// blow up until contain prev
-		for ( ; pp ; pp = pp->m_parent ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// stop if contains prev guy
-			if ( pp->m_firstWordPos != ca ) break;
-			if ( pp->m_lastWordPos  != cb ) break;
-			// otherwise, set it
-			biggest = pp;
-		}
-
-
-		if ( biggest && ! biggest->m_prevBrother &&
-		     // we already give a bonus for being in header tag above
-		     ! (biggest->m_flags & SEC_IN_HEADER) ) {
-		     //!(biggest->m_flags & SEC_HEADING_CONTAINER) &&
-		     //!(biggest->m_flags & SEC_NIXED_HEADING_CONTAINER) ) {
-			tscore *= 1.2;
-			tflags |= SENT_NO_PREV_BROTHER;
-			// check this if we have no prev brother only
-			//if ( ! biggest->m_nextBrother ||
-			//     // or we can differ too!
-			//     (biggest->m_nextBrother->m_tagHash !=
-			//      biggest->m_tagHash ) ) {
-			//	tscore *= 1.1;
-			//	tflags |= SENT_NO_NEXT_BROTHER;
-			//}
-		}
-		*/
-
-		/*
-		Section *bro = NULL;
-		if ( biggest ) bro = biggest->m_nextBrother;
-		// discard brother if not same tag hash
-		if ( bro && bro->m_tagHash != biggest->m_tagHash ) bro = NULL;
-		// get smallest section containing first word of bro
-		Section *smbro = NULL;
-		int32_t fwp = -1;
-		if ( bro ) fwp = bro->m_firstWordPos;
-		if ( fwp >= 0) smbro = sp[fwp];
-		// discard brother if its in lower case issues and we are not
-		if ( smbro && 
-		     !(biggest->m_sentFlags & SENT_MIXED_CASE) &&
-		     (smbro->m_sentFlags & SENT_MIXED_CASE)) bro=NULL;
-		// if no next brother, and no prev brother, reward
-		if ( ! bro && (tflags & SENT_NO_PREV_BROTHER) ) {
-			tscore *= 1.1;
-			tflags |= SENT_NO_NEXT_BROTHER;
-		}
-		*/
 
 		int64_t ch64 = si->m_contentHash64;
 		// fix for sentences
@@ -6129,103 +5905,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		if ( val == -1 )
 			si->m_sentFlags |= SENT_BADEVENTSTART;
 	}
-
-	/*
-	  supplanted by hasTitleWords()
-
-	//////////////////////
-	//
-	// set SENT_BADEVENTSTART
-	//
-	//////////////////////
-	//
-	// . '-': if a title sentences begins with one of these words then
-	//        set SENT_BADEVENTSTART
-	// . do not give bonus for SENT_EVENT_ENDING if SENT_BADEVENTSTART
-	//   is set
-	// . fixes "Presented by Colorado Symphony Orchestra"
-	static char *s_starters [] = {
-		"-presented", // presented by fred, bad
-		//"+festival", // festival of lights, good
-		//"+class",     // class w/ caroline & constantine
-		//"+lecture", // lecture on physics
-		//"+beginning", // beginning painting constantcontact.com
-		//"+intermeditate", 
-		//"+advanced"
-	};
-	// store these words into table
-	static HashTableX s_sw;
-	static char s_swbuf[2000];
-	static bool s_init8 = false;
-	if ( ! s_init8 ) {
-		s_init8 = true;
-		s_sw.set(8,4,128,s_swbuf,2000,false,m_niceness,"swtab");
-		int32_t n = (int32_t)sizeof(s_starters)/ sizeof(char *); 
-		for ( int32_t i = 0 ; i < n ; i++ ) {
-			// set words
-			char *s = s_starters[i];
-			Words w; w.set3 ( s );
-			int64_t *wi = w.getWordIds();
-			int64_t h = 0;
-			// scan words
-			for ( int32_t j = 0 ; j < w.getNumWords(); j++ )
-				if ( wi[j] ) h ^= wi[j];
-			// . store hash of all words, value is ptr to it
-			// . put all exact matches into sw1 and the substring
-			//   matches into sw2
-			s_sw.addKey ( &h , &s );
-		}
-	}
-	// . use the same event ending table to see if the title sentence
-	//   begins with one of these "endings"
-	// . should fix "Presented By Colorado Symphony Orchestra" from
-	//   being a good event title
-	for ( Section *si = ss->m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// only works on sentences for now
-		if ( ! ( si->m_flags & SEC_SENTENCE ) ) continue;
-		// how many alnum words in it?
-		int32_t na = si->m_alnumPosB - si->m_alnumPosA ;
-		// need at least two words
-		if ( na <= 1 ) continue;
-		// skip if too long and not capitalized
-		if ( na > 7 && (si->m_sentFlags & SENT_MIXED_CASE ) ) continue;
-		// get FIRST word in potential event title
-		int32_t i = si->m_senta;
-		int32_t a = si->m_senta;
-		int32_t b = si->m_sentb;
-		// skip cruft though
-		for ( ; i < a ; i++ ) {
-			QUICKPOLL(m_niceness);
-			if ( ! m_wids[i] ) continue;
-			if ( bits[i] & D_IS_IN_DATE ) continue;
-			if ( bits[i] & D_IS_STOPWORD ) continue;
-			if ( m_wlens[i] == 1 ) continue;
-			break;
-		}
-		// if all cruft, ignore
-		if ( i == b ) continue;
-		// go to next section if word not in our list
-		if ( ! s_sw.isInTable ( &m_wids[i] ) ) continue;
-		// must have at least one word after that
-		int32_t next = i + 2;
-		// skip tags
-		for ( ; next < b && ! m_wids[next] ; next++ );
-		// if no more words, forget it, go to next section
-		if ( next >= b ) continue;
-		// get the string
-		char *str = *(char **)s_sw.getValue ( &m_wids[i] );
-		// check sign
-		//if      ( str[0] == '+' )
-		//	si->m_sentFlags |= SENT_GOODEVENTSTART;
-		if ( str[0] == '-' )
-			si->m_sentFlags |= SENT_BADEVENTSTART;
-		// must have a sign
-		else { char *xx=NULL;*xx=0; }
-	}
-	*/
-
 
 	///////////////////
 	//
@@ -7709,17 +7388,6 @@ int32_t hasTitleWords ( sentflags_t sflags ,
 		// TODO: a city/state!!!
 		if ( wids[i+2] == h_in ) {
 			*matchp = 1;
-			/*
-			// assume none
-			bool gotPlaceInd = false;
-			// scan for place indicator or in address bit
-			for ( int32_t j = i + 4 ; j < b ; j++ ) {
-				if ( ! isPlaceIndicator(&wids[j]) ) continue;
-				gotPlaceInd = true;
-				break;
-			}
-			if ( gotPlaceInd ) *matchp = 1;
-			*/
 		}
 
 		// put in subsent code 
@@ -7766,31 +7434,6 @@ int32_t hasTitleWords ( sentflags_t sflags ,
 			*matchp = 1;
 		// or parens: Million+Dollar+Quartet+(Touring)
 		if ( words->hasChar (i+1,'(' ) ) *matchp = 1;
-
-		/*
-		// strange punct follows?
-		char *p    =     wptrs[i+1];
-		char *pend = p + wlens[i+1];
-		for ( ; p < pend ; p++ ) {
-			QUICKPOLL(niceness);
-			if ( *p != ':' ) continue;
-			// . phone number not allowed after it!
-			// . fix "Adult Services: 881-001" for unm.edu
-			int32_t next = i + 1;
-			for ( ; next < b && ! wids[next]; next++ );
-			// no phone number, so allow this ending!
-			if ( next >= b ) break;
-			// phone number? if not, we're good!
-			if ( ! isdigit(wptrs[next][0]) ) break;
-			// crap, forget it... do not set ENDING bit
-			p = pend-1;
-		}
-		// there is no strange punct after it, so this word is
-		// not really the "last" word in this sentence
-		if ( p >= pend ) continue;
-		// we got some strange punct
-		return retVal;
-		*/
 	}
 
 	// return it if we got something
@@ -7914,20 +7557,6 @@ int32_t hasTitleWords ( sentflags_t sflags ,
 	// no match
 	return 0;
 }
-/*
-bool Sections::isPlaceOrBusinessWord ( int32_t i ) {
-
-	isPlaceIndicator ( &wids[i] ) return true;
-	if ( wids[i] == h_news ) return true;
-	if ( wids[i] == h_network ) return true;
-
-		// generally, allow all gerunds, anywhere in the title
-		// but if a noun like association or center follows them
-		// they do not count, they are describing a bldg or 
-		// organization... or "news" or "club" "room" (dining room)
-		// "co" "company" "llc" ...
-}
-*/
 
 void Sections::setSentPrettyFlag ( Section *si ) {
 	// shortcut
@@ -8027,138 +7656,6 @@ void Sections::setSentPrettyFlag ( Section *si ) {
 	si->m_sentFlags |= SENT_PRETTY;
 }
 
-/*
-	////////////////////////////////
-	//
-	// punish sections that have a repeated tag hash
-	//
-	//
-	// - the idea being title sections are somewhat unique
-	// - limit repeat table recordings for each individual event
-	//
-	////////////////////////////////
-	char rttbuf[4000];
-	HashTableX rtt; 
-	rtt.set(4,4,256,rttbuf,4000,false,m_niceness,"rttt");
-	for ( Section *si = ss->m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// now we require the sentence
-		if ( ! ( si->m_flags & SEC_SENTENCE ) ) continue;
-		// skip if not in description right now, no need to score it!
-		if ( si->m_minEventId <= 0 ) continue;
-		// insert into table, score one
-		if ( ! rtt.addTerm32((int32_t *)&si->m_tagHash) ) return false;
-	}
-	// now punish the repeaters
-	for ( Section *si = ss->m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// now we require the sentence
-		if ( ! ( si->m_flags & SEC_SENTENCE ) ) continue;
-		// skip if not in description right now, no need to score it!
-		if ( si->m_minEventId <= 0 ) continue;
-		// insert into table, score one
-		int32_t score = rtt.getScore32((int32_t *)&si->m_tagHash) ;
-		// punish?
-		if ( score > 1 ) continue;
-		// yes
-		si->m_sentFlags |= SENT_UNIQUE_TAG_HASH;
-		si->m_titleScore *= 1.02;
-	}
-
-
-	/////////////
-	//
-	// title score boost for being part of title tag
-	//
-	// many event titles are repeated in the title tag
-	// that may be true, but also the title is generic and repeated
-	// again in the document body, and that hurts us!!
-	//
-	// TODO: consider doing this if only one event?
-	//
-	///////////
-	// get the title tag section
-	Section *titleSec = NULL;
-	for ( Section *si = ss->m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// now we require the sentence
-		if ( si->m_tagId != TAG_TITLE ) continue;
-		titleSec = si;
-		break;
-	}
-	// . score each section that directly contains text.
-	// . have a score for title and score for description
-	for ( Section *si = ss->m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// forget if no title
-		if ( ! titleSec ) break;
-		// now we require the sentence
-		if ( ! ( si->m_flags & SEC_SENTENCE ) ) continue;
-		// skip if not in description right now, no need to score it!
-		if ( si->m_minEventId <= 0 ) continue;
-		// get sentence
-		int32_t senta = si->m_senta;
-		int32_t sentb = si->m_sentb;
-		// do not match title tag with itself!
-		if ( senta >= titleSec->m_a && senta < titleSec->m_b ) 
-			continue;
-		// title sentence
-		int32_t ta = titleSec->m_a;
-		int32_t tb = titleSec->m_b;
-		// record max words matched
-		int32_t max = 0;
-		bool allMatched = false;
-		int32_t matchedWords = 0;
-		// compare to sentence in title
-		for ( int32_t i = ta ; i < tb ; i++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// skip if not alnum
-			if ( ! m_wids[i] ) continue;
-			// check with title
-			if ( m_wids[i] != m_wids[senta] ) {
-				// reset matched word count
-				matchedWords = 0;
-				// reset this ptr too
-				senta = si->m_senta;
-				continue;
-			}
-			// ok, words match, see how many
-			matchedWords++;
-			// record max
-			if ( matchedWords > max ) max = matchedWords;
-			// advance over word we match
-			senta++;
-			// advance to next alnumword
-			for ( ; senta < sentb && !m_wids[senta] ; senta++);
-			// all done?
-			if ( senta < sentb ) continue;
-			// all matched!
-			allMatched = true;
-			break;
-		}
-		if ( ! allMatched ) continue;
-		// reward
-		si->m_sentFlags |= SENT_MATCHED_TITLE_TAG;
-		// give a little more the more words matched
-		// no, because the title often has the containing place name, 
-		// like "Museum of Science and Industry" even when the page
-		// is talking about the "Bronzeville Blue Club" which will
-		// get less points because its only match 3 words...
-		//float minb = 2.0;
-		//float maxb = 3.0;
-		//if ( matchedWords > 10 ) matchedWords = 10;
-		//float bonus = minb+(maxb-minb) * ((float)matchedWords/10.0);
-		si->m_titleScore *= 3.0;//bonus;
-		si->m_descScore  *= 3.0;//bonus;
-	}
-}
-*/
-
 #define METHOD_MONTH_PURE   0 // like "<h3>July</h3>"
 #define METHOD_TAGID        1
 #define METHOD_DOM          2
@@ -8235,18 +7732,7 @@ int32_t Sections::addImpliedSections3 ( ) {
 		return 0;
 
 		
-	sec_t badFlags =SEC_MARQUEE|SEC_STYLE|SEC_SCRIPT|SEC_SELECT|
-		SEC_HIDDEN|SEC_NOSCRIPT;
-
-	// for debugging -- sleep forever
-	//if ( g_hostdb.m_hostId == 44 ) {
-	//	for ( ; ; ) {
-	//		QUICKPOLL(m_niceness);
-	//	}
-	//}
-
-	// ignore brothers that are one of these tagids
-	//sec_t badFlags = SEC_SELECT|SEC_SCRIPT|SEC_STYLE|SEC_HIDDEN;
+	sec_t badFlags = SEC_MARQUEE|SEC_STYLE|SEC_SCRIPT|SEC_SELECT|SEC_HIDDEN|SEC_NOSCRIPT;
 
 	bool addedPartition = false;
 
@@ -8404,96 +7890,10 @@ int32_t Sections::addImpliedSections3 ( ) {
 		// if this list had no viable partitions, skip it
 		if ( bestMethod == -1 ) continue;
 
-		/*
-		Partition *bestSuper = NULL;
-		int32_t       bestSuperMethod;
-		// . before inserting the winning partition see if another
-		//   partition is a "super partition" of that and insert that
-		//   first if it is. 
-		// . a lot of times the super partition as a smaller score
-		//   because one section in the partition is much larger
-		//   than another, possibly empty, section...
-		// . prefer the super partition with the lest # of cells
-		for ( int32_t m = 0 ; m < METHOD_MAX ; m++ ) {
-			// breathe
-			QUICKPOLL ( m_niceness );
-			// skip if winner
-			if ( m == bestMethod ) continue;
-			// if no partition here, skip it
-			if ( bestMethodScore[m] <= 0 ) continue;
-			// shorcut
-			Partition *super = &parts[m];
-			Partition *sub   =  bestPart;
-			// need at least one partition
-			if ( super->m_np <= 1 ) continue;
-			// skip if same number of partitions or more
-			if ( super->m_np >= sub->m_np ) continue;
-			// must start ABOVE first partition
-			if ( super->m_a[0] >= sub->m_a[0] ) continue;
-			// assume it is a super partition
-			bool isSuper = true;
-			// w is cursor into the subpartitions cells/intervals
-			int32_t w = 0;
-			// now every startpoint in the super partition must
-			// be right before a point in the subpartition
-			int32_t k; for ( k = 0 ; k < super->m_np ; k++ ) {
-				// breathe
-				QUICKPOLL(m_niceness);
-				// get last partition if we have a sequence
-				// of empties... like if the super partition
-				// was <h1> tags and the sub partition was
-				// <h2> if we had:
-				// <h1>..</h1>
-				// <h1>..</h1>
-				// <h2>..</h2>
-				// <h1>..</h1>
-				// <h2>..</h2>
-				// then that first two adjacent <h1> tags
-				// should not stop the <h1> tags from 
-				// constituting a super partition over the
-				// subpartition of <h2> tags
-				if ( k+1 < super->m_np &&
-				     super->m_firstBro[k  ]->m_alnumPosB == 
-				     super->m_firstBro[k+1]->m_alnumPosA )
-					continue;
-				// advance "w" is need to catch up
-				for ( ; w < sub->m_np ; w++ )
-					if ( sub->m_a[w] >= super->m_a[k] )
-						break;
-				// if w is exhausted we are done
-				if ( w >= sub->m_np ) break;
-				// . now compare to next guy in subpartition
-				// . the first bros must be adjacent
-				// . i.e. <h1> tag must be adjacent to <h2> tag
-				if ( super->m_firstBro[k]->m_alnumPosB ==
-				     sub  ->m_firstBro[w]->m_alnumPosA )
-					continue;
-				// crap, not a match, not a super partition
-				isSuper = false;
-				break;
-			}
-			// skip if not a super partition
-			if ( ! isSuper ) continue;
-			// the best super will have the fewest partitions
-			if ( bestSuper && super->m_np >= bestSuper->m_np ) 
-				continue;
-			// we are now the best super partition
-		        bestSuper       = super;
-			bestSuperMethod = m;
-		}
-		// turn off for now
-		//bestSuper = NULL;
-		*/
-				
+
 		// select the winning partition
 	        int32_t       winnerMethod = bestMethod;
 		Partition *winnerPart   = bestPart;
-		// if no super paritition...
-		//if ( bestSuper ) {
-		//	winnerMethod = bestSuperMethod;
-		//	winnerPart   = bestSuper;
-		//}
-
 
 		// log it
 		char *ms = "";
@@ -8507,9 +7907,7 @@ int32_t Sections::addImpliedSections3 ( ) {
 		if ( winnerMethod == METHOD_ABOVE_DOW   ) ms = "abovedow";
 		if ( winnerMethod == METHOD_INNER_TAGID ) ms = "innertagid";
 		if ( winnerMethod == METHOD_ABOVE_ADDR ) ms = "aboveaddr";
-		//if ( winnerMethod == METHOD_ABOVE_TOD   ) ms = "abovetod";
-		//if ( winnerMethod == METHOD_EMPTY_TAG   ) ms = "emptytag";
-		//if ( winnerMethod == METHOD_ATTRIBUTE ) ms = "attribute";
+
 		log("sections: inserting winner method=%s",ms);
 
 		// loop over his paritions and insert each one
@@ -9348,9 +8746,6 @@ static sec_t s_secFlags[] = {
 bool addLabel ( HashTableX *labelTable ,
 		int32_t        key ,
 		char       *label ) {
-
-	if ( key == 1021574190 )
-		log("got it");
 	// if in there, make sure agrees
 	char *ptr = (char *)labelTable->getValue (&key);
 	if ( ptr ) {
@@ -9601,80 +8996,12 @@ int32_t Sections::getDelimHash ( char method , Section *bro , Section *head ) {
 	int32_t mod = 0;
 	if ( bro->m_firstWordPos < 0 ) mod = 3405873;
 
-	// this is really a fix for the screwed up sections in 
-	// www.guysndollsllc.com/page5/page4/page4.html which have
-	// a dom and then the tod. sometimes the dom is in the same sentence
-	// section as the tod and other times it isn't. so we have a list of
-	// dom/tod/domtod sections that are brothers. but they are partitioned
-	// by the br tag, but the dom following the br tag sometimes has
-	// extra text after it like "To be announced", so we just required
-	// that the first word be a date.
-	/*
-	if ( method == METHOD_BR_DOM ) {
-		if ( bro->m_tagId != TAG_BR ) return -1;
-		// get next
-		Section *next = bro->m_nextBrother;
-		// must have section after
-		if ( ! next ) return -1;
-		// must be a sort of heading like "Jul 24"
-		//if ( !(next->m_flags & SEC_HEADING_CONTAINER) &&
-		//     !(next->m_flags & SEC_HEADING          ) )
-		//	return -1;
-		// section after must have dom
-		if ( ! (next->m_flags & SEC_HAS_DOM) ) return -1;
-		// now it must be all date words
-		int32_t a = next->m_firstWordPos;
-		int32_t b = next->m_lastWordPos;
-		// sanity check
-		if ( a < 0 ) { char *xx=NULL;*xx=0; }
-		// scan
-		for ( int32_t i = a ; i <= b ; i++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// skip if not wid
-			if ( ! m_wids[i] ) continue;
-			// first word must be in date
-			if ( ! ( m_bits->m_bits[i] & D_IS_IN_DATE ) ) 
-				return -1;
-			// ok, that's good enough!
-			break;
-		}
-		// we're good!
-		return 8888;
-	}
-	*/
-
 	// . single br tags not allowed to be implied section delimeters any
 	//   more for no specific reason but seems to be the right way to go
 	// . this hurts the guysndollsllc.com url, which has single br lines
 	//   each with its own DOM, so let's allow br tags in that case
 	if ( m_tids[bro->m_a] == TAG_BR && bro->m_a + 1 == bro->m_b  ) 
 		return -1;
-
-	/*
-	// <P></P>
-	if ( method == METHOD_EMPTY_TAG ) {
-		// . and cabq.gov/museums/events.html also uses <br><br> which
-		//   looks the same as <p></p> when rendered
-		// . and this is not a single br tag since that is eliminated
-		//   by the return statement right above us
-		// . damn, they had the brbr in a <p> tag with other text so
-		//   this was not fixing that ... so i took it out to be safe
-		// . now i need this for sunsetpromotions.com which use
-		//   double brs otherwise i get mutliple locations error
-		if ( bro->m_tagId == TAG_BR ) 
-			return 777777;
-		// must be a p tag for now
-		if ( bro->m_tagId != TAG_P ) return -1;
-		// and empty. if it has alnum words in it, return -1
-		if ( bro->m_firstWordPos >= 0 ) return -1;
-		// images count as words i guess to fix 
-		// cabq.gov/museum/events.html
-		if ( containsTagId ( bro , TAG_IMG ) ) return -1;
-		// use a special hash
-		return 777777;
-	}
-	*/
 
 	if ( method == METHOD_MONTH_PURE ) {
 		// must be a sort of heading like "Jul 24"
@@ -9723,23 +9050,7 @@ int32_t Sections::getDelimHash ( char method , Section *bro , Section *head ) {
 		// if 0 use base hash
 		return bro->m_baseHash ^ mod;
 	}
-	/*
-	// stole this function logic from getBaseHash2()
-	if ( method == METHOD_ATTRIBUTE ) {
-		// assume this
-		int32_t bh = bro->m_tagHash; // Id;
-		// for sentence sections, etc...
-		if ( bh == 0 ) bh = bro->m_baseHash;
-		// do not allow sentences (see comment above)
-		if ( bro->m_baseHash == BH_SENTENCE ) return -1;
-		// . make heading sections different
-		// . this was wrong for christchurchcincinnati.org/worship
-		//   so i commented it out to get the proper h3/h2 headers
-		//if ( bro->m_flags & SEC_HEADING_CONTAINER) 
-		//	bh ^= 0x789123;
-		return bh ^ mod;
-	}
-	*/
+
 	if ( method == METHOD_INNER_TAGID ) {
 		Section *last = bro;
 		// scan to right to find first kid
@@ -9965,33 +9276,7 @@ int32_t Sections::getDelimHash ( char method , Section *bro , Section *head ) {
 		// do not collide with tagids
 		return 77777;
 	}
-	/*
-	if ( method == METHOD_ABOVE_TOD ) {
-		// must be a sort of heading like "Jul 24"
-		if ( !(bro->m_flags & SEC_HEADING_CONTAINER) &&
-		     !(bro->m_flags & SEC_HEADING          ) )
-			return -1;
-		Section *nb = bro->m_nextBrother;
-		if ( ! nb ) 
-			return -1;
-		if ( ! ( nb->m_flags & SEC_HAS_TOD ) ) 
-			return -1;
-		// next sentence not set yet, so figure it out
-		Section *sent = nb;
-		// scan for it
-		for ( ; sent ; sent = sent->m_next ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// stop we got a sentence section now
-			if ( sent->m_flags & SEC_SENTENCE ) break;
-		}
-		// next SENTENCE must have the tod
-		if ( ! (sent->m_flags & SEC_HAS_TOD) )
-			return -1;
-		// do not collide with tagids
-		return 444333;
-	}
-	*/
+
 	char *xx=NULL;*xx=0;
 	return 0;
 }
@@ -10876,147 +10161,6 @@ bool Sections::addSentenceSections ( ) {
 	}
 
 	return true;
-
-	/*
-		// set this
-		Section *firstSection = m_sectionPtrs[i];
-		Section *lastSection  = m_sectionPtrs[j-1];
-
-		// blow up before containing each other
-		for ( ; firstSection ; ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// stop if too much
-			Section *pp = firstSection->m_parent;
-			// stop if too much
-			if ( ! pp ) break;
-			// stop if too much
-			if ( pp->contains ( lastSection ) ) break;
-			// advance
-			firstSection = pp;
-		}
-		for ( ; lastSection ; ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// stop if too much
-			Section *pp = lastSection->m_parent;
-			// stop if too much
-			if ( ! pp ) break;
-			// stop if too much
-			if ( pp->contains ( firstSection ) ) break;
-			// advance
-			lastSection = pp;
-		}
-
-		// if last section overflowed, cut if off
-		if ( lastSection != firstSection &&
-		     // make sure it doesn't just contain the front part
-		     // of the sentence as well as firstSection!
-		     lastSection->m_firstWordPos > i &&
-		     lastSection->m_lastWordPos  > j ) {
-			sentb = lastSection->m_a;
-			// set a flag 
-			// no need to do a loop
-
-		// likewise, we can't split first section either, but in
-		// that case, drop everything not in the first section
-		if ( lastSection != firstSection &&
-		     firstSection->m_firstWordPos < i &&
-		     firstSection->m_lastWordPos < sentb )
-			sentb = firstSection->m_b;
-
-		// for reverbnation.com we have "Tools for <a>artists</a> |
-		// <a>labels</a> | ..." and the first sentence contains
-		// the anchor tag, but the 2nd sentence is a subsection of
-		// the anchor tag. thus giving inconsistent tag hashes
-		// and messing up our menu detection, so let's include
-		// anchor tags in the sentence to fix that!
-		// CRAP, this was hurting blackbirdbuvette because it was
-		// including the bullet delimeter and the "big" section 
-		// computed below ended up spanning two bullet delimeted
-		// sections to make the sentence!! that gave us a bad event
-		// title that consisted of that sentence.. 
-		//if ( j < m_nw && ! m_tids[j] ) sentb++;
-
-		// sent section needs to include the initial <a>, somehow
-		// that is flip flopping
-		//Section *sa = m_sectionPtrs[senta];
-		//if ( m_tids[senta] && sa->contains ( senta, sentb ) )
-		//	senta++;
-
-		// A = m_sectionPtrs[senta] and
-		// B = m_sectionPtrs[sentb-1]
-		// find the smallest section that contains both A and B.
-		// if A and B are the same, we are done, we are just
-		// a child if that section.
-		// . telescope both A and B up until they contain
-		//   each other like our lasta and lastb algo !!
-
-		Section *big = m_sectionPtrs[senta];
-		for ( ; big ; big = big->m_parent ) {
-			QUICKPOLL(m_niceness);
-			// stop when we contain the whole sentence
-			if ( big->m_a <= senta &&
-			     big->m_b >= sentb ) break;
-		}
-
-		Section *sa = m_sectionPtrs[senta];
-		Section *sb = m_sectionPtrs[sentb-1];
-
-		// get the two sections that are children of "big" and cover
-		// the first and last words of the sentence.
-		Section *lasta = NULL;
-		Section *lastb = NULL;
-		// blow up sb until it contains senta, but its section right
-		// before it equals "big"
-		for ( ; sb ; sb = sb->m_parent ) {
-			if ( sb == big ) break;
-			lastb = sb;
-		}
-		for ( ; sa ; sa = sa->m_parent ) {
-			if ( sa == big ) break;
-			lasta = sa;
-		}
-
-		// set some simple constraints on [senta,sentb) so that we
-		// do no split the sections lasta and lastb. we need our new
-		// inserted section to contain "lasta" and "lastb" but be
-		// a child of "big"
-		int32_t maxa ;
-		int32_t minb ;
-		// but if these are the same as big
-		if ( ! lasta ) maxa = senta;
-		else           maxa = lasta->m_a;
-		if ( ! lastb ) minb = sentb;
-		else           minb = lastb->m_b;
-
-		// save for debug
-		//int32_t saveda = senta;
-		//int32_t savedb = sentb;
-
-		// apply the constraints
-		if ( senta > maxa ) senta = maxa;
-		if ( sentb < minb ) sentb = minb;
-
-		// ok, add the sentence sections as a subsection of "sa"
-		Section *is = insertSubSection ( big , senta , sentb,
-						 BH_SENTENCE );
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// return false with g_errno set on error
-		if ( ! is ) return false;
-		// set sentence flag on it
-		is->m_flags |= SEC_SENTENCE;
-		// make it fake to now
-		//is->m_flags |= SEC_FAKE;
-		// set its base hash to something special
-		//is->m_baseHash = BH_SENTENCE;
-		// skip over
-		//i = j - 1;
-		i = sentb - 1;
-	}
-	return true;
-		*/
 }
 
 Section *Sections::insertSubSection ( Section *parentArg , int32_t a , int32_t b ,
@@ -11042,9 +10186,6 @@ Section *Sections::insertSubSection ( Section *parentArg , int32_t a , int32_t b
 	sk->m_a   = a;
 	sk->m_b   = b;
 
-	// this makes it really fast!
-	//return sk;
-
 	// don't mess this up!
 	if ( m_lastSection && a > m_lastSection->m_a )
 		m_lastSection = sk;
@@ -11061,11 +10202,17 @@ Section *Sections::insertSubSection ( Section *parentArg , int32_t a , int32_t b
 	for ( ; si ; si = si->m_prev ) {
 		// breathe
 		QUICKPOLL(m_niceness);
+
 		// we become his child if this is true
-		if ( si->m_a < a ) break;
+		if ( si->m_a < a ) {
+			break;
+		}
+
 		// if he is bigger (or equal) we become his child
 		// and are after him
-		if ( si->m_a == a && si->m_b >= b ) break;
+		if ( si->m_a == a && si->m_b >= b ) {
+			break;
+		}
 	}
 
 	// . try using section before us if it is contained by "si"
@@ -11079,8 +10226,9 @@ Section *Sections::insertSubSection ( Section *parentArg , int32_t a , int32_t b
 	//   to the newly inserted section, then when done adding sentence
 	//   sections we scanned all the words, keeping track of the last
 	//   html section we entered and used that to insert the sentence sections
-	if ( m_lastAdded && m_lastAdded->m_a > si->m_a && m_lastAdded->m_a < a )
+	if ( m_lastAdded && m_lastAdded->m_a > si->m_a && m_lastAdded->m_a < a ) {
 		si = m_lastAdded;
+	}
 
 
 	// crap we may have 
@@ -11123,8 +10271,7 @@ Section *Sections::insertSubSection ( Section *parentArg , int32_t a , int32_t b
 		//m_sections[0].m_prev = sk;
 		m_rootSection->m_prev = sk;
 		m_rootSection = sk;
-	}
-	else {
+	} else {
 		// insert us into the linked list of sections
 		if ( si->m_next ) si->m_next->m_prev = sk;
 		sk->m_next   = si->m_next;
