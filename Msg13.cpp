@@ -997,15 +997,7 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 		    r->ptr_url,iptoa(r->m_urlIp) ,
 		    (int32_t)r->m_skipHammerCheck);
 
-	// use the default agent unless scraping
-	// force to event guru bot for now
-	//char *agent = "Mozilla/5.0 (compatible; ProCogSEOBot/1.0; +http://www.procog.com/ )";
-	//char *agent = "Mozilla/5.0 (compatible; GigaBot/1.0; +http://www.gigablast.com/ )";
 	char *agent = g_conf.m_spiderUserAgent;
-	if ( r->m_isScraping )
-		agent = "Mozilla/4.0 "
-			"(compatible; MSIE 6.0; Windows 98; "
-			"Win 9x 4.90)" ;
 
 	// if sending to a proxy use random user agent
 	if ( g_conf.m_useRandAgents && r->m_proxyIp ) {
@@ -2631,7 +2623,6 @@ int32_t filterRobotsTxt ( char *reply ,
 		if ( strncasecmp(s,"gigabot",7) == 0 ) match = true;
 		if ( strncasecmp(s,"flurbot",7) == 0 ) match = true;
 		if ( strncasecmp(s,"eventgurubot",12) == 0 ) match = true;
-		if ( strncasecmp(s,"procogbot",8) == 0 ) match = true;
 		if ( strncasecmp(s,"probot",6) == 0 ) match = true;
 		*/
 		// record agent position if we matched!
@@ -3335,167 +3326,6 @@ int64_t computeProxiedCacheKey64 ( Msg13Request *r ) {
 
 	return h64;
 }
-
-/*
-static void sendBackInlineSectionVotingBuf ( void *xd ) ;
-
-// . returns false if blocks and will call gotHttpReply2() when done
-// . returns true if does not block
-// . returns true and sets g_errno on error
-// . insert sectiondb data into various html tags
-// . <div id=poop> --> <div id=poop a=10 n=100> 
-//   where "n" is the # of times the tag occurred on other pages from this site
-//   and "a" is the # of those times that it had the same inner content.
-bool markupServerReply ( Msg13Request *r , TcpSocket *ts ) {
-
-	char *httpReply = ts->m_readBuf;
-	int32_t  httpReplyLen = ts->m_readOffset;
-
-	HttpMime mime;
-	mime.set ( httpReply , httpReplyLen , NULL );
-
-	// return NULL if we did nothing
-	if ( mime.getHttpStatus() != 200 ) 
-		return true;
-
-	if ( mime.getContentType() != CT_HTML )
-		return true;
-
-	// make a new xmldoc class to handle the heavy lifting
-	XmlDoc *xd;
-	try { xd = new ( XmlDoc ); }
-	catch ( ... ) {
-		g_errno = ENOMEM;
-		return true;
-	}
-	mnew ( xd , sizeof(XmlDoc),"msg13xd");
-
-	//char *content = mime.getContent();
-
-	// if this doesn't copy the content we need to
-	xd->m_httpReply = httpReply;
-	xd->m_httpReplySize = ts->m_readOffset + 1;
-	xd->m_httpReplyAllocSize = ts->m_readBufSize;
-	xd->m_httpReplyValid = true;
-
-	// tell ts not to free it now! xmldoc will do that.
-	ts->m_readBuf = NULL;
-
-	xd->m_redirError = 0;
-	xd->m_redirErrorValid = true;
-
-	xd->m_redirUrlPtr = NULL;
-	xd->m_redirUrlValid = true;
-	
-	xd->m_niceness = 0;
-
-	xd->m_firstUrl.set ( r->m_proxiedUrl , r->m_proxiedUrlLen );
-	xd->m_firstUrlValid = true;
-	xd->ptr_firstUrl = xd->m_firstUrl.getUrl();
-	xd->m_ip = r->m_urlIp;
-	xd->m_ipValid = true;
-
-	xd->m_skipIframeExpansion = true;
-
-	// . try to use the global index for this
-	// . the main collection will now hold the html only, no json, and
-	//   the section markup is done on the html, not the json
-	CollectionRec *cr = g_collectiondb.getRec ( "main");//"GLOBAL-INDEX" );
-	//if ( ! cr ) cr = g_collectiondb.getRec ( "test" ); // tmp hack
-	//if ( ! cr ) cr = g_collectiondb.getRec ( "main" );
-	if ( cr ) {
-		xd->m_collnum = cr->m_collnum;
-		xd->m_collnumValid = true;
-	}
-	if ( ! cr ) {
-		g_errno = ENOCOLLREC;
-		mdelete ( xd , sizeof(XmlDoc) , "msg13xd" );
-		delete  ( xd );
-		return true;
-	}
-
-
-	// hack stash this for use by sendBackInlineSectionVotingBuf
-	xd->m_hsr = r;
-
-	// when it has the final output, it calls this
-	xd->m_callback1 = sendBackInlineSectionVotingBuf;
-	xd->m_state     = xd;
-
-	// . xd uses this callback internally to get the markup
-	//   but when done it calls xt->m_xd.m_callback.
-	//   actually this function should set these. so comment out here.
-	// . returns false if blocked
-	SafeBuf *vb = xd->getInlineSectionVotingBuf();
-	// we blocked, return true. vb is NULL with g_errno set on error.
-	if ( vb == (void *)-1 ) return false;
-
-	sendBackInlineSectionVotingBuf ( xd );
-
-	// so gotHttpReply2() is not called again by our parent caller
-	return false;
-}
-
-void sendBackInlineSectionVotingBuf ( void *state ) {
-
-	XmlDoc *xd = (XmlDoc *)state;
-
-	// error?
-	int32_t saved = g_errno;
-
-	SafeBuf *buf = &xd->m_inlineSectionVotingBuf;
-
-	// steal it. this should now start with the original http mime
-	char *reply          = buf->getBufStart();
-	int32_t  replySize      = buf->length() + 1; // include \0
-	int32_t  replyAllocSize = buf->getCapacity();
-
-	// we hack stashed this. is just the original udpslot readbuf
-	Msg13Request *r = xd->m_hsr;
-
-	// totally empty?
-	//if ( replySize <= 1 ) {
-	// 	log("msg13: got empty inline section votingbuf for %s",
-	// 	    r->m_url);
-	// 	reply = "\0";
-	// 	replySize = 1;
-	// }
-
-	// only steal the buf if no error happened
-	if ( ! saved ) xd->m_inlineSectionVotingBuf.detachBuf();
-
-	mdelete ( xd , sizeof(XmlDoc) , "msg13xd" );
-	delete  ( xd );
-
-	// did we have some error?
-	if ( saved ) {
-		log("msg13: error making inline section voting buf: %s",
-		    mstrerror(g_errno));
-		// re-write the error for sending back to client
-		saved = EINLINESECTIONS;
-		//return;
-	}
-
-	// and resume just like we got the reply from the webserver
-	//mfree ( ts->m_alloc , ts->m_allocSize , "mkupts");
-
-	// reinstate error
-	g_errno = saved;
-
-	// we set ts to NULL, i guess it was probably already freed up
-	// any how by now since the sectiondb lookups probably blocked in the
-	// call the XmlDoc::getInlineSectionVotingBuf()
-	gotHttpReply2 ( r, reply, replySize , replyAllocSize , NULL ); // ts
-
-	// it didn't block, send back the html with the inlined section
-	// voting info
-	// g_udpServer.sendReply_ass (reply,
-	// 			   replySize,
-	// 			   reply,
-	// 			   replyAllocSize,
-	// 			   r->m_udpSlot);
-}
-*/
 
 static char *s_agentList[] = {
 	"Mozilla/5.0 (compatible; U; ABrowse 0.6; Syllable) AppleWebKit/420+ (KHTML, like Gecko)",

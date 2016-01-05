@@ -14319,134 +14319,7 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 	return true;
 }
 
-/*
-bool SectionVotingTable::print ( SafeBuf *sbuf , char *title ) {
-
-
-	// title = "new/old section voting table"
-	sbuf->safePrintf("<b>%s</b>\n",title );
-	sbuf->safePrintf("<br>");
-	sbuf->safePrintf("<i>turkTagHash is combined with sectionType to "
-			 "make the "
-			 "key in sectiondb. The data is everything else. "
-			 "<br>"
-			 "*The turkTagHash is XOR'ed with the contentHash "
-			 "for the contentHash "
-			 "section type, and is the tagPairHash for the "
-			 "tagPairHash section type.</i>");
-	// print table header
-	char *hdr2 =
-		"<table border=1>"
-		"<tr>"
-		"<td><b>siteHash</b></td>"
-		"<td><b>turkTagHash*</b></td>"
-		"<td><b>sectionType</b></td>"
-		"<td><b>scoreTotal</b></td>"
-		"<td><b>numSampled</b></td>"
-		"<td><b>avgScore</b></td>"
-		"</tr>\n";
-	sbuf->safePrintf("%s",hdr2);
-	HashTableX *st = &m_svt;
-	int32_t rcount = 0;
-	for ( int32_t i = 0 ; i < st->m_numSlots ; i++ ) {
-		// breathe
-		//QUICKPOLL(m_niceness);
-		// skip if empty
-		if ( ! st->m_flags[i] ) continue;
-		// see if one big table causes a browser slowdown
-		if ( (++rcount % TABLE_ROWS ) == 0 ) 
-			sbuf->safePrintf("<!--ignore--></table>%s\n",hdr2);
-		// get the key
-		uint64_t k = *(uint64_t *)st->getKey ( i );
-		// get the data
-		SectionVote *sv = (SectionVote *)st->getValueFromSlot ( i );
-		// parse key
-		int32_t turkTagHash = (int32_t)(k & 0xffffffff);
-		int32_t sectionType = (int32_t)(k >> 32);
-		//int32_t tagHash     = (int32_t)(k >> 32);
-		//int32_t sectionType = (int32_t)(k & 0xffffffff);
-		// convert to string
-		char *st = getSectionTypeAsStr ( sectionType );
-		float avg = 0.0;
-		if ( sv->m_numSampled > 0 ) avg = sv->m_score/sv->m_numSampled;
-		sbuf->safePrintf("<tr>"
-				 "<td>--</td>"
-				 "<td>0x%"XINT32"</td>"
-				 "<td>%s</td>"
-				 "<td>%.02f</td>"
-				 "<td>%.02f</td>"
-				 "<td>%.02f</td>"
-				 "</tr>\n",
-				 turkTagHash,
-				 st,
-				 sv->m_score,
-				 sv->m_numSampled ,
-				 avg );
-	}
-	sbuf->safePrintf("</table>\n<br><br>\n");
-
-
-
-	sbuf->safePrintf("<table border=1 cellpadding=3>\n");
-	sbuf->safePrintf(
-			 "<tr><td><nobr><b>Section Type</b></nobr></td>"
-			 "<td><b>Description</b></td></tr>\n"
-			 
-			 "<tr><td>texty</td><td>An average "
-			 "score of 0.0 means the "
-			 "section does not have any words that are not "
-			 "in anchor test. An average "
-			 "score of 1.0 means the section "
-			 "has words, none of which are in anchor text."
-			 "</td></tr>\n"
-
-			 "<tr><td>clock</td><td>An average "
-			 "score of 1.0 means "
-			 "section identified as "
-			 "containing a clock. An average "
-			 "score of 0.0 mean it contains "
-			 "a date that is definitely not a clock."
-			 "</td></tr>\n"
-
-			 "<tr><td>eurdatefmt</td><td>An average "
-			 "score of 1.0 means "
-			 "the section contains a date in european format, "
-			 "which means day first, not month. An average "
-			 "score of 0.0 "
-			 "means the section contains a date that is NOT in "
-			 "european format.</td></tr>\n"
-
-			 //"<tr><td>event</td><td>"
-			 //"</td></tr>\n"
-
-			 //"<tr><td>address</td><td></td></tr>\n"
-
-			 "<tr><td>tagpairhash</td><td>"
-			 "All unique adjacent tag ids are hashed to form "
-			 "this number which represents the overal strucutre "
-			 "of the document. The turkTagHash is the tagPairHash "
-			 "in this case."
-			 "</td></tr>\n"
-
-			 "<tr><td>contenthash</td><td>"
-			 "The turkTagHash in this case is really "
-			 "the content hash of the words in the section XORed "
-			 "with the original turkTagHash."
-			 "</td></tr>\n"
-
-			 //"<tr><td>textmaxsmpl</td><td></td></tr>\n"
-			 //"<tr><td>waitinline</td><td></td></tr>\n"
-			 //"<tr><td></td><td></td></tr>\n"
-			 );
-	sbuf->safePrintf("</table>\n<br><br>\n");
-	// must be \0 terminated
-	if ( sbuf->m_buf[sbuf->m_length] ) { char *xx=NULL;*xx=0; }
-
-	return true;
-}
-*/
-
-bool Sections::printSectionDiv ( Section *sk , char format ) { // bool forProCog ) {
+bool Sections::printSectionDiv ( Section *sk , char format ) {
 	//log("sk=%"INT32"",sk->m_a);
 	// enter a new div section now
 	m_sbuf->safePrintf("<br>");
@@ -14488,188 +14361,136 @@ bool Sections::printSectionDiv ( Section *sk , char format ) { // bool forProCog
 		// only encode if it is a tag
 		m_sbuf->htmlEncode(m_wptrs[sk->m_a],m_wlens[sk->m_a],false );
 
-	//if ( forProCog )
-	//	m_sbuf->safePrintf("A=%"INT32" ",sk->m_a);
-
-
-	/*
-	  take out for now since we changed the stats class around
-	if ( format == FORMAT_PROCOG && sk->m_stats.m_numUniqueSites >= 2 ) {
-		// do not count our own site!
-		m_sbuf->safePrintf("<i>"
-				   "<font size=-1>"
-				   "<a href=\"/search?"
-				   // turn off summary deduping
-				   "dr=0&"
-				   // turn ON site clustering
-				   "sc=1&"
-				   "q=gbsectionhash:%"UINT64"\">"
-				   "sitedups=%"INT32""
-				   "</a>"
-				   "</font>"
-				   "</i> "
-				   , sk->m_sentenceContentHash64
-				   ,(int32_t)sk->m_stats.m_numUniqueSites-1);
-	}
-	*/
-
 	m_sbuf->safePrintf("<i>");
 
-	if ( format == FORMAT_PROCOG && (sk->m_flags & SEC_SENTENCE) ) {
-		sec_t f = sk->m_flags;
-		//if ( f & SEC_SENTENCE )
-		//	m_sbuf->safePrintf("sentence " );
-		if ( f & SEC_MENU_SENTENCE )
-			m_sbuf->safePrintf("menusentence " );
-		if ( f & SEC_MENU )
-			m_sbuf->safePrintf("ismenu " );
-		if ( f & SEC_MENU_HEADER )
-			m_sbuf->safePrintf("menuheader " );
-	}
+	// print the flags
+	m_sbuf->safePrintf("A=%"INT32" ",sk->m_a);
+
+	// print tag hash now
+	m_sbuf->safePrintf("taghash=%"UINT32" ",(int32_t)sk->m_tagHash);
+
+	m_sbuf->safePrintf("turktaghash=%"UINT32" ",
+	                   (int32_t)sk->m_turkTagHash32);
+
+	if ( sk->m_contentHash64 )
+		m_sbuf->safePrintf("ch64=%"UINT64" ",sk->m_contentHash64);
+	if ( sk->m_sentenceContentHash64 &&
+	     sk->m_sentenceContentHash64 != sk->m_contentHash64 )
+		m_sbuf->safePrintf("sch=%"UINT64" ",
+		                   sk->m_sentenceContentHash64);
 
 
-	//if ( sk->m_sentenceContentHash64 && 
-	//     sk->m_sentenceContentHash64 ) // != sk->m_contentHash64 )
-	//	m_sbuf->safePrintf("sch=%"UINT64" ",
-	//			   sk->m_sentenceContentHash64);
-
-	// show dup votes if any
-	//if ( sk->m_votesForDup )
-	//	m_sbuf->safePrintf("dupvotes=%"INT32" ",sk->m_votesForDup);
-	//if ( sk->m_votesForNotDup )
-	//	m_sbuf->safePrintf("notdupvotes=%"INT32" ",
-	//			   sk->m_votesForNotDup);
-	
-	if ( format != FORMAT_PROCOG ) {
-		// print the flags
-		m_sbuf->safePrintf("A=%"INT32" ",sk->m_a);
-		
-		// print tag hash now
-		m_sbuf->safePrintf("taghash=%"UINT32" ",(int32_t)sk->m_tagHash);
-		
-		m_sbuf->safePrintf("turktaghash=%"UINT32" ",
-				   (int32_t)sk->m_turkTagHash32);
-		
-		if ( sk->m_contentHash64 )
-			m_sbuf->safePrintf("ch64=%"UINT64" ",sk->m_contentHash64);
-		if ( sk->m_sentenceContentHash64 && 
-		     sk->m_sentenceContentHash64 != sk->m_contentHash64 )
-			m_sbuf->safePrintf("sch=%"UINT64" ",
-					   sk->m_sentenceContentHash64);
-
-
-		// show this stuff for tags that contain sentences indirectly,
-		// that is what we hash in XmlDoc::hashSections()
-		//if(sk->m_indirectSentHash64 && sk->m_tagId != TAG_TEXTNODE) {
-		uint64_t mod = 0;
-		if ( sk->m_flags & SEC_HASHXPATH ) {
+	// show this stuff for tags that contain sentences indirectly,
+	// that is what we hash in XmlDoc::hashSections()
+	//if(sk->m_indirectSentHash64 && sk->m_tagId != TAG_TEXTNODE) {
+	uint64_t mod = 0;
+	if ( sk->m_flags & SEC_HASHXPATH ) {
 		// show for all tags now because diffbot wants to see
 		// markup on all tags
 		//if ( sk->m_indirectSentHash64 && sk->m_tagId !=TAG_TEXTNODE){
 		//if ( sk->m_stats.m_totalDocIds ) {
-			mod = (uint32_t)sk->m_turkTagHash32;
-			mod ^= (uint32_t)(uint64_t)m_siteHash64;
-			m_sbuf->safePrintf("<a style=decoration:none; "
-					   "href=/search?c=%s&"
-					   "q=gbfacetstr%%3A"
-					   "gbxpathsitehash%"UINT64">"
-					   //"<u>"
-					   "xpathsitehash=%"UINT64""
-					   //"</u>"
-					   "</a> "
-					   //"</font> "
-					   ,m_coll
-					   ,mod
-					   ,mod);
-		}
-
-		SectionStats *ss = &sk->m_stats;
-
-		// also the value of the inner html hashed
-		if ( sk->m_flags & SEC_HASHXPATH ) {//ss->m_totalMatches > 0) {
-			uint32_t val ;
-			val = (uint32_t) sk->m_indirectSentHash64 ;
-			m_sbuf->safePrintf("xpathsitehashval=%"UINT32" ", val );
-		}
-
-		// some voting stats
-		if ( sk->m_flags & SEC_HASHXPATH ) {//ss->m_totalMatches > 0) {
-			m_sbuf->safePrintf("_s=M%"INT32"D%"INT32"n%"INT32"u%"INT32"h%"UINT32" "
-					   ,(int32_t)ss->m_totalMatches
-					   ,(int32_t)ss->m_totalDocIds
-					   ,(int32_t)ss->m_totalEntries
-					   ,(int32_t)ss->m_numUniqueVals
-					   ,(uint32_t)mod
-					   );
-		}
-
-		// take this out for now... MDW 7/7/2014
-
-		// // for the gbsectionhash:xxxxx terms we index
-		// if ( sk->m_sentenceContentHash64 ) {
-		// 	uint32_t mod = (uint32_t)sk->m_turkTagHash32;
-		// 	mod ^= (uint32_t)m_siteHash64;
-		// 	m_sbuf->safePrintf(//"<font color=red>"
-		// 			   "gbsectionhash32=%"UINT32" "
-		// 			   //"</font> "
-		// 			   ,mod);
-		// }
-		// if ( sk->m_contentHash64 )
-		// 	m_sbuf->safePrintf(//"<font color=red>"
-		// 			   "ch32=%"UINT32""
-		// 			   //"</font> "
-		// 			   ,
-		// 			   (uint32_t)sk->m_contentHash64);
-					   
-		
-		if ( sk->m_lastLinkContentHash32 )
-			m_sbuf->safePrintf("llch=%"UINT32" ",
-					   (int32_t)sk->m_lastLinkContentHash32);
-		
-		if ( sk->m_leftCell )
-			m_sbuf->safePrintf("leftcellA=%"INT32" ",
-					   (int32_t)sk->m_leftCell->m_a);
-		if ( sk->m_aboveCell )
-			m_sbuf->safePrintf("abovecellA=%"INT32" ",
-					   (int32_t)sk->m_aboveCell->m_a);
-		
-		printFlags ( m_sbuf , sk , false );
-	
-		if ( isHardSection(sk) )
-			m_sbuf->safePrintf("hardsec ");
-	
-		// get addr index ptr if any (could be mult)
-		int32_t acount = 0;
-		//int64_t sh = 0LL;
-		int32_t pi = sk->m_firstPlaceNum;
-		int32_t np = m_aa->m_numSorted;
-		for ( ; pi >= 0 && pi < np ; pi++ ) {
-			Place *p = m_aa->m_sorted[pi];
-			// stop if not in section any more
-			if ( p->m_a >= sk->m_b ) break;
-			// get hash
-			//int64_t tt = p->m_hash;
-			// get max
-			//if ( ! sh || tt > sh ) sh = tt;
-			// count them
-			acount++;
-		}
-		// print those out
-		if ( sk->m_phoneXor ) 
-			m_sbuf->safePrintf("phonexor=0x%"XINT32" ",sk->m_phoneXor);
-		if ( sk->m_emailXor ) 
-			m_sbuf->safePrintf("emailxor=0x%"XINT32" ",sk->m_emailXor);
-		if ( sk->m_priceXor ) 
-			m_sbuf->safePrintf("pricexor=0x%"XINT32" ",sk->m_priceXor);
-		if ( sk->m_todXor )
-			m_sbuf->safePrintf("todxor=0x%"XINT32" ",sk->m_todXor);
-		if ( sk->m_dayXor )
-			m_sbuf->safePrintf("dayxor=0x%"XINT32" ",sk->m_dayXor);
-		if ( sk->m_addrXor )
-			m_sbuf->safePrintf("addrxor=0x%"XINT32" ",sk->m_addrXor);
-		if ( acount >= 2 )
-			m_sbuf->safePrintf(" (%"INT32" places)",acount);
+		mod = (uint32_t)sk->m_turkTagHash32;
+		mod ^= (uint32_t)(uint64_t)m_siteHash64;
+		m_sbuf->safePrintf("<a style=decoration:none; "
+		                   "href=/search?c=%s&"
+		                   "q=gbfacetstr%%3A"
+		                   "gbxpathsitehash%"UINT64">"
+		                   //"<u>"
+		                   "xpathsitehash=%"UINT64""
+		                   //"</u>"
+		                   "</a> "
+		                   //"</font> "
+		                   ,m_coll
+		                   ,mod
+		                   ,mod);
 	}
+
+	SectionStats *ss = &sk->m_stats;
+
+	// also the value of the inner html hashed
+	if ( sk->m_flags & SEC_HASHXPATH ) {//ss->m_totalMatches > 0) {
+		uint32_t val ;
+		val = (uint32_t) sk->m_indirectSentHash64 ;
+		m_sbuf->safePrintf("xpathsitehashval=%"UINT32" ", val );
+	}
+
+	// some voting stats
+	if ( sk->m_flags & SEC_HASHXPATH ) {//ss->m_totalMatches > 0) {
+		m_sbuf->safePrintf("_s=M%"INT32"D%"INT32"n%"INT32"u%"INT32"h%"UINT32" "
+		                   ,(int32_t)ss->m_totalMatches
+		                   ,(int32_t)ss->m_totalDocIds
+		                   ,(int32_t)ss->m_totalEntries
+		                   ,(int32_t)ss->m_numUniqueVals
+		                   ,(uint32_t)mod
+		                   );
+	}
+
+	// take this out for now... MDW 7/7/2014
+
+	// // for the gbsectionhash:xxxxx terms we index
+	// if ( sk->m_sentenceContentHash64 ) {
+	// 	uint32_t mod = (uint32_t)sk->m_turkTagHash32;
+	// 	mod ^= (uint32_t)m_siteHash64;
+	// 	m_sbuf->safePrintf(//"<font color=red>"
+	// 			   "gbsectionhash32=%"UINT32" "
+	// 			   //"</font> "
+	// 			   ,mod);
+	// }
+	// if ( sk->m_contentHash64 )
+	// 	m_sbuf->safePrintf(//"<font color=red>"
+	// 			   "ch32=%"UINT32""
+	// 			   //"</font> "
+	// 			   ,
+	// 			   (uint32_t)sk->m_contentHash64);
+
+
+	if ( sk->m_lastLinkContentHash32 )
+		m_sbuf->safePrintf("llch=%"UINT32" ",
+		                   (int32_t)sk->m_lastLinkContentHash32);
+
+	if ( sk->m_leftCell )
+		m_sbuf->safePrintf("leftcellA=%"INT32" ",
+		                   (int32_t)sk->m_leftCell->m_a);
+	if ( sk->m_aboveCell )
+		m_sbuf->safePrintf("abovecellA=%"INT32" ",
+		                   (int32_t)sk->m_aboveCell->m_a);
+
+	printFlags ( m_sbuf , sk , false );
+	
+	if ( isHardSection(sk) )
+		m_sbuf->safePrintf("hardsec ");
+	
+	// get addr index ptr if any (could be mult)
+	int32_t acount = 0;
+	//int64_t sh = 0LL;
+	int32_t pi = sk->m_firstPlaceNum;
+	int32_t np = m_aa->m_numSorted;
+	for ( ; pi >= 0 && pi < np ; pi++ ) {
+		Place *p = m_aa->m_sorted[pi];
+		// stop if not in section any more
+		if ( p->m_a >= sk->m_b ) break;
+		// get hash
+		//int64_t tt = p->m_hash;
+		// get max
+		//if ( ! sh || tt > sh ) sh = tt;
+		// count them
+		acount++;
+	}
+	// print those out
+	if ( sk->m_phoneXor )
+		m_sbuf->safePrintf("phonexor=0x%"XINT32" ",sk->m_phoneXor);
+	if ( sk->m_emailXor )
+		m_sbuf->safePrintf("emailxor=0x%"XINT32" ",sk->m_emailXor);
+	if ( sk->m_priceXor )
+		m_sbuf->safePrintf("pricexor=0x%"XINT32" ",sk->m_priceXor);
+	if ( sk->m_todXor )
+		m_sbuf->safePrintf("todxor=0x%"XINT32" ",sk->m_todXor);
+	if ( sk->m_dayXor )
+		m_sbuf->safePrintf("dayxor=0x%"XINT32" ",sk->m_dayXor);
+	if ( sk->m_addrXor )
+		m_sbuf->safePrintf("addrxor=0x%"XINT32" ",sk->m_addrXor);
+	if ( acount >= 2 )
+		m_sbuf->safePrintf(" (%"INT32" places)",acount);
 
 	m_sbuf->safePrintf("</i>\n");
 

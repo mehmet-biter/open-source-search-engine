@@ -33,7 +33,6 @@
 #define FORMAT_JSON 3
 #define FORMAT_CSV  4
 #define FORMAT_TXT  5
-#define FORMAT_PROCOG 6
 #define FORMAT_WIDGET_IFRAME 7
 #define FORMAT_WIDGET_AJAX 8
 // used by ajax widget to create search results to APPEND to the end of widget

@@ -465,11 +465,6 @@ class CollectionRec {
 	//char  m_addUrlEnabled           ; // TODO: use at http interface lvl
 	//char  m_spiderLinks             ; use url filters now!
 	char  m_sameHostLinks           ; // spider links from same host only?
-	char  m_scrapingEnabledWeb      ;
-	char  m_scrapingEnabledNews     ;
-	char  m_scrapingEnabledBlogs    ;
-	char  m_scrapingEnabledProCog   ;
-	//char  m_subsiteDetectionEnabled ;
 
 	// do not re-add outlinks to spiderdb if less than this many days
 	// have elapsed since the last time we added them to spiderdb
