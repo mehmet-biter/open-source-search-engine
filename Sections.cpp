@@ -260,7 +260,6 @@ bool Sections::set ( Words     *w                       ,
 	// separate buf now for section ptr for each word
 	if ( ! m_sectionPtrBuf.reserve ( nw *sizeof(Section *)) ) return true;
 	m_sectionPtrs = (Section **)m_sectionPtrBuf.getBufStart();
-	m_sectionPtrsEnd = (Section **)m_sectionPtrBuf.getBufEnd();
 
 	// allocate m_sectionBuf
 	m_sections = NULL;
@@ -2467,13 +2466,6 @@ bool Sections::addImpliedSections ( Addresses *aa ) {
 	// set this
 	//m_osvt = osvt;
 
-	//
-	// now do table swoggling
-	//
-	// turn off table rows and use columns if necessary.
-	// some tables are column based not row-based and we have to fix that.
-	//
-	//if ( ! swoggleTables ( ) ) return false;
 
 	// as part of a replacement for table swoggling which is confusing
 	// and didn't really work right, especially when we had both 
@@ -2501,12 +2493,11 @@ bool Sections::addImpliedSections ( Addresses *aa ) {
 	// santafeplayhouse.org might not have had "Thursdays" in
 	// that event title in which case we'd have to rely on 
 	// implied sections... so let's do this right...
-	
-	// this is needed by setSentFlags()
-	//setNextSentPtrs();
 
 	// returns false and sets g_errno on error
-	if ( ! setSentFlagsPart2 ( ) ) return false;
+	if ( ! setSentFlagsPart2 ( ) ) {
+		return false;
+	}
 
 
 	// i would say <hr> is kinda like an <h0>, so do it first
@@ -4728,11 +4719,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		int32_t priceWordCount = 0;
 		bool hadAt = false;
 
-		// punish for huge # of words
-		//if ( si->m_alnumPosB - si->m_alnumPosA + 1 >= 15 ) {
-		//	tflags |= SENT_TOO_MANY_WORDS;
-		//}
-
 		// watchout if in a table. the last table column header
 		// should not be applied to the first table cell in the
 		// next row! was screwing up
@@ -5162,67 +5148,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		if ( ! hasSpace ) 
 			si->m_sentFlags |= SENT_HASNOSPACE;
 
-		/*
-		// if all words one in address, penalize
-		if ( inAddress && ! notInAddress ) {
-			//tscore *= .76;
-			//dscore *= .76;
-			// since it is a street or city, nuke it harder, 
-			// harder than a mixed case sentence really... which
-			// is .15.
-			// now http://www.cabq.gov/library/branches.html is
-			// getting the street addresses as titles because
-			// the sub header is nuked so hard from MULT_EVENTS
-			// so nuke this even harder
-			// generic words
-			//tscore *= .001;//.12;
-			//dscore *= .001;//.12;
-			// if generic that means we are not store hours
-			// and this is something we do not want in the title
-			if ( tflags & SENT_GENERIC_WORDS )
-			     tscore *= .99;
-			// a slight hit now, no hurts, blackbird
-			//tscore *= .99;
-			tflags |= SENT_IN_ADDRESS;
-		}
-
-		// . if some words in address, penalize less
-		// . fixes newmexico.org urls which have
-		//   "45th Annual Rockhound Roundup - Gem & Mineral Show - 
-		//    Deming, NM - 09:00 AM" where Deming, NM is in address
-		//    but the rest are not. it caused us to prefer the
-		//    section "Thursday, 11 March, 2010" as the title and
-		//    we wound up not getting an outlinked title bit set
-		//    (EV_OUTLINKED_TITLE)
-		if ( inAddress && notInAddress ) {
-			// hurt salsapower.com title from
-			// "Intermediate Salsa class on Saturdays at 11 a.m. 
-			//  at the Harwood 1114 7th Street NW ts=50.0 ds=50.0 
-			//  inaddress" to "Alb, NM" with weight of .50, so i
-			// changed to no penalty.
-			// BUT without a penalty we get event titles like
-			// "Albuquerque, NM 87104-1133" from trumba that
-			// have extended zip codes not recognized as being
-			// 100% in an address. and we get
-			// "P.O.B. 4321, zip 87196" from unm.edu that are
-			// quite address-y but not 100% recognized as all
-			// address words by us!
-			// . BUT we are missing some nice titles for 
-			//   abqtango.com like "Dance to Live Tango Music, 
-			//   Fridays, 10:00pm-Midnight at the Roasted Bean 
-			//   Cafe", so let's only penalize if there is no
-			//   "at" in the title
-			if ( ! hadAt ) {
-				// generic words
-				//tscore *= .90;
-				//dscore *= .90;
-				// slightly - no, hurts blackbird
-				//tscore *= .99;
-			}
-			tflags |= SENT_IN_ADDRESS;
-		}
-		*/
-
 		// punish just a tiny amount to fix 
 		// http://www.when.com/albuquerque-nm/venues which is using
 		// the place name as the title and not the real event title
@@ -5325,14 +5250,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		       m_wptrs[senta][-1] == '[' ) )
 			si->m_sentFlags |= SENT_PARENS_START; // STRANGE_PUNCT;
 
-		// . if one lower case and most are upper, we can ignore
-		// . fixes mistakes
-		// . fixes "Welcome to the Academy store" for wholefoods.com
-		//if ( lowerCount == 1 && upperCount >= 2 ) lowerCount = 0;
-		// punish if not title case
-		//if ( lowerCount )
-		//	si->m_sentFlags |= SENT_MIXED_CASE;
-
 		// if in a tag of its own that's great! like being in a header
 		// tag kind of
 		Section *sp = si->m_parent;
@@ -5349,36 +5266,8 @@ bool Sections::setSentFlagsPart2 ( ) {
 		if ( si->m_sentFlags & SENT_IN_HEADER )
 			si->m_sentFlags |= SENT_IN_TAG;
 
-		// if sent to left of us starts the parent tag and a colon
-		// separates us, then set both our SENT_IN_TAG bits.
-		// fixes newmexico.org where event title is "Looking Ahead: 
-		// Portraits from the Mott-Warsh Collection, Las Cruces"
-		/*
-		int32_t cc = si->m_a - 1;
-		Section *leftSent = NULL;
-		if ( cc - 1 >= 0 ) leftSent = ss->m_sectionPtrs [ cc - 1 ];
-		if ( leftSent && 
-		     (leftSent->m_flags & SEC_SENTENCE) &&
-		     m_words->hasChar(cc,':') &&
-		     sp->m_firstWordPos == leftSent->m_firstWordPos &&
-		     sp->m_lastWordPos  == si->m_lastWordPos ) {
-			si->m_sentFlags       |= SENT_IN_TAG;
-			leftSent->m_sentFlags |= SENT_IN_TAG;
-		}
-		*/
 	}
 
-
-	// are we a trumba.com url? we trust the event titles for those
-	//char *dom  = m_url->getDomain();
-	//int32_t  dlen = m_url->getDomainLen();
-	//bool  isTrumba = false;
-	//bool  isFacebook = false;
-	//if ( dlen == 10 && strncmp ( dom , "trumba.com" , 10 ) == 0 )
-	//	isTrumba = true;
-	//if ( dlen == 12 && strncmp ( dom , "facebook.com" , 12 ) == 0 )
-	//	isFacebook = true;
-		
 	//bool lastSentenceHadColon = false;
 	// . score each section that directly contains text.
 	// . have a score for title and score for description
@@ -5487,60 +5376,12 @@ bool Sections::setSentFlagsPart2 ( ) {
 			// must be p or hr tag etc.
 			si->m_sentFlags |= SENT_BEFORE_SPACER;
 
-
 		// location sandwich? punish
 		// "2000 Mountain Rd NW, Old Town, Albuquerque, NM 87104"
 		// for collectorsguide.com.
 		if ( (bits[sa  ] & D_IS_IN_ADDRESS) &&
 		     (bits[sb-1] & D_IS_IN_ADDRESS) )
 			si->m_sentFlags |= SENT_LOCATION_SANDWICH;
-
-
-
-		// . has colon at the end of it?
-		// . but do allow "hours:" etc to be a title...
-		// . that fixes www.thewoodencow.com's store hours "event"
-		/*
-		if ( m_words->hasChar(sb-1,':') &&
-		     (sb-2<0 || m_wids[sb-2]!=h_hours) ) {
-			// just slight penalty, no hurts us!
-			// "*Practica*: 9-10pm"
-			si->m_sentFlags |= SENT_HAS_COLON;
-			lastSentenceHadColon = true;
-		}
-		else if ( sb<m_nw && m_words->hasChar(sb,':') &&
-		     (sb-1<0 || m_wids[sb-1]!=h_hours) ) {
-			si->m_sentFlags |= SENT_HAS_COLON;
-			lastSentenceHadColon = true;
-		}
-
-		// negate if title: etc.
-		if ( m_wids[sb-1] == h_title )
-			lastSentenceHadColon = false;
-		if ( m_wids[sb-1] == h_event )
-			lastSentenceHadColon = false;
-		// . or if 2+ words in sentence
-		// . but still "Doves: For Divorced, Widowed and Separated"
-		//   title suffers for http://www.trumba.com/calendars/
-		//   KRQE_Calendar.rss
-		if ( sb - sa >= 2 )
-			lastSentenceHadColon = false;
-		// negate if "Saturdays: 5-6:30pm All Levels African w/ ..."
-		// to fix texasdrums.drums.org url
-		if ( bits[sa] & D_IS_IN_DATE )
-			lastSentenceHadColon = false;
-		*/
-
-		// . dup slam
-		// . make it 2 to 1 to fix trumba.com
-		//if ( si->m_votesForDup > 2 * si->m_votesForNotDup )
-		//	si->m_sentFlags |= SENT_DUP_SECTION;
-
-		// this crap is set in XmlDoc.cpp
-		//if ( si->m_votesForDup >  2 * si->m_votesForNotDup && 
-		//     si->m_votesForDup >= 1 &&
-		//     ! (si->m_flags & SEC_HAS_NONFUZZYDATE) ) 
-		//	si->m_sentFlags |= SENT_DUP_SECTION;
 
 		// . second title slam
 		// . need to telescope up for this i think
@@ -5581,21 +5422,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		// . fixes meetup.com
 		if ( si->m_flags & SEC_IN_HEADER )
 			si->m_sentFlags |= SENT_IN_HEADER;
-
-		// lost a title because of SENT_MIXED_TEXT 
-		// "Tango Club of Albuquerque (Argentine Tango)". should we
-		// split up the sentence when it ends in a parenthetical to 
-		// fix that? let's take this out then see it can remove good
-		// titles...
-		//if ( (si->m_flags & SEC_LINK_TEXT) &&
-		//     (si->m_flags & SEC_PLAIN_TEXT) ) {
-		//	si->m_sentFlags |= SENT_MIXED_TEXT;
-		//}
-
-		// same goes for being in a menu sentence
-		//if ( si->m_flags & SEC_MENU_SENTENCE ) {
-		//	si->m_sentFlags |= SENT_MIXED_TEXT;
-		//}
 
 		// . now fix trumba.com which has <title> tag for each event
 		// . if parent section is title tag or has "title" in it
@@ -5657,64 +5483,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 			// once is good enough
 			break;
 		}
-
-		/*
-		// get biggest
-		Section *biggest = NULL;
-		// loop over this
-		Section *pp = si;
-		int32_t ca = si->m_firstWordPos;
-		int32_t cb = si->m_lastWordPos;
-		// blow up until contain prev
-		for ( ; pp ; pp = pp->m_parent ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// stop if contains prev guy
-			if ( pp->m_firstWordPos != ca ) break;
-			if ( pp->m_lastWordPos  != cb ) break;
-			// otherwise, set it
-			biggest = pp;
-		}
-
-
-		if ( biggest && ! biggest->m_prevBrother &&
-		     // we already give a bonus for being in header tag above
-		     ! (biggest->m_flags & SEC_IN_HEADER) ) {
-		     //!(biggest->m_flags & SEC_HEADING_CONTAINER) &&
-		     //!(biggest->m_flags & SEC_NIXED_HEADING_CONTAINER) ) {
-			tscore *= 1.2;
-			tflags |= SENT_NO_PREV_BROTHER;
-			// check this if we have no prev brother only
-			//if ( ! biggest->m_nextBrother ||
-			//     // or we can differ too!
-			//     (biggest->m_nextBrother->m_tagHash !=
-			//      biggest->m_tagHash ) ) {
-			//	tscore *= 1.1;
-			//	tflags |= SENT_NO_NEXT_BROTHER;
-			//}
-		}
-		*/
-
-		/*
-		Section *bro = NULL;
-		if ( biggest ) bro = biggest->m_nextBrother;
-		// discard brother if not same tag hash
-		if ( bro && bro->m_tagHash != biggest->m_tagHash ) bro = NULL;
-		// get smallest section containing first word of bro
-		Section *smbro = NULL;
-		int32_t fwp = -1;
-		if ( bro ) fwp = bro->m_firstWordPos;
-		if ( fwp >= 0) smbro = sp[fwp];
-		// discard brother if its in lower case issues and we are not
-		if ( smbro && 
-		     !(biggest->m_sentFlags & SENT_MIXED_CASE) &&
-		     (smbro->m_sentFlags & SENT_MIXED_CASE)) bro=NULL;
-		// if no next brother, and no prev brother, reward
-		if ( ! bro && (tflags & SENT_NO_PREV_BROTHER) ) {
-			tscore *= 1.1;
-			tflags |= SENT_NO_NEXT_BROTHER;
-		}
-		*/
 
 		int64_t ch64 = si->m_contentHash64;
 		// fix for sentences
@@ -6130,103 +5898,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		if ( val == -1 )
 			si->m_sentFlags |= SENT_BADEVENTSTART;
 	}
-
-	/*
-	  supplanted by hasTitleWords()
-
-	//////////////////////
-	//
-	// set SENT_BADEVENTSTART
-	//
-	//////////////////////
-	//
-	// . '-': if a title sentences begins with one of these words then
-	//        set SENT_BADEVENTSTART
-	// . do not give bonus for SENT_EVENT_ENDING if SENT_BADEVENTSTART
-	//   is set
-	// . fixes "Presented by Colorado Symphony Orchestra"
-	static char *s_starters [] = {
-		"-presented", // presented by fred, bad
-		//"+festival", // festival of lights, good
-		//"+class",     // class w/ caroline & constantine
-		//"+lecture", // lecture on physics
-		//"+beginning", // beginning painting constantcontact.com
-		//"+intermeditate", 
-		//"+advanced"
-	};
-	// store these words into table
-	static HashTableX s_sw;
-	static char s_swbuf[2000];
-	static bool s_init8 = false;
-	if ( ! s_init8 ) {
-		s_init8 = true;
-		s_sw.set(8,4,128,s_swbuf,2000,false,m_niceness,"swtab");
-		int32_t n = (int32_t)sizeof(s_starters)/ sizeof(char *); 
-		for ( int32_t i = 0 ; i < n ; i++ ) {
-			// set words
-			char *s = s_starters[i];
-			Words w; w.set3 ( s );
-			int64_t *wi = w.getWordIds();
-			int64_t h = 0;
-			// scan words
-			for ( int32_t j = 0 ; j < w.getNumWords(); j++ )
-				if ( wi[j] ) h ^= wi[j];
-			// . store hash of all words, value is ptr to it
-			// . put all exact matches into sw1 and the substring
-			//   matches into sw2
-			s_sw.addKey ( &h , &s );
-		}
-	}
-	// . use the same event ending table to see if the title sentence
-	//   begins with one of these "endings"
-	// . should fix "Presented By Colorado Symphony Orchestra" from
-	//   being a good event title
-	for ( Section *si = ss->m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// only works on sentences for now
-		if ( ! ( si->m_flags & SEC_SENTENCE ) ) continue;
-		// how many alnum words in it?
-		int32_t na = si->m_alnumPosB - si->m_alnumPosA ;
-		// need at least two words
-		if ( na <= 1 ) continue;
-		// skip if too long and not capitalized
-		if ( na > 7 && (si->m_sentFlags & SENT_MIXED_CASE ) ) continue;
-		// get FIRST word in potential event title
-		int32_t i = si->m_senta;
-		int32_t a = si->m_senta;
-		int32_t b = si->m_sentb;
-		// skip cruft though
-		for ( ; i < a ; i++ ) {
-			QUICKPOLL(m_niceness);
-			if ( ! m_wids[i] ) continue;
-			if ( bits[i] & D_IS_IN_DATE ) continue;
-			if ( bits[i] & D_IS_STOPWORD ) continue;
-			if ( m_wlens[i] == 1 ) continue;
-			break;
-		}
-		// if all cruft, ignore
-		if ( i == b ) continue;
-		// go to next section if word not in our list
-		if ( ! s_sw.isInTable ( &m_wids[i] ) ) continue;
-		// must have at least one word after that
-		int32_t next = i + 2;
-		// skip tags
-		for ( ; next < b && ! m_wids[next] ; next++ );
-		// if no more words, forget it, go to next section
-		if ( next >= b ) continue;
-		// get the string
-		char *str = *(char **)s_sw.getValue ( &m_wids[i] );
-		// check sign
-		//if      ( str[0] == '+' )
-		//	si->m_sentFlags |= SENT_GOODEVENTSTART;
-		if ( str[0] == '-' )
-			si->m_sentFlags |= SENT_BADEVENTSTART;
-		// must have a sign
-		else { char *xx=NULL;*xx=0; }
-	}
-	*/
-
 
 	///////////////////
 	//
@@ -7710,17 +7381,6 @@ int32_t hasTitleWords ( sentflags_t sflags ,
 		// TODO: a city/state!!!
 		if ( wids[i+2] == h_in ) {
 			*matchp = 1;
-			/*
-			// assume none
-			bool gotPlaceInd = false;
-			// scan for place indicator or in address bit
-			for ( int32_t j = i + 4 ; j < b ; j++ ) {
-				if ( ! isPlaceIndicator(&wids[j]) ) continue;
-				gotPlaceInd = true;
-				break;
-			}
-			if ( gotPlaceInd ) *matchp = 1;
-			*/
 		}
 
 		// put in subsent code 
@@ -7767,31 +7427,6 @@ int32_t hasTitleWords ( sentflags_t sflags ,
 			*matchp = 1;
 		// or parens: Million+Dollar+Quartet+(Touring)
 		if ( words->hasChar (i+1,'(' ) ) *matchp = 1;
-
-		/*
-		// strange punct follows?
-		char *p    =     wptrs[i+1];
-		char *pend = p + wlens[i+1];
-		for ( ; p < pend ; p++ ) {
-			QUICKPOLL(niceness);
-			if ( *p != ':' ) continue;
-			// . phone number not allowed after it!
-			// . fix "Adult Services: 881-001" for unm.edu
-			int32_t next = i + 1;
-			for ( ; next < b && ! wids[next]; next++ );
-			// no phone number, so allow this ending!
-			if ( next >= b ) break;
-			// phone number? if not, we're good!
-			if ( ! isdigit(wptrs[next][0]) ) break;
-			// crap, forget it... do not set ENDING bit
-			p = pend-1;
-		}
-		// there is no strange punct after it, so this word is
-		// not really the "last" word in this sentence
-		if ( p >= pend ) continue;
-		// we got some strange punct
-		return retVal;
-		*/
 	}
 
 	// return it if we got something
@@ -7915,20 +7550,6 @@ int32_t hasTitleWords ( sentflags_t sflags ,
 	// no match
 	return 0;
 }
-/*
-bool Sections::isPlaceOrBusinessWord ( int32_t i ) {
-
-	isPlaceIndicator ( &wids[i] ) return true;
-	if ( wids[i] == h_news ) return true;
-	if ( wids[i] == h_network ) return true;
-
-		// generally, allow all gerunds, anywhere in the title
-		// but if a noun like association or center follows them
-		// they do not count, they are describing a bldg or 
-		// organization... or "news" or "club" "room" (dining room)
-		// "co" "company" "llc" ...
-}
-*/
 
 void Sections::setSentPrettyFlag ( Section *si ) {
 	// shortcut
@@ -8028,138 +7649,6 @@ void Sections::setSentPrettyFlag ( Section *si ) {
 	si->m_sentFlags |= SENT_PRETTY;
 }
 
-/*
-	////////////////////////////////
-	//
-	// punish sections that have a repeated tag hash
-	//
-	//
-	// - the idea being title sections are somewhat unique
-	// - limit repeat table recordings for each individual event
-	//
-	////////////////////////////////
-	char rttbuf[4000];
-	HashTableX rtt; 
-	rtt.set(4,4,256,rttbuf,4000,false,m_niceness,"rttt");
-	for ( Section *si = ss->m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// now we require the sentence
-		if ( ! ( si->m_flags & SEC_SENTENCE ) ) continue;
-		// skip if not in description right now, no need to score it!
-		if ( si->m_minEventId <= 0 ) continue;
-		// insert into table, score one
-		if ( ! rtt.addTerm32((int32_t *)&si->m_tagHash) ) return false;
-	}
-	// now punish the repeaters
-	for ( Section *si = ss->m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// now we require the sentence
-		if ( ! ( si->m_flags & SEC_SENTENCE ) ) continue;
-		// skip if not in description right now, no need to score it!
-		if ( si->m_minEventId <= 0 ) continue;
-		// insert into table, score one
-		int32_t score = rtt.getScore32((int32_t *)&si->m_tagHash) ;
-		// punish?
-		if ( score > 1 ) continue;
-		// yes
-		si->m_sentFlags |= SENT_UNIQUE_TAG_HASH;
-		si->m_titleScore *= 1.02;
-	}
-
-
-	/////////////
-	//
-	// title score boost for being part of title tag
-	//
-	// many event titles are repeated in the title tag
-	// that may be true, but also the title is generic and repeated
-	// again in the document body, and that hurts us!!
-	//
-	// TODO: consider doing this if only one event?
-	//
-	///////////
-	// get the title tag section
-	Section *titleSec = NULL;
-	for ( Section *si = ss->m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// now we require the sentence
-		if ( si->m_tagId != TAG_TITLE ) continue;
-		titleSec = si;
-		break;
-	}
-	// . score each section that directly contains text.
-	// . have a score for title and score for description
-	for ( Section *si = ss->m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// forget if no title
-		if ( ! titleSec ) break;
-		// now we require the sentence
-		if ( ! ( si->m_flags & SEC_SENTENCE ) ) continue;
-		// skip if not in description right now, no need to score it!
-		if ( si->m_minEventId <= 0 ) continue;
-		// get sentence
-		int32_t senta = si->m_senta;
-		int32_t sentb = si->m_sentb;
-		// do not match title tag with itself!
-		if ( senta >= titleSec->m_a && senta < titleSec->m_b ) 
-			continue;
-		// title sentence
-		int32_t ta = titleSec->m_a;
-		int32_t tb = titleSec->m_b;
-		// record max words matched
-		int32_t max = 0;
-		bool allMatched = false;
-		int32_t matchedWords = 0;
-		// compare to sentence in title
-		for ( int32_t i = ta ; i < tb ; i++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// skip if not alnum
-			if ( ! m_wids[i] ) continue;
-			// check with title
-			if ( m_wids[i] != m_wids[senta] ) {
-				// reset matched word count
-				matchedWords = 0;
-				// reset this ptr too
-				senta = si->m_senta;
-				continue;
-			}
-			// ok, words match, see how many
-			matchedWords++;
-			// record max
-			if ( matchedWords > max ) max = matchedWords;
-			// advance over word we match
-			senta++;
-			// advance to next alnumword
-			for ( ; senta < sentb && !m_wids[senta] ; senta++);
-			// all done?
-			if ( senta < sentb ) continue;
-			// all matched!
-			allMatched = true;
-			break;
-		}
-		if ( ! allMatched ) continue;
-		// reward
-		si->m_sentFlags |= SENT_MATCHED_TITLE_TAG;
-		// give a little more the more words matched
-		// no, because the title often has the containing place name, 
-		// like "Museum of Science and Industry" even when the page
-		// is talking about the "Bronzeville Blue Club" which will
-		// get less points because its only match 3 words...
-		//float minb = 2.0;
-		//float maxb = 3.0;
-		//if ( matchedWords > 10 ) matchedWords = 10;
-		//float bonus = minb+(maxb-minb) * ((float)matchedWords/10.0);
-		si->m_titleScore *= 3.0;//bonus;
-		si->m_descScore  *= 3.0;//bonus;
-	}
-}
-*/
-
 #define METHOD_MONTH_PURE   0 // like "<h3>July</h3>"
 #define METHOD_TAGID        1
 #define METHOD_DOM          2
@@ -8236,18 +7725,7 @@ int32_t Sections::addImpliedSections3 ( ) {
 		return 0;
 
 		
-	sec_t badFlags =SEC_MARQUEE|SEC_STYLE|SEC_SCRIPT|SEC_SELECT|
-		SEC_HIDDEN|SEC_NOSCRIPT;
-
-	// for debugging -- sleep forever
-	//if ( g_hostdb.m_hostId == 44 ) {
-	//	for ( ; ; ) {
-	//		QUICKPOLL(m_niceness);
-	//	}
-	//}
-
-	// ignore brothers that are one of these tagids
-	//sec_t badFlags = SEC_SELECT|SEC_SCRIPT|SEC_STYLE|SEC_HIDDEN;
+	sec_t badFlags = SEC_MARQUEE|SEC_STYLE|SEC_SCRIPT|SEC_SELECT|SEC_HIDDEN|SEC_NOSCRIPT;
 
 	bool addedPartition = false;
 
@@ -8405,96 +7883,10 @@ int32_t Sections::addImpliedSections3 ( ) {
 		// if this list had no viable partitions, skip it
 		if ( bestMethod == -1 ) continue;
 
-		/*
-		Partition *bestSuper = NULL;
-		int32_t       bestSuperMethod;
-		// . before inserting the winning partition see if another
-		//   partition is a "super partition" of that and insert that
-		//   first if it is. 
-		// . a lot of times the super partition as a smaller score
-		//   because one section in the partition is much larger
-		//   than another, possibly empty, section...
-		// . prefer the super partition with the lest # of cells
-		for ( int32_t m = 0 ; m < METHOD_MAX ; m++ ) {
-			// breathe
-			QUICKPOLL ( m_niceness );
-			// skip if winner
-			if ( m == bestMethod ) continue;
-			// if no partition here, skip it
-			if ( bestMethodScore[m] <= 0 ) continue;
-			// shorcut
-			Partition *super = &parts[m];
-			Partition *sub   =  bestPart;
-			// need at least one partition
-			if ( super->m_np <= 1 ) continue;
-			// skip if same number of partitions or more
-			if ( super->m_np >= sub->m_np ) continue;
-			// must start ABOVE first partition
-			if ( super->m_a[0] >= sub->m_a[0] ) continue;
-			// assume it is a super partition
-			bool isSuper = true;
-			// w is cursor into the subpartitions cells/intervals
-			int32_t w = 0;
-			// now every startpoint in the super partition must
-			// be right before a point in the subpartition
-			int32_t k; for ( k = 0 ; k < super->m_np ; k++ ) {
-				// breathe
-				QUICKPOLL(m_niceness);
-				// get last partition if we have a sequence
-				// of empties... like if the super partition
-				// was <h1> tags and the sub partition was
-				// <h2> if we had:
-				// <h1>..</h1>
-				// <h1>..</h1>
-				// <h2>..</h2>
-				// <h1>..</h1>
-				// <h2>..</h2>
-				// then that first two adjacent <h1> tags
-				// should not stop the <h1> tags from 
-				// constituting a super partition over the
-				// subpartition of <h2> tags
-				if ( k+1 < super->m_np &&
-				     super->m_firstBro[k  ]->m_alnumPosB == 
-				     super->m_firstBro[k+1]->m_alnumPosA )
-					continue;
-				// advance "w" is need to catch up
-				for ( ; w < sub->m_np ; w++ )
-					if ( sub->m_a[w] >= super->m_a[k] )
-						break;
-				// if w is exhausted we are done
-				if ( w >= sub->m_np ) break;
-				// . now compare to next guy in subpartition
-				// . the first bros must be adjacent
-				// . i.e. <h1> tag must be adjacent to <h2> tag
-				if ( super->m_firstBro[k]->m_alnumPosB ==
-				     sub  ->m_firstBro[w]->m_alnumPosA )
-					continue;
-				// crap, not a match, not a super partition
-				isSuper = false;
-				break;
-			}
-			// skip if not a super partition
-			if ( ! isSuper ) continue;
-			// the best super will have the fewest partitions
-			if ( bestSuper && super->m_np >= bestSuper->m_np ) 
-				continue;
-			// we are now the best super partition
-		        bestSuper       = super;
-			bestSuperMethod = m;
-		}
-		// turn off for now
-		//bestSuper = NULL;
-		*/
-				
+
 		// select the winning partition
 	        int32_t       winnerMethod = bestMethod;
 		Partition *winnerPart   = bestPart;
-		// if no super paritition...
-		//if ( bestSuper ) {
-		//	winnerMethod = bestSuperMethod;
-		//	winnerPart   = bestSuper;
-		//}
-
 
 		// log it
 		char *ms = "";
@@ -8508,9 +7900,7 @@ int32_t Sections::addImpliedSections3 ( ) {
 		if ( winnerMethod == METHOD_ABOVE_DOW   ) ms = "abovedow";
 		if ( winnerMethod == METHOD_INNER_TAGID ) ms = "innertagid";
 		if ( winnerMethod == METHOD_ABOVE_ADDR ) ms = "aboveaddr";
-		//if ( winnerMethod == METHOD_ABOVE_TOD   ) ms = "abovetod";
-		//if ( winnerMethod == METHOD_EMPTY_TAG   ) ms = "emptytag";
-		//if ( winnerMethod == METHOD_ATTRIBUTE ) ms = "attribute";
+
 		log("sections: inserting winner method=%s",ms);
 
 		// loop over his paritions and insert each one
@@ -9349,9 +8739,6 @@ static sec_t s_secFlags[] = {
 bool addLabel ( HashTableX *labelTable ,
 		int32_t        key ,
 		char       *label ) {
-
-	if ( key == 1021574190 )
-		log("got it");
 	// if in there, make sure agrees
 	char *ptr = (char *)labelTable->getValue (&key);
 	if ( ptr ) {
@@ -9602,80 +8989,12 @@ int32_t Sections::getDelimHash ( char method , Section *bro , Section *head ) {
 	int32_t mod = 0;
 	if ( bro->m_firstWordPos < 0 ) mod = 3405873;
 
-	// this is really a fix for the screwed up sections in 
-	// www.guysndollsllc.com/page5/page4/page4.html which have
-	// a dom and then the tod. sometimes the dom is in the same sentence
-	// section as the tod and other times it isn't. so we have a list of
-	// dom/tod/domtod sections that are brothers. but they are partitioned
-	// by the br tag, but the dom following the br tag sometimes has
-	// extra text after it like "To be announced", so we just required
-	// that the first word be a date.
-	/*
-	if ( method == METHOD_BR_DOM ) {
-		if ( bro->m_tagId != TAG_BR ) return -1;
-		// get next
-		Section *next = bro->m_nextBrother;
-		// must have section after
-		if ( ! next ) return -1;
-		// must be a sort of heading like "Jul 24"
-		//if ( !(next->m_flags & SEC_HEADING_CONTAINER) &&
-		//     !(next->m_flags & SEC_HEADING          ) )
-		//	return -1;
-		// section after must have dom
-		if ( ! (next->m_flags & SEC_HAS_DOM) ) return -1;
-		// now it must be all date words
-		int32_t a = next->m_firstWordPos;
-		int32_t b = next->m_lastWordPos;
-		// sanity check
-		if ( a < 0 ) { char *xx=NULL;*xx=0; }
-		// scan
-		for ( int32_t i = a ; i <= b ; i++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// skip if not wid
-			if ( ! m_wids[i] ) continue;
-			// first word must be in date
-			if ( ! ( m_bits->m_bits[i] & D_IS_IN_DATE ) ) 
-				return -1;
-			// ok, that's good enough!
-			break;
-		}
-		// we're good!
-		return 8888;
-	}
-	*/
-
 	// . single br tags not allowed to be implied section delimeters any
 	//   more for no specific reason but seems to be the right way to go
 	// . this hurts the guysndollsllc.com url, which has single br lines
 	//   each with its own DOM, so let's allow br tags in that case
 	if ( m_tids[bro->m_a] == TAG_BR && bro->m_a + 1 == bro->m_b  ) 
 		return -1;
-
-	/*
-	// <P></P>
-	if ( method == METHOD_EMPTY_TAG ) {
-		// . and cabq.gov/museums/events.html also uses <br><br> which
-		//   looks the same as <p></p> when rendered
-		// . and this is not a single br tag since that is eliminated
-		//   by the return statement right above us
-		// . damn, they had the brbr in a <p> tag with other text so
-		//   this was not fixing that ... so i took it out to be safe
-		// . now i need this for sunsetpromotions.com which use
-		//   double brs otherwise i get mutliple locations error
-		if ( bro->m_tagId == TAG_BR ) 
-			return 777777;
-		// must be a p tag for now
-		if ( bro->m_tagId != TAG_P ) return -1;
-		// and empty. if it has alnum words in it, return -1
-		if ( bro->m_firstWordPos >= 0 ) return -1;
-		// images count as words i guess to fix 
-		// cabq.gov/museum/events.html
-		if ( containsTagId ( bro , TAG_IMG ) ) return -1;
-		// use a special hash
-		return 777777;
-	}
-	*/
 
 	if ( method == METHOD_MONTH_PURE ) {
 		// must be a sort of heading like "Jul 24"
@@ -9724,23 +9043,7 @@ int32_t Sections::getDelimHash ( char method , Section *bro , Section *head ) {
 		// if 0 use base hash
 		return bro->m_baseHash ^ mod;
 	}
-	/*
-	// stole this function logic from getBaseHash2()
-	if ( method == METHOD_ATTRIBUTE ) {
-		// assume this
-		int32_t bh = bro->m_tagHash; // Id;
-		// for sentence sections, etc...
-		if ( bh == 0 ) bh = bro->m_baseHash;
-		// do not allow sentences (see comment above)
-		if ( bro->m_baseHash == BH_SENTENCE ) return -1;
-		// . make heading sections different
-		// . this was wrong for christchurchcincinnati.org/worship
-		//   so i commented it out to get the proper h3/h2 headers
-		//if ( bro->m_flags & SEC_HEADING_CONTAINER) 
-		//	bh ^= 0x789123;
-		return bh ^ mod;
-	}
-	*/
+
 	if ( method == METHOD_INNER_TAGID ) {
 		Section *last = bro;
 		// scan to right to find first kid
@@ -9966,33 +9269,7 @@ int32_t Sections::getDelimHash ( char method , Section *bro , Section *head ) {
 		// do not collide with tagids
 		return 77777;
 	}
-	/*
-	if ( method == METHOD_ABOVE_TOD ) {
-		// must be a sort of heading like "Jul 24"
-		if ( !(bro->m_flags & SEC_HEADING_CONTAINER) &&
-		     !(bro->m_flags & SEC_HEADING          ) )
-			return -1;
-		Section *nb = bro->m_nextBrother;
-		if ( ! nb ) 
-			return -1;
-		if ( ! ( nb->m_flags & SEC_HAS_TOD ) ) 
-			return -1;
-		// next sentence not set yet, so figure it out
-		Section *sent = nb;
-		// scan for it
-		for ( ; sent ; sent = sent->m_next ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// stop we got a sentence section now
-			if ( sent->m_flags & SEC_SENTENCE ) break;
-		}
-		// next SENTENCE must have the tod
-		if ( ! (sent->m_flags & SEC_HAS_TOD) )
-			return -1;
-		// do not collide with tagids
-		return 444333;
-	}
-	*/
+
 	char *xx=NULL;*xx=0;
 	return 0;
 }
@@ -10877,147 +10154,6 @@ bool Sections::addSentenceSections ( ) {
 	}
 
 	return true;
-
-	/*
-		// set this
-		Section *firstSection = m_sectionPtrs[i];
-		Section *lastSection  = m_sectionPtrs[j-1];
-
-		// blow up before containing each other
-		for ( ; firstSection ; ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// stop if too much
-			Section *pp = firstSection->m_parent;
-			// stop if too much
-			if ( ! pp ) break;
-			// stop if too much
-			if ( pp->contains ( lastSection ) ) break;
-			// advance
-			firstSection = pp;
-		}
-		for ( ; lastSection ; ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// stop if too much
-			Section *pp = lastSection->m_parent;
-			// stop if too much
-			if ( ! pp ) break;
-			// stop if too much
-			if ( pp->contains ( firstSection ) ) break;
-			// advance
-			lastSection = pp;
-		}
-
-		// if last section overflowed, cut if off
-		if ( lastSection != firstSection &&
-		     // make sure it doesn't just contain the front part
-		     // of the sentence as well as firstSection!
-		     lastSection->m_firstWordPos > i &&
-		     lastSection->m_lastWordPos  > j ) {
-			sentb = lastSection->m_a;
-			// set a flag 
-			// no need to do a loop
-
-		// likewise, we can't split first section either, but in
-		// that case, drop everything not in the first section
-		if ( lastSection != firstSection &&
-		     firstSection->m_firstWordPos < i &&
-		     firstSection->m_lastWordPos < sentb )
-			sentb = firstSection->m_b;
-
-		// for reverbnation.com we have "Tools for <a>artists</a> |
-		// <a>labels</a> | ..." and the first sentence contains
-		// the anchor tag, but the 2nd sentence is a subsection of
-		// the anchor tag. thus giving inconsistent tag hashes
-		// and messing up our menu detection, so let's include
-		// anchor tags in the sentence to fix that!
-		// CRAP, this was hurting blackbirdbuvette because it was
-		// including the bullet delimeter and the "big" section 
-		// computed below ended up spanning two bullet delimeted
-		// sections to make the sentence!! that gave us a bad event
-		// title that consisted of that sentence.. 
-		//if ( j < m_nw && ! m_tids[j] ) sentb++;
-
-		// sent section needs to include the initial <a>, somehow
-		// that is flip flopping
-		//Section *sa = m_sectionPtrs[senta];
-		//if ( m_tids[senta] && sa->contains ( senta, sentb ) )
-		//	senta++;
-
-		// A = m_sectionPtrs[senta] and
-		// B = m_sectionPtrs[sentb-1]
-		// find the smallest section that contains both A and B.
-		// if A and B are the same, we are done, we are just
-		// a child if that section.
-		// . telescope both A and B up until they contain
-		//   each other like our lasta and lastb algo !!
-
-		Section *big = m_sectionPtrs[senta];
-		for ( ; big ; big = big->m_parent ) {
-			QUICKPOLL(m_niceness);
-			// stop when we contain the whole sentence
-			if ( big->m_a <= senta &&
-			     big->m_b >= sentb ) break;
-		}
-
-		Section *sa = m_sectionPtrs[senta];
-		Section *sb = m_sectionPtrs[sentb-1];
-
-		// get the two sections that are children of "big" and cover
-		// the first and last words of the sentence.
-		Section *lasta = NULL;
-		Section *lastb = NULL;
-		// blow up sb until it contains senta, but its section right
-		// before it equals "big"
-		for ( ; sb ; sb = sb->m_parent ) {
-			if ( sb == big ) break;
-			lastb = sb;
-		}
-		for ( ; sa ; sa = sa->m_parent ) {
-			if ( sa == big ) break;
-			lasta = sa;
-		}
-
-		// set some simple constraints on [senta,sentb) so that we
-		// do no split the sections lasta and lastb. we need our new
-		// inserted section to contain "lasta" and "lastb" but be
-		// a child of "big"
-		int32_t maxa ;
-		int32_t minb ;
-		// but if these are the same as big
-		if ( ! lasta ) maxa = senta;
-		else           maxa = lasta->m_a;
-		if ( ! lastb ) minb = sentb;
-		else           minb = lastb->m_b;
-
-		// save for debug
-		//int32_t saveda = senta;
-		//int32_t savedb = sentb;
-
-		// apply the constraints
-		if ( senta > maxa ) senta = maxa;
-		if ( sentb < minb ) sentb = minb;
-
-		// ok, add the sentence sections as a subsection of "sa"
-		Section *is = insertSubSection ( big , senta , sentb,
-						 BH_SENTENCE );
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// return false with g_errno set on error
-		if ( ! is ) return false;
-		// set sentence flag on it
-		is->m_flags |= SEC_SENTENCE;
-		// make it fake to now
-		//is->m_flags |= SEC_FAKE;
-		// set its base hash to something special
-		//is->m_baseHash = BH_SENTENCE;
-		// skip over
-		//i = j - 1;
-		i = sentb - 1;
-	}
-	return true;
-		*/
 }
 
 Section *Sections::insertSubSection ( Section *parentArg , int32_t a , int32_t b ,
@@ -11043,9 +10179,6 @@ Section *Sections::insertSubSection ( Section *parentArg , int32_t a , int32_t b
 	sk->m_a   = a;
 	sk->m_b   = b;
 
-	// this makes it really fast!
-	//return sk;
-
 	// don't mess this up!
 	if ( m_lastSection && a > m_lastSection->m_a )
 		m_lastSection = sk;
@@ -11062,11 +10195,17 @@ Section *Sections::insertSubSection ( Section *parentArg , int32_t a , int32_t b
 	for ( ; si ; si = si->m_prev ) {
 		// breathe
 		QUICKPOLL(m_niceness);
+
 		// we become his child if this is true
-		if ( si->m_a < a ) break;
+		if ( si->m_a < a ) {
+			break;
+		}
+
 		// if he is bigger (or equal) we become his child
 		// and are after him
-		if ( si->m_a == a && si->m_b >= b ) break;
+		if ( si->m_a == a && si->m_b >= b ) {
+			break;
+		}
 	}
 
 	// . try using section before us if it is contained by "si"
@@ -11080,8 +10219,9 @@ Section *Sections::insertSubSection ( Section *parentArg , int32_t a , int32_t b
 	//   to the newly inserted section, then when done adding sentence
 	//   sections we scanned all the words, keeping track of the last
 	//   html section we entered and used that to insert the sentence sections
-	if ( m_lastAdded && m_lastAdded->m_a > si->m_a && m_lastAdded->m_a < a )
+	if ( m_lastAdded && m_lastAdded->m_a > si->m_a && m_lastAdded->m_a < a ) {
 		si = m_lastAdded;
+	}
 
 
 	// crap we may have 
@@ -11124,8 +10264,7 @@ Section *Sections::insertSubSection ( Section *parentArg , int32_t a , int32_t b
 		//m_sections[0].m_prev = sk;
 		m_rootSection->m_prev = sk;
 		m_rootSection = sk;
-	}
-	else {
+	} else {
 		// insert us into the linked list of sections
 		if ( si->m_next ) si->m_next->m_prev = sk;
 		sk->m_next   = si->m_next;
@@ -11970,25 +11109,7 @@ void Sections::setNextBrotherPtrs ( bool setContainer ) {
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
-		// skip column sections. their m_a and m_b overlap with
-		// one another which triggers a seg fault below... and
-		// we already set their m_next/prevBrother members in the
-		// swoggleTable() function
-		//if ( si->m_tagId == TAG_TC ) continue;
-		// shortcut
-		//Section *si = &m_sections[i];
-		// assume none
-		//si->m_nextBrother = NULL;
-		// crap this is overwriting our junk
-		//si->m_prevBrother = NULL;
-		// . skip if not a section with its own words
-		// . no, i need this for Events.cpp::getRegistrationTable()
-		//if ( si->m_flags & SEC_NOTEXT ) continue;
-		// must be a menu
-		//if ( ! ( si->m_flags & SEC_DUP ) ) continue;
-		// must NOT have a unique tag hash
-		//if ( si->m_numOccurences <= 1  ) continue;
-		//Section *sj = m_sectionPtrs[wn];
+
 		Section *sj = NULL;
 
 		// get word after us
@@ -12168,84 +11289,6 @@ bool SectionVotingTable::addVote3 ( int32_t        turkTagHash ,
 	return true;
 }
 
-/*
-// . no longer use single bit flags, sec_t
-// . just use enumerated section types now
-// . each section type has a score and number sampled to get that score
-// . returns -1 if no data
-// . otherwise returns score from 0.0 to 1.0 which is probability that
-//   sections with the given tagHash are of type "sectionType" where
-//   "sectionType" is like SEC_TEXTY, SEC_DUP, SEC_CLOCK, etc.
-float SectionVotingTable::getScore ( int32_t turkTagHash , int32_t sectionType ) {
-	// make the vote key
-	int64_t vk = ((uint64_t)sectionType) << 32 | (uint32_t)turkTagHash;
-	//int64_t vk = ((uint64_t)tagHash) << 32 | (uint32_t)sectionType;
-	// get these
-	SectionVote *sv = (SectionVote *)m_svt.getValue ( &vk );
-	//SectionVote *osv = (SectionVote *)m_osvt.getValue ( &vk );
-	//SectionVote *nsv = (SectionVote *)m_nsvt.getValue ( &vk );
-	// return -1.0 if no voting data for this guy
-	//if ( ! osv && ! nsv ) return -1.0;
-	if ( ! sv ) return -1.0;
-	// combine
-	float score      = 0.0;
-	float numSampled = 0.0;
-	if ( sv ) score      += sv->m_score;
-	if ( sv ) numSampled += sv->m_numSampled;
-	// . only count ourselves as one sample
-	// . in the "old" voting table a single sample is a doc, as opposed
-	//   to in the new voting table where we have one sample count every
-	//   time the turkTagHash or contentHash occurs on the page.
-	//if ( nsv ) numSampled++;
-	// and use an average for the score
-	//if ( nsv ) score += nsv->m_score / nsv->m_numSampled;
-	// sanity check
-	if ( numSampled <= 0.0 ) { char *xx=NULL;*xx=0; }
-	// normalize
-	return score / numSampled;
-}
-*/
-
-/*
-float SectionVotingTable::getOldScore ( Section *sn , int32_t sectionType ) {
-	// make the vote key
-	int64_t vk = ((uint64_t)sectionType) << 32|(uint32_t)sn->m_tagHash;
-	//int64_t vk=((uint64_t)sn->m_tagHash) << 32 | (uint32_t)sectionType;
-	// get these
-	SectionVote *osv = (SectionVote *)m_osvt.getValue ( &vk );
-	// return -1.0 if no voting data for this guy
-	if ( ! osv ) return -1.0;
-	// combine
-	float score      = 0.0;
-	float numSampled = 0.0;
-	if ( osv ) score += osv->m_score;
-	if ( osv ) numSampled += osv->m_numSampled;
-	// sanity check
-	if ( numSampled <= 0.0 ) { char *xx=NULL;*xx=0; }
-	// normalize
-	return score / numSampled;
-}
-
-float SectionVotingTable::getNewScore ( Section *sn , int32_t sectionType ) {
-	// make the vote key
-	int64_t vk = ((uint64_t)sectionType) << 32|(uint32_t)sn->m_tagHash;
-	//int64_t vk=((uint64_t)sn->m_tagHash) << 32 | (uint32_t)sectionType;
-	// get these
-	SectionVote *nsv = (SectionVote *)m_nsvt.getValue ( &vk );
-	// return -1.0 if no voting data for this guy
-	if ( ! nsv ) return -1.0;
-	// combine
-	float score      = 0.0;
-	float numSampled = 0.0;
-	if ( nsv ) score      += nsv->m_score;
-	if ( nsv ) numSampled += nsv->m_numSampled;
-	// sanity check
-	if ( numSampled <= 0.0 ) { char *xx=NULL;*xx=0; }
-	// normalize
-	return score / numSampled;
-}
-*/
-
 // just like getScore() above basically
 float SectionVotingTable::getNumSampled ( int32_t turkTagHash, int32_t sectionType) {
 	// make the vote key
@@ -12271,65 +11314,6 @@ float SectionVotingTable::getNumSampled ( int32_t turkTagHash, int32_t sectionTy
 	// normalize
 	return numSampled;
 }
-
-/*
-// just like getScore() above basically
-float SectionVotingTable::getOldNumSampled ( Section *sn , int32_t sectionType ) {
-	// make the vote key
-	int64_t vk=((uint64_t)sectionType) << 32 | (uint32_t)sn->m_tagHash;
-	//int64_t vk=((uint64_t)sn->m_tagHash) << 32 | (uint32_t)sectionType;
-	// get these
-	SectionVote *osv = (SectionVote *)m_osvt.getValue ( &vk );
-	// return 0.0 if no voting data for this guy
-	if ( ! osv ) return 0.0;
-	// combine
-	float numSampled = 0.0;
-	if ( osv ) numSampled += osv->m_numSampled;
-	// sanity check
-	if ( numSampled <= 0.0 ) { char *xx=NULL;*xx=0; }
-	// normalize
-	return numSampled;
-}
-*/
-/*
-// . returns false if no article
-// . otherwise sets a and b to the range in word #'s and returns true
-void Sections::getArticleRange ( int32_t *start , int32_t *end ) {
-	// assume no section
-	*start = -1;
-	*end   = -1;
-	// if no article, skip all!
-	if ( ! m_hadArticle ) return ;
-	// return if we got it
-	if ( m_articleEndWord != -2 ) {
-		*start = m_articleStartWord;
-		*end   = m_articleEndWord;
-		return;
-	}
-	int32_t a   = -1;
-	int32_t b   = -1;
-	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// shortcut
-		Section *sn = &m_sections[i];
-		// skip if not article section
-		if ( ! ( sn->m_flags & SEC_ARTICLE ) ) continue;
-		// keep a range going
-		if ( sn->m_a < a || a == -1 ) a = sn->m_a;
-		// and the end of the range
-		if ( sn->m_b   > b || b == -1 ) b = sn->m_b;
-	}
-	// set them
-	m_articleStartWord = a;
-	m_articleEndWord   = b;
-	// sanity check. if m_hadArticle was set, we should have something
-	if ( (a == -1 || b == -1) && m_hadArticle ) { char *xx=NULL;*xx=0; }
-	// set the range to return it
-	*start = m_articleStartWord;
-	*end   = m_articleEndWord;
-}
-*/
 
 // . store our "votes" into datedb
 // . each vote key is:
@@ -12409,10 +11393,7 @@ bool SectionVotingTable::hash ( int64_t docId ,
 		if ( sectionType < 0   ) { char *xx=NULL;*xx=0; }
 		// and tagHash from key
 		uint32_t secHash32 = vk & 0xffffffff;
-		// check for "what"
-		//if ( tagHash == (uint32_t)-1024871986 )
-		//	log("hey");
-		//int32_t tagHash = vk >> 32;
+
 		// make the record key first
 		key128_t k;
 		k = g_datedb.makeKey ( termId    , // termId
@@ -12440,735 +11421,11 @@ bool SectionVotingTable::hash ( int64_t docId ,
 	return true;
 }
 
-/*
-// add docid-based forced spider recs into the metalist
-char *Sections::respiderLineWaiters ( char *metaList    , 
-				      char *metaListEnd ) {
-				      // these are from the parent
-				      //Url  *url         ,
-				      //int32_t  ip          ,
-				      //int32_t  priority    ) {
-	
-	// shortcut
-	char *p    = metaList;
-	char *pend = metaListEnd;
 
-	// not if we ourselves had to wait in line! that means there were not
-	// enough voters!
-	if ( m_waitInLine ) return p;
-
-	// MDW: disable this for now since it is causing a parsing 
-	// inconsistency since when we re-read the list from sectiondb
-	// for the parsing inconsistency check in XmlDoc.cpp, it sometimes
-	// sets m_waitInLine to true... which is strange... wtf?
-	// guilty url: www.lis.illinois.edu/newsroom/events?dt=2011-01-15
-	return p;
-
-	//int32_t now = getTimeSynced();
-
-	// host hash
-	//int32_t h = hash32 ( url->getHost() , url->getHostLen() );
-	// make sure not 0
-	//if ( h == 0 ) h = 1;
-
-	// now add the line waiters into spiderdb as forced spider recs
-	for ( ; ! m_list.isExhausted() ; m_list.skipCurrentRecord() ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// does it match us?
-		int32_t tagPairHash = m_list.getCurrentDate();
-		// skip if not line waiter
-		if ( tagPairHash != m_tagPairHash ) continue;
-		// key128_t
-		key128_t *key = (key128_t *)m_list.getCurrentRec();
-		// get section type of this sectiondb vote/key
-		int32_t secType = g_indexdb.getScore ( (char *)key );
-		// must be this
-		if ( secType != SV_WAITINLINE ) continue;
-		// get docid
-		int64_t docId = m_list.getCurrentDocId();
-		// store the rdbId
-		*p++ = RDB_SPIDERDB;
-		// . store in the meta list
-		// . similar to how we do it in Links::setMetaList()
-		SpiderRequest *sreq = (SpiderRequest *)p;
-		// reset it
-		sreq->reset();
-		// now set these
-		sreq->m_fromSections = 1;
-		sreq->m_urlIsDocId   = 1;
-		sreq->m_fakeFirstIp  = 1;
-		// copy url
-		sprintf(sreq->m_url,"%"UINT64"",docId);
-		// fake
-		int32_t firstIp = hash32n(sreq->m_url);
-		if ( firstIp == -1 || firstIp == 0 ) firstIp = 1;
-		sreq->m_firstIp = firstIp;
-		// set the key!
-		sreq->setKey( firstIp, m_docId , false );
-		// advance p
-		p += sreq->getRecSize();
-		// sanity check
-		if ( p > pend ) { char *xx=NULL;*xx=0; }
-		// debug
-		logf(LOG_DEBUG,"section: respider line waiter d=%"INT64"",docId);
-	}
-	return p;
-}		
-*/
 #define TABLE_ROWS 25
 
-// . print it out
-// . we can't just loop over the sections because some sections have
-//   words between the subsections they contain,
-// . so we have to loop over the individual "words"
-/*
-bool Sections::print ( SafeBuf *sbuf ,
-		       HashTableX *pt ,
-		       HashTableX *et ,
-		       HashTableX *st2 ,
-		       HashTableX *at  ,
-		       HashTableX *tt  ,
-		       //HashTableX *rt  ,
-		       HashTableX *priceTable ) {
-
-	sbuf->safePrintf("<b>Sections in Document</b>\n");
-
-	// section sanity checks
-	for ( int32_t i =0  ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get section
-		Section *sn = &m_sections[i]; // Ptrs[i];
-		// get parent
-		Section *sp = sn->m_parent;
-		if ( ! sp ) continue;
-		// check if contained
-		if ( sn->m_a < sp->m_a ) { char *xx=NULL;*xx=0; }
-		if ( sn->m_b > sp->m_b ) { char *xx=NULL;*xx=0; }
-	}
-
-	char  **wptrs = m_words->getWords    ();
-	int32_t   *wlens = m_words->getWordLens ();
-	nodeid_t *tids = m_words->getTagIds();
-	int32_t    nw    = m_words->getNumWords ();
-
-	// check words
-	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get section
-		Section *sn = m_sectionPtrs[i];
-		if ( sn->m_a >  i ) { char *xx=NULL;*xx=0; }
-		if ( sn->m_b <= i ) { char *xx=NULL;*xx=0; }
-	}
-
-	bool hadWords = false;
-	Section *lastSection = NULL; // TagHash = -1;
-	Section *dstack[MAXTAGSTACK];
-	int32_t    ns = 0;
-	int32_t printedi = -1;
-	//sbuf->safePrintf("<pre>\n");
-	// first print the html lines out
-	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get section
-		Section *sn = m_sectionPtrs[i];
-		// print if ending
-		if ( ns>0 && dstack[ns-1]->m_b == i && ! hadWords )
-			sbuf->safePrintf("&nbsp;");
-		// if this word is punct print that out
-		if ( ! m_wids[i] && ! m_tids[i] ) {
-			sbuf->safeMemcpy(m_wptrs[i],m_wlens[i]);
-			// do not reprint
-			printedi = i;
-		}
-		// punch out some </divs>
-		for ( ; ns>0 && dstack[ns-1]->m_b == i ; ns-- ) {
-			//sbuf->safePrintf("</div id=0x%"XINT32">\n",
-			//(int32_t)dstack[ns-1]);
-			sbuf->safePrintf("</div>\n");
-		}
-		// . put in a div if its a new section changing front tag
-		// . section might not start with a tag, like the bullet
-		if ( //tids[i] && 
-		     //! ( tids[i] & BACKBIT ) &&
-		     sn->m_a == i &&
-		     lastSection != sn ) {
-			// punch out some </divs>
-			//for ( ; ns>0 && dstack[ns-1] == i ; ns-- ) 
-			//	sbuf->safePrintf("</div>\n");
-			sbuf->safePrintf("<br>");
-			// store the sections in this array
-			Section *spbuf[20];
-			// one div per parent!
-			Section *sp = sn;
-			int32_t qq = 0;
-			for ( ; sp && sp->m_a == sn->m_a ; sp = sp->m_parent )
-				spbuf[qq++] = sp;
-			// sanity check
-			if ( qq > 20 ) { char *xx=NULL;*xx=0; }
-			// flag for printing
-			//bool printed = false;
-			// for sanity check
-			Section *lastk = NULL;
-			bool printFirstWord = false;
-			// now reverse loop for div sections
-			for ( int32_t k = qq-1 ; k >= 0 ; k-- ) {
-				// get it
-				Section *sk = spbuf[k];
-				// must be good
-				if ( lastk && 
-				     ( sk->m_a > lastk->m_a || 
-				       sk->m_b > lastk->m_b )) { 
-					char *xx=NULL;*xx=0; }
-				// save it
-				lastk = sk;
-				// flag
-				if ( sk->m_flags & SEC_SENTENCE )
-					printFirstWord = true;
-				// only make font color different
-				int32_t bcolor = (int32_t)sk->m_tagHash& 0x00ffffff;
-				int32_t fcolor = 0x000000;
-				int32_t rcolor = 0x000000;
-				uint8_t *bp = (uint8_t *)&bcolor;
-				bool dark = false;
-				if ( bp[0]<128 && bp[1]<128 && bp[2]<128 ) 
-					dark = true;
-				// or if two are less than 50
-				if ( bp[0]<100 && bp[1]<100 ) dark = true;
-				if ( bp[1]<100 && bp[2]<100 ) dark = true;
-				if ( bp[0]<100 && bp[2]<100 ) dark = true;
-				// if bg color is dark, make font color light
-				if ( dark ) {
-					fcolor = 0x00ffffff;
-					rcolor = 0x00ffffff;
-				}
-				// start the new div
-				//sbuf->safePrintf("<div id=0x%"XINT32" "//e%"INT32" "
-				sbuf->safePrintf("<div "
-						 "style=\""
-						 "background-color:#%06"XINT32";"
-						 "margin-left:20px;"
-						 "border:#%06"XINT32" 1px solid;"
-						 "color:#%06"XINT32"\">",
-						 //(int32_t)sk,
-						 bcolor,
-						 rcolor,
-						 fcolor);
-				// print event id range
-				if ( sk->m_minEventId >= 1 )
-					sbuf->safePrintf("%"INT32"-%"INT32" ",
-							 sk->m_minEventId,
-							 sk->m_maxEventId);
-				// push that
-				//if ( (sk->m_flags & SEC_FAKE) &&
-				//     sk->m_b > sk->m_a + 1 )
-				//	dstack[ns++] = sk->m_b - 1;
-				//else
-				dstack[ns++] = sk;//->m_b;
-				// print word/tag #i
-				if ( printedi<i && !(sk->m_flags&SEC_FAKE)) {
-					// only print the contents once
-					printedi = i; // = true;
-					// "<br>" might be a sequnce of brs
-					int32_t last = i;
-					if ( tids[i] == TAG_BR )
-						last = sk->m_b - 1;
-					char *end = m_wptrs[last] +
-						m_wlens[last];
-					int32_t tlen = end - wptrs[i];
-					// only encode if it is a tag
-					if ( tids[i] )
-						sbuf->htmlEncode(wptrs[i],
-								 tlen,
-								 false );
-					//else
-					//sbuf->safePrintf(wptrs[i],
-					//wlens[i],
-					//false );
-				}
-				// print the flags
-				sbuf->safePrintf("<i>");
-
-				if ( sk ) 
-				 sbuf->safePrintf("A=%"INT32" ",sk->m_a);
-
-				//sbuf->
-				//safePrintf("fwp=%"INT32" ",sk->m_firstWordPos);
-
-				// print tag hash now
-				if ( sk )
-				 sbuf->safePrintf("hash=0x%"XINT32" ",
-						  (int32_t)sk->m_tagHash);
-
-				if ( sk->m_contentHash)
-					sbuf->safePrintf("ch=0x%"XINT32" ",
-						 (int32_t)sk->m_contentHash);
-				//else if ( sk->m_contentHash2 )
-				//	sbuf->safePrintf("ch2=0x%"XINT32" ",
-				//		 (int32_t)sk->m_contentHash2);
-				else if ( sk->m_sentenceContentHash )
-					sbuf->safePrintf("sch=0x%"XINT32" ",
-					     (int32_t)sk->m_sentenceContentHash);
-
-
-				// show dup votes if any
-				if ( sk->m_votesForDup )
-					sbuf->safePrintf("dupvotes=%"INT32" ",
-							 sk->m_votesForDup);
-				if ( sk->m_votesForNotDup )
-					sbuf->safePrintf("notdupvotes=%"INT32" ",
-							 sk->m_votesForNotDup);
-
-				printFlags ( sbuf , sk , false );
-
-				// print the item tables out
-				int64_t *ph = (int64_t *)pt->getValue(&sk);
-				int64_t *eh = (int64_t *)et->getValue(&sk);
-				//bool isInRt = false;
-				//if ( rt ) isInRt = rt->isInTable(&sk);
-				bool inPriceTable = false;
-				if ( priceTable )
-					inPriceTable = 
-						priceTable->isInTable(&sk);
-				// get addr index ptr if any (could be mult)
-				int32_t acount = 0;
-				int64_t sh = 0LL;
-				if ( at ) {
-					int32_t slot = at->getSlot(&sk);
-					for(;slot>=0;
-					    slot=at->getNextSlot(slot,&sk)) {
-						// get min
-						Place **pp;
-						pp = (Place **)at->
-							getValueFromSlot(slot);
-						// get hash
-						int64_t tt=(*pp)->m_hash;
-						// get max
-						if ( ! sh || tt > sh ) sh = tt;
-						// count them
-						acount++;
-					}
-				}
-				// date #
-				//int32_t *ti = (int32_t *)tt->getValue(&sk);
-				// print those out
-				if ( ph ) 
-				       sbuf->safePrintf("hasphone ");
-				if ( eh ) 
-				       sbuf->safePrintf("hasemail ");
-				//if ( isInRt )
-				//     sbuf->safePrintf("hasregistration ");
-
-				if ( inPriceTable )
-					sbuf->safePrintf("hasprice ");
-					
-				//if ( sk )
-				//sbuf->safePrintf("dh=0x%"XINT32" ",
-				//getDelimHash(METHOD_INNER_TAGID,sk));
-
-
-				if ( sh )
-					sbuf->safePrintf("placehash=0x%"XINT64"",
-							 sh);
-				if ( sh && acount >= 2 )
-					sbuf->safePrintf(" (%"INT32" total)",
-							 acount);
-
-				if ( isHardSection(sk) )
-					sbuf->safePrintf("hardsec ");
-					
-				//if ( ph ) 
-				//     sbuf->safePrintf("phonehash=%"XINT64" ",*ph);
-				//if ( eh ) 
-				//     sbuf->safePrintf("emailhash=%"XINT64" ",*eh);
-				// consider actually print the address out
-				// if you want to, but don't show the pointer
-				// because it causes problems in the diff
-				// that the qa loop does.
-				// addr #
-				//if ( ai ) 
-				//sbuf->safePrintf("addrindex=%"INT32" ",*ai);
-				//if ( ai ) 
-				//sbuf->safePrintf("hasaddress ");
-				// tod #
-				//if ( ti ) 
-				//	sbuf->safePrintf("hastod ");//,*ti);
-				//if ( sk->m_numAddresses > 0 )
-				//	sbuf->safePrintf("na=%i ",
-				//			 sk->m_numAddresses);
-				//if ( sk->m_numPlaces > 0 )
-				//	sbuf->safePrintf("np=%i ",
-				//			 sk->m_numPlaces);
-				sbuf->safePrintf("</i> ");
-			}
-			// assume had no words
-			hadWords = false;
-
-			if (printFirstWord && !tids[i] )
-				sbuf->htmlEncode(wptrs[i],wlens[i],false );
-
-			// update it
-			lastSection = sn;
-			continue;
-		}
-		// based on depth
-		//for ( int32_t k = 0 ; 
-		//      lastSection != sn && k < sn->m_depth + 1 ; 
-		//      k++ )
-		//	sbuf->safePrintf("-");
-		// print word/tag #i
-		if ( tids[i] != TAG_BR && i>printedi )
-			sbuf->htmlEncode(wptrs[i],wlens[i],false );
-		// update it
-		lastSection = sn;
-		// assume had words
-		if ( m_wids[i] || tids[i] ) hadWords = true;
-	}
-	bool unbal = (ns > 0 );
-	//sbuf->safePrintf("</pre>\n");
-	for ( int32_t i = 0 ; i < ns ; i++ )
-		sbuf->safePrintf("</div>\n");
-	// sanity check
-	if ( unbal ) 
-		sbuf->safePrintf("<br><b>%"INT32" UNBALANCED SECTIONS</b><br><br>",
-				 ns);
-
-
-	// print header
-	char *hdr =
-		"<table border=1>"
-		"<tr>"
-		"<td><b>sec #</b></td>"
-		"<td><b>baseHash</b></td>"
-		"<td><b>cumulTagHash</b></td>"
-		"<td><b>wordStart</b></td>"
-		"<td><b>wordEnd</b></td>"
-		"<td><b>contentHash</b></td>"
-		"<td><b>XOR</b></td>" // only valid for contentHashes
-		"<td><b>alnum words</b></td>" // contained in section
-		"<td><b>depth</b></td>"
-		"<td><b>parent word range</b></td>"
-		"<td><b># siblings</b></td>"
-		"<td><b>flags</b></td>"
-		"<td><b>evIds</b></td>"
-		"<td><b>text snippet</b></td>"
-		//"<td>votes for static</td>"
-		//"<td>votes for dynamic</td>"
-		//"<td>votes for texty</td>"
-		//"<td>votes for unique</td>"
-		"</tr>\n";
-	sbuf->safePrintf("%s",hdr);
-
-	int32_t rcount = 0;
-	int32_t scount = 0;
-	// show word # of each section so we can look in PageParser.cpp's
-	// output to see exactly where it starts, since we now label all
-	// the words
-	//for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-	for ( Section *sn = m_rootSection ; sn ; sn = sn->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// see if one big table causes a browser slowdown
-		if ( (++rcount % TABLE_ROWS ) == 0 ) 
-			sbuf->safePrintf("<!--ignore--></table>%s\n",hdr);
-		// get it
-		//Section *sn = &m_sections[i];
-		//Section *sn = m_sorted[i];
-		// skip if not a section with its own words
-		//if ( sn->m_flags & SEC_NOTEXT ) continue;
-		char *xs = "--";
-		char ttt[100];
-		if ( sn->m_contentHash ) {
-			int32_t modified = sn->m_tagHash ^ sn->m_contentHash;
-			sprintf(ttt,"0x%"XINT32"",modified);
-			xs = ttt;
-		}
-		// shortcut
-		Section *parent = sn->m_parent;
-		int32_t pswn = -1;
-		int32_t pewn = -1;
-		if ( parent ) pswn = parent->m_a;
-		if ( parent ) pewn = parent->m_b;
-		// print it
-		sbuf->safePrintf("<!--ignore--><tr><td>%"INT32"</td>\n"
-				 "<td>0x%"XINT32"</td>"
-				 "<td>0x%"XINT32"</td>"
-				 "<td>%"INT32"</td>"
-				 "<td>%"INT32"</td>"
-				 "<td>0x%"XINT32"</td>"
-				 "<td>%s</td>"
-				 "<td>%"INT32"</td>"
-				 "<td>%"INT32"</td>"
-				 "<td><nobr>%"INT32" to %"INT32"</nobr></td>"
-				 "<td>%"INT32"</td>"
-				 "<td><nobr>" ,
-				 scount++,//i,
-				 (int32_t)sn->m_baseHash,
-				 (int32_t)sn->m_tagHash,
-				 sn->m_a,
-				 sn->m_b,
-				 (int32_t)sn->m_contentHash,
-				 xs,
-				 sn->m_exclusive,
-				 sn->m_depth,
-				 pswn,
-				 pewn,
-				 sn->m_numOccurences);//totalOccurences );
-		// now show the flags
-		printFlags ( sbuf , sn , false );
-		// first few words of section
-		int32_t a = sn->m_a;
-		int32_t b = sn->m_b;
-		// -1 means an unclosed tag!! should no longer be the case
-		if ( b == -1 ) { char *xx=NULL;*xx=0; }//b=m_words->m_numWords;
-		sbuf->safePrintf("</nobr></td>");
-
-		if ( sn->m_minEventId >= 1 )
-			sbuf->safePrintf("<td><nobr>%"INT32"-%"INT32"</nobr></td>",
-					 sn->m_minEventId,sn->m_maxEventId);
-		else
-			sbuf->safePrintf("<td>&nbsp;</td>");
-
-		sbuf->safePrintf("<td><nobr>");
-		// 70 chars max
-		int32_t   max   = 70; 
-		int32_t   count = 0;
-		char   truncated = 0;
-		// do not print last word/tag in section
-		for ( int32_t i = a ; i < b - 1 && count < max ; i++ ) {
-			char *s    = wptrs[i];
-			int32_t  slen = wlens[i];
-			if ( count + slen > max ) {
-				truncated = 1; 
-				slen = max - count;
-			}
-			count += slen;
-			// boldify front tag
-			if ( i == a ) sbuf->safePrintf("<b>");
-			sbuf->htmlEncode(s,slen,false);
-			// boldify front tag
-			if ( i == a ) sbuf->safePrintf("</b>");
-		}
-		// if we truncated print a ...
-		if ( truncated ) sbuf->safePrintf("<b>...</b>");
-		// then print ending tag
-		if ( b < nw ) {
-			int32_t blen = wlens[b-1];
-			if ( blen>20 ) blen = 20;
-			sbuf->safePrintf("<b>");
-			sbuf->htmlEncode(wptrs[b-1],blen,false);
-			sbuf->safePrintf("</b>");
-		}
-
-		sbuf->safePrintf("</nobr></td></tr>\n");
-	}
-			 
-	sbuf->safePrintf("</table>\n<br>\n");
-
-
-
-	// now print the NEW voting table
-	sbuf->safePrintf("<b>NEW Section Voting Table (nsvt)</b>\n");
-	sbuf->safePrintf("<br>");
-	sbuf->safePrintf("<i>tagHash is combined with sectionType to make the "
-			 "key in sectiondb. The data is everything else. "
-			 "<br>"
-			 "*The tagHash is XOR'ed with the contentHash for the "
-			 "contentHash "
-			 "section type, and is the tagPairHash for the "
-			 "tagPairHash section type.</i>");
-	// print table header
-	char *hdr2 =
-		"<table border=1>"
-		"<tr>"
-		"<td><b>siteHash</b></td>"
-		"<td><b>tagHash*</b></td>"
-		"<td><b>sectionType</b></td>"
-		"<td><b>scoreTotal</b></td>"
-		"<td><b>numSampled</b></td>"
-		"<td><b>avgScore</b></td>"
-		"</tr>\n";
-	sbuf->safePrintf("%s",hdr2);
-	HashTableX *st = &m_nsvt;
-	rcount = 0;
-	for ( int32_t i = 0 ; i < st->m_numSlots ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// skip if empty
-		if ( ! st->m_flags[i] ) continue;
-		// see if one big table causes a browser slowdown
-		if ( (++rcount % TABLE_ROWS ) == 0 ) 
-			sbuf->safePrintf("<!--ignore--></table>%s\n",hdr2);
-		// get the key
-		uint64_t k = *(uint64_t *)st->getKey ( i );
-		// get the data
-		SectionVote *sv = (SectionVote *)st->getValueFromSlot ( i );
-		// parse key
-		int32_t tagHash     = (int32_t)(k & 0xffffffff);
-		int32_t sectionType = (int32_t)(k >> 32);
-		//int32_t tagHash     = (int32_t)(k >> 32);
-		//int32_t sectionType = (int32_t)(k & 0xffffffff);
-		// convert to string
-		char *st = getSectionTypeAsStr ( sectionType );
-		float avg = 0.0;
-		if ( sv->m_numSampled > 0 ) avg = sv->m_score/sv->m_numSampled;
-		sbuf->safePrintf("<tr>"
-				 "<td>--</td>"
-				 "<td>0x%"XINT32"</td>"
-				 "<td>%s</td>"
-				 "<td>%.02f</td>"
-				 "<td>%.02f</td>"
-				 "<td>%.02f</td>"
-				 "</tr>\n",
-				 tagHash,
-				 st,
-				 sv->m_score,
-				 sv->m_numSampled ,
-				 avg );
-	}
-	sbuf->safePrintf("</table>\n<br><br>\n");
-
-
-
-
-
-
-
-
-	// now print the OLD voting table
-	sbuf->safePrintf("<b>OLD Section Voting Table (osvt)</b>\n");
-	sbuf->safePrintf("<br>\n");
-	sbuf->safePrintf("<i>numSampled is # of docs that had tagHash or "
-			 "contentHash.\n");
-	// print table header
-	sbuf->safePrintf("%s",hdr2);
-	st = &m_osvt;
-	rcount = 0;
-	for ( int32_t i = 0 ; i < st->m_numSlots ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// skip if empty
-		if ( ! st->m_flags[i] ) continue;
-		// see if one big table causes a browser slowdown
-		if ( (++rcount % TABLE_ROWS ) == 0 ) 
-			sbuf->safePrintf("<!--ignore--></table>%s\n",hdr2);
-		// get the key
-		uint64_t k = *(uint64_t *)st->getKey ( i );
-		// get the data
-		SectionVote *sv = (SectionVote *)st->getValueFromSlot ( i );
-		// parse key
-		int32_t tagHash     = (int32_t)(k & 0xffffffff);
-		int32_t sectionType = (int32_t)(k >> 32);
-		//int32_t tagHash     = (int32_t)(k >> 32);
-		//int32_t sectionType = (int32_t)(k & 0xffffffff);
-		// convert to string
-		char *st = getSectionTypeAsStr ( sectionType );
-		float avg = 0.0;
-		if ( sv->m_numSampled > 0 ) avg = sv->m_score/sv->m_numSampled;
-		sbuf->safePrintf("<tr>"
-				 "<td>--</td>"
-				 "<td>0x%"XINT32"</td>"
-				 "<td>%s</td>"
-				 "<td>%.02f</td>"
-				 "<td>%.02f</td>"
-				 "<td>%.02f</td>"
-				 "</tr>\n",
-				 tagHash,
-				 st,
-				 sv->m_score,
-				 sv->m_numSampled ,
-				 avg );
-	}
-	sbuf->safePrintf("</table>\n<br><br>\n");
-
-	sbuf->safePrintf("<table border=1 cellpadding=3>\n");
-	sbuf->safePrintf(
-			 "<tr><td><nobr><b>Section Type</b></nobr></td>"
-			 "<td><b>Description</b></td></tr>\n"
-			 
-			 "<tr><td>texty</td><td>An average "
-			 "score of 0.0 means the "
-			 "section does not have any words that are not "
-			 "in anchor test. An average "
-			 "score of 1.0 means the section "
-			 "has words, none of which are in anchor text."
-			 "</td></tr>\n"
-
-			 "<tr><td>clock</td><td>An average "
-			 "score of 1.0 means "
-			 "section identified as "
-			 "containing a clock. An average "
-			 "score of 0.0 mean it contains "
-			 "a date that is definitely not a clock."
-			 "</td></tr>\n"
-
-			 "<tr><td>eurdatefmt</td><td>An average "
-			 "score of 1.0 means "
-			 "the section contains a date in european format, "
-			 "which means day first, not month. An average "
-			 "score of 0.0 "
-			 "means the section contains a date that is NOT in "
-			 "european format.</td></tr>\n"
-
-			 //"<tr><td>event</td><td>"
-			 //"</td></tr>\n"
-
-			 //"<tr><td>address</td><td></td></tr>\n"
-
-			 "<tr><td>tagpairhash</td><td>"
-			 "All unique adjacent tag ids are hashed to form "
-			 "this number which represents the overal strucutre "
-			 "of the document. The tagHash is the tagPairHash "
-			 "in this case."
-			 "</td></tr>\n"
-
-			 "<tr><td>contenthash</td><td>"
-			 "The tagHash in this case is really "
-			 "the content hash of the words in the section XORed "
-			 "with the original tagHash."
-			 "</td></tr>\n"
-
-			 //"<tr><td>textmaxsmpl</td><td></td></tr>\n"
-			 //"<tr><td>waitinline</td><td></td></tr>\n"
-			 //"<tr><td></td><td></td></tr>\n"
-			 );
-	sbuf->safePrintf("</table>\n<br><br>\n");
-	// must be \0 terminated
-	if ( sbuf->m_buf[sbuf->m_length] ) { char *xx=NULL;*xx=0; }
-
-			 
-	return true;
-}
-*/
-
-void Sections::printFlags ( SafeBuf *sbuf , Section *sn , bool justEvents ) {
+void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 	sec_t f = sn->m_flags;
-
-
-	//if ( f & SEC_ADDRESS_CONTAINER )
-	//	sbuf->safePrintf("addresscontainer ");
-	//if ( f & SEC_EVENT )
-	//	sbuf->safePrintf("hasevent ");
-
-	//if ( f & SEC_MULT_EVENTS_1 )
-	//	sbuf->safePrintf("multevents1 ");
-	//if ( f & SEC_MULT_EVENTS_2 )
-	//	sbuf->safePrintf("multevents2 ");
-	//if ( f & SEC_MULT_DATES )
-	//	sbuf->safePrintf("multdates ");
-	//if ( f & SEC_SUBSECTION )
-	//	sbuf->safePrintf("subsection ");
-	//if ( f & SEC_VENUE_PAGE )
-	//	sbuf->safePrintf("venuepage ");
-	//if ( f & SEC_MULT_ADDRESSES )
-	//	sbuf->safePrintf("multaddresses ");
-	//if ( f & SEC_MULT_PLACES )
-	//	sbuf->safePrintf("multplaces ");
-
-	if ( justEvents ) return;
 
 	if ( f & SEC_HASHXPATH )
 		sbuf->safePrintf("hashxpath ");
@@ -13181,14 +11438,6 @@ void Sections::printFlags ( SafeBuf *sbuf , Section *sn , bool justEvents ) {
 
 	if ( f & SEC_HR_CONTAINER )
 		sbuf->safePrintf("hrcontainer ");
-
-	//if ( f & SEC_TOD_EVENT_2 )
-	//	sbuf->safePrintf("containsmulttodevents ");
-	//if ( f & SEC_TOD_EVENT_3 )
-	//	sbuf->safePrintf("containsmulttodevents ");
-	//if ( sn->m_numTods >= 1 )
-	//	sbuf->safePrintf("numtods=%"INT32" ",sn->m_numTods );
-
 
 	if ( f & SEC_HAS_REGISTRATION )
 		sbuf->safePrintf("hasregistration ");
@@ -13216,10 +11465,6 @@ void Sections::printFlags ( SafeBuf *sbuf , Section *sn , bool justEvents ) {
 	if ( f & SEC_SECOND_TITLE )
 		sbuf->safePrintf("secondtitle ");
 
-	//if ( f & SEC_HAS_EVENT_DATE )
-	//	sbuf->safePrintf("haseventdate " );
-	//if ( f & SEC_HAS_NON_EVENT_DATE )
-	//	sbuf->safePrintf("hasnoneventdate " );
 	if ( f & SEC_EVENT_BROTHER )
 		sbuf->safePrintf("eventbrother " );
 	if ( f & SEC_IGNOREEVENTBROTHER )
@@ -13232,8 +11477,7 @@ void Sections::printFlags ( SafeBuf *sbuf , Section *sn , bool justEvents ) {
 		sbuf->safePrintf("pubdatecontainer ");
 	if ( f & SEC_TABLE_HEADER )
 		sbuf->safePrintf("tableheader ");
-	//if ( f & SEC_HAS_DATE )
-	//	sbuf->safePrintf("hasdate " );
+
 	if ( f & SEC_HAS_DOM )
 		sbuf->safePrintf("hasdom " );
 	if ( f & SEC_HAS_MONTH )
@@ -13244,16 +11488,14 @@ void Sections::printFlags ( SafeBuf *sbuf , Section *sn , bool justEvents ) {
 		sbuf->safePrintf("hastod " );
 	if ( f & SEC_HASEVENTDOMDOW )
 		sbuf->safePrintf("haseventdomdow " );
-	//if ( f & SEC_HAS_TODINMENU )
-	//	sbuf->safePrintf("hastodinmenu " );
+
 	if ( f & SEC_MENU_SENTENCE )
 		sbuf->safePrintf("menusentence " );
 	if ( f & SEC_MENU )
 		sbuf->safePrintf("ismenu " );
 	if ( f & SEC_MENU_HEADER )
 		sbuf->safePrintf("menuheader " );
-	//if ( f & SEC_LIST_HEADER )
-	//	sbuf->safePrintf("listheader " );
+
 	if ( f & SEC_CONTAINER )
 		sbuf->safePrintf("listcontainer " );
 	if ( f & SEC_INPUT_HEADER )
@@ -13264,44 +11506,14 @@ void Sections::printFlags ( SafeBuf *sbuf , Section *sn , bool justEvents ) {
 		sbuf->safePrintf("linktext " );
 	if ( f & SEC_PLAIN_TEXT )
 		sbuf->safePrintf("plaintext " );
-	//if ( f & SEC_NOT_MENU )
-	//	sbuf->safePrintf("notmenu " );
-	//if ( f & SEC_MAYBE_MENU )
-	//	sbuf->safePrintf("maybemenu " );
-	//if ( f & SEC_DUP )
-	//	sbuf->safePrintf("dupsection " );
-	//if ( f & SEC_IS_MENUITEM )
-	//	sbuf->safePrintf("menuitem " );
-
-
-	//if ( f & SEC_SENTENCE )
-	//	sbuf->safePrintf("sentence ");
 
 	if ( f & SEC_FAKE ) {
-		//sbuf->safePrintf("hrtag ");
-		// extra it
-		//if      ( sn->m_baseHash == BH_HR )
-		//	sbuf->safePrintf("hrtagdelim ");
-		//if ( sn->m_baseHash == BH_BR )
-		//	sbuf->safePrintf("brtagdelim ");
-		//else if ( sn->m_baseHash == BH_H1 )
-		//	sbuf->safePrintf("h1tagdelim ");
-		//else if ( sn->m_baseHash == BH_H2 )
-		//	sbuf->safePrintf("h2tagdelim ");
-		//else if ( sn->m_baseHash == BH_H3 )
-		//	sbuf->safePrintf("h3tagdelim ");
-		//else if ( sn->m_baseHash == BH_H4 )
-		//	sbuf->safePrintf("h4tagdelim ");
-		//else if ( sn->m_baseHash == BH_BRBR )
-		//	sbuf->safePrintf("brbrdelim ");
 		if ( sn->m_baseHash == BH_BULLET )
 			sbuf->safePrintf("bulletdelim ");
 		else if ( sn->m_baseHash == BH_SENTENCE )
 			sbuf->safePrintf("<b>sentence</b> ");
 		else if ( sn->m_baseHash == BH_IMPLIED )
 			sbuf->safePrintf("<b>impliedsec</b> ");
-		//else if ( sn->m_baseHash == BH_IMPLIED_LIST )
-		//	sbuf->safePrintf("<b>impliedLIST</b> ");
 		else { char *xx=NULL;*xx=0; }
 	}
 
@@ -13332,24 +11544,18 @@ void Sections::printFlags ( SafeBuf *sbuf , Section *sn , bool justEvents ) {
 
 	if ( f & SEC_IN_TABLE )
 		sbuf->safePrintf("intable ");
-	//if ( f & SEC_ARTICLE )
-	//	sbuf->safePrintf("inarticle ");
 	if ( f & SEC_SCRIPT )
 		sbuf->safePrintf("inscript ");
 	if ( f & SEC_NOSCRIPT )
 		sbuf->safePrintf("innoscript ");
 	if ( f & SEC_STYLE )
 		sbuf->safePrintf("instyle ");
-	//if ( f & SEC_FIRST_HIDDEN )
-	//	sbuf->safePrintf("infirstdivhide ");
 	if ( f & SEC_HIDDEN )
 		sbuf->safePrintf("indivhide ");
 	if ( f & SEC_SELECT )
 		sbuf->safePrintf("inselect ");
 	if ( f & SEC_MARQUEE )
 		sbuf->safePrintf("inmarquee ");
-	//if ( f & SEC_A )
-	//	sbuf->safePrintf("inhref ");
 	if ( f & SEC_IN_TITLE )
 		sbuf->safePrintf("intitle ");
 	if ( f & SEC_IN_HEADER )
@@ -13360,12 +11566,6 @@ void Sections::printFlags ( SafeBuf *sbuf , Section *sn , bool justEvents ) {
 	if ( f & SEC_OPEN_ENDED )
 		sbuf->safePrintf("openended " );
 
-	//for ( int32_t i = 0 ; i < (int32_t)sizeof(turkbits_t)*8 ; i++ ) {
-	//	uint64_t mask = ((turkbits_t)1) << (turkbits_t)i;
-	//	if ( ! ((sn->m_turkBits) & mask ) ) continue;
-	//	sbuf->safePrintf("%s ",getTurkBitLabel(mask));
-	//}
-
 	// sentence flags
 	sentflags_t sf = sn->m_sentFlags;
 	for ( int32_t i = 0 ; i < 64 ; i++ ) {
@@ -13375,9 +11575,6 @@ void Sections::printFlags ( SafeBuf *sbuf , Section *sn , bool justEvents ) {
 			sbuf->safePrintf("%s ",getSentBitLabel(mask));
 	}
 
-	//if ( f & SEC_HAS_DATE )
-	//	sbuf->safePrintf("hasdate ");
-	//if ( ! f ) sbuf->safePrintf("&nbsp;");
 }
 
 char *getSectionTypeAsStr ( int32_t sectionType ) {
@@ -14643,305 +12840,6 @@ bool Sections::setTableDateHeaders ( Section *ts ) {
 	return true;
 }
 
-/*
-bool Sections::swoggleTables ( ) {
-
-	// . turn this off for now because it is too confusing
-	// . really just need to rewrite the entire table and re-set
-	//   the sections class!!
-	return true;
-
-	Section *lastTable = NULL;
-	// scan dates until we find one in a table
-	for ( int32_t i = 0 ; i < m_dates->m_numDatePtrs ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		Date *di = m_dates->m_datePtrs[i];
-		// skip if nuked. part of a compound, or in bad section.
-		if ( ! di ) continue;
-		// sanity check
-		if ( di->m_a < 0 ) continue;
-		// get section
-		Section *si = di->m_section;
-		// must be in a table
-		if ( ! ( si->m_flags & SEC_IN_TABLE ) ) continue;
-		// get our table we are swoggling
-		Section *ts = si->m_tableSec;
-		// seems like this happens for bad sections like
-		// display:none hidden sections etc.
-		if ( ! ts ) continue;
-		// bail if already did it
-		if ( ts == lastTable ) continue;
-		// set it
-		lastTable = ts;
-		// swoggle that table
-		if ( ! swoggleTable ( i , ts ) ) return false;
-	}
-	return true;
-}
-
-// . swoggle the table at section "ts"
-// . start at date #dn
-bool Sections::swoggleTable ( int32_t dn , Section *ts ) { 
-
-	char adtbuf[1000];
-	HashTableX adt;
-	adt.set ( 4 , 0 , 64 , adtbuf, 1000, false,m_niceness,"adttab");
-
-	bool adjacentColumns = false;
-	bool adjacentRows    = false;
-	for ( int32_t i = dn ; i < m_dates->m_numDatePtrs ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		Date *di = m_dates->m_datePtrs[i];
-		// skip if nuked. part of a compound, or in bad section.
-		if ( ! di ) continue;
-		// sanity check
-		if ( di->m_a < 0 ) continue;
-		// if it is a single tod then make sure not like "8.32"
-		if ( di->m_flags & DF_FUZZY ) continue;
-		// get date's section
-		Section *si = di->m_section;
-		// must be in that table
-		if ( si->m_tableSec != ts ) break;
-		// get date types
-		datetype_t dt = di->m_hasType;
-		// see if same date type in prev row or col
-		int32_t row = si->m_rowNum;
-		int32_t col = si->m_colNum;
-		int32_t prevRow = row - 1;
-		int32_t prevCol = col - 1;
-		int32_t h;
-		if ( prevRow >= 0 ) {
-			h = hash32h ( prevRow , col );
-			h = hash32h ( (int32_t)ts , h );
-			h = hash32h ( dt , h ); // datetype
-			if ( adt.isInTable ( &h ) ) {
-				adjacentColumns = true;
-				//break;
-			}
-		}
-		if ( prevCol >= 0 ) {
-			h = hash32h ( row , prevCol );
-			h = hash32h ( (int32_t)ts , h );
-			h = hash32h ( dt , h ); // datetype
-			if ( adt.isInTable ( &h ) ) {
-				adjacentRows = true;
-				//break;
-			}
-		}
-		// add our hash
-		h = hash32h ( row , col );
-		h = hash32h ( (int32_t)ts , h );
-		h = hash32h ( dt , h ); // datetype
-		if ( ! adt.addKey ( &h ) ) return false;
-	}
-	// bail if nobody adjacent or both!
-	if ( ! adjacentColumns && ! adjacentRows ) return true;
-	if (   adjacentColumns &&   adjacentRows ) return true;
-	if (   adjacentColumns ) return true;
-
-	Section *next    = NULL;
-	Section *tailSec = NULL;
-	// . remove <tr> sections from the doubly linked list of sections
-	// . up <tr> children's m_parent in the loop below though
-	for ( Section *si = ts ; si ; si = next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get next in case excised
-		next = si->m_next;
-		// stop if out of table
-		if ( si->m_a >= ts->m_b ) break;
-		// remember next section after last row
-		tailSec = si->m_next;
-		// skip if not td section or th
-		if ( si->m_tagId != TAG_TR ) continue;
-		// excise from linked list
-		si->m_prev->m_next = si->m_next;
-		si->m_next->m_prev = si->m_prev;
-		// its a doubly linked list
-		si->m_next->m_prev = si->m_prev;
-		si->m_prev->m_next = si->m_next;
-		// sanity
-		si->m_next = NULL;
-		si->m_prev = NULL;
-	}
-
-#define MAXCOLS 50
-	Section *colSections[MAXCOLS];
-	Section *lastColCell[MAXCOLS];
-	Section *lastColKid [MAXCOLS];
-	for ( int32_t i = 0 ; i < MAXCOLS ; i++ ) {
-		colSections[i] = NULL;
-		lastColCell[i] = NULL;
-		lastColKid [i] = NULL;
-	}
-	int32_t maxColnum = 0;
-
-	// scan the <td> sections in the table
-	for ( Section *si = ts ; si ; si = next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get next in case excised
-		next = si->m_next;
-		// stop if out of table
-		if ( si->m_a >= ts->m_b ) break;
-		// skip if not td section or th
-		if ( si->m_tagId != TAG_TD && si->m_tagId != TAG_TH ) continue;
-		// parent must be table now since we excised row
-		if ( ! si->m_parent ) continue;
-		// must be parent of excised row of THIS table, not a td
-		// in another table inside this one
-		if ( si->m_parent->m_parent != ts ) continue;
-		// excise ourselves so we can re-add in a better place
-		//si->m_prev->m_next = NULL; // si->m_next;
-		//si->m_next->m_prev = si->m_prev;
-		// its a doubly linked list
-		//si->m_next->m_prev = si->m_prev;
-		//si->m_prev->m_next = si->m_next;
-		// shortcut
-		int32_t colnum = si->m_colNum;
-		// cram everything into last column in case of too many cols
-		if ( colnum >= MAXCOLS ) colnum = MAXCOLS-1;
-		// sanity
-		if ( colnum < 0 ) { char *xx=NULL;*xx=0; }
-		// get col section. starts at colnum=1, not 0!
-		Section *cs = colSections[colnum];
-		// make a new col section if haven't already
-		if ( ! cs ) {
-			// overflow check
-			if ( m_numSections >= m_maxNumSections) {
-				char *xx=NULL;*xx=0;}
-			// insert it
-			cs = &m_sections[m_numSections++];
-			// count them as well
-			if ( colnum > maxColnum ) maxColnum = colnum;
-			// get the previous colnum from us that is non-NULL, 
-			// but use the table itself if we are the first.
-			Section *prevCol = NULL;
-			for ( int32_t pc = colnum - 1; pc >= 1 ; pc-- ) {
-				if ( ! colSections[pc] ) continue;
-				prevCol = colSections[pc];
-				break;
-			}
-			// the column sections are in a brother list
-			cs->m_prevBrother = prevCol;
-			if ( prevCol ) prevCol->m_nextBrother = cs;
-			// make it an implied section
-			cs->m_baseHash = BH_IMPLIED;
-			// reset these
-			cs->m_headColSection = NULL;
-			cs->m_headRowSection = NULL;
-			cs->m_firstWordPos = -1;
-			cs->m_lastWordPos  = -1;
-			cs->m_firstPlaceNum= -1;
-			cs->m_senta        = -1;
-			cs->m_sentb        = -1;
-			cs->m_a            = si->m_a;
-			cs->m_b            = si->m_b;
-			cs->m_parent       = ts;
-			cs->m_tagId        = TAG_TC;
-			cs->m_flags        = 0;
-			cs->m_flags       |= SEC_NOTEXT;
-			// store in temp array
-			colSections[colnum] = cs;
-		}
-		// get it
-		if ( si->m_a == 1156 && si->m_b == 1171 )
-			log("you");
-		// col sec is our new parent, not the <tr> section we erased
-		si->m_parent = cs;
-		// update col section's m_b
-		if ( si->m_b > cs->m_b ) cs->m_b = si->m_b;
-		// assume not in brother list
-		si->m_prevBrother = NULL;
-		si->m_nextBrother = NULL;
-		// and in the doubly linked list we now follow the
-		// last one in the colsection
-		Section *lastCell = lastColCell[colnum];
-		// insert into brother list if we are not the first
-		if ( lastCell ) {
-			lastCell->m_nextBrother = si;
-			si->m_prevBrother      = lastCell;
-		}
-		// get last section in this th/td cell
-		Section *lastKid = si;
-		// endpoint of that th/td cell
-		int32_t b = lastKid->m_b;
-		// and find the true last kid in this cell
-		for ( ; lastKid ; lastKid = lastKid->m_next ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// stop if we are the last section period
-			if ( ! lastKid->m_next ) break;
-			// keep looping as int32_t as the "lastKid" 
-			// section is contained in this td/th cell
-			if ( lastKid->m_next->m_a >= b ) break;
-		}
-
-		// stitch the th/td cells in the same column together
-		Section *prevLastKid = lastColKid[colnum];
-		// link this cell up with the previous section it should be w/
-		if ( prevLastKid ) {
-			prevLastKid->m_next = si;
-			si->m_prev          = prevLastKid;
-		}
-		else {
-			si->m_prev = cs;
-			cs->m_next = si;
-		}
-
-		// this td/th section is not connected to anything else yet. 
-		// if we do not connect it right above we will connect it up
-		// in the loop below.
-		// no, we can't do this because it messes up our scan for
-		// this for loop!
-		//lastKid->m_next = NULL;
-		// we are the new last kid for this col #
-		lastColCell[colnum] = si;
-		lastColKid [colnum] = lastKid;
-	}
-
-	//
-	// now set the m_prev/m_next members of each column section
-	//
-	Section *prevLastKid = NULL;
-	for ( int32_t i = 1 ; i <= maxColnum ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// get it
-		Section *cs = colSections[i];
-		// skip if empty
-		if ( ! cs ) continue;
-		// get last section in this column
-		Section *lastKid = lastColKid[i];
-		// insert column into linked list with the lastKid
-		// of the previous column
-		if ( prevLastKid ) {
-			cs->m_prev          = prevLastKid;
-			prevLastKid->m_next = cs;
-		}
-		else {
-			cs->m_prev = ts;
-			ts->m_next = cs;
-		}
-		// assume we are the final lastKid and will not be connected
-		// with the "prevLastKid" logic above
-		lastKid->m_next = tailSec;
-		tailSec->m_prev = lastKid;
-		// set this now
-		prevLastKid = lastKid;
-	}
-
-	//verifySections();
-
-	return true;
-}
-*/
-
-
 // . just the voting info for passing into diffbot in json
 // . along w/ the title/summary/etc. we can return this json blob for each search result
 bool Sections::printVotingInfoInJSON ( SafeBuf *sb ) {
@@ -15123,7 +13021,7 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 				 pewn,
 				 sn->m_numOccurences);//totalOccurences );
 		// now show the flags
-		printFlags ( sbuf , sn , false );
+		printFlags ( sbuf , sn );
 		// first few words of section
 		int32_t a = sn->m_a;
 		int32_t b = sn->m_b;
@@ -15173,134 +13071,7 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 	return true;
 }
 
-/*
-bool SectionVotingTable::print ( SafeBuf *sbuf , char *title ) {
-
-
-	// title = "new/old section voting table"
-	sbuf->safePrintf("<b>%s</b>\n",title );
-	sbuf->safePrintf("<br>");
-	sbuf->safePrintf("<i>turkTagHash is combined with sectionType to "
-			 "make the "
-			 "key in sectiondb. The data is everything else. "
-			 "<br>"
-			 "*The turkTagHash is XOR'ed with the contentHash "
-			 "for the contentHash "
-			 "section type, and is the tagPairHash for the "
-			 "tagPairHash section type.</i>");
-	// print table header
-	char *hdr2 =
-		"<table border=1>"
-		"<tr>"
-		"<td><b>siteHash</b></td>"
-		"<td><b>turkTagHash*</b></td>"
-		"<td><b>sectionType</b></td>"
-		"<td><b>scoreTotal</b></td>"
-		"<td><b>numSampled</b></td>"
-		"<td><b>avgScore</b></td>"
-		"</tr>\n";
-	sbuf->safePrintf("%s",hdr2);
-	HashTableX *st = &m_svt;
-	int32_t rcount = 0;
-	for ( int32_t i = 0 ; i < st->m_numSlots ; i++ ) {
-		// breathe
-		//QUICKPOLL(m_niceness);
-		// skip if empty
-		if ( ! st->m_flags[i] ) continue;
-		// see if one big table causes a browser slowdown
-		if ( (++rcount % TABLE_ROWS ) == 0 ) 
-			sbuf->safePrintf("<!--ignore--></table>%s\n",hdr2);
-		// get the key
-		uint64_t k = *(uint64_t *)st->getKey ( i );
-		// get the data
-		SectionVote *sv = (SectionVote *)st->getValueFromSlot ( i );
-		// parse key
-		int32_t turkTagHash = (int32_t)(k & 0xffffffff);
-		int32_t sectionType = (int32_t)(k >> 32);
-		//int32_t tagHash     = (int32_t)(k >> 32);
-		//int32_t sectionType = (int32_t)(k & 0xffffffff);
-		// convert to string
-		char *st = getSectionTypeAsStr ( sectionType );
-		float avg = 0.0;
-		if ( sv->m_numSampled > 0 ) avg = sv->m_score/sv->m_numSampled;
-		sbuf->safePrintf("<tr>"
-				 "<td>--</td>"
-				 "<td>0x%"XINT32"</td>"
-				 "<td>%s</td>"
-				 "<td>%.02f</td>"
-				 "<td>%.02f</td>"
-				 "<td>%.02f</td>"
-				 "</tr>\n",
-				 turkTagHash,
-				 st,
-				 sv->m_score,
-				 sv->m_numSampled ,
-				 avg );
-	}
-	sbuf->safePrintf("</table>\n<br><br>\n");
-
-
-
-	sbuf->safePrintf("<table border=1 cellpadding=3>\n");
-	sbuf->safePrintf(
-			 "<tr><td><nobr><b>Section Type</b></nobr></td>"
-			 "<td><b>Description</b></td></tr>\n"
-			 
-			 "<tr><td>texty</td><td>An average "
-			 "score of 0.0 means the "
-			 "section does not have any words that are not "
-			 "in anchor test. An average "
-			 "score of 1.0 means the section "
-			 "has words, none of which are in anchor text."
-			 "</td></tr>\n"
-
-			 "<tr><td>clock</td><td>An average "
-			 "score of 1.0 means "
-			 "section identified as "
-			 "containing a clock. An average "
-			 "score of 0.0 mean it contains "
-			 "a date that is definitely not a clock."
-			 "</td></tr>\n"
-
-			 "<tr><td>eurdatefmt</td><td>An average "
-			 "score of 1.0 means "
-			 "the section contains a date in european format, "
-			 "which means day first, not month. An average "
-			 "score of 0.0 "
-			 "means the section contains a date that is NOT in "
-			 "european format.</td></tr>\n"
-
-			 //"<tr><td>event</td><td>"
-			 //"</td></tr>\n"
-
-			 //"<tr><td>address</td><td></td></tr>\n"
-
-			 "<tr><td>tagpairhash</td><td>"
-			 "All unique adjacent tag ids are hashed to form "
-			 "this number which represents the overal strucutre "
-			 "of the document. The turkTagHash is the tagPairHash "
-			 "in this case."
-			 "</td></tr>\n"
-
-			 "<tr><td>contenthash</td><td>"
-			 "The turkTagHash in this case is really "
-			 "the content hash of the words in the section XORed "
-			 "with the original turkTagHash."
-			 "</td></tr>\n"
-
-			 //"<tr><td>textmaxsmpl</td><td></td></tr>\n"
-			 //"<tr><td>waitinline</td><td></td></tr>\n"
-			 //"<tr><td></td><td></td></tr>\n"
-			 );
-	sbuf->safePrintf("</table>\n<br><br>\n");
-	// must be \0 terminated
-	if ( sbuf->m_buf[sbuf->m_length] ) { char *xx=NULL;*xx=0; }
-
-	return true;
-}
-*/
-
-bool Sections::printSectionDiv ( Section *sk , char format ) { // bool forProCog ) {
+bool Sections::printSectionDiv ( Section *sk , char format ) {
 	//log("sk=%"INT32"",sk->m_a);
 	// enter a new div section now
 	m_sbuf->safePrintf("<br>");
@@ -15342,188 +13113,136 @@ bool Sections::printSectionDiv ( Section *sk , char format ) { // bool forProCog
 		// only encode if it is a tag
 		m_sbuf->htmlEncode(m_wptrs[sk->m_a],m_wlens[sk->m_a],false );
 
-	//if ( forProCog )
-	//	m_sbuf->safePrintf("A=%"INT32" ",sk->m_a);
-
-
-	/*
-	  take out for now since we changed the stats class around
-	if ( format == FORMAT_PROCOG && sk->m_stats.m_numUniqueSites >= 2 ) {
-		// do not count our own site!
-		m_sbuf->safePrintf("<i>"
-				   "<font size=-1>"
-				   "<a href=\"/search?"
-				   // turn off summary deduping
-				   "dr=0&"
-				   // turn ON site clustering
-				   "sc=1&"
-				   "q=gbsectionhash:%"UINT64"\">"
-				   "sitedups=%"INT32""
-				   "</a>"
-				   "</font>"
-				   "</i> "
-				   , sk->m_sentenceContentHash64
-				   ,(int32_t)sk->m_stats.m_numUniqueSites-1);
-	}
-	*/
-
 	m_sbuf->safePrintf("<i>");
 
-	if ( format == FORMAT_PROCOG && (sk->m_flags & SEC_SENTENCE) ) {
-		sec_t f = sk->m_flags;
-		//if ( f & SEC_SENTENCE )
-		//	m_sbuf->safePrintf("sentence " );
-		if ( f & SEC_MENU_SENTENCE )
-			m_sbuf->safePrintf("menusentence " );
-		if ( f & SEC_MENU )
-			m_sbuf->safePrintf("ismenu " );
-		if ( f & SEC_MENU_HEADER )
-			m_sbuf->safePrintf("menuheader " );
-	}
+	// print the flags
+	m_sbuf->safePrintf("A=%"INT32" ",sk->m_a);
+
+	// print tag hash now
+	m_sbuf->safePrintf("taghash=%"UINT32" ",(int32_t)sk->m_tagHash);
+
+	m_sbuf->safePrintf("turktaghash=%"UINT32" ",
+	                   (int32_t)sk->m_turkTagHash32);
+
+	if ( sk->m_contentHash64 )
+		m_sbuf->safePrintf("ch64=%"UINT64" ",sk->m_contentHash64);
+	if ( sk->m_sentenceContentHash64 &&
+	     sk->m_sentenceContentHash64 != sk->m_contentHash64 )
+		m_sbuf->safePrintf("sch=%"UINT64" ",
+		                   sk->m_sentenceContentHash64);
 
 
-	//if ( sk->m_sentenceContentHash64 && 
-	//     sk->m_sentenceContentHash64 ) // != sk->m_contentHash64 )
-	//	m_sbuf->safePrintf("sch=%"UINT64" ",
-	//			   sk->m_sentenceContentHash64);
-
-	// show dup votes if any
-	//if ( sk->m_votesForDup )
-	//	m_sbuf->safePrintf("dupvotes=%"INT32" ",sk->m_votesForDup);
-	//if ( sk->m_votesForNotDup )
-	//	m_sbuf->safePrintf("notdupvotes=%"INT32" ",
-	//			   sk->m_votesForNotDup);
-	
-	if ( format != FORMAT_PROCOG ) {
-		// print the flags
-		m_sbuf->safePrintf("A=%"INT32" ",sk->m_a);
-		
-		// print tag hash now
-		m_sbuf->safePrintf("taghash=%"UINT32" ",(int32_t)sk->m_tagHash);
-		
-		m_sbuf->safePrintf("turktaghash=%"UINT32" ",
-				   (int32_t)sk->m_turkTagHash32);
-		
-		if ( sk->m_contentHash64 )
-			m_sbuf->safePrintf("ch64=%"UINT64" ",sk->m_contentHash64);
-		if ( sk->m_sentenceContentHash64 && 
-		     sk->m_sentenceContentHash64 != sk->m_contentHash64 )
-			m_sbuf->safePrintf("sch=%"UINT64" ",
-					   sk->m_sentenceContentHash64);
-
-
-		// show this stuff for tags that contain sentences indirectly,
-		// that is what we hash in XmlDoc::hashSections()
-		//if(sk->m_indirectSentHash64 && sk->m_tagId != TAG_TEXTNODE) {
-		uint64_t mod = 0;
-		if ( sk->m_flags & SEC_HASHXPATH ) {
+	// show this stuff for tags that contain sentences indirectly,
+	// that is what we hash in XmlDoc::hashSections()
+	//if(sk->m_indirectSentHash64 && sk->m_tagId != TAG_TEXTNODE) {
+	uint64_t mod = 0;
+	if ( sk->m_flags & SEC_HASHXPATH ) {
 		// show for all tags now because diffbot wants to see
 		// markup on all tags
 		//if ( sk->m_indirectSentHash64 && sk->m_tagId !=TAG_TEXTNODE){
 		//if ( sk->m_stats.m_totalDocIds ) {
-			mod = (uint32_t)sk->m_turkTagHash32;
-			mod ^= (uint32_t)(uint64_t)m_siteHash64;
-			m_sbuf->safePrintf("<a style=decoration:none; "
-					   "href=/search?c=%s&"
-					   "q=gbfacetstr%%3A"
-					   "gbxpathsitehash%"UINT64">"
-					   //"<u>"
-					   "xpathsitehash=%"UINT64""
-					   //"</u>"
-					   "</a> "
-					   //"</font> "
-					   ,m_coll
-					   ,mod
-					   ,mod);
-		}
-
-		SectionStats *ss = &sk->m_stats;
-
-		// also the value of the inner html hashed
-		if ( sk->m_flags & SEC_HASHXPATH ) {//ss->m_totalMatches > 0) {
-			uint32_t val ;
-			val = (uint32_t) sk->m_indirectSentHash64 ;
-			m_sbuf->safePrintf("xpathsitehashval=%"UINT32" ", val );
-		}
-
-		// some voting stats
-		if ( sk->m_flags & SEC_HASHXPATH ) {//ss->m_totalMatches > 0) {
-			m_sbuf->safePrintf("_s=M%"INT32"D%"INT32"n%"INT32"u%"INT32"h%"UINT32" "
-					   ,(int32_t)ss->m_totalMatches
-					   ,(int32_t)ss->m_totalDocIds
-					   ,(int32_t)ss->m_totalEntries
-					   ,(int32_t)ss->m_numUniqueVals
-					   ,(uint32_t)mod
-					   );
-		}
-
-		// take this out for now... MDW 7/7/2014
-
-		// // for the gbsectionhash:xxxxx terms we index
-		// if ( sk->m_sentenceContentHash64 ) {
-		// 	uint32_t mod = (uint32_t)sk->m_turkTagHash32;
-		// 	mod ^= (uint32_t)m_siteHash64;
-		// 	m_sbuf->safePrintf(//"<font color=red>"
-		// 			   "gbsectionhash32=%"UINT32" "
-		// 			   //"</font> "
-		// 			   ,mod);
-		// }
-		// if ( sk->m_contentHash64 )
-		// 	m_sbuf->safePrintf(//"<font color=red>"
-		// 			   "ch32=%"UINT32""
-		// 			   //"</font> "
-		// 			   ,
-		// 			   (uint32_t)sk->m_contentHash64);
-					   
-		
-		if ( sk->m_lastLinkContentHash32 )
-			m_sbuf->safePrintf("llch=%"UINT32" ",
-					   (int32_t)sk->m_lastLinkContentHash32);
-		
-		if ( sk->m_leftCell )
-			m_sbuf->safePrintf("leftcellA=%"INT32" ",
-					   (int32_t)sk->m_leftCell->m_a);
-		if ( sk->m_aboveCell )
-			m_sbuf->safePrintf("abovecellA=%"INT32" ",
-					   (int32_t)sk->m_aboveCell->m_a);
-		
-		printFlags ( m_sbuf , sk , false );
-	
-		if ( isHardSection(sk) )
-			m_sbuf->safePrintf("hardsec ");
-	
-		// get addr index ptr if any (could be mult)
-		int32_t acount = 0;
-		//int64_t sh = 0LL;
-		int32_t pi = sk->m_firstPlaceNum;
-		int32_t np = m_aa->m_numSorted;
-		for ( ; pi >= 0 && pi < np ; pi++ ) {
-			Place *p = m_aa->m_sorted[pi];
-			// stop if not in section any more
-			if ( p->m_a >= sk->m_b ) break;
-			// get hash
-			//int64_t tt = p->m_hash;
-			// get max
-			//if ( ! sh || tt > sh ) sh = tt;
-			// count them
-			acount++;
-		}
-		// print those out
-		if ( sk->m_phoneXor ) 
-			m_sbuf->safePrintf("phonexor=0x%"XINT32" ",sk->m_phoneXor);
-		if ( sk->m_emailXor ) 
-			m_sbuf->safePrintf("emailxor=0x%"XINT32" ",sk->m_emailXor);
-		if ( sk->m_priceXor ) 
-			m_sbuf->safePrintf("pricexor=0x%"XINT32" ",sk->m_priceXor);
-		if ( sk->m_todXor )
-			m_sbuf->safePrintf("todxor=0x%"XINT32" ",sk->m_todXor);
-		if ( sk->m_dayXor )
-			m_sbuf->safePrintf("dayxor=0x%"XINT32" ",sk->m_dayXor);
-		if ( sk->m_addrXor )
-			m_sbuf->safePrintf("addrxor=0x%"XINT32" ",sk->m_addrXor);
-		if ( acount >= 2 )
-			m_sbuf->safePrintf(" (%"INT32" places)",acount);
+		mod = (uint32_t)sk->m_turkTagHash32;
+		mod ^= (uint32_t)(uint64_t)m_siteHash64;
+		m_sbuf->safePrintf("<a style=decoration:none; "
+		                   "href=/search?c=%s&"
+		                   "q=gbfacetstr%%3A"
+		                   "gbxpathsitehash%"UINT64">"
+		                   //"<u>"
+		                   "xpathsitehash=%"UINT64""
+		                   //"</u>"
+		                   "</a> "
+		                   //"</font> "
+		                   ,m_coll
+		                   ,mod
+		                   ,mod);
 	}
+
+	SectionStats *ss = &sk->m_stats;
+
+	// also the value of the inner html hashed
+	if ( sk->m_flags & SEC_HASHXPATH ) {//ss->m_totalMatches > 0) {
+		uint32_t val ;
+		val = (uint32_t) sk->m_indirectSentHash64 ;
+		m_sbuf->safePrintf("xpathsitehashval=%"UINT32" ", val );
+	}
+
+	// some voting stats
+	if ( sk->m_flags & SEC_HASHXPATH ) {//ss->m_totalMatches > 0) {
+		m_sbuf->safePrintf("_s=M%"INT32"D%"INT32"n%"INT32"u%"INT32"h%"UINT32" "
+		                   ,(int32_t)ss->m_totalMatches
+		                   ,(int32_t)ss->m_totalDocIds
+		                   ,(int32_t)ss->m_totalEntries
+		                   ,(int32_t)ss->m_numUniqueVals
+		                   ,(uint32_t)mod
+		                   );
+	}
+
+	// take this out for now... MDW 7/7/2014
+
+	// // for the gbsectionhash:xxxxx terms we index
+	// if ( sk->m_sentenceContentHash64 ) {
+	// 	uint32_t mod = (uint32_t)sk->m_turkTagHash32;
+	// 	mod ^= (uint32_t)m_siteHash64;
+	// 	m_sbuf->safePrintf(//"<font color=red>"
+	// 			   "gbsectionhash32=%"UINT32" "
+	// 			   //"</font> "
+	// 			   ,mod);
+	// }
+	// if ( sk->m_contentHash64 )
+	// 	m_sbuf->safePrintf(//"<font color=red>"
+	// 			   "ch32=%"UINT32""
+	// 			   //"</font> "
+	// 			   ,
+	// 			   (uint32_t)sk->m_contentHash64);
+
+
+	if ( sk->m_lastLinkContentHash32 )
+		m_sbuf->safePrintf("llch=%"UINT32" ",
+		                   (int32_t)sk->m_lastLinkContentHash32);
+
+	if ( sk->m_leftCell )
+		m_sbuf->safePrintf("leftcellA=%"INT32" ",
+		                   (int32_t)sk->m_leftCell->m_a);
+	if ( sk->m_aboveCell )
+		m_sbuf->safePrintf("abovecellA=%"INT32" ",
+		                   (int32_t)sk->m_aboveCell->m_a);
+
+	printFlags ( m_sbuf , sk );
+	
+	if ( isHardSection(sk) )
+		m_sbuf->safePrintf("hardsec ");
+	
+	// get addr index ptr if any (could be mult)
+	int32_t acount = 0;
+	//int64_t sh = 0LL;
+	int32_t pi = sk->m_firstPlaceNum;
+	int32_t np = m_aa->m_numSorted;
+	for ( ; pi >= 0 && pi < np ; pi++ ) {
+		Place *p = m_aa->m_sorted[pi];
+		// stop if not in section any more
+		if ( p->m_a >= sk->m_b ) break;
+		// get hash
+		//int64_t tt = p->m_hash;
+		// get max
+		//if ( ! sh || tt > sh ) sh = tt;
+		// count them
+		acount++;
+	}
+	// print those out
+	if ( sk->m_phoneXor )
+		m_sbuf->safePrintf("phonexor=0x%"XINT32" ",sk->m_phoneXor);
+	if ( sk->m_emailXor )
+		m_sbuf->safePrintf("emailxor=0x%"XINT32" ",sk->m_emailXor);
+	if ( sk->m_priceXor )
+		m_sbuf->safePrintf("pricexor=0x%"XINT32" ",sk->m_priceXor);
+	if ( sk->m_todXor )
+		m_sbuf->safePrintf("todxor=0x%"XINT32" ",sk->m_todXor);
+	if ( sk->m_dayXor )
+		m_sbuf->safePrintf("dayxor=0x%"XINT32" ",sk->m_dayXor);
+	if ( sk->m_addrXor )
+		m_sbuf->safePrintf("addrxor=0x%"XINT32" ",sk->m_addrXor);
+	if ( acount >= 2 )
+		m_sbuf->safePrintf(" (%"INT32" places)",acount);
 
 	m_sbuf->safePrintf("</i>\n");
 

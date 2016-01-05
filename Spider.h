@@ -620,13 +620,7 @@ class SpiderRequest {
 	//unsigned    m_fromSections:1;
 	// a new flag. replaced above. did we have a corresponding SpiderReply?
 	unsigned    m_hadReply:1;
-	// are we scraping from google, etc.?
 	unsigned    m_reserved3b:1;
-	// page add url can be updated to store content for the web page
-	// into titledb or something to simulate injections of yore. we can
-	// use that content as the content of the web page. the add url can
-	// accept it from a form and we store it right away into titledb i
-	// guess using msg4, then we look it up when we spider the url.
 	unsigned    m_reserved3c:1;
 	// is first ip a hash of url or docid or whatever?
 	unsigned    m_fakeFirstIp:1;

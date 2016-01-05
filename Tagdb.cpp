@@ -1489,59 +1489,9 @@ static TagDesc s_tagDesc[] = {
 	// title tag and incoming link text of the root page is stored here
 	// for determining default venue addresses
 	{"roottitles"             ,TDF_STRING|TDF_NOINDEX,0},
-	//{"rootlangid"             ,TDF_STRING|TDF_NOINDEX,0},
 
 	// for addresses of the website, can be multiple
 	{"venueaddress"             ,TDF_STRING|TDF_ARRAY|TDF_NOINDEX,0},
-
-	/*
-	{"langunknown"          ,0x00,0},
-	{"english"              ,0x00,0},
-	{"french"               ,0x00,0},
-	{"spanish"              ,0x00,0},
-	{"russian"              ,0x00,0},
-	{"turkish"              ,0x00,0},
-	{"japanese"             ,0x00,0},
-	{"chinesetraditional"   ,0x00,0},
-	{"chinesesimplified"    ,0x00,0},
-	{"korean"               ,0x00,0},
-	{"german"               ,0x00,0},
-	{"dutch"                ,0x00,0},
-	{"italian"              ,0x00,0},
-	{"finnish"              ,0x00,0},
-	{"swedish"              ,0x00,0},
-	{"norwegian"            ,0x00,0},
-	{"portuguese"           ,0x00,0},
-	{"vietnamese"           ,0x00,0},
-	{"arabic"               ,0x00,0},
-	{"hebrew"               ,0x00,0},
-	{"indonesian"           ,0x00,0},
-	{"greek"                ,0x00,0},
-	{"thai"                 ,0x00,0},
-	{"hindi"                ,0x00,0},
-	{"bengala"              ,0x00,0},
-	{"polish"               ,0x00,0},
-	{"tagalog"              ,0x00,0},
-	*/
-
-	/*
-	{"spam"                 ,0x00,0},
-	{"retail"               ,0x00,0},
-	{"business"             ,0x00,0},
-	{"adult"                ,0x00,0},
-	{"forum"                ,0x00,0},
-	{"blog"                 ,0x00,0},
-	{"news"                 ,0x00,0},
-	{"reference"            ,0x00,0},
-	{"directory"            ,0x00,0},
-	{"searchengine"         ,0x00,0},
-	{"domainsquatter"       ,0x00,0},
-	{"platform"             ,0x00,0},
-	{"travel"               ,0x00,0},
-	{"audio"                ,0x00,0},
-	{"video"                ,0x00,0},
-	{"socialnetworking"     ,0x00,0},
-	*/
 
 	{"manualban"            ,0x00,0},
 	{"manualfilter"         ,0x00,0},
@@ -1560,36 +1510,14 @@ static TagDesc s_tagDesc[] = {
 	// we now index this. really we need it for storing into title rec.
 	{"site"                 ,TDF_STRING|TDF_ARRAY,0},
 
-	//{"meta"                 ,TDF_STRING,0},
-
-	// . website contact info
-	// . used by ContactInfo.cpp
-	// . TDB_ARRAY means not to "overwrite" even if username is the same
-	// . a website can have multiple street addresses, etc.
-	// . the "lines" of an single street address are separated by ';'
-	//   instead of \n to maintain tagdb dump output readability
-	//{"streetaddress"        ,TDF_ARRAY,0},
-	//{"phonenumber"          ,TDF_ARRAY,0},
-	//{"faxnumber"            ,TDF_ARRAY,0},
-	//{"emailaddress"         ,TDF_ARRAY,0},
-	// . this tag can contain multiple zipcodes, separated by ' '
-	// . we do index these for local search
-	//{"zipcodes"             ,0x00,0},
-	// . similar to zip codes, separated by ' '
-	// . TODO: we need to fix Places.cpp to label the places for these tags
-	//   but for now we can do gbtagstreetaddress:munich and hope for
-	//   the best, although we will get websites on "munich st.!", but
-	//   maybe you can combine that with gbtagstreetaddress:germany
-	//{"countries",         ,0x00,0},
-	//{"cities",            ,0x00,0},
 	// this is "0" or "1". if it is "0" then the date lets XmlDoc.cpp know
 	// when we last tried to get the contact info for the site
 	{"hascontactinfo"       ,0x00,0},
+
 	// street address using ; as delimeter
 	{"contactaddress"              ,TDF_ARRAY|TDF_NOINDEX,0},
 	{"contactemails"               ,TDF_ARRAY|TDF_NOINDEX,0},
-	//{"emailaddressonsite"   ,TDF_ARRAY|TDF_NOINDEX,0},
-	//{"emailaddressoffsite"  ,TDF_ARRAY|TDF_NOINDEX,0},
+
 	{"hascontactform"       ,0x00,0},
 
 	// subscribe to google's blacklist and mark the sites as this
@@ -1639,95 +1567,6 @@ static TagDesc s_tagDesc[] = {
 	// . so if we did change it then that would result in two hosts
 	//   doing the throttling, really messing things up
 	{"firstip"              ,0x00,0}
-
-
-
-	/*
-	{"user.id"              ,0x00,0},
-	{"user.xml"             ,TDF_STRING,0},
-	{"user.login"           ,TDF_STRING,0},
-	{"user.password"        ,TDF_STRING,0},
-	{"user.securityquestion",TDF_STRING,0},
-	{"user.securityanswer"  ,TDF_STRING,0},
-	{"user.email"           ,TDF_STRING,0},
-	{"user.firstname"       ,TDF_STRING,0},
-	{"user.lastname"        ,TDF_STRING,0},
-	{"user.cookie"          ,TDF_STRING,0},
-	{"user.zipcode"         ,TDF_STRING,0},
-	{"user.city"            ,TDF_STRING,0},
-	{"user.state"           ,TDF_STRING,0},
-	{"user.imageurl"        ,TDF_STRING,0},
-
-	{"user.dob"             ,TDF_STRING,0},
-	{"user.language"        ,TDF_STRING,0},
-	{"user.creditcardname"  ,TDF_STRING,0},
-	{"user.creditcardnum"   ,TDF_STRING,0},
-	{"user.creditcardexp"   ,TDF_STRING,0},
-	{"user.creditcardcode"  ,TDF_STRING,0},
-	{"user.lastlogin"       ,0x00,0},
-	{"user.numlogins"       ,0x00,0},
-	{"user.openlinksnewwin" ,0x00,0},
-	{"user.usehttps"        ,0x00,0},
-	{"user.maxreadhist"     ,0x00,0},
-	{"user.maxsearchhist"   ,0x00,0},
-	{"user.format"          ,0x00,0},
-	{"user.acctbalance"     ,0x00,0},
-	{"user.acctlimit"       ,0x00,0},
-	{"user.acctsuspended"   ,0x00,0},
-	{"user.acctbillemails"  ,TDF_STRING,0},
-	{"user.adstopicid"      ,0x00,0},
-	{"user.adsdailybudget"  ,0x00,0},
-	{"user.adsdisabled"     ,0x00,0},
-	{"user.feednumqueries"  ,0x00,0},
-	{"user.feedcpq"         ,0x00,0},
-	{"user.feeddailybudget" ,0x00,0},
-	{"user.feeddisabled"    ,0x00,0},
-	{"user.feedpassword"    ,TDF_STRING,0},
-	{"user.feeddailycount"  ,TDF_ARRAY,0},
-	{"user.usertransrec"    ,TDF_ARRAY,0},
-	{"user.userhistoryrec"  ,TDF_ARRAY,0},
-	{"user.userpanelrec"    ,TDF_ARRAY,0},
-	{"trans.amount"         ,0x00,0},
-	{"trans.desc"           ,TDF_STRING,0},
-	{"hist.wasread"         ,0x00,0},
-	{"hist.url"             ,TDF_STRING,0},
-	{"hist.gigabits"        ,TDF_STRING,0},
-	{"hist.timespent"       ,0x00,0},
-	{"panel.topcid"         ,0x00,0},
-	{"panel.showmainstream" ,0x00,0},
-	{"panel.showblogs"      ,0x00,0},
-	{"panel.showforum"      ,0x00,0},
-	{"panel.showweb"        ,0x00,0},
-	{"panel.showsearchbox"  ,0x00,0},
-	{"panel.showimages"     ,0x00,0},
-	{"panel.showvideo"      ,0x00,0},
-	{"panel.showchatbox"    ,0x00,0},
-	{"panel.showchatpics"   ,0x00,0},
-	{"panel.chatboxnumlines",0x00,0},
-	{"panel.popsliderval"   ,0x00,0},
-	{"panel.agesliderval"   ,0x00,0},
-	{"panel.windowxpos"     ,0x00,0},
-	{"panel.windowypos"     ,0x00,0},
-	{"panel.numstories"     ,0x00,0},
-	{"panel.storylang"      ,TDF_STRING,0},
-	{"panel.translatelang"  ,TDF_STRING,0},
-	{"panel.displaylang"    ,TDF_STRING,0},
-	{"panel.filterquery"    ,TDF_STRING,0},
-	{"panel.sendemailalerts",TDF_STRING,0},
-	{"chat.comment"         ,TDF_STRING,0},
-
-	{"ad.topicid"           ,0x00,0},
-	{"ad.userid"            ,0x00,0},
-	{"ad.adid"              ,0x00,0},
-	{"ad.title"             ,TDF_STRING,0},
-	{"ad.text"              ,TDF_STRING,0},
-	{"ad.url"               ,TDF_STRING,0},
-	{"ad.keywordstring"     ,TDF_STRING,0},
-	{"ad.dailypledge"       ,0x00,0},
-	{"ad.disabled"          ,0x00,0},
-	{"ad.dailyimpresscount" ,TDF_ARRAY,0},
-	{"ad.dailyclickcount"   ,TDF_ARRAY,0}
-	*/
 };
 
 // . convert "domain_squatter" to ST_DOMAIN_SQUATTER

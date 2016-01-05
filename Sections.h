@@ -679,7 +679,6 @@ class Sections {
 		   char           *sectionsData,
 		   bool            sectionsDataValid ,
 		   char           *sectionsData2,
-		   //uint64_t        tagPairHash ,
 		   char           *buf         ,
 		   int32_t            bufSize     ) ;
 
@@ -688,22 +687,9 @@ class Sections {
 
 	bool verifySections ( ) ;
 
-	// . the start and end word # of the article range
-	// . all article content is in [start,end)
-	//void getArticleRange ( int32_t *start , int32_t *end );
-
-	// add docid-based forced spider recs into the metalist
-	//char *respiderLineWaiters ( char *metaList    ,
-	//			    char *metaListEnd );
-				    // these are from the parent
-				    //Url  *url         ,
-				    //int32_t  ip          ,
-				    //int32_t  priority    ) ;
-
 	int32_t getStoredSize ( ) ;
 	static int32_t getStoredSize ( char *p ) ;
 	int32_t serialize     ( char *p ) ;
-	//int32_t getMemUsed ( ) { return m_sectionsBufSize; };
 
 	bool growSections ( );
 
@@ -724,12 +710,8 @@ class Sections {
 		     //class HashTableX *rt ,
 		     class HashTableX *priceTable ) ;
 
-	void printFlags ( class SafeBuf *sbuf , class Section *sn ,
-			  bool justEvents ) ;
+	void printFlags ( class SafeBuf *sbuf , class Section *sn ) ;
 
-	bool swoggleTables ( ) ;
-	bool swoggleTable ( int32_t dn , class Section *ts ) ;
-	
 	bool printVotingInfoInJSON ( SafeBuf *sb ) ;
 
 	bool print2 ( SafeBuf *sbuf ,
@@ -831,7 +813,6 @@ class Sections {
 
 	// these are 1-1 with the Words::m_words[] array
 	class Section **m_sectionPtrs;
-	class Section **m_sectionPtrsEnd;
 
 	// save this too
 	int32_t m_nw ;
@@ -1071,11 +1052,6 @@ class SectionVotingTable {
 		    class HashTableX *dt , 
 		    uint64_t siteHash64 ,
 		    int32_t niceness ) ;
-
-
-	bool addVote1 ( Section *sn , int32_t sectionType , float score ) {
-		if ( ! sn ) return true;
-		return addVote3 ( sn->m_tagHash,sectionType,score,1);};
 
 	bool addVote2 ( int32_t tagHash, int32_t sectionType , float score ) {
 		return addVote3 ( tagHash,sectionType,score,1);};

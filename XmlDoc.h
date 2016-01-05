@@ -1607,7 +1607,6 @@ public:
 	char m_incrementedAttemptsCount;
 	char m_incrementedDownloadCount;
 	char m_redirectFlag;
-	//char m_isScraping;
 	//char m_throttleDownload;
 	char m_spamCheckDisabled;
 	char m_useRobotsTxt;
@@ -2313,14 +2312,6 @@ public:
 			 uint32_t lastSpideredDate = 0 ,
 			 int32_t  injectDocIp = 0 );
 
-
-	bool injectLinks  ( HashTableX *linkDedupTable ,
-			    HashTableX *domDedupTable ,
-			    void *finalState , 
-			    void (* finalCallback)(void *));
-
-	bool doInjectLoop ( );
-	void doneInjecting ( class XmlDoc *xd );
 	int32_t  m_i;
 	int32_t  m_blocked;
 	HashTableX  m_domDedupTable;

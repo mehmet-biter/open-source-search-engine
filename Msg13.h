@@ -95,7 +95,6 @@ public:
 	// by just blocking one ip address. and it makes it easier for them
 	// to analyze their web logs.
 	int32_t  m_forwardDownloadRequest:1;
-	int32_t  m_isScraping:1;
 	// does url end in /robots.txt ?
 	int32_t  m_isRobotsTxt:1; 
 	// should we call getTestDoc()/addTestDoc() like for the "test" coll

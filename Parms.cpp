@@ -16388,69 +16388,6 @@ void Parms::init ( ) {
 	m->m_group = 0;
 	m++;*/
 
-	m->m_title = "scraping enabled procog";
-	m->m_desc  = "Do searches for queries in this hosts part of the "
-		"query log.";
-	m->m_cgi   = "scrapepc";
-	m->m_off   = (char *)&cr.m_scrapingEnabledProCog - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "scraping enabled web";
-	m->m_desc  = "Perform random searches on googles news search engine "
-		"to add sites with ingoogle tags into tagdb.";
-	m->m_cgi   = "scrapeweb";
-	m->m_off   = (char *)&cr.m_scrapingEnabledWeb - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "scraping enabled news";
-	m->m_desc  = "Perform random searches on googles news search engine "
-		"to add sites with news and goognews and ingoogle "
-		"tags into tagdb.";
-	m->m_cgi   = "scrapenews";
-	m->m_off   = (char *)&cr.m_scrapingEnabledNews - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "scraping enabled blogs";
-	m->m_desc  = "Perform random searches on googles news search engine "
-		"to add sites with blogs and googblogs and ingoogle "
-		"tags into tagdb.";
-	m->m_cgi   = "scrapeblogs";
-	m->m_off   = (char *)&cr.m_scrapingEnabledBlogs - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	/*
-	m->m_title = "subsite detection enabled";
-	m->m_desc  = "Add the \"sitepathdepth\" to tagdb if a hostname "
-		"is determined to have subsites at a particular depth.";
-	m->m_cgi   = "ssd";
-	m->m_off   = (char *)&cr.m_subsiteDetectionEnabled - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m++;
-	*/
-
 	m->m_title = "deduping enabled";
 	m->m_desc  = "When enabled, the spider will "
 		"discard web pages which are identical to other web pages "

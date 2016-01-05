@@ -489,41 +489,6 @@ int32_t SpiderRequest::printToTableSimple ( SafeBuf *sb , char *status ,
 	sb->safePrintf(" <td><nobr>%s(%"UINT32")</nobr></td>\n",time,
 		       (uint32_t)m_addedTime);
 
-	/*
-	sb->safePrintf(" <td><nobr>");
-
-	if ( m_isNewOutlink ) sb->safePrintf("ISNEWOUTLINK ");
-	if ( m_isAddUrl ) sb->safePrintf("ISADDURL ");
-	if ( m_isPageReindex ) sb->safePrintf("ISPAGEREINDEX ");
-	if ( m_isPageParser ) sb->safePrintf("ISPAGEPARSER ");
-	if ( m_urlIsDocId ) sb->safePrintf("URLISDOCID ");
-	if ( m_isRSSExt ) sb->safePrintf("ISRSSEXT ");
-	if ( m_isUrlPermalinkFormat ) sb->safePrintf("ISURLPERMALINKFORMAT ");
-	if ( m_isPingServer ) sb->safePrintf("ISPINGSERVER ");
-	if ( m_isInjecting ) sb->safePrintf("ISINJECTING ");
-	if ( m_forceDelete ) sb->safePrintf("FORCEDELETE ");
-	if ( m_sameDom ) sb->safePrintf("SAMEDOM ");
-	if ( m_sameHost ) sb->safePrintf("SAMEHOST ");
-	if ( m_sameSite ) sb->safePrintf("SAMESITE ");
-	if ( m_wasParentIndexed ) sb->safePrintf("WASPARENTINDEXED ");
-	if ( m_parentIsRSS ) sb->safePrintf("PARENTISRSS ");
-	if ( m_parentIsPermalink ) sb->safePrintf("PARENTISPERMALINK ");
-	if ( m_parentIsPingServer ) sb->safePrintf("PARENTISPINGSERVER ");
-	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
-
-	if ( m_parentHasAddress ) sb->safePrintf("PARENTHASADDRESS ");
-	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
-	if ( m_isScraping ) sb->safePrintf("ISSCRAPING ");
-	if ( m_inGoogle ) sb->safePrintf("INGOOGLE ");
-	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
-	if ( m_hasContactInfo ) sb->safePrintf("HASCONTACTINFO ");
-
-	if ( m_hasSiteVenue  ) sb->safePrintf("HASSITEVENUE ");
-	if ( m_isContacty      ) sb->safePrintf("CONTACTY ");
-
-	sb->safePrintf("</nobr></td>\n");
-	*/
-
 	sb->safePrintf("</tr>\n");
 
 	return sb->length();
