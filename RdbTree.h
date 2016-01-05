@@ -1,9 +1,9 @@
 // Matt Wells,  Copyright, Apr 2001
 
 // . an UNbalanced b-tree for storing keys in memory
-// . UNbalanced because it's slow to balance and input should be quite random
-// . if the tree becomes highly unbalanced we could just create a new tree
-//   and insert things at random into there, but this should we a rarity
+// . whether the tree is balanced or not can be selected in the set() method
+//   call. If enabled the tree behanves like an AVL tree, otherwise as a
+//   plain simple binary tree.
 // . we store a -1 in the parent field for nodes that were deleted so if you
 //   were to dump the nodes out unordered you'd know where the deleted nodes
 //   were
