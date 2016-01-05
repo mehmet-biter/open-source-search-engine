@@ -18651,200 +18651,6 @@ char *XmlDoc::getSpiderLinks ( ) {
 	return &m_spiderLinks2;
 }
 
-//
-// . DELETE ALL SPAM FROM THE INDEX!!!
-//
-// . for a page to be spam these must ALL be true, with the current ip:
-//   . site is not in google
-//   . site has no "stars" in google's dir
-//   . site has no authorityinlink tag
-//   . site has less than 10 fresh inlinks
-//   . site has less than 500 total inlinks
-//   . ip is not from ultra dns
-//   . TODO: site is not linked to by wikipedia.com
-//   . TODO: site is not linked to by about.com
-//   . TODO: site is not linked to by a .gov site
-//   . the page IP address changed significantly since the same since last
-//     time we indexed it when it was not spam (if applicable)
-//
-// . if the page was indexed at one time and then we decided it was spam,
-//   and its ip changed significantly since last time, we just
-//   reschedule the spider rec for 15 days later and do not touch anything
-//   else. that way we keep the index somewhat stable.
-//
-
-/*
-char *XmlDoc::getIsSpam() {
-	// return it if valid
-	if ( m_isSpamValid ) return &m_isSpam;
-
-	setStatus ("getting is spam");
-
-	// assume it is not spam
-	m_isSpam = false;
-
-	// debug
-	//logf(LOG_DEBUG,"doc: NOT SPAM!!");
-	//m_isSpamValid = true;	return &m_isSpam;
-
-	// we disable this check for the contact doc
-	if ( m_spamCheckDisabled ) { m_isSpamValid = true; return &m_isSpam; }
-
-	// . i put this here for debugging purposes
-	// . some big sites have no easy to find contact info
-	// . get our domain
-	Url *fu = getFirstUrl();
-	char *dom  = fu->getDomain   ();
-	int32_t  dlen = fu->getDomainLen();
-	if ( dlen == 12 && !strncmp(dom,"facebook.com",dlen) ) {
-		m_isSpamValid = true; return &m_isSpam; }
-	if ( dlen ==  9 && !strncmp(dom,"yahoo.com",dlen) ) {
-		m_isSpamValid = true; return &m_isSpam; }
-
-	// get our site's tag rec
-	TagRec *gr = getTagRec();
-	if ( ! gr || gr == (TagRec *)-1 ) return (char *)gr;
-
-	// are we already in the index?
-	//char *isIndexed = getIsIndexed();
-	//if (!isIndexed || isIndexed == (char *)-1 ) return (char *)isIndexed;
-
-	// this will update m_oldTagRec with the latest info if its stale
-	int32_t *sni = getSiteNumInlinks();
-	if ( ! sni || sni == (int32_t *)-1 ) return (char *)sni;
-
-	char *hci = getHasContactInfo();
-	if ( ! hci || hci == (char *)-1 ) return (char *)hci;
-
-	//int32_t *ip = getIp();
-	//if ( ! ip || ip == (int32_t *)-1 ) return (char *)ip;
-
-	//XmlDoc **od = getOldXmlDoc ( );
-	//if ( ! od || od == (void *)-1 ) return (char *)od;
-
-	//int32_t oldIp = 0 ;
-	//if ( *od ) {
-	//	int32_t *ip2 = (*od)->getIp();
-	//	if ( ! ip2 || ip2 == (int32_t *)-1 ) return (char *)ip2;
-	//	oldIp = *ip2;
-	//}
-
-	// i am guessing that most sites that use ultra dns will have a lot
-	// of site inlinks! so comment this our for now
-	//char *ultra = getIpIsUltraDns();
-	//if ( ultra || ultra==(char *)-1 ) return (char *)ultra;
-	// spammers do not use ultradns
-	//if ( *ultra ) return false;
-
-	Url *f = getFirstUrl();
-	char *u = f->getUrl();
-
-	int32_t now = getTimeGlobal();
-
-	// this will be valid
-	m_isSpamValid = true;
-
-	// use this routine
-	m_isSpam = isSpam ( u,
-			    gr,
-			    now,
-			    // *isIndexed,
-			    //oldIp  ,
-			    // *ip    ,
-			    *hci );
-
-	// we are doomed! delete in its entirety
-	if ( m_isSpam ) m_indexCode = EDOCSPAM;
-
-	return &m_isSpam;
-}
-
-// . "u" must be NORMALIZED. i.e. start with http:// or https:// etc.
-// . we call this on outlinks as well
-// . we no longer look at the old and newip to determine ownership change,
-//   because that is not reliable enough
-// . we now maybe rely on a major change to the site root page...
-bool XmlDoc::isSpam ( char   *u         ,
-		      TagRec *gr        ,
-		      int32_t    now       ,
-		      char    isIndexed ,
-		      int32_t    oldIp     ,
-		      int32_t    newIp     ,
-		      bool    hasContactInfo ) {
-
-	// we need to mine that same database that firefox does...
-	Tag *tag = gr->getTag ( "malware" );
-	if ( tag && tag->getTagData()[0] != '0' ) return true;
-
-	// if they have contact info, that is a really good sign
-	if ( hasContactInfo ) return false;
-
-	// .edu and .gov sites are always fine
-	int32_t tlen; char *tld = getTLDFast(u,&tlen);
-	if ( tlen == 3 && ! strncmp(tld,"edu",3) ) return false;
-	if ( tlen == 3 && ! strncmp(tld,"gov",3) ) return false;
-
-	// the current top ip address
-	//int32_t top = newIp & 0x00ffffff;
-
-	// TODO: in the case of multiple ips on one domain, ensure we select
-	// the same IP every time we do a lookup in MsgC.
-
-	// ok if in google
-	if ( gr->getTag ( "ingoogle" ) ) return false;
-	//if ( tag && ((tag->m_ip & 0x00ffffff) == top) ) return false;
-
-	// can also be in google's dmoz dir. must have a decent page rank.
-	if ( gr->getTag ( "pagerank" ) ) return false;
-	//if ( tag && ((tag->m_ip & 0x00ffffff) == top) ) return false;
-
-	// . if was linked to by a high quality root as a new external outlink
-	// . TODO: include about.com and wikipedia.com i guess (TODO)
-	if ( gr->getTag ( "authorityinlink" ) ) return false;
-	//if ( tag && ((tag->m_ip & 0x00ffffff) == top) ) return false;
-
-	tag = gr->getTag("sitenuminlinks");
-	// i guess if it has no entry for this, assume the best
-	if ( ! tag ) return false;
-	// or just a massive amount of any-age inlinks
-	if ( atol(tag->getTagData()) >= 500 ) return false;
-
-	tag = gr->getTag("sitenuminlinksfresh");
-	// i guess if it has no entry for this, assume the best
-	if ( ! tag ) return false;
-	// if site has enough good FRESH inlinks from the last 3 mos, no spam
-	if( atol(tag->getTagData()) >= 10 ) return false;
-
-	// if we are old and the top 3 bytes of the ip is the same as the last
-	// time we were indexed and thereby not identified as spam...
-	// then assume we are still not spam! because it was unlikely that
-	// the domain ownership changed...
-	//if ( isIndexed (oldIp & 0x00ffffff) == top ) return false;
-
-	// if they have contact info, that is a really good sign
-	//if ( hasContactInfo && (oldIp & 0x00ffffff) == top ) return false;
-
-	// if first time... accept them if they got contact info
-	//if ( ! oldIp && hasContactInfo ) return false;
-
-	// . if it has had the same ip for the last 365 days, let it in
-	// . getTagRec() updates this tag immediately if the ip changes
-	// . so we can't really use this tag for outlinks, because they might
-	//   never get thrown into spiderdb to where we can add this tag to
-	//   their tag rec... UNLESS msgc/msge were to update their tag rec...
-	// . i've seen quite a few old spam sites/pages. they just kinda stay
-	//   there.  so let's not do this...
-	//tag = gr->get("iptimestamp");
-	//int32_t now;
-	//if ( tag ) now = getTimeGlobal();
-	//if(tag&&now-atol(tag->getTagData())>365*24*3600&&
-	//    ((tag->m_ip&0x00ffffff)==top))
-	//	return false;
-
-	return true;
-}
-*/
-
 // should we index the doc? if already indexed, and is filtered, we delete it
 char *XmlDoc::getIsFiltered ( ) {
 	if ( m_isFilteredValid ) return &m_isFiltered;
@@ -23313,41 +23119,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	if (! indexCode || indexCode == (void *)-1)
 		return (SpiderReply *)indexCode;
 
-
-	// if it has been abandoned early, i.e. cut-off, then we should
-	// add a "fake" spider reply to release the lock in
-	// SpiderLoop::m_lockTable at least. see Spider.cpp's addSpiderReply()
-	// to see what parts of this are relevant.
-	/*
-	if ( *indexCode == EABANDONED ||
-	     // . any internal "error" needs to be here really
-	     // . was there an error unzipping the title rec?
-	     *indexCode == ECORRUPTDATA ||
-	     *indexCode == EHITCRAWLLIMIT ||
-	     *indexCode == EHITPROCESSLIMIT ) {
-		// clear everything
-		m_srep.reset();
-		// get from spider request, if there
-		int32_t firstIp = 0;
-		if ( m_sreqValid ) firstIp = m_sreq.m_firstIp;
-		// otherwise, wtf?
-		if ( ! firstIp )
-			log("build: no first ip to make fake spiderReply. "
-			    "injected?");
-		// we at least need this
-		m_srep.m_firstIp = firstIp;
-		Url *fu = getFirstUrl();
-		// this is the lock key
-		int64_t uh48 = hash64b(fu->m_url) & 0x0000ffffffffffffLL;
-		m_srep.setKey (  firstIp, 0 , uh48 , false );
-		// tell it we are fake and not to really add us to
-		// spiderdb, but just to release the lock
-		m_srep.m_errCode = *indexCode;
-		m_srepValid = true;
-		return &m_srep;
-	}
-	*/
-
 	TagRec *gr = getTagRec();
 	if ( ! gr || gr == (TagRec *)-1 ) return (SpiderReply *)gr;
 
@@ -23365,15 +23136,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// need to set m_sentToDiffbot!!
 	SafeBuf *dbr = getDiffbotReply();
 	if ( ! dbr || dbr == (void *)-1 ) return (SpiderReply *)dbr;
-
-	// was the doc index when we started trying to spider this url?
-	//char *wasIndexed = getIsIndexed();
-	//if ( ! wasIndexed || wasIndexed == (void *)-1 )
-	//	return (SpiderReply *)wasIndexed;
-
-	//Tag *vt = m_oldTagRec.getTag("venueaddress");
-	//bool siteHasVenue = (bool)vt;
-
 
 	// shortcut
 	Url *fu = NULL;
@@ -36897,6 +36659,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	//
 
 	bool oldHighQualityRoot = true;
+
 	// if we are new, do not add anything, because we only add a tagdb
 	// rec entry for "new" outlinks  that were added to the page since
 	// the last time we spidered it
@@ -36904,11 +36667,10 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 
 	// no updating if we are not root
 	if ( ! *isRoot ) oldHighQualityRoot = false;
+
 	// must be high quality, too
 	if ( *siteNumInlinks < 500 ) oldHighQualityRoot = false;
-	// . if we are a google url then add tags for each outlink!
-	// . more google special tags to replace Scraper.cpp
-	char *fu = m_firstUrl.getUrl();
+
 	// only do once per site
 	char buf[1000];
 	HashTableX ht; ht.set (4,0,-1 , buf , 1000 ,false,m_niceness,"sg-tab");

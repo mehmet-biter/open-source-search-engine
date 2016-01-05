@@ -710,8 +710,7 @@ class Sections {
 		     //class HashTableX *rt ,
 		     class HashTableX *priceTable ) ;
 
-	void printFlags ( class SafeBuf *sbuf , class Section *sn ,
-			  bool justEvents ) ;
+	void printFlags ( class SafeBuf *sbuf , class Section *sn ) ;
 
 	bool printVotingInfoInJSON ( SafeBuf *sb ) ;
 
