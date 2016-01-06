@@ -8309,31 +8309,6 @@ int32_t Sections::getDelimHash ( char method , Section *bro ) {
 		// was not getting an implied section set, so let's do away
 		// with the pure dow algo and see what happens.
 		return -1;
-		// must be a sort of heading like "Jul 24"
-		//if ( !(bro->m_flags & SEC_HEADING_CONTAINER) &&
-		//     !(bro->m_flags & SEC_HEADING          ) )
-		//	return -1;
-		if ( ! (bro->m_flags & SEC_HAS_DOW) ) 
-			return -1;
-		// this is causing core
-		if ( bro->m_tagId == TAG_TC ) return -1;
-		// now it must be all date words
-		int32_t a = bro->m_firstWordPos;
-		int32_t b = bro->m_lastWordPos;
-		// sanity check
-		if ( a < 0 ) { char *xx=NULL;*xx=0; }
-		// scan
-		for ( int32_t i = a ; i <= b ; i++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// skip if not wid
-			if ( ! m_wids[i] ) continue;
-			// must be in date
-			if ( ! ( m_bits->m_bits[i] & D_IS_IN_DATE ) ) 
-				return -1;
-		}
-		// do not collide with tagids
-		return 66666;
 	}
 	if ( method == METHOD_ABOVE_DOW ) {
 		// must be a sort of heading like "Jul 24"
@@ -8802,39 +8777,9 @@ bool Sections::addSentenceSections ( ) {
 					     
 					if ( tagBefore ) break;
 					if ( tagAfter  ) break;
+
 					// for now allow it!
 					continue;
-					// do not break http://... though
-					if ( p[1] == '/' ) continue;
-					// or 10:30 etc.
-					if ( is_digit(p[1]) ) continue;
-					if ( j>0 && is_digit(p[-1]) ) continue;
-					// allow trumba titles to have colons
-					// so they can get the TSF_TITLEY
-					// event title boost in Events.cpp
-					if ( m_isTrumba &&
-					     sp[j]->m_tagId == TAG_TITLE )
-						continue;
-					// fix guysndollsllc.com which has
-					// "Battle of the Bands with: The Cincy
-					// Rockers, Second Wind, ..."
-					// if last word was a lowercase
-					// and one of these, let it in the
-					// sentence
-					//if ( lastWidPos < 0 ) 
-					//	break;
-					// must have been lowercase
-					if(!is_lower_utf8(m_wptrs[lastWidPos]))
-						break;
-					// and must be one of these words:
-					if ( prevWid == h_with ||
-					     // "Send info to: Booking"
-					     // from guysndollsllc.com/page4.ht
-					     prevWid == h_to ||
-					     prevWid == h_and  )
-						continue;
-					// otherwise, break it
-					break;
 				}
 				// . special hyphen
 				// . breaks up title for peachpundit.com
@@ -9277,11 +9222,11 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 		m_numSections--;
 		char *xx=NULL;*xx=0;
 		return NULL;
-		sk->m_next = m_rootSection;//m_rootSection;
-		sk->m_prev = NULL;
-		//m_sections[0].m_prev = sk;
-		m_rootSection->m_prev = sk;
-		m_rootSection = sk;
+//		sk->m_next = m_rootSection;//m_rootSection;
+//		sk->m_prev = NULL;
+//		//m_sections[0].m_prev = sk;
+//		m_rootSection->m_prev = sk;
+//		m_rootSection = sk;
 	} else {
 		// insert us into the linked list of sections
 		if ( si->m_next ) si->m_next->m_prev = sk;
@@ -9442,96 +9387,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 		// sanity check
 		if ( wp->m_b > sk->m_b ) { char *xy=NULL;*xy=0; }
 		if ( wp->m_a < sk->m_a ) { char *xy=NULL;*xy=0; }
-	}
-
-	return sk;
-
-	// start scanning here
-	Section *start = parent->m_next;
-
-	int32_t lastb = -1;
-	// try just scanning sections in parent
-	for ( Section *sx = start ; sx ; sx = sx->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		//Section *sx = &m_sections[xx];
- 		// skip if section ends before our sentence begins
-		if ( sx->m_b <= a ) continue;
-		// stop if beyond sk
-		if ( sx->m_a >= b ) break;
-		// skip if sn not parent
-		if ( sx->m_parent != parent ) continue;
-		// when splitting a section do not reparent if
-		// not in our split...
-		//if ( sx->m_a >= b ) continue;
-		// do not reparent if it contains us
-		if ( sx->m_a <= a && sx->m_b >= b ) continue;
-		// reset his parent to the newly added section
-		sx->m_parent = sk;
-		// and or his flags into us. SEC_HAS_DOM, etc.
-		sk->m_flags |= sx->m_flags & mask;
-		// sanity check
-		if ( sx->m_b > sk->m_b ) { char *xy=NULL;*xy=0; }
-		if ( sx->m_a < sk->m_a ) { char *xy=NULL;*xy=0; }
-		// skip if already got the xor for this section
-		if ( sx->m_a < lastb ) continue;
-		// set this
-		lastb = sx->m_b;
-		// add all the entries from this child section from the
-		// phone/email/etc. tables
-		sk->m_phoneXor ^= sx->m_phoneXor;
-		sk->m_emailXor ^= sx->m_emailXor;
-		sk->m_priceXor ^= sx->m_priceXor;
-		sk->m_todXor   ^= sx->m_todXor;
-		sk->m_dayXor   ^= sx->m_dayXor;
-		sk->m_addrXor  ^= sx->m_addrXor;
-		// make sure did not make it zero
-		if ( sx->m_phoneXor   && sk->m_phoneXor == 0 )
-			sk->m_phoneXor    = sx->m_phoneXor;
-		if ( sx->m_emailXor   && sk->m_emailXor == 0 )
-			sk->m_emailXor    = sx->m_emailXor;
-		if ( sx->m_priceXor   && sk->m_priceXor == 0 )
-			sk->m_priceXor    = sx->m_priceXor;
-		if ( sx->m_todXor     && sk->m_todXor == 0 )
-			sk->m_todXor      = sx->m_todXor;
-		if ( sx->m_dayXor     && sk->m_dayXor == 0 )
-			sk->m_dayXor      = sx->m_dayXor;
-		if ( sx->m_addrXor && sk->m_addrXor == 0 )
-			sk->m_addrXor = sx->m_addrXor;
-		// set this perhaps
-		if ( sk->m_firstPlaceNum < 0 ) 
-			sk->m_firstPlaceNum = sx->m_firstPlaceNum;
-		// update this?
-		if ( sx->m_alnumPosA < 0 ) continue;
-		// take the first one we get
-		if ( sk->m_alnumPosA == -1 ) 
-			sk->m_alnumPosA = sx->m_alnumPosA;
-		// update to the last one always
-		sk->m_alnumPosB  = sx->m_alnumPosB;
-	}
-
-	// a flag
-	bool needsFirst = true;
-	// . set the words ptrs to it
-	// . TODO: can later speed up with ptr to ptr logic
-	for ( int32_t yy = a ; yy < b ; yy++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// and first/last word pos
-		if ( m_wids[yy] ) {
-			// mark this
-			if ( needsFirst ) {
-				sk->m_firstWordPos = yy;
-				needsFirst = false;
-			}
-			// remember last
-			sk->m_lastWordPos = yy;
-		}
-		// must have had sn as parent
-		if ( m_sectionPtrs[yy] != parent ) continue;
-		// "sk" becomes the new parent
-		m_sectionPtrs[yy] = sk;
 	}
 
 	return sk;
@@ -12976,90 +12831,90 @@ bool Sections::growSections ( ) {
 	log("build: growing sections!");
 	g_errno = EDOCBADSECTIONS;
 	return true;
-	// record old buf start
-	char *oldBuf = m_sectionBuf.getBufStart();
-	// grow by 20MB at a time
-	if ( ! m_sectionBuf.reserve ( 20000000 ) ) return false;
-	// for fixing ptrs:
-	char *newBuf = m_sectionBuf.getBufStart();
-	// set the new max
-	m_maxNumSections = m_sectionBuf.getCapacity() / sizeof(Section);
-	// update ptrs in the old sections
-	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		Section *si = &m_sections[i];
-		if ( si->m_parent ) {
-			char *np = (char *)si->m_parent;
-			np = np - oldBuf + newBuf;
-			si->m_parent = (Section *)np;
-		}
-		if ( si->m_next ) {
-			char *np = (char *)si->m_next;
-			np = np - oldBuf + newBuf;
-			si->m_next = (Section *)np;
-		}
-		if ( si->m_prev ) {
-			char *np = (char *)si->m_prev;
-			np = np - oldBuf + newBuf;
-			si->m_prev = (Section *)np;
-		}
-		if ( si->m_listContainer ) {
-			char *np = (char *)si->m_listContainer;
-			np = np - oldBuf + newBuf;
-			si->m_listContainer = (Section *)np;
-		}
-		if ( si->m_prevBrother ) {
-			char *np = (char *)si->m_prevBrother;
-			np = np - oldBuf + newBuf;
-			si->m_prevBrother = (Section *)np;
-		}
-		if ( si->m_nextBrother ) {
-			char *np = (char *)si->m_nextBrother;
-			np = np - oldBuf + newBuf;
-			si->m_nextBrother = (Section *)np;
-		}
-		if ( si->m_sentenceSection ) {
-			char *np = (char *)si->m_sentenceSection;
-			np = np - oldBuf + newBuf;
-			si->m_sentenceSection = (Section *)np;
-		}
-		if ( si->m_prevSent ) {
-			char *np = (char *)si->m_prevSent;
-			np = np - oldBuf + newBuf;
-			si->m_prevSent = (Section *)np;
-		}
-		if ( si->m_nextSent ) {
-			char *np = (char *)si->m_nextSent;
-			np = np - oldBuf + newBuf;
-			si->m_nextSent = (Section *)np;
-		}
-		if ( si->m_tableSec ) {
-			char *np = (char *)si->m_tableSec;
-			np = np - oldBuf + newBuf;
-			si->m_tableSec = (Section *)np;
-		}
-		if ( si->m_headColSection ) {
-			char *np = (char *)si->m_headColSection;
-			np = np - oldBuf + newBuf;
-			si->m_headColSection = (Section *)np;
-		}
-		if ( si->m_headRowSection ) {
-			char *np = (char *)si->m_headRowSection;
-			np = np - oldBuf + newBuf;
-			si->m_headRowSection = (Section *)np;
-		}
-		if ( si->m_leftCell ) {
-			char *np = (char *)si->m_leftCell;
-			np = np - oldBuf + newBuf;
-			si->m_leftCell = (Section *)np;
-		}
-		if ( si->m_aboveCell ) {
-			char *np = (char *)si->m_aboveCell;
-			np = np - oldBuf + newBuf;
-			si->m_aboveCell = (Section *)np;
-		}
-	}
-	return true;
+//	// record old buf start
+//	char *oldBuf = m_sectionBuf.getBufStart();
+//	// grow by 20MB at a time
+//	if ( ! m_sectionBuf.reserve ( 20000000 ) ) return false;
+//	// for fixing ptrs:
+//	char *newBuf = m_sectionBuf.getBufStart();
+//	// set the new max
+//	m_maxNumSections = m_sectionBuf.getCapacity() / sizeof(Section);
+//	// update ptrs in the old sections
+//	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
+//		// breathe
+//		QUICKPOLL(m_niceness);
+//		Section *si = &m_sections[i];
+//		if ( si->m_parent ) {
+//			char *np = (char *)si->m_parent;
+//			np = np - oldBuf + newBuf;
+//			si->m_parent = (Section *)np;
+//		}
+//		if ( si->m_next ) {
+//			char *np = (char *)si->m_next;
+//			np = np - oldBuf + newBuf;
+//			si->m_next = (Section *)np;
+//		}
+//		if ( si->m_prev ) {
+//			char *np = (char *)si->m_prev;
+//			np = np - oldBuf + newBuf;
+//			si->m_prev = (Section *)np;
+//		}
+//		if ( si->m_listContainer ) {
+//			char *np = (char *)si->m_listContainer;
+//			np = np - oldBuf + newBuf;
+//			si->m_listContainer = (Section *)np;
+//		}
+//		if ( si->m_prevBrother ) {
+//			char *np = (char *)si->m_prevBrother;
+//			np = np - oldBuf + newBuf;
+//			si->m_prevBrother = (Section *)np;
+//		}
+//		if ( si->m_nextBrother ) {
+//			char *np = (char *)si->m_nextBrother;
+//			np = np - oldBuf + newBuf;
+//			si->m_nextBrother = (Section *)np;
+//		}
+//		if ( si->m_sentenceSection ) {
+//			char *np = (char *)si->m_sentenceSection;
+//			np = np - oldBuf + newBuf;
+//			si->m_sentenceSection = (Section *)np;
+//		}
+//		if ( si->m_prevSent ) {
+//			char *np = (char *)si->m_prevSent;
+//			np = np - oldBuf + newBuf;
+//			si->m_prevSent = (Section *)np;
+//		}
+//		if ( si->m_nextSent ) {
+//			char *np = (char *)si->m_nextSent;
+//			np = np - oldBuf + newBuf;
+//			si->m_nextSent = (Section *)np;
+//		}
+//		if ( si->m_tableSec ) {
+//			char *np = (char *)si->m_tableSec;
+//			np = np - oldBuf + newBuf;
+//			si->m_tableSec = (Section *)np;
+//		}
+//		if ( si->m_headColSection ) {
+//			char *np = (char *)si->m_headColSection;
+//			np = np - oldBuf + newBuf;
+//			si->m_headColSection = (Section *)np;
+//		}
+//		if ( si->m_headRowSection ) {
+//			char *np = (char *)si->m_headRowSection;
+//			np = np - oldBuf + newBuf;
+//			si->m_headRowSection = (Section *)np;
+//		}
+//		if ( si->m_leftCell ) {
+//			char *np = (char *)si->m_leftCell;
+//			np = np - oldBuf + newBuf;
+//			si->m_leftCell = (Section *)np;
+//		}
+//		if ( si->m_aboveCell ) {
+//			char *np = (char *)si->m_aboveCell;
+//			np = np - oldBuf + newBuf;
+//			si->m_aboveCell = (Section *)np;
+//		}
+//	}
+//	return true;
 }
 
