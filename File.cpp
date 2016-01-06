@@ -1105,6 +1105,7 @@ bool File::unlink ( )
 	}
 
 
+#ifdef PRIVACORE_SAFE_VERSION
 	//### BR 20151218: Hard coded check to help us debug file deletion problem
 	if( strstr(getFilename(),"posdb0001") )
 	{
@@ -1113,6 +1114,7 @@ bool File::unlink ( )
 		g_process.shutdownAbort(false);
 		return false;
 	}
+#endif
 
 	// remove ourselves from the disk
 	if ( ::unlink ( getFilename() ) == 0 )
