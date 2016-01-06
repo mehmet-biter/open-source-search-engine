@@ -5423,13 +5423,7 @@ Sections *XmlDoc::getExplicitSections ( ) {
 				m_niceness    ,
 				m_masterState ,    // state
 				m_masterLoop  ,    // callback
-				*ct           ,
-				NULL          ,    // sd // sections data
-				true          ,    // sections data valid?
-				NULL          ,    // sv // for m_nsvt
-				//*tph          ,
-				NULL          ,    // buf
-				0             )) { // bufSize
+				*ct           )) {
 		m_calledSections = true;
 		// sanity check, this should not block, we are setting
 		// exclusively from the titleRec
@@ -6431,7 +6425,6 @@ SectionVotingTable *XmlDoc::getOldSectionVotingTable ( ) {
 	//   occurs in the document.
 	if ( ! m_osvt.addListOfVotes(&m_secdbList,
 				     &lastKey,
-				     *tph,
 				     *d , // docid
 				     m_niceness))
 		return NULL;
@@ -30847,12 +30840,7 @@ SafeBuf *XmlDoc::getSampleForGigabitsJSON ( ) {
 			m_niceness    ,
 			NULL,//m_masterState ,    // state
 			NULL,//m_masterLoop  ,    // callback
-			CT_JSON, // *ct           ,
-			NULL          ,    // sd // sections data
-			true          ,    // sections data valid?
-			NULL          ,    // sv // for m_nsvt
-			NULL          ,    // buf
-			0             )) { // bufSize
+			CT_JSON )) {
 		return NULL;
 	}
 
@@ -35252,8 +35240,6 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 				   diversityVec,
 				   wordSpamVec,
 				   fragVec,
-				   NULL,
-				   NULL ,
 				   &m_addresses ,
 				   true );
 		return true;

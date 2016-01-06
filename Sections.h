@@ -33,8 +33,6 @@
 // . these are descriptive flags, they are computed when Sections is set
 // . SEC_NOTEXT sections do not vote, i.e. they are not stored in Sectiondb
 #define SEC_NOTEXT       0x0001 // implies section has no alnum words
-//#define SEC_ARTICLE    0x0002 // section is SV_UNIQUE and SV_TEXTY
-//#define SEC_DUP        0x0004 // content hash repeated on same site
 
 // . Weights.cpp zeroes out the weights for these types of sections
 // . is section delimeted by the <script> tag, <marquee> tag, etc.
@@ -43,9 +41,6 @@
 #define SEC_SELECT       0x0020
 #define SEC_MARQUEE      0x0040
 #define SEC_CONTAINER    0x0080
-// . is section in anchor text
-// . is section delimeted by the <a href...> tag
-//#define SEC_A            0x0080
 
 // . in title/header. for gigabits in XmlDoc.cpp
 // . is section delemited by <title> or <hN> tags?
@@ -69,8 +64,6 @@
 #define SEC_HEADING      0x200000
 
 // reasons why a section is not an event
-//#define SEC_MULT_PLACES    0x008000 
-//#define SEC_IS_MENUITEM        0x00040000 // in a list of menu items?
 #define SEC_UNBALANCED         0x00400000 // interlaced section/tags
 #define SEC_OPEN_ENDED         0x00800000 // no closing tag found
 #define SEC_SENTENCE           0x01000000 // made by a sentence?
@@ -115,26 +108,11 @@
 #define SEC_MULTIDIMS               0x0008000000000000LL
 #define SEC_HASHXPATH               0x0010000000000000LL
 
-//#define SEC_HAS_ADDRESS        0x08000000
-//#define SEC_ADDRESS_CONTAINER  0x40000000
-//#define SEC_HAS_STOREHOURS     0x01000000 // event is really just store hours
-//#define SEC_HAS_NONSTOREHOURS  0x02000000
-//#define SEC_HAS_NON_EVENT_DATE 0x04000000
-
-
 // . some random-y numbers for Section::m_baseHash
 // . used by splitSection() function
-//#define BH_BR      -1113348753
-//#define BH_BRBR    3947503
-//#define BH_HR      1378153634
-//#define BH_H1     -1788814047
-//#define BH_H2     -1170023066
-//#define BH_H3     -132582659
-//#define BH_H4      2095609929
 #define BH_BULLET  7845934
 #define BH_SENTENCE 4590649
 #define BH_IMPLIED  95468323
-//#define BH_IMPLIED_LIST 9434499
 
 // values for Section::m_sentFlags (sentence flags)
 #define SENT_HAS_COLON       0x00000001
@@ -342,12 +320,7 @@ public:
 	// used by Events.cpp to count # of timeofdays in section
 	//class Event *m_event;
 
-	// for Events class
-	//uint8_t m_numAddresses;
-	//class Address *m_address;
 	// for Events class, usually streets!
-	//uint8_t m_numPlaces;
-	//class Place *m_place;
 	class Addresses *m_aa;
 
 	// . if we are an element in a list, what is the list container section
@@ -356,10 +329,6 @@ public:
 	// . right now we limit such contained elements to text sections only
 	// . used to set SEC_HAS_MENUBROTHER flag
 	class Section *m_listContainer;
-
-	// if we are a header, of what list are we a header of?
-	//class Section *m_headerOfList;
-	
 
 	// the sibling section before/after us. can be NULL.
 	class Section *m_prevBrother;
@@ -453,29 +422,8 @@ public:
 	// for debug output display of color coded nested sections
 	uint32_t m_colorHash;
 
-	// like tag hash but only the tag ids, no hashed attributes or 
-	// virtual section base hashes
-	//int32_t  m_formatHash;
-
 	// tagid of this section, 0 means none (like sentence section, etc.)
 	nodeid_t m_tagId;
-
-	/*
-	// used by addImpliedSections()
-	int32_t getBaseHash2 ( ) { 
-		// fix for funkefiredarts.com since one of the header tags
-		// has a different tag attribute, but it says "Monday". so
-		// treat all these special headers the same since it is
-		// critical we get these type of implied sections right, lest
-		// we hurt our date telscoping.
-		if ( m_flags & SEC_HAS_DOM_DOW ) return 22222;
-		if ( m_flags&SEC_HEADING_CONTAINER) return m_baseHash^0x789123;
-		else                                return m_baseHash;
-	};
-	*/
-
-	//int32_t getBaseHash3 ();
-
 
 	// usually just the m_tagId, but hashes in the class attributes of
 	// div and span tags, etc. to make them unique
@@ -491,25 +439,12 @@ public:
 	// these deal with enumertated tags and are used by Events.cpp
 	int32_t  m_occNum;
 	int32_t  m_numOccurences;
-	// section with same m_tagHash and before you
-	//class Section *m_prevSibling;
 
 	// used by XmlDoc.cpp to set a topological distance
 	int32_t m_topDist;
-	//int32_t m_sortedIndex;
-
-	// all the parent tags are enumerated, but the kid (youngest tag)
-	// is not enumerated
-	//int32_t  m_enumTagHash;
-
-	// . tag hash which disregards non-breaking or tags with no back tags
-	// . used by Events.cpp
-	//int32_t  m_hardTagHash;
 
 	// hash of all the alnum words DIRECTLY in this section
 	uint64_t  m_contentHash64;
-	// if section contains words indirectly, then store xor'ed wids in here
-	//int32_t  m_contentHash2;
 
 	uint64_t  m_sentenceContentHash64;
 
@@ -523,12 +458,6 @@ public:
 	// uses m_sentenceContentHash64 (for sentences)
 	uint64_t m_indirectSentHash64;
 
-	// for voting! we basically ignore numbers and dates, months, etc.
-	// for doing this hash so that if the date changes from page to page
-	// it will still be recognized as a "dup section" and m_votesForDup
-	// should be high
-	//uint32_t m_voteHash32;
-
 	// . range of words in Words class we encompass
 	// . m_wordStart and m_wordEnd are the tag word #'s
 	// . ACTUALLY it is a half-closed interval [a,b) like all else
@@ -539,30 +468,11 @@ public:
 	int32_t  m_b;//wordEnd;
 
 	// for event titles and descriptions
-	//float m_titleScore;
-	//float m_descScore;
-	//titleflags_t  m_titleFlags;
 	sentflags_t m_sentFlags;
-
-	// bits set based on turk votes. see the TB_* bits in XmlDoc.h
-	//turkbits_t m_turkBits;
-
-	// alnum count for us and all sections we contain
-	//int32_t  m_alnumCount;
 
 	// . # alnum words only in this and only this section
 	// . if we have none, we are SEC_NOTEXT
 	int32_t  m_exclusive;
-
-	// like above, but word must also NOT be in a hyperlink
-	//int32_t  m_plain;
-
-	// Address.cpp uses this
-	//char     m_numBackToBackSubsections;
-	//nodeid_t m_lastTid;
-
-	// # of times this section appears in this doc
-	//int32_t  m_totalOccurences; 
 
 	// our depth. # of tags in the hash
 	int32_t  m_depth;
@@ -574,60 +484,14 @@ public:
 	int32_t m_mark;
 
 	// Events.cpp assigns a date to each section
-	//int32_t m_fullDate;
-	//class Date *m_datePtr;
 	int32_t m_firstDate;
 
 	char m_used;
-
-	//int32_t m_numTods;
-
-	// the event section we contain. used by Events.cpp
-	//class Section *m_eventSec;
-
-	// used by Events.cpp for determining what range of events a section
-	// contains. we store that range in Events::hash() when we index each
-	// word into datedb for events.
-	//int32_t m_minEventId;
-	//int32_t m_maxEventId;
 
 	// used in Sections::splitSections() function
 	int32_t m_processedHash;
 
 	int32_t m_gbFrameNum;
-
-	// . support event ids from 0 to 255
-	// . this increases the sizeof this class from 160 to 192 bytes
-	//char m_evIdBits[32];
-	// how many bits in the above array are set?
-	//int16_t m_numEventIdBits;
-
-	/*
-	bool hasEventId ( int32_t evId ) {
-		// this is an overflow condition...
-		if ( evId > 255 ) return false;
-		// -1 or 0 means not associated with any event id since
-		// all eventIds are >= 1
-		if ( m_minEventId <= 0   ) return false;
-		if ( evId < m_minEventId ) return false;
-		if ( evId > m_maxEventId ) return false;
-		unsigned char bitMask = 1 << (evId % 8);
-		return m_evIdBits[evId/8] & bitMask;
-	};
-
-	void addEventId ( int32_t eid ) {
-		if ( eid >= 256 ) return;
-		unsigned char bitMask = 1 << (eid % 8);
-		unsigned char byteOff = eid / 8;
-		if ( m_evIdBits[byteOff] & bitMask ) return;
-		m_evIdBits[byteOff] |= bitMask;
-		m_numEventIdBits++;
-		if ( m_minEventId <= 0 || m_minEventId > eid )
-			m_minEventId = eid;
-		if ( m_maxEventId <= 0 || m_maxEventId < eid )
-			m_maxEventId = eid;
-	};
-	*/
 
 	// do we contain section "arg"?
 	bool contains ( class Section *arg ) {
@@ -675,12 +539,7 @@ class Sections {
 		   int32_t            niceness    ,
 		   void           *state       ,
 		   void          (*callback)(void *state) ,
-		   uint8_t         contentType ,
-		   char           *sectionsData,
-		   bool            sectionsDataValid ,
-		   char           *sectionsData2,
-		   char           *buf         ,
-		   int32_t            bufSize     ) ;
+		   uint8_t         contentType ) ;
 
 
 	bool addVotes(class SectionVotingTable *nsvt, uint32_t tagPairHash );
@@ -721,17 +580,10 @@ class Sections {
 		      char *diversityVec,
 		      char *wordSpamVec,
 		      char *fragVec,
-		      class HashTableX *st2 ,
-		      class HashTableX *tt  ,
 		      class Addresses  *aa  ,
-		      char format = FMT_HTML ); // bool forProCog );
+		      char format = FMT_HTML );
 	bool printSectionDiv ( class Section *sk , char format = FMT_HTML );
-	//bool forProCog = false ) ;
 	class SafeBuf *m_sbuf;
-	//class HashTableX *m_pt;
-	//class HashTableX *m_et;
-	//class HashTableX *m_at;
-	//class HashTableX *m_priceTable;
 
 	char *getSectionsReply ( int32_t *size );
 	char *getSectionsVotes ( int32_t *size );
@@ -739,13 +591,10 @@ class Sections {
 	bool isHardSection ( class Section *sn );
 
 	bool setMenus ( );
-	bool setListFlags ( );
 
 	bool setFormTableBits ( ) ;
 	bool setTableRowsAndCols ( class Section *tableSec ) ;
 	bool setTableHeaderBits ( class Section *table );
-	bool setTableStuff  ( ) ;
-	bool setTableDateHeaders ( class Section *ts ) ;
 	bool setTableScanPtrs ( class Section *ts ) ;
 
 	void setHeader ( int32_t r , class Section *first , sec_t flag ) ;
@@ -765,7 +614,6 @@ class Sections {
 	class Url   *m_url      ;
 	int64_t    m_docId    ;
 	int64_t    m_siteHash64 ;
-	//int64_t    m_tagPairHash;
 	char        *m_coll     ;
 	void        *m_state    ;
 	void       (*m_callback) ( void *state );
@@ -797,7 +645,6 @@ class Sections {
 	bool m_waitInLine;
 	int32_t m_articleStartWord;
 	int32_t m_articleEndWord;
-	//int32_t m_totalSimilarLayouts;
 	bool m_hadArticle;
 	int32_t m_numInvalids;
 	int32_t m_totalSiteVoters;
@@ -848,13 +695,6 @@ class Sections {
 
 	int32_t m_numSentenceSections;
 
-	// . the section ptrs sorted by Section::m_a
-	// . since we set SEC_FAKE from splitSections() those new sections
-	//   are appended on m_sections[] array and are out of order, so
-	//   we merge sort the two sublists of m_sections[] and put the
-	//   pointers into here...
-	//class Section **m_sorted;
-
 	bool m_isTestColl;
 
 	// assume no malloc
@@ -870,15 +710,8 @@ class Sections {
 	char      **m_wptrs;
 	nodeid_t   *m_tids;
 
-	//int32_t addImpliedSections  ( bool needHR );
-	//int32_t addHeaderImpliedSections ( );
-
-	//int32_t addImpliedSectionsOld ( );
-	//int32_t getHeadingScore ( class Section *sk , int32_t baseHash );
-
 	// the new way
 	bool addImpliedSections ( class Addresses *aa );//, HashTableX *svt );
-	//HashTableX *m_svt;
 
 	bool setSentFlagsPart1 ( );
 	bool setSentFlagsPart2 ( );
@@ -899,10 +732,7 @@ class Sections {
 			     char method,
 			     class Section *delim ,
 			     class Partition *part );
-	int32_t getDelimHash ( char method , class Section *bro ,
-			    class Section *head ) ;
-	//int32_t m_totalHdrCount;
-	//bool m_called;
+	int32_t getDelimHash ( char method , class Section *bro ) ;
 
 	bool addImpliedLists ( ) ;
 	int32_t getDelimScore2 ( class Section *bro,
@@ -926,10 +756,7 @@ class Sections {
 
 	bool addSentenceSections ( ) ;
 
-	class Section *insertSubSection ( class Section *parent , 
-					  int32_t a , 
-					  int32_t b ,
-					  int32_t newBaseHash ) ;
+	class Section *insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash ) ;
 
 	int32_t splitSectionsByTag ( nodeid_t tagid ) ;
 	bool splitSections ( char *delimeter , int32_t dh );
@@ -1040,7 +867,6 @@ class SectionVotingTable {
 	// stock table from a sectiondb rdblist
 	bool addListOfVotes ( RdbList *list, 
 			      key128_t **lastKey ,
-			      uint32_t tagPairHash ,
 			      int64_t docId ,
 			      int32_t niceness ) ;
 
@@ -1105,26 +931,7 @@ class SectionVotingTable {
 #define SV_EURDATEFMT     3 // DateParse2.cpp. contains european date fmt
 #define SV_EVENT          4 // used in Events.cpp to indicate event container
 #define SV_ADDRESS        5 // used in Events.cpp to indicate address container
-// . place types here
-// . these #define's are used for values of Place::m_type in Events.cpp too!
-// . score is from 0 to 1.0 which is probability section is a place container
-//   for the specified place type
-// . used by Events.cpp for address extraction
-/*
-#define SV_PLACE_NAME_1   7 // places now have two names
-#define SV_PLACE_NAME_2   8 // places now have two names
-#define SV_PLACE_STREET   9
-#define SV_PLACE_CITY    10
-#define SV_PLACE_ZIP     11
-#define SV_PLACE_SUITE   12
-#define SV_PLACE_ADM1    13
-#define SV_PLACE_ADM2    14
-#define SV_PLACE_ADM3    15
-#define SV_PLACE_ADM4    16
-#define SV_PLACE_CTRY    17
-#define SV_PLACE_SCH     18
-#define SV_PLACE_PRK     19
-*/
+
 // . HACK: the "date" is not the enum tag hash, but is the tagPairHash for this
 // . every doc has just one of these describing the entire layout of the page
 // . basically looking for these is same as doing a gbtaghash: query
@@ -1133,25 +940,11 @@ class SectionVotingTable {
 // . this allows us to detect a duplicate section even though the layout
 //   of the web page is not quite the same, but is from the same site
 #define SV_TAGCONTENTHASH   21 
-// . HACK: a statistic
-// . the voter that had the max SectionVote::m_numSampled
-// . the m_numSampled for this statistic is his m_numSampled
-// . if we find that a section is not unique (i.e. repeated) on just one
-//   voting document, then we think it is probably a comment and we do not
-//   set the SEC_ARTICLE flag for that section
-//#define SV_TEXTY_MAX_SAMPLED  22
-// . HACK: the "date" is not the enum tag hash, but is the tagPairHash!
-// . indicates this doc is waiting in line for enough docs from its site
-//   with the same page layout (tagpairhash) to become indexed so that it can
-//   make an informed decision in regards to eliminating comment sections
-//   and determining article sections
-//#define SV_WAITINLINE    23
+
 // now Dates.cpp sets these too
 #define SV_FUTURE_DATE   24
 #define SV_PAST_DATE     25
 #define SV_CURRENT_DATE  26
-//#define SV_DUP           27
-//#define SV_NOT_DUP       28
 #define SV_SITE_VOTER    29
 #define SV_TURKTAGHASH   30
 
