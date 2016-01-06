@@ -94,9 +94,21 @@ bool Summary::set ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query 
 	if ( f->isRoot() ) {
 		m_summaryLen = xml->getMetaContent( m_summary, maxSummaryLen, "summary", 7 );
 
+		// verify that it's not the same with title
+		if ( m_summaryLen == titleBufLen && strncasestr(titleBuf, m_summary, titleBufLen, m_summaryLen) ) {
+			m_summaryLen = 0;
+			m_summary[0] = '\0';
+		}
+
 		// the meta description
 		if ( m_summaryLen <= 0 ) {
 			m_summaryLen = xml->getMetaContent( m_summary, maxSummaryLen, "description", 11 );
+		}
+
+		// verify that it's not the same with title
+		if ( m_summaryLen == titleBufLen && strncasestr(titleBuf, m_summary, titleBufLen, m_summaryLen) ) {
+			m_summaryLen = 0;
+			m_summary[0] = '\0';
 		}
 
 		if ( m_numDisplayLines > 0 ) {
