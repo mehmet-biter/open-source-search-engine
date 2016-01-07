@@ -82,6 +82,8 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 	// flag for stopping back-to-back spaces. only count those as one char.
 	bool lastSpace = false;
 	int32_t maxCharSize = 4; // we are utf8
+	int in_bad_tags = 0;
+
 	for ( int32_t i = a ; i < b ; i++ ) {
 		if (trunc) {
 			break;
@@ -94,8 +96,26 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 
 		// is tag?
 		if ( tids && tids[i] ) {
+			if ( f ) {
+				// let's not get from bad tags when filtering into buffer (used for generating summaries)
+				if ( ( tids[i] == TAG_STYLE ) || ( tids[i] == TAG_SCRIPT ) ) {
+					++in_bad_tags;
+					continue;
+				}
+
+				if ( in_bad_tags ) {
+					if ( ( ( tids[i] & BACKBITCOMP ) == TAG_STYLE ) ||
+					     ( ( tids[i] & BACKBITCOMP ) == TAG_SCRIPT ) ) {
+						--in_bad_tags;
+					}
+				}
+			}
+
 			// if not breaking, does nothing
-			if ( ! g_nodes[tids[i]&0x7f].m_isBreaking ) continue;
+			if ( ! g_nodes[tids[i]&0x7f].m_isBreaking ) {
+				continue;
+			}
+
 			// list tag? <li>
 			if ( tids[i] == TAG_LI ) { 
 				if ( f ){
@@ -153,6 +173,11 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 			continue;
 		}
 		
+		// skip words if we're in 'bad' tags
+		if ( in_bad_tags ) {
+			continue;
+		}
+
 		// scan through all chars discounting back-to-back spaces
 		
 		// assume filters out to the same # of chars

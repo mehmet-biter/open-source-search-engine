@@ -124,14 +124,7 @@ bool Sections::set ( Words     *w                       ,
 		     int32_t       niceness                ,
 		     void      *state                   ,
 		     void     (*callback)(void *state)  ,
-		     uint8_t    contentType             ,
-		     // from XmlDoc::ptr_sectionsData in a title rec
-		     char      *sectionsData            ,
-		     bool       sectionsDataValid       ,
-		     char      *sectionsVotes           ,
-		     //uint64_t   tagPairHash             ,
-		     char      *buf                     ,
-		     int32_t       bufSize                 ) {
+		     uint8_t    contentType             ) {
 
 	reset();
 
@@ -1821,23 +1814,6 @@ bool Sections::set ( Words     *w                       ,
 	///////////////////////////////////////
 	setMenus();
 
-	///////////////////////////////////////
-	//
-	// now set SENT_LIST flags on m_sentFlags
-	//
-	// try to capture sentences that are not menus but are a list of
-	// things. if the sentence itself has a list of short items, or a bunch
-	// of commas, then also set the SEC_LIST flag on it. or if sentence
-	// is part of a sequence of sentences that are a list of sentences then
-	// set it for them as well. typically such sentences will be separated
-	// by a vertical space, have no periods, maybe have an <li> tag or only
-	// have a few words per sentence. this will help us demote search results
-	// that have the query terms in such a list because it is usually not
-	// very useful information.
-	//
-	///////////////////////////////////////
-	setListFlags();
-
 	//verifySections();
 
 	// don't use nsvt/osvt now
@@ -1855,16 +1831,6 @@ bool Sections::addImpliedSections ( Addresses *aa ) {
 
 	// no point in going any further if we have nothing
 	if ( m_numSections == 0 ) return true;
-
-	// set this
-	//m_osvt = osvt;
-
-
-	// as part of a replacement for table swoggling which is confusing
-	// and didn't really work right, especially when we had both 
-	// table header row and column, we set these on each table cell:
-	// SEC_HASDATEHEADERROW and SEC_HASDATEHEADERCOL
-	if ( ! setTableStuff ( ) ) return false;
 
 	m_aa = aa;
 
@@ -4060,7 +4026,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		inParens = false;
 		int32_t dollarCount = 0;
 		int32_t priceWordCount = 0;
-		bool hadAt = false;
 
 		// watchout if in a table. the last table column header
 		// should not be applied to the first table cell in the
@@ -4435,8 +4400,7 @@ bool Sections::setSentFlagsPart2 ( ) {
 				isStopWord = true;
 			// count them
 			if ( isStopWord ) stops++;
-			// set this
-			if ( m_wids[i] == h_at ) hadAt = true;
+
 			// if we end on a stop word that is usually indicative
 			// of something like
 			// "Search Results for <h1>Doughnuts</h1>" as for
@@ -5270,8 +5234,6 @@ int32_t hasTitleWords ( sentflags_t sflags ,
 	static int64_t h_tickets;
 	static int64_t h_events;
 	static int64_t h_jobs;
-	static int64_t h_this;
-	static int64_t h_series;
 	static int64_t h_total;
 	static int64_t h_times;
 	static int64_t h_purchase;
@@ -5321,8 +5283,6 @@ int32_t hasTitleWords ( sentflags_t sflags ,
 		h_tickets = hash64n("tickets");
 		h_events = hash64n("events");
 		h_jobs = hash64n("jobs");
-		h_this = hash64n("this");
-		h_series = hash64n("series");
 		h_total = hash64n("total");
 		h_times = hash64n("times");
 		h_purchase = hash64n("purchase");
@@ -6537,10 +6497,6 @@ int32_t hasTitleWords ( sentflags_t sflags ,
 		     to_lower_a(wptrs[i][wlens[i]-1]) == 't' )
 			hadAthon = true;
 
-		//if ( wids[i] == h_this &&
-		//     i+2<nw && wids[i+2] == h_series )
-		//	log("hey");
-
 		// save it
 		int64_t savedWid = lastWid;
 		// assign
@@ -7088,7 +7044,6 @@ int32_t Sections::addImpliedSections3 ( ) {
 		//bro = sk;
 		// assume no winner
 		int32_t       bestScore  = 0;
-		Section   *bestBro    = NULL;
 		char       bestMethod = -1;
 		Partition *bestPart   = NULL;
 		// loop over all enumerated methods
@@ -7147,7 +7102,6 @@ int32_t Sections::addImpliedSections3 ( ) {
 				if ( score <= bestScore ) continue;
 				// is best of all methods so far?
 				bestScore  = score;
-				bestBro    = bro;
 				bestMethod = m;
 				bestPart   = &parts[m];
 			}
@@ -7186,11 +7140,9 @@ int32_t Sections::addImpliedSections3 ( ) {
 			Section *cc = m_sectionPtrs[a];
 			if ( cc && cc->m_a == a && cc->m_b == b ) continue;
 			// this returns false and sets g_errno on error
-			if ( ! insertSubSection( sk->m_parent ,
-						 winnerPart->m_a[i],
-						 winnerPart->m_b[i],
-						 BH_IMPLIED ) )
+			if ( ! insertSubSection( winnerPart->m_a[i], winnerPart->m_b[i], BH_IMPLIED ) ) {
 				return -1;
+			}
 		}
 
 		// ok, flag it
@@ -7214,8 +7166,7 @@ float computeSimilarity2 ( int32_t   *vec0 ,
 			  int32_t    niceness ,
 			  SafeBuf *pbuf ,
 			  HashTableX *labelTable ,
-			  int32_t nv0 ,
-			  int32_t nv1 ) {
+			  int32_t nv0 ) {
 	// if both empty, assume not similar at all
 	if ( *vec0 == 0 && *vec1 == 0 ) return 0;
 	// if either is empty, return 0 to be on the safe side
@@ -7379,7 +7330,7 @@ int32_t Sections::getDelimScore ( Section *bro ,
 	// save it
 	Section *start = bro;
 
-	int32_t dh = getDelimHash ( method , delim , start );
+	int32_t dh = getDelimHash ( method , delim );
 
 	// bro must be certain type for some methods
 	if ( dh == -1 ) return -2;
@@ -7395,8 +7346,6 @@ int32_t Sections::getDelimScore ( Section *bro ,
 	// sanity check... should all be brothers (same parent)
 	if ( delim->m_parent != container ) { char *xx=NULL;*xx=0; }
 
-	// the head section of a particular partition's section
-	Section *currDelim = bro;
 	// scores
 	int32_t brosWithWords = 0;
 	int32_t maxBrosWithWords = 0;
@@ -7453,7 +7402,6 @@ int32_t Sections::getDelimScore ( Section *bro ,
 
 	// reset prev sentence
 	Section *prevSent = NULL;
-	Section *lastBro  = NULL;
 
 	// scan the brothers
 	for ( ; ; bro = bro->m_nextBrother ) {
@@ -7467,7 +7415,7 @@ int32_t Sections::getDelimScore ( Section *bro ,
 
 		// get its hash
 		int32_t h = 0LL ;
-		if ( bro ) h = getDelimHash ( method , bro , start );
+		if ( bro ) h = getDelimHash ( method , bro );
 
 		// . check this out
 		// . don't return 0 because we make a vector of these hashes
@@ -7479,12 +7427,6 @@ int32_t Sections::getDelimScore ( Section *bro ,
 
 		// if first time, ignore crap above the first delimeter occurnc
 		if ( ignoreAbove ) continue;
-
-		// update this for insertSubSection()
-		lastBro = bro;
-
-		if ( h == dh ) 
-			currDelim = bro;
 
 		// count non delimeter sections. at least one section
 		// must have text and not be a delimeter section
@@ -7592,8 +7534,7 @@ int32_t Sections::getDelimScore ( Section *bro ,
 							m_niceness ,
 							pbuf ,
 							dbt ,
-							nva ,
-							nvb );
+							nva );
 			// add up all sims
 			if ( cellCount >= 2 ) { // ! firstTime ) {
 				simTotal += sim;
@@ -7610,8 +7551,6 @@ int32_t Sections::getDelimScore ( Section *bro ,
 				if ( pbuf ) 
 					minBuf.safeMemcpy ( pbuf );
 			}
-			// a new head
-			//currDelim = bro;
 			// reset vht for next partition cell to call
 			// hashSentenceBits() into
 			vht.clear();
@@ -8171,7 +8110,7 @@ bool Sections::hashSentPairs (Section    *sx ,
 
 // . don't return 0 because we make a vector of these hashes
 //   and computeSimilarity() assumes vectors are NULL term'd. return -1 instead
-int32_t Sections::getDelimHash ( char method , Section *bro , Section *head ) {
+int32_t Sections::getDelimHash ( char method , Section *bro ) {
 
 	// now all must have text!
 	//if ( bro->m_firstWordPos < 0 ) return -1;
@@ -8370,31 +8309,6 @@ int32_t Sections::getDelimHash ( char method , Section *bro , Section *head ) {
 		// was not getting an implied section set, so let's do away
 		// with the pure dow algo and see what happens.
 		return -1;
-		// must be a sort of heading like "Jul 24"
-		//if ( !(bro->m_flags & SEC_HEADING_CONTAINER) &&
-		//     !(bro->m_flags & SEC_HEADING          ) )
-		//	return -1;
-		if ( ! (bro->m_flags & SEC_HAS_DOW) ) 
-			return -1;
-		// this is causing core
-		if ( bro->m_tagId == TAG_TC ) return -1;
-		// now it must be all date words
-		int32_t a = bro->m_firstWordPos;
-		int32_t b = bro->m_lastWordPos;
-		// sanity check
-		if ( a < 0 ) { char *xx=NULL;*xx=0; }
-		// scan
-		for ( int32_t i = a ; i <= b ; i++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// skip if not wid
-			if ( ! m_wids[i] ) continue;
-			// must be in date
-			if ( ! ( m_bits->m_bits[i] & D_IS_IN_DATE ) ) 
-				return -1;
-		}
-		// do not collide with tagids
-		return 66666;
 	}
 	if ( method == METHOD_ABOVE_DOW ) {
 		// must be a sort of heading like "Jul 24"
@@ -8503,10 +8417,6 @@ bool Sections::addSentenceSections ( ) {
 	static int64_t h_the;
 	static int64_t h_and;
 	static int64_t h_a;
-	static int64_t h_p;
-	static int64_t h_m;
-	static int64_t h_am;
-	static int64_t h_pm;
 	static int64_t h_http;
 	static int64_t h_https;
 	static int64_t h_room;
@@ -8516,8 +8426,6 @@ bool Sections::addSentenceSections ( ) {
 	static int64_t h_suite;
 	static int64_t h_ste;
 	static int64_t h_tags;
-	//static int64_t h_noon;
-	//static int64_t h_midnight;
 	if ( ! s_init ) {
 		s_init = true;
 		h_tags = hash64n("tags");
@@ -8525,10 +8433,6 @@ bool Sections::addSentenceSections ( ) {
 		h_the = hash64n("the");
 		h_and = hash64n("and");
 		h_a = hash64n("a");
-		h_p = hash64n("p");
-		h_m = hash64n("m");
-		h_am = hash64n("am");
-		h_pm = hash64n("pm");
 		h_a = hash64n("a");
 		h_at = hash64n("at");
 		h_for = hash64n("for");
@@ -8549,8 +8453,6 @@ bool Sections::addSentenceSections ( ) {
 		h_building = hash64n("building");
 		h_suite = hash64n("suite");
 		h_ste = hash64n("ste");
-		//h_noon  = hash64n("noon");
-		//h_midnight = hash64n("midnight");
 	}
 
 	// need D_IS_IN_URL bits to be valid
@@ -8578,7 +8480,6 @@ bool Sections::addSentenceSections ( ) {
 		bool lastWasComma = false;
 		nodeid_t includedTag = -2;
 		int32_t lastbr = -1;
-		bool hasColon = false;
 		bool endOnBr = false;
 		bool endOnBold = false;
 		bool capped = true;
@@ -8842,11 +8743,6 @@ bool Sections::addSentenceSections ( ) {
 					     j == i )
 						break;
 
-					// flag it, but only if not in
-					// a time format like "8:30"
-					if ( j>0 && !is_digit(m_wptrs[j][-1]))
-						hasColon = true;
-
 					// a "::" is used in breadcrumbs,
 					// so break on that.
 					// fixes "Dining :: Visit :: 
@@ -8881,39 +8777,9 @@ bool Sections::addSentenceSections ( ) {
 					     
 					if ( tagBefore ) break;
 					if ( tagAfter  ) break;
+
 					// for now allow it!
 					continue;
-					// do not break http://... though
-					if ( p[1] == '/' ) continue;
-					// or 10:30 etc.
-					if ( is_digit(p[1]) ) continue;
-					if ( j>0 && is_digit(p[-1]) ) continue;
-					// allow trumba titles to have colons
-					// so they can get the TSF_TITLEY
-					// event title boost in Events.cpp
-					if ( m_isTrumba &&
-					     sp[j]->m_tagId == TAG_TITLE )
-						continue;
-					// fix guysndollsllc.com which has
-					// "Battle of the Bands with: The Cincy
-					// Rockers, Second Wind, ..."
-					// if last word was a lowercase
-					// and one of these, let it in the
-					// sentence
-					//if ( lastWidPos < 0 ) 
-					//	break;
-					// must have been lowercase
-					if(!is_lower_utf8(m_wptrs[lastWidPos]))
-						break;
-					// and must be one of these words:
-					if ( prevWid == h_with ||
-					     // "Send info to: Booking"
-					     // from guysndollsllc.com/page4.ht
-					     prevWid == h_to ||
-					     prevWid == h_and  )
-						continue;
-					// otherwise, break it
-					break;
 				}
 				// . special hyphen
 				// . breaks up title for peachpundit.com
@@ -8961,28 +8827,12 @@ bool Sections::addSentenceSections ( ) {
 
 				// set "next" to next alnum word after us
 				int32_t next = j+1;
-				int64_t nwid = 0LL;
 				int32_t max  = next + 10;
 				if ( max > m_nw ) max = m_nw;
 				for ( ; next < max ; next++ ) {
 					if ( ! m_wids[next] ) continue;
-					nwid = m_wids[next];
 					break;
 				}
-				// am. pm.
-				// if prev word was like 'm' as in am or pm
-				// then assume a cap word following ends sent.
-				// although if we got 
-				// "At 1 p.m. Bob Jones plays"
-				// then we'd be wrong.
-				bool isAmPm = false;
-				if ( prevWid == h_m &&
-				     (prevPrevWid == h_a ||
-				      prevPrevWid == h_p ) )
-					isAmPm = true;
-				if ( (prevWid == h_am ||
-				      prevWid == h_pm ) )
-					isAmPm = true;
 
 				// was previous word/abbr capitalized?
 				// if so, assume period does not end sentence.
@@ -9206,7 +9056,7 @@ bool Sections::addSentenceSections ( ) {
 			if ( addb >= m_nw ) { char *xx=NULL;*xx=0; }
 
 			// ok, now add the split sentence
-			Section *is =insertSubSection(parent,adda,addb+1,bh);
+			Section *is =insertSubSection(adda,addb+1,bh);
 			// panic?
 			if ( ! is ) return false;
 			// set sentence flag on it
@@ -9270,8 +9120,7 @@ bool Sections::addSentenceSections ( ) {
 	return true;
 }
 
-Section *Sections::insertSubSection ( Section *parentArg , int32_t a , int32_t b ,
-				      int32_t newBaseHash ) {
+Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash ) {
 	// debug
 	//log("sect: inserting subsection [%"INT32",%"INT32")",a,b);
 
@@ -9373,11 +9222,11 @@ Section *Sections::insertSubSection ( Section *parentArg , int32_t a , int32_t b
 		m_numSections--;
 		char *xx=NULL;*xx=0;
 		return NULL;
-		sk->m_next = m_rootSection;//m_rootSection;
-		sk->m_prev = NULL;
-		//m_sections[0].m_prev = sk;
-		m_rootSection->m_prev = sk;
-		m_rootSection = sk;
+//		sk->m_next = m_rootSection;//m_rootSection;
+//		sk->m_prev = NULL;
+//		//m_sections[0].m_prev = sk;
+//		m_rootSection->m_prev = sk;
+//		m_rootSection = sk;
 	} else {
 		// insert us into the linked list of sections
 		if ( si->m_next ) si->m_next->m_prev = sk;
@@ -9541,96 +9390,6 @@ Section *Sections::insertSubSection ( Section *parentArg , int32_t a , int32_t b
 	}
 
 	return sk;
-
-	// start scanning here
-	Section *start = parent->m_next;
-
-	int32_t lastb = -1;
-	// try just scanning sections in parent
-	for ( Section *sx = start ; sx ; sx = sx->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		//Section *sx = &m_sections[xx];
- 		// skip if section ends before our sentence begins
-		if ( sx->m_b <= a ) continue;
-		// stop if beyond sk
-		if ( sx->m_a >= b ) break;
-		// skip if sn not parent
-		if ( sx->m_parent != parent ) continue;
-		// when splitting a section do not reparent if
-		// not in our split...
-		//if ( sx->m_a >= b ) continue;
-		// do not reparent if it contains us
-		if ( sx->m_a <= a && sx->m_b >= b ) continue;
-		// reset his parent to the newly added section
-		sx->m_parent = sk;
-		// and or his flags into us. SEC_HAS_DOM, etc.
-		sk->m_flags |= sx->m_flags & mask;
-		// sanity check
-		if ( sx->m_b > sk->m_b ) { char *xy=NULL;*xy=0; }
-		if ( sx->m_a < sk->m_a ) { char *xy=NULL;*xy=0; }
-		// skip if already got the xor for this section
-		if ( sx->m_a < lastb ) continue;
-		// set this
-		lastb = sx->m_b;
-		// add all the entries from this child section from the
-		// phone/email/etc. tables
-		sk->m_phoneXor ^= sx->m_phoneXor;
-		sk->m_emailXor ^= sx->m_emailXor;
-		sk->m_priceXor ^= sx->m_priceXor;
-		sk->m_todXor   ^= sx->m_todXor;
-		sk->m_dayXor   ^= sx->m_dayXor;
-		sk->m_addrXor  ^= sx->m_addrXor;
-		// make sure did not make it zero
-		if ( sx->m_phoneXor   && sk->m_phoneXor == 0 )
-			sk->m_phoneXor    = sx->m_phoneXor;
-		if ( sx->m_emailXor   && sk->m_emailXor == 0 )
-			sk->m_emailXor    = sx->m_emailXor;
-		if ( sx->m_priceXor   && sk->m_priceXor == 0 )
-			sk->m_priceXor    = sx->m_priceXor;
-		if ( sx->m_todXor     && sk->m_todXor == 0 )
-			sk->m_todXor      = sx->m_todXor;
-		if ( sx->m_dayXor     && sk->m_dayXor == 0 )
-			sk->m_dayXor      = sx->m_dayXor;
-		if ( sx->m_addrXor && sk->m_addrXor == 0 )
-			sk->m_addrXor = sx->m_addrXor;
-		// set this perhaps
-		if ( sk->m_firstPlaceNum < 0 ) 
-			sk->m_firstPlaceNum = sx->m_firstPlaceNum;
-		// update this?
-		if ( sx->m_alnumPosA < 0 ) continue;
-		// take the first one we get
-		if ( sk->m_alnumPosA == -1 ) 
-			sk->m_alnumPosA = sx->m_alnumPosA;
-		// update to the last one always
-		sk->m_alnumPosB  = sx->m_alnumPosB;
-	}
-
-	// a flag
-	bool needsFirst = true;
-	// . set the words ptrs to it
-	// . TODO: can later speed up with ptr to ptr logic
-	for ( int32_t yy = a ; yy < b ; yy++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// and first/last word pos
-		if ( m_wids[yy] ) {
-			// mark this
-			if ( needsFirst ) {
-				sk->m_firstWordPos = yy;
-				needsFirst = false;
-			}
-			// remember last
-			sk->m_lastWordPos = yy;
-		}
-		// must have had sn as parent
-		if ( m_sectionPtrs[yy] != parent ) continue;
-		// "sk" becomes the new parent
-		m_sectionPtrs[yy] = sk;
-	}
-
-	return sk;
 }
 
 // for brbr and hr splitting delimeters
@@ -9666,8 +9425,6 @@ int32_t Sections::splitSectionsByTag ( nodeid_t tagid ) {
 		for ( ; first->m_prevBrother ; first = first->m_prevBrother )
 			// breathe
 			QUICKPOLL(m_niceness);
-		// save parent
-		Section *parent = first->m_parent;
 
 	subloop:
 		// mark it
@@ -9715,7 +9472,7 @@ int32_t Sections::splitSectionsByTag ( nodeid_t tagid ) {
 		     // and must group together something meaningful
 		     numTextSections >= 2 ) {
 			// do the insertion
-			Section *sk = insertSubSection (parent,a,b,BH_IMPLIED);
+			Section *sk = insertSubSection (a,b,BH_IMPLIED);
 			// error?
 			if ( ! sk ) return -1;
 			// fix it
@@ -9792,7 +9549,7 @@ bool Sections::splitSections ( char *delimeter , int32_t dh ) {
 		//
 		// try this now
 		//
-		Section *sk = insertSubSection ( sn , start , i , dh );
+		Section *sk = insertSubSection ( start , i , dh );
 
 		// do not resplit this split section with same delimeter!!
 		if ( sk ) sk->m_processedHash = dh;
@@ -9900,7 +9657,6 @@ SectionVotingTable::SectionVotingTable ( ) {
 //bool Sections::gotSectiondbList ( bool *needsRecall ) {
 bool SectionVotingTable::addListOfVotes ( RdbList *list, 
 					  key128_t **lastKey ,
-					  uint32_t tagPairHash ,
 					  int64_t myDocId ,
 					  int32_t niceness ) {
 
@@ -11296,27 +11052,6 @@ bool Sections::containsTagId ( Section *si, nodeid_t tagId ) {
 	return false;
 }
 
-bool Sections::setTableStuff ( ) {
-	return true;
-}
-
-// . does table have a date header row or column?
-// . we need this for our weekly schedule detection algorithm
-// . many sites have a row header this is the days of the week
-// . sometimes they have tods in the first column, and sometimes they
-//   just put the tods and tod ranges in the table cells directly.
-// . sets Section::m_flags SEC_HASDATEHEADERCOL/ROW for JUST the table
-//   section if it indeed has such date headers
-// . Dates::isCompatible() looks at that table flag to see if it should
-//   apply special processing when deciding if two dates should be paired
-// . then we set DF_TABLEDATEHEADERROW/COL for the dates in those
-//   header rows/cols so that we can set SF_RECURRING_DOW if the dow date
-//   was in the header row/col
-bool Sections::setTableDateHeaders ( Section *ts ) {
-
-	return true;
-}
-
 // . just the voting info for passing into diffbot in json
 // . along w/ the title/summary/etc. we can return this json blob for each search result
 bool Sections::printVotingInfoInJSON ( SafeBuf *sb ) {
@@ -11354,10 +11089,8 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 			char *diversityVec,
 			char *wordSpamVec,
 			char *fragVec,
-			HashTableX *st2 ,
-			HashTableX *tt  ,
 			Addresses *aa ,
-			char format ) { // bool forProCog ){
+			char format ) {
 	//FORMAT_PROCOG FORMAT_JSON HTML
 
 	//sbuf->safePrintf("<b>Sections in Document</b>\n");
@@ -11367,10 +11100,6 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 
 	m_sbuf->setLabel ("sectprnt");
 
-	//m_pt = pt;
-	//m_et = et;
-	//m_at = at;
-	//m_priceTable = priceTable;
 	m_aa = aa;
 	m_hiPos = hiPos;
 
@@ -11991,7 +11720,6 @@ bool Sections::setRegistrationBits ( ) {
 	static int64_t h_request;
 	static int64_t h_requesting;
 	static int64_t h_get;
-	static int64_t h_enroll;
 	static int64_t h_buy;
 	static int64_t h_presale ;
 	static int64_t h_pre ;
@@ -12004,7 +11732,6 @@ bool Sections::setRegistrationBits ( ) {
 	static int64_t h_box; // box office for newmexicojazzfestival.org
 	static int64_t h_office;
 	static int64_t h_ticket;//ticket window for newmexicojazzfestival.org
-	static int64_t h_online;
 	static int64_t h_window;
 	static int64_t h_patron;
 	static int64_t h_service;
@@ -12043,7 +11770,6 @@ bool Sections::setRegistrationBits ( ) {
 		h_requesting   = hash64n("requesting");
 		h_request      = hash64n("request");
 		h_get          = hash64n("get");
-		h_enroll       = hash64n("enroll");
 		h_buy          = hash64n("buy");
 		h_presale      = hash64n("presale");
 		h_pre          = hash64n("pre");
@@ -12069,7 +11795,6 @@ bool Sections::setRegistrationBits ( ) {
 		h_box          = hash64n("box");
 		h_office       = hash64n("office");
 		h_ticket       = hash64n("ticket");
-		h_online       = hash64n("online");
 		h_window       = hash64n("window");
 		h_patron       = hash64n("patron");
 		h_service      = hash64n("service");
@@ -12186,7 +11911,6 @@ bool Sections::setRegistrationBits ( ) {
 		if ( wid == h_sign && nextWid == h_up      ) gotIt = 1;
 		if ( wid == h_signup                       ) gotIt = 1;
 		if ( wid == h_buy && nextWid == h_ticket  ) gotIt = 1;
-		//if ( wid == h_buy && nextWid == h_online  ) gotIt = 1;
 		if ( wid == h_purchase&&nextWid==h_ticket ) gotIt = 1;
 		if ( wid == h_get && nextWid==h_ticket    ) gotIt = 1;
 		// for that jimmy kimmel live url "requesting tickets online"
@@ -13102,100 +12826,95 @@ bool Sectiondb::verify ( char *coll ) {
 	return true;
 }
 
-
-bool Sections::setListFlags ( ) {
-	return true;
-}
-
 bool Sections::growSections ( ) {
 	// make a log note b/c this should not happen a lot because it's slow
 	log("build: growing sections!");
 	g_errno = EDOCBADSECTIONS;
 	return true;
-	// record old buf start
-	char *oldBuf = m_sectionBuf.getBufStart();
-	// grow by 20MB at a time
-	if ( ! m_sectionBuf.reserve ( 20000000 ) ) return false;
-	// for fixing ptrs:
-	char *newBuf = m_sectionBuf.getBufStart();
-	// set the new max
-	m_maxNumSections = m_sectionBuf.getCapacity() / sizeof(Section);
-	// update ptrs in the old sections
-	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		Section *si = &m_sections[i];
-		if ( si->m_parent ) {
-			char *np = (char *)si->m_parent;
-			np = np - oldBuf + newBuf;
-			si->m_parent = (Section *)np;
-		}
-		if ( si->m_next ) {
-			char *np = (char *)si->m_next;
-			np = np - oldBuf + newBuf;
-			si->m_next = (Section *)np;
-		}
-		if ( si->m_prev ) {
-			char *np = (char *)si->m_prev;
-			np = np - oldBuf + newBuf;
-			si->m_prev = (Section *)np;
-		}
-		if ( si->m_listContainer ) {
-			char *np = (char *)si->m_listContainer;
-			np = np - oldBuf + newBuf;
-			si->m_listContainer = (Section *)np;
-		}
-		if ( si->m_prevBrother ) {
-			char *np = (char *)si->m_prevBrother;
-			np = np - oldBuf + newBuf;
-			si->m_prevBrother = (Section *)np;
-		}
-		if ( si->m_nextBrother ) {
-			char *np = (char *)si->m_nextBrother;
-			np = np - oldBuf + newBuf;
-			si->m_nextBrother = (Section *)np;
-		}
-		if ( si->m_sentenceSection ) {
-			char *np = (char *)si->m_sentenceSection;
-			np = np - oldBuf + newBuf;
-			si->m_sentenceSection = (Section *)np;
-		}
-		if ( si->m_prevSent ) {
-			char *np = (char *)si->m_prevSent;
-			np = np - oldBuf + newBuf;
-			si->m_prevSent = (Section *)np;
-		}
-		if ( si->m_nextSent ) {
-			char *np = (char *)si->m_nextSent;
-			np = np - oldBuf + newBuf;
-			si->m_nextSent = (Section *)np;
-		}
-		if ( si->m_tableSec ) {
-			char *np = (char *)si->m_tableSec;
-			np = np - oldBuf + newBuf;
-			si->m_tableSec = (Section *)np;
-		}
-		if ( si->m_headColSection ) {
-			char *np = (char *)si->m_headColSection;
-			np = np - oldBuf + newBuf;
-			si->m_headColSection = (Section *)np;
-		}
-		if ( si->m_headRowSection ) {
-			char *np = (char *)si->m_headRowSection;
-			np = np - oldBuf + newBuf;
-			si->m_headRowSection = (Section *)np;
-		}
-		if ( si->m_leftCell ) {
-			char *np = (char *)si->m_leftCell;
-			np = np - oldBuf + newBuf;
-			si->m_leftCell = (Section *)np;
-		}
-		if ( si->m_aboveCell ) {
-			char *np = (char *)si->m_aboveCell;
-			np = np - oldBuf + newBuf;
-			si->m_aboveCell = (Section *)np;
-		}
-	}
-	return true;
+//	// record old buf start
+//	char *oldBuf = m_sectionBuf.getBufStart();
+//	// grow by 20MB at a time
+//	if ( ! m_sectionBuf.reserve ( 20000000 ) ) return false;
+//	// for fixing ptrs:
+//	char *newBuf = m_sectionBuf.getBufStart();
+//	// set the new max
+//	m_maxNumSections = m_sectionBuf.getCapacity() / sizeof(Section);
+//	// update ptrs in the old sections
+//	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
+//		// breathe
+//		QUICKPOLL(m_niceness);
+//		Section *si = &m_sections[i];
+//		if ( si->m_parent ) {
+//			char *np = (char *)si->m_parent;
+//			np = np - oldBuf + newBuf;
+//			si->m_parent = (Section *)np;
+//		}
+//		if ( si->m_next ) {
+//			char *np = (char *)si->m_next;
+//			np = np - oldBuf + newBuf;
+//			si->m_next = (Section *)np;
+//		}
+//		if ( si->m_prev ) {
+//			char *np = (char *)si->m_prev;
+//			np = np - oldBuf + newBuf;
+//			si->m_prev = (Section *)np;
+//		}
+//		if ( si->m_listContainer ) {
+//			char *np = (char *)si->m_listContainer;
+//			np = np - oldBuf + newBuf;
+//			si->m_listContainer = (Section *)np;
+//		}
+//		if ( si->m_prevBrother ) {
+//			char *np = (char *)si->m_prevBrother;
+//			np = np - oldBuf + newBuf;
+//			si->m_prevBrother = (Section *)np;
+//		}
+//		if ( si->m_nextBrother ) {
+//			char *np = (char *)si->m_nextBrother;
+//			np = np - oldBuf + newBuf;
+//			si->m_nextBrother = (Section *)np;
+//		}
+//		if ( si->m_sentenceSection ) {
+//			char *np = (char *)si->m_sentenceSection;
+//			np = np - oldBuf + newBuf;
+//			si->m_sentenceSection = (Section *)np;
+//		}
+//		if ( si->m_prevSent ) {
+//			char *np = (char *)si->m_prevSent;
+//			np = np - oldBuf + newBuf;
+//			si->m_prevSent = (Section *)np;
+//		}
+//		if ( si->m_nextSent ) {
+//			char *np = (char *)si->m_nextSent;
+//			np = np - oldBuf + newBuf;
+//			si->m_nextSent = (Section *)np;
+//		}
+//		if ( si->m_tableSec ) {
+//			char *np = (char *)si->m_tableSec;
+//			np = np - oldBuf + newBuf;
+//			si->m_tableSec = (Section *)np;
+//		}
+//		if ( si->m_headColSection ) {
+//			char *np = (char *)si->m_headColSection;
+//			np = np - oldBuf + newBuf;
+//			si->m_headColSection = (Section *)np;
+//		}
+//		if ( si->m_headRowSection ) {
+//			char *np = (char *)si->m_headRowSection;
+//			np = np - oldBuf + newBuf;
+//			si->m_headRowSection = (Section *)np;
+//		}
+//		if ( si->m_leftCell ) {
+//			char *np = (char *)si->m_leftCell;
+//			np = np - oldBuf + newBuf;
+//			si->m_leftCell = (Section *)np;
+//		}
+//		if ( si->m_aboveCell ) {
+//			char *np = (char *)si->m_aboveCell;
+//			np = np - oldBuf + newBuf;
+//			si->m_aboveCell = (Section *)np;
+//		}
+//	}
+//	return true;
 }
 

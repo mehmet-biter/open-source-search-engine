@@ -8806,13 +8806,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 		// do not supply xd so it will be set from scratch
 		if ( ! sections.set (&words,&phrases,&bits,NULL,0,0,
 				     NULL,0,NULL,NULL,
-				     0, // contenttype
-				     NULL, // sectionsdata
-				     false, // sectionsdatavalid
-				     NULL, // sectionsdata2
-				     //0, // tagpairhash
-				     NULL, // buf
-				     0)) // bufSize
+				     0))
 			return log("build: speedtestxml: sections set: %s",
 				   mstrerror(g_errno));
 
