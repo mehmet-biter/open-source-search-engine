@@ -177,10 +177,6 @@ class Xml {
 			bool   filterSpaces    = false ,
 			bool   useStopIndexTag = false );
 
-	// do they have a possible search box for gigablast on their page?
-	// if url and urlLen are non-null they will be filled in with the 
-	// target url
-	bool hasGigablastForm(char **url = NULL, int32_t *urlLen = NULL);
 
 	unsigned char getLanguage() { return langUnknown; }
 

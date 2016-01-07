@@ -93,8 +93,8 @@ typedef uint64_t qvec_t;
 #define FIELD_CHARSET  30
 #define FIELD_GBRSS    31
 #define FIELD_URLHASH       32
-#define FIELD_URLHASHDIV10  33
-#define FIELD_URLHASHDIV100 34
+//BR 20160106 removed: #define FIELD_URLHASHDIV10  33
+//BR 20160106 removed: #define FIELD_URLHASHDIV100 34
 #define FIELD_GBRULESET     35
 #define FIELD_GBLANG        36
 #define FIELD_GBQUALITY     37
@@ -103,7 +103,7 @@ typedef uint64_t qvec_t;
 #define FIELD_KEYWORD       40
 #define FIELD_QUOTA            41
 #define FIELD_GBTAGVECTOR      42
-#define FIELD_GBGIGABITVECTOR  43
+//BR 20160106 removed: #define FIELD_GBGIGABITVECTOR  43
 #define FIELD_GBSAMPLEVECTOR   44
 #define FIELD_SYNONYM          45
 #define FIELD_GBCOUNTRY        46

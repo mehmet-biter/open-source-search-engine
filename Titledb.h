@@ -18,7 +18,11 @@
 // add new link stats into LinkInfo
 //#define TITLEREC_CURRENT_VERSION 119
 //#define TITLEREC_CURRENT_VERSION 120
-#define TITLEREC_CURRENT_VERSION 121
+//#define TITLEREC_CURRENT_VERSION 121
+
+// BR 20160106. New version that eliminates values in posdb that we do not need.
+// See checks for m_version >= 122 in XmlDoc.cpp
+#define TITLEREC_CURRENT_VERSION 122
 
 #include "Rdb.h"
 #include "Url.h"

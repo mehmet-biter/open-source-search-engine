@@ -4840,6 +4840,7 @@ char *XmlDoc::getIsPermalink ( ) {
 }
 
 // guess based on the format of the url if this is a permalink
+//@@@ BR: FLAKY at best...
 char *XmlDoc::getIsUrlPermalinkFormat ( ) {
 	if ( m_isUrlPermalinkFormatValid ) return &m_isUrlPermalinkFormat;
 
@@ -5625,6 +5626,7 @@ SectionVotingTable *XmlDoc::getNewSectionVotingTable ( ) {
 }
 
 
+	
 // . scan every section and look up its tag and content hashes in
 //   sectiondb to find out how many pages and sites have the same hash
 // . use the secondary sectiondb key, key2
@@ -5814,6 +5816,7 @@ Sections *XmlDoc::getSectionsWithDupStats ( ) {
 	return ss;
 }
 
+
 static void gotReplyWrapper39 ( void *state1 , void *state2 ) {
 	//XmlDoc *THIS = (XmlDoc *)state;
 	XmlDoc *THIS = (XmlDoc *)state1;
@@ -5824,6 +5827,9 @@ static void gotReplyWrapper39 ( void *state1 , void *state2 ) {
 	// until m_gotDupStats is set to true.
 	THIS->m_masterLoop ( THIS->m_masterState );
 }
+
+
+
 
 
 // . launch a single msg3a::getDocIds() for a section hash, secHash32
@@ -6092,6 +6098,7 @@ SectionStats *XmlDoc::getSectionStats ( uint32_t secHash32 ,
 	//return &msg3a->m_sectionStats;
 	return &m_sectionStats;
 }
+
 
 // . come here when msg39 got the ptr_faceHashList for our single
 //   gbfacet:gbxpathsitehash
@@ -23757,10 +23764,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	//if ( ! pod || pod == (void *)-1 ) return (char *)pod;
 	//XmlDoc  *od  = *pod;
 
-	// if this page is hacked, then do not spider external outlinks
-	//char *comp = getIsCompromised();
-	//if ( ! comp || comp == (char *)-1 ) return (char *)comp;
-	//if ( *comp )
 	//	onlyInternal = true;
 
 	bool    isParentRSS       = false;
@@ -25253,138 +25256,6 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
 
-	// just keep it somewhat sane...
-	//if ( nw > 30000 ) nw = 30000;
-
-	// then each singleton has one phrase, and 1 empty for good hashing
-	//if ( ! table->setTableSize ( nw * 4 ) )
-	//	return log("build: Could not allocate %"INT32" bytes for table "
-	//		   "for indexing document.",
-	//		   (nw*4)*(8+sizeof(int32_t)));
-
-	/*
-	const char *help =
-		"<table><td bgcolor=lightgreen>\n"
-		"Each document has several associated pieces. Each piece "
-		"is indexed individually. The pieces are listed below and "
-		"are preceeded with a table dictating the parameters with "
-		"which the piece was indexed."
-
-		"<br><br>"
-
-		"Below that table the actual text of the piece is displayed. "
-		"Each alphanumeric word in the text has two subscripts of the "
-		"form <i>X/Y</i> where X and Y are percentage weights on the "
-		"score of that particular alphanumeric word. X is the weight "
-		"on the word itself and Y is the weight on the phrase which "
-		"is started by that word. A weight of 100% "
-		"indicates a weight which does not affect the score."
-
-		"<br><br>"
-
-		"Words that are struck out and in a box with a red background "
-		"instead of light blue are considered to be spam, meaning "
-		"they are repeated in a pattern. They "
-		"contain a number in that box which indicates the probability "
-		"they are spam and 100 minus that probability is weighted "
-		"with their score to get a new, spam-adjusted score. "
-		"<br>\n"
-		"</tr>\n"
-		"</table>\n"
-		"</td></table>\n"
-		"<br><br>\n";
-
-	if ( m_pbuf ) m_pbuf->safePrintf("%s",help);
-	*/
-
-	/*
-	int32_t inlinks = *getSiteNumInlinks();
-	int32_t boost1  = getBoostFromSiteNumInlinks ( inlinks );
-
-	// . now we hard code "boost2"
-	// . based on # of alnum words
-	// . this makes us look at keyword density, not just the
-	//   plain keyword count
-	int32_t naw = m_words.getNumAlnumWords();
-	// . keep at 100% for up to 200 words then reduce linearly
-	// . only do this for newer title recs to avoid undeletable data
-	// . if we have a huge document, it can still contain a very
-	//   relevant paragraph that is dense in the query terms, so
-	//   we really only want to punish enough so the post query
-	//   reranking has some good candidates for doing proximity
-	//   scoring.
-	// . back off by .90 every 1000 words
-	float nn = naw;
-	float bb = 100.0;
-	while ( nn > 1000 ) {
-		nn *= .9;
-		bb *= .9;
-	}
-	// never drop below %1
-	if ( bb < 1.0 ) bb = 1.0;
-	// set it
-	int64_t boost2 = (int64_t)bb;
-	*/
-
-	/*
-	int32_t siteNumInlinks = *getSiteNumInlinks();
-
-	if ( m_pbuf )
-		m_pbuf->safePrintf(
-
-			"<table border=1 cellpadding=2>"
-
-			"<tr><td>siteNumInlinks</td><td><b>%"INT32"%%</b></td></tr>"
-
-			"<tr><td>siteNumInlinksBoost</td>"
-			"<td>%"INT32"%%</td></tr>"
-
-			"<tr><td>numAlnumWords</td>"
-			"<td>%"INT32"</td></tr> "
-
-			"<tr><td>scoreWeightFromNumAlnumWords"
-			"</td><td>%"INT32"%%</td></tr>"
-
-			"<tr><td>headerWeight</td>"
-			"<td>%"INT32"%%</td></tr>"
-
-			"<tr><td>urlPathWeight</td>"
-			"<td>%"INT32"%%</td></tr>"
-
-			"<tr><td>externalLinkTextWeight</td>"
-			"<td>%"INT32"%%</td></tr>"
-
-			"<tr><td>internalLinkTextWeight</td>"
-			"<td>%"INT32"%%</td></tr>"
-
-			"<tr><td>conceptWeight</td>"
-			"<td>%"INT32"%%</td></tr>"
-
-			"<tr><td>titleWeight</td>"
-			"<td>%"INT32"%%</td></tr>"
-
-			"</table>"
-			"<br>"
-			,
-			(int32_t)siteNumInlinks,
-			(int32_t)boost1,
-			//(int32_t)len,
-			(int32_t)naw,
-			(int32_t)boost2,
-			(int32_t)boost1,
-			(int32_t)boost2,
-			//(int32_t)boost1,
-			(int32_t)m_headerWeight,
-			(int32_t)m_urlPathWeight,
-			(int32_t)m_externalLinkTextWeight,
-			(int32_t)m_internalLinkTextWeight,
-			(int32_t)m_conceptWeight,
-			(int32_t)m_titleWeight,
-			(int32_t)m_titleWeight,
-			(int32_t)boost1,
-			(int32_t)boost1,
-			);
-	*/
 
 	// do not repeat this if the cachedb storage call blocks
 	m_allHashed = true;
@@ -25395,25 +25266,6 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// hash diffbot's json output here
 	uint8_t *ct = getContentType();
 	if ( ! ct ) return NULL;
-	/*
-	if ( *ct == CT_JSON ) { // && m_isDiffbotJSONObject ) {
-		// hash the content type for type:json query
-		if ( ! hashContentType   ( table ) ) return NULL;
-		// and the url: query support
-		if ( ! hashUrl           ( table ) ) return NULL;
-		// language support
-		if ( ! hashLanguage      ( table ) ) return NULL;
-		// country?
-		if ( ! hashCountry       ( table ) ) return NULL;
-		if ( ! hashTagRec        ( table ) ) return NULL;
-		// hash for gbsortby:gbspiderdate
-		if ( ! hashDateNumbers   ( table ) ) return NULL;
-		// has gbhasthumbnail:1 or 0
-		if ( ! hashImageStuff    ( table ) ) return NULL;
-		// and the json itself
-		return hashJSON ( table );
-	}
-	*/
 
 	if ( ! hashContentType   ( table ) ) return NULL;
 	if ( ! hashUrl           ( table ) ) return NULL;
@@ -25421,16 +25273,16 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	if ( ! hashCountry       ( table ) ) return NULL;
 	if ( ! hashSiteNumInlinks( table ) ) return NULL;
 	if ( ! hashTagRec        ( table ) ) return NULL;
-	if ( ! hashAds           ( table ) ) return NULL;
-	if ( ! hashSubmitUrls    ( table ) ) return NULL;
+// BR 20160106 removed:	if ( ! hashAds           ( table ) ) return NULL;
+// BR 20160106 removed:	if ( ! hashSubmitUrls    ( table ) ) return NULL;
 	if ( ! hashIsAdult       ( table ) ) return NULL;
 
 	// has gbhasthumbnail:1 or 0
-	if ( ! hashImageStuff    ( table ) ) return NULL;
+// BR 20160106 removed:	if ( ! hashImageStuff    ( table ) ) return NULL;
 
 	// . hash sectionhash:xxxx terms
 	// . diffbot still needs to hash this for voting info
-	if ( ! hashSections   ( table ) ) return NULL;
+// BR 20160106 removed:	if ( ! hashSections   ( table ) ) return NULL;
 
 	// now hash the terms sharded by termid and not docid here since they
 	// just set a special bit in posdb key so Rebalance.cpp can work.
@@ -25446,11 +25298,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	bool indexDoc = true;
 	if ( cr->m_isCustomCrawl ) indexDoc = false;
 	if ( ! cr->m_indexBody   ) indexDoc = false;
-	// if ( cr->m_isCustomCrawl && m_isDiffbotJSONObject )
-	// 	indexDoc = true;
-	// always index diffbot json objects for GI (custom crawl is false)
-	if ( m_isDiffbotJSONObject )
-		indexDoc = true;
+
 
 	// global index unless this is a json object in which case it is
 	// hashed above in the call to hashJSON(). this will decrease disk
@@ -25460,14 +25308,14 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// hash json fields
 	if ( *ct == CT_JSON ) {
 		// this hashes both with and without the fieldname
-		hashJSONFields ( table );
+// BR 20160107 removed:		hashJSONFields ( table );
 		goto skip;
 	}
 
 	// same for xml now, so we can search for field:value like w/ json
 	if ( *ct == CT_XML ) {
 		// this hashes both with and without the fieldname
-		hashXMLFields ( table );
+// BR 20160107 removed:		hashXMLFields ( table );
 		goto skip;
 	}
 
@@ -25533,7 +25381,6 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// . this is in LinkInfo::hash
 	//if ( ! hashMinInlinks ( table , linkInfo ) ) return NULL;
 
-	if ( ! hashMetaData      ( table ) ) return NULL;
 
 	// return true if we don't need to print parser info
 	//if ( ! m_pbuf ) return true;
@@ -25542,26 +25389,6 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	return (char *)1;
 }
 
-// . "inlinks" is # of inlinks to the SITE
-// . returns a percentage boost
-int32_t XmlDoc::getBoostFromSiteNumInlinks ( int32_t inlinks ) {
-	// . base on # of site inlinks
-	// . just hard code this for now
-	int32_t boost1 = 100;
-	if ( inlinks >=    10 ) boost1 = 150;
-	if ( inlinks >=    50 ) boost1 = 200;
-	if ( inlinks >=   100 ) boost1 = 250;
-	if ( inlinks >=   200 ) boost1 = 300;
-	if ( inlinks >=   400 ) boost1 = 350;
-	if ( inlinks >=   800 ) boost1 = 400;
-	if ( inlinks >=  1600 ) boost1 = 450;
-	if ( inlinks >=  3200 ) boost1 = 500;
-	if ( inlinks >=  6400 ) boost1 = 550;
-	if ( inlinks >= 12800 ) boost1 = 600;
-	if ( inlinks >= 25600 ) boost1 = 650;
-	if ( inlinks >= 51200 ) boost1 = 700;
-	return boost1;
-}
 
 // . this is kinda hacky because it uses a short XmlDoc on the stack
 // . no need to hash this stuff for regular documents since all the terms
@@ -26361,6 +26188,19 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		    (tagLen== 8&&strncasecmp(tag,"keywords"   , 8)== 0)||
 		    (tagLen==11&&strncasecmp(tag,"description",11)== 0) )
 			continue;
+			
+
+		// BR 20160107: Only hash certain custom meta tags and ignore the rest
+		if( strncasecmp(tag,"subject", 7) != 0 &&
+			strncasecmp(tag,"abstract", 8) != 0 &&
+			strncasecmp(tag,"news_keywords", 13 != 0) &&	// http://www.metatags.org/meta_name_news_keywords
+			strncasecmp(tag,"author", 6) != 0 )
+		{
+			// Unwanted meta tag
+			continue;
+		}
+			
+			
 		// . don't allow reserved names: site, url, suburl, link and ip
 		// . actually, the colon is included as part of those
 		//   field names, so we really lucked out...!
@@ -26427,9 +26267,6 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 }
 
 
-bool XmlDoc::hashMetaData ( HashTableX *tt ) {
-	return true;
-}
 
 // slightly greater than m_spideredTime, which is the download time.
 // we use this for sorting as well, like for the widget so things
@@ -26571,17 +26408,17 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 
 	// these ctypes are defined in HttpMime.h
 	switch (ctype) {
-	case CT_HTML: s = "html"; break;
-	case CT_TEXT: s = "text"; break;
-	case CT_XML : s = "xml" ; break;
-	case CT_PDF : s = "pdf" ; break;
-	case CT_DOC : s = "doc" ; break;
-	case CT_XLS : s = "xls" ; break;
-	case CT_PPT : s = "ppt" ; break;
-	case CT_PS  : s = "ps"  ; break;
-	// for diffbot. so we can limit search to json objects
-	// in Diffbot.cpp
-	case CT_JSON: s = "json"  ; break;
+		case CT_HTML: s = "html"; break;
+		case CT_TEXT: s = "text"; break;
+		case CT_XML : s = "xml" ; break;
+		case CT_PDF : s = "pdf" ; break;
+		case CT_DOC : s = "doc" ; break;
+		case CT_XLS : s = "xls" ; break;
+		case CT_PPT : s = "ppt" ; break;
+		case CT_PS  : s = "ps"  ; break;
+		// for diffbot. so we can limit search to json objects
+		// in Diffbot.cpp
+		case CT_JSON: s = "json"  ; break;
 	}
 	// bail if unrecognized content type
 	if ( ! s ) return true;
@@ -26976,11 +26813,14 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 
 	// . sanity check
 	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
-	// get the boost
-	//floatboost1=(float)getBoostFromSiteNumInlinks(m_siteNumInlinks)/100.0
 
+	char buf[20];
+	int32_t blen;
 
-
+	
+/*
+	// BR 20160106: No longer store gbpathdepth in posdb
+	
 	//
 	// HASH the url path plain as if in body
 	//
@@ -26993,32 +26833,11 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	// get it
 	char *path = fu->getPath();
 	int32_t  plen = fu->getPathLen();
-	/*
-	// update it
-	float boost2 = (float)m_urlPathWeight / 100;
-	// again
-	float boost3 = 1.0 / ((float)pathDepth + 1.0)  ;
-	// make a description
-	char tmp3[190];
-	sprintf( tmp3 ,
-		 "path score = "
-		 "siteInlinksBoost * "
-		 "urlPathWeight * "
-		 "pathDepthBoost * "
-		 "256 = %.02f * %.02f * %.02f * 256 " ,
-		 boost1 ,
-		 boost2 ,
-		 boost3 );
-	*/
-	//int32_t pathScore = (int32_t) (256.0 * boost1 * boost2 * boost3);
-	// update parms
-	//hi.m_desc      = tmp3;
+
 	hi.m_prefix = NULL;
 	hi.m_desc = "url path";
 	hi.m_hashGroup = HASHGROUP_INURL;
 
-	// if parm "index article content only" is true, do not index this!
-	//if ( m_eliminateMenus ) skipIndex=true;
 
 	setStatus ( "hashing gbpathdepth");
 
@@ -27029,7 +26848,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	// xyz.com/foo/     --> 1
 	// xyz.com/foo/boo  --> 1
 	// xyz.com/foo/boo/ --> 2
-	char buf[20];
+	
 	int32_t blen = sprintf(buf,"%"INT32"",pathDepth);
 	// update parms
 	hi.m_prefix    = "gbpathdepth";
@@ -27038,7 +26857,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	hi.m_hashGroup = HASHGROUP_INTAG;
 	// hash gbpathdepth:X
 	if ( ! hashString ( buf,blen,&hi) ) return false;
-
+*/
 
 
 	//
@@ -27139,6 +26958,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 		gbmemcpy ( p , name          , nameLen      ); p += nameLen;
 		gbmemcpy ( p , fu->getPath() , len          ); p += len;
 		*p = '\0';
+
 		// update hash parms
 		hi.m_prefix    = "site";
 		// no longer, we just index json now
@@ -27153,8 +26973,33 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	while ( name < end3 && *name != '.' ) { name++; nameLen--; }
 	// skip the '.'
 	name++; nameLen--;
-	// if not '.' we're done
-	if ( name < end3 ) goto loop;
+
+
+	// BR 20160106: Don't store junk entries like http://com/ 
+	// Check that there is a dot before first slash after domain
+	int32_t dom_offset=0;	
+	if( strncmp(name,"http://" ,7) )
+	{
+		dom_offset=7;
+	}
+	else
+	if( strncmp(name,"https://",8) ) 
+	{
+		dom_offset=8;
+	}
+	
+	char *dotpos 	= strchr(name,'.');
+	char *slashpos 	= strchr(name+dom_offset,'/');
+	
+	bool dom_valid = false;
+	if( slashpos && dotpos && slashpos > dotpos )
+	{
+		dom_valid = true;
+	}
+
+	
+	if ( name < end3 && dom_valid ) goto loop;
+
 
 	setStatus ( "hashing ext colon");
 
@@ -27254,6 +27099,9 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	blen = sprintf(buf,"%"UINT32"",h);
 	hi.m_prefix    = "urlhash";
 	if ( ! hashString(buf,blen,&hi) ) return false;
+		
+/*
+	BR 20160106 removed.
 	blen = sprintf(buf,"%"UINT32"",h/10);
 	// update hashing parms
 	hi.m_prefix = "urlhashdiv10";
@@ -27262,32 +27110,29 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	// update hashing parms
 	hi.m_prefix = "urlhashdiv100";
 	if ( ! hashString(buf,blen,&hi) ) return false;
-
+*/
 
 	setStatus ( "hashing url mid domain");
-	// the final score
-	//int32_t plainScore = (int32_t)(256.0 * boost1 * boost2 * fw);
+
 	// update parms
 	hi.m_prefix    = NULL;
 	hi.m_desc      = "middle domain";//tmp3;
 	hi.m_hashGroup = HASHGROUP_INURL;
-	// if parm "index article content only" is true, do not index this!
-	//if ( m_eliminateMenus ) plainScore = 0;
-	//char *mid  = fu->getMidDomain   ();
-	//int32_t  mlen = fu->getMidDomainLen();
-	//hi.m_desc = "url mid dom";
-	//if ( ! hashString ( mid,mlen ,&hi ) ) return false;
-	//hi.m_desc = "url host";
+
 	if ( ! hashString ( host,hlen,&hi)) return false;
 
-
 	setStatus ( "hashing url path");
+	char *path = fu->getPath();
+	int32_t  plen = fu->getPathLen();
 
 	// hash the path plain
 	if ( ! hashString (path,plen,&hi) ) return false;
 
 	return true;
 }
+
+
+
 /////////////
 //
 // CHROME DETECTION
@@ -27301,8 +27146,13 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 // . copied Url2.cpp into here basically, so we can now dump Url2.cpp
 bool XmlDoc::hashSections ( HashTableX *tt ) {
 
-	//if ( ! m_contentTypeValid ) { char *xx=NULL;*xx=0; }
-	//if ( m_contentType == CT_HTML ) return true;
+
+	// BR 20160106: No longer store xpath-hashes in posdb as we do not use them.
+	// eek.. but a rebuild of old docs will store them.. not intended.
+//	if ( m_version >= 122 ) 
+	{
+			return true; 
+	}
 
 	setStatus ( "hashing sections" );
 
@@ -27959,16 +27809,7 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 }
 
 
-//bool XmlDoc::linksToGigablast ( ) {
-//	// check m_links for a link to gigablast.com or www.gigablast.com
-//	return m_links.linksToGigablast();
-//}
 
-bool XmlDoc::searchboxToGigablast ( ) {
-	// . they may have a form variable like
-	// . <form method=get action=http://www.gigablast.com/cgi/0.cgi name=f>
-	return m_xml.hasGigablastForm();
-}
 
 bool XmlDoc::hashLanguage ( HashTableX *tt ) {
 
@@ -28237,7 +28078,6 @@ bool XmlDoc::hashVectors ( HashTableX *tt ) {
 	int32_t score =  *getSiteNumInlinks8() * 256;
 	if ( score <= 0 ) score = 1;
 	char buf[32];
-	uint32_t h;
 	//char *field;
 	//char *descr;
 	//h = m_tagVector.getVectorHash();
@@ -28257,13 +28097,16 @@ bool XmlDoc::hashVectors ( HashTableX *tt ) {
 	// this returns false on failure
 	if ( ! hashString ( buf,blen, &hi ) ) return false;
 
-	h = *getGigabitVectorScorelessHash();
+/*
+  BR 20160106 removed
+	uint32_t h = *getGigabitVectorScorelessHash();
 	blen = sprintf(buf,"%"UINT32"",(uint32_t)h);
 	// udpate hash parms
 	hi.m_prefix = "gbgigabitvector";
 	hi.m_desc   = "gigabit vector hash";
 	// this returns false on failure
 	if ( ! hashString ( buf,blen,&hi) ) return false;
+*/
 
 	// . dup checking uses the two hashes above, not this hash!!! MDW
 	// . i think this vector is just used to see if the page changed
@@ -28318,6 +28161,9 @@ bool XmlDoc::hashVectors ( HashTableX *tt ) {
 	return true;
 }
 
+
+/*
+	BR 20160106: removed, don't store in posdb
 bool XmlDoc::hashAds ( HashTableX *tt ) {
 
 	setStatus ( "hashing ad ids" );
@@ -28347,6 +28193,8 @@ bool XmlDoc::hashAds ( HashTableX *tt ) {
 	}
 	return true;
 }
+*/
+
 
 Url *XmlDoc::getBaseUrl ( ) {
 	if ( m_baseUrlValid ) return &m_baseUrl;
@@ -28375,6 +28223,9 @@ Url *XmlDoc::getBaseUrl ( ) {
 	return &m_baseUrl;
 }
 
+
+/*
+	BR 20160106 removed.
 // hash gbhasthumbnail:0|1
 bool XmlDoc::hashImageStuff ( HashTableX *tt ) {
 
@@ -28396,6 +28247,7 @@ bool XmlDoc::hashImageStuff ( HashTableX *tt ) {
 
 	return true;
 }
+*/
 
 
 // returns false and sets g_errno on error
@@ -28426,6 +28278,10 @@ bool XmlDoc::hashIsAdult ( HashTableX *tt ) {
 	return true;
 }
 
+
+/*
+  BR 20160106 removed. We don't want to store this in posdb as we don't use it.
+  
 // hash destination urls for embedded gb search boxes
 bool XmlDoc::hashSubmitUrls ( HashTableX *tt ) {
 
@@ -28460,7 +28316,7 @@ bool XmlDoc::hashSubmitUrls ( HashTableX *tt ) {
 	}
 	return true;
 }
-
+*/
 
 //
 // STUFF IMPORTED FROM INDEXLIST.CPP
@@ -30899,51 +30755,6 @@ SafeBuf *XmlDoc::getSampleForGigabitsJSON ( ) {
 }
 
 
-// . good sites sometimes have hacked pages
-// . try to identify those
-char *XmlDoc::getIsCompromised ( ) {
-	if ( m_isCompromisedValid ) return &m_isCompromised;
-	Xml *xml = getXml();
-	if ( ! xml || xml == (void *)-1 ) return (char *)xml;
-	int32_t     n     = xml->getNumNodes();
-	XmlNode *nodes = xml->getNodes();
-	// assume compromised
-	m_isCompromised = true;
-	m_isCompromisedValid = true;
-	// find the first meta summary node
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// continue if not a meta tag
-		if ( nodes[i].m_nodeId != TAG_FONT ) continue;
-		// only get content for <meta name=..> not <meta http-equiv=..>
-		int32_t stlen;
-		char *style = nodes[i].getFieldValue ( "style" , &stlen );
-		// skip if none
-		if ( ! style || stlen <= 6 ) continue;
-		// NULL term
-		char c = style[stlen];
-		style[stlen] = '\0';
-		char *hc = strstr(style,"height");
-		char *wc = strstr(style,"width");
-		// skip if neighter
-		if ( ! hc && ! wc ) continue;
-		// advance
-		if ( hc ) hc += 6;
-		if ( wc ) wc += 5;
-		while ( is_wspace_a(*hc) ) hc++;
-		while ( is_wspace_a(*wc) ) wc++;
-		if ( hc && *hc == ':' ) hc++;
-		if ( wc && *wc == ':' ) hc++;
-		while ( is_wspace_a(*hc) ) hc++;
-		while ( is_wspace_a(*wc) ) wc++;
-		style[stlen] = c;
-		// a zero height or width is a signal of invisble text and of
-		// our syzygy compromised site to compromised site spammer
-		if ( *hc == '0' ) return &m_isCompromised;
-		if ( *wc == '0' ) return &m_isCompromised;
-	}
-	m_isCompromised = false;
-	return &m_isCompromised;
-}
 
 // <meta name=robots value=noarchive>
 // <meta name=gigabot value=noarchive>
@@ -32778,111 +32589,6 @@ bool XmlDoc::hashNumber ( char *beginBuf ,
 	return true;
 }
 
-// . THIS IS NOW replaced by ::hashFacet2() being called by hashSections()
-//   above. it is a more generic, faceted approch.
-// . the term is gbxpathsite123456 the prefix is gbfacet the val32
-//   stored in the posdb key is the inner html hash of the section, and
-//   the "123456" is the hash of the xpath and site. so the field names
-//   are very custom, not your typical "ext" or "title"
-// . CHROME DETECTION
-// . hash a special "gbxpathsitehash12345678" term which has the hash of the
-//   innerHTML content embedded in it.
-// . we do this for doing gbfacetstr:gbxpathsitehash12345678 etc. on every
-//   section with innerHTML so we can figure out the histogram of each
-//   section on this page relative to its subdomain. like the distriubtion
-//   of the innerHTML for this section as it appears on other pages from
-//   this site. this allows killer CHROME DETECTION!!!!
-/*
-bool XmlDoc::hashSectionTerm ( char *term , HashInfo *hi , int32_t sentHash32 ) {
-
-        int64_t termId = hash64 ( term , gbstrlen(term) );
-	key144_t k;
-	g_posdb.makeKey ( &k ,
-			  termId,
-			  0,//docid
-			  0,// word pos #
-			  0,// densityRank , // 0-15
-			  0 , // MAXDIVERSITYRANK
-			  0 , // wordSpamRank ,
-			  0 , //siterank
-			  0 , // hashGroup,
-			  // we set to docLang final hash loop
-			  //langUnknown, // langid
-			  // unless already set. so set to english here
-			  // so it will not be set to something else
-			  // otherwise our floats would be ordered by langid!
-			  // somehow we have to indicate that this is a float
-			  // termlist so it will not be mangled any more.
-			  //langEnglish,
-			  langUnknown,
-			  0 , // multiplier
-			  false, // syn?
-			  false , // delkey?
-			  hi->m_shardByTermId );
-
-	//int64_t final = hash64n("products.offerprice",0);
-	//int64_t prefix = hash64n("gbsortby",0);
-	//int64_t h64 = hash64 ( final , prefix);
-	//if ( ph2 == h64 )
-	//	log("hey: got offer price");
-
-	// now set the float in that key
-	g_posdb.setInt ( &k , sentHash32 );
-
-	// HACK: this bit is ALWAYS set by Posdb::makeKey() to 1
-	// so that we can b-step into a posdb list and make sure
-	// we are aligned on a 6 byte or 12 byte key, since they come
-	// in both sizes. but for this, hack it off to tell
-	// addTable144() that we are a special posdb key, a "numeric"
-	// key that has a float stored in it. then it will NOT
-	// set the siterank and langid bits which throw our sorting
-	// off!!
-	g_posdb.setAlignmentBit ( &k , 0 );
-
-	// sanity
-	int t = g_posdb.getInt ( &k );
-	if ( t != sentHash32 ) { char *xx=NULL;*xx=0; }
-
-	HashTableX *dt = hi->m_tt;
-
-	// the key may indeed collide, but that's ok for this application
-	if ( ! dt->addTerm144 ( &k ) )
-		return false;
-
-	if ( ! m_wts )
-		return true;
-
-	// store in buffer
-	//char buf[128];
-	//int32_t bufLen = sprintf(buf,"%"UINT32"",sentHash32);
-
-	// if no gbmin or gbmax or gbsorty or gbrevsortby we need gbfacet
-	//int64_t truePrefix64 = hash64n ( "gbfacet" );
-
-	// add to wts for PageParser.cpp display
-	// store it
-	if ( ! storeTerm ( term,//buf,
-			   gbstrlen(term),//bufLen,
-			   0LL,//truePrefix64,
-			   hi,
-			   0, // word#, i,
-			   0, // wordPos
-			   0,// densityRank , // 0-15
-			   0, // MAXDIVERSITYRANK,//phrase
-			   0, // ws,
-			   0, // hashGroup,
-			   //true,
-			   &m_wbuf,
-			   m_wts,
-			   // a hack for display in wts:
-			   SOURCE_NUMBER, // SOURCE_BIGRAM, // synsrc
-			   langUnknown ,
-			   k))
-		return false;
-
-	return true;
-}
-*/
 
 
 
@@ -33105,6 +32811,7 @@ bool XmlDoc::hashNumber3 ( int32_t n , HashInfo *hi , char *sortByStr ) {
 // . many many websites got hijacked pages in them...
 // . revkim.org/mcdrt/mgntf/sata/sata.htm
 // . collegefootballweekly.net/hswsj/riime/sata/sata.htm
+//@@@ BR: Not safe at all. Remove?
 char *XmlDoc::getIsHijacked() {
 	bool hj = false;
 	if ( ! hj ) hj = isHijackerFormat ( ptr_firstUrl );
@@ -33927,7 +33634,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	printRainbowSections ( sb , NULL );
 
 	//nsvt->print ( sb , "NEW Sections Voting Table" );
-
 	//osvt->print ( sb , "OLD Sections Voting Table" );
 
 
@@ -35000,6 +34706,8 @@ bool XmlDoc::printPageInlinks ( SafeBuf *sb , HttpRequest *hr ) {
 	return true;
 }
 
+/*
+  BR 20160106 removed
 static void getInlineSectionVotingBufWrapper ( void *state ) {
 	XmlDoc *xd = (XmlDoc *)state;
 	SafeBuf *vb = xd->getInlineSectionVotingBuf();
@@ -35012,6 +34720,7 @@ static void getInlineSectionVotingBufWrapper ( void *state ) {
 	log("xmldoc: returning control to original caller");
 	xd->m_callback1 ( xd->m_state );
 }
+
 
 // . returns false if blocked, true otherwise
 // . returns true with g_errno set on error
@@ -35131,6 +34840,8 @@ SafeBuf *XmlDoc::getInlineSectionVotingBuf ( ) {
 	m_inlineSectionVotingBufValid = true;
 	return &m_inlineSectionVotingBuf;
 }
+*/
+
 
 bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 
@@ -44721,3 +44432,5 @@ bool XmlDoc::storeFacetValuesJSON (char *qs,
 
 	return true;
 }
+
+

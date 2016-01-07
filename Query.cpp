@@ -3979,8 +3979,6 @@ struct QueryField g_fields[] = {
 
 	// this just complicates things for now, so comment out
 	//{"urlhash",FIELD_URLHASH, false,""},
-	//{"urlhashdiv10",FIELD_URLHASHDIV10, false,""},
-	//{"urlhashdiv100",FIELD_URLHASHDIV100, false,""},
 
 	{"gblang",
 	 FIELD_GBLANG,
@@ -4002,6 +4000,8 @@ struct QueryField g_fields[] = {
 	//{"gbkeyword",FIELD_KEYWORD,true,""},
 	//{"gbcharset", FIELD_CHARSET, false,""},
 
+/*
+	// BR 20160106: No longer stored in our posdb as we don't use it
 	{"gbpathdepth", 
 	 FIELD_GBOTHER, 
 	 false,
@@ -4010,7 +4010,7 @@ struct QueryField g_fields[] = {
 	 "http://somedomain.com/dir1/dir2/dir3/foo.html",
 	 NULL,
 	 0},
-
+*/
 
 	{"gbhopcount", 
 	 FIELD_GBOTHER, 
@@ -4055,6 +4055,8 @@ struct QueryField g_fields[] = {
 	 NULL,
 	0},
 
+/*
+	BR 20160106 removed
 	{"gbsubmiturl", 
 	 FIELD_GBOTHER, 
 	 false,
@@ -4063,7 +4065,7 @@ struct QueryField g_fields[] = {
 	 "specified url.",
 	 NULL,
 	0},
-
+*/
 
 	// diffbot only
 	{"gbparenturl", 
@@ -4879,140 +4881,17 @@ struct QueryField g_fields[] = {
 	 0},
 
 
-	/*
-	{"gbstatus",
-	 FIELD_GENERIC,
-	 false,
-	 "gbstatus:0",
-	 "Matches all special spider status documents that spidered "
-	 "their url successfully. Replace <i>0</i> with other numeric error "
-	 "codes to get the other outcomes.",
-	 "Spider Status Documents", // title
-	 QTF_BEGINNEWTABLE},
-
-	
-	{"gbstatusmsg",
-	 FIELD_GENERIC,
-	 false,
-	 "gbstatusmsg:tcp",
-	 "Matches all special spider status documents that had a status "
-	 "message containing the word <i>tcp</i> like in "
-	 "<i>TCP Timed Out</i>. Similarly, gbstatus:success, "
-	 "gbstatus:\"robots.txt\" are other possibilities.",
-	 NULL,
-	 0},
-
-
-	{"url2", 
-	 FIELD_URL, 
-	 true,
-	 "url2:www.abc.com/page.html",
-	 "Matches the <i>Spider Status</i> documents for the specified url. "
-	 "These special documents "
-	 "let you know exactly when the url was attempted to be "
-	 "spidered and the outcome.",
-	 NULL,
-	 0 },
-
-	{"site2", 
-	 FIELD_SITE, 
-	 true,
-	 "site2:mysite.com",
-	 "Matches all the special spider status documents on the "
-	 "mysite.com domain.",
-	 NULL,
-	 0 },
-
-
-	{"ip2", 
-	 FIELD_IP, 
-	 true,
-	 "ip2:192.0.2.1",
-	 "Matches all the special spider status "
-	 "documents whose IP is 192.0.2.1.",
-	 NULL,
-	 0 },
-
-	{"inurl2", 
-	 FIELD_SUBURL2, 
-	 true,
-	 "inurl2:dog",
-	 "Matches all the special spider status "
-	 "documents that have the word dog in their url, like "
-	 "http://www.mysite.com/dog/food.html. However will not match "
-	 "http://www.mysite.com/dogfood.html because it is not an "
-	 "individual word. It must be delineated by punctuation.",
-	 NULL,
-	 0 },
-
-
-	{"gbpathdepth2", 
-	 FIELD_GBOTHER, 
-	 false,
-	 "gbpathdepth2:2",
-	 "Similar to gbpathdepth: described above but for special "
-	 "spider status documents.",
-	 NULL,
-	 0},
-
-	{"gbhopcount2", 
-	 FIELD_GBOTHER, 
-	 false,
-	 "gbhopcount2:3",
-	 "Similar to gbhopcount: described above but for special "
-	 "spider status documents.",
-	 NULL,
-	 0},
-
-
-	{"gbhasfilename2", 
-	 FIELD_GBOTHER, 
-	 false,
-	 "gbhasfilename2:1",
-	 "Similar to gbhasfilename: described above but for special "
-	 "spider status documents.",
-	 NULL,
-	 0},
-
-	{"gbiscgi2",
-	 FIELD_GBOTHER, 
-	 false,
-	 "gbiscgi2:1",
-	 "Similar to gbiscgi: described above but for special "
-	 "spider status documents.",
-	 NULL,
-	 0},
-
-	{"gbhasext2",
-	 FIELD_GBOTHER, 
-	 false,
-	 "gbhasext2:1",
-	 "Similar to gbhasext: described above but for special "
-	 "spider status documents.",
-	 NULL,
-	 0},
-	*/
 
 
 	// they don't need to know about this
 	{"gbad",FIELD_GBAD,false,"","",NULL,QTF_HIDE},
 	{"gbtagvector", FIELD_GBTAGVECTOR, false,"","",NULL,QTF_HIDE},
-	{"gbgigabitvector", FIELD_GBGIGABITVECTOR, false,"","",NULL,QTF_HIDE},
 	{"gbsamplevector", FIELD_GBSAMPLEVECTOR, false,"","",NULL,QTF_HIDE},
 	{"gbcontenthash", FIELD_GBCONTENTHASH, false,"","",NULL,QTF_HIDE},
 	{"gbduphash"  ,FIELD_GBOTHER,false,"","",NULL,QTF_HIDE},
+
 	// call it field url to hash all up to the first space
 	{"gbsitetemplate"           ,FIELD_URL,false,"","",NULL,QTF_HIDE}
-
-	//{"gbcsenum",FIELD_GBCSENUM,false,""},
-	//{"gboutlinkedtitle"         ,FIELD_GBOTHER,false,"gboutlinkedtitle:0 and gboutlinkedtitle:1 matches events whose title is not in and in a hyperlink, respectively."},
-	//{"gbisaggregator"           ,FIELD_GBOTHER,false,"gbisaggregator:0|1 depending on if the event came from an event aggregator website, like eviesays.com."},
-	//{"gbdeduped"                ,FIELD_GBOTHER,false,""},
-
-	//{"gbinjected", FIELD_GBOTHER,false,"Was the document injected?."},
-
-
-	
 };
 
 void resetQuery ( ) {
@@ -5683,7 +5562,7 @@ bool QueryTerm::isSplit() {
 	if(!m_fieldCode) return true;
 	if(m_fieldCode == FIELD_QUOTA)           return false;
 	if(m_fieldCode == FIELD_GBTAGVECTOR)     return false;
-	if(m_fieldCode == FIELD_GBGIGABITVECTOR) return false;
+//BR 20160106 removed:	if(m_fieldCode == FIELD_GBGIGABITVECTOR) return false;
 	if(m_fieldCode == FIELD_GBSAMPLEVECTOR)  return false;
 	if(m_fieldCode == FIELD_GBSECTIONHASH)  return false;
 	if(m_fieldCode == FIELD_GBCONTENTHASH)  return false;

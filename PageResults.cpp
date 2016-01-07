@@ -4740,13 +4740,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       "&rcache=0\">"
 			       "tag</a> " ,
 			       (int32_t)mr->m_tagVectorHash,  coll);
-		sb->safePrintf ("<a href=\"/search?"
-			       "q="
-			       "gbgigabitvector%%3A%"UINT32""
-			       "&sc=1&dr=0&c=%s&n=100"
-			       "&rcache=0\">"
-			       "topic</a> " ,
-			       (int32_t)mr->m_gigabitVectorHash, coll);
 		*/
 		if ( mr->size_gbAdIds > 0 ) 
 			sb->safePrintf ("<a href=\"/search?"
@@ -7122,11 +7115,12 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		// s_mi[n].m_cgi      = "facet=gbfacetstr:ip";
 		// n++;
 
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "Url path depth";
-		s_mi[n].m_cgi      = "facet=gbfacetint:gbpathdepth";
-		s_mi[n].m_icon     = NULL;
-		n++;
+// BR 20160106: No longer stored in our posdb
+//		s_mi[n].m_menuNum  = 4;
+//		s_mi[n].m_title    = "Url path depth";
+//		s_mi[n].m_cgi      = "facet=gbfacetint:gbpathdepth";
+//		s_mi[n].m_icon     = NULL;
+//		n++;
 
 		s_mi[n].m_menuNum  = 4;
 		s_mi[n].m_title    = "Spider date facet";

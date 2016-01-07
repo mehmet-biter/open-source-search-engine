@@ -780,7 +780,7 @@ class Conf {
 	// used by Repair.cpp
 	char  m_repairingEnabled  ;
 	int32_t  m_maxRepairSpiders  ;
-	int32_t  m_repairMem;
+	int64_t  m_repairMem;
 	SafeBuf m_collsToRepair;
 	char  m_rebuildAllCollections;
 	char  m_fullRebuild       ;

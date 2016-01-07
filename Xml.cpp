@@ -965,47 +965,6 @@ int32_t Xml::getMetaContent (char *buf, int32_t bufLen, char *field, int32_t fie
 	return 0;
 }
 
-bool Xml::hasGigablastForm(char **url, int32_t *urlLen) {
-	// find the first meta summary node
-	for ( int32_t i = 0 ; i < m_numNodes ; i++ ) {
-		// continue if not a FORM tag
-		if ( m_nodes[i].m_nodeId != TAG_FORM ) continue;
-		// <form method=get action=/cgi/0.cgi name=f>
-		int32_t len;
-		char *s = getString ( i , "action" , &len );
-		if (url) *url = s;
-		if (urlLen) *urlLen = len;
-		// skip http://
-		if ( len > 10 && strncasecmp(s,"http://",7)==0 ) {
-			s += 7; len -= 7; }
-		// skip https://
-		if ( len > 11 && strncasecmp(s,"https://",8)==0 ) {
-			s += 8; len -= 8; }
-		// skip www.
-		if ( len > 4 && strncasecmp(s,"www.",4)==0) {
-			s += 4; len -= 4; }
-		// skip sitesearch.
-		if ( len > 11 && strncasecmp(s,"sitesearch.",11)==0) {
-			s += 11; len -= 11; }
-		// need gigablast.com
-		if ( len < 13 || strncasecmp(s,"gigablast.com",13)!=0)
-			continue;
-		// skip gigablast.com
-		s += 13; len -= 13;
-		// need slash
-		if ( len < 2 || *s != '/' ) continue;
-		// skip slash
-		s += 1; len -= 1;
-
-		// action must be http://www.gigablast.com/cgi/0.cgi EXACTLY
-		if ( len == 9 && strncasecmp(s,"cgi/0.cgi",9)==0) return true;
-		// another forms
-		if ( len == 6 && strncasecmp(s,"search"   ,6)==0) return true;
-		// another form
-		if ( len == 9 && strncasecmp(s,"index.php",9)==0) return true;
-	}
-	return false;
-}
 
 //  TEST CASES:
 //. this is NOT rss, but has an rdf:rdf tag in it!

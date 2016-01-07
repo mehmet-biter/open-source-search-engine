@@ -485,11 +485,9 @@ public:
 	class Sections *getImpliedSections ( ) ;
 	class Sections *getSections ( ) ;
 	class Sections *getSectionsWithDupStats ( );
-	class SafeBuf  *getInlineSectionVotingBuf();
+//BR 20160106 removed:	class SafeBuf  *getInlineSectionVotingBuf();
 	bool gotSectionFacets( class Multicast *mcast );
-	class SectionStats *getSectionStats ( uint32_t secHash32 ,
-					      uint32_t sentHash32 ,
-					      bool cacheOnly );
+	class SectionStats *getSectionStats ( uint32_t secHash32, uint32_t sentHash32, bool cacheOnly );
 	class SectionVotingTable *getOldSectionVotingTable();
 	class SectionVotingTable *getNewSectionVotingTable();
 	char **getSectionsReply ( ) ;
@@ -735,7 +733,6 @@ public:
 	int32_t getBoostFromSiteNumInlinks ( int32_t inlinks ) ;
 	bool hashSpiderReply (class SpiderReply *reply ,class HashTableX *tt) ;
 	bool hashMetaTags ( class HashTableX *table ) ;
-	bool hashMetaData ( class HashTableX *table ) ;
 	bool hashIsClean ( class HashTableX *table ) ;
 	bool hashZipCodes ( class HashTableX *table ) ;
 	bool hashMetaZip ( class HashTableX *table ) ;
@@ -758,8 +755,6 @@ public:
 	bool hashBody2 ( class HashTableX *table );
 	bool hashMetaKeywords ( class HashTableX *table );
 	bool hashMetaSummary ( class HashTableX *table );
-	bool linksToGigablast ( ) ;
-	bool searchboxToGigablast ( ) ;
 	bool hashLanguage ( class HashTableX *table ) ;
 	bool hashLanguageString ( class HashTableX *table ) ;
 	bool hashCountry ( class HashTableX *table ) ;
@@ -768,10 +763,11 @@ public:
 	bool hashTagRec ( class HashTableX *table ) ;
 	bool hashPermalink ( class HashTableX *table ) ;
 	bool hashVectors(class HashTableX *table ) ;
-	bool hashAds(class HashTableX *table ) ;
+// BR 20160106 removed:	bool hashAds(class HashTableX *table ) ;
+	
 	class Url *getBaseUrl ( ) ;
-	bool hashSubmitUrls ( class HashTableX *table ) ;
-	bool hashImageStuff ( class HashTableX *table ) ;
+// BR 20160106 removed:	bool hashSubmitUrls ( class HashTableX *table ) ;
+// BR 20160106 removed:	bool hashImageStuff ( class HashTableX *table ) ;
 	bool hashIsAdult    ( class HashTableX *table ) ;
 
 	void set20 ( Msg20Request *req ) ;
@@ -787,7 +783,6 @@ public:
 	char *getHighlightedSummary ();
 	SafeBuf *getSampleForGigabits ( ) ;
 	SafeBuf *getSampleForGigabitsJSON ( ) ;
-	char *getIsCompromised ( ) ;
 	char *getIsNoArchive ( ) ;
 	int32_t *getUrlFilterNum();
 	//int32_t *getDiffbotApiNum();
@@ -919,7 +914,6 @@ public:
 	int32_t      m_ubufAlloc;
 
 	// does this page link to gigablast, or has a search form to it?
-	//bool linksToGigablast();
 	//bool searchboxToGigablast();
 
 	// private:
@@ -1607,6 +1601,7 @@ public:
 	char m_incrementedAttemptsCount;
 	char m_incrementedDownloadCount;
 	char m_redirectFlag;
+	//char m_isScraping;
 	//char m_throttleDownload;
 	char m_spamCheckDisabled;
 	char m_useRobotsTxt;
@@ -2312,6 +2307,14 @@ public:
 			 uint32_t lastSpideredDate = 0 ,
 			 int32_t  injectDocIp = 0 );
 
+
+	bool injectLinks  ( HashTableX *linkDedupTable ,
+			    HashTableX *domDedupTable ,
+			    void *finalState , 
+			    void (* finalCallback)(void *));
+
+	bool doInjectLoop ( );
+	void doneInjecting ( class XmlDoc *xd );
 	int32_t  m_i;
 	int32_t  m_blocked;
 	HashTableX  m_domDedupTable;
