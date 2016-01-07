@@ -62,10 +62,6 @@ class Match {
 	// "match group" or type of match. i.e. MF_TITLETAG, MF_METASUMM, ...
 	mf_t m_flags;
 
-	// improve summary generation parms
-	int32_t m_dist;
-	//bool m_crossedSection;
-
 	// . for convenience, these four class ptrs are used by Summary.cpp
 	// . m_wordNum is relative to this "words" class (and scores,bits,pos)
 	class Words    *m_words;

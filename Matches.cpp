@@ -555,37 +555,7 @@ bool Matches::addMatches( Words *words, Phrases *phrases, Sections *sections, Bi
 	int32_t nextMatchWordPos = 0;
 	int32_t lasti = -3;
 
-	int32_t dist = 0;
-
-	// . every tag increments "dist" by a value
-	// . rather than use a switch/case statement, which does a binary
-	//   lookup thing which is really slow, let's use a 256 bucket table
-	//   for constant lookup, rather than log(N).
-	static char   s_tableInit = false;
-	static int8_t s_tab[512];
 	if ( getNumXmlNodes() > 512 ) { char *xx=NULL;*xx=0; }
-	for ( int32_t i = 0 ; ! s_tableInit && i < 128 ; i++ ) {
-		char step = 0;
-		if ( i == TAG_TR    ) step = 2;
-		if ( i == TAG_P     ) step = 10;
-		if ( i == TAG_HR    ) step = 10;
-		if ( i == TAG_H1    ) step = 10;
-		if ( i == TAG_H2    ) step = 10;
-		if ( i == TAG_H3    ) step = 10;
-		if ( i == TAG_H4    ) step = 10;
-		if ( i == TAG_H5    ) step = 10;
-		if ( i == TAG_H6    ) step = 10;
-		if ( i == TAG_TABLE ) step = 30;
-		if ( i == TAG_BLOCKQUOTE ) step = 10;
-		// default
-		if ( step == 0 ) {
-			if ( g_nodes[i].m_isBreaking ) step = 10;
-			else                           step = 1;
-		}
-		// account for both the back and the front tags
-		s_tab[i     ] = step;
-	}
-	s_tableInit = true;
 
 	// google seems to index SEC_MARQUEE so i took that out of here
 	int32_t badFlags =SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_TITLE;
@@ -604,29 +574,13 @@ bool Matches::addMatches( Words *words, Phrases *phrases, Sections *sections, Bi
 		//else if (tids && (tids[i]&BACKBITCOMP) == TAG_A) 
 		//	inAnchTag = false;
 
-		// for each word increment distance
-		dist++;
-
-		//if ( addToMatches && tids && tids[i] ){
 		if ( tids && tids[i] ){
-			int32_t tid = tids[i] & BACKBITCOMP;
-			// accumulate distance
-			dist += s_tab[tid];
-			// monitor boundaries so that the proximity algo
-			// knows when two matches are separated by such tags
-			// MDW: isn't the "dist" good enough for this?????
-			// let's try just using "dist" then.
-			// "crossedSection" is hereby replaced by "dist".
-			//if ( s_tab[tid]
 			// tagIds don't have wids and are skipped
 			continue;
 		}
 
 		// skip if wid is 0, it is not an alnum word then
 		if ( ! wids[i] ) {
-			// and extra unit if it starts with \n i guess
-			if ( words->m_words[i][0] == '\n' ) dist++;
-			//	dist += words->m_wordLens[i] / 3;
 			continue;
 		}
 
@@ -859,7 +813,6 @@ bool Matches::addMatches( Words *words, Phrases *phrases, Sections *sections, Bi
 		m->m_sections = sections;
 		m->m_bits     = bits;
 		m->m_pos      = pos;
-		m->m_dist     = dist;
 		m->m_flags    = flags | eflag ;
 
 		// add to our vector. we want to know where each QueryWord
