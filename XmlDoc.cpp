@@ -26184,10 +26184,16 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 			
 
 		// BR 20160107: Only hash certain custom meta tags and ignore the rest
-		if( strncasecmp(tag,"subject", 7) != 0 &&
-			strncasecmp(tag,"abstract", 8) != 0 &&
-			strncasecmp(tag,"news_keywords", 13 != 0) &&	// http://www.metatags.org/meta_name_news_keywords
-			strncasecmp(tag,"author", 6) != 0 )
+		if( 
+			(strncasecmp(tag,"subject", 7) != 0) &&
+			(strncasecmp(tag,"abstract", 8) != 0) &&
+			(strncasecmp(tag,"news_keywords", 13) != 0) &&		// http://www.metatags.org/meta_name_news_keywords
+			(strncasecmp(tag,"author", 6) != 0) &&
+			(strncasecmp(tag,"title", 5) != 0) &&
+			(strncasecmp(tag,"og:title", 8) != 0) &&
+			(strncasecmp(tag,"og:description", 14) != 0) &&
+			(strncasecmp(tag,"twitter:title", 13) != 0) &&
+			(strncasecmp(tag,"twitter:description", 19) != 0) )
 		{
 			// Unwanted meta tag
 			continue;
@@ -31977,6 +31983,8 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		// . for now do simple stripping here
 		// . if word is "bob's" hash "bob"
 		//
+		
+		//@@@ BR 20160107: Is this always good? Is the same done in Query.cpp?
 		if ( wlens[i] >= 3 &&
 		     wptrs[i][wlens[i]-2] == '\'' &&
 		     to_lower_a(wptrs[i][wlens[i]-1]) == 's' ) {
