@@ -2,7 +2,7 @@
 
 .PHONY: test
 test:
-	py.test $(TEST_ARGS)
+	-py.test $(TEST_ARGS)
 
 .PHONY: clean
 clean:
