@@ -224,7 +224,6 @@ bool Msg2::getLists ( ) {
 
 		// stash this 
 		msg5->m_parent = this;
-		msg5->m_i      = m_i;
 
 		/*
 		// if doing a gbdocid:| restricted query then use msg0
@@ -397,7 +396,6 @@ bool Msg2::getLists ( ) {
 
 		// stash this 
 		msg5->m_parent = this;
-		msg5->m_i      = m_i + m_w;
 
 		// advance cursor
 		m_p = p;

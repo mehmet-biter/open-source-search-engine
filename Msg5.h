@@ -47,6 +47,9 @@ inline key_t makeCacheKey ( key_t startKey     ,
 	return k;
 }
 
+class Msg2;
+
+
 class Msg5 { 
 
  public:
@@ -302,8 +305,7 @@ class Msg5 {
 	uint64_t m_waitingKey;
 
 	// hack parms
-	void *m_parent;
-	int32_t  m_i;
+	Msg2 *m_parent;
 };
 
 #endif
