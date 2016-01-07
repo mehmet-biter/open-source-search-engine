@@ -4528,6 +4528,10 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 		exit(-1);
 	}
 	CollectionRec *cr = g_collectiondb.getRec(coll);
+	if(cr==NULL) {
+		fprintf(stderr,"Unknown collection '%s'\n", coll);
+		return;
+	}
 
  loop:
 	// use msg5 to get the list, should ALWAYS block since no threads
