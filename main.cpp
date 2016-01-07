@@ -4485,6 +4485,11 @@ bool mainShutdown ( bool urgent ) {
 void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTree,
                   int64_t docid , bool justPrintDups) {
 
+	if(startFileNum!=0 && numFiles<0) {
+		//this may apply to all files, but I haven't checked into hash-based ones yet
+		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
+		return;
+	}
 	if (!ucInit(g_hostdb.m_dir, true)) {
 		log("Unicode initialization failed!");
 		return;
