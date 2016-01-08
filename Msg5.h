@@ -297,7 +297,7 @@ class Msg5 {
 
 	bool  m_mergeLists;
 
-	char m_waitingForList;
+	bool m_waitingForList;
 	//char m_waitingForMerge;
 	collnum_t m_collnum;
 	
