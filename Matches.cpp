@@ -258,31 +258,6 @@ void Matches::setQuery ( Query *q ) {
 		m_qtableIds[n] = pid;
 
 	}
-
-	/*
-	// set what bits we need to match
-	for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) {
-		// get it
-		QueryTerm *qt = &m_q->m_qterms[i];			
-		// get its explicit bit
-		qvec_t ebit = qt->m_explicitBit;
-		// must be a required term
-		if ( (m_q->m_matchRequiredBits & ebit) == 0 ) continue;
-		// we only check for certain fields in this logic right now
-		bool skip = true;
-		// if no field, must match it
-		if ( qt->m_fieldCode == 0               ) skip = false;
-		if ( qt->m_fieldCode == FIELD_GBLANG    ) skip = false;
-		if ( qt->m_fieldCode == FIELD_GBCOUNTRY ) skip = false;
-		if ( qt->m_fieldCode == FIELD_SITE      ) skip = false;
-		if ( qt->m_fieldCode == FIELD_IP        ) skip = false;
-		if ( qt->m_fieldCode == FIELD_URL       ) skip = false;
-		if ( skip ) continue;
-
-		// we need this ebit
-		m_matchableRequiredBits |= ebit;
-	}
-	*/
 }
 
 // . this was in Summary.cpp, but is more useful here
@@ -300,17 +275,20 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 	// . first add all the matches in the body of the doc
 	// . add it first since it will kick out early if too many matches
 	//   and we get all the explicit bits matched
-	if ( !addMatches( bodyWords, bodyPhrases, bodySections, bodyBits, bodyPos, xd->m_docId, MF_BODY ) )
+	if ( !addMatches( bodyWords, bodyPhrases, bodySections, bodyBits, bodyPos, xd->m_docId, MF_BODY ) ) {
 		return false;
+	}
 
 	// add the title in
-	if ( !addMatches( tt->getTitle(), tt->getTitleLen(), MF_TITLEGEN, xd->m_docId, niceness ) )
+	if ( !addMatches( tt->getTitle(), tt->getTitleLen(), MF_TITLEGEN, xd->m_docId, niceness ) ) {
 		return false;
+	}
 
 	// add in the url terms
 	Url  *turl = xd->getFirstUrl();
-	if ( !addMatches( turl->m_url, turl->m_ulen, MF_URL, xd->m_docId, niceness ) )
+	if ( !addMatches( turl->m_url, turl->m_ulen, MF_URL, xd->m_docId, niceness ) ) {
 		return false;
+	}
 
 	// also use the title from the title tag, because sometimes it does not equal "tt->getTitle()"
 	int32_t  a     = tt->getTitleTagStart();
@@ -321,13 +299,15 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 	if ( a >= 0 && b >= 0 && b>a ) {
 		start = bodyWords->getWord(a);
 		end   = bodyWords->getWord(b-1) + bodyWords->getWordLen(b-1);
-		if ( !addMatches( start, end - start, MF_TITLETAG, xd->m_docId, niceness ) )
+		if ( !addMatches( start, end - start, MF_TITLETAG, xd->m_docId, niceness ) ) {
 			return false;
+		}
 	}
 
 	// now add in the meta tags
-	int32_t     n     = bodyXml->getNumNodes();
+	int32_t n = bodyXml->getNumNodes();
 	XmlNode *nodes = bodyXml->getNodes();
+
 	// find the first meta summary node
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// continue if not a meta tag
@@ -351,8 +331,9 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 		char *s = bodyXml->getString ( i , "content" , &len );
 		if ( ! s || len <= 0 ) continue;
 		// wordify
-		if ( !addMatches( s, len, flag, xd->m_docId, niceness ) )
+		if ( !addMatches( s, len, flag, xd->m_docId, niceness ) ) {
 			return false;
+		}
 	}
 
 	// . now the link text
@@ -447,18 +428,23 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int64_t docId, int3
 	if ( ! wp->set ( s                        ,
 			 slen                     , // in bytes
 			 true                     , // computeIds?
-			 niceness                 ))
+			 niceness                 )) {
 		return false;
+	}
 
 	// scores vector
 	//if ( ! sp->set ( wp , TITLEREC_CURRENT_VERSION , false ) )
 	//	return false;
 	// bits vector
-	if ( ! bp->setForSummary ( wp ) )
+	if ( ! bp->setForSummary ( wp ) ) {
 		return false;
+	}
+
 	// position vector
-	if ( ! pb->set ( wp ) )
+	if ( ! pb->set ( wp ) ) {
 		return false;
+	}
+
 	// record the start
 	int32_t startNumMatches = m_numMatches;
 	// sometimes it returns true w/o incrementing this
@@ -468,16 +454,24 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int64_t docId, int3
 	bool status = addMatches( wp, NULL, sp, bp, pb, docId, flags );
 
 	// if this matchgroup had some, matches, then keep it
-	if ( m_numMatches > startNumMatches ) return status;
+	if ( m_numMatches > startNumMatches ) {
+		return status;
+	}
+
 	// otherwise, reset it, useless
 	wp->reset();
 	if ( sp ) sp->reset();
 	bp->reset();
 	pb->reset();
+
 	// do not decrement the counter if we never incremented it
-	if ( n == m_numMatchGroups ) return status;
+	if ( n == m_numMatchGroups ) {
+		return status;
+	}
+
 	// ok, remove it
 	m_numMatchGroups--;
+
 	return status;
 }
 
