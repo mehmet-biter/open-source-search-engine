@@ -25,6 +25,18 @@ def gb(request):
     def finalize():
         pass
 
+    # default gb configuration
+    payload = {}
+
+    # max summary len
+    payload.update({'sml': '180'})
+    # max summary excerpts
+    payload.update({'smnl': '1'})
+    # max summary excerpt length
+    payload.update({'smxcpl': '180'})
+
+    api.config_search(payload)
+
     request.addfinalizer(finalize)
     return gb_config
 

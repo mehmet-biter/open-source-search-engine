@@ -96,8 +96,9 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 
 		// is tag?
 		if ( tids && tids[i] ) {
+			// filtering into buffer (when generating summaries)
 			if ( f ) {
-				// let's not get from bad tags when filtering into buffer (used for generating summaries)
+				// let's not get from bad tags
 				if ( ( tids[i] == TAG_STYLE ) || ( tids[i] == TAG_SCRIPT ) ) {
 					++in_bad_tags;
 					continue;
@@ -188,6 +189,14 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 			// get size
 			cs = getUtf8CharSize(p);
 
+			// filtering into buffer (when generating summaries)
+			if ( f ) {
+				// skip unwanted character
+				if ( isUtf8UnwantedSymbols( p ) ) {
+					continue;
+				}
+			}
+
 			// do not count space if one before
 			if ( is_wspace_utf8 (p) ) {
 				if ( lastSpace ) {
@@ -209,6 +218,7 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 				pos++;
 				continue;
 			}
+
 			if ( f ) {
 				if (fend-f > cs) {
 					// change '|' to commas

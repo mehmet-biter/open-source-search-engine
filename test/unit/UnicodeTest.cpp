@@ -128,3 +128,59 @@ TEST(UnicodeTest, InvalidUtf8) {
 		EXPECT_FALSE(isValidUtf8Char(inputs[i]));
 	}
 }
+
+TEST(UnicodeTest, UnwantedSymbols) {
+	const char* inputs[] = {
+	    // Emoji & Pictographs
+		// 2600–26FF: Miscellaneous Symbols
+	    "☀",
+	    "⛿",
+
+		// 2700–27BF: Dingbats
+	    "✀",
+	    "➿",
+
+		// 1F300–1F5FF: Miscellaneous Symbols and Pictographs
+	    "🌀",
+	    "🗿",
+
+		// 1F600–1F64F: Emoticons
+	    "😀",
+	    "🙏",
+
+		// 1F650–1F67F: Ornamental Dingbats
+	    "🙐",
+	    "🙿",
+
+		// 1F680–1F6FF: Transport and Map Symbols
+	    "🚀",
+	    "🛰",
+
+		// 1F900–1F9FF: Supplemental Symbols and Pictographs
+		"🤀",
+	    "🧿",
+
+		// Game Symbols
+		// 1F000–1F02F: Mahjong Tiles
+	    "🀀",
+	    "🀯",
+
+		// 1F030–1F09F: Domino Tiles
+	    "🀰",
+	    "🂟",
+
+		// 1F0A0–1F0FF: Playing Cards
+	    "🂠",
+	    "🃿",
+
+	};
+
+	size_t len = sizeof(inputs) / sizeof(inputs[0]);
+	for (size_t i = 0; i < len; i++) {
+		std::stringstream ss;
+		ss << "inputs[" << i << "]";
+		SCOPED_TRACE(ss.str());
+
+		EXPECT_TRUE(isUtf8UnwantedSymbols(inputs[i]));
+	}
+}

@@ -148,7 +148,7 @@ bool inline isValidUtf8Char(const char *s) {
 // +--------------------+----------+----------+----------+----------+
 // | U+2600..U+27BF     | E2       | 98..9E   | 80..BF   |          |
 // | U+1F000..U+1F0FF   | F0       | 9F       | 80..83   | 80..BF   |
-// | U+1F300..U+1F6FF   | F0       | 9F       | 8C..98   | 80..BF   |
+// | U+1F300..U+1F6FF   | F0       | 9F       | 8C..9B   | 80..BF   |
 // | U+1F900..U+1F9FF   | F0       | 9F       | A4..A7   | 80..BF   |
 // +--------------------+----------+----------+----------+----------+
 bool inline isUtf8UnwantedSymbols(const char *s) {
@@ -163,7 +163,7 @@ bool inline isUtf8UnwantedSymbols(const char *s) {
 		if ((u[2] >= 0x80 && u[2] <= 0x83) &&
 		    (u[3] >= 0x80 && u[3] <= 0xBF)) { // U+1F000..U+1F0FF
 		    return true;
-		} else if ((u[2] >= 0x8C && u[2] <= 0x98) &&
+		} else if ((u[2] >= 0x8C && u[2] <= 0x9B) &&
 		           (u[3] >= 0x80 && u[3] <= 0xBF)) { // U+1F300..U+1F6FF
 			return true;
 		} else if ((u[2] >= 0xA4 && u[2] <= 0xA7) &&
