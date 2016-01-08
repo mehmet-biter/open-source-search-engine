@@ -1396,11 +1396,6 @@ char *Collectiondb::getDefaultColl ( HttpRequest *r ) {
 }
 
 
-//CollectionRec *Collectiondb::getRec2 ( HttpRequest *r , bool useDefaultRec) {
-//	char *coll = getDefaultColl();
-//	return g_collectiondb.getRec(coll);
-//}
-
 // . get collectionRec from name
 // . returns NULL if not available
 CollectionRec *Collectiondb::getRec ( char *coll ) {
@@ -1428,13 +1423,6 @@ CollectionRec *Collectiondb::getRec ( collnum_t collnum) {
 	return m_recs[collnum]; 
 }
 
-
-//CollectionRec *Collectiondb::getDefaultRec ( ) {
-//	if ( ! g_conf.m_defaultColl[0] ) return NULL; // no default?
-//	collnum_t collnum = getCollnum ( g_conf.m_defaultColl );	
-//	if ( collnum < (collnum_t)0 ) return NULL;
-//	return m_recs[(int32_t)collnum];
-//}
 
 CollectionRec *Collectiondb::getFirstRec ( ) {
 	for ( int32_t i = 0 ; i < m_numRecs ; i++ )
@@ -1465,44 +1453,6 @@ collnum_t Collectiondb::getCollnum ( char *coll ) {
 	int32_t clen = 0;
 	if ( coll ) clen = gbstrlen(coll );
 	return getCollnum ( coll , clen );
-	/*
-	//if ( ! coll ) coll = "";
-
-	// default empty collection names
-	if ( coll && ! coll[0] ) coll = NULL;
-	if ( ! coll ) coll = g_conf.m_defaultColl;
-	if ( ! coll || ! coll[0] ) coll = "main";
-
-
-	// This is necessary for Statsdb to work, as it is
-	// not associated with any collection. Is this
-	// necessary for Catdb?
-	if ( coll[0]=='s' && coll[1] =='t' &&
-	     strcmp ( "statsdb\0", coll ) == 0) 
-		return 0;
-	if ( coll[0]=='f' && coll[1]=='a' &&
-	     strcmp ( "facebookdb\0", coll ) == 0) 
-		return 0;
-	if ( coll[0]=='a' && coll[1]=='c' &&
-	     strcmp ( "accessdb\0", coll ) == 0) 
-		return 0;
-
-	// because diffbot may have thousands of crawls/collections
-	// let's improve the speed here. try hashing it...
-	int64_t h64 = hash64n(coll);
-	void *vp = g_collTable.getValue ( &h64 );
-	if ( ! vp ) return -1; // not found
-	return *(collnum_t *)vp;
-	*/
-	/*
-	for ( int32_t i = 0 ; i < m_numRecs ; i++ ) {
-		if ( ! m_recs[i] ) continue;
-		if ( m_recs[i]->m_coll[0] != coll[0] ) continue;
-		if ( strcmp ( m_recs[i]->m_coll , coll ) == 0 ) return i;
-	}
-	//if ( strcmp ( "catdb\0", coll ) == 0) return 0;
-	return (collnum_t)-1; // not found
-	*/
 }
 
 collnum_t Collectiondb::getCollnum ( char *coll , int32_t clen ) {
@@ -1519,21 +1469,11 @@ collnum_t Collectiondb::getCollnum ( char *coll , int32_t clen ) {
 		clen = gbstrlen(coll);
 	}
 
-	// This is necessary for Statsdb to work, as it is
-	//if ( ! coll ) coll = "";
-
 	// not associated with any collection. Is this
 	// necessary for Catdb?
 	if ( coll[0]=='s' && coll[1] =='t' &&
 	     strcmp ( "statsdb\0", coll ) == 0) 
 		return 0;
-	if ( coll[0]=='f' && coll[1]=='f' &&
-	     strcmp ( "facebookdb\0", coll ) == 0) 
-		return 0;
-	if ( coll[0]=='a' && coll[1]=='c' &&
-	     strcmp ( "accessdb\0", coll ) == 0) 
-		return 0;
-
 
 	// because diffbot may have thousands of crawls/collections
 	// let's improve the speed here. try hashing it...
@@ -1541,25 +1481,8 @@ collnum_t Collectiondb::getCollnum ( char *coll , int32_t clen ) {
 	void *vp = g_collTable.getValue ( &h64 );
 	if ( ! vp ) return -1; // not found
 	return *(collnum_t *)vp;
-
-	/*
-	for ( int32_t i = 0 ; i < m_numRecs ; i++ ) {
-		if ( ! m_recs[i] ) continue;
-		if ( m_recs[i]->m_collLen != clen ) continue;
-		if ( strncmp(m_recs[i]->m_coll,coll,clen) == 0 ) return i;
-	}
-
-	//if ( strncmp ( "catdb\0", coll, clen ) == 0) return 0;
-	return (collnum_t)-1; // not found
-	*/
 }
 
-//collnum_t Collectiondb::getNextCollnum ( collnum_t collnum ) {
-//	for ( int32_t i = (int32_t)collnum + 1 ; i < m_numRecs ; i++ ) 
-//		if ( m_recs[i] ) return i;
-//	// no next one, use -1
-//	return (collnum_t) -1;
-//}
 
 // what collnum will be used the next time a coll is added?
 collnum_t Collectiondb::reserveCollNum ( ) {
