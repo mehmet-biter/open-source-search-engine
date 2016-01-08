@@ -74,7 +74,6 @@ class Msg3 {
 
 	// for retrieving unmerged lists
 	RdbList *getList       ( int32_t i ) {return &m_lists[i];};
-	int32_t     getTfn        ( int32_t i ) {return  m_tfns[i];};
 	int32_t     getNumLists   (        ) {return m_numScansCompleted; };
 
 	// keep public for doneScanningWrapper to use
@@ -137,7 +136,6 @@ class Msg3 {
 
 	// hold the lists we read from disk here
 	RdbList  *m_lists ; // [ MAX_RDB_FILES ];
-	int32_t     *m_tfns  ; // [ MAX_RDB_FILES ];
 
 	// key range to read
 	//key_t     m_fileStartKey;

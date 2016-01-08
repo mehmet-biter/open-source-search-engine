@@ -301,7 +301,7 @@ bool Msg3::readList  ( char           rdbId         ,
 
 	// . allocate buffer space
 	// . m_scans, m_startpg, m_endpg, m_hintKeys, m_hintOffsets,
-	//   m_fileNums, m_lists, m_tfns
+	//   m_fileNums, m_lists
 	int32_t chunk = sizeof(RdbScan) + // m_scans
 		4 +                    // m_startpg
 		4 +                    // m_endpg
@@ -309,8 +309,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		m_ks +                 // m_hintKeys
 		4 +                    // m_hintOffsets
 		4 +                    // m_fileNums
-		sizeof(RdbList) +      // m_lists
-		4 ;                    // m_tfns
+		sizeof(RdbList) ;      // m_lists
 	int32_t nn   = numFiles;
 	if ( pre != -10 ) nn++;
 	m_numChunks = nn;
@@ -334,7 +333,6 @@ bool Msg3::readList  ( char           rdbId         ,
 	m_hintOffsets = (int32_t    *)p; p += nn * 4;
 	m_fileNums    = (int32_t    *)p; p += nn * 4;
 	m_lists       = (RdbList *)p; p += nn * sizeof(RdbList);
-	m_tfns        = (int32_t    *)p; p += nn * 4;
 	// sanity check
 	if ( p - m_alloc != need ) {
 		log(LOG_LOGIC,"disk: Bad malloc in Msg3.cpp.");
@@ -607,10 +605,6 @@ bool Msg3::readList  ( char           rdbId         ,
 			    "net: msg: reading %"INT32" bytes from %s file #%"INT32" "
 			     "(niceness=%"INT32")",
 			     bytesToRead,base->m_dbname,i,m_niceness);
-
-		// set the tfn
-		if ( m_rdbId == RDB_TITLEDB )
-			m_tfns[i] = base->getFileId2(m_fileNums[i]);
 
 		// log huge reads, those hurt us
 		if ( bytesToRead > 150000000 ) {
