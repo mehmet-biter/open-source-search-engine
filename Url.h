@@ -25,8 +25,6 @@ bool  isPermalinky ( char *url );
 
 bool isHijackerFormat ( char *url );
 
-bool  isPingServer ( char *s ) ;
-
 // . returns the host of a normalized url pointed to by "s"
 // . i.e. "s" must start with the protocol (i.e. http:// or https:// etc.)
 // . used by Links.cpp for fast parsing and SiteGetter.cpp too

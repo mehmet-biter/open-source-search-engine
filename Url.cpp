@@ -1721,26 +1721,14 @@ bool isPermalinky ( char *u ) {
 }
 
 
-// is it http://rpc.weblogs.com/shortChanges.xml, etc.?
+// Is it a ping server? It might respond with huge documents with thousands of
+// links, which would normally be detected as link spam. This function is kept
+// around until we have a better way of handling it  than hardcoded URLs in a
+// source file.
 bool Url::isPingServer ( ) {
-	if ( strcmp ( m_url , "http://rpc.weblogs.com/shortChanges.xml") == 0 )
-		return true;
-	// testing page
-	if ( strcmp ( m_url , "http://127.0.0.1:8000/shortChanges.xml") == 0 )
-		return true;
-	// default
 	return false;
 }
 
-bool isPingServer ( char *s ) {
-	if ( strstr ( s , "rpc.weblogs.com/shortChanges.xml") )
-		return true;
-	// testing page
-	if ( strstr ( s , "127.0.0.1:8000/shortChanges.xml") )
-		return true;
-	// default
-	return false;
-}
 
 // "s" point to the start of a normalized url (includes http://, etc.)
 char *getHost ( char *s , int32_t *hostLen ) {
