@@ -95,7 +95,8 @@ bool Summary::set ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query 
 		m_summaryLen = xml->getMetaContent( m_summary, maxSummaryLen, "summary", 7 );
 
 		// verify that it's not the same with title
-		if ( m_summaryLen == titleBufLen && strncasestr(titleBuf, m_summary, titleBufLen, m_summaryLen) ) {
+		if ( m_summaryLen > 0 && m_summaryLen == titleBufLen &&
+			 strncasestr( titleBuf, m_summary, titleBufLen, m_summaryLen ) ) {
 			m_summaryLen = 0;
 			m_summary[0] = '\0';
 		}
@@ -106,7 +107,8 @@ bool Summary::set ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query 
 		}
 
 		// verify that it's not the same with title
-		if ( m_summaryLen == titleBufLen && strncasestr(titleBuf, m_summary, titleBufLen, m_summaryLen) ) {
+		if ( m_summaryLen > 0 && m_summaryLen == titleBufLen &&
+			 strncasestr( titleBuf, m_summary, titleBufLen, m_summaryLen ) ) {
 			m_summaryLen = 0;
 			m_summary[0] = '\0';
 		}
