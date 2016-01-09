@@ -3879,6 +3879,8 @@ struct QueryField g_fields[] = {
 	//{"isclean", FIELD_ISCLEAN, true,"Matches all pages that are deemed non-offensive and safe for children."},
 
 
+/*
+	BR 20160108: No longer stored in our posdb as we don't plan to use it
 	{"gbinrss", 
 	 FIELD_GBRSS, 
 	 true,
@@ -3887,7 +3889,7 @@ struct QueryField g_fields[] = {
 	 "<i>gbinrss:0</i> to match all documents that are NOT in RSS feeds.",
 	 NULL,
 	 0},
-
+*/
 
 	{"type", 
 	 FIELD_TYPE, 
@@ -3964,6 +3966,9 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
+/*
+	BR 20160108: No longer stored in our posdb as we don't plan to use it
+
 	{"gbcharset", 
 	 FIELD_CHARSET, 
 	 false,
@@ -3975,7 +3980,7 @@ struct QueryField g_fields[] = {
 	 "latin2, latin3, latin4, greek, utf-8, shift_jis.",
 	 NULL,
 	 0},
-
+*/
 
 	// this just complicates things for now, so comment out
 	//{"urlhash",FIELD_URLHASH, false,""},
@@ -4012,6 +4017,8 @@ struct QueryField g_fields[] = {
 	 0},
 */
 
+/*
+	// BR 20160108: No longer stored in our posdb as we don't use it
 	{"gbhopcount", 
 	 FIELD_GBOTHER, 
 	 false,
@@ -4020,8 +4027,10 @@ struct QueryField g_fields[] = {
 	 "from a root url.",
 	 NULL,
 	 0},
+*/
 
-
+/*
+	// BR 20160108: No longer stored in our posdb as we don't use it
 	{"gbhasfilename", 
 	 FIELD_GBOTHER, 
 	 false,
@@ -4033,7 +4042,10 @@ struct QueryField g_fields[] = {
 	 "have a filename in their url.",
 	 NULL,
 	 0},
+*/
 
+/*
+	BR 20160108: No longer stored in our posdb as we don't plan to use it
 
 	{"gbiscgi", 
 	 FIELD_GBOTHER, 
@@ -4043,7 +4055,11 @@ struct QueryField g_fields[] = {
 	 "Likewise gbiscgi:0 matches all documents that do not.",
 	 NULL,
 	0},
+*/
 
+
+/*
+	BR 20160108: No longer stored in our posdb as we don't use it
 
 	{"gbhasext", 
 	 FIELD_GBOTHER, 
@@ -4054,6 +4070,7 @@ struct QueryField g_fields[] = {
 	 "a file extension in their url.",
 	 NULL,
 	0},
+*/
 
 /*
 	BR 20160106 removed
@@ -4389,6 +4406,8 @@ struct QueryField g_fields[] = {
 	//  "results that have "
 	//  "that spider date timestamp (UTC)"},
 
+/* BR 20160108: All facets disabled as test. Don't think we will need any of them */
+#ifdef SUPPORT_FACETS	
 	{"gbfacetstr", 
 	 FIELD_GBFACETSTR, 
 	 false,
@@ -4488,8 +4507,7 @@ struct QueryField g_fields[] = {
 	 "<i>product.price</i> is case insensitive.",
 	 NULL,
 	 0},
-
-
+#endif
 
 	//
 	// spider status docs queries
@@ -4580,6 +4598,7 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
+#ifdef SUPPORT_FACETS
 	{"gbssNumRedirects",
 	 FIELD_GENERIC,
 	 false,
@@ -4588,6 +4607,7 @@ struct QueryField g_fields[] = {
 	 "index it.",
 	 NULL,
 	 0},
+#endif
 
 	{"gbssDocId",
 	 FIELD_GENERIC,
@@ -4597,6 +4617,8 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
+
+#ifdef SUPPORT_FACETS
 	{"gbssHopCount",
 	 FIELD_GENERIC,
 	 false,
@@ -4612,6 +4634,8 @@ struct QueryField g_fields[] = {
 	 "Query on the crawl round number.",
 	 NULL,
 	 0},
+#endif
+
 
 	{"gbssDupOfDocId",
 	 FIELD_GENERIC,
@@ -4653,6 +4677,7 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
+#ifdef SUPPORT_FACETS
 	{"gbssContentHash32",
 	 FIELD_GENERIC,
 	 false,
@@ -4661,6 +4686,7 @@ struct QueryField g_fields[] = {
 	 "internally for deduping.",
 	 NULL,
 	 0},
+#endif
 
 	{"gbssDownloadDurationMS",
 	 FIELD_GENERIC,
@@ -4686,6 +4712,7 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
+#ifdef SUPPORT_FACETS
 	{"gbssUsedRobotsTxt",
 	 FIELD_GENERIC,
 	 false,
@@ -4702,6 +4729,7 @@ struct QueryField g_fields[] = {
 	 "For the last set of indexing attempts how many were errors?",
 	 NULL,
 	 0},
+#endif
 
 	{"gbssIp",
 	 FIELD_GENERIC,
@@ -4738,6 +4766,7 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
+#ifdef SUPPORT_FACETS
 	{"gbssContentInjected",
 	 FIELD_GENERIC,
 	 false,
@@ -4794,6 +4823,7 @@ struct QueryField g_fields[] = {
 	 "This field is not present if unknown.",
 	 NULL,
 	 0},
+#endif
 
 	{"gbssContentLen",
 	 FIELD_GENERIC,
@@ -4803,6 +4833,7 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
+#ifdef SUPPORT_FACETS
 	{"gbssCrawlDelayMS",
 	 FIELD_GENERIC,
 	 false,
@@ -4811,7 +4842,10 @@ struct QueryField g_fields[] = {
 	 "This is -1 if not specified in the robots.txt or not found.",
 	 NULL,
 	 0},
+#endif
 
+
+/*
 	{"gbssSentToDiffbotThisTime",
 	 FIELD_GENERIC,
 	 false,
@@ -4879,7 +4913,7 @@ struct QueryField g_fields[] = {
 	 "The number of JSON objects diffbot excavated from the provided url.",
 	 NULL,
 	 0},
-
+*/
 
 
 

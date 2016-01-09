@@ -8,6 +8,9 @@
 //
 #define PRIVACORE_SAFE_VERSION
 
+// Facet support disabled by default to save space in posdb
+#undef SUPPORT_FACETS
+
 
 // fix on 64-bit architectures so sizeof(uint96_t) is 12, not 16!
 //#pragma pack(0)

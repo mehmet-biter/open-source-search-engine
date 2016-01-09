@@ -25352,8 +25352,8 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	if ( ! hashDateNumbers   ( table ) ) return NULL;
 	if ( ! hashMetaTags      ( table ) ) return NULL;
 	if ( ! hashMetaZip       ( table ) ) return NULL;
-	if ( ! hashCharset       ( table ) ) return NULL;
-	if ( ! hashRSSInfo       ( table ) ) return NULL;
+// BR 20160107 removed:	if ( ! hashCharset       ( table ) ) return NULL;
+// BR 20160107 removed:		if ( ! hashRSSInfo       ( table ) ) return NULL;
 	if ( ! hashPermalink     ( table ) ) return NULL;
 
 	// hash gblang:de last for parsing consistency
@@ -26249,6 +26249,7 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		tptr[tagLen] = 0;
 		// custom
 		hi.m_prefix = tptr;
+		
 		// desc is NULL, prefix will be used as desc
 		bool status = hashString ( buf,len,&hi );
 		// put it back
@@ -26257,7 +26258,7 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		if ( ! status ) return false;
 
 		// return false with g_errno set on error
-		//if ( ! hashNumber ( buf , bufLen , &hi ) )
+		//if ( ! hashNumberForSorting ( buf , bufLen , &hi ) )
 		//	return false;
 	}
 
@@ -26292,10 +26293,11 @@ bool XmlDoc::hashDateNumbers ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	hi.m_tt        = tt;
 	hi.m_desc      = "last spidered date";
 	hi.m_prefix    = "gbspiderdate";
-
+	hi.m_createSortByForNumbers = true;
+	
 	char buf[64];
 	int32_t bufLen = sprintf ( buf , "%"UINT32"", (uint32_t)m_spideredTime );
-	if ( ! hashNumber ( buf , buf , bufLen , &hi ) )
+	if ( ! hashNumberForSorting( buf , buf , bufLen , &hi ) )
 		return false;
 
 	// and index time is >= spider time, so you want to sort by that for
@@ -26303,7 +26305,7 @@ bool XmlDoc::hashDateNumbers ( HashTableX *tt ) { // , bool isStatusDoc ) {
  	hi.m_desc      = "last indexed date";
  	hi.m_prefix    = "gbindexdate";
  	bufLen = sprintf ( buf , "%"UINT32"", (uint32_t)indexedTime );
- 	if ( ! hashNumber ( buf , buf , bufLen , &hi ) )
+ 	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
  		return false;
 
 	// do not index the rest if we are a "spider reply" document
@@ -26315,18 +26317,20 @@ bool XmlDoc::hashDateNumbers ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	// gbspiderdate so index this so we can just do a
 	// gbsortby:gbdocspiderdate and only get real DOCUMENTS not the
 	// spider status "documents"
+/*
+  BR 20160108: Don't store these as we don't plan to use them	
 	hi.m_desc      = "doc last spidered date";
 	hi.m_prefix    = "gbdocspiderdate";
 	bufLen = sprintf ( buf , "%"UINT32"", (uint32_t)m_spideredTime );
-	if ( ! hashNumber ( buf , buf , bufLen , &hi ) )
+	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
 		return false;
 
  	hi.m_desc      = "doc last indexed date";
  	hi.m_prefix    = "gbdocindexdate";
  	bufLen = sprintf ( buf , "%"UINT32"", (uint32_t)indexedTime );
- 	if ( ! hashNumber ( buf , buf , bufLen , &hi ) )
+ 	if ( ! hashNumberForSorting ( buf , buf , bufLen , &hi ) )
  		return false;
-
+*/
 
 	// all done
 	return true;
@@ -26374,6 +26378,7 @@ bool XmlDoc::hashMetaZip ( HashTableX *tt ) {
 		p += 5; while ( p < pend && is_digit(*p) ) p++;
 		goto nextZip;
 	}
+	
 	// 90210 --> 90 902 9021 90210
 	for ( int32_t i = 0 ; i <= 3 ; i++ )
 		// use prefix as description
@@ -26782,6 +26787,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	char *s    = fu->getUrl   ();
 	int32_t  slen = fu->getUrlLen();
 	hi.m_prefix = "inurl";
+
 	// no longer, we just index json now
 	//if ( isStatusDoc ) hi.m_prefix = "inurl2";
 	if ( ! hashString ( s,slen, &hi ) ) return false;
@@ -26859,6 +26865,9 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 */
 
 
+/*
+	// BR 20160106: No longer stored in our posdb as we don't use it
+
 	//
 	// HASH gbhopcount:X
 	//
@@ -26870,11 +26879,14 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	// no longer, we just index json now
 	//if ( isStatusDoc ) hi.m_prefix = "gbhopcount2";
 	hi.m_hashGroup = HASHGROUP_INTAG;
+	
 	// hash gbpathdepth:X
 	if ( ! hashString ( buf,blen,&hi) ) return false;
+*/
 
 
-
+/*
+	// BR 20160108: No longer stored in our posdb as we don't use it
 	setStatus ( "hashing gbhasfilename");
 
 	//
@@ -26889,9 +26901,14 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	//if ( isStatusDoc ) hi.m_prefix = "gbhasfilename2";
 	// hash gbhasfilename:[0|1]
 	if ( ! hashString ( hm,1,&hi) ) return false;
+*/
+
+
+/*
+	// BR 20160106: No longer store gbiscgi in posdb
 
 	setStatus ( "hashing gbiscgi");
-
+	
 	//
 	// HASH gbiscgi:0 or gbiscgi:1
 	//
@@ -26901,10 +26918,13 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	// no longer, we just index json now
 	//if ( isStatusDoc ) hi.m_prefix = "gbiscgi2";
 	if ( ! hashString ( hm,1,&hi) ) return false;
+*/
 
+
+/*
+	// BR 20160108: No longer stored in our posdb as we don't use it
 
 	setStatus ( "hashing gbext");
-
 	//
 	// HASH gbhasext:0 or gbhasext:1 (does it have a fileextension)
 	//
@@ -26916,6 +26936,8 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	// no longer, we just index json now
 	//if ( isStatusDoc ) hi.m_prefix = "gbhasext2";
 	if ( ! hashString ( hm,1,&hi) ) return false;
+*/
+
 
 	//
 	// HASH the url's mid domain and host as they were in the body
@@ -27295,7 +27317,6 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 	// update hash parms
 	HashInfo hi;
 	hi.m_tt        = tt;
-	hi.m_useSynonyms = true;
 	// hashstring should update this like a cursor.
 	hi.m_startDist = 0;
 
@@ -27589,7 +27610,6 @@ bool XmlDoc::hashRSSInfo ( HashTableX *tt ) {
 	hi.m_tt        = tt;
 	hi.m_desc      = "rss body";
 	hi.m_hashGroup = HASHGROUP_BODY;
-
 	// . hash the rss/atom description
 	// . only hash the terms if they are unique to stay balanced with docs
 	//   that are not referenced by an rss feed
@@ -27680,7 +27700,6 @@ bool XmlDoc::hashTitle ( HashTableX *tt ) {
 	HashInfo hi;
 	hi.m_tt        = tt;
 	hi.m_prefix    = "title";
-	hi.m_useSynonyms= true;
 
 	// the new posdb info
 	hi.m_hashGroup      = HASHGROUP_TITLE;
@@ -27731,7 +27750,6 @@ bool XmlDoc::hashBody2 ( HashTableX *tt ) {
 	HashInfo hi;
 	hi.m_tt         = tt;
 	hi.m_desc       = "body";
-	hi.m_useSynonyms= true;
 	hi.m_hashGroup  = HASHGROUP_BODY;
 
 	// use NULL for the prefix
@@ -28153,6 +28171,7 @@ bool XmlDoc::hashVectors ( HashTableX *tt ) {
 		hi.m_prefix    = "gbwikidocid";
 		hi.m_desc      = "wiki docid";
 		hi.m_hashGroup = HASHGROUP_INTAG;
+		
 		// this returns false on failure
 		if ( ! hashString ( buf,blen,&hi ) ) return false;
 	}
@@ -31554,55 +31573,6 @@ bool XmlDoc::hashString3( char       *s              ,
 	// use primary langid of doc
 	if ( ! m_langIdValid ) { char *xx=NULL;*xx=0; }
 
-	// words
-	//SafeBuf myLangVec;
-	//if ( ! setLangVec ( &words , &myLangVec , m_niceness ) )
-	//	return false;
-	//char *langVec = (char *)myLangVec.getBufStart();
-
-	/*
-	// debugBuf for synonyms? yes if we are debugging
-	SafeBuf synDebugBuf;
-	SafeBuf *sdbp = NULL;
-	if ( pbuf || m_storeTermListInfo ) sdbp = &synDebugBuf;
-	// now we can set it...
-	if ( hi->m_useSynonyms && !synonyms.set(&words,
-						NULL, // langVec,
-						m_langId,
-						&phrases,
-						niceness,
-						sdbp))
-		return false;
-	*/
-
-	// set weights because of count table
-	//if ( countTable && ! weights.set ( &words     ,
-	/*
-	if ( hi->m_useWeights &&
-	     ! weights.set ( &words         ,
-			     &phrases       ,
-			     &bits          ,
-			     NULL           ,
-			     pbuf           ,
-			     false          ,
-			     false          ,
-			     version        ,
-			     100            , // titleWeight
-			     100            , // headerWeight
-			     countTable     ,
-			     false          , // isLinkText
-			     false          , // isCntTable?
-			     siteNumInlinks ,
-			     niceness       ) )
-		return false;
-
-	Weights *wp = &weights;
-	if ( ! hi->m_useWeights ) wp = NULL;
-	*/
-
-	//Synonyms *sp = NULL;
-	//if ( hi->m_useSynonyms ) sp = &synonyms;
-
 	return hashWords3  ( //0                   ,
 			     //words.getNumWords() ,
 			     hi                  ,
@@ -32032,72 +32002,6 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		}
 
 
-		/////////////
-		//
-		// synonyms (alt words,morphs,synonyms)
-		//
-		/////////////
-		/*
-		int64_t *aids = NULL;
-		int16_t      naids = 0;
-		int64_t  syh;
-		if ( synonyms ) {
-			aids   = synonyms->getAltIds (i);
-			naids  = synonyms->getNumAlts(i);
-			//ascore = saved / 4;
-			//if ( ascore <= 0 ) ascore = 1;
-			//asaved = ascore;
-		}
-		for ( int32_t j = 0 ; j < naids ; j++ ) {
-			// skip if same as original
-			if ( (uint64_t)aids[j] == wids[i] ) continue;
-			// . hash it with the prefix if any
-			// . fixes gbwhere:galleries bug...
-			if ( plen>0 ) syh = hash64 ( aids[j] , prefixHash );
-			else          syh = aids[j];
-			g_posdb.makeKey ( &k ,
-					  syh ,
-					  0LL,//docid
-					  wposvec[i], // dist,
-					  densvec[i],// densityRank , // 0-15
-					  wdv[i], // diversityRank ,
-					  ws, // wordSpamRank ,
-					  0, //siterank
-					  hashGroup,
-					  // we set to docLang final hash loop
-					  langUnknown, // langid
-					  0 , // multiplier
-					  true  , // syn?
-					  false ); // delkey?
-			// key should NEVER collide since we are always
-			// incrementing the distance cursor, m_dist
-			dt->addTerm144 ( &k );
-
-			// keep going if not debug
-			if ( ! wts ) continue;
-			// get the junk
-			char *synWord = synonyms->getStringFromId(&aids[j]);
-			// sanity
-			if ( ! synWord ) { char *xx=NULL;*xx=0; }
-			// print the synonym
-			if ( ! storeTerm(synWord,
-					 gbstrlen(synWord),
-					 syh, // termid
-					 hi,
-					 i, // wordnum
-					 wposvec[i], // wordPos
-					 densvec[i],// densityRank , // 0-15
-					 wdv[i],
-					 ws,
-					 hashGroup,
-					 //false, // is phrase?
-					 wbuf,
-					 wts,
-					 synonyms->m_source[i], // synsrc
-					 langId) )
-				return false;
-		}
-		*/
 
 		////////
 		//
@@ -32155,95 +32059,55 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 				return false;
 		}
 
-		////////
-		//
-		// three-word phrase
-		//
-		////////
-		/*
-		npid = pids3[i];
-		npw  = 3;
-
-		// repeat for the two word hash if different!
-		if ( npid ) {
-			// hash with prefix
-			uint64_t ph2 ;
-			if ( plen > 0 ) ph2 = hash64 ( npid , prefixHash );
-			else            ph2 = npid;
-			g_posdb.makeKey ( &k ,
-					  ph2 ,
-					  0LL,//docid
-					  wposvec[i],//dist,
-					  densvec[i],// densityRank , // 0-15
-					  MAXDIVERSITYRANK, //phrase
-					  ws, // wordSpamRank ,
-					  0,//siterank
-					  hashGroup,
-					  // we set to docLang final hash loop
-					  langUnknown, // langid
-					  0 , // multiplier
-					  true  , // syn?
-					  false ); // delkey?
-			// key should NEVER collide since we are always
-			// incrementing the distance cursor, m_dist
-			dt->addTerm144 ( &k );
-		}
-
-		// add to wts for PageParser.cpp display
-		if ( wts && npid ) {
-			// get phrase as a string
-			int32_t plen;
-			char *phr=phrases->getPhrase(i,&plen,npw);
-			// store it
-			if ( ! storeTerm ( phr,plen,ph2,hi,i,
-					   wposvec[i], // wordpos
-					   densvec[i],// densityRank , // 0-15
-					   MAXDIVERSITYRANK,//phrase
-					   ws,
-					   hashGroup,
-					   //true, // is phrase?
-					   wbuf,
-					   wts,
-					   SOURCE_TRIGRAM, // synsrc
-					   langId ) )
-				return false;
-		}
-		*/
-		// update for hashIncomingLinkText()
-		//hi->m_startDist = wposvec[i];
-
-		// debug point
-		//if ( ph2 == (uint64_t)-233869093807964777LL ) {
-		//	log("hey slot=%"INT32" date=%"UINT32" n0=%"INT64" score=%"INT32"",
-		//	    slot,
-		//	    k.n1,k.n0,
-		//	    score);
-		//	//char *xx=NULL;*xx=0;
-		//}
 
 		//
 		// NUMERIC SORTING AND RANGES
 		//
 
 		// only store numbers in fields this way
-		if ( prefixHash == 0 ) continue;
+		if ( prefixHash == 0 )
+		{
+			continue;
+		}
 
 		// this may or may not be numeric.
-		if ( ! is_digit ( wptrs[i][0] ) ) continue;
+		if ( ! is_digit ( wptrs[i][0] ) )
+		{
+			continue;
+		}
+
+		// Avoid creating "sortby" number values in posdb if not wanted
+		if( !hi->m_createSortByForNumbers )
+		{
+			continue;
+		}
 
 		// this might have to "back up" before any '.' or '-' symbols
-		if ( ! hashNumber ( wptrs[0] ,
+		if ( ! hashNumberForSorting ( wptrs[0] ,
 				    wptrs[i] ,
 				    wlens[i] ,
 				    hi ) )
 			return false;
 	}
 
+
+#ifdef SUPPORT_FACETS
+	//BR 20160108 - facets DISABLED AS TEST. Don't think we will use them.
+	//https://gigablast.com/syntax.html?c=main
+
+#ifdef PRIVACORE_SAFE_VERSION
+	#error Oops? Do not enable SUPPORT_FACETS with PRIVACORE_SAFE_VERSION. Stores too much unused data in posdb.
+#endif
+
 	// hash a single term so they can do gbfacet:ext or
 	// gbfacet:siterank or gbfacet:price. a field on a field.
 	if ( prefixHash && words->m_numWords )
+	{
 		// hash gbfacet:price with and store the price in the key
 		hashFacet1 ( hi->m_prefix, words ,hi->m_tt);//, hi );
+	}
+#endif
+
 
 	// between calls? i.e. hashTitle() and hashBody()
 	//if ( wc > 0 ) m_dist = wposvec[wc-1] + 100;
@@ -32271,28 +32135,9 @@ bool XmlDoc::hashFacet1 ( char *term ,
 
 	if ( ! hashFacet2 ( "gbfacetstr",term, val32 , tt ) ) return false;
 
-	//
-	// why do this if we already do it for hashNumber() using gbsortby: ?
-	//
-
-	/*
-	// if it's a number hash as float and int
-	if ( nw != 1 ) return true;
-	char **wptrs = words->m_words;
-	if ( ! is_digit ( wptrs[0][0] ) ) return true;
-
-	// hash with a float val
-	float f = atof(wptrs[0]);
-	int32_t vf32 = *(int32_t *)&f;
-	if ( ! hashFacet2 ( "gbfacetfloat",term, vf32 , tt ) ) return false;
-
-	// and an int val
-	int32_t vi32 = atoi(wptrs[0]);
-	if ( ! hashFacet2 ( "gbfacetint",term, vi32 , tt ) ) return false;
-	*/
-
 	return true;
 }
+
 
 bool XmlDoc::hashFacet2 ( char *prefix,
 			  char *term ,
@@ -32533,7 +32378,7 @@ bool XmlDoc::hashFieldMatchTerm ( char *val , int32_t vlen , HashInfo *hi ) {
 // . the binary representation of floating point numbers is ordered in the
 //   same order as the floating points themselves! so we are lucky and can
 //   keep our usually KEYCMP sorting algos to keep the floats in order.
-bool XmlDoc::hashNumber ( char *beginBuf ,
+bool XmlDoc::hashNumberForSorting ( char *beginBuf ,
 			  char *buf ,
 			  int32_t bufLen ,
 			  HashInfo *hi ) {
@@ -32549,21 +32394,19 @@ bool XmlDoc::hashNumber ( char *beginBuf ,
 	// negative sign?
 	if ( p > beginBuf && p[-1] == '-' ) p--;
 
+	// BR 20160108: Removed all float numbers as we don't plan to use them
 	// . convert it to a float
 	// . this now allows for commas in numbers like "1,500.62"
-	float f = atof2 ( p , bufEnd - p );
+//	float f = atof2 ( p , bufEnd - p );
 
-	// debug
-	//log("build: hashing %s %f",hi->m_prefix,f);
-
-	if ( ! hashNumber2 ( f , hi , "gbsortby" ) )
-		return false;
+//	if ( ! hashNumberForSortingAsFloat ( f , hi , "gbsortby" ) )
+//		return false;
 
 	// also hash in reverse order for sorting from low to high
-	f = -1.0 * f;
+//	f = -1.0 * f;
 
-	if ( ! hashNumber2 ( f , hi , "gbrevsortby" ) )
-		return false;
+//	if ( ! hashNumberForSortingAsFloat ( f , hi , "gbrevsortby" ) )
+//		return false;
 
 	//
 	// also hash as an int, 4 byte-integer so our lastSpidered timestamps
@@ -32572,13 +32415,13 @@ bool XmlDoc::hashNumber ( char *beginBuf ,
 
 	int32_t i = (int32_t) atoll2 ( p , bufEnd - p );
 
-	if ( ! hashNumber3 ( i , hi , "gbsortbyint" ) )
+	if ( ! hashNumberForSortingAsInt32 ( i , hi , "gbsortbyint" ) )
 		return false;
 
 	// also hash in reverse order for sorting from low to high
 	i = -1 * i;
 
-	if ( ! hashNumber3 ( i , hi , "gbrevsortbyint" ) )
+	if ( ! hashNumberForSortingAsInt32 ( i , hi , "gbrevsortbyint" ) )
 		return false;
 
 
@@ -32588,7 +32431,7 @@ bool XmlDoc::hashNumber ( char *beginBuf ,
 
 
 
-bool XmlDoc::hashNumber2 ( float f , HashInfo *hi , char *sortByStr ) {
+bool XmlDoc::hashNumberForSortingAsFloat ( float f , HashInfo *hi , char *sortByStr ) {
 
 	// prefix is something like price. like the meta "name" or
 	// the json name with dots in it like "product.info.price" or something
@@ -32695,7 +32538,7 @@ bool XmlDoc::hashNumber2 ( float f , HashInfo *hi , char *sortByStr ) {
 	return true;
 }
 
-bool XmlDoc::hashNumber3 ( int32_t n , HashInfo *hi , char *sortByStr ) {
+bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , char *sortByStr ) {
 
 	// prefix is something like price. like the meta "name" or
 	// the json name with dots in it like "product.info.price" or something
@@ -43995,7 +43838,7 @@ char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
 		// hash as a number so we can sort search results by
 		// this number and do range constraints
 		float f = ji->m_valueDouble;
-		if ( ! hashNumber2 ( f , hi ) )
+		if ( ! hashNumberForSortingAsFloat ( f , hi ) )
 			return NULL;
 		*/
 	}

@@ -7003,11 +7003,11 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 1;
-		s_mi[n].m_title    = "Sorted by site inlinks";
-		s_mi[n].m_cgi      = "sortby=3";
-		s_mi[n].m_icon     = NULL;
-		n++;
+//		s_mi[n].m_menuNum  = 1;
+//		s_mi[n].m_title    = "Sorted by site inlinks";
+//		s_mi[n].m_cgi      = "sortby=3";
+//		s_mi[n].m_icon     = NULL;
+//		n++;
 
 
 		// languages
@@ -7091,12 +7091,14 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		n++;
 
 		// facets
-
 		s_mi[n].m_menuNum  = 4;
 		s_mi[n].m_title    = "No Facets";
 		s_mi[n].m_cgi      = "facet=";
 		s_mi[n].m_icon     = NULL;
 		n++;
+
+#ifdef SUPPORT_FACETS
+		// BR 20160801: Disabled by default
 
 		s_mi[n].m_menuNum  = 4;
 		s_mi[n].m_title    = "Language facet";
@@ -7110,17 +7112,11 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		// s_mi[n].m_menuNum  = 4;
-		// s_mi[n].m_title    = "Ip address";
-		// s_mi[n].m_cgi      = "facet=gbfacetstr:ip";
-		// n++;
-
-// BR 20160106: No longer stored in our posdb
-//		s_mi[n].m_menuNum  = 4;
-//		s_mi[n].m_title    = "Url path depth";
-//		s_mi[n].m_cgi      = "facet=gbfacetint:gbpathdepth";
-//		s_mi[n].m_icon     = NULL;
-//		n++;
+		s_mi[n].m_menuNum  = 4;
+		s_mi[n].m_title    = "Url path depth";
+		s_mi[n].m_cgi      = "facet=gbfacetint:gbpathdepth";
+		s_mi[n].m_icon     = NULL;
+		n++;
 
 		s_mi[n].m_menuNum  = 4;
 		s_mi[n].m_title    = "Spider date facet";
@@ -7145,9 +7141,10 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_cgi      = "facet=gbfacetint:gbhopcount";
 		s_mi[n].m_icon     = NULL;
 		n++;
+#endif
+
 
 		// output
-
 		s_mi[n].m_menuNum  = 5;
 		s_mi[n].m_title    = "Output HTML";
 		s_mi[n].m_cgi      = "format=html";
@@ -7255,6 +7252,11 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		// after 4 make a new line
 		if ( i == 5 ) sb->safePrintf("<br><br>");
 		if ( i == 9 ) sb->safePrintf("<br><br>");
+			
+#ifndef SUPPORT_FACETS
+		if( i == 4 ) continue;
+#endif			
+
 		printMenu ( sb , i , hr );
 	}
 

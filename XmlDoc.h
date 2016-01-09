@@ -855,16 +855,16 @@ public:
 	// gbfieldmatch:
 	bool hashFieldMatchTerm ( char *val, int32_t vlen, class HashInfo *hi);
 
-	bool hashNumber ( char *beginBuf ,
+	bool hashNumberForSorting( char *beginBuf ,
 			  char *buf , 
 			  int32_t bufLen , 
 			  class HashInfo *hi ) ;
 
-	bool hashNumber2 ( float f , 
+	bool hashNumberForSortingAsFloat ( float f , 
 			   class HashInfo *hi ,
 			   char *gbsortByStr ) ;
 
-	bool hashNumber3 ( int32_t x,
+	bool hashNumberForSortingAsInt32 ( int32_t x,
 			   class HashInfo *hi ,
 			   char *gbsortByStr ) ;
 
@@ -2371,39 +2371,39 @@ class TermDebugInfo {
 class HashInfo {
 public:
 	HashInfo() { 
-		m_tt                      = NULL;
-		m_prefix                  = NULL;
-		m_desc                    = NULL;
-		m_date                    = 0;
+		m_tt					= NULL;
+		m_prefix				= NULL;
+		m_desc					= NULL;
+		m_date					= 0;
 		// should we do sharding based on termid and not the usual docid???
 		// in general this is false, but for checksum we want to shard
 		// by the checksum and not docid to avoid having to do a 
 		// gbchecksum:xxxxx search on ALL shards. much more efficient.
-		m_shardByTermId = false;
-		//m_useWeights              = false;
-		m_useSynonyms             = false;
-		m_hashGroup = -1;
-		m_useCountTable = true;
-		m_useSections = true;
-		m_startDist = 0;
-		//	m_facetVal32 = 0;
-		// used for sectiondb stuff, but stored in posdb
-		//m_sentHash32 = 0;
+		m_shardByTermId 		= false;
+		m_hashGroup				= -1;
+		m_useCountTable			= true;
+		m_useSections			= true;
+		m_startDist				= 0;
+
+		// BR 20160108: Now default to false since we will only use it for
+		// very specific cases like spiderdate, which is for debugging only.
+		// If true, creates 4 posdb entries for numbers in posdb, e.g.
+		// gbsortbyint:gbisadultint32, gbrevsortbyint:gbisadultint32
+		// gbsortby:gbisadultfloat32, gbrevsortby:gbisadultfloat32
+		m_createSortByForNumbers= false;
 	};
 	class HashTableX *m_tt;
-	char             *m_prefix;
+	char			*m_prefix;
 	// "m_desc" should detail the algorithm
-	char             *m_desc;
-	int32_t              m_date;
-	char              m_shardByTermId;
-	char              m_linkerSiteRank;
-	//char              m_useWeights;
-	char              m_useSynonyms;
-	char              m_hashGroup;
-	int32_t              m_startDist;
-	//int32_t              m_facetVal32;
-	bool              m_useCountTable;
-	bool              m_useSections;
+	char			*m_desc;
+	int32_t			m_date;
+	bool			m_shardByTermId;
+	char			m_linkerSiteRank;
+	char			m_hashGroup;
+	int32_t			m_startDist;
+	bool			m_useCountTable;
+	bool			m_useSections;
+	bool			m_createSortByForNumbers;
 };
 
 
