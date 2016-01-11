@@ -31466,11 +31466,14 @@ bool XmlDoc::hashSingleTerm ( char       *s         ,
 	// call the other guy now
 	//return hashSingleTerm ( final , hi );
 
+
 	// shortcut
 	HashTableX *dt = hi->m_tt;
 	// sanity check
 	if ( dt->m_ks != sizeof(key144_t) ) { char *xx=NULL;*xx=0; }
 	// make the key like we do in hashWords()
+	
+	
 	key144_t k;
 	g_posdb.makeKey ( &k ,
 			  final,
@@ -35051,13 +35054,15 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 	//printDensityWeightsTable(sb,isXml);
 	//printWordSpamWeightsTable(sb,isXml);
 
+
 	// print them out in a table
 	char hdr[1000];
 	sprintf(hdr,
 		"<table border=1 cellpadding=0>"
 		"<tr>"
-		// this messes up Test.cpp diff'ing
-		//"<td><b>#</b></td>"
+
+		"<td><b>Term ID</b></td>"
+
 		"<td><b>Prefix</b></td>"
 		"<td><b>WordPos</b></td>"
 		"<td><b>Lang</b></td>"
@@ -35105,8 +35110,20 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\t\t<prefix><![CDATA[%s]]>"
 				       "</prefix>\n",prefix);
 
-		if ( ! isXml ) {
+		if ( ! isXml ) 
+		{
 			sb->safePrintf ( "<tr>");
+		}
+		
+		
+		if ( ! isXml )
+		{
+			sb->safePrintf("<td>0x%016"PRIx64"</td>", tp[i]->m_termId);
+		}
+
+		
+		if( ! isXml )
+		{
 			if ( prefix )
 				sb->safePrintf("<td>%s:</td>",prefix);
 			else
@@ -35114,13 +35131,15 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 		}
 
 		if ( ! isXml )
+		{
 			sb->safePrintf("<td>%"INT32""
 				       "/%"INT32""
 				       "</td>" ,
 				       tp[i]->m_wordPos
 				       ,tp[i]->m_wordNum
 				       );
-
+		}
+		
 		//char *abbr = getLanguageAbbr(tp[i]->m_langId);
 		//if ( tp[i]->m_langId == langTranslingual ) abbr ="??";
 		//if ( tp[i]->m_langId == langUnknown      ) abbr ="--";
