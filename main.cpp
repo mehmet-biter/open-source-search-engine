@@ -1210,7 +1210,6 @@ int main2 ( int argc , char *argv[] ) {
   	if ( strcmp ( cmd , "proxy" ) == 0 ) {
 		if (argc < 3){
 			goto printHelp;
-			exit (1);
 		}
 
 		int32_t proxyId = -1;
@@ -1248,7 +1247,6 @@ int main2 ( int argc , char *argv[] ) {
 
 		else if ( proxyId == -1 || strcmp ( argv[cmdarg+1] , "load" ) != 0 ) {
 			goto printHelp;
-			exit(1);
 		}
 
 		Host *h = g_hostdb.getProxy( proxyId );
@@ -1304,7 +1302,6 @@ int main2 ( int argc , char *argv[] ) {
 		if ( ! hashinit() ) {
 			log("db: Failed to init hashtable." ); return 1; }
 
-	tryagain:
 		if ( ! g_proxy.initHttpServer( httpPort, httpsPort ) ) {
 			log("db: HttpServer init failed. Another gb "
 			    "already running? If not, try editing "
@@ -1314,11 +1311,6 @@ int main2 ( int argc , char *argv[] ) {
 			    "clicking 'save & exit' in the master controls."
 			    , (int32_t)httpPort ); 
 			// this is dangerous!!! do not do the shutdown thing
-			return 1;
-			// just open a socket to port X and send
-			// GET /master?save=1
-			if ( shutdownOldGB(httpPort) ) goto tryagain;
-			log("db: Shutdown failed.");
 			return 1;
 		}		
 		
@@ -10547,9 +10539,6 @@ int injectFile ( char *filename , char *ips ,
 		log("cmd: done injecting archives for split %i",split);
 	}
 
-
-
-
 	bool isDelete = false;
 	int64_t startDocId = 0LL;
 	int64_t endDocId = MAX_DOCID;
@@ -12283,16 +12272,6 @@ bool memTest() {
 	    g_mem.m_used,g_conf.m_maxMem);
 
 	return true;
-
-
-	fprintf(stderr, "memtest: Dumping core to test max core file size.\n");
-	char *xx = NULL;
-	*xx = 0;
-	for (i=0;i<numPtrs;i++){
-		mfree(ptrs[i], 1024*1024, "memtest");
-	}
-	return true;
-	
 }
 
 
