@@ -574,10 +574,8 @@ bool processLoop ( void *state ) {
 	Highlight hi;
 	// make words so we can set the scores to ignore fielded terms
 	Words qw;
-	qw.set ( q            ,  // content being highlighted, utf8
-		 qlen         ,  // content being highlighted, utf8
-		 true         ,  // computeIds
-		 false        ); // hasHtmlEntities?
+	qw.set( q, qlen, true, false );
+
 	// . assign scores of 0 to query words that should be ignored
 	// . TRICKY: loop over words in qq.m_qwords, but they should be 1-1
 	//   with words in qw.

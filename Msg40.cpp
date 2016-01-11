@@ -3894,7 +3894,8 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 		char *s = gi->m_term;
 		int32_t  slen = gi->m_termLen;
 		Words w;
-		w.setx ( s , slen , 0 );
+		w.set ( s , slen , true, 0 );
+
 		int32_t nw = w.getNumWords();
 		// . does it have comma? or other punct besides an apostrophe?
 		// . we allow gigabit phrases to incorporate a int32_t stretch
@@ -4067,7 +4068,8 @@ bool hashGigabitSample ( Query *q,
 		int32_t plen = gbstrlen(p);
 		// parse into words
 		Words ww;
-		ww.setx ( p, plen, 0);// niceness
+		ww.set ( p, plen, true, 0);
+
 		// save it
 		//log("gbits: getting sim for %s",p);
 		// advance to next excerpt
@@ -5432,7 +5434,8 @@ bool Msg40::computeFastFacts ( ) {
 		Gigabit *gi = &gigabits[i];
 		// parse into words
 		Words ww;
-		ww.setx ( gi->m_term , gi->m_termLen , 0 );
+		ww.set ( gi->m_term , gi->m_termLen , true, 0 );
+
 		int64_t *wids = ww.getWordIds();
 		// fix mere here
 		//if ( ! wids[0] ) { char *xx=NULL;*xx=0; }

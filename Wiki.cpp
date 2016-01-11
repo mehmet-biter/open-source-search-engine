@@ -117,11 +117,10 @@ bool Wiki::loadText ( int32_t fileSize ) {
 		for (eol = p; eol < pend && *eol !='\n' ; eol++) ;
 		// parse into words
 		Words w;
-		if ( ! w.set ( p            , // s
-			       eol - p      , // slen
-			       true         , // computeIds?
-			       MAX_NICENESS ) ) 
+		if ( !w.set( p, eol - p, true, MAX_NICENESS ) ) {
 			return false;
+		}
+
 		int32_t nw = w.getNumWords();
 
 		// skip if it begins with 'the', like 'the uk' because it

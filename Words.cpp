@@ -35,9 +35,7 @@ void Words::reset ( ) {
 	m_localBufSize2 = 0;
 }
 
-bool Words::set ( char *s, int32_t slen,
-		  bool computeWordIds,
-		  int32_t niceness) {
+bool Words::set( char *s, int32_t slen, bool computeWordIds, int32_t niceness ) {
 	// bail if nothing
 	if ( ! s || slen == 0 ) {
 		m_numWords = 0;
@@ -46,9 +44,15 @@ bool Words::set ( char *s, int32_t slen,
 	}
 
 	char c = s[slen];
-	if ( c != '\0' ) s[slen]='\0';
-	bool status = set ( s , computeWordIds , niceness );
-	if ( c != '\0' ) s[slen] = c;
+	if ( c != '\0' ) {
+		s[slen] = '\0';
+	}
+
+	bool status = set( s, computeWordIds, niceness );
+	if ( c != '\0' ) {
+		s[slen] = c;
+	}
+
 	return status;
 }
 
@@ -100,60 +104,70 @@ int32_t countWords ( char *p ) {
 	return count+10;
 }
 
-bool Words::set ( Xml *xml, 
-		  bool computeWordIds , 
-		  int32_t niceness ,
-		  int32_t node1 ,
-		  int32_t node2 ) {
+bool Words::set( Xml *xml, bool computeWordIds, int32_t niceness, int32_t node1, int32_t node2 ) {
 	// prevent setting with the same string
 	if ( m_xml == xml ) { char *xx=NULL;*xx=0; }
 	reset();
 	m_xml = xml;
 
 	// if xml is empty, bail
-	if   ( ! xml->getContent() ) return true;
+	if ( !xml->getContent() ) {
+		return true;
+	}
 
 	int32_t numNodes = xml->getNumNodes();
-	if ( numNodes <= 0 ) return true;
+	if ( numNodes <= 0 ) {
+		return true;
+	}
 
 	// . can be given a range, if node2 is -1 that means all!
 	// . range is half-open: [node1, node2)
-	if ( node2 < 0 ) node2 = numNodes;
+	if ( node2 < 0 ) {
+		node2 = numNodes;
+	}
+
 	// sanity check
 	if ( node1 > node2 ) { char *xx=NULL;*xx=0; }
+
 	char *start = xml->getNode(node1);
-	char *end   = xml->getNode(node2-1) + xml->getNodeLen(node2-1);
+	char *end = xml->getNode( node2 - 1 ) + xml->getNodeLen( node2 - 1 );
 	int32_t  size  = end - start;
 
 	m_preCount = countWords( start , size );
 
 	// allocate based on the approximate count
-	if ( ! allocateWordBuffers(m_preCount, true)) return false;
-	
+	if ( !allocateWordBuffers( m_preCount, true ) ) {
+		return false;
+	}
+
 	// are we done?
-	for ( int32_t k = node1 ; k < node2 && m_numWords < m_preCount ; k++ ){
+	for ( int32_t k = node1; k < node2 && m_numWords < m_preCount; ++k ) {
 		// get the kth node
-		char *node    = xml->getNode   (k);
-		int32_t  nodeLen = xml->getNodeLen(k);
+		char *node = xml->getNode( k );
+		int32_t nodeLen = xml->getNodeLen( k );
+
 		// is the kth node a tag?
-		if ( ! xml->isTag(k) ) {
+		if ( !xml->isTag( k ) ) {
 			char c = node[nodeLen];
 			node[nodeLen] = '\0';
-			addWords(node,nodeLen,computeWordIds,niceness);
+			addWords( node, nodeLen, computeWordIds, niceness );
 			node[nodeLen] = c;
 			continue;
 		}
+
 		// it is a tag
 		m_words    [m_numWords] = node;
 		m_wordLens [m_numWords] = nodeLen;
 		m_tagIds   [m_numWords] = xml->getNodeId(k);
 		m_wordIds  [m_numWords] = 0LL;
 		m_nodes    [m_numWords] = k;
+
 		// we have less than 127 HTML tags, so set 
 		// the high bit for back tags
 		if ( xml->isBackTag(k)) {
 			m_tagIds[m_numWords] |= BACKBIT;
 		}
+
 		//log(LOG_DEBUG, "Words: Word %"INT32": got tag %s%s (%d)", 
 		//    m_numWords,
 		//    isBackTag(m_numWords)?"/":"",
@@ -161,46 +175,49 @@ bool Words::set ( Xml *xml,
 		//    getTagId(m_numWords));
 		
 		m_numWords++;
+
 		// used by XmlDoc.cpp
 		m_numTags++;
+
 		continue;
 	}
+
 	return true;
 }
 
 bool Words::set11 ( char *s , char *send , int32_t niceness ) {
 	reset();
+
 	// this will make addWords() scan for tags
 	m_hasTags = true;
+
 	// save it
 	char saved = *send;
+
 	// null term
 	*send = '\0';
+
 	// determine rough upper bound on number of words by counting
 	// punct/alnum boundaries
 	m_preCount = countWords ( s );
+
 	// true = tagIds
 	bool status = allocateWordBuffers(m_preCount,true);
+
 	// deal with error now
-	if ( ! status ) { *send = saved; return false; }
+	if ( !status ) {
+		*send = saved;
+		return false;
+	}
+
 	// and set the words
 	status = addWords(s,0x7fffffff, true, niceness );
+
 	// bring it back
 	*send = saved;
+
 	// return error?
 	return status;
-}
-
-bool Words::setxi ( char *s , char *buf, int32_t bufSize, int32_t niceness ) {
-	reset();
-	m_localBuf2 = buf;
-	m_localBufSize2 = bufSize;
-	// determine rough upper bound on number of words by counting
-	// punct/alnum boundaries
-	m_preCount = countWords ( s );
-	if (!allocateWordBuffers(m_preCount)) return false;
-	bool computeWordIds = true;
-	return addWords(s,0x7fffffff, computeWordIds, niceness );
 }
 
 // . set words from a string
@@ -211,23 +228,22 @@ bool Words::setxi ( char *s , char *buf, int32_t bufSize, int32_t niceness ) {
 // . doesn't do tags, only text nodes in "xml"
 // . our definition of a word is as close to English as we can get it
 // . BUT we also consider a string of punctuation characters to be a word
-bool Words::set ( char *s ,
-		  bool computeWordIds ,
-		  int32_t niceness ) {
-
+bool Words::set( char *s, bool computeWordIds, int32_t niceness ) {
 	reset();
 
 	// determine rough upper bound on number of words by counting
 	// punct/alnum boundaries
 	m_preCount = countWords ( s );
-	if (!allocateWordBuffers(m_preCount)) return false;
-	
-	return addWords(s,0x7fffffff, computeWordIds, niceness );
+	if ( !allocateWordBuffers( m_preCount ) ) {
+		return false;
+	}
+
+	return addWords( s, 0x7fffffff, computeWordIds, niceness );
 }
 
 #include "XmlNode.h"
 
-bool Words::addWords(char *s,int32_t nodeLen,bool computeWordIds, int32_t niceness) {
+bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t niceness ) {
 	int32_t  i = 0;
 	int32_t  j;
 	//int32_t  k = 0;
@@ -249,26 +265,30 @@ bool Words::addWords(char *s,int32_t nodeLen,bool computeWordIds, int32_t nicene
 
 	if ( ! s[i] ) goto done;
 
-	if ( ! is_alnum_utf8(s+i) ) { // && m_numWords < m_preCount ) {
-
-		if ( m_numWords >= m_preCount ) goto done;
+	if ( !is_alnum_utf8( s + i ) ) {
+		if ( m_numWords >= m_preCount ) {
+			goto done;
+		}
 
 		// tag?
 		if ( s[i]=='<' && m_hasTags && isTagStart(s+i) ) {
 			// get the tag id
-			if ( s[i+1]=='/' ) {
+			if ( s[i + 1] == '/' ) {
 				// skip over /
-				m_tagIds [m_numWords] = ::getTagId(s+i+2);
-				m_tagIds [m_numWords] |= BACKBIT;
+				m_tagIds[m_numWords] = ::getTagId( s + i + 2 );
+				m_tagIds[m_numWords] |= BACKBIT;
+			} else {
+				m_tagIds[m_numWords] = ::getTagId( s + i + 1 );
 			}
-			else
-				m_tagIds [m_numWords] = ::getTagId(s+i+1);
-			m_words    [m_numWords] = s + i;
-			m_wordIds  [m_numWords] = 0LL;
+
+			m_words[m_numWords] = s + i;
+			m_wordIds[m_numWords] = 0LL;
+
 			// skip till end
-			int32_t tagLen = getTagLen(s+i); // ,niceness);
-			m_wordLens [m_numWords] = tagLen;
+			int32_t tagLen = getTagLen( s + i );
+			m_wordLens[m_numWords] = tagLen;
 			m_numWords++;
+
 			// advance
 			i += tagLen;
 			goto uptop;
@@ -394,7 +414,7 @@ bool Words::addWords(char *s,int32_t nodeLen,bool computeWordIds, int32_t nicene
  nogo:
 
 	// allow for words like we're dave's and i'm
-	if(s[i]=='\''&&s[i+1]&&is_alnum_utf8(&s[i+1])&&!hadApostrophe){
+	if ( s[i] == '\'' && s[i + 1] && is_alnum_utf8( &s[i + 1] ) && !hadApostrophe ) {
 		i++;
 		hadApostrophe = true;
 		goto again;
@@ -407,16 +427,13 @@ bool Words::addWords(char *s,int32_t nodeLen,bool computeWordIds, int32_t nicene
 	m_words   [ m_numWords  ] = &s[j];
 	m_wordLens[ m_numWords  ] = wlen;
 
-	// word start
-	// if ( m_numWords==11429 )
-	// 	log("hey");
-
 	// . Lars says it's better to leave the accented chars intact
 	// . google agrees
 	// . but what about "re'sume"?
 	if ( computeWordIds ) {
 		int64_t h = hash64Lower_utf8(&s[j],wlen);
 		m_wordIds [m_numWords] = h;
+
 		// until we get an accent removal algo, comment this
 		// out and possibly use the query synonym pipeline
 		// to search without accents. MDW
@@ -432,30 +449,11 @@ bool Words::addWords(char *s,int32_t nodeLen,bool computeWordIds, int32_t nicene
 	//if ( ! s[i] ) goto done;
 	// get a punct word
 	goto uptop;
-	/*
-	  j = i;
-	  // delineate the "punctuation" word
-	  for ( ; s[i] && !is_alnum_utf8(&s[i]);i+=getUtf8CharSize(s+i));
-	  // bad utf8 could cause us to breach the node, so watch out!
-	  if ( i > nodeLen ) {
-	  badCount++;
-	  i = nodeLen;
-	  }
-	  // get word length
-	  wlen = i - j;
-	  if ( m_numWords >= m_preCount ) goto done;
-	  m_words        [m_numWords  ] = &s[j];
-	  m_wordLens     [m_numWords  ] = wlen;
-	  m_wordIds      [m_numWords  ] = 0LL;
-	  if (m_tagIds) m_tagIds[m_numWords] = 0;
-	  m_numWords++;
-	*/
 
  done:
 	// bad programming warning
 	if ( m_numWords > m_preCount ) {
-		log(LOG_LOGIC,
-		    "build: words: set: Fix counting routine.");
+		log(LOG_LOGIC, "build: words: set: Fix counting routine.");
 		char *xx = NULL; *xx = 0;
 	}
 	// compute total length
@@ -546,134 +544,6 @@ int32_t printstring ( char *s , int32_t len ) {
 	return olen;
 }
 
-////////////////////////////////////////////////////////////
-// 
-// the new faster words setter. 
-// old was taking 346 cycles per word
-//
-////////////////////////////////////////////////////////////
-
-bool Words::set2 ( Xml *xml, 
-		   bool computeWordIds ,
-		   int32_t niceness) {
-	reset();
-	m_xml = xml;
-	register char *p = (char *)xml->getContent();
-	if ( *p ) p++;
-	register int32_t x = 0;
-
-	do {
-		if ( is_alnum_utf8(p) )
-			x++;
-		p++;
-	} while ( *p );
-
-	m_preCount = x;
-	m_preCount = xml->getContentLen() / 2;
-	//if ( m_preCount > 9000 ) m_preCount = 9000;
-	//m_preCount = 9000;
-
-	if (!allocateWordBuffers(m_preCount, true)) return false;
-	
-	int32_t numNodes = xml->getNumNodes();
-	// are we done?
-	for ( int32_t k = 0 ; k < numNodes && m_numWords < m_preCount ; k++ ) {
-		// get the kth node
-		char *node    = xml->getNode   (k);
-		int32_t  nodeLen = xml->getNodeLen(k);
-		// is the kth node a tag?
-		if ( xml->isTag(k) ) {
-			m_words         [m_numWords] = node;
-			m_wordLens      [m_numWords] = nodeLen;
-			m_tagIds        [m_numWords] = xml->getNodeId(k);
-			m_wordIds       [m_numWords] = 0LL;
-			m_nodes         [m_numWords] = k;
-			// we have less than 127 HTML tags, so set 
-			// the high bit for back tags
-			if ( xml->isBackTag(k)) {
-				m_tagIds[m_numWords] |= BACKBIT;
-			}
-
-			//log(LOG_DEBUG, "Words: Word %"INT32": got tag %s%s (%d)", 
-			//    m_numWords,
-			//    isBackTag(m_numWords)?"/":"",
-			//    g_nodes[getTagId(m_numWords)].m_nodeName,
-			//    getTagId(m_numWords));
-
-			m_numWords++;
-			// used by XmlDoc.cpp
-			m_numTags++;
-			continue;
-		}
-		// otherwise it's a text node
-		char c = node[nodeLen];
-		node[nodeLen] = '\0';
-		addWords(node, nodeLen,computeWordIds, niceness);
-		node[nodeLen] = c;
-	}
-	return true;
-}
-
-int32_t Words::isFloat  ( int32_t n, float& f) {
-	char buf[128];
-	char *p = buf;
-	int32_t offset = 0;
-	while(isPunct(n+offset) && 
-	      !(m_words[n+offset][0] == '.' || 
-		m_words[n+offset][0] == '-')) offset++;
-
-	while(isPunct(n+offset) && 
-	      !(m_words[n+offset][0] == '.' || 
-		m_words[n+offset][0] == '-')) offset++;
-
-
-	gbmemcpy(buf, getWord(n), getWordLen(n));
-	buf[getWordLen(n)] = '\0';
-	log(LOG_WARN, "trying to get %s %"INT32"", buf, offset);
-	
-
-	if(isNum(n)) {
-		if(1 + n < m_numWords && 
-		   isPunct(n+1) && m_words[n+1][0] == '.') {
-			if(2 + n < m_numWords && isNum(n+2)) {
-				gbmemcpy(p, m_words[n], m_wordLens[n]);
-				p += m_wordLens[n];
-				gbmemcpy(p, ".", 1);
-				p++;
-				gbmemcpy(p, m_words[n+2], m_wordLens[n+2]);
-				f = atof(buf);
-				return 3 + offset;
-			}
-			else {
-				return offset;
-			}
-		} else if(n > 0 && isPunct(n-1) && m_wordLens[n-1] > 0 &&
-			  (m_words[n-1][m_wordLens[n-1]-1] == '.' ||
-			   m_words[n-1][m_wordLens[n-1]-1] == '-')) {
-			//hmm, we just skipped the period as punct?
-			sprintf(buf, "0.%s",m_words[n]);
-			f = atof(buf);
-			return 1 + offset;
-		}
-		else {
-			f = atof(m_words[n]);
-			return 1 + offset;
-		}
-	}
-
-	//does this have a period in front?
-	if(isPunct(n) && (m_words[n][0] == '.' || m_words[n][0] == '-')) {
-		if(1 + n < m_numWords && isNum(n+1)) {
-			gbmemcpy(p, m_words[n], m_wordLens[n]);
-			p += m_wordLens[n];
-			gbmemcpy(p, m_words[n+1], m_wordLens[n+1]);
-			f = atof(buf);
-			return 2 + offset;
-		}
-	}
-	return offset;
-}
-
 static uint8_t s_findMaxIndex(int64_t *array, int num, int *wantmax = NULL) {
 	if(!array || num < 2 || num > 255) return(0);
 	int64_t max, oldmax;
@@ -691,13 +561,6 @@ static uint8_t s_findMaxIndex(int64_t *array, int num, int *wantmax = NULL) {
 	if(wantmax) *wantmax = max;
 	return((uint8_t)idx);
 }
-
-//static bool s_isWordCap ( char *word , int len ) {
-//	if ( ! is_upper_utf8 ( word ) ) return false;
-//	int32_t cs = getUtf8CharSize ( word );
-//	if ( is_lower_utf8 ( &word[cs] ) ) return true;
-//	return false;
-//}
 
 unsigned char Words::isBounded(int wordi) {
 	if(wordi+1 < m_numWords &&

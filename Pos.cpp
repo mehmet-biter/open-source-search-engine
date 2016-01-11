@@ -113,17 +113,16 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 			}
 
 			// if not breaking, does nothing
-			if ( ! g_nodes[tids[i]&0x7f].m_isBreaking ) {
+			if ( !g_nodes[tids[i] & 0x7f].m_isBreaking ) {
 				continue;
 			}
 
 			// list tag? <li>
-			if ( tids[i] == TAG_LI ) { 
-				if ( f ){
-					if ((fend - f > maxCharSize)) {
+			if ( tids[i] == TAG_LI ) {
+				if ( f ) {
+					if ( ( fend - f > maxCharSize ) ) {
 						*f++ = '*';
-					}
-					else {
+					} else {
 						trunc = true;
 					}
 				}
@@ -131,6 +130,7 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 				lastSpace = false;
 				continue;
 			}
+
 			// if had a previous breaking tag and no non-tag
 			// word after it, do not count back-to-back spaces
 			if ( lastSpace ) {
@@ -141,7 +141,7 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 			if ( tids[i] ) { // <br>
 				// are we filtering?
 				if ( f && f != fstart ) {
-					if ((fend-f>2*maxCharSize)) {
+					if ( ( fend - f > 2 * maxCharSize ) ) {
 						*f++ = '.';
 						*f++ = ' ';
 					} else {
@@ -158,7 +158,7 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 
 			// are we filtering?
 			if ( f ) {
-				if ((fend-f > maxCharSize)) {
+				if ( ( fend - f > maxCharSize ) ) {
 					*f++ = ' ';
 				} else {
 					trunc = true;
@@ -207,7 +207,7 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 
 				// are we filtering?
 				if ( f ) {
-					if (fend-f > 1 ) {
+					if ( fend - f > 1 ) {
 						lastBreak = f;
 						*f++ = ' ';
 					} else {
@@ -220,18 +220,17 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 			}
 
 			if ( f ) {
-				if (fend-f > cs) {
+				if ( fend - f > cs ) {
 					// change '|' to commas
 					if ( *p == '|' ) {
 						*f++ = ',';
 					} else if ( cs == 1 ) {
 						*f++ = *p;
 					} else {
-						gbmemcpy(f,p,cs);
+						gbmemcpy( f, p, cs );
 						f += cs;
 					}
-				}
-				else {
+				} else {
 					trunc = true;
 				}
 			}
@@ -241,24 +240,23 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 		}
 	}
 
-	if (trunc) {
-		if(lastBreak == NULL) {
+	if ( trunc ) {
+		if ( lastBreak == NULL ) {
 			*len = 0;
 			return false;
- 		}
-		else if (f) {
+		} else if ( f ) {
 			f = lastBreak;
 		}
 	}
 
 	// set pos for the END of the last word here (used in Summary.cpp)
-	if ( ! f ) {
+	if ( !f ) {
 		m_pos[nw] = pos;
 	} else { // NULL terminate f
 		*len = f - fstart;
 	}
 
-	if ( fend-f > maxCharSize) {
+	if ( fend - f > maxCharSize ) {
 		*f = '\0';
 	}
 

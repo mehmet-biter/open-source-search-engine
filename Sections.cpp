@@ -3741,7 +3741,9 @@ bool Sections::setSentFlagsPart2 ( ) {
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			// set words
 			char *s = s_titleFields[i];
-			Words w; w.set3 ( s );
+			Words w;
+			w.set ( s, true, 0 );
+
 			int64_t *wi = w.getWordIds();
 			int64_t h = 0;
 			// scan words
@@ -3781,7 +3783,9 @@ bool Sections::setSentFlagsPart2 ( ) {
 		int32_t n = (int32_t)sizeof(s_exceptPhrases)/ sizeof(char *); 
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			// set words
-			Words w; w.set3 ( s_exceptPhrases[i] );
+			Words w;
+			w.set ( s_exceptPhrases[i], true, 0 );
+
 			int64_t *wi = w.getWordIds();
 			int64_t h = 0;
 			// scan words
@@ -6400,7 +6404,9 @@ int32_t hasTitleWords ( sentflags_t sflags ,
 			// set words
 			char *s = s_twords[i];
 			// set words
-			Words w; w.set3 ( s );
+			Words w;
+			w.set ( s, true, 0 );
+
 			int64_t *wi = w.getWordIds();
 			int64_t h = 0;
 			// scan words
@@ -12518,7 +12524,9 @@ bool Sections::setTableHeaderBits ( Section *ts ) {
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			// set words
 			char *s = s_tableFields[i];
-			Words w; w.set3 ( s );
+			Words w;
+			w.set ( s , true, 0);
+
 			int64_t *wi = w.getWordIds();
 			int64_t h = 0;
 			// scan words

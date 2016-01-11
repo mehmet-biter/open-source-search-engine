@@ -226,10 +226,10 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 	int32_t parent[MAX_TIT_CANDIDATES];
 
 	// record the scoring algos effects
-	//float  baseScore        [MAX_TIT_CANDIDATES];
-	//float  noCapsBoost      [MAX_TIT_CANDIDATES];
-	//float  qtermsBoost      [MAX_TIT_CANDIDATES];
-	//float  inCommonCandBoost[MAX_TIT_CANDIDATES];
+	float  baseScore        [MAX_TIT_CANDIDATES];
+	float  noCapsBoost      [MAX_TIT_CANDIDATES];
+	float  qtermsBoost      [MAX_TIT_CANDIDATES];
+	float  inCommonCandBoost[MAX_TIT_CANDIDATES];
 
 	// reset these
 	for ( int32_t i = 0 ; i < MAX_TIT_CANDIDATES ; i++ ) {
@@ -289,11 +289,10 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 			}
 
 			// now the words.
-			if ( ! tw[ti].set ( k->getLinkText() ,
-					    k->size_linkText-1, // len
-					    true              , // computeIds
-					    0                 ))// niceness
+			if ( !tw[ti].set( k->getLinkText(), k->size_linkText - 1, true, 0 ) ) {
 				return false;
+			}
+
 			// set the bookends, it is the whole thing
 			cptrs   [n] = &tw[ti];
 			as      [n] = 0;
@@ -326,11 +325,10 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 		// skip if empty
 		if ( tslen <= 0 ) continue;
 		// now set words to that
-		if ( ! tw[ti].set ( ts                       ,
-				    tslen                    ,
-				    true       , // compute wordIds?
-				    0          ))// niceness
+		if ( !tw[ti].set( ts, tslen, true, 0 ) ) {
 			return false;
+		}
+
 		// point to that
 		cptrs   [n] = &tw[ti];
 		as      [n] = 0;
@@ -1080,10 +1078,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 		}
 	}
 
-	//logf(LOG_DEBUG,"title: took5=%"INT64"",gettimeofdayInMilliseconds()-x);
-	//x = gettimeofdayInMilliseconds();
-
-	//for ( int32_t i = 0 ; i < n ; i++ ) baseScore[i] = scores[i];
+	for ( int32_t i = 0 ; i < n ; i++ ) baseScore[i] = scores[i];
 	
 	//
 	// . now punish by 0.85 for every lower case non-stop word it has
@@ -1112,7 +1107,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 
 		// record the boosts
 		float ncb = 1.0;
-		//float qtb = 1.0;
+		float qtb = 1.0;
 
 		// a flag
 		char uncapped = false;
@@ -1137,7 +1132,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 
 			// reward if in the query
 			if ( q->getWordNum(wid) >= 0 ) {
-				//qtb       *= 1.5;
+				qtb       *= 1.5;
 				scores[i] *= 1.5;
 			}
 		}
@@ -1162,12 +1157,9 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 		// set these guys
 		scores[i] *= ncb;
 
-		//noCapsBoost[i]  = ncb;
-		//qtermsBoost[i]  = qtb;
+		noCapsBoost[i]  = ncb;
+		qtermsBoost[i]  = qtb;
 	}
-
-	//logf(LOG_DEBUG,"title: took6=%"INT64"",gettimeofdayInMilliseconds()-x);
-	//x = gettimeofdayInMilliseconds();
 
 	// . now compare each candidate to the other candidates
 	// . give a boost if matches
@@ -1188,7 +1180,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 		char localFlag2 = 0;
 
 		// record the boost
-		//float iccb = 1.0;
+		float iccb = 1.0;
 
 		// total boost
 		float total = 1.0;
@@ -1318,10 +1310,10 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 			// apply it
 			scores[i] *= boost;
 
-			//iccb      *= boost;
+			iccb      *= boost;
 		}
 
-		//inCommonCandBoost[i] = iccb;
+		inCommonCandBoost[i] = iccb;
 	}
 
 	//logf(LOG_DEBUG,"title: took7=%"INT64"",gettimeofdayInMilliseconds()-x);
@@ -1344,16 +1336,10 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 		}
 	}
 
-	//logf(LOG_DEBUG,"title: took8=%"INT64"",gettimeofdayInMilliseconds()-x);
-	//x = gettimeofdayInMilliseconds();
-
 	// free our stuff
 	if ( flags!=localBuf ) {
 		mfree (flags, need, "TITLEflags");
 	}
-
-	//logf(LOG_DEBUG,"title: took10=%"INT64"",gettimeofdayInMilliseconds()-x);
-	//x = gettimeofdayInMilliseconds();
 
 	// now get the highest scoring candidate title
 	float max    = -1.0;
@@ -1386,9 +1372,6 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 		// save it
 		winner = i;
 	}
-
-	//logf(LOG_DEBUG,"title: took11=%"INT64"",gettimeofdayInMilliseconds()-x);
-	//x = gettimeofdayInMilliseconds();
 
 	// if we are a root, always pick the title tag as the title
 	if ( oldn == -2 && tti >= 0 ) {
@@ -1433,17 +1416,12 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 		return false;
 	}
 
-	//logf(LOG_DEBUG,"title: took12=%"INT64"",gettimeofdayInMilliseconds()-x);
-	//x = gettimeofdayInMilliseconds();
-
-	//return true;
-
-	//log("title: candidates for %s",xd->getFirstUrl()->getUrl() );
-
 	/*
 	// debug logging
 	SafeBuf sb;
 	SafeBuf *pbuf = &sb;
+
+	log("title: candidates for %s",xd->getFirstUrl()->getUrl() );
 
 	pbuf->safePrintf("<div stype=\"border:1px solid black\">");
 	pbuf->safePrintf("<b>***Finding Title***</b><br>\n");
@@ -1522,7 +1500,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 	pbuf->safePrintf("</table>\n<br>\n");
 
 	// log these for now
-	log("query: title: %s",sb.getBufStart());
+	log("title: %s",sb.getBufStart());
 	*/
 
 	return true;

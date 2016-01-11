@@ -33,8 +33,6 @@ char *getFieldValue ( char *s ,int32_t  slen, char *field , int32_t *valueLen ) 
 
 unsigned char getCharacterLanguage ( char *utf8Char ) ;
 
-
-//#include "TermTable.h"  // used in hash()
 #include "Xml.h"
 #include "SafeBuf.h"
 #include "StopWords.h"
@@ -56,103 +54,71 @@ class Words {
 	// . NOTE: we never own the data
 	// . there is typically no html in "s"
 	// . html tags are NOT parsed out
-	bool set ( char *s , 
-		   bool computeIds , // = true ,
-		   int32_t niceness ); // = 0);
-
-	// assume computeIds is true
-	bool set9 ( char *s , int32_t niceness ) {
-		return set ( s , true , niceness);}
-
-	bool setxi ( char *s , char *buf, int32_t bufSize, int32_t niceness ) ;
-
-	bool setx ( char *s , int32_t slen , int32_t niceness ) {
-		return set ( s,slen,true,niceness);}
+	bool set( char *s, bool computeIds, int32_t niceness );
 
 	bool set11 ( char *s , char *send , int32_t niceness ) ;
 
 	// . similar to above
 	// . but we temporarily stick a \0 @ s[slen] for parsing purposes
-	bool set ( char *s , int32_t slen ,
-		   bool computeIds ,
-		   int32_t niceness = 0);
-
-	bool set3 ( char *s ) {return set(s,true,0);};
+	bool set( char *s, int32_t slen, bool computeIds, int32_t niceness = 0 );
 
 	// . new function to set directly from an Xml, rather than extracting
 	//   text first
 	// . use range (node1,node2] and if node2 is -1 that means the last one
-	bool      set ( Xml *xml, 
-			bool computeIds , 
-			int32_t niceness = 0 , 
-			int32_t node1    = 0 ,
-			int32_t node2    = -1 );
+	bool set( Xml *xml, bool computeIds, int32_t niceness = 0, int32_t node1 = 0, int32_t node2 = -1 );
 
-	// trying to make it faster
-	bool      set2 ( Xml *xml, bool computeIds , int32_t niceness = 0);
-
-	// . if score == 0  then use spam modified score
-	// . each non-spammy occurence of a word adds "baseScore" to it's score
-	// . keep baseScore pretty high in case reduced by spamming
-	// . typically i use 100 as the baseScore to preserve fractions
-	/*
-	bool hash ( TermTable      *table       ,
-		    class Spam     *spam        ,
-		    class Weights  *weights     ,
-		    uint32_t   baseScore   ,
-		    uint32_t   maxScore    ,
-		    int64_t       startHash   ,
-		    char           *prefix1     ,
-		    int32_t            prefixLen1  ,
-		    char           *prefix2     ,
-		    int32_t            prefixLen2  ,
-		    bool            useStems    ,
-		    bool            hashUniqueOnly ,
-		    class Phrases  *phrases                ,//= NULL  ,
-		    bool            hashWordIffNotInPhrase ,//= false,
-		    int32_t            niceness               );//= 0);
-	*/
-
-	inline bool addWords(char* s, int32_t nodeLen,
-			     bool computeIds, int32_t niceness);
+	inline bool addWords( char *s, int32_t nodeLen, bool computeIds, int32_t niceness );
 
 	// get the spam modified score of the ith word (baseScore is the 
 	// score if the word is not spammed)
-	int32_t      getNumWords      (        ) const { return m_numWords;   };
-	int32_t      getNumAlnumWords (        ) const { return m_numAlnumWords;};
-	char     *getWord          ( int32_t n ) const { return m_words   [n];};
-	int32_t      getWordLen       ( int32_t n ) const { return m_wordLens[n];};
-
-	//int64_t getNextWid ( int32_t i , int32_t toscan , int32_t niceness ) {
-	//	int32_t max = i + toscan;
-	//	if ( max > m_numWords ) max = m_numWords;
-	//	for ( ; i < max ; i++ ) {
-	//		QUICKPOLL(niceness);
-	//		if ( m_wids[i] ) return m_wids[i];
-	//	}
-	//	return 0LL;
-	//};
+	int32_t getNumWords() const {
+		return m_numWords;
+	}
+	int32_t getNumAlnumWords() const {
+		return m_numAlnumWords;
+	}
+	char *getWord( int32_t n ) const {
+		return m_words[n];
+	}
+	int32_t getWordLen( int32_t n ) const {
+		return m_wordLens[n];
+	}
 
 	// . size of string from word #a up to and NOT including word #b
 	// . "b" can be m_numWords to mean up to the end of the doc
-	int32_t      getStringSize    ( int32_t a , int32_t b ) {
+	int32_t getStringSize( int32_t a, int32_t b ) {
 		// do not let it exceed this
-		if ( b >= m_numWords ) b = m_numWords;
+		if ( b >= m_numWords ) {
+			b = m_numWords;
+		}
+
 		// pedal it back. we might equal a then. which is ok, that
 		// means to just return the length of word #a then
 		b--;
-		if ( b <  a ) return 0;
-		if ( a <  0 ) return 0;
+
+		if ( b < a ) {
+			return 0;
+		}
+
+		if ( a < 0 ) {
+			return 0;
+		}
+
 		int32_t size = m_words[b] - m_words[a];
+
 		// add in size of word #b
 		size += m_wordLens[b];
-		return size;
-	};
 
-	int32_t getWordAt ( char *charPos ); // int32_t charPos );
+		return size;
+	}
+
+	int32_t getWordAt ( char *charPos );
+
 	// . CAUTION: don't call this for punct "words"... it's bogus for them
 	// . this is only for alnum "words"
-	int64_t getWordId        ( int32_t n ) const { return m_wordIds [n];};
+	int64_t getWordId( int32_t n ) const {
+		return m_wordIds [n];
+	}
 
 	bool isStopWord ( int32_t n ) {
 		return ::isStopWord(m_words   [n],
@@ -171,75 +137,72 @@ class Words {
 	// . how many quotes in the nth word?
 	// . how many plusses in the nth word?
 	// . used exclusively by Query class for parsing query syntax
-	int32_t      getNumQuotes     ( int32_t n ) {
+	int32_t getNumQuotes( int32_t n ) {
 		int32_t count = 0;
-		for ( int32_t i = 0 ; i < m_wordLens[n] ; i++ )
-			if ( m_words[n][i] == '\"' ) count++;
-		return count; };
+		for ( int32_t i = 0; i < m_wordLens[n]; i++ ) {
+			if ( m_words[n][i] == '\"' ) {
+				count++;
+			}
+		}
 
-	int32_t      getNumPlusses    ( int32_t n );
+		return count;
+	}
 
 	// . do we have a ' ' 't' '\n' or '\r' in this word?
 	// . caller should not call this is isPunct(n) is false, pointless.
-	
-	bool      hasSpace         ( int32_t n ) {
-		for ( int32_t i = 0 ; i < m_wordLens[n] ; i++ )
-			if ( is_wspace_utf8(&m_words[n][i]) ) return true;
-		return false; 
-	};
+
+	bool hasSpace( int32_t n ) {
+		for ( int32_t i = 0; i < m_wordLens[n]; i++ ) {
+			if ( is_wspace_utf8( &m_words[n][i] ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
 
 	bool      hasChar         ( int32_t n , char c ) const {
 		for ( int32_t i = 0 ; i < m_wordLens[n] ; i++ )
 			if ( m_words[n][i] == c ) return true;
 		return false; 
-	};
+	}
 
 	bool      hasDigit        ( int32_t n ) const {
 		for ( int32_t i = 0 ; i < m_wordLens[n] ; i++ )
 			if ( is_digit(m_words[n][i]) ) return true;
 		return false; 
-	};
+	}
 
 	// this doesn't really work for utf8!!!
 	bool      hasAlpha        ( int32_t n ) const {
 		for ( int32_t i = 0 ; i < m_wordLens[n] ; i++ )
 			if ( is_alpha_a(m_words[n][i]) ) return true;
 		return false; 
-	};
+	}
 
 	bool      isSpaces        ( int32_t n ) {
 		for ( int32_t i = 0 ; i < m_wordLens[n] ; i++ )
 			if ( ! is_wspace_utf8(&m_words[n][i]) ) return false;
 		return true;
-	};
+	}
 
 	bool      isSpaces2       ( int32_t n , int32_t starti ) {
 		for ( int32_t i = starti ; i < m_wordLens[n] ; i++ )
 			if ( ! is_wspace_utf8(&m_words[n][i]) ) return false;
 		return true;
-	};
-
-	//bool      isSpacesOrComma  ( int32_t n ) {
-	//	for ( int32_t i = 0 ; i < m_wordLens[n] ; i++ )
-	//		if ( ! is_wspace_utf8(&m_words[n][i]) &&
-	//		     m_words[n][i]!=',' ) return false;
-	//	return true;
-	//};
+	}
 
 	//if this is set from xml, every word is either a word or an xml node 
 	nodeid_t getTagId(int32_t n) {
 		if ( ! m_tagIds ) return 0;
 		return ( m_tagIds[n] & BACKBITCOMP );
-	};
+	}
+
 	bool    isBackTag(int32_t n) {
 		if ( ! m_tagIds ) return false;
 		if ( m_tagIds[n] & BACKBIT ) return true;
 		return false;
-	};
-	bool    isBackTagId ( nodeid_t tid ) {
-		if ( tid & BACKBIT ) return true;
-		return false;
-	};
+	}
 
 	// CAUTION!!!
 	//
@@ -249,15 +212,16 @@ class Words {
 	// want the pure tagid!!!!
 	//
 	// CAUTION!!!
-	nodeid_t   *getTagIds  () { return m_tagIds; };
-	char      **getWords   () { return m_words; };
-	char      **getWordPtrs() { return m_words; };
-	int32_t       *getWordLens() { return m_wordLens; };
-	int64_t  *getWordIds () { return m_wordIds; };
+	nodeid_t   *getTagIds  () { return m_tagIds; }
+	char      **getWords   () { return m_words; }
+	char      **getWordPtrs() { return m_words; }
+	int32_t       *getWordLens() { return m_wordLens; }
+	int64_t  *getWordIds () { return m_wordIds; }
+
 	// 2 types of "words": punctuation and alnum
 	// isPunct() will return true on tags, too, so they are "punct"
-	bool      isPunct  ( int32_t n ) const { return m_wordIds[n] == 0;};
-	bool      isAlnum  ( int32_t n ) const { return m_wordIds[n] != 0;};
+	bool      isPunct  ( int32_t n ) const { return m_wordIds[n] == 0;}
+	bool      isAlnum  ( int32_t n ) const { return m_wordIds[n] != 0;}
 	bool      isAlpha  ( int32_t n ) const { 
 		if ( m_wordIds[n] == 0LL ) return false;
 		if ( isNum ( n )         ) return false;
@@ -326,12 +290,9 @@ class Words {
 	bool isCapitalized ( int32_t n ) {
 		if ( ! is_alpha_utf8 ( m_words[n] ) ) return false;
 		return is_upper_utf8 ( m_words[n] ) ;
-	};
+	}
 
-	//returns the number of words in the float.
-	int32_t      isFloat  ( int32_t n, float& f);
-
-	int32_t      getTotalLen ( ) { return m_totalLen; };
+	int32_t      getTotalLen ( ) { return m_totalLen; }
 
 	unsigned char isBounded(int wordi);
 	 Words     ( );
@@ -348,16 +309,15 @@ class Words {
 			   int32_t niceness = 0,
 			   int32_t *langScore = NULL);
 
-	int32_t getMemUsed () { return m_bufSize; };
-
 	char *getContent() { 
 		if ( m_numWords == 0 ) return NULL;
 		return m_words[0]; 
-	};
+	}
+
 	char *getContentEnd() { 
 		if ( m_numWords == 0 ) return NULL;
 		return m_words[m_numWords-1] + m_wordLens[m_numWords-1];
-	};
+	}
 
 	// private:
 
@@ -370,7 +330,7 @@ class Words {
 
 	char *m_buf;
 	int32_t  m_bufSize;
-        Xml  *m_xml ;  // if the class is set from xml, rather than a string
+	Xml  *m_xml ;  // if the class is set from xml, rather than a string
 
 	int32_t           m_preCount  ; // estimate of number of words in the doc
 	char          **m_words    ;  // pointers to the word

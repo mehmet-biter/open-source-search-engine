@@ -8728,18 +8728,6 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	    " (precount=%"INT32") for docId %"INT64".", 
 	    (double)(e - t)/100.0,words.m_numWords,words.m_preCount,docId);
 
-	t = gettimeofdayInMilliseconds_force();
-	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set2 ( &xml , true , true ) )
-			return log("build: speedtestxml: words set: %s",
-				   mstrerror(g_errno));
-	// print time it took
-	e = gettimeofdayInMilliseconds_force();
-	log("build: Words::set2(xml,computeIds=true) took %.3f ms for %"INT32" "\
-	    "words (precount=%"INT32") for docId %"INT64".", 
-	    (double)(e - t)/100.0,words.m_numWords,words.m_preCount,docId);
-
-
 
 	t = gettimeofdayInMilliseconds_force();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 

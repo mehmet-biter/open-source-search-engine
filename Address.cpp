@@ -1490,7 +1490,9 @@ bool Addresses::updateAddresses ( ) {
 			if ( ! *s ) { char *xx=NULL;*xx=0; }
 			// hash that
 			Words tmp;
-			if ( ! tmp.set9 ( s, m_niceness ) ) return false;
+			if ( ! tmp.set ( s, true, m_niceness ) ) {
+				return false;
+			}
 			int32_t nw = tmp.m_numWords;
 			if ( ! hashPlaceName (&nt1,&tmp,0,nw,v|(count<<32)) ) 
 				return false;
@@ -1813,7 +1815,10 @@ bool Addresses::updateAddresses ( ) {
 
 			// make into word array
 			Words tmp;
-			if ( ! tmp.setx (ps,pslen,m_niceness)) return false;
+			if ( !tmp.set( ps, pslen, true, m_niceness ) ) {
+				return false;
+			}
+
 			// count the alnumwords, but ignore "the"
 			int32_t aw = 0;
 			for (int32_t x=0;x<tmp.m_numWords;x++) {
@@ -3209,10 +3214,10 @@ bool setHashes ( Place *p , Words *ww , int32_t niceness ) {
 	Words tmp;
 	if ( p->m_a < 0 ) {
 		// return false with g_errno set on error
-		if ( ! tmp.set ( p->m_str , 
-				 p->m_strlen ,
-				 true ,
-				 niceness ) ) return false;
+		if ( !tmp.set( p->m_str, p->m_strlen, true, niceness ) ) {
+			return false;
+		}
+
 		// set it up
 		ww = &tmp;
 		a = 0;
@@ -13515,7 +13520,7 @@ StateDesc *getStateDescFromBits ( uint64_t bit ) {
 
 int64_t getWordXorHash ( char *s ) {
 	Words tmp;
-	tmp.set9 ( s , 0 );
+	tmp.set ( s , true, 0 );
 	int64_t *wids = tmp.m_wordIds;
 	uint64_t h = 0LL;
 	for ( int32_t i = 0 ; i < tmp.m_numWords ; i++ ) {

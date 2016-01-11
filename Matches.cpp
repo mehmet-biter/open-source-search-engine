@@ -425,10 +425,7 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int64_t docId, int3
 	Pos      *pb = &m_posArray      [ m_numMatchGroups ];
 
 	// set the words class for this match group
-	if ( ! wp->set ( s                        ,
-			 slen                     , // in bytes
-			 true                     , // computeIds?
-			 niceness                 )) {
+	if ( !wp->set( s, slen, true, niceness ) ) {
 		return false;
 	}
 

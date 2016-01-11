@@ -162,9 +162,6 @@ bool SiteGetter::getSite ( char   *url      ,
 	// . if caller give us a timestamp of 0, never redo it!
 	if ( age > 10*24*60*60 && timestamp != 0 ) age = -1;
 
-	//if ( strstr(m_url,"http://www.topix.com/yp/albuquerque/c/community-religion-and-spirituality-churches") )
-	//	log("hey");
-
 	// . if our site quality is low, forget about dividing it up too
 	// . if age is valid, skip it
 	// . also if caller does not want a callback, like XmlDoc.cpp,

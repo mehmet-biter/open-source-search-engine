@@ -2032,8 +2032,7 @@ bool Query::setQWords ( char boolFlag ,
 	// . because we now deal with boolean queries, we make parentheses
 	//   their own separate Word, so tell "words" we're setting a query
 	//Words words;
-	if ( ! words.set ( m_sb.getBufStart() , m_sb.length() ,
-			    true, 1 ) )
+	if ( !words.set( m_sb.getBufStart(), m_sb.length(), true, 1 ) )
 		return log("query: Had error parsing query: %s.",
 			   mstrerror(g_errno));
 	int32_t numWords = words.getNumWords();

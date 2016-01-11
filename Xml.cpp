@@ -894,20 +894,34 @@ int32_t Xml::getMetaContent (char *buf, int32_t bufLen, char *field, int32_t fie
 	for ( int32_t i = startNode ; i < m_numNodes ; i++ ) {
 		// breathe
 		QUICKPOLL(m_niceness);
+
 		// continue if not a meta tag
-		if ( m_nodes[i].m_nodeId != TAG_META ) continue;
+		if ( m_nodes[i].m_nodeId != TAG_META ) {
+			continue;
+		}
+
 		// . does it have a type field that's "summary"
 		// . <meta name=summary content="...">
 		// . <meta http-equiv="refresh" content="0;URL=http://y.com/">
 		int32_t len;
 		char *s = getString ( i , name , &len );
+
 		// continue if name doesn't match field
 		// field can be "summary","description","keywords",...
-		if ( len != fieldLen ) continue;
-		if ( strncasecmp ( s , field , fieldLen ) != 0 ) continue;
+		if ( len != fieldLen ) {
+			continue;
+		}
+
+		if ( strncasecmp ( s , field , fieldLen ) != 0 ) {
+			continue;
+		}
+
 		// point to the summary itself
 		s = getString ( i , "content" , &len );
-		if ( ! s || len <= 0 ) continue;
+		if ( ! s || len <= 0 ) {
+			continue;
+		}
+
 		// point to it
 		char *src    = s;
 		char *srcEnd = s + len;
@@ -959,7 +973,10 @@ int32_t Xml::getMetaContent (char *buf, int32_t bufLen, char *field, int32_t fie
 		}
 
 		// store node number
-		if ( matchedNode ) *matchedNode = i;
+		if ( matchedNode ) {
+			*matchedNode = i;
+		}
+
 		return len;
 	}
 	return 0;

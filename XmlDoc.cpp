@@ -4930,20 +4930,6 @@ Xml *XmlDoc::getXml ( ) {
 	return &m_xml;
 }
 
-// Language support static stuff
-enum {
-	METHOD_TAG = 0,
-	METHOD_DMOZ,
-	METHOD_URL,
-	METHOD_OUTLINKS,
-	METHOD_INLINKS,
-	METHOD_FREQ,
-	METHOD_DEFAULT,
-	METHOD_IP,
-	METHOD_ROOT,
-	METHOD_CAP
-};
-
 bool setLangVec ( Words *words ,
 		  SafeBuf *langBuf ,
 		  Sections *ss ,
@@ -5191,7 +5177,8 @@ uint8_t *XmlDoc::getLangId ( ) {
 	int32_t mdlen;
 	char *md = getMetaDescription( &mdlen );
 	Words mdw;
-	mdw.setx ( md , mdlen , m_niceness );
+	mdw.set ( md , mdlen , true, m_niceness );
+
 	SafeBuf langBuf;
 	setLangVec ( &mdw,&langBuf,NULL,m_niceness);
 	char *tmpLangVec = langBuf.getBufStart();
@@ -5203,7 +5190,8 @@ uint8_t *XmlDoc::getLangId ( ) {
 
 	// try meta keywords
 	md = getMetaKeywords( &mdlen );
-	mdw.setx ( md , mdlen , m_niceness );
+	mdw.set ( md , mdlen , true, m_niceness );
+
 	langBuf.purge();
 	setLangVec ( &mdw,&langBuf,NULL,m_niceness);
 	tmpLangVec = langBuf.getBufStart();
@@ -5283,10 +5271,10 @@ Words *XmlDoc::getWords ( ) {
 	// note it
 	setStatus ( "getting words");
 	// now set what we need
-	if ( ! m_words.set ( xml        ,
-			     true       ,  // computeWordIds?
-			     m_niceness ))
+	if ( !m_words.set( xml, true, m_niceness ) ) {
 		return NULL;
+	}
+
 	// we got it
 	m_wordsValid = true;
 	return &m_words;
@@ -6905,11 +6893,18 @@ uint8_t *XmlDoc::getSummaryLangId ( ) {
 	char *sum    = s->getSummary();
 	// now set the words class
 	Words ww;
-	if ( ! ww.set9 ( sum , m_niceness ) ) return NULL;
+	if ( ! ww.set ( sum , true, m_niceness ) ) {
+		return NULL;
+	}
+
 	// check it out. 0 means langUnknown. -1 means error.
 	int32_t ret = ww.getLanguage ( NULL , 100 , m_niceness , NULL );
+
 	// -1 means error! g_errno should be set
-	if ( ret < 0 ) return NULL;
+	if ( ret < 0 ) {
+		return NULL;
+	}
+
 	// set it
 	m_summaryLangId = (uint8_t)ret;
 	// assume valid
@@ -7115,7 +7110,10 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 	sb.nullTerm();
 	// word-ify it
 	Words words;
-	if ( ! words.set9 ( sb.getBufStart() , m_niceness ) ) return NULL;
+	if ( ! words.set ( sb.getBufStart() , true, m_niceness ) ) {
+		return NULL;
+	}
+
 	// . now set the dedup vector from big summary and title
 	// . store sample vector in here
 	// . returns size in bytes including null terminating int32_t
@@ -7443,7 +7441,10 @@ int32_t makeSimpleWordVector (char *s,int32_t *vbuf,int32_t vbufSize,int32_t nic
 	// set them
 	Words w;
 	// return -1 with g_errno set on error
-	if ( ! w.set9 ( s , niceness ) ) return -1;
+	if ( ! w.set ( s , true, niceness ) ) {
+		return -1;
+	}
+
 	// skip if no words
 	if ( w.m_numWords == 0 ) return 0;
 	// shortcut
@@ -8454,8 +8455,12 @@ bool XmlDoc::addGigabits ( char *s ,
 	Words tmp;
 	// skip if none
 	if ( ! s ) return true;
+
 	// returns NULL with g_errno set on error
-	if ( ! tmp.set9 ( s , m_niceness ) ) return false;
+	if ( ! tmp.set ( s , true, m_niceness ) ) {
+		return false;
+	}
+
 	// and weights!
 	//Weights we;
 	//if ( ! we.set ( &tmp , )
@@ -8471,7 +8476,10 @@ bool XmlDoc::addGigabits2 ( char *s ,
 	// skip if none
 	if ( ! s ) return true;
 	// returns NULL with g_errno set on error
-	if ( ! tmp.setx ( s , slen , m_niceness ) ) return false;
+	if ( ! tmp.set ( s , slen , true, m_niceness ) ) {
+		return false;
+	}
+
 	// and weights!
 	//Weights we;
 	//if ( ! we.set ( &tmp , )
@@ -10524,7 +10532,10 @@ int32_t getIsContacty ( Url *url ,
 		Words ww;
 		// . TODO: use alt text if only an image in the link!!!!!
 		// . return -1 if it fails with g_errno set
-		if ( ! ww.setx ( txt , tlen , niceness) ) return (char)-1;
+		if ( ! ww.set ( txt , tlen , true, niceness) ) {
+			return (char)-1;
+		}
+
 		// shortcut
 		int32_t nw = ww.getNumWords();
 		// skip if too big
@@ -27597,11 +27608,10 @@ bool XmlDoc::hashRSSInfo ( HashTableX *tt ) {
 			return false;
 		// set the words class from the xml, returns false and sets
 		// g_errno on error
-		if ( ! w.set ( &xml2 ,
-			       true  ,  // compute Ids
-			       true  ))// has html ents? (WERE encoded twice!)
-
+		if ( !w.set( &xml2, true, true ) ) {
 			return false;
+		}
+
 		// pass it in to TermTable::hash() below
 		wordsPtr = &w;
 	}
@@ -29989,7 +29999,7 @@ Matches *XmlDoc::getMatches () {
 	if ( m_matchesValid ) return &m_matches;
 
 	// if no query, matches are empty
-	if ( ! m_req->ptr_qbuf ) {
+	if ( ! m_req || ! m_req->ptr_qbuf ) {
 		m_matchesValid = true;
 		return &m_matches;
 	}
@@ -37844,7 +37854,7 @@ SafeBuf *XmlDoc::getTermInfoBuf ( ) {
 	char *md = getMetaDescription( &mdlen );
 	if ( md ) {
 		Words ww3;
-		ww3.setx ( md , mdlen , m_niceness );
+		ww3.set ( md , mdlen , true, m_niceness );
 		if (!addUniqueWordsToBuf(NULL,
 					 NULL , // dedup table
 					 NULL, // filter table
@@ -37863,7 +37873,7 @@ SafeBuf *XmlDoc::getTermInfoBuf ( ) {
 	char *mk = getMetaKeywords( &mklen );
 	if ( mk ) {
 		Words ww4;
-		ww4.setx ( mk , mklen , m_niceness );
+		ww4.set ( mk , mklen , true, m_niceness );
 		if (!addUniqueWordsToBuf(NULL,
 					 NULL, // dedup table
 					 NULL, // filter table

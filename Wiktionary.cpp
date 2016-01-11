@@ -179,7 +179,8 @@ bool Wiktionary::test2 ( ) {
 	//wid = hash64n(str);
 
 	Words words;
-	words.set3 ( str );
+	words.set ( str, true, 0 );
+
 	int32_t wordNum = 0;
 	char tmpBuf[1000];
 	int32_t niceness = 0;

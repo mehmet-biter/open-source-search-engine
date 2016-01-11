@@ -350,7 +350,8 @@ int32_t Synonyms::getSynonyms ( Words *words ,
 		// and for multi alnum word synonyms
 		if ( hadSpace ) {
 			Words sw;
-			sw.setx ( p , e - p , m_niceness );
+			sw.set ( p , e - p , true, m_niceness );
+
 			*(int64_t *)m_wids0Ptr = sw.m_wordIds[0];
 			*(int64_t *)m_wids1Ptr = sw.m_wordIds[2];
 			*(int32_t  *)m_numAlnumWordsPtr = sw.getNumAlnumWords();
@@ -566,7 +567,8 @@ char *getSourceString ( char source ) {
 // langId is language of the query
 int64_t getSynBaseHash64 ( char *qstr , uint8_t langId ) {
 	Words ww;
-	ww.set3 ( qstr );
+	ww.set ( qstr, true, 0 );
+
 	int32_t nw = ww.getNumWords();
 	int64_t *wids = ww.getWordIds();
 	//char **wptrs = ww.getWords();
