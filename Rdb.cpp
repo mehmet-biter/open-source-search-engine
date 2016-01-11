@@ -2808,14 +2808,14 @@ bool Rdb::isMerging ( ) {
 }
 	
 
-Rdb *s_table9 [ 50 ];
+static Rdb *s_table9 [ RDB_END ];
 
 // maps an rdbId to an Rdb
 Rdb *getRdbFromId ( uint8_t rdbId ) {
 	static bool s_init = false;
 	if ( ! s_init ) {
 		s_init = true;
-		memset ( s_table9 , 0 , 50 * 4 );
+		memset ( s_table9, 0, sizeof(s_table9) );
 		s_table9 [ RDB_TAGDB     ] = g_tagdb.getRdb();
 		s_table9 [ RDB_INDEXDB   ] = g_indexdb.getRdb();
 		s_table9 [ RDB_POSDB     ] = g_posdb.getRdb();
