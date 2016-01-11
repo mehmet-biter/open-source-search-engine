@@ -18968,7 +18968,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 				       cr->m_indexSpiderReplies);
 	}
 
-	if ( size_imageData && m_imageDataValid ) {
+	if ( m_imageDataValid && size_imageData ) {
 		// url is in data now
 		ThumbnailArray *ta = (ThumbnailArray *)ptr_imageData;
 		int32_t nt = ta->getNumThumbnails();
