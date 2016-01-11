@@ -864,10 +864,10 @@ void XmlDoc::reset ( ) {
 	void *pxend = &m_dummyEnd;
 	memset ( px , 0 , (char *)pxend - (char *)px );
 
-	ptr_catIds = NULL;
-	size_catIds = 0;
-	ptr_indCatIds = NULL;
-	size_indCatIds = 0;
+	ptr_unused6 = NULL;
+	size_unused6 = 0;
+	ptr_unused7 = NULL;
+	size_unused7 = 0;
 	ptr_unused1 = NULL;
 	size_unused1 = 0;
 	ptr_unused2 = NULL;

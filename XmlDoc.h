@@ -339,8 +339,8 @@ public:
 	int64_t *ptr_wikiDocIds;
 	rscore_t  *ptr_wikiScores;
 	char      *ptr_imageData;
-	int32_t      *ptr_catIds;
-	int32_t      *ptr_indCatIds;
+	int32_t      *ptr_unused6;
+	int32_t      *ptr_unused7;
 	char      *ptr_unused1;
 	char      *ptr_unused2;
 	char      *ptr_unused3;
@@ -364,8 +364,8 @@ public:
 	int32_t       size_wikiDocIds;
 	int32_t       size_wikiScores;
 	int32_t       size_imageData;
-	int32_t       size_catIds;
-	int32_t       size_indCatIds;
+	int32_t       size_unused6;
+	int32_t       size_unused7;
 	int32_t       size_unused1;
 	int32_t       size_unused2;
 	int32_t       size_unused3;
