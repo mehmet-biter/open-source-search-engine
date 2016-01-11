@@ -22,15 +22,6 @@ Xml::~Xml () {
 }
 
 // . for parsing xml conf files
-bool Xml::getBool ( int32_t n0 , int32_t n1 , char *tagName , bool defaultBool ) {
-	int32_t len;
-	char *s = getTextForXmlTag ( n0 , n1 , tagName , &len , true );
-	if ( s ) return atob ( s , len );
-	// return the default if no non-white-space text
-	return defaultBool;
-}
-
-// . for parsing xml conf files
 int32_t Xml::getLong ( int32_t n0 , int32_t n1 , char *tagName , int32_t defaultLong ) {
 	int32_t len;
 	char *s = getTextForXmlTag ( n0 , n1 , tagName , &len , false );
@@ -47,15 +38,6 @@ int64_t Xml::getLongLong ( int32_t n0 , int32_t n1 , char *tagName ,
 	if ( s ) return atoll2 ( s , len );
 	// return the default if no non-white-space text
 	return defaultLongLong;
-}
-
-// . for parsing xml conf files
-float Xml::getFloat (int32_t n0 , int32_t n1 , char *tagName,float defaultFloat){
-	int32_t len;
-	char *s = getTextForXmlTag ( n0 , n1 , tagName , &len , false );
-	if ( s ) return atof2 ( s , len );
-	// return the default if no non-white-space text
-	return defaultFloat;
 }
 
 char *Xml::getString ( int32_t n0 , int32_t n1 , char *tagName, int32_t *len ,

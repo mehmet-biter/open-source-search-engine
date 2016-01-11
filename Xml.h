@@ -98,27 +98,23 @@ class Xml {
 	// . gets the value of the text field immediately following the tag
 	// . "tagName" is always compound
 	// . only searches nodes in [n0,n1] node range
-	bool      getBool     ( int32_t n0 , int32_t n1 , char *tagName ,
-				bool      defaultBool     = 0   ); 
+
 	int32_t      getLong     ( int32_t n0 , int32_t n1 , char *tagName ,
 			        int32_t      defaultLong     = 0   ); 
 	int64_t getLongLong ( int32_t n0 , int32_t n1 , char *tagName ,
 			        int64_t defaultLongLong = 0LL ); 
-	float     getFloat    ( int32_t n0 , int32_t n1 , char *tagName ,
-			        float defaultFloat = 0.0 );
+
 	char     *getString   ( int32_t n0 , int32_t n1 , char *tagName , int32_t *len ,
 			        bool skipLeadingSpaces = true   ) const; 
 	// for parsing facebook replies:
 	char     *getNode ( char *tagName , int32_t *len ) ;
 	// like above routines but we search all nodes
-	bool  getBool     ( char *tagName, bool  defaultBool = false ) {
-		return getBool(0,m_numNodes,tagName,defaultBool); }
+
 	int32_t  getLong     ( char *tagName, int32_t  defaultLong = 0 ) {
 		return getLong(0,m_numNodes,tagName,defaultLong); }
 	int64_t getLongLong (char *tagName, int64_t defaultLongLong = 0LL){
 		return getLongLong(0,m_numNodes,tagName,defaultLongLong); }
-	float getFloat   ( char *tagName, float defaultFloat = 0.0 ) {
-		return getFloat(0,m_numNodes,tagName,defaultFloat); }
+
 	char *getString   ( char *tagName                 , 
 			    int32_t *len                     , 
 			    bool skipLeadingSpaces = true ) const {
