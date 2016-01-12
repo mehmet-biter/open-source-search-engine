@@ -861,7 +861,7 @@ void XmlDoc::reset ( ) {
 
 	// reset these ptrs too!
 	void *px    = &ptr_firstUrl;
-	void *pxend = &size_firstUrl;
+	void *pxend = &m_dummyEnd;
 	memset ( px , 0 , (char *)pxend - (char *)px );
 
 	ptr_catIds = NULL;
