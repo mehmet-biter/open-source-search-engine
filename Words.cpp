@@ -28,6 +28,7 @@ void Words::reset ( ) {
 		mfree ( m_buf , m_bufSize , "Words" );
 	m_buf = NULL;
 	m_bufSize = 0;
+	m_nodes = NULL;
 	m_tagIds = NULL;
 	m_numTags = 0;
 	m_hasTags = false;
@@ -287,6 +288,7 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 			// skip till end
 			int32_t tagLen = getTagLen( s + i );
 			m_wordLens[m_numWords] = tagLen;
+			m_nodes[m_numWords] = 0;
 			m_numWords++;
 
 			// advance
@@ -323,6 +325,7 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 		m_words        [ m_numWords  ] = start;
 		m_wordLens     [ m_numWords  ] = s+i - start;
 		m_wordIds      [ m_numWords  ] = 0LL;
+		m_nodes        [ m_numWords  ] = 0;
 		if (m_tagIds) m_tagIds[m_numWords] = 0;
 		m_numWords++;
 		goto uptop;
@@ -442,6 +445,7 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 		//else           m_stripWordIds [m_numWords] = 0LL;
 		//m_stripWordIds[m_numWords] = 0;
 	}
+	m_nodes[m_numWords] = 0;
 	if (m_tagIds) m_tagIds[m_numWords] = 0;
 	m_numWords++;
 	m_numAlnumWords++;
