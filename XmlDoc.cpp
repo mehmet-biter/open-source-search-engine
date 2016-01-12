@@ -19136,23 +19136,23 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 
 	// only print if different now! good for grepping changes
 	if ( m_sreqValid && m_sreq.m_ufn >= 0 &&
-	     m_sreq.m_ufn != m_urlFilterNum )
+	     (!m_urlFilterNumValid || m_sreq.m_ufn != m_urlFilterNum) )
 		sb->safePrintf("oldurlfilternum=%"INT32" ",
 			      (int32_t)m_sreq.m_ufn);
 
 	if ( m_sreqValid && m_sreq.m_priority >= 0 &&
-	     m_sreq.m_priority != m_priority )
+	     (!m_priorityValid || m_sreq.m_priority != m_priority) )
 		sb->safePrintf("oldpriority=%"INT32" ",
 			      (int32_t)m_sreq.m_priority);
 
 	if ( m_oldDoc && m_oldDoc->m_langIdValid &&
-	     m_oldDoc->m_langId != m_langId )
+	     (!m_langIdValid || m_oldDoc->m_langId != m_langId) )
 		sb->safePrintf("oldlang=%02"INT32"(%s) ",(int32_t)m_oldDoc->m_langId,
 			      getLanguageAbbr(m_oldDoc->m_langId));
 
 	if ( m_useSecondaryRdbs &&
 	     m_useTitledb &&
-	     m_logLangId != m_langId )
+	     (!m_langIdValid || m_logLangId != m_langId) )
 		sb->safePrintf("oldlang=%02"INT32"(%s) ",(int32_t)m_logLangId,
 			      getLanguageAbbr(m_logLangId));
 
