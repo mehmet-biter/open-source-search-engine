@@ -30769,7 +30769,7 @@ SafeBuf *XmlDoc::getSampleForGigabitsJSON ( ) {
 
 
 // <meta name=robots value=noarchive>
-// <meta name=gigabot value=noarchive>
+// <meta name=<configured botname> value=noarchive>
 char *XmlDoc::getIsNoArchive ( ) {
 	if ( m_isNoArchiveValid ) return &m_isNoArchive;
 	Xml *xml = getXml();
@@ -30794,7 +30794,7 @@ char *XmlDoc::getIsNoArchive ( ) {
 		char *end = att + alen;
 		// skip leading spaces
 		while ( att < end && *att && is_wspace_a(*att) ) att++;
-		// must be robots or gigabot. skip if not
+		// must be robots or <configured botname>. skip if not
 		if ( strncasecmp(att,"robots" ,6) &&
 		     strncasecmp(att,g_conf.m_spiderBotName,gbstrlen(g_conf.m_spiderBotName))   ) continue;
 		     
