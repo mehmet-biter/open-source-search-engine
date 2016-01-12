@@ -643,25 +643,17 @@ bool Xml::set ( char  *s             ,
 // . must write to your buf rather than just return a pointer since we may
 //   have to concatenate several nodes together, we may have to replace tags,..
 // . TODO: nuke this in favor of Pos.cpp::filter() -- but that needs Words.cpp
-int32_t Xml::getText ( char  *buf             ,
-		    int32_t   bufMaxSize      ,
-		    int32_t   node1           ,
-		    int32_t   node2           ,
-		    bool   includeTags     ,
-		    bool   visibleTextOnly ,
-		    bool   filter          , // convert entities, \r's
-		    bool   filterSpaces    , // filter excessive punct/spaces
-		    bool   useStopIndexTag ) { // indexable text only?
-
+int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node2, bool includeTags,
+					  bool visibleTextOnly, bool filter, bool filterSpaces ) {
 	// init some vars
 	int32_t i    = node1;
 	int32_t n    = node2;
+
 	// truncate n to the # of nodes we have
 	if ( n > m_numNodes ) n = m_numNodes;
+
 	// keep a non visible tag stack
 	int32_t notVisible = 0;
-	// are we in indexable area?
-	bool inStopTag = false;
 
 	// the destination
 	char *dst    = buf;
@@ -677,23 +669,6 @@ int32_t Xml::getText ( char  *buf             ,
 	// loop through all nodes from here on until we run outta nodes...
 	// or until we hit a tag with the same depth as us.
 	for ( ; i < n ; i++ ) {
-
-		// if it's <stop index> continue until start index
-		if ( useStopIndexTag ) {
-			// is it a <stop index> tag ?
-			if ( m_nodes[i].m_nodeId == 115 ) {
-				inStopTag = true;
-				continue;
-			}
-			// is it a start tag?
-			if ( m_nodes[i].m_nodeId == 114 ) {
-				inStopTag = false;
-				continue;
-			}
-			// continue if in a stop section
-			if ( inStopTag ) continue;
-		}
-		
 		// . set skipText to true if this tag has inivisble text
 		// . examples: <option> <script> ...
 		if ( m_nodes[i].isTag() && ! m_nodes[i].isVisible() &&

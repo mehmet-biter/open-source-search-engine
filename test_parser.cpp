@@ -209,8 +209,7 @@ void parse_doc_8859_1(char *s, int len, bool doHash,char *charset)
 		    false,
 		    true,
 		    false,
-		    doFilterSpaces,
-		    false);
+		    doFilterSpaces);
 	Words words;
 
 	// just tokenize words
@@ -233,8 +232,7 @@ void parse_doc_icu(char *s, int len, bool doHash, char *charset){
 				   false,
 				   true,
 				   false,
-				   doFilterSpaces,
-				   false);
+				   doFilterSpaces);
 	Words w;
 	w.set(true,false, text_buf, textLen, doHash);
 	free(text_buf);

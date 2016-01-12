@@ -6404,16 +6404,8 @@ skipItem:
 	// get the back tag for node #n0
 	//int32_t n1 = m_xml->getEndNode ( i );
 	// now we can call Xml::getText()
-	int32_t bufLen =  m_xml->getText ( buf   , 
-					bufMaxLen ,
-					node1 ,  // get kid text of this node
-					node2 ,
-					false ,  // include tags?
-					true  ,  // visible text only?
-					//true  ,  // filter? (entities to iso)
-					false ,  // filter? (entities to iso)
-					false ,  // filter spaces?
-					false ); // exclude if in <stop index>?
+	int32_t bufLen = m_xml->getText( buf, bufMaxLen, node1, node2, false, true, false, false );
+
 	// set it
 	if ( retNode1 ) *retNode1 = node1;
 	// hunt for an alnum in the link text

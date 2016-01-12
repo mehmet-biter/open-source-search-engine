@@ -170,8 +170,7 @@ class Xml {
 			bool   includeTags     = false ,
 			bool   visibleTextOnly = true  ,
 			bool   filter          = false ,
-			bool   filterSpaces    = false ,
-			bool   useStopIndexTag = false );
+			bool   filterSpaces    = false );
 
 
 	unsigned char getLanguage() { return langUnknown; }

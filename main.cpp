@@ -8833,66 +8833,6 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	if ( contentType == CT_TEXT ) isPreformattedText = true;
 	else                          isPreformattedText = false;
 
-	/*
-	Weights weights;
-	//LinkInfo info1;
-	//LinkInfo info2;
-	// computeWordIds from xml
-	t = gettimeofdayInMilliseconds_force();
-	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		//if ( ! words.set ( &xml , true , true ) )
-		if ( ! weights.set (&words                   , 
-				    &phrases                 ,
-				    &bits                    ,
-				    NULL                     , // sections
-				    NULL                     , // debug?
-				    true , // elim menus?
-				    isPreformattedText       ,
-				    TITLEREC_CURRENT_VERSION ,
-				    600                      , // titleWeight
-				    300                      , // headerWeight
-				    NULL                     , 
-				    false                    , // isLinkText?
-				    false                    , // isCntTable?
-				    0                        , // sitenuminlnkx
-				    0                       )) // niceness
-			return log("build: speedtestxml: Weights set: %s",
-				   mstrerror(g_errno));
-	// print time it took
-	e = gettimeofdayInMilliseconds_force();
-	log("build: Weights::set() "
-	    "took %.3f ms for %"INT32" words "
-	    "for docId %"INT64".", 
-	    (double)(e - t)/100.0,words.m_numWords,docId);
-	*/
-
-	/*
-	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
-		return 1;
-	}
-	t = gettimeofdayInMilliseconds_force();
-	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml , true , true ) )
-			return log("build: speedtestxml: words set: %s",
-				   mstrerror(g_errno));
-	// print time it took
-	e = gettimeofdayInMilliseconds_force();
-	log("build: Words::set(computeIds=true) took %.3f ms for %"INT32" words "
-	    "for docId %"INT64".", 
-	    (double)(e - t)/100.0,words.m_numWords,docId);
-
-	t = gettimeofdayInMilliseconds_force();
-	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! words.set ( &xml , false , true ) )
-			return log("build: speedtestxml: words set: %s",
-				   mstrerror(g_errno));
-	// print time it took
-	e = gettimeofdayInMilliseconds_force();
-	log("build: Words::set(computeIds=false) took %.3f ms for docId %"INT64".",
-	    (double)(e - t)/100.0,docId);
-	*/
-
 
 	char *buf = (char *)mmalloc(contentLen*2+1,"main");
 	t = gettimeofdayInMilliseconds_force();
@@ -8903,8 +8843,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 				     false     ,  // includeTags?
 				     true      ,  // visible text only?
 				     true      ,  // convert html entities?
-				     true      ,  // filter spaces?
-				     false     )) // use <stop index> tag?
+				     true      ))  // filter spaces?
 			return log("build: speedtestxml: getText: %s",
 				   mstrerror(g_errno));
 	// print time it took
@@ -8922,8 +8861,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 				     false     ,  // includeTags?
 				     true      ,  // visible text only?
 				     true      ,  // convert html entities?
-				     true      ,  // filter spaces?
-				     false     ); // use <stop index> tag?
+				     true      );  // filter spaces?
 		if ( ! bufLen ) return log("build: speedtestxml: getText: %s",
 					   mstrerror(g_errno));
 		if ( ! words.set ( buf,true,0) )
