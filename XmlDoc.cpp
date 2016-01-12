@@ -36008,7 +36008,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	bool addRootLang = false;
 	if ( ! oldrl ) addRootLang = true;
 	if ( oldrlid != *rl ) addRootLang = true;
-	if ( now-timestamp > 10*86400 ) addRootLang = true;
+	if ( oldrl && now-timestamp > 10*86400 ) addRootLang = true;
 	// injects do not download the root doc for speed reasons, so do not
 	// bother for them unless the doc itself is the root.
 	if ( m_wasContentInjected && !*isRoot ) addRootLang = false;
@@ -36089,7 +36089,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	else if ( memcmp(data,m_rootTitleBuf,m_rootTitleBufSize))
 		addRootTitle =true;
 	// or if it is 10 days old or more
-	if ( now-timestamp > 10*86400 ) addRootTitle = true;
+	if ( old1!=-1 && now-timestamp > 10*86400 ) addRootTitle = true;
 	// but not if injected
 	if ( m_wasContentInjected && ! *isRoot ) addRootTitle = false;
 	// add it then
