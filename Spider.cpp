@@ -282,12 +282,12 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	if ( m_isPermalink ) sb->safePrintf("ISPERMALINK ");
 	if ( m_isPingServer ) sb->safePrintf("ISPINGSERVER ");
 	//if ( m_deleted ) sb->safePrintf("DELETED ");
-	if ( m_isIndexed && ! m_isIndexedINValid) sb->safePrintf("ISINDEXED ");
+	if ( ! m_isIndexedINValid && m_isIndexed ) sb->safePrintf("ISINDEXED ");
 
-	if ( m_hasAddress    ) sb->safePrintf("HASADDRESS ");
-	if ( m_hasTOD        ) sb->safePrintf("HASTOD ");
+	if ( m_hasAddressValid && m_hasAddress    ) sb->safePrintf("HASADDRESS ");
+	if ( m_hasTODValid && m_hasTOD        ) sb->safePrintf("HASTOD ");
 	//if ( m_hasSiteVenue  ) sb->safePrintf("HASSITEVENUE ");
-	if ( m_isContacty    ) sb->safePrintf("CONTACTY ");
+	if ( m_isContactyValid && m_isContacty    ) sb->safePrintf("CONTACTY ");
 
 	//sb->safePrintf("url=%s",m_url);
 
