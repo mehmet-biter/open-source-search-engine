@@ -97,12 +97,10 @@ char *Xml::getNode ( char *tagName , int32_t *len ) {
 	XmlNode *node = &m_nodes[num];
 	if ( ! node->m_hasBackTag ) return NULL;
 
-	// scan for ending back tag
-	int32_t i ; for ( i = num + 1 ; i < m_numNodes ; i++ ) {
-		if ( m_nodes[i].m_hash != node->m_hash ) continue;
-		break;
+	int32_t i = getNodeNumEnd( num );
+	if ( i < 0 ) {
+		return NULL;
 	}
-	if ( i >= m_numNodes ) return NULL;
 
 	// got the back tag
 	char *end = m_nodes[i].m_node;
@@ -116,7 +114,33 @@ char *Xml::getNode ( char *tagName , int32_t *len ) {
 	return s;
 }
 
+int32_t Xml::getNodeNumEnd ( int32_t num ) {
+	if ( (num < 0) || (num >= m_numNodes) ) {
+		return -1;
+	}
 
+	XmlNode *node = &m_nodes[num];
+	if ( ! node->isTag() ) {
+		return -1;
+	}
+
+	int32_t i = 0;
+
+	// scan for ending back tag
+	for ( i = num + 1 ; i < m_numNodes ; ++i ) {
+		if ( m_nodes[i].m_hash != node->m_hash ) {
+			continue;
+		}
+
+		break;
+	}
+
+	if ( i >= m_numNodes ) {
+		return -1;
+	}
+
+	return i;
+}
 
 int64_t Xml::getCompoundHash ( char *s , int32_t len ) const {
 	// setup

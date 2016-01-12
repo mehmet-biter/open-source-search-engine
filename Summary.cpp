@@ -6,6 +6,7 @@
 #include "Xml.h"
 #include "Pos.h"
 #include "Matches.h"
+#include "XmlDoc.h"
 
 Summary::Summary()
     : m_summaryLen(0)
@@ -44,6 +45,154 @@ int32_t Summary::getSummaryLen() {
 	return m_summaryLen;
 }
 
+bool Summary::setLength() {
+	if ( m_summaryLen > 0 ) {
+		m_summaryExcerptLen[0] = m_summaryLen;
+		m_numExcerpts = 1;
+
+		// in this case we only have one summary line
+		if ( m_numDisplayLines > 0 ) {
+			m_displayLen = m_summaryLen;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
+	// verify that it's not the same with title
+	if ( titleBufLen > 0 && m_summaryLen == titleBufLen &&
+	     strncasestr( titleBuf, m_summary, titleBufLen, m_summaryLen ) ) {
+		m_summaryLen = 0;
+		m_summary[0] = '\0';
+
+		return false;
+	}
+
+	return true;
+}
+
+bool Summary::setFromWords( Words *wp, Pos *pp, int32_t maxSummaryLen ) {
+	bool isTruncated = false;
+	m_summaryLen = pp->filter( m_summary, m_summary + maxSummaryLen, wp, 0, wp->getNumWords(), &isTruncated );
+
+	/// @todo ALC we may want this to be configurable so we can tweak this as needed
+	if (m_summaryLen < 20) {
+		// ignore too short descriptions
+		m_summaryLen = 0;
+		m_summary[0] = '\0';
+
+		return false;
+	}
+
+	if ( isTruncated ) {
+		gbmemcpy ( m_summary + m_summaryLen , " ..." , 4 );
+		m_summaryLen += 4;
+	}
+
+	return true;
+}
+
+bool Summary::setFromMetaTag( Xml *xml, int32_t maxSummaryLen, const char *fieldName, const char *fieldContent ) {
+	int32_t fieldContentLen = strlen(fieldContent);
+
+	for ( int32_t i = 0 ; i < xml->getNumNodes(); ++i ) {
+		if ( xml->getNodeId(i) != TAG_META ) {
+			continue;
+		}
+
+		int32_t tagLen = 0;
+		char *tag = xml->getString ( i , fieldName , &tagLen );
+		if ( tagLen == fieldContentLen && strncasecmp( tag, fieldContent, fieldContentLen ) == 0 ) {
+			int32_t len = 0;
+			char *s = xml->getString ( i , "content" , &len );
+			if ( ! s || len <= 0 ) {
+				continue;
+			}
+
+			Words wp;
+			Pos pp;
+
+			if ( ( !wp.set( s, len, true) ) || ( !pp.set( &wp ) ) ) {
+				return false;
+			}
+
+			if ( !setFromWords( &wp, &pp, maxSummaryLen ) ) {
+				continue;
+			}
+
+			break;
+		}
+	}
+
+	return setLength();
+}
+
+bool Summary::setFromField( Xml *xml, int32_t maxSummaryLen, const char *fieldName, const char *fieldContent ) {
+	int32_t fieldContentLen = strlen(fieldContent);
+
+	for ( int32_t i = 0 ; i < xml->getNumNodes(); ++i ) {
+		int32_t tagLen = 0;
+		char *tag = xml->getString ( i , fieldName , &tagLen );
+		if ( tagLen == fieldContentLen && strncasecmp( tag, fieldContent, fieldContentLen ) == 0 ) {
+			int32_t end_node = xml->getNodeNumEnd(i);
+			if (end_node < 0) {
+				// no end tag
+				continue;
+			}
+
+			Words wp;
+			Pos pp;
+
+			if ( ( !wp.set(xml, true, 0, i, end_node ) ) || ( !pp.set( &wp ) ) ) {
+				return false;
+			}
+
+			if ( !setFromWords( &wp, &pp, maxSummaryLen ) ) {
+				continue;
+			}
+
+			/// @todo ALC we may want to loop through the whole doc and get the best.
+			/// Only get the first for now
+			break;
+		}
+	}
+
+	return setLength();
+}
+
+// let's try to get a nicer summary by using what the website set as description
+// Use the following in priority order (highest first)
+// - itemprop = "description"
+// - meta name = "og:description"
+// - meta name = "description"
+bool Summary::setFromUserData( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen ) {
+	// itemprop = "description"
+	if ( setFromField( xml, maxSummaryLen, "itemprop", "description" ) ) {
+		if ( verifySummary( titleBuf, titleBufLen ) ) {
+			return true;
+		}
+	}
+
+	// meta property = "og:description"
+	if ( setFromMetaTag( xml, maxSummaryLen, "property", "og:description" ) ) {
+		if ( verifySummary( titleBuf, titleBufLen ) ) {
+			return true;
+		}
+	}
+
+	// meta name = "description"
+	if ( setFromMetaTag( xml, maxSummaryLen, "name", "description" ) ) {
+		if ( verifySummary( titleBuf, titleBufLen ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 //////////////////////////////////////////////////////////////////
 //
 // THE NEW SUMMARY GENERATOR
@@ -51,7 +200,7 @@ int32_t Summary::getSummaryLen() {
 //////////////////////////////////////////////////////////////////
 
 // returns false and sets g_errno on error
-bool Summary::set ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q,
+bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q,
                      int64_t *termFreqs, int32_t maxSummaryLen,  int32_t maxNumLines,
                      int32_t numDisplayLines, int32_t maxNumCharsPerLine, Url *f,
                      Matches *matches, char *titleBuf, int32_t titleBufLen) {
@@ -90,38 +239,8 @@ bool Summary::set ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query 
 		return log("query: More than 256 summary lines requested.");
 	}
 
-	// short circuit when URL is root
-	if ( f->isRoot() ) {
-		m_summaryLen = xml->getMetaContent( m_summary, maxSummaryLen, "summary", 7 );
-
-		// verify that it's not the same with title
-		if ( m_summaryLen > 0 && m_summaryLen == titleBufLen &&
-			 strncasestr( titleBuf, m_summary, titleBufLen, m_summaryLen ) ) {
-			m_summaryLen = 0;
-			m_summary[0] = '\0';
-		}
-
-		// the meta description
-		if ( m_summaryLen <= 0 ) {
-			m_summaryLen = xml->getMetaContent( m_summary, maxSummaryLen, "description", 11 );
-		}
-
-		// verify that it's not the same with title
-		if ( m_summaryLen > 0 && m_summaryLen == titleBufLen &&
-			 strncasestr( titleBuf, m_summary, titleBufLen, m_summaryLen ) ) {
-			m_summaryLen = 0;
-			m_summary[0] = '\0';
-		}
-
-		if ( m_numDisplayLines > 0 ) {
-			m_displayLen = m_summaryLen;
-		}
-
-		if ( m_summaryLen > 0 ) {
-			m_summaryExcerptLen[0] = m_summaryLen;
-			m_numExcerpts = 1;
-			return true;
-		}
+	if (setFromUserData(xml, maxSummaryLen, titleBuf, titleBufLen)) {
+		return true;
 	}
 
 	// Nothing to match...print beginning of content as summary
@@ -205,15 +324,15 @@ bool Summary::set ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query 
 
 	int32_t lastNumFinal = 0;
 	int32_t maxLoops = 1024;
-	char *p, *pend;
 
 	// if just computing absScore2...
 	if ( maxNumLines <= 0 ) {
 		return true;
 	}
 
-	p    = m_summary;
-	pend = m_summary + maxSummaryLen;
+	char *p = m_summary;
+	char *pend = m_summary + maxSummaryLen;
+
 	m_numExcerpts = 0;
 
 	int32_t need2 = (1+1+1) * m_q->m_numWords;
@@ -291,11 +410,22 @@ bool Summary::set ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query 
 			mf_t flags = matches->m_matches[i].m_flags;
 
 			bool skip = true;
-			if ( flags & MF_METASUMM ) skip = false;
-			if ( flags & MF_METADESC ) skip = false;
-			if ( flags & MF_BODY     ) skip = false;
-			if ( flags & MF_RSSDESC  ) skip = false;
-			if ( skip ) continue;
+			if ( flags & MF_METASUMM ) {
+				skip = false;
+			}
+			if ( flags & MF_METADESC ) {
+				skip = false;
+			}
+			if ( flags & MF_BODY     ) {
+				skip = false;
+			}
+			if ( flags & MF_RSSDESC  ) {
+				skip = false;
+			}
+
+			if ( skip ) {
+				continue;
+			}
 
 			// ask him for the query words he matched
 			//char gotIt [ MAX_QUERY_WORDS ];
@@ -461,7 +591,7 @@ bool Summary::set ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query 
 		// . removes back to back spaces
 		// . converts html entities
 		// . filters in stores words in [a,b) interval
-		int32_t len = pos->filter(p, pend, ww, maxa, maxb);
+		int32_t len = pos->filter( p, pend, ww, maxa, maxb );
 
 		// break out if did not fit
 		if ( len == 0 ) {
@@ -535,29 +665,6 @@ bool Summary::set ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query 
 
 	if ( numFinal <= m_numDisplayLines ) {
 		m_displayLen = p - m_summary;
-	}
-
-	// If we still didn't find a summary, directly use whats given in the
-	// meta summary or description.
-	if ( p == m_summary ){
-		Words    *wp;
-		Pos      *pp;
-		Sections *ss;
-		// get it from the summary
-		if ( matches->getMatchGroup(MF_METASUMM, &wp, &pp, &ss) ) {
-			p += pp->filter(p,pend, wp, 0, wp->m_numWords );
-		} else if ( matches->getMatchGroup(MF_METADESC, &wp, &pp, &ss) ) {
-			p += pp->filter(p,pend, wp, 0, wp->m_numWords );
-		}
-
-		if ( p != m_summary ) {
-			m_summaryExcerptLen[0] = p - m_summary;
-			m_numExcerpts = 1;
-		}
-
-		// in this case we only have one summary line
-		if ( m_numDisplayLines > 0 )
-			m_displayLen = p - m_summary;
 	}
 
 	// free the mem we used if we allocated it
@@ -1070,7 +1177,7 @@ bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Po
 	}
 
 	if (bestStart >= 0 && bestEnd > bestStart){
-		int32_t len = pos->filter(p, pend-10, words, bestStart, bestEnd);
+		int32_t len = pos->filter( p, pend - 10, words, bestStart, bestEnd );
 		p += len;
 		if ( len > 0 && p + 3 + 2 < pend ){
 			// space first?

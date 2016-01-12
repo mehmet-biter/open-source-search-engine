@@ -1,6 +1,7 @@
 #include "gb-include.h"
 
 #include "Pos.h"
+#include "Words.h"
 #include "Sections.h"
 
 Pos::Pos() {
@@ -20,9 +21,9 @@ void Pos::reset() {
 
 // . the interval is half-open [a,b)
 // . do not print out any alnum word with negative score
-int32_t Pos::filter( char *p, char *pend, class Words *words, int32_t a, int32_t b ) {
+int32_t Pos::filter( char *p, char *pend, Words *words, int32_t a, int32_t b, bool *isTruncated ) {
 	int32_t plen = 0;
-	set ( words , p , pend, &plen , a , b );
+	set ( words , isTruncated, p , pend, &plen , a , b );
 	return plen;
 }
 
@@ -32,7 +33,7 @@ int32_t Pos::filter( char *p, char *pend, class Words *words, int32_t a, int32_t
 // . returns false and sets g_errno on error
 // . if f is non-NULL store filtered words into there. back to back spaces
 //   are eliminated.
-bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int32_t b, char *buf, int32_t bufSize ) {
+bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *len, int32_t a, int32_t b ) {
 	// free m_buf in case this is a second call
 	if ( ! f ) {
 		reset();
@@ -59,9 +60,7 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 		m_needsFree = false;
 
 		m_buf = m_localBuf;
-		if ( need > POS_LOCALBUFSIZE && need < bufSize )
-			m_buf = buf;
-		else if ( need > POS_LOCALBUFSIZE ) {
+		if ( need > POS_LOCALBUFSIZE ) {
 			m_buf = (char *)mmalloc(need,"Pos");
 			m_needsFree = true;
 		}
@@ -81,7 +80,7 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 
 	// flag for stopping back-to-back spaces. only count those as one char.
 	bool lastSpace = false;
-	int32_t maxCharSize = 4; // we are utf8
+	static const int32_t maxCharSize = 4; // we are utf8
 	int in_bad_tags = 0;
 
 	for ( int32_t i = a ; i < b ; i++ ) {
@@ -238,6 +237,10 @@ bool Pos::set (Words *words, char *f, char *fend, int32_t *len , int32_t a , int
 			pos++; 
 			lastSpace = false;
 		}
+	}
+
+	if ( isTruncated ) {
+		*isTruncated = trunc;
 	}
 
 	if ( trunc ) {

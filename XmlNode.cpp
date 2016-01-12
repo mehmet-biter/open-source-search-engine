@@ -527,7 +527,7 @@ int32_t XmlNode::setCDATANode ( char *node ) {
 
 // Return the value of the specified "field" within this node.
 // the case of "field" does not matter.
-char *XmlNode::getFieldValue ( char *field , int32_t *valueLen ) {
+char *XmlNode::getFieldValue ( const char *field , int32_t *valueLen ) {
 	// reset this to 0
 	*valueLen = 0;
 	// scan for the field name in our node

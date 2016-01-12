@@ -22,9 +22,12 @@
 
 #include "gb-include.h"
 
+#include "Xml.h"
+
 #define MAX_SUMMARY_LEN 1024*20
 #define MAX_SUMMARY_EXCERPTS 1024
 
+class XmlDoc;
 class Sections;
 class Matches;
 class Xml;
@@ -38,15 +41,30 @@ public:
 	Summary();
 	~Summary();
 
-	bool set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q, int64_t *termFreqs,
-	          int32_t maxSummaryLen, int32_t numDisplayLines, int32_t maxNumLines, int32_t maxNumCharsPerLine,
-	          Url *f, Matches *matches, char *titleBuf, int32_t titleBufLen);
+	bool set(Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q, int64_t *termFreqs,
+			  int32_t maxSummaryLen, int32_t numDisplayLines, int32_t maxNumLines, int32_t maxNumCharsPerLine,
+			  Url *f, Matches *matches, char *titleBuf, int32_t titleBufLen );
 
 	char *getSummary();
 	int32_t getSummaryDisplayLen();
 	int32_t getSummaryLen();
 
 private:
+	bool verifySummary( char *titleBuf, int32_t titleBufLen );
+
+	bool setFromWords( Words *wp, Pos *pp, int32_t maxSummaryLen );
+	bool setFromMetaTag( Xml *xml, int32_t maxSummaryLen, const char *fieldName, const char *fieldContent );
+	bool setFromField( Xml *xml, int32_t maxSummaryLen, const char *fieldName, const char *fieldContent );
+
+	bool setFromUserData( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen );
+
+	/**
+	 * sets the various length parameter based on m_summaryLen
+	 *
+	 * @retval true Successfully fill in length
+	 * @retval false No changes to length
+	 */
+	bool setLength();
 
 	bool getDefaultSummary (Xml *xml, Words *words, Sections *sections , Pos *pos, int32_t maxSummaryLen );
 

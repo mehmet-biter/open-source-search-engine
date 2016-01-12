@@ -213,7 +213,7 @@ class XmlNode {
 			m_nodeId != TAG_META && m_nodeId != TAG_COMMENT; };
 
 	// . get the value of a field like "href" in the <a href="blah"> tag
-	char *getFieldValue ( char *fieldName , int32_t *valueLen );
+	char *getFieldValue ( const char *fieldName , int32_t *valueLen );
 
 	// . used exclusively by Xml class which contains an array of XmlNodes
 	// . "node" points to the beginning of the node, the '<' if it's a tag

@@ -108,6 +108,8 @@ class Xml {
 			        bool skipLeadingSpaces = true   ) const; 
 	// for parsing facebook replies:
 	char     *getNode ( char *tagName , int32_t *len ) ;
+	int32_t getNodeNumEnd ( int32_t num );
+
 	// like above routines but we search all nodes
 
 	int32_t  getLong     ( char *tagName, int32_t  defaultLong = 0 ) {
@@ -124,9 +126,10 @@ class Xml {
 	// . used for getting data from meta tags
 	//bool  getBool     ( int32_t node, char *field, bool defaultBool );
 	//int32_t  getLong     ( int32_t node, char *field, int32_t defaultLong );
-	char *getString   ( int32_t node, char *field, int32_t *valueLen ) {
+	char *getString   ( int32_t node, const char *field, int32_t *valueLen ) {
 		if ( node >= m_numNodes ) { char *xx=NULL;*xx=0; }
-		return m_nodes[node].getFieldValue ( field , valueLen);}
+		return m_nodes[node].getFieldValue ( field , valueLen);
+	}
 
 	// called by getTextForXmlTag() below
 	char *getString ( int32_t node , bool skipLeadingSpaces, int32_t *len )const;
