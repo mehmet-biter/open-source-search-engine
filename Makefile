@@ -651,4 +651,5 @@ warcinjector:
 .PHONY: cleandb
 cleandb:
 	rm -rf coll.main.?
-	rm -f *-saved.dat spiderproxystats.dat addsinprogress.dat
+	rm -f *-saved.dat spiderproxystats.dat addsinprogress.dat robots.txt.cache dns.cache
+
