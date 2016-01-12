@@ -593,6 +593,8 @@ class Conf {
 	// defaults to "Gigabot/1.0"
 	char m_spiderUserAgent [ USERAGENTMAXSIZE ];
 
+	char m_spiderBotName [ USERAGENTMAXSIZE ];
+
 	int32_t m_autoSaveFrequency;
 
 	int32_t m_docCountAdjustment;

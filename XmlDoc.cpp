@@ -12655,9 +12655,9 @@ bool *XmlDoc::getIsAllowed ( ) {
 	int32_t  cacheLen;
 	bool  hadAllowOrDisallow;
 	int32_t  savedCrawlDelay = -1;
-	// now use left-anchored substring match so we can match Gigabot/1.0
+	// now use left-anchored substring match so we can match Botname/1.0
 	allowed = isAllowed2 ( cu                       ,
-			       g_conf.m_spiderUserAgent ,
+			       g_conf.m_spiderBotName ,
 			       content                  ,
 			       contentLen               ,
 			       &uaFound                 ,
@@ -12673,7 +12673,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// save it
 	savedCrawlDelay = m_crawlDelay;
 	// . if didn't find our user agent so check for * as a user-agent
-	// . www.wikihow.com/robots.txt just has "Gigabot: crawl-delay:10\n"
+	// . www.wikihow.com/robots.txt just has "Botname: crawl-delay:10\n"
 	//   and then a "User-Agent: *" after that with the disallows, so
 	//   i added the hadAllowDisallow parm
 	if ( ! uaFound || ! hadAllowOrDisallow )
@@ -14752,17 +14752,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 	if ( cr->m_forceUseFloaters )
 		r->m_forceUseFloaters = true;
 
-	// eventgurubot is the max
-	//char *userAgent = g_conf.m_spiderUserAgent;
-	// hardcode it
-	//char *userAgent = "EventGuruBot";
-	//int32_t uaLen = gbstrlen(userAgent);
-	//if ( uaLen > 12 ) {
-	//	log("spider: user agent string too long");
-	//	uaLen = 12;
-	//}
-	//strncpy(r->m_userAgent,userAgent,uaLen);
-	//r->m_userAgent[uaLen] = '\0';
 
 	// turn this off too
 	r->m_attemptedIframeExpansion = false;
@@ -18633,7 +18622,7 @@ char *XmlDoc::getSpiderLinks ( ) {
 	buf1[0] = '\0';
 	buf2[0] = '\0';
 	xml->getMetaContent ( buf1, 255 , "robots" , 6 );
-	xml->getMetaContent ( buf2, 255 , "gigabot", 7 );
+	xml->getMetaContent ( buf2, 255 , g_conf.m_spiderBotName, gbstrlen(g_conf.m_spiderBotName) );
 
 	if ( strstr ( buf1 , "nofollow" ) ||
 	     strstr ( buf2 , "nofollow" ) ||
@@ -30807,7 +30796,8 @@ char *XmlDoc::getIsNoArchive ( ) {
 		while ( att < end && *att && is_wspace_a(*att) ) att++;
 		// must be robots or gigabot. skip if not
 		if ( strncasecmp(att,"robots" ,6) &&
-		     strncasecmp(att,"gigabot",7)   ) continue;
+		     strncasecmp(att,g_conf.m_spiderBotName,gbstrlen(g_conf.m_spiderBotName))   ) continue;
+		     
 		// get the content vaue
 		att = nodes[i].getFieldValue("content",&alen);
 		// skip if none

@@ -18,8 +18,7 @@ char *g_fakeReply =
 	"Content-Type: text/html\r\n\r\n\0";
 
 int32_t convertIntoLinks ( char *reply , int32_t replySize ) ;
-int32_t filterRobotsTxt ( char *reply , int32_t replySize , HttpMime *mime ,
-		       int32_t niceness , char *userAgent , int32_t uaLen ) ;
+
 bool getIframeExpandedContent ( Msg13Request *r , TcpSocket *ts );
 void gotIframeExpandedContent ( void *state ) ;
 
@@ -1947,16 +1946,11 @@ void gotHttpReply2 ( void *state ,
 	     ! savedErr &&
 	     r->m_compressReply && 
 	     httpStatus == 200 ) {
+
 		// . just take out the lines we need...
 		// . if no user-agent line matches * or gigabot/flurbot we
 		//   will get just a \0 for the reply, replySize=1!
-		//char *ua = "ProCogBot";//"EventGuruBot";//r->m_userAgent;
-		// take this out until it works for 
-		// user-agent: *\ndisallow: blah
-		//char *ua = "Gigabot";
-		//int32_t uaLen = gbstrlen(ua);
-		//replySize = filterRobotsTxt (reply,replySize,&mime,niceness,
-		//			     ua,uaLen);
+
 		// record in the stats
 		docsPtr     = &g_stats.m_compressRobotsTxtDocs;
 		bytesInPtr  = &g_stats.m_compressRobotsTxtBytesIn;
@@ -2536,98 +2530,6 @@ char getContentTypeQuick ( HttpMime *mime,
 	return ctype;
 }
 
-// . return new size, might be zero...
-// . use a minimal mime as well
-// . keep in same buffer
-int32_t filterRobotsTxt ( char *reply , 
-		       int32_t replySize , 
-		       HttpMime *mime ,
-		       int32_t niceness ,
-		       char *userAgent ,
-		       int32_t  userAgentLen ) {
-	// bail if nothing
-	if ( ! reply || replySize <= 0 ) return replySize;
-	// skip mime
-	char *content = reply + mime->getMimeLen();
-	char *s = content;
-	// end of a line
-	char *end;
-	char *agent = NULL;
-	char *dst = reply;
-	// get first user-agent
-	for ( ; *s ; s = end ) {
-		// breathe
-		QUICKPOLL(niceness);
-		// record line start
-		char *start = s;
-		// skip non breaking white space
-		while ( *s && (*s == ' ' || *s == '\t') ) s++;
-		// skip to next non-empty line
-		for ( end = s ; *end && *end != '\n' ; end++ );
-		// advance over \n
-		if ( *end ) end++;
-		// is it a comment line? skip if so
-		if ( *s == '#' ) continue;
-		// need "user-agent", but eof works too...
-		if ( *s ) {
-			if ( to_lower_a(s[0]) != 'u' ) continue;
-			if ( to_lower_a(s[1]) != 's' ) continue;
-			if ( strncasecmp ( s, "user-agent",10 ) ) continue;
-		}
-		// if we already had an agent and now another one... stop!
-		if ( ! *s || agent ) {
-			// this is a problem... if somehow its got a smaller
-			// mime than us, we can't let our new mime overwrite 
-			// the user-agent line we were going to gbmemcpy()
-			if ( reply + 16 > agent ) return replySize;
-			if ( dst == reply ) {
-				gbmemcpy ( dst , "HTTP/1.0 200\r\n\r\n", 16 );
-				dst += 16;
-			}
-			// store the user-agent and following allows/disallows
-			gbmemcpy ( dst, agent , start - agent );
-			dst += ( start - agent );
-			// restart
-			agent = NULL;
-			// eof?
-			if ( ! *s ) break;
-		}
-		// record line start
-		char *lineStart = s;
-		// skip over that
-		s += 10;
-		// then a colon or not!
-		for ( ; *s ; s++ ) {
-			if ( *s == ':'  ) continue;
-			if ( *s == ' '  ) continue;
-			if ( *s == '\t' ) continue;
-			break;
-		}
-		// craziness? need a bot name, otherwise, skip the line
-		if ( ! is_alnum_a(*s) && *s != '*' ) continue;
-		// did the user-agent line match our bot name?
-		bool match = false;
-		// then the user-agent
-		if ( *s == '*' ) match = true;
-		if ( strncasecmp(s,userAgent,userAgentLen) == 0 ) match =true;
-		/*
-		if ( strncasecmp(s,"gigabot",7) == 0 ) match = true;
-		if ( strncasecmp(s,"flurbot",7) == 0 ) match = true;
-		if ( strncasecmp(s,"eventgurubot",12) == 0 ) match = true;
-		if ( strncasecmp(s,"probot",6) == 0 ) match = true;
-		*/
-		// record agent position if we matched!
-		if ( match ) agent = lineStart;
-		// now a sequence of allow/disallow lines until
-		// we hit another user agent
-	}
-	// if nothing keep it zero
-	if ( dst - reply == 0 ) return 0;
-	// otherwise null term it. this could be a one byte \0 reply!!! no mime
-	*dst++ = '\0';
-	// all done, return new replysize...
-	return dst - reply;
-}
 
 // returns false if blocks, true otherwise
 bool getIframeExpandedContent ( Msg13Request *r , TcpSocket *ts ) {

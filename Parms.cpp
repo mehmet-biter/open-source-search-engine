@@ -9821,6 +9821,17 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "bot name";
+	m->m_desc  = "Bot name used when checking robots.txt and metatags for specific allow/deny rules.";
+	m->m_cgi   = "botname";
+	m->m_off   = (char *)&g_conf.m_spiderBotName - g;
+	m->m_type  = TYPE_STRING;
+	m->m_size  = USERAGENTMAXSIZE;
+	m->m_def   = "gigablastopensource";
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
         m->m_title = "use temporary cluster";
         m->m_desc  = "Used by proxy to point to a temporary cluster while the "
 		"original cluster is updated with a new binary. The "

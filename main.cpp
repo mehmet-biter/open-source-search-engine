@@ -3249,7 +3249,9 @@ bool doCmd ( const char *cmd , int32_t hostId , char *filename ,
 	s_hostId2 = hostId2;
 	// set stuff so http server client-side works right
 	g_conf.m_httpMaxSockets = 512;
-	sprintf ( g_conf.m_spiderUserAgent ,"Gigabot/1.0");
+	sprintf ( g_conf.m_spiderUserAgent ,"GigablastOpenSource/1.0");
+	sprintf ( g_conf.m_spiderBotName ,"gigablastopensource");
+
 
 	// register sleep callback to get started
 	if ( ! g_loop.registerSleepCallback(1, NULL, doCmdAll , 0 ) )
