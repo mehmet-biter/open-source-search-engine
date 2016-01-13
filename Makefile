@@ -112,7 +112,7 @@ GIT_VERSION=$(shell git rev-parse HEAD)$(DIRTY)
 
 all: gb
 
-utils: blaster2 dump hashtest makeclusterdb makespiderdb membustest monitor seektest urlinfo treetest dnstest gbtitletest
+utils: blaster2 hashtest monitor seektest urlinfo treetest dnstest gbtitletest
 
 # third party libraries
 LIBFILES = libcld2_full.so
@@ -246,16 +246,12 @@ udptest: $(OBJS) udptest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 dnstest: $(OBJS) dnstest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-thunder: thunder.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o
 threadtest: threadtest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o -lpthread
 memtest: memtest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o
 hashtest: hashtest.cpp
 	$(CXX) -O3 -o hashtest hashtest.cpp
-membustest: membustest.cpp
-	$(CXX) -O0 -o membustest membustest.cpp -lc
 mergetest: $(OBJS) mergetest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 seektest: seektest.cpp
@@ -279,7 +275,7 @@ gbtitletest: gbtitletest.o
 
 # comment this out for faster deb package building
 clean:
-	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest membustest mergetest seektest monitor reindex maketestindex makespiderdb makeclusterdb urlinfo dnstest thunder gbtitletest gmon.* quarantine core core.* libgb.a
+	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest mergetest seektest monitor reindex urlinfo dnstest gbtitletest gmon.* quarantine core core.* libgb.a
 	make -C test $@
 
 StopWords.o:
