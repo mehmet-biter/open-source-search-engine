@@ -6,7 +6,6 @@
 #include "Tagdb.h"
 #include "Posdb.h"
 #include "Cachedb.h"
-#include "Monitordb.h"
 #include "Datedb.h"
 #include "Titledb.h"
 #include "Sections.h"
@@ -1439,8 +1438,6 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	if ( cr && m_rdb == g_cachedb.getRdb() )
 		m_minToMerge = 4;
 	if ( cr && m_rdb == g_serpdb.getRdb() )
-		m_minToMerge = 4;
-	if ( cr && m_rdb == g_monitordb.getRdb() )
 		m_minToMerge = 4;
 	if ( cr && m_rdb == g_tagdb.getRdb() )
 		m_minToMerge = cr->m_tagdbMinFilesToMerge;

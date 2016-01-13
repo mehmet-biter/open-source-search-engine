@@ -7,7 +7,6 @@
 #include "Indexdb.h"
 #include "Posdb.h"
 #include "Cachedb.h"
-#include "Monitordb.h"
 #include "Titledb.h"
 #include "Spider.h"
 #include "Spider.h"
@@ -183,7 +182,6 @@ bool Rdb::init ( char          *dir                  ,
 	if ( m_rdbId == RDB2_SPIDERDB2 ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_CACHEDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_SERPDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_MONITORDB  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_LINKDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_LINKDB2   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_REVDB      ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
@@ -1766,8 +1764,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	if ( g_repair.isRepairActive() &&
 	     g_repair.m_fullRebuild    && 
 	     collnum != g_repair.m_newCollnum &&
-	     m_rdbId != RDB_TAGDB &&
-	     m_rdbId != RDB_TURKDB ) {
+	     m_rdbId != RDB_TAGDB ) {
 		log("db: How did an add come in while in full repair mode?"
 		    " addCollnum=%"INT32" repairCollnum=%"INT32" db=%s",
 		    (int32_t)collnum , (int32_t)g_repair.m_newCollnum ,
@@ -2828,7 +2825,6 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB_LINKDB    ] = g_linkdb.getRdb();
 		s_table9 [ RDB_CACHEDB   ] = g_cachedb.getRdb();
 		s_table9 [ RDB_SERPDB    ] = g_serpdb.getRdb();
-		s_table9 [ RDB_MONITORDB ] = g_monitordb.getRdb();
 		s_table9 [ RDB_STATSDB   ] = g_statsdb.getRdb();
 		s_table9 [ RDB_REVDB     ] = g_revdb.getRdb();
 		s_table9 [ RDB_PARMDB    ] = NULL;
@@ -2863,7 +2859,6 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_linkdb.getRdb    () ) return RDB_LINKDB;
 	if ( rdb == g_cachedb.getRdb   () ) return RDB_CACHEDB;
 	if ( rdb == g_serpdb.getRdb    () ) return RDB_SERPDB;
-	if ( rdb == g_monitordb.getRdb () ) return RDB_MONITORDB;
 	if ( rdb == g_revdb.getRdb     () ) return RDB_REVDB;
 	if ( rdb == g_indexdb2.getRdb   () ) return RDB2_INDEXDB2;
 	if ( rdb == g_posdb2.getRdb   () ) return RDB2_POSDB2;

@@ -18,7 +18,6 @@
 #include "Indexdb.h"
 #include "Posdb.h"
 #include "Cachedb.h"
-#include "Monitordb.h"
 #include "Datedb.h"
 #include "Titledb.h"
 #include "Revdb.h"
@@ -99,14 +98,8 @@ static int32_t dumpSpiderdb ( char *coll,int32_t sfn,int32_t numFiles,bool inclu
 static void dumpSectiondb( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
 static void dumpRevdb    ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
 
-static void dumpTagdb   ( char *coll,
-			  int32_t sfn,
-			  int32_t numFiles,
-			  bool includeTree,
-			  int32_t c, 
-			  char rec=0, 
-			  int32_t rdbId = RDB_TAGDB ,
-			  char *site = NULL );
+static void dumpTagdb( char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char rec = 0,
+					   int32_t rdbId = RDB_TAGDB, char *site = NULL );
 
 static void dumpIndexdb  ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree, 
 			   int64_t termId ) ;
@@ -2348,37 +2341,23 @@ int main2 ( int argc , char *argv[] ) {
 		       dumpRevdb(coll,startFileNum,numFiles,includeTree);
 		else if ( argv[cmdarg+1][0] == 'S' ) {
 			char *site = NULL;
-			if ( cmdarg+6 < argc ) site = argv[cmdarg+6];
-			dumpTagdb(coll,
-				  startFileNum,
-				  numFiles,
-				  includeTree,
-				  0,
-				  0,
-				  RDB_TAGDB,
-				  site);
-		}
-		else if ( argv[cmdarg+1][0] == 'z' ) {
+			if ( cmdarg+6 < argc ) {
+				site = argv[cmdarg+6];
+			}
+			dumpTagdb( coll, startFileNum, numFiles, includeTree, 0, RDB_TAGDB, site );
+		} else if ( argv[cmdarg+1][0] == 'z' ) {
 			char *site = NULL;
 			if ( cmdarg+6 < argc ) site = argv[cmdarg+6];
-			dumpTagdb  (coll,startFileNum,numFiles,includeTree,0,
-				    'z',RDB_TAGDB,site);
-		}
-		else if ( argv[cmdarg+1][0] == 'A' )
-			dumpTagdb  (coll,startFileNum,numFiles,includeTree,0,
-				     'A');
-		else if ( argv[cmdarg+1][0] == 'a' )
-			dumpTagdb  (coll,startFileNum,numFiles,includeTree,0,
-				     'D');
-		else if ( argv[cmdarg+1][0] == 'G' )
-			dumpTagdb  (coll,startFileNum,numFiles,includeTree,0,
-				     'G');
-		else if ( argv[cmdarg+1][0] == 'W' )
-			dumpTagdb  (coll,startFileNum,numFiles,includeTree,1);
-		else if ( argv[cmdarg+1][0] == 'C' )
-			dumpTagdb  (coll,startFileNum,numFiles,includeTree,0,
-				     0,RDB_CATDB);
-		else if ( argv[cmdarg+1][0] == 'l' )
+			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'z', RDB_TAGDB, site );
+		} else if ( argv[cmdarg+1][0] == 'A' ) {
+			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'A' );
+		} else if ( argv[cmdarg+1][0] == 'G' ) {
+			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'G' );
+		} else if ( argv[cmdarg+1][0] == 'W' ) {
+			dumpTagdb( coll, startFileNum, numFiles, includeTree );
+		} else if ( argv[cmdarg+1][0] == 'C' ) {
+			dumpTagdb( coll, startFileNum, numFiles, includeTree, 0, RDB_CATDB );
+		} else if ( argv[cmdarg+1][0] == 'l' )
 			dumpClusterdb (coll,startFileNum,numFiles,includeTree);
 		//else if ( argv[cmdarg+1][0] == 'z' )
 		//	dumpStatsdb(startFileNum,numFiles,includeTree,2);
@@ -8360,15 +8339,15 @@ void dumpRevdb(char *coll,int32_t startFileNum,int32_t numFiles, bool includeTre
 	goto loop;
 }
 
-
-void dumpTagdb (char *coll,int32_t startFileNum,int32_t numFiles,
-		bool includeTree, 
-		int32_t c , char req, int32_t rdbId ,
-		char *siteArg ) {
+void dumpTagdb( char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char req, int32_t rdbId,
+				char *siteArg ) {
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
 	g_tagdb.init ();
 	//g_collectiondb.init(true);
-	if ( rdbId == RDB_TAGDB ) g_tagdb.getRdb()->addRdbBase1(coll );
+
+	if ( rdbId == RDB_TAGDB ) {
+		g_tagdb.getRdb()->addRdbBase1(coll );
+	}
 
 	key128_t startKey ;
 	key128_t endKey   ;
@@ -8379,21 +8358,15 @@ void dumpTagdb (char *coll,int32_t startFileNum,int32_t numFiles,
 		endKey = g_tagdb.makeEndKey ( siteArg );
 		log("gb: using site %s for start key",siteArg );
 	}
+
 	// turn off threads
 	g_threads.disableThreads();
+
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
 	RdbList list;
-	//char tmpBuf[1024];
-	//SafeBuf sb(tmpBuf, 1024);
-	
-	// get my hostname and port
-	char httpAddr[30];
-	int32_t port = g_hostdb.getMyPort() - 1000;
-	char action[50]="";
-	sprintf(httpAddr,"127.0.0.1:%"INT32"", port );
-	if ( req == 'D') strcpy(action,"&deleterec=1&useNew=1");	
+
 	CollectionRec *cr = g_collectiondb.getRec(coll);
 
 	int64_t hostHash = -1;
@@ -8406,7 +8379,7 @@ void dumpTagdb (char *coll,int32_t startFileNum,int32_t numFiles,
 
  loop:
 	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( rdbId, //RDB_TAGDB     ,
+	if ( ! msg5.getList ( rdbId,
 			      cr->m_collnum      ,
 			      &list         ,
 			      (char *)&startKey      ,
@@ -8452,8 +8425,8 @@ void dumpTagdb (char *coll,int32_t startFileNum,int32_t numFiles,
 		}
 
 		// parse it up
-		//TagRec *tagRec = (TagRec *)rec; 
 		Tag *tag = (Tag *)rec;
+
 		// print the version and site
 		char tmpBuf[1024];
 		SafeBuf sb(tmpBuf, 1024);
@@ -8471,9 +8444,6 @@ void dumpTagdb (char *coll,int32_t startFileNum,int32_t numFiles,
 		}
 
 		lastHostHash = hostHash;
-
-		// if ( hostHash == 3079740012919792457LL )
-		// 	log("hey");
 
 		// making sitelist.txt?
 		if ( tag->m_type == typeSite && req == 'z' ) {
