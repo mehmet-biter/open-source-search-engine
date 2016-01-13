@@ -95,10 +95,36 @@ bool Summary::setFromWords( Words *wp, Pos *pp, int32_t maxSummaryLen ) {
 	return true;
 }
 
+static bool inTag ( XmlNode *node, nodeid_t tagId, int *count ) {
+	if ( !count ) {
+		return false;
+	}
+
+	if ( node->getNodeId() == tagId ) {
+		if ( node->isFrontTag() ) {
+			++(*count);
+			return true;
+		}
+
+		// back tag
+		if ( *count ) {
+			--(*count);
+		}
+	}
+
+	return (*count > 0);
+}
+
 bool Summary::setFromMetaTag( Xml *xml, int32_t maxSummaryLen, const char *fieldName, const char *fieldContent ) {
 	int32_t fieldContentLen = strlen(fieldContent);
 
+	int inTagCount = 0;
 	for ( int32_t i = 0 ; i < xml->getNumNodes(); ++i ) {
+		// don't get tag from filled in iframe content
+		if ( inTag( xml->getNodePtr( i ), TAG_GBFRAME, &inTagCount ) ) {
+			continue;
+		}
+
 		if ( xml->getNodeId(i) != TAG_META ) {
 			continue;
 		}

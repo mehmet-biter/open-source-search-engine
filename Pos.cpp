@@ -81,7 +81,7 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 	// flag for stopping back-to-back spaces. only count those as one char.
 	bool lastSpace = false;
 	static const int32_t maxCharSize = 4; // we are utf8
-	int in_bad_tags = 0;
+	int inBadTags = 0;
 
 	for ( int32_t i = a ; i < b ; i++ ) {
 		if (trunc) {
@@ -99,14 +99,14 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 			if ( f ) {
 				// let's not get from bad tags
 				if ( ( tids[i] == TAG_STYLE ) || ( tids[i] == TAG_SCRIPT ) ) {
-					++in_bad_tags;
+					++inBadTags;
 					continue;
 				}
 
-				if ( in_bad_tags ) {
+				if ( inBadTags ) {
 					if ( ( ( tids[i] & BACKBITCOMP ) == TAG_STYLE ) ||
 					     ( ( tids[i] & BACKBITCOMP ) == TAG_SCRIPT ) ) {
-						--in_bad_tags;
+						--inBadTags;
 					}
 				}
 			}
@@ -174,7 +174,7 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 		}
 		
 		// skip words if we're in 'bad' tags
-		if ( in_bad_tags ) {
+		if ( inBadTags ) {
 			continue;
 		}
 

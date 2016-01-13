@@ -18,7 +18,9 @@ class Xml {
 	~Xml () ;
 
 	// do we have any xml in here?
-	bool isEmpty () { return (m_xml == NULL); };
+	bool isEmpty() {
+		return ( m_xml == NULL );
+	}
 
 	// . set this xml class from a string
 	// . should be called before calling anything else
@@ -26,22 +28,30 @@ class Xml {
 	// . s must be NULL terminated
 	// . if it's pure xml then set pureXml to true otherwise we assume it
 	//   is html or xhtml
-	bool set(char *s , int32_t slen , 
-		 bool ownData , int32_t allocSize, //=0, 
-		 bool pureXml, // =false );
-		 int32_t version ,
-		 bool setParents , // = true,
-		 int32_t niceness , // = 0
-		 char contentType );
-
-
+	bool set( char *s, int32_t slen, bool ownData, int32_t allocSize, bool pureXml, int32_t version,
+			  bool setParents, int32_t niceness, char contentType );
 
 	void  reset ( );
-	char *getContent    () { return m_xml;    };
-	char *getContentEnd () { return m_xml + m_xmlLen; };
-	int32_t  getContentLen () { return m_xmlLen; };
-	int32_t  getNumNodes ( ) { return m_numNodes; };
-	int32_t  getVersion ( ) { return m_version; };
+
+	char *getContent() {
+		return m_xml;
+	}
+
+	char *getContentEnd() {
+		return m_xml + m_xmlLen;
+	}
+
+	int32_t getContentLen() {
+		return m_xmlLen;
+	}
+
+	int32_t getNumNodes() {
+		return m_numNodes;
+	}
+
+	int32_t getVersion() {
+		return m_version;
+	}
 
 	// . tagName is compound for xml tags, simple for html tags
 	// . xml compound tag name example = "myhouse.bedroom.nightstand"
@@ -124,8 +134,6 @@ class Xml {
 
 	// . used for getting links in the <a href=...> tag
 	// . used for getting data from meta tags
-	//bool  getBool     ( int32_t node, char *field, bool defaultBool );
-	//int32_t  getLong     ( int32_t node, char *field, int32_t defaultLong );
 	char *getString   ( int32_t node, const char *field, int32_t *valueLen ) {
 		if ( node >= m_numNodes ) { char *xx=NULL;*xx=0; }
 		return m_nodes[node].getFieldValue ( field , valueLen);
