@@ -92,12 +92,6 @@ class Tag {
 	// of all the tag types. m_type is a hash of the type name.
 	int32_t     m_type;
 
-	// . m_user[] IS ACTUALLY a 6-byte KEY for another TagRec
-	// . this is also a user's name like "mwells"
-	// . each user has a TagRec whose FULL key is this userHash
-	// . m_user[7] is always \0
-	//char     m_user[8];
-
 	int32_t     m_bufSize;
 	char     m_buf[0];
 };
@@ -121,35 +115,11 @@ char *getTagStrFromType ( int32_t tagType ) ;
 //#define TAGREC_CURRENT_VERSION 0
 
 class TagRec {
-
- public:
-
-
+public:
 	TagRec();
 	~TagRec();
 	void reset();
 	void constructor ();
-
-	// . an rdb record is a key, dataSize, then the data
-	// . the "data" is al the stuff after "m_dataSize"
-	//key_t    m_key;
-	//int32_t     m_dataSize;
-	//uint16_t m_numTags;
-	//char     m_version;
-	//char     m_buf [ MAX_TAGREC_SIZE - 12 - 4 - 2 ];
-
-	//char *getKey      () { return (char *)&m_key; };
-	//char *getData     () { return (char *)this + 12 + 4; };
-	//int32_t  getDataSize () { return m_dataSize; };
-
-	//void  copy        (class TagRec *tp ) {
-	//	gbmemcpy ( this , (void *)tp , tp->getSize() ); };
-
-	// includes the 4 byte "header" which consists of the first 2 bytes
-	// being the size of the actual tag buffer and the second two bytes
-	// being the number of tags in the actual tag buffer
-	//int32_t         getSize       ( ) { return 12+4+1+2+m_dataSize; };
-	//int32_t           getSize       ( ) { return 12+4+m_dataSize;};
 
 	int32_t           getNumTags    ( );
 
@@ -201,11 +171,7 @@ class TagRec {
 
 	// get a tag from the tagType
 	class Tag *getTag        ( char *tagTypeStr );
-
 	class Tag *getTag2       ( int32_t tagType );
-
-	//char *getRecEnd ( ) { return (char *)this + getSize(); };
-	//char *getMaxEnd ( ) { return (char *)this + (int32_t)MAX_TAGREC_SIZE; };
 
 	// . for showing under the summary of a search result in PageResults
 	// . also for Msg6a
@@ -249,50 +215,6 @@ class TagRec {
 			  int32_t      *timestamp = NULL ,
 			  char     **user      = NULL );
 
-	// we only store the first 6 chars of "user" into this TagRec, m_buf
-	/*
-	bool addTag ( char        *tagTypeStr,
-		      int32_t         timestamp , 
-		      char        *user      ,
-		      int32_t         ip        ,
-		      char        *data      , 
-		      int32_t         dataSize  );
-	
-
-	// we convert the int32_t to a string for you here...
-	bool addTag ( char        *tagTypeStr ,
-		      int32_t         timestamp  , 
-		      char        *user       ,
-		      int32_t         ip         ,
-		      int32_t         dataAsLong ) {
-		char buf[16]; sprintf(buf,"%"INT32"",dataAsLong);
-		return addTag(tagTypeStr,timestamp,user,ip,buf,
-			      gbstrlen(buf)); };
-
-	
-	// same as above
-	bool addTag ( Tag *tag );
-
-	// add "negative" tags, so when these tags are added to the
-	// TagRec in tagdb, they will delete them
-	bool addDelTag ( char *tagTypeStr );
-
-	// now you can specify a unique tag id in the case of multiple tags
-	// that have the same tagType and user
-	bool removeTags ( char *tagTypeStr , char *user , int32_t tagId = 0 ) ;
-	bool removeTags ( int32_t  tagType    , char *user , int32_t tagId = 0 ) ;
-	bool removeTag  ( class Tag *rmTag ) ;
-
-	// add/remove all the tags from "tagRec" to our list of tags
-	bool addTags ( TagRec *tagRec ) ;
-	bool removeTags ( TagRec *tagRec ) ;
-
-	// return false and set g_errno on error
-	bool addTags     ( Tag *tags , char *tagEnd , char *bufEnd );
-	bool removeTags  ( Tag *tags , char *tagEnd , char *bufEnd );
-	bool replaceTags ( Tag *tags , char *tagEnd , char *bufEnd );
-	*/
-
 	bool setFromBuf ( char *buf , int32_t bufSize );
 	bool serialize ( SafeBuf &dst );
 
@@ -302,9 +224,7 @@ class TagRec {
 	// use this for setFromBuf()
 	SafeBuf m_sbuf;
 	
-
 	// some specified input
-	//char  *m_coll;
 	Url   *m_url;
 
 	collnum_t m_collnum;
@@ -333,48 +253,24 @@ class Tagdb  {
 	
 	bool verify ( char *coll );
 
-	//bool convert ( char *coll ) ;
-
 	bool addColl ( char *coll, bool doVerify = true );
 
 	// used by ../rdb/Msg0 and ../rdb/Msg1
 	Rdb *getRdb ( ) { return &m_rdb; };
 
-	//key128_t makeKey      ( Url *u , bool isDelete ) ;
 	key128_t makeStartKey ( char *site );//Url *u ) ;
 	key128_t makeEndKey   ( char *site );//Url *u ) ;
-
 
 	key128_t makeDomainStartKey ( Url *u ) ;
 	key128_t makeDomainEndKey   ( Url *u ) ;
 
-	// . get the serialized TagRec from an RdbList of TagRecs from tagdb
-	//   that is the best match for "url"
-	char *getRec ( RdbList *list , Url *url , int32_t *recSize ,char* coll, 
-		       int32_t collLen, RdbList *retList) ;
-
-	//DiskPageCache *getDiskPageCache() { return &m_pc; };
-
-	//int32_t getGroupId (key_t *key) {return key->n1 & g_hostdb.m_groupMask;}
-
-	// . dump tagdb to stdout
-	// . dump as URL requests so we can re-add with blaster on each host
-	// . this replaces dumpTagdb() in main.cpp
-	// . sendPageTagdb() will process such URL requests
-	void dumpTagdb ( );
-
 	// private:
-
-	// . returns 0 if url is not a suburl of "site"
-	int32_t getMatchPoints ( Url *url , Url *site ) ;
 
 	bool setHashTable ( ) ;
 
 	// . we use the cache in here also for caching tagdb records
 	//   and "not-founds" stored remotely (net cache)
 	Rdb   m_rdb;
-
-	//DiskPageCache m_pc;
 
 	bool    loadMinSiteInlinksBuffer ( );
 	bool    loadMinSiteInlinksBuffer2 ( );
@@ -384,21 +280,8 @@ class Tagdb  {
 
 };
 
-// derive this from tagdb
-class Turkdb {
- public:
-	void reset();
-	bool init  ( );
-	bool addColl ( char *coll, bool doVerify = true );
-	Rdb *getRdb ( ) { return &m_rdb; };
-	Rdb   m_rdb;
-	//DiskPageCache m_pc;	
-};
-
 extern class Tagdb  g_tagdb;
 extern class Tagdb  g_tagdb2;
-extern class Turkdb g_turkdb;
-//extern class Tagdb g_sitedb;
 
 bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) ;
 
@@ -409,13 +292,6 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) ;
 // Msg8a gets TagRecs from Tagdb
 //
 ///////////////////////////////////////////////
-
-// msg8a needs to keep a ptr to the tags it
-// generates in the "inheritance loop". so don't
-// store more than this! log if we do.
-//#define MAX_TAGS 128
-
-//#define MSG8A_MAX_REQUEST_SIZE 2048
 
 // this msg class is for getting AND adding to tagdb
 class Msg8a {
@@ -449,10 +325,7 @@ class Msg8a {
 	void gotAllReplies ( ) ;
 
 	// some specified input
-	//char  *m_coll;
-	//int32_t   m_collLen;
 	Url   *m_url;
-	//bool   m_doFullUrl;
 	char   m_rdbId;
 
 	collnum_t m_collnum;
@@ -465,9 +338,6 @@ class Msg8a {
 
 	key128_t m_siteStartKey ;
 	key128_t m_siteEndKey   ;
-
-	// hold possible tagdb records
-	//RdbList m_lists[MAX_TAGDB_REQUESTS];
 
 	int32_t m_niceness;
 
@@ -494,84 +364,6 @@ class Msg8a {
 	
 	bool  m_doInheritance;
 };
-
-/*
-void handleRequest9a ( UdpSlot *slot , int32_t niceness ) ;
-
-class Msg9a {
-
- public:
-
-	Msg9a ();
-	~Msg9a();
-	void reset() ;
-	bool launchAddRequests ( ) ;
-
-	static bool registerHandler ( ) {
-		return g_udpServer.registerHandler ( 0x9a, handleRequest9a );};
-	
-	// . returns false if blocked, true otherwise
-	// . sets errno on error
-	// . "sites" is a NULL-terminated list of space-separated urls
-	// . if "deleteTags" is false, then the tags will be added to the
-	///  the TagRecs specified by the sites in "sites". if a TagRec
-	//   does not exist for a given "site" then it will be added just
-	//   so we can add the Tags to it. If it does exist, we will
-	//   just append the given Tags to it. Tags with the same tagType and
-	//   and "user" will be replaced by these Tags in the tagRecPtrs[].
-	// . if "deleteTags" is true, then the Tags matching the Tags
-	//   given will be removed from each TagRec. If a nonzero timestamp
-	//   or a username that does not start with \0 or a non-zero data
-	//   is specified in the Tag, then that must match the Tag
-	//   being removed as well. In this way we can remove specific
-	//   Tags from a list of Tags that share the same m_tagType.
-	// . if "deleteTagRecs" is false then the entire TagRec will be removed
-	//   from Tagdb. tagRecPtrs must be NULL in this case.
-	// . if provided, the ip vector is 1-1 with the sites in "sitesPtrs[]"
-	//   and we set the Tag::m_ip with the corresponding
-	//   ip given by that. this allows XmlDoc.cpp to "ip stamp" a tag. 
-	//   and the tag will be rendered invalid by XmlDoc.cpp if the ip of 
-	//   the site changes from that! in this way we can invalidate tags 
-	//   when a site changes ownership. assuming it also changes ip!
-	// . you can now pass in either "sites" or sitePtrs/numSitePtrs,
-	//   whichever is easiest for you...
-	bool addTags ( char    *sites                  ,
-		       char   **sitePtrs               ,
-		       int32_t     numSitePtrs            ,
-		       char    *coll                   , 
-		       void    *state                  ,
-		       void   (*callback)(void *state) ,
-		       int32_t     niceness               ,
-		       TagRec  *tagRec                 ,
-		       bool     nukeTagRecs            ,
-		       int32_t    *ipVector               );//= NULL );
-
-	// like above, but we are adding the output of a
-	// './gb dump S main 0 -1 1' cmd
-	bool addTags ( char    *dumpFile               ,
-		       char    *coll                   , 
-		       void    *state                  ,
-		       void   (*callback)(void *state) ,
-		       int32_t     niceness               );
-
-	void    (*m_callback ) ( void *state );
-	void     *m_state;
-
-	int32_t  m_errno;
-	int32_t  m_requests;
-	int32_t  m_replies;
-
-	char *m_requestBuf;
-	int32_t  m_requestBufSize;
-
-	char *m_p;
-	char *m_pend;
-
-	int32_t  m_niceness;
-};
-*/
-
-int32_t getY ( int64_t X , int64_t *x , int64_t *y , int32_t n ) ;
 
 #endif
 

@@ -14,10 +14,6 @@
 #include "Rebalance.h"
 
 static void gotMsg0ReplyWrapper ( void *state );
-//static void gotReplyWrapper9a   ( void *state , UdpSlot *slot ) ;
-
-//static void gotList ( void *state , RdbList *xxx , Msg5 *yyy ) ;
-//static void sendReply9a ( void *state ) ;
 
 static HashTableX s_ht;
 
@@ -147,21 +143,6 @@ void Tag::set ( char *site ,
 	m_key.n1 = hash64n ( site );
 	// assume we are unique tag, that many of this type can exist
 	uint32_t upper32 = getDedupHash(); // m_type;
-	/*
-	// if we are NOT unique... then hash username and data. thus we only
-	// replace a key if its the same tagtype, username and data. that
-	// way it will just update the timestamp and/or ip.
-	if ( ! isTagTypeUnique ( m_type ) ) {
-		// start hashing here
-		char *startHashing = (char *)&m_type;
-		// end here. include username (and tag data!)
-		char *endHashing = m_buf + m_bufSize;
-		// hash this many bytes
-		int32_t hashSize = endHashing - startHashing;
-		// . set key
-		upper32 = hash32 ( startHashing , hashSize );
-	}
-	*/
 
 	// put in upper 32
 	m_key.n0 = upper32;
@@ -292,22 +273,6 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 	// skip comma
 	//p++;
 
-	//
-	// BEGIN HACK
-	//
-	// as a hack for now, override this, because before we were not 100%
-	// strings as tags, we had single byte values being printed out as
-	// strings of 3 bytes
-	//char *e = p;
-	//while ( e < pend && ! is_wspace_a(*e) ) e++;
-	//if ( e > pend ) return 0;
-	//m_dataSize = e - p;
-	// add in a \0
-	//m_dataSize++;
-	
-	//
-	// END HACK
-	//
 
 	// . now is the data
 	// . return # of chars scanned in "p"
@@ -350,31 +315,6 @@ int32_t Tag::setDataFromBuf ( char *p , char *pend ) {
 	// we basically insert the \0, and *p should point to the space
 	// right after the string...! so return m_dataSize - 1
 	return m_bufSize - 1;
-	/*
-	}
-	// save it to count
-	char *start = p;
-	// print as decimal if just 1 byte
-	if ( m_dataSize == 1 ) {
-		int32_t v = atoi(p);
-		if ( v > 256 ) { char *xx=NULL;*xx=0; }
-		m_data[0] = v;
-		// skip till whitespace or end
-		while ( p < pend && isdigit(*p) ) p++;
-		return p - start;
-	}
-	// skip 0x
-	if ( *p!='0' || *(p+1)!='x' ) { char *xx=NULL;*xx=0; }
-	p += 2;
-	// convert hexadecimal string into binary
-	int32_t bytesStored = hexToBinary ( p , pend , m_data , false );
-	// sanity check
-	if ( bytesStored != m_dataSize ) { char*xx=NULL;*xx=0;}
-	// advance p, each byte is two characters
-	p += bytesStored * 2;
-	// return # of bytes in "p" we scanned
-	return p - start;
-	*/
 }
 
 int32_t hexToBinary ( char *src , char *srcEnd , char *dst , bool decrement ) {
@@ -752,285 +692,6 @@ char *TagRec::getString ( char      *tagTypeStr,
 	return defalt;
 }
 
-/*
-// add a special tag with null m_data. this tells Msg9a to delete
-// all tags of this tag type before adding any other tags of this type
-// that we might have. it is basically a "negative" tag.
-bool TagRec::addDelTag ( char *tagTypeStr ) {
-	return addTag ( tagTypeStr ,
-			0          , // timestamp
-			NULL       , // user
-			0          , // ip
-			NULL       , // data
-			0          );// dataSize
-}
-
-// returns false and sets g_errno on error
-bool TagRec::addTag ( char        *tagTypeStr,
-		      int32_t         timestamp , 
-		      char        *user      ,
-		      int32_t         ip        ,
-		      char        *data      , 
-		      int32_t         dataSize  ) {
-	// get the tagType
-	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
-	// breach check
-	if ( dataSize + sizeof(Tag) > MAX_TAGREC_SIZE ) {
-		g_errno = EBUFTOOSMALL; 
-		return log("tagdb: no room to add tag");
-	}
-	// the Tag::m_dataSize is only 2 bytes... NOT ANYMORE, MDW
-	if ( dataSize < 0 ) { // >= 65536 ) {
-		g_errno = EBADENGINEER;
-		return log("tagdb: tag dataSize of %"INT32" is >= 65536. "
-			   "Bad value.",  dataSize);
-	}
-	// sanity check -- no binary chars allowed, must all be strings!
-	// BUT they can have an empty string (i.e. just \0)
-	if ( dataSize == 1 && data[0] < 9 && data[0] >= 0 && data[0] ) { 
-		char *xx=NULL;*xx=0; }
-	// make a tag
-	char buf[MAX_TAGREC_SIZE];
-	Tag *tag = (Tag *)buf;
-	// fill it in
-	tag->m_type      = tagType;
-	tag->m_timestamp = timestamp;
-	tag->m_ip        = ip;
-	tag->m_dataSize  = dataSize;
-	// dummy value for now
-	tag->m_tagId     = 0;
-	// careful!
-	if ( sizeof(Tag) + dataSize + 10 > MAX_TAGREC_SIZE ) {
-		g_errno = EBUFTOOSMALL;
-		return log("tagdb: no room to add tag data");
-	}
-	// store user into special buffer
-	int32_t ulen = 0;
-	if ( user ) {
-		ulen = gbstrlen(user);
-		if ( ulen > 7 ) ulen = 7;
-	}
-	memset ( tag->m_user , 0    , 8    );
-	gbmemcpy ( tag->m_user , user , ulen );
-	// store data now too
-	gbmemcpy ( tag->m_data , data , dataSize );
-	// NULL terminate if they did not! now all tag are strings and must
-	// be NULL terminated.
-	if ( data && tag->m_data[dataSize-1] ) {
-		tag->m_data[dataSize] = '\0';
-		dataSize++;
-		tag->m_dataSize++;
-	}
-	// the id is the hash for now (MDW)
-	tag->m_tagId = hash32 ( (char *)tag,(int32_t)sizeof(tag)+dataSize , 0 );
-	// 0 is not valid
-	if ( tag->m_tagId == 0 ) tag->m_tagId = 1;
-	// now add that tag
-	return addTag ( tag );
-}
-
-// returns false and sets g_errno on error
-bool TagRec::addTag ( Tag *TAG ) {
-	// . do not allow empty user
-	// . but "del tags" i.e. "negative tags" can have no user
-	if ( TAG->m_dataSize>0 && (!TAG->m_user || TAG->m_user[0] == '\0') ) { 
-		char *xx=NULL;*xx=0;}
-	// sanity check
-	if ( TAG->m_tagId == 0 ) { char *xx=NULL;*xx=0;}
-	// come back up here if we did a remove operation
- loop:
-	// start at the first tag
-	Tag *tag = getFirstTag();
-	// loop over all tags in the buf, see if we got a dup
-	for ( ; tag ; tag = getNextTag ( tag ) ) {
-		// skip if not matching id
-		if ( tag->m_type != TAG->m_type ) continue;
-		// skip if does not match user
-		if ( memcmp(tag->m_user,TAG->m_user,7) ) continue;
-		// data now has to match too, so we will allow tags of the
-		// same type from the same user to be added if they have
-		// different data now. i would only do this for strings,
-		// but for int32_ts and chars i would skip this check...
-		// so only replace "unique" tags of the same type.
-		// mostly strings and embedded tag recs will be non-unquie
-		if ( ! isTagTypeUnique ( tag->m_type ) ) {
-			if ( tag->m_dataSize != TAG->m_dataSize ) continue;
-			if ( memcmp(tag->m_data,TAG->m_data,tag->m_dataSize))
-				continue;
-		}
-		// Msg8a allows multiple ST_SITE tags in order to indicate 
-		// what sites the other tags came from (i.e. used by the 
-		// inheritance loop below)
-		// MDW: This is now covered by isTagTypeUnique() above.
-		//if ( tag->m_type == ST_SITE ) continue;
-		// it does match, so replace it!
-		//removeTags ( tag->m_type , tag->m_user );
-		removeTag ( tag );
-		// start from the top
-		goto loop;
-	}
-	// . ok, we "deduped" the tag
-	// . point to the end of the buf
-	char *p = getRecEnd();
-	// get the max end
-	char *pend = getMaxEnd();
-	// how much do we need?
-	int32_t need = TAG->getSize();
-	// breach?
-	if ( p + need > pend ) {
-		char *site = getString("site","unknown");
-		g_errno = EBUFTOOSMALL; 
-		log("tagdb: no room to add tag to buf. tagtype=%s "
-		    "tagsize=%"INT32" site=%s",  
-		    getTagStrFromType ( TAG->m_type ) , need , site );
-		//char *xx=NULL;*xx=0;
-		return false;
-	}
-	// store it
-	gbmemcpy ( p , TAG , need );
-	// update our counters
-	m_numTags++;
-	m_dataSize += need;
-
-	// SPECIAL: if it was ST_SITE, set our m_key, we are an Rdb record
-	//if ( TAG->m_type != ST_SITE ) return true;
-	if ( ! TAG->isType ("site") ) return true;
-
-	// set the key
-	Url u;
-	// convenience
-	char *site = TAG->m_data;
-	int32_t  size = TAG->m_dataSize;
-	// sanity check
-	if ( site[size-1] != '\0' ) { char *xx=NULL;*xx=0; }
-	// do not start with http:// ! wastes space!!
-	if (size>=8 && strncmp(site,"http://",7)==0 ) {
-		log("tagdb: don't sotre http:// in tags!");
-		char *xx=NULL;*xx=0;
-	}
-	// do not include the NULL
-	u.set ( site , size - 1 );
-	// set our key, the endKey is our "startKey"
-	m_key = g_tagdb.makeKey ( &u , false ); // isDelete?
-
-	// success, return true
-	return true;
-}
-
-bool TagRec::removeTags ( char *tagTypeStr , char *user , int32_t tagId ) {
-	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
-	return removeTags ( tagType , user , tagId );
-}
-
-bool TagRec::removeTags ( int32_t tagType , char *user , int32_t tagId ) {
- loop:
-	// start at the first tag
-	Tag *tag = getFirstTag();
-	// loop over all tags in the rec, see if we got a dup
-	for ( ; tag ; tag = getNextTag ( tag ) ) {
-		// id if matches, that is good enough
-		if ( tagId && tag->m_tagId != tagId ) continue;
-		// skip if not matching id
-		if ( tagId == 0 && tag->m_type != tagType ) continue;
-		// skip if does not match user
-		if ( tagId == 0 && user && memcmp(tag->m_user,user,7))continue;
-		// remove that tag
-		removeTag ( tag );
-		// re do loop
-		goto loop;
-	}
-	// success
-	return true;
-}
-
-bool TagRec::removeTag ( Tag *rmTag ) {
-	// save this
-	int32_t oldn = m_numTags;
-	// start at the first tag
-	Tag *tag = getFirstTag();
-	// loop over all tags in the rec, see if we got a dup
-	for ( ; tag ; tag = getNextTag ( tag ) ) {
-		// must be it
-		if ( tag != rmTag ) continue;
-		// copy to here
-		char *dst = (char *)tag;
-		// size of tag we are removing
-		int32_t size = tag->getSize();
-		// from here
-		char *src = dst + size;
-		// end of tag buffer
-		char *pend = getRecEnd();
-		// byte to move
-		int32_t move = pend - src;
-		// it does match, so replace it!
-		gbmemcpy ( dst , src , move );
-		// decrement counts
-		m_numTags--;
-		m_dataSize -= size;
-	}
-	// sanity check
-	if ( m_numTags != oldn - 1 ) { char *xx=NULL;*xx=0; }
-	// success, return true
-	return true;
-}
-
-// add all the tags from "tagRec" to our list of tags
-bool TagRec::addTags ( TagRec *tagRec ) {
-
-	// start at the first tag 
-	Tag *tag = tagRec->getFirstTag();
-	// . remove any tag of any of the tag types we got in "tagRec" ?
-	// . deal with "negative" tags
-	// . used by TagRec::addDelTag() above
-	for ( ; tag ; tag = tagRec->getNextTag ( tag ) ) {
-		// if tag has m_data, skip.
-		if ( tag->m_data && tag->m_dataSize > 0 ) continue;
-		// otherwise, it is a signal to nuke all tags of this type
-		removeTags ( tag->m_type , NULL );
-	}
-
-	// start at the first tag again
-	tag = tagRec->getFirstTag();
-	// loop over all tags in the buf, see if we got a dup
-	for ( ; tag ; tag = tagRec->getNextTag ( tag ) ) {
-		// skip if it was a delete tag
-		if ( tag->m_dataSize <= 0 ) continue;
-		// do not transfer over ST_SITE tags if we already got one
-		//if ( tag->m_type == ST_SITE && getTag ( ST_SITE ) ) continue;
-		if ( tag->isType("site") && getTag("site") ) continue;
-		// add it, return false on error, g_errno should be set
-		if ( ! addTag ( tag ) ) return false;
-	}
-	return true;
-}
-
-// add all the tags from "tagRec" to our list of tags
-bool TagRec::removeTags ( TagRec *tagRec ) {
-	// start at the first tag
-	Tag *tag = tagRec->getFirstTag();
-	// loop over all tags in the buf, see if we got a dup
-	for ( ; tag ; tag = tagRec->getNextTag ( tag ) ) {
-		// do not remove ST_SITE tags
-		//if ( tag->m_type == ST_SITE ) continue;
-		if ( tag->isType("site") ) continue;
-		// add it, return false on error, g_errno should be set
-		if ( ! removeTags ( tag->m_type , tag->m_user ) ) return false;
-	}
-	return true;
-}
-
-Tag *TagRec::getNextTag ( Tag *tag ) {
-	if ( m_numTags == 0 ) return NULL;
-	if ( ! tag    ) return (Tag *)m_buf;
-	char *tagEnd = getRecEnd();
-	int32_t  size   = tag->getSize();
-	char *ret    = ((char *)tag) + size;
-	// overboard?
-	if ( ret >= tagEnd ) return NULL;
-	return (Tag *)ret;
-}
-*/
-
 // return the number of tags having the particular TagType
 int32_t TagRec::getNumTagTypes ( char *tagTypeStr ) {
 	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
@@ -1065,17 +726,6 @@ int32_t TagRec::getNumTags ( ) {
 // . "this" TagRec's user, ip and timestamp will be carried over to "newtr"
 // . returns false and sets g_errno on error
 bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
-	// clear it
-	//reset();
-	// get the username from the cookie
-	//char *user = r->getStringFromCookie ( "username" , NULL );
-	// try from form
-	//if ( ! user ) user = r->getString ("username",NULL);
-	// if no user, don't bother!
-	//if ( ! user ) {
-	//	g_errno = EBADENGINEER;
-	//	return log("tagdb: no username supplied for modifying tagdb.");
-	//}
 	// get the user ip address
 	int32_t ip = 0;
 	if ( s ) ip = s->m_ip;
@@ -1166,44 +816,9 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 		// if empty skip it
 		if ( ! dataPtr    ) continue;
 		if ( ! dataPtr[0] ) continue;
-		// is it numeric? i think only ST_COMMENT is not
-		//char isNum = true;
-		// get the numeric
-		//int32_t tagType = getTagTypeFromStr ( tagTypeStr );
-		// set "isNum" to false if not numeric
-		//if ( tagType == ST_COMMENT ) isNum = false;
-		//if ( tagType == ST_SITE    ) isNum = false;
-		//if ( tagType == ST_META    ) isNum = false;
-		//if ( isTagTypeString ( tagType ) ) isNum = false;
-		//int32_t  dataSize = 0;
-		// . if it is a string, like ST_COMMENT
-		// . include the \0
-		//if ( ! isNum ) dataSize = gbstrlen(dataPtr) + 1;
+
 		// everything is now a string
 		int32_t dataSize = gbstrlen(dataPtr) + 1;
-		// if numeric store in tag buf
-		/*
-		int64_t data;
-		if ( isNum ) {
-			data = atoll ( dataPtr );//r->getLongLong(val,-1);
-			dataSize = 1;
-			if ( data >= 0xffLL           ) dataSize = 2;
-			if ( data >= 0xffffLL         ) dataSize = 3;
-			if ( data >= 0xffffffLL       ) dataSize = 4;
-			if ( data >= 0xffffffffLL     ) dataSize = 5;
-			if ( data >= 0xffffffffffLL   ) dataSize = 6;
-			if ( data >= 0xffffffffffffLL ) dataSize = 7;
-			dataPtr = (char *)&data;
-		}
-		*/
-		// add to tag buf
-		//addTag ( tagTypeStr ,
-		//	 tagTime  ,
-		//	 tagUser  , 
-		//	 tagIp    ,
-		//	 dataPtr  ,
-		//	 dataSize );
-
 
 		// loop over all urls in the url file if provided
 		char *up = fou.getBufStart();
@@ -1266,18 +881,6 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 		}
 	}
 
-
-	// all done
-	//if ( getTag ( ST_SITE ) ) return ;
-	//if ( getTag("site") ) return;
-
-	// add the special ST_SITE tag
-	//addTag ( "site"  , // ST_SITE ,
-	//	 now     ,
-	//	 user    ,
-	//	 ip      ,
-	//	 p       ,
-	//	 psize   );
 	return true;
 }
 
@@ -1300,87 +903,6 @@ bool TagRec::printToBuf (  SafeBuf *sb ) {
 	}
 	return true;
 }
-
-// . return size of characters scanned from "p"
-// . returns 0 on error
-/*
-int32_t TagRec::setFromBuf ( char *p , char *pend ) {
-	// remember the start
-	char *start = p;
-	// scan in the key
-	//if ( strncmp(p,"k.n1=0x",7) != 0 ) return 0;
-	// skip key stuff
-	//p += 7;
-	// clear our key
-	//m_key.setToMin();
-	// read in the key
-	//key_t k;
-	//sscanf(p,"k.n1=0x%08"XINT32" k.n0=0x%016"XINT64" ",&k.n1,&k.n0);
-
-	// now do it the fast way and compare the results!
-	//p += 7 ;
-	//hexToBinary ( p , pend , ((char *)&m_key.n1)+3 , true );
-	//p += 8 + 8;
-	//hexToBinary ( p , pend , ((char *)&m_key.n0)+7 , true );
-	// test it
-	//if ( m_key.n1 != k.n1 || m_key.n0 != k.n0 ) { char *xx=NULL; *xx=0; }
-
-	//p = strstr ( p , " version=");
-	// error?
-	//if ( ! p ) return 0;
-	// skip " version="
-	//p += 9;
-	// get version
-	//m_version = atoi(p);
-
-	// skip p until space
-	//while ( p < pend && *p != ' ' ) p++;
-	// error?
-	//if ( p >= pend ) return 0;
-	// skip the space -- NO! tag parser wants the space
-	//p++;
-
-	// point to the where we should serialize the tags into
-	//char *tagPtr = m_buf;
-
-	char tbuf[5000];
-
-	while ( p < pend ) {
-		// now we should be pointing to the tag
-		Tag *tag = (Tag *)tbuf;
-		// serialize the tag from the buf
-		int32_t asciiBytesRead = tag->setFromBuf ( p , pend );
-		// if bad this is 0
-		if ( asciiBytesRead == 0 ) return 0;
-		// store tag into our safebuf. return 0 with g_errno set on err
-		// . mdwmdwmdw
-		if ( ! m_sbuf.addTag ( tag ) ) return 0;
-		// point to next tag to read into our binary buffer
-		//p += asciiBytesRead;
-		// inc our ptr to point to next tag if it exists
-		//tagPtr += tag->getSize();
-		// inc our count in the TagRec
-		//m_numTags++;
-		// adjust our tag buffer size, TagRec::m_dataSize
-		//m_dataSize = tagPtr - m_buf;
-		// hey, it includes the other crap too!
-		// it includes m_numTags + m_version, see Tagdb.h
-		//m_dataSize += 2 + 1; 
-
-	}
-
-	// clear all lists
-	//resetLists();
-	// now make list point to that
-	//m_lists[0].m_list     = m_sbuf.getBufStart();
-	//m_lists[0].m_listSize = m_sbuf.length();
-	//m_lists[0].m_listAllocSize = 0; // do not free it!
-	//m_numLists = 0;
-
-	//return getSize();
-	return p - start;
-}
-*/
 
 bool TagRec::setFromBuf ( char *p , int32_t bufSize ) {
 
@@ -1500,12 +1022,8 @@ static TagDesc s_tagDesc[] = {
 	{"dateformat"           ,0x00,0}, // 1 = american, 2 = european
 	
 	{"ruleset"              ,0x00,0},
-	//{"filtered"             ,0x00,0},
-	//{"compromised"          ,0x00,0},
-	//{"good"                 ,0x00,0},
 	{"deep"                 ,0x00,0},
-	//{"quality"              ,0x00,0},
-	//{"dmozcatid"            ,TDF_NOINDEX,0},
+
 	{"comment"              ,TDF_STRING|TDF_NOINDEX,0},
 	// we now index this. really we need it for storing into title rec.
 	{"site"                 ,TDF_STRING|TDF_ARRAY,0},
@@ -1519,9 +1037,6 @@ static TagDesc s_tagDesc[] = {
 	{"contactemails"               ,TDF_ARRAY|TDF_NOINDEX,0},
 
 	{"hascontactform"       ,0x00,0},
-
-	// subscribe to google's blacklist and mark the sites as this
-	//{"malware"              ,0x00,0},
 
 	// . this is used to define INDEPENDENT subsites
 	// . such INDEPENDENT subsites should never inherit from this tag rec
@@ -1558,7 +1073,6 @@ static TagDesc s_tagDesc[] = {
 	// keep these although no longer used
 	{"sitepop"  ,0x00,0},
 	{"sitenuminlinksfresh"  ,0x00,0},
-
 
 	// . the first ip we lookup for this domain
 	// . this is permanent and should never change
@@ -1602,12 +1116,6 @@ char *getTagStrFromType ( int32_t tagType ) {
 // a global class extern'd in .h file
 Tagdb g_tagdb;
 Tagdb g_tagdb2;
-
-// a fake site for Tagdb::convert()
-//Tagdb g_sitedb;
-
-//static HashTableT<int64_t,int32_t> s_lockTable;
-//static HashTableX s_lockTable2;
 
 // reset rdb and Xmls
 void Tagdb::reset() {
@@ -1729,22 +1237,6 @@ bool Tagdb::init2 ( int32_t treeMem ) {
 			    false ); // bias disk page cache?
 }
 
-/*
-bool Tagdb::addColl ( char *coll, bool doVerify ) {
-	if ( ! m_rdb.addColl ( coll ) ) return false;
-	if ( ! doVerify ) return true;//false;
-	// verify
-	if ( verify(coll) ) return true;
-	// if not allowing scale, return false
-	//if ( ! g_conf.m_allowScale ) return false;
-	// otherwise let it go
-	//log ( "tagdb: Verify failed, but scaling is allowed, passing." );
-	//return true;
-	return false;
-}
-*/
-
-
 bool Tagdb::verify ( char *coll ) {
 	char *rdbName = NULL;
 	rdbName = "Tagdb";
@@ -1844,417 +1336,6 @@ bool Tagdb::verify ( char *coll ) {
 	return true;
 }
 
-/////////////
-//
-// past blast -- for Tagdb::convert()
-//
-////////////
-/*
-struct SiteType {
-	SiteType() : m_score(0) {}
-	SiteType& operator=(SiteType& o) 
-	{m_type=o.m_type;m_score=o.m_score; return *this;}
-	// get this type's size
-	int32_t getStoredSize() { 
-		if (isType4Bytes(m_type)) return sizeof(m_type)+4;
-		else                      return sizeof(m_type)+1;
-	};
-	enum {
-		FIRST_TYPE = 0,
-		SPAM = FIRST_TYPE,   //probablitity that it is spam
-		RETAIL,     //selling something
-		BUSINESS,   //a corporate storefront eg ibm.com
-		ADULT,      //not safe for kids, higher score = more hardcore
-		FORUM,      //message board
-		BLOG,       //or personal home page
-		NEWS,       //articles, opinions magazines
-		REFERENCE,  //all special interest sites
-		DIRECTORY,  //links organized categorically
-		SEARCH_ENGINE, //indexed info
-		DOMAIN_SQUATTER,
-		PLATFORM,   //political candidate, or org
-		TRAVEL,     //Travel sites
-		AUDIO,   //podcast, streaming radio
-		VIDEO,   //flash video
-		SOCIAL_NETWORKING,//dating, myspace, facebook
-		MANUAL_BAN,  //a human hates this site
-		PAGE_RANK,  //google's page rank
-		CLOCK1_PREHASH,   //hash of unique preceeding 1st clock
-		CLOCK1_PREHASH_CNT, // count of tags to make 1st clock hash
-		DATE_FORMAT,    //format of dates on page
-		CLOCK2_PREHASH,   //hash of unique tags preceeding 2nd clock
-		CLOCK2_PREHASH_CNT, // count of tags to make 2nd clock hash
-		CLOCK3_PREHASH,   //hash of unique tags preceeding 3rd clock
-		CLOCK3_PREHASH_CNT, // count of tags to make 3rd clock hash
-		CLOCK4_PREHASH,   //hash of unique tags preceeding 4th clock
-		CLOCK4_PREHASH_CNT, // count of tags to make 4th clock hash
-
-		// ....ADD ALL NEW TYPES HERE... corruption upon ye if not
-
-		LAST_TYPE,
-		BAD_TYPE = LAST_TYPE,
-
-		TOTAL_TYPE_COUNT = (LAST_TYPE-FIRST_TYPE)
-	};
-	// . types can be 1 byte or 4 bytes. if they are 4 bytes, they must be
-	//   added to this function
-	static bool isType4Bytes(int type) {
-		if ( type == CLOCK1_PREHASH ) return true;
-		if ( type == CLOCK2_PREHASH ) return true;
-		if ( type == CLOCK3_PREHASH ) return true;
-		if ( type == CLOCK4_PREHASH ) return true;
-		return false;
-	}
-
-	static int32_t getScoreSize(uint8_t type) {
-		if ( type == CLOCK1_PREHASH ) return 4;
-		if ( type == CLOCK2_PREHASH ) return 4;
-		if ( type == CLOCK3_PREHASH ) return 4;
-		if ( type == CLOCK4_PREHASH ) return 4;
-		return 1;
-	};
-	bool isNormScore() {return m_type <= PAGE_RANK;}
-	uint8_t   m_type;
-	uint32_t  m_score;
-};
-
-// . convert the old Tagdb format into the new format
-bool Tagdb::convert ( char *coll ) {
-
-	g_threads.disableThreads();
-
-	log("db: Trying to convert sitedb for coll %s into tagdb",coll);
-	collnum_t collnum = g_collectiondb.getCollnum ( coll );
-	// open up old sitedb files
-	int32_t mem          = 100000000;
-	int32_t maxTreeNodes = mem  / 82;
-	//Rdb sitedb;
-	g_sitedb.m_rdb.init ( g_hostdb.m_dir ,
-			      "sitedb"       ,
-			      true           , // dedup same keys?
-			      -1             , // fixed record size
-			      9999           , // MinFilesToMerge
-			      100000000      , // g_conf.m_tagdbMaxTreeMem
-			      maxTreeNodes   ,
-			      true           , // balance tree?
-			      0              , // g_conf.m_tagdbMaxCacheMem
-			      0              , // maxCacheNodes
-			      false          , // half keys?
-			      false          , // m_tagdbSaveCache
-			      NULL           , // DiskPageCache *, &m_pc
-			      false          , // is titledb
-			      false          , // preload disk page cache
-			      12             , // key size
-			      false          );// bias disk page cache?
-	//g_collectiondb.init(true);
-	g_sitedb.addColl ( coll, false );
-
-	Msg5 msg5;
-	Msg5 msg5b;
-	RdbList list;
-	key_t startKey;
-	key_t endKey;
-	startKey.setMin();
-	endKey.setMax();
-	key_t k;
-	bool threadsWereEnabled = !g_threads.areThreadsDisabled();
-	g_threads.disableThreads();
-
- loop:
-	// loop over all tagdb recs in tagdb
-	if ( ! msg5.getList ( RDB_SITEDB    ,
-			      coll          ,
-			      &list         ,
-			      startKey      ,
-			      endKey        ,
-			      64000         , // minRecSizes   ,
-			      true          , // includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      0             , // startFileNum  ,
-			      -1            , // numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      NULL          ,
-			      0             ,
-			      -1            ,
-			      true          ,
-			      -1LL          ,
-			      &msg5b        ,
-			      true          )) {
-		if(threadsWereEnabled) g_threads.enableThreads();
-		return log("db: HEY! it did not block");
-	}
-
-	int32_t count  = 0;
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
-		k = list.getCurrentKey();
-		count++;
-		char *data     = list.getCurrentData();
-		//int32_t  dataSize = list.getCurrentDataSize();
-		// point to end of it
-		//char *pend        = data + dataSize;
-		// parse the old site rec
-		char *p           = data;
-		int32_t  old_sfn     = (*(int32_t *)p) & 0x00ffffff;
-		//char  old_version = p[3];
-		p +=  4;
-		char *old_site    = p;
-		int32_t  old_siteLen = gbstrlen(p);
-		p +=  old_siteLen + 1;
-		int32_t  old_time    = *(int32_t *)p;
-		p +=  4;
-		char *old_comment = p;
-		p +=  gbstrlen(p) + 1;
-		//char *old_username = p;
-		p +=  gbstrlen(p) + 1;
-		//unsigned char siteFlags = *p;
-		p += 1;
-		//char siteQuality = *p;
-		p += 1;
-		//char    incHere  = *(int32_t    *)p;
-		uint8_t numTypes = *(uint8_t *)p;
-		p += 1;
-
-		// do not start with http:// ! wastes space!!
-		if (old_siteLen>=8 && strncmp(old_site,"http://",7)==0 ) {
-			old_site    += 7;
-			old_siteLen -= 7;
-		}
-		// sanity check
-		//Url s; s.set ( old_site, old_siteLen );
-		//key_t newk = g_tagdb.makeKey ( &s , false );
-		//if ( k != newk ) { char *xx=NULL;*xx=0; }
-		// . without any tags, what is our dataSize?
-		// . version(1 byte)+site(X bytes)+NULLTerm(1 byte)+
-		//   #Tags(2 bytes)
-		//int32_t dataSize2 = 1 + old_siteLen + 1 + 2;
-		// set the new rec with this stuff
-		TagRec newgr;
-		//newgr.set ( k                      ,
-		//	    dataSize2              ,
-		//	    TAGREC_CURRENT_VERSION ,
-		//	    old_site               );
-		int32_t now = getTimeGlobal();
-		// add the "site" name as a tag (include NULL)
-		newgr.addTag ( ST_SITE , old_time , "conv" , 0, 
-			       old_site, gbstrlen(old_site)+1);
-		// the banned tag
-		if ( old_sfn == 30 ) {
-			char data = 1;
-			newgr.addTag ( ST_MANUAL_BAN ,now, "conv", 0,&data,1);
-		}
-		if ( old_sfn == 50 ) {
-			char data = 1;
-			newgr.addTag ( ST_DEEP,now, "conv", 0,&data,1);
-		}
-		// just for historical reasons, keep this too
-		newgr.addTag ( ST_RULESET , now , "conv",0,(char *)&old_sfn,1);
-		// . add in comment tag
-		// . this will increase newgr::m_dataEnd/m_dataSize
-		// . include NULL
-		if ( old_comment[0] )
-			newgr.addTag ( ST_COMMENT  ,now, "conv", 0,
-				       old_comment , gbstrlen(old_comment)+1);
-		// reset these
-		bool gotPrehash1 = false;
-		bool gotPrehash2 = false;
-		bool gotPrehash3 = false;
-		bool gotPrehash4 = false;
-		bool gotPrehashCount1 = false;
-		bool gotPrehashCount2 = false;
-		bool gotPrehashCount3 = false;
-		bool gotPrehashCount4 = false;
-		int32_t prehash1;
-		int32_t prehash2;
-		int32_t prehash3;
-		int32_t prehash4;
-		char prehashCount1;
-		char prehashCount2;
-		char prehashCount3;
-		char prehashCount4;
-		// now for the old SiteTypes
-		for ( int32_t i = 0 ; i < numTypes ; i++ ) {
-			//while ( p < pend ) {
-			//SiteType *ost = (SiteType *)p;
-			// get the type
-			char siteType = *p; p++;
-			// and the score
-			char *siteTypeScore = p;
-			int32_t  siteTypeScoreSize = 
-				SiteType::getScoreSize(siteType);
-			p += siteTypeScoreSize;
-			// a 0 score in the old sitedb meant to ignore
-			if ( *siteTypeScore == 0 && siteTypeScoreSize == 1 )
-				continue;
-			// map the siteType 1-1 for the most part
-			int32_t tagType = siteType + ST_SPAM;
-			// if the type is SiteType::CLOCK2-4_ re-map it
-			if ( siteType == SiteType::CLOCK1_PREHASH ) {
-				gotPrehash1 = true;
-				prehash1 = *(int32_t *)siteTypeScore;
-				continue;
-			}
-			if ( siteType == SiteType::CLOCK1_PREHASH_CNT ) {
-				gotPrehashCount1 = true;
-				prehashCount1 = *(char *)siteTypeScore;
-				continue;
-			}
-			if ( siteType == SiteType::CLOCK2_PREHASH ) {
-				gotPrehash2 = true;
-				prehash2 = *(int32_t *)siteTypeScore;
-				continue;
-			}
-			if ( siteType == SiteType::CLOCK2_PREHASH_CNT ) {
-				gotPrehashCount2 = true;
-				prehashCount2 = *(char *)siteTypeScore;
-				continue;
-			}
-			if ( siteType == SiteType::CLOCK3_PREHASH ) {
-				gotPrehash3 = true;
-				prehash3 = *(int32_t *)siteTypeScore;
-				continue;
-			}
-			if ( siteType == SiteType::CLOCK3_PREHASH_CNT ) {
-				gotPrehashCount3 = true;
-				prehashCount3 = *(char *)siteTypeScore;
-				continue;
-			}
-			if ( siteType == SiteType::CLOCK4_PREHASH ) {
-				gotPrehash4 = true;
-				prehash4 = *(int32_t *)siteTypeScore;
-				continue;
-			}
-			if ( siteType == SiteType::CLOCK4_PREHASH_CNT ) {
-				gotPrehashCount4 = true;
-				prehashCount4 = *(char *)siteTypeScore;
-				continue;
-			}
-			// but DATE_FORMAT is off
-			if ( siteType == SiteType::DATE_FORMAT )
-				tagType = ST_DATE_FORMAT;
-
-			// panic
-			if ( tagType >= ST_LAST_TAG ) {
-				log("db: got bad tagtype %"INT32" for sitedb rec.",
-				    (int32_t)tagType);
-				continue;
-			}
-			// add to new rec
-			newgr.addTag ( tagType             , // should be 1-1
-				       now               ,
-				       "conv"            ,
-				       0                 , // ip
-				       siteTypeScore     ,
-				       siteTypeScoreSize );
-		}
-		// add in the clock stuff
-		if ( gotPrehash1 && gotPrehashCount1 ) {
-			// make a 5 byte thingy
-			char tmp[5];
-			tmp[0] = prehashCount1;
-			gbmemcpy ( tmp+1 , &prehash1, 4 );
-			newgr.addTag ( ST_CLOCK,now,"conv",0,tmp,5);
-		}
-		if ( gotPrehash2 && gotPrehashCount2 ) {
-			// make a 5 byte thingy
-			char tmp[5];
-			tmp[0] = prehashCount2;
-			gbmemcpy ( tmp+1 , &prehash2, 4 );
-			newgr.addTag ( ST_CLOCK,now,"conv",0,tmp,5);
-		}
-		if ( gotPrehash3 && gotPrehashCount3 ) {
-			// make a 5 byte thingy
-			char tmp[5];
-			tmp[0] = prehashCount3;
-			gbmemcpy ( tmp+1 , &prehash3, 4 );
-			newgr.addTag ( ST_CLOCK,now,"conv",0,tmp,5);
-		}
-		if ( gotPrehash4 && gotPrehashCount4 ) {
-			// make a 5 byte thingy
-			char tmp[5];
-			tmp[0] = prehashCount4;
-			gbmemcpy ( tmp+1 , &prehash4, 4 );
-			newgr.addTag ( ST_CLOCK,now,"conv",0,tmp,5);
-		}
-
-		// now the langs
-		uint8_t numLangs = *p;
-		p += 1;
-		for ( int32_t i = 0 ; i < numLangs ; i++ ) {
-			uint8_t langId = *p;
-			p += 1;
-			int32_t score = (int32_t)*(uint8_t *)p;
-			p += 1;
-			// add to new rec
-			newgr.addTag ( langId , // should be 1-1
-				       now    ,
-				       "conv" ,
-				       0      , // ip
-				       (char *)&score ,
-				       1      );
-		}
-
-		// print it out
-		SafeBuf sb;
-		newgr.printToBuf(&sb);
-		logf(LOG_INFO,"tagdb: %s",sb.getBufStart());
-		
-		Rdb *r = &g_tagdb.m_rdb;
-	
-		// . add the new site rec back as a TagRec
-		// . it should overwrite the old one since the key is the same
-		// . this should not block
-		// . it should do a dump if tree is full
-		if ( ! r->addRecord ( collnum              ,
-				      newgr.getKey     ()  ,
-				      newgr.getData    ()  ,
-				      newgr.getDataSize()  ,
-				      MAX_NICENESS         )) {
-			log("tagdb: convert: %s",mstrerror(g_errno));
-			char *xx=NULL;*xx=0;
-		}
-
-		// do a blocking dump of tree if it's 90% full now
-		if (r->m_mem.is90PercentFull() || r->m_tree.is90PercentFull()){
-			log("tagdb: convert: dumping tree to disk.");
-			if ( ! r->dumpTree ( 0 ) ) // niceness
-				return log("tagdb: convert: dump failed.");
-		}
-	}
-
-	// if list not empty, get more
-	if ( list.isEmpty() ) { g_threads.enableThreads(); return true; }
-	// advance startKey
-	startKey = k;
-	startKey += 1;
-	// watch for wrap, that means done, too
-	if ( startKey < k ) { g_threads.enableThreads(); return true; }
-	// otherwise, do more
-	goto loop;
-}
-*/
-
-/*
-// . dddddddd dddddddd dddddddd dddddddd  d = domain hash w/o collection
-// . uuuuuuuu uuuuuuuu uuuuuuuu uuuuuuuu  u = url hash
-// . uuuuuuuu uuuuuuuu uuuuuuuu uuuuuuuu  
-key_t Tagdb::makeKey ( Url *u , bool isDelete ) {
-	key_t k;
-	// hash full hostname
-	k.n1 = hash32 ( u->getHost() , u->getHostLen() );
-	// set lower 64 bits of key to hash of this url
-	k.n0 = hash64 ( u->getUrl() , u->getUrlLen() );
-	// clear low bit if we're a delete, otherwise set it
-	if ( isDelete ) k.n0 &= 0xfffffffffffffffeLL;
-	else            k.n0 |= 0x0000000000000001LL;
-	return k;
-}
-*/
-
 // . ssssssss ssssssss ssssssss ssssssss  hash of site/url
 // . xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx  tagType OR hash of that+user+data
 // . xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
@@ -2304,54 +1385,6 @@ key128_t Tagdb::makeDomainEndKey ( Url *u ) {
 	return k;
 }
 
-
-/*
-// . returns 0 if "url" is not a suburl of "site"
-// . otherwise, returns "percent" of "url" that matches "site"
-int32_t Tagdb::getMatchPoints ( Url *recUrl , Url *url ) {
-	// reset pts to 0
-	int32_t pts = 0;
-	
-	// temporary fix to the hostname key collision problem is Tagdb Rdb
-	int32_t  rhlen = recUrl->getHostLen ();
-
-	char *uhost = url   ->getDomain    ();
-	int32_t  uhlen = url   ->getDomainLen ();
-	char *shost = recUrl->getDomain    ();
-	int32_t  shlen = recUrl->getDomainLen ();
-	//int32_t  uip   = url->getIp       ();
-	//int32_t  sip   = site->getIp      ();
-
-	// MDW: we are not really doing ips like this now
-	if ( uhlen != shlen || strncmp( uhost, shost, uhlen ) != 0 )
-	//	if ( ! uip || uip != sip ) return 0;
-		return 0;
-		
-	// compare ports for bonus points
-	// but return 0 if site's port is not default
-	int32_t  rport  = recUrl->getPort   ();
-	int32_t  uport  = url->getPort      ();
-	if ( rport == uport ) pts += 1000000;
-	else if ( uport != url->getDefaultPort() ) return 0;
-
-	// now ensure url's path is a subpath of recUrl's
-	int32_t  rplen = recUrl->getPathLen();
-	char *rpath = recUrl->getPath();
-	int32_t  uplen = url->getPathLen();
-	char *upath = url->getPath();
-	if ( rplen > uplen                          ) return 0;
-	if ( strncmp ( upath , rpath , rplen ) != 0 ) return 0;
-	// . now we got a solid match
-	// . add 1 pt for each char in recUrl's path
-	// . so the longer recUrl's path the better the match (more specific)
-	// . this allows us to override TagRecs for deeper sub urls
-	pts += rplen;
-	// add in host size of the matching recUrl
-	pts += rhlen*1000;
-	// all done
-	return pts;
-}
-*/
 
 ///////////////////////////////////////////////
 //
@@ -2625,10 +1658,6 @@ bool Msg8a::launchGetRequests ( ) {
 			log("tagdb: looking up site tags for %s",
 			    m_url->getUrl());
 	}
-		
-
-	// get the groupid
-	//uint32_t groupId = g_tagdb.getGroupId ( startKey );
 
 	// get the next mcast
 	Msg0 *m = &m_msg0s[m_requests];
@@ -2697,26 +1726,6 @@ bool Msg8a::launchGetRequests ( ) {
 	// out i guess after we read the whole list.
 	//
 	return (m_requests == m_replies);
-	//m_doneLaunching = true;
-	//goto loop;
-
-	/*
-	// do not advance m_p if doing the full url first
-	if ( m_doFullUrl ) {
-		m_doFullUrl = false;
-		goto loop;
-	}
-	// . advance m_p
-	// . we go backwards to better support subdomains that have a ton
-	//   of periods in them...
-	for ( ; m_p < m_dom && *m_p != '.' ; m_p++ );
-	// advance over .
-	if ( m_p != m_dom ) m_p++;
-	// if another dot that is bad!
-	if ( *m_p == '.' ) m_errno = EBADURL;
-	// launch another
-	goto loop;
-	*/
 }
 	
 void gotMsg0ReplyWrapper ( void *state ) {
@@ -2842,1016 +1851,6 @@ void Msg8a::gotAllReplies ( ) {
 	}
 }		
 
-/*
-// get the TagRec from the reply
-void TagRec::gotAllReplies ( ) {
-	// if any had an error, don't do anything
-	if ( m_errno ) return;
-	// time how long this takes and log it
-	int64_t startTime = gettimeofdayInMilliseconds();
-	// how many TagRecs we matched
-	int32_t n = 0;
-	// arrays for pointing to best matching TagRecs
-	//char *data       [128];
-	//int32_t  dataSizes  [128];
-	//int32_t  dataScores [128];
-	char *recs      [128];
-	int32_t  recScores [128];
-
-	// . each reply is a list of TagRecs
-	// . each TagRec is a standard Rdb record
-	// . key|dataSize|data...
-	// . go through all TagRecs and sort our list of ptrs to the
-	//   best TagRecs
-	// . some TagRecs will not even match, so do not include those in
-	//   our list of pointers
-	// . the closest matching TagRecs will be on top
-	// . inherit Tags from lesser matching TagRecs provided there
-	//   is no such Tag::m_type from a closer matching TagRec
-	// . if xyz.com is banned and abc.xyz.com has a 0 score for the
-	//   ST_BANNED Tag, then it is effectively "unbanned" and should
-	//   not inherit the score from xyz.com for ST_BANNED.
-	// . so by scanning each TagRec in order, we compose our own
-	//   final merged TagRec that may have a lot more Tags in it
-	//   than any one matching TagRec
-	for ( int32_t i = 0 ; i < m_replies ; i++ ) {
-		// get the list from this reply
-		RdbList *list = &m_lists[i];
-		// scan list
-		for ( ; ! list->isExhausted() ; list->skipCurrentRecord() ) {
-			// break if overflow
-			if ( n >= 128 ) break;
-			// get next rec
-			//char *d     = list->getCurrentData    ();
-			//int32_t  dsize = list->getCurrentDataSize();
-			char *rec = list->getCurrentRec();
-			// set TagRec to it
-			TagRec *gr = (TagRec *)rec;
-			// get the site
-			//char *site = gr->getString(ST_SITE,NULL);
-			char *site = gr->getString("site",NULL);
-			// sanity check
-			if ( ! site ) { char *xx=NULL;*xx=0; }
-			// make it a url
-			Url u;
-			u.set ( site , gbstrlen(site) );
-			// score it
-			int32_t s = g_tagdb.getMatchPoints ( &u , m_url );
-			// skip it if not a match
-			if ( s <= 0 ) continue;
-			// save it
-			//data       [n] = d;
-			//dataSize   [n] = dsize;
-			recs      [n] = rec;
-			recScores [n] = s;
-			n++;
-		}
-	}
-
-	// if no recs, we did not match anything
-	if ( n == 0 ) return;
-	// or on error
-	if ( m_errno ) return;
-
-	// bubble sort the recs by their scores, highest score first
- bubble:
-	bool swapped = false;
-	for ( int32_t i = 1 ; i < n ; i++ ) {
-		// keep going if in correct order
-		if ( recScores[i-1] >= recScores[i] ) continue;
-		// swap
-		char *t1 = recs      [i-1];
-		int32_t  t2 = recScores [i-1];
-		recs      [i-1] = recs      [i];
-		recs      [i  ] = t1;
-		recScores [i-1] = recScores [i];
-		recScores [i  ] = t2;
-		swapped = true;
-	}
-	if ( swapped ) goto bubble;
-
-	// parse the best matching SiteData
-	//TagRec gr ; gr.set ( data[0] , dataSizes[0] );
-	// use the site from the best matching TagRec as our site
-	//m_siteUrl.set ( gr.getSite() , gr.getSiteLen() );
-
-	// reset the inheritance array
-	//char array[ST_LAST_TAG];
-	//memset ( array , -1 , 256 );
-	HashTable ia;
-	char ibuf [ 1024 * 8 ];
-	ia.set ( 1024 , ibuf , 1024 * 8 );
-
-	// we just store the tags, ptrs into the tags in the m_lists
-	//Tag *tags[MAX_TAGS];
-	// assume we got no tags
-	//int32_t numTags = 0;
-	// size of all tags
-	//int32_t size = 0;
-
-	// set our new tag rec
-	m_tagRec->reset();
-
-	// . only get tags from the first matching tag rec if we should not
-	//   do the inheritance loop
-	// . if they click "get rec" on PageTagdb, then do not do inheritance,
-	//   but if they click "get tags", then do it!
-	if ( ! m_doInheritance && n > 0 ) n = 1;
-
-
-	// . DO NOT INHERIT ANYTHING FROM TAG RECS that have a sitePathDepth 
-	//   tag in them UNLESS the sitePathDepth does not work on us
-	// . i.e. if xyz.com has a sitePathDepth of 2 in its TagRec and the
-	//   url we are looking at is xyz.com/a/b/c/d then we must assume that
-	//   out site is xyz.com/a/b/ we are an independent subsite of 
-	//   xyz.com and inherit nothing from it
-	SiteGetter siteGetter;
-
-	// site getter sometimes adds recs to tagdb to add in a new subsite
-	// it finds... i'd imagine this will create a parsing inconsistency
-	// when injecting docs into the "qatest123" coll... but oh well!
-	int32_t timestamp = getTimeGlobal();
-
-	// . begin the "inheritance loop"
-	// . fill our m_tags[] array with the Tags that apply to us
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// parse the TagRec (very fast)
-	        TagRec *gr = (TagRec *)recs[i];
-		// is "url" an independent subsite of gr's site?
-		char *us = m_url->getUrl();
-		bool st=siteGetter.getSite(us,gr,timestamp,m_coll,m_niceness );
-		// sanity check, not allowed to block since state is NULL!
-		if ( ! st ) { char *xx=NULL;*xx=0; }
-		// are we independent subsite? if so, do not inherit
-		// from that. this is used to prevent www.geocities.com/~mark/
-		// from gaining the benefits of being on the www.geocities.com
-		// site. TODO later: we should make another tag to indicate
-		// a subsite is expicitly independent. but for now we rely
-		// on the "sitepathdepth" tag automatically computed by 
-		// SiteGetter.cpp.
-		//if ( siteGetter.isIndependentSubsite() ) continue;
-
-		// 
-		// TODO:
-		// NONO, just do not inherit sitenumlinks or any tag
-		// that is marked as such!!! add a new flag to the tags!!!!!!
-		//
-
-		// always add the ST_SITE tag first from each tag so we know 
-		// what site the other tags belong to
-		//Tag *stag = gr->getTag ( ST_SITE );
-		Tag *stag = gr->getTag ( "site" );
-		// only add if non null
-		if ( stag ) m_tagRec->addTag ( stag );
-		// last tag
-		Tag *last = NULL;
-		// loop over all tags in TagRec #i
-	tagLoop:
-		// get the tag id of current tag
-		Tag *tag = gr->getNextTag ( last );
-		// assign
-		last = tag;
-		// was that the end of the tags? if so, go to next TagRec
-		if ( ! tag ) continue;
-		// get tag id
-		int32_t tagType = tag->m_type;
-		// skip all ST_SITE tags, we added those first above
-		//if ( tagType == ST_SITE ) goto tagLoop;
-		if ( tag->isType("site") ) goto tagLoop;
-		// sanity check
-		//if ( tagType >= ST_LAST_TAG ) { char *xx=NULL;*xx=0;}
-		// for getting the next tag, remember this
-		last = tag;
-		// . have we added this yet?
-		// . if tagType added from a prev TagRec do not "inherit" it
-		//if(array[tagType] != -1 && array[tagType] != i) goto tagLoop;
-		int32_t slot = ia.getSlot ( tagType );
-		if ( slot >= 0 && ia.getValueFromSlot(slot) != i) goto tagLoop;
-
-		// if tag type is "eventtag" then only add it if the site of this
-		// tagrec EQUALS our url. exact match... that way we make sure to only
-		// tag a single url, otherwise we might accidentally tag an entire site.
-		if ( tag->isType("eventtag") ) {
-			// must be in tagRec that matches us the closest
-			if ( i != 0 ) goto tagLoop;
-			// if no site, skip it
-			if ( ! stag ) goto tagLoop;
-			// and even then must match site exactly
-			char *site = stag->m_data;
-			// as string
-			char *url  = m_url->getUrl();
-			int32_t  ulen = m_url->getUrlLen();
-			// skip our proto (http://)
-			url  += m_url->getSchemeLen() + 3;
-			ulen -= m_url->getSchemeLen() + 3;
-			// remove trailing /
-			if ( ulen > 0 && url[ulen-1] == '/' ) ulen--;
-			// likewise for site
-			int32_t slen = gbstrlen(site);
-			if ( slen > 0 && site[slen-1] == '/' ) slen--;
-			// skip if not exact
-			if ( slen != ulen ) goto tagLoop;
-			// compare, must match exactly, if not, do not add tag
-			if ( strncmp(url,site,slen) != 0 ) goto tagLoop;
-		}
-
-		// ok, add/inherit it
-		//tags[numTags++] = tag;
-		// add it directly to m_tagRec
-		if ( ! m_tagRec->addTag ( tag ) ) {
-			log("tagdb: addTag failed: %s",mstrerror(g_errno));
-			m_errno = g_errno;
-			break;
-		}
-		// add in size
-		//size += tag->getSize();
-		// note it, so we do not add/inherit it from another TagRec
-		//array[tagType] = i;
-		ia.addKey ( tagType , i );
-		// add more tags
-		goto tagLoop;
-	}
-
-	// sanity!
-	//if ( size > 32000                   ) { char *xx=NULL;*xx=0; }
-	//if ( size + 2 + 2 > MAX_TAGREC_SIZE ) { char *xx=NULL;*xx=0; }
-	// then copy the tags into the buffer
-	//for ( int32_t i = 0 ; i < numTags ; i++ )
-	//	m_tagRec->addTag ( tags[i] );
-
-	// sanity check
-	//if ( p - m_tagRec > MAX_TAGREC_SIZE ) { char *xx=NULL;*xx=0;}
-
-	// free the mem
-	reset();
-		
-	// time it
-	int64_t took = gettimeofdayInMilliseconds() - startTime;
-	if(took>10) log(LOG_INFO, "admin: gotreply for msg8a took %"INT64"",took);
-}
-*/
-/*
-///////////////////////////////////////////////
-//
-// Msg9a : for modifying TagRecs in Tagdb
-//
-///////////////////////////////////////////////
-
-Msg9a::Msg9a () { 
-	m_requestBuf = NULL;
-	m_requests   = 0;
-	m_replies    = 0;
-}
-Msg9a::~Msg9a() { reset(); }
-
-void Msg9a::reset() {
-	// guard against not waiting for all replies to come in
-	if ( m_requests != m_replies && ! g_process.m_exiting ) {
-		char *xx=NULL;*xx=0; }
-	if ( ! m_requestBuf ) return;
-	mfree ( m_requestBuf , m_requestBufSize , "msg9a" );
-	m_requestBuf = NULL;
-}
-
-// . returns false if blocked, true otherwise
-// . sets errno on error
-// . "urls" is a NULL-terminated list of space-separated urls
-// . if "addTags" is true, then the tags in "tagRec" will be added to the
-///  the TagRecs specified by the sites in "sites". if a TagRec
-//   does not exist for a given "site" then it will be added just
-//   so we can add the Tags to it. If it does exist, we will
-//   just append the given Tags to it.
-// . to "delete" a tag, just assign it a dataSize of 0!
-// . Tags added with the same user name and tag type of an existing tag 
-//   will overwrite it.
-// . you can now optionally supply an array of ptrs to sites, sitePtrs.
-// . you can call this with your "tagRec" on the stack because we copy
-//   its contents into our own buffer here
-bool Msg9a::addTags ( char    *sites                  ,
-		      char   **sitePtrs               ,
-		      int32_t     numSitePtrs            ,
-		      char    *coll                   , 
-		      void    *state                  ,
-		      void   (*callback)(void *state) ,
-		      int32_t     niceness               ,
-		      TagRec  *tagRec                 ,
-		      bool     nukeTagRecs            ,
-		      int32_t    *ipVector               ) {
-
-	// incase we are being re-used!
-	reset();
-
-	g_errno = 0;
-
-	// sanity check, one or the other
-	if ( sites && sitePtrs ) { char *xx=NULL;*xx=0; }
-
-	// ipVector only used with sitePtrs for now
-	if ( ! sitePtrs && ipVector ) { char *xx=NULL;*xx=0; }
-
-	// when we add the "site" tag to it use the timestamp from one
-	// of the tags we are adding... therefore we must require there be
-	// some tags! we do this to insure injection consistency into the
-	// "qatest123" collection.
-	if ( ! tagRec || tagRec->getNumTags() <= 0 ) { char *xx=NULL;*xx=0; }
-
-	// use the first timestamp
-	int32_t timestamp = tagRec->getFirstTag()->m_timestamp;
-
-	// . up to 20 oustanding Msg0 getting the exact TagRec for each site
-	// . when we get it we immediately modify it and then add it back
-	//   using Msg4.
-	// . to resolve collisions we could assign a particular hostid
-	//   to handle adding each site... yeah, how about the local host.
-	// . so forward the Msg9a add/del/rpl request to the responsible
-	//   host. then it can lock the "site" until the add completes.
-	// . it should use Msg1 to add it.
-
-	// reset
-	m_errno    = 0;
-	m_requests = 0;
-	m_replies  = 0;
-	m_niceness = niceness;
-	m_state    = state;
-	m_callback = callback;
-
-	int32_t collLen = gbstrlen(coll);
-
-	// how many urls in the sites do we have?
-	int32_t numUrls = 0;
-	// point to buf
-	char *s = sites;
-	// count each one
-	while ( sites && *s ) {
-		// skip whitespace
-		while ( *s && is_wspace_a(*s) ) s++;
-		// alnum?
-		if ( *s ) numUrls++;
-		// skip url
-		while ( *s && ! is_wspace_a(*s) ) s++;
-	}
-	if ( sitePtrs )
-		numUrls = numSitePtrs;
-
-
-	// how much buf do we need to hold all the requests for all the sites
-	int32_t need = 0;
-
-
-	// just a buffer of sites
-	if ( sites ) 
-		need += 2 * (gbstrlen(sites) + 1);
-	// otherwise, use the site ptrs
-	for ( int32_t i = 0 ; i < numSitePtrs ; i++ )
-		need += 2 * (gbstrlen(sitePtrs[i]) + 1);
-
-	// how big is each request's header?
-	int32_t header = 0;
-	// request size
-	header += 4;
-	// niceness
-	header += 1;
-	// collection
-	header += collLen + 1;
-	// flag
-	header += 1;
-	// the tag rec
-	header += tagRec->getSize();
-	// . add ST_SITE to each tagRec
-	// . we already accounted for the sites in the gbstrlen() above
-	header += sizeof(Tag);
-	// one header per url
-	need += header * numUrls;
-	
-	// make a request buffer for all the requests
-	m_requestBuf = (char *)mmalloc ( need , "msg9a-add");
-	if ( ! m_requestBuf ) return true;
-	m_requestBufSize = need;
-
-	// carve it up
-	char *p = m_requestBuf;
-	// loop over sites
-	s = sites;
-	// reset sitePtr counter in case we are using those
-	int32_t si = 0;
-
-	//int32_t now = getTimeGlobal();
-
-	// loop it
-	for ( ; ; si++ ) {
-		// stop if all done
-		if ( sites && ! *s ) break;
-
-		// or this
-		if ( sitePtrs && si >= numSitePtrs ) break;
-		// make "s" point to the site if we are using ptrs
-		if ( sitePtrs ) s = sitePtrs[si];
-
-		// skip whitespace
-		while ( *s && is_wspace_a(*s) ) s++;
-		// skip over http:// (wastes space)
-		if ( strncmp(s,"http://",7)==0 ) s += 7;
-		// find end of url
-		char *send = s;
-		while ( *send && ! is_wspace_a(*send)) send++;
-		// get the length
-		int32_t len = send - s;
-		// done? make sure we are using the site buffer and not ptrs
-		if ( sites && ! *s ) break;
-		// a place holder for the request size
-		int32_t *rsizePtr = (int32_t *)p; p += 4;
-		// track the size
-		char *start = p;
-		// first niceness
-		*p = niceness; p++;
-		// then coll
-		gbmemcpy ( p , coll , collLen ); p += collLen;
-		// NULL term
-		*p++ = '\0';
-		// add flag first
-		*p = 0x00;
-		//if ( deleteTags  ) *p = 0x01;
-		if ( nukeTagRecs ) *p = 0x02; // delete entire TagRec?
-		p++;
-		// now make the Tag!
-		//TagRec *tagRec = (TagRec *)p;
-		// sets its ip special if we should
-		int32_t ip = 0;
-		if ( ipVector ) ip = ipVector[si];
-		// . copy it over
-		// . get the size
-		int32_t size = tagRec->getSize();
-		// add in tagRec
-		gbmemcpy ( p , tagRec , size );
-		// cat it to p
-		TagRec *newgr = (TagRec *)p;
-		// NULL terminate it temporarily
-		char c = s[len];
-		s[len] = 0;
-		// . remove the old site so the new one can replace it
-		// . we already contain a SITE_TAG and addTag() will NEVER
-		//   replace that particular tag...
-		// . this is now removed above
-		//newgr->removeTag ( "site" , NULL );
-		// add the site
-		//newgr->addTag ( ST_SITE, now,"tagdb",0,s, len+1 );
-		newgr->addTag ( "site", timestamp,"tagdb",ip,s, len+1 );
-		// undo the NULL termination
-		s[len] = c;
-		// update the size
-		size = newgr->getSize();
-		// advance
-		p += size;
-		// how big was the request, store that
-		*rsizePtr = (p - start);
-		// advance s
-		s = send;
-	}
-
-
-	// reset ptr to request to launch
-	m_p = m_requestBuf;
-	// sanity check
-	if ( p - m_requestBuf > need ) { char *xx=NULL;*xx=0; }
-	// all done
-	m_pend = p;
-	// launch them
-	if ( ! launchAddRequests () ) return false;
-	// hey that should always block!
-	if ( ! g_errno ) { char *xx=NULL; *xx=0; }
-	// show erroer
-	log("tagdb: msg9a: %s",mstrerror(g_errno));
-	// free the allocated mem
-	reset();
-	// did not block...
-	return true;
-}
-
-// . "dumpFile" format contains one tag record per line as
-//   dumped from './gb dump S main 0 -1 1' cmd line cmd.
-// . it is the format given by the TagRec::printToBuf() cmd
-bool Msg9a::addTags ( char    *dumpFile               ,
-		      char    *coll                   , 
-		      void    *state                  ,
-		      void   (*callback)(void *state) ,
-		      int32_t     niceness               ) {
-
-	g_errno = 0;
-
-	// reset
-	m_errno    = 0;
-	m_requests = 0;
-	m_replies  = 0;
-	m_niceness = niceness;
-	m_state    = state;
-	m_callback = callback;
-
-	int32_t collLen = gbstrlen(coll);
-	// scan the dump file
-	char *p = dumpFile;
-	// the end of it
-	char *pend = p + gbstrlen(p);
-	// add up total sizes
-	int32_t sum = 0;
-	// end of line ptr
-	char *eol;
-	// count
-	int32_t count = 1;
-	// debug
-	//HashTable ht;
-	// do the scan
-	for ( ; p < pend ; p = eol + 1 ) {
-		// point to next line
-		eol = p; while ( eol < pend && *eol != '\n' ) eol++;
-		// a fake tag rec
-		TagRec gr;
-		// . scan it into "gr"
-		// . returns size of the tag rec stored into "buf"
-		int32_t bytesScanned = gr.setFromBuf ( p , eol );
-		// error?
-		if ( bytesScanned <= 0 ) {count++; continue;}
-		// get size
-		int32_t size = gr.getSize();
-		// error?
-		if ( size <= 0 ) {count++; continue;}
-		//logf(LOG_DEBUG,"tagdb: tag %"INT32" size=%"INT32"",count++,size);
-		// hash it for debug
-		//ht.addKey ( count , size );
-		count++;
-		// sanity check
-		if ( size > MAX_TAGREC_SIZE ) { char *xx=NULL;*xx=0;}
-		// sanity check
-		char *site = gr.getString("site",NULL);
-		if ( ! site ) { char *xx=NULL;*xx=0;}
-		// then request header size
-		size += 4 + 1 + collLen + 1 + 1;
-		// increment total size
-		sum += size;
-	}
-
-	// make the buf
-	m_requestBuf = (char *)mmalloc ( sum , "msg9adbuf");
-	m_requestBufSize = sum;
-	// store tags here
-	char *t = m_requestBuf;
-	// return true on error with g_errno set
-	if ( ! t ) return true;
-	// reset to beginning of file
-	p = dumpFile;
-	// reset
-	count = 1;
-	// do the scan
-	for ( ; p < pend ; p = eol + 1 ) {
-		// point to next line
-		eol = p; while ( eol < pend && *eol != '\n' ) eol++;
-		// first is the request size
-		int32_t *requestSizePtr = (int32_t *)t; t += 4;
-		// see how big the request is
-		char *a = t;
-		// then niceness
-		*t++ = (char)MAX_NICENESS;
-		// then coll
-		gbmemcpy ( t , coll , collLen ); t += collLen;
-		// null temrinate
-		*t++ = '\0';
-		// then the 1 byte flag (0 means add?)
-		*t++ = 0; 
-		// store TagRec into the request buffer
-		TagRec *gr = (TagRec *)t;
-		// . scan it into "t"
-		// . returns size of the tag rec stored into "buf"
-		int32_t bytesScanned = gr->setFromBuf ( p , eol );
-		// error?
-		if ( bytesScanned <= 0 ) {
-			log("tagdb: skipping tag rec #%"INT32".",count++);
-			t -= (4+1+collLen+1+1);
-			continue;
-		}
-		// get size
-		int32_t size = gr->getSize();
-		// error?
-		if ( size <= 0 ) { 
-			log("tagdb: skipping tag rec #%"INT32".",count++);
-			t -= (4+1+collLen+1+1);
-			continue;
-		}
-		// test it
-		//int32_t slot = ht.getSlot ( count );
-		//if ( slot < 0 ) { char *xx=NULL;*xx=0; }
-		//int32_t shouldbe = ht.getValueFromSlot ( slot );
-		//if ( size != shouldbe ) { char *xx=NULL;*xx=0; }
-		count++;
-		//logf(LOG_DEBUG,"tagdb: tag %"INT32" size=%"INT32"",count++,size);
-		// increment storage ptr
-		t += size;
-		// store the size of the WHOLE REQUEST, does not
-		// include the request size itself. see 
-		// launchRequests() below.
-		*requestSizePtr = (t - a);
-		// sanity check
-		if ( *requestSizePtr > 10000 ) { char*xx=NULL;*xx=0;}
-	}
-	// sanity check
-	if ( t - m_requestBuf != sum ) { char *xx=NULL;*xx=0; }
-	// use their ptrs for adding these tag recs
-	m_p    = m_requestBuf;
-	m_pend = m_requestBuf + m_requestBufSize ;
-	// now add those tags
-	return launchAddRequests ( );
-}
-
-// . returns false if blocked, true otherwise
-// . sets g_errno and returns true on error
-bool Msg9a::launchAddRequests ( ) {
-	// clear it
-	g_errno = 0;
- loop:
-	// return true if nothing to launch
-	if ( m_p >= m_pend ) return (m_requests == m_replies);
-	// don't bother if already got an error
-	if ( m_errno ) return (m_requests == m_replies);
-	// limit max oustanding to 20
-	if (m_requests - m_replies >= 20 ) return (m_requests==m_replies);
-	// take a breath
-	QUICKPOLL(m_niceness);
-
-	// parse our request
-	char *p = m_p;
-	// first is the request size
-	p += 4;
-	// then niceness
-	p += 1;
-	// then coll
-	p += gbstrlen(p) + 1;
-	// then the 1 byte flag
-	p++;
-	// then the tag rec
-	TagRec *tagRec = (TagRec *)p;
-	// . get the groupid
-	// . tagRec's key should already be valid because when you add
-	//   a ST_SITE to a TagRec it sets TagRec::m_key (special thing)
-	//uint32_t groupId = g_tagdb.getGroupId ( &tagRec->m_key );
-	uint32_t shardNum = getShardNum ( RDB_TAGDB , &tagRec->m_key );
-	// get the host to send to
-	Host *hosts = g_hostdb.getGroup ( groupId );
-	// select a host in the group
-	int32_t hostNum = tagRec->m_key.n1 % g_hostdb.getNumHostsPerShard();
-	// and his ptr
-	Host *h = &hosts[hostNum];
-
-	// get the next mcast
-	//Multicast *m = &m_casts[m_requests];
-	// reqeust size
-	int32_t  requestSize = *(int32_t *)m_p; m_p += 4;
-	char *request     =          m_p; m_p += requestSize;
-	
-	// . send to just one very specific host so he is the only one that
-	//   controls modification to this particular tagdb rec. that way if
-	//   we are changing its Tags we do not collide with another.
-	// . this returns false and sets g_errno on error
-	UdpServer *us = &g_udpServer;
-	bool status = us->sendRequest ( request           ,
-					requestSize       ,
-					0x9a              ,
-					h->m_ip           , // bestIp 
-					h->m_port         , // destPort
-					h->m_hostId       , // hostId
-					NULL              , // slotPtr
-					this              , // state
-					gotReplyWrapper9a , // callback
-					365*24*3600       , // timeout
-					-1                , // backoff
-					-1                , // max wait in ms
-					NULL              , // replybuf
-					0                 , // replybufMaxSize
-					m_niceness        );
-	// error?
-	if ( ! status ) {
-		// g_errno should be set, we had an error
-		m_errno = g_errno;
-		return (m_requests == m_replies);
-	}
-	// successfully launched
-	m_requests++;
-	// launch another
-	goto loop;
-}
-
-void gotReplyWrapper9a ( void *state , UdpSlot *slot ) {
-	Msg9a *THIS = (Msg9a *) state;
-	THIS->m_replies++;
-	// don't let him free our send buf, it is m_requestBuf
-	// which we allocated above
-	slot->m_sendBufAlloc = NULL;
-	// error? if so, save it
-	if ( g_errno && ! THIS->m_errno ) THIS->m_errno = g_errno;
-	if ( ! THIS->launchAddRequests() ) return;
-	// free the allocated mem
-	THIS->reset();
-	THIS->m_callback ( THIS->m_state );
-}
-
-class State9a {
-public:
-	UdpSlot *m_slot;
-	Msg5     m_msg5;
-	char     m_requestType;
-	Msg1     m_msg1;
-	RdbList  m_list;
-	// this has all the tags we need to add/remove/replace
-	TagRec  *m_tagRec;
-	// this has the original tagRec and we modify it with "m_tagRec"
-	// to get the final TagRec we add back to Tagdb. it is the
-	// "accumulator" tagdb record.
-	TagRec   m_accRec;
-	// enough mem to store a key_t and a 0 dataSize (int32_t)
-	char     m_tmp[12+4];
-
-	char     m_niceness;
-	char    *m_coll;
-
-	// linked list of ppl waiting in line to make mods
-	class State9a *m_next;
-	//class State9a *m_tail;
-};
-
-void handleRequest9a ( UdpSlot *slot , int32_t niceness ) {
-	// get the request
-	char *request     = slot->m_readBuf;
-	int32_t  requestSize = slot->m_readBufSize;
-	// overflow protection for corrupt requests
-	if ( requestSize < 4 ) {
-		g_errno = EBUFTOOSMALL;
-		g_udpServer.sendErrorReply ( slot , g_errno );
-		return;
-	}
-	// make a new Msg9a
-	State9a *st ;
-	try { st = new (State9a); }
-	catch ( ... ) {
-		g_errno = ENOMEM;
-		log("msg9a: new(%i): %s", sizeof(State9a), mstrerror(g_errno));
-		return g_udpServer.sendErrorReply ( slot, g_errno );
-	}
-	mnew ( st , sizeof(State9a) , "Msg10" );
-
-	// parse the request
-	char *p = request;
-	// save slot for sending reply
-	st->m_slot = slot;
-	// get niceness
-	st->m_niceness = *(char *)p; p++;
-	// get coll
-	st->m_coll = p; p += gbstrlen(p) + 1;
-	// save this
-	st->m_requestType = *p; p++;
-	// the "tagRec" is the record
-	TagRec *tagRec = (TagRec *)p; p += tagRec->getSize();
-	// store ptr
-	st->m_tagRec = tagRec;
-	// reset this, we are the head/tail of the linked list so far
-	st->m_next = NULL;
-
-	// sanity check
-	//char *site = tagRec->getString(ST_SITE,NULL);
-	char *site = tagRec->getString("site",NULL);
-	// this is a no-no
-	if ( ! site ) { char *xx=NULL;*xx=0;}
-
-	// no tail after us
-	//st->m_tail = NULL;
-
-	// . get the lock on this site
-	// . the lower 64 bits of the key should be the url hash
-	int32_t slotNum = s_lockTable2.getSlot ( &st->m_tagRec->m_key.n0 );
-	// if already in there, we have to wait because someone is already
-	// making mods to this TagRec
-	if ( slotNum >= 0 ) {
-		// log this for now?
-		if ( g_conf.m_logDebugSpider )
-			logf(LOG_DEBUG,"tagdb: TAGDB handleRequest9a "
-			     "waiting for lock st=0x%"XINT32" key.n0=%"UINT64"",(int32_t)st,
-			     st->m_tagRec->m_key.n0);
-		State9a *p ;
-		p = *(State9a **)s_lockTable2.getValueFromSlot(slotNum);
-		// put us right after him in the linked list
-		st->m_next = p->m_next;
-		p->m_next  = st;
-		// we could be the next in line
-		//if ( ! p->m_next ) p->m_next = st;
-		// we wait...
-		return;
-	}
-
-	// delete our slot from the lock table
-	if ( ! s_lockTable2.addKey ( &st->m_tagRec->m_key.n0 , &st ) ) {
-		log("tagdb: failed to get lock : %s",mstrerror(g_errno));
-		// free him, we sent his reply
-		mdelete ( st , sizeof(State9a),"msg9afr");
-		delete (st);
-		return g_udpServer.sendErrorReply ( slot, g_errno );
-	}
-
-	// make a startKey and endKey from the tagRec's key
-	key_t startKey = tagRec->m_key;
-	key_t endKey   = tagRec->m_key;
-	// startkey gets is low bit cleared though
-	startKey.n0 &= 0xfffffffffffffffeLL;	
-
-	// delete record request, no need to look it up
-	if ( st->m_requestType == 0x02 ) {
-		// note it
-		SafeBuf sb; tagRec->printToBuf ( &sb );
-		log("tagdb: deleting TagRec for site %s",sb.getBufStart());
-		// use tmp buf in st
-		char *p = st->m_tmp;
-		// store key in the tmp buf
-		*(key_t *)p = startKey;
-		// advance
-		p += sizeof(key_t);
-		// and store the data size
-		*(int32_t *)p = 0;
-		// advance
-		p += 4;
-		// set the list (just a negative rec in it)
-		st->m_list.set ( st->m_tmp         , // list
-				 4+sizeof(key_t)   , // listSize
-				 st->m_tmp         , // alloc
-				 4+sizeof(key_t)   , // allocSize
-				 (char *)&startKey , // startKey
-				 (char *)&endKey   , // endKey
-				 -1                , // fixeDataSize
-				 false             , // ownData?
-				 false             , // useHalfKeys?
-				 sizeof(key_t)     );// keySize
-
-		if ( ! st->m_msg1.addList( &st->m_list    ,
-					   RDB_TAGDB      ,
-					   st->m_coll     ,
-					   st             ,
-					   sendReply9a    ,
-					   false          , // forceLocal?
-					   st->m_niceness ))
-			// return if blocked
-			return;
-		sendReply9a( st );
-		return;
-	}
-
-	// . get from msg5, return if it blocked
-	// . will probably not block since in the disk page cache a lot
-	if ( ! st->m_msg5.getList ( RDB_TAGDB      ,
-				    st->m_coll     ,
-				    &st->m_list    ,
-				    startKey       ,
-				    endKey         ,
-				    100000         , // minRecSizes
-				    true           , // include tree?
-				    false          , // addtocache?
-				    0              , // maxcacheage
-				    0              , // startfilenum
-				    -1             , // numFiles
-				    st             ,
-				    gotList        ,
-				    st->m_niceness ,
-				    true           ))// do err correction?
-		return;
-	// log that for debug
-	//log("tagdb: msg5 call did not block. st=%"UINT32"",(int32_t)st);
-	// sanity check - why not block if it had corruption?
-	if ( st->m_msg5.m_msg3.m_hadCorruption ) { char *xx=NULL;*xx=0; }
-	// it did not block...
-	gotList( st , NULL , NULL );
-}
-
-void gotList ( void *state , RdbList *xxx , Msg5 *yyy ) {
-	// cast our state class
-	State9a *st = (State9a *)state;
-	// return right away if error getting the rec
-	if ( g_errno ) { sendReply9a ( st ); return; }
-	// note it
-	//log("tagdb: in gotlist st=%"UINT32"",(int32_t)st);
-	// this is the TagRec rdb record
-	char *rec     = st->m_list.getList    ();
-	int32_t  recSize = st->m_list.getListSize();
-	// cast it as a TagRec
-	TagRec *accRec = &st->m_accRec;
-	// reset in case not in tagdb and rec/recSize is NULL/0
-	accRec->reset();
-	// copy it to our accumulator rec which has room to grow, the list
-	// does not
-	gbmemcpy ( (char *)accRec , rec , recSize );
-	// free that list buffer now, we copied it into a larger buffer
-	st->m_list.reset();
-
- loop:
-	// clear it
-	g_errno = 0;
-	// . add/remove the tags from the tagRec
-	// . add will replace tags with the same tag id and username
-	// . should deal with "negative" tags (addDelTag())
-	//if ( st->m_requestType == 0x00 ) accRec->addTags    ( st->m_tagRec );
-	//else                             accRec->removeTags ( st->m_tagRec );
-	accRec->addTags ( st->m_tagRec );
-	// was there an error? abandon all operations on this TagRec if so
-	if ( g_errno ) { sendReply9a ( st ); return; }
-	// perform operations on others in the queue
-	st = st->m_next;
-	// debug for now
-	if ( st && g_conf.m_logDebugSpider ) 
-		logf(LOG_DEBUG,"tagdb: calling lock for st=0x%"XINT32"",(int32_t)st);
-	// if there was one, do it
-	if ( st ) goto loop;
-	// reset to original parent
-	st = (State9a *)state;
-	// debug msg
-	SafeBuf sb; accRec->printToBuf ( &sb );
-	log(LOG_DEBUG,"tagdb: adding to tagdb: %s",sb.getBufStart());
-
-	// set the list, it should free itself
-	st->m_list.set ( (char *)accRec    , // list
-			 accRec->getSize() , // allocSize
-			 (char *)accRec    , // alloc
-			 accRec->getSize() , // allocSize
-			 (char *)&accRec->m_key , // startKey
-			 (char *)&accRec->m_key , // endKey
-			 -1                , // fixeDataSize
-			 false             , // ownData?
-			 false             , // useHalfKeys?
-			 sizeof(key_t)     );// keySize
-
-	// add it back after the mods
-	if ( ! st->m_msg1.addList( &st->m_list    ,
-				   RDB_TAGDB      ,
-				   st->m_coll     ,
-				   st             ,
-				   sendReply9a    ,
-				   false          , // forceLocal?
-				   MAX_NICENESS   ))// niceness
-		return;
-	// i giess we did not block! send back the reply...
-	sendReply9a ( st );
-}
-
-void sendReply9a ( void *state ) {
-	// cast our state class
-	State9a *st = (State9a *)state;
-	// delete our slot from the lock table
-	s_lockTable2.removeKey ( &st->m_tagRec->m_key.n0 );
-	// log it
-	if (g_errno) log("tagdb: msg9a failed to add: %s",mstrerror(g_errno));
-	// save it, in case a function below clears g_errno
-	int32_t saved = g_errno;
-
- loop:
-	if ( saved ) g_udpServer.sendErrorReply( st->m_slot,saved);
-	// send empty reply
-	else         g_udpServer.sendReply_ass(NULL,0,NULL,0,st->m_slot);
-	// save old guy
-	State9a *next = st->m_next;
-	// free him, we sent his reply
-	mdelete ( st , sizeof(State9a),"msg9afr");
-	delete (st);
-	// repeat for each guy waiting in line
-	st = next;
-	// if there was one, do it
-	if ( st ) goto loop;
-	// reset to original parent
-	st = (State9a *)state;
-}
-*/
-
-///////////////////////////////////////////////
-//
-// OTHER functions
-//
-///////////////////////////////////////////////
-
-int32_t getY ( int64_t X , int64_t *x , int64_t *y , int32_t n ) {
-	// if we only have one point then there'll be no interpolation
-	if ( n == 1 ) return y[0];
-	// find the first x after our "X"
-	int32_t j;
-	for ( j = 0 ; j < n; j++ ) if ( x[j] >= X ) break;
-	// before/after first/last point means we don't have to interpolate
-	if ( j <= 0 ) return y[0  ];
-	if ( j >= n ) return y[n-1];
-	// linear interpolate between our 2 points (x0,y0) and (x1,y1)
-	int64_t x0 = x[j-1];
-	int64_t x1 = x[j  ];
-	int64_t y0 = y[j-1];
-	int64_t y1 = y[j  ];
-	// error if x1 less than x0
-	if ( x1 <= x0 ) {
-		log("tagdb: X coordinates are not in ascending order for map");
-		char *xx=NULL;*xx=0;
-	}
-	// otherwise we have a sloping line
-	return  y0 + ( ((int64_t)X - x0) * (y1-y0) ) /(x1-x0) ;
-}
-
 ///////////////////////////////////////////////
 //
 // sendPageTagdb() is the HTML interface to tagdb
@@ -3867,23 +1866,11 @@ static bool getTagRec ( class State12 *st );
 // don't change name to "State" cuz that might conflict with another
 class State12 {
 public:
-	//Msg9a        m_msg9a;
 	TcpSocket   *m_socket;
 	bool         m_adding;
-	//char        *m_coll;
 	collnum_t m_collnum;
-	//int32_t         m_collLen;
-	//char        *m_buf;
-	//int32_t         m_bufLen;
 	bool         m_isLocal;
-	//int32_t         m_fileNum;
-	//bool         m_isMasterAdmin;
-	//bool         m_isAssassin;
-	// . Commented by Gourav
-	// .  Reason:user perm no longer used
-	//char         m_userType;
 	HttpRequest  m_r;
-	//char        *m_username;
 	TagRec       m_tagRec;
 	TagRec       m_newtr;
 	Msg8a        m_msg8a;
@@ -3892,10 +1879,8 @@ public:
 	int32_t         m_urlsLen;
 	Msg1         m_msg1;
 	RdbList      m_list;
-	//Msg1         m_msg1;
 	int32_t         m_niceness;
 	bool         m_mergeTags;
-	//char         m_tmp[16];
 };
 
 // . returns false if blocked, true otherwise
@@ -3917,19 +1902,7 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 		return g_httpServer.sendErrorReply ( s , 500 ,
 						  "collection does not exist");
 	}
-	/*
-	bool isAssassin = cr->isAssassin ( s->m_ip );
-	if ( isAdmin ) isAssassin = true;
-	// bail if permission denied
-	if ( ! isAssassin ){ 
-	//&& ! cr->hasPermission ( req , s ) ) {
-		log("admin: Bad collection name or password. Could not add "
-		    "sites to tagdb. Permission denied.");
-		return sendPagexxxx( s , req , 
-						    "Collection name or "
-						    "password is incorrect");
-	}
-	*/
+
 	// make a state
 	State12 *st ;
 	try { st = new (State12); }
@@ -3979,75 +1952,19 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 	if(r->getLong("uenc", 0)) 
 		for(int32_t i = 0; i < urlsLen; i++) 
 			if(urls[i] == '+') urls[i] = '\n';
-	// get the file # of the tagdb file these sites should use
-	//int32_t  fileNum = r->getLong ("f",-1);
-	// get the archive filename of sites to add
-	/*
-	int32_t  xlen;
-	char *x = r->getString("x",&xlen,NULL);
-	// trim off any spaces
-	while ( xlen > 0 && is_wspace_a(x[xlen-1]) ) x[--xlen]='\0';
-	*/
-	// . get the username
-	// . just get from cookie so it is not broadcast over the web via a 
-	//   referral url
-	//st->m_username = r->getStringFromCookie("username");
 
 	// are we coming from a local machine?
 	st->m_isLocal = r->isLocal();
-	/*
-	// don't set this unless we have to free it
-	st->m_buf    = NULL;
-	st->m_bufLen = 0;
-	// . set our archive filename of sites to add with this fileNum
-	// . "a" will be NULL if none supplied
-	if ( xlen ) {
-		File file;
-		file.set ( x );
-		// add 1 to bufLen for terminating \0
-		int32_t  bufLen = file.getFileSize() + 1 ;
-		char *buf    = (char *) mmalloc ( bufLen , "PageTagdb");
-		if ( ! buf ) {
-			log("admin: File of sites is too big to add to tagdb."
-			    " Allocation of %"INT32" bytes failed.",bufLen);
-			mdelete ( st , sizeof(State12) , "PageTagdb" );
-			delete (st);
-			return g_httpServer.sendErrorReply(s,500,
-							   mstrerror(g_errno));
-		}
-		file.open(O_RDONLY);
-		file.read ( buf , bufLen - 1 , 0 );
-		// NULL terminate the list of urls
-		buf [ bufLen - 1 ] = '\0';
-		st->m_buf    = buf;
-		st->m_bufLen = bufLen ;
-		urls    = buf;
-		urlsLen = bufLen;
-	}		
-	*/
+
 	// it references into the request, should be ok
-	//st->m_coll    = coll;
 	st->m_collnum = cr->m_collnum;
-	//st->m_collLen = collLen;
-	//strcpy ( st->m_coll , coll );
+
 	// do not print "(null)" in the textarea
 	if ( ! urls ) urls = "";
 
 	// the url buffer
 	st->m_urls    = urls;
 	st->m_urlsLen = urlsLen;
-
-	// sanity check
-	//bool  delOp = r->getLong   ("delop",0    );
-	//char *nuke  = r->getString ("nuke" ,NULL );
-	//if ( nuke && ! delOp ) {
-	//	g_errno = EBADENGINEER;
-	//	log("tagdb: delete operation checkbox not checked.");
-	//	mdelete ( st , sizeof(State12) , "PageTagdb" );
-	//	delete (st);
-	//	return g_httpServer.sendErrorReply(s,500,
-	//					   mstrerror(g_errno));
-	//}
 
 	int32_t ufuLen;
 	char *ufu = r->getString("ufu",&ufuLen);
@@ -4062,33 +1979,7 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 	if ( get || merge ) st->m_adding = false;
 	else                st->m_adding = true;
 
-
-	// if each line in the file is the output of a tagdb dump
-	// operation on the cmd line like this:
-	// k.n1=0x892f9 k.n0=0xac2ff39f8112b71f version=0 TAG=ruleset,
-	// "mwells",1,Jan-02-2009-18:26:04,333333333,67.16.94.2,3735437892,36 
-	// THEN we should just call msg9a directly and it should create
-	// a tag rec for each line and add that
-	/*
-	bool isDumpFile = false;
-	if ( urls && strncmp(urls,"k.n1=",5)==0 ) isDumpFile = true;
-	if ( isDumpFile ) {
-		if ( ! st->m_msg9a.addTags ( st->m_urls        , // dumpFile
-					     st->m_coll        ,
-					     st                ,
-					     sendReplyWrapper2 ,
-					     0                 ))// niceness
-			return false;
-		return sendReply2 ( st );
-	}
-	*/
-
-	// get/merge operations can skip the tag rec lookup
-	//if ( ! st->m_adding ) return sendReply ( st );
-
 	// regardless, we have to get the tagrec for all operations
-	//Url site;
-	//site.set(urls,gbstrlen(urls));
 	st->m_url.set(urls,gbstrlen(urls));
 	st->m_mergeTags = merge;
 
@@ -4116,19 +2007,7 @@ bool getTagRec ( State12 *st ) {
 				       doInheritance ,
 				       rdbId))
 		return false;
-	/*
-	if ( ! st->m_msg8a.getTagRec ( &site , // &st->m_url,
-				       st->m_coll,
-				       st->m_collLen,
-				       true, //usecanonicalName
-				       0, //niceness
-				       st,
-				       sendReplyWrapper ,
-				       &st->m_tagRec ,
-				       doInheritance )){
-		return false;
-	}
-	*/
+
 	return sendReply ( st );
 }
 
@@ -4151,24 +2030,6 @@ bool sendReply ( void *state ) {
 	HttpRequest *r = &st->m_r;
 	// and socket
 	TcpSocket *s = st->m_socket;
-	// the tagrec
-	//TagRec *gr = &st->m_tagRec;
-	// reset "gr" so it won't show the old tags of the first rec
-	// in the text area box on the tagdb page after the add is completed
-	//if ( st->m_adding ) gr->reset();
-
-	// . if urlsLen <= 0 or fileNum < 0 and we're not deleting 
-	// . then we've nothing to add
-	//if ( urlsLen <= 0 ) return sendReply ( st );
-
-	// need a valid username
-	//if ( ! st->m_username || st->m_username[0] == '\0' ) {
-	//	log("tagdb: bad username.");
-	//	mdelete ( st , sizeof(State12) , "PageTagdb" );
-	//	delete (st);
-	//	return g_httpServer.sendErrorReply(s,500,
-	//					   mstrerror(g_errno));
-	//}
 
 	if ( ! st->m_adding ) return sendReply2 ( st );
 
@@ -4181,46 +2042,9 @@ bool sendReply ( void *state ) {
 		return sendReply2 ( st );
 	}
 
-	//char *nuke = r->getString ("nuke" ,NULL );
-
 	TagRec *newtr = &st->m_newtr;
 	// update it from the http request
 	newtr->setFromHttpRequest ( r , s );
-	// but remove the site tag
-	//newtr.removeTags ( "site" , NULL );
-	// add it into gr
-	//gr->addTags ( &newtr );
-	// copy it over to our state
-	//gbmemcpy ( gr , &newtr , newtr.getSize() );
-
-	// debug
-	// this doesn't work because we do not set TagRec::m_listPtrs[0]
-	// to point to the list we make below (MDW 4/29/13)
-	//SafeBuf tmp;
-	//newtr->printToBuf ( &tmp );
-	//log(LOG_DEBUG,"tagdb: converted from http: %s", 
-	//    tmp.getBufStart() );
-
-	// make a startKey and endKey from the tagRec's key
-	//key_t startKey = gr->m_key;
-	//key_t endKey   = gr->m_key;
-	// startkey gets is low bit cleared though
-	//startKey.n0 &= 0xfffffffffffffffeLL;	
-
-	/*
-	// add using msg9a
-	if ( ! st->m_msg9a.addTags ( st->m_urls        ,
-				     NULL              , // sitePtrs
-				     0                 , // numSitePtrs
-				     st->m_coll        ,
-				     st                ,
-				     sendReplyWrapper2 ,
-				     0                 , // niceness
-				     &newtr            , // gr
-				     nuke              ,
-				     NULL              )) // ipvec
-		return false;
-	*/
 
 	// shrotcut
 	SafeBuf *sbuf = &newtr->m_sbuf;
@@ -4378,14 +2202,7 @@ bool sendReply2 ( void *state ) {
 		       "<textarea rows=16 cols=64 name=u>"
 		       "%s</textarea></td></tr>" , uu );
 
-	// spam assassins should not use this much power, too risky
-	//if ( st->m_isMasterAdmin ) {
-	//	sb.safePrintf ("<i><font size=-1>Note: use 1.2.3.<b>0</b> to "
-	//		       "specify ip domain.</i><br>");
-	//}
-
 	// allow filename to load them from
-	//if ( st->m_isMasterAdmin ) {
 	sb.safePrintf("<tr class=poo>"
 		      "<td>"
 		      "<b>file of urls to tag</b>"
@@ -4404,7 +2221,6 @@ bool sendReply2 ( void *state ) {
 		      //"<br><br>" );
 		      "</td></tr>"
 		      );
-	//}
 
 	// this is applied to every tag that is added for accountability
 	sb.safePrintf("<tr class=poo><td>"
@@ -4684,10 +2500,6 @@ bool sendReply2 ( void *state ) {
 	return g_httpServer.sendDynamicPage (s, sb.getBufStart(), sb.length());
 }
 
-//void classifierDoneWrapper ( void *state ) {
-//	g_tagdbClassifier.m_running = false;
-//}
-
 // . we can have multiple tags of this type per tag for a single username
 // . by default, there can be multiple tags of the same type in the Tag as
 //   int32_t as the usernames are all different. see addTag()'s deduping below.
@@ -4742,20 +2554,7 @@ bool isTagTypeIndexable ( int32_t tt ) {
 	if ( td->m_flags & TDF_NOINDEX ) return false;
 	// otherwise, index it
 	return true;
-}	
-
-// . when displaying a tag we need to know if it is a string or not
-// . that and the dataSize determine how we display it
-/*
-bool isTagTypeString ( int32_t tt ) {
-	// look up in hash table
-	TagDesc *td = (TagDesc **)s_ht.getValue ( tt );
-	// if none, that is crazy
-	if ( ! td ) { char *xx=NULL;*xx=0; }
-	// return 
-	return (td->m_flags & TDF_STRING);
 }
-*/
 
 // used to determine if one Tag should overwrite the other! if they
 // have the same dedup hash... then yes...
@@ -4772,14 +2571,6 @@ int32_t Tag::getDedupHash ( ) {
 	char *startHashing = (char *)&m_type;
 	// end here. include username (and tag data!)
 	char *endHashing = m_buf + m_bufSize;
-
-	// if we are an event tag then PageEvents.cpp added us in the form of
-	// user%"UINT64"tag%sval%"INT32" ... so ignore value (FACEBOOKDB)
-	//if ( m_type == s_eventTag ) {
-	//	endHashing--;
-	//	for (;endHashing-1>m_buf&&is_digit(endHashing[-1]);
-	//	     endHashing--);
-	//}
 
 	// do not include bufsize in hash
 	int32_t saved = m_bufSize;
