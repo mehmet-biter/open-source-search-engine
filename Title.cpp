@@ -81,8 +81,6 @@ bool Title::setTitle ( XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars
 	// if we are a json object
 	if ( ! xd->m_contentTypeValid ) { char *xx=NULL;*xx=0; }
 
-
-
 	// look for the "title:" field in json then use that
 	if ( xd->m_contentType == CT_JSON ) {
 		char *val = NULL;
@@ -98,23 +96,6 @@ bool Title::setTitle ( XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars
 			jsonTitle.nullTerm();
 		}
 
-		// if we got a product, try getting price
-		int32_t oplen;
-		char *op = getJSONFieldValue(s,"offerPrice",&oplen);
-		if ( op && oplen ) {
-			if ( ! is_digit(op[0]) ) {
-				op++;
-				oplen--;
-			}
-
-			float price = atof2(op,oplen);
-			// print without decimal point if ends in .00
-			if ( (float)(int32_t)price == price ) {
-				jsonTitle.safePrintf(", &nbsp; $%"INT32"", (int32_t)price);
-			} else {
-				jsonTitle.safePrintf(", &nbsp; $%.02f",price);
-			}
-		}
 		if ( jsonTitle.length() ) {
 			val = jsonTitle.getBufStart();
 			vlen = jsonTitle.length();
@@ -432,7 +413,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 			continue;
 		}
 
-		// if it is a selflink , check for an "onClock" tag in the
+		// if it is a selflink , check for an "onClick" tag in the
 		// anchor tag to fix that Mixx issue for:
 		// http://www.npr.org/templates/story/story.php?storyId=5417137
 
@@ -463,8 +444,10 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 			continue;
 		}
 
-		// if it contains permanent or permalink, ignore it!
-		if ( strncasestr ( atitle, "permalink", atlen ) || strncasestr ( atitle,"permanent", atlen)) {
+		// if it contains permanent, permalink or share, ignore it!
+		if ( strncasestr ( atitle, "permalink", atlen ) ||
+		     strncasestr ( atitle,"permanent", atlen) ||
+		     strncasestr ( atitle,"share", atlen) ) {
 			continue;
 		}
 
