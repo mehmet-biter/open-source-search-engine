@@ -79,7 +79,7 @@ bool Summary::setFromWords( Words *wp, Pos *pp, int32_t maxSummaryLen ) {
 	m_summaryLen = pp->filter( m_summary, m_summary + maxSummaryLen, wp, 0, wp->getNumWords(), &isTruncated );
 
 	/// @todo ALC we may want this to be configurable so we can tweak this as needed
-	if (m_summaryLen < 20) {
+	if (m_summaryLen < (maxSummaryLen / 3)) {
 		// ignore too short descriptions
 		m_summaryLen = 0;
 		m_summary[0] = '\0';
@@ -204,7 +204,6 @@ bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *
                      int64_t *termFreqs, int32_t maxSummaryLen,  int32_t maxNumLines,
                      int32_t numDisplayLines, int32_t maxNumCharsPerLine, Url *f,
                      Matches *matches, char *titleBuf, int32_t titleBufLen) {
-
 	m_numDisplayLines = numDisplayLines;
 	m_displayLen      = 0;
 
@@ -1078,26 +1077,6 @@ bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Po
 
 	// null it out
 	m_summaryLen = 0;
-
-	// try the meta summary tag
-	if ( m_summaryLen <= 0 ) {
-		m_summaryLen = xml->getMetaContent (p , maxSummaryLen , "summary", 7);
-	}
-
-	// the meta descr
-	if ( m_summaryLen <= 0 ) {
-		m_summaryLen = xml->getMetaContent (p, maxSummaryLen, "description", 11);
-	}
-
-	if ( m_numDisplayLines > 0 ) {
-		m_displayLen = m_summaryLen;
-	}
-
-	if ( m_summaryLen > 0 ) {
-		m_summaryExcerptLen[0] = m_summaryLen;
-		m_numExcerpts = 1;
-		return true;
-	}
 
 	bool inLink   = false;
 	char *pend = m_summary + maxSummaryLen - 2;
