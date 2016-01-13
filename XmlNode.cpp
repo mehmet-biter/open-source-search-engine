@@ -255,7 +255,7 @@ int32_t XmlNode::set ( char *node , bool pureXml , int32_t version ) {
 	if ( *node != '<' || ! isTagStart ( node ) ) {//, 0, version ) ) {
 		// . set this node as a text node!
 		// . nodeId for text nodes is 0
-		m_nodeId     = 0;
+		m_nodeId     = TAG_TEXTNODE;
 		m_node       = node;
 		m_hasBackTag = false;
 		m_hash       = 0;

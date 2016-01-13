@@ -284,7 +284,7 @@ bool Xml::set ( char  *s             ,
 		xd->m_nodeLen    = slen;
 		xd->m_isSelfLink = 0;
 		// . nodeId for text nodes is 0
-		xd->m_nodeId     = 0;
+		xd->m_nodeId     = TAG_TEXTNODE;
 		xd->m_hasBackTag = false;
 		xd->m_hash       = 0;
 		xd->m_pairTagNum = -1;

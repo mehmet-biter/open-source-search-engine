@@ -311,7 +311,7 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 	// find the first meta summary node
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// continue if not a meta tag
-		if ( nodes[i].m_nodeId != 68 ) continue;
+		if ( nodes[i].m_nodeId != TAG_META ) continue;
 		// only get content for <meta name=..> not <meta http-equiv=..>
 		int32_t tagLen;
 		char *tag = bodyXml->getString ( i , "name" , &tagLen );

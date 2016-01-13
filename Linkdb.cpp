@@ -6334,7 +6334,7 @@ int32_t Links::getLinkText2 ( int32_t i ,
 		int32_t     xmlNumNodes = m_xml->getNumNodes();
 		// . must come from a <link> node, not a <a>
 		// . can also be an <enclosure> tag now too
-		if ( xmlNodes[node1].m_nodeId == 2 ) goto skipItem;
+		if ( xmlNodes[node1].m_nodeId == TAG_A ) goto skipItem;
 		// get item delimeter length
 		//int32_t dlen = gbstrlen(del);
 		// back pedal node until we hit <item> or <entry> tag
@@ -6342,7 +6342,7 @@ int32_t Links::getLinkText2 ( int32_t i ,
 		for ( j = node1 ; j > 0 ; j-- ) {
 			QUICKPOLL(niceness);
 			// skip text nodes
-			if ( xmlNodes[j].m_nodeId == 0 ) continue;
+			if ( xmlNodes[j].m_nodeId == TAG_TEXTNODE ) continue;
 			// check the tag
 			if(xmlNodes[j].m_tagNameLen != dlen) continue;
 			if(strncasecmp(xmlNodes[j].m_tagName,del,dlen))
@@ -6373,7 +6373,7 @@ int32_t Links::getLinkText2 ( int32_t i ,
 			// break out if done
 			if ( k >= xmlNumNodes ) break;
 			// skip text nodes
-			if ( nn->m_nodeId == 0 ) continue;
+			if ( nn->m_nodeId == TAG_TEXTNODE ) continue;
 			// skip script sections, inside script tags
 			if ( nn->m_nodeId == TAG_SCRIPTTEXT ) continue;
 			if(nn->m_tagNameLen != dlen) continue;

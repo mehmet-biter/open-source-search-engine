@@ -193,10 +193,10 @@ class XmlNode {
 	friend class Xml;    // needs to access our private parts ;)
 	friend class XmlDoc; // needs to access our private parts ;)
 
-	bool  isText       () { return m_nodeId == 0; };
+	bool  isText       () { return m_nodeId == TAG_TEXTNODE; };
 	bool  isTag        () { return m_nodeId >  0; };
 	bool  isHtmlTag    () { return m_nodeId >  1; };
-	bool  isXmlTag     () { return m_nodeId == 1; };
+	bool  isXmlTag     () { return m_nodeId == TAG_XMLTAG; };
 	nodeid_t getNodeId    () { return m_nodeId; };
 	int64_t getNodeHash() { return m_hash; };
 	char *getNode      () { return m_node; };
