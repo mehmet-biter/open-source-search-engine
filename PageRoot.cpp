@@ -12,6 +12,7 @@
 #include "SafeBuf.h"
 #include "LanguageIdentifier.h"
 #include "Proxy.h"
+#include "HashTable.h"
 
 bool sendPageRoot ( TcpSocket *s, HttpRequest *r ){
 	return sendPageRoot ( s, r, NULL );
@@ -1130,7 +1131,6 @@ bool sendPageRoot ( TcpSocket *s , HttpRequest *r, char *cookie ) {
 /////////////////
 
 #include "PageInject.h"
-#include "TuringTest.h"
 #include "Spider.h"
 
 static bool canSubmit        (uint32_t h, int32_t now, int32_t maxUrlsPerIpDom);

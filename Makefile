@@ -56,7 +56,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	matches2.o LanguageIdentifier.o \
 	Repair.o Process.o \
 	Abbreviations.o \
-	TuringTest.o Msg51.o \
+	Msg51.o \
 	Msg40.o Msg4.o SpiderProxy.o \
 	Statsdb.o PageStatsdb.o \
 	PostQueryRerank.o Msge0.o Msge1.o \
@@ -69,8 +69,9 @@ OBJS =  UdpSlot.o Rebalance.o \
 
 # common flags
 DEFS = -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I.
-#CPPFLAGS = -g -Wall -Wextra -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -DPTHREADS
-CPPFLAGS = -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable
+CPPFLAGS = -g -Wall -fno-stack-protector -DPTHREADS -Wno-write-strings -Wstrict-aliasing=0
+CPPFLAGS += -Wno-uninitialized -Wno-unused-but-set-variable
+#CPPFLAGS += -Wunreachable-code -Wno-tautological-undefined-compare # clang++
 LIBS = -lm -lpthread -lssl -lcrypto
 
 # to build static libiconv.a do a './configure --enable-static' then 'make' in the iconv directory
