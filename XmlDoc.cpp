@@ -26809,11 +26809,11 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	if ( ! hashSingleTerm(ipbuf,iplen,&hi) ) return false;
 
 	//
-	// HASH ip:a.b.c
+	// BR 20160113: No longer store HASH ip:a.b.c
 	//
-	char *end1 = ipbuf + iplen - 1;
-	while ( *end1 != '.' ) end1--;
-	if ( ! hashSingleTerm(ipbuf,end1-ipbuf,&hi) ) return false;
+	//char *end1 = ipbuf + iplen - 1;
+	//while ( *end1 != '.' ) end1--;
+	//if ( ! hashSingleTerm(ipbuf,end1-ipbuf,&hi) ) return false;
 
 
 	// . sanity check
@@ -26965,7 +26965,18 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	// . point to the end of the whole thing, including port field
 	// . add in port, if non default
 	char *end3    = name + fu->getHostLen() + fu->getPortLen();
+	
+	// Generate string with port if server runs on non-standard ports
+	char pbuf[12];
+	int pbufLen=0;
+	int32_t port = fu->getPort();
+	if( port > 0 && port != 80 && port != 443 )
+	{
+		pbufLen=snprintf(pbuf, 12, ":%"UINT32"",fu->getPort());
+	}
+	
  loop:
+ 	
 	// now loop through the sub paths of this url's path
 	for ( int32_t i = 0 ; ; i++ ) {
 		// get the subpath
@@ -26975,8 +26986,14 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 		// write http://www.whatever.com/path into buf
 		char buf[MAX_URL_LEN+10];
 		char *p = buf;
-		gbmemcpy ( p , "http://" , 7 ); p += 7;
+//		gbmemcpy ( p , "http://" , 7 ); p += 7;
+		gbmemcpy ( p , fu->getScheme(), fu->getSchemeLen() ); p += fu->getSchemeLen();
+		gbmemcpy ( p , "://" , 3 ); p += 3;
 		gbmemcpy ( p , name          , nameLen      ); p += nameLen;
+		if( pbufLen > 0 )
+		{
+			gbmemcpy ( p , pbuf, pbufLen); p += pbufLen;
+		}	
 		gbmemcpy ( p , fu->getPath() , len          ); p += len;
 		*p = '\0';
 
