@@ -1592,10 +1592,6 @@ bool Process::saveBlockingFiles1 ( ) {
 	// never if in read only mode
 	if ( g_conf.m_readOnlyMode ) return true;
 
-	// save user accounting files. 3 of them.
-	if ( g_hostdb.m_myHost && g_hostdb.m_myHost->m_isProxy )
-		g_proxy.saveUserBufs();
-
 	// save the gb.conf file now
 	g_conf.save();
 	// save the conf files
