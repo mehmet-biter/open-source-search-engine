@@ -76,11 +76,24 @@ bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
 
 bool Summary::setFromWords( Words *wp, Pos *pp, int32_t maxSummaryLen ) {
 	bool isTruncated = false;
+
+	/// @todo ALC we may want this to be configurable so we can tweak this as needed
+	if ( wp->getNumWords() > maxSummaryLen ) {
+		// ignore too long snippet
+		// it may not be that useful to get the first x characters from a long snippet
+		m_summaryLen = 0;
+		m_summary[0] = '\0';
+
+		return false;
+	}
+
+
 	m_summaryLen = pp->filter( m_summary, m_summary + maxSummaryLen, wp, 0, wp->getNumWords(), &isTruncated );
 
 	/// @todo ALC we may want this to be configurable so we can tweak this as needed
 	if (m_summaryLen < (maxSummaryLen / 3)) {
 		// ignore too short descriptions
+		// it may not be a good summary if it's too short
 		m_summaryLen = 0;
 		m_summary[0] = '\0';
 
@@ -163,8 +176,10 @@ bool Summary::setFromField( Xml *xml, int32_t maxSummaryLen, const char *fieldNa
 		int32_t tagLen = 0;
 		char *tag = xml->getString ( i , fieldName , &tagLen );
 		if ( tagLen == fieldContentLen && strncasecmp( tag, fieldContent, fieldContentLen ) == 0 ) {
-			int32_t end_node = xml->getNodeNumEnd(i);
+			int32_t end_node = xml->getEndNode(i);
+
 			if (end_node < 0) {
+				/// @todo ALC meta name itemprop = "description"
 				// no end tag
 				continue;
 			}

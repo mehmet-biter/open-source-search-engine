@@ -57,49 +57,72 @@ public:
 	// . obsolete compound name = myhouse[0].bedroom[2].nightstand[1]
 	// . returns -1 if not found
 	// . only searches nodes in [n0,n1] node range
-	int32_t     getNodeNum  ( 	int32_t n0,
-				int32_t n1,
-				char *tagName,
-				int32_t tagNameLen) const; 
+	int32_t getNodeNum( int32_t n0, int32_t n1, char *tagName, int32_t tagNameLen ) const;
+
 	// some wrappers for it
-	int32_t     getNodeNum  ( char *tagName ) {
-		if ( ! tagName ) { char *xx=NULL;*xx=0; }
-		return getNodeNum ( 0,m_numNodes,tagName,strlen(tagName)); };
-	int32_t     getNodeNum  ( char *tagName , int32_t tagNameLen ) {
-		return getNodeNum ( 0,m_numNodes,tagName,tagNameLen); };
-	int32_t    findNodeNum ( char *nodeText);
-	int32_t    getPingServerCount ( ) ;
+	int32_t getNodeNum( char *tagName ) {
+		if ( !tagName ) {
+			char *xx = NULL; *xx = 0;
+		}
+		return getNodeNum( 0, m_numNodes, tagName, strlen( tagName ) );
+	}
+
+	int32_t getNodeNum( char *tagName, int32_t tagNameLen ) {
+		return getNodeNum( 0, m_numNodes, tagName, tagNameLen );
+	}
+
+	int32_t findNodeNum( char *nodeText );
+	int32_t getPingServerCount();
+
 	// . get the back tag node for a given node
-	// . return the last node considered to be a kid or part of node n
-	// . used by XmlDoc to parse out <index> tags and find </index>
-	//	int32_t getEndNode ( int32_t n );
+	int32_t getEndNode ( int32_t num );
 
+	bool isTag( int32_t n ) {
+		return m_nodes[n].isTag();
+	}
 
-	bool      isTag         ( int32_t n ) {return m_nodes[n].isTag(); };
-	bool      isBreakingTag ( int32_t n ) {return m_nodes[n].m_isBreaking;};
-	bool      isBackTag     ( int32_t n ) {return m_nodes[n].m_node[1]=='/';};
-	bool      isXmlTag      ( int32_t n ) {return m_nodes[n].m_nodeId == TAG_XMLTAG;};
-	char     *getNode       ( int32_t n ) {return m_nodes[n].m_node; };
-	int32_t      getNodeLen    ( int32_t n ) {return m_nodes[n].m_nodeLen;};
-	nodeid_t  getNodeId     ( int32_t n ) {return m_nodes[n].m_nodeId;};
-	int64_t getNodeHash   ( int32_t n ) {return m_nodes[n].m_hash;};
-	bool      isVisible     ( int32_t n ) {return m_nodes[n].m_isVisible;};
+	bool isBreakingTag( int32_t n ) {
+		return m_nodes[n].m_isBreaking;
+	}
+
+	bool isBackTag( int32_t n ) {
+		return m_nodes[n].m_node[1] == '/';
+	}
+
+	bool isXmlTag( int32_t n ) {
+		return m_nodes[n].m_nodeId == TAG_XMLTAG;
+	}
+
+	char *getNode( int32_t n ) {
+		return m_nodes[n].m_node;
+	}
+
+	int32_t getNodeLen( int32_t n ) {
+		return m_nodes[n].m_nodeLen;
+	}
+
+	nodeid_t getNodeId( int32_t n ) {
+		return m_nodes[n].m_nodeId;
+	}
+
+	int64_t getNodeHash( int32_t n ) {
+		return m_nodes[n].m_hash;
+	}
+
+	bool isVisible( int32_t n ) {
+		return m_nodes[n].m_isVisible;
+	}
 
 	// get all nodes!
-	XmlNode  *getNodes ( ) { return m_nodes; };
-	XmlNode  *getNodePtr ( int32_t n ) { return &m_nodes[n]; };
-
-	// . store the the full xml compound name of a tag into "buf" (w/ \0)
-	// . return the length stored
-	// . ie. "xml.country.state.city"
-	// . fullTag option returns the entire node text
-	// . ie. "<xml>.<country>.<state abbrev="true">.<city arg="foo">
-	//int32_t getCompoundName ( int32_t n , char *buf , int32_t bufMaxLen, 
-	//		       bool fullTag = false ) ;
+	XmlNode *getNodes() {
+		return m_nodes;
+	}
+	XmlNode *getNodePtr( int32_t n ) {
+		return &m_nodes[n];
+	}
 
 	// get like compound name like "node1.node2.node3\0"
-	bool getCompoundName ( int32_t node , class SafeBuf *sb ) ;
-
+	bool getCompoundName( int32_t node, class SafeBuf *sb );
 
 	// . used for parsing xml conf files
 	// . used for getting the title in an html doc, etc.
@@ -107,34 +130,35 @@ public:
 	// . "tagName" is always compound
 	// . only searches nodes in [n0,n1] node range
 
-	int32_t      getLong     ( int32_t n0 , int32_t n1 , char *tagName ,
-			        int32_t      defaultLong     = 0   ); 
+	int32_t getLong( int32_t n0, int32_t n1, char *tagName, int32_t defaultLong = 0 );
 
-	char     *getString   ( int32_t n0 , int32_t n1 , char *tagName , int32_t *len ,
-			        bool skipLeadingSpaces = true   ) const; 
+	char *getString( int32_t n0, int32_t n1, char *tagName, int32_t *len,
+					 bool skipLeadingSpaces = true ) const;
+
 	// for parsing facebook replies:
-	char     *getNode ( char *tagName , int32_t *len ) ;
-	int32_t getNodeNumEnd ( int32_t num );
+	char *getNode( char *tagName, int32_t *len );
 
 	// like above routines but we search all nodes
+	int32_t getLong( char *tagName, int32_t defaultLong = 0 ) {
+		return getLong( 0, m_numNodes, tagName, defaultLong );
+	}
 
-	int32_t  getLong     ( char *tagName, int32_t  defaultLong = 0 ) {
-		return getLong(0,m_numNodes,tagName,defaultLong); }
-
-	char *getString   ( char *tagName                 , 
-			    int32_t *len                     , 
-			    bool skipLeadingSpaces = true ) const {
-		return getString(0,m_numNodes,tagName,len,skipLeadingSpaces); }
+	char *getString( char *tagName, int32_t *len, bool skipLeadingSpaces = true ) const {
+		return getString( 0, m_numNodes, tagName, len, skipLeadingSpaces );
+	}
 
 	// . used for getting links in the <a href=...> tag
 	// . used for getting data from meta tags
-	char *getString   ( int32_t node, const char *field, int32_t *valueLen ) {
-		if ( node >= m_numNodes ) { char *xx=NULL;*xx=0; }
-		return m_nodes[node].getFieldValue ( field , valueLen);
+	char *getString( int32_t node, const char *field, int32_t *valueLen ) {
+		if ( node >= m_numNodes ) {
+			char *xx = NULL; *xx = 0;
+		}
+
+		return m_nodes[node].getFieldValue( field, valueLen );
 	}
 
 	// called by getTextForXmlTag() below
-	char *getString ( int32_t node , bool skipLeadingSpaces, int32_t *len )const;
+	char *getString( int32_t node, bool skipLeadingSpaces, int32_t *len ) const;
 
 	// . like getText() below but gets the content from a meta tag
 	// . stores it in "buf"  and NULL terminates it
@@ -142,20 +166,12 @@ public:
 	// . field can be stuff like "summary","description","keywords",...
 	// . use "http-equiv" for "name" for meta redirect tags
 	// . if "convertHtmlEntites" is true we change < to &lt; and > to &gt;
-	int32_t getMetaContent ( char *buf      ,
-			      int32_t  bufLen   ,
-			      char *field    ,
-			      int32_t  fieldLen ,
-			      char *name                = "name" ,
-			      bool  convertHtmlEntities = false  ,
-			      int32_t  startNode   = 0 ,
-			      int32_t *matchedNode = NULL ) ;
-	
+	int32_t getMetaContent( char *buf, int32_t bufLen, char *field, int32_t fieldLen, char *name = "name",
+							bool convertHtmlEntities = false, int32_t startNode = 0,
+							int32_t *matchedNode = NULL );
+
 	// just get a pointer to it
-	char *getMetaContentPointer ( char *field    ,
-				      int32_t  fieldLen ,
-				      char *name = "name" ,
-				      int32_t *len  = NULL );
+	char *getMetaContentPointer( char *field, int32_t fieldLen, char *name = "name", int32_t *len = NULL );
 
 	// . filters out tags (uses html entities) and stores in "buf"
 	// . replaces "line breaking" html tags with 2 returns
@@ -168,19 +184,13 @@ public:
 	// . get kid text of node #"nodeNumber" unless it's -1
 	// . if "filterSpaces" then don't allow back to back spaces or \n's
 	//   and replace tags with ".." not \n (but no back to back ..'s)
-	int32_t  getText ( char  *buf                     , 
-			int32_t   bufMaxSize              ,
-			int32_t   node1           = 0     ,
-			int32_t   node2           = 999999,
-			bool   includeTags     = false ,
-			bool   visibleTextOnly = true  ,
-			bool   filter          = false ,
-			bool   filterSpaces    = false );
+	int32_t getText( char *buf, int32_t bufMaxSize, int32_t node1 = 0, int32_t node2 = 999999,
+					 bool filterSpaces = false );
 
-	int32_t  isRSSFeed  ( );
+	int32_t isRSSFeed();
 
-	char *getRSSTitle       ( int32_t *titleLen , bool *isHtmlEncoded ) const;
-	char *getRSSDescription ( int32_t *titleLen , bool *isHtmlEncoded );
+	char *getRSSTitle( int32_t *titleLen, bool *isHtmlEncoded ) const;
+	char *getRSSDescription( int32_t *titleLen, bool *isHtmlEncoded );
 
 	int32_t getMemUsed() { 
 		return m_allocSize + m_maxNumNodes*sizeof(XmlNode);
@@ -188,31 +198,31 @@ public:
 
 	// . used by getValueAsBool/Long/String()
 	// . tagName is compound for xml tags, simple for html tags
-	char *getTextForXmlTag ( int32_t n0, int32_t n1, char *tagName, int32_t *len ,
-				 bool skipLeadingSpaces ) const;
+	char *getTextForXmlTag( int32_t n0, int32_t n1, char *tagName, int32_t *len,
+							bool skipLeadingSpaces ) const;
 
-	XmlNode   *m_nodes;
-	int32_t       m_numNodes;
-	int32_t       m_maxNumNodes;
-
+	XmlNode *m_nodes;
+	int32_t m_numNodes;
+	int32_t m_maxNumNodes;
 
 private:
-
 	// used because "s" may have words separated by periods
-	int64_t getCompoundHash ( char *s , int32_t len ) const;
+	int64_t getCompoundHash( char *s, int32_t len ) const;
 
-	char      *m_xml;
-	int32_t       m_xmlLen;
+	char *m_xml;
+	int32_t m_xmlLen;
 
 	// If this is a unicode buffer, then m_xml is encoded in UTF-16
 	// m_xmlLen is still the size of the buffer IN BYTES
-	int32_t       m_version;
+	int32_t m_version;
 
-	int32_t       m_niceness;
+	int32_t m_niceness;
 
 	// if we own the data we free m_xml on reset or destruction
-	bool       m_ownData;
-	int32_t 	   m_allocSize; // size of buffer, if we allocated it
+	bool m_ownData;
+
+	// size of buffer, if we allocated it
+	int32_t m_allocSize;
 };
 
 #endif

@@ -298,27 +298,40 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 
 		// it is a punct word, find end of it
 		char *start = s+i;
-		//for (;s[i] && ! is_alnum_utf8(s+i);i+=getUtf8CharSize(s+i));
-		for ( ; s[i] ; i += getUtf8CharSize(s+i)){
+		for ( ; s[i] ; i += getUtf8CharSize(s+i)) {
 			// stop on < if we got tags
-			if ( s[i] == '<' && m_hasTags ) break;
+			if ( s[i] == '<' && m_hasTags ) {
+				break;
+			}
+
 			// breathe
 			QUICKPOLL(niceness);
+
 			// if we are simple ascii, skip quickly
 			if ( is_ascii(s[i]) ) {
 				// accumulate NON-alnum chars
-				if ( ! is_alnum_a(s[i]) ) continue;
+				if ( ! is_alnum_a(s[i]) ) {
+					continue;
+				}
+
 				// update
 				oldScript = ucScriptCommon;
+
 				// otherwise, stop we got alnum
 				break;
 			}
+
 			// if we are utf8 we stop on special props
 			UChar32 c = utf8Decode ( s+i );
+
 			// stop if word char
-			if ( ! ucIsWordChar ( c ) ) continue;
+			if ( ! ucIsWordChar ( c ) ) {
+				continue;
+			}
+
 			// update first though
 			oldScript = ucGetScript ( c );
+
 			// then stop
 			break;
 		}
@@ -461,8 +474,11 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 		char *xx = NULL; *xx = 0;
 	}
 	// compute total length
-	if ( m_numWords <= 0 ) m_totalLen = 0;
-	else m_totalLen = m_words[m_numWords-1] - s + m_wordLens[m_numWords-1];
+	if ( m_numWords <= 0 ) {
+		m_totalLen = 0;
+	} else {
+		m_totalLen = m_words[m_numWords-1] - s + m_wordLens[m_numWords-1];
+	}
 
 	if ( badCount )
 		log("words: had %"INT32" bad utf8 chars",badCount);

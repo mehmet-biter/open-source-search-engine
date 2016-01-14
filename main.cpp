@@ -8807,14 +8807,8 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 
 	char *buf = (char *)mmalloc(contentLen*2+1,"main");
 	t = gettimeofdayInMilliseconds_force();
-	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! xml.getText ( buf , contentLen*2+1 ,
-				     0         ,  // startNode
-				     9999999   ,  // endNode (the last one!)
-				     false     ,  // includeTags?
-				     true      ,  // visible text only?
-				     true      ,  // convert html entities?
-				     true      ))  // filter spaces?
+	for ( int32_t i = 0 ; i < 100 ; i++ )
+		if ( !xml.getText( buf, contentLen * 2 + 1, 0, 9999999, true ) )
 			return log("build: speedtestxml: getText: %s",
 				   mstrerror(g_errno));
 	// print time it took
@@ -8826,13 +8820,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 
 	t = gettimeofdayInMilliseconds_force();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
-		int32_t bufLen = xml.getText ( buf , contentLen*2+1 ,
-				     0         ,  // startNode
-				     9999999   ,  // endNode (the last one!)
-				     false     ,  // includeTags?
-				     true      ,  // visible text only?
-				     true      ,  // convert html entities?
-				     true      );  // filter spaces?
+		int32_t bufLen = xml.getText( buf, contentLen * 2 + 1, 0, 9999999, true );
 		if ( ! bufLen ) return log("build: speedtestxml: getText: %s",
 					   mstrerror(g_errno));
 		if ( ! words.set ( buf,true,0) )

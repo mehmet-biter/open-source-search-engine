@@ -6400,10 +6400,9 @@ skipItem:
 	int32_t node2 = m_xml->getNodeNum ( node1+1,9999999,"a",1);
 	// if not found use the last node in the document
 	if ( node2 < 0 ) node2 = 99999999;
-	// get the back tag for node #n0
-	//int32_t n1 = m_xml->getEndNode ( i );
+
 	// now we can call Xml::getText()
-	int32_t bufLen = m_xml->getText( buf, bufMaxLen, node1, node2, false, true, false, false );
+	int32_t bufLen = m_xml->getText( buf, bufMaxLen, node1, node2, false );
 
 	// set it
 	if ( retNode1 ) *retNode1 = node1;

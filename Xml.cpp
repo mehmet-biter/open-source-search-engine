@@ -87,7 +87,7 @@ char *Xml::getNode ( char *tagName , int32_t *len ) {
 	XmlNode *node = &m_nodes[num];
 	if ( ! node->m_hasBackTag ) return NULL;
 
-	int32_t i = getNodeNumEnd( num );
+	int32_t i = getEndNode( num );
 	if ( i < 0 ) {
 		return NULL;
 	}
@@ -104,25 +104,33 @@ char *Xml::getNode ( char *tagName , int32_t *len ) {
 	return s;
 }
 
-int32_t Xml::getNodeNumEnd ( int32_t num ) {
+int32_t Xml::getEndNode ( int32_t num ) {
 	if ( (num < 0) || (num >= m_numNodes) ) {
 		return -1;
 	}
 
 	XmlNode *node = &m_nodes[num];
-	if ( ! node->isTag() ) {
+	if ( !node->isTag() || !node->hasBackTag() ) {
 		return -1;
 	}
 
 	int32_t i = 0;
 
+	int innerTagCount = 1;
+
 	// scan for ending back tag
 	for ( i = num + 1 ; i < m_numNodes ; ++i ) {
-		if ( m_nodes[i].m_hash != node->m_hash ) {
-			continue;
-		}
+		if ( m_nodes[i].m_hash == node->m_hash ) {
+			if ( m_nodes[i].isFrontTag() ) {
+				++innerTagCount;
+			} else {
+				--innerTagCount;
+			}
 
-		break;
+			if ( innerTagCount == 0 ) {
+				break;
+			}
+		}
 	}
 
 	if ( i >= m_numNodes ) {
@@ -654,8 +662,7 @@ bool Xml::set ( char  *s             ,
 // . must write to your buf rather than just return a pointer since we may
 //   have to concatenate several nodes together, we may have to replace tags,..
 // . TODO: nuke this in favor of Pos.cpp::filter() -- but that needs Words.cpp
-int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node2, bool includeTags,
-					  bool visibleTextOnly, bool filter, bool filterSpaces ) {
+int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node2, bool filterSpaces ) {
 	// init some vars
 	int32_t i    = node1;
 	int32_t n    = node2;
@@ -672,11 +679,6 @@ int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node
 
 	char cs = -1;
 
-	// cannot allow nested script tags, messed up our summary generator
-	// when a page tried to print a <SCRIPT> tag in a doWrite('<SCRIPT>')
-	// already in a <SCRIPT> block
-	//char inScript = false;
-
 	// loop through all nodes from here on until we run outta nodes...
 	// or until we hit a tag with the same depth as us.
 	for ( ; i < n ; i++ ) {
@@ -692,7 +694,7 @@ int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node
 		// . if it's a tag then write a \n\n or \n to the buf
 		// . do this only if we do not include tags
 		// . do it only if there's something already in the buf
-		if ( ! includeTags && m_nodes[i].isTag() ) {
+		if ( m_nodes[i].isTag() ) {
 			// do nothing if buf still empty
 			if ( dst <= buf ) continue;
 			// or not a breaking tag
@@ -770,8 +772,7 @@ int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node
 		// point to it
 		char *src    = nodeData;
 		char *srcEnd = nodeData + nodeDataLen;
-		// size of character in bytes, usually 1
-		//char cs ;
+
 		// copy the node @src into "dst"
 		for ( ; src < srcEnd ; src += cs , dst += cs ) {
 			// get the character size in bytes
@@ -784,11 +785,6 @@ int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node
 				//goto simplecopy;
 			}
 
-			// a lot of docs have ^M's in them (\r)
-			//if ( c == '\r' ) { buf [ blen++ ] = ' '; continue; }
-
-			// store it as-is if not filtering or not html entity
-			//simplecopy:
 			// if more than 1 byte in char, use gbmemcpy
 			if ( cs > 1 ) {gbmemcpy ( dst , src , cs );}
 			else          *dst = *src;
@@ -810,10 +806,7 @@ int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node
 }
 
 // just get a pointer to it
-char *Xml::getMetaContentPointer ( char *field    ,
-				   int32_t  fieldLen ,
-				   char *name     ,
-				   int32_t *slen     ) {
+char *Xml::getMetaContentPointer( char *field, int32_t fieldLen, char *name, int32_t *slen ) {
 	// find the first meta summary node
 	for ( int32_t i = 0 ; i < m_numNodes ; i++ ) {
 		// continue if not a meta tag
