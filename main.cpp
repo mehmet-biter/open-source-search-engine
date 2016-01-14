@@ -8647,7 +8647,6 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		if ( ! xml.set ( content , contentLen , 
 				 false, 0, false, xd.m_version ,
-				 true , // setparents
 				 0 , // niceness 
 				 CT_HTML ) )
 			return log("build: speedtestxml: xml set: %s",
@@ -8665,7 +8664,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	t = gettimeofdayInMilliseconds_force();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		if ( ! xml.set ( content , contentLen , 
-				 false, 0, false, xd.m_version , false ,
+				 false, 0, false, xd.m_version ,
 				 0 , CT_HTML ) )
 			return log("build: xml(setparents=false): %s",
 				   mstrerror(g_errno));
@@ -8912,7 +8911,6 @@ bool summaryTest1   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
 		Xml xml;
 		xml.set ( content, contentLen , 
 			  false/*ownData?*/, 0, false, xd.m_version ,
-			  true , // setparents
 			  0 , // niceness
 			  CT_HTML );
 

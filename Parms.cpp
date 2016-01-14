@@ -3821,7 +3821,6 @@ bool Parms::setXmlFromFile(Xml *xml, char *filename, SafeBuf *sb ) {
 			  0       , // allocSize
 			  false   , // pureXml?
 			  0       , // version
-			  true    , // setParents
 			  0       , // niceness
 			  CT_XML  );
 }

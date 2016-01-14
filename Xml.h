@@ -9,13 +9,11 @@
 #include "Lang.h"
 
 class Xml {
-
- public:
-
-	Xml  () ;
+public:
+	Xml();
 
 	// . should free m_xml if m_copy is true
-	~Xml () ;
+	~Xml();
 
 	// do we have any xml in here?
 	bool isEmpty() {
@@ -29,7 +27,7 @@ class Xml {
 	// . if it's pure xml then set pureXml to true otherwise we assume it
 	//   is html or xhtml
 	bool set( char *s, int32_t slen, bool ownData, int32_t allocSize, bool pureXml, int32_t version,
-			  bool setParents, int32_t niceness, char contentType );
+			  int32_t niceness, char contentType );
 
 	void  reset ( );
 
@@ -111,8 +109,6 @@ class Xml {
 
 	int32_t      getLong     ( int32_t n0 , int32_t n1 , char *tagName ,
 			        int32_t      defaultLong     = 0   ); 
-	int64_t getLongLong ( int32_t n0 , int32_t n1 , char *tagName ,
-			        int64_t defaultLongLong = 0LL ); 
 
 	char     *getString   ( int32_t n0 , int32_t n1 , char *tagName , int32_t *len ,
 			        bool skipLeadingSpaces = true   ) const; 
@@ -124,8 +120,6 @@ class Xml {
 
 	int32_t  getLong     ( char *tagName, int32_t  defaultLong = 0 ) {
 		return getLong(0,m_numNodes,tagName,defaultLong); }
-	int64_t getLongLong (char *tagName, int64_t defaultLongLong = 0LL){
-		return getLongLong(0,m_numNodes,tagName,defaultLongLong); }
 
 	char *getString   ( char *tagName                 , 
 			    int32_t *len                     , 
@@ -183,56 +177,29 @@ class Xml {
 			bool   filter          = false ,
 			bool   filterSpaces    = false );
 
-
-	unsigned char getLanguage() { return langUnknown; }
-
 	int32_t  isRSSFeed  ( );
-	//bool  isAtomFeed ( );
-	//bool  isRDFFeed  ( );
-	
-	//int32_t  getRSSPublishDate ( int32_t niceness );
+
 	char *getRSSTitle       ( int32_t *titleLen , bool *isHtmlEncoded ) const;
 	char *getRSSDescription ( int32_t *titleLen , bool *isHtmlEncoded );
 
-	// get the link to the RSS feed for this page if it has one
-	char *getRSSPointer ( int32_t *length,
-			      int32_t startNode  = 0,
-			      int32_t *matchNode = NULL );
-
-	// get the link from this RSS item to the article
-	char *getItemLink ( int32_t *length );
-
 	int32_t getMemUsed() { 
-		return m_allocSize + m_maxNumNodes*sizeof(XmlNode); };
-
-	// private:
+		return m_allocSize + m_maxNumNodes*sizeof(XmlNode);
+	}
 
 	// . used by getValueAsBool/Long/String()
 	// . tagName is compound for xml tags, simple for html tags
 	char *getTextForXmlTag ( int32_t n0, int32_t n1, char *tagName, int32_t *len ,
 				 bool skipLeadingSpaces ) const;
 
-	// used because "s" may have words separated by periods
-	int64_t getCompoundHash ( char *s , int32_t len ) const;
-
-	// . set the m_parentNum of each XmlNode in our m_nodes array
-	// . TODO: do it on demand?
-	void setParents ();
-
-	// . must be called after setParents()
-	// . sets the m_compoundHash member variable in each XmlNode in m_nodes
-	void setCompoundHashes();
-
-	// . for mapping one xml tag to another
-	// . we map single and compound tags
-	// . TODO: implement this
-	//	class Xml *map;
-
 	XmlNode   *m_nodes;
 	int32_t       m_numNodes;
 	int32_t       m_maxNumNodes;
 
-	bool m_pureXml;
+
+private:
+
+	// used because "s" may have words separated by periods
+	int64_t getCompoundHash ( char *s , int32_t len ) const;
 
 	char      *m_xml;
 	int32_t       m_xmlLen;

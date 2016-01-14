@@ -30,16 +30,6 @@ int32_t Xml::getLong ( int32_t n0 , int32_t n1 , char *tagName , int32_t default
 	return defaultLong;
 }
 
-// . for parsing xml conf files
-int64_t Xml::getLongLong ( int32_t n0 , int32_t n1 , char *tagName , 
-			     int64_t defaultLongLong         ) {
-	int32_t len;
-	char *s = getTextForXmlTag ( n0 , n1 , tagName , &len , false );
-	if ( s ) return atoll2 ( s , len );
-	// return the default if no non-white-space text
-	return defaultLongLong;
-}
-
 char *Xml::getString ( int32_t n0 , int32_t n1 , char *tagName, int32_t *len ,
 		       bool skipLeadingSpaces ) const {
 	char *s = getTextForXmlTag ( n0, n1, tagName, len, skipLeadingSpaces );
@@ -239,7 +229,6 @@ bool Xml::set ( char  *s             ,
 	        int32_t   allocSize     ,
 	        bool   pureXml       ,
 	        int32_t   version       ,
-	        bool   setParentsArg ,
 	        int32_t   niceness      ,
 		char   contentType ) {
 
@@ -303,8 +292,6 @@ bool Xml::set ( char  *s             ,
 	if ( contentType == CT_XML )
 	  	pureXml = true;
 
-	// is it an xml conf file?
-	m_pureXml = pureXml;
 
 	QUICKPOLL((niceness));
 	int32_t i;
@@ -1065,103 +1052,6 @@ char *Xml::getRSSDescription ( int32_t *descLen , bool *isHtmlEncoded ) {
 	*descLen = dLen;
 	return desc;
 }
-
-// get a link to an RSS feed for this page
-char *Xml::getRSSPointer ( int32_t *length, int32_t  startNode, int32_t *matchedNode ) {
-	// assume no tag matched
-	if ( matchedNode ) *matchedNode = -1;
-	*length = 0;
-	// find the first meta summary node
-	for ( int32_t i = startNode ; i < m_numNodes ; i++ ) {
-		// continue if not a <link> tag
-		if ( m_nodes[i].m_nodeId != TAG_LINK ) continue;
-		// . check for rel="alternate"
-		int32_t len;
-		char *s = getString ( i, "rel", &len );
-		// continue if name doesn't match field
-		// field can be "summary","description","keywords",...
-		if ( len != 9 ) continue;
-		if ( strncasecmp ( s , "alternate" , 9 ) != 0 ) 
-			continue;
-		// . check for valid type:
-		//   type="application/atom+xml" (atom)
-		//   type="application/rss+xml"  (RSS 1.0/2.0)
-		//   type="application/rdf+xml"  (RDF)
-		//   type="text/xml"             (RSS .92) support?
-		s = getString ( i, "type", &len );
-		if (len == 20 && !strncasecmp(s, "application/atom+xml", 20))
-			goto isRSS;
-		if (len == 19 && !strncasecmp(s, "application/rss+xml", 19) )
-			goto isRSS;
-		if (len == 19 && !strncasecmp(s, "application/rdf+xml", 19) )
-			goto isRSS;
-		// not RSS
-		continue;
-	isRSS:
-		// . extract the link from href=""
-		s = getString ( i, "href", length );
-		if ( matchedNode ) *matchedNode = i;
-		return s;
-	}
-	return NULL;
-}
-
-// get the link pointed to by this RSS item
-char *Xml::getItemLink ( int32_t *linkLen ) {
-	char *link = NULL;
-	*linkLen = 0;
-
-	// find the first meta summary node
-	for ( int32_t i = 0; i < m_numNodes ; i++ ) {
-
-		// skip node if not an xml tag node
-		//if ( m_nodes[i].m_nodeId != 1 ) continue;
-
-		if ( m_nodes[i].m_nodeId == TAG_ENCLOSURE ) {
-			link = (char *) getString ( i, "url", linkLen );
-			if ( link ) return link;
-		}
-		// skip if not a <link> tag
-		else if ( m_nodes[i].m_nodeId != TAG_LINK ) 
-			continue;
-
-		// do we have an "enclosure" tag? used for multimedia.
-		/*
-		if ( m_nodes[i].m_tagNameLen == 9 &&
-		     memcmp(m_nodes[i].m_tagName,"enclosure",9) == 0 ) 
-			link = (char *) getString ( i, "url", linkLen );
-
-		if ( link ) return link;
-
-		// skip if not a <link> tag
-		if ( m_nodes[i].m_tagNameLen != 4 ) continue;
-		if (memcmp(m_nodes[i].m_tagName,"link",4)!=0) continue;
-		}
-		*/
-
-		// check for href string in the <link> tag... wierd...
-		link = getString ( i, "href", linkLen );
-		if ( link ) return link;
-
-		// if not in href, get the following text node
-		char *node    = m_nodes[i].m_node;
-		int32_t  nodeLen = m_nodes[i].m_nodeLen;
-		// must not end in "/>"
-		if (node[nodeLen-2] == '/' ) continue;
-		// expect <link> url </link>
-		if ( i + 2 >= m_numNodes ) continue;
-		if ( !isBackTag(i+2) ) continue;
-		// get the url
-		link     = m_nodes[i+1].m_node;
-		*linkLen = m_nodes[i+1].m_nodeLen;
-
-		if ( link && &linkLen > 0 ) return link;
-	}
-	// no link found, return NULL
-	*linkLen = 0;
-	return NULL;
-}
-
 
 int32_t Xml::findNodeNum(char *nodeText) {
         // do a binary search to find the node whose text begins at 

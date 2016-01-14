@@ -4186,7 +4186,6 @@ bool Inlink::setXmlFromRSS ( Xml *xml , int32_t niceness ) {
 			  0                        , // allocSize
 			  true                     , // pure xml?
 			  TITLEREC_CURRENT_VERSION ,
-			  false                    , // no need to now
 			  niceness                 ,
 			  CT_XML );
 }
@@ -4291,7 +4290,7 @@ bool LinkInfo::hash ( TermTable     *table                  ,
 		if ( ! table->hash ( version      ,
 				     note         ,
 				     noteLen      ,
-				     NULL         ,  
+				     NULL         ,
 				     0            ,
 				     txt          ,
 				     tlen         ,
@@ -4333,7 +4332,7 @@ bool LinkInfo::hash ( TermTable     *table                  ,
 				     txt          ,
 				     txtLen       ,
 				     docQuality   ,
-				     TERMTABLE_MAXSCORE, // maxScore  
+				     TERMTABLE_MAXSCORE, // maxScore
 				     true         ,  // doSpamDetection?
 				     true         ,  // hashSingleWords? ok.
 				     true         ,  // hashPhrases?
@@ -4364,7 +4363,7 @@ bool LinkInfo::hash ( TermTable     *table                  ,
 			     "numinlinks"      ,
 			     10                ,
 			     score             ,
-			     TERMTABLE_MAXSCORE,  // maxScore  
+			     TERMTABLE_MAXSCORE,  // maxScore
 			     false             ,  // doSpamDetection?
 			     true              ,  // hashSingleWords? ok.
 			     false             ,  // hashPhrases?
@@ -4374,7 +4373,7 @@ bool LinkInfo::hash ( TermTable     *table                  ,
 			     false             ,  // hashIffUnique?
 			     false             )) // hashWordIffNotInPhrase
 			return false;
-	
+
 
 	return true;
 }
