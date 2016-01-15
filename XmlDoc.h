@@ -739,6 +739,7 @@ public:
 	bool hashZipCodes ( class HashTableX *table ) ;
 	bool hashMetaZip ( class HashTableX *table ) ;
 	bool hashContentType ( class HashTableX *table ) ;
+	bool isDomainUnwantedForHashing(char *domain, int32_t dlen);
 	bool hashLinks ( class HashTableX *table ) ;
 	bool getUseTimeAxis ( ) ;
 	SafeBuf *getTimeAxisUrl ( );
@@ -2395,6 +2396,8 @@ public:
 		// gbsortbyint:gbisadultint32, gbrevsortbyint:gbisadultint32
 		// gbsortby:gbisadultfloat32, gbrevsortby:gbisadultfloat32
 		m_createSortByForNumbers= false;
+		m_hashNumbers			= true;
+		m_hashCommonWebWords	= true;
 	};
 	class HashTableX *m_tt;
 	char			*m_prefix;
@@ -2408,6 +2411,8 @@ public:
 	bool			m_useCountTable;
 	bool			m_useSections;
 	bool			m_createSortByForNumbers;
+	bool			m_hashNumbers;
+	bool			m_hashCommonWebWords;
 };
 
 

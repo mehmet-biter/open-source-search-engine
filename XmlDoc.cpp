@@ -26439,6 +26439,60 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 	return hashString (s,gbstrlen(s),&hi );
 }
 
+
+
+
+// BR 20160115
+// Yes, ugly hardcoded stuff again..
+// List of domains we do not want to store hashes for in posdb for "link:" entries
+bool XmlDoc::isDomainUnwantedForHashing(char *domain, int32_t dlen) {
+
+	if ( !domain || dlen <= 0 ) return true;
+
+	switch( dlen )
+	{
+		case 5:
+			if( memcmp(domain, "ow.ly", 5) == 0 ||
+				memcmp(domain, "tr.im", 5) == 0 )
+			{
+				return true;
+			}
+			break;
+		case 6:
+			if( memcmp(domain, "bit.ly", 6) == 0 ||
+				memcmp(domain, "goo.gl", 6) == 0 )
+			{
+				return true;
+			}
+			break;
+		case 10:
+			if( memcmp(domain, "tinyurl.cc", 10) == 0 )
+			{
+				return true;
+			}
+			break;
+		case 11:
+			if( memcmp(domain, "tinyurl.com", 11) == 0 )
+			{
+				return true;
+			}
+			break;
+		case 14:
+			if( memcmp(domain, "googleapis.com", 14) == 0 )
+			{
+				return true;
+			}
+			break;
+		default:
+			break;
+	}
+
+	return false;
+}
+
+
+
+
 // . hash the link: terms
 // . ensure that more useful linkers are scored higher
 // . useful for computing offsite link text for qdb-ish algorithm
@@ -26499,6 +26553,16 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 			   false         , // stripPound?
 			   false         , // stripCommonFile?
 			   m_version     );// used for new session id stripping
+
+
+		// BR 20160105: Do not create "link:" hashes for media URLs etc.
+		if( link.hasMediaExtension() ||
+			link.hasScriptExtension() ||
+			isDomainUnwantedForHashing(link.getDomain(), link.getDomainLen()) )
+		{
+			continue;			
+		}
+
 		// breathe
 		QUICKPOLL(m_niceness);
 		// . the score depends on some factors:
@@ -26788,11 +26852,18 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	int32_t  slen = fu->getUrlLen();
 	hi.m_prefix = "inurl";
 
+
+	// BR 20160114: Skip numbers in urls when doing "inurl:" queries
+	hi.m_hashNumbers = false;
+	hi.m_hashCommonWebWords = false;
 	// no longer, we just index json now
 	//if ( isStatusDoc ) hi.m_prefix = "inurl2";
 	if ( ! hashString ( s,slen, &hi ) ) return false;
 
+
 	setStatus ( "hashing ip colon" );
+	hi.m_hashNumbers = true;
+	hi.m_hashCommonWebWords = true;
 
 	//
 	// HASH ip:a.b.c.d
@@ -27150,21 +27221,37 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	if ( ! hashString(buf,blen,&hi) ) return false;
 */
 
+
 	setStatus ( "hashing url mid domain");
 
 	// update parms
 	hi.m_prefix    = NULL;
-	hi.m_desc      = "middle domain";//tmp3;
+	hi.m_desc      = "middle domain";
 	hi.m_hashGroup = HASHGROUP_INURL;
-
 	if ( ! hashString ( host,hlen,&hi)) return false;
+
+
 
 	setStatus ( "hashing url path");
 	char *path = fu->getPath();
 	int32_t  plen = fu->getPathLen();
 
-	// hash the path plain
-	if ( ! hashString (path,plen,&hi) ) return false;
+	// BR 20160113: Do not hash and combine the page filename extension with the page name (skip e.g. .com)
+	if( elen > 0 )
+	{
+		elen++;	// also skip the dot
+	}
+	plen -= elen;
+
+
+	// BR 20160113: Do not hash the most common page names
+	if( strncmp(path, "/index", plen) != 0 )
+	{
+		// hash the path
+		// BR 20160114: Exclude numbers in paths (usually dates)
+		hi.m_hashNumbers = false;
+		if ( ! hashString (path,plen,&hi) ) return false;
+	}
 
 	return true;
 }
@@ -31821,6 +31908,14 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		// do not breach wordpos bits
 		if ( wposvec[i] > MAXWORDPOS ) break;
 
+
+		// BR: 20160114 if digit, do not hash it if disabled
+		if( is_digit( wptrs[i][0] ) && !hi->m_hashNumbers )
+		{
+			continue;
+		}
+
+
 		// . hash the startHash with the wordId for this word
 		// . we must mask it before adding it to the table because
 		//   this table is also used to hash IndexLists into that come
@@ -31894,6 +31989,64 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		if ( hi->m_useCountTable ) wd = wdv[i];
 		else                       wd = MAXDIVERSITYRANK;
 
+
+		// BR 20160115: Don't hash 'junk' words
+		bool skipword = false;
+		if( !hi->m_hashCommonWebWords )
+		{
+			// Don't hash the words below as individual words.
+			// Yes, hack'ish. Will have to do for now..
+			switch( wlens[i] )
+			{
+				case 2:
+					if( memcmp(wptrs[i], "uk", 2) == 0 ||
+						memcmp(wptrs[i], "de", 2) == 0 ||
+						memcmp(wptrs[i], "dk", 2) == 0 ||
+						memcmp(wptrs[i], "co", 2) == 0 ||
+						memcmp(wptrs[i], "cn", 2) == 0 ||
+						memcmp(wptrs[i], "ru", 2) == 0 )
+					{
+						// Skip single word but include bigram (for domain searches)
+						skipword = true;
+					}
+					break;
+
+				case 3:
+					if( memcmp(wptrs[i], "com", 3) == 0 ||
+						memcmp(wptrs[i], "net", 3) == 0 ||
+						memcmp(wptrs[i], "org", 3) == 0 ||
+						memcmp(wptrs[i], "biz", 3) == 0 ||
+						memcmp(wptrs[i], "edu", 3) == 0 ||
+						memcmp(wptrs[i], "gov", 3) == 0 )
+					{
+						// Skip single word but include bigram (for domain searches)
+						skipword = true;
+					}
+
+				case 4:
+					if( memcmp(wptrs[i], "http", 4) == 0 )
+					{
+						// Never include as single word or in bigrams
+						continue;
+					}
+					break;
+
+				case 5:
+					if( memcmp(wptrs[i], "https", 5) == 0 )
+					{
+						// Never include as single word or in bigrams
+						continue;
+					}
+					break;
+			}
+			if( skipword )
+			{
+				// sticking to the gb style ;)
+				goto skipsingleword;
+			}
+		}
+
+		
 		// if using posdb
 		key144_t k;
 		// if ( i == 11429 )
@@ -32023,6 +32176,7 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 
 
 
+skipsingleword:
 		////////
 		//
 		// two-word phrase

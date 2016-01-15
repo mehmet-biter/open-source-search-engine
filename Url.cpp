@@ -1912,84 +1912,82 @@ bool isHijackerFormat ( char *url ) {
 
 bool Url::hasMediaExtension ( ) {
 
-	if ( ! m_extension || ! m_elen ) return false;
+	if ( ! m_extension || ! m_elen || m_elen > 4 ) return false;
 
-	char *ext = m_extension;
-
-	if ( to_lower_a(ext[0]) == 'c' &&
-	     to_lower_a(ext[1]) == 's' &&
-	     to_lower_a(ext[2]) == 's' )
-		return true;
-
-	if ( to_lower_a(ext[0]) == 'm' &&
-	     to_lower_a(ext[1]) == 'p' &&
-	     to_lower_a(ext[2]) == 'g' )
-		return true;
-
-	if ( to_lower_a(ext[0]) == 'p' &&
-	     to_lower_a(ext[1]) == 'n' &&
-	     to_lower_a(ext[2]) == 'g' )
-		return true;
-
-	if ( to_lower_a(ext[0]) == 'w' &&
-	     to_lower_a(ext[1]) == 'm' &&
-	     to_lower_a(ext[2]) == 'v' )
-		return true;
-
-	if ( to_lower_a(ext[0]) == 'w' &&
-	     to_lower_a(ext[1]) == 'a' &&
-	     to_lower_a(ext[2]) == 'v' )
-		return true;
-
-	if ( to_lower_a(ext[0]) == 'j' &&
-	     to_lower_a(ext[1]) == 'p' &&
-	     to_lower_a(ext[2]) == 'g' )
-		return true;
-
-	if ( to_lower_a(ext[0]) == 'g' &&
-	     to_lower_a(ext[1]) == 'i' &&
-	     to_lower_a(ext[2]) == 'f' )
-		return true;
-
-	if ( to_lower_a(ext[0]) == 'i' &&
-	     to_lower_a(ext[1]) == 'c' &&
-	     to_lower_a(ext[2]) == 'o' )
-		return true;
-
-	if ( to_lower_a(ext[0]) == 'm' &&
-	     to_lower_a(ext[1]) == 'p' &&
-	     to_lower_a(ext[2]) == '3' )
-		return true;
-
-	if ( to_lower_a(ext[0]) == 'm' &&
-	     to_lower_a(ext[1]) == 'p' &&
-	     to_lower_a(ext[2]) == '4' )
-		return true;
-
-	if ( to_lower_a(ext[0]) == 'm' &&
-	     to_lower_a(ext[1]) == 'o' &&
-	     to_lower_a(ext[2]) == 'v' )
-		return true;
-
-	if ( to_lower_a(ext[0]) == 'a' &&
-	     to_lower_a(ext[1]) == 'v' &&
-	     to_lower_a(ext[2]) == 'i' )
-		return true;
-
-	if ( to_lower_a(ext[0]) == 'm' &&
-	     to_lower_a(ext[1]) == 'p' &&
-	     to_lower_a(ext[2]) == 'e' &&
-	     to_lower_a(ext[3]) == 'g' )
-		return true;
-
-	if ( to_lower_a(ext[0]) == 'j' &&
-	     to_lower_a(ext[1]) == 'p' &&
-	     to_lower_a(ext[2]) == 'e' &&
-	     to_lower_a(ext[3]) == 'g' )
-		return true;
+	char ext[5];
+	int i;
+	for(i=0; i < m_elen; i++)
+	{
+		ext[i] = to_lower_a(m_extension[i]);
+	}
+	ext[i] = '\0';
+	
+	switch( m_elen )
+	{
+		case 3:
+			if( memcmp(ext, "css", 3) == 0 ||
+				memcmp(ext, "mpg", 3) == 0 ||
+				memcmp(ext, "png", 3) == 0 ||
+				memcmp(ext, "wmv", 3) == 0 ||
+				memcmp(ext, "wav", 3) == 0 ||
+				memcmp(ext, "jpg", 3) == 0 ||
+				memcmp(ext, "gif", 3) == 0 ||
+				memcmp(ext, "ico", 3) == 0 ||
+				memcmp(ext, "css", 3) == 0 ||
+				memcmp(ext, "mp2", 3) == 0 ||
+				memcmp(ext, "mp3", 3) == 0 ||
+				memcmp(ext, "mp4", 3) == 0 ||
+				memcmp(ext, "mov", 3) == 0 ||
+				memcmp(ext, "avi", 3) == 0 ||
+				memcmp(ext, "css", 3) == 0 ||
+				memcmp(ext, "css", 3) == 0 )
+			{
+				return true;
+			}
+			break;
+		case 4:
+			if( memcmp(ext, "mpeg", 4) == 0 ||
+				memcmp(ext, "jpeg", 4) == 0 )
+			{
+				return true;
+			}
+			break;
+		default:
+			break;
+	}
 
 	return false;
 }
+
+
+bool Url::hasScriptExtension ( ) {
+
+	if ( ! m_extension || ! m_elen || m_elen > 4 ) return false;
+
+	char ext[5];
+	int i;
+	for(i=0; i < m_elen; i++)
+	{
+		ext[i] = to_lower_a(m_extension[i]);
+	}
+	ext[i] = '\0';
+	
+	switch( m_elen )
+	{
+		case 2:
+			if( memcmp(ext, "js", 2) == 0 )
+			{
+				return true;
+			}
+			break;
+		default:
+			break;
+	}
+
+	return false;
+}
+
+
 
 char* Url::getDisplayUrl(char* url, SafeBuf* sb) {
 	char* found;
