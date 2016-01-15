@@ -285,8 +285,6 @@ public:
 	//bool  utf16HtmlEncode(char *s, int32_t len) {
 	//	return utf16HtmlEncode((UChar*)s, len>>1); };
 
-	bool htmlEncodeXmlTags ( char *s , int32_t slen , int32_t niceness ) ;
-
 	bool  cdataEncode ( char *s ) ;
 	bool  cdataEncode ( char *s , int32_t slen ) ;
 

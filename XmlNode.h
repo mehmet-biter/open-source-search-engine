@@ -319,6 +319,16 @@ inline bool isTagStart ( char *s ) {
 	return false;
 }
 
+enum NodeTagType {
+	TAG_TYPE_UNKNOWN = 0,
+	TAG_TYPE_XML,
+	TAG_TYPE_HTML_VOID,
+	TAG_TYPE_HTML_RAW,
+	TAG_TYPE_HTML_ESCAPABLE_RAW,
+	TAG_TYPE_HTML_FOREIGN,
+	TAG_TYPE_HTML_NORMAL,
+	LAST_TAG_TYPE
+};
 
 // Now set up a structure for describing ALL the available HTML nodes.
 // . Each HTML node has a name, name length, does it break a word?
@@ -336,7 +346,7 @@ public:
 	char m_filterKeep1; // for &strip=1 option
 	char m_filterKeep2; // for &strip=2 option
 	nodeid_t m_nodeId;
-	char m_isXmlTag;
+	char m_tagType;
 };
 
 extern class NodeType g_nodes[];

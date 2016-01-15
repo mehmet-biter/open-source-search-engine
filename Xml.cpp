@@ -6,6 +6,7 @@
 #include "Unicode.h" // for html entities that return unicode
 #include "Titledb.h"
 #include "Words.h"
+#include "Pos.h"
 
 Xml::Xml  () { 
 	m_xml = NULL; 
@@ -110,7 +111,10 @@ int32_t Xml::getEndNode ( int32_t num ) {
 	}
 
 	XmlNode *node = &m_nodes[num];
-	if ( !node->isTag() || !node->hasBackTag() ) {
+
+	// we can't use hasBackTag() because some tags has back tag but it's not mandatory
+	// so we check for void elements
+	if ( !node->isTag() || g_nodes[node->getNodeId()].m_tagType == TAG_TYPE_HTML_VOID ) {
 		return -1;
 	}
 
@@ -838,7 +842,6 @@ char *Xml::getMetaContentPointer( char *field, int32_t fieldLen, char *name, int
 //         generation purposes in Summary class
 // . "name" is usually "name" or "http-equiv"
 // . if "convertHtmlEntities" is true we turn < into &lt; and > in &gt;
-
 int32_t Xml::getMetaContent( char *buf, int32_t bufLen, char *field, int32_t fieldLen, char *name,
 							 int32_t startNode, int32_t *matchedNode ) {
 	// return 0 length if no buffer space
@@ -933,6 +936,140 @@ int32_t Xml::getMetaContent( char *buf, int32_t bufLen, char *field, int32_t fie
 	return 0;
 }
 
+static bool inTag ( XmlNode *node, nodeid_t tagId, int *count ) {
+	if ( !count ) {
+		return false;
+	}
+
+	if ( node->getNodeId() == tagId ) {
+		if ( node->isFrontTag() ) {
+			++(*count);
+			return true;
+		}
+
+		// back tag
+		if ( *count ) {
+			--(*count);
+		}
+	}
+
+	return (*count > 0);
+}
+
+static int32_t filterContent ( Words *wp, Pos *pp, char *buf, int32_t bufLen, int32_t minLength, int32_t maxLength ) {
+	bool isTruncated = false;
+	int32_t contentLen = 0;
+
+	/// @todo ALC we may want this to be configurable so we can tweak this as needed
+	if ( wp->getNumWords() > maxLength ) {
+		// ignore too long snippet
+		// it may not be that useful to get the first x characters from a long snippet
+		contentLen = 0;
+		buf[0] = '\0';
+
+		return contentLen;
+	}
+
+	contentLen = pp->filter( buf, buf + maxLength, wp, 0, wp->getNumWords(), &isTruncated );
+
+	if ( contentLen < minLength ) {
+		// ignore too short descriptions
+		// it may not be a good summary if it's too short
+		contentLen = 0;
+		buf[0] = '\0';
+
+		return contentLen;
+	}
+
+	if ( isTruncated && ( bufLen > ( contentLen + 4 ) ) ) {
+		gbmemcpy ( buf + contentLen , " ..." , 4 );
+		contentLen += 4;
+		buf[contentLen] = '\0';
+	}
+
+	return contentLen;
+}
+
+bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *buf, int32_t bufLen,
+						 int32_t minLength, int32_t maxLength, int32_t *contentLenPtr,
+						 bool ignoreExpandedIframe, nodeid_t expectedNodeId ) {
+	int32_t fieldNameLen = strlen( fieldName );
+	int32_t fieldContentLen = strlen(fieldContent);
+	int32_t contentLen = 0;
+
+	int inTagCount = 0;
+	for (int32_t i = 0; i < getNumNodes(); ++i ) {
+		// don't get tag from gbframe (expanded iframe content)
+		if ( ignoreExpandedIframe && inTag( getNodePtr( i ), TAG_GBFRAME, &inTagCount ) ) {
+			continue;
+		}
+
+		if ( expectedNodeId != LAST_TAG && getNodeId(i) != expectedNodeId ) {
+			continue;
+		}
+
+		bool found = false;
+		if ( fieldNameLen > 0 ) {
+			int32_t tagLen = 0;
+			char *tag = getString ( i , fieldName , &tagLen );
+			if ( tagLen == fieldContentLen && strncasecmp( tag, fieldContent, fieldContentLen ) == 0 ) {
+				found = true;
+			}
+		} else {
+			found = true;
+		}
+
+		if ( found ) {
+			int32_t end_node = getEndNode(i);
+
+			Words wp;
+			Pos pp;
+
+			if (end_node < 0) {
+				if ( getNodeId(i) != TAG_META ) {
+					// no end tag
+					continue;
+				}
+
+				// extract content from meta tag
+				int32_t len = 0;
+				char *s = getString ( i , "content" , &len );
+				if ( ! s || len <= 0 ) {
+					// no content
+					continue;
+				}
+
+				if ( ( !wp.set( s, len, true) ) ) {
+					// unable to allocate buffer
+					return false;
+				}
+			} else {
+				if ( !wp.set(this, true, 0, i, end_node ) ) {
+					// unable to allocate buffer
+					return false;
+				}
+			}
+
+			if ( !pp.set( &wp ) ) {
+				// unable to allocate buffer
+				return false;
+			}
+
+			contentLen = filterContent( &wp, &pp, buf, bufLen, minLength, maxLength );
+			if ( contentLen > 0 ) {
+				if (contentLenPtr) {
+					*contentLenPtr = contentLen;
+				}
+
+				/// @todo ALC we may want to loop through the whole doc and get the best.
+				/// Only get the first for now
+				break;
+			}
+		}
+	}
+
+	return (contentLen > 0);
+}
 
 //  TEST CASES:
 //. this is NOT rss, but has an rdf:rdf tag in it!

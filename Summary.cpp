@@ -45,8 +45,16 @@ int32_t Summary::getSummaryLen() {
 	return m_summaryLen;
 }
 
-bool Summary::setLength() {
+bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
 	if ( m_summaryLen > 0 ) {
+		// verify that it's not the same with title
+		if ( m_summaryLen == titleBufLen && strncasestr( titleBuf, m_summary, titleBufLen, m_summaryLen ) ) {
+			m_summaryLen = 0;
+			m_summary[0] = '\0';
+
+			return false;
+		}
+
 		m_summaryExcerptLen[0] = m_summaryLen;
 		m_numExcerpts = 1;
 
@@ -61,172 +69,44 @@ bool Summary::setLength() {
 	return false;
 }
 
-bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
-	// verify that it's not the same with title
-	if ( titleBufLen > 0 && m_summaryLen == titleBufLen &&
-	     strncasestr( titleBuf, m_summary, titleBufLen, m_summaryLen ) ) {
-		m_summaryLen = 0;
-		m_summary[0] = '\0';
-
-		return false;
-	}
-
-	return true;
-}
-
-bool Summary::setFromWords( Words *wp, Pos *pp, int32_t maxSummaryLen ) {
-	bool isTruncated = false;
-
-	/// @todo ALC we may want this to be configurable so we can tweak this as needed
-	if ( wp->getNumWords() > maxSummaryLen ) {
-		// ignore too long snippet
-		// it may not be that useful to get the first x characters from a long snippet
-		m_summaryLen = 0;
-		m_summary[0] = '\0';
-
-		return false;
-	}
-
-
-	m_summaryLen = pp->filter( m_summary, m_summary + maxSummaryLen, wp, 0, wp->getNumWords(), &isTruncated );
-
-	/// @todo ALC we may want this to be configurable so we can tweak this as needed
-	if (m_summaryLen < (maxSummaryLen / 3)) {
-		// ignore too short descriptions
-		// it may not be a good summary if it's too short
-		m_summaryLen = 0;
-		m_summary[0] = '\0';
-
-		return false;
-	}
-
-	if ( isTruncated ) {
-		gbmemcpy ( m_summary + m_summaryLen , " ..." , 4 );
-		m_summaryLen += 4;
-	}
-
-	return true;
-}
-
-static bool inTag ( XmlNode *node, nodeid_t tagId, int *count ) {
-	if ( !count ) {
-		return false;
-	}
-
-	if ( node->getNodeId() == tagId ) {
-		if ( node->isFrontTag() ) {
-			++(*count);
-			return true;
-		}
-
-		// back tag
-		if ( *count ) {
-			--(*count);
-		}
-	}
-
-	return (*count > 0);
-}
-
-bool Summary::setFromMetaTag( Xml *xml, int32_t maxSummaryLen, const char *fieldName, const char *fieldContent ) {
-	int32_t fieldContentLen = strlen(fieldContent);
-
-	int inTagCount = 0;
-	for ( int32_t i = 0 ; i < xml->getNumNodes(); ++i ) {
-		// don't get tag from filled in iframe content
-		if ( inTag( xml->getNodePtr( i ), TAG_GBFRAME, &inTagCount ) ) {
-			continue;
-		}
-
-		if ( xml->getNodeId(i) != TAG_META ) {
-			continue;
-		}
-
-		int32_t tagLen = 0;
-		char *tag = xml->getString ( i , fieldName , &tagLen );
-		if ( tagLen == fieldContentLen && strncasecmp( tag, fieldContent, fieldContentLen ) == 0 ) {
-			int32_t len = 0;
-			char *s = xml->getString ( i , "content" , &len );
-			if ( ! s || len <= 0 ) {
-				continue;
-			}
-
-			Words wp;
-			Pos pp;
-
-			if ( ( !wp.set( s, len, true) ) || ( !pp.set( &wp ) ) ) {
-				return false;
-			}
-
-			if ( !setFromWords( &wp, &pp, maxSummaryLen ) ) {
-				continue;
-			}
-
-			break;
-		}
-	}
-
-	return setLength();
-}
-
-bool Summary::setFromField( Xml *xml, int32_t maxSummaryLen, const char *fieldName, const char *fieldContent ) {
-	int32_t fieldContentLen = strlen(fieldContent);
-
-	for ( int32_t i = 0 ; i < xml->getNumNodes(); ++i ) {
-		int32_t tagLen = 0;
-		char *tag = xml->getString ( i , fieldName , &tagLen );
-		if ( tagLen == fieldContentLen && strncasecmp( tag, fieldContent, fieldContentLen ) == 0 ) {
-			int32_t end_node = xml->getEndNode(i);
-
-			if (end_node < 0) {
-				/// @todo ALC meta name itemprop = "description"
-				// no end tag
-				continue;
-			}
-
-			Words wp;
-			Pos pp;
-
-			if ( ( !wp.set(xml, true, 0, i, end_node ) ) || ( !pp.set( &wp ) ) ) {
-				return false;
-			}
-
-			if ( !setFromWords( &wp, &pp, maxSummaryLen ) ) {
-				continue;
-			}
-
-			/// @todo ALC we may want to loop through the whole doc and get the best.
-			/// Only get the first for now
-			break;
-		}
-	}
-
-	return setLength();
-}
-
 // let's try to get a nicer summary by using what the website set as description
 // Use the following in priority order (highest first)
 // - itemprop = "description"
 // - meta name = "og:description"
 // - meta name = "description"
-bool Summary::setFromUserData( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen ) {
+bool Summary::setFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen ) {
+	/// @todo ALC we may want this to be configurable so we can tweak this as needed
+	int minSummaryLen = (maxSummaryLen / 3);
+
 	// itemprop = "description"
-	if ( setFromField( xml, maxSummaryLen, "itemprop", "description" ) ) {
+	if ( xml->getTagContent("itemprop", "description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen) ) {
 		if ( verifySummary( titleBuf, titleBufLen ) ) {
+			if ( g_conf.m_logDebugSummary ) {
+				log(LOG_DEBUG, "sum: generated from itemprop description. summary='%.*s'", m_summaryLen, m_summary);
+			}
+
 			return true;
 		}
 	}
 
 	// meta property = "og:description"
-	if ( setFromMetaTag( xml, maxSummaryLen, "property", "og:description" ) ) {
+	if ( xml->getTagContent("property", "og:description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen, true, TAG_META ) ) {
 		if ( verifySummary( titleBuf, titleBufLen ) ) {
+			if ( g_conf.m_logDebugSummary ) {
+				log(LOG_DEBUG, "sum: generated from meta property og:description. summary='%.*s'", m_summaryLen, m_summary);
+			}
+
 			return true;
 		}
 	}
 
 	// meta name = "description"
-	if ( setFromMetaTag( xml, maxSummaryLen, "name", "description" ) ) {
+	if ( xml->getTagContent("name", "description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen, true, TAG_META ) ) {
 		if ( verifySummary( titleBuf, titleBufLen ) ) {
+			if ( g_conf.m_logDebugSummary ) {
+				log(LOG_DEBUG, "sum: generated from meta name description. summary='%.*s'", m_summaryLen, m_summary);
+			}
+
 			return true;
 		}
 	}
@@ -279,7 +159,8 @@ bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *
 		return log("query: More than 256 summary lines requested.");
 	}
 
-	if (setFromUserData(xml, maxSummaryLen, titleBuf, titleBufLen)) {
+	// set from itemprop/meta tags
+	if (setFromTags(xml, maxSummaryLen, titleBuf, titleBufLen)) {
 		return true;
 	}
 

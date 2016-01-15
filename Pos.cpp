@@ -220,10 +220,7 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 
 			if ( f ) {
 				if ( fend - f > cs ) {
-					// change '|' to commas
-					if ( *p == '|' ) {
-						*f++ = ',';
-					} else if ( cs == 1 ) {
+					if ( cs == 1 ) {
 						*f++ = *p;
 					} else {
 						gbmemcpy( f, p, cs );

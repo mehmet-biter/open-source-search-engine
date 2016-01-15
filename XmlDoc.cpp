@@ -8400,13 +8400,9 @@ char *XmlDoc::getMetaDescription( int32_t *mdlen ) {
 	}
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
-	//xml->getMetaContent ( m_metaDesc, 1024, "description", 11 );
-	// we need to point to it in the html source so our WordPosInfo
-	// algo works right.
-	m_metaDesc = xml->getMetaContentPointer("description",
-						11,
-						"name",
-						&m_metaDescLen);
+
+	// we need to point to it in the html source so our WordPosInfo algo works right.
+	m_metaDesc = xml->getMetaContentPointer( "description", 11, "name", &m_metaDescLen );
 	*mdlen = m_metaDescLen;
 	m_metaDescValid = true;
 	return m_metaDesc;
@@ -8419,10 +8415,8 @@ char *XmlDoc::getMetaSummary ( int32_t *mslen ) {
 	}
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
-	m_metaSummary = xml->getMetaContentPointer("summary",
-						   7,
-						   "name",
-						   &m_metaSummaryLen);
+
+	m_metaSummary = xml->getMetaContentPointer( "summary", 7, "name", &m_metaSummaryLen );
 	*mslen = m_metaSummaryLen;
 	m_metaSummaryValid = true;
 	return m_metaSummary;
@@ -8435,13 +8429,9 @@ char *XmlDoc::getMetaKeywords( int32_t *mklen ) {
 	}
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
-	//xml->getMetaContent ( m_metaKeywords, 1024, "keywords", 8 );
-	// we need to point to it in the html source so our WordPosInfo
-	// algo works right.
-	m_metaKeywords=xml->getMetaContentPointer("keywords",
-						  8,
-						  "name",
-						  &m_metaKeywordsLen);
+
+	// we need to point to it in the html source so our WordPosInfo algo works right.
+	m_metaKeywords = xml->getMetaContentPointer( "keywords", 8, "name", &m_metaKeywordsLen );
 	*mklen = m_metaKeywordsLen;
 	m_metaKeywordsValid = true;
 	return m_metaKeywords;
@@ -17146,70 +17136,6 @@ char **XmlDoc::getUtf8Content ( ) {
 
 	// sanity
 	if ( ! m_contentTypeValid ) { char *xx=NULL;*xx=0; }
-
-	// if we are an xml doc, then before we call htmlDecode translate
-	// all tags like <title> or <link> to <gbtitle> or <gblink> so we
-	// know they are xml tags. because stuff like &lt;br&gt; will
-	// become <br> and will be within its xml tag like <gbdescription>
-	// or <gbtitle>.
-	// MDW: 9/28/2014. no longer do this since i added hashXmlFields().
-	/*
-	if ( m_contentType == CT_XML ) {
-		// count the xml tags
-		char *p    = m_expandedUtf8Content;
-		char *pend = p + m_expandedUtf8ContentSize - 1;
-		int32_t  need = m_expandedUtf8ContentSize;
-		for ( ; p < pend ; p++ ) {
-			QUICKPOLL(m_niceness);
-			if ( *p == '<' ) need += 5; // for adding "gbxml"
-		}
-		if ( ! m_xbuf.reserve(need) ) return NULL;
-		// reset ptr
-		p = m_expandedUtf8Content;
-		// ponit to dst
-		char *dst = m_xbuf.getBufStart();
-		// do the copy
-		for ( ; p < pend ; p++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// copy it over
-			*dst++ = *p;
-			if ( *p != '<' ) continue;
-			// if <?xml> copy over as is, do not insert 'gb'
-			if ( p[1] == '?' ) continue;
-			// same for comments <!--...-->
-			if ( p[1] == '!' ) continue;
-			// point to tagname
-			char *tagName = p+1;
-			if ( p[1] == '/' ) tagName++;
-			// also get the full node now
-			NodeType *nt; getTagId ( tagName , &nt );
-			// if it is not an html tag, do not fuss with it!
-			if ( ! nt ) continue;
-			// if its in the list but is xml, let it go too
-			if ( nt->m_isXmlTag ) continue;
-			// . otherwise, its an html tag being used as an xml
-			//   tag and we need to encode (append gbxml to it)
-			// . insert / first if there
-			if ( p[1] == '/' ) {p++;*dst++ = *p;}
-			// then "gb"
-			*dst++ = 'g';
-			*dst++ = 'b';
-			*dst++ = 'x';
-			*dst++ = 'm';
-			*dst++ = 'l';
-		}
-		// update
-		m_xbuf.m_length = dst - m_xbuf.getBufStart();
-		// final \0
-		*dst = '\0';
-		// re-assign these
-		m_expandedUtf8Content     = m_xbuf.getBufStart();//m_buf;
-		m_expandedUtf8ContentSize = m_xbuf.m_length + 1;
-		// free esbuf if we were referencing that to save mem
-		m_esbuf.purge();
-	}
-	*/
 
 	// richmondspca.org has &quot; in some tags and we do not like
 	// expanding that to " because it messes up XmlNode::getTagLen()
@@ -28945,6 +28871,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		if ( ! ti || ti == (Title *)-1 ) return (Msg20Reply *)ti;
 		char *tit = ti->getTitle();
 		int32_t  titLen = ti->getTitleLen();
+		logf(LOG_INFO, "title: titleLen=%d title='%.*s'", titLen, titLen, tit);
 		reply-> ptr_tbuf = tit;
 		reply->size_tbuf = titLen + 1; // include \0
 		// sanity

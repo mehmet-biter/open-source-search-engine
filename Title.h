@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-#define TITLE_LOCAL_SIZE 2048
+#define MAX_TITLE_LEN 2048
 
 // forward declaration
 class XmlDoc;
@@ -45,7 +45,7 @@ public:
 
 	// does NOT include \0
 	int32_t getTitleLen() {
-		return m_titleBytes;
+		return m_titleLen;
 	}
 
 	int32_t getTitleTagStart() {
@@ -61,22 +61,19 @@ public:
 	float getSimilarity(Words *w1, int32_t i0, int32_t i1, Words  *w2, int32_t t0, int32_t t1);
 
 private:
+	bool setFromTags(Xml *xml, int32_t maxTitleLen);
 
-	char *m_title;
-	int32_t m_titleBytes; // in bytes. does NOT include \0
-	int32_t m_titleAllocSize;
-	char m_localBuf[TITLE_LOCAL_SIZE];
+	bool setTitle4(XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars, int32_t maxTitleWords, Query *q);
+
+	char m_title[MAX_TITLE_LEN];
+	int32_t m_titleLen;
+
 	char m_niceness;
 
 	int32_t  m_maxTitleChars;
 
 	int32_t m_titleTagStart;
 	int32_t m_titleTagEnd;
-
-
-
-	bool setTitle4(XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars, int32_t maxTitleWords, Query *q);
-
 };
 
 #endif

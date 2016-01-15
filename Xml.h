@@ -158,6 +158,11 @@ public:
 	// called by getTextForXmlTag() below
 	char *getString( int32_t node, bool skipLeadingSpaces, int32_t *len ) const;
 
+	// used for title/summary generation
+	bool getTagContent( const char *fieldName, const char *fieldContent, char *buf, int32_t bufLen,
+						int32_t minLength, int32_t maxLength, int32_t *contentLenPtr,
+						bool ignoreExpandedIframe = false, nodeid_t expectedNodeId = LAST_TAG );
+
 	// . like getText() below but gets the content from a meta tag
 	// . stores it in "buf"  and NULL terminates it
 	// . returns the length
