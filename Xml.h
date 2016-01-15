@@ -165,8 +165,7 @@ public:
 	// . use "http-equiv" for "name" for meta redirect tags
 	// . if "convertHtmlEntites" is true we change < to &lt; and > to &gt;
 	int32_t getMetaContent( char *buf, int32_t bufLen, char *field, int32_t fieldLen, char *name = "name",
-							bool convertHtmlEntities = false, int32_t startNode = 0,
-							int32_t *matchedNode = NULL );
+							int32_t startNode = 0, int32_t *matchedNode = NULL );
 
 	// just get a pointer to it
 	char *getMetaContentPointer( char *field, int32_t fieldLen, char *name = "name", int32_t *len = NULL );

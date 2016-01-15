@@ -839,9 +839,8 @@ char *Xml::getMetaContentPointer( char *field, int32_t fieldLen, char *name, int
 // . "name" is usually "name" or "http-equiv"
 // . if "convertHtmlEntities" is true we turn < into &lt; and > in &gt;
 
-int32_t Xml::getMetaContent (char *buf, int32_t bufLen, char *field, int32_t fieldLen ,
-			  char *name , bool convertHtmlEntities , 
-			  int32_t startNode , int32_t *matchedNode ) {
+int32_t Xml::getMetaContent( char *buf, int32_t bufLen, char *field, int32_t fieldLen, char *name,
+							 int32_t startNode, int32_t *matchedNode ) {
 	// return 0 length if no buffer space
 	if ( bufLen <= 0 ) return 0;
 	// assume it's empty
@@ -896,22 +895,13 @@ int32_t Xml::getMetaContent (char *buf, int32_t bufLen, char *field, int32_t fie
 			QUICKPOLL(m_niceness);
 			// get the character size in bytes
 			cs = getUtf8CharSize ( src );
+
 			// break if we are full! (save room for \0)
 			if ( dst + 5 >= dstEnd ) break;
+
 			// remember last punct for cutting purposes
 			if ( ! is_alnum_utf8 ( src ) ) lastp = dst;
-			// encode it as an html entity if asked to
-			if ( *src == '<' && convertHtmlEntities ) {
-				gbmemcpy ( dst , "&lt;" , 4 );
-				dst += 4;
-				continue;
-			}
-			// encode it as an html entity if asked to
-			if ( *src == '>' && convertHtmlEntities ) {
-				gbmemcpy ( dst , "&gt;" , 4 );
-				dst += 4;
-				continue;
-			}
+
 			// if more than 1 byte in char, use gbmemcpy
 			if ( cs > 1 ) {gbmemcpy ( dst , src , cs );}
 			else          *dst = *src;

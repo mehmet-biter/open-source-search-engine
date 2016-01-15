@@ -29834,12 +29834,7 @@ char *XmlDoc::getDescriptionBuf ( char *displayMetas , int32_t *dsize ) {
 		int32_t avail = dbufEnd - dptr - 1;
 		if ( maxLen > avail ) maxLen = avail;
 		// store the content at "dptr" (do not exceed "maxLen" bytes)
-		int32_t wlen = xml->getMetaContent ( dptr      , // write buf
-						 maxLen    , // buf length
-						 s         , // name value
-						 gbstrlen(s) , // name len
-						 "name"    , // http-equiv/name
-						 false     );// convert &#'s?
+		int32_t wlen = xml->getMetaContent( dptr, maxLen, s, gbstrlen( s ) );
 		dptr[wlen] = '\0';
 
 		// test it out
