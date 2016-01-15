@@ -1925,19 +1925,21 @@ bool Url::hasMediaExtension ( ) {
 	switch( m_elen )
 	{
 		case 3:
-			if( memcmp(ext, "css", 3) == 0 ||
-				memcmp(ext, "mpg", 3) == 0 ||
-				memcmp(ext, "png", 3) == 0 ||
-				memcmp(ext, "wmv", 3) == 0 ||
-				memcmp(ext, "wav", 3) == 0 ||
-				memcmp(ext, "jpg", 3) == 0 ||
+			if( 
+				memcmp(ext, "avi", 3) == 0 ||
+				memcmp(ext, "css", 3) == 0 ||
 				memcmp(ext, "gif", 3) == 0 ||
 				memcmp(ext, "ico", 3) == 0 ||
+				memcmp(ext, "jpg", 3) == 0 ||
+				memcmp(ext, "mov", 3) == 0 ||
 				memcmp(ext, "mp2", 3) == 0 ||
 				memcmp(ext, "mp3", 3) == 0 ||
 				memcmp(ext, "mp4", 3) == 0 ||
-				memcmp(ext, "mov", 3) == 0 ||
-				memcmp(ext, "avi", 3) == 0 )
+				memcmp(ext, "mpg", 3) == 0 ||
+				memcmp(ext, "png", 3) == 0 ||
+				memcmp(ext, "svg", 3) == 0 ||
+				memcmp(ext, "wav", 3) == 0 ||
+				memcmp(ext, "wmv", 3) == 0 )
 			{
 				return true;
 			}
