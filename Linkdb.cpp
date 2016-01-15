@@ -6064,7 +6064,7 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 		     m_parentUrl->getUrlLen())==0) {
 		flags |= LF_SELFLINK;
 		// turn this flag on
-		if ( nodeNum >= 0 ) m_xml->m_nodes[nodeNum].m_isSelfLink = 1;
+		if ( nodeNum >= 0 ) m_xml->getNodePtr(nodeNum)->m_isSelfLink = 1;
 	}
 
 	// now check for the "permalink" key word or "permanent link" keyphrase

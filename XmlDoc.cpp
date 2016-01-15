@@ -43854,10 +43854,10 @@ bool XmlDoc::storeFacetValuesHtml(char *qs, SafeBuf *sb, FacetValHash_t fvh ) {
 
 
 	// find the first meta summary node
-	for ( i = 0 ; i < xml->m_numNodes ; i++ ) {
+	for ( i = 0 ; i < xml->getNumNodes() ; i++ ) {
 
 		// continue if not a meta tag
-		if ( xml->m_nodes[i].m_nodeId != TAG_META ) continue;
+		if ( xml->getNodeId(i) != TAG_META ) continue;
 		// . does it have a type field that's "summary"
 		// . <meta name=summary content="...">
 		// . <meta http-equiv="refresh" content="0;URL=http://y.com/">
@@ -43913,10 +43913,10 @@ bool XmlDoc::storeFacetValuesXml(char *qs, SafeBuf *sb, FacetValHash_t fvh ) {
 	SafeBuf nameBuf;
 
 	// find the first meta summary node
-	for ( i = 0 ; i < xml->m_numNodes ; i++ ) {
+	for ( i = 0 ; i < xml->getNumNodes() ; i++ ) {
 
 		// skip text nodes
-		if ( xml->m_nodes[i].m_nodeId == TAG_TEXTNODE ) continue;
+		if ( xml->getNodeId(i) == TAG_TEXTNODE ) continue;
 
 		// assemble the full parent name
 		// like "tag1.tag2.tag3"
@@ -43937,15 +43937,15 @@ bool XmlDoc::storeFacetValuesXml(char *qs, SafeBuf *sb, FacetValHash_t fvh ) {
 		// got it...
 
 		// wtf?
-		if ( i + 1 >= xml->m_numNodes ) continue;
+		if ( i + 1 >= xml->getNumNodes() ) continue;
 
 		// point to the content! this is a text node?
 
 		// skip if not a text node, we don't return tag nodes i guess
-		if ( xml->m_nodes[i+1].m_nodeId ) continue;
+		if ( xml->getNodeId(i+1) ) continue;
 
-		char *content = xml->m_nodes[i+1].m_node;
-		int32_t contentLen = xml->m_nodes[i+1].m_nodeLen;
+		char *content = xml->getNode(i+1);
+		int32_t contentLen = xml->getNodeLen(i+1);
 
 		// skip if empty
 		if ( ! content || contentLen <= 0 ) continue;

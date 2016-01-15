@@ -71,9 +71,6 @@ public:
 		return getNodeNum( 0, m_numNodes, tagName, tagNameLen );
 	}
 
-	int32_t findNodeNum( char *nodeText );
-	int32_t getPingServerCount();
-
 	// . get the back tag node for a given node
 	int32_t getEndNode ( int32_t num );
 
@@ -117,6 +114,7 @@ public:
 	XmlNode *getNodes() {
 		return m_nodes;
 	}
+
 	XmlNode *getNodePtr( int32_t n ) {
 		return &m_nodes[n];
 	}
@@ -192,22 +190,18 @@ public:
 	char *getRSSTitle( int32_t *titleLen, bool *isHtmlEncoded ) const;
 	char *getRSSDescription( int32_t *titleLen, bool *isHtmlEncoded );
 
-	int32_t getMemUsed() { 
-		return m_allocSize + m_maxNumNodes*sizeof(XmlNode);
-	}
-
 	// . used by getValueAsBool/Long/String()
 	// . tagName is compound for xml tags, simple for html tags
 	char *getTextForXmlTag( int32_t n0, int32_t n1, char *tagName, int32_t *len,
 							bool skipLeadingSpaces ) const;
 
-	XmlNode *m_nodes;
-	int32_t m_numNodes;
-	int32_t m_maxNumNodes;
-
 private:
 	// used because "s" may have words separated by periods
 	int64_t getCompoundHash( char *s, int32_t len ) const;
+
+	XmlNode *m_nodes;
+	int32_t m_numNodes;
+	int32_t m_maxNumNodes;
 
 	char *m_xml;
 	int32_t m_xmlLen;

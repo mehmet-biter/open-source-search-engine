@@ -949,15 +949,6 @@ int32_t Xml::getMetaContent (char *buf, int32_t bufLen, char *field, int32_t fie
 //  http://www.silverstripe.com/silverstripe-adds-a-touch-of-design-and-a-whole-lot-more/
 //  http://government.zdnet.com/?p=4245
 int32_t Xml::isRSSFeed ( ) {
-	// must have atleast one rss.channel.item.link node
-	//int32_t rssLink = getNodeNum ( "rss.channel.item.link" );
-	//if ( rssLink >= 0 )
-	//	return true;
-	// rdf: must have atleast one rss.channel.item.link node
-	//rssLink = getNodeNum ( "rdf.channel.item.link" );
-	//if ( rssLink >= 0 )
-	//	return true;
-	//bool hasTag  = false;
 	int32_t type = 0;
 	int32_t tag  = 0;
 	int32_t i;
@@ -994,23 +985,16 @@ char *Xml::getRSSTitle ( int32_t *titleLen , bool *isHtmlEncoded ) const {
 	// . extract the RSS/Atom title
 	// rss/rdf
 	int32_t tLen;
-	//char *title = getString ( "item.title",
-	//			  &tLen       ,
-	//			  true        );
-	char *title = getString ( "title" ,
-				  &tLen   ,
-				  true    );
-	// atom
-	//if ( ! title )
-	//	title = getString ( "entry.title",
-	//			    &tLen        ,
-	//			    true         );
+
+	char *title = getString( "title", &tLen, true );
+
 	// watch out for <![CDATA[]]> block
 	if ( tLen >= 12 && strncasecmp(title, "<![CDATA[", 9) == 0 ) {
 		title += 9;
 		tLen  -= 12;
 		*isHtmlEncoded = false;
 	}
+
 	// return
 	*titleLen  = tLen;
 	return title;
@@ -1022,64 +1006,29 @@ char *Xml::getRSSDescription ( int32_t *descLen , bool *isHtmlEncoded ) {
 	// . extract the RSS/Atom description
 	// rss/rdf
 	int32_t dLen;
-	char *desc  = getString ( "description", // "item.description",
-				  &dLen        ,
-				  true         );
+
+	// "item.description"
+	char *desc = getString( "description", &dLen, true );
+
 	// get content first, it is usually more inclusive than the summary
-	if ( ! desc )
-		desc  = getString ( "content" , // "entry.content",
-				    &dLen     ,
-				    true      );
+	if ( ! desc ) {
+		// "entry.content"
+		desc = getString( "content", &dLen, true );
+	}
 	// atom
-	if ( ! desc )
-		desc  = getString ( "summary" , // "entry.summary",
-				    &dLen     ,
-				    true      );
+	if ( ! desc ) {
+		// "entry.summary"
+		desc = getString( "summary", &dLen, true );
+	}
+
 	// watch out for <![CDATA[]]> block
 	if ( dLen >= 12 && strncasecmp(desc, "<![CDATA[", 9) == 0 ) {
 		desc += 9;
 		dLen -= 12;
 		*isHtmlEncoded = false;
 	}
+
 	// return
 	*descLen = dLen;
 	return desc;
-}
-
-int32_t Xml::findNodeNum(char *nodeText) {
-        // do a binary search to find the node whose text begins at 
-        // this pointer
-	int32_t a = 0;
-	int32_t b = m_numNodes - 1;
-	if ( nodeText < m_nodes[a].m_node ) return -1;
-	if ( nodeText > m_nodes[b].m_node ) return -1;
-	
-	while (a < b) {
-		int32_t mid = ((b-a)>>1) + a;
-		if ( nodeText == m_nodes[a].m_node ) return a;
-		if ( nodeText == m_nodes[b].m_node ) return b;
-		if ( nodeText == m_nodes[mid].m_node ) return mid;
-		
-		if ( nodeText < m_nodes[mid].m_node ) b = mid - 1;
-		else a = mid + 1;
-	}
-
-	return -1;
-}
-
-// returns -1 if no count found
-int32_t Xml::getPingServerCount ( ) {
-	for ( int32_t i = 0 ; i < m_numNodes && i < 40 ; i++ ) {
-		if ( ! m_nodes[i].isXmlTag() ) continue;
-		// must be "weblogUpdates"
-		int32_t  slen = 0;
-		char *s = getString ( i,"count",&slen);
-		if ( ! s || slen <= 0 ) continue;
-		int32_t count = atoi(s);
-		if ( count == -1 ) continue;
-		// got it
-		return count;
-	}
-	// no count
-	return -1;
 }
