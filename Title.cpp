@@ -146,7 +146,7 @@ bool Title::setTitle ( XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars
 	}
 
 	// set from meta/title tags
-	if ( setFromTags( xml, maxTitleChars ) ) {
+	if ( xd->m_contentType == CT_HTML && setFromTags( xml, maxTitleChars ) ) {
 		return true;
 	}
 

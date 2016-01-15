@@ -28871,7 +28871,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		if ( ! ti || ti == (Title *)-1 ) return (Msg20Reply *)ti;
 		char *tit = ti->getTitle();
 		int32_t  titLen = ti->getTitleLen();
-		logf(LOG_INFO, "title: titleLen=%d title='%.*s'", titLen, titLen, tit);
 		reply-> ptr_tbuf = tit;
 		reply->size_tbuf = titLen + 1; // include \0
 		// sanity
