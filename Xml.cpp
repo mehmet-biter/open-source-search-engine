@@ -984,8 +984,9 @@ static int32_t filterContent ( Words *wp, Pos *pp, char *buf, int32_t bufLen, in
 	if ( isTruncated && ( bufLen > ( contentLen + 4 ) ) ) {
 		gbmemcpy ( buf + contentLen , " ..." , 4 );
 		contentLen += 4;
-		buf[contentLen] = '\0';
 	}
+
+	buf[contentLen] = '\0';
 
 	return contentLen;
 }
