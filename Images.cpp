@@ -105,14 +105,8 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml ,
 	// . <meta property="og:image" content="http://example.com/rock3.jpg"/>
  ogimgloop:
 	char ubuf[2000];
-	int32_t ulen = xml->getMetaContent ( ubuf , // store the val here
-					  1999 ,
-					  "og:image",
-					  8,
-					  "property",
-					  false, // convertHtmlEntities
-					  startNode ,
-					  &node2 ); // matchedNode
+	int32_t ulen = xml->getMetaContent( ubuf, 1999, "og:image", 8, "property", startNode, &node2 );
+
 	// update this in case goto ogimgloop is called
 	startNode = node2 + 1;
 	// see section below for explanation of what we are storing here...

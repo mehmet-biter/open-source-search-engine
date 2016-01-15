@@ -2592,13 +2592,6 @@ bool sendNotification ( EmailInfo *ei ) {
 			ei->m_notifyBlocked++;
 	}
 
-	if ( ei->m_notifyBlocked == 0 ) {
-		//ei->m_inUse = false;
-		// nuke it
-		mfree ( ei , sizeof(EmailInfo) ,"eialrt" );
-		return true;
-	}
-
 	// we blocked, wait
 	return false;
 }

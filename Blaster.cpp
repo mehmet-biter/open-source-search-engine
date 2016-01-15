@@ -646,14 +646,13 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 		log(LOG_DEBUG, "blaster: Unknown charset : %s", mime2.getCharset());*/
 	Xml xml1;
 	// assume utf8
-	if (!xml1.set(content1, 
+	if (!xml1.set(content1,
 		     content1Len,
 		     false,
 		     0,
 		     false,
 		      TITLEREC_CURRENT_VERSION ,
-		      true , // set parents
-		      0 , // niceness 
+		      0 , // niceness
 		      CT_XML )){ // content type
 		log(LOG_WARN,"blaster: Couldn't set XML1 Class in gotDoc2");
 	}
@@ -677,13 +676,12 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 	/*	if (csEnum2== csUnknown)
 		log(LOG_DEBUG, "blaster: Unknown charset : %s", mime2.getCharset());*/
 	Xml xml2;
-	if (!xml2.set(content2, 
+	if (!xml2.set(content2,
 		     content2Len,
 		     false,
 		     0,
 		     false,
 		      TITLEREC_CURRENT_VERSION,
-		      true , // setparents
 		      0 , // niceness
 		      CT_XML )){
 		log(LOG_WARN,"blaster: Couldn't set XML2 Class in gotDoc2");
@@ -1171,13 +1169,12 @@ void Blaster::gotDoc4 ( void *state, TcpSocket *s){
 	
 	Xml xml;
 	if (!xml.set(
-		     content, 
+		     content,
 		     contentLen,
 		     false,
 		     0,
 		     false,
 		     TITLEREC_CURRENT_VERSION,
-		     true, // setparents
 		     0, // niceness
 		     CT_XML )){
 		log(LOG_WARN,"blaster: Couldn't set XML Class in gotDoc4");

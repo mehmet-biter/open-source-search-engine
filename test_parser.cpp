@@ -3,6 +3,7 @@
 #include "Unicode.h"
 #include "Words.h"
 #include <sys/time.h>
+#include "HttpMime.h"
 
 #define NUM_TEST_RUNS 1000
 
@@ -148,12 +149,6 @@ int main(int argc, char *argv[])
 		int32_t usec_elapsed;
 //		int testnum;
 		
-		char ucBuf[128*1024];
-		int32_t ucLen = ucToUnicode((UChar*)ucBuf,128*1024,
-					 file_buf,nread+1,"utf-8", 10);
-		ucLen <<= 1;
-
-		
 		usec_elapsed = time_parser(parser,
 					   file_buf,nread,doHash,
 					   encoding,
@@ -197,23 +192,16 @@ int32_t time_parser(void (*parse_doc)(char*,int, bool,char*), char* buf, int len
 void parse_doc_8859_1(char *s, int len, bool doHash,char *charset)
 {
 	Xml xml;
-	xml.set(csASCII,s,len,false, 0, false, TITLEREC_CURRENT_VERSION);
+	xml.set(s,len,false, 0, false, TITLEREC_CURRENT_VERSION, 0, CT_HTML);
 	//fprintf(stderr,"\nparse_doc_8859_1\n");
 
 	// Extract text from (x)html
 	char *text_buf = (char*)malloc(len+1);
-	xml.getText(text_buf, 
-		    len, 
-		    0,
-		    99999999,
-		    false,
-		    true,
-		    false,
-		    doFilterSpaces);
+	xml.getText( text_buf, len, 0, 99999999, doFilterSpaces );
 	Words words;
 
 	// just tokenize words
-	words.set(false, text_buf, doHash);
+	words.set(text_buf, len, doHash);
 	free(text_buf);
 }
 
@@ -221,20 +209,13 @@ void parse_doc_8859_1(char *s, int len, bool doHash,char *charset)
 //////////////////////////////////////////////////////////////////
 void parse_doc_icu(char *s, int len, bool doHash, char *charset){
 	Xml xml;
-	xml.set(csUTF8,s,len,false, 0,false, TITLEREC_CURRENT_VERSION);
+	xml.set(s,len,false, 0,false, TITLEREC_CURRENT_VERSION, 0, CT_HTML);
 	//fprintf(stderr,"\nparse_doc_icu\n");	
 	// Extract text from (x)html
 	char *text_buf = (char*)malloc(64*1024);
-	int32_t textLen = xml.getText(text_buf, 
-				   64*1024, 
-				   0,
-				   99999999,
-				   false,
-				   true,
-				   false,
-				   doFilterSpaces);
+	int32_t textLen = xml.getText( text_buf, 64 * 1024, 0, 99999999, doFilterSpaces );
 	Words w;
-	w.set(true,false, text_buf, textLen, doHash);
+	w.set(text_buf, textLen, doHash);
 	free(text_buf);
 }
 
@@ -250,53 +231,3 @@ int32_t elapsed_usec(const timeval* tv1, const timeval *tv2)
 	usec_elapsed += sec_elapsed*1000000;
 	return usec_elapsed;
 }
-
-#if 0
-void PrintTokens(UChar **tokens, int num_tokens, int32_t *toklen, bool ascii, bool html)
-{
-	if (html) printf("<html>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n<head>\n<style> .token { border: 1px solid gray;background: #f0ffff;}</style>\n</head>\n<body>\n");
-	for (int i=0;i<num_tokens;i++){
-		if (html) printf("<span class=\"token\">");
-		else printf("Token %d: ",i);
-
-		UChar *tok = tokens[i];
-		int tlen = toklen[i];
-
-		// Doesn't account for 4-byte unicode yet
-		for (int j=0;j<tlen;j++){
-			if (ascii){
-				if (tok[j]>=0x20 && tok[j] < 0x80)
-					printf("%c", (char)tok[j]);
-				else
-					printf("[u+%02x]",(int)tok[j]); 
-			}
-			else{
-				char code_point[4];
-				int num_bytes = utf8_encode((u_int32_t)tok[j],
-							   code_point);
-				if (html){
-					if (code_point[0] == '<') printf("&lt;");
-					else if (code_point[0] == '>') printf("&gt;");
-					else if (code_point[0] == '&') printf("&amp;");
-					else {
-						for(int k=0;k<num_bytes;k++){
-							putchar(code_point[k]);
-						}
-					}
-				}
-				else
-					for(int k=0;k<num_bytes;k++){
-						putchar(code_point[k]);
-					}
-
-			}
-		}
-		if (html) printf("</span>");
-		printf("\n");
-
-		
-	}
-	if (html) printf("</body>\n</html>\n");
-	
-}
-#endif

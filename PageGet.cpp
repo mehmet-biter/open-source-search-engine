@@ -814,7 +814,7 @@ bool processLoop ( void *state ) {
 	}
 	else {
 		// get the content as xhtml (should be NULL terminated)
-		if ( ! xml.set ( content, contentLen, false , 0, false, TITLEREC_CURRENT_VERSION, false, 0, CT_HTML ) ) {
+		if ( ! xml.set ( content, contentLen, false , 0, false, TITLEREC_CURRENT_VERSION, 0, CT_HTML ) ) {
 			return sendErrorReply ( st , g_errno );
 		}
 
@@ -850,37 +850,6 @@ bool processLoop ( void *state ) {
 	if ( pre ) {
 		sb->safeMemcpy ( "</pre>" , 6 );
 	}
-
-	// calculate bufLen
-	//int32_t bufLen = p - buf;
-
-	/*
-
-	  MDW: return the xml page as is now. 9/28/2014
-
-	int32_t ct = xd->m_contentType;
-
-	// now filter the entire buffer to escape out the xml tags
-	// so it is displayed nice
-	SafeBuf newbuf;
-
-	if ( ct == CT_XML ) {
-		// encode the xml tags into &lt;tagname&gt; sequences
-		if ( !newbuf.htmlEncodeXmlTags ( sb->getBufStart() ,
-						 sb->getLength(),
-						 0)){// niceness=0
-			//if ( buf ) mfree ( buf , bufMaxSize , "PageGet2" );
-			return sendErrorReply ( st , g_errno );
-		}
-		// free out buffer that we alloc'd before returning since this
-		// should have copied it into another buffer
-		//if ( buf ) mfree ( buf , bufMaxSize , "PageGet2" );	
-		// reassign
-		//buf    = newbuf.getBufStart();
-		//bufLen = newbuf.length();
-		sb->stealBuf ( &newbuf );
-	}
-	*/
 
 	// now encapsulate it in html head/tail and send it off
 	// sendErr:

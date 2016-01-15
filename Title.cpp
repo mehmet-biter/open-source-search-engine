@@ -36,8 +36,8 @@
 
 
 Title::Title() {
-	m_title = NULL;
-	m_titleBytes = 0;
+	m_title[0] = '\0';
+	m_titleLen = 0;
 }
 
 Title::~Title() {
@@ -45,15 +45,44 @@ Title::~Title() {
 }
 
 void Title::reset() {
-	if ( m_title && m_title != m_localBuf ) {
-		mfree ( m_title , m_titleAllocSize , "Title" );
-	}
-
-	m_title = NULL;
-	m_titleBytes = 0;
-	m_titleAllocSize = 0;
+	m_title[0] = '\0';
+	m_titleLen = 0;
 	m_titleTagStart = -1;
 	m_titleTagEnd   = -1;
+}
+
+bool Title::setFromTags( Xml *xml, int32_t maxTitleLen ) {
+	/// @todo ALC we may want this to be configurable so we can tweak this as needed
+	int minTitleLen = 5;
+
+	// meta property = "og:title"
+	if ( xml->getTagContent("property", "og:title", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_META) ) {
+		if ( g_conf.m_logDebugTitle ) {
+			log( LOG_DEBUG, "title: generated from meta property og:description. title='%.*s'", m_titleLen, m_title );
+		}
+
+		return true;
+	}
+
+	// meta name = "title"
+	if ( xml->getTagContent("name", "title", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_META) ) {
+		if ( g_conf.m_logDebugTitle ) {
+			log( LOG_DEBUG, "title: generated from meta property og:description. title='%.*s'", m_titleLen, m_title );
+		}
+
+		return true;
+	}
+
+	// title
+	if ( xml->getTagContent( "", "", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_TITLE ) ) {
+		if ( g_conf.m_logDebugTitle ) {
+			log( LOG_DEBUG, "title: generated from title tag. title='%.*s'", m_titleLen, m_title );
+		}
+
+		return true;
+	}
+
+	return false;
 }
 
 // returns false and sets g_errno on error
@@ -65,8 +94,7 @@ bool Title::setTitle ( XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars
 	m_niceness = niceness;
 
 	// make Msg20.cpp faster if it is just has
-	// Msg20Request::m_setForLinkInfo set to true, no need
-	// to extricate a title.
+	// Msg20Request::m_setForLinkInfo set to true, no need to extricate a title.
 	if ( maxTitleChars <= 0 || maxTitleWords <= 0 ) {
 		return true;
 	}
@@ -103,30 +131,22 @@ bool Title::setTitle ( XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars
 
 		// if we had a title: field in the json...
 		if ( val && vlen > 0 ) {
-			char *dst = NULL;
-			m_titleBytes = vlen;
-			if ( m_titleBytes+1 <  TITLE_LOCAL_SIZE )
-				dst = m_localBuf;
-			else {
-				dst = (char *)mmalloc ( m_titleBytes+1,"titdst" );
-				if ( ! dst ) {
-					return false;
-				}
-
-				m_titleAllocSize = m_titleBytes+1;
-			}
-			m_title = dst;
-			gbmemcpy ( dst , val , m_titleBytes );
-			dst[m_titleBytes] = '\0';
+			m_titleLen = vlen;
+			gbmemcpy ( m_title, val , m_titleLen );
+			m_title[m_titleLen] = '\0';
 
 			return true;
 		}
 
 		// json content, if has no explicit title field, has no title then
-		m_localBuf[0] = '\0';
-		m_title = m_localBuf;
-		m_titleBytes = 0;
+		m_title[0] = '\0';
+		m_titleLen = 0;
 
+		return true;
+	}
+
+	// set from meta/title tags
+	if ( xd->m_contentType == CT_HTML && setFromTags( xml, maxTitleChars ) ) {
 		return true;
 	}
 
@@ -177,7 +197,6 @@ bool isWordQualified ( char *wp , int32_t wlen ) {
 	if ( wlen==1 ) qualified = false;
 	return qualified;
 }
-
 
 //
 // TODO: do not accumulate boosts from a parent
@@ -1699,31 +1718,16 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	// allocate title
 	int32_t need = end - wp[t0];
 
-	// . max bytes we'll need
-	// . no, all "chars" could be encoded so they take up like 5 bytes each
-	//int32_t max = m_maxTitleChars;
-	// truncate the bytes to allocate if we can, based on m_maxTitleChars
-	//if ( need > max ) need = max;
 	// add 3 bytes for "..." and 1 for \0
 	need += 5;
 
-	// assume we can use our local buf
-	m_title = m_localBuf;
-	// if it is too small, then we must allocate
-	if ( need >= TITLE_LOCAL_SIZE ) {
-		m_title = (char *)mmalloc ( need , "Title" );
-		m_titleAllocSize = need;
-	}
-
-	// return false if could not alloc mem to hold the title
-	if ( ! m_title ) {
-		m_titleBytes = 0;
+	// return false if could not hold the title
+	if ( need > MAX_TITLE_LEN ) {
+		m_title[0] = '\0';
+		m_titleLen = 0;
 		log("query: Could not alloc %"INT32" bytes for title.",need);
 		return false;
 	}
-
-	// save for freeing later
-	m_titleAllocSize = need;
 
 	// point to the title to transcribe
 	char *src    = wp[t0];
@@ -1749,7 +1753,7 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	char *dst    = m_title;
 
 	// leave room for "...\0"
-	char *dstEnd = m_title + m_titleAllocSize - 4;
+	char *dstEnd = m_title + need - 4;
 
 	// size of character in bytes, usually 1
 	char cs ;
@@ -1829,7 +1833,7 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 	}
 
 	// set size. does not include the terminating \0
-	m_titleBytes = dst - m_title;
+	m_titleLen = dst - m_title;
 
 	return true;
 }

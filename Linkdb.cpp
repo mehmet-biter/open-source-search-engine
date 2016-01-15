@@ -4186,7 +4186,6 @@ bool Inlink::setXmlFromRSS ( Xml *xml , int32_t niceness ) {
 			  0                        , // allocSize
 			  true                     , // pure xml?
 			  TITLEREC_CURRENT_VERSION ,
-			  false                    , // no need to now
 			  niceness                 ,
 			  CT_XML );
 }
@@ -4291,7 +4290,7 @@ bool LinkInfo::hash ( TermTable     *table                  ,
 		if ( ! table->hash ( version      ,
 				     note         ,
 				     noteLen      ,
-				     NULL         ,  
+				     NULL         ,
 				     0            ,
 				     txt          ,
 				     tlen         ,
@@ -4333,7 +4332,7 @@ bool LinkInfo::hash ( TermTable     *table                  ,
 				     txt          ,
 				     txtLen       ,
 				     docQuality   ,
-				     TERMTABLE_MAXSCORE, // maxScore  
+				     TERMTABLE_MAXSCORE, // maxScore
 				     true         ,  // doSpamDetection?
 				     true         ,  // hashSingleWords? ok.
 				     true         ,  // hashPhrases?
@@ -4364,7 +4363,7 @@ bool LinkInfo::hash ( TermTable     *table                  ,
 			     "numinlinks"      ,
 			     10                ,
 			     score             ,
-			     TERMTABLE_MAXSCORE,  // maxScore  
+			     TERMTABLE_MAXSCORE,  // maxScore
 			     false             ,  // doSpamDetection?
 			     true              ,  // hashSingleWords? ok.
 			     false             ,  // hashPhrases?
@@ -4374,7 +4373,7 @@ bool LinkInfo::hash ( TermTable     *table                  ,
 			     false             ,  // hashIffUnique?
 			     false             )) // hashWordIffNotInPhrase
 			return false;
-	
+
 
 	return true;
 }
@@ -6065,7 +6064,7 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 		     m_parentUrl->getUrlLen())==0) {
 		flags |= LF_SELFLINK;
 		// turn this flag on
-		if ( nodeNum >= 0 ) m_xml->m_nodes[nodeNum].m_isSelfLink = 1;
+		if ( nodeNum >= 0 ) m_xml->getNodePtr(nodeNum)->m_isSelfLink = 1;
 	}
 
 	// now check for the "permalink" key word or "permanent link" keyphrase
@@ -6401,10 +6400,9 @@ skipItem:
 	int32_t node2 = m_xml->getNodeNum ( node1+1,9999999,"a",1);
 	// if not found use the last node in the document
 	if ( node2 < 0 ) node2 = 99999999;
-	// get the back tag for node #n0
-	//int32_t n1 = m_xml->getEndNode ( i );
+
 	// now we can call Xml::getText()
-	int32_t bufLen = m_xml->getText( buf, bufMaxLen, node1, node2, false, true, false, false );
+	int32_t bufLen = m_xml->getText( buf, bufMaxLen, node1, node2, false );
 
 	// set it
 	if ( retNode1 ) *retNode1 = node1;

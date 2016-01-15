@@ -51,20 +51,7 @@ public:
 
 private:
 	bool verifySummary( char *titleBuf, int32_t titleBufLen );
-
-	bool setFromWords( Words *wp, Pos *pp, int32_t maxSummaryLen );
-	bool setFromMetaTag( Xml *xml, int32_t maxSummaryLen, const char *fieldName, const char *fieldContent );
-	bool setFromField( Xml *xml, int32_t maxSummaryLen, const char *fieldName, const char *fieldContent );
-
-	bool setFromUserData( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen );
-
-	/**
-	 * sets the various length parameter based on m_summaryLen
-	 *
-	 * @retval true Successfully fill in length
-	 * @retval false No changes to length
-	 */
-	bool setLength();
+	bool setFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen );
 
 	bool getDefaultSummary (Xml *xml, Words *words, Sections *sections , Pos *pos, int32_t maxSummaryLen );
 

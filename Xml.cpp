@@ -6,6 +6,7 @@
 #include "Unicode.h" // for html entities that return unicode
 #include "Titledb.h"
 #include "Words.h"
+#include "Pos.h"
 
 Xml::Xml  () { 
 	m_xml = NULL; 
@@ -28,16 +29,6 @@ int32_t Xml::getLong ( int32_t n0 , int32_t n1 , char *tagName , int32_t default
 	if ( s ) return atol2 ( s , len );
 	// return the default if no non-white-space text
 	return defaultLong;
-}
-
-// . for parsing xml conf files
-int64_t Xml::getLongLong ( int32_t n0 , int32_t n1 , char *tagName , 
-			     int64_t defaultLongLong         ) {
-	int32_t len;
-	char *s = getTextForXmlTag ( n0 , n1 , tagName , &len , false );
-	if ( s ) return atoll2 ( s , len );
-	// return the default if no non-white-space text
-	return defaultLongLong;
 }
 
 char *Xml::getString ( int32_t n0 , int32_t n1 , char *tagName, int32_t *len ,
@@ -97,7 +88,7 @@ char *Xml::getNode ( char *tagName , int32_t *len ) {
 	XmlNode *node = &m_nodes[num];
 	if ( ! node->m_hasBackTag ) return NULL;
 
-	int32_t i = getNodeNumEnd( num );
+	int32_t i = getEndNode( num );
 	if ( i < 0 ) {
 		return NULL;
 	}
@@ -114,25 +105,36 @@ char *Xml::getNode ( char *tagName , int32_t *len ) {
 	return s;
 }
 
-int32_t Xml::getNodeNumEnd ( int32_t num ) {
+int32_t Xml::getEndNode ( int32_t num ) {
 	if ( (num < 0) || (num >= m_numNodes) ) {
 		return -1;
 	}
 
 	XmlNode *node = &m_nodes[num];
-	if ( ! node->isTag() ) {
+
+	// we can't use hasBackTag() because some tags has back tag but it's not mandatory
+	// so we check for void elements
+	if ( !node->isTag() || g_nodes[node->getNodeId()].m_tagType == TAG_TYPE_HTML_VOID ) {
 		return -1;
 	}
 
 	int32_t i = 0;
 
+	int innerTagCount = 1;
+
 	// scan for ending back tag
 	for ( i = num + 1 ; i < m_numNodes ; ++i ) {
-		if ( m_nodes[i].m_hash != node->m_hash ) {
-			continue;
-		}
+		if ( m_nodes[i].m_hash == node->m_hash ) {
+			if ( m_nodes[i].isFrontTag() ) {
+				++innerTagCount;
+			} else {
+				--innerTagCount;
+			}
 
-		break;
+			if ( innerTagCount == 0 ) {
+				break;
+			}
+		}
 	}
 
 	if ( i >= m_numNodes ) {
@@ -239,7 +241,6 @@ bool Xml::set ( char  *s             ,
 	        int32_t   allocSize     ,
 	        bool   pureXml       ,
 	        int32_t   version       ,
-	        bool   setParentsArg ,
 	        int32_t   niceness      ,
 		char   contentType ) {
 
@@ -303,8 +304,6 @@ bool Xml::set ( char  *s             ,
 	if ( contentType == CT_XML )
 	  	pureXml = true;
 
-	// is it an xml conf file?
-	m_pureXml = pureXml;
 
 	QUICKPOLL((niceness));
 	int32_t i;
@@ -667,8 +666,7 @@ bool Xml::set ( char  *s             ,
 // . must write to your buf rather than just return a pointer since we may
 //   have to concatenate several nodes together, we may have to replace tags,..
 // . TODO: nuke this in favor of Pos.cpp::filter() -- but that needs Words.cpp
-int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node2, bool includeTags,
-					  bool visibleTextOnly, bool filter, bool filterSpaces ) {
+int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node2, bool filterSpaces ) {
 	// init some vars
 	int32_t i    = node1;
 	int32_t n    = node2;
@@ -685,11 +683,6 @@ int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node
 
 	char cs = -1;
 
-	// cannot allow nested script tags, messed up our summary generator
-	// when a page tried to print a <SCRIPT> tag in a doWrite('<SCRIPT>')
-	// already in a <SCRIPT> block
-	//char inScript = false;
-
 	// loop through all nodes from here on until we run outta nodes...
 	// or until we hit a tag with the same depth as us.
 	for ( ; i < n ; i++ ) {
@@ -705,7 +698,7 @@ int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node
 		// . if it's a tag then write a \n\n or \n to the buf
 		// . do this only if we do not include tags
 		// . do it only if there's something already in the buf
-		if ( ! includeTags && m_nodes[i].isTag() ) {
+		if ( m_nodes[i].isTag() ) {
 			// do nothing if buf still empty
 			if ( dst <= buf ) continue;
 			// or not a breaking tag
@@ -783,8 +776,7 @@ int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node
 		// point to it
 		char *src    = nodeData;
 		char *srcEnd = nodeData + nodeDataLen;
-		// size of character in bytes, usually 1
-		//char cs ;
+
 		// copy the node @src into "dst"
 		for ( ; src < srcEnd ; src += cs , dst += cs ) {
 			// get the character size in bytes
@@ -797,11 +789,6 @@ int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node
 				//goto simplecopy;
 			}
 
-			// a lot of docs have ^M's in them (\r)
-			//if ( c == '\r' ) { buf [ blen++ ] = ' '; continue; }
-
-			// store it as-is if not filtering or not html entity
-			//simplecopy:
 			// if more than 1 byte in char, use gbmemcpy
 			if ( cs > 1 ) {gbmemcpy ( dst , src , cs );}
 			else          *dst = *src;
@@ -823,10 +810,7 @@ int32_t Xml::getText( char *buf, int32_t bufMaxSize, int32_t node1, int32_t node
 }
 
 // just get a pointer to it
-char *Xml::getMetaContentPointer ( char *field    ,
-				   int32_t  fieldLen ,
-				   char *name     ,
-				   int32_t *slen     ) {
+char *Xml::getMetaContentPointer( char *field, int32_t fieldLen, char *name, int32_t *slen ) {
 	// find the first meta summary node
 	for ( int32_t i = 0 ; i < m_numNodes ; i++ ) {
 		// continue if not a meta tag
@@ -858,10 +842,8 @@ char *Xml::getMetaContentPointer ( char *field    ,
 //         generation purposes in Summary class
 // . "name" is usually "name" or "http-equiv"
 // . if "convertHtmlEntities" is true we turn < into &lt; and > in &gt;
-
-int32_t Xml::getMetaContent (char *buf, int32_t bufLen, char *field, int32_t fieldLen ,
-			  char *name , bool convertHtmlEntities , 
-			  int32_t startNode , int32_t *matchedNode ) {
+int32_t Xml::getMetaContent( char *buf, int32_t bufLen, char *field, int32_t fieldLen, char *name,
+							 int32_t startNode, int32_t *matchedNode ) {
 	// return 0 length if no buffer space
 	if ( bufLen <= 0 ) return 0;
 	// assume it's empty
@@ -916,22 +898,13 @@ int32_t Xml::getMetaContent (char *buf, int32_t bufLen, char *field, int32_t fie
 			QUICKPOLL(m_niceness);
 			// get the character size in bytes
 			cs = getUtf8CharSize ( src );
+
 			// break if we are full! (save room for \0)
 			if ( dst + 5 >= dstEnd ) break;
+
 			// remember last punct for cutting purposes
 			if ( ! is_alnum_utf8 ( src ) ) lastp = dst;
-			// encode it as an html entity if asked to
-			if ( *src == '<' && convertHtmlEntities ) {
-				gbmemcpy ( dst , "&lt;" , 4 );
-				dst += 4;
-				continue;
-			}
-			// encode it as an html entity if asked to
-			if ( *src == '>' && convertHtmlEntities ) {
-				gbmemcpy ( dst , "&gt;" , 4 );
-				dst += 4;
-				continue;
-			}
+
 			// if more than 1 byte in char, use gbmemcpy
 			if ( cs > 1 ) {gbmemcpy ( dst , src , cs );}
 			else          *dst = *src;
@@ -963,21 +936,147 @@ int32_t Xml::getMetaContent (char *buf, int32_t bufLen, char *field, int32_t fie
 	return 0;
 }
 
+static bool inTag ( XmlNode *node, nodeid_t tagId, int *count ) {
+	if ( !count ) {
+		return false;
+	}
+
+	if ( node->getNodeId() == tagId ) {
+		if ( node->isFrontTag() ) {
+			++(*count);
+			return true;
+		}
+
+		// back tag
+		if ( *count ) {
+			--(*count);
+		}
+	}
+
+	return (*count > 0);
+}
+
+static int32_t filterContent ( Words *wp, Pos *pp, char *buf, int32_t bufLen, int32_t minLength, int32_t maxLength ) {
+	bool isTruncated = false;
+	int32_t contentLen = 0;
+
+	/// @todo ALC we may want this to be configurable so we can tweak this as needed
+	if ( wp->getNumWords() > maxLength ) {
+		// ignore too long snippet
+		// it may not be that useful to get the first x characters from a long snippet
+		contentLen = 0;
+		buf[0] = '\0';
+
+		return contentLen;
+	}
+
+	contentLen = pp->filter( buf, buf + maxLength, wp, 0, wp->getNumWords(), &isTruncated );
+
+	if ( contentLen < minLength ) {
+		// ignore too short descriptions
+		// it may not be a good summary if it's too short
+		contentLen = 0;
+		buf[0] = '\0';
+
+		return contentLen;
+	}
+
+	if ( isTruncated && ( bufLen > ( contentLen + 4 ) ) ) {
+		gbmemcpy ( buf + contentLen , " ..." , 4 );
+		contentLen += 4;
+	}
+
+	buf[contentLen] = '\0';
+
+	return contentLen;
+}
+
+bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *buf, int32_t bufLen,
+						 int32_t minLength, int32_t maxLength, int32_t *contentLenPtr,
+						 bool ignoreExpandedIframe, nodeid_t expectedNodeId ) {
+	int32_t fieldNameLen = strlen( fieldName );
+	int32_t fieldContentLen = strlen(fieldContent);
+	int32_t contentLen = 0;
+
+	int inTagCount = 0;
+	for (int32_t i = 0; i < getNumNodes(); ++i ) {
+		// don't get tag from gbframe (expanded iframe content)
+		if ( ignoreExpandedIframe && inTag( getNodePtr( i ), TAG_GBFRAME, &inTagCount ) ) {
+			continue;
+		}
+
+		if ( expectedNodeId != LAST_TAG && getNodeId(i) != expectedNodeId ) {
+			continue;
+		}
+
+		bool found = false;
+		if ( fieldNameLen > 0 ) {
+			int32_t tagLen = 0;
+			char *tag = getString ( i , fieldName , &tagLen );
+			if ( tagLen == fieldContentLen && strncasecmp( tag, fieldContent, fieldContentLen ) == 0 ) {
+				found = true;
+			}
+		} else {
+			found = true;
+		}
+
+		if ( found ) {
+			int32_t end_node = getEndNode(i);
+
+			Words wp;
+			Pos pp;
+
+			if (end_node < 0) {
+				if ( getNodeId(i) != TAG_META ) {
+					// no end tag
+					continue;
+				}
+
+				// extract content from meta tag
+				int32_t len = 0;
+				char *s = getString ( i , "content" , &len );
+				if ( ! s || len <= 0 ) {
+					// no content
+					continue;
+				}
+
+				if ( ( !wp.set( s, len, true) ) ) {
+					// unable to allocate buffer
+					return false;
+				}
+			} else {
+				if ( !wp.set(this, true, 0, i, end_node ) ) {
+					// unable to allocate buffer
+					return false;
+				}
+			}
+
+			if ( !pp.set( &wp ) ) {
+				// unable to allocate buffer
+				return false;
+			}
+
+			contentLen = filterContent( &wp, &pp, buf, bufLen, minLength, maxLength );
+			if ( contentLen > 0 ) {
+				if (contentLenPtr) {
+					*contentLenPtr = contentLen;
+				}
+
+				/// @todo ALC we may want to loop through the whole doc and get the best.
+				/// Only get the first for now
+				break;
+			}
+		}
+	}
+
+	return (contentLen > 0);
+}
 
 //  TEST CASES:
 //. this is NOT rss, but has an rdf:rdf tag in it!
 //  http://www.silverstripe.com/silverstripe-adds-a-touch-of-design-and-a-whole-lot-more/
 //  http://government.zdnet.com/?p=4245
 int32_t Xml::isRSSFeed ( ) {
-	// must have atleast one rss.channel.item.link node
-	//int32_t rssLink = getNodeNum ( "rss.channel.item.link" );
-	//if ( rssLink >= 0 )
-	//	return true;
-	// rdf: must have atleast one rss.channel.item.link node
-	//rssLink = getNodeNum ( "rdf.channel.item.link" );
-	//if ( rssLink >= 0 )
-	//	return true;
-	//bool hasTag  = false;
 	int32_t type = 0;
 	int32_t tag  = 0;
 	int32_t i;
@@ -1014,23 +1113,16 @@ char *Xml::getRSSTitle ( int32_t *titleLen , bool *isHtmlEncoded ) const {
 	// . extract the RSS/Atom title
 	// rss/rdf
 	int32_t tLen;
-	//char *title = getString ( "item.title",
-	//			  &tLen       ,
-	//			  true        );
-	char *title = getString ( "title" ,
-				  &tLen   ,
-				  true    );
-	// atom
-	//if ( ! title )
-	//	title = getString ( "entry.title",
-	//			    &tLen        ,
-	//			    true         );
+
+	char *title = getString( "title", &tLen, true );
+
 	// watch out for <![CDATA[]]> block
 	if ( tLen >= 12 && strncasecmp(title, "<![CDATA[", 9) == 0 ) {
 		title += 9;
 		tLen  -= 12;
 		*isHtmlEncoded = false;
 	}
+
 	// return
 	*titleLen  = tLen;
 	return title;
@@ -1042,161 +1134,29 @@ char *Xml::getRSSDescription ( int32_t *descLen , bool *isHtmlEncoded ) {
 	// . extract the RSS/Atom description
 	// rss/rdf
 	int32_t dLen;
-	char *desc  = getString ( "description", // "item.description",
-				  &dLen        ,
-				  true         );
+
+	// "item.description"
+	char *desc = getString( "description", &dLen, true );
+
 	// get content first, it is usually more inclusive than the summary
-	if ( ! desc )
-		desc  = getString ( "content" , // "entry.content",
-				    &dLen     ,
-				    true      );
+	if ( ! desc ) {
+		// "entry.content"
+		desc = getString( "content", &dLen, true );
+	}
 	// atom
-	if ( ! desc )
-		desc  = getString ( "summary" , // "entry.summary",
-				    &dLen     ,
-				    true      );
+	if ( ! desc ) {
+		// "entry.summary"
+		desc = getString( "summary", &dLen, true );
+	}
+
 	// watch out for <![CDATA[]]> block
 	if ( dLen >= 12 && strncasecmp(desc, "<![CDATA[", 9) == 0 ) {
 		desc += 9;
 		dLen -= 12;
 		*isHtmlEncoded = false;
 	}
+
 	// return
 	*descLen = dLen;
 	return desc;
-}
-
-// get a link to an RSS feed for this page
-char *Xml::getRSSPointer ( int32_t *length, int32_t  startNode, int32_t *matchedNode ) {
-	// assume no tag matched
-	if ( matchedNode ) *matchedNode = -1;
-	*length = 0;
-	// find the first meta summary node
-	for ( int32_t i = startNode ; i < m_numNodes ; i++ ) {
-		// continue if not a <link> tag
-		if ( m_nodes[i].m_nodeId != TAG_LINK ) continue;
-		// . check for rel="alternate"
-		int32_t len;
-		char *s = getString ( i, "rel", &len );
-		// continue if name doesn't match field
-		// field can be "summary","description","keywords",...
-		if ( len != 9 ) continue;
-		if ( strncasecmp ( s , "alternate" , 9 ) != 0 ) 
-			continue;
-		// . check for valid type:
-		//   type="application/atom+xml" (atom)
-		//   type="application/rss+xml"  (RSS 1.0/2.0)
-		//   type="application/rdf+xml"  (RDF)
-		//   type="text/xml"             (RSS .92) support?
-		s = getString ( i, "type", &len );
-		if (len == 20 && !strncasecmp(s, "application/atom+xml", 20))
-			goto isRSS;
-		if (len == 19 && !strncasecmp(s, "application/rss+xml", 19) )
-			goto isRSS;
-		if (len == 19 && !strncasecmp(s, "application/rdf+xml", 19) )
-			goto isRSS;
-		// not RSS
-		continue;
-	isRSS:
-		// . extract the link from href=""
-		s = getString ( i, "href", length );
-		if ( matchedNode ) *matchedNode = i;
-		return s;
-	}
-	return NULL;
-}
-
-// get the link pointed to by this RSS item
-char *Xml::getItemLink ( int32_t *linkLen ) {
-	char *link = NULL;
-	*linkLen = 0;
-
-	// find the first meta summary node
-	for ( int32_t i = 0; i < m_numNodes ; i++ ) {
-
-		// skip node if not an xml tag node
-		//if ( m_nodes[i].m_nodeId != 1 ) continue;
-
-		if ( m_nodes[i].m_nodeId == TAG_ENCLOSURE ) {
-			link = (char *) getString ( i, "url", linkLen );
-			if ( link ) return link;
-		}
-		// skip if not a <link> tag
-		else if ( m_nodes[i].m_nodeId != TAG_LINK ) 
-			continue;
-
-		// do we have an "enclosure" tag? used for multimedia.
-		/*
-		if ( m_nodes[i].m_tagNameLen == 9 &&
-		     memcmp(m_nodes[i].m_tagName,"enclosure",9) == 0 ) 
-			link = (char *) getString ( i, "url", linkLen );
-
-		if ( link ) return link;
-
-		// skip if not a <link> tag
-		if ( m_nodes[i].m_tagNameLen != 4 ) continue;
-		if (memcmp(m_nodes[i].m_tagName,"link",4)!=0) continue;
-		}
-		*/
-
-		// check for href string in the <link> tag... wierd...
-		link = getString ( i, "href", linkLen );
-		if ( link ) return link;
-
-		// if not in href, get the following text node
-		char *node    = m_nodes[i].m_node;
-		int32_t  nodeLen = m_nodes[i].m_nodeLen;
-		// must not end in "/>"
-		if (node[nodeLen-2] == '/' ) continue;
-		// expect <link> url </link>
-		if ( i + 2 >= m_numNodes ) continue;
-		if ( !isBackTag(i+2) ) continue;
-		// get the url
-		link     = m_nodes[i+1].m_node;
-		*linkLen = m_nodes[i+1].m_nodeLen;
-
-		if ( link && &linkLen > 0 ) return link;
-	}
-	// no link found, return NULL
-	*linkLen = 0;
-	return NULL;
-}
-
-
-int32_t Xml::findNodeNum(char *nodeText) {
-        // do a binary search to find the node whose text begins at 
-        // this pointer
-	int32_t a = 0;
-	int32_t b = m_numNodes - 1;
-	if ( nodeText < m_nodes[a].m_node ) return -1;
-	if ( nodeText > m_nodes[b].m_node ) return -1;
-	
-	while (a < b) {
-		int32_t mid = ((b-a)>>1) + a;
-		if ( nodeText == m_nodes[a].m_node ) return a;
-		if ( nodeText == m_nodes[b].m_node ) return b;
-		if ( nodeText == m_nodes[mid].m_node ) return mid;
-		
-		if ( nodeText < m_nodes[mid].m_node ) b = mid - 1;
-		else a = mid + 1;
-	}
-
-	return -1;
-}
-
-// returns -1 if no count found
-int32_t Xml::getPingServerCount ( ) {
-	for ( int32_t i = 0 ; i < m_numNodes && i < 40 ; i++ ) {
-		if ( ! m_nodes[i].isXmlTag() ) continue;
-		// must be "weblogUpdates"
-		int32_t  slen = 0;
-		char *s = getString ( i,"count",&slen);
-		if ( ! s || slen <= 0 ) continue;
-		int32_t count = atoi(s);
-		if ( count == -1 ) continue;
-		// got it
-		return count;
-	}
-	// no count
-	return -1;
 }

@@ -214,38 +214,15 @@ public:
 
 	// . a function for adding Tags to buffer, like from Tagdb.cpp
 	// . if safebuf is a buffer of Tags from Tagdb.cpp
-	class Tag *addTag2 ( char *mysite , 
-			    char *tagname ,
-			    int32_t  now ,
-			    char *user ,
-			    int32_t  ip ,
-			    int32_t  val ,
-			    char  rdbId );
-	class Tag *addTag3 ( char *mysite , 
-			    char *tagname ,
-			    int32_t  now ,
-			    char *user ,
-			    int32_t  ip ,
-			    char *data ,
-			    char  rdbId );
-	// makes the site "%"UINT64".com" where %"UINT64" is userId
-	class Tag *addFaceookTag ( int64_t userId ,
-				   char *tagname ,
-				   int32_t  now ,
-				   int32_t  ip ,
-				   char *data ,
-				   int32_t  dsize ,
-				   char  rdbId ,
-				   bool  pushRdbId ) ;
-	class Tag *addTag ( char *mysite , 
-			    char *tagname ,
-			    int32_t  now ,
-			    char *user ,
-			    int32_t  ip ,
-			    char *data ,
-			    int32_t  dsize ,
-			    char  rdbId ,
-			    bool  pushRdbId );
+	class Tag *addTag2( char *mysite, char *tagname, int32_t now, char *user, int32_t ip, int32_t val,
+						char rdbId );
+
+	class Tag *addTag3( char *mysite, char *tagname, int32_t now, char *user, int32_t ip, char *data,
+						char rdbId );
+
+	class Tag *addTag( char *mysite, char *tagname, int32_t now, char *user, int32_t ip, char *data,
+					   int32_t dsize, char rdbId, bool pushRdbId );
+
 	bool addTag ( class Tag *tag );
 
 	//insert strings in their native encoding
@@ -307,8 +284,6 @@ public:
 	//bool  utf16HtmlEncode(UChar *s, int32_t len);
 	//bool  utf16HtmlEncode(char *s, int32_t len) {
 	//	return utf16HtmlEncode((UChar*)s, len>>1); };
-
-	bool htmlEncodeXmlTags ( char *s , int32_t slen , int32_t niceness ) ;
 
 	bool  cdataEncode ( char *s ) ;
 	bool  cdataEncode ( char *s , int32_t slen ) ;

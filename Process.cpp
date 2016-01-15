@@ -7,7 +7,6 @@
 #include "Tagdb.h"
 #include "Posdb.h"
 #include "Cachedb.h"
-#include "Monitordb.h"
 #include "Datedb.h"
 #include "Titledb.h"
 #include "Sections.h"
@@ -274,7 +273,6 @@ bool Process::init ( ) {
 	m_rdbs[m_numRdbs++] = g_linkdb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_cachedb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_serpdb.getRdb      ();
-	m_rdbs[m_numRdbs++] = g_monitordb.getRdb      ();
 	// save what urls we have been doled
 	m_rdbs[m_numRdbs++] = g_doledb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_titledb2.getRdb    ();
@@ -1593,10 +1591,6 @@ bool Process::saveRdbCaches ( bool useThread ) {
 bool Process::saveBlockingFiles1 ( ) {
 	// never if in read only mode
 	if ( g_conf.m_readOnlyMode ) return true;
-
-	// save user accounting files. 3 of them.
-	if ( g_hostdb.m_myHost && g_hostdb.m_myHost->m_isProxy )
-		g_proxy.saveUserBufs();
 
 	// save the gb.conf file now
 	g_conf.save();

@@ -4765,7 +4765,6 @@ void XmlDoc::gotWikiResults ( UdpSlot *slot ) {
 			 0                        ,
 			 false                    ,
 			 TITLEREC_CURRENT_VERSION ,
-			 false                    , // setParents?
 			 m_niceness               ,
 			 CT_HTML                  ))
 		// return if g_errno got set
@@ -4919,7 +4918,6 @@ Xml *XmlDoc::getXml ( ) {
 			   0          ,  // allocSize
 			   false      ,  // pure xml?
 			   m_version  ,
-			   false      ,  // setParentsArg?
 			   m_niceness ,
 			   *ct ) )
 		// return NULL on error with g_errno set
@@ -5608,7 +5606,7 @@ SectionVotingTable *XmlDoc::getNewSectionVotingTable ( ) {
 }
 
 
-	
+
 // . scan every section and look up its tag and content hashes in
 //   sectiondb to find out how many pages and sites have the same hash
 // . use the secondary sectiondb key, key2
@@ -7876,7 +7874,7 @@ char *XmlDoc::getIsDup ( ) {
 		return &m_isDup;
 	}
 
-	// if &links was given in the diffbot api url then do not do 
+	// if &links was given in the diffbot api url then do not do
 	// spider time deduping because the pages are likely rendered using
 	// javascript, so they'd all seem to be dups of one another.
 	if ( cr->m_isCustomCrawl ) {
@@ -8402,13 +8400,9 @@ char *XmlDoc::getMetaDescription( int32_t *mdlen ) {
 	}
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
-	//xml->getMetaContent ( m_metaDesc, 1024, "description", 11 );
-	// we need to point to it in the html source so our WordPosInfo
-	// algo works right.
-	m_metaDesc = xml->getMetaContentPointer("description",
-						11,
-						"name",
-						&m_metaDescLen);
+
+	// we need to point to it in the html source so our WordPosInfo algo works right.
+	m_metaDesc = xml->getMetaContentPointer( "description", 11, "name", &m_metaDescLen );
 	*mdlen = m_metaDescLen;
 	m_metaDescValid = true;
 	return m_metaDesc;
@@ -8421,10 +8415,8 @@ char *XmlDoc::getMetaSummary ( int32_t *mslen ) {
 	}
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
-	m_metaSummary = xml->getMetaContentPointer("summary",
-						   7,
-						   "name",
-						   &m_metaSummaryLen);
+
+	m_metaSummary = xml->getMetaContentPointer( "summary", 7, "name", &m_metaSummaryLen );
 	*mslen = m_metaSummaryLen;
 	m_metaSummaryValid = true;
 	return m_metaSummary;
@@ -8437,13 +8429,9 @@ char *XmlDoc::getMetaKeywords( int32_t *mklen ) {
 	}
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
-	//xml->getMetaContent ( m_metaKeywords, 1024, "keywords", 8 );
-	// we need to point to it in the html source so our WordPosInfo
-	// algo works right.
-	m_metaKeywords=xml->getMetaContentPointer("keywords",
-						  8,
-						  "name",
-						  &m_metaKeywordsLen);
+
+	// we need to point to it in the html source so our WordPosInfo algo works right.
+	m_metaKeywords = xml->getMetaContentPointer( "keywords", 8, "name", &m_metaKeywordsLen );
 	*mklen = m_metaKeywordsLen;
 	m_metaKeywordsValid = true;
 	return m_metaKeywords;
@@ -9560,15 +9548,15 @@ void XmlDoc::nukeDoc ( XmlDoc *nd ) {
 static LinkInfo s_dummy;
 
 XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
-	
+
 	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN [%s]", __FILE__,__FUNCTION__, u);
-		
-	if ( m_extraDocValid ) 
+
+	if ( m_extraDocValid )
 	{
 		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. m_extraDocValid is true", __FILE__,__FUNCTION__);
 		return &m_extraDoc;
 	}
-		
+
 	// note that
 	setStatus ( "getting new doc" );
 	// we need a valid first ip first!
@@ -9579,12 +9567,12 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 	// sanity check
 	if ( ! u || ! u[0] ) { char *xx=NULL;*xx=0; }//return &m_extraDoc;
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) 
+	if ( ! cr )
 	{
 		if( g_conf.m_logDebugDetailed ) log("%s:%s: END - collection not found", __FILE__,__FUNCTION__);
 		return NULL;
 	}
-	
+
 	// . if *otr is NULL that means not found
 	// . return a NULL old XmlDoc in that case as well?
 	// . make a new one
@@ -9679,7 +9667,7 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 
 	// i guess we are valid now
 	m_extraDocValid = true;
-	
+
 	if( g_conf.m_logDebugDetailed ) log("%s:%s: END.", __FILE__,__FUNCTION__);
 	return &m_extraDoc;
 }
@@ -9701,7 +9689,7 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	// help avoid mem leaks
 	if ( m_rootDoc ) { char *xx=NULL;*xx=0; }
 	// note it
-	
+
 	setStatus ( "getting root doc");
 	// are we a root?
 	char *isRoot = getIsSiteRoot();
@@ -9715,7 +9703,7 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	// get our site root
 	char *_mysite = getSite();
 	if ( ! _mysite || _mysite == (void *)-1 ) return (XmlDoc **)_mysite;
-		
+
 
 	// BR 20151215: Prefix domain with the scheme, otherwise it will later
 	// prefix with http:// in Url::set even for https sites.
@@ -9729,7 +9717,7 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	sprintf(mysite, "%s", _mysite);
 	mysite = sitebuf;
 
-		
+
 	// otherwise, we gotta get it!
 	char **rtr = getRootTitleRec ( );
 	if ( ! rtr || rtr == (char **)-1 ) return (XmlDoc **)rtr;
@@ -11059,8 +11047,8 @@ char *XmlDoc::getEmailBuf ( ) {
 	// now we check char by char since a website had it in the javascript:
 	// http://www.botanique.com/bincgi/stateprov.CFM?state=NM
 	//
-	char *m    =     xml->m_xml;
-	char *mend = m + xml->m_xmlLen - 4;
+	char *m    =     xml->getContent();
+	char *mend = m + xml->getContentLen() - 4;
 	// empty?
 	if ( ! m ) mend = m;
 	// scan
@@ -11870,25 +11858,25 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 		//return msg25.m_linkInfo;
 		return (LinkInfo *)m_mySiteLinkInfoBuf.getBufStart();
 	}
-	
+
 	char *mysite = getSite();
-	if ( ! mysite || mysite == (void *)-1 ) 
+	if ( ! mysite || mysite == (void *)-1 )
 	{
 		return (LinkInfo *)mysite;
 	}
-	
+
 	int32_t *fip = getFirstIp();
-	if ( ! fip || fip == (int32_t *)-1) 
+	if ( ! fip || fip == (int32_t *)-1)
 	{
 		return (LinkInfo *)fip;
 	}
-	
+
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) 
+	if ( ! cr )
 	{
 		return NULL;
 	}
-	
+
 	// can we be cancelled?
 	bool canBeCancelled = true;
 	// not if pageparser though
@@ -12404,16 +12392,16 @@ int32_t *XmlDoc::getFinalCrawlDelay() {
 // . getting a robots.txt is not trivial since we need to follow redirects,
 //   so we make use of the powerful XmlDoc class for this
 bool *XmlDoc::getIsAllowed ( ) {
-	
+
 	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
-	
+
 	// return if we got it
-	if ( m_isAllowedValid ) 
+	if ( m_isAllowedValid )
 	{
 		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Valid. Allowed=%s", __FILE__,__FUNCTION__,(m_isAllowed?"true":"false"));
 		return &m_isAllowed;
 	}
-		
+
 	// could be turned off for everyone
 	if ( ! m_useRobotsTxt ) {
 		m_isAllowed      = true;
@@ -12507,27 +12495,27 @@ bool *XmlDoc::getIsAllowed ( ) {
 
 	// we need this so getExtraDoc does not core
 	int32_t *pfip = getFirstIp();
-	if ( ! pfip || pfip == (void *)-1 ) 
+	if ( ! pfip || pfip == (void *)-1 )
 	{
 		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. No first IP, return %s", __FILE__,__FUNCTION__, ((bool *)pfip?"true":"false"));
 		return (bool *)pfip;
 	}
 
-	
+
 	// get the current url after redirects
 	Url *cu = getCurrentUrl();
-	if ( ! cu || cu == (void *)-1 ) 
+	if ( ! cu || cu == (void *)-1 )
 	{
 		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. No current URL, return %s", __FILE__,__FUNCTION__, ((bool *)cu?"true":"false"));
 		return (bool *)cu;
 	}
-		
+
 
 	// set m_extraUrl to the robots.txt url
 	char buf[MAX_URL_LEN+1];
 	char *p = buf;
-	if ( ! cu->getScheme() ) 
-	{ 
+	if ( ! cu->getScheme() )
+	{
 		p += sprintf ( p , "http://" );
 	}
 	else
@@ -12536,9 +12524,9 @@ bool *XmlDoc::getIsAllowed ( ) {
 		p += cu->getSchemeLen();
 		p += sprintf(p,"://");
 	}
-		
-		
-		
+
+
+
 	// sanity
 	if ( ! cu->getHost() ) { char *xx=NULL;*xx=0; }
 	gbmemcpy ( p , cu->getHost() , cu->getHostLen() );
@@ -12561,12 +12549,12 @@ bool *XmlDoc::getIsAllowed ( ) {
 	//   relevant to our user agent!
 	// . getHttpReply() should use msg13 to get cached reply!
 	XmlDoc **ped = getExtraDoc ( m_extraUrl.getUrl() , 3600 );
-	if ( ! ped || ped == (void *)-1 ) 
+	if ( ! ped || ped == (void *)-1 )
 	{
 		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. getExtraDoc (ped) failed, return %s", __FILE__,__FUNCTION__, ((bool *)ped?"true":"false"));
 		return (bool *)ped;
 	}
-	
+
 	// assign it
 	XmlDoc *ed = *ped;
 	// return NULL on error with g_errno set
@@ -12581,8 +12569,8 @@ bool *XmlDoc::getIsAllowed ( ) {
 
 		return NULL;
 	}
-	
-	
+
+
 	// inherit this
 	//if ( ! m_useIpsTxtFile ) ed->m_useIpsTxtFile = false;
 	// . steal m_firstIp from us to avoid tag rec lookup
@@ -12596,21 +12584,21 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// . now try the content
 	// . should call getHttpReply
 	char **pcontent = ed->getContent();
-	if ( ! pcontent || pcontent == (void *)-1 ) 
+	if ( ! pcontent || pcontent == (void *)-1 )
 	{
 		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. pcontent failed, return %s", __FILE__,__FUNCTION__, ((bool *)pcontent?"true":"false"));
 		return (bool *)pcontent;
 	}
-	
+
 	// get the mime
 	HttpMime *mime = ed->getMime();
-	if ( ! mime || mime == (HttpMime *)-1 ) 
+	if ( ! mime || mime == (HttpMime *)-1 )
 	{
 		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. mime failed, return %s", __FILE__,__FUNCTION__, ((bool *)mime?"true":"false"));
 		return (bool *)mime;
 	}
 
-	
+
 	// get this
 	int32_t contentLen = ed->m_contentLen;
 	// save this
@@ -12631,7 +12619,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	m_isAllowedValid = true;
 
 
-	if ( mime->getHttpStatus() != 200 ) 
+	if ( mime->getHttpStatus() != 200 )
 	{
 		// BR 20151215: Do not allow spidering if we cannot read robots.txt EXCEPT
 		// if the error code is 404 (Not Found).
@@ -12639,7 +12627,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 		{
 			m_isAllowed = false;
 		}
-		
+
 		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. httpStatus != 200. Return %s", __FILE__,__FUNCTION__, (m_isAllowed?"true":"false"));
 
 		// nuke it to save mem
@@ -12688,11 +12676,11 @@ bool *XmlDoc::getIsAllowed ( ) {
 				       &cacheStart         ,
 				       &cacheLen           ,
 				       &hadAllowOrDisallow   );
-				       
+
 		if( g_conf.m_logDebugDetailed ) log("%s:%s: isAllowed2 returned %s for '*' bot", __FILE__,__FUNCTION__, (allowed?"true":"false"));
 	}
-	
-	
+
+
 	// bring back?
 	if ( savedCrawlDelay != -1 ) m_crawlDelay = savedCrawlDelay;
 	// nuke it to save mem
@@ -13223,7 +13211,7 @@ void XmlDoc::gotSite ( ) {
 	// this sets g_errno on error
 	ptr_site    = m_siteGetter.m_site;
 	size_site   = m_siteGetter.m_siteLen+1; // include \0
-	
+
 	// sanity check -- must have a site
 	if ( ! g_errno && size_site <= 1 ) { char *xx=NULL;*xx=0; }
 
@@ -13232,7 +13220,7 @@ void XmlDoc::gotSite ( ) {
 	ptr_scheme    = m_siteGetter.m_scheme;
 	size_scheme   = m_siteGetter.m_schemeLen+1; // include \0
 
-		
+
 	// sitegetter.m_errno might be set!
 	m_siteValid = true;
 	// must be valid
@@ -13272,7 +13260,7 @@ char *XmlDoc::getScheme ( ) {
 	}
 	// ok, return it
 	if ( m_siteValid ) return ptr_scheme;//m_siteGetter.m_scheme;
-		
+
 	return "";
 }
 
@@ -15467,7 +15455,7 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		// the canonical url.
 		if ( isMe ) break;
 		// ignore if in an expanded iframe (<gbrame>) tag
-		char *pstart = xml->m_xml;
+		char *pstart = xml->getContent();
 		char *p      = link;
 		// scan backwards
 		if ( ! m_didExpansion ) p = pstart;
@@ -15692,7 +15680,6 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 			 0          ,  // allocSize
 			 false      ,  // pure xml?
 			 m_version  ,
-			 false      ,  // setParentsArg?
 			 m_niceness ,
 			 // assume html since getContentType() is recursive
 			 // on us.
@@ -17149,70 +17136,6 @@ char **XmlDoc::getUtf8Content ( ) {
 
 	// sanity
 	if ( ! m_contentTypeValid ) { char *xx=NULL;*xx=0; }
-
-	// if we are an xml doc, then before we call htmlDecode translate
-	// all tags like <title> or <link> to <gbtitle> or <gblink> so we
-	// know they are xml tags. because stuff like &lt;br&gt; will
-	// become <br> and will be within its xml tag like <gbdescription>
-	// or <gbtitle>.
-	// MDW: 9/28/2014. no longer do this since i added hashXmlFields().
-	/*
-	if ( m_contentType == CT_XML ) {
-		// count the xml tags
-		char *p    = m_expandedUtf8Content;
-		char *pend = p + m_expandedUtf8ContentSize - 1;
-		int32_t  need = m_expandedUtf8ContentSize;
-		for ( ; p < pend ; p++ ) {
-			QUICKPOLL(m_niceness);
-			if ( *p == '<' ) need += 5; // for adding "gbxml"
-		}
-		if ( ! m_xbuf.reserve(need) ) return NULL;
-		// reset ptr
-		p = m_expandedUtf8Content;
-		// ponit to dst
-		char *dst = m_xbuf.getBufStart();
-		// do the copy
-		for ( ; p < pend ; p++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// copy it over
-			*dst++ = *p;
-			if ( *p != '<' ) continue;
-			// if <?xml> copy over as is, do not insert 'gb'
-			if ( p[1] == '?' ) continue;
-			// same for comments <!--...-->
-			if ( p[1] == '!' ) continue;
-			// point to tagname
-			char *tagName = p+1;
-			if ( p[1] == '/' ) tagName++;
-			// also get the full node now
-			NodeType *nt; getTagId ( tagName , &nt );
-			// if it is not an html tag, do not fuss with it!
-			if ( ! nt ) continue;
-			// if its in the list but is xml, let it go too
-			if ( nt->m_isXmlTag ) continue;
-			// . otherwise, its an html tag being used as an xml
-			//   tag and we need to encode (append gbxml to it)
-			// . insert / first if there
-			if ( p[1] == '/' ) {p++;*dst++ = *p;}
-			// then "gb"
-			*dst++ = 'g';
-			*dst++ = 'b';
-			*dst++ = 'x';
-			*dst++ = 'm';
-			*dst++ = 'l';
-		}
-		// update
-		m_xbuf.m_length = dst - m_xbuf.getBufStart();
-		// final \0
-		*dst = '\0';
-		// re-assign these
-		m_expandedUtf8Content     = m_xbuf.getBufStart();//m_buf;
-		m_expandedUtf8ContentSize = m_xbuf.m_length + 1;
-		// free esbuf if we were referencing that to save mem
-		m_esbuf.purge();
-	}
-	*/
 
 	// richmondspca.org has &quot; in some tags and we do not like
 	// expanding that to " because it messes up XmlNode::getTagLen()
@@ -20558,32 +20481,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		return m_metaList;
 	}
 
-
-	// any other indexing issue? hey! g_errno might not be set here
-	//if ( m_indexCode ) { g_errno = m_indexCode; return NULL; }
-
-	// a hacky thing
-	//XmlDoc *od = (XmlDoc *)1;
-
-	//bool diffbotEmptyReply = false;
-
-	/*
-	// fake this for diffbot?
-	if ( m_useDiffbot &&
-	     ! m_isDiffbotJSONObject &&
-	     ! doesUrlMatchDiffbotCrawlPattern() ) {
-		// flag it so we only add the SpiderReply to spiderdb and bail
-		//diffbotEmptyReply = true;
-		// we should not delete the json objects for this url
-		// from the index just because the user decided to remove
-		// it from her crawl
-		m_isIndexedValid = true;
-		m_isIndexed      = false;
-		m_oldDocValid    = true;
-		m_oldDoc         = NULL;
-	}
-	*/
-
 	// if "rejecting" from index fake all this stuff
 	if ( m_deleteFromIndex ) {
 	     // if we are using diffbot api and diffbot found no json objects
@@ -20802,10 +20699,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// check if we are already indexed
 	char *isIndexed = getIsIndexed ();
 	if ( ! isIndexed || isIndexed == (char *)-1 ) return (char *)isIndexed;
-	// do not delete anything in these cases, but do remove us from
-	// spiderdb, and from tfndb (except for EDOCNOTNEW)
-	//if ( m_indexCode == EDOCNOTNEW || m_indexCode == EDOCNOTOLD  )
-	//	od = NULL;
 
 	// why call this way down here? it ends up downloading the doc!
 	int32_t *indexCode = getIndexCode();
@@ -20822,14 +20715,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		m_metaListValid = true;
 		return m_metaList;
 	}
-
-	// if diffbot reply is empty, don't bother adding anything except
-	// for the spider reply... reply might be "-1" too!
-	//if ( m_useDiffbot &&
-	//     ! m_isDiffbotJSONObject &&
-	//     m_diffbotReplyValid &&
-	//     m_diffbotReply.length() <= 3 )
-	//	diffbotEmptyReply = true;
 
 	// . some index code warrant retries, like EDNSTIMEDOUT, ETCPTIMEDOUT,
 	//   etc. these are deemed temporary errors. other errors basically
@@ -20942,12 +20827,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 		// i guess it is safe to do this after getting the spiderreply
 		SafeBuf *spiderStatusDocMetaList = NULL;
-		// if ( cr->m_indexSpiderReplies &&
-		//      m_useSpiderdb &&
-		//      // doing it for diffbot throws off smoketests.
-		//      // yeah, but we need it, so we'll just have to update
-		//      // the smoketests
-		//      ! cr->m_isCustomCrawl ) {
+
 		// get the spiderreply ready to be added
 		spiderStatusDocMetaList = getSpiderStatusDocMetaList(newsr ,
 								    forDelete);
@@ -20990,51 +20870,9 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			m_p += spiderStatusDocMetaList->length();
 		}
 
-		/*
-
-		  Not any more, now we remove from doledb as soon
-		  as we get all the lock grants in our group (shard)
-		  using Msg4 in Spider.cpp. That way we can add a
-		  "0" entry into the waiting tree (or a time X ms into
-		  the future from now) to try to enforce a sameIpWait
-		  constraint and also allow up to maxSpidersPerIP.
-
-		// remove from doledb if we had a valid key
-		// (BEFORE adding SpiderReply)
-		if ( m_doledbKey.n0 || m_doledbKey.n1 ) {
-			// note it
-			setStatus ( "removing key from doledb" );
-			// . now remove the original spider rec from "doledb"
-			// . rdbid first
-			*m_p = RDB_DOLEDB;
-			m_p++;
-			// then the key
-			*(key_t *)m_p = m_doledbKey;
-			// nukey, clear del bit to delete it
-			*m_p = *m_p & 0xfe;
-			// skip key
-			m_p += sizeof(key_t);
-			// then zero for data size
-			// *(int32_t *)m_p = 0;
-			//m_p += 4;
-			// sanity check
-			verifyMetaList( m_metaList , m_p , forDelete );
-		}
-		*/
-
 		// sanity check
 		if ( ! m_docIdValid ) { char *xx=NULL;*xx=0; }
-		// . make a fake titledb key
-		// . remove the spider lock (Msg12 in Spider.cpp)
-		// . now SPider.cpp uses SpiderReply reception to remove lock
-		//   - mdw 9/28/13
-		//*m_p++ = RDB_FAKEDB;
-		//*(key_t *)m_p = g_titledb.makeKey ( m_docId , 0LL , true );
-		//key_t fakeKey;
-		//fakeKey.n1 = 0;
-		//fakeKey.n0 = m_docId;
-		//gbmemcpy ( m_p , &fakeKey , sizeof(key_t) );
-		//m_p += sizeof(key_t);
+
 		// now add the new rescheduled time
 		setStatus ( "adding SpiderReply to spiderdb" );
 		// rdbid first
@@ -21175,11 +21013,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	bool nukeJson = true;
 	if ( ! od ) nukeJson = false;
 	if ( od && od->m_diffbotJSONCount <= 0 ) nukeJson = false;
+
 	// if recycling json objects, leave them there!
 	if ( *recycle ) nukeJson = false;
-	// you have to be a diffbot crawl to do this
-	// no, not if you have th diffbot api url set... so take this out
-	//if ( ! cr->m_isCustomCrawl ) nukeJson = false;
+
 	// do not remove old diffbot json objects if pageparser.cpp test
 	// because that can not change the index, etc.
 	if ( getIsPageParser() ) nukeJson = false;
@@ -21232,25 +21069,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// return NULL with g_errno set on error
 		if ( ! ptg || ptg == (void *)-1 ) return (char *)ptg;
 	}
-
-	// sanity check - if the valid title rec is null, m_indexCode is set!
-	//if ( ! *tr && ! m_indexCode ) { char *xx=NULL;*xx=0; }
-	// . bail. return an empty meta list, m_metaListSize should be 0!
-	// . NO! we need to add a SpiderReply to spiderdb...
-	//if ( ! *tr )
-	//	log("HEY");
-	/*
-	if ( ! *tr ) {
-		m_metaList = "";
-		m_metaListSize = 0;
-		m_metaListValid = true;
-		return m_metaList;
-	}
-	*/
-
-	// get this for hashing stuff
-	//Spam *sp = getSpam();
-	//if ( ! sp || sp == (void *)-1 ) return (char *)sp;
 
 	// our next slated spider priority
 	char *spiderLinks3 = getSpiderLinks();
@@ -22159,46 +21977,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	verifyMetaList( m_metaList , m_p , forDelete );
 
 	//
-	// ADD NOSPLIT INDEXDB/DATEDB TERMS
-	//
-	/*
-	  we added these now in hashAll() to tt1, no longer ns1 since we
-	  have the sharded by termid bit in the actual posdb key now so
-	  Rebalance.cpp works
-
-	setStatus ( "adding posdb shardByTermId terms");
-	// checkpoint
-	saved = m_p;
-	// no longer anything special now since the
-	// Posdb::isShardedyTermId() bit
-	// is in the key now so Rebalance.cpp can work
-	if ( m_usePosdb && ! addTable144 ( &ns1 )) return NULL;
-	//if(! addTable96 ( &ns2, &ns1, -1, -1, true ,true)) return NULL;
-	// sanity check
-	if ( m_p - saved > needNoSplit1 ) { char*xx=NULL;*xx=0; }
-	// free all mem
-	ns1.reset();
-	// sanity check
-	verifyMetaList( m_metaList , m_p , forDelete );
-	*/
-
-
-	/*
-	setStatus ( "adding datedb nosplit terms");
-	// checkpoint
-	saved = m_p;
- 	// this is now for datedb
-	if ( m_useDatedb && ! addTableDate(&ns2,m_docId,RDB_DATEDB,true))
-		return NULL;
-	// sanity check
-	if ( m_p - saved > needNoSplit2 ) { char*xx=NULL;*xx=0; }
-	// free all mem
-	ns2.reset();
-	// sanity check
-	verifyMetaList( m_metaList , m_p );
-	*/
-
-	//
 	// ADD SECTIONS SPECIAL TERMS
 	//
 	setStatus ( "adding sectiondb keys");
@@ -22318,110 +22096,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
 
-
-	/*
-	//
-	// ADD REVDB RECORD
-	//
-
-	//
-	// . add the metalist to itself
-	// . this way, when we delete this doc from the index, we just
-	//   lookup the original metalist in revdb, set all the
-	//   delbits, and re-add that. this avoid having to ensure
-	//   parsing consistency, which is a royal pain in the ass
-	// . now we also update getMetaList() to check revdb to get
-	//   the meta list if the doc is already indexed...
-	//
-	// define current meta list
-	char *x    = m_metaList;
-	char *xend = m_p;
-	// skip adding to revdb?
-	if ( ! m_useRevdb ) xend = x;
-	int32_t *dataSizePtr;
-	char *savedp;
-	// if nothing in current list do not add revdb rec
-	bool hadStuff = ( x < xend);
-	if ( hadStuff ) {
-		// put in the rdbId
-		if ( m_useSecondaryRdbs ) *m_p++ = RDB2_REVDB2;
-		else                      *m_p++ = RDB_REVDB;
-		// the key
-		if ( ! m_docIdValid ) { char *xx=NULL;*xx=0; }
-		*(key_t *)m_p = g_revdb.makeKey ( m_docId , false );
-		m_p += sizeof(key_t);
-		// data size
-		dataSizePtr = (int32_t *)m_p;
-		// skip for now
-		m_p += 4;
-		// save it
-		savedp = m_p;
-	}
-	// scan the current metalist and add keys to the revdb record
-	for ( ; x < xend ; ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// save this
-		char byte = *x;
-		// get rdbId
-		char rdbId = byte & 0x7f;
-		//
-		// convert if adding to secondary rdbids!!!!!!!!
-		//
-		if ( m_useSecondaryRdbs ) {
-			if ( rdbId == RDB2_POSDB2 )
-				rdbId = RDB_POSDB;
-			else if ( rdbId == RDB2_DATEDB2 )
-				rdbId = RDB_DATEDB;
-			else if ( rdbId == RDB2_SECTIONDB2 )
-				rdbId = RDB_SECTIONDB;
-			else if ( rdbId == RDB2_PLACEDB2 )
-				rdbId = RDB_PLACEDB;
-			else if ( rdbId == RDB2_TITLEDB2 )
-				rdbId = RDB_TITLEDB;
-			else if ( rdbId == RDB2_LINKDB2 )
-				rdbId = RDB_LINKDB;
-			else if ( rdbId == RDB2_CLUSTERDB2 )
-				rdbId = RDB_CLUSTERDB;
-			else if ( rdbId == RDB2_SPIDERDB2 )
-				rdbId = RDB_SPIDERDB;
-			else if ( rdbId == RDB2_TAGDB2 )
-				rdbId = RDB_TAGDB;
-			// must be covered!!
-			else { char *xx=NULL;*xx=0; }
-			// rewrite byte now b/c we store it below
-			byte = (byte & 0x80) | rdbId;
-		}
-		// skip that
-		x++;
-		// copy that over
-		*m_p++ = byte;
-		// sanity check -- no negative keys allowed in here
-		if ( (x[0] & 0x01) == 0x00 ) { char *xx=NULL;*xx=0; }
-		// get key size
-		int32_t ks = getKeySizeFromRdbId(rdbId);
-		// copy that over
-		gbmemcpy ( m_p , x , ks );
-		// skip that
-		m_p += ks;
-		x   += ks;
-		// datasize?
-		int32_t ds = getDataSizeFromRdbId(rdbId);
-		if ( ds == -1 ) {
-			ds = *(int32_t *)x;
-			x += 4;
-		}
-		// skip data
-		x += ds;
-	}
-	// record size of what we wrote
-	if ( hadStuff )
-		*dataSizePtr = ( m_p - savedp );
-	// sanity check
-	if ( m_p > m_pend || m_p < m_metaList ) { char *xx=NULL;*xx=0;}
-	// sanity check
-	verifyMetaList( m_metaList , m_p );
-	*/
 
 	//////
 	//
@@ -26181,10 +25855,10 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		    (tagLen== 8&&strncasecmp(tag,"keywords"   , 8)== 0)||
 		    (tagLen==11&&strncasecmp(tag,"description",11)== 0) )
 			continue;
-			
+
 
 		// BR 20160107: Only hash certain custom meta tags and ignore the rest
-		if( 
+		if(
 			(strncasecmp(tag,"subject", 7) != 0) &&
 			(strncasecmp(tag,"abstract", 8) != 0) &&
 			(strncasecmp(tag,"news_keywords", 13) != 0) &&		// http://www.metatags.org/meta_name_news_keywords
@@ -26198,8 +25872,8 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 			// Unwanted meta tag
 			continue;
 		}
-			
-			
+
+
 		// . don't allow reserved names: site, url, suburl, link and ip
 		// . actually, the colon is included as part of those
 		//   field names, so we really lucked out...!
@@ -26249,7 +25923,7 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		tptr[tagLen] = 0;
 		// custom
 		hi.m_prefix = tptr;
-		
+
 		// desc is NULL, prefix will be used as desc
 		bool status = hashString ( buf,len,&hi );
 		// put it back
@@ -26294,7 +25968,7 @@ bool XmlDoc::hashDateNumbers ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	hi.m_desc      = "last spidered date";
 	hi.m_prefix    = "gbspiderdate";
 	hi.m_createSortByForNumbers = true;
-	
+
 	char buf[64];
 	int32_t bufLen = sprintf ( buf , "%"UINT32"", (uint32_t)m_spideredTime );
 	if ( ! hashNumberForSorting( buf , buf , bufLen , &hi ) )
@@ -26318,7 +25992,7 @@ bool XmlDoc::hashDateNumbers ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	// gbsortby:gbdocspiderdate and only get real DOCUMENTS not the
 	// spider status "documents"
 /*
-  BR 20160108: Don't store these as we don't plan to use them	
+  BR 20160108: Don't store these as we don't plan to use them
 	hi.m_desc      = "doc last spidered date";
 	hi.m_prefix    = "gbdocspiderdate";
 	bufLen = sprintf ( buf , "%"UINT32"", (uint32_t)m_spideredTime );
@@ -26378,7 +26052,7 @@ bool XmlDoc::hashMetaZip ( HashTableX *tt ) {
 		p += 5; while ( p < pend && is_digit(*p) ) p++;
 		goto nextZip;
 	}
-	
+
 	// 90210 --> 90 902 9021 90210
 	for ( int32_t i = 0 ; i <= 3 ; i++ )
 		// use prefix as description
@@ -26893,10 +26567,10 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	char buf[20];
 	int32_t blen;
 
-	
+
 /*
 	// BR 20160106: No longer store gbpathdepth in posdb
-	
+
 	//
 	// HASH the url path plain as if in body
 	//
@@ -26924,7 +26598,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	// xyz.com/foo/     --> 1
 	// xyz.com/foo/boo  --> 1
 	// xyz.com/foo/boo/ --> 2
-	
+
 	int32_t blen = sprintf(buf,"%"INT32"",pathDepth);
 	// update parms
 	hi.m_prefix    = "gbpathdepth";
@@ -26950,7 +26624,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	// no longer, we just index json now
 	//if ( isStatusDoc ) hi.m_prefix = "gbhopcount2";
 	hi.m_hashGroup = HASHGROUP_INTAG;
-	
+
 	// hash gbpathdepth:X
 	if ( ! hashString ( buf,blen,&hi) ) return false;
 */
@@ -26979,7 +26653,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	// BR 20160106: No longer store gbiscgi in posdb
 
 	setStatus ( "hashing gbiscgi");
-	
+
 	//
 	// HASH gbiscgi:0 or gbiscgi:1
 	//
@@ -27084,29 +26758,29 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	name++; nameLen--;
 
 
-	// BR 20160106: Don't store junk entries like http://com/ 
+	// BR 20160106: Don't store junk entries like http://com/
 	// Check that there is a dot before first slash after domain
-	int32_t dom_offset=0;	
+	int32_t dom_offset=0;
 	if( strncmp(name,"http://" ,7) )
 	{
 		dom_offset=7;
 	}
 	else
-	if( strncmp(name,"https://",8) ) 
+	if( strncmp(name,"https://",8) )
 	{
 		dom_offset=8;
 	}
-	
+
 	char *dotpos 	= strchr(name,'.');
 	char *slashpos 	= strchr(name+dom_offset,'/');
-	
+
 	bool dom_valid = false;
 	if( slashpos && dotpos && slashpos > dotpos )
 	{
 		dom_valid = true;
 	}
 
-	
+
 	if ( name < end3 && dom_valid ) goto loop;
 
 
@@ -27208,7 +26882,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	blen = sprintf(buf,"%"UINT32"",h);
 	hi.m_prefix    = "urlhash";
 	if ( ! hashString(buf,blen,&hi) ) return false;
-		
+
 /*
 	BR 20160106 removed.
 	blen = sprintf(buf,"%"UINT32"",h/10);
@@ -27274,9 +26948,9 @@ bool XmlDoc::hashSections ( HashTableX *tt ) {
 
 	// BR 20160106: No longer store xpath-hashes in posdb as we do not use them.
 	// eek.. but a rebuild of old docs will store them.. not intended.
-//	if ( m_version >= 122 ) 
+//	if ( m_version >= 122 )
 	{
-			return true; 
+			return true;
 	}
 
 	setStatus ( "hashing sections" );
@@ -27695,7 +27369,6 @@ bool XmlDoc::hashRSSInfo ( HashTableX *tt ) {
 				  0                , // allocSize
 				  false            , // pure xml?
 				  m_version ,
-				  true , // set parents?
 				  m_niceness ,
 				  *ct ) )
 			return false;
@@ -28274,7 +27947,7 @@ bool XmlDoc::hashVectors ( HashTableX *tt ) {
 		hi.m_prefix    = "gbwikidocid";
 		hi.m_desc      = "wiki docid";
 		hi.m_hashGroup = HASHGROUP_INTAG;
-		
+
 		// this returns false on failure
 		if ( ! hashString ( buf,blen,&hi ) ) return false;
 	}
@@ -28402,7 +28075,7 @@ bool XmlDoc::hashIsAdult ( HashTableX *tt ) {
 
 /*
   BR 20160106 removed. We don't want to store this in posdb as we don't use it.
-  
+
 // hash destination urls for embedded gb search boxes
 bool XmlDoc::hashSubmitUrls ( HashTableX *tt ) {
 
@@ -30174,12 +29847,7 @@ char *XmlDoc::getDescriptionBuf ( char *displayMetas , int32_t *dsize ) {
 		int32_t avail = dbufEnd - dptr - 1;
 		if ( maxLen > avail ) maxLen = avail;
 		// store the content at "dptr" (do not exceed "maxLen" bytes)
-		int32_t wlen = xml->getMetaContent ( dptr      , // write buf
-						 maxLen    , // buf length
-						 s         , // name value
-						 gbstrlen(s) , // name len
-						 "name"    , // http-equiv/name
-						 false     );// convert &#'s?
+		int32_t wlen = xml->getMetaContent( dptr, maxLen, s, gbstrlen( s ) );
 		dptr[wlen] = '\0';
 
 		// test it out
@@ -30801,7 +30469,6 @@ SafeBuf *XmlDoc::getSampleForGigabitsJSON ( ) {
 			 0          ,  // allocSize
 			 false      ,  // pure xml?
 			 m_version  ,
-			 false      ,  // setParentsArg?
 			 m_niceness ,
 			 CT_HTML ) ) // *ct ) )
 	     return NULL;
@@ -30901,7 +30568,7 @@ char *XmlDoc::getIsNoArchive ( ) {
 		// must be robots or <configured botname>. skip if not
 		if ( strncasecmp(att,"robots" ,6) &&
 		     strncasecmp(att,g_conf.m_spiderBotName,gbstrlen(g_conf.m_spiderBotName))   ) continue;
-		     
+
 		// get the content vaue
 		att = nodes[i].getFieldValue("content",&alen);
 		// skip if none
@@ -31576,8 +31243,8 @@ bool XmlDoc::hashSingleTerm ( char       *s         ,
 	// sanity check
 	if ( dt->m_ks != sizeof(key144_t) ) { char *xx=NULL;*xx=0; }
 	// make the key like we do in hashWords()
-	
-	
+
+
 	key144_t k;
 	g_posdb.makeKey ( &k ,
 			  final,
@@ -32126,7 +31793,7 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		// . for now do simple stripping here
 		// . if word is "bob's" hash "bob"
 		//
-		
+
 		//@@@ BR 20160107: Is this always good? Is the same done in Query.cpp?
 		if ( wlens[i] >= 3 &&
 		     wptrs[i][wlens[i]-2] == '\'' &&
@@ -35281,18 +34948,18 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\t\t<prefix><![CDATA[%s]]>"
 				       "</prefix>\n",prefix);
 
-		if ( ! isXml ) 
+		if ( ! isXml )
 		{
 			sb->safePrintf ( "<tr>");
 		}
-		
-		
+
+
 		if ( ! isXml )
 		{
 			sb->safePrintf("<td>0x%016"PRIx64"</td>", tp[i]->m_termId);
 		}
 
-		
+
 		if( ! isXml )
 		{
 			if ( prefix )
@@ -35310,7 +34977,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 				       ,tp[i]->m_wordNum
 				       );
 		}
-		
+
 		//char *abbr = getLanguageAbbr(tp[i]->m_langId);
 		//if ( tp[i]->m_langId == langTranslingual ) abbr ="??";
 		//if ( tp[i]->m_langId == langUnknown      ) abbr ="--";
@@ -35989,7 +35656,6 @@ char **XmlDoc::getTitleBuf ( ) {
 // . now we just get all the tagdb rdb recs to add using this function
 // . then we just use the metalist to update tagdb
 SafeBuf *XmlDoc::getNewTagBuf ( ) {
-
 	if ( m_newTagBufValid ) return &m_newTagBuf;
 
 	setStatus ( "getting new tags");
@@ -36464,15 +36130,6 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		}
 
 		if ( skip ) continue;
-
-		// if outlink is a .gov or .edu site, do not bother, because
-		// getIsSpam() always returns false for those
-		// TODO: verify this
-		//if ( flags[i] & LF_EDUTLD ) continue;
-		//if ( flags[i] & LF_GOVTLD ) continue;
-		// this must be valid
-		//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
-		//int32_t timestamp = m_spideredTime;
 
 		// how much avail for adding tags?
 		int32_t avail = tbuf->getAvail();
@@ -44272,10 +43929,10 @@ bool XmlDoc::storeFacetValuesHtml(char *qs, SafeBuf *sb, FacetValHash_t fvh ) {
 
 
 	// find the first meta summary node
-	for ( i = 0 ; i < xml->m_numNodes ; i++ ) {
+	for ( i = 0 ; i < xml->getNumNodes() ; i++ ) {
 
 		// continue if not a meta tag
-		if ( xml->m_nodes[i].m_nodeId != TAG_META ) continue;
+		if ( xml->getNodeId(i) != TAG_META ) continue;
 		// . does it have a type field that's "summary"
 		// . <meta name=summary content="...">
 		// . <meta http-equiv="refresh" content="0;URL=http://y.com/">
@@ -44331,10 +43988,10 @@ bool XmlDoc::storeFacetValuesXml(char *qs, SafeBuf *sb, FacetValHash_t fvh ) {
 	SafeBuf nameBuf;
 
 	// find the first meta summary node
-	for ( i = 0 ; i < xml->m_numNodes ; i++ ) {
+	for ( i = 0 ; i < xml->getNumNodes() ; i++ ) {
 
 		// skip text nodes
-		if ( xml->m_nodes[i].m_nodeId == TAG_TEXTNODE ) continue;
+		if ( xml->getNodeId(i) == TAG_TEXTNODE ) continue;
 
 		// assemble the full parent name
 		// like "tag1.tag2.tag3"
@@ -44355,15 +44012,15 @@ bool XmlDoc::storeFacetValuesXml(char *qs, SafeBuf *sb, FacetValHash_t fvh ) {
 		// got it...
 
 		// wtf?
-		if ( i + 1 >= xml->m_numNodes ) continue;
+		if ( i + 1 >= xml->getNumNodes() ) continue;
 
 		// point to the content! this is a text node?
 
 		// skip if not a text node, we don't return tag nodes i guess
-		if ( xml->m_nodes[i+1].m_nodeId ) continue;
+		if ( xml->getNodeId(i+1) ) continue;
 
-		char *content = xml->m_nodes[i+1].m_node;
-		int32_t contentLen = xml->m_nodes[i+1].m_nodeLen;
+		char *content = xml->getNode(i+1);
+		int32_t contentLen = xml->getNodeLen(i+1);
 
 		// skip if empty
 		if ( ! content || contentLen <= 0 ) continue;

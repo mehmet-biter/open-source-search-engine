@@ -6588,6 +6588,9 @@ bool sendNotificationForCollRec ( CollectionRec *cr )  {
 
 	// so handle this ourselves in that case:
 	doneSendingNotification ( ei );
+	
+	mfree ( ei , sizeof(EmailInfo) ,"eialrt" );
+
 	return true;
 }
 
