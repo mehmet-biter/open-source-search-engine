@@ -206,7 +206,7 @@ bool Process::checkFiles ( const char *dir ) {
 		}
 
 		if ( ! f.doesExist() ) {
-			log("db: %s%s file missing.", dd, g_files[i]);
+			log(LOG_ERROR, "db: %s%s file missing.", dd, g_files[i]);
 			needsFiles = true;
 		}
 	}
