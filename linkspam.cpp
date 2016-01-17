@@ -609,7 +609,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		// anyway... this will save us some processing time
 		if ( links->isInternalDom(i) ) continue;
 		// otherwise, normalize it...
-		Url uu; uu.set ( links->getLink(i), links->getLinkLen(i) );
+		Url uu; uu.set ( links->getLink(i), links->getLinkLen(i), false, false, false, false, false, 0x7fffffff);
 
 		// take a break
 		QUICKPOLL ( niceness );
@@ -1150,7 +1150,7 @@ bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
 		if ( ulen == 0 ) leftMalformed = true;
 		// normalize
 		if ( ulen > 0 ) 
-			leftUrl.set ( linker , u , ulen );
+			leftUrl.set ( linker , u , ulen, false, false, false, false, false, 0x7fffffff);
 		// . if NOT from the same domain, break out, otherwise continue
 		// . this helps us find the <table> tag in ad tables with 
 		//   multiple links to the same domain
@@ -1221,7 +1221,7 @@ bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
 		if ( ulen == 0 ) rightMalformed = true;
 		// normalize
 		if ( ulen > 0 ) 
-			rightUrl.set ( linker, u , ulen );
+			rightUrl.set ( linker, u , ulen, false, false, false, false, false, 0x7fffffff );
 		// . if NOT from the same domain, break out, otherwise continue
 		// . this helps us find the <table> tag in ad tables with 
 		//   multiple links to the same domain

@@ -1980,7 +1980,7 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 	else                st->m_adding = true;
 
 	// regardless, we have to get the tagrec for all operations
-	st->m_url.set(urls,gbstrlen(urls));
+	st->m_url.set(urls,gbstrlen(urls), false, false, false, false, false, 0x7fffffff);
 	st->m_mergeTags = merge;
 
 	return getTagRec ( st );

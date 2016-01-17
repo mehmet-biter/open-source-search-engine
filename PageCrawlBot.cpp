@@ -4387,7 +4387,7 @@ bool getSpiderRequestMetaList ( char *doc ,
 		char *end = p;
 		// get that url
 		Url url;
-		url.set ( saved , end - saved );
+		url.set ( saved , end - saved, false, false, false, false, false, 0x7fffffff );
 		// if not legit skip
 		if ( url.getUrlLen() <= 0 ) continue;
 		// need this

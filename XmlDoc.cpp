@@ -1860,7 +1860,7 @@ bool XmlDoc::setFirstUrl ( char *u , bool addWWW , Url *baseUrl ) {
 	//if ( gbstrlen (u) + 1 > MAX_URL_LEN )
 	//	m_indexCode = EURLTOOLONG;
 
-	m_firstUrl.set ( baseUrl , u , gbstrlen(u) , addWWW ) ;
+	m_firstUrl.set ( baseUrl , u , gbstrlen(u) , addWWW, false, false, false, false, 0x7fffffff ) ;
 
 	// it is the active url
 	m_currentUrl.set ( &m_firstUrl , false );
@@ -2036,7 +2036,7 @@ bool XmlDoc::injectDoc ( char *url ,
 	Url uu;
 	// do not add www to fix tmblr.co/ZHw5yo1E5TAaW injection
 	// which has no www.tmblr.co IP!
-	uu.set(url,gbstrlen(url),false);//true);
+	uu.set(url,gbstrlen(url),false, false, false, false, false, 0x7fffffff);
 
 	// if (!strncmp(url , "http://www.focusinfo.com/products/mxprodv" ,40))
         //          log("hey");
@@ -8978,8 +8978,13 @@ Url **XmlDoc::getRedirUrl() {
 		Url *tt = &m_redirUrl;
 		tt->set ( cu->getUrl() ,
 			  cu->getUrlLen() ,
-			  true ,  // addwww?
-			  true ); // strip sessid?
+			  true,  	// addwww?
+			  true, 	// strip sessid?
+			  false,	// strip #
+			  false,	// strip common file
+			  true,		// strip tracking params
+			  0x7fffffff);
+			  
 		// if it no longer has the session id, force redirect it
 		if ( ! gb_strcasestr( tt->getUrl(), "sessionid") &&
 		     ! gb_strcasestr( tt->getUrl(), "oscsid")   )  {
@@ -15442,7 +15447,7 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		// allow for relative urls
 		Url *cu = getCurrentUrl();
 		// set base to it. addWWW=false
-		m_canonicalRedirUrl.set(cu,link,linkLen,false);//true
+		m_canonicalRedirUrl.set(cu,link,linkLen,false, false, false, false, false, 0x7fffffff);
 		// assume it is not our url
 		bool isMe = false;
 		// if it is us, then skip!
@@ -15581,7 +15586,14 @@ bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness ,
 	// . redirUrl is set to the original at the top
 	else
 		// addWWW = false, stripSessId=true
-		metaRedirUrl->set(cu,decoded,decBytes,false,true);
+		metaRedirUrl->set(cu,decoded,decBytes,
+				false,  // addwww?
+			  true, 	// strip sessid?
+			  false,	// strip pound
+			  false,	// strip common file
+			  true,		// strip tracking params
+				0x7fffffff);
+
 	return true;
 }
 
@@ -16797,7 +16809,7 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		// get our current url
 		//cu = getCurrentUrl();
 		// set our frame url
-		furl.set ( cu , url , urlLen );
+		furl.set ( cu , url , urlLen, false, false, false, false, false, 0x7fffffff );
 		// no recursion
 		if ( strcmp(furl.getUrl(),m_firstUrl.getUrl()) == 0 )
 			continue;
@@ -23627,7 +23639,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// set it. addWWW = true! no.. make it false because of issues
 		// like tmblr.co/ZHw5yo1E5TAaW injection where
 		// www.tmblr.co has no IP
-		Url url; url.set ( s , slen , false ); // true );
+		Url url; url.set ( s , slen , false, false, false, false, false, 0x7fffffff );
 
 		// if hostname length is <= 2 then SILENTLY reject it
 		if ( url.getHostLen() <= 2 ) continue;
@@ -26123,13 +26135,15 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 
 
 // BR 20160115
-// Yes, ugly hardcoded stuff again..
+// Yes, ugly hardcoded stuff again.. Can likely be optimized a bit too..
 // List of domains we do not want to store hashes for in posdb for "link:" entries
 bool XmlDoc::isDomainUnwantedForHashing(Url *url) {
 	char *domain 	= url->getDomain();			// top domain only, e.g. googleapis.com
 	int32_t dlen 	= url->getDomainLen();
 	char *host		= url->getHost();				// domain including subdomain, e.g. fonts.googleapis.com
 	int32_t hlen	= url->getHostLen();
+	char *path		= url->getPath();				// document path, e.g. /bla/doh/doc.html
+	int32_t plen	= url->getPathLen();
 
 
 	if ( !domain || dlen <= 0 ) return true;
@@ -26174,12 +26188,72 @@ bool XmlDoc::isDomainUnwantedForHashing(Url *url) {
 			{
 				return true;
 			}
+			if( memcmp(domain, "tumblr.com", 10) == 0 )
+			{
+				if( plen >= 6 && memcmp(path, "/share", 6) == 0 )
+				{
+					// https://www.tumblr.com/share			
+					return true;
+				}
+			}
+			
+			if( memcmp(domain, "google.com", 10) == 0 )
+			{
+				if( memcmp(host, "plus.", 5) == 0 )
+				{
+					if( plen >= 7 && memcmp(path, "/share?", 7) == 0 )
+					{
+						// http://plus.google.com/share?url=http%3A//on.11alive.com/NEIG1r]
+						return true;
+					}
+				}
+				if( memcmp(host, "accounts.", 9) == 0 )
+				{
+					// https://accounts.google.com/
+					return true;
+				}
+				
+			}
 			break;
 		case 11:
 			if( memcmp(domain, "tinyurl.com", 11) == 0 ||
 					memcmp(domain, "gstatic.com", 11) == 0 )
 			{
 				return true;
+			}
+
+			if( memcmp(domain, "archive.org", 11) == 0 )
+			{
+				if( memcmp(host, "web.", 4) == 0 &&
+						plen > 5 && memcmp(path, "/web/", 5) == 0 )
+				{
+					// https://web.archive.org/web/*/dr.dk
+					return true;
+				}
+			}
+
+			if( memcmp(domain, "twitter.com", 11) == 0 )
+			{
+				if( memcmp(host, "search.", 7) == 0 )
+				{
+					// http://search.twitter.com/search?q=%23trademark
+					return true;
+				}
+				if( plen >= 7 && memcmp(path, "/share?", 7) == 0 )
+				{
+					// http://twitter.com/share?text=Im%20Sharing%20on%20Twitter&url=http://stackoverflow.com/users/2943186/youssef-subehi&hashtags=stackoverflow,example,youssefusf
+					return true;
+				}
+				if( plen >= 8 && memcmp(path, "/search?", 8) == 0 )
+				{
+					// https://www.twitter.com/search?q=China
+					return true;
+				}
+				if( plen >= 13 && memcmp(path, "/intent/tweet?", 13) == 0 )
+				{
+					// https://www.twitter.com/intent/tweet?text=18%20Cocktails%20That%20Are%20Better%20With%20Butter&url=http%3A%2F%2Fwww.eater.com%2Fdrinks%2F2016%2F1%2F14%2F10710202%2Fbutter-cocktails&via=Eater
+					return true;
+				}
 			}
 			break;
 		case 12:
@@ -26188,6 +26262,24 @@ bool XmlDoc::isDomainUnwantedForHashing(Url *url) {
 			{
 				return true;
 			}
+
+			if( memcmp(domain, "facebook.com", 12) == 0 )
+			{
+				if( plen >=8 && memcmp(path, "/sharer/", 8) == 0 )
+				{
+					// https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Fallthingsd.com%2F20120309%2Fgreen-dot-buys-location-app-loopt-for-43-4m%2F%3Fmod%3Dfb
+					return true;
+				}
+			}
+			
+			if( memcmp(domain, "linkedin.com", 12) == 0 )
+			{
+				if( plen >= 13 && memcmp(path, "/shareArticle", 13) == 0 )
+				{
+					// https://www.linkedin.com/shareArticle?
+					return true;
+				}
+			}
 			break;
 		case 13:
 			if( memcmp(domain, "akamaized.net", 13) == 0 ||
@@ -26195,7 +26287,17 @@ bool XmlDoc::isDomainUnwantedForHashing(Url *url) {
 			{
 				return true;
 			}
+
+			if( memcmp(domain, "pinterest.com", 13) == 0 )
+			{
+				if( plen >= 12 && memcmp(path, "/pin/create/", 12) == 0 )
+				{
+					// http://www.pinterest.com/pin/create/button/?description=&media=https%3A%2F%2Fcdn1.vox-cdn.com%2Fthumbor%2FrMA6BPH4ZkdBg2RqB9mmZVhYqUs%3D%2F0x77%3A1000x640%2F1050x591%2Fcdn0.vox-cdn.com%2Fuploads%2Fchorus_image%2Fimage%2F48544087%2Fshutterstock_308548907.0.0.jpg&url=http%3A%2F%2Fwww.eater.com%2Fmaps%2Fbest-coffee-taipei
+				}
+				return true;
+			}
 			break;
+		
 		case 14:
 			if( memcmp(domain, "googleapis.com", 14) == 0 ||
 					memcmp(domain, "netdna-cdn.com", 14) == 0 ||
@@ -26298,6 +26400,7 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 			   m_links.m_stripIds    ,
 			   false         , // stripPound?
 			   false         , // stripCommonFile?
+			   true          , // stripTrackingParams?
 			   m_version     );// used for new session id stripping
 
 
@@ -26581,7 +26684,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	// HASH url: term
 	//
 	// append a "www." for doing url: searches
-	Url uw; uw.set ( fu->getUrl() , fu->getUrlLen() , true );
+	Url uw; uw.set ( fu->getUrl() , fu->getUrlLen() , true, false, false, false, false, 0x7fffffff );
 	hi.m_prefix    = "url";
 	// no longer, we just index json now
 	//if ( isStatusDoc ) hi.m_prefix = "url2";
@@ -26897,7 +27000,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 		hi.m_tt        = tt;
 		hi.m_desc      = "diffbot parent url";
 		// append a "www." as part of normalization
-		uw.set ( fu->getUrl() , p - fu->getUrl() , true );
+		uw.set ( fu->getUrl() , p - fu->getUrl() , true, false, false, false, false, 0x7fffffff );
 		hi.m_prefix    = "gbparenturl";
 		// no longer, we just index json now
 		//if ( isStatusDoc ) hi.m_prefix = "gbparenturl2";
@@ -28088,8 +28191,8 @@ Url *XmlDoc::getBaseUrl ( ) {
 		char *link = (char *) xml->getString ( i, "href", &linkLen );
 		// skip if not valid
 		if ( ! link || linkLen == 0 ) continue;
-		// set base to it. addWWW=true
-		m_baseUrl.set(link, linkLen, false);//true);
+		// set base to it. addWWW=false
+		m_baseUrl.set(link, linkLen, false, false, false, false, false, 0x7fffffff);
 		break;
 	}
 	m_baseUrlValid = true;
@@ -33212,7 +33315,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	// this is all to get "note"
 	//char *note = NULL;
 	// make it a URL
-	Url uu; uu.set ( ptr_firstUrl , false );
+	Url uu; uu.set ( ptr_firstUrl );
 	// sanity check
 	Xml *xml = getXml();
 	// sanity check
@@ -34044,7 +34147,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	//if ( ! links ) return true;
 
 	// make it a URL
-	Url uu; uu.set ( fu , false );
+	Url uu; uu.set ( fu );
 
 
 
@@ -37793,7 +37896,7 @@ SafeBuf *XmlDoc::getTermInfoBuf ( ) {
 		if ( k->size_linkText <= 1 ) continue;
 		// set Url
 		Url u;
-		u.set ( k->getUrl() , k->size_urlBuf );
+		u.set ( k->getUrl() , k->size_urlBuf, false, false, false, false, false, 0x7fffffff );
 		// do not allow anomalous link text to match query
 		//if ( k->m_isAnomaly ) continue;
 		char *p    = k-> getLinkText();
@@ -37838,7 +37941,7 @@ SafeBuf *XmlDoc::getTermInfoBuf ( ) {
 		if ( k->size_linkText <= 1 ) continue;
 		// set Url
 		Url u;
-		u.set ( k->getUrl() , k->size_urlBuf );
+		u.set ( k->getUrl() , k->size_urlBuf, false, false, false, false, false, 0x7fffffff );
 		// do not allow anomalous link text to match query
 		//if ( k->m_isAnomaly ) continue;
 		char *p    = k-> getLinkText();

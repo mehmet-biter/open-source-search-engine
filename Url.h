@@ -54,23 +54,34 @@ public:
 	// set from another Url, does a copy
 	void set ( Url *url , bool addWWW );
 
-	void set    ( char *s ) { 
+	void set    ( char *s ) 
+	{
 		if ( ! s ) { char *xx=NULL;*xx=0; }
-		return set ( s , strlen(s) ); }
+		return set ( s , strlen(s), false, false, false, false, false, 0x7fffffff); 
+	}
 
-	void set ( Url *baseUrl , char *s ) {
+	void set ( Url *baseUrl , char *s ) 
+	{
 		if ( ! s ) { char *xx=NULL;*xx=0; }
-		set ( baseUrl , s , strlen(s) ); }
+		set ( baseUrl , s , strlen(s), false, false, false, false, false, 0x7fffffff); 
+	}
 
 	// . "s" must be an ENCODED url
-	void set    ( char *s , int32_t len , bool addWWW = false,
-		      bool stripSessionIds = false , bool stripPound = false ,
-		      bool stripCommonFile = false ,
-		      int32_t titleRecVersion = 0x7fffffff );
+	void set    ( char *s , int32_t len , bool addWWW,
+		      bool stripSessionIds, bool stripPound,
+		      bool stripCommonFile, bool stripTrackingParams,
+		      int32_t titleRecVersion);
+
+#if 0		      
 	void set    ( Url *baseUrl , char *s , int32_t len , bool addWWW = false,
 		      bool stripSessionIds = false , bool stripPound = false ,
-		      bool stripCommonFile = false ,
+		      bool stripCommonFile = false , bool stripTrackingParams = false,
 		      int32_t titleRecVersion = 0x7fffffff );
+#endif		      
+	void set    ( Url *baseUrl , char *s , int32_t len , bool addWWW,
+		      bool stripSessionIds, bool stripPound,
+		      bool stripCommonFile, bool stripTrackingParams,
+		      int32_t titleRecVersion);
 	void setIp  ( int32_t ip ) { m_ip = ip; };
 
 	char isSessionId ( char *hh, int32_t titleRecVersion ) ;

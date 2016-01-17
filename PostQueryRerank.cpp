@@ -269,7 +269,7 @@ bool PostQueryRerank::preRerank ( ) {
 
 		// set the urls for each page
 		// used by pqrqttiu, pqrfsh and clustering
-		m_pageUrl[y].set( mr->ptr_ubuf , false );
+		m_pageUrl[y].set( mr->ptr_ubuf);
 		// now fill in host without the 'www.' if present
 		char *host    = m_pageUrl[y].getHost();
 		int32_t  hostLen = m_pageUrl[y].getHostLen();

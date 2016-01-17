@@ -2526,7 +2526,7 @@ bool Msg40::gotSummary ( ) {
 			if(url[ulen-1] == '/')
 				ulen--;
 			Url u;
-                        u.set(url,ulen);
+                        u.set(url,ulen, false, false, false, false, false, 0x7fffffff);
                         url   = u.getHost();
 
                         if(u.getPathLen() > 1) {
@@ -3599,7 +3599,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 			}
 			// now we also check domain
 			Url uu;
-			uu.set ( reply->ptr_ubuf, reply->size_ubuf-1);
+			uu.set ( reply->ptr_ubuf, reply->size_ubuf-1, false, false, false, false, false, 0x7fffffff);
 			// "mid dom" is the "ibm" part of ibm.com or ibm.de
 			char *dom  = uu.getMidDomain();
 			int32_t  dlen = uu.getMidDomainLen();

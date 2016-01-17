@@ -22,7 +22,7 @@
 
 // BR 20160106. New version that eliminates values in posdb that we do not need.
 // See checks for m_version >= 122 in XmlDoc.cpp
-#define TITLEREC_CURRENT_VERSION 122
+#define TITLEREC_CURRENT_VERSION 	122
 
 #include "Rdb.h"
 #include "Url.h"
@@ -74,7 +74,7 @@ class Titledb {
 	// a different way to do it
 	uint64_t getProbableDocId ( char *url  ) {
 		Url u;
-		u.set(url, gbstrlen(url));
+		u.set(url, gbstrlen(url), false, false, false, false, false, 0x7fffffff);
 		return getProbableDocId ( &u ); 
 	};
 

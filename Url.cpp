@@ -41,19 +41,23 @@ void Url::reset() {
 // set from another Url, does a copy
 void Url::set ( Url *url , bool addWWW ) {
 	if ( ! url ) { reset(); return; }
-	set ( url->getUrl() , url->getUrlLen() , addWWW );
+	set ( url->getUrl() , url->getUrlLen() , addWWW, false, false, false, false, 0x7fffffff );
 }
 
 
 void Url::set (Url *baseUrl,char *s,int32_t len,bool addWWW,bool stripSessionId,
-	       bool stripPound , bool stripCommonFile, int32_t titleRecVersion ) {
+	       bool stripPound , bool stripCommonFile, bool stripTrackingParams, int32_t titleRecVersion ) {
 
 	reset();
 	// debug msg
 	//if ( addWWW )
 	//	log("Url::set: warning, forcing WWW\n");
 
-	if ( ! baseUrl ) { set ( s , len , addWWW ); return; }
+	if ( ! baseUrl ) 
+	{ 
+		set ( s , len , addWWW, false, false, false, false, 0x7fffffff ); 
+		return; 
+	}
 
 	char *base = (char *) baseUrl->m_url;
 	int32_t  blen =          baseUrl->m_ulen;
@@ -109,6 +113,7 @@ void Url::set (Url *baseUrl,char *s,int32_t len,bool addWWW,bool stripSessionId,
 	if ( blen==0 || isAbsolute ) {
 		set(s,len,addWWW,stripSessionId,stripPound,
 		    false, // stripCommonFile?
+		    stripTrackingParams,
 		    titleRecVersion);
 		return;
 	}
@@ -130,8 +135,12 @@ void Url::set (Url *baseUrl,char *s,int32_t len,bool addWWW,bool stripSessionId,
 	strncpy(temp+blen,s,len);
 	set ( temp, blen+len , addWWW , stripSessionId , stripPound ,
 	      stripCommonFile ,
+	      stripTrackingParams,
 	      titleRecVersion );
 }
+
+
+
 // . url rfc = http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
 // . "...Only alphanumerics [0-9a-zA-Z], the special characters "$-_.+!*'()," 
 //    [not including the quotes - ed], and reserved characters used for their 
@@ -139,7 +148,7 @@ void Url::set (Url *baseUrl,char *s,int32_t len,bool addWWW,bool stripSessionId,
 // . i know sun.com has urls like "http://sun.com/;$sessionid=123ABC$"
 // . url should be ENCODED PROPERLY for this to work properly
 void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
-                bool stripPound , bool stripCommonFile , 
+                bool stripPound , bool stripCommonFile , bool stripTrackingParams,
 		int32_t titleRecVersion ) 
 {
 	reset();
@@ -342,7 +351,7 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		//gbmemcpy(encodedDomStart, p, restOfUrlLen);
 		encoded[newUrlLen] = '\0';
 		return this->set(encoded, newUrlLen, addWWW, stripSessionId, 
-						 stripPound, stripCommonFile, titleRecVersion);
+						 stripPound, stripCommonFile, stripTrackingParams, titleRecVersion);
     }
 
 	// truncate length to the first occurence of an unacceptable char
@@ -386,7 +395,7 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 	// . http://www.b.com/?PHPSESSID=737aec14eb7b360983d4fe39395&p=1
 	// . http://www.b.com/cat.cgi/process?mv_session_id=xrf2EY3q&p=1
 	// . http://www.b.com/default?SID=f320a739cdecb4c3edef67e&p=1
-	if ( stripSessionId ) 
+	if ( stripSessionId || stripTrackingParams ) 
 	{
 		// CHECK FOR A SESSION ID USING QUERY STRINGS
 		char *p = s;
@@ -396,90 +405,134 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		// now search for severl strings in the cgi query string
 		char *tt = NULL;
 		int32_t x;
-		if ( ! tt ) { tt = gb_strcasestr ( p , "PHPSESSID=" ); x = 10;}
-		if ( ! tt ) { tt = strstr        ( p , "SID="       ); x =  4;}
-		// . osCsid and XTCsid are new session ids
-		// . keep this up here so "sid=" doesn't override it
-		if ( ! tt && titleRecVersion >= 59 ) { 
-			tt = strstr ( p , "osCsid=" ); 
-			x =  7;
-			if ( ! tt ) tt = strstr ( p , "XTCsid=" );
-			// a hex sequence of at least 10 digits must follow
-			if ( tt && ! isSessionId ( tt + x, titleRecVersion ) )
-				tt = NULL;
-		}
-		if ( ! tt && titleRecVersion >= 59 ) { 
-			tt = strstr ( p , "osCsid/" ); 
-			x =  7;
-			// a hex sequence of at least 10 digits must follow
-			if ( tt && ! isSessionId ( tt + x, titleRecVersion ) )
-				tt = NULL;
-		}
-		// this is a new session id thing
-		if ( ! tt && titleRecVersion >= 54 ) { 
-			tt = strstr ( p , "sid=" ); x =  4;
-			// a hex sequence of at least 10 digits must follow
-			if ( tt && ! isSessionId ( tt + x, titleRecVersion ) ) 
-				tt = NULL;
-		}
-		// osCsid and XTCsid are new session ids
-		if ( ! tt && titleRecVersion >= 57 ) { 
-			tt = strstr ( p , "osCsid=" ); 
-			x =  7;
-			if ( ! tt ) tt = strstr ( p , "XTCsid=" );
-			// a hex sequence of at least 10 digits must follow
-			if ( tt && ! isSessionId ( tt + x, titleRecVersion ) ) 
-				tt = NULL;
-		}
-		// fixes for bug of matching plain &sessionid= first and
-		// then realizing char before is an alnum...
-		if ( ! tt && titleRecVersion >= 59 ) { 
-			tt = gb_strcasestr ( p, "jsessionid="); x = 11; }
-		if ( ! tt && titleRecVersion >= 59 ) { 
-			tt = gb_strcasestr ( p , "vbsessid="  ); x =  9;}
-		if ( ! tt && titleRecVersion >= 59 ) { 
-			tt = gb_strcasestr ( p, "asesessid=" ); x = 10; }
-		if ( ! tt && titleRecVersion >= 59 ) { 
-			tt = gb_strcasestr ( p, "nlsessid="  ); x =  9; }
-		if ( ! tt && titleRecVersion >= 59 ) { 
-			tt = gb_strcasestr ( p, "psession="  ); x =  9; }
 
-		if ( ! tt ) { tt = gb_strcasestr ( p , "session_id="); x = 11;}
-		if ( ! tt ) { tt = gb_strcasestr ( p , "sessionid=" ); x = 10;}
-		if ( ! tt ) { tt = gb_strcasestr ( p , "sessid="    ); x =  7;}
-		if ( ! tt ) { tt = gb_strcasestr ( p , "vbsessid="  ); x =  9;}
-		if ( ! tt ) { tt = gb_strcasestr ( p , "session="   ); x =  8;}
-		if ( ! tt ) { tt = gb_strcasestr ( p , "session/"   ); x =  8;}
-		if ( ! tt ) { tt = gb_strcasestr ( p , "POSTNUKESID=");x = 12;}
-		// some new session ids as of Feb 2005
-		if ( ! tt ) { tt = gb_strcasestr ( p, "auth_sess=" ); x = 10; }
-		if ( ! tt ) { tt = gb_strcasestr ( p, "mysid="     ); x =  6; }
-		if ( ! tt ) { tt = gb_strcasestr ( p, "oscsid="    ); x =  7; }
-		if ( ! tt ) { tt = gb_strcasestr ( p, "cg_sess="   ); x =  8; }
-		if ( ! tt ) { tt = gb_strcasestr ( p, "galileoSession");x=14; }
-		if ( ! tt ) { tt = gb_strcasestr ( p, "asesessid=" ); x = 10; }
-		if ( ! tt ) { tt = gb_strcasestr ( p, "nlsessid="  ); x =  9; }
-		if ( ! tt ) { tt = gb_strcasestr ( p, "jsessionid="); x = 11; }
-		if ( ! tt ) { tt = gb_strcasestr ( p, "psession="  ); x =  9; }
-		// new as of Jan 2006. is hurting news5 collection on gb6
-		if ( ! tt ) { tt = gb_strcasestr ( p, "sess="      ); x =  5; }
-		
-		// .php?s=8af9d6d0d59e8a3108f3bf3f64166f5a&
-		// .php?s=eae5808588c0708d428784a483083734&
-		// .php?s=6256dbb2912e517e5952caccdbc534f3&
-		if ( ! tt && (tt = strstr ( p-4 , ".php?s=" )) ) {
-			// point to the value of the s=
-			char *pp = tt + 7; 
-			int32_t i = 0;
-			// ensure we got 32 hexadecimal chars
-			while ( pp[i] && 
-				( is_digit(pp[i]) || 
-				  ( pp[i]>='a' && pp[i]<='f' ) ) ) i++;
-			// if not, do not consider it a session id
-			if ( i < 32 ) tt = NULL;
-			// point to s= for removal
-			else { tt += 5; x = 2; }
+		if( stripSessionId )
+		{
+			// http://br4622.customervoice360.com/about_us.php?SES=652ee78702fe135cd96ae925aa9ec556&frmnd=registration		
+			if ( ! tt ) { tt = strstr        ( p , "SES="       ); x =  4;}
+					
+			if ( ! tt ) { tt = gb_strcasestr ( p , "PHPSESSID=" ); x = 10;}
+			if ( ! tt ) { tt = strstr        ( p , "SID="       ); x =  4;}
+			// . osCsid and XTCsid are new session ids
+			// . keep this up here so "sid=" doesn't override it
+			if ( ! tt && titleRecVersion >= 59 ) { 
+				tt = strstr ( p , "osCsid=" ); 
+				x =  7;
+				if ( ! tt ) tt = strstr ( p , "XTCsid=" );
+				// a hex sequence of at least 10 digits must follow
+				if ( tt && ! isSessionId ( tt + x, titleRecVersion ) )
+					tt = NULL;
+			}
+			if ( ! tt && titleRecVersion >= 59 ) { 
+				tt = strstr ( p , "osCsid/" ); 
+				x =  7;
+				// a hex sequence of at least 10 digits must follow
+				if ( tt && ! isSessionId ( tt + x, titleRecVersion ) )
+					tt = NULL;
+			}
+			// this is a new session id thing
+			if ( ! tt && titleRecVersion >= 54 ) { 
+				tt = strstr ( p , "sid=" ); x =  4;
+				// a hex sequence of at least 10 digits must follow
+				if ( tt && ! isSessionId ( tt + x, titleRecVersion ) ) 
+					tt = NULL;
+			}
+			// osCsid and XTCsid are new session ids
+			if ( ! tt && titleRecVersion >= 57 ) { 
+				tt = strstr ( p , "osCsid=" ); 
+				x =  7;
+				if ( ! tt ) tt = strstr ( p , "XTCsid=" );
+				// a hex sequence of at least 10 digits must follow
+				if ( tt && ! isSessionId ( tt + x, titleRecVersion ) ) 
+					tt = NULL;
+			}
+			// fixes for bug of matching plain &sessionid= first and
+			// then realizing char before is an alnum...
+			if ( ! tt && titleRecVersion >= 59 ) { 
+				tt = gb_strcasestr ( p, "jsessionid="); x = 11; }
+			if ( ! tt && titleRecVersion >= 59 ) { 
+				tt = gb_strcasestr ( p , "vbsessid="  ); x =  9;}
+			if ( ! tt && titleRecVersion >= 59 ) { 
+				tt = gb_strcasestr ( p, "asesessid=" ); x = 10; }
+			if ( ! tt && titleRecVersion >= 59 ) { 
+				tt = gb_strcasestr ( p, "nlsessid="  ); x =  9; }
+			if ( ! tt && titleRecVersion >= 59 ) { 
+				tt = gb_strcasestr ( p, "psession="  ); x =  9; }
+	
+			if ( ! tt ) { tt = gb_strcasestr ( p , "session_id="); x = 11;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "sessionid=" ); x = 10;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "sessid="    ); x =  7;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "vbsessid="  ); x =  9;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "session="   ); x =  8;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "session/"   ); x =  8;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "POSTNUKESID=");x = 12;}
+			// some new session ids as of Feb 2005
+			if ( ! tt ) { tt = gb_strcasestr ( p, "auth_sess=" ); x = 10; }
+			if ( ! tt ) { tt = gb_strcasestr ( p, "mysid="     ); x =  6; }
+			if ( ! tt ) { tt = gb_strcasestr ( p, "oscsid="    ); x =  7; }
+			if ( ! tt ) { tt = gb_strcasestr ( p, "cg_sess="   ); x =  8; }
+			if ( ! tt ) { tt = gb_strcasestr ( p, "galileoSession");x=14; }
+			if ( ! tt ) { tt = gb_strcasestr ( p, "asesessid=" ); x = 10; }
+			if ( ! tt ) { tt = gb_strcasestr ( p, "nlsessid="  ); x =  9; }
+			if ( ! tt ) { tt = gb_strcasestr ( p, "jsessionid="); x = 11; }
+			if ( ! tt ) { tt = gb_strcasestr ( p, "psession="  ); x =  9; }
+			// new as of Jan 2006. is hurting news5 collection on gb6
+			if ( ! tt ) { tt = gb_strcasestr ( p, "sess="      ); x =  5; }
+			
+			// .php?s=8af9d6d0d59e8a3108f3bf3f64166f5a&
+			// .php?s=eae5808588c0708d428784a483083734&
+			// .php?s=6256dbb2912e517e5952caccdbc534f3&
+			if ( ! tt && (tt = strstr ( p-4 , ".php?s=" )) ) {
+				// point to the value of the s=
+				char *pp = tt + 7; 
+				int32_t i = 0;
+				// ensure we got 32 hexadecimal chars
+				while ( pp[i] && 
+					( is_digit(pp[i]) || 
+					  ( pp[i]>='a' && pp[i]<='f' ) ) ) i++;
+				// if not, do not consider it a session id
+				if ( i < 32 ) tt = NULL;
+				// point to s= for removal
+				else { tt += 5; x = 2; }
+			}
 		}
+		
+		// BR 20160117: Skip most common tracking parameters
+		if( !tt && stripTrackingParams )
+		{
+			// Oracle Eloqua
+			// http://app.reg.techweb.com/e/er?s=2150&lid=25554&elq=00000000000000000000000000000000&elqaid=2294&elqat=2&elqTrackId=3de2badc5d7c4a748bc30253468225fd
+			if ( ! tt ) { tt = gb_strcasestr ( p , "elq="); x = 4;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "elqat="); x = 6;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "elqaid="); x = 7;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "elq_mid="); x = 8;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "elqTrackId="); x = 11;}
+
+			// Google Analytics
+			// http://kikolani.com/blog-post-promotion-ultimate-guide?utm_source=kikolani&utm_medium=320banner&utm_campaign=bpp
+			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_term="); x = 9;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_source="); x = 11;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_medium="); x = 11;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_content="); x = 12;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_campaign="); x = 13;}
+
+			// Piwik
+			if ( ! tt ) { tt = gb_strcasestr ( p , "pk_kwd="); x = 7;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "pk_source="); x = 10;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "pk_medium="); x = 10;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "pk_campaign="); x = 12;}
+
+			// Misc				
+			if ( ! tt ) { tt = gb_strcasestr ( p , "trk="); x = 4;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "promoid="); x = 8;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "promCode="); x = 9;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "promoCode="); x = 10;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "partnerref="); x = 11;}
+		}
+		
+		
+			
+			
 		// bail if none were found
 		if ( ! tt ) goto skip;
 		// . must not have an alpha char before it!
@@ -817,7 +870,8 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 	flag = 1;
 	// Must not use defaults!
 	u2.set ( m_url, m_ulen , addWWW, stripSessionId ,
-		 stripPound , stripCommonFile , titleRecVersion );
+		 stripPound , stripCommonFile , stripTrackingParams, titleRecVersion );
+		 
 	if ( strcmp(u2.getUrl(),m_url) != 0 ) {
 		log(LOG_REMIND,"db: *********url %s-->%s\n",m_url,u2.getUrl());
 		//sleep(5000);

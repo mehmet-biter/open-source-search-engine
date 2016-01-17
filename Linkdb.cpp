@@ -2070,7 +2070,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 
 	// get the linker url
 	Url linker; 
-	if ( r ) linker.set ( r->ptr_ubuf , r->size_ubuf );
+	if ( r ) linker.set ( r->ptr_ubuf , r->size_ubuf, false, false, false, false, false, 0x7fffffff );
 
 	// sanity check, Xml::set() requires this...
 	if ( r&&r->size_rssItem > 0 && r->ptr_rssItem[r->size_rssItem-1]!=0 ) {
@@ -5493,7 +5493,7 @@ bool Links::queueBlogRoll ( TagRec **tagRecPtrs , int32_t niceness ) {
 		// skip if unknown whether it is a blog
 		if ( b == -1 ) continue;
 		// normalize it
-		Url link; link.set ( m_linkPtrs[j] , m_linkLens[j] );
+		Url link; link.set ( m_linkPtrs[j] , m_linkLens[j] , false, false, false, false, false, 0x7fffffff);
 		// get domain
 		char *dom  = link.getDomain   ();
 		int32_t  dlen = link.getDomainLen();
@@ -5836,6 +5836,7 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 		  // turned this back on per john's request
 		  // will cause undeletable data in existing indexes.
 		  true            , // stripCommonFile?
+		  true, 		// strip common tracking parameters
 		  titleRecVersion );// used for removing session ids
 
 	// refix the link

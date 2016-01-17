@@ -118,7 +118,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml ,
 		// set it to the full url
 		Url iu;
 		// use "pageUrl" as the baseUrl
-		iu.set ( pageUrl , ubuf , ulen );
+		iu.set ( pageUrl , ubuf , ulen, false, false, false, false, false, 0x7fffffff );
 		// skip if invalid domain or TLD
 		if ( iu.getDomainLen() <= 0 ) goto ogimgloop;
 		// for looking it up on disk to see if unique or not
@@ -217,7 +217,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml ,
 		// set it to the full url
 		Url iu;
 		// use "pageUrl" as the baseUrl
-		iu.set ( pageUrl , src , srcLen ); 
+		iu.set ( pageUrl , src , srcLen, false, false, false, false, false, 0x7fffffff ); 
 		// skip if invalid domain or TLD
 		if ( iu.getDomainLen() <= 0 ) continue;
 		// skip if not from same domain as page url
@@ -571,7 +571,7 @@ bool Images::downloadImages () {
 		src = *iup;
 		srcLen = gbstrlen(src);
 		// need this
-		m_imageUrl.set ( src , srcLen );
+		m_imageUrl.set ( src , srcLen, false, false, false, false, false, 0x7fffffff );
 		// jump into the for loop below
 		//if ( m_phase == 0 ) goto insertionPoint;
 	}
@@ -598,7 +598,7 @@ bool Images::downloadImages () {
 				// get the url of the image
 				src = getImageUrl ( m_j , &srcLen );
 				// use "pageUrl" as the baseUrl
-				m_imageUrl.set ( m_pageUrl , src , srcLen ); 
+				m_imageUrl.set ( m_pageUrl , src , srcLen, false, false, false, false, false, 0x7fffffff ); 
 			}
 			// if we should stop, stop
 			if ( m_stopDownloading ) break;
@@ -831,7 +831,7 @@ bool Images::makeThumb ( ) {
 	// set it to the full url
 	Url iu;
 	// use "pageUrl" as the baseUrl
-	iu.set ( m_pageUrl , src , srcLen ); 
+	iu.set ( m_pageUrl , src , srcLen, false, false, false, false, false, 0x7fffffff ); 
 	// get the mime
 	if ( ! mime.set ( buf, bufLen, &iu ) ) {		
 		log ( "image: MIME.set() failed in gotImage()" );

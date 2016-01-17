@@ -2903,7 +2903,7 @@ bool Query::setQWords ( char boolFlag ,
 					addwww = true;
 				if ( fieldCode == FIELD_SITELINK) 
 					addwww = true;
-				url.set ( w , wlen , addwww );
+				url.set ( w , wlen , addwww, false, false, false, false, 0x7fffffff );
 				char *site    = url.getHost();
 				int32_t  siteLen = url.getHostLen();
 				if (fieldCode == FIELD_SITELINK)

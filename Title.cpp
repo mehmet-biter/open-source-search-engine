@@ -270,7 +270,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 		if ( k->size_rssItem > 10 && ++rcount >= 20 ) continue;
 		// set Url
 		Url u;
-		u.set ( k->getUrl() , k->size_urlBuf );
+		u.set ( k->getUrl() , k->size_urlBuf, false, false, false, false, false, 0x7fffffff );
 		// is it the same host as us?
 		bool sh = true;
 		// the title url
@@ -422,7 +422,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 		// . set the url class to this
 		// . TODO: use the base url in the doc
 		Url u;
-		u.set(link, len, true, false );
+		u.set(link, len, true, false, false, false, false, 0x7fffffff );
 
 		// compare
 		selfLink = u.equals ( xd->getFirstUrl() );

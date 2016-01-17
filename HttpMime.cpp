@@ -188,7 +188,8 @@ bool HttpMime::parse ( char *mime , int32_t mimeLen , Url *url ) {
 			// . we skip initial spaces in this Url::set() routine
 			if(url)
 				m_locUrl.set ( url, p + 9, len - 9,
-					       false/*addWWW?*/);
+					       false/*addWWW?*/,
+					       false, false, false, false, 0x7fffffff);
 		}
 		else if ( strncasecmp ( p , "Content-Encoding:", 17) == 0 ) {
 			//only support gzip now, it doesn't seem like servers
