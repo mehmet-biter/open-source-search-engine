@@ -4142,7 +4142,8 @@ struct QueryField g_fields[] = {
 	//{"qdom", FIELD_QUOTA, false,""},
 	//{"qhost", FIELD_QUOTA, false,""},
 
-
+/*
+// BR 20160117: No longer supported
 	{"gbsortbyfloat", 
 	 FIELD_GBSORTBYFLOAT, 
 	 false,
@@ -4197,9 +4198,11 @@ struct QueryField g_fields[] = {
 	 "oldest on top.",
 	 NULL,
 	 QTF_HIDE},
+*/
 
 
-
+/*
+// BR 20160117: No longer supported
 
 	{"gbsortbyint", 
 	 FIELD_GBSORTBYINT, 
@@ -4212,7 +4215,7 @@ struct QueryField g_fields[] = {
 	 "contains is interpreted as a 32-bit integer.", 
 	 NULL,
 	 0 },
-
+*/
 
 	{"gbsortbyint", 
 	 FIELD_GBSORTBYINT, 
@@ -4222,6 +4225,8 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
+/*
+// BR 20160117: No longer supported
 
 	{"gbsortbyint", 
 	 FIELD_GBSORTBYINT, 
@@ -4245,7 +4250,7 @@ struct QueryField g_fields[] = {
 	 "document's site has.",
 	 NULL,
 	 0 },
-
+*/
 
 	{"gbrevsortbyint", 
 	 FIELD_GBREVSORTBYINT, 
@@ -4257,9 +4262,10 @@ struct QueryField g_fields[] = {
 	 0},
 
 
+/*
+// BR 20160117: No longer supported
 
 	// gbmin:price:1.23
-
 	{"gbminfloat", 
 	 FIELD_GBNUMBERMIN, 
 	 false,
@@ -4361,7 +4367,7 @@ struct QueryField g_fields[] = {
 	 "Similar to gbminint and gbmaxint but is an equality constraint.",
 	 NULL,
 	 0},
-
+*/
 
 	{"gbdocspiderdate",
 	 FIELD_GENERIC,
@@ -4925,7 +4931,7 @@ struct QueryField g_fields[] = {
 
 	// they don't need to know about this
 	{"gbad",FIELD_GBAD,false,"","",NULL,QTF_HIDE},
-	{"gbtagvector", FIELD_GBTAGVECTOR, false,"","",NULL,QTF_HIDE},
+//BR 20160117 removed:	{"gbtagvector", FIELD_GBTAGVECTOR, false,"","",NULL,QTF_HIDE},
 	{"gbsamplevector", FIELD_GBSAMPLEVECTOR, false,"","",NULL,QTF_HIDE},
 	{"gbcontenthash", FIELD_GBCONTENTHASH, false,"","",NULL,QTF_HIDE},
 	{"gbduphash"  ,FIELD_GBOTHER,false,"","",NULL,QTF_HIDE},
@@ -5601,7 +5607,7 @@ void QueryTerm::constructor ( ) {
 bool QueryTerm::isSplit() {
 	if(!m_fieldCode) return true;
 	if(m_fieldCode == FIELD_QUOTA)           return false;
-	if(m_fieldCode == FIELD_GBTAGVECTOR)     return false;
+//BR 20160117 removed:	if(m_fieldCode == FIELD_GBTAGVECTOR)     return false;
 //BR 20160106 removed:	if(m_fieldCode == FIELD_GBGIGABITVECTOR) return false;
 	if(m_fieldCode == FIELD_GBSAMPLEVECTOR)  return false;
 	if(m_fieldCode == FIELD_GBSECTIONHASH)  return false;

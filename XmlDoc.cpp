@@ -24726,7 +24726,8 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	// shortcut
 	Url *fu = getFirstUrl();
 
-	if ( ! hashVectors ( tt ) ) return false;
+//BR 20160117: removed:	if ( ! hashVectors ( tt ) ) return false;
+
 
 	// constructor should set to defaults automatically
 	HashInfo hi;
@@ -24956,7 +24957,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	if ( ! hashUrl           ( table ) ) return NULL;
 	if ( ! hashLanguage      ( table ) ) return NULL;
 	if ( ! hashCountry       ( table ) ) return NULL;
-	if ( ! hashSiteNumInlinks( table ) ) return NULL;
+// BR 20160117 removed:	if ( ! hashSiteNumInlinks( table ) ) return NULL;
 // BR 20160117 removed:	if ( ! hashTagRec        ( table ) ) return NULL;
 // BR 20160106 removed:	if ( ! hashAds           ( table ) ) return NULL;
 // BR 20160106 removed:	if ( ! hashSubmitUrls    ( table ) ) return NULL;
@@ -27082,8 +27083,11 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	hi.m_prefix    = NULL;
 	hi.m_desc      = "middle domain";
 	hi.m_hashGroup = HASHGROUP_INURL;
+	hi.m_hashCommonWebWords = false;	// Skip www, com, http etc.
 	if ( ! hashString ( host,hlen,&hi)) return false;
 
+	hi.m_hashCommonWebWords = true;
+	if ( ! hashSingleTerm ( fu->getDomain(),fu->getDomainLen(),&hi)) return false;
 
 
 	setStatus ( "hashing url path");
@@ -28050,14 +28054,22 @@ bool XmlDoc::hashVectors ( HashTableX *tt ) {
 
 	setStatus ( "hashing vectors" );
 
+	int32_t blen;
+	char buf[32];
+	HashInfo hi;
+	hi.m_tt        = tt;
+	hi.m_shardByTermId = true;
+	
+/*
+  BR 20160117 removed
+
 	int32_t score =  *getSiteNumInlinks8() * 256;
 	if ( score <= 0 ) score = 1;
-	char buf[32];
 	//char *field;
 	//char *descr;
 	//h = m_tagVector.getVectorHash();
 	uint32_t tph = *getTagPairHash32();
-	int32_t blen = sprintf(buf,"%"UINT32"", tph);
+	blen = sprintf(buf,"%"UINT32"", tph);
 	//field = "gbtagvector";
 	//descr = "tag vector hash";
 
@@ -28071,6 +28083,7 @@ bool XmlDoc::hashVectors ( HashTableX *tt ) {
 
 	// this returns false on failure
 	if ( ! hashString ( buf,blen, &hi ) ) return false;
+*/
 
 /*
   BR 20160106 removed
@@ -31839,10 +31852,12 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		else                       wd = MAXDIVERSITYRANK;
 
 
+
 		// BR 20160115: Don't hash 'junk' words
 		bool skipword = false;
 		if( !hi->m_hashCommonWebWords )
 		{
+			
 			// Don't hash the words below as individual words.
 			// Yes, hack'ish. Will have to do for now..
 			switch( wlens[i] )
@@ -31861,7 +31876,8 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 					break;
 
 				case 3:
-					if( memcmp(wptrs[i], "com", 3) == 0 ||
+					if( memcmp(wptrs[i], "www", 3) == 0 ||
+						memcmp(wptrs[i], "com", 3) == 0 ||
 						memcmp(wptrs[i], "net", 3) == 0 ||
 						memcmp(wptrs[i], "org", 3) == 0 ||
 						memcmp(wptrs[i], "biz", 3) == 0 ||
@@ -31871,6 +31887,7 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 						// Skip single word but include bigram (for domain searches)
 						skipword = true;
 					}
+					break;
 
 				case 4:
 					if( memcmp(wptrs[i], "http", 4) == 0 )
@@ -31887,7 +31904,11 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 						continue;
 					}
 					break;
+					
+				default:
+					break;
 			}
+			
 			if( skipword )
 			{
 				// sticking to the gb style ;)
@@ -39882,6 +39903,8 @@ SafeBuf *XmlDoc::getRelatedDocIds ( ) {
 			if ( td->m_topSiteHashes26[j] == ourDomHash26 )
 				continue;
 			// skip twitter facebook, etc
+			
+//@@@@@@ BR: What is this for?
 			int64_t docId = td->m_topDocIds[j];
 			if ( docId == 114607849462LL || // https://www.twitter
 			     docId == 273941610476LL || // twitter.com
@@ -40467,6 +40490,7 @@ bool XmlDoc::setRelatedDocIdInfoFromMsg20Reply ( RelatedDocId *rd ,
 		return true;
 	}
 
+//@@@@@@ BR: What is this for?
 	// bar facebook.com and twitter.com roots... too popular for all!
 	// was coming up for jezebelgallery.com
 	if ( strcmp(urlStr,"http://www.twitter.com/") == 0 )
