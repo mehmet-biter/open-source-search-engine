@@ -739,7 +739,7 @@ public:
 	bool hashZipCodes ( class HashTableX *table ) ;
 	bool hashMetaZip ( class HashTableX *table ) ;
 	bool hashContentType ( class HashTableX *table ) ;
-	bool isDomainUnwantedForHashing(char *domain, int32_t dlen);
+	bool isDomainUnwantedForHashing(Url *url);
 	bool hashLinks ( class HashTableX *table ) ;
 	bool getUseTimeAxis ( ) ;
 	SafeBuf *getTimeAxisUrl ( );

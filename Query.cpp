@@ -3737,6 +3737,8 @@ static bool       s_isInitialized = false;
 // 3rd field = m_hasColon
 struct QueryField g_fields[] = {
 
+/*
+	BR 20160117: No longer hashed
 	{"gbfieldmatch",
 	 FIELD_GBFIELDMATCH,
 	 true,
@@ -3748,6 +3750,7 @@ struct QueryField g_fields[] = {
 	 "general, it should be a very short termlist, so it should be fast.",
 	 "Advanced Query Operators",
 	 QTF_BEGINNEWTABLE },
+*/
 
 	{"url", 
 	 FIELD_URL, 
@@ -3922,6 +3925,8 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
+/*
+	BR 20160117: No longer hash image info
 	{"gbimage",
 	 FIELD_URL,
 	 false,
@@ -3939,8 +3944,10 @@ struct QueryField g_fields[] = {
 	 "do not have thumbnails.",
 	 NULL,
 	 0},
+*/
 
-
+/*
+	BR 20160117: No longer hash tags
 	{"gbtag*", 
 	 FIELD_TAG, 
 	 false,
@@ -3954,7 +3961,7 @@ struct QueryField g_fields[] = {
 	 "menu for more information.",
 	 NULL,
 	0},
-
+*/
 
 	{"gbzipcode", 
 	 FIELD_ZIP, 

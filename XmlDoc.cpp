@@ -24815,6 +24815,10 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	// . let's try thumbnails for all...
 	//if ( ! *getIsPermalink() ) return true;
 
+
+/*
+	// BR 20160115: Don't store "gbsitetemplate" hash in posdb
+	
 	setStatus ( "hashing no-split gbsitetemplate keys" );
 
 	// must be valid
@@ -24835,8 +24839,10 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	hi.m_prefix = "gbsitetemplate";
 	//if ( ! hashString ( buf,blen,&hi ) ) return false;
 	if ( ! hashSingleTerm ( buf,blen,&hi ) ) return false;
+*/
 
-
+/*
+	BR 20160117: No longer has image URLs
 	setStatus ( "hashing no-split gbimage keys" );
 
 	hi.m_prefix    = "gbimage";
@@ -24862,7 +24868,7 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 		if ( ! hashSingleTerm ( u,ulen,&hi) ) return false;
 		//log("test: %s",u);
 	}
-
+*/
 	return true;
 }
 
@@ -24939,7 +24945,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	if ( ! hashLanguage      ( table ) ) return NULL;
 	if ( ! hashCountry       ( table ) ) return NULL;
 	if ( ! hashSiteNumInlinks( table ) ) return NULL;
-	if ( ! hashTagRec        ( table ) ) return NULL;
+// BR 20160117 removed:	if ( ! hashTagRec        ( table ) ) return NULL;
 // BR 20160106 removed:	if ( ! hashAds           ( table ) ) return NULL;
 // BR 20160106 removed:	if ( ! hashSubmitUrls    ( table ) ) return NULL;
 	if ( ! hashIsAdult       ( table ) ) return NULL;
@@ -26119,12 +26125,23 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 // BR 20160115
 // Yes, ugly hardcoded stuff again..
 // List of domains we do not want to store hashes for in posdb for "link:" entries
-bool XmlDoc::isDomainUnwantedForHashing(char *domain, int32_t dlen) {
+bool XmlDoc::isDomainUnwantedForHashing(Url *url) {
+	char *domain 	= url->getDomain();			// top domain only, e.g. googleapis.com
+	int32_t dlen 	= url->getDomainLen();
+	char *host		= url->getHost();				// domain including subdomain, e.g. fonts.googleapis.com
+	int32_t hlen	= url->getHostLen();
+
 
 	if ( !domain || dlen <= 0 ) return true;
 
 	switch( dlen )
 	{
+		case 4:
+			if( memcmp(domain, "t.co", 4) == 0 )			// Twitter
+			{
+				return true;
+			}
+			break;
 		case 5:
 			if( memcmp(domain, "ow.ly", 5) == 0 ||
 				memcmp(domain, "tr.im", 5) == 0 )
@@ -26139,6 +26156,19 @@ bool XmlDoc::isDomainUnwantedForHashing(char *domain, int32_t dlen) {
 				return true;
 			}
 			break;
+		case 8:
+			if( memcmp(domain, "yimg.com", 8) == 0 )		// Yahoo CDN
+			{
+				return true;
+			}
+			break;
+		case 9:
+			if( memcmp(domain, "ytimg.com", 9) == 0 ||	// YouTube images
+					memcmp(domain, "atdmt.com", 9) == 0 )		// Facebook tracking
+			{
+				return true;
+			}
+			break;
 		case 10:
 			if( memcmp(domain, "tinyurl.cc", 10) == 0 )
 			{
@@ -26146,13 +26176,55 @@ bool XmlDoc::isDomainUnwantedForHashing(char *domain, int32_t dlen) {
 			}
 			break;
 		case 11:
-			if( memcmp(domain, "tinyurl.com", 11) == 0 )
+			if( memcmp(domain, "tinyurl.com", 11) == 0 ||
+					memcmp(domain, "gstatic.com", 11) == 0 )
+			{
+				return true;
+			}
+			break;
+		case 12:
+			if( memcmp(domain, "akamaihd.net", 12) == 0 ||
+					memcmp(domain, "vimeocdn.com", 12) == 0 )
+			{
+				return true;
+			}
+			break;
+		case 13:
+			if( memcmp(domain, "akamaized.net", 13) == 0 ||
+					memcmp(domain, "disquscdn.com", 13) == 0 )
 			{
 				return true;
 			}
 			break;
 		case 14:
-			if( memcmp(domain, "googleapis.com", 14) == 0 )
+			if( memcmp(domain, "googleapis.com", 14) == 0 ||
+					memcmp(domain, "netdna-cdn.com", 14) == 0 ||
+					memcmp(domain, "cloudfront.net", 14) == 0 )
+			{
+				return true;
+			}
+			break;
+		case 15:
+			if( memcmp(domain, "doubleclick.net", 15) == 0 )
+			{
+				// If subdomain empty or www, keep it. Otherwise trash it.
+				// pubads.g.doubleclick.net
+				// ad.doubleclick.net
+				// ads.g.doubleclick.net
+		
+				if( hlen != dlen )	// has subdomain, only OK if www
+				{
+					if( hlen != dlen+4 ||
+							memcmp(host,"www.",4) != 0 )
+					{
+						return true;
+					}
+				}
+					
+			}
+			break;
+		case 16:
+			if( memcmp(domain, "staticflickr.com", 16) == 0 )
 			{
 				return true;
 			}
@@ -26232,10 +26304,15 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 		// BR 20160105: Do not create "link:" hashes for media URLs etc.
 		if( link.hasMediaExtension() ||
 			link.hasScriptExtension() ||
-			isDomainUnwantedForHashing(link.getDomain(), link.getDomainLen()) )
+			isDomainUnwantedForHashing(&link) )
 		{
 			continue;			
 		}
+
+//char debugu[MAX_URL_LEN+1];
+//memcpy(debugu, link.getUrl(), link.getUrlLen());
+//debugu[ link.getUrlLen() ] = '\0';
+//log(LOG_ERROR,"### [%s]", debugu);
 
 		// breathe
 		QUICKPOLL(m_niceness);
@@ -27621,13 +27698,15 @@ bool XmlDoc::hashLanguage ( HashTableX *tt ) {
 
 	if ( ! hashString ( s, slen, &hi ) ) return false;
 
+/* 
+	BR 20160117: Duplicate
 	// try lang abbreviation
 	sprintf(s , "%s ", getLanguageAbbr(langId) );
 	// go back to broken way to try to fix parsing consistency bug
 	// by adding hashLanguageString() function below
 	//sprintf(s , "%s ", getLanguageAbbr(langId) );
 	if ( ! hashString ( s, slen, &hi ) ) return false;
-
+*/
 	return true;
 }
 
