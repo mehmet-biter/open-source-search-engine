@@ -49,12 +49,12 @@ TEST(UrlTest, SetNonAsciiValid) {
 	    "http://xn--kjvp61d69f6wc3zf.jp/"
 	};
 
-	ASSERT_EQ(sizeof(input_urls), sizeof(expected_normalized));
+	ASSERT_EQ(sizeof(input_urls)/sizeof(input_urls[0]), sizeof(expected_normalized)/sizeof(expected_normalized[0]));
 
 	size_t len = sizeof(input_urls) / sizeof(input_urls[0]);
 	for (size_t i = 0; i < len; i++) {
 		Url url;
-		url.set(input_urls[i], strlen(input_urls[i]));
+		url.set(input_urls[i]);
 
 		EXPECT_STREQ(expected_normalized[i], (const char*)url.getUrl());
 	}
@@ -73,12 +73,12 @@ TEST(UrlTest, SetNonAsciiInValid) {
 		"http://undocs.org/ru/A/C.3/68/%0BSR.48"
 	};
 
-	ASSERT_EQ(sizeof(input_urls), sizeof(expected_normalized));
+	ASSERT_EQ(sizeof(input_urls)/sizeof(input_urls[0]), sizeof(expected_normalized)/sizeof(expected_normalized[0]));
 
 	size_t len = sizeof(input_urls) / sizeof(input_urls[0]);
 	for (size_t i = 0; i < len; i++) {
 		Url url;
-		url.set(input_urls[i], strlen(input_urls[i]));
+		url.set(input_urls[i]);
 
 		EXPECT_STREQ(expected_normalized[i], (const char*)url.getUrl());
 	}

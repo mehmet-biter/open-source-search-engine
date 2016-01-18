@@ -53,7 +53,7 @@ TEST(JsonTest, EncodeValid) {
 	    "\\b\\f\\r"
 	};
 
-	ASSERT_EQ(sizeof(input_strs), sizeof(expected_encoded));
+	ASSERT_EQ(sizeof(input_strs)/sizeof(input_strs[0]), sizeof(expected_encoded)/sizeof(expected_encoded[0]));
 
 	size_t len = sizeof(input_strs) / sizeof(input_strs[0]);
 	for (size_t i = 0; i < len; i++) {
