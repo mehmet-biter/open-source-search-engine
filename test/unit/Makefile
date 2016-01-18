@@ -4,7 +4,7 @@ GTEST_DIR = googletest/googletest
 BASE_DIR ?= ../..
 
 TARGET = GigablastTest
-OBJECTS = GigablastTest.o FctypesTest.o JsonTest.o ProcessTest.o UnicodeTest.o UrlTest.o WordsTest.o
+OBJECTS = GigablastTest.o FctypesTest.o JsonTest.o PosTest.o ProcessTest.o UnicodeTest.o UrlTest.o WordsTest.o
 
 .PHONY: all
 all: $(TARGET)
@@ -23,7 +23,7 @@ libgtest.so:
 	cd $(GTEST_DIR) && cmake -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Debug && make
 	ln -s $(GTEST_DIR)/$@ .
 
-CPPFLAGS += -ggdb
+CPPFLAGS += -g
 CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wl,-rpath=. -Wl,-rpath=$(BASE_DIR)
 CPPFLAGS += -I$(BASE_DIR) -I$(GTEST_DIR)/include

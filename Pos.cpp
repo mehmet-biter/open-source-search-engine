@@ -81,7 +81,7 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 	bool lastSpace = false;
 	static const int32_t maxCharSize = 4; // we are utf8
 	int inBadTags = 0;
-
+	int capCount = 0;
 	for ( int32_t i = a ; i < b ; i++ ) {
 		if (trunc) {
 			break;
@@ -183,33 +183,6 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 
 		char *p    = NULL ;
 
-		bool isAllCaps = false;
-
-		// check for all caps
-		if ( f ) {
-			isAllCaps = true;
-
-			for ( p = wp[i]; p < pend; p += cs ) {
-				// get size
-				cs = getUtf8CharSize(p);
-
-				// only check for alpha
-				if ( !is_alpha_utf8( p ) ) {
-					continue;
-				}
-
-				// we only do it for ascii to avoid catering for different rules in different languages
-				// https://en.wikipedia.org/wiki/Letter_case#Exceptional_letters_and_digraphs
-				// eg:
-				//   The Greek upper-case letter "Σ" has two different lower-case forms:
-				//     "ς" in word-final position and "σ" elsewhere
-				if ( !is_ascii( *p ) || !is_upper_a( *p ) ) {
-					isAllCaps = false;
-					break;
-				}
-			}
-		}
-
 		// assume filters out to the same # of chars
 		for ( p = wp[i]; p < pend; p += cs ) {
 			// get size
@@ -236,6 +209,9 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 					if ( fend - f > 1 ) {
 						lastBreak = f;
 						*f++ = ' ';
+
+						// space is counted as caps as well because we're detecting all caps for a sentence
+						++capCount;
 					} else {
 						trunc = true;
 					}
@@ -248,12 +224,18 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 			if ( f ) {
 				if ( fend - f > cs ) {
 					if ( cs == 1 ) {
-						if ( isAllCaps && p != wp[i] ) {
-							// not first character
-							*f++ = to_lower_a( *p );
-						} else {
-							*f++ = *p;
+						// we only do it for ascii to avoid catering for different rules in different languages
+						// https://en.wikipedia.org/wiki/Letter_case#Exceptional_letters_and_digraphs
+						// eg:
+						//   The Greek upper-case letter "Σ" has two different lower-case forms:
+						//     "ς" in word-final position and "σ" elsewhere
+						if ( !is_alpha_a( *p ) || is_upper_a( *p ) ) {
+							// non-alpha is counted as caps as well because we're detecting all caps for a sentence
+							// and comma/quotes/etc. is included
+							++capCount;
 						}
+
+						*f++ = *p;
 					} else {
 						gbmemcpy( f, p, cs );
 						f += cs;
@@ -265,6 +247,33 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 
 			pos++; 
 			lastSpace = false;
+		}
+	}
+
+	if ( f ) {
+		if ( capCount == ( f - fstart ) ) {
+			bool isFirstLetter = true;
+
+			unsigned char cs = 0;
+			for ( char *c = fstart; c < fend; c += cs ) {
+				cs = getUtf8CharSize(c);
+
+				bool isAlpha = is_alpha_utf8( c );
+
+				if ( isAlpha ) {
+					if (isFirstLetter) {
+						isFirstLetter = false;
+						continue;
+					}
+				} else {
+					isFirstLetter = true;
+					continue;
+				}
+
+				if ( !isFirstLetter ) {
+					to_lower_utf8(c, c);
+				}
+			}
 		}
 	}
 
@@ -281,15 +290,16 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 		}
 	}
 
+
 	// set pos for the END of the last word here (used in Summary.cpp)
 	if ( !f ) {
 		m_pos[nw] = pos;
 	} else { // NULL terminate f
 		*len = f - fstart;
-	}
 
-	if ( fend - f > maxCharSize ) {
-		*f = '\0';
+		if ( fend - f > maxCharSize ) {
+			*f = '\0';
+		}
 	}
 
 	// Success
