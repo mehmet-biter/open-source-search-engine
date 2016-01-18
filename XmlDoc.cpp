@@ -26133,8 +26133,6 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 }
 
 
-
-
 // BR 20160115
 // Yes, ugly hardcoded stuff again.. Can likely be optimized a bit too..
 // List of domains we do not want to store hashes for in posdb for "link:" entries
@@ -26145,7 +26143,6 @@ bool XmlDoc::isDomainUnwantedForHashing(Url *url) {
 	int32_t hlen	= url->getHostLen();
 	char *path		= url->getPath();				// document path, e.g. /bla/doh/doc.html
 	int32_t plen	= url->getPathLen();
-
 
 	if ( !domain || dlen <= 0 ) return true;
 
@@ -26179,7 +26176,7 @@ bool XmlDoc::isDomainUnwantedForHashing(Url *url) {
 			break;
 		case 9:
 			if( memcmp(domain, "ytimg.com", 9) == 0 ||	// YouTube images
-					memcmp(domain, "atdmt.com", 9) == 0 )		// Facebook tracking
+				memcmp(domain, "atdmt.com", 9) == 0 )		// Facebook tracking
 			{
 				return true;
 			}
@@ -26218,7 +26215,7 @@ bool XmlDoc::isDomainUnwantedForHashing(Url *url) {
 			break;
 		case 11:
 			if( memcmp(domain, "tinyurl.com", 11) == 0 ||
-					memcmp(domain, "gstatic.com", 11) == 0 )
+				memcmp(domain, "gstatic.com", 11) == 0 )
 			{
 				return true;
 			}
@@ -26323,7 +26320,6 @@ bool XmlDoc::isDomainUnwantedForHashing(Url *url) {
 						return true;
 					}
 				}
-					
 			}
 			break;
 		case 16:
@@ -26334,6 +26330,45 @@ bool XmlDoc::isDomainUnwantedForHashing(Url *url) {
 			break;
 		default:
 			break;
+	}
+
+	if( plen > 8 )
+	{
+		if( plen > 8 && 
+			(memcmp(path, "/oembed?", 8) == 0 || memcmp(path, "/oembed/", 8) == 0) )
+		{
+			// http://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DLkcZdhamaew&format=xml
+			// http://indavideo.hu/oembed/4ff1e92383
+			// https://vine.co/oembed/ODibqgXlQpE.xml
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+
+// BR 20160115
+// Yes, ugly hardcoded stuff again.. Can likely be optimized a bit too..
+// List of paths we do not want to store hashes for in posdb for "link:" entries
+bool XmlDoc::isPathUnwantedForHashing(Url *url) {
+	char *path		= url->getPath();				// document path, e.g. /bla/doh/doc.html
+	int32_t plen	= url->getPathLen();
+
+	if ( !path|| plen <= 0 ) return false;
+
+	if( plen > 8 )
+	{
+		if( plen > 8 && 
+			(memcmp(path, "/oembed?", 8) == 0 || 
+			 memcmp(path, "/oembed/", 8) == 0) )
+		{
+			// http://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DLkcZdhamaew&format=xml
+			// http://indavideo.hu/oembed/4ff1e92383
+			// https://vine.co/oembed/ODibqgXlQpE.xml
+			return true;
+		}
 	}
 
 	return false;
@@ -26408,15 +26443,15 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 		// BR 20160105: Do not create "link:" hashes for media URLs etc.
 		if( link.hasMediaExtension() ||
 			link.hasScriptExtension() ||
-			isDomainUnwantedForHashing(&link) )
+			link.hasOtherUnindexableBinaryExtension() ||
+			link.hasJsonExtension() ||
+			link.hasXmlExtension() ||
+			isDomainUnwantedForHashing(&link) ||
+			isPathUnwantedForHashing(&link) )
 		{
 			continue;			
 		}
 
-//char debugu[MAX_URL_LEN+1];
-//memcpy(debugu, link.getUrl(), link.getUrlLen());
-//debugu[ link.getUrlLen() ] = '\0';
-//log(LOG_ERROR,"### [%s]", debugu);
 
 		// breathe
 		QUICKPOLL(m_niceness);

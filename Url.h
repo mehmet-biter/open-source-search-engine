@@ -71,13 +71,6 @@ public:
 		      bool stripSessionIds, bool stripPound,
 		      bool stripCommonFile, bool stripTrackingParams,
 		      int32_t titleRecVersion);
-
-#if 0		      
-	void set    ( Url *baseUrl , char *s , int32_t len , bool addWWW = false,
-		      bool stripSessionIds = false , bool stripPound = false ,
-		      bool stripCommonFile = false , bool stripTrackingParams = false,
-		      int32_t titleRecVersion = 0x7fffffff );
-#endif		      
 	void set    ( Url *baseUrl , char *s , int32_t len , bool addWWW,
 		      bool stripSessionIds, bool stripPound,
 		      bool stripCommonFile, bool stripTrackingParams,
@@ -188,8 +181,12 @@ public:
 	int64_t getUrlHash48    ( ) {
 		return getUrlHash64() & 0x0000ffffffffffffLL; }
 
-	bool hasMediaExtension ();
-	bool hasScriptExtension ();
+	bool hasMediaExtension();
+	bool hasOtherUnindexableBinaryExtension();
+	bool hasScriptExtension();
+	bool hasXmlExtension();
+	bool hasJsonExtension();
+
 	
 	// . store url w/o http://
 	// . without trailing / if path is just "/"

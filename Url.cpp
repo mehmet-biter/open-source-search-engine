@@ -408,9 +408,6 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 
 		if( stripSessionId )
 		{
-			// http://br4622.customervoice360.com/about_us.php?SES=652ee78702fe135cd96ae925aa9ec556&frmnd=registration		
-			if ( ! tt ) { tt = strstr        ( p , "SES="       ); x =  4;}
-					
 			if ( ! tt ) { tt = gb_strcasestr ( p , "PHPSESSID=" ); x = 10;}
 			if ( ! tt ) { tt = strstr        ( p , "SID="       ); x =  4;}
 			// . osCsid and XTCsid are new session ids
@@ -495,6 +492,10 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 				// point to s= for removal
 				else { tt += 5; x = 2; }
 			}
+
+			// BR 20160117
+			// http://br4622.customervoice360.com/about_us.php?SES=652ee78702fe135cd96ae925aa9ec556&frmnd=registration		
+			if ( ! tt ) { tt = strstr        ( p , "SES="       ); x =  4;}
 		}
 		
 		// BR 20160117: Skip most common tracking parameters
@@ -511,6 +512,7 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 			// Google Analytics
 			// http://kikolani.com/blog-post-promotion-ultimate-guide?utm_source=kikolani&utm_medium=320banner&utm_campaign=bpp
 			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_term="); x = 9;}
+			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_hp_ref="); x = 11;}	// Lots on huffingtonpost.com
 			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_source="); x = 11;}
 			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_medium="); x = 11;}
 			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_content="); x = 12;}
@@ -529,9 +531,7 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 			if ( ! tt ) { tt = gb_strcasestr ( p , "promoCode="); x = 10;}
 			if ( ! tt ) { tt = gb_strcasestr ( p , "partnerref="); x = 11;}
 		}
-		
-		
-			
+
 			
 		// bail if none were found
 		if ( ! tt ) goto skip;
@@ -2001,6 +2001,114 @@ bool Url::hasMediaExtension ( ) {
 		case 4:
 			if( memcmp(ext, "mpeg", 4) == 0 ||
 				memcmp(ext, "jpeg", 4) == 0 )
+			{
+				return true;
+			}
+			break;
+		default:
+			break;
+	}
+
+	return false;
+}
+
+
+bool Url::hasOtherUnindexableBinaryExtension() {
+
+	if ( ! m_extension || ! m_elen || m_elen > 4 ) return false;
+
+	char ext[5];
+	int i;
+	for(i=0; i < m_elen; i++)
+	{
+		ext[i] = to_lower_a(m_extension[i]);
+	}
+	ext[i] = '\0';
+	
+	switch( m_elen )
+	{
+		case 2:
+			if( 
+				memcmp(ext, "7z", 2) == 0 ||
+				memcmp(ext, "gz", 2) == 0 ||
+				memcmp(ext, "lz", 2) == 0 ||
+				memcmp(ext, "xz", 2) == 0 )
+			{
+				return true;
+			}
+			break;
+		case 3:
+			if( 
+				memcmp(ext, "apk", 3) == 0 ||
+				memcmp(ext, "bin", 3) == 0 ||
+				memcmp(ext, "com", 3) == 0 ||
+				memcmp(ext, "dmg", 3) == 0 ||
+				memcmp(ext, "exe", 3) == 0 ||
+				memcmp(ext, "rar", 3) == 0 ||
+				memcmp(ext, "tar", 3) == 0 ||
+				memcmp(ext, "zip", 3) == 0 )
+			{
+				return true;
+			}
+			break;
+		case 4:
+			if( memcmp(ext, "lzma", 4) == 0 ||
+				memcmp(ext, "zipx", 4) == 0 )
+			{
+				return true;
+			}
+			break;
+		default:
+			break;
+	}
+
+	return false;
+}
+
+
+bool Url::hasXmlExtension ( ) {
+
+	if ( ! m_extension || ! m_elen || m_elen > 3 ) return false;
+
+	char ext[5];
+	int i;
+	for(i=0; i < m_elen; i++)
+	{
+		ext[i] = to_lower_a(m_extension[i]);
+	}
+	ext[i] = '\0';
+	
+	switch( m_elen )
+	{
+		case 3:
+			if( memcmp(ext, "xml", 3) == 0 )
+			{
+				return true;
+			}
+			break;
+		default:
+			break;
+	}
+
+	return false;
+}
+
+bool Url::hasJsonExtension ( ) {
+
+	if ( ! m_extension || ! m_elen || m_elen >= 4 ) return false;
+
+	char ext[5];
+	int i;
+	for(i=0; i < m_elen; i++)
+	{
+		ext[i] = to_lower_a(m_extension[i]);
+	}
+	ext[i] = '\0';
+	
+	switch( m_elen )
+	{
+		case 4:
+			if( memcmp(ext, "json", 4) == 0 )
 			{
 				return true;
 			}
