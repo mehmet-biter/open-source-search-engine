@@ -255,7 +255,7 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 			bool isFirstLetter = true;
 
 			unsigned char cs = 0;
-			for ( char *c = fstart; c < fend; c += cs ) {
+			for ( char *c = fstart; c < f; c += cs ) {
 				cs = getUtf8CharSize(c);
 
 				bool isAlpha = is_alpha_utf8( c );
