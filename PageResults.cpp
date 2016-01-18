@@ -925,18 +925,6 @@ static bool printGigabitContainingSentences ( State0 *st,
 	return true;
 }
 
-class StateAU {
-public:
-	SafeBuf m_metaListBuf;
-	Msg4    m_msg4;
-};
-	
-
-void freeMsg4Wrapper( void *st ) {
-	StateAU *stau = (StateAU *)st;
-	mdelete(stau, sizeof(StateAU), "staud");
-	delete stau;
-}
 
 // . make a web page from results stored in msg40
 // . send it on TcpSocket "s" when done
@@ -1065,66 +1053,6 @@ bool gotResults ( void *state ) {
 		g_errno = msg40->m_errno;
 	 	return sendReply(st,NULL);
 	}
-
-
-	//
-	// BEGIN ADDING URL
-	//
-
-	//////////
-	//
-	// if its a special request to get diffbot json objects for
-	// a given parent url, it often contains the same url in "addurl"
-	// to add as a spider request to spiderdb so that 
-	// it gets spidered and processed through diffbot.
-	//
-	//////////
-	char *addUrl = st->m_hr.getString("addurl",NULL);
-	if ( addUrl ) { // && cr->m_isCustomCrawl ) {
-
-		Url norm;
-		norm.set ( addUrl );
-
-		SpiderRequest sreq;
-		// returns false and sets g_errno on error
-		if ( ! sreq.setFromAddUrl ( norm.getUrl() ) ) { //addUrl ) ) {
-			log("addurl: url had problem: %s",mstrerror(g_errno));
-			return true;
-		}
-
-		// addurl state
-		StateAU *stau;
-		try { stau = new(StateAU); }
-		catch ( ... ) {
-			g_errno = ENOMEM;
-			return true;
-		}
-		mnew ( stau , sizeof(StateAU) , "stau");
-		
-		// fill it up
-		SafeBuf *mlist = &stau->m_metaListBuf;
-		if ( ! mlist->pushChar(RDB_SPIDERDB) )
-			return true;
-		if ( ! mlist->safeMemcpy ( &sreq , sreq.getRecSize() ) )
-			return true;
-
-		Msg4 *msg4 = &stau->m_msg4;
-		// this should copy the recs from list into the buffers
-		if ( msg4->addMetaList ( mlist->getBufStart() ,
-					 mlist->getLength() ,
-					 cr->m_collnum,
-					 stau ,
-					 freeMsg4Wrapper ,
-					 MAX_NICENESS ) ) {
-			// if it copied everything ok, nuke our msg4
-			// otherwise it will call freeMsg4Wraper when it
-			// completes!
-			freeMsg4Wrapper( stau );
-		}
-	}
-	//
-	// DONE ADDING URL
-	//
 
 
  	int32_t numResults = msg40->getNumResults();
