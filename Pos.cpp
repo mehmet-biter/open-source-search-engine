@@ -74,7 +74,6 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 	// this is the CHARACTER count. 
 	int32_t pos = 0;
 	bool trunc = false;
-	char *p , *pend;
 
 	char* lastBreak = NULL;
 
@@ -179,12 +178,40 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 		}
 
 		// scan through all chars discounting back-to-back spaces
-		
-		// assume filters out to the same # of chars
-		p    = wp[i] ;
-		pend = p + wlens[i];
+		char *pend = wp[i] + wlens[i];
 		unsigned char cs = 0;
-		for ( ; p < pend ; p += cs ) {
+
+		char *p    = NULL ;
+
+		bool isAllCaps = false;
+
+		// check for all caps
+		if ( f ) {
+			isAllCaps = true;
+
+			for ( p = wp[i]; p < pend; p += cs ) {
+				// get size
+				cs = getUtf8CharSize(p);
+
+				// only check for alpha
+				if ( !is_alpha_utf8( p ) ) {
+					continue;
+				}
+
+				// we only do it for ascii to avoid catering for different rules in different languages
+				// https://en.wikipedia.org/wiki/Letter_case#Exceptional_letters_and_digraphs
+				// eg:
+				//   The Greek upper-case letter "Σ" has two different lower-case forms:
+				//     "ς" in word-final position and "σ" elsewhere
+				if ( !is_ascii( *p ) || !is_upper_a( *p ) ) {
+					isAllCaps = false;
+					break;
+				}
+			}
+		}
+
+		// assume filters out to the same # of chars
+		for ( p = wp[i]; p < pend; p += cs ) {
 			// get size
 			cs = getUtf8CharSize(p);
 
@@ -221,7 +248,12 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 			if ( f ) {
 				if ( fend - f > cs ) {
 					if ( cs == 1 ) {
-						*f++ = *p;
+						if ( isAllCaps && p != wp[i] ) {
+							// not first character
+							*f++ = to_lower_a( *p );
+						} else {
+							*f++ = *p;
+						}
 					} else {
 						gbmemcpy( f, p, cs );
 						f += cs;
