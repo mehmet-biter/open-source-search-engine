@@ -58,7 +58,7 @@ bool Title::setFromTags( Xml *xml, int32_t maxTitleLen ) {
 	// meta property = "og:title"
 	if ( xml->getTagContent("property", "og:title", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_META) ) {
 		if ( g_conf.m_logDebugTitle ) {
-			log( LOG_DEBUG, "title: generated from meta property og:description. title='%.*s'", m_titleLen, m_title );
+			log( LOG_DEBUG, "title: generated from meta property og:title. title='%.*s'", m_titleLen, m_title );
 		}
 
 		return true;
@@ -67,7 +67,7 @@ bool Title::setFromTags( Xml *xml, int32_t maxTitleLen ) {
 	// meta name = "title"
 	if ( xml->getTagContent("name", "title", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_META) ) {
 		if ( g_conf.m_logDebugTitle ) {
-			log( LOG_DEBUG, "title: generated from meta property og:description. title='%.*s'", m_titleLen, m_title );
+			log( LOG_DEBUG, "title: generated from meta property title. title='%.*s'", m_titleLen, m_title );
 		}
 
 		return true;
