@@ -957,7 +957,6 @@ static bool inTag ( XmlNode *node, nodeid_t tagId, int *count ) {
 }
 
 static int32_t filterContent ( Words *wp, Pos *pp, char *buf, int32_t bufLen, int32_t minLength, int32_t maxLength ) {
-	bool isTruncated = false;
 	int32_t contentLen = 0;
 
 	/// @todo ALC we may want this to be configurable so we can tweak this as needed
@@ -970,7 +969,12 @@ static int32_t filterContent ( Words *wp, Pos *pp, char *buf, int32_t bufLen, in
 		return contentLen;
 	}
 
-	contentLen = pp->filter( buf, buf + maxLength, wp, 0, wp->getNumWords(), &isTruncated );
+	char *bufEnd = buf + maxLength + 4; // plus ellipsis
+	if ( bufEnd > buf + bufLen ) {
+		bufEnd = buf + bufLen;
+	}
+
+	contentLen = pp->filter( buf, bufEnd, wp, 0, wp->getNumWords(), true );
 
 	if ( contentLen < minLength ) {
 		// ignore too short descriptions
@@ -980,13 +984,6 @@ static int32_t filterContent ( Words *wp, Pos *pp, char *buf, int32_t bufLen, in
 
 		return contentLen;
 	}
-
-	if ( isTruncated && ( bufLen > ( contentLen + 4 ) ) ) {
-		gbmemcpy ( buf + contentLen , " ..." , 4 );
-		contentLen += 4;
-	}
-
-	buf[contentLen] = '\0';
 
 	return contentLen;
 }

@@ -19,14 +19,14 @@ class Pos {
 	~Pos();
 	void reset();
 
-	bool set(Words *words, bool *isTruncated = NULL, char *f = NULL, char *fend = NULL,
+	bool set(Words *words, bool addEllipsis = false, char *f = NULL, char *fend = NULL,
 			  int32_t *flen = NULL, int32_t a = 0, int32_t b = -1 );
 
 	// . filter out xml words [a,b] into plain text, stores into "p"
 	// . will not exceed "pend"
 	// . returns number of BYTES stored into "p"
-	int32_t filter( char *p, char *pend, Words *words, int32_t a = 0, int32_t b = -1,
-					bool *isTruncated = NULL );
+	int32_t filter(char *p, char *pend, Words *words, int32_t a = 0, int32_t b = -1,
+					bool addEllipsis = false );
 
 	// . the position in CHARACTERS of word i is given by m_pos[i]
 	// . this is NOT the byte position. you can have 2, 3 or even 4

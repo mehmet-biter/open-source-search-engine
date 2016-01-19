@@ -21,9 +21,9 @@ void Pos::reset() {
 
 // . the interval is half-open [a,b)
 // . do not print out any alnum word with negative score
-int32_t Pos::filter( char *p, char *pend, Words *words, int32_t a, int32_t b, bool *isTruncated ) {
+int32_t Pos::filter( char *p, char *pend, Words *words, int32_t a, int32_t b, bool addEllipsis ) {
 	int32_t plen = 0;
-	set ( words , isTruncated, p , pend, &plen , a , b );
+	set ( words , addEllipsis, p , pend, &plen , a , b );
 	return plen;
 }
 
@@ -33,7 +33,7 @@ int32_t Pos::filter( char *p, char *pend, Words *words, int32_t a, int32_t b, bo
 // . returns false and sets g_errno on error
 // . if f is non-NULL store filtered words into there. back to back spaces
 //   are eliminated.
-bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *len, int32_t a, int32_t b ) {
+bool Pos::set( Words *words, bool addEllipsis, char *f, char *fend, int32_t *len, int32_t a, int32_t b ) {
 	// free m_buf in case this is a second call
 	if ( ! f ) {
 		reset();
@@ -75,13 +75,22 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 	int32_t pos = 0;
 	bool trunc = false;
 
+	static const int32_t maxCharSize = 4; // we are utf8
+
+	char* prevChar = NULL;
+
 	char* lastBreak = NULL;
+	char* lastBreakPrevChar = NULL; // store char before space
 
 	// flag for stopping back-to-back spaces. only count those as one char.
 	bool lastSpace = false;
-	static const int32_t maxCharSize = 4; // we are utf8
+
 	int inBadTags = 0;
 	int capCount = 0;
+
+	int dotCount = 0; // store last encountered total consecutive dots
+	char* dotPrevChar = NULL; // store char before dot which is not a space
+
 	for ( int32_t i = a ; i < b ; i++ ) {
 		if (trunc) {
 			break;
@@ -207,22 +216,30 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 				// are we filtering?
 				if ( f ) {
 					if ( fend - f > 1 ) {
+						lastBreakPrevChar = prevChar;
+
 						lastBreak = f;
 						*f++ = ' ';
 
 						// space is counted as caps as well because we're detecting all caps for a sentence
 						++capCount;
+
+						dotCount = 0;
+
+						// we don't store space as dotPreviousChar because we want to strip ' ...' as well
 					} else {
 						trunc = true;
 					}
 				}
 
-				pos++;
+				++pos;
 				continue;
 			}
 
 			if ( f ) {
 				if ( fend - f > cs ) {
+					prevChar = f;
+
 					if ( cs == 1 ) {
 						// we only do it for ascii to avoid catering for different rules in different languages
 						// https://en.wikipedia.org/wiki/Letter_case#Exceptional_letters_and_digraphs
@@ -235,8 +252,20 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 							++capCount;
 						}
 
+						// some sites try to be smart and truncate for us, let's remove that
+						// if if there are no space between dots and letter
+						if ( *p == '.' ) {
+							++dotCount;
+						} else {
+							dotCount = 0;
+							dotPrevChar = f;
+						}
+
 						*f++ = *p;
 					} else {
+						dotCount = 0;
+						dotPrevChar = f;
+
 						gbmemcpy( f, p, cs );
 						f += cs;
 					}
@@ -250,7 +279,9 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 		}
 	}
 
+	/// @todo ALC simplify logic/break into smaller functions
 	if ( f ) {
+		// only capitalize first letter in a word for a sentence with all caps
 		if ( capCount == ( f - fstart ) ) {
 			bool isFirstLetter = true;
 
@@ -275,31 +306,76 @@ bool Pos::set( Words *words, bool *isTruncated, char *f, char *fend, int32_t *le
 				}
 			}
 		}
-	}
 
-	if ( isTruncated ) {
-		*isTruncated = trunc;
+		// let's remove ellipsis (...) at the end
+		if ( dotCount == 3 ) {
+			if ( is_ascii3( *dotPrevChar ) ) {
+				switch ( *dotPrevChar ) {
+					case ',':
+						trunc = true;
+						lastBreak = dotPrevChar + 1;
+						break;
+					case '!':
+					case '.':
+						trunc = false;
+						f = dotPrevChar + 1;
+						break;
+					case ' ':
+						trunc = false;
+
+						if ( lastBreak ) {
+							f = lastBreak;
+						}
+						break;
+					default:
+						trunc = true;
+
+						if ( lastBreakPrevChar ) {
+							if ( is_ascii3( *( lastBreakPrevChar ) ) ) {
+								switch ( *( lastBreakPrevChar ) ) {
+									case '!':
+									case '.':
+										trunc = false;
+
+										if (lastBreak) {
+											f = lastBreak;
+										}
+										break;
+									default:
+										break;
+								}
+							}
+						}
+						break;
+				}
+			}
+		}
 	}
 
 	if ( trunc ) {
 		if ( lastBreak == NULL ) {
 			*len = 0;
 			return false;
-		} else if ( f ) {
+		}
+
+		if ( f ) {
 			f = lastBreak;
 		}
-	}
 
+		if ( addEllipsis ) {
+			if ( (fend - f) > 4 ) {
+				gbmemcpy ( f , " ..." , 4 );
+				f += 4;
+			}
+		}
+	}
 
 	// set pos for the END of the last word here (used in Summary.cpp)
 	if ( !f ) {
 		m_pos[nw] = pos;
 	} else { // NULL terminate f
 		*len = f - fstart;
-
-		if ( fend - f > maxCharSize ) {
-			*f = '\0';
-		}
+		*f = '\0';
 	}
 
 	// Success
