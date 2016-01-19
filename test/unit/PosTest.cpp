@@ -54,9 +54,6 @@ TEST( PosTest, FilterEnding ) {
 
 		"Computer programming is tremendous fun. Li...",
 
-		"The Redmen TV is Uncensored LFC Television. Stats, Sketches, Analysis, Features, Interviews and "
-		"Real Fan Opinions broadcasting after every Liverpool game. St...",
-
 		"Premature optimization is the root of all evil."
 	};
 
@@ -76,9 +73,6 @@ TEST( PosTest, FilterEnding ) {
 		"To me programming is more than an important practical art.",
 
 		"Computer programming is tremendous fun.",
-
-		"The Redmen TV is Uncensored LFC Television. Stats, Sketches, Analysis, Features, Interviews and "
-		"Real Fan Opinions broadcasting after every Liverpool game.",
 
 		"Premature optimization is the root of all evil."
 	};
