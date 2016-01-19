@@ -777,9 +777,6 @@ bool Msg39::getLists () {
 	//   reindex bug
 	char rdbId = RDB_POSDB;
 
-	// . TODO: MDW: fix
-	// . partap says there is a bug in this??? we can't cache UOR'ed lists?
-	bool checkCache = false;
 	// split is us????
 	//int32_t split = g_hostdb.m_myHost->m_group;
 	int32_t split = g_hostdb.m_myHost->m_shardNum;
