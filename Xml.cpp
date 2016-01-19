@@ -961,7 +961,7 @@ static int32_t filterContent ( Words *wp, Pos *pp, char *buf, int32_t bufLen, in
 	int32_t contentLen = 0;
 
 	/// @todo ALC we may want this to be configurable so we can tweak this as needed
-	if ( wp->getNumWords() > maxLength ) {
+	if ( wp->getNumWords() > (maxLength * 2) ) {
 		// ignore too long snippet
 		// it may not be that useful to get the first x characters from a long snippet
 		contentLen = 0;
