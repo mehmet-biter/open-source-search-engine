@@ -19,7 +19,6 @@ void Msg2::reset ( ) {
 	m_numLists = 0;
 }
 
-Msg2 *g_msg2;
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 // . componentCodes are used to collapse a series of termlists into a single
@@ -29,7 +28,6 @@ Msg2 *g_msg2;
 //   from the Query.cpp class.
 bool Msg2::getLists ( int32_t     rdbId       ,
 		      collnum_t collnum , // char    *coll        ,
-		      int32_t     maxAge      ,
 		      bool     addToCache  ,
 		      //QueryTerm *qterms ,
 		      Query *query ,
@@ -46,12 +44,9 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 		      void   (* callback)(void *state ) ,
 		      Msg39Request *request ,
 		      int32_t     niceness    ,
-		      bool     doMerge     ,
 		      bool     isDebug     ,
-		      int32_t    *bestSenderHostIds ,
 		      bool     restrictPosdb   ,
-		      char     forceParitySplit    ,
-		      bool     checkCache          ) {
+		      char     forceParitySplit    ) {
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg2.");
 	if ( ! minRecSizes ) { 
@@ -65,7 +60,6 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 	m_state       = state;
 	m_callback    = callback;
 	m_niceness    = niceness;
-	m_doMerge     = doMerge;
 	m_isDebug     = isDebug;
 	m_lists = lists;
 	//m_totalRead   = 0;
@@ -78,16 +72,12 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 	m_req         = request;
 	m_qterms              = m_query->m_qterms;
 	m_minRecSizes         = minRecSizes;
-	m_maxAge              = maxAge;
 	m_getComponents       = false;
 	m_rdbId               = rdbId;
 	m_addToCache          = addToCache;
 	m_collnum             = collnum;
 	m_restrictPosdb       = restrictPosdb;
 	m_forceParitySplit    = forceParitySplit;
-	m_checkCache          = checkCache;
-	// MDW: no more than an hr seconds, no matter what. let's keep it fresh
-	if ( m_maxAge > 3600 ) m_maxAge = 3600;
 	// we haven't got any responses as of yet or sent any requests
 	m_numReplies  = 0;
 	m_numRequests = 0;

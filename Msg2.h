@@ -44,7 +44,7 @@ public:
 	 */
 	bool getLists(int32_t rdbId,
 			collnum_t collnum,			//char    *coll        ,
-			int32_t maxAge, bool addToCache, class Query *query,
+			bool addToCache, class Query *query,
 			// restrict search results to this list of sites,
 			// i.e. "abc.com+xyz.com+..." (Custom Search)
 			char *whiteList,
@@ -58,12 +58,9 @@ public:
 			void (*callback)(void *state),
 			class Msg39Request *request,
 			int32_t niceness = MAX_NICENESS,
-			bool doMerge = true,
 			bool isDebug = false,
-			int32_t *bestSenderHostIds = NULL,
 			bool restrictPosdb = false,
-			char forceParitySplit = -1,
-			bool checkCache = false);
+			char forceParitySplit = -1);
 
 	/** internal helper method that actually does the fetching of the lists */
 	bool getLists();
@@ -117,7 +114,6 @@ public:
 	class QueryTerm *m_qterms;
 	//char     m_cacheKeys[MAX_NUM_LISTS * MAX_KEY_BYTES];
 	int32_t *m_minRecSizes;
-	int32_t m_maxAge;
 	int32_t m_numLists;
 	bool m_getComponents;
 	char m_rdbId;
@@ -141,11 +137,6 @@ public:
 	void *m_state;
 	void (*m_callback)(void *state);
 	int32_t m_niceness;
-
-	// . should lists from cache, tree and disk files be merged into one?
-	// . or appended out of order? 
-	// . avoiding merge saves query engine valuable time
-	bool m_doMerge;
 
 	/** if this is true we log more output */
 	bool m_isDebug;

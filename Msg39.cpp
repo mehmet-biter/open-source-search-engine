@@ -799,7 +799,6 @@ bool Msg39::getLists () {
 	// call msg2
 	if ( ! m_msg2.getLists ( rdbId                      ,
 				 m_r->m_collnum,//m_r->ptr_coll              ,
-				 m_r->m_maxAge              ,
 				 m_r->m_addToCache          ,
 				 //m_tmpq.m_qterms ,
 				 &m_tmpq,
@@ -818,12 +817,9 @@ bool Msg39::getLists () {
 				 controlLoopWrapper,//gotListsWrapper      ,
 				 m_r                        ,
 				 m_r->m_niceness            ,
-				 true                       , // do merge?
 				 m_debug                  ,
-				 NULL                       ,  // best hostids
 				 m_r->m_restrictPosdbForQuery  ,
-				 split                      ,
-				 checkCache                 )) {
+				 split                      )) {
 		m_blocked = true;
 		return false;
 	}
