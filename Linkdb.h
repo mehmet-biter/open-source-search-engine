@@ -1176,8 +1176,7 @@ public:
 		   Links *oldLinks         , // for LF_OLDLINKS flag
 		   // this is used by Msg13.cpp to quickly get ptrs
 		   // to the links in the document, no normalization!
-		   bool doQuickSet = false ,
-		   class SafeBuf *diffbotReply = NULL );
+		   bool doQuickSet = false );
 
 	// set from a simple text buffer
 	bool set ( char *buf , int32_t niceness ) ;

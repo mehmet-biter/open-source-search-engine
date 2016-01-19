@@ -6667,8 +6667,7 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 			     m_niceness  ,
 			     *pp         , // parent url in permalink format?
 			     oldLinks    ,// oldLinks, might be NULL!
-			     doQuickSet  ,
-			     dbr ) )
+			     doQuickSet ) )
 		return NULL;
 
 	m_linksValid = true;
