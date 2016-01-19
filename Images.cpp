@@ -87,10 +87,6 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml ,
 	m_xml       = xml;
 	m_pageUrl   = pageUrl;
 
-	// if we are a diffbot json reply, trust that diffbot got the
-	// best candidate, and just use that
-	if ( xd->m_isDiffbotJSONObject ) return;
-
 	//
 	// first add any open graph candidate.
 	// basically they page telling us the best image straight up.
@@ -307,12 +303,6 @@ bool Images::getThumbnail ( char *pageSite ,
 	m_docId = docId;
 	m_callback = callback;
 	m_state = state;
-
-	// if this doc is a json diffbot reply it already has the primary
-	// image selected so just use that
-	m_xd = xd;
-	if ( m_xd->m_isDiffbotJSONObject ) 
-		return downloadImages();
 
 	// if no candidates, we are done, no error
 	if ( m_numImages == 0 ) return true;
@@ -553,29 +543,6 @@ bool Images::downloadImages () {
 	char *src = NULL;
 	int32_t node;
 
-	// downloading an image from diffbot json reply?
-	if ( m_xd->m_isDiffbotJSONObject ) {
-		// i guess this better not block cuz we'll core!
-		char **iup = m_xd->getDiffbotPrimaryImageUrl();
-		// if no image, nothing to download
-		if ( ! *iup ) {
-			//log("no diffbot image url for %s",
-			//    m_xd->m_firstUrl.m_url);
-			return true;
-		}
-		// force image count to one
-		m_numImages = 1;
-		// do not error out
-		m_errors[0] = 0;
-		// set it to the full url
-		src = *iup;
-		srcLen = gbstrlen(src);
-		// need this
-		m_imageUrl.set ( src , srcLen, false, false, false, false, false, 0x7fffffff );
-		// jump into the for loop below
-		//if ( m_phase == 0 ) goto insertionPoint;
-	}
-
 	// . download each leftover image
 	// . stop as soon as we get one with good dimensions
 	// . make a thumbnail of that one
@@ -592,14 +559,12 @@ bool Images::downloadImages () {
 			// advance
 			m_phase++;
 			// only if not diffbot, we set "src" above for it
-			if ( ! m_xd->m_isDiffbotJSONObject ) {
-				// get img tag node
-				node = m_imageNodes[m_j];
-				// get the url of the image
-				src = getImageUrl ( m_j , &srcLen );
-				// use "pageUrl" as the baseUrl
-				m_imageUrl.set ( m_pageUrl , src , srcLen, false, false, false, false, false, 0x7fffffff ); 
-			}
+			// get img tag node
+			node = m_imageNodes[m_j];
+			// get the url of the image
+			src = getImageUrl ( m_j , &srcLen );
+			// use "pageUrl" as the baseUrl
+			m_imageUrl.set ( m_pageUrl , src , srcLen, false, false, false, false, false, 0x7fffffff ); 
 			// if we should stop, stop
 			if ( m_stopDownloading ) break;
 			// skip if bad or not unique
@@ -820,14 +785,7 @@ bool Images::makeThumb ( ) {
 	// get img tag node
 	// get the url of the image
 	int32_t  srcLen;
-	char *src = NULL;
-	if ( m_xd->m_isDiffbotJSONObject ) {
-		src = *m_xd->getDiffbotPrimaryImageUrl();
-		srcLen = gbstrlen(src);
-	}
-	else {
-		src = getImageUrl ( m_j , &srcLen );
-	}
+	char *src = getImageUrl ( m_j , &srcLen );
 	// set it to the full url
 	Url iu;
 	// use "pageUrl" as the baseUrl
@@ -1051,10 +1009,6 @@ void Images::thumbStart_r ( bool amThread ) {
 		       strcpy( ext, "bmp" );
 		       break;
         } 
-
-	//int32_t xysize = 250;//100;
-	// make thumbnail a little bigger for diffbot for widget
-	//if ( m_xd->m_isDiffbotJSONObject ) xysize = 250;
 
 	// i hope 2500 is big enough!
 	char  cmd[2501];
