@@ -18,7 +18,7 @@ TEST(JsonTest, ParseValid) {
 
 	EXPECT_EQ(JT_OBJECT, ji->m_type);
 
-	/// @todo add more validation on JsonItem
+	/// @todo ALC add more validation on JsonItem
 
 	json.reset();
 }

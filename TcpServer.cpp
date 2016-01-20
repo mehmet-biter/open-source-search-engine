@@ -2823,7 +2823,7 @@ int TcpServer::sslHandshake ( TcpSocket *s ) {
 
 	// set hostname for SNI
 	if ( s->m_hostname ) {
-		/// @todo what do we do if we can't set TLS servername extension?
+		/// @todo ALC what do we do if we can't set TLS servername extension?
 		SSL_set_tlsext_host_name(s->m_ssl, s->m_hostname);
 	}
 

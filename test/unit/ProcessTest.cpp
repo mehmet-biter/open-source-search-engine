@@ -12,5 +12,5 @@ TEST(ProcessTest, Abort) {
 	// remove file
 	unlink(Process::getAbortFileName());
 
-	/// @todo verify/remove core
+	/// @todo ALC verify/remove core
 }
