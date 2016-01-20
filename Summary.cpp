@@ -111,6 +111,10 @@ bool Summary::setFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int3
 		}
 	}
 
+	if ( g_conf.m_logDebugSummary ) {
+		log(LOG_DEBUG, "sum: unable to generate summary from itemprop/meta tags");
+	}
+
 	return false;
 }
 
@@ -748,11 +752,18 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 	int32_t endQuoteWordNum = -1;
 	int32_t numTagsCrossed = 0;
 	for ( ; b <= nw; b++ ){
-		if ( b == nw ) break;
-		if ( pos[b+1] - pos[a] >= maxExcerptLen ) break;
+		if ( b == nw ) {
+			break;
+		}
+
+		if ( pos[b+1] - pos[a] >= maxExcerptLen ) {
+			break;
+		}
 		
-		if ( startOnQuote && words->m_words[b][0] == '\"' )
+		if ( startOnQuote && words->m_words[b][0] == '\"' ) {
 			endQuoteWordNum = b;
+		}
+
 		// don't include any dead zone, those are already-used samples		
 		if ( bb[b]&D_USED ) {
 			break;
@@ -867,7 +878,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 		}
 
 		// check if there is a url. best way to check for '://'
-		if ( wids && !wids[i] ){
+		if ( wids && !wids[i] ) {
 			char *wrd = words->m_words[i];
 			int32_t  wrdLen = words->m_wordLens[i];
 			if ( wrdLen == 3 && wrd[0] == ':' && wrd[1] == '/' &&  wrd[2] == '/' ) {
@@ -875,12 +886,17 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 			}
 		}
 
+		// skip if not wid
+		if ( ! wids[i] ) {
+			continue;
+		}
+
 		// just make every word 100 pts
 		int32_t t = 100;
+
 		// penalize it if in one of these sections
-		if ( bb[i] & ( D_IN_PARENS | D_IN_HYPERLINK | D_IN_LIST | D_IN_SUP | D_IN_BLOCKQUOTE ) ) {
-			// backoff since posbd has best window in some links, etc.
-			t *= 1;
+		if ( bb[i] & ( D_IN_PARENS | D_IN_SUP | D_IN_LIST ) ) {
+			t /= 2;
 		}
 
 		// boost it if in bold or italics
@@ -896,18 +912,26 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 			xp.safePrintf("(%"INT32")",t);
 		}
 
-		// skip if not wid
-		if ( ! wids[i] ) continue;
 		// count the alpha words we got
 		wordCount++;
+
 		// if no matches left, skip
-		if ( mi >= matches->m_numMatches ) continue;
+		if ( mi >= matches->m_numMatches ) {
+			continue;
+		}
+
 		// get the match
 		Match *next = &ms[mi];
+
 		// skip if not a match
-		if ( i != next->m_wordNum ) continue;
+		if ( i != next->m_wordNum ) {
+			continue;
+		}
+
 		// must be a match in this class
-		if ( next->m_words != words ) continue;
+		if ( next->m_words != words ) {
+			continue;
+		}
 
 		// advance it
 		mi++;
@@ -919,17 +943,36 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 
 		// undo old score
 		score -= t;
+
 		// add 100000 per match
 		t = 100000;
+
 		// weight based on tf, goes from 0.1 to 1.0
 		t = (int32_t)((float)t * m_wordWeights [ qwn ]);
-		// if it is a query stop word, make it 10000 pts
-		if ( m_q->m_qwords[qwn].m_isQueryStopWord ) t = 0;//10000;
 
-		// have we matched it in this [a,b) already?
-		if ( gotIt[qwn] > 0 ) t /= 15;
-		// have we matched it already in a winning window?
-		else if ( retired [qwn] > 0 ) t /= 12;
+		// if it is a query stop word, make it 10000 pts
+		if ( m_q->m_qwords[qwn].m_isQueryStopWord ) {
+			t = 0;//10000;
+		}
+
+		// penalize it if in one of these sections
+		if ( bb[i] & ( D_IN_PARENS | D_IN_SUP | D_IN_LIST ) ) {
+			t /= 2;
+		}
+
+		if ( gotIt[qwn] > 0 ) {
+			// have we matched it in this [a,b) already?
+			if ( gotIt[qwn] == 1 ) {
+				t /= 15;
+			} else {
+				// if we have more than 2 matches in the same window,
+				// it may not give a good summary. give a heavy penalty
+				t -= 200000;
+			}
+		} else if ( retired [qwn] > 0 ) {
+			// have we matched it already in a winning window?
+			t /= 12;
+		}
 
 		// add it back
 		score += t;
@@ -940,7 +983,9 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 		}
 
 		// inc the query word count for this window
-		if ( gotIt[qwn] < 100 ) gotIt[qwn]++;
+		if ( gotIt[qwn] < 100 ) {
+			gotIt[qwn]++;
+		}
 	}
 
 	int32_t oldScore = score;
@@ -951,24 +996,31 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 		// a match can give us 10k to 100k pts based on the tf weights
 		// so we don't want to overwhelm that too much, so let's make
 		// this a 20k bonus if it starts a sentence
-		if ( bb[a] & D_STARTS_SENTENCE ) score += 8000;
-		// likewise, a fragment, like after a comma
-		else if ( bb[a] & D_STARTS_FRAG ) score += 4000;
+		if ( bb[a] & D_STARTS_SENTENCE ) {
+			score += 8000;
+		} else if ( bb[a] & D_STARTS_FRAG ) {
+			// likewise, a fragment, like after a comma
+			score += 4000;
+		}
+
 		// 1k if the match word is very close to the
 		// start of a sentence, lets say 3 alphawords
-		if ( matchWordNum - a < 7 ) score += 1000;
-		// 20M in case of meta stuff, and rss description, which 
-		// should be the best summary. so give a huge boost
-		if ( ! tids ) score += 20000000;
+		if ( matchWordNum - a < 7 ) {
+			score += 1000;
+		}
 	}
 
 	// a summary isn't really a summary if its less than 7 words.
 	// reduce the score, but still give it a decent score.
 	// minus 5M.
-	if ( wordCount < 7 ) score -= 20000;
+	if ( wordCount < 7 ) {
+		score -= 20000;
+	}
 
 	// summaries that cross a lot of tags are usually bad, penalize them
-	if ( numTagsCrossed > 1 ) score -= (numTagsCrossed * 20000);
+	if ( numTagsCrossed > 1 ) {
+		score -= (numTagsCrossed * 20000);
+	}
 
 	if ( hasUrl ) {
 		score -= 8000;
@@ -976,7 +1028,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 
 	// show it
 	if ( g_conf.m_logDebugSummary ) {
-		logf(LOG_DEBUG,"score=%08"INT32" prescore=%08"INT32" a=%05"INT32" b=%05"INT32" %s",
+		log(LOG_DEBUG, "sum: score=%08"INT32" prescore=%08"INT32" a=%05"INT32" b=%05"INT32" %s",
 		     (int32_t)score,oldScore,(int32_t)a,(int32_t)b,
 		     xp.getBufStart());
 	}

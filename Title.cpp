@@ -82,6 +82,10 @@ bool Title::setFromTags( Xml *xml, int32_t maxTitleLen ) {
 		return true;
 	}
 
+	if ( g_conf.m_logDebugTitle ) {
+		log(LOG_DEBUG, "title: unable to generate summary from meta/title tags");
+	}
+
 	return false;
 }
 
