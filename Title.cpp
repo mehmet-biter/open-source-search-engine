@@ -53,7 +53,7 @@ void Title::reset() {
 
 bool Title::setFromTags( Xml *xml, int32_t maxTitleLen ) {
 	/// @todo ALC we may want this to be configurable so we can tweak this as needed
-	int minTitleLen = 5;
+	int minTitleLen = 3;
 
 	// meta property = "og:title"
 	if ( xml->getTagContent("property", "og:title", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_META) ) {
