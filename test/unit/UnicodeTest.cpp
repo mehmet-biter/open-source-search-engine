@@ -173,6 +173,15 @@ TEST(UnicodeTest, UnwantedSymbols) {
 	    "🂠",
 	    "🃿",
 
+	    // Enclosed Alphanumeric Supplement
+		// 1F1E6–1F1FF: Regional indicator symbols
+	    "🇦",
+	    "🇿",
+
+	    // Geometric Shapes
+		// 25A0–25FF: Geometric Shapes
+	    "■",
+	    "◿",
 	};
 
 	size_t len = sizeof(inputs) / sizeof(inputs[0]);

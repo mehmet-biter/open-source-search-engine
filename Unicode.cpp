@@ -66,7 +66,7 @@ iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 }
 
 int gbiconv_close(iconv_t cd) {
-	/// @todo gbiconv_close currently does nothing
+	/// @todo ALC gbiconv_close currently does nothing
 	//int val = iconv_close(cd);
 	//if (val  == 0) g_mem.rmMem((void*)cd, 1, "iconv", 1);
 	//return val;	

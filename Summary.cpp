@@ -75,8 +75,8 @@ bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
 // - meta name = "og:description"
 // - meta name = "description"
 bool Summary::setFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen ) {
-	/// @todo ALC we may want this to be configurable so we can tweak this as needed
-	int minSummaryLen = (maxSummaryLen / 3);
+	/// @todo ALC configurable minSummaryLen so we can tweak this as needed
+	const int minSummaryLen = (maxSummaryLen / 3);
 
 	// itemprop = "description"
 	if ( xml->getTagContent("itemprop", "description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen) ) {
@@ -512,7 +512,7 @@ bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *
 		// . removes back to back spaces
 		// . converts html entities
 		// . filters in stores words in [a,b) interval
-		int32_t len = pos->filter( p, pend, ww, maxa, maxb );
+		int32_t len = pos->filter( ww, maxa, maxb, false, p, pend );
 
 		// break out if did not fit
 		if ( len == 0 ) {
@@ -1078,7 +1078,7 @@ bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Po
 	}
 
 	if (bestStart >= 0 && bestEnd > bestStart){
-		int32_t len = pos->filter( p, pend - 10, words, bestStart, bestEnd );
+		int32_t len = pos->filter( words, bestStart, bestEnd, false, p, pend - 10 );
 		p += len;
 		if ( len > 0 && p + 3 + 2 < pend ){
 			// space first?

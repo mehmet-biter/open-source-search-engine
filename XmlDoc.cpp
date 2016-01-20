@@ -29839,7 +29839,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	if ( p + len + 1 < pend ) {
 		// store it
 		// FILTER the html entities!!
-		int32_t len2 = pos->filter( p, pend, ww, a, b );
+		int32_t len2 = pos->filter( ww, a, b, false, p, pend );
 
 		// ensure NULL terminated
 		p[len2] = '\0';
@@ -30207,7 +30207,7 @@ Summary *XmlDoc::getSummary () {
 		return (Summary *)ct;
 	}
 
-	/// @todo fill in summary for XML document
+	/// @todo ALC fill in summary for XML document
 	// xml and json docs have empty summaries for now
 	if ( *ct == CT_JSON || *ct == CT_XML ) {
 		m_summaryValid = true;
@@ -30614,7 +30614,7 @@ SafeBuf *XmlDoc::getSampleForGigabits ( ) {
 		// if match would send us over, we are done
 		if ( p + len >= pend ) break;
 
-		len = pos->filter( p, pend, m->m_words, a, b );
+		len = pos->filter( m->m_words, a, b, false, p, pend );
 
 		// for debug (mdw)
 		//log("query: gigabitsample#%"INT32"=%s",i,p);

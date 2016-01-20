@@ -29,7 +29,7 @@ TEST( PosTest, FilterAllCaps ) {
 
 		ASSERT_TRUE( words.set( input_strs[i], true, 0 ) );
 
-		int32_t len = pos.filter( buf, buf + MAX_BUF_SIZE, &words );
+		int32_t len = pos.filter( &words, 0, words.getNumWords(), false, buf, buf + MAX_BUF_SIZE );
 
 		EXPECT_EQ( strlen( expected_output[i] ), len );
 		EXPECT_STREQ( expected_output[i], buf );
@@ -54,7 +54,12 @@ TEST( PosTest, FilterEnding ) {
 
 		"Computer programming is tremendous fun. Li...",
 
-		"Premature optimization is the root of all evil."
+		"Premature optimization is the root of all evil.",
+
+		"As soon as we started programming, we found to our surprise that it wasn't as easy to get programs "
+		"right as we had thought. Debugging had to be discovered. I can remember the exact instant when I "
+		"realized that a large part of my life from then on was going to be spent in finding mistakes in my "
+		"own programs. "
 	};
 
 	const char *expected_output[] = {
@@ -74,7 +79,10 @@ TEST( PosTest, FilterEnding ) {
 
 		"Computer programming is tremendous fun.",
 
-		"Premature optimization is the root of all evil."
+		"Premature optimization is the root of all evil.",
+
+		"As soon as we started programming, we found to our surprise that it wasn't as easy to get programs "
+		"right as we had thought. Debugging had to be discovered. I can remember the ..."
 	};
 
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
@@ -88,9 +96,9 @@ TEST( PosTest, FilterEnding ) {
 
 		ASSERT_TRUE( words.set( input_strs[i], true, 0 ) );
 
-		int32_t len = pos.filter( buf, buf + 180 + 4, &words, 0, -1, true );
+		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
 
-		//EXPECT_EQ( strlen( expected_output[i] ), len );
+		EXPECT_EQ( strlen( expected_output[i] ), len );
 		EXPECT_STREQ( expected_output[i], buf );
 	}
 }

@@ -20,7 +20,7 @@ public:
 
 	void reset();
 
-	/// @todo correct comments
+	/// @todo ALC correct comments
 	// . set m_title to the title of the document represented by "xd"
 	// . if getHardTitle is true will always use the title in the <title>
 	//   tag, but if that is not present, will try dmoz titles before

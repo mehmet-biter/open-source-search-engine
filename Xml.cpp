@@ -959,8 +959,10 @@ static bool inTag ( XmlNode *node, nodeid_t tagId, int *count ) {
 static int32_t filterContent ( Words *wp, Pos *pp, char *buf, int32_t bufLen, int32_t minLength, int32_t maxLength ) {
 	int32_t contentLen = 0;
 
-	/// @todo ALC we may want this to be configurable so we can tweak this as needed
-	if ( wp->getNumWords() > (maxLength * 2) ) {
+	/// @todo ALC configurable maxNumWord so we can tweak this as needed
+	const int32_t maxNumWord = (maxLength * 2);
+
+	if ( wp->getNumWords() > maxNumWord ) {
 		// ignore too long snippet
 		// it may not be that useful to get the first x characters from a long snippet
 		contentLen = 0;
@@ -969,12 +971,7 @@ static int32_t filterContent ( Words *wp, Pos *pp, char *buf, int32_t bufLen, in
 		return contentLen;
 	}
 
-	char *bufEnd = buf + maxLength + 4; // plus ellipsis
-	if ( bufEnd > buf + bufLen ) {
-		bufEnd = buf + bufLen;
-	}
-
-	contentLen = pp->filter( buf, bufEnd, wp, 0, wp->getNumWords(), true );
+	contentLen = pp->filter( wp, 0, wp->getNumWords(), true, buf, buf + maxLength );
 
 	if ( contentLen < minLength ) {
 		// ignore too short descriptions

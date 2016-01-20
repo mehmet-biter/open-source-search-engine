@@ -52,8 +52,8 @@ void Title::reset() {
 }
 
 bool Title::setFromTags( Xml *xml, int32_t maxTitleLen ) {
-	/// @todo ALC we may want this to be configurable so we can tweak this as needed
-	int minTitleLen = 3;
+	/// @todo ALC configurable minTitleLen so we can tweak this as needed
+	const int minTitleLen = 3;
 
 	// meta property = "og:title"
 	if ( xml->getTagContent("property", "og:title", m_title, MAX_TITLE_LEN, minTitleLen, maxTitleLen, &m_titleLen, true, TAG_META) ) {
@@ -555,7 +555,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 			}
 		}
 
-		/// @todo we should allow more tags than just title/link
+		/// @todo ALC we should allow more tags than just title/link
 		// skip if not a good tag.
 		if (tid != TAG_TITLE && tid != TAG_A) {
 			continue;
