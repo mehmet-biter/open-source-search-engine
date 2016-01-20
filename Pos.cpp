@@ -157,7 +157,11 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 				if ( fend - f > 1 ) {
 					lastBreakPrevChar = prevChar;
 
-					lastBreak = f;
+					// don't store lastBreak if we have less than ellipsis length ' ...'
+					if ( fend - f > 4 ) {
+						lastBreak = f;
+					}
+
 					*f++ = ' ';
 
 					// counted as caps because we're detecting all caps for a sentence
