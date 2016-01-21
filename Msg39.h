@@ -42,7 +42,6 @@ class Msg39Request {
 		m_hideAllClustered        = false;
 		//m_doIpClustering          = true;
 		m_doDupContentRemoval     = true;
-		m_restrictPosdbForQuery   = false;
 		m_addToCache              = false;
 		m_familyFilter            = false;
 		m_timeout                 = -1; // -1 means auto-compute
@@ -111,7 +110,7 @@ class Msg39Request {
 	char    m_hideAllClustered;
 	//char    m_doIpClustering;
 	char    m_doDupContentRemoval;
-	char    m_restrictPosdbForQuery;
+	char    m_reserved;
 	char    m_addToCache;
 	char    m_familyFilter;
 	char    m_getDocIdScoringInfo;

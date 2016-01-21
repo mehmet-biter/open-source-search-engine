@@ -663,7 +663,7 @@ bool Msg39::getLists () {
 				 m_r                        ,
 				 m_r->m_niceness            ,
 				 m_debug                  ,
-				 m_r->m_restrictPosdbForQuery  ,
+				 false  ,
 				 split                      )) {
 		m_blocked = true;
 		return false;
