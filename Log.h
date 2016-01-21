@@ -9,6 +9,7 @@
 #ifndef _MYLOG_H_
 #define _MYLOG_H_
 
+#include <stdarg.h>
 
 
 // THE TYPES OF LOG MESSAGES
