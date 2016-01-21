@@ -65,7 +65,8 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Timezone.o Sections.o SiteGetter.o qa.o \
 	Placedb.o Address.o Test.o Synonyms.o \
 	Cachedb.o dlstubs.o PageCrawlBot.o Json.o PageBasic.o \
-	Punycode.o Version.o
+	Punycode.o Version.o \
+	HighFrequencyTermShortcuts.cpp \
 
 # common flags
 DEFS = -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I.

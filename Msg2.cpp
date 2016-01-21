@@ -7,6 +7,7 @@
 #include "Threads.h"
 #include "Posdb.h" // getTermId()
 #include "Msg3a.h" // DEFAULT_POSDB_READ_SIZE
+#include "HighFrequencyTermShortcuts.h"
 
 //static void gotListWrapper0 ( void *state ) ;
 static void  gotListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) ;
@@ -143,6 +144,14 @@ bool Msg2::getLists ( ) {
 		char *ek2 = NULL;
 		sk2 = qt->m_startKey;
 		ek2 = qt->m_endKey;
+
+		//if the term is a high-frequency one then use the PosDB shortcuts
+		const void *hfterm_shortcut_posdb_buffer;
+		size_t hfterm_shortcut_buffer_bytes;
+		if(g_hfts.query_term_shortcut(m_query->getTermId(m_i),&hfterm_shortcut_posdb_buffer,&hfterm_shortcut_buffer_bytes)) {
+			log("term %"PRId64" is a high-frequency term",m_query->getTermId(m_i));
+			//TODO: use PosDB shortcut buffer, pout into RdbList and avoid actualyl going into PosDB
+		}
 
 		// if single word and not required, skip it
 		if ( ! qt->m_isRequired && 

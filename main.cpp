@@ -34,6 +34,7 @@
 #include "HttpServer.h"
 #include "Loop.h"
 #include "Spider.h"
+#include "HighFrequencyTermShortcuts.h"
 #include <sys/resource.h>  // setrlimit
 #include "Stats.h"
 #include "Spider.h"
@@ -2765,6 +2766,9 @@ int main2 ( int argc , char *argv[] ) {
 	//   the wrong data files.
 	//if ( ! checkDataParity() ) return 1;
 
+	//Load the high-frequency term shortcuts (if they exist)
+	g_hfts.load();
+	
 	// init the vector cache
 	/*
 	if ( ! g_vectorCache.init ( g_conf.m_maxVectorCacheMem,
