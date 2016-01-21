@@ -837,15 +837,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 		log(LOG_LOGIC,"query: msg39: Badness."); 
 		char *xx = NULL; *xx = 0; }
 
-	// sometimes we skip the thread
-	//skipThread:
-	// . addLists() should never have a problem
-	// . g_errno should be set by prepareToAddLists() above if there is
-	//   going to be a problem
-	//if ( m_r->m_useNewAlgo )
 	m_posdbTable.intersectLists10_r ( );
-	//else
-	//	m_posdbTable.intersectLists9_r ( );
 
 	// time it
 	diff = gettimeofdayInMilliseconds() - start;
