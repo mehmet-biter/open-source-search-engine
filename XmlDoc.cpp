@@ -26995,8 +26995,20 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 		dom_valid = true;
 	}
 
-
 	if ( name < end3 && dom_valid ) goto loop;
+
+
+	// BR 20160121: Make searching for e.g. site:dk work
+	setStatus ( "hashing tld for site search");
+	char *tld = fu->getTLD();
+	int32_t tldLen = fu->getTLDLen();
+	
+	char *p = buf;
+	gbmemcpy ( p , "http://", 7 ); p += 7;
+	gbmemcpy ( p , tld, tldLen); p += tldLen;
+	gbmemcpy ( p , "/", 1 ); p += 1;
+	*p = '\0';
+	if ( ! hashSingleTerm (buf,p-buf,&hi ) ) return false;
 
 
 	setStatus ( "hashing ext colon");
@@ -35193,7 +35205,8 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 
 		if ( ! isXml )
 		{
-			sb->safePrintf("<td>0x%016"PRIx64"</td>", tp[i]->m_termId);
+			// Show termId in decimal, masked as it would be stored in posdb
+			sb->safePrintf("<td align=\"right\">%"INT64"</td>", (int64_t)(tp[i]->m_termId & TERMID_MASK));
 		}
 
 
