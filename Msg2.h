@@ -58,8 +58,7 @@ public:
 			void (*callback)(void *state),
 			class Msg39Request *request,
 			int32_t niceness = MAX_NICENESS,
-			bool isDebug = false,
-			char forceParitySplit = -1);
+			bool isDebug = false);
 
 	/** internal helper method that actually does the fetching of the lists */
 	bool getLists();
@@ -118,7 +117,6 @@ public:
 	char m_rdbId;
 	bool m_addToCache;collnum_t m_collnum;
 	int32_t m_compoundListMaxSize;
-	char m_forceParitySplit;
 	bool m_checkCache;
 	int32_t m_k;
 	int32_t m_n;

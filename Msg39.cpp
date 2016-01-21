@@ -625,10 +625,6 @@ bool Msg39::getLists () {
 	//   reindex bug
 	char rdbId = RDB_POSDB;
 
-	// split is us????
-	//int32_t split = g_hostdb.m_myHost->m_group;
-	int32_t split = g_hostdb.m_myHost->m_shardNum;
-
 
 	int32_t nqt = m_tmpq.getNumTerms();
 	int32_t need = sizeof(RdbList) * nqt ;
@@ -662,8 +658,7 @@ bool Msg39::getLists () {
 				 controlLoopWrapper,
 				 m_r                        ,
 				 m_r->m_niceness            ,
-				 m_debug                  ,
-				 split                      )) {
+				 m_debug                      )) {
 		m_blocked = true;
 		return false;
 	}

@@ -42,8 +42,7 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 		      void   (* callback)(void *state ) ,
 		      Msg39Request *request ,
 		      int32_t     niceness    ,
-		      bool     isDebug     ,
-		      char     forceParitySplit    ) {
+		      bool     isDebug ) {
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg2.");
 	if ( ! minRecSizes ) { 
@@ -73,7 +72,6 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 	m_rdbId               = rdbId;
 	m_addToCache          = addToCache;
 	m_collnum             = collnum;
-	m_forceParitySplit    = forceParitySplit;
 	// we haven't got any responses as of yet or sent any requests
 	m_numReplies  = 0;
 	m_numRequests = 0;
