@@ -227,8 +227,6 @@ class Msg39 {
 	bool getLists () ;
 	// called when lists have been retrieved, uses PosdbTable to hash lists
 	bool intersectLists ( );//bool updateReadInfo ) ;
-	// this is called after thread exits, or if thread creation failed
-	bool addedLists();
 
 	// incoming parameters passed to Msg39::getDocIds() function
 	//void       *m_state;
