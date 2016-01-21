@@ -59,7 +59,6 @@ public:
 			class Msg39Request *request,
 			int32_t niceness = MAX_NICENESS,
 			bool isDebug = false,
-			bool restrictPosdb = false,
 			char forceParitySplit = -1);
 
 	/** internal helper method that actually does the fetching of the lists */
@@ -118,7 +117,6 @@ public:
 	bool m_getComponents;
 	char m_rdbId;
 	bool m_addToCache;collnum_t m_collnum;
-	bool m_restrictPosdb;
 	int32_t m_compoundListMaxSize;
 	char m_forceParitySplit;
 	bool m_checkCache;

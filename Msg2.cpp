@@ -43,7 +43,6 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 		      Msg39Request *request ,
 		      int32_t     niceness    ,
 		      bool     isDebug     ,
-		      bool     restrictPosdb   ,
 		      char     forceParitySplit    ) {
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg2.");
@@ -74,7 +73,6 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 	m_rdbId               = rdbId;
 	m_addToCache          = addToCache;
 	m_collnum             = collnum;
-	m_restrictPosdb       = restrictPosdb;
 	m_forceParitySplit    = forceParitySplit;
 	// we haven't got any responses as of yet or sent any requests
 	m_numReplies  = 0;
@@ -101,10 +99,8 @@ bool Msg2::getLists ( int32_t     rdbId       ,
 
 bool Msg2::getLists ( ) {
 	// if we're just using the root file of indexdb to save seeks
-	int32_t numFiles;
-	bool includeTree;
-	if ( m_restrictPosdb ) { numFiles =  1; includeTree = false; }
-	else                   { numFiles = -1; includeTree = true;  }
+	int32_t numFiles = -1;
+	bool includeTree = true;
 
 	// . send out a bunch of msg5 requests
 	// . make slots for all

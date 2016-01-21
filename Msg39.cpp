@@ -663,7 +663,6 @@ bool Msg39::getLists () {
 				 m_r                        ,
 				 m_r->m_niceness            ,
 				 m_debug                  ,
-				 false  ,
 				 split                      )) {
 		m_blocked = true;
 		return false;
