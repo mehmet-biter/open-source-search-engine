@@ -26946,8 +26946,11 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 		// write http://www.whatever.com/path into buf
 		char buf[MAX_URL_LEN+10];
 		char *p = buf;
-//		gbmemcpy ( p , "http://" , 7 ); p += 7;
-		gbmemcpy ( p , fu->getScheme(), fu->getSchemeLen() ); p += fu->getSchemeLen();
+		
+		// BR 20160122: Do NOT fix this for https sites. The search is
+		// always prefixed with http:// (sigh ...)
+		gbmemcpy ( p , "http://" , 7 ); p += 7;
+//		gbmemcpy ( p , fu->getScheme(), fu->getSchemeLen() ); p += fu->getSchemeLen();
 		gbmemcpy ( p , "://" , 3 ); p += 3;
 		gbmemcpy ( p , name          , nameLen      ); p += nameLen;
 		if( pbufLen > 0 )
