@@ -145,19 +145,42 @@ bool Msg2::getLists ( ) {
 		sk2 = qt->m_startKey;
 		ek2 = qt->m_endKey;
 
-		//if the term is a high-frequency one then use the PosDB shortcuts
-		const void *hfterm_shortcut_posdb_buffer;
-		size_t hfterm_shortcut_buffer_bytes;
-		if(g_hfts.query_term_shortcut(m_query->getTermId(m_i),&hfterm_shortcut_posdb_buffer,&hfterm_shortcut_buffer_bytes)) {
-			log("term %"PRId64" is a high-frequency term",m_query->getTermId(m_i));
-			//TODO: use PosDB shortcut buffer, pout into RdbList and avoid actualyl going into PosDB
-		}
-
 		// if single word and not required, skip it
 		if ( ! qt->m_isRequired && 
 		     ! qt->m_isPhrase &&
 		     ! qt->m_synonymOf )
 			continue;
+
+		//if the term is a high-frequency one then use the PosDB shortcuts
+		const void *hfterm_shortcut_posdb_buffer;
+		size_t hfterm_shortcut_buffer_bytes;
+		if(g_hfts.query_term_shortcut(m_query->getTermId(m_i),&hfterm_shortcut_posdb_buffer,&hfterm_shortcut_buffer_bytes)) {
+			log("term %"PRId64" (%*.*s) is a high-frequency term",m_query->getTermId(m_i),qt->m_qword->m_wordLen,qt->m_qword->m_wordLen,qt->m_qword->m_word);
+			//use PosDB shortcut buffer, put into RdbList and avoid actually going into PosDB
+			char *startKey = (char*)hfterm_shortcut_posdb_buffer;
+			char *endKey = ((char*)hfterm_shortcut_posdb_buffer)+hfterm_shortcut_buffer_bytes-18;
+			
+			char *rdblistmem = (char*)mmalloc(hfterm_shortcut_buffer_bytes,"RdbList");
+			memcpy(rdblistmem,hfterm_shortcut_posdb_buffer,hfterm_shortcut_buffer_bytes);
+			m_lists[m_i].set(rdblistmem,                           //list
+			                 hfterm_shortcut_buffer_bytes,         //listSize
+			                 NULL,                                 //alloc
+			                 0,                                    //allocSize
+			                 startKey,                             //startkey
+			                 endKey,                               //endkey
+			                 0,                                    //fixeddatasize
+			                 false,                                //owndata
+			                 true,                                 //usehalfkeys
+			                 18);                                  //keysize
+			m_lists[m_i].constrain(sk2,            //startKey
+			                       ek2,            //endKey
+			                       -1,             //minRecSizes
+			                       0,              //hintOffset
+			                       NULL,           //hintKey
+			                       "",             //filename
+			                       0);             //niceness
+			continue;
+		}
 
 		Msg5 *msg5 = getAvailMsg5();
 		// return if all are in use

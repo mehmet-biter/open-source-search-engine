@@ -77,7 +77,7 @@ bool HighFrequencyTermShortcuts::load()
 	std::map<uint64_t,TermEntry> new_entries;
 	
 	const char *end = new_buffer + st.st_size;
-	const char *p = new_buffer;
+	char *p = new_buffer;
 	while(p+8+4<end) {
 		uint64_t term_id = *(const uint64_t*)p;
 		p += 8;
@@ -100,6 +100,36 @@ bool HighFrequencyTermShortcuts::load()
 	entries.swap(new_entries);
 	delete[] (char*)buffer;
 	buffer = new_buffer;
+	
+	//All the entries are full 18-byte entries in all their glory
+	//But PosdbTable::intersectLists10_r() does like that and fails in
+	//a "sanity check" due to unhealthy knowledge of not only the
+	//posdb format but also the workings and algorithms.
+	//So we have to compress the non-entries to 12 byte.
+	//technically we should also compress to 6 bytes for same docids, but
+	//we "know" that there aren't such entries in the shortcut file.
+	for(std::map<uint64_t,TermEntry>::iterator iter = entries.begin();
+	    iter!=entries.end();
+	    ++iter)
+	{
+		const char *src = (const char*)iter->second.p;
+		size_t src_bytes = iter->second.bytes;
+		const char *src_end = src+src_bytes;
+		char *dst = (char*)iter->second.p;
+		size_t dst_bytes = 0;
+		for(const char *p = src; p<src_end; p+=18) {
+			if(p==src) {
+				dst += 18;
+				dst_bytes +=18;
+			} else {
+				memmove(dst,p,12);
+				dst[0] |= 0x02; //now it's a 12-byte key
+				dst += 12;
+				dst_bytes += 12;
+			}
+		}
+		iter->second.bytes = dst_bytes;
+	}
 	
 	log(LOG_DEBUG, "%s loaded", filename);
 	return true;
