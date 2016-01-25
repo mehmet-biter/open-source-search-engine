@@ -7,6 +7,9 @@
 #include "UdpServer.h"
 //#include "CollectionRec.h"
 #include "SearchInput.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 // called to send back the reply
 static void  sendReply         ( UdpSlot *slot         ,
@@ -1340,6 +1343,9 @@ void Msg39::estimateHitsAndSendReply ( ) {
 	}
 
 	// now send back the reply
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(reply,replySize);
+#endif
 	sendReply(m_slot,this,reply,replySize,replySize,false);
 	return;
 }
