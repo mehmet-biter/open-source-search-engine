@@ -812,10 +812,7 @@ class DocIdScore {
 	DocIdScore ( ) { reset(); }
 
 	void reset ( ) {
-		m_numPairs = m_numSingles = 0;
-		m_pairsOffset = m_singlesOffset = -1;
-		m_pairScores = NULL;
-		m_singleScores = NULL;
+		memset(this,0,sizeof(*this));
 	};
 
 	// we use QueryChange::getDebugDocIdScore() to "deserialize" per se
@@ -827,6 +824,9 @@ class DocIdScore {
 	// for example. see Posdb.cpp "intScore".
 	double      m_finalScore;
 	char        m_siteRank;
+	char        m_reserved0;
+	char        m_reserved1;
+	char        m_reserved2;
 	int32_t        m_docLang; // langId
 	int32_t        m_numRequiredTerms;
 
