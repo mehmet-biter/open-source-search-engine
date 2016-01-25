@@ -1027,10 +1027,8 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 		// . no, we should core otherwise it can result in some
 		//   pretty hard to track down bugs later.
 		//return false;
-#ifndef _VALGRIND_
 		char *xx = NULL;
 		*xx = 0;
-#endif
 		//sleep(50000);
 		// unlock for threads
 		//pthread_mutex_unlock ( &s_lock );
@@ -1048,10 +1046,8 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 		log(
 		    "mem: rmMem: Freeing %"INT32" should be %"INT32". (%s)",
 		    size,s_sizes[h],note);
-#ifndef _VALGRIND_
 		char *xx = NULL;
 		*xx = 0;
-#endif
 		//sleep(50000);
 		// unlock for threads
 		//pthread_mutex_unlock ( &s_lock );

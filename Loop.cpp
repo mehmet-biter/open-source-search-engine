@@ -735,9 +735,6 @@ bool Loop::init ( ) {
 
 	// redhat 9's NPTL doesn't like our async signals
 	if ( ! g_conf.m_allowAsyncSignals ) g_isHot = false;
-#ifdef _VALGRIND_
-	g_isHot = false;
-#endif
 	// sighupHandler() will set this to true so we know when to shutdown
 	m_shutdown  = 0;
 	// . reset this cuz we have no sleep callbacks right now
@@ -777,9 +774,7 @@ bool Loop::init ( ) {
 	sigset_t sigs;
 	sigemptyset ( &sigs                );
 	sigaddset   ( &sigs , SIGPIPE      ); //if we write to a close socket
-// #ifndef _VALGRIND_
 // 	sigaddset   ( &sigs , GB_SIGRTMIN     );
-// #endif
 // 	sigaddset   ( &sigs , GB_SIGRTMIN + 1 );
 // 	sigaddset   ( &sigs , GB_SIGRTMIN + 2 );
 // 	sigaddset   ( &sigs , GB_SIGRTMIN + 3 );
@@ -862,10 +857,8 @@ bool Loop::init ( ) {
 	// clear g_errno
 	g_errno = 0;
 	// now when we got an unblocked GB_SIGRTMIN signal go here right away
-// #ifndef _VALGRIND_
 // 	if ( sigaction ( GB_SIGRTMIN, &sa, 0 ) < 0 ) g_errno = errno;
 // 	if ( g_errno)log("loop: sigaction GB_SIGRTMIN: %s.", mstrerror(errno));
-// #endif
 
 	// set it this way for SIGIO's
 	sa.sa_flags = SA_SIGINFO ; // | SA_ONESHOT;
@@ -1207,9 +1200,7 @@ bool Loop::runLoop ( ) {
 	// . set sigs on which sigtimedwait() listens for
 	// . add this signal to our set of signals to watch (currently NONE)
 	sigaddset ( &sigs0, SIGPIPE      );
-// #ifndef _VALGRIND_
 // 	sigaddset ( &sigs0, GB_SIGRTMIN     );
-// #endif
 // 	sigaddset ( &sigs0, GB_SIGRTMIN + 1 );
 // 	sigaddset ( &sigs0, GB_SIGRTMIN + 2 );
 // 	sigaddset ( &sigs0, GB_SIGRTMIN + 3 );
@@ -2161,9 +2152,7 @@ void Loop::interruptsOff ( ) {
 	sigset_t rtmin;
 	sigemptyset ( &rtmin );
 	// tmp debug hack, so we don't have real time signals now...
-// #ifndef _VALGRIND_
 // 	sigaddset   ( &rtmin, GB_SIGRTMIN );
-// #endif
 	// block it
 	if ( sigprocmask ( SIG_BLOCK  , &rtmin, 0 ) < 0 ) {
 		log("loop: interruptsOff: sigprocmask: %s.", strerror(errno));
@@ -2186,9 +2175,7 @@ void Loop::interruptsOn ( ) {
 	sigset_t rtmin;
 	sigemptyset ( &rtmin );
 	// uncomment this next line to easily disable real time interrupts
-// #ifndef _VALGRIND_
 // 	sigaddset   ( &rtmin, GB_SIGRTMIN );
-// #endif
 	// debug msg
 	//log("interruptsOn");
 	// let everyone know before we are vulnerable to an interrupt

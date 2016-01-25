@@ -799,10 +799,6 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		// copy errno to g_errno
 		g_errno = errno;
 		if ( g_errno == EAGAIN  ) { g_errno = 0; return 0;}
-#ifdef _VALGRIND_
-		// interrupted system call?
-		if ( g_errno == 4 ) { g_errno = 0; return 0; }
-#endif
 		// not in linux
 		// . "output queue for a network interface was full"
 		// . however, linux just silently drops packets!!!!!!!
@@ -1106,10 +1102,6 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 		g_errno = errno;
 		if ( g_errno == EAGAIN  ) { g_errno = 0; return 0; }
 		if ( g_errno == ENOBUFS ) { g_errno = 0; return 0; }
-#ifdef _VALGRIND_
-		// interrupted system call
-		if ( g_errno == 4       ) { g_errno = 0; return 0; }
-#endif
 		log("udp: error sending ack: %s",mstrerror(g_errno));
 		return -1;
 	}
@@ -1577,9 +1569,6 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 		memcpy_ass ( dest , tmp , headerSize );
 		// bail on error, how could this happen?
 		if ( numRead < 0 ) {
-#ifdef _VALGRIND_			
-			if ( errno == 4 ) goto retry;
-#endif
 			g_errno = errno;
 			return log("udp: Call to recvfrom had error: %s.",
 				   mstrerror(g_errno));

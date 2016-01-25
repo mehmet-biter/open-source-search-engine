@@ -19280,10 +19280,8 @@ void Parms::init ( ) {
 	//
 	// . fill in each parm's buffer with byte #b
 	// . inc b for each parm
-#ifndef _VALGRIND_
 	overlapTest(+1);
 	overlapTest(-1);
-#endif
 }
 
 void Parms::overlapTest ( char step ) {

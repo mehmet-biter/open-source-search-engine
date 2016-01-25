@@ -442,9 +442,6 @@ bool Threads::call ( char   type                         ,
 		     void *(* startRoutine)(void *state,ThreadEntry *t) ) {
 	// debug
 	//return false;
-#ifdef _VALGRIND_
-	return false;
-#endif
 
 	g_errno = 0;
 

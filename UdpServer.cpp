@@ -1251,9 +1251,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 		if ( g_errno == EILSEQ ) { 
 			g_errno = 0; return 0; }
 		// Interrupted system call (4) (from valgrind)
-#ifdef _VALGRIND_
-		if ( g_errno == 4 ) { g_errno = 0; return 0;}
-#endif		
 		return log("udp: readDgram: %s (%d).",mstrerror(g_errno), g_errno) - 1;
 	}
 	// the discard buffer, for reading dgram into
