@@ -99,6 +99,9 @@ public:
 	//returns True if the extension is in the list of 
 	//badExtensions - extensions not to be parsed
 	bool isBadExtension(int32_t xxx);
+	bool isDomainUnwantedForHashing();
+	bool isPathUnwantedForHashing();
+	
 	bool isSet()            { return m_ulen != 0; }
 
 	// is it http://rpc.weblogs.com/shortChanges.xml, etc.?

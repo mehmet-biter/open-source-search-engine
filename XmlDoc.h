@@ -739,8 +739,6 @@ public:
 	bool hashZipCodes ( class HashTableX *table ) ;
 	bool hashMetaZip ( class HashTableX *table ) ;
 	bool hashContentType ( class HashTableX *table ) ;
-	bool isDomainUnwantedForHashing(Url *url);
-	bool isPathUnwantedForHashing(Url *url);
 	
 	bool hashLinks ( class HashTableX *table ) ;
 	bool getUseTimeAxis ( ) ;
