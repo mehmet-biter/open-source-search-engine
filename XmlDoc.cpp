@@ -105,6 +105,9 @@ char *getJSONObjectEnd ( char *p , int32_t niceness ) ;
 void doneReadingArchiveFileWrapper ( int fd, void *state );
 
 XmlDoc::XmlDoc() {
+	//clear all fields in the titledb structure (which are the first fileds in this class)
+	memset(&m_headerSize, 0, (size_t)((char*)&ptr_firstUrl-(char*)&m_headerSize));
+	
 	m_esbuf.setLabel("exputfbuf");
 	for ( int32_t i = 0 ; i < MAX_XML_DOCS ; i++ ) m_xmlDocs[i] = NULL;
 	m_freed = false;
