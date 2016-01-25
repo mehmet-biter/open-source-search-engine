@@ -41,6 +41,9 @@
 #include "Parms.h"
 #include "Domains.h"
 #include "matches2.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 extern int g_inMemcpy;
 
@@ -3859,6 +3862,9 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 	// serialize into it
 	char *p = ubuf;
 	// copy our crap into there
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(&m_headerSize,(size_t)((char*)&ptr_firstUrl-(char*)&m_headerSize));
+#endif
 	gbmemcpy ( p , &m_headerSize , m_headerSize );
 	// skip it
 	p += m_headerSize;
@@ -3879,6 +3885,9 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 		*(int32_t *)p = *ps;
 		p += 4;
 		// then the data
+#ifdef _VALGRIND_
+		VALGRIND_CHECK_MEM_IS_DEFINED(*pd,*ps);
+#endif
 		gbmemcpy ( p , *pd , *ps );
 		// skip *ps bytes we wrote. should include a \0
 		p += *ps;
