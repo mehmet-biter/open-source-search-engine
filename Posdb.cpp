@@ -4169,6 +4169,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	// set each of the top scoring terms individiually
 	for ( int32_t k = 0 ; k < numTop ; k++ , px++ ) {
 		pdcs->m_numPairs++;
+		memset(px,0,sizeof(*px));
 		char *maxp1 = bestwpi[k];
 		char *maxp2 = bestwpj[k];
 		float score = bestScores[k];

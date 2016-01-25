@@ -756,6 +756,15 @@ class PosdbTable {
 
 class PairScore {
  public:
+	int32_t  m_wordPos1;
+	int32_t  m_wordPos2;
+	int64_t m_termFreq1;
+	int64_t m_termFreq2;
+	float     m_tfWeight1;
+	float     m_tfWeight2;
+	int32_t m_qtermNum1;
+	int32_t m_qtermNum2;
+	int32_t m_qdist;
 	float m_finalScore;
 	char  m_isSynonym1;
 	char  m_isSynonym2;
@@ -771,17 +780,8 @@ class PairScore {
 	char  m_hashGroup2;
 	char  m_inSameWikiPhrase;
 	char  m_fixedDistance;
-	int32_t  m_wordPos1;
-	int32_t  m_wordPos2;
-	int64_t m_termFreq1;
-	int64_t m_termFreq2;
-	float     m_tfWeight1;
-	float     m_tfWeight2;
-	int32_t m_qtermNum1;
-	int32_t m_qtermNum2;
 	char m_bflags1;
 	char m_bflags2;
-	int32_t m_qdist;
 };
 
 class SingleScore {
