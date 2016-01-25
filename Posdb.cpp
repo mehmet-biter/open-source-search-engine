@@ -8,6 +8,9 @@
 #include "Threads.h"
 #include "Posdb.h"
 #include "Rebalance.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 // a global class extern'd in .h file
 Posdb g_posdb;
@@ -3232,6 +3235,7 @@ float PosdbTable::getSingleTermScore ( int32_t i,
 		// udpate count
 		pdcs->m_numSingles++;
 		char *maxp = bestwpi[k];
+		memset(sx,0,sizeof(*sx));
 		sx->m_isSynonym      = g_posdb.getIsSynonym(maxp);
 		sx->m_isHalfStopWikiBigram = 
 			g_posdb.getIsHalfStopWikiBigram(maxp);
@@ -4218,6 +4222,9 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		// flag it as in same wiki phrase
 		if ( wts == (float)WIKI_WEIGHT ) px->m_inSameWikiPhrase =true;
 		else                             px->m_inSameWikiPhrase =false;
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(px,sizeof(*px));
+#endif
 		// only log for debug if it is one result
 		if ( m_debug < 2 ) continue;
 		// log each one for debug
@@ -7502,6 +7509,9 @@ void PosdbTable::intersectLists10_r ( ) {
 		// show it, 190255775595
 		//log("posdb: storing score info for d=%"INT64"",m_docId);
 		// copy into the safebuf for holding the scoring info
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(&dcs,sizeof(dcs));
+#endif
 		m_scoreInfoBuf.safeMemcpy ( (char *)&dcs, sizeof(DocIdScore) );
 		// save that
 		lastLen = len;

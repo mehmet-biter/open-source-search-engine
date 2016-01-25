@@ -786,19 +786,22 @@ class PairScore {
 
 class SingleScore {
  public:
-	float m_finalScore;
-	char  m_isSynonym;
-	char  m_isHalfStopWikiBigram;
-	char  m_diversityRank;
-	char  m_densityRank;
-	char  m_wordSpamRank;
-	char  m_hashGroup;
-	int32_t  m_wordPos;
-	int64_t m_termFreq; // float m_termFreqWeight;
-	float m_tfWeight;
+	int64_t m_termFreq;
+	float   m_finalScore;
+	int32_t m_wordPos;
+	float   m_tfWeight;
 	int32_t m_qtermNum;
-	char m_bflags;
+	char    m_isSynonym;
+	char    m_isHalfStopWikiBigram;
+	char    m_diversityRank;
+	char    m_densityRank;
+	char    m_wordSpamRank;
+	char    m_hashGroup;
+	char    m_bflags;
+	char    m_reserved0;
 };
+//above struct members are sorted on size as to minimize internal padding and final size
+
 
 // we add up the pair scores of this many of the top-scoring pairs
 // for inlink text only, so it is accumulative. but now we also
