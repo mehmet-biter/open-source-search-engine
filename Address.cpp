@@ -300,6 +300,7 @@ int32_t getDayOfWeek ( int64_t h ) {
 static bool s_init = false;
 
 Addresses::Addresses ( ) {
+	m_numNonDupAddresses = 0;
 	m_buf     = NULL;
 	m_bufSize = 0;
 	m_calledGeocoder = false;
