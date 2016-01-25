@@ -132,7 +132,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 //		     bool      allowPageCache ) {
 //#endif
 
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+//	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
 
 	// this is obsolete! mostly, but we need it for PageIndexdb.cpp to 
 	// show a "termlist" for a given query term in its entirety so you 
@@ -153,12 +153,12 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// get keySize of rdb
 	m_ks = getKeySizeFromRdbId ( rdbId );
 	
-	if( g_conf.m_logDebugDetailed ) 
-	{
-		log("%s:%s: rdbId. [%d]", __FILE__,__FUNCTION__, (int)rdbId);
-		log("%s:%s: m_ks.. [%d]", __FILE__,__FUNCTION__, (int)m_ks);
-		log("%s:%s: hostId [%"INT64"]", __FILE__,__FUNCTION__, hostId);
-	}
+//	if( g_conf.m_logDebugDetailed ) 
+//	{
+//		log("%s:%s: rdbId. [%d]", __FILE__,__FUNCTION__, (int)rdbId);
+//		log("%s:%s: m_ks.. [%d]", __FILE__,__FUNCTION__, (int)m_ks);
+//		log("%s:%s: hostId [%"INT64"]", __FILE__,__FUNCTION__, hostId);
+//	}
 	
 	
 	// if startKey > endKey, don't read anything
@@ -170,7 +170,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// no longer accept negative minrecsize
 	if ( minRecSizes < 0 ) {
 		g_errno = EBADENGINEER;
-		if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
+//		if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
 
 		log(LOG_LOGIC,
 		    "net: msg0: Negative minRecSizes no longer supported.");
@@ -235,7 +235,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	if ( forceLocalIndexdb ) m_shardNum = getMyShardNum();
 
 
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: shardNum [%"INT32"]", __FILE__,__FUNCTION__, m_shardNum);
+//	if( g_conf.m_logDebugDetailed ) log("%s:%s: shardNum [%"INT32"]", __FILE__,__FUNCTION__, m_shardNum);
 
 
 	// . store these parameters
@@ -321,7 +321,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// . don't do this if m_hostId was specified
 	if ( isLocal ) 
 	{ 
-		if( g_conf.m_logDebugDetailed ) log("%s:%s: isLocal", __FILE__,__FUNCTION__);
+//		if( g_conf.m_logDebugDetailed ) log("%s:%s: isLocal", __FILE__,__FUNCTION__);
 		
 		
 		if ( msg5 ) {
@@ -647,14 +647,14 @@ skip:
 		m->reset();
 		if ( m_numRequests > 0 )
 		{
-			if( g_conf.m_logDebugDetailed ) log("%s:%s: END - returning false", __FILE__,__FUNCTION__);
+//			if( g_conf.m_logDebugDetailed ) log("%s:%s: END - returning false", __FILE__,__FUNCTION__);
 			
 			return false;
 		}
 //#else
 //		m_mcast.reset();
 //#endif
-		if( g_conf.m_logDebugDetailed ) log("%s:%s: END - returning true", __FILE__,__FUNCTION__);
+//		if( g_conf.m_logDebugDetailed ) log("%s:%s: END - returning true", __FILE__,__FUNCTION__);
 		return true;
 	}
 //#ifdef SPLIT_INDEXDB
@@ -662,7 +662,7 @@ skip:
 
 //#endif
 	// we blocked
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: END - returning false", __FILE__,__FUNCTION__);
+//	if( g_conf.m_logDebugDetailed ) log("%s:%s: END - returning false", __FILE__,__FUNCTION__);
 
 	return false;
 }

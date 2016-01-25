@@ -1309,7 +1309,7 @@ static char *s_badExtensions[] = {
         "rm",
         "roff",
         "rpm",
-	"deb", // debian/ubuntu package file
+		"deb", // debian/ubuntu package file
         "rtf",
         "rtx",
         "scm",
@@ -1377,7 +1377,7 @@ static HashTable s_badExtTable;
 static bool s_badExtInitialized;
 
 //returns True if the extension is listed as bad
-bool Url::isBadExtension ( int32_t version ) {
+bool Url::hasNonIndexableExtension( int32_t version ) {
 	if ( ! m_extension || m_elen == 0 ) return false;
 	if(!s_badExtInitialized) { //if hash has not been created-create one
 		int32_t i=0;
@@ -1386,32 +1386,69 @@ bool Url::isBadExtension ( int32_t version ) {
 			int tlen = gbstrlen(s_badExtensions[i]);
 			int64_t swh = hash64Lower_a(s_badExtensions[i],tlen);
 			if(!s_badExtTable.addKey(swh,(int32_t)50))
+			{
+				log(LOG_ERROR,"hasNonIndexableExtension: Could not add hash %"INT64" to badExtTable.", swh);
 				return false;
+			}
 			i++;
 
 		} while(strcmp(s_badExtensions[i],"zip")!=0);
 
 
 		//version 73 and after.
-		if(!s_badExtTable.addKey(hash64Lower_a("wmv", 3),
-					 (int32_t)73) ||
-		   !s_badExtTable.addKey(hash64Lower_a("wma", 3),
-					 (int32_t)73) ||    
-		   !s_badExtTable.addKey(hash64Lower_a("ogg", 3),
-					 (int32_t)73))
+		if(!s_badExtTable.addKey(hash64Lower_a("wmv", 3),(int32_t)73) ||
+		   !s_badExtTable.addKey(hash64Lower_a("wma", 3),(int32_t)73) ||    
+		   !s_badExtTable.addKey(hash64Lower_a("ogg", 3),(int32_t)73))
+		{
+			log(LOG_ERROR,"hasNonIndexableExtension: Could not add hash to badExtTable (2).");
 			return false;
+		}
+		
+		// BR 20160125: More unwanted extensions
+		if(
+			!s_badExtTable.addKey(hash64Lower_a("7z", 2),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("lz", 2),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("xz", 2),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("apk", 3),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("com", 3),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("dll", 3),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("dmg", 3),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("flv", 3),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("gpx", 3),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("ico", 3),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("iso", 3),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("kmz", 3),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("mp4", 3),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("rar", 3),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("svg", 3),(int32_t)122) ||
+			!s_badExtTable.addKey(hash64Lower_a("vcf", 3),(int32_t)122) ||
+//			!s_badExtTable.addKey(hash64Lower_a("xls", 3),(int32_t)122) ||		// Should be handled by converter (AbiWord)
+		   	!s_badExtTable.addKey(hash64Lower_a("lzma", 4),(int32_t)122) ||    
+//			!s_badExtTable.addKey(hash64Lower_a("pptx", 4),(int32_t)122) ||		// Should be handled by converter (AbiWord)
+			!s_badExtTable.addKey(hash64Lower_a("thmx", 4),(int32_t)122) ||
+		   	!s_badExtTable.addKey(hash64Lower_a("zipx", 4),(int32_t)122) ||
+//			!s_badExtTable.addKey(hash64Lower_a("xlsx", 4),(int32_t)122) ||		// Should be handled by converter (AbiWord)
+		   	!s_badExtTable.addKey(hash64Lower_a("zsync", 5),(int32_t)122) ||    
+		   	!s_badExtTable.addKey(hash64Lower_a("torrent", 7),(int32_t)122) ||
+		   	!s_badExtTable.addKey(hash64Lower_a("manifest", 8),(int32_t)122)
+		   	)
+		{
+			log(LOG_ERROR,"hasNonIndexableExtension: Could not add hash to badExtTable (3).");
+			return false;
+		}
 		
 		s_badExtInitialized = true;
 	}
 
 
 	int myKey = hash64Lower_a(m_extension,m_elen);
-	//zero unless we have a bad extention, otherwise
-	//we return TR version in which it was banned
 	int32_t badVersion = s_badExtTable.getValue(myKey);
-	if (badVersion == 0) return false;
-	//if(badVersion <= version) return true;
-	if ( badVersion > version ) return false;
+
+	if( badVersion == 0 || badVersion > version ) 
+	{
+		return false;
+	}
+	
 	return true;
 }
 
@@ -1420,7 +1457,7 @@ bool Url::isBadExtension ( int32_t version ) {
 // BR 20160115
 // Yes, ugly hardcoded stuff again.. Can likely be optimized a bit too..
 // List of domains we do not want to store hashes for in posdb for "link:" entries
-bool Url::isDomainUnwantedForHashing() {
+bool Url::isDomainUnwantedForIndexing() {
 	char *domain 	= getDomain();				// top domain only, e.g. googleapis.com
 	int32_t dlen 	= getDomainLen();
 	char *host		= getHost();				// domain including subdomain, e.g. fonts.googleapis.com
@@ -1579,7 +1616,6 @@ bool Url::isDomainUnwantedForHashing() {
 				return true;
 			}
 			break;
-		
 		case 14:
 			if( memcmp(domain, "googleapis.com", 14) == 0 ||
 					memcmp(domain, "netdna-cdn.com", 14) == 0 ||
@@ -1616,18 +1652,6 @@ bool Url::isDomainUnwantedForHashing() {
 			break;
 	}
 
-	if( plen > 8 )
-	{
-		if( plen > 8 && 
-			(memcmp(path, "/oembed?", 8) == 0 || memcmp(path, "/oembed/", 8) == 0) )
-		{
-			// http://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DLkcZdhamaew&format=xml
-			// http://indavideo.hu/oembed/4ff1e92383
-			// https://vine.co/oembed/ODibqgXlQpE.xml
-			return true;
-		}
-	}
-
 	return false;
 }
 
@@ -1636,7 +1660,7 @@ bool Url::isDomainUnwantedForHashing() {
 // BR 20160115
 // Yes, ugly hardcoded stuff again.. Can likely be optimized a bit too..
 // List of paths we do not want to store hashes for in posdb for "link:" entries
-bool Url::isPathUnwantedForHashing() {
+bool Url::isPathUnwantedForIndexing() {
 	char *path		= getPath();				// document path, e.g. /bla/doh/doc.html
 	int32_t plen	= getPathLen();
 
@@ -1644,15 +1668,184 @@ bool Url::isPathUnwantedForHashing() {
 
 	if( plen > 8 )
 	{
-		if( plen > 8 && 
-			(memcmp(path, "/oembed?", 8) == 0 || 
-			 memcmp(path, "/oembed/", 8) == 0) )
+		if( memcmp(path, "/oembed?", 8) == 0 || 
+			memcmp(path, "/oembed/", 8) == 0 || 
+			memcmp(path, "/wp-json", 8) == 0 )
 		{
 			// http://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DLkcZdhamaew&format=xml
 			// http://indavideo.hu/oembed/4ff1e92383
 			// https://vine.co/oembed/ODibqgXlQpE.xml
 			return true;
 		}
+	}
+
+	if( plen > 9 )
+	{
+		if( memcmp(path, "/wp-admin/", 10) == 0 )
+		{
+			return true;
+		}
+	}
+
+	if( plen > 10 )
+	{
+		if( memcmp(path, "/xmlrpc.php", 11) == 0 ||
+			memcmp(path, "/wp-content", 11) == 0 ||
+			memcmp(path, "/wp-uploads", 11) == 0 )
+		{
+			
+			return true;
+		}
+	}
+
+	if( plen > 11 )
+	{
+		if( memcmp(path, "/wp-includes", 12) == 0 )
+		{
+			
+			return true;
+		}
+	}
+
+	if( plen > 12 )
+	{
+		if( memcmp(path, "/wp-login.php", 13) == 0 )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+bool Url::hasMediaExtension ( ) {
+
+	if ( ! m_extension || ! m_elen || m_elen > 4 ) return false;
+
+	char ext[5];
+	int i;
+	for(i=0; i < m_elen; i++)
+	{
+		ext[i] = to_lower_a(m_extension[i]);
+	}
+	ext[i] = '\0';
+	
+	switch( m_elen )
+	{
+		case 3:
+			if( 
+				memcmp(ext, "avi", 3) == 0 ||
+				memcmp(ext, "css", 3) == 0 ||
+				memcmp(ext, "gif", 3) == 0 ||
+				memcmp(ext, "ico", 3) == 0 ||
+				memcmp(ext, "jpg", 3) == 0 ||
+				memcmp(ext, "mov", 3) == 0 ||
+				memcmp(ext, "mp2", 3) == 0 ||
+				memcmp(ext, "mp3", 3) == 0 ||
+				memcmp(ext, "mp4", 3) == 0 ||
+				memcmp(ext, "mpg", 3) == 0 ||
+				memcmp(ext, "png", 3) == 0 ||
+				memcmp(ext, "svg", 3) == 0 ||
+				memcmp(ext, "wav", 3) == 0 ||
+				memcmp(ext, "wmv", 3) == 0 )
+			{
+				return true;
+			}
+			break;
+		case 4:
+			if( memcmp(ext, "mpeg", 4) == 0 ||
+				memcmp(ext, "jpeg", 4) == 0 )
+			{
+				return true;
+			}
+			break;
+		default:
+			break;
+	}
+
+	return false;
+}
+
+
+bool Url::hasXmlExtension ( ) {
+
+	if ( ! m_extension || ! m_elen || m_elen > 3 ) return false;
+
+	char ext[5];
+	int i;
+	for(i=0; i < m_elen; i++)
+	{
+		ext[i] = to_lower_a(m_extension[i]);
+	}
+	ext[i] = '\0';
+	
+	switch( m_elen )
+	{
+		case 3:
+			if( memcmp(ext, "xml", 3) == 0 )
+			{
+				return true;
+			}
+			break;
+		default:
+			break;
+	}
+
+	return false;
+}
+
+
+bool Url::hasJsonExtension ( ) {
+
+	if ( ! m_extension || ! m_elen || m_elen >= 4 ) return false;
+
+	char ext[5];
+	int i;
+	for(i=0; i < m_elen; i++)
+	{
+		ext[i] = to_lower_a(m_extension[i]);
+	}
+	ext[i] = '\0';
+	
+	switch( m_elen )
+	{
+		case 4:
+			if( memcmp(ext, "json", 4) == 0 )
+			{
+				return true;
+			}
+			break;
+		default:
+			break;
+	}
+
+	return false;
+}
+
+
+bool Url::hasScriptExtension ( ) {
+
+	if ( ! m_extension || ! m_elen || m_elen > 4 ) return false;
+
+	char ext[5];
+	int i;
+	for(i=0; i < m_elen; i++)
+	{
+		ext[i] = to_lower_a(m_extension[i]);
+	}
+	ext[i] = '\0';
+	
+	switch( m_elen )
+	{
+		case 2:
+			if( memcmp(ext, "js", 2) == 0 )
+			{
+				return true;
+			}
+			break;
+		default:
+			break;
 	}
 
 	return false;
@@ -2209,189 +2402,6 @@ bool isHijackerFormat ( char *url ) {
 	return true;
 }
 
-bool Url::hasMediaExtension ( ) {
-
-	if ( ! m_extension || ! m_elen || m_elen > 4 ) return false;
-
-	char ext[5];
-	int i;
-	for(i=0; i < m_elen; i++)
-	{
-		ext[i] = to_lower_a(m_extension[i]);
-	}
-	ext[i] = '\0';
-	
-	switch( m_elen )
-	{
-		case 3:
-			if( 
-				memcmp(ext, "avi", 3) == 0 ||
-				memcmp(ext, "css", 3) == 0 ||
-				memcmp(ext, "gif", 3) == 0 ||
-				memcmp(ext, "ico", 3) == 0 ||
-				memcmp(ext, "jpg", 3) == 0 ||
-				memcmp(ext, "mov", 3) == 0 ||
-				memcmp(ext, "mp2", 3) == 0 ||
-				memcmp(ext, "mp3", 3) == 0 ||
-				memcmp(ext, "mp4", 3) == 0 ||
-				memcmp(ext, "mpg", 3) == 0 ||
-				memcmp(ext, "png", 3) == 0 ||
-				memcmp(ext, "svg", 3) == 0 ||
-				memcmp(ext, "wav", 3) == 0 ||
-				memcmp(ext, "wmv", 3) == 0 )
-			{
-				return true;
-			}
-			break;
-		case 4:
-			if( memcmp(ext, "mpeg", 4) == 0 ||
-				memcmp(ext, "jpeg", 4) == 0 )
-			{
-				return true;
-			}
-			break;
-		default:
-			break;
-	}
-
-	return false;
-}
-
-
-bool Url::hasOtherUnindexableBinaryExtension() {
-
-	if ( ! m_extension || ! m_elen || m_elen > 4 ) return false;
-
-	char ext[5];
-	int i;
-	for(i=0; i < m_elen; i++)
-	{
-		ext[i] = to_lower_a(m_extension[i]);
-	}
-	ext[i] = '\0';
-	
-	switch( m_elen )
-	{
-		case 2:
-			if( 
-				memcmp(ext, "7z", 2) == 0 ||
-				memcmp(ext, "gz", 2) == 0 ||
-				memcmp(ext, "lz", 2) == 0 ||
-				memcmp(ext, "xz", 2) == 0 )
-			{
-				return true;
-			}
-			break;
-		case 3:
-			if( 
-				memcmp(ext, "apk", 3) == 0 ||
-				memcmp(ext, "bin", 3) == 0 ||
-				memcmp(ext, "com", 3) == 0 ||
-				memcmp(ext, "dmg", 3) == 0 ||
-				memcmp(ext, "exe", 3) == 0 ||
-				memcmp(ext, "rar", 3) == 0 ||
-				memcmp(ext, "tar", 3) == 0 ||
-				memcmp(ext, "zip", 3) == 0 )
-			{
-				return true;
-			}
-			break;
-		case 4:
-			if( memcmp(ext, "lzma", 4) == 0 ||
-				memcmp(ext, "zipx", 4) == 0 )
-			{
-				return true;
-			}
-			break;
-		default:
-			break;
-	}
-
-	return false;
-}
-
-
-bool Url::hasXmlExtension ( ) {
-
-	if ( ! m_extension || ! m_elen || m_elen > 3 ) return false;
-
-	char ext[5];
-	int i;
-	for(i=0; i < m_elen; i++)
-	{
-		ext[i] = to_lower_a(m_extension[i]);
-	}
-	ext[i] = '\0';
-	
-	switch( m_elen )
-	{
-		case 3:
-			if( memcmp(ext, "xml", 3) == 0 )
-			{
-				return true;
-			}
-			break;
-		default:
-			break;
-	}
-
-	return false;
-}
-
-bool Url::hasJsonExtension ( ) {
-
-	if ( ! m_extension || ! m_elen || m_elen >= 4 ) return false;
-
-	char ext[5];
-	int i;
-	for(i=0; i < m_elen; i++)
-	{
-		ext[i] = to_lower_a(m_extension[i]);
-	}
-	ext[i] = '\0';
-	
-	switch( m_elen )
-	{
-		case 4:
-			if( memcmp(ext, "json", 4) == 0 )
-			{
-				return true;
-			}
-			break;
-		default:
-			break;
-	}
-
-	return false;
-}
-
-
-bool Url::hasScriptExtension ( ) {
-
-	if ( ! m_extension || ! m_elen || m_elen > 4 ) return false;
-
-	char ext[5];
-	int i;
-	for(i=0; i < m_elen; i++)
-	{
-		ext[i] = to_lower_a(m_extension[i]);
-	}
-	ext[i] = '\0';
-	
-	switch( m_elen )
-	{
-		case 2:
-			if( memcmp(ext, "js", 2) == 0 )
-			{
-				return true;
-			}
-			break;
-		default:
-			break;
-	}
-
-	return false;
-}
 
 
 

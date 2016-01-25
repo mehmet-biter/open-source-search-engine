@@ -3336,8 +3336,7 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 	// so i'll just edit the list to remove more ambiguous extensions
 	// like .f and .t
 	//
-	//@todo BR: Why not use a isGOODExtension instead?
-	bool badExt = cu->isBadExtension ( m_version );
+	bool badExt = cu->hasNonIndexableExtension(TITLEREC_CURRENT_VERSION);	// @todo BR: For now ignore actual TitleDB version. // m_version);
 	if ( badExt && ! info1->hasLinkText() &&
 	      ( ! info2 || ! info2->hasLinkText() ) ) {
 	 	m_indexCode      = EDOCBADCONTENTTYPE;
@@ -3363,6 +3362,7 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 	//}
 
 	// if this page is hijacked, toss it!
+	//@todo: BR not save at all.
 	char *hj = getIsHijacked();
 	if ( ! hj || hj == (char *)-1 ) 
 	{
@@ -23948,6 +23948,22 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// if hostname length is <= 2 then SILENTLY reject it
 		if ( url.getHostLen() <= 2 ) continue;
 
+
+
+		// BR 20160125: Do not create spiderdb entries for media URLs etc.
+		if(	url.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION) ||	
+			url.hasScriptExtension() ||
+			url.hasJsonExtension() ||
+//			url.hasXmlExtension() ||
+			url.isDomainUnwantedForIndexing() ||
+			url.isPathUnwantedForIndexing() )
+		{
+			continue;			
+		}
+
+
+
+
 		// are we a new outlink from a ? i.e. a "hot link"? assume so
 		bool newOutlink = true;
 		// if no old links, can not be a new outlink then
@@ -26508,13 +26524,12 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 
 
 		// BR 20160105: Do not create "link:" hashes for media URLs etc.
-		if( link.hasMediaExtension() ||
+		if( link.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION) ||	// @todo BR: For now ignore actual TitleDB version. // m_version) ||
 			link.hasScriptExtension() ||
-			link.hasOtherUnindexableBinaryExtension() ||
 			link.hasJsonExtension() ||
 			link.hasXmlExtension() ||
-			link.isDomainUnwantedForHashing() ||
-			link.isPathUnwantedForHashing() )
+			link.isDomainUnwantedForIndexing() ||
+			link.isPathUnwantedForIndexing() )
 		{
 			continue;			
 		}

@@ -98,9 +98,9 @@ public:
 
 	//returns True if the extension is in the list of 
 	//badExtensions - extensions not to be parsed
-	bool isBadExtension(int32_t xxx);
-	bool isDomainUnwantedForHashing();
-	bool isPathUnwantedForHashing();
+	bool hasNonIndexableExtension(int32_t xxx);
+	bool isDomainUnwantedForIndexing();
+	bool isPathUnwantedForIndexing();
 	
 	bool isSet()            { return m_ulen != 0; }
 
@@ -185,7 +185,6 @@ public:
 		return getUrlHash64() & 0x0000ffffffffffffLL; }
 
 	bool hasMediaExtension();
-	bool hasOtherUnindexableBinaryExtension();
 	bool hasScriptExtension();
 	bool hasXmlExtension();
 	bool hasJsonExtension();
