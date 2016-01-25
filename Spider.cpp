@@ -11731,8 +11731,8 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			// if there is no domain or url explicitly listed
 			// then assume user is spidering the whole internet
 			// and we basically ignore "insitelist"
-			if ( sc->m_siteListIsEmpty && 
-			     sc->m_siteListIsEmptyValid ) {
+			if ( sc->m_siteListIsEmptyValid &&
+			     sc->m_siteListIsEmpty ) {
 				// use a dummy row match
 				row = (char *)1;
 			}

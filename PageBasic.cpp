@@ -134,8 +134,6 @@ bool updateSiteListBuf ( collnum_t collnum ,
 	
 	sc->m_siteListIsEmptyValid = true;
 
-	sc->m_siteListIsEmptyValid = true;
-
 	// use this so it will be free automatically when msg4 completes!
 	SafeBuf *spiderReqBuf = &sc->m_msg4x.m_tmpBuf;
 
@@ -434,7 +432,7 @@ char *getMatchingUrlPattern ( SpiderColl *sc ,
 	//	return sc->m_siteListAsteriskLine;
 
 	// if it is just a bunch of comments or blank lines, it is empty
-	if ( sc->m_siteListIsEmpty && sc->m_siteListIsEmptyValid )
+	if ( sc->m_siteListIsEmptyValid && sc->m_siteListIsEmpty )
 		return NULL;
 
 	// if we had a list of contains: or regex: directives in the sitelist
