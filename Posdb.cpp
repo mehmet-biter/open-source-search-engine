@@ -3736,6 +3736,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			dist = FIXED_DISTANCE;
 			fixedDistance = true;
 		}
+		else
+			fixedDistance = false;
 		// if both are link text and > 50 units apart that means
 		// they are from different link texts
 		//if ( hg1 == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip1;
@@ -3934,6 +3936,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 			dist = FIXED_DISTANCE;
 			fixedDistance = true;
 		}
+		else
+			fixedDistance = false;
 		// if both are link text and > 50 units apart that means
 		// they are from different link texts
 		//if ( hg1 == HASHGROUP_INLINKTEXT && dist > 50 ) goto skip2;
