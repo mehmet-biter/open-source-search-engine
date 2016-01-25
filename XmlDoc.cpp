@@ -146,6 +146,9 @@ XmlDoc::XmlDoc() {
 	//m_titleRec = NULL;
 	//m_freeTitleRec = true;
 	m_rootTitleRec = NULL;
+	m_isIndexed = false;
+	m_isInIndex = false;
+	m_wasInIndex = false;
 	m_outlinkHopCountVector = NULL;
 	//m_gsbuf = NULL;
 	m_extraDoc = NULL;
@@ -2657,6 +2660,9 @@ if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __fun
 
 	// log this for debug now
 	if ( nsr ) {
+#ifdef _VALGRIND_
+		VALGRIND_CHECK_MEM_IS_DEFINED(nsr, sizeof(*nsr));
+#endif
 		SafeBuf tmp;
 		nsr->print(&tmp);
 		log("xmldoc: added reply %s",tmp.getBufStart());
