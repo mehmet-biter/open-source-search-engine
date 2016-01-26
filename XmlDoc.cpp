@@ -22328,11 +22328,8 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			m_srep.m_langId         = m_oldDoc->m_langId;
 			m_srep.m_isRSS          = m_oldDoc->m_isRSS;
 			m_srep.m_isPermalink    = m_oldDoc->m_isPermalink;
-			m_srep.m_hasTOD         = 0;
 			m_srep.m_siteNumInlinks = m_oldDoc->m_siteNumInlinks;
 			// they're all valid
-			m_srep.m_hasTODValid         = true;
-			//m_srep.m_hasSiteVenueValid   = true;
 			m_srep.m_siteNumInlinksValid = true;
 		}
 		// do special things if
@@ -22445,15 +22442,8 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 	m_srep.m_siteNumInlinksValid = true;
 
-	// . ignore address in dup sections (nondup/non-dup addresses only)
-	// . this way if the place always has their address in the header or
-	//   footer of every web page we will ignore it
-	m_srep.m_hasTOD        = 0;
-
 	// validate all
 	m_srep.m_hasAuthorityInlinkValid = 1;
-	m_srep.m_hasTODValid             = 1;
-	//m_srep.m_hasSiteVenueValid       = 1;
 
 	// a quick validation. reply must unlock the url from the lock table.
 	// so the locks must be equal.

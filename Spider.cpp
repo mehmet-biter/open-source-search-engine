@@ -11547,27 +11547,6 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			goto checkNextRule;
 		}
 
-		if ( *p=='h' && strncmp(p,"hastod",6) == 0 ) {
-			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) return -1;
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// reply based
-			if ( ! srep ) continue;
-			// skip if not valid (pageaddurl? injection?)
-			if ( ! srep->m_hasTODValid ) continue;
-			// if no match continue
-			if ( (bool)srep->m_hasTOD==val ) continue;
-			// skip
-			p += 6;
-			// skip to next constraint
-			p = strstr(p, "&&");
-			// all done?
-			if ( ! p ) return i;
-			p += 2;
-			goto checkNextRule;
-		}
-
 		if ( *p=='h' && strncmp(p,"hasreply",8) == 0 ) {
 			// if we do not have enough info for outlink, all done
 			if ( isOutlink ) return -1;

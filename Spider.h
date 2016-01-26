@@ -909,7 +909,7 @@ class SpiderReply {
 	unsigned    m_reserved002   :1;
 	unsigned    m_reserved001   :1;
 	unsigned    m_reserved5     :1;
-	unsigned    m_hasTOD        :1;
+	unsigned    m_reserved006   :1;
 
 	// make this "INvalid" not valid since it was set to 0 before
 	// and we want to be backwards compatible
@@ -921,7 +921,7 @@ class SpiderReply {
 	unsigned    m_hasAuthorityInlinkValid :1;
 	unsigned    m_reserved004             :1;
 	unsigned    m_reserved005             :1;
-	unsigned    m_hasTODValid             :1;
+	unsigned    m_reserved007             :1;
 	unsigned    m_reserved2               :1;
 	unsigned    m_siteNumInlinksValid     :1;
 	// was the request an injection request
