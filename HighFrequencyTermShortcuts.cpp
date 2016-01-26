@@ -133,7 +133,7 @@ bool HighFrequencyTermShortcuts::load()
 		}
 		iter->second.bytes = dst_bytes;
 #ifdef _VALGRIND_
-		VALGRIND_MAKE_MEM_UNDEFINED(p, src_bytes-dst_bytes);
+		VALGRIND_MAKE_MEM_UNDEFINED(dst, src_bytes-dst_bytes);
 #endif
 	}
 	
