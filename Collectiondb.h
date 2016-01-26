@@ -722,7 +722,6 @@ class CollectionRec {
 
 	// more control
 	int32_t m_maxSearchResultsPerQuery;
-	int32_t m_maxSearchResultsPerQueryForClients; // more for paying clients
 
 	int32_t  m_compoundListMaxSize;
 
