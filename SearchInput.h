@@ -225,7 +225,6 @@ class SearchInput {
 	char   m_hideAllClustered;
 
 	// ranking algos
-	char   m_useNewAlgo;
 	char   m_doMaxScoreAlgo;
 
 	// intersection speed up shortcut? "&fi=1", defaults to on

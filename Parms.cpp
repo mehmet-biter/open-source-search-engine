@@ -4569,18 +4569,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m++;
 
-	m->m_title = "use new ranking algo";
-	m->m_desc  = "Should search results be ranked using this new algo?";
-	m->m_off   = (char *)&si.m_useNewAlgo - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	// seems, good, default it on
-	m->m_def   = "1";
-	m->m_cgi   = "una";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m++;
-
 	m->m_title = "do max score algo";
 	m->m_desc  = "Quickly eliminated docids using max score algo";
 	m->m_off   = (char *)&si.m_doMaxScoreAlgo - y;

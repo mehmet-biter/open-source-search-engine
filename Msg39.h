@@ -49,7 +49,6 @@ class Msg39Request {
 		m_stripe                  = 0;
 		m_collnum                 = -1;
 		m_useQueryStopWords       = true;
-		//m_useNewAlgo              = true;
 		m_doMaxScoreAlgo          = true;
 		m_useSeoResultsCache      = false;
 		
@@ -116,7 +115,6 @@ class Msg39Request {
 	char    m_realMaxTop;
 	char    m_stripe;
 	char    m_useQueryStopWords;
-	//char    m_useNewAlgo;
 	char    m_doMaxScoreAlgo;
 
 	char    m_forSectionStats;

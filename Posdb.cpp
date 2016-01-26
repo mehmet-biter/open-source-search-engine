@@ -939,11 +939,6 @@ bool PosdbTable::allocTopTree ( ) {
 			return false;
 	}
 
-	//bool useNewAlgo = false;
-	// set the m_qiBuf, alloc it etc.
-	//if ( m_r->m_useNewAlgo && ! setQueryTermInfo () )
-	//	return false;
-
 	/*
 	  when we bring back fast intersections we can bring this back
 	  when doAlternativeAlgo is true again
