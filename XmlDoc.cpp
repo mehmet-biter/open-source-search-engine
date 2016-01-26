@@ -22331,7 +22331,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			m_srep.m_hasTOD         = 0;
 			m_srep.m_siteNumInlinks = m_oldDoc->m_siteNumInlinks;
 			// they're all valid
-			m_srep.m_hasAddressValid     = true;
 			m_srep.m_hasTODValid         = true;
 			//m_srep.m_hasSiteVenueValid   = true;
 			m_srep.m_siteNumInlinksValid = true;
@@ -22453,7 +22452,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 
 	// validate all
 	m_srep.m_hasAuthorityInlinkValid = 1;
-	m_srep.m_hasAddressValid         = 1;
 	m_srep.m_hasTODValid             = 1;
 	//m_srep.m_hasSiteVenueValid       = 1;
 

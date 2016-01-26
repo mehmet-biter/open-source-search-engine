@@ -920,7 +920,7 @@ class SpiderReply {
 	unsigned    m_reserved003             :1;
 	unsigned    m_hasAuthorityInlinkValid :1;
 	unsigned    m_reserved004             :1;
-	unsigned    m_hasAddressValid         :1;
+	unsigned    m_reserved005             :1;
 	unsigned    m_hasTODValid             :1;
 	unsigned    m_reserved2               :1;
 	unsigned    m_siteNumInlinksValid     :1;
