@@ -3874,7 +3874,6 @@ int32_t isCommonWord ( int64_t h ) {
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			char *sw    = s_commonWords[i];
 			int32_t  swlen = gbstrlen ( sw );
-			//int32_t  swh   = g_speller.hash32d ( sw , swlen );
 			// use the same algo that Words.cpp computeWordIds does
 			int64_t swh = hash64Lower_utf8 ( sw , swlen );
 			if ( ! s_commonWordTable.addTerm ( &swh,i+1 ) )
@@ -4324,7 +4323,6 @@ int32_t isCommonQueryWordInEnglish ( int64_t h64 ) {
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			char *sw    = s_commonQueryWords[i];
 			int32_t  swlen = gbstrlen ( sw );
-			//int32_t  swh   = g_speller.hash32d ( sw , swlen );
 			// use the same algo that Words.cpp computeWordIds does
 			int64_t swh64 = hash64Lower_utf8 ( sw , swlen );
 			if ( ! s_commonQueryWordTable.addTerm ( &swh64,i+1 ) )
