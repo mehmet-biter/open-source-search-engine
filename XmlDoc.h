@@ -191,8 +191,6 @@ uint16_t getCharsetFast ( class HttpMime *mime,
 
 #define ROOT_TITLE_BUF_MAX 512
 
-#define MAXMSG7S 50
-
 class XmlDoc {
 
 public:
