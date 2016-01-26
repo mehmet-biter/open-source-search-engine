@@ -4796,20 +4796,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "max value for pages that are not high quality";
-	m->m_desc  = "Max page quality. Pages with a quality level "
-		"equal to or higher than this value "
-		"will not be demoted. ";
-	m->m_cgi   = "pqrqualm";
-	m->m_off   = (char *)&cr.m_pqr_maxValQual - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "100";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "demotion for pages that are not "
 		"root or have many paths in the url";
 	m->m_desc  = "Demotion factor each path in the url. "

@@ -894,7 +894,6 @@ class CollectionRec {
 	float m_pqr_demFactCountry; // demotion for foreign countries
 	float m_pqr_demFactQTTopicsInUrl; // demotion factor fewer for query terms or gigabits in the url
 	int32_t  m_pqr_maxValQTTopicsInUrl; // max value for fewer query terms or gigabits in the url
-	int32_t  m_pqr_maxValQual; // max value for quality demotion
 	float m_pqr_demFactPaths; // demotion factor for more paths
 	int32_t  m_pqr_maxValPaths; // max value for more paths
 	float m_pqr_demFactNoCatId; // demtion factor for no catid
