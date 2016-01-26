@@ -185,7 +185,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
-	if ( m_hasContactInfo ) sb->safePrintf("HASCONTACTINFO ");
 
 	if ( m_isWWWSubdomain  ) sb->safePrintf("WWWSUBDOMAIN ");
 	if ( m_avoidSpiderLinks ) sb->safePrintf("AVOIDSPIDERLINKS ");
@@ -389,7 +388,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , char *status ,
 
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
-	if ( m_hasContactInfo ) sb->safePrintf("HASCONTACTINFO ");
 
 
 	//if ( m_inOrderTree ) sb->safePrintf("INORDERTREE ");
@@ -11549,23 +11547,6 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			goto checkNextRule;
 		}
 
-		if ( *p=='h' && strncmp(p,"hascontactinfo",14) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// skip if not valid (pageaddurl? injection?)
-			if ( ! sreq->m_hasContactInfoValid ) continue;
-			// if no match continue
-			if ( (bool)sreq->m_hasContactInfo==val ) continue;
-			// skip
-			p += 14;
-			// skip to next constraint
-			p = strstr(p, "&&");
-			// all done?
-			if ( ! p ) return i;
-			p += 2;
-			goto checkNextRule;
-		}
-
 		if ( *p=='h' && strncmp(p,"hastod",6) == 0 ) {
 			// if we do not have enough info for outlink, all done
 			if ( isOutlink ) return -1;
@@ -13404,8 +13385,6 @@ void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs )
 
 			SpiderReply *old = oldRep;
 			sreq->m_hasAuthorityInlink = old->m_hasAuthorityInlink;
-			sreq->m_hasContactInfo     = old->m_hasContactInfo;
-			//sreq->m_hasSiteVenue       = old->m_hasSiteVenue;
 		}
 
 		// if we are not the same url as last request, add it

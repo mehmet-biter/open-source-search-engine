@@ -656,13 +656,13 @@ class SpiderRequest {
 	// expires after a certain time or if ownership changed
 	// did it have an inlink from a really nice site?
 	unsigned    m_hasAuthorityInlink :1;
-	unsigned    m_hasContactInfo     :1;
+	unsigned    m_reserved3m         :1;
 	unsigned    m_reserved3j         :1;
 	unsigned    m_reserved3d         :1;
 
 	unsigned    m_reserved3i              :1;
 	unsigned    m_hasAuthorityInlinkValid :1;
-	unsigned    m_hasContactInfoValid     :1;
+	unsigned    m_reserved3n              :1;
 	unsigned    m_reserved3k              :1;
 	unsigned    m_reserved3e              :1;
 	//unsigned    m_matchesUrlCrawlPattern  :1;
@@ -906,7 +906,7 @@ class SpiderReply {
 	// did it have an inlink from a really nice site?
 	unsigned    m_hasAuthorityInlink:1;
 	// does it have contact info
-	unsigned    m_hasContactInfo:1;
+	unsigned    m_reserved002   :1;
 	unsigned    m_reserved001   :1;
 	unsigned    m_reserved5     :1;
 	unsigned    m_hasTOD        :1;
@@ -917,9 +917,9 @@ class SpiderReply {
 
 	// expires after a certain time or if ownership changed
 	unsigned    m_reserved4               :1;
-	unsigned    m_hasContactInfoValid     :1;
+	unsigned    m_reserved003             :1;
 	unsigned    m_hasAuthorityInlinkValid :1;
-	unsigned    m_reserved002             :1;
+	unsigned    m_reserved004             :1;
 	unsigned    m_hasAddressValid         :1;
 	unsigned    m_hasTODValid             :1;
 	unsigned    m_reserved2               :1;

@@ -22289,11 +22289,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			SpiderReply   *n = &m_srep;
 			SpiderRequest *o = &m_sreq;
 			// more stuff
-			n->m_hasContactInfo     = o->m_hasContactInfo;
 			n->m_hasAuthorityInlink = o->m_hasAuthorityInlink;
 			n->m_isPingServer       = o->m_isPingServer;
 			// the validator flags
-			n->m_hasContactInfoValid = o->m_hasContactInfoValid;
 			n->m_hasAuthorityInlinkValid =
 				o->m_hasAuthorityInlinkValid;
 			// get error count from original spider request
@@ -22454,7 +22452,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	m_srep.m_hasTOD        = 0;
 
 	// validate all
-	m_srep.m_hasContactInfoValid     = 1;
 	m_srep.m_hasAuthorityInlinkValid = 1;
 	m_srep.m_hasAddressValid         = 1;
 	m_srep.m_hasTODValid             = 1;
@@ -23059,9 +23056,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// hascontactinfo tag can have a value of 0 or 1
 		//tag = gr->getTag("hascontactinfo");
 		//if ( tag ) {
-
-		ksr.m_hasContactInfo      = 0;
-		ksr.m_hasContactInfoValid = true;
 
 		// the mere existence of these tags is good
 		if ( gr->getTag("authorityinlink"))ksr.m_hasAuthorityInlink =1;
