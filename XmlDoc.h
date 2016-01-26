@@ -191,17 +191,6 @@ uint16_t getCharsetFast ( class HttpMime *mime,
 
 #define ROOT_TITLE_BUF_MAX 512
 
-// store the subsentences in an array now
-class SubSent {
-public:
-	sentflags_t m_subSentFlags;
-	//esflags_t   m_esflags;
-	int32_t        m_senta;
-	int32_t        m_sentb;
-	int32_t        m_subEnding;
-	float       m_titleScore;
-};
-
 #define MAX_XML_DOCS 4
 
 #define MAXMSG7S 50
