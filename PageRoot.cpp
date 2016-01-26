@@ -1138,13 +1138,11 @@ void resetPageAddUrl ( ) ;
 
 class State1i {
 public:
-	//Msg4       m_msg4;
 	Msg7       m_msg7;
 	TcpSocket *m_socket;
         bool       m_isMasterAdmin;
 	char       m_coll[MAX_COLL_LEN+1];
 	bool       m_goodAnswer;
-	bool       m_doTuringTest;
 	int32_t       m_ufuLen;
 	char       m_ufu[MAX_URL_LEN];
 
@@ -1334,7 +1332,6 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	gbmemcpy ( st1->m_ufu , ufu , ufuLen );
 	st1->m_ufu[ufuLen] = '\0';
 
-	st1->m_doTuringTest = cr->m_doTuringTest;
 	st1->m_spiderLinks = true;
 	st1->m_strip   = true;
 
@@ -1387,21 +1384,6 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 					      "UTF-8");
 		return true;
 	}
-
-	//st1->m_query = r->getString( "qts", &st1->m_queryLen );
-
-	// check it, if turing test is enabled for this collection
-	/*
-	if ( ! st1->m_isMasterAdmin && cr->m_doTuringTest && 
-	     ! g_turingTest.isHuman(r) )  {
-		// log note so we know it didn't make it
-		g_msg = " (error: bad answer)";
-		//log("PageAddUrl:: addurl failed for %s : bad answer",
-		//    iptoa(sock->m_ip));
-		st1->m_goodAnswer = false;
-		return sendReply ( st1 , true ); // addUrl enabled?
-	}
-	*/
 
 	Msg7 *msg7 = &st1->m_msg7;
 	// set this.

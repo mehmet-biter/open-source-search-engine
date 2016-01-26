@@ -514,7 +514,6 @@ class CollectionRec {
 	char  m_automaticallyUseProxies ;
 	char  m_automaticallyBackOff    ;
 	//char  m_restrictDomain          ; // say on same domain as seeds?
-	char  m_doTuringTest            ; // for addurl
 	char  m_applyFilterToText       ; // speeds us up
 	char  m_allowHttps              ; // read HTTPS using SSL
 	char  m_recycleContent          ;
@@ -1260,9 +1259,6 @@ class CollectionRec {
 	float m_pqr_demFactXml; // demotion factor for xml content type
 	float m_pqr_demFactOthFromHost; // demotion factor for no other pages from same host
 	int32_t  m_pqr_maxValOthFromHost; // max value for no other pages from same host
-	float m_pqr_demFactComTopicInDmoz; // demotion factor for fewer common topics in dmoz
-	float m_pqr_decFactComTopicInDmoz; // decay factor for fewer common topics in dmoz
-	int32_t  m_pqr_maxValComTopicInDmoz; // max value for fewer common topics in dmoz
 	float m_pqr_demFactDmozCatNmNoQT; // demotion factor for dmoz category names that don't contain a query term
 	int32_t  m_pqr_maxValDmozCatNmNoQT; // max value for dmoz category names that don't contain a query term
 	float m_pqr_demFactDmozCatNmNoGigabits; // demotion factor for dmoz category names that don't contain a gigabit
