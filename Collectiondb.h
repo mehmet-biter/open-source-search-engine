@@ -720,9 +720,6 @@ class CollectionRec {
 	// match this content-type exactly (txt/html/pdf/doc)
 	char  m_filter [ MAX_FILTER_LEN + 1 ];
 
-	// more control
-	int32_t m_maxSearchResultsPerQuery;
-
 	int32_t  m_compoundListMaxSize;
 
 	// . related topics control

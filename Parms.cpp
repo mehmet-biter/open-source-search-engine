@@ -4594,18 +4594,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "max search results per query";
-	m->m_desc  = "What is the limit to the total number "
-		"of returned search results per query?";
-	m->m_cgi   = "msrpq";
-	m->m_off   = (char *)&cr.m_maxSearchResultsPerQuery - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "100";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	// limit to this # of the top term pairs from inlink text whose
 	// score is accumulated
 	m->m_title = "real max top";
