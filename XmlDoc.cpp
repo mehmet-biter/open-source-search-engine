@@ -18232,20 +18232,6 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	LinkInfo *info1 = NULL;
 	if ( m_linkInfo1Valid ) info1 = ptr_linkInfo1;
 
-	//bool isContacty    =  getIsContacty(&m_firstUrl,
-	//				    info1,
-	//				    m_hopCount ,
-	//				    ct , // contentType
-	//				    isRoot ,
-	//				    m_niceness );
-	/*
-	// just use this now
-	if ( m_hasContactInfoValid )
-		sb->safePrintf("iscontacty=%"INT32" ",(int32_t)m_hasContactInfo);
-
-	if ( m_hasSiteVenueValid )
-		sb->safePrintf("hassitevenue=%"INT32" ",(int32_t)m_hasSiteVenue);
-	*/
 
 	// hack this kinda
 	// . in PageInject.cpp we do not have a valid priority without
