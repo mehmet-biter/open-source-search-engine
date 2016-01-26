@@ -905,7 +905,6 @@ class SpiderReply {
 	unsigned    m_reserved3:1;
 	// did it have an inlink from a really nice site?
 	unsigned    m_hasAuthorityInlink:1;
-	// does it have contact info
 	unsigned    m_reserved002   :1;
 	unsigned    m_reserved001   :1;
 	unsigned    m_reserved5     :1;

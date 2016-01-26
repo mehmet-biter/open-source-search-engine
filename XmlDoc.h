@@ -1413,8 +1413,6 @@ public:
 	int32_t    m_oldTitleRecSize;
 	char   *m_rootTitleRec;
 	int32_t    m_rootTitleRecSize;
-	//char   *m_contactTitleRec;
-	//int32_t    m_contactTitleRecSize;
 	char    m_isIndexed;
 
 	// confusing, i know! these are used exclsusively by
