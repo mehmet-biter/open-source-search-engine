@@ -3931,7 +3931,7 @@ bool SpiderColl::scanListForWinners ( ) {
 	//uint64_t       winTimeMS   = 0xffffffffffffffffLL;
 	//int32_t           winMaxSpidersPerIp = 9999;
 	SpiderReply   *srep        = NULL;
-	int64_t      srepUh48;
+	int64_t      srepUh48 = 0;
 
 	// for getting the top MAX_NODES nodes
 	//int32_t           tailPriority = -10;
