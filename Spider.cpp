@@ -183,7 +183,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	if ( m_parentIsSiteMap ) sb->safePrintf("PARENTISSITEMAP ");
 	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
-	if ( m_parentHasAddress ) sb->safePrintf("PARENTHASADDRESS ");
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 	if ( m_hasContactInfo ) sb->safePrintf("HASCONTACTINFO ");
@@ -388,7 +387,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , char *status ,
 	if ( m_parentIsSiteMap ) sb->safePrintf("PARENTISSITEMAP ");
 	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
-	if ( m_parentHasAddress ) sb->safePrintf("PARENTHASADDRESS ");
 	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 	if ( m_hasContactInfo ) sb->safePrintf("HASCONTACTINFO ");
@@ -11560,27 +11558,6 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			if ( (bool)sreq->m_hasContactInfo==val ) continue;
 			// skip
 			p += 14;
-			// skip to next constraint
-			p = strstr(p, "&&");
-			// all done?
-			if ( ! p ) return i;
-			p += 2;
-			goto checkNextRule;
-		}
-
-		if ( *p=='h' && strncmp(p,"hasaddress",10) == 0 ) {
-			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) return -1;
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// reply based
-			if ( ! srep ) continue;
-			// skip if not valid (pageaddurl? injection?)
-			if ( ! srep->m_hasAddressValid ) continue;
-			// if no match continue
-			if ( (bool)srep->m_hasAddress==val ) continue;
-			// skip
-			p += 10;
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?

@@ -22330,7 +22330,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			m_srep.m_langId         = m_oldDoc->m_langId;
 			m_srep.m_isRSS          = m_oldDoc->m_isRSS;
 			m_srep.m_isPermalink    = m_oldDoc->m_isPermalink;
-			m_srep.m_hasAddress     = 0;
 			m_srep.m_hasTOD         = 0;
 			m_srep.m_siteNumInlinks = m_oldDoc->m_siteNumInlinks;
 			// they're all valid
@@ -22452,7 +22451,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// . ignore address in dup sections (nondup/non-dup addresses only)
 	// . this way if the place always has their address in the header or
 	//   footer of every web page we will ignore it
-	m_srep.m_hasAddress    = 0;
 	m_srep.m_hasTOD        = 0;
 
 	// validate all
@@ -23004,7 +23002,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		//ksr.m_parentFirstIp    = *pfip;//m_ip;
 		ksr.m_pageNumInlinks   = 0;
 
-		ksr.m_parentHasAddress = 0;
 		// get this
 		bool isupf = ::isPermalink(NULL,&url,CT_HTML,NULL,isRSSExt);
 		// set some bit flags. the rest are 0 since we call reset()

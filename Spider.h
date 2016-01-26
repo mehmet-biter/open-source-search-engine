@@ -642,7 +642,7 @@ class SpiderRequest {
 	unsigned    m_parentIsRSS       :1;
 	unsigned    m_parentIsPermalink :1;
 	unsigned    m_parentIsPingServer:1;
-	unsigned    m_parentHasAddress  :1;
+	unsigned    m_reserved3l        :1;
 	// is this outlink from content or menu?
 	unsigned    m_isMenuOutlink     :1;
 
@@ -908,7 +908,7 @@ class SpiderReply {
 	// does it have contact info
 	unsigned    m_hasContactInfo:1;
 	unsigned    m_reserved001   :1;
-	unsigned    m_hasAddress    :1;
+	unsigned    m_reserved5     :1;
 	unsigned    m_hasTOD        :1;
 
 	// make this "INvalid" not valid since it was set to 0 before
