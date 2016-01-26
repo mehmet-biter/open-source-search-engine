@@ -94,11 +94,6 @@ static bool getWordPosVec ( Words *words ,
 
 static void getMetaListWrapper ( void *state ) ;
 
-char *getFirstJSONObject ( char *p ,
-			   int32_t niceness ,
-			   bool *isProduct ,
-			   bool *isImage ) ;
-char *getJSONObjectEnd ( char *p , int32_t niceness ) ;
 
 void doneReadingArchiveFileWrapper ( int fd, void *state );
 
