@@ -1376,7 +1376,6 @@ public:
 	uint64_t       *m_hostHashes;// [MAX_LINKS];
 	int32_t           *m_domHashes;// [MAX_LINKS];
 	linkflags_t    *m_linkFlags;
-	char           *m_linkContactyTypes; // for XmlDoc's isContacty() algo
 	char          **m_spamNotes;
 
 	bool m_doQuickSet;
