@@ -22290,12 +22290,10 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			SpiderRequest *o = &m_sreq;
 			// more stuff
 			n->m_hasContactInfo     = o->m_hasContactInfo;
-			n->m_isContacty         = o->m_isContacty;
 			n->m_hasAuthorityInlink = o->m_hasAuthorityInlink;
 			n->m_isPingServer       = o->m_isPingServer;
 			// the validator flags
 			n->m_hasContactInfoValid = o->m_hasContactInfoValid;
-			n->m_isContactyValid     = o->m_isContactyValid;
 			n->m_hasAuthorityInlinkValid =
 				o->m_hasAuthorityInlinkValid;
 			// get error count from original spider request
@@ -22455,13 +22453,11 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// . this way if the place always has their address in the header or
 	//   footer of every web page we will ignore it
 	m_srep.m_hasAddress    = 0;
-	m_srep.m_isContacty    =  0;
 	m_srep.m_hasTOD        = 0;
 
 	// validate all
 	m_srep.m_hasContactInfoValid     = 1;
 	m_srep.m_hasAuthorityInlinkValid = 1;
-	m_srep.m_isContactyValid         = 1;
 	m_srep.m_hasAddressValid         = 1;
 	m_srep.m_hasTODValid             = 1;
 	//m_srep.m_hasSiteVenueValid       = 1;
@@ -23054,9 +23050,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// set this
 		lastType = t;
 
-		// validate
-		ksr.m_isContactyValid = 1;
-
 		// if parent is a root of a popular site, then it is considered
 		// an authority linker.  (see updateTagdb() function above)
 		
@@ -23251,32 +23244,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// check domain
 		//if ( domHash32  == m_domHash32 ) numAddedFromSameDomain++;
 		if ( ksr.m_sameDom ) numAddedFromSameDomain++;
-	}
-
-	//
-	// scan through requests and set m_isContacty
-	//
-	char *s = m_p;
-	int32_t k = 0;
-	for ( ; s < p ; k++ ) {
-		// advance over rdbid
-		s++;
-		// breathe
-		QUICKPOLL(m_niceness);
-		// cast
-		SpiderRequest *ksr = (SpiderRequest *)s;
-		// set size
-		size = ksr->getRecSize();
-		// advance over that
-		s += size;
-		// stop if breach
-		if ( k >= 2000 ) break;
-		// must be isContacty
-		if ( ! linkTypes[k] ) continue;
-		// and not disqualified
-		if ( disqualify.isInTable(&linkTypes[k] )) continue;
-		// ok, we are good to go
-		ksr->m_isContacty = 1;
 	}
 
 	// . this is just how many urls we tried to index
