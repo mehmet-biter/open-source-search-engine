@@ -1732,7 +1732,6 @@ void Process::resetAll ( ) {
 
 	s_clusterdbQuickCache.reset();
 	s_hammerCache.reset();
-	s_table32.reset();
 
 	resetDecompTables();
 	resetPageAddUrl();

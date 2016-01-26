@@ -13,8 +13,6 @@ bool isStopWord ( char *s , int32_t len , int64_t h ) ;
 // used by Synonyms.cpp
 bool isStopWord2 ( int64_t *h ) ;
 
-bool isStopWord32 ( int32_t h ) ;
-
 //just a stub for now
 //bool isStopWord ( UChar *s , int32_t len , int64_t h );
 
@@ -39,6 +37,5 @@ bool isVerb ( int64_t *hp ) ;
 // for Process.cpp::resetAll() to call when exiting to free all mem
 void resetStopWordTables();
 
-extern HashTableX s_table32;
 
 #endif

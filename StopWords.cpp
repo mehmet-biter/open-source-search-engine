@@ -197,27 +197,6 @@ bool isStopWord2 ( int64_t *h ) {
 	return s_stopWordTable.getScore ( h );
 }		
 
-HashTableX s_table32;
-static bool s_init32 = false;
-
-// a 32-bit version
-bool isStopWord32 ( int32_t h ) {
-	if ( ! s_init32 ) {
-		s_init32 = true;
-		int32_t size = sizeof(s_stopWords);
-		if ( ! s_table32.set ( 4,0,size * 2,NULL,0,false,0,"stb32" ) ) 
-			return log("build: Could not init 32-bit stop words");
-		// now add in all the stop words
-		int32_t n = (int32_t)size/ sizeof(char *); 
-		for ( int32_t i = 0 ; i < n ; i++ ) {
-			char *sw    = s_stopWords[i];
-			int32_t  swlen = gbstrlen ( sw );
-			int32_t  swh   = hash32Lower_utf8 ( sw , swlen );
-			if ( ! s_table32.addKey (&swh) ) {char *xx=NULL;*xx=0;}
-		}
-	}
-	return s_table32.isInTable ( &h );
-}
 
 // . damn i forgot to include these above
 // . i need these so m_bitScores in IndexTable.cpp doesn't have to require
