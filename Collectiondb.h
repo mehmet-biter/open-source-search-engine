@@ -812,8 +812,6 @@ class CollectionRec {
 	int32_t  m_spiderTimeMin;
 	int32_t  m_spiderTimeMax;
 
-	int32_t  m_maxSearchResults;
-
 	int32_t  m_maxAddUrlsPerIpDomPerDay;
 
 	float m_maxKbps;

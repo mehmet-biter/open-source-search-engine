@@ -4581,19 +4581,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_SI;
 	m++;
 
-	// more general parameters
-	m->m_title = "max search results";
-	m->m_desc  = "What is the maximum total number "
-		"of returned search results.";
-	m->m_cgi   = "msr";
-	m->m_off   = (char *)&cr.m_maxSearchResults - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "1000";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	// limit to this # of the top term pairs from inlink text whose
 	// score is accumulated
 	m->m_title = "real max top";
