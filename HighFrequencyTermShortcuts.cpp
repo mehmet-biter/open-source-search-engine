@@ -6,6 +6,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 
 //Useful if the user forces the search engine to search for high-frequency words
@@ -102,7 +105,7 @@ bool HighFrequencyTermShortcuts::load()
 	buffer = new_buffer;
 	
 	//All the entries are full 18-byte entries in all their glory
-	//But PosdbTable::intersectLists10_r() does like that and fails in
+	//But PosdbTable::intersectLists10_r() doesn't like that and fails in
 	//a "sanity check" due to unhealthy knowledge of not only the
 	//posdb format but also the workings and algorithms.
 	//So we have to compress the non-entries to 12 byte.
@@ -129,6 +132,9 @@ bool HighFrequencyTermShortcuts::load()
 			}
 		}
 		iter->second.bytes = dst_bytes;
+#ifdef _VALGRIND_
+		VALGRIND_MAKE_MEM_UNDEFINED(p, src_bytes-dst_bytes);
+#endif
 	}
 	
 	log(LOG_DEBUG, "%s loaded", filename);
