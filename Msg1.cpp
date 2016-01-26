@@ -378,12 +378,6 @@ bool Msg1::sendSomeOfList ( ) {
 	if ( m_list->m_fixedDataSize != getDataSizeFromRdbId(m_rdbId) ) {
 		char *xx=NULL;*xx=0; }
 
-	// little debug thing for genCatdb from msg9b's huge list add
-	//if ( m_list->m_listSize > 10000000 )
-	//	log("msg1: adding chunk @ %"INT32" of %"INT32" bytes",
-	//	    (int32_t)(dataStart - m_list->m_list) ,
-	//	    (int32_t)m_list->m_listSize );
-
 	// . now send this list to the host
 	// . this returns false if blocked, true otherwise
 	// . it also sets g_errno on error

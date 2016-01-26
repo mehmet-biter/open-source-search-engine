@@ -8967,17 +8967,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "catdb minRecSizes";
-	m->m_desc  = "minRecSizes for Catdb lookups";
-	m->m_cgi   = "catmsr";
-	m->m_off   = (char *)&g_conf.m_catdbMinRecSizes - g;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "100000000"; // 100 million
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "doc count adjustment";
 	m->m_desc  = "Add this number to the total document count in the "
 		"index. Just used for displaying on the homepage.";
@@ -11401,62 +11390,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_size  = MAX_COLL_LEN+1;
 	m->m_def   = "";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "catdb lookups enabled";
-	m->m_desc  = "Spiders will look to see if the current page is in "
-		"catdb.  If it is, all Directory information for that page "
-		"will be indexed with it.";
-	m->m_cgi   = "cdbe";
-	m->m_off   = (char *)&cr.m_catdbEnabled - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "recycle catdb info";
-	m->m_desc   = "Rather than requesting new info from DMOZ, like "
-		"titles and topic ids, grab it from old record. Increases "
-		"performance if you are seeing a lot of "
-		"\"getting catdb record\" entries in the spider queues.";
-	m->m_cgi   = "rci";
-	m->m_off   = (char *)&cr.m_recycleCatdb - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "allow banning of pages in catdb";
-	m->m_desc  = "If this is 'NO' then pages that are in catdb, "
-		"but banned from tagdb or the url filters page, can not "
-		"be banned.";
-	m->m_cgi   = "abpc";
-	m->m_off   = (char *)&cr.m_catdbPagesCanBeBanned - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "override spider errors for catdb";
-	m->m_desc  = "Ignore and skip spider errors if the spidered site"
-		     " is found in Catdb (DMOZ).";
-	m->m_cgi   = "catose";
-	m->m_off   = (char *)&cr.m_overrideSpiderErrorsForCatdb - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_group = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;

@@ -636,9 +636,6 @@ class Conf {
 
 	float m_minPopForSpeller; // 0% to 100%
 
-	// catdb min site rec size for LARGE but latent domains
-	int32_t  m_catdbMinRecSizes;
-
 	// allow scaling up of hosts by removing recs not in the correct
 	// group. otherwise a sanity check will happen.
 	char  m_allowScale;

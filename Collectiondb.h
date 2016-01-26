@@ -485,8 +485,6 @@ class CollectionRec {
 	int32_t  m_linkTextAnomalyThresh   ; //filters linktext that is unique
 	//char  m_tagdbEnabled          ;
 	char  m_tagdbColl [MAX_COLL_LEN+1]; // coll to use for tagdb lookups
-	char  m_catdbEnabled            ;
-	char  m_catdbPagesCanBeBanned   ;
 	char  m_doChineseDetection      ;
 	char  m_delete404s              ;
 	char  m_restrictIndexdbForQuery ;
@@ -505,7 +503,6 @@ class CollectionRec {
 	char  m_applyFilterToText       ; // speeds us up
 	char  m_allowHttps              ; // read HTTPS using SSL
 	char  m_recycleContent          ;
-	char  m_recycleCatdb            ;
 	char  m_getLinkInfo             ; // turn off to save seeks
 	char  m_computeSiteNumInlinks   ;
 	char  m_indexInlinkNeighborhoods;
@@ -879,7 +876,6 @@ class CollectionRec {
 	// for news collection. uses changes in Msg20.cpp.
 	char m_onlyUseLinkTextForTitle;
 
-	char m_overrideSpiderErrorsForCatdb;
 	char m_showAdultCategoryOnTop;
 	char m_displaySearchCategoryLink;
 
