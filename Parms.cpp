@@ -4286,18 +4286,6 @@ void Parms::init ( ) {
 	// SEARCH CONTROLS
 	///////////////////////////////////////////
 
-	m->m_title = "restrict indexdb for xml feed";
-	m->m_desc  = "Like above, but specifically for XML feeds.";
-	m->m_cgi   = "rix";
-	m->m_off   = (char *)&cr.m_restrictIndexdbForXML - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "read from cache by default";
 	m->m_desc  = "Should we read search results from the cache? Set "
 		"to false to fix dmoz bug.";

@@ -472,7 +472,6 @@ class CollectionRec {
 	char  m_tagdbColl [MAX_COLL_LEN+1]; // coll to use for tagdb lookups
 	char  m_doChineseDetection      ;
 	char  m_delete404s              ;
-	char  m_restrictIndexdbForXML   ;
 	char  m_defaultRatForXML        ;
 	char  m_defaultRatForHTML       ;
 	char  m_siteClusterByDefault    ;
