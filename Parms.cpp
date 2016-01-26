@@ -4248,21 +4248,6 @@ void Parms::init ( ) {
 	//
 	// CLOUD SEARCH ENGINE SUPPORT
 	//
-	// used to prevent a guest ip adding more than one coll
-	m->m_title = "user ip";
-	m->m_desc  = "IP of user adding collection.";
-	m->m_cgi   = "userip";
-	m->m_xml   = "userIp";
-	m->m_off   = (char *)&cr.m_userIp - x;
-	m->m_type  = TYPE_STRING;
-	m->m_size  = 16;
-	m->m_def   = "";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN;// | PF_NOSAVE;
-	m->m_page  = PAGE_ADDCOLL;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 
 	m->m_title = "add custom crawl";
 	m->m_desc  = "add custom crawl";
@@ -4646,17 +4631,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "user ip";
-	m->m_desc  = "The ip address of the searcher. We can pass back "
-		"for use in the autoban technology which bans abusive IPs.";
-	m->m_obj   = OBJ_SI;
-	m->m_page  = PAGE_RESULTS;
-	m->m_off   = (char *)&si.m_userIpStr - y;
-	m->m_type  = TYPE_CHARPTR;//STRING;
-	m->m_cgi   = "uip";
-	m->m_flags = PF_COOKIE | PF_WIDGET_PARM | PF_API;
 	m++;
 
 	m->m_title = "use min ranking algo";

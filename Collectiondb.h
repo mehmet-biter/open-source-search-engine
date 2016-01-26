@@ -426,21 +426,9 @@ class CollectionRec {
 	// to backoff and use proxies on
 	HashTableX m_twitchyTable;
 
-	//
-	// CLOUD SEARCH ENGINE SUPPORT
-	//
-	// ip of user adding the collection
-	char m_userIp[16];
-
 	// spider controls for this collection
-	//char  m_oldSpideringEnabled     ;
-	//char  m_newSpideringEnabled     ;
 	char m_spideringEnabled ;
 	float m_newSpiderWeight         ;
-	// m_inDeleteMode is no longer used, just a place holder now
-	//char  m_inDeleteMode            ;
-	//char  m_restrictTitledbForQuery ; // obsoleted
-	//char  m_recycleVotes            ;
 	int32_t  m_spiderDelayInMilliseconds;
 
 	// is in active list in spider.cpp?
