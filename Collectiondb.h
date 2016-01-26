@@ -494,7 +494,6 @@ class CollectionRec {
 	char  m_getNewsTopic            ;
 	char  m_newAlgo                 ; // use new links: termlist algo
 	char  m_useGigabitVector        ;
-	char  m_allowXmlDocs            ;
 	char  m_removeBannedPages       ;
 
 	float m_inlinkNeighborhoodsScoreScalar;

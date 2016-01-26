@@ -11139,20 +11139,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "allow xml docs";
-	m->m_desc  = "If this is disabled the spider "
-		"will not allow any xml "
-		"into the index.";
-	m->m_cgi   = "axd";
-	m->m_off   = (char *)&cr.m_allowXmlDocs - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "do serp detection";
 	m->m_desc  = "If this is eabled the spider "
 		"will not allow any docs which are determined to "
