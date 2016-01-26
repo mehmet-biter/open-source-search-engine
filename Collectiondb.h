@@ -873,8 +873,6 @@ class CollectionRec {
 
 	char m_classificationMode;
 
-	char m_showAdultCategoryOnTop;
-
 	// use query expansion for this collection?
 	char m_queryExpansion;
 

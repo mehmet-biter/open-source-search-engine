@@ -10333,18 +10333,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "show adult category on top";
-	m->m_desc  = "Yes to display the Adult category in the Top category";
-	m->m_cgi   = "sacot";
-	m->m_off   = (char *)&cr.m_showAdultCategoryOnTop - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "display indexed date";
 	m->m_desc  = "Display the indexed date along with results.";
 	m->m_cgi   = "didt";
