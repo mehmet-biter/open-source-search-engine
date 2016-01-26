@@ -8,7 +8,6 @@
 #include "Posdb.h"
 #include "Datedb.h"
 #include "Titledb.h"
-#include "Placedb.h"
 #include "Tagdb.h"
 #include "Spider.h"
 #include "Clusterdb.h"

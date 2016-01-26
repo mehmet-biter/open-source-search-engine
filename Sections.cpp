@@ -54,7 +54,6 @@ void Sections::reset() {
 	m_numSections      = 0;
 	m_numSentenceSections = 0;
 	m_badHtml          = false;
-	m_aa               = NULL;
 	m_sentFlagsAreSet  = false;
 	m_addedImpliedSections = false;
 	m_setRegBits       = false;
@@ -1229,7 +1228,6 @@ bool Sections::set ( Words     *w                       ,
 		si->m_lastWordPos  = -1;
 		si->m_senta        = -1;
 		si->m_sentb        = -1;
-		si->m_firstPlaceNum = -1;
 		si->m_headRowSection = NULL;
 		si->m_headColSection = NULL;
 	}
@@ -1823,7 +1821,7 @@ bool Sections::set ( Words     *w                       ,
 // . returns false and sets g_errno on error
 // . XmlDoc.cpp calls this separately from Sections::set because it needs
 //   to set Addresses and Dates class partially first so we can use them here.
-bool Sections::addImpliedSections ( Addresses *aa ) {
+bool Sections::addImpliedSections ( ) {
 
 	// only call once
 	if ( m_addedImpliedSections ) return true;
@@ -1831,8 +1829,6 @@ bool Sections::addImpliedSections ( Addresses *aa ) {
 
 	// no point in going any further if we have nothing
 	if ( m_numSections == 0 ) return true;
-
-	m_aa = aa;
 
 
 	// now we use m_numTotalPtrs, not m_numDatePtrs:
@@ -1873,9 +1869,6 @@ bool Sections::addImpliedSections ( Addresses *aa ) {
 	// . this also splits on any double space really:
 	//   including text-free tr tags
 	if ( splitSectionsByTag ( TAG_BR ) > 0 ) setNextBrotherPtrs ( false );
-
-	// we now have METHOD_ABOVE_ADDR so need addr xor
-	setAddrXors( m_aa );
 
 	//
 	// now add implied sections based on dates
@@ -4494,19 +4487,9 @@ bool Sections::setSentFlagsPart2 ( ) {
 		if ( lastStop )
 			si->m_sentFlags |= SENT_LAST_STOP;
 
-		// check to see if text is a "city, state"
-		// or has a city in previous section and state in this
-		if ( m_aa->isCityState ( si ) )
-			si->m_sentFlags |= SENT_CITY_STATE;
-		
 		// punish if only wnumbers (excluding stop words)
 		if ( alphas - stops == 0 )
 			si->m_sentFlags |= SENT_NUMBERS_ONLY;
-
-		// do we contain a phone number?
-		//if ( pt->isInTable ( &si ) )
-		if ( si->m_phoneXor )
-			si->m_sentFlags |= SENT_HAS_PHONE;
 
 		//
 		// end case check
@@ -8346,37 +8329,6 @@ int32_t Sections::getDelimHash ( char method , Section *bro ) {
 		// do not collide with tagids
 		return 44444;
 	}
-	if ( method == METHOD_ABOVE_ADDR ) {
-		// must be a sort of heading like "11. San Pedro Library"
-		// for cabq.gov
-		if ( !(bro->m_flags & SEC_HEADING_CONTAINER) &&
-		     !(bro->m_flags & SEC_HEADING          ) )
-			return -1;
-		Section *nb = bro->m_nextBrother;
-		if ( ! nb ) 
-			return -1;
-		if ( ! nb->m_addrXor )
-			return -1;
-		// next sentence not set yet, so figure it out
-		Section *sent = nb;
-		// scan for it
-		for ( ; sent ; sent = sent->m_next ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// stop we got a sentence section now
-			if ( sent->m_flags & SEC_SENTENCE ) break;
-		}
-		// might have been last sentence already
-		if ( ! sent )
-			return -1;
-		// . next SENTENCE must have the addr
-		// . should fix santafeplayhouse from making crazy
-		//   implied sections
-		if ( ! sent->m_addrXor )
-			return -1;
-		// do not collide with tagids
-		return 77777;
-	}
 
 	char *xx=NULL;*xx=0;
 	return 0;
@@ -9287,7 +9239,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	sk->m_alnumPosB    = -1;
 	sk->m_senta        = -1;
 	sk->m_sentb        = -1;
-	sk->m_firstPlaceNum= -1;
 	sk->m_headColSection = NULL;
 	sk->m_headRowSection = NULL;
 	sk->m_tableSec       = NULL;
@@ -11095,7 +11046,6 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 			char *diversityVec,
 			char *wordSpamVec,
 			char *fragVec,
-			Addresses *aa ,
 			char format ) {
 	//FORMAT_PROCOG FORMAT_JSON HTML
 
@@ -11106,7 +11056,6 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 
 	m_sbuf->setLabel ("sectprnt");
 
-	m_aa = aa;
 	m_hiPos = hiPos;
 
 	m_wposVec      = wposVec;
@@ -11405,38 +11354,6 @@ bool Sections::printSectionDiv ( Section *sk , char format ) {
 	if ( isHardSection(sk) )
 		m_sbuf->safePrintf("hardsec ");
 	
-	// get addr index ptr if any (could be mult)
-	int32_t acount = 0;
-	//int64_t sh = 0LL;
-	int32_t pi = sk->m_firstPlaceNum;
-	int32_t np = m_aa->m_numSorted;
-	for ( ; pi >= 0 && pi < np ; pi++ ) {
-		Place *p = m_aa->m_sorted[pi];
-		// stop if not in section any more
-		if ( p->m_a >= sk->m_b ) break;
-		// get hash
-		//int64_t tt = p->m_hash;
-		// get max
-		//if ( ! sh || tt > sh ) sh = tt;
-		// count them
-		acount++;
-	}
-	// print those out
-	if ( sk->m_phoneXor )
-		m_sbuf->safePrintf("phonexor=0x%"XINT32" ",sk->m_phoneXor);
-	if ( sk->m_emailXor )
-		m_sbuf->safePrintf("emailxor=0x%"XINT32" ",sk->m_emailXor);
-	if ( sk->m_priceXor )
-		m_sbuf->safePrintf("pricexor=0x%"XINT32" ",sk->m_priceXor);
-	if ( sk->m_todXor )
-		m_sbuf->safePrintf("todxor=0x%"XINT32" ",sk->m_todXor);
-	if ( sk->m_dayXor )
-		m_sbuf->safePrintf("dayxor=0x%"XINT32" ",sk->m_dayXor);
-	if ( sk->m_addrXor )
-		m_sbuf->safePrintf("addrxor=0x%"XINT32" ",sk->m_addrXor);
-	if ( acount >= 2 )
-		m_sbuf->safePrintf(" (%"INT32" places)",acount);
-
 	m_sbuf->safePrintf("</i>\n");
 
 	// now print each word and subsections in this section
@@ -12262,56 +12179,6 @@ bool Sections::setFormTableBits ( ) {
 		next->m_sentFlags |= SENT_FORMTABLE_VALUE;
 	}
 	return true;
-}
-
-// just loop over Addresses::m_sortedPlaces
-void Sections::setAddrXors ( Addresses *aa ) {
-	// sanity check
-	if ( ! aa->m_sortedValid ) { char *xx=NULL;*xx=0; }
-	// loop over the places, sorted by Place::m_a
-	int32_t np = aa->m_numSorted;
-	for ( int32_t i = 0 ; i < np ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// get place #i
-		Place *p = aa->m_sorted[i];
-		// get the address?
-		Address *ad = p->m_address;
-		// assume none
-		int32_t h = 0;
-		// or alias
-		if ( ! ad ) ad = p->m_alias;
-		// or just use place hash i guess!
-		if ( ! ad ) 
-			h = (int32_t)(PTRTYPE)p;
-		else if ( ad->m_flags3 & AF2_LATLON )
-			h = (int32_t)(PTRTYPE)p;
-		// otherwise hash up address street etc.
-		else {
-			h  =(int32_t)ad->m_street->m_hash;
-			h ^=(int32_t)ad->m_street->m_streetNumHash;
-			//h ^= ad->m_adm1->m_cid; // country id
-			//h ^= (int32_t)ad->m_adm1Bits;
-			//h ^= (int32_t)ad->m_cityHash;
-			h ^= (int32_t)ad->m_cityId32;
-			// sanity check
-			//if ( ! ad->m_adm1Bits ||
-			//     ! ad->m_cityHash ) {
-			if ( ! ad->m_cityId32 ) {
-				//! ad->m_adm1->m_cid  ) {
-				char *xx=NULL;*xx=0; }
-		}
-		// get first section containing place #i
-		Section *sp = m_sectionPtrs[p->m_a];
-		// telescope all the way up
-		for ( ; sp ; sp = sp->m_parent ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// propagate
-			sp->m_addrXor ^= h;
-			if ( ! sp->m_addrXor ) sp->m_addrXor = h;
-		}
-	}
 }
 
 

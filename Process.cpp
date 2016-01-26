@@ -1753,7 +1753,6 @@ void Process::resetAll ( ) {
 	// query log buffer
 	g_qbuf.reset();
 	g_profiler.reset();
-	resetAddressTables();
 	resetMsg13Caches();
 	resetStopWordTables();
 	resetTimezoneTables();

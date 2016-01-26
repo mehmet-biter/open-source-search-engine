@@ -320,9 +320,6 @@ public:
 	// used by Events.cpp to count # of timeofdays in section
 	//class Event *m_event;
 
-	// for Events class, usually streets!
-	class Addresses *m_aa;
-
 	// . if we are an element in a list, what is the list container section
 	// . a containing section is a section containing MULTIPLE 
 	//   smaller sections
@@ -342,13 +339,6 @@ public:
 	// . set in XmlDoc::getSectionsWithDupStats()
 	// . voting info for this section over all indexed pages from this site
 	SectionStats m_stats;
-
-	// this (minus -1) references into Addresses::m_sorted[] which is
-	// a list of Places. so we can quickly scan that list for the Places
-	// contained in just this section. but you have to subtract one
-	// from m_firstPlaceNum to get the proper index into that array because
-	// we add one to it since 0 is the initial value.
-	int32_t m_firstPlaceNum;
 
 	int32_t m_votesForDup;
 	int32_t m_votesForNotDup;
@@ -385,19 +375,6 @@ public:
 
 	class Section *m_prevSent;
 	class Section *m_nextSent;
-
-	int32_t m_phoneXor;
-	int32_t m_emailXor;
-	int32_t m_priceXor;
-	// make this match Date::m_dateHash size
-	int32_t m_todXor;
-	int32_t m_dayXor;
-	int32_t m_addrXor;
-	int32_t m_monthXor;
-	int32_t m_dowXor;
-
-	// for Address.cpp setting place names
-	//int32_t m_numStreets;
 
 	// . if we are in a table, what position are we
 	// . starts at 1 and goes upwards
@@ -580,7 +557,6 @@ class Sections {
 		      char *diversityVec,
 		      char *wordSpamVec,
 		      char *fragVec,
-		      class Addresses  *aa  ,
 		      char format = FMT_HTML );
 	bool printSectionDiv ( class Section *sk , char format = FMT_HTML );
 	class SafeBuf *m_sbuf;
@@ -711,7 +687,7 @@ class Sections {
 	nodeid_t   *m_tids;
 
 	// the new way
-	bool addImpliedSections ( class Addresses *aa );//, HashTableX *svt );
+	bool addImpliedSections ( );
 
 	bool setSentFlagsPart1 ( );
 	bool setSentFlagsPart2 ( );
@@ -720,12 +696,9 @@ class Sections {
 							 int32_t sentb ,
 							 int32_t alnumCount) ;
 	void setSentPrettyFlag ( class Section *si ) ;
-	Addresses *m_aa;
 	int32_t       m_hiPos;
 	bool       m_sentFlagsAreSet;
 	bool       m_addedImpliedSections;
-
-	void setAddrXors ( class Addresses *aa ) ;
 
 	int32_t addImpliedSections3 ();
 	int32_t getDelimScore ( class Section *bro,

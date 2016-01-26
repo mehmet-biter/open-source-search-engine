@@ -55,7 +55,6 @@
 #include "Query.h"
 #include "Title.h"
 #include "Summary.h"
-#include "Address.h"
 #include "zlib.h" // Z_OK
 #include "Spider.h" // SpiderRequest/SpiderReply definitions
 #include "HttpMime.h" // ET_DEFLAT
@@ -100,12 +99,6 @@ bool checkRegex ( SafeBuf *regex ,
 		  bool    *boolValValid ,
 		  int32_t    *compileError ,
 		  CollectionRec *cr ) ;
-
-// Address.cpp calls this to make a vector from the "place name" for comparing
-// to other places in placedb using the computeSimilarity() function. if
-// we got a >75% similarity we set the AF_VERIFIED_PLACE_NAME bit in the
-// Address::m_flags for that address on the web page.
-int32_t makeSimpleWordVector ( char *s, int32_t *vbuf, int32_t vbufSize, int32_t niceness);
 
 bool getDensityRanks ( int64_t *wids , 
 		       int32_t nw,
@@ -207,11 +200,6 @@ uint16_t getCharsetFast ( class HttpMime *mime,
 			  int32_t slen , 
 			  int32_t niceness );
 
-//#define MAX_CONTACT_OUTLINKS 5
-
-#define MAX_CONTACT_ADDRESSES 20
-#define EMAILBUFSIZE 512
-
 #define ROOT_TITLE_BUF_MAX 512
 
 // store the subsentences in an array now
@@ -304,10 +292,10 @@ public:
 	uint16_t  m_spiderLinks:1;
 	uint16_t  m_isContentTruncated:1;
 	uint16_t  m_isLinkSpam:1;
-	uint16_t  m_hasAddress:1;
-	uint16_t  m_hasTOD:1;
-	uint16_t  m_reserved_sv:1;//hasSiteVenue:1;
-	uint16_t  m_hasContactInfo:1;
+	uint16_t  m_reserved796:1;
+	uint16_t  m_reserved797:1;
+	uint16_t  m_reserved798:1;
+	uint16_t  m_reserved799:1;
 	uint16_t  m_isSiteRoot:1;
 
 	uint16_t  m_isDiffbotJSONObject:1;
@@ -558,26 +546,11 @@ public:
 	uint8_t *getRootLangId ();
 	//bool *updateRootLangId ( );
 	char **getRootTitleRec ( ) ;
-	//char **getContactTitleRec ( char *url ) ;
 	int64_t *getAvailDocIdOnly ( int64_t preferredDocId ) ;
 	int64_t *getDocId ( ) ;
 	char *getIsIndexed ( ) ;
 	class TagRec *getTagRec ( ) ;
-	char *getHasContactInfo ( ) ;
-	char *getIsThisDocContacty ( );
-	bool *getHasTOD();
-	bool *getHasSiteVenue();
 	// non-dup/nondup addresses only
-	bool *getHasAddress();
-	class Addresses *getAddresses ( ) ;
-	Address **getContactAddresses ( );
-	int32_t *getNumOfficialEmails ( ) ;
-	char *getEmailBuf ( ) ;
-	int32_t *getNumContactAddresses ( );
-	int32_t addEmailTags ( class Xml *xml , class Words *ww , 
-			    class TagRec *gr , int32_t ip ) ;
-	//class Url *getContactUsLink ( ) ;
-	//class Url *getAboutUsLink ( ) ;
 	int32_t *getFirstIp ( ) ;
 	bool *updateFirstIp ( ) ;
 	//int32_t *getSiteNumInlinksUniqueIp ( ) ;
@@ -903,9 +876,6 @@ public:
 	char **getRootTitleBuf         ( );
 	char **getFilteredRootTitleBuf ( );
 
-	// funcs that update our tagdb tagrec, m_tagRec, and also update tagdb
-	bool *updateVenueAddresses ( );
-
  public:
 
 	// stuff set from the key of the titleRec, above the compression area
@@ -1090,12 +1060,6 @@ public:
 	SafeBuf    m_fragBuf;
 	SafeBuf    m_wordSpamBuf;
 	SafeBuf    m_finalSummaryBuf;
-	// this one is initially the same as m_tagRec, but we do not modify it
-	// so that Address.cpp can reference into its buffer, m_buf, without
-	// fear of getting the buffer overwritten by crap
-	//TagRec     m_savedTagRec1;
-	//char    *m_sampleVector  ;
-	//uint32_t   m_tagPairHash32;
 	int32_t       m_firstIp;
 
 	class SafeBuf     *m_savedSb;
@@ -1275,8 +1239,6 @@ public:
 	bool m_isPermalinkValid;
 
 	bool m_isAdultValid;
-	bool m_hasAddressValid;
-	bool m_hasTODValid;
 	//bool m_hasSiteVenueValid;
 	bool m_urlPubDateValid;
 	bool m_isUrlPermalinkFormatValid;
@@ -1300,23 +1262,12 @@ public:
 	bool m_siteSpiderQuotaValid;
 	bool m_oldDocValid;
 	bool m_extraDocValid;
-	//bool m_contactDocValid;
 	bool m_rootDocValid;
 	//bool m_gatewayDocValid;
 	bool m_oldMetaListValid;
 	bool m_oldTitleRecValid;
 	bool m_rootTitleRecValid;
-	//bool m_contactTitleRecValid;
 	bool m_isIndexedValid;
-	bool m_hasContactInfoValid;
-	bool m_isContactyValid;
-	bool m_contactInfoTagRecValid;
-	bool m_addressesValid;
-	bool m_contactAddressesValid;
-	bool m_emailBufValid;
-	//bool m_contactUsLinkValid;
-	//bool m_aboutUsLinkValid;
-	//bool m_contactLinksValid;
 	bool m_siteNumInlinksValid;
 	//bool m_siteNumInlinksUniqueIpValid;//FreshValid;
 	//bool m_siteNumInlinksUniqueCBlockValid;//sitePopValid
@@ -1402,10 +1353,7 @@ public:
         char m_spiderLinks2;
 	char m_isContentTruncated2;
 	char m_isLinkSpam2;
-	bool m_hasAddress2;
-	bool m_hasTOD2;
 	//bool m_hasSiteVenue2;
-	char m_hasContactInfo2;
 	char m_isSiteRoot2;
 
 	// DO NOT add validity flags below this line!
@@ -1484,7 +1432,6 @@ public:
 	//int32_t m_numBannedOutlinks;
 	class XmlDoc *m_oldDoc;
 	class XmlDoc *m_extraDoc;
-	//class XmlDoc *m_contactDoc;
 	class XmlDoc *m_rootDoc;
 	//class XmlDoc *m_gatewayDoc;
 	RdbList m_oldMetaList;
@@ -1504,27 +1451,7 @@ public:
 	Msg8a   m_msg8a;
 	char   *m_tagdbColl;
 	int32_t    m_tagdbCollLen;
-	Addresses m_addresses;
 
-	Address *m_contactAddresses[MAX_CONTACT_ADDRESSES];
-	int32_t     m_numContactAddresses;
-
-	char     m_isContacty;
-
-	//Url     m_contactUsLink;
-	//Url     m_aboutUsLink;
-	/*
-	char *m_contactLinks     [MAX_CONTACT_OUTLINKS];
-	int32_t  m_contactLens      [MAX_CONTACT_OUTLINKS];
-	int32_t  m_contactScores    [MAX_CONTACT_OUTLINKS];
-	int32_t  m_contactFlags     [MAX_CONTACT_OUTLINKS];
-	char  m_contactProcessed [MAX_CONTACT_OUTLINKS];
-	char *m_contactText      [MAX_CONTACT_OUTLINKS];
-	char *m_contactTextEnd   [MAX_CONTACT_OUTLINKS];
-	int32_t  m_minContactScore;
-	int32_t  m_minContactIndex;
-	int32_t  m_numContactLinks;
-	*/
 	Url   m_extraUrl;
 	//int32_t m_siteNumInlinksFresh;
 	//int32_t m_sitePop;
@@ -2081,12 +2008,6 @@ public:
 	bool m_launchedMsg8a2           ;
 	bool m_loaded                   ;
 
-	// used for getHasContactInfo()
-	bool m_processed0               ;
-
-	// a lock to prevent infinite loops
-	//bool m_checkForRedir            ;
-
 	bool m_processedLang            ;
 
 	bool m_doingConsistencyCheck ;
@@ -2095,19 +2016,7 @@ public:
 	//int32_t    m_rootLangIdScore;
 	//uint8_t m_rootLangId;
 
-	// used for getting contact info
-	//bool m_triedRoot                ;
-	//int32_t m_winner                   ;
-
 	int32_t m_dist;
-
-	// the tags in this tagRec are just contact info based tags and
-	// created in the addContactInfo() function. also, in that same
-	// function we add/sub the tags in m_citr to the m_newTagRec tag rec.
-	//TagRec m_citr ;
-
-	char m_emailBuf[EMAILBUFSIZE];
-	int32_t m_numOfficialEmails;
 
 	// use to store a \0 list of "titles" of the root page so we can
 	// see which if any are the venue name, and thus match that to
@@ -2227,11 +2136,6 @@ public:
 	class HashTableX *m_wts;
 	HashTableX m_wtsTable;
 	SafeBuf m_wbuf;
-
-	// used by addContactInfo() to keep track of what urls we have
-	// processed for contact info to avoid re-processing them in the
-	// recursive loop thing that we do
-	//HashTableX m_pt;
 
 	// Msg25.cpp stores its pageparser.cpp output into this one
 	SafeBuf m_pageLinkBuf;

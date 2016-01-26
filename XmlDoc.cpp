@@ -26,7 +26,6 @@
 #include "Wiki.h"
 #include "Speller.h"
 #include "SiteGetter.h"
-#include "Placedb.h"
 #include "Test.h"
 #include "Synonyms.h"
 //#include "Revdb.h"
@@ -670,7 +669,6 @@ void XmlDoc::reset ( ) {
 	m_sections.reset();
 	//m_weights.reset();
 	m_countTable.reset();
-	m_addresses.reset();
 
 	// other crap
 	m_xml.reset();
@@ -815,11 +813,6 @@ void XmlDoc::reset ( ) {
 	m_callback1                = NULL;
 	m_callback2                = NULL;
 	m_state                    = NULL;
-
-	// used for getHasContactInfo()
-	m_processed0               = false;
-	m_hasContactInfo           = false;
-	m_hasContactInfo2          = false;
 
 
 	//m_checkForRedir            = true;
@@ -1719,10 +1712,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_spiderLinks2        = m_spiderLinks;
 	m_isContentTruncated2 = m_isContentTruncated;
 	m_isLinkSpam2         = m_isLinkSpam;
-	m_hasAddress2         = m_hasAddress;
-	m_hasTOD2             = m_hasTOD;
-	//m_hasSiteVenue2       = m_hasSiteVenue;
-	m_hasContactInfo2     = m_hasContactInfo;
 	//m_skipIndexingByte    = m_skipIndexing;
 	m_isSiteRoot2         = m_isSiteRoot;
 
@@ -1751,7 +1740,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// m_siteNumInlinksTotalValid        = true;
 	//m_sitePopValid                = true;
 	m_rootLangIdValid             = true;
-	m_hasContactInfoValid         = true;
 	m_metaListCheckSum8Valid      = true;
 
 	m_hopCountValid               = true;
@@ -1765,7 +1753,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_spiderLinksValid            = true;
 	m_isContentTruncatedValid     = true;
 	m_isLinkSpamValid             = true;
-	m_hasAddressValid             = true;
 	m_tagRecDataValid             = true;
 	m_gigabitHashesValid          = true;
 	m_contentHash32Valid          = true;
@@ -3579,23 +3566,6 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 	// i think an oom error is not being caught by Sections.cpp properly
 	if ( g_errno ) { char *xx=NULL;*xx=0; }
 
-	// make sure address buffers did not overflow
-	Addresses *aa = getAddresses ();
-	if ( (! aa && g_errno == EBUFOVERFLOW) ||
-	     // it sets m_breached now if there's a problem
-	     (aa && aa->m_breached) ) {
-		g_errno = 0;
-		m_indexCode      = EBUFOVERFLOW;
-		m_indexCodeValid = true;
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, EBUFOVERFLOW (Addresses)", __FILE__,__func__,__LINE__);
-		return &m_indexCode;
-	}
-	if ( ! aa || aa == (void *)-1 ) 
-	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END error, getAddresses failed", __FILE__,__func__,__LINE__);
-		return (int32_t *)aa;
-	}
-
 
 	// are we a root?
 	char *isRoot = getIsSiteRoot();
@@ -3788,8 +3758,6 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 	//   be in there because isSpam() never required it.
 	int32_t *sni = getSiteNumInlinks();
 	if ( ! sni || sni == (int32_t *)-1 ) return (char *)sni;
-	char *hci = getHasContactInfo();
-	if ( ! hci || hci == (char *)-1 ) return (char *)hci;
 	char *ict = getIsContentTruncated();
 	if ( ! ict || ict == (char *)-1 ) return (char *)ict;
 	int64_t **wd = getWikiDocIds();
@@ -4095,8 +4063,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if ( ! m_hostHash32aValid            ) { char *xx=NULL;*xx=0; }
 	if ( ! m_contentHash32Valid          ) { char *xx=NULL;*xx=0; }
 	if ( ! m_tagPairHash32Valid          ) { char *xx=NULL;*xx=0; }
-	// sanity checks
-	if ( ! m_addressesValid              ) { char *xx=NULL;*xx=0; }
 
 	// breathe
 	QUICKPOLL( m_niceness );
@@ -5609,15 +5575,10 @@ Sections *XmlDoc::getImpliedSections ( ) {
 		sections->m_addedImpliedSections = true;
 		return &m_sections;
 	}
-	// . now set addresses so we can use those to add implied sections
-	// . this calls getSimpleDates() which calles m_dates.setPart1()
-	//   which calls parseDates again
-	Addresses *aa = getAddresses ();
-	if ( ! aa || aa == (void *)-1 ) return (Sections *)aa;
 
 	// . now add implied sections
 	// . return NULL with g_errno set on error
-	if ( ! m_sections.addImpliedSections ( aa ) ) return NULL;
+	if ( ! m_sections.addImpliedSections() ) return NULL;
 
 	// we got it
 	m_impliedSectionsValid = true;
@@ -7558,65 +7519,6 @@ float *XmlDoc::getPercentChanged ( ) {
 	m_percentChangedValid = true;
 	// just return it
 	return &m_percentChanged;
-}
-
-// . Address.cpp converts a place name into a vector for comparing via a
-//   call to computeSimilarity() below
-// . returns -1 and set g_errno on error
-// . "vbufSize" is in BYTES!
-// . returns length of word vector in int32_ts (# components stored)
-int32_t makeSimpleWordVector (char *s,int32_t *vbuf,int32_t vbufSize,int32_t niceness ) {
-	// nonsense?
-	if ( vbufSize < 4 ) { char *xx=NULL;*xx=0; }
-	// empty it
-	*vbuf = 0;
-	// no words, no vector
-	if ( ! s ) return 0;
-	// set them
-	Words w;
-	// return -1 with g_errno set on error
-	if ( ! w.set ( s , true, niceness ) ) {
-		return -1;
-	}
-
-	// skip if no words
-	if ( w.m_numWords == 0 ) return 0;
-	// shortcut
-	int64_t *wids = w.m_wordIds;
-	int64_t  pid  = 0LL;
-	// count insertions
-	int32_t count = 0;
-	// ptr
-	int32_t *vbufPtr = vbuf;
-	int32_t *vbufEnd = vbuf + vbufSize/4;
-	// put words into a vector
-	for ( int32_t i = 0 ; i < w.m_numWords ; i++ ) {
-		// skip if not alnum word
-		if ( ! wids[i] ) continue;
-		// if no room stop. need room for NULL terminator
-		if ( vbufPtr + 2 >= vbufEnd ) return count;
-		// put it in
-		//*vbufPtr = (int32_t)wids[i];
-		// . use the synonym instead if it had one
-		// . maps "theatre" to "theater", "4th" to "fourth", etc.
-		// . false = is street name?
-		int64_t *p = getSynonymWord ( &wids[i] , &pid , false );
-		// set this
-		pid = wids[i];
-		//int64_t *p = (int64_t *)synTable->getValue64( wids[i] );
-		// 0 means to ignore it
-		if ( *p == 0LL ) continue;
-		// otherwise add into our vector
-		*vbufPtr = *p;
-		// advance
-		vbufPtr++;
-		// NULL termination
-		*vbufPtr = 0;
-		// count it
-		count++;
-	}
-	// all done
-	return count;
 }
 
 // . compare two vectors
@@ -10540,89 +10442,6 @@ TagRec *XmlDoc::getTagRec ( ) {
 
 
 
-// this is only for purposes of setting the site's TagRec
-char *XmlDoc::getHasContactInfo ( ) {
-
-	if ( m_hasContactInfoValid ) return &m_hasContactInfo2;
-
-	setStatus ( "getting has contact info" );
-
-	// get it from the tag rec if we can
-	TagRec *gr = getTagRec ();
-	if ( ! gr || gr == (TagRec *)-1 ) return (char *)gr;
-
-	char *ic = getIsThisDocContacty ( );
-	if ( ! ic || ic == (void *)-1 ) return (char *)ic;
-
-	// the current top ip address
-	//int32_t *ip = getIp();
-	//if ( ! ip || ip == (int32_t *)-1) return (char *)ip;
-	//int32_t top = *ip & 0x00ffffff;
-
-	// and should have a contact page tag
-	Tag *tag = gr->getTag ("hascontactinfo");
-
-	if ( tag ) m_hasContactInfo = true;
-	else       m_hasContactInfo = false;
-
-	m_hasContactInfo2 = m_hasContactInfo;
-
-	// are we a "contact" link? i.e. about us, etc. that would contain
-	// the physical address of the entity responsible for this website
-	//bool isContacty = getIsContacty( fu ,
-	//				 info1 ,
-	//				 hops ,
-	//				 *ct ,
-	//				 *isRoot ,
-	//				 m_niceness );
-
-	// bail early if not a candidate for contact info
-	if ( ! *ic ) { // check ) {
-		m_hasContactInfoValid = true;
-		return &m_hasContactInfo2;
-	}
-
-	//
-	// TODO: did IP change?? invalidate it???
-	//
-
-	// set status. we can time status changes with this routine!
-	setStatus ( "getting contact info on just this page" );
-
-	int32_t *nca = getNumContactAddresses();
-	if ( ! nca || nca == (void *)-1 ) return (char *)nca;
-
-	// did we have a contact address?
-	if ( *nca ) {
-		m_hasContactInfo  = true;
-		m_hasContactInfo2 = true;
-		m_hasContactInfoValid = true;
-		return &m_hasContactInfo2;
-	}
-
-	// get the email addresses
-	int32_t *numOfficial = getNumOfficialEmails ( );
-	if ( ! numOfficial || numOfficial == (void *)-1)
-		return (char *)numOfficial;
-
-	// did we get some?
-	if ( *numOfficial > 0 ) {
-		m_hasContactInfo  = true;
-		m_hasContactInfo2 = true;
-		m_hasContactInfoValid = true;
-		return &m_hasContactInfo2;
-	}
-
-	// this should set m_hasContactInfo as well as m_contact*[] arrays
-	//TagRec *pcitr = getContactInfoTagRec ();
-	//if ( ! pcitr || pcitr == (void *)-1 ) return (char *)pcitr;
-
-	// do not re-peat the above now
-	m_hasContactInfoValid = true;
-
-	return &m_hasContactInfo2;
-}
-
 // returns "type" of contact link, > 0
 int32_t getIsContacty ( Url *url ,
 		     LinkInfo *info1 ,
@@ -10842,847 +10661,6 @@ int32_t getIsContacty ( Url *url ,
 
 	return check;
 }
-
-char *XmlDoc::getIsThisDocContacty() {
-	if ( m_isContactyValid ) return &m_isContacty;
-	setStatus  ( "getting is contacty" );
-	// are we a root?
-	char *isRoot = getIsSiteRoot();
-	if ( ! isRoot || isRoot == (char *)-1 ) return (char *)isRoot;
-	int8_t *hc = getHopCount();
-	if ( ! hc || hc == (void *)-1 ) return (char *)hc;
-	// get the content type
-	uint8_t *ct = getContentType();
-	if ( ! ct ) return NULL;
-	LinkInfo  *info1    = getLinkInfo1 ();
-	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (char *)info1;
-	// get the first url
-	Url *fu = getFirstUrl();
-	// shortcut
-	int32_t hops = *hc;
-	// check it
-	m_isContacty = getIsContacty ( fu ,
-				       info1 ,
-				       hops ,
-				       *ct ,
-				       *isRoot ,
-				       m_niceness );
-	m_isContactyValid = true;
-	return &m_isContacty;
-}
-
-
-int32_t *XmlDoc::getNumContactAddresses ( ) {
-	// process
-	Address **ca = getContactAddresses();
-	if ( ! ca || ca == (void *)-1 ) return (int32_t *)ca;
-	// now we are valid
-	return &m_numContactAddresses;
-}
-
-
-Address **XmlDoc::getContactAddresses ( ) {
-	// assume none
-	if ( m_contactAddressesValid ) return m_contactAddresses;
-	// need this of course
-	Addresses *aa = getAddresses ();
-	if ( ! aa || aa == (void *)-1 ) return (Address **)aa;
-	// assume none
-	m_contactAddressesValid = true;
-	m_numContactAddresses   = 0;
-	// not if not contacty. we gotta be a url like ".../contact.asp"
-	char *ic = getIsThisDocContacty ( );
-	if ( ! ic || ic == (void *)-1 ) return (Address **)ic;
-	// if not a of contact url form, return none
-	if ( ! *ic )
-		return m_contactAddresses;
-	// are we a root?
-	char *isRoot = getIsSiteRoot();
-	if ( ! isRoot || isRoot == (char *)-1 ) return (Address **)isRoot;
-	// do not do this for root if multiple addresses. this
-	// fixes http://obits.abqjournal.com/
-	if ( *isRoot && aa->m_uniqueStreetHashes > 1 )
-		return m_contactAddresses;
-	// reset count
-	int32_t nca = 0;
-	// number of addresses in this doc
-	int32_t na = aa->m_am.getNumPtrs();
-	// add all addresses then???
-	for ( int32_t i = 0 ; i < na ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// get it
-		Address *ai = (Address *)aa->m_am.getPtr(i);
-		// do not add this to tagdb if not inlined!
-		if ( ! ( ai->m_flags & AF_INLINED ) ) continue;
-		// store it
-		m_contactAddresses[nca++] = ai;
-		// stop before breach
-		if ( nca >= MAX_CONTACT_ADDRESSES ) break;
-	}
-	// update count
-	m_numContactAddresses = nca;
-	return m_contactAddresses;
-}
-
-int32_t *XmlDoc::getNumOfficialEmails ( ) {
-	char *eb = getEmailBuf();
-	if ( ! eb || eb == (void *)-1 ) return (int32_t *)eb;
-	return &m_numOfficialEmails;
-}
-
-// . add email addresses to tag rec
-// . add up to 3 of same domain and different domain addresses
-// . return # of *official* contact infos added to tag rec
-// . this now includes submission forms!
-// . returns -1 and sets g_errno on error
-char *XmlDoc::getEmailBuf ( ) {
-
-	if ( m_emailBufValid ) return m_emailBuf;
-
-	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
-
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (char *)ww;
-
-	// count # of official contacts we got
-	int32_t official = 0;
-
-	// shortcuts
-	int64_t  *wids  = ww->m_wordIds;
-	char      **wptrs = ww->m_words;
-	int32_t       *wlens = ww->m_wordLens;
-	nodeid_t   *tids  = ww->m_tagIds;
-	int32_t        nw    = ww->getNumWords();
-
-	// get our url
-	Url *f = getFirstUrl();
-	// get its domain len
-	char *myDom    = f->getMidDomain();
-	int32_t  myDomLen = f->getMidDomainLen();
-
-
-	// point here
-	char *eptr = m_emailBuf;
-	char *emax = m_emailBuf + EMAILBUFSIZE;
-
-	m_emailBufValid = true;
-
-	// reset
-	*eptr = '\0';
-
-	//
-	// ADD EMAIL ADDRESSES
-	//
-
-	// count how many we find
-	int32_t ne = 0;
-	// loop over all the words
-	for ( int32_t i = 1 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// . email address? look for the '@'
-		// . might also have <img src="at.gif"> (bot proof)
-		if ( wptrs[i][0] != '@' && tids[i] != TAG_IMG ) continue;
-		// . make sure any image has an "/at." in it!
-		// . "mail<img src="/common/images/at.gif">pipl.com"
-		if(tids[i]==TAG_IMG&&!gb_strncasestr(wptrs[i],wlens[i],"/at."))
-			continue;
-		// must be a single char
-		if ( ! tids[i] && wlens[i] != 1 ) continue;
-		// if i was the last word, give up!
-		if ( i + 1 >= nw ) break;
-		// back up i until we hit a non-email char
-		int32_t a ;
-		for ( a = i ; a - 1 > 0 ; a-- ) {
-			if (wids [a-1] ) continue;
-			if (wptrs[a-1][0]=='.'&&wlens[a-1]==1)continue;
-			if (wptrs[a-1][0]=='-'&&wlens[a-1]==1)continue;
-			break;
-		}
-		// must not start with '.'
-		if ( wptrs[a][0]=='.' ) a++;
-		// now get the end of it
-		int32_t b;
-		int32_t periodCount = 0;
-		for ( b = i ; b+1 < nw ; b++ ) {
-			if (wids[b+1]) continue;
-			// only punct we allow is a single period
-			if ( wptrs[b+1][0]!='.' ) break;
-			if ( wlens[b+1]   != 1  ) break;
-			periodCount++;
-		}
-		// must have at least one!
-		if ( ! periodCount ) continue;
-		// must not end on '.'
-		if ( wptrs[b][0]=='.') b--;
-		// hostname must have a valid tld
-		char *host = wptrs[i+1];
-		char *hend = wptrs[b]+wlens[b];
-		// temp null term
-		char c = *hend;
-		*hend = '\0';
-		int32_t tldLen ; char *tld = getTLDFast ( host, &tldLen , false );
-		// ignore the rest of this line for addresses even
-		// if tld is bogus
-		//ignoreLine = true;
-		// must have a legit tld!
-		if ( ! tld ) { *hend = c; continue; }
-		// if not from our same domain, use "emailaddressoffsite"
-		int32_t  dlen ; char *dom = getDomFast ( host , &dlen , false );
-		// use mid domain. subtract '.'
-		//int32_t midlen = tld - dom - 1;
-		// undo the temp NULL thing
-		*hend = c;
-		if ( ! dom ) continue;
-
-		// include last word
-		b++;
-		// normal buffer
-		char  buf[100];
-		char *p    = buf;
-		char *pend = buf + 100;
-		// normalize it
-		for ( int32_t j = a ; j < b ; j++ ) {
-			// include the at sign
-			if ( j == i ) {*p++ = '@'; continue;}
-			// skip tags
-			if ( tids[j] ) continue;
-			// skip punct
-			if ( ! wids[j] ) {*p++ ='.'; continue;}
-			// ensure minimal space
-			if ( p + wlens[j] + 1 >= pend ) break;
-			// write out wids
-			gbmemcpy ( p , wptrs[j] , wlens[j] );
-			p += wlens[j];
-		}
-		// NULL term it
-		*p = '\0';
-
-		// do we match domains?
-		//char *tn = "emailaddressoffsite";
-		// use this if we match domains
-		//if ( midlen == myDomLen && ! strncmp (dom,myDom,midlen) ) {
-		//	tn = "emailaddressonsite";
-		//	// this is an official contact method
-		//	//official++;
-		//}
-		// we now count even offsite email addresses as official
-		// for addresses like @gmail.com etc. because we are now
-		// only checking "contact us" and "about us" and root pages,
-		// so they should never be email addresses of commenters.
-		// and often bloggers have external email addresses.
-		// http://www.christinesaari.com/html/about.php?psi=44
-		official++;
-		// store it
-		//if ( ! gr->addTag(tn,timestamp,"xmldoc",ip,buf) )
-		//	return -1;
-		int32_t blen = gbstrlen(buf);
-		// ignore if breach
-		if ( eptr + blen + 2 > emax ) continue;
-		// comma?
-		if ( eptr > m_emailBuf ) *eptr++ = ',';
-		// store it
-		gbmemcpy (eptr , buf , blen );
-		// advance
-		eptr += blen;
-		// limit it
-		if ( ++ne >= 3 ) break;
-	}
-
-	//
-	// ADD BOT-PROOF EMAIL ADDRESSES (bot proof)
-	//
-	// super dot john at xyz dot com
-	//
-
-	int64_t h_at  = hash64Lower_utf8("at");
-	int64_t h_dot = hash64Lower_utf8("dot");
-	// loop over all the words
-	for ( int32_t i = 1 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// email address? look for the " at "
-		if ( wids[i] != h_at ) continue;
-		// front name word count
-		int32_t nameCount = 0;
-		// back up i until we hit a non-email word
-		int32_t a ;
-		// do a loop
-		for ( a = i - 1 ; a > 0 ; ) {
-			// need a space/punt word
-			if ( wids[a] ) break;
-			if ( tids[a] ) break;
-			// skip it
-			a--;
-			// then need the "john" part
-			if ( ! wids[a]          ) break;
-			if (   tids[a]          ) break;
-			if (   wids[a] == h_dot ) break; // "dot" is bad
-			// count account name part
-			nameCount++;
-			// go back if like "mike dot smith"
-			if ( a - 4 >= 0 &&
-			     ! tids[a-1] &&
-			     wids  [a-2] == h_dot &&
-			     ! tids[a-3] &&
-			     wids  [a-4] != h_dot &&
-			     wids  [a-4] != h_at )
-				a -= 4;
-			// that is good enough
-			break;
-		}
-		// need a name at least one
-		if ( nameCount <= 0 ) continue;
-		// skip over that space/punct word
-		//a--;
-		// now must be regular word before that
-		//if (   tids[a-1] ) continue;
-		//if ( ! wids[a-1] ) continue;
-		// we got it
-		//a--;
-		// now get the end of it
-		int32_t b ;
-		// count the dots
-		int32_t dotCount = 0;
-		// make sure last word is a legit tld
-		int32_t tldLen = 0; char *tld = NULL;
-		// do a loop
-		for ( b = i + 1 ; b + 3 < nw ; b++ ) {
-			// need a space/punt word
-			if ( wids[b] ) break;
-			if ( tids[b] ) break;
-			// skip it
-			b++;
-			// then need the "xyz" part
-			if ( ! wids[b]          ) break;
-			if (   tids[b]          ) break;
-			if (   wids[b] == h_dot ) break; // "dot" is bad
-			// remember it for tld detection
-			tld    = wptrs[b];
-			tldLen = wlens[b];
-			// skip it
-			b++;
-			// need another space/punct word
-			if ( wids[b] ) break;
-			if ( tids[b] ) break;
-			// skip it
-			b++;
-			// now we need a "dot"
-			if ( wids[b] != h_dot ) break;
-			// count the dots
-			dotCount++;
-		}
-		// need at least one "dot"
-		if ( dotCount < 1 ) continue;
-		// not too many!
-		if ( dotCount > 5 ) continue;
-		// must have legit tld
-		if ( tld && ! isTLD ( tld , tldLen ) ) continue;
-		// normal buffer
-		char  buf[100];
-		char *p    = buf;
-		char *pend = buf + 100;
-		// normalize it
-		for ( int32_t j = a ; j < b ; j++ ) {
-			// skip tags
-			if ( tids[j] ) continue;
-			// skip punct
-			if ( ! wids[j] ) continue;
-			// ensure minimal space
-			if ( p + wlens[j] + 1 >= pend ) break;
-			// write out wids
-			if ( wids[j] == h_at  ) {*p++ = '@'; continue;}
-			if ( wids[j] == h_dot ) {*p++ = '.'; continue;}
-			gbmemcpy ( p , wptrs[j] , wlens[j] );
-			p += wlens[j];
-		}
-		// NULL term it
-		*p = '\0';
-		// get the host
-		char *host    = buf ; // wptrs[i+1]; ?? is this right?
-		// if not from our same domain, use "emailaddressoffsite"
-		int32_t  dlen ; char *dom = getDomFast ( host , &dlen , false );
-		if ( ! dom ) continue;
-		// use mid domain
-		int32_t tlen3; char *tld3 = getTLDFast ( dom, &tlen3 , false );
-		// limit domain by that. subtract '.'
-		int32_t midlen = tld3 - dom - 1;
-		// do we match domains?
-		char *tn = "emailaddressoffsite";
-		// use this if we match domains
-		if ( midlen == myDomLen && ! strncmp (dom,myDom,midlen) ) {
-			tn = "emailaddressonsite";
-			// this is an official contact method
-			//official++;
-		}
-		// we now count even offsite email addresses as official
-		// for addresses like @gmail.com etc. because we are now
-		// only checking "contact us" and "about us" and root pages,
-		// so they should never be email addresses of commenters
-		// and often bloggers have external email addresses.
-		// http://www.christinesaari.com/html/about.php?psi=44
-		official++;
-		// store that
-		//if ( ! gr->addTag(tn,timestamp,"xmldoc",ip,buf) )
-		//	return -1;
-		int32_t blen = gbstrlen(buf);
-		// ignore if breach
-		if ( eptr + blen + 2 > emax ) continue;
-		// comma?
-		if ( eptr > m_emailBuf ) *eptr++ = ',';
-		// store it
-		gbmemcpy (eptr , buf , blen );
-		// advance
-		eptr += blen;
-		// limit it
-		if ( ++ne >= 3 ) break;
-	}
-
-	//
-	// ADD EMAIL ADDRESSES IN MAILTO TAGS
-	//
-	// <a href=mailto:steve@xyz.com>
-	// <a href=mailto:"steve at xyz dot com">
-	// now we check char by char since a website had it in the javascript:
-	// http://www.botanique.com/bincgi/stateprov.CFM?state=NM
-	//
-	char *m    =     xml->getContent();
-	char *mend = m + xml->getContentLen() - 4;
-	// empty?
-	if ( ! m ) mend = m;
-	// scan
-	for ( ; ; m++ ) {
-		// breach?
-		if ( m >= mend ) break;
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// skip if not possible mailto:
-		if ( *m != 'm' && *m !='M' ) continue;
-		// skip
-		m++;
-		// skip?
-		if ( *m != 'a' && *m !='A' ) continue;
-		// skip
-		m++;
-		// skip?
-		if ( *m != 'i' && *m !='I' ) continue;
-		// skip
-		m++;
-		// skip?
-		if ( *m != 'l' && *m !='L' ) continue;
-		// skip
-		m++;
-		// skip?
-		if ( *m != 't' && *m !='T' ) continue;
-		// skip
-		m++;
-		// skip?
-		if ( *m != 'o' && *m !='O' ) continue;
-		// skip
-		m++;
-		// skip?
-		if ( *m != ':' ) continue;
-		// skip
-		m++;
-		// set end
-		char *mend = m + 100;
-		// skip over the mailto:
-		//m += 7;
-		// that is the start of the email address then
-		char *start = m;
-		// skip til '@'
-		for ( ; *m && m < mend && *m != '@' ; m++ ) {
-			// but give up if we hit a non-email name char
-			if ( is_alnum_a(*m) ) continue;
-			if ( *m == '.' ) continue;
-			if ( *m == '-' ) continue;
-			break;
-		}
-		// bad if no @
-		if ( *m != '@' ) continue;
-		// skip the @
-		m++;
-		// . skip until alnum
-		// . fix parsing of "dsquires@ unimelb.edu.au" for
-		//   http://www.marcom1.unimelb.edu.au/public/contact.html
-		for (;*m && is_wspace_utf8(m); m+=getUtf8CharSize(m) );
-		// get the host
-		char *host    = m;
-		// skip till end of hostname
-		for (;*m && m<mend && (is_alnum_a(*m)||*m=='.'||*m=='-');m++ );
-		// null term
-		char c = *m; *m = '\0';
-		// if not from our same domain, use "emailaddressoffsite"
-		int32_t  dlen ; char *dom = getDomFast ( host , &dlen , false );
-		// skip if no valid domain
-		if ( ! dom ) { *m = c; continue; }
-		// use mid domain
-		int32_t tlen3; char *tld3 = getTLDFast ( dom, &tlen3 , false );
-		// limit domain by that. subtract '.'
-		int32_t midlen = tld3 - dom - 1;
-		// put it back
-		*m = c;
-		// point "end" to end of the email address
-		char *end = dom + dlen;
-		// do we match domains?
-		char *tn = "emailaddressoffsite";
-		// use this if we match domains
-		if ( midlen == myDomLen && ! strncmp (dom,myDom,midlen) ) {
-			tn = "emailaddressonsite";
-			// this is an official contact method
-			//official++;
-		}
-		// we now count even offsite email addresses as official
-		// for addresses like @gmail.com etc. because we are now
-		// only checking "contact us" and "about us" and root pages,
-		// so they should never be email addresses of commenters
-		// and often bloggers have external email addresses.
-		// http://www.christinesaari.com/html/about.php?psi=44
-		official++;
-		// store that
-		//if ( ! gr->addTag(tn,timestamp,"xmldoc",ip,start,end-start) )
-		//	return -1;
-		// cast it
-		char *buf  = start;
-		int32_t  blen = end - start;
-		// ignore if breach
-		if ( eptr + blen + 2 > emax ) continue;
-		// comma?
-		if ( eptr > m_emailBuf ) *eptr++ = ',';
-		// store it
-		gbmemcpy (eptr , buf , blen );
-		// advance
-		eptr += blen;
-		// limit it
-		if ( ++ne >= 3 ) break;
-	}
-
-
-	//
-	// ADD CONTACT FORM
-	//
-
-	bool gotEmailBox = false;
-	bool storedForm  = false;
-	int32_t emailPos    = -1;
-	int32_t alnumCount  =  0;
-	// quick compares
-	int64_t he1 = hash64Lower_utf8 ( "email");
-	int64_t he2 = hash64Lower_utf8 ( "mail");
-	// loop over all words again
-	for ( int32_t i = 1 ; i < nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get tag id if any
-		int32_t tid = tids[i] & BACKBITCOMP;
-		// . do we have a submit form?
-		// . first, do we have a text box for the sender's email?
-		if ( tid == TAG_INPUT ) {
-			int32_t ttlen;
-			// bad i is not a node # it is a word #
-			int32_t nn = ww->m_nodes[i];
-			// must be valid
-			char *tt = xml->getString(nn,"type",&ttlen);
-			if ( ! tt || ttlen <= 0 ) continue;
-			// must be of type text
-			if ( strncasecmp(tt,"text",4) ) continue;
-			// might have "email" or "e-mail" in the value
-			int32_t vlen;
-			char *val = xml->getString(nn,"value",&vlen);
-			// check that
-			if ( val ) {
-				if ( gb_strncasestr(val,vlen,"email") ||
-				     gb_strncasestr(val,vlen,"e-mail") )
-					// flag it good
-					gotEmailBox = true;
-			}
-			// must have the word "email" or "e-mail" within
-			// a few words right before it!
-			if ( emailPos ==    -1 ) continue;
-			//if ( i - emailPos >= 7 ) continue;
-			if ( alnumCount > 7 ) continue;
-			// flag it
-			gotEmailBox = true;
-		}
-		// text area? must happen AFTER the email adress box
-		if ( tid == TAG_TEXTAREA && gotEmailBox ) {
-			// must have had the form before us
-			// do not double store into tagdb rec
-			if ( storedForm ) continue;
-			// store this bad boy into the tagdb rec
-			//if ( ! gr->addTag("hascontactform",
-			//		  timestamp,
-			//		  "xmldoc",
-			//		  ip,
-			//		  "1" ,
-			//		  1 ) )
-			//	return -1;
-			// copy it
-			char *buf  = "hascontactform";
-			int32_t  blen = gbstrlen(buf);
-			// ignore if breach
-			if ( eptr + blen + 2 > emax ) continue;
-			// comma?
-			if ( eptr > m_emailBuf ) *eptr++ = ',';
-			// store it
-			gbmemcpy (eptr , buf , blen );
-			// advance
-			eptr += blen;
-			// do not double store
-			storedForm = true;
-			// this is an official contact method
-			official++;
-			// another contact method
-			ne++;
-			// that's enough!
-			break;
-		}
-		// alnum counter
-		if ( wids[i] ) alnumCount++;
-		// special counter
-		if ( wids[i] == he1 || wids[i] == he2 ) {
-			// mark it
-			emailPos = i;
-			// reset counter
-			alnumCount = 0;
-		}
-	}
-
-	// null term
-	*eptr = '\0';
-
-	m_numOfficialEmails = official;
-
-	// i guess that is it
-	return m_emailBuf;
-}
-
-// returns vector 1-1 with Words.m_words[] array
-/*
-Spam *XmlDoc::getSpam ( ) {
-	if ( m_spamValid ) return &m_spam;
-	// set it
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (Spam *)ww;
-	Bits *bits = getBits ();
-	if ( ! bits || bits == (Bits *)-1 ) return (Spam *)bits;
-	int32_t *sni = getSiteNumInlinks();
-	if ( ! sni || sni == (int32_t *)-1 ) return (Spam *)sni;
-	// if more than X% ("thresh") of words are spammed to some degree,
-	// index all words with a minimum score
-	int32_t thresh = 6;
-	if ( *sni > 10  ) thresh = 8;
-	if ( *sni > 30  ) thresh = 10;
-	if ( *sni > 100 ) thresh = 20;
-	if ( *sni > 500 ) thresh = 30;
-	//int64_t x[] = {30,40,50,70,90};
-	//int64_t y[] = {6,8,10,20,30};
-	//int32_t spamThresh = getY ( m_docQuality , x , y , 5 );
-	if ( ! m_spam.set ( ww         ,
-			    bits       ,
-			    m_version  ,
-			    thresh     ,
-			    20         ,
-			    m_niceness ))
-		return NULL;
-	m_spamValid = true;
-	return &m_spam;
-}
-*/
-
-// this means any tod now
-bool *XmlDoc::getHasTOD ( ) {
-	if ( m_hasTODValid ) return &m_hasTOD2;
-	// assume not
-	m_hasTOD2 = false;
-	m_hasTOD  = false;
-	// it is now valid
-	m_hasTODValid = true;
-	return &m_hasTOD2;
-}
-
-/*
-bool *XmlDoc::getHasSiteVenue ( ) {
-	if ( m_hasSiteVenueValid ) return &m_hasSiteVenue2;
-	// get the tag rec
-	TagRec *gr = getTagRec ();
-	if ( ! gr || gr == (TagRec *)-1 ) return (bool *)gr;
-	// get tag from it
-	Tag *sv = gr->getTag("venueaddress") ;
-	// from that
-	m_hasSiteVenue2 = (bool)sv;
-	m_hasSiteVenue  = (bool)sv;
-	m_hasSiteVenueValid = true;
-	return &m_hasSiteVenue2;
-}
-*/
-
-
-// do not include addresses that are always in the header/footer of every page!
-bool *XmlDoc::getHasAddress ( ) {
-	if ( m_hasAddressValid ) return &m_hasAddress2;
-	// get the addresses
-	Addresses *aa = getAddresses();
-	if ( ! aa || aa == (void *)-1 ) return (bool *)aa;
-	// from that
-	m_hasAddress2 = (aa->getNumNonDupAddresses() > 0);
-	m_hasAddress  = (aa->getNumNonDupAddresses() > 0);
-	m_hasAddressValid = true;
-	return &m_hasAddress2;
-}
-
-Addresses *XmlDoc::getAddresses ( ) {
-	if ( m_addressesValid ) {
-		// return error if buf was breached
-		//if ( m_addresses.m_breached ) {
-		//	g_errno = EBUFOVERFLOW;
-		//	return NULL;
-		//}
-		// otherwise, return it
-		return &m_addresses;
-	}
-	// skip for now
-	m_addressesValid = true;
-	return &m_addresses;
-	// note it
-	setStatus ( "getting addresses");
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (Addresses *)ww;
-	// we make sure that D_IS_IN_DATE is set by doing this
-	//Dates *dp = getDates();
-	//if ( ! dp || dp == (Dates *)-1) return (Addresses *)dp;
-	// we set the D_IS_IN_DATE flag for these bits
-	Bits *bits = getBits(); if ( ! bits ) return NULL;
-	Sections *sections = getExplicitSections();
-	if ( !sections||sections==(Sections *)-1) return (Addresses *)sections;
-	TagRec *gr = getTagRec();
-	if ( ! gr || gr == (TagRec *)-1 ) return (Addresses *)gr;
-	// the site hash
-	//int32_t *sh32 = getSiteHash32();
-	//if ( ! sh32 || sh32 == (int32_t *)-1 ) return (Addresses *)sh32;
-	int32_t dh = getDomHash32();
-	// hash of all adjacent tag pairs
-	//uint32_t *tph = getTagPairHash32 ( ) ;
-	//if ( ! tph || tph == (void *)-1 ) return (Addresses *)tph;
-	int64_t *d = getDocId();
-	if ( ! d || d == (int64_t *)-1 ) return (Addresses *)d;
-	// get our ip
-	int32_t *ip = getIp();
-	if ( ! ip || ip == (int32_t *)-1) return (Addresses *)ip;
-	// get the content type
-	uint8_t *ct = getContentType();
-	if ( ! ct ) return NULL;
-
-	//char **stb = getSiteTitleBuf();
-	//if ( ! stb || stb == (void *)-1 ) return (Addresses *)stb;
-	// sanity check
-	//if ( ! m_siteTitleBufValid ) { char *xx=NULL;*xx=0; }
-	char **fbuf = getFilteredRootTitleBuf();
-	if ( ! fbuf || fbuf == (void *)-1 ) return (Addresses *)fbuf;
-
-	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
-
-	// if the serialized section is valid, use that
-	//char *sd = NULL;
-	//bool valid = false;
-	//if ( od && od->m_sectionsReplyValid ) valid = true;
-	//if ( valid                          ) sd = od->ptr_sectionsReply;
-	// assume valid, really only when it returns in case it blocked...
-	//m_addressesValid = true;
-	// this should not be outstanding!
-	if ( m_addressSetCalled ) { char *xx=NULL;*xx=0; }
-	// assume valid, really only when it returns in case it blocked...
-	m_addressesValid = true;
-	// set it
-	m_addressSetCalled = true;
-	// make a copy of the tag rec here in case it gets mangled later
-	// because the m_addresses class may reference its buffer
-	//m_savedTagRec1.copy ( gr );
-	// . this returns false if blocked
-	// . it uses the "venueaddress" from the tagrec, "gr", BUT if this
-	//   page is the one that sets the venue address, it won't be able
-	//   to use it as a default city/state thingy until next time it is
-	//   spidered, since that info is in the tagrec
-	// . PROBLEM: if the venue address is on this page, we can't take
-	//   advantage of it by usings its city/state as a default for the
-	//   other addresses on this page
-	if ( ! m_addresses.set ( sections      ,
-				 ww            ,
-				 bits          ,
-				 &m_tagRec     , // &m_savedTagRec1 , // gr
-				 &m_firstUrl   ,
-				 *d            ,
-				 cr->m_collnum    ,
-				 dh            , // *sh32
-				 *ip           ,
-				 //(int32_t)*tph    ,
-				 m_niceness    ,
-				 m_pbuf        ,
-				 m_masterState ,
-				 m_masterLoop  ,
-				 *ct           ,
-				 //ptr_addressReply ,
-				 //size_addressReply ,
-				 //m_addressReplyValid ,
-				 m_filteredRootTitleBuf     ,
-				 m_filteredRootTitleBufSize ,
-				 this ))
-		return (Addresses *)-1;
-	// sanity check
-	if ( m_addresses.m_msg2c &&
-	     m_addresses.m_msg2c->m_requests !=
-	     m_addresses.m_msg2c->m_replies) {
-		char *xx=NULL;*xx=0; }
-	// error?
-	if ( g_errno ) return NULL;
-	// return it if not breached
-	//if ( ! m_addresses.m_breached ) return &m_addresses;
-	// return that error otherwise
-	//g_errno = EBUFOVERFLOW;
-	//return NULL;
-	return &m_addresses;
-}
-
-/*
-int32_t *XmlDoc::getSiteNumInlinksUniqueIp ( ) {
-	if ( m_siteNumInlinksUniqueIpValid )
-		return &m_siteNumInlinksUniqueIp;
-	// get our companion number
-	int32_t *ni = getSiteNumInlinks();
-	if ( ! ni || ni == (int32_t *)-1 ) return (int32_t *)ni;
-	// sanity check
-	if ( ! m_siteNumInlinksUniqueIp ) { char *xx=NULL;*xx=0; }
-	// ok we must be valid
-	return &m_siteNumInlinksUniqueIp;
-}
-
-int32_t *XmlDoc::getSiteNumInlinksUniqueCBlock ( ) {
-	if ( m_siteNumInlinksUniqueCBlockValid )
-		return &m_siteNumInlinksUniqueCBlock;
-	// get our companion number
-	int32_t *ni = getSiteNumInlinks();
-	if ( ! ni || ni == (int32_t *)-1 ) return (int32_t *)ni;
-	// sanity check
-	if ( ! m_siteNumInlinksUniqueCBlock ) { char *xx=NULL;*xx=0; }
-	// ok we must be valid
-	return &m_siteNumInlinksUniqueCBlock;
-}
-
-int32_t *XmlDoc::getSiteNumInlinksTotal ( ) {
-	if ( m_siteNumInlinksTotalValid )
-		return &m_siteNumInlinksTotal;
-	// get our companion number
-	int32_t *ni = getSiteNumInlinks();
-	if ( ! ni || ni == (int32_t *)-1 ) return (int32_t *)ni;
-	// sanity check
-	if ( ! m_siteNumInlinksTotal ) { char *xx=NULL;*xx=0; }
-	// ok we must be valid
-	return &m_siteNumInlinksTotal;
-}
-*/
 
 // we need this for setting SpiderRequest::m_parentFirstIp of each outlink
 int32_t *XmlDoc::getFirstIp ( ) {
@@ -19892,30 +18870,6 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 				       docId );
 		}
 		// key parsing logic taken from Address::makePlacedbKey
-		else if ( rdbId == RDB_PLACEDB ) {
-			key128_t *k2 = (key128_t *)k;
-			int64_t bigHash = g_placedb.getBigHash       ( k2 );
-			int64_t docId   = g_placedb.getDocId         ( k2 );
-			int32_t      snh     = g_placedb.getStreetNumHash ( k2 );
-			//int32_t smallHash    = g_placedb.getSmallHash ( k2 );
-			// sanity check
-			if(!neg &&dataSize<=0){char*xx=NULL;*xx=0;}
-			if( neg &&dataSize!=0){char*xx=NULL;*xx=0;}
-			sb->safePrintf("<td><nobr>"
-				       "bigHash64=0x%016"XINT64" "
-				       "docId=%"UINT64" "
-				       "streetNumHash25=0x%08"XINT32" "
-				       "dataSize=%010"INT32" "
-				       "address=%s"
-				       "</nobr>"
-				       "</td>",
-				       bigHash,
-				       docId,
-				       snh,
-				       dataSize ,
-				       data );
-		}
-		// key parsing logic taken from Address::makePlacedbKey
 		else if ( rdbId == RDB_SPIDERDB ) {
 			sb->safePrintf("<td><nobr>");
 			key128_t *k2 = (key128_t *)k;
@@ -21495,12 +20449,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		if ( ! osvt || osvt == (void *)-1 ) return (char *)osvt;
 	}
 
-	// get the addresses for hashing tag hashes that indicate place names
-	Addresses *na = NULL;
-	//Addresses *oa = NULL;
-	if ( nd ) na = getAddresses();
-	//if ( od ) oa = od->getAddresses();
-
 	// need firstip if adding a rebuilt spider request
 	if ( m_useSecondaryRdbs && ! m_isDiffbotJSONObject && m_useSpiderdb ) {
 		int32_t *fip = getFirstIp();
@@ -22023,8 +20971,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//else if (oa && !oa->hashForPlacedb(m_docId,*sh32,*od->getIp(),&pt2) )
 	//	return NULL;
 	// hash terms into a table that uses full datedb keys
-	if ( na && !na->hashForPlacedb(m_docId,*sh32,*nd->getIp(),&pt1))
-		return NULL;
 
 
 	setStatus("hashing place info");
@@ -22935,19 +21881,12 @@ void XmlDoc::copyFromOldDoc ( XmlDoc *od ) {
 	m_tagPairHash32 = od->m_tagPairHash32;
 	//m_sitePop       = od->m_sitePop;
 	m_httpStatus    = od->m_httpStatus;
-	m_hasAddress    = od->m_hasAddress;
-	m_hasTOD        = od->m_hasTOD;
-	//m_hasSiteVenue  = od->m_hasSiteVenue;
 	m_isRSS         = od->m_isRSS;
 	m_isPermalink   = od->m_isPermalink;
-	m_hasContactInfo= od->m_hasContactInfo;
 	m_hopCount      = od->m_hopCount;
 	m_crawlDelay    = od->m_crawlDelay;
 
 	// do not forget the shadow members of the bit members
-	m_hasAddress2    = m_hasAddress;
-	m_hasTOD2        = m_hasTOD;
-	//m_hasSiteVenue2  = m_hasSiteVenue;
 	m_isRSS2         = m_isRSS;
 	m_isPermalink2   = m_isPermalink;
 
@@ -22957,12 +21896,8 @@ void XmlDoc::copyFromOldDoc ( XmlDoc *od ) {
 	m_tagPairHash32Valid = true;
 	//m_sitePopValid       = true;
 	m_httpStatusValid    = true;
-	m_hasAddressValid    = true;
-	m_hasTODValid        = true;
-	//m_hasSiteVenueValid  = true;
 	m_isRSSValid         = true;
 	m_isPermalinkValid   = true;
-	m_hasContactInfoValid= true;
 	m_hopCountValid      = true;
 	m_crawlDelayValid    = true;
 
@@ -23381,9 +22316,8 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 			m_srep.m_langId         = m_oldDoc->m_langId;
 			m_srep.m_isRSS          = m_oldDoc->m_isRSS;
 			m_srep.m_isPermalink    = m_oldDoc->m_isPermalink;
-			m_srep.m_hasAddress     = m_oldDoc->m_hasAddress;
-			m_srep.m_hasTOD         = m_oldDoc->m_hasTOD;
-			//m_srep.m_hasSiteVenue   = m_oldDoc->m_hasSiteVenue;
+			m_srep.m_hasAddress     = 0;
+			m_srep.m_hasTOD         = 0;
 			m_srep.m_siteNumInlinks = m_oldDoc->m_siteNumInlinks;
 			// they're all valid
 			m_srep.m_hasAddressValid     = true;
@@ -23419,25 +22353,11 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	float *pc = getPercentChanged();
 	if ( ! pc || pc == (void *)-1 ) return (SpiderReply *)pc;
 
-	// these are "non-dup" addresses (nondup)
-	bool *hasAddress = getHasAddress();
-	if ( ! hasAddress || hasAddress == (void *)-1 )
-		return (SpiderReply *)hasAddress;
-	// does it have a tod (i.e. 6pm) in there somewhere?
-	bool *hasTOD = getHasTOD();
-	if ( ! hasTOD || hasTOD == (void *)-1 )
-		return (SpiderReply *)hasTOD;
-	// does it have a venue address?
-	//bool *hasSiteVenue = getHasSiteVenue();
-	//if ( ! hasSiteVenue || hasSiteVenue == (void *)-1 )
-	//	return (SpiderReply *)hasSiteVenue;
 	// get the content type
 	uint8_t *ct = getContentType();
 	if ( ! ct ) return NULL;
 	char *isRoot = getIsSiteRoot();
 	if ( ! isRoot || isRoot == (char *)-1 ) return (SpiderReply *)isRoot;
-	char *hci = getHasContactInfo();
-	if ( ! hci || hci == (char *)-1 ) return (SpiderReply *)hci;
 
 
 
@@ -23452,12 +22372,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	char *pl = getIsPermalink();
 	if ( ! pl || pl == (char *)-1 )
 		return (SpiderReply *)pl;
-
-	if ( ! m_hasContactInfoValid ) { char *xx=NULL;*xx=0; }
-	if ( m_hasContactInfo ) {
-		m_srep.m_hasContactInfo = 1;
-		m_srep.m_hasContactInfoValid = 1;
-	}
 
 	// this is only know if we download the robots.tt...
 	if ( od && m_recycleContent ) {
@@ -23501,11 +22415,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		// -1 means invalid/unknown
 		m_srep.m_crawlDelayMS = -1;
 
-	if ( ! m_hasAddressValid    ) { char *xx=NULL;*xx=0; }
-	if ( ! m_hasTODValid        ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_hasSiteVenueValid  ) { char *xx=NULL;*xx=0; }
-	if ( ! m_hasContactInfoValid) { char *xx=NULL;*xx=0; }
-
 	// . we use this to store "bad" spider recs to keep from respidering
 	//   a "bad" url over and over again
 	// . it is up to the url filters whether they want to retry this
@@ -23529,15 +22438,9 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// . ignore address in dup sections (nondup/non-dup addresses only)
 	// . this way if the place always has their address in the header or
 	//   footer of every web page we will ignore it
-	m_srep.m_hasAddress    = *hasAddress;
-	m_srep.m_isContacty    =  *hci;//getIsContacty(fu,
-					//	 info1,
-					//	 m_hopCount ,
-					//	 *ct , // contentType
-					//	 *isRoot ,
-					//	 m_niceness );
-	m_srep.m_hasTOD        = *hasTOD;
-	//m_srep.m_hasSiteVenue  = *hasSiteVenue;
+	m_srep.m_hasAddress    = 0;
+	m_srep.m_isContacty    =  0;
+	m_srep.m_hasTOD        = 0;
 
 	// validate all
 	m_srep.m_hasContactInfoValid     = 1;
@@ -23696,15 +22599,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	//if ( ! hcv || hcv == (void *)-1 ) return (char *)hcv;
 	char     *ipi = getIsIndexed(); // is the parent indexed?
 	if ( ! ipi || ipi == (char *)-1 ) return (char *)ipi;
-	Addresses *aa = getAddresses ();
-	if ( ! aa || aa == (Addresses *)-1 ) return (char *)aa;
-	// sanity check
-	if ( ! m_hasContactInfoValid ) { char *xx=NULL;*xx=0; }
-
-	// . ignore address in dup sections
-	// . this way if the place always has their address in the header or
-	//   footer of every web page we will ignore it (SEC_DUP section flag)
-	bool parentHasAddress = (bool)(aa->getNumNonDupAddresses()>0);
 
 	// need this
 	int32_t parentDomHash32 = getDomHash32();
@@ -24098,7 +22992,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		//ksr.m_parentFirstIp    = *pfip;//m_ip;
 		ksr.m_pageNumInlinks   = 0;
 
-		ksr.m_parentHasAddress = parentHasAddress;
+		ksr.m_parentHasAddress = 0;
 		// get this
 		bool isupf = ::isPermalink(NULL,&url,CT_HTML,NULL,isRSSExt);
 		// set some bit flags. the rest are 0 since we call reset()
@@ -24159,17 +23053,9 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// hascontactinfo tag can have a value of 0 or 1
 		//tag = gr->getTag("hascontactinfo");
 		//if ( tag ) {
-		if ( ! m_hasContactInfoValid ) { char *xx=NULL;*xx=0; }
-		if ( m_hasContactInfo ) {
-			ksr.m_hasContactInfo = 1;
-			ksr.m_hasContactInfoValid     = true;
-		}
 
-		// if we just set the contact info, use us, more recent
-		if ( linkSiteHashes[i]==m_siteHash32 && m_hasContactInfoValid){
-			ksr.m_hasContactInfo      = m_hasContactInfo;
-			ksr.m_hasContactInfoValid = true;
-		}
+		ksr.m_hasContactInfo      = 0;
+		ksr.m_hasContactInfoValid = true;
 
 		// the mere existence of these tags is good
 		if ( gr->getTag("authorityinlink"))ksr.m_hasAuthorityInlink =1;
@@ -33160,10 +32046,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 	if ( ! sb ) return true;
 
-	Url *u = getFirstUrl();
-	// hash the url into 64 bits
-	int64_t uh64 = hash64(u->getUrl(),u->getUrlLen());
-
 
 	// shortcut
 	char *fu = ptr_firstUrl;
@@ -33620,15 +32502,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 	// print outlinks
 	links->print( sb );
-
-	//
-	// PRINT ADDRESSES (prints streets first)
-	//
-	Addresses *aa = getAddresses ();
-	if ( ! aa || aa == (Addresses *)-1 ) { char *xx=NULL;*xx=0;}
-	aa->print(sb,uh64);
-
-
 
 	//
 	// PRINT SECTIONS
@@ -34986,8 +33859,7 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 				   diversityVec,
 				   wordSpamVec,
 				   fragVec,
-				   &m_addresses ,
-				   true );
+				   FMT_HTML );
 		return true;
 	}
 
@@ -36124,17 +34996,6 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	uint8_t *rl = getRootLangId();
 	if ( ! rl || rl == (void *)-1 ) return (SafeBuf *)rl;
 
-	char *hci = getHasContactInfo();
-	if ( ! hci || hci == (char *)-1 ) return (SafeBuf *)hci;
-
-	// get the address class
-	Addresses *aa = getAddresses ();
-	if ( ! aa || aa == (Addresses *)-1 ) return (SafeBuf *)aa;
-
-	// get comma separated list of email address on page
-	char *emails = getEmailBuf ( );
-	if ( ! emails || emails == (void *)-1 ) return (SafeBuf *)emails;
-
 	//
 	// init stuff
 	//
@@ -36166,7 +35027,6 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	// store tags into here
 	SafeBuf *tbuf = &m_newTagBuf;
 	// allocate space to hold the tags we will add
-	Tag *tag;
 	int32_t need = 512;
 	// add in root title buf in case we add it too
 	need += m_rootTitleBufSize;
@@ -36204,16 +35064,6 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	if ( newrl )
 		tbuf->addTag3(mysite,"rootlang",now,"xmldoc",*ip,newrl,rdbId);
 
-	//
-	// add hascontactinfo if we need to
-	//
-	int32_t oldhci = gr->getLong("hascontactinfo",-1,NULL,&timestamp);
-	if ( oldhci == -1 || oldhci != *hci || now-timestamp > 10 *86400 ) {
-		char *val = "0";
-		if ( m_hasContactInfo ) val = "1";
-		tbuf->addTag3 (mysite,"hascontactinfo",now,"xmldoc",*ip,val,
-			       rdbId);
-	}
 	//
 	// add "site" tag
 	//
@@ -36279,115 +35129,6 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 			    *ip,m_rootTitleBuf,m_rootTitleBufSize,
 			    rdbId,true) )
 		return NULL;
-
-
-	//
-	// add the VENUEADDRESS tags
-	//
-
-	// init the dedup table so we do not add the same address many times
-	char dtbuf[1000];
-	HashTableX dt;
-	dt.set(8,0,32,dtbuf,1000,false,m_niceness,"xmldt");
-	// reset counts
-	int32_t numContactAddressTags = 0;
-	int32_t numContactEmailTags   = 0;
-	int32_t tagType2 = getTagTypeFromStr ( "contactaddress" );
-	int32_t tagType3 = getTagTypeFromStr ( "contactemails"   );
-	// before we add the sitevenue to the tagrec let's make sure it is
-	// not a dedup.. i.e. that we do not already have this address
-	// in there.
-	int32_t tagType = getTagTypeFromStr ( "venueaddress" );
-	// start at the first tag
-	tag = gr->getFirstTag();
-	// loop over all tags in the buf, see if we got a dup
-	for ( ; tag ; tag = gr->getNextTag ( tag ) ) {
-		// count current contact addresses we have
-		if ( tag->m_type == tagType2 ) numContactAddressTags++;
-		if ( tag->m_type == tagType3 ) numContactEmailTags++;
-		// skip if not a venueaddress tag
-		if ( tag->m_type != tagType ) continue;
-		// point to the serialized address
-		char *data = tag->getTagData();
-		// get that address hash i guess
-		uint64_t ah = getHashFromAddr ( data );
-		// add to dedup table - return NULL with g_errno set on error
-		if ( ! dt.addKey ( &ah ) ) return NULL;
-	}
-	int32_t na = aa->getNumAddresses();
-	// add up to 10 for now
-	for ( int32_t i = 0 ; i < na ; i++ ) {
-		// get it
-		Address *a = (Address *)aa->m_am.getPtr(i);
-		// check if venue
-		if ( ! ( a->m_flags & AF_VENUE_DEFAULT ) ) continue;
-		// must have street on the page, not pointing into a tagrec
-		// from tagdb... otherwise we keep re-adding
-		if ( a->m_street->m_a < 0 ) continue;
-		//  dedup! dedup against
-		//  addresses in tagdb for venueaddress tag. can we use
-		//  the dc[] array from Address.cpp... we need another
-		//  set of bit flags for address class:
-		if ( dt.isInTable ( &a->m_hash ) ) continue;
-		// sanity
-		if ( a->m_hash == 0 ) { char *xx=NULL;*xx=0; }
-		// . serialize it
-		// . TODO: get rid of Address::addToTagRec() functions
-		char abuf[5000];
-		a->serialize ( abuf , 5000, m_firstUrl.getUrl(),false,true);
-		// store in safebuf of tags
-		if ( ! tbuf->addTag3 (mysite,"venueaddress",now,"xmldoc",
-				     *ip,abuf,rdbId) ) return NULL;
-		// only add once
-		if ( ! dt.addKey (&a->m_hash) ) return NULL;
-	}
-
-	//
-	//
-	// contact info stuff
-	//
-	//
-
-	// ensure m_numContactAddresses etc. are valid
-	Address **ca = getContactAddresses();
-	// blocked?
-	if ( ! ca || ca == (void *)-1 ) return (SafeBuf *)ca;
-
-	// do not do this for root if multiple addresses. this
-	// fixes http://obits.abqjournal.com/
-	if ( *isRoot && aa->m_uniqueStreetHashes > 1 )  na = 0;
-
-	// do not store more than 2 contact addresses, or 2 contact emails
-	// to avoid tagdb bloat. and also because we do not need that many.
-
-	// . store contact address if we had one
-	// . this is a buffer of Address ptrs
-	for ( int32_t i = 0 ; i < m_numContactAddresses ; i++ ) {
-		// stop on breach
-		if ( numContactAddressTags >= 2 ) break;
-		// inc it
-		numContactAddressTags++;
-		// breathe
-		QUICKPOLL(m_niceness);
-		// get it
-		Address *a = ca[i];
-		// . serialize it
-		// . TODO: get rid of Address::addToTagRec() functions
-		char abuf[5000];
-		a->serialize ( abuf , 5000, m_firstUrl.getUrl(),false,true);
-		// store in safebuf of tags
-		if ( ! tbuf->addTag3 (mysite,"contactaddress",now,"xmldoc",
-				     *ip,abuf,rdbId) ) return NULL;
-	}
-
-	// . add email addresses and submission forms to tag
-	// . this does not block, so make sure only called once!
-	// . contact emails. comma separated list
-	if ( emails && numContactEmailTags <= 1 ) {
-		numContactEmailTags++;
-		if ( ! tbuf->addTag3 (mysite,"contactemails",now,"xmldoc",
-				     *ip,emails,rdbId) ) return NULL;
-	}
 
 
 	//

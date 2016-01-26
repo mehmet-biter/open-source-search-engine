@@ -188,8 +188,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 	if ( m_hasContactInfo ) sb->safePrintf("HASCONTACTINFO ");
 
-	//if ( m_hasSiteVenue  ) sb->safePrintf("HASSITEVENUE ");
-	if ( m_isContacty      ) sb->safePrintf("CONTACTY ");
 	if ( m_isWWWSubdomain  ) sb->safePrintf("WWWSUBDOMAIN ");
 	if ( m_avoidSpiderLinks ) sb->safePrintf("AVOIDSPIDERLINKS ");
 
@@ -284,10 +282,6 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 	//if ( m_deleted ) sb->safePrintf("DELETED ");
 	if ( ! m_isIndexedINValid && m_isIndexed ) sb->safePrintf("ISINDEXED ");
 
-	if ( m_hasAddressValid && m_hasAddress    ) sb->safePrintf("HASADDRESS ");
-	if ( m_hasTODValid && m_hasTOD        ) sb->safePrintf("HASTOD ");
-	//if ( m_hasSiteVenue  ) sb->safePrintf("HASSITEVENUE ");
-	if ( m_isContactyValid && m_isContacty    ) sb->safePrintf("CONTACTY ");
 
 	//sb->safePrintf("url=%s",m_url);
 
@@ -399,8 +393,6 @@ int32_t SpiderRequest::printToTable ( SafeBuf *sb , char *status ,
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 	if ( m_hasContactInfo ) sb->safePrintf("HASCONTACTINFO ");
 
-	//if ( m_hasSiteVenue  ) sb->safePrintf("HASSITEVENUE ");
-	if ( m_isContacty      ) sb->safePrintf("CONTACTY ");
 
 	//if ( m_inOrderTree ) sb->safePrintf("INORDERTREE ");
 	//if ( m_doled ) sb->safePrintf("DOLED ");
@@ -11696,29 +11688,6 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			goto checkNextRule;
 		}
 
-		/*
-		if ( *p=='h' && strncmp(p,"hassitevenue",12) == 0 ) {
-			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) return -1;
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// skip if not valid (pageaddurl? injection?)
-			if ( ! sreq->m_hasSiteVenueValid ) continue;
-			// if no match continue
-			if ( (bool)sreq->m_hasSiteVenue==val ) continue;
-			// allow "!isindexed" if no SpiderReply at all
-			//if ( ! srep && val == 0 ) continue;
-			// skip
-			p += 12;
-			// skip to next constraint
-			p = strstr(p, "&&");
-			// all done?
-			if ( ! p ) return i;
-			p += 2;
-			goto checkNextRule;
-		}
-		*/
-
 		if ( *p != 'i' ) goto skipi;
 
 		if ( strncmp(p,"isinjected",10) == 0 ) {
@@ -11760,23 +11729,6 @@ int32_t getUrlFilterNum2 ( SpiderRequest *sreq       ,
 			if ( (bool)sreq->m_isPageReindex==val ) continue;
 			// skip
 			p += 9;
-			// skip to next constraint
-			p = strstr(p, "&&");
-			// all done?
-			if ( ! p ) return i;
-			p += 2;
-			goto checkNextRule;
-		}
-
-		if ( strncmp(p,"iscontacty",10) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// skip if not valid
-			if ( ! sreq->m_isContactyValid ) continue;
-			// if no match continue
-			if ( (bool)sreq->m_isContacty==val ) continue;
-			// skip
-			p += 10;
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
