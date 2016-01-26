@@ -392,9 +392,6 @@ class Conf {
 	//   topics requires that
 	bool   m_doSpellChecking;
 
-	// . give suggestions to narrow the search
-	bool   m_doNarrowSearch;
-
 	// are we running in Matt Wells's private data center? if so we
 	// use seo tools and control datacenter fans, etc.
 	bool   m_isMattWells;

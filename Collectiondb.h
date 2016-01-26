@@ -755,9 +755,6 @@ class CollectionRec {
 	// SPELL CHECK
 	char  m_spellCheck;
 
-	// NARROW SEARCH
-	char  m_doNarrowSearch;
-
 	char m_sendingAlertInProgress;
 
 	// . reference pages parameters

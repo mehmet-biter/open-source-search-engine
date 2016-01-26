@@ -32,8 +32,6 @@
 
 Parms g_parms;
 
-
-//#include "Tfndb.h"
 #include "Spider.h"
 #include "Tagdb.h"
 #include "Indexdb.h"
@@ -3840,17 +3838,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
 	m->m_flags = PF_NOAPI;
-	m++;
-
-	m->m_title = "do narrow search";
-	m->m_desc  = "give narrow search suggestions.";
-	m->m_off   = (char *)&g_conf.m_doNarrowSearch - g;
-	m->m_cgi   = "donarrowsearch";
-	m->m_def   = "0"; 
-	m->m_type  = TYPE_BOOL;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_CONF;
 	m++;
 
 	///////////////////////////////////////////
