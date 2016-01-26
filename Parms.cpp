@@ -10333,20 +10333,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "display Search Category link to query category of result";
-	m->m_desc  = "If enabled, a link will appear next to each category "
-		"on each result allowing the user to perform their query "
-		"on that entire category.";
-	m->m_cgi   = "dscl";
-	m->m_off   = (char *)&cr.m_displaySearchCategoryLink - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "show adult category on top";
 	m->m_desc  = "Yes to display the Adult category in the Top category";
 	m->m_cgi   = "sacot";

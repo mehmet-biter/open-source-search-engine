@@ -873,11 +873,7 @@ class CollectionRec {
 
 	char m_classificationMode;
 
-	// for news collection. uses changes in Msg20.cpp.
-	char m_onlyUseLinkTextForTitle;
-
 	char m_showAdultCategoryOnTop;
-	char m_displaySearchCategoryLink;
 
 	// use query expansion for this collection?
 	char m_queryExpansion;
