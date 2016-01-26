@@ -73,10 +73,6 @@ class SearchInput {
 	// Language support for Msg40
 	uint8_t detectQueryLanguage(void);
 
-	//bool addFacebookInterests ( char *list ) ;
-	//bool addInterests ( char *list , char delim, bool hasNums ) ;
-	//bool addInterest (char *s, int32_t slen, char valc, bool overwrite );
-
 	///////////
 	//
 	// BEGIN COMPUTED THINGS
@@ -179,10 +175,6 @@ class SearchInput {
 	int32_t   m_refs_numToDisplay;
 	int32_t   m_rp_numToDisplay;  
 
-	// these should all be hashed in makeKey()
-	//char  *m_rp_externalColl;            // msg40
-	//char  *m_importColl;                 // msg40
-
 	char  *m_queryCharset;
 
 	char  *m_gbcountry;
@@ -228,7 +220,6 @@ class SearchInput {
 	int32_t   m_includeCachedCopy;
 	char   m_getSectionVotingInfo;
 	char   m_familyFilter;            // msg40
-	//char   m_restrictIndexdbForQuery; // msg40
 	char   m_showErrors;
 	char   m_doSiteClustering;        // msg40
 	char   m_doDupContentRemoval;     // msg40
@@ -240,8 +231,6 @@ class SearchInput {
 	char   m_useMinAlgo;
 	char   m_useNewAlgo;
 	char   m_doMaxScoreAlgo;
-
-	char   m_adFeedEnabled;
 
 	// intersection speed up shortcut? "&fi=1", defaults to on
 	char   m_fastIntersection;
@@ -308,10 +297,6 @@ class SearchInput {
 	char                    m_useLanguagePages;
 
 
-	//char   m_getTitleRec;
-	// buzz uses this
-	//char   m_getSitePops;
-
 	// search result knobs
 	int32_t   m_realMaxTop;
 
@@ -355,8 +340,6 @@ class SearchInput {
 	char   m_displayTermFreqs;
 	char   m_justMarkClusterLevels;
 
-	//char   m_queryPrepend[41];
-
 	// new sort/constrain by date stuff
 	char   m_useDateLists;
 
@@ -389,43 +372,11 @@ class SearchInput {
 	// . we also hash displayMetas, TopicGroups and Query into the key
 	int32_t   m_END_HASH;
 
-
-
 	//////
 	//
 	// STUFF NOT REALLY USED NWO
 	//
 	//////
-
-	// for selecting a language
-	//char   m_queryLang;
-	//int32_t   m_gblang;
-
-	// post query reranking
-	//int32_t          m_docsToScanForReranking;
-
-	//char  *m_url;
-	//SafeBuf m_whiteListBuf;
-	// password is for all
-	//char  *m_pwd;
-	// for /addurl?u=www.foo.com
-	//char  *m_url2;
-
-
-	// for /get?d=xxxxx&strip=0&ih=1&qh=1
-	//int64_t m_docId;
-	//int32_t      m_strip;
-	//char      m_includeHeader;
-	//char      m_queryHighlighting; 
-	//char      m_doDateHighlighting;
-        //int32_t      m_useAdFeedNum;
-
-	//char          *m_username;
-
-	// true if query is directly from an end-user
-	//char m_endUser;
-
-	//int32_t           m_maxResults;       // msg40
 
 	// a marker for SearchInput::test()
 	int32_t      m_END_TEST;

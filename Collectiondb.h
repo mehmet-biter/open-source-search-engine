@@ -461,9 +461,6 @@ class CollectionRec {
 	char  m_indexSpiderReplies;
 	char  m_indexBody;
 
-	//char  m_useDatedb               ;
-	//char  m_addUrlEnabled           ; // TODO: use at http interface lvl
-	//char  m_spiderLinks             ; use url filters now!
 	char  m_sameHostLinks           ; // spider links from same host only?
 
 	// do not re-add outlinks to spiderdb if less than this many days
@@ -491,19 +488,11 @@ class CollectionRec {
 	char  m_catdbEnabled            ;
 	char  m_catdbPagesCanBeBanned   ;
 	char  m_doChineseDetection      ;
-	//char  m_breakWebRings           ;
 	char  m_delete404s              ;
-	//char  m_enforceOldQuotas        ;
-	//char  m_exactQuotas             ;
-	//char  m_sequentialTitledbLookup ; // obsoleted
-	//char  m_restrictVotesToRoots    ;
 	char  m_restrictIndexdbForQuery ;
 	char  m_restrictIndexdbForXML   ;
 	char  m_defaultRatForXML        ;
 	char  m_defaultRatForHTML       ;
-	//char  m_indexLinkText         ;
-	//char  m_restrictIndexdbForQueryRaw ;
-	//char  m_restrictIndexdbForSpider;
 	char  m_siteClusterByDefault    ;
 	char  m_doInnerLoopSiteClustering;
 	char  m_enforceNewQuotas        ;
@@ -513,15 +502,12 @@ class CollectionRec {
 	char  m_forceUseFloaters        ;
 	char  m_automaticallyUseProxies ;
 	char  m_automaticallyBackOff    ;
-	//char  m_restrictDomain          ; // say on same domain as seeds?
 	char  m_applyFilterToText       ; // speeds us up
 	char  m_allowHttps              ; // read HTTPS using SSL
 	char  m_recycleContent          ;
 	char  m_recycleCatdb            ;
 	char  m_getLinkInfo             ; // turn off to save seeks
 	char  m_computeSiteNumInlinks   ;
-	//char  m_recycleLinkInfo2        ; // ALWAYS recycle linkInfo2?
-	//char  m_useLinkInfo2ForQuality  ;
 	char  m_indexInlinkNeighborhoods;
 	char  m_doRobotChecking         ;
 	char  m_needDollarSign          ;
@@ -530,7 +516,6 @@ class CollectionRec {
 	char  m_useGigabitVector        ;
 	char  m_allowXmlDocs            ;
 	char  m_removeBannedPages       ;
-	//char  m_needNumbersInUrl        ;
 
 	float m_inlinkNeighborhoodsScoreScalar;
 
@@ -542,7 +527,6 @@ class CollectionRec {
 	char  m_useNewDeduping              ;
 	char  m_doTierJumping               ;
 	float m_numDocsMultiplier           ;
-	//int32_t  m_maxDocIdsToCompute          ;
 	int32_t  m_percentSimilarSummary       ; // Dedup by summary similiarity
 	int32_t  m_summDedupNumLines           ;
 	int32_t  m_contentLenMaxForSummary     ;
@@ -585,25 +569,9 @@ class CollectionRec {
 	int32_t m_posdbMinFilesToMerge ;
 	int32_t m_titledbMinFilesToMerge ;
 	int32_t m_sectiondbMinFilesToMerge ;
-	//int32_t m_indexdbMinFilesToMerge ;
-	//int32_t m_indexdbMinTotalFilesToMerge ;
-	//int32_t m_spiderdbMinFilesToMerge ;
-	//int32_t m_clusterdbMinFilesToMerge ;
-	//int32_t m_datedbMinFilesToMerge ;
 	int32_t m_linkdbMinFilesToMerge ;
 	int32_t m_tagdbMinFilesToMerge ;
 
-	//char  m_spiderdbRootUrlPriority   ; // 0-(MAX_SPIDER_PRIORITIES-1)
-	//char  m_spiderdbAddUrlPriority    ;
-	//char  m_newMinSpiderPriority      ; // min priority to spider
-	//char  m_newMaxSpiderPriority      ; // max priority to spider
-	//unsigned char  m_spiderNewBits;
-	//char  m_spiderNewBits[MAX_SPIDER_PRIORITIES];
-	//char  m_spiderOldBits[MAX_SPIDER_PRIORITIES];
-	// bit 0 corresponds to spider priority 0, bit 1 to priority 1, etc...
-	//char  m_spiderLinksByPriority[MAX_SPIDER_PRIORITIES];
-
-	
 	int32_t m_numCols; // number of columns for results page
 	int32_t m_screenWidth; // screen width to balance columns
 	int32_t m_adWidth; // how wide the ad Column is in pixels
@@ -622,22 +590,10 @@ class CollectionRec {
 	char  m_doSerpDetection         ;
 	char  m_useCanonicalRedirects   ;
 
-	//char  m_trustIsNew              ; // trust spider rec's isNew bit?
-
-	//charm_minLinkPriority           ; // don't add links under this prty
-	//float m_minRespiderWait           ; // in days to re-spider a pg
-	//float m_maxRespiderWait           ; // in days to re-spider a pg
-	//float m_firstRespiderWait         ; // in days to wait 1st time
-	//float m_errorRespiderWait         ; // in days
-	//float m_docNotFoundErrorRespiderWait; // in days
 	int32_t  m_maxNumSpiders             ; // per local spider host
 	float m_spiderNewPct;             ; // appx. percentage new documents
 
 	int32_t m_lastResetCount;
-
-	// . in seconds
-	// . shift all spiderTimes for urls in spider queue down this many secs
-	//int32_t m_spiderTimeShift;
 
 	// start another set of flags using the old m_spiderTimeShift
 	char  m_useCurrentTime          ; // ... for m_spiderTime2
@@ -665,12 +621,6 @@ class CollectionRec {
 
 	char m_getDocIdScoringInfo;
 
-	// # of times to retry url b4 nuke
-	//char  m_numRetries ;
-
-	// priority of urls being retried, usually higher than normal
-	//char  m_retryPriority; 
-
   /***** 
    * !! Start Diffbot paramamters !! *
    *****/
@@ -684,16 +634,7 @@ class CollectionRec {
 	// the default respider frequency for all rows in url filters
 	float   m_collectiveRespiderFrequency;
 	float   m_collectiveCrawlDelay;//SpiderWait;
-	// an alternate name for the collection. we tend to create
-	// collection names as a random sequence of hex digits. this
-	// will allow a user to give them an alternate name.
-	//SafeBuf m_collectionNameAlias;
 	SafeBuf m_diffbotSeeds;
-	// this will be NULL or "none" to not pass off to diffbot
-	//SafeBuf m_diffbotApi;
-	//SafeBuf m_diffbotApiList;//QueryString;
-	//SafeBuf m_diffbotUrlCrawlPattern;
-	//SafeBuf m_diffbotUrlProcessPattern;
 
 	// use for all now...
 	SafeBuf m_diffbotApiUrl;
@@ -718,15 +659,7 @@ class CollectionRec {
 
 	char    m_diffbotOnlyProcessIfNewUrl;
 
-	//SafeBuf m_diffbotClassify;
-	//char m_diffbotClassify;
-	//char m_useDiffbot;
 	char m_isCustomCrawl;
-	//char m_isDiffbotCollection;
-	// format of output. "csv" or "xml" or "json" or null
-	//SafeBuf m_diffbotFormat;
-	// what fields to return in the json output: (api dependent)
-	//SafeBuf m_diffbotFields;
 	int64_t m_maxToCrawl;
 	int64_t m_maxToProcess;
 	int32_t      m_maxCrawlRounds;
@@ -735,28 +668,13 @@ class CollectionRec {
 	uint32_t m_diffbotCrawlStartTime;
 	uint32_t m_diffbotCrawlEndTime;
 
-	// for testing their regexes etc...
-	//char m_isDiffbotTestCrawl;
-
 	// our local crawling stats
 	CrawlInfo m_localCrawlInfo;
 	// total crawling stats summed up from all hosts in network
 	CrawlInfo m_globalCrawlInfo;
 
-	//CrawlInfo m_tmpCrawlInfo;
-
 	// holds the latest CrawlInfo for each host for this collrec
 	SafeBuf m_crawlInfoBuf;
-
-	// last time we computed global crawl info
-	//time_t m_globalCrawlInfoUpdateTime;
-	//EmailInfo m_emailInfo;
-	// for counting replies
-	//int32_t m_replies;
-	//int32_t m_requests;
-	//bool m_doingCallbacks;
-	// for storing callbacks waiting in line for freshest crawl info
-	//SafeBuf m_callbackQueue;
 
   /***** 
    * !! End of Diffbot paramamters !! *
@@ -780,7 +698,6 @@ class CollectionRec {
 	int32_t      m_numRegExs  ;
 	// make this now use g_collectiondb.m_stringBuf safebuf and
 	// make Parms.cpp use that stringbuf rather than store into here...
-	//char      m_regExs           [ MAX_FILTERS ] [ MAX_REGEX_LEN+1 ];
 	SafeBuf   m_regExs           [ MAX_FILTERS ];
 
 	int32_t      m_numRegExs2 ; // useless, just for Parms::setParm()
@@ -798,20 +715,6 @@ class CollectionRec {
 	// same goes for max spiders per ip
 	int32_t      m_numRegExs6;
 	int32_t      m_spiderIpMaxSpiders [ MAX_FILTERS ];
-	// how long to wait before respidering
-	//int32_t      m_respiderWaits      [ MAX_FILTERS ];
-	//int32_t      m_numRegExs8;
-	// spidering on or off?
-	//int32_t      m_numRegExs7;
-	//char      m_spidersEnabled     [ MAX_FILTERS ];
-
-	// should urls in this queue be sent to diffbot for processing
-	// when we are trying to index them?
-	//int32_t      m_numRegExs11;
-	//char      m_spiderDiffbotApiNum [ MAX_FILTERS ];
-
-	//int32_t      m_numRegExs11;
-	//SafeBuf   m_spiderDiffbotApiUrl [ MAX_FILTERS ];
 
 	int32_t      m_numRegExs8;
 	char      m_harvestLinks     [ MAX_FILTERS ];
@@ -822,118 +725,23 @@ class CollectionRec {
 	// dummy?
 	int32_t      m_numRegExs9;
 
-	//int32_t      m_rulesets         [ MAX_FILTERS ];
-
-	/*
-	// if no reg expression matches a url use this default site rec #
-	char      m_defaultRegEx [ MAX_REGEX_LEN+1 ]; // just a placeholder
-	//int32_t      m_defaultSiteFileNum;
-	char      m_defaultSpiderPriority;
-	float     m_defaultSpiderFrequency ;
-	int64_t m_defaultSpiderQuota;
-	*/
-
-	//this is the current default siterec.
-	//int32_t  m_defaultSiteRec;
-	//int32_t  m_rssSiteRec;
-	//int32_t  m_tocSiteRec;
-
-	//
-	// the priority controls page parms
-	//
-	/*
-	int32_t  m_pq_numSpideringEnabled;
-	char  m_pq_spideringEnabled        [ MAX_PRIORITY_QUEUES ];
-	int32_t  m_pq_numTimeSlice;
-	float m_pq_timeSlice               [ MAX_PRIORITY_QUEUES ];
-	int32_t  m_pq_numSpidered;
-	int32_t  m_pq_spidered                [ MAX_PRIORITY_QUEUES ];
-	int32_t  m_pq_numSpiderLinks;
-	char  m_pq_spiderLinks             [ MAX_PRIORITY_QUEUES ];
-	int32_t  m_pq_numSpiderSameHostnameLinks;	
-	char  m_pq_spiderSameHostnameLinks [ MAX_PRIORITY_QUEUES ];
-	// is this queue a "force queue". i.e. anytime a url is
-	// supposed to go into it we FORCE it in even if it is
-	// in another queue. then we keep a cache to make sure
-	// we do not over-add the same url to that priority
-	int32_t  m_pq_numAutoForceQueue;
-	char  m_pq_autoForceQueue          [ MAX_PRIORITY_QUEUES ];
-	int32_t  m_pq_numMaxSpidersPerIp;
-	int32_t  m_pq_maxSpidersPerIp         [ MAX_PRIORITY_QUEUES ];
-	int32_t  m_pq_numMaxSpidersPerDom;
-	int32_t  m_pq_maxSpidersPerDom        [ MAX_PRIORITY_QUEUES ];
-	int32_t  m_pq_numMaxRespiderWait;
-	float m_pq_maxRespiderWait         [ MAX_PRIORITY_QUEUES ];
-	int32_t  m_pq_numFirstRespiderWait;
-	float m_pq_firstRespiderWait       [ MAX_PRIORITY_QUEUES ];
-	int32_t  m_pq_numSameIpWait;
-	int32_t  m_pq_sameIpWait              [ MAX_PRIORITY_QUEUES ];
-	int32_t  m_pq_numSameDomainWait;
-	int32_t  m_pq_sameDomainWait          [ MAX_PRIORITY_QUEUES ];
-	*/
-
 	char m_doQueryHighlighting;
 
 	char  m_summaryFrontHighlightTag[SUMMARYHIGHLIGHTTAGMAXSIZE] ;
 	char  m_summaryBackHighlightTag [SUMMARYHIGHLIGHTTAGMAXSIZE] ;
 
-	// . http header and tail for search results page for this collection
-	// . allows custom html wraps around search results for your collection
-	//char  m_htmlHead [ MAX_HTML_LEN + 1 ];
-	//char  m_htmlTail [ MAX_HTML_LEN + 1 ];
-	//char  m_htmlRoot [ MAX_HTML_LEN + 1 ];
-	//int32_t  m_htmlHeadLen;
-	//int32_t  m_htmlTailLen;
-	//int32_t  m_htmlRootLen;
-
 	SafeBuf m_htmlRoot;
 	SafeBuf m_htmlHead;
 	SafeBuf m_htmlTail;
 
-	// . some users allowed to access this collection parameters
-	// . TODO: have permission bits for various levels of access
-	// . email, phone #, etc. can be in m_description
-	//int32_t  m_numSearchPwds;
-	//char  m_searchPwds [ MAX_SEARCH_PASSWORDS ][ PASSWORD_MAX_LEN+1 ];
-
-	//int32_t  m_numSearchIps;
-	//int32_t  m_searchIps [ MAX_SEARCH_IPS ];
-
-	// spam assassin
-	//int32_t  m_numSpamIps;
-	//int32_t  m_spamIps [ MAX_SPAM_IPS ];
-	
-	//int32_t  m_numAdminPwds;
-	//char  m_adminPwds [ MAX_ADMIN_PASSWORDS ][ PASSWORD_MAX_LEN+1 ];
-
-	//int32_t  m_numAdminIps;
-	//int32_t  m_adminIps [ MAX_ADMIN_IPS ];
-
 	// match this content-type exactly (txt/html/pdf/doc)
 	char  m_filter [ MAX_FILTER_LEN + 1 ];
-
-	// append to the turk query, something like gbcity:albuquerque, to
-	// restrict what we turk on! like if we just want to turk a city
-	// or something
-	//char  m_supplementalTurkQuery [ 512 ];
 
 	// more control
 	int32_t m_maxSearchResultsPerQuery;
 	int32_t m_maxSearchResultsPerQueryForClients; // more for paying clients
-	/*
-	int32_t  m_tierStage0;
-	int32_t  m_tierStage1;
-	int32_t  m_tierStage2;
-	int32_t  m_tierStage0Raw;
-	int32_t  m_tierStage1Raw;
-	int32_t  m_tierStage2Raw;
-	int32_t  m_tierStage0RawSite;
-	int32_t  m_tierStage1RawSite;
-	int32_t  m_tierStage2RawSite;
-	*/
+
 	int32_t  m_compoundListMaxSize;
-        //dictionary lookup controls
-        //char m_dictionarySite[SUMMARYHIGHLIGHTTAGMAXSIZE];
 
 	// . related topics control
 	// . this can all be overridden by passing in your own cgi parms
@@ -957,8 +765,6 @@ class CollectionRec {
 
 	char m_sendingAlertInProgress;
 
-        // Allow Links: searches on the collection
-	//char  m_allowLinksSearch;
 	// . reference pages parameters
 	// . copied from Parms.cpp
 	int32_t  m_refs_numToGenerate;         // total # wanted by default.
@@ -1043,46 +849,14 @@ class CollectionRec {
 
 	float m_maxKbps;
 
-	// . max content length of text/html or text/plain document
-	// . we will not download, index or store more than this many bytes
-	//int32_t  m_maxTextDocLen;
-	// . max content length of other (pdf, word, xls, ppt, ps)
-	// . we will not download, index or store more than this many bytes
-	// . if content would be truncated, we will not even download at all
-	//   because the html converter needs 100% of the doc otherwise it
-	//   will have an error
-	//int32_t  m_maxOtherDocLen;
-
-	// the proxy ip, 0 if none
-	//int32_t  m_proxyIp;
-	// and proxy port
-	//int32_t m_proxyPort;
-
 	// . puts <br>s in the summary to keep its width below this
 	// . but we exceed this width before we would split a word
 	int32_t m_summaryMaxWidth;
 
 	int32_t m_proxCarveRadius;
 
-	// . ptr to buf in Collectiondb, m_buf that contains this rec in binary
-	// . we parse out the above info from this rec
-	//char *m_rec;
-	//char  m_oldMinSpiderPriority;
-	//char  m_oldMaxSpiderPriority;
-
-	// how many milliseconds to wait between spidering urls from same IP
-	//int32_t m_sameIpWait;
-	// in milliseconds
-	//int32_t m_sameDomainWait;
-	//int32_t  m_maxSpidersPerDomain; 
-
 	// how long a robots.txt can be in the cache (Msg13.cpp/Robotdb.cpp)
 	int32_t m_maxRobotsCacheAge;
-
-	//char m_orig [ MAX_PARMS ];
-
-	// we no longer truncate termlists on disk, so this is obsolete
-	//int32_t m_indexdbTruncationLimit;
 
 	// collection name in the other/external cluster from which we
 	// fetch link information. (gov.gigablast.com)
@@ -1094,11 +868,6 @@ class CollectionRec {
 	// not yet fully soaked through into gk, for slingshot.
 	//char m_getExternalLinkInfoFresh;
 	char m_externalColl [ MAX_COLL_LEN + 1 ] ;
-
-	// turk tags 
-	// for asking question on that tag
-	// comma seperated list of tags, no space allowed
-	//char m_turkTags [256];
 
 	// collection name in the other/external cluster from which we
 	// fetch related pages titleRecs. (gov.gigablast.com)
@@ -1120,12 +889,6 @@ class CollectionRec {
 	char m_showAdultCategoryOnTop;
 	char m_displaySearchCategoryLink;
 
-	// show <docsInColl>, <tag>s, etc. in PageResults::printXml()
-	//char m_showSensitiveStuff;
-
-	// enable the page turk?
-	//char m_pageTurkEnabled;
-
 	// use query expansion for this collection?
 	char m_queryExpansion;
 
@@ -1138,18 +901,12 @@ class CollectionRec {
 	char m_hideAllClustered;
 	int32_t m_maxRealTimeInlinks;
 
-	// collection hostname
-	//char m_collectionHostname  [ MAX_URL_LEN ];
-	//char m_collectionHostname1 [ MAX_URL_LEN ];
-	//char m_collectionHostname2 [ MAX_URL_LEN ];
-
 	// . cut off age in number of days old 
 	// . if pub date is older than this we do not add to datedb
 	//   and we remove it from datedb during a datedb merge
 	int32_t  m_datedbCutoff;
 	// date parsing parms
 	int32_t  m_datedbDefaultTimezone;
-	//float m_datedbDaysBeforeNow;
 
 	// display indexed date, last modified date, datedb (published) date
 	char m_displayIndexedDate;
@@ -1160,67 +917,17 @@ class CollectionRec {
         char m_useDFAcctServer; 
         int32_t m_dfAcctIp;
         int32_t m_dfAcctPort;
-        //char m_dfAcctColl[MAX_COLL_LEN];
-
-	// ad feed parms
-	int32_t m_adFeedServerIp;
-	int32_t m_adFeedServerPort;
-	//char m_adFeedCgiParms[MAX_URL_LEN];
-	int32_t m_adFeedNumAds;
-	int32_t m_adFeedTimeOut;
-
-	// use the new clusterdb?
-	//char m_useClusterdb;
 
 	// number of similar results for cluster by topic
 	int32_t m_maxClusterByTopicResults;
 	int32_t m_numExtraClusterByTopicResults;
 
-	// RAID options
-	//char m_allowRaidLookup;
-	//char m_allowRaidListRead;
-	//int32_t m_maxRaidMercenaries;
-	//int32_t m_minRaidListSize;
-
-	// . for restricting this collection to a particular language
-	// . replaced by lang== lang!= in url filters
-	//int32_t m_language;
-
 	// rss options
 	char m_followRSSLinks;
 	char m_onlyIndexRSS;
 
-	// msg6 spider lock option
-	//char m_useSpiderLocks;
-	//char m_distributeSpiderGet;
-
-	// percent of the water level to reload at
-	//int32_t m_reloadQueuePercent;
 	// enable click 'n' scroll
 	char m_clickNScrollEnabled;
-
-	// JAB - only compile a regex one time... lazy algorithm...
-	//regex_t* m_pRegExParser  [ MAX_FILTERS ];
-
-        // . ad parameters
-	/*
-        int32_t m_adPINumAds;
-        char m_adPIEnable;
-        char m_adPIFormat   [MAX_HTML_LEN + 1];
-        int32_t m_adPIFormatLen;
-        int32_t m_adSSNumAds;
-        char m_adSSEnable;
-        char m_adSSFormat   [MAX_HTML_LEN + 1];
-        int32_t m_adSSFormatLen;
-        char m_adSSSameasPI;
-        char m_adBSSSameasBPI;
-        char m_adCGI        [MAX_AD_FEEDS][MAX_CGI_URL];
-        char m_adResultXml  [MAX_AD_FEEDS][MAX_XML_LEN];
-        char m_adTitleXml   [MAX_AD_FEEDS][MAX_XML_LEN];
-        char m_adDescXml    [MAX_AD_FEEDS][MAX_XML_LEN];
-        char m_adLinkXml    [MAX_AD_FEEDS][MAX_XML_LEN];
-        char m_adUrlXml     [MAX_AD_FEEDS][MAX_XML_LEN];
-        */
 
 	// . do not keep in ruleset, store in title rec at time of parsing
 	// . allows admin to quickly and easily change how we parse docs
@@ -1230,13 +937,8 @@ class CollectionRec {
 	int32_t  m_externalLinkTextWeight;
 	int32_t  m_internalLinkTextWeight;
 	int32_t  m_conceptWeight;
-	//float m_qualityBoostBase;
 	float m_siteNumInlinksBoostBase;
 	
-
-	// zero out the scores of terms in menu sections?
-	//char  m_eliminateMenus;
-
 	// post query reranking
 	int32_t  m_pqr_docsToScan; // also for # docs for language
 	float m_pqr_demFactCountry; // demotion for foreign countries
@@ -1275,23 +977,12 @@ class CollectionRec {
 	float m_pqr_demFactSubPhrase;
 	float m_pqr_demFactCommonInlinks;
 
-        // sitedb filters
-	/*
-	int32_t m_numSiteExpressions;
-	char m_siteExpressions[MAX_SITE_EXPRESSIONS]
-		[MAX_SITE_EXPRESSION_LEN+1];
-	int32_t m_numSiteFilters2;
-	int32_t m_siteRules[MAX_SITE_EXPRESSIONS];
-	*/
-
         // lookup table for sitedb filter
 	char      m_updateSiteRulesTable;
-	//HashTable m_siteRulesTable;
 
 	// special var to prevent Collectiondb.cpp from copying the crap
 	// below here
 	char m_END_COPY;
-
 
 	// use this not m_bases to get the RdbBase
 	class RdbBase *getBase ( char rdbId );

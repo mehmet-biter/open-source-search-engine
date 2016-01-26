@@ -13,7 +13,6 @@
 #ifndef _CONF_H_
 #define _CONF_H_
 
-//#include "../../rsa/rsa.h"      // for private_key and public_key types
 #include "Xml.h"         // Xml class
 #include "File.h"        // File class
 #include "ip.h"          // atoip()
@@ -64,8 +63,6 @@ class Conf {
 
 
 	bool isMasterAdmin ( TcpSocket *socket , HttpRequest *hr ) ;
-	//bool isMasterAdmin  ( class TcpSocket *s , class HttpRequest *r );
-	//bool isSpamAssassin ( class TcpSocket *s , class HttpRequest *r );
 	bool hasMasterPwd ( HttpRequest *hr ) ;
 	bool isMasterIp      ( uint32_t ip );
 	bool isConnectIp    ( uint32_t ip );
@@ -95,13 +92,6 @@ class Conf {
 	// hold the filename of this conf file
 	char        m_confFilename[256];
 
-	// general info
-	//bool        m_isTrustedNet;
-	//char        m_dir[256];     // our mattster root working dir
-	//int32_t        m_ip;           // now in hostdb conf file
-	//bool        m_isTrusted;    // is the whole network trusted?
-	//private_key m_privKey;      // our private key for this host
-
 	// max amount of memory we can use
 	int64_t        m_maxMem;
 
@@ -116,27 +106,6 @@ class Conf {
 	
 	bool m_isLocal;
 
-	//director info (optional) (used iff m_isTrustedNet is false)
-	//public_key  m_dirPubKey;  // everyone should know director's pub key
-	//private_key m_dirPrivKey;   // this is 0 if we don't know it
-
-	// . external ip of our firewall/router/...
-	// . regular users use this to connect
-	// . Host::m_externalIp/Port is used by admin
-	// . Host::m_ip/port is for machine to machine communication or
-	//   if admin is coming from a local machine
-	//uint32_t  m_mainExternalIp;
-	//uint16_t m_mainExternalPort;
-
-	// . our group info
-	//int32_t m_hostId;       // our hostId
-	//int32_t m_numGroups;
-	//uint32_t m_groupId;     // hi bits are set before low bits
-	//uint32_t m_groupMask;   // hi bits are set before low bits
-
-	// the main directory
-	//char m_dir[256];
-
 	// an additional strip directory on a different drive
 	char m_stripeDir[256];
 
@@ -148,7 +117,6 @@ class Conf {
 
 	// . dns parameters
 	// . dnsDir should hold our saved cached (TODO: save the dns cache)
-	//int16_t m_dnsClientPort;            
 	int32_t  m_numDns ;
 	int32_t  m_dnsIps[MAX_DNSIPS];
 	int16_t m_dnsPorts[MAX_DNSIPS];            
@@ -173,65 +141,30 @@ class Conf {
 	int32_t  m_rnsIps[MAX_RNSIPS];
 	int16_t m_rnsPorts[MAX_RNSIPS];
 
-	// log absolute filename
-	//char  m_logFilename[256];
-	// hostdb absolute conf filename
-	//char  m_hostdbFilename[256];
 	// used to limit all rdb's to one merge per machine at a time
 	int32_t  m_mergeBufSize;
 
 	// tagdb parameters
 	int32_t  m_tagdbMaxTreeMem;
-	//int32_t  m_tagdbMaxDiskPageCacheMem;
-	//int32_t  m_tagdbMaxCacheMem;
-	//bool  m_tagdbUseSeals;
-	//int32_t  m_tagdbMinFilesToMerge;
-	//bool  m_tagdbSaveCache;
-
-	//bool m_makeAllFilesGroupWritable;
 
 	int32_t  m_revdbMaxTreeMem;
 	int32_t  m_timedbMaxTreeMem;
 
-	// titledb parameters
-	//int32_t  m_titledbMaxTreeMem; // why isn't this used?
-	//int32_t  m_titledbMaxCacheMem;
-	//int32_t  m_titledbMinFilesToMerge;
-	//int32_t  m_titledbMaxCacheAge;
-	//bool  m_titledbSaveCache;
-
 	// clusterdb for site clustering, each rec is 16 bytes
 	int32_t  m_clusterdbMaxTreeMem; 
-	//int32_t  m_clusterdbMaxCacheMem;
-	//int32_t  m_clusterdbMaxDiskPageCacheMem;
 	int32_t  m_clusterdbMinFilesToMerge;
 	bool  m_clusterdbSaveCache;
 
-	// if this is true, all collections index into the "main" collection
-	// but keep their own spiderdb in their collection.
-	//bool m_useDiffbot;
-
-	//bool  m_indexEventsOnly;
 	// are we doing a command line thing like 'gb 0 dump s ....' in
 	// which case we do not want to log certain things
 	bool m_doingCommandLine;
 
 	// linkdb for storing linking relations
 	int32_t  m_linkdbMaxTreeMem;
-	//	int32_t  m_linkdbMaxCacheMem;
-	//int32_t  m_linkdbMaxDiskPageCacheMem;
 	int32_t  m_linkdbMinFilesToMerge;
-	//	bool  m_linkdbSaveCache;
 
 	// dup vector cache max mem
 	int32_t  m_maxVectorCacheMem;
-
-	// for holding urls that have been entered into the spider queue
-	//int32_t  m_tfndbMaxTreeMem   ;
-	//int32_t  m_tfndbMaxDiskPageCacheMem ; // for the DiskPageCache class only
-	//int32_t  m_tfndbMinFilesToMerge;
-	//bool  m_tfndbSaveCache;
-	//int64_t  m_tfndbMaxUrls;
 
 	int32_t  m_maxCpuThreads;
 	int32_t  m_maxCpuMergeThreads;
@@ -242,64 +175,24 @@ class Conf {
 
 	// the spiderdb holds url records for spidering, when to spider, etc..
 	int32_t  m_maxWriteThreads ;
-	//int32_t  m_spiderdbMaxTreeMem   ;
-	//int32_t  m_spiderdbMaxCacheMem ;
-	//int32_t  m_spiderdbMaxDiskPageCacheMem ;
-	//int32_t  m_spiderdbMinFilesToMerge;
 	int32_t  m_spiderMaxDiskThreads    ;
-	//int32_t  m_spiderMaxBigDiskThreads ; // > 1M read
-	//int32_t  m_spiderMaxMedDiskThreads ; // 100k - 1M read
-	//int32_t  m_spiderMaxSmaDiskThreads ; // < 100k read
-	//int32_t  m_queryMaxDiskThreads     ;
-	//int32_t  m_queryMaxBigDiskThreads  ; // > 1M read
-	//int32_t  m_queryMaxMedDiskThreads  ; // 100k - 1M read
-	//int32_t  m_queryMaxSmaDiskThreads  ; // < 100k per read
-	// categorize the disk read sizes by these here
-	//int32_t  m_bigReadSize;
-	//int32_t  m_medReadSize;
-	//int32_t  m_smaReadSize;
 
 	char m_separateDiskReads;
 
 	int32_t m_statsdbMaxTreeMem;
 	int32_t m_statsdbMaxCacheMem;
-	//int32_t m_statsdbMaxDiskPageCacheMem;
-	//int32_t m_statsdbMinFilesToMerge;
 	bool m_useStatsdb;
-	//bool m_statsdbSnapshots;
-	//bool m_statsdbPageEnabled;
 
-	//int32_t  m_spiderdbRootUrlPriority; // 0-7
-	//int32_t  m_spiderdbAddUrlPriority ;
-	//int32_t  m_minSpiderPriority    ; // min spiderRec priority to spider
-	//int32_t  m_maxSpidersPerDomain  ; // per foreign domain
-	//int32_t  m_maxRespiderWait      ; // in seconds to re-spider a page
-	//int32_t  m_minRespiderWait      ; // in seconds to re-spider a page
-	// this is now in the root collection record
-	//int32_t  m_maxNumSpiders        ; // per local spider host
 	bool  m_spideringEnabled     ;
 	bool  m_turkingEnabled     ;
-	//bool  m_webSpideringEnabled;
-	//bool  m_facebookSpideringEnabled;
-	//bool  m_stubHubSpideringEnabled;
-	//bool  m_eventBriteSpideringEnabled;
-	//bool  m_refreshFacebookUsersEnabled;
 	bool  m_injectionsEnabled     ;
 	bool  m_queryingEnabled ;
 	bool  m_returnResultsAnyway;
 	// qa testing loop going on? uses "test" subdir
 	bool  m_testParserEnabled     ;
 	bool  m_testSpiderEnabled     ;
-	//bool  m_doDocIdRangeSplitting ;
 	bool  m_testSearchEnabled     ;
-	//bool  m_spiderLoggingEnabled ;
-	//bool  m_logWarnings          ; // generally small problems
-	//bool  m_logCongestion        ; // ENOSLOTS
 	bool  m_addUrlEnabled        ; // TODO: use at http interface level
-	bool  m_adFeedEnabled        ;
-	//bool  m_timingDebugEnabled   ;
-	//bool  m_threadDebugEnabled   ;
-	//bool  m_httpServerEnabled    ;// don't allow seo bots on all machines
 	bool  m_doStripeBalancing    ;
 
 	// . true if the server is on the production cluster
@@ -313,12 +206,6 @@ class Conf {
 	// is this a wikipedia cluster?
 	bool   m_isWikipedia;
 
-	//bool  m_spiderLinks          ;
-	//bool  m_dedupingEnabled      ; // dedup content on same mid domain
-	//int32_t  m_retryNum             ; // how many times to retry url b4 nuke
-	//bool  m_useIfModifiedSince   ;
-	//bool  m_doUrlSpamCheck       ; // disallow urls w/ naughty hostnames
-	//bool  m_timeBetweenUrls      ; // for urls from same domain only
 	// for holding robot.txt files for various hostnames
 	int32_t  m_robotdbMaxCacheMem  ;
 	bool  m_robotdbSaveCache;

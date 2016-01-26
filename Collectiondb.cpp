@@ -51,35 +51,6 @@ void Collectiondb::reset() {
 	g_collTable.reset();
 }
 
-/*
-bool Collectiondb::init ( bool isDump ) {
-	reset();
-	if ( g_isYippy ) return true;
-	// reset # of recs
-	//m_numRecs     = 0;
-	//m_numRecsUsed = 0;
-	// . now load ALL recs
-	// . returns false and sets g_errno on error
-	if ( ! load ( isDump ) ) return false;
-	// update time
-	updateTime();
-	// so we don't save again
-	m_needsSave = false;
-	// sanity
-	if ( RDB_END2 < RDB_END ) { 
-		log("db: increase RDB_END2 to at least %"INT32" in "
-		    "Collectiondb.h",(int32_t)RDB_END);
-		char *xx=NULL;*xx=0;
-	}
-	// if it set g_errno, return false
-	//if ( g_errno ) return log("admin: Had init error: %s.",
-	//			  mstrerror(g_errno));
-	g_errno = 0;
-	// otherwise, true, even if reloadList() blocked
-	return true;
-}
-*/
-
 extern bool g_inAutoSave;
 
 // . save to disk
@@ -183,13 +154,6 @@ bool Collectiondb::loadAllCollRecs ( ) {
 
 	m_initializing = false;
 
-	// note it
-	//log(LOG_INFO,"db: Loaded data for %"INT32" collections. Ranging from "
-	//    "collection #0 to #%"INT32".",m_numRecsUsed,m_numRecs-1);
-	// update the time
-	//updateTime();
-	// don't clean the tree if just dumpin
-	//if ( isDump ) return true;
 	return true;
 }
 
@@ -199,22 +163,11 @@ bool Collectiondb::cleanTrees ( ) {
 
 	// remove any nodes with illegal collnums
 	Rdb *r;
-	//r = g_indexdb.getRdb();
-	//r->m_tree.cleanTree    ((char **)r->m_bases);
 	r = g_posdb.getRdb();
-	//r->m_tree.cleanTree    ();//(char **)r->m_bases);
 	r->m_buckets.cleanBuckets();
-	//r = g_datedb.getRdb();
-	//r->m_tree.cleanTree    ((char **)r->m_bases);
 
 	r = g_titledb.getRdb();
 	r->m_tree.cleanTree    ();//(char **)r->m_bases);
-	//r = g_revdb.getRdb();
-	//r->m_tree.cleanTree    ((char **)r->m_bases);
-	//r = g_sectiondb.getRdb();
-	//r->m_tree.cleanTree    ((char **)r->m_bases);
-	//r = g_tfndb.getRdb();
-	//r->m_tree.cleanTree    ((char **)r->m_bases);
 	r = g_spiderdb.getRdb();
 	r->m_tree.cleanTree    ();//(char **)r->m_bases);
 	r = g_doledb.getRdb();
@@ -222,18 +175,6 @@ bool Collectiondb::cleanTrees ( ) {
 	// success
 	return true;
 }
-/*
-void Collectiondb::updateTime() {
-	// get time now in milliseconds
-	int64_t newTime = gettimeofdayInMilliseconds();
-	// change it
-	if ( m_lastUpdateTime == newTime ) newTime++;
-	// update it
-	m_lastUpdateTime = newTime;
-	// we need a save
-	m_needsSave = true;
-}
-*/
 
 #include "Statsdb.h"
 #include "Cachedb.h"
@@ -367,33 +308,8 @@ bool Collectiondb::addNewColl ( char *coll ,
 		    "contains the '%c' character.",coll,*p);
 		return false;
 	}
-	// . scan for holes
-	// . i is also known as the collection id
-	//int32_t i = (int32_t)newCollnum;
-	// no longer fill empty slots because if they do a reset then
-	// a new rec right away it will be filled with msg4 recs not
-	// destined for it. Later we will have to recycle some how!!
-	//else for ( i = 0 ; i < m_numRecs ; i++ ) if ( ! m_recs[i] ) break;
-	// right now we #define collnum_t int16_t. so do not breach that!
-	//if ( m_numRecs < 0x7fff ) {
-	//	// set it
-	//	i = m_numRecs;
-	//	// claim it
-	//	// we don't do it here, because we check i below and
-	//	// increment m_numRecs below.
-	//	//m_numRecs++;
-	//}
-	// TODO: scan for holes here...
-	//else { 
 	if ( newCollnum < 0 ) { char *xx=NULL;*xx=0; }
 
-	// ceiling?
-	//int64_t maxColls = 1LL<<(sizeof(collnum_t)*8);
-	//if ( i >= maxColls ) {
-	//	g_errno = ENOBUFS;
-	//	return log("admin: Limit of %"INT64" collection reached. "
-	//		   "Collection not created.",maxColls);
-	//}
 	// if empty... bail, no longer accepted, use "main"
 	if ( ! coll || !coll[0] ) {
 		g_errno = EBADENGINEER;
@@ -439,44 +355,12 @@ bool Collectiondb::addNewColl ( char *coll ,
 	// register the mem
 	mnew ( cr , sizeof(CollectionRec) , "CollectionRec" ); 
 
-	// get copy collection
-	//CollectionRec *cpcrec = NULL;
-	//if ( cpc && cpc[0] ) cpcrec = getRec ( cpc , cpclen );
-	//if ( cpc && cpc[0] && ! cpcrec )
-	//	log("admin: Collection \"%s\" to copy config from does not "
-	//	    "exist.",cpc);
-
-	// set collnum right for g_parms.setToDefault() call
-	//cr->m_collnum = newCollnum;
-
-	// . get the default.conf from working dir if there
-	// . i think this calls CollectionRec::reset() which resets all of its
-	//   rdbbase classes for its collnum so m_collnum needs to be right
-	//g_parms.setToDefault( (char *)cr );
 	// get the default.conf from working dir if there
-	//g_parms.setToDefault( (char *)cr , OBJ_COLL );
 	g_parms.setToDefault( (char *)cr , OBJ_COLL , cr );
 
 	// put search results back so it doesn't mess up results in qatest123
 	if ( strcmp(coll,"qatest123") == 0 )
 		cr->m_sameLangWeight = 20.0;
-	/*
-	// the default conf file
-	char tmp1[1024];
-	sprintf ( tmp1 , "%sdefault.conf" , g_hostdb.m_dir );
-	// . set our parms from the file.
-	// . accepts OBJ_COLLECTIONREC or OBJ_CONF
-	g_parms.setFromFile ( cr , NULL , tmp1 );
-	*/
-
-	// this will override all
-	// if ( cpcrec ) {
-	// 	// copy it, but not the timedb hashtable, etc.
-	// 	int32_t size = (char *)&(cpcrec->m_END_COPY) - (char *)cpcrec;
-	// 	// JAB: bad gbmemcpy - no donut!
-	// 	// this is not how objects are supposed to be copied!!!
-	// 	gbmemcpy ( cr , cpcrec , size);
-	// }
 
 	// set coll id and coll name for coll id #i
 	strcpy ( cr->m_coll , coll );
@@ -1550,12 +1434,6 @@ CollectionRec::CollectionRec() {
 	m_coll[0] = '\0';
 	m_updateRoundNum = 0;
 	m_swappedOut = false;
-	//m_numSearchPwds = 0;
-	//m_numBanIps     = 0;
-	//m_numSearchIps  = 0;
-	//m_numSpamIps    = 0;
-	//m_numAdminPwds  = 0;
-	//m_numAdminIps   = 0;
 	memset ( m_bases , 0 , sizeof(RdbBase *)*RDB_END );
 	// how many keys in the tree of each rdb? we now store this stuff
 	// here and not in RdbTree.cpp because we no longer have a maximum
@@ -1710,12 +1588,6 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 		log(LOG_INFO,"db: Loading conf for collection %s (%"INT32")",coll,
 		    (int32_t)m_collnum);
 
-	// collection name HACK for backwards compatibility
-	//if ( strcmp ( coll , "main" ) == 0 ) {
-	//	m_coll[0] = '\0';
-	//	m_collLen = 0;
-	//}
-
 	// the default conf file
 	char tmp1[1024];
 	snprintf ( tmp1 , 1023, "%sdefault.conf" , g_hostdb.m_dir );
@@ -1724,14 +1596,8 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 	// . accepts OBJ_COLLECTIONREC or OBJ_CONF
 	g_parms.setFromFile ( this , tmp2 , tmp1 , OBJ_COLL );
 
-	// add default reg ex IFF there are no url filters there now
-	//if(m_numRegExs == 0) rebuildUrlFilters();//setUrlFiltersToDefaults();
-
 	// this only rebuild them if necessary
 	rebuildUrlFilters();//setUrlFiltersToDefaults();
-
-	// temp check
-	//testRegex();
 
 	//
 	// LOAD the crawlinfo class in the collectionrec for diffbot
@@ -1774,17 +1640,6 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 			m_localCrawlInfo.m_pageProcessSuccesses;
 	}
 
-	// fix from old bug that was fixed
-	//if ( m_spiderRoundNum == 0 &&
-	//     m_collectiveRespiderFrequency > 0.0 &&
-	//     m_localCrawlInfo.m_sentCrawlDoneAlert ) {
-	//	log("coll: bug fix: resending email alert for coll %s (%"INT32") "
-	//	    "of respider freq %f",m_coll,(int32_t)m_collnum,
-	//	    m_collectiveRespiderFrequency);
-	//	m_localCrawlInfo.m_sentCrawlDoneAlert = false;
-	//}
-
-
 	// LOAD GLOBAL
 	snprintf ( tmp1 , 1023, "%scoll.%s.%"INT32"/globalcrawlinfo.dat",
 		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
@@ -1812,20 +1667,6 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 		m_twitchyTable.load ( sb.getBufStart() , "ipstouseproxiesfor.dat" );
 	}
 
-	
-
-	////////////
-	//
-	// PAGE COUNT TABLE for doing quotas in url filters
-	//
-	/////////////
-	// log it up if there on disk
-	//snprintf ( tmp1 , 1023, "/coll.%s.%"INT32"/pagecounts.dat",
-	//	   m_coll , (int32_t)m_collnum );
-	//if ( ! m_pageCountTable.load ( g_hostdb.m_dir , tmp1 ) && g_errno )
-	//	log("db: failed to load page count table: %s",
-	//	    mstrerror(g_errno));
-
 	// ignore errors i guess
 	g_errno = 0;
 
@@ -1845,124 +1686,8 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 		m_tagdbMinFilesToMerge   = 2;
 	}
 
-	// always turn on distributed spider locking because otherwise
-	// we end up calling Msg50 which calls Msg25 for the same root url
-	// at the same time, thereby wasting massive resources. it is also
-	// dangerous to run without this because webmaster get pissed when
-	// we slam their servers.
-	// This is now deprecated...
-	//m_useSpiderLocks      = false;
-	// and all pages downloaded from a particular ip should be done
-	// by the same host in our cluster to prevent webmaster rage
-	//m_distributeSpiderGet = true;
-
-	//initSortByDateTable(m_coll);
-
 	return true;
 }
-
-/*
-bool CollectionRec::countEvents ( ) {
-	// set our m_numEventsOnHost value
-	log("coll: loading event count termlist gbeventcount");
-	// temporarily turn off threads
-	bool enabled = g_threads.areThreadsEnabled();
-	g_threads.disableThreads();
-	// count them
-	m_numEventsOnHost = 0;
-	// 1MB at a time
-	int32_t minRecSizes = 1000000;
-	// look up this termlist, gbeventcount which we index in XmlDoc.cpp
-	int64_t termId = hash64n("gbeventcount") & TERMID_MASK;
-	// make datedb key from it
-	key128_t startKey = g_datedb.makeStartKey ( termId , 0xffffffff );
-	key128_t endKey   = g_datedb.makeEndKey ( termId , 0 );
-	
-	Msg5 msg5;
-	RdbList list;
-
-	// . init m_numEventsOnHost by getting the exact length of that 
-	//   termlist on this host
-	// . send in the ping request packet so all hosts can total up
-	// . Rdb.cpp should be added to incrementally so we should have no
-	//   double positives.
-	// . Rdb.cpp should inspect each datedb rec for this termid in
-	//   a fast an efficient manner
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_DATEDB    ,
-			      m_coll        ,
-			      &list         ,
-			      (char *)&startKey      ,
-			      (char *)&endKey        ,
-			      minRecSizes   ,
-			      true          , // includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      0             , // startFileNum  ,
-			      -1            , // numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         , // err correction?
-			      NULL          , // cache key ptr
-			      0             , // retry num
-			      -1            , // maxRetries
-			      true          , // compensate for merge
-			      -1LL          , // sync point
-			      NULL          )){// msg5b
-		// not allowed to block!
-		char *xx=NULL;*xx=0; }
-	// scan the list, score is how many valid events from that docid
-	uint32_t total = 0;
-	for ( ; ! list.isExhausted() ; list.skipCurrentRec() ) {
-		unsigned char *rec = (unsigned char *)list.getCurrentRec();
-		// in datedb score is byte #5
-		total += (255-rec[5]);
-	}
-	// declare
-	char    *lastKeyPtr;
-	key128_t  newStartKey;
-	// add to count. datedb uses half keys so subtract 6 bytes
-	// since the termids will be the same...
-	//m_numEventsOnHost += list.getListSize() / (sizeof(key128_t)-6);
-	m_numEventsOnHost += total;
-	// bail if under limit
-	if ( list.getListSize() < minRecSizes ) goto done;
-	// update key
-	lastKeyPtr = list.m_listEnd - 10;
-	// we make a new start key
-	list.getKey ( lastKeyPtr , (char *)&newStartKey );
-	// maxxed out?
-	if ( newStartKey.n0==0xffffffffffffffffLL &&
-	     newStartKey.n1==0xffffffffffffffffLL )
-		goto done;
-	// sanity check
-	if ( newStartKey < startKey ) { char *xx=NULL;*xx=0; }
-	if ( newStartKey > endKey   ) { char *xx=NULL;*xx=0; }
-	// inc it
-	newStartKey.n0++;
-	// in the top if the bottom wrapped
-	if ( newStartKey.n0 == 0LL ) newStartKey.n1++;
-	// assign
-	startKey = newStartKey;
-	// and loop back up for more now
-	goto loop;
-
- done:
-
-	// update all colls count
-	g_collectiondb.m_numEventsAllColls += m_numEventsOnHost;
-
-	if ( enabled ) g_threads.enableThreads();
-	log("coll: got %"INT32" local events in termlist",m_numEventsOnHost);
-
-	// set "m_hasDocQualityFiler"
-	//updateFilters();
-
-	return true;
-}
-*/
 
 bool CollectionRec::rebuildUrlFilters2 ( ) {
 
@@ -3020,49 +2745,6 @@ bool CollectionRec::rebuildShallowRules ( ) {
 	return true;
 }
 
-/*
-bool CrawlInfo::print (SafeBuf *sb ) {
-	return sb->safePrintf("objectsAdded:%"INT64"\n"
-			      "objectsDeleted:%"INT64"\n"
-			      "urlsConsidered:%"INT64"\n"
-			      "downloadAttempts:%"INT64"\n"
-			      "downloadSuccesses:%"INT64"\n"
-			      "processAttempts:%"INT64"\n"
-			      "processSuccesses:%"INT64"\n"
-			      "lastupdate:%"UINT32"\n"
-			      , m_objectsAdded
-			      , m_objectsDeleted
-			      , m_urlsConsidered
-			      , m_pageDownloadAttempts
-			      , m_pageDownloadSuccesses
-			      , m_pageProcessAttempts
-			      , m_pageProcessSuccesses
-			      , m_lastUpdateTime
-			      );
-}
-
-bool CrawlInfo::setFromSafeBuf (SafeBuf *sb ) {
-	return sscanf(sb->getBufStart(),
-		      "objectsAdded:%"INT64"\n"
-		      "objectsDeleted:%"INT64"\n"
-		      "urlsConsidered:%"INT64"\n"
-		      "downloadAttempts:%"INT64"\n"
-		      "downloadSuccesses:%"INT64"\n"
-		      "processAttempts:%"INT64"\n"
-		      "processSuccesses:%"INT64"\n"
-		      "lastupdate:%"UINT32"\n"
-		      , &m_objectsAdded
-		      , &m_objectsDeleted
-		      , &m_urlsConsidered
-		      , &m_pageDownloadAttempts
-		      , &m_pageDownloadSuccesses
-		      , &m_pageProcessAttempts
-		      , &m_pageProcessSuccesses
-		      , &m_lastUpdateTime
-		      );
-}
-*/
-	
 // returns false on failure and sets g_errno, true otherwise
 bool CollectionRec::save ( ) {
 	if ( g_conf.m_readOnlyMode ) return true;
@@ -3122,20 +2804,6 @@ bool CollectionRec::save ( ) {
 	// do not need a save now
 	m_needsSave = false;
 
-	// waiting tree is saved in SpiderCache::save() called by Process.cpp
-	//SpiderColl *sc = m_spiderColl;
-	//if ( ! sc ) return true;
-
-	// save page count table which has # of pages indexed per 
-	// subdomain/site and firstip for doing quotas in url filters table
-	//snprintf ( tmp , 1023, "coll.%s.%"INT32"/pagecounts.dat",
-	//	   m_coll , (int32_t)m_collnum );
-	//if ( ! m_pageCountTable.save ( g_hostdb.m_dir , tmp ) ) {
-	//	log("db: failed to save file %s : %s",tmp,mstrerror(g_errno));
-	//	g_errno = 0;
-	//}
-
-
 	return true;
 }
 
@@ -3150,10 +2818,6 @@ bool CollectionRec::hasPermission ( HttpRequest *r , TcpSocket *s ) {
 
 // . does this password work for this collection?
 bool CollectionRec::isAssassin ( int32_t ip ) {
-	// ok, make sure they came from an acceptable IP
-	//for ( int32_t i = 0 ; i < m_numSpamIps ; i++ ) 
-	//	// they also have a matching IP, so they now have permission
-	//	if ( m_spamIps[i] == ip ) return true;
 	return false;
 }
 
@@ -3161,40 +2825,6 @@ bool CollectionRec::isAssassin ( int32_t ip ) {
 bool CollectionRec::hasPermission ( char *p, int32_t plen , int32_t ip ) {
 	// just return true
 	return true;
-
-	// scan the passwords
-	// MDW: no longer, this is too vulnerable!!!
-	/*
-	for ( int32_t i = 0 ; i < m_numAdminPwds ; i++ ) {
-		int32_t len = gbstrlen ( m_adminPwds[i] );
-		if ( len != plen ) continue;
-		if ( strncmp ( m_adminPwds[i] , p , plen ) != 0 ) continue;
-		// otherwise it's a match!
-		//goto checkIp;
-		// . matching one password is good enough now, default OR
-		// . because just matching an IP is good enough security,
-		//   there is really no need for both IP AND passwd match
-		return true;
-	}
-	*/
-	// . if had passwords but the provided one didn't match, return false
-	// . matching one password is good enough now, default OR
-	//if ( m_numPasswords > 0 ) return false;
-	// checkIp:
-	// ok, make sure they came from an acceptable IP
-	//for ( int32_t i = 0 ; i < m_numAdminIps ; i++ ) 
-	//	// they also have a matching IP, so they now have permission
-	//	if ( m_adminIps[i] == ip ) return true;
-	// if no security, allow all NONONONONONONONONO!!!!!!!!!!!!!!
-	//if ( m_numAdminPwds == 0 && m_numAdminIps == 0 ) return true;
-	// if they did not match an ip or password, even if both lists
-	// are empty, do not allow access... this prevents security breeches
-	// by accident
-	return false;
-	// if there were IPs then they failed to get in
-	//if ( m_numAdminIps > 0 ) return false;
-	// otherwise, they made it
-	//return true;
 }
 
 bool expandRegExShortcuts ( SafeBuf *sb ) ;
