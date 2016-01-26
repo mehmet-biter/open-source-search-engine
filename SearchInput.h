@@ -225,7 +225,6 @@ class SearchInput {
 	char   m_hideAllClustered;
 
 	// ranking algos
-	char   m_useMinAlgo;
 	char   m_useNewAlgo;
 	char   m_doMaxScoreAlgo;
 

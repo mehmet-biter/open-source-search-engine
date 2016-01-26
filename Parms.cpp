@@ -4633,19 +4633,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "use min ranking algo";
-	m->m_desc  = "Should search results be ranked using this algo?";
-	m->m_off   = (char *)&si.m_useMinAlgo - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	// seems, good, default it on
-	m->m_def   = "1";
-	m->m_cgi  = "uma";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m++;
-
-
 	// limit to this # of the top term pairs from inlink text whose
 	// score is accumulated
 	m->m_title = "real max top";

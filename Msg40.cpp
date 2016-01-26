@@ -647,7 +647,6 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_doSiteClustering          = m_si->m_doSiteClustering    ;
 	mr.m_hideAllClustered          = m_si->m_hideAllClustered;
 	mr.m_familyFilter              = m_si->m_familyFilter;
-	//mr.m_useMinAlgo                = m_si->m_useMinAlgo;
 	//mr.m_useNewAlgo                = m_si->m_useNewAlgo;
 	mr.m_doMaxScoreAlgo            = m_si->m_doMaxScoreAlgo;
 	//mr.m_fastIntersection          = m_si->m_fastIntersection;

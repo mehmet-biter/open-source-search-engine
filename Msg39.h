@@ -45,7 +45,6 @@ class Msg39Request {
 		m_addToCache              = false;
 		m_familyFilter            = false;
 		m_timeout                 = -1; // -1 means auto-compute
-		//m_useMinAlgo              = false;
 		//m_fastIntersection        = -1;
 		m_stripe                  = 0;
 		m_collnum                 = -1;
@@ -125,7 +124,6 @@ class Msg39Request {
 	// Msg3a still uses this
 	//int32_t    m_myFacetVal32; // for gbfacet:xpathsite really sectionstats
 
-	//char    m_useMinAlgo;
 	//char    m_fastIntersection;
 
 	collnum_t m_collnum;

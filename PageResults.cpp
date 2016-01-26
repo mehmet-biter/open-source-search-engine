@@ -5037,9 +5037,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	
 
 	char *ff = "";
-	if ( si->m_useMinAlgo ) ff = "MIN ";
 	char *ff2 = "sum";
-	if ( si->m_useMinAlgo ) ff2 = "min";
 	//if ( nr ) sb->safePrintf("</table>");
 	//sb->safePrintf("<br>");
 	// final score!!!
