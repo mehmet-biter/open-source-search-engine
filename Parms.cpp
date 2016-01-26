@@ -10016,19 +10016,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "use vhost language detection";
-	m->m_desc  = "Use language specific pages for home, etc.";
-	m->m_cgi   = "vhost";
-	m->m_off   = (char *)&cr.m_useLanguagePages - x;
-	//m->m_soff  = (char *)&si.m_useLanguagePages - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	//m->m_scgi  = "vhost";
-	m->m_smin  = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
 
 	m->m_title = "sort language preference default";
 	m->m_desc  = "Default language to use for ranking results. "
@@ -10043,7 +10030,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_size  = 6; // up to 5 chars + NULL, e.g. "en_US"
 	m->m_def   = "xx";//_US";
-	//m->m_group = 0;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -10073,7 +10059,6 @@ void Parms::init ( ) {
 		"0 disables all post query reranking. ";
 	m->m_cgi   = "pqrds";
 	m->m_off   = (char *)&cr.m_pqr_docsToScan - x;
-	//m->m_soff  = (char *)&si.m_docsToScanForReranking - y;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "0";
 	m->m_group = 1;

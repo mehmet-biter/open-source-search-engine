@@ -545,7 +545,6 @@ class CollectionRec {
 	int32_t 			m_languageThreshold;
 	int32_t 			m_languageSamples;
 	int32_t 			m_langPageLimit;
-	char			m_useLanguagePages;
 	char 			m_defaultSortCountry[3];
 
 	int32_t  m_filterTimeout;                // kill filter pid after X secs

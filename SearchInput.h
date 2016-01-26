@@ -294,7 +294,6 @@ class SearchInput {
 	float			m_languageWeightFactor;
 	char			m_enableLanguageSorting;
 	uint8_t                 m_countryHint;
-	char                    m_useLanguagePages;
 
 
 	// search result knobs
