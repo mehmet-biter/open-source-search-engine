@@ -816,10 +816,6 @@ class CollectionRec {
 
 	char  m_familyFilter;
 
-	char      	m_qualityAgentEnabled;
-	char      	m_qualityAgentLoop;
-	char            m_qualityAgentBanSubSites;
-	int64_t 	m_qualityAgentStartDoc;
 	int32_t      	m_tagdbRefreshRate;
 	int32_t      	m_linkSamplesToGet;	//was 256
 	int32_t    	m_linkQualityDivisor;	//was 8
@@ -828,7 +824,6 @@ class CollectionRec {
 	int32_t    	m_negPointsPerBannedSiteOnIp;	// was 1
 	int32_t    	m_siteOnIpQualityDivisor;	//was 8
 	int32_t    	m_maxPenaltyFromIp;	        //was 30
-	int32_t            m_qualityAgentBanRuleset;
 	int32_t            m_minPagesToEvaluate;
 
 	int32_t 		m_siteQualityBanThreshold;
