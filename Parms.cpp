@@ -4286,19 +4286,6 @@ void Parms::init ( ) {
 	// SEARCH CONTROLS
 	///////////////////////////////////////////
 
-	m->m_title = "restrict indexdb for queries";
-	m->m_desc  = "If this is true Gigablast will only search the root "
-		"index file for docIds. Saves on disk seeks, "
-		"but may use older versions of indexed web pages.";
-	m->m_cgi   = "riq";
-	m->m_off   = (char *)&cr.m_restrictIndexdbForQuery - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m++;
-
 	m->m_title = "restrict indexdb for xml feed";
 	m->m_desc  = "Like above, but specifically for XML feeds.";
 	m->m_cgi   = "rix";

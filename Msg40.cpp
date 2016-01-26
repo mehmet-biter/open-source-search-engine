@@ -635,8 +635,6 @@ bool Msg40::federatedLoop ( ) {
 	Msg39Request mr;
 	mr.reset();
 
-	//m_r.ptr_coll                    = m_si->m_coll2;
-	//m_r.size_coll                   = m_si->m_collLen2+1;
 	mr.m_maxAge                    = maxAge;
 	mr.m_addToCache                = m_si->m_wcache;
 	mr.m_docsToGet                 = m_docsToGet;
@@ -647,27 +645,18 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_doSiteClustering          = m_si->m_doSiteClustering    ;
 	mr.m_hideAllClustered          = m_si->m_hideAllClustered;
 	mr.m_familyFilter              = m_si->m_familyFilter;
-	//mr.m_useNewAlgo                = m_si->m_useNewAlgo;
 	mr.m_doMaxScoreAlgo            = m_si->m_doMaxScoreAlgo;
-	//mr.m_fastIntersection          = m_si->m_fastIntersection;
-	//mr.m_doIpClustering            = m_si->m_doIpClustering      ;
 	mr.m_doDupContentRemoval       = m_si->m_doDupContentRemoval ;
-	//mr.m_restrictIndexdbForQuery   = m_si->m_restrictIndexdbForQuery ;
 	mr.m_queryExpansion            = m_si->m_queryExpansion; 
-	//mr.m_compoundListMaxSize       = m_si->m_compoundListMaxSize ;
 	mr.m_boolFlag                  = m_si->m_boolFlag            ;
 	mr.m_familyFilter              = m_si->m_familyFilter        ;
 	mr.m_language                  = (unsigned char)m_si->m_queryLangId;
 	mr.ptr_query                   = m_si->m_q.m_orig;
 	mr.size_query                  = m_si->m_q.m_origLen+1;
-	//mr.ptr_whiteList               = m_si->m_whiteListBuf.getBufStart();
-	//mr.size_whiteList              = m_si->m_whiteListBuf.length()+1;
 	int32_t slen = 0; if ( m_si->m_sites ) slen=gbstrlen(m_si->m_sites)+1;
 	mr.ptr_whiteList               = m_si->m_sites;
 	mr.size_whiteList              = slen;
 	mr.m_timeout                   = -1; // auto-determine based on #terms
-	// make sure query term counts match in msg39
-	//mr.m_maxQueryTerms             = m_si->m_maxQueryTerms; 
 	mr.m_realMaxTop                = m_si->m_realMaxTop;
 
 	mr.m_minSerpDocId              = m_si->m_minSerpDocId;

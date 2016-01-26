@@ -455,8 +455,6 @@ class CollectionRec {
 	// have elapsed since the last time we added them to spiderdb
 	float m_outlinksRecycleFrequencyDays ;
 
-	//char  m_onlySpiderRoots         ; // only spider root urls?
-	//	char  m_maxNumHops              ; // hops from parent page
 	char  m_dedupingEnabled         ; // dedup content on same hostname
 	char  m_dupCheckWWW             ;
 	char  m_detectCustomErrorPages  ;
@@ -471,11 +469,9 @@ class CollectionRec {
 	int32_t  m_deadWaitMaxAge          ;
 	char  m_doLinkSpamCheck         ; //filters dynamically generated pages
 	int32_t  m_linkTextAnomalyThresh   ; //filters linktext that is unique
-	//char  m_tagdbEnabled          ;
 	char  m_tagdbColl [MAX_COLL_LEN+1]; // coll to use for tagdb lookups
 	char  m_doChineseDetection      ;
 	char  m_delete404s              ;
-	char  m_restrictIndexdbForQuery ;
 	char  m_restrictIndexdbForXML   ;
 	char  m_defaultRatForXML        ;
 	char  m_defaultRatForHTML       ;
