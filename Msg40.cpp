@@ -363,106 +363,9 @@ bool Msg40::getResults ( SearchInput *si      ,
 	// do not need hosts2.conf!
 	if ( forward ) { char *xx=NULL;*xx=0; }
 
-	// . forward to another *collection* and/or *cluster* if we should
-	// . this is used by Msg41 for importing results from another cluster
-	/*
-	if ( forward ) {
-		// serialize input
-		int32_t  requestSize;
-		// CAUTION: m_docsToGet can be different on remote host!!!
-		char *request = m_si->serializeForMsg40 ( &requestSize );
-		if ( ! request ) return true;
-		// . set timeout based on docids requested!
-		// . the more docs requested the longer it will take to get
-		// . use 50ms per docid requested
-		int32_t timeout = (50 * m_docsToGet) / 1000;
-		// always wait at least 20 seconds
-		if ( timeout < 20 ) timeout = 20;
-		// . forward to another cluster
-		// . use the advanced composite query to make the key
-		uint32_t h = hash32 ( m_si->m_qbuf1 );
-		// get groupId from docId, if positive
-		int32_t          groupNum = h % g_hostdb2.m_numGroups;
-		uint32_t groupId  = g_hostdb2.getGroupId ( groupNum );
-		if ( ! m_mcast.send ( request         , 
-				      requestSize     , 
-				      0x40            , // msgType 0x40
-				      false           , // mcast own m_request?
-				      groupId         , //sendtogroup(groupKey)
-				      false           , // send to whole group?
-				      h               , // key for host in grp
-				      this            , // state data
-				      NULL            , // state data
-				      gotExternalReplyWrapper ,
-				      timeout         , // to re-send to twin
-				      m_si->m_niceness, // niceness        ,
-				      false           , // real time udp?
-				      -1              , // first hostid
-				      NULL            , // m_reply         ,
-				      0               , // m_replyMaxSize  ,
-				      false           , // free reply buf?
-				      false           , // disk load balancing?
-				      -1              , // max cache age
-				      0               , // cacheKey
-				      0               , // bogus rdbId
-				      -1              , // minRecSizes(-1=ukwn)
-				      true            , // sendToSelf
-				      false           , // retry forever
-				      &g_hostdb2      )) {
-			m_mcast.reset();
-			return true;
-		}
-		// always blocks
-		return false; // gotExternalReply();
-	}
-	*/
-
 	// time the cache lookup
 	if ( g_conf.m_logTimingQuery || m_si->m_debug ) 
 		m_startTime = gettimeofdayInMilliseconds();
-
-	// // use cache?
-	// bool useCache = m_si->m_rcache;
-	// 
-	// // turn it off for now until we cache the scoring tables
-	// log("db: cache is disabled until we cache scoring tables");
-	// useCache = false;
-	// // if searching multiple collections do not cache for now
-	// if ( m_si->m_collnumBuf.length() > (int32_t)sizeof(collnum_t) ) 
-	// 	useCache=false;
-	// 
-	// // . try setting from cache first
-	// // . cacher --> "do we READ from cache?"
-	// if ( useCache ) {
-	// 	// make the key based on query and other input parms in msg40
-	// 	key_t key = m_si->makeKey ( );
-	// 	// this should point to the cached rec, if any
-	// 	m_cachePtr = NULL;
-	// 	m_cacheSize = 0;
-	// 	// this returns false if blocked, true otherwise
-	// 	if ( ! m_msg17.getFromCache ( SEARCHRESULTS_CACHEID,
-	// 				      key ,
-	// 				      &m_cachePtr,
-	// 				      &m_cacheSize,
-	// 				      // use first collection #
-	// 				      m_si->m_firstCollnum,
-	// 				      this , 
-	// 				      gotCacheReplyWrapper ,
-	// 				      m_si->m_niceness ,
-	// 				      1 ) )
-	// 		return false;
-	// 	// reset g_errno, we're just a cache
-	// 	g_errno = 0;
-	// 	bool status = gotCacheReply();
-	// 
-	// 	if ( status && m_si->m_streamResults ) {
-	// 		log("msg40: setting streamresults to false. "
-	// 		    "was in cache.");
-	// 		m_si->m_streamResults = false;
-	// 	}
-	// 
-	// 	return status;
-	// }
 
 	// keep going
 	bool status = prepareToGetDocIds ( );
@@ -475,50 +378,6 @@ bool Msg40::getResults ( SearchInput *si      ,
 
 	return status;
 }
-
-/*
-void gotExternalReplyWrapper ( void *state , void *state2 ) {
-	Msg40 *THIS = (Msg40 *)state;
-	if ( ! THIS->gotExternalReply() ) return;
-	THIS->m_callback ( THIS->m_state );
-}
-
-bool Msg40::gotExternalReply ( ) {
-	if ( g_errno ) {
-		log("query: Trying to forward to another cluster "
-		    "had error: %s.",mstrerror(g_errno));
-		return true;
-	}
-	// grab the reply from the multicast class
-	bool freeit;
-	int32_t bufSize , bufMaxSize;
-	char *buf = m_mcast.getBestReply ( &bufSize , &bufMaxSize , &freeit );
-	relabel( buf, bufMaxSize, "Msg40-mcastGBR" );
-	// sanity check
-	if ( freeit ) {
-		log(LOG_LOGIC,"query: msg40: gotReply: Bad engineer.");
-		char *xx = NULL; *xx = 0;
-	}
-	if ( bufSize != bufMaxSize ) {
-		log(LOG_LOGIC,"query: msg40: fix me.");
-		char *xx = NULL; *xx = 0;
-	}
-	// set ourselves from it
-	deserialize ( buf , bufSize );
-	return true;
-}
-*/
-		
-// msg17 calls this after it gets a reply
-//void gotCacheReplyWrapper ( void *state ) {
-//	Msg40 *THIS = (Msg40 *)state;
-//	// reset g_errno, we're just a cache
-//	g_errno = 0;
-//	// handle the reply
-//	if ( ! THIS->gotCacheReply() ) return;
-//	// otherwise, call callback
-//	THIS->m_callback ( THIS->m_state );
-//}
 
 bool Msg40::gotCacheReply ( ) {
 	// if not found, get the result the hard way
@@ -886,10 +745,6 @@ bool Msg40::gotDocIds ( ) {
 	// . returns false and sets g_errno/m_errno on error
 	// . salvage any Msg20s that we can if we are being re-called
 	if ( ! reallocMsg20Buf() ) return true;
-
-	// these are just like for passing to Msg39 above
-	//int32_t maxAge = 0;
-	//if ( m_si->m_rcache ) maxAge = g_conf.m_titledbMaxCacheAge;
 
 	// . launch a bunch of task that depend on the docids we got
 	// . gigabits, reference pages and dmoz topics
@@ -1285,70 +1140,11 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 
 	// these are just like for passing to Msg39 above
 	int32_t maxAge = 0 ;
-	//if ( m_si->m_rcache ) maxAge = g_conf.m_titledbMaxCacheAge;
 	// may it somewhat jive with the search results caching, otherwise
 	// it will tell me a search result was indexed like 3 days ago
 	// when it was just indexed 10 minutes ago because the 
 	// titledbMaxCacheAge was set way too high
 	if ( m_si->m_rcache ) maxAge = g_conf.m_searchResultsMaxCacheAge;
-
-	/*
-	// "need" = how many more msg20 replies do we need to get back to
-	// get the required number of search results?
-	int32_t sample        = 0;
-	int32_t good          = 0;
-	int32_t gaps          = 0;
-	int32_t goodAfterGaps = 0;
-	// loop up to the last msg20 request we actually launched
-	for ( int32_t i = 0 ; i <= m_maxiLaunched ; i++ ) {
-		// if Msg51 had initially clustered (CR_CLUSTERED) this away 
-		// we never actually gave it a msg20 ptr, so it is NULL. it
-		// m_msg3a.m_clusterLevel[i] != CR_OK ever.
-		if ( ! m_msg20[i] ) continue;
-		// do not count if reply not received yet. it is a gap.
-		if ( ! m_msg20[i]->m_gotReply ) { gaps++; continue; }
-		// ok, we had launched it and got a reply for it, it is 
-		// therefore in our "sample", used to make the visibility ratio
-		sample++;
-		// . skip if not "good" (visible)
-		// . if msg20 has error, sets cluster level to CR_ERROR_SUMMARY
-		if ( m_msg3a.m_clusterLevels[i] != CR_OK ) continue;
-		// count as good. it is visible.
-		if ( gaps ) goodAfterGaps++;
-		else        good++;
-	}
-	// how many MORE docs to we need to get? subtract what was desired from
-	// what we already have that is visible as int32_t as it is before any gap
-	int32_t need = m_docsToGetVisible - good ;
-	// if we fill in the gaps, we get "goodAfterGaps" more visible results
-	if ( need >= gaps ) {
-		// so no need to get these then
-		need -= goodAfterGaps ;
-		// but watch out for flooding!
-		if ( need < gaps ) need = gaps;
-	}
-	// how many total good?
-	int32_t allGood = good + goodAfterGaps;
-	// get the visiblity ratio from the replies we did get back
-	float ratio ;
-	if ( allGood > 0 ) ratio = (float)sample / (float)allGood;
-	else               ratio = (float)sample / 1.0        ;
-	// give a 5% boost
-	ratio *= 1.05;
-	// assume some of what we "need" will be invisible, make up for that
-	if ( sample > 0 ) need = (int32_t)((float)need * ratio);
-	// . restrict "need" to no more than 50 at a time
-	// . we are using it for a "max outstanding" msg20s
-	// . do not overflow the udpservers
-	if ( need > 50 ) need = 50;
-
-	if ( m_si->m_debug || g_conf.m_logDebugQuery )
-		logf(LOG_DEBUG,"query: msg40: can launch %"INT32" more msg20s. "
-		     "%"INT32" out. %"INT32" completed. %"INT32" visible. %"INT32" gaps. "
-		     "%"INT32" contiguous. %"INT32" toGet. ",
-		     need,m_numRequests-m_numReplies,sample,allGood,gaps,
-		     m_numContiguous,m_docsToGet);
-	*/
 
 	int32_t bigSampleRadius = 0;
 	int32_t bigSampleMaxLen = 0;
@@ -2788,12 +2584,6 @@ bool Msg40::gotSummary ( ) {
 		     (PTRTYPE)this ,
 		     visible, // m_visibleContiguous,
 		     now - m_startTime );
-
-
-	//int32_t maxAge = 0;
-	//if ( m_si->m_rcache ) maxAge = g_conf.m_titledbMaxCacheAge;
-
-
 
 
 	/////////////
