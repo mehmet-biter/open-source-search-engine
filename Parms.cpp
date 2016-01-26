@@ -11218,19 +11218,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "follow RSS links";
-	m->m_desc  = "If an item on a page has an RSS feed link, add the "
-		"RSS link to the spider queue and index the RSS pages "
-		"instead of the current page.";
-	m->m_cgi   = "frss";
-	m->m_off   = (char *)&cr.m_followRSSLinks - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "only index articles from RSS feeds";
 	m->m_desc  = "Only index pages that were linked to by an RSS feed. "
 		"Follow RSS Links must be enabled (above).";

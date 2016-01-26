@@ -873,7 +873,6 @@ class CollectionRec {
 	int32_t m_numExtraClusterByTopicResults;
 
 	// rss options
-	char m_followRSSLinks;
 	char m_onlyIndexRSS;
 
 	// enable click 'n' scroll
