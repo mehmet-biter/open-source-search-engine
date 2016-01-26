@@ -1494,9 +1494,18 @@ bool Url::isDomainUnwantedForIndexing() {
 			{
 				return true;
 			}
+
+			if( memcmp(domain, "imdb.com", 8) == 0 )
+			{
+				if( strnstr2(path, plen, "/imdb/embed?") )
+				{
+					// http://www.imdb.com/video/imdb/vi706391833/imdb/embed?autoplay=false&width=480
+					return true;
+				}
+			}
 			break;
 		case 9:
-			if( memcmp(domain, "ytimg.com", 9) == 0 ||	// YouTube images
+			if( memcmp(domain, "ytimg.com", 9) == 0 ||		// YouTube images
 				memcmp(domain, "atdmt.com", 9) == 0 )		// Facebook tracking
 			{
 				return true;
@@ -1563,21 +1572,21 @@ bool Url::isDomainUnwantedForIndexing() {
 					// http://twitter.com/share?text=Im%20Sharing%20on%20Twitter&url=http://stackoverflow.com/users/2943186/youssef-subehi&hashtags=stackoverflow,example,youssefusf
 					return true;
 				}
-				if( plen >= 8 && memcmp(path, "/search?", 8) == 0 )
+				if( plen >= 8 && 
+					(	memcmp(path, "/search?", 8) == 0 ||
+						memcmp(path, "/intent/", 8) == 0 ) )
 				{
-					// https://www.twitter.com/search?q=China
-					return true;
-				}
-				if( plen >= 13 && memcmp(path, "/intent/tweet?", 13) == 0 )
-				{
-					// https://www.twitter.com/intent/tweet?text=18%20Cocktails%20That%20Are%20Better%20With%20Butter&url=http%3A%2F%2Fwww.eater.com%2Fdrinks%2F2016%2F1%2F14%2F10710202%2Fbutter-cocktails&via=Eater
+					// https://twitter.com/search?q=China
+					// https://twitter.com/intent/tweet?text=18%20Cocktails%20That%20Are%20Better%20With%20Butter&url=http%3A%2F%2Fwww.eater.com%2Fdrinks%2F2016%2F1%2F14%2F10710202%2Fbutter-cocktails&via=Eater
+					// https://twitter.com/intent/retweet?tweet_id=534860467186171904
+					// https://twitter.com/intent/favorite?tweet_id=595310844746969089
 					return true;
 				}
 			}
 			break;
 		case 12:
 			if( memcmp(domain, "akamaihd.net", 12) == 0 ||
-					memcmp(domain, "vimeocdn.com", 12) == 0 )
+				memcmp(domain, "vimeocdn.com", 12) == 0 )
 			{
 				return true;
 			}
@@ -1602,7 +1611,7 @@ bool Url::isDomainUnwantedForIndexing() {
 			break;
 		case 13:
 			if( memcmp(domain, "akamaized.net", 13) == 0 ||
-					memcmp(domain, "disquscdn.com", 13) == 0 )
+				memcmp(domain, "disquscdn.com", 13) == 0 )
 			{
 				return true;
 			}
@@ -1617,9 +1626,9 @@ bool Url::isDomainUnwantedForIndexing() {
 			}
 			break;
 		case 14:
-			if( memcmp(domain, "googleapis.com", 14) == 0 ||
-					memcmp(domain, "netdna-cdn.com", 14) == 0 ||
-					memcmp(domain, "cloudfront.net", 14) == 0 )
+			if(	memcmp(domain, "googleapis.com", 14) == 0 ||
+				memcmp(domain, "netdna-cdn.com", 14) == 0 ||
+				memcmp(domain, "cloudfront.net", 14) == 0 )
 			{
 				return true;
 			}
