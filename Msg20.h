@@ -202,10 +202,6 @@ public:
 	class Msg20Reply *m_nextMerged   ;
 	int32_t       m_contentLen          ; // was m_docLen
 	int32_t       m_contentHash32       ;  // for deduping diffbot json objects streaming
-	//int32_t     m_docSummaryScore     ;
-	//int32_t     m_inSectionScore      ;
-	//float      m_proximityScore      ;
-	//int32_t       m_ruleset             ;
 	int32_t       m_pageNumInlinks      ;
 	int32_t       m_pageNumGoodInlinks  ;
 	int32_t       m_pageNumUniqueIps    ; // includes our own inlinks
@@ -213,23 +209,12 @@ public:
 	int32_t       m_pageInlinksLastUpdated;
 	
 	int32_t       m_siteNumInlinks      ; // GOOD inlinks!
-	//int32_t       m_siteNumInlinksTotal ; // TOTAL inlinks
-	//int32_t       m_siteNumUniqueIps    ;
-	//int32_t       m_siteNumUniqueCBlocks;
 
 	int32_t       m_numOutlinks         ; // replaced m_linkCount
 
 	// these are just storage for LinkInfo::set() to use
-	//int32_t       m_linkTextScoreWeight ;
 	int32_t       m_linkTextNumWords    ;
-	//int32_t       m_linkTextLinkerQualityBoost ;
-	//int32_t       m_linkTextNumWordsBoost    ;
-	//int32_t       m_linkTextBaseScore   ;
 
-	//int32_t       m_pagePop             ; // set for m_computeLinkInfo
-	//int32_t     m_siteRootPagePop     ; // set for m_computeLinkInfo
-	//int32_t     m_siteRootNumInlinks  ; // set for m_computeLinkInfo
-	//int32_t       m_sitePop             ; // set for m_computeLinkInfo
 	int32_t       m_midDomHash          ; // set for m_getLinkText
 	int32_t       m_adIdHash            ; // set for m_getLinkText
 	void         *m_parentOwner;

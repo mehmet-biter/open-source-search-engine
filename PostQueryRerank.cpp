@@ -530,11 +530,6 @@ bool PostQueryRerank::rerank ( ) {
 		score = rerankPageSize( score,
 					msg20->m_r->m_contentLen );
 
-		// demote for no cat id
-		score = rerankNoCatId( score,
-				       msg20->m_r->size_catIds/4,
-				       msg20->m_r->size_indCatIds/4);
-
 		// demote for no other pages from same host
 		score = rerankOtherPagesFromSameHost( score,
 						      &m_pageUrl[x] );
@@ -801,26 +796,6 @@ rscore_t PostQueryRerank::rerankPathsInUrl ( rscore_t score,
 
 	return rerankHigherDemotesMore( score, numPaths, maxVal, factor,
 					"pqrpaths", "paths in its url" );
-}
-
-// pqrcatid
-// demote page if does not have a catid
-rscore_t PostQueryRerank::rerankNoCatId ( rscore_t score, 
-				      int32_t numCatIds,
-				      int32_t numIndCatIds ) {
-	//log( LOG_DEBUG, "AWL:in PQR::rerankNoCatId("
-	//     "score:%"INT32", numCatIds:%"INT32", numIndCatIds:%"INT32")"
-	//     "[P_factor:%3.3f]",
-	//     score, numCatIds, numIndCatIds,
-	//     m_si->m_cr->m_pqr_demFactNoCatId );
-
-	float factor = m_si->m_cr->m_pqr_demFactNoCatId;
-	if ( factor <= 0 ) return score; // disables
-
-	if ( numCatIds + numIndCatIds > 0 ) return score;
-	
-	return rerankAssignPenalty( score, factor, 
-				    "pqrcatid", "it has no category id" );
 }
 
 // pqrpgsz

@@ -4831,20 +4831,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "demotion for pages that do not have a catid";
-	m->m_desc  = "Demotion factor for pages that do not have a catid. "
-		"Score will be penalized by this factor as a percent. "
-		"A safe range is from 0 to 0.2. ";
-	m->m_cgi   = "pqrcatid";
-	m->m_off   = (char *)&cr.m_pqr_demFactNoCatId - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "demotion for larger pages";
 	m->m_desc  = "Demotion factor for larger pages. "
 		"Page will be penalized by its size times this factor "

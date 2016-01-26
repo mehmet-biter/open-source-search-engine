@@ -896,7 +896,6 @@ class CollectionRec {
 	int32_t  m_pqr_maxValQTTopicsInUrl; // max value for fewer query terms or gigabits in the url
 	float m_pqr_demFactPaths; // demotion factor for more paths
 	int32_t  m_pqr_maxValPaths; // max value for more paths
-	float m_pqr_demFactNoCatId; // demtion factor for no catid
 	float m_pqr_demFactCatidHasSupers; // demotion factor for catids with many super topics
 	int32_t  m_pqr_maxValCatidHasSupers; // max value for catids with many super topics
 	float m_pqr_demFactPageSize; // demotion factor for higher page sizes
