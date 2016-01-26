@@ -102,6 +102,50 @@ char *getJSONObjectEnd ( char *p , int32_t niceness ) ;
 
 void doneReadingArchiveFileWrapper ( int fd, void *state );
 
+// a ptr to HashInfo is passed to hashString() and hashWords()
+class HashInfo {
+public:
+	HashInfo() { 
+		m_tt					= NULL;
+		m_prefix				= NULL;
+		m_desc					= NULL;
+		m_date					= 0;
+		// should we do sharding based on termid and not the usual docid???
+		// in general this is false, but for checksum we want to shard
+		// by the checksum and not docid to avoid having to do a 
+		// gbchecksum:xxxxx search on ALL shards. much more efficient.
+		m_shardByTermId 		= false;
+		m_hashGroup				= -1;
+		m_useCountTable			= true;
+		m_useSections			= true;
+		m_startDist				= 0;
+
+		// BR 20160108: Now default to false since we will only use it for
+		// very specific cases like spiderdate, which is for debugging only.
+		// If true, creates 4 posdb entries for numbers in posdb, e.g.
+		// gbsortbyint:gbisadultint32, gbrevsortbyint:gbisadultint32
+		// gbsortby:gbisadultfloat32, gbrevsortby:gbisadultfloat32
+		m_createSortByForNumbers= false;
+		m_hashNumbers			= true;
+		m_hashCommonWebWords	= true;
+	};
+	class HashTableX *m_tt;
+	char			*m_prefix;
+	// "m_desc" should detail the algorithm
+	char			*m_desc;
+	int32_t			m_date;
+	bool			m_shardByTermId;
+	char			m_linkerSiteRank;
+	char			m_hashGroup;
+	int32_t			m_startDist;
+	bool			m_useCountTable;
+	bool			m_useSections;
+	bool			m_createSortByForNumbers;
+	bool			m_hashNumbers;
+	bool			m_hashCommonWebWords;
+};
+
+
 XmlDoc::XmlDoc() {
 	//clear all fields in the titledb structure (which are the first fileds in this class)
 	memset(&m_headerSize, 0, (size_t)((char*)&ptr_firstUrl-(char*)&m_headerSize));
