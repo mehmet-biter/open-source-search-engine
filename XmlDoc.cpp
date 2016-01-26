@@ -18221,17 +18221,6 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("thumbnail=none ");
 
 
-	/*
-	if ( m_hasAddressValid && m_addressesValid )
-		sb->safePrintf("numaddr=%"INT32" ",(int32_t)m_addresses.m_numValid);
-
-	//if ( m_skipIndexingValid )
-	//	sb->safePrintf("skipindexing=%"INT32" ",(int32_t)m_skipIndexing);
-
-	if ( m_hasTODValid )
-		sb->safePrintf("hastod=%"INT32" ",(int32_t)m_hasTOD);
-	*/
-
 	// get the content type
 	uint8_t ct = CT_UNKNOWN;
 	if ( m_contentTypeValid ) ct = m_contentType;
