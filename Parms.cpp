@@ -10199,7 +10199,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "dsrt";
 	m->m_off   = (char *)&cr.m_docsToScanForTopics - x;
 	m->m_type  = TYPE_LONG;
-	m->m_def   = "30";
+	m->m_def   = "0";
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -10240,7 +10240,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "nrt";
 	m->m_off   = (char *)&cr.m_numTopics - x;
 	m->m_type  = TYPE_LONG;
-	m->m_def   = "11";
+	m->m_def   = "0";
 	m->m_group = 0;
 	m->m_sprpg = 0; // do not propagate
         m->m_sprpp = 0; // do not propagate
