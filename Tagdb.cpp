@@ -1012,14 +1012,7 @@ static TagDesc s_tagDesc[] = {
 	// for determining default venue addresses
 	{"roottitles"             ,TDF_STRING|TDF_NOINDEX,0},
 
-	// for addresses of the website, can be multiple
-	{"venueaddress"             ,TDF_STRING|TDF_ARRAY|TDF_NOINDEX,0},
-
 	{"manualban"            ,0x00,0},
-	{"manualfilter"         ,0x00,0},
-	// clock hashes are now stored in indexdb
-	//{"clock"              ,0x00,0},
-	{"dateformat"           ,0x00,0}, // 1 = american, 2 = european
 	
 	{"ruleset"              ,0x00,0},
 	{"deep"                 ,0x00,0},
@@ -1031,12 +1024,6 @@ static TagDesc s_tagDesc[] = {
 	// this is "0" or "1". if it is "0" then the date lets XmlDoc.cpp know
 	// when we last tried to get the contact info for the site
 	{"hascontactinfo"       ,0x00,0},
-
-	// street address using ; as delimeter
-	{"contactaddress"              ,TDF_ARRAY|TDF_NOINDEX,0},
-	{"contactemails"               ,TDF_ARRAY|TDF_NOINDEX,0},
-
-	{"hascontactform"       ,0x00,0},
 
 	// . this is used to define INDEPENDENT subsites
 	// . such INDEPENDENT subsites should never inherit from this tag rec
@@ -1057,12 +1044,6 @@ static TagDesc s_tagDesc[] = {
 	{"authorityinlink"      ,TDF_STRING|TDF_ARRAY,0},
 
 	{"pagerank"             ,0x00,0},
-	{"ingoogle"             ,0x00,0},
-	{"ingoogleblogs"        ,0x00,0},
-	{"ingooglenews"         ,0x00,0},
-
-	// geo location from this news site directory
-	{"abyznewslinks.address",0x00,0},
 
 	// we now store site pop, etc. in tagdb
 	{"sitenuminlinks"       ,0x00,0},
