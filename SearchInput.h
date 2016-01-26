@@ -227,9 +227,6 @@ class SearchInput {
 	// ranking algos
 	char   m_doMaxScoreAlgo;
 
-	// intersection speed up shortcut? "&fi=1", defaults to on
-	char   m_fastIntersection;
-
 	// stream results back on socket in streaming mode, usefule when 
 	// thousands of results are requested
 	char   m_streamResults;

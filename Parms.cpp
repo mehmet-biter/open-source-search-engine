@@ -4580,19 +4580,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m++;
 
-
-	m->m_title = "use fast intersection algo";
-	m->m_desc  = "Should we try to speed up search results generation?";
-	m->m_off   = (char *)&si.m_fastIntersection - y;
-	m->m_type  = TYPE_CHAR;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	// turn off until we debug
-	m->m_def   = "-1";
-	m->m_cgi   = "fi";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m++;
-
 	m->m_title = "max number of facets to return";
 	m->m_desc  = "Max number of facets to return";
 	m->m_off   = (char *)&si.m_maxFacets - y;
