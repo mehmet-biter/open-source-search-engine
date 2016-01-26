@@ -585,7 +585,6 @@ class CollectionRec {
 	char  m_requireAllTerms         ;
 	int32_t  m_summaryMode		;
 	char  m_deleteTimeouts          ; // can delete docs that time out?
-	char  m_allowAsianDocs          ;
 	char  m_allowAdultDocs          ;
 	char  m_doSerpDetection         ;
 	char  m_useCanonicalRedirects   ;
