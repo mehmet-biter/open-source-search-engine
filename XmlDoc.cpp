@@ -15746,7 +15746,6 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 }
 
 pid_t g_pid    = -1;
-int32_t  g_ticker = 0;
 int32_t  g_filterTimeout = -1;
 
 // return downloaded content as utf8

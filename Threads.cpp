@@ -10,8 +10,6 @@
 #include <sys/wait.h>     // waitpid()
 #include "Rdb.h"          // g_mergeUrgent
 #include <sched.h>        // clone()
-//#include "Msg16.h"      // g_pid g_ticker
-#include "XmlDoc.h"       // g_pid g_ticker
 #include "Profiler.h"
 #include "Stats.h"
 #include "Process.h"
@@ -33,6 +31,8 @@ int pthread_mutex_unlock (pthread_mutex_t *t ) { return 0; }
 //static pid_t  s_pid    = (pid_t) -1;
 // on 64-bit architectures pthread_t is 64 bit and pid_t is 32 bit:
 static pthread_t  s_pid    = (pthread_t) -1;
+
+static int32_t  g_ticker = 0;
 
 //pid_t getpidtid() {
 // on 64-bit architectures pthread_t is 64 bit and pid_t is 32 bit:

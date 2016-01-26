@@ -2298,7 +2298,6 @@ public:
 extern uint8_t score32to8 ( uint32_t score ) ;
 
 extern pid_t g_pid    ;
-extern int32_t  g_ticker ;
 extern int32_t  g_filterTimeout ;
 
 // as recommended in the "man system" page we use our own
