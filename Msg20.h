@@ -12,18 +12,9 @@
 #include "Summary.h"
 #include "Titledb.h"
 #include "Query.h"
-//#include "LinkInfo.h"
 #include "Tagdb.h" // TagRec
 
-// values for SummaryLine::m_flags
-//#define SL_TRUNCATED 0x0100
-//#define SL_IS_TITLE  0x0080
-//#define SL_HAS_DATE  0x0040
-//#define SL_HAS_QTERM 0x0020
-//#define SL_BULLET    0x0001
-
 #define MSG20_CURRENT_VERSION 0
-
 
 class Msg20Request {
  public:
@@ -82,8 +73,6 @@ class Msg20Request {
 
 	unsigned char       m_justGetFacets : 1         ;
 
-	// if titleRec not from this ruleset, return g_errno = EDOCFILTERED
-	//int32_t       m_rulesetFilter             ;
 	// language the query is in (ptr_qbuf)
 	uint8_t    m_langId;
 	// we now use the numeric collection # and not the ptr_coll
@@ -91,19 +80,12 @@ class Msg20Request {
 
 	unsigned char       m_highlightQueryTerms       :1;
 	unsigned char       m_wcache                    :1;
-	//unsigned char     m_checkSitedb               :1;
-	unsigned char       m_considerTitlesFromBody    :1;
 	unsigned char       m_getSummaryVector          :1;
 	unsigned char       m_showBanned                :1;
-	//unsigned char       m_excludeLinkText           :1;
-	//unsigned char       m_excludeMetaText           :1;
-	//unsigned char       m_hackFixWords              :1;
-	//unsigned char       m_hackFixPhrases            :1;
 	unsigned char       m_includeCachedCopy         :1;
 	unsigned char       m_getSectionVotingInfo      :1; // in JSON for now
 	unsigned char       m_getMatches                :1;
 	unsigned char       m_getTermListBuf            :1;
-	//unsigned char     m_getInlinks                :1; // use m_getLinkInfo!
 	unsigned char       m_getOutlinks               :1;
 	unsigned char       m_getTitleRec               :1; // sets ptr_tr in reply
 	unsigned char       m_getGigabitVector          :1;

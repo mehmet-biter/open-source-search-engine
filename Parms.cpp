@@ -9911,21 +9911,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "consider titles from body";
-	m->m_desc = "Can Gigablast make titles from the document content? "
-		"Used mostly for the news collection where the title tags "
-		"are not very reliable.";
-	m->m_cgi   = "gtfb";
-	m->m_off   = (char *)&cr.m_considerTitlesFromBody - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_group = 0;
-	//m->m_soff  = (char *)&si.m_considerTitlesFromBody - y;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "site cluster by default";
 	m->m_desc  = "Should search results be site clustered? This "
 		"limits each site to appearing at most twice in the "

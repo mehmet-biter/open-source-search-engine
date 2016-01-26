@@ -346,7 +346,6 @@ class SearchInput {
 	int32_t   m_maxQueryTerms;
 
 	// for the news collection really
-	char   m_considerTitlesFromBody;
 	int32_t   m_maxClusterByTopicResults;
 	int32_t   m_numExtraClusterByTopicResults;
 

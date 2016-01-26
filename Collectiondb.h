@@ -882,9 +882,6 @@ class CollectionRec {
 	// use query expansion for this collection?
 	char m_queryExpansion;
 
-	// usedful for the news collection where <title>s aren't that good
-	char m_considerTitlesFromBody;
-
 	// read from cache
 	char m_rcache;
 
