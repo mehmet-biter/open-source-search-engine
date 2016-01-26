@@ -111,7 +111,6 @@ XmlDoc::XmlDoc() {
 	memset(&m_headerSize, 0, (size_t)((char*)&ptr_firstUrl-(char*)&m_headerSize));
 	
 	m_esbuf.setLabel("exputfbuf");
-	for ( int32_t i = 0 ; i < MAX_XML_DOCS ; i++ ) m_xmlDocs[i] = NULL;
 	m_freed = false;
 	m_contentInjected = false;
 	m_wasContentInjected = false;
@@ -499,13 +498,6 @@ void XmlDoc::reset ( ) {
 
 	m_wordSpamBuf.purge();
 	m_fragBuf.purge();
-
-	for ( int32_t i = 0 ; i < MAX_XML_DOCS ; i++ ) {
-		if ( ! m_xmlDocs[i] ) continue;
-		mdelete ( m_xmlDocs[i] , sizeof(XmlDoc), "xdarr" );
-		delete  ( m_xmlDocs[i] );
-		m_xmlDocs[i] = NULL;
-	}
 
 	s_lastTimeStart = 0LL;
 

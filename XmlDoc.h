@@ -191,8 +191,6 @@ uint16_t getCharsetFast ( class HttpMime *mime,
 
 #define ROOT_TITLE_BUF_MAX 512
 
-#define MAX_XML_DOCS 4
-
 #define MAXMSG7S 50
 
 class XmlDoc {
@@ -2210,8 +2208,6 @@ public:
 	bool m_dedupLinkDomains;
 	void *m_finalState;
 	void (* m_finalCallback) ( void *state );
-	char  m_used[MAX_XML_DOCS];
-	class XmlDoc *m_xmlDocs[MAX_XML_DOCS];
 	int64_t m_cacheStartTime;
 };
 
