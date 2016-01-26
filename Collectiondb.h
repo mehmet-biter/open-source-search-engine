@@ -844,8 +844,6 @@ class CollectionRec {
 	// . but we exceed this width before we would split a word
 	int32_t m_summaryMaxWidth;
 
-	int32_t m_proxCarveRadius;
-
 	// how long a robots.txt can be in the cache (Msg13.cpp/Robotdb.cpp)
 	int32_t m_maxRobotsCacheAge;
 

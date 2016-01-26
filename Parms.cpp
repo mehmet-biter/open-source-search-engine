@@ -10151,19 +10151,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;       
 
-	m->m_title = "Prox summary carver radius";
-	m->m_desc  = "Maximum number of characters to allow in between "
-		"search terms.";
-	m->m_cgi   = "pscr";
-	m->m_off   = (char *)&cr.m_proxCarveRadius - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "256";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "front highlight tag";
 	m->m_desc  = "Front html tag used for highlightig query terms in the "
 		"summaries displated in the search results.";
