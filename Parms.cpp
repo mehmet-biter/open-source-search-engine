@@ -4796,25 +4796,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "demotion for pages that are not high quality";
-	m->m_desc  = "Demotion factor for pages that are not high quality. "
-		"Score is penalized by this number as a percent times level "
-		"of quality. A pqge will be demoted by the formula "
-		"(max quality - page's quality) * this factor / the max "
-		"value given below. Generally, a page will not be "
-		"demoted more than this factor as a percent. "
-		"0 means no demotion. "
-		"A safe range is between 0 to 1. ";
-	m->m_cgi   = "pqrqual";
-	m->m_off   = (char *)&cr.m_pqr_demFactQual - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "max value for pages that are not high quality";
 	m->m_desc  = "Max page quality. Pages with a quality level "
 		"equal to or higher than this value "
