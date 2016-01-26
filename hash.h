@@ -385,12 +385,6 @@ inline uint64_t hash64Upper_a ( char *s , int32_t len ,
 	return h;
 }
 
-// returns the 'clean' letter by removing accents and puctuation marks
-// supporting only iso charsets for now
-//char getClean( UChar32 c );
-uint8_t getClean_a ( char c ) ;
-UChar32 getClean_utf8 ( const char *src ) ;
-
 
 inline uint32_t hashLong ( uint32_t x ) {
 	uint32_t h = 0;

@@ -2,6 +2,14 @@
 
 uint64_t g_hashtab[256][256] ;
 
+
+// returns the 'clean' letter by removing accents and puctuation marks
+// supporting only iso charsets for now
+//char getClean( UChar32 c );
+static uint8_t getClean_a ( char c ) ;
+static UChar32 getClean_utf8 ( const char *src ) ;
+
+
 // . now we explicitly specify the zobrist table so we are compatible
 //   with cygwin and apple environments
 // . no, let's just define the rand2() function to be compatible then
@@ -220,7 +228,7 @@ uint64_t hash64d ( const char *p, int32_t plen ) {
 	return h;
 }
 
-uint8_t getClean_a ( char c ) {
+static uint8_t getClean_a ( char c ) {
 	if ( is_alnum_a ( c ) ) return to_lower_a(c);
 	if ( c == '\n'        ) return '\0';
 	if ( c == '-'         ) return c;
@@ -230,7 +238,7 @@ uint8_t getClean_a ( char c ) {
 }
 
 
-UChar32 getClean_utf8 ( const char *src ) {
+static UChar32 getClean_utf8 ( const char *src ) {
 	// do ascii fast
 	if ( is_ascii ( *src ) ) return (UChar32)getClean_a(*src);
 	// otherwise, lower case it
