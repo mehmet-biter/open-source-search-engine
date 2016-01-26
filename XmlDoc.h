@@ -1008,9 +1008,7 @@ public:
 	HashTableX m_turkVotingTable;
 	HashTableX m_turkBitsTable;
 	uint32_t m_confirmedTitleContentHash ;
-	uint32_t m_confirmedVenueContentHash ;
 	uint32_t m_confirmedTitleTagHash     ;
-	uint32_t m_confirmedVenueTagHash     ;
 
 	// turk voting tag rec
 	TagRec m_vtr;
@@ -1213,7 +1211,6 @@ public:
 	bool m_isPermalinkValid;
 
 	bool m_isAdultValid;
-	//bool m_hasSiteVenueValid;
 	bool m_urlPubDateValid;
 	bool m_isUrlPermalinkFormatValid;
 	bool m_percentChangedValid;
@@ -1327,7 +1324,6 @@ public:
         char m_spiderLinks2;
 	char m_isContentTruncated2;
 	char m_isLinkSpam2;
-	//bool m_hasSiteVenue2;
 	char m_isSiteRoot2;
 
 	// DO NOT add validity flags below this line!
