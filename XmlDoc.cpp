@@ -48,10 +48,6 @@ extern int g_inMemcpy;
 
 #define MAXDOCLEN (1024*1024 * 5)
 
-HashTableX *g_ct = NULL;
-XmlDoc *g_doc = NULL;
-char *g_ptr = NULL;
-int32_t *g_int32_t = NULL;
 
 #define SENT_UNITS 30
 
@@ -193,8 +189,6 @@ XmlDoc::~XmlDoc() {
 
 static int64_t s_lastTimeStart = 0LL;
 
-// for debugging
-class XmlDoc *g_xd;
 
 void XmlDoc::reset ( ) {
 
@@ -9746,8 +9740,6 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 	m_extraDoc->m_forwardDownloadRequest = true;
 	// set this flag so msg13.cpp doesn't print the "hammering ip" msg
 	m_extraDoc->m_isChildDoc = true;
-	// debug it
-	//g_doc = this;
 
 	// and inherit test dir so getTestDir() doesn't core on us
 	bool isPageParser = getIsPageParser();
@@ -19646,7 +19638,6 @@ void getMetaListWrapper ( void *state ) {
 	else                     THIS->m_callback2 ( THIS->m_state );
 }
 
-XmlDoc *g_od = NULL;
 
 // . returns NULL and sets g_errno on error
 // . make a meta list to call Msg4::addMetaList() with
@@ -20308,9 +20299,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( ! info1 || info1 == (LinkInfo *)-1 )
 		return (char *)info1;
 	//}
-
-	// global debug
-	g_od = od;
 
 	// so getSiteRank() works
 	int32_t *sni = getSiteNumInlinks();
@@ -36081,7 +36069,7 @@ char *XmlDoc::getFragVec ( ) {
 	return ff;
 }
 
-float g_wtab[30][30];
+static float g_wtab[30][30];
 
 // . inline this for speed
 // . if a word repeats in different phrases, promote the word
