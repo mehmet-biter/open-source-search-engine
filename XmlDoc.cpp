@@ -3843,8 +3843,6 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 		if ( *ps <= 0 ) continue;
 		// or empty string ptr
 		if ( ! *pd ) continue;
-		// skip utf8content if we should -- no events or addresses
-		//if ( m_skipIndexing && pd == &ptr_utf8Content ) continue;
 		// 4 bytes for the size
 		need1 += 4;
 		// add it up
