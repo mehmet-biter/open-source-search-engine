@@ -171,17 +171,6 @@ int gbcompress   ( unsigned char *dest      ,
 		   uint32_t  sourceLen ,
 		   int32_t encoding = ET_DEFLATE);
 
-int gbcompress7  ( unsigned char *dest      ,
-		   uint32_t *destLen   ,
-		   unsigned char *source    ,
-		   uint32_t  sourceLen ,
-		   bool compress = true );
-
-int gbuncompress7  ( unsigned char *dest      ,
-		     uint32_t *destLen   ,
-		     unsigned char *source    ,
-		     uint32_t  sourceLen ) ;
-
 
 uint32_t score8to32 ( uint8_t score8 );
 
