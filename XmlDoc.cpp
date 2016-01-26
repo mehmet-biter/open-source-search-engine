@@ -15745,8 +15745,6 @@ void XmlDoc::filterStart_r ( bool amThread ) {
 	//m_filteredContentAllocSize = 0;
 }
 
-pid_t g_pid    = -1;
-int32_t  g_filterTimeout = -1;
 
 // return downloaded content as utf8
 char **XmlDoc::getRawUtf8Content ( ) {

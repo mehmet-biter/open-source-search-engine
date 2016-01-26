@@ -33,6 +33,8 @@ int pthread_mutex_unlock (pthread_mutex_t *t ) { return 0; }
 static pthread_t  s_pid    = (pthread_t) -1;
 
 static int32_t  g_ticker = 0;
+static int32_t  g_filterTimeout = -1;
+static pid_t g_pid    = -1;
 
 //pid_t getpidtid() {
 // on 64-bit architectures pthread_t is 64 bit and pid_t is 32 bit:
