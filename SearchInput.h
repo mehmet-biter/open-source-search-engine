@@ -343,7 +343,6 @@ class SearchInput {
 	float  m_pqr_demFactCommonInlinks;
 	float  m_pqr_demFactLocTitle;
 	float  m_pqr_demFactLocSummary;
-	float  m_pqr_demFactLocDmoz;
 	float  m_pqr_demFactProximity;
 	float  m_pqr_demFactInSection;
 	float  m_pqr_demFactOrigScore;

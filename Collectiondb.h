@@ -1254,7 +1254,6 @@ class CollectionRec {
 	int32_t  m_pqr_maxValPageSize; // max value for higher page sizes
 	float m_pqr_demFactLocTitle; // demotion factor for non-location specific queries with location specific results
 	float m_pqr_demFactLocSummary; // demotion factor for non-location specific queries with location specific results
-	float m_pqr_demFactLocDmoz; // demotion factor for non-location specific queries with location specific results
 	bool  m_pqr_demInTopics; // true to demote if location is in the gigabits, otherwise these locs won't be demoted
 	int32_t  m_pqr_maxValLoc; // max value for non-location specific queries with location specific results
 	float m_pqr_demFactNonHtml; // demotion factor for non-html content type

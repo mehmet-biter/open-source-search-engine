@@ -7213,29 +7213,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "demotion for non-location specific queries "
-		"with a location specific dmoz category";
-	m->m_desc  = "Demotion factor for non-location specific queries "
-		"with a location specific dmoz regional category. "
-		"Pages which contain a location in their dmoz which is "
-		"not in the query or the gigabits will be demoted by their "
-		"population multiplied by this factor divided by the max "
-		"place population specified below. "
-		"Generally, a page will not be demoted more than this "
-		"value as a percent. "
-		"0 means no demotion. ";
-	m->m_cgi   = "pqrlocd";
-	m->m_off   = (char *)&cr.m_pqr_demFactLocDmoz - x;
-	//m->m_scgi  = "pqrlocd";
-	//m->m_soff  = (char *)&si.m_pqr_demFactLocDmoz - y;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0.95";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "demote locations that appear in gigabits";
 	m->m_desc  = "Demote locations that appear in gigabits.";
 	m->m_cgi   = "pqrlocg";
