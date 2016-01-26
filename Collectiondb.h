@@ -872,9 +872,6 @@ class CollectionRec {
 	int32_t m_maxClusterByTopicResults;
 	int32_t m_numExtraClusterByTopicResults;
 
-	// rss options
-	char m_onlyIndexRSS;
-
 	// enable click 'n' scroll
 	char m_clickNScrollEnabled;
 

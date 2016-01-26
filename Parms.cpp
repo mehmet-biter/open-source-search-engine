@@ -11218,19 +11218,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "only index articles from RSS feeds";
-	m->m_desc  = "Only index pages that were linked to by an RSS feed. "
-		"Follow RSS Links must be enabled (above).";
-	m->m_cgi   = "orss";
-	m->m_off   = (char *)&cr.m_onlyIndexRSS - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "apply filter to text pages";
 	m->m_desc  = "If this is false then the filter "
 		"will not be used on html or text pages.";
