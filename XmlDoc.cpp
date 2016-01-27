@@ -3719,8 +3719,6 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 	if ( ! ict || ict == (char *)-1 ) return (char *)ict;
 	int64_t **wd = getWikiDocIds();
 	if ( ! wd || wd == (void *)-1 ) return (char *)wd;
-	int64_t **avp = getAdVector();
-	if ( ! avp || avp == (void *)-1 ) return (char *)avp;
 	char *at = getIsAdult();
 	if ( ! at || at == (void *)-1 ) return (char *)at;
 	char *ls = getIsLinkSpam();
@@ -25359,13 +25357,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->size_imgData = size_imageData;
 	}
 
-	// . adids contained in the doc
-	// . get from title rec rather than generating
-	// . but we need to generate to store in titleRec at index time
-	// . they are 32 bits each
-	int64_t **avp = getAdVector();
-	if ( ! avp || avp == (void *)-1 ) return (Msg20Reply *)avp;
-
 	// get firstip
 	int32_t *fip = getFirstIp();
 	if ( ! fip || fip == (void *)-1 ) return (Msg20Reply *)fip;
@@ -26862,143 +26853,6 @@ char *XmlDoc::getIsNoArchive ( ) {
 	// return what we got
 	return &m_isNoArchive;
 }
-
-// this vector's components are 64-bit, not the usual 32-bit
-int64_t **XmlDoc::getAdVector ( ) {
-	if ( m_adVectorValid ) return &ptr_adVector;
-	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (int64_t **)xml;
-	setStatus ( "parsing out ad ids");
-	// assume valid
-	m_adVectorValid = true;
-	int32_t     na    = 0;
-	int32_t     n     = xml->getNumNodes();
-	XmlNode *nodes = xml->getNodes();
-	// find the meta tags
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// continue if not a script tag
-		if ( nodes[i].m_nodeId != TAG_SCRIPT ) continue; // 83
-		// must be a front tag, not a back tag
-		if ( xml->isBackTag ( i ) ) continue;
-		// find the back tag for it
-		int32_t j;
-		for ( j = i ; j < n ; j++ ) {
-			// another script tag
-			if( nodes[i].m_nodeId != TAG_SCRIPT ) continue;
-			// must be a back tag this time
-			if ( ! xml->isBackTag ( i ) ) continue;
-			// ok, we got it
-			break;
-		}
-		// if no back tag, give up
-		if ( j == n ) break;
-
-		// buf/len defines the script area
-		char *buf = xml->getNode(i);
-		int32_t  len = xml->getNode(j) - buf;
-
-		// skip this script tag for next loop
-		i = j;
-
-		bool  found  = false;
-
-		// start off looking for google
-		char *needles[3] =
-			{ "google_ad_client" ,
-			  "ctxt_ad_partner",
-			  "http://ad" };
-		char *providers[3] =
-			{ "google" ,
-			  "yahoo",
-			  "doubleclick" };
-
-		for ( int32_t k = 0 ; k < 3 ; k++ ) {
-			// try to match this needle
-			char *match = needles[k];
-			// try to get a match
-			char *p = strnstr2 ( buf, len, match );
-			// go again
-			if ( ! p ) continue;
-			// do not exceed the script area
-			char *pend   = buf + len;
-
-			// it is in quotes
-			// pub-uint64_t for google ad, uint32_t for yahoo
-
-			// check for double or single quote
-			while (k<2 && p<pend && *p != '"' && *p != '\'') p++;
-			// it must have them!... i guess
-			if ( p >= pend ) continue;
-
-			// point to after the quote
-			char *pbegin = ++p;
-			// find the ending quote
-			while (k<2 && p<pend && *p != '"' && *p != '\'') p++;
-			// if none, bail
-			if ( p >= pend ) continue;
-			// get length of the ad client id between the quotes
-			int32_t adClientLen = p - pbegin;
-
-			if ( k == 2 ) {
-				p = strnstr2(p, (pend-p), ".doubleclick.net/");
-				if ( ! p ) continue;
-				p += 17;
-				// look for doubleclick ads
-				// user name is the second element of the path
-				while(p < pend && *p != '/') p++;
-				pbegin = ++p;
-				while(p < pend && *p != '/') p++;
-				if(p >= pend) continue;
-				adClientLen = p - pbegin;
-				found = true;
-			}
-
-			char *f    = pbegin;
-			char *fend = pbegin + adClientLen;
-			for ( ; f < fend ; f++ ) {
-				if ( is_alnum_a ( *f ) ) continue;
-				if ( *f == '-' || *f == '_' || *f == '.' )
-					continue;
-				break;
-			}
-			if ( f < fend           ) continue;
-			if ( adClientLen >= 400 ) continue;
-			if ( adClientLen < 4    ) continue;
-			// null term temp
-			char c = *fend;
-			*fend = '\0';
-			// hash it
-			char buf[512];
-			sprintf(buf,"gbad:%s-%s",providers[k],pbegin);
-			// put it back
-			*fend = c;
-			// . make the query term id
-			// . first hash the field
-			uint64_t h = hash64 ( "gbad" , 4 );
-			// then add in the other junk
-			h = hash64 ( buf , gbstrlen(buf) , h );
-			// . now we will index that as-is
-			// . and Msg25/LinkInfo can use to dedup voters!
-			m_adIds[na++] = h;
-			// stop if too many. save room for NULL termination.
-			if ( na + 1 >= XD_MAX_AD_IDS ) break;
-		}
-		//look for another if not found or not ok.
-	}
-	// null term it like a good vector! no, those are 32-bit components,
-	// we are a 64-bit component vector
-	//m_adIds[na++] = 0;
-	// point to where we should put them
-	ptr_adVector = m_adIds;
-	// store this i guess
-	size_adVector = na * 8;
-	// *lastNode = nn;
-	return &ptr_adVector;
-}
-
-
 
 char *XmlDoc::getIsLinkSpam ( ) {
 	if ( m_isLinkSpamValid ) return &m_isLinkSpam2;

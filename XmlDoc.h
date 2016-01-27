@@ -293,7 +293,7 @@ public:
 	char      *ptr_rootTitleBuf;
 	int32_t      *ptr_gigabitHashes;
 	int32_t      *ptr_gigabitScores;
-	int64_t *ptr_adVector;
+	void      *ptr_unused8;
 	int64_t *ptr_wikiDocIds;
 	rscore_t  *ptr_wikiScores;
 	char      *ptr_imageData;
@@ -318,7 +318,7 @@ public:
 	int32_t       size_rootTitleBuf;
 	int32_t       size_gigabitHashes;
 	int32_t       size_gigabitScores;
-	int32_t       size_adVector;
+	int32_t       size_unused8;
 	int32_t       size_wikiDocIds;
 	int32_t       size_wikiScores;
 	int32_t       size_imageData;
@@ -731,7 +731,6 @@ public:
 	int32_t *getUrlFilterNum();
 	//int32_t *getDiffbotApiNum();
 	SafeBuf *getDiffbotApiUrl();
-	int64_t **getAdVector ( ) ;
 	char *getIsLinkSpam ( ) ;
 	char *getIsHijacked();
 	char *getIsErrorPage ( ) ;
