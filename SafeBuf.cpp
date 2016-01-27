@@ -1415,23 +1415,6 @@ char& SafeBuf::operator[](int32_t i) {
 	return m_buf[i];
 }
 
-bool SafeBuf::printKey(char* key, char ks) {
-	switch (ks) {
-	case 12:
-		safePrintf("%016"XINT64"%08"XINT32"",
-			   *(int64_t*)(key+(sizeof(int32_t))), *(int32_t*)key);
-		break;
-	case 16:
-		safePrintf("%016"XINT64"%016"XINT64" ",
-			   *(int64_t*)(key+(sizeof(int64_t))),
-			   *(int64_t *)key);
-		break;
-	default:
-		break;
-	}
-	return true;
-}
-
 // . filter out tags and line breaks and extra spaces or whatever
 // . used for printing sentences from XmlDoc::printEventSentences()
 bool SafeBuf::safePrintFilterTagsAndLines ( char *p , int32_t plen ,

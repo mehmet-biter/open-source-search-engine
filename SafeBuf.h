@@ -301,7 +301,6 @@ public:
 	float popFloat();
 
 	int32_t  pad(const char ch, const int32_t len);
-	bool  printKey(char* key, char ks);
 
 	//OPERATORS
 	//copy numbers into the buffer, *in binary*
