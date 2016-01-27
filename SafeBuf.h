@@ -255,8 +255,6 @@ public:
 	bool  latin1CdataEncode(char *s, int32_t len);
 	bool  utf8CdataEncode(char *s, int32_t len);
 
-	bool  latin1HtmlEncode(char *s, int32_t len, int32_t niceness=0);
-
 	bool  cdataEncode ( char *s ) ;
 	bool  cdataEncode ( char *s , int32_t slen ) ;
 

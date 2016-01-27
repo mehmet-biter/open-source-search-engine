@@ -852,41 +852,6 @@ bool  SafeBuf::utf8CdataEncode(char *s, int32_t len) {
 	return true;
 }
 
-bool  SafeBuf::latin1HtmlEncode(char *s, int32_t len,int32_t niceness) {
-	int32_t len1 = m_length;
-	bool r;
-	switch(m_encoding) {
-	case csUTF8:
-		r = safeLatin1ToUtf8(s,len);
-		break;
-	case csISOLatin1:
-		r = safeMemcpy(s,len);
-		break;
-	default:
-		return false;
-	}
-	if ( !r ) return false;
-	// check the written section for bad characters
-	int32_t p = len1;
-	while ( p < m_length ) {
-		QUICKPOLL(niceness);
-		if ( m_buf[p]=='>' ) {
-			// rewrite the > as &gt
-			safeReplace("&gt;", 4, p, 1);
-		}
-		else if ( m_buf[p]=='<' ) {
-			// rewrite the < as &lt
-			safeReplace("&lt;", 4, p, 1);
-		}
-		else if ( m_buf[p]=='&' ) {
-			// rewrite the & as &amp;
-			safeReplace("&amp;", 5, p, 1);
-		}
-		p++;
-	}
-	return true;
-}
-
 bool SafeBuf::cdataEncode ( char *s ) {
 	return safeCdataMemcpy(s,gbstrlen(s));
 }
