@@ -770,13 +770,6 @@ bool SafeBuf::safeReplace2 ( char *s, int32_t slen,
 	return status;
 }
 
-
-bool SafeBuf::copyToken(char* s) {
-	char* p = s;
-	while(*p && !isspace(*p)) p++;
-	return safeMemcpy(s, (p - s));
-}
-
 bool  SafeBuf::utf8Encode2(char *s, int32_t len, bool encodeHTML,int32_t niceness) {
 	int32_t tmp = m_length;
 	if ( m_encoding == csUTF8 ) {
