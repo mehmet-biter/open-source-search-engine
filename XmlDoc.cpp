@@ -19661,7 +19661,12 @@ void getMetaListWrapper ( void *state ) {
 // . generally only Repair.cpp changes these use* args to false
 char *XmlDoc::getMetaList ( bool forDelete ) {
 
-	if ( m_metaListValid ) return m_metaList;
+	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	if ( m_metaListValid ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, already valid", __FILE__, __func__, __LINE__);
+		return m_metaList;
+	}
 
 	setStatus ( "getting meta list" );
 
@@ -19690,7 +19695,11 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	}
 
 	// returning from a handler that had an error?
-	if ( g_errno ) return NULL;
+	if ( g_errno ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, g_errno=%"INT32"", __FILE__, __func__, __LINE__, g_errno);
+		return NULL;
+	}
 
 	// if we are a spider status doc/titlerec and we are doing a rebuild
 	// operation, then keep it simple
@@ -19702,6 +19711,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// spider status docs do not contribute to linkdb, clusterdb,..
 		if ( ! m_usePosdb && ! m_useTitledb ) {
 			m_metaListValid = true;
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, CT_STATUS", __FILE__, __func__, __LINE__);
 			return m_metaList;
 		}
 
@@ -19714,6 +19724,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		CollectionRec *cr = getCollRec();
 		if ( ! cr ) return NULL;
 		if ( ! cr->m_indexSpiderReplies ) {
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Not indexing spider replies. Delete titlerec for this doc", __FILE__, __func__, __LINE__);
 			int64_t uh48 = m_firstUrl.getUrlHash48();
 			// delete title rec. true = delete?
 			key_t tkey = g_titledb.makeKey (m_docId,uh48,true);
@@ -19726,25 +19737,34 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			m_metaList      = ssb->getBufStart();
 			m_metaListSize  = ssb->getLength  ();
 			m_metaListValid = true;
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 			return m_metaList;
 		}
 
 		// set safebuf to the json of the spider status doc
 		SafeBuf jd;
 		if ( ! jd.safeMemcpy ( ptr_utf8Content , size_utf8Content ) )
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, js.safeMemcpy failed", __FILE__, __func__, __LINE__);
 			return NULL;
+		}
 		// set m_spiderStatusDocMetaList from the json
 		if ( ! setSpiderStatusDocMetaList ( &jd , m_docId ) )
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, setSpiderStatusDocMetaList failed", __FILE__, __func__, __LINE__);
 			return NULL;
+		}
 		// TODO: support titledb rebuild as well
 		m_metaList      = m_spiderStatusDocMetaList.getBufStart();
 		m_metaListSize  = m_spiderStatusDocMetaList.getLength();
 		m_metaListValid = true;
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, OK", __FILE__, __func__, __LINE__);
 		return m_metaList;
 	}
 
 	// if "rejecting" from index fake all this stuff
 	if ( m_deleteFromIndex ) {
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: deleteFromIndex true", __FILE__, __func__, __LINE__);
 	     // if we are using diffbot api and diffbot found no json objects
 	     // or we never even processed the url, we really just want to
 	     // add the SpiderReply for this url to spiderdb and nothing more.
@@ -19780,7 +19800,11 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	}
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: getCollRec failed", __FILE__, __func__, __LINE__);
+		return NULL;
+	}
 
 	//
 	// BEGIN MULTI DOC QUERY REINDEX HACK
@@ -19796,6 +19820,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	     // if it is a force delete, then allow the user to delete
 	     // such diffbot reply json children documents, however.
 	     ! m_sreq.m_forceDelete ) {
+	     if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: 'multi-doc query re-index hack'", __FILE__, __func__, __LINE__);
 		// see if its diffbot json object
 		XmlDoc **pod = getOldXmlDoc ( );
 		if ( ! pod || pod == (XmlDoc **)-1 ) return (char *)pod;
@@ -19857,11 +19882,17 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		char rd = RDB_SPIDERDB;
 		if ( m_useSecondaryRdbs ) rd = RDB2_SPIDERDB2;
 		if ( ! m_zbuf.pushChar(rd) )
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, m_zbuf.pushChar failed", __FILE__, __func__, __LINE__);
 			return NULL;
+		}
 		// store that reply to indicate this spider request has
 		// been fulfilled!
 		if( ! m_zbuf.safeMemcpy (&srep, srep.getRecSize()))
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, m_zbuf.safeMemcpy failed", __FILE__, __func__, __LINE__);
 			return NULL;
+		}
 
 		// but also store a new spider request for the parent url
 		SpiderRequest ksr;
@@ -19872,8 +19903,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// them completely.
 		if ( od->m_contentType == CT_STATUS )
 			goto returnList;
-
-		//goto returnList;
 
 		// complain
 		if ( cr->m_diffbotApiUrl.length()<1 && !cr->m_isCustomCrawl )
@@ -19900,10 +19929,18 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		ksr.setKey ( m_sreq.m_firstIp, pd , false );
 		// store this
 		if ( ! m_zbuf.pushChar(rd) )
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, m_zbuf.pushChar failed", __FILE__, __func__, __LINE__);
 			return NULL;
+		}
+		
 		// then the request
 		if ( ! m_zbuf.safeMemcpy(&ksr,ksr.getRecSize() ) )
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, m_zbuf.safeMemcpy failed", __FILE__, __func__, __LINE__);
 			return NULL;
+		}
+		
 	returnList:
 		// prevent cores in indexDoc()
 		m_indexCode = EREINDEXREDIR;
@@ -19912,6 +19949,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		m_metaList = m_zbuf.getBufStart();
 		m_metaListSize = m_zbuf.length();
 		m_metaListValid = true;
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 		return m_metaList;
 	}
 	//
@@ -19922,30 +19960,51 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
  skip9:
 	// get our checksum
 	int32_t *plainch32 = getContentHash32();
-	if ( ! plainch32 || plainch32 == (void *)-1 ) return (char *)plainch32;
+	if ( ! plainch32 || plainch32 == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getContentHash32 failed", __FILE__, __func__, __LINE__);
+		return (char *)plainch32;
+	}
 
 	// get this too
 	int16_t *hs = getHttpStatus ();
-	if ( ! hs || hs == (void *)-1 ) return (char *)hs;
+	if ( ! hs || hs == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getHttpStatus failed", __FILE__, __func__, __LINE__);
+		return (char *)hs;
+	}
 
 	// make sure site is valid
 	char *site = getSite();
-	if ( ! site || site == (void *)-1 ) return (char *)site;
+	if ( ! site || site == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getSite failed", __FILE__, __func__, __LINE__);
+		return (char *)site;
+	}
 
 	// this seems to be an issue as well for "unchanged" block below
 	char *isr = getIsSiteRoot();
-	if ( ! isr || isr == (void *)-1 ) return (char *)isr;
+	if ( ! isr || isr == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getIsSiteRoot failed", __FILE__, __func__, __LINE__);
+		return (char *)isr;
+	}
 
-	// get hash of all tags from tagdb that affect what we index
-	//int32_t *tagHash = getTagHash32 ( );
-	//if ( ! tagHash || tagHash == (void *)-1 ) return (char *)tagHash;
 
 	int64_t *sh64 = getSiteHash64();
-	if ( ! sh64 || sh64 == (void *)-1 ) return (char *)sh64;
+	if ( ! sh64 || sh64 == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getSiteHash64 failed", __FILE__, __func__, __LINE__);
+		return (char *)sh64;
+	}
 
 	// make sure docid valid
 	int64_t *mydocid = getDocId();
-	if ( ! mydocid || mydocid == (int64_t *)-1) return (char *)mydocid;
+	if ( ! mydocid || mydocid == (int64_t *)-1) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getDocId failed", __FILE__, __func__, __LINE__);
+		return (char *)mydocid;
+	}
 
 	// . get the old version of our XmlDoc from the previous spider time
 	// . set using the old title rec in titledb
@@ -19954,17 +20013,31 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// . getNewSpiderReply() will use this to set the reply if
 	//   m_indexCode == EDOCUNCHANGED...
 	XmlDoc **pod = getOldXmlDoc ( );
-	if ( ! pod || pod == (XmlDoc **)-1 ) return (char *)pod;
+	if ( ! pod || pod == (XmlDoc **)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getOldXmlDoc failed", __FILE__, __func__, __LINE__);
+		return (char *)pod;
+	}
+	
 	// point to the old xml doc if no error, etc.
 	XmlDoc *od = *pod;
 
 	// check if we are already indexed
 	char *isIndexed = getIsIndexed ();
-	if ( ! isIndexed || isIndexed == (char *)-1 ) return (char *)isIndexed;
+	if ( ! isIndexed || isIndexed == (char *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getIsIndexed failed", __FILE__, __func__, __LINE__);
+		return (char *)isIndexed;
+	}
 
 	// why call this way down here? it ends up downloading the doc!
 	int32_t *indexCode = getIndexCode();
-	if ( ! indexCode || indexCode ==(void *)-1) return (char *)indexCode;
+	if ( ! indexCode || indexCode ==(void *)-1) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getIndexCode failed", __FILE__, __func__, __LINE__);
+		return (char *)indexCode;
+	}
+	
 	// sanity check
 	if ( ! m_indexCodeValid ) { char *xx=NULL;*xx=0; }
 
@@ -19975,6 +20048,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		m_metaList = (char *)0x123456;
 		m_metaListSize = 0;
 		m_metaListValid = true;
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, abandoned", __FILE__, __func__, __LINE__);
 		return m_metaList;
 	}
 
@@ -20002,6 +20076,8 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		) {
 		// sanity - in repair mode?
 		if ( m_useSecondaryRdbs ) { char *xx=NULL;*xx=0; }
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Temporary error state: %"INT32"", __FILE__, __func__, __LINE__, *indexCode);
+
 		// . this seems to be an issue for blocking
 		// . if we do not have a valid ip, we can't compute this,
 		//   in which case it will not be valid in the spider reply
@@ -20015,7 +20091,11 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		     m_ip != 0 &&
 		     m_ip != -1 ) {
 			int32_t *sni = getSiteNumInlinks();
-			if ( ! sni || sni == (int32_t *)-1 ) return (char *)sni;
+			if ( ! sni || sni == (int32_t *)-1 ) 
+			{
+				log(LOG_ERROR,"%s:%s:%d: getSiteNumInlinks failed", __FILE__, __func__, __LINE__);
+				return (char *)sni;
+			}
 		}
 		// all done!
 		bool addReply = true;
@@ -20025,8 +20105,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		if ( ! addReply ) {
 			m_metaListSize = 0;
 			m_metaList     = (char *)0x1;
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, m_isPageParser and valid", __FILE__, __func__, __LINE__);
 			return m_metaList;
 		}
+		
 		// save this
 		int32_t savedCode = *indexCode;
 		// before getting our spider reply, assign crap from the old
@@ -20067,13 +20149,19 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		if ( ! m_useSpiderdb ) {
 			m_metaList = NULL;
 			m_metaListSize = 0;
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, not using spiderdb", __FILE__, __func__, __LINE__);
 			return (char *)0x01;
 		}
 
 		// get our spider reply
 		SpiderReply *newsr = getNewSpiderReply();
 		// return on error
-		if ( ! newsr ) return (char *)newsr;
+		if ( ! newsr ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, could not get spider reply", __FILE__, __func__, __LINE__);
+			return (char *)newsr;
+		}
+		
 		// . panic on blocking! this is supposed to be fast!
 		// . it might still have to lookup the tagdb rec?????
 		if ( newsr == (void *)-1 ) { char *xx=NULL;*xx=0; }
@@ -20094,10 +20182,18 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		spiderStatusDocMetaList = getSpiderStatusDocMetaList(newsr ,
 								    forDelete);
 		// error?
-		if ( ! spiderStatusDocMetaList ) return NULL;
+		if ( ! spiderStatusDocMetaList ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, getSpiderStatusDocMetaList failed", __FILE__, __func__, __LINE__);
+			return NULL;
+		}
+			
 		// blocked?
 		if (spiderStatusDocMetaList==(void *)-1)
+		{
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getSpiderStatusDocMetaList blocked", __FILE__, __func__, __LINE__);
 			return (char *)-1;
+		}
 
 		// need to alloc space for it too
 		int32_t len = spiderStatusDocMetaList->length();
@@ -20137,6 +20233,8 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 		// now add the new rescheduled time
 		setStatus ( "adding SpiderReply to spiderdb" );
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Adding spider reply to spiderdb", __FILE__, __func__, __LINE__);
+
 		// rdbid first
 		char rd = RDB_SPIDERDB;
 		if ( m_useSecondaryRdbs ) rd = RDB2_SPIDERDB2;
@@ -20158,19 +20256,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// set size
 		m_metaListSize = m_p - m_metaList;
 		// all done
+
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, all done", __FILE__, __func__, __LINE__);
 		return m_metaList;
 
 	}
 
-	// if using diffbot do not index the content of the web page we
-	// got the json objects from, although, do keep it cached in titledb
-	// because that can be useful
-	// Not any more, now index the pages as well! then restrict search
-	// to type:json to just search json objects.
-	//if ( m_useDiffbot && ! m_isDiffbotJSONObject ) {
-	//	m_usePosdb      = false;
-	//	m_useClusterdb  = false;
-	//}
 
 	// get the old meta list if we had an old doc
 	char *oldList = NULL;
@@ -20188,7 +20279,11 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// page, so we need to get the old doc meta list
 		oldList = od->getMetaList ( true );
 		oldListSize = od->m_metaListSize;
-		if ( ! oldList || oldList ==(void *)-1) return (char *)oldList;
+		if ( ! oldList || oldList ==(void *)-1) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, get old meta list failed", __FILE__, __func__, __LINE__);
+			return (char *)oldList;
+		}
 	}
 
 	// . set whether we should add recs to titledb, posdb, linkdb, etc.
@@ -20205,7 +20300,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//   these dmoz urls so we can search the CONTENT of the pages in dmoz,
 	//   something dmoz won't let you do.
 	char *mt = hasNoIndexMetaTag();
-	if ( ! mt || mt == (void *)-1 ) return (char *)mt;
+	if ( ! mt || mt == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, hasNoIndexMetaTag failed", __FILE__, __func__, __LINE__);
+		return (char *)mt;
+	}
+	
 	if ( *mt ) {
 		m_usePosdb = false;
 		m_useLinkdb = false;
@@ -20224,7 +20324,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//   our existing diffbot reply, i.e. recycle it, even though we
 	//   respidered this page.
 	bool *recycle = getRecycleDiffbotReply();
-	if ( ! recycle || recycle == (void *)-1) return (char *)recycle;
+	if ( ! recycle || recycle == (void *)-1) 
+	{
+		 log(LOG_ERROR,"%s:%s:%d: END, getRecycleDiffbotReply failed", __FILE__, __func__, __LINE__);
+		return (char *)recycle;
+	}
+	
 	// in that case inherit this from the old doc...
 	if ( od && *recycle && od->m_diffbotJSONCount &&
 	     // somehow i am seeing that this is empty!
@@ -20244,7 +20349,11 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		int nh = 0;
 		int32_t *ohbuf = od->getDiffbotTitleHashes ( &nh );
 		if ( ! m_diffbotTitleHashBuf.safeMemcpy ( ohbuf , nh*4 ) )
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, m_diffbotTitleHashBuf.safeMemcpy failed", __FILE__, __func__, __LINE__);
 			return NULL;
+		}
+		
 		ptr_linkInfo2 =(LinkInfo *)m_diffbotTitleHashBuf.getBufStart();
 		size_linkInfo2=m_diffbotTitleHashBuf.length();
 
@@ -20261,7 +20370,11 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		int32_t *ohbuf =(int32_t *)m_diffbotTitleHashBuf.getBufStart();
 		int32_t nh     =m_diffbotTitleHashBuf.length() / 4;
 		int32_t *status = reindexJSONObjects( ohbuf , nh );
-		if ( ! status || status == (void *)-1) return (char *)status;
+		if ( ! status || status == (void *)-1) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, reindexJSONObjects failed", __FILE__, __func__, __LINE__);
+			return (char *)status;
+		}
 	}
 
 
@@ -20293,10 +20406,19 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		int32_t numHashes;
 		int32_t *th = getDiffbotTitleHashes(&numHashes);
 		if ( ! th && ! g_errno ) { char *xx=NULL;*xx=0; }
-		if ( ! th || th == (void *)-1 ) return (char *)th;
+		if ( ! th || th == (void *)-1 ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, getDiffbotTitleHashes failed", __FILE__, __func__, __LINE__);
+			return (char *)th;
+		}
+			
 		// this returns false if it blocks
 		int32_t *status = od->nukeJSONObjects( th , numHashes );
-		if ( ! status || status == (void *)-1) return (char *)status;
+		if ( ! status || status == (void *)-1) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, nukeJSONObjects failed or blocked", __FILE__, __func__, __LINE__);
+			return (char *)status;
+		}
 	}
 
 	// . need this if useTitledb is true
@@ -20306,15 +20428,27 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//if ( m_useTitledb ) {
 	LinkInfo *info1 = getLinkInfo1();
 	if ( ! info1 || info1 == (LinkInfo *)-1 )
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getLinkInfo1 failed", __FILE__, __func__, __LINE__);
 		return (char *)info1;
+	}
 	//}
 
 	// so getSiteRank() works
 	int32_t *sni = getSiteNumInlinks();
-	if ( ! sni || sni == (int32_t *)-1 ) return (char *)sni;
+	if ( ! sni || sni == (int32_t *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getSiteNumInlinks failed", __FILE__, __func__, __LINE__);
+		return (char *)sni;
+	}
+	
 	// so addTable144 works
 	uint8_t *langId = getLangId();
-	if ( ! langId || langId == (uint8_t *)-1 ) return (char *) langId;
+	if ( ! langId || langId == (uint8_t *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getLangId failed", __FILE__, __func__, __LINE__);
+		return (char *) langId;
+	}
 
 
 	//
@@ -20326,13 +20460,20 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// all member vars should already be valid if set from titlerec
 		char *ptg = prepareToMakeTitleRec ();
 		// return NULL with g_errno set on error
-		if ( ! ptg || ptg == (void *)-1 ) return (char *)ptg;
+		if ( ! ptg || ptg == (void *)-1 ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, prepareToMakeTitleRec failed", __FILE__, __func__, __LINE__);
+			return (char *)ptg;
+		}
 	}
 
 	// our next slated spider priority
 	char *spiderLinks3 = getSpiderLinks();
 	if ( ! spiderLinks3  || spiderLinks3 == (char *)-1 )
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getSpiderLinks failed", __FILE__, __func__, __LINE__);
 		return (char *)spiderLinks3;
+	}
 
 	bool spideringLinks = *spiderLinks3;
 
@@ -20389,11 +20530,21 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( spideringLinks && ! m_doingConsistencyCheck && m_useSpiderdb){
 		setStatus ( "getting outlink info" );
 		TagRec ***grv = getOutlinkTagRecVector();
-		if ( ! grv || grv == (void *)-1 ) return (char *)grv;
+		if ( ! grv || grv == (void *)-1 ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, getOutlinkTagRecVector failed", __FILE__, __func__, __LINE__);
+			return (char *)grv;
+		}
+		
 		//char    **iiv = getOutlinkIsIndexedVector();
 		//if ( ! iiv || iiv == (void *)-1 ) return (char *)iiv;
 		int32_t    **ipv = getOutlinkFirstIpVector();
-		if ( ! ipv || ipv == (void *)-1 ) return (char *)ipv;
+		if ( ! ipv || ipv == (void *)-1 ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, getOutlinkFirstIpVector failed", __FILE__, __func__, __LINE__);
+			return (char *)ipv;
+		}
+		
 		//int8_t  *hcv = getOutlinkHopCountVector();
 		//if ( ! hcv || hcv == (void *)-1 ) return (char *)hcv;
 		//char     *ipi = getIsIndexed(); // is the parent indexed?
@@ -20404,19 +20555,35 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	SafeBuf *ntb = NULL;
 	if ( m_useTagdb && ! m_deleteFromIndex ) {
 		ntb = getNewTagBuf();
-		if ( ! ntb || ntb == (void *)-1 ) return (char *)ntb;
+		if ( ! ntb || ntb == (void *)-1 ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, getNewTagBuf failed", __FILE__, __func__, __LINE__);
+			return (char *)ntb;
+		}
 	}
 
 
 	char *isRoot = getIsSiteRoot();
-	if ( ! isRoot || isRoot == (char *)-1 ) return (char *)isRoot;
+	if ( ! isRoot || isRoot == (char *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getIsSiteRoot failed", __FILE__, __func__, __LINE__);
+		return (char *)isRoot;
+	}
 
 	Words *ww = getWords();
-	if ( ! ww || ww == (void *)-1 ) return (char *)ww;
+	if ( ! ww || ww == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getWords failed", __FILE__, __func__, __LINE__);
+		return (char *)ww;
+	}
 
 	int64_t *pch64 = getExactContentHash64();
 	//int64_t *pch64 = getLooseContentHash64();
-	if ( ! pch64 || pch64 == (void *)-1 ) return (char *)pch64;
+	if ( ! pch64 || pch64 == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getExactContentHash64 failed", __FILE__, __func__, __LINE__);
+		return (char *)pch64;
+	}
 
 	// get the voting table which we will add to sectiondb
 	SectionVotingTable *nsvt = NULL;
@@ -20432,16 +20599,28 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//if ( nd && *isRoot ) addSectionVotes = true;
 	if ( addSectionVotes ) {
 		nsvt = getNewSectionVotingTable();
-		if ( ! nsvt || nsvt == (void *)-1 ) return (char *)nsvt;
+		if ( ! nsvt || nsvt == (void *)-1 ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, getNewSectionVotingTable failed", __FILE__, __func__, __LINE__);
+			return (char *)nsvt;
+		}
 		// get the old table too!
 		osvt = getNewSectionVotingTable();
-		if ( ! osvt || osvt == (void *)-1 ) return (char *)osvt;
+		if ( ! osvt || osvt == (void *)-1 ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, getNewSectionVotingTable failed", __FILE__, __func__, __LINE__);
+			return (char *)osvt;
+		}
 	}
 
 	// need firstip if adding a rebuilt spider request
 	if ( m_useSecondaryRdbs && ! m_isDiffbotJSONObject && m_useSpiderdb ) {
 		int32_t *fip = getFirstIp();
-		if ( ! fip || fip == (void *)-1 ) return (char *)fip;
+		if ( ! fip || fip == (void *)-1 ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, getFirstIp failed", __FILE__, __func__, __LINE__);
+			return (char *)fip;
+		}
 	}
 
 
@@ -20451,12 +20630,20 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	SpiderReply *newsr = NULL;
 	if ( m_useSpiderdb ) { // && ! m_deleteFromIndex ) {
 		newsr = getNewSpiderReply();
-		if ( ! newsr || newsr == (void *)-1 ) return (char *)newsr;
+		if ( ! newsr || newsr == (void *)-1 ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, getNewSpiderReply failed", __FILE__, __func__, __LINE__);
+			return (char *)newsr;
+		}
 	}
 
 	// the site hash for hashing
 	int32_t *sh32 = getSiteHash32();
-	if ( ! sh32 || sh32 == (int32_t *)-1 ) return (char *)sh32;
+	if ( ! sh32 || sh32 == (int32_t *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getSiteHash32 failed", __FILE__, __func__, __LINE__);
+		return (char *)sh32;
+	}
 
 	// set ptr_clockCandidatesData
 	// if ( nd ) {
@@ -20467,20 +20654,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( m_useLinkdb && ! m_deleteFromIndex ) {
 		int32_t *linkSiteHashes = getLinkSiteHashes();
 		if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 )
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, getLinkSiteHashes failed", __FILE__, __func__, __LINE__);
 			return (char *)linkSiteHashes;
+		}
 	}
 
-	//SafeBuf *au = getDiffbotApiUrl();
-	//if ( ! au || au == (void *)-1 ) return (char *)au;
-
-
-	// test json parser
-	//
-	/*
-	char *json = "{\"icon\":\"http://www.pixar.com/sites/default/files/pixar_2012_favicon_0.ico\",\"text\":\"\",\"title\":\"Pixar\",\"type\":\"article\",\"media\":[{\"primary\":\"true\",\"link\":\"http://www.pixar.com/sites/default/files/home_billboard_v7.jpg\",\"type\":\"image\"},{\"link\":\"http://www.pixar.com/sites/default/files/roz1_0.jpg\",\"type\":\"image\"},{\"link\":\"http://www.pixar.com/sites/default/files/home_bu-thumb_v1.jpg\",\"type\":\"image\"},{\"link\":\"http://www.pixar.com/sites/default/files/mu_home_thumb.jpg\",\"type\":\"image\"},{\"link\":\"http://www.pixar.com/sites/default/files/brenda_homepage.jpg\",\"type\":\"image\"}],\"url\":\"http://www.pixar.com/\"}";
-	char *dd = getNextJSONObject ( json );
-	if ( *dd ) { char *xx=NULL;*xx=0; }
-	*/
 
 	///////////
 	//
@@ -20498,12 +20677,15 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// . the TOKENIZED reply consists of \0 separated json objects that
 	//   we create from the original diffbot reply
 	SafeBuf *tdbr = getTokenizedDiffbotReply();
-	if ( ! tdbr || tdbr == (void *)-1 ) return (char *)tdbr;
+	if ( ! tdbr || tdbr == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getTokenizedDiffbotReply failed", __FILE__, __func__, __LINE__);
+		return (char *)tdbr;
+	}
 
 
 	// i guess it is safe to do this after getting the spiderreply
 	SafeBuf *spiderStatusDocMetaList = NULL;
-	//if ( indexReply ) {
 
 	// get the spiderreply ready to be added to the rdbs w/ msg4
 	// but if doing a rebuild operation then do not get it, we'll rebuild
@@ -20513,13 +20695,17 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			getSpiderStatusDocMetaList (newsr,forDelete);
 		if ( ! spiderStatusDocMetaList ) {
 			log("build: ss doc metalist null. bad!");
+			
+			log(LOG_ERROR,"%s:%s:%d: END, getSpiderStatusDocMetaList failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 	}
 
 	if ( spiderStatusDocMetaList == (void *)-1)
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getSpiderStatusDocMetaList failed", __FILE__, __func__, __LINE__);
 		return (char *)spiderStatusDocMetaList;
-	//}
+	}
 
 
 
@@ -20563,7 +20749,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			try { m_dx = new ( XmlDoc ); }
 			catch ( ... ) {
 				g_errno = ENOMEM;
-				log("xmldoc: failed to alloc m_dx");
+				log(LOG_ERROR,"%s:%s:%d: END, failed to allox m_dx", __FILE__, __func__, __LINE__);
 				return NULL;
 			}
 			mnew ( m_dx , sizeof(XmlDoc),"xmldocdx");
@@ -20667,12 +20853,19 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		//   m_listAdded.
 		///////////////
 		if ( ! m_dx->m_listAdded && ! m_dx->indexDoc ( ) )
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, m_dx->indexDoc failed", __FILE__, __func__, __LINE__);
 			return (char *)-1;
+		}
 
 		// critical error on our part trying to index it?
 		// does not include timeouts or 404s, etc. mostly just
 		// OOM errors.
-		if ( g_errno ) return NULL;
+		if ( g_errno ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, g_errno %"INT32"", __FILE__, __func__, __LINE__, g_errno);
+			return NULL;
+		}
 
 		CollectionRec *cr = getCollRec();
 		if ( ! cr ) return NULL;
@@ -20745,7 +20938,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( nd && index1 && m_usePosdb ) {
 		if ( ! tt1.set ( 18 , 4 , need4,NULL,0,false,m_niceness,
 				 "posdb-indx"))
+		{
+			log(LOG_ERROR,"%s:%s:%d: tt1.set failed", __FILE__, __func__, __LINE__);
 			return NULL;
+		}
 		int32_t did = tt1.m_numSlots;
 		//bool index2 = true;
 		// . hash the document terms into "tt1"
@@ -20760,7 +20956,11 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// you can't block here because if we are re-called we lose tt1
 		if ( nod == (char *)-1 ) { char *xx=NULL;*xx=0; }
 		// error?
-		if ( ! nod ) return NULL;
+		if ( ! nod ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: END, hashAll failed", __FILE__, __func__, __LINE__);
+			return NULL;
+		}
 		int32_t done = tt1.m_numSlots;
 		if ( done != did )
 			log("xmldoc: reallocated big table! bad. old=%"INT32" "
@@ -20850,7 +21050,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// not bloat sectiondb that big...
 	if ( osvt && osvt->m_totalSiteVoters >= MAX_SITE_VOTERS ) nsvt = NULL;
 	// hash terms into a table that uses full datedb keys
-	if ( nsvt && ! nsvt->hash (m_docId,&st1,*sh64,m_niceness)) return NULL;
+	if ( nsvt && ! nsvt->hash (m_docId,&st1,*sh64,m_niceness)) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, nsvt->hash failed", __FILE__, __func__, __LINE__);
+		return NULL;
+	}
+	
 	// needs for hashing no split terms
 	int32_t needSectiondb = 0;
 	// add em up. plus one for rdbId
@@ -20932,7 +21137,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//   but this will have to be for adding to Linkdb. basically take a
 	//   lot of it from Linkdb::fillLinkdbList()
 	// . these return false with g_errno set on error
-	if ( m_useLinkdb && nl2 && ! hashLinksForLinkdb(&kt1) ) return NULL;
+	if ( m_useLinkdb && nl2 && ! hashLinksForLinkdb(&kt1) ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, hashLinksForLinkdb failed", __FILE__, __func__, __LINE__);
+		return NULL;
+	}
+	
 	//if ( add2 && ol && ! !od->m_skipIndexing &&
 	//     ol->hash(&kt2,od,m_niceness) )
 	//	return NULL;
@@ -21216,7 +21426,11 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// checkpoint
 	saved = m_p;
 	// store indexdb terms into m_metaList[]
-	if ( m_usePosdb && ! addTable144 ( &tt1 , m_docId )) return NULL;
+	if ( m_usePosdb && ! addTable144 ( &tt1 , m_docId )) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, addTable144 failed", __FILE__, __func__, __LINE__);
+		return NULL;
+	}
 	//if(!addTable96 ( &tt2, &tt1, date2, date1, true ,false)) return NULL;
 	//if ( od ) tt2.clear();
 	// sanity check
@@ -21235,7 +21449,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	saved = m_p;
 	// add that table to the metalist
 	if ( m_useSectiondb && !addTable128(&st1,RDB_SECTIONDB,forDelete))
+	{
+		log(LOG_ERROR,"%s:%s:%d: addTable128 failed", __FILE__, __func__, __LINE__);
 		return NULL;
+	}
 	//if(! addTable128 (&st2,&st1, RDB_SECTIONDB,true ,true))return NULL;
 	// sanity check
 	if ( m_p - saved > needSectiondb ) { char *xx=NULL;*xx=0; }
@@ -21317,7 +21534,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	saved = m_p;
 	// add that table to the metalist (LINKDB)
 	if ( m_useLinkdb && !addTable224(&kt1))
+	{
+		log(LOG_ERROR,"%s:%s:%d: addTable224 failed", __FILE__, __func__, __LINE__);
 		return NULL;
+	}
 	//if(add2&&!addTable128(&kt2,&kt1,RDB_LINKDB, false))return NULL;
 	// sanity check
 	if ( m_p - saved > needLinkdb ) { char *xx=NULL;*xx=0; }
@@ -21337,7 +21557,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	saved = m_p;
 	// add that table to the metalist
 	if ( m_usePlacedb && ! addTable128 ( &pt1, RDB_PLACEDB,forDelete))
+	{
+		log(LOG_ERROR,"%s:%s:%d: addTable128 failed", __FILE__, __func__, __LINE__);
 		return NULL;
+	}
 	//if(! addTable128 ( &pt2, &pt1, RDB_PLACEDB, true , true))return NULL;
 	// sanity check
 	if ( m_p - saved > needPlacedb ) { char *xx=NULL;*xx=0; }
@@ -21461,12 +21684,18 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//   pointing to it so it can get link text then!!
 	if ( spideringLinks && nl2 && ! m_doingConsistencyCheck &&
 	     m_useSpiderdb && ! forDelete ){
+		
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Adding spiderdb records of outlinks", __FILE__, __func__, __LINE__);
 		// returns NULL and sets g_errno on error
 		char *ret = addOutlinkSpiderRecsToMetaList ();
 		// sanity check
 		if ( ! ret && ! g_errno ) { char *xx=NULL;*xx=0; }
 		// return NULL on error
-		if ( ! ret ) return NULL;
+		if ( ! ret ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: addOutlinkSpiderRecsToMetaList failed", __FILE__, __func__, __LINE__);
+			return NULL;
+		}
 		// this MUST not block down here, to avoid re-hashing above
 		if ( ret == (void *)-1 ) { char *xx=NULL;*xx=0; }
 	}
@@ -21620,7 +21849,11 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			//if      (ks == 12 ) status = dt12.addKey ( k, &byte);
 			//else if (ks == 16 ) status = dt16.addKey ( k, &byte);
 			//else { char *xx=NULL; *xx=0; }
-			if ( ! dt8.addKey(&hk,&rec) ) return NULL;
+			if ( ! dt8.addKey(&hk,&rec) ) 
+			{
+				log(LOG_ERROR,"%s:%s:%d: addKey failed", __FILE__, __func__, __LINE__);
+				return NULL;
+			}
 			// return NULL with g_errno set on error
 			//if ( ! status ) return NULL;
 		}
@@ -21629,7 +21862,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		needx += (m_p - m_metaList);
 		// now alloc for our new manicured metalist
 		char *nm = (char *)mmalloc( needx, "newmeta" );
-		if ( ! nm ) return NULL;
+		if ( ! nm ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: mmalloc failed", __FILE__, __func__, __LINE__);
+			return NULL;
+		}
+		
 		char *nptr = nm;
 		char *nmax = nm + needx;
 		// scan each rec in the current meta list, see if its in either
@@ -21844,6 +22082,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	verifyMetaList( m_metaList , m_metaList + m_metaListSize , forDelete );
 
 	// all done
+	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, all done", __FILE__, __func__, __LINE__);
 	return m_metaList;
 }
 
@@ -22535,63 +22774,121 @@ int32_t isInSeedBuf ( CollectionRec *cr , char *url, int len ) ;
 //   "inject" it, with only m_useSpiderdb set to true...
 char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
+	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+		
 	if ( m_doingConsistencyCheck ) { char *xx=NULL;*xx=0; }
 
 	// do not do this if recycling content
 	// UNLESS REBUILDING...
-	if ( m_recycleContent && ! m_useSecondaryRdbs ) return (char *)0x01;
+	if ( m_recycleContent && ! m_useSecondaryRdbs ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, rebuilding", __FILE__, __func__, __LINE__);
+		return (char *)0x01;
+	}
 
 
 	// for now skip in repair tool
 	if ( m_useSecondaryRdbs && ! g_conf.m_rebuildAddOutlinks )
+	{
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, in repair mode", __FILE__, __func__, __LINE__);
 		return (char *)0x01;
+	}
 
 
 	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
+	if ( ! xml || xml == (Xml *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getXml failed", __FILE__, __func__, __LINE__);
+		return (char *)xml;
+	}
 
 	Links *links = getLinks();
-	if ( ! links || links == (Links *)-1 ) return (char *)links;
+	if ( ! links || links == (Links *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getLinks failed", __FILE__, __func__, __LINE__);
+		return (char *)links;
+	}
 
 	char *spiderLinks = getSpiderLinks();
 	if ( ! spiderLinks || spiderLinks == (char *)-1 )
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getSpiderLinks failed", __FILE__, __func__, __LINE__);
 		return (char *)spiderLinks;
+	}
 
 	TagRec ***grv = getOutlinkTagRecVector();
-	if ( ! grv || grv == (void *)-1 ) return (char *)grv;
-	//char    **iiv = getOutlinkIsIndexedVector();
-	//if ( ! iiv || iiv == (void *)-1 ) return (char *)iiv;
+	if ( ! grv || grv == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getOutlinkTagRecVector failed", __FILE__, __func__, __LINE__);
+		return (char *)grv;
+	}
+
 	int32_t    **ipv = getOutlinkFirstIpVector();
-	if ( ! ipv || ipv == (void *)-1 ) return (char *)ipv;
-	//int8_t  *hcv = getOutlinkHopCountVector();
-	//if ( ! hcv || hcv == (void *)-1 ) return (char *)hcv;
+	if ( ! ipv || ipv == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: getOutlinkFirstIpVector failed", __FILE__, __func__, __LINE__);
+		return (char *)ipv;
+	}
+	
 	char     *ipi = getIsIndexed(); // is the parent indexed?
-	if ( ! ipi || ipi == (char *)-1 ) return (char *)ipi;
+	if ( ! ipi || ipi == (char *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getIsIndexed failed", __FILE__, __func__, __LINE__);
+		return (char *)ipi;
+	}
 
 	// need this
 	int32_t parentDomHash32 = getDomHash32();
 	if ( parentDomHash32 != m_domHash32 ) { char *xx=NULL;*xx=0; }
 
 	char *isRoot = getIsSiteRoot();
-	if ( ! isRoot || isRoot == (char *)-1 ) return (char *)isRoot;
+	if ( ! isRoot || isRoot == (char *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getIsSiteRoot failed", __FILE__, __func__, __LINE__);
+		return (char *)isRoot;
+	}
 
 	int32_t *psni = getSiteNumInlinks();
-	if ( ! psni || psni == (int32_t *)-1 ) return (char *)psni;
+	if ( ! psni || psni == (int32_t *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getSiteNumInlinks failed", __FILE__, __func__, __LINE__);
+		return (char *)psni;
+	}
 
 	int32_t *pfip = getFirstIp();
-	if ( ! pfip || pfip == (void *)-1 ) return (char *)pfip;
+	if ( ! pfip || pfip == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getFirstIp failed", __FILE__, __func__, __LINE__);
+		return (char *)pfip;
+	}
 
 	int64_t *d = getDocId();
-	if ( ! d || d == (int64_t *)-1 ) return (char *)d;
+	if ( ! d || d == (int64_t *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getDocId failed", __FILE__, __func__, __LINE__);
+		return (char *)d;
+	}
 
 	Url *fu = getFirstUrl();
-	if ( ! fu || fu == (void *)-1 ) return (char *)fu;
+	if ( ! fu || fu == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getFirstUrl failed", __FILE__, __func__, __LINE__);
+		return (char *)fu;
+	}
 
 	Url *cu = getCurrentUrl();
-	if ( ! cu || cu == (void *)-1 ) return (char *)cu;
+	if ( ! cu || cu == (void *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getCurrentUrl failed", __FILE__, __func__, __LINE__);
+		return (char *)cu;
+	}
 
 	uint8_t *langId = getLangId();
-	if ( ! langId || langId == (uint8_t *)-1 ) return (char *)langId;
+	if ( ! langId || langId == (uint8_t *)-1 ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getLangId failed", __FILE__, __func__, __LINE__);
+		return (char *)langId;
+	}
 
 	// validate this to prevent core for simplified redirect links
 	int32_t hostHash32a = getHostHash32a();
@@ -22599,7 +22896,10 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	// so linkSites[i] is site for link #i in Links.cpp class
 	int32_t *linkSiteHashes = getLinkSiteHashes ( );
 	if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 )
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getLinkSiteHashes failed", __FILE__, __func__, __LINE__);
 		return (char *)linkSiteHashes;
+	}
 
 
 	XmlDoc  *nd  = this;
@@ -22624,7 +22924,11 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	int32_t n = links->m_numLinks;
 	// return early if nothing to do. do not return NULL though cuz we
 	// do not have g_errno set!
-	if ( n <= 0 ) return (char *)0x01;
+	if ( n <= 0 ) 
+	{
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, no links to add (%"INT32").", __FILE__, __func__, __LINE__, n);
+		return (char *)0x01;
+	}
 
 	// sanity checks
 	if ( ! m_ipValid             ) { char *xx=NULL;*xx=0; }
@@ -22650,7 +22954,10 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	HashTableX ht;
 	char buf2[8192];
 	if ( ! ht.set ( 4,0,1000,buf2 , 8192,false,m_niceness,"linkdedup" ) )
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, ht.set failed", __FILE__, __func__, __LINE__);
 		return NULL;
+	}
 
 	// count how many we add
 	int32_t numAdded = 0;
@@ -22665,18 +22972,16 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	//bool useTestSpiderDir = (m_sreqValid && m_sreq.m_useTestSpiderDir);
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) 
+	{
+		log(LOG_ERROR,"%s:%s:%d: END, getCollRec failed", __FILE__, __func__, __LINE__);
+		return NULL;
+	}
 
 	// do not do this if not test collection for now
 	bool isTestColl = (! strcmp(cr->m_coll,"qatest123") );
 	// turn off for now
 	isTestColl = false;
-
-	//char **wptrs = m_words.getWords();
-	//int32_t  *wlens = m_words.getWordLens();
-
-	// need this for setting SpiderRequest::m_spiderTime
-	//int32_t nowGlobal = getTimeGlobal();
 
 	// for setting LF_CONTACTY bit on the outlinks
 	char disbuf[1000];
@@ -22738,7 +23043,8 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	}
 
 
-	//SpiderColl *sc = g_spiderCache.getSpiderCollIffNonNull ( m_collnum );
+
+	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Handling %"INT32" links", __FILE__, __func__, __LINE__, n);
 
 	//
 	// serialize each link into the metalist now
@@ -22822,6 +23128,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			url.isDomainUnwantedForIndexing() ||
 			url.isPathUnwantedForIndexing() )
 		{
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Unwanted for indexing [%s]", __FILE__, __func__, __LINE__, url.getUrl());
 			continue;			
 		}
 
@@ -22886,6 +23193,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if ( ext && strcasecmp(ext,"xml" ) == 0 ) isRSSExt = true;
 		if ( ext && strcasecmp(ext,"atom") == 0 ) isRSSExt = true;
 
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: link is RSS [%s]", __FILE__, __func__, __LINE__, isRSSExt?"true":"false");
 
 		// make the spider request rec for it
 		SpiderRequest ksr;
@@ -23198,6 +23506,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if ( ksr.m_sameDom ) numAddedFromSameDomain++;
 	}
 
+	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Added %"INT32" links", __FILE__, __func__, __LINE__, numAdded);
 	// . this is just how many urls we tried to index
 	// . move into Spider::addSpiderRequest()
 	//cr->m_localCrawlInfo.m_urlsHarvested += numAdded;
@@ -23213,6 +23522,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	// update end of list once we have successfully added all spider recs
 	m_p = p;
 	// return current ptr
+	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, all done.", __FILE__, __func__, __LINE__);
 	return m_p ;
 }
 
@@ -24054,6 +24364,29 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// ptr to term = 4 + score = 4 + ptr to sec = 4
 	if ( m_wts && m_wts->m_ds!=sizeof(TermDebugInfo)){char *xx=NULL;*xx=0;}
 
+	uint8_t *ct = getContentType();
+	if ( ! ct )
+	{
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s: getContentType failed", __FILE__,__func__);
+		return NULL;
+	}
+	
+	// BR 20160127: Never index JSON and XML content
+	if ( *ct == CT_JSON || *ct == CT_XML )
+	{
+		// For XML (JSON should not get here as it should be filtered out during spidering)
+		// store the URL as the only thing in posdb so we are able to find it, and
+		// eventually ban it.
+		if ( !hashUrl( table, true ) )  // urlOnly (skip IP and term generation)
+		{
+			return NULL;
+		}
+		m_allHashed = true;
+		return (char *)1;
+	}
+
+
+
 	unsigned char *hc = (unsigned char *)getHopCount();
 	if ( ! hc || hc == (void *)-1 ) return (char *)hc;
 
@@ -24101,12 +24434,9 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// reset distance cursor
 	m_dist = 0;
 
-	// hash diffbot's json output here
-	uint8_t *ct = getContentType();
-	if ( ! ct ) return NULL;
 
 	if ( ! hashContentType   ( table ) ) return NULL;
-	if ( ! hashUrl           ( table ) ) return NULL;
+	if ( ! hashUrl           ( table, false ) ) return NULL;
 	if ( ! hashLanguage      ( table ) ) return NULL;
 	if ( ! hashCountry       ( table ) ) return NULL;
 // BR 20160117 removed:	if ( ! hashSiteNumInlinks( table ) ) return NULL;
@@ -25360,6 +25690,7 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 			link.isDomainUnwantedForIndexing() ||
 			link.isPathUnwantedForIndexing() )
 		{
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Unwanted for indexing [%s]", __FILE__, __func__, __LINE__, link.getUrl());
 			continue;			
 		}
 
@@ -25613,7 +25944,7 @@ bool XmlDoc::getUseTimeAxis ( ) {
 
 // . returns false and sets g_errno on error
 // . copied Url2.cpp into here basically, so we can now dump Url2.cpp
-bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
+bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) {
 
 	setStatus ( "hashing url colon" );
 
@@ -25637,6 +25968,12 @@ bool XmlDoc::hashUrl ( HashTableX *tt ) { // , bool isStatusDoc ) {
 	//if ( isStatusDoc ) hi.m_prefix = "url2";
 	if ( ! hashSingleTerm(uw.getUrl(),uw.getUrlLen(),&hi) )
 		return false;
+
+	if( urlOnly )
+	{
+		return true;
+	}
+
 
 	if ( getUseTimeAxis() ) { // g_conf.m_useTimeAxis ) {
 		hi.m_prefix = "gbtimeurl";

@@ -690,7 +690,7 @@ public:
 	bool hashLinks ( class HashTableX *table ) ;
 	bool getUseTimeAxis ( ) ;
 	SafeBuf *getTimeAxisUrl ( );
-	bool hashUrl ( class HashTableX *table );
+	bool hashUrl ( class HashTableX *table, bool urlOnly );
 	bool hashDateNumbers ( class HashTableX *tt );
 	bool hashSections ( class HashTableX *table ) ;
 	bool hashIncomingLinkText ( class HashTableX *table            ,
