@@ -137,7 +137,6 @@ public:
 	bool  cat2 ( SafeBuf& c,char *tagFilter1,char *tagFilter2);
 	void  reset() { m_length = 0; }
 	void  purge(); // Clear all data and free all allocated memory
-	bool  advance ( int32_t i ) ;
 
 	bool safePrintFilterTagsAndLines ( char *p , int32_t plen ,
 					   bool oneWordPerLine ) ;

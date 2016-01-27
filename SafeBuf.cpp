@@ -355,13 +355,6 @@ bool SafeBuf::cat2 ( SafeBuf& c,
 	goto loop;
 }
 
-
-bool SafeBuf::advance ( int32_t i ) {
-	if ( ! reserve ( i ) ) return false;
-	m_length += i;
-	return true;
-}
-
 bool SafeBuf::reserve(int32_t i , char *label, bool clearIt ) {
 
 	// if we don't already have a label and they provided one, use it
