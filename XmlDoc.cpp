@@ -1721,7 +1721,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_contentHash32Valid          = true;
 	//m_tagHash32Valid              = true;
 	m_tagPairHash32Valid          = true;
-	m_adVectorValid               = true;
 	m_wikiDocIdsValid             = true;
 	m_imageDataValid              = true;
 	m_utf8ContentValid            = true;
@@ -4000,7 +3999,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if ( ! m_redirUrlValid               ) { char *xx=NULL;*xx=0; }
 	if ( ! m_tagRecValid                 ) { char *xx=NULL;*xx=0; }
 	if ( ! m_gigabitHashesValid          ) { char *xx=NULL;*xx=0; }
-	if ( ! m_adVectorValid               ) { char *xx=NULL;*xx=0; }
 	if ( ! m_wikiDocIdsValid             ) { char *xx=NULL;*xx=0; }
 	if ( ! m_imageDataValid              ) { char *xx=NULL;*xx=0; }
 	if ( ! m_recycleContent ) {
