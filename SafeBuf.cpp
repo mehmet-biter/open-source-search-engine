@@ -1274,24 +1274,6 @@ bool SafeBuf::urlEncodeAllBuf ( bool spaceToPlus ) {
 	return true;
 }
 
-// used by PageEvents.cpp to escape out the single quotes in javascript
-// strings...
-bool SafeBuf::escapeJS (char *s , int32_t slen ) {
-	if ( ! reserve ( slen + 1 ) ) return false;
-	char *send = s + slen;
-	for ( ; s < send ; s++ ) {
-		// encode the damn thing
-		if ( *s == '\'' ) safeMemcpy("\\\'",2 );
-		// i dunno why i need &quot; here... but \\\" does not work!
-		// i think because the html parser messes up on it before
-		// passing it on to the javascript parser.
-		else if ( *s == '\"' ) safeMemcpy("&quot;",6 );
-		else if ( *s == '\\' ) safeMemcpy("\\\\",2 );
-		else pushChar ( *s );
-	}
-	return true;
-}	
-
 
 //s is a url, make it safe for printing to html
 bool SafeBuf::urlEncode (char *s , int32_t slen, 
@@ -2914,16 +2896,15 @@ bool SafeBuf::htmlDecode ( char *src,
 	purge();
 	// make sure we have enough room
 	if ( ! reserve ( srcLen + 1 ) ) return false;
+
 	// . just decode buffer into our m_buf that we reserved
 	// . it puts a \0 at the end and returns the LENGTH of the string
 	//   it put into m_buf, not including the \0
-	int32_t newLen = ::htmlDecode ( m_buf ,
-				     src,
-				     srcLen,
-				     false ,
-				     niceness );
+	int32_t newLen = ::htmlDecode( m_buf, src, srcLen, false, niceness );
+
 	// assign that length then
 	m_length = newLen;
+
 	// good to go
 	return true;
 }

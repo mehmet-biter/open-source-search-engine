@@ -250,9 +250,7 @@ public:
 			 bool doSpecial = false,
 			 int32_t niceness = 0 );
 
-	//bool  htmlEncode(int32_t niceness );
 	bool  dequote ( char *t , int32_t tlen );
-	bool  escapeJS ( char *s , int32_t slen ) ;
 
 	bool  urlEncode (char *s , 
 			 int32_t slen, 
