@@ -51,13 +51,6 @@ extern int g_inMemcpy;
 
 #define SENT_UNITS 30
 
-static int32_t getIsContacty ( Url *url ,
-			    LinkInfo *info1 ,
-			    int32_t hops ,
-			    uint8_t ct ,
-			    bool isRoot ,
-			    int32_t niceness );
-
 
 static int32_t getTopGigabits ( HashTableX   *ht          ,
 			     GigabitInfo **top         ,
@@ -155,7 +148,6 @@ XmlDoc::XmlDoc() {
 	//m_coll  = NULL;
 	m_ubuf = NULL;
 	m_pbuf = NULL;
-	//m_contactDoc = NULL;
 	m_rootDoc    = NULL;
 	m_oldDoc     = NULL;
 	m_dx = NULL;
@@ -563,7 +555,6 @@ void XmlDoc::reset ( ) {
 
 	m_deleteFromIndex = false;
 
-	//if ( m_contactDocValid ) nukeDoc ( m_contactDoc );
 	if ( m_rootDocValid    ) nukeDoc ( m_rootDoc    );
 	if ( m_oldDocValid     ) nukeDoc ( m_oldDoc     );
 	if ( m_extraDocValid   ) nukeDoc ( m_extraDoc   );
@@ -846,9 +837,6 @@ void XmlDoc::reset ( ) {
 
 	m_doingConsistencyCheck    = false;
 
-	// used for getting contact info
-	//m_triedRoot = false;
-	//m_winner = -2;
 
 	// tell Msg13 to just call HttpServer::getDoc() and not to forward
 	// the download request to another host. although this does not
@@ -1835,12 +1823,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	// must not be negative
 	if ( m_siteNumInlinks < 0 ) { char *xx=NULL;*xx=0; }
 
-	// set m_hasContactInfo in case someone calls ::getHasContactInfo()
-	// which will do a bunch of parsing!!
-	//tag = m_oldTagRec.getTag ("hascontactinfo");
-	//if ( tag ) m_hasContactInfo = true;
-	//else       m_hasContactInfo = false;
-	//m_hasContactInfoValid = true;
 
 	// sanity check. if m_siteValid is true, this must be there
 	if ( ! ptr_site ) {
@@ -3778,7 +3760,7 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 
 	// . before storing this into title Rec, make sure all tags
 	//   are valid and tagRec is up to date
-	// . like we might need to update the contact info, siteNumInlinks,
+	// . like we might need to update the siteNumInlinks,
 	//   or other tags because, for instance, contact info might not
 	//   be in there because isSpam() never required it.
 	int32_t *sni = getSiteNumInlinks();
@@ -10167,55 +10149,6 @@ char **XmlDoc::getRootTitleRec ( ) {
 	return &m_rootTitleRec;
 }
 
-/*
-// . look up TitleRec using Msg22 if we need to
-// . set our m_titleRec member from titledb
-// . the twin brother of XmlDoc::getTitleRecBuf() which makes the title rec
-//   from scratch. this loads it from titledb.
-// . NULL is a valid value (EDOCNOTFOUND) so return a char **
-char **XmlDoc::getContactTitleRec ( char *u ) {
-	// clear if we blocked
-	//if ( g_errno == ENOTFOUND ) g_errno = 0;
-	// if valid return that
-	if ( m_contactTitleRecValid ) return &m_contactTitleRec;
-	// fake
-	static char *s_fake = NULL;
-	// if no url, we got no contact title rec in titledb then!
-	if ( ! u || u[0] == '\0' ) return &s_fake;
-	// update status msg
-	setStatus ( "getting contact title rec");
-	// assume its valid
-	m_contactTitleRecValid = true;
-	// add it to the cache?
-	bool addToCache = false;
-	//if ( maxCacheAge > 0 ) addToCache = true;
-	// the title must be local since we're spidering it
-        if ( ! m_msg22c.getTitleRec ( &m_msg22Request      ,
-				      u                    ,
-				      0                    , // probable docid
-				      m_coll               ,
-				      // . msg22 will set this to point to it!
-				      // . if NULL that means NOT FOUND
-				      &m_contactTitleRec     ,
-				      &m_contactTitleRecSize ,
-				      false                , // just chk tfndb?
-				      m_masterState        ,
-				      m_masterLoop         ,
-				      m_niceness           , // niceness
-				      addToCache           , // add to cache?
-				      0                    , // max cache age
-				      999999               , // timeout seconds
-				      false                ))// load balancing?
-		// return -1 if we blocked
-		return (char **)-1;
-	// not really an error
-	if ( g_errno == ENOTFOUND ) g_errno = 0;
-	// error?
-	if ( g_errno ) return NULL;
-	// got it
-	return &m_contactTitleRec;
-}
-*/
 
 
 // used for indexing spider replies. we need a unique docid because it
@@ -10451,226 +10384,6 @@ TagRec *XmlDoc::getTagRec ( ) {
 
 
 
-
-// returns "type" of contact link, > 0
-int32_t getIsContacty ( Url *url ,
-		     LinkInfo *info1 ,
-		     int32_t hops ,
-		     uint8_t ct ,
-		     bool isRoot ,
-		     int32_t niceness ) {
-
-	static int64_t h_home       ;
-	static int64_t h_site       ;
-	static int64_t h_map        ;
-	static int64_t h_sitemap    ;
-	static int64_t h_contact    ;
-	static int64_t h_about      ;
-	static int64_t h_privacy    ;
-	static int64_t h_policy     ;
-	static int64_t h_statement  ;
-	static int64_t h_terms      ;
-	static int64_t h_of         ;
-	static int64_t h_and        ;
-	static int64_t h_service    ;
-	static int64_t h_conditions ;
-	static int64_t h_use        ;
-	static int64_t h_us         ;
-	static int64_t h_help       ;
-	static int64_t h_location   ;
-	static int64_t h_faq        ;
-	static int64_t h_faqs       ;
-	static int64_t h_customer   ;
-	static int64_t h_support    ;
-	static int64_t h_advertise  ;
-	static int64_t h_inquiry    ;
-	static int64_t h_inquiries  ;
-	static int64_t h_feedback   ;
-	static int64_t h_company    ;
-	static int64_t h_corporate  ;
-
-	static bool s_inith = false;
-	if ( ! s_inith ) {
-		s_inith = true;
-		h_home       = hash64n ("home");
-		h_site       = hash64n ("site");
-		h_map        = hash64n ("map");
-		h_sitemap    = hash64n ("sitemap");
-		h_contact    = hash64n ("contact");
-		h_about      = hash64n ("about");
-		h_privacy    = hash64n ("privacy");
-		h_policy     = hash64n ("policy");
-		h_statement  = hash64n ("statement");
-		h_terms      = hash64n ("terms");
-		h_of         = hash64n ("of");
-		h_and        = hash64n ("and");
-		h_service    = hash64n ("service");
-		h_conditions = hash64n ("conditions");
-		h_use        = hash64n ("use");
-		h_us         = hash64n ("us");
-		h_help       = hash64n ("help");
-		h_location   = hash64n ("location");
-		h_faq        = hash64n ("faq");
-		h_faqs       = hash64n ("faqs");
-		h_customer   = hash64n ("customer");
-		h_support    = hash64n ("support");
-		h_advertise  = hash64n ("advertise");
-		h_inquiry    = hash64n ("inquiry");
-		h_inquiries  = hash64n ("inquiries");
-		h_feedback   = hash64n ("feedback");
-		h_company    = hash64n ("company");
-		h_corporate  = hash64n ("corporate");
-	}
-
-	int32_t check = 0;
-	// loop over the link texts we got
-	for ( Inlink *k = NULL; (k = info1->getNextInlink(k)) ; ) {
-		// never do anything if hop count >= 3
-		if ( hops >= 3 ) break;
-		// javascript must be hopcount 1 only
-		if ( ct == CT_JS && hops != 1 ) break;
-		// is this inlinker internal?
-		//bool internal=((m_ip&0x0000ffff)==(k->m_ip&0x0000ffff));
-		// skip if not local to site
-		//if ( ! internal ) continue;
-		// get the text
-		char *txt = k->getLinkText();
-		// get length of link text
-		int32_t tlen = k->size_linkText;
-		if ( tlen > 0 ) tlen--;
-		// assume utf-8. so do a utf-8 sanity check so it doesn't
-		// break Words::countWords() by thinking a character is
-		// 2+ bytes and breaching the buffer
-		if ( ! verifyUtf8 ( txt , tlen ) ) {
-			log("xmldoc: bad link text 1 from url=%s for %s",
-			    k->getUrl(),url->m_url);
-			continue;
-		}
-		// convert into words i guess
-		Words ww;
-		// . TODO: use alt text if only an image in the link!!!!!
-		// . return -1 if it fails with g_errno set
-		if ( ! ww.set ( txt , tlen , true, niceness) ) {
-			return (char)-1;
-		}
-
-		// shortcut
-		int32_t nw = ww.getNumWords();
-		// skip if too big
-		if ( nw >= 30 ) continue;
-		// shortcut
-		int64_t *wids = ww.getWordIds();
-		// reset alnumcount
-		int32_t count = 0;
-		// loop over its words
-		for ( int32_t j = 0 ; j < nw && ! check ; j++ ) {
-			// skip if not alnum
-			if ( ! wids[j] ) continue;
-			// keep track of alnum word position
-			count++;
-			// "contact..." only good from root or root kid
-			if ( wids[j] == h_contact && hops >= 1 && count == 1 )
-				check = 1;
-			// "about..." only good from root or root kid
-			if ( wids[j] == h_about   && hops >= 1 && count == 1 )
-				check = 2;
-			// "...privacy policy..."
-			if ( wids[j  ] == h_privacy && j+2<nw &&
-			     wids[j+2] == h_policy )
-				check = 3;
-			// "...privacy statement..."
-			if ( wids[j  ] == h_privacy && j+2<nw &&
-			     wids[j+2] == h_statement )
-				check = 4;
-			// "...terms of service..."
-			if ( wids[j  ] == h_terms && j+4<nw &&
-			     wids[j+2] == h_of &&
-			     wids[j+4] == h_service )
-				check = 5;
-			// "...terms of use..."
-			if ( wids[j  ] == h_terms && j+4<nw &&
-			     wids[j+2] == h_of &&
-			     wids[j+4] == h_use )
-				check = 6;
-			// "... terms & conditions ..."
-			if ( wids[j  ] == h_terms && j+2<nw &&
-			     wids[j+2] == h_conditions )
-				check = 7;
-			// "... terms and conditions ..."
-			if ( wids[j  ] == h_terms && j+4<nw &&
-			     wids[j+2] == h_and &&
-			     wids[j+4] == h_conditions )
-				check = 8;
-			// "...site map ..."
-			if ( wids[j] == h_site && j+2<nw &&
-			     wids[j+2] == h_map )
-				check = 9;
-			// "...about us..."
-			if ( wids[j] == h_about && j+2<nw &&
-			     wids[j+2] == h_us )
-				check = 10;
-			// "...contact us..."
-			if ( wids[j] == h_contact && j+2<nw &&
-			     wids[j+2] == h_us)
-				check = 11;
-			// "help..."
-			if ( wids[j] == h_help && count == 1 )
-				check = 12;
-			// "faq..."
-			if ( wids[j] == h_faq && count == 1 )
-				check = 13;
-			// "faqs..."
-			if ( wids[j] == h_faqs && count == 1 )
-				check = 14;
-			// "...customer support..."
-			if ( wids[j] == h_customer && j+2<nw &&
-			     wids[j+2] == h_support )
-				check = 15;
-			// "advertise..."
-			if ( wids[j] == h_advertise && count == 1)
-				check = 16;
-			// "...inquiry..."
-			if ( wids[j] == h_inquiry )
-				check = 17;
-			// "...inquiries..."
-			if ( wids[j] == h_inquiries )
-				check = 18;
-			// one word only below here
-			if ( ww.getNumAlnumWords() != 1 ) continue;
-			if ( wids[j] == h_about     ) check = 2;
-			if ( wids[j] == h_home      ) check = 19;
-			if ( wids[j] == h_support   ) check = 20;
-			if ( wids[j] == h_advertise ) check = 21;
-			if ( wids[j] == h_help      ) check = 22;
-			if ( wids[j] == h_faq       ) check = 23;
-			if ( wids[j] == h_faqs      ) check = 24;
-			if ( wids[j] == h_contact   ) check = 25;
-			if ( wids[j] == h_feedback  ) check = 26;
-			if ( wids[j] == h_sitemap   ) check = 27;
-			if ( wids[j] == h_company   ) check = 28;
-			if ( wids[j] == h_corporate ) check = 29;
-			if ( wids[j] == h_privacy   ) check = 30;
-			if ( wids[j] == h_terms     ) check = 31;
-			// "location" fixes guildcinema.com
-			if ( wids[j] == h_location && isRoot ) check = 32;
-		}
-	}
-
-
-	// check for certain things in the url path that would indicate that
-	// this is a contact info page
-	//char *path = m_firstUrl.getPath();
-	char *path = url->getPath();
-	if ( gb_strcasestr(path,"contact"  ) ) { check += 33; check *= 90; }
-	if ( gb_strcasestr(path,"/about"   ) ) { check += 34; check *= 91; }
-	if ( gb_strcasestr(path,"/feedback") ) { check += 35; check *= 92; }
-	if ( gb_strcasestr(path,"/help"    ) ) { check += 36; check *= 93; }
-	if ( gb_strcasestr(path,"/faq"     ) ) { check += 37; check *= 94; }
-	if ( gb_strcasestr(path,"advertise") ) { check += 38; check *= 95; }
-	if ( gb_strcasestr(path,"inquir"   ) ) { check += 39; check *= 96; }
-
-	return check;
-}
 
 // we need this for setting SpiderRequest::m_parentFirstIp of each outlink
 int32_t *XmlDoc::getFirstIp ( ) {
@@ -22355,9 +22068,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		m_srep.m_hasAuthorityInlink = 1;
 	// automatically valid either way
 	m_srep.m_hasAuthorityInlinkValid = 1;
-	// but for this tag, it must exist even if it has no contact info
-	//tag = gr->getTag ( "hascontactinfo"  );
-	//if ( tag ) {
 
 	int64_t uh48        = 0LL;
 	// we might be a docid based spider request so fu could be invalid
@@ -22965,14 +22675,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	// turn off for now
 	isTestColl = false;
 
-	// for setting LF_CONTACTY bit on the outlinks
-	char disbuf[1000];
-	HashTableX disqualify;
-	disqualify.set(4,0,32,disbuf,1000,false,m_niceness,"disqual");
-	int32_t consec = 0;
-	int32_t linkTypes[2000];
-	int32_t lastType = 0;
-
 
 
 	// if the file we are indexing now has
@@ -23262,38 +22964,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// includes xxx.com/* however
 		ksr.m_isWWWSubdomain = url.isSimpleSubdomain();
 
-		// get link text we use for this outlink
-		/*
-		char tbuf[200];
-		int32_t  tlen = links->getLinkText2 ( i          ,
-						   tbuf       ,
-						   200        ,
-						   NULL       ,
-						   NULL       ,
-						   NULL       ,
-						   m_niceness );
-		*/
-
-		// the updated isContacty algo to fix www.apha.org which
-		// has a ton of apha.org/about/* links
-		int32_t t = getIsContacty ( &url,
-					 NULL ,
-					 ksr.m_hopCount ,
-					 0 , // content type
-					 (ksr.m_hopCount==0),
-					 m_niceness );
-		// if same type as last one we might disqualify if 3 in a row
-		if ( t && t == lastType ) consec++;
-		else                      consec = 0;
-		// disqualify this pattern as a contacty link if is abused
-		if ( consec >= 3 )
-			if ( ! disqualify.addKey(&t) )
-				return NULL;
-		// remember. use numAdded as the index for this since we do
-		// not add all the outlinks to this list.
-		if ( numAdded < 2000 ) linkTypes[numAdded] = t;
-		// set this
-		lastType = t;
 
 		// if parent is a root of a popular site, then it is considered
 		// an authority linker.  (see updateTagdb() function above)
@@ -23302,11 +22972,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if ( *isRoot && *psni >= 500 )
 			ksr.m_hasAuthorityInlink   = 1;
 			
-		// this is in request now as well as reply
-		//Tag *tag;
-		// hascontactinfo tag can have a value of 0 or 1
-		//tag = gr->getTag("hascontactinfo");
-		//if ( tag ) {
 
 		// the mere existence of these tags is good
 		if ( gr->getTag("authorityinlink"))ksr.m_hasAuthorityInlink =1;
