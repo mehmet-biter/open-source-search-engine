@@ -591,33 +591,6 @@ retry2:
 	return numRead;
 }
 
-// safely print the string, converting Latin1 to Utf8
-bool SafeBuf::safeLatin1ToUtf8(char *s, int32_t len) {
-	// check how far we're going to grow
-	int32_t tmp = len + m_length;
-	for ( int32_t i = 0; i < len; i++ ) {
-		unsigned char c = (unsigned char)s[i];
-		// check if this expands to 2 chars
-		if ( c >= 0x80 ) tmp++;
-	}
-	// make sure we have room
-	if ( tmp >= m_capacity ) {
-		int32_t expanded = tmp - (len + m_length);
-		if (!reserve( m_capacity + len + expanded))
-			return false;
-	}
-	// convert it over
-	char *p = m_buf + m_length;
-
-	// use the iconv function
-	p += latin1ToUtf8(p, m_capacity-m_length, s, len);
-	//#endif
-	
-	// set the new length
-	m_length = p - m_buf;
-	return true;
-}
-
 // a special replace
 bool SafeBuf::insert ( SafeBuf *c , int32_t insertPos ) {
 	return safeReplace ( c->getBufStart() ,

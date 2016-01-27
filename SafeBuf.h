@@ -160,9 +160,7 @@ public:
 	void  setLength(int32_t i) { m_length = i; }
 	char *getNextLine ( char *p ) ;
 	int32_t  catFile(char *filename) ;
-	//int32_t  load(char *dir,char *filename) { 
-	//	return fillFromFile(dir,filename);};
-	bool  safeLatin1ToUtf8(char *s, int32_t len);
+
 	void  detachBuf();
 	bool  insert ( class SafeBuf *c , int32_t insertPos ) ;
 	bool  insert ( char *s , int32_t insertPos ) ;
