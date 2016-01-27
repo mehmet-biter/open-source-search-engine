@@ -225,7 +225,6 @@ public:
 
 	bool  htmlEncode(char *s, int32_t len,bool encodePoundSign,
 			 int32_t niceness=0 , int32_t truncateLen = -1 );
-	bool  javascriptEncode(char *s, int32_t len );
 
 	bool  htmlEncode(char *s) ;
 
