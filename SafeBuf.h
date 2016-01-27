@@ -267,19 +267,7 @@ public:
 	bool  latin1CdataEncode(char *s, int32_t len);
 	bool  utf8CdataEncode(char *s, int32_t len);
 
-	// . filter out parentheses and other query operators
-	// . used by SearchInput.cpp when it constructs the big UOR query
-	//   of facebook interests
-	bool queryFilter ( char *s , int32_t len );
-
-	//bool  utf16CdataEncode(UChar *s, int32_t len);
-	//bool  utf16CdataEncode(char *s, int32_t len) {
-	//	return utf16CdataEncode((UChar*)s, len>>1); };
-
 	bool  latin1HtmlEncode(char *s, int32_t len, int32_t niceness=0);
-	//bool  utf16HtmlEncode(UChar *s, int32_t len);
-	//bool  utf16HtmlEncode(char *s, int32_t len) {
-	//	return utf16HtmlEncode((UChar*)s, len>>1); };
 
 	bool  cdataEncode ( char *s ) ;
 	bool  cdataEncode ( char *s , int32_t slen ) ;
