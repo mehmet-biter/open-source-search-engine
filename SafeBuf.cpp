@@ -91,27 +91,6 @@ bool SafeBuf::setBuf(char *newBuf, int32_t bufMax, int32_t bytesInUse, bool ownD
 	return true;
 }
 
-bool SafeBuf::yieldBuf( char **bufPtr, int32_t *bufCapacity, int32_t *bytesInUse,
-		        bool *ownData, int16_t *encoding ) {
-	// Set the references to our data.
-	if ( !bufPtr || !bufCapacity || ! bytesInUse || !ownData )
-		return false;
-	*bufPtr = m_buf;
-	*bufCapacity = m_capacity;
-	*bytesInUse = m_length;
-	*ownData = !m_usingStack;
-	if ( encoding ) {
-		*encoding = m_encoding;
-	}
-	// Clear out our data.
-	m_buf = NULL;
-	m_capacity = 0;
-	m_length = 0;
-	m_usingStack = false;
-	m_encoding = csUTF8;
-	return true;
-}
-
 void SafeBuf::purge() {
 	if ( !m_usingStack && m_buf )
 		mfree( m_buf, m_capacity, "SafeBuf" );

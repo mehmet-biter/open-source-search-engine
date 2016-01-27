@@ -42,12 +42,6 @@ public:
 		    int32_t bytesInUse, 
 		    bool ownData,
 		    int16_t encoding = csUTF8 );
-	// yieldBuf() allows you to take over the buffer in SafeBuf. 
-	// You may only free the data if it was originally owned by
-	// the SafeBuf.
-	// Think twice before using this function.
-	bool yieldBuf(char **bufPtr, int32_t *bufAlloc, int32_t *bytesInUse,
-		      bool *ownData, int16_t *encoding );
 
 	// set buffer from another safebuf, stealing it
 	bool stealBuf ( SafeBuf *sb );
