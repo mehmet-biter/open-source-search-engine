@@ -219,8 +219,7 @@ public:
 	// htmlEncode default = false
 	bool  utf8Encode2(char *s, int32_t len, bool htmlEncode=false, 
 			 int32_t niceness=0);
-	bool  latin1Encode(char *s, int32_t len, bool htmlEncode=false,
-			   int32_t niceness=0);
+
     bool utf32Encode(UChar32* codePoints, int32_t cpLen);
 
 	bool  htmlEncode(char *s, int32_t len,bool encodePoundSign,

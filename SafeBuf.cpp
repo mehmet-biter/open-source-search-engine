@@ -816,22 +816,6 @@ bool SafeBuf::utf32Encode(UChar32* codePoints, int32_t cpLen) {
     return true;
 }
 
-bool  SafeBuf::latin1Encode(char *s, int32_t len, bool encodeHTML,int32_t niceness) {
-	int32_t tmp = m_length;
-	switch(m_encoding) {
-	case csUTF8:
-		if (! safeLatin1ToUtf8(s,len)) return false;
-		break;
-	case csISOLatin1:
-		if (! safeMemcpy(s,len)) return false;
-		break;
-	default:
-		return false;
-	}
-	if (!encodeHTML) return true;
-	return htmlEncode(m_length-tmp,niceness);
-}
-
 bool SafeBuf::cdataEncode ( char *s ) {
 	return safeCdataMemcpy(s,gbstrlen(s));
 }
