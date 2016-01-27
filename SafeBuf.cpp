@@ -1219,62 +1219,6 @@ void initTable ( ) {
 	}
 }
 
-//  url encode the whole buffer
-bool SafeBuf::urlEncodeAllBuf ( bool spaceToPlus ) {
-	// this makes things faster
-	if ( ! s_init23 ) initTable();
-	// how many chars do we need?
-	char *bs = m_buf;
-	int32_t size = 0;
-	int32_t need = 0;
-	for ( ; *bs ; bs++ ) {
-		// one char is one byte
-		size++;
-		// skip if no encoding required
-		if ( s_ut[(unsigned char)*bs] == 0 ) continue;
-		// spaces are ok, just a single + byte
-		if ( *bs == ' ' && spaceToPlus ) continue;
-		// will need to do %ff type of thing
-		need += 2;
-	}
-	// incorporate abse size
-	need += size;
-	// null term
-	need++;
-	// ensure enough room
-	if ( ! reserve ( need ) ) return false;
-	// reset s in case got reallocated
-	char *src = m_buf + size - 1;
-	char *dst = m_buf + need - 1;
-	// null term
-	*dst-- = '\0';
-	// start off encoding backwards!
-	for ( ; src >= m_buf ; src-- ) {
-		// copy one byte if no encoding required
-		if ( s_ut[(unsigned char)*src] == 0 ) {
-			*dst = *src;
-			dst--;
-			continue;
-		}
-		// ok, need to encode it
-		if ( *src == ' ' && spaceToPlus ) { *dst-- = '+'; continue; }
-		unsigned char v;
-		// store second hex digit
-		v = ((unsigned char)*src) & 0x0f ;
-		if ( v < 10 ) v += '0';
-		else          v += 'A' - 10;
-		*dst-- = v;
-		// store first hex digit
-		v = ((unsigned char)*src)/16 ;
-		if ( v < 10 ) v += '0';
-		else          v += 'A' - 10;
-		*dst-- = v;
-		*dst-- = '%';
-	}
-	return true;
-}
-
-
 //s is a url, make it safe for printing to html
 bool SafeBuf::urlEncode (char *s , int32_t slen, 
 			 bool requestPath ,
@@ -1373,14 +1317,6 @@ bool SafeBuf::operator += (uint64_t i) {
 bool SafeBuf::operator += (int64_t i) {
 	return safeMemcpy((char*)&i, sizeof(int64_t));
 }
-
-// bool SafeBuf::operator += (int32_t i) {
-// 	return safeMemcpy((char*)&i, sizeof(int32_t));
-// }
-
-// bool SafeBuf::operator += (uint32_t i) {
-// 	return safeMemcpy((char*)&i, sizeof(uint32_t));
-// }
 
 bool SafeBuf::operator += (float i) {
 	return safeMemcpy((char*)&i, sizeof(float));
