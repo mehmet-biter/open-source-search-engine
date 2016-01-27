@@ -19727,13 +19727,13 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		SafeBuf jd;
 		if ( ! jd.safeMemcpy ( ptr_utf8Content , size_utf8Content ) )
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, js.safeMemcpy failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, js.safeMemcpy failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 		// set m_spiderStatusDocMetaList from the json
 		if ( ! setSpiderStatusDocMetaList ( &jd , m_docId ) )
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, setSpiderStatusDocMetaList failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, setSpiderStatusDocMetaList failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 		// TODO: support titledb rebuild as well
@@ -19784,7 +19784,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: getCollRec failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: getCollRec failed", __FILE__, __func__, __LINE__);
 		return NULL;
 	}
 
@@ -19865,14 +19865,14 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		if ( m_useSecondaryRdbs ) rd = RDB2_SPIDERDB2;
 		if ( ! m_zbuf.pushChar(rd) )
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, m_zbuf.pushChar failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, m_zbuf.pushChar failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 		// store that reply to indicate this spider request has
 		// been fulfilled!
 		if( ! m_zbuf.safeMemcpy (&srep, srep.getRecSize()))
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, m_zbuf.safeMemcpy failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, m_zbuf.safeMemcpy failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 
@@ -19912,14 +19912,14 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// store this
 		if ( ! m_zbuf.pushChar(rd) )
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, m_zbuf.pushChar failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, m_zbuf.pushChar failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 		
 		// then the request
 		if ( ! m_zbuf.safeMemcpy(&ksr,ksr.getRecSize() ) )
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, m_zbuf.safeMemcpy failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, m_zbuf.safeMemcpy failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 		
@@ -19944,7 +19944,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	int32_t *plainch32 = getContentHash32();
 	if ( ! plainch32 || plainch32 == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getContentHash32 failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getContentHash32 failed", __FILE__, __func__, __LINE__);
 		return (char *)plainch32;
 	}
 
@@ -19952,7 +19952,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	int16_t *hs = getHttpStatus ();
 	if ( ! hs || hs == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getHttpStatus failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getHttpStatus failed", __FILE__, __func__, __LINE__);
 		return (char *)hs;
 	}
 
@@ -19960,7 +19960,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	char *site = getSite();
 	if ( ! site || site == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getSite failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getSite failed", __FILE__, __func__, __LINE__);
 		return (char *)site;
 	}
 
@@ -19968,7 +19968,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	char *isr = getIsSiteRoot();
 	if ( ! isr || isr == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getIsSiteRoot failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getIsSiteRoot failed", __FILE__, __func__, __LINE__);
 		return (char *)isr;
 	}
 
@@ -19976,7 +19976,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	int64_t *sh64 = getSiteHash64();
 	if ( ! sh64 || sh64 == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getSiteHash64 failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getSiteHash64 failed", __FILE__, __func__, __LINE__);
 		return (char *)sh64;
 	}
 
@@ -19984,7 +19984,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	int64_t *mydocid = getDocId();
 	if ( ! mydocid || mydocid == (int64_t *)-1) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getDocId failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getDocId failed", __FILE__, __func__, __LINE__);
 		return (char *)mydocid;
 	}
 
@@ -19997,7 +19997,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	XmlDoc **pod = getOldXmlDoc ( );
 	if ( ! pod || pod == (XmlDoc **)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getOldXmlDoc failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getOldXmlDoc failed", __FILE__, __func__, __LINE__);
 		return (char *)pod;
 	}
 	
@@ -20008,7 +20008,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	char *isIndexed = getIsIndexed ();
 	if ( ! isIndexed || isIndexed == (char *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getIsIndexed failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getIsIndexed failed", __FILE__, __func__, __LINE__);
 		return (char *)isIndexed;
 	}
 
@@ -20016,7 +20016,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	int32_t *indexCode = getIndexCode();
 	if ( ! indexCode || indexCode ==(void *)-1) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getIndexCode failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getIndexCode failed", __FILE__, __func__, __LINE__);
 		return (char *)indexCode;
 	}
 	
@@ -20075,7 +20075,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			int32_t *sni = getSiteNumInlinks();
 			if ( ! sni || sni == (int32_t *)-1 ) 
 			{
-				log(LOG_ERROR,"%s:%s:%d: getSiteNumInlinks failed", __FILE__, __func__, __LINE__);
+				if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: getSiteNumInlinks failed", __FILE__, __func__, __LINE__);
 				return (char *)sni;
 			}
 		}
@@ -20140,7 +20140,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// return on error
 		if ( ! newsr ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, could not get spider reply", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, could not get spider reply", __FILE__, __func__, __LINE__);
 			return (char *)newsr;
 		}
 		
@@ -20166,7 +20166,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// error?
 		if ( ! spiderStatusDocMetaList ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, getSpiderStatusDocMetaList failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getSpiderStatusDocMetaList failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 			
@@ -20263,7 +20263,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		oldListSize = od->m_metaListSize;
 		if ( ! oldList || oldList ==(void *)-1) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, get old meta list failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, get old meta list failed", __FILE__, __func__, __LINE__);
 			return (char *)oldList;
 		}
 	}
@@ -20284,7 +20284,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	char *mt = hasNoIndexMetaTag();
 	if ( ! mt || mt == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, hasNoIndexMetaTag failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, hasNoIndexMetaTag failed", __FILE__, __func__, __LINE__);
 		return (char *)mt;
 	}
 	
@@ -20308,7 +20308,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	bool *recycle = getRecycleDiffbotReply();
 	if ( ! recycle || recycle == (void *)-1) 
 	{
-		 log(LOG_ERROR,"%s:%s:%d: END, getRecycleDiffbotReply failed", __FILE__, __func__, __LINE__);
+		 if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getRecycleDiffbotReply failed", __FILE__, __func__, __LINE__);
 		return (char *)recycle;
 	}
 	
@@ -20332,7 +20332,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		int32_t *ohbuf = od->getDiffbotTitleHashes ( &nh );
 		if ( ! m_diffbotTitleHashBuf.safeMemcpy ( ohbuf , nh*4 ) )
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, m_diffbotTitleHashBuf.safeMemcpy failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, m_diffbotTitleHashBuf.safeMemcpy failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 		
@@ -20354,7 +20354,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		int32_t *status = reindexJSONObjects( ohbuf , nh );
 		if ( ! status || status == (void *)-1) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, reindexJSONObjects failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, reindexJSONObjects failed", __FILE__, __func__, __LINE__);
 			return (char *)status;
 		}
 	}
@@ -20390,7 +20390,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		if ( ! th && ! g_errno ) { char *xx=NULL;*xx=0; }
 		if ( ! th || th == (void *)-1 ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, getDiffbotTitleHashes failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getDiffbotTitleHashes failed", __FILE__, __func__, __LINE__);
 			return (char *)th;
 		}
 			
@@ -20398,7 +20398,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		int32_t *status = od->nukeJSONObjects( th , numHashes );
 		if ( ! status || status == (void *)-1) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, nukeJSONObjects failed or blocked", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, nukeJSONObjects failed or blocked", __FILE__, __func__, __LINE__);
 			return (char *)status;
 		}
 	}
@@ -20411,7 +20411,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	LinkInfo *info1 = getLinkInfo1();
 	if ( ! info1 || info1 == (LinkInfo *)-1 )
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getLinkInfo1 failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getLinkInfo1 failed", __FILE__, __func__, __LINE__);
 		return (char *)info1;
 	}
 	//}
@@ -20420,7 +20420,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	int32_t *sni = getSiteNumInlinks();
 	if ( ! sni || sni == (int32_t *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getSiteNumInlinks failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getSiteNumInlinks failed", __FILE__, __func__, __LINE__);
 		return (char *)sni;
 	}
 	
@@ -20428,7 +20428,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	uint8_t *langId = getLangId();
 	if ( ! langId || langId == (uint8_t *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getLangId failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getLangId failed", __FILE__, __func__, __LINE__);
 		return (char *) langId;
 	}
 
@@ -20444,7 +20444,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// return NULL with g_errno set on error
 		if ( ! ptg || ptg == (void *)-1 ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, prepareToMakeTitleRec failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, prepareToMakeTitleRec failed", __FILE__, __func__, __LINE__);
 			return (char *)ptg;
 		}
 	}
@@ -20453,7 +20453,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	char *spiderLinks3 = getSpiderLinks();
 	if ( ! spiderLinks3  || spiderLinks3 == (char *)-1 )
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getSpiderLinks failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getSpiderLinks failed", __FILE__, __func__, __LINE__);
 		return (char *)spiderLinks3;
 	}
 
@@ -20514,7 +20514,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		TagRec ***grv = getOutlinkTagRecVector();
 		if ( ! grv || grv == (void *)-1 ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, getOutlinkTagRecVector failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getOutlinkTagRecVector failed", __FILE__, __func__, __LINE__);
 			return (char *)grv;
 		}
 		
@@ -20523,7 +20523,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		int32_t    **ipv = getOutlinkFirstIpVector();
 		if ( ! ipv || ipv == (void *)-1 ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, getOutlinkFirstIpVector failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getOutlinkFirstIpVector failed", __FILE__, __func__, __LINE__);
 			return (char *)ipv;
 		}
 		
@@ -20539,7 +20539,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		ntb = getNewTagBuf();
 		if ( ! ntb || ntb == (void *)-1 ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, getNewTagBuf failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getNewTagBuf failed", __FILE__, __func__, __LINE__);
 			return (char *)ntb;
 		}
 	}
@@ -20548,14 +20548,14 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	char *isRoot = getIsSiteRoot();
 	if ( ! isRoot || isRoot == (char *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getIsSiteRoot failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getIsSiteRoot failed", __FILE__, __func__, __LINE__);
 		return (char *)isRoot;
 	}
 
 	Words *ww = getWords();
 	if ( ! ww || ww == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getWords failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getWords failed", __FILE__, __func__, __LINE__);
 		return (char *)ww;
 	}
 
@@ -20563,7 +20563,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//int64_t *pch64 = getLooseContentHash64();
 	if ( ! pch64 || pch64 == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getExactContentHash64 failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getExactContentHash64 failed", __FILE__, __func__, __LINE__);
 		return (char *)pch64;
 	}
 
@@ -20583,14 +20583,14 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		nsvt = getNewSectionVotingTable();
 		if ( ! nsvt || nsvt == (void *)-1 ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, getNewSectionVotingTable failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getNewSectionVotingTable failed", __FILE__, __func__, __LINE__);
 			return (char *)nsvt;
 		}
 		// get the old table too!
 		osvt = getNewSectionVotingTable();
 		if ( ! osvt || osvt == (void *)-1 ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, getNewSectionVotingTable failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getNewSectionVotingTable failed", __FILE__, __func__, __LINE__);
 			return (char *)osvt;
 		}
 	}
@@ -20600,7 +20600,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		int32_t *fip = getFirstIp();
 		if ( ! fip || fip == (void *)-1 ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, getFirstIp failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getFirstIp failed", __FILE__, __func__, __LINE__);
 			return (char *)fip;
 		}
 	}
@@ -20614,7 +20614,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		newsr = getNewSpiderReply();
 		if ( ! newsr || newsr == (void *)-1 ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, getNewSpiderReply failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getNewSpiderReply failed", __FILE__, __func__, __LINE__);
 			return (char *)newsr;
 		}
 	}
@@ -20623,7 +20623,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	int32_t *sh32 = getSiteHash32();
 	if ( ! sh32 || sh32 == (int32_t *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getSiteHash32 failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getSiteHash32 failed", __FILE__, __func__, __LINE__);
 		return (char *)sh32;
 	}
 
@@ -20637,7 +20637,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		int32_t *linkSiteHashes = getLinkSiteHashes();
 		if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 )
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, getLinkSiteHashes failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getLinkSiteHashes failed", __FILE__, __func__, __LINE__);
 			return (char *)linkSiteHashes;
 		}
 	}
@@ -20661,7 +20661,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	SafeBuf *tdbr = getTokenizedDiffbotReply();
 	if ( ! tdbr || tdbr == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getTokenizedDiffbotReply failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getTokenizedDiffbotReply failed", __FILE__, __func__, __LINE__);
 		return (char *)tdbr;
 	}
 
@@ -20678,14 +20678,14 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		if ( ! spiderStatusDocMetaList ) {
 			log("build: ss doc metalist null. bad!");
 			
-			log(LOG_ERROR,"%s:%s:%d: END, getSpiderStatusDocMetaList failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getSpiderStatusDocMetaList failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 	}
 
 	if ( spiderStatusDocMetaList == (void *)-1)
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getSpiderStatusDocMetaList failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getSpiderStatusDocMetaList failed", __FILE__, __func__, __LINE__);
 		return (char *)spiderStatusDocMetaList;
 	}
 
@@ -20731,7 +20731,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			try { m_dx = new ( XmlDoc ); }
 			catch ( ... ) {
 				g_errno = ENOMEM;
-				log(LOG_ERROR,"%s:%s:%d: END, failed to allox m_dx", __FILE__, __func__, __LINE__);
+				if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, failed to allox m_dx", __FILE__, __func__, __LINE__);
 				return NULL;
 			}
 			mnew ( m_dx , sizeof(XmlDoc),"xmldocdx");
@@ -20836,7 +20836,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		///////////////
 		if ( ! m_dx->m_listAdded && ! m_dx->indexDoc ( ) )
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, m_dx->indexDoc failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, m_dx->indexDoc failed", __FILE__, __func__, __LINE__);
 			return (char *)-1;
 		}
 
@@ -20845,7 +20845,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// OOM errors.
 		if ( g_errno ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, g_errno %"INT32"", __FILE__, __func__, __LINE__, g_errno);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, g_errno %"INT32"", __FILE__, __func__, __LINE__, g_errno);
 			return NULL;
 		}
 
@@ -20921,7 +20921,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		if ( ! tt1.set ( 18 , 4 , need4,NULL,0,false,m_niceness,
 				 "posdb-indx"))
 		{
-			log(LOG_ERROR,"%s:%s:%d: tt1.set failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: tt1.set failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 		int32_t did = tt1.m_numSlots;
@@ -20940,7 +20940,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// error?
 		if ( ! nod ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: END, hashAll failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, hashAll failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 		int32_t done = tt1.m_numSlots;
@@ -21034,7 +21034,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// hash terms into a table that uses full datedb keys
 	if ( nsvt && ! nsvt->hash (m_docId,&st1,*sh64,m_niceness)) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, nsvt->hash failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, nsvt->hash failed", __FILE__, __func__, __LINE__);
 		return NULL;
 	}
 	
@@ -21121,7 +21121,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// . these return false with g_errno set on error
 	if ( m_useLinkdb && nl2 && ! hashLinksForLinkdb(&kt1) ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, hashLinksForLinkdb failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, hashLinksForLinkdb failed", __FILE__, __func__, __LINE__);
 		return NULL;
 	}
 	
@@ -21410,7 +21410,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// store indexdb terms into m_metaList[]
 	if ( m_usePosdb && ! addTable144 ( &tt1 , m_docId )) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, addTable144 failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, addTable144 failed", __FILE__, __func__, __LINE__);
 		return NULL;
 	}
 	//if(!addTable96 ( &tt2, &tt1, date2, date1, true ,false)) return NULL;
@@ -21432,7 +21432,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// add that table to the metalist
 	if ( m_useSectiondb && !addTable128(&st1,RDB_SECTIONDB,forDelete))
 	{
-		log(LOG_ERROR,"%s:%s:%d: addTable128 failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: addTable128 failed", __FILE__, __func__, __LINE__);
 		return NULL;
 	}
 	//if(! addTable128 (&st2,&st1, RDB_SECTIONDB,true ,true))return NULL;
@@ -21517,7 +21517,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// add that table to the metalist (LINKDB)
 	if ( m_useLinkdb && !addTable224(&kt1))
 	{
-		log(LOG_ERROR,"%s:%s:%d: addTable224 failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: addTable224 failed", __FILE__, __func__, __LINE__);
 		return NULL;
 	}
 	//if(add2&&!addTable128(&kt2,&kt1,RDB_LINKDB, false))return NULL;
@@ -21540,7 +21540,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// add that table to the metalist
 	if ( m_usePlacedb && ! addTable128 ( &pt1, RDB_PLACEDB,forDelete))
 	{
-		log(LOG_ERROR,"%s:%s:%d: addTable128 failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: addTable128 failed", __FILE__, __func__, __LINE__);
 		return NULL;
 	}
 	//if(! addTable128 ( &pt2, &pt1, RDB_PLACEDB, true , true))return NULL;
@@ -21675,7 +21675,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// return NULL on error
 		if ( ! ret ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: addOutlinkSpiderRecsToMetaList failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: addOutlinkSpiderRecsToMetaList failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 		// this MUST not block down here, to avoid re-hashing above
@@ -21833,7 +21833,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			//else { char *xx=NULL; *xx=0; }
 			if ( ! dt8.addKey(&hk,&rec) ) 
 			{
-				log(LOG_ERROR,"%s:%s:%d: addKey failed", __FILE__, __func__, __LINE__);
+				if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: addKey failed", __FILE__, __func__, __LINE__);
 				return NULL;
 			}
 			// return NULL with g_errno set on error
@@ -21846,7 +21846,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		char *nm = (char *)mmalloc( needx, "newmeta" );
 		if ( ! nm ) 
 		{
-			log(LOG_ERROR,"%s:%s:%d: mmalloc failed", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: mmalloc failed", __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 		
@@ -22780,42 +22780,42 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getXml failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getXml failed", __FILE__, __func__, __LINE__);
 		return (char *)xml;
 	}
 
 	Links *links = getLinks();
 	if ( ! links || links == (Links *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getLinks failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getLinks failed", __FILE__, __func__, __LINE__);
 		return (char *)links;
 	}
 
 	char *spiderLinks = getSpiderLinks();
 	if ( ! spiderLinks || spiderLinks == (char *)-1 )
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getSpiderLinks failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getSpiderLinks failed", __FILE__, __func__, __LINE__);
 		return (char *)spiderLinks;
 	}
 
 	TagRec ***grv = getOutlinkTagRecVector();
 	if ( ! grv || grv == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getOutlinkTagRecVector failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getOutlinkTagRecVector failed", __FILE__, __func__, __LINE__);
 		return (char *)grv;
 	}
 
 	int32_t    **ipv = getOutlinkFirstIpVector();
 	if ( ! ipv || ipv == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: getOutlinkFirstIpVector failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: getOutlinkFirstIpVector failed", __FILE__, __func__, __LINE__);
 		return (char *)ipv;
 	}
 	
 	char     *ipi = getIsIndexed(); // is the parent indexed?
 	if ( ! ipi || ipi == (char *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getIsIndexed failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getIsIndexed failed", __FILE__, __func__, __LINE__);
 		return (char *)ipi;
 	}
 
@@ -22826,49 +22826,49 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	char *isRoot = getIsSiteRoot();
 	if ( ! isRoot || isRoot == (char *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getIsSiteRoot failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getIsSiteRoot failed", __FILE__, __func__, __LINE__);
 		return (char *)isRoot;
 	}
 
 	int32_t *psni = getSiteNumInlinks();
 	if ( ! psni || psni == (int32_t *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getSiteNumInlinks failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getSiteNumInlinks failed", __FILE__, __func__, __LINE__);
 		return (char *)psni;
 	}
 
 	int32_t *pfip = getFirstIp();
 	if ( ! pfip || pfip == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getFirstIp failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getFirstIp failed", __FILE__, __func__, __LINE__);
 		return (char *)pfip;
 	}
 
 	int64_t *d = getDocId();
 	if ( ! d || d == (int64_t *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getDocId failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getDocId failed", __FILE__, __func__, __LINE__);
 		return (char *)d;
 	}
 
 	Url *fu = getFirstUrl();
 	if ( ! fu || fu == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getFirstUrl failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getFirstUrl failed", __FILE__, __func__, __LINE__);
 		return (char *)fu;
 	}
 
 	Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getCurrentUrl failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getCurrentUrl failed", __FILE__, __func__, __LINE__);
 		return (char *)cu;
 	}
 
 	uint8_t *langId = getLangId();
 	if ( ! langId || langId == (uint8_t *)-1 ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getLangId failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getLangId failed", __FILE__, __func__, __LINE__);
 		return (char *)langId;
 	}
 
@@ -22879,7 +22879,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	int32_t *linkSiteHashes = getLinkSiteHashes ( );
 	if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 )
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getLinkSiteHashes failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getLinkSiteHashes failed", __FILE__, __func__, __LINE__);
 		return (char *)linkSiteHashes;
 	}
 
@@ -22937,7 +22937,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	char buf2[8192];
 	if ( ! ht.set ( 4,0,1000,buf2 , 8192,false,m_niceness,"linkdedup" ) )
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, ht.set failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, ht.set failed", __FILE__, __func__, __LINE__);
 		return NULL;
 	}
 
@@ -22956,7 +22956,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) 
 	{
-		log(LOG_ERROR,"%s:%s:%d: END, getCollRec failed", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, getCollRec failed", __FILE__, __func__, __LINE__);
 		return NULL;
 	}
 
