@@ -525,11 +525,6 @@ bool sendPageParser2 ( TcpSocket   *s ,
 	if ( content ) {
 		st->m_dbuf.purge();
 		st->m_dbuf.safeStrcpy(content);
-		//char *data = strstr(content,"\r\n\r\n");
-		//int32_t dataPos = 0;
-		//if ( data ) dataPos = (data + 4) - content;
-		//st->m_dbuf.convertJSONtoXML(0,dataPos);
-		//st->m_dbuf.decodeJSON(0);
 		content = st->m_dbuf.getBufStart();
 	}
 
