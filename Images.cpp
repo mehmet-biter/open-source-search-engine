@@ -6,7 +6,6 @@
 #include "XmlDoc.h"
 #include "Threads.h"
 #include "Hostdb.h"
-#include "XmlDoc.h" // my_system_r()
 
 // TODO: image is bad if repeated on same page, check for that
 
@@ -1050,8 +1049,6 @@ void Images::thumbStart_r ( bool amThread ) {
 		
         
         // Call clone function for the shell to execute command
-        // This call WILL BLOCK	. timeout is 30 seconds.
-	//int err = my_system_r( cmd, 30 ); // m_thmbconvTimeout );
 	int err = system( cmd ); // m_thmbconvTimeout );
 
 	//if( (m_dx != 0) && (m_dy != 0) )

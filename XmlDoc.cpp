@@ -15259,7 +15259,6 @@ void *filterStartWrapper_r ( void *state , ThreadEntry *te ) {
 	return NULL;
 }
 
-//int my_system_r ( char *cmd , int32_t timeout ) ;
 
 // sets m_errno on error
 void XmlDoc::filterStart_r ( bool amThread ) {

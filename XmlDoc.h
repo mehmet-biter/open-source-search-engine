@@ -2240,9 +2240,6 @@ class TermDebugInfo {
 extern uint8_t score32to8 ( uint32_t score ) ;
 
 
-// as recommended in the "man system" page we use our own
-int my_system_r ( char *cmd , int32_t timeout ) ;
-
 // . returns 0 to 100 , the probability of spam for this subprofile
 // . a "profile" is an array of all the positions of a word in the document
 // . a "position" is just the word #, like first word, word #8, etc...
