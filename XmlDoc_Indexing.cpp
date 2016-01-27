@@ -2751,40 +2751,6 @@ bool XmlDoc::hashVectors ( HashTableX *tt ) {
 
 
 /*
-	BR 20160106: removed, don't store in posdb
-bool XmlDoc::hashAds ( HashTableX *tt ) {
-
-	setStatus ( "hashing ad ids" );
-
-	for(int32_t i = 0; i < size_adVector / 8 ; i++) {
-		int32_t score =  *getSiteNumInlinks8() * 256;
-		if ( score <= 0 ) score = 1;
-		char buf[128];
-		char *field;
-		char *descr;
-		//buflen = snprintf(buf,128,"%s-%s",
-		//		  m_adProvider[i],m_adClient[i]);
-		snprintf(buf,128,"%"UINT64"",ptr_adVector[i] );
-		int32_t bufLen = gbstrlen(buf);
-		field = "gbad";
-		descr = "ad provider and id";
-		// update hash parms
-		HashInfo hi;
-		hi.m_tt        = tt;
-		hi.m_hashGroup = HASHGROUP_INTAG;
-		hi.m_prefix    = "gbad";
-		hi.m_desc      = "ad provider and id";
-		//log(LOG_WARN, "build: url %s indexing ad termid %s:%s",
-		// getFirstUrl()->getUrl(), field, buf);
-		//this returns false on failure
-		if ( ! hashString ( buf,bufLen,&hi ) ) return false;
-	}
-	return true;
-}
-*/
-
-
-/*
 	BR 20160106 removed.
 // hash gbhasthumbnail:0|1
 bool XmlDoc::hashImageStuff ( HashTableX *tt ) {
