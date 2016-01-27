@@ -298,63 +298,6 @@ bool SafeBuf::cat(SafeBuf& c) {
 	return safeMemcpy(c.getBufStart(), c.length());
 }
 
-// returns false with g_errno set on error
-bool SafeBuf::cat2 ( SafeBuf& c,
-		     char *tagFilter1 ,
-		     char *tagFilter2 ) {
-
-	//SafeBuf tmp;
-	// reserve 1MB to avoid excessive reallocs
-	//if ( ! tmp.reserve(1000000) ) return -1;
-
-	int32_t tlen1 = gbstrlen(tagFilter1);
-	int32_t tlen2 = gbstrlen(tagFilter2);
-	// parse our buffer up into words and sections
-	char *p = c.m_buf;
-	// ensure c.m_buf is NULL terminated so we do not overflow!
-	//if ( c.m_buf[c.m_length-1]
-
- loop:
-	// scan it 
-	for ( ; *p ; p++ ) {
-		// match?
-		if ( p[0] != tagFilter1[0] ) continue;
-		if ( p[1] != tagFilter1[1] ) continue;
-		if ( p[2] != tagFilter1[2] ) continue;
-		if ( p[3] != tagFilter1[3] ) continue;
-		if ( strncmp(p,tagFilter1,tlen1) ) continue;
-		// ok, got one!
-		break;
-	}
-
-	// no more?
-	if ( ! *p ) return true;
-
-	// scan for the end tag now
-	char *e = p + 1;
-	for ( ; *e ; e++ ) {
-		// match?
-		if ( e[0] != tagFilter2[0] ) continue;
-		if ( e[1] != tagFilter2[1] ) continue;
-		if ( e[2] != tagFilter2[2] ) continue;
-		if ( e[3] != tagFilter2[3] ) continue;
-		if ( strncmp(e,tagFilter2,tlen2) ) continue;
-		break;
-	}
-
-	// unmatched tag?
-	if ( ! *e ) { char *xx=NULL;*xx=0; }
-
-	// concatenate it to our buffer
-	if ( ! safeMemcpy ( p , e - p ) ) return false;
-
-	// go to next tag
-	p++;
-
-	// do more
-	goto loop;
-}
-
 bool SafeBuf::reserve(int32_t i , char *label, bool clearIt ) {
 
 	// if we don't already have a label and they provided one, use it

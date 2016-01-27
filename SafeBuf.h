@@ -130,11 +130,7 @@ public:
 
 	//bool  pushLong ( int32_t val ) { return safeMemcpy((char *)&val,4); }
 	bool  cat(SafeBuf& c);
-	// . only cat the sections/tag that start with "tagFilter"
-	// . used by Spider.cpp to dump <div class=shortdisplay> sections
-	//   to parse-shortdisplay.uh64.runid.txt for displaying the
-	//   validation checkboxes in qa.html
-	bool  cat2 ( SafeBuf& c,char *tagFilter1,char *tagFilter2);
+
 	void  reset() { m_length = 0; }
 	void  purge(); // Clear all data and free all allocated memory
 
