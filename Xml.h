@@ -26,8 +26,7 @@ public:
 	// . s must be NULL terminated
 	// . if it's pure xml then set pureXml to true otherwise we assume it
 	//   is html or xhtml
-	bool set( char *s, int32_t slen, bool ownData, int32_t allocSize, bool pureXml, int32_t version,
-			  int32_t niceness, char contentType );
+	bool set(char *s, int32_t slen, int32_t version, int32_t niceness, char contentType );
 
 	void  reset ( );
 
@@ -45,10 +44,6 @@ public:
 
 	int32_t getNumNodes() {
 		return m_numNodes;
-	}
-
-	int32_t getVersion() {
-		return m_version;
 	}
 
 	// . tagName is compound for xml tags, simple for html tags
@@ -207,20 +202,13 @@ private:
 	int32_t m_numNodes;
 	int32_t m_maxNumNodes;
 
+	// If this is a unicode buffer, then m_xml is encoded in UTF-16
+	// m_xmlLen is still the size of the buffer IN BYTES
 	char *m_xml;
 	int32_t m_xmlLen;
 
-	// If this is a unicode buffer, then m_xml is encoded in UTF-16
-	// m_xmlLen is still the size of the buffer IN BYTES
-	int32_t m_version;
 
 	int32_t m_niceness;
-
-	// if we own the data we free m_xml on reset or destruction
-	bool m_ownData;
-
-	// size of buffer, if we allocated it
-	int32_t m_allocSize;
 };
 
 #endif

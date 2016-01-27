@@ -8649,13 +8649,13 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	// loop parse
 	Xml xml;
 	t = gettimeofdayInMilliseconds_force();
-	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! xml.set ( content , contentLen , 
-				 false, 0, false, xd.m_version ,
-				 0 , // niceness 
-				 CT_HTML ) )
+	for ( int32_t i = 0 ; i < 100 ; i++ ) {
+		if ( !xml.set( content, contentLen, xd.m_version, 0, CT_HTML ) ) {
 			return log("build: speedtestxml: xml set: %s",
 				   mstrerror(g_errno));
+		}
+	}
+
 	// print time it took
 	e = gettimeofdayInMilliseconds_force();
 	log("build: Xml::set() took %.3f ms to parse docId %"INT64".", 
@@ -8667,12 +8667,13 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 
 	// loop parse
 	t = gettimeofdayInMilliseconds_force();
-	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! xml.set ( content , contentLen , 
-				 false, 0, false, xd.m_version ,
-				 0 , CT_HTML ) )
+	for ( int32_t i = 0 ; i < 100 ; i++ ) {
+		if ( !xml.set( content, contentLen, xd.m_version, 0, CT_HTML ) ) {
 			return log("build: xml(setparents=false): %s",
 				   mstrerror(g_errno));
+		}
+	}
+
 	// print time it took
 	e = gettimeofdayInMilliseconds_force();
 	log("build: Xml::set(setparents=false) took %.3f ms to "
@@ -8865,24 +8866,10 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	return true;
 }	
 
-bool summaryTest1   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
-		      char *query ) {
-
-	//int32_t collLen = gbstrlen(coll);
-	// CollectionRec *cr = g_collectiondb.getRec ( coll );
+bool summaryTest1   ( char *rec , int32_t listSize, char *coll , int64_t docId , char *query ) {
 
 	// start the timer
 	int64_t t = gettimeofdayInMilliseconds_force();
-
-	//int32_t titleMaxLen               = cr->m_titleMaxLen;
-	//bool considerTitlesFromBody    = false;
-	// int32_t summaryMaxLen             = cr->m_summaryMaxLen;
-	// int32_t numSummaryLines           = cr->m_summaryMaxNumLines;
-	// int32_t summaryMaxNumCharsPerLine = cr->m_summaryMaxNumCharsPerLine;
-	// these are arbitrary (taken from Msg24.cpp)
-	// int32_t bigSampleRadius           = 100;
-	// int32_t bigSampleMaxLen           = 4000;
-	// bool ratInSummary              = false;
 
 	Query q;
 	q.set2 ( query , langUnknown , false );
@@ -8892,8 +8879,6 @@ bool summaryTest1   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
 
 	// loop parse
 	for ( int32_t i = 0 ; i < 100 ; i++ ) {
-
-		//TitleRec tr;
 		XmlDoc xd;
 		xd.set2 (rec, listSize, coll,NULL,0);
 		// get content
@@ -8902,10 +8887,7 @@ bool summaryTest1   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
 
 		// now parse into xhtml (takes 15ms on lenny)
 		Xml xml;
-		xml.set ( content, contentLen , 
-			  false/*ownData?*/, 0, false, xd.m_version ,
-			  0 , // niceness
-			  CT_HTML );
+		xml.set( content, contentLen, xd.m_version, 0, CT_HTML );
 
 		xd.getSummary();
 

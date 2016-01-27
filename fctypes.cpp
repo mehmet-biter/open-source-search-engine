@@ -1554,9 +1554,9 @@ int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t s
 	// . get the content as xhtml (should be NULL terminated)
 	// . parse as utf8 since all we are doing is messing with 
 	//   the tags...content manipulation comes later
-	if ( ! tmpXml.set ( content , contentLen,
-			    false, 0, false, version , 0 , CT_HTML ) )
+	if ( !tmpXml.set( content, contentLen, version, 0, CT_HTML ) ) {
 		return -1;
+	}
 
 	//if( strip == 4 )
 	//	return tmpXml.getText( content, contentLen );

@@ -192,8 +192,7 @@ int32_t time_parser(void (*parse_doc)(char*,int, bool,char*), char* buf, int len
 void parse_doc_8859_1(char *s, int len, bool doHash,char *charset)
 {
 	Xml xml;
-	xml.set(s,len,false, 0, false, TITLEREC_CURRENT_VERSION, 0, CT_HTML);
-	//fprintf(stderr,"\nparse_doc_8859_1\n");
+	xml.set( s, len, TITLEREC_CURRENT_VERSION, 0, CT_HTML );
 
 	// Extract text from (x)html
 	char *text_buf = (char*)malloc(len+1);
@@ -209,8 +208,8 @@ void parse_doc_8859_1(char *s, int len, bool doHash,char *charset)
 //////////////////////////////////////////////////////////////////
 void parse_doc_icu(char *s, int len, bool doHash, char *charset){
 	Xml xml;
-	xml.set(s,len,false, 0,false, TITLEREC_CURRENT_VERSION, 0, CT_HTML);
-	//fprintf(stderr,"\nparse_doc_icu\n");	
+	xml.set( s, len, TITLEREC_CURRENT_VERSION, 0, CT_HTML );
+
 	// Extract text from (x)html
 	char *text_buf = (char*)malloc(64*1024);
 	int32_t textLen = xml.getText( text_buf, 64 * 1024, 0, 99999999, doFilterSpaces );

@@ -12,9 +12,7 @@ Xml::Xml  () {
 	m_xml = NULL; 
 	m_xmlLen = 0; 
 	m_nodes = NULL; 
-	m_numNodes=0; 
-	m_ownData = false;
-	m_version = TITLEREC_CURRENT_VERSION;
+	m_numNodes=0;
 }
 
 // . should free m_xml if m_copy is true
@@ -194,13 +192,14 @@ int32_t Xml::getNodeNum ( int32_t n0 , int32_t n1 , char *tagName , int32_t tagN
 
 void Xml::reset ( ) {
 	// free old nodes array if any
-	if ( m_nodes ) mfree ( m_nodes, m_maxNumNodes*sizeof(XmlNode),"Xml1"); 
-	if ( m_ownData && m_xml ) mfree ( m_xml, m_allocSize, "Xml1");
+	if ( m_nodes ) {
+		mfree ( m_nodes, m_maxNumNodes*sizeof(XmlNode),"Xml1");
+	}
+
 	m_xml         = NULL;
 	m_nodes       = NULL; 
 	m_numNodes    = 0;
 	m_maxNumNodes = 0;
-	m_allocSize   = 0;
 }
 
 
@@ -235,26 +234,14 @@ bool Xml::getCompoundName ( int32_t node , SafeBuf *sb ) {
 #include "HttpMime.h" // CT_JSON
 
 // "s" must be in utf8
-bool Xml::set ( char  *s             , 
-	        int32_t   slen          , 
-	        bool   ownData       , 
-	        int32_t   allocSize     ,
-	        bool   pureXml       ,
-	        int32_t   version       ,
-	        int32_t   niceness      ,
-		char   contentType ) {
-
+bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char contentType ) {
 	// just in case
 	reset();
 	m_niceness = niceness;
+
 	// clear it
 	g_errno = 0;
 
-	// if we own the data we free on reset/destruction
-	m_ownData = ownData;
-	m_version = version;
-	// use explicit allocSize if we passed one
-	m_allocSize = allocSize?allocSize:slen+1;
 	// make pointers to data
 	m_xml    = s;
 	m_xmlLen = slen; //i;
@@ -301,9 +288,7 @@ bool Xml::set ( char  *s             ,
 	// some other way... because Links.cpp and Xml::isRSSFeed() 
 	// depend on having regular tagids. but without this here
 	// then XmlDoc::hashXml() breaks.
-	if ( contentType == CT_XML )
-	  	pureXml = true;
-
+	bool pureXml = ( contentType == CT_XML );
 
 	QUICKPOLL((niceness));
 	int32_t i;
@@ -376,8 +361,7 @@ bool Xml::set ( char  *s             ,
 		XmlNode *xi = &m_nodes[m_numNodes];
 
 		// set that node
-		i += xi->set (&m_xml[i],pureXml,version);
-
+		i += xi->set( &m_xml[i], pureXml );
 
 		// set his parent xml node if is xml
 		xi->m_parent = parent;
@@ -434,9 +418,7 @@ bool Xml::set ( char  *s             ,
 
 		// use this for parsing consistency when deleting records
 		// so they equal what we added.
-		bool newVersion = true;
-		if ( version <= 120 ) newVersion = false;
-		//newVersion = false;
+		bool newVersion = (version > 120);
 
 		//	retry:
 		// scan for </script>
