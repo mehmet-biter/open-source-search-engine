@@ -1685,69 +1685,6 @@ bool SafeBuf::truncateLongWords ( char *s , int32_t srcLen , int32_t minmax ) {
 	return true;
 }
 
-bool SafeBuf::decodeJSON ( int32_t niceness ) {
-
-	// count how many \u's we got
-	int32_t need = 0;
-	char *p = m_buf;
-	for ( ; *p ; p++ ) 
-		// for the 'x' and the ';'
-		if ( *p == '\\' && p[1] == 'u' ) need += 2;
-
-	// reserve a little extra if we need it
-	SafeBuf dbuf;
-	dbuf.reserve ( need + m_length + 1);
-
-	char *src = m_buf;
-	char *dst = dbuf.m_buf;
-	for ( ; *src ; ) {
-		if ( *src == '\\' ) {
-			// \n?
-			if ( src[1] == 'n' ) {
-				*dst++ = '\n';
-				src += 2;
-				continue;
-			}
-			if ( src[1] == 'r' ) {
-				*dst++ = '\r';
-				src += 2;
-				continue;
-			}
-			// utf8? if not, just skip the slash
-			if ( src[1] != 'u'  ) { src++; continue; }
-			// otherwise, decode. can do in place like this...
-			*dst++ = '&';
-			*dst++ = '#';
-			*dst++ = 'x';
-			// skip over /u
-			src += 2;
-			if ( *src ) *dst++ = *src++;
-			if ( *src ) *dst++ = *src++;
-			if ( *src ) *dst++ = *src++;
-			if ( *src ) *dst++ = *src++;
-			*dst++ = ';';
-			continue;
-		}
-		*dst++ = *src++;
-	}
-	*dst = '\0';
-	dbuf.m_length = dst - dbuf.m_buf;
-
-	// purge ourselves
-	purge();
-
-	// and steal dbuf's m_buf
-	m_buf        = dbuf.m_buf;
-	m_length     = dbuf.m_length;
-	m_capacity   = dbuf.m_capacity;
-	m_usingStack = dbuf.m_usingStack;
-
-	// detach from dbuf so he does not free it
-	dbuf.detachBuf();
-
-	return true;
-}
-
 // . this should support the case when the src and dst buffers are the same!
 //   so decodeJSONToUtf8() function below will work
 // . this is used by xmldoc.cpp to PARTIALLY decode a json buf so we do not

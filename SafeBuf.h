@@ -88,7 +88,6 @@ public:
 	bool safeDecodeJSONToUtf8 ( const char *json, int32_t jsonLen, int32_t niceness);
 
 	bool decodeJSONToUtf8 ( int32_t niceness );
-	bool decodeJSON ( int32_t niceness );
 	bool linkify ( int32_t niceness , int32_t startPos );
 
 	void truncLen ( int32_t newLen ) {
