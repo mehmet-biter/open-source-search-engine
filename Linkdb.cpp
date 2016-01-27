@@ -111,19 +111,7 @@ bool Linkdb::init ( ) {
 	// . key+4+left+right+parents+dataPtr = sizeof(key192_t)+4 +4+4+4+4
 	// . 32 bytes per record when in the tree
 	int32_t maxTreeNodes = maxTreeMem /(sizeof(key224_t)+16);
-	// disk page cache mem, 100MB on gk0 now
-	//int32_t pcmem = 0; // g_conf.m_linkdbMaxDiskPageCacheMem;
-	// give it a little
-	//pcmem = 10000000; // 10MB
-	// keep this low if we are the tmp cluster
-	//if ( g_hostdb.m_useTmpCluster ) pcmem = 0;
-	// TODO: would be nice to just do page caching on the satellite files;
-	//       look into "minimizeDiskSeeks" at some point...
-	// if ( ! m_pc.init ( "linkdb" ,
-	// 		   RDB_LINKDB,
-	// 		   pcmem    ,
-	// 		   pageSize ))
-	// 	return log("db: Linkdb init failed.");
+
 	// init the rdb
 	return m_rdb.init ( g_hostdb.m_dir ,
 			    "linkdb" ,
@@ -176,19 +164,7 @@ bool Linkdb::init2 ( int32_t treeMem ) {
 			    sizeof(key224_t), // key size
 			    true          );// bias disk page cache
 }
-/*
-bool Linkdb::addColl ( char *coll, bool doVerify ) {
-	if ( ! m_rdb.addColl ( coll ) ) return false;
-	if ( ! doVerify ) return true;
-	// verify
-	if ( verify(coll) ) return true;
-	// if not allowing scale, return false
-	if ( ! g_conf.m_allowScale ) return false;
-	// otherwise let it go
-	log ( "db: Verify failed, but scaling is allowed, passing." );
-	return true;
-}
-*/
+
 bool Linkdb::verify ( char *coll ) {
 	log ( LOG_DEBUG, "db: Verifying Linkdb for coll %s...", coll );
 	g_threads.disableThreads();
@@ -248,24 +224,6 @@ bool Linkdb::verify ( char *coll ) {
 		g_rebalance.m_numForeignRecs += count - got;
 		log ("db: Out of first %"INT32" records in Linkdb , "
 		     "only %"INT32" belong to our group.",count,got);
-
-		/*
-		// repeat with log
-		for ( list.resetListPtr() ; ! list.isExhausted() ;
-		      list.skipCurrentRecord() ) {
-
-			key224_t k;
-			list.getCurrentKey((char*)&k);
-			uint32_t shardNum = getShardNum ( RDB_LINKDB , &k );
-			int32_t groupNum = g_hostdb.getGroupNum(groupId);
-			uint32_t sh32 ;
-			sh32 = g_linkdb.getLinkeeSiteHash32_uk(&k);
-			uint16_t sh16 = sh32 >> 19;
-			log("db: sh16=0x%"XINT32" group=%"INT32"",
-			    (int32_t)sh16,groupNum);
-		}
-		*/
-
 
 		// exit if NONE, we probably got the wrong data
 		if ( got == 0 ) log("db: Are you sure you have the "
@@ -1028,21 +986,6 @@ bool Msg25::getLinkInfo2( char      *site                ,
 	// we have not done a retry yet
 	m_retried = false;
 
-	// change status
-	//if ( m_statusPtr ) *m_statusPtr = "consulting linkdb";
-
-	// . add a "www" to our url
-	// . we do this when indexing link: terms as well 
-	// . this allows www.xyz.com & xyz.com to both get the same link text
-	// . we only index one of those if they both have the same content
-	// . the problem is is that Linkdb::getUrlHash() is what we set
-	//   Links::m_linkHashes[i] to, and that does NOT add "www"
-	// . ultimately i would say it should add the "www" but only for 
-	//   computing the m_linkHashes[i], not for indexing links:?
-	// . MDW: doesn't seem like we do this anymore...
-	//Url u2;
-	//u2.set ( m_url->getUrl() , m_url->getUrlLen() , false/*addWWW?*/);
-
 	//log("debug: entering getlinkinfo this=%"XINT32"",(int32_t)this);
 
 	// then the url/site hash
@@ -1107,21 +1050,7 @@ bool Msg25::doReadLoop ( ) {
 	int32_t numFiles = -1;
 	// NO, DON't restrict because it will mess up the hopcount.
 	bool includeTree = true;
-	/*
-	// what group has this linkdb list?
-	//uint32_t groupId = getGroupId ( RDB_LINKDB , &startKey );
-	uint32_t shardNum = getShardNum ( RDB_LINKDB, &startKey );
-	// use a biased lookup
-	int32_t numTwins = g_hostdb.getNumHostsPerShard();
-	int64_t sectionWidth = (0xffffffff/(int64_t)numTwins) + 1;
-	// these are 192 bit keys, top 32 bits are a hash of the url
-	uint32_t x = siteHash32;//(startKey.n1 >> 32);
-	int32_t hostNum = x / sectionWidth;
-	int32_t numHosts = g_hostdb.getNumHostsPerShard();
-	Host *hosts = g_hostdb.getShard ( shardNum); // Group ( groupId );
-	if ( hostNum >= numHosts ) { char *xx = NULL; *xx = 0; }
-	int32_t hostId = hosts [ hostNum ].m_hostId ;
-	*/
+
 	// debug log
 	if ( g_conf.m_logDebugLinkInfo ) {
 		char *ms = "page";
@@ -1269,54 +1198,6 @@ bool Msg25::gotList() {
 	m_list.resetListPtr();
 	// clear this too
 	m_k = (Inlink *)-1;
-	// MATT: fix this later maybe....
-	/*
-	// all done?
-	if ( m_list.getListSize() < m_minRecSizes ) return gotTermFreq (false);
-
-	// change status
-	//if ( m_statusPtr ) *m_statusPtr = "getting linkdb term freq";
-	// returns false if blocked, returns true and sets g_errno 
-	// on error
-	if ( ! m_msg42.getTermFreq ( m_coll   ,
-				     3600     , // maxAge
-				     m_termId ,
-				     this     , // state
-				     gotTermFreqWrapper ,
-				     m_niceness         ) )
-		return false;
-	return gotTermFreq(true);
-}
-
-void gotTermFreqWrapper ( void *state ) {
-	Msg25 *THIS = (Msg25 *)state;
-	// if blocked, just return
-	if ( ! THIS->gotTermFreq(true) ) return;
-	// otherwise call callback, g_errno is probably set
-	THIS->m_callback ( THIS->m_state , THIS->m_linkInfo );
-}
-
-bool Msg25::gotTermFreq ( bool msg42Called ) {
-	// error?
-	if ( g_errno ) {
-		log("build: Msg25 had error getting term freq.");
-		return true;
-	}
-	// was msg42 called?
-	if ( msg42Called ) {
-		// set the new one
-		int64_t tf = m_msg42.getTermFreq();
-		logf(LOG_DEBUG,"build: Upping linkers from %"INT32" to %"INT64"",
-		     m_numDocIds,tf);
-		if ( tf > m_numDocIds ) m_numDocIds = tf;
-	}
-	*/
-
-	// set m_nextKey in case we need to re-call doReadLoop()
-	//m_list.getLastKey ( (char *)&m_nextKey );
-	// inc by 1
-	//m_nextKey += 1;
-
 
 	// we haven't got any responses as of yet or sent any requests
 	m_numReplies    = 0;
@@ -1387,24 +1268,6 @@ bool Msg25::gotTermFreq ( bool msg42Called ) {
 	else if ( n >=   70 ) {m_spamWeight = 07; m_maxSpam =   10;}
 	else if ( n >=   20 ) {m_spamWeight = 05; m_maxSpam =    7;}
 
-	/*
-
-	  for steve i took this out of the key and put in the lower ip byte
-
-	// scan list for the minimum hop count of the inlinkers
-	m_list.resetListPtr();
-	int32_t minhc = -1;
-	for ( ; ! m_list.isExhausted() ; m_list.skipCurrentRecord() ) { 
-		// get the key/rec
-		key224_t key;
-		m_list.getCurrentKey( (char*)&key );
-		char hc = g_linkdb.getLinkerHopCount_uk ( &key );
-		if ( hc >= 0 && hc < minhc ) minhc = hc;
-	}
-	// now set our hopcount based on that
-	if ( minhc >= 0 ) m_minInlinkerHopCount = minhc;
-	*/
-
 	// now send the requests
 	m_list.resetListPtr();
 	return sendRequests();
@@ -1413,24 +1276,7 @@ bool Msg25::gotTermFreq ( bool msg42Called ) {
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool Msg25::sendRequests ( ) {
-	// . stop if cancelled
-	// . a niceness of 0 implies we are called from Msg3b, the docid
-	//   reranking tool
-	// . no, now that can be niceness 0, so use the m_spideringEnabled flag
-	//if ( ! g_conf.m_spideringEnabled && 
-	//     ! m_isInjecting             &&
-	//     ! m_pbuf                    &&
-	//       m_canBeCancelled ) {
-	//	g_errno = ECANCELLED;
-	//	return true;
-	//}
-
 	uint64_t lastDocId = 0LL;
-
-	//log("debug: entering sendrequests this=%"XINT32"",(int32_t)this);
-
-	// change status
-	//if ( m_statusPtr ) *m_statusPtr = "getting link texts";
 
 	// smaller clusters cannot afford to launch the full 300 msg20s
 	// because it can clog up one host!
@@ -1564,21 +1410,6 @@ bool Msg25::sendRequests ( ) {
 		// clear this if we should
 		if ( ! m_doLinkSpamCheck ) isLinkSpam = false;
 
-		// mangle it so hashtable does not collide so much
-		//int64_t dh = hash64h ( docId , docId );
-
-		// dedup docid, since we now try to keep old Inlinks from
-		// the previous LinkInfo. this allows us to preserve RSS
-		// info, good hopcounts, etc.
-		// on round 487 this is going OOM at 300MB, so take it out
-		//if ( m_docIdTable.getSlot ( &dh ) >= 0 ) {
-		//	m_docIdDupsLinkdb++;
-		//	continue;
-		//}
-		// add it. TODO: what if this fails?
-		//if ( ! m_docIdTable.addKey ( &dh ) ) 
-		//	return true;
-
 		// if it is no longer there, just ignore
 		if ( lostDate ) {
 			m_lostLinks++;
@@ -1602,23 +1433,6 @@ bool Msg25::sendRequests ( ) {
 		//
  		// . now the 4 hi bits of the score represent special things
 		// . see Msg18.cpp:125 where we repeat this
-
-		// once we got this many "good" spam inlinkers, we should
-		// get no more! assume the outstanding link spams will be
-		// successful. they may not, so we must wait on them.
-		// MDW: take this out
-		//if(isLinkSpam && m_spamCount + m_linkSpamOut >= m_maxSpam ) {
-		//	// actually, assume they will be successful, 
-		//	// and just skip ourselves
-		//	m_linkSpamLinkdb++;
-		//	continue;
-		//}
-
-		// is it the minimum thus far?
-		// MDW: i saw a bunch of corrupt linkdb recs with hc<0. check.
-		//if ( hc>=0 &&
-		//     (m_minInlinkerHopCount==-1 || hc<m_minInlinkerHopCount))
-		//	m_minInlinkerHopCount = hc;
 
 		// count unique ips for steve's stats
 		if ( ! m_fullIpTable.isInTable(&ip32) ) {
@@ -1710,14 +1524,7 @@ bool Msg25::sendRequests ( ) {
 		r->m_langId             = langUnknown; // no synonyms i guess
 		r->ptr_qbuf             = m_qbuf;
 		r->size_qbuf            = m_qbufSize;
-		// These parms should maybe be passed from the calling msg20,
-		// But, at least for now, buzz always wants these values.
-		//if (m_qbufSize > 1){
-		//	r->m_hackFixWords   = true;
-		//	r->m_hackFixPhrases = true;
-		//	r->m_excludeLinkText = true;
-		//	r->m_excludeMetaText = true;
-		//}
+
 		// place holder used below
 		r->m_isLinkSpam         = isLinkSpam;
 		// buzz may not want link spam checks! they are pretty clean.
@@ -2112,28 +1919,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		note = "banned by ad id";
 	}
 
-	// . if we are linked to by a page on the same ip as the linkee
-	//   then call it a reciprocal link
-	// . only check if our root quality is < 45%
-	// . MDW: i disabled this until it can prove more useful
-	/*
-	Vector *v5 = NULL;
-	if ( r ) v5 = r->ptr_vectorBuf5; // linkText->getVector4();
-	if ( r && good && ! internal && m_rootQuality < 45 ) {
-		// these are the IPs of the linker's incoming linkers
-		int32_t numIps = v5->getNumPairHashes();
-		int32_t ourIp  = m_url->getIp();
-		for ( int32_t i = 0 ; i < numIps ; i++ ) {
-			int32_t ip = v5->m_pairHashes[i];
-			if ( ip != ourIp ) continue;
-			good = false;
-			m_reciprocal++;
-			note = "reciprocal link";
-			break;
-		}
-	}
-	*/
-
 	QUICKPOLL(m_niceness);
 	// discount if LinkText::isLinkSpam() or isLinkSpam2() said it
 	// should not vote
@@ -2342,52 +2127,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	// process all "good" Msg20Replies
 	//
 	//
-
-	/*
-	// since we may not have called a Msg20 for every docid in the
-	// linkdb list, extroplate "m_numReplyPtrs" to what it probably should
-	// have been. it is a non-linear. we could go out to more derivatives,
-	// m_deltaDiff2, etc. if necessary.
-	int64_t extrapolated = m_numReplyPtrs;
-	int64_t bonus        = m_numReplyPtrs;
-	int64_t step         = (int32_t)MAX_DOCIDS_TO_SAMPLE * 2 ;
-	// add in "bonus" X docids sampled
-	int32_t nd;
-	for ( nd = m_numReplies ; nd + step <= m_numDocIds ; nd += step ) {
-		QUICKPOLL(m_niceness);
-		extrapolated += bonus;
-		step      *= 2;
-	}
-	*/
-	// . do linear estimation of remainder however. 
-	// . hey i don't want to get into crazy logs...
-	/*
-	int64_t rem = m_numDocIds - nd;
-	if ( step > 0 && rem > 0 ) extrapolated += (bonus * rem) / step;
-	// sanity check
-	if ( rem > step ) { char *xx = NULL; *xx = 0; }
-	// log build msg
-	if ( g_conf.m_logDebugSpider )
-		log(LOG_DEBUG,"build: msg25: %s extrapolated=%"INT32" "
-		    "goodReplies=%"INT32" "
-		    "allReplies=%"INT32"",
-		    m_url->getUrl(), (int32_t)extrapolated, (int32_t)m_numReplyPtrs, 
-		    (int32_t)m_numReplies);
-	// sanity check
-	if ( extrapolated < 0 ) {
-		if ( g_conf.m_logDebugSpider )
-			log("build: msg25: extrapolated = %"INT32" < 0. Resetting "
-			    "to 0.",(int32_t)extrapolated);
-		extrapolated = 0;
-	}
-	// the x factor
-	int32_t x = 100;
-	if ( m_numReplyPtrs > 0 ) 
-		x = ((int64_t)extrapolated * 100LL) / m_numReplyPtrs;
-	*/
-
-	// skip making link info?
-	//if ( ! m_onlyNeedGoodInlinks ) return true;
 
 	// breathe
 	QUICKPOLL(m_niceness);
@@ -3172,41 +2911,6 @@ char *Msg25::isDup ( Msg20Reply *r , Msg20Reply *p ) {
 	if ( r->m_adIdHash && r->m_adIdHash == p->m_adIdHash )
 		return "same ad id";
 
-	/*
-	// see if he is too similar to another, if so he is not a good voter
-	Vector *v1 = (Vector *)r->ptr_vector1;
-	Vector *v2 = (Vector *)r->ptr_vector2;
-	Vector *v3 = (Vector *)r->ptr_vector3;
-
-	// get vectors for Msg20Reply "p"
-	Vector *x1 = (Vector *)p->ptr_vector1;
-	Vector *x2 = (Vector *)p->ptr_vector2;
-	Vector *x3 = (Vector *)p->ptr_vector3;
-
-	//   doc j is 0% to 100% similar to doc i
-	// . but we need to remove the wordpairs found
-	//   in common so they aren't used against 
-	//   another doc, so we say 'true' here
-	// . returns -1 and sets g_errno on error
-	// . vX vectors can be NULL if the linker was "linkSpam" because
-	//   Msg20.cpp's handler does not set them in that case
-	int32_t p1 = 0;
-	int32_t p2 = 0;
-	int32_t p3 = 0;
-	if ( v1 && x1 ) p1 = v1->getLinkBrotherProbability  ( x1  , false);
-	// only consider p2 if each vector is beefy. these
-	// can be small because these vectors represent the
-	// word pairs just to the right of the link in the
-	// content, and before any "breaking" tag thereafter.
-	// no, there are too many little ads, so disregard the beeft
-	// requirement.
-	if ( v2 && x2 && v2->m_numPairHashes >= 1 && x2->m_numPairHashes >= 1 )
-		p2 = v2->getLinkBrotherProbability(x2,false);
-	// compare tag id pair vectors
-	if ( v3 && x3 && v3->m_numPairHashes >= 2 && x3->m_numPairHashes >= 2 )
-		p3 = v3->getLinkBrotherProbability(x3,false);
-	*/
-
 	// see if he is too similar to another, if so he is not a good voter
 	int32_t *v1 = (int32_t *)r->ptr_vector1;
 	int32_t *v2 = (int32_t *)r->ptr_vector2;
@@ -3233,33 +2937,6 @@ char *Msg25::isDup ( Msg20Reply *r , Msg20Reply *p ) {
 	// . returns -1 and sets g_errno on error
 	// . vX vectors can be NULL if the linker was "linkSpam" because
 	//   Msg20.cpp's handler does not set them in that case
-
-
-	// compare now for sanity!
-	//int32_t p1 = 0;
-	//int32_t p2 = 0;
-	//int32_t p3 = 0;
-	// shortcut
-	//int32_t ni = m_niceness;
-	//if ( v1 && x1 && nv1 >= 2 && nx1 >= 2 )
-	//	p1 = (int32_t)computeSimilarity (v1,x1,NULL,NULL,NULL,ni);
-	// only consider p2 if each vector is beefy. these
-	// can be small because these vectors represent the
-	// word pairs just to the right of the link in the
-	// content, and before any "breaking" tag thereafter.
-	// no, there are too many little ads, so disregard the beeft
-	// requirement.
-	//if ( v2 && x2 && nv2 >= 2 && nx2 >= 2 ) 
-	//	p2 = (int32_t)computeSimilarity (v2,x2,NULL,NULL,NULL,ni);
-
-	// compare tag id pair vectors
-	//if ( v3 && x3 && nv3 >= 2 && nx3 >= 2 ) 
-	//	p3 = (int32_t)computeSimilarity (v3,x3,NULL,NULL,NULL,ni);
-
-	//if ( p1 >=  80 ) return "similar content";
-	//if ( p2 >=  80 ) return "similar link desc";
-	//if ( p3 >= 100 ) return "similar tag template";
-
 
 	// these count the terminating 0 int32_t as a component
 	if ( v1 && x1 && nv1 >= 2 && nx1 >= 2 ) {
@@ -3293,9 +2970,6 @@ char *Msg25::isDup ( Msg20Reply *r , Msg20Reply *p ) {
 		}
 	}
 
-	//if ( p2 >= 80 ) 
-	//	log("test p2 failed2");
-
 	// compare tag id pair vectors
 	if ( v3 && x3 && nv3 >= 2 && nx3 >= 2 ) {
 		//p3 = (int32_t)computeSimilarity (v3,x3,NULL,NULL,NULL,ni);
@@ -3307,44 +2981,7 @@ char *Msg25::isDup ( Msg20Reply *r , Msg20Reply *p ) {
 		}
 	}
 
-	//if ( p3 >= 100 ) 
-	//	log("test p3 failed2");
-
 	return NULL;
-
-	// compare the ip tops (ip tops of the inlinks)
-	//int32_t sum4 = v4->m_numPairHashes + x4->m_numPairHashes;
-	// each must have at least this many
-	//sum4 /= 3;
-	// at least 4 inlinking ips each...
-	//if ( sum4 < 4 ) sum4 = 4;
-	// check it
-	//if ( v4->m_numPairHashes >= sum4 &&
-	//     x4->m_numPairHashes >= sum4 )
-	//	p4 = v4->getLinkBrotherProbability(x4,false);
-
-	/*
-	// sensitivity settings
-	if ( p1 >=  80 ) return "similar content";
-	if ( p2 >=  80 ) return "similar link desc";
-	if ( p3 >= 100 ) return "similar tag template";
-	//if ( p4 >= 80 ) return "similar incoming ip shingle";
-	//if ( p4 >= 80 ) {
-	//	// get the link text that is residing
-	//	logf(LOG_DEBUG,"build: ip shingle sim2 of %"INT32"%% for "
-	//	     "nhi=%"INT32" nhj=%"INT32" di=%"UINT64" dj=%"UINT64"",
-	//	     (int32_t)p4,
-	//	     v4->m_numPairHashes,x4->m_numPairHashes,
-	//	     rold->getDocId(),rnew->getDocId());
-	//}
-
-	// if no memory pN will be -1
-	if ( p1 < 0 || p2 < 0 || p3 < 0 )
-		log("build: Msg25: Could not perform link spam "
-		    "removal: %s.",mstrerror(g_errno));
-	// all done, it was not a dup, but g_errno MAY be set
-	return NULL;
-	*/
 }
 
 bool Msg25::addNote ( char *note , int32_t noteLen , int64_t docId ) {
@@ -3402,293 +3039,6 @@ bool Msg25::addNote ( char *note , int32_t noteLen , int64_t docId ) {
 	//if ( val ) *(int32_t *)val = *(int32_t *)val + 1;
 	return true;
 }
-/*
-// . the ip to which we send this request must allow us to make udp requests
-// . let's also have a separate list of allowable ips (not just admin ips)
-//   for which gigablast will accept udp requests
-bool Msg25::getPageLinkInfo2 ( Url       *url                ,
-			       char      *coll               ,
-			       char      *remoteColl         ,
-			       void      *state              ,
-			       void (* callback)(void *state),
-			       bool       doLinkSpamCheck    ,
-			       bool       oneVotePerIpDom    ,
-			       bool       canBeCancelled     ) {
-	//linkInfo->reset();
-
-	// sanity check
-	if ( ! coll ) { char *xx = NULL; *xx = 0; }
-
-	// get hostdb to use
-	//int32_t collLen = gbstrlen(coll);
-	CollectionRec *cr     =  g_collectiondb.getRec ( coll );//, collLen );
-	Hostdb        *hostdb = &g_hostdb;
-	if ( cr->m_importFromHosts2Conf ) hostdb = &g_hostdb2;
-
-	// sanity check
-	//if ( g_hostdb2.m_numHosts == 0 ) {
-	if ( hostdb->m_numHosts == 0 ) {
-		if ( m_linkInfo ) 
-			mfree(m_linkInfo,m_linkInfo->getStoredSize(),"msg25s");
-		m_linkInfo = NULL;
-		//g_errno = EBADENGINEER;
-		static bool s_printed = false;
-		if ( s_printed ) return true;
-		s_printed = true;
-		log("build: No hostdb2.conf to get secondary link info from.");
-		return true;
-	}
-	// watch out for bogus urls
-	if ( url->getHostLen() <= 0 ) {
-		g_errno = EBADENGINEER;
-		log("build: Url %s has no hostname.",url->getUrl());
-		return true;
-	}
-	// save callback info
-	m_state    = state;
-	m_callback = callback;
-	m_url      = url;
-	//m_linkInfo = linkInfo;
-	int32_t remoteCollLen = 0;
-	if ( remoteColl ) remoteCollLen = gbstrlen ( remoteColl );
-
-	// assign it in case somebody uses it
-	m_coll     = coll;
-	//m_collLen  = collLen;
-
-	// make a Msg25 request for fresh link info
-	char *p = m_request;
-	// store url
-	gbmemcpy ( p , url->getUrl() , url->getUrlLen() );
-	// skip over url
-	p += url->getUrlLen();
-	// store \0
-	*p++ = '\0';
-	// store remote coll
-	gbmemcpy ( p , remoteColl , remoteCollLen );
-	// skip over it
-	p += remoteCollLen;
-	// store \0
-	*p++ = '\0';
-	// store ip
-	*(int32_t *)p = m_ip; p += 4; // url->getIp(); p += 4;
-	// siteNumInlinks (bogus)
-	*(int32_t *)p = 0; p += 4;
-	// sitePop (bogus)
-	*(int32_t *)p = 0; p += 4;
-	// the last update time
-	*(int32_t *)p = m_lastUpdateTime; p += 4;
-	// . store a BOGUS root quality now so gk cluster won't force a core
-	//   because the rootQuality < 0
-	// . older clusters like gk will use it to compute quality, but we
-	//   disard that info now, we just want the number of extrapolated
-	//   inlinks to use in Msg16.cpp's computeQuality() function.
-	// *(char *)p = 0; p += 1;
-	// store flags
-	*p = 0;
-	if ( doLinkSpamCheck          ) *p |= 0x02;
-	if ( oneVotePerIpDom          ) *p |= 0x08;
-	if ( canBeCancelled           ) *p |= 0x40;
-	p++;
-
-	// get size of request
-	m_requestSize = p - m_request;
-
-	// sanity check
-	if ( m_requestSize > MSG25_MAX_REQUEST_SIZE ) {
-		char *xx = NULL; *xx = 0; }
-
-	// use the group that has this url's title rec local, if it exists
-	//m_groupId = g_titledb.getGroupIdForDatil(url,hostdb);//&g_hostdb2);
-	//m_probDocId = g_titledb.getProbableDocIdForDatil ( url );
-	m_probDocId = g_titledb.getProbableDocId ( url );	
-	m_groupId   = getGroupIdFromDocId ( m_probDocId );
-
-	// . send that request
-	// . returns false and sets g_errno on error, otherwise it will block
-	//   and return true
-	if ( ! m_mcast.send ( m_request            ,
-			      m_requestSize        ,
-			      0x25                 , // msgType 0x25
-			      false                , // m_mcast own m_request?
-			      m_groupId            , // send to group(groupKey)
-			      false                , // send to whole group?
-			      m_probDocId          , // probDocId (key)
-			      this                 , // state data
-			      NULL                 , // state data
-			      gotReplyWrapper25    ,
-			      3600*24*360          , // block forever for this!
-			      MAX_NICENESS         , // niceness
-			      false                , // real time?
-			      -1                   , // firstHostId
-			      NULL                 , // m_replyBuf           ,
-			      0                    , // MSG25_MAX_REPLY_SIZE ,
-			      false                , // free reply buf?
-			      false                , // do disk load balancing?
-			      -1                   , // max cache age
-			      0                    , // cacheKey
-			      0                    , // bogus rdbId
-			      -1                   , // minRecSizes
-			      true                 , // sendToSelf
-			      true                 , // retry forever
-			      //&g_hostdb2         ))// send to 2ndary cluster
-			      hostdb               ))// send to 2ndary cluster
-		return true;
-	// we blocked, wait for callback to be called
-	return false;
-}
-
-void gotReplyWrapper25 ( void *state , void *state2 ) {
-	Msg25 *THIS = (Msg25 *)state;
-	THIS->gotMsg25Reply ( );
-	THIS->m_callback ( THIS->m_state );//, THIS->m_linkInfo );
-}
-
-bool Msg25::gotMsg25Reply ( ) {
-	// ENOTFOUND errors are very common
-	//if ( g_errno == ENOTFOUND ) g_errno = 0;
-	// error?
-	if ( g_errno ) {
-		log("build: Failed to get external link info for %s.",
-		    m_url->getUrl());
-		return true;
-	}
-	// grab it
-	bool  freeit;
-	int32_t  replySize;
-	int32_t  replyMaxSize;
-	char *reply = m_mcast.getBestReply(&replySize,&replyMaxSize,&freeit);
-
-	// relabel it if different
-	//if( reply != m_replyBuf )
-	relabel( reply, replyMaxSize, "Msg25-mcastGBR" );
-
-	// sanity check - find that mem leak
-	if ( m_linkInfo ) { char *xx=NULL;*xx=0; }
-	// . deserialize the reply here (copied from Msg20.cpp)
-	// . m_linkInfo will own it
-	m_linkInfo = (LinkInfo *)reply;
-	// sanity check
-	if ( m_linkInfo->getStoredSize() != replySize ) { char*xx=NULL;*xx=0;}
-	// fix our string ptrs
-	//m_linkInfo->updateStringPtrs();
-	// sanity check
-	//if ( reply == m_replyBuf ) { char *xx=NULL;*xx=0;}
-	return true;
-}
-
-class State25 {
-public:
-	LinkInfo  m_linkInfo;
-	Msg25     m_msg25;
-	UdpSlot  *m_slot;
-	//char     *m_statusPtr;
-	Url       m_url;
-	//SiteRec   m_siteRec;
-};
-
-
-// TODO: add in neighborhood flag, do not look at g_conf for anything!!
-// likewise, cr->* is not right for cr->m_indexInlinkNeighborhoods and
-// cr->doLinkSpamDetection in LinkText.cpp...
-// AND, all the cr->m_* in Msg25.cpp should be flags!!!
-void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) {
-
-	char  *p = slot->m_readBuf;
-	// deserialize url
-	char  *url = p; p += gbstrlen(p) + 1;
-	// deserialize coll
-	char  *coll           = p; p += gbstrlen(p) + 1;
-	//int32_t collLen        = gbstrlen(coll);
-	int32_t   ip             = *(int32_t *)p; p += 4;
-	int32_t   siteNumInlinks = *(int32_t *)p; p += 4;
-	int32_t   sitePop        = *(int32_t *)p; p += 4;
-	int32_t   lastUpdateTime = *(int32_t *)p; p += 4;
-	// sanity check
-	if ( lastUpdateTime == 0 || lastUpdateTime == -1){char *xx=NULL;*xx=0;}
-	// sanity check
-	//if ( rootQuality < 0 || rootQuality > 100 ) { char *xx=NULL; *xx=0;}
-	// get flags
-	char   doLinkSpamCheck          = *p & 0x02;
-	char   oneVotePerIpDom          = *p & 0x08;
-	char   canBeCancelled           = *p & 0x40;
-	p++;
-	// make a new Msg25
-	State25 *st ;
-	try { st = new ( State25 ); }
-	catch ( ... ) {
-		g_errno = ENOMEM;
-		log("build: msg25: new(%i): %s", 
-		    sizeof(State25),mstrerror(g_errno));
-		g_udpServer.sendErrorReply ( slot , g_errno );
-		return;
-	}
-	mnew ( st , sizeof(State25) , "Msg25" );
-	// set url class
-	st->m_url.set ( url , gbstrlen(url) );
-	// save socket
-	st->m_slot = slot;
-	// call it
-	Msg25 *mm = &st->m_msg25;
-	if ( ! mm->getPageLinkInfo ( &st->m_url               ,
-				     ip                       ,
-				     -1                       , // docId
-				     coll                     ,
-				     NULL                     , // qbuf
-				     0                        , // qbufSize
-				     st                       , // state
-				     sendLinkInfoReplyWrapper , // callback
-				     false                    , // isInjecting?
-				     NULL                     , // pbuf
-				     NULL                    , // xd
-				     siteNumInlinks           ,
-				     sitePop                  ,
-				     NULL                     , // oldLinkInfo
-				     MAX_NICENESS             ,
-				     doLinkSpamCheck          ,
-				     oneVotePerIpDom          ,
-				     canBeCancelled           ,
-				     lastUpdateTime           ))
-		return;
-	// return the reply
-	sendLinkInfoReplyWrapper ( st );//, &st->m_linkInfo );
-}
-
-
-void sendLinkInfoReplyWrapper ( void *state ) { // , LinkInfo *infoArg ) {
-
-	State25 *st = (State25 *)state;
-	// get our state
-	UdpSlot *slot = st->m_slot;
-	// did it have an error?
-	if ( g_errno ) {
-		mdelete ( st , sizeof(st) , "Msg25" );
-		delete ( st );
-		g_udpServer.sendErrorReply ( slot , g_errno );		
-		return;
-	}
-
-	Msg25 *m = &st->m_msg25;
-	// get the link info ptr
-	LinkInfo *info = m->m_linkInfo;
-	// sanity test
-	//if ( info != infoArg ) { char *xx=NULL; *xx=0; }
-	// grab it
-	char *reply = (char *)info;
-	// get the size
-	int32_t need = 0;
-	if ( info ) need = info->getStoredSize();
-	// don't let Msg25 free it
-	m->m_linkInfo = NULL;
-
-	// free the state
-	mdelete ( st , sizeof(st) , "Msg25" );
-	delete ( st );
-
-	// send it away
-	g_udpServer.sendReply_ass ( reply , need , reply , need , slot );
-}
-*/
 
 //////////
 //
@@ -3752,172 +3102,6 @@ LinkInfo *makeLinkInfo ( char        *coll                    ,
 		if ( internal )
 			icount++;
 	}
-	/*
-	// limit
-	if ( icount > MAX_INTERNAL_INLINKS ) icount = MAX_INTERNAL_INLINKS;
-	// count external now too
-	// *ecount = numReplies - icount;
-	// for counting internal links again
-	int32_t icount2 = 0;
-	// . only allow 1 vote per ip domain OR mid domain
-	// . assign weights of -1 to links to ignore (from same ip top domain)
-	for ( int32_t i = 0 ; i < numReplies ; i++ ) {
-		// get the reply
-		Msg20Reply *r = replies[i];
-		// replies are NULL if MsgE had an error, like ENOTFOUND
-		if ( ! r ) continue;
-		// . for setting "outlinks", skip those not in the index
-		// . this will cause them not to be stored
-		if ( r->m_docId == 0LL ) {
-			r->m_linkTextScoreWeight = 0;
-			continue;
-		}
-		// are we internal?
-		bool internal = ((r->m_ip&0x0000ffff) == (ip & 0x0000ffff));
-		// . if he's probably a guestbook, message board page or other
-		//   cgi/dynamic page, don't let him vote because he can be
-		//   easily subverted by a clever link spammer
-		// . this now include any url with the string "link" in it, too
-		if ( r->m_isLinkSpam && ! internal ) {
-			r->m_linkTextScoreWeight = spamWeight;
-			continue;
-		}
-		// if we are external
-		if ( ! internal ) {
-			r->m_linkTextScoreWeight = 100;
-			continue;
-		}
-		// . allow first 100 internal links, if any, but together
-		//   they cannot count more than one external link can
-		// . see Links.cpp::hash() for values of "scores" 
-		// . TODO: if he's an rss or atom doc then let him thru
-		// . only allow first 10 internal linkers to vote
-		if ( ++icount2 > MAX_INTERNAL_INLINKS ) {
-			r->m_linkTextScoreWeight = -1; // should this be 0?
-			continue;
-		}
-		int32_t kc = r->m_pageNumInlinks + r->m_siteNumInlinks;
-		int64_t b2 ;
-		if      ( kc >= 5000 ) b2 = 100;
-		else if ( kc >= 2500 ) b2 =  95;
-		else if ( kc >= 1000 ) b2 =  80;
-		else if ( kc >=  500 ) b2 =  70;
-		else if ( kc >=  100 ) b2 =  60;
-		else if ( kc >=   50 ) b2 =  50;
-		else if ( kc >=   10 ) b2 =  40;
-		else                   b2 =  10;
-		r->m_linkTextScoreWeight =  b2 / icount;
-	}
-	*/
-
-	// sum up all weights into "total"
-	//int32_t total = 0;
-	
-	/*
-	for ( int32_t i = 0 ; i < numReplies ; i++ ) {
-		// get the reply
-		Msg20Reply *r = replies[i];
-		// replies are NULL if MsgE had an error, like ENOTFOUND
-		if ( ! r ) continue;
-		// skip links from the same 2 byte ip as another link
-		//if ( r->m_linkTextScoreWeight <= 0 ) continue;
-		// ignore if spam
-		if ( onlyNeedGoodInlinks && r->m_isLinkSpam ) continue;
-		// add up weights
-		//total += r->m_linkTextScoreWeight;
-		char *txt       = r->ptr_linkText;
-		int32_t  txtLen    = r->size_linkText;
-		if ( txtLen > 0 ) txtLen--;
-		// this can be empty if we just had an item
-		if ( ! txt || txtLen <= 0 ) continue;
-		// otherwise, hash each word with weight of 1
-		//words.set ( false , txt , txtLen );
-		words.set ( txt, txtLen,TITLEREC_CURRENT_VERSION,true, true );
-		// get # of words
-		int32_t nw = words.getNumWords();
-		// loop over each on in this link text
-		for ( int32_t k = 0 ; k < nw; k++ ) {
-			// don't count punct
-			if ( words.isPunct(k) ) continue;
-			// get the word Id of the ith word
-			int64_t wid = words.getWordId(k);
-			// does it match a word in this same link text?
-			int32_t j;
-			for ( j = 0 ; j < k ; j++ ) {
-				// don't consider the wordId of punct "words"
-				// because it is a bogus value that may
-				// ultimately cause us to segfault below
-				if ( words.isPunct  (j)        ) continue ;
-				if ( words.getWordId(j) == wid ) break;
-			}
-			// if it does then skip it
-			if ( j < k ) continue;
-			// otherwise, hash it so we can count word occurences
-			if ( ! tt.addTerm ( &wid , 1 ) ) {
-				log("build: Failed to add word to table.");
-				return NULL;
-			}
-		}
-	}
-	// always return >= 0, -1 means error
-	//if ( total < 0 ) total = 0;
-	// at least .3% of the good linkers need to have the word so when
-	// if numReplies is 1000, minCount is 3, if it is 100, this is .3
-	uint32_t minCount = (3 * ((int32_t)numReplies)) / 1000;
-	// and at least 3 docs need to have the word...
-	if ( minCount < 3 ) minCount = 3;
-	// and if 7 have it you are always golden
-	if ( minCount > 7 ) minCount = 7;
-
-	int32_t nn = numReplies;
-	// skip this part if table empty
-	if ( tt.getNumSlotsUsed() <= 0 ) nn = 0;
-	// set the m_isAnomaly bits
-	for ( int32_t i = 0 ; i < nn ; i++ ) {
-		// get the reply
-		Msg20Reply *r = replies[i];
-		// replies are NULL if MsgE had an error, like ENOTFOUND
-		if ( ! r ) continue;
-		// skip weights 0 or less
-		if ( r->m_linkTextScoreWeight <= 0 ) continue;
-		if ( onlyNeedGoodInlinks && r->m_isLinkSpam ) continue;
-		// point to link text itself
-		char *txt       = r->ptr_linkText;
-		int32_t  txtLen    = r->size_linkText;
-		if ( txtLen > 0 ) txtLen--;
-		// this can be empty if we just had an item
-		if ( ! txt || txtLen <= 0 ) continue;
-		// reset it now to prevent core
-		words.reset();
-		// set the words class again from this link text
-		words.set ( txt , txtLen, 
-			    TITLEREC_CURRENT_VERSION,
-			    true, true );
-		// get # of words in this link text
-		int32_t nw = words.getNumWords();
-		// loop over each word
-		int32_t k ;
-		for ( k = 0 ; k < nw; k++ ) {
-			// don't count punct
-			if ( words.isPunct(k) ) continue;
-			// do not count stop words (uncapitalized)
-			if ( words.isStopWord(k) ) continue;
-			// get the word Id of the ith word
-			int64_t wid = words.getWordId(k);
-			// filter out this LinkText if has an anomalous word
-			if ( tt.getScore ( &wid ) < minCount )
-				break;
-		}
-		// continue if not anomalous
-		if ( k == nw ) continue;
-		// remove this weight from the total
-		total -= r->m_linkTextScoreWeight;
-		// set the anomaly bit
-		r->m_isAnomaly = true;
-	}
-	// always return >= 0, -1 means error
-	if ( total < 0 ) total = 0;
-	*/
 
 	// we can estimate our quality here
 	int32_t numGoodInlinks = 0;
@@ -4093,46 +3277,6 @@ LinkInfo *makeLinkInfo ( char        *coll                    ,
 	return info;
 }
 
-/*
-static Inlink *s_orig;
-static Inlink  s_inlink;
-
-// if we are an old version, we have to set s_inlink and return
-// a ptr to that
-Inlink *LinkInfo::getNextInlink ( Inlink *k ) {
-	// switch back
-	if ( k == &s_inlink ) k = s_orig;
-	// get it as the latest versioned inlink
-	Inlink *p = getNextInlink2 ( k );
-	// if none, we are done
-	if ( ! p ) return p;
-	// sanity checks
-	//if(p->m_numStrings==0&& p->m_firstStrPtrOffset){char *xx=NULL;*xx=0;}
-	//if(p->m_numStrings&& p->m_firstStrPtrOffset==0){char *xx=NULL;*xx=0;}
-	// fix this for the really old guy. we did not store these two
-	// things initially, but they should have been set to this...
-	// luckily, we had a "reserved1" int32_t...
-	// if ( p->m_numStrings == 0 ) {
-	// 	// urlBuf,linkText,surroudingText,rssItem
-	// 	p->m_numStrings        = 4;
-	// 	p->m_firstStrPtrOffset = 64;
-	// }
-	// MDW: now we just use offsets for 64bit conversion so no ptrs...
-	// if latest, return that
-	//if ( p->m_numStrings        == p->getBaseNumStrings() &&
-	//     p->m_firstStrPtrOffset == (char *)&p->off_urlBuf - (char *)p ) {
-	//	p->updateStringPtrs(NULL);
-	//	return p;
-	//}
-	// otherwise, set s_inlink to it
-	s_inlink.set2 ( (Inlink *)p );
-	// preserve p though for next call
-	s_orig = (Inlink *)p;
-	// and return that
-	return &s_inlink;
-}
-*/
-
 Inlink *LinkInfo::getNextInlink ( Inlink *k ) {
 	if ( this == NULL ) return NULL;
 	// if none, return NULL
@@ -4190,220 +3334,12 @@ bool Inlink::setXmlFromRSS ( Xml *xml , int32_t niceness ) {
 			  CT_XML );
 }
 
-// only Title.cpp uses this right now
-/*
-bool Inlink::setXmlFromLinkText ( Xml *xml ) {
-	// compute the length (excludes the \0's)
-	int32_t len = size_linkText - 1;
-	// bitch
-	if ( ptr_linkText[len] )
-		log("linknfo: bad link text, no NULL termination. truncing.");
-	// if not null terminated make it so!
-	ptr_linkText[len] = '\0';
-	// for some reason the link text is not DOUBLE NULL TERMINATED
-*/
-/*
-	// . copy into buf to ensure NULL termination
-	// . older versions were not null terminated or doubly null terminated
-	//   as Xml::set() requires for uni
-	char buf[1000];
-	// sanity check
-	if ( len > 900 ) { char *xx=NULL;*xx=0; }
-	// copy
-	gbmemcpy ( buf , ptr_linkText , size_linkText );
-	// ensure null termination
-	buf [ size_linkText     ] = '\0';
-	buf [ size_linkText + 1 ] = '\0';
-
-	// return false and set g_errno if this fails
-	return xml->set ( csUTF8                   ,
-			  ptr_linkText             ,
-			  len                      ,
-			  false                    , // own data?
-			  0                        , // allocSize
-			  true                     , // pure xml?
-			  TITLEREC_CURRENT_VERSION ,
-			  false                    ); // no need to now
-}
-*/
-
-// . update them for each Inlink
-// . same as calling deserialize()
-//void LinkInfo::updateStringPtrs ( ) {
-//	// loop through the Inlinks and update them
-//	for ( Inlink *k = NULL; (k = getNextInlink(k)) ; )
-//		k->updateStringPtrs();
-//}
-
 bool LinkInfo::hasLinkText ( ) {
 	// loop through the Inlinks
 	for ( Inlink *k = NULL; (k = getNextInlink(k)) ; ) 
 		if ( k->size_linkText > 1 ) return true;
 	return false;
 }
-
-/*
-bool LinkInfo::hash ( TermTable     *table                  ,
-		      int32_t           externalLinkTextWeight ,
-		      int32_t           internalLinkTextWeight ,
-		      //TitleRec      *tr                   ,
-		      int32_t           ip                     ,
-		      int32_t           version                ,
-		      int32_t           siteNumInlinks         ,
-		      TermTable     *countTable             ,
-		      char          *note                   ,
-		      int32_t           niceness               ) {
-
-	int32_t noteLen = 0;
-	if ( note ) noteLen = gbstrlen ( note );
-	// count "external" inlinkers
-	int32_t ecount = 0;
-	// loop through the link texts and hash them
-	for ( Inlink *k = NULL; (k = getNextInlink(k)) ; ) {
-		// is this inlinker internal?
-		bool internal=((ip&0x0000ffff)==(k->m_ip&0x0000ffff));
-		// count external inlinks we have for indexing gbmininlinks:
-		if ( ! internal ) ecount++;
-		// get score
-		int64_t baseScore = k->m_baseScore;
-                // get the weight
-		int64_t ww ;
-		if ( internal ) ww = internalLinkTextWeight;
-		else            ww = externalLinkTextWeight;
-		// modify the baseScore
-		int64_t final = (baseScore * ww) / 100LL;
-		// get length of link text
-		int32_t tlen = k->size_linkText;
-		if ( tlen > 0 ) tlen--;
-		// get the text
-		char *txt = k->ptr_linkText;
-		// if it is anomalous, set this, we don't
-		//if ( k->m_isAnomalous )
-		//	table->m_hashIffNotUnique = true;
-		// . hash the link text into the table
-		// . returns false and sets g_errno on error
-		// . do NOT hash singletons if they are in a phrase already!
-		//   this way "yahoo groups" won't come up for a "yahoo" query
-		//   and "new york times" won't come up for a "york" query
-		// . actually, this may backfire on us, so i reverted back!
-		// . we still have the score punish from # of words though!
-		if ( ! table->hash ( version      ,
-				     note         ,
-				     noteLen      ,
-				     NULL         ,
-				     0            ,
-				     txt          ,
-				     tlen         ,
-				     final        ,  // modified score
-				     0x7fffffff   ,  // maxScore
-				     true         ,  // doSpamDetection?
-				     true         ,  // hashSingleWords? ok.
-				     true         ,  // hashPhrases?
-				     false        ,  // hashAsWhole?
-				     false        ,  // useStems?
-				     true         ,  // useStopWords?
-				     false        ,  // hashIffUnique?
-				     false        ,  // hashWordIffNotInPhrase
-				     // FIXME: need normaliztion Info (partap)
-				     4            , // mp
-				     NULL         , // wwptr        ,
-				     NULL         , // pptr         ,
-				     NULL         , // bptr         ,
-				     NULL         , // wgptr        ,
-				     true         , // isLinkText?
-				     countTable   ,
-				     NULL         , // scoresPtr
-				     20           , // numRepeatWords
-				     siteNumInlinks,
-				     niceness     ))
-			return false;
-*/
-		// turn this back off in case enabled
-		//table->m_hashIffNotUnique = false;
-
-		/*
-		if( !hasLinkText ) continue;
-
-		if ( ! table->hash ( titleRecVersion ,
-				     "hash incoming link text for this field" ,
-				     0            ,  // prefixLen1
-				     field        ,  // "linktextincoming:"
-				     gbstrlen(field),  // length of field
-				     txt          ,
-				     txtLen       ,
-				     docQuality   ,
-				     TERMTABLE_MAXSCORE, // maxScore
-				     true         ,  // doSpamDetection?
-				     true         ,  // hashSingleWords? ok.
-				     true         ,  // hashPhrases?
-				     false        ,  // hashAsWhole?
-				     false        ,  // useStems?
-				     true         ,  // useStopWords?
-				     false        ,  // hashIffUnique?
-				     false        ,  // hashWordIffNotInPhrase
-			return false;
-		*/
-/*
-	}
-
-	// . hash gbkeyword:numinlinks where score is # of inlinks from 1-255
-	// . do not hash gbkeyword:numinlinks if we don't got any
-	if ( ecount <= 0 ) return true;
-	// limit it since our score can't be more than 255 (8-bits)
-	if ( ecount > 255 ) ecount = 255;
-	// IndexList::set() converts our 32 bit score to 8-bits so we trick it!
-	int32_t score = score8to32 ( (uint8_t)ecount );
-	// watch out for wrap
-	if ( score < 0 ) score = 0x7fffffff;
-	if ( ! table->hash ( version           ,
-			     "hash numinlinks" ,
-			     15                ,
-			     "gbkeyword"       ,
-			     9                 ,
-			     "numinlinks"      ,
-			     10                ,
-			     score             ,
-			     TERMTABLE_MAXSCORE,  // maxScore
-			     false             ,  // doSpamDetection?
-			     true              ,  // hashSingleWords? ok.
-			     false             ,  // hashPhrases?
-			     false             ,  // hashAsWhole?
-			     false             ,  // useStems?
-			     false             ,  // useStopWords?
-			     false             ,  // hashIffUnique?
-			     false             )) // hashWordIffNotInPhrase
-			return false;
-
-
-	return true;
-}
-*/
-
-/*
-int64_t getBoostFromLinkeeQuality ( char docQuality ) {
-	// hard code this
-	float fboost    = 1.0;
-	float myQuality = (float)docQuality;
-	// do it different over 50, that is very nice quality...
-	while ( myQuality >= 50.0 ) {
-		myQuality--;
-		fboost    *= 1.10;
-	}
-	// . every 14 pts over 30 doubles our boost
-	// .  44 --> x2
-	// .  58 --> x4
-	// .  72 --> x8
-	// .  86 --> x16
-	// . 100 --> x32
-	while ( myQuality >= 30.0 ) {
-		//myQuality *= 0.9;
-		myQuality--;
-		fboost    *= 1.05;
-	}
-	// assign
-	return (int64_t )(fboost * 100.0);
-}
-*/
 
 void Inlink::set ( Msg20Reply *r ) {
 
@@ -4437,12 +3373,6 @@ void Inlink::set ( Msg20Reply *r ) {
 	//m_isAnomaly          = r->m_isAnomaly;
 	m_hasAllQueryTerms   = r->m_hasAllQueryTerms;
 	m_recycled           = r->m_recycled;
-
-	// usually the datedb date is a publication date, but it can also
-	// be a "modified" date. when the document was last modified. That
-	// is indicated by the last bit of the datedb date. it is clear if it
-	// is a Modified date, and it is set if it is a Publish date.
-	//m_datedbModified     = r->m_datedbModified;
 
 	m_country             = r->m_country;
 	m_language            = r->m_language;
@@ -4558,19 +3488,6 @@ void Inlink::set ( Msg20Reply *r ) {
 	poff += size_templateVector;
 	p    += size_templateVector;
 
-	
-	/*
-	  MDW: take this out for 64 bit offset-only conversion
-	ptr_urlBuf            = r->ptr_ubuf;
-	ptr_linkText          = r->ptr_linkText;
-	ptr_surroundingText   = r->ptr_surroundingText;
-	ptr_rssItem           = r->ptr_rssItem;
-	ptr_categories        = r->ptr_categories;
-	ptr_gigabitQuery      = r->ptr_gigabitQuery;
-	ptr_templateVector    = r->ptr_templateVector;
-	*/
-
-
 }
 
 // Msg25 calls this to make a "fake" msg20 reply for recycling Inlinks
@@ -4626,37 +3543,6 @@ void Inlink::setMsg20Reply ( Msg20Reply *r ) {
 	r->size_templateVector   = size_templateVector;
 }
 
-// convert offsets back into ptrs
-// MDW: no, now they are always offsets since we are 64bits
-// this was kinda like Inlink::deserialize()
-/*
-int32_t Inlink::updateStringPtrs ( char *buf ) {
-	// point to our string buffer
-	char *p = buf;
-	// use our buf if none supplied
-	if ( ! p ) p = getStringBuf(); // m_buf;
-	// then store the strings!
-	int32_t  *sizePtr = getFirstSizeParm(); // &size_qbuf;
-	int32_t  *sizeEnd = getLastSizeParm (); // &size_displayMetas;
-	char **strPtr  = getFirstStrPtr  (); // &ptr_qbuf;
-	for ( ; sizePtr <= sizeEnd ;  ) {
-		// convert the offset to a ptr
-		*strPtr = p;
-		// make it NULL if size is 0 though
-		if ( *sizePtr == 0 ) *strPtr = NULL;
-		// sanity check
-		if ( *sizePtr < 0 ) { char *xx = NULL; *xx =0; }
-		// advance our destination ptr
-		p += *sizePtr;
-		// advance both ptrs to next string
-		sizePtr++;
-		strPtr++;
-	}
-	// return how many bytes we processed
-	return getBaseSize() + (p - getStringBuf());
-}
-*/
-
 void Inlink::reset ( ) {
 	// clear ourselves out
 	memset ( (char *)this,0,sizeof(Inlink) - MAXINLINKSTRINGBUFSIZE);
@@ -4667,53 +3553,16 @@ void Inlink::reset ( ) {
 void Inlink::set2 ( Inlink *old ) {
 	// clear ouselves
 	reset();
-	// copy what is legit to us
-	//int fullSize = sizeof(Inlink);
-	// add in the sizes of all strings
-	//int32_t  *sizePtr = getFirstSizeParm(); // &size_qbuf;
-	//int32_t  *sizeEnd = getLastSizeParm (); // &size_displayMetas;
-	//for ( ; sizePtr <= sizeEnd ;  sizePtr++ ) 
-	//	fullSize += *sizePtr;
 
 	int fullSize = old->getStoredSize();
+
 	// return how many bytes we processed
 	gbmemcpy ( (char *)this , (char *)old , fullSize );
 
 	return;
-
-	// this old way is pre-64bit
-	/*
-	gbmemcpy ( (char *)this , (char *)old , old->m_firstStrPtrOffset );
-	// set our offset to the string ptrs
-	m_firstStrPtrOffset = (char *)&ptr_urlBuf - (char *)this;
-	// and our base
-	m_numStrings = getBaseNumStrings();
-	// now copy over string ptrs
-	char *dst = (char *)this +      m_firstStrPtrOffset;
-	char *src = (char *)old  + old->m_firstStrPtrOffset;
-	gbmemcpy ( dst , src , old->m_numStrings * 4 );
-	// and the sizes
-	dst += 4 * m_numStrings ;
-	src += 4 * old->m_numStrings ;
-	gbmemcpy ( dst , src , old->m_numStrings * 4 );
-	// sanity tests. make sure they match up
-	//if ( old->ptr_urlBuf  != ptr_urlBuf  ) { char *xx=NULL;*xx=0; }
-	//if ( old->ptr_rssItem != ptr_rssItem ) { char *xx=NULL;*xx=0; }
-	// point to the old buf now, OldInlink::m_buf[]
-	src += 4 * old->m_numStrings ;
-	// update our string ptrs to reference into "old's" m_buf[]
-	updateStringPtrs ( src );
-	// log it
-	//logf(LOG_DEBUG,"build: setting new Inlink from old.");
-	// we can't do this sanity check because we cast "old" as an Inlink
-	// whereas before it was an older version of "Inlink"
-	//if ( old->size_urlBuf != size_urlBuf ) { char *xx=NULL;*xx=0; }
-	*/
 }
 
 int32_t Inlink::getStoredSize ( ) {
-	//int32_t size = (int32_t)sizeof(Msg);
-	//int32_t size = getBaseSize();
 	int32_t size = sizeof(Inlink) -	MAXINLINKSTRINGBUFSIZE;
 
 	size += size_urlBuf;
@@ -4725,17 +3574,6 @@ int32_t Inlink::getStoredSize ( ) {
 	size += size_templateVector;
 
 	return size;
-	// add in string offsets AND size, 4 bytes each
-	//size += 8 * m_numStrings;
-	// start of first offset
-	// int32_t *sizePtr = &size_urlBuf;
-	// int32_t *sizeEnd = (int32_t *)((char *)this + sizeof(Inlink));
-	// add up string buffer sizes
-	//int32_t *sizePtr = getFirstSizeParm(); // &size_qbuf;
-	//int32_t *sizeEnd = getLastSizeParm (); // &size_displayMetas;
-	//int32_t *sizePtr = 
-	//	(int32_t *)((char *)this + m_firstStrPtrOffset+4*m_numStrings);
-	//int32_t *sizeEnd = sizePtr + m_numStrings;
 }
 
 // . return ptr to the buffer we serialize into
@@ -4763,45 +3601,13 @@ char *Inlink::serialize ( int32_t *retSize     ,
 
 	if ( p != pend ) { char *xx=NULL;*xx=0; }
 
-	// int32_t  *sizePtr = getFirstSizeParm(); // &size_qbuf;
-	// int32_t  *sizeEnd = getLastSizeParm (); // &size_displayMetas;
-	// int32_t  *offPtr  = getFirstOffPtr  (); // &ptr_qbuf;
-	// for ( ; sizePtr <= sizeEnd ;  ) {
-	// 	if ( p > pend ) { char *xx=NULL;*xx=0; }
-	// 	// if we are NULL, we are a "bookmark", so
-	// 	// we alloc'd space for it, but don't copy into
-	// 	// the space until after this call toe serialize()
-	// 	// MDW: we can't use NULL now because we are offsets and 0 is 
-	// 	// legit. because of the 64bit conversion.
-	// 	// well if empty, *sizePtr will be 0... so we don't need this.
-	// 	//if ( *offPtr == -1 ) goto skip;
-	// 	// sanity check -- cannot copy onto ourselves
-	// 	if ( p > m_buf+*offPtr && p < m_buf+*offPtr + *sizePtr ) {
-	// 		char *xx = NULL; *xx = 0; }
-	// 	// copy the string into the buffer
-	// 	gbmemcpy ( p , m_buf + *offPtr , *sizePtr );
-	// 	//skip:
-	// 	// . make it point into the buffer now
-	// 	// . MDW: why? that is causing problems for the re-call in
-	// 	//   Msg3a, it calls this twice with the same "m_r"
-	// 	// . MDW: took out for 64bit
-	// 	//if ( makePtrsRefNewBuf ) *offPtr = (p-buf);
-	// 	// advance our destination ptr
-	// 	p += *sizePtr;
-	// 	// advance both ptrs to next string
-	// 	sizePtr++;
-	// 	offPtr++;
-	// }
 	return buf;
 }
 
 // used by PageTitledb.cpp
 bool LinkInfo::print ( SafeBuf *sb , char *coll ) {
-	//char buf [1024];
-	//char buf2[1024];
-	//char buf3[MAX_RSSITEM_SIZE]; // 30000?
-	//char buf4[1024];
 	int32_t count = 1;
+
 	// loop through the link texts
 	for ( Inlink *k = NULL; (k = getNextInlink(k)) ; count++ ) {
 		char *s    = k->getLinkText();//ptr_linkText;
@@ -4881,35 +3687,6 @@ bool LinkInfo::print ( SafeBuf *sb , char *coll ) {
 	}
 	return true;
 }
-
-//int32_t getNumLinksToSite ( int32_t q ) {
-//	if ( q <= 20 ) return 0; return (1 << ((q - 20)/5)); };
-//int32_t getSitePop        ( int32_t q ) { return getNumLinksToSite ( q ) * 5; };
-// . total pop of all the inlinkers to the page
-// . assume 20 times less than site pop
-//int32_t getPagePop        ( int32_t q ) { return getSitePop ( q ) / 20; }
-
-/*
-int32_t LinkInfo::computePagePop ( Url *u , char *coll ) {
-	// get our site hiash. use domain for now
-	int32_t dh = u->getDomainHash32 ( );
-	// store pagepop into "sum"
-	int32_t sum = 0;
-	for ( Inlink *k=NULL;(k=getNextInlink(k));) {
-		// get the url
-		Url u2; u2.set ( k->ptr_urlBuf , k->size_urlBuf - 1);
-		// get the site hash
-		int32_t dh2 = u2.getDomainHash32 ( );
-		// skip if it is from our same site
-		if ( dh2 == dh ) continue;
-		// one point for having him
-		sum++;
-		// and we inherit his points as well
-		sum += k->m_pagePop;
-	}
-	return sum;
-}
-*/
 
 bool LinkInfo::hasRSSItem() {
 	for ( Inlink *k=NULL;(k=getNextInlink(k));) 
@@ -4991,61 +3768,23 @@ bool Links::set ( bool useRelNoFollow ,
 
 	m_baseSite    = NULL;
 	m_baseSiteLen = 0;
-	// default to domain, not hostname
-	//if ( m_baseUrl && addSiteRootFlags ) 
-	//	m_baseSite = m_baseUrl->getSite ( &m_baseSiteLen, coll, false);
-
-	//m_addSiteRootFlags = addSiteRootFlags;
-	//m_coll             = coll;
-	// sanity check
-	//if ( addSiteRootFlags && ! coll ) { char *xx=NULL;*xx=0; }
 
 	m_numLinks = 0;
 	m_numNodes = xml->getNumNodes();
 	m_bufPtr   = NULL;
-	//m_buf[0]   = '\0';
-
-	//bool useRelNoFollow = true;
-	//if ( sx ) useRelNoFollow = sx->getBool ("useRelNoFollow",true);
 
 	m_linksToGigablast = false;
 	m_hasRelNoFollow   = false;
 
-	// unknow if baseUrl are a permalink or not
-	//m_isPermalink = -1;
-
-	//char utf8Buf[MAX_URL_LEN+1];
-	//int32_t utf8Len = 0;
-
-	// this is not a good thing, don't strip here, but we did it for 
-	// version 51 so we have to keep doing it for version 51. we strip
-	// the session id in Msg10.cpp in the addUrlLoop().
-	//if ( version == 51 )
-	//	m_stripIds = true;
-	//else
 	m_stripIds = false;
+
 	// ok, let's remove it for the links: hashing, it just makes more
 	// sense this way i think. we can normalize the links: terms in the
 	// query if you are worried about it.
-	//if ( version >= 54 ) m_stripIds = true;
 	m_stripIds = true;
 
 	// get the <base href=> tag if any (12)
 	if ( baseUrl ) m_baseUrl = baseUrl;
-
-	// count the dirty links
-	//m_numDirtyLinks = 0;
-
-	// get this from the xml of the siteRec
-	//m_extractRedirects = sx->getBool ("extractRedirectsFromLinks",false);
-
-	//bool gotIt = false;
-	//for ( int32_t i=0; i < m_numNodes ; i++ ) {
-	//	if ( xml->getNodeId ( i ) != TAG_FBORIGLINK ) continue;
-	//	gotIt = true;
-	//	break;
-	//}
-
 
 	// visit each node in the xml tree. a node can be a tag or a non-tag.
 	char *urlattr = NULL;
@@ -5057,26 +3796,9 @@ bool Links::set ( bool useRelNoFollow ,
 
 		int32_t  slen;
 		char *s ;
+
 		// reset
 		linkflags_t flags = 0;
-
-		/*
-		  MDW: now we set m_nodeId properly to TAG_LINK even in
-		  pure xml docs
-		if ( xml->m_pureXml ) {
-			// if it's a back tag continue
-			if ( xml->isBackTag ( i ) ) continue;
-			// must be a <> tag not innerhtml of tag
-			if ( xml->m_nodes[i].m_nodeId != TAG_XMLTAG ) continue;
-			// must be <link> i guess
-			if ( xml->m_nodes[i].m_tagNameLen != 4 ) continue;
-			if ( strncmp ( xml->m_nodes[i].m_tagName , "link" , 4))
-				continue;
-			// pure xml does not have ids like this so force it
-			id = TAG_LINK;
-			goto gotOne;
-		}
-		*/
 
 		if ( id != TAG_A         &&
 		     id != TAG_LINK      && // rss feed url
@@ -5519,48 +4241,14 @@ bool Links::queueBlogRoll ( TagRec **tagRecPtrs , int32_t niceness ) {
 		int32_t  plen = m_linkLens[i];
 		// tmp NULL
 		char c = p[plen]; p[plen] = '\0';
-		// vote on these tagids
-		//int32_t tagIds[] = { ST_BLOG , ST_NEWS };
-		// . add it to turk
-		// . buzz has mostly blogs and mainstream media news sites
-		/*
-		g_turk.addUrl ( p      ,
-				0LL    , // docid
-				NULL   , // TagRec
-				tagIds , // tagIds to test for
-				2      );
-		*/
+
 		// put it back
 		p[plen] = c;
-
-		// now make the score
-		//unsigned char score = QUALITY;
-		// . now hash with our score
-		// . this should only be called by XmlDoc::hashNoSplit()
-		//if ( ! link.hashAsLink ( version        ,
-		//			 table          ,
-		//			 NULL           ,
-		//			 0              ,
-		//			 score          ,
-		//			 false          , // internal?
-		//			 "gbblogroll:"  ,
-		//			 indexSiteLinks ) )
-		//	return false;
 	}
+
 	// success
 	return true;
 }
-
-// . should this page be considered dirty based on it's dirty links
-// . ?we should avoid adding dirty pages to the index?
-// . we should not add ANY of links if enough are dirty
-// . we should not hash link: terms for dirty pages
-//bool Links::isPageDirty ( ) {
-//	if ( m_numLinks < 5  ) return ( m_numDirtyLinks >= 2 ) ;
-//	// get percent dirty
-//	int32_t percent = ( m_numDirtyLinks * 100 ) / m_numLinks ;
-//	return ( percent >= 10 );
-//}
 
 bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 		      bool setLinkHash , int32_t titleRecVersion ,
@@ -5669,78 +4357,9 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 		m_spamNotes  = newSpamNotes;
 	}
 
-	// quickset?
-	/*
-	if ( m_doQuickSet ) {
-		m_linkPtrs    [ m_numLinks ] = link;
-		m_linkLens    [ m_numLinks ] = linkLen;
-		m_linkNodes   [ m_numLinks ] = nodeNum;
-		m_numLinks++;
-		return true;
-	}
-	*/
-
 	// normalize the link and prepend base url if needed
 	Url url;
 
-	// if our base url is http://poo.com/user/register/user/register/...
-	// and this link is "user/register/", for instance, we got a link loop.
-	// the "webmaster" really meant "/user/register" to be the link.
-	/*
-	char fix = false;
-	//if ( titleRecVersion >= 79 && link[0] != '/' ) {
-	if ( && link[0] != '/' ) {
-		// temporarily NULL terminate the link
-		char c = link[linkLen];
-		link[linkLen] = '\0';
-		// get the base url path
-		char *path = m_baseUrl->getPath();
-		int32_t  plen = m_baseUrl->getPathLen();
-		char *pend = path + plen;
-		// is this relative path is repeated in the base url?
-		char *p = strnstr ( path ,  // haystack
-				    link ,  // needle
-				    plen ); // haystackSize
-		//char *p2 = strnstr ( 
-		if ( p )
-			log("hey");
-		// advance over the needle in the haystack
-		if ( p ) 
-			p += linkLen;
-		// but if the relative url contains a / it only needs to
-		// be repeated once
-		if ( strchr ( link , '/' ) ) 
-			fix = true;
-		// is it repeated again after that? making it twice repeated?
-		if ( p && ! fix && strnstr ( p        ,  // haystack
-					     link     ,  // needle
-					     pend - p )) // haystackSize
-			fix = true;
-		// put the char back
-		link[linkLen] = c;
-	}
-	char c;
-	if ( fix ) {
-		link--;
-		c     = *link;
-		*link = '/';
-		linkLen++;
-	}
-	*/
-
-	// . let's force the www (back to the old ways)
-	// . before i wasn't, but root urls w or w/o the www can be dynamic
-	//   pages that really are the same, but had a different ad or whatever
-	//url.set ( m_baseUrl , link , linkLen , true/*addWWW?*/, m_stripIds ,
-
-	// MDW: let's try turning it off. slashdot.org's outlinkers are all
-	// seen as external because we force the 'www' on them here and the
-	// m_baseUrl does NOT have the 'www'. we now check for "www dups" in
-	// Msg16.cpp so that should alleviate the issue discussed right above.
-	//bool addWWW = true;
-	//if ( titleRecVersion >= 99 ) addWWW = false;
-	//bool addWWW = false;
-	//bool addWWW = true;
 
 	// we now use everything has is for sites like file.org
 	bool addWWW = false;
@@ -5805,9 +4424,6 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 		  true, 		// strip common tracking parameters
 		  titleRecVersion );// used for removing session ids
 
-	// refix the link
-	//if ( fix ) *link = c;
-
 	// sometimes there's links like:
 	// http://'+ycso[8]+ \n'commentsn?blog_id=... which is within
 	// <script></script> tags
@@ -5817,46 +4433,7 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 	// which somehow make it through without this!!
 	if ( url.getTLDLen() <= 0 ) return true;
 
-	// count dirty links
-	//if ( url.isDirty() ) m_numDirtyLinks++;
-	// . a lot of links are redirect to other places
-	// . yahoo.com/drst/pop/2/10/576995/37640326/*http://www.m.com/
-	// . find the asterix before the url to redirect to if we should
-	// . if we had a known redirect url in the link, set url class to it
-	// . this makes the link: search work much better
-	// . that means we can use yahoo to tell us banned/unbanned sites
-	//char *s ;
-	//if ( m_extractRedirects && (s=strchr(url.getUrl(),'*'))  ) {
-	//	// . this is really just for yahoo, but we could eventually
-	//	//   use an aribtrary delimeter in the site file
-	//	// . skip the *http:/
-	//	s += 7;
-	//	char buf[MAX_URL_LEN];
-	//	strcpy ( buf , s );
-	//	int32_t blen = gbstrlen(buf);
-	//	// . this was causing problems!
-	//	// . sometimes yahoo has nothing after the '*'
-	//	if ( blen == 0 ) return;
-	//	// it must start with http:
-	//	url.set ( buf, blen , true, m_stripIds);
-	//}
-	// debug TODO: fix a href=\"http://www.thecounter.com"\ thangs
-	// if ( url.getUrl()[0] !='h' ) sleep(10);
-	// ensure buf has enough room
-// 	if (titleRecVersion < 72) {
-// 		if ( m_bufPtr + url.getUrlLen() + 1 >= m_buf+LINK_BUF_SIZE ) 
-// 			return true;
-// 	}
-
-	// this is now set to 0 in XmlNode.cpp
-	// make sure it is valid
-	//if ( nodeNum >= 0 )
-	//	// reset this
-	//	m_xml->m_nodes[nodeNum].m_isSelfLink = 0;
-
 	// Allocate more link buffer space?
-	//int32_t bufSize = m_allocSize+LINK_BUF_SIZE;
-	//int32_t bufSpace = m_allocBuf?m_allocSize - (m_bufPtr-m_allocBuf):0;
 	int32_t bufSpace ;
 	if ( m_allocBuf ) bufSpace = m_allocSize - (m_bufPtr-m_allocBuf);
 	else              bufSpace = 0;
@@ -5920,23 +4497,6 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 	// and NULL terminate it
 	*m_bufPtr++  = '\0';
 
-	/*
-	// do permalink detection here
-	char *d    = url.getDomain();
-	int32_t  dlen = url.getDomainLen();
-	// is the baseurl contained in a link to reddit?
-	if ( dlen == 10 && m_baseUrl && strncmp ( d , "reddit.com" ) == 0 ) {
-		// get the baseurl without the http://
-		char *bh  = m_baseUrl->getHost();
-		char *cgi = url.getCgi();
-		// our base url is a permalink then
-		if ( strstr ( cgi , bh ) ) m_isPermalink = 1;
-		// otherwise, if it has a link elsewhere it is an index page
-		//else if ( strstr ( cgi, "diggthis.php?") ) m_isPermalink = 0;
-	}
-	*/
-
-
 	// . set link hash if we need to
 	// . the Vector class uses these link hashes for determining similarity
 	//   of this document to another for purposes of fightling link spam
@@ -5986,19 +4546,6 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 	if ( tlen == 3 && ! strncmp(tld,"edu",3) ) flags |= LF_EDUTLD;
 	if ( tlen == 3 && ! strncmp(tld,"gov",3) ) flags |= LF_GOVTLD;
 
-	//if ( m_addSiteRootFlags ) {
-	//	char *site    = NULL;
-	//	int32_t  siteLen = 0;
-	//	// i guess TagRec is NULL here. we really should have
-	//	// the tag recs of all the outlinks at this point
-	//	if ( url.isSiteRoot(m_coll,NULL,&site,&siteLen) ) 
-	//		flags |= LF_SITEROOT;
-	//	// same site flag?
-	//	if ( site&&siteLen==m_baseSiteLen&&
-	//	     strncmp(site,m_baseSite,siteLen)==0)
-	//		flags |= LF_SAMESITE;
-	//}
-
 	// rss?
 	if ( isRSS ) {
 		// flag it
@@ -6009,12 +4556,6 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 		if ( ! m_rssOutlinkPtr ) {
 			m_rssOutlinkPtr = m_linkPtrs[m_numLinks];
 			m_rssOutlinkLen = m_linkLens[m_numLinks];
-			// logit
-			//char c = link[linkLen];
-			//link[linkLen]=0;
-			//logf(LOG_DEBUG,"gb: parent=%s rssoutlink= %s",
-			//     m_parentUrl->m_url,link);
-			//link[linkLen]=c;
 		}
 	}
 
@@ -6423,165 +4964,6 @@ char *Links::linkTextSubstr(int32_t linkNum, char *string, int32_t niceness) {
 	return NULL;
 }
 
-// . hash the link: terms
-// . ensure that more useful linkers are scored higher
-// . useful for computing offsite link text for qdb-ish algorithm
-// . NOTE: for now i do not hash links to the same domain in order to
-//   hopefully save 10%-25% index space
-// . NOTE: PLUS, they may clog up the link-adjusted quality ratings since
-//   different site links with no link text will be ranked behind them
-// . the 8-bit bitmap of the score of a link: term:
-// . 00ubdcss  u = link is Unbanned? b = link isBanned?
-//             d = link dirty?       c = link clean? 
-//             s = 01 if no link text, 10 if link text
-// . NOTE: this is used in Msg18.cpp for extraction
-// . CAUTION: IndexList::score32to8() will warp our score if its >= 128
-//   so i moved the bits down
-/*
-bool Links::hash ( TermTable *table,
-		   Url *url , 
-		   Url *redirUrl , 
-		   int32_t version,
-		   int32_t niceness ,
-		   // can cal Xml::isRSSFeed() on the content to check
-		   // for the special identifying tag to be a feed
-		   bool isRSSFeed ) {
-	// we mask in some bits to the score sometimes
-	//unsigned char mask = 0;
-	// see if our links are all banned or all unbanned via siteRec
-	// Xml *sx = sr->getXml();
-	// later, the score can contain a ruleset that should be used to parse
-	// the document that is linked to, but just support unbanning of 
-	// soft banned sites for now
-	//if ( sx->getBool("linksUnbanned", false ) ) mask |= 0x20;
-	// let's phase these guys out, they aren't really used anyway
-	//if ( version < 21 ) {
-	//	if ( sx->getBool("linksBanned"  , false ) ) mask |= 0x10;
-	//	if ( sx->getBool("linksDirty"   , false ) ) mask |= 0x08;
-	//	if ( sx->getBool("linksClean"   , false ) ) mask |= 0x04;
-	//}
-	// decide if we will index sitelink terms
-	bool indexSiteLinks = false;
-	if (version >= 71) {
-		//if (sx->getBool("indexSiteLinks", true)) indexSiteLinks=true;
-		indexSiteLinks = true;
-	}
-	// see ../url/Url2.cpp for hashAsLink() algorithm
-	for ( int32_t i = 0 ; i < m_numLinks ; i++ ) {
-		// skip links with zero 0 length
-		if ( m_linkLens[i] == 0 ) continue;
-		// . skip if we are rss page and this link is an <a href> link
-		// . we only harvest/index <link> urls from rss feeds
-		// . or in the case of feedburner, those orig tags
-		if ( isRSSFeed && (m_linkFlags[i] & LF_AHREFTAG) ) 
-			continue;
-		// if we have a <feedburner:origLink> tag, then ignore <link> 
-		// tags and only get the links from the original links
-		if ( m_isFeedBurner && !(m_linkFlags[i] & LF_FBTAG) )
-			continue;
-		// normalize the link
-		Url2 link;
-		// now we always add "www" to these links so that any link
-		// to cnn.com is same as link to www.cnn.com, because either
-		// we index cnn.com or www.cnn.com but not both providing 
-		// their content is identical (deduping). This way whichever
-		// one we index, we can take advantage of all link text whether
-		// it's to cnn.com or www.cnn.com.
-		// Every now and then we add new session ids to our list in
-		// Url.cpp, too, so we have to version that.
-		link.set ( m_linkPtrs[i] , 
-			   m_linkLens[i] ,
-			   true          , // addWWW? 
-			   m_stripIds    ,
-			   false         , // stripPound?
-			   false         , // stripCommonFile?
-			   version       );// used for new session id stripping
-		QUICKPOLL(niceness);
-		// . the score depends on some factors:
-		// . NOTE: these are no longer valid! (see score bitmap above)
-		// . 4 --> if link has different domain AND has link text
-		// . 3 --> if link has same domain AND has link text
-		// . 2 --> if link has different domain AND no link text
-		// . 1 --> if link has sam domain AND no link text
-		// . is domain the same as ours?
-		// . NOTE: ideally, using the IP domain would be better, but
-		//   we do not know the ip of the linker right now... so scores
-		//   may be topped with a bunch of same-ip domain links so that
-		//   we may not get as much link text as we'd like, since we
-		//   only sample from one link text per ip domain 
-		// . now we also just use the mid domain! (excludes TLD)
-		//bool sameMidDomain = false;
-		bool internal = false;
-		int32_t mdlen = url->getMidDomainLen();
-		if ( mdlen == link.getMidDomainLen() &&
-		     strncmp(url->getMidDomain(),link.getMidDomain(),mdlen)==0)
-			//continue; // sameMidDomain = true;
-			internal = true;
-		// also check the redir url
-		if ( redirUrl ) {
-			mdlen = redirUrl->getMidDomainLen();
-			if ( mdlen == link.getMidDomainLen() &&
-			     strncmp(redirUrl->getMidDomain(),
-				     link.getMidDomain(),mdlen)==0)
-				//continue; // sameMidDomain = true;
-				internal = true;
-		}
-		// select prefix
-		char *prefix = "link:";
-		// let's use a different termlist for version 21 and up since
-		// we include internal links and we do scoring differently. 
-		// once those new termlists get beefed up we can switch over 
-		// to them exclusively.
-		if ( version >= 21 ) prefix = "links";
-		// older versions used ilink:
-		if ( version <  21 && internal ) prefix = "ilink:";
-
-		// for now, don't hash same-mid-domain links at all (save disk)
-		//if ( sameMidDomain ) continue;
-		// now make the score
-		unsigned char score ;
-		// . TODO: consider not hashing link w/o text!
-		// . otherwise, give it a higher score if it's got link TEXT
-		bool gotLinkText = hasLinkText ( i, version );
-		//if ( ! sameMidDomain ) {
-		// support the old scores for backwards compatibility
-		if ( version < 21 ) {
-			if ( gotLinkText ) score = 2; // has link text
-			else               score = 1; // no link text
-		}
-		// otherwise, beginning with version 21, allow internal links,
-		// but with lower scores
-		else {
-			//                          score
-			// internal, no link text:  2
-			// internal, w/ link text:  4
-			// external, no link text:  6
-			// external, w/ link text:  8
-			if ( internal ) {
-				if ( ! gotLinkText ) score = 0x02;
-				else                 score = 0x04;
-			}
-			else {
-				if ( ! gotLinkText ) score = 0x06;
-				else                 score = 0x08;
-			}
-		}
-		//}
-		//else if ( gotLinkText ) score = 3;
-		// set upper 2 bits to indicate of link is banned/unbanned
-		//score |= mask;
-
-		// now hash with our score
-		if ( ! link.hashAsLink ( version, table , NULL , 0 , score ,
-					 internal , prefix, indexSiteLinks ) )
-			return false;
-
-		QUICKPOLL(niceness);
-	}
-	return true;
-}
-*/
-
 int32_t Links::findLinkNum(char* url, int32_t urlLen) {
 	for(int32_t i = 0;i< m_numLinks; i++) {
 		if(m_linkLens[i] == urlLen &&
@@ -6604,37 +4986,6 @@ static int32_t getLinkBufferSize(int32_t numLinks){
 		 sizeof(char*        )   // spamNotes
 		 );
 }
-
-/*
-void Links::removeExternalLinks ( ) {
-	int32_t j = 0;
-	char *p = m_allocBuf;
-	for ( int32_t i = 0 ; i < m_numLinks ; i++ ) {
-		// skip if not internal (by hostname)
-		if ( ! isInternalHost(i) ) continue;
-		// copy it over
-		gbmemcpy ( p , m_linkPtrs[i] , m_linkLens[i] );
-		// add it back
-		m_linkPtrs  [j] = p;
-		m_linkLens  [j] = m_linkLens  [i];
-		m_linkNodes [j] = m_linkNodes [i];
-		m_linkHashes[j] = m_linkHashes[i];
-		m_hostHashes[j] = m_hostHashes[i];
-		m_linkFlags [j] = m_linkFlags [i];
-		// skip it
-		p += m_linkLens[i];
-		// NULL
-		*p++ = '\0';
-		// inc count of links
-		j++;
-	}
-	// . update m_bufPtr cuz that is what getLinkBufLen() returns!
-	// . Msg10 uses that to know when to stop adding urls
-	m_bufPtr = p;
-	// update count
-	m_numLinks = j;
-}
-*/
 
 // returns false and sets g_errno on error
 bool Links::flagOldLinks ( Links *old ) {
@@ -6674,10 +5025,6 @@ bool Links::flagOldLinks ( Links *old ) {
 	}
 	return true;
 }
-
-//static char s_isLinkRSS;
-//static char s_permalink;
-//static int32_t s_age;
 
 // . are we a permalink?
 // . this registers as a permalink which it is not:
