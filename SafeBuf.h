@@ -20,7 +20,6 @@ public:
 	SafeBuf(int32_t initSize, char *label);
 
 	void constructor();
-	void destructor ();
 
 	//be careful with passing in a stackBuf! it could go out
 	//of scope independently of the safebuf.
