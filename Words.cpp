@@ -262,9 +262,13 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
  uptop:
 
 	// bad utf8 can cause a breach
-	if ( i >= nodeLen ) goto done;
+	if ( i >= nodeLen ) {
+		goto done;
+	}
 
-	if ( ! s[i] ) goto done;
+	if ( ! s[i] ) {
+		goto done;
+	}
 
 	if ( !is_alnum_utf8( s + i ) ) {
 		if ( m_numWords >= m_preCount ) {
@@ -339,7 +343,11 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 		m_wordLens     [ m_numWords  ] = s+i - start;
 		m_wordIds      [ m_numWords  ] = 0LL;
 		m_nodes        [ m_numWords  ] = 0;
-		if (m_tagIds) m_tagIds[m_numWords] = 0;
+
+		if (m_tagIds) {
+			m_tagIds[m_numWords] = 0;
+		}
+
 		m_numWords++;
 		goto uptop;
 	}

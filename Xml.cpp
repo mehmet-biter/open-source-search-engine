@@ -293,12 +293,22 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	QUICKPOLL((niceness));
 	int32_t i;
 
+	/// @bug ALC why are we replacing NULL bytes here?
+	/// Shouldn't all string be valid utf-8 at this point?
 	// . replacing NULL bytes with spaces in the buffer
 	// . utf8 should never have any 0 bytes in it either!
-	for ( i = 0 ; i < slen ; i++ ) if ( !s[i] ) s[i] = ' ';
+	for ( i = 0 ; i < slen ; i++ ) {
+		if ( !s[i] ) {
+			s[i] = ' ';
+		}
+	}
 
 	// counting the max num nodes
-	for ( i = 0 ; s[i] ; i++ ) if ( s[i] == '<' ) m_maxNumNodes++;
+	for ( i = 0 ; s[i] ; i++ ) {
+		if ( s[i] == '<' ) {
+			m_maxNumNodes++;
+		}
+	}
 
 	// account for the text (non-tag) nodes (padding nodes between tags)
 	m_maxNumNodes *= 2 ;
@@ -367,10 +377,18 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 		xi->m_parent = parent;
 
 		bool endsInSlash = false;
-		if ( xi->m_node[xi->m_nodeLen-2] == '/' ) endsInSlash = true;
-		if ( xi->m_node[xi->m_nodeLen-2] == '?' ) endsInSlash = true;
+		if ( xi->m_node[xi->m_nodeLen-2] == '/' ) {
+			endsInSlash = true;
+		}
+
+		if ( xi->m_node[xi->m_nodeLen-2] == '?' ) {
+			endsInSlash = true;
+		}
+
 		// disregard </> in the conf files
-		if ( xi->m_nodeLen==3 && endsInSlash    ) endsInSlash = false;
+		if ( xi->m_nodeLen==3 && endsInSlash    ) {
+			endsInSlash = false;
+		}
 
 		// if not text node then he's the new parent
 		// if we don't do this for xhtml then we don't pop the parent
@@ -593,22 +611,12 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 				break;
 			}
 		}
-		// if ( foo )
-		// 	log("done");
+
 		// make sure we do not breach! i saw this happen once!
 		if ( m_numNodes >= m_maxNumNodes ) break;
 		// was it like <script></script> then no scripttext tag?
 		if ( p - pstart == 0 )
 			continue;
-
-		// none found? allow for </script> in quotes then, maybe
-		// they were unbalanced quotes. also allow for </script>
-		// in a comment. do we need to do this? just enable it if
-		// we find a page that needs it.
-		// if ( p == pend && newVersion ) {
-		// 	newVersion = false;
-		// 	goto retry;
-		// }
 
 		XmlNode *xn      = &m_nodes[m_numNodes++];
 		xn->m_nodeId     = TAG_SCRIPTTEXT;//0; // TEXT NODE
@@ -623,15 +631,19 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 		// advance i to get to the </script> or <gbframe> etc.
 		i = p - &m_xml[0] ;
 	}
+
 	// sanity
 	if ( m_numNodes > m_maxNumNodes ) { char *xx=NULL;*xx=0; }
+
 	// trim off last node if empty! it is causing a core in isBackTag()
-	if ( m_numNodes > 0 && m_nodes[m_numNodes-1].m_nodeLen == 0 )
+	if ( m_numNodes > 0 && m_nodes[m_numNodes-1].m_nodeLen == 0 ) {
 		m_numNodes--;
+	}
+
 	// debug msg time
-	if ( g_conf.m_logTimingBuild )
-		logf(LOG_TIMING,
-		    "build: xml: set: 4d. %"UINT64"",gettimeofdayInMilliseconds());
+	if ( g_conf.m_logTimingBuild ) {
+		logf( LOG_TIMING, "build: xml: set: 4d. %" UINT64 "", gettimeofdayInMilliseconds() );
+	}
 
 	return true;
 }
@@ -973,8 +985,8 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 	int32_t fieldNameLen = strlen( fieldName );
 	int32_t fieldContentLen = strlen(fieldContent);
 	int32_t contentLen = 0;
-
 	int inTagCount = 0;
+
 	for (int32_t i = 0; i < getNumNodes(); ++i ) {
 		// don't get tag from gbframe (expanded iframe content)
 		if ( ignoreExpandedIframe && inTag( getNodePtr( i ), TAG_GBFRAME, &inTagCount ) ) {
@@ -1010,6 +1022,8 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 
 				// extract content from meta tag
 				int32_t len = 0;
+
+				/// @todo cater for invalid quote
 				char *s = getString ( i , "content" , &len );
 				if ( ! s || len <= 0 ) {
 					// no content

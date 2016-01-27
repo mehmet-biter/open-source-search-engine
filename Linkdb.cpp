@@ -3986,8 +3986,7 @@ bool Links::set ( bool useRelNoFollow ,
 		//if ( ! isRSS && type ) continue;
 		// store it
 		if ( isRSS ) m_hasRSS = true;
-		// JAB: warning abatement
-		//unsigned char flags = 0;
+
 		//TODO: should we urlEncode here?
 		// i didn't know this, but links can have encoded html entities
 		// like &amp; and &gt; etc. in them and we have to decode
@@ -3998,15 +3997,10 @@ bool Links::set ( bool useRelNoFollow ,
 		// nono, need this now otherwise it hits that linkNode<0
 		// error msg in XmlDoc.cpp. but for Msg13 spider compression
 		// you might want to do something else then i guess...
-		//if ( ! m_doQuickSet ) {
-		linkLen = htmlDecode ( tmp , 
-				       link , 
-				       linkLen,
-				       false,
-				       niceness );
+		linkLen = htmlDecode( tmp, link, linkLen, false, niceness );
+
 		// use tmp buf
 		link = tmp;
-		//}
 
 		if (!addLink ( link , linkLen , i , setLinkHash , 
 			       version , niceness , isRSS , id , flags ))

@@ -26,7 +26,7 @@ public:
 	// . s must be NULL terminated
 	// . if it's pure xml then set pureXml to true otherwise we assume it
 	//   is html or xhtml
-	bool set(char *s, int32_t slen, int32_t version, int32_t niceness, char contentType );
+	bool set( char *s, int32_t slen, int32_t version, int32_t niceness, char contentType );
 
 	void  reset ( );
 

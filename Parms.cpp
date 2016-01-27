@@ -2744,11 +2744,17 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , char *s ,
 		// send email alerts when parms change!
 		if ( fromRequest &&
 		     ! isHtmlEncoded && (int32_t)gbstrlen(dst) == len &&
-		     memcmp ( dst , s , len ) == 0 ) 
+		     memcmp ( dst , s , len ) == 0 ) {
 			return;
+		}
+
 		// this means that we can not use string POINTERS as parms!!
-		if ( ! isHtmlEncoded ) {gbmemcpy ( dst , s , len ); }
-		else                   len = htmlDecode (dst , s,len,false,0);
+		if ( !isHtmlEncoded ) {
+			gbmemcpy( dst, s, len );
+		} else {
+			len = htmlDecode( dst, s, len, false, 0 );
+		}
+
 		dst[len] = '\0';
 		// . might have to set length
 		// . used for CollectionRec::m_htmlHeadLen and m_htmlTailLen
@@ -3053,12 +3059,14 @@ bool Parms::setFromFile ( void *THIS        ,
 		// now use proper cdata
 		// we can't do this and be backwards compatible right now
 		//nb = cdataDecode ( v , v , 0 );//, vlen , false ,0);
+
 		// now decode it into itself
 		nb = htmlDecode ( v , v , vlen , false ,0);
 		v[nb] = '\0';
+
 		// set our parm
-		setParm ( (char *)THIS, m, i, j, v, false/*is html encoded?*/,
-			  false );
+		setParm( (char *)THIS, m, i, j, v, false, false );
+
 		// we were set from the explicit file
 		//((CollectionRec *)THIS)->m_orig[i] = 2;
 		// go back
@@ -3131,18 +3139,26 @@ bool Parms::setFromFile ( void *THIS        ,
 				vlen -= 12;
 			}
 		}
+
 		// get the value
 		//v = m_xml2.getString ( nn , nn+2 , m->m_xml , &vlen );
+
 		// this only happens when tag is there, but without a value
-		if ( ! v || vlen == 0 ) { vlen = 0; v = tt; }
+		if ( !v || vlen == 0 ) {
+			vlen = 0;
+			v = tt;
+		}
+
 		//c = v[vlen];
 		v[vlen]='\0';
+
 		// now decode it into itself
 		nb = htmlDecode ( v , v , vlen , false,0);
 		v[nb] = '\0';
+
 		// set our parm
-		setParm ( (char *)THIS, m, i, j, v, false/*is html encoded?*/,
-			  false );
+		setParm( (char *)THIS, m, i, j, v, false /*is html encoded?*/, false );
+
 		// we were set from the backup default file
 		//((CollectionRec *)THIS)->m_orig[i] = 1;
 		// go back

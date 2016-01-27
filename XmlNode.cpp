@@ -219,8 +219,10 @@ int32_t XmlNode::set( char *node, bool pureXml ) {
 	static bool s_check = false;
 	if ( ! s_check ) {
 		s_check = true;
+
 		// how many NodeTypes do we have in g_nodes?
 		static int32_t nn = sizeof(g_nodes) / sizeof(NodeType);
+
 		// set the hash table
 		for ( int32_t i = 0 ; i < nn ; i++ ) {
 			// sanity
@@ -540,58 +542,83 @@ char *XmlNode::getFieldValue ( const char *field , int32_t *valueLen ) {
 	for ( i = 1; i + flen < m_nodeLen ; i++ ) {
 		// skip the field if it's quoted
 		if ( inQuotes) {
-			if (m_node[i] == inQuotes ) inQuotes = 0;
+			if (m_node[i] == inQuotes ) {
+				inQuotes = 0;
+			}
 			continue;
 		}
+
 		// set inQuotes to the quote if we're in quotes
-		if ( (m_node[i]=='\"' || m_node[i]=='\'')){ 
+		if ( (m_node[i]=='\"' || m_node[i]=='\'')) {
 			inQuotes = m_node[i];
 			continue;
 		} 
+
 		// a field name must be preceeded by non-alnum
-		if ( is_alnum_a ( m_node[i-1] ) ) continue;
+		if ( is_alnum_a ( m_node[i-1] ) ) {
+			continue;
+		}
+
 		// the first character of this field shout match field[0]
-		if ( to_lower_a (m_node[i]) != to_lower_a(field[0] )) continue;
+		if ( to_lower_a( m_node[i] ) != to_lower_a( field[0] ) ) {
+			continue;
+		}
+
 		// field just be immediately followed by an = or space
-		if (m_node[i+flen]!='='&&!is_wspace_a(m_node[i+flen]))continue;
+		if ( m_node[i + flen] != '=' && !is_wspace_a( m_node[i + flen] ) ) {
+			continue;
+		}
+
 		// field names must match
-		if ( strncasecmp ( &m_node[i], field, flen ) != 0 ) continue;
+		if ( strncasecmp ( &m_node[i], field, flen ) != 0 ) {
+			continue;
+		}
+
 		// break cuz we got a match for our field name
 		break;
 	}
 
 
 	// return NULL if no matching field
-	if ( i + flen >= m_nodeLen ) return NULL;
+	if ( i + flen >= m_nodeLen ) {
+		return NULL;
+	}
 
 	// advance i over the fieldname so it pts to = or space
 	i += flen;
 
 	// advance i over spaces
-	while ( i < m_nodeLen && is_wspace_a ( m_node[i] ) ) i++;
+	while ( i < m_nodeLen && is_wspace_a ( m_node[i] ) ) {
+		i++;
+	}
 
 	// advance over the equal sign, return NULL if does not exist
-	if ( i < m_nodeLen && m_node[i++] != '=' ) return NULL;
+	if ( i < m_nodeLen && m_node[i++] != '=' ) {
+		return NULL;
+	}
 
 	// advance i over spaces after the equal sign
-	while ( i < m_nodeLen && is_wspace_a ( m_node[i] ) ) i++;
+	while ( i < m_nodeLen && is_wspace_a ( m_node[i] ) ) {
+		i++;
+	}
 	
 	// now parse out the value of this field (could be in quotes)
 	inQuotes = '\0';
 
 	// set inQuotes to the quote if we're in quotes
-	if ( m_node[i]=='\"' || m_node[i]=='\'') inQuotes = m_node[i++]; 
+	if ( m_node[i] == '\"' || m_node[i] == '\'' ) {
+		inQuotes = m_node[i++];
+	}
 
 	// mark this as the start of the value
-	int start=i;
+	int start = i;
 
 	// advance i until we hit a space, or we hit a that quote if inQuotes
-	if (inQuotes) {
-		while (i<m_nodeLen && m_node[i] != inQuotes ) {
+	if ( inQuotes ) {
+		while ( i < m_nodeLen && m_node[i] != inQuotes ) {
 			++i;
 		}
-	}
-	else {
+	} else {
 		while ( i < m_nodeLen && !is_wspace_a( m_node[i] ) && m_node[i] != '>' ) {
 			++i;
 		}
