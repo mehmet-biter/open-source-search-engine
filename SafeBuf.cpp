@@ -1685,32 +1685,6 @@ bool SafeBuf::truncateLongWords ( char *s , int32_t srcLen , int32_t minmax ) {
 	return true;
 }
 
-// fix email issues. the period on the line by itself is the signal
-// to terminate the email.
-bool SafeBuf::fixIsolatedPeriods ( ) {
-
-	char *s = getBufStart();
-	char *start = s;
-
-	for ( ; *s ; s++ ) {
-		if ( *s != '.' ) continue;
-		if ( s > start && s[-1] != '\n' ) continue;
-
-		char *p = s;
-		// check following spaces
-		bool fixIt = false;
-		for ( ; *p ; p++ ) {
-			if ( *p == '\n' ) { fixIt = true; break; }
-			// i guess ".  \n" is also a signal...
-			if ( is_wspace_a(*p) ) continue;
-			break;
-		}
-		// map it to hyphen
-		if ( fixIt ) *s = '-';
-	}
-	return true;
-}
-
 // convert json to xml if it is in json
 bool SafeBuf::convertJSONtoXML ( int32_t niceness , int32_t startConvertPos ) {
 

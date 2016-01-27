@@ -198,8 +198,6 @@ public:
 	bool brify ( char *s , int32_t slen , int32_t niceness , int32_t cols ,
 		     char *sep = "<br>" , bool isHtml = true );
 
-	bool fixIsolatedPeriods ( ) ;
-
 	bool hasDigits();
 
 	// treat safebuf as an array of signed int32_ts and sort them
