@@ -142,22 +142,6 @@ bool isSimilar_sorted ( int32_t   *vec0 ,
 
 int32_t getDirtyPoints ( char *s , int32_t len , int32_t niceness , char *logUrl ) ;
 
-bool storeTerm ( char             *s        ,
-                 int32_t              slen     ,
-                 int64_t         termId   ,
-                 class HashInfo   *hi       ,
-                 int32_t              wordNum  ,
-		 int32_t              wordPos  ,
-		 char densityRank   ,
-		 char diversityRank ,
-		 char wordSpamRank  ,
-		 char hashGroup ,
-		 //bool              isPhrase ,
-                 class SafeBuf    *wbuf     ,
-                 class HashTableX *wts      ,
-		 char              synSrc   ,
-		 char              langId   ,
-		 POSDBKEY key ) ;
 
 // tell zlib to use our malloc/free functions
 int gbuncompress ( unsigned char *dest      ,
@@ -188,6 +172,16 @@ uint16_t getCharsetFast ( class HttpMime *mime,
 			  char *s , 
 			  int32_t slen , 
 			  int32_t niceness );
+
+bool getWordPosVec ( Words *words ,
+			    Sections *sections,
+			    //int32_t wordStart,
+			    //int32_t wordEnd,
+			    int32_t startDist,
+			    char *fragVec,
+			    int32_t niceness ,
+			    SafeBuf *wpos ) ;
+
 
 #define ROOT_TITLE_BUF_MAX 512
 
