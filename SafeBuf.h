@@ -157,9 +157,8 @@ public:
 	char *makeSpace ( int32_t size ) {
 		if ( ! reserve ( size ) ) return NULL;
 		return m_buf + m_length;
-	};
+	}
 
-	bool  inlineStyleTags();
 	void  incrementLength(int32_t i) { 
 		m_length += i; 
 		// watch out for negative i's
