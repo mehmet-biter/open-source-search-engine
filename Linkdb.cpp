@@ -3323,15 +3323,9 @@ bool LinkInfo::getItemXml ( Xml *xml , int32_t niceness ) {
 bool Inlink::setXmlFromRSS ( Xml *xml , int32_t niceness ) {
 	// compute the length (excludes the \0's)
 	int32_t len = size_rssItem - 1;
+
 	// return false and set g_errno if this fails
-	return xml->set ( getRSSItem(),//ptr_rssItem              ,
-			  len                      ,
-			  false                    , // own data?
-			  0                        , // allocSize
-			  true                     , // pure xml?
-			  TITLEREC_CURRENT_VERSION ,
-			  niceness                 ,
-			  CT_XML );
+	return xml->set( getRSSItem(), len, TITLEREC_CURRENT_VERSION, niceness, CT_XML );
 }
 
 bool LinkInfo::hasLinkText ( ) {

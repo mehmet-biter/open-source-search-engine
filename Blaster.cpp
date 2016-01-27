@@ -625,37 +625,15 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 		log(LOG_WARN,"blaster: content2len=%"INT32", Content2 is =%s",
 		    content2Len,content2);
 
-	// Now that we've got the contents, lets get the url links out 
-	// of these pages.Passing them to function getSearchLinks should 
-	// get the first x links found out.
-	/*	st->m_links1=(char *) mmalloc(200*MAX_URL_LEN,"Blaster3");
-	st->m_links2=st->m_links1+100*MAX_URL_LEN;
-	st->m_numLinks1=100;
-	st->m_numLinks2=100;*/
-
-	/*	int32_t numLinks1=getSearchLinks(content1,content1Len,
-				      st->m_links1,st->m_numLinks1);
-	int32_t numLinks2=getSearchLinks(content2,content2Len,
-	st->m_links2,st->m_numLinks2);*/
-
-
 	content1[content1Len]='\0';
-	//int16_t csEnum1= get_iana_charset(mime1.getCharset(), 
-	//				mime1.getCharsetLen());
-	/*	if (csEnum1== csUnknown)
-		log(LOG_DEBUG, "blaster: Unknown charset : %s", mime2.getCharset());*/
+
 	Xml xml1;
+
 	// assume utf8
-	if (!xml1.set(content1,
-		     content1Len,
-		     false,
-		     0,
-		     false,
-		      TITLEREC_CURRENT_VERSION ,
-		      0 , // niceness
-		      CT_XML )){ // content type
+	if ( !xml1.set( content1, content1Len, TITLEREC_CURRENT_VERSION, 0, CT_XML ) ) {
 		log(LOG_WARN,"blaster: Couldn't set XML1 Class in gotDoc2");
 	}
+
 	Links links1;
 	Url parent; parent.set ( st->m_u1);
 	if (!links1.set(false , // userellnofollow
@@ -671,21 +649,12 @@ void Blaster::gotDoc2 ( void *state, TcpSocket *s){
 	}
 
 	content2[content2Len]='\0';
-	//int16_t csEnum2= get_iana_charset(mime2.getCharset(), 
-	//				mime2.getCharsetLen());
-	/*	if (csEnum2== csUnknown)
-		log(LOG_DEBUG, "blaster: Unknown charset : %s", mime2.getCharset());*/
+
 	Xml xml2;
-	if (!xml2.set(content2,
-		     content2Len,
-		     false,
-		     0,
-		     false,
-		      TITLEREC_CURRENT_VERSION,
-		      0 , // niceness
-		      CT_XML )){
+	if ( !xml2.set( content2, content2Len, TITLEREC_CURRENT_VERSION, 0, CT_XML ) ) {
 		log(LOG_WARN,"blaster: Couldn't set XML2 Class in gotDoc2");
 	}
+
 	Links links2;
 	parent.set(st->m_u2);
 	if (!links2.set(0,//siterec xml
@@ -1162,23 +1131,11 @@ void Blaster::gotDoc4 ( void *state, TcpSocket *s){
 	char *content    = reply + mime.getMimeLen();
 	int32_t  contentLen = size  - mime.getMimeLen();
 
-	//int16_t csEnum = get_iana_charset(mime.getCharset(), 
-	//				mime.getCharsetLen());
-	/*	if (csEnum == csUnknown)
-		log(LOG_DEBUG, "blaster: Unknown charset : %s", mime.getCharset());*/
-	
 	Xml xml;
-	if (!xml.set(
-		     content,
-		     contentLen,
-		     false,
-		     0,
-		     false,
-		     TITLEREC_CURRENT_VERSION,
-		     0, // niceness
-		     CT_XML )){
-		log(LOG_WARN,"blaster: Couldn't set XML Class in gotDoc4");
+	if ( !xml.set( content, contentLen, TITLEREC_CURRENT_VERSION, 0, CT_XML ) ) {
+		log( LOG_WARN, "blaster: Couldn't set XML Class in gotDoc4" );
 	}
+
 	Links links;
 	Url *url=mime.getLocationUrl();
 	if (!links.set(0,//siterec xml

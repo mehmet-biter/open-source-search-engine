@@ -4885,16 +4885,10 @@ void XmlDoc::gotWikiResults ( UdpSlot *slot ) {
 	*end = '\0';
 	// make our xml
 	Xml xml;
-	if ( ! xml.set ( s                        ,
-			 end - s                  ,
-			 false                    , // ownData?
-			 0                        ,
-			 false                    ,
-			 TITLEREC_CURRENT_VERSION ,
-			 m_niceness               ,
-			 CT_HTML                  ))
+	if ( !xml.set( s, end - s, TITLEREC_CURRENT_VERSION, m_niceness, CT_HTML ) ) {
 		// return if g_errno got set
 		return;
+	}
 
 	// grab docids
 	int32_t      nd    = 0;
@@ -5038,16 +5032,11 @@ Xml *XmlDoc::getXml ( ) {
 	if ( ! ct || ct == (void *)-1 ) return (Xml *)ct;
 
 	// set it
-	if ( ! m_xml.set ( *u8        ,
-			   u8len      ,
-			   false      ,  // ownData?
-			   0          ,  // allocSize
-			   false      ,  // pure xml?
-			   m_version  ,
-			   m_niceness ,
-			   *ct ) )
+	if ( !m_xml.set( *u8, u8len, m_version, m_niceness, *ct ) ) {
 		// return NULL on error with g_errno set
 		return NULL;
+	}
+
 	// set just once
 	m_xmlValid = true;
 	// all done
@@ -14989,18 +14978,11 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 	// recursion bugs so just do it directly here
 
 	Xml xml;
-	if ( ! xml.set ( m_httpReply ,
-			 m_httpReplySize - 1, // make it a length
-			 false      ,  // ownData?
-			 0          ,  // allocSize
-			 false      ,  // pure xml?
-			 m_version  ,
-			 m_niceness ,
-			 // assume html since getContentType() is recursive
-			 // on us.
-			 CT_HTML ) ) // *ct ) )
+	// assume html since getContentType() is recursive on us.
+	if ( !xml.set( m_httpReply, m_httpReplySize - 1, m_version, m_niceness, CT_HTML ) ) {
 		// return NULL on error with g_errno set
 		return NULL;
+	}
 
 	XmlNode *nodes = xml.getNodes();
 	int32_t     n  = xml.getNumNodes();
@@ -26508,15 +26490,10 @@ bool XmlDoc::hashRSSInfo ( HashTableX *tt ) {
 		c = desc[descLen];
 		desc[descLen] = '\0';
 		// set the xml class from the decoded html
-		if ( ! xml2.set ( desc             ,
-				  descLen          ,
-				  false            , // own data?
-				  0                , // allocSize
-				  false            , // pure xml?
-				  m_version ,
-				  m_niceness ,
-				  *ct ) )
+		if ( !xml2.set( desc, descLen, m_version, m_niceness, *ct ) ) {
 			return false;
+		}
+
 		// set the words class from the xml, returns false and sets
 		// g_errno on error
 		if ( !w.set( &xml2, true, true ) ) {
@@ -29619,15 +29596,10 @@ SafeBuf *XmlDoc::getSampleForGigabitsJSON ( ) {
 		return NULL;
 
 	Xml xml;
-	if ( ! xml.set ( tmp.getBufStart() ,
-			 tmp.length() ,
-			 false      ,  // ownData?
-			 0          ,  // allocSize
-			 false      ,  // pure xml?
-			 m_version  ,
-			 m_niceness ,
-			 CT_HTML ) ) // *ct ) )
-	     return NULL;
+	if ( !xml.set( tmp.getBufStart(), tmp.length(), m_version, m_niceness, CT_HTML ) ) {
+		 return NULL;
+	}
+
 	Words ww;
 	if ( ! ww.set ( &xml , true  , m_niceness ) ) return NULL;
 	Bits bb;

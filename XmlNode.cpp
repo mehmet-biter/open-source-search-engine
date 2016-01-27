@@ -211,7 +211,7 @@ NodeType g_nodes[] = {
 // . called by Xml class
 // . returns the length of the node
 // . TODO: "node" is now guaranteed to be \0 terminated -- make this faster
-int32_t XmlNode::set( char *node, bool pureXml, int32_t version ) {
+int32_t XmlNode::set( char *node, bool pureXml ) {
 	// save head of node
 	m_node = node;
 
