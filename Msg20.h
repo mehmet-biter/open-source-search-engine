@@ -216,7 +216,7 @@ public:
 	int32_t       m_linkTextNumWords    ;
 
 	int32_t       m_midDomHash          ; // set for m_getLinkText
-	int32_t       m_adIdHash            ; // set for m_getLinkText
+	int32_t       m_reserved1           ; // adIdHash
 	void         *m_parentOwner;
 
 	char       m_isLinkSpam          ; // set for m_getLinkText

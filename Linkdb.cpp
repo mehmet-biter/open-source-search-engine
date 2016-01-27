@@ -1864,9 +1864,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		good = false;
 		// inc the general count, too
 		m_spamLinks++;
-		// add his ad id hash to the table, so if any
-		// other linker has it, it will be banned by ad id!
-		if ( r->m_adIdHash ) m_adBanTable.addKey ( &r->m_adIdHash );
 		// count each *type* of "link spam". the type is given
 		// by linkText->m_note and is a string...
 		note = "linker banned or filtered";
@@ -1908,16 +1905,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		note = "no link text";
 	}
 
-	// banned by way of ad id?
-	if (r && good&& r->m_adIdHash&&m_adBanTable.getSlot(&r->m_adIdHash)>0){
-		// it is no longer good
-		good = false;
-		// inc the general count, too
-		m_spamLinks++;
-		// count each *type* of "link spam". the type is given
-		// by linkText->m_note and is a string...
-		note = "banned by ad id";
-	}
 
 	QUICKPOLL(m_niceness);
 	// discount if LinkText::isLinkSpam() or isLinkSpam2() said it
@@ -2906,10 +2893,6 @@ char *Msg25::isDup ( Msg20Reply *r , Msg20Reply *p ) {
 	if ( iptop(p->m_firstIp) == m_top ) internal = true;
 	if ( internal && m_oneVotePerIpDom )
 		return "ip dup";
-
-	// only one ad id
-	if ( r->m_adIdHash && r->m_adIdHash == p->m_adIdHash )
-		return "same ad id";
 
 	// see if he is too similar to another, if so he is not a good voter
 	int32_t *v1 = (int32_t *)r->ptr_vector1;

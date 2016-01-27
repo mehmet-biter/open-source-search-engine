@@ -1169,7 +1169,6 @@ public:
 	bool m_crawlDelayValid;
 	bool m_finalCrawlDelayValid;
 	bool m_titleRecKeyValid;
-	bool m_adVectorValid;
 	bool m_wikiDocIdsValid;
 	bool m_versionValid;
 	bool m_rawUtf8ContentValid;
@@ -2043,10 +2042,6 @@ public:
 
 	int32_t  m_maxCacheAge;
 
-	// a list of 32-bit ints followed by a zero 32-bit int to terminate
-	int64_t m_adIds [ XD_MAX_AD_IDS ];
-	//char *m_adVector;// [XMLDOC_MAX_AD_IDS];
-	//int32_t  m_adVectorSize;
 
 	char     *m_wikiqbuf;
 	int32_t      m_wikiqbufSize;

@@ -25370,7 +25370,8 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	int32_t  rulen = 0;
 	if ( ru ) rulen = gbstrlen(ru)+1;
 
-	//One reserved list. Previously held ad ids (so you could search ads)
+	// One reserved list. Previously held ad ids (so links could be marked 
+	// as spammy based on ads found)
 	reply->ptr_reserved0 = NULL;
 	reply->size_reserved0 = 0;
 
