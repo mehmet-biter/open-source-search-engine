@@ -178,9 +178,6 @@ public:
 	bool  safeReplace3 ( char *s, char *t , int32_t niceness = 0 ) ;
 	void replaceChar ( char src , char dst );
 	bool  copyToken(char* s);;
-	//output encoding
-	bool  setEncoding(int16_t cs);
-	int16_t getEncoding() { return m_encoding; };
 
 	void zeroOut() { memset ( m_buf , 0 , m_capacity ); }
 

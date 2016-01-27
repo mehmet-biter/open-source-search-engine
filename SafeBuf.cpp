@@ -777,18 +777,6 @@ bool SafeBuf::copyToken(char* s) {
 	return safeMemcpy(s, (p - s));
 }
 
-
-bool SafeBuf::setEncoding(int16_t cs) {
-	//only support utf8 and latin1 encoding for now
-	if ((cs != csUTF8) &&
-	    (cs != csISOLatin1)){
-		m_encoding = csUTF8; //default
-		return false;
-	}
-	m_encoding = cs;
-	return true;
-}
-
 bool  SafeBuf::utf8Encode2(char *s, int32_t len, bool encodeHTML,int32_t niceness) {
 	int32_t tmp = m_length;
 	if ( m_encoding == csUTF8 ) {
