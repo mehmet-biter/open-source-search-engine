@@ -4661,12 +4661,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       "tag</a> " ,
 			       (int32_t)mr->m_tagVectorHash,  coll);
 		*/
-		if ( mr->size_gbAdIds > 0 ) 
-			sb->safePrintf ("<a href=\"/search?"
-				       "q=%s"
-				       "&sc=1&dr=0&c=%s&n=200&rat=0\">"
-				       "Ad Id</a>\n" ,
-				       mr->ptr_gbAdIds,  coll);
 		
 		//sb->safePrintf ("] ");
 		

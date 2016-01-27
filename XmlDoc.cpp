@@ -25381,11 +25381,9 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	int32_t  rulen = 0;
 	if ( ru ) rulen = gbstrlen(ru)+1;
 
-	// . Msg25.cpp uses m_adIdHash for restricting voting
-	// . these are 64 bit termids hashes
-	reply-> ptr_gbAdIds = (char *)*avp;
-	// this size is in bytes and includes the \0
-	reply->size_gbAdIds = size_adVector;
+	//One reserved list. Previously held ad ids (so you could search ads)
+	reply->ptr_reserved0 = NULL;
+	reply->size_reserved0 = 0;
 
 	// need full cached page of each search result?
 	// include it always for spider status docs.

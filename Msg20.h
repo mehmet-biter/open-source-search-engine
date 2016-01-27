@@ -248,7 +248,7 @@ public:
 	int32_t       *ptr_catIds               ;
 	int32_t       *ptr_indCatIds            ;
 	char       *ptr_site                 ;
-	char       *ptr_gbAdIds              ;
+	char       *ptr_reserved0            ;
 
 	// . if m_computeLinkInfo is true this is computed using Msg25 (fresh)
 	// . if m_setLinkInfo is true this is just set from the titleRec
@@ -300,7 +300,7 @@ public:
 	int32_t       size_catIds               ;
 	int32_t       size_indCatIds            ;
 	int32_t       size_site                 ;
-	int32_t       size_gbAdIds              ;
+	int32_t       size_reserved0            ;
 
 	int32_t       size_linkInfo;//inlinks              ;
 	int32_t       size_outlinks             ;
