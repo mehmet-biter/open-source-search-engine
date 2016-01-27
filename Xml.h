@@ -46,10 +46,6 @@ public:
 		return m_numNodes;
 	}
 
-	int32_t getVersion() {
-		return m_version;
-	}
-
 	// . tagName is compound for xml tags, simple for html tags
 	// . xml compound tag name example = "myhouse.bedroom.nightstand"
 	// . html simple  tag name example = "title" or "table"
@@ -206,12 +202,11 @@ private:
 	int32_t m_numNodes;
 	int32_t m_maxNumNodes;
 
+	// If this is a unicode buffer, then m_xml is encoded in UTF-16
+	// m_xmlLen is still the size of the buffer IN BYTES
 	char *m_xml;
 	int32_t m_xmlLen;
 
-	// If this is a unicode buffer, then m_xml is encoded in UTF-16
-	// m_xmlLen is still the size of the buffer IN BYTES
-	int32_t m_version;
 
 	int32_t m_niceness;
 };

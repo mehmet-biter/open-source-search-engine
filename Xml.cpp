@@ -12,8 +12,7 @@ Xml::Xml  () {
 	m_xml = NULL; 
 	m_xmlLen = 0; 
 	m_nodes = NULL; 
-	m_numNodes=0; 
-	m_version = TITLEREC_CURRENT_VERSION;
+	m_numNodes=0;
 }
 
 // . should free m_xml if m_copy is true
@@ -239,10 +238,9 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	// just in case
 	reset();
 	m_niceness = niceness;
+
 	// clear it
 	g_errno = 0;
-
-	m_version = version;
 
 	// make pointers to data
 	m_xml    = s;
@@ -420,9 +418,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 
 		// use this for parsing consistency when deleting records
 		// so they equal what we added.
-		bool newVersion = true;
-		if ( version <= 120 ) newVersion = false;
-		//newVersion = false;
+		bool newVersion = (version > 120);
 
 		//	retry:
 		// scan for </script>
