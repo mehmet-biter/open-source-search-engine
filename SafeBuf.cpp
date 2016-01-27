@@ -1502,69 +1502,6 @@ bool SafeBuf::safePrintFilterTagsAndLines ( char *p , int32_t plen ,
 	return true;
 }
 
-void SafeBuf::filterTags ( ) {
-	// write into here
-	char *dst = m_buf ;
-	char *p = m_buf;
-	char *pend = m_buf + m_length;
-	char size;
-	// set this to true so we do not lead with a space
-	bool lastWasSpace = true;
-	for ( ; p < pend ; p += size ) {
-		// get size
-		size = getUtf8CharSize(p);
-		// if a tag, then skip till '>' (assume no comment
-		// tags are in here!)
-		if ( *p == '<' ) {
-			// count # of lost chars
-			int32_t count = 0;
-			//char *pstart = p;
-			for ( ; p < pend && *p != '>' ; p++ ) count++;
-			// no back to back spaces
-			if ( lastWasSpace ) continue;
-			// add a space to represent the tag
-			*dst++ = ' ';
-			lastWasSpace = true;
-			continue;
-		}
-		// if we are space, write a simple space
-		if ( is_wspace_utf8 ( p ) ) {
-			// no back to back spaces
-			if ( lastWasSpace ) continue;
-			*dst++ = ' ';
-			lastWasSpace = true;
-			continue;
-		}
-		// not a space
-		lastWasSpace = false;
-		// . copy the char if not a tag char
-		// . if only 1 byte, done
-		if ( size == 1 ) { *dst++ = *p; continue; }
-		// might consist of multiple bytes in utf8
-		gbmemcpy ( dst , p , size );
-		dst += size;
-	}
-	// update length now
-	m_length = dst - m_buf;
-	// this should not hurt anything
-	m_buf[m_length] = '\0';
-}
-
-void SafeBuf::filterQuotes ( ) {
-	char *p = m_buf;
-	char *pend = m_buf + m_length;
-	char size;
-	for ( ; p < pend ; p += size ) {
-		// get size
-		size = getUtf8CharSize(p);
-		// if a tag, then skip till '>' (assume no comment
-		// tags are in here!)
-		if ( *p != '\"' ) continue;
-		// filter?
-		*p = ' ';
-	}
-}
-
 #include "Tagdb.h"
 
 // if safebuf is a buffer of Tags from Tagdb.cpp
