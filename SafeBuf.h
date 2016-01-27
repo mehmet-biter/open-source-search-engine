@@ -81,7 +81,6 @@ public:
 		return fillFromFile(dir,fname,label);};
 	int32_t  load(char *fname) { return fillFromFile(fname);};
 
-	bool truncateLongWords ( char *src, int32_t srcLen , int32_t minmax );
 	bool safeTruncateEllipsis ( char *src , int32_t maxLen );
 	bool safeTruncateEllipsis ( char *src , int32_t srcLen, int32_t maxLen );
 
