@@ -7,7 +7,6 @@
 // . i do not plan on having unicode support, but may think about it later
 // . Partap seems like a chump...I'll probably make him do it
 
-//#include "TermTable.h"  // for hashing entity encodings
 #include "Unicode.h"
 
 // call these two

@@ -17,33 +17,55 @@ static uint32_t getHexadecimalEntity ( const char *s , int32_t len );
 // JAB: const-ness for optimizer...
 int32_t getEntity_a ( const char *s , int32_t maxLen , uint32_t *c ) {
 	// ensure there's an & as first char
-	if ( s[0] != '&' ) return 0;
+	if ( s[0] != '&' ) {
+		return 0;
+	}
+
 	// compute maximum length of entity, if it's indeed an entity
 	int32_t len = 1;
-	if ( s[len]=='#' ) len++;
+	if ( s[len] == '#' ) {
+		len++;
+	}
+
 	// cut it off after 9 chars to save time
-	while ( len < maxLen && len < 9 && is_alnum_a(s[len]) ) len++;
+	while ( len < maxLen && len < 9 && is_alnum_a( s[len] ) ) {
+		len++;
+	}
+
 	// include the ending ; if any
-	if ( len < maxLen && s[len]==';' ) len++;
-	//	char d = s[len];
-	//	s[len]='\0';
-	//	fprintf(stderr,"got entity %s \n",s);
-	//	s[len]=d;
+	if ( len < maxLen && s[len] == ';' ) {
+		len++;
+	}
+
 	// we don't have entities longer than "&curren;"
-	if ( len > 10 ) return 0;
+	if ( len > 10 ) {
+		return 0;
+	}
+
 	// all entites are 3 or more chars (&gt)
-	if ( len < 3 ) return 0;
+	if ( len < 3 ) {
+		return 0;
+	}
+
 	// . if it's a numeric entity like &#123 use this routine
 	// . pass in the whole she-bang: "&#12...;" or "&acute...;
 	if ( s[1] == '#' ) {
-		if ( s[2] == 'x' ) *c = getHexadecimalEntity (s, len );
-		else               *c = getDecimalEntity     (s, len );
+		if ( s[2] == 'x' ) {
+			*c = getHexadecimalEntity( s, len );
+		} else {
+			*c = getDecimalEntity( s, len );
+		}
+	} else {
+		// otherwise, it's text
+		*c = getTextEntity( s, len );
 	}
-	// otherwise, it's text
-	else *c = getTextEntity ( s , len );
+
 	// return 0 if not an entity, length of entity if it is an entity
-	if ( *c ) return len;
-	else      return 0;
+	if ( *c ) {
+		return len;
+	} else {
+		return 0;
+	}
 }
 
 
@@ -368,40 +390,27 @@ static bool initEntityTable(){
 		int32_t n = (int32_t)sizeof(s_entities) / (int32_t)sizeof(Entity);
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			int64_t h = hash64b ( s_entities[i].entity );
+
 			// grab the unicode code point
 			UChar32 up = s_entities[i].unicode;
+
 			// now we are 100% up
 			if ( ! up ) { char *xx=NULL;*xx=0; }
+
 			// point to it
 			char *buf = (char *)s_entities[i].utf8;
+
 			// if uchar32 not 0 then set the utf8 with it
 			int32_t len = utf8Encode(up,buf);
+
 			//
 			// make my own mods to make parsing easier
 			//
+
 			if ( up == 160 ) {  // nbsp
-				buf[0] = ' '; len = 1; }
-			// make all quotes equal '\"' (34 decimal)
-			// double and single curling quotes
-			//http://www.dwheeler.com/essays/quotes-test-utf-8.html
-			// &#x201c, 201d, 2018, 2019 (unicode values, not utf8)
-			// &ldquo, &rdquo, &lsquo, &rsquo
-			/*
-			if ( up == 171 ||
-			     up == 187 ||
-			     up == 8216 ||
-			     up == 8217 ||
-			     up == 8218 ||
-			     up == 8220 ||
-			     up == 8221 ||
-			     up == 8222 ||
-			     up == 8249 ||
-			     up == 8250 ) {
-				buf[0] = '\"'; len = 1; }
-			// and normalize all dashes (mdash,ndash)
-			if ( up == 8211 || up == 8212 ) {
-				buf[0] = '-'; len = 1; }
-			*/
+				buf[0] = ' ';
+				len = 1;
+			}
 
 			//
 			// end custom mods
@@ -420,6 +429,7 @@ static bool initEntityTable(){
 	} 
 	return true;
 }
+
 // . is "s" an HTML entity? (ascii representative of an iso char)
 // . return the 32-bit unicode char it represents
 // . returns 0 if none
@@ -440,12 +450,6 @@ uint32_t getTextEntity ( const char *s , int32_t len ) {
 	uint32_t c = utf8Decode ( p );
 	// return that
 	return c;
-	// return the iso character
-	//printf("Converted text entity \"");
-	//for(int si=0;si<len;si++)putchar(s[si]);
-	//printf("\" to 0x%x(%d)\"%c\"\n",s_entities[i-1].c,s_entities[i-1].c, 
-	//	   s_entities[i-1].c);
-	//return (uint32_t)s_entities[i-1].c;
 }
 
 // . get a decimal encoded entity
