@@ -304,10 +304,6 @@ public:
 	int32_t  pad(const char ch, const int32_t len);
 	bool  printKey(char* key, char ks);
 
-	// these use zlib
-	bool compress();
-	bool uncompress();
-
 	//OPERATORS
 	//copy numbers into the buffer, *in binary*
 	//useful for making lists.
