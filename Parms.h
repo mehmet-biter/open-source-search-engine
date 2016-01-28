@@ -129,7 +129,6 @@ class GigablastRequest {
 	//char *m_contentTypeStr;
 	//char *m_contentFile;
 	//char *m_content;
-	//char *m_diffbotReply; // secret thing from dan
 	//char  m_injectLinks;
 	//char  m_spiderLinks;
 	//char  m_shortReply;
