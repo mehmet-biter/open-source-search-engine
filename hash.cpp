@@ -129,18 +129,6 @@ u_int96_t hash96 ( const char *s, int32_t slen, u_int96_t startHash ) {
 	return h;
 }
 
-u_int96_t hash96 ( u_int96_t h1 ,  u_int96_t h2 ) {
-	h1.n0 = hash64  ( h1.n0 , h2.n0 );
-	h1.n1 = hash32h ( h1.n1 , h2.n1 );
-	return h1;
-}
-
-u_int96_t hash96 ( int32_t h1 ,  u_int96_t h2 ) {
-	h2.n0 = hash64  ( h1 , h2.n0 );
-	h2.n1 = hash32h ( h1 , h2.n1 );
-	return h2;
-}
-
 u_int128_t hash128 ( u_int128_t h1 ,  u_int128_t h2 ) {
 	h1.n0 = hash64 ( h1.n0 , h2.n0 );
 	h1.n1 = hash64 ( h1.n1 , h2.n1 );
