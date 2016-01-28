@@ -13,9 +13,6 @@ bool printRedBox  ( SafeBuf *mb ,
 		    class TcpSocket *sock , 
 		    class HttpRequest *hr );
 
-// for PageEvents.cpp and Accessdb.cpp
-//#define RESULTSWIDTHSTR "550px"
-
 #include "gb-include.h"	// For PRIVACORE_SAFE_VERSION
 #include "TcpSocket.h"
 #include "HttpRequest.h"

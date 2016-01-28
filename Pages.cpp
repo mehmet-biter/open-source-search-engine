@@ -1,10 +1,8 @@
 #include "gb-include.h"
 
-//#include "GBVersion.h"
 #include "Pages.h"
 #include "Parms.h"
 #include "Collectiondb.h"
-//#include "CollectionRec.h"
 #include "Tagdb.h"
 #include "Proxy.h"
 #include "PageParser.h" // g_inPageParser
@@ -181,11 +179,6 @@ static WebPage s_pages[] = {
 	  sendPageLogView  , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
 
-//	{ PAGE_SYNC      , "master/sync"    , 0 , "sync"            ,  0 , 0 ,
-//	  //USER_MASTER , 
-//	  "sync",
-//	  sendPageGeneric  , 0 ,NULL,NULL,PG_NOAPI},
-
 	// deactivate until works on 64-bit... mdw 12/14/14
 	{ PAGE_PROFILER    , "admin/profiler"   , 0 , "profiler" ,  0 ,M_POST,
 	  "profiler",
@@ -196,12 +189,6 @@ static WebPage s_pages[] = {
 	  "threads",
 	  sendPageThreads  , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
-
-	// collection admin pages
-	//{ PAGE_OVERVIEW , "admin/overview"     , 0 , "overview" ,  0 , 0,
-	//  //USER_MASTER | USER_ADMIN ,
-	//  "overview",
-	//  sendPageOverview  , 0 ,NULL,NULL,PG_NOAPI},
 
 	{ PAGE_QA , "admin/qa"         , 0 , "qa" , 0 , 0 ,
 	  "quality assurance", 
@@ -233,15 +220,6 @@ static WebPage s_pages[] = {
 	  "spider queue",
 	  sendPageSpiderdb , 0 ,NULL,NULL,
 	  PG_STATUS|PG_NOAPI|PG_MASTERADMIN|PG_ACTIVE},
-
-	//{ PAGE_PRIORITIES, "admin/priorities"  , 0 , "priority controls",1,1,
-	//  //USER_ADMIN | USER_MASTER   , 
-	//  "spider priorities",
-	//  sendPageGeneric  , 0 ,NULL,NULL,PG_NOAPI},
-
-	//{ PAGE_KEYWORDS, "admin/queries",0,"queries" ,  0 , 1 ,
-	//  "get queries a url matches",
-	//  sendPageMatchingQueries   , 2 } ,
 
 	{ PAGE_SEARCHBOX , "admin/searchbox", 0 , "search" ,  0 , 0 ,
 	  "search box",
@@ -369,14 +347,6 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 	if ( page < PAGE_ROOT || page >= s_numPages ) 
 		return g_httpServer.sendErrorReply ( s , 505 , "Bad Request");
 
-	// map root page to results page for event searching
-	//if ( page == PAGE_ROOT ) {
-	//	char *coll = r->getString("c");
-	//	// ensure it exists
-	//	CollectionRec *cr = g_collectiondb.getRec ( coll );
-	//	if ( cr && cr->m_indexEventsOnly ) page = PAGE_RESULTS;
-	//}
-
 	// does public have permission?
 	bool publicPage = false;
 	if ( page == PAGE_ROOT ) publicPage = true;
@@ -423,8 +393,6 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 	     ! publicPage &&
 	     ! isMasterAdmin &&
 	     ! g_conf.isCollAdmin ( s , r ) ) {
-		//char *msg = "Permission Denied";
-		//return g_httpServer.sendErrorReply(s, 403,msg);
 		return sendPageLogin ( s , r );
 	}
 
@@ -548,24 +516,15 @@ bool printTopNavButton ( char *text,
 			       "border-top-right-radius:10px;"
 			       "border-width:3px;"
 			       "border-style:solid;"
-			       //"margin-bottom:-3px;"
 			       "border-color:blue;"
-			       // fix for msie. no this is bad for firefox
-			       //"padding-bottom:7px;"
 			       // fix msie this way:
 			       "border-bottom-width:4px;"
 			       "border-bottom-color:white;"
-			       //"overflow-y:hidden;"
-			       //"overflow-x:hidden;"
-			       //"line-height:23px;"
-
-			       //"text-align:right;"
 			       "\""
 			       ">"
 			       "<b>%s</b>"
 			       "</div>"
 			       "</a>"
-			       //"<br>"
 			       , link
 			       , coll
 			       , text
@@ -587,14 +546,13 @@ bool printTopNavButton ( char *text,
 			       "padding:6px;" // same as TABLE_STYLE
 			       "display:inline;"
 			       "margin-left:10px;"
-			       "background-color:blue;"//#d0d0d0;"
+			       "background-color:blue;"
 			       "border-top-left-radius:10px;"
 			       "border-top-right-radius:10px;"
 			       "border-color:white;"
 			       "border-width:3px;"
 			       "border-bottom-width:0px;"
 			       "border-style:solid;"
-			       //"text-align:right;"
 			       "overflow-y:hidden;"
 			       "overflow-x:hidden;"
 			       "line-height:23px;"
@@ -603,7 +561,6 @@ bool printTopNavButton ( char *text,
 			       ">"
 			       "<b>%s</b>"
 			       "</div>"
-			       //"<br>"
 			       "</a>"
 			       , link
 			       , coll
@@ -723,11 +680,10 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 
 		       "padding:4px;" // same as TABLE_STYLE
 		       "margin-left:10px;"
-		       "background-color:white;"//#d0d0d0;"
+		       "background-color:white;"
 		       "border-top-left-radius:10px;"
 		       "border-bottom-left-radius:10px;"
 		       "border-color:blue;"
-		       //"border:2px #606060 solid;"
 		       "border-width:3px;"
 		       "border-style:solid;"
 		       "margin-right:-3px;"
@@ -826,38 +782,19 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 
 	// the controls will go here
 	sb->safePrintf("<TD valign=top>"
-
-		       // MDW 9/27/2014: tried to fix that blue border
-		       // in MSIE but could not easily make it go away.
-		       // seems like the table cell truncates the div's
-		       // left border below even if i put a z-index:1000;
-		       // on there.
-
-		       // "style="
-		       // "border-color:green;"
-		       // "border-left-width:3px;"
-		       // "border-style:solid;"
-		       // "margin-left:-30px;"
-		       // ">"
-
 		       "<div style=\"padding-left:20px;"
-
 		       "margin-left:-3px;"
-
-		       "border-color:#%s;"//f3c714;"
+		       "border-color:#%s;"
 		       "border-width:3px;"
 		       // make this from 3px to 4px for msie
 		       "border-left-width:4px;"
-		       // another msie fix:
-		       //"position:absolute;"
 		       "border-top-width:0px;"
 		       "border-right-width:0px;"
 		       "border-bottom-color:blue;"
 		       "border-top-width:0px;"
 		       "border-style:solid;"
 		       "padding:4px;"
-
-		       "background-color:#%s;\" "//f3c714;\" " // yellow/gold
+		       "background-color:#%s;\" "
 		       "id=prepane>"
 		       , GOLD
 		       , GOLD
@@ -943,10 +880,6 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 	// gigabot helper blurb
 	printGigabotAdvice ( sb , page , r , NULL );
 
-	// begin 2nd row in big table
-	//sb->safePrintf("</td></TR>");
-
-
 	return true;
 }
 
@@ -970,16 +903,9 @@ bool printGigabotAdvice ( SafeBuf *sb ,
 		// full width of enclosing div
 		"width=100%% "
 		"style=\""
-
-		//"background-color:gold;"
-		//"border:3px blue solid;"
-
 		"background-color:lightblue;"
 		"border:3px blue solid;"
-
-
 		"border-radius:8px;"
-		//"max-width:500px;"
 		"\" "
 		"border=0"
 		">"
@@ -994,8 +920,6 @@ bool printGigabotAdvice ( SafeBuf *sb ,
 			"STEP 1 of 3. "
 			"<br>"
 			"<br>"
-			//"Human, I am Gigabot."
-			//"<br><br>"
 			"Enter the name of your collection "
 			"(search engine) in the box below then hit "
 			"submit. You can only use alphanumeric characters, "
@@ -1004,8 +928,6 @@ bool printGigabotAdvice ( SafeBuf *sb ,
 			"<br>"
 			"Remember this name so you can access the controls "
 			"later."
-			// "Do not deviate from this path or you may "
-			// "be blasted."
 			;
 #endif
 	if ( page == PAGE_BASIC_SETTINGS )
@@ -1095,24 +1017,6 @@ void Pages::printFormData( SafeBuf *sb, TcpSocket *s, HttpRequest *r ) {
 
 }
 
-/*
-char *Pages::printAdminBottom ( char *p , char *pend , HttpRequest *r ) {
-	return printAdminBottom ( p , pend );
-}
-
-char *Pages::printAdminBottom ( char *p , char *pend ) {
-	// update button
-	sprintf ( p, "<center>"
-		  "<input type=submit name=action value=submit /></center>"
-		  "<br/>\n");
-	p += gbstrlen ( p );
-	// end form
-	sprintf ( p, "</form>\n" );
-	p += gbstrlen ( p );			  	
-	return p;
-}
-*/
-
 bool Pages::printAdminBottom ( SafeBuf *sb, HttpRequest *r ) {
 	return printAdminBottom ( sb );
 }
@@ -1189,15 +1093,10 @@ bool Pages::printColors ( SafeBuf *sb, char* bodyJavascript ) {
 		  "%s>\n" 
 		  "<style>"
 		  "body,td,p,.h{font-family:"
-		  //"arial,"
 		  "arial,"
 		  "helvetica-neue"
-		  //"helvetica-neue,helvetica,"
-		  //"sans-serif"
 		  "; "
 		  "font-size: 15px;} "
-		  //".h{font-size: 20px;} .h{color:} "
-		  //".q{text-decoration:none; color:#0000cc;}"
 		  "</style>\n",
 		  bodyJavascript);
 	return true;
@@ -1308,28 +1207,8 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 			       bool  isBasic ) {
 
 	bool status = true;
-	// prepare for printing these
-	//if ( ! coll ) coll = "";
-	//if ( ! pwd  ) pwd  = "";
 
 	CollectionRec *cr = g_collectiondb.getRec ( coll );
-	// sometimes there are no collections!
-	//if ( ! cr ) return true;
-	//char *coll = "";
-	//if ( cr ) coll = cr->m_coll;
-	
-
-	//if ( ! top ) {
-	//	// . if no collection do not print anything else
-	//	// . no, we accept as legit (print out as "main")
-	//	//if ( ! coll[0] ) return status;
-	//	if ( g_collectiondb.m_numRecsUsed == 0 ) return status;
-	//	//if ( ! g_collectiondb.getRec ( coll )  ) return status;
-	//}
-
-	//sprintf(p,"<font size=+1>\n" );
-	//p += gbstrlen(p);
-	//sb->safePrintf ("<center>\n" );
 
 	// soemtimes we do not want to be USER_MASTER for testing
 	char buf [ 64 ];
@@ -1511,9 +1390,7 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, char *coll, char 
 	// if doing qa test don't print out collection names because
 	// they are somewhat random and throw off the diff in qa.cpp
 	int32_t qa = hr->getLong("qa",0);
-	//if ( ! strcmp(coll,"qatest123") ) qa = 1;
 
-	//for ( int32_t i = a ; i < b ; i++ ) {
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
 
 		if ( qa ) 
@@ -1530,24 +1407,9 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, char *coll, char 
 		// count it
 		numPrinted++;
 
-		//
-		// CLOUD SEARCH ENGINE SUPPORT
-		//
-		// if not root admin and collrec's password does not match
-		// the one we are logged in with (in the cookie) then skip it
-		// if ( ! isMasterAdmin &&
-		//      cr->m_password &&
-		//      ! strcmp(cr->m_password,pwd) )
-		// 	continue;
-
-
 		char *cname = cc->m_coll;
 
 		row++;
-
-		//if ( p + gbstrlen(cname) + 100 >= pend ) return p;
-		// collection name HACK for backwards compatibility
-		//if ( ! cname[0] ) cname = "main";
 
 		// every other coll in a darker div
 		if ( (row % 2) == 0 )
@@ -1669,17 +1531,6 @@ bool sendPageAPI ( TcpSocket *s , HttpRequest *r ) {
 	char pbuf[32768];
 	SafeBuf p(pbuf, 32768);
 
-
-	// print standard header
-	// 	char *pp    = sb->getBuf();
-	// 	char *ppend = sb->getBufEnd();
-	// 	if ( pp ) {
-	//g_pages.printAdminTop ( &p , s , r );
-
-	// 	sb->incrementLength ( pp - sb->getBuf() );
-	// 	}
-
-
 	CollectionRec *cr = g_collectiondb.getRec ( r , true );
 	char *coll = "";
 	if ( cr ) coll = cr->m_coll;
@@ -1689,27 +1540,6 @@ bool sendPageAPI ( TcpSocket *s , HttpRequest *r ) {
 
 	// new stuff
 	printFrontPageShell ( &p , "api" , cr , true );
-
-
-	//p.safePrintf("<style>body,td,p,.h{font-family:arial,helvetica-neue; "
-	//	     "font-size: 15px;} </style>");
-
-
-	// print colors
-	//g_pages.printColors ( &p );
-	// start table
-	//p.safePrintf( "<table><tr><td>");
-	// print logo
-	//g_pages.printLogo   ( &p , coll );
-	//p.safePrintf("</td></tr></table><br><br>");
-
-
-	// p.safePrintf("<a href=/><img border=0 width=500 "
-	// 	      "height=122 src=/logo-med.jpg></a>\n");
-
-	//sb.safePrintf("<center><a href=/><img border=0 width=470 "
-	//	      "height=44 src=/gigablast.jpg></a>\n");
-
 
 	p.safePrintf("<br><br>\n");
 
@@ -1724,7 +1554,7 @@ bool sendPageAPI ( TcpSocket *s , HttpRequest *r ) {
 
 	p.safePrintf("<br><br>");
 
-	p.safePrintf(//"<div style=padding-left:10%%>"
+	p.safePrintf(
 		     "<font size=+2><b>API by pages</b></font>"
 		     "<ul>"
 		     );
@@ -1746,19 +1576,6 @@ bool sendPageAPI ( TcpSocket *s , HttpRequest *r ) {
 
 	p.safePrintf("</ul>");//</div>\n");
 
-
-	/*
-	p.safePrintf("<div style=padding-left:10%%>"
-		     "<font size=+2><b>Other Information</b></font>"
-		     "<ul>"
-		     "<li> <a href=#qops>Query Operators</a></li>\n"
-		     "</ul>"
-		     "</div>"
-		     "<br>"
-		     );
-	*/
-
-
 	p.safePrintf("<hr>\n");
 
 	bool printed = false;
@@ -1770,41 +1587,6 @@ bool sendPageAPI ( TcpSocket *s , HttpRequest *r ) {
 		printApiForPage ( &p , i , cr );
 		printed = true;
 	}
-
-	//
-	// PRINT QUERY OPERATORS TABLE NOW
-	//
-
-	/*
-	p.safePrintf ( "<center>"
-		       "<br>"
-		       "<a name=qops>"
-		       "<div>"
-		       "<hr></div><br>\n"
-		       "</a>"
-
-
-		       "<table style=max-width:80%%; %s>"
-		       "<tr class=hdrow><td colspan=2>"
-		       "<center><b>Query Operators</b></td></tr>"
-		       "<tr><td><b>Operator</b></td>"
-		       "<td><b>Description</b>"
-		       "</td></tr>\n",
-		       TABLE_STYLE );
-	// table of the query keywords
-	int32_t n = getNumFieldCodes();
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// get field #i
-		QueryField *f = &g_fields[i];
-		// print it out
-		char *d = f->desc;
-		// fix table internal cell bordering
-		if ( d[0] == '\0' ) d = "&nbsp;";
-		p.safePrintf("<tr bgcolor=#%s>"
-			     "<td><b>%s</b>:</td><td>%s</td></tr>\n",
-			     LIGHT_BLUE,f->text,d);
-	}
-	*/
 
 	p.safePrintf("</table></center></body></html>");
 
@@ -1836,49 +1618,25 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 	sb->safePrintf("<a name=/%s>",pageStr);//PAGENUM);
 
 
-	sb->safePrintf(//"<div style=padding-left:10%%>"
+	sb->safePrintf(
 		       "<font size=+2><b><a href=/%s?c=%s>/%s</a></b></font>"
 		       ,pageStr,cr->m_coll,pageStr);
 	sb->safePrintf("</a>");
 
-	// show settings?
-	// if ( PAGENUM == PAGE_MASTER ||
-	//      PAGENUM == PAGE_SEARCH ||
-	//      PAGENUM == PAGE_SPIDER )
-	// 	sb->safePrintf("<font size=-0> - %s "
-	// 		       " &nbsp; "
-	// 		       "[ <b>show settings in</b> "
-	// 		       "<a href=/%s?showsettings=1&format=xml>"
-	// 		       "xml</a> "
-	// 		       "or "
-	// 		       "<a href=/%s?showsettings=1&format=json>"
-	// 		       "json</a> "
-	// 		       "or <a href=/%s>html</a> ] "
-	// 		       "</font><br>",
-	// 		       s_pages[PAGENUM].m_desc,
-	// 		       pageStr,
-	// 		       pageStr,
-	// 		       pageStr);
-
-	// show input parms to provide
-	//if ( PAGENUM == PAGE_ADDURL2 )
-	//if ( ! (s_pages[PAGENUM].m_pgflags & PG_STATUS) )
-		sb->safePrintf("<font size=-0> - %s "
-			       " &nbsp; "
-			       "[ <b>show parms in</b> "
-			       "<a href=/%s?showinput=1&format=xml>"
-			       "xml</a> "
-			       "or "
-			       "<a href=/%s?showinput=1&format=json>"
-			       "json</a> "
-			       //"or <a href=/%s>html</a>"
-			       " ] "
-			       "</font>",
-			       s_pages[PAGENUM].m_desc,
-			       pageStr,
-			       pageStr
-			       //pageStr);
-			       );
+	sb->safePrintf("<font size=-0> - %s "
+	               " &nbsp; "
+	               "[ <b>show parms in</b> "
+	               "<a href=/%s?showinput=1&format=xml>"
+	               "xml</a> "
+	               "or "
+	               "<a href=/%s?showinput=1&format=json>"
+	               "json</a> "
+	               " ] "
+	               "</font>",
+	               s_pages[PAGENUM].m_desc,
+	               pageStr,
+	               pageStr
+	               );
 
 	// status pages. if its a status page with no input parms
 	if ( s_pages[PAGENUM].m_pgflags & PG_STATUS )
@@ -1903,37 +1661,23 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 	sb->safePrintf("<br>");
 	sb->safePrintf(//"</div>"
 		       "<br>");
-	
-	// begin new list of centered tables
-	//sb->safePrintf("<center>");
-	
+
 	// and the start of the input parms table
 	sb->safePrintf ( 
 			"<table style=max-width:80%%; %s>"
 			"<tr class=hdrow><td colspan=9>"
 			"<center><b>Input</b>"
 
-			// show input parms in these formats
-			// " &nbsp; [ "
-			// "<a href=/%s?showinput=1&format=xml>xml</a> "
-			// "<a href=/%s?showinput=1&format=json>json</a> "
-			// "<a href=/%s?showinput=1&format=html>html</a> "
-			//  "]"
-
 			"</td>"
 			"</tr>"
 			"<tr bgcolor=#%s>"
 			"<td><b>#</b></td>"
 			"<td><b>Parm</b></td>"
-			//"<td><b>Page</b></td>"
 			"<td><b>Type</b></td>"
 			"<td><b>Title</b></td>"
 			"<td><b>Default Value</b></td>"
 			"<td><b>Description</b></td></tr>\n"
 			, TABLE_STYLE
-			// , pageStr
-			// , pageStr
-			// , pageStr
 			, DARK_BLUE );
 	
 	const char *blues[] = {DARK_BLUE,LIGHT_BLUE};
@@ -1967,10 +1711,6 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 		       );
 	count++;
 
-	// for pages that have settings...
-	// if ( PAGENUM == PAGE_MASTER ||
-	//      PAGENUM == PAGE_SEARCH ||
-	//      PAGENUM == PAGE_SPIDER ) {
 	sb->safePrintf("<tr bgcolor=%s>"
 		       "<td>%"INT32"</td>\n"
 		       "<td><b>showinput</b></td>"
@@ -1987,53 +1727,20 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 	count++;
 
 
-	// . master controls are for all collections so no need for this
-	// . we already have this in the parms list for some pages so only
-	//   show for selected pages here
-	// if ( PAGENUM != PAGE_MASTER ) {
-	// 	sb->safePrintf("<tr bgcolor=%s>"
-	// 		       "<td>%"INT32"</td>\n"
-	// 		       "<td><b>c</b></td>"
-	// 		       "<td>STRING</td>"
-	// 		       "<td>Collection</td>"
-	// 		       "<td></td>"
-	// 		       "<td>The name of the collection. "
-	// 		       "<font color=green><b>REQUIRED</b></font>"
-	// 		       "</td>"
-	// 		       "</tr>"
-	// 		       , blues[count%2]
-	// 		       , count
-	// 		       );
-	// 	count++;
-	// }
-
-	//char *lastPage = NULL;
-	//Parm *lastParm = NULL;
-
 	for ( int32_t i = 0; i < g_parms.m_numParms; i++ ) {
 		Parm *parm = &g_parms.m_parms[i];
-		// assume do not print
-		//parm->m_pstr = NULL;
+
 		if ( parm->m_flags & PF_HIDDEN ) continue;
-		//if ( parm->m_type == TYPE_CMD ) continue;
 		if ( parm->m_type == TYPE_COMMENT ) continue;
 
 		if ( parm->m_flags & PF_DUP ) continue;
-		// do not show on html page? this isn't the html page...
-		//if ( parm->m_flags & PF_NOHTML ) continue;
 		if ( parm->m_flags & PF_NOAPI ) continue;
 		if ( parm->m_flags & PF_DIFFBOT ) continue;
-		//if ( ! (parm->m_flags & PF_API) ) continue;
-		//if ( parm->m_page == PAGE_FILTERS ) continue;
 
 		int32_t pageNum = parm->m_page;
 
 		// these have PAGE_NONE for some reason
 		if ( parm->m_obj == OBJ_SI ) pageNum = PAGE_RESULTS;
-
-		// dup page fix. so we should 'masterpwd' and 'masterip'
-		// in the list now.
-		//if ( pageNum ==PAGE_SECURITY ) pageNum = PAGE_BASIC_SECURITY;
 
 		if ( pageNum != PAGENUM ) continue;
 
@@ -2122,16 +1829,9 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 	// end input parm table we started below
 	sb->safePrintf("</table><br>\n\n");
 
-	// do not print the tables below now,
-	// we provide output links for xml, json and html
-	//sb->safePrintf("</center>");
-
 	if ( PAGENUM != PAGE_GET &&
 	     PAGENUM != PAGE_RESULTS )
 		return true;
-
-
-	//sb->safePrintf("<center>");
 
 	//
 	// done printing parm table
@@ -2149,15 +1849,6 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 			, TABLE_STYLE
 			, LIGHT_BLUE
 			);
-
-
-	// bool showParms = false;
-	// if ( PAGENUM == PAGE_MASTER ||
-	//      PAGENUM == PAGE_SPIDER ||
-	//      PAGENUM == PAGE_SEARCH 
-	//      ) 
-	// 	showParms = true;
-
 
 	sb->safePrintf("<pre style=max-width:500px;>\n");
 
@@ -2852,9 +2543,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 
 	sb->safePrintf("</pre>");
 	sb->safePrintf ( "</td></tr></table><br>\n\n" );
-	
-	//sb->safePrintf("</center>");
-	
+
 	return true;
 }
 
@@ -2924,21 +2613,6 @@ bool sendPageLogin ( TcpSocket *socket , HttpRequest *hr ) {
 	// if they had an original destination, redirect there NOW
 	WebPage *pagePtr = g_pages.getPage(refPage);
 
-	/*
-	char *cookie = NULL;
-	if ( hasPermission ) {
-		// "pwd" could be NULL... like when it is not required,
-		// perhaps only the right ip address is required, but if it
-		// is there then store it in a cookie with no expiration
-		//if ( pwd ) sprintf ( cookieData, "pwd=%s;expires=0;",pwd);
-		// and redirect to it
-		sb.safePrintf("<meta http-equiv=\"refresh\" content=\"0;"
-			      "/%s?c=%s\">", page->m_filename,coll);
-		// return cookie in server reply if pwd was non-null
-		cookie = cookieData;
-	}
-	*/
-
 	char *ep = emsg.getBufStart();
 	if ( !ep ) ep = "";
 
@@ -2982,8 +2656,6 @@ bool sendPageLogin ( TcpSocket *socket , HttpRequest *hr ) {
 		  "<br><br>"
 		  , page, ep , coll );
 
-	// print the tail
-	//g_pages.printTail ( &sb , hr->isLocal() ); // pwd
 	// send the page
 	return g_httpServer.sendDynamicPage ( socket , 
 					      sb.getBufStart(),

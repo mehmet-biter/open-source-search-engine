@@ -232,29 +232,6 @@ void sendReply ( void *state ) {
 	SafeBuf buf( 1024*32 , "tmpbuf0" );
 	SafeBuf tmpBuf( 1024 , "tmpbuf1" );
 
-	//
-	// take these out until we need them!
-	//
-	/*
-	// print the top of the page
-	tmpBuf.safePrintf( 
-			  //"<style type=\"text/css\">"
-			  //"@import url(/styles/statsdb.css);</style>\n"
-		"<script type=\"text/javascript\" "
-		"src=\"/scripts/statsdb.js\"></script>\n"
-		"<!-- DHTML Calendar -->"
-		"<style type=\"text/css\">"
-		"@import url(/jsc/calendar-win2k-1.css);"
-		"</style>\n"
-		"<script type=\"text/javascript\" "
-		"src=\"/jsc/calendar.js\"></script>\n"
-		"<script type=\"text/javascript\" "
-		"src=\"/jsc/lang/calendar-en.js\"></script>\n"
-		"<script type=\"text/javascript\" "
-		"src=\"/jsc/calendar-setup.js\"></script>\n"
-	);
-	*/
-
 	// make the query string
 	char qs[1024];
 	sprintf(qs,"&date_period=%"INT32"&date_units=%"INT32"&samples=%"INT32"",
@@ -263,8 +240,7 @@ void sendReply ( void *state ) {
 		st->m_samples);
 
 	// print standard header
-	g_pages.printAdminTop ( &buf , st->m_socket , &st->m_request ,
-				qs );
+	g_pages.printAdminTop ( &buf , st->m_socket , &st->m_request , qs );
 
 	buf.cat ( tmpBuf );
 
