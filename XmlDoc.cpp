@@ -1961,7 +1961,6 @@ void indexDocWrapper2 ( int fd , void *state ) {
 bool XmlDoc::injectDoc ( char *url ,
 			 CollectionRec *cr ,
 			 char *content ,
-			 char *diffbotReply, // usually null
 			 bool contentHasMimeArg ,
 			 int32_t hopCount,
 			 int32_t charset,
@@ -2058,18 +2057,6 @@ bool XmlDoc::injectDoc ( char *url ,
 		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, returning true. set4 returned false", __FILE__, __func__, __LINE__);
 		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
 		return true;
-	}
-
-	// a diffbot reply? should be in json
-	if ( diffbotReply ) {
-		if ( ! m_diffbotReply.safeStrcpy(diffbotReply) )
-		{
-			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, returning true. diffbotReply problem.", __FILE__, __func__, __LINE__);
-			return true;
-		}
-		// it was injected so assume no error
-		m_diffbotReplyError = 0;
-		m_diffbotReplyValid = true;
 	}
 
 	//m_doConsistencyTesting = doConsistencyTesting;

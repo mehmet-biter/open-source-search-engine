@@ -2154,7 +2154,6 @@ public:
 	bool injectDoc ( char *url ,
 			 class CollectionRec *cr ,
 			 char *content ,
-			 char *diffbotReply, // usually null
 			 bool contentHasMime ,
 			 int32_t hopCount,
 			 int32_t charset,
