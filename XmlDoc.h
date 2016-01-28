@@ -981,7 +981,6 @@ public:
 	key128_t m_sectiondbStartKey;
 	RdbList m_secdbList;
 	int32_t m_sectiondbRecall;
-	SafeBuf m_tmpBuf3;
 
 	bool m_gotFacets;
 	SafeBuf m_tmpBuf2;
@@ -1463,11 +1462,7 @@ public:
 	//int32_t m_maxSpidersPerDomain;
 	char m_isWWWDup;
 	char m_calledMsg0b;
-	Url  m_tmpUrl;
 
-	SafeBuf m_tmpsb1;
-	SafeBuf m_tmpsb2;
-	SafeBuf m_turkBuf;
 	SafeBuf m_linkSiteHashBuf;
 	SafeBuf m_linkdbDataBuf;
 	SafeBuf m_langVec;
@@ -1672,7 +1667,6 @@ public:
 	int32_t  m_msg95ReplySizes[MAX_HOSTS];
 	//HashTableX m_queryHashTable;
 	HashTableX m_queryOffsetTable;
-	HashTableX m_tmpTable;
 	HashTableX m_fullQueryDedup;
 	//SafeBuf m_twbuf;
 	//SafeBuf m_queryPtrs;

@@ -467,7 +467,6 @@ void XmlDoc::reset ( ) {
 	//m_queryHashTable.reset();
 	m_tidTable32.reset();
 	m_queryOffsetTable.reset();
-	m_tmpTable.reset();
 	m_fullQueryDedup.reset();
 	//m_dupVotes.reset();
 
@@ -665,9 +664,6 @@ void XmlDoc::reset ( ) {
 	//m_msg25.reset();
 	//m_msgc.reset();
 	m_msg13.reset();
-	m_tmpsb1.reset();
-	m_tmpsb2.reset();
-	m_turkBuf.reset();
 	m_msg0b.reset();
 	//m_siteGetter.reset();
 	m_msge0.reset();
