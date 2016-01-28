@@ -19,6 +19,25 @@ void Pos::reset() {
 	m_buf = NULL;
 }
 
+static bool inTag( nodeid_t tagId, nodeid_t expectedTagId, int *count ) {
+	if ( !count ) {
+		return false;
+	}
+
+	if ( tagId == expectedTagId ) {
+		++( *count );
+	}
+
+	if ( *count ) {
+		// back tag
+		if ( ( tagId & BACKBITCOMP ) == expectedTagId ) {
+			--( *count );
+		}
+	}
+
+	return ( *count > 0 );
+}
+
 int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend ) {
 	nodeid_t *tids = words->getTagIds(); // m_tagIds;
 
@@ -56,16 +75,12 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 		// is tag?
 		if ( tids && tids[i] ) {
 			// let's not get from bad tags
-			if ( ( tids[i] == TAG_STYLE ) || ( tids[i] == TAG_SCRIPT ) ) {
-				++inBadTags;
+			if ( inTag( tids[i], TAG_STYLE, &inBadTags ) ) {
 				continue;
 			}
 
-			if ( inBadTags ) {
-				if ( ( ( tids[i] & BACKBITCOMP ) == TAG_STYLE ) ||
-				     ( ( tids[i] & BACKBITCOMP ) == TAG_SCRIPT ) ) {
-					--inBadTags;
-				}
+			if ( inTag( tids[i], TAG_SCRIPT, &inBadTags ) ) {
+				continue;
 			}
 
 			// if not breaking, does nothing
@@ -98,11 +113,15 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 			if ( tids[i] ) { // <br>
 				if ( f != fstart ) {
 					if ( ( fend - f > 2 * maxCharSize ) ) {
-						*f++ = '.';
-						*f++ = ' ';
+						if ( is_ascii(*prevChar) && (*prevChar != '.') ) {
+							*f++ = '.';
 
-						// counted as caps because we're detecting all caps for a sentence
-						capCount += 2;
+							// counted as caps because we're detecting all caps for a sentence
+							++capCount;
+						}
+
+						*f++ = ' ';
+						++capCount;
 					} else {
 						trunc = true;
 					}
@@ -122,11 +141,6 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 			// do not allow back-to-back spaces
 			lastSpace = true;
 
-			continue;
-		}
-		
-		// skip words if we're in 'bad' tags
-		if ( inBadTags ) {
 			continue;
 		}
 
@@ -275,7 +289,7 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 					trunc = true;
 
 					if ( lastBreakPrevChar ) {
-						if ( is_ascii3( *( lastBreakPrevChar ) ) ) {
+						if ( is_ascii( *( lastBreakPrevChar ) ) ) {
 							switch ( *( lastBreakPrevChar ) ) {
 								case '!':
 								case '.':

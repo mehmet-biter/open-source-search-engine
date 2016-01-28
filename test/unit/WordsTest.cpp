@@ -18,7 +18,7 @@ TEST(WordsTest, VerifySize) {
 	// "numBytes" is how many bytes it stored into 'dst"
 	int32_t numBytes = utf8Encode ( c , p );
 
-	// must be 2 bytes i guess
+	// must be 3 bytes
 	EXPECT_EQ(3, numBytes);
 
 	// check it

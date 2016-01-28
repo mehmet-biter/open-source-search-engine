@@ -2,6 +2,9 @@
 
 #include "Pos.h"
 #include "Words.h"
+#include "Xml.h"
+#include "HttpMime.h"
+#include <cstdio>
 
 #define MAX_BUF_SIZE 1024
 
@@ -111,6 +114,38 @@ TEST( PosTest, FilterEnding ) {
 		ASSERT_TRUE( words.set( input_strs[i], true, 0 ) );
 
 		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
+
+		EXPECT_STREQ( expected_output[i], buf );
+		EXPECT_EQ( strlen( expected_output[i] ), len );
+	}
+}
+
+TEST( PosTest, FilterTags ) {
+	char *input_strs[] = {
+		"First line.<br>Second line.<br>Third line."
+	};
+
+	const char *expected_output[] = {
+		"First line. Second line. Third line."
+	};
+
+	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
+			   sizeof( expected_output ) / sizeof( expected_output[0] ) );
+
+	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+		Xml xml;
+		Words words;
+		Pos pos;
+		char input[MAX_BUF_SIZE];
+		char buf[MAX_BUF_SIZE];
+
+		std::sprintf(input, input_strs[i]);
+
+		ASSERT_TRUE( xml.set( input, strlen( input ), TITLEREC_CURRENT_VERSION, 0, CT_HTML ) );
+		ASSERT_TRUE( words.set( &xml, true ) );
+
+		int32_t len = pos.filter( &words, 0, words.getNumWords(), false, buf, buf + MAX_BUF_SIZE );
 
 		EXPECT_STREQ( expected_output[i], buf );
 		EXPECT_EQ( strlen( expected_output[i] ), len );

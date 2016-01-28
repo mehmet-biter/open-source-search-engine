@@ -149,6 +149,8 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t niceness, int32_t node1,
 
 		// is the kth node a tag?
 		if ( !xml->isTag( k ) ) {
+			/// @todo ALC why are we adding NULL and restoring it after?
+			/// addWords should be change to use nodeLen and not null terminated string
 			char c = node[nodeLen];
 			node[nodeLen] = '\0';
 			addWords( node, nodeLen, computeWordIds, niceness );
