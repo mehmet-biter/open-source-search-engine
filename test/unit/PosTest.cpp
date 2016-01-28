@@ -122,11 +122,13 @@ TEST( PosTest, FilterEnding ) {
 
 TEST( PosTest, FilterTags ) {
 	char *input_strs[] = {
-		"First line.<br>Second line.<br>Third line."
+		"First line.<br>Second line.<br>Third line.",
+	    "<li>item 1</li><li>item 2</li><li>item 3</li>"
 	};
 
 	const char *expected_output[] = {
-		"First line. Second line. Third line."
+		"First line. Second line. Third line.",
+	    "*item 1. *item 2. *item 3. "
 	};
 
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),

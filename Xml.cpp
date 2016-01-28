@@ -217,12 +217,17 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	// make pointers to data
 	m_xml    = s;
 	m_xmlLen = slen; //i;
+
 	// debug msg time
-	if ( g_conf.m_logTimingBuild )
-		logf(LOG_TIMING,
-		    "build: xml: set: 4a. %"UINT64"",gettimeofdayInMilliseconds());
+	if ( g_conf.m_logTimingBuild ) {
+		logf( LOG_TIMING, "build: xml: set: 4a. %" UINT64 "", gettimeofdayInMilliseconds() );
+	}
+
 	// sanity check
-	if ( !s || slen <= 0) return true;
+	if ( !s || slen <= 0) {
+		return true;
+	}
+
 	if ( s[slen] != '\0' ) {
 		log(LOG_LOGIC,"build: Xml: Content is not null terminated.");
 		char *xx = NULL; *xx = 0;
@@ -285,13 +290,14 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 
 	// account for the text (non-tag) nodes (padding nodes between tags)
 	m_maxNumNodes *= 2 ;
+
 	// if we only have one tag we can still have 3 nodes!
 	m_maxNumNodes++;
 
 	// debug msg time
-	if ( g_conf.m_logTimingBuild )
-		logf(LOG_TIMING,
-		    "build: xml: set: 4b. %"UINT64"",gettimeofdayInMilliseconds());
+	if ( g_conf.m_logTimingBuild ) {
+		logf( LOG_TIMING, "build: xml: set: 4b. %" UINT64 "", gettimeofdayInMilliseconds() );
+	}
 
 	// . truncate it to avoid spammers
 	// . now i limit to 30k nodes because of those damned xls docs!
@@ -311,18 +317,17 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	// breathe
 	QUICKPOLL ( niceness );
 
-	m_nodes = (XmlNode *) mmalloc (sizeof(XmlNode) * m_maxNumNodes,"Xml1");
+	m_nodes = (XmlNode *)mmalloc( sizeof( XmlNode ) * m_maxNumNodes, "Xml1" );
 	if ( ! m_nodes ) { 
-		reset(); 
-		return log("build: Could not allocate %"INT32" "
-			   "bytes need to parse document.",
-			   (int32_t)sizeof(XmlNode)*m_maxNumNodes);
+		reset();
+		return log( "build: Could not allocate %" INT32 " bytes need to parse document.",
+					(int32_t)sizeof( XmlNode ) * m_maxNumNodes );
 	}
 
 	// debug msg time
-	if ( g_conf.m_logTimingBuild )
-		logf(LOG_TIMING,
-		    "build: xml: set: 4c. %"UINT64"",gettimeofdayInMilliseconds());
+	if ( g_conf.m_logTimingBuild ) {
+		logf( LOG_TIMING, "build: xml: set: 4c. %" UINT64 "", gettimeofdayInMilliseconds() );
+	}
 
 	XmlNode *parent = NULL;
 	XmlNode *parentStackStart[256];
@@ -337,6 +342,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	for ( i = 0 ; i < m_xmlLen && m_numNodes < m_maxNumNodes ; ) {
 		// breathe
 		QUICKPOLL(niceness);
+
 		// remember oldi
 		oldi = i;
 
@@ -359,24 +365,22 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 		}
 
 		// disregard </> in the conf files
-		if ( xi->m_nodeLen==3 && endsInSlash    ) {
+		if ( xi->m_nodeLen == 3 && endsInSlash ) {
 			endsInSlash = false;
 		}
 
 		// if not text node then he's the new parent
 		// if we don't do this for xhtml then we don't pop the parent
 		// and run out of parent stack space very quickly.
-		if ( pureXml &&
-		     xi->m_nodeId && 
-		     xi->m_nodeId != TAG_COMMENT &&
-		     xi->m_nodeId != TAG_CDATA &&
-		     ! endsInSlash ) {
-
+		if ( pureXml && xi->m_nodeId &&
+		     xi->m_nodeId != TAG_COMMENT && xi->m_nodeId != TAG_CDATA &&
+			 !endsInSlash ) {
 			// if we are a back tag pop the stack
 			if ( ! xi->isFrontTag() ) {
 				// pop old parent
-				if ( parentStackPtr > parentStackStart )
+				if ( parentStackPtr > parentStackStart ) {
 					parent = *(--parentStackPtr);
+				}
 			}
 			// we are a front tag...
 			else {
@@ -386,26 +390,24 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 					g_errno = EBUFTOOSMALL;
 					return false;
 				}
+
 				// push the old parent ptr
-				if ( parent ) *parentStackPtr++ = parent;
+				if ( parent ) {
+					*parentStackPtr++ = parent;
+				}
+
 				// set the new parent to us
 				parent = xi;
 			}
 		}
-			
-			
 
-		// in script?
-		if ( xi->m_nodeId != TAG_SCRIPT ) {
-			m_numNodes++;
+		if ( xi->m_nodeId != TAG_SCRIPT || !xi->isFrontTag() ) {
+			++m_numNodes;
 			continue;
 		}
-		if ( ! xi->isFrontTag() ) {
-			m_numNodes++;
-			continue;
-		}
+
 		// ok, we got a <script> tag now
-		m_numNodes++;
+		++m_numNodes;
 
 		// use this for parsing consistency when deleting records
 		// so they equal what we added.
@@ -423,11 +425,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 		bool inComment3 = false;
 		bool inComment4 = false;
 		bool escaped    = false;
-		//bool newLine    = false;
-		// bool foo = false;
-		// if ( m_xmlLen == 13257 ) { //pstart - m_xml == 88881 ) {
-		// 	foo = true;
-		// }
+
 		// scan -- 5 continues -- node 1570 is text of script
 		for ( ; p < pend ; p++ ) {
 			// breathe
@@ -582,7 +580,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 			continue;
 
 		XmlNode *xn      = &m_nodes[m_numNodes++];
-		xn->m_nodeId     = TAG_SCRIPTTEXT;//0; // TEXT NODE
+		xn->m_nodeId     = TAG_SCRIPTTEXT;
 		xn->m_node       =     pstart;
 		xn->m_nodeLen    = p - pstart;
 		xn->m_tagName    = NULL;
@@ -985,9 +983,7 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 
 				// extract content from meta tag
 				int32_t len = 0;
-
-				/// @todo cater for invalid quote
-				char *s = getString ( i , "content" , &len );
+				char *s = getNodePtr(i)->getAttrValue("content", &len);
 				if ( ! s || len <= 0 ) {
 					// no content
 					continue;

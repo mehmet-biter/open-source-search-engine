@@ -12,7 +12,7 @@ int32_t getNumXmlNodes ( ) ;
 bool isBreakingTagId ( nodeid_t tagId ) ;
 bool hasBackTag ( nodeid_t tagId ) ;
 int32_t getTagLen ( char *node ) ;
-bool isTagStart ( char *s );//, int32_t i, int32_t version ) ;
+
 // s points to tag name - first char
 nodeid_t getTagId ( char *s , class NodeType **retp = NULL ); 
 
@@ -236,6 +236,8 @@ public:
 		return m_nodeId > 0 && m_node[1] != '/' && m_nodeId != TAG_META && m_nodeId != TAG_COMMENT;
 	}
 
+	char* getAttrValue( const char *field, int32_t *valueLen );
+
 	// . get the value of a field like "href" in the <a href="blah"> tag
 	char *getFieldValue ( const char *fieldName , int32_t *valueLen );
 
@@ -277,43 +279,57 @@ public:
 // . does "s" start a tag? (regular tag , back tag or comment tag)
 inline bool isTagStart ( char *s ) {
 	// it must start with < to be a tag
-	if ( *s != '<' ) {
+	if ( s[0] != '<' ) {
 		return false;
 	}
 
 	// next char can be an alnum, !-- or / then alnum
+
+	/// @todo ALC are we sure a number is a valid tag start?
+	/// regex: "^<[A-Za-z0-9]"
 	if ( is_alnum_a( s[1] ) ) {
 		return true;
 	}
 
 	// next char can be 1 of 3 things to be a tag
 	// / is also acceptable, followed only by an alnum or >
-	if ( s[1]== '/' ) {
-		if ( is_alnum_a(s[2]) ) return true;
-		if ( s[2] == '>'    ) return true;
+
+	/// @todo ALC "</>" a valid tag?
+	/// regex: "^</[A-Za-z0-9>]"
+	if ( s[1] == '/' ) {
+		if ( is_alnum_a( s[2] ) || (s[2] == '>') ) {
+			return true;
+		}
 		return false;
 	}
 
 	// office.microsoft.com uses <?xml ...?> tags
+	/// regex: "^<?[A-Za-z0-9]"
 	if ( s[1]=='?' ) {
-		if ( is_alnum_a(s[2]) ) return true;
-		//if ( s[2] == '>'    ) return true; <?> is tag???
+		if ( is_alnum_a(s[2]) ) {
+			return true;
+		}
 		return false;
 	}
 
 	// make sure the double hyphens follow the ! or alnum
 	if ( s[1]=='!' ) {
 		// this is for <!xml> i guess
-		if ( is_alnum_a(s[2]) ) return true;
+		if ( is_alnum_a(s[2]) ) {
+			return true;
+		}
+
 		// and the <![CDATA[
-		if ( s[2]=='[' && s[3]=='C' && s[4]=='D' &&
-		     s[5]=='A' && s[6]=='T' && s[7]=='A' &&
-		     s[8]=='[' ) return true;
-		// and the <!-- comment here--> famous comment tag
-		if ( s[2]=='-' && s[3]=='-' ) return true;
 		// and <![....]> i've seen too
 		// <![if gt IE 6]><script>.... for waterfordcoc.org
-		if ( s[2] == '[' ) return true;
+		if ( s[2] == '[' ) {
+			return true;
+		}
+
+		// and the <!-- comment here--> famous comment tag
+		if ( s[2]=='-' && s[3]=='-' ) {
+			return true;
+		}
 	}
 
 	return false;

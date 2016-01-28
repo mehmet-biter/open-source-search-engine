@@ -253,7 +253,7 @@ int32_t XmlNode::set( char *node, bool pureXml ) {
 	}
 
 	// if "node" isn't the start of a tag then set it as a Text Node
-	if ( *node != '<' || ! isTagStart ( node ) ) {
+	if ( ! isTagStart ( node ) ) {
 		// . set this node as a text node!
 		// . nodeId for text nodes is 0
 		m_nodeId     = TAG_TEXTNODE;
@@ -337,7 +337,7 @@ int32_t XmlNode::set( char *node, bool pureXml ) {
 }
 
 // . return the length of a node starting at "node"
-int32_t getTagLen ( char *node ) { // , int32_t version ) {
+int32_t getTagLen ( char *node ) {
 	// skip over first <
 	int32_t i ;
 
@@ -352,15 +352,16 @@ int32_t getTagLen ( char *node ) { // , int32_t version ) {
 			continue;
 		}
 
-		if ( node[i] == '<' ) break;
-		if ( node[i] == '>' ) {
+		if ( ( node[i] == '<' ) || ( node[i] == '>' ) ) {
 			break;
 		}
 
 		// we can have double quotes within single quotes
 		if ( node [ i ] == '\"' ) {
 			// scan back looking for equal sign...
-			int32_t k; for ( k = i - 1 ; k > 1 ; k-- ) {
+			int32_t k;
+
+			for ( k = i - 1 ; k > 1 ; k-- ) {
 				if ( is_wspace_a(node[k]) ) continue;
 				break;
 			}
@@ -526,6 +527,204 @@ int32_t XmlNode::setCDATANode ( char *node ) {
 	m_nodeLen = i;
 
 	return i;
+}
+
+static bool isInQuotes(char currentChar, char *currentQuote) {
+	if ( currentQuote && *currentQuote ) {
+		if ( currentChar == *currentQuote ) {
+			*currentQuote = '\0';
+		}
+
+		return true;
+	}
+
+	// check quotes
+	if ( ( currentChar == '"' ) || ( currentChar == '\'' ) ) {
+		if (currentQuote) {
+			*currentQuote = currentChar;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+static bool findCharSingle( char nodeChar, char expectedChar, char expectedOtherChar, char *foundChar ) {
+	if ( ( nodeChar == expectedChar ) || ( expectedOtherChar && nodeChar == expectedOtherChar ) ) {
+		if ( foundChar ) {
+			*foundChar = nodeChar;
+		}
+
+		return true;
+	}
+
+	// invalid char
+	return false;
+}
+
+// allow whitespace when looking for char
+static bool findChar( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
+					  char expectedOtherChar = '\0', char *foundChar = NULL, bool onlyAllowWhiteSpace = true ) {
+	for ( *pos = start; *pos < end; ++(*pos) ) {
+		if ( is_wspace_a( node[*pos] ) ) {
+			continue;
+		}
+
+		if ( findCharSingle( node[*pos], expectedChar, expectedOtherChar, foundChar ) ) {
+			return true;
+		} else {
+			if ( onlyAllowWhiteSpace ) {
+				return false;
+			}
+
+			continue;
+		}
+	}
+
+	return false;
+}
+
+static bool findCharReverse( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
+                             char expectedOtherChar = '\0', char *foundChar = NULL ) {
+	for ( *pos = start; (*pos > end) && (*pos > 0); --(*pos) ) {
+		if ( is_wspace_a( node[*pos] ) ) {
+			continue;
+		}
+
+		return findCharSingle(node[*pos], expectedChar, expectedOtherChar, foundChar);
+	}
+
+	return false;
+}
+
+/**
+ * Get attribute value
+ *
+ * The difference between XmlNode::getAttrValue and XmlNode::getFieldValue is that we try to recover
+ * from bad attribute value
+ *
+ * @param[in] field Attribute name (only ascii supported)
+ * @param[out] valueLen Attribute value length
+ *
+ * @return Attribute value
+ */
+char *XmlNode::getAttrValue( const char *field, int32_t *valueLen ) {
+	if (valueLen) {
+		*valueLen = 0;
+	}
+
+	/*
+	 * https://www.w3.org/TR/html-markup/syntax.html#syntax-attributes
+	 *
+	 * attribute names:
+	 *   must consist of one or more characters other than the space characters,
+	 *   U+0000 NULL, """, "'", ">", "/", "=", the control characters, and any characters that are not defined by Unicode.
+	 *
+	 * attribute values:
+	 *   can contain text and character references, with additional restrictions depending on whether they are
+	 *   unquoted attribute values, single-quoted attribute values, or double-quoted attribute values.
+	 *   Also, the HTML elements section of this reference describes further restrictions on the allowed values of
+	 *   particular attributes, and attributes must have values that conform to those restrictions.
+	 *
+	 *   attributes can be specified in four different ways:
+	 *     - empty attribute syntax (not handled)
+	 *     - unquoted attribute-value syntax (not handled)
+	 *     - single-quoted attribute-value syntax
+	 *     - double-quoted attribute-value syntax
+	 */
+
+	int32_t fieldLen = strlen(field);
+
+	char inQuotes = '\0';
+
+	bool found = false;
+
+	int32_t i = 1;
+	for ( ; i + fieldLen < m_nodeLen; ++i ) {
+		// skip if we're in quotes
+		if ( isInQuotes( m_node[i], &inQuotes ) ) {
+			continue;
+		}
+
+		// check that previous character is not a valid attribute name character
+		char prevChar = m_node[i - 1];
+		if ( !is_wspace_a( prevChar ) && !is_binary_a( prevChar ) && prevChar != '"' && prevChar != '\'' &&
+			 prevChar != '>' && prevChar != '/' && prevChar != '=' ) {
+			continue;
+		}
+
+		// field names must match
+		if ( strncasecmp( &m_node[i], field, fieldLen ) != 0 ) {
+			continue;
+		}
+
+		found = true;
+		break;
+	}
+
+	// not found
+	if ( !found ) {
+		return NULL;
+	}
+
+	// look for equals sign
+	int32_t j = 0;
+	found = findChar(m_node, i + fieldLen, m_nodeLen, &j, '=');
+
+	if ( !found ) {
+		// assume empty attribute syntax
+		return m_node + i + fieldLen;
+	}
+
+	// look for start quote
+	int32_t startQuotePos = 0;
+	char foundChar = '\0';
+	found = findChar(m_node, j + 1, m_nodeLen, &startQuotePos, '\'', '"', &foundChar);
+
+	if ( !found ) {
+		// no start quote
+		return NULL;
+	}
+
+	// look for end quote
+	int32_t endQuotePos = 0;
+	found = findChar(m_node, startQuotePos + 1, m_nodeLen, &endQuotePos, foundChar, '\0', NULL, false);
+
+	if ( !found ) {
+		// no end quote
+		return NULL;
+	}
+
+	while (endQuotePos < m_nodeLen) {
+		// do some validation
+
+		// look for another quote
+		int32_t nextQuotePos = 0;
+		char nextFoundChar = '\0';
+
+		found = findChar(m_node, endQuotePos + 1, m_nodeLen, &nextQuotePos, '\'', '"', &nextFoundChar, false);
+		if ( found ) {
+			// let's see if it's preceeded by equals
+			int32_t nextEqualsPos = 0;
+
+			found = findCharReverse(m_node, nextQuotePos - 1, endQuotePos, &nextEqualsPos, '=');
+			if ( !found ) {
+				// no preceding equals sign (assume invalid meta tag, try to recover from it)
+				endQuotePos = nextQuotePos;
+				continue;
+			}
+		}
+
+		// assume found valid end quote
+		break;
+	}
+
+	// set the length of the value
+	*valueLen = endQuotePos - startQuotePos - 1;
+
+	// return a ptr to the value
+	return m_node + startQuotePos + 1;
 }
 
 // Return the value of the specified "field" within this node.
