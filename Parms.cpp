@@ -9528,17 +9528,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&ir.m_getSections - (char *)&ir;
 	m++;
 
-	m->m_title = "diffbot reply";
-	m->m_desc = "Used exclusively by diffbot. Do not use.";
-	m->m_cgi   = "diffbotreply";
-	m->m_obj   = OBJ_IR;
-	m->m_type  = TYPE_CHARPTR;
-	m->m_def   = NULL;
-	m->m_flags = PF_API|PF_TEXTAREA|PF_NOHTML; // do not show in our api
-	m->m_page  = PAGE_INJECT;
-	m->m_off   = (char *)&ir.ptr_diffbotReply - (char *)&ir;
-	m++;
-
 
 	///////////////////
 	//
