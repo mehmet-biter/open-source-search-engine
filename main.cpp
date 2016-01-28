@@ -214,6 +214,7 @@ typedef enum {
 	ifk_start2 	
 } install_flag_konst_t;
 
+static int install_file(const char *file);
 int install ( install_flag_konst_t installFlag , int32_t hostId , 
 	      char *dir = NULL , char *coll = NULL , int32_t hostId2 = -1 , 
 	      char *cmd = NULL );
@@ -465,6 +466,9 @@ int main2 ( int argc , char *argv[] ) {
 			"installgbrcp [hostId]\n"
 			"\tLike above, but install just the gb executable "
 			"and using rcp.\n\n"
+
+			"installfile <file>\n"
+			"\tInstalls the specified file on all hosts\n\n"
 
 			/*
 			"installgb2 [hostId]\n"
@@ -1573,6 +1577,12 @@ int main2 ( int argc , char *argv[] ) {
 		int32_t hostId = -1;
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
 		return install ( ifk_installgbrcp , hostId );
+	}
+
+	// gb installfile
+	if ( strcmp ( cmd , "installfile" ) == 0 ) {	
+		if(cmdarg+1 < argc)
+			return install_file ( argv[cmdarg+1] );
 	}
 
 	// gb installgb
@@ -3520,6 +3530,36 @@ int scale ( char *newHostsConf , bool useShotgunIp) {
 	}
 	return 1;
 }
+
+
+static int install_file(const char *dst_host, const char *src_file, const char *dst_file)
+{
+	char cmd[1024];
+	sprintf(cmd, "scp -p %s %s:%s",
+		src_file,
+		dst_host,
+		dst_file);
+	log(LOG_INIT,"admin: %s", cmd);
+	int rc = system(cmd);
+	return rc;
+}
+
+
+static int install_file(const char *file)
+{
+	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
+		Host *h2 = g_hostdb.getHost(i);
+		if(h2==g_hostdb.getMyShard())
+			continue; //skip ourselves
+		char full_dst_file[024];
+		sprintf(full_dst_file, "%s%s",h2->m_dir,file);
+		install_file(iptoa(h2->m_ip),
+		             file,
+	                     full_dst_file);
+	}
+	return 0; //return value is unclear
+}
+
 
 // installFlag is 1 if we are really installing, 2 if just starting up gb's
 // installFlag should be a member of the ifk_ enum defined above
