@@ -2,6 +2,7 @@
 
 #include "Mem.h"
 #include "Unicode.h"
+#include "hash.h"
 
 int g_inMemcpy=0;
 bool g_recoveryMode = false;
@@ -21,6 +22,8 @@ int main(int argc, char **argv) {
 		log("Unicode initialization failed!");
 		exit(1);
 	}
+
+	hashinit();
 
 	::testing::InitGoogleTest(&argc, argv);
 
