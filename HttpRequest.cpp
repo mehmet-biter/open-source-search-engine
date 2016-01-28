@@ -1485,9 +1485,6 @@ bool HttpRequest::getCurrentUrl ( SafeBuf &cu ) {
 
 	// need a "Host: "
 	char *host = m_host;
-	if ( ! host ) {
-		host = "www.eventguru.com";
-	}
 
 	cu.safePrintf("http");
 	if ( m_isSSL ) cu.pushChar('s');
@@ -1515,7 +1512,6 @@ bool HttpRequest::getCurrentUrl ( SafeBuf &cu ) {
 	// cut it off at facebook's &code=
 	char *buf = cu.getBufStart();
 	char *code = strstr( buf,"&code=");
-	// fix for eventguru.com/blog.html?code=
 	if ( ! code ) code = strstr(buf,"?code=");
 	// hack that off if there
 	if ( code ) {

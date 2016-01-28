@@ -866,26 +866,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		redirLen = gbstrlen(g_conf.m_redirect);
 	}
 
-	char *hdom = h;
-	if ( strncasecmp(hdom,"www.",4) == 0 ) hdom += 4;
-	// auto redirect eventguru.com to www.eventguru.com so cookies
-	// are consistent
-	if ( ! redir && 
-	     ( strcasecmp ( h    , "eventguru.com" ) == 0 ||
-	       strcasecmp ( hdom , "flurbit.com" ) == 0 ||
-	       strcasecmp ( hdom , "flurbits.com" ) == 0 ||
-	       strcasecmp ( hdom , "flurpit.com" ) == 0 ||
-	       strcasecmp ( hdom , "flurbot.com" ) == 0 ||
-	       strcasecmp ( hdom , "flurbits.com" ) == 0 ||
-	       strcasecmp ( hdom , "flurbyte.com" ) == 0 ||
-	       strcasecmp ( hdom , "eventstereo.com" ) == 0 ||
-	       strcasecmp ( hdom , "eventcrier.com" ) == 0 ||
-	       strcasecmp ( hdom , "eventwidget.com" ) == 0 ) ) {
-		redir = "http://www.eventguru.com/";
-		redirLen = gbstrlen(redir);
-	}
-
-
 	if ( redirLen > 0 ) {
 		// . generate our mime header
 		// . see http://www.vbip.com/winsock/winsock_http_08_01.asp
@@ -973,8 +953,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	if ( strcasecmp ( h , "www.gigablast.com" ) == 0 ) isGigablast = true;
 	if ( strcasecmp ( h , "gigablast.com"     ) == 0 ) isGigablast = true;
 	//bool isNewSite = false;
-	//if ( gb_strcasestr ( h , "eventwidget.com"   ) ) isNewSite = true;
-	//if ( gb_strcasestr ( h , "eventguru.com"     ) ) isNewSite = true;
 	//isNewSite = true;
 
 	// get the dynamic page number, is -1 if not a dynamic page
@@ -1049,10 +1027,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	}
 
 
-
-	// map to new events page if we are eventguru.com
-	//if ( isNewSite && ( n == PAGE_RESULTS || n == PAGE_ROOT ) )
-	//	return sendPageEvents ( s , r );
 
 	if ( n == PAGE_RESULTS ) // || n == PAGE_ROOT )
 		return sendPageResults ( s , r );
