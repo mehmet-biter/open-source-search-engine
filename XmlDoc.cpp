@@ -27708,21 +27708,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	// close the table
 	sb->safePrintf ( "</table></center><br>\n" );
 
-	//
-	// convert document into json representing multiple documents
-	// if it makes sense. sometimes a single url contains multiple
-	// subdocuments that each should have their own url, but do not,
-	// so we fix that here.
-	//
-	SafeBuf *dbr = getDiffbotReply();
-	if ( dbr->length() ) {
-		sb->safePrintf("<b>START EXACT DIFFBOT REPLY</b><br>\n");
-		sb->safePrintf("<pre>");
-		sb->safeMemcpy ( dbr );
-		sb->safePrintf("</pre>");
-		sb->safePrintf("<b>END EXACT DIFFBOT REPLY</b><br><br>\n");
-	}
-
 	// print outlinks
 	links->print( sb );
 
