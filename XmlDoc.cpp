@@ -12812,16 +12812,6 @@ SafeBuf *XmlDoc::getDiffbotReply ( ) {
 		return &m_diffbotReply;
 	}
 
-	// do not send to diffbot if its binary!
-	char *ib = getIsBinary();
-	if ( ! ib || ib == (void *)-1 ) return (SafeBuf *)ib;
-	if ( *ib ) {
-		m_diffbotReplyValid = true;
-		log("diffbot: skipping binary page %s",m_firstUrl.m_url);
-		return &m_diffbotReply;
-	}
-
-
 	// or if original page content matches the page regex dont hit diffbot
 	if ( ! doesPageContentMatchDiffbotProcessPattern() ) {
 		m_diffbotReplyValid = true;
@@ -14872,100 +14862,6 @@ uint16_t *XmlDoc::getCharset ( ) {
 	m_charsetValid = true;
 	return &m_charset;
 }
-
-char *XmlDoc::getIsBinary ( ) {
-	if ( m_isBinaryValid ) return &m_isBinary;
-
-	// get the content
-	char **u8 = getUtf8Content();
-	if ( ! u8 || u8 == (char **)-1 ) return (char *)u8;
-
-	//char *ctype = getContentType();
-	//if ( ! ctype || ctype == (void *)-1 ) return (char *)ctype;
-	//bool doBinaryCheck = false;
-	// the "abq-g" query gives a lot of binary content, use that
-	// as a testbed to make sure we filter it out!
-	//if ( *ctype  == CT_TEXT     ) doBinaryCheck = true;
-	//if ( *ctype  == CT_UNKNOWN  ) doBinaryCheck = true;
-	//if ( *ctype  == CT_XML      ) doBinaryCheck = true;
-	//if ( *ctype  == CT_HTML     ) doBinaryCheck = true;
-	//if ( csEnum == csUnknown   ) doBinaryCheck = true;
-	//if ( csEnum == csASCII     ) doBinaryCheck = true;
-	//if ( csEnum == csISOLatin1 ) doBinaryCheck = true;
-	//if (   slen <= 0           ) doBinaryCheck = false;
-	// why shouldn't we binary check everything? now that we are utf8...
-	//doBinaryCheck = true;
-
-	// assume not
-	m_isBinary      = false;
-	m_isBinaryValid = true;
-
-	// if content is not identifed as a type known to us, then check it
-	// for binary characters. yes, this can be utf8 or utf16 and then
-	// detected as binary i think, but it should really be identified as
-	// being html or txt or something...
-	//if ( ! doBinaryCheck ) return &m_isBinary;
-
-	// use a table
-	char table[256];
-	memset ( table , 0 , 256 );
-	// see if we had deceitful binary content
-	char *s    =     ptr_utf8Content;
-	char *send = s + size_utf8Content - 1;
-	// for now just count the binary chars
-	int32_t count = 0;
-
-	// no content?
-	if ( ! s ) return &m_isBinary;
-
-	for ( ; s < send ; s += getUtf8CharSize(s) ) {
-		// yield
-		QUICKPOLL(m_niceness);
-		// skip valid utf8 characters
-		if ( getUtf8CharSize(s) > 1 ) continue;
-		// . do not count \0's
-		// . the fctypes.cpp isBinary array takes into account
-		//   that people mix windows 1254 characters into
-		//   latin-1. windows 1254 is a superset of latin-1.
-		//   so the more common quotes and dashes are no longer
-		//   counted as binary characters, but some of the
-		//   rarer ones are! however, the "diff" count
-		//   contraint helps us make up for that.
-		// . the first char of a utf8 character sequence always has
-		//   the high bit off, so just test that...
-		if ( ! is_binary_a(*s) || ! *s ) continue;
-		// count it up
-		count++;
-		table[(unsigned char)*s]++;
-	}
-	// how many DIFFERENT bin chars do we have?
-	int32_t diff = 0;
-	for ( int32_t i = 0 ; i < 256 ; i++ )
-		if ( table[i] ) diff++;
-	// . is binary if 10 or more bin chars and at least 10
-	//   DIFFERENT binary chars
-	// . is binary if > 5% of chars are binary
-	if ( (count > 10 && diff>=5) || ( 100 * count ) / size_utf8Content>6) {
-		// note it for now
-		logf(LOG_DEBUG,"build: Got binary content for %s. "
-		     "Zeroing out content. (diff=%"INT32" count=%"INT32" "
-		     "len=%"INT32")",
-		     m_firstUrl.getUrl(),diff,count,size_utf8Content-1);
-		// do not try to index binary content, but keep it
-		// around for site: queries or in case we have
-		// inlink text for it!
-		ptr_utf8Content  = NULL;
-		size_utf8Content = 0;
-		m_isBinary = true;
-	}
-	return &m_isBinary;
-}
-
-
-
-
-
-
 
 
 

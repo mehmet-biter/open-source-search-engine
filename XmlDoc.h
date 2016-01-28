@@ -560,7 +560,6 @@ public:
 	char **getContent ( ) ;
 	uint8_t *getContentType ( ) ;
 	uint16_t *getCharset ( ) ;
-	char *getIsBinary ( ) ;
 	char **getFilteredContent ( ) ;
 	void filterStart_r ( bool amThread ) ;
 	char **getRawUtf8Content ( ) ;
