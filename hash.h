@@ -42,9 +42,7 @@ uint64_t      hash64Lower_utf8 ( const char *s, int32_t len, uint64_t startHash 
 uint64_t      hash64Lower_utf8_nospaces ( const char *s, int32_t len );
 uint64_t      hash64Lower_utf8 ( const char *p );
 uint64_t      hash64Lower_utf8_cont ( const char *p, int32_t len, uint64_t startHash, int32_t *conti );
-uint96_t      hash96           ( const char *s, int32_t slen, u_int96_t startHash = (u_int96_t )0);
-uint96_t      hash96           ( uint96_t  h1 ,  uint96_t h2 );
-uint96_t      hash96           ( int32_t       h1 ,  uint96_t h2 );
+uint96_t      hash96           ( const char *s, int32_t slen);
 uint32_t hashLong         ( uint32_t x ) ;
 
 // . these convert \n to \0 when hashing
