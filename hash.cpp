@@ -122,10 +122,10 @@ uint32_t hash32Lower_a ( const char *s,int32_t len,uint32_t startHash){
 	return h;
 }
 
-u_int96_t hash96 ( const char *s, int32_t slen, u_int96_t startHash ) {
+u_int96_t hash96 ( const char *s, int32_t slen) {
 	u_int96_t h;
-	h.n0 = hash64 ( s , slen , startHash.n0 );
-	h.n1 = hash32 ( s , slen , startHash.n1 );
+	h.n0 = hash64 ( s , slen );
+	h.n1 = hash32 ( s , slen );
 	return h;
 }
 
