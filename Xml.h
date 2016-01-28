@@ -54,18 +54,6 @@ public:
 	// . only searches nodes in [n0,n1] node range
 	int32_t getNodeNum( int32_t n0, int32_t n1, char *tagName, int32_t tagNameLen ) const;
 
-	// some wrappers for it
-	int32_t getNodeNum( char *tagName ) {
-		if ( !tagName ) {
-			char *xx = NULL; *xx = 0;
-		}
-		return getNodeNum( 0, m_numNodes, tagName, strlen( tagName ) );
-	}
-
-	int32_t getNodeNum( char *tagName, int32_t tagNameLen ) {
-		return getNodeNum( 0, m_numNodes, tagName, tagNameLen );
-	}
-
 	// . get the back tag node for a given node
 	int32_t getEndNode ( int32_t num );
 
@@ -73,16 +61,8 @@ public:
 		return m_nodes[n].isTag();
 	}
 
-	bool isBreakingTag( int32_t n ) {
-		return m_nodes[n].m_isBreaking;
-	}
-
 	bool isBackTag( int32_t n ) {
 		return m_nodes[n].m_node[1] == '/';
-	}
-
-	bool isXmlTag( int32_t n ) {
-		return m_nodes[n].m_nodeId == TAG_XMLTAG;
 	}
 
 	char *getNode( int32_t n ) {
@@ -95,14 +75,6 @@ public:
 
 	nodeid_t getNodeId( int32_t n ) {
 		return m_nodes[n].m_nodeId;
-	}
-
-	int64_t getNodeHash( int32_t n ) {
-		return m_nodes[n].m_hash;
-	}
-
-	bool isVisible( int32_t n ) {
-		return m_nodes[n].m_isVisible;
 	}
 
 	// get all nodes!
@@ -127,9 +99,6 @@ public:
 
 	char *getString( int32_t n0, int32_t n1, char *tagName, int32_t *len,
 					 bool skipLeadingSpaces = true ) const;
-
-	// for parsing facebook replies:
-	char *getNode( char *tagName, int32_t *len );
 
 	// like above routines but we search all nodes
 	int32_t getLong( char *tagName, int32_t defaultLong = 0 ) {

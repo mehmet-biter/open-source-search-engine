@@ -75,34 +75,6 @@ char *Xml::getString ( int32_t num , bool skipLeadingSpaces , int32_t *len ) con
 	return s;
 }
 
-char *Xml::getNode ( char *tagName , int32_t *len ) {
-	// assume len is 0
-	*len = 0;
-	// get a matching xml TAG
-	int32_t num = getNodeNum ( 0 , m_numNodes, tagName , gbstrlen(tagName) );
-	if ( num < 0                 ) return NULL;
-
-	// no back tag if its like <languages/> it won't have one
-	XmlNode *node = &m_nodes[num];
-	if ( ! node->m_hasBackTag ) return NULL;
-
-	int32_t i = getEndNode( num );
-	if ( i < 0 ) {
-		return NULL;
-	}
-
-	// got the back tag
-	char *end = m_nodes[i].m_node;
-	char *s = m_nodes[num+1].m_node;
-
-	// trim spaces
-	while ( s < end && is_wspace_a ( *s ) ) s++;
-	while ( end-1 > s && is_wspace_a ( end[-1] ) ) end--;
-
-	*len = end - s;
-	return s;
-}
-
 int32_t Xml::getEndNode ( int32_t num ) {
 	if ( (num < 0) || (num >= m_numNodes) ) {
 		return -1;
@@ -293,7 +265,8 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	QUICKPOLL((niceness));
 	int32_t i;
 
-	/// @bug ALC why are we replacing NULL bytes here?
+	/// @todo ALC why are we replacing NULL bytes here?
+
 	/// Shouldn't all string be valid utf-8 at this point?
 	// . replacing NULL bytes with spaces in the buffer
 	// . utf8 should never have any 0 bytes in it either!
@@ -566,17 +539,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 				inSingles = ! inSingles;
 			// no longer escaped
 			escaped = false;
-			// if ( foo ) {
-			// 	fprintf(stderr,"%c [%lu](inDoubles=%i,"
-			// 		"inSingles=%i)\n",*p,
-			// 		(unsigned long)(uint8_t)*p,
-			// 		(int)inDoubles,
-			// 		(int)inSingles);
-			// }
-			// if ( inSingles ) 
-			// 	continue;
-			// if ( inDoubles ) 
-			// 	continue;
+
 			// keep going if not a tag
 			if ( p[0]  != '<' ) continue;
 			// </script> or </gbframe> stops it
