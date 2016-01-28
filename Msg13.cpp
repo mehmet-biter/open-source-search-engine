@@ -1873,23 +1873,6 @@ void gotHttpReply2 ( void *state ,
 		}
 	}
 
-	// nuke the content if from flurbit.com website!!
-	if ( r->ptr_url &&
-	     replySize>0 &&
-	     goodStatus &&
-	     ! r->m_isSquidProxiedUrl &&
-	     strstr ( r->ptr_url,"flurbit.com/" ) ) {
-		// note it in log
-		log("msg13: got flurbit url: %s",r->ptr_url);
-		// record in the stats
-		docsPtr     = &g_stats.m_compressUnchangedDocs;
-		bytesInPtr  = &g_stats.m_compressUnchangedBytesIn;
-		bytesOutPtr = &g_stats.m_compressUnchangedBytesOut;
-		// do not send anything back
-		replySize = 0;
-	}
-
-
 	// by default assume it has a good date
 	int32_t status = 1;
 
