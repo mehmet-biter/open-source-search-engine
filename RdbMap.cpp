@@ -22,7 +22,7 @@ void RdbMap::set ( char *dir , char *mapFilename,
 		   int32_t fixedDataSize , bool useHalfKeys , char keySize ,
 		   int32_t pageSize )
 {
-if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. dir [%s], mapFilename [%s]", __FILE__,__FUNCTION__, dir, mapFilename);
+	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: BEGIN. dir [%s], mapFilename [%s]", __FILE__, __func__, __LINE__,  dir, mapFilename);
 
 
 	reset();
@@ -46,7 +46,7 @@ if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. dir [%s], mapFilena
 	//   MAX_PART_SIZE #define'd in BigFile.h
 	if ( (MAX_PART_SIZE % (PAGES_PER_SEGMENT*m_pageSize)) == 0 )
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END", __FILE__,__FUNCTION__);
+		if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 		return;
 	}
 
@@ -118,19 +118,19 @@ void RdbMap::reset ( ) {
 
 
 bool RdbMap::writeMap ( bool allDone ) {
-	if ( g_conf.m_logDebugDetailed ) {
-		log(LOG_DEBUG, "%s:%s: BEGIN. filename [%s]", __FILE__, __func__, m_file.getFilename());
+	if ( g_conf.m_logTraceRdbMap ) {
+		log(LOG_TRACE, "%s:%s:d: BEGIN. filename [%s]", __FILE__, __func__, m_file.getFilename());
 	}
 
 
 	if ( g_conf.m_readOnlyMode ) {
-		log(LOG_DEBUG, "%s:%s: END. Read-only mode, not writing map. filename [%s]. Returning true.",
+		log(LOG_TRACE, "%s:%s:d: END. Read-only mode, not writing map. filename [%s]. Returning true.",
 		    __FILE__, __func__, m_file.getFilename());
 		return true;
 	}
 
 	if ( ! m_needToWrite ) {
-		log(LOG_DEBUG, "%s:%s: END. no need, not writing map. filename [%s]. Returning true.",
+		log(LOG_TRACE, "%s:%s:d: END. no need, not writing map. filename [%s]. Returning true.",
 		    __FILE__, __func__, m_file.getFilename());
 		return true;
 	}
@@ -156,8 +156,8 @@ bool RdbMap::writeMap ( bool allDone ) {
 		reduceMemFootPrint ();
 	}
 
-	if( g_conf.m_logDebugDetailed ) {
-		log(LOG_DEBUG, "%s:%s: END. filename [%s], returning %s",
+	if( g_conf.m_logTraceRdbMap ) {
+		log(LOG_TRACE, "%s:%s:d: END. filename [%s], returning %s",
 		    __FILE__, __func__, m_file.getFilename(), status ? "true" : "false");
 	}
 
@@ -166,15 +166,15 @@ bool RdbMap::writeMap ( bool allDone ) {
 
 
 bool RdbMap::writeMap2 ( ) {
-	if( g_conf.m_logDebugDetailed ) {
-		log(LOG_DEBUG, "%s:%s: BEGIN. filename [%s]", __FILE__, __func__, m_file.getFilename());
+	if( g_conf.m_logTraceRdbMap ) {
+		log(LOG_TRACE, "%s:%s:d: BEGIN. filename [%s]", __FILE__, __func__, m_file.getFilename());
 	}
 	
 	// the current disk offset
 	int64_t offset = 0LL;
 	g_errno = 0;
 
-	if( g_conf.m_logDebugDetailed ) {
+	if( g_conf.m_logTraceRdbMap ) {
 		log(LOG_DEBUG, " m_offset.........: %"INT64"", m_offset);
 		log(LOG_DEBUG, " m_fileStartOffset: %"INT64"", m_fileStartOffset);
 		log(LOG_DEBUG, " m_numPositiveRecs: %"INT64"", m_numPositiveRecs);
@@ -234,8 +234,8 @@ bool RdbMap::writeMap2 ( ) {
 	offset += m_ks;
 
 
-	if( g_conf.m_logDebugDetailed ) {
-		log(LOG_DEBUG, "%s:%s: Writing %"INT32" segments", __FILE__, __func__, m_numSegments);
+	if( g_conf.m_logTraceRdbMap ) {
+		log(LOG_TRACE, "%s:%s:d: Writing %"INT32" segments", __FILE__, __func__, m_numSegments);
 	}
 
 
@@ -250,8 +250,8 @@ bool RdbMap::writeMap2 ( ) {
 		}
 	}
 
-	if( g_conf.m_logDebugDetailed ) {
-		log(LOG_DEBUG, "%s:%s: END - OK, returning true.", __FILE__, __func__);
+	if( g_conf.m_logTraceRdbMap ) {
+		log(LOG_TRACE, "%s:%s:d: END - OK, returning true.", __FILE__, __func__);
 	}
 
 	return true;
@@ -296,14 +296,14 @@ int64_t RdbMap::writeSegment ( int32_t seg , int64_t offset ) {
 // . now we pass in ptr to the data file we map so verifyMap() can use it
 bool RdbMap::readMap ( BigFile *dataFile ) 
 {
-	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. filename [%s]", __FILE__,__FUNCTION__, m_file.getFilename());
+	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: BEGIN. filename [%s]", __FILE__, __func__, __LINE__,  m_file.getFilename());
 	
 	// bail if does not exist
 	if ( ! m_file.doesExist() )
 	{
-		log(LOG_ERROR,"%s:%s: Map file [%s] does not exist.", __FILE__,__FUNCTION__, m_file.getFilename());			
+		log(LOG_ERROR,"%s:%s:%d: Map file [%s] does not exist.", __FILE__, __func__, __LINE__,  m_file.getFilename());			
 		
-		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. Returning false", __FILE__,__FUNCTION__);	
+		if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: END. Returning false", __FILE__, __func__, __LINE__);	
 		return false;
 	}
 
@@ -313,9 +313,9 @@ bool RdbMap::readMap ( BigFile *dataFile )
 	//   we will add to this map and write it back out.
 	if ( ! m_file.open ( O_RDWR ) )
 	{
-		log(LOG_ERROR,"%s:%s: Could not open map file %s for reading: %s.",__FILE__,__FUNCTION__,m_file.getFilename(),mstrerror(g_errno));
+		log(LOG_ERROR,"%s:%s:%d: Could not open map file %s for reading: %s.",__FILE__, __func__, __LINE__, m_file.getFilename(),mstrerror(g_errno));
 			   
-		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. Returning false", __FILE__,__FUNCTION__);
+		if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: END. Returning false", __FILE__, __func__, __LINE__);
 		return false;
 	}
 			   
@@ -331,18 +331,18 @@ bool RdbMap::readMap ( BigFile *dataFile )
 	// verify and fix map, data on disk could be corrupted
 	if ( ! verifyMap ( dataFile ) ) 
 	{
-		log(LOG_ERROR,"%s:%s: END. Could not verify map. filename [%s]. Returning false", __FILE__,__FUNCTION__, m_file.getFilename());
+		log(LOG_ERROR,"%s:%s:%d: END. Could not verify map. filename [%s]. Returning false", __FILE__, __func__, __LINE__,  m_file.getFilename());
 		return false;
 	}
 	
-	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. Returning %s", __FILE__,__FUNCTION__, status?"true":"false");
+	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: END. Returning %s", __FILE__, __func__, __LINE__,  status?"true":"false");
 	// return status
 	return status;
 }
 
 bool RdbMap::verifyMap ( BigFile *dataFile ) 
 {
-	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. filename [%s]", __FILE__,__FUNCTION__, m_file.getFilename());
+	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: BEGIN. filename [%s]", __FILE__, __func__, __LINE__,  m_file.getFilename());
 	
 	int64_t diff = m_offset - m_fileStartOffset;
 	diff -= dataFile->getFileSize();
@@ -352,19 +352,14 @@ bool RdbMap::verifyMap ( BigFile *dataFile )
 		diff = diff * -1LL;
 	}
 
-	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: diff: %"INT64"", __FILE__,__FUNCTION__, diff);
+	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: diff: %"INT64"", __FILE__, __func__, __LINE__,  diff);
 
 	// . return false if file size does not match
 	// . i've seen this happen before
 	if ( diff ) 
 	{
-		log(LOG_WARN, "%s:%s: Map file [%s] says that file [%s] should be %"INT64" bytes long, but it is %"INT64" bytes.",
-			__FILE__,
-			__FUNCTION__,
-		    m_file.getFilename(),
-		    dataFile->getFilename() ,
-		    m_offset - m_fileStartOffset ,
-		    dataFile->getFileSize() );
+		log(LOG_WARN, "%s:%s:%d: Map file [%s] says that file [%s] should be %"INT64" bytes long, but it is %"INT64" bytes.",
+			__FILE__, __func__, __LINE__, m_file.getFilename(), dataFile->getFilename(), m_offset - m_fileStartOffset, dataFile->getFileSize() );
 		    
 		// we let headless files squeak by on this because we cannot
 		// generate a map for them yet. if power went out a key can be
@@ -427,13 +422,13 @@ bool RdbMap::verifyMap ( BigFile *dataFile )
 	
 	if ( numMissingParts > 0 ) 
 	{
-		log(LOG_ERROR,"%s:%s: %"INT32" missing parts. filename [%s]", __FILE__,__FUNCTION__, numMissingParts, m_file.getFilename());	
+		log(LOG_ERROR,"%s:%s:%d: %"INT32" missing parts. filename [%s]", __FILE__, __func__, __LINE__,  numMissingParts, m_file.getFilename());	
 
 		File *f = dataFile->getFile2 ( numMissingParts );
 		
 		if ( f ) 
 		{
-			log(LOG_ERROR,"%s:%s: Missing part file before %s.", __FILE__,__FUNCTION__, f->getFilename());
+			log(LOG_ERROR,"%s:%s:%d: Missing part file before %s.", __FILE__, __func__, __LINE__,  f->getFilename());
 		}
 	}
 
@@ -449,7 +444,7 @@ bool RdbMap::verifyMap ( BigFile *dataFile )
 	}
 	// now fix the map if it had out of order keys in it
 	bool status = verifyMap2 ( );
-	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END. Returning %s", __FILE__,__FUNCTION__, status?"true":"false");
+	if( g_conf.m_logTraceRdbMap ) log(LOG_TRACE,"%s:%s:%d: END. Returning %s", __FILE__, __func__, __LINE__,  status?"true":"false");
 		
 	return status;
 }
@@ -1685,9 +1680,10 @@ bool RdbMap::generateMap ( BigFile *f ) {
 		// if none found, bail
 		if ( fullKeyOff < 0 )
 		{
-			log(LOG_ERROR,"%s:%s: Could not get a full key in the first %"INT64" bytes read of headless file [%s]",
+			log(LOG_ERROR,"%s:%s:%d: Could not get a full key in the first %"INT64" bytes read of headless file [%s]",
 				__FILE__,
-				__FUNCTION__,
+				__func__,
+				__LINE__,
 				readSize,
 				f->getFilename());
 			return false;
@@ -1856,9 +1852,10 @@ done:
 	// if there was bad data we probably added out of order keys
 	if ( m_needVerify ) 
 	{
-		log(LOG_ERROR,"%s:%s: Fixing map for [%s]. Added at least %"INT64" bad keys.",
+		log(LOG_ERROR,"%s:%s:%d: Fixing map for [%s]. Added at least %"INT64" bad keys.",
 			__FILE__,
-			__FUNCTION__,
+			__func__,
+			__LINE__,
 			f->getFilename(),
 		    m_badKeys);
 
@@ -1898,8 +1895,8 @@ bool RdbMap::truncateFile ( BigFile *f )
 	f->read ( buf , readSize , off );
 	if ( ! f->read ( buf , readSize , off ) ) 
 	{
-		log(LOG_ERROR,"%s:%s: Failed to read %"INT32" bytes of [%s] at offset=%"INT64".",
-			   __FILE__,__FUNCTION__,readSize, f->getFilename(), off);
+		log(LOG_ERROR,"%s:%s:%d: Failed to read %"INT32" bytes of [%s] at offset=%"INT64".",
+			   __FILE__, __func__, __LINE__, readSize, f->getFilename(), off);
 		return false;
 	}
 	
@@ -1917,8 +1914,8 @@ bool RdbMap::truncateFile ( BigFile *f )
 	// if too much remains, do not truncate it
 	if ( tail > MAX_TRUNC_SIZE )
 	{
-		log(LOG_ERROR,"%s:%s: Cannot truncate data file because bad tail is %"INT64" bytes > %"INT32". That excludes bytes that are zero.",
-			__FILE__, __FUNCTION__, tail, (int32_t)MAX_TRUNC_SIZE);
+		log(LOG_ERROR,"%s:%s:%d: Cannot truncate data file because bad tail is %"INT64" bytes > %"INT32". That excludes bytes that are zero.",
+			__FILE__, __func__, __LINE__, tail, (int32_t)MAX_TRUNC_SIZE);
 		return false;
 	}
 	
@@ -1931,8 +1928,8 @@ bool RdbMap::truncateFile ( BigFile *f )
 	
 	if ( ! p ) 
 	{
-		log(LOG_ERROR,"%s:%s: Unable to get part %"INT32" of file [%s]",
-			__FILE__, __FUNCTION__, partnum, f->getFilename());
+		log(LOG_ERROR,"%s:%s:%d: Unable to get part %"INT32" of file [%s]",
+			__FILE__, __func__, __LINE__, partnum, f->getFilename());
 		return false;
 	}
 		
@@ -1953,8 +1950,8 @@ bool RdbMap::truncateFile ( BigFile *f )
 	// we must always be the last part of next to last part
 	if ( partnum != numParts-1 && partnum != numParts-2 )
 	{
-		log(LOG_ERROR,"%s:%s: This file is not the last part or next to last part for this file. aborting truncation.",
-			__FILE__, __FUNCTION__);
+		log(LOG_ERROR,"%s:%s:%d: This file is not the last part or next to last part for this file. aborting truncation.",
+			__FILE__, __func__, __LINE__);
 		return false;
 	}
 			   
@@ -1967,16 +1964,16 @@ bool RdbMap::truncateFile ( BigFile *f )
 		p2 = f->getFile2 ( partnum + 1 );
 		if ( ! p2 ) 
 		{
-			log(LOG_ERROR,"%s:%s: Could not get next part %"INT32" of file [%s]",
-				__FILE__, __FUNCTION__, partnum+1, f->getFilename());
+			log(LOG_ERROR,"%s:%s:%d: Could not get next part %"INT32" of file [%s]",
+				__FILE__, __func__, __LINE__, partnum+1, f->getFilename());
 			return false;
 		}
 			
 			
 		if ( p2->getFileSize() > MAX_TRUNC_SIZE )
 		{
-			log(LOG_ERROR,"%s:%s: db: Next part file is bigger than %"INT32" bytes.",
-				__FILE__, __FUNCTION__, (int32_t)MAX_TRUNC_SIZE);
+			log(LOG_ERROR,"%s:%s:%d: db: Next part file is bigger than %"INT32" bytes.",
+				__FILE__, __func__, __LINE__, (int32_t)MAX_TRUNC_SIZE);
 			return false;
 		}
 	}
@@ -1985,8 +1982,8 @@ bool RdbMap::truncateFile ( BigFile *f )
 	if ( truncate ( p->getFilename() , newSize ) )
 	{
 		// return false if had an error
-		log(LOG_ERROR, "%s:%s: truncate(%s,%"INT32"): %s.",
-			   __FILE__, __FUNCTION__, p->getFilename(),newSize,mstrerror(errno));
+		log(LOG_ERROR, "%s:%s:%d: truncate(%s,%"INT32"): %s.",
+			   __FILE__, __func__, __LINE__, p->getFilename(),newSize,mstrerror(errno));
 		return false;
 	}
 			   

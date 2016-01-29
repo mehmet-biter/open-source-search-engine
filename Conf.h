@@ -571,6 +571,8 @@ class Conf {
 	bool  m_logDebugRepair  ;
 	bool  m_logDebugDate    ;
 	bool  m_logDebugDetailed;
+	bool  m_logTraceRdbMap;
+	bool  m_logTraceBigFile;
 	bool m_logTraceMsg;
 	// expensive timing messages
 	bool m_logTimingAddurl  ;
