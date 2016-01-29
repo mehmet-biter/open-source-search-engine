@@ -1113,44 +1113,6 @@ void StateCD::printTitledbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 			sb->pushChar('\n');
 			continue;
 		}
-
-		// skip if not a diffbot json url
-		if ( ! xd.m_isDiffbotJSONObject ) continue;
-
-		// get the json content
-		char *json = xd.ptr_utf8Content;
-		
-		// empty?
-		if ( xd.size_utf8Content <= 1 )
-			continue;
-
-		// if not json, just print the json item out in csv
-		// moved into PageResults.cpp...
-		//if ( m_fmt == FORMAT_CSV ) {
-		//	printJsonItemInCsv ( json , sb );
-		//	continue;
-		//}
-
-		// just print that out. encode \n's and \r's back to \\n \\r
-		// and backslash to a \\ ...
-		// but if they originally had a \u<backslash> encoding and
-		// we made into utf8, do not put that back into the \u
-		// encoding because it is not necessary.
-
-		// print in json
-		if ( m_printedItem )
-			sb->safePrintf("\n,\n");
-
-		m_printedItem = true;
-
-		//if ( ! sb->safeStrcpyPrettyJSON ( json ) ) 
-		//	log("diffbot: error printing json in dump");
-		sb->safeStrcpy ( json );
-
-		sb->nullTerm();
-
-		// separate each JSON object with \n i guess
-		//sb->pushChar('\n');
 	}
 }
 

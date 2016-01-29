@@ -910,7 +910,7 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 
 	// hack for diffbot. do not hash type:json because diffbot uses
 	// that for searching diffbot json objects
-	if ( cr->m_isCustomCrawl && ctype==CT_JSON && !m_isDiffbotJSONObject )
+	if ( cr->m_isCustomCrawl && ctype==CT_JSON )
 		return true;
 
 	// . now hash it
@@ -1591,27 +1591,6 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	char buf2[32];
 	sprintf(buf2,"%"UINT64"",(m_docId) );
 	if ( ! hashSingleTerm(buf2,gbstrlen(buf2),&hi) ) return false;
-
-	// if indexing a json diffbot object, index
-	// gbparenturl:xxxx of the original url from which the json was
-	// datamined. we use this so we can act as a diffbot json cache.
-	if ( m_isDiffbotJSONObject ) {
-		setStatus ( "hashing gbparenturl term");
-		char *p = fu->getUrl() + fu->getUrlLen() - 1;
-		// back up to - as in "http://xyz.com/foo-diffbotxyz123456"
-		for ( ; *p && *p != '-' ; p-- );
-		// set up the hashing parms
-		hi.m_hashGroup = HASHGROUP_INTAG;
-		hi.m_tt        = tt;
-		hi.m_desc      = "diffbot parent url";
-		// append a "www." as part of normalization
-		uw.set ( fu->getUrl() , p - fu->getUrl() , true, false, false, false, false, 0x7fffffff );
-		hi.m_prefix    = "gbparenturl";
-		// no longer, we just index json now
-		//if ( isStatusDoc ) hi.m_prefix = "gbparenturl2";
-		if ( ! hashSingleTerm(uw.getUrl(),uw.getUrlLen(),&hi) )
-			return false;
-	}
 
 	//if ( isStatusDoc ) return true;
 
@@ -3154,11 +3133,6 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		// . sanity test, make sure it is in supported list
 		// . hashing diffbot json output of course fails this so
 		//   skip in that case if diffbot
-		//if ( ! m_isDiffbotJSONObject &&
-		//     getFieldCode3 ( prefixHash ) == FIELD_GENERIC ) {
-		//	if (hi->m_desc&&strcmp(hi->m_desc,"custom meta tag")) {
-		//		char *xx=NULL;*xx=0; }
-		//}
 	}
 
 	bool hashIffUnique = false;

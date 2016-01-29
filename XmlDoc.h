@@ -237,12 +237,7 @@ public:
 	uint16_t  m_bodyStartPos;
 	uint16_t  m_reserved5;
 
-	// a new parm from reserved6. need to know the count so we can
-	// delete the json objects derived from this page if we want to
-	// delete this page. or if this page is respidered then we get the
-	// json objects for it, REject the old json object urls, and inject
-	// the new ones i guess.
-	uint16_t  m_diffbotJSONCount;
+	uint16_t  m_unused0; //was: m_diffbotJSONCount
 
 	int16_t   m_httpStatus; // -1 if not found (empty http reply)
 	
@@ -266,9 +261,9 @@ public:
 	uint16_t  m_reserved799:1;
 	uint16_t  m_isSiteRoot:1;
 
-	uint16_t  m_isDiffbotJSONObject:1;
-	uint16_t  m_sentToDiffbot:1;
-	uint16_t  m_gotDiffbotSuccessfulReply:1;
+	uint16_t  m_reserved800:1; //was:m_isDiffbotJSONObject
+	uint16_t  m_reserved801:1; //was:m_sentToDiffbot
+	uint16_t  m_reserved802:1; //was:m_gotDiffbotSuccessfulReply
 	uint16_t  m_useTimeAxis:1; // m_reserved804:1;
 	uint16_t  m_reserved805:1;
 	uint16_t  m_reserved806:1;
@@ -614,14 +609,6 @@ public:
 
 	char *getMetaList ( bool forDelete = false );
 
-	char *getDiffbotParentUrl( char *myUrl );
-
-	int64_t m_diffbotReplyEndTime;
-	int64_t m_diffbotReplyStartTime;
-	int32_t m_diffbotReplyRetries;
-
-	bool m_sentToDiffbotThisTime;
-
 	uint64_t m_downloadStartTime;
 	//uint64_t m_downloadEndTime;
 
@@ -715,7 +702,6 @@ public:
 
 	void set20 ( Msg20Request *req ) ;
 	class Msg20Reply *getMsg20Reply ( ) ;
-	char **getDiffbotPrimaryImageUrl ( ) ;
 	class MatchOffsets *getMatchOffsets () ;
 	Query *getQuery() ;
 	Matches *getMatches () ;
@@ -728,8 +714,6 @@ public:
 	SafeBuf *getSampleForGigabitsJSON ( ) ;
 	char *getIsNoArchive ( ) ;
 	int32_t *getUrlFilterNum();
-	//int32_t *getDiffbotApiNum();
-	SafeBuf *getDiffbotApiUrl();
 	char *getIsLinkSpam ( ) ;
 	char *getIsHijacked();
 	char *getIsErrorPage ( ) ;
@@ -1262,23 +1246,12 @@ public:
 	bool m_numOutlinksAddedValid;
 	bool m_baseUrlValid;
 	bool m_replyValid;
-	bool m_recycleDiffbotReplyValid;
-	bool m_diffbotReplyValid;
-	bool m_tokenizedDiffbotReplyValid;
-	//bool m_diffbotUrlCrawlPatternMatchValid;
-	//bool m_diffbotUrlProcessPatternMatchValid;
-	//bool m_diffbotPageProcessPatternMatchValid;
-	//bool m_useDiffbotValid;
-	//bool m_diffbotApiNumValid;
-	bool m_diffbotApiUrlValid;
-	bool m_diffbotTitleHashBufValid;
 	bool m_crawlInfoValid;
 	bool m_isPageParserValid;
 	bool m_imageUrlValid;
 	bool m_imageUrl2Valid;
 	bool m_matchOffsetsValid;
 	bool m_queryValid;
-	bool m_diffbotProxyReplyValid;
 	bool m_matchesValid;
 	bool m_dbufValid;
 	bool m_titleValid;
@@ -1449,8 +1422,6 @@ public:
 	bool m_isChildDoc;
 	Msg13 m_msg13;
 	Msg13Request m_msg13Request;
-	Msg13Request m_diffbotProxyRequest;
-	ProxyReply *m_diffbotProxyReply;
 	bool m_isSpiderProxy;
 	// for limiting # of iframe tag expansions
 	int32_t m_numExpansions;
@@ -1525,45 +1496,12 @@ public:
 	//
 	// diffbot parms for indexing diffbot's json output
 	//
-	XmlDoc *m_dx;
-	char *m_diffbotObj;
-	SafeBuf m_diffbotReply;
-	SafeBuf m_v3buf;
-	SafeBuf *m_tokenizedDiffbotReplyPtr;
-	SafeBuf  m_tokenizedDiffbotReply;
-	int32_t m_diffbotReplyError;
-	bool m_recycleDiffbotReply;
-	//bool m_diffbotUrlCrawlPatternMatch;
-	//bool m_diffbotUrlProcessPatternMatch;
-	//bool m_diffbotPageProcessPatternMatch;
-	//int32_t m_diffbotApiNum;
-	//bool m_useDiffbot;
-	// url to access diffbot with
-	SafeBuf m_diffbotApiUrl;
-	SafeBuf m_diffbotUrl; // exact url used to fetch reply from diffbot
 
-	bool *getRecycleDiffbotReply ( ) ;
-	SafeBuf *getTokenizedDiffbotReply ( ) ;
-	SafeBuf *getDiffbotReply ( ) ;
-	bool doesUrlMatchDiffbotCrawlPattern() ;
-	//bool doesUrlMatchDiffbotProcessPattern() ;
-	bool doesPageContentMatchDiffbotProcessPattern() ;
-	int32_t *getDiffbotTitleHashes ( int32_t *numHashes ) ;
 	char *hashJSONFields ( HashTableX *table );
 	char *hashJSONFields2 ( HashTableX *table , HashInfo *hi , Json *jp ,
 				bool hashWithoutFieldNames ) ;
 
 	char *hashXMLFields ( HashTableX *table );
-	int32_t *reindexJSONObjects ( int32_t *newTitleHashes , 
-				      int32_t numNewHashes ) ;
-	int32_t *nukeJSONObjects ( int32_t *newTitleHashes , 
-				   int32_t numNewHashes ) ;
-	int32_t *redoJSONObjects ( int32_t *newTitleHashes , 
-				   int32_t numNewHashes ,
-				   bool deleteFromIndex ) ;
-
-	int32_t m_joc;
-	SafeBuf m_diffbotTitleHashBuf;
 
 	Json *getParsedJson();
 	// object that parses the json
