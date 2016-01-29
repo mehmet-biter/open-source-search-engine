@@ -13147,9 +13147,11 @@ bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness ,
 	//Url *cu = getCurrentUrl();
 	// decode what we got
 	char decoded[MAX_URL_LEN];
+
 	// convert &amp; to "&"
-	int32_t decBytes = htmlDecode(decoded,url,usize,false,niceness);
+	int32_t decBytes = htmlDecode( decoded, url, usize, false, niceness );
 	decoded[decBytes]='\0';
+
 	// . then the url
 	// . set the url to the one in the redirect tag
 	// . but if the http-equiv meta redirect url starts with a '?'
@@ -14555,8 +14557,6 @@ char **XmlDoc::getUtf8Content ( ) {
 
 	}
 
-
-
 	char **ep = getExpandedUtf8Content();
 	if ( ! ep || ep == (void *)-1 ) return ep;
 
@@ -14584,23 +14584,6 @@ char **XmlDoc::getUtf8Content ( ) {
 	// XmlDoc::getExpandedUtf8Content() want to call this??? it seems
 	// to destroy expandedutf8content with a call to htmldecode
 	if ( m_isSpiderProxy ) { char *xx=NULL;*xx=0; }
-
-
-	// not if rss file extension
-	//bool isRSSExt = false;
-	//char *ext = m_firstUrl.getExtension();
-	//if ( ext && strcasecmp(ext,"rss") == 0 ) isRSSExt = true;
-	//if ( ext && strcasecmp(ext,"xml") == 0 ) isRSSExt = true;
-	//if ( ext && strcasecmp(ext,"atom") == 0 ) isRSSExt = true;
-
-	//if ( ! m_contentTypeValid ) { char *xx=NULL;*xx=0; }
-	//if ( m_contentTypeValid && m_contentType == CT_XML ) isRSSExt = true;
-
-	// convert &lt; to <gb and &gt; to gb/> ???? and &amp; to utf32 char
-	// for a double wide ampersand?
-	//bool doSpecial = true;
-	// convert to what it should be if we are an .rss file extension
-	//if ( isRSSExt ) doSpecial = false;
 
 	// sabnity check
 	if ( m_xmlValid   ) { char *xx=NULL;*xx=0; }
@@ -14634,8 +14617,7 @@ char **XmlDoc::getUtf8Content ( ) {
 	// and creates big problems. same for www.first-avenue.com. so
 	// by setting doSpecial to try we change &lt; &gt and &quot; to
 	// [ ] and ' which have no meaning in html per se.
-	bool doSpecial = true;
-	if ( m_contentType == CT_XML ) doSpecial = false;
+	bool doSpecial = ( m_contentType != CT_XML );
 
 	// . now decode those html entites into utf8 so that we never have to
 	//   check for html entities anywhere else in the code. a big win!!
@@ -14647,162 +14629,78 @@ char **XmlDoc::getUtf8Content ( ) {
 	// . MDW: 9/28/2014. no longer do for xml docs since i added
 	//   hashXmlFields()
 	int32_t n = m_expandedUtf8ContentSize - 1;
-	if ( m_contentType != CT_XML )
-		n = htmlDecode(m_expandedUtf8Content,//ptr_utf8Content,
-			       m_expandedUtf8Content,//ptr_utf8Content,
-			       m_expandedUtf8ContentSize-1,//size_utf8Con
-			       doSpecial,
-			       m_niceness);
+	if ( m_contentType != CT_XML ) {
+		n = htmlDecode( m_expandedUtf8Content, m_expandedUtf8Content, m_expandedUtf8ContentSize - 1,
+						doSpecial, m_niceness );
+	}
 
 	// can't exceed this! n does not include the final \0 even though
 	// we do right it out.
 	if ( n > m_expandedUtf8ContentSize-1 ) {char *xx=NULL;*xx=0; }
+
 	// sanity
 	if ( m_expandedUtf8Content[n] != '\0' ) { char *xx=NULL;*xx=0; }
 
-	// now rss has crap in it like "&amp;nbsp;" so we have to do another
-	// decoding pass
-	// . MDW: 9/28/2014. no longer do for xml docs since i added
-	//   hashXmlFields()
-	// if ( m_contentType == CT_XML ) // isRSSExt )
-	// 	n = htmlDecode(m_expandedUtf8Content,//ptr_utf8Content,
-	// 		       m_expandedUtf8Content,//ptr_utf8Content,
-	// 		       n,
-	// 		       false,//doSpecial,
-	// 		       m_niceness);
 	// sanity
 	if ( n > m_expandedUtf8ContentSize-1 ) {char *xx=NULL;*xx=0; }
 	// sanity
 	if ( m_expandedUtf8Content[n] != '\0' ) { char *xx=NULL;*xx=0; }
-
-
 
 	// finally transform utf8 apostrophe's into regular apostrophes
 	// to make parsing easier
 	uint8_t *p   = (uint8_t *)m_expandedUtf8Content;
 	uint8_t *dst = (uint8_t *)m_expandedUtf8Content;
 	uint8_t *pend = p + n;
+
 	for ( ; *p ; p += size ) {
 		QUICKPOLL(m_niceness);
 		size = getUtf8CharSize(p);
+
 		// quick copy
-		if ( size == 1 && p[0] != '<' ) { *dst++ = *p; continue; }
-		// make "1<super>st</super>" into "1st" so Dates.cpp can
-		// have an easier time
-		if ( p[0] == '<' &&
-		     to_lower_a(p[1]) == 's' &&
-		     to_lower_a(p[2]) == 'u' &&
-		     to_lower_a(p[3]) == 'p' ) {
-			// assume no go!
-			*dst++ = '<';
-			// use this
-			char *s = (char *)p;
-			// did number preceed?
-			char *pn = s - 1;
-			for (;pn>=m_expandedUtf8Content&&is_wspace_a(*pn);pn--)
-				QUICKPOLL(m_niceness);
-			// must be like "1st" or "32nd"
-			if ( ! is_digit(*pn) ) continue;
-			// skip the "<sup"
-			s += 4;
-			// skip until >
-			for (; *s && *s != '>' ; s++ )
-				QUICKPOLL(m_niceness);
-			// crazy?
-			if ( ! *s ) continue;
-			// skip the '>'
-			s++;
-			// skip spaces after the "<sup>" tag
-			for (; *s && is_wspace_a(*s) ; s++ )
-				QUICKPOLL(m_niceness);
-			// crazy?
-			if ( ! *s ) continue;
-			// check for "st" etc
-			bool gotIt = false;
-			char *suffix = s;
-			if ( (to_lower_a(s[0])=='s'&&to_lower_a(s[1]) == 't')||
-			     (to_lower_a(s[0])=='n'&&to_lower_a(s[1]) == 'd')||
-			     (to_lower_a(s[0])=='r'&&to_lower_a(s[1]) == 'd')||
-			     (to_lower_a(s[0])=='t'&&to_lower_a(s[1]) == 'h'))
-				gotIt = true;
-			if ( ! gotIt ) continue;
-			// skip that
-			s += 2;
-			// skip more spaces
-			for (; *s && is_wspace_a(*s) ; s++ )
-				QUICKPOLL(m_niceness);
-			// crazy?
-			if ( ! *s ) continue;
-			// find </super> tag
-			if ( s[0] != '<' ) continue;
-			if ( s[1] != '/' ) continue;
-			if ( to_lower_a(s[2]) != 's' ) continue;
-			if ( to_lower_a(s[3]) != 'u' ) continue;
-			if ( to_lower_a(s[4]) != 'p' ) continue;
-			if ( s[5] != '>' ) continue;
-			// skip it, point to >
-			s += 5;
-			// assign p to that
-			p = (unsigned char *)s;
-			// back up ove rthe no-go
-			dst--;
-			// rewrite it
-			*dst++ = to_lower_a(suffix[0]);
-			*dst++ = to_lower_a(suffix[1]);
-			// do next round
+		if ( size == 1 ) {
+			*dst++ = *p;
 			continue;
 		}
 
-
 		// check for crazy apostrophes
-		if ( p[0]==0xe2 &&
-		     p[1]==0x80 &&
-		     (p[2]==0x99 ||
-		      p[2]==0x98 ||
-		      p[2]==0x9b ) ) {
+		if ( p[0] == 0xe2 && p[1] == 0x80 &&
+		     ( p[2] == 0x98 ||    // U+2018 LEFT SINGLE QUOTATION MARK
+		       p[2] == 0x99 ||    // U+2019 RIGHT SINGLE QUOTATION MARK
+		       p[2] == 0x9b ) ) { // U+201B SINGLE HIGH-REVERSED-9 QUOTATION MARK
 			*dst++ = '\'';
 			continue;
 		}
+
 		// utf8 control character?
 		if ( p[0] == 0xc2 &&
-		     p[1] >= 0x80 &&
-		     p[1] <= 0x9f ) {
+		     p[1] >= 0x80 && p[1] <= 0x9f ) {
 			*dst++ = ' ';
 			continue;
 		}
+
 		// double quotes in utf8
-		// DO NOT do this if type JSON!! json uses quotes as
-		// control characters
-		if ( p[0] == 0xe2 &&
-		     p[1] == 0x80 &&
-		     m_contentType != CT_JSON ) {
-			if (p[2] == 0x9c ) {
-				*dst++ = '\"';
-				continue;
-			}
-			if (p[2] == 0x9d ) {
-				*dst++ = '\"';
-				continue;
+		// DO NOT do this if type JSON!! json uses quotes as control characters
+		if (m_contentType != CT_JSON) {
+			if ( p[0] == 0xe2 && p[1] == 0x80 ) {
+				if ( p[2] == 0x9c ) {
+					*dst++ = '\"';
+					continue;
+				}
+				if ( p[2] == 0x9d ) {
+					*dst++ = '\"';
+					continue;
+				}
 			}
 		}
+
 		// and crazy hyphens (8 - 10pm)
-		if ( p[0]==0xc2 &&
-		     p[1]==0xad ) {
+		if ( ( p[0] == 0xc2 && p[1] == 0xad ) ||                  // U+00AD SOFT HYPHEN
+		     ( p[0] == 0xe2 && p[1] == 0x80 && p[2] == 0x93 ) ||  // U+2013 EN DASH
+			 ( p[0] == 0xe2 && p[1] == 0x80 && p[2] == 0x94 ) ) { // U+2014 EM DASH
 			*dst++ = '-';
 			continue;
 		}
-		if ( p[0]==0xe2 &&
-		     p[1]==0x80 &&
-		     p[2]==0x93 ) {
-			*dst++ = '-';
-			continue;
-		}
-		if ( p[0]==0xe2 &&
-		     p[1]==0x80 &&
-		     p[2]==0x94 ) {
-			*dst++ = '-';
-			continue;
-		}
+
 		// . convert all utf8 white space to ascii white space
 		// . should benefit the string matching algo in
 		//   XmlDoc::getEventSummary() which needs to skip spaces
@@ -14811,16 +14709,17 @@ char **XmlDoc::getUtf8Content ( ) {
 			*dst++ = ' ';
 			continue;
 		}
+
 		// otherwise, just copy it
 		gbmemcpy(dst,p,size);
 		dst += size;
 	}
+
 	// null term
 	*dst++ = '\0';
 
 	// now set it up
 	ptr_utf8Content  = (char *)m_expandedUtf8Content;
-	//size_utf8Content = n+1;//m_expandedUtf8ContentSize;
 	size_utf8Content = (char *)dst - m_expandedUtf8Content;
 
 	// sanity -- skipped over the \0???
