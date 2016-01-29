@@ -321,8 +321,7 @@ bool SafeBuf::reserve(int32_t i , char *label, bool clearIt ) {
 			int32_t clearSize = m_capacity - tmpCap;
 			memset(m_buf+tmpCap,0,clearSize);
 		}
-		log(LOG_DEBUG, "query: resize safebuf %"INT32" to %"INT32"", 
-		    tmpCap, m_capacity);
+		// log(LOG_DEBUG, "query: resize safebuf %"INT32" to %"INT32"", tmpCap, m_capacity);
 	}
 	// reset to 0's?
 	//if ( ! clearIt ) return true;
