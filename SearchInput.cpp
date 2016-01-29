@@ -28,7 +28,6 @@ void SearchInput::clear ( int32_t niceness ) {
 	memset ( &m_START , 0x00 , size );
 	m_sbuf1.reset();
 	m_sbuf2.reset();
-	m_sbuf3.reset();
 
 	// set these
 	m_numLinesInSummary  = 2;
@@ -672,7 +671,6 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 
 	m_sbuf1.reset();
 	m_sbuf2.reset();
-	m_sbuf3.reset();
 
 	int16_t qcs = csUTF8;
 	if (m_queryCharset && m_queryCharset[0]){
@@ -891,7 +889,6 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	}
 	m_sbuf1.setLabel("sisbuf1");
 	m_sbuf2.setLabel("sisbuf2");
-	m_sbuf3.setLabel("sisbuf3");
 	// append the natural query
 	if ( m_query && m_query[0] ) {
 		//if ( p  > pstart  ) *p++  = ' ';
@@ -1127,7 +1124,6 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	// null terms
 	if ( ! m_sbuf1.nullTerm() ) return false;
 	if ( ! m_sbuf2.nullTerm() ) return false;
-	if ( ! m_sbuf3.nullTerm() ) return false;
 
 	// the natural query
 	m_displayQuery = m_sbuf2.getBufStart();// + displayQueryOffset;

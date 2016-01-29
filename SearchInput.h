@@ -116,11 +116,7 @@ class SearchInput {
 	TopicGroup     m_topicGroups [ MAX_TOPIC_GROUPS ];// msg40
 	SafeBuf m_sbuf1;
 	SafeBuf m_sbuf2;
-	SafeBuf m_sbuf3;
 
-
-	// make a cookie from parms with m_flags of PF_COOKIE set
-	SafeBuf m_cookieBuf;
 
 	// we convert m_defaultSortLang to this number, like langEnglish
 	// or langFrench or langUnknown...
