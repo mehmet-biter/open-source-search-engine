@@ -93,13 +93,6 @@ char *getJSONFieldValue ( char *json, char *field , int32_t *valueLen ) ;
 
 bool logQueryLogs ( );
 
-bool checkRegex ( SafeBuf *regex , 
-		  char    *target ,
-		  bool    *boolVal ,
-		  bool    *boolValValid ,
-		  int32_t    *compileError ,
-		  CollectionRec *cr ) ;
-
 bool getDensityRanks ( int64_t *wids , 
 		       int32_t nw,
 		       //int32_t wordStart , 

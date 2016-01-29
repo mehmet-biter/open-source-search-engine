@@ -17482,54 +17482,6 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 	return true;
 }
 
-/*
-bool checkRegex ( SafeBuf *regex ,
-		  char    *target ,
-		  bool    *boolVal ,
-		  bool    *boolValValid ,
-		  int32_t    *compileError ,
-		  CollectionRec *cr ) {
-
-	if ( compileError ) *compileError = false;
-
-	if ( *boolValValid )
-		return *boolVal;
-
-	// if not using diffbot or there is no regex, it is ok
-	if ( regex->length() <= 0 ) {
-		*boolVal = true;
-		*boolValValid = true;
-		return boolVal;
-	}
-
-	// whip out the regex shit i guess...
-	regex_t buf;
-	// this will store the compiled regular expression into "buf"
-	int32_t ret = regcomp ( &buf ,
-			     // the actual regular expression to compile
-			     regex->getBufStart() ,
-			     // some flags
-			     REG_EXTENDED|REG_ICASE|REG_NEWLINE|REG_NOSUB);
-
-	if ( ret ) {
-		//g_errno = ret;
-		if ( compileError ) *compileError = errno;
-		log("xmldoc: diffbot regcomp failed: %s. This should have "
-		    "been tested before crawl was started. Ignoring.",
-		    mstrerror(errno));
-		return true;
-	}
-
-	// now see if it is a match
-	if ( regexec(&buf,target,0,NULL,0) ) *boolVal = true;
-	else                                 *boolVal = false;
-
-	*boolValValid = true;
-	return boolVal;
-}
-*/
-
-
 void getMetaListWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// make sure has not been freed from under us!
