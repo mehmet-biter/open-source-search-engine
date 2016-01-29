@@ -2826,21 +2826,54 @@ static void gotSpiderdbListWrapper2( void *state , RdbList *list,Msg5 *msg5) {
 // . this should be called from a sleepwrapper, the same sleep wrapper we
 //   call populateDoledbFromWaitingTree() from should be fine
 void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
+ 
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	
 	// skip if in repair mode
-	if ( g_repairMode ) return;
+	if ( g_repairMode ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, in repair mode", __FILE__, __func__, __LINE__);
+		return;
+	}
+	
 	// sanity
 	if ( m_deleteMyself ) { char *xx=NULL;*xx=0; }
 	// skip if spiders off
-	if ( ! m_cr->m_spideringEnabled ) return;
-	if ( ! g_hostdb.getMyHost( )->m_spiderEnabled ) return;
+	if ( ! m_cr->m_spideringEnabled ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, spiders disabled", __FILE__, __func__, __LINE__);
+		return;
+	}
+	
+	if ( ! g_hostdb.getMyHost( )->m_spiderEnabled ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, spiders disabled (2)", __FILE__, __func__, __LINE__);
+		return;
+	}
+		
+		
 	// skip if udp table is full
-	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) return;
+	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, UDP table full", __FILE__, __func__, __LINE__);
+		return;
+	}
+		
 	// if entering for the first time, we need to read list from spiderdb
 	if ( ! reentry ) {
 		// just return if we should not be doing this yet
-		if ( ! m_waitingTreeNeedsRebuild ) return;
+		if ( ! m_waitingTreeNeedsRebuild ) 
+		{
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, !m_waitingTreeNeedsRebuild", __FILE__, __func__, __LINE__);
+			return;
+		}
+		
 		// a double call? can happen if list read is slow...
-		if ( m_gettingList2 ) return;
+		if ( m_gettingList2 ) 
+		{
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, double call", __FILE__, __func__, __LINE__);
+			return;
+		}
 
 		// . borrow a msg5
 		// . if none available just return, we will be called again
@@ -2851,11 +2884,9 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// . get the list of spiderdb records
 		// . do not include cache, those results are old and will mess
 		//   us up
-		log(LOG_DEBUG,"spider: populateWaitingTree: "
-		    "calling msg5: startKey=0x%"XINT64",0x%"XINT64" "
-		    "firstip=%s",
-		    m_nextKey2.n1,m_nextKey2.n0,
-		    iptoa(g_spiderdb.getFirstIp(&m_nextKey2)));
+		log(LOG_DEBUG,"spider: populateWaitingTree: calling msg5: startKey=0x%"XINT64",0x%"XINT64" firstip=%s",
+		    m_nextKey2.n1, m_nextKey2.n0, iptoa(g_spiderdb.getFirstIp(&m_nextKey2)));
+		    
 		// flag it
 		m_gettingList2 = true;
 		// make state
@@ -2876,14 +2907,18 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 					 gotSpiderdbListWrapper2 ,
 					 MAX_NICENESS   , // niceness
 					 true          )) // do error correct?
+		{
 			// return if blocked
+ 			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, msg5b.getList blocked", __FILE__, __func__, __LINE__);
 			return;
+		}
 	}
 
 	// show list stats
 	if ( g_conf.m_logDebugSpider )
-		log("spider: populateWaitingTree: got list of size %"INT32"",
-		    m_list2.m_listSize);
+	{
+		log("spider: populateWaitingTree: got list of size %"INT32"", m_list2.m_listSize);
+	}
 
 	// unflag it
 	m_gettingList2 = false;
@@ -2894,7 +2929,11 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	// writes were disabled then just bail and let the scan be re-called
 	// later
 	RdbTree *wt = &m_waitingTree;
-	if ( wt->m_isSaving || ! wt->m_isWritable ) return;
+	if ( wt->m_isSaving || ! wt->m_isWritable ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, waitingTree not writable at the moment", __FILE__, __func__, __LINE__);
+		return;
+	}
 
 	// shortcut
 	RdbList *list = &m_list2;
@@ -2902,9 +2941,9 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	list->resetListPtr();
 	// bail on error
 	if ( g_errno ) {
-		log("spider: Had error getting list of urls "
-		    "from spiderdb2: %s.",mstrerror(g_errno));
+		log("spider: Had error getting list of urls from spiderdb2: %s.", mstrerror(g_errno));
 		//m_isReadDone2 = true;
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 		return;
 	}
 
@@ -2932,7 +2971,12 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// if ( firstIp == 0 || firstIp == -1 )
 		// 	gotCorruption = true;
 		// if same as last, skip it
-		if ( firstIp == lastOne ) continue;
+		if ( firstIp == lastOne ) 
+		{
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Skipping, IP [%s] same as last", __FILE__, __func__, __LINE__, iptoa(firstIp));
+			continue;
+		}
+
 		// set this lastOne for speed
 		lastOne = firstIp;
 		// check for dmoz. set up gdb on gk157/gk221 to break here
@@ -2940,12 +2984,27 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		//if ( firstIp == -815809331 )
 		//	log("got dmoz");
 		// if firstip already in waiting tree, skip it
-		if ( m_waitingTable.isInTable ( &firstIp ) ) continue;
+		if ( m_waitingTable.isInTable ( &firstIp ) ) 
+		{
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Skipping, IP [%s] already in waiting tree", __FILE__, __func__, __LINE__, iptoa(firstIp));
+			continue;
+		}
+
 		// skip if only our twin should add it to waitingtree/doledb
-		if ( ! isAssignedToUs ( firstIp ) ) continue;
-		// skip if ip already represented in doledb i guess otehrwise
+		if ( ! isAssignedToUs ( firstIp ) ) 
+		{
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Skipping, IP [%s] not assigned to us", __FILE__, __func__, __LINE__, iptoa(firstIp));
+			continue;
+		}
+
+		// skip if ip already represented in doledb i guess otherwise
 		// the populatedoledb scan will nuke it!!
-		if ( m_doleIpTable.isInTable ( &firstIp ) ) continue;
+		if ( m_doleIpTable.isInTable ( &firstIp ) ) 
+		{
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Skipping, IP [%s] already in doledb", __FILE__, __func__, __LINE__, iptoa(firstIp));
+			continue;
+		}
+
 		// not currently spidering either. when they got their
 		// lock they called confirmLockAcquisition() which will
 		// have added an entry to the waiting table. sometimes the
@@ -2959,7 +3018,10 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		//   added!!!
 		// . so now i made this collection specific, not global
 		if ( g_spiderLoop.getNumSpidersOutPerIp (firstIp,m_collnum)>0)
+		{
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Skipping, IP [%s] is already being spidered", __FILE__, __func__, __LINE__, iptoa(firstIp));
 			continue;
+		}
 
 		// otherwise, we want to add it with 0 time so the doledb
 		// scan will evaluate it properly
@@ -2970,7 +3032,12 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 			    "population of waiting tree will repeat until "
 			    "this add happens."
 			    , iptoa(firstIp) );
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, addToWaitingTree for IP [%s] failed", __FILE__, __func__, __LINE__, iptoa(firstIp));
 			return;
+		}
+		else
+		{
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: IP [%s] added to waiting tree", __FILE__, __func__, __LINE__, iptoa(firstIp));
 		}
 
 		// count it
@@ -3046,9 +3113,9 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 		// 	    m_numAdded,m_numBytesScanned,
 		// 	    m_cr->m_coll);
 		// note it
-		log("spider: rebuild complete for %s. Added %"INT32" "
-		    "recs to waiting tree, scanned %"INT64" bytes of spiderdb.",
-		    m_coll,m_numAdded,m_numBytesScanned);
+		log("spider: rebuild complete for %s. Added %"INT32" recs to waiting tree, scanned %"INT64" bytes of spiderdb.",
+		    m_coll,m_numAdded, m_numBytesScanned);
+		    
 		// reset the count for next scan
 		m_numAdded = 0 ;
 		m_numBytesScanned = 0;
@@ -3067,6 +3134,7 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	// free list to save memory
 	list->freeList();
 	// wait for sleepwrapper to call us again with our updated m_nextKey2
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, done", __FILE__, __func__, __LINE__);
 	return;
 }
 
@@ -3102,11 +3170,23 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 // . we call this a lot, like if the admin changes the url filters table
 //   we have to re-scan all of spiderdb basically and re-do doledb
 void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
+	
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	// only one loop can run at a time!
 	//if ( ! reentry && m_isPopulating ) return;
-	if ( m_isPopulatingDoledb ) return;
+	if ( m_isPopulatingDoledb ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, already populating doledb", __FILE__, __func__, __LINE__);
+		return;
+	}
+	
 	// skip if in repair mode
-	if ( g_repairMode ) return;
+	if ( g_repairMode ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, in repair mode", __FILE__, __func__, __LINE__);
+		return;
+	}
+	
 	// if rebuilding the waiting tree, do that first
 	// MDW. re-allow us to populate doledb while waiting tree is being
 	// build so spiders can go right away. i had this in there to debug.
@@ -3115,12 +3195,25 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	// let's skip if spiders off so we can inject/popoulate the index quick
 	// since addSpiderRequest() calls addToWaitingTree() which then calls
 	// this. 
-	if ( ! g_conf.m_spideringEnabled ) return;
-	if ( ! g_hostdb.getMyHost( )->m_spiderEnabled ) return;
+	if ( ! g_conf.m_spideringEnabled ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, spidering not enabled", __FILE__, __func__, __LINE__);
+		return;
+	}
+	
+	if ( ! g_hostdb.getMyHost( )->m_spiderEnabled ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, spidering not enabled (2)", __FILE__, __func__, __LINE__);
+		return;
+	}
 
 
 	// skip if udp table is full
-	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) return;
+	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, no more UDP slots", __FILE__, __func__, __LINE__);
+		return;
+	}
 
 	// try skipping!!!!!!!!!!!
 	// yeah, this makes us scream. in addition to calling
@@ -3141,6 +3234,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	RdbTree *wt = &m_waitingTree;
 	if( wt->m_isSaving || ! wt->m_isWritable ) {
 		m_isPopulatingDoledb = false;
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, waitingTree not writable at the moment", __FILE__, __func__, __LINE__);
 		return;
 	}
 
@@ -3148,6 +3242,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	// terminate here so all threads can return and we can exit properly
 	if ( g_process.m_mode == EXIT_MODE ) {
 		m_isPopulatingDoledb = false; 
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, shutting down", __FILE__, __func__, __LINE__);
 		return;
 	}
 
@@ -3292,6 +3387,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 				  -1 ) ) { // rdbid
 		m_isPopulatingDoledb = false;
 		log("spider: winntree set: %s",mstrerror(g_errno));
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, after winnerTree.set", __FILE__, __func__, __LINE__);
 		return;
 	}
 
@@ -3306,6 +3402,7 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 				   "wtdedup" ) ) {
 		m_isPopulatingDoledb = false;
 		log("spider: wintable set: %s",mstrerror(g_errno));
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, after winnerTable.set", __FILE__, __func__, __LINE__);
 		return;
 	}
 
@@ -3327,55 +3424,24 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 	// . look up in spiderdb otherwise and add best req to doledb from ip
 	// . if it blocks ultimately it calls gotSpiderdbListWrapper() which
 	//   calls this function again with re-entry set to true
-	if ( ! evalIpLoop ( ) ) return ;
+	if ( ! evalIpLoop ( ) ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, after evalIpLoop", __FILE__, __func__, __LINE__);
+		return ;
+	}
 
 	// oom error? i've seen this happen and we end up locking up!
 	if ( g_errno ) { 
 		log("spider: evalIpLoop: %s",mstrerror(g_errno));
 		m_isPopulatingDoledb = false; 
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, error after evalIpLoop", __FILE__, __func__, __LINE__);
 		return; 
 	}
 	// try more
 	goto loop;
 }
 
-/*
-// replace this func with the one above...
-static void doledWrapper ( void *state ) {
-	SpiderColl *THIS = (SpiderColl *)state;
-	// msg4 is available again
-	THIS->m_msg1Avail = true;
 
-	if ( g_errno )
-		log("spider: msg1 addlist had error: %s. need to "
-		    "somehow reduce doleiptable score now...",
-		    mstrerror(g_errno));
-
-	// no longer populating doledb. we also set to false in 
-	// gotSpiderListWrapper
-	//THIS->m_isPopulating = false;
-
-	int64_t now = gettimeofdayInMilliseconds();
-	int64_t diff = now - THIS->m_msg4Start;
-	// we add recs to doledb using msg1 to keep things fast because
-	// msg4 has a delay of 500ms in it. but even then, msg1 can take
-	// 6ms or more just because of load issues.
-	if ( diff > 10 ) 
-		log("spider: adding to doledb took %"INT64"ms",diff);
-
-	// we are done!! that was the final step...
-	THIS->m_isPopulating = false;
-
-	// did collection get nuked while we were waiting for msg1 reply?
-	if ( tryToDeleteSpiderColl ( THIS ,"3") ) return;
-
-	// . we added a rec to doledb for the firstIp in m_waitingTreeKey, so
-	//   now go to the next node in the wait tree.
-	// . it will get the next key after m_waitingTreeKey
-	// . re-entry is true because we just got the msg4 reply
-	THIS->populateDoledbFromWaitingTree ( );
-}
-*/
 
 key128_t makeUfnTreeKey ( int32_t      firstIp      ,
 			  int32_t      priority     ,
@@ -3512,6 +3578,7 @@ static void gotSpiderdbListWrapper ( void *state , RdbList *list , Msg5 *msg5){
 
 bool SpiderColl::evalIpLoop ( ) {
 
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	//testWinnerTreeKey ( );
 
 	// sanity
@@ -3519,7 +3586,11 @@ bool SpiderColl::evalIpLoop ( ) {
 
 	// are we trying to exit? some firstip lists can be quite long, so
 	// terminate here so all threads can return and we can exit properly
-	if ( g_process.m_mode == EXIT_MODE ) return true;
+	if ( g_process.m_mode == EXIT_MODE ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, shutting down", __FILE__, __func__, __LINE__);
+		return true;
+	}
 
 	// if this ip is in the winnerlistcache use that. it saves
 	// us a lot of time.
@@ -3602,7 +3673,10 @@ bool SpiderColl::evalIpLoop ( ) {
 		sb.setBuf ( doleBuf, doleBufSize, doleBufSize, false );
 		// now add the first rec m_doleBuf into doledb's tree
 		// and re-add the rest back to the cache with the same key.
-		return addDoleBufIntoDoledb(&sb,true);//,cachedTimestamp)
+		bool rc = addDoleBufIntoDoledb(&sb,true);//,cachedTimestamp)
+		
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, after addDoleBufIntoDoledb. returning %s", __FILE__, __func__, __LINE__,rc?"true":"false");
+		return rc;
 	}
 
  top:
@@ -3610,7 +3684,11 @@ bool SpiderColl::evalIpLoop ( ) {
 	// did our collection rec get deleted? since we were doing a read
 	// the SpiderColl will have been preserved in that case but its
 	// m_deleteMyself flag will have been set.
-	if ( tryToDeleteSpiderColl ( this ,"4") ) return false;
+	if ( tryToDeleteSpiderColl ( this ,"4") ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, after tryToDeleteSpiderColl (4)", __FILE__, __func__, __LINE__);
+		return false;
+	}
 
 	// if first time here, let's do a read first
 	if ( ! m_didRead ) {
@@ -3626,7 +3704,11 @@ bool SpiderColl::evalIpLoop ( ) {
 		m_lastSreqUh48 = 0LL;
 
 		// do a read. if it blocks it will recall this loop
-		if ( ! readListFromSpiderdb () ) return false;
+		if ( ! readListFromSpiderdb () ) 
+		{
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, readListFromSpiderdb returned false", __FILE__, __func__, __LINE__);
+			return false;
+		}
 	}
 
  loop:
@@ -3635,8 +3717,11 @@ bool SpiderColl::evalIpLoop ( ) {
 	// the SpiderColl will have been preserved in that case but its
 	// m_deleteMyself flag will have been set.
 	if ( tryToDeleteSpiderColl ( this ,"5") )
+	{
 		// pretend to block since we got deleted!!!
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, after tryToDeleteSpiderColl (5)", __FILE__, __func__, __LINE__);
 		return false;
+	}
 
 	// . did reading the list from spiderdb have an error?
 	// . i guess we don't add to doledb then
@@ -3646,6 +3731,7 @@ bool SpiderColl::evalIpLoop ( ) {
 		// save mem
 		m_list.freeList();
 		//m_isReadDone = true;
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, g_errno %"INT32"", __FILE__, __func__, __LINE__, g_errno);
 		return true;
 	}
 
@@ -3727,7 +3813,11 @@ bool SpiderColl::evalIpLoop ( ) {
 	//   a new spider request or reply for this ip comes in we'll try
 	//   again as well...
 	// . this returns false if blocked adding to doledb using msg1
-	if ( ! addWinnersIntoDoledb() ) return false;
+	if ( ! addWinnersIntoDoledb() ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning false. After addWinnersIntoDoledb", __FILE__, __func__, __LINE__);
+		return false;
+	}
 
 	// . do more from tree
 	// . re-entry is true because we just got the  msg5 reply
@@ -3736,14 +3826,19 @@ bool SpiderColl::evalIpLoop ( ) {
 	//populateDoledbFromWaitingTree ( true );
 
 	// we are done...
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, all done.", __FILE__, __func__, __LINE__);
 	return true;
 }
+
+
 
 // . this is ONLY CALLED from evalIpLoop() above
 // . returns false if blocked, true otherwise
 // . returns true and sets g_errno on error
 bool SpiderColl::readListFromSpiderdb ( ) {
 
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+		
 	if ( ! m_waitingTreeKeyValid ) { char *xx=NULL;*xx=0; }
 	if ( ! m_scanningIp ) { char *xx=NULL;*xx=0; }
 
@@ -3751,6 +3846,8 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	if ( ! cr ) {
 		log("spider: lost collnum %"INT32"",(int32_t)m_collnum);
 		g_errno = ENOCOLLREC;
+		
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, ENOCOLLREC", __FILE__, __func__, __LINE__);
 		return true;
 	}
 
@@ -3762,8 +3859,14 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 	// sometimes we already have this ip in doledb/doleiptable
 	// already and somehow we try to scan spiderdb for it anyway
 	if ( m_doleIpTable.isInTable ( &firstIp0 ) ) { char *xx=NULL;*xx=0;}
+		
 	// if it got zapped from the waiting tree by the time we read the list
-	if ( ! m_waitingTable.isInTable ( &m_scanningIp ) ) return true;
+	if ( ! m_waitingTable.isInTable ( &m_scanningIp ) ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, IP no longer in waitingTree", __FILE__, __func__, __LINE__);
+		return true;
+	}
+	
 	// sanity check
 	int32_t wn = m_waitingTree.getNode(0,(char *)&m_waitingTreeKey);
 	// it gets removed because addSpiderReply() calls addToWaitingTree
@@ -3775,8 +3878,10 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 		log("spider: waiting tree key removed while reading list "
 		    "for %s (%"INT32")",
 		    cr->m_coll,(int32_t)m_collnum);
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, waitingTree node was removed", __FILE__, __func__, __LINE__);
 		return true;
 	}
+	
 	// sanity. if first time, this must be invalid
 	//if ( needList && m_nextKey == m_firstKey && m_bestRequestValid ) {
 	//	char *xx=NULL; *xx=0 ; }
@@ -3814,24 +3919,20 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 		// got print each out individually because KEYSTR
 		// uses a static buffer to store the string
 		SafeBuf tmp;
-		tmp.safePrintf("spider: readListFromSpiderdb: "
-			       "calling msg5: ");
-		tmp.safePrintf("firstKey=%s "
-			       ,KEYSTR(&m_firstKey,sizeof(key128_t)));
-		tmp.safePrintf("endKey=%s "
-			       ,KEYSTR(&m_endKey,sizeof(key128_t)));
-		tmp.safePrintf("nextKey=%s "
-			       ,KEYSTR(&m_nextKey,sizeof(key128_t)));
-		tmp.safePrintf("firstip=%s "
-			       ,iptoa(m_scanningIp));
+		tmp.safePrintf("spider: readListFromSpiderdb: calling msg5: ");
+		tmp.safePrintf("firstKey=%s ", KEYSTR(&m_firstKey,sizeof(key128_t)));
+		tmp.safePrintf("endKey=%s ", KEYSTR(&m_endKey,sizeof(key128_t)));
+		tmp.safePrintf("nextKey=%s ", KEYSTR(&m_nextKey,sizeof(key128_t)));
+		tmp.safePrintf("firstip=%s ", iptoa(m_scanningIp));
 		tmp.safePrintf("(cn=%"INT32")",(int32_t)m_collnum);
 		log(LOG_DEBUG,"%s",tmp.getBufStart());
 	}
+	
 	// log this better
 	if ( g_conf.m_logDebugSpider )
 		log("spider: readListFromSpiderdb: firstip=%s key=%s"
-		    ,iptoa(m_scanningIp)
-		    ,KEYSTR(&m_nextKey,sizeof(key128_t) ) );
+		    ,iptoa(m_scanningIp) ,KEYSTR(&m_nextKey,sizeof(key128_t) ) );
+		    
 	// flag it
 	m_gettingList1 = true;
 	// make state
@@ -3857,23 +3958,26 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 				gotSpiderdbListWrapper ,
 				MAX_NICENESS   , // niceness
 				true          )) // do error correct?
+	{
 		// return false if blocked
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, msg5.getList blocked", __FILE__, __func__, __LINE__);
 		return false ;
+	}
+	
 	// note its return
 	if ( g_conf.m_logDebugSpider )
-		log("spider: back from msg5 spiderdb read of %"INT32" bytes",
-		    m_list.m_listSize);
+	{
+		log("spider: back from msg5 spiderdb read of %"INT32" bytes",m_list.m_listSize);
+	}
+		
 	// no longer getting list
 	m_gettingList1 = false;
 
 	// got it without blocking. maybe all in tree or in cache
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, didn't block", __FILE__, __func__, __LINE__);
 	return true;
-
-	// unflag it
-	//m_gettingList = false;
-	// stop if we are done
-	//if ( m_isReadDone ) return true;
 }
+
 
 static int32_t s_lastIn  = 0;
 static int32_t s_lastOut = 0;
@@ -6149,6 +6253,8 @@ void SpiderLoop::reset() {
 void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) ;
 
 void SpiderLoop::startLoop ( ) {
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	
 	//m_cri     = 0;
 	m_crx = NULL;
 	m_activeListValid = false;
@@ -6217,6 +6323,8 @@ void SpiderLoop::startLoop ( ) {
 					   this,
 					   updateAllCrawlInfosSleepWrapper))
 		log("build: failed to register updatecrawlinfowrapper");
+		
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
 
 // call this every 50ms it seems to try to spider urls and populate doledb
@@ -13473,6 +13581,8 @@ static int32_t s_updateRoundNum = 1;
 // . ask every host for their crawl infos for each collection rec
 void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	
 	// debug test
 	//int32_t mr = g_collectiondb.m_recs[0]->m_maxCrawlRounds;
 	//log("mcr: %"INT32"",mr);
@@ -13536,23 +13646,23 @@ void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 			s_replies++;
 		}
 	}
-
+	
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Sent %"INT32" requests, got %"INT32" replies", __FILE__, __func__, __LINE__, s_requests, s_replies);
 	// return false if we blocked awaiting replies
 	if ( s_replies < s_requests )
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END. requests/replies mismatch", __FILE__, __func__, __LINE__);
 		return;
+	}
 
 	// how did this happen?
 	log("spider: got bogus crawl info replies!");
 	s_inUse = false;
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 	return;
-
-	// somehow we did not block... hmmmm...
-	//char *xx=NULL;*xx=0;
-	//gotCrawlInfoReply( cr , NULL );
-
-	// we did not block...
-	//return true;
 }
+
+
 
 // . Parms.cpp calls this when it receives our "spiderRoundNum" increment above
 // . all hosts should get it at *about* the same time
@@ -14534,6 +14644,9 @@ int32_t getFakeIpForUrl2 ( Url *url2 ) {
 
 // returns false and sets g_errno on error
 bool SpiderRequest::setFromAddUrl ( char *url ) {
+	
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN. url [%s]", __FILE__, __func__, __LINE__, url);
+		
 	// reset it
 	reset();
 	// make the probable docid
@@ -14566,6 +14679,7 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 	// too big?
 	if ( gbstrlen(url) > MAX_URL_LEN ) {
 		g_errno = EURLTOOLONG;
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, EURLTOOLONG", __FILE__, __func__, __LINE__);
 		return false;
 	}
 	// the url! includes \0
@@ -14585,6 +14699,7 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 	// sanity
 	if ( ! dom ) {
 		g_errno = EBADURL;
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, EBADURL", __FILE__, __func__, __LINE__);
 		return false;
 		//return sendReply ( st1 , true );
 	}
@@ -14596,6 +14711,7 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 	m_siteHash32 = hash32 ( host , hlen );
 	m_hostHash32 = m_siteHash32;
 
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, done.", __FILE__, __func__, __LINE__);
 	return true;
 }
 
@@ -14671,7 +14787,8 @@ CollectionRec *SpiderLoop::getActiveList() {
 
 
 void SpiderLoop::buildActiveList ( ) {
-
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	
 	//log("spider: rebuilding active list");
 
 	//m_bookmark = NULL;
@@ -14755,4 +14872,8 @@ void SpiderLoop::buildActiveList ( ) {
 		m_bookmark = NULL;
 		m_crx = NULL;
 	}
+	
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
+
+

@@ -1299,12 +1299,12 @@ void RdbBase::buryFiles ( int32_t a , int32_t b ) {
 bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			     int32_t minToMergeOverride ) {
 
-	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN. minToMergeOverride: %"INT32"", __FILE__,__func__,__LINE__, minToMergeOverride);
+	if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: BEGIN. minToMergeOverride: %"INT32"", __FILE__,__func__,__LINE__, minToMergeOverride);
 
 	// don't do merge if we're in read only mode
 	if ( g_conf.m_readOnlyMode ) 
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, in read-only mode", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, in read-only mode", __FILE__,__func__,__LINE__);
 		return false;
 	}
 	
@@ -1313,27 +1313,27 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	// nor if EITHER of the merge classes are suspended
 	if ( g_merge.m_isSuspended  ) 
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, is suspended", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, is suspended", __FILE__,__func__,__LINE__);
 		return false;
 	}
 	
 	if ( g_merge2.m_isSuspended ) 
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, is suspended (2)", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, is suspended (2)", __FILE__,__func__,__LINE__);
 		return false;
 	}
 
 	// shutting down? do not start another merge then
 	if ( g_process.m_mode == EXIT_MODE ) 
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, shutting down", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, shutting down", __FILE__,__func__,__LINE__);
 		return false;
 	}
 	
 
 	// sanity checks
 	if (   g_loop.m_inQuickPoll ) { 
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, in QuickPoll (?)", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, in QuickPoll (?)", __FILE__,__func__,__LINE__);
 		log("rdb: cant attempt merge in quickpoll");
 		return false;
 	}
@@ -1356,7 +1356,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		if ( doLog ) 
 			log(LOG_INFO,"db: Can not merge titledb while it "
 			    "is dumping.");
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, wait for titledb dump", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, wait for titledb dump", __FILE__,__func__,__LINE__);
 		return false;
 	}
 
@@ -1392,7 +1392,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			log(LOG_INFO,"merge: Waiting for unlink/rename "
 			    "operations to finish before attempting merge "
 			    "for %s. (collnum=%"INT32")",m_dbname,(int32_t)m_collnum);
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, wait for unlink/rename", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, wait for unlink/rename", __FILE__,__func__,__LINE__);
 		return false;
 	}
 
@@ -1407,7 +1407,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			    "for %s (collnum=%"INT32").",
 			    m_dbname,(int32_t)m_collnum);
 		s_lastTime = now;
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, waiting for threads to finish", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, waiting for threads to finish", __FILE__,__func__,__LINE__);
 		return false;
 	}
 
@@ -1439,7 +1439,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	// is actually valid at this point, use it as is, therefore, just set
 	// cr to NULL
 
-	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: m_minToMergeArg: %"INT32"", __FILE__,__func__,__LINE__, m_minToMergeArg);
+	if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: m_minToMergeArg: %"INT32"", __FILE__,__func__,__LINE__, m_minToMergeArg);
 		
 	m_minToMerge = m_minToMergeArg;
 	if ( cr && m_minToMerge > 0 ) cr = NULL;
@@ -1448,12 +1448,12 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	if ( cr && m_rdb == g_posdb.getRdb() ) 
 	{
 		m_minToMerge = cr->m_posdbMinFilesToMerge;
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: posdb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: posdb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
 	}
 	if ( cr && m_rdb == g_titledb.getRdb() ) 
 	{
 		m_minToMerge = cr->m_titledbMinFilesToMerge;
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: titledb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: titledb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
 	}
 	//if ( cr && m_rdb == g_spiderdb.getRdb() ) 
 	//	m_minToMerge = cr->m_spiderdbMinFilesToMerge;
@@ -1471,25 +1471,25 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	if ( cr && m_rdb == g_linkdb.getRdb() )
 	{
 		m_minToMerge = cr->m_linkdbMinFilesToMerge;
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: linkdb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: linkdb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
 	}
 	
 	if ( cr && m_rdb == g_cachedb.getRdb() )
 	{
 		m_minToMerge = 4;
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: cachedb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: cachedb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
 	}
 	
 	if ( cr && m_rdb == g_serpdb.getRdb() )
 	{
 		m_minToMerge = 4;
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: serpdb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: serpdb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
 	}
 	
 	if ( cr && m_rdb == g_tagdb.getRdb() )
 	{
 		m_minToMerge = cr->m_tagdbMinFilesToMerge;
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: tagdb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: tagdb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
 	}
 
 	// if we are reblancing this coll then keep merges tight so all
@@ -1519,7 +1519,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		log("merge: Overriding min files to merge of %"INT32" with %"INT32"",
 		    m_minToMerge,minToMergeOverride );
 		m_minToMerge = minToMergeOverride;
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Overriding. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: Overriding. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
 	}
 
 	// if still -1 that is a problem
@@ -1560,7 +1560,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	RdbMerge *m = &g_merge;
 	if ( m->isMerging() )
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, is merging", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, is merging", __FILE__,__func__,__LINE__);
 		return false;
 	}
 
@@ -1581,7 +1581,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		if ( m_fileIds[j] & 0x01 ) continue;
 		// yes we are resuming a merge
 		resuming = true;
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Resuming a merge", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: Resuming a merge", __FILE__,__func__,__LINE__);
 		break;
 	}
 
@@ -1589,7 +1589,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	// tries to merge on one file...
 	if ( ! resuming && m_numFiles <= 1 ) {
 		m_nextMergeForced = false;
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, too few files (%"INT32")", __FILE__,__func__,__LINE__, m_numFiles);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, too few files (%"INT32")", __FILE__,__func__,__LINE__, m_numFiles);
 		return false;
 	}
 
@@ -1632,7 +1632,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		// 20,000+ collections. if we dump a file to disk for it
 		// then we set this flag back to false in Rdb.cpp.
 		m_checkedForMerge = true;
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, min files not reached (%"INT32" / %"INT32")", __FILE__,__func__,__LINE__,numFiles,minToMerge);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, min files not reached (%"INT32" / %"INT32")", __FILE__,__func__,__LINE__,numFiles,minToMerge);
 		return false;
 	}
 
@@ -1642,7 +1642,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 			log(LOG_INFO,
 			    "merge: Waiting for other merge to complete "
 			    "before merging %s.",m_dbname);
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, already merging this", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, already merging this", __FILE__,__func__,__LINE__);
 		return false;
 	}
 	// bail if already waiting for it
@@ -1650,7 +1650,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		if ( doLog ) 
 			log(LOG_INFO,"merge: Already requested token. "
 			    "Request for %s pending.",m_dbname);
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, waiting for token", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, waiting for token", __FILE__,__func__,__LINE__);
 		return false;
 	}
 	// score it
@@ -1776,14 +1776,14 @@ void RdbBase::gotTokenForMerge ( ) {
 			//"merge: Someone already merging. Waiting for "
 			//"merge token "
 			//"in order to merge %s.",m_dbname);
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, failed sanity check", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, failed sanity check", __FILE__,__func__,__LINE__);
 		return false;
 	}
 
 	// or if # threads out is positive
 	if ( m_numThreads > 0 ) 
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, threads already running", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, threads already running", __FILE__,__func__,__LINE__);
 		return false;
 	}
 
@@ -1821,7 +1821,7 @@ void RdbBase::gotTokenForMerge ( ) {
 
 	//char rdbId = getIdFromRdb ( m_rdb );
 
-	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Checking files", __FILE__,__func__,__LINE__);
+	if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: Checking files", __FILE__,__func__,__LINE__);
 	// if one file is even #'ed then we were merging into that, but
 	// got interrupted and restarted. maybe the power went off or maybe
 	// gb saved and exited w/o finishing the merge.
@@ -2230,7 +2230,7 @@ void RdbBase::gotTokenForMerge ( ) {
 	if ( m_niceness == 0 ) { char *xx=NULL;*xx=0 ; }
 
 
-	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: merge!", __FILE__,__func__,__LINE__);
+	if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: merge!", __FILE__,__func__,__LINE__);
 	// . start the merge
 	// . returns false if blocked, true otherwise & sets g_errno
 	if ( ! m->merge ( rdbId  ,
@@ -2246,7 +2246,7 @@ void RdbBase::gotTokenForMerge ( ) {
 			  m_ks                  ) ) 
 		// we started the merge so return true here
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, started OK", __FILE__,__func__,__LINE__);
+		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END, started OK", __FILE__,__func__,__LINE__);
 		return true;
 	}
 	
@@ -2273,7 +2273,7 @@ void RdbBase::gotTokenForMerge ( ) {
 	//m_rdb->attemptMerge( m_niceness, false , true );
 	// how did this happen?
 	log("merge: did not block for some reason.");
-	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__,__func__,__LINE__);
+	if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__,__func__,__LINE__);
 	return true;
 }
 
