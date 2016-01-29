@@ -2187,18 +2187,23 @@ bool Msg40::gotSummary ( ) {
                         //m_visibleContiguous--;
 			continue;
 		}
-		if( mr && ! mr->m_hasAllQueryTerms ) {
-			if ( m_si->m_debug || g_conf.m_logDebugQuery )
-			logf( LOG_DEBUG, "query: result %"INT32" "
-			      "(docid=%"INT64") is "
-			      "missing query terms and will not be"
-			      " shown.", i, m_msg3a.m_docIds[i] );
-			*level = CR_MISSING_TERMS;
-                        //m_visibleContiguous--;
-			// uncluster any docids below this one
-			if ( m_unclusterCount-- > 0 ) uncluster ( i );
-			continue;
-		}
+		//Apparently this was some sort of hack to filter out bad
+		//results originating from a corrupted Indexdb. Disabling
+		//the code seems to have no ill effect. Keeping the hack
+		//in, on the other hand, appears to effectlyve disable OR
+		//functionality, as in "existingterm OR nonexistingterm"
+		//if( mr && ! mr->m_hasAllQueryTerms ) {
+		//	if ( m_si->m_debug || g_conf.m_logDebugQuery )
+		//	logf( LOG_DEBUG, "query: result %"INT32" "
+		//	      "(docid=%"INT64") is "
+		//	      "missing query terms and will not be"
+		//	      " shown.", i, m_msg3a.m_docIds[i] );
+		//	*level = CR_MISSING_TERMS;
+		//      //m_visibleContiguous--;
+		//	// uncluster any docids below this one
+		//	if ( m_unclusterCount-- > 0 ) uncluster ( i );
+		//	continue;
+		//}
 		//visible++;
 	}
 
