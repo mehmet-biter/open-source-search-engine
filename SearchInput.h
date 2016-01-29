@@ -109,8 +109,6 @@ class SearchInput {
 	// the final compiled query goes here
 	Query          m_q;
 
-	Query         *m_q2;
-
 	char           m_isMasterAdmin;
 	char           m_isCollAdmin;
 
