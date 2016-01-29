@@ -77,7 +77,6 @@ void Msg3a::reset ( ) {
 	m_numTotalEstimatedHits = 0LL;
 }
 
-Msg39Request *g_r = NULL;
 
 static void gotCacheReplyWrapper ( void *state ) {
 	Msg3a *THIS = (Msg3a *)state;
@@ -405,8 +404,6 @@ bool Msg3a::gotCacheReply ( ) {
 		m_rbufPtr = NULL;
 	}
 	m_r->m_stripe = 0;
-	// debug thing
-	g_r        = m_r;
 	// . (re)serialize the request
 	// . returns NULL and sets g_errno on error
 	// . "m_rbuf" is a local storage space that can save a malloc
