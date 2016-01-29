@@ -235,7 +235,7 @@ bool Msg40::getResults ( SearchInput *si      ,
 	// ones. each TopicGroup can derive its gigabits/topics from a
 	// different source, like the meta keywords tags only, for instance.
 	// This support was originally put in for a client.
-	for ( int32_t i = 0 ; i < m_si->m_numTopicGroups ; i++ ) {
+	for ( int32_t i = 0 ; i < 1 ; i++ ) {
 		int32_t x = m_si->m_topicGroups[i].m_docsToScanForTopics ;
 		if ( x > m_docsToScanForTopics ) m_docsToScanForTopics = x;
 	}
@@ -779,7 +779,7 @@ bool Msg40::gotDocIds ( ) {
 // 				      m_msg3a.m_clusterLevels     ,
 // 				      m_msg3a.m_numDocIds         ,
 // 				      m_si->m_topicGroups         ,
-// 				      m_si->m_numTopicGroups      ,
+// 				      1      ,
 // 				      maxAge                      ,
 // 				      m_si->m_wcache              ,//addToCache
 // 				      m_si->m_returnDocIdCount    ,

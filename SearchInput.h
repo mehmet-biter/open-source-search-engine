@@ -20,7 +20,7 @@
 //#define MAX_URLPARMS_LEN (MAX_URL_LEN + MAX_QUERY_LEN+ PASSWORD_MAX_LEN + 5000)
 #define SI_TMPBUF_SIZE   (16*1024)
 
-#define MAX_TOPIC_GROUPS 10
+#define MAX_TOPIC_GROUPS 1
 
 // . parameters used to generate a set of related topics (gigabits)
 // . you can have Msg24 generate multiple sets of related topics in one call
@@ -91,9 +91,6 @@ class SearchInput {
 	SafeBuf m_collnumBuf;
 	// first collection # listed in m_collnumBuf
 	collnum_t m_firstCollnum;
-
-	// reset this
-	int32_t      m_numTopicGroups;   // msg40
 
 	char          *m_displayQuery;     // pts into m_qbuf1
 	//class Hostdb  *m_hostdb;

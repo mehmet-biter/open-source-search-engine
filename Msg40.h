@@ -153,8 +153,6 @@ class Msg40 {
 	int32_t getFilterStats ( int32_t crId ) { return m_filterStats[crId]; };
 	int32_t getNumCensored         ( ) { return m_filterStats[CR_DIRTY]; };
 
-	int32_t getNumTopicGroups      ( ) { return m_si->m_numTopicGroups; };
-
 	// . estimated # of total hits
 	// . this is now an EXACT count... since we read all posdb termlists
 	int64_t getNumTotalHits (){return m_msg3a.m_numTotalEstimatedHits; }

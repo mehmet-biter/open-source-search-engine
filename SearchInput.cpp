@@ -102,7 +102,7 @@ key_t SearchInput::makeKey ( ) {
 	//m_rp_numToDisplay    = save2;
 	//m_numTopicsToDisplay = save3;
 	// hash each topic group
-	for ( int32_t i = 0 ; i < m_numTopicGroups ; i++ ) {
+	for ( int32_t i = 0 ; i < 1 ; i++ ) {
 		TopicGroup *t = &m_topicGroups[i];
 		//k.n0 = hash64 ( t->m_numTopics           , k.n0 );
 		k.n0 = hash64 ( t->m_maxTopics           , k.n0 );
@@ -657,7 +657,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	tg->m_topicSampleSize = 4096;
 	// max sequential punct chars allowedin a topic
 	tg->m_topicMaxPunctLen = 1;
-	m_numTopicGroups = 1;
 
 
 	return true;
