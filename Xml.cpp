@@ -961,7 +961,7 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 		bool found = false;
 		if ( fieldNameLen > 0 ) {
 			int32_t tagLen = 0;
-			char *tag = getString ( i , fieldName , &tagLen );
+			char *tag = getNodePtr(i)->getAttrValue(fieldName, &tagLen);
 			if ( tagLen == fieldContentLen && strncasecmp( tag, fieldContent, fieldContentLen ) == 0 ) {
 				found = true;
 			}

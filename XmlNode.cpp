@@ -529,27 +529,6 @@ int32_t XmlNode::setCDATANode ( char *node ) {
 	return i;
 }
 
-static bool isInQuotes(char currentChar, char *currentQuote) {
-	if ( currentQuote && *currentQuote ) {
-		if ( currentChar == *currentQuote ) {
-			*currentQuote = '\0';
-		}
-
-		return true;
-	}
-
-	// check quotes
-	if ( ( currentChar == '"' ) || ( currentChar == '\'' ) ) {
-		if (currentQuote) {
-			*currentQuote = currentChar;
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
 static bool findCharSingle( char nodeChar, char expectedChar, char expectedOtherChar, char *foundChar ) {
 	if ( ( nodeChar == expectedChar ) || ( expectedOtherChar && nodeChar == expectedOtherChar ) ) {
 		if ( foundChar ) {
@@ -565,7 +544,7 @@ static bool findCharSingle( char nodeChar, char expectedChar, char expectedOther
 
 // allow whitespace when looking for char
 static bool findChar( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
-					  char expectedOtherChar = '\0', char *foundChar = NULL, bool onlyAllowWhiteSpace = true ) {
+					  char expectedOtherChar, char *foundChar, bool onlyAllowWhiteSpace = true ) {
 	for ( *pos = start; *pos < end; ++(*pos) ) {
 		if ( is_wspace_a( node[*pos] ) ) {
 			continue;
@@ -585,17 +564,62 @@ static bool findChar( char *node, int32_t start, int32_t end, int32_t *pos, char
 	return false;
 }
 
+static bool findChar( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
+					  bool onlyAllowWhiteSpace = true ) {
+	return findChar(node, start, end, pos, expectedChar, '\0', NULL, onlyAllowWhiteSpace);
+}
+
 static bool findCharReverse( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
-                             char expectedOtherChar = '\0', char *foundChar = NULL ) {
+                             char expectedOtherChar, char *foundChar, bool onlyAllowWhiteSpace = true ) {
 	for ( *pos = start; (*pos > end) && (*pos > 0); --(*pos) ) {
 		if ( is_wspace_a( node[*pos] ) ) {
 			continue;
 		}
 
-		return findCharSingle(node[*pos], expectedChar, expectedOtherChar, foundChar);
+		if ( findCharSingle( node[*pos], expectedChar, expectedOtherChar, foundChar ) ) {
+			return true;
+		} else {
+			if ( onlyAllowWhiteSpace ) {
+				return false;
+			}
+
+			continue;
+		}
 	}
 
 	return false;
+}
+
+
+static bool findCharReverse( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
+					  bool onlyAllowWhiteSpace = true ) {
+	return findCharReverse(node, start, end, pos, expectedChar, '\0', NULL, onlyAllowWhiteSpace);
+}
+
+static bool findQuoteChar( char *node, int32_t start, int32_t end, int32_t *pos, char *foundChar = NULL,
+						   bool onlyAllowWhiteSpace = true ) {
+	if (start > end) {
+		return findCharReverse(node, start, end, pos, '\'', '"', foundChar, onlyAllowWhiteSpace);
+	}
+
+	return findChar(node, start, end, pos, '\'', '"', foundChar, onlyAllowWhiteSpace);
+}
+
+static bool findEqualChar( char *node, int32_t start, int32_t end, int32_t *pos, bool onlyAllowWhiteSpace = true) {
+	if (start > end) {
+		return findCharReverse(node, start, end, pos, '=', onlyAllowWhiteSpace);
+	}
+
+	return findChar(node, start, end, pos, '=', onlyAllowWhiteSpace);
+}
+
+static bool isValidAttrNameChar(char nodeChar) {
+	if ( is_wspace_a( nodeChar ) || is_binary_a( nodeChar ) || nodeChar == '"' || nodeChar == '\'' ||
+	     nodeChar == '<' || nodeChar == '>' || nodeChar == '/' || nodeChar == '=' ) {
+		return false;
+	}
+
+	return true;
 }
 
 /**
@@ -636,88 +660,99 @@ char *XmlNode::getAttrValue( const char *field, int32_t *valueLen ) {
 
 	int32_t fieldLen = strlen(field);
 
-	char inQuotes = '\0';
-
 	bool found = false;
 
-	int32_t i = 1;
-	for ( ; i + fieldLen < m_nodeLen; ++i ) {
-		// skip if we're in quotes
-		if ( isInQuotes( m_node[i], &inQuotes ) ) {
+	int32_t startPos = 0;
+	int32_t prevEndPos = 0;
+
+	int32_t startQuotePos = 0;
+	int32_t endQuotePos = 0;
+
+	while ( startPos < m_nodeLen ) {
+		char foundQuoteChar = '\0';
+
+		// look for start quote (forward)
+		found = findQuoteChar(m_node, startPos, m_nodeLen, &startQuotePos, &foundQuoteChar, false);
+		if ( !found ) {
+			// we should have at least one quote char to be able to have any value
+			return NULL;
+		}
+
+		int32_t equalsPos = 0;
+
+		// look for equals (reverse)
+		found = findEqualChar( m_node, startQuotePos - 1, startPos, &equalsPos );
+		if ( !found ) {
+			// unable to find equals, assume dangling quote
+			startPos = startQuotePos + 1;
 			continue;
 		}
 
-		// check that previous character is not a valid attribute name character
-		char prevChar = m_node[i - 1];
-		if ( !is_wspace_a( prevChar ) && !is_binary_a( prevChar ) && prevChar != '"' && prevChar != '\'' &&
-			 prevChar != '>' && prevChar != '/' && prevChar != '=' ) {
+		// look for end quote (forward)
+		found = findChar(m_node, startQuotePos + 1, m_nodeLen, &endQuotePos, foundQuoteChar, false);
+		if ( !found ) {
+			// no end quote
+			return NULL;
+		}
+
+		while (endQuotePos < m_nodeLen) {
+			// do some validation
+
+			// look for another quote
+			int32_t nextQuotePos = 0;
+			char nextFoundQuoteChar = '\0';
+
+			found = findQuoteChar(m_node, endQuotePos + 1, m_nodeLen, &nextQuotePos, &nextFoundQuoteChar, false);
+			if ( found ) {
+				// let's see if it's preceeded by equals
+				int32_t nextEqualsPos = 0;
+
+				found = findEqualChar(m_node, nextQuotePos - 1, endQuotePos, &nextEqualsPos);
+				if ( !found ) {
+					// no preceding equals sign (assume invalid meta tag, try to recover from it)
+					endQuotePos = nextQuotePos;
+					continue;
+				}
+			}
+
+			// assume found valid end quote
+			break;
+		}
+
+		int32_t endAttrNamePos = equalsPos;
+
+		// look for attr name (reverse)
+		found = findCharReverse(m_node, equalsPos - 1, prevEndPos, &endAttrNamePos, field[fieldLen - 1]);
+		if ( !found ) {
+			// not our field
+			prevEndPos = endQuotePos;
+			startPos = endQuotePos + 1;
 			continue;
 		}
 
-		// field names must match
-		if ( strncasecmp( &m_node[i], field, fieldLen ) != 0 ) {
+		int32_t startAttrNamePos = endAttrNamePos;
+
+		// look for attr name start (forward)
+		while ( isValidAttrNameChar( m_node[startAttrNamePos] ) && startAttrNamePos > prevEndPos ) {
+			--startAttrNamePos;
+		}
+
+		if ( endAttrNamePos - startAttrNamePos != fieldLen ||
+			 strncasecmp( &m_node[startAttrNamePos + 1], field, fieldLen ) != 0 ) {
+			// no match
+			found = false;
+			prevEndPos = endQuotePos;
+			startPos = endQuotePos + 1;
 			continue;
 		}
 
+		// found match!
 		found = true;
 		break;
 	}
 
-	// not found
-	if ( !found ) {
+	if (!found) {
 		return NULL;
-	}
-
-	// look for equals sign
-	int32_t j = 0;
-	found = findChar(m_node, i + fieldLen, m_nodeLen, &j, '=');
-
-	if ( !found ) {
-		// assume empty attribute syntax
-		return m_node + i + fieldLen;
-	}
-
-	// look for start quote
-	int32_t startQuotePos = 0;
-	char foundChar = '\0';
-	found = findChar(m_node, j + 1, m_nodeLen, &startQuotePos, '\'', '"', &foundChar);
-
-	if ( !found ) {
-		// no start quote
-		return NULL;
-	}
-
-	// look for end quote
-	int32_t endQuotePos = 0;
-	found = findChar(m_node, startQuotePos + 1, m_nodeLen, &endQuotePos, foundChar, '\0', NULL, false);
-
-	if ( !found ) {
-		// no end quote
-		return NULL;
-	}
-
-	while (endQuotePos < m_nodeLen) {
-		// do some validation
-
-		// look for another quote
-		int32_t nextQuotePos = 0;
-		char nextFoundChar = '\0';
-
-		found = findChar(m_node, endQuotePos + 1, m_nodeLen, &nextQuotePos, '\'', '"', &nextFoundChar, false);
-		if ( found ) {
-			// let's see if it's preceeded by equals
-			int32_t nextEqualsPos = 0;
-
-			found = findCharReverse(m_node, nextQuotePos - 1, endQuotePos, &nextEqualsPos, '=');
-			if ( !found ) {
-				// no preceding equals sign (assume invalid meta tag, try to recover from it)
-				endQuotePos = nextQuotePos;
-				continue;
-			}
-		}
-
-		// assume found valid end quote
-		break;
 	}
 
 	// set the length of the value

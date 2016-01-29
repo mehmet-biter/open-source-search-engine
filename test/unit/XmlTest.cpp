@@ -30,13 +30,11 @@ TEST( XmlTest, MetaDescription) {
 	    "<meta name=\"description\" ng-attr-content=\"{{meta.description}}\" content=\"%s\">",
 	    "<meta name=\"description\" ng-attr-content=\"{{meta.description}}\" content='%s'>",
 	    "<meta name=\"description\" content=\"%s\" other-content=\"%s\">",
-	    "<meta name=\"description\" content='%s' other-content='%s'>"
-
-	    /// @todo ALC cater for unhandled scenarios
-	    //"<meta content=\"%s\" name=\"description\">",
-	    //"<meta content='%s' name=\"description\">",
-	    //"<meta name=\"description\" other-content=\"%s\" content=\"%s\">",
-	    //"<meta name=\"description\" other-content='%s' content='%s'>"
+	    "<meta name=\"description\" content='%s' other-content='%s'>",
+	    "<meta content=\"%s\" name=\"description\">",
+	    "<meta content='%s' name=\"description\">",
+	    "<meta name=\"description\" other-content=\"%s\" content=\"%s\">",
+	    "<meta name=\"description\" other-content='%s' content='%s'>"
 	};
 
 	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
