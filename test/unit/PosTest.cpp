@@ -153,3 +153,44 @@ TEST( PosTest, FilterTags ) {
 		EXPECT_EQ( strlen( expected_output[i] ), len );
 	}
 }
+
+TEST( PosTest, DecodeHTMLEntities ) {
+	char *input_strs[] = {
+		"abc &gt; efg",
+	    "abc&gt;efg",
+	    "abc &amp; efg",
+	    "abc&amp;efg",
+	    "&amp;&amp;",
+	    "&gt;&gt;",
+	    "abc &my; def",
+	    "&gt&gt;"
+	};
+
+	const char *expected_output[] = {
+		"abc > efg",
+	    "abc>efg",
+	    "abc & efg",
+	    "abc&efg",
+	    "&&",
+	    ">>",
+	    "abc &my; def",
+	    "&gt>"
+	};
+
+	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
+			   sizeof( expected_output ) / sizeof( expected_output[0] ) );
+
+	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+		Words words;
+		Pos pos;
+		char buf[MAX_BUF_SIZE];
+
+		ASSERT_TRUE( words.set( input_strs[i], true, 0 ) );
+
+		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
+
+		EXPECT_STREQ( expected_output[i], buf );
+		EXPECT_EQ( strlen( expected_output[i] ), len );
+	}
+}

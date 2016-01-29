@@ -3607,12 +3607,9 @@ bool LinkInfo::print ( SafeBuf *sb , char *coll ) {
 		// encode the rss item further
 		char buf3b[MAX_RSSITEM_SIZE*2];
 		buf3b[0] = 0;
-		if ( rlen > 0 ) 
-			htmlEncode ( buf3b , 
-				     buf3b + MAX_RSSITEM_SIZE*2 ,
-				     r , // buf3 ,
-				     r + rlen , // buf3 + gbstrlen(buf3) ,
-				     true         );
+		if ( rlen > 0 ) {
+			htmlEncode( buf3b, buf3b + MAX_RSSITEM_SIZE * 2, r, r + rlen );
+		}
 
 		// . print link text and score into table
 		// . there is a ton more info in Inlink class to print if

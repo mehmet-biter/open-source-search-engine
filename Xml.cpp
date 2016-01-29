@@ -209,6 +209,8 @@ bool Xml::getCompoundName ( int32_t node , SafeBuf *sb ) {
 bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char contentType ) {
 	// just in case
 	reset();
+
+	m_version = version;
 	m_niceness = niceness;
 
 	// clear it
@@ -216,7 +218,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 
 	// make pointers to data
 	m_xml    = s;
-	m_xmlLen = slen; //i;
+	m_xmlLen = slen;
 
 	// debug msg time
 	if ( g_conf.m_logTimingBuild ) {
@@ -224,7 +226,7 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	}
 
 	// sanity check
-	if ( !s || slen <= 0) {
+	if ( !s || slen <= 0 ) {
 		return true;
 	}
 
@@ -911,7 +913,8 @@ static bool inTag ( XmlNode *node, nodeid_t tagId, int *count ) {
 	return (*count > 0);
 }
 
-static int32_t filterContent ( Words *wp, Pos *pp, char *buf, int32_t bufLen, int32_t minLength, int32_t maxLength ) {
+static int32_t filterContent( Words *wp, Pos *pp, char *buf, int32_t bufLen, int32_t minLength,
+							  int32_t maxLength, int32_t version ) {
 	int32_t contentLen = 0;
 
 	/// @todo ALC configurable maxNumWord so we can tweak this as needed
@@ -926,7 +929,7 @@ static int32_t filterContent ( Words *wp, Pos *pp, char *buf, int32_t bufLen, in
 		return contentLen;
 	}
 
-	contentLen = pp->filter( wp, 0, wp->getNumWords(), true, buf, buf + maxLength );
+	contentLen = pp->filter( wp, 0, wp->getNumWords(), true, buf, buf + maxLength, version );
 
 	if ( contentLen < minLength ) {
 		// ignore too short descriptions
@@ -1005,7 +1008,7 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 				return false;
 			}
 
-			contentLen = filterContent( &wp, &pp, buf, bufLen, minLength, maxLength );
+			contentLen = filterContent( &wp, &pp, buf, bufLen, minLength, maxLength, m_version );
 			if ( contentLen > 0 ) {
 				if (contentLenPtr) {
 					*contentLenPtr = contentLen;

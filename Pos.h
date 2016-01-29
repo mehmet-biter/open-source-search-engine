@@ -4,6 +4,7 @@
 #define _POS_H_
 
 #include <stdint.h>
+#include <Titledb.h>
 
 // this class is used to measure the number of characters between two "words"
 // (as defined in the Words.cpp class) in units of "characters". A utf8
@@ -26,7 +27,8 @@ class Pos {
 	// . filter out xml words [a,b] into plain text, stores into "f"
 	// . will not exceed "fend"
 	// . returns number of BYTES stored into "f"
-	int32_t filter(Words *words, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend);
+	int32_t filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend,
+					int32_t version = TITLEREC_CURRENT_VERSION );
 
 	// . the position in CHARACTERS of word i is given by m_pos[i]
 	// . this is NOT the byte position. you can have 2, 3 or even 4

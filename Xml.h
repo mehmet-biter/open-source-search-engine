@@ -30,6 +30,10 @@ public:
 
 	void  reset ( );
 
+	int32_t getVersion() {
+		return m_version;
+	}
+
 	char *getContent() {
 		return m_xml;
 	}
@@ -176,6 +180,7 @@ private:
 	char *m_xml;
 	int32_t m_xmlLen;
 
+	int32_t m_version;
 
 	int32_t m_niceness;
 };

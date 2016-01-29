@@ -40,15 +40,12 @@ int32_t dequote       ( char *dest , char *dend , const char *src , int32_t srcL
 // . store "src" into "dest" and return bytes stored
 // . does not do bounds checking on "dest"
 // . encode t into s
-char *htmlEncode ( char *dst, char *dstend, const char *src, const char *srcend,
-		   bool pound = false , int32_t niceness = 0) ;
+char *htmlEncode( char *dst, char *dstend, const char *src, const char *srcend );
 
 // . like above but src is NULL terminated
 // . returns length of string stored into "dest"
 // . decode html entities like &amp; and &gt;
-int32_t htmlDecode    ( char *dst, const char *src, int32_t srcLen, 
-		     bool doSpecial ,//=false);
-		     int32_t niceness);
+int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial, int32_t niceness );
 
 // . convert " to %22 , & to %26, is that it?
 // . urlEncode() stores the encoded, NULL-terminated URL in "dest"
@@ -182,16 +179,6 @@ bool saveTimeAdjustment ( ) ;
 #define is_tagname_char(c)     g_map_is_tagname_char[(unsigned char)c]
 
 inline bool is_upper_utf8 ( const char *s );
-
-/*
-// is character, "s", used in textual hexadecimal representation?
-inline bool is_hex ( char s ) {
-	if ( is_digit(s)) return true;
-	if ( s >= 'a'  && s <= 'f' ) return true;
-	if ( s >= 'A'  && s <= 'F' ) return true;
-	return false;
-}
-*/
 
 // convert hex digit to value
 inline int32_t htob ( char s ) {
@@ -358,14 +345,6 @@ void getCalendarFromMs(int64_t ms,
 		       int32_t* minutes, 
 		       int32_t* secs,
 		       int32_t* msecs);
-
-//inline 
-//int32_t u16UrlEncode(char *d, int32_t dlen, char *s, int32_t slen, 
-//		  bool requestPath = false){
-//	char u8Buf[2048];
-//	int32_t u8Len = utf16ToUtf8(u8Buf, 2048, s, slen);
-//	return urlEncode(d, dlen, u8Buf, u8Len, requestPath);
-//}
 
 uint32_t calculateChecksum(char *buf, int32_t bufLen);
 char* getNextNum(char* input, char** numPtr);

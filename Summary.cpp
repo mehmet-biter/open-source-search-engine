@@ -516,7 +516,7 @@ bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *
 		// . removes back to back spaces
 		// . converts html entities
 		// . filters in stores words in [a,b) interval
-		int32_t len = pos->filter( ww, maxa, maxb, false, p, pend );
+		int32_t len = pos->filter( ww, maxa, maxb, false, p, pend, xml->getVersion() );
 
 		// break out if did not fit
 		if ( len == 0 ) {
@@ -1130,9 +1130,9 @@ bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Po
 	}
 
 	if (bestStart >= 0 && bestEnd > bestStart){
-		int32_t len = pos->filter( words, bestStart, bestEnd, false, p, pend - 10 );
+		int32_t len = pos->filter( words, bestStart, bestEnd, false, p, pend - 10, xml->getVersion() );
 		p += len;
-		if ( len > 0 && p + 3 + 2 < pend ){
+		if ( len > 0 && p + 3 + 2 < pend ) {
 			// space first?
 			if ( p > m_summary ) *p++ = ' ';
 			gbmemcpy ( p , "..." , 3 );

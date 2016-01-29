@@ -23445,7 +23445,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	if ( p + len + 1 < pend ) {
 		// store it
 		// FILTER the html entities!!
-		int32_t len2 = pos->filter( ww, a, b, false, p, pend );
+		int32_t len2 = pos->filter( ww, a, b, false, p, pend, m_version );
 
 		// ensure NULL terminated
 		p[len2] = '\0';
@@ -24152,7 +24152,7 @@ SafeBuf *XmlDoc::getSampleForGigabits ( ) {
 		// if match would send us over, we are done
 		if ( p + len >= pend ) break;
 
-		len = pos->filter( m->m_words, a, b, false, p, pend );
+		len = pos->filter( m->m_words, a, b, false, p, pend, m_version );
 
 		// for debug (mdw)
 		//log("query: gigabitsample#%"INT32"=%s",i,p);

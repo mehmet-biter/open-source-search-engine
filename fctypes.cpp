@@ -860,81 +860,71 @@ int32_t saftenTags ( char *dst , int32_t dstlen , const char *src , int32_t srcl
 	return dst - start;
 }
 
-// . if "doSpecial" is true, then we change &lt;, &gt; and &amp; to
-//   the following:
-//   UnicodeData.txt:22E6;LESS-THAN BUT NOT EQUIVALENT TO;Sm;0;ON;;;;;Y;
-//   UnicodeData.txt:22E7;GREATER-THAN BUT NOT EQUIVALENT TO;Sm;0;ON;;;;;Y;
-//   UnicodeData.txt:E0026;TAG AMPERSAND;Cf;0;BN;;;;;N;;;;;
-//   UnicodeData.txt:235E;APL FUNCTIONAL SYMBOL QUOTE QUAD;So;0;L;;;;;N;;;;; 
-int32_t htmlDecode ( char *dst , const char *src , int32_t srcLen , bool doSpecial ,
-		  int32_t niceness ) {
-	if ( srcLen == 0 ) return 0;
+// . if "doSpecial" is true, then we don't touch &lt;, &gt; and &amp;
+int32_t htmlDecode( char *dst, const char *src, int32_t srcLen, bool doSpecial, int32_t niceness ) {
+	if ( srcLen == 0 ) {
+		return 0;
+	}
+
 	char *start  = dst;
 	const char *srcEnd = src + srcLen;
 	for ( ; src < srcEnd ; ) {
 		// breathe
 		QUICKPOLL(niceness);
+
 		// utf8 support?
 		char size = getUtf8CharSize(src);
+
 		// all entities must start with '&'
-		if ( *src != '&' ) { 
-			if ( size == 1 ) { *dst++ = *src++; continue; }
+		if ( *src != '&' ) {
+			if ( size == 1 ) {
+				*dst++ = *src++;
+				continue;
+			}
+
 			gbmemcpy ( dst , src , size );
 			src += size;
 			dst += size;
 			continue;
-			//*dst++ = *src++; continue; }
 		}
-		// TODO: avoid doSpecial by not decoding crap in tags...
-		//if ( src[0] == '<' ) {
-		//	// skip to tag end then!
-		//	
+
 		// store decoded entity char into dst[j]
 		uint32_t c;
+
 		// "skip" is how many bytes the entites was in "src"
-		int32_t skip = getEntity_a (src, srcEnd-src, &c );
+		int32_t skip = getEntity_a( src, srcEnd - src, &c );
+
 		// ignore the "entity" if it was invalid
-		if ( skip == 0 ) { *dst++ = *src++ ; continue; }
-		// force this now always since some tags contain &quot;
-		// and it was causing the tags to be terminated too early
-		// for richmondspca.org
-		//if ( c == '\"' ) c = '\'';
-		//if ( c == '<' ) c = '[';
-		//if ( c == '>' ) c = ']';
+		if ( skip == 0 ) {
+			*dst++ = *src++;
+			continue;
+		}
+
 		// . special mapping
 		// . make &lt; and &gt; special so Xml::set() still works
 		// . and make &amp; special so we do not screw up summaries
 		if ( doSpecial ) {
-			// no longer use this!
-			//char *xx=NULL;*xx=0;
-			if ( c == '<' ) {
-				// using [ and ] looks bad in event titles...
-				*dst = '|';
-				dst++;
+			if ( c == '<' || c == '>' || c == '&' ) {
+				int32_t entityLen = 4;
+				const char* entityStr = "";
+
+				if (c == '<') {
+					entityStr = "&lt;";
+				} else if (c == '>') {
+					entityStr = "&gt;";
+				} else {
+					entityStr = "&amp;";
+					entityLen = 5;
+				}
+
+				gbmemcpy(dst, entityStr, entityLen);
 				src += skip;
+				dst += entityLen;
 				continue;
-				gbmemcpy(dst,"+!-",3);
-				//gbmemcpy(dst,"<gb",3); 
-				dst += 3; 
-				src += skip;
-				continue;
-				// paragraph sign:
-				//c = 0xc2b6;
 			}
-			if ( c == '>' ) {
-				// using [ and ] looks bad in event titles...
-				*dst = '|';
-				dst++;
-				src += skip;
-				continue;
-				//gbmemcpy(dst,"gb>",3); 
-				gbmemcpy(dst,"-!+",3); 
-				dst += 3; 
-				src += skip;
-				continue;
-				// high-rise hyphen:
-				//c = 0xc2af;
-			}
+
+			/// @todo verify if we need to replace " with '
+
 			// some tags have &quot; in their value strings
 			// so we have to preserve that!
 			// use curling quote:
@@ -942,34 +932,33 @@ int32_t htmlDecode ( char *dst , const char *src , int32_t srcLen , bool doSpeci
 			// curling double and single quotes resp:
 			// &ldquo; &rdquo; &lsquo; &rdquo;
 			if ( c == '\"' ) {
-				//c = 0x201c; // 0x235e;
 				*dst = '\'';
 				dst++;
 				src += skip;
 				continue;
 			}
-			//if ( c == '<' ) c = 0x22d6; // e6;
-			//if ( c == '>' ) c = 0x22d7; // e7;
-			// this was working ok, but just code it to an 
-			// ampersand. when displaying a page we can code all
-			// ampersands back into &amp; i guess! that way
-			// the check for a " & " in the place name in 
-			// Address.cpp works out...
-			//if ( c == '&' ) c = 0xff06; // full width ampersand
 		}
+
 		// . otherwise it was a legit entity
 		// . store it into "dst" in utf8 format
 		// . "numBytes" is how many bytes it stored into 'dst"
 		int32_t numBytes = utf8Encode ( c , dst );
+
 		// sanity check. do not eat our tail if dst == src
-		if ( numBytes > skip ) { char *xx=NULL;*xx=0; }
+		if ( numBytes > skip ) {
+			char *xx = NULL; *xx = 0;
+		}
+
 		// advance dst ptr
 		dst += numBytes;
+
 		// skip over the encoded entity in the source string
 		src += skip;
 	}
+
 	// NULL term
 	*dst = '\0';
+
 	return dst - start;
 }
 
@@ -1001,11 +990,13 @@ int32_t dequote ( char *s , char *send , const char *t , int32_t tlen ) {
 // . entity-ize a string so it's safe for html output
 // . store "t" into "s" and return bytes stored
 // . does bounds checking
-char *htmlEncode ( char *dst, char *dstend, const char *src, const char *srcend,
-		   bool pound, int32_t niceness ) {
+char *htmlEncode ( char *dst, char *dstend, const char *src, const char *srcend ) {
 	for ( ; src < srcend ; src++ ) {
-		QUICKPOLL(niceness);
-		if ( dst + 7 >= dstend ) { *dst = '\0'; return dst; }
+		if ( dst + 7 >= dstend ) {
+			*dst = '\0';
+			return dst;
+		}
+
 		if ( *src == '"' ) {
 			*dst++ = '&';
 			*dst++ = '#';
@@ -1036,7 +1027,7 @@ char *htmlEncode ( char *dst, char *dstend, const char *src, const char *srcend,
 			*dst++ = ';';
 			continue;
 		}
-		if ( *src == '#' && pound ) {
+		if ( *src == '#' ) {
 			*dst++ = '&';
 			*dst++ = '#';
 			*dst++ = '0';

@@ -38,7 +38,7 @@ static bool inTag( nodeid_t tagId, nodeid_t expectedTagId, int *count ) {
 	return ( *count > 0 );
 }
 
-int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend ) {
+int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char *f, char *fend, int32_t version ) {
 	nodeid_t *tids = words->getTagIds(); // m_tagIds;
 
 	// save start point for filtering
@@ -66,6 +66,62 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 
 	int dotCount = 0; // store last encountered total consecutive dots
 	char* dotPrevChar = NULL; // store char before dot which is not a space
+
+	char* entityPos[32];
+	int32_t entityLen[32];
+	char entityChar[32];
+	int32_t entityCount = 0;
+
+	// we need to decode HTML entities for version above 122 because we stop decoding
+	// &amp; &gt; &lt; to avoid losing information
+	if (version >= 122) { // TITLEREC_CURRENT_VERSION
+		int32_t maxWord = b;
+
+		if (maxWord == words->getNumWords()) {
+			maxWord -= 1;
+		}
+
+		int32_t totalLen = (words->getWord(maxWord) + words->getWordLen(maxWord)) - words->getWord(a);
+		char *pos = words->getWord(a);
+		char *endPos = pos + totalLen;
+
+		for ( ; ( pos + 3 ) < endPos; ++pos ) {
+			if (*pos == '&') {
+				if (*(pos + 3) == ';') {
+					// &gt;
+					if (*(pos + 2) == 't') {
+						char c = *(pos + 1);
+						if ( c == 'g' || c == 'l' ) {
+							// &gt; / &lt;
+							entityPos[entityCount] = pos;
+							entityLen[entityCount] = 4;
+							if ( c == 'g' ) {
+								entityChar[entityCount] = '>';
+							} else {
+								entityChar[entityCount] = '<';
+							}
+							++entityCount;
+						}
+					}
+				} else if ((pos + 4 < endPos) && *(pos + 4) == ';') {
+					if (*(pos + 1) == 'a' && *(pos + 2) == 'm' && *(pos + 3) == 'p') {
+						// &amp;
+						entityPos[entityCount] = pos;
+						entityLen[entityCount] = 5;
+						entityChar[entityCount] = '&';
+						++entityCount;
+					}
+				}
+			}
+
+			// make sure we don't overflow
+			if (entityCount >= 32) {
+				break;
+			}
+		}
+	}
+
+	int32_t currentEntityPos = 0;
 
 	for ( int32_t i = a ; i < b ; ++i ) {
 		if (trunc) {
@@ -145,15 +201,65 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 		}
 
 		// scan through all chars discounting back-to-back spaces
-		char *pend = words->getWord(i) + words->getWordLen(i);
 		unsigned char cs = 0;
+		char *p    = words->getWord(i) ;
+		char *pend = words->getWord(i) + words->getWordLen(i);
 
-		char *p    = NULL ;
+
+		char *currentEntity = NULL;
+		int32_t currentEntityLen = 0;
+		char currentEntityChar = '\0';
+		char *nextEntity = NULL;
+		int32_t nextEntityLen = 0;
+		char nextEntityChar = '\0';
+
+		bool hasEntity = false;
+		while (currentEntityPos < entityCount) {
+			currentEntity = entityPos[currentEntityPos];
+			currentEntityLen = entityLen[currentEntityPos];
+			currentEntityChar = entityChar[currentEntityPos];
+
+			if ( currentEntityPos + 1 < entityCount ) {
+				nextEntity = entityPos[currentEntityPos + 1];
+				nextEntityLen = entityLen[currentEntityPos + 1];
+				nextEntityChar = entityChar[currentEntityPos + 1];
+			}
+
+			if ( p <= currentEntity || p <= (currentEntity + currentEntityLen) ) {
+				hasEntity = true;
+				break;
+			} else {
+				if (p > currentEntity) {
+					++currentEntityPos;
+				} else {
+					break;
+				}
+			}
+		}
 
 		// assume filters out to the same # of chars
-		for ( p = words->getWord(i); p < pend; p += cs ) {
+		for ( ; p < pend; p += cs ) {
 			// get size
 			cs = getUtf8CharSize(p);
+
+			// skip entity
+			if ( hasEntity ) {
+				if (p >= currentEntity && p < (currentEntity + currentEntityLen)) {
+					if (p == currentEntity) {
+						*f++ = currentEntityChar;
+						lastSpace = false;
+					}
+					continue;
+				}
+
+				if (nextEntity && p >= nextEntity && p < (nextEntity + nextEntityLen)) {
+					if (p == nextEntity) {
+						*f++ = nextEntityChar;
+						lastSpace = false;
+					}
+					continue;
+				}
+			}
 
 			// skip unwanted character
 			if ( isUtf8UnwantedSymbols( p ) ) {
