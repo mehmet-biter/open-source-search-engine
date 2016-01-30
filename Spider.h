@@ -19,6 +19,41 @@
 #include "Msg1.h"
 #include "hash.h"
 #include "RdbCache.h"
+#include "Msg12.h"
+
+
+// lower from 1300 to 300
+#define MAXUDPSLOTS 300
+
+extern int32_t g_corruptCount;
+extern char s_countsAreValid;
+
+
+// . this is in seconds
+// . had to make this 4 hours since one url was taking more than an hour
+//   to lookup over 80,000 places in placedb. after an hour it had only
+//   reached about 30,000
+//   http://pitchfork.com/news/tours/833-julianna-barwick-announces-european-and-north-american-dates/
+// . this problem with this now is that it will lock an entire IP until it
+//   expires if we have maxSpidersPerIp set to 1. so now we try to add
+//   a SpiderReply for local errors like when XmlDoc::indexDoc() sets g_errno,
+//   we try to add a SpiderReply at least.
+#define MAX_LOCK_AGE (3600*4)
+
+// . size of spiderecs to load in one call to readList
+// . i increased it to 1MB to speed everything up, seems like cache is 
+//   getting loaded up way too slow
+#define SR_READ_SIZE (512*1024)
+
+// seems like timecity.com as gigabytes of spiderdb data so up from 40 to 400
+//#define MAX_WINNER_NODES 400
+
+// up it to 2000 because shard #15 has slow disk reads and some collections
+// are taking forever to spider because the spiderdb scan is so slow.
+// we reduce this below if the spiderdb is smaller.
+#define MAX_WINNER_NODES 2000
+
+
 
 // for diffbot, this is for xmldoc.cpp to update CollectionRec::m_crawlInfo
 // which has m_pagesCrawled and m_pagesProcessed.
@@ -53,6 +88,9 @@ bool getSpiderStatusMsg ( class CollectionRec *cx ,
 
 int32_t getFakeIpForUrl1 ( char *url1 ) ;
 int32_t getFakeIpForUrl2 ( Url  *url2 ) ;
+
+void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) ;
+
 
 // Overview of Spider
 //
@@ -953,11 +991,16 @@ class SpiderReply {
 	int64_t getParentDocId (){return g_spiderdb.getParentDocId(&m_key);};
 };
 
+
+// was 1000 but breached, now equals SR_READ_SIZE/sizeof(SpiderReply)
+#define MAX_BEST_REQUEST_SIZE (MAX_URL_LEN+1+sizeof(SpiderRequest))
+#define MAX_DOLEREC_SIZE      (MAX_BEST_REQUEST_SIZE+sizeof(key_t)+4)
+#define MAX_SP_REPLY_SIZE     (sizeof(SpiderReply))
+
+
 // are we responsible for this ip?
 bool isAssignedToUs ( int32_t firstIp ) ;
 
-// key96_t:
-#define DOLEDBKEY key_t
 
 #define SPIDERDBKEY key128_t
 
@@ -1066,272 +1109,6 @@ class Doledb {
 
 extern class Doledb g_doledb;
 
-// was 1000 but breached, now equals SR_READ_SIZE/sizeof(SpiderReply)
-#define MAX_BEST_REQUEST_SIZE (MAX_URL_LEN+1+sizeof(SpiderRequest))
-#define MAX_DOLEREC_SIZE      (MAX_BEST_REQUEST_SIZE+sizeof(key_t)+4)
-#define MAX_SP_REPLY_SIZE     (sizeof(SpiderReply))
-
-#define OVERFLOWLISTSIZE 200
-
-// we have one SpiderColl for each collection record
-class SpiderColl {
- public:
-
-	~SpiderColl ( );
-	SpiderColl  ( ) ;
-
-	void setCollectionRec ( class CollectionRec *cr );
-	class CollectionRec *getCollectionRec ( );
-
-	void clearLocks();
-
-	// called by main.cpp on exit to free memory
-	void      reset();
-
-	bool      load();
-
-	int64_t m_msg4Start;
-
-	int32_t getTotalOutstandingSpiders ( ) ;
-
-	void urlFiltersChanged();
-
-	key128_t m_firstKey;
-	// spiderdb is now 128bit keys
-	key128_t m_nextKey;
-	key128_t m_endKey;
-
-	bool m_useTree;
-
-	//bool m_lastDoledbReadEmpty;
-	//bool m_encounteredDoledbRecs;
-	//int64_t m_numRoundsDone;
-
-	//bool           m_bestRequestValid;
-	//char           m_bestRequestBuf[MAX_BEST_REQUEST_SIZE];
-	//SpiderRequest *m_bestRequest;
-	//uint64_t       m_bestSpiderTimeMS;
-	//int32_t           m_bestMaxSpidersPerIp;
-
-	bool           m_lastReplyValid;
-	char           m_lastReplyBuf[MAX_SP_REPLY_SIZE];
-
-	// doledbkey + dataSize + bestRequestRec
-	//char m_doleBuf[MAX_DOLEREC_SIZE];
-	//SafeBuf m_doleBuf;
-
-	bool m_isLoading;
-
-	// for scanning the wait tree...
-	bool m_isPopulatingDoledb;
-	// for reading from spiderdb
-	//bool m_isReadDone;
-	bool m_didRead;
-
-	// corresponding to CollectionRec::m_siteListBuf
-	//char *m_siteListAsteriskLine;
-	bool  m_siteListHasNegatives;
-	bool  m_siteListIsEmpty;
-	bool  m_siteListIsEmptyValid;
-	// data buckets in this table are of type 
-	HashTableX m_siteListDomTable;
-	// substring matches like "contains:goodstuff" or
-	// later "regex:.*"
-	SafeBuf m_negSubstringBuf;
-	SafeBuf m_posSubstringBuf;
-
-	RdbCache m_dupCache;
-	RdbTree m_winnerTree;
-	HashTableX m_winnerTable;
-	int32_t m_tailIp;
-	int32_t m_tailPriority;
-	int64_t m_tailTimeMS;
-	int64_t m_tailUh48;
-	int32_t      m_tailHopCount;
-	int64_t m_minFutureTimeMS;
-
-	// these don't work because we only store one reply
-	// which overwrites any older reply. that's how the 
-	// key is. we can change the key to use the timestamp 
-	// and not parent docid in makeKey() for spider 
-	// replies later.
-	// int32_t m_numSuccessReplies;
-	// int32_t m_numFailedReplies;
-
-	// . do not re-send CrawlInfoLocal for a coll if not update
-	// . we store the flags in here as true if we should send our
-	//   CrawlInfoLocal for this coll to this hostId
-	char m_sendLocalCrawlInfoToHost[MAX_HOSTS];
-
-	Msg4 m_msg4x;
-	//Msg4 m_msg4;
-	//Msg1 m_msg1;
-	//bool m_msg1Avail;
-	RdbList m_tmpList;
-
-	bool isInDupCache ( SpiderRequest *sreq , bool addToCache ) ;
-
-	// Rdb.cpp calls this
-	bool  addSpiderReply   ( SpiderReply   *srep );
-	bool  addSpiderRequest ( SpiderRequest *sreq , int64_t nowGlobalMS );
-
-	void removeFromDoledbTable ( int32_t firstIp );
-
-	bool  addToDoleTable   ( SpiderRequest *sreq ) ;
-
-	bool validateDoleBuf ( SafeBuf *doleBuf ) ;
-	bool addDoleBufIntoDoledb ( SafeBuf *doleBuf , bool isFromCache);
-	//,uint32_t cachedTimestamp);
-
-	bool updateSiteNumInlinksTable ( int32_t siteHash32,int32_t sni,
-					 time_t tstamp); // time_t
-
-	uint64_t getSpiderTimeMS ( SpiderRequest *sreq,
-				   int32_t ufn,
-				   SpiderReply *srep,
-				   uint64_t nowGlobalMS);
-
-	// doledb cursor keys for each priority to speed up performance
-	key_t m_nextKeys[MAX_SPIDER_PRIORITIES];
-
-	// save us scanning empty priorities
-	char m_isDoledbEmpty [MAX_SPIDER_PRIORITIES];
-
-	// are all priority slots empt?
-	//int32_t m_allDoledbPrioritiesEmpty;
-	//int32_t m_lastEmptyCheck; 
-
-	// maps priority to first ufn that uses that
-	// priority. map to -1 if no ufn uses it. that way when we scan
-	// priorities for spiderrequests to dole out we can start with
-	// priority 63 and see what the max spiders or same ip wait are
-	// because we need the ufn to get the maxSpiders from the url filters
-	// table.
-	int32_t m_priorityToUfn[MAX_SPIDER_PRIORITIES];
-	// init this to false, and also set to false on reset, then when
-	// it is false we re-stock m_ufns. re-stock if user changes the
-	// url filters table...
-	bool m_ufnMapValid;
-
-	// list for loading spiderdb recs during the spiderdb scan
-	RdbList        m_list;
-
-	// spiderdb scan for populating waiting tree
-	RdbList  m_list2;
-	Msg5     m_msg5b;
-	bool     m_gettingList2;
-	key128_t m_nextKey2;
-	key128_t m_endKey2;
-	time_t   m_lastScanTime;
-	bool     m_waitingTreeNeedsRebuild;
-	int32_t     m_numAdded;
-	int64_t m_numBytesScanned;
-	int64_t m_lastPrintCount;
-	int64_t m_lastPrinted;
-
-	// used by SpiderLoop.cpp
-	int32_t m_spidersOut;
-
-	// . hash of collection name this arena represents
-	// . 0 for main collection
-	collnum_t m_collnum;
-	char  m_coll [ MAX_COLL_LEN + 1 ] ;
-	class CollectionRec *getCollRec();
-	char *getCollName();
-	bool     m_isTestColl;
-
-	HashTableX m_doleIpTable;
-
-	// freshest m_siteNumInlinks per site stored in here
-	HashTableX m_sniTable;
-
-	// maps a domainHash32 to a crawl delay in milliseconds
-	HashTableX m_cdTable;
-
-	RdbCache m_lastDownloadCache;
-
-	bool m_countingPagesIndexed;
-	HashTableX m_localTable;
-	int64_t m_lastReqUh48a;
-	int64_t m_lastReqUh48b;
-	int64_t m_lastRepUh48;
-	// move to CollectionRec so it can load at startup and save it
-	//HashTableX m_pageCountTable;
-
-	bool makeDoleIPTable     ( );
-	bool makeWaitingTable    ( );
-	bool makeWaitingTree     ( );
-
-	int64_t getEarliestSpiderTimeFromWaitingTree ( int32_t firstIp ) ;
-
-	bool printWaitingTree ( ) ;
-
-	bool addToWaitingTree    ( uint64_t spiderTime , int32_t firstIp ,
-				   bool callForScan );
-	int32_t getNextIpFromWaitingTree ( );
-	uint64_t getNextSpiderTimeFromWaitingTree ( ) ;
-	void populateDoledbFromWaitingTree ( );
-
-	//bool scanSpiderdb        ( bool needList );
-
-
-	// broke up scanSpiderdb into simpler functions:
-	bool evalIpLoop ( ) ;
-	bool readListFromSpiderdb ( ) ;
-	bool scanListForWinners ( ) ;
-	bool addWinnersIntoDoledb ( ) ;
-
-
-	void populateWaitingTreeFromSpiderdb ( bool reentry ) ;
-
-	HashTableX m_waitingTable;
-	RdbTree    m_waitingTree;
-	RdbMem     m_waitingMem; // used by m_waitingTree
-	key_t      m_waitingTreeKey;
-	bool       m_waitingTreeKeyValid;
-	int32_t       m_scanningIp;
-	int32_t       m_gotNewDataForScanningIp;
-	int32_t       m_lastListSize;
-	int32_t       m_lastScanningIp;
-	int64_t  m_totalBytesScanned;
-
-	char m_deleteMyself;
-
-	// start key for reading doledb
-	key_t m_msg5StartKey;
-
-	void devancePriority();
-	void setPriority(int32_t pri);
-
-	key_t m_nextDoledbKey;
-	bool  m_didRound;
-	int32_t  m_pri2;
-	bool  m_twinDied;
-	int32_t  m_lastUrlFiltersUpdate;
-
-	// for reading lists from spiderdb
-	Msg5 m_msg5;
-	bool m_gettingList1;
-
-	// how many outstanding spiders a priority has
-	int32_t m_outstandingSpiders[MAX_SPIDER_PRIORITIES];
-
-	bool printStats ( SafeBuf &sb ) ;
-
-	bool isFirstIpInOverflowList ( int32_t firstIp ) ;
-	int32_t *m_overflowList;
-	int64_t  m_totalNewSpiderRequests;
-	int64_t  m_lastSreqUh48;
-
-	int32_t m_cblocks[20];
-	int32_t m_pageNumInlinks;
-	int32_t m_lastCBlockIp;
-		
-	int32_t  m_lastOverflowFirstIp;
-
- private:
-	class CollectionRec *m_cr;
-};
 
 class SpiderCache {
 
@@ -1392,24 +1169,6 @@ inline int64_t makeLockTableKey ( SpiderReply *srep ) {
 }
 
 
-class LockRequest {
-public:
-	int64_t m_lockKeyUh48;
-	int32_t m_lockSequence;
-	int32_t m_firstIp;
-	char m_removeLock;
-	collnum_t m_collnum;
-};
-
-class ConfirmRequest {
-public:
-	int64_t m_lockKeyUh48;
-	collnum_t m_collnum;
-	key_t m_doledbKey;
-	int32_t  m_firstIp;
-	int32_t m_maxSpidersOutPerIp;
-};
-
 class UrlLock {
 public:
 	int32_t m_hostId;
@@ -1422,198 +1181,9 @@ public:
 	collnum_t m_collnum;
 };
 
-class Msg12 {
- public:
 
-	Msg12();
-
-	bool confirmLockAcquisition ( ) ;
-
-	//uint32_t m_lockGroupId;
-
-	LockRequest m_lockRequest;
-
-	ConfirmRequest m_confirmRequest;
-
-	// stuff for getting the msg12 lock for spidering a url
-	bool getLocks       ( int64_t probDocId,
-			      char *url ,
-			      DOLEDBKEY *doledbKey,
-			      collnum_t collnum,
-			      int32_t sameIpWaitTime, // in milliseconds
-			      int32_t maxSpidersOutPerIp,
-			      int32_t firstIp,
-			      void *state,
-			      void (* callback)(void *state) );
-	bool gotLockReply   ( class UdpSlot *slot );
-	bool removeAllLocks ( );
-
-	// these two things comprise the lock request buffer
-	//uint64_t  m_lockKey;
-	// this is the new lock key. just use docid for docid-only spider reqs.
-	uint64_t  m_lockKeyUh48;
-	int32_t                m_lockSequence;
-
-	int64_t  m_origUh48;
-	int32_t       m_numReplies;
-	int32_t       m_numRequests;
-	int32_t       m_grants;
-	bool       m_removing;
-	bool       m_confirming;
-	char      *m_url; // for debugging
-	void      *m_state;
-	void      (*m_callback)(void *state);
-	bool       m_gettingLocks;
-	bool       m_hasLock;
-
-	collnum_t  m_collnum;
-	DOLEDBKEY  m_doledbKey;
-	int32_t       m_sameIpWaitTime;
-	int32_t       m_maxSpidersOutPerIp;
-	int32_t       m_firstIp;
-	Msg4       m_msg4;
-};
-
-void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) ;
 void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) ;
 
-// . the spider loop
-// . it gets urls to spider from the SpiderCache global class, g_spiderCache
-// . supports robots.txt
-// . supports <META NAME="ROBOTS" CONTENT="NOINDEX">  (no indexing)
-// . supports <META NAME="ROBOTS" CONTENT="NOFOLLOW"> (no links)
-// . supports limiting spiders per domain
-
-// . max spiders we can have going at once for this process
-// . limit to 50 to preven OOM conditions
-#define MAX_SPIDERS 300
-
-class SpiderLoop {
-
- public:
-
-	~SpiderLoop();
-	SpiderLoop();
-
-	bool isInLockTable ( int64_t probDocId );
-
-	bool printLockTable ( );
-
-	int32_t getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum ) ;
-
-	// free all XmlDocs and m_list
-	void reset();
-
-	// . call this no matter what
-	// . if spidering is disabled this will sleep about 10 seconds or so
-	//   before checking to see if it's been enabled
-	void startLoop();
-
-	void doLoop();
-
-	void doleUrls1();
-	void doleUrls2();
-
-	int32_t getMaxAllowableSpidersOut ( int32_t pri ) ;
-
-	void spiderDoledUrls ( ) ;
-	bool gotDoledbList2  ( ) ;
-
-	// . returns false if blocked and "callback" will be called, 
-	//   true otherwise
-	// . returns true and sets g_errno on error
-	bool spiderUrl9 ( class SpiderRequest *sreq ,
-			 key_t *doledbKey       ,
-			  collnum_t collnum,//char  *coll            ,
-			  int32_t sameIpWaitTime , // in milliseconds
-			  int32_t maxSpidersOutPerIp );
-
-	bool spiderUrl2 ( );
-
-	Msg12 m_msg12;
-
-	// state memory for calling SpiderUrl2() (maybe also getLocks()!)
-	SpiderRequest *m_sreq;
-
-	//char      *m_coll;
-	collnum_t  m_collnum;
-	char      *m_content;
-	int32_t       m_contentLen;
-	char       m_contentHasMime;
-	key_t     *m_doledbKey;
-	void      *m_state;
-	void     (*m_callback)(void *state);
-
-	// . the one that was just indexed
-	// . Msg7.cpp uses this to see what docid the injected doc got so it
-	//   can forward it to external program
-	int64_t getLastDocId ( );
-
-	// delete m_msg14[i], decrement m_numSpiders, m_maxUsed
-	void cleanUp ( int32_t i );
-
-	// registers sleep callback iff not already registered
-	void doSleep ( ) ;
-
-	bool indexedDoc ( class XmlDoc *doc );
-
-	// are we registered for sleep callbacks
-	bool m_isRegistered;
-
-	int32_t m_numSpidersOut;
-
-	int32_t m_launches;
-
-	// for spidering/parsing/indexing a url(s)
-	class XmlDoc *m_docs [ MAX_SPIDERS ];
-
-	// . this is "i" where m_msg14[i] is the highest m_msg14 in use
-	// . we use it to limit our scanning to the first "i" m_msg14's
-	int32_t m_maxUsed;
-
-	// . list for getting next url(s) to spider
-	RdbList m_list;
-
-	// for getting RdbLists
-	Msg5 m_msg5;
-
-	class SpiderColl *m_sc;
-
-	// used to avoid calling getRec() twice!
-	//bool m_gettingList0;
-
-	int32_t m_outstanding1;
-	bool m_gettingDoledbList;
-	HashTableX m_lockTable;
-	// save on msg12 lookups! keep somewhat local...
-	RdbCache   m_lockCache;
-
-	RdbCache   m_winnerListCache;
-
-	//bool m_gettingLocks;
-
-	// for round robining in SpiderLoop::doleUrls(), etc.
-	//int32_t m_cri;
-
-	CollectionRec *getActiveList();
-	void buildActiveList ( ) ;
-	class CollectionRec *m_crx;
-	class CollectionRec *m_activeList;
-	CollectionRec *m_bookmark;
-	bool m_activeListValid;
-	bool m_activeListModified;
-	int32_t m_activeListCount;
-	uint32_t m_recalcTime;
-	bool m_recalcTimeValid;
-
-	int64_t m_lastCallTime;
-
-	int64_t m_doleStart;
-
-	int32_t m_processed;
-};
-
-extern class SpiderLoop g_spiderLoop;
 
 void clearUfnTable ( ) ;
 
@@ -1626,5 +1196,22 @@ int32_t getUrlFilterNum ( class SpiderRequest *sreq ,
 		       bool isOutlink , // = false ,
 			  HashTableX *quotaTable ,//= NULL ) ;
 			  int32_t langIdArg );
+
+void parseWinnerTreeKey ( key192_t  *k ,
+			  int32_t      *firstIp ,
+			  int32_t      *priority ,
+			  int32_t *hopCount,
+			  int64_t  *spiderTimeMS ,
+			  int64_t *uh48 );
+
+key192_t makeWinnerTreeKey ( int32_t firstIp ,
+			     int32_t priority ,
+			     int32_t hopCount,
+			     int64_t spiderTimeMS ,
+			     int64_t uh48 );
+
+key_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp );
+
+void nukeDoledb ( collnum_t collnum ) ;
 
 #endif

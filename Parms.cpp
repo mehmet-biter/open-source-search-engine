@@ -14,6 +14,8 @@
 #include "Unicode.h"
 #include "Threads.h"
 #include "Spider.h" // MAX_SPIDER_PRIORITIES
+#include "SpiderColl.h"
+#include "SpiderLoop.h"
 #include "Statsdb.h"
 #include "Sections.h"
 #include "Msg17.h"

@@ -13,6 +13,8 @@
 #include "Pages.h"
 #include "PingServer.h"
 #include "Spider.h"
+#include "SpiderColl.h"
+#include "SpiderLoop.h"
 #include "Process.h"
 #include "Tagdb.h"
 #include "Sections.h"

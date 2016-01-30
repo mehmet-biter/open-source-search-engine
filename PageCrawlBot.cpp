@@ -23,6 +23,7 @@
 #include "PageInject.h" // Msg7
 #include "Repair.h"
 #include "Parms.h"
+#include "SpiderLoop.h"
 
 // so user can specify the format of the reply/output
 //#define FMT_HTML 1

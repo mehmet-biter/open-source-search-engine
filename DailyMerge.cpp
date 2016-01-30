@@ -8,6 +8,8 @@
 #include "Rdb.h"
 #include "Process.h" // g_process.m_processStartTime
 #include "Spider.h"
+#include "SpiderColl.h"
+#include "SpiderLoop.h"
 #include "Proxy.h"
 
 static void dailyMergeWrapper ( int fd , void *state ) ;

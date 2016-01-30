@@ -5,6 +5,8 @@
 #include "Url.h"
 #include "Loop.h"
 #include "Spider.h"  // for calling SpiderLoop::collectionsUpdated()
+#include "SpiderLoop.h"
+#include "SpiderColl.h"
 #include "Posdb.h"
 #include "Datedb.h"
 #include "Titledb.h"

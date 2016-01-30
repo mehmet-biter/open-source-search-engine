@@ -4,6 +4,8 @@
 #include "Pages.h"
 #include "Parms.h"
 #include "Spider.h"
+#include "SpiderColl.h"
+#include "SpiderLoop.h"
 #include "PageResults.h" // for RESULT_HEIGHT
 #include "Stats.h"
 

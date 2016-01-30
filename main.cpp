@@ -23,6 +23,8 @@
 #include "Revdb.h"
 #include "Tagdb.h"
 #include "Spider.h"
+#include "SpiderColl.h"
+#include "SpiderLoop.h"
 #include "Clusterdb.h"
 #include "Sections.h"
 #include "Statsdb.h"
@@ -33,11 +35,9 @@
 #include "MsgC.h"
 #include "HttpServer.h"
 #include "Loop.h"
-#include "Spider.h"
 #include "HighFrequencyTermShortcuts.h"
 #include <sys/resource.h>  // setrlimit
 #include "Stats.h"
-#include "Spider.h"
 #include "Speller.h"       // g_speller
 #include "Wiki.h"          // g_wiki
 #include "Wiktionary.h"    // g_wiktionary

@@ -11,6 +11,8 @@
 #include "Titledb.h"
 #include "Sections.h"
 #include "Spider.h"
+#include "SpiderColl.h"
+#include "SpiderLoop.h"
 #include "Statsdb.h"
 #include "Threads.h"
 #include "PingServer.h"

@@ -15,6 +15,7 @@
 #include "Statsdb.h"
 #include "Sections.h"
 #include "Spider.h"
+#include "SpiderColl.h"
 #include "Revdb.h"
 #include "hash.h"
 

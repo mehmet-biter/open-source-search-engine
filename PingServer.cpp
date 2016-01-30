@@ -20,6 +20,8 @@ int32_t klogctl( int, char *,int ) { return 0; }
 #include "Process.h"
 #include "DailyMerge.h"
 #include "Spider.h"
+#include "SpiderColl.h"
+#include "SpiderLoop.h"
 #include "Test.h"
 #include "Rebalance.h"
 #include "Version.h"
