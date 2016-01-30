@@ -4722,9 +4722,6 @@ bool SpiderColl::addToDoleTable ( SpiderRequest *sreq ) {
 
 
 
-
-
-
 // . decrement priority
 // . will also set m_sc->m_nextDoledbKey
 // . will also set m_sc->m_msg5StartKey

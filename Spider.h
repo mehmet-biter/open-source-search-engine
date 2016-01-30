@@ -1072,7 +1072,6 @@ public:
 };
 
 
-void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) ;
 
 
 void clearUfnTable ( ) ;
