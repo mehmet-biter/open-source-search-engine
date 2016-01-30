@@ -16,6 +16,7 @@
 #include "Sections.h"
 #include "Spider.h"
 #include "SpiderColl.h"
+#include "Doledb.h"
 #include "Revdb.h"
 #include "hash.h"
 

@@ -24,7 +24,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Words.o Url.o UdpServer.o \
 	Threads.o Titledb.o HashTable.o \
 	TcpServer.o Summary.o \
-	Spider.o SpiderColl.o SpiderLoop.o \
+	Spider.o SpiderColl.o SpiderLoop.o Doledb.o \
 	RdbTree.o RdbScan.o RdbMerge.o RdbMap.o RdbMem.o RdbBuckets.o \
 	RdbList.o RdbDump.o RdbCache.o Rdb.o RdbBase.o \
 	Query.o Phrases.o Multicast.o \
@@ -419,6 +419,9 @@ SpiderColl.o:
 	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp
 
 SpiderLoop.o:
+	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp
+
+Doledb.o:
 	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp
 
 test_parser2.o:

@@ -1,23 +1,9 @@
-// . TODO: do not cache if less than the 20k thing again.
-
-// . TODO: nuke doledb every couple hours.
-//   CollectionRec::m_doledbRefreshRateInSecs. but how would this work
-//   for crawlbot jobs where we got 10,000 collections? i'd turn this off.
-//   we could selectively update certain firstips in doledb that have
-//   been in doledb for a long time.
-//   i'd like to see how many collections are actually active
-//   for diffbot first though.
-
-
-
-// TODO: add m_downloadTimeTable to measure download speed of an IP
-// TODO: consider a "latestpubdateage" in url filters for pages that are
-//       adding new dates (not clocks) all the time
 
 #include "gb-include.h"
 #include "Spider.h"
 #include "SpiderLoop.h"
 #include "SpiderColl.h"
+#include "Doledb.h"
 #include "Msg5.h"
 #include "Collectiondb.h"
 #include "XmlDoc.h"    // score8to32()

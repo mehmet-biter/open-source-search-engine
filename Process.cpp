@@ -13,6 +13,7 @@
 #include "Spider.h"
 #include "SpiderColl.h"
 #include "SpiderLoop.h"
+#include "Doledb.h"
 #include "Statsdb.h"
 #include "Threads.h"
 #include "PingServer.h"

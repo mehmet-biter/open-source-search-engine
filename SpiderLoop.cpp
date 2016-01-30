@@ -3,6 +3,7 @@
 #include "Spider.h"
 #include "SpiderColl.h"
 #include "SpiderLoop.h"
+#include "Doledb.h"
 #include "Msg5.h"
 #include "Collectiondb.h"
 #include "XmlDoc.h"    // score8to32()
@@ -337,6 +338,15 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 
 	// spider some urls that were doled to us
 	g_spiderLoop.spiderDoledUrls( );
+}
+
+
+void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
+	// process the doledb list and try to launch a spider
+	g_spiderLoop.gotDoledbList2();
+	// regardless of whether that blocked or not try to launch another 
+	// and try to get the next SpiderRequest from doledb
+	g_spiderLoop.spiderDoledUrls();
 }
 
 

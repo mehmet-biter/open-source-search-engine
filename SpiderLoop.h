@@ -158,4 +158,7 @@ class SpiderLoop {
 
 extern class SpiderLoop g_spiderLoop;
 
+void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) ;
+
+
 #endif

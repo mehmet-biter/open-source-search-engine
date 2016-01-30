@@ -40,6 +40,7 @@
 #include "Parms.h"
 #include "Domains.h"
 #include "matches2.h"
+#include "Doledb.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

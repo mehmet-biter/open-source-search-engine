@@ -5,6 +5,7 @@
 #include "Titledb.h"
 #include "Spider.h"
 #include "SpiderLoop.h"
+#include "Doledb.h"
 #include "Tagdb.h"
 #include "Cachedb.h"
 #include "Clusterdb.h"
