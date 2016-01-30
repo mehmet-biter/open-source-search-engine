@@ -398,11 +398,6 @@ int32_t getFakeIpForUrl2 ( Url  *url2 ) ;
 // . CAUTION: NOT the same group (shard) that doles it out to spider!!!
 //uint32_t getGroupIdToSpider ( char *spiderRec );
 
-// now used by xmldoc.cpp
-bool isAggregator ( int32_t siteHash32 , 
-		    int32_t domHash32 , 
-		    char *url ,
-		    int32_t urlLen ) ;
 
 // The 128-bit Spiderdb record key128_t for a rec in Spiderdb is as follows:
 //
