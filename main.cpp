@@ -37,6 +37,7 @@
 #include "HttpServer.h"
 #include "Loop.h"
 #include "HighFrequencyTermShortcuts.h"
+#include "IPAddressChecks.h"
 #include <sys/resource.h>  // setrlimit
 #include "Stats.h"
 #include "Speller.h"       // g_speller
@@ -1091,7 +1092,9 @@ int main2 ( int argc , char *argv[] ) {
 
 	//log("host: working directory is %s",workingDir);
 
-
+	//initialize IP address checks
+	initialize_ip_address_checks();
+	
 	// load up hosts.conf
 	// . it will determine our hostid based on the directory path of this
 	//   gb binary and the ip address of this server

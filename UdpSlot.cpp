@@ -4,6 +4,7 @@
 #include "UdpServer.h"
 #include "Stats.h"
 #include "Proxy.h"
+#include "IPAddressChecks.h"
 
 int32_t g_cancelAcksSent = 0;
 int32_t g_cancelAcksRead = 0;
@@ -553,17 +554,7 @@ void UdpSlot::setResendTime() {
 		return;
 	}
 	// is it a local ip?
-	bool isLocal = false;
-	// shortcut
-	uint8_t *p = (uint8_t *)&m_ip;
-	// this is local
-	if ( p[0] == 10 ) isLocal = true;
-	// this is local
-	if ( p[0] == 192 && p[1] == 168 ) isLocal = true;
-	// if we match top two ips, then its local
-	if ( (m_ip&0x0000ffff) == (g_hostdb.m_myIp&0x0000ffff)) isLocal = true;
-	// loopback is local
-	if ( m_ip == 0x0100007f ) isLocal = true;
+	bool isLocal = ip_distance(m_ip)<=2;
 	// . keep our resend times up-to-date
 	// . recompute a new resend time in milliseconds for the winning slot
 	// . we double,triple,... the deviation as our backoff scheme
