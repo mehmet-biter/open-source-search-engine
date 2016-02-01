@@ -97,7 +97,6 @@ static bool storeTerm ( char	*s        ,
 	int32_t toff = wbuf->length();
 	// add it
 	if ( ! wbuf->safeMemcpy ( s , slen ) ) return false;
-
 	// make this
 	TermDebugInfo ti;
 	ti.m_termOff   = toff;
@@ -4022,7 +4021,7 @@ bool XmlDoc::hashNumberForSortingAsFloat ( float f , HashInfo *hi , char *sortBy
 	// store it
 	if ( ! storeTerm ( buf,
 			   bufLen,
-			   truePrefix64,
+				ph2,
 			   hi,
 			   0, // word#, i,
 			   0, // wordPos
@@ -4093,7 +4092,6 @@ bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , char *sort
 	//int64_t h64 = hash64 ( final , prefix);
 	//if ( ph2 == h64 )
 	//	log("hey: got offer price");
-
 	// now set the float in that key
 	//g_posdb.setFloat ( &k , f );
 	g_posdb.setInt ( &k , n );
@@ -4131,7 +4129,7 @@ bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , char *sort
 	// store it
 	if ( ! storeTerm ( buf,
 			   bufLen,
-			   truePrefix64,
+				ph2,
 			   hi,
 			   0, // word#, i,
 			   0, // wordPos
