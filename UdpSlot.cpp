@@ -1347,8 +1347,6 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 	}
 
 	// . if it's our first, mark this for g_stats UDP_*_IN_BPS
-	// . makeReadBuf will init m_firstReadTime to -1
-	//if (m_readBitsOn == 0 && m_firstReadTime == -1) m_firstReadTime =now;
 	// did we already receive this dgram? 
 	if ( isOn(dgramNum,m_readBits2) ) {
 		// did we already send the ack for it?
@@ -1773,8 +1771,6 @@ bool UdpSlot::makeReadBuf ( int32_t msgSize , int32_t numDgrams ) {
 		return log(LOG_LOGIC,
 			   "udp: makereadbuf: Read buf already there.");
 	}
-	// reset this to -1
-	//m_firstReadTime = -1;
 	// ensure msg not too big
 	if ( msgSize > m_proto->getMaxMsgSize() ) {
 		g_errno = EMSGTOOBIG;

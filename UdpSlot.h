@@ -391,7 +391,6 @@ class UdpSlot {
 	int64_t      m_calledHandlerTime;
 
 	// these are for measuring bps (bandwidth) for g_stats
-	int64_t      m_firstReadTime;
 	int64_t      m_firstSendTime;
 
 	// . this is bigger for loopback sends/reads
