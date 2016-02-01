@@ -364,7 +364,7 @@ bool Msg40::getResults ( SearchInput *si      ,
 	if ( forward ) { char *xx=NULL;*xx=0; }
 
 	// time the cache lookup
-	if ( g_conf.m_logTimingQuery || m_si->m_debug ) 
+	if ( g_conf.m_logTimingQuery || m_si->m_debug || g_conf.m_logDebugQuery) 
 		m_startTime = gettimeofdayInMilliseconds();
 
 	// keep going
@@ -410,7 +410,7 @@ bool Msg40::gotCacheReply ( ) {
 bool Msg40::prepareToGetDocIds ( ) {
 
 	// log the time it took for cache lookup
-	if ( g_conf.m_logTimingQuery || m_si->m_debug ) {
+	if ( g_conf.m_logTimingQuery || m_si->m_debug || g_conf.m_logDebugQuery) {
 		int64_t now  = gettimeofdayInMilliseconds();
 		int64_t took = now - m_startTime;
 		logf(LOG_TIMING,"query: [%"PTRFMT"] Not found in cache. "
