@@ -958,8 +958,8 @@ class SpiderReply {
 	// was the request an injection request
 	unsigned    m_fromInjectionRequest    :1;
 	// did we TRY to send it to the diffbot backend filter? might be err?
-	unsigned    m_sentToDiffbotThisTime   :1;
-	unsigned    m_hadDiffbotError         :1;
+	unsigned    m_reserved008             :1; //was:m_sentToDiffbotThisTime
+	unsigned    m_reserved009             :1; //was:m_hadDiffbotError
 	// . was it in the index when we started?
 	// . we use this with m_isIndexed above to adjust quota counts for
 	//   this m_siteHash32 which is basically just the subdomain/host

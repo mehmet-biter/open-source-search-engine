@@ -869,10 +869,7 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 			lastSpidered = 0;
 
 		bool isProcessed = false;
-		if ( srep ) isProcessed = srep->m_sentToDiffbotThisTime;
-
-		if ( srep && srep->m_hadDiffbotError )
-			isProcessed = false;
+		if ( srep ) isProcessed = false;
 
 		// debug point
 		//if ( strstr(sreq->m_url,"chief") )
@@ -909,17 +906,6 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 			if ( m_prevReplyError == EFAKEFIRSTIP )
 				continue;
 		}
-
-		if ( srep && srep->m_hadDiffbotError )
-			msg = "Diffbot processing error";
-
-		// indicate specific diffbot error if we have it
-		if ( srep && 
-		     srep->m_hadDiffbotError && 
-		     srep->m_errCode &&
-		     // stick with "diffbot processing error" for these...
-		     srep->m_errCode != EDIFFBOTINTERNALERROR )
-			msg = mstrerror(srep->m_errCode);
 
 		// matching url filter, print out the expression
 		int32_t ufn ;

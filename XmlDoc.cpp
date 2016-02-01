@@ -19705,10 +19705,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	if ( m_sreqValid && m_sreq.m_isInjecting )
 		m_srep.m_fromInjectionRequest = 1;
 
-	m_srep.m_sentToDiffbotThisTime = false;
-
-	m_srep.m_hadDiffbotError = false;
-
 	// sanity. if being called directly from indexDoc() because of
 	// an error like out of memory, then we do not know if it is
 	// indexed or not or was indexed...
