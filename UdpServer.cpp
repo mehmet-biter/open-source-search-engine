@@ -3017,8 +3017,6 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 	}
 	// return if no slot
 	if ( ! slot ) return;
-	// core if we should
-	if ( slot->m_coreOnDestroy ) { char *xx = NULL; *xx = 0; }
 	// if we're deleting a slot that was an incoming request then
 	// decrement m_requestsInWaiting (exclude pings)
 	if ( ! slot->m_callback && slot->m_msgType != 0x11 ) {

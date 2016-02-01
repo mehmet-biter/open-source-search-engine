@@ -359,9 +359,6 @@ class UdpSlot {
 	// how many times we've tried to resend
         char           m_resendCount; 
 
-	// used for debugging
-	char m_coreOnDestroy;
-
 	// . we record the start time of each dgram transmission (in millisecs)
 	// . it's relative to m_startTime
 	// . when an ACK arrives we can compute the roundtrip time 4 that dgram
