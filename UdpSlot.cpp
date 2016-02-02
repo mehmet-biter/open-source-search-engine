@@ -554,7 +554,7 @@ void UdpSlot::setResendTime() {
 		return;
 	}
 	// is it a local ip?
-	bool isLocal = ip_distance(m_ip)<=2;
+	bool isLocal = ip_distance(m_ip)<=ip_distance_nearby;
 	// . keep our resend times up-to-date
 	// . recompute a new resend time in milliseconds for the winning slot
 	// . we double,triple,... the deviation as our backoff scheme

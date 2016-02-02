@@ -52,26 +52,26 @@ unsigned ip_distance(uint32_t ip/*network-order*/)
 	//quick tests first
 	//127.0.0.1 ?
 	if(ip==0x7f000001)
-		return 0;
+		return ip_distance_ourselves;
 	//linux speciality: default loopback network is 127.0.0.0/8
 	if((ip&0xff000000) == 0x7f000000)
-		return 0;
+		return ip_distance_ourselves;
 	
 	//ok, not loopback. Is it one of our own local IP-addresses?
 	for(size_t i=0; i<local_ips; i++)
 		if(local_ip[i] == ip)
-			return 0;
+			return ip_distance_ourselves;
 	
 	//is it on one of the local nets?
 	for(size_t i=0; i<local_nets; i++)
 		if((ip&local_net_mask[i])==(local_net_address[i]&local_net_mask[i]))
-			return 1;
+			return ip_distance_lan;
 	
 	//todo: support configuration of "nearby" networks, or do dynamic measurement of them.
 	//hackish way of test if it is a nearby network: do they share the /16 prefix?
 	for(size_t i=0; i<local_ips; i++)
 		if((ip&0xffff0000)==(local_ip[i]&0xffff0000))
-			return 2;
+			return ip_distance_nearby;
 	
 	return 3;
 }
