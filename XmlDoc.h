@@ -1398,8 +1398,6 @@ public:
 	Multicast m_mcast12;
 	Msg25 *m_tempMsg25Page;
 	Msg25 *m_tempMsg25Site;
-	// for page or for site?
-	Msg25 *getAllInlinks ( bool forSite );
 	// lists from cachedb for msg25's msg20 replies serialized
 	RdbList m_siteReplyList;
 	RdbList m_pageReplyList;
@@ -1679,7 +1677,6 @@ public:
 	//bool m_setForReplyPtrs;
 	//bool m_setForLinkPtrs;
 
-	SafeBuf *getRecommendedLinksBuf ( );
 	bool processLinkInfoMsg20Reply ( class Msg25 *msg25 );
 	bool printRecommendedLinksBuf ( class SafeBuf *sb ) ;
 
@@ -1693,8 +1690,6 @@ public:
 	int32_t m_titleCursor;
 	int32_t m_msg20Phase;
 	int32_t m_recommendedLinkError;
-	SafeBuf *lookupTitles();
-	bool gotLinkerTitle ( class Msg20 *msg20 );
 
 	// 1 *current* bin per host!
 	//class Bin *m_currentBinPtrs[MAX_HOSTS];
