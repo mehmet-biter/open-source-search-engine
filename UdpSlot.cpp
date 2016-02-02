@@ -181,42 +181,26 @@ void UdpSlot::connect ( UdpProtocol    *proto    ,
 	m_startTime = now;
 	// reset this
 	m_queuedTime = -1;
-	// is it a local ip?
-	bool isLocal = false;
-	// shortcut
-	uint8_t *p = (uint8_t *)&m_ip;
-	// this is local
-	if ( p[0] == 10 ) isLocal = true;
-	// this is local
-	if ( p[0] == 192 && p[1] == 168 ) isLocal = true;
-	// if we match top two ips, then its local
-	if ( (m_ip&0x0000ffff) == (g_hostdb.m_myIp&0x0000ffff)) isLocal = true;
-	// loopback is local
-	if ( m_ip == 0x0100007f ) isLocal = true;
-	// . if we're sending to loopback make bigger
-	// . dns has its own max size (DNS_DGRAM_SIZE)
-	// . if we're going over the internet (interface machine)
-	//   use a smaller DGRAM so it makes it
-	if      ( ! m_proto->useAcks()     )
+	
+	//determine datagram size
+	if ( ! m_proto->useAcks() )
 		m_maxDgramSize = DGRAM_SIZE_DNS;
-	else if ( //g_conf.m_interfaceMachine ||
-		  // now that we use hosts2.conf so we can get link text
-		  // via Msg20 from an external gb cluster, it need not come
-		  // from the admin ip...
-		  //( ! g_hostdb.isIpInNetwork ( ip ) &&
-		  //    g_conf.isAdminIp ( ip ) ) )
-		 // this was 0000ffff but since we now use 10.5.*.* and
-		 // 10.6.*.* i had to change that
-		 ! isLocal ) { // || ! g_hostdb.isIpInNetwork ( ip ) ) {
-		// i guess we use this 
-		m_maxDgramSize = DGRAM_SIZE_INTERNET;
-		//char *xx=NULL; *xx=0; 
+	else {
+		switch(ip_distance(m_ip)) {
+			case ip_distance_ourselves:
+				m_maxDgramSize = DGRAM_SIZE_LB;
+				break;
+			case ip_distance_lan:
+				//todo: check link MTU
+				//fallthrough
+			case ip_distance_nearby:
+				m_maxDgramSize = DGRAM_SIZE;
+				break;
+			default:
+				m_maxDgramSize = DGRAM_SIZE_INTERNET;
+				break;
+		}
 	}
-	//else if ( ip == g_hostdb.getMyIp() )
-	else if ( g_hostdb.isMyIp(ip) )
-		m_maxDgramSize = DGRAM_SIZE_LB;
-	else
-		m_maxDgramSize = DGRAM_SIZE;
 }
 
 void UdpSlot::resetConnect ( ) {
