@@ -41,6 +41,7 @@
 #include "Domains.h"
 #include "matches2.h"
 #include "Doledb.h"
+#include "IPAddressChecks.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -12212,20 +12213,12 @@ char **XmlDoc::getHttpReply2 ( ) {
 	if ( ! m_firstIpValid ) { char *xx=NULL;*xx=0; }
 	// max to download in bytes. currently 1MB.
 	int32_t maxDownload = (int32_t)MAXDOCLEN;
-	// but if url is http://127.0.0.1.... or local then
-	if ( m_ipValid ) {
-		// make into a string
-		char *ipStr = iptoa(m_ip);
-		// is it local?
-		bool isLocal = false;
-		if ( strncmp(ipStr,"192.168.",8) == 0) isLocal = true;
-		if ( strncmp(ipStr,"10."     ,3) == 0) isLocal = true;
-		if ( m_ip == 16777343 ) isLocal = true; // 127.0.0.1 ?
+	// but if url is on the intranet/internal nets
+	if ( m_ipValid && is_internal_net_ip(m_ip) ) {
 		// . if local then make web page download max size unlimited
 		// . this is for adding the gbdmoz.urls.txt.* files to
 		//   populate dmoz. those files are about 25MB each.
-		if ( isLocal )
-			maxDownload = -1;
+		maxDownload = -1;
 	}
 	// m_maxCacheAge is set for getting contact or root docs in
 	// getContactDoc() and getRootDoc() and it only applies to
