@@ -1066,8 +1066,6 @@ public:
 	//char     m_iwfiBufValid; // for holding WordFreqInfo instances
 	char     m_wordPosInfoBufValid;
 	char     m_recommendedLinksBufValid;
-	char     m_tempMsg25PageValid;
-	char     m_tempMsg25SiteValid;
 
 	//char     m_queryHashTableValid;
 	char     m_queryOffsetTableValid;
@@ -1396,8 +1394,6 @@ public:
 	SafeBuf m_tmpBuf12;
 	Multicast m_mcast11;
 	Multicast m_mcast12;
-	Msg25 *m_tempMsg25Page;
-	Msg25 *m_tempMsg25Site;
 	// lists from cachedb for msg25's msg20 replies serialized
 	RdbList m_siteReplyList;
 	RdbList m_pageReplyList;

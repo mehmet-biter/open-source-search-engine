@@ -146,8 +146,6 @@ XmlDoc::XmlDoc() {
 	//m_numMsg98Replies = 0;
 	m_numMsg8eReplies = 0;
 	m_numMsg8eRequests = 0;
-	m_tempMsg25Page = NULL;
-	m_tempMsg25Site = NULL;
 	m_numLinkRequestsOut = 0;
 	m_numLinkRequestsIn = 0;
 	m_numMsg3fReplies = 0;
@@ -271,19 +269,6 @@ void XmlDoc::reset ( ) {
 	m_checkedCachedbForSite = false;
 	m_checkedCachedbForPage = false;
 	m_allHashed = false;
-
-	// nuke it
-	if ( m_tempMsg25Page ) {
-		mdelete ( m_tempMsg25Page , sizeof(Msg25), "m25li" );
-		delete ( m_tempMsg25Page );
-		m_tempMsg25Page = NULL;
-	}
-
-	if ( m_tempMsg25Site ) {
-		mdelete ( m_tempMsg25Site , sizeof(Msg25), "m25li" );
-		delete ( m_tempMsg25Site );
-		m_tempMsg25Site = NULL;
-	}
 
 	m_numLinkRequestsOut = 0;
 	//m_seoInfoSetFromCache = false;
