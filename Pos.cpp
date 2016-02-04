@@ -169,7 +169,7 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 			if ( tids[i] ) { // <br>
 				if ( f != fstart ) {
 					if ( ( fend - f > 2 * maxCharSize ) ) {
-						if ( is_ascii(*prevChar) && (*prevChar != '.') ) {
+						if ( prevChar && is_ascii(*prevChar) && (*prevChar != '.') ) {
 							*f++ = '.';
 
 							// counted as caps because we're detecting all caps for a sentence
