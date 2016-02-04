@@ -1508,7 +1508,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		// always prefixed with http:// (sigh ...)
 		gbmemcpy ( p , "http://" , 7 ); p += 7;
 //		gbmemcpy ( p , fu->getScheme(), fu->getSchemeLen() ); p += fu->getSchemeLen();
-		gbmemcpy ( p , "://" , 3 ); p += 3;
+//		gbmemcpy ( p , "://" , 3 ); p += 3;
 		gbmemcpy ( p , name          , nameLen      ); p += nameLen;
 		if( pbufLen > 0 )
 		{
