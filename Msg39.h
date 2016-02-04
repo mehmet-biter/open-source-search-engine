@@ -268,16 +268,7 @@ class Msg39 {
 	// always use top tree now
 	TopTree    m_tt;
 
-	char       m_boolFlag;
-
-	int32_t       m_firstResultNum;
-
 	int64_t  m_numTotalHits;
-
-	int32_t       m_numCensored;
-
-	// for indexdb splitting
-	char      m_paritySplit;
 
 	int32_t        m_bufSize;
 	char       *m_buf;
@@ -286,7 +277,6 @@ class Msg39 {
 	key_t      *m_clusterRecs;
 	int32_t        m_numClusterDocIds;
 	int32_t        m_numVisible;
-	int32_t        m_numDocIds;
 	Msg51       m_msg51;
 	bool        m_gotClusterRecs;
 	bool        controlLoop();
