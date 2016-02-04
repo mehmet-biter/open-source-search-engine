@@ -553,7 +553,7 @@ skip:
 			    this       , // state data
 			    NULL       , // state data
 			    gotReplyWrapper1 ,
-			    60         , // timeout in secs
+			    multicast_msg1_senddata_timeout         , // timeout
 			    m_niceness , // niceness 
 			    -1    , // first host to try
 			    NULL  , // replyBuf        = NULL ,

@@ -191,7 +191,7 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 			      this            , // state data
 			      NULL            , // state data
 			      gotReplyWrapper22 ,
-			      timeout         , // 60 second time out
+			      timeout*1000    , // timeout
 			      r->m_niceness   , // nice, reply size can be huge
 			      firstHostId     , // first hostid
 			      NULL            , // replyBuf

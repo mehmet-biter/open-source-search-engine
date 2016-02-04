@@ -827,7 +827,7 @@ bool sendBuffer ( int32_t hostId , int32_t niceness ) {
 			   // addsinprogress at the wrong time we might miss
 			   // it when its between having timed out and
 			   // having been resent by us!
-			   999999999   , // timeout in secs
+			   multicast_infinite_send_timeout   , // timeout
 			   MAX_NICENESS, // niceness
 			   -1         , // first host to try
 			   NULL       , // replyBuf        = NULL ,

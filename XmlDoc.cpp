@@ -5989,7 +5989,7 @@ SectionStats *XmlDoc::getSectionStats ( uint32_t secHash32 ,
 			       this              , // state1 data
 			       mcast             , // state2 data
 			       gotReplyWrapper39 ,
-			       30                , //timeout in secs
+			       multicast_xmldoc_sectionstats_timeout, //timeout
 			       m_niceness,//m_r->m_niceness   ,
 			       -1, // firstHostId, // -1// bestHandlingHostId ,
 			       NULL              , // m_replyBuf   ,

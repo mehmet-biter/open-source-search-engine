@@ -191,9 +191,9 @@ bool MsgC::getIp(char  *hostname    , int32_t   hostnameLen ,
 	// here unless we are niceness 0, which we need in case the handling
 	// servers goes down, we do not want to wait for it and would rather
 	// call the callback with an EUDPTIMEDOUT error after 60 seconds.
-	int32_t timeout = 60;
-	// make it virtual infinite
-	if ( niceness > 0 ) timeout = 999999999;
+	int64_t timeout = (niceness==0)
+	                ? multicast_msg1c_getip_default_timeout
+	                : multicast_infinite_send_timeout;
 	if ( !m_mcast.send (m_request    , // sets mcast->m_msg to this
 			    requestSize, // sets mcast->m_msgLen to this
 			    0x0c       , // msgType for add rdb record
@@ -204,7 +204,7 @@ bool MsgC::getIp(char  *hostname    , int32_t   hostnameLen ,
 			    this       , // state data
 			    state       , // state data
 			    gotReplyWrapper ,
-			    timeout    , // timeout in secs
+			    timeout    , // timeout
 			    niceness   , // niceness
 			    firstHostId,// first host to try
 			    NULL       , // reply buf

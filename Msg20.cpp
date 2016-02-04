@@ -152,8 +152,9 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 
 	// we might be getting inlinks for a spider request
 	// so make sure timeout is inifinite for that...
-	int32_t timeout = 9999999; // 10 million seconds, basically inf.
-	if ( req->m_niceness == 0 ) timeout = 20;
+	const int32_t timeout = (req->m_niceness==0)
+	                      ? multicast_msg20_summary_timeout
+	                      : multicast_infinite_send_timeout;
 
 	// for diffbot make timeout super long so we aren't tripped up
 	// by dead hosts that aren't really dead.
@@ -241,7 +242,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 			      this              , // state data
 			      NULL              , // state data
 			      gotReplyWrapper20 ,
-			      timeout           , // 60 second time out
+			      timeout           , // timeout
 			      req->m_niceness   ,
 			      firstHostId       , // first hostid
 			      NULL              , // reply buffer

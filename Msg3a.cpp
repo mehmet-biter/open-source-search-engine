@@ -439,17 +439,15 @@ bool Msg3a::gotCacheReply ( ) {
 	//
 	/////////////////////////////
 
-	// . set timeout based on docids requested!
-	// . the more docs requested the longer it will take to get
-	int32_t timeout = (50 * m_docsToGet) / 1000;
-	// at least 20 seconds
-	if ( timeout < 20 ) timeout = 20;
+	//todo: scale the get-doc-ids timeout according to number of query terms
+	int64_t timeout = multicast_msg3a_default_timeout;
 	// override? this is USUALLY -1, but DupDectector.cpp needs it
 	// high because it is a spider time thing.
-	if ( m_r->m_timeout > 0 ) timeout = m_r->m_timeout;
-	// for new posdb stuff
-	if ( timeout < 60 ) timeout = 60;
-
+	if ( m_r->m_timeout > 0 )
+		timeout = m_r->m_timeout * 1000;
+	if ( timeout > multicast_msg3a_maximum_timeout )
+		timeout = multicast_msg3a_maximum_timeout;
+	
 	int64_t qh = 0LL; if ( m_q ) qh = m_q->getQueryHash();
 
 	m_numHosts = g_hostdb.getNumHosts();
@@ -537,7 +535,7 @@ bool Msg3a::gotCacheReply ( ) {
 				   this              , // state1 data
 				   m                 , // state2 data
 				   gotReplyWrapper3a ,
-				   timeout           , // in seconds
+				   timeout           , // timeout
 				   m_r->m_niceness   ,
 				   firstHostId, // -1// bestHandlingHostId ,
 				   NULL              , // m_replyBuf   ,

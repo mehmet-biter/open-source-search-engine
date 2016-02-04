@@ -613,7 +613,7 @@ skip:
 			      this         , // state data
 			      NULL         , // state data
 			      gotMulticastReplyWrapper0 ,
-			      timeout      , // timeout in seconds (was 30)
+			      timeout*1000 , // timeout
 			      niceness     ,
 			      firstHostId  ,
 //#ifdef SPLIT_INDEXDB

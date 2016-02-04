@@ -587,7 +587,7 @@ bool getLinkInfo ( SafeBuf   *reqBuf              ,
 			    // if this is too low we core in XmlDoc.cpp
 			    // after getNewSpiderReply() returns a -1 because
 			    // it blocks for some reason.
-			    9999998     , // timeout in seconds (was 30)
+			    multicast_infinite_send_timeout     , // timeout
 			    req->m_niceness ,
 			    hostId )) {// firstHostId  ,
 		log("linkdb: Failed to send multicast for %s err=%s",

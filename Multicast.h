@@ -25,6 +25,16 @@
 
 #define MAX_HOSTS_PER_GROUP 10
 
+//various timeouts, in milliseconds
+static const int64_t multicast_infinite_send_timeout       = 9999999999;
+static const int64_t multicast_msg20_summary_timeout       =      20000;
+static const int64_t multicast_msg1_senddata_timeout       =      60000;
+static const int64_t multicast_msg3a_default_timeout       =      10000;
+static const int64_t multicast_msg3a_maximum_timeout       =      60000;
+static const int64_t multicast_xmldoc_sectionstats_timeout =      30000;
+static const int64_t multicast_msg1c_getip_default_timeout =      60000;
+
+
 class Multicast {
 
  public:
@@ -89,7 +99,7 @@ class Multicast {
 		    void       *state           , // callback state
 		    void       *state2          , // callback state
 		    void      (*callback)(void *state,void *state2),
-		    int32_t        totalTimeout    , // usually 60 seconds 
+		    int64_t        totalTimeout    , //relative timeout in milliseconds
 		    int32_t        niceness        = MAX_NICENESS ,
 		    int32_t        firstHostId     = -1 ,// first host to try
 		    char       *replyBuf        = NULL ,
@@ -138,13 +148,13 @@ class Multicast {
 	void       *m_state;
 	void       *m_state2;
 	void       (* m_callback)( void *state , void *state2 );
-	int32_t       m_totalTimeout;   // in seconds
+	int64_t       m_totalTimeout;   // in milliseconds
 
 	class UdpSlot *m_slot;
 
 	// . m_slots[] is our list of concurrent transactions
 	// . we delete all the slots only after cast is done
-	int32_t        m_startTime;   // seconds since the epoch
+	int64_t        m_startTime;   // milliseconds since the epoch
 
 	// # of replies we've received
 	int32_t        m_numReplies;

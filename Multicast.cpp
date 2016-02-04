@@ -89,7 +89,7 @@ bool Multicast::send ( char         *msg              ,
 		       void         *state            ,
 		       void         *state2           ,
 		       void          (*callback) (void *state , void *state2),
-		       int32_t          totalTimeout     , // in seconds
+		       int64_t          totalTimeout     , // in millseconds
 		       int32_t          niceness         ,
 		       int32_t          firstHostId      ,
 		       char         *replyBuf         ,
@@ -128,13 +128,13 @@ bool Multicast::send ( char         *msg              ,
 	m_state            = state;
 	m_state2           = state2;
 	m_callback         = callback;
-	m_totalTimeout     = totalTimeout; // in seconds
+	m_totalTimeout     = totalTimeout; // in milliseconds
 	m_niceness         = niceness;
 	// this can't be -1 i guess
 	if ( totalTimeout <= 0 ) { char *xx=NULL;*xx=0; }
 	m_replyBuf         = replyBuf;
 	m_replyBufMaxSize  = replyBufMaxSize;
-	m_startTime        = getTime();
+	m_startTime        = gettimeofdayInMilliseconds();
 	m_numReplies       = 0;
 	m_readBuf          = NULL;
 	m_readBufSize      = 0;
@@ -785,14 +785,14 @@ bool Multicast::sendToHost ( int32_t i ) {
 	m_retired [ i ] = true;
 	// what time is it now?
 	int64_t nowms = gettimeofdayInMilliseconds();
-	time_t    now   = nowms / 1000;
 	// save the time
 	m_launchTime [ i ] = nowms;
 	// sometimes clock is updated on us
-	if ( m_startTime > now ) m_startTime = now ;
+	if ( m_startTime > nowms )
+		m_startTime = nowms;
 	// . timeout is in seconds
 	// . timeout is just the time remaining for the whole groupcast
-	int32_t timeRemaining = m_startTime + m_totalTimeout - now;
+	int64_t timeRemaining = m_startTime + m_totalTimeout - nowms;
 	// . if timeout is negative then reset start time so we try forever
 	// . no, this could be called by a re-route in sleepWrapper1 in which
 	//   case we really should timeout.
@@ -807,13 +807,13 @@ bool Multicast::sendToHost ( int32_t i ) {
 		// msg23 request tried to send a msg22 request which timed out
 		// on it so it sent us back this error.
 		if ( g_errno != EUDPTIMEDOUT ) 
-		log(LOG_INFO,"net: multicast: had negative timeout, %"INT32". "
-		    "startTime=%"INT32" totalTimeout=%"INT32" "
-		    "now=%"INT32". msgType=0x%hhx "
-		    "niceness=%"INT32" clock updated?",
-		    timeRemaining,m_startTime,m_totalTimeout,
-		    (int32_t)now,m_msgType,
-		    (int32_t)m_niceness);
+			log(LOG_INFO,"net: multicast: had negative timeout, %"INT64". "
+			    "startTime=%"INT64" totalTimeout=%"INT64" "
+			    "now=%"INT64". msgType=0x%hhx "
+			    "niceness=%"INT32" clock updated?",
+			    timeRemaining,m_startTime,m_totalTimeout,
+			    nowms,m_msgType,
+			    (int32_t)m_niceness);
 		// we are timed out so do not bother re-routing
 		//g_errno = ETIMEDOUT; 		
 		//return false;
