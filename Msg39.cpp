@@ -62,10 +62,6 @@ void Msg39::reset2() {
 	m_lists = NULL;
 	m_msg2.reset();
 	m_posdbTable.reset();
-	m_callback = NULL;
-	m_state = NULL;
-	m_blocked = false;
-	m_tmp = NULL;
 }
 
 // . handle a request to get a the search results, list of docids only
@@ -104,17 +100,6 @@ void sendReply ( UdpSlot *slot , Msg39 *msg39 , char *reply , int32_t replyLen ,
 
 	// no longer in use. msg39 will be NULL if ENOMEM or something
 	if ( msg39 ) msg39->m_inUse = false;
-
-	// . if we enter from a local call and not from handling a udp slot
-	//   then execute this logic here to return control to caller.
-	// . do not delete ourselves because we will be re-used probably and
-	//   caller handles that now.
-	if ( msg39 && msg39->m_callback ) {
-		// if we blocked call user callback
-		if ( msg39->m_blocked ) msg39->m_callback ( msg39->m_state );
-		// if not sending back a udp reply, return now
-		return;
-	}
 
 	// . now we can free the lists before sending
 	// . may help a little bit...
@@ -662,7 +647,6 @@ bool Msg39::getLists () {
 				 m_r                        ,
 				 m_r->m_niceness            ,
 				 m_debug                      )) {
-		m_blocked = true;
 		return false;
 	}
 
@@ -823,7 +807,6 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 			      this              , // top 4 bytes must be cback
 			      controlLoopWrapper2,
 			      addListsWrapper   ) ) {
-		m_blocked = true;
 		return false;
 	}
 	// if it failed
@@ -1007,26 +990,6 @@ void Msg39::estimateHitsAndSendReply ( ) {
 	// no longer in use
 	m_inUse = false;
 
-	// a little hack for the seo pipeline in xmldoc.cpp
-	m_topDocId  = 0LL;
-	m_topScore  = 0.0;
-	m_topDocId2 = 0LL;
-	m_topScore2 = 0.0;
-	int32_t ti = m_tt.getHighNode();
-	if ( ti >= 0 ) {
-		TopNode *t = &m_tt.m_nodes[ti];
-		m_topDocId = t->m_docId;
-		m_topScore = t->m_score;
-	}
-	// try the 2nd one too
-	int32_t ti2 = -1;
-	if ( ti >= 0 ) ti2 = m_tt.getNext ( ti );
-	if ( ti2 >= 0 ) {
-		TopNode *t2 = &m_tt.m_nodes[ti2];
-		m_topDocId2 = t2->m_docId;
-		m_topScore2 = t2->m_score;
-	}
-
 	// convenience ptrs. we will store the docids/scores into these arrays
 	int64_t *topDocIds;
 	double    *topScores;
@@ -1044,8 +1007,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 	// make the reply?
 	Msg39Reply mr;
 
-	// this is what you want to look at if there is no seo.cpp module...
-	if ( ! m_callback ) {
+	if ( true ) { //silly condition so we don't have to un-indent a lot of lines
 		// if we got clusterdb recs in here, use 'em
 		if ( m_gotClusterRecs ) numDocIds = m_numVisible;
 		
@@ -1267,15 +1229,6 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		if ( m_gotClusterRecs && t->m_clusterLevel != CR_OK ) 
 			continue;
 
-		// if not sending back a reply... we were called from seo.cpp
-		// State3f logic to evaluate a QueryLogEntry, etc.
-		if ( m_callback ) {
-			// skip results past #50
-			if ( docCount > 50 ) continue;
-			// that's it
-			continue;
-		}
-
 		// get the docid ptr
 		//char      *diptr = t->m_docIdPtr;
 		//int64_t  docId = getDocIdFromPtr(diptr);
@@ -1321,15 +1274,6 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		    m_tmpq.getQuery()                 );
 	}
 
-
-	// if we blocked because we used a thread then call callback if
-	// summoned from a msg3f handler and not a msg39 handler
-	if ( m_callback ) {
-		// if we blocked call user callback
-		if ( m_blocked ) m_callback ( m_state );
-		// if not sending back a udp reply, return now
-		return;
-	}
 
 	// now send back the reply
 #ifdef _VALGRIND_

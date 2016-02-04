@@ -295,16 +295,6 @@ class Msg39 {
 	bool        setClusterRecs ();
 	bool        gotClusterRecs ();
 
-	// hack stuff
-	void *m_tmp;
-	int32_t  m_tmp2;
-	bool  m_blocked;
-	void (*m_callback)( void *state );
-	void  *m_state;
-	int64_t m_topDocId;
-	float     m_topScore;
-	int64_t m_topDocId2;
-	float     m_topScore2;
 
 	bool  m_inUse;
 };		
