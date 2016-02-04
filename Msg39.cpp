@@ -19,15 +19,15 @@ static void  sendReply         ( UdpSlot *slot         ,
 				 int32_t     replyMaxSize ,
 				 bool     hadError     );
 // thread wrappers
-static void *addListsWrapper   ( void *state , ThreadEntry *t ) ;
+void *Msg39_addListsWrapper   ( void *state , ThreadEntry *t );
 
-bool Msg39::registerHandler ( ) {
-	// . register ourselves with the udp server
-	// . it calls our callback when it receives a msg of type 0x39
-	if ( ! g_udpServer.registerHandler ( 0x39, handleRequest39 )) 
-		return false;
-	return true;
-}
+//bool Msg39::registerHandler ( ) {
+//	// . register ourselves with the udp server
+//	// . it calls our callback when it receives a msg of type 0x39
+//	if ( ! g_udpServer.registerHandler ( 0x39, handleRequest39 )) 
+//		return false;
+//	return true;
+//}
 
 Msg39::Msg39 () {
 	m_inUse = false;
@@ -87,7 +87,7 @@ void handleRequest39 ( UdpSlot *slot , int32_t netnice ) {
 }
 
 // this must always be called sometime AFTER handleRequest() is called
-void sendReply ( UdpSlot *slot , Msg39 *msg39 , char *reply , int32_t replyLen ,
+static void sendReply ( UdpSlot *slot , Msg39 *msg39 , char *reply , int32_t replyLen ,
 		 int32_t replyMaxSize , bool hadError ) {
 	// debug msg
 	if ( g_conf.m_logDebugQuery || (msg39&&msg39->m_debug) ) 
@@ -259,13 +259,13 @@ void Msg39::getDocIds2 ( Msg39Request *req ) {
 	return;
 }
 
-void controlLoopWrapper2 ( void *state , ThreadEntry *t ) {
+void Msg39_controlLoopWrapper2 ( void *state , ThreadEntry *t ) {
 	Msg39 *THIS = (Msg39 *)state;
 	THIS->controlLoop();
 }
 
 
-void controlLoopWrapper ( void *state ) {
+void Msg39_controlLoopWrapper ( void *state ) {
 	Msg39 *THIS = (Msg39 *)state;
 	THIS->controlLoop();
 }
@@ -643,7 +643,7 @@ bool Msg39::getLists () {
 				 // 1-1 with query terms
 				 m_lists                    ,
 				 this                       ,
-				 controlLoopWrapper,
+				 Msg39_controlLoopWrapper,
 				 m_r                        ,
 				 m_r->m_niceness            ,
 				 m_debug                      )) {
@@ -805,8 +805,8 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	     g_threads.call ( INTERSECT_THREAD  , // threadType
 			      m_r->m_niceness   ,
 			      this              , // top 4 bytes must be cback
-			      controlLoopWrapper2,
-			      addListsWrapper   ) ) {
+			      Msg39_controlLoopWrapper2,
+			      Msg39_addListsWrapper   ) ) {
 		return false;
 	}
 	// if it failed
@@ -827,7 +827,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	return true;
 }
 
-void *addListsWrapper ( void *state , ThreadEntry *t ) {
+void *Msg39_addListsWrapper ( void *state , ThreadEntry *t ) {
 	// we're in a thread now!
 	Msg39 *THIS = (Msg39 *)state;
 	// . do the add
@@ -910,7 +910,7 @@ bool Msg39::setClusterRecs ( ) {
 					0                     , // maxAge
 					false                 , // addToCache
 					this                  ,
-					controlLoopWrapper,
+					Msg39_controlLoopWrapper,
 					m_r->m_niceness       ,
 					m_debug             ) )
 		// did we block? if so, return

@@ -202,15 +202,16 @@ public:
 
 
 class Msg39 {
-
- public:
+public:
 
 	Msg39();
 	~Msg39();
+
+private:
 	void reset();
 	void reset2();
 	// register our request handler for Msg39's
-	bool registerHandler ( );
+	// bool registerHandler ( );
 	// called by handler when a request for docids arrives
 	void getDocIds ( UdpSlot *slot ) ;
 	// XmlDoc.cpp seo pipeline uses this call
@@ -219,10 +220,6 @@ class Msg39 {
 	bool getLists () ;
 	// called when lists have been retrieved, uses PosdbTable to hash lists
 	bool intersectLists ( );//bool updateReadInfo ) ;
-
-	// incoming parameters passed to Msg39::getDocIds() function
-	//void       *m_state;
-	//void      (* m_callback ) ( void *state );
 
 	// . this is used by handler to reconstruct the incoming Query class
 	// . TODO: have a serialize/deserialize for Query class
@@ -245,7 +242,6 @@ class Msg39 {
 	// keep a ptr to the request
 	Msg39Request *m_r;
 
-	char       m_debug;
 
 	//int32_t m_numDocIdSplits;
 	bool m_allocedTree;
@@ -285,8 +281,15 @@ class Msg39 {
 	bool        setClusterRecs ();
 	bool        gotClusterRecs ();
 
+	friend void handleRequest39 ( UdpSlot *slot , int32_t netnice );
+	friend void Msg39_controlLoopWrapper2 ( void *state , ThreadEntry *t );
+	friend void Msg39_controlLoopWrapper ( void *state );
+	friend void *Msg39_addListsWrapper ( void *state , ThreadEntry *t );
 
-	bool  m_inUse;
+public:
+	//debugging aid
+	bool    m_inUse;
+	bool    m_debug;
 };		
 
 #endif
