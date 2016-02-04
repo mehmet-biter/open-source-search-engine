@@ -1007,10 +1007,6 @@ void Msg39::estimateHitsAndSendReply ( ) {
 	// no longer in use
 	m_inUse = false;
 
-	// now this for the query loop on the QueryLogEntries.
-	m_topDocId50 = 0LL;
-	m_topScore50 = 0.0;
-
 	// a little hack for the seo pipeline in xmldoc.cpp
 	m_topDocId  = 0LL;
 	m_topScore  = 0.0;
@@ -1276,9 +1272,6 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		if ( m_callback ) {
 			// skip results past #50
 			if ( docCount > 50 ) continue;
-			// set this
-			m_topScore50 = t->m_score;
-			m_topDocId50 = t->m_docId;
 			// that's it
 			continue;
 		}
@@ -1300,10 +1293,6 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		//	getNumBitsOn(t->m_explicits)
 		docCount++;
 
-		// 50th score? set this for seo.cpp. if less than 50 results
-		// we want the score of the last doc then.
-		if ( docCount <= 50 ) m_topScore50 = t->m_score;
-		
 		if ( m_debug ) {
 			logf(LOG_DEBUG,"query: msg39: [%"PTRFMT"] "
 			    "%03"INT32") docId=%012"UINT64" sum=%.02f",

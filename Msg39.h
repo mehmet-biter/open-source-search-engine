@@ -306,11 +306,6 @@ class Msg39 {
 	int64_t m_topDocId2;
 	float     m_topScore2;
 
-	// . for the top 50 algo in seo.cpp
-	// . will be the score of the last result if < 50 results
-	float     m_topScore50;
-	int64_t m_topDocId50;
-
 	bool  m_inUse;
 };		
 
