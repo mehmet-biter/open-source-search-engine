@@ -1476,6 +1476,9 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// get the hostname (later we set to domain name)
 	char *name    = fu->getHost();
 	int32_t  nameLen = fu->getHostLen();
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(name,nameLen);
+#endif
 	// . point to the end of the whole thing, including port field
 	// . add in port, if non default
 	char *end3    = name + fu->getHostLen() + fu->getPortLen();
@@ -1533,18 +1536,18 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// BR 20160106: Don't store junk entries like http://com/
 	// Check that there is a dot before first slash after domain
 	int32_t dom_offset=0;
-	if( strncmp(name,"http://" ,7) )
+	if( strncmp(name,"http://" ,7)==0 )
 	{
 		dom_offset=7;
 	}
 	else
-	if( strncmp(name,"https://",8) )
+	if( strncmp(name,"https://",8)==0 )
 	{
 		dom_offset=8;
 	}
 
-	char *dotpos 	= strchr(name,'.');
-	char *slashpos 	= strchr(name+dom_offset,'/');
+	const char *dotpos 	= (const char *)memchr(name,'.',nameLen);
+	const char *slashpos 	= (const char *)memchr(name+dom_offset,'/',nameLen-dom_offset);
 
 	bool dom_valid = false;
 	if( slashpos && dotpos && slashpos > dotpos )
