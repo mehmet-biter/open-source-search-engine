@@ -1495,9 +1495,13 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
  loop:
  	
 	// now loop through the sub paths of this url's path
+	int32_t prev_len = -1;
 	for ( int32_t i = 0 ; ; i++ ) {
 		// get the subpath
 		int32_t len = fu->getSubPathLen(i);
+		if(len==prev_len) //work around bug (?) in Url
+			continue;
+		prev_len = len;
 		// FIX: always include first /
 		if ( len == 0 ) len = 1;
 		// write http://www.whatever.com/path into buf
