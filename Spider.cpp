@@ -607,6 +607,8 @@ bool Spiderdb::init ( ) {
 			    sizeof(key128_t)            );
 }
 
+
+
 // init the rebuild/secondary rdb, used by PageRepair.cpp
 bool Spiderdb::init2 ( int32_t treeMem ) {
 	// . what's max # of tree nodes?
@@ -632,19 +634,7 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 			    sizeof(key128_t));
 }
 
-/*
-bool Spiderdb::addColl ( char *coll, bool doVerify ) {
-	if ( ! m_rdb.addColl ( coll ) ) return false;
-	if ( ! doVerify ) return true;
-	// verify
-	if ( verify(coll) ) return true;
-	// if not allowing scale, return false
-	if ( ! g_conf.m_allowScale ) return false;
-	// otherwise let it go
-	log ( "db: Verify failed, but scaling is allowed, passing." );
-	return true;
-}
-*/
+
 
 bool Spiderdb::verify ( char *coll ) {
 	//return true;
@@ -720,6 +710,8 @@ bool Spiderdb::verify ( char *coll ) {
 	g_threads.enableThreads();
 	return true;
 }
+
+
 
 key128_t Spiderdb::makeKey ( int32_t      firstIp     ,
 			     int64_t urlHash48   , 
@@ -1057,22 +1049,6 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	    cr->m_coll);
 	// that was it
 	return sc;
-}
-
-
-
-key_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp ) {
-	// sanity
-	if ( ((int64_t)spiderTimeMS) < 0 ) { char *xx=NULL;*xx=0; }
-	// make the wait tree key
-	key_t wk;
-	wk.n1 = (spiderTimeMS>>32);
-	wk.n0 = (spiderTimeMS&0xffffffff);
-	wk.n0 <<= 32;
-	wk.n0 |= (uint32_t)firstIp;
-	// sanity
-	if ( wk.n1 & 0x8000000000000000LL ) { char *xx=NULL;*xx=0; }
-	return wk;
 }
 
 

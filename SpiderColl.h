@@ -286,5 +286,7 @@ class SpiderColl {
 	class CollectionRec *m_cr;
 };
 
+key_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp );
+
 
 #endif

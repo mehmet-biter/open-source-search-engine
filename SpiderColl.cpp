@@ -307,7 +307,6 @@ char *SpiderColl::getCollName() {
 }
 
 
-
 // this one has to scan all of spiderdb
 bool SpiderColl::makeWaitingTree ( ) {
 
@@ -1534,6 +1533,7 @@ static void gotSpiderdbListWrapper2( void *state , RdbList *list,Msg5 *msg5) {
 }
 
 
+
 //////////////////
 //////////////////
 //
@@ -1551,7 +1551,7 @@ static void gotSpiderdbListWrapper2( void *state , RdbList *list,Msg5 *msg5) {
 // . scan spiderdb to make sure each firstip represented in spiderdb is
 //   in the waiting tree. it seems they fall out over time. we need to fix
 //   that but in the meantime this should do a bg repair. and is nice to have
-// . the waiting tree key is reall just a spidertime and a firstip. so we will
+// . the waiting tree key is really just a spidertime and a firstip. so we will
 //   still need populatedoledbfromwaitingtree to periodically scan firstips
 //   that are already in doledb to see if it has a higher-priority request
 //   for that firstip. in which case it can add that to doledb too, but then
@@ -1696,7 +1696,11 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 			continue;
 		}
 		// if its a SpiderReply skip it
-		if ( ! g_spiderdb.isSpiderRequest ( (key128_t *)rec)) continue;
+		if ( ! g_spiderdb.isSpiderRequest ( (key128_t *)rec)) 
+		{
+			continue;
+		}
+			
 		// cast it
 		SpiderRequest *sreq = (SpiderRequest *)rec;
 		// get first ip
@@ -1872,6 +1876,8 @@ void SpiderColl::populateWaitingTreeFromSpiderdb ( bool reentry ) {
 	return;
 }
 
+
+
 //static bool    s_ufnTreeSet = false;
 //static RdbTree s_ufnTree;
 //static time_t  s_lastUfnTreeFlushTime = 0;
@@ -2028,6 +2034,9 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 		log(LOG_DEBUG,"spider: evalIpLoop: waitingtree nextip=%s "
 		    "numUsedNodes=%"INT32"",iptoa(ip),m_waitingTree.m_numUsedNodes);
 
+
+//@@@@@@ BR: THIS SHOULD BE DEBUGGED AND ENABLED
+
 	/*
 	// assume using tree
 	m_useTree = true;
@@ -2177,8 +2186,6 @@ void SpiderColl::populateDoledbFromWaitingTree ( ) { // bool reentry ) {
 
 
 
-
-
 static void gotSpiderdbListWrapper ( void *state , RdbList *list , Msg5 *msg5){
 	SpiderColl *THIS = (SpiderColl *)state;
 	// prevent a core
@@ -2193,6 +2200,7 @@ static void gotSpiderdbListWrapper ( void *state , RdbList *list , Msg5 *msg5){
 	// gotta set m_isPopulatingDoledb to false lest it won't work
 	THIS->populateDoledbFromWaitingTree ( );
 }
+
 
 
 ///////////////////
@@ -2614,6 +2622,7 @@ bool SpiderColl::readListFromSpiderdb ( ) {
 }
 
 
+
 static int32_t s_lastIn  = 0;
 static int32_t s_lastOut = 0;
 
@@ -2634,6 +2643,8 @@ bool SpiderColl::isFirstIpInOverflowList ( int32_t firstIp ) {
 	s_lastOut = firstIp;
 	return false;
 }
+
+
 
 // . ADDS top X winners to m_winnerTree
 // . this is ONLY CALLED from evalIpLoop() above
@@ -3429,36 +3440,38 @@ bool SpiderColl::scanListForWinners ( ) {
 		// so we can kick out a lower priority version of the same url.
 		int32_t winSlot = m_winnerTable.getSlot ( &uh48 );
 		if ( winSlot >= 0 ) {
-			key192_t *oldwk = (key192_t *)m_winnerTable.
-				getDataFromSlot ( winSlot );
+			key192_t *oldwk = (key192_t *)m_winnerTable.getDataFromSlot ( winSlot );
 
 			// get the min hopcount  
 			SpiderRequest *wsreq ;
-			wsreq =(SpiderRequest *)m_winnerTree.
-				getData(0,(char *)oldwk);
+			wsreq =(SpiderRequest *)m_winnerTree.getData(0,(char *)oldwk);
+			
 			if ( wsreq ) {
 				if ( sreq->m_hopCount < wsreq->m_hopCount )
 					wsreq->m_hopCount = sreq->m_hopCount;
+					
 				if ( wsreq->m_hopCount < sreq->m_hopCount )
 					sreq->m_hopCount = wsreq->m_hopCount;
+					
 				// and the min added time as well!
 				// get the oldest timestamp so
 				// gbssDiscoveryTime will be accurate.
 				if ( sreq->m_discoveryTime < wsreq->m_discoveryTime )
-					wsreq->m_discoveryTime = 
-						sreq->m_discoveryTime;
+					wsreq->m_discoveryTime = sreq->m_discoveryTime;
+					
 				if ( wsreq->m_discoveryTime < sreq->m_discoveryTime )
-					sreq->m_discoveryTime = 
-						wsreq->m_discoveryTime;
+					sreq->m_discoveryTime = wsreq->m_discoveryTime;
 			}
 
 			
 
 			// are we lower priority? (or equal)
 			// smaller keys are HIGHER priority.
-			if(KEYCMP((char *)&wk,(char *)oldwk,
-				  sizeof(key192_t))>=0) 
+			if(KEYCMP( (char *)&wk, (char *)oldwk, sizeof(key192_t)) >= 0) 
+			{
 				continue;
+			}
+				
 			// from table too. no it's a dup uh48!
 			//m_winnerTable.deleteKey ( &uh48 );
 			// otherwise we supplant it. remove old key from tree.
@@ -3470,6 +3483,8 @@ bool SpiderColl::scanListForWinners ( ) {
 		int32_t maxWinners = (int32_t)MAX_WINNER_NODES; // 40
 		//if ( ! m_cr->m_isCustomCrawl ) maxWinners = 1;
 
+
+//@todo BR: Why max winners based on bytes scanned??
 		// if less than 10MB of spiderdb requests limit to 400
 		if ( m_totalBytesScanned < 10000000 ) maxWinners = 400;
 
@@ -3797,6 +3812,7 @@ bool SpiderColl::scanListForWinners ( ) {
 	// have 10M spider requests for it.
 	// lower for testing
 	//if ( m_totalNewSpiderRequests > 1 )
+// @todo BR: Another hardcoded limit..	
 	if ( m_totalNewSpiderRequests > 10000000 )
 		overflow = true;
 
@@ -3868,13 +3884,11 @@ bool SpiderColl::scanListForWinners ( ) {
 	// END maintain firstip overflow list
 	//
 	/////
-		
-
-
 
 	// ok we've updated m_bestRequest!!!
 	return true;
 }
+
 
 
 // . this is ONLY CALLED from evalIpLoop() above
@@ -4067,6 +4081,8 @@ bool SpiderColl::addWinnersIntoDoledb ( ) {
 	return addDoleBufIntoDoledb ( &doleBuf , false );//, 0 );
 }
 
+
+
 bool SpiderColl::validateDoleBuf ( SafeBuf *doleBuf ) {
 	char *doleBufEnd = doleBuf->getBuf();
 	// get offset
@@ -4099,6 +4115,8 @@ bool SpiderColl::validateDoleBuf ( SafeBuf *doleBuf ) {
 	if ( ! gotIt ) { char *xx=NULL;*xx=0; }
 	return true;
 }
+
+
 
 bool SpiderColl::addDoleBufIntoDoledb ( SafeBuf *doleBuf, bool isFromCache ) {
 					// uint32_t cachedTimestamp ) {
@@ -4648,6 +4666,8 @@ uint64_t SpiderColl::getSpiderTimeMS ( SpiderRequest *sreq,
 	return spiderTimeMS;
 }
 
+
+
 // . returns false with g_errno set on error
 // . Rdb.cpp should call this when it receives a doledb key
 // . when trying to add a SpiderRequest to the waiting tree we first check
@@ -4716,7 +4736,6 @@ bool SpiderColl::addToDoleTable ( SpiderRequest *sreq ) {
 	// reset scan for this priority in doledb
 	m_nextKeys     [pri] =g_doledb.makeFirstKey2 ( pri );
 
-
 	return true;
 }
 
@@ -4739,6 +4758,8 @@ void SpiderColl::devancePriority() {
 	m_msg5StartKey = m_nextDoledbKey;
 }
 
+
+
 void SpiderColl::setPriority(int32_t pri) {
 	m_pri2 = pri;
 	m_nextDoledbKey = m_nextKeys [ m_pri2 ];
@@ -4749,4 +4770,23 @@ void SpiderColl::setPriority(int32_t pri) {
 bool SpiderColl::printStats ( SafeBuf &sb ) {
 	return true;
 }
+
+
+
+
+key_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp ) {
+	// sanity
+	if ( ((int64_t)spiderTimeMS) < 0 ) { char *xx=NULL;*xx=0; }
+	// make the wait tree key
+	key_t wk;
+	wk.n1 = (spiderTimeMS>>32);
+	wk.n0 = (spiderTimeMS&0xffffffff);
+	wk.n0 <<= 32;
+	wk.n0 |= (uint32_t)firstIp;
+	// sanity
+	if ( wk.n1 & 0x8000000000000000LL ) { char *xx=NULL;*xx=0; }
+	return wk;
+}
+
+
 

@@ -1099,6 +1099,4 @@ key192_t makeWinnerTreeKey ( int32_t firstIp ,
 			     int64_t spiderTimeMS ,
 			     int64_t uh48 );
 
-key_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp );
-
 #endif

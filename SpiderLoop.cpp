@@ -117,6 +117,8 @@ void SpiderLoop::reset() {
 
 void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) ;
 
+
+
 void SpiderLoop::startLoop ( ) {
 	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	
@@ -171,8 +173,9 @@ void SpiderLoop::startLoop ( ) {
 	//g_spiderLoop.spiderDoledUrls( );
 	// sleep for .1 seconds = 100ms
 	if (!g_loop.registerSleepCallback(50,this,doneSleepingWrapperSL))
-		log("build: Failed to register timer callback. Spidering "
-		    "is permanently disabled. Restart to fix.");
+	{
+		log(LOG_ERROR, "build: Failed to register timer callback. Spidering is permanently disabled. Restart to fix.");
+	}
 
 	// crawlinfo updating
 	// save bandwidth for now make this every 4 seconds not 1 second
@@ -187,10 +190,14 @@ void SpiderLoop::startLoop ( ) {
 	if ( !g_loop.registerSleepCallback(20000,
 					   this,
 					   updateAllCrawlInfosSleepWrapper))
-		log("build: failed to register updatecrawlinfowrapper");
+	{
+		log(LOG_ERROR, "build: failed to register updatecrawlinfowrapper");
+	}
 		
 	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
+
+
 
 // call this every 50ms it seems to try to spider urls and populate doledb
 // from the waiting tree
@@ -296,15 +303,19 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 			// flush the ufn table
 			//clearUfnTable();
 		}
+	
+	
+//@@@@@@
+//@@@ BR: Why not check m_waitingTreeNeedsRebuild before calling??
 		// try this then. it just returns if
 		// sc->m_waitingTreeNeedsRebuild is false so it
 		// should be fast in those cases
-		sc->populateWaitingTreeFromSpiderdb ( false );
-		//}
-		// if list was modified a collection was deleted/added
-		//if ( g_spiderLoop.m_activeListModified ) goto top;
-
 		// re-entry is false because we are entering for the first time
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Calling populateWaitingTreeFromSpiderdb", __FILE__, __func__, __LINE__);
+		sc->populateWaitingTreeFromSpiderdb ( false );
+
+
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Calling populateDoledbFromWaitingTree", __FILE__, __func__, __LINE__);
 		sc->populateDoledbFromWaitingTree ( );
 		// . skip if still loading doledb lists from disk this round
 		// . we use m_didRound to share spiders across all collections
@@ -356,6 +367,7 @@ void doneSleepingWrapperSL ( int fd , void *state ) {
 
 
 	// spider some urls that were doled to us
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Calling spiderDoledUrls", __FILE__, __func__, __LINE__);
 	g_spiderLoop.spiderDoledUrls( );
 }
 
@@ -394,6 +406,8 @@ void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
 // now check our RDB_DOLEDB for SpiderRequests to spider!
 void SpiderLoop::spiderDoledUrls ( ) {
 
+if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	
 	//char *reb = g_rebalance.getNeedsRebalance();
 	//if ( ! reb || *reb ) {return;
 
@@ -452,38 +466,109 @@ void SpiderLoop::spiderDoledUrls ( ) {
 	QUICKPOLL(MAX_NICENESS);
 
 	// must be spidering to dole out
-	if ( ! g_conf.m_spideringEnabled ) return;
-	if ( ! g_hostdb.getMyHost( )->m_spiderEnabled ) return;
+	if ( ! g_conf.m_spideringEnabled ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, spidering disabled", __FILE__, __func__, __LINE__);
+		return;
+	}
+	if ( ! g_hostdb.getMyHost( )->m_spiderEnabled ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, spidering disabled (2)", __FILE__, __func__, __LINE__);
+		return;
+	}
 
 	// or if trying to exit
-	if ( g_process.m_mode == EXIT_MODE ) return;	
+	if ( g_process.m_mode == EXIT_MODE ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, shutting down", __FILE__, __func__, __LINE__);
+		return;	
+	}
+	
 	// if we don't have all the url counts from all hosts, then wait.
 	// one host is probably down and was never up to begin with
-	if ( ! s_countsAreValid ) return;
-	//if ( ! g_conf.m_webSpideringEnabled )  return;
+	if ( ! s_countsAreValid ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, counts not valid", __FILE__, __func__, __LINE__);
+		return;
+	}
+	
 	// if we do not overlap ourselves
-	if ( m_gettingDoledbList ) return;
+	if ( m_gettingDoledbList ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, already getting DoledbList", __FILE__, __func__, __LINE__);
+		return;
+	}
+	
 	// bail instantly if in read-only mode (no RdbTrees!)
-	if ( g_conf.m_readOnlyMode ) return;
+	if ( g_conf.m_readOnlyMode ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, in read-only mode", __FILE__, __func__, __LINE__);
+		return;
+	}
+	
 	// or if doing a daily merge
-	if ( g_dailyMerge.m_mergeMode ) return;
+	if ( g_dailyMerge.m_mergeMode ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, doing daily merge", __FILE__, __func__, __LINE__);
+		return;
+	}
+		
 	// skip if too many udp slots being used
-	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) return;
+	if ( g_udpServer.getNumUsedSlotsIncoming() >= MAXUDPSLOTS ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, using max UDP slots", __FILE__, __func__, __LINE__);
+		return;
+	}
+	
 	// stop if too many out. this is now 50 down from 500.
-	if ( m_numSpidersOut >= MAX_SPIDERS ) return;
+	if ( m_numSpidersOut >= MAX_SPIDERS ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, reached max spiders", __FILE__, __func__, __LINE__);
+		return;
+	}
+	
 	// a new global conf rule
-	if ( m_numSpidersOut >= g_conf.m_maxTotalSpiders ) return;
+	if ( m_numSpidersOut >= g_conf.m_maxTotalSpiders ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, reached max total spiders", __FILE__, __func__, __LINE__);
+		return;
+	}
+		
 	// bail if no collections
-	if ( g_collectiondb.m_numRecs <= 0 ) return;
+	if ( g_collectiondb.m_numRecs <= 0 ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, no collections", __FILE__, __func__, __LINE__);
+		return;
+	}
+
 	// not while repairing
-	if ( g_repairMode ) return;
+	if ( g_repairMode ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, in repair mode", __FILE__, __func__, __LINE__);
+		return;
+	}
+		
 	// do not spider until collections/parms in sync with host #0
-	if ( ! g_parms.m_inSyncWithHost0 ) return;
+	if ( ! g_parms.m_inSyncWithHost0 ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, not in sync with host#0", __FILE__, __func__, __LINE__);
+		return;
+	}
+	
 	// don't spider if not all hosts are up, or they do not all
 	// have the same hosts.conf.
-	if ( ! g_pingServer.m_hostsConfInAgreement ) return;
+	if ( ! g_pingServer.m_hostsConfInAgreement ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, host config disagreement", __FILE__, __func__, __LINE__);
+		return;
+	}
+		
 	// if nothin in the active list then return as well
-	if ( ! m_activeList ) return;
+	if ( ! m_activeList ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, nothing in active list", __FILE__, __func__, __LINE__);
+		return;
+	}
 
 	// if we hit the end of the list, wrap it around
 	if ( ! m_crx ) m_crx = m_activeList;
@@ -501,7 +586,10 @@ void SpiderLoop::spiderDoledUrls ( ) {
 	// spider. i could see a single collection dominating all the spider
 	// slots in some scenarios with this approach unfortunately.
 	if ( m_crx == m_bookmark && ! firstTime && m_launches == 0 )
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, end of list?", __FILE__, __func__, __LINE__);
 		return;
+	}
 
 	// reset # launches after doing a round and having launched > 0
 	if ( m_crx == m_bookmark && ! firstTime )
@@ -513,10 +601,17 @@ void SpiderLoop::spiderDoledUrls ( ) {
 	// we don't core trying to access a delete collectionrec.
 	// i'm not sure if this can happen here but i put this in as a 
 	// precaution.
-	if ( ! m_activeListValid ) { m_crx = NULL; goto collLoop; }
+	if ( ! m_activeListValid ) { 
+		m_crx = NULL; 
+		goto collLoop; 
+	}
 
 	// return now if list is just empty
-	if ( ! m_activeList ) return;
+	if ( ! m_activeList ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, active list empty", __FILE__, __func__, __LINE__);
+		return;
+	}
 
 	cr = m_crx;
 
@@ -527,7 +622,11 @@ void SpiderLoop::spiderDoledUrls ( ) {
 	// get the spider collection for this collnum
 	m_sc = g_spiderCache.getSpiderColl(cr->m_collnum);//m_cri);
 	// skip if none
-	if ( ! m_sc ) goto subloop;
+	if ( ! m_sc ) {
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Loop, no spider cache for this collection", __FILE__, __func__, __LINE__);
+		goto subloop;
+	}
+		
 	// always reset priority to max at start
 	m_sc->setPriority ( MAX_SPIDER_PRIORITIES - 1 );
 
@@ -540,7 +639,8 @@ void SpiderLoop::spiderDoledUrls ( ) {
 		// get rec
 		//cr = g_collectiondb.m_recs[m_cri];
 		// skip if gone
-	        if ( ! cr ) goto subloop;
+        if ( ! cr ) goto subloop;
+
 		// stop if not enabled
 		if ( ! cr->m_spideringEnabled ) goto subloop;
 
@@ -558,6 +658,8 @@ void SpiderLoop::spiderDoledUrls ( ) {
 				cr->m_needsSave = true;
 				cr->m_spiderStatus = SP_MAXROUNDS;
 			}
+			
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Loop, crawl round max reached", __FILE__, __func__, __LINE__);
 			goto subloop;
 		}
 
@@ -568,7 +670,10 @@ void SpiderLoop::spiderDoledUrls ( ) {
 		     cr->m_maxToCrawl ) {
 			// should we resend our local crawl info to all hosts?
 			if ( cr->m_localCrawlInfo.m_hasUrlsReadyToSpider )
+			{
 				cr->localCrawlInfoUpdate();
+			}
+				
 			// now once all hosts have no urls ready to spider
 			// then the send email code will be called.
 			// do it this way for code simplicity.
@@ -578,6 +683,8 @@ void SpiderLoop::spiderDoledUrls ( ) {
 				cr->m_needsSave = true;
 				cr->m_spiderStatus = SP_MAXTOCRAWL;
 			}
+			
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Loop, max pages to crawl reached", __FILE__, __func__, __LINE__);
 			goto subloop;
 		}
 
@@ -596,6 +703,8 @@ void SpiderLoop::spiderDoledUrls ( ) {
 				cr->m_needsSave = true;
 				cr->m_spiderStatus = SP_MAXTOPROCESS;
 			}
+			
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Loop, max pages to process reached", __FILE__, __func__, __LINE__);
 			goto subloop;
 		}
 
@@ -662,7 +771,11 @@ void SpiderLoop::spiderDoledUrls ( ) {
 		// . if m_collectiveRespiderFrequency was set to 0.0 then
 		//   PageCrawlBot.cpp also sets m_roundStartTime to 0.
 		//
-		if ( nowGlobal < cr->m_spiderRoundStartTime ) goto subloop;
+		if ( nowGlobal < cr->m_spiderRoundStartTime ) 
+		{
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Loop, Spider start time not reached", __FILE__, __func__, __LINE__);
+			goto subloop;
+		}
 
 		// if populating this collection's waitingtree assume
 		// we would have found something to launch as well. it might
@@ -684,25 +797,35 @@ void SpiderLoop::spiderDoledUrls ( ) {
 			if ( g_conf.m_testSpiderEnabled ) maxSpiders = 6;
 		}
 
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: maxSpiders: %"INT32"", __FILE__, __func__, __LINE__, maxSpiders);
+	
 		// if some spiders are currently outstanding
 		if ( m_sc->m_spidersOut )
+		{
 			// do not end the crawl until empty of urls because
 			// that url might end up adding more links to spider
 			// when it finally completes
 			ci->m_lastSpiderCouldLaunch = nowGlobal;
+		}
 
 		// debug log
 		//if ( g_conf.m_logDebugSpider )
 		//	log("spider: has %"INT32" spiders out",m_sc->m_spidersOut);
 		// obey max spiders per collection too
 		if ( m_sc->m_spidersOut >= maxSpiders )
+		{
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Loop, Too many spiders active for collection", __FILE__, __func__, __LINE__);
 			goto subloop;
+		}
 
 		// shortcut
 		SpiderColl *sc = cr->m_spiderColl;
 
 		if ( sc && sc->m_doleIpTable.isEmpty() )
+		{
+			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Loop, doleIpTable is empty", __FILE__, __func__, __LINE__);
 			goto subloop;
+		}
 
 		/*
 		// . HACK. 
@@ -805,6 +928,7 @@ void SpiderLoop::spiderDoledUrls ( ) {
 		// assume we would have launched a spider for this coll
 		ci->m_lastSpiderCouldLaunch = nowGlobal;
 		// wait for sleep callback to re-call us in 10ms
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, still waiting for lock reply", __FILE__, __func__, __LINE__);
 		return;
 	}
 
@@ -834,6 +958,7 @@ void SpiderLoop::spiderDoledUrls ( ) {
 		//	m_sc->m_lastDoledbReadEmpty = true;
 		// and go up top
 		//goto collLoop;
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Loop, pri2 < 0", __FILE__, __func__, __LINE__);
 		goto subloop;
 	}
 
@@ -893,6 +1018,7 @@ void SpiderLoop::spiderDoledUrls ( ) {
 		//	//	g_doledb.makeFirstKey2(m_sc->m_pri);
 		//	m_sc->m_nextDoledbKey = m_sc->m_nextKeys[m_sc->m_pri2];
 		// and try again
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Loop, trying previous priority", __FILE__, __func__, __LINE__);
 		goto loop;
 	}
 
@@ -911,6 +1037,7 @@ void SpiderLoop::spiderDoledUrls ( ) {
 	// seems like we need this reset here... strange
 	m_list.reset();
 
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Getting list (msg5)", __FILE__, __func__, __LINE__);
 	// get a spider rec for us to spider from doledb (mdw)
 	if ( ! m_msg5.getList ( RDB_DOLEDB      ,
 				cr->m_collnum, // coll            ,
@@ -941,8 +1068,12 @@ void SpiderLoop::spiderDoledUrls ( ) {
 				gotDoledbListWrapper2 ,
 				MAX_NICENESS    , // niceness
 				true            ))// do error correction?
+	{
 		// return if it blocked
-		return ;
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, getList blocked", __FILE__, __func__, __LINE__);
+		return;
+	}
+	
 	// debug
 	//log(LOG_DEBUG,"spider: read list of %"INT32" bytes from spiderdb for "
 	//    "pri=%"INT32"+",m_list.m_listSize,(int32_t)m_sc->m_pri);
@@ -955,16 +1086,19 @@ void SpiderLoop::spiderDoledUrls ( ) {
 	// . returns true if we should read another list
 	// . will set startKey to next key to start at
 	bool status = gotDoledbList2 ( );
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Back from gotDoledList2. Get more? %s", __FILE__, __func__, __LINE__, status?"true":"false");
 
 	// if we did not launch anything, then decrement priority and
 	// try again. but if priority hits -1 then subloop2 will just go to 
 	// the next collection.
 	if ( saved == m_launches ) {
 		m_sc->devancePriority();
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: Loop, get next priority", __FILE__, __func__, __LINE__);
 		goto subloopNextPriority;
 	}
 
 
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, loop", __FILE__, __func__, __LINE__);
 	if ( status ) {
 		// . if priority is -1 that means try next priority
 		// . DO NOT reset the whole scan. that was what was happening
