@@ -6,7 +6,6 @@
 #include "CountryCode.h" // g_countryCode
 #include "Speller.h"
 #include "Synonyms.h"
-#include "seo.h" // Msg99Request etc.
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -545,15 +544,6 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 
 	// hash gblang:de last for parsing consistency
 	if ( ! hashLanguageString ( table ) ) return NULL;
-
-	// we set this now in hashWords3()
-	if ( m_doingSEO )
-		m_wordPosInfoBufValid = true;
-
-	// store the m_wordPosInfoBuf into cachedb
-	// NO! we are not allowed to block in here it messes shit up!!!
-	//if ( m_doingSEO && ! storeWordPosInfoBufIntoCachedb ( ) )
-	//	return (char *)-1;
 
 	// . hash gbkeyword:gbmininlinks where the score is the inlink count
 	// . the inlink count can go from 1 to 255
@@ -3412,32 +3402,6 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		// the distance cursor, m_dist
 		dt->addTerm144 ( &k );
 
-
-		// . make the m_wordPosInfoBuf here because we need to set
-		//   WordPosInfo::m_wordPtr/m_wordLen.
-		// . could also use instead of the "wts" buffer?
-		if ( m_doingSEO ) {
-			// alloc in 10k chunks
-			if ( m_wordPosInfoBuf.getAvail() <
-			     (int32_t)sizeof(WordPosInfo) ) {
-				int32_t newSize = m_wordPosInfoBuf.length();
-				newSize += 10000;
-				if ( ! m_wordPosInfoBuf.reserve ( newSize ) )
-					return false;
-			}
-			// make it
-			WordPosInfo wi;
-			wi.m_wordPtr       = wptrs[i];
-			wi.m_wordLen       = wlens[i];
-			wi.m_wordPos       = wposvec[i];
-			wi.m_densityRank   = densvec[i];
-			wi.m_wordSpamRank  = ws;
-			wi.m_diversityRank = wd;//v[i];
-			wi.m_hashGroup     = hashGroup;
-			wi.m_trafficGain   = 0;
-			int32_t cs = sizeof(WordPosInfo);
-			if(!m_wordPosInfoBuf.safeMemcpy(&wi,cs)) return false;
-		}
 
 		// add to wts for PageParser.cpp display
 		if ( wts ) {

@@ -1397,11 +1397,6 @@ public:
 	// lists from cachedb for msg25's msg20 replies serialized
 	RdbList m_siteReplyList;
 	RdbList m_pageReplyList;
-	bool m_checkedCachedbForSite;
-	bool m_checkedCachedbForPage;
-	bool m_triedToAddWordPosInfoToCachedb;
-	bool m_calledMsg25ForSite;
-	bool m_calledMsg25ForPage;
 	//void (* m_masterLoopWrapper) (void *state);
 	MsgC m_msgc;
 	bool m_isAllowed;
@@ -1495,62 +1490,14 @@ public:
 	Json m_jp;
 
 
-	//EmailInfo m_emailInfo;
-
 	//
 	// functions and vars for the seo query matching tool
 	//
-	bool loadTitleRecFromDiskOrSpider();
-	//SafeBuf *getSEOQueryInfo ( );
-	HashTableX *getTermIdBufDedupTable32();
-	//int32_t  *getTopWordsVector( bool includeSynonyms );
 	SafeBuf *getTermId32Buf();
 	SafeBuf *getTermInfoBuf();
-	SafeBuf *getMatchingQueryBuf();
-	SafeBuf *getQueryLinkBuf(SafeBuf *docIdListBuf,bool doMatchingQueries);
-	//SafeBuf *getMatchingQueriesScored();
-	SafeBuf *getMatchingQueriesScoredForFullQuery();
-	SafeBuf *getRelatedDocIds();
-	SafeBuf *getRelatedDocIdsScored();
-	SafeBuf *getTopMatchingQueryBuf();
-	bool     addRelatedDocIdInfo ( int64_t docId ,
-				       int32_t queryNum , 
-				       float score ,
-				       int32_t  rank ,
-				       int32_t  siteHash26 ) ;
-	bool     setRelatedDocIdWeightAndRank ( class RelatedDocId *rd );
-	SafeBuf *getRelatedDocIdsWithTitles();
-	bool     setRelatedDocIdInfoFromMsg20Reply ( class RelatedDocId *rd ,
-						     class Msg20Reply *reply );
-
-	SafeBuf *getRelatedQueryBuf();
-	//SafeBuf *getRelatedQueryLinksModPart ( int32_t modPart );
-
-	bool addTermsFromQuery ( char *queryStr,
-				 uint8_t queryLangId,
-				 int32_t gigablastTraffic,
-				 int32_t googleTraffic,
-				 int32_t hackqoff,
-				 class SafeBuf *tmpBuf , 
-				 class HashTableX *scoreTable ,
-				 class HashTableX *topWordsTable ,
-				 float imp,
-				 bool isRelatedQuery ) ;
-
-	bool sortTermsIntoBuf ( class HashTableX *scoreTable ,
-				class SafeBuf *tmpBuf ,
-				class SafeBuf *missingTermBuf ) ;
 
 	SafeBuf *getTermIdSortedPosdbListBuf();
-	SafeBuf *getWordPosSortedPosdbListBuf();
 	SafeBuf *getTermListBuf(); // list of posdb termlists for caching
-	SafeBuf *getWordPosInfoBuf ( ) ;
-
-
-	//bool     sendBin ( int32_t i );
-	//bool     scoreDocIdRestrictedQueries(class Msg99Reply **replyPtrs,
-	//				     class QueryLink  *linkPtrs,
-	//				     int32_t  numPtrs );
 
 	// private like functions
 	bool   addUniqueWordsToBuf ( SafeBuf *termInfoBuf,
@@ -1560,213 +1507,32 @@ public:
 				     bool storeCounts,
 				     Words *words ,
 				     bool includeSynonyms );
-	void gotMsg3aReplyForFullQuery( );
-	//void gotMsg3aReplyForFullQueryCached ( char *cachedRec ,
-	//				       class Msg99Reply *qp );
-	//void gotMsg3aReplyForRelQuery ( class Msg3a *msg3a );
-	void gotMsg3fReply ( class Bin *bin );
-	//void pumpSocketWriteBuf ( );
-	//HashTableX *getMatchingQueryHashTable();
-	HashTableX *getMatchingQueryOffsetTable();
 
 
 	HashTableX m_tidTable32;
-	//int32_t *m_twids;
-	//int32_t  m_numTwids;
 	SafeBuf m_termId32Buf;
 	SafeBuf m_termInfoBuf;
-	SafeBuf m_newTermInfoBuf;
-	//int32_t  m_maxQueries;
-	//int32_t  m_maxRelatedQueries;
-	//int32_t  m_maxRelatedUrls;
-	//int32_t  m_numMsg99Requests;
-	//int32_t  m_numMsg98Requests;
-	//int32_t  m_numMsg99Replies;
-	//int32_t  m_numMsg98Replies;
-	//char *m_msg99ReplyPtrs [MAX_HOSTS];
-	//int32_t  m_msg99ReplySizes[MAX_HOSTS];
-	//int32_t  m_msg99ReplyAlloc[MAX_HOSTS];
-	//int32_t  m_msg99HostIds   [MAX_HOSTS];
-	char *m_msg95ReplyPtrs [MAX_HOSTS];
-	int32_t  m_msg95ReplySizes[MAX_HOSTS];
-	//HashTableX m_queryHashTable;
-	HashTableX m_queryOffsetTable;
-	HashTableX m_fullQueryDedup;
-	//SafeBuf m_twbuf;
-	//SafeBuf m_queryPtrs;
-	SafeBuf m_matchingQueryBuf;
-	SafeBuf m_matchingQueryStringBuf;
-	SafeBuf m_relatedQueryBuf;
-	SafeBuf m_relatedQueryStringBuf;
-	SafeBuf m_docIdListBuf;
-	SafeBuf m_queryOffsets;
-	SafeBuf m_extraQueryBuf;
-	//SafeBuf m_socketWriteBuf;
-	SafeBuf m_relatedDocIdBuf;
-	SafeBuf m_relatedTitleBuf;
-	SafeBuf m_commonQueryNumBuf;
-	SafeBuf m_topMatchingQueryBuf;
-	HashTableX m_rdtab;
 
 	// related query algo stuff
-	SafeBuf m_queryLinkBuf;
-	SafeBuf m_queryLinkStringBuf;
-	char   *m_msg8eReply    [MAX_HOSTS];
-	int32_t    m_msg8eReplySize[MAX_HOSTS];
-	int32_t    m_numMsg8eRequests;
-	int32_t    m_numMsg8eReplies;
-	//bool    m_launchedAll;
 	int64_t m_tlbufTimer;
 
-	SafeBuf m_missingTermBuf;
-	SafeBuf m_matchingTermBuf;
-	//SafeBuf m_queryRelBuf;
-	//SafeBuf m_relPtrs;
 	SafeBuf m_sortedPosdbListBuf;
-	SafeBuf m_wpSortedPosdbListBuf;
 	SafeBuf m_termListBuf;
-	SafeBuf m_insertableTermsBuf;
-	//SafeBuf m_iwfiBuf;
-	SafeBuf m_wordPosInfoBuf;
-	//SafeBuf m_msg20ReplyPtrBuf;
-	SafeBuf m_recommendedLinksBuf;
-	SafeBuf m_tmpMsg0Buf;
-	SafeBuf m_msg20Array;
-	SafeBuf m_newLinkerBuf;
-
-	//Msg17  m_msg17;
-	//key_t  m_cacheKey;
-	//char  *m_cacheRec;
-	//int32_t   m_cacheRecSize;
-	//bool   m_triedCache;
-	
-	//class TopDocIds *m_topDocIdsBuf;
-	//int32_t             m_topDocIdsBufSize;
-	SafeBuf m_topDocIdsBuf;
-	//class TopDocIds *m_nextAvailTopDocIds;
-	//int32_t m_nextAvailTopDocIdsOffset;
-
-	//int32_t    m_maxFullQueries;
-	//XmlDoc *m_newxd;
-	//XmlDoc *m_newxd2;
-	//bool    m_newxd2Blocked;
-	//HashTableX m_tmpDupTable;
-	//class Msg20  *m_newMsg20;
-	Msg3a  *m_msg3a;
-	Query  *m_query3a;
-	int32_t m_numMsg3aRequests;
-	int32_t m_numMsg3aReplies;
-
-	int32_t m_numMsg3fRequests;
-	int32_t m_numMsg3fReplies;
-	int32_t m_numMsg4fRequests;
-	int32_t m_numMsg4fReplies;
-	bool m_sentMsg4fRequests;
-	bool m_matchesCrawlPattern;
-	class UdpSlot *m_savedSlot;
-	int32_t m_numMsg95Requests;
-	int32_t m_numMsg95Replies;
-	int32_t m_qcursor;
-	char m_progressBar;
-	bool m_readFromCachedb;
-	bool m_writeToCachedb;
-	//bool m_setForReplyPtrs;
-	//bool m_setForLinkPtrs;
-
-	bool processLinkInfoMsg20Reply ( class Msg25 *msg25 );
-	bool printRecommendedLinksBuf ( class SafeBuf *sb ) ;
-
-	// recommendedlinksbuf vars and functions
-	int32_t m_numLinkRequestsOut;
-	int32_t m_numLinkRequestsIn;
-	int32_t m_hadLinkInfoError;
-	int32_t m_numMsg20sIn;
-	int32_t m_numMsg20sOut;
-	int32_t m_numValidMsg20s;
-	int32_t m_titleCursor;
-	int32_t m_msg20Phase;
-	int32_t m_recommendedLinkError;
-
-	// 1 *current* bin per host!
-	//class Bin *m_currentBinPtrs[MAX_HOSTS];
-	//int32_t       m_binError;
-	//int32_t       m_msg98ReplyError;
-	//int32_t       m_binErrorForReplyPtrs;
-	//int32_t       m_binErrorForLinkPtrs;
-	HashTableX m_qstringTable;
 
 	// flow flags
-	bool m_printedQueries;
-	bool m_printedRelatedDocIds;
-	bool m_printedRelatedQueries;
-	bool m_printedScoredInsertableTerms;
-	bool m_printedRecommendedLinks;
-	bool m_loggedMsg3;
-	int64_t m_lastPrintedDocId;
-	//bool m_docIndexed;
-	//bool m_sentMsg99Requests;
-	bool m_didSet3;
-	//bool m_didSet3b;
-	bool m_registeredSocketCallback;
-	// the caller's socket the expect the xml reply on
-	TcpSocket *m_seoSocket;
-	TcpSocket *m_hackSocket;
-	bool m_doingSEO;
 
-
-	bool clientClosedConnection ( );
-	bool m_hadMatchError;
-	bool m_clientClosed;
-	bool m_lastCheckTime;
-	int32_t m_msg3aErrno ;
 	bool m_computedMetaListCheckSum;
 
 	// cachedb related args
-	//bool m_seoInfoSetFromCache;
-	bool m_checkedCachedb;
-	bool m_processedCachedbReply;
-	//bool m_storedIntoCachedb;
-	RdbList m_cacheList;
-	//SafeBuf m_msg99ReplyBuf;
-	SafeBuf m_queryChangeBuf;
-	SafeBuf m_queryLogBuf;
-	//SafeBuf m_itStrBuf;
-	SafeBuf m_debugScoreInfoBuf;
-	SafeBuf m_origScoreInfoBuf;
-	RdbList m_storeList;
-	Msg1    m_msg1;
 	bool    m_allHashed;
-	bool checkCachedb ( );
-	bool storeRelatedQueriesIntoCachedb ( ) ;
-	bool storeRelatedDocIdsIntoCachedb ( ) ;
-	bool storeMatchingQueriesIntoCachedb ( ) ; // only the top 1000 or so
-	bool storeMissingTermBufIntoCachedb ( );
-	bool storeWordPosInfoBufIntoCachedb ( );
-	bool storeRecommendedLinksBuf ( );
-
-	// cursors
-	int32_t    m_socketWriteBufSent;
-	int32_t    m_queryNum;
-	int32_t    m_rdCursor;
-	int32_t    m_relatedNum;
-	int32_t    m_numRelatedAdded;
 
 	// for getRelatedDocIdsWithTitles() launching msg20s
-	int32_t m_relatedDocIdError;
 	int32_t m_numMsg20Replies;
 	int32_t m_numMsg20Requests;
-	SafeBuf m_msg20Buf;
 
-	// this points into m_msge2
-	//char *m_outlinkIsIndexedVector;
-	//Msge2 m_msge2;
-
-	int32_t m_numRegExs;
-	//char m_isSiteRoot;
 	int8_t *m_outlinkHopCountVector;
 	int32_t  m_outlinkHopCountVectorSize;
 	//char m_isSpam;
-	char m_isUrlBadYear;
 	char m_isFiltered;
 	int32_t m_urlFilterNum;
 	int32_t m_numOutlinksAdded;
