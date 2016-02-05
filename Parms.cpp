@@ -1979,6 +1979,14 @@ bool Parms::printParm ( SafeBuf* sb,
 		// s is NULL for GigablastRequest parms
 		if ( ! s && m->m_def && m->m_def[0]=='1' )
 			val = " checked";
+
+		// in case it is not checked, submit that!
+		// if it gets checked this should be overridden then
+		// BR 20160205: Do not remove this. Otherwise checkboxes with
+		// default value 1 does not work when you uncheck the box in the UI.
+		sb->safePrintf("<input type=hidden name=%s value=0>", cgi );
+
+
 		sb->safePrintf("<input type=checkbox value=1 ");
 		//"<nobr><input type=button ");
 		if ( m->m_page == PAGE_FILTERS)
@@ -9155,7 +9163,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_GBREQUEST;
 	m->m_off   = (char *)&gr.m_stripBox - (char *)&gr;
 	m->m_type  = TYPE_CHECKBOX;
-	m->m_def   = "1";
+	m->m_def   = "0";
 	m->m_flags = PF_API;
 	m++;
 
@@ -9166,7 +9174,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_GBREQUEST;
 	m->m_off   = (char *)&gr.m_harvestLinks - (char *)&gr;
 	m->m_type  = TYPE_CHECKBOX;
-	m->m_def   = "1";
+	m->m_def   = "0";
 	m->m_flags = PF_API;
 	m++;
 
@@ -10811,7 +10819,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_BOOL;
 	// turn off for now. spider time deduping should help any issues
 	// by disabling this.
-	m->m_def   = "0";
+	m->m_def   = "1";
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_CLONE;
