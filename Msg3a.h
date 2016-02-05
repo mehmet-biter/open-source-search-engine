@@ -65,8 +65,6 @@ public:
 	// called when we got a reply of docIds
 	bool gotAllShardReplies ( );
 
-	bool gotCacheReply ( );
-
 	bool mergeLists ( );
 
 	// . deserialize ourselves for the cache

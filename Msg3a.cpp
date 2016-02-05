@@ -186,10 +186,6 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 		     (PTRTYPE)this);
 	}
 
-	return gotCacheReply ( );
-}
-
-bool Msg3a::gotCacheReply ( ) {
 
 	setTermFreqWeights ( m_r->m_collnum,m_q );
 
