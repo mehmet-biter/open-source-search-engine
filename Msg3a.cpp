@@ -738,8 +738,8 @@ bool Msg3a::gotAllShardReplies ( ) {
 	return true;
 }
 
-HashTableX *g_fht = NULL;
-QueryTerm *g_qt = NULL;
+static HashTableX *g_fht = NULL;
+static QueryTerm *g_qt = NULL;
 
 // sort facets by document counts before displaying
 static int feCmp ( const void *a1, const void *b1 ) {
