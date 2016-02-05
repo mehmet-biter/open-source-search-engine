@@ -115,7 +115,7 @@ void HashTableX::clear ( ) {
 }	 
 
 // #n is the slot
-int32_t HashTableX::getNextSlot ( int32_t n , void *key ) {
+int32_t HashTableX::getNextSlot ( int32_t n , const void *key ) {
 	if ( n < 0 ) return -1;
  loop:
 	// inc it
@@ -123,7 +123,7 @@ int32_t HashTableX::getNextSlot ( int32_t n , void *key ) {
 	// this is set to 0x01 if non-empty
 	if ( m_flags [ n ] == 0   ) return -1;
 	// if key matches return it
-	if ( *(int32_t *)(m_keys + m_ks * n) == *(int32_t *)key  &&
+	if ( *(int32_t *)(m_keys + m_ks * n) == *(const int32_t *)key  &&
 	     ( memcmp (m_keys + m_ks * n, key, m_ks ) == 0 ) )
 		return n;
 	// loop up
@@ -131,7 +131,7 @@ int32_t HashTableX::getNextSlot ( int32_t n , void *key ) {
 }
 
 // how many slots have this key
-int32_t HashTableX::getCount ( void *key ) {
+int32_t HashTableX::getCount ( const void *key ) {
 	int32_t n = getSlot ( key );
 	if ( n < 0 ) return 0;
 	int32_t count = 1;
@@ -151,14 +151,14 @@ int32_t HashTableX::getCount ( void *key ) {
 
 // . returns the slot number for "key"
 // . returns -1 if key not in hash table
-int32_t HashTableX::getOccupiedSlotNum ( void *key ) {
+int32_t HashTableX::getOccupiedSlotNum ( const void *key ) {
 	if ( m_numSlots <= 0 ) return -1;
 
-        int32_t n = *(uint32_t *)(((char *)key)+m_maskKeyOffset);
+        int32_t n = *(const uint32_t *)(((const char *)key)+m_maskKeyOffset);
 
 	// use magic to "randomize" key a little
 	if ( m_useKeyMagic ) 
-		n^=g_hashtab[(unsigned char)((char *)key)[m_maskKeyOffset]][0];
+		n^=g_hashtab[(unsigned char)((const char *)key)[m_maskKeyOffset]][0];
 
 	// mask on the lower 32 bits i guess
         n &= m_mask;
@@ -168,7 +168,7 @@ int32_t HashTableX::getOccupiedSlotNum ( void *key ) {
 		// this is set to 0x01 if non-empty
 		if ( m_flags [ n ] == 0   ) return -1;
 		// get the key there
-		if ( *(int32_t *)(m_keys + m_ks * n) == *(int32_t *)key  &&
+		if ( *(int32_t *)(m_keys + m_ks * n) == *(const int32_t *)key  &&
 		     ( memcmp (m_keys + m_ks * n, key, m_ks ) == 0 ) )
 			return n;
 		// advance otherwise
@@ -179,7 +179,7 @@ int32_t HashTableX::getOccupiedSlotNum ( void *key ) {
 }
 
 // for value-less hashtables
-bool HashTableX::addKey ( void *key ) {
+bool HashTableX::addKey ( const void *key ) {
 	// sanity check -- need to supply data?
 	if ( m_ds != 0 ) { char *xx=NULL;*xx=0; }
 	return addKey ( key , NULL , NULL );
@@ -187,7 +187,7 @@ bool HashTableX::addKey ( void *key ) {
 
 // . returns false and sets g_errno on error, returns true otherwise
 // . adds scores if termId already exists in table
-bool HashTableX::addKey ( void *key , void *val , int32_t *slot ) {
+bool HashTableX::addKey ( const void *key , const void *val , int32_t *slot ) {
 	// if saving, try again later
 	if ( m_isSaving || ! m_isWritable ) { 
 		g_errno = ETRYAGAIN; 
@@ -273,7 +273,7 @@ bool HashTableX::addKey ( void *key , void *val , int32_t *slot ) {
 }
 
 // patch the hole so chaining still works
-bool HashTableX::removeKey ( void *key ) {
+bool HashTableX::removeKey ( const void *key ) {
 	// returns -1 if key not in hash table
 	int32_t n = getOccupiedSlotNum(key);
 	if ( n >= 0 ) return removeSlot ( n );
@@ -424,7 +424,7 @@ bool HashTableX::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 	return true;
 }
 
-bool HashTableX::load ( char *dir , char *filename ,  SafeBuf *fillBuf ) {
+bool HashTableX::load ( const char *dir, const char *filename,  SafeBuf *fillBuf ) {
 	char *tbuf = NULL;
 	int32_t  tsize = 0;
 	bool status = load ( dir , filename , &tbuf, &tsize );
@@ -435,11 +435,11 @@ bool HashTableX::load ( char *dir , char *filename ,  SafeBuf *fillBuf ) {
 }
 
 // both return false and set g_errno on error, true otherwise
-bool HashTableX::load ( char *dir, char *filename, char **tbuf, int32_t *tsize ) {
+bool HashTableX::load ( const char *dir, const char *filename, char **tbuf, int32_t *tsize ) {
 	File f;
 	f.set ( dir , filename );
 	if ( ! f.doesExist() ) return false;
-	char *pdir = dir;
+	const char *pdir = dir;
 	if ( ! pdir ) pdir = "";
 	//log(LOG_INFO,"admin: Loading hashtablex from %s%s",pdir,filename);
 	if ( ! f.open ( O_RDONLY) ) return false;
@@ -560,9 +560,9 @@ static void threadDoneWrapper ( void *state , class ThreadEntry *t ) {
 
 
 bool HashTableX::fastSave ( bool useThread ,
-			    char *dir , 
-			    char *filename , 
-			    char *tbuf, 
+			    const char *dir , 
+			    const char *filename , 
+			    const char *tbuf, 
 			    int32_t tsize ,
 			    void *state ,
 			    void (* callback)(void *state) ) {
@@ -614,9 +614,9 @@ bool HashTableX::fastSave ( bool useThread ,
 	return true;
 }
 
-bool HashTableX::save ( char *dir , 
-			char *filename , 
-			char *tbuf, 
+bool HashTableX::save ( const char *dir , 
+			const char *filename , 
+			const char *tbuf, 
 			int32_t tsize ) {
 
 	//if ( ! m_needsSave ) return true;
