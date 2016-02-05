@@ -21,9 +21,6 @@ int32_t g_dropped = 0;
 int32_t g_corruptPackets = 0;
 bool g_inHandler = false;
 
-// main process id
-static pid_t s_pid = 0;
-
 // . making a hot udp server (realtime signal based)
 // . caller calls to sendRequest() or sendReply() should turn off interrupts
 //   before messing with our data
@@ -299,8 +296,6 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto, int32_t niceness,
 	if( ! m_isDns &&
 	    RDBIDOFFSET +1 > m_proto->getMaxPeekSize() ) {
 		char *xx=NULL;*xx=0; }
-	// set the main process id
-	if ( s_pid == 0 ) s_pid = getpid();
 	// remember our level of niceness
 	//m_niceness = niceness;
 	// don't allow negatives for other transactions, that's unmasked
@@ -2694,13 +2689,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	//   happen since we're already in an interrupt handler, so we have
 	//   to let g_loop know to poll
 	// . TODO: won't he have to wakeup before he'll poll?????
-// #ifndef _POLLONLY_	
-// 	if ( ! g_loop.m_needToPoll && 
-// 	     sigqueue ( s_pid, GB_SIGRTMIN + 1 , svt ) < 0 )
-// 		g_loop.m_needToPoll = true;
-// #else
-// 	g_loop.m_needToPoll = true;
-// #endif
 	// . tell g_loop that we did a queue
 	// . he sets this to false before calling our makeCallbacks_ass()
 	g_someAreQueued = true;
