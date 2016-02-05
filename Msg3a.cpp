@@ -78,16 +78,6 @@ void Msg3a::reset ( ) {
 }
 
 
-static void gotCacheReplyWrapper ( void *state ) {
-	Msg3a *THIS = (Msg3a *)state;
-	// return if it blocked...
-	if ( ! THIS->gotCacheReply() ) return;
-	// set g_errno i guess so parent knows
-	if ( THIS->m_errno ) g_errno = THIS->m_errno;
-	// call callback if we did not block, since we're here. all done.
-	THIS->m_callback ( THIS->m_state );
-}
-
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 // . "query/coll" should NOT be on the stack in case we block
@@ -572,14 +562,6 @@ void gotReplyWrapper3a ( void *state , void *state2 ) {
 	if ( ! THIS->gotAllShardReplies( ) ) return;
 	// set g_errno i guess so parent knows
 	if ( THIS->m_errno ) g_errno = THIS->m_errno;
-	// call callback if we did not block, since we're here. all done.
-	THIS->m_callback ( THIS->m_state );
-}
-
-static void gotSerpdbReplyWrapper ( void *state ) {
-	Msg3a *THIS = (Msg3a *)state;
-	// remove error, like ETRYAGAIN etc.
-	g_errno = 0;
 	// call callback if we did not block, since we're here. all done.
 	THIS->m_callback ( THIS->m_state );
 }
