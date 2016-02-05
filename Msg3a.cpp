@@ -127,8 +127,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	m_callback = callback;
 	m_state    = state;
 
-	// warning. coll size includes \0
-	if ( ! m_r->m_collnum < 0 ) // ptr_coll || m_r->size_coll-1 <= 0 )
+	if ( m_r->m_collnum < 0 )
 		log(LOG_LOGIC,"net: bad collection. msg3a. %"INT32"",
 		    (int32_t)m_r->m_collnum);
 
