@@ -69,12 +69,6 @@ public:
 
 	bool mergeLists ( );
 
-	bool gotReranked ( );
-
-	bool gotClusterRecs ( bool calledFromMergeLists );
-
-	bool gotClusterLevels ( );
-
 	// . deserialize ourselves for the cache
 	// . returns bytes written
 	// . returns -1 and sets g_errno on error
