@@ -49,7 +49,6 @@ class Msg39Request {
 		m_collnum                 = -1;
 		m_useQueryStopWords       = true;
 		m_doMaxScoreAlgo          = true;
-		m_useSeoResultsCache      = false;
 		
 		ptr_readSizes             = NULL;
 		ptr_query                 = NULL; // in utf8?
@@ -102,7 +101,7 @@ class Msg39Request {
 	// flags
 	char    m_queryExpansion;
 	char    m_debug;
-	char    m_useSeoResultsCache;
+	char    m_reserved1; //was:m_useSeoResultsCache
 	char    m_doSiteClustering;
 	char    m_hideAllClustered;
 	//char    m_doIpClustering;

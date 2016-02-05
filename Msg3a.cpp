@@ -204,57 +204,6 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 		     (PTRTYPE)this);
 	}
 
-	// . hit msg17 seoresults cache
-	// . just stores docid/score pairs for seo.cpp
-	if ( m_r->m_useSeoResultsCache ) {
-		// the all important seo results cache key
-		m_ckey.n0 = hash64 ( m_r->ptr_query ,m_r->size_query - 1 ,0 );
-		m_ckey.n0 = hash64h ( (int64_t)m_r->m_collnum,  m_ckey.n0);
-		m_ckey.n0 = hash64 ( (char *)&m_r->m_language,1 ,  m_ckey.n0 );
-		m_ckey.n0 = hash64 ( (char *)&m_r->m_docsToGet,4,  m_ckey.n0 );
-		// this should be non-zero so g_hostdb.getGroupId(RDB_SERPDB)
-		// does not always return groupid 0!
-		m_ckey.n1 = hash32 ( m_r->ptr_query ,m_r->size_query - 1 ,0 );
-		// must NOT be a delete!
-		m_ckey.n0 |= 0x01;
-		// set hi bit to avoid collisions with keys made from
-		// Cachedb::makeKey() function calls
-		//m_ckey.n1 |= 0x80000000;
-		key_t startKey = m_ckey;
-		key_t endKey   = m_ckey;
-		// clear delbit
-		startKey.n0 &= 0xfffffffffffffffeLL;
-		// make a proper endkey
-		//endKey += 2;
-		// sanity
-		if ( ( m_ckey.n0 & 0x01 ) == 0x00 ) { char *xx=NULL;*xx=0; }
-		// reset it
-		//m_cacheRec     = NULL;
-		//m_cacheRecSize = 0;
-		// note it
-		//log("seopipe: checking ckey=%s q=%s"
-		//    ,KEYSTR(&m_ckey,12)
-		//    ,m_r->ptr_query
-		//    );
-		//setStatus("launching msg17");
-		// return FALSE if this blocks
-		if ( ! m_msg0.getList ( -1, // hostid
-					0 , // ip
-					0 , // port
-					0 , // maxcacheage
-					false, // addtocache?
-					RDB_SERPDB,//RDB_CACHEDB,
-					m_r->m_collnum,//ptr_coll,
-					&m_seoCacheList,
-					(char *)&startKey ,
-					(char *)&endKey,
-					10, // minrecsizes 10 bytes
-					this,
-					gotCacheReplyWrapper,
-					m_r->m_niceness ) )
-			return false;
-	}
-
 	return gotCacheReply ( );
 }
 
@@ -804,76 +753,6 @@ bool Msg3a::gotAllShardReplies ( ) {
 	// this seems to always return true!
 	mergeLists ( );
 
-	if ( ! m_r->m_useSeoResultsCache ) return true;
-
-	// now cache the reply
-	SafeBuf cr;
-	int32_t dataSize = 4 + 4 + 4 + m_numDocIds * (8+4+4);
-	int32_t need = sizeof(key_t) + 4 + dataSize;
-	bool status = cr.reserve ( need );
-	// sanity
-	if ( ( m_ckey.n0 & 0x01 ) == 0x00 ) { char *xx=NULL;*xx=0; }
-	// ignore errors
-	g_errno = 0;
-	// return on error with g_errno cleared if cache add failed
-	if ( ! status ) return true;
-	// add to buf otherwise
-	cr.safeMemcpy ( &m_ckey , sizeof(key_t) );
-	cr.safeMemcpy ( &dataSize , 4 );
-	int32_t now = getTimeGlobal();
-	cr.pushLong ( now );
-	cr.pushLong ( m_numDocIds );
-	cr.pushLong ( m_numTotalEstimatedHits );//Results );
-	int32_t max = m_numDocIds;
-	// then the docids
-	for ( int32_t i = 0 ; i < max ; i++ )
-		cr.pushLongLong(m_docIds[i] );
-	for ( int32_t i = 0 ; i < max ; i++ )
-		cr.pushDouble(m_scores[i]);
-	for ( int32_t i = 0 ; i < max ; i++ )
-		cr.pushLong(getSiteHash26(i));
-	// sanity
-	if ( cr.length() != need ) { char *xx=NULL;*xx=0; }
-	// make these
-	key_t startKey;
-	key_t endKey;
-	startKey = m_ckey;
-	// clear delbit
-	startKey.n0 &= 0xfffffffffffffffeLL;
-	// end key is us
-	endKey = m_ckey;
-	// that is the single record
-	m_seoCacheList.set ( cr.getBufStart() ,
-			     cr.length(),
-			     cr.getBufStart(), // alloc
-			     cr.getCapacity(), // alloc size
-			     (char *)&startKey,
-			     (char *)&endKey,
-			     -1, // fixeddatasize
-			     true, // owndata?
-			     false,// use half keys?
-			     sizeof(key_t) );
-	// do not allow cr to free it, msg1 will
-	cr.detachBuf();
-	// note it
-	//log("seopipe: storing ckey=%s q=%s"
-	//    ,KEYSTR(&m_ckey,12)
-	//    ,m_r->ptr_query
-	//    );
-	//log("msg1: sending niceness=%"INT32"",(int32_t)m_r->m_niceness);
-	// this will often block, but who cares!? it just sends a request off
-	if ( ! m_msg1.addList ( &m_seoCacheList ,
-				RDB_SERPDB,//RDB_CACHEDB,
-				m_r->m_collnum,//ptr_coll,
-				this, // state
-				gotSerpdbReplyWrapper, // callback
-				false, // forcelocal?
-				m_r->m_niceness ) ) {
-		//log("blocked");
-		return false;
-	}
-
-	// we can safely delete m_msg17... just return true
 	return true;
 }
 
