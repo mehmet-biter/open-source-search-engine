@@ -31,12 +31,6 @@ static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;
 char      *g_dbuf          = NULL;
 int32_t       g_dbufSize       = 0;
 
-// main process id. pthread_t is 64 bit and pid_t is 32 bit on 64 bit oses
-static pthread_t s_pid = (pthread_t)-1;
-
-void Log::setPid ( ) {
-	s_pid = getpidtid();
-}
 
 Log::Log () { 
 	m_fd = -1; 
@@ -92,9 +86,6 @@ bool renameCurrentLogFile ( ) {
 
 
 bool Log::init ( char *filename ) {
-	// set the main process id
-	//s_pid = getpidtid();
-	setPid();
 	// init these
 	m_numErrors =  0;
 	m_bufPtr    =  0;
@@ -277,8 +268,6 @@ bool Log::logR ( int64_t now , int32_t type , char *msg , bool asterisk ,
 	// chop off any spaces at the end of the msg.
 	while ( is_wspace_a ( msg [ msgLen - 1 ] ) && msgLen > 0 ) msgLen--;
 
-	// get this pid
-	pthread_t pid = getpidtid();
 	// a tmp buffer
 	char tt [ MAX_LINE_LEN ];
 	char *p    = tt;
@@ -316,12 +305,6 @@ bool Log::logR ( int64_t now , int32_t type , char *msg , bool asterisk ,
 	// Log level
 	p += sprintf(p, "%s ", getTypeString(type));
 	
-
-	if ( pid != s_pid && s_pid != (pthread_t)-1 ) {
-		//sprintf ( p , "[%"INT32"] " , (int32_t)getpid() );
-		sprintf ( p , "[%"UINT64"] " , (uint64_t)pid );
-		p += gbstrlen ( p );
-	}
 
 	// then message itself
 	char *x = msg;
@@ -547,13 +530,6 @@ bool Log::logLater ( int64_t now, int32_t type, char *format, va_list ap ) {
 	// store the args themselves
 	memcpy_ass ( s_ptr , (char *)ap , apsize );
 	s_ptr += apsize;
-	// queue a signal if we need to
-	//if ( ! queueSig ) return false;
-	// queue the signal
-	//sigval_t svt; 
-	//svt.sival_int = 1;
-	//if ( sigqueue ( s_pid, GB_SIGRTMIN + 1 + 0, svt ) < 0)
-	//	g_loop.m_needToPoll = true;
 	return false;
 }
 

@@ -2544,7 +2544,6 @@ int main2 ( int argc , char *argv[] ) {
 		// set our new pid
 		g_mem.setPid();
 		g_threads.setPid();
-		g_log.setPid();
 
 		// if we do not do this we don't get sigalarms or quickpolls
 		// when running as 'gb -d'
