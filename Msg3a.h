@@ -53,13 +53,6 @@ public:
 	double *getScores        ( ) { return m_scores;        };
 	int32_t   getNumDocIds     ( ) { return m_numDocIds; };
 
-	int32_t getSiteHash26 ( int32_t i ) { 
-		// if it was in the seoResults cache this will be non-NULL
-		if ( m_siteHashes26 ) return m_siteHashes26[i];
-		// otherwise, this is the standard method:
-		return g_clusterdb.getSiteHash26((char *)&m_clusterRecs[i]); 
-	};
-
 	bool sortFacetEntries();
 
 	void printTerms ( ) ;
@@ -99,12 +92,6 @@ public:
 	// set by Msg3a initially
 	//int32_t       m_indexdbSplit;
 	int32_t m_numHosts;
-
-	// used in XmlDoc.cpp for doing the seo keyword tool
-	void      *m_hack;
-	int32_t       m_hackQNum;
-	char      *m_hackQPtr;
-	char       m_inUse;
 
 	bool m_moreDocIdsAvail;
 	int32_t m_totalDocCount;
@@ -168,15 +155,6 @@ public:
 
 	// what collection # are these docids from if m_collnums[] is NULL
 	//collnum_t m_collnum;
-
-	//
-	// new things for seoresults cache
-	//
-	int32_t           *m_siteHashes26;
-	key_t           m_ckey; // cachedb key
-	Msg0            m_msg0;
-	Msg1            m_msg1;
-	RdbList         m_seoCacheList;
 
 	// we don't have FacetStats because we have the actual 
 	// Msg39Reply::ptr_facetHashList from each shard which contains

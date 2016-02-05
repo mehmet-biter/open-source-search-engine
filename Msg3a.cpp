@@ -21,7 +21,6 @@ void Msg3a::constructor ( ) {
 	m_docsToGet    = 0;
 	m_numDocIds    = 0;
 	m_collnums     = NULL;
-	m_inUse        = false;
 	m_q            = NULL;
 
 	// need to call all safebuf constructors now to set m_label
@@ -33,23 +32,16 @@ void Msg3a::constructor ( ) {
 	m_rbufPtr = NULL;
 	for ( int32_t j = 0; j < MAX_SHARDS; j++ )
 		m_mcast[j].constructor();
-	m_seoCacheList.constructor();
 }
 
 Msg3a::~Msg3a ( ) {
 	reset();
 	for ( int32_t j = 0; j < MAX_SHARDS; j++ )
 		m_mcast[j].destructor();
-	m_seoCacheList.freeList();
 }
 
 void Msg3a::reset ( ) {
 
-	if ( m_inUse ) { log("msg3a: msg3a in use!"); }
-
-	m_seoCacheList.freeList();
-
-	m_siteHashes26 = NULL;
 	// . NULLify all the reply buffer ptrs
 	// . have to count DOWN with "i" because of the m_reply[i-1][j] check
 	for ( int32_t j = 0; j < MAX_SHARDS; j++ ) {
@@ -198,57 +190,6 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 }
 
 bool Msg3a::gotCacheReply ( ) {
-
-	// in cache?
-	if ( ! m_seoCacheList.isEmpty() ) {
-		// note it
-		//log("seopipe: found ckey=%s q=%s"
-		//    ,KEYSTR(&m_ckey,12)
-		//    ,m_r->ptr_query
-		//    );
-		char *p = m_seoCacheList.getList();
-		// skip key
-		p += sizeof(key_t);
-		// datasize
-		p += 4;
-		// timestamp
-		//int32_t cachedTime = *(int32_t *)p;
-		p += 4;
-		// # docids
-		m_numDocIds = *(int32_t *)p;
-		p += 4;
-		// total # results
-		m_numTotalEstimatedHits = *(int32_t *)p;
-		p += 4;
-		// docids
-		m_docIds = (int64_t *)p;
-		p += 8 * m_numDocIds;
-		// scores
-		m_scores = (double *)p;
-		p += sizeof(double) * m_numDocIds;
-		// site hashes
-		m_siteHashes26 = (int32_t *)p;
-		p += 4 * m_numDocIds;
-		// log to log as well
-		char tmp[50000];
-		p = tmp;
-		p += sprintf(p,
-			     "seopipe: hit cache "
-			     "docids=%"INT32" "
-			     "query=\"%s\" ",
-			     m_numDocIds,
-			     m_r->ptr_query );
-		// log each docid
-		//for ( int32_t i = 0 ; i < m_numDocIds ; i++ ) {
-		//	//float score = m_msg3a->getScores()[i];
-		//	int64_t d = m_docIds[i];
-		//	//int32_t sh32 = m_msg3a->getSiteHash32(i);
-		//	p += sprintf(p,"d%"INT32"=%"INT64" ",i,d);
-		//}
-		log("%s",tmp);
-		// all done!
-		return true;
-	}
 
 	setTermFreqWeights ( m_r->m_collnum,m_q );
 
