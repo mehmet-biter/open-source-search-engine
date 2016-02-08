@@ -32,10 +32,14 @@ int32_t getEntity_a ( const char *s , int32_t maxLen , uint32_t *c ) {
 		len++;
 	}
 
-	// include the ending ; if any
-	if ( len < maxLen && s[len] == ';' ) {
-		len++;
+	// character entity reference must end with a semicolon.
+	// some browsers have lenient parsing, but we don't accept invalid
+	// references.
+	if ( len == maxLen || s[len] != ';' ) {
+		//not a valid character entity reference
+		return 0;
 	}
+	len++;
 
 	// we don't have entities longer than "&curren;"
 	if ( len > 10 ) {
