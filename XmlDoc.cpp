@@ -16031,6 +16031,13 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("thumbnail=none ");
 
 
+	if ( m_rawUtf8ContentValid )
+		sb->safePrintf("utf8size=%"INT32" ",
+			       m_rawUtf8ContentSize);
+	if ( m_utf8ContentValid )
+		sb->safePrintf("rawutf8size=%"INT32" ",
+			       size_utf8Content);
+
 	// get the content type
 	uint8_t ct = CT_UNKNOWN;
 	if ( m_contentTypeValid ) ct = m_contentType;
