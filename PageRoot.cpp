@@ -13,6 +13,9 @@
 #include "LanguageIdentifier.h"
 #include "Proxy.h"
 #include "HashTable.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 bool sendPageRoot ( TcpSocket *s, HttpRequest *r ){
 	return sendPageRoot ( s, r, NULL );
@@ -1146,8 +1149,8 @@ public:
 	int32_t       m_ufuLen;
 	char       m_ufu[MAX_URL_LEN];
 
-	//int32_t       m_urlLen;
-	//char       m_url[MAX_URL_LEN];
+	int32_t    m_urlLen;
+	char       m_url[MAX_URL_LEN];
 
 	//char       m_username[MAX_USER_SIZE];
 	bool       m_strip;
@@ -1311,21 +1314,6 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	st1->m_socket  = sock;
 	st1->m_isMasterAdmin = isAdmin;
 
-	/*
-	// save the url
-	st1->m_url[0] = '\0';
-	if ( url ) {
-		// normalize and add www. if it needs it
-		Url uu;
-		uu.set ( url , gbstrlen(url) , true );
-		// remove >'s i guess and store in st1->m_url[] buffer
-		st1->m_urlLen=cleanInput ( st1->m_url,
-					   MAX_URL_LEN, 
-					   uu.getUrl(),
-					   uu.getUrlLen() );
-	}
-	*/
-
 	// save the "ufu" (url of file of urls)
 	st1->m_ufu[0] = '\0';
 	st1->m_ufuLen  = ufuLen;
@@ -1400,15 +1388,12 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	if ( ! coll ) coll = g_conf.m_defaultColl;
 	ir->m_collnum = g_collectiondb.getCollnum ( coll );
 
-	ir->ptr_url = hr->getString("u",NULL);
-	if ( ! ir->ptr_url ) ir->ptr_url = hr->getString("url",NULL);
-	if ( ! ir->ptr_url ) ir->ptr_url = hr->getString("urls",NULL);
-
-	if ( ! ir->ptr_url ) {
-		g_errno = EBADURL;
-		doneInjectingWrapper3  ( st1 );
-		return true;
-	}
+	//save the URL
+	st1->m_urlLen = strlen(url);
+	memcpy(st1->m_url, url, st1->m_urlLen+1);
+	
+	
+	ir->ptr_url = st1->m_url;
 
 	// include \0 in size
 	ir->size_url = gbstrlen(ir->ptr_url)+1;
@@ -1465,6 +1450,15 @@ void doneInjectingWrapper3 ( void *st ) {
 	//char *url = st1->m_msg7.m_xd.m_firstUrl.m_url;
 	Msg7 *msg7 = &st1->m_msg7;
 	InjectionRequest *ir = &msg7->m_injectionRequest;
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(ir,sizeof(*ir));
+	VALGRIND_CHECK_MEM_IS_DEFINED(ir->ptr_url,ir->size_url);
+	VALGRIND_CHECK_MEM_IS_DEFINED(ir->ptr_contentDelim,ir->size_contentDelim);
+	VALGRIND_CHECK_MEM_IS_DEFINED(ir->ptr_contentFile,ir->size_contentFile);
+	VALGRIND_CHECK_MEM_IS_DEFINED(ir->ptr_contentTypeStr,ir->size_contentTypeStr);
+	VALGRIND_CHECK_MEM_IS_DEFINED(ir->ptr_content,ir->size_content);
+	VALGRIND_CHECK_MEM_IS_DEFINED(ir->ptr_metadata,ir->size_metadata);
+#endif
 	char *url = ir->ptr_url;
 	log(LOG_INFO,"http: add url %s (%s)",url ,mstrerror(g_errno));
 	// extract info from state
