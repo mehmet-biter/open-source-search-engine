@@ -440,7 +440,7 @@ class UdpSlot {
 
 	char m_maxResends;
 
-	char m_incoming;
+	bool m_incoming;
 
 	// . for the hot udp server, we cannot call malloc in the sig handler
 	//   so we set m_readBuf to this to read in int16_t requests
