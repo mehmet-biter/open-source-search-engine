@@ -10,6 +10,9 @@
 #include "Proxy.h"
 #include "PageCrawlBot.h"
 #include "Parms.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 // a global class extern'd in .h file
 HttpServer g_httpServer;
@@ -2017,6 +2020,9 @@ int32_t getMsgPiece ( TcpSocket *s ) {
 // . up to 128 bytes of the reply can be stored in a static buffer
 //   contained in TcpSocket, until we need to alloc...
 int32_t getMsgSize ( char *buf, int32_t bufSize, TcpSocket *s ) {
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufSize);
+#endif
 	// . if the msg ends in \r\n0\r\n\r\n that's an end delimeter
 	// . this is part of HTTP/1.1's "chunked transfer encoding" thang
 	/*
