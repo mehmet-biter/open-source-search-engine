@@ -1056,6 +1056,8 @@ bool Repair::load ( ) {
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool Repair::loop ( void *state ) {
+	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	
 	m_allowInjectToLoop = false;
 
 	// if the power went off
@@ -1072,12 +1074,17 @@ bool Repair::loop ( void *state ) {
 		// will notice it was suspended and call loop() again to
 		// resume where we left off...
 		m_isSuspended = true;
+		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END, repair suspended", __FILE__, __func__, __LINE__);
 		return true;
 	}
 
 	// if we re-entered this loop from doneWithIndexDocWrapper
 	// do not launch another msg5 if it is currently out!
-	if ( m_msg5InUse ) return false;
+	if ( m_msg5InUse ) 
+	{
+		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END, waiting for msg5", __FILE__, __func__, __LINE__);
+		return false;
+	}
 
 	// set this to on
 	g_process.m_repairNeedsSave = true;
@@ -1085,17 +1092,32 @@ bool Repair::loop ( void *state ) {
  loop1:
 
 	if ( g_process.m_mode == EXIT_MODE )
+	{
 		return true;
+	}
 
-	if ( m_stage == STAGE_TITLEDB_0  ) {
+	if ( m_stage == STAGE_TITLEDB_0  ) 
+	{
+		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: STAGE_TITLEDB_0 - scanRecs", __FILE__, __func__, __LINE__);
 		m_stage++;
-		if ( ! scanRecs()       ) return false;
+		if ( ! scanRecs()       ) 
+		{
+			return false;
+		}
 	}
-	if ( m_stage == STAGE_TITLEDB_1  ) {
+	
+	if ( m_stage == STAGE_TITLEDB_1  ) 
+	{
+		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: STAGE_TITLEDB_1 - gotScanRecList", __FILE__, __func__, __LINE__);
 		m_stage++;
-		if ( ! gotScanRecList()   ) return false;
+		if ( ! gotScanRecList()   ) 
+		{
+			return false;
+		}
 	}
+	
 	if ( m_stage == STAGE_TITLEDB_2  ) {
+		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: STAGE_TITLEDB_2", __FILE__, __func__, __LINE__);
 		m_stage++;
 		// skip this for now
 		//if ( ! gotTfndbList()      ) return false;
@@ -1105,13 +1127,17 @@ bool Repair::loop ( void *state ) {
 	}
 	// get the site rec to see if it is banned first, before injecting it
 	if ( m_stage == STAGE_TITLEDB_3 ) {
+		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: STAGE_TITLEDB_3", __FILE__, __func__, __LINE__);
+		
 		// if we have maxed out our injects, wait for one to come back
 		if ( m_numOutstandingInjects >= g_conf.m_maxRepairSpiders ) {
 			m_allowInjectToLoop = true;
 			return false;
 		}
 		m_stage++;
+		
 		// BEGIN NEW STUFF
+		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: injectTitleRec", __FILE__, __func__, __LINE__);
 		bool status = injectTitleRec();
 		//return false; // (state)
 		// try to launch another
@@ -1123,6 +1149,7 @@ bool Repair::loop ( void *state ) {
 		if ( ! status ) return false;
 	}
 	if ( m_stage == STAGE_TITLEDB_4  ) {
+		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: STAGE_TITLEDB_4", __FILE__, __func__, __LINE__);
 		m_stage++;
 		//if ( ! addToTfndb2()       ) return false;
 	}
@@ -1130,6 +1157,7 @@ bool Repair::loop ( void *state ) {
 	// if we are not done with the titledb scan loop back up
 	if ( ! m_completedFirstScan ) {
 		m_stage = STAGE_TITLEDB_0;
+		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: loop, set STAGE_TITLEDB_0", __FILE__, __func__, __LINE__);
 		goto loop1;
 	}
 
@@ -1226,8 +1254,11 @@ bool Repair::loop ( void *state ) {
 	//if ( ! dumpsCompleted() ) return false;
 	
 	// we are all done with the repair loop
+	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 	return true;
 }
+
+
 
 // this blocks
 void Repair::updateRdbs ( ) {
@@ -1842,6 +1873,8 @@ bool Repair::getTitleRec ( ) {
 //static XmlDoc   s_docs  [ MAX_OUT_REPAIR ];
 
 void doneWithIndexDoc ( XmlDoc *xd ) {
+	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	
 	// preserve
 	int32_t saved = g_errno;
 	// nuke it
@@ -1868,17 +1901,22 @@ void doneWithIndexDoc ( XmlDoc *xd ) {
 	// give back the tr
 	s_inUse[i] = 0;
 	*/
+	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
 
 void doneWithIndexDocWrapper ( void *state ) {
+	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	// clean up
 	doneWithIndexDoc ( (XmlDoc *)state );
 	// and re-enter the loop to get next title rec
 	g_repair.loop ( NULL );
+	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
+
 
 //bool Repair::getTagRec ( void **state ) {
 bool Repair::injectTitleRec ( ) {
+	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 
 	// no, now we specify in call to indexDoc() which
 	// dbs we want to update
@@ -1987,6 +2025,7 @@ bool Repair::injectTitleRec ( ) {
 	if ( ! xd->set2 ( titleRec,-1,m_cr->m_coll , NULL , MAX_NICENESS ) ) {
 		m_recsetErrors++;
 		m_stage = STAGE_TITLEDB_0; // 0
+		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END, return true. XmlDoc->set2 failed", __FILE__, __func__, __LINE__);
 		return true;
 	}
 	// set callback
@@ -2145,11 +2184,16 @@ bool Repair::injectTitleRec ( ) {
 	// . sets m_usePosdb, m_useTitledb, etc.
 	bool status = xd->indexDoc ( );
 	// blocked?
-	if ( ! status ) return false;
+	if ( ! status ) 
+	{
+		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END, return false. XmlDoc->indexDoc blocked", __FILE__, __func__, __LINE__);
+		return false;
+	}
 
 	// give it back
 	doneWithIndexDoc ( xd );
 
+	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END, return true", __FILE__, __func__, __LINE__);
 	return true;
 }
 

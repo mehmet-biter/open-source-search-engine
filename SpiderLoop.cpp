@@ -406,7 +406,7 @@ void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
 // now check our RDB_DOLEDB for SpiderRequests to spider!
 void SpiderLoop::spiderDoledUrls ( ) {
 
-if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	
 	//char *reb = g_rebalance.getNeedsRebalance();
 	//if ( ! reb || *reb ) {return;

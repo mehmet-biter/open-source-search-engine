@@ -2093,7 +2093,7 @@ if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __fun
 	// blocked?
 	if ( ! status ) 
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: return false, indexDoc2 blocked", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return false, indexDoc2 blocked", __FILE__, __func__, __LINE__);
 		return false;
 	}
 
@@ -2107,7 +2107,7 @@ if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __fun
 
 	if ( success ) 
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: return true, success!", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return true, success!", __FILE__, __func__, __LINE__);
 		return true;
 	}
 
@@ -2118,7 +2118,7 @@ if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __fun
 		    "spider reply for %s",
 		    mstrerror(g_errno),
 		    m_firstUrl.m_url);
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, returning true, indexed child doc", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return true, indexed child doc", __FILE__, __func__, __LINE__);
 		return true;
 	}
 
@@ -2141,21 +2141,21 @@ if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __fun
 	// seems like this was causing a core somehow...
 	if ( g_errno == ENOMEM )
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: return true, ENOMEM", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return true, ENOMEM", __FILE__, __func__, __LINE__);
 		return true;
 	}
 
 	// and do not add spider reply if shutting down the server
 	if ( g_errno == ESHUTTINGDOWN )
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: return true, ESHUTTINGDOWN", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return true, ESHUTTINGDOWN", __FILE__, __func__, __LINE__);
 		return true;
 	}
 
 	// i saw this on shard 9, how is it happening
 	if ( g_errno == EBADRDBID )
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: return true, EBADRDBID", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return true, EBADRDBID", __FILE__, __func__, __LINE__);
 		return true;
 	}
 
@@ -2263,7 +2263,7 @@ if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __fun
 
 			if ( ! m_metaList2.safeMemcpy ( list , len ) )
 			{
-				if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: return true, metaList2 safeMemcpy returned false", __FILE__, __func__, __LINE__);
+				if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return true, metaList2 safeMemcpy returned false", __FILE__, __func__, __LINE__);
 				return true;
 			}
 
@@ -2274,7 +2274,7 @@ if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __fun
 		if ( m_useSecondaryRdbs ) rd = RDB2_SPIDERDB2;
 		if ( ! m_metaList2.pushChar(rd) )
 		{
-			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: return true, metaList2 pushChar returned false", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return true, metaList2 pushChar returned false", __FILE__, __func__, __LINE__);
 			return true;
 		}
 		// store it here
@@ -2284,7 +2284,7 @@ if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __fun
 		// and store that new request for adding
 		if ( ! m_metaList2.safeMemcpy (&revisedReq,revisedReq.getRecSize()))
 		{
-			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: return true, metaList2 safeMemcpy returned false", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return true, metaList2 safeMemcpy returned false", __FILE__, __func__, __LINE__);
 			return true;
 		}
 		// make sure to log the size of the spider request
@@ -2308,7 +2308,7 @@ if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __fun
 		// this can be NULL and g_errno set to ENOCOLLREC or something
 		if ( ! nsr )
 		{
-			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: return true, getFakeSpiderReply returned false", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return true, getFakeSpiderReply returned false", __FILE__, __func__, __LINE__);
 			return true;
 		}
 
@@ -2318,13 +2318,13 @@ if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __fun
 		if ( m_useSecondaryRdbs ) rd = RDB2_SPIDERDB2;
 		if ( ! m_metaList2.pushChar( rd ) )
 		{
-			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: return true, metaList2 pushChar returned false", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return true, metaList2 pushChar returned false", __FILE__, __func__, __LINE__);
 			return true;
 		}
 
 		if ( ! m_metaList2.safeMemcpy ( (char *)nsr,nsr->getRecSize()))
 		{
-			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: return true, metaList2 safeMemcpy returned false", __FILE__, __func__, __LINE__);
+			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return true, metaList2 safeMemcpy returned false", __FILE__, __func__, __LINE__);
 			return true;
 		}
 
@@ -2364,7 +2364,7 @@ if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __fun
 		//	logf(LOG_DEBUG,"build: msg4 meta add3 blocked"
 		//	     "msg4=0x%"XINT32"" ,(int32_t)&m_msg4);
 		m_msg4Waiting = true;
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: return false, m_msg4.addMetaList returned false", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return false, m_msg4.addMetaList returned false", __FILE__, __func__, __LINE__);
 		return false;
 	}
 
@@ -2372,10 +2372,12 @@ if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __fun
 
 	m_msg4Launched = false;
 
-	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, returning true, all done", __FILE__, __func__, __LINE__);
+	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return true, all done", __FILE__, __func__, __LINE__);
 	// all done
 	return true;
 }
+
+
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error and returns true
@@ -2392,7 +2394,7 @@ bool XmlDoc::indexDoc2 ( ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) 
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, returning true. Could not get collection.", __FILE__, __func__, __LINE__);
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return true. Could not get collection.", __FILE__, __func__, __LINE__);
 		return true;
 	}
 
@@ -2457,7 +2459,7 @@ bool XmlDoc::indexDoc2 ( ) {
 	int32_t *indexCode = getIndexCode();
 	if (! indexCode || indexCode == (void *)-1) 
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, returning %s based on indexCode", __FILE__, __func__, __LINE__, (bool*)indexCode?"true":"false");
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, return %s based on indexCode", __FILE__, __func__, __LINE__, (bool*)indexCode?"true":"false");
 		return (char *)indexCode;
 	}
 
@@ -2592,6 +2594,8 @@ bool XmlDoc::indexDoc2 ( ) {
 	
 	return rc2;
 }
+
+
 
 bool isRobotsTxtFile ( char *u , int32_t ulen ) {
 	if ( ulen > 12 && ! strncmp ( u + ulen - 11 , "/robots.txt" , 11 ) )
@@ -9841,9 +9845,13 @@ char *XmlDoc::getIsIndexed ( ) {
 				      false                )){//load balancing?
 		// validate
 		m_calledMsg22e = true;
+		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, called msg22e.getTitleRec, which blocked. Return -1", __FILE__, __func__, __LINE__);
 		// return -1 if we blocked
 		return (char *)-1;
 	}
+
+	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: msg22e.getTitleRec did not block", __FILE__, __func__, __LINE__);
+		
 	// got it
 	m_calledMsg22e = true;
 	// error?
@@ -9854,8 +9862,11 @@ char *XmlDoc::getIsIndexed ( ) {
 
 	// validate
 	m_isIndexedValid = true;
+	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: END, returning isIndexed [%s]", __FILE__, __func__, __LINE__, m_isIndexed?"true":"false");
 	return &m_isIndexed;
 }
+
+
 
 void gotTagRecWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;

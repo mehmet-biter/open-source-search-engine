@@ -12315,6 +12315,16 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "log trace info for Repairs";
+	m->m_cgi   = "ltrc_rp";
+	m->m_off   = (char *)&g_conf.m_logTraceRepairs - g;
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_priv  = 1;
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "log trace info for Spider";
 	m->m_cgi   = "ltrc_sp";
 	m->m_off   = (char *)&g_conf.m_logTraceSpider - g;
