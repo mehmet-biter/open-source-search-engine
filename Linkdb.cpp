@@ -3690,6 +3690,7 @@ Links::Links(){
 	m_numLinks = 0;
 	m_baseUrl = NULL;
 	m_numOutlinksAdded = 0;
+	m_doQuickSet = false;
 }
 
 Links::~Links() {
