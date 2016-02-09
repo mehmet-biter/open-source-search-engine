@@ -1295,9 +1295,6 @@ public:
 	//uint32_t *getLinkHashes () { return m_linkHashes; };
 	int32_t           getNumLinks   () { return m_numLinks; };
 
-	// was there a link to gigablast.com or www.gigablast.com?
-	bool           linksToGigablast() { return m_linksToGigablast; };
-
 	int32_t           getLinkLen    ( int32_t i ) { return m_linkLens  [i]; };
 	char          *getLink       ( int32_t i ) { return m_linkPtrs  [i]; };
 	char          *getLinkPtr    ( int32_t i ) { return m_linkPtrs  [i]; };
@@ -1393,8 +1390,6 @@ public:
 	// . this is set based on the SiteRec
 	//bool m_extractRedirects;
 
-	bool m_linksToGigablast;
-	
 	bool m_hasRelNoFollow;
 
 	bool m_stripIds;

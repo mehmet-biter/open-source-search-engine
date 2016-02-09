@@ -3751,7 +3751,6 @@ bool Links::set ( bool useRelNoFollow ,
 	m_numNodes = xml->getNumNodes();
 	m_bufPtr   = NULL;
 
-	m_linksToGigablast = false;
 	m_hasRelNoFollow   = false;
 
 	m_stripIds = false;
@@ -4449,14 +4448,6 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 		m_allocSize = newAllocSize;
 	}
 	
-	// . is hostname gigablast.com or www.gigablast.com?
-	// . must be in the top 100k of link text, too!
-	int32_t  hlen = url.getHostLen();
-	char *h    = url.getHost   ();
-	if ( hlen == 13 && strncmp ( h , "gigablast.com"     , 13 ) == 0 )
-		m_linksToGigablast = true;
-	if ( hlen == 17 && strncmp ( h , "www.gigablast.com" , 17 ) == 0 )
-		m_linksToGigablast = true;
 	// add some info
 	m_linkPtrs    [ m_numLinks ] = m_bufPtr;
 	m_linkLens    [ m_numLinks ] = url.getUrlLen();
