@@ -5,6 +5,9 @@
 #include "Profiler.h"
 #include "PingServer.h"
 #include "Hostdb.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 // . TODO: deleting nodes from under Loop::callCallbacks is dangerous!!
 
@@ -1418,6 +1421,10 @@ int32_t TcpServer::readSocket ( TcpSocket *s ) {
 	if ( m_useSSL || s->m_tunnelMode == 3 ) {
 		//int64_t now1 = gettimeofdayInMilliseconds();
 		n = SSL_read(s->m_ssl, s->m_readBuf + s->m_readOffset, avail );
+#ifdef _VALGRIND_
+		if(n>0)
+			VALGRIND_MAKE_MEM_DEFINED(s->m_readBuf + s->m_readOffset,n);
+#endif
 		//int64_t now2 = gettimeofdayInMilliseconds();
 		//int64_t took = now2 - now1 ;
 		//if ( took >= 2 ) log("tcp: ssl_read took %"INT64"ms", took);
@@ -1547,6 +1554,9 @@ bool TcpServer::setTotalToRead ( TcpSocket *s ) {
 	// . parse out the msgSize, -1 means unknown
 	// . NOTE: getMsgSize() may return less than the actual reply size if 
 	//   it decides we should truncate the document!
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(s->m_readBuf , s->m_readOffset);
+#endif
 	int32_t size = m_getMsgSize ( s->m_readBuf , s->m_readOffset , s );
 	// set total to read if we know it
 	if ( size > 0 ) s->m_totalToRead = size;
