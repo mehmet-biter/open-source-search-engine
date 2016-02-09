@@ -7,6 +7,9 @@
 #include "Rebalance.h"
 #include "Process.h"
 #include "HashTable.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 Linkdb g_linkdb;
 Linkdb g_linkdb2;
@@ -4033,7 +4036,7 @@ bool Links::set ( char *buf ,  int32_t niceness ) { //char *coll,int32_t nicenes
 		while ( *q && ! is_wspace_a(*q) ) q++;
 		int32_t len = q - p;
 		// add the link
-		if ( ! addLink ( p , len , -1 , false , 
+		if ( ! addLink ( p , len , -1 , true , 
 				 TITLEREC_CURRENT_VERSION , niceness, false,
 				 TAG_A , 0 ) ) 
 			return false;
@@ -4484,6 +4487,11 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 		m_linkHashes [ m_numLinks ] = url.getUrlHash64();
 		m_hostHashes [ m_numLinks ] = url.getHostHash64();
 		m_domHashes  [ m_numLinks ] = url.getDomainHash32();
+#ifdef _VALGRIND_
+		VALGRIND_CHECK_MEM_IS_DEFINED(&(m_linkHashes[m_numLinks]),sizeof(m_linkHashes[m_numLinks]));
+		VALGRIND_CHECK_MEM_IS_DEFINED(&(m_hostHashes[m_numLinks]),sizeof(m_hostHashes[m_numLinks]));
+		VALGRIND_CHECK_MEM_IS_DEFINED(&(m_domHashes[m_numLinks]), sizeof(m_domHashes[m_numLinks]));
+#endif
 	}
 
 	// set the bits in the flags byte

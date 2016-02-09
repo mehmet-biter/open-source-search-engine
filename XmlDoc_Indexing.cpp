@@ -1178,6 +1178,21 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 		//
 
 
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(&linkeeSiteHash32,sizeof(linkeeSiteHash32));
+	uint64_t tmp1 = m_links.getLinkHash64(i);
+	VALGRIND_CHECK_MEM_IS_DEFINED(&tmp1,sizeof(tmp1));
+	VALGRIND_CHECK_MEM_IS_DEFINED(&spam,sizeof(spam));
+	VALGRIND_CHECK_MEM_IS_DEFINED(&siteRank,sizeof(siteRank));
+	VALGRIND_CHECK_MEM_IS_DEFINED(&hopCount,sizeof(hopCount));
+	uint32_t tmp2 = *getIp();
+	VALGRIND_CHECK_MEM_IS_DEFINED(&tmp2,sizeof(tmp2));
+	uint64_t tmp3 = *getDocId();
+	VALGRIND_CHECK_MEM_IS_DEFINED(&tmp3,sizeof(tmp3));
+	VALGRIND_CHECK_MEM_IS_DEFINED(&discoveryDate,sizeof(discoveryDate));
+	VALGRIND_CHECK_MEM_IS_DEFINED(&lostDate,sizeof(lostDate));
+	VALGRIND_CHECK_MEM_IS_DEFINED(&linkerSiteHash32,sizeof(linkerSiteHash32));
+#endif
 		// set this key, it is the entire record
 		key224_t k;
 		k = g_linkdb.makeKey_uk ( linkeeSiteHash32 ,
@@ -1192,6 +1207,9 @@ bool XmlDoc::hashLinksForLinkdb ( HashTableX *dt ) {
 					  false              , // new add?
 					  linkerSiteHash32   ,
 					  false              );// delete?
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(&k,sizeof(k));
+#endif
 		/*
 		// debug
 		if ( m_links.getLinkHash64(i) != 0x3df1c439a364e18dLL )
