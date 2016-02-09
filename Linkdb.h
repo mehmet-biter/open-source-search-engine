@@ -842,6 +842,8 @@ class Inlink { // : public Msg {
 	//int32_t getBaseNumStrings() { 
 	//	return (char **)&size_urlBuf - (char **)&off_urlBuf; };
 	
+	Inlink() { reset(); }
+
 	// zero ourselves out
 	void reset() ;
 
