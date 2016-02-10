@@ -12285,6 +12285,17 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+
+	m->m_title = "log trace info for BigFile";
+	m->m_cgi   = "ltrc_bf";
+	m->m_off   = (char *)&g_conf.m_logTraceBigFile - g;
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_priv  = 1;
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "log trace info for RdbBase";
 	m->m_cgi   = "ltrc_rb";
 	m->m_off   = (char *)&g_conf.m_logTraceRdbBase - g;
@@ -12305,16 +12316,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "log trace info for BigFile";
-	m->m_cgi   = "ltrc_bf";
-	m->m_off   = (char *)&g_conf.m_logTraceBigFile - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_priv  = 1;
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "log trace info for Repairs";
 	m->m_cgi   = "ltrc_rp";
 	m->m_off   = (char *)&g_conf.m_logTraceRepairs - g;
@@ -12328,6 +12329,26 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for Spider";
 	m->m_cgi   = "ltrc_sp";
 	m->m_off   = (char *)&g_conf.m_logTraceSpider - g;
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_priv  = 1;
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "log trace info for Msg0";
+	m->m_cgi   = "ltrc_msgzero";
+	m->m_off   = (char *)&g_conf.m_logTraceMsg0 - g;
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_priv  = 1;
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "log trace info for XmlDoc";
+	m->m_cgi   = "ltrc_xmldoc";
+	m->m_off   = (char *)&g_conf.m_logTraceXmlDoc - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_priv  = 1;

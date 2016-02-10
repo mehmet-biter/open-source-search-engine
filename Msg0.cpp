@@ -132,7 +132,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 //		     bool      allowPageCache ) {
 //#endif
 
-//	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN. hostId: %"INT64", rdbId: %d", __FILE__,__func__, __LINE__, hostId, (int)rdbId);
 
 	// this is obsolete! mostly, but we need it for PageIndexdb.cpp to 
 	// show a "termlist" for a given query term in its entirety so you 
@@ -153,11 +153,11 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// get keySize of rdb
 	m_ks = getKeySizeFromRdbId ( rdbId );
 	
-//	if( g_conf.m_logDebugDetailed ) 
+//	if( g_conf.m_logTraceMsg0 ) 
 //	{
-//		log("%s:%s: rdbId. [%d]", __FILE__,__FUNCTION__, (int)rdbId);
-//		log("%s:%s: m_ks.. [%d]", __FILE__,__FUNCTION__, (int)m_ks);
-//		log("%s:%s: hostId [%"INT64"]", __FILE__,__FUNCTION__, hostId);
+//		log("%s:%s:%d: rdbId. [%d]", __FILE__,__func__,__LINE__, (int)rdbId);
+//		log("%s:%s:%d: m_ks.. [%d]", __FILE__,__func__,__LINE__, (int)m_ks);
+//		log("%s:%s:%d: hostId [%"INT64"]", __FILE__,__func__,__LINE__, hostId);
 //	}
 	
 	
@@ -170,7 +170,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// no longer accept negative minrecsize
 	if ( minRecSizes < 0 ) {
 		g_errno = EBADENGINEER;
-//		if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
+		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END", __FILE__, __func__, __LINE__);
 
 		log(LOG_LOGIC,
 		    "net: msg0: Negative minRecSizes no longer supported.");
@@ -235,7 +235,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	if ( forceLocalIndexdb ) m_shardNum = getMyShardNum();
 
 
-//	if( g_conf.m_logDebugDetailed ) log("%s:%s: shardNum [%"INT32"]", __FILE__,__FUNCTION__, m_shardNum);
+//	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: shardNum [%"INT32"]", __FILE__,__func__, __LINE__, m_shardNum);
 
 
 	// . store these parameters
@@ -321,7 +321,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// . don't do this if m_hostId was specified
 	if ( isLocal ) 
 	{ 
-//		if( g_conf.m_logDebugDetailed ) log("%s:%s: isLocal", __FILE__,__FUNCTION__);
+		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: isLocal", __FILE__, __func__, __LINE__);
 		
 		
 		if ( msg5 ) {
@@ -389,6 +389,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 					 m_allowPageCache ) ) return false;
 		// nuke it
 		reset();
+		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END", __FILE__, __func__, __LINE__);
 		return true;
 	}
 skip:
@@ -454,6 +455,8 @@ skip:
 			    "data read remotely from %s: %s.",
 			    replyBufMaxSize,getDbnameFromId(m_rdbId),
 			    mstrerror(g_errno));
+			    
+			if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END, return true. Could not allocate memory.", __FILE__, __func__, __LINE__);
 			return true;
 		}
 	}
@@ -491,8 +494,10 @@ skip:
 			g_errno = EBADHOSTID; 
 			log(LOG_LOGIC,"net: msg0: Bad hostId of %"INT64".",
 			    m_hostId);
+			if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END, retruen true. Bad hostId", __FILE__, __func__, __LINE__);
 			return true;
 		}
+		
 		// if niceness is 0, use the higher priority udpServer
 		UdpServer *us ;
 		uint16_t port;
@@ -520,8 +525,13 @@ skip:
 					 replyBuf      ,
 					 replyBufMaxSize ,
 					 m_niceness     ) ) // cback niceness
+		{
+			if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END, return true. Request sent.", __FILE__, __func__, __LINE__);
 			return true;
+		}
+		
 		// return false cuz it blocked
+		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END, return false. sendRequest blocked", __FILE__, __func__, __LINE__);
 		return false;
 	}
 	// timing debug
@@ -635,8 +645,9 @@ skip:
 			      // this is a 96-bit key. TODO: fix...
 			 0 , // *(key_t *)cacheKey        ,
 			      rdbId           ,
-			      minRecSizes     ) ) {
-		log("net: Failed to send request for data from %s in shard "
+			      minRecSizes     ) ) 
+	{
+		log(LOG_ERROR, "net: Failed to send request for data from %s in shard "
 		    "#%"UINT32" over network: %s.",
 		    getDbnameFromId(m_rdbId),m_shardNum, mstrerror(g_errno));
 		// no, multicast will free this when it is destroyed
@@ -647,37 +658,38 @@ skip:
 		m->reset();
 		if ( m_numRequests > 0 )
 		{
-//			if( g_conf.m_logDebugDetailed ) log("%s:%s: END - returning false", __FILE__,__FUNCTION__);
+			if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END - returning false", __FILE__, __func__, __LINE__);
 			
 			return false;
 		}
 //#else
 //		m_mcast.reset();
 //#endif
-//		if( g_conf.m_logDebugDetailed ) log("%s:%s: END - returning true", __FILE__,__FUNCTION__);
+		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END - returning true", __FILE__, __func__, __LINE__);
 		return true;
 	}
 //#ifdef SPLIT_INDEXDB
 	m_numRequests++;
 
 //#endif
-	// we blocked
-//	if( g_conf.m_logDebugDetailed ) log("%s:%s: END - returning false", __FILE__,__FUNCTION__);
 
+	// we blocked
+	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END - returning false, blocked", __FILE__, __func__, __LINE__);
 	return false;
 }
+
 
 // . this is called when we got a local RdbList
 // . we need to call it to call the original caller callback
 void gotListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) 
 {
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 
 	Msg0 *THIS = (Msg0 *) state;
 	THIS->reset(); // delete m_msg5
 	THIS->m_callback ( THIS->m_state );//, THIS->m_list );
 
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
+	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END. rdbId=%d", __FILE__, __func__, __LINE__, (int)THIS->m_rdbId);
 }
 
 
@@ -700,7 +712,7 @@ void gotSingleReplyWrapper ( void *state , UdpSlot *slot ) {
 
 void gotMulticastReplyWrapper0 ( void *state , void *state2 ) 
 {
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 
 	Msg0 *THIS = (Msg0 *)state;
 //#ifdef SPLIT_INDEXDB
@@ -746,7 +758,7 @@ void gotMulticastReplyWrapper0 ( void *state , void *state2 )
 	THIS->m_callback ( THIS->m_state );//, THIS->m_list );
 	//}
 //#endif
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
+	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
 
 
@@ -857,7 +869,7 @@ void Msg0::gotSplitReply ( ) {
 // . we are responsible for freeing reply/replySize
 void Msg0::gotReply ( char *reply , int32_t replySize , int32_t replyMaxSize ) 
 {
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	
 	
 	// timing debug
@@ -909,7 +921,7 @@ void Msg0::gotReply ( char *reply , int32_t replySize , int32_t replyMaxSize )
 	//cache->addList ( m_startKey , m_list ) ;
 	// reset g_errno -- we don't care if cache coulnd't add it
 	//g_errno = 0;
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
+	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
 
 
@@ -932,7 +944,7 @@ public:
 void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 
 
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN. Got request for an RdbList", __FILE__,__FUNCTION__);
+	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN. Got request for an RdbList", __FILE__, __func__, __LINE__);
 
 	// if niceness is 0, use the higher priority udpServer
 	UdpServer *us = &g_udpServer;
@@ -975,18 +987,18 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	CollectionRec *xcr = g_collectiondb.getRec ( collnum );
 	if ( ! xcr ) g_errno = ENOCOLLREC;
 	
-	if( g_conf.m_logDebugDetailed )	
+	if( g_conf.m_logTraceMsg0 )	
 	{
-		log("%s:%s: rdbId....... %d", __FILE__,__FUNCTION__, (int)rdbId);
-		log("%s:%s: key size.... %d", __FILE__,__FUNCTION__, (int)ks);
-		log("%s:%s: startFileNum %"INT32"", __FILE__,__FUNCTION__, startFileNum);
-		log("%s:%s: numFiles.... %"INT32"", __FILE__,__FUNCTION__, numFiles);
+		log("%s:%s:%d: rdbId....... %d", __FILE__,__func__, __LINE__, (int)rdbId);
+		log("%s:%s:%d: key size.... %d", __FILE__,__func__, __LINE__, (int)ks);
+		log("%s:%s:%d: startFileNum %"INT32"", __FILE__,__func__, __LINE__,startFileNum);
+		log("%s:%s:%d: numFiles.... %"INT32"", __FILE__,__func__, __LINE__, numFiles);
 	}
 	
 	// error set from XmlDoc::cacheTermLists()?
 	if ( g_errno ) 
 	{
-		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Invalid collection", __FILE__,__FUNCTION__);
+		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END. Invalid collection", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , EBADRDBID ); 
 		return;
 	}
@@ -998,7 +1010,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	Rdb *rdb = getRdbFromId ( rdbId );
 	if ( ! rdb ) 
 	{ 
-		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Invalid rdbId", __FILE__,__FUNCTION__);
+		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END. Invalid rdbId", __FILE__, __func__, __LINE__);
 		
 		us->sendErrorReply ( slot , EBADRDBID ); 
 		return;
@@ -1064,16 +1076,16 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 				     false,
 				     allowPageCache ) )
 	{
-		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. m_msg5.getList returned false", __FILE__,__FUNCTION__);
+		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END. m_msg5.getList returned false", __FILE__, __func__, __LINE__);
 		return;
 	}
 
 	// call wrapper ouselves
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: Calling gotListWrapper", __FILE__,__FUNCTION__);
+	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: Calling gotListWrapper", __FILE__, __func__, __LINE__);
 
 	gotListWrapper ( st0 , NULL , NULL );
 
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
+	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
 
 #include "Sections.h" // SectionVote
@@ -1082,7 +1094,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 // . TODO: ensure if this sendReply() fails does it really nuke the slot?
 void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) 
 {
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	
 	// get the state
 	State00 *st0 = (State00 *)state;
@@ -1313,7 +1325,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx )
 	//   if need be
 	st0->m_us->sendReply_ass( data, dataSize, alloc, allocSize, slot, st0, doneSending_ass, -1, -1, true );
 
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: END", __FILE__,__FUNCTION__);
+	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }	
 
 

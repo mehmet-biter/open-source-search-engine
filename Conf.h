@@ -576,6 +576,9 @@ class Conf {
 	bool  m_logTraceBigFile;
 	bool  m_logTraceRepairs;
 	bool  m_logTraceSpider;
+	bool  m_logTraceXmlDoc;
+	bool  m_logTraceMsg0;
+	
 	bool m_logTraceMsg;
 	// expensive timing messages
 	bool m_logTimingAddurl  ;

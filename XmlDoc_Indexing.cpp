@@ -363,6 +363,8 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 // . "ws" store the terms for PageParser.cpp display
 char *XmlDoc::hashAll ( HashTableX *table ) {
 
+	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__,__func__, __LINE__);
+		
 	setStatus ( "hashing document" );
 
 	if ( m_allHashed ) return (char *)1;
@@ -378,7 +380,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	uint8_t *ct = getContentType();
 	if ( ! ct )
 	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s: getContentType failed", __FILE__,__func__);
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getContentType failed", __FILE__,__func__, __LINE__);
 		return NULL;
 	}
 	
@@ -390,6 +392,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		// eventually ban it.
 		if ( !hashUrl( table, true ) )  // urlOnly (skip IP and term generation)
 		{
+			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashUrl failed", __FILE__,__func__, __LINE__);
 			return NULL;
 		}
 		m_allHashed = true;
@@ -399,44 +402,78 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 
 
 	unsigned char *hc = (unsigned char *)getHopCount();
-	if ( ! hc || hc == (void *)-1 ) return (char *)hc;
+	if ( ! hc || hc == (void *)-1 ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getHopCount returned -1", __FILE__,__func__, __LINE__);
+		return (char *)hc;
+	}
 
 	// need this for hashing
 	HashTableX *cnt = getCountTable();
-	if ( ! cnt ) return (char *)cnt;
+	if ( ! cnt ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getCountTable failed", __FILE__,__func__, __LINE__);
+		return (char *)cnt;
+	}
 	if ( cnt == (void *)-1 ) { char *xx=NULL;*xx=0; }
+		
 	// and this
 	//Weights *we = getWeights();
 	//if ( ! we || we == (void *)-1 ) return (char *)we;
 	// and this
 	Links *links = getLinks();
-	if ( ! links ) return (char *)links;
+	if ( ! links ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getLinks failed", __FILE__,__func__, __LINE__);
+		return (char *)links;
+	}
 	if ( links == (Links *)-1 ) { char *xx=NULL;*xx=0; }
+		
 	// and now this
 	//Synonyms *syn = getSynonyms();
 	//if ( ! syn || syn == (void *)-1 ) return (char *)syn;
 
 	char *wordSpamVec = getWordSpamVec();
-	if (!wordSpamVec) return (char *)wordSpamVec;
+	if (!wordSpamVec) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getWordSpamVec failed", __FILE__,__func__, __LINE__);
+		return (char *)wordSpamVec;
+	}
 	if (wordSpamVec==(void *)-1) {char *xx=NULL;*xx=0;}
 
 	char *fragVec = getFragVec();//m_fragBuf.getBufStart();
-	if ( ! fragVec ) return (char *)fragVec;
+	if ( ! fragVec ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getFragVec failed", __FILE__,__func__, __LINE__);
+		return (char *)fragVec;
+	}
 	if ( fragVec == (void *)-1 ) { char *xx=NULL;*xx=0; }
 
 	// why do we need this?
 	if ( m_wts ) {
 		uint8_t *lv = getLangVector();
-		if ( ! lv ) return (char *)lv;
+		if ( ! lv ) 
+		{
+			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getLangVector failed", __FILE__,__func__, __LINE__);
+			return (char *)lv;
+		}
 		if ( lv == (void *)-1 ) { char *xx=NULL;*xx=0; }
 	}
 
 	TagRec *gr = getTagRec();
-	if ( ! gr ) return (char *)gr;
+	if ( ! gr ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getTagRec failed", __FILE__,__func__, __LINE__);
+		return (char *)gr;
+	}
 	if ( gr == (void *)-1 ) {char *xx=NULL;*xx=0; }
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getCollRec failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
 
 
 	// do not repeat this if the cachedb storage call blocks
@@ -446,15 +483,39 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	m_dist = 0;
 
 
-	if ( ! hashContentType   ( table ) ) return NULL;
-	if ( ! hashUrl           ( table, false ) ) return NULL;
-	if ( ! hashLanguage      ( table ) ) return NULL;
-	if ( ! hashCountry       ( table ) ) return NULL;
+	if ( ! hashContentType   ( table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashContentType failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
+	
+	if ( ! hashUrl           ( table, false ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashUrl failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
+	
+	if ( ! hashLanguage      ( table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashLanguage failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
+	
+	if ( ! hashCountry       ( table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashCountry failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
+	
 // BR 20160117 removed:	if ( ! hashSiteNumInlinks( table ) ) return NULL;
 // BR 20160117 removed:	if ( ! hashTagRec        ( table ) ) return NULL;
 // BR 20160106 removed:	if ( ! hashAds           ( table ) ) return NULL;
 // BR 20160106 removed:	if ( ! hashSubmitUrls    ( table ) ) return NULL;
-	if ( ! hashIsAdult       ( table ) ) return NULL;
+	if ( ! hashIsAdult       ( table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashIsAdult failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
 
 	// has gbhasthumbnail:1 or 0
 // BR 20160106 removed:	if ( ! hashImageStuff    ( table ) ) return NULL;
@@ -467,8 +528,11 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// just set a special bit in posdb key so Rebalance.cpp can work.
 	// this will hash the content checksum which we need for deduping
 	// which we use for diffbot custom crawls as well.
-	if ( ! hashNoSplit ( table ) ) return NULL;
-
+	if ( ! hashNoSplit ( table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashNoSplit failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
 
 	// MDW: i think we just inject empty html with a diffbotreply into
 	// global index now, so don't need this... 9/28/2014
@@ -482,7 +546,11 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// global index unless this is a json object in which case it is
 	// hashed above in the call to hashJSON(). this will decrease disk
 	// usage by about half, posdb* files are pretty big.
-	if ( ! indexDoc ) return (char *)1;
+	if ( ! indexDoc ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, !indexDoc", __FILE__,__func__, __LINE__);
+		return (char *)1;
+	}
 
 	// hash json fields
 	if ( *ct == CT_JSON ) {
@@ -500,7 +568,11 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 
 	// hash the body of the doc first so m_dist is 0 to match
 	// the rainbow display of sections
-	if ( ! hashBody2 (table ) ) return NULL;
+	if ( ! hashBody2 (table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashBody2 failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
 
 	// hash the title now too so neighborhood singles have more
 	// to match. plus, we only hash these title terms iff they
@@ -508,42 +580,89 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	// repeated title terms because we do not do spam detection
 	// on them. thus, we need to hash these first before anything
 	// else. give them triple the body score
-	if ( ! hashTitle ( table )) return NULL;
+	if ( ! hashTitle ( table )) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashTitle failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
 
 	// . hash the keywords tag, limited to first 2k of them so far
 	// . hash above the neighborhoods so the neighborhoods only index
 	//   what is already in the hash table
-	if ( ! hashMetaKeywords(table ) ) return NULL;
+	if ( ! hashMetaKeywords(table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashMetaKeywords failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
 
 	// then hash the incoming link text, NO ANOMALIES, because
 	// we index the single words in the neighborhoods next, and
 	// we had songfacts.com coming up for the 'street light facts'
 	// query because it had a bunch of anomalous inlink text.
-	if ( ! hashIncomingLinkText(table,false,true)) return NULL;
+	if ( ! hashIncomingLinkText(table,false,true)) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashIncomingLinkText failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
 
 	// then the meta summary and description tags with half the score of
 	// the body, and only hash a term if was not already hashed above
 	// somewhere.
-	if ( ! hashMetaSummary(table) ) return NULL;
+	if ( ! hashMetaSummary(table) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashMetaSummary failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
 
  skip:
 
 	// this will only increment the scores of terms already in the table
 	// because we neighborhoods are not techincally in the document
 	// necessarily and we do not want to ruin our precision
-	if ( ! hashNeighborhoods ( table ) ) return NULL;
+	if ( ! hashNeighborhoods ( table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashNeighborhoods failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
 
-
-	if ( ! hashLinks         ( table ) ) return NULL;
-	if ( ! hashDateNumbers   ( table ) ) return NULL;
-	if ( ! hashMetaTags      ( table ) ) return NULL;
-	if ( ! hashMetaZip       ( table ) ) return NULL;
+	if ( ! hashLinks         ( table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashLinks failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
+	
+	if ( ! hashDateNumbers   ( table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashDateNumbers failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
+	
+	if ( ! hashMetaTags      ( table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashMetaTags failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
+	
+	if ( ! hashMetaZip       ( table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashMetaZip failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
+	
 // BR 20160107 removed:	if ( ! hashCharset       ( table ) ) return NULL;
 // BR 20160107 removed:		if ( ! hashRSSInfo       ( table ) ) return NULL;
-	if ( ! hashPermalink     ( table ) ) return NULL;
+	if ( ! hashPermalink     ( table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashPermaLink failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
 
 	// hash gblang:de last for parsing consistency
-	if ( ! hashLanguageString ( table ) ) return NULL;
+	if ( ! hashLanguageString ( table ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashLanguageString failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
 
 	// . hash gbkeyword:gbmininlinks where the score is the inlink count
 	// . the inlink count can go from 1 to 255
@@ -556,6 +675,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	//if ( ! m_pbuf ) return true;
 	// print out the table into g_bufPtr now if we need to
 	//table->print ( );
+	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, OK", __FILE__,__func__, __LINE__);
 	return (char *)1;
 }
 
@@ -985,7 +1105,7 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 			link.isDomainUnwantedForIndexing() ||
 			link.isPathUnwantedForIndexing() )
 		{
-			if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Unwanted for indexing [%s]", __FILE__, __func__, __LINE__, link.getUrl());
+			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Unwanted for indexing [%s]", __FILE__, __func__, __LINE__, link.getUrl());
 			continue;			
 		}
 

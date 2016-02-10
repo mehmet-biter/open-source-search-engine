@@ -1139,15 +1139,24 @@ bool Repair::loop ( void *state ) {
 		// BEGIN NEW STUFF
 		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: injectTitleRec", __FILE__, __func__, __LINE__);
 		bool status = injectTitleRec();
+		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: injectTitleRec returned %s", __FILE__, __func__, __LINE__, status?"true":"false");
+			
 		//return false; // (state)
 		// try to launch another
 		if ( m_numOutstandingInjects<g_conf.m_maxRepairSpiders ) {
 			m_stage = STAGE_TITLEDB_0;
+			if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: Still have more free repair spiders, loop.", __FILE__, __func__, __LINE__);
 			goto loop1;
 		}
+		
 		// if we are full and it blocked... wait now
-		if ( ! status ) return false;
+		if ( ! status ) 
+		{
+			if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END, return false. Full queue and blocked.", __FILE__, __func__, __LINE__);
+			return false;
+		}
 	}
+	
 	if ( m_stage == STAGE_TITLEDB_4  ) {
 		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: STAGE_TITLEDB_4", __FILE__, __func__, __LINE__);
 		m_stage++;
@@ -1166,6 +1175,7 @@ bool Repair::loop ( void *state ) {
 		// tell injection complete wrapper to call us back, otherwise
 		// we never end up moving on to the spider phase
 		g_repair.m_allowInjectToLoop = true;
+		if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END, return false. Have %"INT32" outstanding injects", __FILE__, __func__, __LINE__, m_numOutstandingInjects);
 		return false;
 	}
 
@@ -2182,6 +2192,7 @@ bool Repair::injectTitleRec ( ) {
 
 	// . get the meta list to add
 	// . sets m_usePosdb, m_useTitledb, etc.
+	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: Calling indexDoc", __FILE__, __func__, __LINE__);
 	bool status = xd->indexDoc ( );
 	// blocked?
 	if ( ! status ) 
