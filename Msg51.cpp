@@ -309,7 +309,7 @@ bool Msg51::sendRequest ( int32_t    i ) {
 				     firstHostId ,
 				     0           , // startFileNum
 				     -1          , // numFiles
-				     30          , // timeout
+				     30000       , // timeout
 				     -1          , // syncPoint
 				     false       , // preferLocalReads
 				     &m_msg5[i]  , // use for local reads
