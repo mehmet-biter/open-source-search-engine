@@ -5,6 +5,9 @@
 #include "Stats.h"
 #include "Proxy.h"
 #include "IPAddressChecks.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 int32_t g_cancelAcksSent = 0;
 int32_t g_cancelAcksRead = 0;
@@ -274,6 +277,9 @@ bool UdpSlot::sendSetup ( char      *msg         ,
 			  char      *replyBuf    ,
 			  int32_t       replyBufMaxSize ) {
 
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(msg,msgSize);
+#endif
 	// can't be too big
 	if ( msgSize / m_maxDgramSize + 1 >= MAX_DGRAMS ) {
 		int32_t maxMsgSize = m_maxDgramSize * MAX_DGRAMS;
@@ -646,6 +652,9 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 	// what should we send, and how much?
 	char *send      = m_sendBuf     + offset;
 	int32_t  sendSize  = m_sendBufSize - offset;
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(send,sendSize);
+#endif
 	// truncate to max size of dgram we're allowed
 	if ( sendSize > m_maxDgramSize - headerSize ) 
 		sendSize = m_maxDgramSize - headerSize;
@@ -669,6 +678,9 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 			     m_callback    ,  // weInitiated?
 			     m_localErrno  ,  // hadError?
 			     m_niceness    );  
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(dgram,headerSize);
+#endif
 	// . if we're the first dgram, we can't back up for the header...
 	// . copy data into dgram if we're the 1st dgram
 	if ( dgramNum == 0 ) 
