@@ -11,6 +11,9 @@
 #include "Profiler.h"
 #include "Repair.h"
 #include "Multicast.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 //////////////
 //
@@ -466,6 +469,9 @@ bool Msg4::addMetaList2 ( ) {
 
 	char *pend = m_metaList + m_metaListSize;
 
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(p,pend-p);
+#endif
 	//if ( m_collnum < 0 || m_collnum > 1000 ) { char *xx=NULL;*xx=0; }
 	if ( m_collnum < 0 ) { char *xx=NULL;*xx=0; }
 
@@ -591,6 +597,9 @@ bool Msg4::addMetaList2 ( ) {
 		// . these are NOT allowed to be compressed (half bit set)
 		//   and this point
 		// . this returns false and sets g_errno on failure
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(key,p-key);
+#endif
 		if ( storeRec ( m_collnum, 
 				rdbId, 
 				shardNum,//gid, 
@@ -656,8 +665,16 @@ bool storeRec ( collnum_t      collnum ,
 		char          *rec     ,
 		int32_t           recSize ,
 		int32_t           niceness ) {
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(&collnum,sizeof(collnum));
+	VALGRIND_CHECK_MEM_IS_DEFINED(&rdbId,sizeof(rdbId));
+	VALGRIND_CHECK_MEM_IS_DEFINED(&shardNum,sizeof(shardNum));
+	VALGRIND_CHECK_MEM_IS_DEFINED(&recSize,sizeof(recSize));
+	VALGRIND_CHECK_MEM_IS_DEFINED(rec,recSize);
+#endif
 	// loop back up here if you have to flush the buffer
  retry:
+
 	// sanity check
 	//if ( recSize==16 && rdbId==RDB_SPIDERDB && *(int32_t *)(rec+12)!=0 ) {
 	//	char *xx=NULL; *xx=0; }
@@ -699,6 +716,9 @@ bool storeRec ( collnum_t      collnum ,
 	}
 	// . first int32_t is how much of "buf" is used
 	// . includes everything even itself
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(buf,4);
+#endif
 	int32_t  used = *(int32_t *)buf;
 	// sanity chec. "used" must include the 4 bytes of itself
 	if ( used < 12 ) { char *xx = NULL; *xx = 0; }
@@ -706,6 +726,9 @@ bool storeRec ( collnum_t      collnum ,
 	int32_t  maxSize = s_hostBufSizes[hostId];
 	// how many bytes are available in "buf"?
 	int32_t  avail   = maxSize - used;
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(buf+4+8,used-4-8);
+#endif
 	// if we can not fit list into buffer...
 	if ( avail < needForRec ) {
 		// . send what is already in the buffer and clear it
@@ -731,6 +754,9 @@ bool storeRec ( collnum_t      collnum ,
 	// update buffer used
 	*(int32_t *)buf = used + (p - start);
 	// all done, did not "block"
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(start,p-start);
+#endif
 	return true;
 }
 
@@ -744,11 +770,17 @@ bool sendBuffer ( int32_t hostId , int32_t niceness ) {
 	int32_t  allocSize = s_hostBufSizes[hostId];
 	// skip if empty
 	if ( ! buf ) return true;
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(buf,4);
+#endif
 	// . get size used in buf
 	// . includes everything, including itself!
 	int32_t used = *(int32_t *)buf;
 	// if empty, bail
 	if ( used <= 12 ) return true;
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(buf+4+8,used-4-8);
+#endif
 	// grab a vehicle for sending the buffer
 	Multicast *mcast = getMulticast();
 	// if we could not get one, wait in line for one to become available
