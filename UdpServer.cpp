@@ -499,8 +499,7 @@ bool UdpServer::sendRequest ( char     *msg          ,
 	// ensure timeout ok
 	if ( timeout < 0 ) { 
 		//g_errno = EBADENGINEER;
-		log(LOG_LOGIC,"udp: sendrequest: Timeout is negative. "
-		    "Making 9999999.");
+		log(LOG_LOGIC,"udp: sendrequest: Timeout is negative. ");
 		char *xx=NULL;*xx=0;
 	}
 	// . we only allow niceness 0 or 1 now
