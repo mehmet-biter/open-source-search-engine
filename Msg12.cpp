@@ -194,7 +194,7 @@ bool Msg12::getLocks ( int64_t uh48, // probDocId ,
 					 NULL         , // retSlotPtrPtr
 					 this         , // state data
 					 gotLockReplyWrapper ,
-					 60*60*24*365    ) ) 
+					 udpserver_sendrequest_infinite_timeout ) ) 
 			// udpserver returns false and sets g_errno on error
 			return true;
 		// count them
@@ -254,7 +254,7 @@ bool Msg12::gotLockReply ( UdpSlot *slot ) {
 						 NULL         , // retSlotPtrPt
 						 this         , // state data
 						 gotLockReplyWrapper ,
-						 60*60*24*365    ) ) 
+						 udpserver_sendrequest_infinite_timeout ) ) 
 				return false;
 			// error?
 			// don't spam the log!
@@ -452,7 +452,7 @@ bool Msg12::removeAllLocks ( ) {
 					 NULL         , // retSlotPtrPtr
 					 this         , // state data
 					 gotLockReplyWrapper ,
-					 60*60*24*365    ) ) 
+					 udpserver_sendrequest_infinite_timeout ) ) 
 			// udpserver returns false and sets g_errno on error
 			return true;
 		// count them
@@ -527,7 +527,7 @@ bool Msg12::confirmLockAcquisition ( ) {
 					 NULL         , // retSlotPtrPtr
 					 this         , // state data
 					 gotLockReplyWrapper ,
-					 60*60*24*365    ) ) 
+					 udpserver_sendrequest_infinite_timeout ) ) 
 			// udpserver returns false and sets g_errno on error
 			return true;
 		// count them

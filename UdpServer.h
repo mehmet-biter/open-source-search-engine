@@ -59,6 +59,8 @@
 // 3. only _ass functions should be called from an ASYNC signal handler.
 
 
+static const int64_t udpserver_sendrequest_infinite_timeout = 999999999999;
+
 class UdpServer {
 
  public:
@@ -130,7 +132,7 @@ class UdpServer {
 			   UdpSlot **retSlot      , // can be NULL
 			   void     *state        , // callback state
 			   void    (* callback ) (void *state, UdpSlot *slot) ,
-			   int32_t      timeout      = 60 , // seconds
+			   int64_t      timeout      = 60000 , // milliseconds
 			   int16_t     backoff      = -1 ,
 			   int16_t     maxWait      = -1   , // ms
 			   char     *replyBuf     = NULL ,

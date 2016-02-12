@@ -559,7 +559,7 @@ void printUdpTable ( SafeBuf *p, char *title, UdpServer *server ,
 				"<td>%s</td>"  // age
 				"<td>%s</td>"  // last read
 				"<td>%s</td>"  // last send
-				"<td>%"INT32"</td>",  // timeout
+				"<td>%"INT64"</td>",  // timeout
 				bg ,
 				e0 ,
 				e1 ,

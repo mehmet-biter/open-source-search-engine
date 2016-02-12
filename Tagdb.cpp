@@ -1677,7 +1677,7 @@ bool Msg8a::launchGetRequests ( ) {
 				   firstHostId         , // firstHostId
 				   0                   , // startFileNum
 				   -1                  , // numFiles
-				   3600*24*365         );// timeout
+				   msg0_getlist_infinite_timeout );// timeout
 	// all done?
 	//if ( m_p == m_url->getDomain() ) m_doneLaunching = true;
 	// error?

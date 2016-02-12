@@ -95,6 +95,9 @@
 //#define TMPBUFSIZE (1024)
 #define TMPBUFSIZE (250)
 
+static const int64_t udpslot_connect_infinite_timeout = 999999999999;
+
+
 class UdpSlot {
 	
  public:
@@ -105,7 +108,7 @@ class UdpSlot {
 		       Host        *host     ,
 		       int32_t         hostId   ,
 		       int32_t         transId  ,
-		       int32_t         timeout  , // in seconds
+		       int64_t         timeout  , // in milliseconds
 		       int64_t    now      ,
 		       int32_t         niceness );
 
@@ -116,7 +119,7 @@ class UdpSlot {
 		       Host           *host     ,
 		       int32_t            hostId   ,
 		       int32_t            transId  ,
-		       int32_t            timeout  , // in seconds
+		       int64_t            timeout  , // in milliseconds
 		       int64_t       now      ,
 		       int32_t            niceness );
 
@@ -330,7 +333,7 @@ class UdpSlot {
 	int32_t        m_hostId;        // the endpoint host's hostId in hostmap
 	unsigned char m_msgType;       // i like to use this for class routing
 
-	int32_t        m_timeout;       // deltaT in seconds
+	int64_t        m_timeout;       // deltaT in milliseconds
 	int32_t        m_errno;         // anything go wrong?  0 means ok.
 	int32_t        m_localErrno;    // are we sending back an error reply?
 

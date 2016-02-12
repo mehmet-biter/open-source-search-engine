@@ -117,7 +117,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     int32_t      firstHostId   ,
 		     int32_t      startFileNum  ,
 		     int32_t      numFiles      ,
-		     int32_t      timeout       ,
+		     int64_t      timeout       ,
 		     int64_t syncPoint     ,
 		     int32_t      preferLocalReads ,
 		     Msg5     *msg5             ,

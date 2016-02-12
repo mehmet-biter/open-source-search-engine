@@ -569,7 +569,7 @@ bool Proxy::forwardRequest ( StateControl *stC ) {
 					   NULL        , // the slotPtr
 					   stC         , // state
 					   gotHttpReplyWrapper ,
-					   stC->m_timeout  ,
+					   stC->m_timeout ,
 					   -1          , // backoff
 					   -1          , // maxwait
 					   NULL        , // replyBuf

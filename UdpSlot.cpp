@@ -125,7 +125,7 @@ void UdpSlot::connect ( UdpProtocol *proto    ,
 			Host        *host     ,
 			int32_t         hostId   ,
 			int32_t         transId  ,
-			int32_t         timeout  , // in seconds
+			int64_t         timeout  , // in milliseconds
 			int64_t    now      ,
 			int32_t         niceness ) {
 	// map loopback ip to our ip
@@ -153,7 +153,7 @@ void UdpSlot::connect ( UdpProtocol    *proto    ,
 			Host           *host     ,
 			int32_t            hostId   ,
 			int32_t            transId  ,
-			int32_t            timeout  , // in seconds
+			int64_t            timeout  , // in milliseconds
 			int64_t       now      ,
 			int32_t            niceness ) {
 	// clear bufs

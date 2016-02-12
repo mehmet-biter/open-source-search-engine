@@ -72,7 +72,7 @@ bool Msg17::getFromCache ( char   cacheId,
 			   void  *state ,
 			   void (*callback) (void *state) ,
 			   int32_t   niceness ,
-			   int32_t   timeout ) {
+			   int64_t   timeout ) {
 	// assume not in cache
 	m_found = false;
 	// use a fake recSize if we should
@@ -386,7 +386,7 @@ bool Msg17::storeInCache ( char   cacheId ,
 			   int32_t   recSize ,
 			   collnum_t collnum, // char  *coll ,
 			   int32_t   niceness ,
-			   int32_t   timeout  ) {
+			   int64_t   timeout  ) {
 
 	// only allow 200 launched in progress stores at a time to
 	// save UdpSlots

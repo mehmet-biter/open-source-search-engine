@@ -1648,7 +1648,7 @@ bool loadAddsInProgress ( char *prefix ) {
 						 NULL         ,
 						 NULL         , // state data
 						 NULL , // callback
-						 999999999)){// seconds timeout
+						 udpserver_sendrequest_infinite_timeout)){// timeout
 			close ( fd );
 			// report it
 			log(LOG_WARN, "%s:%s: could not resend reload buf: %s",

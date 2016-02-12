@@ -57,7 +57,7 @@ class Msg17 {
 			    void  *state ,
 			    void (* callback) (void *state) ,
 			    int32_t   niceness,
-			    int32_t   timeout );
+			    int64_t   timeout );
 
 	// make the key for retrieving or storing the serialized Msg40
 	key_t makeKey ( class Msg40 *msg40 ) ;
@@ -85,7 +85,7 @@ class Msg17 {
 			    int32_t  recSize ,
 			    collnum_t collnum,
 			    int32_t  niceness ,
-			    int32_t  timeout );
+			    int64_t  timeout );
 
 	// keep public so wrappers can access
 	bool gotReply ( class UdpSlot *slot , char *cbuf , int32_t cbufSize ,
