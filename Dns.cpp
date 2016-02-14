@@ -2458,7 +2458,7 @@ key_t Dns::getKey ( char *hostname , int32_t hostnameLen ) {
 // . returns -1 if not host available to send request to
 Host *Dns::getResponsibleHost ( key_t key ) 
 {
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: BEGIN", __FILE__,__FUNCTION__);
+	if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: BEGIN", __FILE__,__func__, __LINE__);
 
 	// just keep this on this cluster now
 	Hostdb *hostdb = &g_hostdb;
@@ -2468,9 +2468,9 @@ Host *Dns::getResponsibleHost ( key_t key )
 
 	if( g_conf.m_logDebugDetailed ) 
 	{
-		log("%s:%s: numHosts: %"UINT32"", __FILE__,__FUNCTION__,hostdb->getNumHosts());
-		log("%s:%s: key.n1: %"UINT32"", __FILE__,__FUNCTION__,key.n1);
-		log("%s:%s: hostId: %"UINT32"", __FILE__,__FUNCTION__,hostId);
+		log("%s:%s:%d: numHosts: %"UINT32"", __FILE__,__func__, __LINE__, hostdb->getNumHosts());
+		log("%s:%s:%d: key.n1: %"UINT32"", __FILE__,__func__, __LINE__, key.n1);
+		log("%s:%s:%d: hostId: %"UINT32"", __FILE__,__func__, __LINE__, hostId);
 	}
 	
 
@@ -2479,7 +2479,7 @@ Host *Dns::getResponsibleHost ( key_t key )
 	
 	if ( h->m_spiderEnabled && ! hostdb->isDead ( hostId ) ) 
 	{
-		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Spidering enabled and not dead. Returning.", __FILE__,__FUNCTION__);
+		if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: END. Spidering enabled and not dead. Returning.", __FILE__,__func__, __LINE__);
 		return h;
 	}
 		
@@ -2488,13 +2488,13 @@ Host *Dns::getResponsibleHost ( key_t key )
 	// how many are up?
 	int32_t numAlive = hostdb->getNumHostsAlive();
 
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: Above is dead. numAlive: %"UINT32"", __FILE__,__FUNCTION__, numAlive);
+	if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: Above is dead. numAlive: %"UINT32"", __FILE__,__func__, __LINE__, numAlive);
 
 
 	// NULL if none
 	if ( numAlive == 0 ) 
 	{
-		if( g_conf.m_logDebugDetailed ) log("%s:%s: None alive. return NULL", __FILE__,__FUNCTION__);
+		if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: None alive. return NULL", __FILE__,__func__, __LINE__);
 		return NULL;
 	}
 	
@@ -2503,8 +2503,8 @@ Host *Dns::getResponsibleHost ( key_t key )
 
 	if( g_conf.m_logDebugDetailed ) 
 	{
-		log("%s:%s: hostNum: %"INT32"", __FILE__,__FUNCTION__, hostNum);
-		log("%s:%s: m_numHosts: %"INT32"", __FILE__,__FUNCTION__, hostdb->m_numHosts);
+		log("%s:%s:%d: hostNum: %"INT32"", __FILE__,__func__, __LINE__, hostNum);
+		log("%s:%s:%d: m_numHosts: %"INT32"", __FILE__,__func__, __LINE__,  hostdb->m_numHosts);
 	}
 	
 	
@@ -2517,34 +2517,34 @@ Host *Dns::getResponsibleHost ( key_t key )
 		Host *host = &hostdb->m_hosts[i];
 		if ( !host->m_spiderEnabled )  
 		{
-			if( g_conf.m_logDebugDetailed ) log("%s:%s: i: %"INT32" - spidering disabled", __FILE__,__FUNCTION__, i);
+			if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: i: %"INT32" - spidering disabled", __FILE__,__func__, __LINE__, i);
 			continue;
 		}
 		
 		// skip him if he is dead
 		if ( hostdb->isDead ( host ) ) 
 		{
-			if( g_conf.m_logDebugDetailed ) log("%s:%s: i: %"INT32" - dead", __FILE__,__FUNCTION__, i);
+			if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: i: %"INT32" - dead", __FILE__,__func__, __LINE__, i);
 			continue;
 		}
 			
 		// count it if alive, continue if not our number
 		if ( count++ != hostNum ) 
 		{
-			if( g_conf.m_logDebugDetailed ) log("%s:%s: i: %"INT32" - not our host (%"INT32")", __FILE__,__FUNCTION__, i, hostNum);
+			if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: i: %"INT32" - not our host (%"INT32")", __FILE__,__func__, __LINE__, i, hostNum);
 			
 			continue;
 		}
 		// we got a match, we cannot use hostNum as the hostId now
 		// because the host with that hostId might be dead
 		
-		if( g_conf.m_logDebugDetailed ) log("%s:%s: END. i: %"INT32" - Match!", __FILE__,__FUNCTION__, i);
+		if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: END. i: %"INT32" - Match!", __FILE__,__func__, __LINE__, i);
 		
 		return host;
 	}
 	
 
-	if( g_conf.m_logDebugDetailed ) log("%s:%s: END. Return EHOSTDEAD. None found", __FILE__,__FUNCTION__);
+	if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: END. Return EHOSTDEAD. None found", __FILE__,__func__, __LINE__ );
 
 	g_errno = EHOSTDEAD;
 	return NULL;

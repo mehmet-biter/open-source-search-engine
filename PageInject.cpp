@@ -980,6 +980,9 @@ void handleRequest7Import ( UdpSlot *slot , int32_t netnice ) {
 	// hack this
 	xd->m_slot = slot;
 	// then index it
+	
+	if( g_conf.m_logDebugDetailed ) log(LOG_TRACE,"%s:%s:%d: Calling XmlDoc->indexDoc", __FILE__, __func__, __LINE__);
+		
 	if ( ! xd->indexDoc() )
 		// return if would block
 		return;

@@ -1674,14 +1674,25 @@ void XmlDoc::setCallback ( void *state, bool (*callback) (void *state) ) {
 	m_callback2 = callback;
 }
 
+
+
 void indexDocWrapper ( void *state ) {
+	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+		
 	XmlDoc *THIS = (XmlDoc *)state;
 	// make sure has not been freed from under us!
 	if ( THIS->m_freed ) { char *xx=NULL;*xx=0;}
 	// note it
 	THIS->setStatus ( "in index doc wrapper" );
+
+	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Calling XmlDoc::indexDoc", __FILE__, __func__, __LINE__);
 	// return if it blocked
-	if ( ! THIS->indexDoc( ) ) return;
+	if ( ! THIS->indexDoc( ) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, indexDoc blocked", __FILE__, __func__, __LINE__);
+		return;
+	}
+
 	// otherwise, all done, call the caller callback
 
 	// g_statsdb.addStat ( MAX_NICENESS,
@@ -1691,14 +1702,34 @@ void indexDocWrapper ( void *state ) {
 	// 		    );
 
 
-	if ( THIS->m_callback1 ) THIS->m_callback1 ( THIS->m_state );
-	else                     THIS->m_callback2 ( THIS->m_state );
+	if ( THIS->m_callback1 ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Calling callback1", __FILE__, __func__, __LINE__);
+
+		THIS->m_callback1 ( THIS->m_state );
+	}
+	else
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Calling callback2", __FILE__, __func__, __LINE__);
+
+		THIS->m_callback2 ( THIS->m_state );
+	}
+		
+	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
+
+
 
 // for registerSleepCallback
 void indexDocWrapper2 ( int fd , void *state ) {
+	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+
 	indexDocWrapper ( state );
+	
+	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
+
+
 
 // . inject from http request
 // . replace more of Msg7.cpp logic with this?
@@ -1998,6 +2029,9 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 	sreq->setDataSize();
 }
 
+
+
+#include <execinfo.h>
 
 ////////////////////////////////////////////////////////////////////
 //   THIS IS THE HEART OF HOW THE PARSER ADDS TO THE RDBS
@@ -2573,6 +2607,7 @@ bool XmlDoc::indexDoc2 ( ) {
 	// HACK: flush it if we are injecting it in case the next thing we
 	//       spider is dependent on this one
 	if ( flush ) {
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Flushing msg4 buffers", __FILE__, __func__, __LINE__);
 		// note it
 		setStatus ( "flushing msg4" );
 		// only do it once
@@ -15920,6 +15955,8 @@ int32_t *XmlDoc::getSpiderPriority ( ) {
 	return &m_priority;
 }
 
+
+
 bool XmlDoc::logIt (SafeBuf *bb ) {
 
 	// set errCode
@@ -17968,6 +18005,16 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( m_indexCode == EDOCNONCANONICAL )
 		spideringLinks = true;
 
+
+
+//@@@ BR TEST. Awaiting Matt's sanity check
+//if( !m_setFromTitleRec )
+//{
+
+//if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: m_setFromTitleRec: %s", __FILE__, __func__, __LINE__, m_setFromTitleRec?"true":"false");
+//if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: spideringLinks...: %s", __FILE__, __func__, __LINE__, spideringLinks?"true":"false");	
+
+
 	//
 	// . prepare the outlink info if we are adding links to spiderdb!
 	// . do this before we start hashing so we do not block and re-hash!!
@@ -17998,6 +18045,8 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		//char     *ipi = getIsIndexed(); // is the parent indexed?
 		//if ( ! ipi || ipi == (char *)-1 ) return (char *)ipi;
 	}
+
+//}
 
 	// get the tag buf to add to tagdb
 	SafeBuf *ntb = NULL;

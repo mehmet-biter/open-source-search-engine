@@ -2037,6 +2037,8 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 
 bool SpiderLoop::spiderUrl2 ( ) {
 
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+		
 	// sanity check
 	//if ( ! m_sreq->m_doled ) { char *xx=NULL;*xx=0; }
 
@@ -2067,6 +2069,8 @@ bool SpiderLoop::spiderUrl2 ( ) {
 		log("build: Could not allocate %"INT32" bytes to spider "
 		    "the url %s. Will retry later.",
 		    (int32_t)sizeof(XmlDoc),  m_sreq->m_url );
+		    
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, new XmlDoc failed", __FILE__, __func__, __LINE__);
 		return true;
 	}
 	// register it's mem usage with Mem.cpp class
@@ -2128,6 +2132,7 @@ bool SpiderLoop::spiderUrl2 ( ) {
 		delete (m_docs[i]);
 		m_docs[i] = NULL;
 		// error, g_errno should be set!
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, xd->set4 returned false", __FILE__, __func__, __LINE__);
 		return true;
 	}
 
@@ -2198,7 +2203,9 @@ bool SpiderLoop::spiderUrl2 ( ) {
 
 	// . return if this blocked
 	// . no, launch another spider!
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: calling xd->indexDoc", __FILE__, __func__, __LINE__);
 	bool status = xd->indexDoc();
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: indexDoc status [%s]", __FILE__, __func__, __LINE__, status?"true":"false");
 
 	// . reset the next doledbkey to start over!
 	// . when spiderDoledUrls() see this negative priority it will
@@ -2210,12 +2217,17 @@ bool SpiderLoop::spiderUrl2 ( ) {
 	//m_sc->setPriority ( MAX_SPIDER_PRIORITIES - 1 );
 
 	// if we were injecting and it blocked... return false
-	if ( ! status ) return false;
+	if ( ! status ) 
+	{
+		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, indexDoc blocked", __FILE__, __func__, __LINE__);
+		return false;
+	}
 
 	// deal with this error
 	indexedDoc ( xd );
 
 	// "callback" will not be called cuz it should be NULL
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, return true", __FILE__, __func__, __LINE__);
 	return true;
 }
 
@@ -2251,7 +2263,8 @@ void indexedDocWrapper ( void *state ) {
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
-
+if( 	g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	
 	// save the error in case a call changes it below
 	//int32_t saved = g_errno;
 
@@ -2463,6 +2476,7 @@ bool SpiderLoop::indexedDoc ( XmlDoc *xd ) {
 	//if ( ! removeAllLocks () ) return false;
 
 	// we did not block, so return true
+	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 	return true;
 }
 
