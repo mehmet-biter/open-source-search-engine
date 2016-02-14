@@ -7150,6 +7150,128 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_icon     = NULL;
 		n++;
 
+
+
+		s_mi[n].m_menuNum  = 11;
+		s_mi[n].m_title    = "fx_country (none)";
+		s_mi[n].m_cgi      = "fx_country=";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 11;
+		s_mi[n].m_title    = "de";
+		s_mi[n].m_cgi      = "fx_country=de";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 11;
+		s_mi[n].m_title    = "dk";
+		s_mi[n].m_cgi      = "fx_country=dk";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 11;
+		s_mi[n].m_title    = "fr";
+		s_mi[n].m_cgi      = "fx_country=fr";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 11;
+		s_mi[n].m_title    = "no";
+		s_mi[n].m_cgi      = "fx_country=no";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 11;
+		s_mi[n].m_title    = "se";
+		s_mi[n].m_cgi      = "fx_country=se";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+
+
+		s_mi[n].m_menuNum  = 12;
+		s_mi[n].m_title    = "fx_blang (none)";
+		s_mi[n].m_cgi      = "fx_blang=";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 12;
+		s_mi[n].m_title    = "da";
+		s_mi[n].m_cgi      = "fx_blang=da";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 12;
+		s_mi[n].m_title    = "de";
+		s_mi[n].m_cgi      = "fx_blang=de";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 12;
+		s_mi[n].m_title    = "en";
+		s_mi[n].m_cgi      = "fx_blang=en";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 12;
+		s_mi[n].m_title    = "en-US";
+		s_mi[n].m_cgi      = "fx_blang=en-US";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 12;
+		s_mi[n].m_title    = "no";
+		s_mi[n].m_cgi      = "fx_blang=no";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 12;
+		s_mi[n].m_title    = "se";
+		s_mi[n].m_cgi      = "fx_blang=se";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+
+		s_mi[n].m_menuNum  = 13;
+		s_mi[n].m_title    = "fx_fetld (none)";
+		s_mi[n].m_cgi      = "fx_fetld=";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 13;
+		s_mi[n].m_title    = "com";
+		s_mi[n].m_cgi      = "fx_fetld=findx.com";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 13;
+		s_mi[n].m_title    = "de";
+		s_mi[n].m_cgi      = "fx_fetld=findx.de";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 13;
+		s_mi[n].m_title    = "dk";
+		s_mi[n].m_cgi      = "fx_fetld=findx.dk";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 13;
+		s_mi[n].m_title    = "no";
+		s_mi[n].m_cgi      = "fx_fetld=findx.no";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+		s_mi[n].m_menuNum  = 13;
+		s_mi[n].m_title    = "se";
+		s_mi[n].m_cgi      = "fx_fetld=findx.se";
+		s_mi[n].m_icon     = NULL;
+		n++;
+
+
+
+
 		s_num = n;
 		if ( n > 200 ) { char *xx=NULL;*xx=0; }
 	}
