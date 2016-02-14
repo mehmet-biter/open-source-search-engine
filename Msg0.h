@@ -40,6 +40,8 @@ bool getRecFromTermListCache ( char *coll,
 //#define MSG0_REQ_SIZE (8 + 2 * sizeof(key_t) + 16 + 5 + MAX_COLL_LEN + 1 )
 #define MSG0_REQ_SIZE (8 + 2 * MAX_KEY_BYTES + 16 + 5 + 4 + 1 + 1 )
 
+static const int64_t msg0_getlist_infinite_timeout = 999999999999;
+
 class Msg0 {
 
  public:
@@ -88,7 +90,7 @@ class Msg0 {
 		       int32_t      firstHostId       = -1   ,
 		       int32_t      startFileNum      =  0   ,
 		       int32_t      numFiles          = -1   ,
-		       int32_t      timeout           = 30   ,
+		       int64_t      timeout           = 30000   ,
 		       int64_t syncPoint         = -1   ,
 		       int32_t      preferLocalReads  = -1   , // -1=use g_conf
 		       class Msg5 *msg5            = NULL ,
@@ -125,7 +127,7 @@ class Msg0 {
 		       int32_t      firstHostId       = -1   ,
 		       int32_t      startFileNum      =  0   ,
 		       int32_t      numFiles          = -1   ,
-		       int32_t      timeout           = 30   ,
+		       int64_t      timeout           = 30000   ,
 		       int64_t syncPoint         = -1   ,
 		       int32_t      preferLocalReads  = -1   , // -1=use g_conf
 		       class Msg5 *msg5            = NULL ,

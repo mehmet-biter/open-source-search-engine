@@ -477,7 +477,7 @@ bool UdpServer::sendRequest ( char     *msg          ,
 			      UdpSlot **retslot      , // can be NULL
 			      void     *state        ,
 			      void    (* callback)(void *state,UdpSlot *slot),
-			      int32_t      timeout      , // in seconds
+			      int64_t      timeout      , // in milliseconds
 			      int16_t     backoff      ,
 			      int16_t     maxWait      ,
 			      char     *replyBuf     ,
@@ -499,9 +499,7 @@ bool UdpServer::sendRequest ( char     *msg          ,
 	// ensure timeout ok
 	if ( timeout < 0 ) { 
 		//g_errno = EBADENGINEER;
-		log(LOG_LOGIC,"udp: sendrequest: Timeout is negative. "
-		    "Making 9999999.");
-		timeout = 9999999;
+		log(LOG_LOGIC,"udp: sendrequest: Timeout is negative. ");
 		char *xx=NULL;*xx=0;
 	}
 	// . we only allow niceness 0 or 1 now
@@ -1424,7 +1422,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 			// . send them another ACK so they shut up
 			// . they might not have gotten due to network error
 			// . this will clear "tmp" with memset
-			tmp.connect (m_proto,&from,NULL,-1,transId, 10/*time*/,
+			tmp.connect (m_proto,&from,NULL,-1,transId, 10000/*timeout*/,
 				      now , 0 ); // m_niceness );
 			// . if this blocks, that sucks, we'll probably get
 			//   another untethered read... oh well...
@@ -1616,9 +1614,10 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 			goto discard;
 		}
 		// default timeout, sender has 60 seconds to send request!
-		int32_t timeout = 60;
+		int64_t timeout = 60000;
 		// not if msg8e! they are huge requests!
-		if ( msgType == 0x8e ) timeout = 999999;
+		if ( msgType == 0x8e )
+			timeout = udpslot_connect_infinite_timeout;
 		// connect this slot (callback should be NULL)
 		slot->connect ( m_proto ,  
 				&from   ,  // ip/port
@@ -2790,7 +2789,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    "delta=%"UINT64" "
 			    "lastSendTime=%"UINT64" "
 			    "delta=%"UINT64" "
-			    "timeout=%"UINT32" "
+			    "timeout=%"UINT64" "
 			    "sentBitsOn=%"INT32" "
 			    "readAckBitsOn=%"INT32" ",
 			    slot->m_transId,
@@ -2803,7 +2802,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    (uint64_t)(now - slot->m_lastReadTime) ,
 			    (uint64_t)slot->m_lastSendTime,
 			    (uint64_t)(now - slot->m_lastSendTime) ,
-			    (uint32_t)slot->m_timeout,
+			    (uint64_t)slot->m_timeout,
 			    slot->m_sentBitsOn ,
 			    slot->m_readAckBitsOn ) ;
 		// skip empties
@@ -2822,8 +2821,8 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// get time elapsed since last read
 		int64_t elapsed = now - slot->m_lastReadTime;
 		// set all timeouts to 4 secs if we are shutting down
-		if ( m_isShuttingDown && slot->m_timeout > 4 ) 
-			slot->m_timeout = 4;
+		if ( m_isShuttingDown && slot->m_timeout > 4000 ) 
+			slot->m_timeout = 4000;
 		// if we don't get any activity on the slot for 30 ms
 		// that often means the other side has lost the token
 		/*
@@ -2847,7 +2846,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// . 3. they take too long to ACK our reply 
 		// . 4. they take too long to ACK our request
 		// . only flag it if we haven't already...
-		if ( elapsed >= ((int64_t)slot->m_timeout) * 1000LL &&
+		if ( elapsed >= slot->m_timeout &&
 		     slot->m_errno != EUDPTIMEDOUT ) {
 			// . set slot's m_errno field
 			// . makeCallbacks_ass() should call its callback
@@ -2939,7 +2938,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// let's also require that it has been 5 secs or more...
 		//
 
-		int32_t timeout = 5000;
+		int64_t timeout = 5000;
 		// spider time requests typically have timeouts of 1 year!
 		// so we end up waiting for the host to come back online
 		// before the spider can proceed.
@@ -3105,7 +3104,7 @@ bool UdpServer::shutdown ( bool urgent ) {
 			// don't bother with pings or other hosts shutdown 
 			if ( slot->m_msgType == 0x11 ) continue;
 			// set all timeouts to 3 secs
-			if ( slot->m_timeout > 3 ) slot->m_timeout = 3;
+			if ( slot->m_timeout > 3000 ) slot->m_timeout = 3000;
 			// . don't count lagging slots that haven't got 
 			//   a read in 5 sec
 			if ( now - slot->m_lastReadTime > 5 ) continue;

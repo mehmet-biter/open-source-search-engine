@@ -380,7 +380,7 @@ bool Images::getThumbnail ( char *pageSite ,
 				-1    , // firstHostId
 				0     , // start filenum
 				-1    , // numFiles
-				30    , // timeout
+				30000 , // timeout
 				-1    , // syncpoint
 				-1    , // preferlocalreads
 				NULL  , // msg5
@@ -480,7 +480,7 @@ bool Images::launchRequests ( ) {
 					-1    , // firstHostId
 					0     , // start filenum
 					-1    , // numFiles
-					30    , // timeout
+					30000 , // timeout
 					-1    , // syncpoint
 					-1    , // preferlocalreads
 					NULL  , // msg5

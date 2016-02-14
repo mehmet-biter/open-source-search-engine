@@ -271,7 +271,7 @@ bool Msg7::sendInjectionRequestToHost ( InjectionRequest *ir ,
 					 NULL, // retslot
 					 this,//state,
 					 gotUdpReplyWrapper,//acallback,
-					 99999999 , // timeout
+					 udpserver_sendrequest_infinite_timeout , // timeout
 					 -1 , // backoff
 					 -1 , // maxwait
 					 NULL, // replybuf

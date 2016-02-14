@@ -161,7 +161,7 @@ class Dns {
 		     // monitor.cpp passes in false for this:
 		     bool   cacheNotFounds = true );
 
-	bool sendToNextDNS ( struct DnsState *ds , int32_t timeout = 60 ) ;
+	bool sendToNextDNS ( struct DnsState *ds ) ;
 
 	bool getIpOfDNS ( DnsState *ds ) ;
 

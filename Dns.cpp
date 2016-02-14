@@ -665,7 +665,8 @@ bool Dns::getIp ( char *hostname ,
 	// return 0 if we block on the reply
 	//if ( ! sendToNextDNS ( ds , timeout ) ) return false;
 	// timeout from an individual dns is 20 seconds
-	if ( ! sendToNextDNS ( ds , TIMEOUT_SINGLE_HOST ) ) return false;
+	if ( ! sendToNextDNS ( ds ) )
+		return false;
 
 	// debug msg
 	log(LOG_DEBUG,"dns: Removing3 key %"UINT64" from table. "
@@ -830,7 +831,7 @@ void gotIpOfDNSWrapper ( void *state , int32_t ip ) {
 	// disregard any g_errnos cuz we will try again
 	g_errno = 0;
 	// just return if this blocks
-	if ( ! g_dns.sendToNextDNS ( ds , 20 ) ) {
+	if ( ! g_dns.sendToNextDNS ( ds ) ) {
 		log(LOG_DEBUG, "dns: sendToNextDns blocking for '%s'",
 			ds->m_hostname);
 		return ;
@@ -849,7 +850,7 @@ void gotIpOfDNSWrapper ( void *state , int32_t ip ) {
 }
 
 // returns false if blocked, sets g_errno and returns true otherwise
-bool Dns::sendToNextDNS ( DnsState *ds , int32_t timeout ) {
+bool Dns::sendToNextDNS ( DnsState *ds ) {
 	//log(LOG_DEBUG, "dns: sendToNextDNS depth %d", ds->m_depth);
 	// let's clear g_errno since caller may have set it in gotIp()
 	g_errno = 0;
@@ -1189,7 +1190,7 @@ bool Dns::sendToNextDNS ( DnsState *ds , int32_t timeout ) {
 					 &slotPtr       , // slot ptr
 					 ds             , // cback state
 					 gotIpWrapper   , // callback
-					 TIMEOUT_SINGLE_HOST , // 20 secs?
+					 TIMEOUT_SINGLE_HOST*1000 , // 20 secs?
 					 -1, // backoff
 					 -1, // maxWait
 					 NULL, // replyBuf
@@ -1316,7 +1317,7 @@ void gotIpWrapper ( void *state , UdpSlot *slot ) {
 		//   so let's try again on that too!
 		// . set timeout to 10 seconds
 		if ( //g_errno != EDNSDEAD &&
-		     ! g_dns.sendToNextDNS(ds,20) )  {
+		     ! g_dns.sendToNextDNS(ds) )  {
 		     	log(LOG_DEBUG, "dns: gotIpWrapper blocking on "
 				"SendToNextDNS for '%s'", ds->m_hostname);
 			return;

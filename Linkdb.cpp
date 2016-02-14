@@ -3170,6 +3170,7 @@ LinkInfo *makeLinkInfo ( char        *coll                    ,
 	if ( ! linkInfoBuf->reserve ( need , "LinkInfo" ) ) return NULL;
 	// set ourselves to this new buffer
 	LinkInfo *info = (LinkInfo *)(linkInfoBuf->getBufStart());
+	memset(info,0,sizeof(*info));
 	
 	// set our header
 	info->m_version                = 0;
@@ -3201,6 +3202,9 @@ LinkInfo *makeLinkInfo ( char        *coll                    ,
 	// extrapolate the total # of inlinkers we have. Msg25 does this
 	// and passes it in to us.
 	//info->m_numInlinksExtrapolated = extrapolated;
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(info,sizeof(*info));
+#endif
 
 	// point to our buf
 	char *p    = info->m_buf;
@@ -3250,6 +3254,9 @@ LinkInfo *makeLinkInfo ( char        *coll                    ,
 
 	// how many guys that we stored were internal?
 	info->m_numInlinksInternal = (char)icount3;
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(info,pend-(char*)info);
+#endif
 
 	linkInfoBuf->setLength ( need );
 
@@ -4225,6 +4232,9 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 		      bool setLinkHash , int32_t titleRecVersion ,
 		      int32_t niceness , bool isRSS , int32_t tagId ,
 		      int32_t flagsArg ){
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(link,linkLen);
+#endif
 
 	// don't add 0 length links
 	if ( linkLen <= 0 ) return true;

@@ -1,5 +1,8 @@
 #include "gb-include.h"
 #include "XmlDoc.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 static void gotReplyWrapper20 ( void *state , void *state20 ) ;
 //static void gotReplyWrapper20b ( void *state , UdpSlot *slot );
@@ -690,6 +693,9 @@ int32_t Msg20Reply::getStoredSize ( ) {
 
 // returns NULL and set g_errno on error
 int32_t Msg20Reply::serialize ( char *buf , int32_t bufSize ) {
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(this,sizeof(*this));
+#endif
 	// copy the easy stuff
 	char *p = buf;
 	gbmemcpy ( p , (char *)this , sizeof(Msg20Reply) );
@@ -703,6 +709,9 @@ int32_t Msg20Reply::serialize ( char *buf , int32_t bufSize ) {
 		// sometimes the ptr is NULL but size is positive
 		// so watch out for that
 		if ( *strPtr ) {
+#ifdef _VALGRIND_
+			VALGRIND_CHECK_MEM_IS_DEFINED(*strPtr,*sizePtr);
+#endif
 			gbmemcpy ( p , *strPtr , *sizePtr );
 			// advance our destination ptr
 			p += *sizePtr;

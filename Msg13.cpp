@@ -345,7 +345,7 @@ bool Msg13::forwardRequest ( ) {
 					 NULL         ,
 					 this         , // state data
 					 gotForwardedReplyWrapper  ,
-					 200   )){// 200 sec timeout
+					 200000 )){// 200 sec timeout
 		// sanity check
 		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
 		// report it
@@ -687,7 +687,7 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 						 NULL         ,
 						 r            , // state data
 						 passOnReply  ,
-						 200 , // 200 sec timeout
+						 200000 , // 200 sec timeout
 						 -1,//backoff
 						 -1,//maxwait
 						 NULL,//replybuf
@@ -828,7 +828,7 @@ void downloadTheDocForReals2 ( Msg13Request *r ) {
 					 NULL         ,
 					 r         , // state data
 					 gotProxyHostReplyWrapper  ,
-					 9999999  )){// 9999999 sec timeout
+					 udpserver_sendrequest_infinite_timeout )){
 		// sanity check
 		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
 		// report it
@@ -1318,7 +1318,7 @@ void gotHttpReply9 ( void *state , TcpSocket *ts ) {
 				       NULL         ,
 				       r        , // state data
 				       doneReportingStatsWrapper  ,
-				       10    )){// 10 sec timeout
+				       10000 )){// 10 sec timeout
 		// it blocked!
 		//r->m_blocked = true;
 		s_55Out++;

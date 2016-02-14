@@ -14061,7 +14061,7 @@ bool Parms::doParmSendingLoop ( ) {
 						 NULL, // retslot
 						 (void *)(PTRTYPE)h->m_hostId , // state
 						 gotParmReplyWrapper ,
-						 30 , // timeout secs
+						 30*1000 , // timeout msecs
 						 -1 , // backoff
 						 -1 , // maxwait
 						 NULL , // replybuf
@@ -14393,7 +14393,7 @@ bool Parms::syncParmsWithHost0 ( ) {
 					 NULL, // retslot
 					 NULL , // state
 					 gotReplyFromHost0Wrapper ,
-					 99999999 ) ) { // timeout in secs
+					 udpserver_sendrequest_infinite_timeout ) ) { // timeout in msecs
 		log("parms: error syncing with host 0: %s",mstrerror(g_errno));
 		return false;
 	}

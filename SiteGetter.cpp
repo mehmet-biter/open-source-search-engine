@@ -316,7 +316,7 @@ top:
 			    -1    ,  // firstHostId
 			    0     ,  // startFileNum
 			    -1    ,  // numFiles
-			    999999,  // timeout
+			    msg0_getlist_infinite_timeout,  // timeout
 			    -1    ,  // syncPoint
 			    -1    ,  // preferLocalReads
 			    NULL  ,  // msg5

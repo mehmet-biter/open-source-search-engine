@@ -4521,7 +4521,7 @@ int64_t **XmlDoc::getWikiDocIds ( ) {
 					 NULL                  , // retSlot
 					 this                  , // state
 					 gotWikiResultsWrapper ,
-					 1000                  ) )
+					 1*1000                  ) ) //timeout
 		// we had an error, g_errno should be set
 		return NULL;
 
@@ -6124,7 +6124,7 @@ SectionVotingTable *XmlDoc::getOldSectionVotingTable ( ) {
 				    -1    ,  // firstHostId
 				    0     ,  // startFileNum
 				    -1    ,  // numFiles
-				    999995    ,  // timeout
+				    msg0_getlist_infinite_timeout ,  // timeout
 				    -1    ,  // syncPoint
 				    -1    ,  // preferLocalReads
 				    NULL  ,  // msg5
@@ -7566,7 +7566,7 @@ RdbList *XmlDoc::getDupList ( ) {
 				-1, // # files
 				// never timeout when spidering in case
 				// a host is down.
-				9999977 , // timeout
+				msg0_getlist_infinite_timeout , // timeout
 				-1 , // syncpoint
 				-1 , // preferlocal reads
 				NULL, // msg5

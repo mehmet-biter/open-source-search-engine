@@ -1829,7 +1829,7 @@ bool Msg5::getRemoteList ( ) {
 				 -1                   , // first hostid
 				 0                    , // startFileNum
 				 -1                   , // numFiles (-1=all)
-				 60*60*24             , // timeout in secs
+				 60*60*24*1000            , // timeout
 				 -1                   , // syncPoint
 				 -1                   , // preferLocalReads
 				 NULL                 , // msg5

@@ -127,7 +127,7 @@ int main ( int argc , char *argv[] ) {
 					  NULL , // UdpSlot ptr being used
 					  NULL , // callback state
 					  gotit, // callback
-					  30   );// timeout in seconds
+					  30*1000   );// timeout in seconds
 	}
 
 	// . now start g_loops main interrupt handling loop

@@ -575,7 +575,7 @@ void PingServer::pingHost ( Host *h , uint32_t ip , uint16_t port ) {
 					(void *)h     , // callback state
 					gotReplyWrapperP ,
 					// timeout
-					(g_conf.m_deadHostTimeout/1000)+1 ,
+					g_conf.m_deadHostTimeout ,
 					1000          ,           // backoff
 					2000          ,  // max wait
 					NULL          ,  // reply buf
@@ -842,7 +842,7 @@ void gotReplyWrapperP ( void *state , UdpSlot *slot ) {
 				       (void *)(PTRTYPE)h->m_hostId, //cb state
 				       gotReplyWrapperP3 ,
 				       // timeout
-				       (g_conf.m_deadHostTimeout/1000)+1 , 
+				       g_conf.m_deadHostTimeout , 
 				       1000          ,           // backoff
 				       2000          ,  // max wait
 				       NULL          ,  // reply buf
@@ -1827,7 +1827,7 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 						NULL          , //
 						NULL          , // state
 						gotReplyWrapperP2 ,
-						3     , // 3 sec timeout
+						3000     , // 3 sec timeout
 						-1    , // default backoff
 						-1    , // default maxwait
 						NULL  , // reply buf
@@ -1863,7 +1863,7 @@ bool PingServer::broadcastShutdownNotes ( bool    sendEmailAlert          ,
 						NULL          , //
 						NULL          , // state
 						gotReplyWrapperP2 ,
-						3     , // 3 sec timeout
+						3000     , // 3 sec timeout
 						-1    , // default backoff
 						-1    , // default maxwait
 						NULL  , // reply buf
@@ -1983,7 +1983,7 @@ void PingServer::tapHost ( int32_t hostId ) {
 					NULL            ,
 				       (void *)(PTRTYPE)h->m_hostId,// cb state
 					gotTapReplyWrapper ,
-					30              , // timeout
+					30000           , // timeout
 					1000            , // backoff
 					10000           , // max wait
 					NULL            , // reply buf
