@@ -1003,6 +1003,13 @@ public:
 // map the tags to names
 static TagDesc s_tagDesc[] = {
 
+
+	// BR: DO NOT REMOVE unused entries as we may have them in our TagDB already,
+	//     and removing them will cause missing info in the TagDB dump code
+	//     (when clicking 'page info' in search results)
+	
+	
+
 	// data for the "lang" tag is 2 char language id followed by
 	// a comma then a score from 1 to 100 to indicate percentage.
 	// Allow multiple "lang" tags in one tagrec.
@@ -1012,8 +1019,14 @@ static TagDesc s_tagDesc[] = {
 	// for determining default venue addresses
 	{"roottitles"             ,TDF_STRING|TDF_NOINDEX,0},
 
+	// for addresses of the website, can be multiple
+	{"venueaddress"             ,TDF_STRING|TDF_ARRAY|TDF_NOINDEX,0},	// BR: NO LONGER SET
+
 	{"manualban"            ,0x00,0},
-	
+
+	{"manualfilter"         ,0x00,0},									// BR: NO LONGER SET
+	{"dateformat"           ,0x00,0}, // 1 = american, 2 = european		// BR: NO LONGER SET
+
 	{"ruleset"              ,0x00,0},
 	{"deep"                 ,0x00,0},
 
@@ -1024,6 +1037,12 @@ static TagDesc s_tagDesc[] = {
 	// this is "0" or "1". if it is "0" then the date lets XmlDoc.cpp know
 	// when we last tried to get the contact info for the site
 	{"hascontactinfo"       ,0x00,0},
+
+	// street address using ; as delimeter
+	{"contactaddress"              ,TDF_ARRAY|TDF_NOINDEX,0},			// BR: NO LONGER SET
+	{"contactemails"               ,TDF_ARRAY|TDF_NOINDEX,0},			// BR: NO LONGER SET
+
+	{"hascontactform"       ,0x00,0},									// BR: NO LONGER SET
 
 	// . this is used to define INDEPENDENT subsites
 	// . such INDEPENDENT subsites should never inherit from this tag rec
@@ -1044,6 +1063,12 @@ static TagDesc s_tagDesc[] = {
 	{"authorityinlink"      ,TDF_STRING|TDF_ARRAY,0},
 
 	{"pagerank"             ,0x00,0},
+	{"ingoogle"             ,0x00,0},									// BR: NO LONGER SET
+	{"ingoogleblogs"        ,0x00,0},									// BR: NO LONGER SET
+	{"ingooglenews"         ,0x00,0},									// BR: NO LONGER SET
+
+	// geo location from this news site directory
+	{"abyznewslinks.address",0x00,0},									// BR: NO LONGER SET
 
 	// we now store site pop, etc. in tagdb
 	{"sitenuminlinks"       ,0x00,0},
@@ -1089,7 +1114,12 @@ char *getTagStrFromType ( int32_t tagType ) {
 	if ( ! s_initialized ) g_tagdb.setHashTable();
 	TagDesc **ptd = (TagDesc **)s_ht.getValue ( &tagType );
 	// sanity check
-	if ( ! ptd ) { char *xx=NULL;*xx=0; }
+	if ( ! ptd ) 
+	{ 	
+		log(LOG_ERROR,"%s:%s:%d: Failed to lookup tagType %"INT32"", __FILE__, __func__, __LINE__, tagType);
+		//char *xx=NULL;*xx=0; 
+		return "UNKNOWN";
+	}
 	// return it
 	return (*ptd)->m_name;
 }
