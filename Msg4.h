@@ -6,8 +6,8 @@
 #define _MSG4_H_
 
 bool registerHandler4   ( ) ;
-bool saveAddsInProgress ( char *filenamePrefix );
-bool loadAddsInProgress ( char *filenamePrefix );
+bool saveAddsInProgress ( const char *filenamePrefix );
+bool loadAddsInProgress ( const char *filenamePrefix );
 // used by Repair.cpp to make sure we are not adding any more data ("writing")
 bool hasAddsInQueue     ( ) ;
 

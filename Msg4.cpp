@@ -1356,7 +1356,7 @@ bool addMetaList ( char *p , UdpSlot *slot ) {
 // . does not do any mallocs in case we are OOM and need to save
 // . BUG: might be trying to send an old bucket, so scan udp slots too? or
 //   keep unsent buckets in the list?
-bool saveAddsInProgress ( char *prefix ) {
+bool saveAddsInProgress ( const char *prefix ) {
 
 	if ( g_conf.m_readOnlyMode ) return true;
 
@@ -1458,7 +1458,7 @@ bool saveAddsInProgress ( char *prefix ) {
 
 // . returns false on an unrecoverable error, true otherwise
 // . sets g_errno on error
-bool loadAddsInProgress ( char *prefix ) {
+bool loadAddsInProgress ( const char *prefix ) {
 
 	if( g_conf.m_logTraceMsg ) {
 		log(LOG_TRACE,"%s:%s: BEGIN", __FILE__,__func__);
