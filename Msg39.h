@@ -131,7 +131,7 @@ class Msg39Request {
 	int64_t m_minSerpDocId;
 
 	// msg3a stuff
-	int32_t    m_timeout; // in seconds
+	int64_t    m_timeout; // in milliseconds
 
 	// do not add new string parms before ptr_readSizes or
 	// after ptr_whiteList so serializeMsg() calls still work

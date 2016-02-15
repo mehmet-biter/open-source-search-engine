@@ -5712,7 +5712,7 @@ SectionStats *XmlDoc::getSectionStats ( uint32_t secHash32 ,
 	r->m_language            = 0;
 	r->ptr_query             = qbuf;//m_sectionHashQueryBuf;
 	r->size_query            = gbstrlen(r->ptr_query)+1;
-	r->m_timeout             = 3600; //-1;// auto-determine based on #terms
+	r->m_timeout             = 3600*1000; //todo: do we really want to wait an hour for this?
 	r->m_maxQueryTerms       = 10;
 
 	// how much of each termlist to read in bytes

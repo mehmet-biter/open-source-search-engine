@@ -340,7 +340,7 @@ bool Msg1c::reindexQuery ( char *query ,
 	m_req.m_doDupContentRemoval       = false;
 	m_req.ptr_query                   = m_qq.m_orig;
 	m_req.size_query                  = m_qq.m_origLen+1;
-	m_req.m_timeout                   = 100000; // very high, 100k seconds
+	m_req.m_timeout                   = 86400*1000; // a whole day. todo: should we just go for infinite here?
 	m_req.m_queryExpansion            = true; // so it's like regular rslts
 	// add language dropdown or take from [query reindex] link
 	m_req.m_language                  = langId;

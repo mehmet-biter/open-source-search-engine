@@ -319,7 +319,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	// override? this is USUALLY -1, but DupDectector.cpp needs it
 	// high because it is a spider time thing.
 	if ( m_r->m_timeout > 0 )
-		timeout = m_r->m_timeout * 1000;
+		timeout = m_r->m_timeout;
 	if ( timeout > multicast_msg3a_maximum_timeout )
 		timeout = multicast_msg3a_maximum_timeout;
 	
