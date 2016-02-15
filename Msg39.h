@@ -133,8 +133,6 @@ class Msg39Request {
 	// msg3a stuff
 	int32_t    m_timeout; // in seconds
 
-	time_t  m_nowUTC;
-
 	// do not add new string parms before ptr_readSizes or
 	// after ptr_whiteList so serializeMsg() calls still work
 	char   *ptr_readSizes;

@@ -201,9 +201,6 @@ class Msg40 {
 
         int64_t *getDocIdPtr() { return m_msg3a.m_docIds; }
 
-	// Msg39 and all Msg20s must use the same clock timestamp
-	time_t m_nowUTC;
-
 	int32_t m_lastHeartbeat;
 
 	bool printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
