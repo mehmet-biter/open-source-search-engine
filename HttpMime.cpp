@@ -6,6 +6,11 @@
 #include "HashTable.h"
 #include "Timezone.h"
 
+static time_t atotime2( const char *s );
+static time_t atotime3( const char *s );
+static time_t atotime4( const char *s );
+static time_t atotime5( const char *s );
+
 // . convert these values to strings
 // . these must be 1-1 with the #define's in HttpMime.h
 char *g_contentTypeStrings [] = {
@@ -224,7 +229,7 @@ bool HttpMime::parse ( char *mime , int32_t mimeLen , Url *url ) {
 // . #5: 2007-12-31
 // . #6: 2008-04-30T20:48:25Z (ISO8601)
 
-time_t atotime ( char *s ) {
+time_t atotime ( const char *s ) {
 
 	// skip non-alnum padding
 	while ( *s && ! isalnum (*s) ) s++;
@@ -239,7 +244,7 @@ time_t atotime ( char *s ) {
 
 	// . determine if we have type #1, #2 or #3 date format
 	// . now if there's hyphens we have type #2
-	char *t = s;
+	const char *t = s;
 	while ( *t && *t!='-') t++;
 	if ( *t == '-' ) return atotime2 ( s );	
 
@@ -254,7 +259,7 @@ time_t atotime ( char *s ) {
 
 
 // #1: Sun, 06 Nov 1994 08:49:37 GMT  ;RFC 822, updated by RFC 1123
-time_t atotime1 ( char *s ) {
+time_t atotime1 ( const char *s ) {
 	// this time structure, once filled, will help yield a time_t
 	struct tm t;
 	// DAY OF WEEK 
@@ -303,7 +308,7 @@ time_t atotime1 ( char *s ) {
 }
 
 // #2: Sunday, 06-Nov-94 08:49:37 GMT ;RFC 850,obsoleted by RFC1036
-time_t atotime2 ( char *s ) {
+static time_t atotime2 ( const char *s ) {
 	// this time structure, once filled, will help yield a time_t
 	struct tm t;
 	// DAY OF WEEK 
@@ -338,7 +343,7 @@ time_t atotime2 ( char *s ) {
 }
 
 // #3: Sun Nov  6 08:49:37 1994       ;ANSI C's asctime() format
-time_t atotime3 ( char *s ) {
+static time_t atotime3 ( const char *s ) {
 	// this time structure, once filled, will help yield a time_t
 	struct tm t;
 	// DAY OF WEEK 
@@ -366,7 +371,7 @@ time_t atotime3 ( char *s ) {
 
 // . #4: 06 Nov 1994 08:49:37 GMT  ;RFC 822, updated by RFC 1123
 // . like atotime1()
-time_t atotime4 ( char *s ) {
+static time_t atotime4 ( const char *s ) {
 	// this time structure, once filled, will help yield a time_t
 	struct tm t;
 	// DAY OF WEEK 
@@ -402,7 +407,7 @@ time_t atotime4 ( char *s ) {
 
 // 2007-12-31
 // 2008-04-30T20:48:25Z (ISO8601)
-time_t atotime5 ( char *s ) {
+static time_t atotime5 ( const char *s ) {
 	// this time structure, once filled, will help yield a time_t
 	struct tm t;
 	// YEAR
@@ -446,7 +451,7 @@ time_t atotime5 ( char *s ) {
 
 // sunday=0, monday=1, tuesday=2, wednesday=3, thursday=4, friday=5, saturday=6
 // sun=0, mon=1, tue=2, wed=3, thu=4, fri=5, sat=6
-int32_t getWeekday ( char *s ) {
+int32_t getWeekday ( const char *s ) {
 
 	char a = tolower(s[0]);
 	char b = tolower(s[1]);
@@ -469,7 +474,7 @@ int32_t getWeekday ( char *s ) {
 	return 0;
 }
 
-int32_t getMonth ( char *s ) {
+int32_t getMonth ( const char *s ) {
 
 	char a = tolower(s[0]);
 	char b = tolower(s[1]);
@@ -497,7 +502,7 @@ int32_t getMonth ( char *s ) {
 }
 
 // . s = "xx:xx:xx"
-void getTime ( char *s , int *sec , int *min , int *hour ) {
+void getTime ( const char *s , int *sec , int *min , int *hour ) {
 	*hour = atol ( s );	
 	while ( isdigit ( *s ) ) s++;  if ( *s == ':' ) s++;
 	*min  = atol ( s );
@@ -505,7 +510,7 @@ void getTime ( char *s , int *sec , int *min , int *hour ) {
 	*sec  = atol ( s );
 }
 
-int32_t getContentTypeFromStr ( char *s ) {
+int32_t getContentTypeFromStr ( const char *s ) {
 
 	int32_t slen = gbstrlen(s);
 
@@ -653,7 +658,7 @@ void resetHttpMime ( ) {
 	s_mimeTable.reset();
 }
 
-const char *extensionToContentTypeStr2 ( char *ext , int32_t elen ) {
+const char *extensionToContentTypeStr2 ( const char *ext , int32_t elen ) {
 	// assume text/html if no extension provided
 	if ( ! ext || ! ext[0] ) return NULL;
 	if ( elen <= 0 ) return NULL;
@@ -664,7 +669,7 @@ const char *extensionToContentTypeStr2 ( char *ext , int32_t elen ) {
 	return *pp;
 }
 
-const char *HttpMime::getContentTypeFromExtension ( char *ext , int32_t elen) {
+const char *HttpMime::getContentTypeFromExtension ( const char *ext , int32_t elen) {
 	// assume text/html if no extension provided
 	if ( ! ext || ! ext[0] ) return "text/html";
 	if ( elen <= 0 ) return "text/html";
@@ -679,7 +684,7 @@ const char *HttpMime::getContentTypeFromExtension ( char *ext , int32_t elen) {
 
 // . list of types is on: http://www.duke.edu/websrv/file-extensions.html
 // . i copied it to the bottom of this file though
-const char *HttpMime::getContentTypeFromExtension ( char *ext ) {
+const char *HttpMime::getContentTypeFromExtension ( const char *ext ) {
 	// assume text/html if no extension provided
 	if ( ! ext || ! ext[0] ) return "text/html";
 	// get hash for table look up
@@ -690,7 +695,7 @@ const char *HttpMime::getContentTypeFromExtension ( char *ext ) {
 	return *pp;
 }
 
-const char *HttpMime::getContentEncodingFromExtension ( char *ext ) {
+const char *HttpMime::getContentEncodingFromExtension ( const char *ext ) {
 	if ( ! ext ) return NULL;
 	if ( strcasecmp ( ext ,"bz2"  )==0 ) return "x-bzip2";
 	if ( strcasecmp ( ext ,"gz"   )==0 ) return "x-gzip";
@@ -724,9 +729,9 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 			   time_t  lastModified       ,
 			   int32_t    offset             , 
 			   int32_t    bytesToSend        ,
-			   char   *ext                ,
+			   const char   *ext                ,
 			   bool    POSTReply          ,
-			   char   *contentType        ,
+			   const char   *contentType        ,
 			   char   *charset            ,
 			   int32_t    httpStatus         ,
 			   char   *cookie             ) {
@@ -735,7 +740,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 	// . make the content type line
 	// . uses a static buffer
 	if ( ! contentType ) 
-		contentType = (char *)getContentTypeFromExtension ( ext );
+		contentType = getContentTypeFromExtension ( ext );
 
 	// do not cache plug ins
 	if ( contentType && strcmp(contentType,"application/x-xpinstall")==0)

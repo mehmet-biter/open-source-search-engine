@@ -7,21 +7,17 @@
 
 // convert text/html to CT_HTML for instance
 // convert application/json to CT_JSON for instance
-int32_t getContentTypeFromStr ( char *s ) ;
+int32_t getContentTypeFromStr ( const char *s ) ;
 
-const char *extensionToContentTypeStr2 ( char *ext , int32_t elen ) ;
+const char *extensionToContentTypeStr2 ( const char *ext , int32_t elen ) ;
 
 #include <time.h>
 
-void   getTime    ( char *s , int *sec , int *min , int *hour ) ;
-int32_t   getMonth   ( char *s ) ;
-int32_t   getWeekday ( char *s ) ;
-time_t atotime    ( char *s ) ;
-time_t atotime1   ( char *s ) ;
-time_t atotime2   ( char *s ) ;
-time_t atotime3   ( char *s ) ;
-time_t atotime4   ( char *s ) ;
-time_t atotime5   ( char *s ) ;
+void   getTime    ( const char *s , int *sec , int *min , int *hour ) ;
+int32_t   getMonth   ( const char *s ) ;
+int32_t   getWeekday ( const char *s ) ;
+time_t atotime    ( const char *s ) ;
+time_t atotime1   ( const char *s ) ;
 
 // the various content types
 #define CT_UNKNOWN 0
@@ -54,7 +50,7 @@ time_t atotime5   ( char *s ) ;
 #define ET_DEFLATE 3
 
 
-extern char *g_contentTypeStrings[];
+extern char * g_contentTypeStrings[];
 
 #include <time.h>   // time_t mktime()
 #include "Url.h"
@@ -111,9 +107,9 @@ class HttpMime {
 			  time_t  lastModified     = 0   ,
 			  int32_t    offset           = 0   , 
 			  int32_t    bytesToSend      =-1   ,
-			  char   *ext              = NULL,
+			  const char   *ext              = NULL,
 			  bool    POSTReply        = false,
-			  char   *contentType      = NULL ,
+			  const char   *contentType      = NULL ,
 			  char   *charset          = NULL ,
 			  int32_t    httpStatus       = -1   ,
 			  char   *cookie           = NULL );
@@ -145,11 +141,11 @@ class HttpMime {
 	int32_t   getContentTypePrivate ( char *s ) ;
 
 	// convert a file extension like "gif" to "images/gif"
-	const char *getContentTypeFromExtension ( char *ext ) ;
-	const char *getContentTypeFromExtension ( char *ext , int32_t elen ) ;
+	const char *getContentTypeFromExtension ( const char *ext ) ;
+	const char *getContentTypeFromExtension ( const char *ext , int32_t elen ) ;
 
 	// used for bz2, gz files
-	const char *getContentEncodingFromExtension ( char *ext ) ;
+	const char *getContentEncodingFromExtension ( const char *ext ) ;
 
 
 	// these are set by calling set() above
