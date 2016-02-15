@@ -250,9 +250,12 @@ void XmlDoc::reset ( ) {
 	// . are not allowed to exit if waiting for msg4 to complete
 	// . yes we are, it should be saved as addsinprogress.dat
 	if ( m_msg4Waiting ) {
-		log("doc: resetting xmldoc with outstanding msg4. should "
-		    "me saved in addsinprogress.dat. docid=%"UINT64"",m_docId);
-		//char *xx=NULL;*xx=0; }
+		if(m_docIdValid)
+			log("doc: resetting xmldoc with outstanding msg4. should "
+			    "be saved in addsinprogress.dat. docid=%"UINT64"",m_docId);
+		else
+			log("doc: resetting xmldoc with outstanding msg4. should "
+			    "be saved in addsinprogress.dat.");
 	}
 
 	m_ei = 0;
