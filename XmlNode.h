@@ -285,9 +285,16 @@ inline bool isTagStart ( char *s ) {
 
 	// next char can be an alnum, !-- or / then alnum
 
-	/// @todo ALC are we sure a number is a valid tag start?
-	/// regex: "^<[A-Za-z0-9]"
-	if ( is_alnum_a( s[1] ) ) {
+	// Extensible Markup Language (XML) 1.0 (Fifth Edition)
+	// https://www.w3.org/TR/REC-xml/#NT-Name
+	// NameStartChar ::= ":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6] | [#xD8-#xF6] | [#xF8-#x2FF] |
+	//                   [#x370-#x37D] | [#x37F-#x1FFF] | [#x200C-#x200D] | [#x2070-#x218F] |
+	//                   [#x2C00-#x2FEF] | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD] |
+	//                   [#x10000-#xEFFFF]
+
+	/// @todo ALC cater for other start characters
+	/// regex: "^<[A-Za-z]"
+	if ( is_alpha_a( s[1] ) ) {
 		return true;
 	}
 

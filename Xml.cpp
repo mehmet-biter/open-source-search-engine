@@ -340,13 +340,9 @@ bool Xml::set( char *s, int32_t slen, int32_t version, int32_t niceness, char co
 	// . now fill our nodes array
 	// . loop over the xml
 	// . i is byte-index in buffer
-	int32_t oldi;
 	for ( i = 0 ; i < m_xmlLen && m_numNodes < m_maxNumNodes ; ) {
 		// breathe
 		QUICKPOLL(niceness);
-
-		// remember oldi
-		oldi = i;
 
 		// convenience ptr
 		XmlNode *xi = &m_nodes[m_numNodes];
@@ -992,7 +988,21 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 					continue;
 				}
 
-				if ( ( !wp.set( s, len, true) ) ) {
+				Xml xml;
+				{
+					/// @todo ALC workaround until we fix xml to use len instead of '\0'
+					char saved = s[len];
+					s[len] = '\0';
+
+					if ( !xml.set( s, len, m_version, 0, CT_HTML ) ) {
+						s[len] = saved;
+						return false;
+					}
+
+					s[len] = saved;
+				}
+
+				if ( ( !wp.set(&xml, true) ) ) {
 					// unable to allocate buffer
 					return false;
 				}

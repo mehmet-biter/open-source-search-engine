@@ -88,7 +88,6 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 		for ( ; ( pos + 3 ) < endPos; ++pos ) {
 			if (*pos == '&') {
 				if (*(pos + 3) == ';') {
-					// &gt;
 					if (*(pos + 2) == 't') {
 						char c = *(pos + 1);
 						if ( c == 'g' || c == 'l' ) {

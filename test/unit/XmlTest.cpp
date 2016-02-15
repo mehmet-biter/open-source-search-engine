@@ -63,3 +63,47 @@ TEST( XmlTest, MetaDescription) {
 		}
 	}
 }
+
+TEST( XmlTest, MetaDescriptionStripTags) {
+	char* input_strs[] =  {
+	    "my title<br> my <b>very important</b> text",
+	    "Lesser than (<) and greater than (>).",
+	    "We shouldn't strip <3 out",
+	    "123 < 1234; 1234 > 123"
+	};
+
+	char* expected_outputs[] = {
+	    "my title. my very important text",
+	    "Lesser than (<) and greater than (>).",
+	    "We shouldn't strip <3 out",
+	    "123 < 1234; 1234 > 123"
+	};
+
+	char* format_str = "<meta name=\"description\" content=\"%s\">";
+
+	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
+
+	ASSERT_EQ(sizeof(input_strs)/sizeof(input_strs[0]), sizeof(expected_outputs)/sizeof(expected_outputs[0]));
+
+	for ( size_t i = 0; i < len; i++ ) {
+		char *input_str = input_strs[i];
+		char *output_str = expected_outputs[i];
+
+		char desc[MAX_BUF_SIZE];
+		std::sprintf(desc, format_str, input_str, input_str);
+
+		char input[MAX_BUF_SIZE];
+		std::sprintf(input, HTML_FORMAT, desc);
+
+		Xml xml;
+		ASSERT_TRUE(xml.set(input, strlen(input), 0, 0, CT_HTML));
+
+		char buf[MAX_BUF_SIZE];
+		int32_t bufLen = MAX_BUF_SIZE;
+		int32_t contentLen = 0;
+
+		ASSERT_TRUE(xml.getTagContent("name", "description", buf, bufLen, 0, bufLen, &contentLen, false, TAG_META));
+		EXPECT_EQ(strlen(output_str), contentLen);
+		EXPECT_STREQ(output_str, buf);
+	}
+}
