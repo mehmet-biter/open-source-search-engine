@@ -22347,7 +22347,6 @@ void XmlDoc::set20 ( Msg20Request *req ) {
 		setFirstUrl ( m_req->ptr_ubuf , false );
 }
 
-#define MAX_LINK_TEXT_LEN 512
 
 void getMsg20ReplyWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
