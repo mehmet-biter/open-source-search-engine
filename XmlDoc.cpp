@@ -23219,7 +23219,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		// save the size into the reply, include the \0
 		reply->size_linkText = blen + 1;
 		// sanity check
-		if ( blen + 2 > sizeof(m_linkTextBuf) ) { char *xx=NULL;*xx=0; }
+		if ( (size_t)blen + 2 > sizeof(m_linkTextBuf) ) { char *xx=NULL;*xx=0; }
 		// sanity check. null termination required.
 		if ( m_linkTextBuf[blen] ) { char *xx=NULL;*xx=0; }
 	}
@@ -23231,7 +23231,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	reply->size_linkUrl = links->getLinkLen(linkNum)+1;
 
 	// save the rss item in our state so we can point to it, include \0
-	if ( rssItemLen > sizeof(m_rssItemBuf)-2)
+	if ( (size_t)rssItemLen > sizeof(m_rssItemBuf)-2)
 		rssItemLen = sizeof(m_rssItemBuf)-2;
 	if ( rssItemLen > 0) {
 		gbmemcpy ( m_rssItemBuf, rssItem , rssItemLen );
