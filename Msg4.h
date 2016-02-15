@@ -13,7 +13,7 @@ bool hasAddsInQueue     ( ) ;
 
 //#include "RdbList.h"
 
-bool addMetaList ( char *p , class UdpSlot *slot = NULL ) ;
+bool addMetaList ( const char *p , class UdpSlot *slot = NULL ) ;
 
 bool isInMsg4LinkedList ( class Msg4 *msg4 ) ;
 
@@ -25,7 +25,7 @@ class Msg4 {
 	// meta list format =
 	// (rdbId | 0x08) then rdb record [if nosplit]
 	// (rdbId | 0x00) then rdb record [if split  ]
-	bool addMetaList ( char *metaList                 ,
+	bool addMetaList ( const char *metaList                 ,
 			   int32_t  metaListSize             ,
 			   char *coll                     ,
 			   void *state                    ,
@@ -44,7 +44,7 @@ class Msg4 {
 
 	// this one is faster...
 	// returns false if blocked
-	bool addMetaList ( char      *metaList                 ,
+	bool addMetaList ( const char      *metaList                 ,
 			   int32_t       metaListSize             ,
 			   collnum_t  collnum                  ,
 			   void      *state                    ,
@@ -80,9 +80,9 @@ class Msg4 {
 
 	int32_t m_shardOverride;
 
-	char *m_metaList     ;
+	const char *m_metaList     ;
 	int32_t  m_metaListSize ;
-	char *m_currentPtr   ; // into m_metaList
+	const char *m_currentPtr   ; // into m_metaList
 
 	// the linked list for waiting in line
 	class Msg4 *m_next;

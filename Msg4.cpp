@@ -75,7 +75,7 @@ static bool storeRec   ( collnum_t      collnum ,
 			 char           rdbId   ,
 			 uint32_t  gid     ,
 			 int32_t           hostId  ,
-			 char          *rec     ,
+			 const char          *rec     ,
 			 int32_t           recSize ,
 			 int32_t           niceness ) ;
 
@@ -317,7 +317,7 @@ bool hasAddsInQueue   ( ) {
 
 
 // returns false if blocked
-bool Msg4::addMetaList ( char  *metaList                , 
+bool Msg4::addMetaList ( const char  *metaList                , 
 			 int32_t   metaListSize            ,
 			 char  *coll                    ,
 			 void  *state                   ,
@@ -353,7 +353,7 @@ bool Msg4::addMetaList ( SafeBuf *sb ,
 }
 
 
-bool Msg4::addMetaList ( char      *metaList                 , 
+bool Msg4::addMetaList ( const char      *metaList                 , 
 			 int32_t       metaListSize             ,
 			 collnum_t  collnum                  ,
 			 void      *state                    ,
@@ -462,12 +462,12 @@ bool Msg4::addMetaList2 ( ) {
 	}
 
 
-	char *p = m_currentPtr;
+	const char *p = m_currentPtr;
 
 	// get the collnum
 	//collnum_t collnum = g_collectiondb.getCollnum ( m_coll );
 
-	char *pend = m_metaList + m_metaListSize;
+	const char *pend = m_metaList + m_metaListSize;
 
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(p,pend-p);
@@ -491,7 +491,7 @@ bool Msg4::addMetaList2 ( ) {
 
 
 		// get the key of the current record
-		char *key = p; 
+		const char *key = p; 
 		// negative key?
 		bool del ;
 		if ( *p & 0x01 ) del = false;
@@ -662,7 +662,7 @@ bool storeRec ( collnum_t      collnum ,
 		char           rdbId   ,
 		uint32_t  shardNum, //gid
 		int32_t           hostId  ,
-		char          *rec     ,
+		const char          *rec     ,
 		int32_t           recSize ,
 		int32_t           niceness ) {
 #ifdef _VALGRIND_
@@ -1184,7 +1184,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 // . Syncdb.cpp will call this after it has received checkoff keys from
 //   all the alive hosts for this zid/sid
 // . returns false and sets g_errno on error, returns true otherwise
-bool addMetaList ( char *p , UdpSlot *slot ) {
+bool addMetaList ( const char *p , UdpSlot *slot ) {
 
 	if ( g_conf.m_logDebugSpider )
 		logf(LOG_DEBUG,"syncdb: calling addMetalist zid=%"UINT64"",
@@ -1193,7 +1193,7 @@ bool addMetaList ( char *p , UdpSlot *slot ) {
 	// get total buf used
 	int32_t used = *(int32_t *)p;
 	// the end
-	char *pend = p + used;
+	const char *pend = p + used;
 	// skip the used amount
 	p += 4;
 	// skip zid
@@ -1303,9 +1303,9 @@ bool addMetaList ( char *p , UdpSlot *slot ) {
 		return true;
 	}
 	// set the list
-	list.set ( p                       ,
+	list.set ( (char*)p                , //todo: dodgy cast. RdbList should be fixed
 		   recSize                 ,
-		   p                       ,
+		   (char*)p                , //todo: dodgy cast. RdbList should be fixed
 		   recSize                 ,
 		   rdb->getFixedDataSize() ,
 		   false                   ,  // ownData?
