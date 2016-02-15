@@ -22348,7 +22348,6 @@ void XmlDoc::set20 ( Msg20Request *req ) {
 }
 
 #define MAX_LINK_TEXT_LEN 512
-#define MAX_RSSITEM_SIZE  30000
 
 void getMsg20ReplyWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
@@ -23233,17 +23232,17 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	reply->size_linkUrl = links->getLinkLen(linkNum)+1;
 
 	// save the rss item in our state so we can point to it, include \0
-	if ( rssItemLen > MAX_RSSITEM_SIZE-2 ) rssItemLen = MAX_RSSITEM_SIZE-2;
-	char rssItemBuf[MAX_RSSITEM_SIZE];
+	if ( rssItemLen > sizeof(m_rssItemBuf)-2)
+		rssItemLen = sizeof(m_rssItemBuf)-2;
 	if ( rssItemLen > 0) {
-		gbmemcpy ( rssItemBuf, rssItem , rssItemLen );
+		gbmemcpy ( m_rssItemBuf, rssItem , rssItemLen );
 		// NULL terminate it
-		rssItemBuf[rssItemLen] = 0;
+		m_rssItemBuf[rssItemLen] = 0;
 	}
 
 	// point to it, include the \0
 	if ( rssItemLen > 0 ) {
-		reply->ptr_rssItem  = rssItemBuf;
+		reply->ptr_rssItem  = m_rssItemBuf;
 		reply->size_rssItem = rssItemLen + 1;
 	}
 

@@ -83,6 +83,7 @@
 
 #define MAX_LINK_TEXT_LEN     512
 #define MAX_SURROUNDING_TEXT_WIDTH 600
+#define MAX_RSSITEM_SIZE  30000
 
 bool setLangVec ( class Words *words , 
 		  class SafeBuf *langBuf , 
@@ -1546,6 +1547,7 @@ public:
 	Msg20Request *m_req;
 	char  m_linkTextBuf[MAX_LINK_TEXT_LEN];
 	char m_surroundingTextBuf[MAX_SURROUNDING_TEXT_WIDTH];
+	char m_rssItemBuf[MAX_RSSITEM_SIZE];
 	//char *m_gsbuf;
 	SafeBuf m_gsbuf;
 	//int32_t  m_gsbufSize;
