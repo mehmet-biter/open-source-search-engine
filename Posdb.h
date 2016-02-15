@@ -258,9 +258,9 @@ class Posdb {
 	};
 
 	// we got two compression bits!
-	unsigned char getKeySize ( void *key ) {
-		if ( (((char *)key)[0])&0x04 ) return 6;
-		if ( (((char *)key)[0])&0x02 ) return 12;
+	unsigned char getKeySize ( const void *key ) {
+		if ( (((const char *)key)[0])&0x04 ) return 6;
+		if ( (((const char *)key)[0])&0x02 ) return 12;
 		return 18;
 	};
 
@@ -278,15 +278,15 @@ class Posdb {
 	}
 		
 
-	int64_t getTermId ( void *key ) {
-		return ((key144_t *)key)->n2 >> 16;
+	int64_t getTermId ( const void *key ) {
+		return ((const key144_t *)key)->n2 >> 16;
 	};
 
-	int64_t getDocId ( void *key ) {
+	int64_t getDocId ( const void *key ) {
 		uint64_t d = 0LL;
-		d = ((unsigned char *)key)[11];
+		d = ((const unsigned char *)key)[11];
 		d <<= 32;
-		d |= *(uint32_t *)(((unsigned char *)key)+7);
+		d |= *(const uint32_t *)(((unsigned char *)key)+7);
 		d >>= 2;
 		return d;
 		//int64_t d = ((key144_t *)key)->n2 & 0xffff;
@@ -295,25 +295,25 @@ class Posdb {
 		//return d;
 	};
 
-	unsigned char getSiteRank ( void *key ) {
-		return (((key144_t *)key)->n1 >> 37) & MAXSITERANK;
+	unsigned char getSiteRank ( const void *key ) {
+		return (((const key144_t *)key)->n1 >> 37) & MAXSITERANK;
 	};
 
-	unsigned char getLangId ( void *key ) {
-		if ( ((char *)key)[0] & 0x08 )
-			return ((((key144_t *)key)->n1 >> 32) & 0x1f) | 0x20;
+	unsigned char getLangId ( const void *key ) {
+		if ( ((const char *)key)[0] & 0x08 )
+			return ((((const key144_t *)key)->n1 >> 32) & 0x1f) | 0x20;
 		else
-			return ((((key144_t *)key)->n1 >> 32) & 0x1f) ;
+			return ((((const key144_t *)key)->n1 >> 32) & 0x1f) ;
 	};
 
-	unsigned char getHashGroup ( void *key ) {
+	unsigned char getHashGroup ( const void *key ) {
 		//return (((key144_t *)key)->n1 >> 10) & MAXHASHGROUP;
-		return ((((unsigned char *)key)[3]) >>2) & MAXHASHGROUP;
+		return ((((const unsigned char *)key)[3]) >>2) & MAXHASHGROUP;
 	};
 
-	int32_t getWordPos ( void *key ) {
+	int32_t getWordPos ( const void *key ) {
 		//return (((key144_t *)key)->n1 >> 14) & MAXWORDPOS;
-		return (*((uint32_t *)((unsigned char *)key+2))) >> (8+6);
+		return (*((const uint32_t *)((unsigned char *)key+2))) >> (8+6);
 	};
 
 	inline void setWordPos ( char *key , uint32_t wpos ) {
@@ -328,26 +328,26 @@ class Posdb {
 		key[5] = ((char *)&wpos)[1];
 	};
 
-	unsigned char getWordSpamRank ( void *key ) {
-		//return (((key144_t *)key)->n1 >> 6) & MAXWORDSPAMRANK;
-		return ((((uint16_t *)key)[1]) >>6) & MAXWORDSPAMRANK;
+	unsigned char getWordSpamRank ( const void *key ) {
+		//return (((const key144_t *)key)->n1 >> 6) & MAXWORDSPAMRANK;
+		return ((((const uint16_t *)key)[1]) >>6) & MAXWORDSPAMRANK;
 	};
 
-	unsigned char getDiversityRank ( void *key ) {
-		//return (((key144_t *)key)->n1 >> 2) & MAXDIVERSITYRANK;
-		return ((((unsigned char *)key)[2]) >>2) & MAXDIVERSITYRANK;
+	unsigned char getDiversityRank ( const void *key ) {
+		//return (((const key144_t *)key)->n1 >> 2) & MAXDIVERSITYRANK;
+		return ((((const unsigned char *)key)[2]) >>2) & MAXDIVERSITYRANK;
 	};
 
-	unsigned char getIsSynonym ( void *key ) {
-		return (((key144_t *)key)->n1 ) & 0x03;
+	unsigned char getIsSynonym ( const void *key ) {
+		return (((const key144_t *)key)->n1 ) & 0x03;
 	};
 
-	unsigned char getIsHalfStopWikiBigram ( void *key ) {
-		return ((char *)key)[2] & 0x01;
+	unsigned char getIsHalfStopWikiBigram ( const void *key ) {
+		return ((const char *)key)[2] & 0x01;
 	};
 
-	unsigned char getDensityRank ( void *key ) {
-		return ((*(uint16_t *)key) >> 11) & MAXDENSITYRANK;
+	unsigned char getDensityRank ( const void *key ) {
+		return ((*(const uint16_t *)key) >> 11) & MAXDENSITYRANK;
 	};
 
 	inline void setDensityRank ( char *key , unsigned char dr ) {
@@ -359,20 +359,20 @@ class Posdb {
 		key[1] |= dr;
 	};
 
-	char isShardedByTermId ( void *key ){return ((char *)key)[1] & 0x01; };
+	char isShardedByTermId ( const void *key ){return ((const char *)key)[1] & 0x01; };
 
 	void setShardedByTermIdBit ( void *key ) { 
 		char *k = (char *)key;
 		k[1] |= 0x01;
 	};
 
-	unsigned char getMultiplier ( void *key ) {
-		return ((*(uint16_t *)key) >> 4) & MAXMULTIPLIER; };
+	unsigned char getMultiplier ( const void *key ) {
+		return ((*(const uint16_t *)key) >> 4) & MAXMULTIPLIER; };
 
 	// . HACK: for sectionhash:xxxxx posdb keys
 	// . we use the w,G,s,v and F bits
-	uint32_t getFacetVal32 ( void *key ) {
-		return *(uint32_t *)(((char *)key)+2); };
+	uint32_t getFacetVal32 ( const void *key ) {
+		return *(const uint32_t *)(((char *)key)+2); };
 	void setFacetVal32 ( void *key , int32_t facetVal32 ) {
 		*(uint32_t *)(((char *)key)+2) = facetVal32; };
 
