@@ -714,11 +714,11 @@ class Hostdb {
 	//uint32_t getGroupId (char rdbId, void *key, bool split = true);
 	//uint32_t getGroupIdFromDocId ( int64_t d ) ;
 
-	uint32_t getShardNum (char rdbId, void *key );
+	uint32_t getShardNum (char rdbId, const void *key );
 	uint32_t getShardNumFromDocId ( int64_t d ) ;
 
 	// assume to be for posdb here
-	uint32_t getShardNumByTermId ( void *key );
+	uint32_t getShardNumByTermId ( const void *key );
 
 	uint32_t m_map[MAX_KSLOTS];
 };
@@ -730,7 +730,7 @@ extern uint32_t  g_listIps   [ MAX_HOSTS * 4 ];
 extern uint16_t  g_listPorts [ MAX_HOSTS * 4 ];
 extern int32_t      g_listNumTotal;
 
-inline uint32_t getShardNum ( char rdbId, void *key ) {
+inline uint32_t getShardNum ( char rdbId, const void *key ) {
 	return g_hostdb.getShardNum ( rdbId , key );
 };
 

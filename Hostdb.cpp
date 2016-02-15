@@ -2424,7 +2424,7 @@ int32_t Hostdb::getBestHosts2IP ( Host  *h ) {
 }
 
 // assume to be from posdb here
-uint32_t Hostdb::getShardNumByTermId ( void *k ) {
+uint32_t Hostdb::getShardNumByTermId ( const void *k ) {
 	return m_map [(*(uint16_t *)((char *)k + 16))>>3];
 }
 
@@ -2442,7 +2442,7 @@ int32_t getShardNumFromTermId ( int64_t termId ) {
 // . now we can use 3 stripes of 96 hosts each so spiders will almost never
 //   go down
 //uint32_t Hostdb::getGroupId ( char rdbId,void *k,bool split ) {
-uint32_t Hostdb::getShardNum ( char rdbId,void *k ) { // ,bool split ) {
+uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) { // ,bool split ) {
 
 	if ( (rdbId == RDB_POSDB || rdbId == RDB2_POSDB2) &&
 	     // split by termid and not docid?

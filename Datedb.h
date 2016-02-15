@@ -89,11 +89,11 @@ class Datedb {
 		return makeKey ( termId , date2, 0   , DOCID_MASK , false ); };
 
 	// works on 16 byte full key or 10 byte half key
-	int64_t getDocId ( void *key ) {
-		return ((*(uint64_t *)(key)) >> 2) & DOCID_MASK; };
+	int64_t getDocId ( const void *key ) {
+		return ((*(const uint64_t *)(key)) >> 2) & DOCID_MASK; };
 
-	unsigned char getScore ( void *key ) {
-		return ~(((unsigned char *)key)[5]); };
+	unsigned char getScore ( const void *key ) {
+		return ~(((const unsigned char *)key)[5]); };
 
 	// use the very top int32_t only
 	/*
