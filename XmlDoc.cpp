@@ -23219,7 +23219,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		// save the size into the reply, include the \0
 		reply->size_linkText = blen + 1;
 		// sanity check
-		if ( blen + 2 > MAX_LINK_TEXT_LEN ) { char *xx=NULL;*xx=0; }
+		if ( blen + 2 > sizeof(m_linkTextBuf) ) { char *xx=NULL;*xx=0; }
 		// sanity check. null termination required.
 		if ( m_linkTextBuf[blen] ) { char *xx=NULL;*xx=0; }
 	}
