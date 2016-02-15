@@ -3828,12 +3828,16 @@ Query *g_q;
 //   inlink text it could never beat the 10th score.
 void PosdbTable::intersectLists10_r ( ) {
 
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__,__func__, __LINE__);
+		
 	m_finalScore = 0.0;
 
 	//log("seo: intersecting query %s",m_q->m_orig);
 
 	bool seoHack = false;
 	if ( ! m_msg2 ) seoHack = true;
+
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: seoHack: %s, numTerms: %"INT32"", __FILE__,__func__, __LINE__, seoHack?"true":"false", m_q->m_numTerms);
 
 	// if we are just a sitehash:xxxxx list and m_getSectionStats is
 	// true then assume the list is one of hacked posdb keys where
@@ -4089,6 +4093,9 @@ void PosdbTable::intersectLists10_r ( ) {
 		// MANGLE the list
 		list->m_listSize -= 6;
 		list->m_list      = p;
+		
+		if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: termList #%"INT32" totalSize=%"INT64"", __FILE__,__func__, __LINE__,k,total);
+
 		// print total list sizes
 		if ( ! m_debug ) continue;
 		log("query: termlist #%"INT32" totalSize=%"INT64"",k,total);
@@ -4119,12 +4126,18 @@ void PosdbTable::intersectLists10_r ( ) {
 	// setQueryTermInfos() should have set how many we have
 	if ( m_numQueryTermInfos == 0 ) {
 		log("query: NO REQUIRED TERMS IN QUERY2!");
+		
+		if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: END, m_numQueryTermInfos = 0", __FILE__,__func__, __LINE__);
 		return;
 	}
 
 	// . if smallest required list is empty, 0 results
 	// . also set in setQueryTermInfo
-	if ( m_minListSize == 0 && ! m_q->m_isBoolean ) return;
+	if ( m_minListSize == 0 && ! m_q->m_isBoolean ) 
+	{
+		if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: END, m_minListSize = 0 and not boolean", __FILE__,__func__, __LINE__);
+		return;
+	}
 
 	/*
 	for ( int32_t k = 0 ; seoHack && k < m_q->m_numTerms ; k++ ) {
@@ -4169,6 +4182,9 @@ void PosdbTable::intersectLists10_r ( ) {
 		break;
 	}
 	
+	
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: m_allInSameWikiPhrase: %s", __FILE__,__func__, __LINE__, m_allInSameWikiPhrase?"true":"false");
+	
 	// if doing a special hack for seo.cpp and just computing the score
 	// for one docid...
 	// we need this i guess because we have to do the minimerges
@@ -4185,6 +4201,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	// we use Query::getBitScore(qvec_t ebits) to evaluate a docid's
 	// query term explicit term bit vector.
 	if ( m_q->m_isBoolean ) {
+		if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: makeDocIdVoteBufForBoolQuery_r", __FILE__,__func__, __LINE__);
 		// keeping the docids sorted is the challenge here...
 		makeDocIdVoteBufForBoolQuery_r();
 		goto skip3;
@@ -4197,6 +4214,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	//   setQueryTermInfos()
 	// . if all these sublist termlists were 50MB i'd day 10-25ms to
 	//   add their docid votes.
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: addDocIdVotes", __FILE__,__func__, __LINE__);
 	addDocIdVotes ( &qip[m_minListi] , listGroupNum );
 
 	/*
@@ -4237,6 +4255,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// add it
 		addDocIdVotes ( qti , listGroupNum );
 	}
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Added DocIdVotes", __FILE__,__func__, __LINE__);
 
 
 	// remove the negative query term's docids from our docid vote buf
@@ -4250,6 +4269,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// add it
 		rmDocIdVotes ( qti );
 	}
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Removed DocIdVotes for negative query terms", __FILE__,__func__, __LINE__);
 
 	/*
 	// test docid buf
@@ -4305,6 +4325,9 @@ void PosdbTable::intersectLists10_r ( ) {
 		shrinkSubLists ( qti );
 	}
 
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Shrunk SubLists", __FILE__,__func__, __LINE__);
+
+
 	if ( m_debug ) {
 		now = gettimeofdayInMilliseconds();
 		took = now - lastTime;
@@ -4344,12 +4367,12 @@ void PosdbTable::intersectLists10_r ( ) {
 		// get it
 		QueryTermInfo *qti = &qip[i];
 		// set it
-		wikiPhraseIds   [i] = qti->m_wikiPhraseId;
-		quotedStartIds [i] = qti->m_quotedStartId;
+		wikiPhraseIds [i] = qti->m_wikiPhraseId;
+		quotedStartIds[i] = qti->m_quotedStartId;
 		// query term position
-		qpos         [i] = qti->m_qpos;
-		qtermNums    [i] = qti->m_qtermNum;
-		freqWeights  [i] = qti->m_termFreqWeight;
+		qpos          [i] = qti->m_qpos;
+		qtermNums     [i] = qti->m_qtermNum;
+		freqWeights   [i] = qti->m_termFreqWeight;
 	}
 
 
@@ -4504,7 +4527,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		goto seoHackSkip2;
 		
 
-
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Before secondPassLoop", __FILE__,__func__, __LINE__);
  secondPassLoop:
 
 	// reset docid to start!
@@ -4551,6 +4574,8 @@ void PosdbTable::intersectLists10_r ( ) {
 	// . second pass? for printing out transparency info
 	// . skip if not a winner
 	if ( secondPass ) {
+		if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: This is the second pass", __FILE__,__func__, __LINE__);		
+		
 		// did we get enough score info?
 		if ( numProcessed >= m_r->m_docsToGet ) goto done;
 		// loop back up here if the docid is from a previous range
@@ -4715,6 +4740,8 @@ void PosdbTable::intersectLists10_r ( ) {
 	// for 'time enough for love'. it might save time!
 
 	if ( ! secondPass ) {
+		if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Compute 'upper bound' for each query term", __FILE__,__func__, __LINE__);
+			
 		// . if there's no way we can break into the winner's circle, give up!
 		// . this computes an upper bound for each query term
 		for ( int32_t i = 0 ; i < nnn ; i++ ) { // m_numQueryTermInfos ; i++ ) {
@@ -4766,6 +4793,8 @@ void PosdbTable::intersectLists10_r ( ) {
 	// so quickly record the word positions of each query term into
 	// a ring buffer of 4096 slots where each slot contains the
 	// query term # plus 1.
+	
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Ring buffer generation", __FILE__,__func__, __LINE__);
 	qtx = &qip[m_minListi];
 	// populate ring buf just for this query term
 	for ( int32_t k = 0 ; k < qtx->m_numNewSubLists ; k++ ) {
@@ -4799,6 +4828,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	// now get query term closest to query term # m_minListi which
 	// is the query term # with the shortest termlist
 	// get closest term to m_minListi and the distance
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Ring buffer generation 2", __FILE__,__func__, __LINE__);
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// skip the man
 		if ( i == m_minListi ) continue;
@@ -4958,6 +4988,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	// . and merge all the synonym lists for that term together as well.
 	//   so if the term is 'run' we merge it with the lists for
 	//   'running' 'ran' etc.
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Merge sublists", __FILE__,__func__, __LINE__);
 	for ( int32_t j = 0 ; j < m_numQueryTermInfos ; j++ ) {
 		// get the query term info
 		QueryTermInfo *qti = &qip[j];
@@ -5223,6 +5254,8 @@ void PosdbTable::intersectLists10_r ( ) {
 	//   algorithm can use them from there to do sub-outs
 	//
 
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Non-body term pair scoring loop", __FILE__,__func__, __LINE__);
+		
 	// scan over each query term (its synonyms are part of the
 	// QueryTermInfo)
 	for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
@@ -5306,6 +5339,8 @@ void PosdbTable::intersectLists10_r ( ) {
 	}
 	}
 
+
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Single term scoring loop", __FILE__,__func__, __LINE__);
 	//
 	//
 	// SINGLE TERM SCORE LOOP
@@ -5382,7 +5417,8 @@ void PosdbTable::intersectLists10_r ( ) {
 			break;
 		}
 	}
-	
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Got siteRank and docLang", __FILE__,__func__, __LINE__);
+		
 	//
 	// parms for sliding window algorithm
 	//
@@ -5399,6 +5435,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	//
 	//
 
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Sliding Window algorithm begins", __FILE__,__func__, __LINE__);
 	m_windowTermPtrs = winnerStack;
 
 	// . now scan the terms that are in the body in a sliding window
@@ -5551,6 +5588,8 @@ void PosdbTable::intersectLists10_r ( ) {
 	//
 	// (similar to NON-BODY TERM PAIR SCORING LOOP above)
 	//
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Zak algorithm begins", __FILE__,__func__, __LINE__);
+
 	for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
 
 	// skip if to the left of a pipe operator
@@ -5606,6 +5645,7 @@ void PosdbTable::intersectLists10_r ( ) {
 
 	m_preFinalScore = minPairScore;
 
+	
 	minScore = 999999999.0;
 			
 	// get a min score from all the term pairs
@@ -5616,6 +5656,9 @@ void PosdbTable::intersectLists10_r ( ) {
 	if ( minSingleScore < minScore )
 		minScore = minSingleScore;
 
+
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: m_preFinalScore=%f, minScore=%f", __FILE__,__func__, __LINE__, m_preFinalScore, minScore);
+	
 	//score = -1.0;
 	//log("score: minPairScore=%f",minPairScore);
 	// fix "Recently I posted a question about how"
@@ -6097,6 +6140,8 @@ void PosdbTable::intersectLists10_r ( ) {
 	//p = pend;
 	// if not of end list loop back up
 	//if ( p < listEnd ) goto bigloop;
+	
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: ^ Now repeat for next docID", __FILE__,__func__, __LINE__);
 	goto docIdLoop;
 
  done:
@@ -6131,6 +6176,8 @@ void PosdbTable::intersectLists10_r ( ) {
 			m_docIdTable.addKey(&t->m_docId);
 		}
 		*/
+		
+		if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Do second loop now", __FILE__,__func__, __LINE__);
 		goto secondPassLoop;
 	}
 
@@ -6167,7 +6214,10 @@ void PosdbTable::intersectLists10_r ( ) {
 	m_addListsTime = now - t1;
 	m_t1 = t1;
 	m_t2 = now;
+	
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Done. Took %"INT64" msec", __FILE__,__func__, __LINE__, m_addListsTime);
 }
+
 
 
 // . "bestDist" is closest distance to query term # m_minListi

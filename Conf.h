@@ -574,6 +574,7 @@ class Conf {
 	bool  m_logTraceRdbBase;
 	bool  m_logTraceRdbMap;
 	bool  m_logTraceBigFile;
+	bool  m_logTracePosdb;
 	bool  m_logTraceRepairs;
 	bool  m_logTraceSpider;
 	bool  m_logTraceXmlDoc;
