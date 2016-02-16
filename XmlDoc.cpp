@@ -8640,7 +8640,7 @@ Url **XmlDoc::getRedirUrl() {
 		return &m_redirUrlPtr;
 	}
 	// set it
-	if ( LEN && ! mime.set ( m_httpReply, LEN, getCurrentUrl() ) ) {
+	if ( LEN<0 || ! mime.set ( m_httpReply, LEN, getCurrentUrl() ) ) {
 		// set this on mime error
 		//if ( ! m_indexCode ) m_indexCode = EBADMIME;
 		// bad mime, but i guess valid empty redir url
@@ -16016,6 +16016,13 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	//   use domain hash instead of firstip, and then let msg13
 	//   make queues in the case of hammering an ip, which i think
 	//   it already does...
+#ifdef _VALGRIND_
+	if(m_sreqValid) {
+		VALGRIND_CHECK_MEM_IS_DEFINED(&m_sreq.m_firstIp,sizeof(m_sreq.m_firstIp));
+		VALGRIND_CHECK_MEM_IS_DEFINED(&m_firstIp,sizeof(m_firstIp));
+	}
+#endif
+
 	if ( m_sreqValid && m_sreq.m_firstIp != m_firstIp )
 		sb->safePrintf("fakesreqfirstip=%s ",iptoa(m_sreq.m_firstIp) );
 
