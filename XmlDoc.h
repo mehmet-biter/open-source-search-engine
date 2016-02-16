@@ -523,7 +523,6 @@ public:
 	//};
 	char *getIsWWWDup ( ) ;
 	class LinkInfo *getLinkInfo1 ( ) ;
-	class LinkInfo **getLinkInfo2 ( ) ;
 	char *getSite ( ) ;
 	char *getScheme ( ) ;	
 	

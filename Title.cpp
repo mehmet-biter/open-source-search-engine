@@ -254,13 +254,6 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 
 	LinkInfo *info = xd->getLinkInfo1();
 
-	// a flag to control subloop jumping
-	char didit = false;
-
-	// come back to top of loop after switching "info" to point to
-	// the imported link info from another collection, linkInfo2...
- fooloop:
-
 	//int64_t x = gettimeofdayInMilliseconds();
 
 	// . get every link text
@@ -354,15 +347,6 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 
 	//logf(LOG_DEBUG,"title: took1=%"INT64"",gettimeofdayInMilliseconds()-x);
 	//x = gettimeofdayInMilliseconds();
-
-	// process the imported link info
-	info = *xd->getLinkInfo2();
-
-	// only process it once though, use the flag "didit" to control that
-	if ( ! didit && info ) {
-		didit = true;
-		goto fooloop;
-	}
 
 	// . set the flags array
 	// . indicates what words are in title candidates already, but

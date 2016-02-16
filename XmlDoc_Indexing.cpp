@@ -1968,17 +1968,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 	// . otherwise, we generated it from merging a bunch of LinkInfos
 	//   and storing them in this new TitleRec
 	LinkInfo  *info1    = getLinkInfo1 ();
-	LinkInfo **pinfo2   = getLinkInfo2 ();
-	LinkInfo  *info2    = *pinfo2;
 	LinkInfo  *linkInfo = info1;
-	// pick the one with the most inlinks with valid incoming link text,
-	// otherwise, we end up with major bias when we stop importing
-	// link text from another cluster, because some pages will have
-	// twice as many links as they should!
-	if ( info2 && info2->getNumLinkTexts() > info1->getNumLinkTexts() ) {
-		linkInfo = info2;
-		note = "hashing incoming link text from other cluster";
-	}
 
 	// sanity checks
 	if ( ! m_ipValid             ) { char *xx=NULL;*xx=0; }
@@ -2091,19 +2081,7 @@ bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
 	//   space in the titleRec
 	// . now we only do one or the other, not both
 	LinkInfo  *info1    = getLinkInfo1 ();
-	LinkInfo **pinfo2   = getLinkInfo2 ();
-	LinkInfo  *info2    = *pinfo2;
 	LinkInfo  *linkInfo = info1;
-
-	char *note = " (internal cluster)";
-	// pick the one with the most inlinks with valid incoming link text
-	// otherwise, we end up with major bias when we stop importing
-	// link text from another cluster, because some pages will have
-	// twice as many links as they should!
-	if ( info2 && info2->getNumLinkTexts() > info1->getNumLinkTexts() ) {
-		linkInfo = info2;
-		note = " (external cluster)";
-	}
 
 	// loop over all the Inlinks
 	Inlink *k = NULL;

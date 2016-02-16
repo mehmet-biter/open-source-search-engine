@@ -2967,21 +2967,11 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getLinkInfo1 failed", __FILE__,__func__,__LINE__);
 		return (int32_t *)info1;
 	}
-	
-	// get remote link info
-	LinkInfo  **pinfo2 = getLinkInfo2();
-	if ( ! pinfo2 || pinfo2 == (void *)-1 ) 
-	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getLinkInfo2 failed", __FILE__,__func__,__LINE__);
-		return (int32_t *)pinfo2;
-	}
-	LinkInfo   *info2 = *pinfo2;
 
 	// if robots.txt said no, and if we had no link text, then give up
 	bool disallowed = true;
 	if ( *isAllowed ) disallowed = false;
 	if ( info1 && info1->hasLinkText() ) disallowed = false;
-	if ( info2 && info2->hasLinkText() ) disallowed = false;
 	// if we generated a new sitenuminlinks to store in tagdb, we might
 	// want to add this for that only reason... consider!
 	if ( disallowed ) {
@@ -3010,8 +3000,7 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 	// like .f and .t
 	//
 	bool badExt = cu->hasNonIndexableExtension(TITLEREC_CURRENT_VERSION);	// @todo BR: For now ignore actual TitleDB version. // m_version);
-	if ( badExt && ! info1->hasLinkText() &&
-	      ( ! info2 || ! info2->hasLinkText() ) ) {
+	if ( badExt && ! info1->hasLinkText() ) {
 	 	m_indexCode      = EDOCBADCONTENTTYPE;
 	 	m_indexCodeValid = true;
 	 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, EDOCBADCONTENTTYPE", __FILE__,__func__,__LINE__);
@@ -7902,8 +7891,6 @@ char *XmlDoc::getGigabitQuery ( ) {
 	//if ( ! we || we == (Weights *)-1 ) return (char *)we;
 	LinkInfo   *info1 = getLinkInfo1();
 	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (char *)info1;
-	LinkInfo  **pinfo2 = getLinkInfo2();
-	if ( ! pinfo2 || pinfo2 == (void *)-1 ) return (char *)pinfo2;
 	uint8_t *langId = getLangId();
 	if ( ! langId || langId == (uint8_t *)-1 ) return (char *) langId;
 
@@ -8653,17 +8640,6 @@ Url **XmlDoc::getRedirUrl() {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, error, could not get LinkInfo1", __FILE__,__func__,__LINE__);
 		return (Url **)info1;
 	}
-	
-	// get remote link info
-	LinkInfo  **pinfo2 = getLinkInfo2();
-	// error or blocked
-	if ( ! pinfo2 || pinfo2 == (void *)-1 ) 
-	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, error, could not get LinkInfo2", __FILE__,__func__,__LINE__);
-		return (Url **)pinfo2;
-	}
-	// convenience
-	LinkInfo   *info2 = *pinfo2;
 
 	// breathe
 	QUICKPOLL(m_niceness);
@@ -8762,7 +8738,6 @@ Url **XmlDoc::getRedirUrl() {
 
 	bool keep = false;
 	if ( info1->hasLinkText()          ) keep = true;
-	if ( info2 && info2->hasLinkText() ) keep = true;
 
 	// at this point we do not block anywhere
 	m_redirUrlValid = true;
@@ -11647,23 +11622,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	// return it
 	return ptr_linkInfo1;
 }
-
-
-static void *s_null = NULL;
-
-// . returns NULL and sets g_errno on error
-// . returns -1 if blocked, will re-call m_callback
-LinkInfo **XmlDoc::getLinkInfo2 ( ) {
-
-	// this can now be title hashes for XmlDoc::m_diffbotTitleHashes
-	// but otherwise, we don't use it for link info from another cluster
-	// any more.
-	m_linkInfo2Valid = true;
-	return (LinkInfo **)&s_null;
-}
-
-
-
 
 static void gotSiteWrapper ( void *state ) ;
 
@@ -24511,12 +24469,6 @@ char *XmlDoc::getIsErrorPage ( ) {
 	LinkInfo   *info1  = getLinkInfo1();
 	// error or blocked
 	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (char *)info1;
-	// get remote link info
-	LinkInfo   **pinfo2 = getLinkInfo2();
-	// error or blocked
-	if ( ! pinfo2 || pinfo2 == (void *)-1 ) return (char *)pinfo2;
-	// convenience
-	LinkInfo *info2 = *pinfo2;
 
 	// default
 	LinkInfo  *li = info1;
@@ -24563,7 +24515,6 @@ char *XmlDoc::getIsErrorPage ( ) {
 	len = gbstrlen(errMsg);
 
 	// make sure the error message was not present in the link text
- loop:
 	if ( li && li->getNumGoodInlinks() > 5 ) return &m_isErrorPage;
 	for (Inlink *k=NULL;li && (k=li->getNextInlink(k)); ) {
 		//int32_t nli = li->getNumLinkTexts();
@@ -24583,8 +24534,6 @@ char *XmlDoc::getIsErrorPage ( ) {
 				return &m_isErrorPage;
 		}
 	}
-
-	if ( li ) { li = info2; info2 = NULL; goto loop; }
 
 	m_isErrorPage = true;
 	return &m_isErrorPage;
