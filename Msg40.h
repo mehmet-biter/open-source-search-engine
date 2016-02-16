@@ -109,13 +109,10 @@ class Msg40 {
 			  //void (* callback)(class Msg40 *THIS, void *state));
 			  void             (* callback)(void *state));
 
-	void makeCallback();
 	bool gotCacheReply();
 	// a continuation function of getResults() above
 	bool prepareToGetDocIds ( );
 	bool getDocIds ( bool recall );
-	bool gotExternalReply ( ) ;
-	bool postResultsProcessing();
 
 	bool computeGigabits( class TopicGroup *tg );
 	SafeBuf m_gigabitBuf;
