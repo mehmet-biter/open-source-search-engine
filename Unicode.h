@@ -9,7 +9,7 @@
 #include "iconv.h"
 
 // Initialize unicode word parser
-bool 	ucInit(char *path = NULL, bool verifyFiles = false);
+bool 	ucInit(char *path = NULL);
 
 //////////////////////////////////////////////////////
 // Converters

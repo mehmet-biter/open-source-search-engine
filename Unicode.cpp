@@ -6,15 +6,6 @@
 #include "Titledb.h"
 
 static HashTableX s_convTable;
-// JAB: warning abatement
-//static bool verifyIconvFiles();
-static bool openIconvDescriptors() ;
-// alias iconv_open and close to keep count of usage
-// and prevent leaks..
-// now just cache all iconvs in a hash table
-// static iconv_t gbiconv_open(const char *tocode, const char *fromcode) ;
-// static int gbiconv_close(iconv_t cd) ;
-
 
 iconv_t gbiconv_open( const char *tocode, const char *fromcode) {
 	// get hash for to/from
@@ -107,7 +98,7 @@ void gbiconv_reset(){
 #define CHKSUM_SCRIPTS           1826246000
 #define CHKSUM_KDMAP             1920116453
 
-bool ucInit(char *path, bool verifyFiles){
+bool ucInit(char *path) {
 
 	char file[384];
 	if (path == NULL) path = "./";
@@ -160,14 +151,7 @@ bool ucInit(char *path, bool verifyFiles){
 
 	//s_convTable.set(1024);
 	if ( ! s_convTable.set(4,sizeof(iconv_t),1024,NULL,0,false,0,"cnvtbl"))
-		goto failed;
-	
-	// dont use these files anymore
-	if (verifyFiles){
-		if (!openIconvDescriptors())
-			return log(LOG_WARN,
-				   "uni: unable to open all iconv descriptors");
-	}		
+		goto failed;	
 
 	return true;
 	
@@ -414,45 +398,4 @@ done:
 void resetUnicode ( ) {
 	//s_convTable.reset();
 	gbiconv_reset();
-}
-
-bool openIconvDescriptors() {
-
-	// why do this when we call gbiconv_open() directly from ucToAny()
-	// and other functions?
-	return true;
-
-	for (int i=2; i <= 2258 ; i++ ){
-		if (!supportedCharset(i)) continue;
-
-		char *charset = get_charset_str(i);
-		if (!charset) return false;
-		
-		char *csAlias = charset;
-		if (!strncmp(charset, "x-windows-949", 13))
-			csAlias = "CP949";
-		
-		// Treat all latin1 as windows-1252 extended charset
-		if (!strncmp(charset, "ISO-8859-1", 10) )
-			csAlias = "WINDOWS-1252";
-		if (!strncmp(charset, "Windows-31J", 13)){
-			csAlias = "CP932";
-		}
-
-		iconv_t cd1 = gbiconv_open("UTF-8", csAlias);
-		if (cd1 == (iconv_t)-1) {	
-		 	//return false;
-		}
-
-		iconv_t cd2 = gbiconv_open(csAlias, "UTF-8");
-		if (cd2 == (iconv_t)-1) {	
-			//return false;
-		}
-	}
-	// ...and the ones that don't involve utf16
-	if (gbiconv_open("UTF-8", "WINDOWS-1252") < 0) return false;
-	if (gbiconv_open("WINDOWS-1252", "UTF-8") < 0) return false;
-	
-	//log(LOG_INIT, "uni: Successfully loaded all iconv descriptors");
-	return true;
 }

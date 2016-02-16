@@ -2579,7 +2579,7 @@ int main2 ( int argc , char *argv[] ) {
 	log("host: Running as host id #%"INT32"",g_hostdb.m_hostId );
 
 
-	if (!ucInit(g_hostdb.m_dir, true)) {
+	if (!ucInit(g_hostdb.m_dir)) {
 		log("Unicode initialization failed!");
 		return 1;
 	}
@@ -4510,7 +4510,7 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 		fprintf(stderr,"If <startFileNum> is specified then <numFiles> must be too\n");
 		return;
 	}
-	if (!ucInit(g_hostdb.m_dir, true)) {
+	if (!ucInit(g_hostdb.m_dir)) {
 		log("Unicode initialization failed!");
 		return;
 	}
@@ -8633,7 +8633,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 		return log("build: speedtestxml: "
 			   "docId %"INT64" not found.", 
 			   docId );
-	if (!ucInit(g_hostdb.m_dir, true)) 
+	if (!ucInit(g_hostdb.m_dir))
 		return log("Unicode initialization failed!");
 
 	// get raw rec from list
@@ -8724,7 +8724,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	    "parse docId %"INT64".", (double)(e - t)/100.0,docId);
 
 
-	if (!ucInit(g_hostdb.m_dir, true)) {
+	if (!ucInit(g_hostdb.m_dir)) {
 		log("Unicode initialization failed!");
 		return 1;
 	}
