@@ -5187,8 +5187,7 @@ Sections *XmlDoc::getExplicitSections ( ) {
 	// this uses the sectionsReply to see which sections are "text", etc.
 	// rather than compute it expensively
 	if ( !m_calledSections &&
-		 !m_sections.set( &m_words, &m_phrases, bits, getFirstUrl(), *d, *sh64, cr->m_coll, m_niceness,
-						  *ct ) ) {
+		 !m_sections.set( &m_words, &m_phrases, bits, getFirstUrl(), *sh64, cr->m_coll, m_niceness, *ct ) ) {
 		m_calledSections = true;
 		// sanity check, this should not block, we are setting
 		// exclusively from the titleRec
@@ -24237,7 +24236,7 @@ SafeBuf *XmlDoc::getSampleForGigabitsJSON ( ) {
 	// this uses the sectionsReply to see which sections are
 	// "text", etc. rather than compute it expensively
 	Sections sec;
-	if ( !sec.set( &ww, &pp, &bb, getFirstUrl(), 0, 0, "", m_niceness, CT_JSON ) ) {
+	if ( !sec.set( &ww, &pp, &bb, getFirstUrl(), 0, "", m_niceness, CT_JSON ) ) {
 		return NULL;
 	}
 

@@ -506,7 +506,7 @@ class Sections {
 	// . returns false if blocked, true otherwise
 	// . returns true and sets g_errno on error
 	// . sets m_sections[] array, 1-1 with words array "w"
-	bool set(class Words *w, class Phrases *phrases, class Bits *bits, class Url *url, int64_t docId,
+	bool set(class Words *w, class Phrases *phrases, class Bits *bits, class Url *url,
 			  int64_t siteHash64, char *coll, int32_t niceness, uint8_t contentType );
 
 	bool addVotes(class SectionVotingTable *nsvt, uint32_t tagPairHash );
