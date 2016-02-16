@@ -125,7 +125,7 @@ public:
 	class Msg39Reply   *m_reply       [MAX_SHARDS];
 	int32_t                m_replyMaxSize[MAX_SHARDS];
 
-	char m_debug;
+	bool m_debug;
 
 	// final merged lists go here
 	int64_t      *m_docIds        ;

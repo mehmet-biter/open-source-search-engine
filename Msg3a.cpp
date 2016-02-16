@@ -170,10 +170,10 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	}
 
 	// a handy thing
-	m_debug = 0;
-	if ( m_r->m_debug          ) m_debug = 1;
-	if ( g_conf.m_logDebugQuery  ) m_debug = 1;
-	if ( g_conf.m_logTimingQuery ) m_debug = 1;
+	m_debug = false;
+	if ( m_r->m_debug          ) m_debug = true;
+	if ( g_conf.m_logDebugQuery  ) m_debug = true;
+	if ( g_conf.m_logTimingQuery ) m_debug = true;
 
 
 	// time how long it takes to get the term freqs
