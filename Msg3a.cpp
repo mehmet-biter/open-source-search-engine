@@ -562,13 +562,9 @@ bool Msg3a::gotAllShardReplies ( ) {
 			    ,i);
 			m_reply       [i] = NULL;
 			m_replyMaxSize[i] = 0;
+
 			// it might have been timd out, just ignore it!!
 			continue;
-			// if size is 0 it can be Msg39 giving us an error!
-			g_errno = EBADREPLYSIZE;
-			m_errno = EBADREPLYSIZE;
-			// all reply buffers should be freed on reset()
-			return true;
 		}
 		// how did this happen?
 		// if ( replySize < 29 && ! mr->m_errno ) {

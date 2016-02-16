@@ -2883,62 +2883,8 @@ bool Msg40::gotSummary ( ) {
 // m_msg3a.m_docIds[m] was filtered because it was a dup or something so we
 // must "uncluster" the *next* docid from the same hostname that is clustered
 void Msg40::uncluster ( int32_t m ) {
-
 	// skip for now
 	return;
-
-	key_t     crec1 = m_msg3a.m_clusterRecs[m];
-	int64_t sh1   = g_clusterdb.getSiteHash26 ( (char *)&crec1 );
-
-	for ( int32_t k = 0 ; k < m_msg3a.m_numDocIds ; k++ ) {
-		// skip docid #k if not from same hostname
-		key_t     crec2 = m_msg3a.m_clusterRecs[k];
-		int64_t sh2   = g_clusterdb.getSiteHash26 ( (char *)&crec2 );
-		if ( sh2 != sh1 ) continue;
-		// skip if not OK or CLUSTERED
-		if ( m_msg3a.m_clusterLevels[k] != CR_CLUSTERED ) continue;
-		// UNHIDE IT
-		m_msg3a.m_clusterLevels[k] = CR_OK;
-		// we must UN-dedup anything after us because now that we are
-		// no longer clustered, we could dedup a result below us,
-		// which deduped another result, which is now no longer deduped
-		// because its deduped was this unclustered results dup! ;)
-		for ( int32_t i = k+1 ; i < m_msg3a.m_numDocIds ; i++ ) {
-			// get current cluster level
-			char *level = &m_msg3a.m_clusterLevels[i];
-			// reset dupped guys, they will be re-done if needed!
-			if ( *level == CR_DUP_SUMMARY ) *level = CR_OK;
-			if ( *level == CR_DUP_TOPIC   ) *level = CR_OK;
-		}
-		// . reset this so it gets re-computed
-		// . we are placing a gap at m_msg20[k] since
-		//   m_msg20[k].m_gotReply = false
-		//m_numContiguous     = 0; 
-		//m_visibleContiguous = 0;
-		// debug note
-		logf(LOG_DEBUG,"query: msg40: unclustering docid #%"INT32" %"INT64". "
-		     "(unclusterCount=%"INT32")",
-		     k,m_msg3a.m_docIds[k],m_unclusterCount);
-		// . steal the msg20!
-		// . sanity check -- should have been NULL!
-		if (   m_msg20[k] ) { char *xx=NULL; *xx=0; }
-		// sanity check
-		if ( ! m_msg20[m] ) { char *xx=NULL; *xx=0; }
-		// sanity check
-		if ( k == m ) { char *xx=NULL; *xx=0; }
-		// for every one guy marked as a dup, we uncluster FIVE
-		//if ( ++count >= 5 ) break;
-		// grab it
-		m_msg20[k] = m_msg20[m];
-		// reset it, m_gotReply should be false now
-		m_msg20[k]->reset();
-		// the dup guy has a NULL ptr now
-		m_msg20[m] = NULL;
-		// . only have to unhide one at a time
-		// . one is a dup, so no more than one will
-		//   become UNhidden
-		break;
-	}
 }
 
 int32_t Msg40::getStoredSize ( ) {
@@ -5875,17 +5821,9 @@ bool Msg40::printJsonItemInCSV ( State0 *st , int32_t ix ) {
 			column =*(int32_t *)columnTable->getValueFromSlot ( slot);
 
 		// sanity
-		if ( column == -1 ) {//>= numCSVColumns ) { 
+		if ( column == -1 ) {
 			// don't show it any more...
 			continue;
-			// add a new column...
-			int32_t newColnum = numCSVColumns + 1;
-			// silently drop it if we already have too many cols
-			if ( newColnum >= maxCols ) continue;
-			columnTable->addKey ( &h64 , &newColnum );
-			column = newColnum;
-			numCSVColumns++;
-			//char *xx=NULL;*xx=0; }
 		}
 
 		// set ptr to it for printing when done parsing every field
