@@ -600,53 +600,6 @@ void XmlDoc::reset ( ) {
 	size_unused5 = 0;
 }
 
-// . set the url with the intention of adding it or deleting it from the index
-// . Msg7 and Repair.cpp can also set other members of XmlDoc rather than just
-//   m_firstUrl. they can provide the ip, the http reply, content, filtered
-//   content, the forced next spider time and the forced first indexed date,
-//   the hop count
-// . they might also want to skip deduping, or any algo deemed unnecessary
-//   by setting, for instance, m_isDupValid = true, or something
-bool XmlDoc::set1 ( char    *url         ,
-		    char    *coll        ,
-		    SafeBuf *pbuf        ,
-		    int32_t     niceness    ) {
-
-	reset();
-
-	// this is true
-	m_setFromUrl = true;
-
-	//m_coll     = coll;
-	m_pbuf     = pbuf;
-	m_niceness = niceness;
-	m_version  = TITLEREC_CURRENT_VERSION;
-	m_versionValid = true;
-
-	// sanity check
-	if ( m_niceness == 0 ) { char *xx=NULL; *xx=0; }
-
-	// copy this in case collection gets deleted i guess...
-	//m_forceDelete = forceDelete;
-	// did we get this url from PageAddUrl?
-	//m_isAddUrl    = isAddUrl;
-	// set m_indexCode so that XmlDoc::indexDoc() will delete it
-	//if ( forceDelete ) m_indexCode = EDOCFORCEDELETE;
-
-	// set this important member var
-	//cr = g_collectiondb.getRec ( m_coll , gbstrlen(m_coll) );
-	//if ( ! cr ) return false;
-	if ( ! setCollNum ( coll ) ) return false;
-
-	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: calling setFirstURL with [%s]", __FILE__, __func__, __LINE__, url);
-	setFirstUrl ( url , false );
-
-	//setSpideredTime();
-
-	return true;
-}
-
-
 char *XmlDoc::getTestDir ( ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;

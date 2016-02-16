@@ -340,12 +340,6 @@ public:
 
 	void print   ( );
 
-	bool set1 ( char *url ,
-		    char *coll,
-		    SafeBuf *pbuf ,
-		    int32_t niceness );
-
-
 	bool set2 ( char *titleRec,
 		    int32_t maxSize, 
 		    char *coll,
