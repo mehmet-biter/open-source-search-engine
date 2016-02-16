@@ -72,8 +72,13 @@ OBJS =  UdpSlot.o Rebalance.o \
 # common flags
 DEFS = -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I.
 CPPFLAGS = -g -Wall -fno-stack-protector -DPTHREADS -Wno-write-strings -Wstrict-aliasing=0
+
+ifeq ($(CXX), g++)
 CPPFLAGS += -Wno-uninitialized -Wno-unused-but-set-variable
-#CPPFLAGS += -Wunreachable-code -Wno-tautological-undefined-compare # clang++
+else ifeq ($(CXX), clang++)
+CPPFLAGS += -Wunreachable-code -Wno-tautological-undefined-compare
+endif
+
 LIBS = -lm -lpthread -lssl -lcrypto
 
 # to build static libiconv.a do a './configure --enable-static' then 'make' in the iconv directory
