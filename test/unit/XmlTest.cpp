@@ -69,14 +69,16 @@ TEST( XmlTest, MetaDescriptionStripTags) {
 	    "my title<br> my <b>very important</b> text",
 	    "Lesser than (<) and greater than (>).",
 	    "We shouldn't strip <3 out",
-	    "123 < 1234; 1234 > 123"
+	    "123 < 1234; 1234 > 123",
+	    "<p style='text-align: center;'>A color cartoon drawing of a clapping cod fish ( rebus in the danish language for klaptorsk )</p>"
 	};
 
 	char* expected_outputs[] = {
 	    "my title. my very important text",
 	    "Lesser than (<) and greater than (>).",
 	    "We shouldn't strip <3 out",
-	    "123 < 1234; 1234 > 123"
+	    "123 < 1234; 1234 > 123",
+	    "A color cartoon drawing of a clapping cod fish ( rebus in the danish language for klaptorsk ). "
 	};
 
 	char* format_str = "<meta name=\"description\" content=\"%s\">";

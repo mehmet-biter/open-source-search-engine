@@ -23864,10 +23864,15 @@ char *XmlDoc::getHighlightedSummary ( ) {
 
 	if ( ! m_langIdValid ) { char *xx=NULL;*xx=0; }
 
+	// url encode summary
+	StackBuf(tmpSum);
+	tmpSum.htmlEncode(sum, sumLen, false);
+
 	Highlight hi;
 	StackBuf(hb);
+
 	// highlight the query in it
-	int32_t hlen = hi.set ( &hb, sum, sumLen, q, "<b>", "</b>", m_niceness );
+	int32_t hlen = hi.set ( &hb, tmpSum.getBufStart(), tmpSum.getLength(), q, "<b>", "</b>", m_niceness );
 
 	// highlight::set() returns 0 on error
 	if ( hlen < 0 ) {

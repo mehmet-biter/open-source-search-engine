@@ -1336,16 +1336,10 @@ bool sendPageWidgets ( TcpSocket *socket , HttpRequest *hr ) {
 //
 ///////////
 bool sendPageBasicStatus ( TcpSocket *socket , HttpRequest *hr ) {
-
 	char  buf [ 128000 ];
 	SafeBuf sb(buf,128000);
 	sb.reset();
 
-	// char *fs = hr->getString("format",NULL,NULL);
-	// char format = FORMAT_HTML;
-	// if ( fs && strcmp(fs,"html") == 0 ) format = FORMAT_HTML;
-	// if ( fs && strcmp(fs,"json") == 0 ) format = FORMAT_JSON;
-	// if ( fs && strcmp(fs,"xml") == 0 ) format = FORMAT_XML;
 	char format = hr->getReplyFormat();
 
 

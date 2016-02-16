@@ -232,12 +232,7 @@ bool sendPageLogView    ( TcpSocket *s , HttpRequest *r ) {
 
 
 bool showLine ( SafeBuf *sb , char *s , int32_t len ) {
-
-	return sb->brify ( s , len , 
-			   0 , // niceness 
-			   8000 , // cols
-			   "<br>",
-			   false ); // isHtml?
+	return sb->brify( s, len, 0, 8000, "<br>", false );
 }
 
 

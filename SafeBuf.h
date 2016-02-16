@@ -170,8 +170,8 @@ public:
 	bool brify2 ( char *s , int32_t cols , char *sep = "<br>" ,
 		      bool isHtml = true ) ;
 
-	bool brify ( char *s , int32_t slen , int32_t niceness , int32_t cols ,
-		     char *sep = "<br>" , bool isHtml = true );
+	bool brify( char *s, int32_t slen, int32_t niceness, int32_t cols, char *sep = "<br>",
+				bool isHtml = true );
 
 	bool hasDigits();
 
@@ -196,20 +196,19 @@ public:
 	bool addTag ( class Tag *tag );
 
 	//insert strings in their native encoding
-	bool  encode ( char *s , int32_t len , int32_t niceness=0) {
-		return utf8Encode2(s,len,false,niceness); };
-	// htmlEncode default = false
-	bool  utf8Encode2(char *s, int32_t len, bool htmlEncode=false, 
-			 int32_t niceness=0);
+	bool encode( char *s, int32_t len, int32_t niceness = 0 ) {
+		return utf8Encode2( s, len, false, niceness );
+	}
 
-    bool utf32Encode(UChar32* codePoints, int32_t cpLen);
+	bool utf8Encode2( char *s, int32_t len, bool htmlEncode = false, int32_t niceness = 0 );
 
-	bool  htmlEncode(char *s, int32_t len,bool encodePoundSign,
-			 int32_t niceness=0 , int32_t truncateLen = -1 );
+	bool utf32Encode(UChar32* codePoints, int32_t cpLen);
+
+	bool htmlEncode( char *s, int32_t len, bool encodePoundSign, int32_t niceness = 0,
+					 int32_t truncateLen = -1 );
 
 	bool  htmlEncode(char *s) ;
 
-	//bool convertUtf8CharsToEntity = false ) ;
 	// html-encode any of the last "len" bytes that need it
 	bool htmlEncode(int32_t len,int32_t niceness=0);
 

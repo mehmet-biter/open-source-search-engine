@@ -576,25 +576,15 @@ bool processLoop ( void *state ) {
 	Words qw;
 	qw.set( q, qlen, true, false );
 
-	// . assign scores of 0 to query words that should be ignored
-	// . TRICKY: loop over words in qq.m_qwords, but they should be 1-1
-	//   with words in qw.
-	// . sanity check
-	//if ( qw.getNumWords() != qq.m_numWords ) { char *xx = NULL; *xx = 0;}
 	// declare up here
 	Matches m;
-	// do the loop
-	//Scores ss;
-	//ss.set ( &qw , NULL );
-	//for ( int32_t i = 0 ; i < qq.m_numWords ; i++ )
-	//	if ( ! m.matchWord ( &qq.m_qwords[i],i ) ) ss.m_scores[i] = 0;
+
 	// now set m.m_matches[] to those words in qw that match a query word
 	// or phrase in qq.
 	m.setQuery ( &qq );
 	m.addMatches ( &qw );
 	int32_t hilen = 0;
 
-	// CNS: if ( ! st->m_clickNScroll ) {
 	// and highlight the matches
 	if ( printDisclaimer ) {
 		hilen = hi.set ( sb, &qw, &m );

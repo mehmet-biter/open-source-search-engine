@@ -88,7 +88,10 @@ bool sendReply ( State0 *st , char *reply ) {
 	// . use light brown if coming directly from an end user
 	// . use darker brown if xml feed
 	int32_t color = 0x00b58869;
-	if ( si->m_format != FORMAT_HTML )color = 0x00753d30 ;
+	if ( si->m_format != FORMAT_HTML ) {
+		color = 0x00753d30 ;
+	}
+
 	int64_t nowms = gettimeofdayInMilliseconds();
 	int64_t took  = nowms - st->m_startTime ;
 	g_stats.addStat_r ( took            ,
@@ -524,10 +527,7 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	// later on maybe it will default to on.
 	st->m_header = hr->getLong("header",defHdr);
 
-        st->m_numDocIds = si->m_docsWanted;
-
-	// watch out for cowboys
-	//if(si->m_firstResultNum>=si->m_maxResults) return sendReply(st,NULL);
+	st->m_numDocIds = si->m_docsWanted;
 
 	// save state in TcpSocket's m_tmp ptr for debugging. in case 
 	// we lose our string of control and Msg40::getResults() never 
@@ -554,13 +554,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 		g_errno = EQUERYINGDISABLED;
 		return sendReply(st,NULL);
 	}
-
-	// filter that one query causing the memleak for now
-	// if ( strstr(si->m_q.m_orig,
-	// 	    "type:json AND ((((query=humanLanguage:en") ) {
-	// 	g_errno = EQUERYINGDISABLED;
-	// 	return sendReply(st,NULL);
-	// }
 
 	// LAUNCH SPELLER
 	// get our spelling correction if we should (spell checker)
@@ -611,19 +604,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	return status2;
 }
 
-/*
-void gotSpellingWrapper( void *state ){
-	// cast our State0 class from this
-	State0 *st = (State0 *) state;
-	// log the error first
-	if ( g_errno ) log("query: speller: %s.",mstrerror(g_errno));
-	// clear any error cuz spellchecks aren't needed
-	g_errno = 0;
-	st->m_gotSpell = true;
-	gotState(st);
-}
-*/
-
 void gotResultsWrapper ( void *state ) {
 	// cast our State0 class from this
 	State0 *st = (State0 *) state;
@@ -652,10 +632,6 @@ static bool printGigabitContainingSentences ( State0 *st,
 					      SearchInput *si ,
 					      Query *gigabitQuery ,
 					      int32_t gigabitId ) {
-
-	//static int32_t s_gigabitCount = 0;
-	
-
 	char format = si->m_format;
 
 	HttpRequest *hr = &st->m_hr;
@@ -667,8 +643,6 @@ static bool printGigabitContainingSentences ( State0 *st,
 
 	if ( format == FORMAT_HTML ) {
 		sb->safePrintf("<nobr><b>");
-		//"<img src=http://search.yippy.com/"
-		//"images/new/button-closed.gif><b>");
 
 		// make a new query
 		sb->safePrintf("<a href=\"/search?c=%s&q=",cr->m_coll);
@@ -778,22 +752,10 @@ static bool printGigabitContainingSentences ( State0 *st,
 
 		// ok, print it out
 		if ( ! first && ! second && format == FORMAT_HTML ) {
-			//if ( reply->m_docId != lastDocId ) 
 			sb->safePrintf("<br><br>\n");
-			//else {
-			//	sb->setLength ( saveOffset );
-			//	sb->safePrintf("<br><br>\n");
-			//}
 		}
-		else {
-			//sb->safePrintf("");
-		}
-
 
 		numNuggets++;
-
-		// print the fast fact (sentence)
-		//sb->safeMemcpy ( s , e-s );
 
 		// let's highlight with gigabits and query terms
 		SafeBuf tmpBuf;
@@ -1007,9 +969,6 @@ bool gotResults ( void *state ) {
 
 		    );
 
-		// for some reason the socket still exists and will time out
-		//g_tcpServer.destroySocket ( st->m_socket );
-
 		// just let tcpserver nuke it, but don't double call
 		// the callback, doneSendingWrapper9()... because msg40
 		// will have been deleted!
@@ -1023,12 +982,6 @@ bool gotResults ( void *state ) {
 		delete st;
 		return true;
 	}
-
-	// shortcuts
-	//char        *coll    = si->m_coll2;
-	//int32_t         collLen = si->m_collLen2;
-
-	//collnum_t collnum = si->m_firstCollnum;
 
 	// collection rec must still be there since SearchInput references 
 	// into it, and it must be the SAME ptr too!
@@ -1049,177 +1002,18 @@ bool gotResults ( void *state ) {
 
  	int32_t numResults = msg40->getNumResults();
 
-	// if user is doing ajax widget we need to know the current docid
-	// that is listed at the top of their widget display so we can
-	// hide the new docids above that and scroll them down slowly.
-	/*
-	//int32_t topDocIdPos = -1;
-	bool hasInvisibleResults = false;
-	//int32_t numInvisible = 0;
-	int32_t numAbove = 0;
-	HttpRequest *hr = &st->m_hr;
-	int64_t oldTop = 0LL;
-	int64_t lastDocId = 0LL;
-	double lastSerpScore = 0.0;
-	if ( si->m_format == FORMAT_WIDGET_AJAX ) {
-		// sanity, no stream mode here, it won't work
-		if ( si->m_streamResults )
-			log("results: do not use stream=1 for widget");
-		// get current top docid
-		int64_t topDocId = hr->getLongLong("topdocid",0LL);
-
-		// DEBUG: force it on for now
-		//topDocId = 4961990748LL;
-
-		// scan results. this does not support &stream=1 streaming
-		// mode. it doesn't make sense that it needs to.
-		for ( int32_t i = 0 ; i < numResults ; i++ ) {
-			// skip if already invisible
-			if ( msg40->m_msg3a.m_clusterLevels[i] != CR_OK ) 
-				continue;
-			// get it
-			Msg20 *m20 = msg40->m_msg20[i];
-			if ( ! m20 ) continue;
-			// checkdocid
-			Msg20Reply *mr = m20->m_r;
-			if ( ! mr ) continue;
-			// save this
-			lastDocId = mr->m_docId;
-			lastSerpScore = msg40->m_msg3a.m_scores[i];
-			// set "oldTop" to first docid we encounter
-			if ( ! oldTop ) oldTop = mr->m_docId;
-			// stop if no topdocid otherwise. oldTop is now set
-			if ( ! topDocId ) continue; // == 0 ) break;
-			if ( mr->m_docId != topDocId ) {
-				hasInvisibleResults = true;
-				// count # of docids above top docid
-				numAbove++;
-				continue;
-			}
-			// we match it, so set this if not already set
-			//if ( topDocIdPos != -1 ) topDocIdPos = i;
-			//break;
-		}
-	}				
-	*/
-
 	SafeBuf *sb = &st->m_sb;
-
-	// print javascript for scrolling down invisible div for
-	// ajax based widgets
-	// MDW: this does not execute because it is loaded via ajax...
-	// so i moved logic into diffbot.php for now.
-	/*
-	if ( si->m_format == FORMAT_WIDGET_AJAX && numInvisible ) {
-		sb->safePrintf("<script type=text/javascript>"
-			       // call this function like 5 times a second
-			       "function diffbot_scroll() {\n"
-			       // get hidden div
-			       "var hd = document.getElementById('diffbot_"
-			       "invisible');\n"
-			       // get current bottom
-			       "var b=hd.style.height;\n"
-			       // decrement by 1 pixel and reassign
-			       "hd.style.height = hd +1;\n"
-			       // we are done if height is equal to 
-			       // X * resultdivheight which is 140px i think
-			       "if ( hd >= %"INT32" ) return;\n"
-			       // call us again in 300ms
-			       "setTimeout('diffbot_scroll()',300);\n"
-			       "}"
-
-			       // on load start scrolling
-			       "diffbot_scroll();\n"
-
-			       "alert(\'poo\');\n"
-
-			       "</script>"
-			       , numInvisible * (int32_t)RESULT_HEIGHT
-
-			       );
-	}
-	*/
 
 	// print logo, search box, results x-y, ... into st->m_sb
 	printSearchResultsHeader ( st );
-
-	// propagate "topdocid" so when he does another query every 30 secs
-	// or so we know what docid was on top for scrolling purposes
-	//if ( si->m_format == FORMAT_WIDGET_AJAX )
-	//	sb->safePrintf("<input type=hidden "
-	//		       "id=topdocid name=topdocid value=%"INT64">\n",
-	//		       oldTop);
-
-	// report how many results we added above the topdocid provided, if any
-	// so widget can scroll down automatically
-	//if ( si->m_format == FORMAT_WIDGET_AJAX && numAbove )
-	//	sb->safePrintf("<input type=hidden "
-	//		       "id=topadd name=topadd value=%"INT32">\n",numAbove);
-	
-
-	// we often can add 100s of things to the widget's result set per 
-	// second especially when sorting by last spidered time and spidering
-	// a lot. setting the maxserpscore of the serp score of the last result
-	// allows us to append new search results to what we have in a 
-	// consistent manner.
-	// if ( si->m_format == FORMAT_WIDGET_AJAX ) {
-	// 	// let's make this ascii encoded crap
-	// 	sb->safePrintf("<input type=hidden "
-	// 		       "id=maxserpscore "
-	// 		       "value=%f>\n",
-	// 		       lastSerpScore);
-	// 	// let's make this ascii encoded crap
-	// 	sb->safePrintf("<input type=hidden "
-	// 		       "id=maxserpdocid "
-	// 		       "value=%"INT64">\n",
-	// 		       lastDocId);
-	// }
-
 
 	// then print each result
 	// don't display more than docsWanted results
 	int32_t count = msg40->getDocsWanted();
 	bool hadPrintError = false;
 	int32_t numPrintedSoFar = 0;
-	//int32_t widgetHeight = hr->getLong("widgetheight",400);
-	//int32_t widgetwidth = hr->getLong("widgetwidth",250);
 
 	for ( int32_t i = 0 ; count > 0 && i < numResults ; i++ ) {
-
-		/*
-		if ( hasInvisibleResults ) {
-			//
-			// MAKE THESE RESULTS INVISIBLE!
-			//
-			// if doing a widget, we initially hide the new results
-			// and scroll them down in time so it looks cool.
-			if ( i == 0 )
-				sb->safePrintf("<div id=diffbot_invisible "
-					       "style=top:%"INT32"px;"
-					       // relative to containing div
-					       // which is position:relative!
-					       "position:absolute;"
-					       "overflow-y:hidden;>"
-					       ,
-					       (-1*
-						(RESULT_HEIGHT+
-						 SERP_SPACER+
-						 PADDING*2)*
-						numInvisible));
-			//
-			// END INSIVISBILITY
-			//
-			// to test scrolling, hide the first result and
-			// scroll it out
-			if ( i == topDocIdPos )
-				sb->safePrintf("</div>"
-					       "<div id=diffbot_visible"
-					       " style=top:0px;"
-					       "position:absolute;>"
-					       );
-		}
-		*/
-
 		//////////
 		//
 		// prints in xml or html
@@ -1229,7 +1023,6 @@ bool gotResults ( void *state ) {
 			hadPrintError = true;
 			break;
 		}
-
 
 		// limit it
 		count--;
@@ -1242,13 +1035,8 @@ bool gotResults ( void *state ) {
 		//return sendReply ( st , sb.getBufStart() );
 	}
 
-
 	// wrap it up with Next 10 etc.
 	printSearchResultsTail ( st );
-
-	// if we split the serps into 2 divs for scrolling purposes
-	// then close up the 2nd one
-	//if ( hasInvisibleResults ) sb->safePrintf("</div>");
 
 	// END SERP DIV
 	if ( si->m_format == FORMAT_WIDGET_IFRAME ||
@@ -1263,9 +1051,9 @@ bool gotResults ( void *state ) {
 
 // defined in PageRoot.cpp
 bool expandHtml (  SafeBuf& sb,
-		   char *head , 
+		   char *head ,
 		   int32_t hlen ,
-		   char *q    , 
+		   char *q    ,
 		   int32_t qlen ,
 		   HttpRequest *r ,
 		   SearchInput *si,
@@ -1273,7 +1061,7 @@ bool expandHtml (  SafeBuf& sb,
 		   CollectionRec *cr ) ;
 
 
-bool printLeftColumnRocketAndTabs ( SafeBuf *sb, 
+bool printLeftColumnRocketAndTabs ( SafeBuf *sb,
 				    bool isSearchResultsPage ,
 				    CollectionRec *cr ,
 				    char *tabName );
@@ -1298,9 +1086,6 @@ bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 		sb.safePrintf("letter-spacing: 0.04em;\n");
 		sb.safePrintf("}\n");
 		sb.safePrintf("a {text-decoration:none;}\n");
-		//sb.safePrintf("a:link {color:#00c}\n");
-		//sb.safePrintf("a:visited {color:#551a8b}\n");
-		//sb.safePrintf("a:active {color:#f00}\n");
 		sb.safePrintf(".bold {font-weight: bold;}\n");
 		sb.safePrintf(".bluetable {background:#d1e1ff;"
 			      "margin-bottom:15px;font-size:12px;}\n");
@@ -1354,76 +1139,7 @@ bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 		// . tabName = "search"
 		printLeftColumnRocketAndTabs ( &sb , true , cr , "search" );
 
-
-
-// 		sb.safePrintf("<TD bgcolor=#f3c714 " // yellow/gold
-// 			      "valign=top "
-// 			      "style=\""
-// 			      "width:210px;"
-// 			      "border-right:3px solid blue;"
-// 			      "\">"
-
-// 			      "<br>"
-
-// 			      "<center>"
-// 			      "<a href=/?c=%s>"
-// 			      "<div style=\""
-// 			      "background-color:white;"
-// 			      "padding:10px;"
-// 			      "border-radius:100px;"
-// 			      "border-color:blue;"
-// 			      "border-width:3px;"
-// 			      "border-style:solid;"
-// 			      "width:100px;"
-// 			      "height:100px;"
-// 			      "\">"
-// 			      "<br style=line-height:10px;>"
-// 			      "<img width=54 height=79 "
-// 			      "alt=HOME src=/rocket.jpg>"
-// 			      "</div>"
-// 			      "</a>"
-// 			      "</center>"
-
-// 			      "<br>"
-// 			      "<br>"
-// 			      ,cr->m_coll
-// 			      );
 	}
-
-
-	/*
-	// home link
-	sb.safePrintf(
-		      "<a href=/>"
-		      "<div style=\"background-color:blue;"
-		      "padding:5px;"
-		      "text-align:right;"
-		      "border-width:3px;"
-		      "border-right-width:0px;"
-		      "border-style:solid;"
-		      "margin-left:10px;"
-		      "border-color:white;"
-		      "border-top-left-radius:10px;"
-		      "border-bottom-left-radius:10px;"
-		      "font-size:14px;"
-		      "color:white;"
-		      "cursor:hand;"
-		      "cursor:pointer;\" "
-		      " onmouseover=\""
-		      "this.style.backgroundColor='lightblue';"
-		      "this.style.color='black';\""
-		      " onmouseout=\""
-		      "this.style.backgroundColor='blue';"
-		      "this.style.color='white';\""
-		      ">"
-		      "&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; "
-		      "&nbsp; &nbsp; &nbsp; "
-		      "<b>HOME</b> &nbsp; &nbsp;"
-		      "</div>"
-		      "</a>"
-		      "<br>"
-		      );
-	*/
 
 
 	//
@@ -1446,16 +1162,11 @@ bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 	SafeBuf *gbuf = &msg40->m_gigabitBuf;
 	int32_t numGigabits = gbuf->length()/sizeof(Gigabit);
 
-	// MDW: support gigabits in xml/json format again
-	//if ( format != FORMAT_HTML ) numGigabits = 0;
-
 	if ( ! st->m_header )
 		numGigabits = 0;
 
 	// print gigabits
 	Gigabit *gigabits = (Gigabit *)gbuf->getBufStart();
-	//int32_t numCols = 5;
-	//int32_t perRow = numGigabits / numCols;
 
 	if ( numGigabits && format == FORMAT_XML )
 		sb.safePrintf("\t<gigabits>\n");
@@ -1526,13 +1237,8 @@ bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 				    true , // queryexpansion?
 				    true );  // usestopwords?
 
-	// log("results: gigabitquery=%s landid=%"INT32""
-	//     ,ttt.getBufStart()
-	//     ,si->m_queryLangId);
-
-
 	for ( int32_t i = 0 ; i < numGigabits ; i++ ) {
-		//if ( i > 0 && format == FORMAT_HTML ) 
+		//if ( i > 0 && format == FORMAT_HTML )
 		//	sb.safePrintf("<hr>");
 		//if ( perRow && (i % perRow == 0) )
 		//	sb.safePrintf("</td><td valign=top>");
@@ -1559,11 +1265,7 @@ bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 				      "<br><br>");
 		}
 
-		//printGigabit ( st,sb , msg40 , gi , si );
-		//sb.safePrintf("<br>");
-		printGigabitContainingSentences(st,&sb,msg40,gi,si,
-						&gigabitQuery,
-						i);
+		printGigabitContainingSentences( st, &sb, msg40, gi, si, &gigabitQuery, i );
 		if ( format == FORMAT_HTML )
 			sb.safePrintf("<br><br>");
 	}
@@ -1588,89 +1290,6 @@ bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 	//
 	// now print various knobs
 	//
-
-	//
-	// print sort by date options
-	//
-	/*
-	if ( format == FORMAT_HTML )
-		sb.safePrintf(
-			      "<div id=best "
-			      "style="
-			      "font-size:14px;"
-			      "padding:5px;"
-			      "position:relative;"
-			      "border-width:3px;"
-			      "border-right-width:0px;"
-			      "border-style:solid;"
-			      "margin-left:10px;"
-			      "border-top-left-radius:10px;"
-			      "border-bottom-left-radius:10px;"
-			      "border-color:blue;"
-			      "background-color:white;"
-			      "border-right-color:white;"
-			      "margin-right:-3px;"
-			      "text-align:right;"
-			      ">"
-			      "<b>"
-			      "SEARCH TOOLS &nbsp; &nbsp;"
-			      "</b>"
-			      "</div>"
-
-			      "<br>"
-	*/
-			      /*
-			      "<div id=newsest "
-			      "style="
-			      "font-size:14px;"
-			      "padding:5px;"
-			      "position:relative;"
-			      "border-width:3px;"
-			      "border-right-width:0px;"
-			      "border-style:solid;"
-			      "margin-left:10px;"
-			      "border-top-left-radius:10px;"
-			      "border-bottom-left-radius:10px;"
-			      "border-color:white;"
-			      "background-color:blue;"
-			      "border-right-color:blue;"
-			      "margin-right:0px;"
-			      "text-align:right;"
-			      "color:white;"
-			      ">"
-			      "<b>"
-			      "NEWSET FIRST &nbsp; &nbsp;"
-			      "</b>"
-			      "</div>"
-
-			      "<br>"
-
-			      "<div id=newsest "
-			      "style="
-			      "font-size:14px;"
-			      "padding:5px;"
-			      "position:relative;"
-			      "border-width:3px;"
-			      "border-right-width:0px;"
-			      "border-style:solid;"
-			      "margin-left:10px;"
-			      "border-top-left-radius:10px;"
-			      "border-bottom-left-radius:10px;"
-			      "border-color:white;"
-			      "background-color:blue;"
-			      "border-right-color:blue;"
-			      "margin-right:0px;"
-			      "text-align:right;"
-			      "color:white;"
-			      ">"
-			      "<b>"
-			      "OLDEST FIRST &nbsp; &nbsp;"
-			      "</b>"
-			      "</div>"
-			      "<br>"
-
-			      */
-
 
 	//
 	// print date constraint functions now
@@ -2596,57 +2215,11 @@ bool printSearchResultsHeader ( State0 *st ) {
 		     numResults,
 		     (PTRTYPE)sb->getBuf());
 
-
-	//
-	// BEGIN PRINT THE RESULTS
-	//
-
-	/*
-	sb->safePrintf(
-
-		      "<script type=\"text/javascript\">\n"
-		      "function handler() {\n" 
-		      "if(this.readyState == 4 ) {\n"
-		      "document.getElementById('foobar').innerHTML="
-		      "'fuck'+this.responseText;\n"
-		      "alert(this.status+this.statusText+this.responseXML+this.responseText);\n"
-		      "}}\n"
-		      "</script>\n"
-
-		      "<div id=foobar onclick=\""
-		      "var client = new XMLHttpRequest();\n"
-		      "client.onreadystatechange = handler;\n"
-		      //"var url='http://www.google.com/search?q=test';\n"
-		      //"var url='http://192.0.2.154:8000/';\n"
-		      "var url='http://198.51.100.203:8000/';\n"
-		      "client.open('GET', url );\n"
-		      "client.send();\n"
-		      "\">CLICK ME</div>\n"
-
-		      );
-	*/
-
-	/*
-	if ( si->m_format == FORMAT_HTML )
-		sb->safePrintf("<a onclick=\""
-			      "var e = "
-			      "document.getElementsByTagName('html')[0];\n"
-			      "alert ('i='+e.innerHTML);"
-			      "\">"
-			      "CLICK ME"
-			      "</a>");
-	*/
-
-	//
-	// DONE PRINTING SEARCH RESULTS HEADER
-	//
 	return true;
 }
 
 
 bool printSearchResultsTail ( State0 *st ) {
-
-
 	SafeBuf *sb = &st->m_sb;
 
 	SearchInput *si = &st->m_si;	
@@ -2655,13 +2228,6 @@ bool printSearchResultsTail ( State0 *st ) {
 
 	CollectionRec *cr = si->m_cr;
 	char *coll = cr->m_coll;
-
-
-	// if ended in ",\n" cuz it was json, remove that
-	//if ( si->m_format == FORMAT_JSON && sb->length() >= 4 ) {
-	//	char *p = sb->getBuf() - 2;
-	//	if ( p[0] ==',' && p[1] == '\n' ) sb->incrementLength(-2);
-	//}
 
 	if ( si->m_format == FORMAT_JSON ) {	
 		// remove last },\n if there and replace with just \n
@@ -2706,10 +2272,6 @@ bool printSearchResultsTail ( State0 *st ) {
 	// with one click
 	SafeBuf banSites;
 
-	//int32_t tailLen = 0;
-	//char *tail = NULL;
-
-
 	//
 	// PRINT PREV 10 NEXT 10 links!
 	// 
@@ -2729,8 +2291,6 @@ bool printSearchResultsTail ( State0 *st ) {
 		args.safePrintf("&sb=1");
 	if ( ! si->m_showBanned && si->m_isMasterAdmin )
 		args.safePrintf("&sb=0");
-
-	//HttpRequest *hr = &st->m_hr;
 
 	// collection
 	args.safePrintf("&c=%s",coll);
@@ -2866,29 +2426,7 @@ bool printSearchResultsTail ( State0 *st ) {
 	// END PRINT PREV 10 NEXT 10 links!
 	// 
 
-	// end results table cell... and print calendar at top
-	//tail = cr->m_htmlTail;
-	//tailLen = gbstrlen (tail );
-	//if ( si->m_format == FORMAT_HTML ) sb->safeMemcpy ( tail , tailLen );
-
 	if ( si->m_format == FORMAT_HTML ) {
-		/*
-		sb->safePrintf("<table cellpadding=2 cellspacing=0 border=0>"
-			      "<tr><td></td>"
-			      "<td valign=top align=center>"
-			      "<nobr>"
-			      "<input type=text name=q2 size=60 value=\"" );
-		sb->htmlEncode ( si->m_sbuf1.getBufStart() , 
-				si->m_sbuf1.length() ,
-				false );
-		sb->safePrintf("\">"
-			      "<input type=submit value=\"Search\" border=0>"
-			      "</nobr><br>"
-			      "</td><td></td>"
-			      "</tr>"
-			      );
-		sb->safePrintf("</table>");
-		*/
 		sb->safePrintf("<input name=c type=hidden value=\"%s\">",coll);
 	}
 
@@ -3091,9 +2629,6 @@ bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 	int32_t inlinkId = 0;
 	int64_t  starttime = gettimeofdayInMillisecondsLocal();
 
-	//int32_t icount = 0;
-	//int32_t ecount = 0;
-	//int32_t absSum = 0;
 	for ( int32_t i = 0 ; i < numLinks ; i++ ) {
 		k = ptrs[i];
 		if ( ! k->getLinkText() ) continue;
@@ -3102,8 +2637,7 @@ bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 			continue;
 		char *str   = k->getLinkText();//ptr_linkText;
 		int32_t strLen = k->size_linkText;
-		//char tt[1024*3];
-		//char *ttend = tt + 1024*3;
+
 		char *frontTag = 
 		     "<font style=\"color:black;background-color:yellow\">" ;
 		char *backTag = "</font>";
@@ -3624,11 +3158,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// prevent coring
 		if ( widgetWidth < 1 ) widgetWidth = 1;
 
-		// char *bg1 = "lightgray";
-		// char *bg2 = "white";
-		// char *bgcolor = bg1;
-		// if ( (ix % 1) == 1 ) bgcolor = bg2;
-
 		// each search result in widget has a div around it
 		sb->safePrintf("<div "
 			       "class=result "
@@ -3724,19 +3253,15 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// print the url in the href tag
 		sb->safeMemcpy ( url , newLen ); 
 		// then finish the a href tag and start a bold for title
-		sb->safePrintf ( "\">");//<font size=+0>" );
+		sb->safePrintf ( "\">");
 		
 		sb->safePrintf("<b style=\""
 			       "text-decoration:none;"
 			       "font-size: 15px;"
 			       "font-weight:bold;"
-			       // add padding so shadow does not stick out
-			       //"padding-left:4px;"
-			       //"padding-right:4px;"
 			       "background-color:rgba(0,0,0,.5);"
 			       "color:white;"
 			       "font-family:arial;"
-			       //"text-shadow:2px 4px 3px rgba(0,0,1,3);"
 			       "text-shadow: 2px 2px 0 #000 "
 			       ",-2px -2px 0 #000 "
 			       ",-2px  2px 0 #000 "
@@ -3747,9 +3272,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       ", -2px 0px 0 #000 "
 			       ",  2px 0px 0 #000 "
 			       ";"
-			       //"-2px 2px 0 #000 "
-			       //"2px -2px 0 #000 "
-			       //"-2px -2px 0 #000;"
 			       "\">");
 		// then title over image
 	}
@@ -3803,11 +3325,12 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	// . the title can be NULL
 	// . highlight it first
 	// . the title itself should not have any tags in it!
-	char  *str  = mr->ptr_tbuf;//msg40->getTitle(i);
-	int32_t strLen = mr->size_tbuf - 1;// msg40->getTitleLen(i);
-	if ( ! str || strLen < 0 ) strLen = 0;
+	char  *str  = mr->ptr_tbuf;
+	int32_t strLen = mr->size_tbuf - 1;
+	if ( ! str || strLen < 0 ) {
+		strLen = 0;
+	}
 	
-
 	int32_t hlen;
 
 	char *frontTag = 
@@ -3825,10 +3348,15 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	int32_t cols = 80;
 	cols = si->m_summaryMaxWidth;
 
-	char tmp3[1024];
-	SafeBuf hb(tmp3, 1024);
+	// url encode title
+	StackBuf(tmpTitle);
+	if ( str && strLen ) {
+		tmpTitle.htmlEncode(str, strLen, false);
+	}
+
+	StackBuf(hb);
 	if ( str && strLen && si->m_doQueryHighlighting ) {
-		hlen = hi.set ( &hb, str, strLen, &si->m_hqq, frontTag, backTag, 0);
+		hlen = hi.set ( &hb, tmpTitle.getBufStart(), tmpTitle.getLength(), &si->m_hqq, frontTag, backTag, 0);
 
 		// reassign!
 		str = hb.getBufStart();
@@ -3849,7 +3377,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	       si->m_format == FORMAT_WIDGET_AJAX ) 
 	     ) {
 		// determine if TiTle wraps, if it does add a <br> count for each wrap
-		if ( ! sb->brify ( str,strLen,0,cols) ) {
+		if ( !sb->brify( str, strLen, 0, cols ) ) {
 			return false;
 		}
 	}
@@ -3857,13 +3385,17 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	// close up the title tag
 	if ( si->m_format == FORMAT_XML ) {
 		sb->safePrintf("\t\t<title><![CDATA[");
-		if ( str ) sb->cdataEncode(str);
+		if ( str ) {
+			sb->cdataEncode(str);
+		}
 		sb->safePrintf("]]></title>\n");
 	}
 
 	if ( si->m_format == FORMAT_JSON ) {
 		sb->safePrintf("\t\t\"title\":\"");
-		if ( str ) sb->jsonEncode(str);
+		if ( str ) {
+			sb->jsonEncode(str);
+		}
 		sb->safePrintf("\",\n");
 	}
 
@@ -3948,16 +3480,14 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	//
 	////////////
 
-	// . then the summary
-	// . "s" is a string of null terminated strings
-	//char *send;
 	// do the normal summary
 	str    = mr->ptr_displaySum;
+
 	// sometimes the summary is longer than requested because for
 	// summary deduping purposes (see "pss" parm in Parms.cpp) we do not
 	// get it as short as requested. so use mr->m_sumPrintSize here
 	// not mr->size_sum
-	strLen = mr->size_displaySum - 1;//
+	strLen = mr->size_displaySum - 1;
 
 	// this includes the terminating \0 or \0\0 so back up
 	if ( strLen < 0 ) {
@@ -3993,27 +3523,23 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		}
 	}
 
-	if ( printSummary && si->m_format == FORMAT_HTML )
-		sb->brify ( str , strLen, 0 , cols ); // niceness = 0
+	if ( si->m_format == FORMAT_HTML ) {
+		if ( printSummary ) {
+			sb->brify( str, strLen, 0, cols );
+		}
 
-	if ( si->m_format == FORMAT_XML ) {
-		sb->safePrintf("\t\t<sum><![CDATA[");
-		sb->cdataEncode(str);
-		sb->safePrintf("]]></sum>\n");
+		// new line if not xml. even summary is empty we need it too like
+		// when showing xml docs - MDW 9/28/2014
+		sb->safePrintf( "<br>\n" );
+	} else if ( si->m_format == FORMAT_XML ) {
+		sb->safePrintf( "\t\t<sum><![CDATA[" );
+		sb->cdataEncode( str );
+		sb->safePrintf( "]]></sum>\n" );
+	} else if ( si->m_format == FORMAT_JSON ) {
+		sb->safePrintf( "\t\t\"sum\":\"" );
+		sb->jsonEncode( str );
+		sb->safePrintf( "\",\n" );
 	}
-
-	if ( si->m_format == FORMAT_JSON ) {
-		sb->safePrintf("\t\t\"sum\":\"");
-		sb->jsonEncode(str);
-		sb->safePrintf("\",\n");
-	}
-
-
-	// new line if not xml. even summary is empty we need it too like
-	// when showing xml docs - MDW 9/28/2014
-	if ( si->m_format == FORMAT_HTML ) // && strLen ) 
-		sb->safePrintf("<br>\n");
-
 
 	/////////
 	// 
@@ -4250,10 +3776,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->safePrintf("\t\t\"site\":\"");
 		if ( site && siteLen > 0 ) sb->safeMemcpy ( site , siteLen );
 		sb->safePrintf("\",\n");
-		//int32_t sh = hash32 ( site , siteLen );
-		//sb->safePrintf ("\t\t<siteHash32>%"UINT32"</siteHash32>\n",sh);
-		//int32_t dh = uu.getDomainHash32 ();
-		//sb->safePrintf ("\t\t<domainHash32>%"UINT32"</domainHash32>\n",dh);
 		// spider date
 		sb->safePrintf ( "\t\t\"spidered\":%"UINT32",\n",
 				 (uint32_t)mr->m_lastSpidered);
@@ -4526,34 +4048,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				coll,
 				(int32_t)us[0],(int32_t)us[1],(int32_t)us[2],
 				(int32_t)us[0],(int32_t)us[1],(int32_t)us[2]);
-
-		/*
-		// . now the info link
-		// . if it's local, don't put the hostname/port in
-		//   there cuz it will mess up Global Spec's machine
-		//if ( h->m_groupId == g_hostdb.m_groupId ) 
-		sb.safePrintf(" - <a href=\"/admin/titledb?c=%s&"
-			      "d=%"INT64"",coll,mr->m_docId);
-		// then the [info] link to show the TitleRec
-		sb->safePrintf ( "\">[info]</a>" );
-		
-		// now the analyze link
-		sb.safePrintf (" - <a href=\"/admin/parser?c=%s&"
-			       "old=1&hc=%"INT32"&u=", 
-			       coll,
-			       (int32_t)mr->m_hopcount);
-		// encode the url now
-		sb->urlEncode ( url , urlLen );
-		// then the [analyze] link
-		sb->safePrintf ("\">[analyze]</a>" );
-		
-		// and links: query link
-		sb->safePrintf( " - <a href=\"/search?c=%s&dr=0&"
-			       "n=100&q=links:",coll);
-		// encode the url now
-		sb->urlEncode ( url , urlLen );
-		sb->safeMemcpy ("\">linkers</a>" , 14 ); 
-		*/
 	}
 
 	char dbuf [ MAX_URL_LEN ];
@@ -4650,116 +4144,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			      , un
 			      , dbuf
 			      );
-		// take similarity out until working again
-		/*
-		sb->safePrintf (" - [similar -"
-			       " <a href=\"/search?"
-			       "q="
-			       "gbtagvector%%3A%"UINT32""
-			       "&sc=1&dr=0&c=%s&n=100"
-			       "&rcache=0\">"
-			       "tag</a> " ,
-			       (int32_t)mr->m_tagVectorHash,  coll);
-		*/
-		
-		//sb->safePrintf ("] ");
-		
-		/*
-		  put this on 'page info'
-		int32_t urlFilterNum = (int32_t)mr->m_urlFilterNum;
-		if(urlFilterNum != -1) {
-			sb->safePrintf (" - <a style=color:green; "
-					"href=/admin/filters?c=%s>"
-				       "UrlFilter:%"INT32"</a>", 
-				       coll ,
-				       urlFilterNum);
-		}					
-		*/
-		
 	}
 
-	// UN-indent it if level is 1
-	/*
-	if ( si->m_format == FORMAT_HTML && si->m_doIpClustering ) {
-		sb->safePrintf (" - [ <a href=\"/search?"
-			       "q=%%2Bip%%3A%s+%s&sc=0&c=%s\">"
-			       "More from this ip</a> ]",
-			       iptoa ( mr->m_ip ) ,
-			       st->m_qe , coll );
-		if ( indent ) sb->safePrintf ( "</blockquote><br>\n");
-		else sb->safePrintf ( "<br><br>\n");
-	}
-	*/
-
-	/*
-	// print the help
-	SafeBuf help;
-	help.safePrintf("The distance matrix uses the "
-			"following formula to calculate "
-			"a score in a table cell for a pair of query terms: "
-			"<br>"
-			"<span style=\""
-			"border:1px black solid;"
-			"background-color:yellow;"
-			"\">"
-			"SCORE = (%"INT32" - |pos1-pos2|) * "
-			"locationWeight * "
-			"densityWeight * "
-			"synWeight1 * "
-			"synWeight2 * "
-			"spamWeight1 * "
-			"spamWeight2 * "
-			"tfWeight1 * "
-			"tfWeight2"
-			"</span>"
-			"<br>"
-			"<br>"
-			, (int32_t)MAXWORDPOS+1
-			);
-	help.safePrintf("<table>"
-			"<tr><td>pos1</td><td>The word position of "
-			"query term 1</td></tr>"
-			"<tr><td>pos2</td><td>The word position of "
-			"query term 2</td></tr>"
-			"</table>"
-			);
-
-	help.safePrintf(
-			//"where<br>"
-			//"locationWeight is based on where "
-			//"the two terms occur in the document "
-			//"and uses the following table: <br>"
-			"<table>"
-			"<tr><td>term location</td>"
-			"<td>locationWeight</td></tr>"
-			);
-	for ( int32_t i = 0 ; i < HASHGROUP_END ; i++ ) {
-		char *hs = getHashGroupString(i);
-		float hw = s_hashGroupWeights[i];
-		help.safePrintf("<tr><td>%s</td><td>%.0f</td></tr>"
-				,hs,hw );
-	}
-	help.safePrintf("</table>");
-	help.safePrintf("<br><br>");
-	help.safePrintf(
-			"<table>"
-			"<tr><td>max # alphanumeric words in location</td>"
-			"<td>densityRank</td>"
-			"<td>densityWeight</td>"
-			"</tr>"
-			);
-	for ( int32_t i = 0 ; i < MAXDENSITYRANK ; i++ ) {
-		help.safePrintf("<tr>"
-				"<td>%"INT32"</td>"
-				"<td>%"INT32"</td>"
-				"<td>%.0f</td>"
-				"</tr>"
-				,maxw,i,dweight );
-	}
-	help.safePrintf("</table>");
-	help.safePrintf("<br><br>"
-	*/
-		
 	if ( mr->size_metadataBuf && si->m_format == FORMAT_JSON) {
 		sb->safePrintf("\t\t\"metadata\":[");
 		//sb->safeMemcpy(mr->ptr_metadataBuf, mr->size_metadataBuf);
@@ -4922,23 +4308,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			minScore = totalPairScore;
 		// we need to set "ft" for xml stuff below
 		if ( si->m_format != FORMAT_HTML ) continue;
-		//sb->safePrintf("<table border=1><tr><td><center><b>");
-		// print pair text
-		//int32_t qtn1 = fps->m_qtermNum1;
-		//int32_t qtn2 = fps->m_qtermNum2;
-		//if ( q->m_qterms[qtn1].m_isPhrase )
-		//	sb->pushChar('\"');
-		//sb->safeMemcpy ( q->m_qterms[qtn1].m_term ,
-		//		q->m_qterms[qtn1].m_termLen );
-		//if ( q->m_qterms[qtn1].m_isPhrase )
-		//	sb->pushChar('\"');
-		//sb->safePrintf("</b> vs <b>");
-		//if ( q->m_qterms[qtn2].m_isPhrase )
-		//	sb->pushChar('\"');
-		//sb->safeMemcpy ( q->m_qterms[qtn2].m_term ,
-		//		q->m_qterms[qtn2].m_termLen );
-		//if ( q->m_qterms[qtn2].m_isPhrase )
-		//	sb->pushChar('\"');
 
 		sb->safePrintf("<tr><td><b>%.04f</b></td>"
 			      "<td colspan=20>total of above scores</td>"
@@ -4947,20 +4316,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// close table from printScoresHeader
 		if ( ! firstTime ) sb->safePrintf("</table><br>");
 	}
-
-
-
-	// close the distance table
-	//if ( nr ) sb->safePrintf("</table>");
-	// print the breakout tables
-	//if ( nr ) {
-	//	//sb->safePrintf("<br>");
-	//	sb->safeMemcpy ( &bt );
-	//}
-
-	// the singles --- TODO: make it ALL query terms
-	//nr = dp->m_numRequiredTerms;
-	//for ( int32_t i = 0 ; i < nr && nr == 1 ; i++ ) {
 
 	int32_t lastTermNum = -1;
 
@@ -5006,12 +4361,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			minScore = totalSingleScore;
 		// we need to set "ft" for xml stuff below
 		if ( si->m_format != FORMAT_HTML ) continue;
-		//sb->safePrintf("<table border=1><tr><td><center><b>");
-		// print pair text
-		//int32_t qtn = fss->m_qtermNum;
-		//sb->safeMemcpy(q->m_qterms[qtn].m_term ,
-		//	      q->m_qterms[qtn].m_termLen );
-		//sb->safePrintf("</b></center></td></tr>");
+
 		sb->safePrintf("<tr><td><b>%.04f</b></td>"
 			      "<td colspan=20>total of above scores</td>"
 			      "</tr>",
@@ -5024,8 +4374,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	char *ff = "";
 	char *ff2 = "sum";
-	//if ( nr ) sb->safePrintf("</table>");
-	//sb->safePrintf("<br>");
+
 	// final score!!!
 	if ( si->m_format == FORMAT_XML ) {
 		sb->safePrintf ("\t\t<siteRank>%"INT32"</siteRank>\n",
@@ -5034,17 +4383,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->safePrintf ("\t\t<numGoodSiteInlinks>%"INT32""
 			       "</numGoodSiteInlinks>\n",
 			       (int32_t)mr->m_siteNumInlinks );
-
-		// sb->safePrintf ("\t\t<numTotalSiteInlinks>%"INT32""
-		// 	       "</numTotalSiteInlinks>\n",
-		// 	       (int32_t)mr->m_siteNumInlinksTotal );
-		// sb->safePrintf ("\t\t<numUniqueIpsLinkingToSite>%"INT32""
-		// 	       "</numUniqueIpsLinkingToSite>\n",
-		// 	       (int32_t)mr->m_siteNumUniqueIps );
-		// sb->safePrintf("\t\t<numUniqueCBlocksLinkingToSite>%"INT32""
-		// 	       "</numUniqueCBlocksLinkingToSite>\n",
-		// 	       (int32_t)mr->m_siteNumUniqueCBlocks );
-
 
 		struct tm *timeStruct3;
 		timeStruct3 = gmtime((time_t *)&mr->m_pageInlinksLastUpdated);
@@ -5884,16 +5222,7 @@ bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Msg20Repl
 	
 	if ( si->m_format == FORMAT_XML ) {
 		sb->safePrintf("\t\t<termInfo>\n");
-		
-		/*
-		  sb->safePrintf("\t\t\t<diversityRank>%"INT32""
-		  "</diversityRank>\n",
-		  (int32_t)ss->m_diversityRank);
-		  sb->safePrintf("\t\t\t<diversityWeight>%f"
-		  "</diversityWeight>\n",
-		  dvw);
-		*/
-		
+
 		sb->safePrintf("\t\t\t<densityRank>%"INT32""
 			      "</densityRank>\n",
 			      (int32_t)ss->m_densityRank);
@@ -6325,17 +5654,6 @@ int csvPtrCmp ( const void *a, const void *b ) {
 
 	// this is now taken care of from the 'supps[]' array below
 	// by prepending two digits before each field name
-
-	// put url first for spider status docs
-	// if ( strcmp(pa,"gbssUrl") == 0 ) return -1;
-	// if ( strcmp(pb,"gbssUrl") == 0 ) return  1;
-
-	// if ( strcmp(pa,"gbssStatusMsg") == 0 ) return -1;
-	// if ( strcmp(pb,"gbssStatusMsg") == 0 ) return  1;
-
-	// if ( strcmp(pa,"gbssStatusCode") == 0 ) return -1;
-	// if ( strcmp(pb,"gbssStatusCode") == 0 ) return  1;
-
 
 	// otherwise string compare
 	int val = strcmp(pa,pb);
@@ -7320,14 +6638,6 @@ bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 		MenuItem *mi = &s_mi[i];
 		// skip if not our item
 		if ( mi->m_menuNum != menuNum ) continue;
-
-		// admin menu is special
-		// if ( menuNum == s_num - 1 ) {
-		// 	first = mi;
-		// 	frontTag = "<font color=green>";
-		// 	backTag = "</font>";
-		// 	break;
-		// }
 
 		// is it in the url
 		char *match = strnstr2 ( src , srcLen, mi->m_cgi );

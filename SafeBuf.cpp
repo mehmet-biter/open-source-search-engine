@@ -707,7 +707,6 @@ bool  SafeBuf::safeCdataMemcpy ( char *s, int32_t len ) {
 
 bool  SafeBuf::htmlEncode(char *s, int32_t lenArg, bool encodePoundSign ,
 			  int32_t niceness , int32_t truncateLen ) {
-	//bool convertUtf8CharsToEntity ) {
 	// . we assume we are encoding into utf8
 	// . sanity check
 	if ( m_encoding == csUTF16 ) { char *xx = NULL; *xx = 0; }
@@ -723,15 +722,15 @@ bool  SafeBuf::htmlEncode(char *s, int32_t lenArg, bool encodePoundSign ,
 	}
 
 	// alloc some space if we need to. add a byte for NULL termination.
-	if( m_length+len+1+extra>=m_capacity&&!reserve(m_capacity+len+1+extra))
+	if ( m_length + len + 1 + extra >= m_capacity && !reserve( m_capacity + len + 1 + extra ) ) {
 		return false;
+	}
+
 	// tmp vars
 	char *t    = m_buf + m_length;
 	char *tend = m_buf + m_capacity;
 	// scan through all 
 	char *send = s + len;
-
-	
 
 	for ( ; s < send ; s++ ) {
 		// breathe
@@ -740,7 +739,10 @@ bool  SafeBuf::htmlEncode(char *s, int32_t lenArg, bool encodePoundSign ,
 		if ( t + 12 >= tend ) {
 			// save progress
 			int32_t written = t - m_buf;
-			if ( ! reserve (m_capacity + 100) ) return false;
+			if ( !reserve( m_capacity + 100 ) ) {
+				return false;
+			}
+
 			// these might have changed, so set them again
 			t    = m_buf + written;
 			tend = m_buf + m_capacity;
@@ -773,7 +775,7 @@ bool  SafeBuf::htmlEncode(char *s, int32_t lenArg, bool encodePoundSign ,
 			*t++ = ';';
 			continue;
 		}
-		if ( *s == '&' ) { // && ! convertUtf8CharsToEntity ) {
+		if ( *s == '&' ) {
 			*t++ = '&';
 			*t++ = 'a';
 			*t++ = 'm';
@@ -790,24 +792,7 @@ bool  SafeBuf::htmlEncode(char *s, int32_t lenArg, bool encodePoundSign ,
 			*t++ = ';';
 			continue;
 		}
-		// our own specially decoded entites!
-		if ( *s == '+' && s[1]=='!' && s[2]=='-' ) {
-			*t++ = '&';
-			*t++ = 'l';
-			*t++ = 't';
-			*t++ = ';';
-			s += 2;
-			continue;
-		}
-		// our own specially decoded entites!
-		if ( *s == '-' && s[1]=='!' && s[2]=='+' ) {
-			*t++ = '&';
-			*t++ = 'g';
-			*t++ = 't';
-			*t++ = ';';
-			s += 2;
-			continue;
-		}
+
 		*t++ = *s;		
 	}
 
@@ -817,8 +802,10 @@ bool  SafeBuf::htmlEncode(char *s, int32_t lenArg, bool encodePoundSign ,
 	}
 
 	*t = '\0';
+
 	// update the used buf length
 	m_length = t - m_buf ;
+
 	// success
 	return true;
 }
@@ -1397,16 +1384,11 @@ bool SafeBuf::brify2 ( char *s , int32_t cols , char *sep , bool isHtml ) {
 	return brify ( s, gbstrlen(s), 0 , cols , sep , isHtml ); 
 }
 
-bool SafeBuf::brify ( char *s , 
-		      int32_t slen , 
-		      int32_t niceness ,
-		      int32_t maxCharsPerLine ,
-		      char *sep ,
-		      bool isHtml ) {
+bool SafeBuf::brify( char *s, int32_t slen, int32_t niceness, int32_t maxCharsPerLine, char *sep,
+					 bool isHtml ) {
 	// count the xml tags so we know how much buf to allocated
 	char *p = s;
 	char *pend = s + slen;
-	//int32_t count = 0;
 	char cs;
 	int32_t brSizes = 0;
 	bool lastRound = false;
@@ -1417,20 +1399,25 @@ bool SafeBuf::brify ( char *s ,
 	int32_t sepLen = gbstrlen(sep);
 	bool forced = false;
 
- redo:
+redo:
 
 	for ( ; p < pend ; p += cs ) {
 		QUICKPOLL(niceness);
 		cs = getUtf8CharSize(p);
+
 		// do not inc count if in a tag
 		if ( inTag ) {
-			if ( *p == '>' ) inTag = false;
+			if ( *p == '>' ) {
+				inTag = false;
+			}
 			continue;
 		}
+
 		if ( *p == '<' && isHtml ) {
 			inTag = true;
 			continue;
 		}
+
 		col++;
 		if ( is_wspace_utf8(p) ) {
 			// reset?
@@ -1439,31 +1426,40 @@ bool SafeBuf::brify ( char *s ,
 				breakPoint = p;
 				goto forceBreak;
 			}
-			// apostrophe exceptions
-			//if ( *p == '\'' ) continue;
+
 			// break AFTER this punct
 			breakPoint = p;
 			continue;
 		}
-		if ( col < maxCharsPerLine ) continue;
+
+		if ( col < maxCharsPerLine ) {
+			continue;
+		}
 
 	forceBreak:
 		// now add the break point i guess
 		// if none, gotta break here for sure!!!
-		if ( ! breakPoint ) breakPoint = p;
+		if ( ! breakPoint ) {
+			breakPoint = p;
+		}
+
 		// count that
 		brSizes += sepLen;//4;
+
 		// print only for last round
 		if ( lastRound ) {
 			// . print up to that
 			// . this includes the \n if forced is true
 			safeMemcpy ( pstart , breakPoint - pstart + 1 );
+
 			// then br
-			//if ( forced ) pushChar('\n');
-			if ( ! forced ) 
+			if ( ! forced ) {
 				safeMemcpy ( sep , sepLen ) ; // "<br>"
+			}
+
 			forced = false;
 		}
+
 		// start right after breakpoint for next line
 		p = breakPoint;
 		cs = getUtf8CharSize(p);
@@ -1478,14 +1474,16 @@ bool SafeBuf::brify ( char *s ,
 	if ( lastRound && p - pstart ) {
 		// print up to that
 		safeMemcpy ( pstart , p - pstart );
-		// then br
-		//safeMemcpy ( "<br>" , 4 );
 	}
 	
-	if ( lastRound ) return true;
+	if ( lastRound ) {
+		return true;
+	}
 
 	// alloc that space. return false with g_errno set on error
-	if ( brSizes && ! reserve ( brSizes ) ) return false;
+	if ( brSizes && ! reserve ( brSizes ) ) {
+		return false;
+	}
 
 	// reset ptrs
 	p = s;
@@ -1496,7 +1494,9 @@ bool SafeBuf::brify ( char *s ,
 	// now do it again but for real!
 	lastRound = true;
 	forced = false;
+
 	goto redo;
+
 	return true;
 }
 
