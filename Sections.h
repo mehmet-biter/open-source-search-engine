@@ -594,7 +594,6 @@ class Sections {
 	// url ends in .rss or .xml ?
 	bool  m_isRSSExt;
 
-	bool m_isTrumba     ;
 	bool m_isFacebook   ;
 	bool m_isEventBrite ;
 	bool m_isStubHub    ;

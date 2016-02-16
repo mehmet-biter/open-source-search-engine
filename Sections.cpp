@@ -166,12 +166,9 @@ bool Sections::set( Words *w, Phrases *phrases, Bits *bits, Url *url, int64_t do
 	// tumba.com "Guided Nature Walk : ..." title
 	char *dom  = m_url->getDomain();
 	int32_t  dlen = m_url->getDomainLen();
-	m_isTrumba     = false;
 	m_isFacebook   = false;
 	m_isEventBrite = false;
 	m_isStubHub    = false;
-	if ( dlen == 10 && strncmp ( dom , "trumba.com" , 10 ) == 0 )
-		m_isTrumba = true;
 	if ( dlen == 12 && strncmp ( dom , "facebook.com" , 12 ) == 0 )
 		m_isFacebook = true;
 	if ( dlen == 11 && strncmp ( dom , "stubhub.com" , 11 ) == 0 )
@@ -4637,7 +4634,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 
 		// are we in a facebook name tag?
 		sit = si;
-		//if ( ! m_isFacebook ) sit = NULL;
 		if ( m_contentType != CT_XML ) sit = NULL;
 		for ( ; sit ; sit = sit->m_parent ) {
 			// breathe
