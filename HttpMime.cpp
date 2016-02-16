@@ -5,6 +5,9 @@
 #include "HttpMime.h"
 #include "HashTable.h"
 #include "Timezone.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 static time_t atotime2( const char *s );
 static time_t atotime3( const char *s );
@@ -57,6 +60,9 @@ void HttpMime::reset ( ) {
 // . returns false if could not get a valid mime
 // . we need the url in case there's a Location: mime that's base-relative
 bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufLen);
+#endif
 	// reset some stuff
 	m_contentLen       = -1;
 	m_content          = NULL;
@@ -89,6 +95,9 @@ bool HttpMime::set ( char *buf , int32_t bufLen , Url *url ) {
 
 // . returns -1 if no boundary found
 int32_t HttpMime::getMimeLen ( char *buf , int32_t bufLen , int32_t *bsize ) {
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufLen);
+#endif
 	// size of the boundary
 	*bsize = 0;
 	// find the boundary
@@ -122,6 +131,9 @@ int32_t HttpMime::getMimeLen ( char *buf , int32_t bufLen , int32_t *bsize ) {
 
 // returns false on bad mime
 bool HttpMime::parse ( char *mime , int32_t mimeLen , Url *url ) {
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(mime,mimeLen);
+#endif
 	// reset locUrl to 0
 	m_locUrl.reset();
 	// return if we have no valid complete mime
