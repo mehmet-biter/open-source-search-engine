@@ -2997,9 +2997,6 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 	// default to 250ms i guess. -1 means unset i think.
 	if ( m_collectiveCrawlDelay < 0.0 ) wait = 250;
 
-	bool isEthan = false;
-	if (m_coll)isEthan=strstr(m_coll,"2b44a0e0bb91bbec920f7efd29ce3d5b");
-
 	// it looks like we are assuming all crawls are repeating so that
 	// &rountStart=<currenttime> or &roundStart=0 which is the same
 	// thing, will trigger a re-crawl. so if collectiveRespiderFreq
@@ -3032,9 +3029,6 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 
 		m_spiderIpWaits     [i] = wait;
 		m_spiderIpMaxSpiders[i] = diffbotipms; // keep it respectful
-		// ethan wants some speed
-		// if ( isEthan )
-		// 	m_spiderIpMaxSpiders[i] = 30;
 		//m_spidersEnabled    [i] = 1;
 		m_spiderFreqs       [i] = respiderFreq;
 		//m_spiderDiffbotApiUrl[i].purge();
