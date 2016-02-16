@@ -193,22 +193,17 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 			// get the term in utf8
 			QueryTerm *qt = &m_q->m_qterms[i];
 
-			char *tpc = qt->m_term + qt->m_termLen;
-			char c = *tpc;
-			*tpc = 0;
-
 			// this term freq is estimated from the rdbmap and
 			// does not hit disk...
-			logf(LOG_DEBUG,"query: term #%"INT32" \"%s\" "
+			logf(LOG_DEBUG,"query: term #%"INT32" \"%*.*s\" "
 			     "termid=%"INT64" termFreq=%"INT64" termFreqWeight=%.03f",
 			     i,
+			     qt->m_termLen,
+			     qt->m_termLen,
 			     qt->m_term,
 			     qt->m_termId,
 			     qt->m_termFreq,
 			     qt->m_termFreqWeight);
-
-			// put it back
-			*tpc = c;
 		}
 	}
 
