@@ -578,7 +578,6 @@ class Sections {
 	class Words *m_words    ;
 	class Bits  *m_bits     ;
 	class Url   *m_url      ;
-	int64_t    m_docId    ;
 	int64_t    m_siteHash64 ;
 	char        *m_coll     ;
 	int32_t         m_niceness ;

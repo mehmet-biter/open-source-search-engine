@@ -129,7 +129,6 @@ bool Sections::set( Words *w, Phrases *phrases, Bits *bits, Url *url, int64_t do
 	m_words           = w;
 	m_bits            = bits;
 	m_url             = url;
-	m_docId           = docId;
 	m_siteHash64      = siteHash64;
 	m_coll            = coll;
 	m_niceness        = niceness;
