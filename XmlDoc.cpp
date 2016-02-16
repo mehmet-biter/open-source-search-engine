@@ -16003,13 +16003,13 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 	//   make queues in the case of hammering an ip, which i think
 	//   it already does...
 #ifdef _VALGRIND_
-	if(m_sreqValid) {
+	if(m_sreqValid)
 		VALGRIND_CHECK_MEM_IS_DEFINED(&m_sreq.m_firstIp,sizeof(m_sreq.m_firstIp));
+	if(m_firstIpValid)
 		VALGRIND_CHECK_MEM_IS_DEFINED(&m_firstIp,sizeof(m_firstIp));
-	}
 #endif
 
-	if ( m_sreqValid && m_sreq.m_firstIp != m_firstIp )
+	if ( m_sreqValid && m_firstIpValid && m_sreq.m_firstIp != m_firstIp )
 		sb->safePrintf("fakesreqfirstip=%s ",iptoa(m_sreq.m_firstIp) );
 
 	//
