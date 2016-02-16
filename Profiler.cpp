@@ -532,19 +532,6 @@ bool Profiler::get32bitSectionHeaders (FILE * file){
 bool Profiler::startTimer(int32_t address, const char* caller) {
 	// disable - we do interrupt based profiling now
 	return true;
-	if(g_inSigHandler) return 1;
-	int32_t slot = m_fn.getSlot(&address);
-	FnInfo *fnInfo;
-	if (slot == -1) return false;
-	fnInfo=(FnInfo *)m_fn.getValueFromSlot(slot);
-
-	if(fnInfo->m_inFunction++ > 0) return true;
-
-	fnInfo->m_startTimeLocal = gettimeofdayInMillisecondsLocal();
-	fnInfo->m_lastPauseTime = fnInfo->m_startTimeLocal;
-	fnInfo->m_startTime = gettimeofdayInMilliseconds();
-	m_activeFns.addKey(&address, &fnInfo);
-	return true;
 }
 
 inline uint64_t gettimeofdayInMicroseconds(void) {
@@ -954,23 +941,6 @@ Profiler::updateRealTimeData( 	void **trace,
 	return frame;
 }
 
-
-// void
-// Profiler::addMissedQuickPoll( ) {
-// 	void *trace[32];
-// 	uint32_t numFrames = backtrace(trace, 32);
-// 	if(numFrames < 3) return;
-// 	const void *stackPtr = trace[2];
-// 	uint32_t baseAddress = g_profiler.getFuncBaseAddr((uint32_t)stackPtr);
-// 	uint32_t *ptr;
-// 	FrameTrace *frame = updateRealTimeData(trace, numFrames, &ptr);
-// 	if(frame) ++frame->missQuickPoll;
-// 	if(!ptr) ptr = (uint32_t *)realTimeProfilerData.getValuePointer(
-// 							   uint32_t(stackPtr));
-// 	if(ptr) ++ptr[1];
-// }
-
-
 void
 Profiler::checkMissedQuickPoll( FrameTrace *frame,
 				const uint32_t stackPtr,
@@ -1051,31 +1021,12 @@ Profiler::getStackFrame() {
 	// . now just store the Instruction Ptrs into a count hashtable
 	// . skip ahead 2 to avoid the sigalrm function handler
 	for ( int32_t i = 2 ; i < numFrames  ; i++ ) {
-
 		// even if we are 32-bit, make this 64-bit for ease
 		uint64_t addr = (uint64_t)(PTRTYPE)trace[i];
-
-		//if ( addr > 0xf0000000 )
-		//log("profiler: %i) addr = %llx",i,(unsigned long long)addr);
 
 		// the call stack path for profiling the worst paths
 		g_profiler.m_ipBuf.pushLongLong(addr);
 		continue;
-		// just store lowest addr for now
-		//break;
-		/*
-		int32_t slot = g_profiler.m_ipCountTable.getSlot ( &addr );
-		if ( slot < 0 ) {
-			int32_t val = 1;
-			g_profiler.m_ipCountTable.addKey ( &addr , &val );
-			continue;
-		}
-		// update existing
-		uint32_t *val;
-		val=(uint32_t *)g_profiler.
-			m_ipCountTable.getValueFromSlot(slot);
-		*val = *val + 1;
-		*/
 	}
 
 	// a secret # to indicate missed quickpoll
@@ -1087,47 +1038,7 @@ Profiler::getStackFrame() {
 	// indicate end of call stack path
 	g_profiler.m_ipBuf.pushLongLong(0LL);//addr);
 
-
 	return;
-
-	/*
-	// if we are in need of a quickpoll store it here
-	if( g_niceness == 0 ) return;
-	// !g_loop.m_canQuickPoll || 
-	if ( ! g_loop.m_needsToQuickPoll ) return;
-	if ( g_loop.m_inQuickPoll ) return;
-
-	// do not breach
-	if ( g_profiler.m_quickpollMissBuf.m_length + 8*32 >= 
-	     g_profiler.m_quickpollMissBuf.m_capacity )
-		return;
-
-	// store address in need of quickpolls
-	//g_profiler.m_quickpollMissBuf.
-	//	pushLongLong((uint64_t)trace[2] );
-	for ( int32_t i = 2 ; i < numFrames && i <= 4 ; i++ ) {
-		// even if we are 32-bit, make this 64-bit for ease
-		uint64_t addr = (uint64_t)trace[i];
-		// the call stack path for profiling the worst paths
-		g_profiler.m_quickpollMissBuf.pushLongLong(addr);
-	}
-
-	// all done
-	return;
-	*/
-
-	const void *stackPtr = trace[2];
-	uint32_t baseAddress = g_profiler.getFuncBaseAddr((PTRTYPE)stackPtr);
-	uint32_t *ptr;	
-	FrameTrace *frame = updateRealTimeData(trace, numFrames, &ptr);
-	if(baseAddress != g_profiler.m_lastDeltaAddress) {
-		// This function is different from the last function we saw
-		g_profiler.m_lastDeltaAddressTime =gettimeofdayInMilliseconds();
-		g_profiler.m_lastDeltaAddress = baseAddress;
-	}
-	checkMissedQuickPoll( 	frame,
-				(PTRTYPE)stackPtr,
-				ptr);
 }
 
 void
