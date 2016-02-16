@@ -8727,9 +8727,9 @@ Url **XmlDoc::getRedirUrl() {
 
 
 	// get cookie for redirect to fix nyt.com
-	char *cookie = mime.getCookie();
+	const char *cookie = mime.getCookie();
 	// find end of cookie at the semicolon
-	char *s = cookie;
+	const char *s = cookie;
 	for ( ; s && *s && *s != ';' ; s++ );
 	if ( s && *s == ';' ) {
 		// do not include ;
@@ -13257,15 +13257,11 @@ uint16_t getCharsetFast ( HttpMime *mime,
 	char *pstart = s;
 	char *pend   = s + slen;
 
-	char *cs    = mime->getCharset();
+	const char *cs    = mime->getCharset();
 	int32_t  cslen = mime->getCharsetLen();
 	if ( cslen > 31 ) cslen = 31;
 	if ( cs && cslen > 0 ) {
-		char *p2 = cs + cslen ; char  c = *p2; *p2 = '\0';
-		// get it
-		charset = get_iana_charset ( cs , gbstrlen(cs) );
-		// restore
-		*p2 = c;
+		charset = get_iana_charset ( cs , cslen );
 	}
 
 	// look for Unicode BOM first though

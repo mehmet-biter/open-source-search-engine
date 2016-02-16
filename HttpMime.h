@@ -50,7 +50,7 @@ time_t atotime1   ( const char *s ) ;
 #define ET_DEFLATE 3
 
 
-extern char * g_contentTypeStrings[];
+extern const char * const g_contentTypeStrings[];
 
 #include <time.h>   // time_t mktime()
 #include "Url.h"
@@ -82,7 +82,7 @@ class HttpMime {
 	int32_t   getContentType     () { return m_contentType;      };
 	bool   isEmpty            () { return ( m_status == -1); };
 	Url   *getLocationUrl     () { return &m_locUrl;    };
-	char  *getCookie          () { return m_cookie; };
+	const char *getCookie     () { return m_cookie; };
 	int32_t   getCookieLen       () { return m_cookieLen; };
 
 	// new stuff for Msg13.cpp to use
@@ -180,7 +180,7 @@ class HttpMime {
 	char *m_charset;
 	int32_t  m_charsetLen;
 
-	char *m_cookie;
+	const char *m_cookie;
 	int32_t  m_cookieLen;
 };
 

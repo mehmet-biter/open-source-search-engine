@@ -16,7 +16,7 @@ static time_t atotime5( const char *s );
 
 // . convert these values to strings
 // . these must be 1-1 with the #define's in HttpMime.h
-char *g_contentTypeStrings [] = {
+const char * const g_contentTypeStrings [] = {
 	""     ,
 	"html" ,
 	"text" ,

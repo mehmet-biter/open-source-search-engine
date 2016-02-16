@@ -3915,7 +3915,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	//
 	/////
 	unsigned char ctype = mr->m_contentType;
-	char *cs = g_contentTypeStrings[ctype];
+	const char *cs = g_contentTypeStrings[ctype];
 
 	if ( si->m_format == FORMAT_XML )
 		sb->safePrintf("\t\t<contentType>"
@@ -3933,7 +3933,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	     ctype != CT_UNKNOWN ){
 		sb->safePrintf(" <b><font style=color:white;"
 			       "background-color:maroon;>");
-		char *p = cs;
+		const char *p = cs;
 		for ( ; *p ; p++ ) {
 			char c = to_upper_a(*p);
 			sb->pushChar(c);

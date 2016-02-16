@@ -840,7 +840,7 @@ void reset_iana_charset ( ) {
 }
 
 // Slightly modified from getTextEntity
-int16_t get_iana_charset(char *cs, int len)
+int16_t get_iana_charset(const char *cs, int len)
 {
     if (!s_isInitialized){
 	// set up the hash table
