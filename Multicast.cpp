@@ -267,10 +267,6 @@ void Multicast::sendToGroup ( ) {
 
 		// retire the host to prevent resends
 		m_retired [ i ] = true;
-#ifdef _GLOBALSPEC_
-		// debug message for global spec
-		//logf(LOG_DEBUG,"net: mcast state=%08"XINT32"",(int32_t)this);
-#endif
 		int32_t hid = h->m_hostId;
 		// . send to a single host
 		// . this creates a transaction control slot, "udpSlot"
@@ -290,11 +286,6 @@ void Multicast::sendToGroup ( ) {
 				       m_replyBuf       ,
 				       m_replyBufMaxSize ,
 				       m_niceness )) {  // cback niceness
-#ifdef _GLOBALSPEC_
-			// note the slot ptr for reference
-			//logf(LOG_DEBUG, "net: mcast slotPtr=%08"XINT32"",
-			//     (int32_t)&m_slots[i]);
-#endif
 			continue;
 		}
 		// g_errno must have been set, remember it
@@ -832,10 +823,6 @@ bool Multicast::sendToHost ( int32_t i ) {
 	int32_t  bestIp   = h->m_ip;
 	bestIp = g_hostdb.getBestHosts2IP ( h );
 
-#ifdef _GLOBALSPEC_
-	// debug message for global spec
-	//logf(LOG_DEBUG,"net: mcast2 state=%08"XINT32"",(int32_t)this);
-#endif
 	// sanity check
 	//if ( g_hostdb.isDead(h) ) {
 	//	log("net: trying to send to dead host.");
@@ -886,10 +873,6 @@ bool Multicast::sendToHost ( int32_t i ) {
 	}
 	// mark it as outstanding
 	m_inProgress[i] = 1;
-#ifdef _GLOBALSPEC_
-	// note the slot ptr for reference
-	//logf(LOG_DEBUG,"net: mcast2 slotPtr=%08"XINT32"",(int32_t)&m_slots[i]);
-#endif
 	// set our last launch date
 	m_lastLaunch = nowms ; // gettimeofdayInMilliseconds();
 	// save the host, too
@@ -917,10 +900,6 @@ bool Multicast::sendToHost ( int32_t i ) {
 	// . sleepWrapper1() will call sendToHostLoop() for us
 	g_loop.registerSleepCallback  (50/*ms*/,this,sleepWrapper1,m_niceness);
 	m_registeredSleep = true;
-#ifdef _GLOBALSPEC_
-	// debug msg
-	//logf(LOG_DEBUG,"net: mcast registered1 this=%08"XINT32"",(int32_t)this);
-#endif
 	// successful launch
 	return true;
 }
@@ -1378,11 +1357,6 @@ void Multicast::closeUpShop ( UdpSlot *slot ) {
 	if ( m_registeredSleep ) {
 		g_loop.unregisterSleepCallback ( this , sleepWrapper1 );
 		m_registeredSleep = false;
-#ifdef _GLOBALSPEC_
-		// debug msg
-		//logf(LOG_DEBUG,"net: mcast unregistered1 this= %08"XINT32"",
-		//     (int32_t)this);
-#endif
 	}
 	if ( ! g_errno && m_retryCount > 0 ) 
 	       log("net: Multicast succeeded after %"INT32" retries.",m_retryCount);

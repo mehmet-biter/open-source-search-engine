@@ -2384,7 +2384,6 @@ int main2 ( int argc , char *argv[] ) {
 		}
 #ifndef _CLIENT_
 #ifndef _METALINCS_
-#ifndef _GLOBALSPEC_
 		else if ( argv[cmdarg+1][0] == 'i' )
 			dumpIndexdb (coll,startFileNum,numFiles,includeTree,
 				     termId);
@@ -2394,7 +2393,6 @@ int main2 ( int argc , char *argv[] ) {
 		else if ( argv[cmdarg+1][0] == 'd' )
 			dumpDatedb  (coll,startFileNum,numFiles,includeTree,
 				     termId,false);
-#endif
 #endif
 #endif
 		/*
@@ -9173,9 +9171,7 @@ void dumpIndexdb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 		   int64_t termId ) {
 	// this is confidential data format
 #ifdef _CLIENT_
-#ifndef _GLOBALSPEC_
 	return;
-#endif
 #endif
 #ifdef _METALINCS_
 	return;
