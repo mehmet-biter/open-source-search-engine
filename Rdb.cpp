@@ -307,8 +307,6 @@ bool Rdb::init ( char          *dir                  ,
 	//	return g_statsdb.addColl ( NULL );
 	//if ( g_cachedb.getRdb() == this ) 
 	//	return g_cachedb.addColl ( NULL );
-	//if ( g_serpdb.getRdb() == this ) 
-	//	return g_serpdb.addColl ( NULL );
 	//else if ( g_accessdb.getRdb() == this ) 
 	//	return g_accessdb.addColl ( NULL );
 	//else if ( g_facebookdb.getRdb() == this ) 
@@ -2839,7 +2837,6 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB_CLUSTERDB ] = g_clusterdb.getRdb();
 		s_table9 [ RDB_LINKDB    ] = g_linkdb.getRdb();
 		s_table9 [ RDB_CACHEDB   ] = g_cachedb.getRdb();
-		s_table9 [ RDB_SERPDB    ] = g_serpdb.getRdb();
 		s_table9 [ RDB_STATSDB   ] = g_statsdb.getRdb();
 		s_table9 [ RDB_REVDB     ] = g_revdb.getRdb();
 		s_table9 [ RDB_PARMDB    ] = NULL;
@@ -2873,7 +2870,6 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_statsdb.getRdb   () ) return RDB_STATSDB;
 	if ( rdb == g_linkdb.getRdb    () ) return RDB_LINKDB;
 	if ( rdb == g_cachedb.getRdb   () ) return RDB_CACHEDB;
-	if ( rdb == g_serpdb.getRdb    () ) return RDB_SERPDB;
 	if ( rdb == g_revdb.getRdb     () ) return RDB_REVDB;
 	if ( rdb == g_indexdb2.getRdb   () ) return RDB2_INDEXDB2;
 	if ( rdb == g_posdb2.getRdb   () ) return RDB2_POSDB2;

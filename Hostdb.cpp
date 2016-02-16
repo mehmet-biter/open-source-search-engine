@@ -2504,7 +2504,7 @@ uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) { // ,bool split ) {
 		return m_map [(*(uint16_t *)((char *)k + 10))>>3];
 	}
 	// based on url hash, top 32 bits
-	else if ( rdbId == RDB_CACHEDB || rdbId == RDB_SERPDB ) {
+	else if ( rdbId == RDB_CACHEDB ) {
 		return m_map [(*(uint16_t *)((char *)k + 10))>>3];
 	}		
 	// . base this on city/adm1/city/streetname hash bits, 

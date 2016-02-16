@@ -118,6 +118,5 @@ class Cachedb {
 };
 
 extern class Cachedb g_cachedb;
-extern class Cachedb g_serpdb;
 
 #endif

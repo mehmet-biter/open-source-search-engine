@@ -275,7 +275,7 @@ bool Process::init ( ) {
 	m_rdbs[m_numRdbs++] = g_statsdb.getRdb     ();
 	m_rdbs[m_numRdbs++] = g_linkdb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_cachedb.getRdb      ();
-	m_rdbs[m_numRdbs++] = g_serpdb.getRdb      ();
+
 	// save what urls we have been doled
 	m_rdbs[m_numRdbs++] = g_doledb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_titledb2.getRdb    ();

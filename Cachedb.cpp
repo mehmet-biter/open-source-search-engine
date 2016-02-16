@@ -4,9 +4,6 @@
 // for seo-related objects:
 Cachedb g_cachedb;
 
-// for seo serps:
-Cachedb g_serpdb;
-
 void Cachedb::reset() {
 	m_rdb.reset();
 }
@@ -19,7 +16,7 @@ bool Cachedb::init ( ) {
 	// i've seen some debug entries like 33MB because of
 	// m_debugDocIdScoreBuf and m_origDocIdScoreBuf take up so much space!
 	// so don't cache those any more!!
-	int64_t maxTreeMem = 40000000; // 40MB g_serpdb, 40MB g_cachedb
+	int64_t maxTreeMem = 40000000; // 40MB g_cachedb
 	// . what's max # of tree nodes?
 	// . key+4+left+right+parents+dataPtr = sizeof(key96_t)+4 +4+4+4+4
 	// . 32 bytes per record when in the tree
@@ -33,10 +30,6 @@ bool Cachedb::init ( ) {
 	//       look into "minimizeDiskSeeks" at some point...
 	m_name = "cachedb";
 	m_rdbId = RDB_CACHEDB;
-	if ( this == &g_serpdb ) {
-		m_name = "serpdb";
-		m_rdbId = RDB_SERPDB;
-	}
 
 	// if ( ! m_pc.init ( m_name ,
 	// 		   m_rdbId, // RDB_CACHEDB,
