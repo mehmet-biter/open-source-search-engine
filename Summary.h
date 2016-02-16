@@ -22,8 +22,6 @@
 
 #include "gb-include.h"
 
-#include "Xml.h"
-
 #define MAX_SUMMARY_LEN 1024*20
 #define MAX_SUMMARY_EXCERPTS 1024
 
