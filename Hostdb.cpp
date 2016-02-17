@@ -2079,70 +2079,10 @@ bool Hostdb::saveHostsConf ( ) {
 			sprintf(temp, "%"INT32"   ", i);
 		write(fd, temp, gbstrlen(temp));
 
-		int32_t spaces;
-		//int32_t g;
-
 		// the new format is just the hostname then note
 		sprintf(temp,"%s ",h->m_hostname);
 		write(fd, temp, gbstrlen(temp));
-		goto skip;
 
-		// generate the ip string
-		strcpy(temp, iptoa(h->m_ip));
-		write(fd, temp, gbstrlen(temp));
-		spaces = 16 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// generate the ip2 string
-		strcpy(temp, iptoa(h->m_ipShotgun));
-		write(fd, temp, gbstrlen(temp));
-		spaces = 16 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// udp1 port
-		sprintf(temp, "%hu ", h->m_port);
-		write(fd, temp, gbstrlen(temp));
-		spaces = 6 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// udp2 port
-		//sprintf(temp, "%hu ", h->m_port2);
-		sprintf(temp, "0 " );
-		write(fd, temp, gbstrlen(temp));
-		spaces = 6 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// dns port
-		sprintf(temp, "%hu ", h->m_dnsClientPort);
-		write(fd, temp, gbstrlen(temp));
-		spaces = 6 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// http port
-		sprintf(temp, "%hu ", h->m_httpPort);
-		write(fd, temp, gbstrlen(temp));
-		spaces = 6 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// https port
-		sprintf(temp, "%hu ", h->m_httpsPort);
-		write(fd, temp, gbstrlen(temp));
-		spaces = 6 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// IDE channel
-		sprintf(temp, "%"INT32" ", h->m_ideChannel);
-		write(fd, temp, gbstrlen(temp));
-		// switch ID
-		sprintf(temp, "%"INT32" ", (int32_t)h->m_switchId);
-		write(fd, temp, gbstrlen(temp));
-		// Group ID
-		/*
-		g = h->m_group;
-		if ( g < 10 )
-			sprintf(temp, "00%"INT32" ", g);
-		else if ( g < 100 )
-			sprintf(temp, "0%"INT32" ", g);
-		else
-			sprintf(temp, "%"INT32" ", g);
-		write(fd, temp, gbstrlen(temp));
-		*/
-		// directory
-		write(fd, h->m_dir, gbstrlen(h->m_dir));
-	skip:
 		// note
 		write(fd, h->m_note, gbstrlen(h->m_note));
 		// end line
