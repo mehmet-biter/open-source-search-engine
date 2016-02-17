@@ -250,18 +250,7 @@ void Loop::unregisterCallback ( Slot **slots , int fd , void *state ,
 		setSigWaitTime ( m_minTick );
 	}
 
-	// return now if found
-	if ( found ) return;
-	// . otherwise, bitch if we're not silent
-	// . HttpServer.cpp always calls this even if it did not register its
-	//   File's fd just to make sure.
-	if ( silent ) return;
-
 	return;
-	// sometimes the socket is abruptly closed and that calls the
-	// unregisterWriteCallback() for us... so skip this
-	log(LOG_LOGIC,
-	    "loop: unregisterCallback: callback not found (fd=%i).",fd);
 }
 
 bool Loop::registerReadCallback  ( int fd,
