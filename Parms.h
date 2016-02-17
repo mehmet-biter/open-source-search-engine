@@ -84,14 +84,6 @@ enum {
 class HttpRequest;
 class TcpSocket;
 
-class Page {
- public:
-	int32_t  m_page;     // from the PAGE_* enums above
-	char *m_bgcolor;  // color of the cells in the table
-	char *m_topcolor; // color of the table's first row
-	char *m_title;    // browser title bar
-};
-
 #include "Msg4.h"
 
 // generic gigablast request. for all apis offered.
@@ -122,35 +114,6 @@ class GigablastRequest {
 	////////////
 	// these all reference into m_hr or into the Parm::m_def string!
 	char *m_url; // also for /get
-	//char *m_queryToScrape;
-	//char *m_contentDelim;
-	//char  m_containerContentType; // CT_UNKNOWN, CT_WARC, CT_ARC
-	//int32_t m_injectDocIp;
-	//char *m_contentTypeStr;
-	//char *m_contentFile;
-	//char *m_content;
-	//char  m_injectLinks;
-	//char  m_spiderLinks;
-	//char  m_shortReply;
-	//char  m_newOnly;
-	//char  m_deleteUrl;
-	//char  m_recycle;
-	//char  m_dedup;
-	//char  m_hasMime;
-	//char  m_doConsistencyTesting;
-	//char  m_getSections;
-	//char  m_gotSections;
-	//int32_t  m_charset;
-	//int32_t  m_hopCount; // hopcount
-	//collnum_t m_collnum; // more reliable than m_coll
-	// older ones
-	//uint32_t m_firstIndexed; // firstimdexed
-	//uint32_t m_lastSpidered; // lastspidered;
-	//SafeBuf  m_contentBuf; // for holding a warc/arc file
-
-
-
-
 
 	///////////
 	//
@@ -513,9 +476,6 @@ class Parms {
 	bool m_triedToSync;
 
 	bool m_isDefaultLoaded;
-
-	Page m_pages [ 50 ];
-	int32_t m_numPages;
 	
 	Parm m_parms [ MAX_PARMS ];
 	int32_t m_numParms;
@@ -523,24 +483,6 @@ class Parms {
 	// just those Parms that have a m_sparm of 1
 	Parm *m_searchParms [ MAX_PARMS ];
 	int32_t m_numSearchParms;
-
-	/*
- private:
-	// these return true if overflow
-	bool serializeConfParm( Parm *m, int32_t i, char **p, char *end, 
-				int32_t size, int32_t cnt, 
-				bool sizeChk, int32_t *bufSz );
-	bool serializeCollParm( class CollectionRec *cr, 
-				Parm *m, int32_t i, char **p, char *end,
-				int32_t size, int32_t cnt,
-				bool sizeChk, int32_t *bufSz );
-			
-
-	void deserializeConfParm( Parm *m, SerParm *sp, char **p,
-				   bool *confChgd );
-	void deserializeCollParm( class CollectionRec *cr,
-				  Parm *m, SerParm *sp, char **p );
-	*/
 
 	// for holding default.conf file for collection recs for OBJ_COLL
 	char m_buf [ MAX_XML_CONF ];
