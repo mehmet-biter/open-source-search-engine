@@ -6728,93 +6728,44 @@ int Posdb::printList ( RdbList &list ) {
 			err = " (alignerror3)";
 			if ( nd2 < d ) err = " (alignordererror3)";
 		}
-		// if ( KEYCMP((char *)&k,(char *)&startKey,list.m_ks)<0 || 
-		//      KEYCMP((char *)&k,ek2,list.m_ks)>0){
-		// 	err = " (out of range)";
-		// }
-		//if ( err )
-		//	printf("%s",err );
-		//continue;
-		//if ( ! magicBit && recSize == 6 ) { char *xx=NULL;*xx=0; }
-		if ( 1==1 ) //termId < 0 )
-			//fprintf(stderr,
-			log(
-			       "k=%s "
-			       "tid=%015"UINT64" "
-			       "docId=%012"INT64" "
 
-			       "siterank=%02"INT32" "
-			       "langid=%02"INT32" "
-			       "pos=%06"INT32" "
-			       "hgrp=%02"INT32" "
-			       "spamrank=%02"INT32" "
-			       "divrank=%02"INT32" "
-			       "syn=%01"INT32" "
-			       "densrank=%02"INT32" "
-			       //"outlnktxt=%01"INT32" "
-			       "mult=%02"INT32" "
+		log(
+		       "k=%s "
+		       "tid=%015"UINT64" "
+		       "docId=%012"INT64" "
 
-			       "dh=0x%02"XINT32" "
-			       "rs=%"INT32"" //recSize
-			       "%s" // dd
-			       "%s" // err
-			       "\n" , 
-			       KEYSTR(&k,sizeof(key144_t)),
-			       (int64_t)g_posdb.getTermId(&k),
-			       d , 
-			       (int32_t)g_posdb.getSiteRank(&k),
-			       (int32_t)g_posdb.getLangId(&k),
-			       (int32_t)g_posdb.getWordPos(&k),
-			       (int32_t)g_posdb.getHashGroup(&k),
-			       (int32_t)g_posdb.getWordSpamRank(&k),
-			       (int32_t)g_posdb.getDiversityRank(&k),
-			       (int32_t)g_posdb.getIsSynonym(&k),
-			       (int32_t)g_posdb.getDensityRank(&k),
-			       //(int32_t)g_posdb.getIsOutlinkText(&k),
-			       (int32_t)g_posdb.getMultiplier(&k),
-			       
-			       (int32_t)dh, 
-			       recSize,
-			       dd ,
-			       err );
-		else
-			log(//fprintf(stderr,
-			       "k=%s "
-			       "tid=%015"UINT64" "
-			       "docId=%012"INT64" "
+		       "siterank=%02"INT32" "
+		       "langid=%02"INT32" "
+		       "pos=%06"INT32" "
+		       "hgrp=%02"INT32" "
+		       "spamrank=%02"INT32" "
+		       "divrank=%02"INT32" "
+		       "syn=%01"INT32" "
+		       "densrank=%02"INT32" "
+		       "mult=%02"INT32" "
 
-			       "siterank=%02"INT32" "
-			       "langid=%02"INT32" "
-			       "pos=%06"INT32" "
-			       "hgrp=%02"INT32" "
-			       "spamrank=%02"INT32" "
-			       "divrank=%02"INT32" "
-			       "syn=%01"INT32" "
-			       "densrank=%02"INT32" "
-			       //"outlnktxt=%01"INT32" "
-			       "mult=%02"INT32" "
-			       //"senth32=0x%08"XINT32" "
-			       "recSize=%"INT32" "
-			       "dh=0x%02"XINT32"%s%s\n" , 
-			       KEYSTR(&k,sizeof(key144_t)),
-			       (int64_t)g_posdb.getTermId(&k),
-			       d , 
-			       (int32_t)g_posdb.getSiteRank(&k),
-			       (int32_t)g_posdb.getLangId(&k),
-			       (int32_t)g_posdb.getWordPos(&k),
-			       (int32_t)g_posdb.getHashGroup(&k),
-			       (int32_t)g_posdb.getWordSpamRank(&k),
-			       (int32_t)g_posdb.getDiversityRank(&k),
-			       (int32_t)g_posdb.getIsSynonym(&k),
-			       (int32_t)g_posdb.getDensityRank(&k),
-			       //(int32_t)g_posdb.getIsOutlinkText(&k),
-			       (int32_t)g_posdb.getMultiplier(&k),
-			       //(int32_t)g_posdb.getSectionSentHash32(&k),
-			       recSize,
-			       
-			       (int32_t)dh, 
-			       dd ,
-			       err );
+		       "dh=0x%02"XINT32" "
+		       "rs=%"INT32"" //recSize
+		       "%s" // dd
+		       "%s" // err
+		       "\n" ,
+		       KEYSTR(&k,sizeof(key144_t)),
+		       (int64_t)g_posdb.getTermId(&k),
+		       d ,
+		       (int32_t)g_posdb.getSiteRank(&k),
+		       (int32_t)g_posdb.getLangId(&k),
+		       (int32_t)g_posdb.getWordPos(&k),
+		       (int32_t)g_posdb.getHashGroup(&k),
+		       (int32_t)g_posdb.getWordSpamRank(&k),
+		       (int32_t)g_posdb.getDiversityRank(&k),
+		       (int32_t)g_posdb.getIsSynonym(&k),
+		       (int32_t)g_posdb.getDensityRank(&k),
+		       (int32_t)g_posdb.getMultiplier(&k),
+		       (int32_t)dh,
+		       recSize,
+		       dd ,
+		       err );
+
 		continue;
 	}
 
