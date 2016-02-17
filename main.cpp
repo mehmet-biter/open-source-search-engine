@@ -10129,8 +10129,8 @@ int injectFile ( char *filename , char *ips ,
 			gbsystem(cmd.getBufStart());
 			goto subloop;
 		}
-		exit(0);
 		log("cmd: done injecting archives for split %i",split);
+		exit(0);
 	}
 
 	bool isDelete = false;
