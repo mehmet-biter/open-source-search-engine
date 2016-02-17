@@ -4401,65 +4401,12 @@ int64_t **XmlDoc::getWikiDocIds ( ) {
 	//logf(LOG_DEBUG,"FIX ME FIX ME - getWikiDocIds");
 
 	// MDW: for now bail here too!
-	if ( ! gq[0] || 1 == 1 ) {
-		ptr_wikiDocIds  = m_wikiDocIds;
-		ptr_wikiScores  = m_wikiScores;
-		size_wikiDocIds = 0;
-		size_wikiScores = 0;
-		m_wikiDocIdsValid = true;
-		return (int64_t **)&ptr_wikiDocIds;
-	}
-
-	// set our query to these gigabits
-	// re-enable this later
-	//if ( ! m_calledMsg40 ) m_wq.set ( gq );
-
-	int32_t need = 200 + gbstrlen(gq);
-	// make buf
-	m_wikiqbuf = (char *)mmalloc ( need , "wikiqbuf");
-	// error?
-	if ( ! m_wikiqbuf ) return NULL;
-	// save size
-	m_wikiqbufSize = need;
-	// use large single tier for speed
-	char *p = m_wikiqbuf;
-	p += sprintf ( p ,
-		       "GET /search?raw=9&n=%"INT32"&sc=0&dr=0&"//dio=1&"
-		       "t0=1000000&rat=0&"
-		       "c=wiki&q=%s", (int32_t)MAX_WIKI_DOCIDS, gq );
-	// terminate it
-	*p++ = '\0';
-	// then put in the ip
-	*(int32_t *)p = g_hostdb.m_myHost->m_ip;
-	// skip over ip
-	p += 4;
-	// sanity check
-	if ( p - m_wikiqbuf > need ) { char *xx=NULL;*xx=0; }
-
-	int32_t ip = g_conf.m_wikiProxyIp;
-	// if not given, make it gf1 for now
-	if ( ! ip ) ip = atoip ( "10.5.62.11" , 10 );
-
-	int32_t port = g_conf.m_wikiProxyPort;
-	// port default too to gf1
-	if ( ! port ) port = 9002;
-
-	// send it using msg 0xfd to the wiki cluster's proxy
-	if ( ! g_udpServer.sendRequest ( m_wikiqbuf            ,
-					 p - m_wikiqbuf        ,
-					 0xfd                  ,
-					 ip                    ,
-					 port                  ,
-					 -1                    , // hostId
-					 NULL                  , // retSlot
-					 this                  , // state
-					 gotWikiResultsWrapper ,
-					 1*1000                  ) ) //timeout
-		// we had an error, g_errno should be set
-		return NULL;
-
-	// got without blocking? no way!
-	return (int64_t **)-1;
+	ptr_wikiDocIds  = m_wikiDocIds;
+	ptr_wikiScores  = m_wikiScores;
+	size_wikiDocIds = 0;
+	size_wikiScores = 0;
+	m_wikiDocIdsValid = true;
+	return (int64_t **)&ptr_wikiDocIds;
 }
 
 void XmlDoc::gotWikiResults ( UdpSlot *slot ) {
@@ -5151,40 +5098,6 @@ Sections *XmlDoc::getImpliedSections ( ) {
 
 	// just use that for now if not doing events to save time! because
 	// adding implied sections really sucks the resources.
-	m_impliedSectionsValid = true;
-	return &m_sections;
-
-	// this will set it if necessary
-	Words *words = getWords();
-	// returns NULL on error, -1 if blocked
-	if ( ! words || words == (Words *)-1 ) return (Sections *)words;
-	// get this
-	Bits *bits = getBits();
-	// bail on error
-	if ( ! bits ) return NULL;
-	// get the content type
-	uint8_t *ct = getContentType();
-	if ( ! ct ) return NULL;
-
-	if ( ! m_firstUrlValid ) { char *xx=NULL;*xx=0; }
-
-	// if we got no sections it was bad html. so don't go any further
-	// lest we core in other code..
-	// it might have also just been an empty doc.
-	// either way we'll core in getAddresses cuz it calls getSimpleDates
-	// which will core in Dates::setPart1() trying to use m_sectionPtrs
-	if ( sections->m_numSections == 0 ) {
-		m_impliedSectionsValid = true;
-		// hack to avoid core for empty docs like www.mini-polis.com
-		sections->m_addedImpliedSections = true;
-		return &m_sections;
-	}
-
-	// . now add implied sections
-	// . return NULL with g_errno set on error
-	if ( ! m_sections.addImpliedSections() ) return NULL;
-
-	// we got it
 	m_impliedSectionsValid = true;
 	return &m_sections;
 }
@@ -11418,8 +11331,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	if ( *d == 0LL ) {
 		log("xmldoc: crap no g_errno");
 		g_errno = EBADENGINEER;
-		return NULL;
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
 		return NULL;
 	}
 	char *mysite = getSite();
@@ -23959,94 +23870,6 @@ SafeBuf *XmlDoc::getSampleForGigabits ( ) {
 	m_gsbufValid = true;
 	// success
 	return &m_gsbuf;
-
-
-
-
-
-	// need a buncha crap
-	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (SafeBuf *)xml;
-	Pos *pos = getPos();
-	if ( ! pos || pos == (Pos *)-1 ) return (SafeBuf *)pos;
-	Matches *mm = getMatches();
-	if ( ! mm || mm == (Matches *)-1 ) return (SafeBuf *)mm;
-
-	// convert length to number of words
-	int32_t bigSampleRadius = m_req->m_bigSampleRadius / 5;
-	// at least 1
-	if ( bigSampleRadius <= 0 ) bigSampleRadius = 1;
-
-	// alloc for whole document?
-	int32_t max = xml->getContentLen() ;
-	// do not exceed
-	if ( max > m_req->m_bigSampleMaxLen ) max = m_req->m_bigSampleMaxLen;
-	// make sure we have something in words too. i guess no sample?
-	if ( max <= 2 ) { m_gsbufValid = true; return &m_gsbuf; }
-	// a flag so we don't overlap samples...
-	int32_t lastb = -1;
-	// . set m_buf to where we write the sample
-	// . add a byte for the terminating \0
-	int32_t gsbufAllocSize = max + 1;
-	// temp hack
-	//m_gsbuf = (char *)mmalloc(m_gsbufAllocSize,"gsbuf");
-	if ( ! m_gsbuf.reserve ( gsbufAllocSize, "gsbuf" ) ) return NULL;
-	// g_errno should be set...
-	//if ( ! m_gsbuf ) return NULL;
-	//m_freeBuf = true;
-	// set our pointer
-	char *pstart = m_gsbuf.getBufStart();
-	char *p    = pstart;
-	char *pend = pstart + max;
-
-	int32_t nw = ww->m_numWords;
-
-	// skip to first query term
-	for ( int32_t i = 0 ; i < mm->m_numMatches ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get the match
-		Match *m = &mm->m_matches[i];
-		// break out if match is not from the document's Words class
-		if ( m->m_words != ww ) break;
-		// the word #
-		int32_t n = m->m_wordNum;
-		// got a match, add this samplet, [a,b]
-		int32_t a = n - bigSampleRadius;
-		int32_t b = n + bigSampleRadius;
-		if ( a <     0 ) a =     0;
-		if ( b >    nw ) b =    nw;
-		if ( a < lastb ) a = lastb;
-		// ensure the samples are separated by \0
-		else if ( p > pstart && p + 2 < pend ) {
-			*p++ = '\0';
-		}
-		Pos  *pos = m->m_pos;
-		int32_t *pp  = pos->m_pos;
-		int32_t  len = pp[b+1] - pp[a];
-		// if match would send us over, we are done
-		if ( p + len >= pend ) break;
-
-		len = pos->filter( m->m_words, a, b, false, p, pend, m_version );
-
-		// for debug (mdw)
-		//log("query: gigabitsample#%"INT32"=%s",i,p);
-		p += len;
-		// we are the new lastb
-		lastb = b;
-	}
-	// always null terminate
-	*p++ = '\0';
-	// . set sample size
-	// . this includes terminating 0\'s in this case
-	//int32_t gsbufSize = p - m_gsbuf;
-	m_gsbuf.setLength( p - m_gsbuf.getBufStart() );
-	// we are valid
-	m_gsbufValid = true;
-	// for debug (mdw)
-	//log("query: finalgigabitsample=%s",m_gsbuf);
-	// success
-	return &m_gsbuf;
 }
 
 // if it is json then only return the json fields that are strings
@@ -27199,24 +27022,16 @@ char **XmlDoc::getFilteredRootTitleBuf ( ) {
 	char **rtbp = getRootTitleBuf();
 	if ( ! rtbp || rtbp == (void *)-1 ) return (char **)rtbp;
 
-	/*
-	// assume none
-	m_filteredRootTitleBuf[0] = '\0';
-	m_filteredRootTitleBufSize = 0;
-	m_filteredRootTitleBufValid = true;
-	return (char **)&m_filteredRootTitleBuf;
-	*/
-
 	// filter all the punct to \0 so that something like
 	// "walmart.com : live better" is reduced to 3 potential
 	// names, "walmart", "com" and "live better"
 	char *src    =       m_rootTitleBuf;
 	char *srcEnd = src + m_rootTitleBufSize;
 	char *dst    =       m_filteredRootTitleBuf;
+
 	// save some room to add a \0, so subtract 5
 	char *dstEnd = dst + ROOT_TITLE_BUF_MAX - 5;
-	//char *src = tag->getTagData();
-	//char *srcEnd = src + tag->getTagDataSize();
+
 	int32_t  size = 0;
 	bool lastWasPunct = true;
 	for ( ; src < srcEnd && dst < dstEnd ; src += size ) {
@@ -27286,8 +27101,6 @@ char **XmlDoc::getFilteredRootTitleBuf ( ) {
 	if ( m_filteredRootTitleBufSize > 0 &&
 	     m_filteredRootTitleBuf [ m_filteredRootTitleBufSize - 1 ] ) {
 		char *xx=NULL;*xx=0;
-		//m_filteredRootTitleBuf [ m_filteredRootTitleBufSize-1]='\0';
-		//m_filteredRootTitleBufSize++;
 	}
 
 	// sanity check - breach check
@@ -27300,7 +27113,6 @@ char **XmlDoc::getFilteredRootTitleBuf ( ) {
 	static char *fp = m_filteredRootTitleBuf;
 
 	return (char **)&fp;
-	//return (char **)&m_filteredRootTitleBuf;
 }
 
 //static bool s_dummyBool = 1;
