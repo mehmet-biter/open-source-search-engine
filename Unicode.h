@@ -218,9 +218,6 @@ inline int32_t ucToUtf8(char *outbuf, int32_t outbuflen,
 		 inbuf, inbuflen, charset, ignoreBadChars,niceness);
 }
 
-// Encode a code point into latin-1, return 0 if not able to
-uint8_t latin1Encode ( UChar32 c );
-
 // Encode a code point in UTF-8
 int32_t	utf8Encode(UChar32 c, char* buf);
 
@@ -241,17 +238,6 @@ int32_t stripAccentMarks(char *outbuf, int32_t outbufsize,
 //////////////////////////////////////////////////////////////
 //  Inline functions
 //////////////////////////////////////////////////////////////
-
-// . convert a unicode char into latin1
-// . returns 0 if could not do it
-// . see UNIDATA/NamesList.txt for explanation of all UChar32 values
-// . seems like Unicode is conventiently 1-1 with latin1 for the first 256 vals
-inline uint8_t latin1Encode ( UChar32 c ) {
-	// keep ascii chars as ascii
-	if ( c <= 255 ) return (uint8_t)c;
-	// that ain't latin-1!
-	return 0;
-}
 
 // . returns length of byte sequence encoded
 // . store the unicode character, "c", as a utf8 character
