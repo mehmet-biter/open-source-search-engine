@@ -2796,17 +2796,6 @@ int64_t Rdb::getDiskSpaceUsed ( ) {
 bool Rdb::isMerging ( ) {
 	// use this for speed
 	return (bool)m_numMergesOut;
-
-	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
-		if ( ! cr ) continue;
-		// if swapped out, this will be NULL, so skip it
-		RdbBase *base = cr->getBasePtr(m_rdbId);
-		//RdbBase *base = getBase(i);
-		if ( ! base ) continue;
-		if ( base->isMerging() ) return true;
-	}
-	return false;
 }
 	
 
