@@ -180,7 +180,6 @@ bool Collectiondb::cleanTrees ( ) {
 }
 
 #include "Statsdb.h"
-#include "Cachedb.h"
 
 // same as addOldColl()
 bool Collectiondb::addExistingColl ( char *coll, collnum_t collnum ) {

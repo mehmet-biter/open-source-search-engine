@@ -29617,9 +29617,6 @@ bool XmlDoc::addUniqueWordsToBuf ( SafeBuf *termInfoBuf ,
 }
 
 
-#include "Cachedb.h"
-
-
 bool XmlDoc::getIsInjecting ( ) {
 	bool isInjecting = false;
 	//if ( g_inPageInject ) isInjecting = true;

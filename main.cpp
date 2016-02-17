@@ -17,7 +17,6 @@
 #include "Hostdb.h"
 #include "Indexdb.h"
 #include "Posdb.h"
-#include "Cachedb.h"
 #include "Datedb.h"
 #include "Titledb.h"
 #include "Revdb.h"
@@ -2751,9 +2750,6 @@ int main2 ( int argc , char *argv[] ) {
 	// linkdb
 	if ( ! g_linkdb.init()     ) {
 		log("db: Linkdb init failed."   ); return 1; }
-
-	// if ( ! g_cachedb.init()     ) {
-	// 	log("db: Cachedb init failed."   ); return 1; }
 
 	// use sectiondb again for its immense voting power for detecting and
 	// removing web page chrome, categories, etc. only use if 

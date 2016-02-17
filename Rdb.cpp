@@ -6,7 +6,6 @@
 #include "Tagdb.h"
 #include "Indexdb.h"
 #include "Posdb.h"
-#include "Cachedb.h"
 #include "Titledb.h"
 #include "Spider.h"
 #include "Spider.h"
@@ -92,8 +91,7 @@ RdbBase *Rdb::getBase ( collnum_t collnum )  {
 
 // used by Rdb::addBase1()
 void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
-	// if we are collectionless, like g_statsdb.m_rdb or
-	// g_cachedb.m_rdb, etc.. shared by all collections essentially.
+	// if we are collectionless, like g_statsdb.m_rdb etc.. shared by all collections essentially.
 	if ( m_isCollectionLess ) {
 		m_collectionlessBase = base;
 		return;
@@ -181,7 +179,6 @@ bool Rdb::init ( char          *dir                  ,
 	if ( m_rdbId == RDB_SPIDERDB   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_DOLEDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_SPIDERDB2 ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_CACHEDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_SERPDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_LINKDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_LINKDB2   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
@@ -301,12 +298,9 @@ bool Rdb::init ( char          *dir                  ,
 	// rather than here because then if we disable an rdb we don't
 	// have to mess with code here as well:
 
-	// we now call g_*db.addColl(NULL) for Statsdb::init(),
-	// Cachedb::init(), ... directly
+	// we now call g_*db.addColl(NULL) for Statsdb::init() ... directly
 	//if ( g_statsdb.getRdb() == this ) 
 	//	return g_statsdb.addColl ( NULL );
-	//if ( g_cachedb.getRdb() == this ) 
-	//	return g_cachedb.addColl ( NULL );
 	//else if ( g_accessdb.getRdb() == this ) 
 	//	return g_accessdb.addColl ( NULL );
 	//else if ( g_facebookdb.getRdb() == this ) 
@@ -2836,7 +2830,6 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB_DOLEDB    ] = g_doledb.getRdb();
 		s_table9 [ RDB_CLUSTERDB ] = g_clusterdb.getRdb();
 		s_table9 [ RDB_LINKDB    ] = g_linkdb.getRdb();
-		s_table9 [ RDB_CACHEDB   ] = g_cachedb.getRdb();
 		s_table9 [ RDB_STATSDB   ] = g_statsdb.getRdb();
 		s_table9 [ RDB_REVDB     ] = g_revdb.getRdb();
 		s_table9 [ RDB_PARMDB    ] = NULL;
@@ -2869,7 +2862,6 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_clusterdb.getRdb () ) return RDB_CLUSTERDB;
 	if ( rdb == g_statsdb.getRdb   () ) return RDB_STATSDB;
 	if ( rdb == g_linkdb.getRdb    () ) return RDB_LINKDB;
-	if ( rdb == g_cachedb.getRdb   () ) return RDB_CACHEDB;
 	if ( rdb == g_revdb.getRdb     () ) return RDB_REVDB;
 	if ( rdb == g_indexdb2.getRdb   () ) return RDB2_INDEXDB2;
 	if ( rdb == g_posdb2.getRdb   () ) return RDB2_POSDB2;

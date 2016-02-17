@@ -2503,10 +2503,6 @@ uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) { // ,bool split ) {
 		  rdbId == RDB2_TAGDB2 ) {
 		return m_map [(*(uint16_t *)((char *)k + 10))>>3];
 	}
-	// based on url hash, top 32 bits
-	else if ( rdbId == RDB_CACHEDB ) {
-		return m_map [(*(uint16_t *)((char *)k + 10))>>3];
-	}		
 	// . base this on city/adm1/city/streetname hash bits, 
 	// . see Events::makePlacedbKey()
 	// . we got 8+16+25+16 bits = 65 bits

@@ -7,7 +7,6 @@
 #include "SpiderLoop.h"
 #include "Doledb.h"
 #include "Tagdb.h"
-#include "Cachedb.h"
 #include "Clusterdb.h"
 #include "Statsdb.h"
 #include "Linkdb.h"

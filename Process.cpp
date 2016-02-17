@@ -6,7 +6,6 @@
 #include "Hostdb.h"
 #include "Tagdb.h"
 #include "Posdb.h"
-#include "Cachedb.h"
 #include "Datedb.h"
 #include "Titledb.h"
 #include "Sections.h"
@@ -274,7 +273,6 @@ bool Process::init ( ) {
 	m_rdbs[m_numRdbs++] = g_tagdb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_statsdb.getRdb     ();
 	m_rdbs[m_numRdbs++] = g_linkdb.getRdb      ();
-	m_rdbs[m_numRdbs++] = g_cachedb.getRdb      ();
 
 	// save what urls we have been doled
 	m_rdbs[m_numRdbs++] = g_doledb.getRdb      ();

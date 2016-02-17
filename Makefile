@@ -64,7 +64,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Images.o Wiki.o Wiktionary.o \
 	Timezone.o Sections.o SiteGetter.o qa.o \
 	Test.o Synonyms.o \
-	Cachedb.o dlstubs.o PageCrawlBot.o Json.o PageBasic.o \
+	dlstubs.o PageCrawlBot.o Json.o PageBasic.o \
 	Punycode.o Version.o \
 	HighFrequencyTermShortcuts.o \
 	IPAddressChecks.o \
