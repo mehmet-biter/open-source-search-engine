@@ -39,60 +39,6 @@ struct StateControl{
 	bool m_isEventGuru;
 };
 
-#define UIF_ADMIN   0x01
-#define UIF_OLDUSER 0x02
-
-// PageRoot.cpp's pageaddurl now uses userinfo...
-class UserInfo {
-public:
-	// unique userid
-	int32_t m_userId32; 
-	// outstanding requests costs this much
-	float m_pending;
-	int32_t m_signUpDate;
-	// strings include terminating \0
-	char m_login[32];
-	char m_password[32];
-	char m_xmlFeedCode[16];
-	char m_creditCardNum[64]; // no punct, just digits
-	char m_cvv[5]; // "1234\0"
-	char m_creditCardExpires[6]; // "05/13\0"
-	char m_creditCardType[32]; // visa
-
-	// new stuff
-	char m_email[80];
-	char m_phone[30];
-
-	// european stuff for credit card processing
-	char m_firstName[40];
-	char m_lastName[40];
-	char m_address[80];
-	char m_city[30];
-	char m_state[30];
-	char m_country[30];
-	char m_zip[20];
-
-	// session info:
-	int64_t m_lastSessionId64;
-	int32_t m_lastActionTime;
-	int32_t m_lastLoginIP;
-	float m_accountBalance;
-
-	int32_t m_flags;
-};
-
-// values for SummaryRec::m_accessType
-#define AT_SEARCHFEED_OLD       1
-#define AT_SEARCHFEED_NEW       2
-#define AT_COMPETITOR_BACKLINKS 3
-#define AT_RELATED_QUERIES      4
-#define AT_MISSING_TERMS        5
-#define AT_MATCHING_QUERIES     6
-#define AT_COMPETITOR_PAGES     7
-#define AT_ADDURL               8
-#define MAX_ACCESS_TYPE         8
-
-
 static void freeStateControl ( StateControl *stC );
 
 Proxy::Proxy() {
