@@ -912,53 +912,6 @@ bool Mem::printMemBreakdownTable ( SafeBuf* sb,
 bool Mem::lblMem( void *mem, int32_t size, const char *note ) {
 	// seems to be a bad bug in this...
 	return true;
-
-	bool val = false;
-
-	// Make sure we're not relabeling a NULL or dummy memory address,
-	// if so, error then exit
-	if( !mem ){		
-		//log( "mem: lblMem: Mem addr (0x%08X) invalid/NULL, not "
-		//     "relabeling.", mem );
-		return val;
-	}
-	// else if( (uint32_t)mem == 0x7fffffff ) {
-	// 	//log( "mem: lblMem: Mem addr (0x%08X) is dummy address, not "
-	// 	//     "relabeling.", mem );
-	// 	return val;
-	// }
-
-	uint32_t u = (PTRTYPE)mem * (PTRTYPE)0x4bf60ade;
-	uint32_t h = u % (uint32_t)m_memtablesize;
-	// chain to bucket
-	while( s_mptrs[h] ) {
-		if( s_mptrs[h] == mem ) {
-			if( s_sizes[h] != size ) {
-				val = false;
-				log( "mem: lblMem: Mem addr (0x%08"PTRFMT") "
-				     "exists, "
-				     "size is %"INT32" off.", 
-				     (PTRTYPE)mem,
-					 s_sizes[h]-size );
-				break;
-			}
-			int32_t len = gbstrlen(note);
-			if ( len > 15 ) len = 15;
-			char *here = &s_labels [ h * 16 ];
-			gbmemcpy ( here , note , len );
-			// make sure NULL terminated
-			here[len] = '\0';
-			val = true;
-			break;
-		}
-		h++;
-		if ( h == m_memtablesize ) h = 0;
-	}
-
-	if( !val ) log( "mem: lblMem: Mem addr (0x%08"PTRFMT") not found.", 
-			(PTRTYPE)mem );
-
-	return val;
 }
 
 // this is called by C++ classes' destructors to unregister mem
@@ -1328,24 +1281,6 @@ int Mem::printMem ( ) {
 		total += s_sizes[i];
 		p[np++] = i;
 	}
-	// . sort p by size
-	// . skip this because it blocks for like 30 seconds
-	bool flag ;
-	goto skipsort;
-	flag = 1;
-	while ( flag ) {
-		flag = 0;
-		for ( int32_t i = 1 ; i < np ; i++ ) {
-			int32_t a = p[i-1];
-			int32_t b = p[i  ];
-			if ( s_sizes[a] <= s_sizes[b] ) continue;
-			// switch these 2
-			p[i  ] = a;
-			p[i-1] = b;
-			flag = 1;
-		}
-	}
- skipsort:
 
 	// print out table sorted by sizes
 	for ( int32_t i = 0 ; i < np ; i++ ) {
