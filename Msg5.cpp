@@ -491,7 +491,7 @@ bool Msg5::readList ( ) {
 		//if ( m_endKey == kk && ! m_treeList.isEmpty() ) {
 		char kk[MAX_KEY_BYTES];
 		KEYSET(kk,m_startKey,m_ks);
-		KEYADD(kk,1,m_ks);
+		KEYADD(kk,m_ks);
 		// no no no.... gotList() might be returning false because
 		// it's doing a threaded call to merge_r to take out 
 		// the negative recs i guess...
@@ -1729,7 +1729,7 @@ bool Msg5::doneMerging ( ) {
 	//m_fileStartKey  = m_list->getEndKey() ;
 	//m_fileStartKey += (uint32_t)1;
 	KEYSET(m_fileStartKey,m_list->getEndKey(),m_ks);
-	KEYADD(m_fileStartKey,1,m_ks);
+	KEYADD(m_fileStartKey,m_ks);
 	return true;
 }
 

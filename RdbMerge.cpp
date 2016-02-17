@@ -88,7 +88,7 @@ bool RdbMerge::merge ( char     rdbId        ,
 		//m_startKey = m_targetMap->getLastKey();
 		m_targetMap->getLastKey(m_startKey);
 		//m_startKey += (uint32_t) 1;
-		KEYADD(m_startKey,1,m_ks);
+		KEYADD(m_startKey,m_ks);
 		// if power goes out and we are not doing synchronous writes
 		// then we could have completely lost some data and unlinked
 		// a part file from the file being merged, so that the data is
@@ -572,7 +572,7 @@ bool RdbMerge::dumpList ( ) {
 	// doing the merge.
 	m_list.getEndKey(m_startKey) ;
 	//m_startKey += (uint32_t)1;
-	KEYADD(m_startKey,1,m_ks);
+	KEYADD(m_startKey,m_ks);
 
 	/////
 	//

@@ -453,7 +453,7 @@ bool RdbDump::dumpTree ( bool recall ) {
 		//m_nextKey += (uint32_t)1;
 		//if ( m_nextKey < lastKey ) m_rolledOver = true;
 		KEYSET(m_nextKey,lastKey,m_ks);
-		KEYADD(m_nextKey,1,m_ks);
+		KEYADD(m_nextKey,m_ks);
 		if (KEYCMP(m_nextKey,lastKey,m_ks)<0) m_rolledOver = true;
 	      // debug msg
 	      //log(0,"RdbDump:lastKey.n1=%"UINT32",n0=%"UINT64"",lastKey.n1,lastKey.n0);

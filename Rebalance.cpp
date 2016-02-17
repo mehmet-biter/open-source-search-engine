@@ -531,7 +531,7 @@ bool Rebalance::gotList ( ) {
 		// if it is not maxxed out, then incremenet it for the
 		// next scan round
 		if ( KEYCMP ( m_nextKey , KEYMAX() , ks ) != 0 )
-			KEYADD ( m_nextKey , 1 , ks );
+			KEYADD ( m_nextKey , ks );
 	}
 	//else {
 	//	log("rebal: got empty list");

@@ -7179,7 +7179,7 @@ bool bucketstest ( char* dbname ) {
 			{char* xx = NULL; *xx = 0;}
 		KEYSET(key2,key1,keySize);
 		KEYSET(key1,list.getLastKey(),keySize);
-		KEYADD(key1,1,keySize);
+		KEYADD(key1,keySize);
 	}
 	if(rdbb.getNumKeys() > 0) {char* xx = NULL; *xx = 0;}
 
@@ -9382,7 +9382,7 @@ void dumpDatedb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTr
 	}
 
 	KEYSET(startKey,list.getLastKey(),16);
-	KEYADD(startKey,1,16);
+	KEYADD(startKey,16);
 	// watch out for wrap around
 	//if ( startKey < *(key_t *)list.getLastKey() ) return;
 	if ( KEYCMP(startKey,list.getLastKey(),16)<0 ) {
