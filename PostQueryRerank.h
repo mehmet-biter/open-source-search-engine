@@ -11,20 +11,12 @@ class Msg40;
 #include "SearchInput.h"
 struct M20List;
 
-// type for saving Msg20s from results prior to first result
-struct savedM20Data {
-	int32_t score;
-	int tier;
-	int64_t docId;
-	char clusterLevel;
-};
 
 typedef float rscore_t;
 
 #define MINSCORE      1
 #define MIN_SAVE_SIZE 100
-// we don't use this any more so make it compile
-//#define PQR_BUF_SIZE  MAX_QUERY_LEN
+
 #define PQR_BUF_SIZE  64
 
 class PostQueryRerank {
