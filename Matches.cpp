@@ -90,15 +90,6 @@ bool Matches::isMatchableTerm ( QueryTerm *qt ) { // , int32_t i ) {
 	return true;
 }
 
-// a QueryMatch is a quote in the query or a single word.
-class QueryMatch {
-public:
-	// range in Query::m_qwords [m_a,m_b]
-	int32_t m_a;
-	int32_t m_b;
-	int32_t m_score; // lowest of the term freqs
-};
-
 void Matches::setQuery ( Query *q ) { 
 	//int32_t    qtableScores   [ MAX_QUERY_TERMS * 2 ];
 	reset();
