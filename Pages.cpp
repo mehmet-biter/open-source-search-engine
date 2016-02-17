@@ -2351,57 +2351,6 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 		sb->safePrintf("<b>\t\t\"title\":"
 			       "\"This is the title.\",\n\n</b>");
 
-		// dmozEntry
-		sb->brify2 ( "\t\t# A DMOZ entry. One result can have "
-			     "multiple DMOZ entries.\n"
-			     , cols , "\n\t\t# " , false );
-		sb->safePrintf("<b>\t\t\"dmozEntry\":{</b>\n\n");
-
-		sb->brify2 ( "\t\t\t# The DMOZ category ID.\n"
-			     , cols , "\n\t\t\t# " , false );
-		sb->safePrintf("<b>\t\t\t\"dmozCatId\":374449,</b>\n\n");
-
-
-		sb->brify2 ( "\t\t\t# The DMOZ direct category ID.\n"
-			     , cols , "\n\t\t\t# " , false );
-		sb->safePrintf("<b>\t\t\t\"directCatId\":1,</b>\n\n");
-
-
-		sb->brify2 ( "\t\t\t# The DMOZ category as a UTF-8 string.\n"
-			     , cols , "\n\t\t\t# " , false );
-		sb->brify2 ("<b>\t\t\t\"dmozCatStr\":"
-			       "\"Top: Computers: Security: "
-			       "Malicious Software: Viruses: Detection "
-			       "and Removal Tools: Reviews\""
-			       ",</b>\n\n" 
-			     , 60 , "\n\t\t\t " , false );
-
-		sb->brify2 ( "\t\t\t# What title some DMOZ editor gave "
-			     "to this url.\n"
-			     , cols , "\n\t\t\t# " , false );
-		sb->safePrintf("<b>\t\t\t\"dmozTitle\":\"The DMOZ Title\","
-			       "</b>\n\n");
-
-
-		sb->brify2 ( "\t\t\t# What summary some DMOZ editor gave "
-			     "to this url.\n"
-			     , cols , "\n\t\t\t# " , false );
-		sb->safePrintf("<b>\t\t\t\"dmozSum\":\"A great web page.\","
-			       "</b>\n\n");
-
-
-		sb->brify2 ( "\t\t\t# The DMOZ anchor text, if any.\n"
-			     , cols , "\n\t\t\t# " , false );
-		sb->safePrintf("<b>\t\t\t\"dmozAnchor\":\"\","
-			       "</b>\n\n");
-
-
-		sb->brify2 ( "\t\t# End DMOZ entry.\n"
-			     , cols , "\n\t\t# " , false );
-		sb->safePrintf("<b>\t\t},</b>\n\n");
-
-
-
 
 
 		sb->brify2 ( "\t\t# The content type of the url. "

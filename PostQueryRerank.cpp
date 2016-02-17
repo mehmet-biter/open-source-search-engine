@@ -153,9 +153,6 @@ bool PostQueryRerank::set2 ( int32_t resultsWanted ) {
 	
 	// get space for host count table
 	m_hostCntTable.set( m_maxResultsToRerank );
-	
-	// get some space for dmoz table
-	m_dmozTable.set( m_maxResultsToRerank << 1 );
 
 	// alloc urls for pqrqttiu, pqrfsh and clustering
 	m_pageUrl = (Url *)mcalloc( sizeof(Url)*m_maxResultsToRerank,

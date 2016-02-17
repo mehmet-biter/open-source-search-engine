@@ -152,13 +152,6 @@ private:
 	bool preRerankOtherPagesFromSameHost( Url *pageUrl );
 	rscore_t rerankOtherPagesFromSameHost ( rscore_t score, 
 					    Url *pageUrl );
-	bool preRerankCommonTopicsInDmoz( Msg20Reply *mr );
-	rscore_t rerankCommonTopicsInDmoz ( rscore_t score,
-					Msg20 *msg20 );
-	rscore_t rerankDmozCategoryNamesDontHaveQT ( rscore_t score, 
-						 Msg20 *msg20 );
-	rscore_t rerankDmozCategoryNamesDontHaveGigabits ( rscore_t score,
-						       Msg20 *msg20 );
 	inline
 	rscore_t rerankDatedbDate( rscore_t score,
 			       time_t datedbDate );
@@ -198,9 +191,6 @@ private:
 
 	// for rerankOtherPagesFromSameHost
         HashTableT<uint64_t, int32_t> m_hostCntTable;
-
-	// for rerankCommonTopicsInDmoz
-	HashTableT<int32_t, ComTopInDmozRec> m_dmozTable;
 
 	// for rerankDatedbDate
 	time_t m_now;
