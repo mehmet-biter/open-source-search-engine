@@ -114,11 +114,7 @@ private:
 					uint8_t lang, uint8_t summaryLang,
 					    uint16_t country ,
 					    class Msg20 *msg20 );
-	inline 
-	rscore_t rerankLanguage ( rscore_t score, 
-			      uint8_t lang );
-	rscore_t rerankQueryTermsOrGigabitsInUrl ( rscore_t score,
-					       Url *pageUrl );
+
 	inline 
 	rscore_t rerankQuality ( rscore_t score, 
 			     unsigned char quality );
@@ -126,42 +122,17 @@ private:
 	rscore_t rerankPathsInUrl ( rscore_t score,
 				char *url,
 				int32_t urlLen );
-	inline 
-	rscore_t rerankNoCatId ( rscore_t score,
-			     int32_t numCatIds,
-			     int32_t numIndCatIds );
 
 	inline 
 	rscore_t rerankPageSize ( rscore_t score,
 			      int32_t docLen );
-	//bool getLocation ( char *resBuf, int32_t resBufLen,
-	//		   int32_t *resLen, int32_t *resPop,
-	//		   char *buf, int32_t bufLen);
-	//bool preRerankNonLocationSpecificQueries ( );
-	//rscore_t rerankNonLocationSpecificQueries ( rscore_t score,
-	//					Msg20 *msg20 );
-	inline 
-	rscore_t rerankContentType ( rscore_t score,
-				 char contentType );
+
 	bool preRerankOtherPagesFromSameHost( Url *pageUrl );
 	rscore_t rerankOtherPagesFromSameHost ( rscore_t score, 
 					    Url *pageUrl );
 	inline
 	rscore_t rerankDatedbDate( rscore_t score,
 			       time_t datedbDate );
-	inline
-	rscore_t rerankProximity( rscore_t score,
-			      float proximityScore ,
-			      float maxScore);
-	inline
-	rscore_t rerankInSection( rscore_t score,
-			      int32_t summaryScore,
-			      float maxScore);
-	
-	inline
-	rscore_t rerankSubPhrase( rscore_t score,
-			      float diversity,
-			      float maxDiversity);
 
 	bool attemptToCluster( );
 
