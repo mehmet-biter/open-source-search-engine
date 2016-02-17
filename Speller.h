@@ -27,7 +27,6 @@
 class StateFrag{
  public:
 	// ALL THESE ARE CONCERNED WITH THE FRAG
-	void *m_state;//StateSpeller
 	int32_t  m_errno;
 	Query *m_q;
 	int32_t  m_startQword;
@@ -53,25 +52,6 @@ class StateFrag{
 	bool  m_narrowPhrase;
 	int32_t  m_numNarrowPhrases;
 	//char  m_narrowPhrases[MAX_NARROW_SEARCHES][MAX_FRAG_SIZE];
-};
-
-
-class StateSpeller{
- public:
-	void *m_state;
-	void (*m_callback)(void *state);
-	Query *m_q;
-	bool   m_spellcheck;
-	char  *m_dst;
-	char  *m_dend;
-	bool   m_narrowSearch;
-	char  *m_nrw;
-	char  *m_nend;
-	int32_t  *m_numNarrow;
-	uint64_t m_start;
-	int32_t   m_numFrags;
-	int32_t   m_numFragsReceived;
-	StateFrag *m_stFrag[MAX_FRAG_SIZE];
 };
 
 class Speller {
