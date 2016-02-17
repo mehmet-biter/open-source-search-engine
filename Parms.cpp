@@ -205,73 +205,6 @@ bool CommandInsertUrlFiltersRow ( char *rec ) {
 	return true;
 }
 
-bool CommandRemoveConnectIpRow ( char *rec ) {
-	// caller must specify collnum
-	//collnum_t collnum = getCollnumFromParmRec ( rec );
-	//if ( collnum < 0 ) {
-	//	g_errno = ENOCOLLREC;
-	//	log("parms: bad collnum for remove row");
-	//	return true;
-	//}
-	// sanity
-	int32_t dataSize = getDataSizeFromParmRec ( rec );
-	if ( dataSize <= 1 ) {
-		log("parms: insert row data size = %"INT32" bad!",dataSize);
-		g_errno = EBADENGINEER;
-		return true;
-	}
-	// need this
-	//CollectionRec *cr = g_collectiondb.getRec ( collnum );
-	// get the row #
-	char *data = getDataFromParmRec ( rec );
-	int32_t rowNum = atol(data);
-	// scan all parms for url filter parms
-	for ( int32_t i = 0 ; i < g_parms.m_numParms ; i++ ) {
-		Parm *m = &g_parms.m_parms[i];
-		// parm must be a url filters parm
-		if ( m->m_page != PAGE_MASTERPASSWORDS ) continue;
-		// must be an array!
-		if ( ! m->isArray() ) continue;
-		// sanity check
-		if ( m->m_obj != OBJ_CONF ) { char *xx=NULL;*xx=0; }
-		// must be masterip
-		if ( m->m_type != TYPE_IP ) continue;
-		// . nuke that parm's element
-		// . returns false and sets g_errno on error
-		if (!g_parms.removeParm(i,rowNum,(char *)&g_conf))return true;
-	}
-	return true;
-}
-
-bool CommandRemovePasswordRow ( char *rec ) {
-	// sanity
-	int32_t dataSize = getDataSizeFromParmRec ( rec );
-	if ( dataSize <= 1 ) {
-		log("parms: insert row data size = %"INT32" bad!",dataSize);
-		g_errno = EBADENGINEER;
-		return true;
-	}
-	// get the row #
-	char *data = getDataFromParmRec ( rec );
-	int32_t rowNum = atol(data);
-	// scan all parms for url filter parms
-	for ( int32_t i = 0 ; i < g_parms.m_numParms ; i++ ) {
-		Parm *m = &g_parms.m_parms[i];
-		// parm must be a url filters parm
-		if ( m->m_page != PAGE_MASTERPASSWORDS ) continue;
-		// must be an array!
-		if ( ! m->isArray() ) continue;
-		// sanity check
-		if ( m->m_obj != OBJ_CONF ) { char *xx=NULL;*xx=0; }
-		// must be master password
-		if ( m->m_type != TYPE_STRINGNONEMPTY ) continue;
-		// . nuke that parm's element
-		// . returns false and sets g_errno on error
-		if (!g_parms.removeParm(i,rowNum,(char *)&g_conf))return true;
-	}
-	return true;
-}
-
 bool CommandRemoveUrlFiltersRow ( char *rec ) {
 	// caller must specify collnum
 	collnum_t collnum = getCollnumFromParmRec ( rec );
@@ -679,34 +612,10 @@ bool CommandSpiderTestCont ( char *rec ) {
 	return true;
 }
 
-// some of these can block a little. if threads are off, a lot!
-bool CommandMerge ( char *rec ) {
-	forceMergeAll ( RDB_POSDB ,1);
-	forceMergeAll ( RDB_TITLEDB ,1);
-	forceMergeAll ( RDB_TAGDB ,1);
-	forceMergeAll ( RDB_SPIDERDB ,1);
-	forceMergeAll ( RDB_LINKDB ,1);
-	// most of these are probably already in good shape
-	// g_clusterdb.getRdb()->attemptMerge  (1,true); // niceness, force?
-	// g_tagdb.getRdb()->attemptMerge     (1,true);
-	// g_spiderdb.getRdb()->attemptMerge   (1,true);
-	// // these 2 will probably need the merge the most
-	// g_titledb.getRdb()->attemptMerge    (1,true);
-	// g_statsdb.getRdb()->attemptMerge    (1,true);
-	// g_linkdb .getRdb()->attemptMerge    (1,true);
-	return true;
-}
-
 
 bool CommandMergePosdb ( char *rec ) {
 	forceMergeAll ( RDB_POSDB ,1);
 	// set this for each posdb base
-	return true;
-}
-
-
-bool CommandMergeSectiondb ( char *rec ) {
-	//g_sectiondb.getRdb()->attemptMerge    (1,true); // nice , force
 	return true;
 }
 
@@ -767,11 +676,6 @@ bool CommandSaveAndExit ( char *rec ) {
 	return true;
 }
 
-bool CommandUrgentSaveAndExit ( char *rec ) {
-	// "true" means urgent
-	g_process.shutdown ( true );
-	return true;
-}
 
 bool CommandClearKernelError ( char *rec ) {
 	g_hostdb.m_myHost->m_pingInfo.m_kernelErrors = 0;
@@ -3452,17 +3356,6 @@ skip2:
 	//File bigger than %"INT32" bytes."
 	//	   "  Please increase #define in Parms.cpp.",
 	//	   (int32_t)MAX_CONF_SIZE);
-}
-
-Parm *Parms::getParm ( char *cgi ) {
-	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
-		if ( ! m_parms[i].m_cgi ) continue ;
-		if (   m_parms[i].m_cgi[0] != cgi[0] ) continue;
-		if (   m_parms[i].m_cgi[1] != cgi[1] ) continue;
-		if (   strcmp ( m_parms[i].m_cgi , cgi ) == 0 ) 
-			return &m_parms[i];
-	}
-	return NULL;
 }
 
 bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
@@ -13104,19 +12997,6 @@ bool Parms::addNewParmToList2 ( SafeBuf *parmList ,
 		return false;
 
 	return true;
-}
-
-// g_parms.addCurrentParmToList1 ( &parmList , cr , "spiderRoundNum" ); 
-bool Parms::addCurrentParmToList1 ( SafeBuf *parmList ,
-				    CollectionRec *cr , 
-				    char *parmName ) {
-	collnum_t collnum = -1;
-	if ( cr ) collnum = cr->m_collnum;
-	// get the parm descriptor
-	int32_t occNum;
-	Parm *m = getParmFast1 ( parmName , &occNum );
-	if ( ! m ) return log("parms: got bogus parm1 %s",parmName );
-	return addCurrentParmToList2 ( parmList , collnum, -1 , m );
 }
 
 // . use the current value of the parm to make this record

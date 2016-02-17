@@ -432,9 +432,6 @@ class Parms {
 
 	bool convertToXml ( char *buf , char *THIS , char objType ) ;
 
-	// get the parm with the associated cgi name. must be NULL terminated.
-	Parm *getParm ( char *cgi ) ;
-
 	bool getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s );
 
 	bool setGigablastRequest ( class TcpSocket *s ,
@@ -482,9 +479,7 @@ class Parms {
 				 char *parmValString ,
 				 int32_t occNum ,
 				 Parm *m ) ;
-	bool addCurrentParmToList1 ( SafeBuf *parmList ,
-				     CollectionRec *cr , 
-				     char *parmName ) ;
+
 	bool addCurrentParmToList2 ( SafeBuf *parmList ,
 				     collnum_t collnum , 
 				     int32_t occNum ,
