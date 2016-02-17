@@ -11,8 +11,7 @@
 
 // the popularity vector for the Words class, 1-1 with those words
 class Pops {
-
- public:
+public:
 
 	Pops();
 	~Pops();
@@ -22,13 +21,12 @@ class Pops {
 	// . must have computed the word ids (words->m_wordIds must be valid)
 	bool set ( class Words *words, int32_t a, int32_t b );
 
-	// from 1 (min) to 1000 (max popularity)
-	int32_t *getPops ( ) { return m_pops; };
-
 	// from 0.0 to 1.0
-	float getNormalizedPop ( int32_t i ) { 
-		return (float)m_pops[i]/(float)MAX_POP; };
+	float getNormalizedPop( int32_t i ) {
+		return (float)m_pops[i] / (float)MAX_POP;
+	}
 
+private:
 	int32_t *m_pops;
 	int32_t  m_popsSize; // in bytes
 	char  m_localBuf [ POPS_BUF_SIZE ];
