@@ -8,23 +8,6 @@
 
 static bool sendReply        ( void *state  , bool addUrlEnabled );
 
-//static void addedStuff ( void *state );
-
-
-// class State1 {
-// public:
-// 	Msg4       m_msg4;
-// 	//TcpSocket *m_socket;
-// 	//HttpRequest m_hr;
-// 	//int32_t       m_urlLen;
-// 	//char       m_url[MAX_URL_LEN];
-// 	//bool       m_strip;
-// 	//bool       m_spiderLinks;
-// 	int32_t       m_numSent;
-// 	int32_t       m_numReceived;
-// 	SpiderRequest m_sreq;
-// };
-
 // from PageCrawlBot.cpp:
 bool getSpiderRequestMetaList ( char *doc , 
 				SafeBuf *listBuf ,
