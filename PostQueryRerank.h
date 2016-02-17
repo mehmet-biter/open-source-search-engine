@@ -19,12 +19,6 @@ struct savedM20Data {
 	char clusterLevel;
 };
 
-
-struct ComTopInDmozRec {
-	int32_t cnt;      // count of pages with this same topic
-	float demFact; // decay factor for this topic
-};
-
 typedef float rscore_t;
 
 #define MINSCORE      1

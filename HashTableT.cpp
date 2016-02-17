@@ -4,8 +4,6 @@
 #include "Profiler.h" //For fnInfo struct
 #include "Title.h" // For Title::InLinkInfo
 #include "Dns.h"
-//#include "Thesaurus.h" // SynonymLinkGroup structure
-#include "PostQueryRerank.h" // for ComTopInDmozRec
 #include "types.h"
 
 template<class Key_t, class Val_t> 
@@ -541,7 +539,6 @@ template class HashTableT<uint32_t, FrameTrace *>;
 template class HashTableT<uint64_t, int32_t>;
 //template class HashTableT<uint64_t, SynonymLinkGroup>;
 template class HashTableT<uint64_t, int64_t>;
-template class HashTableT<int32_t, ComTopInDmozRec>;
 template class HashTableT<uint16_t, const char *>;
 template class HashTableT<uint16_t, int>;
 template class HashTableT<int32_t,uint64_t>;
