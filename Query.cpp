@@ -5021,8 +5021,6 @@ bool Query::isConnection ( char *s , int32_t len ) {
 			// and msn and yahoo do. 'john's room -"john's" gives
 			// no result son yahoo and msn.
 			return true;
-			if ( *(s+1) !='s' ) return true;
-			return false;
 		case ':': return true;
 		case '-': return true;
 		case '.': return true;
