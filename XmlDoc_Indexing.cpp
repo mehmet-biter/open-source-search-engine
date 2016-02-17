@@ -1960,7 +1960,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 	char *note = "hashing incoming link text";
 	// sanity
 	if ( ! m_linkInfo1Valid ) { char *xx=NULL;*xx=0; }
-	if ( ! m_linkInfo2Valid ) { char *xx=NULL;*xx=0; }
+
 	// . finally hash in the linkText terms from the LinkInfo
 	// . the LinkInfo class has all the terms of hashed anchor text for us
 	// . if we're using an old TitleRec linkTermList is just a ptr to

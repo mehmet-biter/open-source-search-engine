@@ -276,12 +276,7 @@ void XmlDoc::reset ( ) {
 		ptr_linkInfo1    = NULL;
 		m_linkInfo1Valid = false;
 	}
-	if ( m_linkInfo2Valid && ptr_linkInfo2 && m_freeLinkInfo2 ) {
-		// should point into a safebuf as well
-		//mfree ( ptr_linkInfo2 , size_linkInfo2, "LinkInfo2");
-		ptr_linkInfo2    = NULL;
-		m_linkInfo2Valid = false;
-	}
+
 	if ( m_rawUtf8ContentValid && m_rawUtf8Content && !m_setFromTitleRec
 	     // was content supplied by pageInject.cpp?
 	     //! m_contentInjected ) {
@@ -1439,7 +1434,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	//m_addressReplyValid         = true;
 	m_siteValid                   = true;
 	m_linkInfo1Valid              = true;
-	m_linkInfo2Valid              = true;
 	m_versionValid                = true;
 	m_httpStatusValid             = true;
 	m_crawlDelayValid             = true;
@@ -3696,7 +3690,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if ( ! m_utf8ContentValid            ) { char *xx=NULL;*xx=0; }
 	if ( ! m_siteValid                   ) { char *xx=NULL;*xx=0; }
 	if ( ! m_linkInfo1Valid              ) { char *xx=NULL;*xx=0; }
-	if ( ! m_linkInfo2Valid              ) { char *xx=NULL;*xx=0; }
 
 	// do we need these?
 	if ( ! m_hostHash32aValid            ) { char *xx=NULL;*xx=0; }
@@ -9364,9 +9357,6 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 	m_extraDoc->ptr_linkInfo1           = &s_dummy;
 	m_extraDoc->size_linkInfo1          = 0;
 	m_extraDoc->m_linkInfo1Valid        = true;
-	m_extraDoc->ptr_linkInfo2           = &s_dummy;
-	m_extraDoc->size_linkInfo2          = 0;
-	m_extraDoc->m_linkInfo2Valid        = true;
 	m_extraDoc->m_urlFilterNumValid     = true;
 	m_extraDoc->m_urlFilterNum          = 0;
 	// for redirects
@@ -9562,9 +9552,6 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	m_rootDoc->ptr_linkInfo1           = &s_dummy;
 	m_rootDoc->size_linkInfo1          = 0;
 	m_rootDoc->m_linkInfo1Valid        = true;
-	m_rootDoc->ptr_linkInfo2           = &s_dummy;
-	m_rootDoc->size_linkInfo2          = 0;
-	m_rootDoc->m_linkInfo2Valid        = true;
 	m_rootDoc->m_urlFilterNumValid     = true;
 	m_rootDoc->m_urlFilterNum          = 0;
 	// for redirects
@@ -16000,17 +15987,6 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 		//sb->safePrintf("cblockinlinks=%"INT32" ",
 		//info->m_numUniqueCBlocks);
 	}
-
-	//
-	// print # of link texts from 2nd coll
-	//
-	// this is not used for what it was used for.
-	// if ( m_linkInfo2Valid && size_linkInfo2 > 4 ) {
-	// 	LinkInfo *info = ptr_linkInfo2;
-	// 	int32_t nt = 0;
-	// 	if ( info ) nt = info->getNumLinkTexts();
-	// 	if ( nt ) sb->safePrintf("goodinlinks2=%"INT32" ",nt );
-	// }
 
 	if (  m_docIdValid )
 		sb->safePrintf("docid=%"UINT64" ",m_docId);
@@ -25050,11 +25026,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	//int32_t spop = m_sitePop;
 
 	LinkInfo *info1 = ptr_linkInfo1;
-	//LinkInfo *info2 = ptr_linkInfo2;
-	//int32_t sni ;
-	//int32_t extrapolated = 0;
-	//if ( info1 ) extrapolated = info1->m_numInlinksExtrapolated;
-	//if ( info1 ) sni          = info1->m_siteNumInlinks;
 
 	char *ipString = iptoa(m_ip);
 	char *estimated = "";

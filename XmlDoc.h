@@ -300,7 +300,7 @@ public:
 	char      *ptr_linkdbData;
 	char      *ptr_sectiondbData;
 	char      *ptr_tagRecData;
-	LinkInfo  *ptr_linkInfo2;
+	LinkInfo  *ptr_unused9;
 
 	int32_t       size_firstUrl;
 	int32_t       size_redirUrl;
@@ -323,7 +323,7 @@ public:
 	int32_t       size_linkdbData;
 	int32_t       size_sectiondbData;
 	int32_t       size_tagRecData;
-	int32_t       size_linkInfo2;
+	int32_t       size_unused9;
 
 	char      m_dummyEnd;
 
@@ -1163,7 +1163,6 @@ public:
 	//bool m_tagHash32Valid;
 	bool m_tagPairHash32Valid;
 
-	bool m_linkInfo2Valid;
 	bool m_spiderLinksValid;
 	//bool m_nextSpiderPriorityValid;
 	bool m_firstIndexedDateValid;

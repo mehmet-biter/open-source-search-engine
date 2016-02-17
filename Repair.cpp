@@ -2101,10 +2101,6 @@ bool Repair::injectTitleRec ( ) {
 	// rebuild the content hash since we change that function sometimes
 	xd->m_contentHash32Valid = false;
 
-	// hmmm... take these out to see if fixes the core
-	//xd->m_linkInfo1Valid = false;
-	//xd->m_linkInfo2Valid = false;
-
 	// claim it, so "tr" is not overwritten
 	m_numOutstandingInjects++;
 	//s_inUse[i] = 1;
@@ -2173,7 +2169,6 @@ bool Repair::injectTitleRec ( ) {
 		// make null to be safe
 		xd->ptr_linkInfo1  = NULL;
 		xd->size_linkInfo1 = 0;
-		//xd->m_linkInfo2Valid = false;
 		// re-get the tag rec from tagdb
 		xd->m_tagRecValid     = false;
 		xd->m_tagRecDataValid = false;
