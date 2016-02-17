@@ -2503,16 +2503,6 @@ uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) { // ,bool split ) {
 		  rdbId == RDB2_TAGDB2 ) {
 		return m_map [(*(uint16_t *)((char *)k + 10))>>3];
 	}
-	// . base this on city/adm1/city/streetname hash bits, 
-	// . see Events::makePlacedbKey()
-	// . we got 8+16+25+16 bits = 65 bits
-	// . least significant bits are first
-	else if ( rdbId == RDB_PLACEDB || rdbId == RDB2_PLACEDB2 ) {
-		// hash those guys hashes into a single hash
-		uint32_t h = hash32 ( ((char *)k) + 8 , 8 );
-		// use that to lookup in m_map then
-		return m_map [ h & (MAX_KSLOTS-1) ];
-	}
 	else if ( rdbId == RDB_DOLEDB ) { // || rdbId == RDB2_DOLEDB2 ) {
 		// HACK:!!!!!!  this is a trick!!! it is us!!!
 		//return g_hostdb.m_myHost->m_groupId;

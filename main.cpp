@@ -2756,8 +2756,7 @@ int main2 ( int argc , char *argv[] ) {
 	// CollectionRec::m_isCustomCrawl perhaps to save space.
 	if ( ! g_sectiondb.init()     ) {
 		log("db: Sectiondb init failed."   ); return 1; }
-	//if ( ! g_placedb.init()     ) {
-	//	log("db: Placedb init failed."   ); return 1; }
+
 	// now clean the trees since all rdbs have loaded their rdb trees
 	// from disk, we need to remove bogus collection data from teh trees
 	// like if a collection was delete but tree never saved right it'll
