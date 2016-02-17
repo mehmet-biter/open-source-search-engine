@@ -658,10 +658,6 @@ static bool printGigabitContainingSentences ( State0 *st,
 		sb->safePrintf("      ");//,gi->m_numPages);
 		sb->safePrintf("</font>");
 		sb->safePrintf("</b>");
-		if ( si->m_isMasterAdmin && 1 == 2 ) 
-			sb->safePrintf("[%.0f]{%"INT32"}",
-				       gi->m_gbscore,
-				       gi->m_minPop);
 
 		revert = sb->length();
 
