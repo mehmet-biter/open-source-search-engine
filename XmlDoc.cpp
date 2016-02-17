@@ -9,16 +9,13 @@
 #include "Query.h"     // getFieldCode()
 #include "Clusterdb.h" // g_clusterdb
 #include "iana_charset.h"
-//#include "Msg24.h"
 #include "Stats.h"
 #include "Sanity.h"
 #include "Speller.h"
 #include "CountryCode.h"
-//#include "SiteBonus.h"
 #include "linkspam.h"
 #include "Tagdb.h"
 #include "Repair.h"
-//#include "Links.h"
 #include "HashTableX.h"
 #include "LanguageIdentifier.h" // g_langId
 #include "CountryCode.h" // g_countryCode
@@ -28,20 +25,18 @@
 #include "SiteGetter.h"
 #include "Test.h"
 #include "Synonyms.h"
-//#include "Revdb.h"
 #include "PageInject.h"
 #include "HttpServer.h"
 #include "Posdb.h"
 #include "Highlight.h"
 #include "Wiktionary.h"
-#include "seo.h" // Msg99Request etc.
-//#include <regex.h>
 #include "PingServer.h"
 #include "Parms.h"
 #include "Domains.h"
 #include "matches2.h"
 #include "Doledb.h"
 #include "IPAddressChecks.h"
+
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -29302,7 +29297,7 @@ SafeBuf *XmlDoc::getTermId32Buf() {
 
 // . used by getTermId32Buf() for getting this document's matching queries
 // . serialize the words in the title and inlink text into a vector
-// . SafeBuf is filled with class TermInfos! defined in seo.h. currently
+// . SafeBuf is filled with class TermInfos! defined in Synonyms.h. currently
 //   just a int64_t m_termId64 though!
 // . get synonyms of each word too!
 // . we sort them by the 32-bit termid so handleRequest8e() can do its fast

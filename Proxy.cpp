@@ -4,18 +4,10 @@
 #include "Statsdb.h"
 #include "Msg13.h"
 #include "XmlDoc.h"
-//#include "seo.h" // g_secret_tran_key and api_key
-
-
-char *g_secret_tran_key = NULL;
-char *g_secret_api_key  = NULL;
-
 
 Proxy g_proxy;
 
-
 #define MINCHARGE 5.00
-
 
 static void proxyHandlerWrapper ( TcpSocket *s );
 //static void gotReplyWrapperPage( void *state, TcpSocket *s );

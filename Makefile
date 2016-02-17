@@ -102,13 +102,6 @@ LIBS += ./libiconv64.a ./libz64.a
 endif
 
 
-# if you have seo.cpp link that in. This is not part of the open source
-# distribution but is available for interested parties.
-ifneq ($(wildcard seo.cpp),)
-OBJS:=$(OBJS) seo.o
-endif
-
-
 # generate git version
 DIRTY=
 ifneq ($(shell git diff --shortstat 2> /dev/null),)
@@ -338,9 +331,6 @@ Linkdb.o:
 
 # final gigabit generation in here:
 Msg40.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
-
-seo.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
 
 TopTree.o:

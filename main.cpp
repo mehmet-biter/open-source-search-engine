@@ -71,7 +71,6 @@
 #include "sort.h"
 #include "RdbBuckets.h"
 #include "Test.h"
-#include "seo.h"
 #include "SpiderProxy.h"
 #include "HashTable.h"
 
@@ -129,19 +128,6 @@ bool isRecoveryFutile ( ) ;
 
 int copyFiles ( char *dstDir ) ;
 
-//////
-//
-// if seo.o is being linked to it needs to override these weak stubs:
-//
-//////
-void handleRequest8e(UdpSlot *, int32_t netnice ) __attribute__((weak));
-void handleRequest4f(UdpSlot *, int32_t netnice ) __attribute__((weak));
-void handleRequest95(UdpSlot *, int32_t netnice ) __attribute__((weak));
-
-// make the stubs here. seo.o will override them
-void handleRequest8e(UdpSlot *, int32_t netnice ) {return; }
-void handleRequest4f(UdpSlot *, int32_t netnice ) {return; }
-void handleRequest95(UdpSlot *, int32_t netnice ) {return; }
 
 char *getcwd2 ( char *arg ) ;
 
@@ -4461,12 +4447,6 @@ bool registerMsgHandlers2(){
 	if ( ! g_udpServer.registerHandler(0x12,handleRequest12)) return false;
 
 	if ( ! registerHandler4  () ) return false;
-
-	// seo module handlers. this will just be stubs declared above
-	// if no seo module. the seo module is not part of the open source.
-	if(! g_udpServer.registerHandler(0x8e,handleRequest8e)) return false;
-	if(! g_udpServer.registerHandler(0x4f,handleRequest4f)) return false;
-	if(! g_udpServer.registerHandler(0x95,handleRequest95)) return false;
 
 	if(! g_udpServer.registerHandler(0x3e,handleRequest3e)) return false;
 	if(! g_udpServer.registerHandler(0x3f,handleRequest3f)) return false;

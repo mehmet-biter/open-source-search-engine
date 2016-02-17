@@ -23,8 +23,6 @@
 // +1 for langid at end
 #define TMPSYNBUFSIZE (MAX_SYNS*(8+8+8+1+4+4+4+4+sizeof(char *)+1))
 
-int64_t getSynBaseHash64 ( char *qstr , uint8_t langId ) ;
-
 char *getSourceString ( char source );
 
 class Synonyms {
@@ -82,6 +80,12 @@ class Synonyms {
 	char      *m_srcPtr;
 	uint8_t   *m_langIdsPtr;
 
+};
+
+// put these in the safebuf now
+class TermInfo {
+public:
+	uint64_t m_termId64;
 };
 
 #endif
