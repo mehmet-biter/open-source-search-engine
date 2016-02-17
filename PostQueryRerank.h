@@ -108,9 +108,6 @@ private:
 					    class Msg20 *msg20 );
 
 	inline 
-	rscore_t rerankQuality ( rscore_t score, 
-			     unsigned char quality );
-	inline 
 	rscore_t rerankPathsInUrl ( rscore_t score,
 				char *url,
 				int32_t urlLen );
