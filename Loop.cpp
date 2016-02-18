@@ -929,7 +929,7 @@ bool Loop::runLoop ( ) {
 
 	// . now loop forever waiting for signals
 	// . but every second check for timer-based events
-	while (true) {
+	for (;;) {
 		m_lastPollTime = gettimeofdayInMilliseconds();
 		m_needsToQuickPoll = false;
 
