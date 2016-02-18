@@ -191,15 +191,6 @@ class UdpServer {
 
 	// these *Poll() routines must be public so wrappers can call them
 
-	// . this is called by main/Loop.cpp when m_sock is ready for reading
-	// . actually it calls readPollWrapper() which calls this
-	// . this calls registerd handlers for recvd REQUESTS based on msgType
-	// . this calls callbacks (in UdpSlot) for received REPLIES
-	// . returns false if it read nothing and had no errors
-	// . returns true  if it read something or had an error so you can
-	//   call it again ASAP because it has unfinished business
-	bool readPoll ( int64_t now );
-
 	// . this is called by main/Loop.cpp when m_sock is ready for writing
 	// . actually it calls sendPollWrapper()
 	// . it sends as much as it can from all UdpSlots until one blocks

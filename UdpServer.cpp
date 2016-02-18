@@ -69,11 +69,6 @@ UdpServer g_udpServer;
 //static UdpSlot       **s_token;
 //static uint32_t  *s_tokenTime;
 
-// if we're doing a local transaction then keep our slot ptr here
-// since s_token is shared mem
-//static UdpSlot        *s_local;
-//static uint32_t   s_localTime;
-
 
 static void readPollWrapper_ass ( int fd , void *state ) ;
 //static void sendPollWrapper_ass ( int fd , void *state ) ;
@@ -119,7 +114,6 @@ UdpServer::~UdpServer() {
 	reset();
 }
 
-//static int32_t s_udpMem    = 0;
 
 // . returns false and sets g_errno on error
 // . port will be incremented if already in use
@@ -496,8 +490,6 @@ bool UdpServer::sendRequest ( char     *msg          ,
 		if ( flipped ) interruptsOn();
 		return log("udp: Failed to send dgrams for udp socket.");
 	}
-	// mark as used memory
-	//s_udpMem += msgSize;
 
 	// debug msg
 	//int64_t  now = gettimeofdayInMilliseconds();
@@ -649,8 +641,6 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 		log("udp: Sending reply transId=%"INT32" msgType=0x%hhx "
 		     "(niceness=%"INT32").", slot->m_transId,msgType,
 		    (int32_t)slot->m_niceness);
-	// mark as used memory
-	//s_udpMem += msgMaxSize;
 	// keep sending dgrams until we have no more or hit ACK_WINDOW limit
 	if ( ! doSending_ass ( slot , true /*allow resends?*/, now) ) {
 		// . on error deal with that
@@ -671,7 +661,6 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 	// return if send completed
 	//if ( status != -1) return;
 	// make a log note on send failure
-	//return true;
 }
 
 // . this wrapper is called when m_sock is ready for writing
@@ -730,16 +719,6 @@ bool UdpServer::doSending_ass (UdpSlot *slot,bool allowResends,int64_t now) {
 	// . if the score of this slot is -1, don't send on it!
 	// . this now will allow one dgram to be resent even if we don't
 	//   have the token
-	/*
-	if ( ! s_local ) {
-		if ( slot->getScore(now,*s_token,*s_tokenTime,LARGE_MSG) < 0 ) 
-			return true;
-	}
-	else {
-		if ( slot->getScore(now, s_local, s_localTime,LARGE_MSG) < 0 ) 
-			return true;
-	}
-	*/
 	//int32_t score = slot->getScore(now);
 	//log("score is %"INT32"", score);
 	if ( slot->getScore(now) < 0 ) goto done;
@@ -902,14 +881,6 @@ UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
 		//   that have already been sent?
 		// . can be up to ACK_WINDOW_SIZE (16?).
 		// . we're a "Fastest First" (FF) protocol stack.
-		/*
-		if ( ! s_local )
-			score = slot->getScore (now, *s_token,*s_tokenTime,
-						LARGE_MSG );
-		else
-			score = slot->getScore (now,  s_local, s_localTime,
-						LARGE_MSG );
-		*/
 		score = slot->getScore ( now );
 		// a negative score means it's not a candidate
 		if ( score < 0 ) continue;
@@ -1059,44 +1030,6 @@ void readPollWrapper_ass ( int fd , void *state ) {
 	THIS->process_ass ( gettimeofdayInMilliseconds() );
 }
 
-// . reads everything from the network card
-// . then sends everything it can
-// . should only be called from process_ass() since this is not re-entrant
-// . verified that this is not interruptible
-/*
-bool UdpServer::readPoll ( int64_t now ) {
-	// if m_sock shutdown, don't bother
-	if ( m_sock < 0 ) return false;
-	// a common var
-	UdpSlot *slot;
-	// . returns -1 on error, 0 if blocked, 1 if completed reading dgram
-	// . *slot is set to the slot on which the dgram was read
-	// . *slot will be NULL on some errors (read errors or alloc errors)
-	// . *slot will be NULL if we read and processed a slotless ACK
-	// . *slot will be NULL if we read nothing (0 bytes read & 0 returned)
-	int32_t status ;
-	// assume we didn't process anything
-	bool something = false;
-	// do the main read loop
-	while ( ( status = readSock ( &slot , now ) ) != 0 ) {
-		// if no slot was set, it was a slotless read so keep looping
-		if ( ! slot ) { g_errno = 0; continue; }
-		// if there was a read error let makeCallback() know about it
-		if ( status == -1 ) slot->m_errno = g_errno;
-		// we read something
-		something = true;
-	}
-	// return true if we processed something
-	return something;
-	// if no change in token states, don't bother sending more
-	//if ( save == *s_token && save2 == s_local ) return;
-	// . if one is not available, bail
-	// . only one can be claimed at a time
-	//if ( *s_token || s_local ) return;
-	// maybe we can get the token now that's it's free
-	//sendPoll(true);
-}
-*/
 
 void UdpServer::dumpdgram ( char *dgram , int32_t dgramSize ) {
 	for ( int32_t i = 0 ; i < dgramSize ; i++ ) 
@@ -1653,90 +1586,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	// . return 1 cuz we did read the dgram ok
 	// . if we read a dgram, ACK will be sent in readPoll() after we return
 	return 1;
-	// come here if we don't want the dgram!
-	/*
- discard:
-	// read it into the temporary discard buf
-	recvfrom(m_sock,tmpbuf,DGRAM_SIZE_CEILING,0,NULL,NULL);
-	// turn off
-	if ( flipped ) interruptsOn();
-	// return 1 cuz we did read something
-	return 1;
-	*/
-
-	// . if this slot has been waiting too long then steal the token
-	// . if when sender is ready receiver is not, this contention can
-	//   go one for over 10 seconds!
-	// . can we steal the token?
-	// . only query traffic (niceness of 0) can steal, spider traffic
-	//   (niceness of 1) cannot
-	// . we must be older than the token slot by 500 ms
-	// . TODO: can just using lower 4 bytes of millisecond time be bad?
-	// . if you change the 500 here change it in UdpSlot::getScore() too
-	/*
-	bool canSteal = false;
-	if ( slot->m_niceness == 0 ) {
-		if ( *s_token && *s_token != slot && 
-		     (uint32_t)slot->m_startTime + 100 < *s_tokenTime )
-			canSteal = true;
-		if ( s_local  &&  s_local != slot && 
-		     (uint32_t)slot->m_startTime + 100 <  s_localTime )
-			canSteal = true;
-	}
-	// now try to claim the token for ourselves if we're a large reply
-	if ( ! isAck                             &&
-	       slot->m_callback                  && 
-	     //g_hostdb.getMyIp() != slot->m_ip  &&
-	       slot->m_dgramsToRead >= LARGE_MSG &&
-	       ( canSteal || (! *s_token && ! s_local ) ) ) {
-#ifdef _UDPDEBUG_
-		// make a note of it
-		char *a = "Gave";
-		if ( *s_token || s_local ) a = "Stole";
-		log("%s token to transId=%"INT32" msgType=0x%hhx callback=%08"XINT32""
-		    " slot=%"UINT32"", a,slot->m_transId , slot->m_msgType,
-		    (int32_t)slot->m_callback, (uint32_t)slot);
-#endif
-		// . claim s_local if we're local
-		// . set the last 4 bytes of time in milliseconds
-		if ( g_hostdb.getMyIp() == slot->m_ip ) {
-			s_local     = slot;
-			s_localTime = (uint32_t)slot->m_startTime;
-		}
-		// otherwise, claim s_token
-		else {
-			*s_token  = slot;
-			*s_tokenTime = (uint32_t) slot->m_startTime;
-		}
-	}
-	// if we read an ack we might be able to claim s_token so we can
-	// send more dgrams to this host
-	if (   isAck                             && 
-	     ! slot->m_callback                  && 
-	       slot->m_dgramsToSend >= LARGE_MSG && 
-	       //g_hostdb.getMyIp() != slot->m_ip  &&
-	       ( canSteal || ( ! *s_token && ! s_local ) ) ) {
-		// make a note of it
-		char *a = "Gave";
-		if ( *s_token || s_local ) a = "Stole";
-		log("%s token to transId=%"INT32" msgType=0x%hhx slot=%"UINT32"",
-		    a,slot->m_transId , slot->m_msgType , (uint32_t)slot);
-		// . claim s_local if we're local
-		// . set the last 4 bytes of time in milliseconds
-		if ( g_hostdb.getMyIp() == slot->m_ip ) {
-			s_local     = slot;
-			s_localTime = (uint32_t)slot->m_startTime;
-		}
-		// otherwise, claim s_token
-		else {
-			*s_token  = slot;
-			*s_tokenTime = (uint32_t) slot->m_startTime;
-		}
-	}
-	*/
-	// . return 1 cuz we did read the dgram ok
-	// . if we read a dgram, ACK will be sent in readPoll() after we return
-	//return 1;
 }		
 
 // . try calling makeCallback_ass() on all slots
@@ -2095,20 +1944,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 			//log("udp: why calling callback when not ready???");
 			return false;
 		}
-		/*
-#ifdef _UDPDEBUG_		
-		// if we had the token, give it up so others can send with it
-		if ( *s_token == slot || s_local == slot ) 
-			log("s_token  released");
-		log("UdpServer doing callback for transId=%"INT32" "
-		"msgType=0x%hhx g_errno=%s callback=%08"XINT32"",
-		slot->m_transId , msgType, mstrerror(g_errno),
-		(int32_t)slot->m_callback);
-#endif
-		// free the token if we were occupying it
-		if ( *s_token == slot ) *s_token = NULL;
-		if (  s_local == slot )  s_local = NULL;
-		*/
+		
 		// debug msg
 		if ( g_conf.m_logDebugUdp ) {
 			int64_t now  = gettimeofdayInMillisecondsLocal();
@@ -2255,20 +2091,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		//	return false;
 		// if we had the blast token, give it up now so someone else
 		// on this machine can send a large reply
-		/*
-#ifdef _UDPDEBUG_		
-		if ( *s_token == slot || s_local == slot ) {
-			// debug msgs
-			log("udp: makeCallback_ass: done sending "
-			    "slot=%"UINT32" bytes=%"INT32"", (uint32_t)slot , 
-			    slot->m_sendBufSize);
-			log("s_token released");
-		}
-#endif
-		// free the token if we were occupying it
-		if ( *s_token == slot ) *s_token = NULL;
-		if (  s_local == slot )  s_local = NULL;
-		*/
+		
 		// . now we sent the reply so try calling callback2
 		// . this is usually NULL, but so I could make pretty graphs
 		//   of transmission time it won't be
@@ -2371,15 +2194,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// let loop.cpp know we're done then
 	g_inHandler = saved2;
 
-	//#endif
-	// . don't call the handler to satisfy the request if msgType is 0x00 
-	//   or 0x39 AND memory is LOW
-	// . instead, just return and try again some other time
-	// . assume a max of 25 megs for now...
-	//if (( msgType==0x00 || msgType==0x39) && s_udpMem >= 25*1024*1024 ) {
-	//	log("udp: makeCallback_ass: no memory. waiting.");
-	//	return;
-	//}
 	// . stats
 	// . time how long for us to generate a reply
 	//slot->m_calledHandlerTime = gettimeofdayInMillisecondsLocal();
@@ -2413,15 +2227,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 
 	// use this for recording how long it takes to generate the reply
 	slot->m_queuedTime = now;
-
-	// . handler return value now obsolete
-	// . handler must call sendErrorReply() or sendReply()
-	// . send*Reply() will destroy slot on error or transaction completion
-	//if (g_conf.m_profilingEnabled){
-	//	address=(int32_t)m_handlers [slot->m_msgType];
-	//	g_profiler.startTimer(address, __PRETTY_FUNCTION__);
-	//}
-	//	g_loop.startBlockedCpuTimer();
 
 	// log it now
 	if ( slot->m_msgType != 0x11 && g_conf.m_logDebugLoop )
@@ -2615,23 +2420,8 @@ void UdpServer::timePoll ( ) {
 	}
 	// debug msg
 	//if ( g_conf.m_logDebugUdp ) log("exit timePoll");
-	/*
-#ifdef _UDPDEBUG_
-	// some debug info
-	if ( *s_token ) 
-		log("s_token  occupied by slot=%"UINT32" age=%"UINT32"",
-		    (uint32_t)*s_token,
-		    (uint32_t)now - *s_tokenTime );
-	if (  s_local ) 
-		log("s_local  occupied by slot=%"UINT32" age=%"UINT32"",
-		    (uint32_t)s_local,
-		    (uint32_t)now - s_localTime );
-#endif
-	*/
 }
 
-// every half second we check to see if 
-//int64_t s_lastDeadCheck = 0LL;
 
 // . this is called once per second
 // . return false and sets g_errno on error
@@ -2691,22 +2481,7 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 		// set all timeouts to 4 secs if we are shutting down
 		if ( m_isShuttingDown && slot->m_timeout > 4000 ) 
 			slot->m_timeout = 4000;
-		// if we don't get any activity on the slot for 30 ms
-		// that often means the other side has lost the token
-		/*
-		if ( (slot == *s_token || slot == s_local) && elapsed >= 30 ) {
-			//  slot->getNumAcksRead() <= 1 ) {
-			log("Token freed up (no more acks/dgrams read) for "
-			    "transId=%"INT32" msgType=0x%hhx weInitiated=%08"XINT32"",
-			    slot->m_transId , slot->m_msgType,
-			    (int32_t)slot->m_callback);
-			// debug msg
-			log("s_token released");
-			// ok, release it so we can blast msgs to remote hosts
-			*s_token = NULL;
-			s_local  = NULL;
-		}
-		*/
+		
 		// . deal w/ slots that are timed out
 		// . could be 1 of the 4 things:
 		// . 1. they take too long to send their reply
@@ -2922,9 +2697,6 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 	// free the send/read buffers
 	if ( rbuf ) mfree ( rbuf , rbufSize , "UdpServer");
 	if ( sbuf ) mfree ( sbuf , sbufSize , "UdpServer");
-	// mark down used memory
-	//s_udpMem -= slot->m_readBufSize    ;
-	//s_udpMem -= slot->m_sendBufAllocSize ;
 
 	// get the key of this slot...
 	//key_t key = slot->getKey();
