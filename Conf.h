@@ -355,9 +355,6 @@ class Conf {
 
 	float  m_maxLoadAvg;
 
-	// redhat 9's NPTL doesn't like our async signals
-	bool   m_allowAsyncSignals;
-
 	bool   m_useCollectionPasswords;
 
 	bool   m_allowCloudUsers;

@@ -559,8 +559,7 @@ bool Loop::init ( ) {
 	FD_ZERO(&s_selectMaskWrite);
 	FD_ZERO(&s_selectMaskExcept);
 
-	// redhat 9's NPTL doesn't like our async signals
-	if ( ! g_conf.m_allowAsyncSignals ) g_isHot = false;
+	g_isHot = false;
 	// sighupHandler() will set this to true so we know when to shutdown
 	m_shutdown  = 0;
 	// . reset this cuz we have no sleep callbacks right now
