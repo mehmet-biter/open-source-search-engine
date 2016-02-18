@@ -37,9 +37,9 @@ static Needle s_needles1[] = {
 	// this can signify a blog entry, not just a comment
 	//{"class=\"entry"              , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
 	// these seem to be more indicative of posted comments
-	{"class=\"posted"               , 0 , 8 , 1 , 0 , NULL , 0 },
-	{"id=\"posted"                  , 0 , 8 , 1 , 0 , NULL , 0 },
-	{"name=\"posted"                , 0 , 8 , 1 , 0 , NULL , 0 },
+	{"class=\"posted"               , 0 , 8 , 1 , 0 , NULL , 0 , NULL },
+	{"id=\"posted"                  , 0 , 8 , 1 , 0 , NULL , 0 , NULL },
+	{"name=\"posted"                , 0 , 8 , 1 , 0 , NULL , 0 , NULL },
 	// annoying little textbox thingy
 	{"class=\"shoutbox"             , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
 	{"id=\"comment"                 , 0 , 8 , 1 , 0 , NULL , 0 , NULL } ,
