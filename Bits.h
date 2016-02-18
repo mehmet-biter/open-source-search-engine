@@ -103,44 +103,48 @@ typedef uint32_t wbit_t;
 // summary bits used for doing summaries at query time
 typedef uint16_t swbit_t;
 
-// . used by SimpleQuery.cpp
-// . this isn't used for phrasing, it's just so a doc that has the same
-//   # of query terms as another, but also one query stop word, won't be
-//   ranked above the other doc just because of that
-//#define D_IS_QUERY_STOPWORD     0x40
-
 class Bits {
-
- public:
-
+public:
 	Bits();
 	~Bits();
 
-	bool set2 ( Words *words, int32_t niceness ) {
-		return set ( words,TITLEREC_CURRENT_VERSION,niceness); };
+	bool set2( Words *words, int32_t niceness ) {
+		return set( words, TITLEREC_CURRENT_VERSION, niceness );
+	}
 
 	// . returns false and sets errno on error
-	bool set ( Words *words , 
-		   char titleRecVersion ,
-		   int32_t niceness ,
-		   // provide it with a buffer to prevent a malloc
-		   char         *buf    = NULL ,
-		   int32_t          bufSize= 0    );
+	// provide it with a buffer to prevent a malloc
+	bool set( Words *words, char titleRecVersion, int32_t niceness, char *buf = NULL, int32_t bufSize = 0 );
 
-	bool setForSummary ( Words *words ,
-			     // provide it with a buffer to prevent a malloc
-			     char         *buf    = NULL ,
-			     int32_t          bufSize= 0    );
+	// provide it with a buffer to prevent a malloc
+	bool setForSummary( Words *words, char *buf = NULL, int32_t bufSize = 0 );
 
 	void reset();
 
-	bool isStopWord      (int32_t i) {return m_bits[i]&D_IS_STOPWORD;};
-	bool canBeInPhrase   (int32_t i) {return m_bits[i]&D_CAN_BE_IN_PHRASE;};
-	bool canStartPhrase  (int32_t i) {return m_bits[i]&D_CAN_START_PHRASE;};
-	bool canPeriodPreceed(int32_t i) {return m_bits[i]&D_CAN_PERIOD_PRECEED;};
-	bool canPairAcross   (int32_t i) {return m_bits[i]&D_CAN_PAIR_ACROSS;};
-	//bool isIndexable     (int32_t i) {return m_bits[i]&D_IS_INDEXABLE;};
-	bool isCap           (int32_t i) {return m_bits[i]&D_IS_CAP;};
+	bool isStopWord( int32_t i ) {
+		return m_bits[i] & D_IS_STOPWORD;
+	}
+
+	bool canBeInPhrase( int32_t i ) {
+		return m_bits[i] & D_CAN_BE_IN_PHRASE;
+	}
+
+	bool canStartPhrase( int32_t i ) {
+		return m_bits[i] & D_CAN_START_PHRASE;
+	}
+
+	bool canPeriodPreceed( int32_t i ) {
+		return m_bits[i] & D_CAN_PERIOD_PRECEED;
+	}
+
+	bool canPairAcross( int32_t i ) {
+		return m_bits[i] & D_CAN_PAIR_ACROSS;
+	}
+
+	bool isCap( int32_t i ) {
+		return m_bits[i] & D_IS_CAP;
+	}
+
 	void printBits ( );
 	void printBit  ( int32_t i );
 
@@ -150,12 +154,11 @@ class Bits {
 	bool m_inLinkBitsSet;
 	bool m_inUrlBitsSet;
 
-	//char m_localBuf [MAX_WORDS*10];
 	char m_localBuf [ BITS_LOCALBUFSIZE ];
 
 	// leave public so Query.cpp can tweak this
-	wbit_t *m_bits ;
-	int32_t    m_bitsSize;
+	wbit_t *m_bits;
+	int32_t m_bitsSize;
 
 	int32_t m_niceness;
 
@@ -163,19 +166,15 @@ class Bits {
 	// . used only by setForSummary() now to avoid having to update a
 	//   lot of code
 	swbit_t *m_swbits;
-	int32_t     m_swbitsSize;
+	int32_t m_swbitsSize;
 
  private:
+	 Words *m_words;
+	 char m_titleRecVersion;
+	 bool m_needsFree;
 
-	Words        *m_words;
-
-	char m_titleRecVersion;
-
-	bool m_needsFree;
-
-	// get bits for the ith word
-	wbit_t getAlnumBits ( int32_t i , wbit_t prevBits );
-
+	 // get bits for the ith word
+	 wbit_t getAlnumBits( int32_t i, wbit_t prevBits );
 };
 
 #endif

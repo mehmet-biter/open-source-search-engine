@@ -505,12 +505,9 @@ class Msg25 {
 
 	// hack for seo pipeline in xmldoc.cpp
 	int32_t m_hackrd;
-	
-	// . we use Msg0 to get an indexList for href: terms 
-	// . the href: IndexList's docIds are docs that link to us
+
 	// . we now use Msg2 since it has "restrictIndexdb" support to limit
 	//   indexdb searches to just the root file to decrease disk seeks
-	//Msg0  m_msg0;
 	Msg5 m_msg5;
 	RdbList m_list;
 
