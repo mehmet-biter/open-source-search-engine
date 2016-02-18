@@ -22,28 +22,34 @@
 // . stop words can have a period preceeding them in the phrase
 // . words preceeded by "/" , "." or "/~" can have a period preceed them
 #define D_CAN_PERIOD_PRECEED    0x0004 
-// same as above (can we hash this word???)
-//#define D_IS_INDEXABLE        0x08 
+
 // this means the word is in a verified address (bit set in Address.cpp)
 #define D_IS_IN_ADDRESS         0x0008
+
 // . used for phrasing
 // . stop words can only start a phrase if prev word could not "pair across"
 #define D_CAN_START_PHRASE      0x0010 
+
 // . used for phrasing 
 // . can we continue forming our phrase after this word?
 // . some puntuation words and all stop words can be paired across
 #define D_CAN_PAIR_ACROSS       0x0020 
+
 // it it capitalized?
 #define D_IS_CAP                0x0040
+
 // is it in a date?
 #define D_IS_IN_DATE            0x0080
-// is it in a street name. set by Address.cpp code.
-#define D_IS_IN_STREET          0x0100
+
+//#define D_UNUSED_1            0x0100
+
 #define D_BREAKS_SENTENCE       0x0200
 // set by Sections.cpp::setMenu() function
 #define D_IN_LINK               0x0400
+
 // in the place name part of an address?
-#define D_IS_IN_VERIFIED_ADDRESS_NAME    0x0800
+//#define D_UNUSED_2            0x0800
+
 // allow for dows for texasdrums.org, so TUESDAYS is set with this and
 // we can keep it as part of the sentence and not split on the colon
 //#define D_IS_IN_DATE_2        0x1000
@@ -54,7 +60,7 @@
 #define D_GENERIC_WORD          0x2000
 #define D_CRUFTY                0x4000
 #define D_IS_NUM                        0x00008000
-#define D_IS_IN_UNVERIFIED_ADDRESS_NAME 0x00010000
+//#define D_UNUSED_3                    0x00010000
 #define D_IS_IN_URL                     0x00020000
 // like D_IS_TOD above
 #define D_IS_MONTH                      0x00040000

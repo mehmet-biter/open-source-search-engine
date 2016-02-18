@@ -3990,9 +3990,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		int32_t alphas = 0;
 		bool lastStop = false;
 		bool inDate = true;
-		bool inAddress = false;
-		bool notInAddress = false;
-		bool inAddressName = false;
 		int32_t stops = 0;
 		inParens = false;
 		int32_t dollarCount = 0;
@@ -4319,18 +4316,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 			int64_t savedWid = lastWid;
 			lastWid = m_wids[i];
 
-			// skip if not ours directly
-			//if ( sp[i] != si ) continue;
-			// in address?
-			if ( bits[i] & D_IS_IN_VERIFIED_ADDRESS_NAME )
-				inAddressName = true;
-			else if ( bits[i] & D_IS_IN_UNVERIFIED_ADDRESS_NAME)
-				inAddressName = true;
-			else if ( bits[i] & D_IS_IN_ADDRESS ) 
-				inAddress = true;
-			else    
-				notInAddress = true;
-
 			// . skip if in parens
 			// . but allow place name #1's in parens like
 			//   (Albuquerque Rescue Mission) is for unm.edu
@@ -4408,23 +4393,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		// set this
 		if ( ! hasSpace ) 
 			si->m_sentFlags |= SENT_HASNOSPACE;
-
-		// punish just a tiny amount to fix 
-		// http://www.when.com/albuquerque-nm/venues which is using
-		// the place name as the title and not the real event title
-		// which is actually AFTER the event date. BUT the problem
-		// is is that good titles are often mislabeled as being
-		// in an address name! so we can't really punish this at all
-		// because we will lose good titles... unless it is a 
-		// verified place name i guess... so i changed the algo
-		// in Address.cpp to only set D_IS_IN_VERIFIED_ADDRESS_NAME if
-		// the place name is verified, not just inlined...
-		if ( inAddressName && ! notInAddress )
-			si->m_sentFlags |= SENT_PLACE_NAME;
-
-		// does it contain a place name?
-		if ( inAddressName )
-			si->m_sentFlags |= SENT_CONTAINS_PLACE_NAME;
 
 		// try to avoid mutiple-ticket- price titles
 		if ( dollarCount >= 2 )
@@ -4602,13 +4570,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		if ( pj && pj->m_firstWordPos < 0 )
 			// must be p or hr tag etc.
 			si->m_sentFlags |= SENT_BEFORE_SPACER;
-
-		// location sandwich? punish
-		// "2000 Mountain Rd NW, Old Town, Albuquerque, NM 87104"
-		// for collectorsguide.com.
-		if ( (bits[sa  ] & D_IS_IN_ADDRESS) &&
-		     (bits[sb-1] & D_IS_IN_ADDRESS) )
-			si->m_sentFlags |= SENT_LOCATION_SANDWICH;
 
 		// . second title slam
 		// . need to telescope up for this i think
@@ -4931,18 +4892,12 @@ bool Sections::setSentFlagsPart2 ( ) {
 		if ( ! lastSec ) continue;
 		// ok, last guy must have had a colon
 		if ( ! (lastSec->m_sentFlags & SENT_COLON_ENDS) ) continue;
-		// we must be generic, end in a period or be mixed case
-		// no, this hurts "Bill Holman Big Band: Composer, arranger..."
-		//if ( ! (si->m_sentFlags & SENT_GENERIC_WORDS) &&
-		//     ! (si->m_sentFlags & SENT_PERIOD_ENDS)   &&
-		//     ! (si->m_sentFlags & SENT_MIXED_CASE) )
-		//	continue;
+
 		// this is good for cabq.gov libraries page "children's room:"
 		// which has a phone number after it
 		if ( ! ( si->m_sentFlags & SENT_HAS_PHONE ) )
-		     // are we like "location:"
-		     //! ( si->m_sentFlags & SENT_IN_ADDRESS ) ) 
 			continue;
+
 		// ok, punish last guy in that case for having a colon
 		// and preceeding a generic sentence
 		//lastSec->m_titleScore *= .02;
@@ -7706,7 +7661,6 @@ int32_t Sections::getDelimScore ( Section *bro ,
 char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_HAS_COLON  ) return "hascolon";
 	if ( sf == SENT_AFTER_COLON  ) return "aftercolon";
-	//if ( sf == SENT_DUP_SECTION ) return "dupsection";
 	if ( sf == SENT_BAD_FIRST_WORD ) return "badfirstword";
 	if ( sf == SENT_MIXED_CASE ) return "mixedcase";
 	if ( sf == SENT_MIXED_CASE_STRICT ) return "mixedcasestrict";
@@ -7714,21 +7668,14 @@ char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_MULT_EVENTS ) return "multevents";
 	if ( sf == SENT_PAGE_REPEAT ) return "pagerepeat";
 	if ( sf == SENT_NUMBERS_ONLY ) return "numbersonly";
-	if ( sf == SENT_IN_ADDRESS ) return "inaddr";
 	if ( sf == SENT_SECOND_TITLE ) return "secondtitle";
 	if ( sf == SENT_IS_DATE ) return "allwordsindate";
 	if ( sf == SENT_LAST_STOP ) return "laststop";
 	if ( sf == SENT_NUMBER_START ) return "numberstarts";
-	//if ( sf == SENT_HASEVENTADDRESS ) return "haseventaddress";
-	//if ( sf == SENT_PRETTY ) return "pretty";
-	//if ( sf == SENT_NO_PREV_BROTHER ) return "noprevbro";
-	//if ( sf == SENT_NO_NEXT_BROTHER ) return "nonextbro";
 	if ( sf == SENT_IN_HEADER ) return "inheader";
-	//if ( sf == SENT_DONOTPRINT ) return "donotprint";
 	if ( sf == SENT_IN_LIST ) return "inlist";
 	if ( sf == SENT_IN_BIG_LIST ) return "inbiglist";
 	if ( sf == SENT_COLON_ENDS ) return "colonends";
-	if ( sf == SENT_IN_ADDRESS_NAME ) return "inaddressname";
 	if ( sf == SENT_IN_TITLEY_TAG ) return "intitleytag";
 	if ( sf == SENT_CITY_STATE ) return "citystate";
 	if ( sf == SENT_PRICEY ) return "pricey";
@@ -7742,9 +7689,7 @@ char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_INPLACEFIELD ) return "inplacefield";
 	if ( sf == SENT_STRANGE_PUNCT ) return "strangepunct";
 	if ( sf == SENT_TAG_INDICATOR ) return "tagindicator";
-	//if ( sf == SENT_GENERIC_WORDS ) return "genericwords";
 	if ( sf == SENT_INNONTITLEFIELD ) return "innontitlefield";
-	//if ( sf == SENT_TOO_MANY_WORDS ) return "toomanywords";
 	if ( sf == SENT_HASNOSPACE ) return "hasnospace";
 	if ( sf == SENT_IS_BYLINE ) return "isbyline";
 	if ( sf == SENT_NON_TITLE_FIELD ) return "nontitlefield";
@@ -7754,25 +7699,18 @@ char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_WORD_SANDWICH ) return "wordsandwich";
 	if ( sf == SENT_AFTER_SPACER ) return "afterspacer";
 	if ( sf == SENT_BEFORE_SPACER ) return "beforespacer";
-	if ( sf == SENT_LOCATION_SANDWICH ) return "locationsandwich";
 	if ( sf == SENT_NUKE_FIRST_WORD ) return "nukefirstword";
 	if ( sf == SENT_FIELD_NAME ) return "fieldname";
 	if ( sf == SENT_PERIOD_ENDS_HARD ) return "periodends2";
 	if ( sf == SENT_PARENS_START ) return "parensstart";
 	if ( sf == SENT_IN_MENU_HEADER ) return "inmenuheader";
 	if ( sf == SENT_IN_TRUMBA_TITLE ) return "intrumbatitle";
-	if ( sf == SENT_PLACE_NAME ) return "placename";
-	if ( sf == SENT_CONTAINS_PLACE_NAME ) return "containsplacename";
 	if ( sf == SENT_FORMTABLE_FIELD ) return "formtablefield";
 	if ( sf == SENT_FORMTABLE_VALUE ) return "formtablevalue";
 	if ( sf == SENT_IN_TAG ) return "intag";
 	if ( sf == SENT_OBVIOUS_PLACE ) return "obviousplace";
-	//if ( sf == SENT_ONROOTPAGE ) return "onrootpage";
 	if ( sf == SENT_HASSOMEEVENTSDATE ) return "hassomeeventsdate";
-	//if ( sf == SENT_EVENT_ENDING ) return "eventending";
 	if ( sf == SENT_HASTITLEWORDS ) return "hastitlewords";
-	//if ( sf == SENT_CLOSETODATE  ) return "closetodate";
-	//if ( sf == SENT_GOODEVENTSTART ) return "goodeventstart";
 	if ( sf == SENT_BADEVENTSTART ) return "badeventstart";
 	if ( sf == SENT_MENU_SENTENCE ) return "menusentence";
 	if ( sf == SENT_PRETTY ) return "pretty";
@@ -7783,11 +7721,9 @@ char *getSentBitLabel ( sentflags_t sf ) {
 static sentflags_t s_sentFlags[] = {
 	SENT_AFTER_SPACER,
 	SENT_BEFORE_SPACER,
-	//SENT_PERIOD_ENDS, already have periodend2
 	SENT_IN_TAG,
 	SENT_IN_HEADER,
 	SENT_NUMBERS_ONLY,
-	SENT_IN_ADDRESS,
 	SENT_IS_DATE,
 	SENT_NUMBER_START,
 	SENT_IN_TITLEY_TAG,
@@ -7797,15 +7733,10 @@ static sentflags_t s_sentFlags[] = {
 	SENT_INTITLEFIELD,
 	SENT_STRANGE_PUNCT,
 	SENT_INNONTITLEFIELD,
-	//SENT_IS_BYLINE,
 	SENT_NON_TITLE_FIELD,
 	SENT_TITLE_FIELD,
-	//SENT_UNIQUE_TAG_HASH,
 	SENT_FIELD_NAME,
 	SENT_PERIOD_ENDS_HARD,
-	//SENT_IN_MENU_HEADER,
-	SENT_PLACE_NAME,
-	//SENT_FORMAT_DUP,
 	SENT_MIXED_CASE };
 
 char *getSecBitLabel ( sec_t sf ) {
