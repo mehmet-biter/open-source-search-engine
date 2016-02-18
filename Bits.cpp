@@ -118,15 +118,10 @@ bool Bits::set ( Words *words , char titleRecVersion , int32_t niceness , char *
 		// want "project S" to phrase to "projects" or
 		// "the rapist" to phrase to "therapist"
 		bits |= D_CAN_PERIOD_PRECEED;
-		// i commented this out cuz we ALWAYS put a period between now
-		// if this word is following a "/", "." or "/~" then it can
-		// be period preceeded in a phrase
-		//if ( i > 1 && (s[-1]=='/' || s[-1]=='.') && is_alnum(s[-2])) 
-		//	bits |= D_CAN_PERIOD_PRECEED;
-		//if ( i > 2 &&  s[-1]=='~' && s[-2]=='/'  && is_alnum(s[-3])) 
-		//	bits |= D_CAN_PERIOD_PRECEED;
+
 		// remember our bits.
 		m_bits [ i ] = bits;
+
 		// these bits will be the previous bits the next time around.
 		prevBits = bits; //m_bits [ i - 1 ];
 
@@ -228,23 +223,30 @@ void Bits::setInUrlBits ( int32_t niceness ) {
 		if ( wptrs[i][2] != '/' ) continue;
 		// set them up
 		if ( i<= 0 ) continue;
+
 		// scan for end of it. stop at tag or space
 		int32_t j = i - 1;
-		for ( ; j < nw ; j++ ) {
+		for ( ; j < nw; j++ ) {
 			// breathe
-			QUICKPOLL(niceness);
+			QUICKPOLL( niceness );
+
 			// check if end
-			if ( m_words->hasSpace(j) ) break;
-			// or tag
-			if ( tids[j] )
-			     //tids[j] != TAG_B && 
-			     //tids[j] != (TAG_B|BACKBIT) ) 
+			if ( m_words->hasSpace( j ) ) {
 				break;
+			}
+
+			// or tag
+			if ( tids[j] ) {
+				break;
+			}
 			// include it
-		        m_bits[j] |= D_IS_IN_URL;
+			m_bits[j] |= D_IS_IN_URL;
 		}
+
 		// avoid inifinite loop with this if conditional statement
-		if ( j > i ) i = j;
+		if ( j > i ) {
+			i = j;
+		}
 	}
 }
 
@@ -264,8 +266,6 @@ void Bits::printBit ( int32_t i ) {
 	else                          fprintf(stderr,"         ");
 	if (m_bits[i]&D_CAN_PERIOD_PRECEED)fprintf(stderr," periodCanPreceed");
 	else                               fprintf(stderr,"                 ");
-	//if (m_bits[i]&D_IS_INDEXABLE) fprintf(stderr," indexable");
-	//else                          fprintf(stderr,"          ");
 	if (m_bits[i]&D_CAN_START_PHRASE) fprintf(stderr," canStartPhrase");
 	else                              fprintf(stderr,"               ");
 	if (m_bits[i]&D_CAN_PAIR_ACROSS ) fprintf(stderr," canPairAcross");
@@ -354,47 +354,53 @@ bool Bits::setForSummary ( Words *words , char *buf , int32_t bufSize ) {
 
 	// save words so printBits works
 	m_words = words;
-	// save for convenience/speed
-	//m_titleRecVersion = 0;
+
 	// how many words?
 	int32_t numBits = words->getNumWords();
+
 	// how much space do we need?
 	int32_t need = sizeof(swbit_t) * numBits;
+
 	// assume no malloc
 	m_needsFree = false;
 
 	// use local buf?
-	if ( need < BITS_LOCALBUFSIZE ) m_swbits = (swbit_t *)m_localBuf;
-	// use provided buf?
-	else if ( need < bufSize ) m_swbits = (swbit_t *)buf;
-	// i guess need to malloc
-	else {
+	if ( need < BITS_LOCALBUFSIZE ) {
+		m_swbits = (swbit_t *)m_localBuf;
+	} else if ( need < bufSize ) {
+		// use provided buf?
+		m_swbits = (swbit_t *)buf;
+	} else {
+		// i guess need to malloc
 		m_swbitsSize = need;
-		m_swbits = (swbit_t *)mmalloc ( need , "BitsW" );
+		m_swbits = (swbit_t *)mmalloc( need, "BitsW" );
 		m_needsFree = true;
 	}
-	if ( ! m_swbits ) return log("build: Could not allocate "
-				     "Bits table used to parse words: "
-				     "%s",
-				     mstrerror(g_errno));
+
+	if ( !m_swbits ) {
+		return log( "build: Could not allocate "
+					"Bits table used to parse words: "
+					"%s",
+					mstrerror( g_errno ) );
+	}
 
 	// set 
 	// D_STRONG_CONNECTOR
 	// D_STARTS_SENTENCE
 	// D_STARTS_FRAGMENT
 
-	nodeid_t   *tagIds = words->getTagIds();
-	char      **w      = words->getWords();
-	int32_t       *wlens  = words->getWordLens();
-	int64_t  *wids   = words->getWordIds();
+	nodeid_t *tagIds = words->getTagIds();
+	char **w = words->getWords();
+	int32_t *wlens = words->getWordLens();
+	int64_t *wids = words->getWordIds();
 
-	char          startSent = 1;
-	char          startFrag = 1;
-	char          inQuote   = 0;
-	char          inParens  = 0;
+	char startSent = 1;
+	char startFrag = 1;
+	char inQuote = 0;
+	char inParens = 0;
 
-	int32_t          wlen;
-	char         *wp;
+	int32_t wlen;
+	char *wp;
 
 	// the ongoing accumulation flag we apply to each word
 	swbit_t flags = 0;
@@ -402,94 +408,124 @@ bool Bits::setForSummary ( Words *words , char *buf , int32_t bufSize ) {
 	for ( int32_t i = 0 ; i < numBits ; i++ ) {
 		// assume none are set
 		m_swbits[i] = 0;
+
 		// if a breaking tag, next guy can "start a sentence"
 		if ( tagIds && tagIds[i] ) {
 			// get the tag id minus the high "back bit"
 			int32_t tid = tagIds[i] & BACKBITCOMP;
+
 			// is it a "breaking tag"?
 			if ( g_nodes[tid].m_isBreaking ) {
 				startSent = 1;
 				inQuote   = 0;
 			}
+
 			// adjust flags if we should
 			if ( s_bt[tid] ) {
-				if   ( tid != tagIds[i] ) flags &= ~s_bt[tid];
-				else                      flags |=  s_bt[tid];
+				if ( tid != tagIds[i] ) {
+					flags &= ~s_bt[tid];
+				} else {
+					flags |= s_bt[tid];
+				}
 			}
+
 			// apply flag
 			m_swbits[i] |= flags;
 			continue;
 		}
+
 		// if alnum, might start sentence or fragment
 		if ( wids[i] ) {
 			if ( startFrag ) {
-				m_swbits[i] |= D_STARTS_FRAG   ; startFrag =0;}
+				m_swbits[i] |= D_STARTS_FRAG;
+				startFrag = 0;
+			}
+
 			if ( startSent ) {
-				m_swbits[i] |= D_STARTS_SENTENCE;startSent =0;}
+				m_swbits[i] |= D_STARTS_SENTENCE;
+				startSent = 0;
+			}
+
 			if ( inQuote ) {
-				m_swbits[i] |= D_IN_QUOTES      ;inQuote = 0;}
-			if ( inParens )
+				m_swbits[i] |= D_IN_QUOTES;
+				inQuote = 0;
+			}
+
+			if ( inParens ) {
 				m_swbits[i] |= D_IN_PARENS;
+			}
+
 			// apply any other flags we got
 			m_swbits[i] |= flags;
 			continue;
 		}
+
 		// fast ptrs
 		wlen = wlens[i];
 		wp   = w    [i];
 		
 		// this is not 100%
-		if      ( words->hasChar (i, '(' ) ) flags |=  D_IN_PARENS;
-		else if ( words->hasChar (i, ')' ) ) flags &= ~D_IN_PARENS;
+		if ( words->hasChar( i, '(' ) ) {
+			flags |= D_IN_PARENS;
+		} else if ( words->hasChar( i, ')' ) ) {
+			flags &= ~D_IN_PARENS;
+		}
 
 		// apply curent flags
 		m_swbits[i] |= flags;
 
-
 		// does it END in a quote?
-		if      ( wp[wlen-1]=='\"' )
+		if ( wp[wlen - 1] == '\"' ) {
 			inQuote = 1;
-		else if ( wlen >= 6 &&
-			  strncmp(wp,"&quot;",6)== 0 ) 
+		} else if ( wlen >= 6 && strncmp( wp, "&quot;", 6 ) == 0 ) {
 			inQuote = 1;
-		
+		}
+
 		// . but double spaces are not starters
-		// . MDW: we kinda force ourselves to only use ascii spaceshere
-		if ( wlen==2 && is_wspace_a(*wp)&&is_wspace_a(wp[1])) continue;
+		// . MDW: we kinda force ourselves to only use ascii spaces here
+		if ( wlen == 2 && is_wspace_a( *wp ) && is_wspace_a( wp[1] ) ) {
+			continue;
+		}
+
 		// it can start a fragment if not a single space char
-		if ( wlen!=1 || ! is_wspace_utf8(wp) )
+		if ( wlen != 1 || !is_wspace_utf8( wp ) ) {
 			startFrag = 1;
+		}
+
 		// ". " denotes end of sentence
-		if ( wlen>=2 && wp[0]=='.' && is_wspace_utf8(wp+1)){
+		if ( wlen >= 2 && wp[0] == '.' && is_wspace_utf8( wp + 1 ) ) {
 			// but not if preceeded by an initial
-			if ( i>0 && wlens[i-1]==1 && wids[i-1] )
+			if ( i > 0 && wlens[i - 1] == 1 && wids[i - 1] ) {
 				continue;
+			}
+
 			// ok, really the end of a sentence
 			startSent = 1;
 		}
-		// are we a "strong connector", meaning that 
+
+		// are we a "strong connector", meaning that
 		// Summary.cpp should not split on us if possible
-		
+
 		// apostrophe html encoded?
-		if ( wlen == 6 && strncmp(wp,"&#146;",6) == 0 ) {
+		if ( wlen == 6 && strncmp( wp, "&#146;", 6 ) == 0 ) {
 			m_swbits[i] |= D_IS_STRONG_CONNECTOR;
 			continue;
 		}
-		if ( wlen == 7 && strncmp(wp,"&#8217;",7) == 0 ) {
+		if ( wlen == 7 && strncmp( wp, "&#8217;", 7 ) == 0 ) {
 			m_swbits[i] |= D_IS_STRONG_CONNECTOR;
 			continue;
 		}
-		
+
 		// otherwise, strong connectors must be single char
-		if ( wlen != 1 ) continue;
+		if ( wlen != 1 ) {
+			continue;
+		}
+
 		// is it apostrophe? - & . * (M*A*S*H)
 		char c = wp[0];
-		if      ( c == '\'')m_swbits[i]|=D_IS_STRONG_CONNECTOR;
-		else if ( c == '-' )m_swbits[i]|=D_IS_STRONG_CONNECTOR;
-		else if ( c == '&' )m_swbits[i]|=D_IS_STRONG_CONNECTOR;
-		else if ( c == '.' )m_swbits[i]|=D_IS_STRONG_CONNECTOR;
-		else if ( c == '*' )m_swbits[i]|=D_IS_STRONG_CONNECTOR;
-		else if ( c == '/' )m_swbits[i]|=D_IS_STRONG_CONNECTOR;
+		if ( c == '\'' || c == '-' || c == '&' || c == '.' || c == '*' || c == '/' ) {
+			m_swbits[i] |= D_IS_STRONG_CONNECTOR;
+		}
 	}
 
 	return true;
