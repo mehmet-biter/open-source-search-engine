@@ -639,14 +639,9 @@ void Log::printBuf ( ) {
 // . IMPORTANT: should be called while the lock is on!
 // . we just re-write to the file
 bool Log::dumpLog ( ) {
-	// . usually g_errno is set to something
-	// . save it in case we set g_errno
-	int32_t errnum = g_errno;
 	// for now don't dump
 	m_numErrors =  0;
 	m_bufPtr    =  0;
-	// just return true if no file open
-	if ( m_fd < 0 ) return true;
 
 	// for now just return true always
 	return true;
