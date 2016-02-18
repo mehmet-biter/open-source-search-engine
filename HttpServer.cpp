@@ -903,13 +903,6 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// "GET /download/mycoll_urls.csv"
 	if ( strncmp ( path , "/download/", 10 ) == 0 )
 		return sendBackDump ( s , r );
-		
-	// if it's gigablast.com, www.gigablast.com, ... do shortcut
-	bool isGigablast = false;
-	if ( strcasecmp ( h , "www.gigablast.com" ) == 0 ) isGigablast = true;
-	if ( strcasecmp ( h , "gigablast.com"     ) == 0 ) isGigablast = true;
-	//bool isNewSite = false;
-	//isNewSite = true;
 
 	// get the dynamic page number, is -1 if not a dynamic page
 	int32_t n = g_pages.getDynamicPageNumber ( r );
@@ -1070,18 +1063,15 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// set the filepath/name
 	char fullPath[512];
 	bool isQAFile = false;
-	// if it's gigablast.com, www.gigablast.com, ... do shortcut
-	//if ( strcasecmp ( h , "www.gigablast.com" ) == 0 ) goto skip;
-	//if ( strcasecmp ( h , "gigablast.com"     ) == 0 ) goto skip;
-	if ( isGigablast ) goto skip;
+
 	// otherwise, look for special host
 	sprintf(fullPath,"%s/%s/%s", g_hostdb.m_httpRootDir, h, path );
+
 	// set filename to full path
 	f->set ( fullPath );
+
 	// if f does not exist then try w/o the host in the path
 	if ( f->doesExist() <= 0 ) {
-		// skip to here if we're the gigablast host
-	skip:
 		// use default page if does not exist under host-specific path
 		if (pathLen == 11 && strncmp ( path , "/index.html" ,11 ) ==0){
 			if ( g_conf.m_logDebugTcp )
