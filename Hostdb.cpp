@@ -10,7 +10,6 @@
 #include <sys/wait.h>
 #include "sort.h"
 #include "Rdb.h" // RDB_INDEXDB,...
-//#include "Indexdb.h"
 #include "Posdb.h"
 #include "Titledb.h"
 #include "Spider.h"
@@ -19,13 +18,9 @@
 #include "Dns.h"
 #include "Revdb.h"
 
-//extern bool g_isYippy;
-
 // a global class extern'd in .h file
 Hostdb g_hostdb;
 
-//HashTableT <uint64_t, uint32_t> g_hostTableUdp;
-//HashTableT <uint64_t, uint32_t> g_hostTableTcp;
 HashTableX g_hostTableUdp;
 HashTableX g_hostTableTcp;
 
@@ -42,16 +37,6 @@ void Hostdb::resetPortTables () {
 }
 
 static int cmp  ( const void *h1 , const void *h2 ) ;
-
-//static int cmp2 ( const void *h1 , const void *h2 ) ;
-
-//static void *syncStartWrapper_r ( void *state );
-//static void  syncDoneWrapper    ( void *state );
-//static void  syncWrapper        ( int fd, void *state );
-
-//pid_t g_syncpid     = -1;
-//int32_t  g_syncticker  = 0;
-//int32_t  g_syncTimeout = -1;
 
 Hostdb::Hostdb ( ) {
 	m_hosts = NULL;
@@ -128,15 +113,6 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	m_hostId = -1;
 
  retry:
-
-	/*
-	// for yippy use host as port
-	int32_t yippyPort;
-	if ( g_isYippy ) {
-		yippyPort = hostId;
-		hostId = 0;
-	}
-	*/
 
 	// save the name of the network... we can have multiple networks now
 	// since we need to get title recs from separate networks for getting
@@ -623,10 +599,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 			// then skip spaces
 			for ( ; *p && (*p==' '|| *p=='\t') ; p++ );
 		}
-		// yippy hack
-		//if ( g_isYippy ) {
-		//	h->m_httpPort = yippyPort; // 80;
-		//}
+
 		// and other stuff
 		//h->m_ideChannel    = 0;
 		// our group is based on our split!
