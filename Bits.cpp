@@ -324,7 +324,7 @@ wbit_t Bits::getAlnumBits ( int32_t i , wbit_t prevBits ) {
 
 // this table maps a tagId to a #define'd bit from Bits.h which describes
 // the format of the following text in the page. like bold or italics, etc.
-nodeid_t s_bt [ 1000 ];
+static nodeid_t s_bt [ 1000 ];
 
 // . set bits for each word
 // . these bits are used for phrasing and by spam detector
