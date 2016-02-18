@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "Xml.h"
-#include "HttpMime.h"
+#include "HttpMime.h" // CT_HTML
 #include <cstdio>
 
 #define MAX_BUF_SIZE 1024
