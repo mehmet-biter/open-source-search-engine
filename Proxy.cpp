@@ -33,8 +33,6 @@ struct StateControl{
 	int64_t     m_timeout;
 	HttpRequest m_hr;
 	Host *m_forwardHost;
-	float m_pending;
-	bool m_isEventGuru;
 };
 
 static void freeStateControl ( StateControl *stC );
