@@ -903,54 +903,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// "GET /download/mycoll_urls.csv"
 	if ( strncmp ( path , "/download/", 10 ) == 0 )
 		return sendBackDump ( s , r );
-
-	if ( strncmp ( path , "/gbiaitem/" , 10 ) == 0 ) {
-		SafeBuf cmd;
-		char *iaItem = path + 10;
-		char c = iaItem[pathLen];
-		iaItem[pathLen] = '\0';
-		// iaItem is like "webgroup-20100422114008-00011"
-		// print out the warc files as if they were urls
-		// so we can spider them through the spider pipeline as-is.
-		// this hack only works on internet archive servers
-		// that have the '/home/mwells/ia' obviously
-		cmd.safePrintf("/home/mwells/ia list %s --glob='*arc.gz' | "
-			       "awk '{print \"<a "
-			       "href=http://archive.org/download/"
-			       "%s/\"$1\">\"$1\"</a><br>\"}' > ./tmpiaout"
-			       //, g_hostdb.m_dir
-			       ,iaItem
-			       ,iaItem
-			       );
-		iaItem[pathLen] = c;
-		log("system: %s",cmd.getBufStart());
-		gbsystem ( cmd.getBufStart() );
-		SafeBuf sb;
-		sb.safePrintf("<title>%s</title>\n<br>\n",iaItem);
-		sb.load ( "./tmpiaout" );
-		// remove those pesky ^M guys. i guess ia is windows based.
-		sb.safeReplace3("\r","");
-		//log("system: output(%"INT32"=%s",sb.getBufStart(),
-		//sb.length());
-		return g_httpServer.sendDynamicPage(s,
-						    sb.getBufStart(),
-						    sb.length(),
-						    0, false, 
-						    "text/html",
-						    -1, NULL,
-						    "UTF-8");
-	}
 		
-
-	// . is it a diffbot api request, like "GET /api/*"
-	// . ie "/api/startcrawl" or "/api/stopcrawl" etc.?
-	//if ( strncmp ( path , "/api/" , 5 ) == 0 )
-	//	// this will call g_httpServer.sendDynamicPage() to send
-	//	// back the reply when it is done generating the reply.
-	//	// this function is in Diffbot.cpp.
-	//	return handleDiffbotRequest ( s , r );
-
-
 	// if it's gigablast.com, www.gigablast.com, ... do shortcut
 	bool isGigablast = false;
 	if ( strcasecmp ( h , "www.gigablast.com" ) == 0 ) isGigablast = true;
