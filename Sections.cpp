@@ -9932,9 +9932,6 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 	if ( f & SEC_HEADING )
 		sbuf->safePrintf("heading ");
 
-	if ( f & SEC_HAS_NONFUZZYDATE )
-		sbuf->safePrintf("hasnonfuzzydate ");
-
 	if ( f & SEC_TAIL_CRAP )
 		sbuf->safePrintf("tailcrap ");
 

@@ -5166,11 +5166,6 @@ Sections *XmlDoc::getSections ( ) {
 		si->m_votesForNotDup = votes2;
 		// what's the most dup votes we had...
 		if ( votes1 > m_maxVotesForDup ) m_maxVotesForDup = votes1;
-		// set it
-		//if ( si->m_votesForDup >  2 * si->m_votesForNotDup &&
-		//     si->m_votesForDup >= 1 &&
-		//     ! (si->m_flags & SEC_HAS_NONFUZZYDATE) )
-		//	si->m_sentFlags |= SENT_DUP_SECTION;
 	}
 
 	m_sectionsValid = true;

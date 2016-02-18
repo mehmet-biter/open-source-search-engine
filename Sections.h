@@ -68,7 +68,7 @@
 #define SEC_OPEN_ENDED         0x00800000 // no closing tag found
 #define SEC_SENTENCE           0x01000000 // made by a sentence?
 #define SEC_PLAIN_TEXT         0x02000000
-#define SEC_HAS_NONFUZZYDATE   0x04000000
+//#define SEC_UNUSED_1         0x04000000
 
 // . this is set in Dates.cpp and used by Dates.cpp and Events.cpp
 // . we identify max tod sections and make it so brothers in a list of two
@@ -123,7 +123,7 @@
 #define SENT_MULT_EVENTS     0x00000020
 #define SENT_PAGE_REPEAT     0x00000040
 #define SENT_NUMBERS_ONLY    0x00000080
-//#define SENT_IN_ADDRESS      0x00000100
+//#define SENT_UNUSED_6      0x00000100
 #define SENT_SECOND_TITLE    0x00000200
 #define SENT_IS_DATE         0x00000400
 #define SENT_LAST_STOP       0x00000800
@@ -134,7 +134,7 @@
 #define SENT_MIXED_CASE_STRICT 0x00010000
 #define SENT_IN_LIST         0x00020000
 #define SENT_COLON_ENDS      0x00040000
-//#define SENT_IN_ADDRESS_NAME 0x00080000
+//#define SENT_UNUSED_7      0x00080000
 #define SENT_IN_TITLEY_TAG   0x00100000
 #define SENT_CITY_STATE      0x00200000
 #define SENT_PRICEY          0x00400000
@@ -163,7 +163,7 @@
 #define SENT_PARENS_START        0x0000100000000000LL
 #define SENT_IN_MENU_HEADER      0x0000200000000000LL
 #define SENT_IN_TRUMBA_TITLE     0x0000400000000000LL
-//#define SENT_PLACE_NAME          0x0000800000000000LL
+//#define SENT_UNUSED_8          0x0000800000000000LL
 #define SENT_FORMTABLE_FIELD     0x0001000000000000LL
 #define SENT_FORMTABLE_VALUE     0x0002000000000000LL
 #define SENT_IN_TAG              0x0004000000000000LL
@@ -175,31 +175,11 @@
 #define SENT_AFTER_COLON         0x0100000000000000LL
 #define SENT_HASTITLEWORDS       0x0200000000000000LL
 //#define SENT_UNUSED_5          0x0400000000000000LL
-//#define SENT_CONTAINS_PLACE_NAME 0x0800000000000000LL
+//#define SENT_UNUSED_9          0x0800000000000000LL
 #define SENT_IN_BIG_LIST         0x1000000000000000LL
 #define SENT_BADEVENTSTART       0x2000000000000000LL
 #define SENT_MENU_SENTENCE       0x4000000000000000LL
 #define SENT_HAS_PRICE           0x8000000000000000ULL
-
-
-// flags for an Event/Sentence pair!!
-typedef int32_t esflags_t;
-#define EVSENT_DONOTPRINT          0x00000001
-#define EVSENT_GENERIC_PLUS_PLACE  0x00000002
-#define EVSENT_GENERIC_WORDS       0x00000004
-#define EVSENT_FORMAT_DUP          0x00000008
-#define EVSENT_IS_INDEXABLE        0x00000010
-#define EVSENT_HASEVENTADDRESS     0x00000020
-#define EVSENT_CLOSETODATE         0x00000040
-#define EVSENT_HASEVENTDATE        0x00000080
-#define EVSENT_NAMEABOVESTREET     0x00000100
-#define EVSENT_SECTIONDUP          0x00000200
-#define EVSENT_NEARDUP             0x00000400
-#define EVSENT_FARDUP              0x00000800
-#define EVSENT_FARDUPPHONE         0x00001000
-#define EVSENT_FARDUPPRICE         0x00002000
-#define EVSENT_SUBEVENTBROTHER     0x00004000
-#define EVSENT_JUSTDATES           0x00008000
 
 #define NOINDEXFLAGS (SEC_SCRIPT|SEC_STYLE|SEC_SELECT)
 
@@ -211,8 +191,6 @@ typedef uint32_t turkbits_t;
 
 bool  isPlaceIndicator ( int64_t *widp ) ;
 char *getSentBitLabel ( sentflags_t sf ) ;
-char *getEventSentBitLabel ( esflags_t esflags ) ;
-char *getTurkBitLabel ( turkbits_t tb ) ;
 sentflags_t getMixedCaseFlags ( class Words *words , 
 				wbit_t *bits ,
 				int32_t senta , 
