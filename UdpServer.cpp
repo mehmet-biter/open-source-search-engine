@@ -8,6 +8,7 @@
 #include "Proxy.h"
 #include "Process.h"
 #include "Loop.h"
+#include "IPAddressChecks.h"
 
 // . any changes made to the slots should only be done without risk of
 //   interruption because makeCallbacks_ass() reads from the slots to call
@@ -1112,7 +1113,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	// . don't bother checking for dns server, who knows where that is
 	// . now also allow all admin ips
 	else if ( m_proto->useAcks() &&
-		  ! isLocal &&
+		  ! is_trusted_protocol_ip(ip) &&
 		  ! g_hostdb.isIpInNetwork ( ip ) &&
 		  ! g_conf.isMasterIp ( ip ) &&
 		  ! g_conf.isConnectIp ( ip ) ) {
