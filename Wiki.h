@@ -26,19 +26,12 @@ private:
 
 	HashTableX m_ht;
 	
-	char m_buf[5000];
-
-	char m_randPhrase[512];
-
 	BigFile m_f;
 
 	void *m_state;
 	void (* m_callback)(void *);
 
-	int32_t m_errno;
-
 	char m_opened;
-	FileState m_fs;
 };
 
 extern class Wiki g_wiki;
