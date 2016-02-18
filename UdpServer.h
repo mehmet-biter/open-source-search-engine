@@ -230,10 +230,6 @@ class UdpServer {
 	// how nice as a server are we?
 	//int32_t getNiceness ( ) { return m_niceness; };
 
-	// m_token should point to shared memory
-	//bool useSharedMem() ;
-	//bool setupSharedMem() ;
-
 	// . sets *s_token and *s_token2 to NULL
 	// . resets bits and bit counts on all big-reply slots so they
 	//   send dgrams or acks in attempt to get the newly available token

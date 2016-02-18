@@ -2566,10 +2566,6 @@ int main2 ( int argc , char *argv[] ) {
 	//	    g_hostdb.m_indexSplits);
 //#endif
 
-	// . set up shared mem now, only on udpServer2
-	// . will only set it up if we're the lowest hostId on this ip
-	//if ( ! g_udpServer2.setupSharedMem() ) {
-	//	log("db: SharedMem init failed" ); return 1; }
 	// the robots.txt db
 	//if ( ! g_robotdb.init() ) {
 	//	log("db: Robotdb init failed." ); return 1; }

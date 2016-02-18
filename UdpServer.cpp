@@ -84,75 +84,6 @@ static void defaultCallbackWrapper ( void *state , UdpSlot *slot );
 void defaultCallbackWrapper ( void *state , UdpSlot *slot ) {
 }
 
-//#define SHMKEY  75
-//#define SHMKEY2 76
-//static void cleanup(int x);
-//int shmid;
-//int shmid2;
-
-//void cleanup( int x) {
-//	fprintf(stderr,"CALLED*****\n");
-//	shmctl(shmid, IPC_RMID, 0);
-//	exit(0);
-//}
-
-/*
-bool UdpServer::setupSharedMem() {
-	// clear out local slots
-	//s_local      = NULL;
-	//s_localTime  = 0;
-	// . let's create shared memory segment to hold the token slot ptr
-	// . only do this if we're the lowest #'d host on this machine
-	// . get other hosts with this ip
-	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
-		Host *h = g_hostdb.getHost (i);
-		if ( h->m_ip     != g_hostdb.getMyIp() ) continue;
-		if ( h->m_hostId <  g_hostdb.m_hostId    ) return true;
-	}
-	//for ( int32_t i = 0; i < 20; ++i) signal(i, cleanup);
-	// if we made it here, we should create the shared memory
-	//int shmid = shmget(SHMKEY,sizeof(UdpSlot *),0777|IPC_EXCL|IPC_CREAT);
-	shmid  = shmget(SHMKEY ,sizeof(UdpSlot *),0777|IPC_CREAT);
-	shmid2 = shmget(SHMKEY2,sizeof(UdpSlot *),0777|IPC_CREAT);
-	if ( shmid < 0 || shmid2 < 0 ) 
-		return log("udp:  setup: shmget: %s",mstrerror(errno));
-	//log("new shmid  is %"INT32"",shmid );
-	//log("new shmid2 is %"INT32"",shmid2);
-	// init to NULL
-	s_token     = (UdpSlot      **) shmat(shmid , 0, 0);
-	s_tokenTime = (uint32_t *) shmat(shmid2, 0, 0);
-	// ensure it's not NULL
-	if (!s_token    )return log("udp: setupSharedMem: ptr  is NULL");
-	if (!s_tokenTime)return log("udp: setupSharedMem: ptr2 is NULL");
-	// no sender to us has the token yet
-	*s_token     = NULL;
-	// set time to 0
-	*s_tokenTime = 0;
-	// success
-	return true;
-}	
-
-// . point s_token to shared mem set by process with lowest hostId on this ip
-// . sleep until we get the shared mem in case we're waiting for the init host
-bool UdpServer::useSharedMem() {
-	while ( 1 == 1 ) {
-		shmid  = shmget(SHMKEY ,sizeof(UdpSlot *),0777 );
-		shmid2 = shmget(SHMKEY2,sizeof(UdpSlot *),0777 );
-		// break sloop loop on success
-		if ( shmid >= 0 && shmid2 >= 0 ) break;
-		log("udp:  use: shmget: %s. sleeping.",mstrerror(errno));
-		sleep(1);
-	}
-	//log("shmid  is %"INT32"",shmid );
-	//log("shmid2 is %"INT32"",shmid2);
-	// success!
-	s_token     = (UdpSlot       **) shmat(shmid , 0, 0);
-	s_tokenTime = (uint32_t  *) shmat(shmid2, 0, 0);
-	// ensure it's not NULL
-	if ( ! s_token ) return log("udp: useSharedMem: ptr is NULL");
-	return true;
-}
-*/
 
 // now redine key_t as our types.h should have it
 #define key_t  u_int96_t
@@ -264,8 +195,6 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto, int32_t niceness,
 	m_numUsedSlotsIncoming   = 0;
 	// clear this
 	m_isShuttingDown = false;
-	// set up shared mem
-	//if ( ! useSharedMem() ) return false;
 	// . TODO: IMPORTANT: FIX this to read and save from disk!!!!
 	// . NOTE: only need to fix if doing incremental sync/storage??
 	m_nextTransId = 0;
