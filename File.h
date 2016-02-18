@@ -19,13 +19,6 @@
 
 #define MAX_FILENAME_LEN 128
 
-// . max # of VIRTUAL file descriptors
-// . man, chris has 958 files, lets crank it up from 2k to 5k
-// . boost up to 50,000 since we are hitting this limit with crawlbot
-// . we are hitting again with crawlbot, boost to 200k from 50k
-// . TODO: make this dynamically allocate based on need
-//#define MAX_NUM_VFDS (1024*1024)
-
 #include <sys/types.h>       // for open/lseek
 #include <sys/stat.h>        // for open
 #include <fcntl.h>           // for open
@@ -34,9 +27,9 @@
 #include "Loop.h"            // for g_loop.setNonBlocking(int fd)
 #include "SafeBuf.h"
 
-int64_t getFileSize ( char *filename ) ;
+int64_t getFileSize ( const char *filename ) ;
 
-int64_t getFileSize_cygwin ( char *filename ) ;
+int64_t getFileSize_cygwin ( const char *filename ) ;
 
 // for avoiding unlink/opens that mess up our threaded read
 int32_t getCloseCount_r ( int fd );
@@ -44,18 +37,12 @@ int32_t getCloseCount_r ( int fd );
 // prevent fd from being closed on us when we are writing
 void enterWriteMode ( int fd ) ;
 void exitWriteMode  ( int fd ) ;
-// error correction routine used by BigFile.cpp
-//void releaseVfd     ( int32_t vfd ) ;
-//int  getfdFromVfd   ( int32_t vfd ) ;
 
 class File {
 
 	friend class BigFile;
 
  public:
-
-	// along the same lines as getCloseCount_r()
-	//void incCloseCount_r ( ) ;
 
 	 File ( );
 	~File ( );

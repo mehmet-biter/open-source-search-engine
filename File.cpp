@@ -949,7 +949,7 @@ bool File::closeLeastUsed () {
 }
 
 
-int64_t getFileSize ( char *filename ) {
+int64_t getFileSize ( const char *filename ) {
 
 #ifdef CYGWIN
 	return getFileSize_cygwin ( filename );
@@ -961,16 +961,14 @@ int64_t getFileSize ( char *filename ) {
 	//
 
 	// allow the substitution of another filename
-        struct stat stats;
+	struct stat stats;
 
-        stats.st_size = 0;
+	stats.st_size = 0;
 
-        int status = stat ( filename , &stats );
+	int status = stat ( filename , &stats );
 
-        // return the size if the status was ok
-        if ( status == 0 ) {
-		//int64_t tmp = getFileSize_cygwin ( filename );
-		//if ( tmp>=0 && tmp != stats.st_size ) {char *xx=NULL;*xx=0; }
+	// return the size if the status was ok
+	if ( status == 0 ) {
 		return stats.st_size;
 	}
 

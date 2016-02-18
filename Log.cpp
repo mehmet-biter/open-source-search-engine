@@ -19,15 +19,6 @@ Log g_log;
 static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-// . g_pbuf points to the parser buffer
-// . we store text to be printed to html page in g_pbufPtr
-// . we store normalized words/phrases into g_pterms
-// . they are referenced by the TermTable's m_termPtrs[] buckets
-// char      *g_pbuf     = NULL;
-// char      *g_pbufPtr  = NULL;
-// char      *g_pterms   = NULL;
-// char      *g_ptermPtr = NULL;
-// char      *g_pend     = NULL;
 char      *g_dbuf          = NULL;
 int32_t       g_dbufSize       = 0;
 
@@ -85,7 +76,7 @@ bool renameCurrentLogFile ( ) {
 }
 
 
-bool Log::init ( char *filename ) {
+bool Log::init ( const char *filename ) {
 	// init these
 	m_numErrors =  0;
 	m_bufPtr    =  0;
@@ -153,7 +144,7 @@ const char *getTypeString ( int32_t type ) {
 
 #define MAX_LINE_LEN 20048
 
-bool Log::shouldLog ( int32_t type , char *msg ) {
+bool Log::shouldLog ( int32_t type , const char *msg ) {
 	// always log errors/warnings/logic/trace (if trace gets through to here, it is enabled)
 	if ( (type == LOG_WARN) || (type == LOG_LOGIC) || (type == LOG_ERROR) || (type == LOG_TRACE)) {
 		return true;
@@ -229,7 +220,7 @@ bool g_loggingEnabled = true;
 // for testing:
 //#define MAXLOGFILESIZE 3000
 
-bool Log::logR ( int64_t now , int32_t type , char *msg , bool asterisk ,
+bool Log::logR ( int64_t now , int32_t type , const char *msg , bool asterisk ,
 		 bool forced ) {
 
 	// filter if we should
@@ -280,18 +271,18 @@ bool Log::logR ( int64_t now , int32_t type , char *msg , bool asterisk ,
             time_t now_t = (time_t)(now / 1000);
             struct tm *stm = localtime(&now_t);
 
-            p += sprintf ( p , "%04d%02d%02d-%02d%02d%02d-%03d %04"INT32" ", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(now%1000), g_hostdb.m_hostId );
+            p += sprintf ( p , "%04d%02d%02d-%02d%02d%02d-%03d %04" INT32" ", stm->tm_year+1900,stm->tm_mon+1,stm->tm_mday,stm->tm_hour,stm->tm_min,stm->tm_sec,(int)(now%1000), g_hostdb.m_hostId );
         }
         else
         {
             if ( g_hostdb.m_numHosts <= 999 )
-                    p += sprintf ( p , "%"UINT64" %03"INT32" ",
+                    p += sprintf ( p , "%" UINT64" %03" INT32" ",
                               now , g_hostdb.m_hostId );
             else if ( g_hostdb.m_numHosts <= 9999 )
-                    p += sprintf ( p , "%"UINT64" %04"INT32" ",
+                    p += sprintf ( p , "%" UINT64" %04" INT32" ",
                               now , g_hostdb.m_hostId );
             else if ( g_hostdb.m_numHosts <= 99999 )
-                    p += sprintf ( p , "%"UINT64" %05"INT32" ",
+                    p += sprintf ( p , "%" UINT64" %05" INT32" ",
                               now , g_hostdb.m_hostId );
         }
 	}
@@ -307,7 +298,7 @@ bool Log::logR ( int64_t now , int32_t type , char *msg , bool asterisk ,
 	
 
 	// then message itself
-	char *x = msg;
+	const char *x = msg;
 	int32_t avail = (MAX_LINE_LEN) - (p - tt) - 1;
 	if ( msgLen > avail ) msgLen = avail;
 	if ( *x == ':' ) x++;
@@ -351,10 +342,6 @@ bool Log::logR ( int64_t now , int32_t type , char *msg , bool asterisk ,
 			cs = 0;
 			continue;
 		}
-		// convert \n's and \r's to spaces
-//		if ( *ttp == '\n' ) *ttp = ' ';
-//		if ( *ttp == '\r' ) *ttp = ' ';
-//		if ( *ttp == '\t' ) *ttp = ' ';
 	}
 
 	// . if filesize would be too big then make a new log file
@@ -432,7 +419,7 @@ static char  s_problem  = '\0';
 // . 4 bytes = size of string space
 // . X bytes = NULL terminated format string
 // . X bytes = 0-3 bytes word-alignment padding
-bool Log::logLater ( int64_t now, int32_t type, char *format, va_list ap ) {
+bool Log::logLater ( int64_t now, int32_t type, const char *format, va_list ap ) {
 	//return false;
 	// we have to be in a sig handler
 	//if ( ! g_inSigHandler ) 
@@ -460,7 +447,7 @@ bool Log::logLater ( int64_t now, int32_t type, char *format, va_list ap ) {
 	memcpy_ass ( s_ptr , format , flen );
 	s_ptr += flen;
 	// the type of each arg is given by format
-	char *p = format;
+	const char *p = format;
 	// point to the variable args data
 	char *pap = (char *)ap;
 	// loop looking for %s, %"INT32", etc.
@@ -647,7 +634,7 @@ bool Log::dumpLog ( ) {
 	return true;
 }
 
-bool log ( int32_t type , char *formatString , ...) {
+bool log ( int32_t type , const char *formatString , ...) {
 	if ( g_log.m_disabled ) return false;
 	// do not log it if we should not
 	if ( ! g_log.shouldLog ( type , formatString ) ) return false;
@@ -674,7 +661,7 @@ bool log ( int32_t type , char *formatString , ...) {
 	return false;
 }
 
-bool log ( char *formatString , ... ) {
+bool log ( const char *formatString , ... ) {
 	if ( g_log.m_disabled ) return false;
 	// do not log it if we should not
 	if ( ! g_log.shouldLog ( LOG_WARN , formatString ) ) return false;
@@ -701,7 +688,7 @@ bool log ( char *formatString , ... ) {
 	return false;
 }
 
-bool logf ( int32_t type , char *formatString , ...) {
+bool logf ( int32_t type , const char *formatString , ...) {
 	if ( g_log.m_disabled ) return false;
 	// do not log it if we should not
 	//if ( type == LOG_WARN && ! g_conf.m_logWarnings ) return false;
@@ -808,7 +795,7 @@ void hexdump(void const *data, const unsigned int len, char *dest, const int des
 }
 
 
-bool loghex( int32_t type, void const *data, const unsigned int len, char *formatString , ...) {
+bool loghex( int32_t type, void const *data, const unsigned int len, const char *formatString , ...) {
 	
 	if ( g_log.m_disabled ) return false;
 		
