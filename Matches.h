@@ -38,18 +38,32 @@ typedef int32_t mf_t;
 #define MF_URL                        0x4000  // in url
 #define MF_SYNONYM                    0x8000
 
+class Xml;
+class Words;
+class Sections;
+class Bits;
+class Pos;
+class Url;
+class LinkInfo;
+class Title;
+class Phrases;
+
 class Match {
  public:
 	// word # we match in the document using "m_words" below
 	int32_t m_wordNum;
+
 	// # of words in this match, like if we match a phrase
 	// we have > 1 words in the match
 	int32_t m_numWords;
+
 	// word # we match in the query
 	int32_t m_qwordNum;
+
 	// # of query words we match if we are a phrase, otherwise
 	// this is 1
 	int32_t m_numQWords;
+
 	// . used for highlighting under different colors (Highlight.cpp)
 	// . words in the same quote should use the same highlight color
 	int32_t m_colorNum;
@@ -59,10 +73,10 @@ class Match {
 
 	// . for convenience, these four class ptrs are used by Summary.cpp
 	// . m_wordNum is relative to this "words" class (and scores,bits,pos)
-	class Words    *m_words;
-	class Sections *m_sections;
-	class Bits     *m_bits;
-	class Pos      *m_pos;
+	Words    *m_words;
+	Sections *m_sections;
+	Bits     *m_bits;
+	Pos      *m_pos;
 };
 
 class Matches {
@@ -71,9 +85,9 @@ class Matches {
 
 	void setQuery ( Query *q );
 
-	bool set( class XmlDoc *xd, class Words *bodyWords, class Phrases *bodyPhrases,
-			  class Sections *bodySections, class Bits *bodyBits, class Pos *bodyPos, class Xml *xml,
-			  class Title *tt, int32_t niceness );
+	bool set( Words *bodyWords, Phrases *bodyPhrases,
+			  Sections *bodySections, Bits *bodyBits, Pos *bodyPos, Xml *xml,
+			  Title *tt, Url *firstUrl, LinkInfo *linkInfo, int32_t niceness );
 
 	bool addMatches(char *s, int32_t slen, mf_t flags, int32_t niceness );
 
@@ -81,7 +95,7 @@ class Matches {
 	// . m_matches[i] is -1 if it matches no term in the query
 	// . m_matches[i] is X if it matches term #X in the query
 	// . returns false and sets errno on error
-	bool addMatches( Words *words, class Phrases *phrases = NULL, Sections *sections = NULL,
+	bool addMatches( Words *words, Phrases *phrases = NULL, Sections *sections = NULL,
 					 Bits *bits = NULL, Pos *pos = NULL, mf_t flags = 0 );
 
 	// how many words matched a rawTermId?
@@ -95,22 +109,15 @@ class Matches {
 	void reset ( ) ;
 	void reset2 ( ) ;
 
-	// BIG HACK support
-	//int32_t getTermsFound ( bool *hadPhrases , bool *hadWords );
 	uint32_t getTermsFound2(bool *hadPhrases, bool *hadWords);
-	//bool negTermsFound ( );
 	bool docHasQueryTerms(int32_t totalInlinks);
 
 	// used internally and by PageGet.cpp
-	bool isMatchableTerm ( class QueryTerm *qt );//, int32_t i );
+	bool isMatchableTerm ( class QueryTerm *qt );
 
 	// used internally
-	int32_t getNumWordsInMatch ( Words *words     ,
-				  int32_t   wn        , 
-				  int32_t   n         , 
-				  int32_t  *numQWords ,
-				  int32_t  *qwn       ,
-				  bool   allowPunctInPhrase = true ) ;
+	int32_t getNumWordsInMatch( Words *words, int32_t wn, int32_t n, int32_t *numQWords, int32_t *qwn,
+								bool allowPunctInPhrase = true );
 
 	// how many words matched a rawTermId?
 	Match  m_matches[MAX_MATCHES];
@@ -131,7 +138,6 @@ class Matches {
 
 	// . 1-1 with Query::m_qwords[] array of QWords
 	// . shows the match flags for that query word
-	//mf_t      m_qwordFlags[MAX_QUERY_WORDS];
 	mf_t     *m_qwordFlags;
 	int32_t m_qwordAllocSize;
 	char m_tmpBuf[128];
@@ -173,25 +179,29 @@ class Matches {
 #define OFFSET_WORDS 2
 
 // smaller class for attaching to Msg20
-class MatchOffsets{
+class MatchOffsets {
 public:
 	MatchOffsets();
 	~MatchOffsets();
 	void reset();
-	bool set(Xml *xml, Words *words, Matches *matches, 
-		 unsigned char offsetType);
+	bool set( Xml *xml, Words *words, Matches *matches, unsigned char offsetType );
 
 	int32_t getStoredSize();
-	int32_t serialize(char *buf, int32_t buflen);
-	int32_t deserialize(char *buf, int32_t buflen);
+	int32_t serialize( char *buf, int32_t buflen );
+	int32_t deserialize( char *buf, int32_t buflen );
 
 	int32_t m_numMatches;
-	unsigned char m_queryWords[MAX_MATCHES];
 	int32_t m_matchOffsets[MAX_MATCHES];
+
+private:
+	unsigned char m_queryWords[MAX_MATCHES];
+
 	// keep track of breaks between matches
 	int32_t m_numBreaks;
 	int32_t m_breakOffsets[MAX_MATCHES];
+
 	// and total number of alnums in the document
 	int32_t m_numAlnums;
 };
+
 #endif

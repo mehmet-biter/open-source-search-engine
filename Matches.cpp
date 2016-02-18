@@ -255,13 +255,10 @@ void Matches::setQuery ( Query *q ) {
 // . we can also use this to replace the proximity algo setup where it
 //   fills in the matrix for title, link text, etc.
 // . returns false and sets g_errno on error
-bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections *bodySections, Bits *bodyBits,
-				   Pos *bodyPos, Xml *bodyXml, Title *tt, int32_t niceness ) {
+bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySections, Bits *bodyBits,
+				   Pos *bodyPos, Xml *bodyXml, Title *tt, Url *firstUrl, LinkInfo *linkInfo, int32_t niceness ) {
 	// don't reset query info!
 	reset2();
-
-	// sanity check
-	if ( ! xd->m_docIdValid ) { char *xx=NULL;*xx=0; }
 
 	// . first add all the matches in the body of the doc
 	// . add it first since it will kick out early if too many matches
@@ -276,8 +273,7 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 	}
 
 	// add in the url terms
-	Url  *turl = xd->getFirstUrl();
-	if ( !addMatches( turl->m_url, turl->m_ulen, MF_URL, niceness ) ) {
+	if ( !addMatches( firstUrl->m_url, firstUrl->m_ulen, MF_URL, niceness ) ) {
 		return false;
 	}
 
@@ -329,11 +325,10 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 
 	// . now the link text
 	// . loop through each link text and it its matches
-	LinkInfo *info = xd->getLinkInfo1();	
 
 	// loop through the Inlinks
 	Inlink *k = NULL;
-	for ( ; (k = info->getNextInlink(k)) ; ) {
+	for ( ; (k = linkInfo->getNextInlink(k)) ; ) {
 		// does it have link text? skip if not.
 		if ( k->size_linkText <= 1 ) {
 			continue;
@@ -346,9 +341,6 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 		if ( !addMatches( k->getLinkText(), k->size_linkText - 1, flags, niceness ) ) {
 			return false;
 		}
-
-		// skip if no neighborhood text
-		//if ( k->size_surroundingText <= 1 ) continue;
 
 		// set flag for that
 		flags = MF_HOOD;

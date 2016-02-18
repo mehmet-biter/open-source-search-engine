@@ -23344,7 +23344,7 @@ Matches *XmlDoc::getMatches () {
 	m_matches.setQuery ( q );
 
 	// returns false and sets g_errno on error
-	if ( !m_matches.set( this, ww, phrases, ss, bits, pos, xml, ti, m_niceness ) ) {
+	if ( !m_matches.set( ww, phrases, ss, bits, pos, xml, ti, getFirstUrl(), getLinkInfo1(), m_niceness ) ) {
 		return NULL;
 	}
 
