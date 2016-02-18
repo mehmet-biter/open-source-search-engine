@@ -104,27 +104,6 @@ void UdpServer::reset() {
 	m_slots = NULL;
 	if ( m_buf ) mfree ( m_buf , m_bufSize , "UdpServer");
 	m_buf = NULL;
-	/*
-	// clear this
-	m_isShuttingDown = false;
-	// free send/read bufs 
-	for ( int32_t i = 0 ; i <= m_topUsedSlot ; i++ ) {
-		// skip empty nodes
-		if ( isEmpty(i) ) continue;
-		// get slot
-		UdpSlot *slot = &m_slots[i];
-		// . free bufs
-		// . this may NOT be ours to free!!
-		if ( slot->m_readBuf ) 
-			mfree ( slot->m_readBuf,slot->m_readBufSize,"Udp");
-		//slot->m_readBuf = NULL;
-		// . a multicast may own this sendBuf and be sending it over
-		//   2+ slots, so we should not free it!!!
-		//if ( slot->m_sendBuf ) 
-		//	mfree (slot->m_sendBuf,slot->m_sendBufAllocSize,"Udp");
-	}
-	// *s_token = NULL;
-	  */
 }
 
 UdpServer::UdpServer ( ) {
@@ -225,16 +204,10 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto, int32_t niceness,
 	if( ! m_isDns &&
 	    RDBIDOFFSET +1 > m_proto->getMaxPeekSize() ) {
 		char *xx=NULL;*xx=0; }
-	// remember our level of niceness
-	//m_niceness = niceness;
-	// don't allow negatives for other transactions, that's unmasked
-	//if ( m_niceness < 0 ) m_niceness = 0;
 	// are we real live?
 	if ( niceness == -1 && g_isHot ) m_isRealTime = true;
 	else                             m_isRealTime = false;
-	// init slots array
-	//m_topUsedSlot = -1;
-	//memset ( m_keys , 0 , sizeof(key_t) * m_maxSlots );
+	
         // set up our socket
         m_sock  = socket ( AF_INET, SOCK_DGRAM , 0 );
 
@@ -383,7 +356,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto, int32_t niceness,
 
 	// log an innocent msg
 	//log ( 0, "udp: listening on port %hu with sd=%"INT32" and "
-	//      "niceness=%"INT32"", m_port, m_sock, m_niceness );
+	//      , m_port, m_sock );
 	log ( LOG_INIT, "udp: Listening on UDP port %hu with niceness=%"INT32" "
 	      "and fd=%i.", 
 	      m_port, niceness , m_sock );
@@ -912,8 +885,6 @@ UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
 	// . we set the hi bit in the score for non-resends so dgrams that 
 	//   are being resent take precedence
 	for ( UdpSlot *slot = m_head2 ; slot ; slot = slot->m_next2 ) {
-		// continue if slot empty
-		//if ( isEmpty(i) ) continue;
 		// get the ith slot
 		//slot = &m_slots[i];
 		//     slot->m_msgType != 0x00 ) continue;
@@ -2066,34 +2037,6 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 	if ( ++pass == 1 ) goto nextPass;	
 		
 	return numCalled;
-	// . call callbacks for slots that need it
-	// . caution: sometimes callbacks really delay us! like msg 0x20
-	// . well, for now comment this out again
-	/*
-	for ( int32_t i = 0 ; i <= m_topUsedSlot ; i++ ) {
-		// skip if empty
-		if ( isEmpty(i) ) continue;
-		// save msg 0x20's for last
-		if ( m_slots[i].m_msgType == 0x20 ) continue;
-		// pull out old g_errno code since the sigHandler cannot
-		// call callbacks
-		g_errno = m_slots[i].m_errno;
-		// then call it's callback
-		makeCallback_ass ( &m_slots[i] );
-	}
-	// pick up the msg 0x20's we saved for last
-	for ( int32_t i = 0 ; i <= m_topUsedSlot ; i++ ) {
-		// skip if empty
-		if ( isEmpty(i) ) continue;
-		// save msg 0x20's for last
-		if ( m_slots[i].m_msgType != 0x20 ) continue;
-		// pull out old g_errno code since the sigHandler cannot
-		// call callbacks
-		g_errno = m_slots[i].m_errno;
-		// then call it's callback
-		makeCallback_ass ( &m_slots[i] );
-	}
-	*/
 }
 
 
@@ -2643,8 +2586,6 @@ void UdpServer::timePoll ( ) {
 	//if ( g_conf.m_giveupOnDeadHosts ) timeoutDeadHosts ( );
 	// try shutting down
 	//if ( m_isShuttingDown ) tryShuttingDown ( true );
-	// bail if no slots in use
-	//if ( m_topUsedSlot < 0 ) return;
 	if ( ! m_head2 ) return;
 	// debug msg
 	//if ( g_conf.m_logDebugUdp ) log("enter timePoll");
@@ -2734,8 +2675,6 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    (uint64_t)slot->m_timeout,
 			    slot->m_sentBitsOn ,
 			    slot->m_readAckBitsOn ) ;
-		// skip empties
-		//if ( isEmpty(i) ) continue;
 		// get the slot
 		//UdpSlot *slot = &m_slots[i];
 		// if the reading is completed, but we haven't generated a
@@ -3301,10 +3240,6 @@ void UdpServer::freeUdpSlot_ass ( UdpSlot *slot ) {
 		addKey ( ptr->m_key , ptr );
 		if ( ++i >= m_numBuckets ) i = 0;		
 	}
-	// was it top? if so, fix it
-	//if ( i >= m_topUsedSlot ) 
-	//	while ( m_topUsedSlot >= 0 && isEmpty(m_topUsedSlot) ) 
-	//		m_topUsedSlot--;
 	// if we turned 'em off then turn 'em back on
 	if ( flipped ) interruptsOn();
 }
