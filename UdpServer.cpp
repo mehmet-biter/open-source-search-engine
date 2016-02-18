@@ -217,7 +217,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto, int32_t niceness,
         // reset it all just to be safe
         bzero((char *)&name, sizeof(name));
         name.sin_family      = AF_INET;
-        name.sin_addr.s_addr = 0; /*INADDR_ANY;*/
+        name.sin_addr.s_addr = INADDR_ANY;
         name.sin_port        = htons(port);
         // we want to re-use port it if we need to restart
         int options ;

@@ -9830,7 +9830,7 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
         // reset it all just to be safe
         memset((char *)&name, 0,sizeof(name));
         name.sin_family      = AF_INET;
-        name.sin_addr.s_addr = 0; /*INADDR_ANY;*/
+        name.sin_addr.s_addr = INADDR_ANY;
         name.sin_port        = htons(clientPort);
         // we want to re-use port it if we need to restart
         int options = 1;

@@ -160,7 +160,7 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 	// reset it all just to be safe
 	bzero((char *)&name, sizeof(name));
 	name.sin_family      = AF_INET;
-	name.sin_addr.s_addr = 0; /*INADDR_ANY;*/
+	name.sin_addr.s_addr = INADDR_ANY;
 	name.sin_port        = htons(port);
 	// . we want to re-use port it if we need to restart
 	// . sets g_errno and returns -1 on error
@@ -302,7 +302,7 @@ bool TcpServer::testBind ( uint16_t port , bool printMsg ) {
 	// reset it all just to be safe
 	bzero((char *)&name, sizeof(name));
 	name.sin_family      = AF_INET;
-	name.sin_addr.s_addr = 0; /*INADDR_ANY;*/
+	name.sin_addr.s_addr = INADDR_ANY;
 	name.sin_port        = htons(port);
 	// . we want to re-use port it if we need to restart
 	// . sets g_errno and returns -1 on error
