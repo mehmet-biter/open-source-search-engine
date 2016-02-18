@@ -218,11 +218,6 @@ class Dns {
 	DnsProtocol m_proto;
 
 	int16_t  m_dnsClientPort;
-	//char  *m_dnsDir;
-	int32_t   m_dnsIp;
-	int16_t  m_dnsPort; // we talk to dns thru this port
-
-	int32_t m_numBind9Dns;
 
 	// /etc/hosts in hashed into this table
 	int32_t   *m_ips;
@@ -233,9 +228,6 @@ class Dns {
 //This stores the ip's for the machine where 
 //hash96(hostname) % g_hostdb.m_numHosts = cluster(group)
 extern class Dns g_dns;
-
-//This is MsgC's local machine cache
-//extern class Dns g_dnsLocal;
 
 #endif
 
