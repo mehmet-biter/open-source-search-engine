@@ -98,10 +98,10 @@ public:
 
 	//MUTATORS
 #ifdef _CHECK_FORMAT_STRING_
-	bool  safePrintf(char *formatString, ...)
+	bool  safePrintf(const char *formatString, ...)
 		__attribute__ ((format(printf, 2, 3)));
 #else
-	bool  safePrintf(char *formatString, ...);
+	bool  safePrintf(const char *formatString, ...);
 #endif
 	bool  safeMemcpy(void *s, int32_t len){return safeMemcpy((char *)s,len);}
 	bool  safeMemcpy(const char *s, int32_t len);

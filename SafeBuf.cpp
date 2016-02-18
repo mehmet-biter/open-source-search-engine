@@ -97,7 +97,7 @@ void SafeBuf::purge() {
 	m_encoding = csUTF8;
 }
 
-bool SafeBuf::safePrintf(char *formatString , ...) {
+bool SafeBuf::safePrintf(const char *formatString , ...) {
 	va_list   ap;
 	va_start ( ap, formatString);
 	int32_t tmp = vsnprintf ( m_buf + m_length, m_capacity - m_length, 
