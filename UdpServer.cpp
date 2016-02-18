@@ -776,70 +776,54 @@ bool UdpServer::sendPoll_ass ( bool allowResends , int64_t now ) {
 	m_needToSend = false;
 	// if we don'thave anything to send, or we're waiting on ACKS, then
 	// just return false, we didn't do anything.
-	//mdw int32_t status;
 	// assume we didn't process anything
 	bool something = false;
- getNextSlot:
-	// . don't do any sending until we leave the wait state
-	// or if is shutting down
-	if ( m_isShuttingDown ) return false;
-	// . get the next slot to send on
-	// . it sets "isResend" to true if it's a resend
-	// . this sets g_errno to ETIMEOUT if the slot it returns has timed out
-	// . in that case we'll destroy that slot
-	UdpSlot *slot = getBestSlotToSend ( now );
-	// . slot is NULL if no more slots need sending
-	// . return true if we processed something
-	if ( ! slot ) {
-		if ( flipped ) interruptsOn();
-		// if nobody needs to send now unregister write callback
-		// so select() loop in Loop.cpp does not keep freaking out
-		if ( ! m_needToSend && m_writeRegistered ) {
-			g_loop.unregisterWriteCallback(m_sock,
-						       this,
-						       sendPollWrapper_ass);
-			m_writeRegistered = false;
+	
+	for(;;) {
+		// . don't do any sending until we leave the wait state
+		// or if is shutting down
+		if ( m_isShuttingDown )
+			return false;
+		// . get the next slot to send on
+		// . it sets "isResend" to true if it's a resend
+		// . this sets g_errno to ETIMEOUT if the slot it returns has timed out
+		// . in that case we'll destroy that slot
+		UdpSlot *slot = getBestSlotToSend ( now );
+		// . slot is NULL if no more slots need sending
+		// . return true if we processed something
+		if ( ! slot ) {
+			if ( flipped )
+				interruptsOn();
+			// if nobody needs to send now unregister write callback
+			// so select() loop in Loop.cpp does not keep freaking out
+			if ( ! m_needToSend && m_writeRegistered ) {
+				g_loop.unregisterWriteCallback(m_sock,
+							       this,
+							       sendPollWrapper_ass);
+				m_writeRegistered = false;
+			}
+			return something;
 		}
-		return something;
+		// otherwise, we can send something
+		something = true;
+		// . if this slot timed out because we haven't written a reply yet
+		//   then DO NOT call the callback again, just wait for the handler
+		//   to timeout and send a reply
+		// . otherwise, you'll just keep looping the same request to the
+		//   same handler and cause problems (mdw)
+		// if timed out then nuke it
+		//if ( g_errno == ETIMEDOUT ) goto slotDone;
+		// . tell slot to send a datagram OR ACK for us
+		// . returns -2 if nothing to send, -1 on error, 0 if blocked, 
+		//   1 if sent something
+		//if(slot->sendDatagramOrAck (m_sock, true, m_niceness) == 0 ) return ;
+		// . send all we can from this slot
+		// . when shutting down during a dump we can get EBADF during a send
+		//   so do not loop forever
+		// . this returns false on error, i haven't seen it happen though
+		if ( ! doSending_ass ( slot , allowResends , now ) )
+			return true;
 	}
-	// otherwise, we can send something
-	something = true;
-	// . if this slot timed out because we haven't written a reply yet
-	//   then DO NOT call the callback again, just wait for the handler
-	//   to timeout and send a reply
-	// . otherwise, you'll just keep looping the same request to the
-	//   same handler and cause problems (mdw)
-	// if timed out then nuke it
-	//if ( g_errno == ETIMEDOUT ) goto slotDone;
-	// . tell slot to send a datagram OR ACK for us
-	// . returns -2 if nothing to send, -1 on error, 0 if blocked, 
-	//   1 if sent something
-	//if(slot->sendDatagramOrAck (m_sock, true, m_niceness) == 0 ) return ;
-	// . send all we can from this slot
-	// . when shutting down during a dump we can get EBADF during a send
-	//   so do not loop forever
-	// . this returns false on error, i haven't seen it happen though
-	if ( ! doSending_ass ( slot , allowResends , now ) ) return true;
-	// if the send
-	// return if it blocked
-	//mdw if ( status == 0  ) return;
-	// if it had an error then nuke it
-	// if ( status == -1 ) goto slotDone;
-	// . otherwise, it sent a dgram or an ACK
-	// . if the transaction is now completed then call callbacks
-	// . if not, keep looping
-	// if ( ! slot->isTransactionComplete() ) goto getNextSlot;
-	//mdw slotDone:
-	// . MAY make callback
-	// . this MAY call destroy the "slot"
-	// . this may also free up s_token so another can send
-	// . this will just queue a signal for GB_SIGRTMIN + 1 queue if 
-	//   g_inSigHandler is true
-	//makeCallback_ass ( slot );
-	// reset g_errno in case callback set it
-	//g_errno = 0;
-	// keep looping
-	goto getNextSlot;
 }
 
 // . returns NULL if no slots need sending
