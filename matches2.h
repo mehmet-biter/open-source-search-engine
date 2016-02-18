@@ -18,10 +18,6 @@ public:
 	char *m_stringSave;
 	char  m_stringSizeSave;
 	char *m_firstMatch;
-	// used by XmlDoc::getEventSummary()
-	float m_score;
-	// used by XmlDoc::getEventSummary() to point to query word #
-	int32_t  m_qwn;
 };
 
 
