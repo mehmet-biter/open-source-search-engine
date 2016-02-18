@@ -37,9 +37,6 @@
 // extern this for all to use
 bool g_inSigHandler = false ;
 
-// so we know if interrupts are supposed to be enabled/disabled
-bool g_interruptsOn = false;
-
 // are some signals to call g_udpServer2.makeCallbacks() queued?
 bool g_someAreQueued = false;
 
@@ -928,11 +925,6 @@ bool Loop::runLoop ( ) {
 
 	s_lastTime = 0;
 
-	// . allow us to be interrupted
-	// . UNBLOCKs GB_SIGRTMIN
-	// . makes g_udpServer2 quite jumpy
-	g_loop.interruptsOn();
-
 	m_isDoingLoop = true;
 
 	// . now loop forever waiting for signals
@@ -956,7 +948,6 @@ bool Loop::runLoop ( ) {
 			// . turn off interrupts here because it doesn't help to do
 			//   it in the thread
 			// . TODO: turn off signals for sigbadhandler()
-			interruptsOff();
 			// if thread got the signal, just wait for him to save all
 			// Rdbs and then dump core
 			if ( m_shutdown == 2 ) {
@@ -1223,13 +1214,6 @@ void Loop::doPoll ( ) {
 
 // for FileState class
 #include "BigFile.h"
-
-// call this when you don't want to be interrupted
-void Loop::interruptsOff ( ) {
-}
-// and this to resume being interrupted
-void Loop::interruptsOn ( ) {
-}
 
 
 void Loop::quickPoll(int32_t niceness, const char* caller, int32_t lineno) {

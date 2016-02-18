@@ -539,12 +539,6 @@ void Log::printBuf ( ) {
 	m_needsPrinting = false;
 	// bail if nothing to print, maybe first msg overflowed?
 	if ( s_buf == s_ptr ) return;
-	// we cannot be interrupted in here
-	//bool flipped = false;
-	//if ( g_interruptsOn ) {
-	//	flipped = true;
-	//	g_loop.interruptsOff();
-	//}
 	// reset buffer here
 	s_ptr           = s_buf;
 	// now print all log msgs we got while in a signal handler
@@ -617,8 +611,6 @@ void Log::printBuf ( ) {
 	logR ( now , type , buf , true );
 	// if not done loop back
 	if ( p < pend ) goto loop;
-	// turn 'em back on if we turned them off
-	//if ( flipped ) g_loop.interruptsOn();
 }
 
 #include <ctype.h> // isascii()

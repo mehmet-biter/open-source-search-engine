@@ -76,9 +76,6 @@ class Slot {
 // extern variable that let's us know if we're in a sig handler
 extern bool g_inSigHandler;
 
-// a debugging tool really
-extern bool g_interruptsOn ;
-
 // are there pending signals for which we should call g_udpServer.makeCallbacks
 extern bool g_someAreQueued;
 
@@ -171,10 +168,6 @@ class Loop {
 	bool        m_needsToQuickPoll;
 	bool        m_canQuickPoll;
 	bool        m_isDoingLoop;
-	// call this when you don't want to be interrupted
-	void interruptsOff ( ) ;
-	// and this to resume being interrupted
-	void interruptsOn ( ) ;
 
 	// the sighupHandler() will set this to 1 when we receive
 	// a SIGHUP, 2 if a thread crashed, 3 if we got a SIGPWR
