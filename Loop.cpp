@@ -416,10 +416,6 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now ,
 		//	log("Loop::callCallbacks_ass: for fd=%"INT32" state=%"UINT32"",
 		//	    fd,(int32_t)s->m_state);
 		// do the callback
-		//int32_t address = 0;
-		// 		uint64_t profilerStart,profilerEnd;
-		// 		uint64_t statStart, statEnd;
-		//startBlockedCpuTimer();
 
 		// log it now
 		if (  g_conf.m_logDebugLoop )
@@ -429,21 +425,17 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now ,
 		// sanity check. -1 no longer supported
 		if ( s->m_niceness < 0 ) { char *xx=NULL;*xx=0; }
 
-		// save it
-		int32_t saved = g_niceness;
-		// set the niceness
+		// Temporarily (for the duration of the callback call) switch
+		// niceness to the niceness of the slot
+		int32_t saved_niceness = g_niceness;
 		g_niceness = s->m_niceness;
 		// make sure not 2
 		if ( g_niceness >= 2 ) g_niceness = 1;
 
-		// sanity check -- need to be able to quickpoll!
-		//if ( s->m_niceness > 0 && ! g_loop.m_canQuickPoll ) {
-		//	char *xx=NULL;*xx=0; }
-
 		s->m_callback ( fd , s->m_state );
 
-		// restore it
-		g_niceness = saved;
+		// restore niceness
+		g_niceness = saved_niceness;
 
 		// log it now
 		if ( g_conf.m_logDebugLoop )
