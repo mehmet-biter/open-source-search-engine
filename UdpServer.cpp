@@ -2352,10 +2352,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// store any error code in slot so when callback is called
 	// it will be there
 	slot->m_errno = g_errno;
-	// make the signal data
-	sigval_t svt; 
-	// zero means to call g_udpServer2.makeCbacks()
-	svt.sival_int = 0;
 	// debug msg
 	if ( g_conf.m_logDebugUdp ) 
 		log(LOG_DEBUG,"udp: Queuing makeCallbacks_ass() sig for "
