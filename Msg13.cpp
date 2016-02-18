@@ -521,8 +521,8 @@ bool addIpToTwitchyTable ( CollectionRec *cr , int32_t ip ) {
 
 RdbCache s_hammerCache;
 static bool s_flag = false;
-Msg13Request *s_hammerQueueHead = NULL;
-Msg13Request *s_hammerQueueTail = NULL;
+static Msg13Request *s_hammerQueueHead = NULL;
+static Msg13Request *s_hammerQueueTail = NULL;
 
 // . only return false if you want slot to be nuked w/o replying
 // . MUST always call g_udpServer::sendReply() or sendErrorReply()
