@@ -20,7 +20,7 @@
 
 void testRegex ( ) ;
 
-HashTableX g_collTable;
+static HashTableX g_collTable;
 
 // a global class extern'd in .h file
 Collectiondb g_collectiondb;
@@ -1560,8 +1560,6 @@ void CollectionRec::reset() {
 	// 	delete ( sc );
 	// }
 }
-
-CollectionRec *g_cr = NULL;
 
 // . load this data from a conf file
 // . values we do not explicitly have will be taken from "default",
