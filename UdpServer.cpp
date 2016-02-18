@@ -1083,16 +1083,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	uint32_t ip = from.sin_addr.s_addr;
 	// if it's 127.0.0.1 then change it to our ip
 	if ( ip == g_hostdb.getLoopbackIp() ) ip = g_hostdb.getMyIp();
-	// is it local?
-	bool isLocal = false;
-	// shortcut
-        uint8_t *p = (uint8_t *)&ip;
-        // this is local
-        if ( p[0] == 10 ) isLocal = true;
-        // this is local
-        if ( p[0] == 192 && p[1] == 168 ) isLocal = true;
-        // if we match top two ips, then its local
-	if ( (ip&0x0000ffff) == (g_hostdb.m_myIp&0x0000ffff)) isLocal = true;
 	// . if ip is not from a host in hosts.conf, discard it
 	// . don't bother checking for dns server, who knows where that is
 	// . now also allow all admin ips
