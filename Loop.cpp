@@ -34,10 +34,6 @@
 
 // TODO: don't mask signals, catch them as they arrive? (like in phhttpd)
 
-// . set this to false to disable async signal handling
-// . that will make our udp servers less responsive
-bool g_isHot = true;
-
 // extern this for all to use
 bool g_inSigHandler = false ;
 
@@ -559,7 +555,6 @@ bool Loop::init ( ) {
 	FD_ZERO(&s_selectMaskWrite);
 	FD_ZERO(&s_selectMaskExcept);
 
-	g_isHot = false;
 	// sighupHandler() will set this to true so we know when to shutdown
 	m_shutdown  = 0;
 	// . reset this cuz we have no sleep callbacks right now
@@ -567,9 +562,6 @@ bool Loop::init ( ) {
 	m_minTick = 40; //0x7fffffff;
 	// reset the need to poll flag
 	m_needToPoll = false;
-	// let 'em know if we're hot
-	if ( g_isHot ) log ( LOG_INIT , "loop: Using asynchronous signals "
-			     "for udp server.");
 	// make slots
 	m_slots = (Slot *) mmalloc ( MAX_SLOTS * (int32_t)sizeof(Slot) , "Loop" );
 	if ( ! m_slots ) return false;
@@ -1234,50 +1226,9 @@ void Loop::doPoll ( ) {
 
 // call this when you don't want to be interrupted
 void Loop::interruptsOff ( ) {
-	// . debug
-	// . until we have our own malloc, don't turn them on
-	if ( ! g_isHot ) return;
-	// bail in already in a sig handler
-	if ( g_inSigHandler ) return;
-	// if interrupts already off bail
-	if ( ! g_interruptsOn ) return;
-	// looks like sigprocmask is destructive on our sigset
-	sigset_t rtmin;
-	sigemptyset ( &rtmin );
-	// tmp debug hack, so we don't have real time signals now...
-// 	sigaddset   ( &rtmin, GB_SIGRTMIN );
-	// block it
-	if ( sigprocmask ( SIG_BLOCK  , &rtmin, 0 ) < 0 ) {
-		log("loop: interruptsOff: sigprocmask: %s.", strerror(errno));
-		return;
-	}
-	g_interruptsOn = false;
-	// debug msg
-	//log("interruptsOff");
 }
 // and this to resume being interrupted
 void Loop::interruptsOn ( ) {
-	// . debug
-	// . until we have our own malloc, don't turn them on
-	if ( ! g_isHot ) return;
-	// bail in already in a sig handler
-	if ( g_inSigHandler ) return;
-	// if interrupts already on bail
-	if ( g_interruptsOn ) return;
-	// looks like sigprocmask is destructive on our sigset
-	sigset_t rtmin;
-	sigemptyset ( &rtmin );
-	// uncomment this next line to easily disable real time interrupts
-// 	sigaddset   ( &rtmin, GB_SIGRTMIN );
-	// debug msg
-	//log("interruptsOn");
-	// let everyone know before we are vulnerable to an interrupt
-	g_interruptsOn = true;
-	// unblock it so interrupts flow
-	if ( sigprocmask ( SIG_UNBLOCK, &rtmin, 0 ) < 0 ) {
-		log("loop: interruptsOn: sigprocmask: %s.", strerror(errno));
-		return;
-	}
 }
 
 
