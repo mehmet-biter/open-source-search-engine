@@ -234,11 +234,6 @@ class UdpServer {
 	bool makeCallbacks_ass ( int32_t niceness );
 	bool makeCallbacks_ass2( int32_t niceness );
 
-	// return true if we turned them off, false if we did not
-	bool interruptsOff() { return false; }
-
-	void interruptsOn() { g_loop.interruptsOn(); };
-
 	// when a call to sendto() blocks we set this to true so Loop.cpp
 	// will know to manually call sendPoll_ass() rather than counting
 	// on receiving a fd-ready-for-writing signal for this UdpServer

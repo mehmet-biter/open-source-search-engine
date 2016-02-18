@@ -400,9 +400,6 @@ bool UdpServer::sendRequest ( char     *msg          ,
 	// . this niceness is only used for makeCallbacks_ass()
 	if ( niceness > 1 ) niceness = 1;
 	if ( niceness < 0 ) niceness = 0;
-	// . don't allow interruption in here 
-	// . we don't want ::process_ass() processing our new, half ready slot
-	bool flipped = interruptsOff();
 	// get a new transId
 	int32_t transId = getTransId();
 
@@ -435,7 +432,6 @@ bool UdpServer::sendRequest ( char     *msg          ,
 	// . should set g_errno on failure
 	UdpSlot *slot = getEmptyUdpSlot_ass ( key , false );
 	if ( ! slot ) {
-		if ( flipped ) interruptsOn();
 		return log("udp: All %"INT32" slots are in use.",m_maxSlots);
 	}
 	// announce it
@@ -474,7 +470,6 @@ bool UdpServer::sendRequest ( char     *msg          ,
 				replyBuf        , 
 				replyBufMaxSize ) ) {
 		freeUdpSlot_ass ( slot );
-		if ( flipped ) interruptsOn();
 		return log("udp: Failed to initialize udp socket for "
 			   "sending req: %s",mstrerror(g_errno));
 	}
@@ -485,7 +480,6 @@ bool UdpServer::sendRequest ( char     *msg          ,
 	// keep sending dgrams until we have no more or hit ACK_WINDOW limit
 	if ( ! doSending_ass ( slot , true /*allow resends?*/ , now ) ) {
 		freeUdpSlot_ass ( slot );
-		if ( flipped ) interruptsOn();
 		return log("udp: Failed to send dgrams for udp socket.");
 	}
 
@@ -499,8 +493,6 @@ bool UdpServer::sendRequest ( char     *msg          ,
 	//log("UdpServer added slot to send on, key={%"INT32",%"INT64"},"
 	//"msgType=0x%hhx\n",
 	//key.n1,key.n0, msgType );
-	// turn 'em back on
-	if ( flipped ) interruptsOn();
 	// success
 	return true;
 }
@@ -597,9 +589,6 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 
 	// if msgMaxSize is -1 use msgSize
 	//if ( msgMaxSize == -1 ) msgMaxSize = msgSize;
-	// . turn off interrupts to be safe
-	// . unless we're in a sighandler or they're already off
-	bool flipped = interruptsOff();
 	// use the msg type that's already in there
 	unsigned char msgType = slot->getMsgType();
 	// get time 
@@ -622,7 +611,6 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 		log("udp: Failed to initialize udp socket for sending "
 		    "reply: %s", mstrerror(g_errno));
 		mfree ( alloc , allocSize , "UdpServer");
-		if ( flipped ) interruptsOn();
 		// was EBADENGINEER
 		if ( ! g_inSigHandler ) sendErrorReply ( slot , g_errno);
 		return ;
@@ -650,8 +638,6 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 		// destroy it i guess
 		destroySlot ( slot );
 	}
-	// back to it
-	if ( flipped ) g_loop.interruptsOn();
 	// status is 0 if this blocked
 	//if ( status == 0 ) return;
 	// destroy slot on completion of send or on error
@@ -688,9 +674,6 @@ bool UdpServer::doSending_ass (UdpSlot *slot,bool allowResends,int64_t now) {
 		return true;
 	}
 
-	// . turn off interrupts to be safe
-	// . unless we're in a sighandler or they're already off
-	bool flipped = interruptsOff();
 	// get time
 	//int64_t now = gettimeofdayInMilliseconds();
 	// . TODO: why this bug?
@@ -751,7 +734,6 @@ bool UdpServer::doSending_ass (UdpSlot *slot,bool allowResends,int64_t now) {
 	goto loop;
 	// come here to turn the interrupts back on if we turned them off
  done:
-	if ( flipped ) interruptsOn();
 	if ( status == -1 ) return false;
 	return true;
 }
@@ -766,9 +748,6 @@ bool UdpServer::doSending_ass (UdpSlot *slot,bool allowResends,int64_t now) {
 // . MDW: THIS IS NOW called by Loop.cpp when our udp socket is ready for
 //   sending on, and a previous sendto() would have blocked.
 bool UdpServer::sendPoll_ass ( bool allowResends , int64_t now ) {
-	// . turn off interrupts to be safe
-	// . unless we're in a sighandler or they're already off
-	bool flipped = interruptsOff();
 	// just so caller knows we don't need to send again yet
 	m_needToSend = false;
 	// if we don'thave anything to send, or we're waiting on ACKS, then
@@ -789,8 +768,6 @@ bool UdpServer::sendPoll_ass ( bool allowResends , int64_t now ) {
 		// . slot is NULL if no more slots need sending
 		// . return true if we processed something
 		if ( ! slot ) {
-			if ( flipped )
-				interruptsOn();
 			// if nobody needs to send now unregister write callback
 			// so select() loop in Loop.cpp does not keep freaking out
 			if ( ! m_needToSend && m_writeRegistered ) {
@@ -905,9 +882,6 @@ void UdpServer::process_ass ( int64_t now , int32_t maxNiceness) {
 	if ( ! g_inSigHandler )
 		startTimer = gettimeofdayInMillisecondsLocal();
  bigloop:
-	// . if we're real time, and not in a sig handler, turn 'em off
-	// . readSock() and doSending() are not Async Signal Safe (ass)
-	bool flipped = interruptsOff();
 	bool needCallback = false;
  loop:
 	// did we read or send something?
@@ -951,8 +925,6 @@ void UdpServer::process_ass ( int64_t now , int32_t maxNiceness) {
 		needCallback = true; 
 		goto loop; 
 	}
-	// if we read nothing this round, reinstate interrupts
-	if ( flipped ) interruptsOn();
 	// if we don't need a callback, bail
 	if ( ! needCallback ) {
 		if ( m_needBottom ) goto callBottom;
@@ -1020,8 +992,6 @@ void UdpServer::dumpdgram ( char *dgram , int32_t dgramSize ) {
 	
 // . returns -1 on error, 0 if blocked, 1 if completed reading dgram
 int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
-	// turn em off
-	bool flipped = interruptsOff();
 	// NULLify slot
 	*slotPtr = NULL;
 	// now peek at the first few bytes of the dgram to get some info
@@ -1050,7 +1020,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	// cancel silly g_errnos and return 0 since we blocked
 	if ( peekSize < 0 ) {
 		g_errno = errno;
-		if ( flipped ) interruptsOn();
 		if ( g_errno == EAGAIN || g_errno == 0 ) { 
 			// if ( s_ss++ == 100 ) {
 			// 	log("foo");char *xx=NULL;*xx=0; }
@@ -1551,8 +1520,6 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 			g_udpServer.m_outsiderBytesIn   += readSize;
 		}
 	}
-	// turn off
-	if ( flipped ) interruptsOn();
 	// return -1 on error
 	if ( ! status ) return -1;
 	// . return 1 cuz we did read the dgram ok
@@ -2626,8 +2593,6 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 		//     m_requestsInWaiting, slot->m_msgType );
 	}
 
-	// don't let sig handler look at slots while we are destroying them
-	bool flipped = interruptsOff();
 	// save buf ptrs so we can free them
 	char *rbuf     = slot->m_readBuf;
 	int32_t  rbufSize = slot->m_readBufMaxSize;
@@ -2648,8 +2613,6 @@ void UdpServer::destroySlot ( UdpSlot *slot ) {
 	// . free this slot available right away so sig handler won't
 	//   write into m_readBuf or use m_sendBuf, but it may claim it!
 	freeUdpSlot_ass ( slot );
-	// turn em back on if they were on before
-	if ( flipped ) interruptsOn();
 	// free the send/read buffers
 	if ( rbuf ) mfree ( rbuf , rbufSize , "UdpServer");
 	if ( sbuf ) mfree ( sbuf , sbufSize , "UdpServer");
@@ -2774,8 +2737,6 @@ bool UdpServer::timeoutDeadHosts ( Host *h ) {
 
 // verified that this is not interruptible
 UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
-	// turn em off
-	bool flipped = interruptsOff();
 	// tmp debug
 	//if ( (rand() % 10) == 1 ) slot = NULL
 	// return NULL if none left
@@ -2784,7 +2745,6 @@ UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
 		log("udp: %"INT32" of %"INT32" udp slots occupied. None available to "
 		    "handle this new transaction.",
 		    (int32_t)m_numUsedSlots,(int32_t)m_maxSlots);
-		if ( flipped ) interruptsOn();
 		return NULL;
 	}
 	UdpSlot *slot = m_head;
@@ -2827,7 +2787,6 @@ UdpSlot *UdpServer::getEmptyUdpSlot_ass ( key_t k , bool incoming ) {
 	// now store ptr in hash table
 	slot->m_key = k;
 	addKey ( k , slot );
-	if ( flipped ) interruptsOn();
 	return slot;
 }
 
@@ -2920,7 +2879,6 @@ void UdpServer::removeFromCallbackLinkedList ( UdpSlot *slot ) {
 
 // verified that this is not interruptible
 void UdpServer::freeUdpSlot_ass ( UdpSlot *slot ) {
-	bool flipped = interruptsOff();
 	// set the new head/tail if we were it
 	if ( slot == m_tail2 ) m_tail2 = slot->m_prev2;
 	if ( slot == m_head2 ) m_head2 = slot->m_next2;
@@ -2968,8 +2926,6 @@ void UdpServer::freeUdpSlot_ass ( UdpSlot *slot ) {
 		addKey ( ptr->m_key , ptr );
 		if ( ++i >= m_numBuckets ) i = 0;		
 	}
-	// if we turned 'em off then turn 'em back on
-	if ( flipped ) interruptsOn();
 }
 
 void UdpServer::cancel ( void *state , unsigned char msgType ) {
@@ -2991,7 +2947,6 @@ void UdpServer::cancel ( void *state , unsigned char msgType ) {
 }
 
 void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
-	bool flipped = interruptsOff();
 	log ( LOG_INFO, "udp: Replacing slots for ip: "
 	      "%"UINT32"/%"UINT32" port: %"UINT32"",
 	      (uint32_t)oldHost->m_ip, 
@@ -3070,7 +3025,6 @@ void UdpServer::replaceHost ( Host *oldHost, Host *newHost ) {
 				"transId=%"INT32" msgType=%i",
 				slot->m_transId, slot->m_msgType );
 	}
-	if ( flipped ) interruptsOn();
 }
 
 
