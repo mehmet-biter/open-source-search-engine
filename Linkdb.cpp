@@ -3039,9 +3039,6 @@ bool Msg25::addNote ( char *note , int32_t noteLen , int64_t docId ) {
 #include "IndexList.h"
 #include "XmlDoc.h" // score8to32()
 
-#define MAX_LINKERS          3000
-#define MAX_INTERNAL_INLINKS 10
-
 // . after Msg25 calls LinkInfo::set() (was merge()) make it call
 //   Msg25::print(SafeBuf *pbuf) to print the stats. it can access
 //   LinkInfo's Inlinks to get their weights, etc.

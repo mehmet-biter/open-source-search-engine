@@ -14,19 +14,10 @@
 #include "Msg40.h"
 #include "Conf.h"
 #include "Msg1.h" // getGroupId()
-//#include "HashTableX.h"
 #include "XmlDoc.h"
 #include "Bits.h"
 #include "sort.h"
 #include "Abbreviations.h"
-
-#define MIN_VOTERS 10
-//#define MAX_VOTERS 200
-
-//static void gotSectiondbListWrapper ( void *state );
-//static int cmp ( const void *s1 , const void *s2 ) ;
-
-#define SECTIONDB_MINRECSIZES 5000000
 
 Sections::Sections ( ) {
 	m_sections = NULL;

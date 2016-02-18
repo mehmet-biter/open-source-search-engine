@@ -7,8 +7,6 @@
 
 Proxy g_proxy;
 
-#define MINCHARGE 5.00
-
 static void proxyHandlerWrapper ( TcpSocket *s );
 //static void gotReplyWrapperPage( void *state, TcpSocket *s );
 static void gotHttpReplyWrapper ( void *state, UdpSlot *slot ) ;

@@ -3163,10 +3163,6 @@ static int gigabitCmp ( const void *a, const void *b ) {
 	if ( ga->m_termLen < gb->m_termLen ) return -1;
 	return 0;
 }
-	
-
-//#define MAXPOP 10000
-#define MAXPOP 32000
 
 //
 // . set m_gigabitInfos[] array and return # of them we set
@@ -3389,25 +3385,10 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 		if ( master.isEmpty(i) ) continue;
 		// get it
 		Gigabit *gb = (Gigabit *)master.getValueFromSlot(i);
-		// skip term #i from "table" if it has 0 score
-		//int32_t score = master.m_scores[i]; // getScoreFromTermNum(i) ;
-		//if ( ! score ) continue;
-
-		// skip if 0 score i guess
-		//if ( ! gb->m_qrt ) continue;
-
-		// . make it higher the more popular a term is
-		// . these are based on a MAXPOP of 10000
-		//int32_t mdc = (int32_t)((((double)numDocsProcessed * 3.0 * 
-		//		    (double)(gb->m_gbpop&0x7fffffff))+0.5)/
-		//		  MAXPOP);
-		//if ( mdc < tg->m_minDocCount ) mdc = tg->m_minDocCount;
 
 		// skip if does not meet the min doc count
 		if ( gb->m_numPages < tg->m_minDocCount ) continue;
 
-		// set the min of all in our list
-		//if ( score < minScore ) { minScore = score; minj = np; }
 		// i've seen this become NULL at line 753 on gb1 below for
 		// /search?code=mammaXbG&uip=192.0.2.1&n=15&raw=8&q=
 		//  manhattan,+ny 
@@ -3419,10 +3400,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 			     orig);
 			continue;
 		}
-		// recalc the score
-		//double frac1 = ((MAXPOP-(pops[i]&0x7fffffff))*100.0)/MAXPOP;
-		//double frac2 = ((double)count * 100.0) / (double)sampled;
-		//score = (int32_t)((frac1 * frac2) / 100.0);
+
 		// we got a winner
 		gigabitPtrBuf.pushPtr(gb);
 	}
@@ -4524,8 +4502,6 @@ void hashExcerpt ( Query *q ,
 		// set initial popularity
 		//float gigabitPop = 1.0;
 		int32_t minPop = 0x7fffffff;
-		//if ( wi->m_wpop > 0) pop = ((float) wi->m_wpop) / MAXPOP;
-		//else pop = 1.0 / MAXPOP;
 
 		//
 		//
@@ -4599,12 +4575,7 @@ void hashExcerpt ( Query *q ,
 				 wp[j][1 ]=='o' &&
 				 wp[j][2]=='m') continue;
 			};
-			// let's generalize even more! do not allow common
-			// single words as gigabits, with 250+ pop
-			//if ( pop > 100 && j == i && is_lower(wp[j][0]) ) 
-			//continue;
-			// the above assumes a MAX_POP of 10k (sanity check)
-			//if ( MAXPOP != 10000 ) { char *xx = NULL; *xx = 0; }
+
 			// are we passed the first word in the phrase?
 			if ( j > i ) {
 				// advance phrase length
@@ -4850,9 +4821,6 @@ void hashExcerpt ( Query *q ,
 
 			// average among the words with positive prox scores
 			//if ( nhw > 0 ) popModScore /= nhw;
-
-			// store it
-			//int32_t ipop = (int32_t)(pop * MAXPOP);
 
 			//
 			// ADD A GIGABIT CANDIDATE

@@ -19,8 +19,6 @@ Msge1::~Msge1() {
 	reset();
 }
 
-#define SLAB_SIZE (8*1024)
-
 void Msge1::reset() {
 	m_errno = 0;
 	m_ipBuf = NULL;

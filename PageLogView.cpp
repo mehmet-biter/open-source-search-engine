@@ -5,7 +5,6 @@
 #include "SafeBuf.h" 
 #include "Msg1f.h"
 #include "Parms.h"
-#define  MAX_LOG_WINDOW 8192
 
 static void gotRemoteLogWrapper(void *state, UdpSlot *slot);
 
@@ -13,7 +12,7 @@ struct StateLogView {
 	TcpSocket *m_s;
 	SafeBuf    m_sb;
 	int32_t       m_numOutstanding;
-	//	char       m_readBuf[MAX_HOSTS * MAX_LOG_WINDOW];
+
 	//we need to malloc this now, incase they want to see more of the log.
 	int32_t       m_readBufSize;
 	char      *m_readBuf;
@@ -26,9 +25,6 @@ struct StateLogView {
 };
 
 static char *s_magicStr = "4j3.8x*";
-#define BABY_BLUE  "e0e0d0"
-//#define LIGHT_BLUE "d0d0e0"
-//#define DARK_BLUE  "c0c0f0"
 
 bool sendPageLogView    ( TcpSocket *s , HttpRequest *r ) {
 

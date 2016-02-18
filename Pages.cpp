@@ -1518,9 +1518,6 @@ bool sendPageReportSpam ( TcpSocket *s , HttpRequest *r ) {
 	return 	retval;
 }
 
-#define DARK_YELLOW "ffaaaa"
-#define LIGHT_YELLOW "ffcccc"
-
 bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
 			   bool printGigablast ) ;
 
