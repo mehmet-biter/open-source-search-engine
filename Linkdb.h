@@ -1415,7 +1415,9 @@ public:
 	// . returns  0 if probably not a permalink
 	// . returns  1 if probably is a permalink
 	// . returns -1 if not enough information to make a decision
-	char isPermalink ( char **note ) { return -1; };
+	char isPermalink( char ** /*note*/ ) {
+		return -1;
+	}
 
 	int32_t m_numOutlinksAdded;
 };

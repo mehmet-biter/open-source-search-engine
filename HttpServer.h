@@ -29,13 +29,6 @@
 
 #define DEFAULT_HTTP_PROTO "HTTP/1.0"
 
-//this is for low priority requests which come in while we are in a quickpoll
-#define MAX_REQUEST_QUEUE 128
-struct QueuedRequest {
-	HttpRequest  m_r;
-	TcpSocket   *m_s;
-	int32_t         m_page;
-};
 
 typedef void (*tcp_callback_t)(void *, TcpSocket *);
 int32_t getMsgSize ( char *buf , int32_t bufSize , TcpSocket *s );

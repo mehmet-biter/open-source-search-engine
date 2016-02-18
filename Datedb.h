@@ -95,52 +95,6 @@ class Datedb {
 	unsigned char getScore ( const void *key ) {
 		return ~(((const unsigned char *)key)[5]); };
 
-	// use the very top int32_t only
-	/*
-	uint32_t getGroupIdFromKey ( key128_t *key ) {
-		if ( g_conf.m_fullSplit )
-			return g_titledb.getGroupId ( getDocId((char *)key) );
-//#ifdef SPLIT_INDEXDB
-		if ( g_conf.m_indexdbSplit > 1 ) {
-			uint32_t groupId =
-				(((uint32_t*)key)[3]) &
-				g_hostdb.m_groupMask;
-			groupId >>= g_indexdb.m_groupIdShift;
-			uint32_t offset = (key->n0 >> 2) &
-				DOCID_OFFSET_MASK;
-			return g_indexdb.m_groupIdTable [ groupId+
-				(offset*g_indexdb.m_numGroups) ];
-		}
-//#else
-		else
-			return (((uint32_t *)key)[3]) &
-				g_hostdb.m_groupMask;
-//#endif
-	};
-	*/
-
-//#ifdef SPLIT_INDEXDB
-
-	// for terms like gbdom:xyz.com that only reside in one group and
-	// are not split by docid into multiple groups. reduces disk seeks
-	// while spidering, cuz we use such terms for deduping and for
-	// doing quotas.
-	// ---> IS THIS RIGHT???? MDW
-	uint32_t getNoSplitGroupId ( key128_t *k ) {
-		char *xx=NULL;*xx=0; 
-		return 0;
-		// wtf is this? still being used?
-		//return (((uint32_t *)k)[3]) & g_hostdb.m_groupMask;
-		//uint32_t bgid = getBaseGroupId(k);
-		//return g_indexdb.getSplitGroupId(bgid,0);
-		//return bgid;
-	}
-
-	//uint32_t getBaseGroupId ( key128_t *k ) {
-	//	return (((uint32_t *)k)[3]) & g_hostdb.m_groupMask;
-	//}
-//#endif
-
 	// extract the termId from a key
 	int64_t getTermId ( key128_t *k ) {
 		int64_t termId = 0LL;

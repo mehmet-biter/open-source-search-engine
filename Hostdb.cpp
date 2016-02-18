@@ -2079,70 +2079,10 @@ bool Hostdb::saveHostsConf ( ) {
 			sprintf(temp, "%"INT32"   ", i);
 		write(fd, temp, gbstrlen(temp));
 
-		int32_t spaces;
-		//int32_t g;
-
 		// the new format is just the hostname then note
 		sprintf(temp,"%s ",h->m_hostname);
 		write(fd, temp, gbstrlen(temp));
-		goto skip;
 
-		// generate the ip string
-		strcpy(temp, iptoa(h->m_ip));
-		write(fd, temp, gbstrlen(temp));
-		spaces = 16 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// generate the ip2 string
-		strcpy(temp, iptoa(h->m_ipShotgun));
-		write(fd, temp, gbstrlen(temp));
-		spaces = 16 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// udp1 port
-		sprintf(temp, "%hu ", h->m_port);
-		write(fd, temp, gbstrlen(temp));
-		spaces = 6 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// udp2 port
-		//sprintf(temp, "%hu ", h->m_port2);
-		sprintf(temp, "0 " );
-		write(fd, temp, gbstrlen(temp));
-		spaces = 6 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// dns port
-		sprintf(temp, "%hu ", h->m_dnsClientPort);
-		write(fd, temp, gbstrlen(temp));
-		spaces = 6 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// http port
-		sprintf(temp, "%hu ", h->m_httpPort);
-		write(fd, temp, gbstrlen(temp));
-		spaces = 6 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// https port
-		sprintf(temp, "%hu ", h->m_httpsPort);
-		write(fd, temp, gbstrlen(temp));
-		spaces = 6 - gbstrlen(temp);
-		for ( int32_t s = 0; s < spaces; s++ ) write(fd, " ", 1);
-		// IDE channel
-		sprintf(temp, "%"INT32" ", h->m_ideChannel);
-		write(fd, temp, gbstrlen(temp));
-		// switch ID
-		sprintf(temp, "%"INT32" ", (int32_t)h->m_switchId);
-		write(fd, temp, gbstrlen(temp));
-		// Group ID
-		/*
-		g = h->m_group;
-		if ( g < 10 )
-			sprintf(temp, "00%"INT32" ", g);
-		else if ( g < 100 )
-			sprintf(temp, "0%"INT32" ", g);
-		else
-			sprintf(temp, "%"INT32" ", g);
-		write(fd, temp, gbstrlen(temp));
-		*/
-		// directory
-		write(fd, h->m_dir, gbstrlen(h->m_dir));
-	skip:
 		// note
 		write(fd, h->m_note, gbstrlen(h->m_note));
 		// end line
@@ -2502,20 +2442,6 @@ uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) { // ,bool split ) {
 	else if ( rdbId == RDB_TAGDB || 
 		  rdbId == RDB2_TAGDB2 ) {
 		return m_map [(*(uint16_t *)((char *)k + 10))>>3];
-	}
-	// based on url hash, top 32 bits
-	else if ( rdbId == RDB_CACHEDB ) {
-		return m_map [(*(uint16_t *)((char *)k + 10))>>3];
-	}		
-	// . base this on city/adm1/city/streetname hash bits, 
-	// . see Events::makePlacedbKey()
-	// . we got 8+16+25+16 bits = 65 bits
-	// . least significant bits are first
-	else if ( rdbId == RDB_PLACEDB || rdbId == RDB2_PLACEDB2 ) {
-		// hash those guys hashes into a single hash
-		uint32_t h = hash32 ( ((char *)k) + 8 , 8 );
-		// use that to lookup in m_map then
-		return m_map [ h & (MAX_KSLOTS-1) ];
 	}
 	else if ( rdbId == RDB_DOLEDB ) { // || rdbId == RDB2_DOLEDB2 ) {
 		// HACK:!!!!!!  this is a trick!!! it is us!!!

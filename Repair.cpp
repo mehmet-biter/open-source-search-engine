@@ -52,7 +52,6 @@ Rdb **getSecondaryRdbs ( int32_t *nsr ) {
 		s_rdbs[s_nsr++] = g_clusterdb2.getRdb  ();
 		s_rdbs[s_nsr++] = g_linkdb2.getRdb     ();
 		s_rdbs[s_nsr++] = g_tagdb2.getRdb      ();
-		//s_rdbs[s_nsr++] = g_placedb2.getRdb    ();
 		//s_rdbs[s_nsr++] = g_sectiondb2.getRdb  ();
 		//s_rdbs[s_nsr++] = g_revdb2.getRdb      ();
 	}
@@ -76,7 +75,6 @@ Rdb **getAllRdbs ( int32_t *nsr ) {
 		s_rdbs[s_nsr++] = g_clusterdb.getRdb  ();
 		s_rdbs[s_nsr++] = g_linkdb.getRdb     ();
 		s_rdbs[s_nsr++] = g_tagdb.getRdb      ();
-		//s_rdbs[s_nsr++] = g_placedb.getRdb    ();
 		//s_rdbs[s_nsr++] = g_sectiondb.getRdb  ();
 		//s_rdbs[s_nsr++] = g_revdb.getRdb      ();
 
@@ -89,7 +87,6 @@ Rdb **getAllRdbs ( int32_t *nsr ) {
 		s_rdbs[s_nsr++] = g_clusterdb2.getRdb  ();
 		s_rdbs[s_nsr++] = g_linkdb2.getRdb     ();
 		s_rdbs[s_nsr++] = g_tagdb2.getRdb      ();
-		//s_rdbs[s_nsr++] = g_placedb2.getRdb    ();
 		//s_rdbs[s_nsr++] = g_sectiondb2.getRdb  ();
 		//s_rdbs[s_nsr++] = g_revdb2.getRdb      ();
 	}
@@ -712,8 +709,6 @@ void Repair::initScan ( ) {
 		if ( ! g_linkdb2.init2     ( linkdbMem     ) ) goto hadError;
 	//if ( m_rebuildTagdb )
 	//	if ( ! g_tagdb2.init2      ( tagdbMem    ) ) goto hadError;
-	//if ( m_rebuildPlacedb )
-	//	if ( ! g_placedb2.init2    ( placedbMem    ) ) goto hadError;
 	//if ( m_rebuildSectiondb )
 	//	if ( ! g_sectiondb2.init2  ( sectiondbMem    ) ) goto hadError;
 	//if ( m_rebuildRevdb )
@@ -908,10 +903,7 @@ void Repair::getNextCollToRepair ( ) {
 	//	if ( ! g_tagdb2.addColl     ( m_coll ) &&
 	//	     g_errno != EEXIST ) goto hadError;
 	//}
-	//if ( m_rebuildPlacedb ) {
-	//	if ( ! g_placedb2.addColl     ( m_coll ) &&
-	//	     g_errno != EEXIST ) goto hadError;
-	//}
+
 	//if ( m_rebuildSectiondb ) {
 	//	if ( ! g_sectiondb2.addColl     ( m_coll ) &&
 	//	     g_errno != EEXIST ) goto hadError;
@@ -1338,11 +1330,7 @@ void Repair::updateRdbs ( ) {
 	//	rdb2 = g_tagdb2.getRdb();
 	//	rdb1->updateToRebuildFiles ( rdb2 , m_cr->m_coll );
 	//}
-	//if ( m_rebuildPlacedb ) {
-	//	rdb1 = g_placedb.getRdb();
-	//	rdb2 = g_placedb2.getRdb();
-	//	rdb1->updateToRebuildFiles ( rdb2 , m_cr->m_coll );
-	//}
+
 	//if ( m_rebuildSectiondb ) {
 	//	rdb1 = g_sectiondb.getRdb();
 	//	rdb2 = g_sectiondb2.getRdb();
@@ -2101,10 +2089,6 @@ bool Repair::injectTitleRec ( ) {
 	// rebuild the content hash since we change that function sometimes
 	xd->m_contentHash32Valid = false;
 
-	// hmmm... take these out to see if fixes the core
-	//xd->m_linkInfo1Valid = false;
-	//xd->m_linkInfo2Valid = false;
-
 	// claim it, so "tr" is not overwritten
 	m_numOutstandingInjects++;
 	//s_inUse[i] = 1;
@@ -2173,7 +2157,6 @@ bool Repair::injectTitleRec ( ) {
 		// make null to be safe
 		xd->ptr_linkInfo1  = NULL;
 		xd->size_linkInfo1 = 0;
-		//xd->m_linkInfo2Valid = false;
 		// re-get the tag rec from tagdb
 		xd->m_tagRecValid     = false;
 		xd->m_tagRecDataValid = false;

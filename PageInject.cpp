@@ -620,8 +620,8 @@ bool sendHttpReply ( void *state ) {
 //
 ////////////
 
-XmlDoc *s_injectHead = NULL;
-XmlDoc *s_injectTail = NULL;
+static XmlDoc *s_injectHead = NULL;
+static XmlDoc *s_injectTail = NULL;
 
 XmlDoc *getInjectHead ( ) { return s_injectHead; }
 
@@ -692,7 +692,6 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 		    "host ip %s port %i",iptoa(slot->m_ip),(int)slot->m_port);
 		g_errno = EBADREQUEST;
 		g_udpServer.sendErrorReply(slot,g_errno);
-		//g_corruptCount++;
 		return;
 	}
 		
@@ -703,7 +702,6 @@ void handleRequest7 ( UdpSlot *slot , int32_t netnice ) {
 		//log("inject: trying to inject NULL or non http url.");
 		log("inject: trying to inject NULL url.");
 		g_errno = EBADURL;
-		//g_corruptCount++;
 		g_udpServer.sendErrorReply(slot,g_errno);
 		return;
 	}

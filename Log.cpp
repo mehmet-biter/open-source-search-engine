@@ -639,46 +639,11 @@ void Log::printBuf ( ) {
 // . IMPORTANT: should be called while the lock is on!
 // . we just re-write to the file
 bool Log::dumpLog ( ) {
-	// . usually g_errno is set to something
-	// . save it in case we set g_errno
-	int32_t errnum = g_errno;
 	// for now don't dump
 	m_numErrors =  0;
 	m_bufPtr    =  0;
-	// just return true if no file open
-	if ( m_fd < 0 ) return true;
+
 	// for now just return true always
-	return true;
-	// . remove half the error from our memory buffer.
-	// . log then shift the first half outta the picture... bye bye 
-	// . we add one because its safe to assume we have 1 more msg than 
-	//   we do..???? TODO
-	// now shift over the old stuff in the arrays...
-	// be sure to record it in the file if we can before we shift over it.
-	for ( int i=0; i < m_numErrors ; i++ ) {
-		// get time in seconds
-		time_t t = m_errorTime[i] / 1000;
-		// hack off ctime's appended \n
-		//char *ct = ctime ( &t );
-		char *ct = asctime(gmtime ( &t ));
-		ct[gbstrlen(ct)-1] = '\0';
-		char tmp[1024 * 2];
-		snprintf ( tmp , 1024*2 , "%s(UTC):%s" , ct , m_errorMsg[i] );
-		// TODO: add port #
-		int32_t tmpLen = gbstrlen(tmp);
-		// filter out garbage
-		for ( int32_t j=0; j < tmpLen ; j++ )
-			if ( !isascii(tmp[j]) ) tmp[j]='X';
-		int32_t n = write ( m_fd , tmp , tmpLen ); 
-		if ( n == tmpLen ) continue;
-		fprintf(stderr,"Log::dumpLog: %s\n",mstrerror(g_errno));
-		// reload the original g_errno
-		g_errno = errnum;
-		break;
-	}
-	// reset everything
-	m_numErrors =  0;
-	m_bufPtr    =  0;
 	return true;
 }
 

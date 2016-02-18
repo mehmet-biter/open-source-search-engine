@@ -6,7 +6,6 @@
 #include "Tagdb.h"
 #include "Indexdb.h"
 #include "Posdb.h"
-#include "Cachedb.h"
 #include "Titledb.h"
 #include "Spider.h"
 #include "Spider.h"
@@ -92,8 +91,7 @@ RdbBase *Rdb::getBase ( collnum_t collnum )  {
 
 // used by Rdb::addBase1()
 void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
-	// if we are collectionless, like g_statsdb.m_rdb or
-	// g_cachedb.m_rdb, etc.. shared by all collections essentially.
+	// if we are collectionless, like g_statsdb.m_rdb etc.. shared by all collections essentially.
 	if ( m_isCollectionLess ) {
 		m_collectionlessBase = base;
 		return;
@@ -173,15 +171,12 @@ bool Rdb::init ( char          *dir                  ,
 	//if ( m_rdbId == RDB_DATEDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	//if ( m_rdbId == RDB2_DATEDB2   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_SECTIONDB  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_PLACEDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_SECTIONDB2) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_PLACEDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_TITLEDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_TITLEDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_SPIDERDB   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_DOLEDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_SPIDERDB2 ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_CACHEDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_SERPDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_LINKDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_LINKDB2   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
@@ -301,12 +296,9 @@ bool Rdb::init ( char          *dir                  ,
 	// rather than here because then if we disable an rdb we don't
 	// have to mess with code here as well:
 
-	// we now call g_*db.addColl(NULL) for Statsdb::init(),
-	// Cachedb::init(), ... directly
+	// we now call g_*db.addColl(NULL) for Statsdb::init() ... directly
 	//if ( g_statsdb.getRdb() == this ) 
 	//	return g_statsdb.addColl ( NULL );
-	//if ( g_cachedb.getRdb() == this ) 
-	//	return g_cachedb.addColl ( NULL );
 	//else if ( g_accessdb.getRdb() == this ) 
 	//	return g_accessdb.addColl ( NULL );
 	//else if ( g_facebookdb.getRdb() == this ) 
@@ -2804,17 +2796,6 @@ int64_t Rdb::getDiskSpaceUsed ( ) {
 bool Rdb::isMerging ( ) {
 	// use this for speed
 	return (bool)m_numMergesOut;
-
-	for ( int32_t i = 0 ; i < getNumBases() ; i++ ) {
-		CollectionRec *cr = g_collectiondb.m_recs[i];
-		if ( ! cr ) continue;
-		// if swapped out, this will be NULL, so skip it
-		RdbBase *base = cr->getBasePtr(m_rdbId);
-		//RdbBase *base = getBase(i);
-		if ( ! base ) continue;
-		if ( base->isMerging() ) return true;
-	}
-	return false;
 }
 	
 
@@ -2831,12 +2812,10 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB_POSDB     ] = g_posdb.getRdb();
 		s_table9 [ RDB_TITLEDB   ] = g_titledb.getRdb();
 		s_table9 [ RDB_SECTIONDB ] = g_sectiondb.getRdb();
-		//s_table9 [ RDB_PLACEDB   ] = g_placedb.getRdb();
 		s_table9 [ RDB_SPIDERDB  ] = g_spiderdb.getRdb();
 		s_table9 [ RDB_DOLEDB    ] = g_doledb.getRdb();
 		s_table9 [ RDB_CLUSTERDB ] = g_clusterdb.getRdb();
 		s_table9 [ RDB_LINKDB    ] = g_linkdb.getRdb();
-		s_table9 [ RDB_CACHEDB   ] = g_cachedb.getRdb();
 		s_table9 [ RDB_STATSDB   ] = g_statsdb.getRdb();
 		s_table9 [ RDB_REVDB     ] = g_revdb.getRdb();
 		s_table9 [ RDB_PARMDB    ] = NULL;
@@ -2845,7 +2824,6 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB2_POSDB2     ] = g_posdb2.getRdb();
 		s_table9 [ RDB2_TITLEDB2   ] = g_titledb2.getRdb();
 		s_table9 [ RDB2_SECTIONDB2 ] = g_sectiondb2.getRdb();
-		//s_table9 [ RDB2_PLACEDB2   ] = g_placedb2.getRdb();
 		s_table9 [ RDB2_SPIDERDB2  ] = g_spiderdb2.getRdb();
 		s_table9 [ RDB2_CLUSTERDB2 ] = g_clusterdb2.getRdb();
 		s_table9 [ RDB2_LINKDB2    ] = g_linkdb2.getRdb();
@@ -2863,20 +2841,17 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_posdb.getRdb   () ) return RDB_POSDB;
 	if ( rdb == g_titledb.getRdb   () ) return RDB_TITLEDB;
 	if ( rdb == g_sectiondb.getRdb () ) return RDB_SECTIONDB;
-	//if ( rdb == g_placedb.getRdb   () ) return RDB_PLACEDB;
 	if ( rdb == g_spiderdb.getRdb  () ) return RDB_SPIDERDB;
 	if ( rdb == g_doledb.getRdb    () ) return RDB_DOLEDB;
 	if ( rdb == g_clusterdb.getRdb () ) return RDB_CLUSTERDB;
 	if ( rdb == g_statsdb.getRdb   () ) return RDB_STATSDB;
 	if ( rdb == g_linkdb.getRdb    () ) return RDB_LINKDB;
-	if ( rdb == g_cachedb.getRdb   () ) return RDB_CACHEDB;
 	if ( rdb == g_revdb.getRdb     () ) return RDB_REVDB;
 	if ( rdb == g_indexdb2.getRdb   () ) return RDB2_INDEXDB2;
 	if ( rdb == g_posdb2.getRdb   () ) return RDB2_POSDB2;
 	if ( rdb == g_tagdb2.getRdb     () ) return RDB2_TAGDB2;
 	if ( rdb == g_titledb2.getRdb   () ) return RDB2_TITLEDB2;
 	if ( rdb == g_sectiondb2.getRdb () ) return RDB2_SECTIONDB2;
-	//if ( rdb == g_placedb2.getRdb   () ) return RDB2_PLACEDB2;
 	if ( rdb == g_spiderdb2.getRdb  () ) return RDB2_SPIDERDB2;
 	if ( rdb == g_clusterdb2.getRdb () ) return RDB2_CLUSTERDB2;
 	if ( rdb == g_linkdb2.getRdb    () ) return RDB2_LINKDB2;

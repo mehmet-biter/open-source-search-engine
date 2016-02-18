@@ -64,7 +64,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Images.o Wiki.o Wiktionary.o \
 	Timezone.o Sections.o SiteGetter.o qa.o \
 	Test.o Synonyms.o \
-	Cachedb.o dlstubs.o PageCrawlBot.o Json.o PageBasic.o \
+	dlstubs.o PageCrawlBot.o Json.o PageBasic.o \
 	Punycode.o Version.o \
 	HighFrequencyTermShortcuts.o \
 	IPAddressChecks.o \
@@ -99,13 +99,6 @@ LIBS += ./libiconv64.a ./libz64.a
 else
 CPPFLAGS +=
 LIBS += ./libiconv64.a ./libz64.a
-endif
-
-
-# if you have seo.cpp link that in. This is not part of the open source
-# distribution but is available for interested parties.
-ifneq ($(wildcard seo.cpp),)
-OBJS:=$(OBJS) seo.o
 endif
 
 
@@ -338,9 +331,6 @@ Linkdb.o:
 
 # final gigabit generation in here:
 Msg40.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
-
-seo.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
 
 TopTree.o:

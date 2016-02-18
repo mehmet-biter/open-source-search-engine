@@ -9,16 +9,13 @@
 #include "Query.h"     // getFieldCode()
 #include "Clusterdb.h" // g_clusterdb
 #include "iana_charset.h"
-//#include "Msg24.h"
 #include "Stats.h"
 #include "Sanity.h"
 #include "Speller.h"
 #include "CountryCode.h"
-//#include "SiteBonus.h"
 #include "linkspam.h"
 #include "Tagdb.h"
 #include "Repair.h"
-//#include "Links.h"
 #include "HashTableX.h"
 #include "LanguageIdentifier.h" // g_langId
 #include "CountryCode.h" // g_countryCode
@@ -28,20 +25,18 @@
 #include "SiteGetter.h"
 #include "Test.h"
 #include "Synonyms.h"
-//#include "Revdb.h"
 #include "PageInject.h"
 #include "HttpServer.h"
 #include "Posdb.h"
 #include "Highlight.h"
 #include "Wiktionary.h"
-#include "seo.h" // Msg99Request etc.
-//#include <regex.h>
 #include "PingServer.h"
 #include "Parms.h"
 #include "Domains.h"
 #include "matches2.h"
 #include "Doledb.h"
 #include "IPAddressChecks.h"
+
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -276,12 +271,7 @@ void XmlDoc::reset ( ) {
 		ptr_linkInfo1    = NULL;
 		m_linkInfo1Valid = false;
 	}
-	if ( m_linkInfo2Valid && ptr_linkInfo2 && m_freeLinkInfo2 ) {
-		// should point into a safebuf as well
-		//mfree ( ptr_linkInfo2 , size_linkInfo2, "LinkInfo2");
-		ptr_linkInfo2    = NULL;
-		m_linkInfo2Valid = false;
-	}
+
 	if ( m_rawUtf8ContentValid && m_rawUtf8Content && !m_setFromTitleRec
 	     // was content supplied by pageInject.cpp?
 	     //! m_contentInjected ) {
@@ -599,53 +589,6 @@ void XmlDoc::reset ( ) {
 	ptr_unused5 = NULL;
 	size_unused5 = 0;
 }
-
-// . set the url with the intention of adding it or deleting it from the index
-// . Msg7 and Repair.cpp can also set other members of XmlDoc rather than just
-//   m_firstUrl. they can provide the ip, the http reply, content, filtered
-//   content, the forced next spider time and the forced first indexed date,
-//   the hop count
-// . they might also want to skip deduping, or any algo deemed unnecessary
-//   by setting, for instance, m_isDupValid = true, or something
-bool XmlDoc::set1 ( char    *url         ,
-		    char    *coll        ,
-		    SafeBuf *pbuf        ,
-		    int32_t     niceness    ) {
-
-	reset();
-
-	// this is true
-	m_setFromUrl = true;
-
-	//m_coll     = coll;
-	m_pbuf     = pbuf;
-	m_niceness = niceness;
-	m_version  = TITLEREC_CURRENT_VERSION;
-	m_versionValid = true;
-
-	// sanity check
-	if ( m_niceness == 0 ) { char *xx=NULL; *xx=0; }
-
-	// copy this in case collection gets deleted i guess...
-	//m_forceDelete = forceDelete;
-	// did we get this url from PageAddUrl?
-	//m_isAddUrl    = isAddUrl;
-	// set m_indexCode so that XmlDoc::indexDoc() will delete it
-	//if ( forceDelete ) m_indexCode = EDOCFORCEDELETE;
-
-	// set this important member var
-	//cr = g_collectiondb.getRec ( m_coll , gbstrlen(m_coll) );
-	//if ( ! cr ) return false;
-	if ( ! setCollNum ( coll ) ) return false;
-
-	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: calling setFirstURL with [%s]", __FILE__, __func__, __LINE__, url);
-	setFirstUrl ( url , false );
-
-	//setSpideredTime();
-
-	return true;
-}
-
 
 char *XmlDoc::getTestDir ( ) {
 	CollectionRec *cr = getCollRec();
@@ -1486,7 +1429,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	//m_addressReplyValid         = true;
 	m_siteValid                   = true;
 	m_linkInfo1Valid              = true;
-	m_linkInfo2Valid              = true;
 	m_versionValid                = true;
 	m_httpStatusValid             = true;
 	m_crawlDelayValid             = true;
@@ -3014,21 +2956,11 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getLinkInfo1 failed", __FILE__,__func__,__LINE__);
 		return (int32_t *)info1;
 	}
-	
-	// get remote link info
-	LinkInfo  **pinfo2 = getLinkInfo2();
-	if ( ! pinfo2 || pinfo2 == (void *)-1 ) 
-	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getLinkInfo2 failed", __FILE__,__func__,__LINE__);
-		return (int32_t *)pinfo2;
-	}
-	LinkInfo   *info2 = *pinfo2;
 
 	// if robots.txt said no, and if we had no link text, then give up
 	bool disallowed = true;
 	if ( *isAllowed ) disallowed = false;
 	if ( info1 && info1->hasLinkText() ) disallowed = false;
-	if ( info2 && info2->hasLinkText() ) disallowed = false;
 	// if we generated a new sitenuminlinks to store in tagdb, we might
 	// want to add this for that only reason... consider!
 	if ( disallowed ) {
@@ -3057,8 +2989,7 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 	// like .f and .t
 	//
 	bool badExt = cu->hasNonIndexableExtension(TITLEREC_CURRENT_VERSION);	// @todo BR: For now ignore actual TitleDB version. // m_version);
-	if ( badExt && ! info1->hasLinkText() &&
-	      ( ! info2 || ! info2->hasLinkText() ) ) {
+	if ( badExt && ! info1->hasLinkText() ) {
 	 	m_indexCode      = EDOCBADCONTENTTYPE;
 	 	m_indexCodeValid = true;
 	 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, EDOCBADCONTENTTYPE", __FILE__,__func__,__LINE__);
@@ -3754,7 +3685,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if ( ! m_utf8ContentValid            ) { char *xx=NULL;*xx=0; }
 	if ( ! m_siteValid                   ) { char *xx=NULL;*xx=0; }
 	if ( ! m_linkInfo1Valid              ) { char *xx=NULL;*xx=0; }
-	if ( ! m_linkInfo2Valid              ) { char *xx=NULL;*xx=0; }
 
 	// do we need these?
 	if ( ! m_hostHash32aValid            ) { char *xx=NULL;*xx=0; }
@@ -4471,65 +4401,12 @@ int64_t **XmlDoc::getWikiDocIds ( ) {
 	//logf(LOG_DEBUG,"FIX ME FIX ME - getWikiDocIds");
 
 	// MDW: for now bail here too!
-	if ( ! gq[0] || 1 == 1 ) {
-		ptr_wikiDocIds  = m_wikiDocIds;
-		ptr_wikiScores  = m_wikiScores;
-		size_wikiDocIds = 0;
-		size_wikiScores = 0;
-		m_wikiDocIdsValid = true;
-		return (int64_t **)&ptr_wikiDocIds;
-	}
-
-	// set our query to these gigabits
-	// re-enable this later
-	//if ( ! m_calledMsg40 ) m_wq.set ( gq );
-
-	int32_t need = 200 + gbstrlen(gq);
-	// make buf
-	m_wikiqbuf = (char *)mmalloc ( need , "wikiqbuf");
-	// error?
-	if ( ! m_wikiqbuf ) return NULL;
-	// save size
-	m_wikiqbufSize = need;
-	// use large single tier for speed
-	char *p = m_wikiqbuf;
-	p += sprintf ( p ,
-		       "GET /search?raw=9&n=%"INT32"&sc=0&dr=0&"//dio=1&"
-		       "t0=1000000&rat=0&"
-		       "c=wiki&q=%s", (int32_t)MAX_WIKI_DOCIDS, gq );
-	// terminate it
-	*p++ = '\0';
-	// then put in the ip
-	*(int32_t *)p = g_hostdb.m_myHost->m_ip;
-	// skip over ip
-	p += 4;
-	// sanity check
-	if ( p - m_wikiqbuf > need ) { char *xx=NULL;*xx=0; }
-
-	int32_t ip = g_conf.m_wikiProxyIp;
-	// if not given, make it gf1 for now
-	if ( ! ip ) ip = atoip ( "10.5.62.11" , 10 );
-
-	int32_t port = g_conf.m_wikiProxyPort;
-	// port default too to gf1
-	if ( ! port ) port = 9002;
-
-	// send it using msg 0xfd to the wiki cluster's proxy
-	if ( ! g_udpServer.sendRequest ( m_wikiqbuf            ,
-					 p - m_wikiqbuf        ,
-					 0xfd                  ,
-					 ip                    ,
-					 port                  ,
-					 -1                    , // hostId
-					 NULL                  , // retSlot
-					 this                  , // state
-					 gotWikiResultsWrapper ,
-					 1*1000                  ) ) //timeout
-		// we had an error, g_errno should be set
-		return NULL;
-
-	// got without blocking? no way!
-	return (int64_t **)-1;
+	ptr_wikiDocIds  = m_wikiDocIds;
+	ptr_wikiScores  = m_wikiScores;
+	size_wikiDocIds = 0;
+	size_wikiScores = 0;
+	m_wikiDocIdsValid = true;
+	return (int64_t **)&ptr_wikiDocIds;
 }
 
 void XmlDoc::gotWikiResults ( UdpSlot *slot ) {
@@ -5221,40 +5098,6 @@ Sections *XmlDoc::getImpliedSections ( ) {
 
 	// just use that for now if not doing events to save time! because
 	// adding implied sections really sucks the resources.
-	m_impliedSectionsValid = true;
-	return &m_sections;
-
-	// this will set it if necessary
-	Words *words = getWords();
-	// returns NULL on error, -1 if blocked
-	if ( ! words || words == (Words *)-1 ) return (Sections *)words;
-	// get this
-	Bits *bits = getBits();
-	// bail on error
-	if ( ! bits ) return NULL;
-	// get the content type
-	uint8_t *ct = getContentType();
-	if ( ! ct ) return NULL;
-
-	if ( ! m_firstUrlValid ) { char *xx=NULL;*xx=0; }
-
-	// if we got no sections it was bad html. so don't go any further
-	// lest we core in other code..
-	// it might have also just been an empty doc.
-	// either way we'll core in getAddresses cuz it calls getSimpleDates
-	// which will core in Dates::setPart1() trying to use m_sectionPtrs
-	if ( sections->m_numSections == 0 ) {
-		m_impliedSectionsValid = true;
-		// hack to avoid core for empty docs like www.mini-polis.com
-		sections->m_addedImpliedSections = true;
-		return &m_sections;
-	}
-
-	// . now add implied sections
-	// . return NULL with g_errno set on error
-	if ( ! m_sections.addImpliedSections() ) return NULL;
-
-	// we got it
 	m_impliedSectionsValid = true;
 	return &m_sections;
 }
@@ -7949,8 +7792,6 @@ char *XmlDoc::getGigabitQuery ( ) {
 	//if ( ! we || we == (Weights *)-1 ) return (char *)we;
 	LinkInfo   *info1 = getLinkInfo1();
 	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (char *)info1;
-	LinkInfo  **pinfo2 = getLinkInfo2();
-	if ( ! pinfo2 || pinfo2 == (void *)-1 ) return (char *)pinfo2;
 	uint8_t *langId = getLangId();
 	if ( ! langId || langId == (uint8_t *)-1 ) return (char *) langId;
 
@@ -8700,17 +8541,6 @@ Url **XmlDoc::getRedirUrl() {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, error, could not get LinkInfo1", __FILE__,__func__,__LINE__);
 		return (Url **)info1;
 	}
-	
-	// get remote link info
-	LinkInfo  **pinfo2 = getLinkInfo2();
-	// error or blocked
-	if ( ! pinfo2 || pinfo2 == (void *)-1 ) 
-	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, error, could not get LinkInfo2", __FILE__,__func__,__LINE__);
-		return (Url **)pinfo2;
-	}
-	// convenience
-	LinkInfo   *info2 = *pinfo2;
 
 	// breathe
 	QUICKPOLL(m_niceness);
@@ -8809,7 +8639,6 @@ Url **XmlDoc::getRedirUrl() {
 
 	bool keep = false;
 	if ( info1->hasLinkText()          ) keep = true;
-	if ( info2 && info2->hasLinkText() ) keep = true;
 
 	// at this point we do not block anywhere
 	m_redirUrlValid = true;
@@ -9436,9 +9265,6 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 	m_extraDoc->ptr_linkInfo1           = &s_dummy;
 	m_extraDoc->size_linkInfo1          = 0;
 	m_extraDoc->m_linkInfo1Valid        = true;
-	m_extraDoc->ptr_linkInfo2           = &s_dummy;
-	m_extraDoc->size_linkInfo2          = 0;
-	m_extraDoc->m_linkInfo2Valid        = true;
 	m_extraDoc->m_urlFilterNumValid     = true;
 	m_extraDoc->m_urlFilterNum          = 0;
 	// for redirects
@@ -9634,9 +9460,6 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	m_rootDoc->ptr_linkInfo1           = &s_dummy;
 	m_rootDoc->size_linkInfo1          = 0;
 	m_rootDoc->m_linkInfo1Valid        = true;
-	m_rootDoc->ptr_linkInfo2           = &s_dummy;
-	m_rootDoc->size_linkInfo2          = 0;
-	m_rootDoc->m_linkInfo2Valid        = true;
 	m_rootDoc->m_urlFilterNumValid     = true;
 	m_rootDoc->m_urlFilterNum          = 0;
 	// for redirects
@@ -11509,8 +11332,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 		log("xmldoc: crap no g_errno");
 		g_errno = EBADENGINEER;
 		return NULL;
-		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
-		return NULL;
 	}
 	char *mysite = getSite();
 	if ( ! mysite || mysite == (void *)-1 ) return (LinkInfo *)mysite;
@@ -11694,23 +11515,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	// return it
 	return ptr_linkInfo1;
 }
-
-
-static void *s_null = NULL;
-
-// . returns NULL and sets g_errno on error
-// . returns -1 if blocked, will re-call m_callback
-LinkInfo **XmlDoc::getLinkInfo2 ( ) {
-
-	// this can now be title hashes for XmlDoc::m_diffbotTitleHashes
-	// but otherwise, we don't use it for link info from another cluster
-	// any more.
-	m_linkInfo2Valid = true;
-	return (LinkInfo **)&s_null;
-}
-
-
-
 
 static void gotSiteWrapper ( void *state ) ;
 
@@ -16089,17 +15893,6 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 		//sb->safePrintf("cblockinlinks=%"INT32" ",
 		//info->m_numUniqueCBlocks);
 	}
-
-	//
-	// print # of link texts from 2nd coll
-	//
-	// this is not used for what it was used for.
-	// if ( m_linkInfo2Valid && size_linkInfo2 > 4 ) {
-	// 	LinkInfo *info = ptr_linkInfo2;
-	// 	int32_t nt = 0;
-	// 	if ( info ) nt = info->getNumLinkTexts();
-	// 	if ( nt ) sb->safePrintf("goodinlinks2=%"INT32" ",nt );
-	// }
 
 	if (  m_docIdValid )
 		sb->safePrintf("docid=%"UINT64" ",m_docId);
@@ -24077,94 +23870,6 @@ SafeBuf *XmlDoc::getSampleForGigabits ( ) {
 	m_gsbufValid = true;
 	// success
 	return &m_gsbuf;
-
-
-
-
-
-	// need a buncha crap
-	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (SafeBuf *)xml;
-	Pos *pos = getPos();
-	if ( ! pos || pos == (Pos *)-1 ) return (SafeBuf *)pos;
-	Matches *mm = getMatches();
-	if ( ! mm || mm == (Matches *)-1 ) return (SafeBuf *)mm;
-
-	// convert length to number of words
-	int32_t bigSampleRadius = m_req->m_bigSampleRadius / 5;
-	// at least 1
-	if ( bigSampleRadius <= 0 ) bigSampleRadius = 1;
-
-	// alloc for whole document?
-	int32_t max = xml->getContentLen() ;
-	// do not exceed
-	if ( max > m_req->m_bigSampleMaxLen ) max = m_req->m_bigSampleMaxLen;
-	// make sure we have something in words too. i guess no sample?
-	if ( max <= 2 ) { m_gsbufValid = true; return &m_gsbuf; }
-	// a flag so we don't overlap samples...
-	int32_t lastb = -1;
-	// . set m_buf to where we write the sample
-	// . add a byte for the terminating \0
-	int32_t gsbufAllocSize = max + 1;
-	// temp hack
-	//m_gsbuf = (char *)mmalloc(m_gsbufAllocSize,"gsbuf");
-	if ( ! m_gsbuf.reserve ( gsbufAllocSize, "gsbuf" ) ) return NULL;
-	// g_errno should be set...
-	//if ( ! m_gsbuf ) return NULL;
-	//m_freeBuf = true;
-	// set our pointer
-	char *pstart = m_gsbuf.getBufStart();
-	char *p    = pstart;
-	char *pend = pstart + max;
-
-	int32_t nw = ww->m_numWords;
-
-	// skip to first query term
-	for ( int32_t i = 0 ; i < mm->m_numMatches ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get the match
-		Match *m = &mm->m_matches[i];
-		// break out if match is not from the document's Words class
-		if ( m->m_words != ww ) break;
-		// the word #
-		int32_t n = m->m_wordNum;
-		// got a match, add this samplet, [a,b]
-		int32_t a = n - bigSampleRadius;
-		int32_t b = n + bigSampleRadius;
-		if ( a <     0 ) a =     0;
-		if ( b >    nw ) b =    nw;
-		if ( a < lastb ) a = lastb;
-		// ensure the samples are separated by \0
-		else if ( p > pstart && p + 2 < pend ) {
-			*p++ = '\0';
-		}
-		Pos  *pos = m->m_pos;
-		int32_t *pp  = pos->m_pos;
-		int32_t  len = pp[b+1] - pp[a];
-		// if match would send us over, we are done
-		if ( p + len >= pend ) break;
-
-		len = pos->filter( m->m_words, a, b, false, p, pend, m_version );
-
-		// for debug (mdw)
-		//log("query: gigabitsample#%"INT32"=%s",i,p);
-		p += len;
-		// we are the new lastb
-		lastb = b;
-	}
-	// always null terminate
-	*p++ = '\0';
-	// . set sample size
-	// . this includes terminating 0\'s in this case
-	//int32_t gsbufSize = p - m_gsbuf;
-	m_gsbuf.setLength( p - m_gsbuf.getBufStart() );
-	// we are valid
-	m_gsbufValid = true;
-	// for debug (mdw)
-	//log("query: finalgigabitsample=%s",m_gsbuf);
-	// success
-	return &m_gsbuf;
 }
 
 // if it is json then only return the json fields that are strings
@@ -24558,12 +24263,6 @@ char *XmlDoc::getIsErrorPage ( ) {
 	LinkInfo   *info1  = getLinkInfo1();
 	// error or blocked
 	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (char *)info1;
-	// get remote link info
-	LinkInfo   **pinfo2 = getLinkInfo2();
-	// error or blocked
-	if ( ! pinfo2 || pinfo2 == (void *)-1 ) return (char *)pinfo2;
-	// convenience
-	LinkInfo *info2 = *pinfo2;
 
 	// default
 	LinkInfo  *li = info1;
@@ -24610,7 +24309,6 @@ char *XmlDoc::getIsErrorPage ( ) {
 	len = gbstrlen(errMsg);
 
 	// make sure the error message was not present in the link text
- loop:
 	if ( li && li->getNumGoodInlinks() > 5 ) return &m_isErrorPage;
 	for (Inlink *k=NULL;li && (k=li->getNextInlink(k)); ) {
 		//int32_t nli = li->getNumLinkTexts();
@@ -24630,8 +24328,6 @@ char *XmlDoc::getIsErrorPage ( ) {
 				return &m_isErrorPage;
 		}
 	}
-
-	if ( li ) { li = info2; info2 = NULL; goto loop; }
 
 	m_isErrorPage = true;
 	return &m_isErrorPage;
@@ -25148,11 +24844,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	//int32_t spop = m_sitePop;
 
 	LinkInfo *info1 = ptr_linkInfo1;
-	//LinkInfo *info2 = ptr_linkInfo2;
-	//int32_t sni ;
-	//int32_t extrapolated = 0;
-	//if ( info1 ) extrapolated = info1->m_numInlinksExtrapolated;
-	//if ( info1 ) sni          = info1->m_siteNumInlinks;
 
 	char *ipString = iptoa(m_ip);
 	char *estimated = "";
@@ -27331,24 +27022,16 @@ char **XmlDoc::getFilteredRootTitleBuf ( ) {
 	char **rtbp = getRootTitleBuf();
 	if ( ! rtbp || rtbp == (void *)-1 ) return (char **)rtbp;
 
-	/*
-	// assume none
-	m_filteredRootTitleBuf[0] = '\0';
-	m_filteredRootTitleBufSize = 0;
-	m_filteredRootTitleBufValid = true;
-	return (char **)&m_filteredRootTitleBuf;
-	*/
-
 	// filter all the punct to \0 so that something like
 	// "walmart.com : live better" is reduced to 3 potential
 	// names, "walmart", "com" and "live better"
 	char *src    =       m_rootTitleBuf;
 	char *srcEnd = src + m_rootTitleBufSize;
 	char *dst    =       m_filteredRootTitleBuf;
+
 	// save some room to add a \0, so subtract 5
 	char *dstEnd = dst + ROOT_TITLE_BUF_MAX - 5;
-	//char *src = tag->getTagData();
-	//char *srcEnd = src + tag->getTagDataSize();
+
 	int32_t  size = 0;
 	bool lastWasPunct = true;
 	for ( ; src < srcEnd && dst < dstEnd ; src += size ) {
@@ -27418,8 +27101,6 @@ char **XmlDoc::getFilteredRootTitleBuf ( ) {
 	if ( m_filteredRootTitleBufSize > 0 &&
 	     m_filteredRootTitleBuf [ m_filteredRootTitleBufSize - 1 ] ) {
 		char *xx=NULL;*xx=0;
-		//m_filteredRootTitleBuf [ m_filteredRootTitleBufSize-1]='\0';
-		//m_filteredRootTitleBufSize++;
 	}
 
 	// sanity check - breach check
@@ -27432,7 +27113,6 @@ char **XmlDoc::getFilteredRootTitleBuf ( ) {
 	static char *fp = m_filteredRootTitleBuf;
 
 	return (char **)&fp;
-	//return (char **)&m_filteredRootTitleBuf;
 }
 
 //static bool s_dummyBool = 1;
@@ -29429,7 +29109,7 @@ SafeBuf *XmlDoc::getTermId32Buf() {
 
 // . used by getTermId32Buf() for getting this document's matching queries
 // . serialize the words in the title and inlink text into a vector
-// . SafeBuf is filled with class TermInfos! defined in seo.h. currently
+// . SafeBuf is filled with class TermInfos! defined in Synonyms.h. currently
 //   just a int64_t m_termId64 though!
 // . get synonyms of each word too!
 // . we sort them by the 32-bit termid so handleRequest8e() can do its fast
@@ -29742,9 +29422,6 @@ bool XmlDoc::addUniqueWordsToBuf ( SafeBuf *termInfoBuf ,
 	}
 	return true;
 }
-
-
-#include "Cachedb.h"
 
 
 bool XmlDoc::getIsInjecting ( ) {

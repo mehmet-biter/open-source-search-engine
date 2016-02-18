@@ -537,13 +537,6 @@ bool Speller::loadUnifiedDict() {
 	// start over and load what we created
 	goto reload;
 
-	// hmmm... seems like we need to re-run for some reason
-	log("spell: PLEASE RERUN gb");
-	log("spell: PLEASE RERUN gb");
-	log("spell: PLEASE RERUN gb");
-	exit(0);
-
-	return true;
 }
 
 // in case the language is unknown, just give the pop of the

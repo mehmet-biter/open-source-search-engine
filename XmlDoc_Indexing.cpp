@@ -1845,95 +1845,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 // . returns false and sets g_errno on error
 // . copied Url2.cpp into here basically, so we can now dump Url2.cpp
 bool XmlDoc::hashSections ( HashTableX *tt ) {
-
-
 	// BR 20160106: No longer store xpath-hashes in posdb as we do not use them.
-	// eek.. but a rebuild of old docs will store them.. not intended.
-//	if ( m_version >= 122 )
-	{
-			return true;
-	}
-
-	setStatus ( "hashing sections" );
-
-	if ( ! m_sectionsValid ) { char *xx=NULL;*xx=0; }
-	if ( ! m_siteValid ) { char *xx=NULL;*xx=0; }
-
-	Sections *ss = &m_sections;
-
-	int32_t siteHash32 = *getSiteHash32();
-
-	// set up the hashing parms
-	HashInfo hi;
-	hi.m_hashGroup = HASHGROUP_INTAG;
-	hi.m_tt        = tt;
-	// the prefix is custom set for each section below
-	//hi.m_prefix    = "gbsectionhash";
-	// put all guys with the same xpath/site on the same shard
-	hi.m_shardByTermId = true;
-
-	Section *si = ss->m_rootSection;
-
-	for ( ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// . skip if empty
-		// . this needs to be like 48 bits because 32 bits is not
-		//   big enought!
-		//uint64_t ih64 = si->m_sentenceContentHash64;
-
-		// don't bother with the section if it doesn't have this set
-		// because this eliminates parent dupage to reduce amount
-		// of gbxpathsitehash123456 terms we index
-		if ( ! ( si->m_flags & SEC_HASHXPATH ) )
-			continue;
-
-		// skip if sentence, only hash tags now i guess for diffbot
-		//if ( si->m_sentenceContentHash64 )
-		//	continue;
-
-		// get hash of sentences this tag contains indirectly
-		uint32_t val32 = (uint32_t)si->m_indirectSentHash64;
-		if ( ! val32 )
-			continue;
-
-		// the termid is now the xpath and the sitehash, the "value"
-		// will be the hash of the innerhtml, m_sentenceContentHash64
-		uint64_t thash64 = (uint32_t)si->m_turkTagHash32;
-		// combine with site hash
-		thash64 ^= (uint32_t)siteHash32;
-
-		// this is a special hack we need to make it the
-		// hash of the inner html
-		//hi.m_sentHash32 = (uint32_t)ih64;
-
-		// . get section xpath & site hash
-		// . now if user does a gbfacets:gbxpathsitehashxxxxxx query
-		//   he will get back a histogram of the values it hash,
-		//   which are 32-bit hashes of the innerhtml for that
-		//   xpath on this site.
-		char prefix[96];
-		sprintf(prefix,"gbxpathsitehash%"UINT64"",thash64);
-
-		// like a normal key but we store "ih64" the innerHTML hash
-		// of the section into the key instead of wordbits etc.
-		// similar to hashNumber*() functions.
-		//if ( ! hashSectionTerm ( term , &hi, (uint32_t)ih64 ) )
-		//	return false;
-
-		// i guess use facets
-		hi.m_prefix = prefix;
-
-		// we already have the hash of the inner html of the section
-		hashFacet2 ( "gbfacetstr",
-			     prefix,
-			     //(int32_t)(uint32_t)ih64 ,
-			     val32,
-			     hi.m_tt ,
-			     // shard by termId?
-			     true );
-	}
-
 	return true;
 }
 
@@ -1960,7 +1872,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 	char *note = "hashing incoming link text";
 	// sanity
 	if ( ! m_linkInfo1Valid ) { char *xx=NULL;*xx=0; }
-	if ( ! m_linkInfo2Valid ) { char *xx=NULL;*xx=0; }
+
 	// . finally hash in the linkText terms from the LinkInfo
 	// . the LinkInfo class has all the terms of hashed anchor text for us
 	// . if we're using an old TitleRec linkTermList is just a ptr to
@@ -1968,17 +1880,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 	// . otherwise, we generated it from merging a bunch of LinkInfos
 	//   and storing them in this new TitleRec
 	LinkInfo  *info1    = getLinkInfo1 ();
-	LinkInfo **pinfo2   = getLinkInfo2 ();
-	LinkInfo  *info2    = *pinfo2;
 	LinkInfo  *linkInfo = info1;
-	// pick the one with the most inlinks with valid incoming link text,
-	// otherwise, we end up with major bias when we stop importing
-	// link text from another cluster, because some pages will have
-	// twice as many links as they should!
-	if ( info2 && info2->getNumLinkTexts() > info1->getNumLinkTexts() ) {
-		linkInfo = info2;
-		note = "hashing incoming link text from other cluster";
-	}
 
 	// sanity checks
 	if ( ! m_ipValid             ) { char *xx=NULL;*xx=0; }
@@ -2091,19 +1993,7 @@ bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
 	//   space in the titleRec
 	// . now we only do one or the other, not both
 	LinkInfo  *info1    = getLinkInfo1 ();
-	LinkInfo **pinfo2   = getLinkInfo2 ();
-	LinkInfo  *info2    = *pinfo2;
 	LinkInfo  *linkInfo = info1;
-
-	char *note = " (internal cluster)";
-	// pick the one with the most inlinks with valid incoming link text
-	// otherwise, we end up with major bias when we stop importing
-	// link text from another cluster, because some pages will have
-	// twice as many links as they should!
-	if ( info2 && info2->getNumLinkTexts() > info1->getNumLinkTexts() ) {
-		linkInfo = info2;
-		note = " (external cluster)";
-	}
 
 	// loop over all the Inlinks
 	Inlink *k = NULL;

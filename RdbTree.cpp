@@ -1872,7 +1872,7 @@ bool RdbTree::getList ( collnum_t collnum ,
 		//if (((newEndKey.n0) & 0x01) == 0x00 ) 
 		//	newEndKey += (uint32_t)1;
 		// we are little endian
-		if ( KEYNEG(newEndKey,0,m_ks) ) KEYADD(newEndKey,1,m_ks);
+		if ( KEYNEG(newEndKey,0,m_ks) ) KEYADD(newEndKey,m_ks);
 		// if we're using half keys set his half key bit
 		//if ( useHalfKeys ) newEndKey.n0 |= 0x02;
 		if ( useHalfKeys ) KEYOR(newEndKey,0x02);

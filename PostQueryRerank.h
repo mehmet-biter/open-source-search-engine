@@ -11,26 +11,12 @@ class Msg40;
 #include "SearchInput.h"
 struct M20List;
 
-// type for saving Msg20s from results prior to first result
-struct savedM20Data {
-	int32_t score;
-	int tier;
-	int64_t docId;
-	char clusterLevel;
-};
-
-
-struct ComTopInDmozRec {
-	int32_t cnt;      // count of pages with this same topic
-	float demFact; // decay factor for this topic
-};
 
 typedef float rscore_t;
 
 #define MINSCORE      1
 #define MIN_SAVE_SIZE 100
-// we don't use this any more so make it compile
-//#define PQR_BUF_SIZE  MAX_QUERY_LEN
+
 #define PQR_BUF_SIZE  64
 
 class PostQueryRerank {
@@ -120,61 +106,22 @@ private:
 					uint8_t lang, uint8_t summaryLang,
 					    uint16_t country ,
 					    class Msg20 *msg20 );
-	inline 
-	rscore_t rerankLanguage ( rscore_t score, 
-			      uint8_t lang );
-	rscore_t rerankQueryTermsOrGigabitsInUrl ( rscore_t score,
-					       Url *pageUrl );
-	inline 
-	rscore_t rerankQuality ( rscore_t score, 
-			     unsigned char quality );
+
 	inline 
 	rscore_t rerankPathsInUrl ( rscore_t score,
 				char *url,
 				int32_t urlLen );
-	inline 
-	rscore_t rerankNoCatId ( rscore_t score,
-			     int32_t numCatIds,
-			     int32_t numIndCatIds );
 
 	inline 
 	rscore_t rerankPageSize ( rscore_t score,
 			      int32_t docLen );
-	//bool getLocation ( char *resBuf, int32_t resBufLen,
-	//		   int32_t *resLen, int32_t *resPop,
-	//		   char *buf, int32_t bufLen);
-	//bool preRerankNonLocationSpecificQueries ( );
-	//rscore_t rerankNonLocationSpecificQueries ( rscore_t score,
-	//					Msg20 *msg20 );
-	inline 
-	rscore_t rerankContentType ( rscore_t score,
-				 char contentType );
+
 	bool preRerankOtherPagesFromSameHost( Url *pageUrl );
 	rscore_t rerankOtherPagesFromSameHost ( rscore_t score, 
 					    Url *pageUrl );
-	bool preRerankCommonTopicsInDmoz( Msg20Reply *mr );
-	rscore_t rerankCommonTopicsInDmoz ( rscore_t score,
-					Msg20 *msg20 );
-	rscore_t rerankDmozCategoryNamesDontHaveQT ( rscore_t score, 
-						 Msg20 *msg20 );
-	rscore_t rerankDmozCategoryNamesDontHaveGigabits ( rscore_t score,
-						       Msg20 *msg20 );
 	inline
 	rscore_t rerankDatedbDate( rscore_t score,
 			       time_t datedbDate );
-	inline
-	rscore_t rerankProximity( rscore_t score,
-			      float proximityScore ,
-			      float maxScore);
-	inline
-	rscore_t rerankInSection( rscore_t score,
-			      int32_t summaryScore,
-			      float maxScore);
-	
-	inline
-	rscore_t rerankSubPhrase( rscore_t score,
-			      float diversity,
-			      float maxDiversity);
 
 	bool attemptToCluster( );
 
@@ -198,9 +145,6 @@ private:
 
 	// for rerankOtherPagesFromSameHost
         HashTableT<uint64_t, int32_t> m_hostCntTable;
-
-	// for rerankCommonTopicsInDmoz
-	HashTableT<int32_t, ComTopInDmozRec> m_dmozTable;
 
 	// for rerankDatedbDate
 	time_t m_now;

@@ -617,13 +617,6 @@ void gotReplyWrapper1 ( void *state , void *state2 ) {
 	}
 }
 
-class State1 {
-public:
-	UdpSlot     *m_slot;
-	Rdb         *m_rdb;
-	RdbList      m_list;
-};
-
 static void addedList   ( UdpSlot *slot , Rdb *rdb );
 //static bool updateTfndb ( RdbList *list , bool isTitledb ) ;
 

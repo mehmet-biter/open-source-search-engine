@@ -90,15 +90,6 @@ bool Matches::isMatchableTerm ( QueryTerm *qt ) { // , int32_t i ) {
 	return true;
 }
 
-// a QueryMatch is a quote in the query or a single word.
-class QueryMatch {
-public:
-	// range in Query::m_qwords [m_a,m_b]
-	int32_t m_a;
-	int32_t m_b;
-	int32_t m_score; // lowest of the term freqs
-};
-
 void Matches::setQuery ( Query *q ) { 
 	//int32_t    qtableScores   [ MAX_QUERY_TERMS * 2 ];
 	reset();
@@ -339,9 +330,7 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 	// . now the link text
 	// . loop through each link text and it its matches
 	LinkInfo *info = xd->getLinkInfo1();	
-	// this is not the second pass, it is the first pass
-	bool secondPass = false;
- loop:
+
 	// loop through the Inlinks
 	Inlink *k = NULL;
 	for ( ; (k = info->getNextInlink(k)) ; ) {
@@ -390,15 +379,6 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 		if ( !addMatches( rt, rtlen, MF_RSSTITLE, xd->m_docId, niceness ) ) {
 			return false;
 		}
-	}
-
-	// now repeat for imported link text!
-	if ( ! secondPass ) {
-		// only do this once
-		secondPass = true;
-		// set it
-		info = *xd->getLinkInfo2();
-		if ( info ) goto loop;
 	}
 
 	// that should be it
@@ -819,13 +799,8 @@ bool Matches::addMatches( Words *words, Phrases *phrases, Sections *sections, Bi
 			continue;
 		}
 
-		// don't breech MAX_MATCHES_FOR_BIG_HACK
-		if ( m_numMatches < MAX_MATCHES_FOR_BIG_HACK ) {
-			continue;
-		}
-
-		log( "query: Exceed match buffer of %" INT32 " matches. docId=%" INT64 "",
-			 (int32_t)MAX_MATCHES_FOR_BIG_HACK, docId );
+		log( "query: Exceed match buffer of %" INT32 " matches. docId=%" INT64 "", (int32_t)MAX_MATCHES,
+			 docId );
 
 		break;
 	}

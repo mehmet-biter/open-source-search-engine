@@ -58,10 +58,6 @@ int main ( int argc , char *argv[] ) {
 	//	fprintf (stderr,"main::Mem init failed\n" ); return 1; }
 
 
-	// . set up shared mem now, only on udpServer2
-	// . will only set it up if we're the lowest hostId on this ip
-	//if ( ! g_udpServer2.setupSharedMem() ) {
-	//	log("main::SharedMem init failed" ); return 1; }
 	// plotter test
 	//g_stats.dumpGIF ();
 	//exit (0);

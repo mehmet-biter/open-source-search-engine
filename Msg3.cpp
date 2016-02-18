@@ -426,7 +426,7 @@ bool Msg3::readList  ( char           rdbId         ,
 	//	m_constrainKey -= (uint32_t)1;
 	KEYSET(m_constrainKey,m_endKey,m_ks);
 	if ( KEYNEG(m_constrainKey) )
-		KEYSUB(m_constrainKey,1,m_ks);
+		KEYSUB(m_constrainKey,m_ks);
 
 	// if m_endKey splits some keys that should be together, we need to
 	// decrease it so such a split doesn't happen. 
@@ -555,7 +555,7 @@ bool Msg3::readList  ( char           rdbId         ,
 		// . maps[fn]->getKey(lastPage) will return the LAST KEY
 		//   and maps[fn]->getOffset(lastPage) the length of the file
 		//if ( maps[fn]->getNumPages()!=p2) endKey -=(uint32_t)1;
-		if ( maps[fn]->getNumPages() != p2 ) KEYSUB(endKey2,1,m_ks);
+		if ( maps[fn]->getNumPages() != p2 ) KEYSUB(endKey2,m_ks);
 		// otherwise, if we're reading all pages, then force the
 		// endKey to virtual inifinite
 		//else endKey.setMax();
@@ -1217,7 +1217,7 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 		if ( KEYCMP(minKey,maps[fn]->getKeyPtr(m_endpg[i]),m_ks)!=0) 
 			continue;
 		//minKey += (uint32_t) 1;
-		KEYADD(minKey,1,m_ks);
+		KEYADD(minKey,m_ks);
 	}
 	// . we're done if we hit the end of all maps in the race
 	// . return the max end key
@@ -1251,14 +1251,14 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 		//minKey     += (uint32_t) 1;
 		//lastMinKey  = endKey;
 		KEYSET(minKey,endKey,m_ks);
-		KEYADD(minKey,1,m_ks);
+		KEYADD(minKey,m_ks);
 		KEYSET(lastMinKey,endKey,m_ks);
 	}
 	else {
 		//lastMinKey = minKey ;
 		//lastMinKey -= (uint32_t) 1;
 		KEYSET(lastMinKey,minKey,m_ks);
-		KEYSUB(lastMinKey,1,m_ks);
+		KEYSUB(lastMinKey,m_ks);
 	}
 	// it is now valid
 	lastMinKeyIsValid = 1;

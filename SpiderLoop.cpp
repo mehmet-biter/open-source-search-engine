@@ -1882,15 +1882,6 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 		}
 		// keep chugging
 		continue;
-		//if ( xd->m_doledbKey != *doledbKey ) continue;
-		// count it as processed
-		m_processed++;
-		// log it
-		if ( g_conf.m_logDebugSpider )
-			logf(LOG_DEBUG,"spider: we are already spidering %s "
-			     "lockkey=%"UINT64"",sreq->m_url,lockKeyUh48);
-		// all done, no lock granted...
-		return true;
 	}
 
 	// reset g_errno
@@ -1996,41 +1987,6 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 	// now do it. this returns false if it would block, returns true if it
 	// would not block. sets g_errno on error. it spiders m_sreq.
 	return spiderUrl2 ( );
-
-	// flag it so m_sreq does not "disappear"
-	m_msg12.m_gettingLocks = true;
-
-	// count it
-	m_processed++;
-
-	//if ( g_conf.m_logDebugSpider )
-	//	logf(LOG_DEBUG,"spider: getting lock for %s",m_sreq->m_url);
-
-	//
-	// . try to get the lock. assume it always blocks
-	// . it will call spiderUrl2 with sr when it gets a reply
-	// . if injecting, no need for lock! will return true for that!
-	//
-	if ( ! m_msg12.getLocks ( m_sreq->getUrlHash48() ,
-				  //m_sreq->m_probDocId,//UrlHash48(),
-				  m_sreq->m_url ,
-				  m_doledbKey ,
-				  collnum,
-				  sameIpWaitTime,
-				  maxSpidersOutPerIp,
-				  m_sreq->m_firstIp,
-				  NULL , // state
-				  NULL ) )  // callback
-		return false;
-	// no go
-	m_msg12.m_gettingLocks = false;
-	// it will not block if the lock was found in our m_lockCache!
-	return true;
-	// should always block now!
-	//char *xx=NULL;*xx=0;
-	// i guess we got it
-	//return spiderUrl2 ( );
-	//return true;
 }
 
 

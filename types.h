@@ -918,7 +918,7 @@ inline char KEYPOS ( char *k ) {
 	return 0;
 }
 
-inline void KEYADD ( char *k , int32_t add , char keySize ) {
+inline void KEYADD ( char *k , char keySize ) {
 	// posdb
 	if ( keySize == 18 ) { *((key144_t *)k) += (int32_t)1; return; }
 	if ( keySize == 12 ) { *((key96_t  *)k) += (int32_t)1; return; }
@@ -929,7 +929,7 @@ inline void KEYADD ( char *k , int32_t add , char keySize ) {
 	char *xx=NULL;*xx=0;
 }
 
-inline void KEYSUB ( char *k , int32_t add , char keySize ) {
+inline void KEYSUB ( char *k , char keySize ) {
 	if ( keySize == 18 ) { *((key144_t *)k) -= (int32_t)1; return; }
 	if ( keySize == 12 ) { *((key96_t  *)k) -= (int32_t)1; return; }
 	if ( keySize == 16 ) { *((key128_t *)k) -= (int32_t)1; return; }

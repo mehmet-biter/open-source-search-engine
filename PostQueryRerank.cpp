@@ -153,9 +153,6 @@ bool PostQueryRerank::set2 ( int32_t resultsWanted ) {
 	
 	// get space for host count table
 	m_hostCntTable.set( m_maxResultsToRerank );
-	
-	// get some space for dmoz table
-	m_dmozTable.set( m_maxResultsToRerank << 1 );
 
 	// alloc urls for pqrqttiu, pqrfsh and clustering
 	m_pageUrl = (Url *)mcalloc( sizeof(Url)*m_maxResultsToRerank,
@@ -556,15 +553,6 @@ bool PostQueryRerank::rerank ( ) {
 			msg20->m_pqr_factor_proximity = factor;
 		}
 
-		// . demote pages by the average of the scores of the
-		// . terms based upon what section of the doc they are in
-		// . mdw: proximity algo should obsolete this
-		//if(maxInSectionScore > 0)
-		//	score = rerankInSection( score,
-		//				 msg20->getInSectionScore(),
-		//				 maxInSectionScore);
-
-
 		// . demote pages which only have the query as a part of a
 		// . larger phrase
 		if ( maxDiversity != 0 ) {
@@ -928,74 +916,6 @@ rscore_t PostQueryRerank::rerankDatedbDate( rscore_t score,
 				       "publish date" );
 }
 
-// pqrprox
-// . demote pages by the average distance of query terms from
-// . one another in the document.  Lower score is better.
-/*
-rscore_t PostQueryRerank::rerankProximity( rscore_t score,
-				       float proximityScore,
-				       float maxScore) {
-	// . a -1 implies did not have any query terms
-	// . see Summary.cpp proximity algo
-	if ( proximityScore == -1 ) return 0;
-	if(m_si->m_pqr_demFactProximity <= 0) return score;
-	float factor = (// 1 -
-			(proximityScore/maxScore)) *
-		m_si->m_pqr_demFactProximity;
-	if ( factor <= 0 ) return score;
-	//return rerankAssignPenalty(score, 
-	//			   factor,
-	//			   "pqrprox",
-	//			   "proximity rerank");
-	// just divide the score by the proximityScore now
-
-	// ...new stuff...
-	if ( proximityScore == 0.0 ) return score;
-	float score2 = (float)score;
-	score2 /= proximityScore;
-	score2 += 0.5;
-	rscore_t newScore = (rscore_t)score2;
-	if(m_si->m_debug || g_conf.m_logDebugPQR )
-		logf( LOG_DEBUG, "query: pqr: result demoted "
-		      "from %.02f to %.02f becaose of proximity rerank",
-		      (float)score,(float)newScore);
-	return newScore;
-}
-*/
-
-// pqrinsec
-// . demote pages by the average of the score of the sections
-// . in which the query terms appear in.  Higher score is better.
-rscore_t PostQueryRerank::rerankInSection( rscore_t score,
-				       int32_t summaryScore,
-				       float maxScore) {
-	if(m_si->m_pqr_demFactInSection <= 0) return score;
-	float factor = ( 1 -
-			 (summaryScore/maxScore)) *
-		m_si->m_pqr_demFactInSection;
-	if ( factor <= 0 ) return score;
- 	return rerankAssignPenalty(score, 
- 				   factor,
- 				   "pqrsection",
- 				   "section rerank");
-}
-
-
-/*
-rscore_t PostQueryRerank::rerankSubPhrase( rscore_t score,
-				       float diversity,
-				       float maxDiversity) {
-	if(maxDiversity == 0) return score;
-	float factor = (1 - (diversity/maxDiversity)) *
-		m_si->m_pqr_demFactSubPhrase;
-	if ( factor <= 0 ) return score;
-	return rerankAssignPenalty(score, 
-				   factor,
-				   "pqrspd",
-				   "subphrase demotion");
-
-}
-*/
 
 bool PostQueryRerank::attemptToCluster ( ) {
 	// find results that should be clustered

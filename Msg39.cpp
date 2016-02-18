@@ -247,13 +247,6 @@ void Msg39::getDocIds2 ( Msg39Request *req ) {
 	// . it will send a reply when done
 	if ( ! controlLoop() ) return;
 
-	// error?
-	// if ( g_errno ) {
-	// 	log(LOG_LOGIC,"query: msg39: doDocIdSplitLoop: %s." , 
-	// 	    mstrerror(g_errno) );
-	// 	sendReply ( m_slot , this , NULL , 0 , 0 , true );
-	// 	return ; 
-	// }
 	// it might not have blocked! if all lists in tree and used no thread
 	// it will come here after sending the reply and destroying "this"
 	return;

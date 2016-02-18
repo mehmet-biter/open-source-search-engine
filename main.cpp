@@ -17,7 +17,6 @@
 #include "Hostdb.h"
 #include "Indexdb.h"
 #include "Posdb.h"
-#include "Cachedb.h"
 #include "Datedb.h"
 #include "Titledb.h"
 #include "Revdb.h"
@@ -72,7 +71,6 @@
 #include "sort.h"
 #include "RdbBuckets.h"
 #include "Test.h"
-#include "seo.h"
 #include "SpiderProxy.h"
 #include "HashTable.h"
 
@@ -130,19 +128,6 @@ bool isRecoveryFutile ( ) ;
 
 int copyFiles ( char *dstDir ) ;
 
-//////
-//
-// if seo.o is being linked to it needs to override these weak stubs:
-//
-//////
-void handleRequest8e(UdpSlot *, int32_t netnice ) __attribute__((weak));
-void handleRequest4f(UdpSlot *, int32_t netnice ) __attribute__((weak));
-void handleRequest95(UdpSlot *, int32_t netnice ) __attribute__((weak));
-
-// make the stubs here. seo.o will override them
-void handleRequest8e(UdpSlot *, int32_t netnice ) {return; }
-void handleRequest4f(UdpSlot *, int32_t netnice ) {return; }
-void handleRequest95(UdpSlot *, int32_t netnice ) {return; }
 
 char *getcwd2 ( char *arg ) ;
 
@@ -190,8 +175,6 @@ typedef enum {
 	ifk_installgbrcp ,
 	ifk_installconf ,
 	ifk_gendbs ,
-	ifk_installcat,
-	ifk_installnewcat,
 	ifk_genclusterdb ,
 	ifk_distributeC ,
 	ifk_installgb2 ,
@@ -202,14 +185,11 @@ typedef enum {
 	ifk_backuprestore ,
 	ifk_proxy_start ,
 	ifk_installconf2 ,
-	ifk_installcat2 ,
 	ifk_kstart ,
 	ifk_dstart ,
-	ifk_installnewcat2 ,
 	ifk_dumpmissing ,
 	ifk_removedocids ,
 	ifk_dumpdups ,
-	//ifk_install2,
 	ifk_tmpstart ,
 	ifk_installtmpgb ,
 	ifk_proxy_kstart ,
@@ -486,22 +466,6 @@ int main2 ( int argc , char *argv[] ) {
 			/*
 			"installconf2 [hostId]\n"
 			"\tlike above, but install hosts.conf and gbN.conf "
-			"to the secondary IPs.\n\n"
-
-			
-			"installcat [hostId]\n"
-			"\tlike above, but install just the catdb files.\n\n"
-
-			"installcat2 [hostId]\n"
-			"\tlike above, but install just the catdb files to "
-                        "the secondary IPs.\n\n"
-
-			"installnewcat [hostId]\n"
-			"\tlike above, but install just the new catdb files."
-			"\n\n"
-
-			"installnewcat2 [hostId]\n"
-			"\tlike above, but install just the new catdb files "
 			"to the secondary IPs.\n\n"
 
 			"backupcopy <backupSubdir>\n"
@@ -1621,38 +1585,6 @@ int main2 ( int argc , char *argv[] ) {
 		return install ( ifk_installconf2 , hostId );
 	}
 
-	// gb installcat
-	if ( strcmp ( cmd , "installcat" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installcat , hostId );
-	}
-
-	// gb installcat2
-	if ( strcmp ( cmd , "installcat2" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installcat2 , hostId );
-	}
-
-	// gb installnewcat
-	if ( strcmp ( cmd , "installnewcat" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installnewcat , hostId );
-	}
-
-	// gb installnewcat2
-	if ( strcmp ( cmd , "installnewcat2" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installnewcat2 , hostId );
-	}
-
 	// gb start [hostId]
 	if ( strcmp ( cmd , "start" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
@@ -2064,47 +1996,6 @@ int main2 ( int argc , char *argv[] ) {
 		true, //sendToHosts
 		false );// sendtoproxies
 	}
-
-	// gb startclassifier coll ruleset [hostId]
-	/*
-	if ( strcmp ( cmd , "startclassifier" ) == 0 ) {
-		int32_t hostId = 0;
-		char *coll;
-		char *ruleset;
-		char *siteListFile = NULL;
-		if ( cmdarg + 1 < argc ) coll = argv[cmdarg+1];
-		else return false;
-		if ( cmdarg + 2 < argc ) ruleset = argv[cmdarg+2];
-		else return false;
-		if ( cmdarg + 3 < argc ) hostId = atoi ( argv[cmdarg+3] );
-		if ( cmdarg + 4 < argc ) siteListFile = argv[cmdarg+4];
-		char classifierCmd[512];
-		if ( ! siteListFile )
-			sprintf(classifierCmd, "startclassifier=1&c=%s"
-					       "&ruleset=%s", coll, ruleset);
-		else
-			sprintf(classifierCmd, "startclassifier=1&c=%s"
-					       "&ruleset=%s&sitelistfile=%s",
-					       coll, ruleset, siteListFile );
-		return doCmd(classifierCmd , hostId , "admin/tagdb" ,
-			     true , //sendtohosts
-			     false );//sendtoproxies
-	}
-
-	// gb stopclassifier [hostId]
-	if ( strcmp ( cmd , "stopclassifier" ) == 0 ) {
-		char *coll;
-		if ( cmdarg + 1 < argc ) coll = argv[cmdarg+1];
-		else return false;
-		int32_t hostId = 0;
-		if ( cmdarg + 2 < argc ) hostId = atoi ( argv[cmdarg+2] );
-		char classifierCmd[512];
-		sprintf(classifierCmd, "stopclassifier=1&c=%s", coll );
-		return doCmd(classifierCmd , hostId , "admin/tagdb" ,
-			     true , //sendtohosts
-			     false );//sendtoproxies
-	}
-	*/
 
 	// gb [-h hostsConf] <hid>
 	// mainStart:
@@ -2675,10 +2566,6 @@ int main2 ( int argc , char *argv[] ) {
 	//	    g_hostdb.m_indexSplits);
 //#endif
 
-	// . set up shared mem now, only on udpServer2
-	// . will only set it up if we're the lowest hostId on this ip
-	//if ( ! g_udpServer2.setupSharedMem() ) {
-	//	log("db: SharedMem init failed" ); return 1; }
 	// the robots.txt db
 	//if ( ! g_robotdb.init() ) {
 	//	log("db: Robotdb init failed." ); return 1; }
@@ -2752,16 +2639,12 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! g_linkdb.init()     ) {
 		log("db: Linkdb init failed."   ); return 1; }
 
-	// if ( ! g_cachedb.init()     ) {
-	// 	log("db: Cachedb init failed."   ); return 1; }
-
 	// use sectiondb again for its immense voting power for detecting and
 	// removing web page chrome, categories, etc. only use if 
 	// CollectionRec::m_isCustomCrawl perhaps to save space.
 	if ( ! g_sectiondb.init()     ) {
 		log("db: Sectiondb init failed."   ); return 1; }
-	//if ( ! g_placedb.init()     ) {
-	//	log("db: Placedb init failed."   ); return 1; }
+
 	// now clean the trees since all rdbs have loaded their rdb trees
 	// from disk, we need to remove bogus collection data from teh trees
 	// like if a collection was delete but tree never saved right it'll
@@ -4145,112 +4028,6 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 			// execute it
 			system ( tmp );
 		}
-		else if ( installFlag == ifk_installcat ) {
-			// . copy catdb files to all hosts
-			// don't copy to ourselves
-			if ( h2->m_hostId == 0 )
-				continue;
-			/*
-			if ( h2->m_hostId == 0 ) {
-				sprintf(tmp,
-					"cp "
-					"content.rdf.u8 "
-					"structure.rdf.u8 "
-					"gbdmoz.structure.dat "
-					"gbdmoz.content.dat "
-					"%scatdb/",
-					h2->m_dir);
-				log(LOG_INIT,"admin: %s", tmp);
-				system ( tmp );
-				continue;
-			}
-			*/
-			sprintf(tmp,
-				"scp -p "
-				"%scatdb/content.rdf.u8 "
-				"%s:%scatdb/content.rdf.u8",
-				dir,
-				iptoa(h2->m_ip),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"scp -p "
-				"%scatdb/structure.rdf.u8 "
-				"%s:%scatdb/structure.rdf.u8",
-				dir,
-				iptoa(h2->m_ip),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"scp -p "
-				"%scatdb/gbdmoz.structure.dat "
-				"%s:%scatdb/gbdmoz.structure.dat",
-				dir,
-				iptoa(h2->m_ip),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"scp -p "
-				"%scatdb/gbdmoz.content.dat "
-				"%s:%scatdb/gbdmoz.content.dat",
-				dir,
-				iptoa(h2->m_ip),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-		}
-		else if ( installFlag == ifk_installnewcat ) {
-			// . copy catdb files to all hosts
-			// don't copy to ourselves
-			if ( h2->m_hostId == 0 ) continue;
-			sprintf(tmp,
-				"scp -p "
-				"%scatdb/content.rdf.u8.new "
-				"%s:%scatdb/content.rdf.u8.new",
-				dir,
-				iptoa(h2->m_ip),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"scp -p "
-				"%scatdb/structure.rdf.u8.new "
-				"%s:%scatdb/structure.rdf.u8.new",
-				dir,
-				iptoa(h2->m_ip),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"scp -p "
-				"%scatdb/gbdmoz.structure.dat.new "
-				"%s:%scatdb/gbdmoz.structure.dat.new",
-				dir,
-				iptoa(h2->m_ip),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"scp -p "
-				"%scatdb/gbdmoz.content.dat.new "
-				"%s:%scatdb/gbdmoz.content.dat.new",
-				dir,
-				iptoa(h2->m_ip),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"scp -p "
-				"%scatdb/gbdmoz.content.dat.new.diff "
-				"%s:%scatdb/gbdmoz.content.dat.new.diff",
-				dir,
-				iptoa(h2->m_ip),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-		}
 		else if ( installFlag == ifk_genclusterdb ) {
 			// . save old log now, too
 			char tmp2[1024];
@@ -4327,108 +4104,6 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 			log(LOG_INIT,"admin: %s", tmp);
 			system ( tmp );
 		}
-                // installcat2
-		else if ( installFlag == ifk_installcat2 ) {
-			// . copy catdb files to all hosts
-			// don't copy to ourselves
-			if ( h2->m_hostId == 0 ) continue;
-			sprintf(tmp,
-				"rcp "
-				"%scatdb/content.rdf.u8 "
-				"%s:%scatdb/content.rdf.u8",
-				dir,
-				iptoa(h2->m_ipShotgun),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"rcp "
-				"%scatdb/structure.rdf.u8 "
-				"%s:%scatdb/structure.rdf.u8",
-				dir,
-				iptoa(h2->m_ipShotgun),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"rcp "
-				"%scatdb/gbdmoz.structure.dat "
-				"%s:%scatdb/gbdmoz.structure.dat",
-				dir,
-				iptoa(h2->m_ipShotgun),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"rcp "
-				"%scatdb/gbdmoz.content.dat "
-				"%s:%scatdb/gbdmoz.content.dat",
-				dir,
-				iptoa(h2->m_ipShotgun),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			//system ( tmp );
-			//sprintf(tmp,
-			//	"rcp "
-			//	"%scatdb/gbdmoz.content.dat.diff "
-			//	"%s:%scatdb/gbdmoz.content.dat.diff",
-			//	dir,
-			//	iptoa(h2->m_ip),
-			//	h2->m_dir);
-			//log(LOG_INIT,"admin: %s", tmp);
-			//system ( tmp );
-		}
-                // installnewcat2
-		else if ( installFlag == ifk_installnewcat2 ) {
-			// . copy catdb files to all hosts
-			// don't copy to ourselves
-			if ( h2->m_hostId == 0 ) continue;
-			sprintf(tmp,
-				"rcp "
-				"%scatdb/content.rdf.u8.new "
-				"%s:%scatdb/content.rdf.u8.new",
-				dir,
-				iptoa(h2->m_ipShotgun),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"rcp "
-				"%scatdb/structure.rdf.u8.new "
-				"%s:%scatdb/structure.rdf.u8.new",
-				dir,
-				iptoa(h2->m_ipShotgun),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"rcp "
-				"%scatdb/gbdmoz.structure.dat.new "
-				"%s:%scatdb/gbdmoz.structure.dat.new",
-				dir,
-				iptoa(h2->m_ipShotgun),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"rcp "
-				"%scatdb/gbdmoz.content.dat.new "
-				"%s:%scatdb/gbdmoz.content.dat.new",
-				dir,
-				iptoa(h2->m_ipShotgun),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-			sprintf(tmp,
-				"rcp "
-				"%scatdb/gbdmoz.content.dat.new.diff "
-				"%s:%scatdb/gbdmoz.content.dat.new.diff",
-				dir,
-				iptoa(h2->m_ipShotgun),
-				h2->m_dir);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-		}
 	}
 	// return 0 on success
 	return 0;
@@ -4466,12 +4141,6 @@ bool registerMsgHandlers2(){
 	if ( ! g_udpServer.registerHandler(0x12,handleRequest12)) return false;
 
 	if ( ! registerHandler4  () ) return false;
-
-	// seo module handlers. this will just be stubs declared above
-	// if no seo module. the seo module is not part of the open source.
-	if(! g_udpServer.registerHandler(0x8e,handleRequest8e)) return false;
-	if(! g_udpServer.registerHandler(0x4f,handleRequest4f)) return false;
-	if(! g_udpServer.registerHandler(0x95,handleRequest95)) return false;
 
 	if(! g_udpServer.registerHandler(0x3e,handleRequest3e)) return false;
 	if(! g_udpServer.registerHandler(0x3f,handleRequest3f)) return false;
@@ -7506,7 +7175,7 @@ bool bucketstest ( char* dbname ) {
 			{char* xx = NULL; *xx = 0;}
 		KEYSET(key2,key1,keySize);
 		KEYSET(key1,list.getLastKey(),keySize);
-		KEYADD(key1,1,keySize);
+		KEYADD(key1,keySize);
 	}
 	if(rdbb.getNumKeys() > 0) {char* xx = NULL; *xx = 0;}
 
@@ -9709,7 +9378,7 @@ void dumpDatedb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTr
 	}
 
 	KEYSET(startKey,list.getLastKey(),16);
-	KEYADD(startKey,1,16);
+	KEYADD(startKey,16);
 	// watch out for wrap around
 	//if ( startKey < *(key_t *)list.getLastKey() ) return;
 	if ( KEYCMP(startKey,list.getLastKey(),16)<0 ) {
@@ -10456,8 +10125,8 @@ int injectFile ( char *filename , char *ips ,
 			gbsystem(cmd.getBufStart());
 			goto subloop;
 		}
-		exit(0);
 		log("cmd: done injecting archives for split %i",split);
+		exit(0);
 	}
 
 	bool isDelete = false;

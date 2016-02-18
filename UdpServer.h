@@ -161,12 +161,6 @@ class UdpServer {
 	// . his callback will be called with errno set to "errnum"
 	void sendErrorReply( UdpSlot *slot, int32_t errnum );
 
-	// . too many transactions going on?
-	// . this is just an estimate...
-	//int32_t getNumAvailSlots () { return MAX_UDP_SLOTS - m_topUsedSlot - 1; };
-
-	// an estimation as well
-	//int32_t getNumUsedSlots  () { return m_topUsedSlot + 1; };
 	int32_t getNumUsedSlots  () { return m_numUsedSlots; };
 
 	int32_t getNumUsedSlotsIncoming  () { return m_numUsedSlotsIncoming; };
@@ -227,13 +221,6 @@ class UdpServer {
 	//   or timed a slot out so it's callback should be called
 	bool readTimeoutPoll ( int64_t now ) ;
 
-	// how nice as a server are we?
-	//int32_t getNiceness ( ) { return m_niceness; };
-
-	// m_token should point to shared memory
-	//bool useSharedMem() ;
-	//bool setupSharedMem() ;
-
 	// . sets *s_token and *s_token2 to NULL
 	// . resets bits and bit counts on all big-reply slots so they
 	//   send dgrams or acks in attempt to get the newly available token
@@ -251,8 +238,6 @@ class UdpServer {
 	bool needBottom         () { return m_needBottom; }   
 
 	UdpSlot *getUdpSlotNum   ( int32_t  i ) { return &m_slots[i]; };
-	//bool   isEmpty         ( int32_t i  ) { return (m_keys[i].n0 == 0LL);};
-	//int32_t   getTopUsedSlot  (         ) { return m_topUsedSlot; };
 
 	// try calling makeCallback() on all slots
 	bool makeCallbacks_ass ( int32_t niceness );
@@ -364,9 +349,6 @@ class UdpServer {
 	// . TODO: make somewhat random cuz it's easy to spoof like it is now
 	int32_t         m_nextTransId;
 
-	// our niceness level
-	//int32_t         m_niceness;
-
 	// called when shutdown completes
 	void (*m_shutdownCallback )( void *state );
 	void  *m_shutdownState;
@@ -399,12 +381,8 @@ class UdpServer {
 
 	int32_t m_outstandingConverts;
 
-	// we now avoid malloc with these
-	//UdpSlot m_slots    [ MAX_UDP_SLOTS ];
 	// but alloc MAX_UDP_SLOTS of these in init so we don't blow the stack
 	UdpSlot *m_slots    ;
-	//key_t    m_keys     [ MAX_UDP_SLOTS ];
-	//int32_t     m_topUsedSlot;
 	int32_t     m_maxSlots;
 
 	// routines
@@ -415,8 +393,6 @@ class UdpServer {
 
 	// verified these are only called from within _ass routines that
 	// turn them interrupts off before calling this
-	//bool     isEmpty         ( UdpSlot *slot ) {
-	//	return isEmpty ( slot - m_slots ); };
 	UdpSlot *getUdpSlot      ( key_t k );
 
 	// . hash table for converting keys to slots

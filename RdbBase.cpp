@@ -5,7 +5,6 @@
 #include "Hostdb.h"
 #include "Tagdb.h"
 #include "Posdb.h"
-#include "Cachedb.h"
 #include "Datedb.h"
 #include "Titledb.h"
 #include "Sections.h"
@@ -551,10 +550,6 @@ bool RdbBase::setFiles ( ) {
 			log("gb: bad title filename of %s. Halting.",filename);
 			g_errno = EBADENGINEER;
 			return false;
-			// flag it
-			converting = true;
-			// for now, just use the primary id as the secondary id
-			id2 = id;
 		}
 		else if ( m_isTitledb ) { id2 = atol2 ( s + 1 , 3 ); s += 4; }
 		// don't add if already in there
@@ -1473,13 +1468,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		m_minToMerge = cr->m_linkdbMinFilesToMerge;
 		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: linkdb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
 	}
-	
-	if ( cr && m_rdb == g_cachedb.getRdb() )
-	{
-		m_minToMerge = 4;
-		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: cachedb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
-	}
-	
+
 	if ( cr && m_rdb == g_tagdb.getRdb() )
 	{
 		m_minToMerge = cr->m_tagdbMinFilesToMerge;

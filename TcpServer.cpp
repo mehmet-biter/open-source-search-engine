@@ -2329,54 +2329,6 @@ void TcpServer::recycleSocket ( TcpSocket *s ) {
 	// mdw... this now just destroys, baby, no more keep-alives
 	destroySocket ( s );
 	return;
-	// do not try to free m_tmpBuf
-	//if ( s->m_readBuf == s->m_tmpBuf ) s->m_readBuf = NULL;
-	//if ( s->m_sendBuf == s->m_tmpBuf ) s->m_sendBuf = NULL;
-	// always free read/send buffers
-	if ( s->m_readBuf ) {
-		mfree (s->m_readBuf, s->m_readBufSize,"TcpServer");
-	}
-
-	// always free the sendBuf 
-	if ( s->m_sendBuf ) {
-		mfree (s->m_sendBuf, s->m_sendBufSize,"TcpServer");
-	}
-
-	// always free the hostname
-	if ( s->m_hostname ) {
-		mfree( s->m_hostname, s->m_hostnameSize, "TcpSocket" );
-	}
-
-	// hey! there shouldn't be any should there? TODO! figure out.
-	// debug msg
-	//log("........... TcpServer recycling sock #%i\n",s->m_sd);
-	//if ( s->m_state ) log("TcpServer::recycleSocket: panic-callerData");
-	// NULLify all data in TcpSocket, except ip/port
-	s->m_callback          = NULL;
-	s->m_state             = NULL;
-	s->m_hostname          = NULL;
-	s->m_hostnameSize      = 0;
-	s->m_sendBuf           = NULL;
-	s->m_sendBufSize       = 0;
-	s->m_sendOffset        = 0;
-	s->m_totalSent         = 0;
-	s->m_totalToSend       = 0;
-	s->m_readBuf           = NULL;
-	s->m_readBufSize       = 0;
-	s->m_readOffset        = 0;
-	s->m_totalRead         = 0;
-	s->m_totalToRead       = 0;
-	s->m_tunnelMode        = 0;
-	//s->m_timeout           = 60*1000;
-	// boost from 10 mins to 1000 mins for downloading large json data files
-	s->m_timeout           = 1000*60*1000;
-	s->m_udpSlot           = NULL;
-	s->m_streamingMode     = false;
-	// keep it alive for other dialogs
-	s->m_sockState         = ST_AVAILABLE;
-	s->m_startTime         = gettimeofdayInMilliseconds();
-	s->m_waitingOnHandler  = false;
-	s->m_shutdownStart     = 0;
 }
 
 // . called by Loop::runLoop() every one second

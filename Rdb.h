@@ -380,7 +380,7 @@ class Rdb {
 	int32_t      m_dbnameLen;
 
 	bool      m_isCollectionLess;
-	// for g_cachedb, g_statsdb, etc.
+	// for g_statsdb, etc.
 	RdbBase *m_collectionlessBase;
 
 	//RdbCache  m_cache;

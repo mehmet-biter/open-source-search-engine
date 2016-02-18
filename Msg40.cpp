@@ -4609,20 +4609,7 @@ void hashExcerpt ( Query *q ,
 			if ( j > i ) {
 				// advance phrase length
 				wwlen += wlen[j-1] + wlen[j];
-				// . cut phrase short if too much punct between
-				//   the current word, j, and the last one, j-2
-				// . but allow for abbreviations or initials
-				//   of single letters, like 'harry s. truman'.
-				//   we do not want to break before 's.'
-				// . because the phrase "s. doesn't stand for 
-				//   anything." was unable to form. we only
-				//   got "s." and "doesn't stand for anything."
-				//   as possible gigabit candidates.
-				//if ( wlen[j-1] > 1 ) {
-				//	if ( wlen[j-1]    != 2   ) break;
-				//	if ( wp  [j-1][0] != '.' ) break;
-				//	if ( wlen[j-2]    >  1   ) break;
-				//}
+
 				// . we now allow most punct since it is 
 				//   filtered out above w/ hasPunct variable
 				// . this a little more than doubles the 
@@ -4640,38 +4627,12 @@ void hashExcerpt ( Query *q ,
 				//   becase we get much better gigabits, but
 				//   we need it as a speed saver...
 				if (wlen[j-1]>tg->m_topicMaxPunctLen) break;
-				// no phrasing across commas, etc.
-				/*
-				if ( wlen[j-1] == 2 ) {
-					// only allow "  " or ": " or ". "
-					if ( wp[j-1][1]!=' ' ) break;
-					if ( wp[j-1][0]!=' ' &&
-					     wp[j-1][0]!=':' &&
-					     wp[j-1][0]!='\'' && // beatles'
-					     // allow commas here, but we
-					     // remove any gigabits with commas
-					     // because we just use them to
-					     // cancel out bad gigabits.
-					     wp[j-1][0]!=',' &&
-					     wp[j-1][0]!='.'  ) break;
-					// . TODO: add in sgt. col. so that
-					//   stuff can be in a gigabit
-					// . only allow ". " if prev word was 
-					//   abbreviation.
-					if ( wp[j-1][0]=='.' &&
-					     j >= 2 &&
-					     wlen[j-2] > 3) break; // != 1
-				}
-				*/
+
 				// or if we just skipped the delimeter,
 				// we are not allowed to phrase across that
 				// if one was provided
 				if ( delimeter &&words.hasChar(j-1,delimeter)) 
 					break;
-				// make sure we could phrase across last word
-				//if ( wlen[j-1] > 1 && 
-				//   bits.getPunctuationBits(wp[j-1],wlen[j-1])
-				//   == 0 ) break;
 			}
 
 			//
@@ -4690,22 +4651,11 @@ void hashExcerpt ( Query *q ,
 				if ( wj->m_wpop == 0 ) wj->m_wpop = 1;
 			}
 
-			// adjust popularity
-			//gigabitPop = (gigabitPop* wj->m_wpop)/MAXPOP;
-			// watch our for overflow
-			//if ( gigabitPop <= 0 ) gigabitPop = 1.0/MAXPOP;
 			if ( wj->m_wpop < minPop )
 				minPop = wj->m_wpop;
-			// get lowest of scores
-			//if(scores && scores[j] > mm )	mm = scores[j];
 
-
-			// accumulate wordproxscores
-			//wordProxSum += wj->m_proxScore;
 			if ( wj->m_proxScore > wordProxMax )
 				wordProxMax = wj->m_proxScore;
-
-
 
 			// keep track of words
 			count++;

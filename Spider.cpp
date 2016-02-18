@@ -38,12 +38,6 @@
 
 void testWinnerTreeKey ( ) ;
 
-
-
-RdbTree *g_tree = NULL;
-
-SpiderRequest *g_sreq = NULL;
-
 int32_t g_corruptCount = 0;
 
 char s_countsAreValid = 1;

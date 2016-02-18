@@ -84,75 +84,6 @@ static void defaultCallbackWrapper ( void *state , UdpSlot *slot );
 void defaultCallbackWrapper ( void *state , UdpSlot *slot ) {
 }
 
-//#define SHMKEY  75
-//#define SHMKEY2 76
-//static void cleanup(int x);
-//int shmid;
-//int shmid2;
-
-//void cleanup( int x) {
-//	fprintf(stderr,"CALLED*****\n");
-//	shmctl(shmid, IPC_RMID, 0);
-//	exit(0);
-//}
-
-/*
-bool UdpServer::setupSharedMem() {
-	// clear out local slots
-	//s_local      = NULL;
-	//s_localTime  = 0;
-	// . let's create shared memory segment to hold the token slot ptr
-	// . only do this if we're the lowest #'d host on this machine
-	// . get other hosts with this ip
-	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
-		Host *h = g_hostdb.getHost (i);
-		if ( h->m_ip     != g_hostdb.getMyIp() ) continue;
-		if ( h->m_hostId <  g_hostdb.m_hostId    ) return true;
-	}
-	//for ( int32_t i = 0; i < 20; ++i) signal(i, cleanup);
-	// if we made it here, we should create the shared memory
-	//int shmid = shmget(SHMKEY,sizeof(UdpSlot *),0777|IPC_EXCL|IPC_CREAT);
-	shmid  = shmget(SHMKEY ,sizeof(UdpSlot *),0777|IPC_CREAT);
-	shmid2 = shmget(SHMKEY2,sizeof(UdpSlot *),0777|IPC_CREAT);
-	if ( shmid < 0 || shmid2 < 0 ) 
-		return log("udp:  setup: shmget: %s",mstrerror(errno));
-	//log("new shmid  is %"INT32"",shmid );
-	//log("new shmid2 is %"INT32"",shmid2);
-	// init to NULL
-	s_token     = (UdpSlot      **) shmat(shmid , 0, 0);
-	s_tokenTime = (uint32_t *) shmat(shmid2, 0, 0);
-	// ensure it's not NULL
-	if (!s_token    )return log("udp: setupSharedMem: ptr  is NULL");
-	if (!s_tokenTime)return log("udp: setupSharedMem: ptr2 is NULL");
-	// no sender to us has the token yet
-	*s_token     = NULL;
-	// set time to 0
-	*s_tokenTime = 0;
-	// success
-	return true;
-}	
-
-// . point s_token to shared mem set by process with lowest hostId on this ip
-// . sleep until we get the shared mem in case we're waiting for the init host
-bool UdpServer::useSharedMem() {
-	while ( 1 == 1 ) {
-		shmid  = shmget(SHMKEY ,sizeof(UdpSlot *),0777 );
-		shmid2 = shmget(SHMKEY2,sizeof(UdpSlot *),0777 );
-		// break sloop loop on success
-		if ( shmid >= 0 && shmid2 >= 0 ) break;
-		log("udp:  use: shmget: %s. sleeping.",mstrerror(errno));
-		sleep(1);
-	}
-	//log("shmid  is %"INT32"",shmid );
-	//log("shmid2 is %"INT32"",shmid2);
-	// success!
-	s_token     = (UdpSlot       **) shmat(shmid , 0, 0);
-	s_tokenTime = (uint32_t  *) shmat(shmid2, 0, 0);
-	// ensure it's not NULL
-	if ( ! s_token ) return log("udp: useSharedMem: ptr is NULL");
-	return true;
-}
-*/
 
 // now redine key_t as our types.h should have it
 #define key_t  u_int96_t
@@ -173,27 +104,6 @@ void UdpServer::reset() {
 	m_slots = NULL;
 	if ( m_buf ) mfree ( m_buf , m_bufSize , "UdpServer");
 	m_buf = NULL;
-	/*
-	// clear this
-	m_isShuttingDown = false;
-	// free send/read bufs 
-	for ( int32_t i = 0 ; i <= m_topUsedSlot ; i++ ) {
-		// skip empty nodes
-		if ( isEmpty(i) ) continue;
-		// get slot
-		UdpSlot *slot = &m_slots[i];
-		// . free bufs
-		// . this may NOT be ours to free!!
-		if ( slot->m_readBuf ) 
-			mfree ( slot->m_readBuf,slot->m_readBufSize,"Udp");
-		//slot->m_readBuf = NULL;
-		// . a multicast may own this sendBuf and be sending it over
-		//   2+ slots, so we should not free it!!!
-		//if ( slot->m_sendBuf ) 
-		//	mfree (slot->m_sendBuf,slot->m_sendBufAllocSize,"Udp");
-	}
-	// *s_token = NULL;
-	  */
 }
 
 UdpServer::UdpServer ( ) {
@@ -264,8 +174,6 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto, int32_t niceness,
 	m_numUsedSlotsIncoming   = 0;
 	// clear this
 	m_isShuttingDown = false;
-	// set up shared mem
-	//if ( ! useSharedMem() ) return false;
 	// . TODO: IMPORTANT: FIX this to read and save from disk!!!!
 	// . NOTE: only need to fix if doing incremental sync/storage??
 	m_nextTransId = 0;
@@ -296,16 +204,10 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto, int32_t niceness,
 	if( ! m_isDns &&
 	    RDBIDOFFSET +1 > m_proto->getMaxPeekSize() ) {
 		char *xx=NULL;*xx=0; }
-	// remember our level of niceness
-	//m_niceness = niceness;
-	// don't allow negatives for other transactions, that's unmasked
-	//if ( m_niceness < 0 ) m_niceness = 0;
 	// are we real live?
 	if ( niceness == -1 && g_isHot ) m_isRealTime = true;
 	else                             m_isRealTime = false;
-	// init slots array
-	//m_topUsedSlot = -1;
-	//memset ( m_keys , 0 , sizeof(key_t) * m_maxSlots );
+	
         // set up our socket
         m_sock  = socket ( AF_INET, SOCK_DGRAM , 0 );
 
@@ -454,7 +356,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto, int32_t niceness,
 
 	// log an innocent msg
 	//log ( 0, "udp: listening on port %hu with sd=%"INT32" and "
-	//      "niceness=%"INT32"", m_port, m_sock, m_niceness );
+	//      , m_port, m_sock );
 	log ( LOG_INIT, "udp: Listening on UDP port %hu with niceness=%"INT32" "
 	      "and fd=%i.", 
 	      m_port, niceness , m_sock );
@@ -983,8 +885,6 @@ UdpSlot *UdpServer::getBestSlotToSend ( int64_t now ) {
 	// . we set the hi bit in the score for non-resends so dgrams that 
 	//   are being resent take precedence
 	for ( UdpSlot *slot = m_head2 ; slot ; slot = slot->m_next2 ) {
-		// continue if slot empty
-		//if ( isEmpty(i) ) continue;
 		// get the ith slot
 		//slot = &m_slots[i];
 		//     slot->m_msgType != 0x00 ) continue;
@@ -2137,34 +2037,6 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 	if ( ++pass == 1 ) goto nextPass;	
 		
 	return numCalled;
-	// . call callbacks for slots that need it
-	// . caution: sometimes callbacks really delay us! like msg 0x20
-	// . well, for now comment this out again
-	/*
-	for ( int32_t i = 0 ; i <= m_topUsedSlot ; i++ ) {
-		// skip if empty
-		if ( isEmpty(i) ) continue;
-		// save msg 0x20's for last
-		if ( m_slots[i].m_msgType == 0x20 ) continue;
-		// pull out old g_errno code since the sigHandler cannot
-		// call callbacks
-		g_errno = m_slots[i].m_errno;
-		// then call it's callback
-		makeCallback_ass ( &m_slots[i] );
-	}
-	// pick up the msg 0x20's we saved for last
-	for ( int32_t i = 0 ; i <= m_topUsedSlot ; i++ ) {
-		// skip if empty
-		if ( isEmpty(i) ) continue;
-		// save msg 0x20's for last
-		if ( m_slots[i].m_msgType != 0x20 ) continue;
-		// pull out old g_errno code since the sigHandler cannot
-		// call callbacks
-		g_errno = m_slots[i].m_errno;
-		// then call it's callback
-		makeCallback_ass ( &m_slots[i] );
-	}
-	*/
 }
 
 
@@ -2714,8 +2586,6 @@ void UdpServer::timePoll ( ) {
 	//if ( g_conf.m_giveupOnDeadHosts ) timeoutDeadHosts ( );
 	// try shutting down
 	//if ( m_isShuttingDown ) tryShuttingDown ( true );
-	// bail if no slots in use
-	//if ( m_topUsedSlot < 0 ) return;
 	if ( ! m_head2 ) return;
 	// debug msg
 	//if ( g_conf.m_logDebugUdp ) log("enter timePoll");
@@ -2805,8 +2675,6 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 			    (uint64_t)slot->m_timeout,
 			    slot->m_sentBitsOn ,
 			    slot->m_readAckBitsOn ) ;
-		// skip empties
-		//if ( isEmpty(i) ) continue;
 		// get the slot
 		//UdpSlot *slot = &m_slots[i];
 		// if the reading is completed, but we haven't generated a
@@ -3372,10 +3240,6 @@ void UdpServer::freeUdpSlot_ass ( UdpSlot *slot ) {
 		addKey ( ptr->m_key , ptr );
 		if ( ++i >= m_numBuckets ) i = 0;		
 	}
-	// was it top? if so, fix it
-	//if ( i >= m_topUsedSlot ) 
-	//	while ( m_topUsedSlot >= 0 && isEmpty(m_topUsedSlot) ) 
-	//		m_topUsedSlot--;
 	// if we turned 'em off then turn 'em back on
 	if ( flipped ) interruptsOn();
 }

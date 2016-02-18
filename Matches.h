@@ -18,7 +18,6 @@
 // . i raised MAX_MATCHES to 3000 for huge UOR queries made in SearchInput.cpp
 //   from facebook interests
 #define MAX_MATCHES              3000
-#define MAX_MATCHES_FOR_BIG_HACK 3000
 
 #define MAX_MATCHGROUPS 300
 
@@ -131,7 +130,7 @@ class Matches {
 				  bool   allowPunctInPhrase = true ) ;
 
 	// how many words matched a rawTermId?
-	Match  m_matches[MAX_MATCHES_FOR_BIG_HACK];
+	Match  m_matches[MAX_MATCHES];
 	int32_t   m_numMatches;
 	//int32_t   m_numNegTerms;
 

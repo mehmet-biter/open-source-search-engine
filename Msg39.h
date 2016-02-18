@@ -244,7 +244,6 @@ private:
 	bool m_allocedTree;
 	int64_t m_ddd;
 	int64_t m_dddEnd;
-	bool doDocIdSplitLoop();
 
 	// . we hold our IndexLists here for passing to PosdbTable
 	// . one array for each of the tiers

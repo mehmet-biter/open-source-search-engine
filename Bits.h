@@ -176,8 +176,6 @@ class Bits {
 	// get bits for the ith word
 	wbit_t getAlnumBits ( int32_t i , wbit_t prevBits );
 
-	// get bits for the ith word
-	wbit_t getPunctuationBits  ( char *s , int32_t slen ) ;
 };
 
 #endif

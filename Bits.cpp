@@ -113,7 +113,6 @@ bool Bits::set ( Words *words , char titleRecVersion , int32_t niceness , char *
 			// . the curved quote in utf8 is 3 bytes long and with
 			//   a space before it, was causing issues here!
 			bits= D_CAN_PAIR_ACROSS;
-			//bits = getPunctuationBits(w[i],wlens[i]);
 		}
 		// now everybody has a period before them since i don't
 		// want "project S" to phrase to "projects" or
@@ -317,103 +316,6 @@ wbit_t Bits::getAlnumBits ( int32_t i , wbit_t prevBits ) {
 	if ( i <= 1 ) return bits | D_CAN_START_PHRASE;
 
 	return bits;
-}
-
-// TODO: fuckin' ms frontpage puts int32_t sequences of spaces
-//       between words that are next to each other
-wbit_t Bits::getPunctuationBits ( char *s , int32_t len ) {
-
-	uint8_t cs;
-	if ( len != 2 ) goto tryLen1;
-
-	if (s[0]==',' && (s[1]=='\n' || s[1]==' ')) return D_CAN_PAIR_ACROSS;
-	if (s[0]=='/' && s[1]=='~')                 return D_CAN_PAIR_ACROSS ;
-	cs = getUtf8CharSize ( s );
-	// allow double spaces for version 6 or more
-	if ( is_wspace_utf8(s) && is_wspace_utf8(s+cs) ) 
-		return D_CAN_PAIR_ACROSS;
-	if (is_wspace_utf8(s+cs) && is_punct_utf8(s)) {
-		// switch/case is slow b-tree thing! stop it!
-		if ( s[0] == '?' ) return 0;
-		if ( s[0] == ';' ) return 0;
-		if ( s[0] == '{' ) return 0;
-		if ( s[0] == '}' ) return 0;
-		if ( s[0] == '<' ) return 0;
-		if ( s[0] == '>' ) return 0;
-		//switch ((wbit_t)s[0]) {
-		//case '!': return D_CAN_PAIR_ACROSS; // "Yahoo! games"
-		//case '.': return 0;  // initials!  "I. B. M."
-		//UTF8?case 171: return 0;  // <<  left shift operator
-		//UTF8?case 187: return 0;  // >>  right shift operator
-		//UTF8?case 191: return 0;  // upsidedown question mark
-		//UTF8?case 161: return 0;  // upsidedown exclamation point
-		return D_CAN_PAIR_ACROSS;
-	}
-	if (is_wspace_utf8(s) && is_punct_utf8(s+cs)) {
-		// switch/case is slow b-tree thing! stop it!
-		if ( s[cs] == '?' ) return 0;
-		if ( s[cs] == ';' ) return 0;
-		if ( s[cs] == '{' ) return 0;
-		if ( s[cs] == '}' ) return 0;
-		if ( s[cs] == '<' ) return 0;
-		if ( s[cs] == '>' ) return 0;
-		if ( s[cs] == '!' ) return 0;
-		//UTF8?case 171: return 0;  // <<  left shift operator
-		//UTF8?case 187: return 0;  // >>  right shift operator
-		//UTF8?case 191: return 0;  // upsidedown question mark
-		//UTF8?case 161: return 0;  // upsidedown exclamation point
-		return D_CAN_PAIR_ACROSS;
-	}
-	return 0;
-
- tryLen1:
-
-	if (len != 1) goto tryLen3;
-
-	// switch/case is slow b-tree thing! stop it!
-	if ( s[0] == '?' ) return 0;
-	if ( s[0] == ';' ) return 0;
-	if ( s[0] == '{' ) return 0;
-	if ( s[0] == '}' ) return 0;
-	if ( s[0] == '<' ) return 0;
-	if ( s[0] == '>' ) return 0;
-	if ( s[0] == '!' ) return 0;
-	//UTF8?case 171: return 0;  // <<  left shift operator
-	//UTF8?case 187: return 0;  // >>  right shift operator
-	//UTF8?case 191: return 0;  // upsidedown question mark
-	//UTF8?case 161: return 0;  // upsidedown exclamation point
-	return D_CAN_PAIR_ACROSS;
-
-	// we can pair across:
-	// "://"
-	// " , "
-	// " - "
-	// " & "
-	// " + "
- tryLen3:
-
-	//
-	// good place to check for ascii spaces...
-	//
-
-	// pair across any number of spaces, it will only show up as one
-	// space in html and Microsoft Front Page separates lines by a 
-	// bunch of spaces
-	if ( is_wspace_a(s[0]) && is_wspace_a(s[1]) && is_wspace_a(s[2]) ) {
-		int32_t k = 3;
-		while ( k < len ) if ( ! is_wspace_a(s[k++] ) ) return 0;
-		return D_CAN_PAIR_ACROSS;
-	}
-	if (len != 3) return 0;
-	if (s[0]==':' && s[1]=='/'&&s[2]=='/')return D_CAN_PAIR_ACROSS;
-	if ( is_wspace_a(s[0]) && is_wspace_a(s[2]) ) 
-		switch (s[1]) {
-		case ',': return D_CAN_PAIR_ACROSS;
-		case '-': return D_CAN_PAIR_ACROSS;
-		case '+': return D_CAN_PAIR_ACROSS;
-		case '&': return D_CAN_PAIR_ACROSS;
-		}
-	return 0;
 }
 
 //
