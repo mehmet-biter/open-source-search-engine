@@ -199,8 +199,6 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto, int32_t niceness,
 	if( ! m_isDns &&
 	    RDBIDOFFSET +1 > m_proto->getMaxPeekSize() ) {
 		char *xx=NULL;*xx=0; }
-	// are we real live?
-	m_isRealTime = false;
 	
         // set up our socket
         m_sock  = socket ( AF_INET, SOCK_DGRAM , 0 );

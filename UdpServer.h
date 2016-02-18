@@ -235,12 +235,7 @@ class UdpServer {
 	bool makeCallbacks_ass2( int32_t niceness );
 
 	// return true if we turned them off, false if we did not
-	bool interruptsOff() {
-		if ( m_isRealTime && g_interruptsOn && ! g_inSigHandler ) {
-			g_loop.interruptsOff();
-			return true;
-		}
-		return false; };
+	bool interruptsOff() { return false; }
 
 	void interruptsOn() { g_loop.interruptsOn(); };
 
@@ -366,9 +361,6 @@ class UdpServer {
 	int32_t   m_msg2csInWaiting;
 	int32_t   m_msg0csInWaiting;
 	int32_t   m_msg0sInWaiting;
-
-	// do we live on interrupts?
-	bool   m_isRealTime;
 
 	int32_t m_outstandingConverts;
 
