@@ -64,6 +64,10 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 	int inBadTags = 0;
 	int capCount = 0;
 
+	char *lastPunct = NULL;
+	unsigned char lastPunctSize = 0;
+	int samePunctCount = 0;
+
 	int dotCount = 0; // store last encountered total consecutive dots
 	char* dotPrevChar = NULL; // store char before dot which is not a space
 
@@ -236,6 +240,10 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 			}
 		}
 
+		/// @todo ALC configurable maxSamePunctCount so we can tweak this as needed
+		const int maxSamePunctCount = 5;
+		char *lastEllipsis = NULL;
+
 		// assume filters out to the same # of chars
 		for ( ; p < pend; p += cs ) {
 			// get size
@@ -262,6 +270,58 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 
 			// skip unwanted character
 			if ( isUtf8UnwantedSymbols( p ) ) {
+				continue;
+			}
+
+
+			bool resetPunctCount = true;
+			if ( is_punct_utf8( p ) ) {
+				if ( ( cs == lastPunctSize) && ( memcmp(lastPunct, p, cs) == 0 ) ) {
+					resetPunctCount = false;
+					++samePunctCount;
+				}
+			}
+
+			if ( resetPunctCount ) {
+				if (samePunctCount >= maxSamePunctCount) {
+					f -= (maxSamePunctCount);
+
+					bool addEllipsis = false;
+					if ( lastEllipsis ) {
+						// if all from f to last ellipsis are punctuation, skip to last ellipsis
+						for ( char *c = lastEllipsis + 1; c < f; ++c) {
+							if ( is_alnum_utf8( c ) ) {
+								addEllipsis = true;
+								break;
+							}
+						}
+
+						if ( !addEllipsis ) {
+							f = lastEllipsis;
+						}
+					} else {
+						addEllipsis = true;
+					}
+
+					if (addEllipsis) {
+						if ( f != fstart && *(f - 1) != ' ' ) {
+							*f++ = ' ';
+						}
+
+						lastSpace = true;
+						gbmemcpy ( f , "... " , 4 );
+						f += 4;
+
+						lastEllipsis = f;
+					}
+				}
+
+				lastPunct = p;
+				lastPunctSize = cs;
+				samePunctCount = 0;
+			}
+
+			if ( samePunctCount >= maxSamePunctCount ) {
 				continue;
 			}
 

@@ -745,7 +745,8 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 	int32_t b = matchWordNum + m->m_numWords ;
 	int32_t endQuoteWordNum = -1;
 	int32_t numTagsCrossed = 0;
-	for ( ; b <= nw; b++ ){
+
+	for ( ; b <= nw; b++ ) {
 		if ( b == nw ) {
 			break;
 		}
@@ -758,8 +759,8 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 			endQuoteWordNum = b;
 		}
 
-		// don't include any dead zone, those are already-used samples		
-		if ( bb[b]&D_USED ) {
+		// don't include any dead zone, those are already-used samples
+		if ( bb[b] & D_USED ) {
 			break;
 		}
 
@@ -796,7 +797,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 			}
 		}
 	}
-	
+
 	// don't end on a lot of punct words
 	if ( b > matchWordNum && !wids[b-1]){
 		// remove more than one punct words. if we're ending on a quote

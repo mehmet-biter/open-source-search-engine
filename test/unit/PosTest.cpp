@@ -154,6 +154,44 @@ TEST( PosTest, FilterTags ) {
 	}
 }
 
+TEST( PosTest, FilterSamePunct ) {
+	char *input_strs[] = {
+		"| ADAM RASMUSSON                                 |                       $40.00 |\n"
+		"---------------------------------------------------------------------------------\n"
+		"| BRIAN AUSTIN                                   |                       $40.00 |\n"
+		"---------------------------------------------------------------------------------\n"
+		"| DAN IALACCI                                    |                       $40.00 |\n",
+
+	    "| ADAM RASMUSSON                                 |                       $40.00 |"
+		"+------------------------------------------------+------------------------------+"
+		"| BRIAN AUSTIN                                   |                       $40.00 |"
+		"+------------------------------------------------+------------------------------+"
+		"| DAN IALACCI                                    |                       $40.00 |"
+	};
+
+	const char *expected_output[] = {
+	    "| ADAM RASMUSSON | $40.00 | ... | BRIAN AUSTIN | $40.00 | ... | DAN IALACCI | $40.00 | ",
+	    "| ADAM RASMUSSON | $40.00 |+ ... +| BRIAN AUSTIN | $40.00 |+ ... +| DAN IALACCI | $40.00 |"
+	};
+
+	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
+			   sizeof( expected_output ) / sizeof( expected_output[0] ) );
+
+	size_t len = sizeof( input_strs ) / sizeof( input_strs[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+		Words words;
+		Pos pos;
+		char buf[MAX_BUF_SIZE];
+
+		ASSERT_TRUE( words.set( input_strs[i], true, 0 ) );
+
+		int32_t len = pos.filter( &words, 0, -1, true, buf, buf + 180 );
+
+		EXPECT_STREQ( expected_output[i], buf );
+		EXPECT_EQ( strlen( expected_output[i] ), len );
+	}
+}
+
 TEST( PosTest, DecodeHTMLEntities ) {
 	char *input_strs[] = {
 		"abc &gt; efg",

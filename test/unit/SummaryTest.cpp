@@ -18,9 +18,9 @@
 #define MAX_BUF_SIZE 1024
 #define HTML_FORMAT "<html><head>%s</head><body>%s</body></html>"
 
-static void generateSummary(Summary *summary, char *htmlInput, char *queryStr, char *urlStr) {
+static void generateSummary(Summary &summary, char *htmlInput, char *queryStr, char *urlStr) {
 	Xml xml;
-	ASSERT_TRUE(xml.set(html, strlen(htmlInput), 0, 0, CT_HTML));
+	ASSERT_TRUE(xml.set(htmlInput, strlen(htmlInput), 0, 0, CT_HTML));
 
 	Words words;
 	ASSERT_TRUE(words.set(&xml, true));
@@ -41,6 +41,8 @@ static void generateSummary(Summary *summary, char *htmlInput, char *queryStr, c
 	ASSERT_TRUE(query.set2(queryStr, langEnglish, true));
 
 	LinkInfo linkInfo;
+	memset ( &linkInfo , 0 , sizeof(LinkInfo) );
+	linkInfo.m_lisize = sizeof(LinkInfo);
 
 	Title title;
 	ASSERT_TRUE(title.setTitle(&xml, &words, 80, &query, &linkInfo, &url, NULL, 0, CT_HTML, langEnglish, 0));
@@ -58,26 +60,27 @@ static void generateSummary(Summary *summary, char *htmlInput, char *queryStr, c
 	summary.set(&xml, &words, &sections, &pos, &query, NULL, 180, 3, 3, 180, &url, &matches, title.getTitle(), title.getTitleLen());
 }
 
-TEST (SummaryTest, Punctuation) {
+TEST (SummaryTest, StripSamePunct) {
 	const char *body =
 	   "<pre>"
-	   "---------------------------------------------------------------------------------"
-	   "|                      Name                      |       Total Donations        |"
-	   "---------------------------------------------------------------------------------"
-	   "| JENNI STANLEY                                  |                       $10.00 |"
-	   "---------------------------------------------------------------------------------"
-	   "| CANDRA BUDGE                                   |                       $22.00 |"
-	   "---------------------------------------------------------------------------------"
-	   "| JESSE NICLEY                                   |                       $34.00 |"
-	   "---------------------------------------------------------------------------------"
-	   "| SHARON YOKLEY                                  |                       $45.00 |"
-	   "---------------------------------------------------------------------------------"
+	   "---------------------------------------------------------------------------------\n"
+	   "|                      Name                      |       Total Donations        |\n"
+	   "---------------------------------------------------------------------------------\n"
+	   "| JENNI STANLEY                                  |                       $10.00 |\n"
+	   "---------------------------------------------------------------------------------\n"
+	   "| CANDRA BUDGE                                   |                       $22.00 |\n"
+	   "---------------------------------------------------------------------------------\n"
+	   "| JESSE NICLEY                                   |                       $34.00 |\n"
+	   "---------------------------------------------------------------------------------\n"
+	   "| SHARON YOKLEY                                  |                       $45.00 |\n"
+	   "---------------------------------------------------------------------------------\n"
 	   "</pre>";
 
 	char input[MAX_BUF_SIZE];
 	std::sprintf(input, HTML_FORMAT, "", body);
 
+	Summary summary;
 	generateSummary(summary, input, "jesse budge", "http://www.example.com/");
 
-	logf(LOG_INFO, "summary='%.*s'", summary.getSummaryLen(), summary.getSummary());
+	EXPECT_STREQ("CANDRA BUDGE | $22.00 | ... | JESSE NICLEY | $34.00 ...", summary.getSummary());
 }
