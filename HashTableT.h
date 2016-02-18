@@ -6,7 +6,6 @@
 #include "Mem.h"     // for mcalloc and mmalloc
 #include "SafeBuf.h"
 #include "types.h"
-using namespace std;
 
 #define HT_BUF_SIZE (4*1024)
 
