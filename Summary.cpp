@@ -118,12 +118,6 @@ bool Summary::setFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int3
 	return false;
 }
 
-//////////////////////////////////////////////////////////////////
-//
-// THE NEW SUMMARY GENERATOR
-//
-//////////////////////////////////////////////////////////////////
-
 // returns false and sets g_errno on error
 bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q,
                      int64_t *termFreqs, int32_t maxSummaryLen,  int32_t maxNumLines,
@@ -143,7 +137,7 @@ bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *
 			s_flag = 0;
 			log("query: Warning. "
 			    "Max summary excerpt length decreased to "
-			    "%"INT32" chars because max summary excerpts and "
+			    "%" INT32" chars because max summary excerpts and "
 			    "max summary length are too big.",
 			    maxNumCharsPerLine);
 		}
@@ -154,7 +148,7 @@ bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *
 	// . leave room for tailing \0
 	if ( maxSummaryLen >= MAX_SUMMARY_LEN ) {
 		g_errno = EBUFTOOSMALL;
-		return log("query: Summary too big to hold in buffer of %"INT32" bytes.",(int32_t)MAX_SUMMARY_LEN);
+		return log("query: Summary too big to hold in buffer of %" INT32" bytes.",(int32_t)MAX_SUMMARY_LEN);
 	}
 
 	// do not overrun the final*[] buffers
@@ -236,7 +230,7 @@ bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *
 			if ( termFreqs ) {
 				tf = termFreqs[i];
 			}
-			log("sum: u=%s wordWeights[%"INT32"]=%f tf=%"INT64"", f->m_url,i,m_wordWeights[i],tf);
+			log("sum: u=%s wordWeights[%" INT32"]=%f tf=%" INT64"", f->m_url,i,m_wordWeights[i],tf);
 		}
 	}
 
@@ -370,7 +364,7 @@ bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *
 			char *xp = buf;
 			if ( i == 0 )
 				log (LOG_WARN,"=-=-=-=-=-=-=-=-=-=-=-=-=-=-=");
-			sprintf(xp, "score=%08"INT32" a=%05"INT32" b=%05"INT32" ",
+			sprintf(xp, "score=%08" INT32" a=%05" INT32" b=%05" INT32" ",
 				(int32_t)score,(int32_t)a,(int32_t)b);
 			xp += gbstrlen(xp);
 			for ( int32_t j = a; j < b; j++ ){
@@ -387,7 +381,7 @@ bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *
 				}
 				//p += gbstrlen(p);
 				if ( s == 0 ) continue;
-				sprintf ( xp ,"(%"INT32")",s);
+				sprintf ( xp ,"(%" INT32")",s);
 				xp += gbstrlen(xp);
 			}
 			log (LOG_WARN,"query: summary: %s", buf);
@@ -406,9 +400,9 @@ bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *
 			  //Sections *ss = matches->m_matches[i].m_sections;
 			  //if ( ss->m_numSections <= 0 ) ss = NULL;
 			  //len=pos->filter(bufPtr, bufPtrEnd, ww, a, b, NULL);
-			  //log(LOG_WARN,"summary: %"INT32") %s - %"INT64"",i,bufPtr, 
+			  //log(LOG_WARN,"summary: %" INT32") %s - %" INT64"",i,bufPtr,
 			  //score);
-			  log(LOG_WARN,"summary: %"INT32") %s - %"INT64"",i,bufPtr, 
+			  log(LOG_WARN,"summary: %" INT32") %s - %" INT64"",i,bufPtr,
 			  score);
 			*/
 
@@ -436,7 +430,7 @@ bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *
 		// retire the query words in the winning summary
 
 		
-		//log( LOG_WARN,"summary: took %"INT64" ms to finish getbestwindo",
+		//log( LOG_WARN,"summary: took %" INT64" ms to finish getbestwindo",
 		//    gettimeofdayInMilliseconds() - stget );
 
 
@@ -456,7 +450,7 @@ bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *
 		// this should be impossible
 		if ( maxa > ww->m_numWords || maxb > ww->m_numWords ) {
 			log ( LOG_WARN,"query: summary starts or ends after "
-			      "document is over! maxa=%"INT32" maxb=%"INT32" nw=%"INT32"",
+			      "document is over! maxa=%" INT32" maxb=%" INT32" nw=%" INT32"",
 			      maxa, maxb, ww->m_numWords );
 			maxa = ww->m_numWords - 1;
 			maxb = ww->m_numWords;
@@ -909,7 +903,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 
 		// print the score, "t"
 		if ( g_conf.m_logDebugSummary ) {
-			xp.safePrintf("(%"INT32")",t);
+			xp.safePrintf("(%" INT32")",t);
 		}
 
 		// count the alpha words we got
@@ -978,7 +972,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 		score += t;
 
 		if ( g_conf.m_logDebugSummary ) {
-			xp.safePrintf ("[%"INT32"]{qwn=%"INT32",ww=%f}",t,qwn,
+			xp.safePrintf ("[%" INT32"]{qwn=%" INT32",ww=%f}",t,qwn,
 				       m_wordWeights[qwn]);
 		}
 
@@ -1028,7 +1022,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 
 	// show it
 	if ( g_conf.m_logDebugSummary ) {
-		log(LOG_DEBUG, "sum: score=%08"INT32" prescore=%08"INT32" a=%05"INT32" b=%05"INT32" %s",
+		log(LOG_DEBUG, "sum: score=%08" INT32" prescore=%08" INT32" a=%05" INT32" b=%05" INT32" %s",
 		     (int32_t)score,oldScore,(int32_t)a,(int32_t)b,
 		     xp.getBufStart());
 	}

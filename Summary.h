@@ -17,8 +17,8 @@
 // . stop summary line on space, not non-alnum (no breaking on apostrophe)
 // . don't highlight stop words????
 
-#ifndef _SUMMARY_H_
-#define _SUMMARY_H_
+#ifndef SUMMARY_H_
+#define SUMMARY_H_
 
 #include "gb-include.h"
 
