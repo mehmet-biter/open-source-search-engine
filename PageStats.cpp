@@ -136,32 +136,18 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      "<td>%"INT64"</td></tr>\n"
 			      "<tr class=poo><td>max single alloc by</td>"
 			      "<td>%s</td></tr>\n" 
-
-			      // "<tr class=poo><td>shared mem used</td>"
-			      // "<td>%"INT64"</td></tr>\n"
-
 			      "<tr class=poo><td># out of memory errors</td>"
 			      "<td>%"INT32"</td></tr>\n"
 
 			      "<tr class=poo><td>swaps</td>"
 			      "<td>%"INT64"</td></tr>\n"
-
-			      // "<tr class=poo><td>"
-			      // "collections swapped out"
-			      // "</td>"
-			      // "<td>%"INT32"</td></tr>\n" 
-
 			      ,
-			      //"<tr class=poo><td>num alloc chunks</td>
-			      //<td>%"INT32"</td></tr>\n",
 			      g_mem.getMaxAlloc(),
 			      g_mem.getMaxAllocBy() ,
 
-			      //g_mem.m_sharedUsed,
 			      g_mem.m_outOfMems,
 
-			      (int64_t)ru.ru_nswap// idrss,
-			      //g_collectiondb.m_numCollsSwappedOut
+			      (int64_t)ru.ru_nswap
 			      ); 
 		p.safePrintf (
 			      "<tr class=poo><td><b>current allocations</b>"

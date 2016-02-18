@@ -86,17 +86,7 @@ bool Wiki::loadText ( int32_t fileSize ) {
 	sprintf(ff2, "%swikititles.txt.part2", g_hostdb.m_dir);
 	log(LOG_INFO,"wiki: Loading %s",ff2);
 	if ( ! sb.catFile(ff2) ) return false;
-	
 
-        //int fd1 = open ( ff1 , O_RDONLY );
-	// read in whole thing
-	//char *buf = (char *)mmalloc ( size + 1 , "wiki" );
-	//if ( ! buf ) return false;
-	//int32_t n = read ( fd1 , buf , size );
-	//close ( fd1 );
-	//if ( n != size ) { g_errno = EBADENGINEER; return false; }
-	// null terminate
-	//buf[size] = '\0';
 	sb.pushChar('\0');
 	// should not have reallocated too much
 	if ( sb.length() + 100 < sb.m_capacity ) { char *xx=NULL;*xx=0; }
@@ -128,24 +118,6 @@ bool Wiki::loadText ( int32_t fileSize ) {
 		// same for all stop words i guess...
 		int32_t start = 0;
 
-		//if ( nw >= 2 && w.m_wordIds[0] == 3522767639246570644LL &&
-		//     w.m_wordIds[1] == -943426581783550057LL )
-		//	log("poo"); // hashfast32 = 2117103295
-
-		// this was letting "To_bell_the_cat" through as
-		// "bell_the_cat" and messing up "To_be_or_not_to_be"
-		/*
-		for (  ; start < nw ; start++ ) {
-			// skip punct stuff
-			if ( w.getWordId(start) == 0LL ) continue;
-			// skip query stop words
-			// why? messes up "to be or not to be"
-			if ( w.isQueryStopWord(start) ) continue;
-			// ok, we got a good starter word
-			break;
-		}
-		*/
-
 		// if no words, bail
 		if ( start >= nw ) continue;
 		// remove last words if not alnum
@@ -154,16 +126,7 @@ bool Wiki::loadText ( int32_t fileSize ) {
 		if ( start >= nw ) continue;
 		// skip this line if no words
 		if ( nw <= 0 ) continue;
-		// if begins with upper/lower and ends with lower/upper, skip
-		// don't skip because i still want it for gigabits for
-		// "point-in-time" "real-time" etc. common phrases.
-		//char flag = 0;
-		//if ( w.isCapitalized(start) && ! w.isCapitalized(nw-1) &&
-		//     // fix "To_be_or_not_to_be"
-		//     ! w.isStopWord(nw-1) ) 
-		//	flag = 1;
-		//if ( ! w.isCapitalized(start) && w.isCapitalized(nw-1) ) 
-		//	flag = 1;
+
 		// skip if it has ('s in it
 		char c = *eol;
 		*eol = '\0';
@@ -198,117 +161,6 @@ bool Wiki::loadText ( int32_t fileSize ) {
 		//if ( flag ) count = count * -1;
 		if ( ! m_ht.addKey ( &h , &count ) ) return false;
 	}
-
-	/*
-	// reset for 2nd scan
-	p = buf;
-	//
-	//
-	// scan a second time and allow the mixed case guys like "Lock_pick"
-	// if Lockpick exists and is a word
-	//
-	//
-	for ( ; p < pend ; p = eol + 1 ) {
-		// skip spaces
-		while ( p < pend && is_wspace_a ( *p ) ) p++;
-		// find end of line, "eol" (also treat '(' as \n now)
-		//for(eol = p; eol < pend && *eol !='\n' && *eol!='('; eol++) ;
-		// do not use '(' since too many non-phraes in ()'s (for love)
-		for (eol = p; eol < pend && *eol !='\n' ; eol++) ;
-		// parse into words
-		Words w;
-		if ( ! w.set ( p            , // s
-			       eol - p      , // slen
-			       TITLEREC_CURRENT_VERSION ,
-			       true         , // computeIds?
-			       MAX_NICENESS ) ) 
-			return false;
-		int32_t nw = w.getNumWords();
-
-		// skip if it begins with 'the', like 'the uk' because it
-		// is causing uk to get a low score in 'boots in the uk'.
-		// same for all stop words i guess...
-		int32_t start = 0;
-
-		//if ( nw >= 2 && w.m_wordIds[0] == 3522767639246570644LL &&
-		//     w.m_wordIds[1] == -943426581783550057LL )
-		//	log("poo"); // hashfast32 = 2117103295
-
-		for (  ; start < nw ; start++ ) {
-			// skip punct stuff
-			if ( w.getWordId(start) == 0LL ) continue;
-			// skip query stop words
-			if ( w.isQueryStopWord(start) ) continue;
-			// ok, we got a good starter word
-			break;
-		}
-		// if no words, bail
-		if ( start >= nw ) continue;
-		// need something like "Lock_pick"
-		if ( nw != 3 ) continue;
-		// remove last words if not alnum
-		if ( nw > 0 && !w.isAlnum(nw-1) ) nw--;
-		// if no words, bail
-		if ( start >= nw ) continue;
-		// skip this line if no words
-		if ( nw <= 0 ) continue;
-		// if not mixed, skip for 2nd scan
-		if ( w.isCapitalized(start) && w.isCapitalized(nw-1) ) continue;
-		if ( ! w.isCapitalized(start) && ! w.isCapitalized(nw-1)) continue;
-
-		char **wptrs = w.getWords();
-		int32_t  *wlens = w.getWordLens();
-		uint64_t h64 = 0;
-		int32_t conti = 0;
-		int32_t count = 0;
-		// hash the word ids together
-		for ( int32_t i = start ; i < nw ; i++ ) {
-			// skip if not a proper word
-			if ( ! w.isAlnum(i) ) continue;
-			// no digits starting "08-Hillary" "08Hillary"
-			if ( i == start && !w.isAlpha(i) ) continue;
-			// add into hash quickly
-			h64 = hash64Lower_utf8_cont(wptrs[i], 
-						    wlens[i],
-						    h64,
-						    &conti );
-			count++;
-		}
-		// 2 words
-		if ( count != 2 ) continue;
-		// skip if too big
-		if ( count > 250 ) continue;
-		// conert
-		uint32_t h32 = h64 & 0xffffffff;
-		// the compound form must be in the table from the first scan,
-		// if not, skip it
-		if ( ! m_ht.isInTable ( &h32 ) ) continue;
-
-		uint32_t hf32 = 0;
-		count = 0;
-		int64_t *wids = w.getWordIds();
-		// hash the word ids together to make a new hash that takes the
-		// space into account.
-		for ( int32_t i = start ; i < nw ; i++ ) {
-			// skip if not a proper word
-			if ( ! w.isAlnum(i) ) continue;
-			// add into hash quickly
-			hf32 = hash32Fast ( wids[i] & 0xffffffff , hf32 );
-			// count them
-			count++;
-		}
-
-		// ok, store it
-		if ( ! m_ht.addKey ( &hf32 , &count ) ) return false;
-		// for debug
-		//char c = *eol;
-		// *eol = '\0';
-		//log("wiki: %s",wptrs[0]);
-		// *eol = c;
-	}
-	*/
-
-
 
 	// do not save if we can't
 	if ( g_conf.m_readOnlyMode ) return true;

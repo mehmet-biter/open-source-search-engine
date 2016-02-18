@@ -162,13 +162,13 @@ bool Highlight::highlightWords ( Words *words , Matches *m, Query *q ) {
 		endHead = false;
 		endHtml = false;
 
-		if ( (words->getTagId(i) ) == TAG_TITLE ) { //<TITLE>
+		if ( (words->getTagId(i) ) == TAG_TITLE ) {
 			inTitle = !(words->isBackTag(i));
-		} else if ( (words->getTagId(i) ) == TAG_HTML ) { //<HTML>
+		} else if ( (words->getTagId(i) ) == TAG_HTML ) {
 			if ( words->isBackTag( i ) ) {
 				endHtml = true;
 			}
-		} else if ( (words->getTagId(i) ) == TAG_HEAD ) { //<HEAD>
+		} else if ( (words->getTagId(i) ) == TAG_HEAD ) {
 			if (words->isBackTag(i) ) {
 				endHead = true;
 			}
