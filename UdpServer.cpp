@@ -1774,9 +1774,7 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 				h->m_pingInfo.m_etryagains++;
 		}
 
-		//int32_t cbAddr = (int32_t)slot->m_callback;
 		// try to call the callback for this slot
-		//g_loop.startBlockedCpuTimer();
 		// time it now
 		int64_t start2 = 0;
 		bool logIt = false;
@@ -1958,11 +1956,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		if ( slot->m_calledCallback ) { char *xx=NULL;*xx=0; }
 
 		// now we got a reply or an g_errno so call the callback
-		//if (g_conf.m_profilingEnabled){
-		//	address=(int32_t)slot->m_callback;
-		//	g_profiler.startTimer(address, __PRETTY_FUNCTION__);
-		//}
-		//g_loop.startBlockedCpuTimer();
 
 		if ( g_conf.m_logDebugLoop && slot->m_msgType != 0x11 )
 			log(LOG_DEBUG,"loop: enter callback for 0x%"XINT32" "
@@ -2027,11 +2020,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 				    (int32_t)slot->m_niceness);
 		}
 
-		//if (g_conf.m_profilingEnabled){
-		//	if(!g_profiler.endTimer(address, __PRETTY_FUNCTION__))
-		//		log(LOG_WARN,"admin: Couldn't add the fn %"INT32"",
-		//		    (int32_t)address);
-		//}
 		// time it
 		if ( g_conf.m_logDebugUdp )
 			log(LOG_DEBUG,"udp: Reply callback took %"INT64" ms.",

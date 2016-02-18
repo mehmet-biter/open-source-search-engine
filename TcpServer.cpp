@@ -2690,25 +2690,10 @@ void TcpServer::makeCallback ( TcpSocket * s ) {
 			log("tcp: null callback for s=0x%"PTRFMT"",(PTRTYPE)s);
 		return;
 	}
-	// record times for profiler
-	//int32_t address = (int32_t)s->m_callback;
-// 	uint64_t start ;
-// 	uint64_t statStart,statEnd;
-	//if ( g_conf.m_profilingEnabled ) {
-// 		start = gettimeofdayInMillisecondsLocal();
-// 		statStart=gettimeofdayInMilliseconds();
-	//	g_profiler.startTimer(address, __PRETTY_FUNCTION__);
-	//}
 
 	if ( g_conf.m_logDebugTcp )
 		log("tcp: calling callback for sd=%"INT32"",(int32_t)s->m_sd);
-	//g_loop.startBlockedCpuTimer();	
 	s->m_callback ( s->m_state , s );
-	//if ( g_conf.m_profilingEnabled ) {
-	//	if(!g_profiler.endTimer(address,__PRETTY_FUNCTION__))
-	//		log(LOG_WARN,"admin: Couldn't add the fn %"INT32"",
-	//		    (int32_t)address);
-	//}
 }
 
 // . cancel the transaction that had this state

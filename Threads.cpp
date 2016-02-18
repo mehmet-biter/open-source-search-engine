@@ -1477,7 +1477,6 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 
 		
 		g_errno = 0; 
-		//g_loop.startBlockedCpuTimer();
 		//only allow a quickpoll if we are nice.
 		//g_loop.canQuickPoll(t->m_niceness);
 

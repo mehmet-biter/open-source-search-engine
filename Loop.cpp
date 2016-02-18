@@ -1281,13 +1281,6 @@ void Loop::interruptsOn ( ) {
 	}
 }
 
-void Loop::startBlockedCpuTimer() {
-
-	if(m_inQuickPoll) return;
-	m_lastPollTime = gettimeofdayInMilliseconds();
-	g_profiler.resetLastQpoll();
-}
-
 
 void Loop::quickPoll(int32_t niceness, const char* caller, int32_t lineno) {
 	if ( ! g_conf.m_useQuickpoll ) return;

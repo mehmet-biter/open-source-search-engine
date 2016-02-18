@@ -183,7 +183,6 @@ class Loop {
 	// a SIGHUP, 2 if a thread crashed, 3 if we got a SIGPWR
 	char m_shutdown;
 
-	void startBlockedCpuTimer();
 	void canQuickPoll(int32_t niceness);
 	void setitimerInterval(int32_t niceness);
 
