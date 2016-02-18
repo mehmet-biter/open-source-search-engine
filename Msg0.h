@@ -96,14 +96,10 @@ class Msg0 {
 		       class Msg5 *msg5            = NULL ,
 		       class Msg5 *msg5b           = NULL ,
 		       bool        isRealMerge     = false , // file merge?
-//#ifdef SPLIT_INDEXDB
 		       bool        allowPageCache  = true ,
 		       bool        forceLocalIndexdb = false,
 		       bool        noSplit           = false , // MDW ????
 		       int32_t        forceParitySplit = -1    );
-//#else
-//		       bool        allowPageCache  = true );
-//#endif
 
 	bool getList ( int64_t hostId      , // -1 if unspecified
 		       int32_t      ip          , // info on hostId
@@ -133,16 +129,11 @@ class Msg0 {
 		       class Msg5 *msg5            = NULL ,
 		       class Msg5 *msg5b           = NULL ,
 		       bool        isRealMerge     = false, // file merge?
-//#ifdef SPLIT_INDEXDB
 		       bool        allowPageCache  = true ,
 		       bool        forceLocalIndexdb = false,
 		       // default for this should be false, because true
 		       // means to send a msg0 to every indexdb split!
-		       bool        doIndexdbSplit    = false ,
-		       int32_t        forceParitySplit = -1    ) {
-//#else
-//		       bool        allowPageCache  = true ) {
-//#endif
+		       bool        doIndexdbSplit    = false ) {
 
 		return getList ( hostId      , 
 				 ip          ,
@@ -170,13 +161,9 @@ class Msg0 {
 				 msg5            ,
 				 msg5b           ,
 				 isRealMerge     ,
-//#ifdef SPLIT_INDEXDB
 				 allowPageCache  ,
 				 forceLocalIndexdb ,
-				 doIndexdbSplit  ); };
-//#else
-//				 allowPageCache  ); };
-//#endif
+				 doIndexdbSplit  ); }
 
 
 	// . YOU NEED NOT CALL routines below here
