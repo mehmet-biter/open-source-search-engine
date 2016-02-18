@@ -12,6 +12,8 @@ class XmlDoc;
 class Xml;
 class Words;
 class Query;
+class LinkInfo;
+class Url;
 
 class Title {
 public:
@@ -21,6 +23,7 @@ public:
 	void reset();
 
 	/// @todo ALC correct comments
+
 	// . set m_title to the title of the document represented by "xd"
 	// . if getHardTitle is true will always use the title in the <title>
 	//   tag, but if that is not present, will try dmoz titles before
@@ -37,7 +40,9 @@ public:
 	// . does not consult words with scores of 0 (unless a meta tag)
 	// . maxTitleChars is in chars (a utf16 char is 2 bytes or more)
 	// . maxTitleChars of -1 means no max
-	bool setTitle(XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars, Query *q, int32_t niceness);
+	bool setTitle( Xml *xml, Words *words, int32_t maxTitleChars, Query *q, LinkInfo *linkInfo, Url *firstUrl,
+				   char **filteredRootTitleBuf, int32_t filteredRootTitleBufSize, uint8_t contentType,
+				   uint8_t langId, int32_t niceness );
 
 	char *getTitle() {
 		return m_title;
@@ -63,7 +68,9 @@ public:
 private:
 	bool setFromTags(Xml *xml, int32_t maxTitleLen);
 
-	bool setTitle4(XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars, int32_t maxTitleWords, Query *q);
+	bool setTitle4( Xml *xml, Words *words, int32_t maxTitleChars, int32_t maxTitleWords,
+					Query *q, LinkInfo *info, Url *firstUrl, char **filteredRootTitleBuf,
+					int32_t filteredRootTitleBufSize, uint8_t contentType, uint8_t langId );
 
 	char m_title[MAX_TITLE_LEN];
 	int32_t m_titleLen;

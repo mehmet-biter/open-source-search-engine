@@ -6,11 +6,10 @@
 #include "Sections.h"
 #include "Pops.h"
 #include "Pos.h"
-#include "Titledb.h" // TITLEREC_CURRENT_VERSION
-#include "Profiler.h"
+#include "Matches.h"
 #include "HashTable.h"
-#include "Indexdb.h"
-#include "XmlDoc.h"
+#include "HttpMime.h"
+#include "Linkdb.h"
 
 // test urls
 // http://www.thehindu.com/2009/01/05/stories/2009010555661000.htm
@@ -38,10 +37,11 @@
 Title::Title() {
 	m_title[0] = '\0';
 	m_titleLen = 0;
+	m_titleTagStart = -1;
+	m_titleTagEnd   = -1;
 }
 
 Title::~Title() {
-	reset();
 }
 
 void Title::reset() {
@@ -90,7 +90,9 @@ bool Title::setFromTags( Xml *xml, int32_t maxTitleLen ) {
 }
 
 // returns false and sets g_errno on error
-bool Title::setTitle ( XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars, Query *q, int32_t niceness ) {
+bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleChars, Query *q,
+                       LinkInfo *linkInfo, Url *firstUrl, char **filteredRootTitleBuf, int32_t filteredRootTitleBufSize,
+                       uint8_t contentType, uint8_t langId, int32_t niceness ) {
 	// if this is too big the "first line" algo can be huge!!!
 	// and really slow everything way down with a huge title candidate
 	int32_t maxTitleWords = 128;
@@ -105,63 +107,18 @@ bool Title::setTitle ( XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars
 
 	int64_t startTime = gettimeofdayInMilliseconds();
 
-	// . reset so matches.cpp using this does not core
-	// . assume no title tag
-	m_titleTagStart = -1;
-	m_titleTagEnd   = -1;
-
-	// if we are a json object
-	if ( ! xd->m_contentTypeValid ) { char *xx=NULL;*xx=0; }
-
-	// look for the "title:" field in json then use that
-	if ( xd->m_contentType == CT_JSON ) {
-		char *val = NULL;
-		SafeBuf jsonTitle;
-		int32_t vlen = 0;
-
-		// shortcut
-		char *s = xd->ptr_utf8Content;
-		char *jt;
-		jt = getJSONFieldValue(s,"title",&vlen);
-		if ( jt && vlen > 0 ) {
-			jsonTitle.safeDecodeJSONToUtf8 (jt, vlen, m_niceness);
-			jsonTitle.nullTerm();
-		}
-
-		if ( jsonTitle.length() ) {
-			val = jsonTitle.getBufStart();
-			vlen = jsonTitle.length();
-		}
-
-		// if we had a title: field in the json...
-		if ( val && vlen > 0 ) {
-			m_titleLen = vlen;
-			gbmemcpy ( m_title, val , m_titleLen );
-			m_title[m_titleLen] = '\0';
-
-			return true;
-		}
-
-		// json content, if has no explicit title field, has no title then
-		m_title[0] = '\0';
-		m_titleLen = 0;
-
-		return true;
-	}
-
 	// set from meta/title tags
-	if ( xd->m_contentType == CT_HTML && setFromTags( xml, maxTitleChars ) ) {
+	if ( contentType == CT_HTML && setFromTags( xml, maxTitleChars ) ) {
 		return true;
 	}
 
-	bool status = setTitle4 ( xd, xml, words, maxTitleChars, maxTitleWords, q);
+	bool status = setTitle4( xml, words, maxTitleChars, maxTitleWords, q, linkInfo, firstUrl,
+							 filteredRootTitleBuf, filteredRootTitleBufSize, contentType, langId );
 
 	int64_t took = gettimeofdayInMilliseconds() - startTime;
 	if ( took > 5 ) {
-		log("query: Title set took %"INT64" ms for %s", took, xd->getFirstUrl()->getUrl());
+		log("query: Title set took %"INT64" ms for %s", took, firstUrl->getUrl());
 	}
-
-	//log("query: title='%s'", m_title);
 
 	return status;
 }
@@ -188,17 +145,30 @@ bool Title::setTitle ( XmlDoc *xd, Xml *xml, Words *words, int32_t maxTitleChars
 // does word qualify as a subtitle delimeter?
 bool isWordQualified ( char *wp , int32_t wlen ) {
 	// must be punct word
-	if ( is_alnum_utf8(wp) ) return false;
+	if ( is_alnum_utf8( wp ) ) {
+		return false;
+	}
+
 	// scan the chars
-	int32_t x; for ( x = 0 ; x < wlen ; x++ ) {
-		if ( wp[x] == ' ' ) continue;
+	int32_t x;
+	for ( x = 0; x < wlen; x++ ) {
+		if ( wp[x] == ' ' ) {
+			continue;
+		}
 		break;
 	}
+
 	// does it qualify as a subtitle delimeter?
 	bool qualified = false;
-	if ( x < wlen ) qualified = true;
+	if ( x < wlen ) {
+		qualified = true;
+	}
+
 	// fix amazon.com from splitting on period
-	if ( wlen==1 ) qualified = false;
+	if ( wlen == 1 ) {
+		qualified = false;
+	}
+
 	return qualified;
 }
 
@@ -206,7 +176,9 @@ bool isWordQualified ( char *wp , int32_t wlen ) {
 // TODO: do not accumulate boosts from a parent
 // and its kids, subtitles...
 //
-bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxTitleWords, Query *q) {
+bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxTitleWords, Query *q,
+                        LinkInfo *info, Url *firstUrl, char **filteredRootTitleBuf, int32_t filteredRootTitleBufSize,
+                        uint8_t contentType, uint8_t langId ) {
 	m_maxTitleChars = maxTitleChars;
 
 	// assume no title
@@ -252,8 +224,6 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 	int32_t kcount = 0;
 	int32_t rcount = 0;
 
-	LinkInfo *info = xd->getLinkInfo1();
-
 	//int64_t x = gettimeofdayInMilliseconds();
 
 	// . get every link text
@@ -265,17 +235,24 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 		if ( k->size_linkText >= 3 && ++kcount >= 20 ) continue;
 		// fast skip check for rss item
 		if ( k->size_rssItem > 10 && ++rcount >= 20 ) continue;
+
 		// set Url
 		Url u;
 		u.set ( k->getUrl() , k->size_urlBuf, false, false, false, false, false, 0x7fffffff );
+
 		// is it the same host as us?
 		bool sh = true;
-		// the title url
-		Url *tu = xd->getFirstUrl();
+
 		// skip if not from same host and should be
-		if ( tu->getHostLen() != u.getHostLen() ) sh = false;
+		if ( firstUrl->getHostLen() != u.getHostLen() ) {
+			sh = false;
+		}
+
 		// skip if not from same host and should be
-		if (strncmp(tu->getHost(),u.getHost(),u.getHostLen()))sh=false;
+		if ( strncmp( firstUrl->getHost(), u.getHost(), u.getHostLen() ) ) {
+			sh = false;
+		}
+
 		// get the link text
 		if ( k->size_linkText >= 3 ) {
 			char *p    = k->getLinkText();
@@ -413,7 +390,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 		u.set(link, len, true, false, false, false, false, 0x7fffffff );
 
 		// compare
-		selfLink = u.equals ( xd->getFirstUrl() );
+		selfLink = u.equals ( firstUrl );
 
 		// skip if not selfLink
 		if ( ! selfLink ) {
@@ -640,7 +617,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 		}
 
 		// when using pdftohtml, the title tag is the filename when PDF property does not have title tag
-		if ( tid == TAG_TITLE && *(xd->getContentType()) == CT_PDF ) {
+		if ( tid == TAG_TITLE && contentType == CT_PDF ) {
 			// skip if title == '/in.[0-9]*'
 			char* title_start = WW->getWord(start);
 			char* title_end = WW->getWord(i);
@@ -738,12 +715,9 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 	//logf(LOG_DEBUG,"title: took3=%"INT64"",gettimeofdayInMilliseconds()-x);
 	//x = gettimeofdayInMilliseconds();
 
-	// sanity check
-	if ( ! xd->m_contentTypeValid ) { char *xx=NULL;*xx=0; }
-
 	// to handle text documents, throw in the first line of text
 	// as a title candidate, just make the score really low
-	bool textDoc = (xd->m_contentType == CT_UNKNOWN || xd->m_contentType == CT_TEXT);
+	bool textDoc = (contentType == CT_UNKNOWN || contentType == CT_TEXT);
 
 	if (textDoc) {
 		// make "i" point to first alphabetical word in the document
@@ -797,10 +771,10 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 
 	{
 		// now add the last url path to contain underscores or hyphens
-		char *pstart = xd->getFirstUrl()->getPath();
+		char *pstart = firstUrl->getPath();
 
 		// get first url
-		Url *fu = xd->getFirstUrl();
+		Url *fu = firstUrl;
 
 		// start at the end
 		char *p = fu->getUrl() + fu->getUrlLen();
@@ -858,8 +832,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 	int32_t oldn = n;
 
 	// . do not split titles if we are a root url maps.yahoo.com was getting "Maps" for the title
-	Url *tu = xd->getFirstUrl();
-	if ( tu->isRoot() ) {
+	if ( firstUrl->isRoot() ) {
 		oldn = -2;
 	}
 
@@ -867,28 +840,11 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 	char *rootTitleBuf    = NULL;
 	char *rootTitleBufEnd = NULL;
 
-	bool doRootTitleRemoval = false;
-
-	if ( ! xd->ptr_rootTitleBuf ) {
-		doRootTitleRemoval = false;
-	}
-
 	// get the root title if we are not root!
-	if ( doRootTitleRemoval ) {
-		// it should not block
-		char **px = xd->getFilteredRootTitleBuf();
-
-		// error?
-		if ( ! px ) {
-			return false;
-		}
-
-		// should never block! should be set from title rec basically
-		if ( px == (void *)-1 ) { char *xx=NULL;*xx=0; }
-
+	if (filteredRootTitleBuf) {
 		// point to list of \0 separated titles
-		rootTitleBuf    = *px;
-		rootTitleBufEnd =  *px + xd->m_filteredRootTitleBufSize;
+		rootTitleBuf    = *filteredRootTitleBuf;
+		rootTitleBufEnd =  *filteredRootTitleBuf + filteredRootTitleBufSize;
 	}
 
 	{
@@ -911,7 +867,7 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 				m.reset();
 
 				// see if root title segment has query terms in it
-				m.addMatches ( pr, gbstrlen(pr), MF_TITLEGEN, xd->m_docId, m_niceness );
+				m.addMatches ( pr, gbstrlen(pr), MF_TITLEGEN, m_niceness );
 
 				// if matches query, do NOT add it, we only add it for
 				// removing from the title of the page...
@@ -929,9 +885,6 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 			// no breaching
 			if ( nr >= 20 ) break;
 		}
-
-		// TODO: fix this... put the isSiteRoot bit in title rec?
-		//if ( tu->isSiteRoot(xd->m_coll) ) oldn = -2;
 
 		// now split up candidates in children candidates by tokenizing
 		// using :, | and - as delimters.
@@ -1101,10 +1054,11 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 
 		// a flag
 		char uncapped = false;
+
 		// scan the words in this title candidate
 		for ( int32_t j = a ; j < b ; j++ ) {
 			// skip stop words
-			if ( w->isQueryStopWord(j,xd->m_langId) ) {
+			if ( w->isQueryStopWord( j, langId ) ) {
 				continue;
 			}
 
@@ -1371,9 +1325,9 @@ bool Title::setTitle4 ( XmlDoc *xd, Xml *XML, Words *WW, int32_t maxTitleChars, 
 	// if no winner, all done. no title
 	if ( winner == -1 ) {
 		// last resort use file name
-		if ((*(xd->getContentType()) == CT_PDF) && (xd->getFirstUrl()->getFilenameLen() != 0)) {
+		if ((contentType == CT_PDF) && (firstUrl->getFilenameLen() != 0)) {
 			Words w;
-			w.set(xd->getFirstUrl()->getFilename(), xd->getFirstUrl()->getFilenameLen(), true);
+			w.set(firstUrl->getFilename(), firstUrl->getFilenameLen(), true);
 			if (!copyTitle(&w, 0, w.getNumWords())) {
 				return false;
 			}
@@ -1510,9 +1464,11 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 	if ( w2->getNumWords() <= 0 ) return 0;
 	if ( i0 >= i1 ) return 0;
 	if ( t0 >= t1 ) return 0;
+
 	// invalids vals
 	if ( i0 < 0   ) return 0;
 	if ( t0 < 0   ) return 0;
+
 	// . for this to be useful we must use idf
 	// . get the popularity of each word in w1
 	// . w1 should only be a few words since it is a title candidate
@@ -1524,78 +1480,77 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 	Pops pops2;
 	if ( ! pops1.set ( w1 , i0 , i1 ) ) return -1.0;
 	if ( ! pops2.set ( w2 , t0 , t1 ) ) return -1.0;
+
 	// now hash the words in w1, the needle in the haystack
 	int32_t nw1 = w1->getNumWords();
 	if ( i1 > nw1 ) i1 = nw1;
 	HashTable table;
-	//int32_t *ss1 = NULL;
-	//int32_t *ss2 = NULL;
-	//if ( scores1 ) ss1 = scores1->m_scores;
-	//if ( scores2 ) ss2 = scores2->m_scores;
+
 	// this augments the hash table
-	//int64_t lastWids[1024];
 	int64_t lastWid   = -1;
 	float     lastScore = 0.0;
+
 	// but we cannot have more than 1024 slots then
 	if ( ! table.set ( 1024 ) ) return -1.0;
+
 	// and table auto grows when 90% full, so limit us here
 	int32_t count    = 0;
-	int32_t maxCount = 20; // (1024 * 90) / 100 - 1;
+	int32_t maxCount = 20;
+
 	// sum up everything we add
 	float sum = 0.0;
+
 	// loop over all words in "w1" and hash them
 	for ( int32_t i = i0 ; i < i1 ; i++ ) {
 		// the word id
 		int64_t wid = (int32_t) w1->m_wordIds[i] ;
+
 		// skip if not indexable
-		if ( wid == 0 ) continue;
-		// or score is 0
-		//if ( ss && ss[i] <= 0 ) continue;
+		if ( wid == 0 ) {
+			continue;
+		}
+
 		// no room left in table!
 		if ( count++ > maxCount ) {
 			//logf(LOG_DEBUG, "query: Hash table for title "
 			//    "generation too small. Truncating words from w1.");
 			break;
 		}
-		// . map pop to a score, "pscore"
-		// . the least popular something is the more points it is worth
-		//val = MAX_POP - pops.m_pops[i];
+
 		// . make this a float. it ranges from 0.0 to 1.0
 		// . 1.0 means the word occurs in 100% of documents sampled
 		// . 0.0 means it occurs in none of them
 		// . but "val" is the complement of those two statements!
 		float score = 1.0 - pops1.getNormalizedPop(i);
+
 		// accumulate
 		sum += score;
-		// debug
-		//logf(LOG_DEBUG,"adding wid=%"INT32" score=%.02f sum=%.02f",
-		//     (int32_t)wid,score,sum);
-		// accumulate for scoring phrases too! (adjacent words)
-		//psum += val;
-		// update the linked list
-		//if ( oldi < 1024 ) next[oldi] = i;
-		// prepare for next link, it may never come if we're last one!
-		//oldi = i;
+
 		// add to table
-		if ( ! table.addKey ( (int32_t)wid , (int32_t)score , NULL ) ) 
+		if ( ! table.addKey ( (int32_t)wid , (int32_t)score , NULL ) ) {
 			return -1.0;
+		}
+
 		// if no last wid, continue
-		if ( lastWid == -1LL ) {lastWid=wid;lastScore=score;continue; }
-		// keep this 1-1 with the hash table slots
-		//lastWids [ slot ] = lastWid;
+		if ( lastWid == -1LL ) {
+			lastWid = wid;
+			lastScore = score;
+			continue;
+		}
+
 		// . what was his val?
 		// . the "val" of the phrase: 
 		float phrScore = score + lastScore;
+
 		// do not count as much as single words
 		phrScore *= 0.5;
+
 		// accumulate
 		sum += phrScore;
+
 		// get the phrase id
 		int64_t pid = hash64 ( wid , lastWid );
-		// debug
-		//logf(LOG_DEBUG,
-		//     "adding pid=%"INT32" score=%.02f sum=%.02f",
-		//	     (int32_t)pid,phrScore,sum);
+
 		// now add that
 		if ( ! table.addKey ( (int32_t)pid , (int32_t)phrScore , NULL ) )
 			return -1.0;
@@ -1603,70 +1558,77 @@ float Title::getSimilarity ( Words  *w1 , int32_t i0 , int32_t i1 ,
 		lastWid   = wid;
 		lastScore = score;
 	}
+
 	// sanity check. it can't grow cuz we keep lastWids[] 1-1 with it
 	if ( table.getNumSlots() != 1024 ) {
 		log(LOG_LOGIC,"query: Title has logic bug.");
 		return -1.0;
 	}
 
-	// reset score sum to get "percent contained" functionality back
-	//sum = 0.0;
-
 	// accumulate scores of words that are found
 	float found = 0.0;
+
 	// reset
 	lastWid = -1LL;
+
 	// loop over all words in "w1" and hash them
 	for ( int32_t i = t0 ; i < t1 ; i++ ) {
 		// the word id
 		int64_t wid = (int32_t) w2->m_wordIds[i] ;
+
 		// skip if not indexable
-		if ( wid == 0 ) continue;
-		// or score is 0
-		//if ( ss && ss[i] <= 0 ) continue;
+		if ( wid == 0 ) {
+			continue;
+		}
+
 		// . make this a float. it ranges from 0.0 to 1.0
 		// . 1.0 means the word occurs in 100% of documents sampled
 		// . 0.0 means it occurs in none of them
 		// . but "val" is the complement of those two statements!
 		float score = 1.0 - pops2.getNormalizedPop(i);
+
 		// accumulate
 		sum += score;
+
 		// is it in table? 
 		int32_t slot = table.getSlot ( (int32_t)wid ) ;
+
 		// . if in table, add that up to "found"
 		// . we essentially find his wid AND our wid, so 2.0 times
-		if ( slot >= 0 ) found += 2.0 * score;
-		// use percent contained functionality now
-		//if ( slot >= 0 ) found += score;
-		// debug
-		//logf(LOG_DEBUG,"checking wid=%"INT32" score=%.02f sum=%.02f "
-		//   "found=%.02f slot=%"INT32"",   (int32_t)wid,score,sum,found,slot);
+		if ( slot >= 0 ) {
+			found += 2.0 * score;
+		}
+
 		// now the phrase
-		if ( lastWid == -1LL ) {lastWid=wid;lastScore=score;continue;}
+		if ( lastWid == -1LL ) {
+			lastWid = wid;
+			lastScore = score;
+			continue;
+		}
+
 		// . what was his val?
 		// . the "val" of the phrase: 
 		float phrScore = score + lastScore;
+
 		// do not count as much as single words
 		phrScore *= 0.5;
+
 		// accumulate
 		sum += phrScore;
+
 		// get the phrase id
 		int64_t pid = hash64 ( wid , lastWid );
+
 		// is it in table? 
 		slot = table.getSlot ( (int32_t)pid ) ;
+
 		// . accumulate if in there
 		// . we essentially find his wid AND our wid, so 2.0 times
 		if ( slot >= 0 ) found += 2.0 * phrScore;
-		// use percent contained functionality now
-		//if ( slot >= 0 ) found += score;
+
 		// we are now the last wid
 		lastWid   = wid;
 		lastScore = score;
-		// debug
-		//logf(LOG_DEBUG,
-		//     "checking pid=%"INT32" score=%.02f sum=%.02f found=%.02f "
-		//     "slot=%"INT32"",
-		//     (int32_t)pid,phrScore,sum,found,slot);
 	}
 
 	// do not divide by zero

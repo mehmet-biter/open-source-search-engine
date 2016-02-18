@@ -54,10 +54,6 @@ class Match {
 	// . words in the same quote should use the same highlight color
 	int32_t m_colorNum;
 
-	// . max score of all contained query terms in this match
-	// . uses provided m_tscores[] array to get scores of the query terms
-	//int32_t m_score;
-
 	// "match group" or type of match. i.e. MF_TITLETAG, MF_METASUMM, ...
 	mf_t m_flags;
 
@@ -79,32 +75,19 @@ class Matches {
 			  class Sections *bodySections, class Bits *bodyBits, class Pos *bodyPos, class Xml *xml,
 			  class Title *tt, int32_t niceness );
 
-	bool addMatches( char *s, int32_t slen, mf_t flags, int64_t docId, int32_t niceness );
+	bool addMatches(char *s, int32_t slen, mf_t flags, int32_t niceness );
 
 	// . this sets the m_matches[] array
 	// . m_matches[i] is -1 if it matches no term in the query
 	// . m_matches[i] is X if it matches term #X in the query
 	// . returns false and sets errno on error
 	bool addMatches( Words *words, class Phrases *phrases = NULL, Sections *sections = NULL,
-					 Bits *bits = NULL, Pos *pos = NULL, int64_t docId = 0, mf_t flags = 0 );
-
-	// this is NULL terminated
-	//char getTermNum  ( int32_t i ) { return m_termNums[i]; };
-	//char getTermNum2 ( int32_t i ) { return m_termNums2[i]; };
-
-	// get the whole array
-	//char *getTermNums ( ) { return m_termNums; };
-	//char *getPhraseNums ( ) { return m_phraseNums; };
+					 Bits *bits = NULL, Pos *pos = NULL, mf_t flags = 0 );
 
 	// how many words matched a rawTermId?
-	int32_t getNumMatches ( ) { return m_numMatches; };
-
-	//void clearBitsMatched( void       ) { m_explicitBitsMatched = 0x00; };
-	//void addBitMatched   ( qvec_t bit ) { m_explicitBitsMatched |= bit; };
-	//qvec_t getBitsMatched( void       ) { return m_explicitBitsMatched; };
-
-	// set m_termNums from a to b to 0
-	//void clearMatches ( int32_t a , int32_t b );
+	int32_t getNumMatches() {
+		return m_numMatches;
+	}
 
 	// janitorial stuff
 	Matches ( ) ;
@@ -132,11 +115,7 @@ class Matches {
 	// how many words matched a rawTermId?
 	Match  m_matches[MAX_MATCHES];
 	int32_t   m_numMatches;
-	//int32_t   m_numNegTerms;
 
-	// found term vector, 1-1 with m_q->m_qterms[]
-	//char   m_foundTermVector    [ MAX_QUERY_TERMS ];
-	//char   m_foundNegTermVector [ MAX_QUERY_TERMS ];
 	qvec_t m_explicitBitsMatched;
 
 	// . hash query word ids into a small hash table
@@ -144,7 +123,6 @@ class Matches {
 	int64_t m_qtableIds      [ MAX_QUERY_WORDS_TO_MATCH * 3 ];
 	int32_t      m_qtableWordNums [ MAX_QUERY_WORDS_TO_MATCH * 3 ];
 	char      m_qtableFlags    [ MAX_QUERY_WORDS_TO_MATCH * 3 ];
-	//int64_t m_qtableNegIds   [ MAX_QUERY_WORDS_TO_MATCH * 3 ];
 	int32_t      m_numSlots;
 	Query    *m_q;
 	int32_t      m_maxNQW;
@@ -187,14 +165,8 @@ class Matches {
 	int64_t *m_pids3;
 	int64_t *m_pids4;
 	int64_t *m_pids5;
-	bool getMatchGroup( mf_t matchFlag, Words **wp, Pos **pp, Sections **sp );
 
-	//qvec_t m_explicitsMatched;
-	//qvec_t m_matchableRequiredBits;
-	// this may be false and still be included in the results if rat=0
-	//bool   m_hasAllQueryTerms;
-	// if this is false big hack will exclude it from results
-	//bool   m_matchesQuery;
+	bool getMatchGroup( mf_t matchFlag, Words **wp, Pos **pp, Sections **sp );
 };
 
 #define OFFSET_BYTES 1

@@ -23475,6 +23475,17 @@ Title *XmlDoc::getTitle ( ) {
 		return &m_title;
 	}
 
+	uint8_t *ct = getContentType();
+	if ( ! ct || ct == (void *)-1 ) {
+		return (Title *)ct;
+	}
+
+	// xml and json docs have empty title
+	if ( *ct == CT_JSON || *ct == CT_XML ) {
+		m_titleValid = true;
+		return &m_title;
+	}
+
 	// need a buncha crap
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) {
@@ -23508,7 +23519,13 @@ Title *XmlDoc::getTitle ( ) {
 
 	m_titleValid = true;
 
-	if ( ! m_title.setTitle( this, xml, ww, titleMaxLen, q, m_niceness) ) {
+	char **filteredRootTitleBuf = getFilteredRootTitleBuf();
+	if ( ! filteredRootTitleBuf || filteredRootTitleBuf == (char**) -1) {
+		filteredRootTitleBuf = NULL;
+	}
+
+	if ( !m_title.setTitle( xml, ww, titleMaxLen, q, getLinkInfo1(), getFirstUrl(), filteredRootTitleBuf,
+							m_filteredRootTitleBufSize, *( ct ), m_langId, m_niceness ) ) {
 		return NULL;
 	}
 
@@ -23526,8 +23543,7 @@ Summary *XmlDoc::getSummary () {
 		return (Summary *)ct;
 	}
 
-	/// @todo ALC fill in summary for XML document
-	// xml and json docs have empty summaries for now
+	// xml and json docs have empty summaries
 	if ( *ct == CT_JSON || *ct == CT_XML ) {
 		m_summaryValid = true;
 		return &m_summary;

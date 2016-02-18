@@ -266,18 +266,18 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 	// . first add all the matches in the body of the doc
 	// . add it first since it will kick out early if too many matches
 	//   and we get all the explicit bits matched
-	if ( !addMatches( bodyWords, bodyPhrases, bodySections, bodyBits, bodyPos, xd->m_docId, MF_BODY ) ) {
+	if ( !addMatches( bodyWords, bodyPhrases, bodySections, bodyBits, bodyPos, MF_BODY ) ) {
 		return false;
 	}
 
 	// add the title in
-	if ( !addMatches( tt->getTitle(), tt->getTitleLen(), MF_TITLEGEN, xd->m_docId, niceness ) ) {
+	if ( !addMatches( tt->getTitle(), tt->getTitleLen(), MF_TITLEGEN, niceness ) ) {
 		return false;
 	}
 
 	// add in the url terms
 	Url  *turl = xd->getFirstUrl();
-	if ( !addMatches( turl->m_url, turl->m_ulen, MF_URL, xd->m_docId, niceness ) ) {
+	if ( !addMatches( turl->m_url, turl->m_ulen, MF_URL, niceness ) ) {
 		return false;
 	}
 
@@ -290,7 +290,7 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 	if ( a >= 0 && b >= 0 && b>a ) {
 		start = bodyWords->getWord(a);
 		end   = bodyWords->getWord(b-1) + bodyWords->getWordLen(b-1);
-		if ( !addMatches( start, end - start, MF_TITLETAG, xd->m_docId, niceness ) ) {
+		if ( !addMatches( start, end - start, MF_TITLETAG, niceness ) ) {
 			return false;
 		}
 	}
@@ -322,7 +322,7 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 		char *s = bodyXml->getString ( i , "content" , &len );
 		if ( ! s || len <= 0 ) continue;
 		// wordify
-		if ( !addMatches( s, len, flag, xd->m_docId, niceness ) ) {
+		if ( !addMatches( s, len, flag, niceness ) ) {
 			return false;
 		}
 	}
@@ -343,7 +343,7 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 		mf_t flags = MF_LINK;
 
 		// add it in
-		if ( !addMatches( k->getLinkText(), k->size_linkText - 1, flags, xd->m_docId, niceness ) ) {
+		if ( !addMatches( k->getLinkText(), k->size_linkText - 1, flags, niceness ) ) {
 			return false;
 		}
 
@@ -354,8 +354,7 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 		flags = MF_HOOD;
 
 		// add it in
-		if ( !addMatches( k->getSurroundingText(), k->size_surroundingText - 1, flags, xd->m_docId,
-		                  niceness ) ) {
+		if ( !addMatches( k->getSurroundingText(), k->size_surroundingText - 1, flags, niceness ) ) {
 			return false;
 		}
 
@@ -368,15 +367,15 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 		// add rss description
 		bool isHtmlEncoded;
 		int32_t rdlen;
-		char *rd = rxml.getRSSDescription ( &rdlen , &isHtmlEncoded );
-		if ( !addMatches( rd, rdlen, MF_RSSDESC, xd->m_docId, niceness ) ) {
+		char *rd = rxml.getRSSDescription( &rdlen, &isHtmlEncoded );
+		if ( !addMatches( rd, rdlen, MF_RSSDESC, niceness ) ) {
 			return false;
 		}
 
 		// add rss title
 		int32_t rtlen;
-		char *rt = rxml.getRSSTitle       ( &rtlen , &isHtmlEncoded );
-		if ( !addMatches( rt, rtlen, MF_RSSTITLE, xd->m_docId, niceness ) ) {
+		char *rt = rxml.getRSSTitle( &rtlen, &isHtmlEncoded );
+		if ( !addMatches( rt, rtlen, MF_RSSTITLE, niceness ) ) {
 			return false;
 		}
 	}
@@ -385,15 +384,10 @@ bool Matches::set( XmlDoc *xd, Words *bodyWords, Phrases *bodyPhrases, Sections 
 	return true;
 }
 
-bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int64_t docId, int32_t niceness ) {
+bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int32_t niceness ) {
 	// . do not breach
 	// . happens a lot with a lot of link info text
 	if ( m_numMatchGroups >= MAX_MATCHGROUPS ) {
-		// . log it
-		// . often we have a ton of inlink text!!
-		//log("matches: could not add matches1 for docid=%"INT64" because "
-		//    "already have %"INT32" matchgroups",docId,
-		//    (int32_t)MAX_MATCHGROUPS);
 		return true;
 	}
 
@@ -428,7 +422,7 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int64_t docId, int3
 	int32_t n = m_numMatchGroups;
 	// . add all the Match classes from this match group
 	// . this increments m_numMatchGroups on success
-	bool status = addMatches( wp, NULL, sp, bp, pb, docId, flags );
+	bool status = addMatches( wp, NULL, sp, bp, pb, flags );
 
 	// if this matchgroup had some, matches, then keep it
 	if ( m_numMatches > startNumMatches ) {
@@ -474,8 +468,7 @@ bool Matches::getMatchGroup ( mf_t       matchFlag ,
 // . TODO: support stemming later. each word should then have multiple ids.
 // . add to our m_matches[] array iff addToMatches is true, otherwise we just
 //   set the m_foundTermVector for doing the BIG HACK described in Summary.cpp
-bool Matches::addMatches( Words *words, Phrases *phrases, Sections *sections, Bits *bits, Pos *pos,
-						  int64_t docId, mf_t flags ) {
+bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bits *bits, Pos *pos, mf_t flags ) {
 	// if no query term, bail.
 	if ( m_numSlots <= 0 ) {
 		return true;
@@ -484,11 +477,6 @@ bool Matches::addMatches( Words *words, Phrases *phrases, Sections *sections, Bi
 	// . do not breach
 	// . happens a lot with a lot of link info text
 	if ( m_numMatchGroups >= MAX_MATCHGROUPS ) {
-		// . log it
-		// . often we have a ton of inlink text!!
-		//log("matches: could not add matches2 for docid=%"INT64" because "
-		//    "already have %"INT32" matchgroups",docId,
-		//    (int32_t)MAX_MATCHGROUPS);
 		return true;
 	}
 
@@ -798,9 +786,6 @@ bool Matches::addMatches( Words *words, Phrases *phrases, Sections *sections, Bi
 		if ( m_numMatches < MAX_MATCHES ) {
 			continue;
 		}
-
-		log( "query: Exceed match buffer of %" INT32 " matches. docId=%" INT64 "", (int32_t)MAX_MATCHES,
-			 docId );
 
 		break;
 	}
