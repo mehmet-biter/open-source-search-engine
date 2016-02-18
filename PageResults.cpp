@@ -2790,7 +2790,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 				       "\t</result>\n", 
 				       d );
 		else if ( si->m_format == FORMAT_JSON )
-			sb->safePrintf("\t\{\n"
+			sb->safePrintf("\t{\n"
 				       "\t\t\"docId\":%"INT64"\n"
 				       "\t},\n",
 				       d );
@@ -3286,7 +3286,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// print the url in the href tag
 		sb->safeMemcpy ( url , newLen ); 
 		// then finish the a href tag and start a bold for title
-		sb->safePrintf ( ">");//<font size=+0>" );
+		sb->safePrintf ( ">");
 	}
 
 
