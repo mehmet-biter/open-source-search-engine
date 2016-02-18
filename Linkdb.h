@@ -218,18 +218,6 @@ class Linkdb {
 				    false); // is delete?
 	}
 
-	/*
-	int64_t getUrlHash ( Url *url ) {
-		// . now use the probable docid (UNMASKED)
-		// . this makes it so we reside on the same host as the
-		//   titleRec and spiderRec of this url. that way Msg14
-		//   is assured of adding the Linkdb rec before the Spiderdb
-		//   rec and therefore of getting its parent as an inlinker.
-		int64_t h = g_titledb.getProbableDocId(url,false);
-		// now it is the lower 47 bits since we added the spam bit
-		return h & 0x00007fffffffffffLL;	}
-	*/
-
 	//
 	// accessors for "url" keys in linkdb
 	//
@@ -256,10 +244,6 @@ class Linkdb {
 		rank = (unsigned char)~rank;//LDB_MAXSITERANK - rank;
 		return rank;
 	}
-
-	//unsigned char getLinkerHopCount_uk ( key224_t *k ) {
-	//	return (k->n2 >> 32) & 0xff; 
-	//}
 	
 	int32_t getLinkerIp_uk ( key224_t *k ) {
 		uint32_t ip ;
@@ -356,10 +340,7 @@ class Linkdb {
 		return sh32;
 	}
 
-	Rdb           *getRdb()           { return &m_rdb; };
-
-	//DiskPageCache *getDiskPageCache () { return &m_pc; };
-	//DiskPageCache m_pc;
+	Rdb           *getRdb()           { return &m_rdb; }
 
  private:
 	Rdb           m_rdb;
@@ -376,7 +357,6 @@ extern class Linkdb g_linkdb2;
 // . gets the LinkText, customized for our url, from each docId in that list
 // . merge them into a final LinkInfo class for your url
 
-//#include "LinkText.h"
 #include "Msg2.h"      // for getting IndexLists from Indexdb
 #include "Msg20.h"     // for getting this url's LinkInfo from another cluster
 #include "SafeBuf.h"
@@ -407,8 +387,6 @@ extern class Linkdb g_linkdb2;
 
 #define MSG25_MAX_REQUEST_SIZE (MAX_URL_LEN+MAX_COLL_LEN+64)
 
-//#define MSG25_MAX_REPLY_SIZE   1024
-
 void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) ;
 
 class Msg25 {
@@ -428,19 +406,15 @@ class Msg25 {
 			   bool       isSiteLinkInfo ,
 			   int32_t       ip                  ,
 			   int64_t  docId               ,
-			   //char      *coll                ,
 			   collnum_t collnum,
 			   char      *qbuf                ,
 			   int32_t       qbufSize            ,
 			   void      *state               ,
 			   void (* callback)(void *state) ,
 			   bool       isInjecting         ,
-			   //SafeBuf   *pbuf                ,
 			   bool       printDebugMsgs , // into "Msg25::m_pbuf"
-			   //class XmlDoc *xd ,
 			   bool       printInXml ,
 			   int32_t       siteNumInlinks      ,
-			   //int32_t       sitePop             ,
 			   LinkInfo  *oldLinkInfo         ,
 			   int32_t       niceness            ,
 			   bool       doLinkSpamCheck     ,
@@ -466,22 +440,6 @@ class Msg25 {
 	~Msg25();
 	void reset();
 
-	// . based on the linkInfo, are we banned/unbanned/clean/dirty
-	// . the linking url may set these bits in it's link: term score
-	// . these bits are set based on the linker's siteRec
-	//bool isBanned   () {return (m_msg18.isBanned  () || m_isBanned  ); };
-	//bool isUnbanned () {return (m_msg18.isUnbanned() || m_isUnbanned); };
-	//bool isDirty    () {return (m_msg18.isDirty   () || m_isDirty   ); };
-	//bool isClean    () {return (m_msg18.isClean   () || m_isClean   ); };
-
-	// we also set these bits from looking at url's link scores
-	//bool m_isBanned;
-	//bool m_isUnbanned;
-	//bool m_isDirty;
-	//bool m_isClean;
-
-	//char getMinInlinkerHopCount () { return m_minInlinkerHopCount; };
-
 	// a new parm referencing the request we got over the network
 	class Msg25Request * m_req25;
 
@@ -489,8 +447,6 @@ class Msg25 {
 	char             *isDup    (class Msg20Reply *r, class Msg20Reply *p);
 
 	bool addNote ( char *note , int32_t noteLen , int64_t docId );
-
-	//class LinkInfo *getLinkInfo () { return m_linkInfo; };
 
 	// m_linkInfo ptr references into here. provided by caller.
 	SafeBuf *m_linkInfoBuf;
@@ -503,20 +459,17 @@ class Msg25 {
 	bool getRootTitleRec ( ) ;
 	bool gotRootTitleRec ( );
 	bool gotDocId ( ) ;
-	//bool gotRootQuality2 ( ) ;
 	bool gotRootLinkText ( ) ;
 	bool gotRootLinkText2 ( ) ;
 	bool getLinkingDocIds ( ) ;
 	bool gotList     ( ) ;
 	bool gotClusterRecs ( ) ;
 	bool sendRequests ( );
-	bool gotLinkText  ( class Msg20Request *req ) ; //int32_t j );
+	bool gotLinkText  ( class Msg20Request *req ) ;
 	bool gotMsg25Reply ( ) ;
 	bool doReadLoop ( );
 
 	// input vars
-	//Url       *m_url;
-	//Url        m_tmpUrl;
 	char *m_url;
 	char *m_site;
 
@@ -532,10 +485,7 @@ class Msg25 {
 	bool       m_onlyNeedGoodInlinks;
 	bool       m_getLinkerTitles;
 	int64_t  m_docId;
-	//char      *m_coll;
 	collnum_t m_collnum;
-	//int32_t       m_collLen;
-	//LinkInfo  *m_linkInfo;
 	void      *m_state;
 	void     (* m_callback) ( void *state );
 
@@ -543,7 +493,6 @@ class Msg25 {
 	//int32_t m_sitePop;
 	int32_t m_mode;
 	bool m_printInXml;
-	//class XmlDoc  *m_xd;
 
 	// private:
 
@@ -582,31 +531,17 @@ class Msg25 {
 	int32_t           m_replySizes [ MAX_LINKERS ];
 	int32_t           m_numReplyPtrs;
 
-	//LinkText *m_linkTexts [ MAX_LINKERS ];
 	Msg20        m_msg20s        [ MAX_MSG20_OUTSTANDING ];
 	Msg20Request m_msg20Requests [ MAX_MSG20_OUTSTANDING ];
 	char         m_inUse         [ MAX_MSG20_OUTSTANDING ];
 	// for "fake" replies
 	Msg20Reply   m_msg20Replies  [ MAX_MSG20_OUTSTANDING ];
 
-	// make this dynamic to avoid wasting so much space when must pages
-	// have *very* few inlinkers. make it point to m_dbuf by default.
-	//int64_t m_docIds    [ MAX_DOCIDS_TO_SAMPLE ];
-
-	//char      m_hasLinkText [ MAX_LINKERS ];
-
-	// make this dynamic as well! (see m_docIds comment above)
-	//char      m_scores    [ MAX_DOCIDS_TO_SAMPLE ];
-
 	int32_t      m_numDocIds;
 	int32_t      m_cblocks;
 	int32_t      m_uniqueIps;
 
-	// new stuff for getting term freqs for really huge links: termlists
-	//int64_t m_termId;
-	//Msg42     m_msg42;
 	int32_t      m_minRecSizes;
-	//int32_t      m_termFreq;
 
 	// Msg20 is for getting the LinkInfo class from this same url's
 	// titleRec from another (usually much larger) gigablast cluster/netwrk
@@ -621,14 +556,8 @@ class Msg25 {
 	// have we had an error for any transaction?
 	int32_t      m_errno;
 
-	// this is used for link ban checks
-	//Msg18     m_msg18;
-
 	SafeBuf   m_tmp;
 	SafeBuf  *m_pbuf; // will point to m_tmp if m_printDebugMsgs
-
-	// for holding the final linkinfo output
-	//SafeBuf m_linkInfoBuf;
 
 	// copied from CollectionRec
 	bool  m_oneVotePerIpDom           ;
@@ -639,8 +568,6 @@ class Msg25 {
 
 	Multicast m_mcast;
 
-	//char **m_statusPtr;
-
 	int32_t m_good;
 	int32_t m_errors;
 	int32_t m_noText;
@@ -648,8 +575,6 @@ class Msg25 {
 
 	bool m_spideringEnabled;
 
-	//TermTable m_ipTable;
-	//int32_t      m_ipdups;
 	int32_t      m_dupCount;
 	int32_t      m_vectorDups;
 	int32_t      m_spamLinks;
@@ -666,7 +591,6 @@ class Msg25 {
 	int32_t m_siteNumFreshInlinks;
 
 	// this is used for the linkdb list
-	//HashTableT <int32_t, char> m_ipTable;
 	HashTableX m_ipTable;
 	HashTableX m_fullIpTable;
 	HashTableX m_firstIpTable;
@@ -695,11 +619,6 @@ class Msg25 {
 
 	char      m_request [ MSG25_MAX_REQUEST_SIZE ];
 	int32_t      m_requestSize;
-
-	//char      m_replyBuf [ MSG25_MAX_REQUEST_SIZE ];
-
-	// hop count got from linkdb
-	//char      m_minInlinkerHopCount;
 
 	HashTableX m_adBanTable;
 
@@ -732,35 +651,18 @@ class LinkInfo {
 
  public:
 
-	int32_t   getStoredSize  ( ) { return m_lisize; };
-	int32_t   getSize        ( ) { return m_lisize; };
-	time_t getLastUpdated ( ) { return (time_t)m_lastUpdated; };
+	int32_t   getStoredSize  ( ) { return m_lisize; }
+	int32_t   getSize        ( ) { return m_lisize; }
+	time_t getLastUpdated ( ) { return (time_t)m_lastUpdated; }
 
-	//int32_t   getNumTotalInlinks   ( ) { 
-	//	if ( this == NULL ) return 0; return m_numTotalInlinks; };
 	int32_t   getNumLinkTexts ( ) { 
-		if ( this == NULL ) return 0; return m_numStoredInlinks; };
+		if ( this == NULL ) return 0; return m_numStoredInlinks; }
 
 	int32_t   getNumGoodInlinks   ( ) { 
-		if ( this == NULL ) return 0; return m_numGoodInlinks; };
-
-	// how many of the inlinks are from the same ip top?
-	//int32_t   getNumInternalInlinks( ) { 
-	//	if ( this == NULL ) return 0; return m_numInlinksInternal; };
-
-	// how many inlinks are from a different ip top?
-	//int32_t   getNumExternalInlinks( ) { 
-	//	if ( this == NULL ) return 0; 
-	//	return m_numInlinks - m_numInlinksInternal; };
-
-	//int32_t   getNumInlinksExtrapolated ( ){
-	//	if ( this == NULL ) return 0;return m_numInlinksExtrapolated;};
+		if ( this == NULL ) return 0; return m_numGoodInlinks; }
 
 	// update them for each Inlink. calls for each Inlink.
 	void   updateStringPtrs ( );
-
-	// this returns a ptr to a static Inlink in some cases, so beware
-	//class Inlink *getNextInlink ( class Inlink *k ) ;
 
 	class Inlink *getNextInlink ( class Inlink *k ) ;
 
@@ -768,24 +670,8 @@ class LinkInfo {
 
 	bool hasLinkText ( );
 
-	/*
-	bool hash ( TermTable      *table                  ,
-		    int32_t            externalLinkTextWeight ,
-		    int32_t            internalLinkTextWeight ,
-		    int32_t            ip                     ,
-		    int32_t            version                ,
-		    int32_t            siteNumInlinks         ,
-		    TermTable      *countTable             ,
-		    char           *note                   ,
-		    int32_t            niceness               ) ;
-	*/
-
 	// for PageTitledb
 	bool print ( class SafeBuf *sb , char *coll );
-
-	// adds up the page pops of the inlinkers as int32_t as they are from
-	// a different site than "u" is
-	//int32_t computePagePop ( class Url *u , char *coll ) ;
 
 	bool hasRSSItem();
 
@@ -819,8 +705,6 @@ class LinkInfo {
 	// . only valid if titlerecversion >= 119
 	// . includes your own internal ip
 	int32_t       m_numUniqueIps;//numInlinksFresh; // was m_reserved3;
-	//int32_t       m_sitePop;
-	//int32_t       m_siteNumInlinks;
 
 	// serialize "Inlinks" into this buffer, m_buf[]
 	char   m_buf[0];
@@ -829,19 +713,10 @@ class LinkInfo {
 
 #define MAXINLINKSTRINGBUFSIZE 2048
 
-class Inlink { // : public Msg {
+class Inlink {
 
  public:
 
-	//int32_t  *getFirstSizeParm () { return &size_urlBuf; };
-	//int32_t  *getLastSizeParm  () { return &size_rssItem; };
-	//int32_t  *getFirstOffPtr   () { return &off_urlBuf; };
-	//int32_t   getBaseSize      () { return sizeof(Inlink);};
-	//char  *getStringBuf     () { return m_buf; };
-
-	//int32_t getBaseNumStrings() { 
-	//	return (char **)&size_urlBuf - (char **)&off_urlBuf; };
-	
 	Inlink() { reset(); }
 
 	// zero ourselves out
@@ -853,7 +728,6 @@ class Inlink { // : public Msg {
 	void set2 ( class Inlink *old );
 
 	bool setXmlFromRSS      ( Xml *xml , int32_t niceness ) ;
-	//bool setXmlFromLinkText ( Xml *xml ) ;
 
 	// . set a Msg20Reply from ourselves
 	// . Msg25 uses this to recycle old inlinks that are now gone
@@ -959,20 +833,20 @@ class Inlink { // : public Msg {
 	char *getUrl ( ) { 
 		if ( size_urlBuf == 0 ) return NULL;
 		return m_buf ;//+ off_urlBuf; 
-	};
+	}
 	char *getLinkText ( ) { 
 		if ( size_linkText == 0 ) return NULL;
 		//return m_buf + off_linkText; 
 		return m_buf + 
 			size_urlBuf;
-	};
+	}
 	char *getSurroundingText ( ) { 
 		if ( size_surroundingText == 0 ) return NULL;
 		//return m_buf + off_surroundingText; 
 		return m_buf + 
 			size_urlBuf +
 			size_linkText;
-	};
+	}
 	char *getRSSItem ( ) { 
 		if ( size_rssItem == 0 ) return NULL;
 		//return m_buf + off_rssItem; 
@@ -980,7 +854,7 @@ class Inlink { // : public Msg {
 			size_urlBuf +
 			size_linkText + 
 			size_surroundingText;
-	};
+	}
 	char *getCategories ( ) { 
 		if ( size_categories == 0 ) return NULL;
 		//return m_buf + off_categories; 
@@ -989,7 +863,7 @@ class Inlink { // : public Msg {
 			size_linkText + 
 			size_surroundingText +
 			size_rssItem;
-	};
+	}
 	char *getGigabitQuery ( ) { 
 		if ( size_gigabitQuery == 0 ) return NULL;
 		//return m_buf + off_gigabitQuery; 
@@ -999,7 +873,7 @@ class Inlink { // : public Msg {
 			size_surroundingText +
 			size_rssItem +
 			size_categories;
-	};
+	}
 	char *getTemplateVector ( ) { 
 		if ( size_templateVector == 0 ) return NULL;
 		//return m_buf + off_templateVector; 
@@ -1010,7 +884,7 @@ class Inlink { // : public Msg {
 			size_rssItem +
 			size_categories +
 			size_gigabitQuery;
-	};
+	}
 		
 
 	//
@@ -1071,13 +945,9 @@ class Inlink { // : public Msg {
 // . returns NULL and sets g_errno on error
 LinkInfo *makeLinkInfo ( char        *coll                    ,
 			 int32_t         ip                      ,
-			 //char       siteRootQuality         ,
-			 //int32_t         sitePop                 ,
 			 int32_t         siteNumInlinks          ,
 			 Msg20Reply **replies                 ,
 			 int32_t         numReplies              ,
-			 //int32_t         extrapolated            ,
-			 //int32_t         xfactor                 ,
 			 // if link spam give this weight
 			 int32_t         spamWeight              ,
 			 bool         oneVotePerIpTop         ,
@@ -1107,24 +977,6 @@ typedef int32_t linkflags_t;
 // all the links (urls), separated by \0's, are put into a buf of this size
 #define LINK_BUF_SIZE (100*1024)
 
-// we allow up to this many links to be put into m_buf
-//#define MAX_LINKS      10000
-
-//#define MSR_HAD_REC      0x80
-//#define NUM_TYPES_IN_MSR 2
-
-//class MiniSiteRec {
-//public:
-//	bool hadRec() { return m_flags & MSR_HAD_REC; };
-//	int16_t    m_siteOffset;
-//	int16_t    m_siteLen;
-//	int32_t     m_filenum;
-//	uint8_t  m_flags;
-//	char     m_siteQuality;
-//	SiteType m_types[NUM_TYPES_IN_MSR];
-//	SiteType m_lang;
-//};
-
 // Link Flags
 #define LF_SAMEHOST      0x0001 // same hostname
 #define LF_SAMEDOM       0x0002 // same domain
@@ -1145,7 +997,7 @@ typedef int32_t linkflags_t;
 
 #define LF_NOFOLLOW     0x10000
 
-bool isPermalink ( //char        *coll        ,
+bool isPermalink (
 		   class Links *links       ,
 		   class Url   *u           ,
 		   char         contentType ,
@@ -1196,7 +1048,7 @@ public:
 	bool setAllSpamBits ( char *note ) { m_spamNote = note; return true; }
 	void setSpamBit  ( char *note , int32_t i ) { m_spamNotes[i] = note; }
 	void setSpamBits ( char *note , int32_t i ) { 
-		for (int32_t j=i ; j<m_numLinks ; j++) m_spamNotes[j] = note;};
+		for (int32_t j=i ; j<m_numLinks ; j++) m_spamNotes[j] = note;}
 	// . m_spamNote is set if it is ALL link spam... set above
 	// . internal outlinks are never considered link spam since we "dedup"
 	//   them by ip in Msg25/LinkInfo::merge() anyway
@@ -1221,39 +1073,11 @@ public:
 	// linkspam.cpp::setLinkSpam()
 	bool isInternalDom  ( int32_t i ) { return (m_linkFlags[i] & LF_SAMEDOM);}
 
-	bool isOld ( int32_t i ) { return m_linkFlags[i] & LF_OLDLINK; };
-
-	// remove all links from the link buf that do not have the same 
-	// hostname as "url". Used in Msg14 to avoid adding such links and 
-	// avoid getting link info for such links.
-	//void removeExternalLinks ( );
+	bool isOld ( int32_t i ) { return m_linkFlags[i] & LF_OLDLINK; }
 
 	// . returns false and sets g_errno on error
 	// . remove links from our m_linkPtrs[] if they are in "old"
 	bool flagOldLinks ( class Links *old ) ;
-
-	// does this page have a subtantial amount of links with naughty words
-	// in their hostnames?
-	//bool isPageDirty ( );
-
-	// . hash the link: and href: terms
-	// . we need SiteRec of the url that supplied these links so we
-	//   might set hi bits in the link: terms scores to represent:
-	//   banned, unbanned, clean, dirty links if the SiteRec says so
-	// . returns false and set errno on error
-	/*
-	bool hash ( TermTable *table , // SiteRec *sr ,
-		    Url *url , 
-		    Url *redirUrl , 
-		    int32_t version, 
-		    int32_t niceness ,
-		    bool isRSSFeed );
-	*/
-
-	// hash for Linkdb keys
-	//bool hash ( class HashTableX *dt , // <key128_t,char> *dt ,
-	//	    class XmlDoc     *xd ,
-	//	    int32_t        niceness );
 
 	// . does link #n have link text that has at least 1 alnum char in it?
 	// . used for scoring link: terms to make link-text adds more efficient
@@ -1288,56 +1112,35 @@ public:
 	// returns list of \0 terminated, normalized links
 	char          *getLinkBuf    () { 
 		return m_allocBuf; 
-	};
+	}
 	int32_t           getLinkBufLen () { 
 		if ( m_allocBuf ) return m_bufPtr - m_allocBuf;
 		return 0;
 		//return m_allocBuf?m_bufPtr-m_allocBuf:0; 
-	};
+	}
 	//uint32_t *getLinkHashes () { return m_linkHashes; };
-	int32_t           getNumLinks   () { return m_numLinks; };
+	int32_t           getNumLinks   () { return m_numLinks; }
 
-	int32_t           getLinkLen    ( int32_t i ) { return m_linkLens  [i]; };
-	char          *getLink       ( int32_t i ) { return m_linkPtrs  [i]; };
-	char          *getLinkPtr    ( int32_t i ) { return m_linkPtrs  [i]; };
+	int32_t           getLinkLen    ( int32_t i ) { return m_linkLens  [i]; }
+	char          *getLink       ( int32_t i ) { return m_linkPtrs  [i]; }
+	char          *getLinkPtr    ( int32_t i ) { return m_linkPtrs  [i]; }
 	uint32_t       getLinkHash32 ( int32_t i ) { 
-		return (uint32_t)m_linkHashes[i]; };
-	uint64_t       getLinkHash64 ( int32_t i ) { return m_linkHashes[i]; };
-	uint64_t       getHostHash64 ( int32_t i ) { return m_hostHashes[i]; };
-	int32_t           getDomHash32  ( int32_t i ) { return m_domHashes[i]; };
-	int32_t           getNodeNum    ( int32_t i ) { return m_linkNodes[i];  };
-	bool hasRelNoFollow() { return m_hasRelNoFollow; };
+		return (uint32_t)m_linkHashes[i]; }
+	uint64_t       getLinkHash64 ( int32_t i ) { return m_linkHashes[i]; }
+	uint64_t       getHostHash64 ( int32_t i ) { return m_hostHashes[i]; }
+	int32_t           getDomHash32  ( int32_t i ) { return m_domHashes[i]; }
+	int32_t           getNodeNum    ( int32_t i ) { return m_linkNodes[i];  }
+	bool hasRelNoFollow() { return m_hasRelNoFollow; }
 
 	char *getLinkHost ( int32_t i , int32_t *hostLen ) ;
 
 	int32_t findLinkNum(char* url, int32_t urlLen);
 
-	int32_t getMemUsed () { return m_allocSize; };
+	int32_t getMemUsed () { return m_allocSize; }
 
-	bool hasSelfPermalink ( ) { return m_hasSelfPermalink; };
-	bool hasRSSOutlink    ( ) { return m_hasRSSOutlink; };
-	bool hasSubdirOutlink ( ) { return m_hasSubdirOutlink; };
-
-	// . make an RdbList for adding to spiderdb
-	// . returns -1 and sets g_errno on error
-	// . otherwise returns # of outlinks added to "list"
-	// . used by Msg14.cpp for adding outlinks to spiderdb
-	/*
-	char *addToMetaList ( char            *p           , // metalist start
-			      char            *pend        , // metalist end
-			      class TitleRec  *tr          , 
-			      class XmlDoc    *old         ,
-			      char           *coll         ,
-			      class MsgE     *msge         ,
-			      int32_t            niceness     ,
-			      Url            *quickLink         = NULL  ,
-			      linkflags_t     quickLinkFlags    = 0     ,
-			      bool            isAddUrl          = false ,
-			      bool            forceAll          = false ,
-			      bool            skipExternalLinks = false ,
-			      bool            unforceAll        = false ,
-			      int32_t            explicitPriority  = -1    );
-	*/
+	bool hasSelfPermalink ( ) { return m_hasSelfPermalink; }
+	bool hasRSSOutlink    ( ) { return m_hasRSSOutlink; }
+	bool hasSubdirOutlink ( ) { return m_hasSubdirOutlink; }
 
 	// private:
 
@@ -1356,11 +1159,9 @@ public:
 	// . each link ends in a \0
 	// . convenient for passing to Msg10
 	// . each link is in complete http:// format with base url, etc.
-	char   *m_buf;// [LINK_BUF_SIZE];
+	char   *m_buf;
 	// pointer to the end of the buffer
 	char  *m_bufPtr;
-	// running count of the bufsize, including static and dynamic
-	// int32_t   m_bufSize; 
 
 	// this is non-NULL if all outlinks are considered link spam, 
 	// otherwise, individual outlinks will have their m_spamNotes[i] be
@@ -1388,10 +1189,6 @@ public:
 	int32_t           m_numLinks;
 	int32_t           m_numNodes;
 
-	// . should we extract redirects from links? (like for yahoo's links)
-	// . this is set based on the SiteRec
-	//bool m_extractRedirects;
-
 	bool m_hasRelNoFollow;
 
 	bool m_stripIds;
@@ -1399,8 +1196,6 @@ public:
 	uint32_t  m_allocSize;
 	char          *m_allocBuf;
 
-	// queue the blog roll links into the turk for voting
-	bool queueBlogRoll ( class TagRec **tagRecPtrs , int32_t niceness ) ;
 	bool  m_addSiteRootFlags;
 	char *m_coll;
 
@@ -1421,26 +1216,6 @@ public:
 
 	int32_t m_numOutlinksAdded;
 };
-
-int32_t getRegExpNumOfOutlink ( Url           *up              ,
-			     linkflags_t    linkFlags       ,
-			     TagRec        *tagRec          ,
-			     int32_t           quality         ,
-			     int32_t           ip              ,
-			     CollectionRec *cr              ,
-			     Url           *parentUrl       ,
-			     int32_t           sourceHostHash  ,
-			     int32_t           parentHopCount  ,
-			     int32_t           parentPriority  ,
-			     int32_t           hopCount        , // our hop count
-			     int32_t           h               , // hostHash
-			     bool           newOutlink      , // are we new?
-			     bool           isAddUrl        , // from addUrl?
-			     // use -1 if unknown for these 3 values
-			     char           isParentRSS     ,
-			     char           parentIsNew     ,
-			     char           parentIsPermalink ,
-			     char           isIndexed       ); // -1--> unknown
 
 
 #endif
