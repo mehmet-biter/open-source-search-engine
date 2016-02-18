@@ -323,7 +323,7 @@ inline int32_t to_upper_utf8 ( char *dst , char *src ) {
 	return utf8Encode ( y , dst );
 }
 
-inline int32_t to_lower_utf8 (char *dst, char *dstEnd, const char *src, const char *srcEnd ){
+inline int32_t to_lower_utf8 (char *dst, char * /*dstEnd*/, const char *src, const char *srcEnd ){
 	char *dstart = dst;
 	for ( ; src < srcEnd ; src += getUtf8CharSize((uint8_t *)src) )
 		dst += to_lower_utf8 ( dst , src );
@@ -331,7 +331,7 @@ inline int32_t to_lower_utf8 (char *dst, char *dstEnd, const char *src, const ch
 	return dst - dstart;
 }
 
-inline int32_t to_lower_utf8 (char *dst, char *dstEnd, const char *src ){
+inline int32_t to_lower_utf8 (char *dst, char * /*dstEnd*/, const char *src ){
 	char *dstart = dst;
 	for ( ; *src ; src += getUtf8CharSize((uint8_t *)src) )
 		dst += to_lower_utf8 ( dst , src );

@@ -202,7 +202,7 @@ void * operator new (size_t size) throw (std::bad_alloc);
 #define calloc coreme 
 #define realloc coreme 
 //#endif
-inline void *coreme ( int x ) { char *xx = NULL; *xx = 0; return NULL; }
+inline void *coreme ( int /*x*/ ) { char *xx = NULL; *xx = 0; return NULL; }
 
 int32_t getAllocSize(void *p);
 //void * operator new (size_t size) ;
