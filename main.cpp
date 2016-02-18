@@ -1247,7 +1247,6 @@ int main2 ( int argc , char *argv[] ) {
 
 		if ( ! g_udpServer.init( g_hostdb.getMyPort() ,
 					 &g_dp,
-					 0  , // niceness
 					 20000000 ,   // readBufSIze
 					 20000000 ,   // writeBufSize
 					 20       ,   // pollTime in ms
@@ -2840,7 +2839,7 @@ int main2 ( int argc , char *argv[] ) {
 	//   transmission times for big messages. just use ACK_WINDOW *
 	//   MAX_DGRAM_SIZE as the size so when sending you don't drop dgrams
 	// . the 400k size allows us to cover Sync.cpp's activity well
-	if ( ! g_udpServer.init( g_hostdb.getMyPort() ,&g_dp,2/*niceness*/,
+	if ( ! g_udpServer.init( g_hostdb.getMyPort() ,&g_dp,
 				 20000000 ,   // readBufSIze
 				 20000000 ,   // writeBufSize
 				 20       ,   // pollTime in ms
@@ -3165,7 +3164,6 @@ void doCmdAll ( int fd, void *state ) {
 	// make port -1 to indicate none to listen on
 	if ( ! g_udpServer.init( 18123 , // port to listen on
 				 &g_dp,
-				 0, // niceness
 				 20000000 ,   // readBufSIze
 				 20000000 ,   // writeBufSize
 				 20       ,   // pollTime in ms

@@ -122,7 +122,7 @@ UdpServer::~UdpServer() {
 // . niceness typically goes from 0 to 2, 0 being the highest priority
 // . pollTime is how often to call timePollWrapper() (in milliseconds)
 // . it should be at least the minimal slot timeout
-bool UdpServer::init ( uint16_t port, UdpProtocol *proto, int32_t niceness,
+bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 		       int32_t readBufSize , int32_t writeBufSize , 
 		       int32_t pollTime , int32_t maxSlots , bool isDns ){
 
@@ -349,9 +349,8 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto, int32_t niceness,
 	// log an innocent msg
 	//log ( 0, "udp: listening on port %hu with sd=%"INT32" and "
 	//      , m_port, m_sock );
-	log ( LOG_INIT, "udp: Listening on UDP port %hu with niceness=%"INT32" "
-	      "and fd=%i.", 
-	      m_port, niceness , m_sock );
+	log ( LOG_INIT, "udp: Listening on UDP port %hu with fd=%i.", 
+	      m_port, m_sock );
 	// print dgram sizes
 	//log("udp:  using max dgram size of %"INT32" bytes", DGRAM_SIZE );
 	return true;

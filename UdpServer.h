@@ -83,7 +83,6 @@ class UdpServer {
 	// . it should be at least the minimal slot timeout
 	bool init ( uint16_t  port         , 
 		    UdpProtocol    *proto        , 
-		    int32_t            niceness     ,
 		    int32_t            readBufSize  ,
 		    int32_t            writeBufSize ,
 		    int32_t            pollTime     ,

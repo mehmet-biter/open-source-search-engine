@@ -99,7 +99,6 @@ bool Dns::init ( uint16_t clientPort ) {
 	// . poll for timeouts every 11 seconds (11000 milliseconds)
 	if ( ! m_udpServer.init ( m_dnsClientPort, 
 				  &m_proto       ,
-				  1              ,// niceness 
 				  64000          ,// sock read buf
 				  32000          ,// sock write buf
 				  500            ,//polltime(.5secs)

@@ -98,7 +98,6 @@ int main ( int argc , char *argv[] ) {
 	// . the last 1 and 0 are respective niceness levels
 	if ( ! g_udpServer.init( port                 , // use 2000 or 2001
 				 &g_dp                , // use default proto
-				 0                    , // niceness = 0
 				 1024*1024              ,
 				 1024*1024              )){
 		fprintf ( stderr, "main::UdpServer init failed\n"); 
