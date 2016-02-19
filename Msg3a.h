@@ -83,7 +83,8 @@ public:
 
 	// set by Msg3a initially
 	//int32_t       m_indexdbSplit;
-	int32_t m_numHosts;
+//	int32_t m_numHosts;
+	int32_t m_numQueriedHosts;
 
 	bool m_moreDocIdsAvail;
 	int32_t m_totalDocCount;
