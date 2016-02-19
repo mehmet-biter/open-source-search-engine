@@ -320,19 +320,23 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	
 	int64_t qh = 0LL; if ( m_q ) qh = m_q->getQueryHash();
 
-	m_numHosts = g_hostdb.getNumHosts();
+	int32_t totalNumHosts = g_hostdb.getNumHosts();
+	
+	m_numQueriedHosts = 0;
+	
 	// only send to one host?
-	if ( ! m_q->isSplit() ) m_numHosts = 1;
+	if ( ! m_q->isSplit() ) totalNumHosts = 1;
 
 	// now we run it over ALL hosts that are up!
-	for ( int32_t i = 0; i < m_numHosts ; i++ ) { // m_indexdbSplit; i++ ) {
+	for ( int32_t i = 0; i < totalNumHosts ; i++ ) { // m_indexdbSplit; i++ ) {
 		// get that host
 		Host *h = g_hostdb.getHost(i);
 
 		if(!h->m_queryEnabled) {
-			m_numReplies++;
 			continue;
 		}
+		
+		m_numQueriedHosts++;
 
 		// if not a full split, just round robin the group, i am not
 		// going to sweat over performance on non-fully split indexes
@@ -431,7 +435,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 		g_errno = 0;
 	}
 	// return false if blocked on a reply
-	if ( m_numReplies < m_numHosts ) return false;//indexdbSplit )
+	if ( m_numReplies < m_numQueriedHosts ) return false;//indexdbSplit )
 	// . otherwise, we did not block... error?
 	// . it must have been an error or just no new lists available!!
 	// . if we call gotAllShardReplies() here, and we were called by
@@ -444,32 +448,52 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 
 void gotReplyWrapper3a ( void *state , void *state2 ) {
 	Msg3a *THIS = (Msg3a *)state;
-	// timestamp log
-	if ( THIS->m_debug )
-		logf(LOG_DEBUG,"query: msg3a: [%"PTRFMT"] got reply #%"INT32" in %"INT64" ms."
-		     " err=%s", (PTRTYPE)THIS, THIS->m_numReplies ,
-		     gettimeofdayInMilliseconds() -  THIS->m_startTime ,
-		     mstrerror(g_errno) );
-	else if ( g_errno )
-		logf(LOG_DEBUG,"msg3a: error reply. [%"PTRFMT"] got reply #%"INT32" "
-		     " err=%s", (PTRTYPE)THIS, THIS->m_numReplies ,
-		     mstrerror(g_errno) );
 
-	// if one shard times out, ignore it!
-	if ( g_errno == EQUERYTRUNCATED ||
-	     g_errno == EUDPTIMEDOUT )
-		g_errno = 0;
-
-	// record it
-	if ( g_errno && ! THIS->m_errno )
-		THIS->m_errno = g_errno;
 
 	// set it
 	Multicast *m = (Multicast *)state2;
-	// update time
-	int64_t endTime = gettimeofdayInMilliseconds();
+
 	// update host table
 	Host *h = m->m_replyingHost;
+
+	// update time
+	int64_t endTime = gettimeofdayInMilliseconds();
+
+	
+	// timestamp log
+	if ( THIS->m_debug )
+	{
+		logf(LOG_DEBUG,"query: msg3a: [%"PTRFMT"] got reply #%"INT32" (of %"INT32") in %"INT64" ms. Hostid=%"INT32". err=%s", 
+			(PTRTYPE)THIS, 
+			THIS->m_numReplies+1,
+			THIS->m_numQueriedHosts,
+		     endTime - THIS->m_startTime,
+		     h ? h->m_hostId : -1,
+		     mstrerror(g_errno) );
+	}
+	else 
+	if ( g_errno )
+	{
+		logf(LOG_DEBUG,"msg3a: error reply. [%"PTRFMT"] got reply #%"INT32". Hostid=%"INT32". err=%s", 
+			(PTRTYPE)THIS, THIS->m_numReplies ,
+		     h ? h->m_hostId : -1,
+		     mstrerror(g_errno) );
+	}
+
+
+	// if one shard times out, ignore it!
+	if ( g_errno == EQUERYTRUNCATED || g_errno == EUDPTIMEDOUT )
+	{
+		g_errno = 0;
+	}
+
+	// record it
+	if ( g_errno && ! THIS->m_errno )
+	{
+		THIS->m_errno = g_errno;
+	}
+
+	
 	// i guess h is NULL on error?
 	if ( h ) {
 		// how long did it take from the launch of request until now
@@ -488,7 +512,7 @@ void gotReplyWrapper3a ( void *state , void *state2 ) {
 	// update count of how many replies we got
 	THIS->m_numReplies++;
 	// bail if still awaiting more replies
-	if ( THIS->m_numReplies < THIS->m_numHosts ) return;
+	if ( THIS->m_numReplies < THIS->m_numQueriedHosts ) return;
 	// return if gotAllShardReplies() blocked
 	if ( ! THIS->gotAllShardReplies( ) ) return;
 	// set g_errno i guess so parent knows
@@ -516,7 +540,7 @@ bool Msg3a::gotAllShardReplies ( ) {
 	// update our estimated total hits
 	m_numTotalEstimatedHits = 0;
 
-	for ( int32_t i = 0; i < m_numHosts ; i++ ) {
+	for ( int32_t i = 0; i < m_numQueriedHosts ; i++ ) {
 		// get that host that gave us the reply
 		//Host *h = g_hostdb.getHost(i);
 		// . get the reply from multicast
@@ -815,7 +839,7 @@ bool Msg3a::mergeLists ( ) {
 	double        *rsPtr [MAX_SHARDS];
 	key_t         *ksPtr [MAX_SHARDS];
 	int64_t     *diEnd [MAX_SHARDS];
-	for ( int32_t j = 0; j < m_numHosts ; j++ ) {
+	for ( int32_t j = 0; j < m_numQueriedHosts ; j++ ) {
 		// how does this happen?
 		if ( j >= MAX_SHARDS ) { char *xx=NULL;*xx=0; }
 		Msg39Reply *mr =m_reply[j];
@@ -845,7 +869,7 @@ bool Msg3a::mergeLists ( ) {
 	// HACK: START FACET stats merge
 	//
 	int32_t sneed = 0;
-	for ( int32_t j = 0; j < m_numHosts ; j++ ) {
+	for ( int32_t j = 0; j < m_numQueriedHosts ; j++ ) {
 		Msg39Reply *mr = m_reply[j];
 		if ( ! mr ) continue;
 		sneed += mr->size_facetHashList/4;
@@ -892,7 +916,7 @@ bool Msg3a::mergeLists ( ) {
 
 	// now scan each facethashlist from each shard and compile into
 	// the appropriate query term qt->m_facetHashTable
-	for ( int32_t j = 0; j < m_numHosts ; j++ ) {
+	for ( int32_t j = 0; j < m_numQueriedHosts ; j++ ) {
 		Msg39Reply *mr =m_reply[j];
 		if ( ! mr ) continue;
 		//SectionStats *src = &mr->m_sectionStats;
@@ -1024,7 +1048,7 @@ bool Msg3a::mergeLists ( ) {
 	//int32_t need = m_docsToGet * (8+sizeof(double)+
 	int32_t nd1 = m_docsToGet;
 	int32_t nd2 = 0;
-	for ( int32_t j = 0; j < m_numHosts; j++ ) {
+	for ( int32_t j = 0; j < m_numQueriedHosts; j++ ) {
 		Msg39Reply *mr = m_reply[j];
 		if ( ! mr ) continue;
 		nd2 += mr->m_numDocIds;
@@ -1084,7 +1108,7 @@ bool Msg3a::mergeLists ( ) {
 	int32_t hslot;
 
 	// get the next highest-scoring docids from all shard termlists
-	for ( int32_t j = 0; j < m_numHosts; j++ ) {
+	for ( int32_t j = 0; j < m_numQueriedHosts; j++ ) {
 		// . skip exhausted lists
 		// . these both should be NULL if reply was skipped because
 		//   we did a gbdocid:| query
@@ -1238,7 +1262,7 @@ bool Msg3a::mergeLists ( ) {
 		      "shards in %"UINT64" ms. "
 		      ,
 		      (PTRTYPE)this,
-		       m_numDocIds, (int32_t)m_numHosts,
+		       m_numDocIds, (int32_t)m_numQueriedHosts,
 		       gettimeofdayInMilliseconds() - m_startTime
 		      );
 		// show the final merged docids
