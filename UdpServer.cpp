@@ -15,9 +15,6 @@
 //   callbacks, we don't want it reading garbage
 
 
-// types.h uses key_t type that shmget uses
-#undef key_t
-
 int32_t g_dropped = 0;
 int32_t g_corruptPackets = 0;
 bool g_inHandler = false;
@@ -28,9 +25,6 @@ bool g_inHandler = false;
 // . timepoll should turn off interrupts, too
 // . we should call sigqueue if a callback needs to be made if we're hot
 
-
-//#include <sys/ipc.h>  // shmget()
-//#include <sys/shm.h>  // shmget()
 
 // the philosophy for sending/receiving LARGE replies:
 // 1. sender sends 1 dgram passed the last ack he got 
@@ -117,7 +111,6 @@ UdpServer::~UdpServer() {
 
 
 // . returns false and sets g_errno on error
-// . port will be incremented if already in use
 // . use 1 socket for recving and sending
 // . niceness typically goes from 0 to 2, 0 being the highest priority
 // . pollTime is how often to call timePollWrapper() (in milliseconds)
