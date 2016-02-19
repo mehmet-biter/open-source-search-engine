@@ -112,7 +112,6 @@ UdpServer::~UdpServer() {
 
 // . returns false and sets g_errno on error
 // . use 1 socket for recving and sending
-// . niceness typically goes from 0 to 2, 0 being the highest priority
 // . pollTime is how often to call timePollWrapper() (in milliseconds)
 // . it should be at least the minimal slot timeout
 bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
@@ -977,11 +976,6 @@ void readPollWrapper_ass ( int fd , void *state ) {
 }
 
 
-void UdpServer::dumpdgram ( char *dgram , int32_t dgramSize ) {
-	for ( int32_t i = 0 ; i < dgramSize ; i++ ) 
-		log(LOG_INFO,"%"INT32") %"INT32"\n",i,(int32_t)dgram[i]);
-}
-	
 // . returns -1 on error, 0 if blocked, 1 if completed reading dgram
 int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	// NULLify slot

@@ -1,7 +1,6 @@
 // Copyright Matt Wells Nov 2000
 
 // TODO: use temporary bufs for each UdpSlot to avoid mallocs for reads
-// TODO: eliminate m_gotMsgsToSend, m_gotAcksToSend in lieau of Loop.h methods
 
 // . A reliable udp/datagram server
 // . non-blocking, no threads
@@ -302,18 +301,12 @@ class UdpServer {
 	// . called by readPoll()
 	int32_t readSock_ass ( UdpSlot **slot , int64_t now );
 
-	// a debug util
-	void dumpdgram ( char *dgram , int32_t dgramSize );
-
 	// returns false if cannot shutdown right now due to pending traffic
 	//bool tryShuttingDown ( bool callCallback ) ;
 
 	// our listening/sending udp socket and port
         int            m_sock ;  
         uint16_t m_port ;
-
-	// used to prevent cpu usage by sendPoll() when nothing can be sent
-	bool   m_gotMsgsToSend;
 
 	// for defining your own protocol on top of udp
 	UdpProtocol *m_proto;
