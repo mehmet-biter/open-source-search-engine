@@ -1604,6 +1604,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// get the hostname (later we set to domain name)
 	char *name    = fu->getHost();
 	int32_t  nameLen = fu->getHostLen();
+	
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(name,nameLen);
 #endif
@@ -1619,9 +1620,9 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	{
 		pbufLen=snprintf(pbuf, 12, ":%"UINT32"",fu->getPort());
 	}
-	
+
+
  loop:
- 	
 	// now loop through the sub paths of this url's path
 	int32_t prev_len = -1;
 	for ( int32_t i = 0 ; ; i++ ) {
@@ -1630,8 +1631,12 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		if(len==prev_len) //work around bug (?) in Url
 			continue;
 		prev_len = len;
+
 		// FIX: always include first /
-		if ( len == 0 ) len = 1;
+		if ( len == 0 ) {
+			len = 1;
+		}
+
 		// write http://www.whatever.com/path into buf
 		char buf[MAX_URL_LEN+10];
 		char *p = buf;
@@ -1639,9 +1644,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		// BR 20160122: Do NOT fix this for https sites. The search is
 		// always prefixed with http:// (sigh ...)
 		gbmemcpy ( p , "http://" , 7 ); p += 7;
-//		gbmemcpy ( p , fu->getScheme(), fu->getSchemeLen() ); p += fu->getSchemeLen();
-//		gbmemcpy ( p , "://" , 3 ); p += 3;
-		gbmemcpy ( p , name          , nameLen      ); p += nameLen;
+		gbmemcpy ( p , name, nameLen); 	p += nameLen;
 		if( pbufLen > 0 )
 		{
 			gbmemcpy ( p , pbuf, pbufLen); p += pbufLen;
@@ -1654,40 +1657,56 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		// no longer, we just index json now
 		//if ( isStatusDoc ) hi.m_prefix = "site2";
 		hi.m_hashGroup = HASHGROUP_INURL;
+		
+		
 		// this returns false on failure
-		if ( ! hashSingleTerm (buf,p-buf,&hi ) ) return false;
+		if ( ! hashSingleTerm (buf,p-buf,&hi ) ) {
+			return false;
+		}
+
 		// break when we hash the root path
-		if ( len <=1 ) break;
+		if ( len <=1 ) {
+			break;
+		}
 	}
+
 	// now keep moving the period over in the hostname
-	while ( name < end3 && *name != '.' ) { name++; nameLen--; }
+	while ( name < end3 && *name != '.' ) 
+	{ 
+		name++; 
+		nameLen--; 
+	}
+
 	// skip the '.'
 	name++; nameLen--;
 
-
-	// BR 20160106: Don't store junk entries like http://com/
 	// Check that there is a dot before first slash after domain
-	int32_t dom_offset=0;
-	if( strncmp(name,"http://" ,7)==0 )
-	{
-		dom_offset=7;
-	}
-	else
-	if( strncmp(name,"https://",8)==0 )
-	{
-		dom_offset=8;
-	}
-
-	const char *dotpos 	= (const char *)memchr(name,'.',nameLen);
-	const char *slashpos 	= (const char *)memchr(name+dom_offset,'/',nameLen-dom_offset);
-
+	// to avoid junk entries like http://com/subpath/pagename.html
 	bool dom_valid = false;
-	if( slashpos && dotpos && slashpos > dotpos )
+	if( nameLen > 0 )
 	{
-		dom_valid = true;
+		int32_t dom_offset=0;
+		if( strncmp(name,"http://" ,7)==0 )
+		{
+			dom_offset=7;
+		}
+		else
+		if( strncmp(name,"https://",8)==0 )
+		{
+			dom_offset=8;
+		}
+	
+		const char *dotpos 	= (const char *)memchr(name,'.',nameLen);
+		const char *slashpos= (const char *)memchr(name+dom_offset,'/',nameLen-dom_offset);
+	
+		if( dotpos && ( (slashpos && slashpos > dotpos) || !slashpos) )
+		{
+			dom_valid = true;
+		}
 	}
-
+	
 	if ( name < end3 && dom_valid ) goto loop;
+
 
 
 	// BR 20160121: Make searching for e.g. site:dk work
@@ -1703,12 +1722,11 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	if ( ! hashSingleTerm (buf,p-buf,&hi ) ) return false;
 
 
-	setStatus ( "hashing ext colon");
-
 	//
 	// HASH ext: term
 	//
 	// i.e. ext:gif ext:html ext:htm ext:pdf, etc.
+	setStatus ( "hashing ext colon");
 	char *ext  = fu->getExtension();
 	int32_t  elen = fu->getExtensionLen();
 	// update hash parms
