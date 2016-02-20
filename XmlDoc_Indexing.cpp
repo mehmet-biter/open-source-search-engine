@@ -809,7 +809,7 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 			(strncasecmp(tag,"twitter:title", 13) != 0) &&
 			(strncasecmp(tag,"twitter:description", 19) != 0) )
 		{
-			// Unwanted meta tag
+			// If none of the above, it is an unwanted meta tag
 			continue;
 		}
 
@@ -861,8 +861,14 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		// temp null term
 		char c = tptr[tagLen];
 		tptr[tagLen] = 0;
+		
+		
+		// BR 20160220
+		// Now index the wanted meta tags as normal text without prefix so they
+		// are used in user searches automatically.
 		// custom
-		hi.m_prefix = tptr;
+		//hi.m_prefix = tptr;
+		hi.m_prefix = NULL;
 
 		// desc is NULL, prefix will be used as desc
 		bool status = hashString ( buf,len,&hi );
@@ -875,7 +881,6 @@ bool XmlDoc::hashMetaTags ( HashTableX *tt ) {
 		//if ( ! hashNumberForSorting ( buf , bufLen , &hi ) )
 		//	return false;
 	}
-
 
 	return true;
 }
