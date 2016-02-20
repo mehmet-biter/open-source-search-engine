@@ -7964,6 +7964,7 @@ int32_t getTopGigabits ( HashTableX   *ht          ,
 	return count;
 }
 
+
 char *XmlDoc::getMetaDescription( int32_t *mdlen ) {
 	if ( m_metaDescValid ) {
 		*mdlen = m_metaDescLen;
@@ -7979,6 +7980,7 @@ char *XmlDoc::getMetaDescription( int32_t *mdlen ) {
 	return m_metaDesc;
 }
 
+
 char *XmlDoc::getMetaSummary ( int32_t *mslen ) {
 	if ( m_metaSummaryValid ) {
 		*mslen = m_metaSummaryLen;
@@ -7992,6 +7994,7 @@ char *XmlDoc::getMetaSummary ( int32_t *mslen ) {
 	m_metaSummaryValid = true;
 	return m_metaSummary;
 }
+
 
 char *XmlDoc::getMetaKeywords( int32_t *mklen ) {
 	if ( m_metaKeywordsValid ) {
@@ -8007,6 +8010,24 @@ char *XmlDoc::getMetaKeywords( int32_t *mklen ) {
 	m_metaKeywordsValid = true;
 	return m_metaKeywords;
 }
+
+
+char *XmlDoc::getMetaGeoPlacename( int32_t *mgplen ) {
+	if ( m_metaGeoPlacenameValid ) {
+		*mgplen = m_metaGeoPlacenameLen;
+		return m_metaGeoPlacename;
+	}
+	Xml *xml = getXml();
+	if ( ! xml || xml == (Xml *)-1 ) return (char *)xml;
+
+	// we need to point to it in the html source so our WordPosInfo algo works right.
+	m_metaGeoPlacename = xml->getMetaContentPointer( "geo.placename", 13, "name", &m_metaGeoPlacenameLen );
+	*mgplen = m_metaGeoPlacenameLen;
+	m_metaGeoPlacenameValid = true;
+	return m_metaGeoPlacename;
+}
+
+
 
 bool XmlDoc::addGigabits ( char *s ,
 			   int64_t docId ,

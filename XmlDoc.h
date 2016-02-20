@@ -462,6 +462,8 @@ public:
 	char *getMetaDescription( int32_t *mdlen ) ;
 	char *getMetaSummary ( int32_t *mslen ) ;
 	char *getMetaKeywords( int32_t *mklen ) ;
+	char *getMetaGeoPlacename( int32_t *mgplen );
+	
 	bool addGigabits ( char *s , int64_t docId , uint8_t langId ) ;
 	bool addGigabits2 ( char *s,int32_t slen,int64_t docId,uint8_t langId);
 	bool addGigabits ( class Words *ww , 
@@ -671,6 +673,7 @@ public:
 	bool hashTitle ( class HashTableX *table );
 	bool hashBody2 ( class HashTableX *table );
 	bool hashMetaKeywords ( class HashTableX *table );
+	bool hashMetaGeoPlacename( class HashTableX *table );
 	bool hashMetaSummary ( class HashTableX *table );
 	bool hashLanguage ( class HashTableX *table ) ;
 	bool hashLanguageString ( class HashTableX *table ) ;
@@ -1188,6 +1191,7 @@ public:
 	bool m_metaDescValid;
 	bool m_metaSummaryValid;
 	bool m_metaKeywordsValid;
+	bool m_metaGeoPlacenameValid;
 	bool m_siteSpiderQuotaValid;
 	bool m_oldDocValid;
 	bool m_extraDocValid;
@@ -1345,6 +1349,11 @@ public:
 	int32_t  m_metaSummaryLen;
 	char *m_metaKeywords;
 	int32_t  m_metaKeywordsLen;
+	
+	char *m_metaGeoPlacename;
+	int32_t  m_metaGeoPlacenameLen;
+	
+	
 	int32_t  m_siteSpiderQuota;
 	//int32_t m_numBannedOutlinks;
 	class XmlDoc *m_oldDoc;

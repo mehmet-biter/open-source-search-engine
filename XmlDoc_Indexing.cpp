@@ -614,6 +614,18 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		return NULL;
 	}
 
+
+	// BR 20160220
+	// Store value of meta tag "geo.placename" to help aid searches for
+	// location specific sites, e.g. 'Restaurant in London'
+	if ( ! hashMetaGeoPlacename(table) ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashMetaGeoPlacename failed", __FILE__,__func__, __LINE__);
+		return NULL;
+	}
+
+
+
  skip:
 
 	// this will only increment the scores of terms already in the table
@@ -643,12 +655,14 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		return NULL;
 	}
 	
+/*
+	BR 20160220 removed.
 	if ( ! hashMetaZip       ( table ) ) 
 	{
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashMetaZip failed", __FILE__,__func__, __LINE__);
 		return NULL;
 	}
-	
+*/
 // BR 20160107 removed:	if ( ! hashCharset       ( table ) ) return NULL;
 // BR 20160107 removed:		if ( ! hashRSSInfo       ( table ) ) return NULL;
 	if ( ! hashPermalink     ( table ) ) 
@@ -2403,6 +2417,24 @@ bool XmlDoc::hashMetaSummary ( HashTableX *tt ) {
 	if ( ! hashString ( md , mdlen , &hi ) ) return false;
 
 	return true;
+}
+
+
+bool XmlDoc::hashMetaGeoPlacename( HashTableX *tt ) {
+
+	setStatus ( "hashing meta geo.placename" );
+
+	int32_t mgplen;
+	char *mgp = getMetaGeoPlacename( &mgplen );
+
+	// update hash parms
+	HashInfo hi;
+	hi.m_tt         = tt;
+	hi.m_desc       = "meta geo.placename";
+	hi.m_hashGroup  = HASHGROUP_INMETATAG;
+
+	// call XmlDoc::hashString
+	return hashString ( mgp , mgplen , &hi);
 }
 
 
