@@ -1,12 +1,8 @@
-#ifndef _BUZZLOGIC_
 #include "gb-include.h"
-#endif
 
 #include "Msg40.h"
 #include "Stats.h"        // for timing and graphing time to get all summaries
-//#include "CollectionRec.h"
 #include "Collectiondb.h"
-//#include "TitleRec.h"      // containsAdultWords ()
 #include "LanguageIdentifier.h"
 #include "sort.h"
 #include "matches2.h"
@@ -23,13 +19,8 @@
 
 bool printHttpMime ( class State0 *st ) ;
 
-//static void handleRequest40              ( UdpSlot *slot , int32_t netnice );
-//static void gotExternalReplyWrapper      ( void *state , void *state2 ) ;
-//static void gotCacheReplyWrapper         ( void *state );
 static void gotDocIdsWrapper             ( void *state );
 static bool gotSummaryWrapper            ( void *state );
-//static void didTaskWrapper               ( void *state );
-//static void gotResults2                  ( void *state );
 
 // here's the GIGABIT knobs:
 
@@ -65,8 +56,6 @@ static bool gotSummaryWrapper            ( void *state );
 #define QTR_BONUS_CW         1
 #define MULTIPLE_HIT_BOOST   1000 // orig: 1000
 // gigabit phrase scoring params
-//#define SPARSE_MARK          0.34
-//#define SPARSE_PENALTY       1000
 #define FWC_PENALTY          500   // penalty for begining with common word
 #define POP_ZONE_0           10 // 0.00001
 #define POP_ZONE_1           30 //0.0001
@@ -107,7 +96,6 @@ Msg40::Msg40() {
 	m_didSummarySkip = false;
 	m_omitCount      = 0;
 	m_printCount = 0;
-	//m_numGigabitInfos = 0;
 	m_numCollsToSearch = 0;
 	m_numMsg20sIn = 0;
 	m_numMsg20sOut = 0;
@@ -120,10 +108,6 @@ void Msg40::resetBuf2 ( ) {
 	char *p = m_msg20StartBuf;
 	// msg20 destructors
 	for ( int32_t i = 0 ; i < m_numToFree ; i++ ) {
-		// skip if empty
-		//if ( ! m_msg20[i] ) continue;
-		// call destructor
-		//m_msg20[i]->destructor();
 		// cast it
 		Msg20 *m = (Msg20 *)p;
 		// free its stuff
@@ -157,10 +141,6 @@ Msg40::~Msg40() {
 }
 
 bool Msg40::registerHandler ( ) {
-        // . register ourselves with the udp server
-        // . it calls our callback when it receives a msg of type 0x40
-	//if ( ! g_udpServer.registerHandler ( 0x40, handleRequest40 )) 
-	//	return false;
         return true;
 }
 
@@ -282,15 +262,9 @@ bool Msg40::getResults ( SearchInput *si      ,
 	// this one here is for gigabit generation. it likes to have 30 docids
 	// typically to generate gigabits from.
 	// NOTE: pqr needs gigabits for all pages
-	if ( /*m_si->m_firstResultNum == 0 && */get < m_docsToScanForTopics ) 
+	if ( get < m_docsToScanForTopics )
 		get = m_docsToScanForTopics;
-	// for alden's reranking. often this is 50!
-	//if ( get < m_si->m_docsToScanForReranking  ) 
-	//	get = m_si->m_docsToScanForReranking;
-	// for zak's reference pages
-	// if(get<m_si->m_refs_numToGenerate ) get=m_si->m_refs_numToGenerate;
-	// limit to this ceiling though for peformance reasons
-	//if ( get > m_maxDocIdsToCompute ) get = m_maxDocIdsToCompute;
+
 	// ok, need some sane limit though to prevent malloc from 
 	// trying to get 7800003 docids and going ENOMEM
 	if ( get > MAXDOCIDSTOCOMPUTE ) {
@@ -300,45 +274,11 @@ bool Msg40::getResults ( SearchInput *si      ,
 	}
 	// this is how many visible results we need, after filtering/clustering
 	m_docsToGetVisible = get;
-	// if site clustering is on, get more than we should in anticipation 
-	// that some docIds will be clustered.
-	// MDW: we no longer do this here for full splits because Msg39 does
-	// clustering on its end now!
-	//if ( m_si->m_doSiteClustering ) get = (get*150LL)/100LL;
-	//if ( m_si->m_doSiteClustering && ! g_conf.m_fullSplit ) 
-	//	get = (get*150LL)/100LL;
-	// ip clustering is not really used now i don't think (MDW)
-	//if ( m_si->m_doIpClustering       ) get = (get*150LL)/100LL;
+
 	// . get a little more since this usually doesn't remove many docIds
 	// . deduping is now done in Msg40.cpp once the summaries are gotten
 	if ( m_si->m_doDupContentRemoval ) get = (get*120LL)/100LL;
-	// . get 30% more for what reason? i dunno, just cuz...
-	// . well, for "missing query terms" filtering... errors (not founds)
-	//get = (get*130LL)/100LL;
-	// make it 10% because we are getting too many summaries some times
-	// no, this is bad when not doing site clustering or dup removal
-	// we need to skip directly to the 1000th result sometimes to show
-	// those results and we do not want to lookup the first 1000
-	// summaries, so we don't, and this makes us end up looking up 100
-	// more summaries. well, leave this in, just limit the max out
-	// for summaries below then to what we want to show.
-	// crap, Msg40::gotSummary() has a m_numRequests < m_numDocIds
-	// condition, so take this out...
-	//get = (get*110LL)/100LL;
 
-	// get at least 50 since we need a good sample that explicitly has all 
-	// query terms in order to calculate reliable affinities
-	//if ( get < MIN_AFFINITY_SAMPLE ) get = MIN_AFFINITY_SAMPLE;
-	// now apply the multiplier. before it was not getting applied and
-	// we were constantly doing Msg3a recalls. you can set this multiplier
-	// dynamically in the "search controls"
-	// MDW: don't apply if in a full split though, i don't see why...
-	// MDW: just ignore this now, ppl will just mis-set it and serisouly
-	//      screw things up...
-	//if ( cr->m_numDocsMultiplier > 1.0 && ! g_conf.m_fullSplit ) 
-	//	get = (int32_t) ((float)get * cr->m_numDocsMultiplier);
-	// limit to this ceiling though for peformance reasons
-	//if ( get > m_maxDocIdsToCompute ) get = m_maxDocIdsToCompute;
 	// . ALWAYS get at least this many
 	// . this allows Msg3a to allow higher scoring docids in tier #1 to
 	//   outrank lower-scoring docids in tier #0, even if such docids have
@@ -421,11 +361,6 @@ bool Msg40::prepareToGetDocIds ( ) {
 		     m_docsToGetVisible,  m_docsToGet);
 	}
 
-	//if ( m_si->m_compoundListMaxSize <= 0 )
-	//	log("query: Compound list max size is %"INT32". That is bad. You "
-	//	    "will not get back some search results for UOR queries.",
-	//	    m_si->m_compoundListMaxSize );
-
 	// . if query has dirty words and family filter is on, set
 	//   number of results to 0, and set the m_queryClen flag to true
 	// . m_qbuf1 should be the advanced/composite query
@@ -446,11 +381,6 @@ bool Msg40::prepareToGetDocIds ( ) {
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool Msg40::getDocIds ( bool recall ) {
-
-	// . get the docIds
-	// . this sets m_msg3a.m_clusterLevels[] for us
-	//if(! m_msg3a.getDocIds ( &m_r,  m_si->m_q, this , gotDocIdsWrapper))
-	//	return false;
 
 	////
 	//
@@ -533,12 +463,8 @@ bool Msg40::federatedLoop ( ) {
 	// for every 5M docids per host, lets split up the docid range
 	// to avoid going OOM
 	int32_t mult = numDocs / 5000000;
-        if ( mult <= 0 ) mult = 1;
-	// . do not do splits if caller is already specifying a docid range
-	//   like for gbdocid: queries i guess.
-	// . make sure m_msg2 is non-NULL, because if it is NULL we are
-	//   evaluating a query for a single docid for seo tools
-	//if ( m_r->m_minDocId == -1 ) { // && m_msg2 ) {
+	if ( mult <= 0 ) mult = 1;
+
 	int32_t nt = m_si->m_q.getNumTerms();
 	int32_t numDocIdSplits = nt / 2; // ;/// 2;
 	if ( numDocIdSplits <= 0 ) numDocIdSplits = 1;
@@ -556,10 +482,6 @@ bool Msg40::federatedLoop ( ) {
 	if ( cr && cr->m_isCustomCrawl && numDocIdSplits < 4 ) 
 		numDocIdSplits = 4;
 
-	// for testing
-	//m_numDocIdSplits = 3;
-	//if ( ! g_conf.m_doDocIdRangeSplitting )
-	//	m_numDocIdSplits = 1;
 	// limit to 10
 	if ( numDocIdSplits > 15 ) 
 		numDocIdSplits = 15;
@@ -667,39 +589,6 @@ bool Msg40::gotDocIds ( ) {
 	if ( ! m_errno && m_msg3a.m_errno ) m_errno = m_msg3a.m_errno;
 	//sanity check.  we might not have allocated due to out of memory
 	if ( g_errno ) { m_errno = g_errno; return true; }
-	
-	// . ok, do the actual clustering
-	// . sets m_clusterLevels[]
-	// . sets m_clusterLevels[i] to CR_OK if docid #i is not clustered
-	// . sets m_clusterLevels[i] to CR_OK if not doing any clustering or
-	//   filtering, and then returns right away
-	// . allow up to "2" docids per hostname if site clustering is on
-	// . returns false and sets g_errno on error
-	// . this should get rid of cluster levels of CR_GOT_REC
-	// . if we had g_conf.m_fullSplit then Msg3a should have these
-	//   already set...
-	/*
-	if ( ! g_conf.m_fullSplit && 
-	     m_si->m_doSiteClustering &&
-	     ! setClusterLevels ( m_msg3a.m_clusterRecs    ,
-				  m_msg3a.m_docIds         ,
-				  m_msg3a.m_numDocIds      ,
-				  2                        ,
-				  m_si->m_doSiteClustering ,
-				  m_si->m_familyFilter     ,
-				  m_si->m_language         ,
-				  // list of blacklisted site ids
-				  NULL                     ,
-				  m_si->m_debug            ,
-				  m_msg3a.m_clusterLevels  )) {
-		m_errno = g_errno;
-		return true;
-	}
-	*/
-
-	// DEBUG HACK -- make most clustered!
-	//for ( int32_t i = 1 ; i < m_msg3a.m_numDocIds ; i++ )
-	//	m_msg3a.m_clusterLevels[i] = CR_CLUSTERED;
 
 	// time this
 	m_startTime = gettimeofdayInMilliseconds();
@@ -707,7 +596,6 @@ bool Msg40::gotDocIds ( ) {
 	// we haven't got any Msg20 responses as of yet or sent any requests
 	m_numRequests  =  0;
 	m_numReplies   =  0;
-	//m_maxiLaunched = -1;
 
 	// when returning search results in csv let's get the first 100
 	// results and use those to determine the most common column headers
@@ -720,16 +608,9 @@ bool Msg40::gotDocIds ( ) {
 		if ( m_needFirstReplies > 100 ) m_needFirstReplies = 100;
 	}
 
-	// we have received m_numGood contiguous Msg20 replies!
-	//m_numContiguous     = 0;
-	//m_visibleContiguous = 0;
-
 	// . do not uncluster more than 5 docids! it slows things down.
 	// . kind of a HACK until we do it right
 	m_unclusterCount = 5;
-	
-	// assume we do not have enough visible docids
-	//m_gotEnough = false;
 
 	if ( ! m_urlTable.set ( m_msg3a.m_numDocIds * 2 ) ) {
 		m_errno = g_errno;
@@ -756,58 +637,6 @@ bool Msg40::gotDocIds ( ) {
 	if ( m_si->m_debug || g_conf.m_logDebugQuery )
 		logf(LOG_DEBUG,"query: [%"PTRFMT"] Getting topics/gigabits, "
 		     "reference pages and dir pages.",(PTRTYPE)this);
-
-	// . do not bother getting topics if we are passed first page
-	// . AWL NOTE: pqr needs topics on all pages
-	//if ( m_si->m_firstResultNum > 0 ) return launchMsg20s ( false );
-
-	// do not bother getting topics if we will be re-called below so we
-	// will be here again!
-	//if ( numVisible       < m_docsToGet && // are we short?
-	//     m_msg3a.m_tier+1 < MAX_TIERS   && // do we have a tier to go to?
-	//     ! m_msg3a.m_isDiskExhausted      )// SOME more data on disk?
-	//	return launchMsg20s ( false );
-
-	// . TODO: do this LAST, after we get all summaries and do PQR
-	// . TODO: give it all our Msg20s so it can just use those!!!
-	// . get the topics
-	// . returns true right away if m_docsToScanForTopics is <= 0
-// 	if (!m_msg24.generateTopics ( m_si->m_coll                ,
-// 				      m_si->m_collLen             ,
-// 				      m_msg3a.m_q->m_orig         ,// query
-// 				      m_msg3a.m_q->m_origLen      ,// query
-// 				      m_msg3a.m_docIds            ,
-// 				      m_msg3a.m_clusterLevels     ,
-// 				      m_msg3a.m_numDocIds         ,
-// 				      m_si->m_topicGroups         ,
-// 				      1      ,
-// 				      maxAge                      ,
-// 				      m_si->m_wcache              ,//addToCache
-// 				      m_si->m_returnDocIdCount    ,
-// 				      m_si->m_returnDocIds        ,
-// 				      m_si->m_returnPops          ,
-// 				      this                        ,
-// 				      didTaskWrapper              ,
-// 				      m_si->m_niceness            ))
-// 		m_tasksRemaining++;
-
-	//generate reference and related pages.
-// 	if ( ! m_msg1a.generateReferences(m_si,(void*)this,didTaskWrapper) )
-// 		m_tasksRemaining++;
-
-
-	//
-	// call Msg2b to generate directory
-	//
-	// why is this here? it does not depend on the docids. (mdw 9/25/13)
-	// dissect it and fix it!!
-	//
-	//if ( m_si->m_catId && 
-	//     ! m_msg2b.generateDirectory ( m_si->m_catId,
-	//				   (void*)this,
-	//				   didTaskWrapper ) )
-	//	m_tasksRemaining++;
-
 
 	return launchMsg20s ( false );
 }
@@ -927,10 +756,7 @@ bool Msg40::reallocMsg20Buf ( ) {
 	if ( m_buf2 ) {
 		// we do not do recalls when streaming yet
 		if ( m_si->m_streamResults ) { char *xx=NULL;*xx=0; }
-		// use these 3 vars for mismatch stat reporting
-		//int32_t      mismatches = 0;
-		//int64_t mismatch1  = 0LL;
-		//int64_t mismatch2  = 0LL;
+
 		// make new buf
 		char *newBuf = (char *)mmalloc(need,"Msg40d");
 		// return false if it fails
@@ -1004,29 +830,7 @@ bool Msg40::reallocMsg20Buf ( ) {
 			// it is from an older tier but never got the msg20 
 			// for it? what happened? it got unclustered??
 			if ( ! m_msg20[k] ) continue;
-			/*
-			// . make sure they match!
-			// . they may get mismatched after the recall because
-			//   a new doc gets added to the index!!!
-			// . also, if the re-call gets the termlist from a
-			//   different twin and gets back different docids
-			//   or scores, it will change this too!!
-			if ( tmp[i]->m_docId >= 0 &&
-			     tmp[i]->m_docId != m_msg3a.m_docIds[i] ) {
-				// it should be rare!!!
-				mismatches++;
-				if ( ! mismatch1 ) 
-					mismatch1 = tmp[i]->m_docId;
-				if ( ! mismatch2 ) 
-					mismatch2 = m_msg3a.m_docIds[i];
-				continue;
-				//logf(LOG_DEBUG,"query: msg40: docid mismatch"
-				//   " at #%"INT32". olddocid=%"INT64" newdocid=%"INT64"",i,
-				//   tmp[i]->m_docId,m_msg3a.m_docIds[i]);
-				// core for testing on gb1d only!!!
-				//char *xx = NULL; *xx = 0; 
-			}
-			*/
+
 			// . otherwise copy the memory if available
 			// . if m_msg20[i]->m_docId is set this will save us
 			//   repeating a summary lookup
@@ -1036,13 +840,6 @@ bool Msg40::reallocMsg20Buf ( ) {
 		if ( p - (char *)tmp != need ) { char *xx = NULL; *xx = 0; }
 
 		resetBuf2();
-		// destroy all the old msg20s, this was mem leaking
-		//for ( int32_t i = 0 ; i < m_numMsg20s ; i++ ) {
-		//	// assume empty, because clustered, filtered, etc.
-		//	if ( ! m_msg20[i] ) continue;
-		//	// call its destructor
-		//	m_msg20[i]->destructor();
-		//}
 
 		// the new buf2 stuff
 		m_numToFree     = pcount;
@@ -1052,20 +849,11 @@ bool Msg40::reallocMsg20Buf ( ) {
 		m_msg20 = tmp;
 		// update new count
 		m_numMsg20s = m_msg3a.m_numDocIds;
-		// free old buf
-		//mfree ( m_buf2 , m_bufMaxSize2 , "Msg40c");
+
 		// assign to new mem
 		m_buf2        = newBuf;
 		m_bufMaxSize2 = need;
-		// note it since this is inefficient for now
-		// . crap this is messing up m_nextMerged ptr!!
-		//log("query: msg40: rellocated msg20 buffer");
-		// show mismatch stats
-		//if ( mismatches )
-		//	logf(LOG_DEBUG,"query: msg40: docid %"INT64" mismatched "
-		//	     "%"INT64". Total of %"INT32" mismathes. q=%s",
-		//	     mismatch1,mismatch2,mismatches,
-		//	     m_msg3a.m_q->m_orig );
+
 		// all done
 		return true;
 	}
@@ -1085,13 +873,6 @@ bool Msg40::reallocMsg20Buf ( ) {
 
 	m_buf2        = NULL;
 	m_bufMaxSize2 = need;
-
-	// if ( need > 2000000000 ) {
-	// 	log("msg40: need too much mem=%"INT64,need);
-	// 	m_errno = ENOMEM;
-	// 	g_errno = ENOMEM;
-	// 	return false; 
-	// }
 
 	// do the alloc
 	if ( need ) m_buf2 = (char *)mmalloc ( need ,"Msg40msg20");
@@ -1183,28 +964,11 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		    m_si->m_firstResultNum);
 	}
 
-	// if not doing deduping or site clustering, let's not get like
-	// 100 summaries at a time when we only wanted 10 results
-	// for performance reasons
-	// if ( m_si && 
-	//      ! m_si->m_doDupContentRemoval &&
-	//      ! m_si->m_doSiteClustering &&
-	//       maxOut > m_si->m_docsWanted ) 
-	// 	maxOut = m_si->m_docsWanted;
-
-
 	// . launch a msg20 getSummary() for each docid
 	// . m_numContiguous should preceed any gap, see below
 	for ( int32_t i = m_lastProcessedi+1 ; i < m_msg3a.m_numDocIds ;i++ ) {
 		// if the user only requested docids, do not get the summaries
 		if ( m_si->m_docIdsOnly ) break;
-		// if we have enough visible then no need to launch more!
-		//if ( m_gotEnough ) break;
-		// limit it to this dynamic limit so we can check to 
-		// see if we got enough visible each time we get one back!
-		// this prevents us from having to do like 50 msg20 lookups
-		// at a time.
-		//if ( m_numRequests-m_numReplies >= need ) break;
 		// hard limit
 		if ( m_numRequests-m_numReplies >= maxOut ) break;
 		// do not launch another until m_printi comes back because
@@ -1217,57 +981,8 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		     i >= m_printi + MAX_OUTSTANDING_MSG20S - 1 )
 			break;
 
-		// if we have printed enough summaries then do not launch
-		// any more, wait for them to come back in.
-		/// this is causing problems because we have a bunch of
-		// m_printi < m_msg3a.m_numDocIds checks that kinda expect
-		// us to get all summaries for every docid. but when we
-		// do federated search we can get a ton of docids.
-		// if ( m_printi >= m_docsToGetVisible ) {
-		// 	logf(LOG_DEBUG,"query: got %"INT32" >= %"INT32" "
-		// 	     "summaries. done. "
-		// 	     "waiting on remaining "
-		// 	     "%"INT32" to return."
-		// 	     , m_printi
-		// 	     , m_docsToGetVisible
-		// 	     , m_numRequests-m_numReplies);
-		// 	// wait for all msg20 replies to come in
-		// 	if ( m_numRequests != m_numReplies ) break;
-		// 	// then let's hack fix this then so we can call
-		// 	// printSearchResultsTail()
-		// 	m_printi   = m_msg3a.m_numDocIds;
-		// 	// set these to max so they do not launch another
-		// 	// summary request, just in case, below
-		// 	m_numRequests = m_msg3a.m_numDocIds;
-		// 	m_numReplies  = m_msg3a.m_numDocIds;
-		// 	break;
-		// }
-
-		// do not double count!
-		//if ( i <= m_lastProcessedi ) continue;
 		// do not repeat for this i
 		m_lastProcessedi = i;
-
-
-		// if we have printed enough summaries then do not launch
-		// any more, wait for them to come back in.
-		/// this is causing problems because we have a bunch of
-		// m_printi < m_msg3a.m_numDocIds checks that kinda expect
-		// us to get all summaries for every docid. but when we
-		// do federated search we can get a ton of docids.
-		// if ( m_printi >= m_docsToGetVisible ) {
-		// 	logf(LOG_DEBUG,"query: got %"INT32" >= %"INT32" "
-		// 	     "summaries. done. "
-		// 	     "waiting on remaining "
-		// 	     "%"INT32" to return."
-		// 	     , m_printi
-		// 	     , m_docsToGetVisible
-		// 	     , m_numRequests-m_numReplies);
-		// 	m_numRequests++;
-		// 	m_numReplies++;
-		// 	continue;
-		// }
-
 
 		// start up a Msg20 to get the summary
 		Msg20 *m = NULL;
@@ -1324,15 +1039,7 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 			m_numReplies++;
 			continue;
 		}
-		// get the LinkInfo class to set from it
-		//LinkInfo* li = NULL;
-		//if ( m_si->m_refs_numToGenerate != 0 &&
-		//     m_si->m_refs_docsToScan    >  0    ) 
-		//	li = m_msg1a.getLinkInfo(i);
-		// ENGINEER NOTE -- use a single call to msg20 and use flags..
-		//if ( m_si->m_rp_useResultsAsReferences ) {
-		//	if (!m_tmpMsg20[n].
-		//	    getSummary(m_msg3a.getQuery(),
+
 		// assume no error
 		g_errno = 0;
 		// debug msg
@@ -1368,23 +1075,7 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 			req.size_hqbuf = gbstrlen(req.ptr_hqbuf)+1;
 		}
 
-		//int32_t q3size = m_si->m_sbuf3.length()+1;
-		//if ( q3size == 1 ) q3size = 0;
-		//req.ptr_q2buf             = m_si->m_sbuf3.getBufStart();
-		//req.size_q2buf            = q3size;
-		
-		//req.m_rulesetFilter      = m_si->m_ruleset;
-
-		//req.m_getTitleRec         = m_si->m_getTitleRec;
-
-		//req.m_isSuperTurk       = m_si->m_isSuperTurk;
-
-
 		req.m_highlightQueryTerms = m_si->m_doQueryHighlighting;
-		//req.m_highlightDates      = m_si->m_doDateHighlighting;
-
-		//req.ptr_coll             = m_si->m_coll2;
-		//req.size_coll            = m_si->m_collLen2+1;
 
 		req.m_isDebug            = (bool)m_si->m_debug;
 
@@ -1410,13 +1101,9 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		req.m_state              = this;
 		req.m_callback           = gotSummaryWrapper;
 		req.m_niceness           = m_si->m_niceness;
-		// need to see if it is banned, etc.
-		//req.m_checkSitedb        = 1;
 		// 0 means not, 1 means is (should never be 2 at this point)
 		req.m_boolFlag           = m_si->m_boolFlag;
 		req.m_showBanned         = m_si->m_showBanned;
-		//req.m_excludeLinkText    = m_si->m_excludeLinkText ;
-		//req.m_excludeMetaText    = m_si->m_excludeMetaText ;
 		req.m_includeCachedCopy  = m_si->m_includeCachedCopy;//bigsmpl
 		req.m_getSectionVotingInfo   = m_si->m_getSectionVotingInfo;
 		req.m_expected           = true;
@@ -1433,7 +1120,6 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 
 		// a special undocumented thing for getting <h1> tag
 		req.m_getHeaderTag       = m_si->m_hr.getLong("geth1tag",0);
-		//req.m_numSummaryLines = cr->m_summaryMaxNumLines;
 		// let "ns" parm override
 		req.m_numSummaryLines    = m_si->m_numLinesInSummary;
 
@@ -1441,7 +1127,6 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 			req.m_getGigabitVector   = true;
 		else    req.m_getGigabitVector   = false;
 		if ( m_si->m_pqr_demFactCommonInlinks > 0.0 )
-			//req.m_getInlinks = true;
 			req.m_getLinkInfo = true;
 		// . buzz likes to do the &inlinks=1 parm to get inlinks
 		// . use "&inlinks=1" for realtime inlink info, use 
@@ -1450,16 +1135,9 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		// . we "default" to the realtime stuff... i.e. since buzz
 		//   is already using "&inlinks=1"
 		if ( m_si->m_displayInlinks == 2 ) 
-			//req.m_getInlinks    = true;
 			req.m_getLinkInfo     = true;
 		if ( m_si->m_displayOutlinks )
 			req.m_getOutlinks     = true;
-
-		// buzz still wants the SitePop, computed fresh from Msg25,
-		// even if they do not say "&inlinks=4" ... but they do
-		// seem to specify getsitepops, so use that too
-		//if ( m_si->m_getSitePops )
-		//	req.m_computeLinkInfo = true;
 
 		if (m_si->m_queryMatchOffsets)
 			req.m_getMatches = true;
@@ -1614,40 +1292,6 @@ bool Msg40::gotSummary ( ) {
 		    mstrerror(g_errno));
 
 	State0 *st = (State0 *)m_state;
-
-	// keep socket alive if not streaming. like downloading csv...
-	// this fucks up HTTP replies by inserting a space before the "HTTP"
-	// it does not render properly on the browser...
-	/*
-	int32_t now2 = getTimeLocal();
-	if ( now2 - m_lastHeartbeat >= 10 && ! m_si->m_streamResults &&
-	     // incase socket is closed and recycled for another connection
-	     st->m_socket->m_numDestroys == st->m_numDestroys ) {
-		m_lastHeartbeat = now2;
-		int n = ::send ( st->m_socket->m_sd , " " , 1 , 0 );
-		log("msg40: sent heartbeat of %"INT32" bytes on sd=%"INT32"",
-		    (int32_t)n,(int32_t)st->m_socket->m_sd);
-	}
-	*/
-
-
-	/*
-	// sanity check
-	for ( int32_t i = 0 ; i < m_msg3a.m_numDocIds ; i++ ) {
-		// stop as soon as we hit a gap breaking our contiguity... 
-		Msg20 *m = m_msg20[i];
-		if ( ! m ) continue;
-		Msg20Reply *mr = m->m_r;
-		if ( ! mr ) continue;
-		char *cc = mr->ptr_content;
-		if ( ! cc ) continue;
-		//if ( ! strstr(cc,"Modern Marketing KF400032MA") )  continue;
-		//log("hey");
-		//fprintf(stderr,"msg %"INT32" = %s\n",i,cc );
-		if ( i == 48329 ) { char *xx=NULL;*xx=0; }
-		mr->ptr_content = NULL;
-	}
-	*/
 
 
  doAgain:
@@ -2011,96 +1655,11 @@ bool Msg40::gotSummary ( ) {
 		return true;
 	}
 
-
-	// save this before we increment m_numContiguous
-	//int32_t oldNumContiguous = m_numContiguous;
-
-	// . before launching more msg20s, first see if we got enough now
-	// . the first "m_numContiguous" of the m_msg20[] are valid!
-	// . save this for launchMsg20s() to look at at so it will not keep
-	//   launching just to keep m_maxOutstanding satisfied. otherwise, if
-	//   msg20[0] is really really slow, we end up getting back *way* more
-	//   summaries than we probably need!
-	// . this also let's us know how many of the m_msg3a.m_docIds[] and
-	//   m_msg20[]s we can look at at this point to determine how many of
-	//   the docids are actually "visible" (unclustered)
-	// . if enough are already visible we set m_gotEnough to true to
-	//   prevent more msg20s being launched. but we must wait for all that
-	//   have launched to come back.
-	// . visibleContiguous = of the contiguous guys, how many are good, 
-	//   i.e. visible/unclustered?
-	/*
-	for ( int32_t i = 0 ; i < m_msg3a.m_numDocIds ; i++ ) {
-		// stop as soon as we hit a gap breaking our contiguity... 
-		if ( m_msg20[i] && ! m_msg20[i]->m_gotReply ) break;
-		// count every docid
-		m_numContiguous++;
-		// count if it is visible
-		if (m_msg3a.m_clusterLevels[i] == CR_OK) m_visibleContiguous++;
-	}
-	*/
-
-	// if there's no way we have enough, keep going
-        /*
-	if ( m_visibleContiguous<m_si->m_docsWanted+m_si->m_firstResultNum+1 &&
-	     // there have to be more docids to get summaries for...
-	     m_numContiguous < m_msg3a.m_numDocIds ) {
-		// . if we can launch another, do it
-		// . say "true" here so it does not call us, gotSummary() and 
-		//   do a recursive stack explosion
-		// . this returns false if still waiting on more to come back
-		if ( ! launchMsg20s ( true ) ) return false;
-		// maybe some were cached?
-		goto refilter;
-	}
-        */
-
-	// MDW: put this back once we figure out how to prevent so many
-	//      wasted summary lookups
-	// how many msg20s have we got back but filtered out?
-	// int32_t filtered = m_numContiguous - m_visibleContinguous;
-	// we don't want to over-launch msg20s if we end up getting what
-	// we wanted without any disappearing because of clustering, etc.
-	// BUT if we UNDER the hard count, launch more
-	//if ( m_numContiguous == oldNumContiguous && ! m_gotEnough ) {
-	//	// launch more msg20 requests
-	//	if ( ! launchMsg20s ( true ) ) return false;
-	//	// maybe some were cached?
-	//	//goto refilter;
-	//	// it returned true, so m_numRequests == m_numReplies and
-	//	// we don't need to launch any more! but that does NOT
-	//	// make sense because the reply we just got did not increase
-	//	// m_numContiguous, meaning there is a gap we are waiting on.
-	//	char *xx=NULL; *xx=0;
-	//}
-
-        // this logic here makes us get the msg20s in chunks of 50, so the
-	// 51st msg20 request will have to wait for the first 50 replies to
-	// arrive before it can even be launched! that seriously slows us down,
-	// because we often have a summary that takes 200ms to get... but most
-	// take like 10-20ms or so. MDW: comment out later again
-	//if( (m_numContiguous == oldNumContiguous) &&
-	//    (m_numReplies    <  m_numRequests   )    ) 
-	//	return false;
-
-	// so we have to set this to zero 0 i guess
-	//oldNumContiguous = 0;
-	// and this
-	//m_numContiguous = m_numReplies;
-
-
 	int64_t startTime = gettimeofdayInMilliseconds();
 	int64_t took;
 
 	// shortcut
-	//Query *q = m_msg3a.m_q;
 	Query *q = &m_si->m_q;
-        
-	//log(LOG_DEBUG, "query: msg40: deduping from %"INT32" to %"INT32"", 
-	//oldNumContiguous, m_numContiguous);
-
-	// count how many are visible!
-	//int32_t visible = 0;
 
 	// loop over each clusterLevel and set it
 	for ( int32_t i = 0 ; i < m_numReplies ; i++ ) {
@@ -2135,77 +1694,56 @@ bool Msg40::gotSummary ( ) {
 		// something like EMISSINGQUERYTERMS if the document really
 		// doesn't match the query, maybe because of indexdb corruption
 		if ( m->m_errno ) {
-			if ( m_si->m_debug || g_conf.m_logDebugQuery )
-			logf( LOG_DEBUG, "query: result %"INT32" (docid=%"INT64") had "
-			     "an error (%s) and will not be shown.", i,
-			      m_msg3a.m_docIds[i],  mstrerror(m->m_errno));
+			if ( m_si->m_debug || g_conf.m_logDebugQuery ) {
+				logf( LOG_DEBUG, "query: result %" INT32 " (docid=%" INT64 ") had "
+								 "an error (%s) and will not be shown.",
+				      i, m_msg3a.m_docIds[i], mstrerror( m->m_errno ) );
+			}
+
 			// update our m_errno while here
-			if ( ! m_errno ) m_errno = m->m_errno;
+			if ( ! m_errno ) {
+				m_errno = m->m_errno;
+			}
+
 			if ( ! m_si->m_showErrors ) {
 				*level = CR_ERROR_SUMMARY;
-				//m_visibleContiguous--; 
 				continue;
 			}
 		}
+
 		// a special case
-		if ( mr && mr->m_errno == CR_RULESET_FILTERED ) {
+		if ( mr && ( mr->m_errno == CR_RULESET_FILTERED || mr->m_errno == EDOCFILTERED ) ) {
 			*level = CR_RULESET_FILTERED;
-			//m_visibleContiguous--;
 			continue;
 		}
-		// this seems to be set too!
-		if ( mr && mr->m_errno == EDOCFILTERED ) {
-			*level = CR_RULESET_FILTERED;
-			//m_visibleContiguous--;
-			continue;
-		}
+
 		if ( ! m_si->m_showBanned && mr && mr->m_isBanned ) {
 			if ( m_si->m_debug || g_conf.m_logDebugQuery )
-			logf ( LOG_DEBUG, "query: result %"INT32" "
-			       "(docid=%"INT64") is "
-			       "banned and will not be shown.", i, 
-			       m_msg3a.m_docIds[i] );
+				logf( LOG_DEBUG, "query: result %" INT32 " (docid=%" INT64 ") is "
+								 "banned and will not be shown.",
+					  i, m_msg3a.m_docIds[i] );
 			*level = CR_BANNED_URL;
-                        //m_visibleContiguous--;
 			continue;
 		}
-		// corruptino?
-		if ( mr && ! mr->ptr_ubuf ) {
-			log("msg40: got corrupt msg20 reply for docid %"
-			    INT64,mr->m_docId);
+
+		// corruption?
+		if ( mr && !mr->ptr_ubuf ) {
+			log( "msg40: got corrupt msg20 reply for docid %" INT64, mr->m_docId );
 			*level = CR_BAD_URL;
 			continue;
 		}
+
 		// filter out urls with <![CDATA in them
-		if ( mr && strstr(mr->ptr_ubuf, "<![CDATA[") ) {
+		if ( mr && strstr( mr->ptr_ubuf, "<![CDATA[" ) ) {
 			*level = CR_BAD_URL;
-                        //m_visibleContiguous--;
 			continue;
 		}
+
 		// also filter urls with ]]> in them
-		if ( mr && strstr(mr->ptr_ubuf, "]]>") ) {
+		if ( mr && strstr( mr->ptr_ubuf, "]]>" ) ) {
 			*level = CR_BAD_URL;
-                        //m_visibleContiguous--;
 			continue;
 		}
-		//Apparently this was some sort of hack to filter out bad
-		//results originating from a corrupted Indexdb. Disabling
-		//the code seems to have no ill effect. Keeping the hack
-		//in, on the other hand, appears to effectlyve disable OR
-		//functionality, as in "existingterm OR nonexistingterm"
-		//if( mr && ! mr->m_hasAllQueryTerms ) {
-		//	if ( m_si->m_debug || g_conf.m_logDebugQuery )
-		//	logf( LOG_DEBUG, "query: result %"INT32" "
-		//	      "(docid=%"INT64") is "
-		//	      "missing query terms and will not be"
-		//	      " shown.", i, m_msg3a.m_docIds[i] );
-		//	*level = CR_MISSING_TERMS;
-		//      //m_visibleContiguous--;
-		//	// uncluster any docids below this one
-		//	if ( m_unclusterCount-- > 0 ) uncluster ( i );
-		//	continue;
-		//}
-		//visible++;
 	}
 
 	// . assume no dups removed
@@ -2361,10 +1899,6 @@ bool Msg40::gotSummary ( ) {
         // END URL NORMALIZE AND COMPARE
         // 
 
-	// how many docids are visible? (unfiltered)
-	//int32_t visible = m_filterStats[CR_OK];
-
-
 	m_omitCount = 0;
 
 	// count how many are visible!
@@ -2379,25 +1913,11 @@ bool Msg40::gotSummary ( ) {
 		else m_omitCount++;
 	}
 
-	// do we got enough search results now?
-	//if ( visible >= m_docsWanted ) 
-	//	m_gotEnough = true;
-
 	// show time
 	took = gettimeofdayInMilliseconds() - startTime;
 	if ( took > 3 )
 		log(LOG_INFO,"query: Took %"INT64" ms to do clustering and dup "
 		    "removal.",took);
-
-	// do we have enough visible at this point?
-	//if ( m_visibleContiguous >= m_docsToGetVisible ) m_gotEnough = true;
-
-
-	// . wait for all the replies to come in
-	// . no more should be launched in launchedMsg20s() since we set 
-	//   m_gotEnough to true
-	// . MDW: i added "m_gotEnough &&" to this line...
-	//if ( m_gotEnough && m_numReplies < m_numRequests ) return false;
 
 	// . let's wait for the tasks to complete before even trying to launch
 	//   more than the first MAX_OUTSTANDING msg20s
@@ -2448,11 +1968,8 @@ bool Msg40::gotSummary ( ) {
 		    visible, m_docsToGetVisible,
 		    m_msg3a.m_docsToGet, need,
 		    m_numReplies, m_numRequests);
-		// get more
-		//m_docsToGet = need;
 
 		// get more!
-		//m_msg3a.m_docsToGet = need;
 		m_docsToGet = need;
 		// reset this before launch
 		m_numReplies  = 0;
@@ -2461,116 +1978,7 @@ bool Msg40::gotSummary ( ) {
 		m_lastProcessedi = -1;
 		// let's do it all from the top!
 		return getDocIds ( true ) ;
-		
-
-		//m_msg3a.mergeLists();
-		// rellaoc the msg20 array
-		//if ( ! reallocMsg20Buf() ) return true;
-		// reset this before launch
-		//m_numReplies  = 0;
-		//m_numRequests = 0;
-		// reprocess all!
-		//m_lastProcessedi = -1;
-		// now launch!
-		//if ( ! launchMsg20s ( true ) ) return false; 
-		// all done, call callback
-		//return true;
 	}
-
-	     /*
-	// if we do not have enough visible, try to get more
-	if ( visible < m_docsToGet &&
-	     // if we got some docids yet to get, from any tier...
-	     //m_msg3a.m_moreDocIdsAvail &&
-	     // do not recall until all done with the msg20s
-	     //m_numContiguous >= m_msg3a.m_numDocIds &&
-	     // and we had to have gotten all requested of use but just lost 
-	     // some docids due to clustering/filtering
-	     m_msg3a.m_numDocIds >= m_docsToGet &&
-	     // . only recall 3 times at most
-	     // . this also prevents potential stack explosion since we
-	     //   re-call getDocIds() below!
-	     m_msg3aRecallCnt < 3 &&
-	     // do not recall if doing rerank
-	     //m_si->m_rerankRuleset < 0 &&
-	     // do not recall if we got the max to compute
-	     m_msg3a.m_numDocIds < m_maxDocIdsToCompute ) {
-		// get the visibility ratio
-		float ratio ;
-		if ( m_visibleContiguous < 2 ) 
-			ratio = m_msg3a.m_numDocIds / 1;
-		else    
-			ratio = m_msg3a.m_numDocIds / m_visibleContiguous;
-		// always boost by at least 50% more for good measure
-		ratio *= 1.5;
-		// keep stats on it
-		g_stats.m_msg3aRecallCnt++;
-		m_msg3aRecallCnt++;
-		// . re-call msg3a and ask for more docids because some of them
-		//   are invisible/filtered and we need more
-		// . MDW: can we make Msg3a just re-do its merge if it can,
-		//        rather than re-call Msg39 again? (TODO)
-		// . apply the ratio, to get more docids
-		int32_t get = (int32_t)((float)m_docsToGet * ratio);
-		// do not breach the limit
-		if ( get > m_maxDocIdsToCompute ) get = m_maxDocIdsToCompute;
-		// . if different, recall msg3a
-		// . if we are then we can start from msg3a.MergedocIds
-		if ( get > m_docsToGet ) {
-			// debug msg
-			//if ( g_conf.m_logDebugQuery || m_si->m_debug )
-			logf(LOG_DEBUG,"query: msg40: recalling msg3a "
-			     "merge oldactual=%"INT32" newactual=%"INT32"",
-			     m_docsToGet,get);
-			// ok, we got a new number to get now
-			m_docsToGet = get;
-			// let's do it all from the top!
-			return getDocIds ( true ) ;
-			// NOTE: we no longer do msg3a re-calls for simplicity
-			// so all re-calling is done from right here only
-			// MDW: hack it in msg3a too
-			//m_msg3a.m_docsToGet = get;
-			// . true = recalled?
-			// . this will re-merge the lists with a higher
-			//   m_docsToGet and hopefully squeeze more docids out
-			// . this will block (return false) if it has to 
-			//   re-call the Msg39s to get more docids by calling
-			//   Msg3a::fetchLists().
-			// . if it blocks it will eventually call our
-			//   gotDocIdsWrapper() callback
-			//if ( ! m_msg3a.mergeLists ( true ) ) return false;
-			// hey, we got some more docids out of the merge, 
-			// so check them out
-			//goto refilter;
-		}
-	}
-	*/
-
-
-	/*
-	// how many msg20::getSummary() calls did we do unnecessarily?
-	int32_t vcnt = 0;
-	for ( int32_t i = 0 ; i <= m_maxiLaunched ; i++ ) {
-		// skip if never launched and should have... a gap...
-		if ( m_msg20[i] && ! m_msg20[i]->m_gotReply ) continue;
-		// get cluster level
-		char level = m_msg3a.m_clusterLevels[i];
-		// sanity check
-		if ( level < 0 || level >= CR_END ) { char *xx=NULL; *xx =0; }
-		// add it up
-		g_stats.m_filterStats[(int32_t)level]++;
-		// skip if NOT visible
-		if ( m_msg3a.m_clusterLevels[i] != CR_OK ) continue;
-		// count if visible
-		vcnt++;
-		// skip if not wasted
-		if ( vcnt <= m_docsToGetVisible ) continue;
-		// a special g_stat, means msg20 call was not necessary
-		g_stats.m_filterStats[CR_WASTED]++;
-		// discount from visible
-		g_stats.m_filterStats[CR_OK]--;
-	}
-	*/
 
 	// get time now
 	int64_t now = gettimeofdayInMilliseconds();
@@ -2599,15 +2007,11 @@ bool Msg40::gotSummary ( ) {
 	//
 	////////////
 
-	//QueryTerm *qterms[MAX_QUERY_TERMS];
-	//int32_t nqt = 0;
-	//Query *q = m_si->m_q;
 	// english? TEST!
 	unsigned char lang = m_si->m_queryLangId;
 	// just print warning i guess
 	if ( lang == 0 ) { 
 		log("query: queryLang is 0 for q=%s",q->m_orig);
-		//char *xx=NULL;*xx=0; }
 	}
 	// we gotta use query TERMS not words, because the query may be
 	// 'cd rom' and the phrase term will be 'cdrom' which is a good one
@@ -2641,9 +2045,7 @@ bool Msg40::gotSummary ( ) {
 		// remember them in the query term
 		qt->m_hash64d   = qh;
 		qt->m_popWeight = qpopWeight;
-		// store that queryterm ptrs into our array
-		//qterms[nqt] = qt;
-		//nqt++;
+
 		// debug it
 		if ( ! m_si->m_debugGigabits ) continue;
 		SafeBuf msg;
@@ -2668,7 +2070,6 @@ bool Msg40::gotSummary ( ) {
 		// get the fist one, just use that for now
 		TopicGroup *tg = &m_si->m_topicGroups[0];
 
-
 		// . this will not block
 		// . this code is in XmlDoc.cpp
 		// . samples are from XmlDoc::getSampleForGigabits(), generated
@@ -2687,7 +2088,6 @@ bool Msg40::gotSummary ( ) {
 			return true;
 		}
 
-
 		// now make the fast facts from the gigabits and the
 		// samples. these are sentences containing the query and
 		// a gigabit.
@@ -2698,13 +2098,6 @@ bool Msg40::gotSummary ( ) {
 			return true;
 		}
 
-
-		// ng is -1 on error, g_errno should be set
-		//if ( ng == -1 ) return true;
-		// otherwise, it is legit!
-		//m_numGigabitInfos = ng;
-		// sanity check
-		//if ( ng > 50 ) { char *xx=NULL;*xx=0; }
 		// time it
 		int64_t took = gettimeofdayInMilliseconds() - stt;
 		if ( took > 5 )
@@ -2712,33 +2105,8 @@ bool Msg40::gotSummary ( ) {
 			     took);
 	}
 
-
-	// take this out for now...
-#ifdef GB_PQR
-	// run post query reranks for this query
-	int32_t wanted = m_si->m_docsWanted + m_si->m_firstResultNum + 1;
-	if ( m_postQueryRerank.isEnabled() && 
-	    m_postQueryRerank.set2(wanted)){
-		if (      ! m_postQueryRerank.preRerank  () ) {
-			log("query: PostQueryRerank::"
-			    "preRerank() failed.");
-			m_postQueryRerank.rerankFailed();
-		}
-		else if ( ! m_postQueryRerank.rerank     () ) {
-			log("query: PostQueryRerank::"
-			    "rerank() failed.");
-			m_postQueryRerank.rerankFailed();
-		}
-		else if ( ! m_postQueryRerank.postRerank () ) {
-			log("query: PostQueryRerank::"
-			    "postRerank() failed.");
-			m_postQueryRerank.rerankFailed();
-		}
-	}
-#endif
-
 	// set m_moreToCome, if true, we print a "Next 10" link
-	m_moreToCome = (visible > //m_visibleContiguous > 
+	m_moreToCome = (visible >
 			m_si->m_docsWanted+m_si->m_firstResultNum);
 	if ( m_si->m_debug || g_conf.m_logDebugQuery ) 
 		logf ( LOG_DEBUG, "query: msg40: more? %d",   m_moreToCome );
@@ -2765,30 +2133,29 @@ bool Msg40::gotSummary ( ) {
 	int32_t c = 0;
 	int32_t v = 0;
 	for ( int32_t i = 0 ; i < m_msg3a.m_numDocIds ; i++ ) {
-		// assume we got a valid docid
-		bool skip = false;
 		// must ahve a cluster level of CR_OK (visible)
-		if ( m_msg3a.m_clusterLevels[i] != CR_OK ) skip = true;
 		// v is the visible count
-		else if ( v++ < m_si->m_firstResultNum )
-			skip = true;
-		// . if skipping a valid msg20, give it a chance to destruct
-		// . no longer do this because CR_SUMMARY_MERGED needs to keep
-		//   the msg20 reply around so PageResults.cpp can merge the 
-		//   event  descriptions
-		//if ( skip && m_msg20[i] ) m_msg20[i]->destructor();
-		// if skipping continue
-		if ( skip ) continue;
+		if ( ( m_msg3a.m_clusterLevels[i] != CR_OK ) || ( v++ < m_si->m_firstResultNum ) ) {
+			// skip
+			continue;
+		}
+
 		// we got a winner, save it
 		m_msg3a.m_docIds        [c] = m_msg3a.m_docIds        [i];
 		m_msg3a.m_scores        [c] = m_msg3a.m_scores        [i];
 		m_msg3a.m_clusterLevels [c] = m_msg3a.m_clusterLevels [i];
 		m_msg20                 [c] = m_msg20                 [i];
-		if ( m_msg3a.m_scoreInfos )
+
+		if ( m_msg3a.m_scoreInfos ) {
 			m_msg3a.m_scoreInfos [c] = m_msg3a.m_scoreInfos [i];
+		}
+
 		int32_t need = m_si->m_docsWanted;
+
 		// if done, bail
-		if ( ++c >= need ) break;
+		if ( ++c >= need ) {
+			break;
+		}
 	}
 	// reset the # of docids we got to how many we kept!
 	m_msg3a.m_numDocIds = c;
@@ -2861,19 +2228,6 @@ bool Msg40::gotSummary ( ) {
 		return true;
 	}
 
-	// if ( ! m_msg3a.m_rrr.m_getDocIdScoringInfo ) {
-	// 	// make key based on the hash of certain vars in SearchInput
-	// 	key_t k = m_si->makeKey();
-	// 	// cache it
-	// 	m_msg17.storeInCache ( SEARCHRESULTS_CACHEID ,
-	// 			       k                     ,
-	// 			       p                     , // rec
-	// 			       tmpSize               , // recSize
-	// 			       m_firstCollnum ,//m_si->m_coll2
-	// 			       m_si->m_niceness      ,
-	// 			       3                     ); //timeout=3secs
-	// }
-
 	// free it, cache will copy it into its ring buffer
 	if ( p != tmpBuf ) mfree ( p , tmpSize , "Msg40Cache" );
 	// ignore errors
@@ -2895,11 +2249,6 @@ int32_t Msg40::getStoredSize ( ) {
 	size += m_msg3a.getStoredSize();
 	// add each summary
 	for ( int32_t i = 0 ; i < m_msg3a.m_numDocIds; i++ ) {
-		// do not store the big samples if we're not storing cached 
-		// copy. if "includeCachedCopy" is true then the page itself 
-		// will be the summary.
-		//if ( ! m_si->m_includeCachedCopy )
-		//	m_msg20[i]->clearBigSample();
 		// getting rid of this makes it take up less room
 		m_msg20[i]->clearLinks();
 		m_msg20[i]->clearVectors();
@@ -2908,12 +2257,6 @@ int32_t Msg40::getStoredSize ( ) {
 		// otherwise, store it
 		size += m_msg20[i]->getStoredSize();
 	}
-	// . the related topics, only those whose score is >= m_minTopicScore
-	// . nah, just re-instersect from the msg20 replies again! its quick
-	//size += m_msg24.getStoredSize ( );
-	//size += m_msg1a.getStoredSize ( );
-	// cache msg2b if we have it
-	//size += m_msg2b.getStoredSize();
 
 	return size;
 }
@@ -2964,33 +2307,10 @@ int32_t Msg40::serialize ( char *buf , int32_t bufLen ) {
 		// count it
 		if ( m_msg3a.m_rrr.m_debug )
 			log("query: msg40 serialize msg20size=%"INT32"",nb);
-		//if ( m_r.m_debug ) {
-		//	int32_t mcount = 0;
-		//	Msg20Reply *mr = m_msg20[i]->m_r;
-		//	for ( int32_t *mm = &mr->size_tbuf ; 
-		//	      mm <= &mr->size_templateVector ; 
-		//	      mm++ ) {
-		//		log("query: msg20 #%"INT32" = %"INT32"",
-		//		    mcount,*mm);
-		//		mcount++;
-		//	}
-		//}
+
 		if ( nb == -1 ) return -1;
 		p += nb;
 	}
-
-	// nah, just re-instersect from the msg20 replies again! its quick
-	//int32_t x = m_msg24.serialize ( p , pend - p );
-	//if ( x == -1 ) return -1;
-	//p += x;
-
-	//int32_t y = m_msg1a.serialize (p, pend - p);
-	//if ( y == -1 ) return -1;
-	//p += y;
-
-	//int32_t z = m_msg2b.serialize (p, pend - p);
-	//if ( z == -1 ) return -1;
-	//p += z;
 
 	if ( m_msg3a.m_rrr.m_debug )
 		log("query: msg40 serialize nd=%"INT32" "
@@ -3041,11 +2361,6 @@ int32_t Msg40::deserialize ( char *buf , int32_t bufSize ) {
 		if ( x == -1 ) return -1;
 		p += x;
 	}
-
-	// msg2b
-	//int32_t z = m_msg2b.deserialize ( p , pend - p );
-	//if ( z == -1 ) return -1;
-	//p += z;
 
 	// return bytes read
 	return p - buf;
@@ -3145,9 +2460,7 @@ bool hashGigabitSample ( Query *q,
 static int gigabitCmp ( const void *a, const void *b ) {
 	Gigabit *ga = *(Gigabit **)a;
 	Gigabit *gb = *(Gigabit **)b;
-	// put termlen =0 at end, that means it was nuked
-	//if ( ga->m_termLen == 0 && gb->m_termLen >  0 ) return 1; // swap
-	//if ( ga->m_termLen  > 0 && gb->m_termLen == 0 ) return -1;
+
 	float sa = ga->m_gbscore * ga->m_numPages;
 	float sb = gb->m_gbscore * gb->m_numPages;
 	// "King John" on 6 pages should be "John" on 12!
@@ -3196,13 +2509,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 		Msg20* thisMsg20 = m_msg20[i];
 		// must be there! wtf?
 		if ( ! thisMsg20 ) { char *xx=NULL;*xx=0; }
-		// make sure the summary is not in a foreign language (aac)
-		//if (thisMsg20) {
-		//    unsigned char sLang;
-		//    sLang = thisMsg20->m_r->m_summaryLanguage;
-		//    if (language != langUnknown && sLang != language) 
-		//          continue;   
-		//};
+
 		// . get the sample as provided by XmlDoc::getMsg20Reply() 
 		//   calling XmlDoc::getGigabitSample() for each docid in
 		//   the search results
@@ -3214,10 +2521,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 		if ( ! reply ) continue;
 		char *sample = reply->ptr_gigabitSample;
 		int32_t  slen   = reply->size_gigabitSample;
-		// but if doing metas, get the display content as the sample
-		//char  *next = thisMsg20->getDisplayBuf();
-		//if ( tg->m_meta[0] && next )
-		//	sample = thisMsg20->getNextDisplayBuf(&slen,&next);
+
 		// set parser vars
 		char *p    = sample;
 		char *pend = sample + slen;
@@ -3303,12 +2607,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 		Msg20* thisMsg20 = m_msg20[i];
 		// must be there! wtf?
 		if ( ! thisMsg20 ) { char *xx=NULL;*xx=0; }
-		// make sure the summary is not in a foreign language (aac)
-		//if (thisMsg20) {
-		//    unsigned char sLang;
-		//    sLang = thisMsg20->m_r->m_summaryLanguage;
-		//    if(language!=langUnknown && sLang != language) continue; 
-		//};
+
 		Msg20Reply *reply = thisMsg20->getReply();
 		// skip if from an ip we already did
 		if ( tg->m_ipRestrict ) {
@@ -3352,26 +2651,6 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 		// ignore errors
 		g_errno = 0;
 	}
-
-	// debug msg
-	/*
-	for ( int32_t i = 0 ; i < nt ; i++ ) {
-		int32_t score = master->getScoreFromTermNum(i) ;
-		if ( ! score ) continue;
-		char *ptr  = master->getTermPtr(i) ;
-		int32_t len   = master->getTermLen(i);
-		char ff[1024];
-		if ( len > 1020 ) len = 1020;
-		gbmemcpy ( ff , ptr , len );
-		ff[len] = '\0';
-		// we can have html entities in here now
-		//if ( ! is_alnum(ff[0]) ) { char *xx = NULL; *xx = 0; }
-		log("%08"INT32" %s",score,ff);
-	}
-	*/
-
-	// how many do we need?
-	//int32_t need = tg->m_maxTopics ;
 
 	SafeBuf gigabitPtrBuf;
 	int32_t need = master.m_numSlotsUsed * sizeof(Gigabit *);
@@ -3647,15 +2926,6 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 		gi->m_termLen = 0;
 	}
 
-	// resort!! put termLen = 0 at end!
-	//gbqsort ( ptrs , numPtrs , sizeof(Gigabit *) , gigabitCmp , 0 );
-
-
-	// fucking, done, just use the ptrs!!!
-	//m_gigabitPtrsValid = true;
-	// return ptr to the safebuf
-	//return &m_gigabitPtrs;
-
  skipdedup:
 
 	int32_t stored = 0;
@@ -3746,10 +3016,6 @@ bool hashGigabitSample ( Query *q,
 	simTable.set(4,0,8192,tmpBuf,41000,false,0,"simtbl");
 
 	// store our elements into here
-	//char vstack[10000];
-	//int32_t vneed = nw * 8;
-	//SafeBuf vbuf(vstack,10000);
-	//if ( ! vbuf.reserve ( vneed ) ) return true;
 	SafeBuf vbuf;
 	// TODO: make this better
 	if ( ! vbuf.reserve ( 10000 * 8 ) ) return true;
@@ -3832,9 +3098,6 @@ bool hashGigabitSample ( Query *q,
 	// . or we could just wait for our dedup algo to kick in... (mdw)
 	//   then comment this stuff out ...
 	if ( tg->m_dedupSamplePercent > 0 ) {
-		// store it there
-		//SafeBuf sampleVec;
-		//getSampleVector ( bigSample , bigSampleLen , &sampleVec );
 		// point to it
 		char *v1 = vbuf.getBufStart();
 		// get # stored so far
@@ -3896,13 +3159,6 @@ bool hashGigabitSample ( Query *q,
 		// . may be or may not be full (score is 0 if empty)
 		//int32_t n = master->getTermNum ( tt.getTermId(i) );
 		Gigabit *mg = (Gigabit *)master->getValue(&termId64);
-		// skip if 0, i've seen this happen before
-		//if ( tt.getTermId(i) == 0 ) continue;
-		//if ( returnPops ) pop = tt.m_pops[i];
-		// set hi bit of "pop" if in unicode
-		//if ( isUnicode ) pop |= 0x80000000;
-		//else             pop &= 0x7fffffff;
-		//pop &= 0x7fffffff;
 		Gigabit gbit;
 		Gigabit *pg;
 		// if already there... inc the score i guess
@@ -3938,7 +3194,6 @@ bool hashGigabitSample ( Query *q,
 			pg = &gbit;
 		}
 		// debug msg
-		//if ( ! g_conf.m_logDebugQuery ) continue;
 		if ( ! debugGigabits ) continue;
 		char *ww    = pg->m_term;
 		int32_t  wwlen = pg->m_termLen;
@@ -3983,8 +3238,7 @@ public:
 	bool m_isCommonWord;
 	// the raw QTR scores (aac)
 	float m_proxScore;//qtr;
-	// a hash for looking up in the popularity dictionary
-	//int64_t dwid64;
+
 	// . from 0 to 100. 100 means not repeated.
 	// . set in setRepeatScores() function
 	char m_repeatScore;
@@ -4109,19 +3363,11 @@ void hashExcerpt ( Query *q ,
  		if ( ! wids[i] ) continue;
 		// skip if repeated too much according to setRepeatScores()
 		if ( wi->m_repeatScore <= 20 ) continue;
-		// reset popularity
-		//if   ( idf ) wi->m_wpop = -1;
-		// assume all same if not using idf
-		//else         wi->m_wpop =  1; 
+
 		// assume this word is not in the query
 		wi->m_isQueryTerm = 0;
 		// reset
 		wi->m_wpop = -1;
-		// debug point
-		//if ( strncmp( wp[i],"This",4) == 0 )
-		//	log("hey");
-		// store the id
-		//wi->m_dwid64 = hash64d(wp[i], wlen[i] );
 		// . is it a common word?
 		// . it is if it is just one letter
 		// . what about X-windows coming up for a 'windows' query?
@@ -4129,28 +3375,8 @@ void hashExcerpt ( Query *q ,
 		// . METALINCS likes to have 1 digit topics
 		if ( wlen[i] <= 1 && is_lower_a(wp[i][0]) ) 
 			wi->m_isCommonWord = 1;
-		// 2004 is common here but if it makes it in, don't remove it
-		// in the top topics list... no. loses 'atari 2600' then!
-		//else if ( is_digit(ww.getWord(i)[0]) ) 
-		//	icw[i] = 1;
-		//#ifndef _METALINCS_
 		else wi->m_isCommonWord = isCommonWord ( wids[i] );
-		//#else
-		// always allow gigabits that start with numbers for metalincs
-		//else if ( ! is_digit(wp[i][0])) 
-		//	wi->m_isCommonWord = isCommonWord ( (int32_t)wids[i] );
-		//else                            
-		//	wi->m_isCommonWord = 0;
-		//#endif
-		// debug msg
-		/*
-		char *s    = ww.getWord(i);
-		int32_t  slen = ww.getWordLen(i);
-		char  c    = s[slen];
-		s[slen]='\0';
-		log("icw=%"INT32" %s",icw[i],s);
-		s[slen]=c;
-		*/
+
 		// is it a query term? if so, record its word # in "pos" arry
 		int32_t nt = q->m_numTerms;
 		for ( int32_t j = 0 ; j < nt ; j++ ) {
@@ -4178,18 +3404,10 @@ void hashExcerpt ( Query *q ,
 	//
 	//
 
-	// max score -- ONE max scoring hits per doc
-	//int32_t maxScore = nqi * MAX_SCORE_MULTIPLIER;
-	// this happens when generating the gigabit vector for a single doc
-	// so don't hamper it to such a small ceiling
-	//if ( nqi == 0 ) maxScore = ALT_MAX_SCORE;
-
 	// reset cursor to word #0 in excerpt again
 	i = 0;
 	// skip initial punct and spaces
 	if ( i < nw && words.isPunct(i) ) i++;
-	// score each word based on distance to query terms
-	//float score;
 
 	//
 	//
@@ -4198,11 +3416,6 @@ void hashExcerpt ( Query *q ,
 	//
 	//
 	for ( ; i < nw ; i++ ) {
-		// debug point
-		//if ( strncasecmp( wp[i],"Microsoft",9) == 0 )
-		//	log("hey");
-		// do we have pre-supplied words and scores from XmlDoc.cpp?
-		//if ( wids ) {
 		// skip if not indexable
 		if ( ! wids[i] ) continue;
 		// shorcut
@@ -4220,12 +3433,7 @@ void hashExcerpt ( Query *q ,
 		// or be the first punct word
 		if ( delimeter && i >= 2 && ! words.hasChar(i-1,delimeter) ) 
 			continue;
-		// skip if a query term, it's ineligible
-		//if ( ww.getWordLen(i) == 0 ) continue;
-		// if query is NULL, assume we are restricting to meta tags
-		// and query is not necessary
-		//if   ( enforceQueryRadius ) score = 0;
-		//else                        score = ALT_START_SCORE;
+
 		int32_t j ;
 
 		// number of matches
@@ -4247,8 +3455,7 @@ void hashExcerpt ( Query *q ,
 			QueryTerm *qt = &q->m_qterms[j];
 			// zero for this term
 			float score = 0.0;
-			// get distance in words
-			//int32_t d1 = i - pos[ 1000 * j + posPtr[j] ] ;
+
 			// . posPtr is like a cursor into our m_pos array
 			//   that has the word #'s that this query word
 			//   matches in the excerpt
@@ -4269,17 +3476,9 @@ void hashExcerpt ( Query *q ,
 				if ( wi->m_isQueryTerm ||
 				     wi->m_isCommonWord ||
 				     wlen[i] <= 3) {
-				    // common word, query terms, short words
-				    // are all second class citizens when it
-				    // comes to scoring: they get a small
-				    // bonus, to ensure that they are
-				    // considered in the next stage, but do not
-				    // benefit from QPOP and multiple hit
-				    // bonuses (aac)
-					//score = QTR_BONUS_CW;
-					//proxScore += score;
 				    continue; 
 				};
+
 				// QTR_ZONE_0 is the tighest radius
 				if (d1 < QTR_ZONE_0) 
 				    score = QTR_BONUS_0;
@@ -4299,7 +3498,6 @@ void hashExcerpt ( Query *q ,
 			//
 			// look at the following match
 			//
-			//int32_t d2 = pos[ 1000 * j + posPtr[j] + 1 ] - i ;
 			// look at the next occurence of query term #j
 			// in the excerpt and get dist from us to it
 			int32_t d2 = pe->m_pos[pe->m_posPtr + 1] - i;
@@ -4308,26 +3506,10 @@ void hashExcerpt ( Query *q ,
 			// if we are closer to the current matching word
 			// then set score for that...
 			if ( d1 <= d2 ) {
-				// if      ( d1 >=20 ) continue;
-				// if      ( d1 <  4 ) score += 1000;
-				// else if ( d1 <  8 ) score += 800;
-				// else if ( d1 < 12 ) score += 500;
-				// else                score += 200;
-				// nm++;
-				// score *= qpops[j];
-				// continue;
 				if (d1 >= QTR_ZONE_3) continue;
 				if ( wi->m_isQueryTerm || 
 				     wi->m_isCommonWord || 
 				    wlen[i] <= 3) {
-				    // common word, query terms, short words
-				    // are all second class citizens when it
-				    // comes to scoring: they get a small
-				    // bonus, to ensure that they are
-				    // considered in the next stage, but do not
-				    // benefit from QPOP and multiple hit
-				    // bonuses (aac)
-					//score = QTR_BONUS_CW;
 				    continue; 
 				};
 				if (d1 < QTR_ZONE_0) 
@@ -4364,15 +3546,6 @@ void hashExcerpt ( Query *q ,
 			if ( wi->m_isQueryTerm || 
 			     wi->m_isCommonWord || 
 			     wlen[i] <= 3) {
-			    // common word, query terms, short words
-			    // are all second class citizens when it
-			    // comes to scoring: they get a small
-			    // bonus, to ensure that they are
-			    // considered in the next stage, but do not
-			    // benefit from QPOP and multiple hit
-			    // bonuses (aac)
-				//score = QTR_BONUS_CW;
-				//proxScore += score;
 			    continue; 
 			}
 
@@ -4394,32 +3567,19 @@ void hashExcerpt ( Query *q ,
 		// skip if too far away from all query terms
 		if ( proxScore <= 0 ) continue;
 
-		// give a boost for multiple hits 
-		// the more terms in range, the bigger the boost...
-		if ( nm > 1 ) {
-			//log("nm=%"INT32"",nm);
-			// hmmm...  try to rely on more pages mentioning it!
-			//score += MULTIPLE_HIT_BOOST * nm;
-		};
-
 		// . save the raw QTR score (aac)
 		// . this is based on how close the word is to all query
 		//   terms...
 		wi->m_proxScore = proxScore;
 
-		// no longer count closeness to query terms for score,
-		// just use # times topic is in doc(s) and popularity
-		//score = 1000;
-
 		// set pop if it is -1
-		if ( wi->m_wpop == -1 ) { // pops[i] == -1 ) {
-			wi->m_wpop = g_speller.
-				getPhrasePopularity( wp[i],wids[i], true,lang);
-		       // decrease popularity by half if 
-		       // capitalized so Jack does not have 
-		       // same pop as "jack"
-		       if ( is_upper_a (wp[i][0]) ) wi->m_wpop >>= 1;
-		       if ( wi->m_wpop == 0 ) wi->m_wpop = 1;
+		if ( wi->m_wpop == -1 ) {
+			wi->m_wpop = g_speller.getPhrasePopularity( wp[i],wids[i], true,lang);
+			// decrease popularity by half if
+			// capitalized so Jack does not have
+			// same pop as "jack"
+			if ( is_upper_a (wp[i][0]) ) wi->m_wpop >>= 1;
+			if ( wi->m_wpop == 0 ) wi->m_wpop = 1;
 		}
 
 		// log that
@@ -4437,8 +3597,6 @@ void hashExcerpt ( Query *q ,
 		
 	}
 
-
-	//int32_t mm = 0;
 	// reset word ptr again
 	i = 0;
 	// skip initial punct again
@@ -4464,9 +3622,6 @@ void hashExcerpt ( Query *q ,
 		// "search" and "engine"
 		if ( i <= wikiEnd ) continue;
 
-		//if ( strncmp(words.m_words[i],"point",5) == 0 )
-		//	log("hey");
-
 		// in a wikipedia title?
 		int32_t numWiki = g_wiki.getNumWordsInWikiPhrase ( i,&words );
 		wikiEnd = i + numWiki;
@@ -4474,8 +3629,7 @@ void hashExcerpt ( Query *q ,
 		// point to the string of the word
 		char *ww = wp[i];
 		int32_t  wwlen = wlen[i];
-		//int32_t  ss;
-		//float ss;
+
 		if ( wi->m_isCommonWord ) {
 			// . skip this and all phrases if we're "to"
 			// . avoid "to use..." "to do..." "to make..." annoying
@@ -4514,8 +3668,6 @@ void hashExcerpt ( Query *q ,
 
 		float bonus = 0;
 		uint64_t  ph64 = 0;//wids[i]; // hash value
-		// if first letter is upper case, double the score
-		//if ( is_upper_a (ww.getWord(i)[0]) ) score <<= 1;
 
 		// . loop through all phrases that start with this word
 		// . up to 6 real words per phrase
@@ -4529,9 +3681,6 @@ void hashExcerpt ( Query *q ,
 		int32_t count = 0;
 		int32_t nqc   = 0; // # common/query words in our phrase
 		int32_t nhw   = 0; // # of "hot words" (contribute to score)
-
-		//if ( wlen[i] == 8 && strncmp(wp[i],"Practice",8) == 0 )
-		//	log("hey");
 
 		int32_t jWikiEnd = -1;
 		
@@ -4652,13 +3801,6 @@ void hashExcerpt ( Query *q ,
 			else {
 				// if phrase is all commoners  & query skip it
 				if ( nqc == count ) {
-					// debug
-					//char saveChar = ww[wwlen];
-					//ww[wwlen] = '\0';
-					//log("gbits: "
-					//"phrase is all QT or CW; skipping" 
-					//" phrase %s", ww);
-					//ww[wwlen] = saveChar;
 					continue;
 				};
 			}
@@ -4723,26 +3865,7 @@ void hashExcerpt ( Query *q ,
 			     wp[j][wlen[j]]==',' && 
 			     is_digit(wp[j][wlen[j]+1]))
 				continue;
-			/*
-			if       ( pop < 1  ) ;
-			else if  ( pop < 2  ) ss = (score * 90) / 100;
-			else if  ( pop < 5  ) ss = (score * 85) / 100;
-			else if  ( pop < 10 ) ss = (score * 80) / 100;
-			else if  ( pop < 20 ) ss = (score * 75) / 100;
-			else if  ( pop < 30 ) ss = (score * 70) / 100;
-			else if  ( pop < 40 ) ss = (score * 65) / 100;
-			else if  ( pop < 50 ) ss = (score * 60) / 100;
-			else                  ss = (score * 40) / 100;
-			*/
-			//if ( tt->getScoreFromTermId((int64_t)h) > 0 )
-			//	continue;
-			// debug msg
-			//char c     = ww[wwlen];
-			//ww[wwlen]='\0';
-			//fprintf(stderr,"tid=%"UINT32" score=%"INT32" pop=%"INT32" len=%"INT32" "
-			// "repeat=%"INT32" term=%s\n",h,ss,pop,wwlen,
-			//	repeatScores[i],ww);
-			//ww[wwlen]=c;
+
 			// include any ending or starting ( or )
 			if ( i > 0 && ww[-1] == '(' ) { 
 				// ensure we got a ')' somwhere before adding (
@@ -4772,42 +3895,6 @@ void hashExcerpt ( Query *q ,
 			     j >= 2 && // do not breach!
 			     is_alnum_a(ww[-2])) 
 				wordScore *= 2; // <<= 1; // 1;
-			// adjust the gigabit score using the new scores array
-			//if ( scores && mm != NORM_WORD_SCORE ) 
-			//	ss = (ss * mm) / NORM_WORD_SCORE;
-			// adjust the gigabit score using the new scores array
-			//if ( scores && mm != NORM_WORD_SCORE )
-			//	ss = (ss * mm) / NORM_WORD_SCORE;
-			// only count the highest scoring guy once per page
-			//int32_t tn = tt->getTermNum((int64_t)h);
-			//maxScore = ss;
-			//if ( tn >= 0 ) {
-			//	int32_t sc = tt->getScoreFromTermNum(tn);
-			//	if ( sc > maxScore ) maxScore = sc;
-			//}
-			// . add it
-			// . now store the popularity, too, so we can display
-			//   it for the winning gigabits
-			//if ( ! tt->addTerm ((int64_t)h,ss,maxScore,false,
-			//		    ww,wwlen,tn,NULL,pop) ) 
-			// . weight score by pop
-			// . lets try weighting more popular phrases more!
-			//ss = score;
-			// i guess average the > 0 prox scores
-			//if ( nhw > 0) wordScore /= nhw;
-
-			// i think a common word penalty is this bonus?
-			// it is accumulate, so we can add it down here
-			//wordProxSum += bonus;
-
-			// penalty if not enough hot words
-			//if ( nhw < 3 )
-			//	wordScore -= 100;
-
-			// accumulate proxScores of each word
-			// involved in the gigbit, including the
-			// FIRST word!
-			//wordScoreSum += wordScore;
 
 			float boost;
 			if      (minPop < POP_ZONE_0) boost = POP_BOOST_0;
@@ -4816,12 +3903,8 @@ void hashExcerpt ( Query *q ,
 			else if (minPop < POP_ZONE_3) boost = POP_BOOST_3;
 			else                          boost = POP_BOOST_4;
 			// apply the boost
-			//float popModScore = wordProxSum * boost;
 			float popModScore = wordProxMax * boost;
 			if ( popModScore <= 0 ) popModScore = 1;
-
-			// average among the words with positive prox scores
-			//if ( nhw > 0 ) popModScore /= nhw;
 
 			//
 			// ADD A GIGABIT CANDIDATE
@@ -4905,27 +3988,14 @@ void setRepeatScores ( Words *words ,
 	// if no words, nothing to do
 	if ( nw == 0 ) return;
 
-	//char      *ptr      = repeatTable;
-	//int32_t       numSlots = repeatTableNumSlots;
-	//int64_t *hashes   = (int64_t *)ptr; ptr += numSlots * 8;
-	//int32_t      *vals     = (int32_t      *)ptr; ptr += numSlots * 4;
-
 	int64_t   ringWids [ 5 ];
 	int32_t        ringPos  [ 5 ];
 	int32_t        ringi = 0;
 	int32_t        count = 0;
 	int64_t   h     = 0;
 
-	//int32_t numSlots = repeatTable->getNumSlots();
-
-	// make the mask
-	//uint32_t mask = numSlots - 1;
-
 	// clear ring of hashes
 	memset ( ringWids , 0 , 5 * sizeof(int64_t) );
-
-	// for sanity check
-	//int32_t lastStart = -1;
 
 	// count how many 5-word sequences we match in a row
 	int32_t matched    = 0;
@@ -4953,8 +4023,6 @@ void setRepeatScores ( Words *words ,
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
 		// skip if not alnum word
 		if ( ! wids[i] ) continue;
-		// reset
-		//repeatScores[i] = 100;
 		// add new to the 5 word hash
 		h ^= wids[i];
 		// . remove old from 5 word hash before adding new...
@@ -4970,23 +4038,7 @@ void setRepeatScores ( Words *words ,
 		int32_t start = ringPos[ringi];
 		// need at least 5 words in the ring buffer to do analysis
 		if ( ++count < 5 ) continue;
-		// sanity check
-		//if ( start <= lastStart ) { char *xx = NULL; *xx = 0; }
-		// look up in the hash table
-		//int32_t n = h & mask;
-		// stop at new york times - debug
-		/*
-		if ( words->m_words[i][0] == 'A' &&
-		     words->m_words[i][1] == 's' &&
-		     words->m_words[i][2] == 'k' &&
-		     words->m_words[i][3] == 'e' &&
-		     words->m_words[i][4] == 'd' &&
-		     words->m_words[i][5] == ' ' &&
-		     words->m_words[i][6] == 'Q' &&
-		     words->m_words[i][7] == 'u' ) 
-			log("hey");
-		*/
-		//loop:
+
 		// all done if empty
 		if ( ! repeatTable->isInTable(&h) ) {//! hashes[n] ) {
 			// add ourselves to the hash table now
@@ -4999,11 +4051,7 @@ void setRepeatScores ( Words *words ,
 			if ( matched < 3 ) { matched = 0; continue; }
 			// reset
 			matched = 0;
-			// . how much we should we demote
-			// . 10 matching words pretty much means 0 weights
-			//float demote = 1.0 - ((matched-5)*.10);
-			//if ( demote >= 1.0 ) continue;
-			//if ( demote <  0.0 ) demote = 0.0;
+
 			// demote the words involved
 			for ( int32_t j = matchStart ; j < i ; j++ ) 
 				wis[j].m_repeatScore = 0;
@@ -5082,8 +4130,7 @@ bool Msg40::computeFastFacts ( ) {
 		ww.set ( gi->m_term , gi->m_termLen , true, 0 );
 
 		int64_t *wids = ww.getWordIds();
-		// fix mere here
-		//if ( ! wids[0] ) { char *xx=NULL;*xx=0; }
+
 		if ( ! wids[0] )  {
 			log("doc: wids[0] is null");
 			return true;
@@ -5157,8 +4204,7 @@ bool Msg40::computeFastFacts ( ) {
 			if ( *p ) p += 1;
 			// otherwise, skip the \0
 			else p++;
-			// debug
-			//log("docId=%"INT64" EXCERPT=%s",docId,p);
+
 			// . add facts that have the query and a gigabit
 			// . set Fact::m_score based on gigabit it contains
 			// . limit to complete sentences, surrounded by *'s
@@ -5188,7 +4234,6 @@ bool Msg40::computeFastFacts ( ) {
 	}
 	Fact **ptrs = (Fact **)ptrBuf.getBufStart();
 	gbqsort ( ptrs , numFacts , sizeof(Fact *) , factCmp , 0 );
-
 
 
 	//
@@ -5368,10 +4413,6 @@ bool Msg40::printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
 	// get state0
 	State0 *st = (State0 *)m_state;
 
-	//SafeBuf *sb = &st->m_sb;
-	// clear it since we are streaming
-	//sb->reset();
-
 	Msg40 *msg40 = &st->m_msg40;
 
 	// then print each result
@@ -5403,10 +4444,6 @@ bool Msg40::printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
 		m_hadPrintError = true;
 	}
 
-	
-	// log(LOG_INFO,"msg40: printing #%"INT32" (%"UINT32")(d=%"INT64")",
-	//     m_printi,mr->m_contentHash32,mr->m_docId);
-
 	// count it
 	m_numPrinted++;
 
@@ -5418,13 +4455,6 @@ bool printHttpMime ( State0 *st ) {
 
 	SearchInput *si = &st->m_si;
 
-	// grab the query
-	//Msg40 *msg40 = &(st->m_msg40);
-	//char  *q    = msg40->getQuery();
-	//int32_t   qlen = msg40->getQueryLen();
-
-  	//char  local[ 128000 ];
-	//SafeBuf sb(local, 128000);
 	SafeBuf *sb = &st->m_sb;
 	// reserve 1.5MB now!
 	if ( ! sb->reserve(1500000 ,"pgresbuf" ) ) // 128000) )
@@ -5469,155 +4499,12 @@ bool printHttpMime ( State0 *st ) {
 //
 /////////////////
 
-/*
-// return 1 if a should be before b
-static int csvPtrCmp ( const void *a, const void *b ) {
-	//JsonItem *ja = (JsonItem **)a;
-	//JsonItem *jb = (JsonItem **)b;
-	char *pa = *(char **)a;
-	char *pb = *(char **)b;
-	if ( strcmp(pa,"type") == 0 ) return -1;
-	if ( strcmp(pb,"type") == 0 ) return  1;
-	// force title on top
-	if ( strcmp(pa,"product.title") == 0 ) return -1;
-	if ( strcmp(pb,"product.title") == 0 ) return  1;
-	if ( strcmp(pa,"title") == 0 ) return -1;
-	if ( strcmp(pb,"title") == 0 ) return  1;
-	// otherwise string compare
-	int val = strcmp(pa,pb);
-	return val;
-}
-*/
-	
 #include "Json.h"
 
 // 
 // print header row in csv
 //
 bool Msg40::printCSVHeaderRow ( SafeBuf *sb ) {
-
-	//Msg40 *msg40 = &st->m_msg40;
-	//int32_t numResults = msg40->getNumResults();
-
-	/*
-	char tmp1[1024];
-	SafeBuf tmpBuf (tmp1 , 1024);
-
-	char nbuf[27000];
-	HashTableX nameTable;
-	if ( ! nameTable.set ( 8,4,2048,nbuf,27000,false,0,"ntbuf") )
-		return false;
-
-	int32_t niceness = 0;
-
-	// . scan every fucking json item in the search results.
-	// . we still need to deal with the case when there are so many
-	//   search results we have to dump each msg20 reply to disk in
-	//   order. then we'll have to update this code to scan that file.
-
-	for ( int32_t i = 0 ; i < m_needFirstReplies ; i++ ) {
-
-		Msg20 *m20 = getCompletedSummary(i);
-		if ( ! m20 ) break;
-
-		// unless they specified &showerrors=1 do not show
-		// doc not found errors from a bad title rec lookup
-		if ( m20->m_errno && ! m_si->m_showErrors ) 
-			continue;
-
-		if ( ! m20->m_r ) { char *xx=NULL;*xx=0; }
-
-		Msg20Reply *mr = m20->m_r;
-
-		// get content
-		char *json = mr->ptr_content;
-		// how can it be empty?
-		if ( ! json ) continue;
-
-		// parse it up
-		Json jp;
-		jp.parseJsonStringIntoJsonItems ( json , niceness );
-
-		// scan each json item
-		for ( JsonItem *ji = jp.getFirstItem(); ji ; ji = ji->m_next ){
-
-			// skip if not number or string
-			if ( ji->m_type != JT_NUMBER && 
-			     ji->m_type != JT_STRING )
-				continue;
-
-			// if in an array, do not print! csv is not
-			// good for arrays... like "media":[....] . that
-			// one might be ok, but if the elements in the
-			// array are not simple types, like, if they are
-			// unflat json objects then it is not well suited
-			// for csv.
-			if ( ji->isInArray() ) 
-				continue;
-
-			// reset length of buf to 0
-			tmpBuf.reset();
-
-			// . get the name of the item into "nameBuf"
-			// . returns false with g_errno set on error
-			if ( ! ji->getCompoundName ( tmpBuf ) )
-				return false;
-
-			// skip the "html" column, strip that out now
-			if ( strcmp(tmpBuf.getBufStart(),"html") == 0 )
-				continue;
-
-			// is it new?
-			int64_t h64 = hash64n ( tmpBuf.getBufStart() );
-			if ( nameTable.isInTable ( &h64 ) ) continue;
-
-			// record offset of the name for our hash table
-			int32_t nameBufOffset = nameBuf.length();
-			
-			// store the name in our name buffer
-			if ( ! nameBuf.safeStrcpy ( tmpBuf.getBufStart() ) )
-				return false;
-			if ( ! nameBuf.pushChar ( '\0' ) )
-				return false;
-
-			// it's new. add it
-			if ( ! nameTable.addKey ( &h64 , &nameBufOffset ) )
-				return false;
-
-		}
-	}
-
-	// . make array of ptrs to the names so we can sort them
-	// . try to always put title first regardless
-	char *ptrs [ 1024 ];
-	int32_t numPtrs = 0;
-	for ( int32_t i = 0 ; i < nameTable.m_numSlots ; i++ ) {
-		if ( ! nameTable.m_flags[i] ) continue;
-		int32_t off = *(int32_t *)nameTable.getValueFromSlot(i);
-		char *p = nameBuf.getBufStart() + off;
-		ptrs[numPtrs++] = p;
-		if ( numPtrs >= 1024 ) break;
-	}
-
-	// sort them
-	qsort ( ptrs , numPtrs , sizeof(char *) , csvPtrCmp );
-
-	HashTableX *columnTable = &m_columnTable;
-	if ( ! columnTable->set ( 8,4, numPtrs * 4,NULL,0,false,0,"coltbl" ) )
-		return false;
-
-	// now print them out as the header row
-	for ( int32_t i = 0 ; i < numPtrs ; i++ ) {
-		if ( i > 0 && ! sb->pushChar(',') ) return false;
-		if ( ! sb->safeStrcpy ( ptrs[i] ) ) return false;
-		// record the hash of each one for printing out further json
-		// objects in the same order so columns are aligned!
-		int64_t h64 = hash64n ( ptrs[i] );
-		if ( ! columnTable->addKey ( &h64 , &i ) ) 
-			return false;
-	}
-	*/
-
 	Msg20 *msg20s[100];
 	int32_t i;
 	for ( i = 0 ; i < m_needFirstReplies && i < 100 ; i++ ) {
@@ -6098,7 +4985,6 @@ bool Msg40::printFacetTables ( SafeBuf *sb ) {
 		sb->m_length -= 2;
 		// make just \n
 		sb->pushChar('\n');
-		//sb->safePrintf("],\n");
 
 		// search results will follow so put a comma here if not
 		// streaming result. if we are streaming results we print
@@ -6113,10 +4999,6 @@ bool Msg40::printFacetTables ( SafeBuf *sb ) {
 }
 
 int32_t Msg40::printFacetsForTable ( SafeBuf *sb , QueryTerm *qt ) {
-
-	//QueryWord *qw = qt->m_qword;
-	//if ( qw->m_numFacetRanges > 0 )
-
 	HashTableX *fht = &qt->m_facetHashTable;
 	
 	int32_t *ptrs = (int32_t *)qt->m_facetIndexBuf.getBufStart();
@@ -6149,8 +5031,6 @@ int32_t Msg40::printFacetsForTable ( SafeBuf *sb , QueryTerm *qt ) {
 		// but now it is 64 bit i guess
 		FacetValHash_t *fvh ;
 		fvh = (FacetValHash_t *)fht->getKeyFromSlot(j);
-		// we store how many docids had this value
-		//int32_t count = *(int32_t *)fht->getValFromSlot(j);
 		FacetEntry *fe;
 		fe = (FacetEntry *)fht->getValueFromSlot(j);
 		int32_t count = 0;
