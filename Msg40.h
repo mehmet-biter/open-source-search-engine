@@ -181,16 +181,6 @@ class Msg40 {
 	bool  moreResultsFollow ( )   {return m_moreToCome; };
 	time_t getCachedTime ( )      {return m_cachedTime; };
 
-	/*
-	char *getTopicPtr   ( int32_t i ){return m_gigabitInfos[i].m_ptr; };
-	int32_t  getTopicLen   ( int32_t i ){return m_gigabitInfos[i].m_len; };
-	int32_t  getTopicScore ( int32_t i ){return m_gigabitInfos[i].m_pts; };
-	char  getTopicGid   ( int32_t i ){return 0; }; // temporarily
-	int32_t  getNumTopics  (        ){return m_numGigabitInfos; };
-	// advanced gigabit/topic attributes
-	int32_t getTopicDocIdCount(int32_t i){return m_gigabitInfos[i].m_numDocs; };
-	int32_t       getTopicPop(int32_t  i){return m_gigabitInfos[i].m_pop; };
-	*/
 
 	int32_t getNumGigabits (){return m_gigabitBuf.length()/sizeof(Gigabit);};
 	Gigabit *getGigabit ( int32_t i ) {
