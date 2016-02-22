@@ -45,6 +45,7 @@ void Msg39::reset() {
 	m_tmpq.reset();
 	m_numTotalHits = 0;
 	m_gotClusterRecs = 0;
+	m_docIdSplitNumber = 0;
 	reset2();
 }
 
@@ -170,6 +171,9 @@ void Msg39::getDocIds2 ( Msg39Request *req ) {
 
 	// flag it as in use
 	m_inUse = true;
+	
+	//record start time of the query
+	m_startTimeQuery = gettimeofdayInMilliseconds();
 
 	// store it, might be redundant if called from getDocIds() above
 	m_r = req;
@@ -269,9 +273,30 @@ void Msg39_controlLoopWrapper ( void *state ) {
 // 3. increment docid ranges and keep going
 // 4. when done return the top docids
 bool Msg39::controlLoop ( ) {
+	log(LOG_DEBUG,"Msg39::controlLoop(): m_r->m_numDocIdSplits=%d m_r->m_timeout=%"PRId64, m_r->m_numDocIdSplits, m_r->m_timeout);
+	//log("@@@ Msg39::controlLoop: m_startTimeQuery=%"PRId64, m_startTimeQuery);
+	//log("@@@ Msg39::controlLoop: now             =%"PRId64, gettimeofdayInMilliseconds());
+	//log("@@@ Msg39::controlLoop: m_phase=%d", m_phase);
 
  loop:
 	
+	if(m_docIdSplitNumber!=0 && m_phase==0) {
+		//Estimate if we can do this and next ranges within the deadline
+		int64_t now = gettimeofdayInMilliseconds();
+		int64_t time_spent_so_far = now - m_startTimeQuery;
+		int64_t time_per_range = time_spent_so_far / m_docIdSplitNumber;
+		int64_t estimated_this_range_finish_time = now + time_per_range;
+		int64_t deadline = m_startTimeQuery + m_r->m_timeout;
+		log(LOG_DEBUG,"Msg39::controlLoop(): now=%"PRId64" time_spent_so_far=%"PRId64" time_per_range=%"PRId64" estimated_this_range_finish_time=%"PRId64" deadline=%"PRId64,
+		    now, time_spent_so_far, time_per_range, estimated_this_range_finish_time, deadline);
+		if(estimated_this_range_finish_time > deadline) {
+			//estimated completion time crosses the deadline.
+			log(LOG_INFO,"Msg39::controlLoop(): range %d/%d would cross deadline. Skipping", m_docIdSplitNumber, m_r->m_numDocIdSplits);
+			m_ddd = m_dddEnd;
+			m_phase = 4;
+		}
+	}
+
 	// error?
 	if ( g_errno ) {
 	hadError:
@@ -290,6 +315,7 @@ bool Msg39::controlLoop ( ) {
 		int64_t delta = MAX_DOCID / (int64_t)m_r->m_numDocIdSplits;
 		// advance to point to the exclusive endpoint
 		m_ddd += delta;
+		m_docIdSplitNumber++;
 		// ensure this is exclusive of ddd since it will be
 		// inclusive in the following iteration.
 		int64_t d1 = m_ddd;
@@ -309,7 +335,7 @@ bool Msg39::controlLoop ( ) {
 		reset2();
 		// debug log
 		if ( ! m_r->m_forSectionStats && m_debug )
-			log("msg39: docid split phase %"INT64"-%"INT64"",d0,d1);
+			log("msg39: docid split %d/%d range %"INT64"-%"INT64"", m_docIdSplitNumber-1, m_r->m_numDocIdSplits, d0,d1);
 		// wtf?
 		//if ( d0 >= d1 ) break;
 		// load termlists for these docid ranges using msg2 from posdb

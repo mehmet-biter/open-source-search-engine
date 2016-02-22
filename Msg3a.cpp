@@ -208,8 +208,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	}
 
 	// time how long to get each shard's docids
-	if ( m_debug )
-		m_startTime = gettimeofdayInMilliseconds();
+	m_startTime = gettimeofdayInMilliseconds();
 
 	// reset replies received count
 	m_numReplies  = 0;
@@ -313,8 +312,10 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	int64_t timeout = multicast_msg3a_default_timeout;
 	// override? this is USUALLY -1, but DupDectector.cpp needs it
 	// high because it is a spider time thing.
-	if ( m_r->m_timeout > 0 )
+	if ( m_r->m_timeout > 0 ) {
 		timeout = m_r->m_timeout;
+		timeout += 250; //add 250ms for general overhead
+	}
 	if ( timeout > multicast_msg3a_maximum_timeout )
 		timeout = multicast_msg3a_maximum_timeout;
 	

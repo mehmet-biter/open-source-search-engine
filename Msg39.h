@@ -253,6 +253,7 @@ private:
 	
 	// used for timing
 	int64_t  m_startTime;
+	int64_t  m_startTimeQuery; //when the getDocIds2() was first called
 
 	// this is set if PosdbTable::addLists() had an error
 	int32_t       m_errno;
@@ -273,6 +274,7 @@ private:
 	bool        m_gotClusterRecs;
 	bool        controlLoop();
 	int32_t m_phase;
+	int32_t m_docIdSplitNumber; //next split range to do
 	void        estimateHitsAndSendReply   ();
 	bool        setClusterRecs ();
 	bool        gotClusterRecs ();
