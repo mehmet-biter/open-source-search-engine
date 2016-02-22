@@ -20,11 +20,11 @@ TEST(FctypesTest, VerifyStrnstrTrue) {
 		"aaaab"
 	};
 
-	ASSERT_EQ(sizeof(haystack)/sizeof(haystack[0]), sizeof(needle)/sizeof(needle[0]));
+	ASSERT_EQ( sizeof( haystack ) / sizeof( haystack[0] ), sizeof( needle ) / sizeof( needle[0] ) );
 
-	size_t len = sizeof(haystack) / sizeof(haystack[0]);
-	for (size_t i = 0; i < len; ++i) {
-		SCOPED_TRACE(haystack[i]);
-		EXPECT_TRUE((strnstr2(haystack[i], strlen(haystack[i]), needle[i]) != NULL));
+	size_t len = sizeof( haystack ) / sizeof( haystack[0] );
+	for ( size_t i = 0; i < len; ++i ) {
+		SCOPED_TRACE( haystack[i] );
+		EXPECT_TRUE( ( strnstr2( haystack[i], strlen( haystack[i] ), needle[i] ) != NULL ) );
 	}
 }

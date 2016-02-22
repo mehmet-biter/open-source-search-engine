@@ -754,13 +754,19 @@ char *strncasestr ( char *haystack , const char *needle , int32_t haystackSize )
 	int32_t n = haystackSize - needleSize ;
 	for ( int32_t i = 0 ; i <= n ; i++ ) {
 		// keep looping if first chars do not match
-		if ( to_lower_a(haystack[i]) != to_lower_a(needle[0]) ) 
+		if ( to_lower_a(haystack[i]) != to_lower_a(needle[0]) ) {
 			continue;
+		}
+
 		// if needle was only 1 char it's a match
-		if ( ! needle[1] ) return &haystack[i];
+		if ( ! needle[1] ) {
+			return &haystack[i];
+		}
+
 		// compare the whole strings now
-		if ( strncasecmp ( &haystack[i] , needle , needleSize ) == 0 ) 
-			return &haystack[i];			
+		if ( strncasecmp ( &haystack[i] , needle , needleSize ) == 0 ) {
+			return &haystack[i];
+		}
 	}
 	return NULL;
 }
