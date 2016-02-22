@@ -231,9 +231,6 @@ class Msg40 {
 	HashTableX m_dedupTable;
 
 	int32_t m_msg3aRecallCnt;
-	// this goes into msg3a now so we can send multiple msg3as out,
-	// 1 per collection
-	//Msg39Request m_r;
 
 	int32_t       m_docsToGet;
 	int32_t       m_docsToGetVisible;
