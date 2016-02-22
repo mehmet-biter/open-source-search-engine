@@ -236,13 +236,6 @@ class Multicast {
 	int32_t m_hackFileId;
 	int64_t m_hackFileOff;
 	class ImportState *m_importState;
-
-	// hacky crunk use by seo pipeline in xmldoc.cpp
-	//void *m_hackxd;
-	//void *m_hackHost;
-	//void *m_hackQPtr;
-	//int32_t  m_hackPtrCursor;
-	//char  m_hackIsMsg99ReplyPtr;
 };
 
 #endif
