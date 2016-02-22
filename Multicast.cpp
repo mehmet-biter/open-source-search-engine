@@ -446,32 +446,6 @@ bool Multicast::sendToHostLoop ( int32_t key , int32_t hostNumToTry ,
 				 int32_t firstHostId ) {
 	// erase any errors we may have got
 	g_errno = 0 ;
-	// ALL multicast classes share "s_lastPing"
-	//static time_t s_lastPing = 0;
-	// . every 10 seconds we send to a random host in this group in 
-	//   addition to the best host to act like a ping
-	// . this keeps the ping times of all the hosts fresh
-	// . but we should only use msgs NOT of type 0 so we don't send over
-	//   huge indexLists!
-	/*
-	if ( m_msgType == 0x36 && getTime() - s_lastPing > 10 ) {
-		// . pick a host other than the best at random
-		// . if there's multiple dead hosts we should hit a random one
-		int32_t i = pickRandomHost();
-		// if we got one, try sending to it
-		if ( i >= 0 ) sendToHost(i);
-		// erase any errors we may have got
-		g_errno = 0 ;
-		// note time of our last ping for ALL multicast classes
-		s_lastPing = getTime();
-		// the best host
-		int32_t bh = pickBestHost ( key );
-		// if we sent to the one we were going to already, return now
-		if ( i >= 0 && i == bh ) return true;
-		// if we sent to the one and only host, bail
-		if ( i >= 0 && bh < 0  ) return true;
-	}
-	*/
 loop:
 
 	// if it is already in progress... wait for it to get back
