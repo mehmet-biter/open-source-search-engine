@@ -29465,7 +29465,7 @@ bool XmlDoc::getIsInjecting ( ) {
 }
 
 
-int posdbKeyCmp ( const void *a, const void *b ) {
+static int posdbKeyCmp ( const void *a, const void *b ) {
 	char *ka = (char *)a;
 	char *kb = (char *)b;
 	//int64_t tid64a = g_posdb.getTermId(ka);
