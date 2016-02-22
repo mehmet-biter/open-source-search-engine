@@ -41,8 +41,8 @@ enum {
 	CR_BAD_URL         ,
 	// the url is banned in tagdb or url filters table
 	CR_BANNED_URL      ,
-	// the url is missing query terms (BIG HACK)
-	CR_MISSING_TERMS   ,
+	// the summary is empty
+	CR_EMPTY_SUMMARY   ,
 	// error getting summary (Msg20::m_errno is set)
 	CR_ERROR_SUMMARY   ,
 	// a summary dup of a higher-scoring result
@@ -52,15 +52,9 @@ enum {
 	// a gigabit vector dup
 	CR_DUP_TOPIC       ,
 	// another error getting it... could be one of many
-        CR_ERROR_CLUSTERDB , 
-        // the url is a dup of a previous url (wiki pages capitalization)
+	CR_ERROR_CLUSTERDB ,
+	// the url is a dup of a previous url (wiki pages capitalization)
 	CR_DUP_URL         ,  // 14
-
-	// these are for buzzlogic (buzz)
-	//CR_BELOWMINDATE    ,
-	//CR_ABOVEMAXDATE    ,
-	//CR_BELOWMININLINKS ,
-	//CR_ABOVEMAXINLINKS ,
 
 	// . subset of the CR_OK (visible) results are "wasted" titlerec lookup
 	// . only used for stats by Msg40.cpp/Stats.cpp

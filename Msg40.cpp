@@ -1744,6 +1744,14 @@ bool Msg40::gotSummary ( ) {
 			*level = CR_BAD_URL;
 			continue;
 		}
+
+		// filter empty summaries
+		if ( mr && mr->size_displaySum == 1 ) {
+			if ( ! m_si->m_showErrors ) {
+				*level = CR_EMPTY_SUMMARY;
+				continue;
+			}
+		}
 	}
 
 	// . assume no dups removed
