@@ -701,6 +701,74 @@ int32_t Msg20Reply::serialize ( char *buf , int32_t bufSize ) {
 	gbmemcpy ( p , (char *)this , sizeof(Msg20Reply) );
 	p += (int32_t)sizeof(Msg20Reply);
 	// then store the strings!
+#ifdef _VALGRIND_
+	if(ptr_htag)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_htag,size_htag);
+	if(ptr_ubuf)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_ubuf,size_ubuf);
+	if(ptr_rubuf)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_rubuf,size_rubuf);
+	if(ptr_displaySum)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_displaySum,size_displaySum);
+	if(ptr_dbuf)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_dbuf,size_dbuf);
+	if(ptr_gigabitSample)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_gigabitSample,size_gigabitSample);
+	if(ptr_mbuf)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_mbuf,size_mbuf);
+	if(ptr_vbuf)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_vbuf,size_vbuf);
+	if(ptr_imgData)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_imgData,size_imgData);
+	if(ptr_facetBuf)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_facetBuf,size_facetBuf);
+	if(ptr_catIds)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_catIds,size_catIds);
+	if(ptr_indCatIds)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_indCatIds,size_indCatIds);
+	if(ptr_site)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_site,size_site);
+	if(ptr_reserved0)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_reserved0,size_reserved0);
+	if(ptr_linkInfo)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_linkInfo,size_linkInfo);
+	if(ptr_outlinks)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_outlinks,size_outlinks);
+	if(ptr_vector1)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_vector1,size_vector1);
+	if(ptr_vector2)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_vector2,size_vector2);
+	if(ptr_vector3)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_vector3,size_vector3);
+	if(ptr_linkText)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_linkText,size_linkText);
+	if(ptr_surroundingText)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_surroundingText,size_surroundingText);
+	if(ptr_linkUrl)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_linkUrl,size_linkUrl);
+	if(ptr_rssItem)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_rssItem,size_rssItem);
+	if(ptr_categories)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_categories,size_categories);
+	if(ptr_gigabitQuery)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_gigabitQuery,size_gigabitQuery);
+	if(ptr_content)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_content,size_content);
+	if(ptr_sectionVotingInfo)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_sectionVotingInfo,size_sectionVotingInfo);
+	if(ptr_tr)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_tr,size_tr);
+	if(ptr_tlistBuf)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_tlistBuf,size_tlistBuf);
+	if(ptr_tiBuf)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_tiBuf,size_tiBuf);
+	if(ptr_templateVector)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_templateVector,size_templateVector);
+	if(ptr_metadataBuf)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_metadataBuf,size_metadataBuf);
+	if(ptr_note)
+		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_note,size_note);
+#endif
 	int32_t  *sizePtr = &size_tbuf;
 	int32_t  *sizeEnd = &size_note;
 	char **strPtr  = &ptr_tbuf;
