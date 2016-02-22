@@ -10,6 +10,9 @@
 #include "Phrases.h"
 #include "sort.h"
 #include "Wiktionary.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 Synonyms::Synonyms() {
 	m_synWordBuf.setLabel("syswbuf");
@@ -515,9 +518,15 @@ bool Synonyms::addStripped ( char *w , int32_t wlen , HashTableX *dt ) {
 	// filter out accent marks
 	char abuf[256];
 	//int32_t alen = utf8ToAscii(abuf,256,(unsigned char *)w,wlen);
-	int32_t alen = stripAccentMarks(abuf,256,(unsigned char *)w,wlen);
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(w,wlen);
+#endif
+	int32_t alen = stripAccentMarks(abuf,sizeof(abuf)-1,(unsigned char *)w,wlen);
 	// skip if can't convert to ascii... (unsupported letter)
 	if ( alen < 0 ) return true;
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(abuf,alen);
+#endif
 
 	// if same as original word, skip
 	if ( wlen==alen && strncmp(abuf,w,wlen) == 0 ) return true;
@@ -545,7 +554,7 @@ bool Synonyms::addStripped ( char *w , int32_t wlen , HashTableX *dt ) {
 	// no langs
 	*m_langIdsPtr++ = 0;
 
-	m_synWordBuf.safeStrcpy(abuf);
+	m_synWordBuf.safeMemcpy(abuf,alen);
 	m_synWordBuf.pushChar('\0');
 
 	return true;
