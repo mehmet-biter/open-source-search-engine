@@ -22731,11 +22731,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	int32_t  rulen = 0;
 	if ( ru ) rulen = gbstrlen(ru)+1;
 
-	// One reserved list. Previously held ad ids (so links could be marked 
-	// as spammy based on ads found)
-	reply->ptr_reserved0 = NULL;
-	reply->size_reserved0 = 0;
-
 	// need full cached page of each search result?
 	// include it always for spider status docs.
 	if ( m_req->m_includeCachedCopy || m_contentType == CT_STATUS ) {

@@ -148,14 +148,15 @@ public:
 	// exclude these strings which were "cleared". Used by Msg40 to 
 	// reduce the memory required for caching the Msg40 which includes an
 	// array of Msg20s.
-	//void clearBigSample ( ) { size_sbuf = 0; };
 	void clearOutlinks  ( ) { 
 		size_linkText = 0;
 		size_surroundingText = 0;
-		//size_linkInfo = 0;
 		size_outlinks = 0;
-	};
-	void clearVectors   ( ) { size_vbuf = 0; };
+	}
+
+	void clearVectors() {
+		size_vbuf = 0;
+	}
 
 	// a new one for getting the display contents sequentially used 
 	// by Msg24.cpp. this routine is the exclusive user of the "next"
@@ -184,14 +185,12 @@ public:
 	collnum_t  m_collnum             ; // collection # we came from
 	char       m_noArchive           ;
 	char       m_contentType         ;
-	//char       m_docQuality          ;
 	char       m_siteRank            ;
 	char       m_isBanned            ;
 	char       m_isFiltered          ;
 	char       m_hasLinkToOurDomOrHost;
 	char       m_urlFilterNum        ;
 	char       m_hopcount            ;
-	//char       m_flags3              ;
 	char       m_recycled            ;
 	uint8_t    m_language            ;
 	uint8_t    m_summaryLanguage     ;
@@ -216,7 +215,6 @@ public:
 	int32_t       m_linkTextNumWords    ;
 
 	int32_t       m_midDomHash          ; // set for m_getLinkText
-	int32_t       m_reserved1           ; // adIdHash
 	void         *m_parentOwner;
 
 	char       m_isLinkSpam          ; // set for m_getLinkText
@@ -244,11 +242,7 @@ public:
 	char       *ptr_vbuf                 ; // summary vector
 	char       *ptr_imgData              ; // for encoded images
 	char       *ptr_facetBuf             ;
-
-	int32_t       *ptr_catIds               ;
-	int32_t       *ptr_indCatIds            ;
 	char       *ptr_site                 ;
-	char       *ptr_reserved0            ;
 
 	// . if m_computeLinkInfo is true this is computed using Msg25 (fresh)
 	// . if m_setLinkInfo is true this is just set from the titleRec
@@ -297,12 +291,9 @@ public:
 	int32_t       size_imgData              ;
 	int32_t       size_facetBuf             ;
 
-	int32_t       size_catIds               ;
-	int32_t       size_indCatIds            ;
 	int32_t       size_site                 ;
-	int32_t       size_reserved0            ;
 
-	int32_t       size_linkInfo;//inlinks              ;
+	int32_t       size_linkInfo             ;
 	int32_t       size_outlinks             ;
 
 	int32_t       size_vector1              ;
@@ -329,10 +320,6 @@ public:
 	// . this whole class is cast to a udp reply, so the size of "buf"
 	//   depends on the size of that udp reply
 	char       m_buf[0];
-
-	int32_t      getCatId        (int32_t i){return ((int32_t *)ptr_catIds)[i]; };
-	int32_t      getIndCatId     (int32_t i){return ((int32_t *)ptr_indCatIds)[i];};
-
 };
 
 class Msg20 {

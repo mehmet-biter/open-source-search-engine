@@ -159,15 +159,9 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	                      ? multicast_msg20_summary_timeout
 	                      : multicast_infinite_send_timeout;
 
-	// for diffbot make timeout super long so we aren't tripped up
-	// by dead hosts that aren't really dead.
-	// CollectionRec *cr = g_collectiondb.getRec ( req->m_collnum );
-	// if ( cr && cr->m_isCustomCrawl && req->m_niceness == 0 ) 
-	// 	timeout = 300;
-
 	// get our group
 	int32_t  allNumHosts = g_hostdb.getNumHostsPerShard();
-	Host *allHosts    = g_hostdb.getShard ( shardNum );//getGroup(groupId );
+	Host *allHosts    = g_hostdb.getShard ( shardNum );
 
 	// put all alive hosts in this array
 	Host *cand[32];
@@ -203,7 +197,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 
 	// route based on docid region, not parity, because we want to hit
 	// the urldb page cache as much as possible
-	int64_t sectionWidth =((128LL*1024*1024)/nc)+1;//(DOCID_MASK/nc)+1LL;
+	int64_t sectionWidth =((128LL*1024*1024)/nc)+1;
 	int64_t probDocId    = req->m_docId;
 	// i think reference pages just pass in a url to get the summary
 	if ( probDocId < 0 && req->size_ubuf ) 
@@ -279,15 +273,6 @@ void gotReplyWrapper20 ( void *state , void *state2 ) {
 	else THIS->m_callback2 ( THIS->m_state );
 }
 
-/*
-void gotReplyWrapper20b ( void *state , UdpSlot *slot ) {
-	Msg20 *THIS = (Msg20 *)state;
-	// gotReply() does not block, and does NOT call our callback
-	THIS->gotReply ( slot ) ;
-	THIS->m_callback ( THIS->m_state );
-}
-*/
-
 // . set m_reply/m_replySize to the reply
 void Msg20::gotReply ( UdpSlot *slot ) {
 	// we got the reply
@@ -353,12 +338,6 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 	m_ownReply = true;
 	// deserialize it, sets g_errno on error??? not yet TODO!
 	m_r->deserialize();
-
-	// log("msg20: got msg20=0x%"PTRFMT" msg20reply=0x%"PTRFMT" slot=0x%"PTRFMT" s_tmp=%i"
-	//     ,(PTRTYPE)this
-	//     ,(PTRTYPE)m_r
-	//     ,(PTRTYPE)slot
-	//     ,s_tmp);
 }
 
 // . this is called
