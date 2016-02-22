@@ -1260,7 +1260,7 @@ bool saveTimeAdjustment ( ) {
 	char wbuf[1024];
 	sprintf (wbuf,"%"UINT64" %"INT64"\n",local,s_adjustment);
 	// write it out
-	int fd = open ( s_tafile , O_CREAT|O_RDWR|O_TRUNC , 00666 );
+	int fd = open ( s_tafile , O_CREAT|O_WRONLY|O_TRUNC , 0666 );
 	if ( fd < 0 ) {
 		log("util: could not open %s for writing",s_tafile);
 		g_errno = errno;
