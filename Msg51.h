@@ -41,8 +41,8 @@ enum {
 	CR_BAD_URL         ,
 	// the url is banned in tagdb or url filters table
 	CR_BANNED_URL      ,
-	// the summary is empty
-	CR_EMPTY_SUMMARY   ,
+	// the title & summary is empty
+	CR_EMPTY_TITLE_SUMMARY   ,
 	// error getting summary (Msg20::m_errno is set)
 	CR_ERROR_SUMMARY   ,
 	// a summary dup of a higher-scoring result

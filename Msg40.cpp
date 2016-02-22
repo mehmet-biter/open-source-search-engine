@@ -1745,10 +1745,10 @@ bool Msg40::gotSummary ( ) {
 			continue;
 		}
 
-		// filter empty summaries
-		if ( mr && mr->size_displaySum == 1 ) {
+		// filter empty title & summaries
+		if ( mr && mr->size_tbuf <= 1 && mr->size_displaySum <= 1 ) {
 			if ( ! m_si->m_showErrors ) {
-				*level = CR_EMPTY_SUMMARY;
+				*level = CR_EMPTY_TITLE_SUMMARY;
 				continue;
 			}
 		}
