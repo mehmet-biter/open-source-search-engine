@@ -190,8 +190,6 @@ class Msg40 {
 
         int64_t *getDocIdPtr() { return m_msg3a.m_docIds; }
 
-	int32_t m_lastHeartbeat;
-
 	bool printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
 				  class Msg20Reply *mr ) ;
 

@@ -1364,10 +1364,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_firstUrlValid               = true;
 	m_redirUrlValid               = true;
 
-
-	// convert 8 bit to a 32 bit
-	//m_numBannedOutlinks = score8to32 ( m_numBannedOutlinks8 );
-
 	// validate *shadow* members since bit flags cannot be returned
 	m_isRSS2              = m_isRSS;
 	m_isPermalink2        = m_isPermalink;
@@ -1375,7 +1371,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_spiderLinks2        = m_spiderLinks;
 	m_isContentTruncated2 = m_isContentTruncated;
 	m_isLinkSpam2         = m_isLinkSpam;
-	//m_skipIndexingByte    = m_skipIndexing;
 	m_isSiteRoot2         = m_isSiteRoot;
 
 	// these members are automatically validated
@@ -1387,60 +1382,34 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_outlinksAddedDateValid      = true;
 	m_charsetValid                = true;
 	m_countryIdValid              = true;
-	/*
-	m_titleWeightValid            = true;
-	m_headerWeightValid           = true;
-	m_urlPathWeightValid          = true;
-	m_externalLinkTextWeightValid = true;
-	m_internalLinkTextWeightValid = true;
-	m_conceptWeightValid          = true;
-	*/
 
 	// new stuff
 	m_siteNumInlinksValid         = true;
-	// m_siteNumInlinksUniqueIpValid = true;
-	// m_siteNumInlinksUniqueCBlockValid = true;
-	// m_siteNumInlinksTotalValid        = true;
-	//m_sitePopValid                = true;
 	m_rootLangIdValid             = true;
 	m_metaListCheckSum8Valid      = true;
 
 	m_hopCountValid               = true;
-	//m_numBannedOutlinksValid    = true;
 	m_langIdValid                 = true;
 	m_contentTypeValid            = true;
 	m_isRSSValid                  = true;
 	m_isPermalinkValid            = true;
 	m_isAdultValid                = true;
-	//m_eliminateMenusValid         = true;
 	m_spiderLinksValid            = true;
 	m_isContentTruncatedValid     = true;
 	m_isLinkSpamValid             = true;
 	m_tagRecDataValid             = true;
 	m_gigabitHashesValid          = true;
 	m_contentHash32Valid          = true;
-	//m_tagHash32Valid              = true;
 	m_tagPairHash32Valid          = true;
 	m_wikiDocIdsValid             = true;
 	m_imageDataValid              = true;
 	m_utf8ContentValid            = true;
-	//m_sectionsReplyValid          = true;
-	//m_sectionsVotesValid          = true;
-	//m_addressReplyValid         = true;
 	m_siteValid                   = true;
 	m_linkInfo1Valid              = true;
 	m_versionValid                = true;
 	m_httpStatusValid             = true;
 	m_crawlDelayValid             = true;
-	//m_sectiondbDataValid          = true;
-	//m_placedbDataValid            = true;
-	//m_clockCandidatesDataValid    = true;
-	//m_skipIndexingValid           = true;
 	m_isSiteRootValid             = true;
-
-	// set "m_oldTagRec" from ptr_tagRecData
-	//gbmemcpy ( &m_oldTagRec     , ptr_tagRecData , size_tagRecData );
-	//m_oldTagRecValid = true;
 
 	// there was no issue indexing it...
 	m_indexCode       = 0;
@@ -1452,19 +1421,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_downloadEndTime = m_spideredTime;
 	m_downloadEndTimeValid = true;
 
-	// make a copy for new tag rec too, this one we modify
-	//gbmemcpy ( &m_newTagRec     , ptr_tagRecData , size_tagRecData );
-
-	// set "m_siteNumInlinks" from m_oldTagRec
-	//Tag *tag = m_oldTagRec.getTag("sitenuminlinks");
-	// must always be there!
-	//if ( ! tag ) { char *xx=NULL;*xx=0; }
-	// must be null terminated
-	//if ( tag->getTagData()[tag->getTagData()Size-1] != 0 ) {
-	// char *xx=NULL;*xx=0; }
-	// grab that
-	//m_siteNumInlinks      = atol(tag->getTagData());
-	//m_siteNumInlinksValid = true;
 	// must not be negative
 	if ( m_siteNumInlinks < 0 ) { char *xx=NULL;*xx=0; }
 
@@ -1477,22 +1433,9 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		return false;
 	}
 
-	// lookup the tagdb rec fresh if setting for a summary. that way we
-	// can see if it is banned or not
-	//if ( m_req ) m_tagRecDataValid = false;
-
 	// debug thing
 	ptr_sectiondbData = NULL;
 	size_sectiondbData = 0;
-
-	// set m_sections.m_nsvt from data. ptr_sectiondbData is the m_osvt
-	// serialized, which is from our read of sectiondb at the time we
-	// indexed it. but now that we may have nulled out our content to
-	// save space in titledb because m_skipIndexing is true, then we have
-	// to save our votes as well, BUT, only if we skipped indexing.
-	// and not allowed to serialize UNLESS we skipped because
-	// that would waste space as well
-	//if (! m_skipIndexing && size_sectionsVotes ) { char *xx=NULL;*xx=0; }
 
 	// success, return true then
 	return true;
@@ -9816,8 +9759,6 @@ char *XmlDoc::getIsIndexed ( ) {
 	return &m_isIndexed;
 }
 
-
-
 void gotTagRecWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// note it
@@ -9833,35 +9774,6 @@ void gotTagRecWrapper ( void *state ) {
 	// continue
 	THIS->m_masterLoop ( THIS->m_masterState );
 }
-
-
-// if tagrec changed enough so that it would affect what we would index
-// since last time we indexed this doc, we need to know that!
-/*
-int32_t *XmlDoc::getTagHash32 ( ) {
-	// make it valid
-	if ( m_tagHash32Valid ) return &m_tagHash32;
-	// compute it
-	TagRec *gr = getTagRec ();
-	if ( ! gr || gr == (TagRec *)-1 ) return (int32_t *)gr;
-	// init it
-	m_tagHash32 = 0;
-	// hash the values of all tags
-	for ( Tag *tag = gr->getFirstTag(); tag ; tag = gr->getNextTag(tag) ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// get data
-		uint32_t h = hash32(tag->getTagData(),tag->getTagDataSize(),0);
-		// skip if 0
-		if ( ! h ) continue;
-		// xor it up
-		m_tagHash32 = hash32h ( h , m_tagHash32 );
-	}
-	// validate
-	m_tagHash32Valid = true;
-	return &m_tagHash32;
-}
-*/
 
 // . returns NULL and sets g_errno on error
 // . returns -1 if blocked, will re-call m_callback
@@ -9880,31 +9792,24 @@ TagRec *XmlDoc::getTagRec ( ) {
 	     // lookup the tagdb rec fresh if setting for a summary. that way
 	     // we can see if it is banned or not
 	     m_tagRecDataValid ) {
+
 		// all done
 		m_tagRecValid = true;
-		// assume null if old version
-		//if ( m_version <= 115 ) return &m_tagRec;
+
 		// just return empty otherwise
 		m_tagRec.setFromBuf ( ptr_tagRecData , size_tagRecData );
 		return &m_tagRec;
 	}
+
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
-	// get our site, usually the hostname, but can be like
-	// "www.last.fm/user/breendaxx/"
-	// we can't call this because it CALLS getTagRec()!!!
-	//char *mysite = getSite();
-	//if ( ! mysite || mysite == (char *)-1 ) return (TagRec *)mysite;
+
 	// update status msg
 	setStatus ( "getting tagdb record" );
-	// get the final redirected url
-	//Url *u = getCurrentUrl();
+
 	// nah, try this
 	Url *u = getFirstUrl();
-	// if we are docid based url this might block!
-	//if ( ! u || u == (void *)-1 ) return (TagRec *)u;
-	// good to go
-	//m_oldTagRecValid = true;
+
 	// get it, user our collection for lookups, not m_tagdbColl[] yet!
 	if ( ! m_msg8a.getTagRec ( u ,
 				   // we have to guess the site because
@@ -16339,10 +16244,6 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 	doc->m_firstIp = m_firstIp;
 	doc->m_firstIpValid = true;
 
-	// inherit this doc's tag rec since it has not called updateTagdb() yet
-	//doc->ptr_tagRecData = ptr_tagRecData;
-	//doc->size_tagRecData = size_tagRecData;
-
 	// getNewSpiderReply() calls getDownloadEndTime() which is not valid
 	// and causes the page to be re-downloaded, so stop that..!
 	doc->m_downloadEndTime      = m_downloadEndTime;
@@ -16350,20 +16251,6 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 
 	// inherit doledb key as well to avoid a core there
 	doc->m_doledbKey = m_doledbKey;
-
-	// skip the robots.txt lookup! that was causing this too block!
-	//doc->m_isAllowed      = true;
-	//doc->m_isAllowedValid = true;
-
-	// do not get outlink info for this, that stuff is for adding outlinks
-	// to spiderdb, and tagdb may have changed. so we can't really compare
-	// spider recs! if this is false then the call to doc->getMetaList()
-	// blocks to lookup the tagdb and titledb recs for each outlink!
-	// therefore, set it to true!
-	//doc->m_isInjecting = true;
-	// mdw: shouldn't this have the same effect?
-	//doc->m_spiderLinks2     = false;
-	//doc->m_spiderLinksValid = true;
 
 	// flag it
 	doc->m_doingConsistencyCheck = true;
@@ -16393,14 +16280,6 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 
 	char *list2     = doc->m_metaList;
 	int32_t  listSize2 = doc->m_metaListSize;
-
-
-	// show it for now
-	//log("build: printing meta list 1");
-	//printMetaList(list1,list1+listSize1,NULL);
-	//log("build: printing meta list 2");
-	//printMetaList(list2,list2+listSize2,NULL);
-
 
 	// do a compare
 	HashTableX ht1;
@@ -19770,23 +19649,13 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 
 	// sanity checks
 	if ( ! m_ipValid                   ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_domHash32Valid            ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_siteNumInlinksValid       ) { char *xx=NULL;*xx=0; }
 	if ( ! m_hopCountValid             ) { char *xx=NULL;*xx=0; }
 	if ( ! m_langIdValid               ) { char *xx=NULL;*xx=0; }
 	if ( ! m_isRSSValid                ) { char *xx=NULL;*xx=0; }
 	if ( ! m_isPermalinkValid          ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_isUrlPermalinkFormatValid ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_spideredTimeValid         ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_pageNumInlinksValid     ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_percentChangedValid       ) { char *xx=NULL;*xx=0; }
 
 	Url *fu = getFirstUrl();
 
-	// get this
-	//TagRec *gr = (TagRec *)ptr_tagRecData;
-	//Tag    *tag = NULL;
-	//if ( gr ) tag = gr->getTag("sitenuminlinks");
 	// reset
 	sreq->reset();
 	// assume not valid
@@ -19800,9 +19669,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 	// set other fields besides key
 	sreq->m_firstIp              = m_ip;
 	sreq->m_hostHash32           = m_hostHash32a;
-	//sreq->m_domHash32            = m_domHash32;
-	//sreq->m_siteNumInlinks       = m_siteNumInlinks;
-	//sreq->m_pageNumInlinks     = m_pageNumInlinks;
 	sreq->m_hopCount             = m_hopCount;
 
 	sreq->m_parentHostHash32     = 0;//m_sreq.m_parentHostHash32;
@@ -22731,11 +22597,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	int32_t  rulen = 0;
 	if ( ru ) rulen = gbstrlen(ru)+1;
 
-	// One reserved list. Previously held ad ids (so links could be marked 
-	// as spammy based on ads found)
-	reply->ptr_reserved0 = NULL;
-	reply->size_reserved0 = 0;
-
 	// need full cached page of each search result?
 	// include it always for spider status docs.
 	if ( m_req->m_includeCachedCopy || m_contentType == CT_STATUS ) {
@@ -24835,8 +24696,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	char strLanguage[128];
 	languageToString(m_langId, strLanguage);
 
-	// print tags
-	//if ( ! m_tagRecValid ) { char *xx=NULL;*xx=0; }
 	SafeBuf tb;
 
 	TagRec *ogr = NULL;
@@ -26923,24 +26782,9 @@ char **XmlDoc::getRootTitleBuf ( ) {
 	// get it from the tag rec first
 	setStatus ( "getting root title buf");
 
-	// sanity check, root must have been indexed
-	//if ( ! m_sreq.m_rootIndexed ) { char *xx=NULL;*xx=0; }
-
-	// . update it first before reading it!
-	// . do not update it here, just update it in getTitleRec() because
-	//   this makes doConsistencyCheck() block and core
-	//bool *status2 = updateSiteTitleBuf();
-	//if ( ! status2 || status2 == (void *)-1 ) return (char **)status2;
-
 	// get it from the tag rec if we can
 	TagRec *gr = getTagRec ();
 	if ( ! gr || gr == (void *)-1 ) return (char **)gr;
-
-	// clear this if not set from title rec
-	//if ( ! m_setFromTitleRec ) {
-	//	ptr_siteTitleBuf  = NULL;
-	//	size_siteTitleBuf = 0;
-	//}
 
 	// PROBLEM: new title rec is the only thing which has sitetitles tag
 	// sometimes and we do not store that in the title rec. in this case
@@ -26978,19 +26822,6 @@ char **XmlDoc::getRootTitleBuf ( ) {
 			m_rootTitleBufValid = true;
 			return (char **)&m_rootTitleBuf;
 		}
-		// . ONLY do this if root doc was NOT set from titleRec to
-		//   avoid that core in updateSiteTitleBuf(). this can happen
-		//   if the root doc had no title! (or no content)
-		//if ( rd->m_setFromTitleRec ) {
-		//	// emptyt
-		//	m_siteTitleBuf[0] = '\0';
-		//	// set the size of it
-		//	m_siteTitleBufSize = 0;
-		//	// validate it
-		//	m_siteTitleBufValid = true;
-		//	// return a ptr to it
-		//	return (char **)&m_siteTitleBuf;
-		//}
 
 		// a \0 separated list
 		char **rtl = rd->getTitleBuf();
@@ -27027,9 +26858,6 @@ char **XmlDoc::getRootTitleBuf ( ) {
 		size_rootTitleBuf = 0;
 		m_rootTitleBufValid = true;
 		return (char **)&m_rootTitleBuf;
-		char *xx=NULL;*xx=0;
-		//m_rootTitleBuf [ m_rootTitleBufSize - 1 ] = '\0';
-		//m_rootTitleBufSize++;
 	}
 
 	// sanity check - breach check

@@ -3326,13 +3326,6 @@ bool LinkInfo::hasLinkText ( ) {
 }
 
 void Inlink::set ( Msg20Reply *r ) {
-
-	// . these two things are used for version-based deserializing
-	// . our current version has 5 strings
-	//m_numStrings         = getBaseNumStrings();
-	// and our current string offset
-	//m_firstStrPtrOffset  = (char *)getFirstOffPtr() - (char *)this;
-
 	// set ourselves now
 	m_ip                 = r->m_ip;
 	m_firstIp            = r->m_firstIp;
@@ -3340,31 +3333,21 @@ void Inlink::set ( Msg20Reply *r ) {
 	m_docId              = r->m_docId;
 	m_firstSpidered      = r->m_firstSpidered;
 	m_lastSpidered       = r->m_lastSpidered;
-	//m_nextSpiderDate     = r->m_nextSpiderTime;
 	m_datedbDate         = r->m_datedbDate;
 	m_firstIndexedDate   = r->m_firstIndexedDate;
 	m_numOutlinks        = r->m_numOutlinks;
-	//m_baseScore          = r->m_linkTextBaseScore;
-	//m_pagePop            = r->m_pagePop;
-	//m_sitePop            = r->m_sitePop;
-	//m_siteNumInlinks     = r->m_siteNumInlinks;
-	//m_reserved1        = 0;
 	
 	m_isPermalink        = r->m_isPermalink;
 	m_outlinkInContent   = r->m_outlinkInContent;
 	m_outlinkInComment   = r->m_outlinkInComment;
 	m_isLinkSpam         = r->m_isLinkSpam;
-	//m_isAnomaly          = r->m_isAnomaly;
 	m_hasAllQueryTerms   = r->m_hasAllQueryTerms;
 	m_recycled           = r->m_recycled;
 
 	m_country             = r->m_country;
 	m_language            = r->m_language;
-	//m_docQuality        = r->m_docQuality;
 	m_siteRank            = r->m_siteRank;
-	//m_ruleset             = r->m_ruleset;
 	m_hopcount            = r->m_hopcount;
-	//m_linkTextScoreWeight = r->m_linkTextScoreWeight;
 
 	// MDW: use a new way. construct m_buf. 64-bit stuff.
 	int32_t poff = 0;
