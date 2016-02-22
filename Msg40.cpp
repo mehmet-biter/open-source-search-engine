@@ -175,8 +175,6 @@ bool Msg40::getResults ( SearchInput *si      ,
 	// we need this info for caching as well
 	//m_numGigabitInfos = 0;
 
-	m_lastHeartbeat = getTimeLocal();
-
 	//just getfrom searchinput
 	//....	m_catId = hr->getLong("catid",0);m_si->m_catId;
 
