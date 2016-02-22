@@ -1210,10 +1210,10 @@ bool loadTimeAdjustment ( ) {
 		g_errno = errno;
 		return false;
 	}
-	char rbuf[1024];
+	char rbuf[1024+1];
 	// read in max bytes
-	int nr = read ( fd , rbuf , 1000 );
-	if ( nr <= 10 || nr > 1000 ) {
+	ssize_t bytes_read = read ( fd , rbuf , sizeof(rbuf)-1 );
+	if ( bytes_read < 0 ) {
 		log("util: reading %s had error: %s",s_tafile,
 		    mstrerror(errno));
 		close(fd);
@@ -1221,10 +1221,16 @@ bool loadTimeAdjustment ( ) {
 		return false;
 	}
 	close(fd);
+	rbuf[(size_t)bytes_read] = '\0';
+	
 	// parse the text line
 	int64_t stampTime = 0LL;
 	int64_t clockAdj  = 0LL;
-	sscanf ( rbuf , "%"UINT64" %"INT64"", &stampTime, &clockAdj );
+	if(sscanf ( rbuf , "%"UINT64" %"INT64"", &stampTime, &clockAdj ) != 2) {
+		log("util: Could not parse content of %s", s_tafile);
+		g_errno = errno;
+		return false;
+	}
 	// get stamp age
 	int64_t local = gettimeofdayInMillisecondsLocal();
 	int64_t stampAge = local - stampTime;
