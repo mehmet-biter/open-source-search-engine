@@ -113,10 +113,6 @@ bool Multicast::send ( char         *msg              ,
 	reset();
 	// it is now in use
 	m_inUse = true;
-	// MDW: force this off for now, i'm not sure it helps and i'm tired
-	//      of seeing the msg34 timed out msgs.
-	// . crap, but seems like the indexdb lookups are getting biased!!
-	//doDiskLoadBalancing = false;
 	// set the parameters in this class
 	m_msg              = msg;
 	m_ownMsg           = ownMsg;
@@ -144,11 +140,6 @@ bool Multicast::send ( char         *msg              ,
 	m_sentToTwin       = false;
 	m_retryCount       = 0;
 	m_key              = key;
-	// reset Msg34's m_numRequests/m_numReplies since this may be
-	// the second time send() was called for this particular class instance
-	//m_msg34.reset();
-	// variables for doing disk load balancing
-	//m_doDiskLoadBalancing = doDiskLoadBalancing;
 	m_rdbId               = rdbId;
 	m_redirectTimeout     = redirectTimeout;
 	// clear m_retired, m_errnos, m_slots
@@ -440,81 +431,18 @@ void Multicast::gotReply2 ( UdpSlot *slot ) {
 // . returns true if managed to send to one host ok (initially at least)
 // . uses key to pick the first host to send to (for consistency)
 // . after we pick a host and launch the request to him the sleepWrapper1
-//   will call this at regular intervals, so be careful, if msg34 is in
-//   progress, then just skip it and use pickBestHost!
+//   will call this at regular intervals, so be careful,
 bool Multicast::sendToHostLoop ( int32_t key , int32_t hostNumToTry ,
 				 int32_t firstHostId ) {
 	// erase any errors we may have got
 	g_errno = 0 ;
 loop:
 
-	// if it is already in progress... wait for it to get back
-	//if ( m_msg34.isInProgress() ) return true ;
-
 	int32_t i;
 
 	// what if this host is dead?!?!?
 	if ( hostNumToTry >= 0 ) // && ! g_hostdb.isDead(hostNumToTry) ) 
 		i = hostNumToTry;
-	// try to stay on the same switch if the twin groups are on 
-	// different switches
-	//else if ( g_conf.m_splitTwins && m_msgType == 0x00 )
-	//	i = pickBestHost2 (key,-1,true);
-	// . gigablast will often fetch data across the network even if it
-	//   is available locally because it thinks it will be faster than
-	//   hitting the local disk too much. This is often bad, because local
-	//   disk can be a fast scsi and network can be slow. so override
-	//   gigablast here
-	// . only use this for msg0s, like for reading termlists, stuff like
-	//   msg39 should still be routed without any problems
-	// . this is messing up the biasing logic in Msg51 which calls Msg0
-	//   to get a cluster rec and want to bias the page cache to save mem
-	// . also, Msg0 should handle preferLocalReads itself. it has logic
-	//   in there just for that
-	//else if ( g_conf.m_preferLocalReads && 
-	//	  ( m_msgType == 0x00 ) ) { // || m_msgType == 0x22 ) ) {
-	//	i = pickBestHost (key,-1/*firstHostId*/,true/*preferLocal?*/);
-	//}
-	// . only requests that typically read from disk should set
-	//   m_doDiskLoadBalancing to true
-	// . Msg39 should not do it otherwise host#16 ends up being starved 
-	//   since host0 is the gateway
-	// . this is called at regular intervals by sleepWrapper1 with 
-	//   hostNumToTry set to -1 so don't call Msg34 if its already going
-	// . NOTE: this is essentially an advanced replacement for 
-	//   pickBestHost() so it should return essentially the same values
-	// . pickBestHost() doesn't have a problem returning retired host #s
-	//else if ( m_doDiskLoadBalancing ) { // && hostNumToTry == -1 ) {
-	/*
-	else if ( m_doDiskLoadBalancing && firstHostId < 0 ) {
-		// debug msg
-		//log("getting best host (this=%"INT32")",(int32_t)&m_msg34);
-		// . if multiple hosts have it in memory,prefers the local host
-		// . return true if this blocks
-		if ( ! m_msg34.getBestHost ( m_hosts    ,
-					     m_retired  ,
-					     m_numHosts ,
-					     m_niceness ,
-					     m_maxCacheAge ,
-					     m_cacheKey    , 
-					     m_rdbId       ,
-					     this          ,
-					     gotBestHostWrapper ) )
-			return true;
-		// . if we did not block then get the winning host
-		// . best hostNum is -1 if none untried or all had errors
-		// . this can return a retired host number if all its twins
-		//   and itself are dead
-		i = m_msg34.getBestHostNum ();
-		// if no candidate, try pickBestHost
-		if ( i < 0 ) i = pickBestHost ( key , -1 , false );
-	}
-	*/
-	// . otherwise we had an error on this host
-	// . pick the next best host we haven't sent to yet
-	// . returns -1 if we've sent to all of them in our group, m_hosts
-	//else i = pickBestHost ( (uint32_t)key , firstHostId );
-	//else i = pickBestHost ( key , -1 , false ); // firstHostId
 	else i = pickBestHost ( key , firstHostId );
 	
 	// do not resend to retired hosts
@@ -728,8 +656,6 @@ bool Multicast::sendToHost ( int32_t i ) {
 		//char *xx = NULL; *xx = 0;
 		return true;
 	}
-	// debug msg
-	//log("sending to host #%"INT32" (this=%"INT32")",i,(int32_t)&m_msg34);
 	// . add this host to our retired list so we don't try again
 	// . only used by pickBestHost() and sendToHost()
 	m_retired [ i ] = true;
@@ -836,18 +762,6 @@ bool Multicast::sendToHost ( int32_t i ) {
 	m_lastLaunch = nowms ; // gettimeofdayInMilliseconds();
 	// save the host, too
 	m_lastLaunchHost = h;
-	/*
-	// assume this host has more disk load now
-	if ( m_doDiskLoadBalancing && ! m_msg34.isInBestHostCache() ) {
-		// . add the disk load right after sending it in case we have
-		//   many successive sends right after this one
-		// . in the case of titledb use a low avg read size, otherwise
-		//   this would be like over 1 Meg (the max titleRec size)
-		int32_t avg = m_minRecSizes;
-		if ( m_rdbId == RDB_TITLEDB ) avg = 32*1024; // titledb read?
-		m_msg34.addLoad ( avg , h->m_hostId , nowms );
-	}
-	*/
 	// timing debug
 	//log("Multicast sent to hostId %"INT32", this=%"INT32", transId=%"INT32"", 
 	//    h->m_hostId, (int32_t)this , m_slots[i]->m_transId );
@@ -1116,8 +1030,6 @@ void gotReplyWrapperM1 ( void *state , UdpSlot *slot ) {
 
 // come here if we've got a reply from a host that's not part of a group send
 void Multicast::gotReply1 ( UdpSlot *slot ) {		
-	// debug msg
-	//log("gotReply1: this=%"INT32" should exit",(int32_t)&m_msg34);
 	// don't ever let UdpServer free this send buf (it is m_msg)
 	slot->m_sendBufAlloc = NULL;
 	// remove the slot from m_slots so it doesn't get nuked in
@@ -1279,8 +1191,6 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 void Multicast::closeUpShop ( UdpSlot *slot ) {
 	// sanity check
 	if ( ! m_inUse ) { char *xx=NULL;*xx=0; }
-	// debug msg
-	//log("Multicast exiting (this=%"INT32")",(int32_t)&m_msg34);
 	// destroy the OTHER slots we've spawned that are in progress
 	destroySlotsInProgress ( slot );
 	// if we have no slot per se, skip this stuff
@@ -1347,12 +1257,6 @@ void sleepWrapper1b ( int bogusfd , void *state ) {
 
 // destroy all slots that may be in progress (except "slot")
 void Multicast::destroySlotsInProgress ( UdpSlot *slot ) {
-	// . always destroy any msg34 slots in progress
-	// . if we re-route then we span new msg34 requests, and if we get
-	//   back an original reply we need to take out those msg34 requests
-	//   because if they get a reply they may try to access a Multicast
-	//   class that no longer exists
-	//if ( m_doDiskLoadBalancing ) m_msg34.destroySlotsInProgress ( );
 	// do a loop over all hosts in the group
 	for (int32_t i = 0 ; i < m_numHosts ; i++ ) {
 		// . destroy all slots but this one that are in progress

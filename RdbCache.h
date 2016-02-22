@@ -249,7 +249,6 @@ class RdbCache {
 
 	// . just checks to see if a record is in the cache
 	// . does not promote record
-	// . used by Msg34.cpp for disk load balancing
 	bool isInCache ( collnum_t collnum , char *cacheKey , int32_t maxAge );
 	bool isInCache ( collnum_t collnum , key_t cacheKey , int32_t maxAge ) {
 		return isInCache(collnum,(char *)&cacheKey,maxAge);};

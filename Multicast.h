@@ -20,7 +20,6 @@
 #include "Hostdb.h"  // getGroup(), getTimes(), stampHost()
 #include "UdpServer.h"        // sendRequest()
 #include "Loop.h"         // registerSleepCallback()
-//#include "Msg34.h"
 #include "Threads.h" // MAX_NICENESS
 
 #define MAX_HOSTS_PER_GROUP 10
@@ -69,16 +68,7 @@ class Multicast {
 	// . likewise, Msg37 uses it to get the term frequency consistently
 	//   so it doesn't jitter
 	// . if you pass in a "replyBuf" we'll store the reply in there
-	// . if "doLoadBalancing" is true and sendToWholeGroup is false then
-	//   we send a Msg34 request to all hosts in group "groupId" and ask
-	//   them how much disk load thay have then we send to the best one.
-	// . if we sent a Msg34 to a host within the last couple of 
-	//   milliseconds or so, then Msg34 should use results from last time.
-	//   When we send a Msg0 or Msg20 request we know the approximate
-	//   amount that will be read from disk so we can add this to the
-	//   Load of the handling host by calling Msg34::addLoad() so if we
-	//   call Msg34::getLoad() again before that Msg0/Msg20 request was
-	//   acknowledge, the added load will be included.
+	// . "doDiskLoadBalancing" is no longer used.
 	bool send ( char       *msg             ,
 		    int32_t        msgSize         ,
 		    uint8_t     msgType         ,
@@ -204,8 +194,6 @@ class Multicast {
 
 	int32_t        m_key;
 
-	// Msg34 stuff -- for disk load balancing
-	//Msg34 m_msg34;
 	//bool  m_doDiskLoadBalancing;
 	char  m_rdbId              ;
 

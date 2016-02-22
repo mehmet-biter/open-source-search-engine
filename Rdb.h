@@ -320,7 +320,7 @@ class Rdb {
 
 	bool needsDump ( );
 
-	// these are used by Msg34 class for computing load on a machine
+	// these are used for computing load on a machine
 	bool isMerging ( ) ;
 	bool isDumping ( ) { return m_dump.isDumping(); };
 

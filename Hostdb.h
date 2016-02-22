@@ -238,8 +238,6 @@ class Host {
 	// . -5 means he went down before host we alerted admin about revived
 	int32_t           m_emailCode;
 	// . ide channel
-	// . Msg34 will add disk load from other gigablast process that are
-	//   using your channel and your ip
 	int32_t           m_ideChannel;
 	//int32_t           m_tokenGroupNum;
 	// 0 means no, 1 means yes, 2 means unknown
@@ -563,7 +561,6 @@ class Hostdb {
 	//Host *getProxyFromTcpPort ( uint32_t ip , uint16_t port );
 
 	// . get the Host sharing m_hosts[n]'s ip and ide channel
-	// . used by Msg34.cpp to compute load on the channel
 	// . TODO: speed this up when we get a *lot* of hosts
 	// . right now it just does a linear scan
 	//Host *getSharer ( Host *h ) ;

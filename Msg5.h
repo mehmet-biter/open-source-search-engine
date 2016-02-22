@@ -17,7 +17,7 @@ extern int32_t g_isDumpingRdbFromMain;
 
 // this is used internally and by Msg0 for generating a cacheKey
 // to see if its request can be satisfied by any remote host without
-// hitting disk. Multicast uses Msg34 to ask each host that.
+// hitting disk.
 //key_t makeCacheKey ( key_t startKey     ,
 //		     key_t endKey       ,
 void  makeCacheKey ( char *startKey     ,

@@ -283,7 +283,6 @@ class Threads {
 	// cancels low priority threads running in each ThreadQueue
 	//void cancelLowPriorityThreads();
 
-	// . used by Msg34 for computing the disk load
 	// . gets the number of disk threads (seeks) and total bytes to read
 	// . ignores disk threads that are too nice (over maxNiceness)
 	int32_t getDiskThreadLoad ( int32_t maxNiceness , int32_t *totalToRead ) ;
