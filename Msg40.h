@@ -84,6 +84,8 @@ class GigabitInfo {
 };
 
 
+static const int64_t msg40_msg39_timeout = 5000; //timeout for entire get-docid-list phase, in milliseconds.
+
 class Msg40 {
 
  public:
