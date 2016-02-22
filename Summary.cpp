@@ -47,8 +47,13 @@ int32_t Summary::getSummaryLen() {
 
 bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
 	if ( m_summaryLen > 0 ) {
+		// trim elipsis
+		if ( ( titleBufLen > 4 ) && ( memcmp( (titleBuf + titleBufLen - 4), " ...", 4 ) == 0 ) ) {
+			titleBufLen -= 4;
+		}
+
 		// verify that it's not the same with title
-		if ( m_summaryLen == titleBufLen && strncasestr( titleBuf, m_summary, titleBufLen, m_summaryLen ) ) {
+		if ( strncasestr( m_summary, titleBuf, m_summaryLen, titleBufLen ) ) {
 			m_summaryLen = 0;
 			m_summary[0] = '\0';
 
