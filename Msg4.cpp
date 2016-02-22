@@ -707,9 +707,11 @@ bool storeRec ( collnum_t      collnum ,
 		}
 		// if we are making a brand new buf, init the used
 		// size to "4" bytes
-		else
+		else {
 			// itself(4) PLUS the zid (8 bytes)
 			*(int32_t *)buf = 4 + 8;
+			*(int64_t *)(buf+4) = 0; //clear zid. Not needed, but otherwise leads to uninitialized btyes in a write() syscall
+		}
 		// add it
 		s_hostBufs    [hostId] = buf;
 		s_hostBufSizes[hostId] = size;
