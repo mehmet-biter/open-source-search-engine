@@ -21,22 +21,14 @@
 
 Sections::Sections ( ) {
 	m_sections = NULL;
-	m_buf      = NULL;
-	m_buf2     = NULL;
 	reset();
 }
 
 void Sections::reset() {
 	m_sectionBuf.purge();
 	m_sectionPtrBuf.purge();
-	if ( m_buf && m_bufSize )
-		mfree ( m_buf , m_bufSize , "sdata" );
-	if ( m_buf2 && m_bufSize2 )
-		mfree ( m_buf2 , m_bufSize2 , "sdata2" );
 
 	m_sections         = NULL;
-	m_buf              = NULL;
-	m_buf2             = NULL;
 	m_bits             = NULL;
 	m_numSections      = 0;
 	m_numSentenceSections = 0;
@@ -51,8 +43,6 @@ void Sections::reset() {
 	m_articleStartWord = -2;
 	m_articleEndWord   = -2;
 	m_recall           = 0;
-	//m_totalSimilarLayouts = 0;
-	m_numVotes = 0;
 	m_nw = 0;
 	m_firstSent = NULL;
 	m_lastSent  = NULL;
@@ -1181,9 +1171,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 			m_sections[i].m_prev = &m_sections[i-1];
 	}
 
-	// i would say <hr> is kinda like an <h0>, so do it first
-	//splitSections ( "<hr" , (int32_t)BH_HR );
-
 	// init to -1 to indicate none
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
 		// breathe
@@ -1614,105 +1601,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		}
 	}
 	m_alnumPosValid = true;
-
-
-	// propagate m_headCol/RowSection ptr to all kids in the td cell
-
-	// . "ot" = occurence table
-	// . we use this to set Section::m_occNum and m_numOccurences
-	if ( ! m_ot.set (4,8,5000,NULL, 0 , false ,m_niceness,"sect-occrnc") )
-		return true;
-
-	// set the m_ot hash table for use below
-	for ( int32_t i = 1 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		Section *sn = &m_sections[i];
-		// assume no vote
-		uint64_t vote = 0;
-		// try to get it
-		uint64_t *vp = (uint64_t *)m_ot.getValue ( &sn->m_tagHash );
-		// assume these are zeroes
-		int32_t occNum = 0;
-		// if there, set these to something
-		if ( vp ) {
-			// set it
-			vote = *vp;
-			// what section # are we for this tag hash?
-			occNum = vote & 0xffffffff;
-			// save our kid #
-			sn->m_occNum = occNum;
-			// get ptr to last section to have this tagHash
-			//sn->m_prevSibling = (Section *)(vote>>32);
-		}
-		// mask our prevSibling
-		vote &= 0x00000000ffffffff;
-		// we are the new prevSiblinkg now
-		vote |= ((uint64_t)((uint32_t)i))<<32; // rplcd sn w/ i
-		// inc occNum for the next guy
-		vote++;
-		// store back. return true with g_errno set on error
-		if ( ! m_ot.addKey ( &sn->m_tagHash , &vote ) ) return true;
-
-		// use the secondary content hash which will be non-zero
-		// if the section indirectly contains some text, i.e.
-		// contains a subsection which directly contains text
-		//int32_t ch = sn->m_contentHash;
-		// skip if no content 
-		//if ( ! ch ) continue;
-		// use this as the "modified taghash" now
-		//int32_t modified = sn->m_tagHash ^ ch;
-		// add the content hash to this table as well!
-		//if ( ! m_cht2.addKey ( &modified ) ) return true;
-	}
-
-	// . now we define SEC_UNIQUE using the tagHash and "ot"
-	// . i think this is better than using m_tagHash
-	// . basically you are a unique section if you have no siblings
-	//   in your container 
-
-	// . set Section::m_numOccurences
-	// . the first section is the god section and has a 0 for tagHash
-	//   so skip that!
-	for ( int32_t i = 1 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		Section *sn = &m_sections[i];
-		// get it
-		uint64_t vote ;
-		// assign it
-		uint64_t *slot = (uint64_t *)m_ot.getValue ( &sn->m_tagHash );
-		// wtf? i've seen this happen once in a blue moon
-		if ( ! slot ) {
-			log("build: m_ot slot is NULL! wtf?");
-			continue;
-		}
-		// otherwise, use it
-		vote = *slot;
-		// get slot for it
-		int32_t numKids = vote & 0xffffffff;
-		// must be at least 1 i guess
-		if ( numKids < 1 && i > 0 ) { char *xx=NULL;*xx=0; }
-		// how many siblings do we have total?
-		sn->m_numOccurences = numKids;
-		// sanity check
-		if ( sn->m_a < 0    ) { char *xx=NULL;*xx=0; }
-		if ( sn->m_b > m_nw ) { char *xx=NULL;*xx=0; }
-		//
-		// !!!!!!!!!!!!!!!! HEART OF SECTIONS !!!!!!!!!!!!!!!!
-		//
-		// to be a valid section we must be the sole section 
-		// containing at least one alnum word AND it must NOT be
-		// in a script/style/select/marquee tag
-		//if ( sn->m_exclusive>0 && !(sn->m_flags & badFlags) )
-		//	continue;
-		// this means we are useless
-		//sn->m_flags |= SEC_NOTEXT;
-		// and count them
-		//m_numInvalids++;
-	}
 
 	///////////////////////////////////////
 	//
@@ -2516,9 +2404,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	// the base hash (delimeter hash) hack
 	sk->m_baseHash = 0;// dh; ????????????????????
 
-	// do not resplit this split section with same delimeter!!
-	sk->m_processedHash = 0; // ?????? dh;
-
 	// get first section containing word #a
 	Section *si = m_sectionPtrs[a];
 
@@ -2751,215 +2636,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	}
 
 	return sk;
-}
-
-// for brbr and hr splitting delimeters
-int32_t Sections::splitSectionsByTag ( nodeid_t tagid ) {
-
-	// . try skipping for xml
-	// . eventbrite.com has a bunch of dates per event item and
-	//   we end up using METHOD_DOM on those!
-	// . i think the implied section algo is meant for html really
-	//   or plain text
-	if ( m_contentType == CT_XML &&
-	     ( m_isEventBrite ||
-	       m_isStubHub    ||
-	       m_isFacebook ) )
-		return 0;
-
-	int32_t numAdded = 0;
-	// . now, split sections up if they contain one or more <hr> tags
-	// . just append some "hr" sections under that parent to m_sections[]
-	// . need to update m_sectionPtrs[] after this of course!!!!!
-	// . now we also support various other delimeters, like bullets
-	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// must be brbr or hr
-		if ( ! isTagDelimeter ( si , tagid ) ) continue;
-		// must have a next brother to be useful
-		if ( ! si->m_nextBrother ) continue;
-		// skip if already did this section
-		if ( si->m_processedHash ) continue;
-		// set first brother
-		Section *first = si;
-		for ( ; first->m_prevBrother ; first = first->m_prevBrother )
-			// breathe
-			QUICKPOLL(m_niceness);
-
-	subloop:
-		// mark it
-		first->m_processedHash = 1;
-
-		// start of insertion section is right after tag
-		int32_t a = first->m_b;
-
-		// but if first is not a tag delimeter than use m_a
-		if ( ! isTagDelimeter ( first , tagid ) ) a = first->m_a;
-
-		// or if first section has text, then include that, like
-		// in the case of h1 tags for example
-		if ( first->m_firstWordPos >= 0 ) a = first->m_a;
-
-		// end of inserted section is "b"
-		int32_t b = -1;
-
-		int32_t numTextSections = 0;
-		// count this
-		if ( first->m_firstWordPos >= 0 ) numTextSections++;
-		// start scanning right after "first"
-		Section *last = first->m_nextBrother;
-		// set last brother and "b"
-		for ( ; last ; last = last->m_nextBrother ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// stop on tag delimeters
-			if ( isTagDelimeter ( last , tagid ) ) {
-				// set endpoint of new subsection
-				b = last->m_a;
-				// and stop
-				break;
-			}
-			// assume we are the end of the line
-			b = last->m_b;
-			// count this
-			if ( last->m_firstWordPos >= 0 ) numTextSections++;
-		}
-
-		// . insert [first->m_b,b]
-		// . make sure it covers at least one "word" which means
-		//   that a != b-1
-		if ( a < b - 1 &&
-		     // and must group together something meaningful
-		     numTextSections >= 2 ) {
-			// do the insertion
-			Section *sk = insertSubSection (a,b,BH_IMPLIED);
-			// error?
-			if ( ! sk ) return -1;
-			// fix it
-			sk->m_processedHash = 1;
-			// count it
-			numAdded++;
-		}
-
-		// first is now last
-		first = last;
-		// loop up if there are more brothers
-		if ( first ) goto subloop;
-	}
-	return numAdded;
-}
-
-bool Sections::splitSections ( char *delimeter , int32_t dh ) {
-
-	// . try skipping for xml
-	// . eventbrite.com has a bunch of dates per event item and
-	//   we end up using METHOD_DOM on those!
-	// . i think the implied section algo is meant for html really
-	//   or plain text
-	if ( m_contentType == CT_XML &&
-	     ( m_isEventBrite ||
-	       m_isStubHub    ||
-	       m_isFacebook ) )
-		return 0;
-
-	int32_t saved = -1;
-	int32_t delimEnd = -1000;
-
-	// . now, split sections up if they contain one or more <hr> tags
-	// . just append some "hr" sections under that parent to m_sections[]
-	// . need to update m_sectionPtrs[] after this of course!!!!!
-	// . now we also support various other delimeters, like bullets
-	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// sanity check
-		if ( i < saved ) { char *xx=NULL;*xx=0; }
-		// a quicky
-		if ( ! isDelimeter ( i , delimeter , &delimEnd ) ) continue;
-		// get section it is in
-		Section *sn = m_sectionPtrs[i];
-
-		// skip if already did this section
-		if ( sn->m_processedHash == dh ) continue;
-
-		// what section # is section "sn"?
-		int32_t offset = sn - m_sections;
-
-		// sanity check
-		if ( &m_sections[offset] != sn ) { char *xx=NULL;*xx=0; }
-
-		// init this
-		int32_t start = sn->m_a;
-		// CAUTION: sn->m_a can equal "i" for something like:
-		// "<div><h2>blah</h2> <hr> </div>"
-		// where when splitting h2 sections we are at the start
-		// of an hr section. i think its best to just skip it!
-		// then if we find another <h2> within that same <hr> section
-		// it can split it into non-empty sections
-		if ( start == i ) continue;
-
-		// save it so we can rescan from delimeter right after this one
-		// because there might be more delimeters in DIFFERENT 
-		// subsections
-		saved = i;
-
-	subloop:
-		// sanity check
-		if ( m_numSections >= m_maxNumSections) {char *xx=NULL;*xx=0;}
-		//
-		// try this now
-		//
-		Section *sk = insertSubSection ( start , i , dh );
-
-		// do not resplit this split section with same delimeter!!
-		if ( sk ) sk->m_processedHash = dh;
-
-		// if we were it, no more sublooping!
-		if ( i >= sn->m_b ) { 
-			// sn loses some stuff
-			sn->m_exclusive = 0;
-			// resume where we left off in case next delim is
-			// in a section different than "sn"
-			i = saved; 
-			// do not process any more delimeters in this section
-			sn->m_processedHash = dh;
-			//i = sn->m_b - 1;
-			continue; 
-		}
-
-		// update values in case we call subloop
-		start = i;
-
-		// skip over that delimeter at word #i
-		i++;
-
-		// if we had back-to-back br tags make i point to word
-		// after the last br tag
-		if ( delimeter == (char *)0x01 ) i = delimEnd;
-
-		// find the next <hr> tag, if any, stop at end of "sn"
-		for ( ; i < m_nw ; i++ ) {
-			// breathe
-			QUICKPOLL ( m_niceness );
-			// stop at end of section "sn"
-			if ( i >= sn->m_b ) break;
-			// get his section
-			Section *si = m_sectionPtrs[i];
-			// delimeters that start their own sections must
-			// grow out to their parent
-			//if ( delimIsSection )
-			//	si = si->m_parent;
-			// ignore if not the right parent
-			if ( si != sn ) continue; 
-			// a quicky
-			if ( isDelimeter ( i , delimeter , &delimEnd ) ) break;
-		}
-
-		// now add the <hr> section above word #i
-		goto subloop;
-	}
-	return true;
 }
 
 // this is a function because we also call it from addImpliedSections()!
@@ -4115,7 +3791,6 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 
 	char  **wptrs = m_words->getWords    ();
 	int32_t   *wlens = m_words->getWordLens ();
-	//nodeid_t *tids = m_words->getTagIds();
 	int32_t    nw    = m_words->getNumWords ();
 
 	// check words
@@ -4160,14 +3835,9 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 		"<td><b>alnum words</b></td>" // contained in section
 		"<td><b>depth</b></td>"
 		"<td><b>parent word range</b></td>"
-		"<td><b># siblings</b></td>"
 		"<td><b>flags</b></td>"
 		"<td><b>evIds</b></td>"
 		"<td><b>text snippet</b></td>"
-		//"<td>votes for static</td>"
-		//"<td>votes for dynamic</td>"
-		//"<td>votes for texty</td>"
-		//"<td>votes for unique</td>"
 		"</tr>\n";
 	sbuf->safePrintf("%s",hdr);
 
@@ -4182,12 +3852,7 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 		QUICKPOLL ( m_niceness );
 		// see if one big table causes a browser slowdown
 		if ( (++rcount % TABLE_ROWS ) == 0 ) 
-			sbuf->safePrintf("<!--ignore--></table>%s\n",hdr);
-		// get it
-		//Section *sn = &m_sections[i];
-		//Section *sn = m_sorted[i];
-		// skip if not a section with its own words
-		//if ( sn->m_flags & SEC_NOTEXT ) continue;
+			sbuf->safePrintf("</table>%s\n",hdr);
 		char *xs = "--";
 		char ttt[100];
 		if ( sn->m_contentHash64 ) {
@@ -4202,7 +3867,7 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 		if ( parent ) pswn = parent->m_a;
 		if ( parent ) pewn = parent->m_b;
 		// print it
-		sbuf->safePrintf("<!--ignore--><tr><td>%"INT32"</td>\n"
+		sbuf->safePrintf("<tr><td>%"INT32"</td>\n"
 				 "<td>%"INT32"</td>"
 				 "<td>%"INT32"</td>"
 				 "<td>0x%"XINT32"</td>"
@@ -4213,9 +3878,8 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 				 "<td>%"INT32"</td>"
 				 "<td>%"INT32"</td>"
 				 "<td><nobr>%"INT32" to %"INT32"</nobr></td>"
-				 "<td>%"INT32"</td>"
 				 "<td><nobr>" ,
-				 scount++,//i,
+				 scount++,
 				 sn->m_a,
 				 sn->m_b,
 				 (int32_t)sn->m_baseHash,
@@ -4226,8 +3890,7 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 				 sn->m_exclusive,
 				 sn->m_depth,
 				 pswn,
-				 pewn,
-				 sn->m_numOccurences);//totalOccurences );
+				 pewn);
 		// now show the flags
 		printFlags ( sbuf , sn );
 		// first few words of section

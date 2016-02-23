@@ -218,11 +218,7 @@ public:
 	uint32_t  m_xmlNameHash;
 
 	// these deal with enumertated tags and are used by Events.cpp
-	int32_t  m_occNum;
 	int32_t  m_numOccurences;
-
-	// used by XmlDoc.cpp to set a topological distance
-	int32_t m_topDist;
 
 	// hash of all the alnum words DIRECTLY in this section
 	uint64_t  m_contentHash64;
@@ -258,16 +254,7 @@ public:
 	// container for the #define'd SEC_* values above
 	sec_t m_flags;
 
-	// used to mark it in Dates.cpp like a breadcrumb trail
-	int32_t m_mark;
-
-	// Events.cpp assigns a date to each section
-	int32_t m_firstDate;
-
 	char m_used;
-
-	// used in Sections::splitSections() function
-	int32_t m_processedHash;
 
 	int32_t m_gbFrameNum;
 
@@ -400,7 +387,6 @@ class Sections {
 	int32_t m_articleEndWord;
 	bool m_hadArticle;
 	int32_t m_numInvalids;
-	int32_t m_totalSiteVoters;
 
 	int32_t m_numAlnumWordsInArticle;
 
@@ -409,33 +395,17 @@ class Sections {
 	int32_t m_titleEnd;
 	int32_t m_titleStartAlnumPos;
 
-	int32_t m_numVotes;
-
 	// these are 1-1 with the Words::m_words[] array
 	class Section **m_sectionPtrs;
 
 	// save this too
 	int32_t m_nw ;
 
-	// new stuff
-	HashTableX m_ot;
-	HashTableX m_vt;
-
 	// for caching parition scores
 	HashTableX m_ct;
 
-	// buf for serializing m_osvt into
-	char *m_buf;
-	int32_t  m_bufSize;
-
-
-	// buf for serializing m_nsvt into
-	char *m_buf2;
-	int32_t  m_bufSize2;
-
 	// allocate m_sections[] buffer
 	class Section  *m_sections;
-	//int32_t            m_sectionsBufSize;
 	int32_t            m_numSections;
 	int32_t            m_maxNumSections;
 
@@ -469,9 +439,6 @@ class Sections {
 	bool addSentenceSections ( ) ;
 
 	class Section *insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash ) ;
-
-	int32_t splitSectionsByTag ( nodeid_t tagid ) ;
-	bool splitSections ( char *delimeter , int32_t dh );
 
 	class Section *m_rootSection; // the first section, aka m_firstSection
 	class Section *m_lastSection;
