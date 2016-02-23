@@ -61,8 +61,8 @@ class Collectiondb  {
 	bool m_needsSave;
 
 	// returns i so that m_recs[i].m_coll = coll
-	collnum_t getCollnum ( char *coll , int32_t collLen );
-	collnum_t getCollnum ( char *coll ); // coll is NULL terminated here
+	collnum_t getCollnum ( const char *coll , int32_t collLen );
+	collnum_t getCollnum ( const char *coll ); // coll is NULL terminated here
 
 	char *getCollName ( collnum_t collnum );
 	char *getColl     ( collnum_t collnum ) {return getCollName(collnum);};
@@ -79,9 +79,9 @@ class Collectiondb  {
 	
 	// . get collectionRec from name
 	// returns NULL if not available
-	class CollectionRec *getRec ( char *coll );
+	class CollectionRec *getRec ( const char *coll );
 
-	class CollectionRec *getRec ( char *coll , int32_t collLen );
+	class CollectionRec *getRec ( const char *coll , int32_t collLen );
 
 	class CollectionRec *getRec ( collnum_t collnum);
 
