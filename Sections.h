@@ -225,12 +225,6 @@ public:
 
 	uint64_t  m_sentenceContentHash64;
 
-	// . used by the SEC_EVENTBROTHER algo in Dates.cpp to detect
-	//   [more] or [details] links that indicate distinct items
-	// . sometimes the "(more)" link is combined into the last sentence
-	//   so we have to treat the last link kinda like its own sentence too!
-	uint32_t  m_lastLinkContentHash32;
-
 	// hash of all sentences contained indirectly or directly.
 	// uses m_sentenceContentHash64 (for sentences)
 	uint64_t m_indirectSentHash64;
@@ -389,7 +383,6 @@ class Sections {
 	// word #'s (-1 means invalid)
 	int32_t m_titleStart;
 	int32_t m_titleEnd;
-	int32_t m_titleStartAlnumPos;
 
 	// these are 1-1 with the Words::m_words[] array
 	class Section **m_sectionPtrs;
@@ -441,9 +434,6 @@ class Sections {
 	class Section *m_firstSent;
 	class Section *m_lastSent;
 };
-
-// only allow this many urls per site to add sectiondb info
-#define MAX_SITE_VOTERS 32
 
 // . the key in sectiondb is basically the Section::m_tagHash 
 //   (with a docId) and the data portion of the Rdb record is this SectionVote

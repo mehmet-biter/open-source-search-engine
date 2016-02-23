@@ -250,8 +250,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		m_numSections++;
 	}
 
-	// count this
-	int32_t alnumCount = 0;
 	// for debug
 	g_sections = this;
 
@@ -266,8 +264,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		if ( ! fullTid ) { 
 			// skip if not alnum word
 			if ( ! wids[i] ) continue;
-			// count it raw
-			alnumCount++;
 			// must be in a section at this point
 			if ( ! current ) { char *xx=NULL;*xx=0; }
 			// . hash it up for our content hash
@@ -1261,8 +1257,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		// title is special
 		if ( tid == TAG_TITLE && m_titleStart == -1 ) {
 			m_titleStart = si->m_a; // i;
-			// Address.cpp uses this
-			m_titleStartAlnumPos = alnumCount;
 		}
 	}
 
@@ -4002,10 +3996,6 @@ bool Sections::printSectionDiv ( Section *sk , char format ) {
 		                   ,(uint32_t)mod
 		                   );
 	}
-
-	if ( sk->m_lastLinkContentHash32 )
-		m_sbuf->safePrintf("llch=%"UINT32" ",
-		                   (int32_t)sk->m_lastLinkContentHash32);
 
 	printFlags ( m_sbuf , sk );
 	
