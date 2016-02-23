@@ -486,8 +486,6 @@ class Sections {
 	bool set(class Words *w, class Bits *bits, class Url *url,
 			  int64_t siteHash64, char *coll, int32_t niceness, uint8_t contentType );
 
-	bool addVotes(class SectionVotingTable *nsvt, uint32_t tagPairHash );
-
 	bool verifySections ( ) ;
 
 	int32_t getStoredSize ( ) ;
@@ -787,69 +785,6 @@ public:
 	//   are the only vote types that actually really use this...
 	float m_numSampled;
 };
-
-
-class SectionVotingTable {
- public:
-
-	SectionVotingTable ( ) ;
-
-	//bool set ( Sections *sections , class RdbList *sectiondbList );
-	void reset () { m_svt.reset(); }
-
-	bool print ( SafeBuf *sbuf , char *title ) ;
-
-	// stock table from a sectiondb rdblist
-	bool addListOfVotes ( RdbList *list, 
-			      key128_t **lastKey ,
-			      int64_t docId ,
-			      int32_t niceness ) ;
-
-	// index our sections as flag|tagHash pairs using a termId which
-	// is basically our sitehash. this allows us to "vote" on what
-	// sections are static, dynamic, "texty" by indexing our votes into
-	// datedb.
-	bool hash ( int64_t docId , 
-		    class HashTableX *dt , 
-		    uint64_t siteHash64 ,
-		    int32_t niceness ) ;
-
-	bool addVote2 ( int32_t tagHash, int32_t sectionType , float score ) {
-		return addVote3 ( tagHash,sectionType,score,1);};
-
-	bool addVote3 ( //class HashTableX *ttt         ,
-		       int32_t              tagHash     ,
-		       int32_t              sectionType ,
-		       float             score       ,
-		       float             numSampled  ,
-		       bool              hackFix = false ) ;
-
-	// return -1.0 if no voters!
-	float getScore      ( Section *sn , int32_t sectionType ) {
-		if ( ! sn ) return -1.0;
-		return getScore ( sn->m_tagHash , sectionType ); };
-
-	float getScore      ( int32_t tagHash , int32_t sectionType ) ;
-
-
-	float getNumSampled ( Section *sn , int32_t sectionType ) {
-		if ( ! sn ) return 0.0;
-		return getNumSampled ( sn->m_tagHash , sectionType ); };
-
-	float getNumSampled ( int32_t tagHash , int32_t sectionType ) ;
-
-	int32_t getNumVotes ( ) { return m_svt.getNumSlotsUsed(); };
-
-	bool init ( int32_t numSlots , char *name , int32_t niceness ) {
-		return m_svt.set(8,sizeof(SectionVote),numSlots,
-				 NULL,0,false,niceness,name); };
-
-	HashTableX m_svt;
-
-	int32_t m_totalSiteVoters;
-	//int32_t m_totalSimilarLayouts;
-};
-
 
 //
 // BEGIN SECTION TYPES

@@ -431,7 +431,6 @@ public:
 	class SectionStats *getSectionStats ( uint32_t secHash32, uint32_t sentHash32, bool cacheOnly );
 	char **getSectionsReply ( ) ;
 	char **getSectionsVotes ( ) ;
-	HashTableX *getSectionVotingTable();
 	int32_t *getLinkSiteHashes ( );
 	class Links *getLinks ( bool doQuickSet = false ) ;
 	class HashTableX *getCountTable ( ) ;
@@ -1085,7 +1084,6 @@ public:
 	char     m_vctabValid;
 	char     m_explicitSectionsValid;
 	char     m_impliedSectionsValid;
-	char     m_sectionVotingTableValid;
 	char     m_imageDataValid;
 	char     m_imagesValid;
 	char     m_msge0Valid;

@@ -17363,10 +17363,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		return (char *)pch64;
 	}
 
-	// get the voting table which we will add to sectiondb
-	SectionVotingTable *nsvt = NULL;
-	SectionVotingTable *osvt = NULL;
-
 	// need firstip if adding a rebuilt spider request
 	if ( m_useSecondaryRdbs && m_useSpiderdb ) {
 		int32_t *fip = getFirstIp();
@@ -17532,67 +17528,17 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( spiderStatusDocMetaList )
 		need += spiderStatusDocMetaList->length();
 
-	// now we use revdb
-	// before hashing the old doc into it
-	//if ( od && index2 ) {
-	//	// if this hash table init fails, return NULL
-	//	if (!tt2.set(12,4,5000,NULL,0,false,m_niceness)) return NULL;
-	//	char *rod = od->hash ( &tt2 ) ;
-	//	if ( ! rod || rod == (char *)-1 ) return rod;
-	//}
 	// space for indexdb AND DATEDB! +2 for rdbids
 	int32_t needIndexdb = 0;
 	needIndexdb +=tt1.m_numSlotsUsed*(sizeof(key144_t)+2+sizeof(key128_t));
 	//needIndexdb+=tt2.m_numSlotsUsed * (sizeof(key_t)+2+sizeof(key128_t));
 	need += needIndexdb;
-	// sanity check
-	//if ( ! od && m_skipIndexing && needIndexdb ) { char *xx=NULL;*xx=0; }
-
-	// . sanity check - must have one or the other!
-	// . well, not in the case of EDOCNOTNEW or EDOCNOTOLD, in which
-	//   case we just remove ourselves from spiderdb, and in the case
-	//   of EDOCNOTOLD, from tfndb as well
-	//if ( ! od && ! nd ) { char *xx=NULL;*xx=0; }
-
-
-	// now we also add the title rec. true = ownsCbuf? ret NULL on error
-	// with g_errno set.
-	//if ( nd && ! nd->compress( true , m_niceness ) ) return NULL;
-
-
-	/*
-	  now we have the bit in the posdb key, so this should not be needed...
-	  use Posdb::isShardedByTermId() to see if it is such a spcial case key
-	  like Hostdb::getShardNum() now does...
-
-	setStatus ( "hashing nosplit keys" );
-	// hash no split terms into ns1 and ns2
-	HashTableX ns1;
-	// prepare it, 500 initial terms
-	if ( ! ns1.set ( 18 , 4 , 500,NULL,0,false,m_niceness,"nosplt-indx" ))
-		return NULL;
-	// . hash for no splits
-	// . like above, but these are "no split" termids
-	if ( nd && m_usePosdb && ! hashNoSplit ( &ns1 ) ) return NULL;
-	//if(index2 && od && ! od->hashNoSplit ( &ns2 ) ) return NULL;
-	// needs for hashing no split terms
-	int32_t needNoSplit1 = 0;
-	// add em up. +1 for rdbId. add to both indexdb AND datedb i guess...
-	needNoSplit1 += ns1.m_numSlotsUsed * (18+1); // +16+1);
-	//needNoSplit += ns2.m_numSlotsUsed * (12+1+16+1);
-	// add it in
-	need += needNoSplit1;
-	// sanity check
-	//if ( ! od && m_skipIndexing && needNoSplit ) { char *xx=NULL;*xx=0; }
-	*/
-
 
 	setStatus ( "hashing sectiondb keys" );
 	// add in special sections keys. "ns" = "new sections", etc.
 	// add in the special nosplit datedb terms from the Sections class
 	// these hash into the term table so we can do incremental updating
-	HashTableX st1; // <key128_t,char> dt1;
-	//HashTableX st2; // <key128_t,char> dt2;
+	HashTableX st1;
 	// set key/data size
 	int32_t svs = sizeof(SectionVote);
 	st1.set(sizeof(key128_t),svs,0,NULL,0,false,m_niceness,"sectdb-indx");
@@ -17600,21 +17546,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// not the lower 4 bytes because that is the docid which is the
 	// same for every key
 	st1.m_maskKeyOffset = 6;
-	//st2.set(sizeof(key128_t),svs,0,NULL,0,false,m_niceness);
-	// do not bother if deleting
-	if ( m_indexCode ) nsvt = NULL;
-
-	// . now we hash the root just to get some section votes i guess
-	//if ( nts && ! *isr ) nsvt = NULL;
-	// if old voting table add more than 100,000 votes forget it!!! do
-	// not bloat sectiondb that big...
-	if ( osvt && osvt->m_totalSiteVoters >= MAX_SITE_VOTERS ) nsvt = NULL;
-	// hash terms into a table that uses full datedb keys
-	if ( nsvt && ! nsvt->hash (m_docId,&st1,*sh64,m_niceness)) 
-	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, nsvt->hash failed", __FILE__, __func__, __LINE__);
-		return NULL;
-	}
 	
 	// needs for hashing no split terms
 	int32_t needSectiondb = 0;
@@ -17624,36 +17555,9 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// add it in
 	need += needSectiondb;
 
-
-	// Sections::respiderLineWaiters() adds one docid-based spider rec
-	// for every url waiting in line. Sections::m_numLineWaiters. assume
-	// 64 bytes per line waiter spider rec i guess
-	//int32_t needLineWaiters = 0;
-	// +1 for rdbId
-	//if ( ns ) needLineWaiters = ns->m_numLineWaiters * 64;
-	// forgot to add this?
-	//need += needLineWaiters;
-	// . for adding Sections.cpp keys
-	// . Sections::hash() does not bother with invalid sections
-	// . waitInLine might be true in Sections::hash() too, so always add 12
-	//if ( ns ) need += (ns->m_numSections - ns->m_numInvalids)*12 + 12;
-	//if ( os ) need += (os->m_numSections - os->m_numInvalids)*12 + 12;
-
-
-	// for adding Addresses::m_keys[] (Addresses::hash())
-	//if ( na ) need += (na->m_numKeys * 16);
-	//if ( oa ) need += (oa->m_numKeys * 16);
-
-	// don't forget Dates!
-	//if ( ndp ) need += ndp->m_numPubDates * sizeof(key_t);
-	//if ( odp ) need += odp->m_numPubDates * sizeof(key_t);
-
 	// clusterdb keys. plus one for rdbId
 	int32_t needClusterdb = 0;
-	//if ( nd && ! nd->m_skipIndexing ) needClusterdb += 13;
-	//if ( od && ! od->m_skipIndexing ) needClusterdb += 13;
 	if ( nd ) needClusterdb += 13;
-	//if ( od ) needClusterdb += 13;
 	need += needClusterdb;
 
 	// . LINKDB
