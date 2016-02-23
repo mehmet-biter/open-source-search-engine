@@ -3309,7 +3309,6 @@ float computeSimilarity2 ( int32_t   *vec0 ,
 
 char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_HAS_COLON  ) return "hascolon";
-	if ( sf == SENT_AFTER_COLON  ) return "aftercolon";
 	if ( sf == SENT_BAD_FIRST_WORD ) return "badfirstword";
 	if ( sf == SENT_MIXED_CASE ) return "mixedcase";
 	if ( sf == SENT_MIXED_CASE_STRICT ) return "mixedcasestrict";
@@ -3322,7 +3321,6 @@ char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_NUMBER_START ) return "numberstarts";
 	if ( sf == SENT_IN_HEADER ) return "inheader";
 	if ( sf == SENT_IN_LIST ) return "inlist";
-	if ( sf == SENT_IN_BIG_LIST ) return "inbiglist";
 	if ( sf == SENT_COLON_ENDS ) return "colonends";
 	if ( sf == SENT_IN_TITLEY_TAG ) return "intitleytag";
 	if ( sf == SENT_CITY_STATE ) return "citystate";
@@ -3342,16 +3340,9 @@ char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_UNIQUE_TAG_HASH ) return "uniquetaghash";
 	if ( sf == SENT_AFTER_SENTENCE ) return "aftersentence";
 	if ( sf == SENT_WORD_SANDWICH ) return "wordsandwich";
-	if ( sf == SENT_AFTER_SPACER ) return "afterspacer";
-	if ( sf == SENT_BEFORE_SPACER ) return "beforespacer";
 	if ( sf == SENT_NUKE_FIRST_WORD ) return "nukefirstword";
 	if ( sf == SENT_FIELD_NAME ) return "fieldname";
 	if ( sf == SENT_PERIOD_ENDS_HARD ) return "periodends2";
-	if ( sf == SENT_PARENS_START ) return "parensstart";
-	if ( sf == SENT_IN_MENU_HEADER ) return "inmenuheader";
-	if ( sf == SENT_IN_TRUMBA_TITLE ) return "intrumbatitle";
-	if ( sf == SENT_IN_TAG ) return "intag";
-	if ( sf == SENT_MENU_SENTENCE ) return "menusentence";
 
 	char *xx=NULL;*xx=0;
 	return NULL;
