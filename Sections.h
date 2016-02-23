@@ -80,18 +80,18 @@
 #define SEC_HR_CONTAINER            0x00400000000LL
 #define SEC_HAS_DOM                 0x00800000000LL
 #define SEC_HAS_DOW                 0x01000000000LL
-#define SEC_EVENT_BROTHER           0x02000000000LL
-#define SEC_DATE_LIST_CONTAINER     0x04000000000LL
+//#define SEC_UNUSED                0x02000000000LL
+//#define SEC_UNUSED                0x04000000000LL
 #define SEC_TAIL_CRAP               0x08000000000LL
 
 #define SEC_CONTROL                 0x0000010000000000LL
 #define SEC_STRIKE                  0x0000020000000000LL
 #define SEC_STRIKE2                 0x0000040000000000LL
 #define SEC_HAS_MONTH               0x0000080000000000LL
-#define SEC_IGNOREEVENTBROTHER      0x0000100000000000LL
+//#define SEC_UNUSED                0x0000100000000000LL
 #define SEC_HASEVENTDOMDOW          0x0000200000000000LL
-#define SEC_STOREHOURSCONTAINER     0x0000400000000000LL
-#define SEC_PUBDATECONTAINER        0x0000800000000000LL
+//#define SEC_UNUSED                0x0000400000000000LL
+//#define SEC_UNUSED                0x0000800000000000LL
 
 #define SEC_TABLE_HEADER            0x0001000000000000LL
 #define SEC_HASDATEHEADERROW        0x0002000000000000LL
@@ -634,9 +634,6 @@ class Sections {
 	char      **m_wptrs;
 	nodeid_t   *m_tids;
 
-	// the new way
-	bool addImpliedSections ( );
-
 	bool setSentFlagsPart1 ( );
 	bool setSentFlagsPart2 ( );
 	sentflags_t getSentEventEndingOrBeginningFlags ( sentflags_t sflags ,
@@ -648,7 +645,6 @@ class Sections {
 	bool       m_sentFlagsAreSet;
 	bool       m_addedImpliedSections;
 
-	int32_t addImpliedSections3 ();
 	int32_t getDelimScore ( class Section *bro,
 			     char method,
 			     class Section *delim ,
