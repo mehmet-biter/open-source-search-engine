@@ -3921,9 +3921,7 @@ bool Sections::setSentFlagsPart2 ( ) {
 			else {
 				si->m_sentFlags |= SENT_INNONTITLEFIELD;
 			}
-			// @Location, like for psfs.org has Location in tablcol
-			if ( s[0] == '@' )
-				si->m_sentFlags |= SENT_INPLACEFIELD;
+
 			break;
 		}
 		     
@@ -6954,7 +6952,6 @@ char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_MIXED_TEXT ) return "mixedtext";
 	if ( sf == SENT_TAGS ) return "senttags";
 	if ( sf == SENT_INTITLEFIELD ) return "intitlefield";
-	if ( sf == SENT_INPLACEFIELD ) return "inplacefield";
 	if ( sf == SENT_STRANGE_PUNCT ) return "strangepunct";
 	if ( sf == SENT_TAG_INDICATOR ) return "tagindicator";
 	if ( sf == SENT_INNONTITLEFIELD ) return "innontitlefield";
