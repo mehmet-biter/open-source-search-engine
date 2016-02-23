@@ -6400,16 +6400,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_SI;
 	m++;
 
-	m->m_title = "debug gigabits flag";
-	m->m_desc  = "Is 1 to log gigabits debug information, 0 otherwise.";
-	m->m_def   = "0";
-	m->m_off   = (char *)&si.m_debugGigabits - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_cgi   = "debuggigabits";
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
 	m->m_title = "return docids only";
 	m->m_desc  = "Is 1 to return only docids as query results.";
 	m->m_def   = "0";

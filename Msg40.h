@@ -124,7 +124,6 @@ class Msg40 {
 			HashTableX *gbitTable ,
 			char *pstart,
 			char *pend,
-			bool debugGigabits ,
 			class Msg20Reply *reply,
 			SafeBuf *factBuf ) ;
 

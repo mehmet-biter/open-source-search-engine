@@ -146,7 +146,6 @@ class SearchInput {
 	char   m_wcache;                     // msg40
 
 	char   m_debug;                      // msg40
-	char   m_debugGigabits;
 
 	char   m_spiderResults;
 	char   m_spiderResultRoots;

@@ -2051,16 +2051,6 @@ bool Msg40::gotSummary ( ) {
 		// remember them in the query term
 		qt->m_hash64d   = qh;
 		qt->m_popWeight = qpopWeight;
-
-		// debug it
-		if ( ! m_si->m_debugGigabits ) continue;
-		SafeBuf msg;
-		msg.safePrintf("gbits: qpop=%"INT32" qweight=%"INT32" "
-			       "queryterm=",
-			       qpop,qpopWeight);
-		msg.safeMemcpy(qt->m_term,qt->m_termLen);
-		msg.pushChar('\0');
-		logf(LOG_DEBUG,"%s",msg.getBufStart());
 	}
 
 
@@ -2459,8 +2449,7 @@ bool hashGigabitSample ( Query *q,
 		  TopicGroup *tg ,
 		  SafeBuf *vecBuf,
 		  Msg20 *thisMsg20 ,
-		  HashTableX *repeatTable ,
-		  bool debugGigabits ) ;
+		  HashTableX *repeatTable ) ;
 
 
 static int gigabitCmp ( const void *a, const void *b ) {
@@ -2652,8 +2641,7 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 				    // we let into the master hash table.
 			     &vecBuf,
 			     thisMsg20,
-			     &repeatTable,
-			     m_si->m_debugGigabits);
+			     &repeatTable);
 		// ignore errors
 		g_errno = 0;
 	}
@@ -2749,35 +2737,9 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 				// if we were NOT contained by someone below...
 				if ( ! s ) continue;
 
-				// just punish, and resort by score later.
-				// TODO: ensure cannot go negative!
-				//gj->m_numPages -= gi->m_numPages;
-				
-				// he's gotta be on all of our pages, too
-				//if ( ! onSamePages(i,j,slots,heads,pages) )
-				//	continue;
-
-				// debug it
-				if ( m_si->m_debugGigabits ) {
-					SafeBuf msg;
-					msg.safePrintf("gbits: gigabit \"");
-					msg.safeMemcpy(gi->m_term,
-						       gi->m_termLen);
-					msg.safePrintf("\"[%.0f] *NUKES0* \"",
-						       gi->m_gbscore);
-					msg.safeMemcpy(gj->m_term,
-						       gj->m_termLen);
-					msg.safePrintf("\"[%.0f]",
-						       gj->m_gbscore);
-					logf(LOG_DEBUG,"%s",msg.getBufStart());
-				}
-
 				// shorter gets our score (we need to sort)
 				// not yet! let him finish, then replace him!!
-				//replacerj = j;
 				gj->m_termLen = 0;
-				// see if we can nuke other guys at least
-				//continue;
 			}
 			
 			else {
@@ -2797,53 +2759,10 @@ bool Msg40::computeGigabits( TopicGroup *tg ) {
 				// keep going if no match
 				if ( ! s ) continue;
 
-				// just punish, and resort by score later.
-				// TODO: ensure cannot go negative!
-				//gj->m_numPages -= gi->m_numPages;
-
-				// debug it
-				if ( m_si->m_debugGigabits ) {
-					SafeBuf msg;
-					msg.safePrintf("gbits: gigabit \"");
-					msg.safeMemcpy(gi->m_term,
-						       gi->m_termLen);
-					msg.safePrintf("\"[%.0f] *NUKES1* \"",
-						       gi->m_gbscore);
-					msg.safeMemcpy(gj->m_term,
-						       gj->m_termLen);
-					msg.safePrintf("\"[%.0f]",
-						       gj->m_gbscore);
-					logf(LOG_DEBUG,"%s",msg.getBufStart());
-				}
-
 				// remove him if we contain him
 				gj->m_termLen = 0;
 			}
 		}
-
-		/*
-		// if we got replaced by a longer guy, he replaces us
-		// and takes our score
-		if ( replacerj >= 0 ) {
-			// gigabit #i is now gigabit #j
-			Gigabit *gj = ptrs[replacerj];
-
-			// debug it
-			SafeBuf msg;
-			msg.safePrintf("msg40: replacing gigabit \"");
-			msg.safeMemcpy(gi->m_term,gi->m_termLen);
-			msg.safePrintf("\"[%.0f] *WITH2* \"",gi->m_gbscore);
-			msg.safeMemcpy(gj->m_term,gj->m_termLen);
-			msg.safePrintf("\"[%.0f]",gj->m_gbscore);
-			logf(LOG_DEBUG,msg.getBufStart());
-
-			// make us longer then!
-			gi->m_termLen = gj->m_termLen;
-			// and nuke him
-			gj->m_termLen = 0;
-
-		}
-		*/
 	}
 
 	// remove common phrases
@@ -2957,8 +2876,7 @@ void hashExcerpt ( Query *q ,
 		   Words &ww,
 		   TopicGroup *tg , 
 		   HashTableX *repeatTable ,
-		   Msg20 *thisMsg20 ,
-		   bool debugGigabits );
+		   Msg20 *thisMsg20 );
 
 
 
@@ -2972,8 +2890,7 @@ bool hashGigabitSample ( Query *q,
 		  TopicGroup *tg ,
 		  SafeBuf *vecBuf,
 		  Msg20 *thisMsg20 ,
-		  HashTableX *repeatTable ,
-		  bool debugGigabits ) {
+		  HashTableX *repeatTable ) {
 
 	// numTerms must be less than this
 	//if ( q && q->m_numTerms > MAX_QUERY_TERMS ) 
@@ -3060,8 +2977,7 @@ bool hashGigabitSample ( Query *q,
 			      ww,
 			      tg,
 			      repeatTable , 
-			      thisMsg20 ,
-			      debugGigabits );
+			      thisMsg20 );
 		// . skip if not deduping
 		// . if a sample is too similar to another sample then we
 		//   do not allow its gigabits to vote. its considered too
@@ -3199,27 +3115,6 @@ bool hashGigabitSample ( Query *q,
 				return false;
 			pg = &gbit;
 		}
-		// debug msg
-		if ( ! debugGigabits ) continue;
-		char *ww    = pg->m_term;
-		int32_t  wwlen = pg->m_termLen;
-		char c      = ww[wwlen];
-		ww[wwlen]='\0';
-		logf(LOG_DEBUG,"gbits: master "
-		     "termId=%020"UINT64" "
-		     "d=%018"INT64" "
-		     "score=%7.1f "
-		     "cumscore=%7.1f "
-		     "pages=%"INT32" "
-		     "len=%02"INT32" term=%s",
-		     termId64,
-		     docId,
-		     gc->m_gbscore, // this time score
-		     pg->m_gbscore, // cumulative score
-		     pg->m_numPages,
-		     wwlen,
-		     ww);
-		ww[wwlen]=c;
 	}
 
 	//log("master has %"INT32" terms",master.getNumTermsUsed());
@@ -3259,8 +3154,7 @@ void hashExcerpt ( Query *q ,
 		   Words &words,
 		   TopicGroup *tg , 
 		   HashTableX *repeatTable ,
-		   Msg20 *thisMsg20 , 
-		   bool debugGigabits ) {
+		   Msg20 *thisMsg20 ) {
 	// . bring it out
 	// . allow one more word per gigabit, then remove gigabits that
 	//   are that length. this fixes the problem of having the same
@@ -3587,20 +3481,6 @@ void hashExcerpt ( Query *q ,
 			if ( is_upper_a (wp[i][0]) ) wi->m_wpop >>= 1;
 			if ( wi->m_wpop == 0 ) wi->m_wpop = 1;
 		}
-
-		// log that
-		if ( ! debugGigabits ) continue;
-		SafeBuf msg;
-		msg.safePrintf("gbits: wordpos=%3"INT32" "
-			       "repeatscore=%3"INT32" "
-			       "wordproxscore=%6.1f word=",
-			       i,
-			       (int32_t)wi->m_repeatScore,
-			       proxScore);
-		msg.safeMemcpy(wp[i],wlen[i]);
-		msg.pushChar(0);
-		logf(LOG_DEBUG,"%s",msg.getBufStart());
-		
 	}
 
 	// reset word ptr again
@@ -3944,32 +3824,6 @@ void hashExcerpt ( Query *q ,
 				return;
 			}
 
-			// debug it
-			if ( debugGigabits ) {
-				SafeBuf msg;
-				msg.safePrintf("gbits: adding gigabit "
-					       "d=%018"UINT64" "
-					       "termId=%020"UINT64" "
-					       "popModScore=%7.1f "
-					       //"wordProxSum=%7.1f "
-					       "wordProxMax=%7.1f "
-					       "nhw=%2"INT32" "
-					       "minWordPopBoost=%2.1f "
-					       "minWordPop=%5"INT32" "
-					       "term=\"",
-					       reply->m_docId,
-					       ph64,
-					       popModScore,
-					       wordProxMax,
-					       nhw,
-					       boost,
-					       minPop);
-				msg.safeMemcpy(gc.m_term,gc.m_termLen);
-				msg.safePrintf("\"");
-				logf(LOG_DEBUG,"%s",msg.getBufStart());
-			}
-
-
 			// stop after indexing a word after a int32_t string of
 			// punct, this is the overlap bug fix without taking
 			// a performance hit. hasPunct above will remove it.
@@ -4112,12 +3966,6 @@ static int factCmp ( const void *a, const void *b ) {
 // . these are sentences containing the query and a gigabit.
 // . sets m_factBuf
 bool Msg40::computeFastFacts ( ) {
-
-	// skip for now
-	//return true;
-
-	bool debugGigabits = m_si->m_debugGigabits;
-
 	//
 	// hash gigabits by first wordid and # words, and phrase hash
 	//
@@ -4219,7 +4067,6 @@ bool Msg40::computeFastFacts ( ) {
 					  &gbitTable,
 					  pstart,
 					  pend,
-					  debugGigabits,
 					  reply,
 					  &factBuf ) )
 				return false;
@@ -4287,7 +4134,6 @@ bool Msg40::addFacts ( HashTableX *queryTable,
 		       HashTableX *gbitTable ,
 		       char *pstart,
 		       char *pend,
-		       bool debugGigabits ,
 		       Msg20Reply *reply,
 		       SafeBuf *factBuf ) {
 
