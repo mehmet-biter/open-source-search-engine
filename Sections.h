@@ -276,9 +276,6 @@ public:
 	class Section *m_next;
 	class Section *m_prev;
 
-	// used by Events.cpp to count # of timeofdays in section
-	//class Event *m_event;
-
 	// . if we are an element in a list, what is the list container section
 	// . a containing section is a section containing MULTIPLE 
 	//   smaller sections
@@ -299,20 +296,6 @@ public:
 	// . voting info for this section over all indexed pages from this site
 	SectionStats m_stats;
 
-	int32_t m_votesForDup;
-	int32_t m_votesForNotDup;
-	float getSectiondbVoteFactor ( ) {
-		// now punish if repeated on many page on the site
-		float a = (float)m_votesForNotDup;
-		float b = (float)m_votesForDup;
-		if ( a == 0 && b == 0 ) return 1.0;
-		// use that as a modifier
-		float factor = a / ( a + b);
-		// minimum so we do not completely nuke title i guess
-		if ( factor < .10 ) factor = .10;
-		return factor;
-	};
-
 	// position of the first and last alnum word contained directly OR
 	// indirectly in this section. use -1 if no text contained...
 	int32_t m_firstWordPos;
@@ -328,9 +311,6 @@ public:
 	//   m_lastWordPos respectively
 	int32_t m_senta;
 	int32_t m_sentb;
-
-	// each sentence is numbered
-	//int32_t m_sentNum;
 
 	class Section *m_prevSent;
 	class Section *m_nextSent;
