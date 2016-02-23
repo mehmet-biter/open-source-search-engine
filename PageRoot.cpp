@@ -22,7 +22,7 @@ bool sendPageRoot ( TcpSocket *s, HttpRequest *r ){
 	return sendPageRoot ( s, r, NULL );
 }
 
-bool printNav ( SafeBuf &sb , HttpRequest *r ) {
+static bool printNav ( SafeBuf &sb , HttpRequest *r ) {
 	sb.safePrintf("</TD></TR></TABLE>"
 		      "</body></html>");
 	return true;
@@ -34,7 +34,7 @@ bool printNav ( SafeBuf &sb , HttpRequest *r ) {
 //
 //////////////
 
-bool printFamilyFilter ( SafeBuf& sb , bool familyFilterOn ) {
+static bool printFamilyFilter ( SafeBuf& sb , bool familyFilterOn ) {
 	char *s1 = "";
 	char *s2 = "";
 	if ( familyFilterOn ) s1 = " checked";
@@ -50,7 +50,7 @@ bool printFamilyFilter ( SafeBuf& sb , bool familyFilterOn ) {
 
 #include "SearchInput.h"
 
-bool printRadioButtons ( SafeBuf& sb , SearchInput *si ) {
+static bool printRadioButtons ( SafeBuf& sb , SearchInput *si ) {
 	// don't display this for directory search
 	// look it up. returns catId <= 0 if dmoz not setup yet.
 	// From PageDirectory.cpp
@@ -128,7 +128,7 @@ bool printRadioButtons ( SafeBuf& sb , SearchInput *si ) {
 	return true;
 }
 
-bool printLogo ( SafeBuf& sb , SearchInput *si ) {
+static bool printLogo ( SafeBuf& sb , SearchInput *si ) {
 	// if an image was provided...
 	if ( ! si->m_imgUrl || ! si->m_imgUrl[0] ) {
 		// no, now we default to our logo
@@ -173,7 +173,7 @@ bool printLogo ( SafeBuf& sb , SearchInput *si ) {
 
 
 bool expandHtml (  SafeBuf& sb,
-		   char *head , 
+		   const char *head , 
 		   int32_t hlen ,
 		   char *q    , 
 		   int32_t qlen ,
@@ -434,7 +434,7 @@ bool expandHtml (  SafeBuf& sb,
 bool printLeftColumnRocketAndTabs ( SafeBuf *sb , 
 				    bool isSearchResultsPage ,
 				    CollectionRec *cr ,
-				    char *tabName ) {
+				    const char *tabName ) {
 
 	class MenuItem {
 	public:
@@ -662,7 +662,7 @@ bool printLeftColumnRocketAndTabs ( SafeBuf *sb ,
 	return true;
 }
 
-bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
+bool printFrontPageShell ( SafeBuf *sb , const char *tabName , CollectionRec *cr ,
 			   bool printGigablast ) {
 
 	sb->safePrintf("<html>\n");
@@ -671,7 +671,7 @@ bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
 	sb->safePrintf("<meta name=\"description\" content=\"A powerful, new search engine that does real-time indexing!\">\n");
 	sb->safePrintf("<meta name=\"keywords\" content=\"search, search engine, search engines, search the web, fresh index, green search engine, green search, clean search engine, clean search\">\n");
 
-	char *title = "An Alternative Open Source Search Engine";
+	const char *title = "An Alternative Open Source Search Engine";
 	if ( strcasecmp(tabName,"search") ) {
 		title = tabName;
 	}
@@ -737,7 +737,7 @@ bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
 	return true;
 }
 
-bool printWebHomePage ( SafeBuf &sb , HttpRequest *r , TcpSocket *sock ) {
+static bool printWebHomePage ( SafeBuf &sb , HttpRequest *r , TcpSocket *sock ) {
 	SearchInput si;
 	si.set ( sock , r );
 
@@ -871,7 +871,7 @@ bool printWebHomePage ( SafeBuf &sb , HttpRequest *r , TcpSocket *sock ) {
 	return true;
 }
 
-bool printAddUrlHomePage ( SafeBuf &sb , char *url , HttpRequest *r ) {
+static bool printAddUrlHomePage ( SafeBuf &sb , char *url , HttpRequest *r ) {
 
 	CollectionRec *cr = g_collectiondb.getRec ( r );
 
@@ -1168,7 +1168,7 @@ public:
 // only allow up to 1 Msg10's to be in progress at a time
 static bool s_inprogress = false;
 
-void doneInjectingWrapper3 ( void *st ) ;
+static void doneInjectingWrapper3 ( void *st ) ;
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
@@ -1439,7 +1439,7 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 }
 
 
-void doneInjectingWrapper3 ( void *st ) {
+static void doneInjectingWrapper3 ( void *st ) {
 	State1i *st1 = (State1i *)st;
 	// allow others to add now
 	s_inprogress = false;
@@ -1646,7 +1646,7 @@ void doneInjectingWrapper3 ( void *st ) {
 static HashTable s_htable;
 static bool      s_init = false;
 static int32_t      s_lastTime = 0;
-bool canSubmit ( uint32_t h , int32_t now , int32_t maxAddUrlsPerIpDomPerDay ) {
+static bool canSubmit ( uint32_t h , int32_t now , int32_t maxAddUrlsPerIpDomPerDay ) {
 	// . sometimes no limit
 	// . 0 means no limit because if they don't want any submission they
 	//   can just turn off add url and we want to avoid excess 

@@ -22,6 +22,7 @@
 #include "XmlDoc.h" // GigabitInfo class
 #include "Posdb.h" // MAX_TOP definition
 #include "PageResults.h"
+#include "PageRoot.h"
 #include "Proxy.h"
 
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;
@@ -1045,22 +1046,6 @@ bool gotResults ( void *state ) {
 	return true;
 }
 
-// defined in PageRoot.cpp
-bool expandHtml (  SafeBuf& sb,
-		   char *head ,
-		   int32_t hlen ,
-		   char *q    ,
-		   int32_t qlen ,
-		   HttpRequest *r ,
-		   SearchInput *si,
-		   char *method ,
-		   CollectionRec *cr ) ;
-
-
-bool printLeftColumnRocketAndTabs ( SafeBuf *sb,
-				    bool isSearchResultsPage ,
-				    CollectionRec *cr ,
-				    char *tabName );
 
 bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 
