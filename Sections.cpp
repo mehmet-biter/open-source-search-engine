@@ -35,9 +35,7 @@ void Sections::reset() {
 		mfree ( m_buf , m_bufSize , "sdata" );
 	if ( m_buf2 && m_bufSize2 )
 		mfree ( m_buf2 , m_bufSize2 , "sdata2" );
-	// reset the old and new section voting tables
-	//m_osvt.reset();
-	//m_nsvt.reset();
+
 	m_sections         = NULL;
 	m_buf              = NULL;
 	m_buf2             = NULL;
@@ -2309,11 +2307,6 @@ bool initPlaceIndicatorTable ( ) {
 		s_pit.addKey ( &h );
 	}
 	return true;
-}
-
-bool isPlaceIndicator ( int64_t *widp ) {
-	if ( ! s_init9 ) initPlaceIndicatorTable();
-	return s_pit.isInTable ( widp );
 }
 
 static HashTableX s_igt;
@@ -4902,135 +4895,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		// and preceeding a generic sentence
 		//lastSec->m_titleScore *= .02;
 		lastSec->m_sentFlags |= SENT_FIELD_NAME;
-	}
-
-
-	if ( ! s_init9 ) initPlaceIndicatorTable();
-
-
-	if ( ! m_alnumPosValid ) { char *xx=NULL;*xx=0; }
-
-	/////////////////////////////
-	//
-	// set SENT_OBVIOUS_PLACE
-	//
-	// - indicate sentences that are place names
-	// - end in "theater", "hall", "bar", etc.
-	//
-	////////////////////////////
-	for ( Section *si = ss->m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// only works on sentences for now
-		if ( ! ( si->m_flags & SEC_SENTENCE ) ) continue;
-		// sentence must not be mixed case
-		if ( si->m_sentFlags & SENT_MIXED_CASE ) continue;
-		// ignore if in menu ("the lower school" - maret.org)
-		if ( si->m_sentFlags & SENT_IN_MENU ) continue;
-		if ( si->m_sentFlags & SENT_IN_MENU_HEADER ) continue;
-		// how many alnum words we got?
-		int32_t na = si->m_alnumPosB - si->m_alnumPosA ;
-		// skip if only one word
-		if ( na <= 1 ) continue;
-		// skip if more than 7
-		if ( na > 7 ) continue;
-		// last word in sentence is "last"
-		int32_t last = si->m_sentb - 1;
-		// back up if "last" is numeric like "Studio 3" or "Room 127"
-		for ( ; last > si->m_senta ; last-- ) {
-			// skip until alnumword
-			if ( ! m_wids[last] ) continue;
-			// stop if last is NOT starting with a number
-			if ( ! is_digit(m_wptrs[last][0]))  break;
-		}
-		// make a phrase wid for "night club"
-		int64_t pid = 0LL;
-		for ( int32_t k = last - 1 ; k >= si->m_senta ; k-- ) {
-			QUICKPOLL(m_niceness);
-			if ( ! m_wids[k] ) continue;
-			pid = m_pids[k];
-			break;
-		}
-		// last word must be indicator:  "theater" "center" "school"...
-		bool inTable = false;
-		if ( s_pit.isInTable(&m_wids[last]) ) inTable = true;
-		// check phrase id for "nightclub" for guysndollsllc.com
-		if ( pid && s_pit.isInTable ( &pid ) ) 
-			inTable = true;
-		if ( ! inTable ) continue;
-		// the word "the" or "a" cannot preceed indicator
-		if ( m_wids[last-2] == h_the ) continue;
-		// "find a store"
-		if ( m_wids[last-2] == h_a ) continue;
-		// "use of museums"
-		if ( m_wids[last-2] == h_of ) continue;
-		// first word
-		int32_t i = si->m_senta;
-		// "add/contact/use/search store"
-		if ( m_wids[i] == h_add     ) continue;
-		if ( m_wids[i] == h_contact ) continue;
-		if ( m_wids[i] == h_use     ) continue;
-		if ( m_wids[i] == h_search  ) continue;
-		if ( m_wids[i] == h_find    ) continue;
-		// school needs 3 words at least to fix
-		// "drama/music/cooking/german school"
-		if ( m_wids[last] == h_school && na <= 2 ) continue;
-		// "gift shop" is a subplace name (collectorsguide.com)
-		if ( m_wids[last] == h_shop && m_wids[last-2]==h_gift)continue;
-		// "open house" is subplace name (maret.org)
-		if ( m_wids[last]==h_house&& m_wids[last-2]==h_open)continue;
-		// photo/image/video/media library/gallery
-		if ((m_wids[last] == h_gallery||m_wids[last]==h_library) &&
-		    (m_wids[last-2] == h_photo ||
-		     m_wids[last-2] == h_image ||
-		     m_wids[last-2] == h_picture ||
-		     m_wids[last-2] == h_video ||
-		     m_wids[last-2] == h_media ) )
-			continue;
-		// if contains "at" or "by" or blah blah, stop it
-		int32_t j; for ( j = si->m_senta ; j < si->m_sentb ; j++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// skip tags
-			if ( m_tids[j] ) continue;
-			// strange punct?
-			if ( ! m_wids[j] ) {
-				char *p = m_wptrs[j];
-				char *pend = p + m_wlens[j];
-				for ( ; p < pend ; p++ ) {
-					QUICKPOLL(m_niceness);
-					if ( is_wspace_a(*p) ) continue;
-					if ( *p == '\''      ) continue;
-					// St. John's College Bookstore
-					if ( *p == '.'       ) continue;
-					break;
-				}
-				// bad punct? do not set the flag then
-				if ( p < pend ) break;
-				// otherwise, we are good to go
-				continue;
-			}
-			// stop on these
-			if ( m_wids[j] == h_at ) break;
-			// presented by ....
-			if ( m_wids[j] == h_by ) break;
-			// copyright is bad
-			if ( m_wids[j] == h_copyright ) break;
-			// "proceed to west hartford center" (directs)
-			if ( m_wids[j] == h_to ) break;
-			// "... presents Swan Lake"
-			if ( m_wids[j] == h_presents ) break;
-			// "...review of ..."
-			if ( m_wids[j] == h_review ) break;
-			// folks from erda gardens
-			if ( m_wids[j] == h_from ) break;
-			// join us in crested butte
-			if ( m_wids[j] == h_join ) break;
-		}
-		// if hit a bad word, do not set flag then
-		if ( j < si->m_sentb ) continue;
-		// set it
-		si->m_sentFlags |= SENT_OBVIOUS_PLACE;
 	}
 
 	if ( ! m_alnumPosValid ) { char *xx=NULL;*xx=0; }
@@ -7708,7 +7572,6 @@ char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_FORMTABLE_FIELD ) return "formtablefield";
 	if ( sf == SENT_FORMTABLE_VALUE ) return "formtablevalue";
 	if ( sf == SENT_IN_TAG ) return "intag";
-	if ( sf == SENT_OBVIOUS_PLACE ) return "obviousplace";
 	if ( sf == SENT_HASSOMEEVENTSDATE ) return "hassomeeventsdate";
 	if ( sf == SENT_HASTITLEWORDS ) return "hastitlewords";
 	if ( sf == SENT_BADEVENTSTART ) return "badeventstart";
