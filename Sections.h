@@ -636,31 +636,7 @@ class Sections {
 	bool       m_sentFlagsAreSet;
 	bool       m_addedImpliedSections;
 
-	int32_t getDelimScore ( class Section *bro,
-			     char method,
-			     class Section *delim ,
-			     class Partition *part );
-	int32_t getDelimHash ( char method , class Section *bro ) ;
-
 	bool addImpliedLists ( ) ;
-	int32_t getDelimScore2 ( class Section *bro,
-			      char method,
-			      class Section *delim ,
-			      int32_t *a ,
-			      int32_t *b );
-
-	bool hashSentBits ( class Section    *sx        ,
-			    class HashTableX *vht       ,
-			    class Section    *container ,
-			    uint32_t          mod       ,
-			    class HashTableX *labelTable,
-			    char             *modLabel  );
-
-	bool hashSentPairs ( Section    *sx ,
-			     Section    *sb ,
-			     HashTableX *vht ,
-			     Section    *container ,
-			     HashTableX *labelTable );
 
 	bool addSentenceSections ( ) ;
 
