@@ -115,20 +115,6 @@ class Msg40 {
 	bool prepareToGetDocIds ( );
 	bool getDocIds ( bool recall );
 
-	bool computeGigabits( class TopicGroup *tg );
-	SafeBuf m_gigabitBuf;
-
-	// nuggabits...
-	bool computeFastFacts ( );
-	bool addFacts ( HashTableX *queryTable,
-			HashTableX *gbitTable ,
-			char *pstart,
-			char *pend,
-			class Msg20Reply *reply,
-			SafeBuf *factBuf ) ;
-
-	SafeBuf m_factBuf;
-
 	// keep these public since called by wrapper functions
 	bool federatedLoop ( ) ;
 	bool gotDocIds        ( ) ;
@@ -179,14 +165,7 @@ class Msg40 {
 	bool  moreResultsFollow ( )   {return m_moreToCome; };
 	time_t getCachedTime ( )      {return m_cachedTime; };
 
-
-	int32_t getNumGigabits (){return m_gigabitBuf.length()/sizeof(Gigabit);};
-	Gigabit *getGigabit ( int32_t i ) {
-		Gigabit *gbs = (Gigabit *)m_gigabitBuf.getBufStart();
-		return &gbs[i];
-	};
-
-        int64_t *getDocIdPtr() { return m_msg3a.m_docIds; }
+	int64_t *getDocIdPtr() { return m_msg3a.m_docIds; }
 
 	bool printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
 				  class Msg20Reply *mr ) ;
