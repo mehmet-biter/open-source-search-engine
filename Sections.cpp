@@ -27,8 +27,6 @@ Sections::Sections ( ) {
 }
 
 void Sections::reset() {
-	//if ( m_sections && m_needsFree )
-	//	mfree ( m_sections , m_sectionsBufSize , "Sections" );
 	m_sectionBuf.purge();
 	m_sectionPtrBuf.purge();
 	if ( m_buf && m_bufSize )
@@ -43,8 +41,6 @@ void Sections::reset() {
 	m_numSections      = 0;
 	m_numSentenceSections = 0;
 	m_badHtml          = false;
-	m_sentFlagsAreSet  = false;
-	m_addedImpliedSections = false;
 	m_rootSection      = NULL;
 	m_lastSection      = NULL;
 	m_lastAdded        = NULL;
@@ -1303,8 +1299,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		if ( ! addSentenceSections() ) return true;
 		// this is needed by setSentFlags()
 		setNextSentPtrs();
-		// returns false and sets g_errno on error
-		if ( ! setSentFlagsPart1 ( ) ) return true;
 	}
 
 	// . set m_nextBrother
@@ -2991,146 +2985,6 @@ void initGenericTable ( int32_t niceness ) {
 	}
 }
 
-// so Dates.cpp DF_FUZZY algorithm can see if the DT_YEAR date is in
-// a mixed case and period-ending sentence, in which case it will consider
-// it to be fuzzy since it is not header material
-bool Sections::setSentFlagsPart1 ( ) {
-
-	// shortcut
-	wbit_t *bits = m_bits->m_bits;
-
-	static int64_t h_i;
-	static int64_t h_com;
-	static int64_t h_org;
-	static int64_t h_net;
-	static int64_t h_pg;
-	static int64_t h_pg13;
-	static bool s_init38 = false;
-	if ( ! s_init38 ) {
-		s_init38 = true;
-		h_i = hash64n("i");
-		h_com = hash64n("com");
-		h_org = hash64n("org");
-		h_net = hash64n("net");
-		h_pg  = hash64n("pg");
-		h_pg13  = hash64n("pg13");
-	}
-
-	// . score each section that directly contains text.
-	// . have a score for title and score for description
-	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// now we require the sentence
-		if ( ! ( si->m_flags & SEC_SENTENCE ) ) continue;
-		///////////////////
-		//
-		// SENT_MIXED_CASE
-		//
-		///////////////////
-		si->m_sentFlags |= getMixedCaseFlags ( m_words ,
-						       bits    ,
-						       si->m_senta   ,
-						       si->m_sentb   ,
-						       m_niceness );
-
-
-		bool firstWord = true;
-		int32_t lowerCount = 0;
-		for ( int32_t i = si->m_senta ; i < si->m_sentb ; i++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// skip if not alnum
-			if ( ! m_wids[i] ) continue;
-			// are we a stop word?
-			bool isStopWord = m_words->isStopWord(i);
-			// .com is stop word
-			if ( m_wids[i] == h_com ||
-			     m_wids[i] == h_org ||
-			     m_wids[i] == h_net ||
-			     // fixes mr. movie times "PG-13"
-			     m_wids[i] == h_pg  ||
-			     m_wids[i] == h_pg13 )
-				isStopWord = true;
-			// are we upper case?
-			bool upper = is_upper_utf8(m_wptrs[i]) ;
-			// . are we all upper case?
-			// . is every single letter upper case?
-			// . this is a good tie break sometimes like for
-			//   the santafeplayhouse.org A TUNA CHRISTMAS
-			//if ( megaCaps ) {
-			//	if ( ! upper ) megaCaps = false;
-			// allow if hyphen preceedes like for
-			// abqfolkfest.org's "Kay-lee"
-			if ( i>0 && m_wptrs[i][-1]=='-' ) upper = true;
-			// if we got mixed case, note that!
-			if ( m_wids[i] &&
-			     ! is_digit(m_wptrs[i][0]) &&
-			     ! upper &&
-			     (! isStopWord || firstWord ) &&
-			     // . November 4<sup>th</sup> for facebook.com
-			     // . added "firstword" for "on AmericanTowns.com"
-			     //   title prevention for americantowns.com
-			     (m_wlens[i] >= 3 || firstWord) )
-				lowerCount++;
-			// no longer first word in sentence
-			firstWord = false;
-		}
-		// does it end in period? slight penalty for that since
-		// the ideal event title will not.
-		// fixes events.kgoradio.com which was selecting the
-		// first sentence in the description and not the performers
-		// name for "Ragnar Bohlin" and "Malin Christennsson" whose
-		// first sentence was for the most part properly capitalized
-		// just by sheer luck because it used proper nouns and was
-		// short.
-		bool endsInPeriod = false;
-		char *p = NULL;
-		//if ( si->m_b < m_nw ) p = m_wptrs[si->m_b];
-		int32_t lastPunct = si->m_sentb;
-		// skip over tags to fix nonamejustfriends.com sentence
-		for ( ; lastPunct < m_nw && m_tids[lastPunct] ; lastPunct++);
-		// now assume, possibly incorrectly, that it is punct
-		if ( lastPunct < m_nw ) p = m_wptrs[lastPunct];
-		// scan properly to 
-		char *send = p + m_wlens[lastPunct];
-		char *s    = p;
-		for ( ; s && s < send ; s++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// check. might have ". or ).
-			if ( *s == '.' || 
-			     *s == ';' ||
-			     *s == '?' ||
-			     *s == '!' ) {
-				// do not count ellipsis for this though
-				// to fix eventbrite.com 
-				// "NYC iPhone Boot Camp: ..."
-				if ( s[1] != '.' ) endsInPeriod = true;
-				break;
-			}
-		}
-		//if ( p && p[0] == '.' ) endsInPeriod = true;
-		//if ( p && p[0] == '?' ) endsInPeriod = true;
-		//if ( p && p[0] == '!' ) endsInPeriod = true;
-		//if ( p && p[1] == '.' ) endsInPeriod = false; // ellipsis
-		if ( isAbbr(m_wids[si->m_b-1]) && m_wlens[si->m_b-1]>1 ) 
-			endsInPeriod = false;
-		if ( m_wlens[si->m_b-1] <= 1 &&
-		     // fix "world war I"
-		     m_wids[si->m_b-1] != h_i )
-			endsInPeriod = false;
-		if ( endsInPeriod ) {
-			si->m_sentFlags |= SENT_PERIOD_ENDS;
-			// double punish if also has a lower case word
-			// that should not be lower case in a title
-			if ( lowerCount > 0 )
-				si->m_sentFlags |= SENT_PERIOD_ENDS_HARD;
-		}
-	}
-	return true;
-}
-
 #define METHOD_MONTH_PURE   0 // like "<h3>July</h3>"
 #define METHOD_TAGID        1
 #define METHOD_DOM          2
@@ -3306,48 +3160,6 @@ float computeSimilarity2 ( int32_t   *vec0 ,
 
 	return percent;
 }
-
-char *getSentBitLabel ( sentflags_t sf ) {
-	if ( sf == SENT_HAS_COLON  ) return "hascolon";
-	if ( sf == SENT_BAD_FIRST_WORD ) return "badfirstword";
-	if ( sf == SENT_MIXED_CASE ) return "mixedcase";
-	if ( sf == SENT_MIXED_CASE_STRICT ) return "mixedcasestrict";
-	if ( sf == SENT_MULT_EVENTS ) return "multevents";
-	if ( sf == SENT_PAGE_REPEAT ) return "pagerepeat";
-	if ( sf == SENT_NUMBERS_ONLY ) return "numbersonly";
-	if ( sf == SENT_SECOND_TITLE ) return "secondtitle";
-	if ( sf == SENT_IS_DATE ) return "allwordsindate";
-	if ( sf == SENT_LAST_STOP ) return "laststop";
-	if ( sf == SENT_NUMBER_START ) return "numberstarts";
-	if ( sf == SENT_IN_HEADER ) return "inheader";
-	if ( sf == SENT_IN_LIST ) return "inlist";
-	if ( sf == SENT_COLON_ENDS ) return "colonends";
-	if ( sf == SENT_IN_TITLEY_TAG ) return "intitleytag";
-	if ( sf == SENT_CITY_STATE ) return "citystate";
-	if ( sf == SENT_PERIOD_ENDS ) return "periodends";
-	if ( sf == SENT_HAS_PHONE ) return "hasphone";
-	if ( sf == SENT_IN_MENU ) return "inmenu";
-	if ( sf == SENT_MIXED_TEXT ) return "mixedtext";
-	if ( sf == SENT_TAGS ) return "senttags";
-	if ( sf == SENT_INTITLEFIELD ) return "intitlefield";
-	if ( sf == SENT_STRANGE_PUNCT ) return "strangepunct";
-	if ( sf == SENT_TAG_INDICATOR ) return "tagindicator";
-	if ( sf == SENT_INNONTITLEFIELD ) return "innontitlefield";
-	if ( sf == SENT_HASNOSPACE ) return "hasnospace";
-	if ( sf == SENT_IS_BYLINE ) return "isbyline";
-	if ( sf == SENT_NON_TITLE_FIELD ) return "nontitlefield";
-	if ( sf == SENT_TITLE_FIELD ) return "titlefield";
-	if ( sf == SENT_UNIQUE_TAG_HASH ) return "uniquetaghash";
-	if ( sf == SENT_AFTER_SENTENCE ) return "aftersentence";
-	if ( sf == SENT_WORD_SANDWICH ) return "wordsandwich";
-	if ( sf == SENT_NUKE_FIRST_WORD ) return "nukefirstword";
-	if ( sf == SENT_FIELD_NAME ) return "fieldname";
-	if ( sf == SENT_PERIOD_ENDS_HARD ) return "periodends2";
-
-	char *xx=NULL;*xx=0;
-	return NULL;
-}
-
 
 // . PROBLEM: because we ignore non-breaking tags we often get sections
 //   that are really not sentences, but we are forced into them because
@@ -4832,16 +4644,6 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 		sbuf->safePrintf("unbalanced " );
 	if ( f & SEC_OPEN_ENDED )
 		sbuf->safePrintf("openended " );
-
-	// sentence flags
-	sentflags_t sf = sn->m_sentFlags;
-	for ( int32_t i = 0 ; i < 64 ; i++ ) {
-		// get mask
-		uint64_t mask = ((uint64_t)1) << (uint64_t)i;
-		if ( sf & mask )
-			sbuf->safePrintf("%s ",getSentBitLabel(mask));
-	}
-
 }
 
 char *getSectionTypeAsStr ( int32_t sectionType ) {
@@ -6302,98 +6104,6 @@ bool Sections::isTagDelimeter ( class Section *si , nodeid_t tagId ) {
 		if ( ft >= TAG_H1 && ft <= TAG_H5 ) return true;
 	}
 	return false;
-};
-
-sentflags_t getMixedCaseFlags ( Words *words , 
-				wbit_t *bits ,
-				int32_t senta , 
-				int32_t sentb , 
-				int32_t niceness ) {
-	
-	int64_t *wids = words->getWordIds();
-	int32_t *wlens = words->getWordLens();
-	char **wptrs = words->getWordPtrs();
-	int32_t lowerCount = 0;
-	int32_t upperCount = 0;
-	bool firstWord = true;
-	bool inParens = false;
-	for ( int32_t i = senta ; i < sentb ; i++ ) {
-		// breathe
-		QUICKPOLL(niceness);
-		// skip if not alnum
-		if ( ! wids[i] ) {
-			// skip tags right away
-			if ( wptrs[i][0]=='<' ) continue;
-			// check for end first in case of ") ("
-			if ( words->hasChar(i,')') ) inParens = false;
-			// check if in parens
-			if ( words->hasChar(i,'(') ) inParens = true;
-			continue;
-		}
-		// skip if in parens
-		if ( inParens ) continue;
-		// are we upper case?
-		bool upper = is_upper_utf8(wptrs[i]) ;
-		// are we a stop word?
-		bool isStopWord = words->isStopWord(i);
-		// . if first word is stop word and lower case, forget it
-		// . fix "by Ron Hutchinson" title for adobetheater.org
-		if ( isStopWord && firstWord && ! upper )
-			// make sure both flags are returned i guess
-			return (SENT_MIXED_CASE | SENT_MIXED_CASE_STRICT);
-
-		// allow if hyphen preceedes like for
-		// abqfolkfest.org's "Kay-lee"
-		if ( i>0 && wptrs[i][-1]=='-' ) upper = true;
-		// if we got mixed case, note that!
-		if ( wids[i] &&
-		     ! is_digit(wptrs[i][0]) &&
-		     ! upper &&
-		     (! isStopWord || firstWord ) &&
-		     // . November 4<sup>th</sup> for facebook.com
-		     // . added "firstword" for "on AmericanTowns.com"
-		     //   title prevention for americantowns.com
-		     (wlens[i] >= 3 || firstWord) )
-			lowerCount++;
-
-		// turn off
-		firstWord = false;
-		// . don't count words like "Sunday" that are dates!
-		// . fixes "6:30 am. Sat. and Sun.only" for unm.edu
-		//   and "3:30 pm. - 4 pm. Sat. and Sun., sandwiches"
-		// . fixes events.kgoradio.com's
-		//   "San Francisco Symphony Chorus sings Bach's 
-		//    Christmas Oratorio"
-		// . fixes "7:00-8:00pm, Tango Fundamentals lesson" for
-		//   abqtango.com
-		// . fixes "Song w/ Joanne DelCarpine (located" for
-		//   texasdrums.drums.org
-		// . "Loren Kahn Puppet and Object Theater presents 
-		//    Billy Goat Ball" for trumba.com
-		if ( bits[i] & D_IS_IN_DATE ) upper = false;
-		// . was it upper case?
-		if ( upper ) upperCount++;
-	}
-
-	sentflags_t sflags = 0;
-
-	if ( lowerCount > 0 ) sflags |= SENT_MIXED_CASE_STRICT;
-	
-	if ( lowerCount == 1 && upperCount >= 2 ) lowerCount = 0;
-
-
-	// . fix "7-10:30pm Contra dance"
-	// . treat a numeric date like an upper case word
-	if ( (bits[senta] & D_IS_IN_DATE) && 
-	     // treat a single lower case word as error
-	     lowerCount == 1 && 
-	     // prevent "7:30-8:30 dance" for ceder.net i guess
-	     upperCount >= 1)
-		lowerCount = 0;
-
-	if ( lowerCount > 0 ) sflags |= SENT_MIXED_CASE;
-
-	return sflags;
 }
 
 bool Sections::setTableRowsAndCols ( Section *tableSec ) {

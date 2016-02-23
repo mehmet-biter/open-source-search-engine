@@ -105,66 +105,11 @@
 #define BH_SENTENCE 4590649
 #define BH_IMPLIED  95468323
 
-// values for Section::m_sentFlags (sentence flags)
-#define SENT_HAS_COLON       0x00000001
-//#define SENT_UNUSED        0x00000002
-#define SENT_BAD_FIRST_WORD  0x00000004
-#define SENT_MIXED_CASE      0x00000008
-//#define SENT_UNUSED        0x00000010
-#define SENT_MULT_EVENTS     0x00000020
-#define SENT_PAGE_REPEAT     0x00000040
-#define SENT_NUMBERS_ONLY    0x00000080
-//#define SENT_UNUSED        0x00000100
-#define SENT_SECOND_TITLE    0x00000200
-#define SENT_IS_DATE         0x00000400
-#define SENT_LAST_STOP       0x00000800
-#define SENT_NUMBER_START    0x00001000
-#define SENT_TAG_INDICATOR   0x00002000
-//#define SENT_UNUSED        0x00004000
-#define SENT_IN_HEADER       0x00008000
-#define SENT_MIXED_CASE_STRICT 0x00010000
-#define SENT_IN_LIST         0x00020000
-#define SENT_COLON_ENDS      0x00040000
-//#define SENT_UNUSED        0x00080000
-#define SENT_IN_TITLEY_TAG   0x00100000
-#define SENT_CITY_STATE      0x00200000
-//#define SENT_UNUSED        0x00400000
-#define SENT_PERIOD_ENDS     0x00800000
-#define SENT_HAS_PHONE       0x01000000
-#define SENT_IN_MENU         0x02000000
-#define SENT_MIXED_TEXT      0x04000000
-#define SENT_TAGS            0x08000000
-#define SENT_INTITLEFIELD    0x10000000
-#define SENT_STRANGE_PUNCT   0x20000000
-//#define SENT_UNUSED        0x40000000
-#define SENT_INNONTITLEFIELD 0x80000000
-
-//#define SENT_UNUSED            0x0000000100000000LL
-#define SENT_HASNOSPACE          0x0000000200000000LL
-#define SENT_IS_BYLINE           0x0000000400000000LL
-#define SENT_NON_TITLE_FIELD     0x0000000800000000LL
-#define SENT_TITLE_FIELD         0x0000001000000000LL
-#define SENT_UNIQUE_TAG_HASH     0x0000002000000000LL
-#define SENT_AFTER_SENTENCE      0x0000004000000000LL
-#define SENT_WORD_SANDWICH       0x0000008000000000LL
-//#define SENT_UNUSED            0x0000010000000000LL
-#define SENT_NUKE_FIRST_WORD     0x0000020000000000LL
-#define SENT_FIELD_NAME          0x0000040000000000LL
-#define SENT_PERIOD_ENDS_HARD    0x0000080000000000LL
-
 #define NOINDEXFLAGS (SEC_SCRIPT|SEC_STYLE|SEC_SELECT)
 
 // the section type (bit flag vector for SEC_*) is currently 32 bits
 typedef int64_t sec_t;
-typedef int64_t sentflags_t;
 typedef uint32_t turkbits_t;
-
-char *getSentBitLabel ( sentflags_t sf ) ;
-sentflags_t getMixedCaseFlags ( class Words *words , 
-				wbit_t *bits ,
-				int32_t senta , 
-				int32_t sentb , 
-				int32_t niceness ) ;
 
 // this is only needed for sections, not facets in general i don think.
 // facets has the whole QueryTerm::m_facetHashTable array with more info
@@ -315,9 +260,6 @@ public:
 	//   that were made with a call to splitSection()
 	int32_t  m_a;//wordStart;
 	int32_t  m_b;//wordEnd;
-
-	// for event titles and descriptions
-	sentflags_t m_sentFlags;
 
 	// . # alnum words only in this and only this section
 	// . if we have none, we are SEC_NOTEXT
@@ -537,15 +479,7 @@ class Sections {
 	char      **m_wptrs;
 	nodeid_t   *m_tids;
 
-	bool setSentFlagsPart1 ( );
-	sentflags_t getSentEventEndingOrBeginningFlags ( sentflags_t sflags ,
-							 int32_t senta ,
-							 int32_t sentb ,
-							 int32_t alnumCount) ;
-
 	int32_t       m_hiPos;
-	bool       m_sentFlagsAreSet;
-	bool       m_addedImpliedSections;
 
 	bool addImpliedLists ( ) ;
 
