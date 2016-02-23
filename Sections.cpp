@@ -1178,13 +1178,10 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		// skip if not special tag id
 		nodeid_t tid = si->m_tagId;
 		if      ( tid == TAG_SCRIPT  ) mf = SEC_SCRIPT;
-		else if ( tid == TAG_TABLE   ) mf = SEC_IN_TABLE;
 		else if ( tid == TAG_NOSCRIPT) mf = SEC_NOSCRIPT;
 		else if ( tid == TAG_STYLE   ) mf = SEC_STYLE;
 		else if ( tid == TAG_MARQUEE ) mf = SEC_MARQUEE;
 		else if ( tid == TAG_SELECT  ) mf = SEC_SELECT;
-		else if ( tid == TAG_STRIKE  ) mf = SEC_STRIKE;
-		else if ( tid == TAG_S       ) mf = SEC_STRIKE2;
 		else if ( tid == TAG_H1      ) mf = SEC_IN_HEADER;
 		else if ( tid == TAG_H2      ) mf = SEC_IN_HEADER;
 		else if ( tid == TAG_H3      ) mf = SEC_IN_HEADER;
@@ -1283,21 +1280,14 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		QUICKPOLL ( m_niceness );
 		// set m_lastSection so we can scan backwards
 		m_lastSection = sn;
-		// set SEC_SECOND_TITLE flag
 		if ( sn->m_tagId == TAG_TITLE ) {
 			// . reset if different parent.
 			// . fixes trumba.com rss feed with <title> tags
 			if ( firstTitle &&
 			     firstTitle->m_parent != sn->m_parent ) 
 				firstTitle = NULL;
-			// inc the count
-			//numTitles++;
-			// 2+ is bad. fixes wholefoodsmarket.com 2nd title
-			if ( firstTitle ) sn->m_flags |= SEC_SECOND_TITLE;
 			// set it if need to
 			if ( ! firstTitle ) firstTitle = sn;
-			// store our parent
-			//lastTitleParent = sn->m_parent;
 		}
 		// set this
 		int32_t wn = sn->m_a;
@@ -2250,28 +2240,10 @@ bool Sections::addSentenceSections ( ) {
 			if ( ! is ) return false;
 			// set sentence flag on it
 			is->m_flags |= SEC_SENTENCE;
-			// print it out
-			/*
-			SafeBuf tt;
-			tt.safeMemcpy(m_wptrs[adda],
-				      m_wptrs[addb]+m_wlens[addb]-
-					      m_wptrs[adda]);
-			tt.safeReplace2 ( "\n",1,"*",1,m_niceness);
-			tt.safeReplace2 ( "\r",1,"*",1,m_niceness);
-			if ( is->m_flags & SEC_SPLIT_SENT )
-				tt.safePrintf(" [split]");
-			tt.pushChar(0);
-			fprintf(stderr,"a=%"INT32" %s\n",start,tt.m_buf);
-			*/
 			// . set this
 			// . sentence is from [senta,sentb)
 			is->m_senta = senta;//start;
 			is->m_sentb = sentb;//k;
-			// use this too if its a split of a sentence
-			if ( is->m_senta < is->m_a ) 
-				is->m_flags |= SEC_SPLIT_SENT;
-			if ( is->m_sentb > is->m_b ) 
-				is->m_flags |= SEC_SPLIT_SENT;
 			// stop if that was it
 			if ( k == sentb ) break;
 			// go on to next fragment then
@@ -2438,17 +2410,8 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	sec_t flags = parent->m_flags;
 	// like this
 	flags &= ~SEC_SENTENCE;
-	flags &= ~SEC_SPLIT_SENT;
 	// but take out unbalanced!
 	flags &= ~SEC_UNBALANCED;
-
-	// . remove SEC_HAS_DOM/DOW/TOD 
-	// . we scan our new kids for reparenting to us below, so OR these
-	//   flags back in down there if we should
-	flags &= ~SEC_HAS_DOM;
-	flags &= ~SEC_HAS_DOW;
-	flags &= ~SEC_HAS_TOD;
-	//flags &= ~SEC_HAS_DATE;
 
 	// add in fake
 	flags |= SEC_FAKE;
@@ -2484,14 +2447,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 			     s2->m_a > a    ) {char *xx=NULL;*xx=0;}
 	}
 #endif
-
-	// try to keep a sorted linked list
-	//Section *current = m_sectionPtrs[a];
-
-	//return sk;
-
-	// for inheriting flags from our kids
-	sec_t mask = (SEC_HAS_DOM|SEC_HAS_DOW|SEC_HAS_TOD);//|SEC_HAS_DATE);
 
 	//
 	// !!!!!!!!!! SPEED THIS UP !!!!!!!!!!
@@ -2559,8 +2514,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 		sk->m_parent = wp->m_parent;
 		// and we become wp's parent
 		wp->m_parent = sk;
-		// and or his flags into us. SEC_HAS_DOM, etc.
-		sk->m_flags |= wp->m_flags & mask;
 		// sanity check
 		if ( wp->m_b > sk->m_b ) { char *xy=NULL;*xy=0; }
 		if ( wp->m_a < sk->m_a ) { char *xy=NULL;*xy=0; }
@@ -2722,32 +2675,8 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 	if ( f & SEC_HR_CONTAINER )
 		sbuf->safePrintf("hrcontainer ");
 
-	if ( f & SEC_HEADING_CONTAINER )
-		sbuf->safePrintf("headingcontainer ");
 	if ( f & SEC_HEADING )
 		sbuf->safePrintf("heading ");
-
-	if ( f & SEC_TAIL_CRAP )
-		sbuf->safePrintf("tailcrap ");
-
-	if ( f & SEC_STRIKE )
-		sbuf->safePrintf("strike ");
-	if ( f & SEC_STRIKE2 )
-		sbuf->safePrintf("strike2 ");
-
-	if ( f & SEC_SECOND_TITLE )
-		sbuf->safePrintf("secondtitle ");
-
-	if ( f & SEC_HAS_DOM )
-		sbuf->safePrintf("hasdom " );
-	if ( f & SEC_HAS_MONTH )
-		sbuf->safePrintf("hasmonth " );
-	if ( f & SEC_HAS_DOW )
-		sbuf->safePrintf("hasdow " );
-	if ( f & SEC_HAS_TOD )
-		sbuf->safePrintf("hastod " );
-	if ( f & SEC_HASEVENTDOMDOW )
-		sbuf->safePrintf("haseventdomdow " );
 
 	if ( f & SEC_MENU_SENTENCE )
 		sbuf->safePrintf("menusentence " );
@@ -2777,14 +2706,9 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 		else { char *xx=NULL;*xx=0; }
 	}
 
-	if ( f & SEC_SPLIT_SENT )
-		sbuf->safePrintf("<b>splitsent</b> ");
-
 	if ( f & SEC_NOTEXT )
 		sbuf->safePrintf("notext ");
 
-	if ( f & SEC_IN_TABLE )
-		sbuf->safePrintf("intable ");
 	if ( f & SEC_SCRIPT )
 		sbuf->safePrintf("inscript ");
 	if ( f & SEC_NOSCRIPT )
@@ -3405,17 +3329,11 @@ void Sections::setHeader ( int32_t r , Section *first , sec_t flag ) {
 }
 
 
-// . set SEC_HEADING and SEC_HEADING_CONTAINER bits in Section::m_flags
+// . set SEC_HEADING bits in Section::m_flags
 // . identifies sections that are most likely headings
 // . the WHOLE idea of this algo is to take a list of sections that are all 
 //   the same tagId/baseHash and differentiate them so we can insert implied 
 //   sections with headers. 
-// . then addImpliedSections() uses the SEC_HEADING_CONTAINER bit to
-//   modify the base hash to distinguish sections that would otherwise all
-//   be the same! 
-// . should fix salsapower.com and abqtango.com to have proper implied sections
-// . it is better to not add any implied sections than to add the wrong ones
-//   so be extra strict in our rules here.
 bool Sections::setHeadingBit ( ) {
 
 	int32_t headings = 0;
@@ -3531,20 +3449,6 @@ bool Sections::setHeadingBit ( ) {
 
 		// ok, mark this section as a heading section
 		si->m_flags |= SEC_HEADING;
-
-		// mark all parents to up to biggest
-		biggest->m_flags |= SEC_HEADING_CONTAINER;
-
-		// mark all up to biggest now too! that way the td section
-		// gets marked and if the tr section gets replaced with a 
-		// fake tc section then we are ok for METHOD_ABOVE_DOW!
-		for ( Section *pp = si; // ->m_parent ;  (bug!)
-		      pp && pp != biggest ; 
-		      pp = pp->m_parent ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			pp->m_flags |= SEC_HEADING_CONTAINER;
-		}
 
 		// a hack!
 		if ( inLink ) biggest->m_flags |= SEC_LINK_TEXT;

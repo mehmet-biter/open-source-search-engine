@@ -45,14 +45,13 @@
 #define SEC_IN_TITLE     0x0100
 #define SEC_IN_HEADER    0x0200
 
-// used by Events.cpp to indicate if section contains a TimeOfDay ("7 p.m.")
-#define SEC_HAS_TOD      0x0400 
+//#define SEC_UNUSED     0x0400 
 #define SEC_HIDDEN       0x0800 // <div style="display: none">
-#define SEC_IN_TABLE     0x1000
+//#define SEC_UNUSED     0x1000
 #define SEC_FAKE         0x2000 // <hr>/<br>/sentence based faux section
 #define SEC_NOSCRIPT     0x4000
 
-#define SEC_HEADING_CONTAINER 0x8000
+//#define SEC_UNUSED     0x8000
 
 #define SEC_MENU         0x010000
 #define SEC_LINK_TEXT    0x020000
@@ -70,26 +69,26 @@
 
 //#define SEC_UNUSED                0x00008000000LL
 //#define SEC_UNUSED                0x00010000000LL
-#define SEC_SECOND_TITLE            0x00020000000LL
-#define SEC_SPLIT_SENT              0x00040000000LL
+//#define SEC_UNUSED                0x00020000000LL
+//#define SEC_UNUSED                0x00040000000LL
 //#define SEC_UNUSED                0x00080000000LL
 
 //#define SEC_UNUSED                0x00100000000LL
 #define SEC_MENU_SENTENCE           0x00200000000LL
 // fix for folkmads.org:
 #define SEC_HR_CONTAINER            0x00400000000LL
-#define SEC_HAS_DOM                 0x00800000000LL
-#define SEC_HAS_DOW                 0x01000000000LL
+//#define SEC_UNUSED                0x00800000000LL
+//#define SEC_UNUSED                0x01000000000LL
 //#define SEC_UNUSED                0x02000000000LL
 //#define SEC_UNUSED                0x04000000000LL
-#define SEC_TAIL_CRAP               0x08000000000LL
+//#define SEC_UNUSED                0x08000000000LL
 
-#define SEC_CONTROL                 0x0000010000000000LL
-#define SEC_STRIKE                  0x0000020000000000LL
-#define SEC_STRIKE2                 0x0000040000000000LL
-#define SEC_HAS_MONTH               0x0000080000000000LL
+//#define SEC_UNUSED                0x0000010000000000LL
+//#define SEC_UNUSED                0x0000020000000000LL
+//#define SEC_UNUSED                0x0000040000000000LL
+//#define SEC_UNUSED                0x0000080000000000LL
 //#define SEC_UNUSED                0x0000100000000000LL
-#define SEC_HASEVENTDOMDOW          0x0000200000000000LL
+//#define SEC_UNUSED                0x0000200000000000LL
 //#define SEC_UNUSED                0x0000400000000000LL
 //#define SEC_UNUSED                0x0000800000000000LL
 

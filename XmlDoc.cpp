@@ -5014,9 +5014,6 @@ Sections *XmlDoc::getSectionsWithDupStats ( ) {
 		m_secStatsErrno = 0;
 	}
 
-
-	//sec_t menuFlags = SEC_MENU | SEC_MENU_SENTENCE | SEC_MENU_HEADER   ;
-
 	for ( ; m_si ; m_si = m_si->m_next ) {
 		// breathe
 		QUICKPOLL(m_niceness);
@@ -5027,17 +5024,10 @@ Sections *XmlDoc::getSectionsWithDupStats ( ) {
 		if ( ! ( m_si->m_flags & SEC_HASHXPATH ) )
 			continue;
 
-		// skip if sentence, only hash tags now i guess for diffbot
-		//if ( m_si->m_sentenceContentHash64 )
-		//	continue;
-
 		// get hash of sentences this tag contains indirectly
 		uint32_t val32 = (uint32_t)m_si->m_indirectSentHash64;
 		if ( ! val32 )
 			continue;
-
-		// skip if menu!
-		//if ( m_si->m_flags & menuFlags ) continue;
 
 		// get section xpath hash combined with sitehash
 		uint32_t secHash32 = m_si->m_turkTagHash32 ^ siteHash32;
@@ -24983,143 +24973,6 @@ bool XmlDoc::printPageInlinks ( SafeBuf *sb , HttpRequest *hr ) {
 	return true;
 }
 
-/*
-  BR 20160106 removed
-static void getInlineSectionVotingBufWrapper ( void *state ) {
-	XmlDoc *xd = (XmlDoc *)state;
-	SafeBuf *vb = xd->getInlineSectionVotingBuf();
-	// return if blocked
-	if ( vb == (void *)-1 ) return;
-	// error?
-	if ( ! vb ) log("xmldoc: error getting inline section votes: %s",
-			mstrerror(g_errno));
-	// all done then. call original entry callback
-	log("xmldoc: returning control to original caller");
-	xd->m_callback1 ( xd->m_state );
-}
-
-
-// . returns false if blocked, true otherwise
-// . returns true with g_errno set on error
-// . this actually returns the page content with inserted information
-//   based on sectiondb data
-// . for example, <div id=poo> --> <div id=poo d=5 n=20>
-//   means that the section is repeated on 20 pages from this site and 5 of
-//   which have the same innerHtml as us
-SafeBuf *XmlDoc::getInlineSectionVotingBuf ( ) {
-
-	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
-
-	// . if we block anywhere below we want to come back here until done
-	// . this can be a main entry point, so set m_masterLoop
-	if ( ! m_masterLoop ) {
-		m_masterLoop  = getInlineSectionVotingBufWrapper;
-		m_masterState = this;
-		log("xmldoc: getting section voting info from coll=%s",
-		    cr->m_coll);
-	}
-
-	if ( m_inlineSectionVotingBufValid )
-		return &m_inlineSectionVotingBuf;
-
-	Sections *sections = getSectionsWithDupStats();
-	if ( ! sections || sections == (void *)-1 ) return (SafeBuf *)sections;
-	Words *words = getWords();
-	if ( ! words || words == (void *)-1 ) return (SafeBuf *)words;
-	HttpMime *mime = getMime();
-	if ( ! mime || mime == (void *)-1 ) return (SafeBuf *)mime;
-
-	int32_t siteHash32 = *getSiteHash32();
-
-	//int32_t nw = words->getNumWords();
-	//int64_t *wids = words->getWordIds();
-
-	SafeBuf *sb = &m_inlineSectionVotingBuf;
-
-	// store mime first then content
-	if ( ! m_utf8ContentValid ) { char *xx=NULL;*xx=0; }
-
-	// we no longer use this through a proxy, so take this out
-	//sb->safeMemcpy ( m_httpReply , mime->getMimeLen() );
-	// but hack the Content-Length: field to something alien
-	// because we markup the html and the lenght will be different...
-	//sb->nullTerm();
-
-	// we no longer use this through a proxy so take this out
-	//char *cl = strstr(sb->getBufStart(),"\nContent-Length:");
-	//if ( cl ) cl[1] = 'Z';
-
-	//sec_t mflags = SEC_SENTENCE | SEC_MENU;
-
-	// just print out each word
-	// map the word to a section.
-	// if it s the first time we've printed the section then we
-	// can inject the stuff
-	// set a printed bit to indicate when we print out a section so
-	// we do not re-print it...
-
-	// these are 1-1 with words
-	Section **sptrs = sections->m_sectionPtrs;
-	int32_t nw = words->getNumWords();
-	char **wptrs = words->m_words;
-	int32_t *wlens = words->m_wordLens;
-
-	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		char *a = wptrs[i];
-		// skip if not a front tag
-		if ( *a != '<' || a[1] == '/' ) {
-			sb->safeMemcpy(a,wlens[i]);
-			continue;
-		}
-		Section *sa = sptrs[i];
-		// straight copy if no stats
-		if ( ! sa || ! sa->m_stats.m_totalEntries ) {
-			sb->safeMemcpy ( a , wlens[i] );
-			continue;
-		}
-		// should be tag then
-		char *e = a;
-		for ( ; *e && *e != '>' && ! is_wspace_a(*e) ; e++);
-		// copy that
-		sb->safeMemcpy ( a , e-a);
-
-		// the hash of the turktaghash and sitehash32 combined
-		// so you can do gbfacetstr:gbxpathsitehash12345
-		// where the 12345 is this h32 value.
-		uint32_t h32 = sa->m_turkTagHash32 ^ siteHash32;
-
-		// insert our stuff into the tag
-		//sb->safePrintf("<!--");
-		//sb->safePrintf("<font color=red>");
-		SectionStats *sx = &sa->m_stats;
-		// # docs from our site had the same innerHTML?
-		sb->safePrintf(" _s=M%"INT32"D%"INT32"n%"INT32"u%"INT32"h%"UINT32"",
-			       // total # of docs that had an xpath with
-			       // our same innerHtml
-			       (int32_t)sx->m_totalMatches,
-			       // # of of docids with this facet
-			       (int32_t)sx->m_totalDocIds,
-			       // . total # of times this xpath occurred
-			       // . can be multiple times per doc
-			       (int32_t)sx->m_totalEntries,
-			       // unique values in the xpath innerhtml
-			       (int32_t)sx->m_numUniqueVals,
-			       // xpathsitehash
-			       h32 );
-		// copy the rest of the tag
-		sb->safeMemcpy( e, wlens[i]-(e-a) );
-		//sb->safePrintf("-->");
-		//sb->safePrintf("</font>");
-		// print it here
-	}
-	sb->nullTerm();
-	m_inlineSectionVotingBufValid = true;
-	return &m_inlineSectionVotingBuf;
-}
-*/
-
-
 bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 
 	// what wordposition to scroll to and blink?
@@ -28720,7 +28573,6 @@ bool XmlDoc::storeFacetValuesSections ( char *qs , SafeBuf *sb ,
 	if ( strncmp(qs-4,"str:",4) == 0 ) isString = true;
 
 	Section *si = ss->m_rootSection;
-	//sec_t mflags = SEC_SENTENCE | SEC_MENU;
 	for ( ; si ; si = si->m_next ) {
 		// breathe
 		QUICKPOLL(m_niceness);
