@@ -7807,29 +7807,11 @@ bool addGigabit ( HashTableX *ht         ,
 	else if ( gi->m_pop < 20 ) pts =    2;
 
 	// . special boost if in title, header or anchor tag
-	// . the weights class ONLY boosts the first 20 or so words in
-	//   header tags... how can we fix that??????????????????
-	// . TODO: FIX THAT!!!
-	//if ( flags & SEC_TITLE ) pts = pts * 6.0/(float)we->m_titleWeight;
-	//if ( flags & SEC_HEADER) pts = pts * 4.0/(float)we->m_headerWeight;
-	//if ( flags & SEC_A     ) pts = pts * 4.0/(float)we->m_linkTextWeight;
 	if ( sp ) {
 		if ( sp->m_flags & SEC_IN_TITLE  ) pts = pts * 6.0;
 		if ( sp->m_flags & SEC_IN_HEADER ) pts = pts * 4.0;
 		if ( sp->m_tagId == TAG_A        ) pts = pts * 4.0;
 	}
-
-	// if for the query 'recreation' you get the phrase "park bench"
-	// 100 times and the word "bench" 100 times. the word weight
-	// for "bench" should be very low! Weights.cpp also demotes repreated
-	// sentence fragments, etc. it is generally a really handy thing!
-	// and i think it already boosts scores for being in the title, etc.
-	// IF BEING called from meta tag, weights are NULL!
-	// TODO: we need to use the diversity vector here then...
-	//if ( we ) {
-	//	if ( singleWord ) pts *= we->m_ww[i];
-	//	else              pts *= we->m_pw[i];
-	//}
 
 	// add them in
 	gi->m_pts += (int32_t)pts;
@@ -7837,33 +7819,6 @@ bool addGigabit ( HashTableX *ht         ,
 	// good to go
 	return true;
 }
-
-
-/*
- -- this will be a url filter var like "numindexed"
-int32_t *XmlDoc::getSiteSpiderQuota ( ) {
-	if ( m_siteSpiderQuotaValid ) return &m_siteSpiderQuota;
-	int32_t *siteNumInlinks = getSiteNumInlinks();
-	if ( ! siteNumInlinks               ) return NULL;
-	if (   siteNumInlinks == (int32_t *)-1 ) return (int32_t *)-1;
-	// get this fresh each time
-	int32_t *rn = getRegExpNum ( -1 );
-	if ( ! rn || rn == (int32_t *)-1 ) return (int32_t *)rn;
-	// bail early? this happens if we match a banned/filtered rule in
-	// the url filters table
-	if ( m_indexCode ) return NULL;
-	// valid at this point
-	m_siteSpiderQuotaValid = true;
-	// if no match, or filtered or banned, assume no quota
-	if ( *rn == -1 ) m_siteSpiderQuota = -1;
-	else             m_siteSpiderQuota = cr->m_spiderQuotas[*rn];
-	// get the quota, -1 means no limit
-	return &m_siteSpiderQuota;
-}
-*/
-
-
-
 
 Url *XmlDoc::getCurrentUrl ( ) {
 	if ( m_currentUrlValid ) return &m_currentUrl;
