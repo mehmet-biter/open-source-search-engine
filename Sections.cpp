@@ -3733,7 +3733,7 @@ bool Sections::setSentFlagsPart2 ( ) {
 
 		///////////////
 		//
-		// set D_IS_IN_PARENS, D_CRUFTY
+		// set D_IS_IN_PARENS
 		//
 		///////////////
 
@@ -3767,41 +3767,14 @@ bool Sections::setSentFlagsPart2 ( ) {
 			}
 			// generic if in ()'s or []'s
 			if ( inParens || inSquare ) {
-				bits[j] |= D_IN_PARENS;//GENERIC_WORD;
+				bits[j] |= D_IN_PARENS;
 				continue;
 			}
 			// skip if in date
 			if ( bits[j] & D_IS_IN_DATE ) {
-				// was this right?
-				//bits[j] |= D_IN_PARENS;//GENERIC_WORD;
 				continue;
 			}
-			// skip doors or show, etc.
-			if ( s_igt.isInTable(&m_wids[j]) ) {
-				// see if phrase is an exception
-				int64_t h = m_wids[j];
-				int32_t wcount = 1;
-				bool hadException = false;
-				for ( int32_t k = j + 1 ; k < sentb ; k++ ) {
-					// breathe
-					QUICKPOLL(m_niceness);
-					// skip if not word
-					if ( ! m_wids[k] ) continue;
-					// hash it in otherwise
-					h ^= m_wids[k];
-					// check exceptions
-					if ( s_ext.isInTable(&h) ) {
-						hadException = true;
-						break;
-					}
-					// stop after 3 words
-					if ( ++wcount >= 3 ) break;
-				}
-				if ( ! hadException ) { 
-					bits[j] |= D_CRUFTY;
-					continue;
-				}
-			}
+
 			// numbers are generic (but not if contains an alpha)
 			if ( m_words->isNum(j) ) {
 				bits[j] |= D_IS_NUM;
