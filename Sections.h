@@ -164,11 +164,11 @@
 //#define SENT_UNUSED            0x0040000000000000LL
 //#define SENT_UNUSED            0x0080000000000000LL
 #define SENT_AFTER_COLON         0x0100000000000000LL
-#define SENT_HASTITLEWORDS       0x0200000000000000LL
+//#define SENT_UNUSED            0x0200000000000000LL
 //#define SENT_UNUSED            0x0400000000000000LL
 //#define SENT_UNUSED            0x0800000000000000LL
 #define SENT_IN_BIG_LIST         0x1000000000000000LL
-#define SENT_BADEVENTSTART       0x2000000000000000LL
+//#define SENT_UNUSED            0x2000000000000000LL
 #define SENT_MENU_SENTENCE       0x4000000000000000LL
 #define SENT_HAS_PRICE           0x8000000000000000ULL
 
@@ -186,15 +186,6 @@ sentflags_t getMixedCaseFlags ( class Words *words ,
 				int32_t senta , 
 				int32_t sentb , 
 				int32_t niceness ) ;
-int32_t hasTitleWords ( sentflags_t sflags ,
-		     int32_t senta,
-		     int32_t sentb,
-		     int32_t alnumCount,
-		     class Bits *bits ,
-		     class Words *words ,
-		     bool useAsterisk ,
-		     int32_t niceness );
-
 
 class Sectiondb {
 
