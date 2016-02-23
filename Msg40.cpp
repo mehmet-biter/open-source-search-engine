@@ -203,24 +203,6 @@ bool Msg40::getResults ( SearchInput *si      ,
 	// reset this for family filter
 	m_queryCensored = false;
 	m_filterStats[CR_DIRTY]	= 0;  //m_numCensored = 0;
-	// . compute the min number of results to scan
-	// . it is the 3rd number in a topicGroupPtr string
-	// . the minimum number of docids to get for topic-clustering purposes
-	//m_docsToScanForTopics = 30;
-	//m_docsToScanForTopics = cr->m_docsToScanForTopics;
-	m_docsToScanForTopics = 0;
-	// we usually only have one TopicGroup but there can be multiple
-	// ones. each TopicGroup can derive its gigabits/topics from a
-	// different source, like the meta keywords tags only, for instance.
-	// This support was originally put in for a client.
-	for ( int32_t i = 0 ; i < 1 ; i++ ) {
-		int32_t x = m_si->m_topicGroups[i].m_docsToScanForTopics ;
-		if ( x > m_docsToScanForTopics ) m_docsToScanForTopics = x;
-	}
-	// . but only for first page!
-	// . no! the second page of results may not match with the first
-	//   if they have different result increments
-	//if ( m_firstResultNum > 0 ) m_docsToScanForTopics = 0;
 
 	// . reset these
 	// . Next X Results links? yes or no?
@@ -256,12 +238,6 @@ bool Msg40::getResults ( SearchInput *si      ,
 	// we get one extra for so we can set m_moreToFollow so we know
 	// if more docids can be gotten (i.e. show a "Next 10" link)
 	get++;
-	// make sure we get more than requested for various other tasks, like
-	// this one here is for gigabit generation. it likes to have 30 docids
-	// typically to generate gigabits from.
-	// NOTE: pqr needs gigabits for all pages
-	if ( get < m_docsToScanForTopics )
-		get = m_docsToScanForTopics;
 
 	// ok, need some sane limit though to prevent malloc from 
 	// trying to get 7800003 docids and going ENOMEM
@@ -928,25 +904,17 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 
 	int32_t bigSampleRadius = 0;
 	int32_t bigSampleMaxLen = 0;
-	// NOTE: pqr needs gigabits for all pages
-	if(m_docsToScanForTopics > 0 /*&& m_si->m_firstResultNum == 0*/) {
-		bigSampleRadius = 300;
-		//bigSampleMaxLen = m_si->m_topicGroups[0].m_topicSampleSize;
-		bigSampleMaxLen = 5000;
-	}
 
 	int32_t maxOut = (int32_t)MAX_OUTSTANDING_MSG20S;
 	if ( g_udpServer.getNumUsedSlots() > 500 ) maxOut = 10;
 	if ( g_udpServer.getNumUsedSlots() > 800 ) maxOut = 1;
 
-	// if not deduping or site clustering or getting gigabits, then
+	// if not deduping or site clustering, then
 	// just skip over docids for speed.
 	// don't bother with summaries we do not need
 	if ( m_si && 
 	     ! m_si->m_doDupContentRemoval &&
 	     ! m_si->m_doSiteClustering &&
-	     // gigabits required the first X summaries to be computed
-	     m_docsToScanForTopics <= 0 &&
 	     m_lastProcessedi == -1 ) {
 		// start getting summaries with the result # they want
 		m_lastProcessedi = m_si->m_firstResultNum-1;
@@ -2051,54 +2019,6 @@ bool Msg40::gotSummary ( ) {
 		// remember them in the query term
 		qt->m_hash64d   = qh;
 		qt->m_popWeight = qpopWeight;
-	}
-
-
-
-	/////////////
-	//
-	// make gigabits
-	//
-	/////////////
-	if ( m_docsToScanForTopics > 0 ) {
-		// time it
-		int64_t stt = gettimeofdayInMilliseconds();
-		// get the fist one, just use that for now
-		TopicGroup *tg = &m_si->m_topicGroups[0];
-
-		// . this will not block
-		// . this code is in XmlDoc.cpp
-		// . samples are from XmlDoc::getSampleForGigabits(), generated
-		//   for each titlerec in the search results
-		// . SHIT! lets go back to the old code since this was
-		//   the new approach and didn't support single lower-case
-		//   words, like "parchment" for the 'Magna Carta' query.
-		//   or 'copies' for the 'Magna Carta' query, etc. which
-		//   i think are very interesting, especially when displayed
-		//   in sentences
-		// . set m_gigabitInfos[] to be the gigabits
-		if ( ! computeGigabits( tg ) ) {
-			// note it
-			log("gbits: general error: %s",mstrerror(g_errno));
-			// g_errno should be set on error here!
-			return true;
-		}
-
-		// now make the fast facts from the gigabits and the
-		// samples. these are sentences containing the query and
-		// a gigabit.
-		if ( ! computeFastFacts ( ) ) {
-			// note it
-			log("gbits: general error: %s",mstrerror(g_errno));
-			// g_errno should be set on error here!
-			return true;
-		}
-
-		// time it
-		int64_t took = gettimeofdayInMilliseconds() - stt;
-		if ( took > 5 )
-			logf(LOG_DEBUG,"query: make gigabits took %"INT64" ms",
-			     took);
 	}
 
 	// set m_moreToCome, if true, we print a "Next 10" link

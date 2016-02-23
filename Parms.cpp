@@ -2345,13 +2345,6 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 		char *xx=NULL;*xx=0; 
 	}
 
-	// need this for searchInput which takes default from "cr"
-	//CollectionRec *cr = g_collectiondb.getRec ( r , true );
-
-	// no SearchInput.cpp does this and then overrides if xml feed
-	// to set m_docsToScanForTopics
-	//setToDefault ( THIS , objType , cr );
-
 	// loop through cgi parms
 	for ( int32_t i = 0 ; i < r->getNumFields() ; i++ ) {
 		// get cgi parm name
@@ -5843,20 +5836,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
-
-	m->m_title = "results to scan for gigabits generation";
-	m->m_desc  = "How many search results should we "
-		"scan for gigabit (related topics) generation. Set this to "
-		"zero to disable gigabits!";
-	m->m_cgi   = "dsrt";
-	m->m_off   = (char *)&si.m_docsToScanForTopics - y;
-	m->m_type  = TYPE_LONG;
-	m->m_defOff= (char *)&cr.m_docsToScanForTopics - x;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
 
 	m->m_title = "ip restriction for gigabits";
 	m->m_desc  = "Should Gigablast only get one document per IP domain "
@@ -9849,19 +9828,6 @@ void Parms::init ( ) {
 	m->m_size  = SUMMARYHIGHLIGHTTAGMAXSIZE ;
 	m->m_def   = "</b>";
 	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "results to scan for gigabits generation by default";
-	m->m_desc  = "How many search results should we "
-		"scan for gigabit (related topics) generation. Set this to "
-		"zero to disable gigabits generation by default.";
-	m->m_cgi   = "dsrt";
-	m->m_off   = (char *)&cr.m_docsToScanForTopics - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "0";
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;

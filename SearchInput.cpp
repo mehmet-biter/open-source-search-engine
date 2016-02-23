@@ -61,40 +61,11 @@ key_t SearchInput::makeKey ( ) {
 	// space separated, NULL terminated, list of meta tag names to display
 	if ( m_displayMetas          ) 
 		k.n0 = hash64b ( m_displayMetas          , k.n0 );
-	// name of collection in external cluster to get titleRecs for 
-	// related pages from
-	//if ( m_rp_getExternalPages && m_rp_externalColl )
-	//	k.n0 = hash64b ( m_rp_externalColl , k.n0 );
-	// collection e import from
-	//if ( m_importColl )
-	//	k.n0 = hash64b ( m_importColl , k.n0 );
-	// the special query parm
-	//if ( m_sq && m_sqLen > 0 )
-	//	k.n0 = hash64 ( m_sq , m_sqLen , k.n0 );
-	//if ( m_noDocIds && m_noDocIdsLen )
-	//	k.n0 = hash64 ( m_noDocIds , m_noDocIdsLen , k.n0 );
-	//if ( m_noSiteIds && m_noSiteIdsLen )
-	//	k.n0 = hash64 ( m_noSiteIds , m_noSiteIdsLen , k.n0 );
 
-	// no need to hash these again separately, they are in between 
-	// m_START and m_END_HASH
-	// language
-	//if ( m_language )
-	//	k.n0 = hash64 ( m_language , k.n0 );
-	//if ( m_gblang )
-	//	k.n0 = hash64 ( m_gblang , k.n0 );
 	// . now include the hash of the search parameters
-	// . nnot incuding m_docsToScanForTopics since since we got TopicGroups
 	char *a = ((char *)&m_START) + 4 ; // msg40->m_dpf;
 	char *b =  (char *)&m_END_HASH   ; // msg40->m_topicGroups;
 	int32_t size = b - a; 
-	// push and flush some parms that should not contribute
-	//int32_t save1 = m_refs_numToDisplay;
-	//int32_t save2 = m_rp_numToDisplay;
-	//int32_t save3 = m_numTopicsToDisplay;
-	//m_refs_numToDisplay  = 0;
-	//m_rp_numToDisplay    = 0;
-	//m_numTopicsToDisplay = 0;
 	// and hash it all up
 	k.n0 = hash64 ( a , size , k.n0 );
 	// and pop out the parms that did not contribute
@@ -106,7 +77,6 @@ key_t SearchInput::makeKey ( ) {
 		TopicGroup *t = &m_topicGroups[i];
 		//k.n0 = hash64 ( t->m_numTopics           , k.n0 );
 		k.n0 = hash64 ( t->m_maxTopics           , k.n0 );
-		k.n0 = hash64 ( t->m_docsToScanForTopics , k.n0 );
 		k.n0 = hash64 ( t->m_minTopicScore       , k.n0 );
 		k.n0 = hash64 ( t->m_maxWordsPerTopic    , k.n0 );
 		k.n0 = hash64b( t->m_meta                , k.n0 );
@@ -317,8 +287,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 		m_doQueryHighlighting     = 0;
 		//m_spellCheck              = 0;
 		m_getDocIdScoringInfo = false;
-		// turn gigabits off by default if not html
-		//m_docsToScanForTopics = 0;
 	}
 
 	// if they have a list of sites...
@@ -642,7 +610,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	//
 	tg->m_numTopics = 50;
 	tg->m_maxTopics = 50;
-	tg->m_docsToScanForTopics = m_docsToScanForTopics;
 	tg->m_minTopicScore = 0;
 	tg->m_maxWordsPerTopic = 6;
 	tg->m_meta[0] = '\0';

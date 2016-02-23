@@ -28,7 +28,6 @@ class TopicGroup {
  public:
         int32_t m_numTopics;
         int32_t m_maxTopics;
-        int32_t m_docsToScanForTopics;
         int32_t m_minTopicScore;
         int32_t m_maxWordsPerTopic;
         char m_meta[32];
@@ -229,7 +228,6 @@ class SearchInput {
 
 	// . related topic (gigabits) parameters
 	// . TODO: prepend m_top_ to these var names
-	int32_t   m_docsToScanForTopics;     // msg40
 	int32_t   m_minTopicScore;           // msg40
 	int32_t   m_minDocCount;             // msg40
 	int32_t   m_dedupSamplePercent;      // msg40

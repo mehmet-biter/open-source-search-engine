@@ -335,10 +335,6 @@ class Msg40 {
 
 	// for topic clustering, saved from CollectionRec
 	int32_t       m_topicSimilarCutoff;
-	int32_t       m_docsToScanForTopics;
-
-	// Msg2b for generating a directory
-	//Msg2b  m_msg2b;
 
 	bool mergeDocIdsIntoBaseMsg3a();
 	int32_t m_numCollsToSearch;

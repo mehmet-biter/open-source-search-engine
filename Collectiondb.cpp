@@ -456,8 +456,6 @@ bool Collectiondb::addNewColl ( char *coll ,
 		cr->m_collectiveRespiderFrequency = 0.0;
 		//cr->m_restrictDomain = true;
 		// reset the crawl stats
-		// always turn off gigabits so &s=1000 can do summary skipping
-		cr->m_docsToScanForTopics = 0;
 		// turn off link voting, etc. to speed up
 		cr->m_getLinkInfo = false;
 		cr->m_computeSiteNumInlinks = false;
@@ -1673,9 +1671,6 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 
 	// fix for diffbot, spider time deduping
 	if ( m_isCustomCrawl ) m_dedupingEnabled = true;
-
-	// always turn off gigabits so &s=1000 can do summary skipping
-	if ( m_isCustomCrawl ) m_docsToScanForTopics = 0;
 
 	// make min to merge smaller than normal since most collections are
 	// small and we want to reduce the # of vfds (files) we have
