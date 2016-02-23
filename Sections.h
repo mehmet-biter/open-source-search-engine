@@ -93,10 +93,10 @@
 //#define SEC_UNUSED                0x0000400000000000LL
 //#define SEC_UNUSED                0x0000800000000000LL
 
-#define SEC_TABLE_HEADER            0x0001000000000000LL
-#define SEC_HASDATEHEADERROW        0x0002000000000000LL
-#define SEC_HASDATEHEADERCOL        0x0004000000000000LL
-#define SEC_MULTIDIMS               0x0008000000000000LL
+//#define SEC_UNUSED                0x0001000000000000LL
+//#define SEC_UNUSED                0x0002000000000000LL
+//#define SEC_UNUSED                0x0004000000000000LL
+//#define SEC_UNUSED                0x0008000000000000LL
 #define SEC_HASHXPATH               0x0010000000000000LL
 
 // . some random-y numbers for Section::m_baseHash
@@ -192,19 +192,6 @@ public:
 
 	class Section *m_prevSent;
 	class Section *m_nextSent;
-
-	// . if we are in a table, what position are we
-	// . starts at 1 and goes upwards
-	// . we start it at 1 so that way we know that 0 is invalid!
-	int32_t m_rowNum;
-	int32_t m_colNum;
-	class Section *m_tableSec;
-
-	class Section *m_headColSection;
-	class Section *m_headRowSection;
-
-	class Section *m_leftCell;
-	class Section *m_aboveCell;
 
 	// hash of this tag's baseHash and all its parents baseHashes combined
 	uint32_t  m_tagHash;
@@ -369,10 +356,6 @@ class Sections {
 	bool isHardSection ( class Section *sn );
 
 	bool setMenus ( );
-
-	bool setTableRowsAndCols ( class Section *tableSec ) ;
-	bool setTableHeaderBits ( class Section *table );
-	bool setTableScanPtrs ( class Section *ts ) ;
 
 	void setHeader ( int32_t r , class Section *first , sec_t flag ) ;
 
@@ -550,7 +533,7 @@ class Sections {
 			return true;
 		}
 		return false;
-	};
+	}
 		
 
 };

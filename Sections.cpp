@@ -1193,8 +1193,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		si->m_lastWordPos  = -1;
 		si->m_senta        = -1;
 		si->m_sentb        = -1;
-		si->m_headRowSection = NULL;
-		si->m_headColSection = NULL;
 	}
 	// now set position of first word each section contains
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
@@ -1617,42 +1615,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 	}
 	m_alnumPosValid = true;
 
-
-	/////////////////////////////
-	//
-	// set Section::m_rowNum and m_colNum for sections in table
-	//
-	// (we use this in Dates.cpp to set Date::m_tableRow/ColHeaderSec
-	//  for detecting certain col/row headers like "buy tickets" that
-	//  we use to invalidate dates as event dates)
-	//
-	/////////////////////////////
-	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		Section *si = &m_sections[i];
-		// need table tag
-		if ( si->m_tagId != TAG_TABLE ) continue;
-		// set all the headCol/RowSection ptrs rownum, colnum, etc.
-		// just for this table.
-		setTableRowsAndCols ( si );
-	}
-
-	// now NULLify either all headRow or all headColSections for this
-	// table. dmjuice.com actually uses headRows and not columns. so
-	// we need to detect if the table header is the first row or the first
-	// column.
-	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		Section *si = &m_sections[i];
-		// need table tag
-		if ( si->m_tagId != TAG_TABLE ) continue;
-		// ok, now set table header bits for that table
-		setTableHeaderBits ( si );
-	}
 
 	// propagate m_headCol/RowSection ptr to all kids in the td cell
 
@@ -2985,18 +2947,6 @@ void initGenericTable ( int32_t niceness ) {
 	}
 }
 
-#define METHOD_MONTH_PURE   0 // like "<h3>July</h3>"
-#define METHOD_TAGID        1
-#define METHOD_DOM          2
-#define METHOD_ABOVE_DOM    3
-#define METHOD_DOW          4
-#define METHOD_DOM_PURE     5
-#define METHOD_DOW_PURE     6
-#define METHOD_ABOVE_DOW    7
-#define METHOD_INNER_TAGID  8
-#define METHOD_ABOVE_ADDR   9
-#define METHOD_MAX          10
-
 #define MAXCELLS (1024*5)
 
 class Partition {
@@ -4066,11 +4016,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	sk->m_alnumPosB    = -1;
 	sk->m_senta        = -1;
 	sk->m_sentb        = -1;
-	sk->m_headColSection = NULL;
-	sk->m_headRowSection = NULL;
-	sk->m_tableSec       = NULL;
-	sk->m_rowNum         = 0;
-	sk->m_colNum         = 0;
 
 
 #ifdef _DEBUG_SECTIONS_
@@ -4554,9 +4499,6 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 	if ( f & SEC_SECOND_TITLE )
 		sbuf->safePrintf("secondtitle ");
 
-	if ( f & SEC_TABLE_HEADER )
-		sbuf->safePrintf("tableheader ");
-
 	if ( f & SEC_HAS_DOM )
 		sbuf->safePrintf("hasdom " );
 	if ( f & SEC_HAS_MONTH )
@@ -4601,25 +4543,6 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 
 	if ( f & SEC_NOTEXT )
 		sbuf->safePrintf("notext ");
-
-	if ( f & SEC_MULTIDIMS )
-		sbuf->safePrintf("multidims ");
-
-	if ( f & SEC_HASDATEHEADERROW )
-		sbuf->safePrintf("hasdateheaderrow ");
-	if ( f & SEC_HASDATEHEADERCOL )
-		sbuf->safePrintf("hasdateheadercol ");
-
-
-
-	if ( sn->m_colNum ) 
-		sbuf->safePrintf("colnum=%"INT32" ",sn->m_colNum );
-	if ( sn->m_rowNum ) 
-		sbuf->safePrintf("rownum=%"INT32" ",sn->m_rowNum );
-	if ( sn->m_headColSection )
-		sbuf->safePrintf("headcola=%"INT32" ",sn->m_headColSection->m_a);
-	if ( sn->m_headRowSection )
-		sbuf->safePrintf("headrowa=%"INT32" ",sn->m_headRowSection->m_a);
 
 	if ( f & SEC_IN_TABLE )
 		sbuf->safePrintf("intable ");
@@ -5834,13 +5757,6 @@ bool Sections::printSectionDiv ( Section *sk , char format ) {
 		m_sbuf->safePrintf("llch=%"UINT32" ",
 		                   (int32_t)sk->m_lastLinkContentHash32);
 
-	if ( sk->m_leftCell )
-		m_sbuf->safePrintf("leftcellA=%"INT32" ",
-		                   (int32_t)sk->m_leftCell->m_a);
-	if ( sk->m_aboveCell )
-		m_sbuf->safePrintf("abovecellA=%"INT32" ",
-		                   (int32_t)sk->m_aboveCell->m_a);
-
 	printFlags ( m_sbuf , sk );
 	
 	if ( isHardSection(sk) )
@@ -6106,463 +6022,10 @@ bool Sections::isTagDelimeter ( class Section *si , nodeid_t tagId ) {
 	return false;
 }
 
-bool Sections::setTableRowsAndCols ( Section *tableSec ) {
-
-	//int32_t rowCount = -1;
-	int32_t colCount = -1;
-	int32_t maxColCount = -1;
-	int32_t maxRowCount = -1;
-	Section *headCol[100];
-	Section *headRow[300];
-	int32_t rowspanAcc[300];
-
-	int32_t maxCol = -1;
-	int32_t minCol =  99999;
-	int32_t maxRow = -1;
-	int32_t minRow =  99999;
-
-	int32_t rowCount = 0;
-	// init rowspan info
-	for ( int32_t k = 0 ; k < 300 ; k++ ) rowspanAcc[k] = 1;
-
-	Section *prev = NULL;
-	Section *above[100];
-	memset ( above,0,sizeof(Section *)*100);
-
-	// scan sections in the table
-	for ( Section *ss = tableSec->m_next ; ss ; ss = ss->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// stop if went outside of table
-		if ( ss->m_a >= tableSec->m_b ) break;
-		// table in a table?
-		Section *p = ss->m_parent;
-		for ( ; p ; p = p->m_parent ) {
-			QUICKPOLL(m_niceness);
-			if ( p->m_tagId == TAG_TABLE ) break;
-		}
-		// must not be within another table in our table
-		if ( p != tableSec ) continue;
-		// shortcut
-		nodeid_t tid = ss->m_tagId;
-		// . ok, we are a section the the table "tableSec" now
-		// . row?
-		if ( tid == TAG_TR ) {
-			rowCount++;
-			colCount = 0;
-			continue;
-		}
-		// . column?
-		// . fix eviesays.com which has "what" in a <th> tag
-		if ( tid != TAG_TD && tid != TAG_TH ) continue;
-		// . must have had a row
-		if ( rowCount <= 0 ) continue;
-		// . did previous td tag have multiple rowspan?
-		// . this <td> tag is referring to the first column
-		//   that has not exhausted its rowspan
-		for ( ; colCount<300 ; colCount++ ) 
-			if ( --rowspanAcc[colCount] <= 0 ) break;
-		
-		// is it wacko? we should check this in Dates.cpp
-		// and ignore all dates in such tables or at least
-		// not allow them to pair up with each other
-		int32_t  rslen;
-		char *rs = getFieldValue ( m_wptrs[ss->m_a] , // tag
-					   m_wlens[ss->m_a] , // tagLen
-					   "rowspan"  , 
-					   &rslen );
-		int32_t rowspan = 1;
-		if ( rs ) rowspan = atol2(rs,rslen);
-		//if ( rowspan != 1 ) 
-		//	tableSec->m_flags |= SEC_WACKO_TABLE;
-		if ( colCount < 300 )
-			rowspanAcc[colCount] = rowspan;
-		
-		//Section *cs = m_sectionPtrs[i];
-		// update headCol[] array to refer to us
-		if ( rowCount == 1 && colCount < 100 ) {
-			headCol[colCount] = ss;
-			// record a max since some tables have
-			// fewer columns in first row! bad tables!
-			maxColCount = colCount;
-		}
-		// update headRow[] array to refer to us
-		if ( colCount == 0 && rowCount < 300 ) {
-			headRow[rowCount] = ss;
-			// same for this
-			maxRowCount = rowCount;
-		}
-		// set our junk
-		if ( colCount < 100 && colCount <= maxColCount )
-			ss->m_headColSection = headCol[colCount];
-		if ( rowCount < 300 && rowCount <= maxRowCount )
-			ss->m_headRowSection = headRow[rowCount];
-		colCount++;
-		// start counting at "1" so that way we know that a
-		// Sections::m_col/rowCount of 0 is invalid
-		ss->m_colNum   = colCount;
-		ss->m_rowNum   = rowCount;
-		ss->m_tableSec = tableSec;
-
-
-		// . sets Section::m_cellAbove and Section::m_cellLeft to 
-		//   point to the td or th cells above us or to the left of us
-		//   respectively.
-		// . use this to scan for dates when telescoping 
-		// . if date is in a table and date you are telescoping to is 
-		//   in the same table it must be to your left or above you in
-		//   the same row/col if SEC_HASDATEHEADERROW or 
-		//   SEC_HASDATEHEADERCOL is set for the table.
-		// . so Dates::isCompatible() needs this function to set 
-		//   those ptrs
-
-		// who was on our left?
-		if ( prev && prev->m_rowNum == rowCount )
-			ss->m_leftCell = prev;
-		// who is above us?
-		if ( colCount<100 && rowCount>=2 && above[colCount] )
-			ss->m_aboveCell = above[colCount];
-
-		// update for row
-		prev = ss;
-		// update for col
-		if ( colCount<100) above[colCount] = ss;
-
-		// first word position in section. -1 if no words contained.
-		if ( ss->m_firstWordPos >= 0 ) {
-			if ( colCount > maxCol ) maxCol = colCount;
-			if ( colCount < minCol ) minCol = colCount;
-			if ( rowCount > maxRow ) maxRow = rowCount;
-			if ( rowCount < minRow ) minRow = rowCount;
-		}
-		
-		//
-		// propagate to all child sections in our section
-		//
-		int32_t maxb = ss->m_b;
-		Section *kid = ss->m_next;
-		for ( ; kid && kid->m_b <= maxb ; kid = kid->m_next ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// skip if belongs to another table already
-			if ( kid->m_tableSec &&
-			     tableSec->contains ( kid->m_tableSec) ) 
-				continue;
-			// set his junk
-			kid->m_colNum         = colCount;
-			kid->m_rowNum         = rowCount;
-			kid->m_headColSection = ss->m_headColSection;
-			kid->m_headRowSection = ss->m_headRowSection;
-			kid->m_tableSec       = ss->m_tableSec;
-		}
-	}
-
-	// . require at least a 2x2!!!
-	// . AND require there have been text in the other dimensions
-	//   in order to fix the pool hours for www.the-w.org/poolsched.html
-	//   TODO!!!
-	// . TODO: allow addlist to combine dates across <td> or <th> tags
-	//   provided the table is NOT SEC_MULTIDIMS...
-	if ( maxRow != minRow && maxCol != minCol )
-		tableSec->m_flags |= SEC_MULTIDIMS;
-
-	return true;
-}
-
-// . "<table>" section tag is "sn"
-// . set SEC_TABLE_HEADER on contained <td> or <th> cells that represent
-//   a header column or row
-bool Sections::setTableHeaderBits ( Section *ts ) {
-
-	static char *s_tableFields [] = {
-		// . these have no '$' so they are exact/full matches
-		// . table column headers MUST match full matches and are not
-		//   allowed to match substring matches
-		"+who",
-		"+what",
-		"+event",
-		"+title",
-
-		// use '$' to endicate sentence ENDS in this
-		"-genre",
-		"-type",
-		"-category",
-		"-categories",
-		"@where",
-		"@location",
-		"-contact", // contact: john
-		"-neighborhood", // yelp uses this field
-		"@venue",
-		"-instructor",
-		"-instructors",
-		"-convenor", // graypanthers uses convenor:
-		"-convenors", // graypanthers uses convenor:
-		"-caller", // square dancing
-		"-callers",
-		"-call", // phone number
-		"-price",
-		"-price range",
-		"@event location",
-	};
-	// store these words into field table "ft"
-	static HashTableX s_ft;
-	static char s_ftbuf[2000];
-	static bool s_init0 = false;
-	if ( ! s_init0 ) {
-		s_init0 = true;
-		s_ft.set(8,4,128,s_ftbuf,2000,false,m_niceness,"ftbuf");
-		int32_t n = (int32_t)sizeof(s_tableFields)/ sizeof(char *); 
-		for ( int32_t i = 0 ; i < n ; i++ ) {
-			// set words
-			char *s = s_tableFields[i];
-			Words w;
-			w.set ( s , true, 0);
-
-			int64_t *wi = w.getWordIds();
-			int64_t h = 0;
-			// scan words
-			for ( int32_t j = 0 ; j < w.getNumWords(); j++ )
-				if ( wi[j] ) h ^= wi[j];
-			// . store hash of all words, value is ptr to it
-			// . put all exact matches into ti1 and the substring
-			//   matches into ti2
-			if ( ! s_ft.addKey ( &h , &s ) ) {char *xx=NULL;*xx=0;}
-		}
-	}
-
-
-	int32_t colVotes = 0;
-	int32_t rowVotes = 0;
-	int32_t maxCol = 0;
-	int32_t maxRow = 0;
-	Section *sn = ts;
-	// scan the sections in the table
-	for ( ; sn ; sn = sn->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// stop if leaves the table
-		if ( sn->m_a >= ts->m_b ) break;
-		// skip if in another table in the "ts" table
-		if ( sn->m_tableSec != ts ) continue;
-		// must be a TD section or TH section
-		if ( sn->m_tagId != TAG_TD && sn->m_tagId != TAG_TH ) continue;
-		// get max
-		if ( sn->m_rowNum > maxRow ) maxRow = sn->m_rowNum;
-		if ( sn->m_colNum > maxCol ) maxCol = sn->m_colNum;
-		// must be row or col 1
-		if ( sn->m_colNum != 1 && sn->m_rowNum != 1 ) continue;
-		// header format?
-		bool hdrFormatting = (sn->m_flags & SEC_HEADING_CONTAINER);
-		// is it a single format? i.e. no word<tag>word in the cell?
-		if ( sn->m_colNum == 1 && hdrFormatting ) colVotes++;
-		if ( sn->m_rowNum == 1 && hdrFormatting ) rowVotes++;
-		// skip if not heading container
-		if ( ! hdrFormatting ) continue;
-		// look for certain words like "location:" or "venue", those
-		// are very strong indicators of a header row or header col
-		for ( int32_t i = sn->m_a ; i < sn->m_b ; i++ ) {
-			// breathe
-			QUICKPOLL ( m_niceness );
-			if ( ! s_ft.isInTable ( &m_wids[i] ) ) continue;
-			if ( sn->m_colNum == 1 ) colVotes += 10000;
-			if ( sn->m_rowNum == 1 ) rowVotes += 10000;
-		}
-	}	
-
-	bool colWins = false;
-	bool rowWins = false;
-	// colWins means col #1 is the table header
-	if ( colVotes > rowVotes ) colWins = true;
-	// rowWins means row #1 is the table header
-	if ( colVotes < rowVotes ) rowWins = true;
-
-	// do another scan of table
-	sn = ts;
-	// skip loop if no need
-	if ( ! rowWins && ! colWins ) sn = NULL;
-	// if table only has one row or col
-	if ( maxRow <= 1 && maxCol <= 1 ) sn = NULL;
-
-	// scan the sections in the table
-	for ( ; sn ; sn = sn->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// stop if leaves the table
-		if ( sn->m_a >= ts->m_b ) break;
-		// skip if in another table in the "ts" table
-		if ( sn->m_tableSec != ts ) continue;
-		// must be a TD section or TH section
-		if ( sn->m_tagId != TAG_TD && sn->m_tagId != TAG_TH ) continue;
-		// it must be in the winning row or column
-		if ( rowWins && sn->m_rowNum != 1 ) continue;
-		if ( colWins && sn->m_colNum != 1 ) continue;
-		// flag it as a table header
-		sn->m_flags |= SEC_TABLE_HEADER;
-		// propagate to all kids as well so the sentence itself
-		// will have SEC_TABLE_HEADER set so we can detect that
-		// in setSentFlags(), because we use it for setting
-		// SENT_TAGS
-		Section *kid = sn->m_next;
-		for ( ; kid && kid->m_b <= sn->m_b ; kid = kid->m_next ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// skip if does not belong to our table
-			if ( kid->m_tableSec &&
-			     kid->m_tableSec != sn->m_tableSec ) continue;
-			// set it
-			kid->m_flags |= SEC_TABLE_HEADER;
-		}
-	}
-
-	// scan the cells in the table, NULL out the 
-	// m_headColSection or m_headRowSection depending
-	sn = ts;
-	// scan the sections in the table
-	for ( ; sn ; sn = sn->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// stop if leaves the table
-		if ( sn->m_a >= ts->m_b ) break;
-		// skip if in another table in the "ts" table
-		if ( sn->m_tableSec != ts ) continue;
-		// must be a TD section or TH section
-		if ( sn->m_tagId != TAG_TD && sn->m_tagId != TAG_TH ) continue;
-		// if its a header section itself...
-		if ( sn->m_flags & SEC_TABLE_HEADER ) {
-			sn->m_headColSection = NULL;
-			sn->m_headRowSection = NULL;
-			// keep going so we can propagate the NULLs to our kids
-		}
-		// get its hdr
-		Section *hdr = sn->m_headColSection;
-		// only if we are > row 1
-		//if ( sn->m_rowNum >= 2 ) hdr = sn->m_headColSection;
-		// must have table header set
-		if ( hdr && ! ( hdr->m_flags & SEC_TABLE_HEADER ) )
-		     // but if we are not in the first col, we can use it
-		     //sn->m_colNum == 1 ) 
-			sn->m_headColSection = NULL;
-		// same for row
-		hdr = sn->m_headRowSection;
-		// only if we are col > 1
-		//if ( ! hdr && sn->m_colNum >= 2 ) hdr = sn->m_headRowSection;
-		// must have table header set
-		if ( hdr && ! ( hdr->m_flags & SEC_TABLE_HEADER ) )
-		     // . but if we are not in the first row, we can use it
-		     // . m_rowNum starts at 1, m_colNum starts at 1
-		     //sn->m_rowNum == 1 ) 
-			sn->m_headRowSection = NULL;
-
-		//
-		// propagate to all child sections in our section
-		//
-		Section *kid = sn->m_next;
-		for ( ; kid && kid->m_b <= sn->m_b ; kid = kid->m_next ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// skip if does not belong to our table
-			if ( kid->m_tableSec != ts ) continue;
-			// set his junk
-			//kid->m_colNum         = sn->m_colNum;
-			//kid->m_rowNum         = sn->m_rowNum;
-			kid->m_headColSection = sn->m_headColSection;
-			kid->m_headRowSection = sn->m_headRowSection;
-			//kid->m_tableSec       = sn->m_tableSec;
-		}
-	}
-
-	return true;
-}
-
 bool Sections::growSections ( ) {
 	// make a log note b/c this should not happen a lot because it's slow
 	log("build: growing sections!");
 	g_errno = EDOCBADSECTIONS;
 	return true;
-//	// record old buf start
-//	char *oldBuf = m_sectionBuf.getBufStart();
-//	// grow by 20MB at a time
-//	if ( ! m_sectionBuf.reserve ( 20000000 ) ) return false;
-//	// for fixing ptrs:
-//	char *newBuf = m_sectionBuf.getBufStart();
-//	// set the new max
-//	m_maxNumSections = m_sectionBuf.getCapacity() / sizeof(Section);
-//	// update ptrs in the old sections
-//	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-//		// breathe
-//		QUICKPOLL(m_niceness);
-//		Section *si = &m_sections[i];
-//		if ( si->m_parent ) {
-//			char *np = (char *)si->m_parent;
-//			np = np - oldBuf + newBuf;
-//			si->m_parent = (Section *)np;
-//		}
-//		if ( si->m_next ) {
-//			char *np = (char *)si->m_next;
-//			np = np - oldBuf + newBuf;
-//			si->m_next = (Section *)np;
-//		}
-//		if ( si->m_prev ) {
-//			char *np = (char *)si->m_prev;
-//			np = np - oldBuf + newBuf;
-//			si->m_prev = (Section *)np;
-//		}
-//		if ( si->m_listContainer ) {
-//			char *np = (char *)si->m_listContainer;
-//			np = np - oldBuf + newBuf;
-//			si->m_listContainer = (Section *)np;
-//		}
-//		if ( si->m_prevBrother ) {
-//			char *np = (char *)si->m_prevBrother;
-//			np = np - oldBuf + newBuf;
-//			si->m_prevBrother = (Section *)np;
-//		}
-//		if ( si->m_nextBrother ) {
-//			char *np = (char *)si->m_nextBrother;
-//			np = np - oldBuf + newBuf;
-//			si->m_nextBrother = (Section *)np;
-//		}
-//		if ( si->m_sentenceSection ) {
-//			char *np = (char *)si->m_sentenceSection;
-//			np = np - oldBuf + newBuf;
-//			si->m_sentenceSection = (Section *)np;
-//		}
-//		if ( si->m_prevSent ) {
-//			char *np = (char *)si->m_prevSent;
-//			np = np - oldBuf + newBuf;
-//			si->m_prevSent = (Section *)np;
-//		}
-//		if ( si->m_nextSent ) {
-//			char *np = (char *)si->m_nextSent;
-//			np = np - oldBuf + newBuf;
-//			si->m_nextSent = (Section *)np;
-//		}
-//		if ( si->m_tableSec ) {
-//			char *np = (char *)si->m_tableSec;
-//			np = np - oldBuf + newBuf;
-//			si->m_tableSec = (Section *)np;
-//		}
-//		if ( si->m_headColSection ) {
-//			char *np = (char *)si->m_headColSection;
-//			np = np - oldBuf + newBuf;
-//			si->m_headColSection = (Section *)np;
-//		}
-//		if ( si->m_headRowSection ) {
-//			char *np = (char *)si->m_headRowSection;
-//			np = np - oldBuf + newBuf;
-//			si->m_headRowSection = (Section *)np;
-//		}
-//		if ( si->m_leftCell ) {
-//			char *np = (char *)si->m_leftCell;
-//			np = np - oldBuf + newBuf;
-//			si->m_leftCell = (Section *)np;
-//		}
-//		if ( si->m_aboveCell ) {
-//			char *np = (char *)si->m_aboveCell;
-//			np = np - oldBuf + newBuf;
-//			si->m_aboveCell = (Section *)np;
-//		}
-//	}
-//	return true;
 }
 
