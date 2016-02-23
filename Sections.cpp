@@ -3750,14 +3750,11 @@ bool Sections::setSentFlagsPart2 ( ) {
 			}
 		}
 
-		//int32_t upperCount = 0;
 		int32_t alphas = 0;
 		bool lastStop = false;
 		bool inDate = true;
 		int32_t stops = 0;
 		inParens = false;
-		int32_t dollarCount = 0;
-		int32_t priceWordCount = 0;
 
 		// watchout if in a table. the last table column header
 		// should not be applied to the first table cell in the
@@ -3924,15 +3921,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 
 			break;
 		}
-		     
-		bool hadDollar = false;
-		// fix sentences that start with stuff like "$12 ..."
-		if ( senta>0 && 
-		     ! m_tids[senta-1] &&
-		     m_words->hasChar(senta-1,'$') ) {
-			dollarCount++;
-			hadDollar = true;
-		}
 
 		bool hasSpace = false;
 
@@ -3988,10 +3976,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 				bool  strange = false;
 				for ( ; p < pend ; p++ ) {
 					QUICKPOLL(m_niceness);
-					if ( *p == '$' ) { 
-						hadDollar = true;
-						dollarCount++;
-					}
 					if ( *p == '=' ) strange = true;
 					if ( *p == '*' ) strange = true;
 					if ( *p == '%' ) strange = true;
@@ -4013,66 +3997,7 @@ bool Sections::setSentFlagsPart2 ( ) {
 				     i>senta && 
 				     ! is_digit(m_wptrs[i][-1]) )
 					si->m_sentFlags |= SENT_HAS_COLON;
-				// check for end first in case of ") ("
-				//if ( m_words->hasChar(i,')') )
-				//	inParens = false;
-				// check if in parens
-				//if ( m_words->hasChar(i,'(') )
-				//	inParens = true;
 				continue;
-			}
-
-			//
-			// check for a sane PRICE after the dollar sign.
-			// we do not want large numbers after it, like for
-			// budgets or whatever. those are not tickets!!
-			//
-			if ( hadDollar ) {
-				// require a number after the dollar sign
-				if ( ! is_digit(m_wptrs[i][0]) ) 
-					dollarCount = 0;
-				// number can't be too big!
-				char *p = m_wptrs[i];
-				int32_t digits =0;
-				char *pmax = p + 30;
-				bool hadPeriod = false;
-				for ( ; *p && p < pmax ; p++ ) {
-					if ( *p == ',' ) continue;
-					if ( *p == '.' ) {
-						hadPeriod = true;
-						continue;
-					}
-					if ( is_wspace_a(*p) ) continue;
-					if ( is_digit(*p) ) {
-						if ( ! hadPeriod ) digits++;
-						continue;
-					}
-					// $20M? $20B?
-					if ( to_lower_a(*p) == 'm' )
-						dollarCount = 0;
-					if ( to_lower_a(*p) == 'b' ) 
-						dollarCount = 0;
-					break;
-				}
-				if ( digits >= 4 ) 
-					dollarCount = 0;
-				// if word after the digits is million
-				// thousand billion, etc. then nuke it
-				int32_t n = i + 1;
-				int32_t nmax = i + 10;
-				if ( nmax > m_nw ) nmax = m_nw;
-				for ( ; n < nmax ; n++ ) {
-					if ( ! m_wids[n] ) continue;
-					if ( m_wids[n] == h_million )
-						dollarCount = 0;
-					if ( m_wids[n] == h_billion )
-						dollarCount = 0;
-					if ( m_wids[n] == h_thousand )
-						dollarCount = 0;
-					break;
-				}
-				// reset for next one
-				hadDollar = false;
 			} 
 
 			int64_t savedWid = lastWid;
@@ -4088,10 +4013,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 			//   make sure all are in date!
 			if ( ! ( bits[i] & D_IS_IN_DATE ) ) inDate = false;
 
-			// pricey? "free admission" is a price... be sure
-			// to include in the description!
-			if ( m_wids[i] == h_admission && savedWid == h_free )
-				si->m_sentFlags |= SENT_HAS_PRICE;
 			// count alphas
 			if ( ! is_digit(m_wptrs[i][0]) ) alphas++;
 			// "B-52" as in the band (exclude phone #'s!)
@@ -4135,42 +4056,11 @@ bool Sections::setSentFlagsPart2 ( ) {
 				lastStop = true;
 			else
 				lastStop = false;
-			// ticket pricey words
-			if ( m_wids[i] == h_adv ||
-			     m_wids[i] == h_dos ||
-			     m_wids[i] == h_advance ||
-			     m_wids[i] == h_day ||
-			     m_wids[i] == h_of ||
-			     m_wids[i] == h_show ||
-			     m_wids[i] == h_box ||
-			     m_wids[i] == h_office )
-				priceWordCount++;
 		}
 
 		// set this
 		if ( ! hasSpace ) 
 			si->m_sentFlags |= SENT_HASNOSPACE;
-
-		// try to avoid mutiple-ticket- price titles
-		if ( dollarCount >= 2 )
-			si->m_sentFlags |= SENT_PRICEY;
-		// . if all words in section are describing ticket price...
-		// . fix bad titles for southgatehouse.com because right title
-		//   is in SEC_MENU and perchance is also repeated on the page
-		//   so its score gets slammed and it doesn't even make it in
-		//   the event description. instead the title we pick is this
-		//   ticket pricey title, so let's penalize that here so the
-		//   right title comes through
-		// . pricey title was "$17 ADV / $20 DOS"
-		// . title in SEC_MENU is now "Ricky Nye". we should have
-		//   "Buckwheat zydeco" too, but i guess it didn't make the
-		//   cut, but since we set EV_OUTLINKED_TITLE anyway, it 
-		//   doesn't matter for now.
-		if ( dollarCount >= 1 && alphas == priceWordCount )
-			si->m_sentFlags |= SENT_PRICEY;
-		// single dollar sign?
-		if ( dollarCount >= 1 )
-			si->m_sentFlags |= SENT_HAS_PRICE;
 
 		// . if ALL words in date, penalize
 		// . penalize by .50 to fix events.mapchannels.com
@@ -5290,8 +5180,6 @@ char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_COLON_ENDS ) return "colonends";
 	if ( sf == SENT_IN_TITLEY_TAG ) return "intitleytag";
 	if ( sf == SENT_CITY_STATE ) return "citystate";
-	if ( sf == SENT_PRICEY ) return "pricey";
-	if ( sf == (sentflags_t)SENT_HAS_PRICE ) return "hasprice";
 	if ( sf == SENT_PERIOD_ENDS ) return "periodends";
 	if ( sf == SENT_HAS_PHONE ) return "hasphone";
 	if ( sf == SENT_IN_MENU ) return "inmenu";
@@ -5334,7 +5222,6 @@ static sentflags_t s_sentFlags[] = {
 	SENT_IS_DATE,
 	SENT_NUMBER_START,
 	SENT_IN_TITLEY_TAG,
-	SENT_PRICEY,
 	SENT_HAS_PHONE,
 	SENT_IN_MENU,
 	SENT_INTITLEFIELD,
