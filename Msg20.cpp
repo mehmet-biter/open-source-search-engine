@@ -701,14 +701,8 @@ int32_t Msg20Reply::serialize ( char *buf , int32_t bufSize ) {
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_imgData,size_imgData);
 	if(ptr_facetBuf)
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_facetBuf,size_facetBuf);
-	if(ptr_catIds)
-		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_catIds,size_catIds);
-	if(ptr_indCatIds)
-		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_indCatIds,size_indCatIds);
 	if(ptr_site)
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_site,size_site);
-	if(ptr_reserved0)
-		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_reserved0,size_reserved0);
 	if(ptr_linkInfo)
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_linkInfo,size_linkInfo);
 	if(ptr_outlinks)
