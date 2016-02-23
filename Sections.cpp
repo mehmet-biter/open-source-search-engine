@@ -31,18 +31,12 @@ void Sections::reset() {
 	m_sections         = NULL;
 	m_bits             = NULL;
 	m_numSections      = 0;
-	m_numSentenceSections = 0;
-	m_badHtml          = false;
 	m_rootSection      = NULL;
 	m_lastSection      = NULL;
 	m_lastAdded        = NULL;
 
 	m_numLineWaiters   = 0;
 	m_waitInLine       = false;
-	m_hadArticle       = false;
-	m_articleStartWord = -2;
-	m_articleEndWord   = -2;
-	m_recall           = 0;
 	m_nw = 0;
 	m_firstSent = NULL;
 	m_lastSent  = NULL;
@@ -120,8 +114,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 	char      **wptrs  = w->getWords    ();
 	int32_t        *wlens = w->getWordLens ();
 
-	// set these up for isDelimeter() function to use and for
-	// isCompatible() as well
+	// set these up 
 	m_wids  = wids;
 	m_wlens = wlens;
 	m_wptrs = wptrs;
@@ -1643,8 +1636,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 // . returns false and sets g_errno on error
 bool Sections::addSentenceSections ( ) {
 
-	m_numSentenceSections = 0;
-
 	sec_t badFlags = 
 		//SEC_MARQUEE|
 		SEC_STYLE|
@@ -2316,8 +2307,6 @@ bool Sections::addSentenceSections ( ) {
 			if ( ! is ) return false;
 			// set sentence flag on it
 			is->m_flags |= SEC_SENTENCE;
-			// count it
-			m_numSentenceSections++;
 			// print it out
 			/*
 			SafeBuf tt;
@@ -3720,18 +3709,6 @@ void Sections::setTagHashes ( ) {
 	}
 }
 
-bool Sections::containsTagId ( Section *si, nodeid_t tagId ) {
-	// scan sections to right
-	int32_t a = si->m_a + 1;
-	// scan as int32_t as contained by us
-	for ( ; a < m_nw && a < si->m_b ; a++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		if ( m_tids[a] == tagId ) return true;
-	}
-	return false;
-}
-
 // . just the voting info for passing into diffbot in json
 // . along w/ the title/summary/etc. we can return this json blob for each search result
 bool Sections::printVotingInfoInJSON ( SafeBuf *sb ) {
@@ -4252,69 +4229,6 @@ bool Sections::verifySections ( ) {
 	}
 
 	return true;
-}
-
-bool Sections::isTagDelimeter ( class Section *si , nodeid_t tagId ) {
-	// store
-	Section *saved = si;
-	// . people embed tags in other tags, so scan
-	// . fix "<strong><em><br></em><strong><span><br></span> for
-	//   guysndollsllc.com homepage
-	for ( ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// stop if si not contained in saved
-		if ( ! saved->contains ( si ) ) return false;
-		// stop if got it
-		if ( tagId != TAG_BR &&  si->m_tagId == tagId ) break;
-		// tag br can be a pr or p tag (any vert whitespace really)
-		if ( tagId == TAG_BR ) {
-			if ( si->m_tagId == TAG_BR ) break;
-			if ( si->m_tagId == TAG_P  ) break;
-			// treat <hN> and </hN> as single breaking tags too
-			nodeid_t ft = si->m_tagId & BACKBITCOMP;
-			if ( ft >= TAG_H1 && ft <= TAG_H5 ) break;
-			// fix tennisoncampus.com which has <p>...<table> as
-			// a double space
-			if ( si->m_tagId == TAG_TABLE  ) break;
-		}
-		// . skip if has no text of its own
-		// . like if looking for header tags and we got:
-		//   <tr><td></td><td><h1>stuff here</h1></td></tr>
-		//   we do not want the <td></td> to stop us
-		//   bluefin-cambridge.com
-		if ( si->m_firstWordPos < 0 ) continue;
-		// stop if hit alnum before tagid
-		//if ( si->m_alnumPosA != saved->m_alnumPosA ) 
-		//	return false;
-		// stop if hit text before hitting tagid
-		if ( si->m_lastWordPos != saved->m_lastWordPos )
-			return false;
-	}
-	// done?
-	if ( ! si ) return false; 
-	//if ( si->m_tagId != tagId ) return false;
-	if ( tagId != TAG_BR ) return true;
-	// need double brs (or p tags)
-	int32_t a = si->m_a + 1;
-	//if ( a + 2 >= m_nw ) return false;
-	//if ( m_tids[a+1] == TAG_BR ) return true;
-	//if ( m_wids[a+1]           ) return false;
-	//if ( m_tids[a+2] == TAG_BR ) return true;
-	// guynsdollsllc.com homepage has some crazy br tags
-	// in their own em strong tags, etc.
-	int32_t kmax = a+10;
-	if ( kmax > m_nw ) kmax = m_nw;
-	for ( int32_t k = a ; k < kmax ; k++ ) {
-		if ( m_wids[k]           ) return false;
-		if ( m_tids[k] == TAG_BR ) return true;
-		if ( m_tids[k] == TAG_P  ) return true;
-		if ( m_tids[k] == TAG_TABLE  ) return true;
-		// treat <hN> and </hN> as single breaking tags too
-		nodeid_t ft = m_tids[k] & BACKBITCOMP;
-		if ( ft >= TAG_H1 && ft <= TAG_H5 ) return true;
-	}
-	return false;
 }
 
 bool Sections::growSections ( ) {

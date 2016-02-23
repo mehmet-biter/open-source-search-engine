@@ -377,15 +377,11 @@ class Sections {
 
 	Msg0  m_msg0;
 	key128_t m_startKey;
-	int32_t  m_recall;
 	IndexList m_list;
 	int64_t m_termId;
 
 	int32_t m_numLineWaiters;
 	bool m_waitInLine;
-	int32_t m_articleStartWord;
-	int32_t m_articleEndWord;
-	bool m_hadArticle;
 	int32_t m_numInvalids;
 
 	int32_t m_numAlnumWordsInArticle;
@@ -416,16 +412,11 @@ class Sections {
 	// see what section a word is in.
 	SafeBuf m_sectionPtrBuf;
 
-	int32_t m_numSentenceSections;
-
 	bool m_isTestColl;
 
 	// assume no malloc
 	bool  m_needsFree;
 	char  m_localBuf [ SECTIONS_LOCALBUFSIZE ];
-
-	// set a flag
-	bool  m_badHtml;
 
 	int64_t  *m_wids;
 	int32_t       *m_wlens;
@@ -449,67 +440,10 @@ class Sections {
 	// in the document, is NULL iff no sentences in document
 	class Section *m_firstSent;
 	class Section *m_lastSent;
-
-	bool containsTagId ( class Section *si, nodeid_t tagId ) ;
-
-	bool isTagDelimeter ( class Section *si , nodeid_t tagId ) ;
-	
-	bool isDelimeter ( int32_t i , char *delimeter , int32_t *delimEnd ) {
-
-		// . HACK: special case when delimeter is 0x01 
-		// . that means we are back-to-back br tags
-		if ( delimeter == (char *)0x01 ) {
-			// must be a br tag
-			if ( m_tids[i] != TAG_BR ) return false;
-			// assume that
-			int32_t k = i + 1;
-			// bad if end
-			if ( k >= m_nw ) return false;
-			// bad if a wid
-			if ( m_wids[k] ) return false;
-			// inc if punct
-			if ( ! m_tids[k] ) k++;
-			// bad if end
-			if ( k >= m_nw ) return false;
-			// must be another br tag
-			if ( m_tids[k] != TAG_BR ) return false;
-			// mark as end i guess
-			*delimEnd = k + 1;
-			return true;
-		}
-
-		// no word is a delimeter
-		if ( m_wids[i] ) return false;
-		// tags "<hr" and "<br"
-		if ( m_wptrs[i][0] == delimeter[0] &&
-		     m_wptrs[i][1] == delimeter[1] &&
-		     m_wptrs[i][2] == delimeter[2] )
-			return true;
-		// if no match above, forget it
-		if ( m_tids[i] ) return false;
-		// otherwise, we are a punctuation "word"
-		// the bullet is 3 bytes long
-		if ( m_wlens[i] < 3 ) return false;
-		// if not a bullet, skip it (&bull)
-		char *p    = m_wptrs[i];
-		char *pend = p + m_wlens[i];
-		for ( ; p < pend ; p++ ) {
-			if ( p[0] != delimeter[0] ) continue;
-			if ( p[1] != delimeter[1] ) continue;
-			if ( p[2] != delimeter[2] ) continue;
-			return true;
-		}
-		return false;
-	}
-		
-
 };
 
 // convert sectionType to a string
 char *getSectionTypeAsStr ( int32_t sectionType );
-
-// hash of the last 3 parent tagids
-//uint32_t getSectionContentTagHash3 ( class Section *sn ) ;
 
 // only allow this many urls per site to add sectiondb info
 #define MAX_SITE_VOTERS 32
@@ -542,7 +476,6 @@ public:
 // . the SectionVote is the data portion of the rdb record, and the key
 //   of the rdb record contains the url site hash and the section m_tagHash
 // . in this way, a page can vote on what type of section a tag hash describes
-//#define SV_TEXTY          1 // section has mostly non-hypertext words
 #define SV_CLOCK          2 // DateParse2.cpp. section contains a clock
 #define SV_EURDATEFMT     3 // DateParse2.cpp. contains european date fmt
 #define SV_EVENT          4 // used in Events.cpp to indicate event container

@@ -6393,7 +6393,7 @@ int32_t XmlDoc::computeVector ( Sections *sections, Words *words, uint32_t *vec 
 	vec[0] = 0;
 
 	// skip if no article section. then we have no vector.
-	if ( sections && ! sections->m_hadArticle ) return 0;
+	if ( sections ) return 0;
 
 	// shortcuts
 	int32_t       nw     = words->getNumWords();
@@ -22524,7 +22524,6 @@ Summary *XmlDoc::getSummary () {
 	}
 
 	m_summaryValid = true;
-
 	return &m_summary;
 }
 
