@@ -626,7 +626,6 @@ class Sections {
 	nodeid_t   *m_tids;
 
 	bool setSentFlagsPart1 ( );
-	bool setSentFlagsPart2 ( );
 	sentflags_t getSentEventEndingOrBeginningFlags ( sentflags_t sflags ,
 							 int32_t senta ,
 							 int32_t sentb ,
