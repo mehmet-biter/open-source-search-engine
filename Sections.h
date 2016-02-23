@@ -155,8 +155,8 @@
 #define SENT_IN_MENU_HEADER      0x0000200000000000LL
 #define SENT_IN_TRUMBA_TITLE     0x0000400000000000LL
 //#define SENT_UNUSED            0x0000800000000000LL
-#define SENT_FORMTABLE_FIELD     0x0001000000000000LL
-#define SENT_FORMTABLE_VALUE     0x0002000000000000LL
+//#define SENT_UNUSED            0x0001000000000000LL
+//#define SENT_UNUSED            0x0002000000000000LL
 #define SENT_IN_TAG              0x0004000000000000LL
 #define SENT_AFTER_SPACER        0x0008000000000000LL
 #define SENT_BEFORE_SPACER       0x0010000000000000LL
@@ -176,7 +176,6 @@
 
 // the section type (bit flag vector for SEC_*) is currently 32 bits
 typedef int64_t sec_t;
-//typedef int64_t titleflags_t;
 typedef int64_t sentflags_t;
 typedef uint32_t turkbits_t;
 
@@ -449,7 +448,6 @@ class Sections {
 
 	bool setMenus ( );
 
-	bool setFormTableBits ( ) ;
 	bool setTableRowsAndCols ( class Section *tableSec ) ;
 	bool setTableHeaderBits ( class Section *table );
 	bool setTableScanPtrs ( class Section *ts ) ;

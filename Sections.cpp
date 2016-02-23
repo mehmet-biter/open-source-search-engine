@@ -3350,8 +3350,6 @@ char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_PARENS_START ) return "parensstart";
 	if ( sf == SENT_IN_MENU_HEADER ) return "inmenuheader";
 	if ( sf == SENT_IN_TRUMBA_TITLE ) return "intrumbatitle";
-	if ( sf == SENT_FORMTABLE_FIELD ) return "formtablefield";
-	if ( sf == SENT_FORMTABLE_VALUE ) return "formtablevalue";
 	if ( sf == SENT_IN_TAG ) return "intag";
 	if ( sf == SENT_MENU_SENTENCE ) return "menusentence";
 
@@ -6406,82 +6404,6 @@ sentflags_t getMixedCaseFlags ( Words *words ,
 
 	return sflags;
 }
-
-// identify crap like "Good For Kids: Yes" for yelp.com etc. so we don't
-// use that crap as titles.
-bool Sections::setFormTableBits ( ) {
-
-	if ( ! m_alnumPosValid ) { char *xx=NULL;*xx=0; }
-
-	sec_t sdf = SEC_HAS_DOM|SEC_HAS_MONTH|SEC_HAS_DOW|SEC_HAS_TOD;
-	// scan all sentences
-	for ( Section *si = m_firstSent ; si ; si = si->m_nextSent ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// must be sentence
-		//if ( ! ( si->m_flags & SEC_SENTENCE ) ) continue;
-		// shortcut
-		sentflags_t sf = si->m_sentFlags;
-		// . fortable field must not end in period
-		// . i.e. "Good For Kids:"
-		if ( sf & SENT_PERIOD_ENDS ) continue;
-		// get next sent
-		Section *next = si->m_nextSent;
-		// this stops things..
-		if ( ! next ) continue;
-		// must not end in period either
-		if ( next->m_sentFlags & SENT_PERIOD_ENDS ) continue;
-		Section *ps;
-		// must be the only sentences in a section
-		ps = si->m_parent;
-		for ( ; ps ; ps = ps->m_parent ) {
-			QUICKPOLL(m_niceness);
-			if ( ps->contains ( next ) ) break;
-		}
-		// how does this happen?
-		if ( ! ps ) continue;
-		// must not contain any other sentences, just these two
-		if ( ps->m_alnumPosA != si  ->m_alnumPosA )
-			continue;
-		if ( ps->m_alnumPosB != next->m_alnumPosB )
-			continue;
-		// get first solid parent tag for "si"
-		Section *bs = si->m_parent;
-		for ( ; bs ; bs = bs->m_parent ) {
-			QUICKPOLL(m_niceness);
-			if ( bs->m_tagId == TAG_B ) continue;
-			if ( bs->m_tagId == TAG_STRONG ) continue;
-			if ( bs->m_tagId == TAG_FONT ) continue;
-			if ( bs->m_tagId == TAG_I ) continue;
-			break;
-		}
-		// if none, bail
-		if ( ! bs ) continue;
-		// get the containing tag then
-		nodeid_t tid = bs->m_tagId;
-		// must be some kind of field/value indicator
-		bool separated = false;
-		if ( tid == TAG_DT ) separated = true;
-		if ( tid == TAG_TD ) separated = true;
-		// if tr or dt tag or whatever contains "next" that is not
-		// good, we need next and si to be in their own dt or td
-		// section.
-		if ( bs->contains ( next ) ) separated = false;
-		// fix "Venue Type: Auditorium" for zvents.com kimo theater
-		if ( sf & SENT_COLON_ENDS ) separated = true;
-		// must be separated by a tag or colon to be field/value pair
-		if ( ! separated ) continue;
-		// if either one has dates, let is slide.
-		// fix "zumba</td><td>10/26/2011" for www.ci.tualatin.or.us
-		if ( si  ->m_flags & sdf ) continue;
-		if ( next->m_flags & sdf ) continue;
-		// label them
-		si  ->m_sentFlags |= SENT_FORMTABLE_FIELD;
-		next->m_sentFlags |= SENT_FORMTABLE_VALUE;
-	}
-	return true;
-}
-
 
 bool Sections::setTableRowsAndCols ( Section *tableSec ) {
 
