@@ -3259,8 +3259,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 	static int64_t h_times ;
 	static int64_t h_hide ;
 	static int64_t h_print ;
-	static int64_t h_powered;
-	static int64_t h_provided;
 	static int64_t h_admission;
 	static int64_t h_by;
 	static int64_t h_com;
@@ -3422,8 +3420,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 		h_times = hash64n("times");
 		h_hide = hash64n("hide");
 		h_print = hash64n("print");
-		h_powered = hash64n("powered");
-		h_provided = hash64n("provided");
 		h_admission = hash64n("admission");
 		h_by = hash64n("by");
 		h_com = hash64n("com");
@@ -4093,12 +4089,7 @@ bool Sections::setSentFlagsPart2 ( ) {
 			// . hurts "4-5pm Drumming for Dancers w/ Heidi" so
 			//   make sure all are in date!
 			if ( ! ( bits[i] & D_IS_IN_DATE ) ) inDate = false;
-			// "provided/powered by"
-			if ( ( m_wids[i] == h_provided ||
-			       m_wids[i] == h_powered ) &&
-			     i + 2 < sentb &&
-			     m_wids[i+2] == h_by )
-				si->m_sentFlags |= SENT_POWERED_BY;
+
 			// pricey? "free admission" is a price... be sure
 			// to include in the description!
 			if ( m_wids[i] == h_admission && savedWid == h_free )
@@ -6942,7 +6933,6 @@ char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_BAD_FIRST_WORD ) return "badfirstword";
 	if ( sf == SENT_MIXED_CASE ) return "mixedcase";
 	if ( sf == SENT_MIXED_CASE_STRICT ) return "mixedcasestrict";
-	if ( sf == SENT_POWERED_BY ) return "poweredby";
 	if ( sf == SENT_MULT_EVENTS ) return "multevents";
 	if ( sf == SENT_PAGE_REPEAT ) return "pagerepeat";
 	if ( sf == SENT_NUMBERS_ONLY ) return "numbersonly";
