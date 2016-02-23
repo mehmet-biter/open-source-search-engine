@@ -5606,7 +5606,6 @@ bool QueryTerm::isSplit() {
 	if(!m_fieldCode) return true;
 	if(m_fieldCode == FIELD_QUOTA)           return false;
 //BR 20160117 removed:	if(m_fieldCode == FIELD_GBTAGVECTOR)     return false;
-//BR 20160106 removed:	if(m_fieldCode == FIELD_GBGIGABITVECTOR) return false;
 	if(m_fieldCode == FIELD_GBSAMPLEVECTOR)  return false;
 	if(m_fieldCode == FIELD_GBSECTIONHASH)  return false;
 	if(m_fieldCode == FIELD_GBCONTENTHASH)  return false;

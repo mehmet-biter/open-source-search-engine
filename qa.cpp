@@ -745,8 +745,7 @@ bool qainject1 ( ) {
 
 	if ( ! s_flags[16] ) {
 		s_flags[16] = true;
-		if ( ! getUrl ( "/search?c=qatest123&qa=1&format=xml&q=%2Bthe"
-				"&dsrt=500",
+		if ( ! getUrl ( "/search?c=qatest123&qa=1&format=xml&q=%2Bthe",
 				702467314 ) )
 			return false;
 	}
@@ -1573,8 +1572,7 @@ bool qaWarcFiles ( ) {
 	}
 	if ( s_flags[EXAMINE_RESULTS1] == 0) {
 		s_flags[EXAMINE_RESULTS1]++;
-		if ( ! getUrl ( "/search?c=qatest123&qa=1&format=xml&q=%2Bthe"
-				"&dsrt=500",
+		if ( ! getUrl ( "/search?c=qatest123&qa=1&format=xml&q=%2Bthe",
 				702467314 ) )
 			return false;
 	}
@@ -1596,8 +1594,7 @@ bool qaWarcFiles ( ) {
 
 	if ( s_flags[EXAMINE_RESULTS2] == 0) {
 		s_flags[EXAMINE_RESULTS2]++;
-		if ( ! getUrl ( "/search?c=qatest123&qa=1&format=xml&q=%2Bthe"
-				"&dsrt=500",
+		if ( ! getUrl ( "/search?c=qatest123&qa=1&format=xml&q=%2Bthe",
 				702467314 ) )
 			return false;
 	}
@@ -1790,14 +1787,6 @@ bool qaMetadataFacetSearch ( ) {
 		return false;
 	}
 
-	// if ( ! s_flags[EXAMINE_RESULTS] ) {
-	// 	s_flags[16] = true;
-	// 	if ( ! getUrl ( "/search?c=qatest123&qa=1&q=%2Bthe"
-	// 			"&dsrt=500",
-	// 			702467314 ) )
-	// 		return false;
-	// }
-
     return true;
 }
 
@@ -1876,8 +1865,7 @@ bool qaimport () {
 	// test query
 	if ( ! s_flags[16] ) {
 		s_flags[16] = true;
-		if ( ! getUrl ( "/search?c=qatest123&qa=1&format=xml&q=%2Bthe"
-				"&dsrt=500",
+		if ( ! getUrl ( "/search?c=qatest123&qa=1&format=xml&q=%2Bthe",
 				702467314 ) )
 			return false;
 	}
@@ -1887,7 +1875,7 @@ bool qaimport () {
 	if ( ! s_flags[29] ) {
 		s_flags[29] = true;
 		if ( ! getUrl ( "/search?c=qatest123&qa=1&format=xml&"
-				"q=mediapost&dsrt=0&sc=1",
+				"q=mediapost&sc=1",
 				702467314 ) )
 			return false;
 	}

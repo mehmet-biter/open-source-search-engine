@@ -22,25 +22,6 @@
 
 #define MAX_TOPIC_GROUPS 1
 
-// . parameters used to generate a set of related topics (gigabits)
-// . you can have Msg24 generate multiple sets of related topics in one call
-class TopicGroup {
- public:
-        int32_t m_maxTopics;
-        int32_t m_minTopicScore;
-        int32_t m_maxWordsPerTopic;
-        char m_meta[32];
-        char m_delimeter;
-        bool m_useIdfForTopics;
-        bool m_dedup;
-        int32_t m_minDocCount ;
-        bool m_ipRestrict ;
-        char m_dedupSamplePercent; // -1 means no deduping
-        bool m_topicRemoveOverlaps;
-        int32_t m_topicSampleSize;
-        int32_t m_topicMaxPunctLen;
-};
-
 class SearchInput {
 
  public:
@@ -51,9 +32,6 @@ class SearchInput {
 	void  test    ( );
 	key_t makeKey ( ) ;
 
-	// private
-	void setTopicGroups  ( class HttpRequest *r , 
-			       class CollectionRec *cr ) ;
 	bool setQueryBuffers ( class HttpRequest *hr ) ;
 
 	//void setToDefaults ( class CollectionRec *cr , int32_t niceness ) ;
@@ -108,7 +86,6 @@ class SearchInput {
 	char           m_isCollAdmin;
 
 	// these are set from things above
-	TopicGroup     m_topicGroups [ MAX_TOPIC_GROUPS ];// msg40
 	SafeBuf m_sbuf1;
 	SafeBuf m_sbuf2;
 
@@ -200,7 +177,6 @@ class SearchInput {
 	char   m_excludeMetaText;
 	char   m_doBotDetection;
 	int32_t   m_includeCachedCopy;
-	char   m_getSectionVotingInfo;
 	char   m_familyFilter;            // msg40
 	char   m_showErrors;
 	char   m_doSiteClustering;        // msg40
@@ -223,17 +199,6 @@ class SearchInput {
 	char   m_sortBy;
 
 	char *m_filetype;
-
-	// . related topic (gigabits) parameters
-	// . TODO: prepend m_top_ to these var names
-	int32_t   m_minTopicScore;           // msg40
-	int32_t   m_minDocCount;             // msg40
-	int32_t   m_dedupSamplePercent;      // msg40
-	int32_t   m_maxWordsPerTopic;        // msg40
-	int32_t   m_ipRestrictForTopics;     // msg40
-	char   m_returnDocIdCount;        // msg40
-	char   m_returnDocIds;            // msg40
-	char   m_returnPops;              // msg40
 
 	// . reference page parameters
 	// . copied from CollectionRec.h
@@ -343,14 +308,8 @@ class SearchInput {
 	////////
 
 	// . end the section we hash in SearchInput::makeKey()
-	// . we also hash displayMetas, TopicGroups and Query into the key
+	// . we also hash displayMetas and Query into the key
 	int32_t   m_END_HASH;
-
-	//////
-	//
-	// STUFF NOT REALLY USED NWO
-	//
-	//////
 
 	// a marker for SearchInput::test()
 	int32_t      m_END_TEST;

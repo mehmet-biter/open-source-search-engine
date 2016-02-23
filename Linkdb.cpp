@@ -356,7 +356,6 @@ key224_t Linkdb::makeKey_uk ( uint32_t  linkeeSiteHash32       ,
 /////////
 
 #include "Collectiondb.h"
-//#include "CollectionRec.h"
 #include "matches2.h"
 
 // 1MB read size for now
@@ -364,12 +363,8 @@ key224_t Linkdb::makeKey_uk ( uint32_t  linkeeSiteHash32       ,
 
 #define MAX_INTERNAL_INLINKS 10 
 
-//static void gotRootTitleRecWrapper25 ( void *state ) ;
-//static void gotTermFreqWrapper       ( void *state ) ;
 static void gotListWrapper           ( void *state ,RdbList *list,Msg5 *msg5);
 static bool gotLinkTextWrapper       ( void *state );
-//static void sendLinkInfoReplyWrapper ( void *state );//, LinkInfo *info ) ;
-//static void gotReplyWrapper25        ( void *state , void *state2 ) ;
 
 Msg25::Msg25() {
 	m_numRequests = 0;
@@ -391,12 +386,6 @@ void Msg25::reset() {
 		mfree ( m_replyPtrs[i], m_replySizes[i], "msg25r");
 	// reset array count to 0
 	m_numReplyPtrs = 0;
-	// . free the linkinfo if we are responsible for it
-	// . if someone "steals" it from us, they should set this to NULL
-	//if ( m_linkInfo ) 
-	//	mfree ( m_linkInfo , m_linkInfo->getStoredSize(),"msg25s");
-	// this now points into m_linkInfoBuf safebuf, just NULL it
-	//m_linkInfo = NULL;
 
 	m_table.reset();
 	m_ipTable.reset();
@@ -3359,7 +3348,6 @@ void Inlink::set ( Msg20Reply *r ) {
 		r->size_surroundingText +
 		r->size_rssItem +
 		r->size_categories +
-		r->size_gigabitQuery +
 		r->size_templateVector;
 
 	char *pend = p + need;
@@ -3372,7 +3360,7 @@ void Inlink::set ( Msg20Reply *r ) {
 	size_surroundingText  = r->size_surroundingText;
 	size_rssItem          = r->size_rssItem;
 	size_categories       = r->size_categories;
-	size_gigabitQuery     = r->size_gigabitQuery;
+	size_gigabitQuery     = 0;
 	size_templateVector   = r->size_templateVector;
 
 
@@ -3432,13 +3420,8 @@ void Inlink::set ( Msg20Reply *r ) {
 	/////////////
 	
 	off_gigabitQuery = poff;
-	if ( p + r->size_gigabitQuery < pend ) {
-		gbmemcpy ( p , r->ptr_gigabitQuery , size_gigabitQuery );
-	}
-	else {
-		size_gigabitQuery = 1;
-		*p = '\0';
-	}
+	size_gigabitQuery = 1;
+	*p = '\0';
 	poff += size_gigabitQuery;
 	p    += size_gigabitQuery;
 
@@ -3468,37 +3451,27 @@ void Inlink::setMsg20Reply ( Msg20Reply *r ) {
 	r->m_firstSpidered       = m_firstSpidered;
 	
 	r->m_lastSpidered        = m_lastSpidered;
-	//r->m_nextSpiderTime      = m_nextSpiderDate;
 	r->m_datedbDate          = m_datedbDate;
 	r->m_firstIndexedDate    = m_firstIndexedDate;
 	r->m_numOutlinks         = m_numOutlinks;
-	//r->m_linkTextBaseScore   = m_baseScore;
-	//r->m_pagePop             = m_pagePop;
-	//r->m_sitePop             = m_sitePop;
-	//r->m_siteNumInlinks      = m_siteNumInlinks;
 	
 	r->m_isPermalink         = m_isPermalink;
 	r->m_outlinkInContent    = m_outlinkInContent;
 	r->m_outlinkInComment    = m_outlinkInComment;
 	
 	r->m_isLinkSpam          = m_isLinkSpam;
-	//r->m_isAnomaly           = m_isAnomaly;
 	r->m_hasAllQueryTerms    = m_hasAllQueryTerms;
 	
 	r->m_country             = m_country;
 	r->m_language            = m_language;
-	//r->m_docQuality        = m_docQuality;
 	r->m_siteRank            = m_siteRank;
-	//r->m_ruleset             = m_ruleset;
 	r->m_hopcount            = m_hopcount;
-	//r->m_linkTextScoreWeight = m_linkTextScoreWeight;
 	
 	r->ptr_ubuf              = getUrl();//ptr_urlBuf;
 	r->ptr_linkText          = getLinkText();//ptr_linkText;
 	r->ptr_surroundingText   = getSurroundingText();//ptr_surroundingText;
 	r->ptr_rssItem           = getRSSItem();//ptr_rssItem;
 	r->ptr_categories        = getCategories();//ptr_categories;
-	r->ptr_gigabitQuery      = getGigabitQuery();//ptr_gigabitQuery;
 	r->ptr_templateVector    = getTemplateVector();//ptr_templateVector;
 	
 	r->size_ubuf             = size_urlBuf;
@@ -3506,7 +3479,6 @@ void Inlink::setMsg20Reply ( Msg20Reply *r ) {
 	r->size_surroundingText  = size_surroundingText;
 	r->size_rssItem          = size_rssItem;
 	r->size_categories       = size_categories;
-	r->size_gigabitQuery     = size_gigabitQuery;
 	r->size_templateVector   = size_templateVector;
 }
 
@@ -3583,7 +3555,7 @@ bool LinkInfo::print ( SafeBuf *sb , char *coll ) {
 		int32_t  dlen = k->size_surroundingText - 1;
 		char *r    = k->getRSSItem();//ptr_rssItem;
 		int32_t  rlen = k->size_rssItem - 1;
-		char *g    = k->getGigabitQuery();//ptr_gigabitQuery;
+		char *g    = k->getGigabitQuery();
 		int32_t  glen = k->size_gigabitQuery - 1;
 		char *c    = k->getCategories();//ptr_categories;
 		int32_t  clen = k->size_categories - 1;
@@ -4068,12 +4040,6 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 
 	// don't add 0 length links
 	if ( linkLen <= 0 ) return true;
-	// ensure buf has enough room
-// 	if (titleRecVersion < 72){
-// 		if ( m_bufPtr-m_buf + linkLen + 1 > LINK_BUF_SIZE ){
-// 			return true;
-// 		}
-// 	}
 
 	// do we need to alloc more link space?
 	if (m_numLinks >= m_allocLinks) {
@@ -4250,8 +4216,6 @@ bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
 	else              bufSpace = 0;
 	// allocate dynamic buffer for lotsa links
 	if ( url.getUrlLen() + 1 > bufSpace ) {
-		//if (titleRecVersion < 72 && m_allocSize >= LINK_BUF_SIZE)
-		//	return true;
 		// grow by 100K
 		int32_t newAllocSize;// = m_allocSize+LINK_BUF_SIZE;
 		if ( ! m_allocSize ) newAllocSize = LINK_BUF_SIZE;

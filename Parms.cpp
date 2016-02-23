@@ -5837,65 +5837,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_SI;
 	m++;
 
-	m->m_title = "ip restriction for gigabits";
-	m->m_desc  = "Should Gigablast only get one document per IP domain "
-		"and per domain for gigabits (related topics) generation?";
-	m->m_cgi   = "ipr";
-	m->m_off   = (char *)&si.m_ipRestrictForTopics - y;
-	m->m_defOff= (char *)&cr.m_ipRestrict - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_group = 0;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-
-	m->m_title = "min topics score";
-	m->m_desc  = "Gigabits (related topics) with scores below this "
-		"will be excluded. Scores range from 0% to over 100%.";
-	m->m_cgi   = "mts";
-	m->m_defOff= (char *)&cr.m_minTopicScore - x;
-	m->m_off   = (char *)&si.m_minTopicScore - y;
-	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-
-
-	m->m_title = "min gigabit doc count by default";
-	m->m_desc  = "How many documents must contain the gigabit "
-		"(related topic) in order for it to be displayed.";
-	m->m_cgi   = "mdc";
-	m->m_defOff= (char *)&cr.m_minDocCount - x;
-	m->m_off   = (char *)&si.m_minDocCount - y;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "2";
-	m->m_group = 0;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-
-
-	m->m_title = "dedup doc percent for gigabits (related topics)";
-	m->m_desc  = "If a document is this percent similar to another "
-		"document with a higher score, then it will not contribute "
-		"to the gigabit generation.";
-	m->m_cgi   = "dsp";
-	m->m_defOff= (char *)&cr.m_dedupSamplePercent - x;
-	m->m_off   = (char *)&si.m_dedupSamplePercent - y;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "80";
-	m->m_group = 0;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
 
 	///////////////////////////////////////////
 	//  SPIDER PROXY CONTROLS
@@ -6011,19 +5952,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "max words per gigabit (related topic) by default";
-	m->m_desc  = "Maximum number of words a gigabit (related topic) "
-		"can have. Affects xml feeds, too.";
-	m->m_cgi   = "mwpt";
-	m->m_defOff= (char *)&cr.m_maxWordsPerTopic - x;
-	m->m_off   = (char *)&si.m_maxWordsPerTopic - y;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "6";
-	m->m_group = 0;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
 
 	m->m_title = "show images";
 	m->m_desc  = "Should we return or show the thumbnail images in the "
@@ -6321,42 +6249,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_BOOL;
 	m->m_cgi   = "debug";
 	//m->m_priv  = 1;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-	m->m_title = "return number of docs per topic";
-	m->m_desc  = "Use 1 if you want Gigablast to return the number of "
-		"documents in the search results that contained each topic "
-		"(gigabit).";
-	m->m_def   = "1";
-	m->m_off   = (char *)&si.m_returnDocIdCount - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_cgi   = "rdc";
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-	m->m_title = "return docids per topic";
-	m->m_desc  = "Use 1 if you want Gigablast to return the list of "
-		"docIds from the search results that contained each topic "
-		"(gigabit).";
-	m->m_def   = "0";
-	m->m_off   = (char *)&si.m_returnDocIds - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_cgi   = "rd";
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-	m->m_title = "return popularity per topic";
-	m->m_desc  = "Use 1 if you want Gigablast to return the popularity "
-		"of each topic (gigabit).";
-	m->m_def   = "0";
-	m->m_off   = (char *)&si.m_returnPops - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_cgi   = "rp";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -9811,115 +9703,6 @@ void Parms::init ( ) {
 	m->m_def   = "</b>";
 	m->m_group = 0;
 	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "ip restriction for gigabits by default";
-	m->m_desc  = "Should Gigablast only get one document per IP domain "
-		"and per domain for gigabits (related topics) generation?";
-	m->m_cgi   = "ipr";
-	m->m_off   = (char *)&cr.m_ipRestrict - x;
-	m->m_type  = TYPE_BOOL;
-	// default to 0 since newspaperarchive only has docs from same IP dom
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-
-	m->m_title = "remove overlapping topics";
-	m->m_desc  = "Should Gigablast remove overlapping topics (gigabits)?";
-	m->m_cgi   = "rot";
-	m->m_off   = (char *)&cr.m_topicRemoveOverlaps - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "min gigabit score by default";
-	m->m_desc  = "Gigabits (related topics) with scores below this "
-		"will be excluded. Scores range from 0% to over 100%.";
-	m->m_cgi   = "mts";
-	m->m_off   = (char *)&cr.m_minTopicScore - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "5";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "min gigabit doc count by default";
-	m->m_desc  = "How many documents must contain the gigabit "
-		"(related topic) in order for it to be displayed.";
-	m->m_cgi   = "mdc";
-	m->m_off   = (char *)&cr.m_minDocCount - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "2";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "dedup doc percent for gigabits (related topics)";
-	m->m_desc  = "If a document is this percent similar to another "
-		"document with a higher score, then it will not contribute "
-		"to the gigabit generation.";
-	m->m_cgi   = "dsp";
-	m->m_off   = (char *)&cr.m_dedupSamplePercent - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "80";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "max words per gigabit (related topic) by default";
-	m->m_desc  = "Maximum number of words a gigabit (related topic) "
-		"can have. Affects xml feeds, too.";
-	m->m_cgi   = "mwpt";
-	m->m_off   = (char *)&cr.m_maxWordsPerTopic - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "6";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-
-	m->m_title = "gigabit max sample size";
-	m->m_desc  = "Max chars to sample from each doc for gigabits "
-		"(related topics).";
-	m->m_cgi   = "tmss";
-	m->m_off   = (char *)&cr.m_topicSampleSize - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "4096";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "gigabit max punct len";
-	m->m_desc  = "Max sequential punct chars allowed in a gigabit "
-		"(related topic). "
-		" Set to 1 for speed, 5 or more for best topics but twice as "
-		"slow.";
-	m->m_cgi   = "tmpl";
-	m->m_off   = (char *)&cr.m_topicMaxPunctLen - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "1";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
 	m++;

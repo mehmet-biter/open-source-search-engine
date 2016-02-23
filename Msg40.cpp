@@ -22,53 +22,6 @@ bool printHttpMime ( class State0 *st ) ;
 static void gotDocIdsWrapper             ( void *state );
 static bool gotSummaryWrapper            ( void *state );
 
-// here's the GIGABIT knobs:
-
-// sample radius in chars around each query term    : 600  (line  212)
-// max sample size, all excerpts, per document      : 100k (line  213)
-// map from distance to query term in words to score:      (line  855)
-// map from popularity to score weight              :      (lines 950 et al)
-// the comments above are way out of date (aac, Jan 2008)
-// 
-// QPOP multiplier params
-#define QPOP_ZONE_0          10
-#define QPOP_ZONE_1          30
-#define QPOP_ZONE_2          80
-#define QPOP_ZONE_3          100
-#define QPOP_ZONE_4          300
-#define QPOP_MULT_0          10
-#define QPOP_MULT_1          8
-#define QPOP_MULT_2          6
-#define QPOP_MULT_3          4
-#define QPOP_MULT_4          2
-// QTR scoring params
-#define MAX_SCORE_MULTIPLIER 3000  // orig: 3000
-#define ALT_MAX_SCORE        12000 // orig: 12000
-#define ALT_START_SCORE      1000
-#define QTR_ZONE_0           4
-#define QTR_ZONE_1           8
-#define QTR_ZONE_2           12
-#define QTR_ZONE_3           20
-#define QTR_BONUS_0          1000
-#define QTR_BONUS_1          800
-#define QTR_BONUS_2          500
-#define QTR_BONUS_3          200
-#define QTR_BONUS_CW         1
-#define MULTIPLE_HIT_BOOST   1000 // orig: 1000
-// gigabit phrase scoring params
-#define FWC_PENALTY          500   // penalty for begining with common word
-#define POP_ZONE_0           10 // 0.00001
-#define POP_ZONE_1           30 //0.0001
-#define POP_ZONE_2           80 // 0.001
-#define POP_ZONE_3           300 // 0.01
-#define POP_BOOST_0          4.0
-#define POP_BOOST_1          3.0
-#define POP_BOOST_2          2.0
-#define POP_BOOST_3          1.0
-#define POP_BOOST_4          0.1
-
-
-
 bool isSubDom(char *s , int32_t len);
 
 Msg40::Msg40() {
@@ -899,9 +852,6 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 	// titledbMaxCacheAge was set way too high
 	if ( m_si->m_rcache ) maxAge = g_conf.m_searchResultsMaxCacheAge;
 
-	int32_t bigSampleRadius = 0;
-	int32_t bigSampleMaxLen = 0;
-
 	int32_t maxOut = (int32_t)MAX_OUTSTANDING_MSG20S;
 	if ( g_udpServer.getNumUsedSlots() > 500 ) maxOut = 10;
 	if ( g_udpServer.getNumUsedSlots() > 800 ) maxOut = 1;
@@ -1068,12 +1018,8 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		req.m_boolFlag           = m_si->m_boolFlag;
 		req.m_showBanned         = m_si->m_showBanned;
 		req.m_includeCachedCopy  = m_si->m_includeCachedCopy;//bigsmpl
-		req.m_getSectionVotingInfo   = m_si->m_getSectionVotingInfo;
 		req.m_expected           = true;
 		req.m_getSummaryVector   = true;
-		req.m_bigSampleRadius    = bigSampleRadius;
-		req.m_bigSampleMaxLen    = bigSampleMaxLen;
-		//req.m_titleMaxLen        = 256;
 		req.m_titleMaxLen = m_si->m_titleMaxLen; // cr->
 		req.m_summaryMaxLen = cr->m_summaryMaxLen;
 
@@ -1086,9 +1032,6 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		// let "ns" parm override
 		req.m_numSummaryLines    = m_si->m_numLinesInSummary;
 
-		if(m_si->m_isMasterAdmin && m_si->m_format == FORMAT_HTML )
-			req.m_getGigabitVector   = true;
-		else    req.m_getGigabitVector   = false;
 		if ( m_si->m_pqr_demFactCommonInlinks > 0.0 )
 			req.m_getLinkInfo = true;
 		// . buzz likes to do the &inlinks=1 parm to get inlinks
@@ -1766,8 +1709,6 @@ bool Msg40::gotSummary ( ) {
 			// use gigabit vector to do topic clustering, etc.
 			int32_t *vi = (int32_t *)mri->ptr_vbuf;
 			int32_t *vm = (int32_t *)mrm->ptr_vbuf;
-			//char  s  = g_clusterdb.
-			//	getSampleSimilarity (vi,vm,VECTOR_REC_SIZE );
 			float s ;
 			s = computeSimilarity(vi,vm,NULL,NULL,NULL,
 					      m_si->m_niceness);
@@ -1983,39 +1924,6 @@ bool Msg40::gotSummary ( ) {
 	// just print warning i guess
 	if ( lang == 0 ) { 
 		log("query: queryLang is 0 for q=%s",q->m_orig);
-	}
-	// we gotta use query TERMS not words, because the query may be
-	// 'cd rom' and the phrase term will be 'cdrom' which is a good one
-	// to use for gigabits! plus we got synonyms now!
-	for ( int32_t i = 0 ; i < q->m_numTerms ; i++ ) {
-		// shortcut
-		QueryTerm *qt = &q->m_qterms[i];
-		// assume ignored
-		qt->m_popWeight = 0;
-		qt->m_hash64d   = 0;
-		// skip if ignored query stop word etc.
-		if ( qt->m_ignored && qt->m_ignored != IGNORE_QUOTED )continue;
-		// get the word or phrase
-		char *s    = qt->m_term;
-		int32_t  slen = qt->m_termLen;
-		// use this special hash for looking up popularity in pop dict
-		// i think it is just like hash64 but ignores spaces so we
-		// can hash 'cd rom' as "cdrom". but i think we do this
-		// now, so use m_termId as see...
-		uint64_t qh = hash64d(s, slen);
-		//int64_t qh = qt->m_termId;
-		int32_t qpop;
-		qpop = g_speller.getPhrasePopularity(s, qh, true,lang);
-		int32_t qpopWeight;
-		if       ( qpop < QPOP_ZONE_0 ) qpopWeight = QPOP_MULT_0;
-		else if  ( qpop < QPOP_ZONE_1 ) qpopWeight = QPOP_MULT_1;
-		else if  ( qpop < QPOP_ZONE_2 ) qpopWeight = QPOP_MULT_2;
-		else if  ( qpop < QPOP_ZONE_3 ) qpopWeight = QPOP_MULT_3;
-		else if  ( qpop < QPOP_ZONE_4 ) qpopWeight = QPOP_MULT_4;
-		else                            qpopWeight = 1;
-		// remember them in the query term
-		qt->m_hash64d   = qh;
-		qt->m_popWeight = qpopWeight;
 	}
 
 	// set m_moreToCome, if true, we print a "Next 10" link

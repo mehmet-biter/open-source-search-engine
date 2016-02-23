@@ -569,14 +569,8 @@ class QueryTerm {
 	char m_endKey  [MAX_KEY_BYTES];
 	char m_ks;
 
-	// used by Msg40.cpp for gigabits generation
-	int64_t m_hash64d;
-	int32_t      m_popWeight;
-
 	uint64_t m_numDocsThatHaveFacet;
 };
-
-//#define MAX_OPSLOTS 256
 
 #define MAX_EXPRESSIONS 100
 

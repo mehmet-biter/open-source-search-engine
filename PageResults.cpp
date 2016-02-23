@@ -333,15 +333,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 		// propagate "n"
 		int32_t n = hr->getLong("n",-1);
 		if ( n >= 0 ) sb.safePrintf("&n=%"INT32"",n);
-		// Docs to Scan for Related Topics
-		int32_t dsrt = hr->getLong("dsrt",-1);
-		if ( dsrt >= 0 ) sb.safePrintf("&dsrt=%"INT32"",dsrt);
-		// debug gigabits?
-		int32_t dg = hr->getLong("dg",-1);
-		if ( dg >= 0 ) sb.safePrintf("&dg=%"INT32"",dg);
-		// show gigabits?
-		//int32_t gb = hr->getLong("gigabits",1);
-		//if ( gb >= 1 ) sb.safePrintf("&gigabits=%"INT32"",gb);
 		// show banned results?
 		int32_t showBanned = hr->getLong("sb",0);
 		if ( showBanned ) sb.safePrintf("&sb=1");
@@ -391,23 +382,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 			      //"alert(this.status+this.statusText+"
 			      //"this.responseXML+this.responseText);\n"
 			      "}}\n"
-
-
-			      // gigabit unhide function
-			      "function ccc ( gn ) {\n"
-			      "var e = document.getElementById('fd'+gn);\n"
-			      "var f = document.getElementById('sd'+gn);\n"
-			      "if ( e.style.display == 'none' ){\n"
-			      "e.style.display = '';\n"
-			      "f.style.display = 'none';\n"
-			      "}\n"
-			      "else {\n"
-			      "e.style.display = 'none';\n"
-			      "f.style.display = '';\n"
-			      "}\n"
-			      "}\n"
-			      "</script>\n"
-
 
 
 			      // put search results into this div
@@ -867,28 +841,26 @@ bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 		// . tabName = "search"
 		printLeftColumnRocketAndTabs ( &sb , true , cr , "search" );
 
-	}
+		//
+		// BEGIN FACET PRINTING
+		//
+		// 
+		// . print out one table for each gbfacet: term in the query
+		// . LATER: show the text string corresponding to the hash
+		//   by looking it up in the titleRec
+		//
+		msg40->printFacetTables ( &sb );
+		//
+		// END FACET PRINTING
+		//
 
-
-	//
-	// BEGIN FACET PRINTING
-	//
-	// 
-	// . print out one table for each gbfacet: term in the query
-	// . LATER: show the text string corresponding to the hash
-	//   by looking it up in the titleRec
-	//
-	if ( format == FORMAT_HTML ) msg40->printFacetTables ( &sb );
-	//
-	// END FACET PRINTING
-	//
-
-	//
-	// now the MAIN column
-	//
-	if ( format == FORMAT_HTML )
+		//
+		// now the MAIN column
+		//
 		sb.safePrintf("\n</TD>"
 			      "<TD valign=top style=padding-left:30px;>\n");
+	}
+
 	return true;
 }
 
@@ -1014,7 +986,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 		if ( header ) sb->safeStrcpy ( header );
 	}
 
-	// this also prints gigabits and nuggabits
 	// if we are xml/json we call this below otherwise we lose
 	// the header of <?xml...> or whatever
 	if ( ! g_conf.m_isMattWells && si->m_format == FORMAT_HTML ) {
@@ -1450,12 +1421,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 	if ( si->m_format != FORMAT_HTML && ! si->m_streamResults &&
 	     st->m_header ) 
 		msg40->printFacetTables ( sb );
-
-	// now print gigabits if we are xml/json
-	if ( si->m_format != FORMAT_HTML ) {
-		// this will print gigabits
-		printLeftNavColumn ( *sb,st );
-	}
 
 	// global-index is not a custom crawl but we should use "objects"
 	bool isDiffbot = cr->m_isCustomCrawl;
@@ -2310,12 +2275,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       ,d,mstrerror(m20->m_errno));
 		return true;
 	}
-
-	// . if section voting info was request, display now, it's in json
-	// . so if in csv it will mess things up!!!
-	if ( mr->ptr_sectionVotingInfo )
-		// it is possible this is just "\0"
-		sb->safeStrcpy ( mr->ptr_sectionVotingInfo );
 
 	// each "result" is the actual cached page, in this case, a json
 	// object, because we were called with &icc=1. in that situation

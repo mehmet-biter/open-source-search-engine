@@ -14,76 +14,11 @@
 #include "Msg39.h"      // getTermFreqs()
 #include "Msg20.h"      // for getting summary from docId
 #include "Msg17.h"      // a distributed cache of serialized/compressed Msg40s
-//#include "Msg2b.h"      // for generating directories
-//#include "IndexReadInfo.h" // STAGE0,...
 #include "Msg3a.h"
 #include "PostQueryRerank.h"
 
-// replace CollectionRec::m_maxDocIdsToCompute with this
-//#define MAXDOCIDSTOCOMPUTE 500000
 // make it 2B now. no reason not too limit it so low.
 #define MAXDOCIDSTOCOMPUTE 2000000000
-
-#define MAX_GIGABIT_WORDS 10
-
-class Gigabit {
-public:
-	char *m_term;
-	int32_t  m_termLen;
-	int64_t m_termId64;
-	float m_gbscore;
-	int32_t m_minPop;
-	int32_t m_numWords;
-	int32_t  m_numPages;
-	int64_t m_lastDocId;
-	// the wordids of the words in the gigabit (m_numWords of them)
-	int64_t m_wordIds[MAX_GIGABIT_WORDS];
-};
-
-
-//
-// TODO: add Gigabit::m_firstFastFactOffset..
-//
-
-
-#define MAX_GIGABIT_PTRS 10
-
-class Fact {
-public:
-	// offset of the gigabit in m_gigabitBuf we belong to
-	int32_t  m_gigabitOffset;
-	// . the sentence contaning the gigabit and a lot of the query terms
-	// . ptr refrences into Msg20Reply::ptr_gigabitSample buffers
-	char *m_fact;
-	int32_t  m_factLen;
-	float m_gigabitModScore;
-	float m_queryScore;
-	float m_maxGigabitModScore; // gigabitscore * #pagesItIsOn
-	int32_t  m_numGigabits;
-	char m_printed;
-	class Gigabit *m_gigabitPtrs[MAX_GIGABIT_PTRS];
-	int32_t  m_numQTerms;
-	int64_t m_docId; // from where it came
-	Msg20Reply *m_reply; // reply from where it came
-	// for deduping sentences
-	char  m_dedupVector[SAMPLE_VECTOR_SIZE]; // 128
-};
-
-
-class GigabitInfo {
- public:
-        int32_t       m_pts;
-        uint32_t   m_hash;
-        int32_t       m_pop;
-        int32_t       m_count;
-        int32_t       m_numDocs;
-        int64_t  m_lastDocId;
-        int32_t       m_currentDocCount;
-        char      *m_ptr;
-        int32_t       m_len;
-};
-
-
 
 class Msg40 {
 
@@ -254,14 +189,9 @@ class Msg40 {
 	char      *m_cachePtr;
 	int32_t       m_cacheSize;
 
-	//int32_t m_maxDocIdsToCompute;
-
 	// count summary replies (msg20 replies) we get
 	int32_t       m_numRequests;
 	int32_t       m_numReplies;
-
-	// we launched all docids from 0 to m_maxiLaunched
-	//int32_t       m_maxiLaunched;
 
 	// true if more results follow these
 	bool       m_moreToCome;
@@ -280,12 +210,6 @@ class Msg40 {
 	bool       m_cachedResults;
 	time_t     m_cachedTime;
 
-	// gigabits
-	//Msg24 m_msg24;
-
-	// references
-	//Msg1a m_msg1a;
-	
 	int32_t m_tasksRemaining;
 
 	int32_t m_printCount;

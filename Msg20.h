@@ -58,8 +58,6 @@ class Msg20Request {
 	int32_t       m_summaryMaxLen             ;
 	int32_t       m_summaryMaxNumCharsPerLine ;
 	int32_t       m_maxNumCharsPerLine        ;
-	int32_t       m_bigSampleRadius           ;
-	int32_t       m_bigSampleMaxLen           ;
 	int32_t       m_maxCacheAge               ;
 	int32_t       m_discoveryDate             ;
 
@@ -83,12 +81,10 @@ class Msg20Request {
 	unsigned char       m_getSummaryVector          :1;
 	unsigned char       m_showBanned                :1;
 	unsigned char       m_includeCachedCopy         :1;
-	unsigned char       m_getSectionVotingInfo      :1; // in JSON for now
 	unsigned char       m_getMatches                :1;
 	unsigned char       m_getTermListBuf            :1;
 	unsigned char       m_getOutlinks               :1;
 	unsigned char       m_getTitleRec               :1; // sets ptr_tr in reply
-	unsigned char       m_getGigabitVector          :1;
 	unsigned char       m_doLinkSpamCheck           :1;
 	unsigned char       m_isLinkSpam                :1; // Msg25 uses for storage
 	unsigned char       m_isSiteLinkInfo            :1; // site link info?
@@ -237,7 +233,6 @@ public:
 	char       *ptr_rubuf                ; // redirect url buffer
 	char       *ptr_displaySum           ; // summary for displaying
 	char       *ptr_dbuf                 ; // display metas \0 separated
-	char       *ptr_gigabitSample        ;
 	char       *ptr_mbuf                 ; // match offsets
 	char       *ptr_vbuf                 ; // summary vector
 	char       *ptr_imgData              ; // for encoded images
@@ -263,9 +258,7 @@ public:
 	char       *ptr_linkUrl              ; // what we link to
 	char       *ptr_rssItem              ; // set for m_getLinkText
 	char       *ptr_categories           ;
-	char       *ptr_gigabitQuery         ; // , separated list of gigabits
 	char       *ptr_content              ; // page content in utf8
-	char       *ptr_sectionVotingInfo    ; // in JSON
 	char       *ptr_tr                   ; // like just using msg22
 	char       *ptr_tlistBuf             ;
 	char       *ptr_tiBuf                ; // terminfobuf
@@ -285,7 +278,6 @@ public:
 	int32_t       size_rubuf                ;
 	int32_t       size_displaySum           ;
 	int32_t       size_dbuf                 ;
-	int32_t       size_gigabitSample        ; // includes \0
 	int32_t       size_mbuf                 ;
 	int32_t       size_vbuf                 ;
 	int32_t       size_imgData              ;
@@ -304,9 +296,7 @@ public:
 	int32_t       size_linkUrl              ;
 	int32_t       size_rssItem              ;
 	int32_t       size_categories           ;
-	int32_t       size_gigabitQuery         ;
 	int32_t       size_content              ; // page content in utf8
-	int32_t       size_sectionVotingInfo    ; // in json, includes \0
 	int32_t       size_tr                   ;
 	int32_t       size_tlistBuf             ;
 	int32_t       size_tiBuf                ;

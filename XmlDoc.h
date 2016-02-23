@@ -18,38 +18,30 @@
 #ifndef _XMLDOC_H_
 #define _XMLDOC_H_
 
-//#include "HashTableX.h"
 #include "Lang.h"
 #include "Words.h"
 #include "Bits.h"
 #include "Pos.h"
 #include "Phrases.h"
-//#include "Synonyms.h"
-//#include "Weights.h"
 #include "Xml.h"
 #include "SafeBuf.h"
 #include "Images.h"
 #include "Sections.h"
 #include "Msge0.h"
 #include "Msge1.h"
-//#include "Msge2.h"
 #include "Msg4.h"
 
 #include "SearchInput.h"
 #include "Msg40.h"
-//#include "IndexList.h"
 #include "Msg0.h"
 #include "Msg22.h"
 #include "Tagdb.h"
 #include "Url.h"
 #include "Linkdb.h"
-//#include "LinkInfo.h"
-//#include "Msg25.h"
 #include "MsgC.h"
 #include "Msg13.h"
 #include "RdbList.h"
 #include "SiteGetter.h"
-//#include "CollectionRec.h"
 #include "Msg20.h"
 #include "Matches.h"
 #include "Query.h"
@@ -62,24 +54,15 @@
 #include "PingServer.h"
 #include "Json.h"
 
-//#define XMLDOC_MAX_AD_IDS 4
-//#define XMLDOC_ADLEN      64
-
 #define MAXFRAGWORDS 80000
-
-#define MAX_WIKI_DOCIDS 20
 
 #define MAX_TAG_PAIR_HASHES 100
 
 #include "Msg40.h"
-//#define SAMPLE_VECTOR_SIZE (32*4)
 
 #define POST_VECTOR_SIZE   (32*4)
 
 #define XD_GQ_MAX_SIZE        1000
-#define XD_MAX_GIGABIT_HASHES 48
-
-#define XD_MAX_AD_IDS         5
 
 #define MAX_LINK_TEXT_LEN     512
 #define MAX_SURROUNDING_TEXT_WIDTH 600
@@ -280,11 +263,11 @@ public:
 	char      *ptr_firstUrl;
 	char      *ptr_redirUrl;
 	char      *ptr_rootTitleBuf;
-	int32_t      *ptr_gigabitHashes;
-	int32_t      *ptr_gigabitScores;
+	int32_t      *ptr_unused12;
+	int32_t      *ptr_unused13;
 	void      *ptr_unused8;
-	int64_t *ptr_wikiDocIds;
-	rscore_t  *ptr_wikiScores;
+	int64_t *ptr_unused10;
+	rscore_t  *ptr_unused11;
 	char      *ptr_imageData;
 	int32_t      *ptr_unused6;
 	int32_t      *ptr_unused7;
@@ -305,11 +288,11 @@ public:
 	int32_t       size_firstUrl;
 	int32_t       size_redirUrl;
 	int32_t       size_rootTitleBuf;
-	int32_t       size_gigabitHashes;
-	int32_t       size_gigabitScores;
+	int32_t       size_unused12;
+	int32_t       size_unused13;
 	int32_t       size_unused8;
-	int32_t       size_wikiDocIds;
-	int32_t       size_wikiScores;
+	int32_t       size_unused10;
+	int32_t       size_unused11;
 	int32_t       size_imageData;
 	int32_t       size_unused6;
 	int32_t       size_unused7;
@@ -404,9 +387,6 @@ public:
 	SafeBuf m_spiderStatusDocMetaList;
 	char *getIsAdult ( ) ;
 
-	int64_t **getWikiDocIds ( ) ;
-	void gotWikiResults ( class UdpSlot *slot );
-	//class HashTableX *getClockCandidatesTable();
 	int32_t getOutlinkAge ( int32_t outlinkNum ) ;
 	char *getIsPermalink ( ) ;
 	char *getIsUrlPermalinkFormat ( ) ;
@@ -442,7 +422,6 @@ public:
 	int32_t computeVector ( class Sections *sections, class Words *words, 
 			     uint32_t *vec , int32_t start = 0 , int32_t end = -1 );
 	float *getTagSimilarity ( class XmlDoc *xd2 ) ;
-	float *getGigabitSimilarity ( class XmlDoc *xd2 ) ;
 	float *getPageSimilarity ( class XmlDoc *xd2 ) ;
 	float *getPercentChanged ( );
 	uint64_t *getFuzzyDupHash ( );
@@ -453,22 +432,11 @@ public:
 	class RdbList *getLikedbListForIndexing ( );
 	char *getIsDup ( ) ;
 	char *isDupOfUs ( int64_t d ) ;
-	uint32_t *getGigabitVectorScorelessHash ( ) ;
-	int32_t **getGigabitHashes ( );
-	char *getGigabitQuery ( ) ;
 	char *getMetaDescription( int32_t *mdlen ) ;
 	char *getMetaSummary ( int32_t *mslen ) ;
 	char *getMetaKeywords( int32_t *mklen ) ;
 	char *getMetaGeoPlacename( int32_t *mgplen );
 	
-	bool addGigabits ( char *s , int64_t docId , uint8_t langId ) ;
-	bool addGigabits2 ( char *s,int32_t slen,int64_t docId,uint8_t langId);
-	bool addGigabits ( class Words *ww , 
-			   int64_t docId,
-			   class Sections *sections,
-			   //class Weights  *we ,
-			   uint8_t langId );
-
 	int32_t *getSiteSpiderQuota ( ) ;
 	class Url *getCurrentUrl ( ) ;
 	class Url *getFirstUrl() ;
@@ -697,8 +665,6 @@ public:
 	class Title *getTitle ();
 	class Summary *getSummary () ;
 	char *getHighlightedSummary ();
-	SafeBuf *getSampleForGigabits ( ) ;
-	SafeBuf *getSampleForGigabitsJSON ( ) ;
 	char *getIsNoArchive ( ) ;
 	int32_t *getUrlFilterNum();
 	char *getIsLinkSpam ( ) ;
@@ -1088,7 +1054,6 @@ public:
 	char     m_imagesValid;
 	char     m_msge0Valid;
 	char     m_msge1Valid;
-	char     m_gigabitHashesValid;
 	char     m_sreqValid;
 	char     m_srepValid;
 
@@ -1107,7 +1072,6 @@ public:
 	bool m_crawlDelayValid;
 	bool m_finalCrawlDelayValid;
 	bool m_titleRecKeyValid;
-	bool m_wikiDocIdsValid;
 	bool m_versionValid;
 	bool m_rawUtf8ContentValid;
 	bool m_expandedUtf8ContentValid;
@@ -1150,8 +1114,6 @@ public:
 	bool m_dupListValid;
 	bool m_likedbListValid;
 	bool m_isDupValid;
-	bool m_gigabitVectorHashValid;
-	bool m_gigabitQueryValid;
 	bool m_metaDescValid;
 	bool m_metaSummaryValid;
 	bool m_metaKeywordsValid;
@@ -1239,15 +1201,8 @@ public:
 	//char *m_utf8Content;
 	//int32_t m_utf8ContentLen;
 
-	// use this stuff for getting wiki docids that match our doc's gigabits
-	//Query m_wq; 
-	//SearchInput m_si;
-	//Msg40 m_msg40;
 	bool m_printedMenu;
-	//HashTableX m_clockCandidatesTable;
-	//SafeBuf m_cctbuf;
 	int32_t m_urlPubDate;
-	//int32_t m_urlAge;
 	char m_isUrlPermalinkFormat;
 	uint8_t m_summaryLangId;
 	int32_t m_tagPairHashVec[MAX_TAG_PAIR_HASHES];
@@ -1261,7 +1216,6 @@ public:
 	int32_t m_postVec[POST_VECTOR_SIZE/4];
 	int32_t m_postVecSize;
 	float m_tagSimilarity;
-	float m_gigabitSimilarity;
 	float m_pageSimilarity;
 	float m_percentChanged;
 	bool  m_unchanged;
@@ -1285,17 +1239,6 @@ public:
 	Msg22 m_msg22d;
 	Msg22 m_msg22e;
 	Msg22 m_msg22f;
-	//int32_t m_collLen;
-	uint32_t m_gigabitVectorHash;
-	char m_gigabitQuery [XD_GQ_MAX_SIZE];
-	int32_t m_gigabitHashes [XD_MAX_GIGABIT_HASHES];
-	int32_t m_gigabitScores [XD_MAX_GIGABIT_HASHES];
-	char *m_gigabitPtrs  [XD_MAX_GIGABIT_HASHES];
-	// for debug printing really
-	class GigabitInfo *m_top[100];
-	int32_t               m_numTop;
-	//char  m_metaDesc[1025];
-	//char  m_metaKeywords[1025];
 	// these now reference directly into the html src so our 
 	// WordPosInfo::m_wordPtr algo works in seo.cpp
 	char *m_metaDesc;
@@ -1684,8 +1627,6 @@ public:
 
 	char     *m_wikiqbuf;
 	int32_t      m_wikiqbufSize;
-	int64_t m_wikiDocIds [ MAX_WIKI_DOCIDS ];
-	rscore_t  m_wikiScores [ MAX_WIKI_DOCIDS ];
 
 	bool      m_registeredSleepCallback;
 	bool      m_addedNegativeDoledbRec;

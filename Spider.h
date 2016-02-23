@@ -697,8 +697,6 @@ class SpiderRequest {
 	unsigned    m_reserved3n              :1;
 	unsigned    m_reserved3k              :1;
 	unsigned    m_reserved3e              :1;
-	//unsigned    m_matchesUrlCrawlPattern  :1;
-	//unsigned    m_matchesUrlProcessPattern:1;
 	unsigned    m_reserved3f              :1;
 	unsigned    m_reserved3g              :1;
 	unsigned    m_siteNumInlinksValid     :1;
@@ -711,29 +709,15 @@ class SpiderRequest {
 	// want the url's to have their links spidered. default is to make
 	// this 0 and to not avoid spidering the links.
 	unsigned    m_avoidSpiderLinks:1;
-	// for identifying address heavy sites...
-	//unsigned    m_tagYellowPages:1;
 	// when indexing urls for dmoz, i.e. the urls outputted from
 	// 'dmozparse urldump -s' we need to index them even if there
 	// was a ETCPTIMEDOUT because we have to have indexed the same
 	// urls that dmoz has in it in order to be identical to dmoz.
 	unsigned    m_ignoreExternalErrors:1;
 
-	// called XmlDoc::set4() from PageSubmit.cpp?
-	//unsigned    m_isPageSubmit:1;
-
 	//
 	// INTERNAL USE ONLY
 	//
-
-	// are we in the m_orderTree/m_doleTables/m_ipTree
-	//unsigned    m_inOrderTree:1;
-	// are we doled out?
-	//unsigned    m_doled:1;
-	// are we a re-add of a spiderrequest already in spiderdb added
-	// from xmldoc.cpp when done spidering so that the spider request
-	// gets back in the cache quickly?
-	//unsigned    m_readd:1;
 
 	// . what url filter num do we match in the url filters table?
 	// . determines our spider priority and wait time
@@ -771,14 +755,6 @@ class SpiderRequest {
 		return sizeof(SpiderRequest) - (int32_t)MAX_URL_LEN + urlLen; };
 
 	int32_t getRecSize () { return m_dataSize + 4 + sizeof(key128_t); }
-
-	// how much buf will we need to serialize ourselves?
-	//int32_t getRecSize () { 
-	//	//return m_dataSize + 4 + sizeof(key128_t); }
-	//	return (m_url - (char *)this) + gbstrlen(m_url) + 1
-	//		// subtract m_key and m_dataSize
-	//		- sizeof(key_t) - 4 ;
-	//};
 
 	int32_t getUrlLen() { return m_dataSize -
 				   // subtract the \0

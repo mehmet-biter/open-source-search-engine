@@ -716,18 +716,6 @@ class CollectionRec {
 
 	int32_t  m_compoundListMaxSize;
 
-	// . related topics control
-	// . this can all be overridden by passing in your own cgi parms
-	//   for the query request
-	int32_t  m_minTopicScore;
-	int32_t  m_maxWordsPerTopic;
-	int32_t  m_minDocCount;         // min docs that must contain topic
-	char  m_ipRestrict;
-	int32_t  m_dedupSamplePercent;
-	char  m_topicRemoveOverlaps; // this is generally a good thing
-	int32_t  m_topicSampleSize;     // sample about 5k per document
-	int32_t  m_topicMaxPunctLen;    // keep it set to 1 for speed
-
 	// SPELL CHECK
 	char  m_spellCheck;
 
@@ -901,10 +889,6 @@ class CollectionRec {
 	float m_pqr_demFactXml; // demotion factor for xml content type
 	float m_pqr_demFactOthFromHost; // demotion factor for no other pages from same host
 	int32_t  m_pqr_maxValOthFromHost; // max value for no other pages from same host
-	float m_pqr_demFactDmozCatNmNoQT; // demotion factor for dmoz category names that don't contain a query term
-	int32_t  m_pqr_maxValDmozCatNmNoQT; // max value for dmoz category names that don't contain a query term
-	float m_pqr_demFactDmozCatNmNoGigabits; // demotion factor for dmoz category names that don't contain a gigabit
-	int32_t  m_pqr_maxValDmozCatNmNoGigabits; // max value for dmoz category names that don't contain a gigabit
 	float m_pqr_demFactDatedbDate; // demotion for datedb date
 	int32_t  m_pqr_minValDatedbDate; // dates earlier than this will be demoted to the max
 	int32_t  m_pqr_maxValDatedbDate; // dates later than this will not be demoted

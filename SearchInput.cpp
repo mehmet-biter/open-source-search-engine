@@ -68,17 +68,6 @@ key_t SearchInput::makeKey ( ) {
 	int32_t size = b - a; 
 	// and hash it all up
 	k.n0 = hash64 ( a , size , k.n0 );
-	// hash each topic group
-	for ( int32_t i = 0 ; i < 1 ; i++ ) {
-		TopicGroup *t = &m_topicGroups[i];
-		k.n0 = hash64 ( t->m_maxTopics           , k.n0 );
-		k.n0 = hash64 ( t->m_minTopicScore       , k.n0 );
-		k.n0 = hash64 ( t->m_maxWordsPerTopic    , k.n0 );
-		k.n0 = hash64b( t->m_meta                , k.n0 );
-		k.n0 = hash64 ( t->m_delimeter           , k.n0 );
-		k.n0 = hash64 ( t->m_useIdfForTopics     , k.n0 );
-		k.n0 = hash64 ( t->m_dedup               , k.n0 );
-	}
 	// . boolean queries have operators (AND OR NOT ( ) ) that we need
 	//   to consider in this hash as well. so
 	// . so just hash the whole damn query
@@ -285,7 +274,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	// if they have a list of sites...
 	if ( m_sites && m_sites[0] ) {
 		m_doSiteClustering        = false;
-		m_ipRestrictForTopics     = false;
 	}
 
 
@@ -537,17 +525,9 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 		m_doSiteClustering = true;
 
 	// turn off some parms
-	if ( m_q.m_hasUrlField  ) 
-		m_ipRestrictForTopics = false;
-	if ( m_q.m_hasIpField   )
-		m_ipRestrictForTopics = false;
 	if ( m_q.m_hasPositiveSiteField ) {
-		m_ipRestrictForTopics = false;
 		m_doSiteClustering    = false;
 	}
-
-	if ( cr && ! cr->m_ipRestrict )
-		m_ipRestrictForTopics = false;
 
 	if ( m_q.m_hasQuotaField ) {
 		m_doSiteClustering    = false;
@@ -589,34 +569,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	}
 	// save it
 	m_rcache = readFromCache;
-
-
-	//
-	// TODO: use Parms.cpp defaults
-	//
-	TopicGroup *tg = &m_topicGroups[0];
-
-	//
-	//
-	// gigabits
-	//
-	//
-	tg->m_maxTopics = 50;
-	tg->m_minTopicScore = 0;
-	tg->m_maxWordsPerTopic = 6;
-	tg->m_meta[0] = '\0';
-	tg->m_delimeter = '\0';
-	tg->m_useIdfForTopics = false;
-	tg->m_dedup = true;
-	// need to be on at least 2 pages!
-	tg->m_minDocCount = 2;
-	tg->m_ipRestrict = m_ipRestrictForTopics;
-	tg->m_dedupSamplePercent = 80;
-	tg->m_topicRemoveOverlaps = true;
-	tg->m_topicSampleSize = 4096;
-	// max sequential punct chars allowedin a topic
-	tg->m_topicMaxPunctLen = 1;
-
 
 	return true;
 }

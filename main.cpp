@@ -2640,49 +2640,10 @@ int main2 ( int argc , char *argv[] ) {
 	// still have the collection's data in it
 	if ( ! g_collectiondb.addRdbBaseToAllRdbsForEachCollRec ( ) ) {
 		log("db: Collectiondb init failed." ); return 1; }
-	// . now read in a little bit of each db and make sure the contained
-	//   records belong in our group
-	// . only do this if we have more than one group
-	// . we may have records from other groups if we are scaling, but
-	//   if we cannot find *any* records in our group we probably have
-	//   the wrong data files.
-	//if ( ! checkDataParity() ) return 1;
 
 	//Load the high-frequency term shortcuts (if they exist)
 	g_hfts.load();
 	
-	// init the vector cache
-	/*
-	if ( ! g_vectorCache.init ( g_conf.m_maxVectorCacheMem,
-				    VECTOR_REC_SIZE-sizeof(key_t),
-				    true,
-				    g_conf.m_maxVectorCacheMem /
-				      ( sizeof(collnum_t) + 20 +
-					VECTOR_REC_SIZE )        ,
-				    true,
-				    "vector",
-				    false,
-				    12,
-				    12 ) ) {
-		log("db: Vector Cache init failed." ); return 1; }
-	*/
-	// . gb gendbs 
-	// . hostId should have already been picked up above, so it could be 
-	//   used to initialize all the rdbs
-	//if ( strcmp ( cmd , "gendbs" ) == 0 ) {
-	//	char *coll = argv[cmdarg+1];
-	//	// generate the dbs
-	//	genDbs ( coll ); // coll
-	//	g_log.m_disabled = true;
-	//	return 0;
-	//}
-	//if ( strcmp ( cmd, "genclusterdb" ) == 0 ) {
-	//	char *coll = argv[cmdarg+1];
-	//	makeClusterdb ( coll );
-	//	g_log.m_disabled = true;
-	//	return 0;
-	//}
-
 	// test all collection dirs for write permission -- metalincs' request
 	int32_t pcount = 0;
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
@@ -2699,16 +2660,6 @@ int main2 ( int argc , char *argv[] ) {
 		checkDirPerms ( tt ) ;
 	}
 
-	// and now that all rdbs have loaded lets count the gbeventcount
-	// keys we have in datedb. those represent the # of events we
-	// have indexed.
-	//g_collectiondb.countEvents();
-
-	//if (!ucInit(g_hostdb.m_dir, true)) {
-	//	log("Unicode initialization failed!");
-	//	return 1;
-	//}
-
 	//
 	// NOTE: ANYTHING THAT USES THE PARSER SHOULD GO BELOW HERE, UCINIT!
 	//
@@ -2717,20 +2668,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! g_speller.init() && g_conf.m_isLive ) {
 		return 1;
 	}
-
-	// have to test after unified dict is loaded because if word is
-	// of unknown langid we try to get syns for it anyway if it has
-	// only one possible lang according to unified dict
-	//if ( ! g_wiktionary.test2() ) return 1;
-
-	/*
-	if ( strcmp ( cmd, "gendaterange" ) == 0 ) {
-		char *coll = argv[cmdarg+1];
-		genDateRange ( coll );
-		g_log.m_disabled = true;
-		return 0;
-	}
-	*/
 
 	// Load the category language table
 	g_countryCode.loadHashTable();
@@ -2755,64 +2692,6 @@ int main2 ( int argc , char *argv[] ) {
 		log("db: ResultsCache: %s",mstrerror(g_errno)); 
 		return 1;
 	}
-	/*
-	maxMem = 40000000;
-	int32_t maxNodes2 = maxMem/(8+8+50*(8+4+4));
-	if ( ! g_genericCache[SEORESULTS_CACHEID].init (
-				     maxMem     ,   // max cache mem
-				     -1          ,   // fixedDataSize
-				     false       ,   // support lists of recs?
-				     maxNodes2   ,   // max cache nodes 
-				     false       ,   // use half keys?
-				     "seoresults"   ,   // filename
-				     true)){ // save to disk?
-		log("db: ResultsCache: %s",mstrerror(g_errno)); 
-		return 1;
-	}
-	*/
-	/*
-	int32_t maxMem1 = g_conf.m_siteLinkInfoMaxCacheMem;
-	if ( ! g_genericCache[SITELINKINFO_CACHEID].init (
-				     maxMem1     ,   // max cache mem
-				     4           ,   // fixedDataSize
-				     false       ,   // support lists of recs?
-				     maxMem1/36  ,   // max cache nodes 
-				     false       ,   // use half keys?
-				     "sitelinkinfo" ,   // filename
-				     //g_conf.m_siteLinkInfoSaveCache ) ) {
-				     true)){
-		log("db: SiteLinkInfoCache: %s",mstrerror(g_errno)); 
-		return 1;
-	}
-	int32_t maxMem2a = g_conf.m_siteQualityMaxCacheMem;
-	if ( ! g_genericCache[SITEQUALITY_CACHEID].init (
-				     maxMem2a    ,   // max cache mem
-				     1           ,   // fixedDataSize
-				     false       ,   // support lists of recs?
-				     maxMem2a/36 ,   // max cache nodes 
-				     false       ,   // use half keys?
-				     "sitequality" ,   // filename
-				     //g_conf.m_siteQualitySaveCache ) ) {
-				     true)) {
-		log("db: SiteQualityCache: %s",mstrerror(g_errno)); 
-		return 1;
-	}
-	*/
-	/*
-	int32_t maxMem2b = g_conf.m_siteQualityMaxCacheMem * .10 ;
-	if ( ! g_genericCacheSmallLocal[SITEQUALITY_CACHEID].init (
-				     maxMem2b    ,   // max cache mem
-				     1           ,   // fixedDataSize
-				     false       ,   // support lists of recs?
-				     maxMem2b/36 ,   // max cache nodes 
-				     false       ,   // use half keys?
-				     "sitequality" ,   // filename
-				     //g_conf.m_siteQualitySaveCache ) ) {
-				     false)) {
-		log("db: SiteQualityCacheSmallLocal: %s",mstrerror(g_errno)); 
-		return 1;
-	}
-	*/
 
 	// init minsitenuminlinks buffer
 	if ( ! g_tagdb.loadMinSiteInlinksBuffer() ) {
@@ -8461,22 +8340,6 @@ bool summaryTest1   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
 		xml.set( content, contentLen, xd.m_version, 0, CT_HTML );
 
 		xd.getSummary();
-
-		//Summary s;
-		// bool status;
-		/*
-		status = s.set  ( &xml                      , 
-				  &q                        ,
-				  NULL                      , // termFreqs
-				  false                     , // doStemming? 
-				  summaryMaxLen             ,
-				  numSummaryLines           ,
-				  summaryMaxNumCharsPerLine ,
-				  bigSampleRadius           ,
-				  bigSampleMaxLen           ,
-				  ratInSummary              ,
-				  &tr                       );
-		*/
 	}
 
 	// print time it took
@@ -8505,8 +8368,6 @@ bool summaryTest2   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
 	int32_t numSummaryLines           = cr->m_summaryMaxNumLines;
 	int32_t summaryMaxNumCharsPerLine = cr->m_summaryMaxNumCharsPerLine;
 	// these are arbitrary (taken from Msg24.cpp)
-	int32_t bigSampleRadius           = 100;
-	int32_t bigSampleMaxLen           = 4000;
 	bool ratInSummary              = false;
 
 	Query q;
@@ -8595,8 +8456,6 @@ bool summaryTest2   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
 				  summaryMaxLen             ,
 				  numSummaryLines           ,
 				  summaryMaxNumCharsPerLine ,
-				  bigSampleRadius           ,
-				  bigSampleMaxLen           ,
 				  ratInSummary              ,
 				  &tr                       );
 		// time it

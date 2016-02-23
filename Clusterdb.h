@@ -36,8 +36,6 @@
 
 // these are now just TitleRec keys
 #define CLUSTER_REC_SIZE (sizeof(key_t))
-// this now includes the gigabit vector
-#define VECTOR_REC_SIZE (sizeof(key_t)+SAMPLE_VECTOR_SIZE+GIGABIT_VECTOR_SIZE)
 
 class Clusterdb {
 public:

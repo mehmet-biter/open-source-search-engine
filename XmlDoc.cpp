@@ -50,11 +50,6 @@ extern int g_inMemcpy;
 #define SENT_UNITS 30
 
 
-static int32_t getTopGigabits ( HashTableX   *ht          ,
-			     GigabitInfo **top         ,
-			     int32_t          max         ,
-			     int32_t          minDocCount ) ;
-
 static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 					  int64_t   wid1 ,
 					  int64_t   pid2 ,
@@ -62,18 +57,6 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 					  float      *ww   ,
 					  HashTableX *tt1  ,
 					  int32_t        titleRecVersion ) ;
-
-static bool addGigabit     ( HashTableX  *ht          ,
-			     char        *s           ,
-			     int32_t         slen        ,
-			     int64_t    docId       ,
-			     Section     *sp          ,
-			     bool         singleWord  ,
-			     uint8_t      langId      ,
-			     // starts with word #i
-			     int32_t         i           ,
-			     int32_t         ptsArg      = -1 ) ;
-
 
 static void getMetaListWrapper ( void *state ) ;
 
@@ -1341,10 +1324,8 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_isContentTruncatedValid     = true;
 	m_isLinkSpamValid             = true;
 	m_tagRecDataValid             = true;
-	m_gigabitHashesValid          = true;
 	m_contentHash32Valid          = true;
 	m_tagPairHash32Valid          = true;
-	m_wikiDocIdsValid             = true;
 	m_imageDataValid              = true;
 	m_utf8ContentValid            = true;
 	m_siteValid                   = true;
@@ -3279,21 +3260,12 @@ char *XmlDoc::prepareToMakeTitleRec ( ) {
 	if ( ! sni || sni == (int32_t *)-1 ) return (char *)sni;
 	char *ict = getIsContentTruncated();
 	if ( ! ict || ict == (char *)-1 ) return (char *)ict;
-	int64_t **wd = getWikiDocIds();
-	if ( ! wd || wd == (void *)-1 ) return (char *)wd;
 	char *at = getIsAdult();
 	if ( ! at || at == (void *)-1 ) return (char *)at;
 	char *ls = getIsLinkSpam();
 	if ( ! ls || ls == (void *)-1 ) return (char *)ls;
 	uint32_t *tph = getTagPairHash32();
 	if ( ! tph || tph == (uint32_t *)-1 ) return (char *)tph;
-
-	// sets the ptr_sectionsReply, that is all we need it to do
-	//char **sd = getSectionsReply ( ) ;
-	//if ( ! sd || sd == (void *)-1 ) return (char *)sd;
-	// sets the ptr_addressReply, that is all we need it to do
-	//char **ad = getAddressReply ( ) ;
-	//if ( ! ad || ad == (void *)-1 ) return (char *)ad;
 	uint8_t *rl = getRootLangId();
 	if ( ! rl || rl == (void *)-1 ) return (char *)rl;
 
@@ -3561,8 +3533,6 @@ SafeBuf *XmlDoc::getTitleRecBuf ( ) {
 	if ( ! m_firstUrlValid               ) { char *xx=NULL;*xx=0; }
 	if ( ! m_redirUrlValid               ) { char *xx=NULL;*xx=0; }
 	if ( ! m_tagRecValid                 ) { char *xx=NULL;*xx=0; }
-	if ( ! m_gigabitHashesValid          ) { char *xx=NULL;*xx=0; }
-	if ( ! m_wikiDocIdsValid             ) { char *xx=NULL;*xx=0; }
 	if ( ! m_imageDataValid              ) { char *xx=NULL;*xx=0; }
 	if ( ! m_recycleContent ) {
 		if ( ! m_rawUtf8ContentValid         ) { char *xx=NULL;*xx=0; }
@@ -4247,124 +4217,6 @@ int32_t getDirtyPoints ( char *s , int32_t slen , int32_t niceness , char *url )
 
 	return points;
 }
-
-void gotWikiResultsWrapper ( void *state , UdpSlot *slot ) {
-	XmlDoc *THIS = (XmlDoc *)state;
-	THIS->gotWikiResults ( slot );
-	THIS->m_masterLoop ( THIS->m_masterState );
-}
-
-// . get the wiki pages that this page matches
-// . use the docids of the wiki pages to represent them
-// . use an independent 32-node cluster to index all of wikipedia so it is all
-//   in ram. do not need datedb, etc.
-// . get the gigabits for this page, up to 50 of them, and use that as a rat=0
-//   query on the wiki cluster
-// . score each wiki docid too, based on match
-// . normalize scores so they range from 10% to 100%, based on # of gigabits
-//   that the wiki page matches
-// . index these as gbwiki:<wikipagedocid> with the score given (8-bit) mapped
-//   to 32 bits using score8to32() so the score itself is preserved
-// . WE CAN ALSO call this at QUERY TIME, using the actual query of the
-//   searcher instead of the string of gigabits
-// . BUT i will probably just look at the wiki topics of the search results,
-//   that will be faster and maybe more accurate...
-int64_t **XmlDoc::getWikiDocIds ( ) {
-
-	if ( m_wikiDocIdsValid ) return (int64_t **)&ptr_wikiDocIds;
-
-	setStatus ( "getting wiki docids" );
-
-	// . get our gigabit vector
-	// . consists of array of 32-bit hashes
-	// . followed by 1-1 array of 16-bit scores
-	// . TODO: restrict gigabits to capitalized words and phrases, and
-	//   also to 2+ word wiki titles
-	char *gq = getGigabitQuery ( );
-	if ( ! gq || gq == (char *)-1 ) return (int64_t **)gq;
-
-	// empty? then no wiki match i guess
-	//logf(LOG_DEBUG,"FIX ME FIX ME - getWikiDocIds");
-
-	// MDW: for now bail here too!
-	ptr_wikiDocIds  = m_wikiDocIds;
-	ptr_wikiScores  = m_wikiScores;
-	size_wikiDocIds = 0;
-	size_wikiScores = 0;
-	m_wikiDocIdsValid = true;
-	return (int64_t **)&ptr_wikiDocIds;
-}
-
-void XmlDoc::gotWikiResults ( UdpSlot *slot ) {
-
-	setStatus ( "got wiki docids" );
-
-	// do not free our request in slot
-	slot->m_sendBufAlloc = NULL;
-
-	// free request buf
-	mfree ( m_wikiqbuf , m_wikiqbufSize , "wikiqbuf" );
-
-	// error getting the wiki results?
-	if ( g_errno ) return;
-
-	// TODO: normalize all scores with each other some how. i think
-	// they are fairly absolute, but now sure with a lot of rat=0 terms!
-	logf(LOG_DEBUG,"wiki: fix my scoring stuff. have a min score... "
-	     " and somehow normalize scores to be in [0,1.0]");
-
-	// . force this reply to be NULL terminated
-	// . i can't fix in the code now because the reply is coming from
-	//   a different cluster running an older version of gb
-	char  *s   = slot->m_readBuf;
-	char  *end = s + slot->m_readBufSize - 1;
-	// overwrite the last '>', who cares!
-	*end = '\0';
-	// make our xml
-	Xml xml;
-	if ( !xml.set( s, end - s, TITLEREC_CURRENT_VERSION, m_niceness, CT_HTML ) ) {
-		// return if g_errno got set
-		return;
-	}
-
-	// grab docids
-	int32_t      nd    = 0;
-	int32_t      nn    = xml.getNumNodes();
-	XmlNode  *nodes = xml.getNodes();
-	float     score = 0.0;
-	int64_t docId = 0LL;
-	for ( int32_t i = 0 ; i + 1 < nn ; i++ ) {
-		if ( nodes[i].m_nodeId != TAG_XMLTAG ) continue;
-		// tagname is <docid>?
-		if ( nodes[i].m_tagNameLen == 5 &&
-		     nodes[i].m_tagName[0] == 'd' &&
-		     ! strncmp(nodes[i].m_tagName,"docId",5) )
-			docId = atoll ( nodes[i].m_tagName );
-		// is <score>? (after docid tag)
-		if ( nodes[i].m_tagNameLen == 8 &&
-		     nodes[i].m_tagName[0] == 'a' &&
-		     ! strncmp(nodes[i].m_tagName,"absScore",8) ) {
-			score = atof ( nodes[i].m_tagName );
-			// add it
-			m_wikiDocIds [ nd ] = docId;
-			m_wikiScores [ nd ] = score;
-			nd++;
-			// do not overflow
-			if ( nd >= MAX_WIKI_DOCIDS ) break;
-		}
-	}
-	// point to them
-	ptr_wikiDocIds  = m_wikiDocIds;
-	ptr_wikiScores  = m_wikiScores;
-	size_wikiDocIds = nd * 8;
-	size_wikiScores = nd * sizeof(rscore_t);
-
-	log ( LOG_DEBUG , "build: got %"INT32" wiki docids",nd);
-
-	m_wikiDocIdsValid = true;
-}
-
-
 
 // . sets g_errno on error and returns NULL
 // . now returns a ptr to it so we can return NULL to signify error, that way
@@ -6514,19 +6366,6 @@ float *XmlDoc::getTagSimilarity ( XmlDoc *xd2 ) {
 	return &m_tagSimilarity;
 }
 
-float *XmlDoc::getGigabitSimilarity ( XmlDoc *xd2 ) {
-	int32_t **gv1 = getGigabitHashes();
-	if ( ! gv1 || gv1 == (int32_t **)-1 ) return (float *)gv1;
-	int32_t **gv2 = xd2->getGigabitHashes();
-	if ( ! gv2 || gv2 == (int32_t **)-1 ) return (float *)gv2;
-	// *gv1 could be NULL if vec was empty in titlerec's ptr_gigabitHashes
-	m_gigabitSimilarity = computeSimilarity ( *gv1, *gv2, NULL, NULL, NULL,
-						  m_niceness );
-	// this means error, g_errno should be set
-	if ( m_gigabitSimilarity == -1.0 ) return NULL;
-	return &m_gigabitSimilarity;
-}
-
 float *XmlDoc::getPageSimilarity ( XmlDoc *xd2 ) {
 	int32_t *sv1 = getPageSampleVector();
 	if ( ! sv1 || sv1 == (int32_t *)-1 ) return (float *)sv1;
@@ -6571,7 +6410,6 @@ float *XmlDoc::getPercentChanged ( ) {
 // . vector components are 32-bit hashes of the words (hash32())???
 //   i would say they should be the lower 32 bits of the 64-bit hashes!
 // . replaces:
-//   g_clusterdb.getGigabitSimilarity()
 //   m_tagVec->getLinkBrotherProbability()
 //   g_clusterdb.getSampleSimilarity()
 float computeSimilarity ( int32_t   *vec0 ,
@@ -6781,12 +6619,7 @@ uint64_t *XmlDoc::getFuzzyDupHash ( ) {
 	uint32_t *h1 = getTagPairHash32();
 	if ( ! h1 || h1 == (uint32_t *)-1 ) return (uint64_t *)h1;
 
-	uint32_t *h2 = getGigabitVectorScorelessHash ( ) ;
-	if ( ! h2 || h2 == (uint32_t *)-1 ) return (uint64_t *)h2;
-
-	//uint64_t h2b = (uint64_t)*h2;
-
-	m_dupHash = hash64 ( (uint64_t)*h1 , (uint64_t)*h2 );
+	m_dupHash = *h1;
 	m_dupHashValid = true;
 	return &m_dupHash;
 }
@@ -7222,20 +7055,13 @@ char *XmlDoc::isDupOfUs ( int64_t d ) {
 
 	float *ts = getTagSimilarity     ( &dd );
 	if ( ! ts || ts == (float *)-1 ) return (char *)ts;
-	float *gs = getGigabitSimilarity ( &dd );
-	if ( ! gs || gs == (float *)-1 ) return (char *)gs;
 	float *ps = getPageSimilarity    ( &dd );
 	if ( ! ps || ps == (float *)-1 ) return (char *)ps;
 
-	int32_t gigabitVecSimilarity = (int32_t)*gs;
 	int32_t tagVecSimilarity     = (int32_t)*ts;
 	int32_t sampleVecSimilarity  = (int32_t)*ps;
 
 	int32_t notSimilarCount = 0;
-	if ( gigabitVecSimilarity < 80 ) {
-		notSimilarCount++;
-		if ( gigabitVecSimilarity < 50 ) return &m_isDup;
-	}
 	if ( tagVecSimilarity     < 80 ) {
 		notSimilarCount++;
 		if ( tagVecSimilarity     < 50 ) return &m_isDup;
@@ -7249,243 +7075,6 @@ char *XmlDoc::isDupOfUs ( int64_t d ) {
 
 	return &m_isDup;
 }
-
-// hash a gigabit hash vector without its scores, also order independent
-uint32_t *XmlDoc::getGigabitVectorScorelessHash ( ) {
-	if ( m_gigabitVectorHashValid ) return &m_gigabitVectorHash;
-	int32_t **gbvec = getGigabitHashes();
-	if ( ! gbvec || gbvec == (int32_t **)-1 ) return (uint32_t *)gbvec;
-	uint32_t h = 0;
-	// this bad boy is NULL terminated
-	uint32_t *gbv = (uint32_t *)*gbvec;
-	// i guess zak likes the simple XOR'ing thing...
-	for ( int32_t i = 0; gbv && gbv[i] ; i++) h ^= gbv[i];
-	m_gigabitVectorHashValid = true;
-	m_gigabitVectorHash      = h;
-	return &m_gigabitVectorHash;
-}
-
-// . the original vector used for deduping similar search results is just from
-//   random sample of indexed terms, but gigabit vector is
-//   formed using the hashes of the top-scoring gigabits of the document, and
-//   therefore uses the words class
-// . sets g_errno and returns NULL on error
-// . ptr_gigabitHashes can be NULL...
-int32_t **XmlDoc::getGigabitHashes ( ) {
-	// if it was already set, treat this as an accessor
-	if ( m_gigabitHashesValid ) return &ptr_gigabitHashes;
-	// this also sets the vector
-	char *gq = getGigabitQuery();
-	if ( ! gq || gq == (char *)-1) return (int32_t **)gq;
-	// it should be valid now!
-	if ( ! m_gigabitHashesValid ) { char *xx=NULL;*xx=0; }
-	return &ptr_gigabitHashes;
-}
-
-// . the new function to get gigabits
-// . sets and validates m_gigabitQuery[] and m_gigabitHashes[] among others
-// . candidates = capitalized word, capitalized sequence of words,
-//                uncapitalized 2+ word wikipedia phrase.
-// . candidates exclude uncapitalized query stop words.
-// . calls addGigabits() which is called by each doc in search results
-//   when we use this at query time.
-// . separates gigabits with a comma (delimeter) in m_gigabitQuery[]
-// . quotes multiple word gigabits
-char *XmlDoc::getGigabitQuery ( ) {
-
-	if ( m_gigabitQueryValid ) return m_gigabitQuery;
-
-	setStatus ( "getting gigabit query" );
-
-	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (char  *)xml;
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (char *)ww;
-	int64_t *d = getDocId();
-	if ( ! d || d == (int64_t *)-1 ) return (char *)d;
-	Sections *ss = getSections();
-	if ( ! ss || ss == (Sections *)-1 ) return (char *)ss;
-	//Weights *we = getWeights();
-	//if ( ! we || we == (Weights *)-1 ) return (char *)we;
-	LinkInfo   *info1 = getLinkInfo1();
-	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (char *)info1;
-	uint8_t *langId = getLangId();
-	if ( ! langId || langId == (uint8_t *)-1 ) return (char *) langId;
-
-	HashTableX ht;
-	char buf [ 200000 ];
-	// pass in niceness in case it has to grow really big and re-hash all!!
-	ht.set ( 8 , 4 , -1 , buf , 200000 , false, m_niceness,"xmlgbtbl");
-
-	// . add gigabits from our body words
-	// . includes title and header tags so pts can work well!
-	if ( ! addGigabits ( ww , *d , ss , *langId ) ) return NULL;
-
-	// add gigabits from link info
-	for ( Inlink *k=NULL ; info1 && (k=info1->getNextInlink(k)) ; ) {
-		// sanity check
-		char *txt = k->getLinkText();
-		int32_t tlen = k->size_linkText;
-		if ( tlen > 0 ) tlen--;
-		if ( ! verifyUtf8 ( txt , tlen ) ) {
-			log("xmldoc: bad link text 0 from url=%s for %s",
-			    k->getUrl(),m_firstUrl.m_url);
-			continue;
-		}
-		// add those in
-		if (!addGigabits(txt, *d, *langId ) ) return NULL;
-		// add  in neighborhoods
-		if(!addGigabits(k->getSurroundingText(),*d,*langId))
-			return NULL;
-	}
-
-	// add in gigabits for meta keywords
-	int32_t mdlen;
-	char *md = getMetaDescription( &mdlen );
-	if ( ! addGigabits2 ( md , mdlen, *d , *langId ) ) return NULL;
-
-	// add in gigabits for meta description
-	int32_t mklen;
-	char *mk = getMetaKeywords( &mklen );
-	if ( ! addGigabits2 ( mk , mklen , *d , *langId ) ) return NULL;
-
-	// set m_gigabitQuery and m_gigabitScores
-	//GigabitInfo *top[100];
-	// fill in "top" in order of score
-	m_numTop = getTopGigabits ( &ht , m_top , 100 , 0 );
-	// error? then g_errno should be set
-	if ( m_numTop == -1 ) return NULL;
-
-	char *p    = m_gigabitQuery;
-	char *pend = m_gigabitQuery + XD_GQ_MAX_SIZE - 1;
-	// reset count of vector components for setting gigabit vector
-	int32_t ng = 0;
-	// total score
-	//int32_t total = 0;
-	// . now set the gigabit query!
-	// . start with the highest scoring node first, the last node since
-	//   nodes are ranked by lowest to highest key
-	for ( int32_t i = 0 ; i < m_numTop ; i++ ) {
-		// get the info
-		GigabitInfo *gi = m_top[i];
-		// stop if too big
-		if ( p + gi->m_len + 10 >= pend ) continue;
-		// get 32 bit hash
-		uint32_t h = gi->m_hash & 0xffffffff;
-		// never allow 0
-		if ( h == 0 ) h = 1;
-		// add to vector
-		if ( ng + 1 < XD_MAX_GIGABIT_HASHES ) {
-			// the term hash
-			m_gigabitHashes[ng] = (int32_t)h ;
-			// and the score
-			m_gigabitScores[ng] = gi->m_pts;
-			// point into it, where we will copy it to
-			m_gigabitPtrs  [ng] = p + 1;
-			// advance
-			ng++;
-		}
-		// quote it
-		*p++ = '\"';
-		// write into buffer
-		gbmemcpy ( p , gi->m_ptr , gi->m_len );
-		// finish quote
-		*p++ = '\"';
-		// separate terms just in case
-		//gbmemcpy ( p , " , ", 4 );
-		//p += 4;
-		*p++ = ',';
-	}
-	// done
-	*p++ = '\0';
-	// NULL termiante the vector to make it a legit vector
-	m_gigabitHashes [ ng ] = 0;
-	m_gigabitScores [ ng ] = 0;
-
-	// include the terminating 0
-	ng++;
-	// validate both the query and vector
-	m_gigabitQueryValid  = true;
-	m_gigabitHashesValid = true;
-	// set this too
-	ptr_gigabitHashes   = m_gigabitHashes;
-	ptr_gigabitScores   = m_gigabitScores;
-	size_gigabitHashes  = ng * 4 ; // 4 bytes each component
-	size_gigabitScores  = ng * 4 ; // 4 bytes each score
-	return m_gigabitQuery;
-}
-
-
-// . fill in "top" in order of score
-// . returns -1 and sets g_errno on error
-int32_t getTopGigabits ( HashTableX   *ht          ,
-		      GigabitInfo **top         ,
-		      int32_t          max         ,
-		      int32_t          minDocCount ) {
-
-
-	// store top 100 into this tree
-	RdbTree tree;
-	if ( ! tree.set ( 4     , // fixedDataSize
-			  max+2 , // maxNumNodes
-			  true  , // balance?
-			  -1    , // maxMem
-			  true  , // own data?
-			  "tree-topgbits" ))
-		return -1;
-
-	int32_t  ns = ht->getNumSlots();
-	key_t minKey;
-	bool  minKeyValid = false;
-	for ( int32_t i = 0 ; i < ns ; i++ ) {
-		// skip if empty
-		if ( ht->isEmpty(i) ) continue;
-		// get his info
-		GigabitInfo *gi = (GigabitInfo *)ht->getValueFromSlot(i);
-		// must be valid
-		if ( gi->m_count <= 0 ) { char *xx=NULL;*xx=0; }
-		// must be in this many docs minimum
-		if ( gi->m_numDocs < minDocCount ) continue;
-		// make the key
-		key_t key;
-		key.n1 = gi->m_pts;
-		key.n0 = gi->m_hash;
-		// should we add it?
-		if ( minKeyValid && key <= minKey ) continue;
-		// we should add it. use points as the key. use PTR as data
-		int32_t node = tree.addNode(0,key,(char *)&gi,4);
-		// error? g_errno should be set
-		if ( node < 0 ) return -1;
-		// if not full continue
-		if ( tree.getNumUsedNodes() < 100 ) continue;
-		// get the smallest node
-		int32_t tn = tree.getLowestNode ( ) ;
-		// sanity check
-		if ( tn < 0 ) { char *xx=NULL;*xx=0; }
-		// kick out smallest
-		tree.deleteNode3 ( tn , false );
-		// get new smallest
-		tn = tree.getLowestNode();
-		// set the new minkey
-		minKey = *(key_t *)tree.getKey ( tn );
-		// validate it
-		minKeyValid = true;
-	}
-	int32_t count = 0;
-	// . now set the array
-	// . start with the highest scoring node first, the last node since
-	//   nodes are ranked by lowest to highest key
-	for ( int32_t nn=tree.getLastNode() ; nn>=0 ; nn=tree.getPrevNode(nn) ){
-		// get the info
-		GigabitInfo *gi = (GigabitInfo *)tree.getData(nn);
-		// store it
-		top[count++] = gi;
-		// stop if we are full
-		if ( count >= max ) break;
-	}
-	return count;
-}
-
 
 char *XmlDoc::getMetaDescription( int32_t *mdlen ) {
 	if ( m_metaDescValid ) {
@@ -7547,277 +7136,6 @@ char *XmlDoc::getMetaGeoPlacename( int32_t *mgplen ) {
 	*mgplen = m_metaGeoPlacenameLen;
 	m_metaGeoPlacenameValid = true;
 	return m_metaGeoPlacename;
-}
-
-
-
-bool XmlDoc::addGigabits ( char *s ,
-			   int64_t docId ,
-			   uint8_t langId ) {
-	Words tmp;
-	// skip if none
-	if ( ! s ) return true;
-
-	// returns NULL with g_errno set on error
-	if ( ! tmp.set ( s , true, m_niceness ) ) {
-		return false;
-	}
-
-	// and weights!
-	//Weights we;
-	//if ( ! we.set ( &tmp , )
-	// and so does this
-	return addGigabits ( &tmp , docId , NULL , langId );
-}
-
-bool XmlDoc::addGigabits2 ( char *s ,
-			    int32_t slen,
-			    int64_t docId ,
-			    uint8_t langId ) {
-	Words tmp;
-	// skip if none
-	if ( ! s ) return true;
-	// returns NULL with g_errno set on error
-	if ( ! tmp.set ( s , slen , true, m_niceness ) ) {
-		return false;
-	}
-
-	// and weights!
-	//Weights we;
-	//if ( ! we.set ( &tmp , )
-	// and so does this
-	return addGigabits ( &tmp , docId , NULL , langId );
-}
-
-bool XmlDoc::addGigabits(Words *ww,int64_t docId,Sections *sections,
-			 uint8_t langId ) {
-	// skip sections marked as these:
-	//int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_MARQUEE;
-	// get this
-	Section **sp = NULL;
-	if ( sections ) sp = sections->m_sectionPtrs;
-	// not if we don't have any identified sections
-	if ( sections && sections->m_numSections <= 0 ) sp = NULL;
-	// shortcuts
-	int64_t  *wids  = ww->m_wordIds;
-	char      **wptrs = ww->m_words;
-	int32_t       *wlens = ww->m_wordLens;
-	nodeid_t   *tids  = ww->m_tagIds;
-	int32_t        nw    = ww->getNumWords();
-	//int32_t        flags;
-	// inital # of slots
-	int32_t is = 0;
-	if ( m_wordsValid ) is = ww->m_numAlnumWords;
-	// put gigabits into this hash table
-	HashTableX ht;
-	if ( ! ht.set ( 8 , sizeof(GigabitInfo),is,NULL,0,false,m_niceness,
-			"gigabits") )
-		return false;
-	// scan through the words
-	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// breathe if being called by spider
-		QUICKPOLL ( m_niceness );
-		// skip if not alnum word
-		if ( ! wids[i] ) continue;
-		// get section
-		Section *sx = NULL;
-		// get flags
-		if ( sp ) sx = sp[i];//flags = sp[i]->m_flags;
-		//else      flags = 0;
-		// skip if ignored. i.e. in the menu or not in the article text
-		//if ( flags & badFlags ) continue;
-		// are we capitalized?
-		bool cap = ww->isCapitalized(i);
-		// ignore lower case query stop words
-		if (!cap&&isQueryStopWord(wptrs[i],wlens[i],wids[i],langId))
-			continue;
-		// hash of word then the phrase
-		//uint32_t h = wids[i] & 0xffffffff;
-		//uint64_t h = wids[i];
-		// add the word itself. return NULL with g_errno set on error
-		if ( ! addGigabit (&ht,wptrs[i],wlens[i],docId,
-				   sx,true,langId,i)) return false;
-		// save position
-		int32_t j = i + 1 ;
-		// check this far out
-		int32_t maxj = i + 12; if ( maxj > nw ) maxj = nw;
-		// do we got a cap phrase?
-		bool capPhrase = false;
-		// if capitalized look for sequence
-		for ( ; cap && j < maxj ; j++ ) {
-			// . stop on tags
-			// . tids is NULL if being set from meta tag...
-			if ( tids && tids[j] ) break;
-			// skip if not alnum
-			if ( ! wids[j] ) {
-				// make sure it is like a single space or
-				// something we can "phrase across"
-				// TODO: can be like "capt. "
-				if ( wlens[j] == 1 ) continue;
-				// otherwise it stops the phrase
-				break;
-			}
-			// if not capitalized stop
-			if ( ! ww->isCapitalized(j) ) break;
-			// got one!
-			capPhrase = true;
-			// . hash it into the ongoing hash
-			// . Speller::getPopularity() should use this same
-			//   method so we can get popularities of the gigabits!
-			//h = hash32Fast ( wids[j] & 0xffffffff , h );
-		}
-		// if we added something... skip whole phrase, if any
-		if ( capPhrase ) {
-			// get length of it
-			int32_t len = wptrs[j-1] + wlens[j-1] - wptrs[i];
-			// add that entire sequence, [i,j)
-			if ( ! addGigabit ( &ht,wptrs[i],len,docId,sx,
-					    false,langId,i)) return false;
-			// advance to end of phrase
-			i = j - 1;
-			continue;
-		}
-		// reset
-		j = i + 1;
-		// this must be true
-		// . ok, look for a wiki phrase then!
-		// . we can speed this up if too slow... using a crazy hash tbl
-		int32_t wikij = -1;
-		// init the hash for wiki lookup
-		uint32_t h = 0;
-		// loop over successive terms
-		for ( ; j < maxj ; j++ ) {
-			// . stop on tags
-			// . tids is NULL if being set from meta tag
-			if ( tids && tids[j] ) break;
-			// skip if not alnum
-			if ( ! wids[j] ) {
-				// make sure it is like a single space or
-				// something we can "phrase across"
-				// TODO: can be like "capt. "
-				if ( wlens[j] == 1 ) continue;
-				// otherwise it stops the phrase
-				break;
-			}
-			// init it
-			if ( ! h ) h = hash32Fast ( wids[i] & 0xffffffff , 0 );
-			// hash it into the ongoing hash
-			h = hash32Fast ( wids[j] & 0xffffffff , h );
-			// is this in the wiki?
-			if ( ! g_wiki.isInWiki ( h ) ) continue;
-			// it is, mark it
-			wikij = j + 1;
-		}
-
-		// must be a 2+ word phrase in the wiki to be a gigabit
-		if ( wikij == -1 ) continue;
-		// bail if breach
-		if ( wikij >= nw ) continue;
-		// get len
-		int32_t len = wptrs[wikij] + wlens[wikij] - wptrs[i];
-		// add what we got
-		if ( ! addGigabit ( &ht,wptrs[i],len,docId,sx,false,
-				    langId,i) ) return false;
-		// advance to end of phrase
-		i = wikij - 1;
-	}
-	return true;
-}
-
-
-// . "docId" is the document Id that "h" came from
-// . if being called at query time we often get called on each search result!
-// . if being called at parse/index time we are being called on a single docId
-// . returns false and sets g_errno on error
-bool addGigabit ( HashTableX *ht         ,
-		  char       *s          ,
-		  int32_t        slen       ,
-		  int64_t   docId      ,
-		  Section    *sp         ,
-		  bool        singleWord ,
-		  uint8_t     langId     ,
-		  // starts with word #i
-		  int32_t        i          ,
-		  int32_t        ptsArg     ) {
-	// get its hash
-	uint64_t h = hash64d ( s , slen );
-	// get the slot where its at
-	int32_t slot = ht->getSlot ( &h );
-	// info for this hash/gigabit in the doc
-	GigabitInfo *gi ;
-	// otherwise, init a new slot. set the key to h
-	if ( slot < 0 ) {
-		// . add key to a new slot, set "gi" to the value ptr
-		// . use NULL for the GigabitInfo ptr temporarily so it should
-		//   not gbmemcpy into the slot
-		if ( ! ht->addKey ( &h , NULL , &slot ) ) return false;
-		// get data ptr to the bogus data
-		gi = (GigabitInfo *)ht->getValueFromSlot ( slot );
-		// . set all the stuff now. this way avoids a gbmemcpy...
-		// . every wiki title should have a popularity i guess...
-		// . "pop" is # of docs out of 10,000 that have this phrase?
-		int32_t pop = g_speller.getPhrasePopularity(s,h,true,langId);
-		gi->m_pop             = pop;
-		gi->m_pts             = 0;
-		gi->m_count           = 0;
-		gi->m_numDocs         = 0;
-		gi->m_lastDocId       = 0LL;
-		gi->m_currentDocCount = 0; // a char
-		gi->m_ptr             = s;
-		gi->m_len             = slen;
-		gi->m_hash            = h;
-		// sanity test
-		GigabitInfo *tt = (GigabitInfo *)ht->getValue ( &h );
-		if ( tt->m_pop != pop ) { char *xx=NULL;*xx=0; }
-	}
-	else {
-		gi = (GigabitInfo *)ht->getValueFromSlot ( slot );
-		// only allow up to 5 votes per document!
-		if ( gi->m_currentDocCount >= 5 ) return true;
-	}
-	// inc the count, we got one more occurence
-	gi->m_count++;
-	// doc count. how many docs have this gigabit? count it.
-	if ( docId != gi->m_lastDocId ) {
-		gi->m_numDocs++;
-		gi->m_lastDocId       = docId;
-		gi->m_currentDocCount = 1;
-	}
-	else
-		gi->m_currentDocCount++;
-
-	// given?
-	if ( ptsArg != -1 ) {
-		gi->m_pts += ptsArg;
-		return true;
-	}
-
-	// base points on popularity
-	float pts = 1.0;
-	if      ( gi->m_pop <  1 ) pts = 1000;
-	else if ( gi->m_pop <  2 ) pts =  500;
-	else if ( gi->m_pop <  3 ) pts =  250;
-	else if ( gi->m_pop <  4 ) pts =  200;
-	else if ( gi->m_pop <  5 ) pts =  150;
-	else if ( gi->m_pop <  6 ) pts =  100;
-	else if ( gi->m_pop <  7 ) pts =   20;
-	else if ( gi->m_pop <  8 ) pts =   10;
-	else if ( gi->m_pop < 10 ) pts =    5;
-	else if ( gi->m_pop < 15 ) pts =    3;
-	else if ( gi->m_pop < 20 ) pts =    2;
-
-	// . special boost if in title, header or anchor tag
-	if ( sp ) {
-		if ( sp->m_flags & SEC_IN_TITLE  ) pts = pts * 6.0;
-		if ( sp->m_flags & SEC_IN_HEADER ) pts = pts * 4.0;
-		if ( sp->m_tagId == TAG_A        ) pts = pts * 4.0;
-	}
-
-	// add them in
-	gi->m_pts += (int32_t)pts;
-
-	// good to go
-	return true;
 }
 
 Url *XmlDoc::getCurrentUrl ( ) {
@@ -9722,15 +9040,6 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	// deal with it
 	return &m_siteNumInlinks;
 }
-
-// . do a 'site:xyz.com | gbnuminlinks' query to get the top docs
-//   from a site and get the gigabits from that query!
-// . then store the resulting gigabits into tagdb for efficiency
-// . recompute once per month or so ... or if ip changes i guess
-// . we need the root title as a source for city and adm1's for
-//   Addresses::set() function
-//char **XmlDoc::getSiteGigabits ( ) {
-//}
 
 // TODO: can we have a NULL LinkInfo without having had an error?
 LinkInfo *XmlDoc::getSiteLinkInfo() {
@@ -21514,30 +20823,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// breathe
 	QUICKPOLL ( m_niceness );
 
-	// . sample buffer for doing gigabit generation
-	// . Msg40.cpp calls intersectGigabits on all these samples from
-	//   all the Msg20Replies it gets in the search results
-	//if ( ! reply->ptr_gigabitQuery && m_req->m_bigSampleMaxLen > 0 ) {
-	if ( ! reply->ptr_gigabitSample && m_req->m_bigSampleMaxLen > 0 ) {
-		// before we got a chunk of text from teh doc
-		SafeBuf *gsbuf = getSampleForGigabits();
-		if ( ! gsbuf||gsbuf ==(void *)-1) return (Msg20Reply *)gsbuf;
-		reply->ptr_gigabitSample = gsbuf->getBufStart();
-		reply->size_gigabitSample = gsbuf->length();
-		// . now we use the gigabit query!
-		// . this is really used to find out what wikipedia pages
-		//   we match the best...
-		// . this also sets the vector
-		/*
-		char *gq = getGigabitQuery();
-		if ( ! gq || gq == (char *)-1) return (Msg20Reply *)gq;
-		reply-> ptr_gigabitQuery  = m_gigabitQuery;
-		reply->size_gigabitQuery  = gbstrlen(m_gigabitQuery)+1;
-		reply-> ptr_gigabitScores = ptr_gigabitScores;
-		reply->size_gigabitScores = size_gigabitScores;
-		*/
-	}
-
 	// get thumbnail image DATA
 	if ( ! reply->ptr_imgData && ! m_req->m_getLinkText ) {
 		reply-> ptr_imgData = ptr_imageData;
@@ -21565,16 +20850,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply-> ptr_content =  ptr_utf8Content;
 		reply->size_content = size_utf8Content;
 	}
-
-	// if ( m_req->m_getSectionVotingInfo && m_tmpBuf3.getCapacity() <=0) {
-	// 	Sections *ss = getSections();
-	// 	if ( ! ss || ss == (void *)-1) return (Msg20Reply *)ss;
-	// 	// will at least store a \0 in there, but will not count
-	// 	// as part of the m_tmpBuf.length()
-	//         ss->printVotingInfoInJSON ( &m_tmpBuf3 );
-	// 	reply-> ptr_sectionVotingInfo = m_tmpBuf3.getBufStart();
-	// 	reply->size_sectionVotingInfo = m_tmpBuf3.length() + 1;
-	// }
 
 	// breathe
 	QUICKPOLL ( m_niceness );
@@ -22525,322 +21800,6 @@ char *XmlDoc::getHighlightedSummary ( ) {
 
 	return m_finalSummaryBuf.getBufStart();
 }
-
-
-
-//
-// GET GIGABIT SAMPLE
-//
-//
-// This will get samples surrounding all the query terms for purposes
-// of gigabits generation. We don't just generate gigabits from the
-// WHOLE document because it takes much longer?? is that still true?
-// We assume that the first call to getTopLines() above set
-// matches/numMatches. We use those arrays to
-// skip directly to just the query terms in the document and save time.
-// We may have to reset the Scores array here if we want to use it ltr.
-//
-// aka getGigabitSample.  get gigabit sample
-//
-SafeBuf *XmlDoc::getSampleForGigabits ( ) {
-
-
-	if ( m_gsbufValid ) return &m_gsbuf;
-
-	// assume empty
-	//m_gsbuf = NULL;
-
-	// basically, exit now if no sample needed
-	if ( m_req->m_bigSampleMaxLen <= 0 ||
-	     m_req->m_bigSampleRadius <= 0 ) {
-		m_gsbufValid = true;
-		return &m_gsbuf;
-	}
-
-	uint8_t *ct = getContentType();
-	if ( ! ct || ct == (void *)-1 ) return (SafeBuf *)ct;
-
-
-	// if it is json then only return the json fields that are strings
-	// and json decode them... separate each field with a \0.
-	if ( *ct == CT_JSON )
-		return getSampleForGigabitsJSON();
-
-
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (SafeBuf *)ww;
-
-	// just send back the whole page, but separate each section
-	// with \0. make only sentences end with ? ! or ., headers
-	// not with anything, and no menu items
-	Sections *sections = getSections();
-	if ( ! sections ||sections==(Sections *)-1) return (SafeBuf *)sections;
-	Section *sp = sections->m_rootSection;
-	SafeBuf reply;
-	reply.setLabel("gbtrepbuf");
-	// m_contentLen is invalid, don't use that here use size_utf8Content
-	if ( ! reply.reserve ( size_utf8Content + 1000 ) ) return NULL;
-	// scan the sections of the document
-	for ( ; sp ; sp = sp->m_next ) {
-		QUICKPOLL(m_niceness);
-		// do not allow menu crap
-		if ( sp->m_flags & ( SEC_MENU          |
-				     SEC_MENU_SENTENCE |
-				     SEC_MENU_HEADER   ) )
-			continue;
-		// must be sentence or header
-		bool ok = false;
-		if ( sp->m_flags & SEC_SENTENCE ) ok = true;
-		// headings are ok, just don't use as sentences...
-		if ( sp->m_flags & SEC_HEADING  ) ok = true;
-		if ( ! ok ) continue;
-
-		// store without tags
-		char *p = ww->m_words[sp->m_a];
-		// include period after final word in section
-		int32_t b = sp->m_b - 1;
-		char *e = ww->m_words[b] + ww->m_wordLens[b];
-
-		// if 3+ commas and one comma for every 4 words, forget it,
-		// it is probably a list! well, process it, but make sure it
-		// does not end in a period so we do not display it
-		// as a fast fact, but we use it for gigabits.
-		bool isList = false;
-		int32_t commaCount = 0;
-		int32_t bracketCount = 0;
-		for ( char *z = p ; z < e ; z++ ) {
-			if ( *z == ',' ) commaCount++;
-			// fix ] [AllTheWeb] [Gigablast] [Google] [HotBot]...
-			if ( *z == '[' ) bracketCount++;
-		}
-		int32_t naw = (b - sp->m_a) / 2;
-
-		// just skip even for gigabits if too long. most likely
-		// a spammy list of nouns.
-		if ( naw >= 130 ) continue;
-
-		if ( commaCount >= 3 && commaCount *4 >= naw )
-			isList = true;
-		if ( commaCount >= 10 )
-			isList = true;
-		if ( bracketCount >= 3 )
-			isList = true;
-
-		// too much uppercase?
-		bool yelling = false;
-		int32_t upper = 0;
-		int32_t lower = 0;
-		char cs = 0;
-		for ( char *z = p ; z < e ; z += cs ) {
-			cs = getUtf8CharSize(z);
-			if ( ! is_alpha_utf8(z) ) continue;
-			if ( is_upper_utf8(z) ) upper++;
-			if ( is_lower_utf8(z) ) lower++;
-		}
-		if ( upper > lower ) yelling = true;
-
-
-
-		// ending ) or ]
-		if      ( e[0] == ')' ) e++;
-		else if ( e[0] == ']' ) e++;
-
-		// incorporate period etc.
-		if      ( e[0] == '.' ) e++;
-		else if ( e[0] == '!' ) e++;
-		else if ( e[0] == '?' ) e++;
-		else if ( e[0] == ';' ) e++;
-
-
-		// must end in a period, or .) or .]
-		bool endsInPeriod = false;
-		if ( e-2 >= p &&
-		     ( e[-1] =='.' ||
-		       e[-1] =='!' ||
-		       e[-1] =='?' ) )
-			endsInPeriod = true;
-		if ( (e[-1] == ')' ||
-		      e[-1] == ']' ) &&
-		     (e[-2] == '.' ||
-		      e[-2] == '?' ||
-		      e[-2] == '!' ) )
-			endsInPeriod = true;
-
-		//int32_t off = reply.length();
-
-		// filter out tags and \n's and \r's and store into "reply"
-		if ( ! reply.safePrintFilterTagsAndLines ( p , e-p ,false ) )
-			return NULL;
-
-		// if a sentence and does not end in period, toss one in
-		//if ( sp->m_flags & SEC_SENTENCE ) {
-		//	if ( e[-1] !='.' &&
-		//	     e[-1] !='!' &&
-		//	     e[-1] !='?' &&
-		//	     e[-1] !=']' &&
-		//	     e[-1] !=')' )
-		//		reply.pushChar('.');
-		//}
-
-		// too huge? if # of ALNUM words > 70 it's too big.
-		bool isHuge = false;
-		if ( naw > 70 ) isHuge = true;
-
-
-		// ending in a * indicates a printable sentence for fast facts
-		if ( (sp->m_flags & SEC_SENTENCE) &&
-		     ! isList &&
-		     ! isHuge &&
-		     ! yelling &&
-		     endsInPeriod )
-			reply.pushChar('*');
-
-		// delineate sentences/headers/sections with | now so
-		// we can still allow a word to be a gigabit even if it is
-		// not in a sentence with a query term
-		//reply.pushChar('\0');
-		reply.pushChar('|');
-		char *pc = reply.getBufStart() + reply.length() - 1;
-		*pc = '\0';
-
-		// debug
-		//char *x = reply.getBufStart() + off;
-		// turn off fast fact debug for now
-		//log("fastfact: fastfact: %s",x);
-		// revert back to |
-		*pc = '|';
-
-		// stop? this fixes the query 'lesbain vedeo porno' on
-		// my cluster taking 10 seconds to get gigabits for.
-		// bigsamplemaxlen is 1000 as of 12/4/2013.
-		if ( reply.length() >= m_req->m_bigSampleMaxLen )
-			break;
-	}
-	// a final \0
-	reply.pushChar('\0');
-	// move it over to m_gsbuf now
-	m_gsbuf.stealBuf ( &reply );
-	// we are valid
-	m_gsbufValid = true;
-	// success
-	return &m_gsbuf;
-}
-
-// if it is json then only return the json fields that are strings
-// and json decode them... separate each field with a \0.
-SafeBuf *XmlDoc::getSampleForGigabitsJSON ( ) {
-
-	SafeBuf tmp;
-
-	// use new json parser
-	Json *jp = getParsedJson();
-	if ( ! jp || jp == (void *)-1 ) return (SafeBuf *)jp;
-	JsonItem *ji = jp->getFirstItem();
-	for ( ; ji ; ji = ji->m_next ) {
-		QUICKPOLL(m_niceness);
-		// skip if not string
-		if ( ji->m_type != JT_STRING )
-			continue;
-		// store field value
-		char *val = ji->getValue();
-		int valLen = ji->getValueLen();
-		// if it contains html then skip it as a gigabit candidate.
-		// otherwise our fast facts end up including html tags in them
-		// in computeFastFacts() in Msg40.cpp
-		int i;
-		for ( i = 0 ; i < valLen ; i++ )
-			if ( val[i] == '<' ) break;
-		if ( i < valLen ) continue;
-
-		if ( ! tmp.pushChar('\n') )
-			return NULL;
-		// if ( ! tmp.safePrintf("<p>"))
-		// 	return NULL;
-
-
-		// decode the json
-		//SafeBuf xx;
-		if ( ! tmp.safeDecodeJSONToUtf8(val,valLen,m_niceness))
-			return NULL;
-
-		// escape out the html
-		// if ( ! tmp.htmlEncode ( xx.getBufStart() ))
-		// 	return NULL;
-
-		// two new lines
-		if ( ! tmp.safePrintf("<hr>"))
-			return NULL;
-		if ( ! tmp.pushChar('\n') )
-			return NULL;
-		if ( ! tmp.pushChar('\n') )
-			return NULL;
-		if ( ! tmp.pushChar('\n') )
-			return NULL;
-	}
-
-	if ( ! tmp.nullTerm() )
-		return NULL;
-
-	Xml xml;
-	if ( !xml.set( tmp.getBufStart(), tmp.length(), m_version, m_niceness, CT_HTML ) ) {
-		 return NULL;
-	}
-
-	Words ww;
-	if ( ! ww.set ( &xml , true  , m_niceness ) ) return NULL;
-	Bits bb;
-	if ( ! bb.set ( &ww ,0 ,m_niceness ) ) return NULL;
-
-	// this uses the sectionsReply to see which sections are
-	// "text", etc. rather than compute it expensively
-	Sections sec;
-	if ( !sec.set( &ww, &bb, getFirstUrl(), 0, "", m_niceness, CT_JSON ) ) {
-		return NULL;
-	}
-
-
-	// now add each sentence section into the buffer
-	// scan the sentences if we got those
-	char **wptrs = ww.getWords();
-	int32_t  *wlens = ww.getWordLens();
-	Section *ss = sec.m_firstSent;
-	for ( ; ss ; ss = ss->m_nextSent ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// count of the alnum words in sentence
-		int32_t count = ss->m_alnumPosB - ss->m_alnumPosA;
-		// start with one word!
-		count--;
-		// how can it be less than one alnum word
-		if ( count < 0 ) continue;
-		// store it
-		char *wp1 = wptrs[ss->m_senta];
-		char *wp2 = wptrs[ss->m_sentb-1] + wlens[ss->m_sentb-1];
-
-		bool gotTerm = (wp2[0]=='.' || wp2[0]=='?' || wp2[0]=='!' ) ;
-
-		//if ( ! gotTerm ) continue;
-
-		if ( ! m_gsbuf.safeMemcpy ( wp1 , wp2 - wp1 ) )
-			return NULL;
-
-		// puncty?
-		if ( gotTerm && ! m_gsbuf.pushChar(wp2[0]))
-			return NULL;
-
-		// to indicate end of header or sentence, in order to
-		// qualify as a fast fact, we must add a '*'. see
-		// PageResults.cpp, search for ''*''
-		if ( gotTerm && ! m_gsbuf.pushChar('*') )
-			return NULL;
-		if ( ! m_gsbuf.pushChar('\0') )
-			return NULL;
-	}
-	m_gsbufValid = true;
-	return &m_gsbuf;
-}
-
-
 
 // <meta name=robots value=noarchive>
 // <meta name=<configured botname> value=noarchive>
@@ -23795,37 +22754,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 		  m_useTimeAxis,
 		  "");
 
-
-	// print the new, unstored, gigabit vector
-	if ( size_gigabitHashes ) {
-		// get gigabit vector
-		int32_t *vec = ptr_gigabitHashes;
-		// point to scores
-		int32_t *ss  = ptr_gigabitScores;
-		int32_t count = 0;
-		int32_t total = 0;
-		sb->safePrintf ( "<tr><td>stored gigabit vector</td><td>");
-		while ( *vec ) {
-			sb->safePrintf ( "%08"XINT32" ", *vec );
-			sb->safePrintf ( "(%05"INT32") ", *ss );
-			vec++;
-			ss++;
-			count++;
-			total++;
-			//if ( total >= GIGABITS_IN_VECTOR ) break;
-			if ( count < 4 ) continue;
-			count = 0;
-			sb->safePrintf ( "<br>\n");
-		}
-		sb->safePrintf ( "</tr>\n");
-	}
-
 	if ( info1 ) {
-		//sb->safePrintf("<tr><td>page pop</td><td>%"INT32"</td></tr>\n",
-		//	       info1->m_pagePop );
-		//sb->safePrintf("<tr><td>whole site pop</td>"
-		//	       "<td>%"INT32"</td></tr>\n",
-		//	       spop );
 		sb->safePrintf("<tr><td>num GOOD links to whole site</td>"
 			       "<td>%"INT32"</td></tr>\n",
 			       sni );
@@ -23843,43 +22772,10 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	Sections *sections = getSections();
 	if ( ! sections ||sections==(Sections *)-1) {char*xx=NULL;*xx=0;}
 
-	// these are nice
-	//HashTableX *pt = dp->getPhoneTable();
-	//HashTableX *et = dp->getEmailTable();
-	//HashTableX *at = aa->getPlaceTable();
-	//HashTableX *tt = dp->getTODTable();
-	//HashTableX *rt = ev->getRegistrationTable();
-	//HashTableX *priceTable = dp->getPriceTable();
-
-	//sections->print ( sb , pt , et , NULL , at , tt , priceTable );
-
-	// try the new print function
-	//sections->print2 ( sb , NULL, NULL , NULL , false );
-
 	printRainbowSections ( sb , NULL );
-
-	//nsvt->print ( sb , "NEW Sections Voting Table" );
-	//osvt->print ( sb , "OLD Sections Voting Table" );
-
-
-	//
-	// PRINT LINKINFO
-	//
-
-	//if ( info1 )
-	//	info1->print ( sb , cr->m_coll );
-
-	//if ( info2 ) {
-	//	sb->safePrintf ( "<tr><td><b>IMPORTED LINK INFO:"
-	//			 "</b></td></tr>" );
-	//	info2->print ( sb , cr->m_coll );
-	//}
-
 
 	// cut it short for debugging
 	logf(LOG_DEBUG,"xmldoc: FIX ME remove return");
-
-	//return true;
 
 	//
 	// PRINT LINKINFO
@@ -23898,169 +22794,13 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	sb->safeMemcpy ( p , plen );
 
 
-	//
-	// BEGIN PRINT GIGABITS
-	//
-
-	// print out for PageParser.cpp
-	const char *help =
-		"The <i>Gigabits</i> are words extracted from the document "
-		"that are deemed to best represent it. The <i>Pop</i> column "
-		"is the popularity of the word and it ranges from 0 to 1000 "
-		"and is how many documents out of a sample of 1000 that "
-		"contained that word. The <i>Score</i> of each Gigabit is "
-		"based on the popularity and how many times the word appeared "
-		"in the document. Higher scores are deemed more "
-		"representative of the document. The hashes of these Gigabits "
-		"are stored with the cached copy of the document as numeric "
-		"hashes for purposes of topic clustering. You can see these "
-		"hashes by clicking on the <i>[info]</i> link next to "
-		"any search result.<br><br>";
-
-	if ( m_numTop > 0 )
-		sb->safePrintf(  "<table width=100%%>"
-				 "<td bgcolor=pink>\n"
-				 "%s"
-				 "<table>"
-				 "<tr><td>#</td><td>"
-				 "<b>%"INT32" Gigabits</b></td><td><b>Score</b>"
-				 "</td>"
-				 "<td><b>Pop</b></td>"
-				 "<td><b>Hash</b></td>"
-				 "</tr>\n",
-				 help,m_numTop);
-
-	// . print out the top gigabits we harvested
-	// . start with the highest scoring node first, the last node since
-	//   nodes are ranked by lowest to highest key
-	int32_t total = 0;
-	for ( int32_t i = 0 ; i < m_numTop ; i++ ) {
-		// get the info
-		GigabitInfo *gi = m_top[i];
-		// print row
-		sb->safePrintf("<tr><td>%"INT32"</td><td>",i);
-		// print gigabit
-		sb->safeMemcpy(gi->m_ptr , gi->m_len );
-		// get 32 bit hash
-		uint32_t h = gi->m_hash & 0xffffffff;
-		// never allow 0
-		if ( h == 0 ) h = 1;
-		// if unicode, pop's hi bit is set
-		sb->safePrintf(  "</td>"
-				 "<td>%"INT32"</td>"
-				 "<td>%"INT32"</td>"
-				 "<td>%08"XINT32"</td>"
-				 "</tr>\n",
-				 (int32_t)gi->m_pts,
-				 (int32_t)gi->m_pop,
-				 (int32_t)h );
-		// add up all scores
-		total += gi->m_pts;
-	}
-
-	// close table
-	if ( m_numTop > 0 ) {
-		sb->safePrintf("<tr><td></td><td></td><td>"
-				   "<b>%"INT32"</b></td></tr>\n",total);
-		sb->safePrintf("</table>\n");
-	}
-
-
-	//
-	// END PRINT GIGABITS
-	//
-
-
 	// note this
 	sb->safePrintf("<h2>NEW Meta List</h2>");
 
 	printMetaList ( m_metaList , m_metaList + m_metaListSize , sb );
 
-
 	// all done if no term table to print out
 	if ( ! m_wts ) return true;
-
-
-	// print out the rules in Weights.cpp
-	/*
-	sb->safePrintf ("<br>"
-			"<table border=1 cellpadding=0>"
-
-			"<tr><td>Rule #3</td>"
-			"<td>First 40 words in ()'s.</td></tr>\n"
-
-			"<tr><td>Rule #4</td>"
-			"<td>Adjacent to bad punct.</td></tr>\n"
-
-			"<tr><td>Rule #5</td>"
-			"<td>In a link.</td></tr>\n"
-
-			"<tr><td>Rule #6</td>"
-			"<td>First occurence in a section. Actual weight "
-			"depends on section word count.</td></tr>\n"
-
-			"<tr><td>Rule #7</td>"
-			"<td>In a header tag. h1 is most weight.</td></tr>\n"
-
-			"<tr><td>Rule #8</td>"
-			"<td>In a \"ul\" list.</td></tr>\n"
-
-			"<tr><td>Rule #9</td>"
-			"<td>Repeated occurence in the same fragment or "
-			"sentence.</td></tr>\n"
-
-			"<tr><td>Rule #10</td>"
-			"<td>In a comma-separated list.</td></tr>\n"
-
-			"<tr><td>Rule #11</td>"
-			"<td>Promoted isolated capitalized words, demote "
-			"if it is in a capitalized phrase.</td></tr>\n"
-
-			"<tr><td>Rule #13</td>"
-			"<td>First occurence in document.</td></tr>\n"
-
-			"<tr><td>Rule #15</td>"
-			"<td>Word to phrase ratio weight.</td></tr>\n"
-
-			"<tr><td>Rule #16</td>"
-			"<td>At the beginning of a fragment or sentence."
-			"</td></tr>\n"
-
-			"<tr><td>Rule #17</td>"
-			"<td>If immediately after a quote, iff not "
-			"promoted by Rule #18.</td></tr>\n"
-
-			"<tr><td>Rule #18</td>"
-			"<td>Promote phrase if capitalized. Demote phrase "
-			"if mixed case without hypehn.</td></tr>\n"
-
-			"<tr><td>Rule #22</td>"
-			"<td>Demote phrases containing bad punct.</td></tr>\n"
-
-			"<tr><td>Rule #23</td>"
-			"<td>In script, style, select or marquee tag. "
-			"</td></tr>\n"
-
-			"<tr><td>Rule #23</td>"
-			"<td>Follows a number.</td></tr>\n"
-
-			"<tr><td>Rule #25</td>"
-			"<td>Demote non-hyphenated phrases that would split "
-			"adjacent hyphenated phrases.</td></tr>\n"
-
-			"<tr><td>Rule #26</td>"
-			"<td>Demote if in a repeated fragment.</td></tr>\n"
-
-			"<tr><td>Rule #27</td>"
-			"<td>Demote if in a menu section.</td></tr>\n"
-
-			"<tr><td>Rule #28</td>"
-			"<td>Pattern spam detector.</td></tr>\n"
-
-			"</table>\n"
-			"<br>"
-			);
-	*/
 
 
 	//
@@ -24100,24 +22840,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 	// sort them alphabetically by Term
 	gbsort ( tp , nt , sizeof(TermDebugInfo *), cmptp , m_niceness );
-
-	// determine how many non 1.0 weight fields we got in the vectors
-	/*
-	int32_t count [ MAX_RULES ];
-	memset ( count , 0 , MAX_RULES * 4 );
-	for ( int32_t i = 0 ; i < nt ; i++ ) {
-		TermDebugInfo *ti = tp[i];
-		for ( int32_t j = 0 ; j < MAX_RULES ; j++ )
-			if ( ti->m_rv[j] != 1.0 ) count[j]++;
-	}
-	// count the counts
-	char fbuf[9024];
-	char *fp = fbuf;
-	for ( int32_t j = 0 ; j < MAX_RULES ; j++ ) {
-		if ( ! count[j] ) continue;
-		fp += sprintf(fp ,"<td><b>R#%"INT32"</b></td>",j);
-	}
-	*/
 
 	// print them out in a table
 	char hdr[1000];

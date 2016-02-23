@@ -1664,7 +1664,6 @@ bool Sections::addSentenceSections ( ) {
 		bool capped = true;
 		int32_t upper = 0;
 		int32_t numAlnums = 0;
-		int32_t verbCount = 0;
 		// scan for sentence end
 		int32_t j; for ( j = i ; j < m_nw ; j++ ) {
 			// skip words
@@ -1687,11 +1686,6 @@ bool Sections::addSentenceSections ( ) {
 				if ( is_digit(m_wptrs[j][0]) ) continue;
 				if ( !is_upper_utf8(m_wptrs[j])) capped=false;
 				else                           upper++;
-				// is it a verb?
-				if ( isVerb( &m_wids[j] ) )
-					verbCount++;
-				//if ( bb[i] & D_IS_IN_DATE_2 ) inDate = true;
-				// it is in the sentence
 				continue;
 			}
 			// tag?
