@@ -238,10 +238,6 @@ public:
 	int32_t  m_a;//wordStart;
 	int32_t  m_b;//wordEnd;
 
-	// . # alnum words only in this and only this section
-	// . if we have none, we are SEC_NOTEXT
-	int32_t  m_exclusive;
-
 	// our depth. # of tags in the hash
 	int32_t  m_depth;
 

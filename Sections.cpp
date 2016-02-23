@@ -257,25 +257,11 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
-		// we got it
-		//m_sectionPtrs[i] = current;
+
 		nodeid_t fullTid = tids[i];
+
 		// are we a non-tag?
 		if ( ! fullTid ) { 
-			// skip if not alnum word
-			if ( ! wids[i] ) continue;
-			// must be in a section at this point
-			if ( ! current ) { char *xx=NULL;*xx=0; }
-			// . hash it up for our content hash
-			// . this only hashes words DIRECTLY in a 
-			//   section because we can have a large menu
-			//   section with a little bit of text, and we
-			// contain some non-menu sections.
-			//ch = hash32h ( (int32_t)wids[i] , ch );
-			// if not in an anchor, script, etc. tag
-			//if ( ! inFlag ) current->m_plain++;
-			// inc count in current section
-			current->m_exclusive++;
 			continue;
 		}
 
@@ -299,8 +285,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 			sn->m_parent = current;
 			// need to keep a word range that the section covers
 			sn->m_a = i;
-			// init the flags of the section
-			//sn->m_flags = inFlag ;
 			// section consists of just this tag
 			sn->m_b = i + 1;
 			// go on to next
@@ -385,17 +369,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		if ( wptrs[i][wlens[i]-2] == '/' && tid == TAG_XMLTAG )
 			continue;
 
-		// ignore it cuz we decided it was unbalanced
-		//if ( bits->m_bits[i] & D_UNBAL ) continue;
-
-		// and these often don't have back tags, like <objectid .> WTF!
-		// no! we need these for the xml-based rss feeds
-		// TODO: we should parse the whole doc up front and determine
-		// which tags are missing back tags...
-		//if ( tid == TAG_XMLTAG ) continue;
-
-		// wtf, embed has no back tags. i fixed this in XmlNode.cpp
-		//if ( tid == TAG_EMBED ) continue;
 		// do not breach the stack
 		if ( stackPtr - stack >= MAXTAGSTACK ) {
 			log("html: stack breach for %s",url->getUrl());
@@ -588,14 +561,11 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 			// get parent section
 			if ( stackPtr > stack ) {
 				// get parent section now
-				//xn = *(secNumPtr-1);
 				xn = (stackPtr-1)->m_secNum;
 				// set current to that
 				current = &m_sections[xn];
 			}
 			else {
-				//current = NULL;
-				//char *xx=NULL;*xx=0; 
 				// i guess this is bad html!
 				current = rootSection;
 			}
@@ -825,8 +795,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		}
 		// must be there to be open ended
 		if ( ! tid1 ) { char *xx=NULL;*xx=0; }
-		// flag it for later
-		//si->m_flags |= SEC_CONSTRAINED;
 		// NOW, see if within that parent there is actually another
 		// tag after us of our same tag type, then use that to
 		// constrain us instead!!
@@ -1025,25 +993,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 					skipTillSpace = true;
 					continue;
 				}
-				// and skip height=* tags so cabq.gov which
-				// uses varying <td> height attributes will
-				// have its google map links have the same
-				// tag hash so TSF_PAGE_REPEAT gets set
-				// in Events.cpp and they are not event titles.
-				// it has other chaotic nested tag issues
-				// so let's take this out.
-				/*
-				if ( is_wspace_a(p[0])      &&
-				     to_lower_a (p[1])=='h' &&
-				     to_lower_a (p[2])=='e' &&
-				     to_lower_a (p[3])=='i' &&
-				     to_lower_a (p[4])=='g' &&
-				     to_lower_a (p[5])=='h' &&
-				     to_lower_a (p[6])=='t' ) {
-					skipTillSpace = true;
-					continue;
-				}
-				*/
 
 				// if not a space continue
 				if ( skipTillSpace ) {
@@ -2482,7 +2431,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	}
 	// now we assign the parent to you
 	sk->m_parent    = parent;
-	sk->m_exclusive = parent->m_exclusive;
 	// sometimes an implied section is a subsection of a sentence!
 	// like when there are a lot of brbr (double br) tags in it...
 	sk->m_sentenceSection = parent->m_sentenceSection;
@@ -3781,7 +3729,6 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 		"<td><b>contentHash</b></td>"
 		"<td><b>contentTagHash</b></td>"
 		"<td><b>XOR</b></td>" // only valid for contentHashes
-		"<td><b>alnum words</b></td>" // contained in section
 		"<td><b>depth</b></td>"
 		"<td><b>parent word range</b></td>"
 		"<td><b>flags</b></td>"
@@ -3825,7 +3772,6 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 				 "<td>0x%"XINT32"</td>"
 				 "<td>%s</td>"
 				 "<td>%"INT32"</td>"
-				 "<td>%"INT32"</td>"
 				 "<td><nobr>%"INT32" to %"INT32"</nobr></td>"
 				 "<td><nobr>" ,
 				 scount++,
@@ -3836,7 +3782,6 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 				 (int32_t)sn->m_contentHash64,
 				 (int32_t)(sn->m_contentHash64^sn->m_tagHash),
 				 xs,
-				 sn->m_exclusive,
 				 sn->m_depth,
 				 pswn,
 				 pewn);
