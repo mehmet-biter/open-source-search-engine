@@ -10,6 +10,7 @@
 #include "Proxy.h"
 #include "PageCrawlBot.h"
 #include "Parms.h"
+#include "PageRoot.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -2591,9 +2592,6 @@ TcpSocket *HttpServer::unzipReply(TcpSocket* s) {
 	return s;
 }
 
-
-bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
-			   bool printGigablast );
 
 bool sendPagePretty ( TcpSocket *s , 
 		      HttpRequest *r , 

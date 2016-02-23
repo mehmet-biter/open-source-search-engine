@@ -36,6 +36,7 @@
 #include "matches2.h"
 #include "Doledb.h"
 #include "IPAddressChecks.h"
+#include "PageRoot.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -24913,9 +24914,6 @@ static void printDocForProCogWrapper ( void *state ) {
 	else                     THIS->m_callback2 ( THIS->m_state );
 }
 
-// in PageRoot.cpp
-bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
-			   bool printGigablast );
 
 // . returns false if blocked, true otherwise
 // . sets g_errno and returns true on error

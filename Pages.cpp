@@ -8,6 +8,7 @@
 #include "PageParser.h" // g_inPageParser
 #include "Rebalance.h"
 #include "Profiler.h"
+#include "PageRoot.h"
 
 // a global class extern'd in Pages.h
 Pages g_pages;
@@ -1518,8 +1519,6 @@ bool sendPageReportSpam ( TcpSocket *s , HttpRequest *r ) {
 	return 	retval;
 }
 
-bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
-			   bool printGigablast ) ;
 
 // let's use a separate section for each "page"
 // then have 3 tables, the input parms,

@@ -8,9 +8,8 @@
 #include "SpiderLoop.h"
 #include "PageResults.h" // for RESULT_HEIGHT
 #include "Stats.h"
+#include "PageRoot.h"
 
-bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
-			   bool printGigablast ) ;
 
 // 5 seconds
 #define DEFAULT_WIDGET_RELOAD 1000
