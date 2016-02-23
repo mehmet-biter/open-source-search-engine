@@ -16,7 +16,10 @@ def verify_file(gb_api, httpserver, filename, custom_filename, content_type, exp
     # add url
     assert gb_api.add_url(file_url) == True
 
-    result = gb_api.search('url:' + file_url)
+    payload = {}
+    payload.update({'showerrors': '1'})
+
+    result = gb_api.search('url:' + file_url, payload)
     assert len(result['results']) == 1
 
     assert result['results'][0]['contentType'] == expected_content_type
