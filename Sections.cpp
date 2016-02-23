@@ -2866,28 +2866,6 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 		sbuf->safePrintf("openended " );
 }
 
-char *getSectionTypeAsStr ( int32_t sectionType ) {
-	//if ( sectionType == SV_TEXTY             ) return "texty";
-	if ( sectionType == SV_CLOCK             ) return "clock";
-	if ( sectionType == SV_EURDATEFMT        ) return "eurdatefmt";
-	if ( sectionType == SV_EVENT             ) return "event";
-	if ( sectionType == SV_ADDRESS           ) return "address";
-	if ( sectionType == SV_TAGPAIRHASH       ) return "tagpairhash";
-	if ( sectionType == SV_TAGCONTENTHASH    ) return "tagcontenthash";
-	if ( sectionType == SV_TURKTAGHASH       ) return "turktaghash";
-	//if ( sectionType == SV_DUP               ) return "dup";
-	//if ( sectionType == SV_NOT_DUP           ) return "notdup";
-	//if ( sectionType == SV_TEXTY_MAX_SAMPLED ) return "textymaxsmpl";
-	//if ( sectionType == SV_WAITINLINE        ) return "waitinline";
-	if ( sectionType == SV_FUTURE_DATE       ) return "futuredate";
-	if ( sectionType == SV_CURRENT_DATE      ) return "currentdate";
-	if ( sectionType == SV_PAST_DATE         ) return "pastdate";
-	if ( sectionType == SV_SITE_VOTER        ) return "sitevoter";
-	// sanity check
-	char *xx=NULL;*xx=0;
-	return "unknown";
-}
-
 bool Sections::isHardSection ( Section *sn ) {
 	int32_t a = sn->m_a;
 	// . treat this as hard... kinda like a div section...

@@ -442,9 +442,6 @@ class Sections {
 	class Section *m_lastSent;
 };
 
-// convert sectionType to a string
-char *getSectionTypeAsStr ( int32_t sectionType );
-
 // only allow this many urls per site to add sectiondb info
 #define MAX_SITE_VOTERS 32
 
@@ -465,36 +462,5 @@ public:
 	//   are the only vote types that actually really use this...
 	float m_numSampled;
 };
-
-//
-// BEGIN SECTION TYPES
-//
-
-// . these are the core section types
-// . these are not to be confused with the section bit flags below
-// . we put these into sectiondb in the form of a SectionVote
-// . the SectionVote is the data portion of the rdb record, and the key
-//   of the rdb record contains the url site hash and the section m_tagHash
-// . in this way, a page can vote on what type of section a tag hash describes
-#define SV_CLOCK          2 // DateParse2.cpp. section contains a clock
-#define SV_EURDATEFMT     3 // DateParse2.cpp. contains european date fmt
-#define SV_EVENT          4 // used in Events.cpp to indicate event container
-#define SV_ADDRESS        5 // used in Events.cpp to indicate address container
-
-// . HACK: the "date" is not the enum tag hash, but is the tagPairHash for this
-// . every doc has just one of these describing the entire layout of the page
-// . basically looking for these is same as doing a gbtaghash: query
-#define SV_TAGPAIRHASH   20 
-// . HACK: the "date" is not the enum tag hash, but is the contentHash!
-// . this allows us to detect a duplicate section even though the layout
-//   of the web page is not quite the same, but is from the same site
-#define SV_TAGCONTENTHASH   21 
-
-// now Dates.cpp sets these too
-#define SV_FUTURE_DATE   24
-#define SV_PAST_DATE     25
-#define SV_CURRENT_DATE  26
-#define SV_SITE_VOTER    29
-#define SV_TURKTAGHASH   30
 
 #endif
