@@ -1760,7 +1760,7 @@ int64_t Hostdb::getNumGlobalEvents ( ) {
 	return n / m_numHostsPerShard;
 }
 
-bool Hostdb::setNote ( int32_t hostId, char *note, int32_t noteLen ) {
+bool Hostdb::setNote ( int32_t hostId, const char *note, int32_t noteLen ) {
 	// replace the note on the host
 	if ( noteLen > 125 ) noteLen = 125;
 	Host *h = getHost ( hostId );
@@ -1773,7 +1773,7 @@ bool Hostdb::setNote ( int32_t hostId, char *note, int32_t noteLen ) {
 	return saveHostsConf();
 }
 
-bool Hostdb::setSpareNote ( int32_t spareId, char *note, int32_t noteLen ) {
+bool Hostdb::setSpareNote ( int32_t spareId, const char *note, int32_t noteLen ) {
 	// replace the note on the host
 	if ( noteLen > 125 ) noteLen = 125;
 	Host *h = getSpare ( spareId );
