@@ -103,7 +103,7 @@ public:
 #else
 	bool  safePrintf(const char *formatString, ...);
 #endif
-	bool  safeMemcpy(const void *s, int32_t len){return safeMemcpy(s,len);}
+	bool  safeMemcpy(const void *s, int32_t len){return safeMemcpy((const char*)s,len);}
 	bool  safeMemcpy(const char *s, int32_t len);
 	bool  safeMemcpy_nospaces(const char *s, int32_t len);
 	bool  safeMemcpy(SafeBuf *c){return safeMemcpy(c->m_buf,c->m_length);}
