@@ -4,7 +4,7 @@
 #define _POS_H_
 
 #include <stdint.h>
-#include <Titledb.h>
+#include "Titledb.h"
 
 // this class is used to measure the number of characters between two "words"
 // (as defined in the Words.cpp class) in units of "characters". A utf8
