@@ -120,7 +120,7 @@
 #define SENT_LAST_STOP       0x00000800
 #define SENT_NUMBER_START    0x00001000
 #define SENT_TAG_INDICATOR   0x00002000
-#define SENT_PRETTY          0x00004000
+//#define SENT_UNUSED        0x00004000
 #define SENT_IN_HEADER       0x00008000
 #define SENT_MIXED_CASE_STRICT 0x00010000
 #define SENT_IN_LIST         0x00020000
@@ -640,7 +640,7 @@ class Sections {
 							 int32_t senta ,
 							 int32_t sentb ,
 							 int32_t alnumCount) ;
-	void setSentPrettyFlag ( class Section *si ) ;
+
 	int32_t       m_hiPos;
 	bool       m_sentFlagsAreSet;
 	bool       m_addedImpliedSections;

@@ -4759,20 +4759,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 			si->m_sentFlags |= SENT_BADEVENTSTART;
 	}
 
-	///////////////////
-	//
-	// set SENT_PRETTY
-	//
-	///////////////////
-
-	for ( Section *si = ss->m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// only works on sentences for now
-		if ( ! ( si->m_flags & SEC_SENTENCE ) ) continue;
-		setSentPrettyFlag ( si );
-	}
-
 	return true;
 }
 
@@ -6405,104 +6391,6 @@ int32_t hasTitleWords ( sentflags_t sflags ,
 	return 0;
 }
 
-void Sections::setSentPrettyFlag ( Section *si ) {
-	// shortcut
-	sentflags_t sflags = si->m_sentFlags;
-
-	// shortcut
-	wbit_t *bits = m_bits->m_bits;
-
-	static int64_t h_click;
-	static int64_t h_here;
-	static int64_t h_link;
-	static int64_t h_the;
-	static bool s_init = false;
-	if ( ! s_init ) {
-		s_init = true;
-		h_click = hash64n("click");
-		h_here  = hash64n("here");
-		h_the   = hash64n("the");
-		h_link  = hash64n("link");
-	}
-
-	if ( ! m_alnumPosValid ) { char *xx=NULL;*xx=0; }
-
-	// assume not pretty
-	bool pretty = false;
-	// . we want to record votes on pretty sentences regardless
-	// . the idea is is that if a turk vote changes the event
-	//   title then more sentences may be included as part of the
-	//   event description without every having been voted on!
-	bool periodEnds = (sflags & SENT_PERIOD_ENDS);
-	// if enough mixed case words, allow it through anyway
-	int32_t numAlnums = si->m_alnumPosB - si->m_alnumPosA + 1;
-	if ( (sflags & SENT_MIXED_CASE) && numAlnums >= 6 &&
-	     // watch out for urls like get?q=gbeventhash668419539....
-	     !(sflags & SENT_HASNOSPACE) )
-		periodEnds = true;
-	// or if it has commas
-	bool hasComma = false;
-	for ( int32_t i = si->m_senta ; i < si->m_sentb ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// skip if not word
-		if ( ! m_tids[i] ) continue;
-		if (   m_wids[i] ) continue;
-		if ( ! m_words->hasChar(i,',') ) continue;
-		hasComma = true;
-		break;
-	}
-	if ( hasComma && numAlnums >= 3 ) periodEnds = true;
-	// if no period ends, nuke
-	if ( periodEnds ) pretty = true;
-	// BUT if its all generic words it is not pretty!
-	int32_t lastWidPos = -1;
-	// assume all generic words
-	bool allGeneric = true;
-	// is all generic words?
-	for ( int32_t i = si->m_senta ; i < si->m_sentb ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// skip if not word
-		if ( ! m_wids[i] ) continue;
-		// ignore if it has "click here"
-		if ( m_wids[i] == h_here && 
-		     lastWidPos >= 0 &&
-		     m_wids[lastWidPos] == h_click )
-			break;
-		// ignore if has "[click|follow] the link"
-		if ( m_wids[i] == h_link && 
-		     lastWidPos >= 0 &&
-		     m_wids[lastWidPos] == h_the )
-			break;
-		// save it
-		lastWidPos = i;
-		// skip if generic like
-		if ( bits[i] & (D_CRUFTY|
-				  D_IS_NUM|
-				  D_IS_HEX_NUM|
-				  D_IN_PARENS|
-				  D_IS_IN_DATE) )
-			continue;
-		// otherwise, not generic
-		allGeneric = false;
-		break;
-	}
-	// if all generic, not pretty
-	if ( allGeneric ) pretty = false;
-	// powered by is not pretty
-	if ( sflags & SENT_POWERED_BY ) pretty = false;
-	// all in link is not pretty
-	if ( bits[si->m_senta] & D_IN_LINK ) pretty = false;
-	// starts with "click" is bad "Click the map to drag around..."
-	// or "Click the link to see more..."
-	if ( m_wids[si->m_a] == h_click ) pretty = false;
-	// set it
-	if ( ! pretty ) return;
-	// we are pretty
-	si->m_sentFlags |= SENT_PRETTY;
-}
-
 #define METHOD_MONTH_PURE   0 // like "<h3>July</h3>"
 #define METHOD_TAGID        1
 #define METHOD_DOM          2
@@ -7162,7 +7050,7 @@ char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_HASTITLEWORDS ) return "hastitlewords";
 	if ( sf == SENT_BADEVENTSTART ) return "badeventstart";
 	if ( sf == SENT_MENU_SENTENCE ) return "menusentence";
-	if ( sf == SENT_PRETTY ) return "pretty";
+
 	char *xx=NULL;*xx=0;
 	return NULL;
 }
