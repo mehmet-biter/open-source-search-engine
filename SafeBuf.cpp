@@ -7,7 +7,7 @@
 #include "Words.h"
 #include "Sections.h"
 
-SafeBuf::SafeBuf(int32_t initSize, char *label ) {
+SafeBuf::SafeBuf(int32_t initSize, const char *label ) {
 	if(initSize <= 0) initSize = 1;
 	m_capacity = initSize;
 	m_length = 0;
@@ -36,11 +36,11 @@ SafeBuf::SafeBuf() {
 	m_label = NULL;
 }
 
-void SafeBuf::setLabel ( char *label ) {
+void SafeBuf::setLabel ( const char *label ) {
 	m_label = label;
 }
 
-SafeBuf::SafeBuf(char* stackBuf, int32_t cap, char* label) {
+SafeBuf::SafeBuf(char* stackBuf, int32_t cap, const char* label) {
 	m_usingStack = true;
 	m_capacity = cap;
 	m_buf = stackBuf;
@@ -133,7 +133,7 @@ bool SafeBuf::safeMemcpy(const char *s, int32_t len) {
 	return true;
 }
 
-bool SafeBuf::safeMemcpy_nospaces(char *s, int32_t len) {
+bool SafeBuf::safeMemcpy_nospaces(const char *s, int32_t len) {
 	// put a silent \0 at the end
 	int32_t tmp = len + m_length+1;
 	if(tmp >= m_capacity ) {
@@ -158,7 +158,7 @@ bool SafeBuf::safeMemcpy ( Words *w , int32_t a , int32_t b ) {
 	return safeMemcpy ( p , pend - p );
 }
 
-char* SafeBuf::pushStr  (char* str, uint32_t len) {
+char* SafeBuf::pushStr  (const char* str, uint32_t len) {
 	int32_t initLen = m_length;
 	bool status = safeMemcpy ( str , len );
 	status &= nullTerm();
@@ -273,7 +273,7 @@ bool SafeBuf::cat(SafeBuf& c) {
 	return safeMemcpy(c.getBufStart(), c.length());
 }
 
-bool SafeBuf::reserve(int32_t i , char *label, bool clearIt ) {
+bool SafeBuf::reserve(int32_t i , const char *label, bool clearIt ) {
 
 	// if we don't already have a label and they provided one, use it
 	if ( ! m_label ) {
@@ -333,7 +333,7 @@ bool SafeBuf::reserve(int32_t i , char *label, bool clearIt ) {
 
 //reserve this many bytes, if we need to alloc, we double the 
 //buffer size.
-bool SafeBuf::reserve2x(int32_t i, char *label) {
+bool SafeBuf::reserve2x(int32_t i, const char *label) {
 	//watch out for overflow!
 	if((m_capacity << 1) + i < m_capacity) return false;
 	if(i + m_length >= m_capacity)
@@ -433,7 +433,7 @@ int32_t SafeBuf::safeSave (char *filename ) {
 }
 
 
-int32_t SafeBuf::fillFromFile(char *dir,char *filename,char *label) {
+int32_t SafeBuf::fillFromFile(const char *dir, const char *filename, const char *label) {
 	m_label = label;
 	char buf[1024];
 	if ( dir ) snprintf(buf,1024,"%s/%s",dir,filename);
@@ -451,7 +451,7 @@ char *SafeBuf::getNextLine ( char *p ) {
 }
 
 // returns -1 on error
-int32_t SafeBuf::catFile(char *filename) {
+int32_t SafeBuf::catFile(const char *filename) {
 	SafeBuf sb2;
 	if ( sb2.fillFromFile(filename) < 0 ) return -1;
 	// add 1 for a null
@@ -462,7 +462,7 @@ int32_t SafeBuf::catFile(char *filename) {
 
 
 // returns -1 on error
-int32_t SafeBuf::fillFromFile(char *filename) {
+int32_t SafeBuf::fillFromFile(const char *filename) {
 	struct stat results;
 	if (stat(filename, &results) != 0) {
 		// An error occurred
@@ -1135,7 +1135,7 @@ bool SafeBuf::addTag ( Tag *tag ) {
 }
 
 // this puts a \0 at the end but does not update m_length for the \0 
-bool  SafeBuf::safeStrcpy ( char *s ) {
+bool  SafeBuf::safeStrcpy ( const char *s ) {
 	if ( ! s ) return true;
 	int32_t slen = gbstrlen(s);
 	if ( ! reserve ( slen+1 ) ) return false;
@@ -1565,7 +1565,7 @@ void SafeBuf::replaceChar ( char src , char dst ) {
 
 
 // encode a double quote char to two double quote chars
-bool SafeBuf::csvEncode ( char *s , int32_t len , int32_t niceness ) {
+bool SafeBuf::csvEncode ( const char *s , int32_t len , int32_t niceness ) {
 
 	if ( ! s ) return true;
 
@@ -1578,7 +1578,7 @@ bool SafeBuf::csvEncode ( char *s , int32_t len , int32_t niceness ) {
 	//char *dstEnd = m_buf + m_capacity;
 
 	// scan through all 
-	char *send = s + len;
+	const char *send = s + len;
 	for ( ; s < send ; s++ ) {
 		// breathe
 		QUICKPOLL ( niceness );
@@ -1603,9 +1603,9 @@ bool SafeBuf::csvEncode ( char *s , int32_t len , int32_t niceness ) {
 	return true;
 }
 
-bool SafeBuf::base64Encode ( char *sx , int32_t len , int32_t niceness ) {
+bool SafeBuf::base64Encode ( const char *sx , int32_t len , int32_t niceness ) {
 
-	unsigned char *s = (unsigned char *)sx;
+	const unsigned char *s = (const unsigned char *)sx;
 
 	if ( ! s ) return true;
 
@@ -1630,7 +1630,7 @@ bool SafeBuf::base64Encode ( char *sx , int32_t len , int32_t niceness ) {
 
 	unsigned char val;
 	// scan through all 
-	unsigned char *send = s + len;
+	const unsigned char *send = s + len;
 	for ( ; s < send ; ) {
 		// breathe
 		QUICKPOLL ( niceness );
@@ -1696,7 +1696,7 @@ bool SafeBuf::base64Encode( char *s ) {
 	return base64Encode(s,gbstrlen(s)); 
 }
 
-bool SafeBuf::base64Decode ( char *src , int32_t srcLen , int32_t niceness ) {
+bool SafeBuf::base64Decode ( const char *src , int32_t srcLen , int32_t niceness ) {
 
 	// make the map
 	static unsigned char s_bmap[256];

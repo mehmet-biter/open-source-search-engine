@@ -17,17 +17,17 @@ class SafeBuf {
 public:
 	//*TRUCTORS
 	SafeBuf();
-	SafeBuf(int32_t initSize, char *label);
+	SafeBuf(int32_t initSize, const char *label);
 
 	void constructor();
 
 	//be careful with passing in a stackBuf! it could go out
 	//of scope independently of the safebuf.
-	SafeBuf(char* stackBuf, int32_t cap, char* label = NULL);
+	SafeBuf(char* stackBuf, int32_t cap, const char* label = NULL);
 	SafeBuf(char *heapBuf, int32_t bufMax, int32_t bytesInUse, bool ownData);
 	~SafeBuf();
 
-	void setLabel ( char *label );
+	void setLabel ( const char *label );
 	
 	// CAUTION: BE CAREFUL WHEN USING THE FOLLOWING TWO FUNCTIONS!!
 	// setBuf() allows you reset the contents of the SafeBuf to either
@@ -68,11 +68,11 @@ public:
 	// saves to tmp file and if that succeeds then renames to orig filename
 	int32_t safeSave (char *filename );
 
-	int32_t  fillFromFile(char *filename);
-	int32_t  fillFromFile(char *dir,char *filename, char *label=NULL);
-	int32_t  load(char *dir,char *fname,char *label = NULL) { 
+	int32_t  fillFromFile(const char *filename);
+	int32_t  fillFromFile(const char *dir, const char *filename, const char *label=NULL);
+	int32_t  load(const char *dir, const char *fname, const char *label = NULL) { 
 		return fillFromFile(dir,fname,label);};
-	int32_t  load(char *fname) { return fillFromFile(fname);};
+	int32_t  load(const char *fname) { return fillFromFile(fname);};
 
 	bool safeTruncateEllipsis ( char *src , int32_t maxLen );
 	bool safeTruncateEllipsis ( char *src , int32_t srcLen, int32_t maxLen );
@@ -103,21 +103,21 @@ public:
 #else
 	bool  safePrintf(const char *formatString, ...);
 #endif
-	bool  safeMemcpy(void *s, int32_t len){return safeMemcpy((char *)s,len);}
+	bool  safeMemcpy(const void *s, int32_t len){return safeMemcpy(s,len);}
 	bool  safeMemcpy(const char *s, int32_t len);
-	bool  safeMemcpy_nospaces(char *s, int32_t len);
+	bool  safeMemcpy_nospaces(const char *s, int32_t len);
 	bool  safeMemcpy(SafeBuf *c){return safeMemcpy(c->m_buf,c->m_length);}
 	bool  safeMemcpy ( class Words *w , int32_t a , int32_t b ) ;
-	bool  safeStrcpy ( char *s ) ;
+	bool  safeStrcpy ( const char *s ) ;
 	//bool  safeStrcpyPrettyJSON ( char *decodedJson ) ;
 	bool  safeUtf8ToJSON ( const char *utf8 ) ;
 	bool jsonEncode ( const char *utf8 ) { return safeUtf8ToJSON(utf8); }
 	bool jsonEncode ( char *utf8 , int32_t utf8Len );
 
-	bool  csvEncode ( char *s , int32_t len , int32_t niceness = 0 );
+	bool  csvEncode ( const char *s , int32_t len , int32_t niceness = 0 );
 
-	bool  base64Encode ( char *s , int32_t len , int32_t niceness = 0 );
-	bool  base64Decode ( char *src , int32_t srcLen , int32_t niceness = 0 ) ;
+	bool  base64Encode ( const char *s , int32_t len , int32_t niceness = 0 );
+	bool  base64Decode ( const char *src , int32_t srcLen , int32_t niceness = 0 ) ;
 
 	bool base64Encode( char *s ) ;
 
@@ -132,8 +132,8 @@ public:
 
 	// . if clearIt is true we init the new buffer space to zeroes
 	// . used by Collectiondb.cpp
-	bool  reserve(int32_t i, char *label=NULL , bool clearIt = false );
-	bool  reserve2x(int32_t i, char *label = NULL );
+	bool  reserve(int32_t i, const char *label=NULL , bool clearIt = false );
+	bool  reserve2x(int32_t i, const char *label = NULL );
 
 	char *makeSpace ( int32_t size ) {
 		if ( ! reserve ( size ) ) return NULL;
@@ -147,7 +147,7 @@ public:
 	};
 	void  setLength(int32_t i) { m_length = i; }
 	char *getNextLine ( char *p ) ;
-	int32_t  catFile(char *filename) ;
+	int32_t  catFile(const char *filename) ;
 
 	void  detachBuf();
 	bool  insert ( class SafeBuf *c , int32_t insertPos ) ;
@@ -266,7 +266,7 @@ public:
 	// hack off trailing 0's
 	bool printFloatPretty ( float f ) ;
 
-	char* pushStr  (char* str, uint32_t len);
+	char* pushStr  (const char* str, uint32_t len);
 	bool  pushPtr  ( void *ptr );
 	bool  pushLong (int32_t i);
 	bool  pushLongLong (int64_t i);
@@ -307,7 +307,7 @@ public:
 protected:
 	char *m_buf;
 public:
-	char *m_label;
+	const char *m_label;
 	bool  m_usingStack;
 	int16_t m_encoding; // output charset
 
