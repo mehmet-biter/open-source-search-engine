@@ -2928,7 +2928,6 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 			     i == RDB_TFNDB ||
 			     i == RDB_CLUSTERDB ||
 			     i == RDB_DATEDB ||
-			     //i == RDB_FAKEDB ||
 			     i == RDB_LINKDB )
 				ds = 0;
 			else if ( i == RDB_TITLEDB ||
@@ -2960,15 +2959,12 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 				  i == RDB2_SPIDERDB2 ||
 				  i == RDB2_PLACEDB2 )
 				ds = -1;
-			else { char *xx=NULL;*xx=0; }
-			// get the rdb for this rdbId
-			//Rdb *rdb = getRdbFromId ( i );
-			// sanity check
-			//if ( ! rdb ) continue;//{ char *xx=NULL;*xx=0; }
-			// sanity!
-			//if ( rdb->m_ks == 0 ) { char *xx=NULL;*xx=0; }
+			else {
+				continue;
+			}
+
 			// set the table
-			s_table2[i] = ds;//rdb->m_fixedDataSize;
+			s_table2[i] = ds;
 		}
 	}
 	return s_table2[rdbId];
