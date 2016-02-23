@@ -8473,13 +8473,11 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	// computeWordIds from xml
 	words.set ( &xml , true , true ) ;
 	bits.set ( &words ,TITLEREC_CURRENT_VERSION, 0);
-	Phrases phrases;
-	phrases.set ( &words,&bits,true,true,TITLEREC_CURRENT_VERSION,0);
 	t = gettimeofdayInMilliseconds_force();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		//if ( ! words.set ( &xml , true , true ) )
 		// do not supply xd so it will be set from scratch
-		if ( !sections.set( &words, &phrases, &bits, NULL, 0, NULL, 0, 0 ) )
+		if ( !sections.set( &words, &bits, NULL, 0, NULL, 0, 0 ) )
 			return log("build: speedtestxml: sections set: %s",
 				   mstrerror(g_errno));
 
@@ -8493,6 +8491,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	
 
 	//Phrases phrases;
+	Phrases phrases;
 	t = gettimeofdayInMilliseconds_force();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		if ( ! phrases.set ( &words ,

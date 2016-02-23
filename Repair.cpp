@@ -2104,7 +2104,6 @@ bool Repair::injectTitleRec ( ) {
 	xd->m_useSpiderdb  = m_rebuildSpiderdb;
 	xd->m_useTitledb   = m_rebuildTitledb;
 	//xd->m_usePlacedb   = m_rebuildPlacedb;
-	//xd->m_useSectiondb = m_rebuildSectiondb;
 	//xd->m_useRevdb     = m_rebuildRevdb;
 	xd->m_useSecondaryRdbs = addToSecondaryRdbs;
 

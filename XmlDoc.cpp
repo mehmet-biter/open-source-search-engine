@@ -384,7 +384,6 @@ void XmlDoc::reset ( ) {
 	m_phrases.reset();
 	m_bits.reset();
 	m_sections.reset();
-	//m_weights.reset();
 	m_countTable.reset();
 
 	// other crap
@@ -392,10 +391,7 @@ void XmlDoc::reset ( ) {
 	m_links.reset();
 	m_bits2.reset();
 	m_pos.reset();
-	//m_synonyms.reset();
 	m_synBuf.reset();
-	//m_nsvt.reset();
-	//m_osvt.reset();
 	m_turkVotingTable.reset();
 	m_turkBitsTable.reset();
 	m_vtr.reset();
@@ -406,17 +402,10 @@ void XmlDoc::reset ( ) {
 	m_mime.reset();
 	m_tagRec.reset();
 	m_newTagBuf.reset();
-	//m_clockCandidatesTable.reset();
-	//m_cctbuf.reset();
 	m_dupList.reset();
-	//m_oldMetaList.reset();
 	m_msg8a.reset();
-	//m_siteLinkInfo.reset();
-	//m_msg25.reset();
-	//m_msgc.reset();
 	m_msg13.reset();
 	m_msg0b.reset();
-	//m_siteGetter.reset();
 	m_msge0.reset();
 	m_msge1.reset();
 	m_reply.reset();
@@ -429,9 +418,6 @@ void XmlDoc::reset ( ) {
 	m_esbuf.reset();
 	m_xbuf.reset();
 	m_tagRecBuf.reset();
-
-	//m_titleRec           = NULL;
-	//m_titleRecSize       = 0;
 
 	// origin of this XmlDoc
 	m_setFromTitleRec    = false;
@@ -463,11 +449,6 @@ void XmlDoc::reset ( ) {
 	m_listFlushed              = false;
 	m_updatedCounts            = false;
 	m_updatedCounts2           = false;
-	//m_updatedTagdb1            = false;
-	//m_updatedTagdb2            = false;
-	//m_updatedTagdb3            = false;
-	//m_updatedTagdb4            = false;
-	//m_updatedTagdb5            = false;
 	m_copied1                  = false;
 	m_updatingSiteLinkInfoTags = false;
 	m_addressSetCalled         = false;
@@ -478,18 +459,12 @@ void XmlDoc::reset ( ) {
 
 	m_numRedirects             = 0;
 	m_numOutlinksAdded         = 0;
-	// . use sameDomain and sameIp waits?
-	// . these may be bypassed in getContactDoc()
-	//m_throttleDownload       = true;
 	m_spamCheckDisabled        = false;
 	m_useRobotsTxt             = true;
 	m_redirectFlag             = false;
 
 	m_allowSimplifiedRedirs    = false;
 
-	//m_calledMsg22a             = false;
-	//m_calledMsg22b             = false;
-	//m_calledMsg22c             = false;
 	m_didDelay                 = false;
 	m_didDelayUnregister       = false;
 	m_calledMsg22d             = 0LL;
@@ -511,24 +486,16 @@ void XmlDoc::reset ( ) {
 	m_numSectiondbNeeds        = 0;
 	m_sectiondbRecall          = 0;
 
-	//m_triedVoteCache           = false;
-	//m_storedVoteCache          = false;
-
 	m_setTr                    = false;
-	//m_checkedRobots            = false;
 	m_triedTagRec              = false;
 	m_didGatewayPage           = false;
 	m_didQuickDupCheck         = false;
 	m_calledMsg8b              = false;
 
 	m_recycleContent           = false;
-	//m_loadFromOldTitleRec    = false;
 	m_callback1                = NULL;
 	m_callback2                = NULL;
 	m_state                    = NULL;
-
-
-	//m_checkForRedir            = true;
 
 	m_processedLang            = false;
 
@@ -550,20 +517,13 @@ void XmlDoc::reset ( ) {
 
 	// Repair.cpp now explicitly sets these to false if needs to
 	m_usePosdb     = true;
-	//m_useDatedb    = true;
 	m_useClusterdb = true;
 	m_useLinkdb    = true;
 	m_useSpiderdb  = true;
 	m_useTitledb   = true;
 	m_useTagdb     = true;
 	m_usePlacedb   = true;
-	//m_useTimedb    = true;
-	// only use for custom crawls for now to save disk space
-	m_useSectiondb = false;
-	//m_useRevdb     = true;
 	m_useSecondaryRdbs = false;
-
-	//m_useIpsTxtFile = true;
 
 	// used by Msg13.cpp only. kinda a hack.
 	m_isSpiderProxy = false;
@@ -593,29 +553,11 @@ void XmlDoc::reset ( ) {
 char *XmlDoc::getTestDir ( ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;
+
 	// return NULL if we are not the "qatest123" collection
 	if ( strcmp(cr->m_coll,"qatest123") ) return NULL;
-	// if Test.cpp explicitly set SpiderRequest::m_useTestSpiderDir bit
-	// then return "test-spider" otherwise...
-	//if ( m_sreqValid && m_sreq.m_useTestSpiderDir )
-	//	return "qa";//"test-spider";
-	// ... default to "test-parser"
-	//return "test-parser";
+
 	return "qa";
-	/*
-	if ( getIsPageParser() )
-		return "test-page-parser";
-	//if ( m_sreqValid && m_sreq.m_isInjecting )
-	//	return "test-page-inject";
-	else if ( g_conf.m_testParserEnabled )
-		return "test-parser";
-	else if ( g_conf.m_testSpiderEnabled )
-		return "test-spider";
-	// default to being from PageInject
-	return "test-page-inject";
-	*/
-	//else { char *xx=NULL;*xx=0; }
-	//return NULL;
 }
 
 int32_t XmlDoc::getSpideredTime ( ) {
@@ -4934,23 +4876,25 @@ Pos *XmlDoc::getPos ( ) {
 
 Phrases *XmlDoc::getPhrases ( ) {
 	// return it if it is set
-	if ( m_phrasesValid ) return &m_phrases;
+	if ( m_phrasesValid ) {
+		return &m_phrases;
+	}
+
 	// this will set it if necessary
 	Words *words = getWords();
 	// returns NULL on error, -1 if blocked
 	if ( ! words || words == (Words *)-1 ) return (Phrases *)words;
+
 	// get this
 	Bits *bits = getBits();
 	// bail on error
 	if ( ! bits ) return NULL;
+
 	// now set what we need
-	if ( ! m_phrases.set ( words    ,
-			       bits     ,
-			       true     , // use stop words
-			       false    , // use stems
-			       m_version ,
-			       m_niceness ) )
+	if ( !m_phrases.set( words, bits, true, false, m_version, m_niceness ) ) {
 		return NULL;
+	}
+
 	// we got it
 	m_phrasesValid = true;
 	return &m_phrases;
@@ -4970,6 +4914,7 @@ Sections *XmlDoc::getExplicitSections ( ) {
 	//}
 
 	setStatus ( "getting explicit sections" );
+
 	// use the old title rec to make sure we parse consistently!
 	XmlDoc **pod = getOldXmlDoc ( );
 	if ( ! pod || pod == (XmlDoc **)-1 ) return (Sections *)pod;
@@ -4977,21 +4922,22 @@ Sections *XmlDoc::getExplicitSections ( ) {
 	Words *words = getWords();
 	// returns NULL on error, -1 if blocked
 	if ( ! words || words == (Words *)-1 ) return (Sections *)words;
-	// need these too now
-	Phrases *phrases = getPhrases();
-	if ( ! phrases || phrases == (void *)-1 ) return (Sections *)phrases;
+
 	// get this
 	Bits *bits = getBits();
 	// bail on error
 	if ( ! bits ) return NULL;
+
 	// the site hash
 	int64_t *sh64 = getSiteHash64();
 	// sanity check
 	if ( ! sh64 && ! g_errno ) { char *xx=NULL; *xx=0; }
 	if ( ! sh64 || sh64 == (void *)-1 ) return (Sections *)sh64;
+
 	// the docid
 	int64_t *d = getDocId();
 	if ( ! d || d == (int64_t *)-1 ) return (Sections *)d;
+
 	// get the content type
 	uint8_t *ct = getContentType();
 	if ( ! ct ) return NULL;
@@ -5007,26 +4953,23 @@ Sections *XmlDoc::getExplicitSections ( ) {
 	// this uses the sectionsReply to see which sections are "text", etc.
 	// rather than compute it expensively
 	if ( !m_calledSections &&
-		 !m_sections.set( &m_words, &m_phrases, bits, getFirstUrl(), *sh64, cr->m_coll, m_niceness, *ct ) ) {
+		 !m_sections.set( &m_words, bits, getFirstUrl(), *sh64, cr->m_coll, m_niceness, *ct ) ) {
 		m_calledSections = true;
-		// sanity check, this should not block, we are setting
-		// exclusively from the titleRec
-		//if ( sd ) { char *xx=NULL;*xx=0; }
 		// it blocked, return -1
 		return (Sections *) -1;
 	}
 
 	int64_t end = gettimeofdayInMillisecondsLocal();
 
-	if ( end - start > 1000 )
+	if ( end - start > 100 )
 		log("build: %s section set took %"INT64" ms",
 		    m_firstUrl.m_url,end -start);
-
 
 	// error? ETAGBREACH for example... or maybe ENOMEM
 	if ( g_errno ) return NULL;
 	// set inlink bits
 	m_bits.setInLinkBits ( &m_sections );
+
 	// we got it
 	m_explicitSectionsValid = true;
 	return &m_sections;
@@ -5047,104 +4990,13 @@ Sections *XmlDoc::getImpliedSections ( ) {
 
 // add in Section::m_sentFlags bits having to do with our voting tables
 Sections *XmlDoc::getSections ( ) {
-
-	setStatus("getting sections");
-
 	// get the sections without implied sections
 	Sections *ss = getImpliedSections();
 	if ( ! ss || ss==(void *)-1) return (Sections *)ss;
 
-	// returns NULL if our url is root!
-	//HashTableX *rvt = getRootVotingTable();
-	//if ( ! rvt || rvt == (void *)-1 ) return (Sections *)rvt;
-
-	SectionVotingTable *osvt = getOldSectionVotingTable();
-	if ( ! osvt || osvt == (void *)-1 ) return (Sections *)osvt;
-
-	uint32_t *tph = getTagPairHash32();
-	if ( ! tph || tph == (uint32_t *)-1 ) return (Sections *)tph;
-
-	// need a getUseSectiondb() function...
-
-	if ( ! m_useSectiondb ) {
-		m_sectionsValid = true;
-		return &m_sections;
-	}
-
-	// start here
-	Section *si;
-
-
-	// get first sentence in doc
-	si = ss->m_firstSent;
-	// do not bother scanning if no votes
-	if ( osvt->getNumVotes() <= 0 ) si = NULL;
-	// assume no dups
-	m_maxVotesForDup = 0;
-	// scan the sentence sections and or in the bits we should
-	for ( ; si ; si = si->m_nextSent ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// sanity check
-		if ( ! si->m_sentenceContentHash64 ) { char *xx=NULL;*xx=0; }
-		// how many pages from this site have this taghash for
-		// a sentence
-		float nt;
-		nt = osvt->getNumSampled(si->m_turkTagHash32,SV_TURKTAGHASH);
-		// skip if nobody! (except us)
-		if ( nt <= 0.0 ) continue;
-		// . get out tag content hash
-		// . for some reason m_contentHash is 0 for like menu-y sectns
-		int32_t modified =si->m_turkTagHash32^si->m_sentenceContentHash64;
-		// . now how many pages also had same content in that tag?
-		// . TODO: make sure numsampled only counts a docid once!
-		//   and this is not each time it occurs on that page.
-		float nsam = osvt->getNumSampled(modified,SV_TAGCONTENTHASH);
-		// cast it to a int32_t
-		int32_t votes1  = (int32_t)nsam;
-		// by default, complement
-		int32_t votes2 = (int32_t)nt - votes1;
-		// store votes
-		si->m_votesForDup    = votes1;
-		si->m_votesForNotDup = votes2;
-		// what's the most dup votes we had...
-		if ( votes1 > m_maxVotesForDup ) m_maxVotesForDup = votes1;
-	}
-
 	m_sectionsValid = true;
 	return &m_sections;
 }
-
-SectionVotingTable *XmlDoc::getNewSectionVotingTable ( ) {
-	if ( m_nsvtValid ) return &m_nsvt;
-	// need sections
-	Sections *ss = getSections();
-	if ( ! ss || ss==(Sections *)-1 ) return (SectionVotingTable *)ss;
-	// hash of all adjacent tag pairs
-	uint32_t *tph = getTagPairHash32 ( ) ;
-	if ( ! tph || tph == (uint32_t *)-1 ) return (SectionVotingTable *)tph;
-	// are we a site root url?
-	//char *isRoot = getIsSiteRoot();
-	//if ( ! isRoot || isRoot == (char *)-1 )
-	//	return (SectionVotingTable *)isRoot;
-
-	// init table
-	if ( ! m_nsvt.init ( 4096,"nsvt",m_niceness) ) return NULL;
-	// . tally the section votes from the sections class
-	// . only add the date votes, not the taghash/contenthash keys
-	//   from the root, since we add those from the root voting table
-	//   into m_osvt directly!
-	// . we no longer have root voting table!
-	// . this adds keys of the hash of each tag xpath
-	// . and it adds keys of the hash of each tag path PLUS its innerhtml
-	if ( ! ss->addVotes ( &m_nsvt , *tph ) ) return NULL;
-	// our new section voting table is now valid, and ready to be added
-	// to sectiondb by calling SectionVotingTable::hash()
-	m_nsvtValid = true;
-	return &m_nsvt;
-}
-
-
 
 // . scan every section and look up its tag and content hashes in
 //   sectiondb to find out how many pages and sites have the same hash
@@ -5754,262 +5606,6 @@ bool XmlDoc::gotSectionFacets ( Multicast *mcast ) {
 	// now when the master loop calls getSectionsWithDupStats() it
 	// should find the stats class in the cache!
 	return true;
-}
-
-
-// . for all urls from this subdomain...
-// . EXCEPT root url since we use msg17 to cache that, etc.
-SectionVotingTable *XmlDoc::getOldSectionVotingTable ( ) {
-
-	if ( m_osvtValid ) return &m_osvt;
-
-	// do not consult sectiondb if we are set from the title rec,
-	// that way we avoid parsining inconsistencies since sectiondb changes!
-	if ( m_setFromTitleRec ) {
-		char *p = ptr_sectiondbData;
-		m_osvtValid = true;
-		m_osvt.m_totalSiteVoters = 0;
-		if ( size_sectiondbData <= 4 ) return &m_osvt;
-		m_osvt.m_totalSiteVoters = *(int32_t *)p;
-		p += 4;
-		int32_t remaining = size_sectiondbData - 4;
-		m_osvt.m_svt.deserialize(p,remaining,m_niceness);
-		return &m_osvt;
-	}
-
-	// returns empty table if WE are the site root url!
-	//HashTableX *rvt = getRootVotingTable();
-	//if ( ! rvt || rvt == (void *)-1 ) return (Sections *)rvt;
-
-	// need sections
-	//Sections *ss = getSections();
-	//if ( ! ss || ss==(Sections *)-1 ) return (SectionVotingTable *)ss;
-
-	// hash of all adjacent tag pairs
-	uint32_t *tph = getTagPairHash32 ( ) ;
-	if ( ! tph || tph == (uint32_t *)-1 ) return (SectionVotingTable *)tph;
-
-	int64_t *siteHash64 = getSiteHash64();
-	if ( ! siteHash64 || siteHash64 == (void *)-1 )
-		return (SectionVotingTable *)siteHash64;
-
-	// the docid
-	int64_t *d = getDocId();
-	if ( ! d || d == (int64_t *)-1 ) return (SectionVotingTable *)d;
-
-	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
-
-	// . for us, dates are really containers of the flags and tag hash
-	// . init this up here, it is re-set if we re-call getSectiondbList()
-	//   because there were too many records in it to handle in one read
-	if ( m_numSectiondbReads == 0 ) {
-		// init table
-		if ( ! m_osvt.init ( 8192,"osvt",m_niceness) ) return NULL;
-		// use site hash as the main thing
-		int64_t termId = *siteHash64 & TERMID_MASK;
-		// . start key for reading list from sectiondb
-		// . read all the section votes for this site
-		m_sectiondbStartKey = g_datedb.makeStartKey(termId,0xffffffff);
-		// how many reads we have to do...
-		m_numSectiondbNeeds = 1;
-	}
-
-	//bool skipRecall = false;
-	// always read 5MB at a time from sectiondb
-	int32_t minRecSizes = 5000000;
-
-	// crap! host #28 is being totall slammed!!!!!
-	// why?????? in the meantime do this
-	//minRecSizes = 100000;
-	//skipRecall  = true;
-
-	// is it facebook?
-	bool limitSectiondb = false;
-	// limit now to speed up repair rebuild
-	// limit now to speed up injection!
-	limitSectiondb = true;
-	// facebook lists often clog the tree, and when we read 2MB worth of
-	// it, it takes 100ms, so reduce to 50k to so it takes 2.5ms...
-	// because facebook is a well structured xml feed so why read any
-	// really!
-	if ( limitSectiondb ) minRecSizes = 50000;
-
-	key128_t *lastKey = NULL;
-
-	// if msg0 blocked and came back with g_errno set, like
-	// in preparing to merge it got an OOM
-	if ( g_errno ) {
-		log("build: sectiondb read2: %s",mstrerror(g_errno));
-		return NULL;
-	}
-
-
- readLoop:
-	// before looking up TitleRecs using Msg20, let's first consult
-	// datedb to see if we got adequate data as to what sections
-	// are the article sections
-
-	// only get the list once
-	if ( m_numSectiondbReads < m_numSectiondbNeeds ) {
-		// only do this once
-		m_numSectiondbReads++;
-		// make the termid
-		uint64_t termId = *siteHash64 & TERMID_MASK;
-		// end key is always the same
-		key128_t end = g_datedb.makeEndKey ( termId , 0 );
-		// shortcut
-		Msg0 *m = &m_msg0;
-		// get the group this list is in (split = false)
-		uint32_t shardNum;
-		shardNum = getShardNum ( RDB_SECTIONDB,(char *)&m_sectiondbStartKey);
-		// we need a group # from the groupId
-		//int32_t split = g_hostdb.getGroupNum ( gid );
-		// note it
-		//logf(LOG_DEBUG,"sections: "
-		//     "reading list from sectiondb: "
-		//     "sk.n1=0x%"XINT64" sk.n0=0x%"XINT64" "
-		//     "ek.n1=0x%"XINT64" ek.n0=0x%"XINT64" "
-		//     ,m_sectiondbStartKey.n1
-		//     ,m_sectiondbStartKey.n0
-		//     ,end.n1
-		//     ,end.n0
-		//     );
-		// . get the list
-		// . gets all votes for one particular site
-		if ( ! m->getList ( -1                      , // hostId
-				    0                       , // ip
-				    0                       , // port
-				    0                       , // maxCacheAge
-				    false                   , // addToCache
-				    RDB_SECTIONDB           , // was RDB_DATEDB
-				    cr->m_collnum                  ,
-				    &m_secdbList            ,
-				    (char *)&m_sectiondbStartKey ,
-				    (char *)&end            ,
-				    minRecSizes             ,
-				    m_masterState           ,
-				    m_masterLoop            ,
-				    m_niceness              , // MAX_NICENESS
-				    // default parms follow
-				    true  ,  // doErrorCorrection?
-				    true  ,  // includeTree?
-				    true  ,  // doMerge?
-				    -1    ,  // firstHostId
-				    0     ,  // startFileNum
-				    -1    ,  // numFiles
-				    msg0_getlist_infinite_timeout ,  // timeout
-				    -1    ,  // syncPoint
-				    -1    ,  // preferLocalReads
-				    NULL  ,  // msg5
-				    NULL  ,  // msg5b
-				    false ,  // isrealmerge?
-				    true  ,  // allowpagecache?
-				    false ,  // forceLocalIndexdb?
-				    false ,  // doIndexdbSplit?
-				    shardNum ) )//split ))
-			// return -1 if blocks
-			return (SectionVotingTable *)-1;
-		// error?
-		if ( g_errno ) {
-			log("build: sectiondb read: %s",mstrerror(g_errno));
-			return NULL;
-		}
-	}
-
-	// it also returns the lastKey in the list so we can use that to
-	// set the startKey for a re-call if we read >= 5MB
-	lastKey = NULL;
-
-	//logf(LOG_DEBUG,"sections: read list of %"INT32" bytes",
-	//     m_secdbList.m_listSize);
-
-	bool recall = true;
-
-	if ( m_secdbList.m_listSize + 24 < minRecSizes ) recall = false;
-
-	// . unless it had special byte set in Msg0.cpp HACK
-	// . we send back a compressed list and tack on an extra 0 byte at
-	//   the end so that we know we had a full list!
-	if ( (m_secdbList.m_listSize % 2) == 1 ) {
-		m_secdbList.m_listSize--;
-		m_secdbList.m_listEnd --;
-		recall = true;
-	}
-
-	// no longer bother re-calling, because facebook is way slow...
-	if ( limitSectiondb ) recall = false;
-
-	// . returns false and sets g_errno on error
-	// . compile the votes from sectiondb for this site into a hashtable
-	// . m_osvt is a SectionVotingTable and each entry in the hashtable
-	//   is a SectionVote class.
-	// . the taghash is the key of the vote and is a hash of all the
-	//   nested tags the section is in.
-	// . another vote uses the tag hash hashed with the hash of the
-	//   content contained by the section
-	// . using these two vote counts we set Section::m_votesForDup
-	//   or Section::m_votesForNotDup counts which let us know how the
-	//   section is repeated or not repeated on the site
-	// . SectionVote::m_score is always 1.0 from what i can tell
-	//   cuz it seems like addVote*() always uses a score of 1.0
-	// . SectionVote::m_numSampled is how many times that tagHash
-	//   occurs in the document.
-	if ( ! m_osvt.addListOfVotes(&m_secdbList,
-				     &lastKey,
-				     *d , // docid
-				     m_niceness))
-		return NULL;
-
-	// why is this always zero it seems?
-	if ( g_conf.m_logDebugBuild )
-		log("xmldoc: added sectiondblist size=%"INT32" recall=%"INT32"",
-		    m_secdbList.m_listSize,(int32_t)recall);
-
-	// . recall? yes if we had to truncate our list...
-	// . we need to be able to scan all votes for the website... that is
-	//   why we recall here
-	// . limit votes by a special sectiondb key then that is a vote...
-	if ( recall ) {
-		// another debug
-		//logf(LOG_DEBUG,"sections: recallling read");
-		// just note it for now
-		//if ( m_sectiondbRecall > 5 )
-		if ( m_numSectiondbNeeds > 5 )
-			logf(LOG_DEBUG,"sect: msg0 sectiondb recall #%"INT32"",
-			     m_sectiondbRecall++);
-		// we should really limit voting per site! we do now!
-		//if ( m_recall > 5 ) { char *xx=NULL;*xx=0; }
-		// update our start key
-		if ( lastKey ) m_sectiondbStartKey = *lastKey;
-		// inc by 2 since we already had this key
-		m_sectiondbStartKey += 2;
-		// unflag
-		m_numSectiondbNeeds++;
-		// and repeat
-		goto readLoop;
-	}
-
-	//
-	// set ptr_sectiondbData so this can be set from a title rec without
-	// having to lookup in sectiondb again which might have changed!
-	//
-	m_sectiondbData.purge();
-	// alloc
-	int32_t need = m_osvt.m_svt.getStoredSize() + 4;
-	if ( ! m_sectiondbData.reserve(need) )
-		// oom error?
-		return NULL;
-	// serialize this number
-	m_sectiondbData.pushLong(m_osvt.m_totalSiteVoters);
-	// serialize the hashtablex
-        m_osvt.m_svt.serialize ( &m_sectiondbData );
-	// reference it for title rec serialization
-	ptr_sectiondbData  = m_sectiondbData.getBufStart();
-	size_sectiondbData = m_sectiondbData.length();
-
-	m_osvtValid = true;
-	return &m_osvt;
 }
 
 int32_t *XmlDoc::getLinkSiteHashes ( ) {
@@ -17770,30 +17366,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// get the voting table which we will add to sectiondb
 	SectionVotingTable *nsvt = NULL;
 	SectionVotingTable *osvt = NULL;
-	// seems like
-	// sectiondb takes up abotu 15% of the disk space like this. no!
-	// cuz then there is revdb, so we are 30%. so that's a no go.
-	bool addSectionVotes = false;
-	if ( nd ) addSectionVotes = true;
-	if ( ! m_useSectiondb ) addSectionVotes = false;
-	// to save disk space no longer add the roots! nto only saves sectiondb
-	// but also saves space in revdb
-	//if ( nd && *isRoot ) addSectionVotes = true;
-	if ( addSectionVotes ) {
-		nsvt = getNewSectionVotingTable();
-		if ( ! nsvt || nsvt == (void *)-1 ) 
-		{
-			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getNewSectionVotingTable returned -1", __FILE__, __func__, __LINE__);
-			return (char *)nsvt;
-		}
-		// get the old table too!
-		osvt = getNewSectionVotingTable();
-		if ( ! osvt || osvt == (void *)-1 ) 
-		{
-			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getNewSectionVotingTable returned -1", __FILE__, __func__, __LINE__);
-			return (char *)osvt;
-		}
-	}
 
 	// need firstip if adding a rebuilt spider request
 	if ( m_useSecondaryRdbs && m_useSpiderdb ) {
@@ -18435,12 +18007,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	setStatus ( "adding sectiondb keys");
 	// checkpoint
 	saved = m_p;
-	// add that table to the metalist
-	if ( m_useSectiondb && !addTable128(&st1,RDB_SECTIONDB,forDelete))
-	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: addTable128 failed", __FILE__, __func__, __LINE__);
-		return NULL;
-	}
+
 	//if(! addTable128 (&st2,&st1, RDB_SECTIONDB,true ,true))return NULL;
 	// sanity check
 	if ( m_p - saved > needSectiondb ) { char *xx=NULL;*xx=0; }
@@ -23419,7 +22986,6 @@ Summary *XmlDoc::getSummary () {
 	if ( ! ct || ct == (void *)-1 ) {
 		return (Summary *)ct;
 	}
-
 	// xml and json docs have empty summaries
 	if ( *ct == CT_JSON || *ct == CT_XML ) {
 		m_summaryValid = true;
@@ -23446,6 +23012,7 @@ Summary *XmlDoc::getSummary () {
 	if ( ! pos || pos == (Pos *)-1 ) {
 		return (Summary *)pos;
 	}
+
 	char *site = getSite();
 	if ( ! site || site == (char *)-1 ) {
 		return (Summary *)site;
@@ -23829,12 +23396,11 @@ SafeBuf *XmlDoc::getSampleForGigabitsJSON ( ) {
 	if ( ! ww.set ( &xml , true  , m_niceness ) ) return NULL;
 	Bits bb;
 	if ( ! bb.set ( &ww ,0 ,m_niceness ) ) return NULL;
-	Phrases pp;
-	if ( ! pp.set ( &ww , &bb , true,false,0,m_niceness) ) return NULL;
+
 	// this uses the sectionsReply to see which sections are
 	// "text", etc. rather than compute it expensively
 	Sections sec;
-	if ( !sec.set( &ww, &pp, &bb, getFirstUrl(), 0, "", m_niceness, CT_JSON ) ) {
+	if ( !sec.set( &ww, &bb, getFirstUrl(), 0, "", m_niceness, CT_JSON ) ) {
 		return NULL;
 	}
 
@@ -24882,11 +24448,6 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	//
 	Sections *sections = getSections();
 	if ( ! sections ||sections==(Sections *)-1) {char*xx=NULL;*xx=0;}
-	//SectionVotingTable *nsvt = getNewSectionVotingTable();
-	//if ( ! nsvt || nsvt == (void *)-1 ) {char*xx=NULL;*xx=0;}
-	//SectionVotingTable *osvt = getOldSectionVotingTable();
-	//if ( ! osvt || osvt == (void *)-1 ) {char*xx=NULL;*xx=0;}
-
 
 	// these are nice
 	//HashTableX *pt = dp->getPhoneTable();
@@ -26128,10 +25689,7 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 	if ( hr ) sections = getSectionsWithDupStats();
 	else      sections = getSections();
 	if ( ! sections) return true;if (sections==(Sections *)-1)return false;
-	//SectionVotingTable *nsvt = getNewSectionVotingTable();
-	//if ( ! nsvt || nsvt == (void *)-1 ) {char*xx=NULL;*xx=0;}
-	//SectionVotingTable *osvt = getOldSectionVotingTable();
-	//if ( ! osvt || osvt == (void *)-1 ) {char*xx=NULL;*xx=0;}
+
 	Words *words = getWords();
 	if ( ! words ) return true; if ( words == (Words *)-1 ) return false;
 	Phrases *phrases = getPhrases();
@@ -29537,13 +29095,6 @@ SafeBuf *XmlDoc::getTermListBuf ( ) {
 	m_termListBufValid = true;
 
 	return &m_termListBuf;
-	// print timing
-	//int64_t now = gettimeofdayInMilliseconds();
-	//int64_t took = now - m_cacheStartTime;
-	//log("seopipe: took %"INT64" ms to parse docid %"INT64"",took,m_docId);
-	// . flag it as being completely cached now
-	// . returns false and sets g_errno on error
-	//return addDocIdToTermListCache ( m_docId , cr->m_coll );
 }
 
 

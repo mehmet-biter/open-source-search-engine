@@ -28,14 +28,11 @@ static void generateSummary(Summary &summary, char *htmlInput, char *queryStr, c
 	Bits bits;
 	ASSERT_TRUE(bits.set(&words, TITLEREC_CURRENT_VERSION, 0));
 
-	Phrases phrases;
-	ASSERT_TRUE(phrases.set(&words, &bits, true, false, TITLEREC_CURRENT_VERSION, 0));
-
 	Url url;
 	url.set(urlStr);
 
 	Sections sections;
-	ASSERT_TRUE(sections.set(&words, &phrases, &bits, &url, 0, "", 0, CT_HTML));
+	ASSERT_TRUE(sections.set(&words, &bits, &url, 0, "", 0, CT_HTML));
 
 	Query query;
 	ASSERT_TRUE(query.set2(queryStr, langEnglish, true));
@@ -52,6 +49,9 @@ static void generateSummary(Summary &summary, char *htmlInput, char *queryStr, c
 
 	Bits bitsForSummary;
 	ASSERT_TRUE(bitsForSummary.setForSummary(&words));
+
+	Phrases phrases;
+	ASSERT_TRUE(phrases.set(&words, &bits, true, false, TITLEREC_CURRENT_VERSION, 0));
 
 	Matches matches;
 	matches.setQuery(&query);

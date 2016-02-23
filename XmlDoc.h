@@ -429,8 +429,6 @@ public:
 //BR 20160106 removed:	class SafeBuf  *getInlineSectionVotingBuf();
 	bool gotSectionFacets( class Multicast *mcast );
 	class SectionStats *getSectionStats ( uint32_t secHash32, uint32_t sentHash32, bool cacheOnly );
-	class SectionVotingTable *getOldSectionVotingTable();
-	class SectionVotingTable *getNewSectionVotingTable();
 	char **getSectionsReply ( ) ;
 	char **getSectionsVotes ( ) ;
 	HashTableX *getSectionVotingTable();
@@ -946,9 +944,6 @@ public:
 	char m_logLangId;
 	int32_t m_logSiteNumInlinks;
 
-	SectionVotingTable m_nsvt;
-
-	SectionVotingTable m_osvt;
 	int32_t m_numSectiondbReads;
 	int32_t m_numSectiondbNeeds;
 	key128_t m_sectiondbStartKey;
@@ -1013,7 +1008,6 @@ public:
 	char     m_addedSpiderReplySizeValid;
 	char     m_addedStatusDocSizeValid;
 	char     m_downloadStartTimeValid;
-	//char   m_docQualityValid;
 	char     m_siteValid;
 	char     m_startTimeValid;
 	char     m_currentUrlValid;
@@ -1025,7 +1019,6 @@ public:
 	char     m_lastUrlValid;
 	char     m_docIdValid;
 	char     m_availDocIdValid;
-	//char     m_collValid;
 	char     m_tagRecValid;
 	char     m_robotsTxtLenValid;
 	char     m_tagRecDataValid;
@@ -1042,32 +1035,24 @@ public:
 	char     m_relatedQueryBufValid;
 	char     m_queryLinkBufValid;
 	char     m_redirSpiderRequestValid;
-	//char     m_queryPtrsValid;
 	char     m_queryOffsetsValid;
-	//char     m_queryPtrsSortedValid;
 	char     m_queryPtrsWholeValid;
 	char     m_relatedDocIdBufValid;
 	char     m_topMatchingQueryBufValid;
 	char     m_relatedDocIdsScoredBufValid;
 	char     m_relatedDocIdsWithTitlesValid;
 	char     m_relatedTitleBufValid;
-	//char     m_queryLinkBufValid;
 	char     m_missingTermBufValid;
 	char     m_matchingTermBufValid;
-	//char     m_relPtrsValid;
 	char     m_sortedPosdbListBufValid;
 	char     m_wpSortedPosdbListBufValid;
 	char     m_termListBufValid;
 	char     m_insertableTermsBufValid;
 	char     m_scoredInsertableTermsBufValid;
-	//char     m_iwfiBufValid; // for holding WordFreqInfo instances
 	char     m_wordPosInfoBufValid;
 	char     m_recommendedLinksBufValid;
 
-	//char     m_queryHashTableValid;
 	char     m_queryOffsetTableValid;
-	//char     m_socketWriteBufValid;
-	//char     m_numBannedOutlinksValid;
 	char     m_hopCountValid;
 	char     m_isInjectingValid;
 	char     m_isImportingValid;
@@ -1091,13 +1076,9 @@ public:
 	char     m_posValid;
 	char     m_isUrlBadYearValid;
 	char     m_phrasesValid;
-	//char     m_synonymsValid;
-	//char     m_weightsValid;
 	char     m_sectionsValid;
 	char     m_subSentsValid;
-	char     m_osvtValid;
-	char     m_nsvtValid;
-	//char   m_rvtValid;
+
 	char     m_turkVotingTableValid;
 	char     m_turkBitsTableValid;
 	char     m_turkBanTableValid;
@@ -1109,17 +1090,13 @@ public:
 	char     m_imagesValid;
 	char     m_msge0Valid;
 	char     m_msge1Valid;
-	//char     m_msge2Valid;
-	//char   m_sampleVectorValid;
 	char     m_gigabitHashesValid;
-	//char     m_oldsrValid;
 	char     m_sreqValid;
 	char     m_srepValid;
 
 	bool m_ipValid;
 	bool m_firstIpValid;
 	bool m_spideredTimeValid;
-	//bool m_nextSpiderTimeValid;
 	bool m_indexedTimeValid;
 	bool m_firstIndexedValid;
 	bool m_isInIndexValid;
@@ -1127,14 +1104,7 @@ public:
 	bool m_outlinksAddedDateValid;
 	bool m_countryIdValid;
 	bool m_bodyStartPosValid;
-	/*
-	bool m_titleWeightValid;
-	bool m_headerWeightValid;
-	bool m_urlPathWeightValid;
-	bool m_externalLinkTextWeightValid;
-	bool m_internalLinkTextWeightValid;
-	bool m_conceptWeightValid;
-	*/
+
 	bool m_httpStatusValid;
 	bool m_crawlDelayValid;
 	bool m_finalCrawlDelayValid;
@@ -1145,8 +1115,6 @@ public:
 	bool m_expandedUtf8ContentValid;
 	bool m_utf8ContentValid;
 	bool m_isAllowedValid;
-	//bool m_tryAgainTimeDeltaValid;
-	//bool m_eliminateMenusValid;
 	bool m_redirUrlValid;
 	bool m_redirCookieBufValid;
 	bool m_metaRedirUrlValid;
@@ -1163,11 +1131,9 @@ public:
 	bool m_redirErrorValid;
 	bool m_domHash32Valid;
 	bool m_contentHash32Valid;
-	//bool m_tagHash32Valid;
 	bool m_tagPairHash32Valid;
 
 	bool m_spiderLinksValid;
-	//bool m_nextSpiderPriorityValid;
 	bool m_firstIndexedDateValid;
 	bool m_isPermalinkValid;
 
@@ -1196,15 +1162,11 @@ public:
 	bool m_oldDocValid;
 	bool m_extraDocValid;
 	bool m_rootDocValid;
-	//bool m_gatewayDocValid;
 	bool m_oldMetaListValid;
 	bool m_oldTitleRecValid;
 	bool m_rootTitleRecValid;
 	bool m_isIndexedValid;
 	bool m_siteNumInlinksValid;
-	//bool m_siteNumInlinksUniqueIpValid;//FreshValid;
-	//bool m_siteNumInlinksUniqueCBlockValid;//sitePopValid
-	//bool m_siteNumInlinksTotalValid;
 	bool m_siteNumInlinks8Valid;
 	bool m_siteLinkInfoValid;
 	bool m_isWWWDupValid;
@@ -1228,7 +1190,6 @@ public:
 	bool m_isSiteRootValid;
 	bool m_wasContentInjectedValid;
 	bool m_outlinkHopCountVectorValid;
-	//bool m_isSpamValid;
 	bool m_isFilteredValid;
 	bool m_urlFilterNumValid;
 	bool m_numOutlinksAddedValid;
@@ -1245,7 +1206,6 @@ public:
 	bool m_titleValid;
 	bool m_htbValid;
 	bool m_collnumValid;
-	//bool m_twidsValid;
 	bool m_termId32BufValid;
 	bool m_termInfoBufValid;
 	bool m_newTermInfoBufValid;
@@ -1254,9 +1214,6 @@ public:
 	bool m_spiderStatusDocMetaListValid;
 	bool m_isCompromisedValid;
 	bool m_isNoArchiveValid;
-	//bool m_isVisibleValid;
-	//bool m_clockCandidatesTableValid;
-	//bool m_clockCandidatesDataValid;
 	bool m_titleRecBufValid;
 	bool m_isLinkSpamValid;
 	bool m_isErrorPageValid;
@@ -1749,7 +1706,6 @@ public:
 	bool m_useTagdb     ;
 	bool m_usePlacedb   ;
 	//bool m_useTimedb    ;
-	bool m_useSectiondb ;
 	//bool m_useRevdb     ;
 	bool m_useSecondaryRdbs ;
 
