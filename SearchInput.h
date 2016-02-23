@@ -26,7 +26,6 @@
 // . you can have Msg24 generate multiple sets of related topics in one call
 class TopicGroup {
  public:
-        int32_t m_numTopics;
         int32_t m_maxTopics;
         int32_t m_minTopicScore;
         int32_t m_maxWordsPerTopic;
@@ -155,7 +154,6 @@ class SearchInput {
 
 
 	// do not include these in makeKey()
-	int32_t   m_numTopicsToDisplay;
 	int32_t   m_refs_numToDisplay;
 	int32_t   m_rp_numToDisplay;  
 

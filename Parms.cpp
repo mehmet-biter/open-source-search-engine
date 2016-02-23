@@ -5851,24 +5851,6 @@ void Parms::init ( ) {
 	m++;
 
 
-
-	m->m_title = "number of gigabits to show";
-	m->m_desc  = "What is the number of gigabits (related topics) "
-		"displayed per query? Set to 0 to save a little CPU time.";
-	m->m_cgi   = "nrt";
-	m->m_defOff= (char *)&cr.m_numTopics - x;
-	m->m_off   = (char *)&si.m_numTopicsToDisplay - y;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "11";
-	m->m_group = 0;
-	m->m_sprpg = 0; // do not propagate
-        m->m_sprpp = 0; // do not propagate
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-
 	m->m_title = "min topics score";
 	m->m_desc  = "Gigabits (related topics) with scores below this "
 		"will be excluded. Scores range from 0% to over 100%.";
@@ -9859,25 +9841,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
 	m++;
-
-	m->m_title = "number of gigabits to show by default";
-	m->m_desc  = "What is the number of "
-		"related topics (gigabits) "
-		"displayed per query? Set to 0 to save "
-		"CPU time.";
-	m->m_cgi   = "nrt";
-	m->m_off   = (char *)&cr.m_numTopics - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_sprpg = 0; // do not propagate
-        m->m_sprpp = 0; // do not propagate
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-
 
 	m->m_title = "min gigabit score by default";
 	m->m_desc  = "Gigabits (related topics) with scores below this "

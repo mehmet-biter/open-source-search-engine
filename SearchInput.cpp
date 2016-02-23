@@ -68,14 +68,9 @@ key_t SearchInput::makeKey ( ) {
 	int32_t size = b - a; 
 	// and hash it all up
 	k.n0 = hash64 ( a , size , k.n0 );
-	// and pop out the parms that did not contribute
-	//m_refs_numToDisplay  = save1;
-	//m_rp_numToDisplay    = save2;
-	//m_numTopicsToDisplay = save3;
 	// hash each topic group
 	for ( int32_t i = 0 ; i < 1 ; i++ ) {
 		TopicGroup *t = &m_topicGroups[i];
-		//k.n0 = hash64 ( t->m_numTopics           , k.n0 );
 		k.n0 = hash64 ( t->m_maxTopics           , k.n0 );
 		k.n0 = hash64 ( t->m_minTopicScore       , k.n0 );
 		k.n0 = hash64 ( t->m_maxWordsPerTopic    , k.n0 );
@@ -283,9 +278,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	// now override automatic defaults for special cases
 	if ( tmpFormat != FORMAT_HTML ) {
 		m_familyFilter            = 0;
-		m_numTopicsToDisplay      = 0;
 		m_doQueryHighlighting     = 0;
-		//m_spellCheck              = 0;
 		m_getDocIdScoringInfo = false;
 	}
 
@@ -608,7 +601,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	// gigabits
 	//
 	//
-	tg->m_numTopics = 50;
 	tg->m_maxTopics = 50;
 	tg->m_minTopicScore = 0;
 	tg->m_maxWordsPerTopic = 6;

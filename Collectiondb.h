@@ -719,7 +719,6 @@ class CollectionRec {
 	// . related topics control
 	// . this can all be overridden by passing in your own cgi parms
 	//   for the query request
-	int32_t  m_numTopics;           // how many do they want by default?
 	int32_t  m_minTopicScore;
 	int32_t  m_maxWordsPerTopic;
 	int32_t  m_minDocCount;         // min docs that must contain topic
