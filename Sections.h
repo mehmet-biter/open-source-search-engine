@@ -187,52 +187,6 @@ sentflags_t getMixedCaseFlags ( class Words *words ,
 				int32_t sentb , 
 				int32_t niceness ) ;
 
-class Sectiondb {
-
- public:
-
-	// reset rdb
-	void reset();
-
-	bool verify ( char *coll );
-
-	bool addColl ( char *coll, bool doVerify = true );
-
-	// init m_rdb
-	bool init ();
-
-	// init secondary/rebuild sectiondb
-	bool init2 ( int32_t treeMem ) ;
-
-	Rdb *getRdb() { return &m_rdb; }
-
-	uint64_t getSiteHash ( void *k ) {
-		return ((*(uint64_t *)(((char *)k)+8))) >> 16;};
-
-
-	uint32_t getSectionHash ( void *k ) {
-		return (*(uint32_t *)(((char *)k)+6)); }
-
-
-	int64_t getDocId ( void *k ) {
-		return ((*(uint64_t *)k) >> 2) & DOCID_MASK; }
-
-
-	uint8_t getSectionType ( void *k ) {
-		return ((unsigned char *)k)[5]; };
-
-	// holds binary format title entries
-	Rdb m_rdb;
-
-	//DiskPageCache *getDiskPageCache ( ) { return &m_pc; };
-
-	//DiskPageCache m_pc;
-};
-
-extern class Sectiondb g_sectiondb;
-extern class Sectiondb g_sectiondb2;
-
-
 // this is only needed for sections, not facets in general i don think.
 // facets has the whole QueryTerm::m_facetHashTable array with more info
 //

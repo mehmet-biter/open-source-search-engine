@@ -95,7 +95,6 @@ static void dumpTitledb  (char *coll, int32_t sfn, int32_t numFiles, bool includ
 			   int64_t docId , bool justPrintDups );
 static int32_t dumpSpiderdb ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
 			   char printStats , int32_t firstIp );
-static void dumpSectiondb( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
 static void dumpRevdb    ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
 
 static void dumpTagdb( char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char rec = 0,
@@ -687,7 +686,6 @@ int main2 ( int argc , char *argv[] ) {
 			"\t<db> is W to dump tagdb for wget.\n"
 			"\t<db> is x to dump doledb.\n"
 			"\t<db> is w to dump waiting tree.\n"
-			"\t<db> is B to dump sectiondb.\n"
 			"\t<db> is C to dump catdb.\n"
 			"\t<db> is l to dump clusterdb.\n"
 			"\t<db> is z to dump statsdb all keys.\n"
@@ -2239,8 +2237,6 @@ int main2 ( int argc , char *argv[] ) {
 				fprintf(stdout,"error dumping spiderdb\n");
 			}
 		}
-		else if ( argv[cmdarg+1][0] == 'B' )
-		       dumpSectiondb(coll,startFileNum,numFiles,includeTree);
 		else if ( argv[cmdarg+1][0] == 'V' )
 		       dumpRevdb(coll,startFileNum,numFiles,includeTree);
 		else if ( argv[cmdarg+1][0] == 'S' ) {
@@ -2637,12 +2633,6 @@ int main2 ( int argc , char *argv[] ) {
 	// linkdb
 	if ( ! g_linkdb.init()     ) {
 		log("db: Linkdb init failed."   ); return 1; }
-
-	// use sectiondb again for its immense voting power for detecting and
-	// removing web page chrome, categories, etc. only use if 
-	// CollectionRec::m_isCustomCrawl perhaps to save space.
-	if ( ! g_sectiondb.init()     ) {
-		log("db: Sectiondb init failed."   ); return 1; }
 
 	// now clean the trees since all rdbs have loaded their rdb trees
 	// from disk, we need to remove bogus collection data from teh trees
@@ -7834,131 +7824,6 @@ void *startUp ( void *state , ThreadEntry *t ) {
 
 	// dummy return
 	return 0; //NULL;
-}
-
-void dumpSectiondb(char *coll,int32_t startFileNum,int32_t numFiles,
-		   bool includeTree) {
-	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	g_sectiondb.init ();
-	//g_collectiondb.init(true);
-	g_sectiondb.getRdb()->addRdbBase1(coll );
-	key128_t startKey ;
-	key128_t endKey   ;
-	startKey.setMin();
-	endKey.setMax();
-	// turn off threads
-	g_threads.disableThreads();
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
-	Msg5 msg5;
-	RdbList list;
-	char tmpBuf[1024];
-	SafeBuf sb(tmpBuf, 1024);
-	bool firstKey = true;
-	CollectionRec *cr = g_collectiondb.getRec(coll);
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_SECTIONDB ,
-			      cr->m_collnum      ,
-			      &list         ,
-			      (char *)&startKey      ,
-			      (char *)&endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         )){// err correction?
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) return;
-
-	key128_t lastk;
-
-	// loop over entries in list
-	for(list.resetListPtr();!list.isExhausted(); list.skipCurrentRecord()){
-		char *rec  = list.getCurrentRec();
-		key128_t *k = (key128_t *)rec;
-		char *data = list.getCurrentData();
-		int32_t  size = list.getCurrentDataSize();
-		// is it a delete?
-		if ( (k->n0 & 0x01) == 0 ) {
-			printf("k.n1=%016"XINT64" k.n0=%016"XINT64" (delete)\n",
-			       k->n1  , k->n0   | 0x01  );  // fix it!
-			continue;
-		}
-		if ( size != sizeof(SectionVote) ) { char *xx=NULL;*xx=0; }
-		// sanity check
-		if ( ! firstKey ) {
-			if ( k->n1 < lastk.n1 ) { char *xx=NULL;*xx=0; }
-			if ( k->n1 == lastk.n1 && k->n0 < lastk.n0 ) { 
-				char *xx=NULL;*xx=0; }
-		}
-		// no longer a first key
-		firstKey = false;
-		// copy it
-		gbmemcpy ( &lastk , k , sizeof(key128_t) );
-		int32_t shardNum =  getShardNum (RDB_SECTIONDB,k);
-		//int32_t groupNum = g_hostdb.getGroupNum ( gid );
-		// point to the data
-		char  *p       = data;
-		char  *pend    = data + size;
-		// breach check
-		if ( p >= pend ) {
-			printf("corrupt sectiondb rec k.n0=%"UINT64"",k->n0);
-			continue;
-		}
-		// parse it up
-		SectionVote *sv = (SectionVote *)data;
-		int64_t termId = g_datedb.getTermId ( k );
-		// score is the section type
-		unsigned char score2 = g_datedb.getScore(k);
-		char *stype = "unknown";
-		if ( score2 == SV_CLOCK          ) stype = "clock         ";
-		if ( score2 == SV_EURDATEFMT     ) stype = "eurdatefmt    ";
-		if ( score2 == SV_EVENT          ) stype = "event         ";
-		if ( score2 == SV_ADDRESS        ) stype = "address       ";
-		if ( score2 == SV_TAGPAIRHASH    ) stype = "tagpairhash   ";
-		if ( score2 == SV_TAGCONTENTHASH ) stype = "tagcontenthash";
-		if ( score2 == SV_FUTURE_DATE    ) stype = "futuredate    ";
-		if ( score2 == SV_PAST_DATE      ) stype = "pastdate      ";
-		if ( score2 == SV_CURRENT_DATE   ) stype = "currentdate   ";
-		if ( score2 == SV_SITE_VOTER     ) stype = "sitevoter     ";
-		if ( score2 == SV_TURKTAGHASH    ) stype = "turktaghash   ";
-		int64_t d = g_datedb.getDocId(k);
-		int32_t date = g_datedb.getDate(k);
-		// dump it
-		printf("k=%s "
-		       "sh48=%"XINT64" " // sitehash is the termid
-		       "date=%010"UINT32" " 
-		       "%s (%"UINT32") "
-		       "d=%012"UINT64" "
-		       "score=%f samples=%f "
-		       "shardnum=%"INT32""
-		       "\n",
-		       //k->n1,
-		       //k->n0,
-		       KEYSTR(k,sizeof(key128_t)),
-		       termId,
-		       date,
-		       stype,(uint32_t)score2,
-		       d,
-		       sv->m_score,
-		       sv->m_numSampled,
-		       shardNum);
-	}
-		
-	startKey = *(key128_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
-	// watch out for wrap around
-	if ( startKey < *(key128_t *)list.getLastKey() ){ printf("\n"); return;}
-	goto loop;
 }
 
 void dumpRevdb(char *coll,int32_t startFileNum,int32_t numFiles, bool includeTree) {

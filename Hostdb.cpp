@@ -2421,12 +2421,6 @@ uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) { // ,bool split ) {
 		//return g_hostdb.m_myHost->m_groupId;
 		return g_hostdb.m_myHost->m_shardNum;
 	}
-	else if ( rdbId == RDB_SECTIONDB || rdbId == RDB2_SECTIONDB2 ) {
-		// use top 13 bits of key
-		return m_map [(*(uint16_t *)((char *)k + 14))>>3];
-		//uint64_t d = g_datedb.getDocId ( k );
-		//return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
-	}
 	else if ( rdbId == RDB_REVDB || rdbId == RDB2_REVDB2 ) {
 		// key is formed like title key is
 		//int64_t d = g_titledb.getDocId ( (key_t *)k );

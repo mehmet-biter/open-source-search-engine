@@ -168,10 +168,6 @@ bool Rdb::init ( char          *dir                  ,
 	if ( m_rdbId == RDB2_INDEXDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_POSDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_POSDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	//if ( m_rdbId == RDB_DATEDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	//if ( m_rdbId == RDB2_DATEDB2   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_SECTIONDB  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_SECTIONDB2) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_TITLEDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_TITLEDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_SPIDERDB   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
@@ -1736,7 +1732,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	     //! g_conf.m_rebuildNoSplits &&
 	     //! g_conf.m_removeBadPages &&
 	     ( m_rdbId == RDB_TITLEDB    ||
-	       //m_rdbId == RDB_SECTIONDB  ||
 	       m_rdbId == RDB_PLACEDB    ||
 	       m_rdbId == RDB_TFNDB      ||
 	       m_rdbId == RDB_INDEXDB    || 
@@ -2811,7 +2806,6 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB_INDEXDB   ] = g_indexdb.getRdb();
 		s_table9 [ RDB_POSDB     ] = g_posdb.getRdb();
 		s_table9 [ RDB_TITLEDB   ] = g_titledb.getRdb();
-		s_table9 [ RDB_SECTIONDB ] = g_sectiondb.getRdb();
 		s_table9 [ RDB_SPIDERDB  ] = g_spiderdb.getRdb();
 		s_table9 [ RDB_DOLEDB    ] = g_doledb.getRdb();
 		s_table9 [ RDB_CLUSTERDB ] = g_clusterdb.getRdb();
@@ -2823,7 +2817,6 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB2_INDEXDB2   ] = g_indexdb2.getRdb();
 		s_table9 [ RDB2_POSDB2     ] = g_posdb2.getRdb();
 		s_table9 [ RDB2_TITLEDB2   ] = g_titledb2.getRdb();
-		s_table9 [ RDB2_SECTIONDB2 ] = g_sectiondb2.getRdb();
 		s_table9 [ RDB2_SPIDERDB2  ] = g_spiderdb2.getRdb();
 		s_table9 [ RDB2_CLUSTERDB2 ] = g_clusterdb2.getRdb();
 		s_table9 [ RDB2_LINKDB2    ] = g_linkdb2.getRdb();
@@ -2840,7 +2833,6 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_indexdb.getRdb   () ) return RDB_INDEXDB;
 	if ( rdb == g_posdb.getRdb   () ) return RDB_POSDB;
 	if ( rdb == g_titledb.getRdb   () ) return RDB_TITLEDB;
-	if ( rdb == g_sectiondb.getRdb () ) return RDB_SECTIONDB;
 	if ( rdb == g_spiderdb.getRdb  () ) return RDB_SPIDERDB;
 	if ( rdb == g_doledb.getRdb    () ) return RDB_DOLEDB;
 	if ( rdb == g_clusterdb.getRdb () ) return RDB_CLUSTERDB;
@@ -2851,7 +2843,6 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_posdb2.getRdb   () ) return RDB2_POSDB2;
 	if ( rdb == g_tagdb2.getRdb     () ) return RDB2_TAGDB2;
 	if ( rdb == g_titledb2.getRdb   () ) return RDB2_TITLEDB2;
-	if ( rdb == g_sectiondb2.getRdb () ) return RDB2_SECTIONDB2;
 	if ( rdb == g_spiderdb2.getRdb  () ) return RDB2_SPIDERDB2;
 	if ( rdb == g_clusterdb2.getRdb () ) return RDB2_CLUSTERDB2;
 	if ( rdb == g_linkdb2.getRdb    () ) return RDB2_LINKDB2;
@@ -2868,7 +2859,6 @@ char isSecondaryRdb ( uint8_t rdbId ) {
 		case RDB2_POSDB2   : return true;
 		case RDB2_TAGDB2     : return true;
 		case RDB2_TITLEDB2   : return true;
-		case RDB2_SECTIONDB2 : return true;
 		case RDB2_PLACEDB2   : return true;
 		case RDB2_SPIDERDB2  : return true;
 		case RDB2_TFNDB2     : return true;
@@ -2898,13 +2888,9 @@ char getKeySizeFromRdbId ( uint8_t rdbId ) {
 			     i == RDB_SPIDERDB  ||
 			     i == RDB_TAGDB     ||
 			     i == RDB_SYNCDB    ||
-			     i == RDB_SECTIONDB ||
 			     i == RDB_PLACEDB   ||
-
-			     //i == RDB2_DATEDB2    ||
 			     i == RDB2_SPIDERDB2  ||
 			     i == RDB2_TAGDB2     ||
-			     i == RDB2_SECTIONDB2 ||
 			     i == RDB2_PLACEDB2   )
 				ks = 16;
 			if ( i == RDB_POSDB || i == RDB2_POSDB2 )
@@ -2960,8 +2946,6 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 				ds = -1;
 			else if ( i == RDB_STATSDB )
 				ds = sizeof(StatData);
-			else if ( i == RDB_SECTIONDB )
-				ds = sizeof(SectionVote);
 			else if ( i == RDB2_POSDB2 ||
 				  i == RDB2_INDEXDB2 ||
 				  i == RDB2_TFNDB2 ||
@@ -2976,8 +2960,6 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 				  i == RDB2_SPIDERDB2 ||
 				  i == RDB2_PLACEDB2 )
 				ds = -1;
-			else if ( i == RDB2_SECTIONDB2 )
-				ds = sizeof(SectionVote);
 			else { char *xx=NULL;*xx=0; }
 			// get the rdb for this rdbId
 			//Rdb *rdb = getRdbFromId ( i );

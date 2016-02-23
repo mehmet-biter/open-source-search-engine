@@ -4906,14 +4906,6 @@ Sections *XmlDoc::getExplicitSections ( ) {
 	// these sections might or might not have the implied sections in them
 	if ( m_explicitSectionsValid ) return &m_sections;
 
-	// if json forget this it is only html
-	//uint8_t *ct = getContentType();
-	//if ( ! ct || ct == (void *)-1 ) return (Sections *)ct;
-	//if ( *ct != CT_HTML && *ct != CT_TEXT && *ct != CT_XML ) {
-	//	m_sectionsValid = true;
-	//	return &m_sections;
-	//}
-
 	setStatus ( "getting explicit sections" );
 
 	// use the old title rec to make sure we parse consistently!
@@ -16072,44 +16064,6 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 				       (int32_t)score8,
 				       (int32_t)score32);
 		}
-		// key parsing logic from Sections.cpp::gotSectiondbList()
-		else if ( rdbId == RDB_SECTIONDB ) {
-			key128_t *k2 = (key128_t *)k;
-			int32_t secType  = g_indexdb.getScore ( (char *)k2);
-			int32_t tagHash  = g_datedb.getDate ( k2 );
-			int64_t tid = g_datedb.getTermId(k2);
-			int64_t siteHash = tid; // not quite 64 bits
-			SectionVote *sv = (SectionVote *)data;
-			char *dd = "tagHash32";
-			if ( secType == SV_TAGCONTENTHASH )
-				dd ="tagcontentHash32";
-			if ( secType == SV_TAGPAIRHASH )
-				dd = "tagPairHash32";
-			// sanity check
-			int32_t ds = sizeof(SectionVote);
-			if (!neg&&dataSize!=ds){char*xx=NULL;*xx=0;}
-			if ( neg&&dataSize!=0 ){char*xx=NULL;*xx=0;}
-			float score      = 0.0;
-			float numSampled = 0.0;
-			if ( data ) {
-				score      = sv->m_score;
-				numSampled = sv->m_numSampled;
-			}
-			sb->safePrintf("<td>"
-				       "<nobr>"
-				       "siteHash48=0x%016"XINT64" "
-				       "%s=0x%08"XINT32" "
-				       "secType=%s "
-				       "score=%.02f "
-				       "numSampled=%.02f"
-				       "</nobr>"
-				       "</td>",
-				       siteHash,
-				       dd,tagHash,
-				       getSectionTypeAsStr(secType),
-				       score,
-				       numSampled);
-		}
 		else if ( rdbId == RDB_LINKDB ) {
 			key224_t *k2 = (key224_t *)k;
 			int64_t linkHash=g_linkdb.getLinkeeUrlHash64_uk(k2);
@@ -16570,14 +16524,6 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 			continue;
 		}
 		if ( slot < 0 && ks != 12 ) {
-			// if it is sectiondb and the orig doc did not
-			// add sectiondb recs because m_totalSiteVoters >=
-			// MAX_SITE_VOTERS, then that is ok!
-			if ( (rdbId == RDB_SECTIONDB ||
-			      rdbId == RDB2_SECTIONDB2 ) &&
-			     m_sectionsValid &&
-			     m_sections.m_totalSiteVoters >= MAX_SITE_VOTERS )
-				continue;
 			log("build: missing key #%"INT32" rdb=%s ks=%"INT32" ds=%"INT32" "
 			    "ks=%s "
 			    ,count,getDbnameFromId(rdbId),(int32_t)ks,
@@ -19902,68 +19848,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	return m_p ;
 }
 
-
-/*
-// add keys/recs from the table into the metalist
-bool XmlDoc::addTable96 ( HashTableX *tt1     ,
-			  int32_t       date1   ,
-			  bool       nosplit ) {
-
-	// sanity check
-	if ( tt1->m_numSlots ) {
-		if ( tt1->m_ks != sizeof(key96_t) ) {char *xx=NULL;*xx=0;}
-		if ( tt1->m_ds != 4               ) {char *xx=NULL;*xx=0;}
-	}
-
-	// docid is handy
-	int64_t d = *getDocId();
-
-	uint8_t f = 0;
-	if ( nosplit ) f = 0x80;
-
-	// use secondary rdbs if repairing
-	//bool useRdb2 = ( g_repair.isRepairActive() &&
-	//		 ! g_repair.m_fullRebuild  &&
-	//		 ! g_repair.m_removeBadPages );
-	char rdbId1 = RDB_INDEXDB;
-	char rdbId2 = RDB_DATEDB;
-	if ( m_useSecondaryRdbs ) { // useRdb2 ) {
-		rdbId1 = RDB2_INDEXDB2;
-		rdbId2 = RDB2_DATEDB2;
-	}
-
-	// store terms from "tt1" table
-	for ( int32_t i = 0 ; i < tt1->m_numSlots ; i++ ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// skip if empty
-		if ( tt1->m_flags[i] == 0 ) continue;
-		// get its key
-		int64_t *termId1 = (int64_t *)tt1->getKey ( i );
-		// get the score
-		uint8_t score1 = score32to8( tt1->getScoreFromSlot(i) );
-		// sanity check
-		if ( score1 <= 0 ) { char *xx=NULL;*xx=0; }
-		// store rdbid
-		*m_p++ = (rdbId1 | f);
-		// store it. not a del key.
-		*(key_t *)m_p=g_indexdb.makeKey(*termId1,score1,d,false);
-		// skip it
-		m_p += sizeof(key_t);
-		// add to datedb?
-		if ( date1 == -1 ) continue;
-		// yes
-		*m_p++ = (rdbId2 | f);
-		// store it. not a del key.
-		*(key128_t *)m_p=
-			g_datedb.makeKey(*termId1,date1,score1,d,false);
-		// advance over that
-		m_p += sizeof(key128_t);
-	}
-	return true;
-}
-*/
-
 bool XmlDoc::addTable128 ( HashTableX *tt1     , // T <key128_t,char> *tt1
 			   uint8_t     rdbId   ,
 			   bool        forDelete ) {
@@ -19981,16 +19865,11 @@ bool XmlDoc::addTable128 ( HashTableX *tt1     , // T <key128_t,char> *tt1
 	if ( useRdb2 && rdbId == RDB_LINKDB    ) useRdbId = RDB2_LINKDB2;
 	if ( useRdb2 && rdbId == RDB_DATEDB    ) useRdbId = RDB2_DATEDB2;
 	if ( useRdb2 && rdbId == RDB_PLACEDB   ) useRdbId = RDB2_PLACEDB2;
-	if ( useRdb2 && rdbId == RDB_SECTIONDB ) useRdbId = RDB2_SECTIONDB2;
 
 	// sanity checks
 	if ( tt1->m_ks != 16 ) { char *xx=NULL;*xx=0; }
 	if ( rdbId == RDB_PLACEDB ) {
 		if ( tt1->m_ds !=  512 ) { char *xx=NULL;*xx=0; }
-	}
-	else if ( rdbId == RDB_SECTIONDB ) {
-		int32_t svs = sizeof(SectionVote);
-		if ( tt1->m_ds !=  svs ) { char *xx=NULL;*xx=0; }
 	}
 	else {
 		if ( tt1->m_ds !=  0 ) { char *xx=NULL;*xx=0; }
@@ -20026,7 +19905,7 @@ bool XmlDoc::addTable128 ( HashTableX *tt1     , // T <key128_t,char> *tt1
 		// do not add the data if deleting
 		if ( forDelete ) continue;
 		// skip if not sectiondb or placedb
-		if ( rdbId != RDB_SECTIONDB && rdbId != RDB_PLACEDB ) continue;
+		if ( rdbId != RDB_PLACEDB ) continue;
 		// ok test it out (MDW)
 		//logf(LOG_DEBUG,"doc: UNDO ME!!!!!!!!"); // this below
 		//if ( count > 1 ) continue;
@@ -20049,7 +19928,6 @@ bool XmlDoc::addTable128 ( HashTableX *tt1     , // T <key128_t,char> *tt1
 		m_p += ds;
 	}
 	//if(rdbId==RDB_LINKDB    ) log("doc: added %"INT32" linkdb keys"   ,count);
-	//if(rdbId==RDB_SECTIONDB ) log("doc: added %"INT32" sectiondb keys",count);
 	return true;
 }
 
@@ -20195,339 +20073,6 @@ bool XmlDoc::addTable224 ( HashTableX *tt1 ) {
 	}
 	return true;
 }
-
-/*
-// . add table into our metalist pointed to by m_p
-// . k.n1 = date   (see hashWords() below)
-// . k.n0 = termId (see hashWords() below)
-// . and the value is the score, 32-bits
-bool XmlDoc::addTableDate ( HashTableX *tt1     , // T <key128_t,char> *tt1
-			    uint64_t    docId   ,
-			    uint8_t     rdbId   ,
-			    bool        nosplit ) {
-
-	if ( tt1->m_numSlotsUsed == 0 ) return true;
-
-	uint8_t f = 0;
-	if ( nosplit ) f = 0x80;
-
-	// sanity check
-	if ( rdbId == 0 ) { char *xx=NULL;*xx=0; }
-
-	// sanity checks
-	if ( nosplit ) {
-		if ( rdbId == RDB_LINKDB ) { char *xx=NULL;*xx=0; }
-	}
-
-	bool useRdb2 = m_useSecondaryRdbs;//g_repair.isRepairActive();
-	//if ( g_repair.m_fullRebuild            ) useRdb2 = false;
-	//if ( g_repair.m_removeBadPages         ) useRdb2 = false;
-	//if ( useRdb2 && rdbId == RDB_CLUSTERDB ) rdbId = RDB2_CLUSTERDB2;
-	if ( useRdb2 && rdbId == RDB_LINKDB    ) rdbId = RDB2_LINKDB2;
-	if ( useRdb2 && rdbId == RDB_DATEDB    ) rdbId = RDB2_DATEDB2;
-
-	// sanity checks
-	if ( tt1->m_ks != 12 ) { char *xx=NULL;*xx=0; }
-	if ( tt1->m_ds !=  4 ) { char *xx=NULL;*xx=0; }
-
-	// store terms from "tt1" table
-	for ( int32_t i = 0 ; i < tt1->m_numSlots ; i++ ) {
-		// skip if empty
-		if ( tt1->m_flags[i] == 0 ) continue;
-		// breathe
-		QUICKPOLL(m_niceness);
-		// get its key
-		key96_t *k = (key96_t *)tt1->getKey ( i );
-		// get its value
-		uint32_t v = *(uint32_t *)tt1->getValueFromSlot ( i );
-		// convert to 8 bits
-		v = score32to8 ( v );
-		// . make the meta list key for datedb
-		// . a datedb key (see Datedb.h)
-		key128_t mk = g_datedb.makeKey ( k->n0  , // termId
-						 k->n1  , // date
-						 v      , // score (8 bits)
-						 docId  ,
-						 false  );// del key?
-		// store rdbid with optional "nosplit" flag
-		*m_p++ = (rdbId | f);
-		// store it. it is a del key.
-		*(key128_t *)m_p = mk;
-		// skip it
-		m_p += sizeof(key128_t);
-	}
-	return true;
-}
-*/
-
-/*
-// add keys/recs from the table into the metalist
-bool XmlDoc::addTable96 ( HashTableX *tt1     ,
-			  HashTableX *tt2     ,
-			  int32_t       date1   ,
-			  int32_t       date2   ,
-			  bool       del     ,
-			  bool       nosplit ) {
-
-	// sanity check
-	if ( tt1->m_numSlots ) {
-		if ( tt1->m_ks != sizeof(key96_t) ) {char *xx=NULL;*xx=0;}
-		if ( tt1->m_ds != 4               ) {char *xx=NULL;*xx=0;}
-	}
-	if ( tt2->m_numSlots ) {
-		if ( tt2->m_ks != sizeof(key96_t) ) {char *xx=NULL;*xx=0;}
-		if ( tt2->m_ds != 4               ) {char *xx=NULL;*xx=0;}
-	}
-
-	// docid is handy
-	int64_t d = *getDocId();
-
-	uint8_t f = 0;
-	if ( nosplit ) f = 0x80;
-
-	// use secondary rdbs if repairing
-	//bool useRdb2 = ( g_repair.isRepairActive() &&
-	//		 ! g_repair.m_fullRebuild  &&
-	//		 ! g_repair.m_removeBadPages );
-	char rdbId1 = RDB_INDEXDB;
-	char rdbId2 = RDB_DATEDB;
-	if ( m_useSecondaryRdbs ) { // useRdb2 ) {
-		rdbId1 = RDB2_INDEXDB2;
-		rdbId2 = RDB2_DATEDB2;
-	}
-
-	// store terms from "tt1" table
-	for ( int32_t i = 0 ; i < tt1->m_numSlots ; i++ ) {
-		// skip if empty
-		if ( tt1->m_flags[i] == 0 ) continue;
-		// breathe
-		QUICKPOLL(m_niceness);
-		// get its key
-		int64_t *termId1 = (int64_t *)tt1->getKey ( i );
-		// get the score
-		uint8_t score1 = score32to8( tt1->getScoreFromSlot(i) );
-		// sanity check
-		if ( score1 <= 0 ) { char *xx=NULL;*xx=0; }
-		// see if in "tt2"
-		int32_t slot = tt2->getSlot ( termId1 );
-		// assume 0
-		uint8_t score2 = 0;
-		// look it up in the positive key table
-		if ( slot >= 0 ) {
-			score2 = score32to8 ( tt2->getScoreFromSlot(slot) );
-			// sanity check
-			if ( score2 <= 0 ) { char *xx=NULL;*xx=0; }
-		}
-		// we annihilate!
-		if ( score1 != score2 ) {
-			// store rdbid
-			*m_p++ = (rdbId1 | f);
-			// store it. it is a del key.
-			*(key_t *)m_p=g_indexdb.makeKey(*termId1,score1,d,del);
-			// skip it
-			m_p += sizeof(key_t);
-		}
-		// add to datedb?
-		if ( date1 == -1 ) continue;
-		// same dates too?
-		if ( date1 == date2 && score1 == score2 ) continue;
-		// yes
-		*m_p++ = (rdbId2 | f);
-		// store it. it is a del key.
-		*(key128_t *)m_p=g_datedb.makeKey(*termId1,date1,score1,d,del);
-		// advance over that
-		m_p += sizeof(key128_t);
-	}
-	return true;
-}
-
-// . add table into our metalist pointed to by m_p
-// . k.n1 = date   (see hashWords() below)
-// . k.n0 = termId (see hashWords() below)
-// . and the value is the score, 32-bits
-bool XmlDoc::addTableDate ( HashTableX *tt1     , // T <key128_t,char> *tt1
-			    HashTableX *tt2     , // <key128_t,char> *tt2
-			    uint64_t    docId   ,
-			    uint8_t     rdbId   ,
-			    bool        del     ,
-			    bool        nosplit ) {
-
-	uint8_t f = 0;
-	if ( nosplit ) f = 0x80;
-
-	// sanity check
-	if ( rdbId == 0 ) { char *xx=NULL;*xx=0; }
-
-	// sanity checks
-	if ( nosplit ) {
-		if ( rdbId == RDB_LINKDB ) { char *xx=NULL;*xx=0; }
-	}
-
-	bool useRdb2 = m_useSecondaryRdbs;//g_repair.isRepairActive();
-	//if ( g_repair.m_fullRebuild            ) useRdb2 = false;
-	//if ( g_repair.m_removeBadPages         ) useRdb2 = false;
-	if ( useRdb2 && rdbId == RDB_CLUSTERDB ) rdbId = RDB2_CLUSTERDB2;
-	if ( useRdb2 && rdbId == RDB_LINKDB    ) rdbId = RDB2_LINKDB2;
-	if ( useRdb2 && rdbId == RDB_DATEDB    ) rdbId = RDB2_DATEDB2;
-
-	// sanity checks
-	if ( tt1->m_ks != 12 ) { char *xx=NULL;*xx=0; }
-	if ( tt2->m_ks != 12 ) { char *xx=NULL;*xx=0; }
-	if ( tt1->m_ds !=  4 ) { char *xx=NULL;*xx=0; }
-	if ( tt2->m_ds !=  4 ) { char *xx=NULL;*xx=0; }
-
-	// store terms from "tt1" table
-	for ( int32_t i = 0 ; i < tt1->m_numSlots ; i++ ) {
-		// skip if empty
-		if ( tt1->m_flags[i] == 0 ) continue;
-		// breathe
-		QUICKPOLL(m_niceness);
-		// get its key
-		key96_t *k = (key96_t *)tt1->getKey ( i );
-		// get its value
-		uint32_t v = *(uint32_t *)tt1->getValueFromSlot ( i );
-		// convert to 8 bits
-		v = score32to8 ( v );
-		// see if in "tt2"
-		int32_t slot = tt2->getSlot ( k );
-		// get value if there
-		if ( slot >= 0 ) {
-			// get it
-			uint32_t val =*(uint32_t *)tt2->getValueFromSlot(slot);
-			// convert to 8 bits
-			val = score32to8 ( val );
-			// compare, if same, skip it!
-			if ( val == v ) continue;
-		}
-		// . make the meta list key for datedb
-		// . a datedb key (see Datedb.h)
-		key128_t mk = g_datedb.makeKey ( k->n0  , // termId
-						 k->n1  , // date
-						 v      , // score (8 bits)
-						 docId  ,
-						 del    );// del key?
-		// store rdbid with optional "nosplit" flag
-		*m_p++ = (rdbId | f);
-		// store it. it is a del key.
-		*(key128_t *)m_p = mk;
-		// skip it
-		m_p += sizeof(key128_t);
-	}
-	return true;
-}
-
-bool XmlDoc::addTable128 ( HashTableX *tt1     , // T <key128_t,char> *tt1
-			   HashTableX *tt2     , // <key128_t,char> *tt2
-			   uint8_t     rdbId   ,
-			   bool        del     ,
-			   bool        nosplit ) {
-
-	uint8_t f = 0;
-	if ( nosplit ) f = 0x80;
-
-	// sanity check
-	if ( rdbId == 0 ) { char *xx=NULL;*xx=0; }
-
-	// sanity checks
-	if ( nosplit ) {
-		if ( rdbId == RDB_LINKDB ) { char *xx=NULL;*xx=0; }
-		if ( rdbId == RDB_DATEDB ) { char *xx=NULL;*xx=0; }
-	}
-
-	bool useRdb2 = m_useSecondaryRdbs;//g_repair.isRepairActive();
-	//if ( g_repair.m_fullRebuild            ) useRdb2 = false;
-	//if ( g_repair.m_removeBadPages         ) useRdb2 = false;
-	if ( useRdb2 && rdbId == RDB_CLUSTERDB ) rdbId = RDB2_CLUSTERDB2;
-	if ( useRdb2 && rdbId == RDB_LINKDB    ) rdbId = RDB2_LINKDB2;
-	if ( useRdb2 && rdbId == RDB_DATEDB    ) rdbId = RDB2_DATEDB2;
-
-	// sanity checks
-	if ( tt1->m_ks != 16 ) { char *xx=NULL;*xx=0; }
-	if ( tt2->m_ks != 16 ) { char *xx=NULL;*xx=0; }
-	if ( rdbId == RDB_PLACEDB ) {
-		if ( tt1->m_ds !=  512 ) { char *xx=NULL;*xx=0; }
-		if ( tt2->m_ds !=  512 ) { char *xx=NULL;*xx=0; }
-	}
-	else if ( rdbId == RDB_SECTIONDB ) {
-		int32_t svs = sizeof(SectionVote);
-		if ( tt1->m_ds !=  svs ) { char *xx=NULL;*xx=0; }
-		if ( tt2->m_ds !=  svs ) { char *xx=NULL;*xx=0; }
-	}
-	else {
-		if ( tt1->m_ds !=  0 ) { char *xx=NULL;*xx=0; }
-		if ( tt2->m_ds !=  0 ) { char *xx=NULL;*xx=0; }
-	}
-
-	int32_t count = 0;
-
-	// store terms from "tt1" table
-	for ( int32_t i = 0 ; i < tt1->m_numSlots ; i++ ) {
-		// skip if empty
-		if ( tt1->m_flags[i] == 0 ) continue;
-		// breathe
-		QUICKPOLL(m_niceness);
-		// get its key
-		key128_t *k = (key128_t *)tt1->getKey ( i );
-		// no key is allowed to have the del bit clear at this point
-		// because we reserve that for making negative keys!
-		if ( ! ( k->n0 & 0x0000000000000001LL ) ){char*xx=NULL;*xx=0;}
-		// see if in "tt2"
-		int32_t slot = tt2->getSlot ( k );
-		// . skip if already indexed
-		// . do not do incremental indexing for sectiondb/placedb since
-		//   it may have the same key but different data!!!!!!!
-		if ( slot >= 0 &&
-		     rdbId != RDB_SECTIONDB &&
-		     rdbId != RDB_PLACEDB   )
-			continue;
-		// store rdbid with optional "nosplit" flag
-		*m_p++ = (rdbId | f);
-		// store it
-		// *(key128_t *)m_p = *k; does this work?
-		gbmemcpy ( m_p , k , sizeof(key128_t) );
-		// all keys must be positive at this point
-		if ( ! ( m_p[0] & 0x01 ) ) { char *xx=NULL;*xx=0; }
-		// clear the del bit if we are an unmatched key and "del"
-		// is true. we need to be a negative key now
-		if ( del ) m_p[0] = m_p[0] & 0xfe;
-		// skip key
-		m_p += sizeof(key128_t);
-		// count it
-		count++;
-		// skip if not sectiondb or placedb
-		if ( rdbId != RDB_SECTIONDB && rdbId != RDB_PLACEDB ) continue;
-		// ok test it out (MDW)
-		//logf(LOG_DEBUG,"doc: UNDO ME!!!!!!!!"); // this below
-		//if ( count > 1 ) continue;
-		// if we were a negative key, do not add a value, even for
-		// sectiondb
-		if ( del ) continue;
-		// get the data value
-		char *val = (char *)tt1->getValue ( k );
-		// get the size of the data to store. assume Sectiondb vote.
-		int32_t ds = sizeof(SectionVote);
-		// placedb is special even. include the \0 terminator
-		if ( rdbId == RDB_PLACEDB ) {
-			// "ds" is how many bytes we store as data
-			ds = gbstrlen(val)+1;
-			// store dataSize first
-			*(int32_t *)m_p = ds;
-			// skip it
-			m_p += 4;
-		}
-		// store possible accompanying date of the rdb record
-		gbmemcpy (m_p,val, ds );
-		// skip it
-		m_p += ds;
-	}
-	//if(rdbId==RDB_LINKDB    ) log("doc: added %"INT32" linkdb keys"   ,count);
-	//if(rdbId==RDB_SECTIONDB ) log("doc: added %"INT32" sectiondb keys",count);
-	return true;
-}
-*/
-
-
-
 
 // . this is kinda hacky because it uses a short XmlDoc on the stack
 // . no need to hash this stuff for regular documents since all the terms
