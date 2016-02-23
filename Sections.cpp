@@ -6973,7 +6973,6 @@ char *getSentBitLabel ( sentflags_t sf ) {
 	if ( sf == SENT_FORMTABLE_FIELD ) return "formtablefield";
 	if ( sf == SENT_FORMTABLE_VALUE ) return "formtablevalue";
 	if ( sf == SENT_IN_TAG ) return "intag";
-	if ( sf == SENT_HASSOMEEVENTSDATE ) return "hassomeeventsdate";
 	if ( sf == SENT_HASTITLEWORDS ) return "hastitlewords";
 	if ( sf == SENT_BADEVENTSTART ) return "badeventstart";
 	if ( sf == SENT_MENU_SENTENCE ) return "menusentence";
