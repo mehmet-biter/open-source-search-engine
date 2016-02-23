@@ -3557,39 +3557,6 @@ bool Sections::setSentFlagsPart2 ( ) {
 	// store these words into table
 	if ( ! s_init3 ) initGenericTable ( m_niceness );
 
-	//
-	// phrase exceptions to the ignore words
-	//
-	static char *s_exceptPhrases [] = {
-		// this title was used by exploratorium on a zvents page
-		"free day",
-		"concert band", // the abq concert band
-		"band concert",
-		"the voice", // "the voice of yes"
-		"voice of", // maybe just eliminate voice by itself...?
-		"voice for"
-	};
-	static HashTableX s_ext;
-	static char s_ebuf[10000];
-	static bool s_init4 = false;
-	if ( ! s_init4 ) {
-		s_init4 = true;
-		s_ext.set(8,0,512,s_ebuf,10000,false,m_niceness,"excp-tab");
-		int32_t n = (int32_t)sizeof(s_exceptPhrases)/ sizeof(char *); 
-		for ( int32_t i = 0 ; i < n ; i++ ) {
-			// set words
-			Words w;
-			w.set ( s_exceptPhrases[i], true, 0 );
-
-			int64_t *wi = w.getWordIds();
-			int64_t h = 0;
-			// scan words
-			for ( int32_t j = 0 ; j < w.getNumWords(); j++ )
-				if ( wi[j] ) h ^= wi[j];
-			// store hash of all words
-			s_ext.addKey ( &h );
-		}
-	}
 	// shortcut
 	Sections *ss = this;
 
