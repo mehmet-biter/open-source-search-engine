@@ -443,7 +443,7 @@ bool Msg40::federatedLoop ( ) {
 	int32_t slen = 0; if ( m_si->m_sites ) slen=gbstrlen(m_si->m_sites)+1;
 	mr.ptr_whiteList               = m_si->m_sites;
 	mr.size_whiteList              = slen;
-	mr.m_timeout                   = msg40_msg39_timeout;
+	mr.m_timeout                   = g_conf.m_msg40_msg39_timeout;
 	mr.m_realMaxTop                = m_si->m_realMaxTop;
 
 	mr.m_minSerpDocId              = m_si->m_minSerpDocId;

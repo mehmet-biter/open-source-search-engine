@@ -10331,6 +10331,31 @@ void Parms::init ( ) {
 	m++;
 
 
+	m->m_title = "msg40->39 timeout";
+	m->m_desc  = "Timeout for Msg40/Msg3a to collect candidate docids with Msg39. In milliseconds";
+	m->m_cgi   = "msgfourty_msgthirtynine_timeout";
+	m->m_off   = offsetof(Conf,m_msg40_msg39_timeout);
+	m->m_xml   = "msg40_msg39_timeout";
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_page  = PAGE_SEARCH;
+	m->m_obj   = OBJ_CONF;
+	m->m_def   = "5000";
+	m->m_flags = 0;
+	m++;
+
+
+	m->m_title = "msg3a->39 network overhead";
+	m->m_desc  = "Additional overhead/latecny for msg39 request+response over the network";
+	m->m_cgi   = "msgthreea_msgthirtynine_network_overhead";
+	m->m_off   = offsetof(Conf,m_msg3a_msg39_network_overhead);
+	m->m_xml   = "msg3a_msg39_network_overhead";
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_page  = PAGE_SEARCH;
+	m->m_obj   = OBJ_CONF;
+	m->m_def   = "250";
+	m->m_flags = 0;
+	m++;
+
 	///////////////////////////////////////////
 	// PAGE SPIDER CONTROLS
 	///////////////////////////////////////////

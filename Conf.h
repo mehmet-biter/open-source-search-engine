@@ -173,6 +173,9 @@ class Conf {
 	int32_t  m_sendEmailTimeout;
 	int32_t  m_pingSpacer;
 
+	int64_t  m_msg40_msg39_timeout; //timeout for entire get-docid-list phase, in milliseconds.
+	int64_t  m_msg3a_msg39_network_overhead; //additional latency/overhead of sending reqeust+response over network.
+	
 	// the spiderdb holds url records for spidering, when to spider, etc..
 	int32_t  m_maxWriteThreads ;
 	int32_t  m_spiderMaxDiskThreads    ;

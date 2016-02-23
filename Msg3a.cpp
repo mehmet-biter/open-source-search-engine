@@ -314,7 +314,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	// high because it is a spider time thing.
 	if ( m_r->m_timeout > 0 ) {
 		timeout = m_r->m_timeout;
-		timeout += 250; //add 250ms for general overhead
+		timeout += g_conf.m_msg3a_msg39_network_overhead;
 	}
 	if ( timeout > multicast_msg3a_maximum_timeout )
 		timeout = multicast_msg3a_maximum_timeout;
