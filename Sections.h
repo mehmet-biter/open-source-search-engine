@@ -7,8 +7,6 @@
 #include "Bits.h"
 #include "Words.h"
 #include "Rdb.h"
-//#include "DiskPageCache.h"
-
 
 // KEY:
 // ssssssss ssssssss ssssssss ssssssss  s = 48 bit site hash
@@ -68,22 +66,15 @@
 #define SEC_OPEN_ENDED         0x00800000 // no closing tag found
 #define SEC_SENTENCE           0x01000000 // made by a sentence?
 #define SEC_PLAIN_TEXT         0x02000000
-//#define SEC_UNUSED_1         0x04000000
+//#define SEC_UNUSED           0x04000000
 
-// . this is set in Dates.cpp and used by Dates.cpp and Events.cpp
-// . we identify max tod sections and make it so brothers in a list of two
-//   or more such sections cannot telescope to each other's dates, and so we
-//   do not share each other's event descriptions. fixes abqtango.com
-//   and salsapower.com from grabbing event description text from "failed"
-//   event sections that are brothers to successful event sections.
-#define SEC_TOD_EVENT               0x00008000000LL
-#define SEC_NIXED_HEADING_CONTAINER 0x00010000000LL
-
+//#define SEC_UNUSED                0x00008000000LL
+//#define SEC_UNUSED                0x00010000000LL
 #define SEC_SECOND_TITLE            0x00020000000LL
 #define SEC_SPLIT_SENT              0x00040000000LL
-#define SEC_HAS_REGISTRATION        0x00080000000LL
+//#define SEC_UNUSED                0x00080000000LL
 
-#define SEC_HAS_PARKING             0x00100000000LL
+//#define SEC_UNUSED                0x00100000000LL
 #define SEC_MENU_SENTENCE           0x00200000000LL
 // fix for folkmads.org:
 #define SEC_HR_CONTAINER            0x00400000000LL
@@ -543,9 +534,6 @@ class Sections {
 	bool setHeadingBit ( ) ;
 
 	void setTagHashes ( ) ;
-
-	bool setRegistrationBits ( ) ;
-	bool m_setRegBits ;
 
 	bool m_alnumPosValid;
 
