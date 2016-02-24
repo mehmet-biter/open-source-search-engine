@@ -666,11 +666,6 @@ public:
 					  class SafeBuf *pbuf, class HashTableX *wts, class SafeBuf *wbuf, int32_t version,
 					  int32_t siteNumInlinks, int32_t niceness );
 
-	bool hashFacet1 ( char *term, class Words *words , HashTableX *dt) ;
-
-	bool hashFacet2 ( char *prefix,char *term,int32_t val32, HashTableX *dt,
-			  bool shardByTermId = false ) ;
-
 	// gbfieldmatch:
 	bool hashFieldMatchTerm ( char *val, int32_t vlen, class HashInfo *hi);
 
@@ -691,8 +686,6 @@ public:
 					FacetValHash_t fvh ) ;
 	bool storeFacetValuesSite     ( char *qs , SafeBuf *sb , 
 					FacetValHash_t fvh );
-	bool storeFacetValuesSections ( char *qs , class SafeBuf *sb ,
-					FacetValHash_t fvh ) ;
 	bool storeFacetValuesHtml     ( char *qs , class SafeBuf *sb ,
 					FacetValHash_t fvh ) ;
 	bool storeFacetValuesXml      ( char *qs , class SafeBuf *sb ,

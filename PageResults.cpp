@@ -5727,53 +5727,6 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-#ifdef SUPPORT_FACETS
-		// BR 20160801: Disabled by default
-
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "Language facet";
-		s_mi[n].m_cgi      = "facet=gbfacetint:gblang";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "Content type facet";
-		s_mi[n].m_cgi      = "facet=gbfacetstr:type";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "Url path depth";
-		s_mi[n].m_cgi      = "facet=gbfacetint:gbpathdepth";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "Spider date facet";
-		s_mi[n].m_cgi      = "facet=gbfacetint:gbspiderdate";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		// everything in tagdb is hashed
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "Site num inlinks facet";
-		s_mi[n].m_cgi      = "facet=gbfacetint:gbtagsitenuminlinks";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		// s_mi[n].m_menuNum  = 4;
-		// s_mi[n].m_title    = "Domains facet";
-		// s_mi[n].m_cgi      = "facet=gbfacetint:gbdomhash";
-		// n++;
-
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "Hopcount facet";
-		s_mi[n].m_cgi      = "facet=gbfacetint:gbhopcount";
-		s_mi[n].m_icon     = NULL;
-		n++;
-#endif
-
-
 		// output
 		s_mi[n].m_menuNum  = 5;
 		s_mi[n].m_title    = "Output HTML";
@@ -6004,10 +5957,8 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		// after 4 make a new line
 		if ( i == 5 ) sb->safePrintf("<br><br>");
 		if ( i == 9 ) sb->safePrintf("<br><br>");
-			
-#ifndef SUPPORT_FACETS
+
 		if( i == 4 ) continue;
-#endif			
 
 		printMenu ( sb , i , hr );
 	}

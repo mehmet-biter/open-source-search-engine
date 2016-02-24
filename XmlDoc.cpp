@@ -22983,11 +22983,11 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 		return true;
 	}
 
-	if ( isXml )
-		sb->safePrintf ("<?xml version=\"1.0\" "
-				"encoding=\"UTF-8\" ?>\n"
-				"<response>\n"
-				);
+	// at this point, xml only
+	sb->safePrintf ("<?xml version=\"1.0\" "
+	                "encoding=\"UTF-8\" ?>\n"
+	                "<response>\n"
+	                );
 
 	Section *si = sections->m_rootSection;
 
@@ -23045,30 +23045,6 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 		}
 		sb->safePrintf("\t\t<bgColor>%06"XINT32"</bgColor>\n",bcolor);
 		sb->safePrintf("\t\t<textColor>%06"XINT32"</textColor>\n",fcolor);
-		// count stats
-		uint64_t ch64 = (int32_t)si->m_sentenceContentHash64;
-		if ( ! ch64 ) {
-			sb->safePrintf("\t</section>\n");
-			continue;
-		}
-		/* take this out for now it is not quite right any more.
-		   we now use the xpath hash and site hash as the key
-		   and the "value" is the sentence/innerHtml hash
-		sb->safePrintf("\t\t<numOnSitePagesThatDuplicateContent>%"INT32""
-			       "</numOnSitePagesThatDuplicateContent>\n",
-			       (int32_t)si->m_stats.m_onSiteDocIds);
-		sb->safePrintf("\t\t<numOffSitePagesThatDuplicateContent>%"INT32""
-			       "</numOffSitePagesThatDuplicateContent>\n",
-			       (int32_t)si->m_stats.m_offSiteDocIds);
-		sb->safePrintf("\t\t<numSitesThatDuplicateContent>%"INT32""
-			       "</numSitesThatDuplicateContent>\n",
-			       (int32_t)si->m_stats.m_numUniqueSites);
-		*/
-		// you can do a sitehash:xxxxx this number to see who the
-		// dups are!
-		sb->safePrintf("\t\t<innerContentHash64>%"UINT64""
-			       "</innerContentHash64>\n",
-			       si->m_sentenceContentHash64);
 		sb->safePrintf("\t</section>\n");
 	}
 
@@ -26392,11 +26368,6 @@ bool XmlDoc::storeFacetValues ( char *qs , SafeBuf *sb , FacetValHash_t fvh ) {
 
 	storeFacetValuesSite ( qs, sb, fvh );
 
-	// if "qa" is a gbxpathsitehash123456 type of beastie then we
-	// gotta scan the sections
-	if ( strncasecmp(qs,"gbxpathsitehash",15) == 0 )
-		return storeFacetValuesSections ( qs , sb , fvh );
-
 	// if a json doc, get json field
 	// spider status docs are really json now
 	if ( m_contentType == CT_JSON || m_contentType == CT_STATUS )
@@ -26438,63 +26409,6 @@ bool XmlDoc::storeFacetValuesSite ( char *qs , SafeBuf *sb , FacetValHash_t fvh 
 	return true;
 }
 
-bool XmlDoc::storeFacetValuesSections ( char *qs , SafeBuf *sb ,
-					FacetValHash_t fvh ) {
-
-	// scan all sections
-	Sections *ss = getSections();
-	if ( ! ss ) return false;
-	if ( ss == (void *)-1 ) { char *xx=NULL;*xx=0; }
-
-	Words *ww = getWords();
-	if ( ! ww ) return false;
-	if ( ww == (void *)-1 ) { char *xx=NULL;*xx=0; }
-
-	int32_t siteHash32 = *getSiteHash32();
-
-	// qs is like gbxpathsitehash1234567
-	// so get the digit part
-	char *p = qs;
-	for ( ; *p && ! is_digit(*p); p++ );
-	uint64_t xsh = (uint64_t)atoll(p);
-
-	bool isString = false;
-	if ( strncmp(qs-4,"str:",4) == 0 ) isString = true;
-
-	Section *si = ss->m_rootSection;
-	for ( ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// is it a match?
-		uint64_t mod;
-		mod = (uint32_t)si->m_turkTagHash32;
-		mod ^= (uint32_t)siteHash32;
-		if ( mod != xsh ) continue;
-		// . then add facet VALUE
-		// . hash of the innerhtml of sentence
-		// . get hash of sentences this tag contains indirectly
-		uint32_t val32 = (uint32_t)si->m_indirectSentHash64;
-		if ( ! val32 ) continue;
-		// if a facetvalhash was provided we must match
-		if ( fvh && val32 != fvh ) continue;
-		// got one print the facet field
-		if ( ! sb->safeStrcpy(qs) ) return false;
-		if ( ! sb->pushChar('\0') ) return false;
-		if ( isString && ! sb->safePrintf("%"UINT32",",val32) )
-			return false;
-		// put ALSO print the string somewhat
-		char *a = m_words.m_words[si->m_next->m_a];
-		char *b = m_words.m_words[si->m_next->m_b-1];
-		b += m_words.m_wordLens  [si->m_next->m_b-1];
-		if ( ! sb->safeTruncateEllipsis (a,b-a,160) ) return false;
-		if ( ! sb->pushChar('\0') ) return false;
-		// if wanted a specific string, we are done
-		if ( fvh ) return true;
-	}
-	return true;
-}
-
-
 bool XmlDoc::storeFacetValuesHtml(char *qs, SafeBuf *sb, FacetValHash_t fvh ) {
 
 	Xml *xml = getXml();
@@ -26503,17 +26417,6 @@ bool XmlDoc::storeFacetValuesHtml(char *qs, SafeBuf *sb, FacetValHash_t fvh ) {
 
 	bool isString = false;
 	if ( strncmp(qs-4,"str:",4) == 0 ) isString = true;
-
-	// check for gblang:en etc.
-	// if ( isString && strncmp(qs,"gblang",6)==0 ) {
-	// 	if (!sb->safeStrcpy(qs) ) return false;
-	// 	if (!sb->pushChar('\0') ) return false;
-	// 	// find the lang that has that hash!
-	// 	if (!sb->safePrintf("%"UINT32",",(uint32_t)val32))return false;
-	// 	if (!sb->safeMemcpy(content,contentLen) ) return false;
-	// 	if (!sb->pushChar('\0') ) return false;
-	//}
-
 
 	char *content;
 	int32_t contentLen;

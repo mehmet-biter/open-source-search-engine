@@ -19,7 +19,7 @@
 // NNNNNNNN NNNNNNNN NNNNNNNN NNNNNNNN  N = SectionVote::m_numSampled
 
 // h: hash value. typically the lower 32 bits of the 
-//    Section::m_sentenceContentHash64 or the Section::m_contentHash64 vars. we
+//    Section::m_contentHash64 vars. we
 //    do not need the full 64 bits because we have the 48 bit site hash included
 //    to reduce collisions substantially.
 
@@ -161,10 +161,6 @@ public:
 	// hash of this tag's baseHash and all its parents baseHashes combined
 	uint32_t  m_tagHash;
 
-	// like above but for turk voting. includes hash of the class tag attr
-	// from m_turkBaseHash, whereas m_tagHash uses m_baseHash of parent.
-	uint32_t m_turkTagHash32;
-
 	// for debug output display of color coded nested sections
 	uint32_t m_colorHash;
 
@@ -175,24 +171,12 @@ public:
 	// div and span tags, etc. to make them unique
 	uint32_t  m_baseHash;
 
-	// just hash the "class=" value along with the tagid
-	uint32_t m_turkBaseHash;
-
 	// kinda like m_baseHash but for xml tags and only hashes the
 	// tag name and none of the fields
 	uint32_t  m_xmlNameHash;
 
-	// these deal with enumertated tags and are used by Events.cpp
-	int32_t  m_numOccurences;
-
 	// hash of all the alnum words DIRECTLY in this section
 	uint64_t  m_contentHash64;
-
-	uint64_t  m_sentenceContentHash64;
-
-	// hash of all sentences contained indirectly or directly.
-	// uses m_sentenceContentHash64 (for sentences)
-	uint64_t m_indirectSentHash64;
 
 	// . range of words in Words class we encompass
 	// . m_wordStart and m_wordEnd are the tag word #'s

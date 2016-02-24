@@ -3508,163 +3508,8 @@ skipsingleword:
 			return false;
 	}
 
-
-#ifdef SUPPORT_FACETS
-	//BR 20160108 - facets DISABLED AS TEST. Don't think we will use them.
-	//https://gigablast.com/syntax.html?c=main
-
-#ifdef PRIVACORE_SAFE_VERSION
-	#error Oops? Do not enable SUPPORT_FACETS with PRIVACORE_SAFE_VERSION. Stores too much unused data in posdb.
-#endif
-
-	// hash a single term so they can do gbfacet:ext or
-	// gbfacet:siterank or gbfacet:price. a field on a field.
-	if ( prefixHash && words->m_numWords )
-	{
-		// hash gbfacet:price with and store the price in the key
-		hashFacet1 ( hi->m_prefix, words ,hi->m_tt);//, hi );
-	}
-#endif
-
-
 	// between calls? i.e. hashTitle() and hashBody()
 	if ( i > 0 ) m_dist = wposvec[i-1] + 100;
-
-	return true;
-}
-
-// just like hashNumber*() functions but we use "gbfacet" as the
-// primary prefix, NOT gbminint, gbmin, gbmax, gbmaxint, gbsortby,
-// gbsortbyint, gbrevsortby, gbrevsortbyint
-bool XmlDoc::hashFacet1 ( char *term ,
-			  Words *words ,
-			  HashTableX *tt ) {
-
-	// need a prefix
-	//if ( ! hi->m_prefix ) return true;
-
-	// hash the ENTIRE content, all words as one blob
-	int32_t nw = words->getNumWords();
-	char *a = words->m_words[0];
-	char *b = words->m_words[nw-1]+words->m_wordLens[nw-1];
-	// hash the whole string as one value, the value of the facet
-	int32_t val32 = hash32 ( a , b - a );
-
-	if ( ! hashFacet2 ( "gbfacetstr",term, val32 , tt ) ) return false;
-
-	return true;
-}
-
-
-bool XmlDoc::hashFacet2 ( char *prefix,
-			  char *term ,
-			  int32_t val32 ,
-			  HashTableX *tt ,
-			  // we only use this for gbxpathsitehash terms:
-			  bool shardByTermId ) {
-
-	// this is case-sensitive
-	int64_t prefixHash = hash64n ( prefix );
-
-	// term is like something like "object.price" or whatever.
-	// it is the json field itself, or the meta tag name, etc.
-	int64_t termId64 = hash64n ( term );
-
-	// combine with the "gbfacet" prefix. old prefix hash on right.
-	// like "price" on right and "gbfacetfloat" on left... see Query.cpp.
-	int64_t ph2 = hash64 ( termId64, prefixHash );
-
-	// . now store it
-	// . use field hash as the termid. normally this would just be
-	//   a prefix hash
-	// . use mostly fake value otherwise
-	key144_t k;
-	g_posdb.makeKey ( &k ,
-			  ph2 ,
-			  0,//docid
-			  0,// word pos #
-			  0,// densityRank , // 0-15
-			  0 , // MAXDIVERSITYRANK
-			  0 , // wordSpamRank ,
-			  0 , //siterank
-			  0 , // hashGroup,
-			  // we set to docLang final hash loop
-			  //langUnknown, // langid
-			  // unless already set. so set to english here
-			  // so it will not be set to something else
-			  // otherwise our floats would be ordered by langid!
-			  // somehow we have to indicate that this is a float
-			  // termlist so it will not be mangled any more.
-			  //langEnglish,
-			  langUnknown,
-			  0 , // multiplier
-			  false, // syn?
-			  false , // delkey?
-			  shardByTermId );
-
-	// now set the float in that key
-	g_posdb.setInt ( &k , val32 );
-
-	// HACK: this bit is ALWAYS set by Posdb::makeKey() to 1
-	// so that we can b-step into a posdb list and make sure
-	// we are aligned on a 6 byte or 12 byte key, since they come
-	// in both sizes. but for this, hack it off to tell
-	// addTable144() that we are a special posdb key, a "numeric"
-	// key that has a float stored in it. then it will NOT
-	// set the siterank and langid bits which throw our sorting
-	// off!!
-	g_posdb.setAlignmentBit ( &k , 0 );
-
-	HashTableX *dt = tt;//hi->m_tt;
-
-	// the key may indeed collide, but that's ok for this application
-	if ( ! dt->addTerm144 ( &k ) )
-		return false;
-
-	if ( ! m_wts )
-		return true;
-
-	bool isFloat = false;
-	if ( strcmp(prefix,"gbfacetfloat")==0 ) isFloat = true;
-
-	// store in buffer for display on pageparser.cpp output
-	char buf[130];
-	if ( isFloat )
-		snprintf(buf,128,"facetField=%s facetVal32=%f",term,
-			 *(float *)&val32);
-	else
-		snprintf(buf,128,"facetField=%s facetVal32=%"UINT32"",
-			 term,(uint32_t)val32);
-	int32_t bufLen = gbstrlen(buf);
-
-	// make a special hashinfo for this facet
-	HashInfo hi;
-	hi.m_tt = tt;
-	// the full prefix
-	char fullPrefix[66];
-	snprintf(fullPrefix,64,"%s:%s",prefix,term);
-	hi.m_prefix = fullPrefix;//"gbfacet";
-
-	// add to wts for PageParser.cpp display
-	// store it
-	if ( ! storeTerm ( buf,
-			   bufLen,
-			   ph2, // prefixHash, // s_facetPrefixHash,
-			   &hi,
-			   0, // word#, i,
-			   0, // wordPos
-			   0,// densityRank , // 0-15
-			   0, // MAXDIVERSITYRANK,//phrase
-			   0, // ws,
-			   0, // hashGroup,
-			   //true,
-			   &m_wbuf,
-			   m_wts,
-			   // a hack for display in wts:
-			   SOURCE_NUMBER, // SOURCE_BIGRAM, // synsrc
-			   langUnknown ,
-			   k) )
-		return false;
 
 	return true;
 }
@@ -4184,27 +4029,6 @@ char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
 			}
 		}
 
-
-		//
-		// for deduping search results we set m_contentHash32 here for
-		// diffbot json objects.
-		// we can't do this here anymore, we have to set the
-		// contenthash in ::getContentHash32() because we need it to
-		// set EDOCUNCHANGED in ::getIndexCode() above.
-		//
-		/*
-		if ( hi->m_hashGroup != HASHGROUP_INURL ) {
-			// make the content hash so we can set m_contentHash32
-			// for deduping
-			int32_t nh32 = hash32n ( name );
-			// do an exact hash for now...
-			int32_t vh32 = hash32 ( val , vlen , m_niceness );
-			// accumulate, order independently
-			totalHash32 ^= nh32;
-			totalHash32 ^= vh32;
-		}
-		*/
-
 		// index like "title:whatever"
 		hi->m_prefix = name;
 		hashString ( val , vlen , hi );
@@ -4222,23 +4046,7 @@ char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
 		hi->m_prefix = NULL;
 		hashString ( val , vlen , hi );
 
-		/*
-		// a number? hash special then as well
-		if ( ji->m_type != JT_NUMBER ) continue;
-
-		// use prefix for this though
-		hi->m_prefix = name;
-
-		// hash as a number so we can sort search results by
-		// this number and do range constraints
-		float f = ji->m_valueDouble;
-		if ( ! hashNumberForSortingAsFloat ( f , hi ) )
-			return NULL;
-		*/
 	}
-
-	//m_contentHash32 = totalHash32;
-	//m_contentHash32Valid = true;
 
 	return (char *)0x01;
 }

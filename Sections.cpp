@@ -1016,77 +1016,14 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		if ( sn->m_baseHash == 0 ) { 
 			// fix core on gk21
 			sn->m_baseHash = 2;
-			//char *xx=NULL;*xx=0; }
 		}
 		// set this now too WHY? should already be set!!! was
 		// causing the root section to become a title section
 		// because first word was "<title>". then every word in
 		// the doc got SEC_IN_TITLE set and did not get hashed
 		// in XmlDoc::hashBody()... NOR in XmlDoc::hashTitle()!!!
-		if ( sn != rootSection ) // || tid != TAG_TITLE ) 
+		if ( sn != rootSection )
 			sn->m_tagId = tid;
-
-
-		//
-		// set m_turkBaseHash
-		//
-		// . using just the tid based turkTagHash is not as good
-		//   as incorporating the class of tags because we can then
-		//   distinguish between more types of tags in a document and
-		//   that is kind of what "class" is used for
-		//
-		// use this = "Class" tid
-		int64_t ctid = tid;
-		// get ptr
-		uint8_t *p = (uint8_t *)wptrs[ws];
-		// skip <
-		p++;
-		// skip following alnums, that is the tag name
-		for ( ; is_alnum_a(*p) ; p++ );
-		// scan for "class" in it
-		uint8_t *pend = p + 100;
-		// position ptr
-		unsigned char cnt = 0;
-		// a flag
-		bool inClass = false;
-		// . just hash every freakin char i guess
-		// . TODO: maybe don't hash "width" for <td><tr>
-		for ( ; *p && *p !='>' && p < pend ; p++ ) {
-			// hashing it up?
-			if ( inClass ) {
-				// all done if space
-				if ( is_wspace_a(*p) ) break;
-				// skip if not alnum
-				//if ( !is_alnum_a(*p)) continue;
-				// hash it in
-				ctid ^= g_hashtab[cnt++][(unsigned char)*p];
-			}
-			// look for " class="
-			if ( p[0] !=' ' ) continue;
-			if ( to_lower_a(p[1]) != 'c' ) continue;
-			if ( to_lower_a(p[2]) != 'l' ) continue;
-			if ( to_lower_a(p[3]) != 'a' ) continue;
-			if ( to_lower_a(p[4]) != 's' ) continue;
-			if ( to_lower_a(p[5]) != 's' ) continue;
-			if ( to_lower_a(p[6]) != '=' ) continue;
-			// mark it
-			inClass = true;
-			// skip over it
-			p += 6;
-		}
-		// if root section has no tag this is zero and will core
-		// in Dates.cpp where it checks m_turkTagHash32 to be zero
-		if ( ctid == 0 ) ctid = 999999;
-		// set it for setting m_turkTagHash32
-		sn->m_turkBaseHash = ctid;
-		// always make root turkbasehash be 999999.
-		// if root section did not start with tag it's turkBaseHash
-		// will be 999999. but a root section that did start with
-		// a tag will have a different turk base hash.
-		// will be the same, even if one leads with some punct.
-		// fix fandango.com and its kid.
-		if ( sn == m_rootSection )
-			sn->m_turkBaseHash = 999999;
 	}
 
 
@@ -1353,60 +1290,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		sn->m_flags |= SEC_NOTEXT;
 		// count it
 		m_numInvalids++;
-	}
-
-	//
-	// set m_sentenceContentHash for sentence that need it
-	//
-	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get it
-		Section *sn = &m_sections[i];
-		// skip if had text
-		if ( ! ( sn->m_flags & SEC_SENTENCE ) ) continue;
-
-		// no, m_contentHash64 is just words contained 
-		// directly in the section... so since a sentence can
-		// contain like a bold subsection, we gotta scan the
-		// whole thing.
-		sn->m_sentenceContentHash64 = 0LL;
-
-		// scan the wids of the whole sentence, which may not
-		// be completely contained in the "sn" section!!
-		int32_t a = sn->m_senta;
-		int32_t b = sn->m_sentb;
-		for ( int32_t j = a ; j < b ; j++ ) {
-			// breathe
-			QUICKPOLL(m_niceness);
-			// must be an alnum word
-			if ( ! m_wids[j] ) continue;
-			// get its section
-			sn->m_sentenceContentHash64 ^= m_wids[j];
-			// fix "smooth smooth!"
-			if ( sn->m_sentenceContentHash64 == 0 )
-				sn->m_sentenceContentHash64 = 123456;
-		}
-	}
-
-
-	////////
-	//
-	// set Section::m_indirectSentHash64
-	//
-	////////
-	for ( Section *sn = m_firstSent ; sn ; sn = sn->m_nextSent ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// sanity check
-		int64_t sc64 = sn->m_sentenceContentHash64;
-		if ( ! sc64 ) { char *xx=NULL;*xx=0; }
-		// propagate it upwards
-		Section *p = sn;
-		// TODO: because we use XOR for speed we might end up with
-		// a 0 if two sentence are repeated, they cancel out..
-		for ( ; p ; p = p->m_parent )
-			p->m_indirectSentHash64 ^= sc64;
 	}
 
 	//
@@ -2575,8 +2458,6 @@ void Sections::setNextSentPtrs ( ) {
 void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 	sec_t f = sn->m_flags;
 
-	sbuf->safePrintf("indsenthash64=%"UINT64" ",sn->m_indirectSentHash64);
-
 	if ( f & SEC_HEADING )
 		sbuf->safePrintf("heading ");
 
@@ -3408,9 +3289,7 @@ void Sections::setTagHashes ( ) {
 		if ( ! sn->m_parent ) {
 			sn->m_depth   = 0;
 			sn->m_tagHash = bh;
-			sn->m_turkTagHash32 = sn->m_turkBaseHash;//m_tagId;
-			//sn->m_turkTagHash32 = bh;
-			//sn->m_formatHash = fh;
+
 			// sanity check
 			if ( bh == 0 ) { char *xx=NULL;*xx=0; }
 			continue;
@@ -3422,14 +3301,6 @@ void Sections::setTagHashes ( ) {
 		// . do not include hyperlinks as part of the cumulative hash!
 		sn->m_tagHash = hash32h ( bh , sn->m_parent->m_tagHash );
 
-		// now use this for setting Date::m_dateTagHash instead
-		// of using Section::m_tagHash since often the dates like
-		// for zvents.org are in a <tr id=xxxx> where xxxx changes
-		sn->m_turkTagHash32 = 
-			//hash32h ( sn->m_tagId, sn->m_parent->m_turkTagHash );
-			hash32h ( sn->m_turkBaseHash,
-				  sn->m_parent->m_turkTagHash32 );
-
 		sn->m_colorHash = hash32h ( bh , sn->m_parent->m_colorHash );
 
 		// if we are an implied section, just use the tag hash of
@@ -3438,7 +3309,6 @@ void Sections::setTagHashes ( ) {
 		// the section voting should still match up
 		if ( bh == BH_IMPLIED ) {
 			sn->m_tagHash     = sn->m_parent->m_tagHash;
-			sn->m_turkTagHash32 = sn->m_parent->m_turkTagHash32;
 		}
 
 		if ( sn->m_tagHash == 0 ) sn->m_tagHash = 1234567;
@@ -3670,15 +3540,8 @@ bool Sections::printSectionDiv ( Section *sk , char format ) {
 	// print tag hash now
 	m_sbuf->safePrintf("taghash=%"UINT32" ",(int32_t)sk->m_tagHash);
 
-	m_sbuf->safePrintf("turktaghash=%"UINT32" ",
-	                   (int32_t)sk->m_turkTagHash32);
-
 	if ( sk->m_contentHash64 )
 		m_sbuf->safePrintf("ch64=%"UINT64" ",sk->m_contentHash64);
-	if ( sk->m_sentenceContentHash64 &&
-	     sk->m_sentenceContentHash64 != sk->m_contentHash64 )
-		m_sbuf->safePrintf("sch=%"UINT64" ",
-		                   sk->m_sentenceContentHash64);
 
 	printFlags ( m_sbuf , sk );
 	

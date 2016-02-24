@@ -3736,22 +3736,6 @@ static bool       s_isInitialized = false;
 
 // 3rd field = m_hasColon
 struct QueryField g_fields[] = {
-
-/*
-	BR 20160117: No longer hashed
-	{"gbfieldmatch",
-	 FIELD_GBFIELDMATCH,
-	 true,
-	 "gbfieldmatch:strings.vendor:\"My Vendor Inc.\"",
-	 "Matches all the meta tag or JSON or XML fields that have "
-	 "the name \"strings.vendor\" and contain the exactly provided "
-	 "value, in this case, <i>My Vendor Inc.</i>. This is CASE "
-	 "SENSITIVE and includes punctuation, so it's exact match. In "
-	 "general, it should be a very short termlist, so it should be fast.",
-	 "Advanced Query Operators",
-	 QTF_BEGINNEWTABLE },
-*/
-
 	{"url", 
 	 FIELD_URL, 
 	 true,
@@ -3779,10 +3763,6 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0 },
 
-	//{"links", FIELD_LINKS, true,"Same as link:."},
-	//{"ilink", FIELD_ILINK, true,"Similar to above."},
-
-
 	{"sitelink", 
 	 FIELD_SITELINK, 
 	 true,
@@ -3809,8 +3789,6 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 QTF_DUP },
 
-
-	//{"coll", FIELD_COLL, true,"Not sure if this works."},
 	{"ip", 
 	 FIELD_IP, 
 	 true,
@@ -3877,22 +3855,6 @@ struct QueryField g_fields[] = {
 	 NULL,
 	0},
 
-
-	//{"isclean", FIELD_ISCLEAN, true,"Matches all pages that are deemed non-offensive and safe for children."},
-
-
-/*
-	BR 20160108: No longer stored in our posdb as we don't plan to use it
-	{"gbinrss", 
-	 FIELD_GBRSS, 
-	 true,
-	 "gbinrss:1",
-	 "Matches all documents that are in RSS feeds. Likewise, use "
-	 "<i>gbinrss:0</i> to match all documents that are NOT in RSS feeds.",
-	 NULL,
-	 0},
-*/
-
 	{"type", 
 	 FIELD_TYPE, 
 	 false,
@@ -3925,44 +3887,6 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
-/*
-	BR 20160117: No longer hash image info
-	{"gbimage",
-	 FIELD_URL,
-	 false,
-	 "gbimage:site.com/image.jpg",
-	 "Matches all documents that contain the specified image.",
-	 NULL,
-	 0},
-
-	{"gbhasthumbnail",
-	 FIELD_GENERIC,
-	 false,
-	 "gbhasthumbnail:1",
-	 "Matches all documents for which Gigablast detected a thumbnail. "
-	 "Likewise use <i>gbhasthumbnail:0</i> to match all documents that "
-	 "do not have thumbnails.",
-	 NULL,
-	 0},
-*/
-
-/*
-	BR 20160117: No longer hash tags
-	{"gbtag*", 
-	 FIELD_TAG, 
-	 false,
-	 "gbtag*",
-	 "Matches all documents whose tag named * have the specified value "
-	 "in the tagdb entry for the url. Example: gbtagsitenuminlinks:2 "
-	 "matches all documents that have 2 qualified "
-	 "inlinks pointing to their site "
-	 "based on the tagdb record. You can also provide your own "
-	 "tags in addition to the tags already present. See the <i>tagdb</i> "
-	 "menu for more information.",
-	 NULL,
-	0},
-*/
-
 	{"gbzipcode", 
 	 FIELD_ZIP, 
 	 false,
@@ -3971,25 +3895,6 @@ struct QueryField g_fields[] = {
 	 "in their meta zip code tag.",
 	 NULL,
 	 0},
-
-/*
-	BR 20160108: No longer stored in our posdb as we don't plan to use it
-
-	{"gbcharset", 
-	 FIELD_CHARSET, 
-	 false,
-	 "gbcharset:windows-1252",
-	 "Matches all documents originally in the Windows-1252 charset. "
-	 "Available character sets are listed in the <i>iana_charset.cpp</i> "
-	 "file in the open source distribution. There are a lot. Some "
-	 "more popular ones are: <i>us, latin1, iso-8859-1, csascii, ascii, "
-	 "latin2, latin3, latin4, greek, utf-8, shift_jis.",
-	 NULL,
-	 0},
-*/
-
-	// this just complicates things for now, so comment out
-	//{"urlhash",FIELD_URLHASH, false,""},
 
 	{"gblang",
 	 FIELD_GBLANG,
@@ -4004,91 +3909,6 @@ struct QueryField g_fields[] = {
 	 "gblang:\"zh_cn\"</i> (note the quotes for zh_cn!).",
 	 NULL,
 	 0},
-
-	//{"gbquality",FIELD_GBQUALITY,true,""},
-	//{"gblinktextin",FIELD_LINKTEXTIN,true,""},
-	//{"gblinktextout",FIELD_LINKTEXTOUT,true,""},
-	//{"gbkeyword",FIELD_KEYWORD,true,""},
-	//{"gbcharset", FIELD_CHARSET, false,""},
-
-/*
-	// BR 20160106: No longer stored in our posdb as we don't use it
-	{"gbpathdepth", 
-	 FIELD_GBOTHER, 
-	 false,
-	 "gbpathdepth:3",
-	 "Matches all documents whose url has 3 path components to it like "
-	 "http://somedomain.com/dir1/dir2/dir3/foo.html",
-	 NULL,
-	 0},
-*/
-
-/*
-	// BR 20160108: No longer stored in our posdb as we don't use it
-	{"gbhopcount", 
-	 FIELD_GBOTHER, 
-	 false,
-	 "gbhopcount:2",
-	 "Matches all documents that are a minimum of two link hops away "
-	 "from a root url.",
-	 NULL,
-	 0},
-*/
-
-/*
-	// BR 20160108: No longer stored in our posdb as we don't use it
-	{"gbhasfilename", 
-	 FIELD_GBOTHER, 
-	 false,
-	 "gbhasfilename:1",
-	 "Matches all documents whose url ends in a filename like "
-	 "<i>http://somedomain.com/dir1/myfile</i> and not "
-	 "<i>http://somedomain.com/dir1/dir2/</i>. Likewise, use "
-	 "<i>gbhasfilename:0</i> to match all the documents that do not "
-	 "have a filename in their url.",
-	 NULL,
-	 0},
-*/
-
-/*
-	BR 20160108: No longer stored in our posdb as we don't plan to use it
-
-	{"gbiscgi", 
-	 FIELD_GBOTHER, 
-	 false,
-	 "gbiscgi:1",
-	 "Matches all documents that have a question mark in their url. "
-	 "Likewise gbiscgi:0 matches all documents that do not.",
-	 NULL,
-	0},
-*/
-
-
-/*
-	BR 20160108: No longer stored in our posdb as we don't use it
-
-	{"gbhasext", 
-	 FIELD_GBOTHER, 
-	 false,
-	 "gbhasext:1",
-	 "Matches all documents that have a file extension in their url. "
-	 "Likewise, <i>gbhasext:0</i> matches all documents that do not have "
-	 "a file extension in their url.",
-	 NULL,
-	0},
-*/
-
-/*
-	BR 20160106 removed
-	{"gbsubmiturl", 
-	 FIELD_GBOTHER, 
-	 false,
-	 "gbsubmiturl:domain.com/process.php",
-	 "Matches all documents that have a form that submits to the "
-	 "specified url.",
-	 NULL,
-	0},
-*/
 
 	// diffbot only
 	{"gbparenturl", 
@@ -4131,91 +3951,9 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
-
-
 	//
 	// for content type CT_STATUS documents (Spider status docs)
 	//
-
-
-
-	//{"qdom", FIELD_QUOTA, false,""},
-	//{"qhost", FIELD_QUOTA, false,""},
-
-/*
-// BR 20160117: No longer supported
-	{"gbsortbyfloat", 
-	 FIELD_GBSORTBYFLOAT, 
-	 false,
-	 "cameras gbsortbyfloat:price",
-	 "Sort all documents that "
-	 "contain 'camera' by price. <i>price</i> can be a root JSON field or "
-	 "in a meta tag, or in an xml &lt;price&gt; tag.", 
-	 "Numeric Field Query Operators",
-	 QTF_BEGINNEWTABLE },
-
-
-	{"gbsortbyfloat", 
-	 FIELD_GBSORTBYFLOAT, 
-	 false,
-	 "cameras gbsortbyfloat:product.price",
-	 "Sort all documents that "
-	 "contain 'camera' by price. <i>price</i> can be in a JSON document "
-	 "like "
-	 "<i>{ \"product\":{\"price\":1500.00}} "
-	 "</i> or, alternatively, an XML document like <i>"
-	 "&lt;product&gt;&lt;price&gt;1500.00&lt;/price&gt;&lt;/product&gt;"
-	 "</i>", 
-	 NULL,
-	 0 },
-
-
-	{"gbrevsortbyfloat", 
-	 FIELD_GBREVSORTBYFLOAT, 
-	 false,
-	 "cameras gbrevsortbyfloat:product.price",
-	 "Like above example but sorted with highest prices on top.",
-	 NULL,
-	 0 },
-
-
-	{"gbsortby", 
-	 FIELD_GBSORTBYFLOAT, 
-	 false,
-	 "dog gbsortbyint:gbdocspiderdate",
-	 "Sort the documents that contain 'dog' by "
-	 "the date they were last spidered, with the newest "
-	 "on top.",
-	 NULL,
-	 QTF_HIDE},
-
-	{"gbrevsortby", 
-	 FIELD_GBREVSORTBYFLOAT, 
-	 false,
-	 "dog gbrevsortbyint:gbdocspiderdate",
-	 "Sort the documents that contain 'dog' by "
-	 "the date they were last spidered, but with the "
-	 "oldest on top.",
-	 NULL,
-	 QTF_HIDE},
-*/
-
-
-/*
-// BR 20160117: No longer supported
-
-	{"gbsortbyint", 
-	 FIELD_GBSORTBYINT, 
-	 false,
-	 "pilots gbsortbyint:employees",
-	 "Sort all documents that "
-	 "contain 'pilots' by employees. "
-	 "<i>employees</i> can be a root JSON field or "
-	 "in a meta tag, or in an xml &lt;price&gt; tag. The value it "
-	 "contains is interpreted as a 32-bit integer.", 
-	 NULL,
-	 0 },
-*/
 
 	{"gbsortbyint", 
 	 FIELD_GBSORTBYINT, 
@@ -4225,33 +3963,6 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
-/*
-// BR 20160117: No longer supported
-
-	{"gbsortbyint", 
-	 FIELD_GBSORTBYINT, 
-	 false,
-	 "gbsortbyint:company.employees",
-	 "Sort all documents by employees. Documents can contain "
-	 "<i>employees</i> in a JSON document "
-	 "like "
-	 "<i>{ \"product\":{\"price\":1500.00}} "
-	 "</i> or, alternatively, an XML document like <i>"
-	 "&lt;product&gt;&lt;price&gt;1500.00&lt;/price&gt;&lt;/product&gt;"
-	 "</i>", 
-	 NULL,
-	 0 },
-
-	{"gbsortbyint", 
-	 FIELD_GBSORTBYINT, 
-	 false,
-	 "gbsortbyint:gbsitenuminlinks",
-	 "Sort all documents by the number of distinct inlinks the "
-	 "document's site has.",
-	 NULL,
-	 0 },
-*/
-
 	{"gbrevsortbyint", 
 	 FIELD_GBREVSORTBYINT, 
 	 false,
@@ -4260,114 +3971,6 @@ struct QueryField g_fields[] = {
 	 "but with the oldest on top.",
 	 NULL,
 	 0},
-
-
-/*
-// BR 20160117: No longer supported
-
-	// gbmin:price:1.23
-	{"gbminfloat", 
-	 FIELD_GBNUMBERMIN, 
-	 false,
-	 "cameras gbminfloat:price:109.99",
-	 "Matches all documents that "
-	 "contain 'camera' or 'cameras' and have a price of at least 109.99. "
-	 "<i>price</i> can be a root JSON field or "
-	 "in a meta tag name <i>price</i>, or in an xml &lt;price&gt; tag.", 
-	 NULL,
-	 0 },
-
-
-	{"gbminfloat", 
-	 FIELD_GBNUMBERMIN, 
-	 false,
-	 "cameras gbminfloat:product.price:109.99",
-	 "Matches all documents that "
-	 "contain 'camera' or 'cameras' and have a price of at least 109.99 "
-	 "in a JSON document like "
-	 "<i>{ \"product\":{\"price\":1500.00}} "
-	 "</i> or, alternatively, an XML document like <i>"
-	 "&lt;product&gt;&lt;price&gt;1500.00&lt;/price&gt;&lt;/product&gt;"
-	 "</i>", 
-	 NULL,
-	 0 },
-
-
-	// alias we need to bury
-	{"gbmin", 
-	 FIELD_GBNUMBERMIN, 
-	 false,
-	 "",
-	 "",
-	 NULL,
-	 QTF_HIDE},
-
-
-
-	{"gbmaxfloat", 
-	 FIELD_GBNUMBERMAX, 
-	 false,
-	 "cameras gbmaxfloat:price:109.99",
-	 "Like the gbminfloat examples above, but is an upper bound.",
-	 NULL,
-	 0 },
-
-
-
-	{"gbequalfloat", 
-	 FIELD_GBNUMBEREQUALFLOAT, 
-	 false,
-	 "gbequalfloat:product.price:1.23",
-	 "Similar to gbminfloat and gbmaxfloat but is an equality constraint.",
-	 NULL,
-	 0 },
-
-
-
-	{"gbmax", 
-	 FIELD_GBNUMBERMAX, 
-	 false,
-	 "",
-	 "",
-	 NULL,
-	 QTF_HIDE},
-
-
-
-	{"gbminint", 
-	 FIELD_GBNUMBERMININT, 
-	 false,
-	 "gbminint:gbspiderdate:1391749680",
-	 "Matches all documents with a spider timestamp of at least "
-	 "1391749680. Use this as opposed th gbminfloat when you need "
-	 "32 bits of integer precision.",
-	 NULL,
-	 0},
-
-
-	{"gbmaxint", 
-	 FIELD_GBNUMBERMAXINT, 
-	 false,
-	 "gbmaxint:company.employees:20",
-	 "Matches all companies with 20 or less employees "
-	 "in a JSON document like "
-	 "<i>{ \"company\":{\"employees\":13}} "
-	 "</i> or, alternatively, an XML document like <i>"
-	 "&lt;company&gt;&lt;employees&gt;13&lt;/employees&gt;"
-	 "&lt;/company&gt;"
-	 "</i>", 
-	 NULL,
-	 0},
-
-
-	{"gbequalint", 
-	 FIELD_GBNUMBEREQUALINT, 
-	 false,
-	 "gbequalint:company.employees:13",
-	 "Similar to gbminint and gbmaxint but is an equality constraint.",
-	 NULL,
-	 0},
-*/
 
 	{"gbdocspiderdate",
 	 FIELD_GENERIC,
@@ -4412,114 +4015,6 @@ struct QueryField g_fields[] = {
 	 //"documents.",
 	 NULL,
 	 0},
-
-	// {"gbreplyspiderdate",FIELD_GENERIC,false,
-	//  "Example: gbspiderdate:1400081479 will return spider log "
-	//  "results that have "
-	//  "that spider date timestamp (UTC)"},
-
-/* BR 20160108: All facets disabled as test. Don't think we will need any of them */
-#ifdef SUPPORT_FACETS	
-	{"gbfacetstr", 
-	 FIELD_GBFACETSTR, 
-	 false,
-	 "gbfacetstr:color",
-	 "Returns facets in "
-	 "the search results "
-	 "by their color field. <i>color</i> is case INsensitive.",
-	 "Facet Related Query Operators",
-	 QTF_BEGINNEWTABLE},
-
-
-	{"gbfacetstr", 
-	 FIELD_GBFACETSTR, 
-	 false,
-	 "gbfacetstr:product.color",
-	 "Returns facets in "
-	 "the color field in a JSON document like "
-	 "<i>{ \"product\":{\"color\":\"red\"}} "
-	 "</i> or, alternatively, an XML document like <i>"
-	 "&lt;product&gt;&lt;color&gt;red&lt;/price&gt;&lt;/product&gt;"
-	 "</i>. <i>product.color</i> is case INsensitive.", 
-	 NULL,
-	 0},
-
-	{"gbfacetstr", 
-	 FIELD_GBFACETSTR, 
-	 false,
-	 "gbfacetstr:gbtagsite cat",
-	 "Returns facets from the site names of all pages "
-	 "that contain the word 'cat' or 'cats', etc. <i>gbtagsite</i> is case insensitive."
-	 ,
-	 NULL,
-	 0},
-
-	{"gbfacetint", FIELD_GBFACETINT, false,
-	 "gbfacetint:product.cores",
-	 "Returns facets in "
-	 "of the <i>cores</i> field in a JSON document like "
-	 "<i>{ \"product\":{\"cores\":10}} "
-	 "</i> or, alternatively, an XML document like <i>"
-	 "&lt;product&gt;&lt;cores&gt;10&lt;/price&gt;&lt;/product&gt;"
-	 "</i>. <i>product.cores</i> is case INsensitive.", 
-	 NULL,
-	 0},
-
-	{"gbfacetint", FIELD_GBFACETINT, false,
-	 "gbfacetint:gbhopcount",
-	 "Returns facets in "
-	 "of the <i>gbhopcount</i> field over the documents so you can "
-	 "search the distribution of hopcounts over the index. <i>gbhopcount</i> is "
-	 "case INsensitive.",
-	 NULL,
-	 0},
-
-	{"gbfacetint", FIELD_GBFACETINT, false,
-	 "gbfacetint:gbtagsitenuminlinks",
-	 "Returns facets in "
-	 "of the <i>sitenuminlinks</i> field for the tag <i>sitenuminlinks</i>"
-	 "in the tag for each site. Any numeric tag in tagdb can be "
-	 "facetizeed "
-	 "in this manner so you can add your own facets this way on a per "
-	 "site or per url basis by making tagdb entries. Case Insensitive.",
-	 NULL,
-	 0},
-
-
-	{"gbfacetint", FIELD_GBFACETINT, false,
-	 "gbfacetint:size,0-10,10-20,30-100,100-200,200-1000,1000-10000",
-	 "Returns facets in "
-	 "of the <i>size</i> field (either in json, field or a meta tag) "
-	 "and cluster the results into the specified ranges. <i>size</i> is "
-	 "case INsensitive.",
-	 NULL,
-	 0},
-
-	{"gbfacetint", FIELD_GBFACETINT, false,
-	 "gbfacetint:gbsitenuminlinks",
-	 "Returns facets based on # of site inlinks the site of each "
-	 "result has. <i>gbsitenuminlinks</i> is case INsensitive.",
-	 NULL,
-	 0},
-
-	{"gbfacetfloat", FIELD_GBFACETFLOAT, false,
-	 "gbfacetfloat:product.weight",
-	 "Returns facets "
-	 "of the <i>weight</i> field in a JSON document like "
-	 "<i>{ \"product\":{\"weight\":1.45}} "
-	 "</i> or, alternatively, an XML document like <i>"
-	 "&lt;product&gt;&lt;weight&gt;1.45&lt;/price&gt;&lt;/product&gt;"
-	 "</i>. <i>product.weight</i> is case INsensitive.", 
-	 NULL,
-	 0},
-
-	{"gbfacetfloat", FIELD_GBFACETFLOAT, false,
-	 "gbfacetfloat:product.price,0-1.5,1.5-5,5.0-20,20-100.0",
-	 "Similar to above but cluster the pricess into the specified ranges. "
-	 "<i>product.price</i> is case insensitive.",
-	 NULL,
-	 0},
-#endif
 
 	//
 	// spider status docs queries
@@ -4610,17 +4105,6 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
-#ifdef SUPPORT_FACETS
-	{"gbssNumRedirects",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetint:gbssNumRedirects",
-	 "Query on the number of times the url redirect when attempting to "
-	 "index it.",
-	 NULL,
-	 0},
-#endif
-
 	{"gbssDocId",
 	 FIELD_GENERIC,
 	 false,
@@ -4628,26 +4112,6 @@ struct QueryField g_fields[] = {
 	 "Show all the spider status docs for the document with this docId.",
 	 NULL,
 	 0},
-
-
-#ifdef SUPPORT_FACETS
-	{"gbssHopCount",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetint:gbssHopCount",
-	 "Query on the hop count of the document.",
-	 NULL,
-	 0},
-
-	{"gbssCrawlRound",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetint:gbssCrawlRound",
-	 "Query on the crawl round number.",
-	 NULL,
-	 0},
-#endif
-
 
 	{"gbssDupOfDocId",
 	 FIELD_GENERIC,
@@ -4689,17 +4153,6 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
-#ifdef SUPPORT_FACETS
-	{"gbssContentHash32",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetint:gbssContentHash32",
-	 "The hash of the document content, excluding dates and times. Used "
-	 "internally for deduping.",
-	 NULL,
-	 0},
-#endif
-
 	{"gbssDownloadDurationMS",
 	 FIELD_GENERIC,
 	 false,
@@ -4723,25 +4176,6 @@ struct QueryField g_fields[] = {
 	 "When the download ended, in seconds since the epoch, UTC.",
 	 NULL,
 	 0},
-
-#ifdef SUPPORT_FACETS
-	{"gbssUsedRobotsTxt",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetint:gbssUsedRobotsTxt",
-	 "This is 0 or 1 depending on if robots.txt was not obeyed or obeyed, "
-	 "respectively.",
-	 NULL,
-	 0},
-
-	{"gbssConsecutiveErrors",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetint:gbssConsecutiveErrors",
-	 "For the last set of indexing attempts how many were errors?",
-	 NULL,
-	 0},
-#endif
 
 	{"gbssIp",
 	 FIELD_GENERIC,
@@ -4778,65 +4212,6 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
-#ifdef SUPPORT_FACETS
-	{"gbssContentInjected",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetint:gbssContentInjected",
-	 "This is 0 or 1 if the content was not injected or injected, "
-	 "respectively.",
-	 NULL,
-	 0},
-
-	{"gbssPercentContentChanged",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetfloat:gbssPercentContentChanged",
-	 "A float between 0 and 100, inclusive. Represents how much "
-	 "the document has changed since the last time we indexed it. This is "
-	 "only valid if the document was successfully indexed this time."
-	 "respectively.",
-	 NULL,
-	 0},
-
-	{"gbssSpiderPriority",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetint:gbssSpiderPriority",
-	 "The spider priority, from 0 to 127, inclusive, of the document "
-	 "according to the url filters table.",
-	 NULL,
-	 0},
-
-	{"gbssMatchingUrlFilter",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetstr:gbssMatchingUrlFilter",
-	 "The url filter expression the document matched.",
-	 NULL,
-	 0},
-
-	{"gbssLanguage",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetstr:gbssLanguage",
-	 "The language of the document. If document was empty or not "
-	 "downloaded then this will not be present. Uses xx to mean "
-	 "unknown language. Uses the language abbreviations found at the "
-	 "bottom of the url filters page.",
-	 NULL,
-	 0},
-
-	{"gbssContentType",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetstr:gbssContentType",
-	 "The content type of the document. Like html, xml, json, pdf, etc. "
-	 "This field is not present if unknown.",
-	 NULL,
-	 0},
-#endif
-
 	{"gbssContentLen",
 	 FIELD_GENERIC,
 	 false,
@@ -4845,93 +4220,8 @@ struct QueryField g_fields[] = {
 	 NULL,
 	 0},
 
-#ifdef SUPPORT_FACETS
-	{"gbssCrawlDelayMS",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetint:gbssCrawlDelay",
-	 "The crawl delay according to the robots.txt of the document. "
-	 "This is -1 if not specified in the robots.txt or not found.",
-	 NULL,
-	 0},
-#endif
-
-
-/*
-	{"gbssSentToDiffbotThisTime",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssSentToDiffbotThisTime:1",
-	 "Was the document's url sent to diffbot for processing this time "
-	 "of spidering the url?",
-	 NULL,
-	 0},
-
-	{"gbssSentToDiffbotAtSomeTime",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssSentToDiffbotAtSomeTime:1",
-	 "Was the document's url sent to diffbot for processing, either this "
-	 "time or some time before?",
-	 NULL,
-	 0},
-
-	{"gbssDiffbotReplyCode",
-	 FIELD_GENERIC,
-	 false,
-	 "gbssDiffbotReplyCode:0",
-	 "The reply received from diffbot. 0 means success, otherwise, it "
-	 "indicates an error code.",
-	 NULL,
-	 0},
-
-	{"gbssDiffbotReplyMsg",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetstr:gbssDiffbotReplyMsg:0",
-	 "The reply received from diffbot represented in text.",
-	 NULL,
-	 0},
-
-	{"gbssDiffbotReplyLen",
-	 FIELD_GENERIC,
-	 false,
-	 "gbsortbyint:gbssDiffbotReplyLen",
-	 "The length of the reply received from diffbot.",
-	 NULL,
-	 0},
-
-	{"gbssDiffbotReplyResponseTimeMS",
-	 FIELD_GENERIC,
-	 false,
-	 "gbsortbyint:gbssDiffbotReplyResponseTimeMS",
-	 "The time in milliseconds it took to get a reply from diffbot.",
-	 NULL,
-	 0},
-
-	{"gbssDiffbotReplyRetries",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetint:gbssDiffbotReplyRetries",
-	 "The number of times we had to resend the request to diffbot "
-	 "because diffbot returned a 504 gateway timed out error.",
-	 NULL,
-	 0},
-
-	{"gbssDiffbotReplyNumObjects",
-	 FIELD_GENERIC,
-	 false,
-	 "gbfacetint:gbssDiffbotReplyNumObjects",
-	 "The number of JSON objects diffbot excavated from the provided url.",
-	 NULL,
-	 0},
-*/
-
-
-
 	// they don't need to know about this
 	{"gbad",FIELD_GBAD,false,"","",NULL,QTF_HIDE},
-//BR 20160117 removed:	{"gbtagvector", FIELD_GBTAGVECTOR, false,"","",NULL,QTF_HIDE},
 	{"gbsamplevector", FIELD_GBSAMPLEVECTOR, false,"","",NULL,QTF_HIDE},
 	{"gbcontenthash", FIELD_GBCONTENTHASH, false,"","",NULL,QTF_HIDE},
 	{"gbduphash"  ,FIELD_GBOTHER,false,"","",NULL,QTF_HIDE},

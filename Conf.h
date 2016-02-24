@@ -186,7 +186,6 @@ class Conf {
 	bool m_useStatsdb;
 
 	bool  m_spideringEnabled     ;
-	bool  m_turkingEnabled     ;
 	bool  m_injectionsEnabled     ;
 	bool  m_queryingEnabled ;
 	bool  m_returnResultsAnyway;
