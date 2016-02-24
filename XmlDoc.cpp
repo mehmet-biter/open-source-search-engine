@@ -7620,36 +7620,6 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	return &m_rootDoc;
 }
 
-/*
-// no longer access Revdb to get the old metalist, now re-compute
-RdbList *XmlDoc::getOldMetaList ( ) {
-	// if valid return that
-	if ( m_oldMetaListValid ) return &m_oldMetaList;
-	// update status msg
-	setStatus ( "getting old meta list");
-	// load the old title rec
-	XmlDoc **odp = getOldXmlDoc( );
-	if ( ! odp || odp == (XmlDoc **)-1 ) return (RdbList *)odp;
-	XmlDoc *od = *odp;
-	// empty old doc?
-	if ( ! od ) {
-		m_oldMetaList.reset();
-		m_oldMetaListValid = true;
-		return &m_oldMetaList;
-	}
-	// and use that. it has m_setFromTitleRec set to true.
-	char *old = od->getMetaList();
-	if ( ! old || old == (void *)-1 ) return (RdbList *)old;
-	// set it
-	m_oldMetaList.m_list     = od->m_metaList; // old;
-	m_oldMetaList.m_listSize = od->m_metaListSize;
-	m_oldMetaList.m_ownData  = false;
-	// assign it
-	m_oldMetaListValid = true;
-	return &m_oldMetaList;
-}
-*/
-
 SafeBuf *XmlDoc::getTimeAxisUrl ( ) {
 	if ( m_timeAxisUrlValid ) return &m_timeAxisUrl;
 	if ( m_setFromDocId ) return &m_timeAxisUrl;
@@ -14750,10 +14720,6 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 				       //tmp.getBufStart());
 				       );
 		}
-		//else if ( rdbId == RDB_REVDB ) {
-		//	sb->safePrintf("<td><nobr>revdb datasize=%"INT32" ",
-		//		       dataSize);
-		//}
 		else if ( rdbId == RDB_TAGDB ) {
 			Tag *tag = (Tag *)rec;
 			sb->safePrintf("<td><nobr>");
@@ -14899,10 +14865,8 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 		int32_t dataSize;
 		if      ( rdbId == RDB_POSDB || rdbId==RDB2_POSDB2)dataSize=0;
 		else if ( rdbId == RDB_DATEDB  ) dataSize = 0;
-		//else if ( rdbId == RDB_REVDB      ) dataSize = -1;
 		else if ( rdbId == RDB2_POSDB2  ) dataSize = 0;
 		else if ( rdbId == RDB2_DATEDB2   ) dataSize = 0;
-		//else if ( rdbId == RDB2_REVDB2   ) dataSize = -1;
 		else dataSize = getDataSizeFromRdbId ( rdbId );
 		// . for delete never stores the data
 		// . you can have positive keys without any dataSize member
@@ -15026,11 +14990,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
                         if ( dataSize < 0 ) { char *xx=NULL;*xx=0; }
 			p += 4;
                 }
-		// hash the data into a int32_t for hash table
-		//int32_t h32 = 0;
-		//h32 = hash32 ( p , dataSize );
-		// do not allow 0
-		//if ( h32 == 0 ) h32 = 1;
+
 		// skip the data
 		p += dataSize;
 		// ignore spiderdb recs for parsing consistency check
@@ -15038,8 +14998,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 		if ( rdbId == RDB2_SPIDERDB2 ) continue;
 		// ignore tagdb as well!
 		if ( rdbId == RDB_TAGDB || rdbId == RDB2_TAGDB2 ) continue;
-		// skip revdb for now too
-		//if ( rdbId == RDB_REVDB ) continue;
+
 		// set our rec size, includes key/dataSize/data
 		int32_t recSize = p - rec;
 		// debug point
@@ -16351,11 +16310,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		need += sizeof(key_t);
 	}
 
-	//
-	// now space for the revdb record, which is the meta list itself!
-	//
-	//need = need + 12 + 4 + need;
-
 	// . alloc mem for metalist
 	// . sanity
 	if ( m_metaListSize > 0 ) { char *xx=NULL;*xx=0; }
@@ -16754,10 +16708,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//
 	/////////////////
 
-	// disable for parsing consistency testing of already indexed docs
-	//oldList = NULL;
-
-	if ( oldList ) { // && oldList->m_listSize > 16 ) {
+	if ( oldList ) {
 		// point to start of the old meta list, the first and only
 		// record in the oldList
 		char *om = oldList;// + 12 + 4;
@@ -16766,22 +16717,13 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// the end
 		char *omend = om + osize;
 		int32_t needx = 0;
-		// init these. data is just the rdbid, a single byte.
-		//HashTableX dt12;
-		//HashTableX dt16;
-		//char dbuf12[30000];
-		//char dbuf16[40000];
-		//dt12.set ( 12,1,2048,dbuf12,30000,false,m_niceness);
-		//dt16.set ( 16,1,2048,dbuf16,40000,false,m_niceness);
+
 		HashTableX dt8;
 		char dbuf8[34900];
 		// value is the ptr to the rdbId/key in the oldList
 		dt8.set ( 8,sizeof(char *),2048,dbuf8,34900,
 			  false,m_niceness,"dt8-tab");
-		// just for linkdb:
-		//HashTableX dt9;
-		//char dbuf9[30000];
-		//dt9.set ( 8,4,2048,dbuf9,30000,false,m_niceness,"dt9-tab");
+
 		// scan recs in that and hash them
 		for ( char *p = om ; p < omend ; ) {
 			// breathe
@@ -16830,23 +16772,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			     g_linkdb.getLinkerDocId_uk((key224_t *)k)!=
 			     m_docId ) {
 				char *xx=NULL;*xx=0; }
-			//if ( getDataSize(rdbId) != 0 ) continue;
-			// hash this key
-			//bool status;
-			// sectiondb keys all have the same last few bits...
-			// so this clogs up the hash table.
-			// so mix up the key bits for hashing
-			//uint64_t hk = hash64 ( k,ks);
-			//if      (ks == 12 ) status = dt12.addKey ( k, &byte);
-			//else if (ks == 16 ) status = dt16.addKey ( k, &byte);
-			//else { char *xx=NULL; *xx=0; }
+
 			if ( ! dt8.addKey(&hk,&rec) ) 
 			{
 				if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: addKey failed", __FILE__, __func__, __LINE__);
 				return NULL;
 			}
-			// return NULL with g_errno set on error
-			//if ( ! status ) return NULL;
 		}
 		// also need all the new keys just to be sure, in case none
 		// are already in the rdbs

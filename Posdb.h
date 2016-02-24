@@ -132,15 +132,6 @@ class Posdb {
 
 	bool addColl ( char *coll, bool doVerify = true );
 
-	// . xmldoc.cpp should call this
-	// . store all posdb keys from revdbList into one hashtable
-	//   and only add to new list if not in there
-	//bool makeList ( class RdbList *revdbList ,
-	//		int64_t docId ,
-	//		class Words *words );
-			
-
-
 	// . make a 16-byte key from all these components
 	// . since it is 16 bytes, the big bit will be set
 	void makeKey ( void              *kp             ,

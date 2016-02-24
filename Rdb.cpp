@@ -16,7 +16,6 @@
 #include "Spider.h"
 #include "SpiderColl.h"
 #include "Doledb.h"
-#include "Revdb.h"
 #include "hash.h"
 
 void attemptMergeAll ( int fd , void *state ) ;
@@ -176,30 +175,7 @@ bool Rdb::init ( char          *dir                  ,
 	if ( m_rdbId == RDB_SERPDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_LINKDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_LINKDB2   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_REVDB      ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_REVDB2    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	// let's obsolete this rec/list cache because using the
-	// disk page cache cleverly, is usually better than this,
-	// because this ignores newly added data (it is not realtime),
-	// and it really only saves us from having to intersect a
-	// bunch of indexdb/datedb lists.
-	/*
-	loadCacheFromDisk = false;
-	maxCacheMem       = 0;
-	maxCacheNodes     = 0;
-	// . set up our cache
-	// . we could be adding lists so keep fixedDataSize -1 for cache
-	if ( ! m_cache.init ( maxCacheMem   , 
-			      fixedDataSize , 
-			      true          , // support lists
-			      maxCacheNodes ,
-			      m_useHalfKeys ,
-			      m_dbname      ,
-			      loadCacheFromDisk  ,
-			      m_ks               ,   // cache key size
-			      m_ks               ) ) // data  key size
-		return false;
-	*/
+
 	// we can't merge more than MAX_RDB_FILES files at a time
 	if ( minToMerge > MAX_RDB_FILES ) minToMerge = MAX_RDB_FILES;
 	m_minToMerge = minToMerge;
@@ -1735,13 +1711,11 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	       m_rdbId == RDB_PLACEDB    ||
 	       m_rdbId == RDB_TFNDB      ||
 	       m_rdbId == RDB_INDEXDB    || 
-	       m_rdbId == RDB_POSDB    || 
-	       //m_rdbId == RDB_DATEDB     ||
+	       m_rdbId == RDB_POSDB      ||
 	       m_rdbId == RDB_CLUSTERDB  ||
 	       m_rdbId == RDB_LINKDB     ||
 	       m_rdbId == RDB_DOLEDB     ||
-	       m_rdbId == RDB_SPIDERDB   ||
-	       m_rdbId == RDB_REVDB      ) ) {
+	       m_rdbId == RDB_SPIDERDB   ) ) {
 
 		// exception, spider status docs can be deleted from titledb
 		// if user turns off 'index spider replies' before doing
@@ -1759,20 +1733,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	}
 
  exception:
-
-	/*
-	if ( g_repair.isRepairActive() &&
-	     g_repair.m_fullRebuild    && 
-	     collnum != g_repair.m_newCollnum &&
-	     m_rdbId != RDB_TAGDB ) {
-		log("db: How did an add come in while in full repair mode?"
-		    " addCollnum=%"INT32" repairCollnum=%"INT32" db=%s",
-		    (int32_t)collnum , (int32_t)g_repair.m_newCollnum ,
-		    m_dbname );
-		g_errno = EREPAIRING;
-		return false;
-	}
-	*/
 
 	// if we are currently in a quickpoll, make sure we are not in
 	// RdbTree::getList(), because we could mess that loop up by adding
@@ -2811,7 +2771,6 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB_CLUSTERDB ] = g_clusterdb.getRdb();
 		s_table9 [ RDB_LINKDB    ] = g_linkdb.getRdb();
 		s_table9 [ RDB_STATSDB   ] = g_statsdb.getRdb();
-		s_table9 [ RDB_REVDB     ] = g_revdb.getRdb();
 		s_table9 [ RDB_PARMDB    ] = NULL;
 
 		s_table9 [ RDB2_INDEXDB2   ] = g_indexdb2.getRdb();
@@ -2820,7 +2779,6 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB2_SPIDERDB2  ] = g_spiderdb2.getRdb();
 		s_table9 [ RDB2_CLUSTERDB2 ] = g_clusterdb2.getRdb();
 		s_table9 [ RDB2_LINKDB2    ] = g_linkdb2.getRdb();
-		s_table9 [ RDB2_REVDB2     ] = g_revdb2.getRdb();
 		s_table9 [ RDB2_TAGDB2     ] = g_tagdb2.getRdb();
 	}
 	if ( rdbId >= RDB_END ) return NULL;
@@ -2838,7 +2796,6 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_clusterdb.getRdb () ) return RDB_CLUSTERDB;
 	if ( rdb == g_statsdb.getRdb   () ) return RDB_STATSDB;
 	if ( rdb == g_linkdb.getRdb    () ) return RDB_LINKDB;
-	if ( rdb == g_revdb.getRdb     () ) return RDB_REVDB;
 	if ( rdb == g_indexdb2.getRdb   () ) return RDB2_INDEXDB2;
 	if ( rdb == g_posdb2.getRdb   () ) return RDB2_POSDB2;
 	if ( rdb == g_tagdb2.getRdb     () ) return RDB2_TAGDB2;
@@ -2846,7 +2803,6 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_spiderdb2.getRdb  () ) return RDB2_SPIDERDB2;
 	if ( rdb == g_clusterdb2.getRdb () ) return RDB2_CLUSTERDB2;
 	if ( rdb == g_linkdb2.getRdb    () ) return RDB2_LINKDB2;
-	if ( rdb == g_revdb2.getRdb     () ) return RDB2_REVDB2;
 
 	log(LOG_LOGIC,"db: getIdFromRdb: no rdbId for %s.",rdb->m_dbname);
 	return 0;
@@ -2863,7 +2819,6 @@ char isSecondaryRdb ( uint8_t rdbId ) {
 		case RDB2_SPIDERDB2  : return true;
 		case RDB2_TFNDB2     : return true;
 		case RDB2_CLUSTERDB2 : return true;
-		case RDB2_REVDB2     : return true;
 		case RDB2_LINKDB2 : return true;
 	}
 	return false;
@@ -2931,7 +2886,6 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 			     i == RDB_LINKDB )
 				ds = 0;
 			else if ( i == RDB_TITLEDB ||
-				  i == RDB_REVDB   ||
 				  i == RDB_SYNCDB ||
 				  i == RDB_CACHEDB ||
 				  i == RDB_SERPDB ||
@@ -2953,7 +2907,6 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 				  i == RDB2_DATEDB2 )
 				ds = 0;
 			else if ( i == RDB2_TITLEDB2 ||
-				  i == RDB2_REVDB2   ||
 				  i == RDB2_TAGDB2   ||
 				  i == RDB2_CATDB2   ||
 				  i == RDB2_SPIDERDB2 ||

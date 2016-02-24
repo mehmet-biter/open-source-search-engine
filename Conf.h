@@ -147,7 +147,6 @@ class Conf {
 	// tagdb parameters
 	int32_t  m_tagdbMaxTreeMem;
 
-	int32_t  m_revdbMaxTreeMem;
 	int32_t  m_timedbMaxTreeMem;
 
 	// clusterdb for site clustering, each rec is 16 bytes
@@ -635,17 +634,6 @@ class Conf {
 	int32_t  m_maxHeartbeatDelay;
 	int32_t  m_maxCallbackDelay;
 
-	// balance value for Msg6, each host can have this many ready domains
-	// per global host
-	//int32_t m_distributedSpiderBalance;
-	//int32_t m_distributedIpWait;
-
-	// parameters for indexdb spitting and tfndb extension bits
-	//int32_t  m_indexdbSplit;
-	//char  m_fullSplit;
-	//char  m_legacyIndexdbSplit;
-	//int32_t  m_tfndbExtBits;
-
 	// used by Repair.cpp
 	char  m_repairingEnabled  ;
 	int32_t  m_maxRepairSpiders  ;
@@ -655,23 +643,13 @@ class Conf {
 	char  m_fullRebuild       ;
 	char  m_rebuildAddOutlinks;
 	char  m_rebuildRecycleLinkInfo  ;
-	//char  m_rebuildRecycleLinkInfo2 ;
-	//char  m_removeBadPages    ;
 	char  m_rebuildTitledb    ;
-	//char  m_rebuildTfndb      ;
-	//char  m_rebuildIndexdb    ;
 	char  m_rebuildPosdb    ;
-	//char  m_rebuildNoSplits   ;
-	//char  m_rebuildDatedb     ;
 	char  m_rebuildClusterdb  ;
 	char  m_rebuildSpiderdb   ;
-	//char  m_rebuildSitedb     ;
 	char  m_rebuildLinkdb     ;
-	//char  m_rebuildTagdb      ;
-	//char  m_rebuildPlacedb    ;
 	char  m_rebuildTimedb     ;
 	char  m_rebuildSectiondb  ;
-	//char  m_rebuildRevdb      ;
 	char  m_rebuildRoots      ;
 	char  m_rebuildNonRoots   ;
 

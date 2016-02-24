@@ -19,7 +19,6 @@
 #include "Posdb.h"
 #include "Datedb.h"
 #include "Titledb.h"
-#include "Revdb.h"
 #include "Tagdb.h"
 #include "Spider.h"
 #include "SpiderColl.h"
@@ -95,7 +94,6 @@ static void dumpTitledb  (char *coll, int32_t sfn, int32_t numFiles, bool includ
 			   int64_t docId , bool justPrintDups );
 static int32_t dumpSpiderdb ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
 			   char printStats , int32_t firstIp );
-static void dumpRevdb    ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
 
 static void dumpTagdb( char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char rec = 0,
 					   int32_t rdbId = RDB_TAGDB, char *site = NULL );
@@ -652,16 +650,6 @@ int main2 ( int argc , char *argv[] ) {
 			"all events as if the time is UTCtimestamp.\n\n"
 			*/
 
-			/*
-#ifdef _CLIENT_
-			//there was <hostId> in this command but it 
-			// wasn't used in the program, so deleting it from 
-			// here
-			"dump <V> [C [X [Y [Z]]]]\n\tdump a db in "
-#else
-			*/
-
-			//"dump <db> <collection> [T]\n\tDump a db from disk. "
 			"dump <db> <collection>\n\tDump a db from disk. "
 			"Example: gb dump t main\n"
 			"\t<collection> is the name of the collection.\n"
@@ -2237,8 +2225,6 @@ int main2 ( int argc , char *argv[] ) {
 				fprintf(stdout,"error dumping spiderdb\n");
 			}
 		}
-		else if ( argv[cmdarg+1][0] == 'V' )
-		       dumpRevdb(coll,startFileNum,numFiles,includeTree);
 		else if ( argv[cmdarg+1][0] == 'S' ) {
 			char *site = NULL;
 			if ( cmdarg+6 < argc ) {
@@ -7703,98 +7689,6 @@ void *startUp ( void *state , ThreadEntry *t ) {
 
 	// dummy return
 	return 0; //NULL;
-}
-
-void dumpRevdb(char *coll,int32_t startFileNum,int32_t numFiles, bool includeTree) {
-	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	g_revdb.init ();
-	//g_collectiondb.init(true);
-	g_revdb.getRdb()->addRdbBase1(coll );
-	key_t startKey ;
-	key_t endKey   ;
-	startKey.setMin();
-	endKey.setMax();
-	// turn off threads
-	g_threads.disableThreads();
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
-	Msg5 msg5;
-	RdbList list;
-	char tmpBuf[1024];
-	SafeBuf sb(tmpBuf, 1024);
-	bool firstKey = true;
-	CollectionRec *cr = g_collectiondb.getRec(coll);
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_REVDB     ,
-			      cr->m_collnum ,
-			      &list         ,
-			      (char *)&startKey      ,
-			      (char *)&endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         )){// err correction?
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) return;
-
-	key_t lastk;
-
-	// loop over entries in list
-	for(list.resetListPtr();!list.isExhausted(); list.skipCurrentRecord()){
-		char *rec  = list.getCurrentRec();
-		key_t *k = (key_t *)rec;
-		char *data = list.getCurrentData();
-		int32_t  size = list.getCurrentDataSize();
-		// get docid from key
-		int64_t d = g_revdb.getDocId(k);
-		// is it a delete?
-		if ( (k->n0 & 0x01) == 0 ) {
-			printf("k.n1=%08"XINT32" k.n0=%016"XINT64" d=%"UINT64" (delete)\n",
-			       k->n1  , k->n0   | 0x01  , d );  // fix it!
-			continue;
-		}
-		//if ( size != sizeof(SectionVote) ) { char *xx=NULL;*xx=0; }
-		// sanity check
-		if ( ! firstKey ) {
-			if ( k->n1 < lastk.n1 ) { char *xx=NULL;*xx=0; }
-			if ( k->n1 == lastk.n1 && k->n0 < lastk.n0 ) { 
-				char *xx=NULL;*xx=0; }
-		}
-		// no longer a first key
-		firstKey = false;
-		// copy it
-		gbmemcpy ( &lastk , k , sizeof(key_t) );
-		// point to the data
-		char  *p       = data;
-		char  *pend    = data + size;
-		// breach check
-		if ( p > pend ) {
-			printf("corrupt revdb rec k.n1=0x%08"XINT32" d=%"UINT64"\n",
-			       k->n1,d);
-			continue;
-		}
-		// parse it up
-		//SectionVote *sv = (SectionVote *)data;
-		// dump it
-		printf("k.n1=%08"XINT32" k.n0=%016"XINT64" ds=%06"INT32" d=%"UINT64"\n", 
-		       k->n1,k->n0,size,d);
-	}
-		
-	startKey = *(key_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
-	// watch out for wrap around
-	if ( startKey < *(key_t *)list.getLastKey() ){ printf("\n"); return;}
-	goto loop;
 }
 
 void dumpTagdb( char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char req, int32_t rdbId,

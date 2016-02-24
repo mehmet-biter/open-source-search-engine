@@ -35,7 +35,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Msg1.o \
 	Msg0.o Mem.o Matches.o Loop.o \
 	Log.o Lang.o \
-	Indexdb.o Posdb.o Clusterdb.o IndexList.o Revdb.o \
+	Indexdb.o Posdb.o Clusterdb.o IndexList.o \
 	HttpServer.o HttpRequest.o \
 	HttpMime.o Hostdb.o \
 	Highlight.o File.o Errno.o Entities.o \
@@ -114,6 +114,9 @@ GIT_VERSION=$(shell git rev-parse HEAD)$(DIRTY)
 
 
 all: gb
+
+debug: DEFS += -D_VALGRIND_
+debug: all
 
 utils: blaster2 hashtest monitor seektest urlinfo treetest dnstest gbtitletest
 

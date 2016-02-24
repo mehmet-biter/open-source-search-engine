@@ -1178,29 +1178,6 @@ bool Msg5::gotList2 ( ) {
 	// . why???
 	if ( m_totalSize < 32*1024 ) goto skipThread;
 
-	// if we are an interruptible niceness 1, do not use a thread,
-	// we can be interrupted by the alarm callback and serve niceness
-	// 0 requests, that is probably better! although the resolution is
-	// on like 10ms on those alarms... BUT if you use a smaller
-	// mergeBufSize of like 100k, that might make it responsive enough!
-	// allow it to do a thread again so we can take advantage of
-	// multiple cores, or hyperthreads i guess because i am seeing
-	// some missed quickpoll log msgs, i suppose because we did not
-	// insert QUICKPOLL() statements in the RdbList::merge_r() code
-	//if ( m_niceness >= 1 ) goto skipThread;
-
-	// supder duper hack!
-	//if ( m_rdbId == RDB_REVDB ) goto skipThread;
-
-	// i'm not sure why we core in Msg5's call to RdbList::merge_r().
-	// the list appears to be corrupt...
-	//if ( m_rdbId == RDB_FACEBOOKDB ) goto skipThread;
-
-	// skip it for now
-	//goto skipThread;
-
-	//m_waitingForMerge = true;
-
 	// . if size is big, make a thread
 	// . let's always make niceness 0 since it wasn't being very
 	//   aggressive before

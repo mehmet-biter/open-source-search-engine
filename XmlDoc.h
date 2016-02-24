@@ -1459,15 +1459,12 @@ public:
 	int32_t          m_niceness;
 
 	bool m_usePosdb     ;
-	//bool m_useDatedb    ;
 	bool m_useClusterdb ;
 	bool m_useLinkdb    ;
 	bool m_useSpiderdb  ;
 	bool m_useTitledb   ;
 	bool m_useTagdb     ;
 	bool m_usePlacedb   ;
-	//bool m_useTimedb    ;
-	//bool m_useRevdb     ;
 	bool m_useSecondaryRdbs ;
 
 	int32_t          m_linkeeQualityBoost;
