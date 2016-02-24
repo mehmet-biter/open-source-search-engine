@@ -80,37 +80,6 @@
 // the section type (bit flag vector for SEC_*) is currently 32 bits
 typedef int64_t sec_t;
 
-// this is only needed for sections, not facets in general i don think.
-// facets has the whole QueryTerm::m_facetHashTable array with more info
-//
-// . for gbfacet:gbxpathsite1234567 posdb query stats compilation to
-//   show how many pages duplicate your section's content on your site
-//   at the same xpath. the hash of the innerHTML for that xpath is 
-//   embedded into the posdb key like a number in a number key, so the
-//   wordpos bits etc are sacrificed to hold that 32-bit number.
-// . used by XmlDoc::getSectionsWithDupStats() for display in
-//   XmlDoc::printRainbowSections()
-// . these are in QueryTerm::m_facetStats and computed from
-//   QueryTerm::m_facetHashTable
-class SectionStats {
- public:
-	SectionStats() { reset(); }
-	void reset ( ) {
-		m_totalMatches  = 0; // posdb key "val" matches ours
-		m_totalEntries  = 0; // total posdb keys
-		m_numUniqueVals = 0; // # of unique "vals"
-		m_totalDocIds   = 0;
-	}
-	// # of times xpath innerhtml matched ours. 1 count per docid max.
-	int64_t m_totalMatches;
-	// # of times this xpath occurred. doc can have multiple times.
-	int64_t m_totalEntries;
-	// # of unique vals this xpath had. doc can have multiple counts.
-	int64_t m_numUniqueVals;
-	int64_t m_totalDocIds;
-};
-
-
 class Section {
 public:
 
@@ -198,18 +167,16 @@ public:
 	int32_t m_gbFrameNum;
 
 	// do we contain section "arg"?
-	bool contains ( class Section *arg ) {
-		return ( m_a <= arg->m_a && m_b >= arg->m_b ); };
+	bool contains( class Section *arg ) {
+		return ( m_a <= arg->m_a && m_b >= arg->m_b );
+	}
 
 	// do we contain section "arg"?
 	bool strictlyContains ( class Section *arg ) {
 		if ( m_a <  arg->m_a && m_b >= arg->m_b ) return true;
 		if ( m_a <= arg->m_a && m_b >  arg->m_b ) return true;
 		return false;
-	};
-
-	// does this section contain the word #a?
-	bool contains2 ( int32_t a ) { return ( m_a <= a && m_b > a ); };
+	}
 
 	bool isVirtualSection ( ) ;
 };

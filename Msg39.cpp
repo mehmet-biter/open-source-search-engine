@@ -327,17 +327,15 @@ bool Msg39::controlLoop ( ) {
 		// fix it
 		m_r->m_minDocId = d0;
 		m_r->m_maxDocId = d1; // -1; // exclude d1
-		// allow posdbtable re-initialization each time to set
-		// the msg2 termlist ptrs anew, otherwise we core in
-		// call to PosdbTable::init() below
-		//m_posdbTable.m_initialized = false;
+
 		// reset ourselves, partially, anyway, not tmpq etc.
 		reset2();
+
 		// debug log
-		if ( ! m_r->m_forSectionStats && m_debug )
+		if ( m_debug ) {
 			log("msg39: docid split %d/%d range %"INT64"-%"INT64"", m_docIdSplitNumber-1, m_r->m_numDocIdSplits, d0,d1);
-		// wtf?
-		//if ( d0 >= d1 ) break;
+		}
+
 		// load termlists for these docid ranges using msg2 from posdb
 		if ( ! getLists() ) return false;
 	}

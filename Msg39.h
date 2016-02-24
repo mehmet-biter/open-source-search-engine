@@ -53,14 +53,11 @@ class Msg39Request {
 		ptr_readSizes             = NULL;
 		ptr_query                 = NULL; // in utf8?
 		ptr_whiteList             = NULL;
-		//ptr_coll                  = NULL;
-		m_forSectionStats         = false;
 		size_readSizes            = 0;
 		size_query                = 0;
 		size_whiteList            = 0;
 		m_sameLangWeight          = 20.0;
 		m_maxFacets = -1;
-		//size_coll                 = 0;
 
 		m_getDocIdScoringInfo = 1;
 
@@ -114,11 +111,6 @@ class Msg39Request {
 	char    m_stripe;
 	char    m_useQueryStopWords;
 	char    m_doMaxScoreAlgo;
-
-	char    m_forSectionStats;
-
-	// Msg3a still uses this
-	//int32_t    m_myFacetVal32; // for gbfacet:xpathsite really sectionstats
 
 	collnum_t m_collnum;
 

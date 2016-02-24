@@ -5737,9 +5737,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// . first key is the full size
 		// . uses the w,G,s,v and F bits to hold this
 		// . this is no longer necessarily sitehash,but
-		//   can be any val, like now SectionStats is 
-		//   using it for the innerHtml sentence 
-		//   content hash32
+		//   can be any val
 		int32_t val32 = g_posdb.getFacetVal32 ( p2 );
 
 		// PREADVANCE "p"
@@ -5877,12 +5875,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	}
 
  skipFacetCheck:
-
-
-	// if only one term like gbfacetstr:gbxpathsitehash123456
-	// then do not bother adding to top tree
-	if ( m_r->m_forSectionStats ) goto advance;
-
 
 	// . seoDebug hack so we can set "dcs"
 	// . we only come here if we actually made it into m_topTree
