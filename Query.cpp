@@ -2211,7 +2211,7 @@ bool Query::setQWords ( char boolFlag ,
 			else if ( wp[0]=='-' && wplen==1 ) 
 				posNum += 0;
 			// 'mr. x'
-			else if ( wp[0]=='.' && words.isSpaces2(i,1)) 
+			else if ( wp[0]=='.' && words.isSpaces(i,1))
 				posNum += 0;
 			// animal (dog)
 			else 
@@ -3242,14 +3242,7 @@ bool Query::setQWords ( char boolFlag ,
 
 
 	// make the phrases from the words and the tweaked Bits class
-	//Phrases phrases;
-	if ( ! phrases.set ( &words , 
-			     &bits  , 
-			     //NULL   ,
-			     true   ,  // use stop words?
-			     false  , // use stems?
-			     TITLEREC_CURRENT_VERSION,
-			     0 /*niceness*/))//disallows HUGE phrases
+	if ( !phrases.set( &words, &bits, TITLEREC_CURRENT_VERSION, 0 ) )
 		return false;
 
 	int64_t *wids = words.getWordIds();
@@ -3258,17 +3251,7 @@ bool Query::setQWords ( char boolFlag ,
 	for ( int32_t i = 0 ; i < numWords ; i++ ) {
 		// get the ith QueryWord
 		QueryWord *qw = &m_qwords[i];
-		// if word is ignored because it is opcode, or whatever,
-		// it cannot start a phrase
-		// THIS IS BROKEN
-		//if ( qw->m_queryOp && qw->m_opcode == OP_PIPE){
-		//	for (int32_t j = i-1;j>=0;j--){
-		//		if (!m_qwords[j].m_phraseId) continue;
-		//		m_qwords[j].m_ignorePhrase = IGNORE_BOOLOP;
-		//		break;
-		//	}
-		//	
-		//}
+
 		if ( qw->m_ignoreWord ) continue;
 		if ( qw->m_fieldCode && qw->m_quoteStart < 0) continue;
 		// get the first word # to our left that starts a phrase
@@ -3280,8 +3263,7 @@ bool Query::setQWords ( char boolFlag ,
 			if ( ! bits.canPairAcross(j+1) ) break;
 			//if ( ! bits.canStartPhrase(j)  ) continue;
 			if ( ! wids[j] ) continue;
-			// phrases.getNumWordsInPhrase()
-			//if( j + phrases.getMaxWordsInPhrase(j,&tmp)<i) break;
+
 			qw->m_leftPhraseStart = j;
 			// we can't pair across alnum words now, we just want bigrams
 			if ( wids[j] ) break;
@@ -3335,8 +3317,7 @@ bool Query::setQWords ( char boolFlag ,
 			else      qw->m_phraseId = pid;
 			// how many regular words int32_t is the bigram?
 			int32_t plen2; phrases.getPhrase ( i , &plen2 ,2);
-			// the trigram?
-			int32_t plen3; phrases.getPhrase ( i , &plen3 ,3);
+
 			// get just the bigram for now
 			qw->m_phraseLen = plen2;
 			// do not ignore the phrase, it's valid

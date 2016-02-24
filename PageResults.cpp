@@ -4613,7 +4613,6 @@ bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Msg20Repl
 		wbw = WIKI_BIGRAM_WEIGHT;
 	}
 	float hgw = getHashGroupWeight(ss->m_hashGroup);
-	//float dvw = getDiversityWeight(ss->m_diversityRank);
 	float dnw = getDensityWeight(ss->m_densityRank);
 	float wsw = getWordSpamWeight(ss->m_wordSpamRank);
 	// HACK for inlink text!

@@ -8131,13 +8131,8 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	//Phrases phrases;
 	Phrases phrases;
 	t = gettimeofdayInMilliseconds_force();
-	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! phrases.set ( &words ,
-				     &bits  ,
-				     true     , // use stop words
-				     false    , // use stems
-				     TITLEREC_CURRENT_VERSION ,
-				     0 ) ) // niceness
+	for ( int32_t i = 0 ; i < 100 ; i++ )
+		if ( !phrases.set( &words, &bits, TITLEREC_CURRENT_VERSION, 0 ) )
 			return log("build: speedtestxml: Phrases set: %s",
 				   mstrerror(g_errno));
 	// print time it took

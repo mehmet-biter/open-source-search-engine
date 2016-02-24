@@ -626,10 +626,7 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 
 				// this is 0 if we were an unmatched quote
 				if ( numWords <= 0 ) continue;
-				// we matched a bigram in the document
-				//numWords = 3;
-				// i guess we matched the query phrase bigram
-				//numQWords = 3;
+
 				// got a match
 				goto gotMatch2;
 			}
@@ -640,7 +637,6 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 			numWords = 1;
 			numQWords = 1;
 			goto gotMatch2;
-			//char *xx=NULL;*xx=0;
 		}
 
 		//

@@ -35,13 +35,9 @@ void Sections::reset() {
 	m_lastSection      = NULL;
 	m_lastAdded        = NULL;
 
-	m_numLineWaiters   = 0;
-	m_waitInLine       = false;
 	m_nw = 0;
 	m_firstSent = NULL;
-	m_lastSent  = NULL;
 	m_sectionPtrs = NULL;
-	m_alnumPosValid = false;
 }
 
 Sections::~Sections ( ) {
@@ -125,42 +121,24 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 	if ( ext && strcasecmp(ext,"rss") == 0 ) m_isRSSExt = true;
 	if ( m_contentType == CT_XML ) m_isRSSExt = true;
 
-	// are we a trumba.com url? we allow colons in sentences for its
-	// event titles so that we get the correct event title. fixes
-	// tumba.com "Guided Nature Walk : ..." title
-	char *dom  = m_url->getDomain();
-	int32_t  dlen = m_url->getDomainLen();
-	m_isFacebook   = false;
-	m_isEventBrite = false;
-	m_isStubHub    = false;
-	if ( dlen == 12 && strncmp ( dom , "facebook.com" , 12 ) == 0 )
-		m_isFacebook = true;
-	if ( dlen == 11 && strncmp ( dom , "stubhub.com" , 11 ) == 0 )
-		m_isStubHub = true;
-	if ( dlen == 14 && strncmp ( dom , "eventbrite.com" , 14 ) == 0 )
-		m_isEventBrite = true;
-
 	// . how many sections do we have max?
 	// . init at one to count the root section
 	int32_t max = 1;
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
+
 		// . count all front tags
-		// . count twice since it can terminate a SEC_SENT sentence sec
-		//if ( tids[i] && !(tids[i]&BACKBIT) ) max += 2;
+
 		// count back tags too since some url 
 		// http://www.tedxhz.com/tags.asp?id=3919&id2=494 had a bunch
 		// of </p> tags with no front tags and it cored us because
 		// m_numSections > m_maxNumSections!
-		if ( tids[i] ) max += 2; // && !(tids[i]&BACKBIT) ) max += 2;
-		// or any hr tag
-		//else if ( tids[i] == (BACKBIT|TAG_HR) ) max += 2;
-		//else if ( tids[i] == (BACKBIT|TAG_BR) ) max += 2;
+		if ( tids[i] ) {
+			max += 2;
 		// . any punct tag could have a bullet in it...
 		// . or if its a period could make a sentence section
-		//else if ( ! tids[i] && ! wids[i] ) {
-		else if ( ! wids[i] ) {
+		} else if ( ! wids[i] ) {
 			// only do not count simple spaces
 			if ( m_wlens[i] == 1 && is_wspace_a(m_wptrs[i][0]))
 				continue;
@@ -168,9 +146,11 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 			max++;
 		}
 	}
+
 	// . then \0 allows for a sentence too!
 	// . fix doc that was just "localize-sf-prod\n"
 	max++;
+
 	// and each section may create a sentence section
 	max *= 2;
 
@@ -211,9 +191,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 
 	// point into it
 	m_sections = (Section *)m_sectionBuf.getBufStart();
-
-	// reset
-	m_numAlnumWordsInArticle = 0;
 
 	m_titleStart = -1;
 	m_titleEnd   = -1;
@@ -1161,7 +1138,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 	// . we call this now to aid in setHeadingBit() and for adding the
 	//   implied sections, but it is ultimately
 	//   called a second time once all the new sections are inserted
-	setNextBrotherPtrs ( false ); // setContainer = false
+	setNextBrotherPtrs ( false );
 
 	// . set SEC_HEADING bit
 	// . need this before implied sections
@@ -1275,9 +1252,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 
 	}
 
-	// reset
-	m_numInvalids = 0;
-
 	// now set SEC_NOTEXT flag if content hash is zero!
 	for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
 		// breathe
@@ -1288,8 +1262,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		if ( sn->m_contentHash64 ) continue;
 		// no text!
 		sn->m_flags |= SEC_NOTEXT;
-		// count it
-		m_numInvalids++;
 	}
 
 	//
@@ -1356,7 +1328,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 			si->m_alnumPosB = sn->m_alnumPosB;
 		}
 	}
-	m_alnumPosValid = true;
 
 	///////////////////////////////////////
 	//
@@ -1986,10 +1957,6 @@ bool Sections::addSentenceSections ( ) {
 			// sanity
 			if ( adda < 0 ) { char *xx=NULL;*xx=0; }
 
-			// backup addb over any punct we don't need that
-			//if ( addb > 0 && addb < m_nw && 
-			//     ! m_wids[addb] && ! m_tids[addb] ) addb--;
-
 			// same for right endpoint
 			for ( ; addb < m_nw ; ) {
 				// breathe
@@ -2417,37 +2384,43 @@ void Sections::setNextSentPtrs ( ) {
 
 	// kinda like m_rootSection
 	m_firstSent = NULL;
-	m_lastSent  = NULL;
 
 	Section *finalSec = NULL;
-	Section *lastSent = NULL;
+
 	// scan the sentence sections and number them to set m_sentNum
 	for ( Section *sk = m_rootSection ; sk ; sk = sk->m_next ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
+
 		// record final section
 		finalSec = sk;
-		// set this
-		sk->m_prevSent = lastSent;
+
 		// need sentence
-		if ( ! ( sk->m_flags & SEC_SENTENCE ) ) continue;
+		if ( ! ( sk->m_flags & SEC_SENTENCE ) ) {
+			continue;
+		}
+
 		// first one?
-		if ( ! m_firstSent ) m_firstSent = sk;
-		// we are the sentence now
-		lastSent = sk;
+		if ( ! m_firstSent ) {
+			m_firstSent = sk;
+		}
 	}
-	// update
-	m_lastSent = lastSent;
-	// reset this
-	lastSent = NULL;
+
+	Section *lastSent = NULL;
+
 	// now set "m_nextSent" of each section
 	for ( Section *sk = finalSec ; sk ; sk = sk->m_prev ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
+
 		// set this
 		sk->m_nextSent = lastSent;
+
 		// need sentence
-		if ( ! ( sk->m_flags & SEC_SENTENCE ) ) continue;
+		if ( ! ( sk->m_flags & SEC_SENTENCE ) ) {
+			continue;
+		}
+
 		// we are the sentence now
 		lastSent = sk;
 	}
@@ -3270,21 +3243,22 @@ void Sections::setTagHashes ( ) {
 
 	// now recompute the tagHashes and depths and content hashes since
 	// we have eliminate open-ended sections in the loop above
-	//for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
 	for ( Section *sn = m_rootSection ; sn ; sn = sn->m_next ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
+
 		// these have to be in order of sn->m_a to work right
 		// because we rely on the parent tag hash, which would not
 		// necessarily be set if we were not sorted, because the 
 		// parent section could have SEC_FAKE flag set because it is
 		// a br section added afterwards.
-		//Section *sn = m_sorted[i]; // sections[i];
+
 		// shortcut
 		int64_t bh = (int64_t)sn->m_baseHash;
-		//int64_t fh = sn->m_tagId;
+
 		// sanity check
 		if ( bh == 0 ) { char *xx=NULL;*xx=0; }
+
 		// if no parent, use initial values
 		if ( ! sn->m_parent ) {
 			sn->m_depth   = 0;
@@ -3294,6 +3268,7 @@ void Sections::setTagHashes ( ) {
 			if ( bh == 0 ) { char *xx=NULL;*xx=0; }
 			continue;
 		}
+
 		// sanity check
 		if ( sn->m_parent->m_tagHash == 0 ) { char *xx=NULL;*xx=0; }
 
@@ -3311,7 +3286,10 @@ void Sections::setTagHashes ( ) {
 			sn->m_tagHash     = sn->m_parent->m_tagHash;
 		}
 
-		if ( sn->m_tagHash == 0 ) sn->m_tagHash = 1234567;
+		if ( sn->m_tagHash == 0 ) {
+			sn->m_tagHash = 1234567;
+		}
+
 		// depth based on parent, too
 		sn->m_depth = sn->m_parent->m_depth + 1;
 	}
@@ -3322,7 +3300,6 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 			int32_t hiPos,
 			int32_t *wposVec,
 			char *densityVec,
-			char *diversityVec,
 			char *wordSpamVec,
 			char *fragVec,
 			char format ) {
@@ -3335,7 +3312,6 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 
 	m_wposVec      = wposVec;
 	m_densityVec   = densityVec;
-	m_diversityVec = diversityVec;
 	m_wordSpamVec  = wordSpamVec;
 	m_fragVec      = fragVec;
 

@@ -184,23 +184,12 @@ static bool storeTerm ( char	*s        ,
 //   we know the termlist is small, or the termlist is being used for spidering
 //   or parsing purposes and is usually not sent across the network.
 bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
-
-	//if (  m_pbuf )
-	//	m_pbuf->safePrintf("<h3>Terms which are immune to indexdb "
-	//			   "splitting:</h3>");
-
-	//if ( m_skipIndexing ) return true;
-
 	// this should be ready to go and not block!
 	int64_t *pch64 = getExactContentHash64();
-	//int64_t *pch64 = getLooseContentHash64();
 	if ( ! pch64 || pch64 == (void *)-1 ) { char *xx=NULL;*xx=0; }
 
 	// shortcut
 	Url *fu = getFirstUrl();
-
-//BR 20160117: removed:	if ( ! hashVectors ( tt ) ) return false;
-
 
 	// constructor should set to defaults automatically
 	HashInfo hi;
@@ -2949,7 +2938,7 @@ bool XmlDoc::hashString3( char       *s              ,
 		return false;
 	if ( ! bits.set    ( &words , version , niceness ) )
 		return false;
-	if ( ! phrases.set(&words,&bits,true,false,version,niceness ) )
+	if ( !phrases.set( &words, &bits, version, niceness ) )
 		return false;
 
 	// use primary langid of doc
@@ -3250,10 +3239,6 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		// otherwise it will be the document's primary language.
 		char langId = langUnknown;
 		if ( m_wts && langVec ) langId = langVec[i];
-		// keep it as the original vector. i'm not sure we use
-		// this for anything but for display, so show the user
-		// how we made our calculation of the document's primary lang
-		//if ( langId == langUnknown ) langId = docLangId;
 
 		char wd;
 		if ( hi->m_useCountTable ) wd = wdv[i];
@@ -3428,7 +3413,6 @@ skipsingleword:
 		////////
 
 		int64_t npid = pids2[i];
-		int32_t      npw  = 2;
 		uint64_t  ph2 = 0;
 
 		// repeat for the two word hash if different!
@@ -3460,7 +3444,7 @@ skipsingleword:
 		if ( wts && npid ) {
 			// get phrase as a string
 			int32_t plen;
-			char *phr=phrases->getPhrase(i,&plen,npw);
+			char *phr=phrases->getPhrase(i,&plen,2);
 			// store it
 			if ( ! storeTerm ( phr,plen,ph2,hi,i,
 					   wposvec[i], // wordPos

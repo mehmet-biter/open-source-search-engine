@@ -1,7 +1,6 @@
 #include "gb-include.h"
 
 #include "Words.h"
-#include "Phrases.h" // for isInPhrase() for hashWordIffNotInPhrase
 #include "Unicode.h" // getUtf8CharSize()
 #include "StopWords.h"
 #include "Speller.h"
@@ -108,7 +107,9 @@ int32_t countWords ( char *p ) {
 bool Words::set( Xml *xml, bool computeWordIds, int32_t niceness, int32_t node1, int32_t node2 ) {
 	// prevent setting with the same string
 	if ( m_xml == xml ) { char *xx=NULL;*xx=0; }
+
 	reset();
+
 	m_xml = xml;
 
 	// if xml is empty, bail
@@ -171,12 +172,6 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t niceness, int32_t node1,
 			m_tagIds[m_numWords] |= BACKBIT;
 		}
 
-		//log(LOG_DEBUG, "Words: Word %"INT32": got tag %s%s (%d)", 
-		//    m_numWords,
-		//    isBackTag(m_numWords)?"/":"",
-		//    g_nodes[getTagId(m_numWords)].m_nodeName,
-		//    getTagId(m_numWords));
-		
 		m_numWords++;
 
 		// used by XmlDoc.cpp
@@ -186,41 +181,6 @@ bool Words::set( Xml *xml, bool computeWordIds, int32_t niceness, int32_t node1,
 	}
 
 	return true;
-}
-
-bool Words::set11 ( char *s , char *send , int32_t niceness ) {
-	reset();
-
-	// this will make addWords() scan for tags
-	m_hasTags = true;
-
-	// save it
-	char saved = *send;
-
-	// null term
-	*send = '\0';
-
-	// determine rough upper bound on number of words by counting
-	// punct/alnum boundaries
-	m_preCount = countWords ( s );
-
-	// true = tagIds
-	bool status = allocateWordBuffers(m_preCount,true);
-
-	// deal with error now
-	if ( !status ) {
-		*send = saved;
-		return false;
-	}
-
-	// and set the words
-	status = addWords(s,0x7fffffff, true, niceness );
-
-	// bring it back
-	*send = saved;
-
-	// return error?
-	return status;
 }
 
 // . set words from a string
@@ -249,10 +209,7 @@ bool Words::set( char *s, bool computeWordIds, int32_t niceness ) {
 bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t niceness ) {
 	int32_t  i = 0;
 	int32_t  j;
-	//int32_t  k = 0;
 	int32_t  wlen;
-	//uint32_t e;
-	//int32_t  skip;
 	int32_t badCount = 0;
 
 	bool hadApostrophe = false;
@@ -453,21 +410,11 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 	m_words   [ m_numWords  ] = &s[j];
 	m_wordLens[ m_numWords  ] = wlen;
 
-	// . Lars says it's better to leave the accented chars intact
-	// . google agrees
-	// . but what about "re'sume"?
 	if ( computeWordIds ) {
 		int64_t h = hash64Lower_utf8(&s[j],wlen);
 		m_wordIds [m_numWords] = h;
-
-		// until we get an accent removal algo, comment this
-		// out and possibly use the query synonym pipeline
-		// to search without accents. MDW
-		//int64_t h2 = hash64AsciiLowerE(&s[j],wlen);
-		//if ( h2 != h ) m_stripWordIds [m_numWords] = h2;
-		//else           m_stripWordIds [m_numWords] = 0LL;
-		//m_stripWordIds[m_numWords] = 0;
 	}
+
 	m_nodes[m_numWords] = 0;
 	if (m_tagIds) m_tagIds[m_numWords] = 0;
 	m_numWords++;
@@ -796,34 +743,6 @@ int32_t Words::getLanguage( Sections *sections ,
 	// return if known now
 	return l;
 }
-
-// get the word index at the given character position 
-int32_t Words::getWordAt ( char *p ) { // int32_t charPos ) {
-	if ( ! p                  ) { char *xx=NULL;*xx=0; }
-	if ( p <  m_words[0]      ) { char *xx=NULL;*xx=0; }
-	if ( p >= getContentEnd() ) { char *xx=NULL;*xx=0; }
-	
-	int32_t step = m_numWords / 2;
-	int32_t i = m_numWords / 2 ;
-
-	for (;;) {
-		// divide it by 2 each time
-		step >>= 1;
-		// always at least one
-		if ( step <= 0 )
-			step = 1;
-		// is it a hit?
-		if ( p >= m_words[i] && p < m_words[i] + m_wordLens[i] )
-			return i;
-		// compare
-		if ( m_words[i] < p )
-			i += step;
-		else
-			i -= step;
-	}
-	return -1;
-}
-
 
 // . return the value of the specified "field" within this html tag, "s"
 // . the case of "field" does not matter

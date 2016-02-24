@@ -640,26 +640,14 @@ class Query {
 	int32_t 	serialize(char *buf, int32_t bufLen);
 	int32_t	deserialize(char *buf, int32_t bufLen);
 
-	// . if a term is truncated in indexdb, change its '+' sign to a '*'
-	// . will recopmute m_bitScores to fix bit #7
-	//void softenTruncatedTerms ( );
-
 	bool setQueryTermScores ( int64_t *termFreqsArg ) ;
-
-	// about how hits for this query?
-	//int64_t getEstimatedTotalHits ( );
 
 	char *getQuery    ( ) { return m_orig  ; };
 	int32_t  getQueryLen ( ) { return m_origLen; };
 
-	//int32_t  getNumIgnored    ( ) { return m_numIgnored; };
-	//int32_t  getNumNotIgnored ( ) { return m_numTerms ;  };
-
 	int32_t       getNumTerms  (        ) { return m_numTerms;              };
 	char       getTermSign  ( int32_t i ) { return m_qterms[i].m_termSign;  };
 	bool       isPhrase     ( int32_t i ) { return m_qterms[i].m_isPhrase;  };
-	bool       isInPhrase   ( int32_t i ) { return m_qterms[i].m_inPhrase;  };
-	bool       isInQuotes   ( int32_t i ) { return m_qterms[i].m_inQuotes;  };
 	int64_t  getTermId    ( int32_t i ) { return m_qterms[i].m_termId;    };
 	char       getFieldCode2( int32_t i ) { return m_qterms[i].m_fieldCode; };
 	int64_t  getRawTermId ( int32_t i ) { return m_qterms[i].m_rawTermId; };
@@ -681,13 +669,6 @@ class Query {
 
 	bool isSplit(int32_t i) { return m_qterms[i].isSplit(); };
 
-	// . Msg39 calls this to get our vector so it can pass it to Msg37
-	// . the signs and ids are dupped in the QueryTerm classes, too
-	//int64_t *getTermFreqs ( ) { return m_termFreqs ; };
-	//int64_t  getTermFreq  ( int32_t i ) { return m_termFreqs[i]; };
-	//int64_t *getTermIds   ( ) { return m_termIds   ; };
-	//char      *getTermSigns ( ) { return m_termSigns ; };
-	//int32_t      *getComponentCodes   ( ) { return m_componentCodes; };
 	int64_t  getRawWordId ( int32_t i ) { return m_qwords[i].m_rawWordId;};
 
 	int32_t getNumComponentTerms ( ) { return m_numComponents; };

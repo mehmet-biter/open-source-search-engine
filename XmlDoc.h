@@ -401,8 +401,6 @@ public:
 	class Bits *getBitsForSummary ( ) ;
 	class Pos *getPos ( );
 	class Phrases *getPhrases ( ) ;
-	class Sections *getExplicitSections ( ) ;
-	class Sections *getImpliedSections ( ) ;
 	class Sections *getSections ( ) ;
 	int32_t *getLinkSiteHashes ( );
 	class Links *getLinks ( bool doQuickSet = false ) ;
@@ -412,19 +410,16 @@ public:
 	int32_t *getSummaryVector ( ) ;
 	int32_t *getPageSampleVector ( ) ;
 	int32_t *getPostLinkTextVector ( int32_t linkNode ) ;
-	int32_t computeVector ( class Sections *sections, class Words *words, 
-			     uint32_t *vec , int32_t start = 0 , int32_t end = -1 );
+	int32_t computeVector ( class Words *words, uint32_t *vec , int32_t start = 0 , int32_t end = -1 );
 	float *getTagSimilarity ( class XmlDoc *xd2 ) ;
 	float *getPageSimilarity ( class XmlDoc *xd2 ) ;
 	float *getPercentChanged ( );
 	uint64_t *getFuzzyDupHash ( );
 	int64_t *getExactContentHash64();
-	int64_t *getLooseContentHash64();
 	class RdbList *getDupList ( ) ;
 	class RdbList *getLikedbListForReq ( );
 	class RdbList *getLikedbListForIndexing ( );
 	char *getIsDup ( ) ;
-	char *isDupOfUs ( int64_t d ) ;
 	char *getMetaDescription( int32_t *mdlen ) ;
 	char *getMetaSummary ( int32_t *mslen ) ;
 	char *getMetaKeywords( int32_t *mklen ) ;
@@ -893,8 +888,6 @@ public:
 	char     m_sectionsValid;
 	char     m_subSentsValid;
 
-	char     m_explicitSectionsValid;
-	char     m_impliedSectionsValid;
 	char     m_imageDataValid;
 	char     m_imagesValid;
 	char     m_msge0Valid;
@@ -1564,6 +1557,8 @@ public:
 			    HashTableX *domDedupTable ,
 			    void *finalState , 
 			    void (* finalCallback)(void *));
+
+	void logQueryTiming(const char* function, int64_t startTime);
 
 	bool doInjectLoop ( );
 	void doneInjecting ( class XmlDoc *xd );

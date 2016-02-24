@@ -124,7 +124,6 @@ public:
 	int32_t m_senta;
 	int32_t m_sentb;
 
-	class Section *m_prevSent;
 	class Section *m_nextSent;
 
 	// hash of this tag's baseHash and all its parents baseHashes combined
@@ -190,12 +189,11 @@ public:
 #define FMT_JSON   3
 
 class Sections {
+public:
+	Sections();
+	~Sections();
 
- public:
-
-	Sections ( ) ;
-	void reset() ;
-	~Sections ( ) ;
+	void reset();
 
 	// . returns false if blocked, true otherwise
 	// . returns true and sets g_errno on error
@@ -205,43 +203,25 @@ class Sections {
 
 	bool verifySections ( ) ;
 
-	int32_t getStoredSize ( ) ;
-	static int32_t getStoredSize ( char *p ) ;
-	int32_t serialize     ( char *p ) ;
-
 	bool growSections ( );
-
-	bool getSectiondbList ( );
-	bool gotSectiondbList ( bool *needsRecall ) ;
 
 	void setNextBrotherPtrs ( bool setContainer ) ;
 
 	// this is used by Events.cpp Section::m_nextSent
 	void setNextSentPtrs();
 
-	bool print ( SafeBuf *sbuf ,
-		     class HashTableX *pt ,
-		     class HashTableX *et ,
-		     class HashTableX *st ,
-		     class HashTableX *at ,
-		     class HashTableX *tt ,
-		     //class HashTableX *rt ,
-		     class HashTableX *priceTable ) ;
+	bool print( SafeBuf *sbuf, class HashTableX *pt, class HashTableX *et, class HashTableX *st,
+				class HashTableX *at, class HashTableX *tt, class HashTableX *priceTable );
 
 	void printFlags ( class SafeBuf *sbuf , class Section *sn ) ;
 
-	bool print2 ( SafeBuf *sbuf ,
-		      int32_t hiPos,
-		      int32_t *wposVec,
-		      char *densityVec,
-		      char *diversityVec,
-		      char *wordSpamVec,
-		      char *fragVec,
-		      char format = FMT_HTML );
-	bool printSectionDiv ( class Section *sk , char format = FMT_HTML );
+	bool print2(SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *densityVec,
+				 char *wordSpamVec, char *fragVec, char format = FMT_HTML );
+
+	bool printSectionDiv ( Section *sk , char format = FMT_HTML );
 	class SafeBuf *m_sbuf;
 
-	bool isHardSection ( class Section *sn );
+	bool isHardSection ( Section *sn );
 
 	bool setMenus ( );
 
@@ -250,8 +230,6 @@ class Sections {
 	bool setHeadingBit ( ) ;
 
 	void setTagHashes ( ) ;
-
-	bool m_alnumPosValid;
 
 	// save it
 	class Words *m_words    ;
@@ -265,27 +243,11 @@ class Sections {
 
 	int32_t *m_wposVec;
 	char *m_densityVec;
-	char *m_diversityVec;
 	char *m_wordSpamVec;
 	char *m_fragVec;
 	
 	// url ends in .rss or .xml ?
 	bool  m_isRSSExt;
-
-	bool m_isFacebook   ;
-	bool m_isEventBrite ;
-	bool m_isStubHub    ;
-
-	Msg0  m_msg0;
-	key128_t m_startKey;
-	IndexList m_list;
-	int64_t m_termId;
-
-	int32_t m_numLineWaiters;
-	bool m_waitInLine;
-	int32_t m_numInvalids;
-
-	int32_t m_numAlnumWordsInArticle;
 
 	// word #'s (-1 means invalid)
 	int32_t m_titleStart;
@@ -296,9 +258,6 @@ class Sections {
 
 	// save this too
 	int32_t m_nw ;
-
-	// for caching parition scores
-	HashTableX m_ct;
 
 	// allocate m_sections[] buffer
 	class Section  *m_sections;
@@ -339,7 +298,6 @@ class Sections {
 	// kinda like m_rootSection, the first sentence section that occurs
 	// in the document, is NULL iff no sentences in document
 	class Section *m_firstSent;
-	class Section *m_lastSent;
 };
 
 // . the key in sectiondb is basically the Section::m_tagHash 
