@@ -31,42 +31,33 @@
 // . these are descriptive flags, they are computed when Sections is set
 // . SEC_NOTEXT sections do not vote, i.e. they are not stored in Sectiondb
 #define SEC_NOTEXT       0x0001 // implies section has no alnum words
-
-// . Weights.cpp zeroes out the weights for these types of sections
-// . is section delimeted by the <script> tag, <marquee> tag, etc.
+//#define SEC_UNUSED     0x0002
+//#define SEC_UNUSED     0x0004
 #define SEC_SCRIPT       0x0008
 #define SEC_STYLE        0x0010
 #define SEC_SELECT       0x0020
 //#define SEC_UNUSED     0x0040
 //#define SEC_UNUSED     0x0080
-
-// . in title/header. for gigabits in XmlDoc.cpp
-// . is section delemited by <title> or <hN> tags?
-#define SEC_IN_TITLE     0x0100
-#define SEC_IN_HEADER    0x0200
-
+#define SEC_IN_TITLE     0x0100 // in title
+#define SEC_IN_HEADER    0x0200 // in <hN> tags
 //#define SEC_UNUSED     0x0400 
 #define SEC_HIDDEN       0x0800 // <div style="display: none">
 //#define SEC_UNUSED     0x1000
 #define SEC_FAKE         0x2000 // <hr>/<br>/sentence based faux section
 #define SEC_NOSCRIPT     0x4000
-
 //#define SEC_UNUSED     0x8000
 
-#define SEC_MENU         0x010000
-#define SEC_LINK_TEXT    0x020000
-#define SEC_MENU_HEADER  0x040000
-#define SEC_INPUT_HEADER 0x080000
-#define SEC_INPUT_FOOTER 0x100000
-#define SEC_HEADING      0x200000
-
-// reasons why a section is not an event
+#define SEC_MENU               0x00010000
+#define SEC_LINK_TEXT          0x00020000
+#define SEC_MENU_HEADER        0x00040000
+#define SEC_INPUT_HEADER       0x00080000
+#define SEC_INPUT_FOOTER       0x00100000
+#define SEC_HEADING            0x00200000
 //#define SEC_UNUSED           0x00400000
 //#define SEC_UNUSED           0x00800000
 #define SEC_SENTENCE           0x01000000 // made by a sentence?
 #define SEC_PLAIN_TEXT         0x02000000
 //#define SEC_UNUSED           0x04000000
-
 //#define SEC_UNUSED                0x00008000000LL
 //#define SEC_UNUSED                0x00010000000LL
 //#define SEC_UNUSED                0x00020000000LL
@@ -77,25 +68,6 @@
 #define SEC_MENU_SENTENCE           0x00200000000LL
 //#define SEC_UNUSED                0x00400000000LL
 //#define SEC_UNUSED                0x00800000000LL
-//#define SEC_UNUSED                0x01000000000LL
-//#define SEC_UNUSED                0x02000000000LL
-//#define SEC_UNUSED                0x04000000000LL
-//#define SEC_UNUSED                0x08000000000LL
-
-//#define SEC_UNUSED                0x0000010000000000LL
-//#define SEC_UNUSED                0x0000020000000000LL
-//#define SEC_UNUSED                0x0000040000000000LL
-//#define SEC_UNUSED                0x0000080000000000LL
-//#define SEC_UNUSED                0x0000100000000000LL
-//#define SEC_UNUSED                0x0000200000000000LL
-//#define SEC_UNUSED                0x0000400000000000LL
-//#define SEC_UNUSED                0x0000800000000000LL
-
-//#define SEC_UNUSED                0x0001000000000000LL
-//#define SEC_UNUSED                0x0002000000000000LL
-//#define SEC_UNUSED                0x0004000000000000LL
-//#define SEC_UNUSED                0x0008000000000000LL
-#define SEC_HASHXPATH               0x0010000000000000LL
 
 // . some random-y numbers for Section::m_baseHash
 // . used by splitSection() function
@@ -306,8 +278,6 @@ class Sections {
 		     class HashTableX *priceTable ) ;
 
 	void printFlags ( class SafeBuf *sbuf , class Section *sn ) ;
-
-	bool printVotingInfoInJSON ( SafeBuf *sb ) ;
 
 	bool print2 ( SafeBuf *sbuf ,
 		      int32_t hiPos,

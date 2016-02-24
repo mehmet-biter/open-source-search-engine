@@ -3563,22 +3563,6 @@ bool XmlDoc::hashFacet2 ( char *prefix,
 			  // we only use this for gbxpathsitehash terms:
 			  bool shardByTermId ) {
 
-	// need a prefix
-	//if ( ! hi->m_prefix ) return true;
-	//int32_t plen = gbstrlen ( hi->m_prefix );
-	//if ( plen <= 0 ) return true;
-	// we gotta make this case insensitive, and skip spaces
-	// because if it is 'focal length' we can't search
-	// 'focal length:10' because that comes across as TWO terms.
-	//int64_t prefixHash =hash64Lower_utf8_nospaces ( hi->m_prefix,plen);
-
-	// now any field has to support gbfacet:thatfield
-	// and store the 32-bit termid into where we normally put
-	// the word position bits, etc.
-	//static int64_t s_facetPrefixHash = 0LL;
-	//if ( ! s_facetPrefixHash )
-	//	s_facetPrefixHash = hash64n ( "gbfacet" );
-
 	// this is case-sensitive
 	int64_t prefixHash = hash64n ( prefix );
 
@@ -3617,12 +3601,6 @@ bool XmlDoc::hashFacet2 ( char *prefix,
 			  false, // syn?
 			  false , // delkey?
 			  shardByTermId );
-
-	//int64_t final = hash64n("products.offerprice",0);
-	//int64_t prefix = hash64n("gbsortby",0);
-	//int64_t h64 = hash64 ( final , prefix);
-	//if ( ph2 == h64 )
-	//	log("hey: got offer price");
 
 	// now set the float in that key
 	g_posdb.setInt ( &k , val32 );

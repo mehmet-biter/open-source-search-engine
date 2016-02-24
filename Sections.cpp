@@ -1409,37 +1409,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 			p->m_indirectSentHash64 ^= sc64;
 	}
 
-	/////
-	//
-	// set SEC_HASHXPATH
-	//
-	/////
-	for ( Section *sn = m_firstSent ; sn ; sn = sn->m_nextSent ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// sanity check
-		int64_t sc64 = sn->m_sentenceContentHash64;
-		if ( ! sc64 ) { char *xx=NULL;*xx=0; }
-		// propagate it upwards
-		Section *p = sn->m_parent;
-		// parent of sentence always gets it i guess
-		uint64_t lastVal = 0x7fffffffffffffffLL;
-		// TODO: because we use XOR for speed we might end up with
-		// a 0 if two sentence are repeated, they cancel out..
-		for ( ; p ; p = p->m_parent ) {
-			// how can this be a text node?
-			if ( p->m_tagId == TAG_TEXTNODE ) continue;
-			// if parent's hash is same as its kid then do not
-			// hash it separately in order to save index space
-			// from adding gbxpathsitehash1234567 terms
-			if ( p->m_indirectSentHash64 == lastVal ) continue;
-			// update this for deduping
-			lastVal = p->m_indirectSentHash64;
-			// this parent should be hashed with gbxpathsitehash123
-			p->m_flags |= SEC_HASHXPATH;
-		}
-	}
-
 	//
 	// set Section::m_alnumPosA/m_alnumPosB
 	//
@@ -1519,7 +1488,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 	//   need this now!!
 	//
 	///////////////////////////////////////
-	setNextBrotherPtrs ( true ); // setContainer = true
+	setNextBrotherPtrs ( true );
 
 
 	///////////////////////////////////////
@@ -1531,7 +1500,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 
 	//verifySections();
 
-	// don't use nsvt/osvt now
 	return true;
 }
 
@@ -2245,14 +2213,13 @@ bool Sections::addSentenceSections ( ) {
 }
 
 Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash ) {
-	// debug
-	//log("sect: inserting subsection [%"INT32",%"INT32")",a,b);
-
 	// try to realloc i guess. should keep ptrs in tact.
-	if ( m_numSections >= m_maxNumSections )
+	if ( m_numSections >= m_maxNumSections ) {
 		// try to realloc i guess
-		if ( ! growSections() ) return NULL;
-		//char *xx=NULL;*xx=0;}
+		if ( !growSections() ) {
+			return NULL;
+		}
+	}
 
 	//
 	// make a new section
@@ -2307,7 +2274,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 		si = m_lastAdded;
 	}
 
-
 	// crap we may have 
 	// "<p> <strong>hey there!</strong> this is another sentence.</p>"
 	// then "si" will be pointing at the "<p>" section, and we will
@@ -2343,11 +2309,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 		m_numSections--;
 		char *xx=NULL;*xx=0;
 		return NULL;
-//		sk->m_next = m_rootSection;//m_rootSection;
-//		sk->m_prev = NULL;
-//		//m_sections[0].m_prev = sk;
-//		m_rootSection->m_prev = sk;
-//		m_rootSection = sk;
 	} else {
 		// insert us into the linked list of sections
 		if ( si->m_next ) si->m_next->m_prev = sk;
@@ -2411,21 +2372,6 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 			     s2->m_a > a    ) {char *xx=NULL;*xx=0;}
 	}
 #endif
-
-	//
-	// !!!!!!!!!! SPEED THIS UP !!!!!!!!!!
-	//
-
-	// . find any child section of "parent" and make us their parent
-	// . TODO: can later speed up with ptr to ptr logic
-	// . at this point sections are not sorted so we can't
-	//   really iterate linearly through them ... !!!
-	// . TODO: speed this up!!!
-	//
-	// . TODO: use hashtable?
-	// . TODO: aren't these sections in order by m_a??? could just use that
-	//
-	//for ( int32_t xx = 0 ; xx < m_numSections ; xx++ ) {
 
 	// set sk->m_firstWordPos
 	for ( int32_t i = a ; i < b ; i++ ) {
@@ -2498,8 +2444,6 @@ void Sections::setNextBrotherPtrs ( bool setContainer ) {
 		si->m_prevBrother = NULL;
 	}
 
-
-	//for ( int32_t i = 0 ; i + 1 < m_numSections ; i++ ) {
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
@@ -2630,9 +2574,6 @@ void Sections::setNextSentPtrs ( ) {
 
 void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 	sec_t f = sn->m_flags;
-
-	if ( f & SEC_HASHXPATH )
-		sbuf->safePrintf("hashxpath ");
 
 	sbuf->safePrintf("indsenthash64=%"UINT64" ",sn->m_indirectSentHash64);
 
@@ -3500,46 +3441,11 @@ void Sections::setTagHashes ( ) {
 			sn->m_turkTagHash32 = sn->m_parent->m_turkTagHash32;
 		}
 
-		// sanity check
-		// i've seen this happen once for
-		// sn->m_parent->m_tagHash = 791013962
-		// bh = 20020
 		if ( sn->m_tagHash == 0 ) sn->m_tagHash = 1234567;
 		// depth based on parent, too
-		//if ( tid != TAG_A ) sn->m_depth = sn->m_parent->m_depth + 1;
-		//else                sn->m_depth = sn->m_parent->m_depth    ;
 		sn->m_depth = sn->m_parent->m_depth + 1;
 	}
 }
-
-// . just the voting info for passing into diffbot in json
-// . along w/ the title/summary/etc. we can return this json blob for each search result
-bool Sections::printVotingInfoInJSON ( SafeBuf *sb ) {
-
-	// save ptrs
-	m_sbuf = sb;
-	m_sbuf->setLabel ("sectprnt2");
-
-	// print sections out
-	for ( Section *sk = m_rootSection ; sk ; ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// print this section
-		printSectionDiv ( sk , FORMAT_JSON ); // forProCog );
-		// advance
-		int32_t b = sk->m_b;
-		// stop if last
-		if ( b >= m_nw ) break;
-		// get section after that
-		sk = m_sectionPtrs[b];
-	}
-
-	// ensure ends in \0
-	if ( ! sb->nullTerm() ) return false;
-
-	return true;
-}
-
 
 // make this replace ::print() when it works
 bool Sections::print2 ( SafeBuf *sbuf ,
@@ -3621,7 +3527,6 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 	// show word # of each section so we can look in PageParser.cpp's
 	// output to see exactly where it starts, since we now label all
 	// the words
-	//for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
 	for ( Section *sn = m_rootSection ; sn ; sn = sn->m_next ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
@@ -3774,29 +3679,6 @@ bool Sections::printSectionDiv ( Section *sk , char format ) {
 	     sk->m_sentenceContentHash64 != sk->m_contentHash64 )
 		m_sbuf->safePrintf("sch=%"UINT64" ",
 		                   sk->m_sentenceContentHash64);
-
-
-	// show this stuff for tags that contain sentences indirectly,
-	// that is what we hash in XmlDoc::hashSections()
-	//if(sk->m_indirectSentHash64 && sk->m_tagId != TAG_TEXTNODE) {
-	uint64_t mod = 0;
-	if ( sk->m_flags & SEC_HASHXPATH ) {
-		// show for all tags now
-		mod = (uint32_t)sk->m_turkTagHash32;
-		mod ^= (uint32_t)(uint64_t)m_siteHash64;
-		m_sbuf->safePrintf("<a style=decoration:none; "
-		                   "href=/search?c=%s&"
-		                   "q=gbfacetstr%%3A"
-		                   "gbxpathsitehash%"UINT64">"
-		                   //"<u>"
-		                   "xpathsitehash=%"UINT64""
-		                   //"</u>"
-		                   "</a> "
-		                   //"</font> "
-		                   ,m_coll
-		                   ,mod
-		                   ,mod);
-	}
 
 	printFlags ( m_sbuf , sk );
 	
