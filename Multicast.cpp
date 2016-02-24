@@ -854,8 +854,6 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 	case 0x20: if ( elapsed <  5000 ) return; break;
 	// msg 0x20 calls this to get the title rec
 	case 0x22: if ( elapsed <  1000 ) return; break;
-	// Msg23 niceness 0 is only for doing &rerank=X queries
-	//case 0x23: if ( elapsed < 100000 ) return; break;
 	// a request to get the score of a docid, can be *very* intensive
 	case 0x3b: if ( elapsed < 500000 ) return; break;
 	// related topics request, calls many Msg22 to get titlerecs...
@@ -868,21 +866,6 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 		// performance reasons, cuz we do pretty good load balancing
 		// and when things get saturated, rerouting excacerbates it
 		if ( elapsed <  8000 ) return; break;
-		// how many bytes were requested?
-		/*
-		if ( THIS->m_msg ) nb=*(int32_t *)(THIS->m_msg + sizeof(key_t)*2);
-		else               nb=2000000;
-		// . givem 300ms + 1ms per 5000 bytes
-		// . a 6M   read would be allowed 1500ms before re-routing
-		// . a 1M   read would be allowed 500ms
-		// . a 100k read would be allowed 320ms
-		ta = 300 + nb / 5000;
-		// limit it
-		if ( ta < 100  ) ta = 100;
-		if ( ta > 9000 ) ta = 9000; // could this hurt us?
-		if ( elapsed <  ta ) return; 
-		break;
-		*/
 	// msg to get a clusterdb rec
 	case 0x38: if ( elapsed <  2000 ) return; break;
 	// msg to get docIds from a query, may take a while

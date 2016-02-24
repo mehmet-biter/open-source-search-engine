@@ -145,11 +145,6 @@ bool Msg40::getResults ( SearchInput *si      ,
 	// save that
 	m_firstCollnum = cr->m_collnum;
 
-	// what is our max docids ceiling?
-	//m_maxDocIdsToCompute = cr->m_maxDocIdsToCompute;
-	// topic similarity cutoff
-	m_topicSimilarCutoff = cr->m_topicSimilarCutoffDefault ;
-
 	// reset this for family filter
 	m_queryCensored = false;
 	m_filterStats[CR_DIRTY]	= 0;  //m_numCensored = 0;
@@ -543,8 +538,7 @@ bool Msg40::gotDocIds ( ) {
 		return true;
 	}
 
-	// if only getting docids, skip summaries,topics, and references
-	//	if ( m_si->m_docIdsOnly ) return launchMsg20s ( false );
+	// if only getting docids, skip summaries, and references
 	if ( m_si->m_docIdsOnly ) return true;
 
 	// . alloc buf to hold all m_msg20[i] ptrs and the Msg20s they point to
@@ -553,13 +547,12 @@ bool Msg40::gotDocIds ( ) {
 	if ( ! reallocMsg20Buf() ) return true;
 
 	// . launch a bunch of task that depend on the docids we got
-	// . gigabits, reference pages and dmoz topics
 	// . keep track of how many are out
 	m_tasksRemaining = 0;
 
 	// debug msg
 	if ( m_si->m_debug || g_conf.m_logDebugQuery )
-		logf(LOG_DEBUG,"query: [%"PTRFMT"] Getting topics/gigabits, "
+		logf(LOG_DEBUG,"query: [%"PTRFMT"] Getting "
 		     "reference pages and dir pages.",(PTRTYPE)this);
 
 	return launchMsg20s ( false );

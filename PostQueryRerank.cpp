@@ -341,7 +341,7 @@ bool PostQueryRerank::preRerank ( ) {
 			return false;
 
 		// . calculate maximum url length in pages for reranking 
-		//   by query terms or topics in a url
+		//   by query terms in a url
 		int32_t urlLen = mr->size_ubuf - 1;//msg20->getUrlLen();
 		if ( urlLen > m_maxUrlLen )
 			m_maxUrlLen = urlLen;
@@ -379,7 +379,7 @@ bool PostQueryRerank::preRerank ( ) {
 	}
 
 
-	// . setup reranking for query terms or topics in url (pqrqttiu)
+	// . setup reranking for query terms in url (pqrqttiu)
 	// . add space to max url length for terminating NULL and allocate
 	//   room for max length
 	m_maxUrlLen++;

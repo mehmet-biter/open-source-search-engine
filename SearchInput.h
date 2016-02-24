@@ -266,12 +266,9 @@ class SearchInput {
 	int32_t   m_docsToScanForReranking;
 	float  m_pqr_demFactSubPhrase;
 	float  m_pqr_demFactCommonInlinks;
-	float  m_pqr_demFactLocTitle;
-	float  m_pqr_demFactLocSummary;
 	float  m_pqr_demFactProximity;
 	float  m_pqr_demFactInSection;
 	float  m_pqr_demFactOrigScore;
-	bool   m_pqr_demInTopics;
 	// . buzz stuff (buzz)
 	// . these controls the set of results, so should be in the makeKey()
 	//   as it is, in between the start and end hash vars

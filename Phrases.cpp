@@ -247,13 +247,11 @@ void Phrases::setPhrase ( int32_t i, int32_t niceness ) {
 	// . "i-phone"   -> iphone
 	// . "e-mail"    -> email
 	if ( hasHyphen || ! hasStopWord2 ) {
-		//m_phraseIds [i] = h;
 		m_phraseIds2[i] = h2;
 	}
 	// . "st. and"    !-> stand
 	// . "the rapist" !-> therapist
 	else {
-		//m_phraseIds [i] = h  ^ 0x768867;
 		m_phraseIds2[i] = h2 ^ 0x768867;
 	}
 

@@ -4648,59 +4648,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "demotion for query terms or gigabits in url";
-	m->m_desc  = "Demotion factor for query terms or gigabits "
-		"in a result's url. "
-		"Score will be penalized by this factor times the number "
-		"of query terms or gigabits in the url divided by "
-		"the max value below such that fewer "
-		"query terms or gigabits in the url causes the result "
-		"to be demoted more heavily, depending on the factor. "
-		"Higher factors demote more per query term or gigabit "
-		"in the page's url. "
-		"Generally, a page may not be demoted more than this "
-		"factor as a percent. Also, how it is demoted is "
-		"dependant on the max value. For example, "
-		"a factor of 0.2 will demote the page 20% if it has no "
-		"query terms or gigabits in its url. And if the max value is "
-		"10, then a page with 5 query terms or gigabits in its "
-		"url will be demoted 10%; and 10 or more query terms or "
-		"gigabits in the url will not be demoted at all. "
-		"0 means no demotion. "
-		"A safe range is from 0 to 0.35. ";
-	m->m_cgi   = "pqrqttiu";
-	m->m_off   = (char *)&cr.m_pqr_demFactQTTopicsInUrl - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "max value for pages with query terms or gigabits "
-		"in url";
-	m->m_desc  = "Max number of query terms or gigabits in a url. "
-		"Pages with a number of query terms or gigabits in their "
-		"urls greater than or equal to this value will not be "
-		"demoted. "
-		"This controls the range of values expected to represent "
-		"the number of query terms or gigabits in a url. It should "
-		"be set to or near the estimated max number of query terms "
-		"or topics that can be in a url. Setting to a lower value "
-		"increases the penalty per query term or gigabit that is "
-		"not in a url, but decreases the range of values that "
-		"will be demoted.";
-	m->m_cgi   = "pqrqttium";
-	m->m_off   = (char *)&cr.m_pqr_maxValQTTopicsInUrl - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "10";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "demotion for pages that are not "
 		"root or have many paths in the url";
 	m->m_desc  = "Demotion factor each path in the url. "
@@ -4762,60 +4709,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_pqr_maxValPageSize - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "524288";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion for non-location specific queries "
-		"with a location specific title";
-	m->m_desc  = "Demotion factor for non-location specific queries "
-		"with a location specific title. "
-		"Pages which contain a location in their title which is "
-		"not in the query or the gigabits will be demoted by their "
-		"population multiplied by this factor divided by the max "
-		"place population specified below. "
-		"Generally, a page will not be demoted more than this "
-		"value as a percent. "
-		"0 means no demotion. ";
-	m->m_cgi   = "pqrloct";
-	m->m_off   = (char *)&cr.m_pqr_demFactLocTitle - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0.99";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion for non-location specific queries "
-		"with a location specific summary";
-	m->m_desc  = "Demotion factor for non-location specific queries "
-		"with a location specific summary. "
-		"Pages which contain a location in their summary which is "
-		"not in the query or the gigabits will be demoted by their "
-		"population multiplied by this factor divided by the max "
-		"place population specified below. "
-		"Generally, a page will not be demoted more than this "
-		"value as a percent. "
-		"0 means no demotion. ";
-	m->m_cgi   = "pqrlocs";
-	m->m_off   = (char *)&cr.m_pqr_demFactLocSummary - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0.95";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demote locations that appear in gigabits";
-	m->m_desc  = "Demote locations that appear in gigabits.";
-	m->m_cgi   = "pqrlocg";
-	m->m_off   = (char *)&cr.m_pqr_demInTopics - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
 	m->m_group = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
@@ -5082,19 +4975,6 @@ void Parms::init ( ) {
 	m->m_smin  = 0;
 	m->m_smax  = 100000;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "percent topic similar default";
-	m->m_desc  = "Like above, but used for deciding when to cluster "
-		"results by topic for the news collection.";
-	m->m_cgi   = "ptcd";
-	m->m_off   = (char *)&cr.m_topicSimilarCutoffDefault - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "50";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;	
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
 	m++;
@@ -11835,16 +11715,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "log debug topic messages";
-	m->m_cgi   = "ldto";
-	m->m_off   = (char *)&g_conf.m_logDebugTopics - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_priv  = 1;
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "log debug topDoc messages";
 	m->m_cgi   = "ldtopd";
 	m->m_off   = (char *)&g_conf.m_logDebugTopDocs - g;
@@ -12054,16 +11924,6 @@ void Parms::init ( ) {
 	m->m_desc  = "Log various timing related messages.";
 	m->m_cgi   = "ltspc";
 	m->m_off   = (char *)&g_conf.m_logTimingSpcache - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_priv  = 1;
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "log timing messages for related topics";
-	m->m_cgi   = "ltt";
-	m->m_off   = (char *)&g_conf.m_logTimingTopics - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_priv  = 1;

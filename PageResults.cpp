@@ -19,7 +19,6 @@
 #include "LanguageIdentifier.h"
 #include "CountryCode.h"
 #include "Unicode.h"
-#include "XmlDoc.h" // GigabitInfo class
 #include "Posdb.h" // MAX_TOP definition
 #include "PageResults.h"
 #include "PageRoot.h"
@@ -28,9 +27,7 @@
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;
 static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) ;
 
-//static void gotSpellingWrapper ( void *state ) ;
 static void gotResultsWrapper  ( void *state ) ;
-//static void gotAdsWrapper      ( void *state ) ;
 static void gotState           ( void *state ) ;
 static bool gotResults         ( void *state ) ;
 
@@ -163,34 +160,6 @@ bool sendReply ( State0 *st , char *reply ) {
 
 	mdelete(st, sizeof(State0), "PageResults2");
 	delete st;
-
-	/*
-	if ( format == FORMAT_XML ) {
-		SafeBuf sb;
-		sb.safePrintf("<?xml version=\"1.0\" "
-			      "encoding=\"UTF-8\" ?>\n"
-			      "<response>\n"
-			      "\t<errno>%"INT32"</errno>\n"
-			      "\t<errmsg>%s</errmsg>\n"
-			      "</response>\n"
-			      ,(int32_t)savedErr
-			      ,mstrerror(savedErr)
-			      );
-		// clear it for sending back
-		g_errno = 0;
-		// send back as normal reply
-		g_httpServer.sendDynamicPage(s,
-					     sb.getBufStart(),
-					     sb.length(),
-					     0, // cachetime in secs
-					     false, // POSTReply?
-					     ct,
-					     -1, // httpstatus -1 -> 200
-					     NULL, // cookieptr
-					     charset );
-		return true;
-	}
-	*/
 
 	// if we had a broken pipe from the browser while sending
 	// them the search results, then we end up closing the socket fd
@@ -359,12 +328,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 			      , h32
 			      , rand64
 			      );
-		//
-		// . login bar
-		// . proxy will replace it byte by byte with a login/logout
-		//   link etc.
-		//
-		//g_proxy.insertLoginBarDirective(&sb);
 
 		// 
 		// logo header
@@ -4956,13 +4919,6 @@ bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr,
 
 // if catId >= 1 then print the dmoz radio button
 bool printLogoAndSearchBox ( SafeBuf *sb, HttpRequest *hr, SearchInput *si ) {
-	char *root = "";
-
-	if ( g_conf.m_isMattWells )
-		root = "http://www.gigablast.com";
-
-	// now make a TABLE, left PANE contains gigabits and stuff
-
 	char *coll = hr->getString("c");
 	if ( ! coll ) coll = "";
 

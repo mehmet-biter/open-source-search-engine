@@ -165,7 +165,6 @@ bool Log::shouldLog ( int32_t type , const char *msg ) {
 		if ( msg[0] == 'n' ) return g_conf.m_logTimingNet;
 		if ( msg[0] == 'q' ) return g_conf.m_logTimingQuery;
 		if ( msg[0] == 's' ) return g_conf.m_logTimingSpcache;
-		if ( msg[0] == 't' ) return g_conf.m_logTimingTopics;
 		return false;
 	}
 	if ( type != LOG_DEBUG ) return true;
@@ -205,8 +204,6 @@ bool Log::shouldLog ( int32_t type , const char *msg ) {
 	if (msg[0]=='u'&&msg[1]=='n' ) return g_conf.m_logDebugUnicode;
 	if (msg[0]=='t'&&msg[1]=='o'&&msg[3]=='D' ) 
 		return g_conf.m_logDebugTopDocs;
-	if (msg[0]=='t'&&msg[1]=='o'&&msg[3]!='D' ) 
-		return g_conf.m_logDebugTopics;
 	if (msg[0]=='d'&&msg[1]=='a' ) return g_conf.m_logDebugDate;
 	if (msg[0]=='d'&&msg[1]=='d' ) return g_conf.m_logDebugDetailed;
 		

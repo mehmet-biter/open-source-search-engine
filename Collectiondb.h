@@ -501,8 +501,7 @@ class CollectionRec {
 	float m_updateVotesFreq         ; // in days. replaced m_recycleVotes
 	float m_sortByDateWeight        ;
 
-        char  m_dedupURLDefault             ;
-	int32_t  m_topicSimilarCutoffDefault   ;
+    char  m_dedupURLDefault             ;
 	char  m_useNewDeduping              ;
 	char  m_doTierJumping               ;
 	float m_numDocsMultiplier           ;
@@ -873,17 +872,10 @@ class CollectionRec {
 	// post query reranking
 	int32_t  m_pqr_docsToScan; // also for # docs for language
 	float m_pqr_demFactCountry; // demotion for foreign countries
-	float m_pqr_demFactQTTopicsInUrl; // demotion factor fewer for query terms or gigabits in the url
-	int32_t  m_pqr_maxValQTTopicsInUrl; // max value for fewer query terms or gigabits in the url
 	float m_pqr_demFactPaths; // demotion factor for more paths
 	int32_t  m_pqr_maxValPaths; // max value for more paths
-	float m_pqr_demFactCatidHasSupers; // demotion factor for catids with many super topics
-	int32_t  m_pqr_maxValCatidHasSupers; // max value for catids with many super topics
 	float m_pqr_demFactPageSize; // demotion factor for higher page sizes
 	int32_t  m_pqr_maxValPageSize; // max value for higher page sizes
-	float m_pqr_demFactLocTitle; // demotion factor for non-location specific queries with location specific results
-	float m_pqr_demFactLocSummary; // demotion factor for non-location specific queries with location specific results
-	bool  m_pqr_demInTopics; // true to demote if location is in the gigabits, otherwise these locs won't be demoted
 	int32_t  m_pqr_maxValLoc; // max value for non-location specific queries with location specific results
 	float m_pqr_demFactNonHtml; // demotion factor for non-html content type
 	float m_pqr_demFactXml; // demotion factor for xml content type

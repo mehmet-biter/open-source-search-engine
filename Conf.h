@@ -388,8 +388,6 @@ class Conf {
 	bool   m_detectMemLeaks;
 
 	// . if false we will not keep spelling information in memory
-	// . we will keep the popularity info from dict though, since related
-	//   topics requires that
 	bool   m_doSpellChecking;
 
 	// are we running in Matt Wells's private data center? if so we
@@ -397,23 +395,6 @@ class Conf {
 	bool   m_isMattWells;
 
 	bool   m_forceIt;
-
-	// maximum number of synonyms/stems to expand a word into
-	//int32_t   m_maxSynonyms;
-
-	// default affinity for spelling suggestions/numbers
-	//float  m_defaultAffinity;
-
-	// threshold for synonym usage
-	//float  m_frequencyThreshold;
-
-	// thesaurus configuration
-	//int32_t   m_maxAffinityRequests;
-	//int32_t   m_maxAffinityErrors;
-	//int32_t   m_maxAffinityAge;
-	//int32_t   m_affinityTimeout;
-	//char   m_affinityServer[MAX_URL_LEN];
-	//char   m_affinityParms[MAX_URL_LEN];
 
 	// new syncing information
 	bool   m_syncEnabled;
@@ -564,7 +545,6 @@ class Conf {
 	bool  m_logDebugThread  ;
 	bool  m_logDebugTimedb  ;
 	bool  m_logDebugTitle   ;
-	bool  m_logDebugTopics  ;
 	bool  m_logDebugTopDocs ;
 	bool  m_logDebugUdp     ;
 	bool  m_logDebugUnicode ;
@@ -589,7 +569,6 @@ class Conf {
 	bool m_logTimingNet;
 	bool m_logTimingQuery;
 	bool m_logTimingSpcache;
-	bool m_logTimingTopics;
 	// programmer reminders.
 	bool m_logReminders;
 

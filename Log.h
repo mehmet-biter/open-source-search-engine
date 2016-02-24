@@ -69,7 +69,6 @@
 // spcache related to determining what urls to spider next
 // speller query spell checking
 // thread  calling threads
-// topics  related topics
 // udp     udp networking
 
 // example log:
@@ -87,11 +86,6 @@
 #define MAX_LOG_MSGS  1024 // in memory
 
 // this is for printing out how a page is parsed by PageParser.cpp
-/* extern char *g_pbuf     ; */
-/* extern char *g_pbufPtr  ; */
-/* extern char *g_pterms   ; */
-/* extern char *g_ptermPtr ; */
-/* extern char *g_pend; */
 extern char *g_dbuf;
 extern int32_t  g_dbufSize;
 

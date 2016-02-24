@@ -235,10 +235,6 @@ class Msg40 {
 
 	SearchInput   *m_si;
 
-
-	// for topic clustering, saved from CollectionRec
-	int32_t       m_topicSimilarCutoff;
-
 	bool mergeDocIdsIntoBaseMsg3a();
 	int32_t m_numCollsToSearch;
 	class Msg3a **m_msg3aPtrs;
