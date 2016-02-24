@@ -1068,7 +1068,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 			mr.size_pairScoreBuf   = 0;
 			mr.size_singleScoreBuf = 0;
 		}
-		//mr.m_sectionStats    = pt->m_sectionStats;
+
 		// reserve space for these guys, we fill them in below
 		mr.ptr_docIds       = NULL;
 		mr.ptr_scores       = NULL;

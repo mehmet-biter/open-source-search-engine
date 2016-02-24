@@ -131,13 +131,6 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 		log(LOG_LOGIC,"net: bad collection. msg3a. %"INT32"",
 		    (int32_t)m_r->m_collnum);
 
-	//m_indexdbSplit = g_hostdb.m_indexSplits;
-	// certain query term, like, gbdom:xyz.com, are NOT split
-	// at all in order to keep performance high because such
-	// terms are looked up by the spider. if a query contains
-	// multiple "no split" terms, then it becomes split unfortunately...
-	//if ( ! m_q->isSplit() ) m_indexdbSplit = 1;
-
 	// for a sanity check in Msg39.cpp
 	r->m_nqt = m_q->getNumTerms();
 
@@ -154,10 +147,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	// . return now if query empty, no docids, or none wanted...
 	// . if query terms = 0, might have been "x AND NOT x"
 	if ( m_q->getNumTerms() <= 0 ) return true;
-	// sometimes we want to get section stats from the hacked
-	// sectionhash: posdb termlists
-	//if ( m_docsToGet <= 0 && ! m_r->m_getSectionStats )
-	//	return true;
+
 	// . set g_errno if not found and return true
 	// . coll is null terminated
 	CollectionRec *cr = g_collectiondb.getRec(r->m_collnum);
@@ -234,24 +224,17 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	// update our read info
 	for ( int32_t j = 0; j < n ; j++ ) {
 		// the read size for THIS query term
-		int32_t rs = 300000000; // toRead; 300MB i guess...
-		// limit to 50MB man! this was 30MB but the
-		// 'time enough for love' query was hitting 30MB termlists.
-		//rs = 50000000;
-		rs = DEFAULT_POSDB_READSIZE;//90000000; // 90MB!
-		// it is better to go oom then leave users scratching their
-		// heads as to why some results are not being returned.
-		// no, because we are going out of mem for queries like
-		// 'www.disney.nl' etc.
-		//rs = -1;
-		// if section stats, limit to 1MB
-		//if ( m_r->m_getSectionStats ) rs = 1000000;
+		int32_t rs = DEFAULT_POSDB_READSIZE;//90000000; // 90MB!
+
 		// get the jth query term
 		QueryTerm *qt = &m_q->m_qterms[j];
+
 		// if query term is ignored, skip it
 		if ( qt->m_ignored ) rs = 0;
+
 		// set it
 		readSizes[j] = rs;
+
 		// serialize these too
 		tfw[j] = qt->m_termFreqWeight;
 	}
@@ -265,8 +248,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	// Query::expandQuery() above
 	m_r->ptr_query  = m_q->m_orig;
 	m_r->size_query = m_q->m_origLen+1;
-	// the white list now too...
-	//m_r->ptr_whiteList = si->m_whiteListBuf.getBufStart();
+
 	// free us?
 	if ( m_rbufPtr && m_rbufPtr != m_rbuf ) {
 		mfree ( m_rbufPtr , m_rbufSize, "Msg3a" );
@@ -774,64 +756,6 @@ bool Msg3a::mergeLists ( ) {
 	//m_totalDocCount = 0; // int32_t docCount = 0;
 	m_moreDocIdsAvail = true;
 
-	/*
-
-	  this version is too simple. now each query term can be a
-	  gbfacet:price or gbfacet:type term and each has a
-	  list in the Msg39Reply::ptr_facetHashList for its termid
-
-	//
-	// compile facet stats
-	//
-	for ( int32_t j = 0; j < m_numHosts ; j++ ) {
-		Msg39Reply *mr =m_reply[j];
-		// one table for each query term
-		char *p = mr->ptr_facetHashList;
-		// loop over all query terms
-		int32_t n = m_q->getNumTerms();
-		// use this
-		HashTableX tmp;
-		// do the loop
-		for ( int32_t i = 0 ; i < n ; i++ ) {
-			// size of it
-			int32_t psize = *(int32_t *)p;
-			p += 4;
-			tmp.deserialize ( p , psize );
-			p += psize;
-			// now compile the stats into a master table
-			for ( int32_t k = 0 ; k < tmp.m_numSlots ; k++ ) {
-				if ( ! tmp.m_flags[k] ) continue;
-				// get the vlaue
-				int32_t v32 = *(int32_t *)tmp.getKeyFromSlot(k);
-				// and how many of them there where
-				int32_t count = *(int32_t *)tmp.getValueFromSlot(k);
-				// add to master
-				master.addScore32 ( v32 , count );
-			}
-		}
-	}
-	////////
-	//
-	// now set m_facetStats
-	//
-	////////
-	// add up all counts
-	int64_t count = 0LL;
-	for ( int32_t i = 0 ; i < master.getNumSlots() ; i++ ) {
-		if ( ! master.m_flags[i] ) continue;
-		int64_t slotCount = *(int32_t *)master.getValueFromSlot(i);
-		int32_t h32 = *(int32_t *)master.getKeyFromSlot(i);
-		if ( h32 == m_r->m_myFacetVal32 )
-			m_facetStats.m_myValCount = slotCount;
-		count += slotCount;
-	}
-	m_facetStats.m_totalUniqueValues = master.getNumUsedSlots();
-	m_facetStats.m_totalValues = count;
-	*/
-
-
-	// shortcut
-	//int32_t numSplits = m_numHosts;//indexdbSplit;
 
 	// . point to the various docids, etc. in each shard reply
 	// . tcPtr = term count. how many required query terms does the doc
@@ -920,11 +844,6 @@ bool Msg3a::mergeLists ( ) {
 	for ( int32_t j = 0; j < m_numQueriedHosts ; j++ ) {
 		Msg39Reply *mr =m_reply[j];
 		if ( ! mr ) continue;
-		//SectionStats *src = &mr->m_sectionStats;
-		//dst->m_onSiteDocIds      += src->m_onSiteDocIds;
-		//dst->m_offSiteDocIds     += src->m_offSiteDocIds;
-		//dst->m_totalMatches      += src->m_totalMatches;
-		//dst->m_totalEntries      += src->m_totalEntries;
 		// now the list should be the unique site hashes that
 		// had the section hash. we need to uniquify them again
 		// here.
@@ -1036,7 +955,6 @@ bool Msg3a::mergeLists ( ) {
 	if ( ! sortFacetEntries() )
 		return true;
 
-	//if ( m_r->m_getSectionStats ) return true;
 	//
 	// HACK: END section stats merge
 	//

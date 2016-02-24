@@ -1869,18 +1869,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 }
 
 
-
-/////////////
-//
-// CHROME DETECTION
-//
-// we search for these terms we hash here in getSectionsWithDupStats()
-// so we can remove chrome.
-//
-/////////////
-
 // . returns false and sets g_errno on error
-// . copied Url2.cpp into here basically, so we can now dump Url2.cpp
 bool XmlDoc::hashSections ( HashTableX *tt ) {
 	// BR 20160106: No longer store xpath-hashes in posdb as we do not use them.
 	return true;
@@ -3539,7 +3528,6 @@ skipsingleword:
 
 
 	// between calls? i.e. hashTitle() and hashBody()
-	//if ( wc > 0 ) m_dist = wposvec[wc-1] + 100;
 	if ( i > 0 ) m_dist = wposvec[i-1] + 100;
 
 	return true;

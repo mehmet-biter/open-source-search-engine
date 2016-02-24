@@ -145,17 +145,6 @@ public:
 	// when merging this list of docids into a final list keep
 	// track of the cursor into m_docIds[]
 	int32_t m_cursor;
-
-	// what collection # are these docids from if m_collnums[] is NULL
-	//collnum_t m_collnum;
-
-	// we don't have FacetStats because we have the actual 
-	// Msg39Reply::ptr_facetHashList from each shard which contains
-	// all the facet hash lists for each gbfacet: query term we had
-	// and the query "Msg3a::m_q.m_qterms[].m_dt" is the hash table
-	// where each key is a facethash for that gbfacet:xxxx term and
-	// the value if the # of occurences.
-	//SectionStats    m_sectionStats;
 };
 
 #endif

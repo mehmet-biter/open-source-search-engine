@@ -440,79 +440,7 @@ public:
 	int32_t      m_quotedStartId;
 };
 
-
-/*
-#include "RdbList.h"
-
-class PosdbList : public RdbList {
-
- public:
-
-	// why do i have to repeat this for LinkInfo::set() calling our set()??
-	void set ( char *list , int32_t  listSize  , bool  ownData   ) {
-		RdbList::set ( list     ,
-			       listSize ,
-			       list     , // alloc
-			       listSize , // alloc size
-			       0        , // fixed data size
-			       ownData  ,
-			       true     , // use half keys?
-			       sizeof(key_t));// 12 bytes per key
-	};
-
-	// clear the low bits on the keys so terms are DELETED
-	void clearDelBits ( );
-
-	void print();
-
-
-	// . these are made for special IndexLists, too
-	// . getTermId() assumes as 12 byte key
-	int64_t getCurrentTermId12 ( ) {
-		return getTermId12 ( m_listPtr ); };
-	int64_t getTermId12 ( char *rec ) {
-		return (*(uint64_t *)(&rec[4])) >> 16 ;
-	};
-	int64_t getTermId16 ( char *rec ) {
-		return (*(uint64_t *)(&rec[8])) >> 16 ;
-	};
-	// these 2 assume 12 and 6 byte keys respectively
-	int64_t getCurrentDocId () {
-		if ( isHalfBitOn ( m_listPtr ) ) return getDocId6 (m_listPtr);
-		else                             return getDocId12(m_listPtr);
-	};
-	int64_t getDocId ( char *rec ) {
-		if ( isHalfBitOn ( rec ) ) return getDocId6 (rec);
-		else                       return getDocId12(rec);
-	};
-	int64_t getCurrentDocId12 ( ) {
-		return getDocId12 ( m_listPtr ); };
-	int64_t getDocId12 ( char *rec ) {
-		return ((*(uint64_t *)(rec)) >> 2) & DOCID_MASK; };
-	int64_t getDocId6 ( char *rec ) {
-		int64_t docid;
-		*(int32_t *)(&docid) = *(int32_t *)rec;
-		((char *)&docid)[4] = rec[4];
-		docid >>= 2;
-		return docid & DOCID_MASK;
-	};
-	// this works with either 12 or 6 byte keys
-	unsigned char getCurrentScore ( ) {
-		return getScore(m_listPtr); };
-	unsigned char getScore ( char *rec ) { return ~rec[5]; };
-
-	// uncomplemented...
-	void setScore ( char *rec , char score ) { rec[5] = score; };
-
-	// for date lists only...
-	int32_t getCurrentDate ( ) { return ~*(int32_t *)(m_listPtr+6); };
-};
-*/
-
 #include "Query.h"         // MAX_QUERY_TERMS, qvec_t
-
-// max # search results that can be viewed without using TopTree
-//#define MAX_RESULTS 1000
 
 class PosdbTable {
 
@@ -525,10 +453,7 @@ class PosdbTable {
 		   char           debug           ,
 		   void          *logstate        ,
 		   class TopTree *topTree         ,
-		   //char          *coll            ,
 		   collnum_t collnum ,
-		   //IndexList     *lists           ,
-		   //int32_t           numLists        ,
 		   class Msg2 *msg2, 
 		   class          Msg39Request *r );
 
@@ -537,12 +462,6 @@ class PosdbTable {
 
 	// pre-allocate memory since intersection runs in a thread
 	bool allocTopTree ( );
-
-	// . returns false on error and sets errno
-	// . we assume there are "m_numTerms" lists passed in (see set() above)
-	//void intersectLists_r ( );
-
-	//void intersectLists9_r ( );
 
 	void  getTermPairScoreForNonBody   ( int32_t i, int32_t j,
 					     char *wpi, char *wpj, 
@@ -580,7 +499,9 @@ class PosdbTable {
 	void freeMem ( ) ;
 
 	// has init already been called?
-	bool isInitialized ( ) { return m_initialized; };
+	bool isInitialized() {
+		return m_initialized;
+	}
 
 	uint64_t m_docId;
 
@@ -609,30 +530,20 @@ class PosdbTable {
 
 	int32_t            m_maxScores;
 
-	//char           *m_coll;
 	collnum_t       m_collnum;
 
 	int32_t *m_qpos;
 	int32_t *m_wikiPhraseIds;
 	int32_t *m_quotedStartIds;
-	//class DocIdScore *m_ds;
 	int32_t  m_qdist;
 	float *m_freqWeights;
-	//int64_t *m_freqs;
 	char  *m_bflags;
 	int32_t  *m_qtermNums;
 	float m_bestWindowScore;
-	//char **m_finalWinners1;
-	//char **m_finalWinners2;
-	//float *m_finalScores;
 	char **m_windowTermPtrs;
 
 	// how many docs in the collection?
 	int64_t m_docsInColl;
-
-	//SectionStats m_sectionStats;
-	//SafeBuf m_facetHashList;
-	//HashTableX m_dt;
 
 	class Msg2 *m_msg2;
 
@@ -640,24 +551,15 @@ class PosdbTable {
 	// them rather than the m_top*[] arrays above
 	class TopTree *m_topTree;
 
-	//HashTableX m_docIdTable;
-	
 	SafeBuf m_scoreInfoBuf;
 	SafeBuf m_pairScoreBuf;
 	SafeBuf m_singleScoreBuf;
 
 	SafeBuf m_stackBuf;
 
-	//SafeBuf m_mergeBuf;
-
 	// a reference to the query
 	Query          *m_q;
 	int32_t m_nqt;
-
-	// these are NOT in imap space, but in query term space, 1-1 with 
-	// Query::m_qterms[]
-	//IndexList      *m_lists;
-	//int32_t            m_numLists;
 
 	// has init() been called?
 	bool            m_initialized;
@@ -667,8 +569,6 @@ class PosdbTable {
 
 	// for debug msgs
 	void *m_logstate;
-
-	//int64_t       m_numDocsInColl;
 
 	class Msg39Request *m_r;
 

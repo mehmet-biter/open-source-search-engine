@@ -167,10 +167,6 @@ public:
 	// are a sentence section then this points to itself.
 	class Section *m_sentenceSection;
 
-	// . set in XmlDoc::getSectionsWithDupStats()
-	// . voting info for this section over all indexed pages from this site
-	SectionStats m_stats;
-
 	// position of the first and last alnum word contained directly OR
 	// indirectly in this section. use -1 if no text contained...
 	int32_t m_firstWordPos;
@@ -323,9 +319,6 @@ class Sections {
 		      char format = FMT_HTML );
 	bool printSectionDiv ( class Section *sk , char format = FMT_HTML );
 	class SafeBuf *m_sbuf;
-
-	char *getSectionsReply ( int32_t *size );
-	char *getSectionsVotes ( int32_t *size );
 
 	bool isHardSection ( class Section *sn );
 

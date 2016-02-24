@@ -3798,26 +3798,6 @@ bool Sections::printSectionDiv ( Section *sk , char format ) {
 		                   ,mod);
 	}
 
-	SectionStats *ss = &sk->m_stats;
-
-	// also the value of the inner html hashed
-	if ( sk->m_flags & SEC_HASHXPATH ) {
-		uint32_t val ;
-		val = (uint32_t) sk->m_indirectSentHash64 ;
-		m_sbuf->safePrintf("xpathsitehashval=%"UINT32" ", val );
-	}
-
-	// some voting stats
-	if ( sk->m_flags & SEC_HASHXPATH ) {
-		m_sbuf->safePrintf("_s=M%"INT32"D%"INT32"n%"INT32"u%"INT32"h%"UINT32" "
-		                   ,(int32_t)ss->m_totalMatches
-		                   ,(int32_t)ss->m_totalDocIds
-		                   ,(int32_t)ss->m_totalEntries
-		                   ,(int32_t)ss->m_numUniqueVals
-		                   ,(uint32_t)mod
-		                   );
-	}
-
 	printFlags ( m_sbuf , sk );
 	
 	if ( isHardSection(sk) )
