@@ -108,7 +108,7 @@ void Images::setCandidates ( Url *pageUrl , Words *words , Xml *xml ,
 	// the positive scored window
 	int32_t firstPosScore = -1;
 	int32_t lastPosScore  = -1;
-	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_MARQUEE;
+	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT;
 	// find positive scoring window
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
 		// skip if in bad section

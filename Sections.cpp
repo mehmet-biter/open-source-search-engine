@@ -531,9 +531,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 				if ( ps->m_b <= 0 ) continue;
 				// parent must have closed before us
 				if ( ps->m_b > sn->m_b ) {char *xx=NULL;*xx=0;}
-				// we had no matching tag, or it was unbalanced
-				// but i do not know which...!
-				sn->m_flags |= SEC_OPEN_ENDED;
+
 				// cut our end shorter
 				sn->m_b = ps->m_b;
 				// our TXF_MATCHED bit should still be set
@@ -550,10 +548,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
    
 			// sanity check
 			if ( sn->m_b <= sn->m_a ) { char *xx=NULL;*xx=0;}
-
-			// mark the section as unbalanced
-			if ( spp != (stackPtr - 1) )
-				sn->m_flags |= SEC_UNBALANCED;
 
 			// revert it to this guy, may not equal stackPtr-1 !!
 			stackPtr = spp;
@@ -774,8 +768,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		int32_t end = m_words->getNumWords();
 		// get end of parent
 		if ( ps ) end = ps->m_b;
-		// flag it
-		if ( si->m_b == -1 ) si->m_flags |= SEC_OPEN_ENDED;
+
 		// shrink our section if parent ends before us OR if we
 		// are open ended
 		if ( si->m_b != -1 && si->m_b <= end ) continue;
@@ -1158,6 +1151,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 	int32_t  istack[1000];
 	sec_t iflags[1000];
 	int32_t  ni = 0;
+
 	// 
 	// now set the inFlags here because the tags might not have all
 	// been closed, making tags like SEC_STYLE overflow from where
@@ -1166,6 +1160,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
+
 		// did we exceed a tag boundary?
 		for ( ; ni>0 && si->m_a >= istack[ni-1] ; ) {
 			// undo flag
@@ -1173,28 +1168,34 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 			// pop off
 			ni--;
 		}
+
 		// get the flag if any into mf
 		sec_t mf = 0;
+
 		// skip if not special tag id
 		nodeid_t tid = si->m_tagId;
 		if      ( tid == TAG_SCRIPT  ) mf = SEC_SCRIPT;
 		else if ( tid == TAG_NOSCRIPT) mf = SEC_NOSCRIPT;
 		else if ( tid == TAG_STYLE   ) mf = SEC_STYLE;
-		else if ( tid == TAG_MARQUEE ) mf = SEC_MARQUEE;
 		else if ( tid == TAG_SELECT  ) mf = SEC_SELECT;
 		else if ( tid == TAG_H1      ) mf = SEC_IN_HEADER;
 		else if ( tid == TAG_H2      ) mf = SEC_IN_HEADER;
 		else if ( tid == TAG_H3      ) mf = SEC_IN_HEADER;
 		else if ( tid == TAG_H4      ) mf = SEC_IN_HEADER;
 		else if ( tid == TAG_TITLE   ) mf = SEC_IN_TITLE;
+
 		// accumulate
 		inFlag |= mf;
+
 		// add in the flags
 		si->m_flags |= inFlag;
+
 		// skip if nothing special
 		if ( ! mf ) continue;
+
 		// sanity
 		if ( ni >= 1000 ) { char *xx=NULL;*xx=0; }
+
 		// otherwise, store on stack
 		istack[ni] = si->m_b;
 		iflags[ni] = mf;
@@ -1228,29 +1229,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 	// . set SEC_HEADING bit
 	// . need this before implied sections
 	setHeadingBit ();
-
-	//
-	// set SEC_HR_CONTAINER bit for use by addHeaderImpliedSections(true)
-	// fix for folkmads.org which has <tr><td><div><hr></div>...
-	//
-	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// skip if not hr
-		if ( si->m_tagId != TAG_HR ) continue;
-		// cycle this
-		Section *sp = si;
-		// blow up right before it has text
-		for ( ; sp ; sp = sp->m_parent ) {
-			// breathe
-			QUICKPOLL ( m_niceness );
-			// set this
-			sp->m_flags |= SEC_HR_CONTAINER;
-			// stop if parent has text
-			if ( sp->m_parent &&
-			     sp->m_parent->m_firstWordPos >= 0 ) break;
-		}
-	}
 
 	setTagHashes();
 
@@ -1568,14 +1546,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 //   alnum chars!! fixes sentence flip flopping
 // . returns false and sets g_errno on error
 bool Sections::addSentenceSections ( ) {
-
-	sec_t badFlags = 
-		//SEC_MARQUEE|
-		SEC_STYLE|
-		SEC_SCRIPT|
-		SEC_SELECT|
-		SEC_HIDDEN|
-		SEC_NOSCRIPT;
+	sec_t badFlags = SEC_STYLE | SEC_SCRIPT | SEC_SELECT | SEC_HIDDEN | SEC_NOSCRIPT;
 
 	// shortcut
 	Section **sp = m_sectionPtrs;
@@ -2402,15 +2373,14 @@ Section *Sections::insertSubSection ( int32_t a, int32_t b, int32_t newBaseHash 
 	sk->m_sentenceSection = parent->m_sentenceSection;
 	// take out certain flags from parent
 	sec_t flags = parent->m_flags;
-	// like this
 	flags &= ~SEC_SENTENCE;
-	// but take out unbalanced!
-	flags &= ~SEC_UNBALANCED;
 
 	// add in fake
 	flags |= SEC_FAKE;
+
 	// flag it as a fake section
 	sk->m_flags = flags ;
+
 	// need this
 	sk->m_baseHash = newBaseHash;
 
@@ -2666,9 +2636,6 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 
 	sbuf->safePrintf("indsenthash64=%"UINT64" ",sn->m_indirectSentHash64);
 
-	if ( f & SEC_HR_CONTAINER )
-		sbuf->safePrintf("hrcontainer ");
-
 	if ( f & SEC_HEADING )
 		sbuf->safePrintf("heading ");
 
@@ -2679,8 +2646,6 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 	if ( f & SEC_MENU_HEADER )
 		sbuf->safePrintf("menuheader " );
 
-	if ( f & SEC_CONTAINER )
-		sbuf->safePrintf("listcontainer " );
 	if ( f & SEC_INPUT_HEADER )
 		sbuf->safePrintf("inputheader " );
 	if ( f & SEC_INPUT_FOOTER )
@@ -2705,25 +2670,24 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 
 	if ( f & SEC_SCRIPT )
 		sbuf->safePrintf("inscript ");
+
 	if ( f & SEC_NOSCRIPT )
 		sbuf->safePrintf("innoscript ");
+
 	if ( f & SEC_STYLE )
 		sbuf->safePrintf("instyle ");
+
 	if ( f & SEC_HIDDEN )
 		sbuf->safePrintf("indivhide ");
+
 	if ( f & SEC_SELECT )
 		sbuf->safePrintf("inselect ");
-	if ( f & SEC_MARQUEE )
-		sbuf->safePrintf("inmarquee ");
+
 	if ( f & SEC_IN_TITLE )
 		sbuf->safePrintf("intitle ");
+
 	if ( f & SEC_IN_HEADER )
 		sbuf->safePrintf("inheader ");
-
-	if ( f & SEC_UNBALANCED )
-		sbuf->safePrintf("unbalanced " );
-	if ( f & SEC_OPEN_ENDED )
-		sbuf->safePrintf("openended " );
 }
 
 bool Sections::isHardSection ( Section *sn ) {
@@ -2943,29 +2907,34 @@ bool Sections::setMenus ( ) {
 		sp->m_flags |= SEC_MENU;
 	}
 
-
-	sec_t ff = SEC_MENU | 
-		SEC_INPUT_HEADER | 
-		SEC_INPUT_FOOTER;
+	sec_t ff = SEC_MENU | SEC_INPUT_HEADER | SEC_INPUT_FOOTER;
 
 	// set SEC_MENU of child sections of SEC_MENU sections
-	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
+	for ( Section *si = m_rootSection; si; si = si->m_next ) {
 		// breathe
-		QUICKPOLL ( m_niceness );
+		QUICKPOLL( m_niceness );
+
 		// must be a link text only section
-		if ( ! ( si->m_flags & ff ) ) continue;
+		if ( !( si->m_flags & ff ) )
+			continue;
+
 		// ignore if went down this path
-		if ( si->m_used == 82 ) continue;
-		// save it
-		//Section *parent = si;
+		if ( si->m_used == 82 ) {
+			continue;
+		}
+
 		// get first potential kid
 		Section *sk = si->m_next;
 		// scan child sections
-		for ( ; sk ; sk = sk->m_next ) {
+		for ( ; sk; sk = sk->m_next ) {
 			// stop if not contained
-			if ( ! si->contains ( sk ) ) break;
+			if ( !si->contains( sk ) ) {
+				break;
+			}
+
 			// mark it
-			sk->m_flags |= (si->m_flags & ff); // SEC_MENU;
+			sk->m_flags |= ( si->m_flags & ff ); // SEC_MENU;
+
 			// ignore in big loop
 			sk->m_used = 82;
 		}
@@ -2977,88 +2946,106 @@ bool Sections::setMenus ( ) {
 	for ( Section *sk = m_rootSection ; sk ; sk = sk->m_next ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
+
 		// skip if not in a menu
-		if ( ! ( sk->m_flags & SEC_MENU ) ) continue;
+		if ( ! ( sk->m_flags & SEC_MENU ) ) {
+			continue;
+		}
+
 		// get his list container
 		Section *c = sk->m_listContainer;
+
 		// skip if none
-		if ( ! c ) continue;
+		if ( !c ) {
+			continue;
+		}
+
 		// already flagged?
-		if ( c->m_used == 89 ) continue;
+		if ( c->m_used == 89 ) {
+			continue;
+		}
+
 		// do not repeat on any item in this list
 		c->m_used = 89;
+
 		// flag all its brothers!
 		Section *zz = sk;
-		for ( ; zz ; zz = zz->m_nextBrother ) 
+		for ( ; zz; zz = zz->m_nextBrother ) {
 			// bail if not in menu
-			if ( ! ( zz->m_flags & SEC_MENU ) ) break;
+			if ( !( zz->m_flags & SEC_MENU ) ) {
+				break;
+			}
+		}
+
 		// if broked it, stop
-		if ( zz ) continue;
+		if ( zz ) {
+			continue;
+		}
+
 		//
 		// ok, every item in list is a menu item, so try to set header
 		//
 		// get word before first item in list
 		int32_t r = sk->m_a - 1;
-		for ( ; r >= 0 && ! m_wids[r] ; r-- )
-			QUICKPOLL(m_niceness);
+		for ( ; r >= 0 && !m_wids[r]; r-- );
+
+		QUICKPOLL( m_niceness );
+
 		// if no header, skip
-		if ( r < 0 ) continue;
+		if ( r < 0 ) {
+			continue;
+		}
+
 		// set SEC_MENU_HEADER
-		setHeader ( r , sk , SEC_MENU_HEADER );
+		setHeader( r, sk, SEC_MENU_HEADER );
 	}
 
 	//
 	// set SEC_MENU_SENTENCE flag
 	//
-	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
+	for ( Section *si = m_rootSection; si; si = si->m_next ) {
 		// breathe
-		QUICKPOLL ( m_niceness );
+		QUICKPOLL( m_niceness );
+
 		// must be a link text only section
-		if ( ! ( si->m_flags & SEC_MENU ) ) continue;
+		if ( !( si->m_flags & SEC_MENU ) ) {
+			continue;
+		}
+
 		// set this
 		bool gotSentence = ( si->m_flags & SEC_SENTENCE );
+
 		// set SEC_MENU of the sentence
-		if ( gotSentence ) continue;
+		if ( gotSentence ) {
+			continue;
+		}
+
 		// parent up otherwise
-		for ( Section *sk = si->m_parent ; sk ; sk = sk->m_parent ) {
+		for ( Section *sk = si->m_parent; sk; sk = sk->m_parent ) {
 			// breathe
-			QUICKPOLL ( m_niceness );
+			QUICKPOLL( m_niceness );
+
 			// stop if sentence finally
-			if ( ! ( sk->m_flags & SEC_SENTENCE ) ) continue;
+			if ( !( sk->m_flags & SEC_SENTENCE ) ) {
+				continue;
+			}
+
 			// not a menu sentence if it has plain text in it
 			// though! we have to make this exception to stop
-			// stuff like 
+			// stuff like
 			// "Wedding Ceremonies, No preservatives, more... "
 			// from switchboard.com from being a menu sentence
 			// just because "more" is in a link.
-			if ( sk->m_flags & SEC_PLAIN_TEXT ) break;
+			if ( sk->m_flags & SEC_PLAIN_TEXT ) {
+				break;
+			}
+
 			// set it
 			sk->m_flags |= SEC_MENU_SENTENCE;
+
 			// and stop
 			break;
 		}
-	}
-
-	// . now set generic list headers
-	// . list headers can only contain one hard section with text
-	// . list headers cannot have a previous brother section
-	for ( int32_t i = 0 ; i + 1 < m_numSections ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// shortcut
-		Section *si = &m_sections[i];
-		// get container
-		Section *c = si->m_listContainer;
-		// skip if no container
-		if ( ! c ) continue;
-		// skip if already did this container
-		if ( c->m_used == 55 ) continue;
-		// mark it
-		c->m_used = 55;
-		// flag it
-		c->m_flags |= SEC_CONTAINER;
-		// skip the rest for now
-		continue;
 	}
 
 	static bool s_init = false;
@@ -3283,7 +3270,6 @@ void Sections::setHeader ( int32_t r , Section *first , sec_t flag ) {
 			if ( fx->m_flags & SEC_MENU_SENTENCE ) continue;
 			// otherwise, bad!
 			return;
-			//if ( ! ( fx->m_flags & SEC_MENU ) ) return;
 		}
 	}
 
@@ -3335,11 +3321,10 @@ bool Sections::setHeadingBit ( ) {
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
-		// skip if directly contains no text
-		//if ( si->m_flags & SEC_NOTEXT ) continue;
-		// SEC_NOTEXT is not set at this point
+
 		int32_t fwp = si->m_firstWordPos;
 		if ( fwp == -1 ) continue;
+
 		// we must be the smallest container around this text
 		if ( m_sectionPtrs[fwp] != si ) continue;
 
@@ -3565,10 +3550,6 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 			char *wordSpamVec,
 			char *fragVec,
 			char format ) {
-	//FORMAT_PROCOG FORMAT_JSON HTML
-
-	//sbuf->safePrintf("<b>Sections in Document</b>\n");
-
 	// save ptrs
 	m_sbuf = sbuf;
 
@@ -3800,10 +3781,7 @@ bool Sections::printSectionDiv ( Section *sk , char format ) {
 	//if(sk->m_indirectSentHash64 && sk->m_tagId != TAG_TEXTNODE) {
 	uint64_t mod = 0;
 	if ( sk->m_flags & SEC_HASHXPATH ) {
-		// show for all tags now because diffbot wants to see
-		// markup on all tags
-		//if ( sk->m_indirectSentHash64 && sk->m_tagId !=TAG_TEXTNODE){
-		//if ( sk->m_stats.m_totalDocIds ) {
+		// show for all tags now
 		mod = (uint32_t)sk->m_turkTagHash32;
 		mod ^= (uint32_t)(uint64_t)m_siteHash64;
 		m_sbuf->safePrintf("<a style=decoration:none; "
@@ -3823,14 +3801,14 @@ bool Sections::printSectionDiv ( Section *sk , char format ) {
 	SectionStats *ss = &sk->m_stats;
 
 	// also the value of the inner html hashed
-	if ( sk->m_flags & SEC_HASHXPATH ) {//ss->m_totalMatches > 0) {
+	if ( sk->m_flags & SEC_HASHXPATH ) {
 		uint32_t val ;
 		val = (uint32_t) sk->m_indirectSentHash64 ;
 		m_sbuf->safePrintf("xpathsitehashval=%"UINT32" ", val );
 	}
 
 	// some voting stats
-	if ( sk->m_flags & SEC_HASHXPATH ) {//ss->m_totalMatches > 0) {
+	if ( sk->m_flags & SEC_HASHXPATH ) {
 		m_sbuf->safePrintf("_s=M%"INT32"D%"INT32"n%"INT32"u%"INT32"h%"UINT32" "
 		                   ,(int32_t)ss->m_totalMatches
 		                   ,(int32_t)ss->m_totalDocIds
@@ -3853,6 +3831,7 @@ bool Sections::printSectionDiv ( Section *sk , char format ) {
 	for ( int32_t i = a ; i < b ; i++ ) {
 		// breathe
 		QUICKPOLL(m_niceness);
+
 		// . if its a and us, skip
 		// . BUT if we are root then really this tag belongs to
 		//   our first child, so make an exception for root!
@@ -3921,13 +3900,7 @@ bool Sections::printSectionDiv ( Section *sk , char format ) {
 						   "</b></font>"
 						   ,
 						   (int32_t)m_densityVec[i]);
-			/*
-			if ( m_diversityVec[i] != MAXDIVERSITYRANK )
-				m_sbuf->safePrintf("/<font color=green><b>%"INT32""
-						   "</b></font>"
-						   ,
-						   (int32_t)m_diversityVec[i]);
-			*/
+
 			if ( m_wordSpamVec[i] != MAXWORDSPAMRANK )
 				m_sbuf->safePrintf("/<font color=red><b>%"INT32""
 						   "</b></font>"
@@ -3962,7 +3935,6 @@ bool Sections::verifySections ( ) {
 		QUICKPOLL ( m_niceness );
 
 	// sanity check
-	//for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
 	for ( Section *sn = m_rootSection ; sn ; sn = sn->m_next ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
@@ -3991,11 +3963,7 @@ bool Sections::verifySections ( ) {
 
 	// sanity check, make sure each section is contained by the
 	// smallest section containing it
-	//for ( int32_t i = 0 ; i < m_numSections ; i++ ) {
 	for ( Section *si = m_rootSection ; si ; si = si->m_next ) {
-		//Section *si = &m_sections[i];
-		//if ( ! si ) continue;
-		//for ( int32_t j = 0 ; j < m_numSections ; j++ ) {
 		for ( Section *sj = m_rootSection ; sj ; sj = sj->m_next ) {
 			// breathe
 			QUICKPOLL(m_niceness);
@@ -4010,22 +3978,25 @@ bool Sections::verifySections ( ) {
 			     sj->m_parent &&
 			     sj->m_parent->m_tagId == TAG_TC ) 
 				continue;
-			// get him
-			//Section *sj = &m_sections[j];
+
 			// skip if sj does not contain first word in si
 			if ( sj->m_a >  si->m_a ) continue;
 			if ( sj->m_b <= si->m_a ) continue;
+
 			// ok, make sure in our parent path
 			Section *ps = si;
 			for ( ; ps ; ps = ps->m_parent ) 
 				if ( ps == sj ) break;
+
 			// ok if we found it
 			if ( ps ) continue;
+
 			// sometimes if sections are equal then the other
 			// is the parent
 			ps = sj;
 			for ( ; ps ; ps = ps->m_parent ) 
 				if ( ps == si ) break;
+
 			// must have had us
 			if ( ps ) continue;
 			char *xx=NULL;*xx=0;

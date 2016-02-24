@@ -6252,9 +6252,6 @@ int32_t XmlDoc::computeVector ( Sections *sections, Words *words, uint32_t *vec 
 	// if we got sections, how many good words?
 	if ( sections ) count = sections->m_numAlnumWordsInArticle;
 
-	// google seems to index SEC_MARQUEE so i took that out
-	//int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT;
-
 	// these Section ptrs are 1-1 with the words
 	Section **sp = NULL; if ( sections ) sp = sections->m_sectionPtrs;
 
@@ -21284,10 +21281,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		}
 	}
 
-
-	// just always do it
-	//if ( ! req->m_getInlinkNeighborhoods ) return true;
-
 	// convert "linkNode" into a string ptr into the document
 	char *node = xml->getNodePtr(linkNode)->m_node;
 	// . find the word index, "n" for this node
@@ -21304,16 +21297,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		g_errno = EBADENGINEER;
 		return NULL;
 	}
-
-	//int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_MARQUEE;
-	// get the ptrs to the sections, 1-1 with words
-	//Section **sp = NULL;
-	//if ( ss ) sp = ss->m_sectionPtrs;
-	// . even tags in the article section have positive scores
-	// . the scores array is 1-1 with the words in Words, not the nodes
-	//   in Xml. so we had to do that conversion.
-	//if ( ! sp || !(sp[n]->m_flags & NOINDEXFLAGS) )
-	//	reply->m_outlinkInContent = true;
 
 	//
 	// get the surrounding link text, around "linkNode"
@@ -21652,6 +21635,8 @@ Summary *XmlDoc::getSummary () {
 		return &m_summary;
 	}
 
+	int64_t start = gettimeofdayInMilliseconds();
+
 	uint8_t *ct = getContentType();
 	if ( ! ct || ct == (void *)-1 ) {
 		return (Summary *)ct;
@@ -21729,8 +21714,7 @@ Summary *XmlDoc::getSummary () {
 	Summary *s = &m_summary;
 
 	// time cpu set time
-	int64_t start = gettimeofdayInMilliseconds();
-	m_cpuSummaryStartTime = start;
+	m_cpuSummaryStartTime = gettimeofdayInMilliseconds();
 
 	// compute the summary
 	bool status = s->set( xml, ww, sections, pos, q, (int64_t *)m_req->ptr_termFreqs,
@@ -21742,6 +21726,8 @@ Summary *XmlDoc::getSummary () {
 	if ( ! status ) {
 		return NULL;
 	}
+
+	log( LOG_TIMING, "query: XmlDoc::%s took %" INT64 " ms", __func__, gettimeofdayInMilliseconds() - start );
 
 	m_summaryValid = true;
 	return &m_summary;

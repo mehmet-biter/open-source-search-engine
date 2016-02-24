@@ -508,7 +508,6 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 
 	if ( getNumXmlNodes() > 512 ) { char *xx=NULL;*xx=0; }
 
-	// google seems to index SEC_MARQUEE so i took that out of here
 	int32_t badFlags =SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_TITLE;
 
 	int32_t qwn;

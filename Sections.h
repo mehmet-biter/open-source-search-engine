@@ -37,8 +37,8 @@
 #define SEC_SCRIPT       0x0008
 #define SEC_STYLE        0x0010
 #define SEC_SELECT       0x0020
-#define SEC_MARQUEE      0x0040
-#define SEC_CONTAINER    0x0080
+//#define SEC_UNUSED     0x0040
+//#define SEC_UNUSED     0x0080
 
 // . in title/header. for gigabits in XmlDoc.cpp
 // . is section delemited by <title> or <hN> tags?
@@ -61,8 +61,8 @@
 #define SEC_HEADING      0x200000
 
 // reasons why a section is not an event
-#define SEC_UNBALANCED         0x00400000 // interlaced section/tags
-#define SEC_OPEN_ENDED         0x00800000 // no closing tag found
+//#define SEC_UNUSED           0x00400000
+//#define SEC_UNUSED           0x00800000
 #define SEC_SENTENCE           0x01000000 // made by a sentence?
 #define SEC_PLAIN_TEXT         0x02000000
 //#define SEC_UNUSED           0x04000000
@@ -75,8 +75,7 @@
 
 //#define SEC_UNUSED                0x00100000000LL
 #define SEC_MENU_SENTENCE           0x00200000000LL
-// fix for folkmads.org:
-#define SEC_HR_CONTAINER            0x00400000000LL
+//#define SEC_UNUSED                0x00400000000LL
 //#define SEC_UNUSED                0x00800000000LL
 //#define SEC_UNUSED                0x01000000000LL
 //#define SEC_UNUSED                0x02000000000LL
@@ -108,7 +107,6 @@
 
 // the section type (bit flag vector for SEC_*) is currently 32 bits
 typedef int64_t sec_t;
-typedef uint32_t turkbits_t;
 
 // this is only needed for sections, not facets in general i don think.
 // facets has the whole QueryTerm::m_facetHashTable array with more info
@@ -130,7 +128,7 @@ class SectionStats {
 		m_totalEntries  = 0; // total posdb keys
 		m_numUniqueVals = 0; // # of unique "vals"
 		m_totalDocIds   = 0;
-	};
+	}
 	// # of times xpath innerhtml matched ours. 1 count per docid max.
 	int64_t m_totalMatches;
 	// # of times this xpath occurred. doc can have multiple times.

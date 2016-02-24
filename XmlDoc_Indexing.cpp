@@ -3228,15 +3228,15 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 			//   hashTitle we count all the words in the title
 			//   towards the density rank even if they are
 			//   in different sentences
-			if ( sx->m_flags & SEC_IN_TITLE  )
-				//hashGroup = HASHGROUP_TITLE;
+			if ( sx->m_flags & SEC_IN_TITLE  ) {
 				continue;
-			if ( sx->m_flags & SEC_IN_HEADER )
+			}
+			if ( sx->m_flags & SEC_IN_HEADER ) {
 				hashGroup = HASHGROUP_HEADING;
-			if ( sx->m_flags & ( SEC_MENU          |
-					     SEC_MENU_SENTENCE |
-					     SEC_MENU_HEADER   ) )
+			}
+			if ( sx->m_flags & ( SEC_MENU | SEC_MENU_SENTENCE | SEC_MENU_HEADER ) ) {
 				hashGroup = HASHGROUP_INMENU;
+			}
 		}
 
 		// this is for link text and meta tags mostly
@@ -3338,8 +3338,7 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		
 		// if using posdb
 		key144_t k;
-		// if ( i == 11429 )
-		// 	log("foo");
+
 		g_posdb.makeKey ( &k ,
 				  h ,
 				  0LL,//docid
@@ -3356,15 +3355,9 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 				  false , // delkey?
 				  hi->m_shardByTermId );
 
-		// get the one we lost
-		// char *kstr = KEYSTR ( &k , sizeof(POSDBKEY) );
-		// if (!strcmp(kstr,"0x0ca3417544e400000000000032b96bf8aa01"))
-		// 	log("got lost key");
-
 		// key should NEVER collide since we are always incrementing
 		// the distance cursor, m_dist
 		dt->addTerm144 ( &k );
-
 
 		// add to wts for PageParser.cpp display
 		if ( wts ) {
@@ -3374,7 +3367,6 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 					   wd,//v[i],
 					   ws,
 					   hashGroup,
-					   //false, // is phrase?
 					   wbuf,
 					   wts,
 					   SOURCE_NONE, // synsrc
