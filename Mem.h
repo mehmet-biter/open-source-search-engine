@@ -123,12 +123,6 @@ class Mem {
 				    char *lightblue, 
 				    char *darkblue);
 
-	// We can check the size of the stack from anywhere. However,
-	// setStackPointer() must be called from main, and ptr should
-	// be the address of the first variable declared in main.
-	void setStackPointer( char *ptr );
-	int32_t checkStackSize();
-
 	int32_t findPtr ( void *target ) ;
 
 	// alloc this much memory then immediately free it.
@@ -154,10 +148,6 @@ class Mem {
 	int32_t          m_numAllocated;
 	int64_t     m_numTotalAllocated;
 	uint32_t m_memtablesize;
-
- protected:
-	char *m_stackStart;
-	
 };
 
 extern class Mem g_mem;

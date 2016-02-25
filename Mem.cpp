@@ -428,7 +428,6 @@ Mem::Mem() {
 	m_maxAllocBy = "";
 	m_maxAlloced = 0;
 	m_memtablesize = 0;//DMEMTABLESIZE;
- 	m_stackStart = NULL;
 	// shared mem used
 	m_sharedUsed = 0LL;
 	// count how many allocs/news failed
@@ -1764,21 +1763,6 @@ void memcpy_ass ( register void *dest2, register const void *src2, int32_t len )
 	*/
 //}
 
-// Check the current stack usage
-int32_t Mem::checkStackSize() {
-	if ( !m_stackStart )
-		return 0;
-	char final;
-	char *stackEnd = &final;
-	int32_t size = m_stackStart - stackEnd;
-	log("gb: stack size is %"INT32"",size);
-	return size;
-}
-
-// Set the stack's start point (called in main.cpp)
-void Mem::setStackPointer( char *ptr ) {
-	m_stackStart = ptr;
-}
 
 char g_a[256] = { 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 
 		  1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 

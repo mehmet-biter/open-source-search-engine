@@ -253,11 +253,6 @@ int main2 ( int argc , char *argv[] ) {
 
 	//g_timedb.makeStartKey ( 0 );
 
-	// Anchor the stack start point at the first stack variable
-	// in main.
-	char stackPointTestAnchor;
-	g_mem.setStackPointer( &stackPointTestAnchor );
-
 	// record time for uptime
 	g_stats.m_uptimeStart = time(NULL);
 
@@ -9174,12 +9169,6 @@ void dumpStatsdb( int32_t startFileNum, int32_t numFiles, bool includeTree,
 	SafeBuf cBuf( 1024 );
 	bool dataSummaryGen = false;
 	bool first = true;
-	if ( g_mem.checkStackSize() > (int)(6*1024*1024) ) {
-		fprintf( stderr, "Running low on stack space, %"INT32" bytes "
-				 "used. %s:%d\n", g_mem.checkStackSize(),
-			 	 __PRETTY_FUNCTION__, __LINE__ );
-		return;
-	}
 	StatsV1 stats;
 
 	for ( list.resetListPtr() ; ! list.isExhausted() ;
