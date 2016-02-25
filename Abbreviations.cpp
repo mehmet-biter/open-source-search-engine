@@ -227,24 +227,6 @@ static class Abbr s_abbrs99[] = {
 static HashTableX s_abbrTable;
 static bool       s_abbrInitialized = false;
 
-/*
-static bool initTable ( HashTableX *table, char *words[], int32_t size ) {
-	// set up the hash table
-	if ( ! table->set ( 8 , 4 , size * 2,NULL,0,false,MAX_NICENESS,
-			    "abbrtbl") ) 
-		return log("build: Could not init abbreviation table.");
-	// now add in all the stop words
-	int32_t n = (int32_t)size/ sizeof(char *); 
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		char      *sw    = words[i];
-		//int32_t     swlen = gbstrlen ( sw );
-		int64_t  swh   = hash64Lower_utf8 ( sw );
-		if ( ! table->addTerm (&swh,i+1) ) return false;
-	}
-	return true;
-}
-*/
-
 bool isAbbr ( int64_t h , bool *hasWordAfter ) {
 	if ( ! s_abbrInitialized ) {
 		// shortcut
