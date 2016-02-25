@@ -215,10 +215,6 @@ class Multicast {
 	// when the request was launched to the m_replyingHost
 	int64_t  m_replyLaunchTime;
 
-	// used by XmlDoc.cpp for gbfacet: stuff
-	int32_t       m_hack32; 
-	int64_t  m_hack64;
-
 	// more hack stuff used by PageInject.cpp
 	int32_t m_hackFileId;
 	int64_t m_hackFileOff;

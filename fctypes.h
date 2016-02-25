@@ -8,10 +8,6 @@
 #include "Unicode.h"
 #include "types.h"
 
-// we have to leave this as 32 bits for now because the termlists store
-// the hash value as 32 bits in posdb
-typedef uint32_t FacetValHash_t;
-
 bool verifyUtf8 ( const char *txt ) ;
 bool verifyUtf8 ( const char *txt , int32_t tlen ) ;
 

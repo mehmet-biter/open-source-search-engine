@@ -19314,76 +19314,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		return reply;
 	}
 
-	// if they provided a query with gbfacet*: terms then we have
-	// to get those facet values.
-	if ( ! m_gotFacets ) {
-		// only do this once
-		m_gotFacets = true;
-		// get facet term
-		char *qs = m_req->ptr_qbuf;
-facetPrintLoop:
-		for ( ; qs && *qs ; qs++ ) {
-			if ( qs[0] != 'g' ) continue;
-			if ( qs[1] != 'b' ) continue;
-			if ( qs[2] != 'f' ) continue;
-			if ( strncasecmp(qs,"gbfacet",7) ) continue;
-			qs += 7;
-			// gbfacetstr: gbfacetint: gbfacetfloat:
-			if      ( strncasecmp(qs,"str:"  ,4) == 0 ) qs += 4;
-			else if ( strncasecmp(qs,"int:"  ,4) == 0 ) qs += 4;
-			else if ( strncasecmp(qs,"float:",6) == 0 ) qs += 6;
-			else continue;
-			break;
-		}
-		// if we had a facet, get the values it has in the doc
-		if ( qs && *qs ) {
-			// need this for storeFacetValues() if we are json
-			if ( m_contentType == CT_JSON ||
-			     // spider status docs are really json
-			     m_contentType == CT_STATUS ) {
-				Json *jp = getParsedJson();
-				if ( ! jp || jp == (void *)-1)
-					return (Msg20Reply *)jp;
-			}
-			if ( m_contentType == CT_HTML ||
-			     m_contentType == CT_XML ) {
-				Xml *xml = getXml();
-				if ( ! xml || xml==(void *)-1)
-					return (Msg20Reply *)xml;
-			}
-			// find end of it
-			char *e = qs;
-			for ( ; *e && ! is_wspace_a(*e) ; e++ );
-			// tmp null it
-			char c = *e; *e = '\0';
-			// this is zero if unspecifed
-			FacetValHash_t fvh = m_req->m_facetValHash;
-			// . this will store facetField/facetValue pairs
-			// . stores into safebuf, m_tmpBuf2
-			// . it will terminate all stored strings with \0
-			// . we check meta tags for html docs
-			// . otherwise we check xml/json doc fields
-			// . returns false with g_errno set on error
-			bool ret = storeFacetValues ( qs , &m_tmpBuf2 , fvh ) ;
-			// revert the \0
-			*e = c;
-			// return NULL with g_errno set on error
-			if ( ! ret ) return NULL;
-			// advance
-			qs = e;
-			// do another one
-			goto facetPrintLoop;
-		}
-		// assign
-		reply-> ptr_facetBuf = m_tmpBuf2.getBufStart();
-		reply->size_facetBuf = m_tmpBuf2.length();
-	}
-
-	if ( m_req->m_justGetFacets ) {
-		m_replyValid = true;
-		return reply;
-	}
-
 	if ( m_req->m_getTermListBuf ) {
 		// ensure content is recycled from title rec
 		m_recycleContent = true;
@@ -21707,24 +21637,14 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	sprintf(hdr,
 		"<table border=1 cellpadding=0>"
 		"<tr>"
-		// this messes up Test.cpp diff'ing
-		//"<td><b>#</b></td>"
 		"<td><b>Prefix</b></td>"
 		"<td><b>WordNum</b></td>"
 		"<td><b>Lang</b></td>"
 		"<td><b>Term</b></td>"
-
-		//"%s"
-
-		//"<td><b>Weight</b></td>"
-		//"<td><b>Spam</b></td>"
-
 		"<td><b>Desc</b></td>"
 		"<td><b>TermId/TermHash48</b></td>"
 		"<td><b>ShardByTermId?</b></td>"
-		"<td><b>Note</b></td>"
 		"</tr>\n"
-		//,fbuf
 		);
 
 	sb->safePrintf("%s",hdr);
@@ -21737,169 +21657,46 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 
 		// see if one big table causes a browser slowdown
 		if ( (++rcount % TABLE_ROWS) == 0 )
-			sb->safePrintf("<!--ignore--></table>%s",hdr);
+			sb->safePrintf("</table>%s",hdr);
 
 		char *prefix = "&nbsp;";
 		if ( tp[i]->m_prefixOff >= 0 )
 			prefix = start + tp[i]->m_prefixOff;
 
-		bool isFacet = false;
-		if ( prefix &&
-		     prefix[0]=='g' &&
-		     strncmp(prefix,"gbfacet",7)== 0 )
-			isFacet = true;
+		sb->safePrintf ( "<tr><td>%s</td>", prefix);
 
-		sb->safePrintf ( "<tr>"
-				 //"<td><b>%"INT32"</b></td>"
-				 "<td>%s</td>"
-				 //i ,
-				 , prefix
-				 );
-
-		if ( isFacet )
-			sb->safePrintf("<td>--</td>");
-		else
-			sb->safePrintf( "<td>%"INT32"</td>"
-					, tp[i]->m_wordNum );
-
-
-		// print lang
-		//char langId = tp[i]->m_langId;
+		sb->safePrintf( "<td>%" INT32 "</td>", tp[i]->m_wordNum );
 
 		// print out all langs word is in if it's not clear
 		// what language it is. we use a sliding window to
 		// resolve some ambiguity, but not all, so print out
 		// the possible langs here
 		sb->safePrintf("<td>");
-		if ( isFacet )
-			sb->safePrintf("--");
-		else
-			printLangBits ( sb , tp[i] );
+		printLangBits ( sb , tp[i] );
 		sb->safePrintf("</td>");
-
 
 		// print the term
 		sb->safePrintf("<td><nobr>");
 
-		if ( tp[i]->m_synSrc )
+		if ( tp[i]->m_synSrc ) {
 			sb->pushChar('*');
+		}
 
 		char *term = start + tp[i]->m_termOff;
 		int32_t  termLen = tp[i]->m_termLen;
 		sb->safeMemcpy ( term , termLen );
 
-		/*
-		char *dateStr = "&nbsp;";
-		int32_t ddd = tp[i]->m_date;
-		uint8_t *tddd = (uint8_t *)&ddd;
-		char tbbb[32];
-		if ( ddd && tddd[2] == 0 && tddd[3] == 0 &&
-		     tddd[0] && tddd[1] && tddd[1] <= tddd[0] ) {
-			sprintf(tbbb,"evIds %"INT32"-%"INT32"",
-				(int32_t)tddd[1],(int32_t)tddd[0]);
-			dateStr = tbbb;
+		sb->safePrintf ( "</nobr></td>");
+
+		sb->safePrintf( "<td><nobr>%s</nobr></td>", getHashGroupString( tp[i]->m_hashGroup ) );
+
+		sb->safePrintf ( "<td>%016"UINT64"</td>", (uint64_t)(tp[i]->m_termId & TERMID_MASK) );
+
+		if ( tp[i]->m_shardByTermId ) {
+			sb->safePrintf( "<td><b>1</b></td>" );
+		} else {
+			sb->safePrintf( "<td>0</td>" );
 		}
-		else if ( ddd )
-			dateStr = asctime ( gmtime(&ddd ));
-		*/
-
-		//char ss[30];
-		//if ( tp[i]->m_spam == -1.0 ) sprintf(ss,"&nbsp;");
-		//else if ( tp[i]->m_spam == 0.0 ) sprintf(ss,"--");
-		//else sprintf ( ss , "%.03f",1.0-tp[i]->m_spam);
-
-
-		sb->safePrintf ( "</nobr></td>"
-				 );
-
-		// print the weight vector before Weight and Spam
-		/*
-		float prod = 1.0;
-		for ( int32_t j = 0 ; j < MAX_RULES ; j++ ) {
-			if ( ! count[j] ) continue;
-			if ( tp[i]->m_isSynonym )
-				sb->safePrintf("<td>&nbsp;</td>" );
-			else if ( tp[i]->m_rv[j] == 1.0 )
-				sb->safePrintf("<td>&nbsp;</td>" );
-			else sb->safePrintf("<td>%.02f</td>",tp[i]->m_rv[j] );
-			// product up
-			prod *= tp[i]->m_rv[j];
-		}
-
-		// sanity check
-		// maybe look into this at some point, but not a big deal!!
-		//float err = prod - tp[i]->m_weight;
-		//if ( err > .05 )
-		//	logf(LOG_DEBUG,"weights: prod was %.02f should be "
-		//	     "%.02f",prod,tp[i]->m_weight);
-		*/
-
-		//char *desc = "&nbsp;";
-		//if ( tp[i]->m_descOff >= 0 )
-		//	desc = start + tp[i]->m_descOff;
-
-		/*
-		// synonyms are always 1/4 weight of original
-		if ( tp[i]->m_isSynonym )
-			sb->safePrintf("<td>&nbsp;</td>" );
-		else
-			sb->safePrintf("<td>%.03f</td>",  tp[i]->m_weight );
-		*/
-
-		sb->safePrintf ( //"<td>%s</td>"
-				//"<td><b>%"UINT32"</b></td>"
-				//"<td><nobr>%s</nobr></td>"
-				"<td><nobr>%s",
-				getHashGroupString(tp[i]->m_hashGroup)
-				);
-
-		//if ( tp[i]->m_synSrc ) {
-		//	char ss = tp[i]->m_synSrc;
-		//	sb->safePrintf(" - %s",g_synonyms.getSourceString(ss));
-		//}
-
-		sb->safePrintf ( "</nobr></td>" );
-
-		sb->safePrintf ( "<td>%016"UINT64"</td>"
-				 ,
-				 //ss ,
-				 //(uint32_t)tp[i]->m_score32 ,
-				 //dateStr          ,
-				 //desc, // start + tp[i]->m_descOff    ,
-				 (uint64_t)(tp[i]->m_termId & TERMID_MASK) );
-
-		if ( tp[i]->m_shardByTermId ) sb->safePrintf("<td><b>1</b></td>" );
-		else                    sb->safePrintf("<td>0</td>" );
-
-
-		sb->safePrintf("<td>");
-
-		// there is no prefix for such terms now
-		// TODO: store actual key in there i guess?? or just this bit.
-		int32_t val32 = 0;
-		if ( strncmp(prefix,"gbfacet",7) == 0 )
-			val32 = g_posdb.getInt(&tp[i]->m_key);
-
-		// . this is like gbxpathsitehash1234567
-		// . the number following it is the hash
-		// . the value stored in the posdb key is the hash of the
-		//   inner html content of that xpath/site for this page
-		if ( strncmp(term,"facetField=gbxpathsitehash",26)==0)
-			sb->safePrintf("<b>Term</b> is a 32-bit hash of the "
-				       "X-path of "
-				       "a section XOR'ed with the 32-bit "
-				       "hash of this document's subdomain. "
-				       "[%"UINT32"] is the 32-bit hash of the "
-				       "Inner HTML of this section stored "
-				       "in the posdb key instead of "
-				       "the usual stuff. This is also "
-				       "sharded by termId!",
-				       (uint32_t)val32
-				       //(int32_t)tp[i]->m_sentHash32
-				       );
-
-		sb->safePrintf("</td>");
-
 
 		sb->safePrintf("</tr>\n");
 	}
@@ -25952,271 +25749,3 @@ Json *XmlDoc::getParsedJson ( ) {
 	m_jpValid = true;
 	return &m_jp;
 }
-
-
-bool XmlDoc::storeFacetValues ( char *qs , SafeBuf *sb , FacetValHash_t fvh ) {
-
-	// sanity
-	if ( ! m_contentTypeValid ) { char *xx=NULL;*xx=0; }
-
-	storeFacetValuesSite ( qs, sb, fvh );
-
-	// if a json doc, get json field
-	// spider status docs are really json now
-	if ( m_contentType == CT_JSON || m_contentType == CT_STATUS )
-		return storeFacetValuesJSON ( qs , sb , fvh, getParsedJson());
-
-
-	if ( m_contentType == CT_HTML )
-		return storeFacetValuesHtml ( qs , sb , fvh );
-
-	if ( m_contentType == CT_XML )
-		return storeFacetValuesXml ( qs , sb , fvh );
-
-
-	return true;
-}
-
-// Store facet for site
-bool XmlDoc::storeFacetValuesSite ( char *qs , SafeBuf *sb , FacetValHash_t fvh ) {
-
-  char* val = getSite();
-  int  vlen = gbstrlen(val);
-	FacetValHash_t val32 = hash32 ( val , vlen );
-
-
-	// skip if not for us
-	if ( fvh && val32 != fvh ) return false;
-	if ( strcmp("gbtagsite",qs) ) return false;
-
-
-	// otherwise add facet FIELD to our buf
-	if ( ! sb->safeStrcpy(qs) ) return false;
-	if ( ! sb->pushChar('\0') ) return false;
-
-	// then add facet VALUE
-	if ( !sb->safePrintf("%"UINT32",",(uint32_t)val32)) return false;
-	if ( val && vlen && ! sb->safeMemcpy(val,vlen) ) return false;
-	if ( ! sb->pushChar('\0') ) return false;
-
-	return true;
-}
-
-bool XmlDoc::storeFacetValuesHtml(char *qs, SafeBuf *sb, FacetValHash_t fvh ) {
-
-	Xml *xml = getXml();
-
-	int32_t qsLen = gbstrlen(qs);
-
-	bool isString = false;
-	if ( strncmp(qs-4,"str:",4) == 0 ) isString = true;
-
-	char *content;
-	int32_t contentLen;
-	int32_t nameLen;
-	char *s;
-	int32_t i = 0;
-
-	bool uniqueField = false;
-
-	// a title tag can count now too
-	if ( strcmp(qs,"title") == 0 ) {
-		// skip leading spaces = false
-		content = xml->getString ("title",&contentLen,false);
-		uniqueField = true;
-		goto skip;
-	}
-
-
-
-	// find the first meta summary node
-	for ( i = 0 ; i < xml->getNumNodes() ; i++ ) {
-
-		// continue if not a meta tag
-		if ( xml->getNodeId(i) != TAG_META ) continue;
-		// . does it have a type field that's "summary"
-		// . <meta name=summary content="...">
-		// . <meta http-equiv="refresh" content="0;URL=http://y.com/">
-		s = xml->getString ( i , "name", &nameLen );
-		// "s" can be "summary","description","keywords",...
-		if ( nameLen != qsLen ) continue;
-		if ( strncasecmp ( s , qs , qsLen ) != 0 ) continue;
-		// point to the summary itself
-		content = xml->getString ( i , "content" , &contentLen );
-		if ( ! content || contentLen <= 0 ) continue;
-
-	skip:
-		// hash it to match it if caller specified a particular hash
-		// because they are coming from Msg40::lookUpFacets() function
-		// to convert the hashes to strings, like for rendering in
-		// the facets box to the left of the search results
-		FacetValHash_t val32 = hash32 ( content, contentLen);
-		if ( fvh && fvh != val32 ) continue;
-
-		// otherwise add facet FIELD to our buf
-		if ( ! sb->safeStrcpy(qs) ) return false;
-		if ( ! sb->pushChar('\0') ) return false;
-
-		// then add facet VALUE
-		if ( isString && !sb->safePrintf("%"UINT32",",(uint32_t)val32))
-			return false;
-		if ( !sb->safeMemcpy(content,contentLen) ) return false;
-		if ( !sb->pushChar('\0') ) return false;
-
-		// if only one specified, we are done
-		if ( fvh ) return true;
-
-		if ( uniqueField ) return true;
-	}
-
-	return true;
-}
-
-
-bool XmlDoc::storeFacetValuesXml(char *qs, SafeBuf *sb, FacetValHash_t fvh ) {
-
-	Xml *xml = getXml();
-
-	int32_t qsLen = gbstrlen(qs);
-
-	bool isString = false;
-	if ( strncmp(qs-4,"str:",4) == 0 ) isString = true;
-
-	int32_t i = 0;
-
-	bool uniqueField = false;
-
-	SafeBuf nameBuf;
-
-	// find the first meta summary node
-	for ( i = 0 ; i < xml->getNumNodes() ; i++ ) {
-
-		// skip text nodes
-		if ( xml->getNodeId(i) == TAG_TEXTNODE ) continue;
-
-		// assemble the full parent name
-		// like "tag1.tag2.tag3"
-		nameBuf.reset();
-		xml->getCompoundName ( i , &nameBuf );
-		int32_t nameLen = nameBuf.length();
-		char *s = nameBuf.getBufStart();
-
-		// . does it have a type field that's "summary"
-		// . <meta name=summary content="...">
-		// . <meta http-equiv="refresh" content="0;URL=http://y.com/">
-		//s = xml->getString ( i , "name", &nameLen );
-
-		// "s" can be "summary","description","keywords",...
-		if ( nameLen != qsLen ) continue;
-		if ( strncasecmp ( s , qs , qsLen ) != 0 ) continue;
-
-		// got it...
-
-		// wtf?
-		if ( i + 1 >= xml->getNumNodes() ) continue;
-
-		// point to the content! this is a text node?
-
-		// skip if not a text node, we don't return tag nodes i guess
-		if ( xml->getNodeId(i+1) ) continue;
-
-		char *content = xml->getNode(i+1);
-		int32_t contentLen = xml->getNodeLen(i+1);
-
-		// skip if empty
-		if ( ! content || contentLen <= 0 ) continue;
-
-		// skip commen cases too! like white space
-		if ( contentLen == 1 && is_wspace_a(content[0]) ) continue;
-
-		// hash it to match it if caller specified a particular hash
-		// because they are coming from Msg40::lookUpFacets() function
-		// to convert the hashes to strings, like for rendering in
-		// the facets box to the left of the search results
-		FacetValHash_t val32 = hash32 ( content, contentLen);
-		if ( fvh && fvh != val32 ) continue;
-
-		// otherwise add facet FIELD to our buf
-		if ( ! sb->safeStrcpy(qs) ) return false;
-		if ( ! sb->pushChar('\0') ) return false;
-
-		// then add facet VALUE
-		if ( isString && !sb->safePrintf("%"UINT32",",(uint32_t)val32))
-			return false;
-		if ( !sb->safeMemcpy(content,contentLen) ) return false;
-		if ( !sb->pushChar('\0') ) return false;
-
-		// if only one specified, we are done
-		if ( fvh ) return true;
-
-		if ( uniqueField ) return true;
-	}
-
-	return true;
-}
-
-
-bool XmlDoc::storeFacetValuesJSON (char *qs,
-                                   SafeBuf *sb,
-                                   FacetValHash_t fvh,
-                                   Json *jp ) {
-
-	JsonItem *ji = jp->getFirstItem();
-
-	char nb[1024];
-	SafeBuf nameBuf(nb,1024);
-
-	bool isString = false;
-	if ( strncmp(qs-4,"str:",4) == 0 ) isString = true;
-
-	for ( ; ji ; ji = ji->m_next ) {
-
-		QUICKPOLL(m_niceness);
-
-		// skip if not number or string
-		if ( ji->m_type != JT_NUMBER && ji->m_type != JT_STRING )
-			continue;
-
-		// reset, but don't free mem etc. just set m_length to 0
-		nameBuf.reset();
-
-		// get its full compound name like "meta.twitter.title"
-		ji->getCompoundName ( nameBuf );
-
-		// skip if not for us
-		if ( strcmp(nameBuf.getBufStart(),qs) ) continue;
-
-		//
-		// now Json.cpp decodes and stores the value into
-		// a buffer, so ji->getValue() should be decoded completely
-		//
-		int32_t vlen;
-		char *val = ji->getValueAsString( &vlen );
-
-		// hash it to match it if caller specified a particular hash
-		// because they are coming from Msg40::lookUpFacets() function
-		// to convert the hashes to strings, like for rendering in
-		// the facets box to the left of the search results
-		FacetValHash_t val32 = hash32 ( val , vlen );
-		if ( fvh && val32 != fvh )
-			continue;
-
-		// otherwise add facet FIELD to our buf
-		if ( ! sb->safeStrcpy(qs) ) return false;
-		if ( ! sb->pushChar('\0') ) return false;
-
-		// then add facet VALUE
-		if ( isString && !sb->safePrintf("%"UINT32",",(uint32_t)val32))
-				return false;
-
-		if ( val && vlen && ! sb->safeMemcpy(val,vlen) ) return false;
-		if ( ! sb->pushChar('\0') ) return false;
-
-		// if wanted a specific string, then we are done
-		if ( fvh ) return true;
-	}
-
-	return true;
-}
-
-

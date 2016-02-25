@@ -24,7 +24,7 @@ class Msg39Request {
 
  public:
 
-	Msg39Request () { reset(); };
+	Msg39Request () { reset(); }
 
 	void reset() {
 		memset(this, 0, sizeof(*this));
@@ -57,7 +57,6 @@ class Msg39Request {
 		size_query                = 0;
 		size_whiteList            = 0;
 		m_sameLangWeight          = 20.0;
-		m_maxFacets = -1;
 
 		m_getDocIdScoringInfo = 1;
 
@@ -77,13 +76,13 @@ class Msg39Request {
 		// . accumulate the top 10 term pairs from inlink text. lower
 		//   it down from 10 here.
 		m_realMaxTop = MAX_TOP;
-	};
+	}
 
 	// we are requesting that this many docids be returned. Msg40 requests
 	// of Msg3a a little more docids than it needs because it assumes
 	// some will be de-duped at summary gen time.
 	int32_t    m_docsToGet;
-	int32_t    m_maxFacets;
+
 	int32_t    m_nqt; // # of query terms
 	char    m_niceness;
 	int32_t    m_maxAge;
@@ -163,13 +162,10 @@ public:
 	// do not add new string parms before ptr_docIds or
 	// after ptr_clusterRecs so serializeMsg() calls still work
 	char  *ptr_docIds         ; // the results, int64_t
-	char  *ptr_scores;        ; // now doubles! so we can have intScores
+	char  *ptr_scores         ; // now doubles! so we can have intScores
 	char  *ptr_scoreInfo      ; // transparency info
 	char  *ptr_pairScoreBuf   ; // transparency info
 	char  *ptr_singleScoreBuf ; // transparency info
-	char  *ptr_numDocsThatHaveFacetList ;
-	// this is now 1-1 with # of query terms!
-	char  *ptr_facetHashList   ; // list of all the facet values in serps
 	char  *ptr_clusterRecs    ; // key_t (might be empty)
 	
 	// do not add new string parms before size_docIds or
@@ -179,8 +175,6 @@ public:
 	int32_t   size_scoreInfo;
 	int32_t   size_pairScoreBuf  ;
 	int32_t   size_singleScoreBuf;
-	int32_t   size_numDocsThatHaveFacetList ;
-	int32_t   size_facetHashList;
 	int32_t   size_clusterRecs;
 
 	// . this is the "string buffer" and it is a variable size

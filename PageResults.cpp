@@ -734,7 +734,6 @@ bool gotResults ( void *state ) {
 bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 
 	SearchInput *si = &st->m_si;
-	Msg40 *msg40 = &st->m_msg40;
 	CollectionRec *cr = si->m_cr;
 
 	char format = si->m_format;
@@ -803,19 +802,6 @@ bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 		// . also prints <TD>...</TD>. true=isSearchresults
 		// . tabName = "search"
 		printLeftColumnRocketAndTabs ( &sb , true , cr , "search" );
-
-		//
-		// BEGIN FACET PRINTING
-		//
-		// 
-		// . print out one table for each gbfacet: term in the query
-		// . LATER: show the text string corresponding to the hash
-		//   by looking it up in the titleRec
-		//
-		msg40->printFacetTables ( &sb );
-		//
-		// END FACET PRINTING
-		//
 
 		//
 		// now the MAIN column
@@ -1377,13 +1363,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 		}
 		sb->safePrintf("\t]\n"); // end "terms":[]
 		sb->safePrintf("},\n");
-	}			
-
-
-	// when streaming results we lookup the facets last
-	if ( si->m_format != FORMAT_HTML && ! si->m_streamResults &&
-	     st->m_header ) 
-		msg40->printFacetTables ( sb );
+	}
 
 	// global-index is not a custom crawl but we should use "objects"
 	bool isDiffbot = cr->m_isCustomCrawl;
@@ -1653,10 +1633,6 @@ bool printSearchResultsTail ( State0 *st ) {
 		// print ending ] for json search results
 		sb->safePrintf("]\n");
 
-		// when streaming results we lookup the facets last
-		if ( si->m_streamResults ) 
-			msg40->printFacetTables ( sb );
-
 		if ( st->m_header ) sb->safePrintf("}\n");
 
 		//////////////////////
@@ -1877,11 +1853,6 @@ bool printSearchResultsTail ( State0 *st ) {
 	
 
 	if ( si->m_format == FORMAT_XML ) {
-
-		// when streaming results we lookup the facets last
-		if ( si->m_streamResults ) 
-			msg40->printFacetTables ( sb );
-
 		sb->safePrintf("</response>\n");
 	}
 
@@ -2942,63 +2913,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	/////////
 	if ( mr->ptr_dbuf && mr->size_dbuf>1 )
 		printMetaContent ( msg40 , ix,st,sb);
-
-	///////////
-	//
-	// print facet field/values
-	//
-	// if there was a gbfacet*: term (gbfacetstr, gbfacetfloat, gbfacetint)
-	// this should be non-NULL and have the facet field/value pairs
-	// and every string ends in a \0
-	//
-	//////////
-	char *fp    =      mr->ptr_facetBuf;
-	char *fpEnd = fp + mr->size_facetBuf;
-	for ( ; fp && fp < fpEnd ; ) {
-		if ( si->m_format == FORMAT_HTML ) {
-			// print first one
-			sb->safePrintf("<i><font color=maroon>");
-			sb->safeStrcpy(fp);
-			sb->safePrintf("</font></i>");
-			sb->safePrintf(" &nbsp; : &nbsp; ");
-			sb->safePrintf("<b>");
-			fp += gbstrlen(fp) + 1;
-			sb->htmlEncode(fp);
-			// begin a new pair
-			sb->safePrintf("</b>");
-			sb->safeStrcpy("<br>\n");
-			fp += gbstrlen(fp) + 1;		
-		}
-		else if ( si->m_format == FORMAT_XML ) {
-			// print first one
-			sb->safePrintf("\t\t<facet>\n"
-				       "\t\t\t<field><![CDATA[");
-			sb->cdataEncode(fp);
-			sb->safePrintf("]]></field>\n");
-			fp += gbstrlen(fp) + 1;
-			sb->safePrintf("\t\t\t<value><![CDATA[");
-			sb->cdataEncode(fp);
-			sb->safePrintf("]]></value>\n");
-			sb->safePrintf("\t\t</facet>\n");
-			fp += gbstrlen(fp) + 1;
-		}
-		else if ( si->m_format == FORMAT_JSON ) {
-			// print first one
-			sb->safePrintf("\t\t\"facet\":{\n");
-			sb->safePrintf("\t\t\t\"field\":\"");
-			sb->jsonEncode(fp);
-			sb->safePrintf("\",\n");
-			fp += gbstrlen(fp) + 1;
-			sb->safePrintf("\t\t\t\"value\":\"");
-			sb->jsonEncode(fp);
-			sb->safePrintf("\"\n");
-			fp += gbstrlen(fp) + 1;
-			sb->safePrintf("\t\t},\n");
-		}
-
-
-	}
-		      
 
 	////////////
 	//
@@ -5567,75 +5481,71 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 
 	if ( ! s_init ) {
 
+		int32_t menuNum = 0;
 		int32_t n = 0;
 
-		s_mi[n].m_menuNum  = 0;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Any time";
 		s_mi[n].m_cgi      = "secsback=0";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 0;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Past 24 hours";
 		s_mi[n].m_cgi      = "secsback=86400";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 0;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Past week";
 		s_mi[n].m_cgi      = "secsback=604800";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 0;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Past month";
 		s_mi[n].m_cgi      = "secsback=2592000";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 0;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Past year";
 		s_mi[n].m_cgi      = "secsback=31536000";
 		n++;
 		s_mi[n].m_icon     = NULL;
 
-		// sort by
+		++menuNum;
 
-		s_mi[n].m_menuNum  = 1;
+		// sort by
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Sorted by relevance";
 		s_mi[n].m_cgi      = "sortby=0";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 1;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Sorted by date";
 		s_mi[n].m_cgi      = "sortby=1";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 1;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Reverse sorted by date";
 		s_mi[n].m_cgi      = "sortby=2";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-//		s_mi[n].m_menuNum  = 1;
-//		s_mi[n].m_title    = "Sorted by site inlinks";
-//		s_mi[n].m_cgi      = "sortby=3";
-//		s_mi[n].m_icon     = NULL;
-//		n++;
-
+		++menuNum;
 
 		// languages
-
-		s_mi[n].m_menuNum  = 2;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Any language";
 		s_mi[n].m_cgi      = "qlang=xx";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
 		for ( int32_t i = 0 ; i < langLast ; i++ ) {
-			s_mi[n].m_menuNum  = 2;
+			s_mi[n].m_menuNum  = menuNum;
 			s_mi[n].m_title    = getLanguageString(i);
 			char *abbr = getLanguageAbbr(i);
 			snprintf(s_mi[n].m_tmp,10,"qlang=%s",abbr);
@@ -5644,290 +5554,293 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 			n++;
 		}
 
-		// filetypes
+		++menuNum;
 
-		s_mi[n].m_menuNum  = 3;
+		// filetypes
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Any filetype";
 		s_mi[n].m_cgi      = "filetype=any";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 3;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "HTML";
 		s_mi[n].m_cgi      = "filetype=html";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 3;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "TEXT";
 		s_mi[n].m_cgi      = "filetype=txt";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 3;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "PDF";
 		s_mi[n].m_cgi      = "filetype=pdf";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 3;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Microsoft Word";
 		s_mi[n].m_cgi      = "filetype=doc";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 3;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "XML";
 		s_mi[n].m_cgi      = "filetype=xml";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 3;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "JSON";
 		s_mi[n].m_cgi      = "filetype=json";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 3;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Excel";
 		s_mi[n].m_cgi      = "filetype=xls";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 3;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "PostScript";
 		s_mi[n].m_cgi      = "filetype=ps";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 3;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Spider Status";
 		s_mi[n].m_cgi      = "filetype=status";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		// facets
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "No Facets";
-		s_mi[n].m_cgi      = "facet=";
-		s_mi[n].m_icon     = NULL;
-		n++;
+		++menuNum;
 
 		// output
-		s_mi[n].m_menuNum  = 5;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Output HTML";
 		s_mi[n].m_cgi      = "format=html";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 5;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Output XML";
 		s_mi[n].m_cgi      = "format=xml";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 5;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Output JSON";
 		s_mi[n].m_cgi      = "format=json";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 5;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Output CSV";
 		s_mi[n].m_cgi      = "format=csv";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
+		++menuNum;
+
 		// show/hide banned
-		s_mi[n].m_menuNum  = 6;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Hide banned results";
 		s_mi[n].m_cgi      = "sb=0";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 6;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Show banned results";
 		s_mi[n].m_cgi      = "sb=1";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
+		++menuNum;
 
 		// spider status
-		s_mi[n].m_menuNum  = 7;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Hide Spider Log";
 		s_mi[n].m_cgi      = "splog=0";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 7;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Show Spider Log";
 		s_mi[n].m_cgi      = "q=type:status";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
+		++menuNum;
 
 		// family filter
-		s_mi[n].m_menuNum  = 8;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Family Filter Off";
 		s_mi[n].m_cgi      = "ff=0";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 8;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Family Filter On";
 		s_mi[n].m_cgi      = "ff=1";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
+		++menuNum;
+
 		// META TAGS
-		s_mi[n].m_menuNum  = 9;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "No Meta Tags";
 		s_mi[n].m_cgi      = "dt=";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 9;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Show Meta Tags";
 		s_mi[n].m_cgi      = "dt=keywords+description";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
+		++menuNum;
 
 		// ADMIN
-
-		s_mi[n].m_menuNum  = 10;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Show Admin View";
 		s_mi[n].m_cgi      = "admin=1";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 10;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "Show User View";
 		s_mi[n].m_cgi      = "admin=0";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
+		++menuNum;
 
-
-		s_mi[n].m_menuNum  = 11;
+		// fx_country
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "fx_country (none)";
 		s_mi[n].m_cgi      = "fx_country=";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 11;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "de";
 		s_mi[n].m_cgi      = "fx_country=de";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 11;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "dk";
 		s_mi[n].m_cgi      = "fx_country=dk";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 11;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "fr";
 		s_mi[n].m_cgi      = "fx_country=fr";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 11;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "no";
 		s_mi[n].m_cgi      = "fx_country=no";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 11;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "se";
 		s_mi[n].m_cgi      = "fx_country=se";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
+		++menuNum;
 
-
-		s_mi[n].m_menuNum  = 12;
+		// fx_blang
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "fx_blang (none)";
 		s_mi[n].m_cgi      = "fx_blang=";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 12;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "da";
 		s_mi[n].m_cgi      = "fx_blang=da";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 12;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "de";
 		s_mi[n].m_cgi      = "fx_blang=de";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 12;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "en";
 		s_mi[n].m_cgi      = "fx_blang=en";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 12;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "en-US";
 		s_mi[n].m_cgi      = "fx_blang=en-US";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 12;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "no";
 		s_mi[n].m_cgi      = "fx_blang=no";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 12;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "se";
 		s_mi[n].m_cgi      = "fx_blang=se";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
+		++menuNum;
 
-		s_mi[n].m_menuNum  = 13;
+		// fx_fetld
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "fx_fetld (none)";
 		s_mi[n].m_cgi      = "fx_fetld=";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 13;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "com";
 		s_mi[n].m_cgi      = "fx_fetld=findx.com";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 13;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "de";
 		s_mi[n].m_cgi      = "fx_fetld=findx.de";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 13;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "dk";
 		s_mi[n].m_cgi      = "fx_fetld=findx.dk";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 13;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "no";
 		s_mi[n].m_cgi      = "fx_fetld=findx.no";
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-		s_mi[n].m_menuNum  = 13;
+		s_mi[n].m_menuNum  = menuNum;
 		s_mi[n].m_title    = "se";
 		s_mi[n].m_cgi      = "fx_fetld=findx.se";
 		s_mi[n].m_icon     = NULL;
 		n++;
-
-
-
 
 		s_num = n;
 		if ( n > 200 ) { char *xx=NULL;*xx=0; }
@@ -5940,11 +5853,8 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 	sb->safePrintf("<div style=color:gray;>");
 
 	for ( int32_t i = 0 ; i <= s_mi[s_num-1].m_menuNum ; i++ ) {
-		// after 4 make a new line
-		if ( i == 5 ) sb->safePrintf("<br><br>");
-		if ( i == 9 ) sb->safePrintf("<br><br>");
-
-		if( i == 4 ) continue;
+		// after 5 make a new line
+		if ( i % 5 == 0 ) sb->safePrintf("<br><br>");
 
 		printMenu ( sb , i , hr );
 	}

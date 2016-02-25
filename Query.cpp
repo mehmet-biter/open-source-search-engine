@@ -49,15 +49,6 @@ void Query::reset ( ) {
 	// if Query::constructor() was called explicitly then we have to
 	// call destructors explicitly as well...
 	// essentially call QueryTerm::reset() on each query term
-	for ( long i = 0 ; i < m_numTerms ; i++ ) {
-	 	// get it
-		QueryTerm *qt = &m_qterms[i];
-		HashTableX *ht = &qt->m_facetHashTable;
-
-		ht->reset();
-		qt->m_facetIndexBuf.purge();
-	}
-
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
 		QueryWord *qw = &m_qwords[i];
 		qw->destructor();
@@ -70,32 +61,18 @@ void Query::reset ( ) {
 	m_osb.purge();
 	m_docIdRestriction = 0LL;
 	m_groupThatHasDocId = NULL;
-	//m_bufLen      = 0;
 	m_origLen     = 0;
 	m_numWords    = 0;
-	//m_numOperands = 0;
 	m_numTerms    = 0;
 	m_synTerm     = 0;
-	//m_numIgnored  = 0;
-	//m_numRequired = -1;
 	m_numComponents = 0;
-	//if ( m_bmap && m_bmapSize ) // != m_bmbuf )
-	//	mfree ( m_bmap , m_bmapSize , "Query1" );
-	//if ( m_bitScores && m_bitScoresSize ) //  != m_bsbuf )
-	//	mfree ( m_bitScores , m_bitScoresSize , "Query2" );
-	//m_bmap = NULL;
 
 	m_bitScores = NULL;
-	//m_bmapSize      = 0;
 	m_bitScoresSize = 0;
-	//if ( m_expressionsAllocSize )
-	//	mfree ( m_expressions , m_expressionsAllocSize , "Query3" );
 	if ( m_qwordsAllocSize )
 		mfree ( m_qwords      , m_qwordsAllocSize      , "Query4" );
-	//m_expressionsAllocSize = 0;
 	m_qwordsAllocSize      = 0;
 	m_qwords               = NULL;
-	//m_expressions          = NULL;
 	m_numExpressions       = 0;
 	m_gnext                = m_gbuf;
 	m_hasUOR               = false;
@@ -2395,14 +2372,14 @@ bool Query::setQWords ( char boolFlag ,
 				 (  m_qwords[j].m_wordLen ==1 &&
 				  ((m_qwords[j].m_word)[0]=='-' || 
 				   (m_qwords[j].m_word)[0]=='_' || 
-				   (m_qwords[j].m_word)[0]=='.'))))
-			{
+				   (m_qwords[j].m_word)[0]=='.')))) {
 				j--;
 			}
-			if ( j < 0 ) { 
-				//log(LOG_LOGIC,"query: query: bad "
-				//"engineer."); 
-				j = 0; }
+
+			if ( j < 0 ) {
+				j = 0;
+			}
+
 			// advance j to a non-punct word
 			while (words.isPunct(j)) j++;
 
@@ -2416,24 +2393,11 @@ bool Query::setQWords ( char boolFlag ,
 			fieldLen  = tlen;
 			if ( j == i ) fieldSign = wordSign;
 			else          fieldSign = m_qwords[j].m_wordSign;
-			// debug msg
-			//char ttt[128];
-			//gbmemcpy ( ttt , field , fieldLen );
-			//ttt[fieldLen] = '\0';
-			//log("field name = %s", ttt);
+
 			// . is it recognized field name,like "title" or "url"?
 			// . does it officially end in a colon? incl. in hash?
 			bool hasColon;
 			fieldCode = getFieldCode (field, fieldLen, &hasColon) ;
-			// only url,link,site,ip and suburl field names will
-			// end a colon, due to historical fuck up
-			//if ( hasColon ){ 
-			//	fieldLen++;
-			//}
-			// reassign alias fields
-			//Why??? -p
-			//if ( fieldCode == FIELD_TYPE ) {
-			//	field = "type" ; fieldLen = 4; }
 
 			// if so, it does NOT get its own QueryWord,
 			// but its sign can be inherited by its members
@@ -2460,8 +2424,7 @@ bool Query::setQWords ( char boolFlag ,
 			if ( wlen>1 &&!is_wspace_a (w[wlen-2]) ) wordSign = 0;
 			if ( i > 0 && wlen == 1                ) wordSign = 0;
 		}
-		// assign quoteSign to wordSign if we just got into quotes
-		//if ( nq > 0 && inQuotes ) quoteSign = wordSign;
+
 		// don't add any QueryWord for a punctuation word
 		if ( words.isPunct(i) ) continue;
 		// what is the sign of our term? +, -, *, ...
@@ -2476,19 +2439,7 @@ bool Query::setQWords ( char boolFlag ,
 		// what quote chunk are we in? this is 0 if we're not in quotes
 		if ( inQuotes ) qw->m_quoteStart = quoteStart ;
 		else            qw->m_quoteStart = -1;
-		// if we're the first alnum in this quote and
-		// the next word has a quote, then we're just a single word
-		// in quotes which is silly, so undo it. But we should
-		// still inherit any quoteSign, however. Be sure to also
-		// set m_inQuotes to false so Matches.cpp::matchWord() works.
-		// MDW: don't undo it because we do not want to get synonyms
-		// of terms in quotes. 7/15/2015
-		// if ( i == quoteStart ) { // + 1 ) {
-		// 	if ( i + 1 >= numWords || words.getNumQuotes(i+1)>0 ) {
-		// 		qw->m_quoteStart = -1;
-		// 		qw->m_inQuotes   = false;
-		// 	}
-		// }
+
 		// . get prefix hash of collection name and field
 		// . but first convert field to lower case
 		uint64_t ph;
@@ -2496,8 +2447,7 @@ bool Query::setQWords ( char boolFlag ,
 		if ( fflen > 62 ) fflen = 62;
 		char ff[64];
 		to_lower3_a ( field , fflen , ff );
-		//uint32_tint32_tph=getPrefixHash(m_coll,m_collLen,ff,fflen);
-		//ph=getPrefixHash(NULL,0,ff,fflen);
+
 		ph = hash64 ( ff , fflen );
 		// map "intitle" map to "title"
 		if ( fieldCode == FIELD_TITLE )
@@ -2530,24 +2480,9 @@ bool Query::setQWords ( char boolFlag ,
 		if ( fieldCode == FIELD_GBNUMBEREQUALINT )
 			ph = hash64 ("gbsortbyint", 11);
 
-
-		// really just like the gbfacetstr operator but we do not
-		// display the facets, instead we try to match the provided
-		// facet value exactly, case sensitvely.
-		// NOT any more because termlist is too big and we need it
-		// to be fast for diffbot.
-		//if ( fieldCode == FIELD_GBFIELDMATCH )
-		//	ph = hash64 ("gbfacetstr", 10);
-
-
-		if ( fieldCode == FIELD_GBFACETFLOAT )
-			ph = hash64 ("gbsortby",8);
-		if ( fieldCode == FIELD_GBFACETINT )
-			ph = hash64 ("gbsortbyint",11);
-
 		// ptr to field, if any
-
 		qw->m_fieldCode = fieldCode;
+
 		// prefix hash
 		qw->m_prefixHash = ph;
 		// set this flag
@@ -2578,9 +2513,7 @@ bool Query::setQWords ( char boolFlag ,
 		     fieldCode == FIELD_GBNUMBERMININT ||
 		     fieldCode == FIELD_GBNUMBERMAXINT ||
 		     fieldCode == FIELD_GBNUMBEREQUALINT ||
-		     fieldCode == FIELD_GBFACETSTR ||
-		     fieldCode == FIELD_GBFACETINT ||
-		     fieldCode == FIELD_GBFACETFLOAT ||
+
 		     fieldCode == FIELD_GBFIELDMATCH ||
 
 		     fieldCode == FIELD_GBAD  ) {
@@ -2593,13 +2526,7 @@ bool Query::setQWords ( char boolFlag ,
 			int32_t firstColonLen = -1;
 			int32_t lastColonLen = -1;
 			int32_t colonCount = 0;
-			int32_t firstComma = -1;
-			// are we a facet term?
-			bool isFacetNumTerm = false;
-			if ( fieldCode == FIELD_GBFACETINT   ) 
-				isFacetNumTerm = true;
-			if ( fieldCode == FIELD_GBFACETFLOAT ) 
-				isFacetNumTerm = true;
+
 			// "w" points to the first alnumword after the field,
 			// so for site:xyz.com "w" points to the 'x' and wlen 
 			// would be 3 in that case sinze xyz is a word of 3 
@@ -2622,12 +2549,6 @@ bool Query::setQWords ( char boolFlag ,
 				// to true.
 				if ( w[wlen] == '(' || w[wlen] == ')' )
 					break;
-				// hit a comma in something like
-				// gbfacetfloat:price,0-1,1-2.5,2.5-10
-				if ( w[wlen]==',' && 
-				     isFacetNumTerm && 
-				     firstComma == -1 )
-					firstComma = wlen;
 
 				wlen++;
 			}
@@ -2637,153 +2558,6 @@ bool Query::setQWords ( char boolFlag ,
 			// the fieldmatch stuff should be case-sensitive. 
 			// this may change later.
 			uint64_t wid = hash64Lower_utf8 ( w , wlen, 0LL );
-
-			//
-			// BEGIN FACET RANGE LISTS
-			//
-			qw->m_numFacetRanges = 0;
-			// for gbfacetfloat:price,0-1,1-2.5,... just hash price
-			if ( firstComma > 0 &&
-			     ( fieldCode == FIELD_GBFACETINT ||
-			       fieldCode == FIELD_GBFACETFLOAT ) )
-				// hash the "price" not the following range lst
-				// crap, since this uses the gbsortby: 
-				// termlists it is NOT case-sensitive
-				wid = hash64Lower_utf8 ( w , firstComma );
-			// now store the range list so we can 
-			// fill up the buckets below
-			char *s = w + firstComma + 1;
-			char *send = w + wlen;
-			int32_t nr = 0;
-			for ( ; s <send && fieldCode == FIELD_GBFACETINT;){
-				// must be a digit or . or - or *
-				if ( ! is_digit(s[0]) &&
-				     s[0] != '.' &&
-				     s[0] != '-' &&
-                                     s[0] != '*')
-					break;
-				char *sav = s;
-				// skip to hyphen
-				for ( ; s < send && *s != '-' ; s++ );
-				// stop if not hyphen
-				if ( *s != '-' ) break;
-
-                                // If the first character is a hyphen, check
-                                // if its part of a negative number. If it is,
-                                // don't consider it a hyphen
-                                if ( sav == s && is_digit(s[1]) ) {
-                                  // Read the entire negative number
-                                  char *s2 = s + 1;
-                                  for ( ; s2 < send && is_digit(s2[0]); s2++);
-                                  // If there's a hyphen after the negative
-                                  // number, use that as the hyphen separator
-                                  if ( *s2 == '-' ) s = s2;
-                                }
-
-				// skip hyphen
-				s++;
-				// must be a digit or . or - or *
-				if ( ! is_digit(s[0]) &&
-				     s[0] != '.' &&
-				     s[0] != '-' &&
-                                     s[0] != '*')
-					break;
-				// if under max, add it
-				if ( nr < MAX_FACET_RANGES ) {
-				     if (sav[0] == '*')
-                                       qw->m_facetRangeIntA [nr] =
-                                         std::numeric_limits<int>::min();
-                                     else
-				       qw->m_facetRangeIntA [nr] = atoll(sav);
-
-                                     if (s[0] == '*')
-                                       qw->m_facetRangeIntB [nr] =
-                                         std::numeric_limits<int>::max();
-                                     else
-				       qw->m_facetRangeIntB [nr] = atoll(s);
-				     qw->m_numFacetRanges = ++nr;
-				}
-				// skip to comma or end
-				for ( ; s < send && *s != ',' ; s++ );
-				// skip that
-				if ( *s != ',' ) break;
-				// SKIP COMMA
-				s++;
-				// ignore till. does not included s
-				ignoreTill = s;
-			}
-			for ( ; s <send && fieldCode==FIELD_GBFACETFLOAT;){
-				// must be a digit or . or - or *
-				if ( ! is_digit(s[0]) &&
-				     s[0] != '.' &&
-				     s[0] != '-' &&
-                                     s[0] != '*')
-					break;
-				char *sav = s;
-				// skip to hyphen
-				for ( ; s < send && *s != '-' ; s++ );
-				// stop if not hyphen
-				if ( *s != '-' ) break;
-
-                                // If the first character is a hyphen, check
-                                // if its part of a negative number. If it is,
-                                // don't consider it a hyphen
-                                if ( sav == s && (is_digit(s[1]) ||
-						  (s[1] == '.' &&
-						   s + 2 < send &&
-						   is_digit(s[2]))) ) {
-                                  // Read the entire negative number
-                                  char *s2 = s + 1;
-                                  for ( ; s2 < send &&
-					  (is_digit(s2[0]) || s2[0] == '.'); s2++);
-                                  // If there's a hyphen after the negative
-                                  // number, use that as the hyphen separator
-                                  if ( *s2 == '-' ) s = s2;
-                                }
- 
-				// save that
-				char *cma = s;
-				// skip hyphen
-				s++;
-				// must be a digit or . or - or *
-				if ( ! is_digit(s[0]) &&
-				     s[0] != '.' &&
-				     s[0] != '-' &&
-                                     s[0] != '*')
-					break;
-				// save that
-				char *sav2 = s;
-				// advance to comma etc.
-				for ( ; s < send && *s != ',' ; s++ );
-				char *cma2 = s;
-				// if under max, add it
-				if ( nr < MAX_FACET_RANGES ) {
-				  if (sav[0] == '*')
-                                    // min() is min positive value for float, so
-				    // we want -max() instead
-                                    qw->m_facetRangeFloatA [nr] =
-                                      -std::numeric_limits<float>::max();
-                                  else
-				    qw->m_facetRangeFloatA [nr] =atof2(sav,cma-sav);
-
-                                  if (sav2[0] == '*')
-                                    qw->m_facetRangeFloatB [nr] =
-                                      std::numeric_limits<float>::max();
-                                  else
-				    qw->m_facetRangeFloatB [nr] =atof2(sav2,cma2-sav2);
-				  qw->m_numFacetRanges = ++nr;
-				}
-				// skip that
-				if ( *s != ',' ) break;
-				// SKIP COMMA
-				s++;
-				// ignore till. does not included s
-				ignoreTill = s;
-			}
-
-			//
-			// END FACET RANGE LISTS
-			//
 			     
 			// i've decided not to make 
 			// gbsortby:products.offerPrice 
@@ -2799,11 +2573,6 @@ bool Query::setQWords ( char boolFlag ,
 				// Expression::isTruth() will ignore it and we
 				// fix '(A OR B) gbsortby:offperice' query
 				qw->m_ignoreWordInBoolQuery = true;
-			}
-
-			// this seems case sensitive now, gbfacetstr:humanLang
-			if ( fieldCode == FIELD_GBFACETSTR ) {
-				wid = hash64 ( w , wlen , 0LL );
 			}
 
 			if ( fieldCode == FIELD_GBFIELDMATCH ) {
@@ -3717,7 +3486,7 @@ static bool       s_isInitialized = false;
 
 // 3rd field = m_hasColon
 struct QueryField g_fields[] = {
-	{"url", 
+	{"url",
 	 FIELD_URL, 
 	 true,
 	 "url:www.abc.com/page.html",
@@ -4232,10 +4001,11 @@ static bool initFieldTable(){
 		int32_t n = getNumFieldCodes();
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			// skip if dup
-			//if ( g_fields[i].m_flag & QTF_DUP ) continue;
 			int64_t h = hash64b ( g_fields[i].text );
+
 			// if already in there it is a dup
 			if ( s_table.isInTable ( &h ) ) continue;
+
 			// store the entity index in the hash table as score
 			if ( ! s_table.addTerm ( &h, i+1 ) ) return false;
 		}
@@ -4247,13 +4017,21 @@ static bool initFieldTable(){
 
 char getFieldCode ( char *s , int32_t len , bool *hasColon ) {
 	// default
-	if (hasColon) *hasColon = false;
+	if ( hasColon ) {
+		*hasColon = false;
+	}
 
-	if (!initFieldTable()) return FIELD_GENERIC;
-	int64_t h = hash64Lower_a(s, len );//>> 1) ;
+	if ( !initFieldTable() ) {
+		return FIELD_GENERIC;
+	}
+
+	int64_t h = hash64Lower_a( s, len );
 	int32_t i = (int32_t) s_table.getScore ( &h ) ;
-	if (i==0) return FIELD_GENERIC;
-	//if (hasColon) *hasColon = g_fields[i-1].hasColon ; 
+
+	if ( i == 0 ) {
+		return FIELD_GENERIC;
+	}
+
 	return g_fields[i-1].field;
 }
 
@@ -4864,11 +4642,8 @@ bool Query::isSplit() {
 }
 
 void QueryTerm::constructor ( ) {
-	m_facetHashTable.constructor(); // hashtablex
-	m_facetIndexBuf.constructor(); // safebuf
 	m_langIdBits = 0;
 	m_langIdBitsValid = false;
-	m_numDocsThatHaveFacet = 0;
 	m_numAlnumWordsInSynonym = 1;
 }
 

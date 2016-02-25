@@ -1080,126 +1080,6 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		else    
 			mr.size_clusterRecs = 0;
 
-		#define MAX_FACETS 20000
-
-		/////////////////
-		//
-		// FACETS
-		//
-		/////////////////
-
-		// We can have multiple gbfacet: terms in a query so
-		// serialize all the QueryTerm::m_facetHashTables into
-		// Msg39Reply::ptr_facetHashList.
-		//
-		// combine the facet hash lists of each query term into
-		// a list of lists. each lsit is preceeded by the query term
-		// id of the query term (like gbfacet:xpathsitehash12345)
-		// followed by a 4 byte length of the following 32-bit
-		// facet values
-		int32_t need = 0;
-		for ( int32_t i = 0 ; i < m_tmpq.m_numTerms; i++ ) {
-			QueryTerm *qt = &m_tmpq.m_qterms[i];
-			// skip if not facet
-			if ( qt->m_fieldCode != FIELD_GBFACETSTR &&
-			     qt->m_fieldCode != FIELD_GBFACETINT &&
-			     qt->m_fieldCode != FIELD_GBFACETFLOAT )
-				continue;
-			HashTableX *ft = &qt->m_facetHashTable;
-			if ( ft->m_numSlotsUsed == 0 ) continue;
-			int32_t used = ft->m_numSlotsUsed;
-			// limit for memory
-			if ( used > (int32_t)MAX_FACETS ) {
-				log("msg39: truncating facet list to 20000 "
-				    "from %"INT32" for %s",used,qt->m_term);
-				used = (int32_t)MAX_FACETS;
-			}
-			// store query term id 64 bit
-			need += 8;
-			// then size
-			need += 4;
-			// then buckets. keys and counts
-			need += (4+sizeof(FacetEntry)) * used;
-			// for # of ALL docs that have this facet, even if
-			// not in search results
-			need += sizeof(int64_t);
-		}
-		// allocate
-		SafeBuf tmp;
-		if ( ! tmp.reserve ( need ) ) {
-			log("query: Could not allocate memory "
-			    "to hold reply facets");
-			sendReply(m_slot,this,NULL,0,0,true);
-			return;
-		}
-		// point to there
-		char *p = tmp.getBufStart();
-		for ( int32_t i = 0 ; i < m_tmpq.m_numTerms ; i++ ) {
-			QueryTerm *qt = &m_tmpq.m_qterms[i];
-			// skip if not facet
-			if ( qt->m_fieldCode != FIELD_GBFACETSTR &&
-			     qt->m_fieldCode != FIELD_GBFACETINT &&
-			     qt->m_fieldCode != FIELD_GBFACETFLOAT )
-				continue;
-			// get all the facet hashes and their counts
-			HashTableX *ft = &qt->m_facetHashTable;
-			// skip if none
-			if ( ft->m_numSlotsUsed == 0 ) continue;
-			// store query term id 64 bit
-			*(int64_t *)p = qt->m_termId;
-			p += 8;
-			int32_t used = ft->getNumSlotsUsed();
-			if ( used > (int32_t)MAX_FACETS ) 
-				used = (int32_t)MAX_FACETS;
-			// store count
-			*(int32_t *)p = used;
-			p += 4;
-			int32_t count = 0;
-			// for sanity check
-			char *pend = p + (used * (4+sizeof(FacetEntry)));
-			// serialize the key/val pairs
-			for ( int32_t k = 0 ; k < ft->m_numSlots ; k++ ) {
-				// skip empty buckets
-				if ( ! ft->m_flags[k] ) continue;
-				// store key. the hash of the facet value.
-				*(int32_t *)p = ft->getKey32FromSlot(k); p += 4;
-				// then store count
-				//*(int32_t *)p = ft->getVal32FromSlot(k); p += 4;
-				// now this has a docid on it so we can
-				// lookup the text of the facet in Msg40.cpp
-				FacetEntry *fe;
-				fe = (FacetEntry *)ft->getValFromSlot(k);
-				// sanity
-				// no, count can be zero if its a range facet
-				// that was never added to. we add those
-				// empty FaceEntries only for range facets
-				// in Posdb.cpp
-				//if(fe->m_count == 0 ) { char *xx=NULL;*xx=0;}
-				gbmemcpy ( p , fe , sizeof(FacetEntry) );
-				p += sizeof(FacetEntry);
-				// do not breach
-				if ( ++count >= (int32_t)MAX_FACETS ) break;
-			}
-			// sanity check
-			if ( p != pend ) { char *xx=NULL;*xx=0; }
-			// do the next query term
-		}
-		// now point to that so it can be serialized below
-		mr.ptr_facetHashList  = tmp.getBufStart();
-		mr.size_facetHashList = p - tmp.getBufStart();//tmp.length();
-
-		/////////////
-		//
-		// END FACETS
-		//
-		/////////////
-
-		// how many docs IN TOTAL had the facet, including all docs
-		// that did not match the query.
-		// it's 1-1 with the query terms.
-		mr.ptr_numDocsThatHaveFacetList  = NULL;
-		mr.size_numDocsThatHaveFacetList = nqt * sizeof(int64_t);
-
 		// . that is pretty much it,so serialize it into buffer,"reply"
 		// . mr.ptr_docIds, etc., will point into the buffer so we can
 		//   re-serialize into it below from the tree
@@ -1228,12 +1108,6 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		// sanity
 		if ( nqt != m_msg2.m_numLists )
 			log("query: nqt mismatch for q=%s",m_tmpq.m_orig);
-		int64_t *facetCounts=(int64_t*)mr.ptr_numDocsThatHaveFacetList;
-		for ( int32_t i = 0 ; i < nqt ; i++ ) {
-			QueryTerm *qt = &m_tmpq.m_qterms[i];
-			// default is 0 for non-facet termlists
-			facetCounts[i] = qt->m_numDocsThatHaveFacet;
-		}
 	}
 
 	int32_t docCount = 0;

@@ -8,38 +8,17 @@
 #include "SafeBuf.h"
 #include "Mem.h"
 
-// keep these down to save memory
-//#define MAX_QUERY_LEN   8000 // url:XXX can be quite long! (MAX_URL_LEN)
-//#define MAX_QUERY_LEN 3200
 // support big OR queries for image shingles
 #define ABS_MAX_QUERY_LEN 62000
-// . words need to deal with int32_t list of sites!
-// . remember, words can be string of punctuation, too
-//#define MAX_QUERY_WORDS 5000 
-//#define MAX_QUERY_WORDS 32000 
-// not any more!
-//#define MAX_QUERY_WORDS 320 
+
 // raise for crazy bool query on diffbot
 // seems like we alloc just enough to hold our words now so that this
 // is really a performance capper but it is used in Summary.cpp
 // and Matches.h so don't go too big just yet
-//#define MAX_QUERY_WORDS 800
 #define ABS_MAX_QUERY_WORDS 99000
 
 // . how many IndexLists might we get/intersect
 // . we now use a int64_t to hold the query term bits for non-boolean queries
-//#define MAX_QUERY_TERMS 216
-//#define MAX_QUERY_TERMS 512
-// seems like CTS is causing huge delay spiders in query processing so
-// truncate for now...
-//#define MAX_QUERY_TERMS 40
-// we need more for zak's categories!
-//#define MAX_QUERY_TERMS 1500
-// nah, do 40 again
-//#define MAX_QUERY_TERMS 40
-// how to make a lock pick set loses synonyms from 40!
-//#define MAX_QUERY_TERMS 80
-//#define MAX_QUERY_TERMS 160
 #define ABS_MAX_QUERY_TERMS 9000
 
 // only allow up to 200 interests from facebook plus manually entered
@@ -49,9 +28,6 @@
 
 #define GBUF_SIZE (16*1024)
 #define SYNBUF_SIZE (16*1024)
-
-// score of highest-scoring query term in the QueryScore
-//#define BASE_QUERY_SCORE 10000000
 
 // let's support up to 64 query terms for now
 typedef uint64_t qvec_t;
@@ -89,12 +65,12 @@ typedef uint64_t qvec_t;
 #define FIELD_DATE     17
 #define FIELD_GENERIC  18
 #define FIELD_ISCLEAN  19  // we hash field="isclean:" val="1" if doc clean
-//#define FIELD_RANGE    20  // date range OBSOLETE, was only for newspaperarchive
+//#define FIELD_UNUSED 20
 #define FIELD_CHARSET  30
 #define FIELD_GBRSS    31
 #define FIELD_URLHASH       32
-//BR 20160106 removed: #define FIELD_URLHASHDIV10  33
-//BR 20160106 removed: #define FIELD_URLHASHDIV100 34
+//#define FIELD_UNUSED      33
+//#define FIELD_UNUSED      34
 #define FIELD_GBRULESET     35
 #define FIELD_GBLANG        36
 #define FIELD_GBQUALITY     37
@@ -103,13 +79,12 @@ typedef uint64_t qvec_t;
 #define FIELD_KEYWORD       40
 #define FIELD_QUOTA            41
 #define FIELD_GBTAGVECTOR      42
-//BR 20160106 removed: #define FIELD_GBGIGABITVECTOR  43
+//#define FIELD_UNUSED         43
 #define FIELD_GBSAMPLEVECTOR   44
 #define FIELD_SYNONYM          45
 #define FIELD_GBCOUNTRY        46
 #define FIELD_GBAD             47
 #define FIELD_GBSUBMITURL      48
-
 #define FIELD_GBPERMALINK      49
 #define FIELD_GBCSENUM         50
 #define FIELD_GBSECTIONHASH    51
@@ -120,14 +95,13 @@ typedef uint64_t qvec_t;
 #define FIELD_GBNUMBERMIN      56
 #define FIELD_GBNUMBERMAX      57
 #define FIELD_GBPARENTURL      58
-
 #define FIELD_GBSORTBYINT      59
 #define FIELD_GBREVSORTBYINT   60
 #define FIELD_GBNUMBERMININT   61
 #define FIELD_GBNUMBERMAXINT   62
-#define FIELD_GBFACETSTR       63
-#define FIELD_GBFACETINT       64
-#define FIELD_GBFACETFLOAT     65
+//#define FIELD_UNUSED         63
+//#define FIELD_UNUSED         64
+//#define FIELD_UNUSED         65
 #define FIELD_GBNUMBEREQUALINT 66
 #define FIELD_GBNUMBEREQUALFLOAT 67
 #define FIELD_SUBURL2            68
@@ -187,78 +161,6 @@ extern struct QueryField g_fields[];
 #define OP_UOR        6
 #define OP_PIPE       7
 
-////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////
-//////////        BEGIN BOOLEAN STUFF      /////////////
-////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////
-
-/*
-// . creating a QueryBoolean class was unnecessary since it was only functional
-//   and had nothing new it would store that the Query class doesn't store
-// . the entry point is the Query::setBitScoresBoolean() function below
-
-// . we can have as many operands (plain opds, not expressions) as query terms
-// . no, not anymore, we boosted MAX_QUERY_TERMS so we can have UORs which
-//   essentially make a bunch of terms use the same explicit bit
-//#define MAX_OPERANDS 16
-#define MAX_OPERANDS (MAX_QUERY_TERMS)
-
-class Operand {
-public:
-	int32_t set ( int32_t a , int32_t b , class QueryWord *qwords , int32_t level ,
-		   bool underNOT ) ;
-	// . "bits" are 1-1 with the query terms in Query::m_qterms[] array
-	// . Operand::m_opBits is the required bits for operand to be true
-	// . does not include signless phrases
-	//bool isTruth ( qvec_t bits, qvec_t mask=(qvec_t)-1 ) {
-	bool isTruth ( unsigned char *bitVec , int32_t vecSize ) {
-		// must always satisfy hard required terms (+ sign)
-		//if ( (bits & m_forcedBits) != m_forcedBits )
-		//	return false;
-		//if (m_hasNOT) return (bits & m_opBits & mask) == 0;
-		//return ( (bits & m_opBits & mask) == (m_opBits & mask)); 
-		if ( m_hasNOT ) {
-			for ( int32_t i = 0 ; i < vecSize ; i++ )
-				if ( m_opBits[i] & bitVec[i] ) return false;
-			return true;
-		}
-		for ( int32_t i = 0 ; i < vecSize ; i++ )
-			if ( m_opBits[i] & bitVec[i] ) return true;
-		return false;
-		// . we are now back to good ol' default OR
-		// . m_opBits should have been masked with
-		//   m_requiredBits so as not to include signless phrases
-		//return ( (bits & m_opBits) != 0 ); 
-	};
-	void print (SafeBuf *sbuf);
-	// we are a sequence of QueryWords
-	//int32_t m_startWordNum;
-	//int32_t m_lastWordNum;
-	// . doc just needs one of these bits for this op to be considered true
-	// . terms under the same QueryTermInfo class should have the same
-	//   termbit here
-	unsigned char m_opBits[MAX_OVEC_SIZE];
-	//int32_t m_vecSize;
-	// does the word NOT preceed the operand?
-	bool   m_hasNOT;
-	//class Expression *m_parent;
-
-	// we MUST have these for this OPERAND to be true
-	//uint16_t m_forcedBits;
-};
-*/
-
-
-////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////
-//////////         END BOOLEAN STUFF       /////////////
-////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////
-
-
-#define MAX_FACET_RANGES 256
-
 // . these first two classes are functionless
 // . QueryWord, like the Phrases class, is an extension on the Words class
 // . the array of QueryWords, m_qwords[], is contained in the Query class
@@ -276,11 +178,6 @@ class QueryWord {
 	};
 	void constructor ();
 	void destructor ();
-
-	//UCScript wordScript() { 
-	//	UChar*foo;
-	//	return ucGetScript(utf16Decode((UChar*)(m_word),&foo));
-	//}
 
 	// this ptr references into the actual query
 	char       *m_word    ;
@@ -385,16 +282,6 @@ class QueryWord {
 	// for holding some synonyms
 	SafeBuf m_synWordBuf;
 
-
-	int32_t  m_facetRangeIntA   [MAX_FACET_RANGES];
-	int32_t  m_facetRangeIntB   [MAX_FACET_RANGES];
-	float m_facetRangeFloatA [MAX_FACET_RANGES];
-	float m_facetRangeFloatB [MAX_FACET_RANGES];
-	int32_t  m_numFacetRanges;
-
-
-	// what operand bit # is it for doing boolen queries?
-	//int32_t  m_opBitNum;
 	// when an operand is an expression...
 	class Expression *m_expressionPtr;
 };
@@ -557,19 +444,9 @@ class QueryTerm {
 	// we have an array of these we set in Posdb.cpp:setQueryTermInfo().
 	int m_queryTermInfoNum;
 
-	// facet support in Posdb.cpp for compiling the data and we'll
-	// send this back via Msg39Reply::ptr_facetHashList which will be
-	// 1-1 with the query terms.
-	HashTableX m_facetHashTable;
-
-	// for sorting the facetEntries in m_facetHashTable
-	SafeBuf m_facetIndexBuf;
-
 	char m_startKey[MAX_KEY_BYTES];
 	char m_endKey  [MAX_KEY_BYTES];
 	char m_ks;
-
-	uint64_t m_numDocsThatHaveFacet;
 };
 
 #define MAX_EXPRESSIONS 100

@@ -42,25 +42,23 @@ public:
 			 class Host *specialHost = NULL );
 
 	// Msg40 calls this to get Query m_q to pass to Summary class
-	Query *getQuery ( ) { return m_q ; };
+	Query *getQuery ( ) { return m_q ; }
 
 	// Msg40 calls these to get the data pointing into the reply
-	int64_t *getDocIds        ( ) { return m_docIds;        };
-	char      *getClusterLevels ( ) { return m_clusterLevels; };
+	int64_t *getDocIds        ( ) { return m_docIds;        }
+	char      *getClusterLevels ( ) { return m_clusterLevels; }
 	// we basically turn the scores we get from each msg39 split into
 	// floats (rscore_t) and store them as floats so that PostQueryRerank
 	// has an easier time
-	double *getScores        ( ) { return m_scores;        };
-	int32_t   getNumDocIds     ( ) { return m_numDocIds; };
-
-	bool sortFacetEntries();
+	double *getScores        ( ) { return m_scores;        }
+	int32_t   getNumDocIds     ( ) { return m_numDocIds; }
 
 	void printTerms ( ) ;
 
 	// . estimates based on m_termFreqs, m_termSigns and m_numTerms
 	// . received in reply
 	int64_t  getNumTotalEstimatedHits ( ) { 
-		return m_numTotalEstimatedHits; };
+		return m_numTotalEstimatedHits; }
 
 	// called when we got a reply of docIds
 	bool gotAllShardReplies ( );

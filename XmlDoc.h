@@ -677,18 +677,6 @@ public:
 			   class HashInfo *hi ,
 			   char *gbsortByStr ) ;
 
-	bool storeFacetValues         ( char *qs , class SafeBuf *sb ,
-					FacetValHash_t fvh ) ;
-	bool storeFacetValuesSite     ( char *qs , SafeBuf *sb , 
-					FacetValHash_t fvh );
-	bool storeFacetValuesHtml     ( char *qs , class SafeBuf *sb ,
-					FacetValHash_t fvh ) ;
-	bool storeFacetValuesXml      ( char *qs , class SafeBuf *sb ,
-					FacetValHash_t fvh ) ;
-	bool storeFacetValuesJSON     ( char *qs , class SafeBuf *sb ,
-                                    FacetValHash_t fvh,
-                                    Json* jp ) ;
-
 	// print out for PageTitledb.cpp and PageParser.cpp
 	bool printDoc ( class SafeBuf *pbuf );
 	bool printMenu ( class SafeBuf *pbuf );
@@ -791,7 +779,6 @@ public:
 	char m_logLangId;
 	int32_t m_logSiteNumInlinks;
 
-	bool m_gotFacets;
 	SafeBuf m_tmpBuf2;
 
 	SafeBuf m_timeAxisUrl;
@@ -1605,12 +1592,6 @@ class TermDebugInfo {
 	// 0 = not a syn, 1 = syn from presets,2=wikt,3=generated
 	char      m_synSrc;
 	int64_t  m_langBitVec64;
-	// used for gbsectionhash:xxxx terms to hack in the inner content
-	// hash, aka sentHash32 for doing xpath histograms on a site
-	//int32_t m_sentHash32;
-	//int32_t m_facetVal32;
-	// this is copied from Weights::m_rvw or m_rvp
-	//float     m_rv[MAX_RULES];
 };
 
 

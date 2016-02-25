@@ -84,9 +84,6 @@ bool Posdb::init ( ) {
 	if ( g_posdb.getMultiplier ( &k ) !=multiplier){char *xx=NULL;*xx=0; }
 	if ( g_posdb.getIsSynonym ( &k ) != isSynonym) { char *xx=NULL;*xx=0; }
 
-	setFacetVal32 ( &k,45678 );
-	if ( getFacetVal32 ( &k ) != 45678 ) { char *xx=NULL;*xx=0;}
-
 	/*
 	// more tests
 	key144_t sk;
@@ -653,9 +650,6 @@ PosdbTable::~PosdbTable() {
 }
 
 void PosdbTable::reset() {
-	// we can't reset this because we don't recall allocTopTree()
-	// again when computing search results in docid ranges.
-	//m_hasFacetTerm = false;
 	// has init() been called?
 	m_initialized          = false;
 	m_estimatedTotalHits   = -1;
@@ -939,93 +933,6 @@ bool PosdbTable::allocTopTree ( ) {
 			return false;
 	}
 
-	/*
-	  when we bring back fast intersections we can bring this back
-	  when doAlternativeAlgo is true again
-	// merge buf
-	int64_t total = 0LL;
-	for ( int32_t k = 0 ; k < m_msg2->getNumLists() ; k++ ) {
-		// count
-		RdbList *list = m_msg2->getList(k);
-		// skip if null
-		if ( ! list ) continue;
-		// skip if list is empty, too
-		if ( list->isEmpty() ) continue;
-		// tally
-		total += list->m_listSize;
-	}
-	if ( ! m_mergeBuf.reserve ( total + 12 ) ) return false;
-	*/
-
-	m_hasFacetTerm = false;
-	//
-	// allocate space for QueryTerm::m_facetHashList and QueryTerm::m_dt
-	//
-	for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) {
-		QueryTerm *qt = &m_q->m_qterms[i];
-		// skip if not facet
-		if ( qt->m_fieldCode != FIELD_GBFACETSTR &&
-		     qt->m_fieldCode != FIELD_GBFACETINT &&
-		     qt->m_fieldCode != FIELD_GBFACETFLOAT )
-			continue;
-		// how big?
-		int64_t total = m_msg2->m_lists[i].getListSize();
-		// skip if empty. no we could be doing a split that is
-		// empty but other splits are full
-		if ( total == 0 && m_r->m_numDocIdSplits <= 1 ) {
-			log("query: empty facets for term #%i",i);
-			continue;
-		}
-		// need this
-		QueryWord *qw = qt->m_qword;
-		// we got facet terms
-		m_hasFacetTerm = true;
-		// assume list is a unique site for section hash dup
-		int32_t maxRecs = total / 6 + 1;
-		// slot
-		int32_t slots = maxRecs * 4;
-
-		// if user provided a comma separated range like
-		// gbfacetfloat:price,0-10.0,10.0-30,30-100,100-1000
-		// then that is the max # of slots
-		if ( slots > qw->m_numFacetRanges ) slots=qw->m_numFacetRanges;
-
-		// min of at least 20 otherwise m_dt re-allocs in thread and
-		// causes a core!
-		if ( slots  < 32 ) slots = 32;
-
-		// if we already initialized table for previous docid range phase
-		// do not clear it out!
-		if ( qt->m_facetHashTable.getNumSlots() > 0 ) continue;
-
-		// limit this bitch to 10 million otherwise this gets huge!
-		// like over 28 million i've seen and it goes oom
-		if ( slots > 2000000 ) {
-			log("posdb: limiting FACET list to 2M docids "
-			    "for query term %s",qt->m_term);
-			slots = 20000000;
-		}
-
-		log("query: using %i slots for query term #%i",slots,i);
-
-		// . each site hash is 4 bytes
-		// . we have to store each unique val in here for transmitting
-		//   back to msg3a so it can merge them and compute the final
-		//   stats. it really makes no sense for a shard to compute
-		//   stats. it has to be done at the aggregator node.
-		if ( ! qt->m_facetHashTable.set ( 4,sizeof(FacetEntry),
-						  slots,NULL,0,false,
-						  0,"qfht" 
-						  // use magic b/c keys seems
-						  // pretty similar in the 
-						  // lower bits sometimes
-						  , true
-						  ) )
-			return false;
-		// make it nongrowable because we'll be in a thread
-		qt->m_facetHashTable.setNonGrow();
-	}
-
 	// m_stackBuf
 	int32_t   nqt = m_q->m_numTerms;
 	int32_t need  = 0;
@@ -1258,7 +1165,7 @@ void PosdbTable::evalSlidingWindow ( char **ptrs ,
 	for ( int32_t i = 0 ; i < maxi ; i++ ) {
 
 		// skip if to the left of a pipe operator
-		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER|BF_FACET) )
+		if ( m_bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
 			continue;
 
 		//if ( ptrs[i] ) wpi = ptrs[i];
@@ -1281,7 +1188,7 @@ void PosdbTable::evalSlidingWindow ( char **ptrs ,
 	for ( ; j < maxj ; j++ ) {
 
 		// skip if to the left of a pipe operator
-		if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER|BF_FACET) )
+		if ( m_bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
 			continue;
 
 		// TODO: use a cache using wpi/wpj as the key. 
@@ -2788,14 +2695,11 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		qti->m_qtermNum      = i;
 		// and vice versa
 		qt->m_queryTermInfoNum = nrg;
-		// now we count the total # of docs that have a facet
-		// for doing tf/idf type things
-		//qti->m_numDocsThatHaveFacet = 0;
+
 		// this is not good enough, we need to count 
 		// non-whitespace punct as 2 units not 1 unit
 		// otherwise qdist gets thrown off and our phrasing fails.
 		// so use QueryTerm::m_qpos just for this.
-		//qti->m_qpos          = wordNum;
 		qti->m_qpos          = qw->m_posNum;
 		qti->m_wikiPhraseId  = qw->m_wikiPhraseId;
 		qti->m_quotedStartId = qw->m_quoteStart;
@@ -2982,16 +2886,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			qti->m_bigramFlags[nn]|=BF_NUMBER;
 		if (qt->m_fieldCode == FIELD_GBNUMBEREQUALINT )
 			qti->m_bigramFlags[nn]|=BF_NUMBER;
-		//if (qt->m_fieldCode == FIELD_GBFIELDMATCH )
-		//	qti->m_bigramFlags[nn]|=BF_NUMBER;
-
-
-		if (qt->m_fieldCode == FIELD_GBFACETSTR )
-			qti->m_bigramFlags[nn]|=BF_FACET;
-		if (qt->m_fieldCode == FIELD_GBFACETINT )
-			qti->m_bigramFlags[nn]|=BF_FACET;
-		if (qt->m_fieldCode == FIELD_GBFACETFLOAT )
-			qti->m_bigramFlags[nn]|=BF_FACET;
 
 		// add list of member terms
 		//qti->m_qtermList[nn] = qt;
@@ -3385,45 +3279,6 @@ inline bool isInRange2 ( char *recPtr , char *subListEnd, QueryTerm *qt ) {
 		if ( isInRange(recPtr,qt) ) return true;
 	}
 	return false;
-}
-
-// for a facet
-int64_t PosdbTable::countUniqueDocids( QueryTermInfo *qti ) {
-
-	QueryTerm *qt = qti->m_qt;
-	HashTableX *ft = &qt->m_facetHashTable;
-
-	// get that sublist. facets should only have one sublist since
-	// they have no synonyms.
-	char *start = qti->m_subLists[0]->getList();
-	register char *recPtr     = start;
-	register char *subListEnd = qti->m_subLists[0]->getListEnd();
-	int64_t count = 0;
- loop:
-	if ( recPtr >= subListEnd ) {
-		if ( m_debug )
-			log(LOG_DEBUG,"posdb: term list size of %"
-			    INT32" has %"INT64" unique docids"
-			    , (int32_t)(subListEnd-start),count);
-		return count;
-	}
-
-	// this is a facet term so get the value bits. they can represent
-	// a float32, int32 or stringhash32
-	int32_t val32 = g_posdb.getFacetVal32 ( recPtr );
-	// now just accumulate in our hash table of vals
-	FacetEntry *fe = (FacetEntry *)ft->getValue(&val32);
-	// inc the TOTAL val count
-	if ( fe ) fe->m_outsideSearchResultsCount++;
-
-	// Increment ptr to the next record
-        int32_t recSize = qti->m_subLists[0]->getRecSize(recPtr);
-        recPtr += recSize;
-
-        // Records that are 6 bytes share the same doc id, so only increment
-        // 'count' if it refers to a record with a new (unique) docId
-        if (recSize > 6) count++;
-	goto loop;
 }
 
 // . add a QueryTermInfo for a term (synonym lists,etc) to the docid vote buf
@@ -3875,70 +3730,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		}
 	}
 
-
-	for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) {
-		QueryTerm *qt = &m_q->m_qterms[i];
-		if ( qt->m_fieldCode != FIELD_GBFACETSTR &&
-		     qt->m_fieldCode != FIELD_GBFACETINT &&
-		     qt->m_fieldCode != FIELD_GBFACETFLOAT )
-			continue;
-
-		QueryWord *qw = qt->m_qword;
-
-		//
-		// if first time init facet hash table so empty facet ranges
-		// will still print out but with 0 documents
-		//
-
-		// skip if we already initialized it from a previous docid range phase
-		// so we do not reset the data between phases!!!
-		HashTableX *ft = &qt->m_facetHashTable;
-
-		if ( ft->m_numSlotsUsed > 0 ) continue;
-
-		log("posdb: init %i facet ranges for query term #%i",
-		    (int)qw->m_numFacetRanges,(int)i);
-
-		// prevent core
-		if ( ft->m_numSlots == 0 ) {
-			log("posdb: facet table for term #%i is uninit",i);
-			continue;
-		}
-
-		for ( int32_t k = 0 ; k < qw->m_numFacetRanges ; k ++ ) {
-			FacetEntry *fe;
-			if ( qw->m_fieldCode == FIELD_GBFACETFLOAT ) {
-				float val32 = qw->m_facetRangeFloatA[k];
-				fe=(FacetEntry *)ft->getValue(&val32);
-				FacetEntry ff;
-				memset ( &ff , 0 , sizeof(FacetEntry) );
-				// ff.m_count = 0;
-				// ff.m_docId = m_docId;
-				ft->addKey(&val32,&ff);
-				continue;
-			}
-			else {
-				// and for int facets
-				int32_t val32 = qw->m_facetRangeIntA[k];
-				fe=(FacetEntry *)ft->getValue(&val32);
-				FacetEntry ff;
-				memset ( &ff , 0 , sizeof(FacetEntry) );
-				// ff.m_count = 0;
-				// ff.m_docId = m_docId;
-				ft->addKey(&val32,&ff);
-				continue;
-			}
-		}
-		//
-		// end init of facet hash table
-		//
-	}
-
-
-
 	m_addedSites = true;
-
-
 
 	initWeights();
 
@@ -4009,27 +3801,8 @@ void PosdbTable::intersectLists10_r ( ) {
 		log("query: termlist #%"INT32" totalSize=%"INT64"",k,total);
 	}
 
-	//static int32_t s_special = 0;
-	//if ( s_special == 2836 )
-	//	log("hey");
-
 	// point to our array of query term infos set in setQueryTermInfos()
 	QueryTermInfo *qip = (QueryTermInfo *)m_qiBuf.getBufStart();
-
-	// if a query term is for a facet (ie gbfacetstr:gbtagsite)
-	// then count how many unique docids are in it. we were trying to 
-	// do this in addDocIdVotes() but it wasn't in the right place i guess.
-	// for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-	// 	QueryTermInfo *qti = &qip[i];
-	// 	QueryTerm *qt = qti->m_qt;
-	// 	bool isFacetTerm = false;
-	// 	if ( qt->m_fieldCode == FIELD_GBFACETSTR ) isFacetTerm = true;
-	// 	if ( qt->m_fieldCode == FIELD_GBFACETINT ) isFacetTerm = true;
-	// 	if ( qt->m_fieldCode == FIELD_GBFACETFLOAT ) isFacetTerm =true;
-	// 	if ( ! isFacetTerm ) continue;
-	// 	qt->m_numDocsThatHaveFacet += countUniqueDocids ( qti );
-	// }
-
 
 	// setQueryTermInfos() should have set how many we have
 	if ( m_numQueryTermInfos == 0 ) {
@@ -4046,23 +3819,6 @@ void PosdbTable::intersectLists10_r ( ) {
 		if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: END, m_minListSize = 0 and not boolean", __FILE__,__func__, __LINE__);
 		return;
 	}
-
-	/*
-	for ( int32_t k = 0 ; seoHack && k < m_q->m_numTerms ; k++ ) {
-		// count
-		int64_t total = 0LL;
-		RdbList *list = m_q->m_qterms[k].m_posdbListPtr;
-		// skip if null
-		if ( ! list ) continue;
-		// skip if list is empty, too
-		if ( list->isEmpty() ) continue;
-		// test it
-		char *p = list->m_list;
-		// you must provide termlists that start with 12 byte key
-		// for the seo hack! this is for scoring individual docids
-		if ( g_posdb.getKeySize(p) != 12 ) { char *xx=NULL;*xx=0;}
-	}
-	*/
 
 	int64_t now;
 	int64_t took;
@@ -4082,7 +3838,6 @@ void PosdbTable::intersectLists10_r ( ) {
 		if ( qti->m_bigramFlags[0] & BF_NEGATIVE ) continue;
 		// skip if numeric field like gbsortby:price gbmin:price:1.23
 		if ( qti->m_bigramFlags[0] & BF_NUMBER ) continue;
-		if ( qti->m_bigramFlags[0] & BF_FACET  ) continue;
 		// set it
 		if ( qti->m_wikiPhraseId == 1 ) continue;
 		// stop
@@ -4654,8 +4409,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// . this computes an upper bound for each query term
 		for ( int32_t i = 0 ; i < nnn ; i++ ) { // m_numQueryTermInfos ; i++ ) {
 			// skip negative termlists.
-			// now also skip gbfacet: operator terms
-			if ( qip[i].m_bigramFlags[0]&(BF_NEGATIVE|BF_FACET) ) continue;
+			if ( qip[i].m_bigramFlags[0]&(BF_NEGATIVE) ) continue;
 			// an upper bound on the score we could get
 			float maxScore = getMaxPossibleScore ( &qip[i], 0, 0, NULL );
 			// -1 means it has inlink text so do not apply this constraint
@@ -4678,11 +4432,6 @@ void PosdbTable::intersectLists10_r ( ) {
 
 	if ( m_sortByTermNum >= 0 ) goto skipScoringFilter;
 	if ( m_sortByTermNumInt >= 0 ) goto skipScoringFilter;
-
-	// we can't filter out a docid based on a low score if we are
-	// computing facet stats... because they are based on ALL the results
-	// of a query.
-	if ( m_hasFacetTerm ) goto skipScoringFilter;
 
 	// test why we are slow
 	//if ( (s_sss++ % 8) != 0 ) { docIdPtr += 6; fail0++; goto docIdLoop;}
@@ -4743,7 +4492,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// get the query term info
 		QueryTermInfo *qti = &qip[i];
 		// if we have a negative term, skip it
-		if ( qti->m_bigramFlags[0] & (BF_NEGATIVE|BF_FACET) )
+		if ( qti->m_bigramFlags[0] & (BF_NEGATIVE) )
 			// if its empty, that's good!
 			continue;
 		// store all his word positions into ring buffer AS WELL
@@ -4933,33 +4682,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			nwpFlags [nsub] = qti->m_bigramFlags [k];
 			nsub++;
 		}
-		/* // scan the sublists and print them out
-		if ( 1==1 ) { //g_conf.m_logDebugSEOInserts ) {
-			for ( int32_t k = 0 ; ! m_msg2 && k < nsub ; k++ ) {
-				// skip if empty
-				//if ( ! qti->m_savedCursor[k] ) continue;
-				// print out
-				char *xx = nwp[k];
-				char *xxend = nwpEnd[k];
-				if ( g_posdb.getKeySize(xx) != 12 ) {
-					char *xx=NULL;*xx=0; }
-				char ks;
-				for ( ; xx < xxend ; xx += ks ) {
-					if ( xx>nwp[k]&&g_posdb.getKeySize(xx)
-					     != 6)
-						break;
-					ks = g_posdb.getKeySize(xx);
-					char hgx = g_posdb.getHashGroup(xx);
-					int32_t pos = g_posdb.getWordPos(xx);
-					log("seo: term#=%"INT32",nsub=%"INT32" "
-					    "hgx=%"INT32" pos=%"INT32"",
-					    j,k,(int32_t)hgx,pos);
-				}	
-			}
-		} */
-		// debug point
-		//if ( ! m_msg2 )
-		//	log("poo");
+
 		// if only one sublist had this docid, no need to merge
 		// UNLESS it's a synonym list then we gotta set the
 		// synbits on it, below!!! or a half stop wiki bigram like
@@ -4969,8 +4692,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// so we'd have to at least do a key cleansing, so we can't
 		// do this shortcut right now... mdw oct 10 2015
 		if ( nsub == 1 && 
-		     // need it for gbfacet termlists though it seems
-		     (nwpFlags[0] & (BF_FACET|BF_NUMBER)) &&		     
+		     (nwpFlags[0] & BF_NUMBER) &&
 		     !(nwpFlags[0] & BF_SYNONYM) &&
 		     !(nwpFlags[0] & BF_HALFSTOPWIKIBIGRAM) ) {
 			miniMergedList [j] = nwp     [0];
@@ -5129,14 +4851,12 @@ void PosdbTable::intersectLists10_r ( ) {
 		m_docId >>= 2;
 	}
 
-	// seoHackSkip2:
-
 	//
 	// sanity check for all
 	//
 	for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
 		// skip if not part of score
-		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_FACET) ) continue;
+		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE) ) continue;
 		// get list
 		char *plist    = miniMergedList[i];
 		char *plistEnd = miniMergedEnd[i];
@@ -5169,7 +4889,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
 
 	// skip if not part of score
-	if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER|BF_FACET) ) continue;
+	if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) continue;
 
 	// // get the query term info
 	// QueryTermInfo *qtix = &qip[i];
@@ -5178,7 +4898,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	// and pair it with each other possible query term
 	for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
 		// skip if not part of score
-		if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER|BF_FACET) ) 
+		if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
 			continue;
 
 		// // skip if not in same field
@@ -5265,7 +4985,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		float sts;
 		// skip if to the left of a pipe operator
-		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER|BF_FACET) ) 
+		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
 			continue;
 
 		// skip if in a field. although should make exception
@@ -5307,18 +5027,18 @@ void PosdbTable::intersectLists10_r ( ) {
 	//   but has 'streetlight' for the query 'street light'
 	//
 	if ( miniMergedList[0] && 
-	     // siterank/langid is always 0 in facet/numeric 
+	     // siterank/langid is always 0 in numeric
 	     // termlists so they sort by their number correctly
-	     ! (qip[0].m_bigramFlags[0] & (BF_NUMBER|BF_FACET) ) ) {
+	     ! (qip[0].m_bigramFlags[0] & (BF_NUMBER) ) ) {
 		siteRank = g_posdb.getSiteRank ( miniMergedList[0] );
 		docLang  = g_posdb.getLangId   ( miniMergedList[0] );
 	}
 	else {
 		for ( int32_t k = 1 ; k < m_numQueryTermInfos ; k++ ) {
 			if ( ! miniMergedList[k] ) continue;
-			// siterank/langid is always 0 in facet/numeric 
+			// siterank/langid is always 0 in numeric
 			// termlists so they sort by their number correctly
-			if ( qip[k].m_bigramFlags[0] & (BF_NUMBER|BF_FACET) )
+			if ( qip[k].m_bigramFlags[0] & (BF_NUMBER) )
 				continue;
 			siteRank = g_posdb.getSiteRank ( miniMergedList[k] );
 			docLang  = g_posdb.getLangId   ( miniMergedList[k] );
@@ -5375,7 +5095,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	//
 	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
 		// skip if to the left of a pipe operator
-		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER|BF_FACET) ) 
+		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
 			continue;
 		// skip wordposition until it in the body
 		while ( xpos[i] &&!s_inBody[g_posdb.getHashGroup(xpos[i])]) {
@@ -5429,7 +5149,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// skip if to the left of a pipe operator
 		// and numeric posdb termlists do not have word positions,
 		// they store a float there.
-		if ( bflags[x] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER|BF_FACET) ) 
+		if ( bflags[x] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
 			continue;
 		if ( ! xpos[x] ) continue;
 		if ( xpos[x] && minx == -1 ) {
@@ -5459,7 +5179,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		int32_t k; 
 		for ( k = 0 ; k < m_numQueryTermInfos ; k++ ) {
 			// skip if to the left of a pipe operator
-			if(bflags[k]&(BF_PIPED|BF_NEGATIVE|BF_NUMBER|BF_FACET))
+			if(bflags[k]&(BF_PIPED|BF_NEGATIVE|BF_NUMBER))
 				continue;
 			if ( xpos[k] ) break;
 		}
@@ -5501,7 +5221,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
 
 	// skip if to the left of a pipe operator
-	if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER|BF_FACET) ) continue;
+	if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) continue;
 
 	// get the query term info
 	// QueryTermInfo *qtix = &qip[i];
@@ -5510,7 +5230,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
 
 		// skip if to the left of a pipe operator
-		if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER|BF_FACET) ) 
+		if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
 			continue;
 
 		// skip if not in same field
@@ -5677,201 +5397,6 @@ void PosdbTable::intersectLists10_r ( ) {
 
 	// we did not get filtered out
 	if ( ! secondPass ) m_filtered--;
-
-	//
-	// even if docid did not have a score high enough to be in the
-	// winner's list, still add its facet stats, it still is in the
-	// search results, just not in the top X.
-	//
-	// TODO: use limiters like gbfacetmaxvalcount:gbsitehash,2 to limit
-	// to just the top 2 results per site. like a generalized way of
-	// doing site clustering. i thinkg this is called buckets.
-	//
-	// for our section stuff we do a query like 
-	// gbfacet:<xpathsitehash> and the values is the innerhtml content hash
-	// of that xpath/site so we won't have to do buckets for that.
-	//
-	if ( ! m_hasFacetTerm ) goto skipFacetCheck;
-
-	// only do facet computations on the first pass so we have access
-	// to all docids even if not in the winner tree
-	if ( secondPass ) goto skipFacetCheck;
-
-	// scan each facet termlist and update
-	// QueryTerm::m_facetHashTable/m_dt
-	for ( int32_t j = 0 ; j < m_q->m_numTerms ; j++ ) {
-		QueryTerm *qt = &m_q->m_qterms[j];
-		if ( qt->m_fieldCode != FIELD_GBFACETSTR &&
-		     qt->m_fieldCode != FIELD_GBFACETINT &&
-		     qt->m_fieldCode != FIELD_GBFACETFLOAT )
-			continue;
-		// get the queryterminfo class for this query term
-		int qti = qt->m_queryTermInfoNum;
-		// use that, because miniMergedLists are the synonym lists
-		// merged from multiple terms.
-		char *p2    = miniMergedList[qti];
-		//char *pend = miniMergedEnd [i];
-		//
-		// just grab the first value i guess...
-		//
-		//int32_t val32 = g_posdb.getFacetVal32 ( p );
-		// add it. count occurences of it per docid
-		//qt->m_facetHashTable.addTerm32 ( &val32 );
-		// it might have multiple sections that have
-		// the same gbxpathsitehash...
-		bool firstTime = true;
-		//int32_t lastVal;
-
-
-		// loop over entire termlist
-		for ( ; ; ) {
-
-		// do not breach sublist
-		if ( p2 >= miniMergedEnd[qti] ) break;
-		// break if 12 byte key: another docid!
-		if ( ! firstTime && !(p2[0] & 0x04) ) break;
-
-		// . first key is the full size
-		// . uses the w,G,s,v and F bits to hold this
-		// . this is no longer necessarily sitehash,but
-		//   can be any val
-		int32_t val32 = g_posdb.getFacetVal32 ( p2 );
-
-		// PREADVANCE "p"
-		// to avoid dupage...
-		//lastVal = val32;
-		// skip over 6 or 12 byte key
-		if ( firstTime ) p2 += 12;
-		else             p2 += 6;
-		firstTime = false;
-
-
-		float *fp = (float *)&val32;
-
-		QueryWord *qw = qt->m_qword;
-
-		int32_t rangeVal32  = 0;
-
-		FacetEntry ff;
-		FacetEntry *fe = NULL;
-
-		//
-		// CONDENSE THE FACETS
-		//
-		// if the specified facet range is like
-		// 'gbfacetfloat:price,0-1.0,1.0-10,10-50'
-		// then we map this val to one of those range
-		// buckets, i guess the first number in the
-		// range, and do the counts on that! this is
-		// the HISTOGRAM logic. that way if we have 1M results
-		// and each page has its own price, we won't have 1M facets!
-		bool found = false;
-		for ( int32_t k = 0 ; k < qw->m_numFacetRanges ; k ++ ) {
-			if ( qw->m_fieldCode == FIELD_GBFACETFLOAT ) {
-				if ( *fp < qw->m_facetRangeFloatA[k])continue;
-				if ( *fp >=qw->m_facetRangeFloatB[k])continue;
-				rangeVal32 = *(int32_t *)
-					(&qw->m_facetRangeFloatA[k]);
-				found = true;
-				break;
-			}
-			// otherwise it was like a 'gbfacetint:gbhopcount' qry
-			if ( val32 <  qw->m_facetRangeIntA[k] ) continue;
-			if ( val32 >= qw->m_facetRangeIntB[k] ) continue;
-			rangeVal32 = qw->m_facetRangeIntA[k];
-			found = true;
-			break;
-		}
-				
-		// bucket range voting?
-		if ( qw->m_numFacetRanges > 0 && found ) {
-			// get it
-			HashTableX *ft = &qt->m_facetHashTable;
-			fe=(FacetEntry *)ft->getValue(&rangeVal32);
-			if ( ! fe ) { char *xx=NULL;*xx=0; }
-			//fe->m_count++;
-			//fe->m_docId = m_docId;
-		}
-
-		// don't allow the same docid to vote on the
-		// same value twice!
-		if ( qw->m_numFacetRanges <= 0 ) {
-		//     ( val32 != lastVal || firstTime ) ) {
-			// add it
-			//qt->m_facetHashTable.addTerm32(&val32
-			// get it
-			HashTableX *ft = &qt->m_facetHashTable;
-			fe=(FacetEntry *)ft->getValue(&val32);
-			// debug 
-			//log("facets: got entry for key=%"UINT32" "
-			//d=%"UINT64"",  val32,m_docId);
-			// if not there, init it... but NOT if doing ranges
-			// because we already initialized the ranges above
-			// so there is already one bucket for each range 
-			// specified, and your
-			if ( ! fe ) {
-				// sanity check
-				if ( qw->m_numFacetRanges > 0 ) { 
-					char *xx=NULL;*xx=0; }
-				memset ( &ff , 0 , sizeof(FacetEntry) );
-				fe = &ff;
-				int32_t slot;
-				ft->addKey(&val32,fe,&slot);
-				// now point to what we added since
-				// we increment count below, add min/max, etc.
-				fe = (FacetEntry *)ft->getValueFromSlot(slot);
-			}
-		}
-
-		// not in a provided range? or val32==lastVal
-		if ( ! fe ) continue;
-
-		// only one vote per docid per facet entry
-		if ( fe->m_docId == (int64_t)m_docId ) continue;
-
-		fe->m_docId = m_docId;
-		fe->m_count++;
-
-		// first time? then init min/max and set sum to 0
-		if ( fe->m_count == 1 ) {
-			// set initial float stats
-			if ( qw->m_fieldCode == FIELD_GBFACETFLOAT ) {
-				*((double *)&fe->m_sum) = 0.0;
-				*((float *)&fe->m_min) = *fp;
-				*((float *)&fe->m_max) = *fp;
-			}
-			// and initial int stats
-			else {
-				fe->m_sum = 0;
-				fe->m_min = val32;
-				fe->m_max = val32;
-			}
-		}
-
-		// handle float stats
-		if ( qw->m_fieldCode == FIELD_GBFACETFLOAT ) {
-			double sum = *((double *)&fe->m_sum);
-			sum += *fp; //(double)
-			*((double *)&fe->m_sum) = sum;
-			if ( *fp < *((float *)&fe->m_min) )
-				*((float *)&fe->m_min) = *fp;
-			if ( *fp > *((float *)&fe->m_max) )
-				*((float *)&fe->m_max) = *fp;
-		}
-		// and int stats
-		else {
-			fe->m_sum += val32;
-			if ( val32 < fe->m_min )
-				fe->m_min = val32;
-			if ( val32 > fe->m_max )
-				fe->m_max = val32;
-		}
-	
-
-		}
-	}
-
- skipFacetCheck:
 
 	// . seoDebug hack so we can set "dcs"
 	// . we only come here if we actually made it into m_topTree
@@ -6088,25 +5613,6 @@ void PosdbTable::intersectLists10_r ( ) {
 		log("posdb: # fail = %"INT32" ", fail );
 		log("posdb: # pass = %"INT32" ", pass );
 	}
-
-
-	// if a query term is for a facet (ie gbfacetstr:gbtagsite)
-	// then count how many unique docids are in it. we were trying to 
-	// do this in addDocIdVotes() but it wasn't in the right place i guess.
-	for ( int32_t i = 0 ; i < m_numQueryTermInfos ; i++ ) {
-		QueryTermInfo *qti = &qip[i];
-		QueryTerm *qt = qti->m_qt;
-		bool isFacetTerm = false;
-		if ( qt->m_fieldCode == FIELD_GBFACETSTR ) isFacetTerm = true;
-		if ( qt->m_fieldCode == FIELD_GBFACETINT ) isFacetTerm = true;
-		if ( qt->m_fieldCode == FIELD_GBFACETFLOAT ) isFacetTerm =true;
-		if ( ! isFacetTerm ) continue;
-		// this should also now use the facettable we built up
-		// as we accumulated the facet counts above.
-		qt->m_numDocsThatHaveFacet += countUniqueDocids ( qti );
-	}
-
-
 
 	// get time now
 	now = gettimeofdayInMilliseconds();

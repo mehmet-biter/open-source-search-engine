@@ -116,49 +116,11 @@ static bool storeTerm ( char	*s        ,
 	ti.m_langId = langId;
 	ti.m_key   = key;
 
-	// was sitehash32
-	//ti.m_facetVal32 = hi->m_facetVal32;//sentHash32 = hi->m_sentHash32;
-
 	// save for printing out an asterisk
 	ti.m_synSrc = synSrc; // isSynonym = isSynonym;
 
 	// get language bit vec
 	ti.m_langBitVec64 = g_speller.getLangBits64(&termId);
-
-	//if ( isPhrase ) ti.m_synSrc = SOURCE_NGRAM;
-
-	/*
-	// the weight vec for the words and phrases
-	for ( int32_t j = 0 ; j < MAX_RULES ; j++ ) ti.m_rv[j] = 1.0;
-
-	int32_t  *wscores = NULL;
-
-	if ( weights && ! isPhrase ) wscores = weights->m_ww;
-	if ( weights &&   isPhrase ) wscores = weights->m_pw;
-
-	// shortcut
-	int32_t i = wordNum;
-
-	if ( weights && ! weights->m_rvw ) { char *xx=NULL;*xx=0; }
-	if ( weights && ! weights->m_rvp ) { char *xx=NULL;*xx=0; }
-
-	float *rv = NULL;
-	if ( weights && ! isPhrase ) rv = &weights->m_rvw[i*MAX_RULES];
-	if ( weights &&   isPhrase ) rv = &weights->m_rvp[i*MAX_RULES];
-
-	if ( weights ) ti.m_weight = (float)wscores[i] / (float)DW;
-
-	if ( weights )
-		gbmemcpy ( &ti.m_rv, rv , MAX_RULES*sizeof(float));
-
-	// no, because if this is zero we force it up to 1!
-	//if ( weights )
-	//	ti.m_score32 = (int32_t)((float)ti.m_score32 * ti.m_weight);
-	ti.m_score32 = score;
-
-	if ( isSynonym )
-		ti.m_score32   = score;
-	*/
 
 	// make the key
 	key96_t k;
@@ -1036,11 +998,6 @@ bool XmlDoc::hashContentType ( HashTableX *tt ) {
 	//   it's interpolation
 	return hashString (s,gbstrlen(s),&hi );
 }
-
-
-
-
-
 
 // . hash the link: terms
 // . ensure that more useful linkers are scored higher
@@ -2857,19 +2814,6 @@ bool XmlDoc::hashSingleTerm ( char       *s         ,
 			  false , // delkey?
 			  hi->m_shardByTermId );
 
-	//
-	// HACK: mangle the key if its a gbsitehash:xxxx term
-	// used for doing "facets" like stuff on section xpaths.
-	//
-	// no longer do this because we just hash the term
-	// gbxpathsitehash1234567 where 1234567 is that hash.
-	// but
-	//
-	//static int64_t s_gbsectionhash = 0LL;
-	//if ( ! s_gbsectionhash ) s_gbsectionhash = hash64b("gbsectionhash");
-	//if ( prefixHash == s_gbsectionhash )
-	//	g_posdb.setSectionSentHash32 ( &k, hi->m_sentHash32 );
-
 	// . otherwise, add a new slot
 	// . key should NEVER collide since we are always
 	//   incrementing the distance cursor, m_dist
@@ -3487,9 +3431,9 @@ bool XmlDoc::hashFieldMatchTerm ( char *val , int32_t vlen , HashInfo *hi ) {
 	// it is the json field itself, or the meta tag name, etc.
 	uint64_t middlePrefix = hash64n ( hi->m_prefix );
 
-        // hash "This is a new product." with "object.desc".
-        // "object.desc" (termId64) is case-sensitive.
-        uint64_t composite = hash64 ( val64 , middlePrefix );
+	// hash "This is a new product." with "object.desc".
+	// "object.desc" (termId64) is case-sensitive.
+	uint64_t composite = hash64 ( val64 , middlePrefix );
 
         // hash that with "gbfieldmatch"
 	char *prefix = "gbfieldmatch";
@@ -3510,14 +3454,6 @@ bool XmlDoc::hashFieldMatchTerm ( char *val , int32_t vlen , HashInfo *hi ) {
 			  0 , // wordSpamRank ,
 			  0 , //siterank
 			  0 , // hashGroup,
-			  // we set to docLang final hash loop
-			  //langUnknown, // langid
-			  // unless already set. so set to english here
-			  // so it will not be set to something else
-			  // otherwise our floats would be ordered by langid!
-			  // somehow we have to indicate that this is a float
-			  // termlist so it will not be mangled any more.
-			  //langEnglish,
 			  langUnknown,
 			  0 , // multiplier
 			  false, // syn?
@@ -3544,13 +3480,13 @@ bool XmlDoc::hashFieldMatchTerm ( char *val , int32_t vlen , HashInfo *hi ) {
 	// the full prefix
 	char fullPrefix[64];
 	snprintf(fullPrefix,62,"%s:%s",prefix,hi->m_prefix);
-	hi2.m_prefix = fullPrefix;//"gbfacet";
+	hi2.m_prefix = fullPrefix;
 
 	// add to wts for PageParser.cpp display
 	// store it
 	if ( ! storeTerm ( buf,
 			   bufLen,
-			   ph2, // prefixHash, // s_facetPrefixHash,
+			   ph2,
 			   &hi2,
 			   0, // word#, i,
 			   0, // wordPos

@@ -625,24 +625,13 @@ bool Msg3a::gotAllShardReplies ( ) {
 			return true;
 
 		}
-		// skip down here if reply was already set
-		//skip:
+
 		// add of the total hits from each shard, this is how many
 		// total results the lastest shard is estimated to be able to
 		// return
 		// . THIS should now be exact since we read all termlists
 		//   of posdb...
 		m_numTotalEstimatedHits += mr->m_estimatedHits;
-
-		// accumulate total facet count from all shards for each term
-		int64_t *facetCounts;
-		facetCounts = (int64_t*)mr->ptr_numDocsThatHaveFacetList;
-		for ( int32_t k = 0 ; k < mr->m_nqt ;  k++ ) {
-			QueryTerm *qt = &m_q->m_qterms[k];
-			// sanity. this should never happen.
-			if ( k >= m_q->m_numTerms ) break;
-			qt->m_numDocsThatHaveFacet += facetCounts[k];
-		}
 
 		// debug log stuff
 		if ( ! m_debug ) continue;
@@ -671,69 +660,6 @@ bool Msg3a::gotAllShardReplies ( ) {
 
 	return true;
 }
-
-static HashTableX *g_fht = NULL;
-static QueryTerm *g_qt = NULL;
-
-// sort facets by document counts before displaying
-static int feCmp ( const void *a1, const void *b1 ) {
-	int32_t a = *(int32_t *)a1;
-	int32_t b = *(int32_t *)b1;
-	FacetEntry *fe1 = (FacetEntry *)g_fht->getValFromSlot(a);
-	FacetEntry *fe2 = (FacetEntry *)g_fht->getValFromSlot(b);
-	if ( fe2->m_count > fe1->m_count ) return 1;
-	if ( fe2->m_count < fe1->m_count ) return -1;
-	int32_t *k1 = (int32_t *)g_fht->getKeyFromSlot(a);
-	int32_t *k2 = (int32_t *)g_fht->getKeyFromSlot(b);
-	if ( g_qt->m_fieldCode == FIELD_GBFACETFLOAT )
-		return (int)( *(float *)k2 - *(float *)k1 );
-	// otherwise an int
-	return ( *k2 - *k1 );
-}
-
-// each query term has a safebuf of ptrs to the facet entries in its
-// m_facethashTable
-bool Msg3a::sortFacetEntries ( ) {
-
-	for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) {
-		// only for html for now i guess
-		//if ( m_si->m_format != FORMAT_HTML ) break;
-		QueryTerm *qt = &m_q->m_qterms[i];
-		// skip if not facet
-		if ( qt->m_fieldCode != FIELD_GBFACETSTR &&
-		     qt->m_fieldCode != FIELD_GBFACETINT &&
-		     qt->m_fieldCode != FIELD_GBFACETFLOAT )
-			continue;
-
-		HashTableX *fht = &qt->m_facetHashTable;
-		// first sort facetentries in hashtable by their key before
-		// we print them out
-		int32_t np = fht->getNumSlotsUsed();
-		SafeBuf *sb = &qt->m_facetIndexBuf;
-		if ( ! sb->reserve(np*4,"sbfi") ) return false;
-		int32_t *ptrs = (int32_t *)sb->getBufStart();
-		int32_t numPtrs = 0;
-		for ( int32_t j = 0 ; j < fht->getNumSlots() ; j++ ) {
-			if ( ! fht->m_flags[j] ) continue;
-			ptrs[numPtrs++] = j;
-		}
-		// use this as global for qsort
-		g_fht = fht;
-		g_qt  = qt;
-		// use qsort
-		gbqsort ( ptrs , numPtrs , sizeof(int32_t) , feCmp , 0 );
-		// now truncate the length. really we should have a max
-		// for each query term.
-		// this will prevent us from looking up 70,000 facets when
-		// the user specifies just &nf=50.
-		sb->setLength(numPtrs * sizeof(int32_t) );
-		int32_t maxSize = m_r->m_maxFacets * sizeof(int32_t);
-		if ( sb->length() > maxSize )
-			sb->setLength(maxSize);
-	}
-	return true;
-}
-
 
 // . merge all the replies together
 // . put final merged docids into m_docIds[],m_bitScores[],m_scores[],...
@@ -790,181 +716,10 @@ bool Msg3a::mergeLists ( ) {
 		m_finalBufSize = 0;
 	}
 
-	//
-	// HACK: START FACET stats merge
-	//
-	int32_t sneed = 0;
-	for ( int32_t j = 0; j < m_numQueriedHosts ; j++ ) {
-		Msg39Reply *mr = m_reply[j];
-		if ( ! mr ) continue;
-		sneed += mr->size_facetHashList/4;
-	}
-
-	//
-	// each mr->ptr_facetHashList can contain the values of
-	// MULTIPLE facets, so the first is the 64-bit termid of the query
-	// term, like the gbfacet:type or gbfacet:price. so
-	// we want to compute the FacetStats for EACH such query term.
-
-	// so first we scan for facet query terms and reset their
-	// FacetStats arrays.
-	for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) {
-		QueryTerm *qt = &m_q->m_qterms[i];
-		//qt->m_facetStats.reset();
-		// now make a hashtable to compile all of the
-		// facethashlists from each shard into
-		//int64_t tid  = m_q->m_qterms[i].m_termId;
-		// we hold all the facet values
-		// m_q is a ptr to State0::m_si.m_q from PageResults.cpp
-		// and Msg40.cpp ultimately.
-		HashTableX *ht = &qt->m_facetHashTable;
-		// we have to manually call this because Query::constructor()
-		// might have been called explicitly. not now because
-		// i added a call the Query::constructor() to call
-		// QueryTerm::constructor() for each QueryTerm in
-		// Query::m_qterms[]. this was causing a mem leak of
-		// 'fhtqt' too beacause we were re-using the query for each
-		// coll in the federated loop search.
-		//ht->constructor();
-		// 4 byte key, 4 byte score for counting facet values
-		if ( ! ht->set(4,sizeof(FacetEntry),
-			       128,NULL,0,false,
-			       m_r->m_niceness,"fhtqt"))
-			return true;
-
-		// sanity
-		if ( ! ht->m_isWritable ) {
-			log("msg3a: queryterm::constructor not called?");
-			char *xx=NULL;*xx=0;
-		}
-	}
-
-	// now scan each facethashlist from each shard and compile into
-	// the appropriate query term qt->m_facetHashTable
-	for ( int32_t j = 0; j < m_numQueriedHosts ; j++ ) {
-		Msg39Reply *mr =m_reply[j];
-		if ( ! mr ) continue;
-		// now the list should be the unique site hashes that
-		// had the section hash. we need to uniquify them again
-		// here.
-		char *p = (char *)mr->ptr_facetHashList;
-		char *last = p + mr->size_facetHashList;
-		// skip if empty
-		if ( ! p ) continue;
-		// come back up here for another gbfacet:xxx term
-	ploop:
-		// first is the termid
-		int64_t termId = *(int64_t *)p;
-		// skip that
-		p += 8;
-		// the # of 32-bit facet hashes
-		int32_t nh = *(int32_t *)p;
-		p += 4;
-		// get that query term
-		QueryTerm *qt = m_q->getQueryTermByTermId64 ( termId );
-		// sanity
-		if ( ! qt ) {
-			log("msg3a: query: could not find query term with "
-			    "termid %"UINT64" for facet",termId);
-			break;
-		}
-
-		bool isFloat  = false;
-		bool isInt = false;
-		if ( qt->m_fieldCode == FIELD_GBFACETFLOAT ) isFloat = true;
-		if ( qt->m_fieldCode == FIELD_GBFACETINT   ) isInt = true;
-
-		// the end point
-		char *pend = p + ((4+sizeof(FacetEntry)) * nh);
-		// shortcut
-		HashTableX *ft = &qt->m_facetHashTable;
-		// now compile the facet hash list into there
-		for ( ; p < pend ; ) {
-			int32_t facetValue = *(int32_t *)p;
-			p += 4;
-			// how many docids had this facetValue?
-			//int32_t facetCount = *(int32_t *)p;
-			//p += 4;
-			FacetEntry *fe = (FacetEntry *)p;
-			p += sizeof(FacetEntry);
-			// debug
-			//log("msg3a: got facethash %"INT32") %"UINT32"",k,p[k]);
-			// accumulate scores from all shards
-			//if ( ! qt->m_facetHashTable.addScore(&facetValue,
-			//				     facetCount) )
-			//	return true;
-			FacetEntry *fe2 ;
-			fe2 = (FacetEntry *)ft->getValue ( &facetValue );
-			if ( ! fe2 ) {
-				ft->addKey ( &facetValue,fe );
-				continue;
-			}
-
-
-
-			if ( isFloat ) {
-				// accumulate sum as double
-				double sum1 = *((double *)&fe ->m_sum);
-				double sum2 = *((double *)&fe2->m_sum);
-				sum2 += sum1;
-				*((double *)&fe2->m_sum) = sum2;
-				// and min/max as floats
-
-				float min1 = *((float *)&fe ->m_min);
-				float min2 = *((float *)&fe2->m_min);
-				if ( fe2->m_count==0 || (fe->m_count!=0 && min1 < min2 )) min2 = min1;
-				*((float *)&fe2->m_min) = min2;
-				float max1 = *((float *)&fe ->m_max);
-				float max2 = *((float *)&fe2->m_max);
-				if ( fe2->m_count==0 || (fe->m_count!=0 && max1 > max2 )) max2 = max1;
-				*((float *)&fe2->m_max) = max2;
-			}
-			if ( isInt ) {
-				fe2->m_sum += fe->m_sum;
-				if ( fe2->m_count==0 || (fe->m_count!=0 && fe->m_min < fe2->m_min ))
-					fe2->m_min = fe->m_min;
-				if ( fe2->m_count==0 || (fe->m_count!=0 && fe->m_max > fe2->m_max ))
-					fe2->m_max = fe->m_max;
-			}
-
-			fe2->m_count += fe->m_count;
-
-			// also accumualte count of total docs, not just in
-			// the search results, that have this value for this
-			// facet
-			fe2->m_outsideSearchResultsCount +=
-				fe->m_outsideSearchResultsCount;
-
-			// prefer docid kinda randomly to balance
-			// lookupFacets() load in Msg40.cpp
-			if ( rand() % 2 )
-				fe2->m_docId = fe->m_docId;
-
-
-		}
-
-		// now get the next gbfacet: term if there was one
-		if ( p < last ) goto ploop;
-	}
-
-	// now sort the facets and put the indexes into
-	// QueryTerm::m_facetIndexBuf. now since we sort here
-	// we can limit the facets we lookup in Msg40.cpp::lookupFacets2().
-	// we also limit to the SearchInput::m_maxFacets here too.
-	// sets g_errno on error and returns false so we return true.
-	if ( ! sortFacetEntries() )
-		return true;
-
-	//
-	// HACK: END section stats merge
-	//
-
-
 	if ( m_docsToGet <= 0 ) { char *xx=NULL;*xx=0; }
 
 	// . how much do we need to store final merged docids, etc.?
 	// . docid=8 score=4 bitScore=1 clusterRecs=key_t clusterLevls=1
-	//int32_t need = m_docsToGet * (8+sizeof(double)+
 	int32_t nd1 = m_docsToGet;
 	int32_t nd2 = 0;
 	for ( int32_t j = 0; j < m_numQueriedHosts; j++ ) {

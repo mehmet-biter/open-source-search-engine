@@ -96,7 +96,6 @@ float getTermFreqWeight  ( int64_t termFreq , int64_t numDocsInColl );
 #define WIKI_WEIGHT    0.10 // was 0.20
 #define SITERANKDIVISOR 3.0
 #define SITERANKMULTIPLIER 0.33333333
-//#define SAMELANGMULT    20.0 // FOREIGNLANGDIVISOR  2.0
 
 #define POSDBKEY key144_t
 
@@ -106,7 +105,6 @@ float getTermFreqWeight  ( int64_t termFreq , int64_t numDocsInColl );
 #define BF_NEGATIVE           0x08  // query word has a negative sign before it
 #define BF_BIGRAM             0x10  // query word has a negative sign before it
 #define BF_NUMBER             0x20  // is it like gbsortby:price? numeric?
-#define BF_FACET              0x40  // gbfacet:price
 
 void printTermList ( int32_t i, char *list, int32_t listSize ) ;
 
@@ -360,40 +358,13 @@ class Posdb {
 	unsigned char getMultiplier ( const void *key ) {
 		return ((*(const uint16_t *)key) >> 4) & MAXMULTIPLIER; };
 
-	// . HACK: for sectionhash:xxxxx posdb keys
-	// . we use the w,G,s,v and F bits
-	uint32_t getFacetVal32 ( const void *key ) {
-		return *(const uint32_t *)(((char *)key)+2); };
-	void setFacetVal32 ( void *key , int32_t facetVal32 ) {
-		*(uint32_t *)(((char *)key)+2) = facetVal32; };
-
 	int64_t getTermFreq ( collnum_t collnum, int64_t termId ) ;
 
 	//RdbCache *getCache ( ) { return &m_rdb.m_cache; };
 	Rdb      *getRdb   ( ) { return &m_rdb; };
 
 	Rdb m_rdb;
-
-	//DiskPageCache *getDiskPageCache ( ) { return &m_pc; };
-
-	//DiskPageCache m_pc;
 };
-
-class FacetEntry {
- public:
-	// # of search results that have this value:
-	int32_t m_count;
-	// # of docs that have this value:
-	int32_t m_outsideSearchResultsCount;
-	int64_t m_docId;
-
-	// cast as double/floats for floats:
-	int64_t m_sum;
-	int32_t m_max;
-	int32_t m_min;
-};
-
-
 
 #define MAX_SUBLISTS 50
 
@@ -496,10 +467,6 @@ class PosdbTable {
 
 	uint64_t m_docId;
 
-	uint64_t m_docIdHack;
-
-	bool m_hasFacetTerm;
-
 	bool m_hasMaxSerpScore;
 
 	// hack for seo.cpp:
@@ -599,8 +566,6 @@ class PosdbTable {
 	bool setQueryTermInfo ( );
 
 	void shrinkSubLists ( class QueryTermInfo *qti );
-
-	int64_t countUniqueDocids( QueryTermInfo *qti ) ;
 
 	// for intersecting docids
 	void addDocIdVotes ( class QueryTermInfo *qti , int32_t listGroupNum );

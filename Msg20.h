@@ -66,10 +66,6 @@ class Msg20Request {
 	// set both of these to 0 to disregard.
 	int32_t m_ourHostHash32;
 	int32_t m_ourDomHash32;
-	
-	FacetValHash_t m_facetValHash;
-
-	unsigned char       m_justGetFacets : 1         ;
 
 	// language the query is in (ptr_qbuf)
 	uint8_t    m_langId;
@@ -236,7 +232,6 @@ public:
 	char       *ptr_mbuf                 ; // match offsets
 	char       *ptr_vbuf                 ; // summary vector
 	char       *ptr_imgData              ; // for encoded images
-	char       *ptr_facetBuf             ;
 	char       *ptr_site                 ;
 
 	// . if m_computeLinkInfo is true this is computed using Msg25 (fresh)
@@ -281,7 +276,6 @@ public:
 	int32_t       size_mbuf                 ;
 	int32_t       size_vbuf                 ;
 	int32_t       size_imgData              ;
-	int32_t       size_facetBuf             ;
 
 	int32_t       size_site                 ;
 

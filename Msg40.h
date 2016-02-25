@@ -21,16 +21,15 @@
 #define MAXDOCIDSTOCOMPUTE 2000000000
 
 class Msg40 {
-
- public:
+public:
 
 	Msg40();
 	~Msg40();
 	void resetBuf2 ( ) ;
 	static bool registerHandler ();
 
-        // . returns false if blocked, true otherwise
-        // . sets errno on error
+	// . returns false if blocked, true otherwise
+	// . sets errno on error
 	// . uses Query class to parse query
 	// . uses Msg37 to retrieve term frequencies for each termId in query
 	// . uses Indexdb class to intersect the lists to get results
@@ -39,10 +38,9 @@ class Msg40 {
 	// . a useCache of -1 means default, 1 means use the cache,0 means dont
 	// . "displayMetas" is a space separated list of meta tag names
 	//   that you want the content for along with the summary
-        bool getResults ( class SearchInput *si ,
+	bool getResults ( class SearchInput *si ,
 			  bool               forward ,
 			  void              *state    ,
-			  //void (* callback)(class Msg40 *THIS, void *state));
 			  void             (* callback)(void *state));
 
 	bool gotCacheReply();
@@ -59,7 +57,7 @@ class Msg40 {
 	bool getSummaries     ( ) ;
 	bool gotSummary       ( ) ;
 	bool reallocMsg20Buf ( ) ;
-	//bool printLocalTime ( class SafeBuf *sb );
+
 	void uncluster ( int32_t m ) ;
 	// serialization routines used for caching Msg40s by Msg17
 	int32_t  getStoredSize ( ) ;
@@ -68,8 +66,8 @@ class Msg40 {
 
 
 	// see Msg51.h for CR_* values of crId
-	int32_t getFilterStats ( int32_t crId ) { return m_filterStats[crId]; };
-	int32_t getNumCensored         ( ) { return m_filterStats[CR_DIRTY]; };
+	int32_t getFilterStats ( int32_t crId ) { return m_filterStats[crId]; }
+	int32_t getNumCensored         ( ) { return m_filterStats[CR_DIRTY]; }
 
 	// . estimated # of total hits
 	// . this is now an EXACT count... since we read all posdb termlists
@@ -77,28 +75,28 @@ class Msg40 {
 
 	// . we copy query and coll to our own local buffer
 	// . these routines give us back our inputted parameters we saved
-	char *getQuery              ( ) { return m_si->m_q.getQuery(); };
-	int32_t  getQueryLen           ( ) { return m_si->m_q.getQueryLen(); };
-	//char *getColl               ( ) { return m_si->m_coll2; };
-	//int32_t  getCollLen            ( ) { return m_si->m_collLen2; };
-	int32_t  getDocsWanted         ( ) { return m_si->m_docsWanted; };
-	int32_t  getFirstResultNum     ( ) { return m_si->m_firstResultNum; };
+	char *getQuery              ( ) { return m_si->m_q.getQuery(); }
+	int32_t  getQueryLen           ( ) { return m_si->m_q.getQueryLen(); }
 
-	int32_t  getNumResults (        ){return m_msg3a.m_numDocIds; };
-	int32_t  getNumDocIds  (        ){return m_msg3a.m_numDocIds; };
+	int32_t  getDocsWanted         ( ) { return m_si->m_docsWanted; }
+	int32_t  getFirstResultNum     ( ) { return m_si->m_firstResultNum; }
 
-	char   getClusterLevel(int32_t i){return m_msg3a.m_clusterLevels[i];};
+	int32_t  getNumResults (        ){return m_msg3a.m_numDocIds; }
+	int32_t  getNumDocIds  (        ){return m_msg3a.m_numDocIds; }
 
-	int64_t getDocId  ( int32_t i ){return m_msg3a.m_docIds[i]; };
-	int64_t *getDocIds(        ){return m_msg3a.m_docIds; };
-	double  getScore  ( int32_t i ){return m_msg3a.m_scores[i]; };
+	char   getClusterLevel(int32_t i){return m_msg3a.m_clusterLevels[i];}
+
+	int64_t getDocId  ( int32_t i ){return m_msg3a.m_docIds[i]; }
+	int64_t *getDocIds(        ){return m_msg3a.m_docIds; }
+	double  getScore  ( int32_t i ){return m_msg3a.m_scores[i]; }
+
 	class DocIdScore *getScoreInfo(int32_t i){
 		if ( ! m_msg3a.m_scoreInfos ) return NULL;
 		return m_msg3a.m_scoreInfos[i];
 	}
-	//LinkInfo *getLinkInfo( int32_t i){return m_msg20[i]->m_linkInfo; }
-	bool  moreResultsFollow ( )   {return m_moreToCome; };
-	time_t getCachedTime ( )      {return m_cachedTime; };
+
+	bool  moreResultsFollow ( )   {return m_moreToCome; }
+	time_t getCachedTime ( )      {return m_cachedTime; }
 
 	int64_t *getDocIdPtr() { return m_msg3a.m_docIds; }
 
@@ -111,18 +109,8 @@ class Msg40 {
 	int32_t m_j ;
 	int32_t m_i ;
 	bool m_doneWithLookup;
-	HashTableX m_facetTextTable;
-	SafeBuf m_facetTextBuf;
-	bool m_calledFacets;
+
 	int32_t m_omitCount;
-
-	bool printFacetTables ( class SafeBuf *sb ) ;
-	int32_t printFacetsForTable ( SafeBuf *sb , QueryTerm *qt );
-	bool lookupFacets ( ) ;
-	void lookupFacets2 ( ) ;
-	void gotFacetText ( class Msg20 *msg20 ) ;
-	class Msg20 *getUnusedMsg20 ( ) ;
-
 
 	HashTableX m_columnTable;
 	bool printCSVHeaderRow ( class SafeBuf *sb );
@@ -143,23 +131,9 @@ class Msg40 {
 
 	int32_t m_needFirstReplies;
 
-	// max outstanding msg20s
-	//int32_t       m_maxOutstanding;
-
-	// # of contiguous msg20 replies we have received (no gaps)
-	//int32_t       m_numContiguous;
-	// of thos contiguous results, how many are visible? (unfiltered,.etc)
-	//int32_t       m_visibleContiguous;
-
 	// . do not uncluster more than this many docids! it slows things down.
 	// . kind of a HACK until we do it right
 	int32_t       m_unclusterCount;
-
-	// how many of the m_numContiguous have been checked for dups?
-	//int32_t       m_numChecked;
-
-	// do we have enough visible docids? stop launch msg20s when we do
-	//bool       m_gotEnough;
 
 	// a bunch of msg20's for getting summaries/titles/...
 	Msg20    **m_msg20; 
