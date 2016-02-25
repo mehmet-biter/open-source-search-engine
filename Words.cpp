@@ -64,10 +64,13 @@ int32_t countWords ( char *p , int32_t plen ) {
 	int32_t  count = 1;
 
 	while ( p < pend ) {
+
 		// sequence of punct
 		for  ( ; p < pend && ! is_alnum_utf8 (p) ; p += getUtf8CharSize(p) ) {
 			// in case being set from xml tags, count as words now
-			if ( *p=='<') count++; 
+			if ( *p == '<' ) {
+				count++;
+			}
 		}
 		count++;
 
@@ -580,40 +583,31 @@ unsigned char getCharacterLanguage ( char *utf8Char ) {
 }
 
 // returns -1 and sets g_errno on error, because 0 means langUnknown
-int32_t Words::getLanguage( Sections *sections ,
-			 int32_t maxSamples,
-			 int32_t niceness,
-			 int32_t *langScore) {
-
+int32_t Words::getLanguage( Sections *sections, int32_t maxSamples, int32_t niceness, int32_t *langScore ) {
 	// . take a random sample of words and look them up in the
 	//   language dictionary
-	//HashTableT<int64_t, char> ht;
 	HashTableX ht;
 	int64_t langCount[MAX_LANGUAGES];
 	int64_t langWorkArea[MAX_LANGUAGES];
 	int32_t numWords = m_numWords;
-	//int32_t skip = numWords/maxSamples;
-	//if ( skip == 0 ) skip = 1;
+
 	// reset the language count
 	memset(langCount, 0, sizeof(int64_t)*MAX_LANGUAGES);
 	// sample the words
-	//int32_t wordBase  = 0;
 	int32_t wordi     = 0;
-	//if ( ! ht.set(maxSamples*1.5) ) return -1;
-	if ( ! ht.set(8,1,(int32_t)(maxSamples*8.0),NULL,0,false,
-		      niceness,"wordslang")) 
+
+	if ( !ht.set( 8, 1, ( int32_t )( maxSamples * 8.0 ), NULL, 0, false, niceness, "wordslang" ) ) {
 		return -1;
- 
+	}
+
 	// . avoid words in these bad sections
 	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT;
+
 	// shortcuts
 	int64_t *wids  = m_wordIds;
 	int32_t      *wlens = m_wordLens;
 	char     **wptrs = m_words;
 
-	//int32_t langTotal = 0;
-// 	log ( LOG_WARN, "xmldoc: Picking language from %"INT32" words with %"INT32" skip",
-// 			numWords, skip );
 	char numOne = 1;
 	Section **sp = NULL;
 	if ( sections ) sp = sections->m_sectionPtrs;
@@ -625,23 +619,14 @@ int32_t Words::getLanguage( Sections *sections ,
 	while ( wordi < numWords ) {
 		// breathe
 		QUICKPOLL( niceness );
+
 		// move to the next valid word
 		if ( ! wids [wordi]     ) { wordi++; continue; }
 		if (   wlens[wordi] < 2 ) { wordi++; continue; }
-		// skip if in a bad section
-		//int32_t flags = sections->m_sectionPtrs[i]->m_flags;
+
 		// meaning script section ,etc
 		if ( sp && ( sp[wordi]->m_flags & badFlags ) ) {
 			wordi++; continue; }
-		// check the language
-		//unsigned char lang = 0;
-
-		// Skip if word is capitalized and not preceded by a tag
-		//if(s_isWordCap(getWord(wordi), getWordLen(wordi)) &&
-		//   wordi > 0 && !getTagId(wordi - 1)) {
-		//	wordi++;
-		//	continue;
-		//}
 
 		// Skip word if bounded by '/' or '?' might be in a URL
 		if(isBounded(wordi)) {
@@ -659,7 +644,6 @@ int32_t Words::getLanguage( Sections *sections ,
 			continue;
 		}
 
-		//if(ht.getSlot(m_wordIds[wordi]) !=-1) {
 		if(!ht.isEmpty(&m_wordIds[wordi]) ) {
 			wordi++;
 			continue;
@@ -679,7 +663,7 @@ int32_t Words::getLanguage( Sections *sections ,
 		// No lang from charset, got a phrase, and 0 language does not have 
 		// a score Order is very important!
 		int foundone = 0;
-		if ( // lang == 0 &&
+		if (
 		    // we seem to be missing hungarian and thai
 		    g_speller.getPhraseLanguages(getWord(wordi),
 						 getWordLen(wordi), 
@@ -726,30 +710,23 @@ int32_t Words::getLanguage( Sections *sections ,
 			maxCount++;
 		}
 
-		// skip to the next word
-		//wordBase += skip;
-		//if ( wordi < wordBase )
-		//	wordi = wordBase;
-		//else
 		wordi++;
 	}
-	// punish unknown count in case a doc has a lot of proper names
-	// or something
-	//langCount[langUnknown] /= 2;
+
 	// get the lang with the max score then
 	int l = s_findMaxIndex(langCount, MAX_LANGUAGES);
-	// if(langCount[l] < 15) return(langUnknown);
-	if(langScore) *langScore = langCount[l];
+
+	if ( langScore ) {
+		*langScore = langCount[l];
+	}
+
 	// return if known now
 	return l;
 }
 
 // . return the value of the specified "field" within this html tag, "s"
 // . the case of "field" does not matter
-char *getFieldValue ( char *s , 
-		      int32_t  slen ,
-		      char *field , 
-		      int32_t *valueLen ) {
+char *getFieldValue( char *s, int32_t slen, char *field, int32_t *valueLen ) {
 	// reset this to 0
 	*valueLen = 0;
 	// scan for the field name in our node
@@ -784,8 +761,7 @@ char *getFieldValue ( char *s ,
 		// break cuz we got a match for our field name
 		break;
 	}
-	
-	
+
 	// return NULL if no matching field
 	if ( i + flen >= slen ) return NULL;
 

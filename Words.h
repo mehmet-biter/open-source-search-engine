@@ -152,40 +152,62 @@ class Words {
 		return false;
 	}
 
-	bool      hasChar         ( int32_t n , char c ) const {
-		for ( int32_t i = 0 ; i < m_wordLens[n] ; i++ )
-			if ( m_words[n][i] == c ) return true;
-		return false; 
+	bool hasChar( int32_t n, char c ) const {
+		for ( int32_t i = 0; i < m_wordLens[n]; i++ ) {
+			if ( m_words[n][i] == c ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
-	bool      hasDigit        ( int32_t n ) const {
-		for ( int32_t i = 0 ; i < m_wordLens[n] ; i++ )
-			if ( is_digit(m_words[n][i]) ) return true;
-		return false; 
+	bool hasDigit( int32_t n ) const {
+		for ( int32_t i = 0; i < m_wordLens[n]; i++ ) {
+			if ( is_digit( m_words[n][i] ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	// this doesn't really work for utf8!!!
-	bool      hasAlpha        ( int32_t n ) const {
-		for ( int32_t i = 0 ; i < m_wordLens[n] ; i++ )
-			if ( is_alpha_a(m_words[n][i]) ) return true;
-		return false; 
+	bool hasAlpha( int32_t n ) const {
+		for ( int32_t i = 0; i < m_wordLens[n]; i++ ) {
+			if ( is_alpha_a( m_words[n][i] ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
-	bool      isSpaces       ( int32_t n , int32_t starti = 0 ) {
-		for ( int32_t i = starti ; i < m_wordLens[n] ; i++ )
-			if ( ! is_wspace_utf8(&m_words[n][i]) ) return false;
+	bool isSpaces( int32_t n, int32_t starti = 0 ) {
+		for ( int32_t i = starti; i < m_wordLens[n]; i++ ) {
+			if ( !is_wspace_utf8( &m_words[n][i] ) ) {
+				return false;
+			}
+		}
 		return true;
 	}
 
-	//if this is set from xml, every word is either a word or an xml node 
-	nodeid_t getTagId(int32_t n) {
-		if ( ! m_tagIds ) return 0;
+	// if this is set from xml, every word is either a word or an xml node
+	nodeid_t getTagId( int32_t n ) {
+		if ( !m_tagIds ) {
+			return 0;
+		}
+
 		return ( m_tagIds[n] & BACKBITCOMP );
 	}
 
-	bool    isBackTag(int32_t n) {
-		if ( ! m_tagIds ) return false;
-		if ( m_tagIds[n] & BACKBIT ) return true;
+	bool isBackTag( int32_t n ) {
+		if ( !m_tagIds ) {
+			return false;
+		}
+
+		if ( m_tagIds[n] & BACKBIT ) {
+			return true;
+		}
+
 		return false;
 	}
 
@@ -211,14 +233,13 @@ class Words {
 		if ( m_wordIds[n] == 0LL ) return false;
 		if ( isNum ( n )         ) return false;
 		return true;
-	};
+	}
 
 	int32_t getAsLong ( int32_t n ) {
 		// skip if no digit
 		if ( ! is_digit ( m_words[n][0] ) ) return -1;
 		return atol2(m_words[n],m_wordLens[n]); 
-	};
-
+	}
 
 	bool      isNum    ( int32_t n ) const { 
 		if ( ! is_digit(m_words[n][0]) ) return false;
@@ -227,57 +248,39 @@ class Words {
 		for (  ; p < pend ; p++ )
 			if ( ! is_digit(*p) ) return false;
 		return true;
-	};
+	}
 
-	bool      isHexNum    ( int32_t n ) const { 
-		if ( ! is_hex(m_words[n][0]) ) return false;
-		char *p    = m_words[n];
-		char *pend = p + m_wordLens[n];
-		for (  ; p < pend ; p++ )
-			if ( ! is_hex(*p) ) return false;
-		return true;
-	};
-
-	// include &frac12's utf8 equivalent. used by Address.cpp
-	bool      isNum2   ( int32_t n ) const { 
-		if ( ! is_digit(m_words[n][0]) ) return false;
-		char *p    = m_words[n];
-		char *pend = p + m_wordLens[n];
-		for (  ; p < pend ; p++ ) {
-			if ( is_digit(*p) ) continue;
-			// this is frac14
-			if ( p[0] == -62 && p[1] == -68 ) { p++; continue; }
-			// might be that &frac12 char, 14, 34 utf8 chars
-			if ( p[0] == -62 && p[1] == -67 ) { p++; continue; }
-			// this is frac34
-			if ( p[0] == -62 && p[1] == -66 ) { p++; continue; }
-			return false;
-		}
-		return true;
-	};
-
-	// . used in SimpleQuery.cpp
 	// . are all alpha char capitalized?
 	bool      isUpper  ( int32_t n ) {
 		// skip if not alnum...
-		if ( m_wordIds[n] == 0LL ) return false;
-		char *p    = m_words[n];
-		char *pend = p + m_wordLens[n];
-		char  cs;
-		for ( ; p < pend ; p += cs ) {
-			cs = getUtf8CharSize ( p );
-			if ( is_digit        ( *p ) ) continue;
-			if ( is_lower_utf8   (  p ) ) return false;
+		if ( m_wordIds[n] == 0LL ) {
+			return false;
 		}
+
+		char *p = m_words[n];
+		char *pend = p + m_wordLens[n];
+		char cs;
+		for ( ; p < pend; p += cs ) {
+			cs = getUtf8CharSize( p );
+			if ( is_digit( *p ) ) {
+				continue;
+			}
+
+			if ( is_lower_utf8( p ) ) {
+				return false;
+			}
+		}
+
 		return true;
 	}
 
-	bool isCapitalized ( int32_t n ) {
-		if ( ! is_alpha_utf8 ( m_words[n] ) ) return false;
-		return is_upper_utf8 ( m_words[n] ) ;
-	}
+	bool isCapitalized( int32_t n ) {
+		if ( !is_alpha_utf8( m_words[n] ) ) {
+			return false;
+		}
 
-	int32_t      getTotalLen ( ) { return m_totalLen; }
+		return is_upper_utf8( m_words[n] );
+	}
 
 	unsigned char isBounded(int wordi);
 	 Words     ( );
@@ -287,7 +290,6 @@ class Words {
 	void print ( );
 	void printWord ( int32_t i );
 
-	//unsigned char getLanguage() { return langUnknown; }
 	// returns -1 and sets g_errno on error
 	int32_t getLanguage ( class Sections *sections = NULL ,
 			   int32_t maxSamples = NUM_LANGUAGE_SAMPLES,
@@ -297,11 +299,6 @@ class Words {
 	char *getContent() { 
 		if ( m_numWords == 0 ) return NULL;
 		return m_words[0]; 
-	}
-
-	char *getContentEnd() { 
-		if ( m_numWords == 0 ) return NULL;
-		return m_words[m_numWords-1] + m_wordLens[m_numWords-1];
 	}
 
 	// private:
