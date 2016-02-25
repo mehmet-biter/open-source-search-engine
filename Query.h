@@ -634,12 +634,6 @@ class Query {
 		    //bool  keepAllSingles = false ,
 		    int32_t  maxQueryTerms = 0x7fffffff );
 
-	// serialize/deserialize ourselves so we don't have to pass the
-	// unmodified string around and reparse it every time
-	int32_t    getStoredSize();
-	int32_t 	serialize(char *buf, int32_t bufLen);
-	int32_t	deserialize(char *buf, int32_t bufLen);
-
 	bool setQueryTermScores ( int64_t *termFreqsArg ) ;
 
 	char *getQuery    ( ) { return m_orig  ; };
