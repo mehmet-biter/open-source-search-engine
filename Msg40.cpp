@@ -3171,14 +3171,14 @@ int32_t Msg40::printFacetsForTable ( SafeBuf *sb , QueryTerm *qt ) {
 						    ,term
 						    ,*(float *)fvh);
 			else
-			newStuff.safePrintf("prepend="
-					    "gbminfloat%%3A%s%%3A%f+"
-					    "gbmaxfloat%%3A%s%%3A%f+"
-					    ,term
-					    ,min
-					    ,term
-					    ,max
-					    );
+				newStuff.safePrintf("prepend="
+						"gbminfloat%%3A%s%%3A%f+"
+						"gbmaxfloat%%3A%s%%3A%f+"
+						,term
+						,min
+						,term
+						,max
+						);
 		}
 		else if ( qt->m_fieldCode == FIELD_GBFACETFLOAT )
 			newStuff.safePrintf("prepend="
