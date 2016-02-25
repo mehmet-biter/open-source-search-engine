@@ -51,7 +51,13 @@ void Title::reset() {
 	m_titleTagEnd   = -1;
 }
 
-bool Title::setFromTags( Xml *xml, int32_t maxTitleLen ) {
+bool Title::setTitleFromTags( Xml *xml, int32_t maxTitleLen, uint8_t contentType ) {
+	/// @todo cater for CT_PDF & CT_DOC (when antiword is replaced)
+	// only allow html documents for now
+	if ( contentType != CT_HTML ) {
+		return false;
+	}
+
 	/// @todo ALC configurable minTitleLen so we can tweak this as needed
 	const int minTitleLen = 3;
 
@@ -87,40 +93,6 @@ bool Title::setFromTags( Xml *xml, int32_t maxTitleLen ) {
 	}
 
 	return false;
-}
-
-// returns false and sets g_errno on error
-bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleChars, Query *q,
-                       LinkInfo *linkInfo, Url *firstUrl, char **filteredRootTitleBuf, int32_t filteredRootTitleBufSize,
-                       uint8_t contentType, uint8_t langId, int32_t niceness ) {
-	// if this is too big the "first line" algo can be huge!!!
-	// and really slow everything way down with a huge title candidate
-	int32_t maxTitleWords = 128;
-
-	m_niceness = niceness;
-
-	// make Msg20.cpp faster if it is just has
-	// Msg20Request::m_setForLinkInfo set to true, no need to extricate a title.
-	if ( maxTitleChars <= 0 || maxTitleWords <= 0 ) {
-		return true;
-	}
-
-	int64_t startTime = gettimeofdayInMilliseconds();
-
-	// set from meta/title tags
-	if ( contentType == CT_HTML && setFromTags( xml, maxTitleChars ) ) {
-		return true;
-	}
-
-	bool status = setTitle4( xml, words, maxTitleChars, maxTitleWords, q, linkInfo, firstUrl,
-							 filteredRootTitleBuf, filteredRootTitleBufSize, contentType, langId );
-
-	int64_t took = gettimeofdayInMilliseconds() - startTime;
-	if ( took > 5 ) {
-		log("query: Title set took %"INT64" ms for %s", took, firstUrl->getUrl());
-	}
-
-	return status;
 }
 
 // types of titles. indicates where they came from.
@@ -172,19 +144,28 @@ bool isWordQualified ( char *wp , int32_t wlen ) {
 	return qualified;
 }
 
-//
-// TODO: do not accumulate boosts from a parent
-// and its kids, subtitles...
-//
-bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxTitleWords, Query *q,
-                        LinkInfo *info, Url *firstUrl, char **filteredRootTitleBuf, int32_t filteredRootTitleBufSize,
-                        uint8_t contentType, uint8_t langId ) {
-	m_maxTitleChars = maxTitleChars;
+
+// returns false and sets g_errno on error
+bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query,
+                       LinkInfo *linkInfo, Url *firstUrl, char **filteredRootTitleBuf, int32_t filteredRootTitleBufSize,
+                       uint8_t contentType, uint8_t langId, int32_t niceness ) {
+	// make Msg20.cpp faster if it is just has
+	// Msg20Request::m_setForLinkInfo set to true, no need to extricate a title.
+	if ( maxTitleLen <= 0 ) {
+		return true;
+	}
+
+	m_niceness = niceness;
+	m_maxTitleLen = maxTitleLen;
+
+	// if this is too big the "first line" algo can be huge!!!
+	// and really slow everything way down with a huge title candidate
+	int32_t maxTitleWords = 128;
 
 	// assume no title
 	reset();
 
-	int32_t NW = WW->getNumWords();
+	int32_t NW = words->getNumWords();
 
 	//
 	// now get all the candidates
@@ -228,7 +209,7 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 
 	// . get every link text
 	// . TODO: repeat for linkInfo2, the imported link text
-	for ( Inlink *k = NULL; info && (k = info->getNextInlink(k)) ; ) {
+	for ( Inlink *k = NULL; linkInfo && (k = linkInfo->getNextInlink(k)) ; ) {
 		// breathe
 		QUICKPOLL(m_niceness);
 		// fast skip check for link text
@@ -334,7 +315,7 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 	char *flags = NULL;
 	char localBuf[10000];
 
-	int32_t  need = WW->getNumWords();
+	int32_t  need = words->getNumWords();
 	if ( need <= 10000 ) {
 		flags = (char *)localBuf;
 	} else {
@@ -349,7 +330,7 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 	memset ( flags , 0 , need );
 
 	// check tags in body
-	nodeid_t *tids = WW->getTagIds();
+	nodeid_t *tids = words->getTagIds();
 
 	// scan to set link text flags
 	// loop over all "words" in the html body
@@ -378,11 +359,11 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 		inLink = true;
 
 		// get the node in the xml
-		int32_t xn = WW->m_nodes[i];
+		int32_t xn = words->m_nodes[i];
 
 		// is it a self link?
 		int32_t len;
-		char *link = XML->getString(xn,"href",&len);
+		char *link = xml->getString(xn,"href",&len);
 
 		// . set the url class to this
 		// . TODO: use the base url in the doc
@@ -402,10 +383,10 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 		// http://www.npr.org/templates/story/story.php?storyId=5417137
 
 		int32_t  oclen;
-		char *oc = XML->getString(xn,"onclick",&oclen);
+		char *oc = xml->getString(xn,"onclick",&oclen);
 
 		if ( ! oc ) {
-			oc = XML->getString(xn,"onClick",&oclen);
+			oc = xml->getString(xn,"onClick",&oclen);
 		}
 
 		// assume not a self link if we see that...
@@ -416,7 +397,7 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 		// if this <a href> link has a "title" attribute, use that
 		// instead! that thing is solid gold.
 		int32_t  atlen;
-		char *atitle = XML->getString(xn,"title",&atlen);
+		char *atitle = xml->getString(xn,"title",&atlen);
 
 		// stop and use that, this thing is gold!
 		if ( ! atitle || atlen <= 0 ) {
@@ -495,7 +476,7 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 	// the first word
 	char *wstart = NULL;
 	if ( NW > 0 ) {
-		wstart = WW->getWord(0);
+		wstart = words->getWord(0);
 	}
 
 	// loop over all "words" in the html body
@@ -504,7 +485,7 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 		// within our first alleged "title-ish" tag
 	subloop:
 		// stop after 30k of text
-		if ( WW->getWord(i) - wstart > 200000 ) {
+		if ( words->getWord(i) - wstart > 200000 ) {
 			break; // 1106
 		}
 
@@ -580,7 +561,7 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 			}
 
 			// skip if not alnum word
-			if ( ! WW->isAlnum(i) ) {
+			if ( ! words->isAlnum(i) ) {
 				continue;
 			}
 
@@ -612,15 +593,15 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 
 		// . skip if too many bytes
 		// . this does not include the length of word #i, but #(i-1)
-		if ( WW->getStringSize ( start , i ) > 1000 ) {
+		if ( words->getStringSize ( start , i ) > 1000 ) {
 			continue;
 		}
 
 		// when using pdftohtml, the title tag is the filename when PDF property does not have title tag
 		if ( tid == TAG_TITLE && contentType == CT_PDF ) {
 			// skip if title == '/in.[0-9]*'
-			char* title_start = WW->getWord(start);
-			char* title_end = WW->getWord(i);
+			char* title_start = words->getWord(start);
+			char* title_end = words->getWord(i);
 			size_t title_size = title_end - title_start;
 			const char* result = strnstr2(title_start, title_size, "/in.");
 			if (result != NULL) {
@@ -656,7 +637,7 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 		}
 
 		// point to words class of the body that was passed in to us
-		cptrs[n] = WW;
+		cptrs[n] = words;
 		as[n] = start;
 		bs[n] = i;
 		if ( tid == TAG_B ) {
@@ -723,7 +704,7 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 		// make "i" point to first alphabetical word in the document
 		int32_t i ;
 
-		for ( i = 0 ; i < NW && !WW->isAlpha(i) ; i++);
+		for ( i = 0 ; i < NW && !words->isAlpha(i) ; i++);
 
 		// if we got a first alphabetical word, then assume that to be the start of our title
 		if ( i < NW && n < MAX_TIT_CANDIDATES ) {
@@ -734,8 +715,8 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 
 			// set i to the end now. we MUST find a \n to terminate the
 			// title, otherwise we will not have a valid title
-			while (i < NW && numWords < maxTitleWords && (WW->isAlnum(i) || !WW->hasChar(i, '\n'))) {
-				if(WW->isAlnum(i)) {
+			while (i < NW && numWords < maxTitleWords && (words->isAlnum(i) || !words->hasChar(i, '\n'))) {
+				if(words->isAlnum(i)) {
 					numWords++;
 				}
 
@@ -751,7 +732,7 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 			}
 
 			// set the ptrs
-			cptrs   [n] =  WW;
+			cptrs   [n] =  words;
 
 			// this is the last resort i guess...
 			scores  [n] =  0.5;
@@ -849,8 +830,8 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 
 	{
 		Matches m;
-		if ( rootTitleBuf && q ) {
-			m.setQuery ( q );
+		if ( rootTitleBuf && query ) {
+			m.setQuery ( query );
 		}
 
 		// convert into an array
@@ -862,7 +843,7 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 		// loop over each root title segment
 		for ( ; pr && pr < rootTitleBufEnd ; pr += gbstrlen(pr) + 1 ) {
 			// if we had a query...
-			if ( q ) {
+			if ( query ) {
 				// reset it
 				m.reset();
 
@@ -1068,14 +1049,14 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 			}
 
 			// skip if no query
-			if ( ! q ) {
+			if ( ! query ) {
 				continue;
 			}
 
 			int64_t wid = w->getWordId(j);
 
 			// reward if in the query
-			if ( q->getWordNum(wid) >= 0 ) {
+			if ( query->getWordNum(wid) >= 0 ) {
 				qtb       *= 1.5;
 				scores[i] *= 1.5;
 			}
@@ -1267,7 +1248,7 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 	// loop over all n candidates
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// skip if not in the document body
-		if ( cptrs[i] != WW ) continue;
+		if ( cptrs[i] != words ) continue;
 		// point to the words
 		int32_t       a1    = as   [i];
 		int32_t       b1    = bs   [i];
@@ -1342,7 +1323,7 @@ bool Title::setTitle4 ( Xml *XML, Words *WW, int32_t maxTitleChars, int32_t maxT
 
 	// need to make our own Pos class if title not from body
 	Pos  tp;
-	if ( w != WW ) {
+	if ( w != words ) {
 		// set "Scores" ptr to NULL. we assume all are positive scores
 		if ( ! tp.set ( w ) ) {
 			return false;
@@ -1723,7 +1704,7 @@ bool Title::copyTitle(Words *w, int32_t t0, int32_t t1) {
 		}
 
 		// or hit our max char limit
-		if ( charCount++ >= m_maxTitleChars ) {
+		if ( charCount++ >= m_maxTitleLen ) {
 			break;
 		}
 

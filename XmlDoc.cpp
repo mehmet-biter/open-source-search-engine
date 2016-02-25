@@ -127,7 +127,6 @@ void XmlDoc::reset ( ) {
 	m_printedMenu = false;
 
 	m_tmpBuf2.purge();
-	m_gotFacets = false;
 
 	m_bodyStartPos = 0;
 
@@ -466,8 +465,19 @@ void XmlDoc::reset ( ) {
 	size_unused5 = 0;
 }
 
+int64_t XmlDoc::logQueryTimingStart() {
+	if ( !g_conf.m_logTimingQuery ) {
+		return 0;
+	}
 
-void XmlDoc::logQueryTiming(const char* function, int64_t startTime) {
+	return gettimeofdayInMilliseconds();
+}
+
+void XmlDoc::logQueryTimingEnd(const char* function, int64_t startTime) {
+	if ( !g_conf.m_logTimingQuery ) {
+		return;
+	}
+
 	int64_t endTime = gettimeofdayInMilliseconds();
 	int64_t diff = endTime - startTime;
 
@@ -4264,7 +4274,7 @@ Xml *XmlDoc::getXml ( ) {
 	uint8_t *ct = getContentType();
 	if ( ! ct || ct == (void *)-1 ) return (Xml *)ct;
 
-	int64_t start = gettimeofdayInMilliseconds();
+	int64_t start = logQueryTimingStart();
 
 	// set it
 	if ( !m_xml.set( *u8, u8len, m_version, m_niceness, *ct ) ) {
@@ -4272,7 +4282,7 @@ Xml *XmlDoc::getXml ( ) {
 		return NULL;
 	}
 
-	logQueryTiming( __func__, start );
+	logQueryTimingEnd( __func__, start );
 
 	m_xmlValid = true;
 	return &m_xml;
@@ -4616,14 +4626,14 @@ Words *XmlDoc::getWords ( ) {
 	// note it
 	setStatus ( "getting words");
 
-	int64_t start = gettimeofdayInMilliseconds();
+	int64_t start = logQueryTimingStart();
 
 	// now set what we need
 	if ( !m_words.set( xml, true, m_niceness ) ) {
 		return NULL;
 	}
 
-	logQueryTiming( __func__, start );
+	logQueryTimingEnd( __func__, start );
 
 	m_wordsValid = true;
 	return &m_words;
@@ -4638,13 +4648,13 @@ Bits *XmlDoc::getBits ( ) {
 	// returns NULL on error, -1 if blocked
 	if ( ! words || words == (Words *)-1 ) return (Bits *)words;
 
-	int64_t start = gettimeofdayInMilliseconds();
+	int64_t start = logQueryTimingStart();
 
 	// now set what we need
 	if ( ! m_bits.set ( words , m_version , m_niceness ) )
 		return NULL;
 
-	logQueryTiming( __func__, start );
+	logQueryTimingEnd( __func__, start );
 
 	// we got it
 	m_bitsValid = true;
@@ -4660,12 +4670,12 @@ Bits *XmlDoc::getBitsForSummary ( ) {
 	// returns NULL on error, -1 if blocked
 	if ( ! words || words == (Words *)-1 ) return (Bits *)words;
 
-	int64_t start = gettimeofdayInMilliseconds();
+	int64_t start = logQueryTimingStart();
 
 	// now set what we need
 	if ( ! m_bits2.setForSummary ( words ) ) return NULL;
 
-	logQueryTiming( __func__, start );
+	logQueryTimingEnd( __func__, start );
 
 	// we got it
 	m_bits2Valid = true;
@@ -4680,11 +4690,11 @@ Pos *XmlDoc::getPos ( ) {
 	Words *ww = getWords();
 	if ( ! ww || ww == (Words *)-1 ) return (Pos *)ww;
 
-	int64_t start = gettimeofdayInMilliseconds();
+	int64_t start = logQueryTimingStart();
 
 	if ( ! m_pos.set ( ww ) ) return NULL;
 
-	logQueryTiming( __func__, start );
+	logQueryTimingEnd( __func__, start );
 
 	// we got it
 	m_posValid = true;
@@ -4707,14 +4717,14 @@ Phrases *XmlDoc::getPhrases ( ) {
 	// bail on error
 	if ( ! bits ) return NULL;
 
-	int64_t start = gettimeofdayInMilliseconds();
+	int64_t start = logQueryTimingStart();
 
 	// now set what we need
 	if ( !m_phrases.set( words, bits, m_version, m_niceness ) ) {
 		return NULL;
 	}
 
-	logQueryTiming( __func__, start );
+	logQueryTimingEnd( __func__, start );
 
 	// we got it
 	m_phrasesValid = true;
@@ -4760,7 +4770,7 @@ Sections *XmlDoc::getSections ( ) {
 
 	setStatus ( "getting sections");
 
-	int64_t start = gettimeofdayInMilliseconds();
+	int64_t start = logQueryTimingStart();
 
 	// this uses the sectionsReply to see which sections are "text", etc.
 	// rather than compute it expensively
@@ -4777,7 +4787,7 @@ Sections *XmlDoc::getSections ( ) {
 	// set inlink bits
 	m_bits.setInLinkBits ( &m_sections );
 
-	logQueryTiming( __func__, start );
+	logQueryTimingEnd( __func__, start );
 
 	// we got it
 	m_sectionsValid = true;
@@ -5217,10 +5227,17 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 
 uint8_t *XmlDoc::getSummaryLangId ( ) {
 	// return if we got it already
-	if ( m_summaryLangIdValid ) return &m_summaryLangId;
+	if ( m_summaryLangIdValid ) {
+		return &m_summaryLangId;
+	}
+
 	Summary *s = getSummary();
-	if ( ! s || s == (void *)-1 ) return (uint8_t *)s;
-	char *sum    = s->getSummary();
+	if ( !s || s == (void *)-1 ) {
+		return (uint8_t *)s;
+	}
+
+	char *sum = s->getSummary();
+
 	// now set the words class
 	Words ww;
 	if ( ! ww.set ( sum , true, m_niceness ) ) {
@@ -19172,57 +19189,6 @@ static uint32_t s_scoreMap[] = {
 };
 
 uint32_t score8to32 ( uint8_t score8 ) {
-
-	/*
-	int32_t test = score32to8((uint32_t)0xffffffff);
-	static bool s_set = false;
-	if ( ! s_set ) {
-		s_set = true;
-		uint8_t lasts =  0;
-		int32_t    step  =  128;
-		int64_t start = gettimeofdayInMilliseconds();
-		for ( uint64_t i=1 ; i<(uint32_t)0xffffffff ; i+=step) {
-			// get the score
-			uint8_t s = score32to8(i);
-			// print it out now
-			if ( s != lasts ) {
-				fprintf(stderr,"\t%"UINT32"UL,\n",i);
-			}
-			// if no change, skip it
-			if (lasts != 0 && s == lasts ) {
-				if ( s > 128 )
-					step = (int32_t)((float)step * 1.1);
-				continue;
-			}
-			// otherwise set it
-			s_scoreMap[s] = i;
-			// reset
-			lasts = s;
-		}
-		// sanity test
-		for ( int32_t j = 1 ; j < 256 ; j++ ) {
-			uint32_t big = s_scoreMap[j];
-			if ( score32to8(big) != j ) { char *xx=NULL;*xx=0;}
-		}
-		int64_t end = gettimeofdayInMilliseconds();
-		logf(LOG_DEBUG,
-		     "gb: took %"INT64" ms to build score table.",
-		     end-start);
-
-	}
-	// sanity test
-	static bool s_set = false;
-	if ( ! s_set ) {
-		for ( int32_t j = 1 ; j < 256 ; j++ ) {
-			uint32_t big = s_scoreMap[j];
-			uint8_t  tt;
-			tt = score32to8(big);
-			if ( tt != j ) { char *xx=NULL;*xx=0;}
-		}
-		s_set = true;
-	}
-	*/
-
 	return(s_scoreMap[score8]);
 }
 
@@ -19242,9 +19208,6 @@ void XmlDoc::set20 ( Msg20Request *req ) {
 	m_niceness = req->m_niceness;
 	// remember this
 	m_req = req;
-	// and this!
-	//m_coll = req->ptr_coll;
-	//setCollNum ( req->ptr_coll );
 	m_collnum = req->m_collnum;
 	m_collnumValid = true;
 	// make this stuff valid
@@ -19292,10 +19255,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	// caller shouldhave the callback set
 	if ( ! m_callback1 && ! m_callback2 ) { char *xx=NULL;*xx=0; }
-
-	//char safeStack[100000];
-	//safeStack[0] = 0;
-	//safeStack[90000] = 0;
 
 	// shortcut
 	Msg20Reply *reply = &m_reply;
@@ -19355,7 +19314,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		return reply;
 	}
 
-
 	// if they provided a query with gbfacet*: terms then we have
 	// to get those facet values.
 	if ( ! m_gotFacets ) {
@@ -19363,7 +19321,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		m_gotFacets = true;
 		// get facet term
 		char *qs = m_req->ptr_qbuf;
-	facetPrintLoop:
+facetPrintLoop:
 		for ( ; qs && *qs ; qs++ ) {
 			if ( qs[0] != 'g' ) continue;
 			if ( qs[1] != 'b' ) continue;
@@ -19869,18 +19827,8 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	// check the tag first
 	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_sitePopValid        ) { char *xx=NULL;*xx=0; }
-	//Tag *tag1 = gr->getTag ("sitenuminlinks");
-	//Tag *tag2 = gr->getTag ("sitepop");
-	//int32_t sni  = 0;
-	//int32_t spop = 0;
-	//if ( tag1 ) sni  = atol(tag1->m_data);
-	//if ( tag2 ) spop = atol(tag2->m_data);
+
 	reply->m_siteNumInlinks       = m_siteNumInlinks;
-	//reply->m_siteNumInlinksTotal  = m_siteNumInlinksTotal;
-	//reply->m_siteNumUniqueIps     = m_siteNumInlinksUniqueIp;
-	//reply->m_siteNumUniqueCBlocks = m_siteNumInlinksUniqueCBlock;
-	//reply->m_sitePop        = m_sitePop;
 
 	// . get stuff from link info
 	// . this is so fast, just do it for all Msg20 requests
@@ -19970,28 +19918,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	if ( ! ww || ww == (Words *)-1 ) return (Msg20Reply *)ww;
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) return (Msg20Reply *)xml;
-	//Sections *ss = getSections();
-	//if ( ! ss || ss == (void *)-1) return (Msg20Reply *)ss;
-
-	// . is this page a dynamic page?
-	// . like a guestbook, access log stats, etc.
-	// . we don't like to count such pages for links analysis because
-	//   they can be spammed so easily
-	// . TODO: guestbooks and message boards typically contain cgi links
-	//   can we use that to identify?
-	// . the coll size includes the \0
-	//CollectionRec *cr ;
-	//cr = g_collectiondb.getRec ( m_req->ptr_coll,m_req->size_coll-1);
-	// g_errno should be ENOCOLLREC
-	//if ( ! cr ) return NULL;
-
-	// . we want link text for this url, "linkee"
-	// . TODO: true --> add "www" to see if that fixes our problem
-	//   i guess Links.cpp does that with the outlinks, so when
-	//   Linkdb::fillList() uses Links.cpp, the outlinks have "www"
-	//   prepended on them...
-	//Url linkee;
-	//linkee.set ( m_req->ptr_linkee , m_req->size_linkee );
 
 	// get a ptr to the link in the content. will point to the
 	// stuff in the href field of the anchor tag. used for seeing if
@@ -20118,8 +20044,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		char *note = NULL;
 		// need this
 		if ( ! m_xmlValid ) { char *xx=NULL;*xx=0; }
-		// time it
-		//int64_t start = gettimeofdayInMilliseconds();
 
 		Url linkeeUrl;
 		linkeeUrl.set ( m_req->ptr_linkee );
@@ -20338,14 +20262,14 @@ Query *XmlDoc::getQuery() {
 		return &m_query;
 	}
 
-	int64_t start = gettimeofdayInMilliseconds();
+	int64_t start = logQueryTimingStart();
 
 	// return NULL with g_errno set on error
 	if ( !m_query.set2( m_req->ptr_qbuf, m_req->m_langId, true ) ) {
 		return NULL;
 	}
 
-	logQueryTiming( __func__, start );
+	logQueryTimingEnd( __func__, start );
 
 	m_queryValid = true;
 	return &m_query;
@@ -20380,7 +20304,7 @@ Matches *XmlDoc::getMatches () {
 	Query *q = getQuery();
 	if ( ! q ) return (Matches *)q;
 
-	int64_t start = gettimeofdayInMilliseconds();
+	int64_t start = logQueryTimingStart();
 
 	// set it up
 	m_matches.setQuery ( q );
@@ -20390,7 +20314,7 @@ Matches *XmlDoc::getMatches () {
 		return NULL;
 	}
 
-	logQueryTiming( __func__, start );
+	logQueryTimingEnd( __func__, start );
 
 	// we got it
 	m_matchesValid = true;
@@ -20512,42 +20436,23 @@ SafeBuf *XmlDoc::getHeaderTagBuf() {
 	return &m_htb;
 }
 
-
-Title *XmlDoc::getTitle ( ) {
+Title *XmlDoc::getTitle() {
 	if ( m_titleValid ) {
 		return &m_title;
 	}
 
-	uint8_t *ct = getContentType();
-	if ( ! ct || ct == (void *)-1 ) {
-		return (Title *)ct;
+	uint8_t *contentTypePtr = getContentType();
+	if ( ! contentTypePtr || contentTypePtr == (void *)-1 ) {
+		return (Title *)contentTypePtr;
 	}
 
 	// xml and json docs have empty title
-	if ( *ct == CT_JSON || *ct == CT_XML ) {
+	if ( *contentTypePtr == CT_JSON || *contentTypePtr == CT_XML ) {
 		m_titleValid = true;
 		return &m_title;
 	}
 
-	// need a buncha crap
-	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) {
-		return (Title *)xml;
-	}
-
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) {
-		return (Title *)ww;
-	}
-
-	Query *q = getQuery();
-	if ( ! q ) {
-		return (Title *)q;
-	}
-
-	int64_t start = gettimeofdayInMilliseconds();
-
-	int32_t titleMaxLen = 256;
+	int32_t titleMaxLen = 80;
 	if ( m_req ) {
 		titleMaxLen = m_req->m_titleMaxLen;
 	} else {
@@ -20557,24 +20462,47 @@ Title *XmlDoc::getTitle ( ) {
 		}
 	}
 
-	// limit for speed, some guys have a 100k word title!
-	if ( titleMaxLen > 256 ) {
-		titleMaxLen = 256;
+	Xml *xml = getXml();
+	if ( ! xml || xml == (Xml *)-1 ) {
+		return (Title *)xml;
+	}
+
+	int64_t start = logQueryTimingStart();
+
+	// we try to set from tags to avoid initializing everything else
+	if ( m_title.setTitleFromTags( xml, titleMaxLen, *contentTypePtr ) ) {
+		m_titleValid = true;
+
+		logQueryTimingEnd( __func__, start );
+
+		return &m_title;
+	}
+
+	Words *ww = getWords();
+	if ( ! ww || ww == (Words *)-1 ) {
+		return (Title *)ww;
+	}
+
+	Query *query = getQuery();
+	if ( ! query ) {
+		return (Title *)query;
 	}
 
 	m_titleValid = true;
 
 	char **filteredRootTitleBuf = getFilteredRootTitleBuf();
-	if ( ! filteredRootTitleBuf || filteredRootTitleBuf == (char**) -1) {
+	if ( filteredRootTitleBuf == (char**) -1) {
 		filteredRootTitleBuf = NULL;
 	}
 
-	if ( !m_title.setTitle( xml, ww, titleMaxLen, q, getLinkInfo1(), getFirstUrl(), filteredRootTitleBuf,
-							m_filteredRootTitleBufSize, *( ct ), m_langId, m_niceness ) ) {
+	start = logQueryTimingStart();
+
+	if ( !m_title.setTitle( xml, ww, titleMaxLen, query, getLinkInfo1(), getFirstUrl(), filteredRootTitleBuf,
+							m_filteredRootTitleBufSize, *contentTypePtr, m_langId, m_niceness ) ) {
 		return NULL;
 	}
 
-	logQueryTiming( __func__, start );
+	logQueryTimingEnd( __func__, start );
 
 	return &m_title;
 }
@@ -20646,7 +20574,7 @@ Summary *XmlDoc::getSummary () {
 		return NULL;
 	}
 
-	int64_t start = gettimeofdayInMilliseconds();
+	int64_t start = logQueryTimingStart();
 
 	// . get the highest number of summary lines that we need
 	// . the summary vector we generate for doing summary-based deduping
@@ -20677,7 +20605,7 @@ Summary *XmlDoc::getSummary () {
 		return NULL;
 	}
 
-	logQueryTiming( __func__, start );
+	logQueryTimingEnd( __func__, start );
 
 	m_summaryValid = true;
 	return &m_summary;

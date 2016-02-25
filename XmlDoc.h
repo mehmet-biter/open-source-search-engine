@@ -1558,7 +1558,8 @@ public:
 			    void *finalState , 
 			    void (* finalCallback)(void *));
 
-	void logQueryTiming(const char* function, int64_t startTime);
+	int64_t logQueryTimingStart();
+	void logQueryTimingEnd(const char* function, int64_t startTime);
 
 	bool doInjectLoop ( );
 	void doneInjecting ( class XmlDoc *xd );
