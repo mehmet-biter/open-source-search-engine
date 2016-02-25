@@ -11,9 +11,7 @@
 #include "Sections.h"
 #include "Url.h"
 #include "Words.h"
-#include "Msg40.h"
 #include "Conf.h"
-#include "Msg1.h" // getGroupId()
 #include "XmlDoc.h"
 #include "Bits.h"
 #include "sort.h"
@@ -1154,17 +1152,10 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 	//
 	//
 
-	// we seem to be pretty good, so remove these now. comment this
-	// goto out if you change sections.cpp and want to make sure its good
-	//if ( m_isTestColl ) verifySections();
-
 	// clear this
 	bool isHidden  = false;
 	int32_t startHide = 0x7fffffff;
 	int32_t endHide   = 0 ;
-	//int32_t numTitles = 0;
-	//Section *lastTitleParent = NULL;
-	Section *firstTitle = NULL;
 	// now that we have closed any open tag, set the SEC_HIDDEN bit
 	// for all sections that are like <div style=display:none>
 	for ( Section *sn = m_rootSection ; sn ; sn = sn->m_next ) {
@@ -1172,15 +1163,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		QUICKPOLL ( m_niceness );
 		// set m_lastSection so we can scan backwards
 		m_lastSection = sn;
-		if ( sn->m_tagId == TAG_TITLE ) {
-			// . reset if different parent.
-			// . fixes trumba.com rss feed with <title> tags
-			if ( firstTitle &&
-			     firstTitle->m_parent != sn->m_parent ) 
-				firstTitle = NULL;
-			// set it if need to
-			if ( ! firstTitle ) firstTitle = sn;
-		}
+
 		// set this
 		int32_t wn = sn->m_a;
 		// stop hiding it?
@@ -2379,9 +2362,7 @@ void Sections::setNextBrotherPtrs ( bool setContainer ) {
 	}
 }
 
-
 void Sections::setNextSentPtrs ( ) {
-
 	// kinda like m_rootSection
 	m_firstSent = NULL;
 
@@ -2520,9 +2501,7 @@ bool Sections::isHardSection ( Section *sn ) {
 	return true;
 }
 
-
 bool Sections::setMenus ( ) {
-
 	// . this just returns if already set
 	// . sets Bits::m_bits[x].m_flags & D_IN_LINK if its in a link
 	// . this bits array is 1-1 with the words
@@ -2565,23 +2544,37 @@ bool Sections::setMenus ( ) {
 		// . if we hit plain text, we kill our last
 		// . this was causing "geeks who drink" for blackbirdbuvette
 		//   to get is SEC_MENU set because there was a link after it
-		if ( si->m_flags & SEC_PLAIN_TEXT ) last = NULL;
+		if ( si->m_flags & SEC_PLAIN_TEXT ) {
+			last = NULL;
+		}
+
 		// skip if not a href section
-		if ( si->m_baseHash != TAG_A ) continue;
+		if ( si->m_baseHash != TAG_A ) {
+			continue;
+		}
+
 		// . if it is a mailto link forget it
 		// . fixes abtango.com from detecting a bad menu
 		char *ptr  = m_wptrs[si->m_a];
 		int32_t  plen = m_wlens[si->m_a];
+
 		char *mailto = strncasestr(ptr,plen,"mailto:");
-		if ( mailto ) last = NULL;
+		if ( mailto ) {
+			last = NULL;
+		}
+
 		// bail if no last
 		if ( ! last ) { last = si; continue; }
+
 		// save last
 		Section *prev = last;
+
 		// set last for next round, used "saved" below
 		last = si;
+
 		// get first "hard" section encountered while telescoping
 		Section *prevHard = NULL;
+
 		// blow up last until right before it contains us
 		for ( ; prev ; prev = prev->m_parent ) {
 			// record?
@@ -2590,6 +2583,7 @@ bool Sections::setMenus ( ) {
 			// if parent contains us, stop
 			if ( prev->m_parent->contains ( si ) ) break;
 		}
+
 		// if it has plain text, forget it!
 		if ( prev->m_flags & SEC_PLAIN_TEXT ) continue;
 		// use this for us
@@ -2657,8 +2651,10 @@ bool Sections::setMenus ( ) {
 		}
 		// if no header, skip
 		if ( r < 0 ) continue;
+
 		// we are the first item
 		Section *first = m_sectionPtrs[i];
+
 		// set SEC_INPUT_HEADER
 		setHeader ( r , first , SEC_INPUT_HEADER );
 
@@ -2675,7 +2671,6 @@ bool Sections::setMenus ( ) {
 
 	}
 
-
 	int64_t h_copyright = hash64n("copyright");
 	// copyright check
 	// the copyright symbol in utf8 (see Entities.cpp for the code)
@@ -2683,6 +2678,7 @@ bool Sections::setMenus ( ) {
 	copy[0] = 0xc2;
 	copy[1] = 0xa9;
 	copy[2] = 0x00;
+
 	// scan all years, lists and ranges of years, and look for
 	// a preceeding copyright sign. mark such years as DF_COPYRIGHT
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
@@ -3098,8 +3094,6 @@ void Sections::setHeader ( int32_t r , Section *first , sec_t flag ) {
 		if ( sr->m_a >= lastb ) break;
 		// flag each subsection
 		sr->m_flags |= flag; // SEC_MENU_HEADER;
-		// mark it
-		//if (flag == SEC_LIST_HEADER ) sr->m_headerOfList = firstOrig;
 	}
 }
 
@@ -3238,7 +3232,6 @@ bool Sections::setHeadingBit ( ) {
 }
 
 void Sections::setTagHashes ( ) {
-
 	if ( m_numSections == 0 ) return;
 
 	// now recompute the tagHashes and depths and content hashes since
