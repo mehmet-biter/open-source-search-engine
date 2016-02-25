@@ -1175,10 +1175,6 @@ bool Msg25::gotList() {
 		return true;
 	}
 
-	// this counts all the inlinks... not inlinking pages/docids
-	//m_numDocIds = (m_list.getListSize() - 6)/10;
-	//if ( m_numDocIds < 0 ) m_numDocIds = 0;
-
 	// . record the # of hits we got for weighting the score of the
 	//   link text iff it's truncated by MAX_LINKERS
 	// . TODO: if url is really popular, like yahoo, we should use the
@@ -1290,8 +1286,7 @@ bool Msg25::sendRequests ( ) {
 	if ( g_udpServer.m_numUsedSlots >= 300 ) ourMax = 1;
 
 	// keep sending requests
-	while ( 1 == 1 ) {
-
+	for ( ;; ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
 
@@ -1312,7 +1307,6 @@ bool Msg25::sendRequests ( ) {
 		// how many replies we have kept.
 		if ( m_numReplyPtrs+m_numRequests-m_numReplies>=MAX_LINKERS) 
 			break;
-
 
 
 		// reset g_errno just in case
@@ -1338,7 +1332,6 @@ bool Msg25::sendRequests ( ) {
 			// if none left, we really are done
 			if ( ! m_k ) break;
 			// set these
-			//hc         = m_k->m_hopcount;
 			itop       = m_k->m_ip & 0x0000ffff;
 			ip32       = m_k->m_ip;
 			isLinkSpam = m_k->m_isLinkSpam;
@@ -1351,9 +1344,7 @@ bool Msg25::sendRequests ( ) {
 		else if ( m_mode == MODE_PAGELINKINFO ) {
 			// get the current key if list has more left
 			key224_t key; m_list.getCurrentKey( &key );
-			// skip if the bit is not set right
-			//if ( ! g_linkdb.isUrlKey(&key) ) continue;
-			//hc         = g_linkdb.getLinkerHopCount_uk ( &key );
+
 			itop       = g_linkdb.getLinkerIp24_uk     ( &key );
 			ip32       = g_linkdb.getLinkerIp_uk     ( &key );
 			isLinkSpam = g_linkdb.isLinkSpam_uk  ( &key );
@@ -1363,9 +1354,7 @@ bool Msg25::sendRequests ( ) {
 			lostDate = g_linkdb.getLostDate_uk(&key);
 			// update this
 			gbmemcpy ( &m_nextKey  , &key , LDBKS );
-			//if ( ip32+1 < ip32 ) { char *xx=NULL;*xx=0; }
-			// skip to next ip!
-			//g_linkdb.setIp32_uk ( &m_nextKey , ip32+1 );
+
 			m_nextKey += 1;
 		}
 		// otherwise this is a "site" key. we are getting all the
@@ -1373,25 +1362,19 @@ bool Msg25::sendRequests ( ) {
 		else {
 			// get the current key if list has more left
 			key224_t key; m_list.getCurrentKey( &key );
-			// show it for debug
-			//log("key: %s",KEYSTR(&key,LDBKS));
-			// skip if the bit is not set right
-			//if ( ! g_linkdb.isSiteKey(&key) ) continue;
-			//hc         = -1;
+
 			itop       = g_linkdb.getLinkerIp24_uk     ( &key );
 			ip32       = g_linkdb.getLinkerIp_uk     ( &key );
-			//isLinkSpam=g_linkdb.isLinkSpam_sk  ( &key );
+
 			isLinkSpam = false;
 			docId      = g_linkdb.getLinkerDocId_uk    ( &key );
-			//linkDate = g_linkdb.getDate_sk     ( &key );
+
 			discovered = g_linkdb.getDiscoveryDate_uk(&key);
 			// is it expired?
 			lostDate = g_linkdb.getLostDate_uk(&key);
 			// update this
 			gbmemcpy ( &m_nextKey  , &key , LDBKS );
-			//if ( ip32+1 < ip32 ) { char *xx=NULL;*xx=0; }
-			// skip to next ip!
-			//g_linkdb.setIp32_uk ( &m_nextKey , ip32+1 );
+
 			m_nextKey += 1;
 		}
 
@@ -1494,8 +1477,6 @@ bool Msg25::sendRequests ( ) {
 			r-> ptr_linkee = m_site;
 			r->size_linkee = gbstrlen(m_site)+1; // include \0
 		}
-		//r-> ptr_coll         = coll;
-		//r->size_coll         = gbstrlen(coll) + 1; // include \0
 		r->m_collnum = cr->m_collnum;
 		r->m_docId           = docId;
 		r->m_expected        = true; // false;
@@ -1580,17 +1561,6 @@ bool Msg25::sendRequests ( ) {
 
 	// if the list had linkdb recs in it, but we launched no msg20s
 	// because they were "lost" then we end up here.
-	
-	/*
-	if ( m_url )
-		log("linkdb: encountered %"INT32" lost links for url %s "
-		    "rnd=%"INT32"",
-		    m_lostLinks,m_url,m_round);
-	else
-		log("linkdb: encountered %"INT32" lost links for docid %"INT64" "
-		    "rnd=%"INT32"",
-		    m_lostLinks,m_docId,m_round);
-	*/
 
 	// . otherwise, we got everyone, so go right to the merge routine
 	// . returns false if not all replies have been received 
