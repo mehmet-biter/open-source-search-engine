@@ -5601,19 +5601,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "max title len";
-	m->m_desc  = "What is the maximum number of "
-		"characters allowed in titles displayed in the search "
-		"results?";
-	m->m_cgi   = "tml";
-	m->m_defOff= (char *)&cr.m_titleMaxLen - x;
-	m->m_off   = (char *)&si.m_titleMaxLen - y;
-	m->m_type  = TYPE_LONG;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
 	m->m_title = "summary mode";
 	m->m_desc  = "0 = old compatibility mode, 1 = UTF-8 mode, "
 		"2 = fast ASCII mode, "

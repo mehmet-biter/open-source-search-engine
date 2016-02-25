@@ -1010,10 +1010,10 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		// 0 means not, 1 means is (should never be 2 at this point)
 		req.m_boolFlag           = m_si->m_boolFlag;
 		req.m_showBanned         = m_si->m_showBanned;
-		req.m_includeCachedCopy  = m_si->m_includeCachedCopy;//bigsmpl
+		req.m_includeCachedCopy  = m_si->m_includeCachedCopy;
 		req.m_expected           = true;
 		req.m_getSummaryVector   = true;
-		req.m_titleMaxLen = m_si->m_titleMaxLen; // cr->
+		req.m_titleMaxLen = cr->m_titleMaxLen;
 		req.m_summaryMaxLen = cr->m_summaryMaxLen;
 
 		// Line means excerpt 
