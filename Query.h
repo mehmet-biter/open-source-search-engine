@@ -623,7 +623,7 @@ class Query {
 	// . if boolFlag is 0 we ignore all boolean operators
 	// . if boolFlag is 1  we assume query is boolen
 	// . if boolFlag is 2  we attempt to detect if query is boolean or not
-	bool set2 ( char *query    , 
+	bool set2 ( const char *query    , 
 		    //int32_t  queryLen , 
 		    //char *coll     , 
 		    //int32_t  collLen  ,

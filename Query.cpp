@@ -123,7 +123,7 @@ void Query::reset ( ) {
 //   it is a boolean operator (IGNORE_BOOLOP), fieldname (IGNORE_FIELDNAME)
 //   a punct word (IGNORE_DEFAULT) or part of one field value (IGNORE_DEFAULT)
 //   This is used for term highlighting (Highlight.cpp and Summary.cpp)
-bool Query::set2 ( char *query        , 
+bool Query::set2 ( const char *query        , 
 		   //int32_t  queryLen     ,
 		   //char *coll         , 
 		   //int32_t  collLen      ,
@@ -186,7 +186,7 @@ bool Query::set2 ( char *query        ,
 
 	log(LOG_DEBUG, "query: set called = %s", m_orig);
 
-	char *q = query;
+	const char *q = query;
 	// see if it should be boolean...
 	for ( int32_t i = 0 ; i < queryLen ; i++ ) {
 		// but if bool flag is 0 that means it is NOT boolean!
