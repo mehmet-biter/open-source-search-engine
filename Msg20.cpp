@@ -265,7 +265,7 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	return false;
 }
 
-void gotReplyWrapper20 ( void *state , void *state2 ) {
+void gotReplyWrapper20 ( void *state , void */*state2*/ ) {
 	Msg20 *THIS = (Msg20 *)state;
 	// gotReply() does not block, and does NOT call our callback
 	THIS->gotReply ( NULL ) ;
