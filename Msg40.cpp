@@ -428,12 +428,6 @@ bool Msg40::federatedLoop ( ) {
 			}
 			mnew(mp,sizeof(Msg3a),"tm3ap");
 		}
-		// error?
-		if ( ! mp ) {
-			log("msg40: Msg40::getDocIds() had error: %s",
-			    mstrerror(g_errno));
-			return true;
-		}
 		// assign it
 		m_msg3aPtrs[i] = mp;
 		// assign the request for it
