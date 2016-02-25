@@ -3136,24 +3136,6 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 	// a handy ptr
 	int32_t *wposvec = (int32_t *)wpos.getBufStart();
 
-	/*
-	// show that for debug
-	if ( m_docId == 192304365235LL ) {
-		for ( int32_t i = 0 ; i < nw ; i++  ) {
-			char buf[1000];
-			int32_t len = wlens[i];
-			if ( len > 900 ) len = 900;
-			gbmemcpy(buf,wptrs[i],len);
-			buf[len]='\0';
-			log("seopipe: wptr=%s pos[%"INT32"]=%"INT32"",buf,i,wposvec[i]);
-		}
-	}
-	*/
-
-	//int32_t wc = 0;
-
-	//int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT;
-
 	int32_t i;
 	for ( i = 0 ; i < nw ; i++ ) {
 		// breathe
@@ -3173,7 +3155,6 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		{
 			continue;
 		}
-
 
 		// . hash the startHash with the wordId for this word
 		// . we must mask it before adding it to the table because
