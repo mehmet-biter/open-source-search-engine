@@ -5,6 +5,7 @@
 #include "fctypes.h"
 #include "Abbreviations.h"
 #include "Mem.h"
+#include "Sections.h"
 
 Bits::Bits() {
 	m_bits = NULL;
@@ -78,11 +79,6 @@ bool Bits::set ( Words *words , char titleRecVersion , int32_t niceness , char *
 	bool isInSentence = false;
 
 	for ( int32_t i = 0 ; i < numBits ; i++ ) {
-		// get the word text and it's length
-		//char         *s    = words->getWord    ( i );
-		//int32_t          slen = words->getWordLen ( i );
-		//wbit_t bits;
-
 		// breathe
 		QUICKPOLL ( m_niceness );
 
@@ -93,17 +89,12 @@ bool Bits::set ( Words *words , char titleRecVersion , int32_t niceness , char *
 			if ( g_nodes[tid].m_isBreaking ) 
 				bits = 0;
 			// can only pair across one <br> tag, not two
-			else if ( tid == TAG_BR ) { //tagIds[i] == 20 ){// <br>
+			else if ( tid == TAG_BR ) {
 				if ( brcount > 0 ) bits = 0;
 				else { brcount++; bits = D_CAN_PAIR_ACROSS; }
 			}
 			else bits = D_CAN_PAIR_ACROSS;
 		}
-
-		// just skip if ignored from a 0 score
-		//else if ( scores && scores[i] <= 0 ) {
-		//	bits = 0;
-		//}
 		else if ( is_alnum_utf8 ( w[i]+0 )) {
 			bits=getAlnumBits(i,prevBits);
 			brcount = 0;
@@ -183,8 +174,6 @@ bool Bits::set ( Words *words , char titleRecVersion , int32_t niceness , char *
 
 	return true;
 }
-
-#include "Sections.h"
 
 void Bits::setInLinkBits ( Sections *ss ) {
 
@@ -279,9 +268,6 @@ wbit_t Bits::getAlnumBits ( int32_t i , wbit_t prevBits ) {
 	char      *s   = m_words->getWord    ( i );
 	int32_t       len = m_words->getWordLen ( i );
 	int64_t  wid = m_words->getWordId  ( i );
-
-	//if ( m_titleRecVersion < 36 && m_words->getStripWordId(i) )
-	//	wid = m_words->getStripWordId(i);
 
 	wbit_t bits = 0;
 
