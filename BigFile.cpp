@@ -1939,7 +1939,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		}
 
 		// base in ptr to file, but set f->m_this and f->m_i 
-		f->m_this = this;
+		f->m_bigfile = this;
 		f->m_i    = i;
 
 		// assume thread launched, doneRoutine() will decrement these
@@ -2047,7 +2047,7 @@ void *renameWrapper_r ( void *state , ThreadEntry *t ) {
 	// hey, it still blocks
 	//if ( fd >= 0 ) fsync ( fd );
 	// get the big guy and the i in m_files[i]
-	BigFile *THIS = (BigFile *)f->m_this;
+	BigFile *THIS = f->m_bigfile;
 	// get the ith file we just unlinked
 	int32_t      i = f->m_i;
 	// . get the new full name for this file
@@ -2168,7 +2168,7 @@ void doneRenameWrapper ( void *state , ThreadEntry *t )
 	//   ::close1_r(fd) in the thread
 	f->close2();
 	// get the big guy and the i in m_files[i]
-	BigFile *THIS = (BigFile *)f->m_this;
+	BigFile *THIS = f->m_bigfile;
 	// clear thread's errno
 	errno = 0;
 	// one less
@@ -2250,7 +2250,7 @@ void doneUnlinkWrapper ( void *state , ThreadEntry *t ) {
 	// finish the close
 	f->close2();
 	// get the big guy and the i in m_files[i]
-	BigFile *THIS = (BigFile *)f->m_this;
+	BigFile *THIS = f->m_bigfile;
 	// clear thread's errno
 	errno = 0;
 	// one less

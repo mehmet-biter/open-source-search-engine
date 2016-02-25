@@ -38,6 +38,9 @@ int32_t getCloseCount_r ( int fd );
 void enterWriteMode ( int fd ) ;
 void exitWriteMode  ( int fd ) ;
 
+class BigFile;
+
+
 class File {
 
 	friend class BigFile;
@@ -155,7 +158,7 @@ class File {
 
 	// BigFile uses these when passing us to a thread for unlink/rename
 	// so it can store its THIS ptr and the i in BigFile::m_files[i]
-	void *m_this;
+	BigFile *m_bigfile;
 	int32_t  m_i;
 
 	int32_t m_closeCount;
