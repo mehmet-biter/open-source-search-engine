@@ -216,8 +216,6 @@ bool SiteGetter::getSite ( char   *url      ,
 	if ( strncmp(m_url,"http",4) ) { 
 		g_errno = EBADURL;
 		return true;
-		// don't let bad input from pageparser core us!
-		char *xx=NULL;*xx=0;
 	}
 
 	// how many can we do? false = countFilename?
@@ -734,8 +732,6 @@ bool SiteGetter::setRecognizedSite ( ) {
 	if ( p - host + 6 >= MAX_SITE_LEN ) return false;
 
 	goto storeIt;
-
-	return true;
 }
 
 

@@ -1403,9 +1403,6 @@ bool Process::shutdown2 ( ) {
 
 	// exit abruptly
 	exit(0);
-
-	// keep compiler happy
-	return true;
 }
 
 void Process::disableTreeWrites ( bool shuttingDown ) {

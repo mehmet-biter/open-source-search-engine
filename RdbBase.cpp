@@ -741,7 +741,6 @@ int32_t RdbBase::addFile ( int32_t id , bool isNew , int32_t mergeNum ,
 		mdelete ( f , sizeof(BigFile),"RdbBFile");
 		delete (f); 
 		return -1;
-		char *xx=NULL;*xx=0;
 	}
 
 
@@ -805,7 +804,6 @@ int32_t RdbBase::addFile ( int32_t id , bool isNew , int32_t mergeNum ,
 		      (int64_t)ff->getFileSize(),
 		      (int64_t)MAX_PART_SIZE);
 		exit(0);
-		return -1;
 	}
 
 	// set the map file's  filename
@@ -844,11 +842,11 @@ int32_t RdbBase::addFile ( int32_t id , bool isNew , int32_t mergeNum ,
 			log("db: %s",cmd.getBufStart() );
 			gbsystem ( cmd.getBufStart() );
 			exit(0);
-			mdelete ( f , sizeof(BigFile),"RdbBase");
-			delete (f); 
-			mdelete ( m , sizeof(RdbMap),"RdbBase");
-			delete (m); 
-			return -1; 
+			//mdelete ( f , sizeof(BigFile),"RdbBase");
+			//delete (f); 
+			//mdelete ( m , sizeof(RdbMap),"RdbBase");
+			//delete (m); 
+			//return -1; 
 		}
 		log("db: Map generation succeeded.");
 		// . save it

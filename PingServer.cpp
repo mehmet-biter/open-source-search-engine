@@ -103,7 +103,7 @@ bool PingServer::registerHandler ( ) {
 	//				      NULL           , 
 	//				      sleepWrapper10 ) )
 	//	return false;
-	return true;
+	//return true;
 }
 
 static int32_t s_outstandingPings = 0;

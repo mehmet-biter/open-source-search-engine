@@ -1264,10 +1264,10 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 			//if ( p < pend ) goto loop;
 			// all done
 			//return true;
-			char *xx=NULL;*xx=0;
+			//char *xx=NULL;*xx=0;
 			// silently drop it, the WHOLE thing, it seems 
 			// corrupted!!!
-			return true;
+			//return true;
 			//g_errno = EBADENGINEER;
 			//return false;
 		}
@@ -1297,12 +1297,12 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 		    //not in repair mode. dropping.",(int32_t)rdbId);
 		g_errno = ETRYAGAIN;
 		return false;
-		char *xx=NULL;*xx=0;
+		//char *xx=NULL;*xx=0;
 		// drop it for now!!
-		p += recSize;
-		if ( p < pend ) goto loop;
+		//p += recSize;
+		//if ( p < pend ) goto loop;
 		// all done
-		return true;
+		//return true;
 	}
 	// set the list
 	list.set ( (char*)p                , //todo: dodgy cast. RdbList should be fixed

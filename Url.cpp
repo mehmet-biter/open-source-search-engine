@@ -771,7 +771,6 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		m_url[ ++m_ulen ]='\0';
 		// debug change
 		goto done;
-		return;
 	}
 	// . get the m_path and m_path length
 	// . j,i should point to start of path slash '/'

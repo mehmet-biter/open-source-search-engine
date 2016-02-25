@@ -247,7 +247,6 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		g_errno = ENOHOSTS; 
 		log("conf: No host entries found in %s.",filename);
 		goto createFile;
-		return false; 
 	}
 	// alloc space for this many Hosts structures
 	// save buffer size

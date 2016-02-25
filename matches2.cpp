@@ -356,8 +356,6 @@ char *getMatches2 ( Needle *needles          ,
 			// see if we match another needle, fixes bug
 			// of matching "anal" but not "analy[tics]"
 			continue;
-			// advance to next char in the haystack
-			break;
 		}
 		// ok, we did not match any needles, advance p and try again
 	}

@@ -371,22 +371,6 @@ bool Tag::printDataToBuf ( SafeBuf *sb ) {
 	for ( int32_t i = 0 ; data[i] && i < dataSize ; i++ )
 		sb->safePrintf ( "%c" , data[i] );
 	return true;
-	/*
-	}
-	// print as decimal if just 1 byte
-	if ( m_dataSize == 1 ) {
-		sb->safePrintf("%"INT32"",(int32_t)m_data[0]);
-		return true;
-	}
-	// the "score"
-	sb->safePrintf("0x");
-	//for ( int32_t i = 0 ; i < m_dataSize ; i++ )
-	//	sb->safePrintf ( "%02hhx" , m_data[m_dataSize-i-1] );
-	// i guess just print it first byte first now
-	for ( int32_t i = 0 ; i < m_dataSize ; i++ )
-		sb->safePrintf ( "%02hhx" , m_data[i] );
-	*/
-	return true;
 }
 
 // /admin/tagdb?c=mdw&u=www.mdw123.com&ufu=&username=admin&tagtype0=sitenuminlinks&tagdata0=10&tagtype1=rootlang&tagdata1=&tagtype2=rootlang&tagdata2=&add=Add+Tags

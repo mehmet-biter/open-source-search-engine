@@ -158,7 +158,6 @@ bool RdbCache::init ( int32_t  maxMem        ,
 		log("rdbcache: cache for %s does not have enough mem. fix "
 		    "by increasing maxmem or number of recs, etc.",m_dbname);
 		return false;
-		char *xx=NULL;*xx=0;
 	}
 	if ( bufMem  && m_fixedDataSize > 0 &&
 	     bufMem / m_fixedDataSize < maxRecs / 2 ) {

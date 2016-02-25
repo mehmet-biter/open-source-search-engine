@@ -13333,7 +13333,6 @@ bool Parms::doParmSendingLoop ( ) {
 		if ( ! pn ) { 
 			log("parms: pn is null");
 			break;
-			char *xx=NULL; *xx=0; 
 		}
 
 		// give him a free pass? some parm updates are directed to 

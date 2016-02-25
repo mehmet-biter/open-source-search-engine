@@ -1483,8 +1483,6 @@ char *getHashGroupString ( unsigned char hg ) {
 	if ( hg == HASHGROUP_INURL ) return "in url";
 	if ( hg == HASHGROUP_INMENU ) return "in menu";
 	return "unknown!";
-	char *xx=NULL;*xx=0; 
-	return NULL;
 }
 
 
@@ -3131,7 +3129,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 			log("query: too many sublists. %"INT32" >= %"INT32"",
 			    nn,(int32_t)MAX_SUBLISTS);
 			return false;
-			char *xx=NULL; *xx=0; 
 		}
 		
 		// compute m_totalSubListsSize
@@ -5891,7 +5888,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// ensure enough room we can't allocate in a thread!
 		if ( m_scoreInfoBuf.getAvail()<(int32_t)sizeof(DocIdScore)+1){
 			goto advance;
-			char *xx=NULL;*xx=0; }
+		}
 		// if same as last docid, overwrite it since we have a higher
 		// siterank or langid i guess
 		if ( m_docId == lastDocId ) 

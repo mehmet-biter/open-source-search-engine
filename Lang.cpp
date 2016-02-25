@@ -105,7 +105,7 @@ uint8_t getLangIdFromAbbr ( const char *abbr ) {
 		return langEnglish;
 	}
 
-	return langUnknown;;
+	return langUnknown;
 }
 
 char* getLanguageAbbr ( unsigned char langId ) {

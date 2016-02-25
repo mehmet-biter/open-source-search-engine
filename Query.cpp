@@ -4304,7 +4304,6 @@ bool Query::isConnection ( char *s , int32_t len ) {
 		case '\\': return true;
 		default: return false;
 		}
-		return false;
 	}
 	//if ( len == 3 && s[0]==' ' && s[1]=='&' && s[2]==' ' ) return true;
 	if ( len == 3 && s[0]==':' && s[1]=='/' && s[2]=='/' ) return true;

@@ -216,6 +216,7 @@ uint32_t Profiler::getByte (unsigned char * field,int size){
 		char *xx=NULL; xx=0;
 		return 0;
 	}
+	//NOTREACHED
 	return 0;
 }
 

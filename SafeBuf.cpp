@@ -1496,8 +1496,6 @@ redo:
 	forced = false;
 
 	goto redo;
-
-	return true;
 }
 
 #include "XmlDoc.h"

@@ -2048,8 +2048,6 @@ bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
 
 	// get the next Inlink
 	goto loop;
-
-	return true;
 }
 
 

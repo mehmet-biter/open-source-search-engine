@@ -1771,8 +1771,6 @@ bool RdbBucket::deleteList(RdbList *list) {
 		m_parent->updateNumRecs( - m_numKeys, - br, -numNeg);
 		return false;
 	}
-	// success
-	return true;
 }
 
 // remove keys from any non-existent collection

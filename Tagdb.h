@@ -155,7 +155,7 @@ public:
 		if ( recSize > 500000 || recSize < 12 ) { 
 			log("tagdb: corrupt tag recsize %i",(int)recSize);
 			return NULL;
-			char *xx=NULL;*xx=0;}
+		}
 		// breach list?
 		if ( current < m_listPtrs[i]->m_listEnd) return (Tag *)current;
 		// advance list

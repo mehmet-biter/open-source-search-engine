@@ -1326,8 +1326,6 @@ bool SpiderColl::addToWaitingTree ( uint64_t spiderTimeMS , int32_t firstIp ,
 		// and we end up in an infinite loop doing 
 		// populateWaitingTreeFromSpiderdb()
 		return true;
-		//return false;
-		char *xx=NULL; *xx=0;
 	}
 
 	// grow the tree if too small!

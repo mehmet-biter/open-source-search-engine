@@ -83,69 +83,6 @@ bool Wiktionary::test ( ) {
 	*end = '\n';
 
 	return true;
-
-	p = NULL;
-
-	uint8_t langId = langEnglish;
-
- loop:
-	char input[256];
-	fgets(input,200,stdin);
-	input[strlen(input)-1]='\0';
-	if ( input[0] == '\0' ) return true;
-
-	// get language
-	char *pipe = strstr ( input, "|" );
-	if ( ! pipe ) {
-		fprintf(stderr,"lang = %s\n",getLanguageAbbr(langId));
-		str = input;
-	}
-	else {
-		*pipe = '\0';
-		langId = getLangIdFromAbbr ( input );
-		fprintf(stderr,"lang = %s\n",getLanguageAbbr(langId));
-		str = pipe + 1;
-	}
-	//wid = hash64Lower_utf8(str);
-	wid = hash64n(str);
-	// use this now.
-	p = getSynSet  ( wid, langId );//, WF_NOUN );
-	// must be there
-	if ( ! p ) {
-		fprintf(stderr,"no forms\n"); 
-		goto loop;
-	}
-
-
-	// find new line
-	end = p;
-	for ( ; *end && *end !='\n' ; end++ );
-	// tmp set
-	*end = '\0';
-	// header
-	fprintf(stderr,"%s\n",p);
-	// back
-	*end = '\n';
-
- again:
-	p = getNextSynSet  ( wid, langId , p );
-	if ( p ) {
-		// find new line
-		end = p;
-		for ( ; *end && *end !='\n' ; end++ );
-		// tmp set
-		*end = '\0';
-		// header
-		fprintf(stderr,"%s\n",p);
-		// back
-		*end = '\n';
-		// loop up
-		goto again;
-	}
-
-	goto loop;
-
-	return true;
 }
 
 #include "Synonyms.h"
@@ -485,8 +422,6 @@ bool Wiktionary::addSynsets ( char *filename ) {
 	// next line otherwise
 	p = eol+1;
 	goto nextLine;
-
-	return true;
 }
 
 bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {

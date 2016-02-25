@@ -793,7 +793,6 @@ int32_t Msg20Reply::deserialize ( ) {
 		log("xmldoc: deserialize msg20 reply corruption error");
 		log("xmldoc: DO YOU NEED TO NUKE CACHEDB.DAT?????");
 		return -1;
-		char *xx=NULL;*xx=0; 
 	}
 
 	// return how many bytes we used

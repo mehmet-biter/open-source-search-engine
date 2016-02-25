@@ -845,7 +845,6 @@ void sleepWrapper1 ( int bogusfd , void    *state ) {
 		// never re-reoute these, they may be incrementing/decrementing
 		// a count, and we only store that count on one host!!
 		return;
-		break;
 	// msg to get a summary from a query (calls msg22)
 	// buzz takes extra long! it calls Msg25 sometimes.
 	// no more buzz.. put back to 8 seconds.

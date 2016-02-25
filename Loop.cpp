@@ -971,7 +971,7 @@ bool Loop::runLoop ( ) {
 		doPoll();
 	}
 
- 	// make compiler happy
+ 	//NOTREACHED
  	return 0;
 }
 
@@ -1251,10 +1251,6 @@ void Loop::quickPoll(int32_t niceness, const char* caller, int32_t lineno) {
 		// calls ThreadQueue::removeThreads and Msg3::doneScanning()
 		// has niceness 2 and calls quickpoll again!
 		return;
-		//if(g_conf.m_quickpollCoreOnError) {
-		char*xx=NULL;*xx=0;
-		//		}
-		//		else return;
 	}
 	int64_t now = gettimeofdayInMilliseconds();
 	//int64_t took = now - m_lastPollTime;
