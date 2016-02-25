@@ -232,8 +232,6 @@ public:
 		return urlEncode ( s,strlen(s),false,encodeApostrophes);
 	}
 
-	bool  latin1CdataEncode(char *s, int32_t len);
-
 	bool  cdataEncode ( char *s ) ;
 	bool  cdataEncode ( char *s , int32_t slen ) ;
 

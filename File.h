@@ -140,9 +140,6 @@ class File {
 	// . must call open() before calling this
 	int   getfd          ( ) ;
 
-	// return -1 if not opened, otherwise, return the opened fd
-	int   getfdNoOpen ( ) ;
-
 	//char *getFilename ( ) { return m_filename.getBufStart(); };
 	char *getFilename ( ) { return m_filename; };
 
@@ -174,9 +171,9 @@ class File {
 	// THIS file's VIRTUAL descriptor
 	//int m_vfd;
 
+private:
 	// now just the real fd. is -1 if not opened
 	int m_fd;
-
 
 	// save the permission and flag sets in case of re-opening
 	int m_flags;
@@ -185,12 +182,7 @@ class File {
 	char m_calledOpen;
 	char m_calledSet;
 
-	time_t m_st_mtime;  // file last mod date
 	int32_t   m_st_size;   // file size
-	time_t getLastModifiedDate ( ) ;
-
-	//class File *m_nextActive;
-	//class File *m_prevActive;
 };
 
 

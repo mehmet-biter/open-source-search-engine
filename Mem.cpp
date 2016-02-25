@@ -1696,22 +1696,6 @@ key_t ntohkey ( key_t key ) {
 	return newKey;
 }
 
-// like above, but we start copying at HIGH bit so you can
-// shift your recs without interference
-int32_t Mem::printBits  ( void *src, int32_t srcBits , int32_t nb ) {
-	char *s;
-	char  smask;
-	fprintf(stdout,"low %"INT32" bits = ",nb);
-	for ( int32_t b = 0 ; b < nb ; b++ ) {
-		s     =(char *)src + ((b + srcBits) >> 3 );
-		smask = 0x01 << ((b + srcBits) & 0x07);
-		if ( *s & smask ) fprintf(stdout,"1");
-		else              fprintf(stdout,"0");
-	}
-	fprintf(stdout,"\n");
-	return 0;
-}
-
 
 // . TODO: avoid byteCopy by copying remnant bytes
 // . ass = async signal safe, dumb ass

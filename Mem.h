@@ -101,9 +101,6 @@ class Mem {
 	// # of currently allocated chunks
 	int32_t getNumChunks(); 
 
-	// for debugging
-	int32_t printBits  ( void *src, int32_t b , int32_t nb );
-
 	// who underan/overran their buffers?
 	int  printBreech   ( int32_t i , char core ) ;
 	int  printBreeches ( char core ) ;

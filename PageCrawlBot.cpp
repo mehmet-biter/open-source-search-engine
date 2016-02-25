@@ -67,7 +67,6 @@ public:
 				 char **lastKeyPtr ) ;
 	void printTitledbList ( RdbList *list , SafeBuf *sb ,
 				char **lastKeyPtr );
-	bool printJsonItemInCsv ( char *json , SafeBuf *sb ) ;
 
 	int64_t m_lastUh48;
 	int32_t m_lastFirstIp;

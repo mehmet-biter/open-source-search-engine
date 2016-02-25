@@ -589,13 +589,6 @@ bool File::close ( ) {
 	return true;
 }
 
-int File::getfdNoOpen ( ) {
-	// this is -1 if not open
-	return m_fd;
-	//if ( m_vfd < 0 ) return -1;
-	// this is < 0 if invalid
-	//return s_fds [ m_vfd ];
-}
 
 // . get the fd of this file
 // . if it was closed by us we reopen it
