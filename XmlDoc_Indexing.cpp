@@ -2880,7 +2880,7 @@ bool XmlDoc::hashString3( char       *s              ,
 		return false;
 	if ( ! bits.set    ( &words , version , niceness ) )
 		return false;
-	if ( !phrases.set( &words, &bits, version, niceness ) )
+	if ( !phrases.set( &words, &bits, niceness ) )
 		return false;
 
 	// use primary langid of doc

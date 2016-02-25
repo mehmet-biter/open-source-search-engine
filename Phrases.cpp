@@ -20,7 +20,7 @@ void Phrases::reset() {
 }
 
 // initialize this token array with the string, "s" of length, "len".
-bool Phrases::set( Words *words, Bits *bits, int32_t titleRecVersion, int32_t niceness ) {
+bool Phrases::set( Words *words, Bits *bits, int32_t niceness ) {
 	// reset in case being re-used
 	reset();
 
@@ -40,15 +40,21 @@ bool Phrases::set( Words *words, Bits *bits, int32_t titleRecVersion, int32_t ni
 	else
 		m_buf = m_localBuf;
 
-	if ( ! m_buf ) 
+	if ( ! m_buf ) {
 		return log("query: Phrases::set: %s",mstrerror(g_errno));
+	}
+
 	m_bufSize = need;
+
 	// set up arrays
 	char *p = m_buf;
 
 	// phrase not using stop words
-	m_phraseIds2     = (int64_t *)p ; p += m_numPhrases * 8;
-	m_numWordsTotal2= (unsigned char *)p ; p += m_numPhrases * 1;
+	m_phraseIds2 = (int64_t *)p;
+	p += m_numPhrases * 8;
+
+	m_numWordsTotal2 = (unsigned char *)p;
+	p += m_numPhrases * 1;
 
 	// sanity
 	if ( p != m_buf + need ) { char *xx=NULL;*xx=0; }
@@ -63,13 +69,14 @@ bool Phrases::set( Words *words, Bits *bits, int32_t titleRecVersion, int32_t ni
 	// . set the phrases
 	// . sets m_phraseIds [i]
 	// . sets m_phraseSpam[i] to PSKIP if NO phrase exists
-	for ( int32_t i = 0 ; i < words->getNumWords() ; i++ ) {
+	for ( int32_t i = 0 ; i < words->getNumWords() ; ++i ) {
 		if ( ! m_wids[i] ) {
 			continue;
 		}
 
 		setPhrase ( i , niceness);
 	}
+
 	// success
 	return true;
 }

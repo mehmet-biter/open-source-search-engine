@@ -21,15 +21,11 @@ class Phrases {
 	~Phrases();
 	void reset() ;
 
-	bool set2( Words *words, Bits *bits, int32_t niceness ) {
-		return set( words, bits, TITLEREC_CURRENT_VERSION, niceness );
-	}
-
 	// . set the hashes (m_phraseIds) of the phrases for these words
 	// . a phraseSpam of PSKIP means word is not in a phrase
 	// . "bits" describes the words in a phrasing context
 	// . "spam" is % spam of each word (spam may be NULL)
-	bool set( Words *words, Bits *bits, int32_t titleRecVersion, int32_t niceness );
+	bool set(Words *words, Bits *bits, int32_t niceness );
 
 	int64_t *getPhraseIds2() {
 		return m_phraseIds2;
@@ -44,13 +40,12 @@ class Phrases {
 
 	int32_t  getMinWordsInPhrase( int32_t i , int64_t *pid ) ;
 
-	// . leave this public so SimpleQuery.cpp can mess with it
+private:
 	// . called by Phrases::set() above for each i
 	// . we set phraseSpam to 0 to 100% typically
 	// . we set phraseSpam to PSKIP if word #i cannot start a phrase
 	void setPhrase( int32_t i, int32_t niceness );
 
-private:
 	char  m_localBuf [ PHRASE_BUF_SIZE ];
 
 	char *m_buf;

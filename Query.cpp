@@ -1904,94 +1904,6 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 	return true;
 }
 
-/*
-// . add in compound terms
-// . set m_componentCodes appropriately
-void Query::addCompoundTerms ( ) {
-	// loop through possible starting points of sequences of the same ebit
-	for (int32_t i = 0 ; i < m_numTerms - 1 ; i++ ) {
-		// break if too many already
-		if ( m_numTerms >= MAX_QUERY_TERMS ) break;
-		// if already processed, skip it
-		if ( m_componentCodes[i] != -2 ) continue;
-		// get ebit of the ith query term
-		qvec_t ebit = m_qterms[i].m_explicitBit;
-		// skip if 0, it is ignored because it breeched limit of 15
-		if ( ebit == 0 ) continue;
-
-		// skip if next term's ebit is different
-		//if ( ebit != m_qterms[i+1].m_explicitBit ) continue;
-		// skip if not UOR'd because it could just be a repeat term
-		//if ( ! m_qterms[i+1].m_isUORed ) continue;
-
-		// all UORed terms have m_isOURed set now
-		// because UORed terms are not necessarily in order
-		// (first phrases, then words)
-		if ( ! m_qterms[i].m_isUORed ) continue;
-		// the termid of the compound list
-		int64_t id = 0LL;
-		// store compound terms last
-		int32_t n = m_numTerms;
-		// sum of termfreqs
-		//int64_t sum = 0;
-		// we got a UOR'd list, see whose involved
-		int32_t j ;
-		int32_t numUORComponents = 0;
-		char *beg = NULL;
-		char *end = NULL;
-		for ( j = 0; j < m_numTerms ; j++ ) {
-			// if term does not have our ebit, break out
-			if ( ebit != m_qterms[j].m_explicitBit ) continue;
-			// otherwise, make this term point to the compound term
-			m_componentCodes[j] = n;
-			// an integrate its termid into the compound termid
-			id = hash64 ( m_qterms[j].m_termId , id ) &TERMID_MASK;
-			// add in the term frequency (aka popularity)
-			//sum += m_termFreqs[j];
-			// keep track so IndexTable::alloc() can get it
-			m_numComponents++;
-			numUORComponents++;
-			
-			// get phrase UOR term right
-			int32_t a = j;
-			int32_t b = j;
-// 			if (m_qterms[j].m_qword->m_leftPhraseStart >= 0){
-// 				a = m_qterms[j].m_qword->m_leftPhraseStart;
-// 				b++;
-// 			}
-			char *newBeg = m_qterms[a].m_term; 
-			// had to add check for newBeg being null
-			// (because of -O2 ???)
-			if (!beg || (newBeg && newBeg < beg)) 
-				beg = newBeg;
-			char *newEnd = m_qterms[b].m_term 
-				+ m_qterms[b].m_termLen;
-			if (!end || newEnd > end)
-				end = newEnd;
-		}
-		if (!numUORComponents) continue;
-		// copy it
-		gbmemcpy ( &m_qterms[n] , &m_qterms[i] , sizeof(QueryTerm) );
-		// get term's length
-		//char *beg = m_qterms[i].m_term;
-		//char *end = m_qterms[j-1].m_term + m_qterms[j-1].m_termLen;
-		m_qterms[n].m_term    = beg;
-		m_qterms[n].m_termLen = end - beg;
-		// set its id
-		m_qterms[n].m_termId    = id;
-		// this array too!
-		m_termIds[n] = id;
-		m_qterms[n].m_rawTermId = 0LL;
-		m_qterms[n].m_isQueryStopWord = false;
-		m_componentCodes[n]  = -1; // code for a compound termid is -1
-		//m_termFreqs     [n]  = sum;
-		m_termSigns     [n]  = '\0';
-		// inc the total term count
-		m_numTerms++;
-	}
-}
-*/
-
 // -1 means compound, -2 means unset, >= 0 means component
 bool Query::isCompoundTerm ( int32_t i ) {
 	//return ( m_componentCodes[i] == -1 );
@@ -3008,10 +2920,8 @@ bool Query::setQWords ( char boolFlag ,
 		m_qwords[j].m_quoteStart = first;
 	}
 
-
-
 	// make the phrases from the words and the tweaked Bits class
-	if ( !phrases.set( &words, &bits, TITLEREC_CURRENT_VERSION, 0 ) )
+	if ( !phrases.set( &words, &bits, 0 ) )
 		return false;
 
 	int64_t *wids = words.getWordIds();
@@ -3063,43 +2973,41 @@ bool Query::setQWords ( char boolFlag ,
 		// . get phrase info for this term
 		// . a pid (phraseId)of 0 indicates it does not start a phrase
 		// . raw phrase termId
-		//uint64_t pid = phrases.getPhraseId(i);
 		uint64_t pid = 0LL;
+
 		// nwp is a REGULAR WORD COUNT!!
-		int32_t nwp = 0;
-		if ( qw->m_inQuotedPhrase )
-			// keep at a bigram for now... i'm not sure if we
-			// will be indexing trigrams
-			nwp = phrases.getMinWordsInPhrase(i,(int64_t *)&pid);
-		// just get a two-word phrase term if not in quotes
-		else
-			nwp = phrases.getMinWordsInPhrase(i,(int64_t *)&pid);
+		int32_t nwp = phrases.getMinWordsInPhrase(i,(int64_t *)&pid);;
+
 		// store it
 		qw->m_rawPhraseId = pid;
+
 		// does word #i start a phrase?
 		if ( pid != 0 ) {
 			uint64_t ph = qw->m_prefixHash ;
-			// store the phrase id with coll/prefix
-			//qw->m_phraseId = g_indexdb.getTermId ( ph , pid );
+
 			// like we do it in XmlDoc.cpp's hashString()
 			if ( ph ) qw->m_phraseId = hash64 ( pid , ph );
 			else      qw->m_phraseId = pid;
+
 			// how many regular words int32_t is the bigram?
-			int32_t plen2; phrases.getPhrase ( i , &plen2 ,2);
+			int32_t plen2;
+			phrases.getPhrase ( i , &plen2 ,2);
 
 			// get just the bigram for now
 			qw->m_phraseLen = plen2;
+
 			// do not ignore the phrase, it's valid
 			qw->m_ignorePhrase = 0;
-			// set our rightPhraseEnd point
-			//qw->m_rightPhraseEnd = i + phrases.getNumWords(i);
+
 			// leave it as 0 if it got truncated i guess by the
 			// MAX_QUERY_WORDS of 320
 			qw->m_rightRawWordId = 0LL;
+
 			// store left and right raw word ids 
 			int32_t ni = i + nwp - 1;
-			if ( ni < m_numWords )
-				qw->m_rightRawWordId=m_qwords[ni].m_rawWordId;
+			if ( ni < m_numWords ) {
+				qw->m_rightRawWordId = m_qwords[ni].m_rawWordId;
+			}
 		}
 
 

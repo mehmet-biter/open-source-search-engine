@@ -4720,7 +4720,7 @@ Phrases *XmlDoc::getPhrases ( ) {
 	int64_t start = logQueryTimingStart();
 
 	// now set what we need
-	if ( !m_phrases.set( words, bits, m_version, m_niceness ) ) {
+	if ( !m_phrases.set( words, bits, m_niceness ) ) {
 		return NULL;
 	}
 
@@ -5190,7 +5190,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 		return false;
 	if ( ! bits.set    ( &words , m_version , m_niceness ) )
 		return false;
-	if ( !phrases.set( &words, &bits, m_version, m_niceness ) )
+	if ( !phrases.set( &words, &bits, m_niceness ) )
 		return false;
 	int32_t nw = words.getNumWords();
 	int64_t  *wids  = words.getWordIds();

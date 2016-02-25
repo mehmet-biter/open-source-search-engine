@@ -51,7 +51,7 @@ static void generateSummary(Summary &summary, char *htmlInput, char *queryStr, c
 	ASSERT_TRUE(bitsForSummary.setForSummary(&words));
 
 	Phrases phrases;
-	ASSERT_TRUE(phrases.set(&words, &bits, TITLEREC_CURRENT_VERSION, 0));
+	ASSERT_TRUE(phrases.set(&words, &bits, 0));
 
 	Matches matches;
 	matches.setQuery(&query);
