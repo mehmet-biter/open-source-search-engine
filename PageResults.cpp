@@ -2468,10 +2468,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	if ( indent && si->m_format == FORMAT_HTML ) 
 		sb->safePrintf("<blockquote>"); 
 
-	// print the rank. it starts at 0 so add 1
-	if ( si->m_format == FORMAT_HTML && si->m_streamResults ) {
-		sb->safePrintf("<table><tr><td>");
-	} else if ( si->m_format == FORMAT_HTML ) {
+	if ( si->m_format == FORMAT_HTML ) {
 		sb->safePrintf("<table><tr><td>");
 	}
 
@@ -2574,21 +2571,15 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       // using the scripts in PageBasic.cpp
 			       "docid=%"INT64" "
 			       "score=%f " // double
-
 			       "style=\""
 			       "width:%"INT32"px;"
-			       "min-height:%"INT32"px;"//140px;"
-			       "height:%"INT32"px;"//140px;"
+			       "min-height:%"INT32"px;"
+			       "height:%"INT32"px;"
 			       "padding:%"INT32"px;"
-			       //"padding-right:40px;"
 			       "position:relative;"
 			       // summary overflows w/o this!
 			       "overflow-y:hidden;"
 			       "overflow-x:hidden;"
-			       // alternate bg color to separate results!
-			       //"background-color:%s;"
-			       //"display:table-cell;"
-			       //"vertical-align:bottom;"
 			       "\""
 			       ">"
 			       , mr->m_docId
@@ -2600,7 +2591,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       , (int32_t)RESULT_HEIGHT
 			       , (int32_t)RESULT_HEIGHT
 			       , (int32_t)PADDING
-			       //, bgcolor
 			       );
 		if ( mr->ptr_imgData ) {
 			ThumbnailArray *ta = (ThumbnailArray *)mr->ptr_imgData;
@@ -2615,9 +2605,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 						   false , // add <a href>
 						   &newdx );
 		}
-		// end the div style attribute and div tag
-		//sb->safePrintf("\">");
-
 
 		sb->safePrintf ( "<a "
 				 "target=_blank "
