@@ -54,7 +54,7 @@ public:
 	// set from another Url, does a copy
 	void set ( Url *url , bool addWWW );
 
-	void set    ( char *s ) 
+	void set    ( const char *s ) 
 	{
 		if ( ! s ) { char *xx=NULL;*xx=0; }
 		return set ( s , strlen(s), false, false, false, false, false, 0x7fffffff); 
@@ -67,7 +67,7 @@ public:
 	}
 
 	// . "s" must be an ENCODED url
-	void set    ( char *s , int32_t len , bool addWWW,
+	void set    ( const char *s , int32_t len , bool addWWW,
 		      bool stripSessionIds, bool stripPound,
 		      bool stripCommonFile, bool stripTrackingParams,
 		      int32_t titleRecVersion);

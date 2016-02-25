@@ -147,7 +147,7 @@ void Url::set (Url *baseUrl,char *s,int32_t len,bool addWWW,bool stripSessionId,
 //    reserved purposes may be used unencoded within a URL."
 // . i know sun.com has urls like "http://sun.com/;$sessionid=123ABC$"
 // . url should be ENCODED PROPERLY for this to work properly
-void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
+void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
                 bool stripPound , bool stripCommonFile , bool stripTrackingParams,
 		int32_t titleRecVersion ) 
 {
@@ -206,20 +206,20 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		char tmp = t[tlen];
 
 		if (t[tlen]) {
-			t[tlen] = 0;
+			((char*)t)[tlen] = '\0'; //hack
 		}
 
 		log(LOG_DEBUG, "build: attempting to decode unicode url %s pos at %"INT32, t, nonAsciiPos);
 
 		if (tmp) {
-			t[tlen] = tmp;
+			((char*)t)[tlen] = tmp;
 		}
 
 		char encoded [ MAX_URL_LEN ];
 		size_t encodedLen = MAX_URL_LEN;
 		char *encodedDomStart = encoded;
-		char *p = t;
-		char *pend = t+tlen;
+		const char *p = t;
+		const char *pend = t+tlen;
 		
 		// Find the start of the domain
 		if (tlen > 7 && strncmp(p, "http://", 7) == 0) {
@@ -232,7 +232,7 @@ void Url::set ( char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
 		encodedDomStart += p-t;
 
 		while (p < pend && *p != '/') {
-			char *labelStart = p;
+			const char *labelStart = p;
 			uint32_t tmpBuf[MAX_URL_LEN];
 			int32_t tmpLen = 0;
 		
