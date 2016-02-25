@@ -18,38 +18,30 @@
 #ifndef _XMLDOC_H_
 #define _XMLDOC_H_
 
-//#include "HashTableX.h"
 #include "Lang.h"
 #include "Words.h"
 #include "Bits.h"
 #include "Pos.h"
 #include "Phrases.h"
-//#include "Synonyms.h"
-//#include "Weights.h"
 #include "Xml.h"
 #include "SafeBuf.h"
 #include "Images.h"
 #include "Sections.h"
 #include "Msge0.h"
 #include "Msge1.h"
-//#include "Msge2.h"
 #include "Msg4.h"
 
 #include "SearchInput.h"
 #include "Msg40.h"
-//#include "IndexList.h"
 #include "Msg0.h"
 #include "Msg22.h"
 #include "Tagdb.h"
 #include "Url.h"
 #include "Linkdb.h"
-//#include "LinkInfo.h"
-//#include "Msg25.h"
 #include "MsgC.h"
 #include "Msg13.h"
 #include "RdbList.h"
 #include "SiteGetter.h"
-//#include "CollectionRec.h"
 #include "Msg20.h"
 #include "Matches.h"
 #include "Query.h"
@@ -62,24 +54,15 @@
 #include "PingServer.h"
 #include "Json.h"
 
-//#define XMLDOC_MAX_AD_IDS 4
-//#define XMLDOC_ADLEN      64
-
 #define MAXFRAGWORDS 80000
-
-#define MAX_WIKI_DOCIDS 20
 
 #define MAX_TAG_PAIR_HASHES 100
 
 #include "Msg40.h"
-//#define SAMPLE_VECTOR_SIZE (32*4)
 
 #define POST_VECTOR_SIZE   (32*4)
 
 #define XD_GQ_MAX_SIZE        1000
-#define XD_MAX_GIGABIT_HASHES 48
-
-#define XD_MAX_AD_IDS         5
 
 #define MAX_LINK_TEXT_LEN     512
 #define MAX_SURROUNDING_TEXT_WIDTH 600
@@ -280,11 +263,11 @@ public:
 	char      *ptr_firstUrl;
 	char      *ptr_redirUrl;
 	char      *ptr_rootTitleBuf;
-	int32_t      *ptr_gigabitHashes;
-	int32_t      *ptr_gigabitScores;
+	int32_t      *ptr_unused12;
+	int32_t      *ptr_unused13;
 	void      *ptr_unused8;
-	int64_t *ptr_wikiDocIds;
-	rscore_t  *ptr_wikiScores;
+	int64_t *ptr_unused10;
+	rscore_t  *ptr_unused11;
 	char      *ptr_imageData;
 	int32_t      *ptr_unused6;
 	int32_t      *ptr_unused7;
@@ -305,11 +288,11 @@ public:
 	int32_t       size_firstUrl;
 	int32_t       size_redirUrl;
 	int32_t       size_rootTitleBuf;
-	int32_t       size_gigabitHashes;
-	int32_t       size_gigabitScores;
+	int32_t       size_unused12;
+	int32_t       size_unused13;
 	int32_t       size_unused8;
-	int32_t       size_wikiDocIds;
-	int32_t       size_wikiScores;
+	int32_t       size_unused10;
+	int32_t       size_unused11;
 	int32_t       size_imageData;
 	int32_t       size_unused6;
 	int32_t       size_unused7;
@@ -404,9 +387,6 @@ public:
 	SafeBuf m_spiderStatusDocMetaList;
 	char *getIsAdult ( ) ;
 
-	int64_t **getWikiDocIds ( ) ;
-	void gotWikiResults ( class UdpSlot *slot );
-	//class HashTableX *getClockCandidatesTable();
 	int32_t getOutlinkAge ( int32_t outlinkNum ) ;
 	char *getIsPermalink ( ) ;
 	char *getIsUrlPermalinkFormat ( ) ;
@@ -421,19 +401,7 @@ public:
 	class Bits *getBitsForSummary ( ) ;
 	class Pos *getPos ( );
 	class Phrases *getPhrases ( ) ;
-	//class Synonyms *getSynonyms ( );
-	class Sections *getExplicitSections ( ) ;
-	class Sections *getImpliedSections ( ) ;
 	class Sections *getSections ( ) ;
-	class Sections *getSectionsWithDupStats ( );
-//BR 20160106 removed:	class SafeBuf  *getInlineSectionVotingBuf();
-	bool gotSectionFacets( class Multicast *mcast );
-	class SectionStats *getSectionStats ( uint32_t secHash32, uint32_t sentHash32, bool cacheOnly );
-	class SectionVotingTable *getOldSectionVotingTable();
-	class SectionVotingTable *getNewSectionVotingTable();
-	char **getSectionsReply ( ) ;
-	char **getSectionsVotes ( ) ;
-	HashTableX *getSectionVotingTable();
 	int32_t *getLinkSiteHashes ( );
 	class Links *getLinks ( bool doQuickSet = false ) ;
 	class HashTableX *getCountTable ( ) ;
@@ -442,36 +410,21 @@ public:
 	int32_t *getSummaryVector ( ) ;
 	int32_t *getPageSampleVector ( ) ;
 	int32_t *getPostLinkTextVector ( int32_t linkNode ) ;
-	int32_t computeVector ( class Sections *sections, class Words *words, 
-			     uint32_t *vec , int32_t start = 0 , int32_t end = -1 );
+	int32_t computeVector ( class Words *words, uint32_t *vec , int32_t start = 0 , int32_t end = -1 );
 	float *getTagSimilarity ( class XmlDoc *xd2 ) ;
-	float *getGigabitSimilarity ( class XmlDoc *xd2 ) ;
 	float *getPageSimilarity ( class XmlDoc *xd2 ) ;
 	float *getPercentChanged ( );
 	uint64_t *getFuzzyDupHash ( );
 	int64_t *getExactContentHash64();
-	int64_t *getLooseContentHash64();
 	class RdbList *getDupList ( ) ;
 	class RdbList *getLikedbListForReq ( );
 	class RdbList *getLikedbListForIndexing ( );
 	char *getIsDup ( ) ;
-	char *isDupOfUs ( int64_t d ) ;
-	uint32_t *getGigabitVectorScorelessHash ( ) ;
-	int32_t **getGigabitHashes ( );
-	char *getGigabitQuery ( ) ;
 	char *getMetaDescription( int32_t *mdlen ) ;
 	char *getMetaSummary ( int32_t *mslen ) ;
 	char *getMetaKeywords( int32_t *mklen ) ;
 	char *getMetaGeoPlacename( int32_t *mgplen );
 	
-	bool addGigabits ( char *s , int64_t docId , uint8_t langId ) ;
-	bool addGigabits2 ( char *s,int32_t slen,int64_t docId,uint8_t langId);
-	bool addGigabits ( class Words *ww , 
-			   int64_t docId,
-			   class Sections *sections,
-			   //class Weights  *we ,
-			   uint8_t langId );
-
 	int32_t *getSiteSpiderQuota ( ) ;
 	class Url *getCurrentUrl ( ) ;
 	class Url *getFirstUrl() ;
@@ -626,21 +579,12 @@ public:
 
 	char *addOutlinkSpiderRecsToMetaList ( );
 
-	//bool addTable96 ( class HashTableX *tt1     , 
-	//		  int32_t       date1   ,
-	//		  bool       nosplit ) ;
-
 	int32_t getSiteRank ();
 	bool addTable144 ( class HashTableX *tt1 , 
 			   int64_t docId ,
 			   class SafeBuf *buf = NULL );
 
 	bool addTable224 ( HashTableX *tt1 ) ;
-
-	//bool addTableDate ( class HashTableX *tt1     , //T<key128_t,char> *tt1
-	//                           uint64_t    docId   ,
-	//                           uint8_t     rdbId   ,
-	//                           bool        nosplit ) ;
 
 	bool addTable128 ( class HashTableX *tt1     , // T <key128_t,char>*tt1
                            uint8_t     rdbId   ,
@@ -662,10 +606,7 @@ public:
 	bool hashUrl ( class HashTableX *table, bool urlOnly );
 	bool hashDateNumbers ( class HashTableX *tt );
 	bool hashSections ( class HashTableX *table ) ;
-	bool hashIncomingLinkText ( class HashTableX *table            ,
-				    bool       hashAnomalies    ,
-                                    bool       hashNonAnomalies ) ;
-
+	bool hashIncomingLinkText( class HashTableX *table, bool hashAnomalies, bool hashNonAnomalies );
 	bool hashLinksForLinkdb ( class HashTableX *table ) ;
 	bool hashNeighborhoods ( class HashTableX *table ) ;
 	bool hashRSSInfo ( class HashTableX *table ) ;
@@ -683,11 +624,8 @@ public:
 	bool hashTagRec ( class HashTableX *table ) ;
 	bool hashPermalink ( class HashTableX *table ) ;
 	bool hashVectors(class HashTableX *table ) ;
-// BR 20160106 removed:	bool hashAds(class HashTableX *table ) ;
 	
 	class Url *getBaseUrl ( ) ;
-// BR 20160106 removed:	bool hashSubmitUrls ( class HashTableX *table ) ;
-// BR 20160106 removed:	bool hashImageStuff ( class HashTableX *table ) ;
 	bool hashIsAdult    ( class HashTableX *table ) ;
 
 	void set20 ( Msg20Request *req ) ;
@@ -700,8 +638,6 @@ public:
 	class Title *getTitle ();
 	class Summary *getSummary () ;
 	char *getHighlightedSummary ();
-	SafeBuf *getSampleForGigabits ( ) ;
-	SafeBuf *getSampleForGigabitsJSON ( ) ;
 	char *getIsNoArchive ( ) ;
 	int32_t *getUrlFilterNum();
 	char *getIsLinkSpam ( ) ;
@@ -709,64 +645,21 @@ public:
 	char *getIsErrorPage ( ) ;
 	char* matchErrorMsg(char* p, char* pend );
 
-	bool hashWords  ( //int32_t            wordStart ,
-			  //int32_t            wordEnd   ,
-			  class HashInfo *hi        ) ;
-	bool hashSingleTerm ( int64_t       termId , 
-			      class HashInfo *hi     ) ;
-	bool hashSingleTerm ( char            *s    ,
-			      int32_t             slen ,
-			      class HashInfo  *hi   );
-	bool hashString ( class HashTableX *ht   ,
-			  //class Weights    *we   ,
-			  class Bits       *bits ,
-			  char             *s    ,
-			  int32_t              slen ) ;
-	bool hashString ( char             *s    ,
-			  int32_t              slen ,
-			  class HashInfo   *hi   ) ;
-	bool hashString ( char             *s    ,
-			  class HashInfo   *hi   ) ;
+	bool hashWords( class HashInfo *hi );
+	bool hashSingleTerm( int64_t termId, class HashInfo *hi );
+	bool hashSingleTerm( char *s, int32_t slen, class HashInfo *hi );
+	bool hashString( class HashTableX *ht, class Bits *bits, char *s, int32_t slen );
+	bool hashString( char *s, int32_t slen, class HashInfo *hi );
+	bool hashString( char *s, class HashInfo *hi );
 
+	bool hashWords3( class HashInfo *hi, class Words *words, class Phrases *phrases, class Synonyms *synonyms,
+					 class Sections *sections, class HashTableX *countTable, char *fragVec, char *wordSpamVec,
+					 char *langVec, char docLangId, class SafeBuf *pbuf, class HashTableX *wts,
+					 class SafeBuf *wbuf, int32_t niceness );
 
-
-	bool hashWords3 ( //int32_t              wordStart     ,
-			  //int32_t              wordEnd       ,
-			  class HashInfo   *hi            ,
-			  class Words      *words         , 
-			  class Phrases    *phrases       , 
-			  class Synonyms   *synonyms      , 
-			  class Sections   *sections      ,
-			  class HashTableX *countTable    ,
-			  char *fragVec ,
-			  char *wordSpamVec ,
-			  char *langVec ,
-			  char  docLangId , // default lang id
-			  class SafeBuf    *pbuf          ,
-			  class HashTableX *wts           ,
-			  class SafeBuf    *wbuf          ,
-			  int32_t              niceness      );
-	
-	bool hashString3 ( char             *s              ,
-			  int32_t              slen           ,
-			  class HashInfo   *hi             ,
-			  class HashTableX *countTable     ,
-			  class SafeBuf    *pbuf           ,
-			  class HashTableX *wts            ,
-			  class SafeBuf    *wbuf           ,
-			  int32_t              version        ,
-			  int32_t              siteNumInlinks ,
-			  int32_t              niceness       );
-
-
-	//bool hashSectionTerm ( char *term , 
-	//		       class HashInfo *hi , 
-	//		       int32_t sentHash32 ) ;
-
-	bool hashFacet1 ( char *term, class Words *words , HashTableX *dt) ;
-
-	bool hashFacet2 ( char *prefix,char *term,int32_t val32, HashTableX *dt,
-			  bool shardByTermId = false ) ;
+	bool hashString3( char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
+					  class SafeBuf *pbuf, class HashTableX *wts, class SafeBuf *wbuf, int32_t version,
+					  int32_t siteNumInlinks, int32_t niceness );
 
 	// gbfieldmatch:
 	bool hashFieldMatchTerm ( char *val, int32_t vlen, class HashInfo *hi);
@@ -788,8 +681,6 @@ public:
 					FacetValHash_t fvh ) ;
 	bool storeFacetValuesSite     ( char *qs , SafeBuf *sb , 
 					FacetValHash_t fvh );
-	bool storeFacetValuesSections ( char *qs , class SafeBuf *sb ,
-					FacetValHash_t fvh ) ;
 	bool storeFacetValuesHtml     ( char *qs , class SafeBuf *sb ,
 					FacetValHash_t fvh ) ;
 	bool storeFacetValuesXml      ( char *qs , class SafeBuf *sb ,
@@ -819,15 +710,11 @@ public:
  public:
 
 	// stuff set from the key of the titleRec, above the compression area
-	//key_t     m_key;
 	int64_t m_docId;
 
 	char     *m_ubuf;
 	int32_t      m_ubufSize;
 	int32_t      m_ubufAlloc;
-
-	// does this page link to gigablast, or has a search form to it?
-	//bool searchboxToGigablast();
 
 	// private:
 
@@ -842,16 +729,6 @@ public:
 	// to generate the summary
 	int64_t    m_setTime;
 	int64_t    m_cpuSummaryStartTime;
-
-	// timers
-	int64_t m_beginSEOTime;
-	int64_t m_beginTimeAllMatch;
-	int64_t m_beginTimeMatchUrl;
-	int64_t m_beginTimeFullQueries;
-	int64_t m_beginTimeLinks;
-	//int64_t m_beginMsg98s;
-	int64_t m_beginRelatedQueries;
-	int64_t m_beginMsg95s;
 
 	// . these should all be set using set*() function calls so their
 	//   individual validity flags can bet set to true, and successive
@@ -873,8 +750,6 @@ public:
 	int64_t  m_firstUrlHash64;
 	Url        m_currentUrl;
 
-	//char      *m_coll;
-	//char       m_collBuf[MAX_COLL_LEN+1]; // include \0
 	CollectionRec *m_lastcr;
 	collnum_t      m_collnum;
 	int32_t           m_lastCollRecResetCount;
@@ -908,91 +783,24 @@ public:
 	Bits       m_bits2;
 	Pos        m_pos;
 	Phrases    m_phrases;
-	//Synonyms   m_synonyms;
 	SafeBuf    m_synBuf;
-	//Weights    m_weights;
 	Sections   m_sections;
-
-	// a hack storage thing used by Msg13.cpp
-	class Msg13Request *m_hsr;
-
-	Section *m_si;
-	//Section *m_nextSection;
-	//Section *m_lastSection;
-	int32_t m_mcastRequestsOut;
-	int32_t m_mcastRequestsIn;
-	int32_t m_secStatsErrno;
-	char *m_queryBuf;
-	Msg39Request *m_msg39RequestArray;
-	SafeBuf m_mcastBuf;
-	Multicast *m_mcastArray;
-	//char  *m_inUse;
-	//Query *m_queryArray;
-	//Query *m_sharedQuery;
-	bool     m_gotDupStats;
-	//Query    m_q4;
-	//Msg3a    m_msg3a;
-	//Msg39Request m_r39;
-	Msg39Request m_mr2;
-	SectionStats m_sectionStats;
-	HashTableX m_sectionStatsTable;
-	//char m_sectionHashQueryBuf[128];
-
-	// also set in getSections()
-	int32_t       m_maxVotesForDup;
 
 	// . for rebuild logging of what's changed
 	// . Repair.cpp sets these based on titlerec
 	char m_logLangId;
 	int32_t m_logSiteNumInlinks;
 
-	SectionVotingTable m_nsvt;
-
-	SectionVotingTable m_osvt;
-	int32_t m_numSectiondbReads;
-	int32_t m_numSectiondbNeeds;
-	key128_t m_sectiondbStartKey;
-	RdbList m_secdbList;
-	int32_t m_sectiondbRecall;
-
 	bool m_gotFacets;
 	SafeBuf m_tmpBuf2;
 
-	SafeBuf m_inlineSectionVotingBuf;
-
-	//HashTableX m_rvt;
-	//Msg17 m_msg17;
-	//char *m_cachedRootVoteRec;
-	//int32_t  m_cachedRootVoteRecSize;
-	//bool  m_triedVoteCache;
-	//bool  m_storedVoteCache;
-	//SafeBuf m_cacheRecBuf;
-
 	SafeBuf m_timeAxisUrl;
-
-	HashTableX m_turkVotingTable;
-	HashTableX m_turkBitsTable;
-	uint32_t m_confirmedTitleContentHash ;
-	uint32_t m_confirmedTitleTagHash     ;
-
-	// turk voting tag rec
-	TagRec m_vtr;
-	// tagrec of banned turks
-	TagRec m_bannedTurkRec;
-	// and the table of the hashed banned turk users
-	HashTableX m_turkBanTable;
-
-	// used for displaying turk votes...
-	HashTableX m_vctab;
-	HashTableX m_vcduptab;
 
 	Images     m_images;
 	HashTableX m_countTable;
 	HttpMime   m_mime;
 	TagRec     m_tagRec;
 	SafeBuf    m_tagRecBuf;
-	// copy of m_oldTagRec but with our modifications, if any
-	//TagRec     m_newTagRec;
 	SafeBuf    m_newTagBuf;
 	SafeBuf    m_fragBuf;
 	SafeBuf    m_wordSpamBuf;
@@ -1002,9 +810,6 @@ public:
 	class SafeBuf     *m_savedSb;
 	class HttpRequest *m_savedHr;
 
-	char m_savedChar;
-
-
 	// validity flags. on reset() all these are set to false.
 	char     m_VALIDSTART;
 	// DO NOT add validity flags above this line!
@@ -1013,7 +818,6 @@ public:
 	char     m_addedSpiderReplySizeValid;
 	char     m_addedStatusDocSizeValid;
 	char     m_downloadStartTimeValid;
-	//char   m_docQualityValid;
 	char     m_siteValid;
 	char     m_startTimeValid;
 	char     m_currentUrlValid;
@@ -1025,7 +829,6 @@ public:
 	char     m_lastUrlValid;
 	char     m_docIdValid;
 	char     m_availDocIdValid;
-	//char     m_collValid;
 	char     m_tagRecValid;
 	char     m_robotsTxtLenValid;
 	char     m_tagRecDataValid;
@@ -1034,7 +837,6 @@ public:
 	char     m_filteredRootTitleBufValid;
 	char     m_titleBufValid;
 	char     m_fragBufValid;
-	char     m_inlineSectionVotingBufValid;
 	char     m_wordSpamBufValid;
 	char     m_finalSummaryBufValid;
 	char     m_matchingQueryBufValid;
@@ -1042,32 +844,24 @@ public:
 	char     m_relatedQueryBufValid;
 	char     m_queryLinkBufValid;
 	char     m_redirSpiderRequestValid;
-	//char     m_queryPtrsValid;
 	char     m_queryOffsetsValid;
-	//char     m_queryPtrsSortedValid;
 	char     m_queryPtrsWholeValid;
 	char     m_relatedDocIdBufValid;
 	char     m_topMatchingQueryBufValid;
 	char     m_relatedDocIdsScoredBufValid;
 	char     m_relatedDocIdsWithTitlesValid;
 	char     m_relatedTitleBufValid;
-	//char     m_queryLinkBufValid;
 	char     m_missingTermBufValid;
 	char     m_matchingTermBufValid;
-	//char     m_relPtrsValid;
 	char     m_sortedPosdbListBufValid;
 	char     m_wpSortedPosdbListBufValid;
 	char     m_termListBufValid;
 	char     m_insertableTermsBufValid;
 	char     m_scoredInsertableTermsBufValid;
-	//char     m_iwfiBufValid; // for holding WordFreqInfo instances
 	char     m_wordPosInfoBufValid;
 	char     m_recommendedLinksBufValid;
 
-	//char     m_queryHashTableValid;
 	char     m_queryOffsetTableValid;
-	//char     m_socketWriteBufValid;
-	//char     m_numBannedOutlinksValid;
 	char     m_hopCountValid;
 	char     m_isInjectingValid;
 	char     m_isImportingValid;
@@ -1091,35 +885,19 @@ public:
 	char     m_posValid;
 	char     m_isUrlBadYearValid;
 	char     m_phrasesValid;
-	//char     m_synonymsValid;
-	//char     m_weightsValid;
 	char     m_sectionsValid;
 	char     m_subSentsValid;
-	char     m_osvtValid;
-	char     m_nsvtValid;
-	//char   m_rvtValid;
-	char     m_turkVotingTableValid;
-	char     m_turkBitsTableValid;
-	char     m_turkBanTableValid;
-	char     m_vctabValid;
-	char     m_explicitSectionsValid;
-	char     m_impliedSectionsValid;
-	char     m_sectionVotingTableValid;
+
 	char     m_imageDataValid;
 	char     m_imagesValid;
 	char     m_msge0Valid;
 	char     m_msge1Valid;
-	//char     m_msge2Valid;
-	//char   m_sampleVectorValid;
-	char     m_gigabitHashesValid;
-	//char     m_oldsrValid;
 	char     m_sreqValid;
 	char     m_srepValid;
 
 	bool m_ipValid;
 	bool m_firstIpValid;
 	bool m_spideredTimeValid;
-	//bool m_nextSpiderTimeValid;
 	bool m_indexedTimeValid;
 	bool m_firstIndexedValid;
 	bool m_isInIndexValid;
@@ -1127,26 +905,16 @@ public:
 	bool m_outlinksAddedDateValid;
 	bool m_countryIdValid;
 	bool m_bodyStartPosValid;
-	/*
-	bool m_titleWeightValid;
-	bool m_headerWeightValid;
-	bool m_urlPathWeightValid;
-	bool m_externalLinkTextWeightValid;
-	bool m_internalLinkTextWeightValid;
-	bool m_conceptWeightValid;
-	*/
+
 	bool m_httpStatusValid;
 	bool m_crawlDelayValid;
 	bool m_finalCrawlDelayValid;
 	bool m_titleRecKeyValid;
-	bool m_wikiDocIdsValid;
 	bool m_versionValid;
 	bool m_rawUtf8ContentValid;
 	bool m_expandedUtf8ContentValid;
 	bool m_utf8ContentValid;
 	bool m_isAllowedValid;
-	//bool m_tryAgainTimeDeltaValid;
-	//bool m_eliminateMenusValid;
 	bool m_redirUrlValid;
 	bool m_redirCookieBufValid;
 	bool m_metaRedirUrlValid;
@@ -1163,11 +931,9 @@ public:
 	bool m_redirErrorValid;
 	bool m_domHash32Valid;
 	bool m_contentHash32Valid;
-	//bool m_tagHash32Valid;
 	bool m_tagPairHash32Valid;
 
 	bool m_spiderLinksValid;
-	//bool m_nextSpiderPriorityValid;
 	bool m_firstIndexedDateValid;
 	bool m_isPermalinkValid;
 
@@ -1186,8 +952,6 @@ public:
 	bool m_dupListValid;
 	bool m_likedbListValid;
 	bool m_isDupValid;
-	bool m_gigabitVectorHashValid;
-	bool m_gigabitQueryValid;
 	bool m_metaDescValid;
 	bool m_metaSummaryValid;
 	bool m_metaKeywordsValid;
@@ -1196,23 +960,16 @@ public:
 	bool m_oldDocValid;
 	bool m_extraDocValid;
 	bool m_rootDocValid;
-	//bool m_gatewayDocValid;
 	bool m_oldMetaListValid;
 	bool m_oldTitleRecValid;
 	bool m_rootTitleRecValid;
 	bool m_isIndexedValid;
 	bool m_siteNumInlinksValid;
-	//bool m_siteNumInlinksUniqueIpValid;//FreshValid;
-	//bool m_siteNumInlinksUniqueCBlockValid;//sitePopValid
-	//bool m_siteNumInlinksTotalValid;
 	bool m_siteNumInlinks8Valid;
 	bool m_siteLinkInfoValid;
 	bool m_isWWWDupValid;
 	bool m_linkInfo1Valid;
 	bool m_linkSiteHashesValid;
-	bool m_sectionsReplyValid;
-	bool m_sectionsVotesValid;
-	bool m_sectiondbDataValid;
 	bool m_placedbDataValid;
 	bool m_siteHash64Valid;
 	bool m_siteHash32Valid;
@@ -1228,7 +985,6 @@ public:
 	bool m_isSiteRootValid;
 	bool m_wasContentInjectedValid;
 	bool m_outlinkHopCountVectorValid;
-	//bool m_isSpamValid;
 	bool m_isFilteredValid;
 	bool m_urlFilterNumValid;
 	bool m_numOutlinksAddedValid;
@@ -1245,7 +1001,6 @@ public:
 	bool m_titleValid;
 	bool m_htbValid;
 	bool m_collnumValid;
-	//bool m_twidsValid;
 	bool m_termId32BufValid;
 	bool m_termInfoBufValid;
 	bool m_newTermInfoBufValid;
@@ -1254,9 +1009,6 @@ public:
 	bool m_spiderStatusDocMetaListValid;
 	bool m_isCompromisedValid;
 	bool m_isNoArchiveValid;
-	//bool m_isVisibleValid;
-	//bool m_clockCandidatesTableValid;
-	//bool m_clockCandidatesDataValid;
 	bool m_titleRecBufValid;
 	bool m_isLinkSpamValid;
 	bool m_isErrorPageValid;
@@ -1280,19 +1032,9 @@ public:
 	// DO NOT add validity flags below this line!
 	char     m_VALIDEND;
 
-	// more stuff
-	//char *m_utf8Content;
-	//int32_t m_utf8ContentLen;
 
-	// use this stuff for getting wiki docids that match our doc's gigabits
-	//Query m_wq; 
-	//SearchInput m_si;
-	//Msg40 m_msg40;
 	bool m_printedMenu;
-	//HashTableX m_clockCandidatesTable;
-	//SafeBuf m_cctbuf;
 	int32_t m_urlPubDate;
-	//int32_t m_urlAge;
 	char m_isUrlPermalinkFormat;
 	uint8_t m_summaryLangId;
 	int32_t m_tagPairHashVec[MAX_TAG_PAIR_HASHES];
@@ -1306,7 +1048,6 @@ public:
 	int32_t m_postVec[POST_VECTOR_SIZE/4];
 	int32_t m_postVecSize;
 	float m_tagSimilarity;
-	float m_gigabitSimilarity;
 	float m_pageSimilarity;
 	float m_percentChanged;
 	bool  m_unchanged;
@@ -1330,17 +1071,6 @@ public:
 	Msg22 m_msg22d;
 	Msg22 m_msg22e;
 	Msg22 m_msg22f;
-	//int32_t m_collLen;
-	uint32_t m_gigabitVectorHash;
-	char m_gigabitQuery [XD_GQ_MAX_SIZE];
-	int32_t m_gigabitHashes [XD_MAX_GIGABIT_HASHES];
-	int32_t m_gigabitScores [XD_MAX_GIGABIT_HASHES];
-	char *m_gigabitPtrs  [XD_MAX_GIGABIT_HASHES];
-	// for debug printing really
-	class GigabitInfo *m_top[100];
-	int32_t               m_numTop;
-	//char  m_metaDesc[1025];
-	//char  m_metaKeywords[1025];
 	// these now reference directly into the html src so our 
 	// WordPosInfo::m_wordPtr algo works in seo.cpp
 	char *m_metaDesc;
@@ -1355,11 +1085,9 @@ public:
 	
 	
 	int32_t  m_siteSpiderQuota;
-	//int32_t m_numBannedOutlinks;
 	class XmlDoc *m_oldDoc;
 	class XmlDoc *m_extraDoc;
 	class XmlDoc *m_rootDoc;
-	//class XmlDoc *m_gatewayDoc;
 	RdbList m_oldMetaList;
 	char   *m_oldTitleRec;
 	int32_t    m_oldTitleRecSize;
@@ -1377,10 +1105,7 @@ public:
 	int32_t    m_tagdbCollLen;
 
 	Url   m_extraUrl;
-	//int32_t m_siteNumInlinksFresh;
-	//int32_t m_sitePop;
 	uint8_t m_siteNumInlinks8;
-	//int32_t m_siteNumInlinks;
 	LinkInfo m_siteLinkInfo;
 	SafeBuf m_mySiteLinkInfoBuf;
 	SafeBuf m_myPageLinkInfoBuf;
@@ -1391,7 +1116,6 @@ public:
 	char m_useSiteLinkBuf;
 	char m_usePageLinkBuf;
 	char m_printInXml;
-	//Msg25 m_msg25;
 	SafeBuf m_tmpBuf11;
 	SafeBuf m_tmpBuf12;
 	Multicast m_mcast11;
@@ -1399,7 +1123,6 @@ public:
 	// lists from cachedb for msg25's msg20 replies serialized
 	RdbList m_siteReplyList;
 	RdbList m_pageReplyList;
-	//void (* m_masterLoopWrapper) (void *state);
 	MsgC m_msgc;
 	bool m_isAllowed;
 	bool m_forwardDownloadRequest;
@@ -1410,10 +1133,6 @@ public:
 	// for limiting # of iframe tag expansions
 	int32_t m_numExpansions;
 	char m_newOnly;
-	//int32_t m_tryAgainTimeDelta;
-	//int32_t m_sameIpWait;
-	//int32_t m_sameDomainWait;
-	//int32_t m_maxSpidersPerDomain;
 	char m_isWWWDup;
 	char m_calledMsg0b;
 
@@ -1424,24 +1143,14 @@ public:
 	class RdbList *m_ulist;
 	void *m_hack;
 	class XmlDoc *m_hackxd;
-	//class LinkInfo *m_linkInfo1Ptr;
 	char     *m_linkInfoColl;
-	//char m_injectedReply;
-	//int32_t m_minInlinkerHopCount;
-	//class LinkInfo *m_linkInfo2Ptr;
 	SiteGetter m_siteGetter;
 	int64_t  m_siteHash64;
-	//char *m_site;
-	//int32_t m_siteLen;
-	//Url m_siteUrl;
 	int32_t m_siteHash32;
 	char *m_httpReply;
-	//char m_downloadAttempted;
 	char m_incrementedAttemptsCount;
 	char m_incrementedDownloadCount;
 	char m_redirectFlag;
-	//char m_isScraping;
-	//char m_throttleDownload;
 	char m_spamCheckDisabled;
 	char m_useRobotsTxt;
 	int32_t m_robotsTxtLen;
@@ -1455,15 +1164,12 @@ public:
 	int32_t m_filteredContentMaxSize;
 	char m_calledThread;
 	int32_t m_errno;
-	//class CollectionRec *m_cr;
-	//int32_t m_utf8ContentAllocSize;
 	int32_t m_hostHash32a;
 	int32_t m_hostHash32b;
 	int32_t m_domHash32;
 	int32_t m_priorityQueueNum;
 
 	// this points into m_msge0 i guess
-	//class TagRec **m_outlinkTagRecVector;
 	Msge0 m_msge0;
 
 	// this points into m_msge1 i guess
@@ -1729,8 +1435,6 @@ public:
 
 	char     *m_wikiqbuf;
 	int32_t      m_wikiqbufSize;
-	int64_t m_wikiDocIds [ MAX_WIKI_DOCIDS ];
-	rscore_t  m_wikiScores [ MAX_WIKI_DOCIDS ];
 
 	bool      m_registeredSleepCallback;
 	bool      m_addedNegativeDoledbRec;
@@ -1741,16 +1445,12 @@ public:
 	int32_t          m_niceness;
 
 	bool m_usePosdb     ;
-	//bool m_useDatedb    ;
 	bool m_useClusterdb ;
 	bool m_useLinkdb    ;
 	bool m_useSpiderdb  ;
 	bool m_useTitledb   ;
 	bool m_useTagdb     ;
 	bool m_usePlacedb   ;
-	//bool m_useTimedb    ;
-	bool m_useSectiondb ;
-	//bool m_useRevdb     ;
 	bool m_useSecondaryRdbs ;
 
 	int32_t          m_linkeeQualityBoost;
@@ -1762,10 +1462,7 @@ public:
 	bool     m_storeTermListInfo;
 	char     m_sortTermListBy;
 
-	SafeBuf m_sectiondbData;
-	//char *m_sectiondbData;
 	char *m_placedbData;
-	//int32_t  m_sectiondbDataSize;
 	int32_t  m_placedbDataSize;
 
 	// we now have HashInfo to replace this
@@ -1860,6 +1557,8 @@ public:
 			    HashTableX *domDedupTable ,
 			    void *finalState , 
 			    void (* finalCallback)(void *));
+
+	void logQueryTiming(const char* function, int64_t startTime);
 
 	bool doInjectLoop ( );
 	void doneInjecting ( class XmlDoc *xd );

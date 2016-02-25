@@ -14,77 +14,11 @@
 #include "Msg39.h"      // getTermFreqs()
 #include "Msg20.h"      // for getting summary from docId
 #include "Msg17.h"      // a distributed cache of serialized/compressed Msg40s
-//#include "Msg2b.h"      // for generating directories
-//#include "IndexReadInfo.h" // STAGE0,...
 #include "Msg3a.h"
 #include "PostQueryRerank.h"
 
-// replace CollectionRec::m_maxDocIdsToCompute with this
-//#define MAXDOCIDSTOCOMPUTE 500000
 // make it 2B now. no reason not too limit it so low.
 #define MAXDOCIDSTOCOMPUTE 2000000000
-
-#define MAX_GIGABIT_WORDS 10
-
-class Gigabit {
-public:
-	char *m_term;
-	int32_t  m_termLen;
-	int64_t m_termId64;
-	float m_gbscore;
-	int32_t m_minPop;
-	int32_t m_numWords;
-	int32_t  m_numPages;
-	int64_t m_lastDocId;
-	// the wordids of the words in the gigabit (m_numWords of them)
-	int64_t m_wordIds[MAX_GIGABIT_WORDS];
-};
-
-
-//
-// TODO: add Gigabit::m_firstFastFactOffset..
-//
-
-
-#define MAX_GIGABIT_PTRS 10
-
-class Fact {
-public:
-	// offset of the gigabit in m_gigabitBuf we belong to
-	int32_t  m_gigabitOffset;
-	// . the sentence contaning the gigabit and a lot of the query terms
-	// . ptr refrences into Msg20Reply::ptr_gigabitSample buffers
-	char *m_fact;
-	int32_t  m_factLen;
-	float m_gigabitModScore;
-	float m_queryScore;
-	float m_maxGigabitModScore; // gigabitscore * #pagesItIsOn
-	int32_t  m_numGigabits;
-	char m_printed;
-	class Gigabit *m_gigabitPtrs[MAX_GIGABIT_PTRS];
-	int32_t  m_numQTerms;
-	int64_t m_docId; // from where it came
-	Msg20Reply *m_reply; // reply from where it came
-	// for deduping sentences
-	char  m_dedupVector[SAMPLE_VECTOR_SIZE]; // 128
-};
-
-
-class GigabitInfo {
- public:
-        int32_t       m_pts;
-        uint32_t   m_hash;
-        int32_t       m_pop;
-        int32_t       m_count;
-        int32_t       m_numDocs;
-        int64_t  m_lastDocId;
-        int32_t       m_currentDocCount;
-        char      *m_ptr;
-        int32_t       m_len;
-};
-
-
-static const int64_t msg40_msg39_timeout = 5000; //timeout for entire get-docid-list phase, in milliseconds.
 
 class Msg40 {
 
@@ -115,21 +49,6 @@ class Msg40 {
 	// a continuation function of getResults() above
 	bool prepareToGetDocIds ( );
 	bool getDocIds ( bool recall );
-
-	bool computeGigabits( class TopicGroup *tg );
-	SafeBuf m_gigabitBuf;
-
-	// nuggabits...
-	bool computeFastFacts ( );
-	bool addFacts ( HashTableX *queryTable,
-			HashTableX *gbitTable ,
-			char *pstart,
-			char *pend,
-			bool debugGigabits ,
-			class Msg20Reply *reply,
-			SafeBuf *factBuf ) ;
-
-	SafeBuf m_factBuf;
 
 	// keep these public since called by wrapper functions
 	bool federatedLoop ( ) ;
@@ -181,14 +100,7 @@ class Msg40 {
 	bool  moreResultsFollow ( )   {return m_moreToCome; };
 	time_t getCachedTime ( )      {return m_cachedTime; };
 
-
-	int32_t getNumGigabits (){return m_gigabitBuf.length()/sizeof(Gigabit);};
-	Gigabit *getGigabit ( int32_t i ) {
-		Gigabit *gbs = (Gigabit *)m_gigabitBuf.getBufStart();
-		return &gbs[i];
-	};
-
-        int64_t *getDocIdPtr() { return m_msg3a.m_docIds; }
+	int64_t *getDocIdPtr() { return m_msg3a.m_docIds; }
 
 	bool printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
 				  class Msg20Reply *mr ) ;
@@ -277,14 +189,9 @@ class Msg40 {
 	char      *m_cachePtr;
 	int32_t       m_cacheSize;
 
-	//int32_t m_maxDocIdsToCompute;
-
 	// count summary replies (msg20 replies) we get
 	int32_t       m_numRequests;
 	int32_t       m_numReplies;
-
-	// we launched all docids from 0 to m_maxiLaunched
-	//int32_t       m_maxiLaunched;
 
 	// true if more results follow these
 	bool       m_moreToCome;
@@ -303,12 +210,6 @@ class Msg40 {
 	bool       m_cachedResults;
 	time_t     m_cachedTime;
 
-	// gigabits
-	//Msg24 m_msg24;
-
-	// references
-	//Msg1a m_msg1a;
-	
 	int32_t m_tasksRemaining;
 
 	int32_t m_printCount;
@@ -333,14 +234,6 @@ class Msg40 {
 	int32_t       m_filterStats[30];
 
 	SearchInput   *m_si;
-
-
-	// for topic clustering, saved from CollectionRec
-	int32_t       m_topicSimilarCutoff;
-	int32_t       m_docsToScanForTopics;
-
-	// Msg2b for generating a directory
-	//Msg2b  m_msg2b;
 
 	bool mergeDocIdsIntoBaseMsg3a();
 	int32_t m_numCollsToSearch;

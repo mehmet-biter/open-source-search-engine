@@ -593,8 +593,8 @@ class Hostdb {
 
 
 	// sets the note for a host
-	bool setNote ( int32_t hostId, char *note, int32_t noteLen );
-	bool setSpareNote ( int32_t spareId, char *note, int32_t noteLen );
+	bool setNote ( int32_t hostId, const char *note, int32_t noteLen );
+	bool setSpareNote ( int32_t spareId, const char *note, int32_t noteLen );
 	
 	// replace a host with a spare
 	bool replaceHost ( int32_t origHostId, int32_t spareHostId );

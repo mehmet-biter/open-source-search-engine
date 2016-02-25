@@ -21,27 +21,12 @@ bool sendPageSockets ( TcpSocket *s , HttpRequest *r ) {
 	// don't allow pages bigger than 128k in cache
 	char  buf [ 128*1024 ];
 	SafeBuf p(buf, 128*1024);
-	//char *bufEnd = buf + 256*1024;
-	// a ptr into "buf"
-	// password, too
-	//int32_t pwdLen = 0;
-	//char *pwd = r->getString ( "pwd" , &pwdLen );
-	//if ( pwdLen > 31 ) pwdLen = 31;
-	//if ( pwd ) pwd[pwdLen]='\0';
 	int32_t collLen = 0;
 	char *coll = r->getString( "c", &collLen );
 	if ( collLen > MAX_COLL_LEN ) collLen = MAX_COLL_LEN;
 	if ( coll ) coll[collLen] = '\0';
-	//char pbuf [32];
-	//if ( pwdLen > 0 ) strncpy ( pbuf , pwd , pwdLen );
-	//pbuf[pwdLen]='\0';
 	// print standard header
-
-
-	// 	char *ss = p.getBuf();
-	// 	char *ssend = p.getBufEnd();
 	g_pages.printAdminTop ( &p, s , r );
-	//p.incrementLength(sss - ss);
 
 	// now print out the sockets table for each tcp server we have
 	printTcpTable(&p,"HTTP Server"    ,g_httpServer.getTcp());
@@ -61,66 +46,6 @@ bool sendPageSockets ( TcpSocket *s , HttpRequest *r ) {
 		int32_t m   = g_hostdb.getMachineNum ( hid );
 		if ( m == 0 ) count++;
 	}
-
-	/*
-	sprintf ( p , "<table width=100%% bgcolor=#d0d0f0 border=1>"
-		  "<tr><td bgcolor=#c0c0f0 colspan=%"INT32">"
-		  "<center><font size=+1><b>Wait Times</b></font>"
-		  "</td></tr>\n" , 3 + count );
-	p += gbstrlen ( p );
-	// print columns
-	sprintf ( p , 
-		  "<tr>"
-		  "<td><b>machine #</b></td>"
-		  "<td><b>send wait</b></td>"
-		  "<td><b>read wait</b></td>" );
-	p += gbstrlen ( p );	
-	// print disk columns
-	for ( int32_t i = 0 ; i < count ; i++ ) {
-		sprintf ( p , "<td><b>disk %"INT32" wait</b></td>",i);
-		p += gbstrlen ( p );	
-	}
-	// end the top row
-	sprintf ( p , "</tr>\n" );
-	p += gbstrlen ( p );	
-	// print rows
-	for ( int32_t i = 0 ; i < g_hostdb.getNumMachines() ; i++ ) {
-		// print machine #
-		sprintf ( p , "<tr><td><b>%"INT32"</b></td>",i);
-		p += gbstrlen ( p );
-		// then net send
-		float x = (float)g_queryRouter.m_sendWaits[i] / 1000;
-		sprintf ( p , "<td>%.1fms</td>", x );
-		p += gbstrlen ( p );
-		// then net read
-		x = (float)g_queryRouter.m_readWaits[i] / 1000;
-		sprintf ( p , "<td>%.1fms</td>", x );
-		p += gbstrlen ( p );
-		// print disk wait in milliseconds (it's in microseconds)
-		// find any host that matches this machine
-		for ( int32_t j = 0 ; j < g_hostdb.getNumHosts() ; j++ ) {
-			// use in order of ip
-			int32_t hid = g_hostdb.m_hostPtrs[j]->m_hostId;
-			// get machine #
-			int32_t m = g_hostdb.getMachineNum(hid);
-			// skip if no match
-			if ( m != i ) continue;
-			// otherwise print
-			x = (float)g_queryRouter.m_diskWaits[hid] / 1000;
-			sprintf ( p , "<td>%.1fms</td>", x );
-			p += gbstrlen ( p );
-		}
-		// end row
-		sprintf ( p , "</tr>\n");
-		p += gbstrlen ( p );	
-	}
-	// end table
-	sprintf ( p , "</table>");
-	p += gbstrlen ( p );
-	*/
-
-	// print the final tail
-	//p += g_httpServer.printTail ( p , pend - p );
 
 	// calculate buffer length
 	int32_t bufLen = p.length();

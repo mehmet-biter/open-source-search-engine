@@ -61,8 +61,8 @@ class Collectiondb  {
 	bool m_needsSave;
 
 	// returns i so that m_recs[i].m_coll = coll
-	collnum_t getCollnum ( char *coll , int32_t collLen );
-	collnum_t getCollnum ( char *coll ); // coll is NULL terminated here
+	collnum_t getCollnum ( const char *coll , int32_t collLen );
+	collnum_t getCollnum ( const char *coll ); // coll is NULL terminated here
 
 	char *getCollName ( collnum_t collnum );
 	char *getColl     ( collnum_t collnum ) {return getCollName(collnum);};
@@ -79,9 +79,9 @@ class Collectiondb  {
 	
 	// . get collectionRec from name
 	// returns NULL if not available
-	class CollectionRec *getRec ( char *coll );
+	class CollectionRec *getRec ( const char *coll );
 
-	class CollectionRec *getRec ( char *coll , int32_t collLen );
+	class CollectionRec *getRec ( const char *coll , int32_t collLen );
 
 	class CollectionRec *getRec ( collnum_t collnum);
 
@@ -501,8 +501,7 @@ class CollectionRec {
 	float m_updateVotesFreq         ; // in days. replaced m_recycleVotes
 	float m_sortByDateWeight        ;
 
-        char  m_dedupURLDefault             ;
-	int32_t  m_topicSimilarCutoffDefault   ;
+    char  m_dedupURLDefault             ;
 	char  m_useNewDeduping              ;
 	char  m_doTierJumping               ;
 	float m_numDocsMultiplier           ;
@@ -716,20 +715,6 @@ class CollectionRec {
 
 	int32_t  m_compoundListMaxSize;
 
-	// . related topics control
-	// . this can all be overridden by passing in your own cgi parms
-	//   for the query request
-	int32_t  m_numTopics;           // how many do they want by default?
-	int32_t  m_minTopicScore;
-	int32_t  m_docsToScanForTopics; // how many to scan by default?
-	int32_t  m_maxWordsPerTopic;
-	int32_t  m_minDocCount;         // min docs that must contain topic
-	char  m_ipRestrict;
-	int32_t  m_dedupSamplePercent;
-	char  m_topicRemoveOverlaps; // this is generally a good thing
-	int32_t  m_topicSampleSize;     // sample about 5k per document
-	int32_t  m_topicMaxPunctLen;    // keep it set to 1 for speed
-
 	// SPELL CHECK
 	char  m_spellCheck;
 
@@ -887,26 +872,15 @@ class CollectionRec {
 	// post query reranking
 	int32_t  m_pqr_docsToScan; // also for # docs for language
 	float m_pqr_demFactCountry; // demotion for foreign countries
-	float m_pqr_demFactQTTopicsInUrl; // demotion factor fewer for query terms or gigabits in the url
-	int32_t  m_pqr_maxValQTTopicsInUrl; // max value for fewer query terms or gigabits in the url
 	float m_pqr_demFactPaths; // demotion factor for more paths
 	int32_t  m_pqr_maxValPaths; // max value for more paths
-	float m_pqr_demFactCatidHasSupers; // demotion factor for catids with many super topics
-	int32_t  m_pqr_maxValCatidHasSupers; // max value for catids with many super topics
 	float m_pqr_demFactPageSize; // demotion factor for higher page sizes
 	int32_t  m_pqr_maxValPageSize; // max value for higher page sizes
-	float m_pqr_demFactLocTitle; // demotion factor for non-location specific queries with location specific results
-	float m_pqr_demFactLocSummary; // demotion factor for non-location specific queries with location specific results
-	bool  m_pqr_demInTopics; // true to demote if location is in the gigabits, otherwise these locs won't be demoted
 	int32_t  m_pqr_maxValLoc; // max value for non-location specific queries with location specific results
 	float m_pqr_demFactNonHtml; // demotion factor for non-html content type
 	float m_pqr_demFactXml; // demotion factor for xml content type
 	float m_pqr_demFactOthFromHost; // demotion factor for no other pages from same host
 	int32_t  m_pqr_maxValOthFromHost; // max value for no other pages from same host
-	float m_pqr_demFactDmozCatNmNoQT; // demotion factor for dmoz category names that don't contain a query term
-	int32_t  m_pqr_maxValDmozCatNmNoQT; // max value for dmoz category names that don't contain a query term
-	float m_pqr_demFactDmozCatNmNoGigabits; // demotion factor for dmoz category names that don't contain a gigabit
-	int32_t  m_pqr_maxValDmozCatNmNoGigabits; // max value for dmoz category names that don't contain a gigabit
 	float m_pqr_demFactDatedbDate; // demotion for datedb date
 	int32_t  m_pqr_minValDatedbDate; // dates earlier than this will be demoted to the max
 	int32_t  m_pqr_maxValDatedbDate; // dates later than this will not be demoted

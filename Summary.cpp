@@ -661,7 +661,6 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 	}
 
 	// . we NULLify the section ptrs if we already used the word in another summary.
-	// . google seems to index SEC_MARQUEE, so i took that out of here
 	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_TITLE;
 	if ( (bb[matchWordNum] & D_USED) || ( sp && (sp[matchWordNum]->m_flags & badFlags) ) ) {
 		// assume no best window
@@ -1059,7 +1058,6 @@ bool Summary::getDefaultSummary ( Xml *xml, Words *words, Sections *sections, Po
 	int32_t bestEnd = -1;
 	int32_t longestConsecutive = 0;
 	int32_t lastAlnum = -1;
-	// google seems to index SEC_MARQUEE, so i took that out of here
 	int32_t badFlags = SEC_SCRIPT|SEC_STYLE|SEC_SELECT|SEC_IN_TITLE;
 	// shortcut
 	nodeid_t  *tids = words->m_tagIds;

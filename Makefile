@@ -35,7 +35,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Msg1.o \
 	Msg0.o Mem.o Matches.o Loop.o \
 	Log.o Lang.o \
-	Indexdb.o Posdb.o Clusterdb.o IndexList.o Revdb.o \
+	Indexdb.o Posdb.o Clusterdb.o IndexList.o \
 	HttpServer.o HttpRequest.o \
 	HttpMime.o Hostdb.o \
 	Highlight.o File.o Errno.o Entities.o \
@@ -75,6 +75,7 @@ CPPFLAGS = -g -Wall -fno-stack-protector -DPTHREADS -Wstrict-aliasing=0
 
 ifeq ($(CXX), g++)
 CPPFLAGS += -Wno-write-strings -Wno-uninitialized -Wno-unused-but-set-variable
+CPPFLAGS += -Wno-invalid-offsetof
 else ifeq ($(CXX), clang++)
 CPPFLAGS += -Weverything -Wno-cast-align -Wno-reserved-id-macro -Wno-padded -Wno-c++11-long-long -Wno-tautological-undefined-compare -Wno-c++11-compat-reserved-user-defined-literal -Wno-zero-length-array -Wno-float-equal -Wno-c99-extensions -Wno-weak-vtables -Wno-global-constructors -Wno-exit-time-destructors
 CPPFLAGS += -Wno-shadow -Wno-conversion -Wno-extra-semi -Wno-sign-conversion -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-unused-parameter -Wno-missing-prototypes -Wno-c++11-compat-deprecated-writable-strings
@@ -113,6 +114,9 @@ GIT_VERSION=$(shell git rev-parse HEAD)$(DIRTY)
 
 
 all: gb
+
+debug: DEFS += -D_VALGRIND_
+debug: all
 
 utils: blaster2 hashtest monitor seektest urlinfo treetest dnstest gbtitletest
 

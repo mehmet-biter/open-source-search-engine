@@ -2345,13 +2345,6 @@ bool Parms::setFromRequest ( HttpRequest *r ,
 		char *xx=NULL;*xx=0; 
 	}
 
-	// need this for searchInput which takes default from "cr"
-	//CollectionRec *cr = g_collectiondb.getRec ( r , true );
-
-	// no SearchInput.cpp does this and then overrides if xml feed
-	// to set m_docsToScanForTopics
-	//setToDefault ( THIS , objType , cr );
-
 	// loop through cgi parms
 	for ( int32_t i = 0 ; i < r->getNumFields() ; i++ ) {
 		// get cgi parm name
@@ -4655,59 +4648,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "demotion for query terms or gigabits in url";
-	m->m_desc  = "Demotion factor for query terms or gigabits "
-		"in a result's url. "
-		"Score will be penalized by this factor times the number "
-		"of query terms or gigabits in the url divided by "
-		"the max value below such that fewer "
-		"query terms or gigabits in the url causes the result "
-		"to be demoted more heavily, depending on the factor. "
-		"Higher factors demote more per query term or gigabit "
-		"in the page's url. "
-		"Generally, a page may not be demoted more than this "
-		"factor as a percent. Also, how it is demoted is "
-		"dependant on the max value. For example, "
-		"a factor of 0.2 will demote the page 20% if it has no "
-		"query terms or gigabits in its url. And if the max value is "
-		"10, then a page with 5 query terms or gigabits in its "
-		"url will be demoted 10%; and 10 or more query terms or "
-		"gigabits in the url will not be demoted at all. "
-		"0 means no demotion. "
-		"A safe range is from 0 to 0.35. ";
-	m->m_cgi   = "pqrqttiu";
-	m->m_off   = (char *)&cr.m_pqr_demFactQTTopicsInUrl - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "max value for pages with query terms or gigabits "
-		"in url";
-	m->m_desc  = "Max number of query terms or gigabits in a url. "
-		"Pages with a number of query terms or gigabits in their "
-		"urls greater than or equal to this value will not be "
-		"demoted. "
-		"This controls the range of values expected to represent "
-		"the number of query terms or gigabits in a url. It should "
-		"be set to or near the estimated max number of query terms "
-		"or topics that can be in a url. Setting to a lower value "
-		"increases the penalty per query term or gigabit that is "
-		"not in a url, but decreases the range of values that "
-		"will be demoted.";
-	m->m_cgi   = "pqrqttium";
-	m->m_off   = (char *)&cr.m_pqr_maxValQTTopicsInUrl - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "10";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "demotion for pages that are not "
 		"root or have many paths in the url";
 	m->m_desc  = "Demotion factor each path in the url. "
@@ -4769,60 +4709,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_pqr_maxValPageSize - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "524288";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion for non-location specific queries "
-		"with a location specific title";
-	m->m_desc  = "Demotion factor for non-location specific queries "
-		"with a location specific title. "
-		"Pages which contain a location in their title which is "
-		"not in the query or the gigabits will be demoted by their "
-		"population multiplied by this factor divided by the max "
-		"place population specified below. "
-		"Generally, a page will not be demoted more than this "
-		"value as a percent. "
-		"0 means no demotion. ";
-	m->m_cgi   = "pqrloct";
-	m->m_off   = (char *)&cr.m_pqr_demFactLocTitle - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0.99";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion for non-location specific queries "
-		"with a location specific summary";
-	m->m_desc  = "Demotion factor for non-location specific queries "
-		"with a location specific summary. "
-		"Pages which contain a location in their summary which is "
-		"not in the query or the gigabits will be demoted by their "
-		"population multiplied by this factor divided by the max "
-		"place population specified below. "
-		"Generally, a page will not be demoted more than this "
-		"value as a percent. "
-		"0 means no demotion. ";
-	m->m_cgi   = "pqrlocs";
-	m->m_off   = (char *)&cr.m_pqr_demFactLocSummary - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0.95";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demote locations that appear in gigabits";
-	m->m_desc  = "Demote locations that appear in gigabits.";
-	m->m_cgi   = "pqrlocg";
-	m->m_off   = (char *)&cr.m_pqr_demInTopics - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
 	m->m_group = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
@@ -5089,19 +4975,6 @@ void Parms::init ( ) {
 	m->m_smin  = 0;
 	m->m_smax  = 100000;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "percent topic similar default";
-	m->m_desc  = "Like above, but used for deciding when to cluster "
-		"results by topic for the news collection.";
-	m->m_cgi   = "ptcd";
-	m->m_off   = (char *)&cr.m_topicSimilarCutoffDefault - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "50";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;	
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
 	m++;
@@ -5844,97 +5717,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_SI;
 	m++;
 
-	m->m_title = "results to scan for gigabits generation";
-	m->m_desc  = "How many search results should we "
-		"scan for gigabit (related topics) generation. Set this to "
-		"zero to disable gigabits!";
-	m->m_cgi   = "dsrt";
-	m->m_off   = (char *)&si.m_docsToScanForTopics - y;
-	m->m_type  = TYPE_LONG;
-	m->m_defOff= (char *)&cr.m_docsToScanForTopics - x;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-
-	m->m_title = "ip restriction for gigabits";
-	m->m_desc  = "Should Gigablast only get one document per IP domain "
-		"and per domain for gigabits (related topics) generation?";
-	m->m_cgi   = "ipr";
-	m->m_off   = (char *)&si.m_ipRestrictForTopics - y;
-	m->m_defOff= (char *)&cr.m_ipRestrict - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_group = 0;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-
-
-	m->m_title = "number of gigabits to show";
-	m->m_desc  = "What is the number of gigabits (related topics) "
-		"displayed per query? Set to 0 to save a little CPU time.";
-	m->m_cgi   = "nrt";
-	m->m_defOff= (char *)&cr.m_numTopics - x;
-	m->m_off   = (char *)&si.m_numTopicsToDisplay - y;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "11";
-	m->m_group = 0;
-	m->m_sprpg = 0; // do not propagate
-        m->m_sprpp = 0; // do not propagate
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-
-	m->m_title = "min topics score";
-	m->m_desc  = "Gigabits (related topics) with scores below this "
-		"will be excluded. Scores range from 0% to over 100%.";
-	m->m_cgi   = "mts";
-	m->m_defOff= (char *)&cr.m_minTopicScore - x;
-	m->m_off   = (char *)&si.m_minTopicScore - y;
-	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-
-
-	m->m_title = "min gigabit doc count by default";
-	m->m_desc  = "How many documents must contain the gigabit "
-		"(related topic) in order for it to be displayed.";
-	m->m_cgi   = "mdc";
-	m->m_defOff= (char *)&cr.m_minDocCount - x;
-	m->m_off   = (char *)&si.m_minDocCount - y;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "2";
-	m->m_group = 0;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-
-
-	m->m_title = "dedup doc percent for gigabits (related topics)";
-	m->m_desc  = "If a document is this percent similar to another "
-		"document with a higher score, then it will not contribute "
-		"to the gigabit generation.";
-	m->m_cgi   = "dsp";
-	m->m_defOff= (char *)&cr.m_dedupSamplePercent - x;
-	m->m_off   = (char *)&si.m_dedupSamplePercent - y;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "80";
-	m->m_group = 0;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
 
 	///////////////////////////////////////////
 	//  SPIDER PROXY CONTROLS
@@ -6050,19 +5832,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "max words per gigabit (related topic) by default";
-	m->m_desc  = "Maximum number of words a gigabit (related topic) "
-		"can have. Affects xml feeds, too.";
-	m->m_cgi   = "mwpt";
-	m->m_defOff= (char *)&cr.m_maxWordsPerTopic - x;
-	m->m_off   = (char *)&si.m_maxWordsPerTopic - y;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "6";
-	m->m_group = 0;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
 
 	m->m_title = "show images";
 	m->m_desc  = "Should we return or show the thumbnail images in the "
@@ -6360,52 +6129,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_BOOL;
 	m->m_cgi   = "debug";
 	//m->m_priv  = 1;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-	m->m_title = "return number of docs per topic";
-	m->m_desc  = "Use 1 if you want Gigablast to return the number of "
-		"documents in the search results that contained each topic "
-		"(gigabit).";
-	m->m_def   = "1";
-	m->m_off   = (char *)&si.m_returnDocIdCount - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_cgi   = "rdc";
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-	m->m_title = "return docids per topic";
-	m->m_desc  = "Use 1 if you want Gigablast to return the list of "
-		"docIds from the search results that contained each topic "
-		"(gigabit).";
-	m->m_def   = "0";
-	m->m_off   = (char *)&si.m_returnDocIds - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_cgi   = "rd";
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-	m->m_title = "return popularity per topic";
-	m->m_desc  = "Use 1 if you want Gigablast to return the popularity "
-		"of each topic (gigabit).";
-	m->m_def   = "0";
-	m->m_off   = (char *)&si.m_returnPops - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_cgi   = "rp";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-	m->m_title = "debug gigabits flag";
-	m->m_desc  = "Is 1 to log gigabits debug information, 0 otherwise.";
-	m->m_def   = "0";
-	m->m_off   = (char *)&si.m_debugGigabits - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_cgi   = "debuggigabits";
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -9864,147 +9587,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "results to scan for gigabits generation by default";
-	m->m_desc  = "How many search results should we "
-		"scan for gigabit (related topics) generation. Set this to "
-		"zero to disable gigabits generation by default.";
-	m->m_cgi   = "dsrt";
-	m->m_off   = (char *)&cr.m_docsToScanForTopics - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "0";
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "ip restriction for gigabits by default";
-	m->m_desc  = "Should Gigablast only get one document per IP domain "
-		"and per domain for gigabits (related topics) generation?";
-	m->m_cgi   = "ipr";
-	m->m_off   = (char *)&cr.m_ipRestrict - x;
-	m->m_type  = TYPE_BOOL;
-	// default to 0 since newspaperarchive only has docs from same IP dom
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-
-	m->m_title = "remove overlapping topics";
-	m->m_desc  = "Should Gigablast remove overlapping topics (gigabits)?";
-	m->m_cgi   = "rot";
-	m->m_off   = (char *)&cr.m_topicRemoveOverlaps - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "number of gigabits to show by default";
-	m->m_desc  = "What is the number of "
-		"related topics (gigabits) "
-		"displayed per query? Set to 0 to save "
-		"CPU time.";
-	m->m_cgi   = "nrt";
-	m->m_off   = (char *)&cr.m_numTopics - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_sprpg = 0; // do not propagate
-        m->m_sprpp = 0; // do not propagate
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-
-
-	m->m_title = "min gigabit score by default";
-	m->m_desc  = "Gigabits (related topics) with scores below this "
-		"will be excluded. Scores range from 0% to over 100%.";
-	m->m_cgi   = "mts";
-	m->m_off   = (char *)&cr.m_minTopicScore - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "5";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "min gigabit doc count by default";
-	m->m_desc  = "How many documents must contain the gigabit "
-		"(related topic) in order for it to be displayed.";
-	m->m_cgi   = "mdc";
-	m->m_off   = (char *)&cr.m_minDocCount - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "2";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "dedup doc percent for gigabits (related topics)";
-	m->m_desc  = "If a document is this percent similar to another "
-		"document with a higher score, then it will not contribute "
-		"to the gigabit generation.";
-	m->m_cgi   = "dsp";
-	m->m_off   = (char *)&cr.m_dedupSamplePercent - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "80";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "max words per gigabit (related topic) by default";
-	m->m_desc  = "Maximum number of words a gigabit (related topic) "
-		"can have. Affects xml feeds, too.";
-	m->m_cgi   = "mwpt";
-	m->m_off   = (char *)&cr.m_maxWordsPerTopic - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "6";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-
-	m->m_title = "gigabit max sample size";
-	m->m_desc  = "Max chars to sample from each doc for gigabits "
-		"(related topics).";
-	m->m_cgi   = "tmss";
-	m->m_off   = (char *)&cr.m_topicSampleSize - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "4096";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "gigabit max punct len";
-	m->m_desc  = "Max sequential punct chars allowed in a gigabit "
-		"(related topic). "
-		" Set to 1 for speed, 5 or more for best topics but twice as "
-		"slow.";
-	m->m_cgi   = "tmpl";
-	m->m_off   = (char *)&cr.m_topicMaxPunctLen - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "1";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "display indexed date";
 	m->m_desc  = "Display the indexed date along with results.";
 	m->m_cgi   = "didt";
@@ -10330,6 +9912,31 @@ void Parms::init ( ) {
 	m->m_flags = PF_TEXTAREA | PF_CLONE;
 	m++;
 
+
+	m->m_title = "msg40->39 timeout";
+	m->m_desc  = "Timeout for Msg40/Msg3a to collect candidate docids with Msg39. In milliseconds";
+	m->m_cgi   = "msgfourty_msgthirtynine_timeout";
+	m->m_off   = offsetof(Conf,m_msg40_msg39_timeout);
+	m->m_xml   = "msg40_msg39_timeout";
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_page  = PAGE_SEARCH;
+	m->m_obj   = OBJ_CONF;
+	m->m_def   = "5000";
+	m->m_flags = 0;
+	m++;
+
+
+	m->m_title = "msg3a->39 network overhead";
+	m->m_desc  = "Additional overhead/latecny for msg39 request+response over the network";
+	m->m_cgi   = "msgthreea_msgthirtynine_network_overhead";
+	m->m_off   = offsetof(Conf,m_msg3a_msg39_network_overhead);
+	m->m_xml   = "msg3a_msg39_network_overhead";
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_page  = PAGE_SEARCH;
+	m->m_obj   = OBJ_CONF;
+	m->m_def   = "250";
+	m->m_flags = 0;
+	m++;
 
 	///////////////////////////////////////////
 	// PAGE SPIDER CONTROLS
@@ -12108,16 +11715,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "log debug topic messages";
-	m->m_cgi   = "ldto";
-	m->m_off   = (char *)&g_conf.m_logDebugTopics - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_priv  = 1;
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "log debug topDoc messages";
 	m->m_cgi   = "ldtopd";
 	m->m_off   = (char *)&g_conf.m_logDebugTopDocs - g;
@@ -12327,16 +11924,6 @@ void Parms::init ( ) {
 	m->m_desc  = "Log various timing related messages.";
 	m->m_cgi   = "ltspc";
 	m->m_off   = (char *)&g_conf.m_logTimingSpcache - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_priv  = 1;
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "log timing messages for related topics";
-	m->m_cgi   = "ltt";
-	m->m_off   = (char *)&g_conf.m_logTimingTopics - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_priv  = 1;

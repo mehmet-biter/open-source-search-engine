@@ -266,7 +266,6 @@ bool Process::init ( ) {
 	// . let's try to save tfndb first, that is the most important,
 	//   followed by titledb perhaps...
 	m_rdbs[m_numRdbs++] = g_titledb.getRdb     ();
-	m_rdbs[m_numRdbs++] = g_sectiondb.getRdb   ();
 	m_rdbs[m_numRdbs++] = g_posdb.getRdb     ();
 	m_rdbs[m_numRdbs++] = g_spiderdb.getRdb    ();
 	m_rdbs[m_numRdbs++] = g_clusterdb.getRdb   (); 
@@ -277,7 +276,6 @@ bool Process::init ( ) {
 	// save what urls we have been doled
 	m_rdbs[m_numRdbs++] = g_doledb.getRdb      ();
 	m_rdbs[m_numRdbs++] = g_titledb2.getRdb    ();
-	m_rdbs[m_numRdbs++] = g_sectiondb2.getRdb  ();
 	m_rdbs[m_numRdbs++] = g_posdb2.getRdb    ();
 	m_rdbs[m_numRdbs++] = g_spiderdb2.getRdb   ();
 	m_rdbs[m_numRdbs++] = g_clusterdb2.getRdb  ();

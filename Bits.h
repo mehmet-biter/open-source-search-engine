@@ -47,24 +47,21 @@
 // set by Sections.cpp::setMenu() function
 #define D_IN_LINK               0x0400
 
-// in the place name part of an address?
-//#define D_UNUSED_2            0x0800
+//#define D_UNUSED              0x0800
 
-// allow for dows for texasdrums.org, so TUESDAYS is set with this and
-// we can keep it as part of the sentence and not split on the colon
-//#define D_IS_IN_DATE_2        0x1000
 // this is so we can still set EV_HASTITLEBYVOTES if a tod date is in the
 // title, all other dates are no-no!
 #define D_IS_DAYNUM             0x1000
 // for setting event titles in Events.cpp
 #define D_GENERIC_WORD          0x2000
-#define D_CRUFTY                0x4000
-#define D_IS_NUM                        0x00008000
-//#define D_UNUSED_3                    0x00010000
-#define D_IS_IN_URL                     0x00020000
+//#define D_UNUSED              0x4000
+#define D_IS_NUM            0x00008000
+//#define D_UNUSED          0x00010000
+#define D_IS_IN_URL         0x00020000
 // like D_IS_TOD above
-#define D_IS_MONTH                      0x00040000
-#define D_IS_HEX_NUM                    0x00080000
+#define D_IS_MONTH          0x00040000
+#define D_IS_HEX_NUM        0x00080000
+
 //
 // the bits below here are used for Summary.cpp when calling 
 // Bits::setForSummary()

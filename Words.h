@@ -56,8 +56,6 @@ class Words {
 	// . html tags are NOT parsed out
 	bool set( char *s, bool computeIds, int32_t niceness );
 
-	bool set11 ( char *s , char *send , int32_t niceness ) ;
-
 	// . similar to above
 	// . but we temporarily stick a \0 @ s[slen] for parsing purposes
 	bool set( char *s, int32_t slen, bool computeIds, int32_t niceness = 0 );
@@ -112,8 +110,6 @@ class Words {
 		return size;
 	}
 
-	int32_t getWordAt ( char *charPos );
-
 	// . CAUTION: don't call this for punct "words"... it's bogus for them
 	// . this is only for alnum "words"
 	int64_t getWordId( int32_t n ) const {
@@ -121,16 +117,11 @@ class Words {
 	}
 
 	bool isStopWord ( int32_t n ) {
-		return ::isStopWord(m_words   [n],
-				    m_wordLens[n],
-				    m_wordIds [n]);
+		return ::isStopWord( m_words[n], m_wordLens[n], m_wordIds[n] );
 	}
 
 	bool isQueryStopWord ( int32_t n , int32_t langId ) {
-		return ::isQueryStopWord(m_words   [n],
-					 m_wordLens[n],
-					 m_wordIds [n],
-					 langId);
+		return ::isQueryStopWord( m_words[n], m_wordLens[n], m_wordIds[n], langId );
 	}
 
 
@@ -180,13 +171,7 @@ class Words {
 		return false; 
 	}
 
-	bool      isSpaces        ( int32_t n ) {
-		for ( int32_t i = 0 ; i < m_wordLens[n] ; i++ )
-			if ( ! is_wspace_utf8(&m_words[n][i]) ) return false;
-		return true;
-	}
-
-	bool      isSpaces2       ( int32_t n , int32_t starti ) {
+	bool      isSpaces       ( int32_t n , int32_t starti = 0 ) {
 		for ( int32_t i = starti ; i < m_wordLens[n] ; i++ )
 			if ( ! is_wspace_utf8(&m_words[n][i]) ) return false;
 		return true;

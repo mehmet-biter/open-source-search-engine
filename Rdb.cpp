@@ -16,7 +16,6 @@
 #include "Spider.h"
 #include "SpiderColl.h"
 #include "Doledb.h"
-#include "Revdb.h"
 #include "hash.h"
 
 void attemptMergeAll ( int fd , void *state ) ;
@@ -168,10 +167,6 @@ bool Rdb::init ( char          *dir                  ,
 	if ( m_rdbId == RDB2_INDEXDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_POSDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_POSDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	//if ( m_rdbId == RDB_DATEDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	//if ( m_rdbId == RDB2_DATEDB2   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_SECTIONDB  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_SECTIONDB2) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_TITLEDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_TITLEDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_SPIDERDB   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
@@ -180,30 +175,7 @@ bool Rdb::init ( char          *dir                  ,
 	if ( m_rdbId == RDB_SERPDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_LINKDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_LINKDB2   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_REVDB      ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_REVDB2    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	// let's obsolete this rec/list cache because using the
-	// disk page cache cleverly, is usually better than this,
-	// because this ignores newly added data (it is not realtime),
-	// and it really only saves us from having to intersect a
-	// bunch of indexdb/datedb lists.
-	/*
-	loadCacheFromDisk = false;
-	maxCacheMem       = 0;
-	maxCacheNodes     = 0;
-	// . set up our cache
-	// . we could be adding lists so keep fixedDataSize -1 for cache
-	if ( ! m_cache.init ( maxCacheMem   , 
-			      fixedDataSize , 
-			      true          , // support lists
-			      maxCacheNodes ,
-			      m_useHalfKeys ,
-			      m_dbname      ,
-			      loadCacheFromDisk  ,
-			      m_ks               ,   // cache key size
-			      m_ks               ) ) // data  key size
-		return false;
-	*/
+
 	// we can't merge more than MAX_RDB_FILES files at a time
 	if ( minToMerge > MAX_RDB_FILES ) minToMerge = MAX_RDB_FILES;
 	m_minToMerge = minToMerge;
@@ -1736,17 +1708,14 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	     //! g_conf.m_rebuildNoSplits &&
 	     //! g_conf.m_removeBadPages &&
 	     ( m_rdbId == RDB_TITLEDB    ||
-	       //m_rdbId == RDB_SECTIONDB  ||
 	       m_rdbId == RDB_PLACEDB    ||
 	       m_rdbId == RDB_TFNDB      ||
 	       m_rdbId == RDB_INDEXDB    || 
-	       m_rdbId == RDB_POSDB    || 
-	       //m_rdbId == RDB_DATEDB     ||
+	       m_rdbId == RDB_POSDB      ||
 	       m_rdbId == RDB_CLUSTERDB  ||
 	       m_rdbId == RDB_LINKDB     ||
 	       m_rdbId == RDB_DOLEDB     ||
-	       m_rdbId == RDB_SPIDERDB   ||
-	       m_rdbId == RDB_REVDB      ) ) {
+	       m_rdbId == RDB_SPIDERDB   ) ) {
 
 		// exception, spider status docs can be deleted from titledb
 		// if user turns off 'index spider replies' before doing
@@ -1764,20 +1733,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	}
 
  exception:
-
-	/*
-	if ( g_repair.isRepairActive() &&
-	     g_repair.m_fullRebuild    && 
-	     collnum != g_repair.m_newCollnum &&
-	     m_rdbId != RDB_TAGDB ) {
-		log("db: How did an add come in while in full repair mode?"
-		    " addCollnum=%"INT32" repairCollnum=%"INT32" db=%s",
-		    (int32_t)collnum , (int32_t)g_repair.m_newCollnum ,
-		    m_dbname );
-		g_errno = EREPAIRING;
-		return false;
-	}
-	*/
 
 	// if we are currently in a quickpoll, make sure we are not in
 	// RdbTree::getList(), because we could mess that loop up by adding
@@ -2811,23 +2766,19 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB_INDEXDB   ] = g_indexdb.getRdb();
 		s_table9 [ RDB_POSDB     ] = g_posdb.getRdb();
 		s_table9 [ RDB_TITLEDB   ] = g_titledb.getRdb();
-		s_table9 [ RDB_SECTIONDB ] = g_sectiondb.getRdb();
 		s_table9 [ RDB_SPIDERDB  ] = g_spiderdb.getRdb();
 		s_table9 [ RDB_DOLEDB    ] = g_doledb.getRdb();
 		s_table9 [ RDB_CLUSTERDB ] = g_clusterdb.getRdb();
 		s_table9 [ RDB_LINKDB    ] = g_linkdb.getRdb();
 		s_table9 [ RDB_STATSDB   ] = g_statsdb.getRdb();
-		s_table9 [ RDB_REVDB     ] = g_revdb.getRdb();
 		s_table9 [ RDB_PARMDB    ] = NULL;
 
 		s_table9 [ RDB2_INDEXDB2   ] = g_indexdb2.getRdb();
 		s_table9 [ RDB2_POSDB2     ] = g_posdb2.getRdb();
 		s_table9 [ RDB2_TITLEDB2   ] = g_titledb2.getRdb();
-		s_table9 [ RDB2_SECTIONDB2 ] = g_sectiondb2.getRdb();
 		s_table9 [ RDB2_SPIDERDB2  ] = g_spiderdb2.getRdb();
 		s_table9 [ RDB2_CLUSTERDB2 ] = g_clusterdb2.getRdb();
 		s_table9 [ RDB2_LINKDB2    ] = g_linkdb2.getRdb();
-		s_table9 [ RDB2_REVDB2     ] = g_revdb2.getRdb();
 		s_table9 [ RDB2_TAGDB2     ] = g_tagdb2.getRdb();
 	}
 	if ( rdbId >= RDB_END ) return NULL;
@@ -2840,22 +2791,18 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_indexdb.getRdb   () ) return RDB_INDEXDB;
 	if ( rdb == g_posdb.getRdb   () ) return RDB_POSDB;
 	if ( rdb == g_titledb.getRdb   () ) return RDB_TITLEDB;
-	if ( rdb == g_sectiondb.getRdb () ) return RDB_SECTIONDB;
 	if ( rdb == g_spiderdb.getRdb  () ) return RDB_SPIDERDB;
 	if ( rdb == g_doledb.getRdb    () ) return RDB_DOLEDB;
 	if ( rdb == g_clusterdb.getRdb () ) return RDB_CLUSTERDB;
 	if ( rdb == g_statsdb.getRdb   () ) return RDB_STATSDB;
 	if ( rdb == g_linkdb.getRdb    () ) return RDB_LINKDB;
-	if ( rdb == g_revdb.getRdb     () ) return RDB_REVDB;
 	if ( rdb == g_indexdb2.getRdb   () ) return RDB2_INDEXDB2;
 	if ( rdb == g_posdb2.getRdb   () ) return RDB2_POSDB2;
 	if ( rdb == g_tagdb2.getRdb     () ) return RDB2_TAGDB2;
 	if ( rdb == g_titledb2.getRdb   () ) return RDB2_TITLEDB2;
-	if ( rdb == g_sectiondb2.getRdb () ) return RDB2_SECTIONDB2;
 	if ( rdb == g_spiderdb2.getRdb  () ) return RDB2_SPIDERDB2;
 	if ( rdb == g_clusterdb2.getRdb () ) return RDB2_CLUSTERDB2;
 	if ( rdb == g_linkdb2.getRdb    () ) return RDB2_LINKDB2;
-	if ( rdb == g_revdb2.getRdb     () ) return RDB2_REVDB2;
 
 	log(LOG_LOGIC,"db: getIdFromRdb: no rdbId for %s.",rdb->m_dbname);
 	return 0;
@@ -2868,12 +2815,10 @@ char isSecondaryRdb ( uint8_t rdbId ) {
 		case RDB2_POSDB2   : return true;
 		case RDB2_TAGDB2     : return true;
 		case RDB2_TITLEDB2   : return true;
-		case RDB2_SECTIONDB2 : return true;
 		case RDB2_PLACEDB2   : return true;
 		case RDB2_SPIDERDB2  : return true;
 		case RDB2_TFNDB2     : return true;
 		case RDB2_CLUSTERDB2 : return true;
-		case RDB2_REVDB2     : return true;
 		case RDB2_LINKDB2 : return true;
 	}
 	return false;
@@ -2898,13 +2843,9 @@ char getKeySizeFromRdbId ( uint8_t rdbId ) {
 			     i == RDB_SPIDERDB  ||
 			     i == RDB_TAGDB     ||
 			     i == RDB_SYNCDB    ||
-			     i == RDB_SECTIONDB ||
 			     i == RDB_PLACEDB   ||
-
-			     //i == RDB2_DATEDB2    ||
 			     i == RDB2_SPIDERDB2  ||
 			     i == RDB2_TAGDB2     ||
-			     i == RDB2_SECTIONDB2 ||
 			     i == RDB2_PLACEDB2   )
 				ks = 16;
 			if ( i == RDB_POSDB || i == RDB2_POSDB2 )
@@ -2942,11 +2883,9 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 			     i == RDB_TFNDB ||
 			     i == RDB_CLUSTERDB ||
 			     i == RDB_DATEDB ||
-			     //i == RDB_FAKEDB ||
 			     i == RDB_LINKDB )
 				ds = 0;
 			else if ( i == RDB_TITLEDB ||
-				  i == RDB_REVDB   ||
 				  i == RDB_SYNCDB ||
 				  i == RDB_CACHEDB ||
 				  i == RDB_SERPDB ||
@@ -2960,8 +2899,6 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 				ds = -1;
 			else if ( i == RDB_STATSDB )
 				ds = sizeof(StatData);
-			else if ( i == RDB_SECTIONDB )
-				ds = sizeof(SectionVote);
 			else if ( i == RDB2_POSDB2 ||
 				  i == RDB2_INDEXDB2 ||
 				  i == RDB2_TFNDB2 ||
@@ -2970,23 +2907,17 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 				  i == RDB2_DATEDB2 )
 				ds = 0;
 			else if ( i == RDB2_TITLEDB2 ||
-				  i == RDB2_REVDB2   ||
 				  i == RDB2_TAGDB2   ||
 				  i == RDB2_CATDB2   ||
 				  i == RDB2_SPIDERDB2 ||
 				  i == RDB2_PLACEDB2 )
 				ds = -1;
-			else if ( i == RDB2_SECTIONDB2 )
-				ds = sizeof(SectionVote);
-			else { char *xx=NULL;*xx=0; }
-			// get the rdb for this rdbId
-			//Rdb *rdb = getRdbFromId ( i );
-			// sanity check
-			//if ( ! rdb ) continue;//{ char *xx=NULL;*xx=0; }
-			// sanity!
-			//if ( rdb->m_ks == 0 ) { char *xx=NULL;*xx=0; }
+			else {
+				continue;
+			}
+
 			// set the table
-			s_table2[i] = ds;//rdb->m_fixedDataSize;
+			s_table2[i] = ds;
 		}
 	}
 	return s_table2[rdbId];

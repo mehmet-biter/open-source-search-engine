@@ -8,6 +8,7 @@
 #include "PageParser.h" // g_inPageParser
 #include "Rebalance.h"
 #include "Profiler.h"
+#include "PageRoot.h"
 
 // a global class extern'd in Pages.h
 Pages g_pages;
@@ -1518,8 +1519,6 @@ bool sendPageReportSpam ( TcpSocket *s , HttpRequest *r ) {
 	return 	retval;
 }
 
-bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr ,
-			   bool printGigablast ) ;
 
 // let's use a separate section for each "page"
 // then have 3 tables, the input parms,
@@ -2198,81 +2197,6 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 			    "\t# End of the queryInfo JSON structure.\n"
 		, cols , "\n\t# " , false );
 		sb->safePrintf("<b>\t},\n</b>\n");
-
-
-		// gigabits
-		sb->brify2 ( 
-			"\t# The start of the gigabits array. Each gigabit "
-			"is mined from the content of the search results. "
-			"The top "
-			"N results are mined, and you can control N with the "
-			"&dsrt input parameter described above.\n"
-			, cols , "\n\t# " , false );
-		sb->safePrintf("<b>\t\"gigabits\":[\n\n</b>");
-
-
-		// print gigabit #0
-		sb->brify2 ( "\t\t# The first gigabit in the array.\n"
-			     , cols , "\n\t\t# " , false );
-		sb->safePrintf("<b>\t\t{\n\n</b>");
-
-		sb->brify2 ( "\t\t# The gigabit as a string in utf8.\n"
-			     , cols , "\n\t\t# " , false );
-		sb->safePrintf("<b>\t\t\"term\":\"Membership\",\n\n</b>");
-
-		sb->brify2 ( "\t\t# The numeric score of the gigabit.\n"
-			     , cols , "\n\t\t# " , false );
-		sb->safePrintf("<b>\t\t\"score\":240,\n\n</b>");
-
-		sb->brify2 ( "\t\t# The popularity ranking of the gigabit. "
-			     "Out of 10000 random documents, how many "
-			     "documents contain it?\n"
-			     , cols , "\n\t\t# " , false );
-		sb->safePrintf("<b>\t\t\"minPop\":480,\n\n</b>");
-
-		sb->brify2 ( "\t\t# The gigabit in the context of a "
-			     "document.\n"
-			     , cols , "\n\t\t# " , false );
-		sb->safePrintf("<b>\t\t\"instance\":{\n\n</b>");
-
-		sb->brify2 ( "\t\t\t"
-			     "# A sentence, if it exists, "
-			     "from one of the search results "
-			     "which also contains the gigabit and as many "
-			     "significant query terms as possible. In UTF-8.\n"
-			     , cols , "\n\t\t\t# " , false );
-		sb->brify2("<b>\t\t\t\"sentence\":"
-			       "\"Get a free "
-			       "<b>Tested</b> Premium Membership here!\","
-			       "\n\n</b>"
-			     , 80 , "\n\t\t\t " , false );
-
-		sb->brify2 ( "\t\t\t"
-			     "# The url that contained that sentence. Always "
-			     "starts with http.\n"
-			     , cols , "\n\t\t\t# " , false );
-		sb->safePrintf("<b>\t\t\t\"url\":"
-			       "\"http://www.tested.com/\","
-			       "\n\n</b>");
-
-		sb->brify2 ( "\t\t\t"
-			     "# The domain of that url.\n"
-			     , cols , "\n\t\t\t# " , false );
-		sb->safePrintf("<b>\t\t\t\"domain\":"
-			       "\"tested.com\""
-			       "\n</b>");
-		// end instance
-		sb->safePrintf("<b>\t\t}\n\n</b>");
-		// end gigabit
-		sb->safePrintf("\t\t# End of the first gigabit\n"
-			       "<b>\t\t},\n\n</b>");
-
-		sb->safePrintf("\t\t...\n\n");
-
-		sb->brify2 ( 
-			    "\t# End of the JSON gigabits array.\n"
-		, cols , "\n\t# " , false );
-		sb->safePrintf("<b>\t],\n\n</b>");
 
 
 		// BEGIN FACETS

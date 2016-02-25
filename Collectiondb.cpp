@@ -456,8 +456,6 @@ bool Collectiondb::addNewColl ( char *coll ,
 		cr->m_collectiveRespiderFrequency = 0.0;
 		//cr->m_restrictDomain = true;
 		// reset the crawl stats
-		// always turn off gigabits so &s=1000 can do summary skipping
-		cr->m_docsToScanForTopics = 0;
 		// turn off link voting, etc. to speed up
 		cr->m_getLinkInfo = false;
 		cr->m_computeSiteNumInlinks = false;
@@ -1283,12 +1281,12 @@ char *Collectiondb::getDefaultColl ( HttpRequest *r ) {
 
 // . get collectionRec from name
 // . returns NULL if not available
-CollectionRec *Collectiondb::getRec ( char *coll ) {
+CollectionRec *Collectiondb::getRec ( const char *coll ) {
 	if ( ! coll ) coll = "";
 	return getRec ( coll , gbstrlen(coll) );
 }
 
-CollectionRec *Collectiondb::getRec ( char *coll , int32_t collLen ) {
+CollectionRec *Collectiondb::getRec ( const char *coll , int32_t collLen ) {
 	if ( ! coll ) coll = "";
 	collnum_t collnum = getCollnum ( coll , collLen );
 	if ( collnum < 0 ) return NULL;
@@ -1333,14 +1331,14 @@ char *Collectiondb::getCollName ( collnum_t collnum ) {
 	return m_recs[collnum]->m_coll;
 }
 
-collnum_t Collectiondb::getCollnum ( char *coll ) {
+collnum_t Collectiondb::getCollnum ( const char *coll ) {
 
 	int32_t clen = 0;
 	if ( coll ) clen = gbstrlen(coll );
 	return getCollnum ( coll , clen );
 }
 
-collnum_t Collectiondb::getCollnum ( char *coll , int32_t clen ) {
+collnum_t Collectiondb::getCollnum ( const char *coll , int32_t clen ) {
 
 	// default empty collection names
 	if ( coll && ! coll[0] ) coll = NULL;
@@ -1673,9 +1671,6 @@ bool CollectionRec::load ( char *coll , int32_t i ) {
 
 	// fix for diffbot, spider time deduping
 	if ( m_isCustomCrawl ) m_dedupingEnabled = true;
-
-	// always turn off gigabits so &s=1000 can do summary skipping
-	if ( m_isCustomCrawl ) m_docsToScanForTopics = 0;
 
 	// make min to merge smaller than normal since most collections are
 	// small and we want to reduce the # of vfds (files) we have

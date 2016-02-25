@@ -26,12 +26,10 @@ public:
 
 	// . set m_title to the title of the document represented by "xd"
 	// . if getHardTitle is true will always use the title in the <title>
-	//   tag, but if that is not present, will try dmoz titles before
-	//   resorting to trying to guess a title from the document content
-	//   or incoming link text.
+	//   tag, but if that is not present, will resort to trying to guess 
+	//   a title from the document content or incoming link text.
 	// . uses the following:
 	// .   title tag
-	// .   dmoz title
 	// .   meta title tag
 	// .   incoming link text
 	// .   <hX> tags at the top of the scored content

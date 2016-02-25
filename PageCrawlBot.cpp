@@ -242,8 +242,6 @@ bool sendBackDump ( TcpSocket *sock, HttpRequest *hr ) {
 			       // no summary similarity dedup, only exact
 			       // doc content hash. otherwise too slow!!
 			       "pss=0&"
-			       // no gigabits
-			       "dsrt=0&"
 			       // do not compute summary. 0 lines.
 			       "ns=0&"
 			      "q=gbsortby%%3Agbspiderdate&"
@@ -282,8 +280,6 @@ bool sendBackDump ( TcpSocket *sock, HttpRequest *hr ) {
 			       // no summary similarity dedup, only exact
 			       // doc content hash. otherwise too slow!!
 			       "pss=0&"
-			       // no gigabits
-			       "dsrt=0&"
 			       // do not compute summary. 0 lines.
 			       "ns=0&"
 			       //"q=gbsortby%%3Agbspiderdate&"
@@ -321,8 +317,6 @@ bool sendBackDump ( TcpSocket *sock, HttpRequest *hr ) {
 			       // no summary similarity dedup, only exact
 			       // doc content hash. otherwise too slow!!
 			       "pss=0&"
-			       // no gigabits
-			       "dsrt=0&"
 			       // do not compute summary. 0 lines.
 			       "ns=0&"
 			       "q=gbsortby%%3Agbspiderdate&"
@@ -372,8 +366,6 @@ bool sendBackDump ( TcpSocket *sock, HttpRequest *hr ) {
 			       // no summary similarity dedup, only exact
 			       // doc content hash. otherwise too slow!!
 			       "pss=0&"
-			       // no gigabits
-			       "dsrt=0&"
 			       // do not compute summary. 0 lines.
 			       //"ns=0&"
 			       "q=gbrevsortbyint%%3AgbssSpiderTime+"

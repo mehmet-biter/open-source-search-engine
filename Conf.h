@@ -147,7 +147,6 @@ class Conf {
 	// tagdb parameters
 	int32_t  m_tagdbMaxTreeMem;
 
-	int32_t  m_revdbMaxTreeMem;
 	int32_t  m_timedbMaxTreeMem;
 
 	// clusterdb for site clustering, each rec is 16 bytes
@@ -173,6 +172,9 @@ class Conf {
 	int32_t  m_sendEmailTimeout;
 	int32_t  m_pingSpacer;
 
+	int64_t  m_msg40_msg39_timeout; //timeout for entire get-docid-list phase, in milliseconds.
+	int64_t  m_msg3a_msg39_network_overhead; //additional latency/overhead of sending reqeust+response over network.
+	
 	// the spiderdb holds url records for spidering, when to spider, etc..
 	int32_t  m_maxWriteThreads ;
 	int32_t  m_spiderMaxDiskThreads    ;
@@ -184,7 +186,6 @@ class Conf {
 	bool m_useStatsdb;
 
 	bool  m_spideringEnabled     ;
-	bool  m_turkingEnabled     ;
 	bool  m_injectionsEnabled     ;
 	bool  m_queryingEnabled ;
 	bool  m_returnResultsAnyway;
@@ -385,8 +386,6 @@ class Conf {
 	bool   m_detectMemLeaks;
 
 	// . if false we will not keep spelling information in memory
-	// . we will keep the popularity info from dict though, since related
-	//   topics requires that
 	bool   m_doSpellChecking;
 
 	// are we running in Matt Wells's private data center? if so we
@@ -394,23 +393,6 @@ class Conf {
 	bool   m_isMattWells;
 
 	bool   m_forceIt;
-
-	// maximum number of synonyms/stems to expand a word into
-	//int32_t   m_maxSynonyms;
-
-	// default affinity for spelling suggestions/numbers
-	//float  m_defaultAffinity;
-
-	// threshold for synonym usage
-	//float  m_frequencyThreshold;
-
-	// thesaurus configuration
-	//int32_t   m_maxAffinityRequests;
-	//int32_t   m_maxAffinityErrors;
-	//int32_t   m_maxAffinityAge;
-	//int32_t   m_affinityTimeout;
-	//char   m_affinityServer[MAX_URL_LEN];
-	//char   m_affinityParms[MAX_URL_LEN];
 
 	// new syncing information
 	bool   m_syncEnabled;
@@ -561,7 +543,6 @@ class Conf {
 	bool  m_logDebugThread  ;
 	bool  m_logDebugTimedb  ;
 	bool  m_logDebugTitle   ;
-	bool  m_logDebugTopics  ;
 	bool  m_logDebugTopDocs ;
 	bool  m_logDebugUdp     ;
 	bool  m_logDebugUnicode ;
@@ -586,7 +567,6 @@ class Conf {
 	bool m_logTimingNet;
 	bool m_logTimingQuery;
 	bool m_logTimingSpcache;
-	bool m_logTimingTopics;
 	// programmer reminders.
 	bool m_logReminders;
 
@@ -653,17 +633,6 @@ class Conf {
 	int32_t  m_maxHeartbeatDelay;
 	int32_t  m_maxCallbackDelay;
 
-	// balance value for Msg6, each host can have this many ready domains
-	// per global host
-	//int32_t m_distributedSpiderBalance;
-	//int32_t m_distributedIpWait;
-
-	// parameters for indexdb spitting and tfndb extension bits
-	//int32_t  m_indexdbSplit;
-	//char  m_fullSplit;
-	//char  m_legacyIndexdbSplit;
-	//int32_t  m_tfndbExtBits;
-
 	// used by Repair.cpp
 	char  m_repairingEnabled  ;
 	int32_t  m_maxRepairSpiders  ;
@@ -673,23 +642,13 @@ class Conf {
 	char  m_fullRebuild       ;
 	char  m_rebuildAddOutlinks;
 	char  m_rebuildRecycleLinkInfo  ;
-	//char  m_rebuildRecycleLinkInfo2 ;
-	//char  m_removeBadPages    ;
 	char  m_rebuildTitledb    ;
-	//char  m_rebuildTfndb      ;
-	//char  m_rebuildIndexdb    ;
 	char  m_rebuildPosdb    ;
-	//char  m_rebuildNoSplits   ;
-	//char  m_rebuildDatedb     ;
 	char  m_rebuildClusterdb  ;
 	char  m_rebuildSpiderdb   ;
-	//char  m_rebuildSitedb     ;
 	char  m_rebuildLinkdb     ;
-	//char  m_rebuildTagdb      ;
-	//char  m_rebuildPlacedb    ;
 	char  m_rebuildTimedb     ;
 	char  m_rebuildSectiondb  ;
-	//char  m_rebuildRevdb      ;
 	char  m_rebuildRoots      ;
 	char  m_rebuildNonRoots   ;
 

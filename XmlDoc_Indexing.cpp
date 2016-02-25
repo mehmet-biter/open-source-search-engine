@@ -184,23 +184,12 @@ static bool storeTerm ( char	*s        ,
 //   we know the termlist is small, or the termlist is being used for spidering
 //   or parsing purposes and is usually not sent across the network.
 bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
-
-	//if (  m_pbuf )
-	//	m_pbuf->safePrintf("<h3>Terms which are immune to indexdb "
-	//			   "splitting:</h3>");
-
-	//if ( m_skipIndexing ) return true;
-
 	// this should be ready to go and not block!
 	int64_t *pch64 = getExactContentHash64();
-	//int64_t *pch64 = getLooseContentHash64();
 	if ( ! pch64 || pch64 == (void *)-1 ) { char *xx=NULL;*xx=0; }
 
 	// shortcut
 	Url *fu = getFirstUrl();
-
-//BR 20160117: removed:	if ( ! hashVectors ( tt ) ) return false;
-
 
 	// constructor should set to defaults automatically
 	HashInfo hi;
@@ -1869,18 +1858,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 }
 
 
-
-/////////////
-//
-// CHROME DETECTION
-//
-// we search for these terms we hash here in getSectionsWithDupStats()
-// so we can remove chrome.
-//
-/////////////
-
 // . returns false and sets g_errno on error
-// . copied Url2.cpp into here basically, so we can now dump Url2.cpp
 bool XmlDoc::hashSections ( HashTableX *tt ) {
 	// BR 20160106: No longer store xpath-hashes in posdb as we do not use them.
 	return true;
@@ -2706,132 +2684,12 @@ bool XmlDoc::hashPermalink ( HashTableX *tt ) {
 }
 
 
-//hash the tag pair vector, the gigabit vector and the sample vector
 bool XmlDoc::hashVectors ( HashTableX *tt ) {
 
 	setStatus ( "hashing vectors" );
 
-	int32_t blen;
-	char buf[32];
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_shardByTermId = true;
-	
-/*
-  BR 20160117 removed
-
-	int32_t score =  *getSiteNumInlinks8() * 256;
-	if ( score <= 0 ) score = 1;
-	//char *field;
-	//char *descr;
-	//h = m_tagVector.getVectorHash();
-	uint32_t tph = *getTagPairHash32();
-	blen = sprintf(buf,"%"UINT32"", tph);
-	//field = "gbtagvector";
-	//descr = "tag vector hash";
-
-	// update hash parms
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_hashGroup = HASHGROUP_INTAG;
-	hi.m_prefix    = "gbtagvector";
-	hi.m_desc      = "tag vector hash";
-	hi.m_shardByTermId = true;
-
-	// this returns false on failure
-	if ( ! hashString ( buf,blen, &hi ) ) return false;
-*/
-
-/*
-  BR 20160106 removed
-	uint32_t h = *getGigabitVectorScorelessHash();
-	blen = sprintf(buf,"%"UINT32"",(uint32_t)h);
-	// udpate hash parms
-	hi.m_prefix = "gbgigabitvector";
-	hi.m_desc   = "gigabit vector hash";
-	// this returns false on failure
-	if ( ! hashString ( buf,blen,&hi) ) return false;
-*/
-
-	// . dup checking uses the two hashes above, not this hash!!! MDW
-	// . i think this vector is just used to see if the page changed
-	//   significantly since last spidering
-	// . it is used by getPercentChanged() and by Dates.cpp
-	// . sanity check
-	//if ( ! m_pageSampleVecValid ) { char *xx=NULL;*xx=0; }
-	//int32_t *pc = m_pageSampleVec;
-	//h = hash32((char *)m_pageSampleVec, SAMPLE_VECTOR_SIZE);
-	//blen = sprintf(buf,"%"UINT32"",(int32_t unsigned int)h);
-	//field = "gbsamplevector";
-	//descr = "sample vector hash";
-	// this returns false on failure
-	//if ( ! hashString ( tt,buf,blen,score,field,descr) )
-	//	return false;
-
-	// . hash combined for Dup Dectection
-	// . must match XmlDoc::getDupList ( );
-	//uint64_t h1 = m_tagVector.getVectorHash();
-	//uint64_t h2 = getGigabitVectorScorelessHash(gigabitVec);
-	//uint64_t h64 = hash64 ( h1 , h2 );
-
-	// take this out for now
-	/*
-	uint64_t *dh = getDupHash ( );
-	blen = sprintf(buf,"%"UINT64"", *dh );//h64);
-	//field = "gbduphash";
-	//descr = "dup vector hash";
-	// update hash parms
-	hi.m_prefix    = "gbduphash";
-	hi.m_desc      = "dup vector hash";
-	// this returns false on failure
-	if ( ! hashString ( buf,blen,&hi ) ) return false;
-	*/
-
-	// hash the wikipedia docids we match
-	if ( ! m_wikiDocIdsValid   ) { char *xx=NULL;*xx=0; }
-	for ( int32_t i = 0 ; i < size_wikiDocIds/8 ; i++ ) {
-		blen = sprintf(buf,"%"UINT64"",ptr_wikiDocIds[i]);
-		// convert to int32_t
-		//int32_t convScore = (int32_t)ptr_wikiScores[i];
-		// get score
-		//uint32_t ws = score8to32 ( convScore );
-		// update hash parms
-		hi.m_prefix    = "gbwikidocid";
-		hi.m_desc      = "wiki docid";
-		hi.m_hashGroup = HASHGROUP_INTAG;
-
-		// this returns false on failure
-		if ( ! hashString ( buf,blen,&hi ) ) return false;
-	}
-
 	return true;
 }
-
-
-/*
-	BR 20160106 removed.
-// hash gbhasthumbnail:0|1
-bool XmlDoc::hashImageStuff ( HashTableX *tt ) {
-
-	setStatus ("hashing image stuff");
-
-	char *val = "0";
-	char **td = getThumbnailData();
-	if ( *td ) val = "1";
-
-	// update hash parms
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_hashGroup = HASHGROUP_INTAG;
-	hi.m_prefix    = "gbhasthumbnail";
-	hi.m_desc      = "has a thumbnail";
-
-	// this returns false on failure
-	if ( ! hashString ( val,1,&hi ) ) return false;
-
-	return true;
-}
-*/
 
 
 // returns false and sets g_errno on error
@@ -3080,7 +2938,7 @@ bool XmlDoc::hashString3( char       *s              ,
 		return false;
 	if ( ! bits.set    ( &words , version , niceness ) )
 		return false;
-	if ( ! phrases.set(&words,&bits,true,false,version,niceness ) )
+	if ( !phrases.set( &words, &bits, version, niceness ) )
 		return false;
 
 	// use primary langid of doc
@@ -3348,15 +3206,15 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 			//   hashTitle we count all the words in the title
 			//   towards the density rank even if they are
 			//   in different sentences
-			if ( sx->m_flags & SEC_IN_TITLE  )
-				//hashGroup = HASHGROUP_TITLE;
+			if ( sx->m_flags & SEC_IN_TITLE  ) {
 				continue;
-			if ( sx->m_flags & SEC_IN_HEADER )
+			}
+			if ( sx->m_flags & SEC_IN_HEADER ) {
 				hashGroup = HASHGROUP_HEADING;
-			if ( sx->m_flags & ( SEC_MENU          |
-					     SEC_MENU_SENTENCE |
-					     SEC_MENU_HEADER   ) )
+			}
+			if ( sx->m_flags & ( SEC_MENU | SEC_MENU_SENTENCE | SEC_MENU_HEADER ) ) {
 				hashGroup = HASHGROUP_INMENU;
+			}
 		}
 
 		// this is for link text and meta tags mostly
@@ -3381,10 +3239,6 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		// otherwise it will be the document's primary language.
 		char langId = langUnknown;
 		if ( m_wts && langVec ) langId = langVec[i];
-		// keep it as the original vector. i'm not sure we use
-		// this for anything but for display, so show the user
-		// how we made our calculation of the document's primary lang
-		//if ( langId == langUnknown ) langId = docLangId;
 
 		char wd;
 		if ( hi->m_useCountTable ) wd = wdv[i];
@@ -3458,8 +3312,7 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		
 		// if using posdb
 		key144_t k;
-		// if ( i == 11429 )
-		// 	log("foo");
+
 		g_posdb.makeKey ( &k ,
 				  h ,
 				  0LL,//docid
@@ -3476,15 +3329,9 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 				  false , // delkey?
 				  hi->m_shardByTermId );
 
-		// get the one we lost
-		// char *kstr = KEYSTR ( &k , sizeof(POSDBKEY) );
-		// if (!strcmp(kstr,"0x0ca3417544e400000000000032b96bf8aa01"))
-		// 	log("got lost key");
-
 		// key should NEVER collide since we are always incrementing
 		// the distance cursor, m_dist
 		dt->addTerm144 ( &k );
-
 
 		// add to wts for PageParser.cpp display
 		if ( wts ) {
@@ -3494,7 +3341,6 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 					   wd,//v[i],
 					   ws,
 					   hashGroup,
-					   //false, // is phrase?
 					   wbuf,
 					   wts,
 					   SOURCE_NONE, // synsrc
@@ -3567,7 +3413,6 @@ skipsingleword:
 		////////
 
 		int64_t npid = pids2[i];
-		int32_t      npw  = 2;
 		uint64_t  ph2 = 0;
 
 		// repeat for the two word hash if different!
@@ -3599,7 +3444,7 @@ skipsingleword:
 		if ( wts && npid ) {
 			// get phrase as a string
 			int32_t plen;
-			char *phr=phrases->getPhrase(i,&plen,npw);
+			char *phr=phrases->getPhrase(i,&plen,2);
 			// store it
 			if ( ! storeTerm ( phr,plen,ph2,hi,i,
 					   wposvec[i], // wordPos
@@ -3647,186 +3492,8 @@ skipsingleword:
 			return false;
 	}
 
-
-#ifdef SUPPORT_FACETS
-	//BR 20160108 - facets DISABLED AS TEST. Don't think we will use them.
-	//https://gigablast.com/syntax.html?c=main
-
-#ifdef PRIVACORE_SAFE_VERSION
-	#error Oops? Do not enable SUPPORT_FACETS with PRIVACORE_SAFE_VERSION. Stores too much unused data in posdb.
-#endif
-
-	// hash a single term so they can do gbfacet:ext or
-	// gbfacet:siterank or gbfacet:price. a field on a field.
-	if ( prefixHash && words->m_numWords )
-	{
-		// hash gbfacet:price with and store the price in the key
-		hashFacet1 ( hi->m_prefix, words ,hi->m_tt);//, hi );
-	}
-#endif
-
-
 	// between calls? i.e. hashTitle() and hashBody()
-	//if ( wc > 0 ) m_dist = wposvec[wc-1] + 100;
 	if ( i > 0 ) m_dist = wposvec[i-1] + 100;
-
-	return true;
-}
-
-// just like hashNumber*() functions but we use "gbfacet" as the
-// primary prefix, NOT gbminint, gbmin, gbmax, gbmaxint, gbsortby,
-// gbsortbyint, gbrevsortby, gbrevsortbyint
-bool XmlDoc::hashFacet1 ( char *term ,
-			  Words *words ,
-			  HashTableX *tt ) {
-
-	// need a prefix
-	//if ( ! hi->m_prefix ) return true;
-
-	// hash the ENTIRE content, all words as one blob
-	int32_t nw = words->getNumWords();
-	char *a = words->m_words[0];
-	char *b = words->m_words[nw-1]+words->m_wordLens[nw-1];
-	// hash the whole string as one value, the value of the facet
-	int32_t val32 = hash32 ( a , b - a );
-
-	if ( ! hashFacet2 ( "gbfacetstr",term, val32 , tt ) ) return false;
-
-	return true;
-}
-
-
-bool XmlDoc::hashFacet2 ( char *prefix,
-			  char *term ,
-			  int32_t val32 ,
-			  HashTableX *tt ,
-			  // we only use this for gbxpathsitehash terms:
-			  bool shardByTermId ) {
-
-	// need a prefix
-	//if ( ! hi->m_prefix ) return true;
-	//int32_t plen = gbstrlen ( hi->m_prefix );
-	//if ( plen <= 0 ) return true;
-	// we gotta make this case insensitive, and skip spaces
-	// because if it is 'focal length' we can't search
-	// 'focal length:10' because that comes across as TWO terms.
-	//int64_t prefixHash =hash64Lower_utf8_nospaces ( hi->m_prefix,plen);
-
-	// now any field has to support gbfacet:thatfield
-	// and store the 32-bit termid into where we normally put
-	// the word position bits, etc.
-	//static int64_t s_facetPrefixHash = 0LL;
-	//if ( ! s_facetPrefixHash )
-	//	s_facetPrefixHash = hash64n ( "gbfacet" );
-
-	// this is case-sensitive
-	int64_t prefixHash = hash64n ( prefix );
-
-	// term is like something like "object.price" or whatever.
-	// it is the json field itself, or the meta tag name, etc.
-	int64_t termId64 = hash64n ( term );
-
-	// combine with the "gbfacet" prefix. old prefix hash on right.
-	// like "price" on right and "gbfacetfloat" on left... see Query.cpp.
-	int64_t ph2 = hash64 ( termId64, prefixHash );
-
-	// . now store it
-	// . use field hash as the termid. normally this would just be
-	//   a prefix hash
-	// . use mostly fake value otherwise
-	key144_t k;
-	g_posdb.makeKey ( &k ,
-			  ph2 ,
-			  0,//docid
-			  0,// word pos #
-			  0,// densityRank , // 0-15
-			  0 , // MAXDIVERSITYRANK
-			  0 , // wordSpamRank ,
-			  0 , //siterank
-			  0 , // hashGroup,
-			  // we set to docLang final hash loop
-			  //langUnknown, // langid
-			  // unless already set. so set to english here
-			  // so it will not be set to something else
-			  // otherwise our floats would be ordered by langid!
-			  // somehow we have to indicate that this is a float
-			  // termlist so it will not be mangled any more.
-			  //langEnglish,
-			  langUnknown,
-			  0 , // multiplier
-			  false, // syn?
-			  false , // delkey?
-			  shardByTermId );
-
-	//int64_t final = hash64n("products.offerprice",0);
-	//int64_t prefix = hash64n("gbsortby",0);
-	//int64_t h64 = hash64 ( final , prefix);
-	//if ( ph2 == h64 )
-	//	log("hey: got offer price");
-
-	// now set the float in that key
-	g_posdb.setInt ( &k , val32 );
-
-	// HACK: this bit is ALWAYS set by Posdb::makeKey() to 1
-	// so that we can b-step into a posdb list and make sure
-	// we are aligned on a 6 byte or 12 byte key, since they come
-	// in both sizes. but for this, hack it off to tell
-	// addTable144() that we are a special posdb key, a "numeric"
-	// key that has a float stored in it. then it will NOT
-	// set the siterank and langid bits which throw our sorting
-	// off!!
-	g_posdb.setAlignmentBit ( &k , 0 );
-
-	HashTableX *dt = tt;//hi->m_tt;
-
-	// the key may indeed collide, but that's ok for this application
-	if ( ! dt->addTerm144 ( &k ) )
-		return false;
-
-	if ( ! m_wts )
-		return true;
-
-	bool isFloat = false;
-	if ( strcmp(prefix,"gbfacetfloat")==0 ) isFloat = true;
-
-	// store in buffer for display on pageparser.cpp output
-	char buf[130];
-	if ( isFloat )
-		snprintf(buf,128,"facetField=%s facetVal32=%f",term,
-			 *(float *)&val32);
-	else
-		snprintf(buf,128,"facetField=%s facetVal32=%"UINT32"",
-			 term,(uint32_t)val32);
-	int32_t bufLen = gbstrlen(buf);
-
-	// make a special hashinfo for this facet
-	HashInfo hi;
-	hi.m_tt = tt;
-	// the full prefix
-	char fullPrefix[66];
-	snprintf(fullPrefix,64,"%s:%s",prefix,term);
-	hi.m_prefix = fullPrefix;//"gbfacet";
-
-	// add to wts for PageParser.cpp display
-	// store it
-	if ( ! storeTerm ( buf,
-			   bufLen,
-			   ph2, // prefixHash, // s_facetPrefixHash,
-			   &hi,
-			   0, // word#, i,
-			   0, // wordPos
-			   0,// densityRank , // 0-15
-			   0, // MAXDIVERSITYRANK,//phrase
-			   0, // ws,
-			   0, // hashGroup,
-			   //true,
-			   &m_wbuf,
-			   m_wts,
-			   // a hack for display in wts:
-			   SOURCE_NUMBER, // SOURCE_BIGRAM, // synsrc
-			   langUnknown ,
-			   k) )
-		return false;
 
 	return true;
 }
@@ -4346,27 +4013,6 @@ char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
 			}
 		}
 
-
-		//
-		// for deduping search results we set m_contentHash32 here for
-		// diffbot json objects.
-		// we can't do this here anymore, we have to set the
-		// contenthash in ::getContentHash32() because we need it to
-		// set EDOCUNCHANGED in ::getIndexCode() above.
-		//
-		/*
-		if ( hi->m_hashGroup != HASHGROUP_INURL ) {
-			// make the content hash so we can set m_contentHash32
-			// for deduping
-			int32_t nh32 = hash32n ( name );
-			// do an exact hash for now...
-			int32_t vh32 = hash32 ( val , vlen , m_niceness );
-			// accumulate, order independently
-			totalHash32 ^= nh32;
-			totalHash32 ^= vh32;
-		}
-		*/
-
 		// index like "title:whatever"
 		hi->m_prefix = name;
 		hashString ( val , vlen , hi );
@@ -4384,23 +4030,7 @@ char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
 		hi->m_prefix = NULL;
 		hashString ( val , vlen , hi );
 
-		/*
-		// a number? hash special then as well
-		if ( ji->m_type != JT_NUMBER ) continue;
-
-		// use prefix for this though
-		hi->m_prefix = name;
-
-		// hash as a number so we can sort search results by
-		// this number and do range constraints
-		float f = ji->m_valueDouble;
-		if ( ! hashNumberForSortingAsFloat ( f , hi ) )
-			return NULL;
-		*/
 	}
-
-	//m_contentHash32 = totalHash32;
-	//m_contentHash32Valid = true;
 
 	return (char *)0x01;
 }

@@ -15,7 +15,6 @@
 #include "Msg40.h"
 #include "sort.h"
 #include "Spider.h"
-#include "Revdb.h"
 #include "XmlDoc.h"
 #include "PageInject.h" // Msg7
 #include "PageReindex.h"

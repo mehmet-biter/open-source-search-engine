@@ -16,7 +16,6 @@
 #include "Clusterdb.h"
 #include "Datedb.h"
 #include "Dns.h"
-#include "Revdb.h"
 
 // a global class extern'd in .h file
 Hostdb g_hostdb;
@@ -1760,7 +1759,7 @@ int64_t Hostdb::getNumGlobalEvents ( ) {
 	return n / m_numHostsPerShard;
 }
 
-bool Hostdb::setNote ( int32_t hostId, char *note, int32_t noteLen ) {
+bool Hostdb::setNote ( int32_t hostId, const char *note, int32_t noteLen ) {
 	// replace the note on the host
 	if ( noteLen > 125 ) noteLen = 125;
 	Host *h = getHost ( hostId );
@@ -1773,7 +1772,7 @@ bool Hostdb::setNote ( int32_t hostId, char *note, int32_t noteLen ) {
 	return saveHostsConf();
 }
 
-bool Hostdb::setSpareNote ( int32_t spareId, char *note, int32_t noteLen ) {
+bool Hostdb::setSpareNote ( int32_t spareId, const char *note, int32_t noteLen ) {
 	// replace the note on the host
 	if ( noteLen > 125 ) noteLen = 125;
 	Host *h = getSpare ( spareId );
@@ -2354,8 +2353,7 @@ int32_t getShardNumFromTermId ( int64_t termId ) {
 // . this allows us to have any # of groups in a stripe, not just power of 2
 // . now we can use 3 stripes of 96 hosts each so spiders will almost never
 //   go down
-//uint32_t Hostdb::getGroupId ( char rdbId,void *k,bool split ) {
-uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) { // ,bool split ) {
+uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) {
 
 	if ( (rdbId == RDB_POSDB || rdbId == RDB2_POSDB2) &&
 	     // split by termid and not docid?
@@ -2372,10 +2370,6 @@ uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) { // ,bool split ) {
 		uint64_t d = g_posdb.getDocId ( k );
 		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
 	}
-	//if      ( rdbId == RDB_INDEXDB || rdbId == RDB2_INDEXDB2 ) {
-	//	uint64_t d = g_indexdb.getDocId ( (key_t *)k );
-	//	return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
-	//}
 	else if ( rdbId == RDB_DATEDB || rdbId == RDB2_DATEDB2 ) {
 		uint64_t d = g_datedb.getDocId ( k );
 		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
@@ -2383,10 +2377,6 @@ uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) { // ,bool split ) {
 	else if ( rdbId == RDB_LINKDB || rdbId == RDB2_LINKDB2 ) {
 		return m_map [(*(uint16_t *)((char *)k + 26))>>3];	
 	}
-	//else if ( rdbId == RDB_TFNDB || rdbId == RDB2_TFNDB2 ) {
-	//	uint64_t d = g_tfndb.getDocId ( (key_t *)k );
-	//	return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
-	//}
 	else if ( rdbId == RDB_TITLEDB || rdbId == RDB2_TITLEDB2 ) {
 		uint64_t d = g_titledb.getDocId ( (key_t *)k );
 		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
@@ -2416,22 +2406,10 @@ uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) { // ,bool split ) {
 		  rdbId == RDB2_TAGDB2 ) {
 		return m_map [(*(uint16_t *)((char *)k + 10))>>3];
 	}
-	else if ( rdbId == RDB_DOLEDB ) { // || rdbId == RDB2_DOLEDB2 ) {
+	else if ( rdbId == RDB_DOLEDB ) {
 		// HACK:!!!!!!  this is a trick!!! it is us!!!
 		//return g_hostdb.m_myHost->m_groupId;
 		return g_hostdb.m_myHost->m_shardNum;
-	}
-	else if ( rdbId == RDB_SECTIONDB || rdbId == RDB2_SECTIONDB2 ) {
-		// use top 13 bits of key
-		return m_map [(*(uint16_t *)((char *)k + 14))>>3];
-		//uint64_t d = g_datedb.getDocId ( k );
-		//return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
-	}
-	else if ( rdbId == RDB_REVDB || rdbId == RDB2_REVDB2 ) {
-		// key is formed like title key is
-		//int64_t d = g_titledb.getDocId ( (key_t *)k );
-		uint64_t d = g_revdb.getDocId( (key_t *)k );
-		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
 	}
 
 	// core -- must be provided

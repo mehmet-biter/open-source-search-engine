@@ -30,7 +30,6 @@ static const int64_t multicast_msg20_summary_timeout       =       1500;
 static const int64_t multicast_msg1_senddata_timeout       =      60000;
 static const int64_t multicast_msg3a_default_timeout       =      10000;
 static const int64_t multicast_msg3a_maximum_timeout       =      60000;
-static const int64_t multicast_xmldoc_sectionstats_timeout =      30000;
 static const int64_t multicast_msg1c_getip_default_timeout =      60000;
 
 

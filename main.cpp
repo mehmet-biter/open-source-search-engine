@@ -19,7 +19,6 @@
 #include "Posdb.h"
 #include "Datedb.h"
 #include "Titledb.h"
-#include "Revdb.h"
 #include "Tagdb.h"
 #include "Spider.h"
 #include "SpiderColl.h"
@@ -95,8 +94,6 @@ static void dumpTitledb  (char *coll, int32_t sfn, int32_t numFiles, bool includ
 			   int64_t docId , bool justPrintDups );
 static int32_t dumpSpiderdb ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
 			   char printStats , int32_t firstIp );
-static void dumpSectiondb( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
-static void dumpRevdb    ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
 
 static void dumpTagdb( char *coll, int32_t sfn, int32_t numFiles, bool includeTree, char rec = 0,
 					   int32_t rdbId = RDB_TAGDB, char *site = NULL );
@@ -653,16 +650,6 @@ int main2 ( int argc , char *argv[] ) {
 			"all events as if the time is UTCtimestamp.\n\n"
 			*/
 
-			/*
-#ifdef _CLIENT_
-			//there was <hostId> in this command but it 
-			// wasn't used in the program, so deleting it from 
-			// here
-			"dump <V> [C [X [Y [Z]]]]\n\tdump a db in "
-#else
-			*/
-
-			//"dump <db> <collection> [T]\n\tDump a db from disk. "
 			"dump <db> <collection>\n\tDump a db from disk. "
 			"Example: gb dump t main\n"
 			"\t<collection> is the name of the collection.\n"
@@ -687,7 +674,6 @@ int main2 ( int argc , char *argv[] ) {
 			"\t<db> is W to dump tagdb for wget.\n"
 			"\t<db> is x to dump doledb.\n"
 			"\t<db> is w to dump waiting tree.\n"
-			"\t<db> is B to dump sectiondb.\n"
 			"\t<db> is C to dump catdb.\n"
 			"\t<db> is l to dump clusterdb.\n"
 			"\t<db> is z to dump statsdb all keys.\n"
@@ -2239,10 +2225,6 @@ int main2 ( int argc , char *argv[] ) {
 				fprintf(stdout,"error dumping spiderdb\n");
 			}
 		}
-		else if ( argv[cmdarg+1][0] == 'B' )
-		       dumpSectiondb(coll,startFileNum,numFiles,includeTree);
-		else if ( argv[cmdarg+1][0] == 'V' )
-		       dumpRevdb(coll,startFileNum,numFiles,includeTree);
 		else if ( argv[cmdarg+1][0] == 'S' ) {
 			char *site = NULL;
 			if ( cmdarg+6 < argc ) {
@@ -2638,61 +2620,16 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! g_linkdb.init()     ) {
 		log("db: Linkdb init failed."   ); return 1; }
 
-	// use sectiondb again for its immense voting power for detecting and
-	// removing web page chrome, categories, etc. only use if 
-	// CollectionRec::m_isCustomCrawl perhaps to save space.
-	if ( ! g_sectiondb.init()     ) {
-		log("db: Sectiondb init failed."   ); return 1; }
-
 	// now clean the trees since all rdbs have loaded their rdb trees
 	// from disk, we need to remove bogus collection data from teh trees
 	// like if a collection was delete but tree never saved right it'll
 	// still have the collection's data in it
 	if ( ! g_collectiondb.addRdbBaseToAllRdbsForEachCollRec ( ) ) {
 		log("db: Collectiondb init failed." ); return 1; }
-	// . now read in a little bit of each db and make sure the contained
-	//   records belong in our group
-	// . only do this if we have more than one group
-	// . we may have records from other groups if we are scaling, but
-	//   if we cannot find *any* records in our group we probably have
-	//   the wrong data files.
-	//if ( ! checkDataParity() ) return 1;
 
 	//Load the high-frequency term shortcuts (if they exist)
 	g_hfts.load();
 	
-	// init the vector cache
-	/*
-	if ( ! g_vectorCache.init ( g_conf.m_maxVectorCacheMem,
-				    VECTOR_REC_SIZE-sizeof(key_t),
-				    true,
-				    g_conf.m_maxVectorCacheMem /
-				      ( sizeof(collnum_t) + 20 +
-					VECTOR_REC_SIZE )        ,
-				    true,
-				    "vector",
-				    false,
-				    12,
-				    12 ) ) {
-		log("db: Vector Cache init failed." ); return 1; }
-	*/
-	// . gb gendbs 
-	// . hostId should have already been picked up above, so it could be 
-	//   used to initialize all the rdbs
-	//if ( strcmp ( cmd , "gendbs" ) == 0 ) {
-	//	char *coll = argv[cmdarg+1];
-	//	// generate the dbs
-	//	genDbs ( coll ); // coll
-	//	g_log.m_disabled = true;
-	//	return 0;
-	//}
-	//if ( strcmp ( cmd, "genclusterdb" ) == 0 ) {
-	//	char *coll = argv[cmdarg+1];
-	//	makeClusterdb ( coll );
-	//	g_log.m_disabled = true;
-	//	return 0;
-	//}
-
 	// test all collection dirs for write permission -- metalincs' request
 	int32_t pcount = 0;
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
@@ -2709,16 +2646,6 @@ int main2 ( int argc , char *argv[] ) {
 		checkDirPerms ( tt ) ;
 	}
 
-	// and now that all rdbs have loaded lets count the gbeventcount
-	// keys we have in datedb. those represent the # of events we
-	// have indexed.
-	//g_collectiondb.countEvents();
-
-	//if (!ucInit(g_hostdb.m_dir, true)) {
-	//	log("Unicode initialization failed!");
-	//	return 1;
-	//}
-
 	//
 	// NOTE: ANYTHING THAT USES THE PARSER SHOULD GO BELOW HERE, UCINIT!
 	//
@@ -2727,20 +2654,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! g_speller.init() && g_conf.m_isLive ) {
 		return 1;
 	}
-
-	// have to test after unified dict is loaded because if word is
-	// of unknown langid we try to get syns for it anyway if it has
-	// only one possible lang according to unified dict
-	//if ( ! g_wiktionary.test2() ) return 1;
-
-	/*
-	if ( strcmp ( cmd, "gendaterange" ) == 0 ) {
-		char *coll = argv[cmdarg+1];
-		genDateRange ( coll );
-		g_log.m_disabled = true;
-		return 0;
-	}
-	*/
 
 	// Load the category language table
 	g_countryCode.loadHashTable();
@@ -2765,64 +2678,6 @@ int main2 ( int argc , char *argv[] ) {
 		log("db: ResultsCache: %s",mstrerror(g_errno)); 
 		return 1;
 	}
-	/*
-	maxMem = 40000000;
-	int32_t maxNodes2 = maxMem/(8+8+50*(8+4+4));
-	if ( ! g_genericCache[SEORESULTS_CACHEID].init (
-				     maxMem     ,   // max cache mem
-				     -1          ,   // fixedDataSize
-				     false       ,   // support lists of recs?
-				     maxNodes2   ,   // max cache nodes 
-				     false       ,   // use half keys?
-				     "seoresults"   ,   // filename
-				     true)){ // save to disk?
-		log("db: ResultsCache: %s",mstrerror(g_errno)); 
-		return 1;
-	}
-	*/
-	/*
-	int32_t maxMem1 = g_conf.m_siteLinkInfoMaxCacheMem;
-	if ( ! g_genericCache[SITELINKINFO_CACHEID].init (
-				     maxMem1     ,   // max cache mem
-				     4           ,   // fixedDataSize
-				     false       ,   // support lists of recs?
-				     maxMem1/36  ,   // max cache nodes 
-				     false       ,   // use half keys?
-				     "sitelinkinfo" ,   // filename
-				     //g_conf.m_siteLinkInfoSaveCache ) ) {
-				     true)){
-		log("db: SiteLinkInfoCache: %s",mstrerror(g_errno)); 
-		return 1;
-	}
-	int32_t maxMem2a = g_conf.m_siteQualityMaxCacheMem;
-	if ( ! g_genericCache[SITEQUALITY_CACHEID].init (
-				     maxMem2a    ,   // max cache mem
-				     1           ,   // fixedDataSize
-				     false       ,   // support lists of recs?
-				     maxMem2a/36 ,   // max cache nodes 
-				     false       ,   // use half keys?
-				     "sitequality" ,   // filename
-				     //g_conf.m_siteQualitySaveCache ) ) {
-				     true)) {
-		log("db: SiteQualityCache: %s",mstrerror(g_errno)); 
-		return 1;
-	}
-	*/
-	/*
-	int32_t maxMem2b = g_conf.m_siteQualityMaxCacheMem * .10 ;
-	if ( ! g_genericCacheSmallLocal[SITEQUALITY_CACHEID].init (
-				     maxMem2b    ,   // max cache mem
-				     1           ,   // fixedDataSize
-				     false       ,   // support lists of recs?
-				     maxMem2b/36 ,   // max cache nodes 
-				     false       ,   // use half keys?
-				     "sitequality" ,   // filename
-				     //g_conf.m_siteQualitySaveCache ) ) {
-				     false)) {
-		log("db: SiteQualityCacheSmallLocal: %s",mstrerror(g_errno)); 
-		return 1;
-	}
-	*/
 
 	// init minsitenuminlinks buffer
 	if ( ! g_tagdb.loadMinSiteInlinksBuffer() ) {
@@ -7836,223 +7691,6 @@ void *startUp ( void *state , ThreadEntry *t ) {
 	return 0; //NULL;
 }
 
-void dumpSectiondb(char *coll,int32_t startFileNum,int32_t numFiles,
-		   bool includeTree) {
-	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	g_sectiondb.init ();
-	//g_collectiondb.init(true);
-	g_sectiondb.getRdb()->addRdbBase1(coll );
-	key128_t startKey ;
-	key128_t endKey   ;
-	startKey.setMin();
-	endKey.setMax();
-	// turn off threads
-	g_threads.disableThreads();
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
-	Msg5 msg5;
-	RdbList list;
-	char tmpBuf[1024];
-	SafeBuf sb(tmpBuf, 1024);
-	bool firstKey = true;
-	CollectionRec *cr = g_collectiondb.getRec(coll);
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_SECTIONDB ,
-			      cr->m_collnum      ,
-			      &list         ,
-			      (char *)&startKey      ,
-			      (char *)&endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         )){// err correction?
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) return;
-
-	key128_t lastk;
-
-	// loop over entries in list
-	for(list.resetListPtr();!list.isExhausted(); list.skipCurrentRecord()){
-		char *rec  = list.getCurrentRec();
-		key128_t *k = (key128_t *)rec;
-		char *data = list.getCurrentData();
-		int32_t  size = list.getCurrentDataSize();
-		// is it a delete?
-		if ( (k->n0 & 0x01) == 0 ) {
-			printf("k.n1=%016"XINT64" k.n0=%016"XINT64" (delete)\n",
-			       k->n1  , k->n0   | 0x01  );  // fix it!
-			continue;
-		}
-		if ( size != sizeof(SectionVote) ) { char *xx=NULL;*xx=0; }
-		// sanity check
-		if ( ! firstKey ) {
-			if ( k->n1 < lastk.n1 ) { char *xx=NULL;*xx=0; }
-			if ( k->n1 == lastk.n1 && k->n0 < lastk.n0 ) { 
-				char *xx=NULL;*xx=0; }
-		}
-		// no longer a first key
-		firstKey = false;
-		// copy it
-		gbmemcpy ( &lastk , k , sizeof(key128_t) );
-		int32_t shardNum =  getShardNum (RDB_SECTIONDB,k);
-		//int32_t groupNum = g_hostdb.getGroupNum ( gid );
-		// point to the data
-		char  *p       = data;
-		char  *pend    = data + size;
-		// breach check
-		if ( p >= pend ) {
-			printf("corrupt sectiondb rec k.n0=%"UINT64"",k->n0);
-			continue;
-		}
-		// parse it up
-		SectionVote *sv = (SectionVote *)data;
-		int64_t termId = g_datedb.getTermId ( k );
-		// score is the section type
-		unsigned char score2 = g_datedb.getScore(k);
-		char *stype = "unknown";
-		if ( score2 == SV_CLOCK          ) stype = "clock         ";
-		if ( score2 == SV_EURDATEFMT     ) stype = "eurdatefmt    ";
-		if ( score2 == SV_EVENT          ) stype = "event         ";
-		if ( score2 == SV_ADDRESS        ) stype = "address       ";
-		if ( score2 == SV_TAGPAIRHASH    ) stype = "tagpairhash   ";
-		if ( score2 == SV_TAGCONTENTHASH ) stype = "tagcontenthash";
-		if ( score2 == SV_FUTURE_DATE    ) stype = "futuredate    ";
-		if ( score2 == SV_PAST_DATE      ) stype = "pastdate      ";
-		if ( score2 == SV_CURRENT_DATE   ) stype = "currentdate   ";
-		if ( score2 == SV_SITE_VOTER     ) stype = "sitevoter     ";
-		if ( score2 == SV_TURKTAGHASH    ) stype = "turktaghash   ";
-		int64_t d = g_datedb.getDocId(k);
-		int32_t date = g_datedb.getDate(k);
-		// dump it
-		printf("k=%s "
-		       "sh48=%"XINT64" " // sitehash is the termid
-		       "date=%010"UINT32" " 
-		       "%s (%"UINT32") "
-		       "d=%012"UINT64" "
-		       "score=%f samples=%f "
-		       "shardnum=%"INT32""
-		       "\n",
-		       //k->n1,
-		       //k->n0,
-		       KEYSTR(k,sizeof(key128_t)),
-		       termId,
-		       date,
-		       stype,(uint32_t)score2,
-		       d,
-		       sv->m_score,
-		       sv->m_numSampled,
-		       shardNum);
-	}
-		
-	startKey = *(key128_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
-	// watch out for wrap around
-	if ( startKey < *(key128_t *)list.getLastKey() ){ printf("\n"); return;}
-	goto loop;
-}
-
-void dumpRevdb(char *coll,int32_t startFileNum,int32_t numFiles, bool includeTree) {
-	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	g_revdb.init ();
-	//g_collectiondb.init(true);
-	g_revdb.getRdb()->addRdbBase1(coll );
-	key_t startKey ;
-	key_t endKey   ;
-	startKey.setMin();
-	endKey.setMax();
-	// turn off threads
-	g_threads.disableThreads();
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
-	Msg5 msg5;
-	RdbList list;
-	char tmpBuf[1024];
-	SafeBuf sb(tmpBuf, 1024);
-	bool firstKey = true;
-	CollectionRec *cr = g_collectiondb.getRec(coll);
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_REVDB     ,
-			      cr->m_collnum ,
-			      &list         ,
-			      (char *)&startKey      ,
-			      (char *)&endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         )){// err correction?
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) return;
-
-	key_t lastk;
-
-	// loop over entries in list
-	for(list.resetListPtr();!list.isExhausted(); list.skipCurrentRecord()){
-		char *rec  = list.getCurrentRec();
-		key_t *k = (key_t *)rec;
-		char *data = list.getCurrentData();
-		int32_t  size = list.getCurrentDataSize();
-		// get docid from key
-		int64_t d = g_revdb.getDocId(k);
-		// is it a delete?
-		if ( (k->n0 & 0x01) == 0 ) {
-			printf("k.n1=%08"XINT32" k.n0=%016"XINT64" d=%"UINT64" (delete)\n",
-			       k->n1  , k->n0   | 0x01  , d );  // fix it!
-			continue;
-		}
-		//if ( size != sizeof(SectionVote) ) { char *xx=NULL;*xx=0; }
-		// sanity check
-		if ( ! firstKey ) {
-			if ( k->n1 < lastk.n1 ) { char *xx=NULL;*xx=0; }
-			if ( k->n1 == lastk.n1 && k->n0 < lastk.n0 ) { 
-				char *xx=NULL;*xx=0; }
-		}
-		// no longer a first key
-		firstKey = false;
-		// copy it
-		gbmemcpy ( &lastk , k , sizeof(key_t) );
-		// point to the data
-		char  *p       = data;
-		char  *pend    = data + size;
-		// breach check
-		if ( p > pend ) {
-			printf("corrupt revdb rec k.n1=0x%08"XINT32" d=%"UINT64"\n",
-			       k->n1,d);
-			continue;
-		}
-		// parse it up
-		//SectionVote *sv = (SectionVote *)data;
-		// dump it
-		printf("k.n1=%08"XINT32" k.n0=%016"XINT64" ds=%06"INT32" d=%"UINT64"\n", 
-		       k->n1,k->n0,size,d);
-	}
-		
-	startKey = *(key_t *)list.getLastKey();
-	startKey += (uint32_t) 1;
-	// watch out for wrap around
-	if ( startKey < *(key_t *)list.getLastKey() ){ printf("\n"); return;}
-	goto loop;
-}
-
 void dumpTagdb( char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char req, int32_t rdbId,
 				char *siteArg ) {
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
@@ -8473,13 +8111,11 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	// computeWordIds from xml
 	words.set ( &xml , true , true ) ;
 	bits.set ( &words ,TITLEREC_CURRENT_VERSION, 0);
-	Phrases phrases;
-	phrases.set ( &words,&bits,true,true,TITLEREC_CURRENT_VERSION,0);
 	t = gettimeofdayInMilliseconds_force();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		//if ( ! words.set ( &xml , true , true ) )
 		// do not supply xd so it will be set from scratch
-		if ( !sections.set( &words, &phrases, &bits, NULL, 0, NULL, 0, 0 ) )
+		if ( !sections.set( &words, &bits, NULL, 0, NULL, 0, 0 ) )
 			return log("build: speedtestxml: sections set: %s",
 				   mstrerror(g_errno));
 
@@ -8493,14 +8129,10 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	
 
 	//Phrases phrases;
+	Phrases phrases;
 	t = gettimeofdayInMilliseconds_force();
-	for ( int32_t i = 0 ; i < 100 ; i++ ) 
-		if ( ! phrases.set ( &words ,
-				     &bits  ,
-				     true     , // use stop words
-				     false    , // use stems
-				     TITLEREC_CURRENT_VERSION ,
-				     0 ) ) // niceness
+	for ( int32_t i = 0 ; i < 100 ; i++ )
+		if ( !phrases.set( &words, &bits, TITLEREC_CURRENT_VERSION, 0 ) )
 			return log("build: speedtestxml: Phrases set: %s",
 				   mstrerror(g_errno));
 	// print time it took
@@ -8597,22 +8229,6 @@ bool summaryTest1   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
 		xml.set( content, contentLen, xd.m_version, 0, CT_HTML );
 
 		xd.getSummary();
-
-		//Summary s;
-		// bool status;
-		/*
-		status = s.set  ( &xml                      , 
-				  &q                        ,
-				  NULL                      , // termFreqs
-				  false                     , // doStemming? 
-				  summaryMaxLen             ,
-				  numSummaryLines           ,
-				  summaryMaxNumCharsPerLine ,
-				  bigSampleRadius           ,
-				  bigSampleMaxLen           ,
-				  ratInSummary              ,
-				  &tr                       );
-		*/
 	}
 
 	// print time it took
@@ -8641,8 +8257,6 @@ bool summaryTest2   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
 	int32_t numSummaryLines           = cr->m_summaryMaxNumLines;
 	int32_t summaryMaxNumCharsPerLine = cr->m_summaryMaxNumCharsPerLine;
 	// these are arbitrary (taken from Msg24.cpp)
-	int32_t bigSampleRadius           = 100;
-	int32_t bigSampleMaxLen           = 4000;
 	bool ratInSummary              = false;
 
 	Query q;
@@ -8731,8 +8345,6 @@ bool summaryTest2   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
 				  summaryMaxLen             ,
 				  numSummaryLines           ,
 				  summaryMaxNumCharsPerLine ,
-				  bigSampleRadius           ,
-				  bigSampleMaxLen           ,
 				  ratInSummary              ,
 				  &tr                       );
 		// time it

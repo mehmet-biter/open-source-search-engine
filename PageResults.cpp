@@ -19,17 +19,15 @@
 #include "LanguageIdentifier.h"
 #include "CountryCode.h"
 #include "Unicode.h"
-#include "XmlDoc.h" // GigabitInfo class
 #include "Posdb.h" // MAX_TOP definition
 #include "PageResults.h"
+#include "PageRoot.h"
 #include "Proxy.h"
 
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) ;
 static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) ;
 
-//static void gotSpellingWrapper ( void *state ) ;
 static void gotResultsWrapper  ( void *state ) ;
-//static void gotAdsWrapper      ( void *state ) ;
 static void gotState           ( void *state ) ;
 static bool gotResults         ( void *state ) ;
 
@@ -162,34 +160,6 @@ bool sendReply ( State0 *st , char *reply ) {
 
 	mdelete(st, sizeof(State0), "PageResults2");
 	delete st;
-
-	/*
-	if ( format == FORMAT_XML ) {
-		SafeBuf sb;
-		sb.safePrintf("<?xml version=\"1.0\" "
-			      "encoding=\"UTF-8\" ?>\n"
-			      "<response>\n"
-			      "\t<errno>%"INT32"</errno>\n"
-			      "\t<errmsg>%s</errmsg>\n"
-			      "</response>\n"
-			      ,(int32_t)savedErr
-			      ,mstrerror(savedErr)
-			      );
-		// clear it for sending back
-		g_errno = 0;
-		// send back as normal reply
-		g_httpServer.sendDynamicPage(s,
-					     sb.getBufStart(),
-					     sb.length(),
-					     0, // cachetime in secs
-					     false, // POSTReply?
-					     ct,
-					     -1, // httpstatus -1 -> 200
-					     NULL, // cookieptr
-					     charset );
-		return true;
-	}
-	*/
 
 	// if we had a broken pipe from the browser while sending
 	// them the search results, then we end up closing the socket fd
@@ -332,15 +302,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 		// propagate "n"
 		int32_t n = hr->getLong("n",-1);
 		if ( n >= 0 ) sb.safePrintf("&n=%"INT32"",n);
-		// Docs to Scan for Related Topics
-		int32_t dsrt = hr->getLong("dsrt",-1);
-		if ( dsrt >= 0 ) sb.safePrintf("&dsrt=%"INT32"",dsrt);
-		// debug gigabits?
-		int32_t dg = hr->getLong("dg",-1);
-		if ( dg >= 0 ) sb.safePrintf("&dg=%"INT32"",dg);
-		// show gigabits?
-		//int32_t gb = hr->getLong("gigabits",1);
-		//if ( gb >= 1 ) sb.safePrintf("&gigabits=%"INT32"",gb);
 		// show banned results?
 		int32_t showBanned = hr->getLong("sb",0);
 		if ( showBanned ) sb.safePrintf("&sb=1");
@@ -367,12 +328,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 			      , h32
 			      , rand64
 			      );
-		//
-		// . login bar
-		// . proxy will replace it byte by byte with a login/logout
-		//   link etc.
-		//
-		//g_proxy.insertLoginBarDirective(&sb);
 
 		// 
 		// logo header
@@ -390,23 +345,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 			      //"alert(this.status+this.statusText+"
 			      //"this.responseXML+this.responseText);\n"
 			      "}}\n"
-
-
-			      // gigabit unhide function
-			      "function ccc ( gn ) {\n"
-			      "var e = document.getElementById('fd'+gn);\n"
-			      "var f = document.getElementById('sd'+gn);\n"
-			      "if ( e.style.display == 'none' ){\n"
-			      "e.style.display = '';\n"
-			      "f.style.display = 'none';\n"
-			      "}\n"
-			      "else {\n"
-			      "e.style.display = 'none';\n"
-			      "f.style.display = '';\n"
-			      "}\n"
-			      "}\n"
-			      "</script>\n"
-
 
 
 			      // put search results into this div
@@ -623,259 +561,6 @@ void gotState ( void *state ){
 	gotResults ( state );
 }
 
-
-// print all sentences containing this gigabit (fast facts) (nuggabits)
-static bool printGigabitContainingSentences ( State0 *st,
-					      SafeBuf *sb , 
-					      Msg40 *msg40 , 
-					      Gigabit *gi , 
-					      SearchInput *si ,
-					      Query *gigabitQuery ,
-					      int32_t gigabitId ) {
-	char format = si->m_format;
-
-	HttpRequest *hr = &st->m_hr;
-	CollectionRec *cr = si->m_cr;//g_collectiondb.getRec(collnum );
-
-	int32_t numOff;
-	int32_t revert;
-	int32_t spaceOutOff;
-
-	if ( format == FORMAT_HTML ) {
-		sb->safePrintf("<nobr><b>");
-
-		// make a new query
-		sb->safePrintf("<a href=\"/search?c=%s&q=",cr->m_coll);
-		sb->urlEncode(gi->m_term,gi->m_termLen);
-		sb->safeMemcpy("+|+",3);
-		char *q = hr->getString("q",NULL,"");
-		sb->urlEncode(q);
-		sb->safePrintf("\">");
-		sb->safeMemcpy(gi->m_term,gi->m_termLen);
-		sb->safePrintf("</a></b>");
-		sb->safePrintf(" <font color=gray size=-1>");
-		numOff = sb->m_length;
-		sb->safePrintf("      ");//,gi->m_numPages);
-		sb->safePrintf("</font>");
-		sb->safePrintf("</b>");
-
-		revert = sb->length();
-
-		sb->safePrintf("<font color=blue style=align:right;>"
-			       "<a style=cursor:hand;cursor:pointer; "
-			       "onclick=ccc(%"INT32");>"
-			       , gigabitId // s_gigabitCount 
-			       );
-		spaceOutOff = sb->length();
-		sb->safePrintf( "%c%c%c",
-				0xe2,
-				0x87,
-				0x93);
-		sb->safePrintf(//"[more]"
-			       "</a></font>");
-	
-
-		sb->safePrintf("</nobr>"); // <br>
-	}
-
-	if ( format == FORMAT_XML ) {
-		sb->safePrintf("\t\t<gigabit>\n");
-		sb->safePrintf("\t\t\t<term><![CDATA[");
-		sb->cdataEncode(gi->m_term,gi->m_termLen);
-		sb->safePrintf("]]></term>\n");
-		sb->safePrintf("\t\t\t<score>%f</score>\n",gi->m_gbscore);
-		sb->safePrintf("\t\t\t<minPop>%"INT32"</minPop>\n",gi->m_minPop);
-	}
-
-	if ( format == FORMAT_JSON ) {
-		sb->safePrintf("\t{\n");
-		//sb->safePrintf("\t\"gigabit\":{\n");
-		sb->safePrintf("\t\t\"term\":\"");
-		sb->jsonEncode(gi->m_term,gi->m_termLen);
-		sb->safePrintf("\",\n");
-		sb->safePrintf("\t\t\"score\":%f,\n",gi->m_gbscore);
-		sb->safePrintf("\t\t\"minPop\":%"INT32",\n",gi->m_minPop);
-	}
-
-	// get facts
-	int32_t numNuggets = 0;
-	int32_t numFacts = msg40->m_factBuf.length() / sizeof(Fact);
-	Fact *facts = (Fact *)msg40->m_factBuf.getBufStart();
-	bool first = true;
-	bool second = false;
-	bool printedSecond = false;
-	//int64_t lastDocId = -1LL;
-	int32_t saveOffset = 0;
-	for ( int32_t i = 0 ; i < numFacts ; i++ ) {
-		Fact *fi = &facts[i];
-
-		// if printed for a higher scoring gigabit, skip
-		if ( fi->m_printed ) continue;
-
-		// check gigabit match
-		int32_t k; for ( k = 0 ; k < fi->m_numGigabits ; k++ ) 
-			if ( fi->m_gigabitPtrs[k] == gi ) break;
-		// skip this fact/sentence if does not contain gigabit
-		if ( k >= fi->m_numGigabits ) continue;
-
-		// do not print if no period at end
-		char *s = fi->m_fact;
-		char *e = s + fi->m_factLen;
-		if ( e[-1] != '*' ) continue;
-		e--;
-
-	again:
-
-		// first time, print in the single fact div
-		if ( first && format == FORMAT_HTML ) {
-			sb->safePrintf("<div "
-				       //"style=\"border:1px lightgray solid;\"
-				      "id=fd%"INT32">",gigabitId);//s_gigabitCount);
-		}
-
-		if ( second && format == FORMAT_HTML ) {
-			sb->safePrintf("<div style=\"max-height:300px;"
-				      "display:none;"
-				      "overflow-x:hidden;"
-				      "overflow-y:auto;"//scroll;"
-				       //"border:1px lightgray solid; "
-				       "\" "
-				      "id=sd%"INT32">",gigabitId);//s_gigabitCount);
-			printedSecond = true;
-		}
-
-		Msg20Reply *reply = fi->m_reply;
-
-		// ok, print it out
-		if ( ! first && ! second && format == FORMAT_HTML ) {
-			sb->safePrintf("<br><br>\n");
-		}
-
-		numNuggets++;
-
-		// let's highlight with gigabits and query terms
-		SafeBuf tmpBuf;
-		Highlight h;
-		h.set ( &tmpBuf , s , e - s , gigabitQuery, "<u>", "</u>", 0 );
-
-		// now highlight the original query as well but in black bold
-		SafeBuf tmpBuf2;
-		h.set ( &tmpBuf2, tmpBuf.getBufStart(), tmpBuf.length(), &si->m_q, "<b>", "</b>", 0  );
-		
-
-		int32_t dlen; char *dom = getDomFast(reply->ptr_ubuf,&dlen);
-
-		// print the sentence
-		if ( format == FORMAT_HTML )
-			sb->safeStrcpy(tmpBuf2.getBufStart());
-
-		if ( format == FORMAT_XML ) {
-			sb->safePrintf("\t\t\t<instance>\n"
-				       "\t\t\t\t<sentence><![CDATA[");
-			sb->cdataEncode(tmpBuf2.getBufStart());
-			sb->safePrintf("]]></sentence>\n");
-			sb->safePrintf("\t\t\t\t<url><![CDATA[");
-			sb->cdataEncode(reply->ptr_ubuf);
-			sb->safePrintf("]]></url>\n");
-			sb->safePrintf("\t\t\t\t<domain><![CDATA[");
-			sb->cdataEncode(dom,dlen);
-			sb->safePrintf("]]></domain>\n");
-			sb->safePrintf("\t\t\t</instance>\n");
-		}
-
-		if ( format == FORMAT_JSON ) {
-			sb->safePrintf("\t\t\"instance\":{\n"
-				       "\t\t\t\"sentence\":\"");
-			sb->jsonEncode(tmpBuf2.getBufStart());
-			sb->safePrintf("\",\n");
-
-			sb->safePrintf("\t\t\t\"url\":\"");
-			sb->jsonEncode(reply->ptr_ubuf);
-			sb->safePrintf("\",\n");
-
-			sb->safePrintf("\t\t\t\"domain\":\"");
-			sb->jsonEncode(dom,dlen);
-			sb->safePrintf("\"\n");
-			sb->safePrintf("\t\t},\n");
-		}
-
-
-		fi->m_printed = 1;
-		saveOffset = sb->length();
-		if ( format == FORMAT_HTML ) {
-			sb->safePrintf(" <a href=/get?c=%s&cnsp=0&"
-				       "strip=0&d=%"INT64">",
-				       cr->m_coll,reply->m_docId);
-			sb->safeMemcpy(dom,dlen);
-			sb->safePrintf("</a>\n");
-			sb->safePrintf("</div>");
-		}
-
-		if ( second ) {
-			second = false;
-		}
-
-		if ( first ) {
-			first = false;
-			second = true;
-
-			// print first gigabit all over again but in 2nd div
-			goto again;
-		}
-	}
-
-	if ( format == FORMAT_XML ) 
-		sb->safePrintf("\t\t</gigabit>\n");
-
-	if ( format == FORMAT_JSON ) {
-		// remove last ,\n
-		sb->m_length -= 2;
-		// replace with just \n
-		// end the gigabit
-		sb->safePrintf("\n\t},\n");
-	}
-
-	// all done if not html
-	if ( format != FORMAT_HTML )
-		return true;
-
-	// we counted the first one twice since we had to throw it into
-	// the hidden div too!
-	if ( numNuggets > 1 ) numNuggets--;
-
-	// do not print the double down arrow if no nuggets printed
-	if ( numNuggets <= 0 ) {
-		sb->m_length = revert;
-		sb->safePrintf("</nobr>");
-	}
-	// just remove down arrow if only 1...
-	else if ( numNuggets == 1 ) {
-		char *dst = sb->getBufStart()+spaceOutOff;
-		dst[0] = ' ';
-		dst[1] = ' ';
-		dst[2] = ' ';
-	}
-	// store the # of nuggets in ()'s like (10 )
-	else {
-		char tmp[10];
-		sprintf(tmp,"(%"INT32")",numNuggets);
-		char *src = tmp;
-		// starting storing digits after "( "
-		char *dst = sb->getBufStart()+numOff;
-		int32_t srcLen = gbstrlen(tmp);
-		if ( srcLen > 5 ) srcLen = 5;
-		for ( int32_t k = 0 ; k < srcLen ; k++ ) 
-			dst[k] = src[k];
-	}
-
-	if ( printedSecond ) {
-		sb->safePrintf("</div>");
-	}
-
-	return true;
-}
-
-
 // . make a web page from results stored in msg40
 // . send it on TcpSocket "s" when done
 // . returns false if blocked, true otherwise
@@ -1045,22 +730,6 @@ bool gotResults ( void *state ) {
 	return true;
 }
 
-// defined in PageRoot.cpp
-bool expandHtml (  SafeBuf& sb,
-		   char *head ,
-		   int32_t hlen ,
-		   char *q    ,
-		   int32_t qlen ,
-		   HttpRequest *r ,
-		   SearchInput *si,
-		   char *method ,
-		   CollectionRec *cr ) ;
-
-
-bool printLeftColumnRocketAndTabs ( SafeBuf *sb,
-				    bool isSearchResultsPage ,
-				    CollectionRec *cr ,
-				    char *tabName );
 
 bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 
@@ -1135,271 +804,26 @@ bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 		// . tabName = "search"
 		printLeftColumnRocketAndTabs ( &sb , true , cr , "search" );
 
-	}
+		//
+		// BEGIN FACET PRINTING
+		//
+		// 
+		// . print out one table for each gbfacet: term in the query
+		// . LATER: show the text string corresponding to the hash
+		//   by looking it up in the titleRec
+		//
+		msg40->printFacetTables ( &sb );
+		//
+		// END FACET PRINTING
+		//
 
-
-	//
-	// BEGIN FACET PRINTING
-	//
-	// 
-	// . print out one table for each gbfacet: term in the query
-	// . LATER: show the text string corresponding to the hash
-	//   by looking it up in the titleRec
-	//
-	if ( format == FORMAT_HTML ) msg40->printFacetTables ( &sb );
-	//
-	// END FACET PRINTING
-	//
-
-	//
-	// BEGIN PRINT GIGABITS
-	//
-
-	SafeBuf *gbuf = &msg40->m_gigabitBuf;
-	int32_t numGigabits = gbuf->length()/sizeof(Gigabit);
-
-	if ( ! st->m_header )
-		numGigabits = 0;
-
-	// print gigabits
-	Gigabit *gigabits = (Gigabit *)gbuf->getBufStart();
-
-	if ( numGigabits && format == FORMAT_XML )
-		sb.safePrintf("\t<gigabits>\n");
-
-	if ( numGigabits && format == FORMAT_JSON )
-		sb.safePrintf("\"gigabits\":[\n");
-
-
-	if ( numGigabits && format == FORMAT_HTML )
-		// gigabit unhide function
-		sb.safePrintf (
-				"<script>"
-				"function ccc ( gn ) {\n"
-				"var e = document.getElementById('fd'+gn);\n"
-				"var f = document.getElementById('sd'+gn);\n"
-				"if ( e.style.display == 'none' ){\n"
-				"e.style.display = '';\n"
-				"f.style.display = 'none';\n"
-				"}\n"
-				"else {\n"
-				"e.style.display = 'none';\n"
-				"f.style.display = '';\n"
-				"}\n"
-				"}\n"
-				"</script>\n"
-			       );
-	
-	if ( numGigabits && format == FORMAT_HTML )
-		sb.safePrintf("<div id=gigabits "
-			      "style="
-			      "padding:5px;"
-			      "position:relative;"
-			      "border-width:3px;"
-			      "border-right-width:0px;"
-			      "border-style:solid;"
-			      "margin-left:10px;"
-			      "border-top-left-radius:10px;"
-			      "border-bottom-left-radius:10px;"
-			      "border-color:blue;"
-			      "background-color:white;"
-			      "border-right-color:white;"
-			      "margin-right:-3px;"
-			      ">"
-			      "<table cellspacing=7>"
-			      "<tr><td width=200px; valign=top>"
-			      "<center><img src=/gigabits40.jpg></center>"
-			      "<br>"
-			      "<br>"
-			      );
-
-	Query gigabitQuery;
-	char tmp[1024];
-	SafeBuf ttt(tmp, 1024);
-	// limit it to 40 gigabits for now
-	for ( int32_t i = 0 ; i < numGigabits && i < 40 ; i++ ) {
-		Gigabit *gi = &gigabits[i];
-		ttt.pushChar('\"');
-		ttt.safeMemcpy(gi->m_term,gi->m_termLen);
-		ttt.pushChar('\"');
-		ttt.pushChar(' ');
-	}
-	// term on it
-	ttt.nullTerm();
-
-	if ( numGigabits > 0 ) 
-		gigabitQuery.set2 ( ttt.getBufStart() ,
-				    si->m_queryLangId ,
-				    true , // queryexpansion?
-				    true );  // usestopwords?
-
-	for ( int32_t i = 0 ; i < numGigabits ; i++ ) {
-		//if ( i > 0 && format == FORMAT_HTML )
-		//	sb.safePrintf("<hr>");
-		//if ( perRow && (i % perRow == 0) )
-		//	sb.safePrintf("</td><td valign=top>");
-		// print all sentences containing this gigabit
-		Gigabit *gi = &gigabits[i];
-		// after the first 3 hide them with a more link
-		if ( i == 1 && format == FORMAT_HTML )  {
-			sb.safePrintf("</span><a onclick="
-				      "\""
-				      "var e = "
-				      "document.getElementById('hidegbits');"
-				      "if ( e.style.display == 'none' ){\n"
-				      "e.style.display = '';\n"
-				      "this.innerHtml='Show less';"
-				      "}"
-				      "else {\n"
-				      "e.style.display = 'none';\n"
-				      "this.innerHtml='Show more';\n"
-				      "}\n"
-				      "\" style=cursor:hand;cursor:pointer;>"
-				      "Show more</a>");
-			sb.safePrintf("<span id=hidegbits "
-				      "style=display:none;>"
-				      "<br><br>");
-		}
-
-		printGigabitContainingSentences( st, &sb, msg40, gi, si, &gigabitQuery, i );
-		if ( format == FORMAT_HTML )
-			sb.safePrintf("<br><br>");
-	}
-
-	//if ( numGigabits >= 1 && format == FORMAT_HTML ) 
-
-	if ( numGigabits && format == FORMAT_HTML )
-		sb.safePrintf("</td></tr></table></div><br>");
-
-
-	if ( numGigabits && format == FORMAT_XML )
-		sb.safePrintf("\t</gigabits>\n");
-
-	if ( numGigabits && format == FORMAT_JSON ) {
-		// remove ,\n
-		sb.m_length -=2;
-		// add back just \n
-		// end the gigabits array
-		sb.safePrintf("\n],\n");
-	}
-
-	//
-	// now print various knobs
-	//
-
-	//
-	// print date constraint functions now
-	//
-	if ( format == FORMAT_HTML && 1 == 2)
-		sb.safePrintf(
-			      "<div id=best "
-			      "style="
-			      "font-size:14px;"
-			      "padding:5px;"
-			      "position:relative;"
-			      "border-width:3px;"
-			      "border-right-width:0px;"
-			      "border-style:solid;"
-			      "margin-left:10px;"
-			      "border-top-left-radius:10px;"
-			      "border-bottom-left-radius:10px;"
-			      "border-color:blue;"
-			      "background-color:white;"
-			      "border-right-color:white;"
-			      "margin-right:-3px;"
-			      "text-align:right;"
-			      ">"
-			      "<b>"
-			      "ANYTIME &nbsp; &nbsp;"
-			      "</b>"
-			      "</div>"
-
-			      "<br>"
-
-			      "<div id=newsest "
-			      "style="
-			      "font-size:14px;"
-			      "padding:5px;"
-			      "position:relative;"
-			      "border-width:3px;"
-			      "border-right-width:0px;"
-			      "border-style:solid;"
-			      "margin-left:10px;"
-			      "border-top-left-radius:10px;"
-			      "border-bottom-left-radius:10px;"
-			      "border-color:white;"
-			      "background-color:blue;"
-			      "border-right-color:blue;"
-			      "margin-right:0px;"
-			      "text-align:right;"
-			      "color:white;"
-			      ">"
-			      "<b>"
-			      "LAST 24 HOURS &nbsp; &nbsp;"
-			      "</b>"
-			      "</div>"
-
-			      "<br>"
-
-			      "<div id=newsest "
-			      "style="
-			      "font-size:14px;"
-			      "padding:5px;"
-			      "position:relative;"
-			      "border-width:3px;"
-			      "border-right-width:0px;"
-			      "border-style:solid;"
-			      "margin-left:10px;"
-			      "border-top-left-radius:10px;"
-			      "border-bottom-left-radius:10px;"
-			      "border-color:white;"
-			      "background-color:blue;"
-			      "border-right-color:blue;"
-			      "margin-right:0px;"
-			      "text-align:right;"
-			      "color:white;"
-			      ">"
-			      "<b>"
-			      "LAST 7 DAYS &nbsp; &nbsp;"
-			      "</b>"
-			      "</div>"
-			      "<br>"
-
-			      "<div id=newsest "
-			      "style="
-			      "font-size:14px;"
-			      "padding:5px;"
-			      "position:relative;"
-			      "border-width:3px;"
-			      "border-right-width:0px;"
-			      "border-style:solid;"
-			      "margin-left:10px;"
-			      "border-top-left-radius:10px;"
-			      "border-bottom-left-radius:10px;"
-			      "border-color:white;"
-			      "background-color:blue;"
-			      "border-right-color:blue;"
-			      "margin-right:0px;"
-			      "text-align:right;"
-			      "color:white;"
-			      ">"
-			      "<b>"
-			      "LAST 30 DAYS &nbsp; &nbsp;"
-			      "</b>"
-			      "</div>"
-			      "<br>"
-
-
-			      );
-
-
-
-	//
-	// now the MAIN column
-	//
-	if ( format == FORMAT_HTML )
+		//
+		// now the MAIN column
+		//
 		sb.safePrintf("\n</TD>"
 			      "<TD valign=top style=padding-left:30px;>\n");
+	}
+
 	return true;
 }
 
@@ -1525,7 +949,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 		if ( header ) sb->safeStrcpy ( header );
 	}
 
-	// this also prints gigabits and nuggabits
 	// if we are xml/json we call this below otherwise we lose
 	// the header of <?xml...> or whatever
 	if ( ! g_conf.m_isMattWells && si->m_format == FORMAT_HTML ) {
@@ -1961,12 +1384,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 	if ( si->m_format != FORMAT_HTML && ! si->m_streamResults &&
 	     st->m_header ) 
 		msg40->printFacetTables ( sb );
-
-	// now print gigabits if we are xml/json
-	if ( si->m_format != FORMAT_HTML ) {
-		// this will print gigabits
-		printLeftNavColumn ( *sb,st );
-	}
 
 	// global-index is not a custom crawl but we should use "objects"
 	bool isDiffbot = cr->m_isCustomCrawl;
@@ -2821,12 +2238,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       ,d,mstrerror(m20->m_errno));
 		return true;
 	}
-
-	// . if section voting info was request, display now, it's in json
-	// . so if in csv it will mess things up!!!
-	if ( mr->ptr_sectionVotingInfo )
-		// it is possible this is just "\0"
-		sb->safeStrcpy ( mr->ptr_sectionVotingInfo );
 
 	// each "result" is the actual cached page, in this case, a json
 	// object, because we were called with &icc=1. in that situation
@@ -5202,7 +4613,6 @@ bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Msg20Repl
 		wbw = WIKI_BIGRAM_WEIGHT;
 	}
 	float hgw = getHashGroupWeight(ss->m_hashGroup);
-	//float dvw = getDiversityWeight(ss->m_diversityRank);
 	float dnw = getDensityWeight(ss->m_densityRank);
 	float wsw = getWordSpamWeight(ss->m_wordSpamRank);
 	// HACK for inlink text!
@@ -5508,13 +4918,6 @@ bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr,
 
 // if catId >= 1 then print the dmoz radio button
 bool printLogoAndSearchBox ( SafeBuf *sb, HttpRequest *hr, SearchInput *si ) {
-	char *root = "";
-
-	if ( g_conf.m_isMattWells )
-		root = "http://www.gigablast.com";
-
-	// now make a TABLE, left PANE contains gigabits and stuff
-
 	char *coll = hr->getString("c");
 	if ( ! coll ) coll = "";
 
@@ -6323,53 +5726,6 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		s_mi[n].m_icon     = NULL;
 		n++;
 
-#ifdef SUPPORT_FACETS
-		// BR 20160801: Disabled by default
-
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "Language facet";
-		s_mi[n].m_cgi      = "facet=gbfacetint:gblang";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "Content type facet";
-		s_mi[n].m_cgi      = "facet=gbfacetstr:type";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "Url path depth";
-		s_mi[n].m_cgi      = "facet=gbfacetint:gbpathdepth";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "Spider date facet";
-		s_mi[n].m_cgi      = "facet=gbfacetint:gbspiderdate";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		// everything in tagdb is hashed
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "Site num inlinks facet";
-		s_mi[n].m_cgi      = "facet=gbfacetint:gbtagsitenuminlinks";
-		s_mi[n].m_icon     = NULL;
-		n++;
-
-		// s_mi[n].m_menuNum  = 4;
-		// s_mi[n].m_title    = "Domains facet";
-		// s_mi[n].m_cgi      = "facet=gbfacetint:gbdomhash";
-		// n++;
-
-		s_mi[n].m_menuNum  = 4;
-		s_mi[n].m_title    = "Hopcount facet";
-		s_mi[n].m_cgi      = "facet=gbfacetint:gbhopcount";
-		s_mi[n].m_icon     = NULL;
-		n++;
-#endif
-
-
 		// output
 		s_mi[n].m_menuNum  = 5;
 		s_mi[n].m_title    = "Output HTML";
@@ -6600,10 +5956,8 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		// after 4 make a new line
 		if ( i == 5 ) sb->safePrintf("<br><br>");
 		if ( i == 9 ) sb->safePrintf("<br><br>");
-			
-#ifndef SUPPORT_FACETS
+
 		if( i == 4 ) continue;
-#endif			
 
 		printMenu ( sb , i , hr );
 	}

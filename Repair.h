@@ -80,40 +80,27 @@ public:
 	Msg5       m_msg5b;
 	Msg4       m_msg4;
 	bool       m_needsCallback;
-	//Msg50      m_msg50;
 	char       m_docQuality;
-	//Msg14      m_msg14;
-	//RdbList    m_scanList;
 	RdbList    m_titleRecList;
 	int64_t  m_docId;
 	char       m_isDelete;
 	RdbList    m_ulist;
 	RdbList    m_addlist;
-	//int32_t       m_ruleset;
-	//LinkTextReply  m_rootLinkText;
 	int64_t  m_totalMem;
 	int32_t       m_stage ;
 	int32_t       m_tfn;
 	int32_t       m_count;
 	bool       m_updated;
-	//key_t      m_currentTitleRecKey; // for tfndb
 
 	// titledb scan vars
-	//key_t      m_nextRevdbKey;
 	key_t      m_nextTitledbKey;
 	key_t      m_nextSpiderdbKey;
-	//key_t      m_nextIndexdbKey;
 	key_t      m_nextPosdbKey;
-	//key_t      m_nextDatedbKey;
 	key128_t   m_nextLinkdbKey;
-	//key128_t   m_nextPlacedbKey;
 	key_t      m_endKey;
 	int64_t  m_uh48;
-	//TitleRec   m_tr;
-	//Msg8a      m_msg8a;
 	int32_t       m_priority;
 	uint64_t   m_contentHash;
-	//key_t      m_tfndbKey;
 	key_t      m_clusterdbKey ;
 	key_t      m_spiderdbKey;
 	char       m_srBuf[SR_BUFSIZE];
@@ -127,8 +114,6 @@ public:
 
 	// spiderdb scan vars
 	bool       m_isNew;
-	//SpiderRec  m_sr;
-	//SiteRec  m_siteRec;
 	TagRec     m_tagRec;
 
 
@@ -139,8 +124,6 @@ public:
 	int64_t  m_prevDocId;
 	bool       m_completedFirstScan  ;
 	bool       m_completedSpiderdbScan ;
-	//bool     m_completedIndexdbScan  ;
-	//key_t      m_lastRevdbKey;
 	key_t      m_lastTitledbKey;
 	key_t      m_lastSpiderdbKey;
 
@@ -158,7 +141,6 @@ public:
 	int64_t  m_recsRoot;
 	int64_t  m_recsNonRoot;
 	int64_t  m_recsInjected;
-	//int32_t       m_fn;
 
 	// spiderdb scan stats
 	int32_t       m_spiderRecsScanned  ;
@@ -168,21 +150,13 @@ public:
 
 	// generic scan parms
 	char       m_rebuildTitledb    ;
-	//char       m_rebuildIndexdb    ;
 	char       m_rebuildPosdb    ;
-	//char       m_rebuildNoSplits   ;
-	//char       m_rebuildDatedb     ;
-	//char       m_rebuildTfndb      ;
 	char       m_rebuildClusterdb  ;
 	char       m_rebuildSpiderdb   ;
 	char       m_rebuildSitedb     ;
 	char       m_rebuildLinkdb     ;
 	char       m_rebuildTagdb      ;
-	//char       m_rebuildPlacedb    ;
-	//char       m_rebuildSectiondb  ;
-	//char       m_rebuildRevdb      ;
 	char       m_fullRebuild       ;
-	//char       m_removeBadPages    ;
 
 	char       m_rebuildRoots      ;
 	char       m_rebuildNonRoots   ;
@@ -208,7 +182,6 @@ public:
 	char       m_SAVE_END;
 
 	// i'd like to save these but they are ptrs
-	//char      *m_coll;
 	CollectionRec *m_cr;
 
 	//for timing a repair process

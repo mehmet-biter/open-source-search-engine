@@ -1,6 +1,4 @@
 
-#define MAX_TOPICS_PER_TERM 28
-#define MAX_ALLOWED_TOPICS 100
 #define EI_NIDENT 16
 #ifndef _PROFILER_H_
 #define _PROFILER_H_

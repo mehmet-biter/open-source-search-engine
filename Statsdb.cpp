@@ -88,23 +88,6 @@ static Label s_labels[] = {
 	//   eventually
 	{GRAPH_QUANTITY,-1,"docs_indexed", .1,"%.0f docs" , -1,  0x00cc0099,"docs indexed" }
 
-
-	//{ "termlist_intersect",0x0000ff00},
-	//{ "termlist_intersect_soft",0x00008000}, // rat=0
-	//{ "transmit_data_nice",0x00aa00aa },
-	//{ "transmit_data", 0x00ff00ff },
-	//{ "zak_ref_1a", 0x00ccffcc },
-	//{ "zak_ref_1b",0x00fffacd },
-	//{ "get_summary", 0x0000ff},
-	//{ "get_summary_nice", 0x0000b0},
-	//{ "get_gigabits",0x00d1e1ff },
-	//{ "get_termlists_nice", 0x00aaaa00},
-	//{ "get_termlists",0x00ffff00 },
-	//{ "get_all_summaries", 0x008220ff},
-	//{ "rdb_list_merge",0x0000ffff },
-	//{ "titlerec_compress",0x00ffffff },
-	//{ "titlerec_uncompress", 0x00ffffff} ,
-	//{ "parm_change",0xffc0c0} // pink?
 };
 
 void drawLine3 ( SafeBuf &sb ,

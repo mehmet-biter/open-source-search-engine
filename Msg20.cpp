@@ -691,8 +691,6 @@ int32_t Msg20Reply::serialize ( char *buf , int32_t bufSize ) {
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_displaySum,size_displaySum);
 	if(ptr_dbuf)
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_dbuf,size_dbuf);
-	if(ptr_gigabitSample)
-		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_gigabitSample,size_gigabitSample);
 	if(ptr_mbuf)
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_mbuf,size_mbuf);
 	if(ptr_vbuf)
@@ -723,12 +721,8 @@ int32_t Msg20Reply::serialize ( char *buf , int32_t bufSize ) {
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_rssItem,size_rssItem);
 	if(ptr_categories)
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_categories,size_categories);
-	if(ptr_gigabitQuery)
-		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_gigabitQuery,size_gigabitQuery);
 	if(ptr_content)
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_content,size_content);
-	if(ptr_sectionVotingInfo)
-		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_sectionVotingInfo,size_sectionVotingInfo);
 	if(ptr_tr)
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_tr,size_tr);
 	if(ptr_tlistBuf)
