@@ -70,11 +70,13 @@ bool Phrases::set( Words *words, Bits *bits, int32_t niceness ) {
 	// . sets m_phraseIds [i]
 	// . sets m_phraseSpam[i] to PSKIP if NO phrase exists
 	for ( int32_t i = 0 ; i < words->getNumWords() ; ++i ) {
+		QUICKPOLL(niceness);
+
 		if ( ! m_wids[i] ) {
 			continue;
 		}
 
-		setPhrase ( i , niceness);
+		setPhrase ( i );
 	}
 
 	// success
@@ -86,7 +88,7 @@ bool Phrases::set( Words *words, Bits *bits, int32_t niceness ) {
 // . read.ofmice
 // . ofmice
 // . mice.andmen
-void Phrases::setPhrase ( int32_t i, int32_t niceness ) {
+void Phrases::setPhrase ( int32_t i ) {
 	// hash of the phrase
 	int64_t h   = 0LL; 
 
@@ -99,9 +101,6 @@ void Phrases::setPhrase ( int32_t i, int32_t niceness ) {
 	// now look for other tokens that should follow the ith token
 	int32_t nw = m_words->getNumWords();
 	int32_t numWordsInPhrase = 1;
-
-	// use the min spam from all words in the phrase as the spam for phrase
-	char minSpam = -1;
 
 	// we need to hash "1 / 8" differently from "1.8" from "1,000" etc.
 	char isNum = is_digit(m_wptrs[i][0]);
@@ -136,8 +135,6 @@ void Phrases::setPhrase ( int32_t i, int32_t niceness ) {
 	hasStopWord2 = m_bits->isStopWord(i);
 
 	for ( j = i + 1 ; j < nw ; j++ ) {
-		QUICKPOLL(niceness);
-
 		// . do not allow more than 32 alnum/punct "words" in a phrase
 		// . this prevents phrases with 100,000 words from slowing
 		//   us down. would put us in a huge double-nested for loop
@@ -205,9 +202,6 @@ void Phrases::setPhrase ( int32_t i, int32_t niceness ) {
 
 	// sanity check
 	if ( lastWordj - i + 1 > 255 ) { char *xx=NULL;*xx=0; }
-
-	// set the phrase spam
-	if ( minSpam == -1 ) minSpam = 0;
 
 	// hyphen between numbers does not count (so 1-2 != 12)
 	if ( isNum ) hasHyphen = false;

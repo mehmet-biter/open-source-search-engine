@@ -44,7 +44,7 @@ private:
 	// . called by Phrases::set() above for each i
 	// . we set phraseSpam to 0 to 100% typically
 	// . we set phraseSpam to PSKIP if word #i cannot start a phrase
-	void setPhrase( int32_t i, int32_t niceness );
+	void setPhrase(int32_t i);
 
 	char  m_localBuf [ PHRASE_BUF_SIZE ];
 
