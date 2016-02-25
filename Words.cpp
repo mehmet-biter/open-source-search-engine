@@ -544,8 +544,7 @@ static uint8_t s_findMaxIndex(int64_t *array, int num, int *wantmax = NULL) {
 
 unsigned char Words::isBounded(int wordi) {
 	if(wordi+1 < m_numWords &&
-	   getWord(wordi)[getWordLen(wordi)] == '/' //||
-	    //getWord(wordi)[getWordLen(wordi)] == '?'
+	   getWord(wordi)[getWordLen(wordi)] == '/'
 	   )
 		return(true);
 	if(wordi+1 < m_numWords &&

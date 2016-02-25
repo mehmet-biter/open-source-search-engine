@@ -23,10 +23,6 @@
 // make sure it does not slow us down!!
 #define WORDS_LOCALBUFSIZE 80
 
-// an upper bound really
-int32_t countWords ( char *p ) ;
-int32_t countWords ( char *p , int32_t plen );
-
 int32_t printstring ( char *s , int32_t len ) ;
 
 char *getFieldValue ( char *s ,int32_t  slen, char *field , int32_t *valueLen ) ;
