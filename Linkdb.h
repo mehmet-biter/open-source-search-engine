@@ -955,13 +955,6 @@ LinkInfo *makeLinkInfo ( char        *coll                    ,
 			 class Msg25 *msg25 ,
 			 SafeBuf *linkInfoBuf ) ;
 
-// . set from the Msg20 replies in MsgE
-// . Msg20 uses this to set the LinkInfo class to the "outlinks"
-// . if an outlink has no docid, it is not stored, because it was
-//   therefore not in the index.
-LinkInfo *makeLinkInfo ( class MsgE *m , int32_t niceness ) ;
-
-
 ////////
 //
 // LINKS CLASS
