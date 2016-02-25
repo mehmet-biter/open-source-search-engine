@@ -26,13 +26,13 @@ class Msg20Request {
 		memset ( (char *)this,0,sizeof(Msg20Request) ); 
 		// these are the only non-zero defaults
 		m_version            = MSG20_CURRENT_VERSION;
-		m_maxNumCharsPerLine = 50;
-		m_numSummaryLines    = 2;
+		m_maxNumCharsPerLine = 80;
+		m_numSummaryLines    = 1;
 		m_expected           = false;
 		m_docId              = -1LL; // set docid to "invalid"
 		m_boolFlag           = 2   ; // autodetect if query boolean
-		m_titleMaxLen        = 64  ;
-		m_summaryMaxLen      = 512 ;
+		m_titleMaxLen        = 80  ;
+		m_summaryMaxLen      = 180 ;
 		// reset ptr sizes
 		int32_t size = m_buf - (char *)&size_qbuf;
 		memset ( &size_qbuf , 0 , size );
