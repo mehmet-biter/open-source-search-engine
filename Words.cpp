@@ -8,8 +8,6 @@
 #include "Sections.h"
 #include "XmlNode.h" // getTagLen()
 
-//static int32_t printstring ( char *s , int32_t len ) ;
-
 Words::Words ( ) {
 	m_buf = NULL;
 	m_bufSize = 0;
@@ -207,8 +205,6 @@ bool Words::set( char *s, bool computeWordIds, int32_t niceness ) {
 	return addWords( s, 0x7fffffff, computeWordIds, niceness );
 }
 
-#include "XmlNode.h"
-
 bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t niceness ) {
 	int32_t  i = 0;
 	int32_t  j;
@@ -317,7 +313,6 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 	// get an alnum word
 	j = i;
  again:
-	//for ( ; is_alnum_utf8 (&s[i] ) ; i += getUtf8CharSize(s+i) );
 	for ( ; s[i] ; i += getUtf8CharSize(s+i) ) {
 		// breathe
 		QUICKPOLL(niceness);
@@ -422,8 +417,6 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 	if (m_tagIds) m_tagIds[m_numWords] = 0;
 	m_numWords++;
 	m_numAlnumWords++;
-	// break on \0 or MAX_WORDS
-	//if ( ! s[i] ) goto done;
 	// get a punct word
 	goto uptop;
 
@@ -480,8 +473,6 @@ bool Words::allocateWordBuffers(int32_t count, bool tagIds) {
 	p += sizeof(int32_t)* count;
 	m_wordIds  = (int64_t *)p ;
 	p += sizeof (int64_t) * count;
-	//m_stripWordIds  = (int64_t *)p ;
-	//p += sizeof (int64_t) * count;
 	m_nodes = (int32_t *)p;
 	p += sizeof(int32_t) * count;
 
@@ -507,8 +498,6 @@ void Words::printWord ( int32_t i ) {
 	fprintf(stderr,"%020"UINT64" ",m_wordIds[i]);
 	// print the word
 	printstring(m_words[i],m_wordLens[i]);
-	//if (m_spam.m_spam[i]!=0)
-	//	printf("[%i]",m_spam.m_spam[i]);
 }
 
 int32_t printstring ( char *s , int32_t len ) {

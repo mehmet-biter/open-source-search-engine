@@ -11,13 +11,11 @@
 //   values from the "sites=" and "site=" cgi parms, since they show up with
 //   radio buttons below the search text box on the web page.
 
-#include "Query.h" // MAX_QUERY_LEN
-//#include "Msg24.h" // MAX_TOPIC_GROUPS
-
 #ifndef _SEARCHINPUT_H_
 #define _SEARCHINPUT_H_
 
-//#define MAX_URLPARMS_LEN (MAX_URL_LEN + MAX_QUERY_LEN+ PASSWORD_MAX_LEN + 5000)
+#include "Query.h" // MAX_QUERY_LEN
+
 #define SI_TMPBUF_SIZE   (16*1024)
 
 #define MAX_TOPIC_GROUPS 1

@@ -3,7 +3,6 @@
 #include <limits>
 
 #include "Query.h"
-//#include "Indexdb.h" // g_indexdb.getTruncationLimit() g_indexdb.getTermId()
 #include "Words.h"
 #include "Bits.h"
 #include "Phrases.h"
@@ -13,7 +12,6 @@
 #include "Sections.h"
 #include "Msg1.h"
 #include "Speller.h"
-//#include "Thesaurus.h"
 #include "Mem.h"
 #include "Msg3a.h"
 #include "HashTableX.h"
@@ -101,11 +99,6 @@ void Query::reset ( ) {
 //   a punct word (IGNORE_DEFAULT) or part of one field value (IGNORE_DEFAULT)
 //   This is used for term highlighting (Highlight.cpp and Summary.cpp)
 bool Query::set2 ( const char *query        , 
-		   //int32_t  queryLen     ,
-		   //char *coll         , 
-		   //int32_t  collLen      ,
-		   //char  boolFlag     ,
-		   //bool  keepAllSingles ,
 		   // need language for doing synonyms
 		   uint8_t  langId ,
 		   char     queryExpansion ,
@@ -122,9 +115,6 @@ bool Query::set2 ( const char *query        ,
 	// assume  boolean auto-detect.
 	char boolFlag = 2;
 
-	// come back up here if we changed our boolean minds
-	// top:
-
 	reset();
 
 	if ( ! query ) return true;
@@ -134,11 +124,7 @@ bool Query::set2 ( const char *query        ,
 	m_queryExpansion = queryExpansion;
 
 	int32_t queryLen = gbstrlen(query);
-	// override this to 32 at least for now
-	//if ( m_maxQueryTerms < 32 ) m_maxQueryTerms = 32;
-	// save collection info
-	//m_coll    = coll;
-	//m_collLen = collLen;
+
 	// truncate query if too big
 	if ( queryLen >= ABS_MAX_QUERY_LEN ) {
 		log("query: Query length of %"INT32" must be "
@@ -154,10 +140,6 @@ bool Query::set2 ( const char *query        ,
 	m_osb.safeMemcpy ( query , queryLen );
 	m_osb.nullTerm ();
 	
-	//m_origLen = queryLen;
-	//gbmemcpy ( m_orig , query , queryLen );
-	//m_orig [ m_origLen ] = '\0';
-
 	m_orig = m_osb.getBufStart();
 	m_origLen = m_osb.getLength();
 
@@ -184,15 +166,6 @@ bool Query::set2 ( const char *query        ,
 	// if we did not set the flag to 1 set it to 0. force to non-bool
 	if ( boolFlag == 2 ) boolFlag = 0;
 	
-	// come back up here if we find no bool operators but had ()'s
-	// top:
-	// reset anything that was allocated... in case we're being 
-	// called from below... m_qwords may have been allocated in call
-	// to setQWords() below
-	// NO! this resets m_origLen to 0!!! not to mention other member vars
-	// that were set somewhere above!!! i moved top: label above!
-	//reset();
-
 	// reserve some space, guessing how much we'd need
 	m_sb.setBuf(m_tmpBuf3,128,0,false);
 	m_sb.setLabel("qrystk");
@@ -200,9 +173,6 @@ bool Query::set2 ( const char *query        ,
 	if ( ! m_sb.reserve ( need ) ) 
 		return false;
 
-	// convenience ptr
-	//char *p    = m_buf;
-	//char *pend = m_buf + MAX_QUERY_LEN;
 	bool inQuotesFlag = false;
 	// . copy query into m_buf
 	// . translate ( and ) to special query operators so Words class
@@ -228,17 +198,14 @@ bool Query::set2 ( const char *query        ,
 		// }
 		// translate ( and )
 		if ( boolFlag == 1 && query[i] == '(' ) {
-			//gbmemcpy ( p , " LeFtP " , 7 ); p += 7;
 			m_sb.safeMemcpy ( " LeFtP " , 7 );
 			continue;
 		}
 		if ( boolFlag == 1 && query[i] == ')' ) {
-			//gbmemcpy ( p , " RiGhP " , 7 ); p += 7;
 			m_sb.safeMemcpy ( " RiGhP " , 7 );
 			continue;
 		}
 		if ( query[i] == '|' ) {
-			//gbmemcpy ( p , " PiiPE " , 7 ); p += 7;
 			m_sb.safeMemcpy ( " PiiPE " , 7 );
 			continue;
 		}
@@ -249,33 +216,25 @@ bool Query::set2 ( const char *query        ,
 			while ( is_digit(query[j]) ) j++;
 			char c = query[j];
 			if ( (c == 'a' || c == 'r') && query[j+1]==']' ) {
-				//sprintf ( p , " LeFtB %"INT32" %c RiGhB ",
 				m_sb.safePrintf(" LeFtB %"INT32" %c RiGhB ",
 					  val,c);
-				//p += gbstrlen(p);
 				i = j + 1;
 				continue;
 			}
 			else if ( (c == 'a' || c == 'r') && 
 				  query[j+1]=='p' && query[j+2]==']') {
-				//sprintf ( p , " LeFtB %"INT32" %cp RiGhB ",
 				m_sb.safePrintf(" LeFtB %"INT32" %cp RiGhB ",
 				val,c);
-				//p += gbstrlen(p);
 				i = j + 2;
 				continue;
 			}
 		}
 		if ( query[i] == '[' && query[i+1] == ']' ) {
-			//sprintf ( p , " LeFtB RiGhB ");
-			//p += gbstrlen(p);
 			m_sb.safePrintf ( " LeFtB RiGhB ");
 			i = i + 1;
 			continue;
 		}
 		if ( query[i] == '[' && query[i+1] == 'p' && query[i+2]==']') {
-			//sprintf ( p , " LeFtB RiGhB ");
-			//p += gbstrlen(p);
 			m_sb.safePrintf ( " LeFtB RiGhB ");
 			i = i + 2;
 			continue;
@@ -283,22 +242,10 @@ bool Query::set2 ( const char *query        ,
  
 		// TODO: copy altavista's operators here? & | !
 		// otherwise, just a plain copy
-		// *p = query [i];
-		// p++;
 		m_sb.pushChar ( query[i] );
 	}
 	// NULL terminate
-	//*p = '\0';
 	m_sb.nullTerm();
-	// debug statement
-	//log(LOG_DEBUG,"Query: Got new query=%s",tempBuf);
-	//printf("query: query: Got new query=%s\n",tempBuf);
-
-	// set length
-	//m_bufLen = p - m_buf;
-
-	//m_buf = m_sb.getBufStart();
-	//m_bufLen = m_sb.length();
 
 	Words words;
 	Phrases phrases;
@@ -306,75 +253,9 @@ bool Query::set2 ( const char *query        ,
 	// set m_qwords[] array from m_buf
 	if ( ! setQWords ( boolFlag , keepAllSingles , words , phrases ) ) 
 		return false;
-	//log(LOG_DEBUG, "Query: QWords set");
-	// did we have any boolean operators
-	/*
-	char found  = 0;
-	char parens = 0;
-	if ( boolFlag == 1 ) {
-		for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
-			char *w    = m_qwords[i].m_word;
-			int32_t  wlen = m_qwords[i].m_wordLen;
-			if      (wlen==2 &&w[0]=='O'&&w[1]=='R'           )
-				found=1;
-			else if (wlen==3 &&w[0]=='A'&&w[1]=='N'&&w[2]=='D')
-				found=1;
-			else if (wlen==3 &&w[0]=='N'&&w[1]=='O'&&w[2]=='T')
-				found=1;
-			if      (wlen==5 &&w[0]=='L' && w[1]=='e' && 
-				 w[2]=='F' && w[3]=='t' && w[4]=='P' ) 
-				parens=1;
-			else if (wlen==5 &&w[0]=='R' && w[1]=='i' && 
-				 w[2]=='G' && w[3]=='h' && w[4]=='P' ) 
-				parens=1;
-		}
-		// if we were told it was a bool query or to auto-detect
-		// and it has no operators, but had parens, re-do so parens
-		// do not get translated to LeFtP or RiGhP
-		if ( boolFlag >= 1 && found == 0 && parens == 1 ) {
-			boolFlag = 0; goto top; }
-		// if no bool operators, it's definitely not a boolean query
-		if ( found == 0 ) boolFlag = 0;
-	}
-	*/
 
 	// set m_qterms from m_qwords, always succeeds
 	setQTerms ( words , phrases );
-
-	// . now add in compound termlists
-	// . compound query terms replace lists of UOR'd query terms that
-	//   share the same QueryTerm::m_exclusiveBit (ebit)
-	// . if it cannot get the compound termlist from a remote cache, then
-	//   Msg2 should get its components
-	// . component termlists have their compound termlist number
-	//   as their m_componentCode, compound termlists have a componentCode 
-	//   of -1, other termlists have a componentCode of -2.
-	// . Query::addCompoundTerms() will add one extra query term for every 
-	//   sequence of UOR'd query terms that share the same ebit. 
-	//   Furthermore, it sets the m_componentCodes[] array.
-	// . The compound term must have the same ebit as its component terms.
-	// . we use the termid of compound termlists (and NOT their components)
-	//   when routing this query to the host that can use the least
-	//   amount of bandwidth to download/get the termlists. if the compound
-	//   termlist is not in the cache then it will not be on disk or
-	//   in the tree since it is a vitual termlist, BUT we will still
-	//   create it and store it in the cache, so assume it is in a cache,
-	//   because the act of storing it in the cache may require sending
-	//   it to another machine.
-	// . if m_compoundListMaxSize is 0, do not do compound lists
-	// . Query::addCompoundTerms() will set the termfreq of compound terms 
-	//   to the sum of the termfreqs of its component termlists
-	//if ( m_compoundListMaxSize > 0 ) addCompoundTerms( );
-	// . always add them for now
-	//addCompoundTerms( );
-
-	// if m_isBoolean was set and we only have OP_UOR then
-	// we should probably unset it here (mdw)
-
-	// set m_expressions[] and m_operands[] arrays and m_numOperands 
-	// for boolean queries
-	//if ( m_isBoolean )
-	//	if ( ! setBooleanOperands() ) return false;
 
 	// disable stuff for site:, ip: and url: queries
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
@@ -410,10 +291,7 @@ bool Query::set2 ( const char *query        ,
 		// get docid
 		char *ds = m_qterms[i].m_term + 8;
 		m_docIdRestriction = atoll(ds);
-		//uint32_t gid;
 		uint32_t shard = getShardNumFromDocId(m_docIdRestriction);
-		//gid = g_hostdb.getGroupIdFromDocId(m_docIdRestriction);
-		//m_groupThatHasDocId = g_hostdb.getGroup(gid);
 		m_groupThatHasDocId = g_hostdb.getShard ( shard );
 		break;
 	}
@@ -489,52 +367,12 @@ bool Query::set2 ( const char *query        ,
 	if ( ! setQTerms ( words , phrases ) )
 		return false;
 
-
-	// a temp log message
-	//log(LOG_DEBUG,"query: Compressed to %"INT32" query terms, %"INT32" hard. "
-	//    "(nt=%"INT32")",
-	//     m_numExplicitBits,m_numTerms-m_numExplicitBits,m_numTerms);
-
-	//if ( ! m_isBoolean ) return true;
-
-	// free cuz it was already set
-	//if ( m_expressionsAllocSize ) 
-	//	mfree(m_expressions,m_expressionsAllocSize , "Query" );
-	//m_expressionsAllocSize = 0;
-	//m_expressions = NULL;
-
-	// also set the boolean stuff again too!
-	//if ( ! setBooleanOperands() ) return false;
-
 	return true;
 }
-
-/*
-// count how many so PageResults will know if he should offer
-// a default OR alternative search if no more results for
-// the default AND (rat=1)
-int32_t Query::getNumRequired ( ) {
-	if ( m_numRequired >= 0 ) return m_numRequired;
-	m_numRequired = 0;
-	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		// QueryTerms are derived from QueryWords
-		QueryTerm *qt = &m_qterms[i];
-		// don't require if negative
-		if ( qt->m_termSign == '-' ) continue;
-		// skip signless phrases
-		if ( qt->m_isPhrase && qt->m_termSign == '\0' ) continue;
-		if ( qt->m_synonymOf ) continue;
-		// count it up
-		m_numRequired++;
-	}
-	return m_numRequired;
-}
-*/
 
 // returns false and sets g_errno on error
 bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 
-	//int32_t shift = 0;
 	// . set m_qptrs/m_qtermIds/m_qbits 
 	// . use one bit position for each phraseId and wordId
 	// . first set phrases
@@ -593,8 +431,6 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 		     qw->m_fieldCode != FIELD_TITLE &&
 		     qw->m_fieldCode != FIELD_GENERIC )
 			continue;
-		// skip if ignored like a stopword (stop to->too)
-		//if ( qw->m_ignoreWord ) continue;
 		// ignore title: etc. words, they are field names
 		if ( qw->m_ignoreWord == IGNORE_FIELDNAME ) continue;
 		// ignore boolean operators
@@ -644,15 +480,6 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 
 	// count phrase terms
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
-		// break out if no more explicit bits!
-		/*
-		if ( shift >= max ) {
-			log("query: Query1 has more than %"INT32" unique terms. "
-			    "Truncating.",max);
-			m_truncated = true;
-			break; 
-		}
-		*/
 		QueryWord *qw  = &m_qwords[i];
 		// skip if ignored... mdw...
 		if ( ! qw->m_phraseId ) continue;
@@ -691,8 +518,6 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 		qt->m_isQueryStopWord = false;
 		// change in both places
 		qt->m_termId    = qw->m_phraseId & TERMID_MASK;
-		//m_termIds[n]    = qw->m_phraseId & TERMID_MASK;
-		//log(LOG_DEBUG, "Setting query phrase term id %d: %lld", n, m_termIds[n]);
 		qt->m_rawTermId = qw->m_rawPhraseId;
 		// assume explicit bit is 0
 		qt->m_explicitBit = 0;
@@ -702,58 +527,14 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 		// phrases like: "cat dog" AND pig
 		if ( m_isBoolean && qw->m_phraseSign != '*' ) {
 			qt->m_termSign = '\0';
-			//m_termSigns[n] = '\0';
 		}
 		// if not boolean, ensure to change signs in both places
 		else {
 			qt->m_termSign  = qw->m_phraseSign;
-			//m_termSigns[n]  = qw->m_phraseSign;
 		}
-		//
-		// INSERT UOR LOGIC HERE
-		//
-// 		int32_t pw = i-1;
-// 		// . back up until word that contains quote if in a quoted 
-// 		//   phrase
-// 		// . UOR can only support two word phrases really...
-// 		if (m_qwords[i].m_quoteStart >= 0)
-// 			pw = m_qwords[i].m_quoteStart - 1;
-// 		if ( pw >= 0 && m_qwords[pw].m_quoteStart >= 0 ) 
-// 			pw = m_qwords[pw].m_quoteStart - 1;
-
-// 		// back two more if field
-// 		//if ( pw >= 0 && m_qwords[pw].m_ignoreWord==IGNORE_FIELDNAME )
-// 		//	pw -= 2;
-// 		while (pw>0 && 
-// 		       ((m_qwords[pw].m_ignoreWord == IGNORE_DEFAULT) ||
-// 			(m_qwords[pw].m_ignoreWord == IGNORE_FIELDNAME))) pw--;
-
-// 		// is UOR operator? if so, backup over it
-// 		if ( pw >= 0 && m_qwords[pw].m_opcode == OP_UOR ) pw -= 2;
-// 		else          goto notUORPhrase;
-// 		if ( pw < 0 ) goto notUORPhrase;
-// 		// . if previous term is UOR'd with us then share the same ebit
-// 		// . this allows us to use lots of UOR'd query terms
-// 		// . the UOR'd lists may also be merged together into a single
-// 		//   list if "mergeListMaxSize" is positive
-// // 		if ( n >= 1 && 
-// // 		     i >= 4 &&
-// // 		     //m_qterms[n-1].m_qword  == &m_qwords[pw] &&
-// // 		     shift > 0 &&
-// // 		     qw->m_hardCount == 0 ) 
-// // 			shift--;
-// 		// set the UOR term sign
-// 		qt->m_isUORed = true;
-// 	notUORPhrase:
-
-
 
 		// do not use an explicit bit up if we have a hard count
 		qt->m_hardCount = qw->m_hardCount;
-// 		if ( qw->m_hardCount == 0 ) {
-// 			qt->m_explicitBit = 1 << shift ;
-// 			shift++;
-// 		}
 		qw->m_queryWordTerm = NULL;
 		// IndexTable.cpp uses this one
 		qt->m_inQuotes  = qw->m_inQuotes;
@@ -765,12 +546,8 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 		// at least for phrase, so we can OR in the bits of its
 		// constituents in the for loop below
 		qw->m_queryPhraseTerm = qt ;
-		// include ourselves in the implicit bits
-// 		qt->m_implicitBits = qt->m_explicitBit;
 		// doh! gotta reset to 0
 		qt->m_implicitBits = 0;
-		// assume not under a NOT bool op
-		//qt->m_underNOT = false;
 		// assign score weight, we're a phrase here
 		qt->m_userWeight = qw->m_userWeightPhrase ;
 		qt->m_userType   = qw->m_userTypePhrase   ;
@@ -780,35 +557,16 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 			qt->m_userWeight = 1;
 			qt->m_userType   = 'a';
 		}
-		// debug
-		//char tmp[1024];
-		//gbmemcpy ( tmp , qt->m_term , qt->m_termLen );
-		//tmp [ qt->m_termLen ] = 0;
-		//logf(LOG_DEBUG,"got term %s (%"INT32")",tmp,qt->m_termLen);
-		// otherwise, add it
 		n++;
 	}
 
 	// now if we have enough room, do the singles
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
-		// break out if no more explicit bits!
-		/*
-		if ( shift >= max ) {
-			logf(LOG_DEBUG,
-			     "query: Query2 has more than %"INT32" unique terms. "
-			    "Truncating.",max);
-			m_truncated = true;
-			break; 
-		}
-		*/
 		QueryWord *qw  = &m_qwords[i];
 
  		if ( qw->m_ignoreWord && 
  		     qw->m_ignoreWord != IGNORE_QSTOP) continue;
-// 		if ( qw->m_ignoreWord ) continue;
 
-		// ignore if in quotes
-		//if ( qw->m_quoteStart >= 0 ) continue;
 		// ignore if in quotes and part of phrase, watch out
 		// for things like "word", a single word in quotes.
 		if ( qw->m_quoteStart >= 0 && qw->m_phraseId ) continue;
@@ -845,41 +603,33 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 		qt->m_synonymOf = NULL;
 		// ignore some synonym terms if tf is too low
 		qt->m_ignored = qw->m_ignoreWord;
-		//		qt->m_ignored = 0;
 		// assume not a repeat of another query term (set below)
 		qt->m_repeat    = false;
 		// stop word? no, we're a phrase term
 		qt->m_isQueryStopWord = qw->m_isQueryStopWord;
 		// change in both places
 		qt->m_termId    = qw->m_wordId & TERMID_MASK;
-		//m_termIds[n]    = qw->m_wordId & TERMID_MASK;
 		qt->m_rawTermId = qw->m_rawWordId;
 		// assume explicit bit is 0
 		qt->m_explicitBit = 0;
 		qt->m_matchesExplicitBits = 0;
-		//log(LOG_DEBUG, "Setting query phrase term id %d: %lld raw: %lld", n, m_termIds[n], qt->m_rawTermId);
 		// boolean queries are not allowed term signs
 		if ( m_isBoolean ) {
 			qt->m_termSign = '\0';
-			//m_termSigns[n] = '\0';
 			// boolean fix for "health OR +sports" because
 			// the + there means exact word match, no synonyms.
 			if ( qw->m_wordSign == '+' ) {
 				qt->m_termSign  = qw->m_wordSign;
-				//m_termSigns[n]  = qw->m_wordSign;
 			}
 		}
 		// if not boolean, ensure to change signs in both places
 		else {
 			qt->m_termSign  = qw->m_wordSign;
-			//m_termSigns[n]  = qw->m_wordSign;
 		}
-		// get previous text word
-		//int32_t pw = i - 2;
  		int32_t pw = i-1;
-// 		// . back up until word that contains quote if in a quoted 
-// 		//   phrase
-// 		// . UOR can only support two word phrases really...
+ 		// . back up until word that contains quote if in a quoted 
+ 		//   phrase
+ 		// . UOR can only support two word phrases really...
  		if (m_qwords[i].m_quoteStart >= 0)
 			pw = m_qwords[i].m_quoteStart ;
 		if ( pw > 0 ) pw--;
@@ -919,35 +669,8 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 				m_qwords[pw-1].m_wordLen -
 				m_qwords[fieldStart].m_word;
 		}
-// 		// is UOR operator? if so, backup over it
-// 		if ( pw >= 0 && m_qwords[pw].m_opcode == OP_UOR ){
-// 			pw -= 2;
-// 		}
-// 		else          goto notUOR;
-// 		if ( pw < 0 ) goto notUOR;
-// 		// . if previous term is UOR'd with us then share the same ebit
-// 		// . this allows us to use lots of UOR'd query terms
-// 		// . the UOR'd lists may also be merged together into a single
-// 		//   list if "mergeListMaxSize" is positive
-// // 		if ( n >= 1 && 
-// // 		     i >= 4 &&
-// // 		     //m_qterms[n-1].m_qword  == &m_qwords[pw] &&
-// // 		     shift > 0 &&
-// // 		     qw->m_hardCount == 0 ) 
-// // 			shift--;
-// 		// set the UOR term sign
-// 		qt->m_isUORed = true;
-// 		if (m_qwords[pw].m_queryWordTerm) 
-// 			m_qwords[pw].m_queryWordTerm->m_isUORed = true;
-// 		if (m_qwords[pw].m_queryPhraseTerm) 
-// 			m_qwords[pw].m_queryPhraseTerm->m_isUORed = true;
-// 	notUOR:
 		// do not use an explicit bit up if we have a hard count
 		qt->m_hardCount = qw->m_hardCount;
-// 		if ( qw->m_hardCount == 0 ) {
-// 			qt->m_explicitBit = 1 << shift ;
-// 			shift++;
-// 		}
 		qw->m_queryWordTerm   = qt;
 		// IndexTable.cpp uses this one
 		qt->m_inQuotes  = qw->m_inQuotes;
@@ -969,41 +692,11 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 		else {
 			qt->m_termLen   = qw->m_wordLen;
 			qt->m_term      = qw->m_word;
-			//log(LOG_DEBUG, "query: *** term \"%s\"", u8Buf);
 		}
 					  
 		// reset our implicit bits to 0
 		qt->m_implicitBits = 0;
-// 		// . OR ourselves into our parent phrase's m_implicitBits
-// 		// . this makes setting m_bitScores[] easy because if a
-// 		//   doc contains this prhase then it IMPLICITLY contains us
-// 		//   which will make it easier to satisfy requiredBits
-//  		if ( qw->m_queryPhraseTerm ) 
-//  			qw->m_queryPhraseTerm->m_implicitBits |= 
-//  				qt->m_explicitBit;
-// 		// if we're in the middle of the phrase
-// 		int32_t pn = qw->m_leftPhraseStart;
-// 		// convert word to its phrase QueryTerm ptr, if any
-// 		QueryTerm *tt = NULL;
-// 		if ( pn >= 0 ) tt = m_qwords[pn].m_queryPhraseTerm;
-// 		if ( tt      ) tt->m_implicitBits |= qt->m_explicitBit;
-// 		// . there might be some phrase term that actually contains
-// 		//   the same word as we are, but a different occurence
-// 		// . like '"knowledge management" AND NOT management' query
-// 		for ( int32_t j = 0 ; j < i ; j++ ) {
-// 			// must be our same wordId (same word, different occ.)
-// 			QueryWord *qw2 = &m_qwords[j];
-// 			if ( qw2->m_wordId != qw->m_wordId ) continue;
-// 			// get first word in the phrase that jth word is in
-// 			int32_t pn2 = qw2->m_leftPhraseStart;
-// 			if ( pn2 < 0 ) continue;
-// 			// he implies us!
-// 			QueryTerm *tt2 = m_qwords[pn2].m_queryPhraseTerm;
-// 			if ( tt2 ) tt2->m_implicitBits |= qt->m_explicitBit;
-// 			break;
-// 		}
-		// assume not under a NOT bool op
-		//qt->m_underNOT = false;
+
 		// assign score weight, we're a phrase here
 		qt->m_userWeight = qw->m_userWeight ;
 		qt->m_userType   = qw->m_userType   ;
@@ -1013,207 +706,9 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 			qt->m_userWeight = 1;
 			qt->m_userType   = 'a';
 		}
-		// debug
-		//char tmp[1024];
-		//gbmemcpy ( tmp , qt->m_term , qt->m_termLen );
-		//tmp [ qt->m_termLen ] = 0;
-		//logf(LOG_DEBUG,"got term %s (%"INT32")",tmp,qt->m_termLen);
 		n++;
 	}
 	
-
-
-
-	// now handle the explicit bits
-	// moved out of separate phrase and singleton loops
-	// for phrase UOR support
-
-	/*
-	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
-
-		// break out if no more explicit bits!
-// 		if ( shift >= max ) {
-// 			log("query: Query has more than %"INT32" unique terms. "
-// 			    "Truncating.",max);
-// 			m_truncated = true;
-// 			break; 
-// 		}
-
-		int32_t pw;
-		QueryWord *qw = &m_qwords[i];
-		if (!qw->m_queryWordTerm && !qw->m_queryPhraseTerm) 
-			continue;
-		QueryTerm *qt = qw->m_queryPhraseTerm?
-			qw->m_queryPhraseTerm :
-			qw->m_queryWordTerm;
-		if (!qt) continue;
-	doAgain:
-		pw = i-1;
-		// . back up until word that contains quote if in a quoted 
-		//   phrase
-		// . UOR can only support two word phrases really...
-		//if (m_qwords[i].m_quoteStart >= 0)
-		//	pw = m_qwords[i].m_quoteStart - 1;
-		while (pw>0 && 
-		       ((m_qwords[pw].m_ignoreWord == IGNORE_DEFAULT) ||
-			(m_qwords[pw].m_ignoreWord == IGNORE_FIELDNAME))) pw--;
-
-		// is UOR operator? if so, backup over it
-		if ( pw < 0 || m_qwords[pw].m_opcode != OP_UOR )
-			goto notUOR;
-
-		pw--;
-		while (pw>0 && 
-		       ((m_qwords[pw].m_ignoreWord == IGNORE_DEFAULT) ||
-			(m_qwords[pw].m_ignoreWord == IGNORE_FIELDNAME))) pw--;
-
-		if ( pw >= 0 && m_qwords[pw].m_quoteStart >= 0 ) 
-			//pw = m_qwords[pw].m_quoteStart + 1;
-			pw = m_qwords[pw].m_quoteStart;
-		if (pw < 0) goto notUOR;
-		// . if previous term is UOR'd with us then share the same ebit
-		// . this allows us to use lots of UOR'd query terms
-		// . the UOR'd lists may also be merged together into a single
-		//   list if "mergeListMaxSize" is positive
-
-		qt->m_isUORed = true;
-
-		// set uor flag on all words in phrase
-		if (qw->m_queryPhraseTerm && m_qwords[i].m_quoteStart >= 0){
-			int32_t quoteStart = m_qwords[i].m_quoteStart;
-			for (int32_t j=quoteStart;j<m_numWords;j++){
-				if (m_qwords[j].m_ignoreWord) continue;
-				if (m_qwords[j].m_quoteStart != quoteStart)
-					break;
-				QueryTerm *qtp = m_qwords[j].m_queryWordTerm;
-				if (qtp) {
-					qtp->m_isUORed = true;
-					qtp->m_UORedTerm = 
-						m_qwords[pw].m_queryPhraseTerm;
-				}
-			}
-		}
-		
-		//QueryTerm *pqt = NULL;
- 		if (m_qwords[pw].m_queryWordTerm){
- 			m_qwords[pw].m_queryWordTerm->m_isUORed = true;
-			qt->m_UORedTerm = m_qwords[pw].m_queryWordTerm;
-		}
- 		//pqt = m_qwords[pw].m_queryWordTerm;
-		// set uor flag on all words in previous phrase
- 		if (m_qwords[pw].m_queryPhraseTerm &&
-		    m_qwords[pw].m_quoteStart >= 0) {
- 			m_qwords[pw].m_queryPhraseTerm->m_isUORed = true;
-			qt->m_UORedTerm = m_qwords[pw].m_queryPhraseTerm;
-			int32_t quoteStart = m_qwords[pw].m_quoteStart;
-			for (int32_t j=quoteStart;j<m_numWords;j++){
-				if (m_qwords[j].m_ignoreWord) continue;
-				if (m_qwords[j].m_quoteStart != quoteStart)
-					break;
-				QueryTerm *qtp = m_qwords[j].m_queryWordTerm;
-				if (qtp) {
-					qtp->m_isUORed = true;
-					qtp->m_UORedTerm = 
-						m_qwords[pw].m_queryPhraseTerm;
-				}
-			}
-		}
-
-		
-// 		if ( n >= 1 && 
-// 		     i >= 4 &&
-// 		     //m_qterms[n-1].m_qword  == &m_qwords[pw] &&
-// 		     shift > 0 &&
-// 		     qw->m_hardCount == 0 ) {
-// 			shift--;
-// 		}
-	notUOR:		
-//  		if ( qt->m_hardCount == 0 ) {
-// // 			qt->m_explicitBit = 1 << shift ;
-//  			qt->m_explicitBit = shift ;
-//  			shift++;
-
-//  		}
-
-// 		// . OR ourselves into our parent phrase's m_implicitBits
-// 		// . this makes setting m_bitScores[] easy because if a
-// 		//   doc contains this prhase then it IMPLICITLY contains us
-// 		//   which will make it easier to satisfy requiredBits
-//  		if ( qw->m_queryPhraseTerm ) 
-//  			qw->m_queryPhraseTerm->m_implicitBits |= 
-//  				qt->m_explicitBit;
-// 		// if we're in the middle of the phrase
-// 		int32_t pn = qw->m_leftPhraseStart;
-// 		// convert word to its phrase QueryTerm ptr, if any
-// 		QueryTerm *tt = NULL;
-// 		if ( pn >= 0 ) tt = m_qwords[pn].m_queryPhraseTerm;
-// 		if ( tt      ) tt->m_implicitBits |= qt->m_explicitBit;
-// 		// . there might be some phrase term that actually contains
-// 		//   the same word as we are, but a different occurence
-// 		// . like '"knowledge management" AND NOT management' query
-// 		for ( int32_t j = 0 ; j < i ; j++ ) {
-// 			// must be our same wordId (same word, different occ.)
-// 			//QueryWord *qw2 = m_qterms[j].m_qword;
-// 			QueryWord *qw2 = &m_qwords[j];
-// 			if ( qw2->m_wordId != qw->m_wordId ) continue;
-// 			// get first word in the phrase that jth word is in
-// 			int32_t pn2 = qw2->m_leftPhraseStart;
-// 			if ( pn2 < 0 ) continue;
-// 			// he implies us!
-// 			QueryTerm *tt2 = m_qwords[pn2].m_queryPhraseTerm;
-// 			if ( tt2 ) tt2->m_implicitBits |= qt->m_explicitBit;
-// 			break;
-// 		}
-
-		if (qt == qw->m_queryPhraseTerm){
-			if ( qw->m_queryWordTerm){
-				qt = qw->m_queryWordTerm;
-				goto doAgain;
-			}
-		}
-	}
-	*/
-
-	/*
-	// Handle exclusive explicit bits only
-	shift = 0;
-	int n2 = 0;
-	for ( int32_t i = 0; i < n ; i++ ){
- 		// break out if no more explicit bits!
- 		if ( shift >= max ) {
- 			logf(LOG_DEBUG,
-			    "query: Query4 has more than %"INT32" unique terms. "
- 			    "Truncating.",max);
- 			m_truncated = true;
- 			break; 
- 		}
-		QueryTerm *qt = &m_qterms[i];
-		if (qt->m_UORedTerm) continue;
-		// sometims UORedTerm is NULL i guess because of IGNORE_BREECH
-		if ( qt->m_isUORed && qt->m_qword && qt->m_qword->m_ignoreWord ) 
-			continue;
-		// Skip duplicate terms before we waste an explicit bit
-		bool skip=false;
-		for (int32_t j=0;j<i;j++){
-			if ( qt->m_termId != m_qterms[j].m_termId   ||
-			     qt->m_termSign != m_qterms[j].m_termSign){
-				continue;
-			}
-			skip = true;
-			qt->m_explicitBit  = m_qterms[j].m_explicitBit;
-			break;
-		}
-		n2++;
-		if (skip) continue;
-
- 		if ( qt->m_hardCount == 0 ) {
-			qt->m_explicitBit = 1 << shift++;
-		}
-	}
-	// count them for doing number of combos
-	m_numExplicitBits = shift;
-	*/
-
 	// Handle shared explicit bits
 	for ( int32_t i = 0; i < n ; i++ ){
 		QueryTerm *qt = &m_qterms[i];
@@ -1227,11 +722,7 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 		if (!qt2) continue;
 		// chase down first term in UOR chain
 		while (qt2->m_UORedTerm) qt2 = qt2->m_UORedTerm;
-		//if (!qt2->m_explicitBit) continue;
-		//qt->m_explicitBit = qt2->m_explicitBit;
-		//n2++;
 	}
-	//m_numTerms = n2;
 
 	// . set implicit bits, m_implicitBits
 	// . set m_inPhrase
@@ -1288,55 +779,12 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 		}
 	}
 
-	/*
-	// synonym terms should have copy all the implicit/explicit bits
-	// into their implicit bits field
-	for (int32_t i = 0; i < m_numTerms; i++) {
-		QueryTerm *qt = &m_qterms[i];
-		QueryTerm *st = qt->m_synonymOf;
-		if (!st) continue;
-		// also, if we are "auto insurance", a synonymOf 
-		// "car insurance", we should also imply "car insurance"'s
-		// terms, 'car' and 'insurance' for purposes of 
-		// IndexTable2.cpp::getWeightScore()'s calculation of "min".
-		// Because when finding the "max" score of a word, we also
-		// allow its phrase and synonyms' scores to compete.
-		qt->m_implicitBits = st->m_implicitBits | st->m_explicitBit;
-		// now skip if not a phrase synonym
-		if ( ! qt->m_isPhrase ) continue;
-		// . we also imply the two words bookending this phrase, if any
-		// . so see if the leftSynHash is in the syn list
-		for ( int32_t k = m_synTerm ; k < m_numTerms ; k++ ) {
-			// get term
-			QueryTerm *tt = &m_qterms[k];
-			// skip if phrase
-			if ( tt->m_isPhrase ) continue;
-			// must be synonym
-			if ( ! tt->m_synonymOf ) continue;
-			// must match one of our ids
-			if ( tt->m_qword->m_rawWordId != qt->m_leftRawWordId &&
-			     tt->m_qword->m_rawWordId != qt->m_rightRawWordId )
-				continue;
-			// we imply it now!
-			qt->m_implicitBits |= tt->m_explicitBit;
-		}
-	}
-	*/
-
 	////////////
 	//
 	// . add synonym query terms now
 	// . skip this part if language is unknown i guess
 	//
 	////////////
-	// loop over all words in query and process its synonyms list
-	//if ( m_langId != langUnknown && m_queryExpansion ) 
-	// if lang is "xx" unknown we still do synonyms it just does
-	// a loop over all languages starting with english
-	// if ( m_queryExpansion ) 
-	// 	sn = m_numWords;
-
-	//int64_t to = hash64n("to",0LL);
 
 	for ( int32_t i = 0 ; i < sn ; i++ ) {
 		// get query word
@@ -1457,7 +905,6 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 				wid= hash64h(wid,ph);
 			}
 			qt->m_termId    = wid & TERMID_MASK;
-			//m_termIds[n]    = wid & TERMID_MASK;
 			qt->m_rawTermId = syn.m_aids[j];
 			// assume explicit bit is 0
 			qt->m_explicitBit = 0;
@@ -1465,22 +912,18 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 			// boolean queries are not allowed term signs
 			if ( m_isBoolean ) {
 				qt->m_termSign = '\0';
-				//m_termSigns[n] = '\0';
 				// boolean fix for "health OR +sports" because
 				// the + there means exact word match, no syns
 				if ( qw->m_wordSign == '+' ) {
 					qt->m_termSign  = qw->m_wordSign;
-					//m_termSigns[n]  = qw->m_wordSign;
 				}
 			}
 			// if not bool, ensure to change signs in both places
 			else {
 				qt->m_termSign  = qw->m_wordSign;
-				//m_termSigns[n]  = qw->m_wordSign;
 			}
 			// do not use an explicit bit up if we got a hard count
 			qt->m_hardCount = qw->m_hardCount;
-			//qw->m_queryWordTerm   = qt;
 			// IndexTable.cpp uses this one
 			qt->m_inQuotes  = qw->m_inQuotes;
 			// usually this is right
@@ -1503,11 +946,8 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 			// point to the string itself that is the word
 			qt->m_term     = ptr;
 			qt->m_termLen  = syn.m_termLens[j];
-			// qt->m_term     = syn.m_termPtrs[j];
 			// reset our implicit bits to 0
 			qt->m_implicitBits = 0;
-			// assume not under a NOT bool op
-			//qt->m_underNOT = false;
 			// assign score weight, we're a phrase here
 			qt->m_userWeight = qw->m_userWeight ;
 			qt->m_userType   = qw->m_userType   ;
@@ -1525,10 +965,6 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 	m_numTerms = n;
 	
 	if ( n > ABS_MAX_QUERY_TERMS ) { char *xx=NULL;*xx=0; }
-
-
-	// count them for doing number of combos
-	//m_numExplicitBits = shift;
 
 	// . repeated terms have the same termbits!!
 	// . this is only for bool queries since regular queries ignore
@@ -1558,84 +994,17 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 		}
 	}
 
-
-	// if we're a special range: term and a doc has us, then
-	// assume it has our associates too because we are all
-	// essentially the same term. we don't want this to be a
-	// factor in the ranking. since gigablast usually puts docs
-	// with all the terms (between OR operators) above terms that do
-	// not have all ther terms. that is not a good thing for these terms.
-	/*
-	int32_t nw = m_numWords;
-	for ( int32_t i = 0 ; i < nw ; i++ ) {
-		// skip if not a range: query term
-		if ( m_qwords[i].m_fieldCode != FIELD_RANGE ) continue;
-		// loop over all our associates (in same parens level) to
-		// get the OR of all the explicit bits
-		qvec_t allBits = 0;
-		for ( int32_t j=i;j<nw &&m_qwords[j].m_opcode!=OP_RIGHTPAREN;j++){
-			if ( m_qwords[j].m_ignoreWord ) continue;
-			// get the jth word's term
-			QueryTerm *qt = m_qwords[j].m_queryWordTerm;
-			// this can be NULL if we already got 16 query terms!
-			if ( ! qt ) continue;
-			// skip if no value
-			if ( ! qt->m_explicitBit ) continue;
-			// grab it
-			allBits |= qt->m_explicitBit ;
-		}
-		// now make everyone use just one of those bits
-		for ( int32_t j=i;j<nw &&m_qwords[j].m_opcode!=OP_RIGHTPAREN;j++){
-			if ( m_qwords[j].m_ignoreWord ) continue;
-			// get the jth word's term
-			QueryTerm *qt = m_qwords[j].m_queryWordTerm;
-			// this can be NULL if we already got 16 query terms!
-			if ( ! qt ) continue;
-			// skip if no value
-			if ( ! qt->m_explicitBit ) continue;
-			// force it to use the common bit
-			qt->m_explicitBit  = allBits;
-			qt->m_implicitBits = allBits;
-		}
-	}
-	*/
-
 	// . if only have one term and it is a signless phrase, make it signed
 	// . don't forget to set m_termSigns too!
 	if ( n == 1 && m_qterms[0].m_isPhrase && ! m_qterms[0].m_termSign ) {
 		m_qterms[0].m_termSign = '*';
-		//m_termSigns[0]         = '*';
 	}
-
-	// . or bits into the m_implicitBits member of phrase QueryTerms that
-	//   represent the consitutent words
-	// . loop over each 
-	//m_numTerms = n2;
-
-	// . how many of the terms are non fielded singletons?
-	// . this is just for support of the BIG HACK in Summary.cpp
-	/*
-	m_numTermsSpecial = 0;
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		if ( m_qterms[i].m_isPhrase        ) continue;
-		if ( m_qterms[i].m_fieldCode       ) continue;
-		if ( m_qterms[i].m_isUORed         ) continue;
-		// only skip query stop words if in quotes, if it is in 
-		// quotes then we gotta have it...
-		if ( m_qterms[i].m_isQueryStopWord && !
-		     m_qterms[i].m_inQuotes        ) continue;
-		if ( m_qterms[i].m_underNOT        ) continue;
-		if ( m_qterms[i].m_termSign == '-' ) continue;
-		m_numTermsSpecial++;
-	}
-	*/
 
 	// . set m_componentCodes all to -2
 	// . addCompoundTerms() will set these appropriately
 	// . see Msg2.cpp for more info on componentCodes
 	// . -2 means unset, neither a compound term nor a component term at
 	//   this time
-	//for( int32_t i = 0 ; i < m_numTerms ; i++ ) m_componentCodes[i] = -2;
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
 		QueryTerm *qt = &m_qterms[i];
 		qt->m_componentCode = -2;
@@ -1714,9 +1083,6 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 	if ( m_negativeBits & m_requiredBits ) 
 		m_numTerms = 0;
 
-	// we need to remember this now for tier integration in IndexTable.cpp
-	//m_requiredBits = requiredBits;
-
         // now set m_matches,ExplicitBits, used only by Matches.cpp so far
 	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
 		// set it up
@@ -1726,8 +1092,6 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 			// skip if termid mismatch
 			if ( m_qterms[i].m_termId != m_qterms[j].m_termId ) 
 				continue;
-			// i guess signs do not have to match
-			//m_qterms[i].m_termSign == m_qterms[j].m_termSign){
 			m_qterms[i].m_matchesExplicitBits |= 
 				m_qterms[j].m_explicitBit;
 		}
@@ -1739,9 +1103,6 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 		QueryTerm *qt = &m_qterms[i];
 		// assume not required
 		qt->m_isRequired = false;
-		// don't require if negative
-		// no, consider required, but NEGATIVE required...
-		//if ( qt->m_termSign == '-' ) continue;
 		// skip signless phrases
 		if ( qt->m_isPhrase && qt->m_termSign == '\0' ) continue;
 		if ( qt->m_isPhrase && qt->m_termSign == '*'  ) continue;
@@ -2804,7 +2165,6 @@ bool Query::setQWords ( char boolFlag ,
 			// . 'Mice And Men' is just one phrase then
 			// . TODO: "12345678 it was rainy" 
 			//   ("it" should start a phrase)
-			//if ( qw->m_isQueryStopWord) b &= ~D_CAN_START_PHRASE;
 			if ( qw->m_isStopWord ) b &= ~D_CAN_START_PHRASE;
 			// . first alnum word can start phrase.
 			// . example: 'the tigers'
@@ -2857,11 +2217,6 @@ bool Query::setQWords ( char boolFlag ,
 		// otherwise, we can now start a phrase
 		bits.m_bits[i] |= D_CAN_START_PHRASE;
 	}
-
-	// a bogus spam class, all words have 0 for their spam probability
-	//Spam spam;
-	//spam.reset ( words.getNumWords() );
-
 
 	// treat strongly connected phrases like cd-rom and 3.2.0.3 as being
 	// in quotes for the most part, therefore, set m_quoteStart for them
@@ -3046,8 +2401,6 @@ bool Query::setQWords ( char boolFlag ,
 		// . we do not allow phrases in queries to pair across
 		//   quotes. See where we tweak the Bits class above.
 		if ( qw->m_quoteStart >= 0 ) {
-			//if (qw->m_wordSign)qw->m_phraseSign = qw->m_wordSign;
-			//else                 qw->m_phraseSign = '*';
 			qw->m_phraseSign = '*';
 		}
 
@@ -3100,15 +2453,6 @@ bool Query::setQWords ( char boolFlag ,
 		     ! qw->m_ignoreWord )
 			qw->m_ignoreWord = IGNORE_QSTOP;
 
-		// . ignore word if connected to right or left alnum word
-		// . we will be replaced by a phrase(s)
-		// . do not worry about keepAllSingles because we turn
-		//   this into a phrase below!
-		// . if ( ! keepAllSingles &&
-		// . MDW: no longer do this. but we should consider them
-		//   wikibigrams for proximity weighting
-		// if ( ( qw->m_leftConnected || qw->m_rightConnected ) )
-		// 	qw->m_ignoreWord = IGNORE_CONNECTED;
 		// . ignore and/or between quoted phrases, save user from 
 		//   themselves (they meant AND/OR)
 		if ( ! keepAllSingles && qw->m_isQueryStopWord &&
@@ -3182,26 +2526,6 @@ bool Query::setQWords ( char boolFlag ,
 		qw->m_wordSign = '+';
 	}
 
-	// now check phrase terms. if you do a search in quotes like 
-	// "directions and nearby" it will now generate two phrases:
-	// "directions and nearby" and "and nearby", so stop "and nearby"
-	/*
-	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
-		QueryWord *qw = &m_qwords[i];
-		if ( qw->m_ignorePhrase ) continue;
-		if ( ! qw->m_phraseId   ) continue;
-		// skip if we start this phrase
-		if ( qw->m_quoteStart == i ) continue;
-		// . skip if are not a phrase stop word that is paired across
-		// . not now, we support 3,4 and 5 word phrases...
-		//if ( ! qw->m_isStopWord ) continue;
-		// however, we some quoted phrases are more than 5 words
-		// TODO: fix this!!!
-		// ok, nuke this term otherwise
-		qw->m_ignorePhrase = IGNORE_DEFAULT;
-	}
-	*/
-
 	// . if one or more of a phrase's constituent terms exceeded 
 	//   term #MAX_QUERY_TERMS then we should also soft require that phrase
 	// . fixes 'hezekiah walker the love family affair ii live at 
@@ -3262,15 +2586,6 @@ bool Query::setQWords ( char boolFlag ,
 		}
 	}
 
-	// . count ignored WORDS for logging stats
-	// . do not IGNORE_DEFAULT though, that doesn't really count
-	//m_numIgnored = 0;
-	//for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
-	//	if ( ! m_qwords[i].m_ignoreWord                 ) continue;
-	//	if ( m_qwords[i].m_ignoreWord == IGNORE_DEFAULT ) continue;
-	//	m_numIgnored++;
-	//}
-
 	quoteStart = -1;
 	int32_t quoteEnd = -1;
 	// set m_quoteENd
@@ -3298,7 +2613,6 @@ bool Query::setQWords ( char boolFlag ,
 	int32_t upTo = -1;
 	int32_t wk_start;
 	int32_t wk_nwk;
-	//int64_t *wids = words.getWordIds();
 	//
 	// set the wiki phrase ids
 	//
@@ -4040,222 +3354,12 @@ void Query::printQueryTerms(){
 bool  Query::testBoolean( unsigned char *bits ,int32_t vecSize){//qvec_t bitmask){
 	if (!m_isBoolean) return false;
 	Expression *e = &m_expressions [ 0 ];
-	// find top-level expression
-	//while (e->m_parent && e != e->m_parent) e = e->m_parent;
-	return e->isTruth(bits,vecSize);//, bitmask);
+	return e->isTruth(bits,vecSize);
 	
 }
 void  Query::printBooleanTree(){
 	if (!m_isBoolean) return;
-	//Expression *e = &m_expressions [ 0 ];
-	// find top-level expression
-	//while (e->m_parent && e != e->m_parent) e = e->m_parent;
-	//SafeBuf sbuf(1024,"botree");
-	//e->print(&sbuf);
-	//logf(LOG_DEBUG, "query: Boolean Query: %s", sbuf.getBufStart());
 }
-/*
-// . also sets the m_underNOT member of each QueryTerm, too!!
-// . returns false and sets g_errno on error, true otherwise
-bool Query::setBooleanOperands ( ) {
-	// we're done if we're not boolean
-	if ( ! m_isBoolean ) return true;
-
-	if ( m_truncated ) {
-		g_errno = ETOOMANYOPERANDS;
-		return log("query: Maximum number of bool operands "
-			   "exceeded (%"INT32").",m_numTerms);
-	}
-
-	// set the QueryWord::m_opBit member of each query word.
-	// so if  you have a query like 'A B OR C' then you need
-	// to have both A and B if you don't have C. so every word
-	// unless its an operator needs its own bit. quoted phrases
-	// may present a problem down the road we'll have to deal with.
-	int32_t opNum = 0;
-	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
-		// skip if field, opcode, punct. etc.
-		if ( m_qwords[i].m_ignoreWord ) continue;
-		// assign it a # i guess
-		m_qwords[i].m_opNum = opNum++;
-	}
-	
-
-	// alloc the mem if we need to (mdw left off here) 
-	//int32_t need = (m_numWords/3) * sizeof(Expression);
-	// illegitmate bool expressions breech the buffer
-	int32_t need = (m_numWords) * sizeof(Expression);
-	// sanity check
-	if ( m_expressions || m_expressionsAllocSize ) { 
-		char *xx = NULL; *xx = 0; }
-	// point m_qwords to our generic buffer if it will fit
-	if ( m_gnext + need < m_gbuf + GBUF_SIZE ) {
-		m_expressions = (Expression *)m_gnext;
-		m_gnext += need;
-	}
-	// otherwise, we must allocate memory for it
-	else {
-		m_expressions = (Expression *)mmalloc ( need , "Query3" );
-		if ( ! m_expressions ) return log("query: Could not allocate "
-						  "expressions for query.");
-		m_expressionsAllocSize = need;
-	}
-
-	// otherwise, we need to set the boolean Expression classes now
-	// so we can determine which terms are UNDER the influence of
-	// NOT operators so IndexReadInfo.cpp can read in the WHOLE termlist
-	// for those terms. (like it would if they had a '-' m_termSign)
-	Expression *e = &m_expressions [ 0 ];
-	m_numExpressions = 1;
-	// . set the expression recursively
-	// . just setting this will not set the m_hasNOT members of each 
-	//   QueryTerm
-	int32_t status = e->add ( 0           , // first word #
-			       m_numWords  , // last  word #
-			       this        , // array of QueryWords
-			       0              ,// level
-			       false );  // has NOT?
-	if ( status < 0 ) {
-		g_errno = ETOOMANYOPERANDS;
-		return log("query: Maximum number of bool operands "
-			   "(%"INT32") exceeded.",(int32_t)MAX_OPERANDS);
-	}
-	while (e->m_parent) {
-		if (e == e->m_parent) {
-			g_errno = EBADREQUEST;
-			return log(LOG_WARN, "query: expression is own parent: "
-				   "%s", m_orig);
-		}
-		e = e->m_parent;
-	}
-
-	//log(LOG_DEBUG, "query: set %"INT32" operands",
-	//    m_numOperands);
-	if (g_conf.m_logDebugQuery) {
-		SafeBuf sbuf(1024);
-		e->print(&sbuf);
-		log(LOG_DEBUG, "query: Boolean Query: %s", sbuf.getBufStart());
-	}
-
-	// . get all the terms that are UNDER a NOT operator in some fashion
-	// . these bits are 1-1 with m_qterms[]
-	*/
-	/*
-	qvec_t notBits = e->getNOTBits( false );
-	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		if ( m_qterms[i].m_explicitBit & notBits )
-			m_qterms[i].m_underNOT = true;
-		else
-			m_qterms[i].m_underNOT = false;
-	}
-	*/
-/*
-	return true;
-}
-*/
-/*
-// . returns -1 on bad query error
-// . returns word AFTER the last word in our operand
-int32_t Operand::set ( int32_t a , int32_t b , QueryWord *qwords , int32_t level ,
-		    bool underNOT ) {
-	// clear these
-	//m_termBits         = 0;
-	memset(m_opBits,0,MAX_OVEC_SIZE);
-
-	m_hasNOT           = false;
-
-	//m_hardRequiredBits = 0;
-	// . parse out the operands and OR in their term bits
-	// . the boy AND girl --> (the AND boy) AND girl
-	// . "the boy toy" AND girl --> "the boy" AND "boy toy" AND girl
-	// . cd-rom AND buy --> "cd-rom" AND buy
-	// . phraseSign will not be 0 if its important (in quotes, cd-rom,...)
-	for ( int32_t i = a ; i < b ; i++ ) {
-		// get the QUERY word
-		QueryWord *qw = &qwords[i];
-		// set the parenthetical level of the word
-		qw->m_level = level;
-		// set this
-		//qw->m_underNOT = underNOT;
-		// skip punct
-		if ( ! qw->isAlphaWord() ) {
-			// if it is a parens, bail!
-			if ( qw->m_opcode == OP_LEFTPAREN ) return i ;
-			if ( qw->m_opcode == OP_RIGHTPAREN ) return i ;
-			// otherwise, skip this punct and get next word
-			else continue;
-		}
-		// bail if op code, return PUNCT word # before it
-		if ( qw->m_opcode ) return i ;
-
-		
-		if ( qw->m_wordSign == '-' || qw->m_phraseSign == '-'){
-			if (i == a) {
-				m_hasNOT = true;
-			}
-			else {
-				if (!m_hasNOT) return i;
-			}
-			
-		}
-		else if (i>a && m_hasNOT) return i;
-
-
-		// . does it have an unsigned phrase? or in phrase term bits
-		// . might have a phrase that's not a QueryTerm because
-		//   query is too long
-		if ( qw->m_phraseId && qw->m_queryPhraseTerm &&
-		     qw->m_phraseSign ) {
-			//qvec_t e =qw->m_queryPhraseTerm->m_explicitBit;
-			//if (qw->m_phraseSign == '+') m_hardRequiredBits |= e;
-			//m_termBits |= e;
-			int32_t byte = qw->m_opNum / 8;
-			int32_t mask = 1<<(qw->m_opNum % 8);
-			if ( byte < MAX_OVEC_SIZE ) m_opBits[byte] |= mask;
-		}
-		// why would it be ignored? oh... if like cd-rom or in quotes
-		if ( qw->m_ignoreWord ) continue;
-		// . OR in the word term bits
-		// . might be a word that's not a QueryTerm because
-		//   query is too long
-		if ( qw->m_queryWordTerm ) {
-			//qvec_t e = qw->m_queryWordTerm->m_explicitBit;
-			//if (qw->m_phraseSign == '+') m_hardRequiredBits |= e;
-			//m_termBits |= e;
-			int32_t byte = qw->m_opNum / 8;
-			int32_t mask = 1<<(qw->m_opNum % 8);
-			if ( byte < MAX_OVEC_SIZE ) m_opBits[byte] |= mask;
-		}
-	}
-	return b;
-}
-*/
-
-// . returns -1 on bad query error
-// . returns next word to parse (after expression) on success
-// . "*globalNumOperands" is how many expressions/operands are being used
-//   in the global "expressions" and "operands" array
-
-// . new: organize query into sum of products normal form, ie:
-// . (a) OR (b AND c AND d) OR (e AND f)
-
-/*
-unsigned char precedence[] = {
-	0, // term
-	4, // OR
-	3, // AND
-	2, // NOT
-	1, // LEFTP
-	1, // RIGHTP
-	3, // UOR
-	5, // PIPE
-}; 
-*/
-
-//#define TYPE_OPERAND 1
-//#define TYPE_OPCODE 2
-//#define TYPE_EXPRESSION 3
-
 
 // return false and set g_errno on error
 // returns how many words expression was
@@ -4272,9 +3376,6 @@ bool Expression::addExpression (int32_t start,
 
 	// the # of the first alnumpunct word in the expression
 	m_expressionStartWord = start;
-	// and the last one
-	//m_end = end;
-	//m_hasNOT = hasNOT;
 	m_q = q;
 
 	//m_cc = 0;
@@ -4292,19 +3393,12 @@ bool Expression::addExpression (int32_t start,
 		QueryWord *qwords = q->m_qwords;
 
 		QueryWord * qw = &qwords[i];
-		// set this
-		//qw->m_underNOT = underNOT;
 
 		// set leaf node if not an opcode like "AND" and not punct.
 		if ( ! qw->m_opcode && qw->isAlphaWord()){
-			//m_opSlots[m_cc] = i;
-			//m_opTypes[m_cc] = TYPE_OPERAND;
-			//qw->m_opBitNum = m_cc;
-			continue;//goto endExpr; mdw
+			continue;
 		}
 		if (qw->m_opcode == OP_NOT){
-			//hasNOT = !hasNOT;
-			//underNOT = hasNOT;
 			continue;
 		}
 		else if (qw->m_opcode == OP_LEFTPAREN){
@@ -4323,9 +3417,6 @@ bool Expression::addExpression (int32_t start,
 			// skip over it. pt to ')'
 			i += e->m_numWordsInExpression;
 			qw->m_expressionPtr = e;
-			//m_opSlots[m_cc] = (int32_t)e;
-			//m_opTypes[m_cc] = TYPE_EXPRESSION;
-			//qw->m_opBitNum = m_cc;
 		}
 		else if (qw->m_opcode == OP_RIGHTPAREN){
 			// return size i guess, include )
@@ -4333,11 +3424,6 @@ bool Expression::addExpression (int32_t start,
 			return true;
 		}
 		else if (qw->m_opcode) {
-			// add that mdw
-			//m_opSlots[m_cc] = qw->m_opcode;
-			//m_opTypes[m_cc] = TYPE_OPCODE;
-			//qw->m_opBitNum = m_cc;
-			//m_cc++;
 			m_hadOpCode = true;
 			continue;
 		}
@@ -4488,26 +3574,6 @@ bool Expression::isTruth ( unsigned char *bitVec ,int32_t vecSize ) {
 	return true;
 }
 
-/*
-// . "bits" are 1-1 with the query terms in Query::m_qterms[] array
-// . hasNOT is true if there's a NOT just to the left of this WHOLE expressions
-//   ourside the parens
-qvec_t Expression::getNOTBits ( bool hasNOT ) {
-	qvec_t notBits = 0;
-// 	for ( int32_t i = 0 ; i < m_numOperands ; i++ ) {
-// 		// get value of the ith operand, be it plain or an expression
-// 		if ( m_operands[i]  ) {
-// 			if ( m_hasNOT[i] || hasNOT ) 
-// 				notBits |= m_operands[i]->m_termBits;
-// 		}
-// 		else
-// 			notBits |= m_expressions[i]->getNOTBits (m_hasNOT[i]);
-// 	}
-	// success, all operand pairs were true
-	return notBits;
-}
-*/
-
 // print boolean expression for debug purposes
 void Expression::print(SafeBuf *sbuf) {
 	/*
@@ -4532,16 +3598,6 @@ void Expression::print(SafeBuf *sbuf) {
 	*/
 }
 
-/*
-void Operand::print(SafeBuf *sbuf) {
-// 	int32_t shift = 0;
-// 	while (m_termBits >> shift) shift++;
-// 	sbuf->safePrintf("%i", 1<<(shift-1));
-	if (m_hasNOT) sbuf->safePrintf("NOT 0x%"XINT64"",*(int64_t *)m_opBits);
-	else sbuf->safePrintf("0x%"XINT64"", *(int64_t *)m_opBits);
-}
-*/
-
 // if any one query term is split, msg3a has to split the query
 bool Query::isSplit() {
 	for(int32_t i = 0; i < m_numTerms; i++) 
@@ -4558,14 +3614,11 @@ void QueryTerm::constructor ( ) {
 bool QueryTerm::isSplit() {
 	if(!m_fieldCode) return true;
 	if(m_fieldCode == FIELD_QUOTA)           return false;
-//BR 20160117 removed:	if(m_fieldCode == FIELD_GBTAGVECTOR)     return false;
 	if(m_fieldCode == FIELD_GBSAMPLEVECTOR)  return false;
 	if(m_fieldCode == FIELD_GBSECTIONHASH)  return false;
 	if(m_fieldCode == FIELD_GBCONTENTHASH)  return false;
 	return true;
 }
-
-
 
 // hash of all the query terms
 int64_t Query::getQueryHash() {
