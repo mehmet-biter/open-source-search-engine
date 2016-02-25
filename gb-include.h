@@ -24,7 +24,6 @@ extern int g_inMemcpy;
 #define XINT32 "x"
 #define UINT32 "u"
 #define INT32  "d"
-#define PRIX32 "X"
 
 #if __WORDSIZE == 64
 #define XINT64 "lx"
