@@ -2253,8 +2253,6 @@ static char      *s_commonWords[] = {
 	"thursday",
 	"friday",
 	"saturday",
-	// metaLINCS' meta from tags often end in email
-	// address ending in .com/.org and gigabits were not getting it
 	// unfortunately com is portuguese for with.
 	//"org",
 	//"com", 

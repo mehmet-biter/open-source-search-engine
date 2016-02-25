@@ -1558,7 +1558,7 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 	//   repeated terms in setWords()
 	// . we need to support: "trains AND (perl OR python) NOT python"
 	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// BUT NOT IF in a UOR'd list!!! Metalincs bug...
+		// BUT NOT IF in a UOR'd list!!!
 		if ( m_qterms[i].m_isUORed ) continue;
 		// that didn't seem to fix it right, for dup terms that
 		// are the FIRST term in a UOR sequence... they don't seem

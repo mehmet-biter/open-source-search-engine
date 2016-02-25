@@ -2089,7 +2089,6 @@ int main2 ( int argc , char *argv[] ) {
 
 
 #ifndef _CLIENT_
-#ifndef _METALINCS_
 	// gb dump i [fileNum] [off]
 	if ( strcmp ( cmd , "dump" ) == 0 && argc > cmdarg + 1 &&
 	     argv[cmdarg+1][0]=='I')  {		
@@ -2123,7 +2122,6 @@ int main2 ( int argc , char *argv[] ) {
 		g_log.m_disabled = true;
 		return 0;
 	}
-#endif
 #endif
 
 	// . gb dump [dbLetter][coll][fileNum] [numFiles] [includeTree][termId]
@@ -2250,7 +2248,6 @@ int main2 ( int argc , char *argv[] ) {
 			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url);
 		}
 #ifndef _CLIENT_
-#ifndef _METALINCS_
 		else if ( argv[cmdarg+1][0] == 'i' )
 			dumpIndexdb (coll,startFileNum,numFiles,includeTree,
 				     termId);
@@ -2260,7 +2257,6 @@ int main2 ( int argc , char *argv[] ) {
 		else if ( argv[cmdarg+1][0] == 'd' )
 			dumpDatedb  (coll,startFileNum,numFiles,includeTree,
 				     termId,false);
-#endif
 #endif
 		/*
 		else if      ( argv[cmdarg+1][0] == 'R' ) {
@@ -2624,7 +2620,7 @@ int main2 ( int argc , char *argv[] ) {
 	//Load the high-frequency term shortcuts (if they exist)
 	g_hfts.load();
 	
-	// test all collection dirs for write permission -- metalincs' request
+	// test all collection dirs for write permission
 	int32_t pcount = 0;
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
 		CollectionRec *cr = g_collectiondb.m_recs[i];
@@ -8363,9 +8359,6 @@ void dumpIndexdbFile ( int32_t fn , int64_t off , char *ff , int32_t ks ,
 #ifdef _CLIENT_
 	return;
 #endif
-#ifdef _METALINCS_
-	return;
-#endif
 	char buf [ 1000000 ];
 	int32_t bufSize = 1000000;
 	char fname[64];
@@ -8444,9 +8437,6 @@ void dumpIndexdb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 		   int64_t termId ) {
 	// this is confidential data format
 #ifdef _CLIENT_
-	return;
-#endif
-#ifdef _METALINCS_
 	return;
 #endif
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
@@ -8779,9 +8769,6 @@ void dumpDatedb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTr
 #ifdef _CLIENT_
 	return;
 #endif
-#ifdef _METALINCS_
-	return;
-#endif
 	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
 	if ( ! justVerify ) {
 		g_datedb.init ();
@@ -9000,9 +8987,6 @@ void dumpClusterdb ( char *coll,
 #ifdef _CLIENT_
 	return;
 #endif
-#ifdef _METALINCS_
-	return;
-#endif
 	g_clusterdb.init ();
 	//g_collectiondb.init(true);
 	g_clusterdb.getRdb()->addRdbBase1(coll );
@@ -9097,9 +9081,6 @@ void dumpStatsdb( int32_t startFileNum, int32_t numFiles, bool includeTree,
 		 
 	// this is confidential data format
 #ifdef _CLIENT_
-	return;
-#endif
-#ifdef _METALINCS_
 	return;
 #endif
 	static char *coll = "stats";
@@ -9291,9 +9272,6 @@ void dumpLinkdb ( char *coll,
 		  char *url ) {
 	// this is confidential data format
 #ifdef _CLIENT_
-	return;
-#endif
-#ifdef _METALINCS_
 	return;
 #endif
 	g_linkdb.init ();
