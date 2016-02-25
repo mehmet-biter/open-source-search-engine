@@ -2675,106 +2675,11 @@ bool XmlDoc::hashIsAdult ( HashTableX *tt ) {
 	return true;
 }
 
-
-/*
-  BR 20160106 removed. We don't want to store this in posdb as we don't use it.
-
-// hash destination urls for embedded gb search boxes
-bool XmlDoc::hashSubmitUrls ( HashTableX *tt ) {
-
-	setStatus ( "hashing submit urls" );
-
-	Url *baseUrl = getBaseUrl();
-	if ( ! baseUrl || baseUrl == (Url *)-1) { char*xx=NULL;*xx=0;}
-
-	for ( int32_t i = 0 ; i < m_xml.getNumNodes() ; i++ ) {
-		// Find forms
-		if ( m_xml.getNodeId(i) != TAG_FORM ) continue;
-		if ( m_xml.isBackTag(i) ) continue;
-		int32_t score =  *getSiteNumInlinks8() * 256;
-		if ( score <= 0 ) score = 1;
-		int32_t len;
-		char *s = m_xml.getString ( i , "action" , &len );
-		if (!s || len == 0) continue;
-		Url url; url.set(baseUrl, s, len, true);
-
-		char *buf  = url.getUrl();
-		int32_t  blen = url.getUrlLen();
-
-		// update hash parms
-		HashInfo hi;
-		hi.m_tt        = tt;
-		hi.m_hashGroup = HASHGROUP_INTAG;
-		hi.m_prefix    = "gbsubmiturl";
-		hi.m_desc      = "submit url for form";
-
-		// this returns false on failure
-		if ( ! hashString ( buf,blen,&hi ) ) return false;
-	}
-	return true;
-}
-*/
-
-
-/*
-bool XmlDoc::hashSingleTerm ( int64_t termId , HashInfo *hi ) {
-	// combine with a non-NULL prefix
-	if ( hi->m_prefix ) {
-		int64_t prefixHash = hash64b ( hi->m_prefix );
-		// sanity test, make sure it is in supported list
-		if ( getFieldCode3 ( prefixHash ) == FIELD_GENERIC ) {
-			char *xx=NULL;*xx=0; }
-		termId = hash64 ( termId , prefixHash );
-	}
-
-	// save it?
-	if ( m_wts && ! ::storeTerm ( "binary",6,termId,hi,0,0,
-				      MAXDENSITYRANK,
-				      MAXDIVERSITYRANK,
-				      MAXWORDSPAMRANK,
-				      hi->m_hashGroup,
-				      false,&m_wbuf,m_wts,false) )
-		return false;
-
-	// shortcut
-	HashTableX *dt = hi->m_tt;
-	// sanity check
-	if ( dt->m_ks != sizeof(key_t) ) { char *xx=NULL;*xx=0; }
-	// make the key like we do in hashWords()
-	key96_t k;
-	k.n1 = hi->m_date;
-	k.n0 = termId;
-	// get current score for this wordid
-	int32_t slot = dt->getSlot ( &k );
-	// does this termid/date already exist?
-	if ( slot >= 0 ) {
-		// done
-		return true;
-	}
-	// otherwise, add a new slot
-	char val = 1;
-	if ( ! hi->m_tt->addKey ( (char *)k , &val ) )
-		return false;
-	// return true on success
-	return true;
-}
-*/
-
-
-bool XmlDoc::hashSingleTerm ( char       *s         ,
-			      int32_t        slen      ,
-			      HashInfo   *hi        ) {
+bool XmlDoc::hashSingleTerm( char *s, int32_t slen, HashInfo *hi ) {
 	// empty?
 	if ( slen <= 0 ) return true;
 	if ( ! m_versionValid    ) { char *xx=NULL;*xx=0; }
 	if ( hi->m_useCountTable && ! m_countTableValid){char *xx=NULL;*xx=0; }
-
-	//
-	// POSDB HACK: temporarily turn off posdb until we hit 1B pages!
-	//
-	//if ( ! m_storeTermListInfo )
-	//	return true;
-
 
 	// a single blob hash
         int64_t termId = hash64 ( s , slen );
@@ -2841,12 +2746,13 @@ bool XmlDoc::hashSingleTerm ( char       *s         ,
 bool XmlDoc::hashString ( char *s, HashInfo *hi ) {
 	return hashString ( s , gbstrlen(s), hi ); }
 
-bool XmlDoc::hashString ( char       *s          ,
-			  int32_t        slen       ,
-			  HashInfo   *hi         ) {
+bool XmlDoc::hashString( char *s, int32_t slen, HashInfo *hi ) {
 	if ( ! m_versionValid        ) { char *xx=NULL;*xx=0; }
+
 	if ( hi->m_useCountTable && ! m_countTableValid){char *xx=NULL;*xx=0; }
+
 	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
+
 	int32_t *sni = getSiteNumInlinks();
 	return   hashString3( s                ,
 			      slen             ,
@@ -2874,8 +2780,7 @@ bool XmlDoc::hashString3( char       *s              ,
 	Words   words;
 	Bits    bits;
 	Phrases phrases;
-	//Weights weights;
-	//Synonyms synonyms;
+
 	if ( ! words.set   ( s , slen , true , niceness ) )
 		return false;
 	if ( ! bits.set    ( &words , version , niceness ) )
@@ -3021,8 +2926,9 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 	// phrase score. thus, a search for 'mexico' should not bring up
 	// the page for university of new mexico!
 	SafeBuf dwbuf;
-	if(!getDiversityVec ( words,phrases,countTable,&dwbuf,niceness))
+	if ( !getDiversityVec( words, phrases, countTable, &dwbuf, niceness ) ) {
 		return false;
+	}
 	char *wdv = dwbuf.getBufStart();
 
 	int32_t nw = words->getNumWords();
@@ -3154,10 +3060,11 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		if ( m_wts && langVec ) langId = langVec[i];
 
 		char wd;
-		if ( hi->m_useCountTable ) wd = wdv[i];
-		else                       wd = MAXDIVERSITYRANK;
-
-
+		if ( hi->m_useCountTable ) {
+			wd = wdv[i];
+		} else {
+			wd = MAXDIVERSITYRANK;
+		}
 
 		// BR 20160115: Don't hash 'junk' words
 		bool skipword = false;

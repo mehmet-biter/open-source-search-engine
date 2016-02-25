@@ -5062,13 +5062,6 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	char *fv = getFragVec();
 	if ( ! fv || fv == (void *)-1 ) return (HashTableX *)fv;
 
-	//LinkInfo *info2    = getLinkInfo2();
-	//if ( ! info2 || info2 == (LinkInfo *)-1 ) return (HashTableX *)info2;
-
-	// init our count table otherwise
-	//if(! m_countTable.set( 8,4,1024,NULL,0,false,m_niceness,"xmlcnttbl"))
-	//	return NULL;
-
 	// breathe
 	QUICKPOLL ( m_niceness );
 
@@ -5078,9 +5071,6 @@ HashTableX *XmlDoc::getCountTable ( ) {
 
 	// shortcut
 	HashTableX *ct = &m_countTable;
-
-	// reset the counts, just in case set() below does not
-	//ct->reset();
 
 	// ez var
 	int64_t  *wids  = words->getWordIds    ();
@@ -5096,9 +5086,6 @@ HashTableX *XmlDoc::getCountTable ( ) {
 	if (!ct->set(8,4,numSlots,NULL,0,false,m_niceness,"xmlct"))
 	  return (HashTableX *)NULL;
 
-	//char *ff = getFragVec ( ) ;
-	//if ( ! ff ) return false;
-
 	// . now hash all the phrase ids we have in order to see if the phrase
 	//   is unique or not. if phrase is repeated a lot we punish the scores
 	//   of the individual words in the phrase and boost the score of the
@@ -5108,8 +5095,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		QUICKPOLL ( m_niceness );
 		// add the word
 		if ( wids[i] == 0LL ) continue;
-		//if ( wids[i] == 708411945052722517LL )
-		//	log("hey4 got new pid=%"INT64" i=%"INT32"",pids[i],i);
+
 		// . skip if in repeated fragment
 		// . unfortunately we truncate the frag vec to like
 		//   the first 80,000 words for performance reasons
@@ -5133,7 +5119,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
 		// skip if not a meta tag
-		if ( tids[i] != 68 ) continue;
+		if ( tids[i] != TAG_META ) continue;
 		// find the "content=" word
 		char *w    = wptrs[i];
 		int32_t  wlen = wlens[i];
@@ -5146,9 +5132,10 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		p += 8;
 		// skip if empty meta content
 		if ( wend - p <= 0 ) continue;
+
 		// our ouw hash
 		if ( ! hashString_ct ( ct , p , wend - p ) )
-		  return (HashTableX *)NULL;
+			return (HashTableX *)NULL;
 	}
 	// add each incoming link text
 	for ( Inlink *k=NULL ; info1 && (k=info1->getNextInlink(k)) ; ) {
@@ -24294,15 +24281,9 @@ bool getDensityRanks ( int64_t *wids ,
 // . string is usually the document body or inlink text of an inlinker or
 //   perhaps meta keywords. it could be anything. so we need to create this
 //   vector based on that string, which is represented by words/phrases here.
-bool getDiversityVec ( Words *words ,
-		       Phrases *phrases ,
-		       HashTableX *countTable ,
-		       SafeBuf *sbWordVec ,
-		       //SafeBuf *sbPhraseVec ,
-		       int32_t niceness ) {
-
+bool getDiversityVec( Words *words, Phrases *phrases, HashTableX *countTable, SafeBuf *sbWordVec,
+					  int32_t niceness ) {
 	int64_t  *wids  = words->getWordIds ();
-	//nodeid_t   *tids  = words->getTagIds  ();
 	int32_t        nw    = words->getNumWords();
 	int64_t  *pids  = phrases->getPhraseIds2();
 
@@ -24337,7 +24318,7 @@ bool getDiversityVec ( Words *words ,
 		int64_t pid = pids[i];
 		// get the word and phrase weights for term #i
 		float ww2;
-		//float pw2;
+
 		getWordToPhraseRatioWeights ( lastPid  , // pids[i-1],
 					      wids[i]  ,
 					      pid      ,
@@ -24687,7 +24668,6 @@ void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 				   int64_t   pid2 ,
 				   int64_t   wid2 , // post word
 				   float      *retww   ,
-				   //float      *retpw   ,
 				   HashTableX *tt1  ,
 				   int32_t        titleRecVersion ) {
 
