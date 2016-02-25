@@ -481,7 +481,7 @@ void XmlDoc::logQueryTimingEnd(const char* function, int64_t startTime) {
 	int64_t endTime = gettimeofdayInMilliseconds();
 	int64_t diff = endTime - startTime;
 
-	if (diff > 10) {
+	if (diff > 5) {
 		log( LOG_TIMING, "query: XmlDoc::%s took %" INT64 " ms for docId=%" INT64, function, diff, m_docId );
 	}
 }
@@ -5194,7 +5194,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 		return false;
 	int32_t nw = words.getNumWords();
 	int64_t  *wids  = words.getWordIds();
-	int64_t  *pids  = phrases.m_phraseIds2;
+	int64_t  *pids  = phrases.getPhraseIds2();
 	char      **wptrs = words.m_words;
 	int32_t       *wlens = words.m_wordLens;
 

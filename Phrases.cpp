@@ -60,9 +60,6 @@ bool Phrases::set( Words *words, Bits *bits, int32_t titleRecVersion, int32_t ni
 	m_wids         = words->getWordIds();
 	m_bits         = bits;
 
-	// we now are dependent on this
-	m_titleRecVersion = titleRecVersion;
-
 	// . set the phrases
 	// . sets m_phraseIds [i]
 	// . sets m_phraseSpam[i] to PSKIP if NO phrase exists

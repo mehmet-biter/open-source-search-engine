@@ -2961,23 +2961,13 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		 HashTableX *wts       ,
 		 SafeBuf    *wbuf      ,
 		 int32_t        niceness  ) {
-
-	//
-	// POSDB HACK: temporarily turn off posdb until we hit 1B pages!
-	//
-	//if ( ! m_storeTermListInfo )
-	//	return true;
-
 	Sections *sections = sectionsArg;
-	// for getSpiderStatusDocMetaList() we don't use sections it'll
-	// mess us up
+	// for getSpiderStatusDocMetaList() we don't use sections it'll mess us up
 	if ( ! hi->m_useSections ) sections = NULL;
 
 	// shortcuts
 	uint64_t *wids    = (uint64_t *)words->getWordIds();
-	//nodeid_t *tids    = words->m_tagIds;
-	uint64_t *pids2   = (uint64_t *)phrases->m_phraseIds2;
-	//uint64_t *pids3   = (uint64_t *)phrases->m_phraseIds3;
+	uint64_t *pids2   = (uint64_t *)phrases->getPhraseIds2();
 
 	HashTableX *dt = hi->m_tt;
 

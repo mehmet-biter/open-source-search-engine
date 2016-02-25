@@ -31,7 +31,9 @@ class Phrases {
 	// . "spam" is % spam of each word (spam may be NULL)
 	bool set( Words *words, Bits *bits, int32_t titleRecVersion, int32_t niceness );
 
-	int64_t *getPhraseIds2(        ) { return m_phraseIds2; }
+	int64_t *getPhraseIds2() {
+		return m_phraseIds2;
+	}
 
 	// . store phrase that starts with word #i into "dest"
 	// . we also NULL terminated it in "dest"
@@ -48,27 +50,26 @@ class Phrases {
 	// . we set phraseSpam to PSKIP if word #i cannot start a phrase
 	void setPhrase( int32_t i, int32_t niceness );
 
-	// private:
-
+private:
 	char  m_localBuf [ PHRASE_BUF_SIZE ];
 
 	char *m_buf;
 	int32_t  m_bufSize;
 
 	// the two word hash
-	int64_t     *m_phraseIds2  ;
+	int64_t *m_phraseIds2;
+
 	// for the two word phrases:
-	unsigned char *m_numWordsTotal2 ;
-	int32_t           m_numPhrases; // should equal the # of words
+	unsigned char *m_numWordsTotal2;
+	int32_t m_numPhrases; // should equal the # of words
 
 	// placeholders to avoid passing to subroutine
-	Words      *m_words;
-	int64_t  *m_wids;
-	char      **m_wptrs;
-	int32_t       *m_wlens;
+	Words *m_words;
+	int64_t *m_wids;
+	char **m_wptrs;
+	int32_t *m_wlens;
 
-	Bits    *m_bits;
-	int32_t     m_titleRecVersion;
+	Bits *m_bits;
 };
 
 #endif
