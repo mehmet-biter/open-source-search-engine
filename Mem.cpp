@@ -449,22 +449,8 @@ int64_t Mem::getAvailMem   () { return 0; };
 int64_t Mem::getMaxMem     () { return g_conf.m_maxMem; }
 int32_t Mem::getNumChunks  () { return 0; };
 
-// process id of the main process
-pid_t s_pid = (pid_t) -1;
-
-void Mem::setPid() {
-	s_pid = getpid();
-	//log("mem: pid is %"INT32"",(int32_t)s_pid);
-	if(s_pid == -1 ) { log("monitor: bad s_pid"); char *xx=NULL;*xx=0; } 
-}
-
-pid_t Mem::getPid() {
-	return s_pid;
-}
 
 bool Mem::init  ( ) { // int64_t maxMem ) { 
-	// set main process pid
-	s_pid = getpid();
 	// . don't swap our memory out, man...
 	// . damn, linux 2.4.17 seems to crash the kernel sometimes w/ this
 	//if ( mlockall( MCL_CURRENT | MCL_FUTURE ) == -1 ) {
@@ -631,22 +617,6 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 			((char *)mem)[0-i-1] = MAGICCHAR;
 		for ( int32_t i = 0 ; i < OVERPAD ; i++ )
 			((char *)mem)[0+size+i] = MAGICCHAR;
-	}
-	// hey!
-	if ( s_pid == -1 && m_numTotalAllocated >1000 ) {
-		log(LOG_WARN, "pid is %i and numAllocs is %i", (int)s_pid,  
-		    (int)m_numTotalAllocated);
-        //char *xx=NULL;*xx=0;}
-        //	if ( s_pid == -1 && m_numTotalAllocated >1000 ) { char *xx=NULL;*xx=0;}
-    }
-
-	// threads can't be here!
-	if ( s_pid != -1 && getpid() != s_pid ) {
-		log("mem: addMem: Called from thread.");
-		sleep(50000);
-		//char *p = NULL;
-		//*p = 1;
-		char *xx = NULL; *xx = 0;
 	}
 
 	// if no label!
@@ -939,23 +909,6 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 
 	// don't free 0 bytes
 	if ( size == 0 ) return true;
-	// hey!
-	if ( s_pid == -1 && m_numTotalAllocated >1000 ) {
-		log(LOG_WARN, "pid is %i and numAllocs is %i", 
-		    (int)s_pid,  (int)m_numTotalAllocated);
-        //char *xx=NULL;*xx=0;}
-	}
-	// threads can't be here!
-	if ( s_pid != -1 && getpid() != s_pid ) {
-		log("mem: rmMem: Called from thread.");
-		sleep(50000);
-		// throw a bogus sig so we crash
-		char *xx=NULL;*xx=0;
-		//sigval_t svt; 
-		//svt.sival_int = 1; // fd;
-		//sigqueue ( s_pid, GB_SIGRTMIN+1 , svt ) ;
-		//return true;
-	}
 	// lock for threads
 	//pthread_mutex_lock ( &s_lock );
 	// . hash by first hashing "mem" to mix it up some

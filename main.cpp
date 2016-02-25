@@ -2412,7 +2412,6 @@ int main2 ( int argc , char *argv[] ) {
 		if ( sid < 0 ) exit(EXIT_FAILURE);
 		//fprintf(stderr,"done\n");
 		// set our new pid
-		g_mem.setPid();
 		g_threads.setPid();
 
 		// if we do not do this we don't get sigalarms or quickpolls

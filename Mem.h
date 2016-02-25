@@ -65,9 +65,6 @@ class Mem {
 
 	bool init ( );//int64_t maxMem );
 
-	void  setPid();
-	pid_t getPid();
-
 	void *gbmalloc  ( int size , const char *note  );
 	void *gbcalloc  ( int size , const char *note);
 	void *gbrealloc ( void *oldPtr, int oldSize, int newSize,
