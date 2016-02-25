@@ -1478,8 +1478,6 @@ bool Parms::printParm ( SafeBuf* sb,
 			bool isCollAdmin ,
 			TcpSocket *sock ) {
 	bool status = true;
-	// priv of 4 means do not print at all
-	if ( m->m_priv == 4 ) return true;
 
 	// do not print comments, those are for the xml conf file
 	if ( m->m_type == TYPE_COMMENT ) return true;
@@ -3446,7 +3444,6 @@ void Parms::init ( ) {
 		m_parms[i].m_perms  =  0 ; // same as containing WebPages perms
 		m_parms[i].m_plen   = -1 ; // offset for strings length
 		m_parms[i].m_group  =  1 ; // start of a new group of controls?
-		m_parms[i].m_priv   =  0 ; // is it private?
 		m_parms[i].m_save   =  1 ; // save to xml file?
 		m_parms[i].m_min    = -1 ; // min value (for int32_t parms)
 		m_parms[i].m_flags  = 0;
@@ -5003,7 +5000,6 @@ void Parms::init ( ) {
 	m->m_smaxc = (char *)&cr.m_refs_numToGenerateCeiling - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "0";
-	m->m_priv  = 0;
 	m->m_smin  = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
@@ -5018,7 +5014,6 @@ void Parms::init ( ) {
 	m->m_off  = (char *)&si.m_refs_numToGenerate - y;
 	m->m_type  = TYPE_LONG;
 	m->m_defOff =(char *)&cr.m_refs_numToGenerate - x;
-	m->m_priv  = 0;
 	m->m_smin  = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RESULTS;
@@ -5033,7 +5028,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "0";
 	m->m_group = 0;
-	m->m_priv  = 0; // allow the (more) link
 	m->m_sprpg = 0; // do not propagate
         m->m_sprpp = 0; // do not propagate
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -5050,7 +5044,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "30";
 	m->m_group = 0;
-	m->m_priv  = 0;
 	m->m_smin  = 0;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5066,7 +5059,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "1";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5080,7 +5072,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "2";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5095,7 +5086,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "500";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_smin  = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
@@ -5112,7 +5102,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.5";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5126,7 +5115,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "0";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5140,7 +5128,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "1";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5154,7 +5141,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "1000";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5168,7 +5154,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5184,7 +5169,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "100";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5199,7 +5183,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "100";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5214,7 +5197,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "5000";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5229,7 +5211,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "10";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5243,7 +5224,6 @@ void Parms::init ( ) {
 	m->m_smaxc = (char *)&cr.m_rp_numToGenerateCeiling - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "0";
-	m->m_priv  = 0;
 	m->m_smin  = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
@@ -5257,7 +5237,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "0";
 	m->m_group = 0;
-	m->m_priv  = 0; // allow the (more) link
 	m->m_sprpg = 0; // do not propagate
         m->m_sprpp = 0; // do not propagate
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
@@ -5274,7 +5253,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "1024";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_smin  = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
@@ -5289,7 +5267,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "30";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5303,7 +5280,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "1";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5317,7 +5293,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "2";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5332,7 +5307,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "10";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5347,7 +5321,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "1";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5362,7 +5335,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "1";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5377,7 +5349,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "1";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5392,7 +5363,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "1";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_smin  = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
@@ -5407,7 +5377,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5423,7 +5392,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "50";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5437,7 +5405,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5453,7 +5420,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5468,7 +5434,6 @@ void Parms::init ( ) {
 	m->m_size  = MAX_COLL_LEN;
 	m->m_def   = "main";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5482,7 +5447,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "100";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5495,7 +5459,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "5000";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5508,7 +5471,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "10";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5524,7 +5486,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_numResultsToImport - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "0";
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5541,7 +5502,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = ".80";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5555,7 +5515,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "3";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5572,7 +5531,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "50";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5588,7 +5546,6 @@ void Parms::init ( ) {
 	m->m_size  = MAX_COLL_LEN;
 	m->m_def   = "main";
 	m->m_group = 0;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -6128,7 +6085,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&si.m_debug - y;
 	m->m_type  = TYPE_BOOL;
 	m->m_cgi   = "debug";
-	//m->m_priv  = 1;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
@@ -6960,7 +6916,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
 	m->m_size  = MAX_MX_LEN;
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6972,7 +6927,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendEmailAlerts - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 2;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6987,7 +6941,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_delayNonCriticalEmailAlerts - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 2;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -7071,7 +7024,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_priv  = 2;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -7098,7 +7050,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendEmailTimeout - g;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "62000";
-	m->m_priv  = 2;
 	m->m_units = "milliseconds";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7126,7 +7077,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_querySuccessThreshold - g;
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "0.850000";
-	m->m_priv  = 2;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -7139,7 +7089,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	// a titlerec fetch times out after 2 seconds and is re-routed
 	m->m_def   = "2.000000";
-	m->m_priv  = 2;
 	m->m_units = "seconds";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7152,7 +7101,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_numQueryTimes - g;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "300";
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7166,7 +7114,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_maxCorruptLists - g;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "5";
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_flags = PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -7193,7 +7140,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "I/O error";
 	m->m_size  = MAX_URL_LEN;
-	m->m_priv  = 2;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -7207,7 +7153,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
 	m->m_size  = MAX_URL_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7222,7 +7167,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
 	m->m_size  = MAX_URL_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7234,7 +7178,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendEmailAlertsToEmail1 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 2;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -7246,7 +7189,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendParmChangeAlertsToEmail1 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7267,7 +7209,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "127.0.0.1";
 	m->m_size  = MAX_MX_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7280,7 +7221,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "4081234567@vtext.com";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7293,7 +7233,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "sysadmin@mydomain.com";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7305,7 +7244,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendEmailAlertsToEmail2 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 2;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -7317,7 +7255,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendParmChangeAlertsToEmail2 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7330,7 +7267,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "mail.mydomain.com";
 	m->m_size  = MAX_MX_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7343,7 +7279,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7356,7 +7291,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "sysadmin@mydomain.com";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7368,7 +7302,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendEmailAlertsToEmail3 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 2;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -7380,7 +7313,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendParmChangeAlertsToEmail3 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7393,7 +7325,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "mail.mydomain.com";
 	m->m_size  = MAX_MX_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7406,7 +7337,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7419,7 +7349,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "sysadmin@mydomain.com";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7431,7 +7360,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendEmailAlertsToEmail4 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7444,7 +7372,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendParmChangeAlertsToEmail4 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -7458,7 +7385,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "mail.mydomain.com";
 	m->m_size  = MAX_MX_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -7472,7 +7398,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -7486,7 +7411,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "sysadmin@mydomain.com";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_priv  = 2;
 	m->m_group = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
@@ -7732,7 +7656,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_interfaceMachine - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -8337,7 +8260,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = ".01";
 	m->m_units = "%%";
-	m->m_priv  = 2;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -11290,7 +11212,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logNetCongestion - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11316,7 +11237,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logLimits - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11327,7 +11247,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugAdmin - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11337,7 +11256,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugBuild - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11347,7 +11265,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugBuildTime - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11357,7 +11274,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugDb - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11367,7 +11283,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugDirty - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m->m_page  = PAGE_LOG;
@@ -11379,7 +11294,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugDisk - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11389,7 +11303,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugDiskPageCache - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11399,7 +11312,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugDns - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11409,7 +11321,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugHttp - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11419,7 +11330,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugImage - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11429,7 +11339,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugLoop - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11439,7 +11348,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugLang - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11449,7 +11357,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugLinkInfo - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11459,7 +11366,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugMem - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11469,7 +11375,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugMemUsage - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11479,7 +11384,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugNet - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11489,7 +11393,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugPQR - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
@@ -11500,7 +11403,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugQuery - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11510,7 +11412,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugQuota - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11520,7 +11421,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugRobots - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11530,7 +11430,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugSpcache - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11540,7 +11439,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugSpeller - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11550,7 +11448,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugSections - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11560,7 +11457,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugSEOInserts - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11570,7 +11466,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugSEO - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11580,7 +11475,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugStats - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11590,7 +11484,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugSummary - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11600,7 +11493,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugSpider - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11610,7 +11502,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugMsg13 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11620,7 +11511,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugProxies - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11630,7 +11520,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugUrlAttempts - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11640,7 +11529,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugDownloads - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11650,7 +11538,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugFacebook - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11660,7 +11547,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugTagdb - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11670,7 +11556,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugTcp - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11680,7 +11565,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugTcpBuf - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11690,7 +11574,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugThread - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11700,7 +11583,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugTitle - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11710,7 +11592,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugTimedb - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11720,7 +11601,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugTopDocs - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11730,7 +11610,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugUdp - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11740,7 +11619,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugUnicode - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11750,7 +11628,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugRepair - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11760,7 +11637,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugDate - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11770,7 +11646,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logDebugDetailed - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11781,7 +11656,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTraceBigFile - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11791,7 +11665,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTracePosdb - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11801,7 +11674,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTraceRdbBase - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11811,7 +11683,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTraceRdbMap - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11821,7 +11692,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTraceRepairs - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11831,7 +11701,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTraceSpider - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11841,7 +11710,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTraceMsg0 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11851,7 +11719,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTraceXmlDoc - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11862,7 +11729,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTraceMsg - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11874,7 +11740,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTimingBuild - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11885,7 +11750,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTimingAdmin - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11895,7 +11759,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTimingDb - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11905,7 +11768,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTimingNet - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11915,7 +11777,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTimingQuery - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11926,7 +11787,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logTimingSpcache - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -11937,7 +11797,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logReminders - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_priv  = 1;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
