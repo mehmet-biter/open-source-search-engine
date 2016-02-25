@@ -45,7 +45,7 @@ class StateStatsdb {
 	int32_t m_niceness;
 };
 
-static time_t genDate( char *date, int32_t dateLen ) ;
+static time_t genDate( const char *date, int32_t dateLen ) ;
 static void   sendReply ( void *st ) ;
 
 static bool s_graphInUse = false;
@@ -61,7 +61,7 @@ bool sendPageGraph ( TcpSocket *s, HttpRequest *r ) {
 		return true;
 	}
 	
-	char *cgi;
+	const char *cgi;
 	int32_t cgiLen;
 	StateStatsdb *st;
 	try { st = new StateStatsdb; }
@@ -753,7 +753,7 @@ void writeControls ( SafeBuf *buf, StateStatsdb *st ) {
 
 
 
-time_t genDate( char *date, int32_t dateLen ) {
+static time_t genDate( const char *date, int32_t dateLen ) {
 
 	time_t result = -1;
 	// the date string should always be the same length

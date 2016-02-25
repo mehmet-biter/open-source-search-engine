@@ -1225,11 +1225,11 @@ bool addCollToTable ( char *coll , collnum_t collnum ) {
 
 // get coll rec specified in the HTTP request
 CollectionRec *Collectiondb::getRec ( HttpRequest *r , bool useDefaultRec ) {
-	char *coll = r->getString ( "c" );
+	const char *coll = r->getString ( "c" );
 	if ( coll && ! coll[0] ) coll = NULL;
 	// maybe it is crawlbot?
-	char *name = NULL;
-	char *token = NULL;
+	const char *name = NULL;
+	const char *token = NULL;
 	if ( ! coll ) {
 		name = r->getString("name");
 		token = r->getString("token");
@@ -1257,8 +1257,8 @@ CollectionRec *Collectiondb::getRec ( HttpRequest *r , bool useDefaultRec ) {
 	return g_collectiondb.getRec ( coll );
 }
 
-char *Collectiondb::getDefaultColl ( HttpRequest *r ) {
-	char *coll = r->getString ( "c" );
+const char *Collectiondb::getDefaultColl ( HttpRequest *r ) {
+	const char *coll = r->getString ( "c" );
 	if ( coll && ! coll[0] ) coll = NULL;
 	if ( coll ) return coll;
 	CollectionRec *cr = NULL;
@@ -2805,7 +2805,7 @@ bool CollectionRec::save ( ) {
 // calls hasPermissin() below
 bool CollectionRec::hasPermission ( HttpRequest *r , TcpSocket *s ) {
 	int32_t  plen;
-	char *p     = r->getString ( "pwd" , &plen );
+	const char *p  = r->getString ( "pwd" , &plen );
 	int32_t  ip    = s->m_ip;
 	return hasPermission ( p , plen , ip );
 }
@@ -2817,7 +2817,7 @@ bool CollectionRec::isAssassin ( int32_t ip ) {
 }
 
 // . does this password work for this collection?
-bool CollectionRec::hasPermission ( char *p, int32_t plen , int32_t ip ) {
+bool CollectionRec::hasPermission ( const char *p, int32_t plen , int32_t ip ) {
 	// just return true
 	return true;
 }

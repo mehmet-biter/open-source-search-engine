@@ -9,7 +9,7 @@
 static bool sendReply        ( void *state  , bool addUrlEnabled );
 
 // from PageCrawlBot.cpp:
-bool getSpiderRequestMetaList ( char *doc , 
+bool getSpiderRequestMetaList ( const char *doc ,
 				SafeBuf *listBuf ,
 				bool spiderLinks ,
 				CollectionRec *cr ) ;
@@ -37,7 +37,7 @@ bool sendPageAddUrl2 ( TcpSocket *sock , HttpRequest *hr ) {
 	// . get fields from cgi field of the requested url
 	// . get the search query
 	int32_t  urlLen = 0;
-	char *urls = hr->getString ( "urls" , &urlLen , NULL /*default*/);
+	const char *urls = hr->getString ( "urls" , &urlLen , NULL /*default*/);
 	// also try "url" and "urls"
 	//if ( ! url ) url = r->getString ( "url" , &urlLen , NULL );
 	//if ( ! url ) url = r->getString ( "urls" , &urlLen , NULL );
@@ -45,7 +45,7 @@ bool sendPageAddUrl2 ( TcpSocket *sock , HttpRequest *hr ) {
 
 	char format = hr->getReplyFormat();
 
-	char *c = hr->getString("c");
+	const char *c = hr->getString("c");
 	
 	if ( ! c && (format == FORMAT_XML || format == FORMAT_JSON) ) {
 		g_errno = EMISSINGINPUT;
@@ -97,7 +97,7 @@ bool sendPageAddUrl2 ( TcpSocket *sock , HttpRequest *hr ) {
 	bool status = true;
 
 	// do not spider links for spots
-	if ( ! getSpiderRequestMetaList ( urls,
+	if ( ! getSpiderRequestMetaList ( (char*)urls,
 					  // a safebuf
 					  &gr->m_listBuf ,
 					  gr->m_harvestLinks, // spiderLinks?

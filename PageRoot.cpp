@@ -236,7 +236,7 @@ bool expandHtml (  SafeBuf& sb,
 		     head[i+5] == 'e' ) {
 			// insert the location
 			int32_t whereLen;
-			char *where = r->getString("where",&whereLen);
+			const char *where = r->getString("where",&whereLen);
 			// get it from cookie as well!
 			if ( ! where ) 
 				where = r->getStringFromCookie("where",
@@ -257,7 +257,7 @@ bool expandHtml (  SafeBuf& sb,
 		     head[i+4] == 'n' ) {
 			// insert the location
 			int32_t whenLen;
-			char *when = r->getString("when",&whenLen);
+			const char *when = r->getString("when",&whenLen);
 			// skip over the %when
 			i += 4;
 			if ( ! when ) continue;
@@ -375,7 +375,7 @@ bool expandHtml (  SafeBuf& sb,
 
 			// insert collection name too
 			int32_t collLen;
-			char *coll = r->getString ( "c" , &collLen );
+			const char *coll = r->getString ( "c" , &collLen );
 			if ( collLen > 0 && collLen < MAX_COLL_LEN ) {
 			        //sprintf (p,"<input type=hidden name=c "
 				//	 "value=\"");
@@ -767,7 +767,7 @@ static bool printWebHomePage ( SafeBuf &sb , HttpRequest *r , TcpSocket *sock ) 
 	// . search special types
 	// . defaults to web which is "search"
 	// . can be like "images" "products" "articles"
-	char *searchType = r->getString("searchtype",NULL,"search",NULL);
+	const char *searchType = r->getString("searchtype",NULL,"search",NULL);
 	log("searchtype=%s",searchType);
 
 	// pass searchType in as tabName
@@ -871,7 +871,7 @@ static bool printWebHomePage ( SafeBuf &sb , HttpRequest *r , TcpSocket *sock ) 
 	return true;
 }
 
-static bool printAddUrlHomePage ( SafeBuf &sb , char *url , HttpRequest *r ) {
+static bool printAddUrlHomePage ( SafeBuf &sb , const char *url , HttpRequest *r ) {
 
 	CollectionRec *cr = g_collectiondb.getRec ( r );
 
@@ -1176,7 +1176,7 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	// . get fields from cgi field of the requested url
 	// . get the search query
 	int32_t  urlLen = 0;
-	char *url = hr->getString ( "urls" , &urlLen , NULL /*default*/);
+	const char *url = hr->getString ( "urls" , &urlLen , NULL /*default*/);
 
 	// see if they provided a url of a file of urls if they did not
 	// provide a url to add directly
@@ -1385,7 +1385,7 @@ bool sendPageAddUrl ( TcpSocket *sock , HttpRequest *hr ) {
 	//setInjectionRequestFromParms ( sock , hr , cr , ir );
 
 	int32_t collLen;
-	char *coll = hr->getString ( "c" , &collLen ,NULL );
+	const char *coll = hr->getString ( "c" , &collLen ,NULL );
 	if ( ! coll ) coll = g_conf.m_defaultColl;
 	ir->m_collnum = g_collectiondb.getCollnum ( coll );
 

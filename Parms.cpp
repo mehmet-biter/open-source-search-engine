@@ -926,7 +926,7 @@ bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 	//
 	// CLOUD SEARCH ENGINE SUPPORT
 	//
-	char *action = r->getString("action",NULL);
+	const char *action = r->getString("action",NULL);
 	if ( page == PAGE_BASIC_SETTINGS &&
 	     guide &&
 	     // this is non-null if handling a submit request
@@ -934,7 +934,7 @@ bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 	     format == FORMAT_HTML ) {
 		//return g_parms.sendPageGeneric ( s, r, PAGE_BASIC_SETTINGS );
 		// just redirect to it
-		char *coll = r->getString("c",NULL);
+		const char *coll = r->getString("c",NULL);
 		if ( coll ) {
 			sb->safePrintf("<meta http-equiv=Refresh "
 				      "content=\"0; URL=/widgets.html"
@@ -1050,7 +1050,7 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 			"</font></td></tr>\n";
 
 	if ( format == FORMAT_XML || format == FORMAT_JSON ) {
-		char *coll = g_collectiondb.getDefaultColl(r);
+		const char *coll = g_collectiondb.getDefaultColl(r);
 		CollectionRec *cr = g_collectiondb.getRec(coll);//2(r,true);
 		bool isMasterAdmin = g_conf.isMasterAdmin ( s , r );
 		bool isCollAdmin = g_conf.isCollAdmin ( s , r );
@@ -1256,7 +1256,7 @@ bool Parms::printParms (SafeBuf* sb, TcpSocket *s , HttpRequest *r) {
 	int32_t  page = g_pages.getDynamicPageNumber ( r );
 	int32_t nc = r->getLong("nc",1);
 	int32_t pd = r->getLong("pd",1);
-	char *coll = g_collectiondb.getDefaultColl(r);
+	const char *coll = g_collectiondb.getDefaultColl(r);
 	CollectionRec *cr = g_collectiondb.getRec(coll);//2(r,true);
 
 	bool isMasterAdmin = g_conf.isMasterAdmin ( s , r );
@@ -1510,7 +1510,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			sb->safePrintf("\t\t<required>1</required>\n");
 		sb->safePrintf ( "\t\t<cgi>%s</cgi>\n",m->m_cgi);
 		// and default value if it exists
-		char *def = m->m_def;
+		const char *def = m->m_def;
 		if ( ! def ) def = "";
 		sb->safePrintf ( "\t\t<defaultValue><![CDATA[");
 		sb->cdataEncode ( def );
@@ -1545,7 +1545,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			sb->safePrintf("\t\t\"required\":1,\n");
 		sb->safePrintf ( "\t\t\"cgi\":\"%s\",\n",m->m_cgi);
 		// and default value if it exists
-		char *def = m->m_def;
+		const char *def = m->m_def;
 		if ( ! def ) def = "";
 		sb->safePrintf ( "\t\t\"defaultValue\":\"");
 		sb->jsonEncode(def);
@@ -1776,7 +1776,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			//sb->safePrintf(" CGI: %s.",m->m_cgi);
 			// and default value if it exists
 			if ( m->m_def && m->m_def[0] && t != TYPE_CMD ) {
-				char *d = m->m_def;
+				const char *d = m->m_def;
 				if ( t == TYPE_BOOL || t == TYPE_CHECKBOX ) {
 					if ( d[0]=='0' ) d = "NO";
 					else             d = "YES";
@@ -2074,7 +2074,7 @@ bool Parms::printParm ( SafeBuf* sb,
 		// then s and sx will always be NULL, so set to default
 		if ( ! sx ) {
 			sx = &tmp;
-			char *def = m->m_def;
+			const char *def = m->m_def;
 			// if it has PF_DEFAULTCOLL flag set then use the coll
 			if ( cr && (m->m_flags & PF_COLLDEFAULT) ) 
 				def = cr->m_coll;
@@ -2464,7 +2464,7 @@ bool Parms::removeParm ( int32_t i , int32_t an , char *THIS ) {
 	return true;
 }
 
-void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , char *s ,
+void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , const char *s ,
 		      bool isHtmlEncoded , bool fromRequest ) {
 
 	if ( fromRequest ) { char *xx=NULL;*xx=0; }
@@ -2483,7 +2483,7 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , char *s ,
 	     m->m_type != TYPE_FILEUPLOADBUTTON && 
 	     m->m_defOff==-1) {
 		s = "0";
-		char *tit = m->m_title;
+		const char *tit = m->m_title;
 		if ( ! tit || ! tit[0] ) tit = m->m_xml;
 		log(LOG_LOGIC,"admin: Parm \"%s\" had NULL default value. "
 		    "Forcing to 0.",
@@ -2534,11 +2534,11 @@ void Parms::setParm ( char *THIS , Parm *m , int32_t mm , int32_t j , char *s ,
 		goto changed; }
 	else if ( t == TYPE_CHARPTR ) {
 		// "s" might be NULL or m->m_def...
-		*(char **)(THIS + m->m_off + j) = s;
+		*(const char **)(THIS + m->m_off + j) = s;
 	}
 	else if ( t == 	TYPE_FILEUPLOADBUTTON ) {
 		// "s" might be NULL or m->m_def...
-		*(char **)(THIS + m->m_off + j) = s;
+		*(const char **)(THIS + m->m_off + j) = s;
 	}
 	else if ( t == TYPE_CMD ) {
 		log(LOG_LOGIC, "conf: Parms: TYPE_CMD is not a cgi var.");
@@ -3221,7 +3221,7 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 		}
 skip2:
 		// description, do not wrap words around lines
-		char *d = m->m_desc;
+		const char *d = m->m_desc;
 		// if empty array mod description to include the tag name
 		char tmp [10*1024];
 		if ( m->m_max > 1 && count == 0 && gbstrlen(d) < 9000 &&
@@ -3231,10 +3231,10 @@ skip2:
 			sprintf ( tmp , "%s%sUse <%s> tag.",d,cc,m->m_xml);
 			d = tmp;
 		}
-		char *END  = d + gbstrlen(d);
-		char *dend;
-		char *last;
-		char *start;
+		const char *END  = d + gbstrlen(d);
+		const char *dend;
+		const char *last;
+		const char *start;
 		// just print tag if it has no description
 		if ( ! *d ) goto skip;
 		//if ( p + gbstrlen(d)+5 >= pend ) goto hadError;
@@ -12019,7 +12019,7 @@ void Parms::init ( ) {
 		// continue if already have the xml name
 		if ( m_parms[i].m_xml ) continue;
 		// set xml based on title
-		char *tt = m_parms[i].m_title;
+		const char *tt = m_parms[i].m_title;
 		if ( p + gbstrlen(tt) >= pend ) {
 			log(LOG_LOGIC,"conf: Not enough room to store xml "
 			    "tag name in buffer.");
@@ -12527,8 +12527,8 @@ bool Parms::convertHttpRequestToParmList (HttpRequest *hr, SafeBuf *parmList,
 	//if ( hr->isLocal() ) hasPerm = true;
 
 	// fix jenkins "GET /v2/crawl?token=crawlbottesting" request
-	char *name  = hr->getString("name");
-	char *token = hr->getString("token");
+	const char *name  = hr->getString("name");
+	const char *token = hr->getString("token");
 	//if ( ! cr && token ) hasPerm = true;
 
 	//if ( ! hasPerm ) {
@@ -14047,7 +14047,7 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 	if ( collnum >= 0 ) {
 		cr = g_collectiondb.getRec ( collnum );
 		if ( ! cr ) {
-			char *ps = "unknown parm";
+			const char *ps = "unknown parm";
 			if ( parm ) ps = parm->m_title;
 			log("parmdb: invalid collnum %"INT32" for parm \"%s\"",
 			    (int32_t)collnum,ps);

@@ -1228,7 +1228,7 @@ public:
 	TcpSocket    *m_socket;
 	HttpRequest   m_r;
 	collnum_t     m_collnum;
-	char         *m_coll;
+	const char   *m_coll;
 	int32_t          m_count;
 	key_t         m_startKey;
 	key_t         m_endKey;
@@ -1261,7 +1261,7 @@ bool sendPageSpiderdb ( TcpSocket *s , HttpRequest *r ) {
 	st->m_numRecs  = r->getLong ("n", 20  );
 	st->m_r.copy ( r );
 	// get collection name
-	char *coll = st->m_r.getString ( "c" , NULL , NULL );
+	const char *coll = st->m_r.getString ( "c" , NULL , NULL );
 	// get the collection record to see if they have permission
 	//CollectionRec *cr = g_collectiondb.getRec ( coll );
 

@@ -334,7 +334,7 @@ public:
 	//   and use that!
 	// . used by PageGet.cpp
 	bool set3 ( int64_t  docId       , 
-		    char      *coll        ,
+		    const char   *coll        ,
 		    int32_t       niceness    );
 
 	bool set4 ( class SpiderRequest *sreq  , 
@@ -742,7 +742,7 @@ public:
 	collnum_t      m_collnum;
 	int32_t           m_lastCollRecResetCount;
 	class CollectionRec *getCollRec ( ) ;
-	bool setCollNum ( char *coll ) ;
+	bool setCollNum ( const char *coll ) ;
 
 
 	char      *m_content;

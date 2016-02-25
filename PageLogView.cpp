@@ -18,7 +18,7 @@ struct StateLogView {
 	char      *m_readBuf;
 	char      *m_readBufPtrs[MAX_HOSTS];
 	bool       m_filters[8];
-	char      *m_filterStr[8];
+	const char *m_filterStr[8];
 	char       m_numFilts;
 	char      *m_lastPtr;
 	int32_t       m_numSlots;

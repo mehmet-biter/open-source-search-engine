@@ -341,7 +341,7 @@ bool Proxy::handleRequest (TcpSocket *s){
 	// so we can do stripe load balancing by number of query terms.
 	// i.e. sending 3 queries of only one term each is about the
 	// same as sending one larger query to a single stripe.
-	char *qs = hr.getString("q",NULL);
+	const char *qs = hr.getString("q",NULL);
 	Query q;
 	if ( qs ) 
 		q.set2 ( qs , langUnknown , false ); // 2 = autodetect bool

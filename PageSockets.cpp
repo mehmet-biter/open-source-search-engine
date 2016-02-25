@@ -8,9 +8,9 @@
 #include "SafeBuf.h"
 #include "Msg13.h"
 
-static void printTcpTable  (SafeBuf *p,char *title,TcpServer *server);
-static void printUdpTable  (SafeBuf *p,char *title,UdpServer *server,
-			     char *coll, char *pwd , int32_t fromIp ,
+static void printTcpTable  (SafeBuf *p, const char *title, TcpServer *server);
+static void printUdpTable  (SafeBuf *p, const char *title, UdpServer *server,
+			     const char *coll, int32_t fromIp ,
 			    bool isDns = false );
 
 // . returns false if blocked, true otherwise
@@ -22,19 +22,27 @@ bool sendPageSockets ( TcpSocket *s , HttpRequest *r ) {
 	char  buf [ 128*1024 ];
 	SafeBuf p(buf, 128*1024);
 	int32_t collLen = 0;
-	char *coll = r->getString( "c", &collLen );
-	if ( collLen > MAX_COLL_LEN ) collLen = MAX_COLL_LEN;
-	if ( coll ) coll[collLen] = '\0';
+	const char *coll = r->getString( "c", &collLen );
+	char tmp_coll[MAX_COLL_LEN+1];
+	if(coll) {
+		//copy collection name into tmpbuf and nul-terminate it
+		if ( (size_t)collLen >= sizeof(tmp_coll) )
+			collLen = sizeof(tmp_coll);
+		memcpy(tmp_coll,coll,collLen);
+		tmp_coll[collLen] = '\0';
+		coll = tmp_coll;
+	}
+		
 	// print standard header
 	g_pages.printAdminTop ( &p, s , r );
 
 	// now print out the sockets table for each tcp server we have
 	printTcpTable(&p,"HTTP Server"    ,g_httpServer.getTcp());
 	printTcpTable(&p,"HTTPS Server"    ,g_httpServer.getSSLTcp());
-	printUdpTable(&p,"Udp Server" , &g_udpServer,coll,NULL,s->m_ip);
-	//printUdpTable(&p,"Udp Server(async)",&g_udpServer2,coll,pwd,s->m_ip);
+	printUdpTable(&p,"Udp Server" , &g_udpServer,coll,s->m_ip);
+	//printUdpTable(&p,"Udp Server(async)",&g_udpServer2,coll,s->m_ip);
 	printUdpTable(&p,"Udp Server (dns)", &g_dns.m_udpServer,
-		      coll,NULL,s->m_ip,true/*isDns?*/);
+		      coll,s->m_ip,true/*isDns?*/);
 
 	// from msg13.cpp print the queued url download requests
 	printHammerQueueTable ( &p );
@@ -57,7 +65,7 @@ bool sendPageSockets ( TcpSocket *s , HttpRequest *r ) {
 }
 
 
-void printTcpTable ( SafeBuf* p, char *title, TcpServer *server ) {
+void printTcpTable ( SafeBuf* p, const char *title, TcpServer *server ) {
 	// table headers for urls current being spiderd
 	p->safePrintf ( "<table %s>"
 		       "<tr class=hdrow><td colspan=19>"
@@ -203,11 +211,10 @@ void printTcpTable ( SafeBuf* p, char *title, TcpServer *server ) {
 	p->safePrintf ("</table><br>\n" );
 }
 
-void printUdpTable ( SafeBuf *p, char *title, UdpServer *server ,
-		     char *coll, char *pwd , int32_t fromIp ,
+void printUdpTable ( SafeBuf *p, const char *title, UdpServer *server ,
+		     const char *coll, int32_t fromIp ,
 		     bool isDns ) {
 	if ( ! coll ) coll = "main";
-	//if ( ! pwd  ) pwd  = "";
 
 	// time now
 	int64_t now = gettimeofdayInMilliseconds();

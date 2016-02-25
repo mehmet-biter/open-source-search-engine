@@ -37,12 +37,12 @@ class Tag {
 	int32_t  getSize    ( ) { return sizeof(key128_t) + 4 + m_recDataSize; };
 	int32_t  getRecSize ( ) { return sizeof(key128_t) + 4 + m_recDataSize; };
 
-	void set ( char *site ,
-		   char *tagname ,
+	void set ( const char *site ,
+		   const char *tagname ,
 		   int32_t  timestamp ,
-		   char *user ,
+		   const char *user ,
 		   int32_t  ip ,
-		   char *data ,
+		   const char *data ,
 		   int32_t  dataSize );
 
 	int32_t print ( ) ; 
@@ -98,7 +98,7 @@ class Tag {
 
 // . convert "domain_squatter" to ST_DOMAIN_SQUATTER
 // . used by CollectionRec::getRegExpNum()
-int32_t  getTagTypeFromStr( char *tagTypeName , int32_t tagnameLen = -1 );
+int32_t  getTagTypeFromStr( const char *tagTypeName , int32_t tagnameLen = -1 );
 
 // . convert ST_DOMAIN_SQUATTER to "domain_squatter"
 char *getTagStrFromType ( int32_t tagType ) ;

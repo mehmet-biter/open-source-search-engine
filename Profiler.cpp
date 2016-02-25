@@ -763,7 +763,7 @@ bool sendPageProfiler ( TcpSocket *s , HttpRequest *r ) {
 	sb.reserve2x(32768);
 
 	//read in all of the possible cgi parms off the bat:
-	char *coll = r->getString ("c");
+	const char *coll = r->getString ("c");
 	int32_t collLen;
 	if ( ! coll || ! coll[0] ) {
 		coll = g_conf.getDefaultColl( r->getHost(), r->getHostLen() );
@@ -1203,7 +1203,7 @@ int cmpPathBucket (const void *A, const void *B) {
 }
 
 bool
-Profiler::printRealTimeInfo(SafeBuf *sb, char *coll) {
+Profiler::printRealTimeInfo(SafeBuf *sb, const char *coll) {
 	if(!m_realTimeProfilerRunning) {
 		sb->safePrintf("<table %s>",TABLE_STYLE);
 		sb->safePrintf("<tr class=hdrow><td colspan=7>"

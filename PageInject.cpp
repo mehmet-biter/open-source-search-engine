@@ -45,7 +45,7 @@ void setInjectionRequestFromParms ( TcpSocket *sock ,
 		if ( m->m_type == TYPE_CHARPTR ||
 		     m->m_type == TYPE_FILEUPLOADBUTTON ) {
 			int32_t stringLen;
-			char *str =hr->getString(m->m_cgi,&stringLen,m->m_def);
+			const char *str =hr->getString(m->m_cgi,&stringLen,m->m_def);
 			// avoid overwriting the "url" parm with the "u" parm
 			// since it is just an alias
 			if ( ! str ) continue;
@@ -53,7 +53,7 @@ void setInjectionRequestFromParms ( TcpSocket *sock ,
 			char *foo = (char *)ir + m->m_off;
 			char **ptrPtr = (char **)foo;
 			// store the ptr pointing into hr buf for now
-			*ptrPtr = str;
+			*ptrPtr = (char*)str;
 			// how many strings are we past ptr_url?
 			int32_t count = ptrPtr - &ir->ptr_url;
 			// and length. include \0
@@ -76,7 +76,7 @@ void setInjectionRequestFromParms ( TcpSocket *sock ,
 		}
 		else if ( m->m_type == TYPE_IP ) {
 			char *ii = (char *)((char *)ir + m->m_off);
-			char *is = hr->getString(m->m_cgi,NULL);
+			const char *is = hr->getString(m->m_cgi,NULL);
 			*(int32_t *)ii = 0; // default ip to 0
 			// otherwise, set the ip
 			if ( is ) *(int32_t *)ii = atoip(is);
@@ -311,7 +311,7 @@ bool sendPageInject ( TcpSocket *sock , HttpRequest *hr ) {
 	}
 
 	char format = hr->getReplyFormat();
-	char *coll  = hr->getString("c",NULL);
+	const char *coll  = hr->getString("c",NULL);
 
 	// no url parm?
 	if ( format != FORMAT_HTML && ! coll ) {//hr->getString("c",NULL) ) {

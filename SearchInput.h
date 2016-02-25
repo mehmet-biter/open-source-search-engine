@@ -106,7 +106,7 @@ class SearchInput {
 	//
 	//////
 
-	char *m_coll;
+	const char *m_coll;
 	char *m_query;
 	
 	char *m_prepend;

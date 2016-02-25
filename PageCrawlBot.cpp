@@ -1745,12 +1745,12 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 
 	// token is always required. get from json or html form input
 	//char *token = getInputString ( "token" );
-	char *token = hr->getString("token");
-	char *name = hr->getString("name");
+	char *token = (char*)hr->getString("token");
+	char *name = (char*)hr->getString("name");
 
 	// . try getting token-name from ?c= 
 	// . the name of the collection is encoded as <token>-<crawlname>
-	char *c = hr->getString("c");
+	const char *c = hr->getString("c");
 	char tmp[MAX_COLL_LEN+100];
 	if ( ! token && c ) {
 		strncpy ( tmp , c , MAX_COLL_LEN );
@@ -1771,7 +1771,7 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 		}
 
 
-	char *fs = hr->getString("format",NULL,NULL);
+	const char *fs = hr->getString("format",NULL,NULL);
 	// give john a json api
 	if ( fs && strcmp(fs,"html") == 0 ) fmt = FORMAT_HTML;
 	if ( fs && strcmp(fs,"json") == 0 ) fmt = FORMAT_JSON;
@@ -1820,8 +1820,8 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 		return sendErrorReply2 (socket,fmt,msg);
 	}
 
-	char *seeds = hr->getString("seeds");
-	char *spots = hr->getString("spots");
+	const char *seeds = hr->getString("seeds");
+	const char *spots = hr->getString("spots");
 
 	// just existence is the operation
 	//bool delColl   = hr->hasField("deleteCrawl");
@@ -2006,9 +2006,9 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 	// if we can't compile the provided regexes, return error
 	//
 	if ( cr ) {
-		char *rx1 = hr->getString("urlCrawlRegEx",NULL);
+		const char *rx1 = hr->getString("urlCrawlRegEx",NULL);
 		if ( rx1 && ! rx1[0] ) rx1 = NULL;
-		char *rx2 = hr->getString("urlProcessRegEx",NULL);
+		const char *rx2 = hr->getString("urlProcessRegEx",NULL);
 		if ( rx2 && ! rx2[0] ) rx2 = NULL;
 		// this will store the compiled regular expression into ucr
 		regex_t re1;
@@ -2948,7 +2948,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			      );
 	}
 
-	char *name3 = hr->getString("name");
+	const char *name3 = hr->getString("name");
 
 	// scan each coll and get its stats
 	for ( int32_t i = 0 ; summary && i < g_collectiondb.m_numRecs ; i++ ) {
@@ -4259,7 +4259,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 
 // . do not add dups into m_diffbotSeeds safebuf
 // . return 0 if not in table, 1 if in table. -1 on error adding to table.
-int32_t isInSeedBuf ( CollectionRec *cr , char *url, int len ) {
+int32_t isInSeedBuf ( CollectionRec *cr , const char *url, int len ) {
 
 	HashTableX *ht = &cr->m_seedHashTable;
 
@@ -4299,7 +4299,7 @@ int32_t isInSeedBuf ( CollectionRec *cr , char *url, int len ) {
 
 // just use "fakeips" based on the hash of each url hostname/subdomain
 // so we don't waste time doing ip lookups.
-bool getSpiderRequestMetaList ( char *doc , 
+bool getSpiderRequestMetaList ( const char *doc ,
 				SafeBuf *listBuf ,
 				bool spiderLinks ,
 				CollectionRec *cr ) {
@@ -4308,7 +4308,7 @@ bool getSpiderRequestMetaList ( char *doc ,
 
 	// . scan the list of urls
 	// . assume separated by white space \n \t or space
-	char *p = doc;
+	const char *p = doc;
 
 	uint32_t now = (uint32_t)getTimeGlobal();
 
@@ -4319,11 +4319,11 @@ bool getSpiderRequestMetaList ( char *doc ,
 		// all done?
 		if ( ! *p ) break;
 		// save it
-		char *saved = p;
+		const char *saved = p;
 		// advance to next white space
 		for ( ; ! is_wspace_a(*p) && *p ; p++ );
 		// set end
-		char *end = p;
+		const char *end = p;
 		// get that url
 		Url url;
 		url.set ( saved , end - saved, false, false, false, false, false, 0x7fffffff );

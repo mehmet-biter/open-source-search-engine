@@ -152,7 +152,7 @@ class Pages {
 	bool printAdminTop 	       ( SafeBuf     *sb   ,
 					 TcpSocket   *s    ,
 					 HttpRequest *r    ,
-					 char        *qs = NULL,
+					 const char  *qs = NULL,
 					 char* bodyJavascript = "" );
 
 	void printFormTop(  SafeBuf *sb, HttpRequest *r );
@@ -165,18 +165,18 @@ class Pages {
 	bool printSubmit ( SafeBuf *sb ) ;
 
 	bool  printColors              ( SafeBuf *sb , char* bodyJavascript = "" ) ;
-	bool  printLogo                ( SafeBuf *sb, char *coll ) ;
-	bool  printHostLinks (SafeBuf *sb, int32_t  page, char *coll, int32_t fromIp, char *qs) ;
+	bool  printLogo                ( SafeBuf *sb, const char *coll ) ;
+	bool  printHostLinks (SafeBuf *sb, int32_t  page, const char *coll, int32_t fromIp, const char *qs) ;
 
 	bool  printAdminLinks          ( SafeBuf *sb, 
 					 int32_t  page ,
-					 char *coll ,
+					 const char *coll ,
 					 bool isBasic );
 
 	bool  printCollectionNavBar (SafeBuf *sb     ,
 				      int32_t  page     ,
-				      char *coll     ,
-				      char *qs       ,
+				      const char *coll     ,
+				      const char *qs       ,
 				      TcpSocket *sock ,
 				      HttpRequest *hr );
 };

@@ -31,8 +31,8 @@ bool sendPageCrawlbot ( class TcpSocket *s , class HttpRequest *hr );
 //bool handleDiffbotRequest ( TcpSocket *s , HttpRequest *hr ) ;
 bool sendBackDump ( class TcpSocket *s, class HttpRequest *hr );
 
-bool getSpiderRequestMetaList ( char *doc, 
-				class SafeBuf *listBuf, 
+bool getSpiderRequestMetaList ( const char *doc,
+				class SafeBuf *listBuf,
 				bool spiderLinks,
 				class CollectionRec *cr);
 

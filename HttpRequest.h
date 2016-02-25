@@ -135,24 +135,24 @@ class HttpRequest {
 	
 	// . for parsing the terms in a cgi url
 	// . the returned string is NOT NULL terminated
-	char      *getString   ( char *field, int32_t *len = NULL,
-				 char *defaultString = NULL , int32_t *next=NULL);
-	bool       getBool     ( char *field, bool defaultBool );
-	int32_t       getLong     ( char *field, int32_t defaultLong           );
-	int64_t  getLongLong ( char *field, int64_t defaultLongLong    );
-	float      getFloat    ( char *field, double defaultFloat );
-	double     getDouble   ( char *field, double defaultDouble );
+	const char *getString  ( const char *field, int32_t *len = NULL,
+				 const char *defaultString = NULL , int32_t *next=NULL);
+	bool       getBool     ( const char *field, bool defaultBool );
+	int32_t       getLong     ( const char *field, int32_t defaultLong           );
+	int64_t  getLongLong ( const char *field, int64_t defaultLongLong    );
+	float      getFloat    ( const char *field, double defaultFloat );
+	double     getDouble   ( const char *field, double defaultDouble );
 
-	float      getFloatFromCookie    ( char *field, float def );
-	int32_t       getLongFromCookie    ( char *field, int32_t def );
-	int64_t  getLongLongFromCookie( char *field, int64_t def );
-	bool       getBoolFromCookie    ( char *field, bool def );
-	char      *getStringFromCookie  ( char *field, int32_t *len = NULL,
-					  char *defaultString = NULL , 
+	float      getFloatFromCookie    ( const char *field, float def );
+	int32_t       getLongFromCookie    ( const char *field, int32_t def );
+	int64_t  getLongLongFromCookie( const char *field, int64_t def );
+	bool       getBoolFromCookie    ( const char *field, bool def );
+	const char *getStringFromCookie ( const char *field, int32_t *len = NULL,
+					  const char *defaultString = NULL ,
 					  int32_t *next=NULL);
 	
 
-	bool hasField ( char *field );
+	bool hasField ( const char *field );
 
 	// are we a redir? if so return non-NULL
 	char      *getRedir    ( ) { return m_redir;    };
@@ -172,7 +172,7 @@ class HttpRequest {
 
 	// . get value of cgi "field" term in the requested filename
 	// . you know GET /myfile.html?q=123&name=nathaniel
-	char *getValue ( char *field , int32_t *len=NULL, int32_t *next=NULL) ;
+	char *getValue ( const char *field , int32_t *len=NULL, int32_t *next=NULL) ;
 
 	// get value of the ith field
 	char *getValue ( int32_t i, int32_t *len = NULL);

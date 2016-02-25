@@ -16,7 +16,7 @@ public:
 	//XmlDoc m_doc;
 	//Url   m_url;
 	//Url   m_rootUrl;
-	char *m_u;
+	const char *m_u;
 	int32_t  m_ulen;
 	bool  m_applyRulesetToRoot;
 	char  m_rootQuality;
@@ -135,9 +135,9 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 
 	// might a simple request to addsomething to validated.*.txt file
 	// from XmlDoc::print() or XmlDoc::validateOutput()
-	char *add = r->getString("add",NULL);
+	const char *add = r->getString("add",NULL);
 	//int64_t uh64 = r->getLongLong("uh64",0LL);
-	char *uh64str = r->getString("uh64",NULL);
+	const char *uh64str = r->getString("uh64",NULL);
 	//char *divTag = r->getString("div",NULL);
 	if ( uh64str ) {
 		// convert add to number
@@ -208,7 +208,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 
 	// password, too
 	int32_t pwdLen = 0;
-	char *pwd = r->getString ( "pwd" , &pwdLen );
+	const char *pwd = r->getString ( "pwd" , &pwdLen );
 	if ( pwdLen > 31 ) pwdLen = 31;
 	if ( pwdLen > 0 ) strncpy ( st->m_pwd , pwd , pwdLen );
 	st->m_pwd[pwdLen]='\0';
@@ -217,7 +217,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	st->m_s = s;
 	st->m_r.copy ( r );
 	// get the collection
-	char *coll    = r->getString ( "c" , &st->m_collLen ,NULL /*default*/);
+	const char *coll    = r->getString ( "c" , &st->m_collLen ,NULL /*default*/);
 	if ( st->m_collLen > MAX_COLL_LEN )
 		return sendErrorReply ( st , ENOBUFS );
 	if ( ! coll )
@@ -235,8 +235,8 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	int32_t  old     = r->getLong   ( "old", 0 );
 	// set query
 	int32_t qlen;
-	char *qs = r->getString("q",&qlen,NULL);
-	if ( qs ) st->m_tq.set2 ( qs , langUnknown , true );
+	const char *qs = r->getString("q",&qlen,NULL);
+	if ( qs ) st->m_tq.set2 ( (char*)qs , langUnknown , true );
 	// url will override docid if given
 	if ( ! st->m_u || ! st->m_u[0] ) 
 		st->m_docId = r->getLongLong ("docid",-1);
@@ -258,7 +258,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 
 	int32_t  linkInfoLen  = 0;
 	// default is NULL
-	char *linkInfoColl = r->getString ( "oli" , &linkInfoLen, NULL );
+	const char *linkInfoColl = r->getString ( "oli" , &linkInfoLen, NULL );
 	if ( linkInfoColl ) strcpy ( st->m_linkInfoColl , linkInfoColl );
 	else st->m_linkInfoColl[0] = '\0';
 	
@@ -290,12 +290,12 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 
 
 	// print the standard header for admin pages
-	char *dd     = "";
-	char *rr     = "";
-	char *rr2    = "";
-	char *render = "";
-	char *oips   = "";
-	char *us     = "";
+	const char *dd     = "";
+	const char *rr     = "";
+	const char *rr2    = "";
+	const char *render = "";
+	const char *oips   = "";
+	const char *us     = "";
 	if ( st->m_u && st->m_u[0] ) us = st->m_u;
 	//if ( st->m_sfn != -1 ) sprintf ( rtu , "%"INT32"",st->m_sfn );
 	if ( st->m_old ) dd = " checked";
@@ -312,7 +312,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 
 
 	int32_t clen;
-	char *contentParm = r->getString("content",&clen,"");
+	const char *contentParm = r->getString("content",&clen,"");
 	
 	// print the input form
 	xbuf->safePrintf (
@@ -586,7 +586,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	// . will be NULL if none provided
 	// . "content" may contain a MIME
 	int32_t  contentLen = 0;
-	char *content = r->getString ( "content" , &contentLen , NULL );
+	const char *content = r->getString ( "content" , &contentLen , NULL );
 	// is the "content" url-encoded? default is true.
 	bool contentIsEncoded = true;
 	// mark doesn't like to url-encode his content
@@ -607,7 +607,7 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	// if facebook, load xml content from title rec...
 	bool isFacebook = (bool)strstr(st->m_u,"http://www.facebook.com/");
 	if ( isFacebook && ! content ) {
-		int64_t docId = g_titledb.getProbableDocId(st->m_u);
+		int64_t docId = g_titledb.getProbableDocId((char*)st->m_u);
 		sprintf(sreq.m_url ,"%"UINT64"", docId );
 		sreq.m_isPageReindex = true;
 	}
@@ -623,10 +623,10 @@ static bool sendPageParser2 ( TcpSocket   *s ,
 	// . this returns false if blocked
 	if ( ! xd->set4 ( &sreq       ,
 			  NULL        ,
-			  st->m_coll  ,
+			  (char*)st->m_coll  ,
 			  &st->m_wbuf        ,
 			  0 ,//PP_NICENESS ))
-			  content ,
+			  (char*)content ,
 			  false, // deletefromindex
 			  0, // forced ip
 			  contentType ))
@@ -761,7 +761,7 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 
 	// password, too
 	int32_t pwdLen = 0;
-	char *pwd = r->getString ( "pwd" , &pwdLen );
+	const char *pwd = r->getString ( "pwd" , &pwdLen );
 	if ( pwdLen > 31 ) pwdLen = 31;
 	if ( pwdLen > 0 ) strncpy ( st->m_pwd , pwd , pwdLen );
 	st->m_pwd[pwdLen]='\0';
@@ -771,7 +771,7 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	st->m_r.copy ( r );
 
 	// get the collection
-	char *coll    = r->getString ( "c" , &st->m_collLen ,NULL /*default*/);
+	const char *coll    = r->getString ( "c" , &st->m_collLen ,NULL /*default*/);
 	if ( ! coll ) coll = g_conf.m_defaultColl;
 	if ( ! coll ) coll = "main";
 	int32_t collLen = gbstrlen(coll);
@@ -787,14 +787,14 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	int32_t  old     = r->getLong   ( "old", 0 );
 	// set query
 	int32_t qlen;
-	char *qs = r->getString("q",&qlen,NULL);
-	if ( qs ) st->m_tq.set2 ( qs , langUnknown , true );
+	const char *qs = r->getString("q",&qlen,NULL);
+	if ( qs ) st->m_tq.set2 ( (char*)qs , langUnknown , true );
 	// url will override docid if given
 	st->m_docId = r->getLongLong ("d",-1);
 	st->m_docId = r->getLongLong ("docid",st->m_docId);
 
 	int32_t ulen;
-	char *u = st->m_r.getString("u",&ulen,NULL);
+	const char *u = st->m_r.getString("u",&ulen,NULL);
 	if ( ! u ) u = st->m_r.getString("url",&ulen,NULL);
 	if ( ! u && st->m_docId == -1LL ) 
 		return sendErrorReply ( st , EBADREQUEST );
@@ -819,7 +819,7 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 
 	int32_t  linkInfoLen  = 0;
 	// default is NULL
-	char *linkInfoColl = r->getString ( "oli" , &linkInfoLen, NULL );
+	const char *linkInfoColl = r->getString ( "oli" , &linkInfoLen, NULL );
 	if ( linkInfoColl ) strcpy ( st->m_linkInfoColl , linkInfoColl );
 	else st->m_linkInfoColl[0] = '\0';
 	
@@ -892,7 +892,7 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	// . will be NULL if none provided
 	// . "content" may contain a MIME
 	int32_t  contentLen = 0;
-	char *content = r->getString ( "content" , &contentLen , NULL );
+	const char *content = r->getString ( "content" , &contentLen , NULL );
 	// is the "content" url-encoded? default is true.
 	bool contentIsEncoded = true;
 	// mark doesn't like to url-encode his content
@@ -912,11 +912,11 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	// . this returns false if blocked
 	if ( ! xd->set4 ( &sreq       ,
 			  NULL        ,
-			  st->m_coll  ,
+			  (char*)st->m_coll  ,
 			  // we need this so the term table is set!
 			  &st->m_wbuf        , // XmlDoc::m_pbuf
 			  0, // try 0 now! 1 ,//PP_NICENESS ))
-			  content ,
+			  (char*)content ,
 			  false, // deletefromindex
 			  0, // forced ip
 			  ctype ))

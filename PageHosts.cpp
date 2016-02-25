@@ -48,7 +48,7 @@ bool sendPageHosts ( TcpSocket *s , HttpRequest *r ) {
 	int32_t sort  = r->getLong ( "sort", -1 );
 	// sort by hostid with dead on top by default
 	if ( sort == -1 ) sort = 16;
-	char *coll = r->getString ( "c" );
+	const char *coll = r->getString ( "c" );
 	//char *pwd  = r->getString ( "pwd" );
 	// check for setnote command
 	int32_t setnote = r->getLong("setnote", 0);
@@ -64,7 +64,7 @@ bool sendPageHosts ( TcpSocket *s , HttpRequest *r ) {
 		if ( host == -1 ) goto skipReplaceHost;
 		// get the note to set
 		int32_t  noteLen;
-		char *note = r->getString("note", &noteLen, "", 0);
+		const char *note = r->getString("note", &noteLen, "", 0);
 		// set the note
 		g_hostdb.setNote(host, note, noteLen);
 	}
@@ -75,7 +75,7 @@ bool sendPageHosts ( TcpSocket *s , HttpRequest *r ) {
 		if ( spare == -1 ) goto skipReplaceHost;
 		// get the note to set
 		int32_t  noteLen;
-		char *note = r->getString("note", &noteLen, "", 0);
+		const char *note = r->getString("note", &noteLen, "", 0);
 		// set the note
 		g_hostdb.setSpareNote(spare, note, noteLen);
 	}
@@ -120,11 +120,11 @@ skipReplaceHost:
 	if ( format == FORMAT_HTML ) g_pages.printAdminTop ( &sb , s , r );
 	//	sb.incrementLength ( pp - sb.getBuf() );
 	//	}
-	char *colspan = "30";
+	const char *colspan = "30";
 	//char *shotcol = "";
 	char shotcol[1024];
 	shotcol[0] = '\0';
-	char *cs = coll;
+	const char *cs = coll;
 	if ( ! cs ) cs = "";
 
 	if ( g_conf.m_useShotgun && format == FORMAT_HTML ) {

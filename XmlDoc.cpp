@@ -550,7 +550,7 @@ int32_t XmlDoc::getSpideredTime ( ) {
 // . but not for Msg20::getSummary(), that uses XmlDoc::set(Msg20Request*)
 // . returns false and sets g_errno on error
 bool XmlDoc::set3 ( int64_t  docId       ,
-		    char      *coll        ,
+		    const char   *coll        ,
 		    int32_t       niceness    ) {
 
 	reset();
@@ -647,7 +647,7 @@ bool XmlDoc::loadFromOldTitleRec ( ) {
 	return true;
 }
 
-bool XmlDoc::setCollNum ( char *coll ) {
+bool XmlDoc::setCollNum ( const char *coll ) {
 	CollectionRec *cr;
 	cr = g_collectiondb.getRec ( coll , gbstrlen(coll) );
 	if ( ! cr ) {

@@ -264,13 +264,13 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 			      );
 
 		int32_t  qlen;
-		char *qstr = hr->getString("q",&qlen,"",NULL);
+		const char *qstr = hr->getString("q",&qlen,"",NULL);
 		// . crap! also gotta encode apostrophe since "var url='..."
 		// . true = encodeApostrophes?
-		sb.urlEncode2 ( qstr , true );
+		sb.urlEncode2 ( (char*)qstr , true );
 
 		// progate query language
-		char *qlang = hr->getString("qlang",NULL,NULL);
+		const char *qlang = hr->getString("qlang",NULL,NULL);
 		if ( qlang ) sb.safePrintf("&qlang=%s",qlang);
 
 		// propagate "admin" if set
@@ -282,16 +282,16 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 
 		// propagate list of sites to restrict query to
 		int32_t sitesLen;
-		char *sites = hr->getString("sites",&sitesLen,NULL);
+		const char *sites = hr->getString("sites",&sitesLen,NULL);
 		if ( sites ) {
 			sb.safePrintf("&sites=");
-			sb.urlEncode2 ( sites,true);
+			sb.urlEncode2 ( (char*)sites,true);
 		}
 		// propagate "prepend"
-		char *prepend = hr->getString("prepend",NULL);
+		const char *prepend = hr->getString("prepend",NULL);
 		if ( prepend ) {
 			sb.safePrintf("&prepend=");
-			sb.urlEncode(prepend);
+			sb.urlEncode((char*)prepend);
 		}
 		// propagate "debug" if set
 		int32_t debug = hr->getLong("debug",0);
@@ -307,7 +307,7 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 		if ( showBanned ) sb.safePrintf("&sb=1");
 		// propagate collection
 		int32_t clen;
-		char *coll = hr->getString("c",&clen,"",NULL);
+		const char *coll = hr->getString("c",&clen,"",NULL);
 		if ( coll ) sb.safePrintf("&c=%s",coll);
 		// forward the "ff" family filter as well
 		int32_t ff = hr->getLong("ff",0);
@@ -931,7 +931,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 	// lead with user's widget header which usually has custom style tags
 	if ( si->m_format == FORMAT_WIDGET_IFRAME ||
 	     si->m_format == FORMAT_WIDGET_AJAX ) {
-		char *header = hr->getString("header",NULL);
+		const char *header = hr->getString("header",NULL);
 		if ( header ) sb->safeStrcpy ( header );
 	}
 
@@ -968,11 +968,11 @@ bool printSearchResultsHeader ( State0 *st ) {
 			       "top:0px;\">");
 
 		//int32_t refresh = hr->getLong("refresh",15);
-		char *oq = hr->getString("q",NULL);
+		const char *oq = hr->getString("q",NULL);
 		if ( ! oq ) oq = "";
-		char *prepend = hr->getString("prepend");
+		const char *prepend = hr->getString("prepend");
 		if ( ! prepend ) prepend = "";
-		char *displayStr = "none";
+		const char *displayStr = "none";
 		if ( prepend && prepend[0] ) displayStr = "";
 		// to do a search we need to re-call the ajax,
 		// just call reload like the one that is called every 15s or so
@@ -1023,7 +1023,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 		//char *origq = hr->getString("q");
 		// we sort all results by spider date now so PREPEND
 		// the actual user query 
-		char *origq = hr->getString("prepend");
+		const char *origq = hr->getString("prepend");
 		if ( ! origq ) origq = "";
 		sb->safePrintf("<div id=sbox style=\"float:left;"
 			       "display:%s;"
@@ -4819,13 +4819,13 @@ bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr,
 
 // if catId >= 1 then print the dmoz radio button
 bool printLogoAndSearchBox ( SafeBuf *sb, HttpRequest *hr, SearchInput *si ) {
-	char *coll = hr->getString("c");
+	const char *coll = hr->getString("c");
 	if ( ! coll ) coll = "";
 
 	// if there's a ton of sites use the post method otherwise
 	// they won't fit into the http request, the browser will reject
 	// sending such a large request with "GET"
-	char *method = "GET";
+	const char *method = "GET";
 	if ( si && si->m_sites && gbstrlen(si->m_sites)>800 ) {
 		method = "POST";
 	}
@@ -4843,7 +4843,7 @@ bool printLogoAndSearchBox ( SafeBuf *sb, HttpRequest *hr, SearchInput *si ) {
 		      );
 
 	// propagate prepend
-	char *prepend = hr->getString("prepend");
+	const char *prepend = hr->getString("prepend");
 	if ( prepend ) {
 		sb->safePrintf("<input name=prepend type=hidden value=\"");
 		sb->htmlEncode ( prepend, gbstrlen(prepend), false);
@@ -4890,7 +4890,7 @@ bool printLogoAndSearchBox ( SafeBuf *sb, HttpRequest *hr, SearchInput *si ) {
 
 	// contents of search box
 	int32_t  qlen;
-	char *qstr = hr->getString("q",&qlen,"",NULL);
+	const char *qstr = hr->getString("q",&qlen,"",NULL);
 	sb->htmlEncode ( qstr , qlen , false );
 
 	// if it was an advanced search, this can be empty

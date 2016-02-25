@@ -72,7 +72,7 @@ class Collectiondb  {
 				      bool useDefaultRec = true );
 
 	// do not support diffbot style token/name style for this one:
-	char *getDefaultColl ( HttpRequest *r ) ;
+	const char *getDefaultColl ( HttpRequest *r ) ;
 
 	//class CollectionRec *getRec2 ( class HttpRequest *r ,
 	//			       bool useDefaultRec = true );
@@ -329,7 +329,7 @@ class CollectionRec {
 	// . does this user have permission for editing this collection?
 	// . "p" is the password for this collection in question
 	// . "ip" is the connecting ip
-	bool hasPermission ( char *p, int32_t plen , int32_t ip ) ;
+	bool hasPermission ( const char *p, int32_t plen , int32_t ip ) ;
 
 	// is this ip from a spam assassin?
 	bool isAssassin ( int32_t ip );

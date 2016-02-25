@@ -184,13 +184,13 @@ public:
 
 	// . a function for adding Tags to buffer, like from Tagdb.cpp
 	// . if safebuf is a buffer of Tags from Tagdb.cpp
-	class Tag *addTag2( char *mysite, char *tagname, int32_t now, char *user, int32_t ip, int32_t val,
+	class Tag *addTag2( const char *mysite,const  char *tagname, int32_t now, const char *user, int32_t ip, int32_t val,
 						char rdbId );
 
-	class Tag *addTag3( char *mysite, char *tagname, int32_t now, char *user, int32_t ip, char *data,
+	class Tag *addTag3( const char *mysite, const char *tagname, int32_t now, const char *user, int32_t ip, const char *data,
 						char rdbId );
 
-	class Tag *addTag( char *mysite, char *tagname, int32_t now, char *user, int32_t ip, char *data,
+	class Tag *addTag( const char *mysite, const char *tagname, int32_t now, const char *user, int32_t ip,const  char *data,
 					   int32_t dsize, char rdbId, bool pushRdbId );
 
 	bool addTag ( class Tag *tag );
@@ -204,36 +204,36 @@ public:
 
 	bool utf32Encode(UChar32* codePoints, int32_t cpLen);
 
-	bool htmlEncode( char *s, int32_t len, bool encodePoundSign, int32_t niceness = 0,
+	bool htmlEncode( const char *s, int32_t len, bool encodePoundSign, int32_t niceness = 0,
 					 int32_t truncateLen = -1 );
 
-	bool  htmlEncode(char *s) ;
+	bool  htmlEncode(const char *s) ;
 
 	// html-encode any of the last "len" bytes that need it
 	bool htmlEncode(int32_t len,int32_t niceness=0);
 
-	bool htmlDecode (char *s,
+	bool htmlDecode (const char *s,
 			 int32_t len,
 			 bool doSpecial = false,
 			 int32_t niceness = 0 );
 
-	bool  dequote ( char *t , int32_t tlen );
+	bool  dequote ( const char *t , int32_t tlen );
 
-	bool  urlEncode (char *s , 
+	bool  urlEncode (const char *s , 
 			 int32_t slen, 
 			 bool requestPath = false,
 			 bool encodeApostrophes = false );
 
-	bool urlEncode( char *s ) {
+	bool urlEncode( const char *s ) {
 		return urlEncode( s, strlen( s ), false, false );
 	}
 
-	bool urlEncode2( char *s, bool encodeApostrophes ) { // usually false
+	bool urlEncode2( const char *s, bool encodeApostrophes ) { // usually false
 		return urlEncode ( s,strlen(s),false,encodeApostrophes);
 	}
 
-	bool  cdataEncode ( char *s ) ;
-	bool  cdataEncode ( char *s , int32_t slen ) ;
+	bool  cdataEncode ( const char *s ) ;
+	bool  cdataEncode ( const char *s , int32_t slen ) ;
 
 	// . append a \0 but do not inc m_length
 	// . for null terminating strings
@@ -246,7 +246,7 @@ public:
 
 	int32_t indexOf(char c);
 
-	bool  safeCdataMemcpy(char *s, int32_t len);
+	bool  safeCdataMemcpy(const char *s, int32_t len);
 	bool  pushChar (char i) {
 		if(m_length >= m_capacity) 
 			if(!reserve(2*m_capacity + 1))

@@ -205,12 +205,12 @@ class GigablastRequest {
 
 class Parm {
  public:
-	char *m_title; // displayed above m_desc on admin gui page
-	char *m_desc;  // description of variable displayed on admin gui page
-	char *m_cgi;   // cgi name, contains %i if an array
-	char *m_cgi2;  // alias
-	char *m_cgi3;  // alias
-	char *m_cgi4;  // alias
+	const char *m_title; // displayed above m_desc on admin gui page
+	const char *m_desc;  // description of variable displayed on admin gui page
+	const char *m_cgi;   // cgi name, contains %i if an array
+	const char *m_cgi2;  // alias
+	const char *m_cgi3;  // alias
+	const char *m_cgi4;  // alias
 	char *m_xml;   // default to rendition of m_title if NULL
 	int32_t  m_off;   // this variable's offset into the CollectionRec class
 	char  m_colspan;
@@ -230,7 +230,7 @@ class Parm {
 	// this is 0 if not a FIXED size array.
 	int32_t  m_fixed; 
 	int32_t  m_size;  // max string size
-	char *m_def;   // default value of this variable if not in either conf
+	const char *m_def;   // default value of this variable if not in either conf
 	int32_t  m_defOff; // if default value points to a collectionrec parm!
 	char  m_cast;  // true if we should broadcast to all hosts (default)
 	char *m_units;
@@ -368,7 +368,7 @@ class Parms {
 	bool insertParm ( int32_t i , int32_t an , char *THIS ) ;
 	bool removeParm ( int32_t i , int32_t an , char *THIS ) ;
 
-	void setParm ( char *THIS, Parm *m, int32_t mm, int32_t j, char *s,
+	void setParm ( char *THIS, Parm *m, int32_t mm, int32_t j, const char *def,
 		       bool isHtmlEncoded , bool fromRequest ) ;
 	
 	void setToDefault ( char *THIS , char objType ,

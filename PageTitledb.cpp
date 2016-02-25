@@ -26,8 +26,8 @@ public:
 	bool         m_isMasterAdmin;
 	bool         m_isLocal;
 	int64_t    m_docId;
-	char        *m_pwd;
-	char        *m_coll;
+	const char  *m_pwd;
+	const char  *m_coll;
 	int32_t         m_collLen;
 	XmlDoc       m_doc;
 	Msg20Request m_request;
@@ -62,7 +62,7 @@ bool sendPageTitledb ( TcpSocket *s , HttpRequest *r ) {
 	st->m_pwd = r->getString ( "pwd" );
 	// get the collection
 	int32_t  collLen = 0;
-	char *coll    = st->m_r.getString("c",&collLen);
+	const char *coll    = st->m_r.getString("c",&collLen);
 	if ( ! coll || ! coll[0] ) {
 		//coll    = g_conf.m_defaultColl;
 		coll = g_conf.getDefaultColl( r->getHost(), r->getHostLen() );

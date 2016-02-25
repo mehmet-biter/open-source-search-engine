@@ -808,7 +808,7 @@ bool Statsdb::gifLoop ( ) {
 		if ( col == 0 )
 			m_sb2->safePrintf("<tr>");
 
-		char *title = "unknown parm";
+		const char *title = "unknown parm";
 		if ( m ) title = m->m_title;
 
 		m_sb2->safePrintf("<td bgcolor=#%06"XINT32">&nbsp; &nbsp;</td>",c1);

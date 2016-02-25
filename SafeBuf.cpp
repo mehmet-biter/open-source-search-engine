@@ -680,16 +680,16 @@ bool SafeBuf::utf32Encode(UChar32* codePoints, int32_t cpLen) {
     return true;
 }
 
-bool SafeBuf::cdataEncode ( char *s ) {
+bool SafeBuf::cdataEncode ( const char *s ) {
 	return safeCdataMemcpy(s,gbstrlen(s));
 }
 
-bool SafeBuf::cdataEncode ( char *s , int32_t len ) {
+bool SafeBuf::cdataEncode ( const char *s , int32_t len ) {
 	return safeCdataMemcpy(s,len);
 }
 
 
-bool  SafeBuf::safeCdataMemcpy ( char *s, int32_t len ) {
+bool  SafeBuf::safeCdataMemcpy ( const char *s, int32_t len ) {
 	int32_t len1 = m_length;
 	if ( !safeMemcpy(s,len) )
 		return false;
@@ -705,7 +705,7 @@ bool  SafeBuf::safeCdataMemcpy ( char *s, int32_t len ) {
 	return true;
 }
 
-bool  SafeBuf::htmlEncode(char *s, int32_t lenArg, bool encodePoundSign ,
+bool  SafeBuf::htmlEncode(const char *s, int32_t lenArg, bool encodePoundSign ,
 			  int32_t niceness , int32_t truncateLen ) {
 	// . we assume we are encoding into utf8
 	// . sanity check
@@ -730,7 +730,7 @@ bool  SafeBuf::htmlEncode(char *s, int32_t lenArg, bool encodePoundSign ,
 	char *t    = m_buf + m_length;
 	char *tend = m_buf + m_capacity;
 	// scan through all 
-	char *send = s + len;
+	const char *send = s + len;
 
 	for ( ; s < send ; s++ ) {
 		// breathe
@@ -810,7 +810,7 @@ bool  SafeBuf::htmlEncode(char *s, int32_t lenArg, bool encodePoundSign ,
 	return true;
 }
 
-bool SafeBuf::htmlEncode(char *s) {
+bool SafeBuf::htmlEncode(const char *s) {
 	return htmlEncode(s,gbstrlen(s),true,0);
 }
 
@@ -872,13 +872,13 @@ void initTable ( ) {
 }
 
 //s is a url, make it safe for printing to html
-bool SafeBuf::urlEncode (char *s , int32_t slen, 
+bool SafeBuf::urlEncode (const char *s , int32_t slen,
 			 bool requestPath ,
 			 bool encodeApostrophes ) {
 	// this makes things faster
 	if ( ! s_init23 ) initTable();
 
-	char *send = s + slen;
+	const char *send = s + slen;
 	for ( ; s < send ; s++ ) {
 		if ( *s == '\0' && requestPath ) {
 			pushChar(*s);
@@ -920,9 +920,9 @@ bool SafeBuf::urlEncode (char *s , int32_t slen,
 
 
 
-bool SafeBuf::dequote (  char *t , int32_t tlen ) {
+bool SafeBuf::dequote ( const char *t , int32_t tlen ) {
 	if ( tlen == 0 ) return true;
-	char *tend = t + tlen;
+	const char *tend = t + tlen;
 	for ( ; t < tend; t++ ) {
 		if ( *t == '"' ) {
 			safeMemcpy("&#34;", 5);
@@ -1076,10 +1076,10 @@ bool SafeBuf::safePrintFilterTagsAndLines ( char *p , int32_t plen ,
 #include "Tagdb.h"
 
 // if safebuf is a buffer of Tags from Tagdb.cpp
-Tag *SafeBuf::addTag2 ( char *mysite , 
-			char *tagname ,
+Tag *SafeBuf::addTag2 ( const char *mysite ,
+			const char *tagname ,
 			int32_t  now ,
-			char *user ,
+			const char *user ,
 			int32_t  ip ,
 			int32_t  val ,
 			char  rdbId ) {
@@ -1090,23 +1090,23 @@ Tag *SafeBuf::addTag2 ( char *mysite ,
 }
 
 // if safebuf is a buffer of Tags from Tagdb.cpp
-Tag *SafeBuf::addTag3 ( char *mysite , 
-			char *tagname ,
+Tag *SafeBuf::addTag3 ( const char *mysite ,
+			const char *tagname ,
 			int32_t  now ,
-			char *user ,
+			const char *user ,
 			int32_t  ip ,
-			char *data ,
+			const char *data ,
 			char  rdbId ) {
 	int32_t dsize = gbstrlen(data) + 1;
 	return addTag ( mysite,tagname,now,user,ip,data,dsize,rdbId,true);
 }
 
-Tag *SafeBuf::addTag ( char *mysite , 
-		       char *tagname ,
+Tag *SafeBuf::addTag ( const char *mysite ,
+		       const char *tagname ,
 		       int32_t  now ,
-		       char *user ,
+		       const char *user ,
 		       int32_t  ip ,
-		       char *data ,
+		       const char *data ,
 		       int32_t  dsize ,
 		       char  rdbId ,
 		       bool  pushRdbId ) {
@@ -1534,7 +1534,7 @@ void SafeBuf::sortLongs( int32_t niceness ) {
 	gbqsort ( m_buf , np , 4 , int32_tcmp4 , niceness );
 }
 
-bool SafeBuf::htmlDecode ( char *src,
+bool SafeBuf::htmlDecode ( const char *src,
 			   int32_t srcLen,
 			   bool doSpecial ,
 			   int32_t niceness ) {

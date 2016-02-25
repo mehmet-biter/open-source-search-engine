@@ -33,11 +33,11 @@ Conf::Conf ( ) {
 	m_maxMem = 16000000000;
 }
 
-bool isInWhiteSpaceList ( char *p , char *buf ) {
+static bool isInWhiteSpaceList ( const char *p , const char *buf ) {
 
 	if ( ! p ) return false;
 
-	char *match = strstr ( buf , p );
+	const char *match = strstr ( buf , p );
 	if ( ! match ) return false;
 	
 	int32_t len = gbstrlen(p);
@@ -95,7 +95,7 @@ bool Conf::isCollAdmin2 ( TcpSocket *sock ,
 		return true;
 
 	// a good ip?
-	char *p   = iptoa(sock->m_ip);
+	const char *p   = iptoa(sock->m_ip);
 	char *buf = cr->m_collectionIps.getBufStart();
 	if ( isInWhiteSpaceList ( p , buf ) ) return true;
 
@@ -155,7 +155,7 @@ bool Conf::hasMasterPwd ( HttpRequest *hr ) {
 	if ( m_masterPwds.length() <= 0 )
 		return false;
 
-	char *p = hr->getString("pwd");
+	const char *p = hr->getString("pwd");
 
 	if ( ! p ) p = hr->getString("password");
 
@@ -163,7 +163,7 @@ bool Conf::hasMasterPwd ( HttpRequest *hr ) {
 
 	if ( ! p ) return false;
 
-	char *buf = m_masterPwds.getBufStart();
+	const char *buf = m_masterPwds.getBufStart();
 
 	return isInWhiteSpaceList ( p , buf );
 }

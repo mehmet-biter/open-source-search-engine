@@ -63,7 +63,7 @@ public:
 bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	// get the collection
 	int32_t  collLen = 0;
-	char *coll    = r->getString("c",&collLen);
+	const char *coll    = r->getString("c",&collLen);
 	if ( ! coll || ! coll[0] ) {
 		//coll    = g_conf.m_defaultColl;
 		coll = g_conf.getDefaultColl( r->getHost(), r->getHostLen() );
@@ -87,7 +87,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	// . get fields from cgi field of the requested url
 	// . get the search query
 	int32_t  qlen = 0;
-	char *q = r->getString ( "q" , &qlen , NULL /*default*/);
+	const char *q = r->getString ( "q" , &qlen , NULL /*default*/);
 	// ensure query not too big
 	if ( qlen >= ABS_MAX_QUERY_LEN-1 ) { 
 		g_errno=EQUERYTOOBIG; 
@@ -96,7 +96,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	// the docId
 	int64_t docId = r->getLongLong ( "d" , 0LL /*default*/ );
 	// get url
-	char *url = r->getString ( "u",NULL);
+	const char *url = r->getString ( "u",NULL);
 
 	if ( docId == 0 && ! url ) {
 		g_errno = EMISSINGINPUT;
@@ -132,7 +132,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	st->m_queryHighlighting = r->getLong ("qh"    , true  );
 	st->m_strip             = r->getLong ("strip" , 0     );
 	st->m_cnsPage           = r->getLong ("cnsp"  , true );
-	char *langAbbr = r->getString("qlang",NULL);
+	const char *langAbbr = r->getString("qlang",NULL);
 	st->m_langId = langUnknown;
 	if ( langAbbr ) {
 		uint8_t langId = getLangIdFromAbbr ( langAbbr );
@@ -186,7 +186,7 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 		strcpy(sreq.m_url, url );
 		sreq.setDataSize();
 		// this returns false if "coll" is invalid
-		if ( ! xd->set4 ( &sreq , NULL , coll , NULL , st->m_niceness ) ) 
+		if ( ! xd->set4 ( &sreq , NULL , (char*)coll , NULL , st->m_niceness ) )
 			goto hadSetError;
 	}
 	// . when getTitleRec() is called it will load the old one
@@ -694,7 +694,7 @@ bool processLoop ( void *state ) {
 	// . consider moving
 	if ( titleStart ) {
 
-		char *ebuf = st->m_r.getString("eb");
+		const char *ebuf = st->m_r.getString("eb");
 		if ( ! ebuf ) ebuf = "";
 
 		//p += sprintf ( p , 

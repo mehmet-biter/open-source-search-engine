@@ -64,12 +64,12 @@ bool Tag::printToBuf ( SafeBuf *sb ) {
 
 // . "site" can also be a specific url, but it must be normalized
 // . i.e. of the form http://xyz.com/
-void Tag::set ( char *site ,
-		char *tagname ,
+void Tag::set ( const char *site ,
+		const char *tagname ,
 		int32_t  timestamp ,
-		char *user ,
+		const char *user ,
 		int32_t  ip ,
-		char *data ,
+		const char *data ,
 		int32_t  dataSize ) {
 	// get type from name
 	m_type = getTagTypeFromStr ( tagname , strlen(tagname) );
@@ -724,13 +724,13 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 
 	// try from textarea if the ST_SITE was not in the tag section
 	int32_t  uslen;
-	char *us = r->getString("u",&uslen);
+	const char *us = r->getString("u",&uslen);
 	if ( uslen <= 0 ) us = NULL;
 	if ( us ) fou.safeMemcpy ( us , uslen );
 
 	// read in file, file of urls
 	int32_t ufuLen;
-	char *ufu = r->getString("ufu",&ufuLen);
+	const char *ufu = r->getString("ufu",&ufuLen);
 	if ( ufuLen <= 0 ) ufu = NULL;
 	if ( us  ) ufu = NULL; // exclusive
 	if ( ufu ) fou.fillFromFile ( ufu );
@@ -757,17 +757,17 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 
 		char buf[32];
 		sprintf ( buf , "tagtype%"INT32"",i );
-		char *tagTypeStr = r->getString(buf,NULL,NULL);
+		const char *tagTypeStr = r->getString(buf,NULL,NULL);
 		// if not there we are done
 		if ( ! tagTypeStr ) break;
 
 		// should we delete it?
 		sprintf ( buf , "deltag%"INT32"",i);
-		char *deltag = r->getString(buf,NULL,NULL);
+		const char *deltag = r->getString(buf,NULL,NULL);
 		//if ( deltag && deltag[0] ) continue;
 
 		sprintf ( buf , "taguser%"INT32"",i);
-		char *tagUser = r->getString( buf,NULL,"admin");//user);
+		const char *tagUser = r->getString( buf,NULL,"admin");//user);
 		//if ( tagUser && tagUser[0]==0 ) tagUser = user;
 
 		sprintf ( buf , "tagtime%"INT32"",i);
@@ -778,7 +778,7 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 
 		// get the value of this tag
 		sprintf ( buf , "tagdata%"INT32"" , i );
-		char *dataPtr = r->getString ( buf , NULL );
+		const char *dataPtr = r->getString ( buf , NULL );
 
 		// get the tag original key
 		key128_t key;
@@ -1076,7 +1076,7 @@ static TagDesc s_tagDesc[] = {
 // . convert "domain_squatter" to ST_DOMAIN_SQUATTER
 // . used by CollectionRec::getRegExpNum()
 // . tagnameLen is -1 if unknown
-int32_t getTagTypeFromStr( char *tagname , int32_t tagnameLen ) {
+int32_t getTagTypeFromStr( const char *tagname , int32_t tagnameLen ) {
 	// this is now the hash
 	int32_t tagType;
 	if ( tagnameLen == -1 ) tagType = hash32n ( tagname );
@@ -1923,7 +1923,7 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 
 	// get the collection
 	int32_t  collLen = 0;
-	char *coll  = r->getString ( "c" , &collLen  , NULL /*default*/);
+	const char *coll  = r->getString ( "c" , &collLen  , NULL /*default*/);
 	// get collection rec
 	CollectionRec *cr2 = g_collectiondb.getRec ( coll );
 	// bitch if no collection rec found
@@ -1939,9 +1939,9 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 	}
 
 	// . get fields from cgi field of the requested url
-	// . get the null-terminated, space-separated lists of sites to add
+	// . get the null-terminated, newline-separated lists of sites to add
 	int32_t  urlsLen = 0;
-	char *urls = r->getString ( "u" , &urlsLen , NULL /*default*/);
+	char *urls = (char*)r->getString ( "u" , &urlsLen , NULL /*default*/);
 	
 	//a quick hack so we can put multiple sites in a link
 	if(r->getLong("uenc", 0)) 
@@ -1962,13 +1962,13 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 	st->m_urlsLen = urlsLen;
 
 	int32_t ufuLen;
-	char *ufu = r->getString("ufu",&ufuLen);
+	const char *ufu = r->getString("ufu",&ufuLen);
 
 	if ( urls[0] == '\0' && ! ufu ) return sendReply ( st );
 
-	char *get = r->getString ("get",NULL );
+	const char *get = r->getString ("get",NULL );
 	// this is also a get operation but merges the tags from all TagRecs
-	char *merge = r->getString("tags",NULL);
+	const char *merge = r->getString("tags",NULL);
 
 	// is this an add/update operation? or just get?
 	if ( get || merge ) st->m_adding = false;

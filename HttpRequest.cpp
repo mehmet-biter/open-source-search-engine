@@ -10,7 +10,7 @@ HttpRequest::~HttpRequest() { reset();      }
 char HttpRequest::getReplyFormat() {
 	if ( m_replyFormatValid ) return m_replyFormat;
 
-	char *formatStr = getString("format");
+	const char *formatStr = getString("format");
 
 	char format = -1;//FORMAT_HTML;
 
@@ -1052,34 +1052,34 @@ bool HttpRequest::set ( char *origReq , int32_t origReqLen , TcpSocket *sock ) {
 	 return true;
  }
 
-float HttpRequest::getFloatFromCookie    ( char *field, float def ) {
+float HttpRequest::getFloatFromCookie    ( const char *field, float def ) {
 	int32_t flen;
-	char *cs = getStringFromCookie ( field , &flen , NULL );
+	const char *cs = getStringFromCookie ( field , &flen , NULL );
 	if ( ! cs ) return def;
 	float cv = atof(cs);
 	return cv;
 }
 
-int32_t HttpRequest::getLongFromCookie    ( char *field, int32_t def ) {
+int32_t HttpRequest::getLongFromCookie    ( const char *field, int32_t def ) {
 	int32_t flen;
-	char *cs = getStringFromCookie ( field , &flen , NULL );
+	const char *cs = getStringFromCookie ( field , &flen , NULL );
 	if ( ! cs ) return def;
 	int64_t cv = atoll(cs);
 	// convert
 	return (int32_t)cv;
 }
 
-int64_t HttpRequest::getLongLongFromCookie ( char *field, int64_t def ) {
+int64_t HttpRequest::getLongLongFromCookie ( const char *field, int64_t def ) {
 	int32_t flen;
-	char *cs = getStringFromCookie ( field , &flen , NULL );
+	const char *cs = getStringFromCookie ( field , &flen , NULL );
 	if ( ! cs ) return def;
 	int64_t cv = strtoull(cs,NULL,10);
 	return cv;
 }
 
-bool HttpRequest::getBoolFromCookie    ( char *field, bool def ) {
+bool HttpRequest::getBoolFromCookie    ( const char *field, bool def ) {
 	int32_t flen;
-	char *cs = getStringFromCookie ( field , &flen , NULL );
+	const char *cs = getStringFromCookie ( field , &flen , NULL );
 	if ( ! cs ) return def;
 	if ( cs[0] == '0' ) return false;
 	return true;
@@ -1088,10 +1088,10 @@ bool HttpRequest::getBoolFromCookie    ( char *field, bool def ) {
 // *next is set to ptr into m_cgiBuf so that the next successive call to
 // getString with the SAME "field" will start at *next. that way you
 // can use the same cgi parameter multiple times. (like strstr kind of)
-char *HttpRequest::getStringFromCookie ( char *field      ,
-					 int32_t *len        ,
-					 char *defaultStr ,
-					 int32_t *next       ) {
+const char *HttpRequest::getStringFromCookie ( const char *field      ,
+                                               int32_t *len        ,
+                                               const char *defaultStr ,
+                                               int32_t *next       ) {
 	// get field len
 	int32_t flen = gbstrlen(field);
 	// assume none
@@ -1188,9 +1188,9 @@ char *HttpRequest::getStringFromCookie ( char *field      ,
 // *next is set to ptr into m_cgiBuf so that the next successive call to
 // getString with the SAME "field" will start at *next. that way you
 // can use the same cgi parameter multiple times. (like strstr kind of)
-char *HttpRequest::getString ( char *field , int32_t *len , char *defaultStr ,
+const char *HttpRequest::getString ( const char *field , int32_t *len , const char *defaultStr ,
 				int32_t *next ) {
-	 char *value = getValue ( field , len, next );
+	 const char *value = getValue ( field , len, next );
 	 // return default if no match
 	 if ( ! value ) { 
 		 if ( ! len ) return defaultStr;
@@ -1203,24 +1203,27 @@ char *HttpRequest::getString ( char *field , int32_t *len , char *defaultStr ,
 	 return value;
  }
 
-bool HttpRequest::getBool ( char *field , bool defaultBool ) {
+bool HttpRequest::getBool ( const char *field , bool defaultBool ) {
 	int32_t flen;
-	char *cs = getString ( field , &flen , NULL );
+	const char *cs = getString ( field , &flen , NULL );
 	if ( ! cs ) return defaultBool;
 	if ( cs[0] == '0' ) return false;
 	return true;
 }
 
-int32_t HttpRequest::getLong ( char *field , int32_t defaultLong ) {
+int32_t HttpRequest::getLong ( const char *field , int32_t defaultLong ) {
 	 int32_t len;
-	 char *value = getValue ( field, &len, NULL );
+	 const char *value = getValue ( field, &len, NULL );
 	 // return default if no match
-	 if ( ! value || len == 0 ) return defaultLong;
-	 // otherwise, it's a match
-	 char c = value[len];
-	 value[len] = '\0';
-	 int32_t res = atol ( value );
-	 value[len] = c;
+	if ( ! value || len <= 0 )
+		return defaultLong;
+	// otherwise, it's a match
+	char tmpbuf[32];
+	if((size_t)len>=sizeof(tmpbuf))
+		return defaultLong;
+	memcpy(tmpbuf,value,len);
+	tmpbuf[len] = '\0';
+	int32_t res = atol ( value );
 	 if ( res == 0 ) {
 		 // may be an error. if so return the default
 		 int32_t i = 0;
@@ -1231,17 +1234,20 @@ int32_t HttpRequest::getLong ( char *field , int32_t defaultLong ) {
 	 return res;
 }
 
-int64_t HttpRequest::getLongLong   ( char *field , 
+int64_t HttpRequest::getLongLong   ( const char *field , 
 					int64_t defaultLongLong ) {
 	 int32_t len;
-	 char *value = getValue ( field, &len, NULL );
+	 const char *value = getValue ( field, &len, NULL );
 	 // return default if no match
-	 if ( ! value || len == 0 ) return defaultLongLong;
-	 // otherwise, it's a match
-	 char c = value[len];
-	 value[len] = '\0';
-	 int64_t res = strtoull ( value , NULL, 10 );
-	 value[len] = c;
+	if ( ! value || len <= 0 )
+		return defaultLongLong;
+	// otherwise, it's a match
+	char tmpbuf[32];
+	if((size_t)len>=sizeof(tmpbuf))
+		return defaultLongLong;
+	memcpy(tmpbuf,value,len);
+	tmpbuf[len] = '\0';
+	int64_t res = strtoull ( value , NULL, 10 );
 	 if ( res == 0 ) {
 		 // may be an error. if so return the default
 		 int32_t i = 0;
@@ -1252,16 +1258,19 @@ int64_t HttpRequest::getLongLong   ( char *field ,
 	 return res;
 }
 
-float HttpRequest::getFloat   ( char *field , double defaultFloat ) {
+float HttpRequest::getFloat   ( const char *field , double defaultFloat ) {
 	 int32_t len;
-	 char *value = getValue ( field, &len, NULL );
+	 const char *value = getValue ( field, &len, NULL );
 	 // return default if no match
-	 if ( ! value || len == 0 ) return defaultFloat;
-	 // otherwise, it's a match
-	 char c = value[len];
-	 value[len] = '\0';
-	 float res = atof ( value );
-	 value[len] = c;
+	if ( ! value || len <= 0 )
+		return defaultFloat;
+	// otherwise, it's a match
+	char tmpbuf[32];
+	if((size_t)len>=sizeof(tmpbuf))
+		return defaultFloat;
+	memcpy(tmpbuf,value,len);
+	tmpbuf[len] = '\0';
+	float res = atof ( value );
 	 if ( res == +0.0 ) {
 		 // may be an error. if so return the default
 		 int32_t i = 0;
@@ -1275,16 +1284,19 @@ float HttpRequest::getFloat   ( char *field , double defaultFloat ) {
 	 return res;
 }
 
-double HttpRequest::getDouble ( char *field , double defaultDouble ) {
+double HttpRequest::getDouble ( const char *field , double defaultDouble ) {
 	 int32_t len;
-	 char *value = getValue ( field, &len, NULL );
+	 const char *value = getValue ( field, &len, NULL );
 	 // return default if no match
-	 if ( ! value || len == 0 ) return defaultDouble;
-	 // otherwise, it's a match
-	 char c = value[len];
-	 value[len] = '\0';
-	 double res = strtod ( value , NULL );
-	 value[len] = c;
+	if ( ! value || len <= 0 )
+		return defaultDouble;
+	// otherwise, it's a match
+	char tmpbuf[32];
+	if((size_t)len>=sizeof(tmpbuf))
+		return defaultDouble;
+	memcpy(tmpbuf,value,len);
+	tmpbuf[len] = '\0';
+	double res = strtod ( tmpbuf , NULL );
 	 if ( res == +0.0 ) {
 		 // may be an error. if so return the default
 		 int32_t i = 0;
@@ -1299,7 +1311,7 @@ double HttpRequest::getDouble ( char *field , double defaultDouble ) {
 }
 
 
-bool HttpRequest::hasField ( char *field ) {
+bool HttpRequest::hasField ( const char *field ) {
 	// how long is it?
 	int32_t fieldLen = gbstrlen ( field );
 	// scan the field table directly
@@ -1314,7 +1326,7 @@ bool HttpRequest::hasField ( char *field ) {
 }
 
 
-char *HttpRequest::getValue ( char *field , int32_t *len, int32_t *next ) {
+char *HttpRequest::getValue ( const char *field , int32_t *len, int32_t *next ) {
 	// how long is it?
 	int32_t fieldLen = gbstrlen ( field );
 	// scan the field table directly

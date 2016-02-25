@@ -108,7 +108,7 @@ void SearchInput::test ( ) {
 		if ( p[i] == 0xff ) continue;
 		// find it
 		int32_t off = i + fix;
-		char *name = NULL; // "unknown";
+		const char *name = NULL; // "unknown";
 		for ( int32_t k = 0 ; k < g_parms.m_numSearchParms ; k++ ) {
 			Parm *m = g_parms.m_searchParms[k];
 			if ( m->m_off != off ) continue;
@@ -142,7 +142,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	// still access it for the time being, and not free it
 	m_hr.stealBuf ( r );
 
-	char *coll = g_collectiondb.getDefaultColl ( r );
+	const char *coll = g_collectiondb.getDefaultColl ( r );
 
 	//////
 	//
@@ -155,10 +155,10 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	// set this to the collrec of the first valid collnum we encounter
 	CollectionRec *cr = NULL;
 	// now convert list of space-separated coll names into list of collnums
-	char *p = r->getString("c",NULL);
+	const char *p = r->getString("c",NULL);
 	// if no collection list was specified look for "token=" and
 	// use those to make collections. hack for diffbot.
-	char *token = r->getString("token",NULL);
+	const char *token = r->getString("token",NULL);
 	// find all collections under this token
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
 		// must not have a "&c="
@@ -186,12 +186,9 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	// if we had a "&c=..." in the GET request process that
 	if ( p ) {
 	loop:
-		char *end = p;
+		const char *end = p;
 		for ( ; *end && ! is_wspace_a(*end) ; end++ );
-		// temp null
-		char c = *end;
-		*end = '\0';
-		CollectionRec *tmpcr = g_collectiondb.getRec ( p );
+		CollectionRec *tmpcr = g_collectiondb.getRec ( p, end-p );
 		// set defaults from the FIRST one
 		if ( tmpcr && ! cr ) {
 			cr = tmpcr;
@@ -199,7 +196,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 		}
 		if ( ! tmpcr ) { 
 			g_errno = ENOCOLLREC;
-			log("query: missing collection %s",p);
+			log("query: missing collection %*.*s",(int)(end-p),(int)(end-p),p);
 			g_msg = " (error: no such collection)";		
 			return false;
 		}
@@ -207,8 +204,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 		if (!m_collnumBuf.safeMemcpy(&tmpcr->m_collnum,
 					     sizeof(collnum_t)))
 			return false;
-		// restore the \0 character we wrote in there
-		*end = c;
 		// advance
 		p = end;
 		// skip to next collection name if there is one
@@ -631,7 +626,7 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	*/
 
 	// prepend
-	char *qp = hr->getString("prepend",NULL,NULL);
+	const char *qp = hr->getString("prepend",NULL,NULL);
 	if( qp && qp[0] ) {
 		//if( p > pstart ) *p++ =  ' ';
 		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
@@ -641,16 +636,16 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 
 	// boolean OR terms
 	bool boolq = false;
-	char *any = hr->getString("any",NULL);
+	const char *any = hr->getString("any",NULL);
 	bool first = true;
 	if ( any ) {
-		char *s = any;
-		char *send = any + gbstrlen(any);
+		const char *s = any;
+		const char *send = any + gbstrlen(any);
 	 	if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
 	 	if ( m_sbuf2.length() ) m_sbuf2.pushChar(' ');
 		while (s < send) {
 			while (isspace(*s) && s < send) s++;
-			char *s2 = s+1;
+			const char *s2 = s+1;
 			if (*s == '\"') {
 				// if there's no closing quote just treat
 				// the end of the line as such

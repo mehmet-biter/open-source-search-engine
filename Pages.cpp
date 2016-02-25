@@ -498,11 +498,11 @@ bool Pages::getNiceness ( int32_t page ) {
 //
 //////////////////////////////////////////////////////////
 
-bool printTopNavButton ( char *text, 
-			 char *link, 
-			 bool isHighlighted, 
-			 char *coll,
-			 SafeBuf *sb ) {
+static bool printTopNavButton ( const char *text,
+			        const char *link,
+			        bool isHighlighted,
+			        const char *coll,
+			        SafeBuf *sb ) {
 
 	if ( isHighlighted )
 		sb->safePrintf(
@@ -574,10 +574,10 @@ bool printTopNavButton ( char *text,
 bool Pages::printAdminTop (SafeBuf     *sb   ,
 			   TcpSocket   *s    ,
 			   HttpRequest *r    ,
-			   char        *qs   ,
+			   const char  *qs   ,
 			   char* bodyJavascript) {
 	int32_t  page   = getDynamicPageNumber ( r );
-	char *coll = g_collectiondb.getDefaultColl(r);
+	const char *coll = g_collectiondb.getDefaultColl(r);
 	bool status = true;
 
 	sb->safePrintf("<html>\n");
@@ -1006,7 +1006,7 @@ void Pages::printFormTop( SafeBuf *sb, HttpRequest *r ) {
 void Pages::printFormData( SafeBuf *sb, TcpSocket *s, HttpRequest *r ) {
 
 	int32_t  page   = getDynamicPageNumber ( r );
-	char *coll   = r->getString ( "c"   );
+	const char *coll   = r->getString ( "c"   );
 	if ( ! coll ) coll = "";
 	sb->safePrintf ( "<input type=\"hidden\" name=\"c\" "
 			 "value=\"%s\" />\n", coll);
@@ -1103,7 +1103,7 @@ bool Pages::printColors ( SafeBuf *sb, char* bodyJavascript ) {
 	return true;
 }
 
-bool Pages::printLogo ( SafeBuf *sb, char *coll ) {
+bool Pages::printLogo ( SafeBuf *sb, const char *coll ) {
 	// print the logo in upper right corner
 	if ( ! coll ) coll = "";
 	sb->safePrintf (
@@ -1116,9 +1116,9 @@ bool Pages::printLogo ( SafeBuf *sb, char *coll ) {
 
 bool Pages::printHostLinks ( SafeBuf* sb     ,
 			     int32_t     page   ,
-			     char    *coll   ,
+			     const char    *coll   ,
 			     int32_t     fromIp ,
-			     char    *qs     ) {
+			     const char    *qs     ) {
 	bool status = true;
 
 	int32_t total = 0;
@@ -1204,7 +1204,7 @@ bool Pages::printHostLinks ( SafeBuf* sb     ,
 // . print the collection admin links if "user" is USER_ADMIN
 bool  Pages::printAdminLinks ( SafeBuf *sb,
 			       int32_t  page ,
-			       char *coll ,
+			       const char *coll ,
 			       bool  isBasic ) {
 
 	bool status = true;
@@ -1304,7 +1304,7 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 	return status;
 }
 
-bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, char *coll, char *qs,
+bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll, const char *qs,
                                     TcpSocket *sock, HttpRequest *hr ) {
 	bool status = true;
 
@@ -1496,7 +1496,7 @@ bool sendPageReportSpam ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<html><head><title>Help Fight Search Engine Spam</title></head><body>");
 
 	int32_t clen;
-	char* coll = r->getString("c", &clen, "");
+	const char* coll = r->getString("c", &clen, "");
 	p.safePrintf ("<a href=\"/?c=%s\">"
 		      "<img width=\"295\" height=\"64\" border=\"0\" "
 		      "alt=\"Gigablast\" src=\"/logo-small.png\" />"
@@ -1749,7 +1749,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 		      parm->m_obj==OBJ_CONF) ) {
 			printVal = true;
 			parm->printVal ( &tmp , cr->m_collnum , 0 );
-			char *def = parm->m_def;
+			const char *def = parm->m_def;
 			if ( ! def && parm->m_type == TYPE_IP) 
 				def = "0.0.0.0";
 			if ( ! def ) def = "";
@@ -1769,7 +1769,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 		sb->safePrintf("<td>%"INT32"</td>",count++);
 
 		// use m_cgi if no m_scgi
-		char *cgi = parm->m_cgi;
+		const char *cgi = parm->m_cgi;
 
 		sb->safePrintf("<td><b>%s</b></td>", cgi);
 
@@ -1799,7 +1799,7 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 		default: sb->safePrintf("<b><font color=red>UNKNOWN</font></b>");
 		}
 		sb->safePrintf ( "</td><td>%s</td>",parm->m_title);
-		char *def = parm->m_def;
+		const char *def = parm->m_def;
 		if ( ! def ) def = "";
 		sb->safePrintf ( "<td>%s</td>",  def );
 		sb->safePrintf ( "<td>%s",  parm->m_desc );
@@ -2369,7 +2369,7 @@ bool sendPageLogin ( TcpSocket *socket , HttpRequest *hr ) {
 
 	// get the collection
 	int32_t  collLen = 0;
-	char *coll    = hr->getString("c",&collLen);
+	const char *coll    = hr->getString("c",&collLen);
 
 	// default to main collection. if you can login to main then you
 	// are considered the root admin here...
@@ -2395,7 +2395,7 @@ bool sendPageLogin ( TcpSocket *socket , HttpRequest *hr ) {
 	g_pages.printLogo   ( &sb , coll );
 
 	// get password from cgi parms OR cookie
-	char *pwd = hr->getString("pwd");
+	const char *pwd = hr->getString("pwd");
 	if ( ! pwd ) pwd = hr->getStringFromCookie("pwd");
 	// fix "pwd=" cookie (from logout) issue
 	if ( pwd && ! pwd[0] ) pwd = NULL;
