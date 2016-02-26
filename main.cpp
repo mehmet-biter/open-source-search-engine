@@ -3279,7 +3279,7 @@ static int install_file(const char *file)
 		Host *h2 = g_hostdb.getHost(i);
 		if(h2==g_hostdb.getMyShard())
 			continue; //skip ourselves
-		char full_dst_file[024];
+		char full_dst_file[1024];
 		sprintf(full_dst_file, "%s%s",h2->m_dir,file);
 		install_file(iptoa(h2->m_ip),
 		             file,
