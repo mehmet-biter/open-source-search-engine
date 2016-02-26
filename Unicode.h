@@ -6,7 +6,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include "UnicodeProperties.h"
-#include "iconv.h"
+#include <iconv.h>
 
 // Initialize unicode word parser
 bool 	ucInit(char *path = NULL);
