@@ -20440,15 +20440,27 @@ Summary *XmlDoc::getSummary () {
 		return &m_summary;
 	}
 
-	// need a buncha crap
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) {
-		return (Summary *)ww;
-	}
-
 	Xml *xml = getXml();
 	if ( ! xml || xml == (Xml *)-1 ) {
 		return (Summary *)xml;
+	}
+
+	Title *ti = getTitle();
+	if ( ! ti || ti == (Title *)-1 ) {
+		return (Summary *)ti;
+	}
+
+	int64_t start = logQueryTimingStart();
+    if ( m_summary.setSummaryFromTags( xml, m_req->m_summaryMaxLen, ti->getTitle(), ti->getTitleLen() ) ) {
+		logQueryTimingEnd( __func__, start );
+
+		m_summaryValid = true;
+		return &m_summary;
+	}
+
+	Words *ww = getWords();
+	if ( ! ww || ww == (Words *)-1 ) {
+		return (Summary *)ww;
 	}
 
 	Sections *sections = getSections();
@@ -20476,11 +20488,6 @@ Summary *XmlDoc::getSummary () {
 		return (Summary *)mm;
 	}
 
-	Title *ti = getTitle();
-	if ( ! ti || ti == (Title *)-1 ) {
-		return (Summary *)ti;
-	}
-
 	Query *q = getQuery();
 	if ( ! q ) {
 		return (Summary *)q;
@@ -20491,7 +20498,7 @@ Summary *XmlDoc::getSummary () {
 		return NULL;
 	}
 
-	int64_t start = logQueryTimingStart();
+	start = logQueryTimingStart();
 
 	// . get the highest number of summary lines that we need
 	// . the summary vector we generate for doing summary-based deduping
@@ -20506,16 +20513,14 @@ Summary *XmlDoc::getSummary () {
 		numLines = cr->m_summDedupNumLines;
 	}
 
-	Summary *s = &m_summary;
-
 	// time cpu set time
 	m_cpuSummaryStartTime = gettimeofdayInMilliseconds();
 
 	// compute the summary
-	bool status = s->set( xml, ww, sections, pos, q, (int64_t *)m_req->ptr_termFreqs,
-	                      m_req->m_summaryMaxLen, numLines, m_req->m_numSummaryLines,
-	                      m_req->m_summaryMaxNumCharsPerLine, getFirstUrl(), mm,
-	                      ti->getTitle(), ti->getTitleLen());
+	bool status = m_summary.setSummary( xml, ww, sections, pos, q, (int64_t *)m_req->ptr_termFreqs,
+	                                    m_req->m_summaryMaxLen, numLines, m_req->m_numSummaryLines,
+	                                    m_req->m_summaryMaxNumCharsPerLine, getFirstUrl(), mm,
+	                                    ti->getTitle(), ti->getTitleLen() );
 
 	// error, g_errno should be set!
 	if ( ! status ) {

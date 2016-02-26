@@ -39,9 +39,11 @@ public:
 	Summary();
 	~Summary();
 
-	bool set(Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q, int64_t *termFreqs,
-			  int32_t maxSummaryLen, int32_t numDisplayLines, int32_t maxNumLines, int32_t maxNumCharsPerLine,
-			  Url *f, Matches *matches, char *titleBuf, int32_t titleBufLen );
+	bool setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q, int64_t *termFreqs,
+			          int32_t maxSummaryLen, int32_t numDisplayLines, int32_t maxNumLines, int32_t maxNumCharsPerLine,
+			          Url *f, Matches *matches, char *titleBuf, int32_t titleBufLen );
+
+	bool setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen );
 
 	char *getSummary();
 	int32_t getSummaryDisplayLen();
@@ -49,7 +51,6 @@ public:
 
 private:
 	bool verifySummary( char *titleBuf, int32_t titleBufLen );
-	bool setFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen );
 
 	bool getDefaultSummary (Xml *xml, Words *words, Sections *sections , Pos *pos, int32_t maxSummaryLen );
 

@@ -79,7 +79,14 @@ bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
 // - itemprop = "description"
 // - meta name = "og:description"
 // - meta name = "description"
-bool Summary::setFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen ) {
+bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen ) {
+	// sanity check
+	if ( maxSummaryLen >= MAX_SUMMARY_LEN ) {
+		g_errno = EBUFTOOSMALL;
+		log("query: Summary too big to hold in buffer of %" INT32" bytes.",(int32_t)MAX_SUMMARY_LEN);
+		return false;
+	}
+
 	/// @todo ALC configurable minSummaryLen so we can tweak this as needed
 	const int minSummaryLen = (maxSummaryLen / 3);
 
@@ -124,10 +131,10 @@ bool Summary::setFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int3
 }
 
 // returns false and sets g_errno on error
-bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q,
-                     int64_t *termFreqs, int32_t maxSummaryLen,  int32_t maxNumLines,
-                     int32_t numDisplayLines, int32_t maxNumCharsPerLine, Url *f,
-                     Matches *matches, char *titleBuf, int32_t titleBufLen) {
+bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q,
+                           int64_t *termFreqs, int32_t maxSummaryLen,  int32_t maxNumLines,
+                           int32_t numDisplayLines, int32_t maxNumCharsPerLine, Url *f,
+                           Matches *matches, char *titleBuf, int32_t titleBufLen ) {
 	m_numDisplayLines = numDisplayLines;
 	m_displayLen      = 0;
 
@@ -160,11 +167,6 @@ bool Summary::set (Xml *xml, Words *words, Sections *sections, Pos *pos, Query *
 	if ( maxNumLines > 256 ) { 
 		g_errno = EBUFTOOSMALL; 
 		return log("query: More than 256 summary lines requested.");
-	}
-
-	// set from itemprop/meta tags
-	if (setFromTags(xml, maxSummaryLen, titleBuf, titleBufLen)) {
-		return true;
 	}
 
 	// Nothing to match...print beginning of content as summary
