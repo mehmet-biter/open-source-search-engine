@@ -453,7 +453,7 @@ bool gotReplyWrapperxd ( void *state ) {
 	// only do for niceness 0 otherwise it gets interrupted by quickpoll
 	// and can take a int32_t time.
 	if ( (req->m_isDebug || took > 100) && req->m_niceness == 0 )
-		log("query: Took %"INT64" ms to compute summary for d=%"INT64" u=%s "
+		log(LOG_TIMING, "query: Took %"INT64" ms to compute summary for d=%"INT64" u=%s "
 		    "niceness=%"INT32" status=%s",
 		    took,
 		    xd->m_docId,xd->m_firstUrl.m_url,
@@ -462,7 +462,7 @@ bool gotReplyWrapperxd ( void *state ) {
 	if ( (req->m_isDebug || took2 > 100) &&
 	     xd->m_cpuSummaryStartTime &&
 	     req->m_niceness == 0 )
-		log("query: Took %"INT64" ms of CPU to compute summary for d=%"INT64" "
+		log(LOG_TIMING, "query: Took %"INT64" ms of CPU to compute summary for d=%"INT64" "
 		    "u=%s niceness=%"INT32" q=%s",
 		    took2 ,
 		    xd->m_docId,xd->m_firstUrl.m_url,
