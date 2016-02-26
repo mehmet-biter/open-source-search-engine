@@ -72,17 +72,11 @@ class Conf {
 
 	void setRootIps();
 
-	// set from a buffer of null-terminated xml
-	bool add ( char *xml );
-
 	// saves any changes to the conf file
 	bool save ( );
 
 	// reset all values to their defaults
 	void reset();
-
-	// verify that some values are ok
-	bool verify();
 
 	// . get the default collection based on hostname
 	//   will look for the hostname in each collection for a match

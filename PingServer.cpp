@@ -1349,52 +1349,6 @@ void sleepWrapper ( int fd , void *state ) {
 }
 
 
-/*
-void PingServer::pingNextHost ( ) {
-
- skip:
-	// . don't use more than 32       UdpSlots for pinging
-	// . don't use more than numHosts UdpSlots for pinging
-	int32_t n = g_hostdb.getNumHosts();
-        if ( m_pingProxy )
-                n = g_hostdb.getNumProxy();
-        int32_t max = n;
-	if ( n > 32 ) max = 32;
-
-	if ( s_outstandingPings >= max ) return;
-	// the next hostid to ping
-	static int32_t s_nextHostId = 0;
-	// cycle through pinging different hosts
- 	// get next host to ping
-	if ( s_nextHostId >= n ) {
-		s_nextHostId = 0;
-		// toggle shotgun if we should
-		if ( g_conf.m_useShotgun ) {
-			if ( m_useShotgun ) {
-                                m_useShotgun = 0;
-                                if(g_hostdb.getNumProxy())
-                                        m_pingProxy  ^= 1;
-                        }
-			else {
-                                m_useShotgun = 1;
-                        }
-		}
-                else {
-                        if(g_hostdb.getNumProxy())
-                                m_pingProxy ^= 1;
-                }
-	}
-	// always turn off if we should
-	if ( ! g_conf.m_useShotgun ) m_useShotgun = 0;
-	// ping it
-        Host *h = g_hostdb.getHost(s_nextHostId);
-        if ( m_pingProxy )
-                h = g_hostdb.getProxy(s_nextHostId);
-	pingHost ( h, m_useShotgun );
-	// inc next host to ping
-	s_nextHostId++;
-}
-*/
 
 //////////////////////////////////////////////////////
 // email sending code

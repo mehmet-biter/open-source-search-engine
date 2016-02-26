@@ -368,9 +368,6 @@ class Hostdb {
 		    bool proxyHost = false , char useTempCluster = 0 ,
 		    char *cwd = NULL );
 
-	// for dealing with pings
-	bool registerHandler ( );
-
 	// if config changes this *should* change
 	int32_t getCRC();
 
@@ -565,11 +562,6 @@ class Hostdb {
 	// . right now it just does a linear scan
 	//Host *getSharer ( Host *h ) ;
 
-	// . add ip to allowed packets table, if we receive a udp packet
-	//   from an ip not in this list, we discard it
-	// . returns true on success
-	bool addIp ( int32_t ip ) ;
-
 	// . hostId of -1 means unknown
 	//void getTimes ( int32_t hostId , int32_t *avg , int32_t *stdDev );
 
@@ -598,8 +590,6 @@ class Hostdb {
 	
 	// replace a host with a spare
 	bool replaceHost ( int32_t origHostId, int32_t spareHostId );
-
-	void setOnProperSwitchFlags ( ) ;
 
 	// write a hosts.conf file
 	bool saveHostsConf ( );

@@ -196,11 +196,6 @@ class HttpRequest {
 	// . slen should include the last \0
 	void parseFields ( char *s , int32_t slen ) ;
 	void parseFieldsMultipart ( char *s , int32_t slen ) ;
-	void addExtraParms(char *s, int32_t slen);
-	// . decodes "s/slen" and stores into "dest"
-	// . returns the number of bytes stored into "dest"
-	// . converts %3A, %2F, etc to their appropriate chars
-	int32_t decode ( char *dest , char *s , int32_t slen );
 
 	// 0 for GET, 1 for HEAD
 	char  m_requestType;

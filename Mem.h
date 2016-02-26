@@ -110,7 +110,6 @@ class Mem {
 	bool rmMem  ( void *mem , int32_t size , const char *note ) ;
 	bool lblMem ( void *mem , int32_t size , const char *note );
 
-	int32_t getMemSize  ( void *mem );
 	int32_t getMemSlot  ( void *mem );
 
 	void addnew ( void *ptr , int32_t size , const char *note ) ;

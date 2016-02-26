@@ -54,7 +54,6 @@ public:
 	bool launchMsg20s     ( bool recalled ) ;
 	class Msg20 *getAvailMsg20();
 	class Msg20 *getCompletedSummary ( int32_t ix );
-	bool getSummaries     ( ) ;
 	bool gotSummary       ( ) ;
 	bool reallocMsg20Buf ( ) ;
 

@@ -367,7 +367,6 @@ class Msg20 {
 	// just let caller parse it up
 	Msg20Reply *getReply () { return m_r; };
 
-	static int32_t getApproxLinkCount(char* content, int32_t contentLen);
 	//static int32_t getLinkHashes(Links& ln, char* buf, int32_t bufSize);
 
 	//char *getNextDisplayBuf ( int32_t *len , char **next ) { 

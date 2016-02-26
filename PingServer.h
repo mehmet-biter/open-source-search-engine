@@ -63,8 +63,6 @@ class PingServer {
 	// ping host #i
 	void          pingHost      ( Host *h , uint32_t ip , uint16_t port );
 
-	void          pingNextHost ( );
-
 	// . send notes to EVERYONE that you are shutting down
 	// . when they get one they'll set your ping to DEAD status
 	// . returns false if blocked, true otherwise

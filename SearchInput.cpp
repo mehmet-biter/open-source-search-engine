@@ -348,8 +348,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	
 	//m_queryLang = getLanguageFromAbbr ( qs1 );
 
-	//m_queryLang = detectQueryLanguage();
-
 	//char *qs1 = getLanguageAbbr(m_queryLang);
 
 	// this parm is in Parms.cpp and should be set

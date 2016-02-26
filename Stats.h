@@ -59,14 +59,6 @@ class Stats {
 
 	void printGraphInHtml ( SafeBuf &sb );
 
-	// this graphs:
-	// 1. stats per second
-	// 2. avg time of completion
-	// 3. st dev highway around avg
-	void dumpPerSecGIF ( char      type       ,
-			     int64_t start = -1 , 
-			     int64_t end   = -1 );
-
 	// store the points here
 	StatPoint m_pts [ MAX_POINTS ];
 	int32_t      m_next;

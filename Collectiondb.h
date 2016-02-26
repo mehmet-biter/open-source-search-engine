@@ -138,9 +138,6 @@ class Collectiondb  {
 	//bool deleteRec  ( char *coll , WaitEntry *we );
 	bool deleteRec2 ( collnum_t collnum );//, WaitEntry *we ) ;
 
-	//bool updateRec ( CollectionRec *newrec );
-	bool deleteRecs ( class HttpRequest *r ) ;
-
 	//void deleteSpiderColl ( class SpiderColl *sc );
 
 	// returns false if blocked, true otherwise. 
@@ -313,15 +310,6 @@ class CollectionRec {
 	virtual ~CollectionRec();
 	
 	//char *getDiffbotToken ( int32_t *tokenLen );
-
-	// . set ourselves from serialized raw binary
-	// . returns false and sets errno on error
-	bool set ( char *data , int32_t dataSize );
-
-	// . set ourselves the cgi parms in an http request
-	// . unspecified cgi parms will be assigned default values
-	// . returns false and sets errno on error
-	bool set ( class HttpRequest *r , class TcpSocket *s );
 
 	// calls hasPermission() below
 	bool hasPermission ( class HttpRequest *r , class TcpSocket *s ) ;

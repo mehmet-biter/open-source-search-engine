@@ -230,7 +230,6 @@ class UdpServer {
 
 	// try calling makeCallback() on all slots
 	bool makeCallbacks_ass ( int32_t niceness );
-	bool makeCallbacks_ass2( int32_t niceness );
 
 	// when a call to sendto() blocks we set this to true so Loop.cpp
 	// will know to manually call sendPoll_ass() rather than counting

@@ -332,10 +332,6 @@ class RdbTree {
 	// all except the data: the keys,dataPtr,size,left,right,parents,depth
 	int32_t  getRecOverhead () { return m_overhead; };
 
-	// Rdb which contains this class calls this to prevent swap-out once
-	// per minute or so
-	int32_t scanMem ( ) ;
-
 	void disableWrites () { m_isWritable = false; };
 	void enableWrites  () { m_isWritable = true ; };
 

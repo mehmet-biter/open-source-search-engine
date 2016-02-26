@@ -39,13 +39,9 @@ class SearchInput {
 	SearchInput      ( );
 	~SearchInput     ( );
 	void  reset                 ( );
-	int32_t  getStoredSizeForMsg40 ( ) ;
 	//char *serializeForMsg40   ( int32_t *size ) ;
 	//void  deserializeForMsg40 ( char *buf, int32_t bufSize, bool ownBuf ) ;
 	void  copy                  ( class SearchInput *si ) ;
-
-	// Language support for Msg40
-	uint8_t detectQueryLanguage(void);
 
 	///////////
 	//

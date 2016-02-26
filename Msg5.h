@@ -167,8 +167,6 @@ class Msg5 {
 	bool gotList();
 	bool gotList2();
 
-	void copyAndSendBackList ( class RdbList *list );
-
 	// does readList() need to be called again due to negative rec
 	// annihilation?
 	bool needsRecall();

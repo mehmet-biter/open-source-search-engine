@@ -169,7 +169,6 @@ class Loop {
 	char m_shutdown;
 
 	void canQuickPoll(int32_t niceness);
-	void setitimerInterval(int32_t niceness);
 
 	void enableQuickpollTimer();
 	void disableQuickpollTimer();

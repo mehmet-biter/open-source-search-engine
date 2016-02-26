@@ -105,11 +105,6 @@ class Msg3 {
 			      //int32_t       minRecSizes  );
 			      int32_t       minRecSizes  );
 
-	// . buries bad pages from the m_lists we read from disk
-	// . usually modifies m_badStartKey, m_badEndKey
-	// . "n" is the bad list index into m_lists[]
-	void extractBadness ( int32_t n );
-
 	// the rdb we're scanning for
 	char  m_rdbId;
 	//char *m_coll;

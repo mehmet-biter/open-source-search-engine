@@ -44,47 +44,6 @@ RdbTree::~RdbTree ( ) {
 	reset ( );
 }
 
-/*
-#include <asm/page.h> // PAGE_SIZE
-
-// return #of bytes scanned for timing purposes
-int32_t RdbTree::scanMem ( ) {
-	// ahh.. just scan the whole thing to keep it simple
-	char *p    ;
-	char *pend ;
-	char  c;
-	int32_t  size = 0; // count number of bytes scanned
-	// keys
-	p = (char *)m_keys ; pend = p + m_numNodes * m_ks;
-	size += pend - p;
-	if ( p ) while ( p < pend ) { c = *p; p += PAGE_SIZE; }
-	// data ptrs
-	p = (char *)m_data ; pend = p + m_numNodes * sizeof(char *);
-	size += pend - p;
-	if ( p ) while ( p < pend ) { c = *p; p += PAGE_SIZE; }
-	// sizes
-	p = (char *)m_sizes ; pend = p + m_numNodes * sizeof(int32_t);
-	size += pend - p;
-	if ( p ) while ( p < pend ) { c = *p; p += PAGE_SIZE; }
-	// left
-	p = (char *)m_left ; pend = p + m_numNodes * sizeof(int32_t);
-	size += pend - p;
-	if ( p ) while ( p < pend ) { c = *p; p += PAGE_SIZE; }
-	// right
-	p = (char *)m_right ; pend = p + m_numNodes * sizeof(int32_t);
-	size += pend - p;
-	if ( p ) while ( p < pend ) { c = *p; p += PAGE_SIZE; }
-	// parents
-	p = (char *)m_parents ; pend = p + m_numNodes * sizeof(int32_t);
-	size += pend - p;
-	if ( p ) while ( p < pend ) { c = *p; p += PAGE_SIZE; }
-	// depth
-	p = (char *)m_right ; pend = p + m_numNodes * sizeof(char);
-	size += pend - p;
-	if ( p ) while ( p < pend ) { c = *p; p += PAGE_SIZE; }
-	return size;
-}
-*/
 
 // "memMax" includes records plus the overhead
 bool RdbTree::set ( int32_t fixedDataSize , 
