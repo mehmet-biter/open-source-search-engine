@@ -20,32 +20,32 @@ extern int32_t g_isDumpingRdbFromMain;
 // hitting disk.
 //key_t makeCacheKey ( key_t startKey     ,
 //		     key_t endKey       ,
-void  makeCacheKey ( char *startKey     ,
-		     char *endKey       ,
-		     bool  includeTree  ,
-		     int32_t  minRecSizes  ,
-		     int32_t  startFileNum ,
-		     int32_t  numFiles     ,
-		     char *cacheKeyPtr  ,
-		     char  keySize      ) ;
-
-inline key_t makeCacheKey ( key_t startKey     ,
-		     key_t endKey       ,
-		     bool  includeTree  ,
-		     int32_t  minRecSizes  ,
-		     int32_t  startFileNum ,
-		     int32_t  numFiles     ) {
-	key_t k;
-	makeCacheKey ( (char *)&startKey ,
-		       (char *)&endKey   ,
-		       includeTree ,
-		       minRecSizes ,
-		       startFileNum ,
-		       numFiles ,
-		       (char *)&k ,
-		       sizeof(key_t) );
-	return k;
-}
+// void  makeCacheKey ( char *startKey     ,
+// 		     char *endKey       ,
+// 		     bool  includeTree  ,
+// 		     int32_t  minRecSizes  ,
+// 		     int32_t  startFileNum ,
+// 		     int32_t  numFiles     ,
+// 		     char *cacheKeyPtr  ,
+// 		     char  keySize      ) ;
+// 
+// inline key_t makeCacheKey ( key_t startKey     ,
+// 		     key_t endKey       ,
+// 		     bool  includeTree  ,
+// 		     int32_t  minRecSizes  ,
+// 		     int32_t  startFileNum ,
+// 		     int32_t  numFiles     ) {
+// 	key_t k;
+// 	makeCacheKey ( (char *)&startKey ,
+// 		       (char *)&endKey   ,
+// 		       includeTree ,
+// 		       minRecSizes ,
+// 		       startFileNum ,
+// 		       numFiles ,
+// 		       (char *)&k ,
+// 		       sizeof(key_t) );
+// 	return k;
+// }
 
 class Msg2;
 
