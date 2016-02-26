@@ -3397,7 +3397,7 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 	char tmpBuf[2048];
 	iptab.set(4,4,64,tmpBuf,2048,true,0,"iptsu");
 
-	int32_t maxOut = 6;
+	int32_t maxOut = 500;
 
 	// this is a big scp so only do two at a time...
 	if  ( installFlag == ifk_install ) maxOut = 1;
