@@ -27,8 +27,6 @@ FILE* gbpopen(char* cmd);
  */
 void printStackTrace (bool print_location = false);
 
-#define sleep(a) { char *xx=NULL;*xx=0; }
-//#define sleep(a) logf(LOG_INFO,"sleep: sleep"); 
 
 // we have 2 arrays of slots, m_readSlots and m_writeSlots
 class Slot {
@@ -54,9 +52,6 @@ class Slot {
 	Slot     *m_nextAvail;
 };
 
-#define  sleep(a) { char *xx=NULL;*xx=0; }
-#define usleep(a) { char *xx=NULL;*xx=0; }
-//#define sleep(a) logf(LOG_INFO,"sleep: sleep"); 
 
 // linux 2.2 kernel has this limitation
 #define MAX_NUM_FDS 1024
