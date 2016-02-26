@@ -5225,6 +5225,8 @@ uint8_t *XmlDoc::getSummaryLangId ( ) {
 
 	char *sum = s->getSummary();
 
+    int64_t start = logQueryTimingStart();
+
 	// now set the words class
 	Words ww;
 	if ( ! ww.set ( sum , true, m_niceness ) ) {
@@ -5233,6 +5235,8 @@ uint8_t *XmlDoc::getSummaryLangId ( ) {
 
 	// check it out. 0 means langUnknown. -1 means error.
 	int32_t ret = ww.getLanguage ( NULL , 100 , m_niceness , NULL );
+
+	logQueryTimingEnd(__func__, start);
 
 	// -1 means error! g_errno should be set
 	if ( ret < 0 ) {
@@ -5411,15 +5415,14 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 	if ( ! s || s == (Summary *)-1 ) return (int32_t *)s;
 	Title *ti = getTitle();
 	if ( ! ti || ti == (Title *)-1 ) return (int32_t *)ti;
+
+	int64_t start = logQueryTimingStart();
+
 	// store title and summary into "buf" so we can call words.set()
-	//char buf[5000];
 	SafeBuf sb;
-	//char *p = buf;
-	//int32_t avail = 5000;
-	//int32_t len;
+
 	// put title into there
 	int32_t tlen = ti->getTitleLen() - 1;
-	//if ( len > avail ) len = avail - 10;
 	if ( tlen < 0 ) tlen = 0;
 
 	// put summary into there
@@ -5429,19 +5432,16 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 	int32_t need = tlen + 1 + slen + 1;
 	if ( ! sb.reserve ( need ) ) return NULL;
 
-	//gbmemcpy ( p , ti->m_title , len );
-	//p += len;
 	sb.safeMemcpy ( ti->getTitle() , tlen );
+
 	// space separting the title from summary
 	if ( tlen > 0 ) sb.pushChar(' ');
 
-	//if ( len > avail ) len = avail - 10;
-	//gbmemcpy ( p , s->m_summary , len );
-	//p += len;
 	sb.safeMemcpy ( s->getSummary() , slen );
+
 	// null terminate it
-	//*p = '\0';
 	sb.nullTerm();
+
 	// word-ify it
 	Words words;
 	if ( ! words.set ( sb.getBufStart() , true, m_niceness ) ) {
@@ -5452,6 +5452,9 @@ int32_t *XmlDoc::getSummaryVector ( ) {
 	// . store sample vector in here
 	// . returns size in bytes including null terminating int32_t
 	m_summaryVecSize = computeVector ( &words , (uint32_t *)m_summaryVec );
+
+    logQueryTimingEnd(__func__, start);
+
 	m_summaryVecValid = true;
 	return m_summaryVec;
 }
@@ -20430,6 +20433,9 @@ Summary *XmlDoc::getSummary () {
 		return &m_summary;
 	}
 
+	// time cpu set time
+	m_cpuSummaryStartTime = gettimeofdayInMilliseconds();
+
 	uint8_t *ct = getContentType();
 	if ( ! ct || ct == (void *)-1 ) {
 		return (Summary *)ct;
@@ -20512,9 +20518,6 @@ Summary *XmlDoc::getSummary () {
 		// request more lines than we will display
 		numLines = cr->m_summDedupNumLines;
 	}
-
-	// time cpu set time
-	m_cpuSummaryStartTime = gettimeofdayInMilliseconds();
 
 	// compute the summary
 	bool status = m_summary.setSummary( xml, ww, sections, pos, q, (int64_t *)m_req->ptr_termFreqs,
