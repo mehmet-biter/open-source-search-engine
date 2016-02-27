@@ -432,18 +432,6 @@ class Conf {
 	bool   m_testMem;
 	bool   m_doConsistencyTesting;
 
-	// temporary hack for fixing docid collision resolution bug
-	bool   m_hackFixWords;
-	bool   m_hackFixPhrases;
-
-	// flags for excluding docs with only linktext or meta text matches
-	// for one or more query terms
-	//bool   m_excludeLinkText;
-	//bool   m_excludeMetaText;
-
-	// deny robots access to the search results
-	//bool   m_robotCheck;
-
 	// scan all titledb files if we can't find the rec where it should be
 	bool   m_scanAllIfNotFound;
 	
@@ -461,18 +449,6 @@ class Conf {
 	int32_t m_minProfThreshold;
 	bool m_sequentialProfiling;
 	int32_t m_realTimeProfilerMinQuickPollDelta;
-
-	//int32_t m_summaryMode;	// JAB: moved to CollectionRec
-
-	// . for query-dependent summary/title generation
-	//int32_t  m_titleMaxLen;
-	//int32_t  m_summaryMaxLen;
-	//int32_t  m_summaryMaxNumLines;
-	//int32_t  m_summaryMaxNumCharsPerLine;
-	//int32_t  m_summaryDefaultNumLines;
-	//char  m_summaryFrontHighlightTag[128];
-	//char  m_summaryBackHighlightTag [128];
-
 
 	//
 	// See Log.h for an explanation of the switches below
@@ -521,7 +497,6 @@ class Conf {
 	bool  m_logDebugQuota   ;
 	bool  m_logDebugRobots	;
 	bool  m_logDebugSpcache ; // SpiderCache.cpp debug
-	//bool  m_logDebugSpiderWait;
 	bool  m_logDebugSpeller ;
 	bool  m_logDebugTagdb   ;
 	bool  m_logDebugSections;
@@ -564,16 +539,9 @@ class Conf {
 	// programmer reminders.
 	bool m_logReminders;
 
-	//int32_t m_numMasterPwds;
-	//char m_masterPwds[MAX_MASTER_PASSWORDS][PASSWORD_MAX_LEN];
 	SafeBuf m_masterPwds;
 
-	//int32_t m_numMasterIps;
-	//int32_t m_masterIps[MAX_MASTER_IPS];
-
 	// these are the new master ips
-	//int32_t  m_numConnectIps;
-	//int32_t  m_connectIps [ MAX_CONNECT_IPS ];
 	SafeBuf m_connectIps;
 
 	// should we generate similarity/content vector for titleRecs lacking?
@@ -590,11 +558,6 @@ class Conf {
         char m_useTmpCluster;
 
         char m_timeSyncProxy;
-        // For remote datafeed verification
-	//char m_useDFAcctServer; 
-        //int32_t m_dfAcctIp;
-        //int32_t m_dfAcctPort;
-        //char m_dfAcctColl[MAX_COLL_LEN];
 
 	Xml   m_xml;
 	char  m_buf[10*1024];
@@ -646,8 +609,6 @@ class Conf {
 	char  m_rebuildRoots      ;
 	char  m_rebuildNonRoots   ;
 
-	//char  m_rebuildSkipSitedbLookup ;
-
 	// for caching the qualities of urls (see Msg20.cpp)
 	int32_t  m_maxQualityCacheAge ;
 };
@@ -656,21 +617,3 @@ extern class Conf g_conf;
 
 #endif
 
-// old stuff:
-// key is the hostId. hostId of -1 is the default conf record.
-// here's the recognized fields:
-// <dirPubKey>    // default rec only
-// <groupMask>    // default rec only
-// <rootDir>      // default rec only
-// <numPolice>    // default rec only
-// <isTrustedNet> // default rec only
-// <hostId> -- stored in hostmap
-// <ip>     -- stored in hostmap
-// <port>   -- stored in hostmap
-// <networkName>  // also in default rec
-// <maxDiskSpace>
-// <maxMem>
-// <maxCpu>
-// <maxBps>
-// <pubKey>
-// <isTrustedHost>  // director sealed

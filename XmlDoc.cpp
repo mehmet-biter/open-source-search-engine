@@ -362,7 +362,6 @@ void XmlDoc::reset ( ) {
 	m_updatedCounts2           = false;
 	m_copied1                  = false;
 	m_updatingSiteLinkInfoTags = false;
-	m_addressSetCalled         = false;
 	m_hashedTitle              = false;
 
 	m_registeredSleepCallback  = false;
@@ -2669,13 +2668,6 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 	//   check this again below
 	bool *isAllowed = getIsAllowed();
 	if ( ! isAllowed || isAllowed == (void *)-1) return (int32_t *)isAllowed;
-	/*
-	if ( ! *isAllowed ) {
-		m_indexCode      = EDOCDISALLOWED;
-		m_indexCodeValid = true;
-		return &m_indexCode;
-	}
-	*/
 
 	// . TCPTIMEDOUT, NOROUTETOHOST, EDOCUNCHANGED, etc.
 	// . this will be the reply from diffbot.com if using diffbot
@@ -21658,45 +21650,6 @@ bool XmlDoc::printMenu ( SafeBuf *sb ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return false;
 
-	/*
-	char *coll = cr->m_coll;
-
-	int64_t d = m_docId;
-
-	// print links at top
-	sb->safePrintf(
-		       //"<a href=/print?c=%s&u=%s&page=1>general info</a> | "
-		       //"<a href=/print?c=%s&u=%s&page=2>page inlinks</a> | "
-		       //"<a href=/print?c=%s&u=%s&page=3>site inlinks</a> | "
-		       //"<a href=/print?c=%s&u=%s&page=4>sections</a> | "
-		       //"<a href=/print?c=%s&u=%s&page=5>indexed terms</a> | "
-		       // the breakdown of when it was spidered and when it
-		       // is due to be spidered again. and any errors
-		       // encountered when spidering
-		       //"<a href=/print?c=%s&u=%s&page=6>spider stats</a> | "
-		       //"<a href=/print?c=%s&u=%s&page=7>cached page</a>"
-		       "<a href=/print?c=%s&d=%"INT64"&page=1>general info</a> | "
-		       "<a href=/print?c=%s&d=%"INT64"&page=2&recompute=1>"
-		       "page inlinks</a> | "
-		       "<a href=/print?c=%s&d=%"INT64"&page=3>site inlinks</a> | "
-		       //"<a href=/print?c=%s&d=%"INT64"&page=4>sections</a> | "
-		       "<a href=/print?c=%s&d=%"INT64"&page=5>indexed terms</a>"
-		       // the breakdown of when it was spidered and when it
-		       // is due to be spidered again. and any errors
-		       // encountered when spidering
-		       //"<a href=/print?c=%s&d=%"INT64"&page=6>spider stats</a> |"
-		       //" <a href=/print?c=%s&d=%"INT64"&page=7>cached page</a>"
-		       "<br>"
-		       "<br>"
-		       ,coll,d//ue.getBufStart()
-		       ,coll,d//ue.getBufStart()
-		       ,coll,d//ue.getBufStart()
-		       //,coll,d//ue.getBufStart()
-		       ,coll,d//ue.getBufStart()
-		       //,coll,d//ue.getBufStart()
-		       //,coll,d//ue.getBufStart()
-		       );
-	*/
 	return true;
 }
 
@@ -23966,16 +23919,6 @@ bool XmlDoc::setSpam ( int32_t *profile, int32_t plen , int32_t numWords ,
 		for (i=1; i<plen; i++) spam[profile[i]] = 100;
 		return true ;
 	}
-	// . over 50 repeated words is ludicrous
-	// . set all past 50 to spam and continue detecting
-	// . no, our doc length based weight takes care of that kind of thing
-	//if (plen > 50 && m_version < 93 ) {
-	//	// TODO: remember, profile[i] is in reverse order!! we should
-	//	// really do i=0;i<plen-50, but this is obsolete anyway...
-	//	for (i=50; i<plen;i++) m_spam[profile[i]] = 100;
-	//	plen = 50;
-	//}
-
 
 	// we have to do this otherwise it takes FOREVER to do for plens in
 	// the thousands, like i saw a plen of 8338!
@@ -23991,14 +23934,7 @@ bool XmlDoc::setSpam ( int32_t *profile, int32_t plen , int32_t numWords ,
 	}
 
 	QUICKPOLL(m_niceness);
-	// higher quality docs allow more "freebies", but only starting with
-	// version 93... (see Titledb.h)
-	// profile[i] is actually in reverse order so we subtract off from wlen
-	//int32_t off ;
-	//if ( m_version >= 93 ) {
-	//	off = (m_docQuality - 30) / 3;
-	//	if ( off < 0 ) off = 0;
-	//}
+
 	// just use 40% "quality"
 	int32_t off = 3;
 

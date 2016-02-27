@@ -385,8 +385,6 @@ class Msg20 {
 	void freeReply   ();
 	void reset       ();
 
-	void *m_hack;
-	int32_t m_hack2;
 	int32_t m_ii;
 
 	// is the reply in progress? if msg20 has not launched a request

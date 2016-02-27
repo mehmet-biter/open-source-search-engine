@@ -13,31 +13,6 @@
 
 #define RDBIDOFFSET (8+4+4+4+4)
 
-
-/*
-// termlist cache accessor functions for Msg5.cpp to use
-extern RdbCache g_termListCache;
-class RdbCache *getTermListCache ( ) ;
-int64_t getTermListCacheKey ( char *startKey , char *endKey ) ;
-bool addRecToTermListCache ( char *coll,
-			     char *startKey , 
-			     char *endKey , 
-			     char *list ,
-			     int32_t  listSize ) ;
-bool getListFromTermListCache ( char *coll,
-				char *startKey,
-				char *endKey,
-				int32_t  maxCacheAge,
-				RdbList *list ) ;
-bool getRecFromTermListCache ( char *coll,
-			       char *startKey,
-			       char *endKey,
-			       int32_t  maxCacheAge,
-			       char **rec ,
-			       int32_t *recSize ) ;
-*/
-
-//#define MSG0_REQ_SIZE (8 + 2 * sizeof(key_t) + 16 + 5 + MAX_COLL_LEN + 1 )
 #define MSG0_REQ_SIZE (8 + 2 * MAX_KEY_BYTES + 16 + 5 + 4 + 1 + 1 )
 
 static const int64_t msg0_getlist_infinite_timeout = 999999999999;
@@ -204,10 +179,6 @@ class Msg0 {
 	char      m_request [ MSG0_REQ_SIZE ];
 	int32_t      m_requestSize;
 
-	// used for multicasting the request
-//#ifdef SPLIT_INDEXDB
-	//Multicast m_mcast[INDEXDB_SPLIT];
-	//Multicast m_mcast[MAX_SHARDS];
 	// casting to multiple splits is obsolete, but for PageIndexdb.cpp
 	// we still need to do it, but we alloc for it
 	Multicast  m_mcast;
@@ -215,14 +186,10 @@ class Msg0 {
 
 	int32_t      m_numRequests;
 	int32_t      m_numReplies;
-	//int32_t      m_numSplit;
 	int32_t      m_errno;
 	// local reply, need to handle it for splitting
 	char     *m_replyBuf;
 	int32_t      m_replyBufSize;
-//#else
-//	Multicast m_mcast;
-//#endif
 
 	// ptr to passed list we're to fill
 	class RdbList  *m_list;
@@ -239,17 +206,12 @@ class Msg0 {
 	// should we add an received lists from across network to our cache?
 	bool  m_addToCache;
 
-	class XmlDoc *m_hackxd;
-
 	// . parameters that define the RdbList we want
 	// . we use precisely this block to define a network request 
-	//key_t m_startKey    ;
-	//key_t m_endKey      ;
 	char  m_startKey[MAX_KEY_BYTES];
 	char  m_endKey[MAX_KEY_BYTES];
 	int32_t  m_minRecSizes ;
 	char  m_rdbId       ;
-	//char *m_coll        ;
 	collnum_t m_collnum;
 
 	class Msg5  *m_msg5 ;

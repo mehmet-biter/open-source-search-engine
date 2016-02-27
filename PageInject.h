@@ -77,14 +77,6 @@ public:
 	int32_t m_replyIndexCode;
 	int64_t m_replyDocId;
 
-	//SafeBuf m_injectUrlBuf;
-	//bool m_firstTime;
-	//char *m_start;
-	//bool  m_fixMe;
-	//char  m_saved;
-	//int32_t  m_injectCount;
-	//bool m_isDoneInjecting;
-
 	char *m_sir;
 	int32_t m_sirSize;
 
@@ -103,14 +95,8 @@ public:
 	void *m_state;
 	void (* m_callback )(void *state);
 
-	//int64_t m_hackFileOff;
-	//int32_t m_hackFileId;
-
-	//int32_t m_crawlbotAPI;
-
 	class ImportState *m_importState;
 
-	//void constructor();
 	Msg7 ();
 	~Msg7 ();
 	bool m_inUse;
@@ -126,25 +112,6 @@ public:
 	bool sendInjectionRequestToHost ( InjectionRequest *ir ,
 					  void *state ,
 					  void (* callback)(void *) );
-
-	// msg7request m_req7 must be valid
-	//bool inject ( char *coll,
-	//	      char *proxiedUrl,
-	//	      int32_t  proxiedUrlLen,
-	//	      char *content,
-	//	      void *state ,
-	//	      void (*callback)(void *state) );
-
-	// msg7request m_req7 must be valid
-	// bool inject2 ( void *state , */
-	// 	       void (*callback)(void *state) ); */
-
-
-	//bool injectTitleRec ( void *state ,
-	//		      void (*callback)(void *state) ,
-	//		      class CollectionRec *cr );
-
-	//void gotMsg7Reply ();
 
 };
 

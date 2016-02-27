@@ -503,9 +503,6 @@ class Msg25 {
 
 	bool m_gettingList;
 
-	// hack for seo pipeline in xmldoc.cpp
-	int32_t m_hackrd;
-
 	// . we now use Msg2 since it has "restrictIndexdb" support to limit
 	//   indexdb searches to just the root file to decrease disk seeks
 	Msg5 m_msg5;

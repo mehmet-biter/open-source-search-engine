@@ -1655,9 +1655,6 @@ void ImportState::saveFileBookMark ( ) { //Msg7 *msg7 ) {
 	int64_t minOff = -1LL;
 	int32_t minFileId = -1;
 
-	//int32_t fileId  = msg7->m_hackFileId;
-	//int64_t fileOff = msg7->m_hackFileOff;
-
 	// if there is one outstanding the preceeded us, we can't update
 	// the bookmark just yet.
 	for ( int32_t i = 0 ; i < m_numPtrs ; i++ ) {

@@ -1121,8 +1121,6 @@ public:
 	SafeBuf m_langVec;
 	Msg0 m_msg0b;
 	class RdbList *m_ulist;
-	void *m_hack;
-	class XmlDoc *m_hackxd;
 	char     *m_linkInfoColl;
 	SiteGetter m_siteGetter;
 	int64_t  m_siteHash64;
@@ -1195,7 +1193,6 @@ public:
 
 	int8_t *m_outlinkHopCountVector;
 	int32_t  m_outlinkHopCountVectorSize;
-	//char m_isSpam;
 	char m_isFiltered;
 	int32_t m_urlFilterNum;
 	int32_t m_numOutlinksAdded;
@@ -1210,17 +1207,12 @@ public:
 	char  m_linkTextBuf[MAX_LINK_TEXT_LEN];
 	char m_surroundingTextBuf[MAX_SURROUNDING_TEXT_WIDTH];
 	char m_rssItemBuf[MAX_RSSITEM_SIZE];
-	//char *m_gsbuf;
 	SafeBuf m_gsbuf;
-	//int32_t  m_gsbufSize;
-	//int32_t  m_gsbufAllocSize;
 	char *m_note;
 	char *m_imageUrl;
 	char *m_imageUrl2;
-	//char  m_imageUrlBuf[100];
 	SafeBuf m_imageUrlBuf;
 	SafeBuf m_imageUrlBuf2;
-	//int32_t  m_imageUrlSize;
 	MatchOffsets m_matchOffsets;
 	Query m_query;
 	Matches m_matches;
@@ -1234,7 +1226,6 @@ public:
 	char m_isNoArchive;
 	char m_isErrorPage;
 	char m_isHijacked;
-	//char m_isVisible;
 
 	// stuff
 	char *m_statusMsg;
@@ -1245,31 +1236,12 @@ public:
 	bool  m_deleteFromIndex;
 
 	// ptrs to stuff
-	//char *m_titleRec;
 	SafeBuf m_titleRecBuf;
-	//int32_t  m_titleRecSize;
-	//bool  m_freeTitleRec;
-	//int32_t  m_titleRecAllocSize;
 	key_t   m_titleRecKey;
 
 	// for isDupOfUs()
 	char *m_dupTrPtr;
 	int32_t  m_dupTrSize;
-
-	// parse these out of spider rec
-	/*
-	int32_t  m_retryNum                ;
-	int32_t  m_spiderRecPriority       ;
-	bool  m_spiderRecIsNew          ;
-	int32_t  m_spiderRecSiteNumInlinks ;
-	int32_t  m_spiderRecRetryCount     ;
-	int32_t  m_spiderRecHopCount       ;
-	key_t m_spiderRecKey            ;
-	bool  m_spiderRecForced         ;
-	int32_t  m_spiderRecTime           ;
-	int32_t  m_srDataSize ;
-	char  m_srData [ MAX_SPIDERREC_SIZE ];
-	*/
 
 	key_t     m_doledbKey;
 	SpiderRequest m_sreq;
@@ -1285,18 +1257,9 @@ public:
 	bool m_prepared                 ;
 	bool m_updatedCounts            ;
 	bool m_updatedCounts2           ;
-	//bool m_updatedTagdb1            ;
-	//bool m_updatedTagdb2            ;
-	//bool m_updatedTagdb3            ;
-	//bool m_updatedTagdb4            ;
-	//bool m_updatedTagdb5            ;
 	bool m_copied1                  ;
 	bool m_updatingSiteLinkInfoTags ;
-	bool m_addressSetCalled         ;
 
-	//bool m_calledMsg22a             ;
-	//bool m_calledMsg22b             ;
-	//bool m_calledMsg22c             ;
 	int64_t m_calledMsg22d             ;
 	bool m_didDelay                 ;
 	bool m_didDelayUnregister       ;
@@ -1318,8 +1281,6 @@ public:
 	bool m_doingConsistencyCheck ;
 
 	int32_t    m_langIdScore;
-	//int32_t    m_rootLangIdScore;
-	//uint8_t m_rootLangId;
 
 	int32_t m_dist;
 
@@ -1342,7 +1303,6 @@ public:
 
 
 	bool m_setTr                    ;
-	//bool m_checkedRobots            ;
 	bool m_triedTagRec              ;
 	bool m_didGatewayPage           ;
 	bool m_didQuickDupCheck         ;
@@ -1354,13 +1314,7 @@ public:
 	bool (* m_callback2) ( void *state );	
 	void  *m_state;
 
-
-	//void (* m_injectionCallback) ( void *state );	
-	//void   *m_injectionState;
-
 	// flags for spider
-	//bool m_isAddUrl;
-	//bool m_forceDelete;
 	bool m_didDelete;
 
 	bool m_skipIframeExpansion;
@@ -1380,13 +1334,11 @@ public:
 	//   from that IP quickly if the sameipwait is like 500ms.
 	int64_t m_downloadEndTime;
 
-	//char *m_metaListEnd;
 	int32_t  m_metaListAllocSize;
 	char *m_p;
 	char *m_pend;
 
 	int32_t  m_maxCacheAge;
-
 
 	char     *m_wikiqbuf;
 	int32_t      m_wikiqbufSize;
@@ -1407,8 +1359,6 @@ public:
 	bool m_useTagdb     ;
 	bool m_usePlacedb   ;
 	bool m_useSecondaryRdbs ;
-
-	int32_t          m_linkeeQualityBoost;
 
 	SafeBuf *m_pbuf;
 	// used by SpiderLoop to set m_pbuf to
@@ -1437,7 +1387,6 @@ public:
 	bool          m_contentInjected;
 
 	bool          m_recycleContent;
-	//bool        m_loadFromOldTitleRec;
 
 	char *m_rawUtf8Content;
 	int32_t  m_rawUtf8ContentSize;
@@ -1449,9 +1398,6 @@ public:
 	bool  m_didExpansion;
 	SafeBuf m_esbuf;
 	SafeBuf m_xbuf;
-
-	//bool m_useIpsTxtFile ;
-	//bool m_readFromTestCache ;
 
 	// used by msg13
 	class Msg13Request *m_r;
@@ -1487,7 +1433,6 @@ public:
 			 int32_t charset,
 
 			 bool deleteUrl,
-			 //char contentType, // CT_HTML, CT_XML
 			 char *contentTypeStr, // text/html, text/xml etc.
 			 bool spiderLinks ,
 			 char newOnly, // index iff new
@@ -1532,14 +1477,12 @@ class TermDebugInfo {
  public:
 	int32_t      m_termOff;
 	int32_t      m_termLen;
-	//uint32_t  m_score32;
 	int32_t      m_descOff;   // the description offset
 	int32_t      m_prefixOff; // the prefix offset, like "site" or "gbadid"
 	int64_t m_termId;
 	int32_t      m_date;
 	bool      m_shardByTermId;
 
-	//float     m_weight;
 	char      m_langId;
 	char      m_diversityRank;
 	char      m_densityRank;
@@ -1548,7 +1491,6 @@ class TermDebugInfo {
 	int32_t      m_wordNum;
 	int32_t      m_wordPos;
 	POSDBKEY  m_key; // key144_t
-	//bool      m_isSynonym;
 	// 0 = not a syn, 1 = syn from presets,2=wikt,3=generated
 	char      m_synSrc;
 	int64_t  m_langBitVec64;
@@ -1624,14 +1566,6 @@ inline int32_t XmlDoc::getProbSpam(int32_t *profile, int32_t plen, int32_t step)
 	if (prob>100) prob=100;
 
 	return prob;
-
-	//if (prob>=0) {
-	//	int32_t i;
-	//printf("dev=%i,plen=%i,nseq=%i,prob=%i----\n",dev,plen,step,prob);
-	//	for (i=0;i<plen;i++)
-	//		printf("%i#",profile[i]);
-	//	printf("\n");
-	//}
 }
 
 #endif
