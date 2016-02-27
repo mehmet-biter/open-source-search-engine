@@ -78,7 +78,6 @@ class Msg20Request {
 	unsigned char       m_showBanned                :1;
 	unsigned char       m_includeCachedCopy         :1;
 	unsigned char       m_getMatches                :1;
-	unsigned char       m_getTermListBuf            :1;
 	unsigned char       m_getOutlinks               :1;
 	unsigned char       m_getTitleRec               :1; // sets ptr_tr in reply
 	unsigned char       m_doLinkSpamCheck           :1;

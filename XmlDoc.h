@@ -842,7 +842,6 @@ public:
 	char     m_matchingTermBufValid;
 	char     m_sortedPosdbListBufValid;
 	char     m_wpSortedPosdbListBufValid;
-	char     m_termListBufValid;
 	char     m_insertableTermsBufValid;
 	char     m_scoredInsertableTermsBufValid;
 	char     m_wordPosInfoBufValid;
@@ -988,9 +987,6 @@ public:
 	bool m_titleValid;
 	bool m_htbValid;
 	bool m_collnumValid;
-	bool m_termId32BufValid;
-	bool m_termInfoBufValid;
-	bool m_newTermInfoBufValid;
 	bool m_summaryValid;
 	bool m_gsbufValid;
 	bool m_spiderStatusDocMetaListValid;
@@ -1184,35 +1180,10 @@ public:
 	// object that parses the json
 	Json m_jp;
 
-
-	//
-	// functions and vars for the seo query matching tool
-	//
-	SafeBuf *getTermId32Buf();
-	SafeBuf *getTermInfoBuf();
-
-	SafeBuf *getTermIdSortedPosdbListBuf();
-	SafeBuf *getTermListBuf(); // list of posdb termlists for caching
-
-	// private like functions
-	bool   addUniqueWordsToBuf ( SafeBuf *termInfoBuf,
-				     HashTableX *dedupTable , 
-				     HashTableX *filterTable , 
-				     HashTableX *minCountTable ,
-				     bool storeCounts,
-				     Words *words ,
-				     bool includeSynonyms );
-
-
-	HashTableX m_tidTable32;
-	SafeBuf m_termId32Buf;
-	SafeBuf m_termInfoBuf;
-
 	// related query algo stuff
 	int64_t m_tlbufTimer;
 
 	SafeBuf m_sortedPosdbListBuf;
-	SafeBuf m_termListBuf;
 
 	// flow flags
 
