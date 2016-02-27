@@ -316,23 +316,6 @@ class Parms {
 			  bool isCollAdmin
 			  );
 
-	/*
-	char *printParm ( char *p    , 
-			  char *pend ,
-			  //int32_t  user ,
-			  char *username,
-			  Parm *m    , 
-			  int32_t  mm   , // m = &m_parms[mm]
-			  int32_t  j    ,
-			  int32_t  jend ,
-			  char *THIS ,
-			  char *coll ,
-			  char *pwd  ,
-			  char *bg   ,
-			  int32_t  nc   ,
-			  int32_t  pd   ) ;
-	*/
-
 	bool printParm ( SafeBuf* sb,
 			 //int32_t  user ,
 			  char *username,

@@ -10596,18 +10596,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "apply filter to text pages";
-	m->m_desc  = "If this is false then the filter "
-		"will not be used on html or text pages.";
-	m->m_cgi   = "aft";
-	m->m_off   = (char *)&cr.m_applyFilterToText - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m->m_flags = PF_CLONE;
-	m++;
-
 	m->m_title = "filter name";
 	m->m_desc  = "Program to spawn to filter all HTTP "
 		"replies the spider receives. Leave blank for none.";

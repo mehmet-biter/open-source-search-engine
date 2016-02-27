@@ -471,7 +471,6 @@ class CollectionRec {
 	char  m_forceUseFloaters        ;
 	char  m_automaticallyUseProxies ;
 	char  m_automaticallyBackOff    ;
-	char  m_applyFilterToText       ; // speeds us up
 	char  m_allowHttps              ; // read HTTPS using SSL
 	char  m_recycleContent          ;
 	char  m_getLinkInfo             ; // turn off to save seeks
