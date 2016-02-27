@@ -689,8 +689,6 @@ public:
 	bool printSpiderStats ( class SafeBuf *sb , HttpRequest *hr );
 	bool printCachedPage ( class SafeBuf *sb , HttpRequest *hr );
 
-	bool printSerpFiltered ( class Section *sx , char *tagName ) ;
-
 	char **getTitleBuf             ( );
 	char **getRootTitleBuf         ( );
 	char **getFilteredRootTitleBuf ( );
