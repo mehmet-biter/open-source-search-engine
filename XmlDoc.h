@@ -954,7 +954,6 @@ public:
 	bool m_isWWWDupValid;
 	bool m_linkInfo1Valid;
 	bool m_linkSiteHashesValid;
-	bool m_placedbDataValid;
 	bool m_siteHash64Valid;
 	bool m_siteHash32Valid;
 	bool m_httpReplyValid;
@@ -1417,12 +1416,6 @@ public:
 	// store termlist into here if non-null
 	bool     m_storeTermListInfo;
 	char     m_sortTermListBy;
-
-	char *m_placedbData;
-	int32_t  m_placedbDataSize;
-
-	// we now have HashInfo to replace this
-	//bool m_inHashNoSplit;
 
 	// store the terms that we hash into this table so that PageParser.cpp
 	// can print what was hashed and with what score and what description
