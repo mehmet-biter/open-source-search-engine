@@ -551,7 +551,6 @@ class CollectionRec {
 	int32_t  m_summaryMode		;
 	char  m_deleteTimeouts          ; // can delete docs that time out?
 	char  m_allowAdultDocs          ;
-	char  m_doSerpDetection         ;
 	char  m_useCanonicalRedirects   ;
 
 	int32_t  m_maxNumSpiders             ; // per local spider host

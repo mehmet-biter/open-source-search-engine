@@ -289,8 +289,6 @@ class Parm {
 #include "Xml.h"
 #include "SafeBuf.h"
 
-struct SerParm;
-
 class Parms {
 
  public:

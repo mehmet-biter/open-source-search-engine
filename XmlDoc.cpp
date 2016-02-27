@@ -294,8 +294,6 @@ void XmlDoc::reset ( ) {
 
 	m_hashedMetas = false;
 
-	m_serpBuf.purge();
-
 	// Doc.cpp:
 	m_mime.reset();
 	m_words.reset();

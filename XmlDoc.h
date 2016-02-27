@@ -1434,8 +1434,6 @@ public:
 	SafeBuf m_pageLinkBuf;
 	SafeBuf m_siteLinkBuf;
 
-	SafeBuf m_serpBuf;
-
 	// which set() function was called above to set us?
 	bool          m_setFromTitleRec;
 	bool          m_setFromSpiderRec;

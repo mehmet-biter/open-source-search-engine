@@ -10544,19 +10544,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "do serp detection";
-	m->m_desc  = "If this is eabled the spider "
-		"will not allow any docs which are determined to "
-		"be serps.";
-	m->m_cgi   = "dsd";
-	m->m_off   = (char *)&cr.m_doSerpDetection - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m->m_flags = PF_CLONE;
-	m++;
-
 	m->m_title = "do IP lookup";
 	m->m_desc  = "If this is disabled and the proxy "
 		"IP below is not zero then Gigablast will assume "
