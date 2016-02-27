@@ -485,7 +485,6 @@ class CollectionRec {
 
 	float m_inlinkNeighborhoodsScoreScalar;
 
-	float m_updateVotesFreq         ; // in days. replaced m_recycleVotes
 	float m_sortByDateWeight        ;
 
     char  m_dedupURLDefault             ;
@@ -514,8 +513,6 @@ class CollectionRec {
 	int32_t 			m_languageSamples;
 	int32_t 			m_langPageLimit;
 	char 			m_defaultSortCountry[3];
-
-	int32_t  m_filterTimeout;                // kill filter pid after X secs
 
 	// for Spider.cpp
 	int32_t m_updateRoundNum;
@@ -695,9 +692,6 @@ class CollectionRec {
 	SafeBuf m_htmlRoot;
 	SafeBuf m_htmlHead;
 	SafeBuf m_htmlTail;
-
-	// match this content-type exactly (txt/html/pdf/doc)
-	char  m_filter [ MAX_FILTER_LEN + 1 ];
 
 	int32_t  m_compoundListMaxSize;
 

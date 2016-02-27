@@ -10479,28 +10479,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "update link info frequency";
-	m->m_desc   = "How often should Gigablast recompute the "
-		"link info for a url. "
-		"Also applies to getting the quality of a site "
-		"or root url, which is based on the link info. "
-		"In days. Can use decimals. 0 means to update "
-		"the link info every time the url's content is re-indexed. "
-		"If the content is not reindexed because it is unchanged "
-		"then the link info will not be updated. When getting the "
-		"link info or quality of the root url from an "
-		"external cluster, Gigablast will tell the external cluster "
-		"to recompute it if its age is this or higher.";
-	m->m_cgi   = "uvf";
-	m->m_off   = (char *)&cr.m_updateVotesFreq - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "60.000000";
-	m->m_group = 0;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m->m_flags = PF_CLONE;
-	m++;
-
 	m->m_title = "index inlink neighborhoods";
 	m->m_desc  = "If this is true Gigablast will "
 		"index the plain text surrounding the hyper-link text. The "
@@ -10594,33 +10572,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "filter name";
-	m->m_desc  = "Program to spawn to filter all HTTP "
-		"replies the spider receives. Leave blank for none.";
-	m->m_cgi   = "filter";
-	m->m_def   = "";
-	m->m_off   = (char *)&cr.m_filter - x;
-	m->m_type  = TYPE_STRING;
-	m->m_size  = MAX_FILTER_LEN+1;
-	m->m_group = 0;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m->m_flags = PF_CLONE;
-	m++;
-
-	m->m_title = "filter timeout";
-	m->m_desc  = "Kill filter shell after this many seconds. Assume it "
-		"stalled permanently.";
-	m->m_cgi   = "fto";
-	m->m_def   = "40";
-	m->m_off   = (char *)&cr.m_filterTimeout - x;
-	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m->m_flags = PF_CLONE;
 	m++;
 
 	m->m_title = "make image thumbnails";

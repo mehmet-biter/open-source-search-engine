@@ -11268,13 +11268,6 @@ char **XmlDoc::getFilteredContent ( ) {
 	// invalidate
 	m_filteredContentValid = false;
 
-	// . if we have no filter specified...
-	// . usually "gbfilter" and it is a script in the working directory
-	//if ( ! cr->m_filter[0] ) {
-	//	m_indexCode = EDOCBADCONTENTTYPE;
-	//	return &m_filteredContent;
-	//}
-
 	// if not text/html or text/plain, use the other max
 	max = MAXDOCLEN; // cr->m_maxOtherDocLen;
 	// now we base this on the pre-filtered length to save memory because

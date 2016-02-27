@@ -1137,7 +1137,6 @@ public:
 	char m_isBinary;
 	char *m_filteredContent;
 	int32_t m_filteredContentLen;
-	char *m_filter;
 	int32_t m_filteredContentAllocSize;
 	int32_t m_filteredContentMaxSize;
 	char m_calledThread;
