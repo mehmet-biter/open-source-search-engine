@@ -6189,18 +6189,6 @@ void Parms::init ( ) {
 	m++;
 
 	// buzz
-	m->m_title = "display term frequencies";
-	m->m_desc  = "Display Terms and Frequencies in results.";
-	m->m_off   = (char *)&si.m_displayTermFreqs - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_cgi   = "tf";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-	// buzz
 	m->m_title = "spider results";
 	m->m_desc  = "Results of this query will be forced into the spider "
 		"queue for reindexing.";

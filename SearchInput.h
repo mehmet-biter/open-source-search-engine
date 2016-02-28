@@ -263,7 +263,6 @@ class SearchInput {
 	//   as it is, in between the start and end hash vars
 	int32_t   m_displayInlinks;
 	int32_t   m_displayOutlinks;
-	char   m_displayTermFreqs;
 	char   m_justMarkClusterLevels;
 
 	// new sort/constrain by date stuff
