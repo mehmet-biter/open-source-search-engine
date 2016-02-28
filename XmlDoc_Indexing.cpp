@@ -2432,9 +2432,6 @@ bool XmlDoc::hashCountry ( HashTableX *tt ) {
 
 	setStatus ( "hashing country" );
 
-	//uint16_t *cids = getCountryIds();
-	//if ( ! cids                 ) return true;
-	//if ( cids == (uint16_t *)-1 ) return false;
 	uint16_t *cid = getCountryId();
 	if ( ! cid || cid == (uint16_t *)-1 ) return false;
 
@@ -2445,8 +2442,6 @@ bool XmlDoc::hashCountry ( HashTableX *tt ) {
 	hi.m_prefix    = "gbcountry";
 
 	for ( int32_t i = 0 ; i < 1 ; i++ ) {
-		// get the ith country id
-		//int32_t cid = cids[i];
 		// convert it
 		char buf[32];
 		int32_t blen = sprintf(buf,"%s", g_countryCode.getAbbr(*cid) );

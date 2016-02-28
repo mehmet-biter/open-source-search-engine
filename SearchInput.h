@@ -16,13 +16,8 @@
 
 #include "Query.h" // MAX_QUERY_LEN
 
-#define SI_TMPBUF_SIZE   (16*1024)
-
-#define MAX_TOPIC_GROUPS 1
-
 class SearchInput {
-
- public:
+public:
 
 	// why provide query here, it is in "hr"
 	bool set ( class TcpSocket *s , class HttpRequest *hr );
@@ -39,8 +34,6 @@ class SearchInput {
 	SearchInput      ( );
 	~SearchInput     ( );
 	void  reset                 ( );
-	//char *serializeForMsg40   ( int32_t *size ) ;
-	//void  deserializeForMsg40 ( char *buf, int32_t bufSize, bool ownBuf ) ;
 	void  copy                  ( class SearchInput *si ) ;
 
 	///////////
@@ -63,10 +56,6 @@ class SearchInput {
 	collnum_t m_firstCollnum;
 
 	char          *m_displayQuery;     // pts into m_qbuf1
-	//class Hostdb  *m_hostdb;
-
-	// urlencoded display query
-	//char m_qe [ MAX_QUERY_LEN *2 + 1 ];
 
 	// urlencoded display query. everything is compiled into this.
 	SafeBuf m_qe;
