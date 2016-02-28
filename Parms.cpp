@@ -6214,19 +6214,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_SI;
 	m++;
 
-	// buzz
-	m->m_title = "just mark clusterlevels";
-	m->m_desc  = "Check for deduping, but just mark the cluster levels "
-		"and the doc deduped against, don't remove the result.";
-	m->m_off   = (char *)&si.m_justMarkClusterLevels - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_cgi   = "jmcl";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
 	m->m_title = "include cached copy of page";
 	m->m_desc  = "Will cause a cached copy of content to be returned "
 		"instead of summary.";
