@@ -126,7 +126,6 @@ class SearchInput {
 
 	// do not include these in makeKey()
 	int32_t   m_refs_numToDisplay;
-	int32_t   m_rp_numToDisplay;  
 
 	char  *m_queryCharset;
 
@@ -204,22 +203,6 @@ class SearchInput {
 	int32_t   m_refs_qualityCoefficient;     // msg40
 	int32_t   m_refs_linkDensityCoefficient; // msg40
 	char   m_refs_multiplyRefScore;       // msg40
-
-	// . related page parameters
-	// . copied from CollectionRec.h
-	int32_t   m_rp_numToGenerate;            // msg40
-	int32_t   m_rp_numLinksPerDoc;           // msg40
-	int32_t   m_rp_minQuality;               // msg40
-	int32_t   m_rp_minScore;                 // msg40
-	int32_t   m_rp_minLinks;                 // msg40
-	int32_t   m_rp_numLinksCoeff;            // msg40
-	int32_t   m_rp_avgLnkrQualCoeff;         // msg40
-	int32_t   m_rp_qualCoeff;                // msg40
-	int32_t   m_rp_srpLinkCoeff;             // msg40
-	int32_t   m_rp_numSummaryLines;          // msg40
-	int32_t   m_rp_titleTruncateLimit;       // msg40
-	char   m_rp_useResultsAsReferences;   // msg40
-	char   m_rp_getExternalPages;         // msg40
 
 	// unused pqr stuff
 	int8_t			m_langHint;

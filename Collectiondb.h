@@ -726,29 +726,6 @@ class CollectionRec {
 
 	HashTableX m_seedHashTable;
 
-	// . related pages parameters
-	// . copied from Parms.cpp
-        int32_t  m_rp_numToGenerate;
-        int32_t  m_rp_numToDisplay;
-        int32_t  m_rp_numLinksPerDoc;
-        int32_t  m_rp_minQuality;
-	int32_t  m_rp_minScore;
-        int32_t  m_rp_minLinks;
-	int32_t  m_rp_numLinksCoeff;
-	int32_t  m_rp_avgLnkrQualCoeff;
-	int32_t  m_rp_qualCoeff;
-	int32_t  m_rp_srpLinkCoeff;
-	int32_t  m_rp_numSummaryLines;
-	int32_t  m_rp_titleTruncateLimit;
-	char  m_rp_useResultsAsReferences;
-	char  m_rp_getExternalPages; // from another cluster?
-	char  m_rp_externalColl [MAX_COLL_LEN+1]; //coll in cluster
-	// related pages ceiling parameters
-	int32_t  m_rp_numToGenerateCeiling;
-	int32_t  m_rp_numLinksPerDocCeiling;
-	int32_t  m_rp_numSummaryLinesCeiling;
-	char  m_rp_doRelatedPageSumHighlight;
-
 	char  m_familyFilter;
 
 	int32_t      	m_tagdbRefreshRate;
