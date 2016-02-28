@@ -34,10 +34,6 @@ void Matches::reset   ( ) {
 		mfree ( m_qwordFlags , m_qwordAllocSize , "mmqw" );
 		m_qwordFlags = NULL;
 	}
-	//m_explicitsMatched = 0;
-	//m_matchableRequiredBits = 0;
-	//m_hasAllQueryTerms = false;
-	//m_matchesQuery = false;
 }
 
 void Matches::reset2() {

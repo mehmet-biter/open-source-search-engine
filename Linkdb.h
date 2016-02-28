@@ -784,8 +784,6 @@ class Inlink {
 	// we got a 2 byte padding before this PADPADPADPADP
 
 	int32_t       m_siteHash            ; // www.hompages.com/~fred/ // 56
-	//int32_t     m_hostHash            ; // www.ibm.com
-	//int32_t     m_midDomHash          ; // the ibm in ibm.com
 
 	// single bit flags
 	uint16_t   m_isPermalink      : 1 ; // 60
@@ -793,17 +791,6 @@ class Inlink {
 	uint16_t   m_outlinkInComment : 1 ;
 	uint16_t   m_isReserved       : 1 ; // was u-n-i-c-o-d-e- bit
 	uint16_t   m_isLinkSpam       : 1 ;
-	//uint16_t   m_isAnomaly        : 1 ;
-	// when Msg20Request::ptr_qbuf is set and 
-	// Msg20Request::m_computeLinkInfo is true, Msg20 calls Msg25, which 
-	// in turn calls one Msg20 for each inlinker the doc has, thereby 
-	// passing the ptr_qbuf into each of those Msg20s. if the inlinker 
-	// matches the query then it sets m_hasAllQueryTerms to true and
-	// returns the Msg20Reply to Msg25. When Msg25 is done it calls
-	// makeLinkInfo() to make a LinkInfo out of all those Msg20Replies.
-	// We use m_hasAllQueryTerms to display the absScore2 of each inlinker
-	// in the raw xml search results feed for buzz.
-	uint16_t   m_hasAllQueryTerms : 1 ;
 	// if we imported it from the old LinkInfo. helps us preserve rssInfo,
 	// hopcounts, etc.
 	uint16_t   m_recycled         : 1 ;
@@ -818,9 +805,7 @@ class Inlink {
 
 	uint16_t   m_country             ; // 62
 	uint8_t    m_language            ; // 64
-	//char     m_docQuality          ;
 	char       m_siteRank; // 65
-	//char       m_ruleset             ;
 	char       m_hopcount            ;  // 66
 	char       m_linkTextScoreWeight ; // 0-100% (was m_inlinkWeight) //67
 

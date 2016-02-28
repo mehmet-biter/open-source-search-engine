@@ -19391,16 +19391,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->size_displaySum = hsumLen+1;
 	}
 
-	// . we filter out search results that do not have all the query terms
-	// . Matches.cpp checks the link text, dmoz, etc. for all query terms
-	// . it must get into the results form indexdb corruption?
-	// . this filtering method is/was known as the "BIG HACK"
-	if ( m_req->size_qbuf > 1 ) {
-		Matches *mm = getMatches();
-		int32_t numInlinks = getLinkInfo1()->getNumLinkTexts( );
-		reply->m_hasAllQueryTerms = mm->docHasQueryTerms(numInlinks);
-	}
-
 	// breathe
 	QUICKPOLL ( m_niceness );
 

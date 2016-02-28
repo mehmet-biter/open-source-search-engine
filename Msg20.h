@@ -208,7 +208,6 @@ public:
 	char       m_isLinkSpam          ; // set for m_getLinkText
 	char       m_outlinkInContent    ; // set for m_getLinkText
 	char       m_outlinkInComment    ; // set for m_getLinkText
-	char       m_hasAllQueryTerms    ; // set for m_getLinkText (buzz)
 	char       m_isPermalink         ; // set for m_getLinkText (buzz)
 	
 	// . serialize() converts these ptrs into offsets in m_buf[] and

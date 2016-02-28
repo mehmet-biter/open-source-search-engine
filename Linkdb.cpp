@@ -3300,7 +3300,6 @@ void Inlink::set ( Msg20Reply *r ) {
 	m_outlinkInContent   = r->m_outlinkInContent;
 	m_outlinkInComment   = r->m_outlinkInComment;
 	m_isLinkSpam         = r->m_isLinkSpam;
-	m_hasAllQueryTerms   = r->m_hasAllQueryTerms;
 	m_recycled           = r->m_recycled;
 
 	m_country             = r->m_country;
@@ -3430,7 +3429,6 @@ void Inlink::setMsg20Reply ( Msg20Reply *r ) {
 	r->m_outlinkInComment    = m_outlinkInComment;
 	
 	r->m_isLinkSpam          = m_isLinkSpam;
-	r->m_hasAllQueryTerms    = m_hasAllQueryTerms;
 	
 	r->m_country             = m_country;
 	r->m_language            = m_language;
