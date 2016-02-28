@@ -866,7 +866,6 @@ class CollectionRec {
 	int32_t  m_pqr_maxValDatedbDate; // dates later than this will not be demoted
 	float m_pqr_demFactProximity; // demotion for proximity of query terms
 	int32_t  m_pqr_maxValProximity; // max value for proximity of query terms
-	float m_pqr_demFactInSection; // demotion for section of query terms
 	int32_t  m_pqr_maxValInSection; // max value for section of query terms
 	float m_pqr_demFactOrigScore;
 

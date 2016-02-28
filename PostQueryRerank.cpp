@@ -409,55 +409,6 @@ bool PostQueryRerank::rerank ( ) {
 		logf( LOG_DEBUG, "pqr: reranking %"INT32" results", 
 		     m_numToSort );
 
-	/*
-	float maxDiversity = 0;
-	if(m_si->m_pqr_demFactSubPhrase > 0) {
-		for ( int32_t x = 0; x < m_numToSort; x++ ) {
-			M20List *sortArrItem = &m_m20List [ x ];
-			Msg20 *msg20 = sortArrItem->m_m20;
-			if ( ! msg20 || msg20->m_errno ) continue;
-			float d = msg20->m_r->m_diversity;
-			if(d > maxDiversity) maxDiversity = d;
-		}
-	}
-
-	float maxProximityScore = 0;
-	float minProximityScore = -1.0;
-	//float maxInSectionScore = 0;
-	if(m_si->m_pqr_demFactProximity > 0 ||
-	   m_si->m_pqr_demFactInSection > 0) {
-		//grab the max score so that we know what the max to 
-		//demote is.
-		for ( int32_t x = 0; x < m_numToSort; x++ ) {
-			M20List *sortArrItem = &m_m20List [ x ];
-			Msg20 *msg20 = sortArrItem->m_m20;
-			if ( ! msg20 || msg20->m_errno ) continue;
-			//float d = msg20->m_r->m_inSectionScore;
-			//if(d > maxInSectionScore) 
-			//	maxInSectionScore = d;
-			// handle proximity
-			float d = msg20->m_r->m_proximityScore;
-			// i think this means it does not have all the query 
-			// terms! for 'sylvain segal' we got 
-			// www.regalosdirectos.tv/asp2/comparar.asp?cat=36 
-			// in results
-			if ( d == 0.0 ) continue;
-			// . -1 is a bogus proximity
-			// . it means we were not able to find all the terms
-			//   because they were in anomalous link text or
-			//   meta tags or select tags or whatever... so for
-			//   now such results will not be demoted to be on the
-			//   safe side
-			if ( d == -1.0 ) continue;
-			if ( d > maxProximityScore ) 
-				maxProximityScore = d;
-			if ( d < minProximityScore || minProximityScore==-1.0 )
-				minProximityScore = d;
-		}
-	}
-	*/
-
-
 	// rerank weighted sort list
 	for ( register int32_t x = 0; x < m_numToSort; x++ ) {
 		M20List *sortArrItem = &m_m20List [ x ];

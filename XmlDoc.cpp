@@ -19842,9 +19842,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	     reply->ptr_rssItem[reply->size_rssItem-1]!=0) {
 		char *xx=NULL;*xx=0; }
 
-
-	//log ("nogl=%"INT32"",(int32_t)m_req->m_onlyNeedGoodInlinks );
-
 	// . skip all this junk if we are a spammy voter
 	// . we get the title above in "getThatTitle"
 	if ( reply->m_isLinkSpam ) {

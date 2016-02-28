@@ -1009,8 +1009,7 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		req.m_summaryMaxLen = cr->m_summaryMaxLen;
 
 		// Line means excerpt 
-		req.m_summaryMaxNumCharsPerLine = 
-			m_si->m_summaryMaxNumCharsPerLine;
+		req.m_summaryMaxNumCharsPerLine = m_si->m_summaryMaxNumCharsPerLine;
 
 		// a special undocumented thing for getting <h1> tag
 		req.m_getHeaderTag       = m_si->m_hr.getLong("geth1tag",0);

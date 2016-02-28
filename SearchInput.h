@@ -257,7 +257,6 @@ class SearchInput {
 	float  m_pqr_demFactSubPhrase;
 	float  m_pqr_demFactCommonInlinks;
 	float  m_pqr_demFactProximity;
-	float  m_pqr_demFactInSection;
 	float  m_pqr_demFactOrigScore;
 	// . buzz stuff (buzz)
 	// . these controls the set of results, so should be in the makeKey()

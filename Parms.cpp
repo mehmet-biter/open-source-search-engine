@@ -4862,21 +4862,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "demotion for pages based on query terms section";
-	m->m_desc  = "Demotion factor for where the query terms occur "
-		"in the document.  If the terms only occur in a menu, "
-		"a link, or a list, the document will be punished."
-		"0 means no demotion. ";
-	m->m_cgi   = "pqrinsec";
-	m->m_off   = (char *)&cr.m_pqr_demFactInSection - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "weight of indexed score on pqr";
 	m->m_desc  = "The proportion that the original score affects "
 		"its rerank position. A factor of 1 will maintain "
