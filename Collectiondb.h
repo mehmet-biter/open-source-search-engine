@@ -813,7 +813,6 @@ class CollectionRec {
 	char m_rcache;
 
 	char m_hideAllClustered;
-	int32_t m_maxRealTimeInlinks;
 
 	// . cut off age in number of days old 
 	// . if pub date is older than this we do not add to datedb

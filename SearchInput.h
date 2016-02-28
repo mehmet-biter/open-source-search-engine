@@ -276,8 +276,6 @@ class SearchInput {
 	// this should be part of the key because it will affect the results!
 	char   m_queryExpansion;
 
-	int32_t   m_maxRealTimeInlinks;
-
 	////////
 	//
 	// END USER PARMS

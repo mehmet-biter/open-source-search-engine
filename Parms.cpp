@@ -4935,20 +4935,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "max real time inlinks";
-	m->m_desc  = "Limit number of linksdb inlinks requested per result.";
-	m->m_cgi   = "mrti";
-	m->m_off   = (char *)&cr.m_maxRealTimeInlinks - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "10000";
-	m->m_group = 0;
-	m->m_smin  = 0;
-	m->m_smax  = 100000;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "max query terms";
 	m->m_desc  = "Do not allow more than this many query terms. Helps "
 		"prevent big queries from resource hogging.";
