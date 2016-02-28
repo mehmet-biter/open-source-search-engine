@@ -958,7 +958,6 @@ public:
 	bool m_siteHash32Valid;
 	bool m_httpReplyValid;
 	bool m_contentTypeValid;
-	bool m_isBinaryValid;
 	bool m_priorityQueueNumValid;
 	bool m_outlinkTagRecVectorValid;
 	bool m_outlinkIpVectorValid;
@@ -1134,7 +1133,6 @@ public:
 	int32_t m_robotsTxtLen;
 	int32_t m_httpReplySize;
 	int32_t m_httpReplyAllocSize;
-	char m_isBinary;
 	char *m_filteredContent;
 	int32_t m_filteredContentLen;
 	int32_t m_filteredContentAllocSize;
@@ -1302,9 +1300,6 @@ public:
 
 
 	bool m_setTr                    ;
-	bool m_triedTagRec              ;
-	bool m_didGatewayPage           ;
-	bool m_didQuickDupCheck         ;
 
 	void (* m_masterLoop) ( void *state );
 	void  * m_masterState;
@@ -1312,9 +1307,6 @@ public:
 	void (* m_callback1) ( void *state );	
 	bool (* m_callback2) ( void *state );	
 	void  *m_state;
-
-	// flags for spider
-	bool m_didDelete;
 
 	bool m_skipIframeExpansion;
 
@@ -1456,10 +1448,6 @@ public:
 	void doneInjecting ( class XmlDoc *xd );
 	int32_t  m_i;
 	int32_t  m_blocked;
-	HashTableX  m_domDedupTable;
-	HashTableX *m_linkDedupTablePtr;
-	HashTableX *m_domDedupTablePtr;
-	bool m_dedupLinkDomains;
 	void *m_finalState;
 	void (* m_finalCallback) ( void *state );
 	int64_t m_cacheStartTime;

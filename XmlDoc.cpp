@@ -133,8 +133,6 @@ void XmlDoc::reset ( ) {
 	m_skipIframeExpansion = false;
 	m_indexedTime = 0;
 
-	m_didDelete = false;
-
 	m_metaList2.purge();
 	m_zbuf.purge();
 	m_kbuf.purge();
@@ -178,9 +176,6 @@ void XmlDoc::reset ( ) {
 	s_lastTimeStart = 0LL;
 
 	m_req = NULL;
-
-	m_linkDedupTablePtr = NULL;
-	m_domDedupTablePtr = NULL;
 
 	m_storeTermListInfo = false;
 
@@ -393,9 +388,6 @@ void XmlDoc::reset ( ) {
 	m_launchedMsg8a2           = false;
 
 	m_setTr                    = false;
-	m_triedTagRec              = false;
-	m_didGatewayPage           = false;
-	m_didQuickDupCheck         = false;
 	m_calledMsg8b              = false;
 
 	m_recycleContent           = false;
@@ -1003,10 +995,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	//m_coll               = coll;
 	m_pbuf               = pbuf;
 	m_niceness           = niceness;
-
-	// . sanity check
-	// . NO! could be from XmlDoc::getMsg20Reply()!
-	//if ( m_niceness == 0 ) { char *xx=NULL; *xx=0; }
 
 	// it must be there!
 	if ( !titleRec||titleRecSize==0 ) {g_errno=ENOTFOUND; return false;}
@@ -16662,10 +16650,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		m_p                 = nptr;
 	}
 
-
-	// if we only removed it from index, set this flag
-	if ( oldList && ! nd ) m_didDelete = true;
-
 	//
 	// repeat this logic special for linkdb since we keep lost links
 	// and may update the discovery date or lost date in the keys
@@ -16679,9 +16663,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// 6. then add remaining dt9 keys into meta list but with lost date
 	//    set to now UNLESS it's already set
 	//
-
-
-
 
 	//
 	// validate us!
@@ -19202,7 +19183,6 @@ void getMsg20ReplyWrapper ( void *state ) {
 // . returns NULL with g_errno set on error
 // . returns -1 if blocked
 Msg20Reply *XmlDoc::getMsg20Reply ( ) {
-
 	// return it right away if valid
 	if ( m_replyValid ) return &m_reply;
 
@@ -19254,12 +19234,14 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	if ( ! m_setTr ) {
 		// . this completely resets us
 		// . this returns false with g_errno set on error
-		bool status = set2( *otr, maxSize, cr->m_coll, NULL,
-				    m_niceness);
+		bool status = set2( *otr, maxSize, cr->m_coll, NULL, m_niceness);
+
 		// sanity check
 		if ( ! status && ! g_errno ) { char *xx=NULL;*xx=0; }
+
 		// if there was an error, g_errno should be set.
 		if ( ! status ) return NULL;
+
 		m_setTr = true;
 	}
 
@@ -19383,13 +19365,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		//
 		pr = 0;
 
-
-		// if ( pr == SPIDER_PRIORITY_FILTERED ) { // -3
-		// 	// set m_errno
-		// 	reply->m_errno = EDOCFILTERED;
-		// 	// and this
-		// 	reply->m_isFiltered = true;
-		// }
 		// done if we are
 		if ( reply->m_errno && ! m_req->m_showBanned ) {
 			// give back the url at least
@@ -19594,13 +19569,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	int32_t *fip = getFirstIp();
 	if ( ! fip || fip == (void *)-1 ) return (Msg20Reply *)fip;
 
-
-	//Url **redir = getRedirUrl();
-	//if ( ! redir || redir == (Url **)-1 ) return (Msg20Reply *)redir;
-	//int32_t redirSize = 0;
-	//if ( *redir ) redirSize = (*redir)->getUrlLen() + 1;
-	//char *ru = NULL;
-	//if ( *redir ) ru = (*redir)->getUrl();
 	char *ru = ptr_redirUrl;
 	int32_t  rulen = 0;
 	if ( ru ) rulen = gbstrlen(ru)+1;
@@ -19643,15 +19611,12 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	reply->m_docId            = m_docId;
 	reply->m_contentLen       = size_utf8Content;
 	reply->m_lastSpidered     = getSpideredTime();//m_spideredTime;
-	//reply->m_datedbDate       = m_pubDate;
 	reply->m_datedbDate       = 0;
 	reply->m_firstIndexedDate = m_firstIndexedDate;
 	reply->m_firstSpidered    = m_firstIndexedDate;
 	reply->m_contentType      = m_contentType;
-	//reply->m_contentHash      = *getContentHash32();
 	reply->m_language         = m_langId;
 	reply->m_country          = *getCountryId();
-	//reply->m_hasAllQueryTerms = false;
 	reply->m_hopcount         = m_hopCount;
 	reply->m_siteRank         = getSiteRank();
 
@@ -19685,9 +19650,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		reply->m_pageNumUniqueIps       = info1->m_numUniqueIps;
 		reply->m_pageNumUniqueCBlocks   = info1->m_numUniqueCBlocks;
 		reply->m_pageInlinksLastUpdated = info1->m_lastUpdated;
-		//reply->m_pagePop            = 0;//info1->m_pagePop;
-		//reply->m_siteNumInlinks = info1->m_siteNumInlinks;
-		//reply->m_sitePop        = info1->m_sitePop;
 	}
 
 	// breathe
@@ -19711,28 +19673,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		redir.set ( ru );
 		linker = &redir;
 	}
-
-	// breathe
-	QUICKPOLL( m_niceness );
-
-	// . get score weight of link text
-	// . phase out the sitedb*.xml files
-	//int64_t x[] = {0,20,30,40,50,70,90,100}; qualities!
-	// map these siteNumInlinks (x) to a weight (y)
-	//int64_t x[] = {0,50,100,200,500,3000,10000,50000};
-	// these are the weights the link text will receive
-	//int64_t y[] = {10,30,2000,3000,4000,5000,6000,7000};
-	// sanity check
-	//if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
-	// shortcut
-	//int32_t sni = m_siteNumInlinks;// *getSiteNumInlinks();
-	// get the final link text weight as a percentage
-	//int32_t ltw = getY ( m_siteNumInlinks , x , y , 8 );
-	// store the weight in the reply
-	//reply->m_linkTextScoreWeight = ltw;
-
-	//log(LOG_DEBUG,"build: got score weight of %"INT32" for sni=%"INT32"",
-	//    (int32_t)reply->m_linkTextScoreWeight, m_siteNumInlinks);
 
 	// breathe
 	QUICKPOLL( m_niceness );

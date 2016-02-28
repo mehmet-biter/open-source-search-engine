@@ -309,11 +309,10 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 		m_replyMaxSize = slot->m_readBufMaxSize;
 		freeit = false;
 	}
-	else
+	else {
 		rp =m_mcast.getBestReply(&m_replySize,&m_replyMaxSize,&freeit);
+	}
 
-
-	//if( rp != m_replyBuf )
 	relabel( rp , m_replyMaxSize, "Msg20-mcastGBR" );
 
 	// sanity check. make sure multicast is not going to free the
@@ -323,6 +322,7 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 		char *xx = NULL; *xx = 0;
 		return;
 	}
+
 	// see if too small for a getSummary request
 	if ( m_replySize < (int32_t)sizeof(Msg20Reply) ) { 
 		log("query: Summary reply is too small.");
@@ -336,6 +336,7 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 
 	// we own it now
 	m_ownReply = true;
+
 	// deserialize it, sets g_errno on error??? not yet TODO!
 	m_r->deserialize();
 }
@@ -361,9 +362,6 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 		return;
 	}
 
-	//log("query: got umsg20 %i 0x%"PTRFMT"",slot->m_readBufMaxSize,
-	//    (PTRTYPE)slot->m_readBuf);
-
 	// parse the request
 	Msg20Request *req = (Msg20Request *)slot->m_readBuf;
 
@@ -379,8 +377,8 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 		    "from ip=%s port=%i",iptoa(slot->m_ip),(int)slot->m_port);
 	        g_udpServer.sendErrorReply ( slot , ENOTFOUND );
 		return; 
-		//char *xx =NULL; *xx = 0; 
 	}
+
 	// if it's not stored locally that's an error
 	if ( req->m_docId >= 0 && ! g_titledb.isLocal ( req->m_docId ) ) {
 		log("query: Got msg20 request for non-local docId %"INT64"",
@@ -414,20 +412,26 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 
 	// ok, let's use the new XmlDoc.cpp class now!
 	xd->set20 ( req );
+
 	// encode slot
 	xd->m_slot = slot;
+
 	// set the callback
 	xd->setCallback ( xd , gotReplyWrapperxd );
+
 	// set set time
 	xd->m_setTime = startTime;
 	xd->m_cpuSummaryStartTime = 0;
+
 	// . now as for the msg20 reply!
 	// . TODO: move the parse state cache into just a cache of the
 	//   XmlDoc itself, and put that cache logic into XmlDoc.cpp so
 	//   it can be used more generally.
 	Msg20Reply *reply = xd->getMsg20Reply ( );
+
 	// this is just blocked
 	if ( reply == (void *)-1 ) return;
+
 	// got it?
 	gotReplyWrapperxd ( xd );
 }
