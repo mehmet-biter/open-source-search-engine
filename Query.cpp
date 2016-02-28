@@ -3257,30 +3257,6 @@ char getFieldCode ( char *s , int32_t len , bool *hasColon ) {
 	return g_fields[i-1].field;
 }
 
-char getFieldCode2 ( char *s , int32_t len , bool *hasColon ) {
-	// default
-	if (hasColon) *hasColon = false;
-
-	if (!initFieldTable()) return FIELD_GENERIC;
-	// subtract the colon for matching
-	if ( s[len-1]==':') len--;
-	int64_t h = hash64 (s , len , 0LL );
-	int32_t i = (int32_t) s_table.getScore ( &h ) ;
-	if (i==0) return FIELD_GENERIC;
-	//if (hasColon) *hasColon = g_fields[i-1].hasColon ; 
-	return g_fields[i-1].field;
-}
-
-char getFieldCode3 ( int64_t h64 ) {
-	if (!initFieldTable()) return FIELD_GENERIC;
-	// subtract the colon for matching
-	int32_t i = (int32_t) s_table.getScore ( &h64 ) ;
-	if (i==0) return FIELD_GENERIC;
-	//if (hasColon) *hasColon = g_fields[i-1].hasColon ; 
-	return g_fields[i-1].field;
-}
-
-
 // guaranteed to be punctuation
 bool Query::isConnection ( char *s , int32_t len ) {
 	if ( len == 1 ) {

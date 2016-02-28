@@ -111,8 +111,6 @@ typedef uint64_t qvec_t;
 
 // returns a FIELD_* code above, or FIELD_GENERIC if not in the list
 char getFieldCode  ( char *s , int32_t len , bool *hasColon = NULL ) ;
-char getFieldCode2 ( char *s , int32_t len , bool *hasColon = NULL ) ;
-char getFieldCode3 ( int64_t h64 ) ;
 
 int32_t getNumFieldCodes ( );
 
@@ -482,9 +480,6 @@ class Query {
 
 	// . returns false and sets g_errno on error
 	// . after calling this you can call functions below
-	// . if boolFlag is 0 we ignore all boolean operators
-	// . if boolFlag is 1  we assume query is boolen
-	// . if boolFlag is 2  we attempt to detect if query is boolean or not
 	bool set2 ( const char *query    , 
 		    uint8_t  langId ,
 		    char     queryExpansion ,
@@ -500,7 +495,6 @@ class Query {
 	char       getTermSign  ( int32_t i ) { return m_qterms[i].m_termSign;  };
 	bool       isPhrase     ( int32_t i ) { return m_qterms[i].m_isPhrase;  };
 	int64_t  getTermId    ( int32_t i ) { return m_qterms[i].m_termId;    };
-	char       getFieldCode2( int32_t i ) { return m_qterms[i].m_fieldCode; };
 	int64_t  getRawTermId ( int32_t i ) { return m_qterms[i].m_rawTermId; };
 	char      *getTerm      ( int32_t i ) { return m_qterms[i].m_term; };
 	int32_t       getTermLen   ( int32_t i ) { return m_qterms[i].m_termLen; };
