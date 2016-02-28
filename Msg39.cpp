@@ -194,8 +194,6 @@ void Msg39::getDocIds2 ( Msg39Request *req ) {
 	}
 
 	// . set our m_q class
-	// . m_boolFlag is either 1 or 0 in this case, the caller did the
-	//   auto-detect (boolFlag of 2) before calling us
 	// . this now calls Query::addCompoundTerms() for us
 	if ( ! m_tmpq.set2 ( m_r->ptr_query  , 
 			     m_r->m_language ,

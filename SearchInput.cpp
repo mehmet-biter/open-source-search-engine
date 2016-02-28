@@ -31,7 +31,6 @@ void SearchInput::clear ( int32_t niceness ) {
 	// set these
 	m_numLinesInSummary  = 2;
 	m_docsWanted         = 10;
-	m_boolFlag           = 2;
 	m_maxQueryTerms      = 1000;
 	m_niceness           = niceness;
 

@@ -354,7 +354,6 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_doMaxScoreAlgo            = m_si->m_doMaxScoreAlgo;
 	mr.m_doDupContentRemoval       = m_si->m_doDupContentRemoval ;
 	mr.m_queryExpansion            = m_si->m_queryExpansion; 
-	mr.m_boolFlag                  = m_si->m_boolFlag            ;
 	mr.m_familyFilter              = m_si->m_familyFilter        ;
 	mr.m_language                  = (unsigned char)m_si->m_queryLangId;
 	mr.ptr_query                   = m_si->m_q.m_orig;
@@ -999,8 +998,6 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		req.m_state              = this;
 		req.m_callback           = gotSummaryWrapper;
 		req.m_niceness           = m_si->m_niceness;
-		// 0 means not, 1 means is (should never be 2 at this point)
-		req.m_boolFlag           = m_si->m_boolFlag;
 		req.m_showBanned         = m_si->m_showBanned;
 		req.m_includeCachedCopy  = m_si->m_includeCachedCopy;
 		req.m_expected           = true;

@@ -42,7 +42,6 @@ public:
 	SafeBuf m_qsb;
 	char m_qtmpBuf[128];
 	int32_t       m_qlen;
-	char       m_boolFlag;
 	bool       m_printed;
 	int64_t  m_docId;
 	bool       m_includeHeader;
@@ -152,7 +151,6 @@ bool sendPageGet ( TcpSocket *s , HttpRequest *r ) {
 	
 	st->m_qlen = qlen;
 	st->m_rtq      = rtq;
-	st->m_boolFlag = r->getLong ("bq", 2);
 	st->m_isBanned = false;
 	st->m_noArchive = false;
 	st->m_socket = s;

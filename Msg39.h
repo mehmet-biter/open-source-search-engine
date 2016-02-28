@@ -33,7 +33,6 @@ class Msg39Request {
 		m_maxAge                  = 0;
 		m_maxQueryTerms           = 9999;
 		//m_compoundListMaxSize     = 20000000;
-		m_boolFlag                = 2;
 		m_language                = 0;
 		m_queryExpansion          = false;
 		m_debug                   = 0;
@@ -91,7 +90,6 @@ class Msg39Request {
 	float   m_sameLangWeight;
 
 	//int32_t    m_compoundListMaxSize;
-	char    m_boolFlag;
 	uint8_t m_language;
 
 	// flags

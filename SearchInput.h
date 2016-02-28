@@ -195,7 +195,6 @@ public:
 
 	int32_t   m_docsWanted;                  // msg40
 	int32_t   m_firstResultNum;              // msg40
-	int32_t   m_boolFlag;                    // msg40
 	int32_t   m_numResultsToImport;          // msg40
 	float  m_importWeight;
 	int32_t   m_numLinkerWeight;

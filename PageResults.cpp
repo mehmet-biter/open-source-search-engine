@@ -663,7 +663,6 @@ bool printIgnoredWords ( SafeBuf *sb , SearchInput *si ) {
 	// mention ignored query terms
 	// we need to set another Query with "keepAllSingles" set to false
 	Query *qq2 = &si->m_q;
-	//qq2.set ( q , qlen , NULL , 0 , si->m_boolFlag , false );
 	bool firstIgnored = true;
 	for ( int32_t i = 0 ; i < qq2->m_numWords ; i++ ) {
 		//if ( si->m_xml ) break;

@@ -30,7 +30,6 @@ class Msg20Request {
 		m_numSummaryLines    = 1;
 		m_expected           = false;
 		m_docId              = -1LL; // set docid to "invalid"
-		m_boolFlag           = 2   ; // autodetect if query boolean
 		m_titleMaxLen        = 80  ;
 		m_summaryMaxLen      = 180 ;
 		// reset ptr sizes
@@ -53,7 +52,6 @@ class Msg20Request {
 	void    (* m_callback2)( void *m_state );
 	int64_t  m_docId                     ;
 	int32_t       m_niceness                  ;
-	char       m_boolFlag                  ;
 	int32_t       m_titleMaxLen               ;
 	int32_t       m_summaryMaxLen             ;
 	int32_t       m_summaryMaxNumCharsPerLine ;

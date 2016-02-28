@@ -5465,19 +5465,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_NOAPI;
 	m++;
 
-	m->m_title = "boolean status";
-	m->m_desc  = "Can be 0 or 1 or 2. 0 means the query is NOT boolean, "
-		"1 means the query is boolean and 2 means to auto-detect.";
-	m->m_def   = "2";
-	m->m_off   = (char *)&si.m_boolFlag - y;
-	m->m_type  = TYPE_LONG;
-	m->m_cgi   = "bq";
-	m->m_smin  = 0;
-	m->m_smax  = 2;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
 	m->m_title = "meta tags to display";
 	m->m_desc  = "A space-separated string of <b>meta tag names</b>. "
 		"Do not forget to url-encode the spaces to +'s or %%20's. "
