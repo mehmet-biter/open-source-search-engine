@@ -630,7 +630,6 @@ public:
 
 	void set20 ( Msg20Request *req ) ;
 	class Msg20Reply *getMsg20Reply ( ) ;
-	class MatchOffsets *getMatchOffsets () ;
 	Query *getQuery() ;
 	Matches *getMatches () ;
 	char *getDescriptionBuf ( char *displayMetas , int32_t *dlen ) ;
@@ -956,7 +955,6 @@ public:
 	bool m_isPageParserValid;
 	bool m_imageUrlValid;
 	bool m_imageUrl2Valid;
-	bool m_matchOffsetsValid;
 	bool m_queryValid;
 	bool m_matchesValid;
 	bool m_dbufValid;
@@ -1188,7 +1186,6 @@ public:
 	char *m_imageUrl2;
 	SafeBuf m_imageUrlBuf;
 	SafeBuf m_imageUrlBuf2;
-	MatchOffsets m_matchOffsets;
 	Query m_query;
 	Matches m_matches;
 	// meta description buf

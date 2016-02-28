@@ -1026,9 +1026,6 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		if ( m_si->m_displayOutlinks )
 			req.m_getOutlinks     = true;
 
-		if (m_si->m_queryMatchOffsets)
-			req.m_getMatches = true;
-
 		// it copies this using a serialize() function
 		if ( ! m->getSummary ( &req ) ) continue;
 

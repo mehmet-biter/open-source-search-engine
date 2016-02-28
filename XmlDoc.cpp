@@ -19471,16 +19471,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// breathe
 	QUICKPOLL ( m_niceness );
 
-	if ( m_req->m_getMatches && ! reply->ptr_mbuf ) {
-		MatchOffsets *mo = getMatchOffsets();
-		if ( ! mo || mo == (MatchOffsets *)-1) return (Msg20Reply *)mo;
-		reply-> ptr_mbuf = (char *)mo->m_matchOffsets;
-		reply->size_mbuf = mo->m_numMatches*4;
-	}
-
-	// breathe
-	QUICKPOLL ( m_niceness );
-
 	// get site
 	reply->ptr_site  = ptr_site;
 	reply->size_site = size_site;
@@ -19991,23 +19981,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	return reply;
 }
 
-
-MatchOffsets *XmlDoc::getMatchOffsets () {
-	// return it if it is set
-	if ( m_matchOffsetsValid ) return &m_matchOffsets;
-
-	// need a buncha crap
-	Words *ww = getWords();
-	if ( ! ww || ww == (Words *)-1 ) return (MatchOffsets *)ww;
-	Xml *xml = getXml();
-	if ( ! xml || xml == (Xml *)-1 ) return (MatchOffsets *)xml;
-	Matches *mm = getMatches();
-	if ( ! mm || mm == (Matches *)-1 ) return (MatchOffsets *)mm;
-
-	m_matchOffsets.set ( xml , ww , mm , true ); // getMatches=true
-	m_matchOffsetsValid = true;
-	return &m_matchOffsets;
-}
 
 Query *XmlDoc::getQuery() {
 	if ( m_queryValid ) return &m_query;

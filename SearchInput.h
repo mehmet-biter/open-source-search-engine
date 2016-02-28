@@ -202,7 +202,6 @@ public:
 	char   m_doQueryHighlighting;         // msg40
 	char  *m_highlightQuery;
 	Query  m_hqq;
-	int32_t   m_queryMatchOffsets;
 	int32_t   m_summaryMode;
 
 	// are we doing a QA query for quality assurance consistency

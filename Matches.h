@@ -178,30 +178,4 @@ class Matches {
 #define OFFSET_BYTES 1
 #define OFFSET_WORDS 2
 
-// smaller class for attaching to Msg20
-class MatchOffsets {
-public:
-	MatchOffsets();
-	~MatchOffsets();
-	void reset();
-	bool set( Xml *xml, Words *words, Matches *matches, unsigned char offsetType );
-
-	int32_t getStoredSize();
-	int32_t serialize( char *buf, int32_t buflen );
-	int32_t deserialize( char *buf, int32_t buflen );
-
-	int32_t m_numMatches;
-	int32_t m_matchOffsets[MAX_MATCHES];
-
-private:
-	unsigned char m_queryWords[MAX_MATCHES];
-
-	// keep track of breaks between matches
-	int32_t m_numBreaks;
-	int32_t m_breakOffsets[MAX_MATCHES];
-
-	// and total number of alnums in the document
-	int32_t m_numAlnums;
-};
-
 #endif

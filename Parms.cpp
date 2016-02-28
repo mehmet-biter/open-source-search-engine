@@ -5450,21 +5450,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_SI;
 	m++;
 
-	m->m_title = "Query match offsets";
-	m->m_desc  = "Return a list of the offsets of each query word "
-		"actually matched in the document.  1 means byte offset, "
-		"and 2 means word offset.";
-	m->m_def   = "0";
-	m->m_off   = (char *)&si.m_queryMatchOffsets - y;
-	m->m_type  = TYPE_LONG;
-	m->m_cgi   = "qmo";
-	m->m_smin  = 0;
-	m->m_smax  = 2;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m->m_flags = PF_NOAPI;
-	m++;
-
 	m->m_title = "meta tags to display";
 	m->m_desc  = "A space-separated string of <b>meta tag names</b>. "
 		"Do not forget to url-encode the spaces to +'s or %%20's. "

@@ -75,7 +75,6 @@ class Msg20Request {
 	unsigned char       m_getSummaryVector          :1;
 	unsigned char       m_showBanned                :1;
 	unsigned char       m_includeCachedCopy         :1;
-	unsigned char       m_getMatches                :1;
 	unsigned char       m_getOutlinks               :1;
 	unsigned char       m_getTitleRec               :1; // sets ptr_tr in reply
 	unsigned char       m_doLinkSpamCheck           :1;
@@ -226,7 +225,6 @@ public:
 	char       *ptr_rubuf                ; // redirect url buffer
 	char       *ptr_displaySum           ; // summary for displaying
 	char       *ptr_dbuf                 ; // display metas \0 separated
-	char       *ptr_mbuf                 ; // match offsets
 	char       *ptr_vbuf                 ; // summary vector
 	char       *ptr_imgData              ; // for encoded images
 	char       *ptr_site                 ;
@@ -270,7 +268,6 @@ public:
 	int32_t       size_rubuf                ;
 	int32_t       size_displaySum           ;
 	int32_t       size_dbuf                 ;
-	int32_t       size_mbuf                 ;
 	int32_t       size_vbuf                 ;
 	int32_t       size_imgData              ;
 
