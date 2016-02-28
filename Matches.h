@@ -109,7 +109,6 @@ class Matches {
 	void reset ( ) ;
 	void reset2 ( ) ;
 
-	uint32_t getTermsFound2(bool *hadPhrases, bool *hadWords);
 	bool docHasQueryTerms(int32_t totalInlinks);
 
 	// used internally and by PageGet.cpp
