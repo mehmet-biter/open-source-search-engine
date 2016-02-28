@@ -18,9 +18,6 @@
 //       as well as the summary generator, Summary.cpp. right now prox algo
 //       was setting all those different classes itself.
 
-// TODO: toss m_tscores. make Summary::getBestWindow() just use its the
-//       scores array itself. just access it with Match::m_queryWordNum.
-
 Matches::Matches ( ) {
 	m_numMatchGroups = 0;
 	m_qwordFlags = NULL;
@@ -87,17 +84,9 @@ bool Matches::isMatchableTerm ( QueryTerm *qt ) { // , int32_t i ) {
 }
 
 void Matches::setQuery ( Query *q ) { 
-	//int32_t    qtableScores   [ MAX_QUERY_TERMS * 2 ];
 	reset();
 	// save it
 	m_q       = q;
-	//m_tscores = tscores; // scores, 1-1 with query terms
-	//m_numNegTerms = 0; 
-	//m_explicitsMatched = 0;
-	// clear this vector
-	//memset ( m_foundTermVector , 0 , m_q->getNumTerms() );
-
-	//memset ( m_foundNegTermVector, 0, m_q->getNumTerms() );
 
 	if ( m_qwordFlags ) { char *xx=NULL;*xx=0; }
 
@@ -825,8 +814,6 @@ int32_t Matches::getNumWordsInMatch( Words *words, int32_t wn, int32_t n, int32_
 	// query word and doc word simultaneously and make sure they
 	// match as we advance. 
 	int32_t nqw = m_q->m_numWords;
-	// do not look through more words than were hashed, wastes time
-	//if ( nqw >= m_maxNQW && m_maxNQW > 0 ) nqw = m_maxNQW;
 	int32_t j;
 	for ( j = 0 ; j < nqw ; j++ ) {
 		// get ith query word

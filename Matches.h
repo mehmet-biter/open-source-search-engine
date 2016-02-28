@@ -129,8 +129,6 @@ class Matches {
 	char      m_qtableFlags    [ MAX_QUERY_WORDS_TO_MATCH * 3 ];
 	int32_t      m_numSlots;
 	Query    *m_q;
-	int32_t      m_maxNQW;
-	int32_t     *m_tscores;
 	int32_t      m_numAlnums;
 
 	// . 1-1 with Query::m_qwords[] array of QWords
@@ -141,11 +139,6 @@ class Matches {
 
 	int32_t m_leftDiversity;
 	int32_t m_rightDiversity;
-
-	static const int32_t m_htSize = 128 * (sizeof(int64_t) + sizeof(int32_t));
-	char m_subPhraseBuf[2 * m_htSize];
-	HashTableT<int64_t, int32_t> m_pre;
-	HashTableT<int64_t, int32_t> m_post;
 
 	// . one words/scores/bits/pos/flags class per "match group"
 	// . match groups examples = body, a single link text, a meta tag, etc.
@@ -171,8 +164,5 @@ class Matches {
 
 	bool getMatchGroup( mf_t matchFlag, Words **wp, Pos **pp, Sections **sp );
 };
-
-#define OFFSET_BYTES 1
-#define OFFSET_WORDS 2
 
 #endif
