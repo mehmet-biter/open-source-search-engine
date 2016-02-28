@@ -267,7 +267,6 @@ class SearchInput {
 	int32_t   m_maxQueryTerms;
 
 	// for the news collection really
-	int32_t   m_maxClusterByTopicResults;
 	int32_t   m_numExtraClusterByTopicResults;
 
 	// we do not do summary deduping, and other filtering with docids

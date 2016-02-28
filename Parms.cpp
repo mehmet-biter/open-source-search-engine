@@ -5524,18 +5524,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "max similar results for cluster by topic";
-	m->m_desc  = "Max similar results to show when clustering by topic.";
-	m->m_cgi   = "ncbt";
-	m->m_off   = (char *)&cr.m_maxClusterByTopicResults - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "10";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "number of extra results to get for cluster by topic";
 	m->m_desc  = "number of extra results to get for cluster by topic";
 	m->m_cgi   = "ntwo";

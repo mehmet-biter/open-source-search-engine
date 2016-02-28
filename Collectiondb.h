@@ -833,7 +833,6 @@ class CollectionRec {
         int32_t m_dfAcctPort;
 
 	// number of similar results for cluster by topic
-	int32_t m_maxClusterByTopicResults;
 	int32_t m_numExtraClusterByTopicResults;
 
 	// enable click 'n' scroll
