@@ -291,36 +291,6 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 
 	g_conf.m_forceIt = false;
 
-	// always turn on threads if live
-	//if ( g_conf.m_isLive ) g_conf.m_useThreads = true;
-	// disable this at startup always... no since might have crashed
-	// in the middle of a test. and we just turn on spiders again when
-	// already in test mode otherwise hostid #0 will erase all the files.
-	//g_conf.m_testParserEnabled = false;
-	//g_conf.m_testSpiderEnabled = false;
-	//g_conf.m_testSearchEnabled = false;
-
-
-	g_conf.m_isMattWells = false;
-
-#ifdef MATTWELLS
-	g_conf.m_isMattWells = true;
-#endif
-
-	// this is not possible
-	/*
-	if ( g_hostdb.getNumGroups() != g_hostdb.m_indexSplits ) {
-		log("db: Cannot do full split where indexdb split "
-		    "is not %"INT32".",(int32_t)g_hostdb.getNumGroups());
-		g_conf.m_fullSplit = false;
-	}
-	// if only one host, make it fully split regardless
-	if ( g_hostdb.getNumGroups() == 1 )
-		g_conf.m_fullSplit    = true;
-	// note it in the log
-	if ( g_conf.m_fullSplit )
-		log(LOG_INFO,"db: Split is FULL");
-	*/
 	// sanity check
 	if ( g_hostdb.m_indexSplits > MAX_SHARDS ) {
 		log("db: Increase MAX_SHARDS");
@@ -330,13 +300,6 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 	if ( g_conf.m_siteQualityMaxCacheMem < 3000000 )
 		g_conf.m_siteQualityMaxCacheMem = 3000000;
 
-
-	//m_useDiffbot = false;
-
-	//#ifdef DIFFBOT	
-	// make sure all collections index into a single unified collection
-	//m_useDiffbot = true;
-	//#endif
 
 	// HACK: set this now
 	setRootIps();

@@ -241,160 +241,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	// what format should search results be in? default is html
 	char format = hr->getReplyFormat();
 
-	//
-	// . send back page frame with the ajax call to get the real
-	//   search results. do not do this if a "&dir=" (dmoz category)
-	//   is given.
-	// . if not matt wells we do not do ajax
-	// . the ajax is just there to prevent bots from slamming me 
-	//   with queries.
-	//
-	if ( hr->getLong("id",0) == 0 && 
-	     format == FORMAT_HTML &&
-	     g_conf.m_isMattWells ) {
-
-		SafeBuf sb;
-		printCSSHead ( &sb ,format );
-		sb.safePrintf(
-			      "<body "
-			      "onLoad=\""
-			      "var client = new XMLHttpRequest();\n"
-			      "client.onreadystatechange = handler;\n"
-			      "var url='/search?q="
-			      );
-
-		int32_t  qlen;
-		const char *qstr = hr->getString("q",&qlen,"",NULL);
-		// . crap! also gotta encode apostrophe since "var url='..."
-		// . true = encodeApostrophes?
-		sb.urlEncode2 ( (char*)qstr , true );
-
-		// progate query language
-		const char *qlang = hr->getString("qlang",NULL,NULL);
-		if ( qlang ) sb.safePrintf("&qlang=%s",qlang);
-
-		// propagate "admin" if set
-		int32_t admin = hr->getLong("admin",-1);
-		if ( admin != -1 ) sb.safePrintf("&admin=%"INT32"",admin);
-
-		// propagate showing of banned results
-		if ( hr->getLong("sb",0) ) sb.safePrintf("&sb=1");
-
-		// propagate list of sites to restrict query to
-		int32_t sitesLen;
-		const char *sites = hr->getString("sites",&sitesLen,NULL);
-		if ( sites ) {
-			sb.safePrintf("&sites=");
-			sb.urlEncode2 ( (char*)sites,true);
-		}
-		// propagate "prepend"
-		const char *prepend = hr->getString("prepend",NULL);
-		if ( prepend ) {
-			sb.safePrintf("&prepend=");
-			sb.urlEncode((char*)prepend);
-		}
-		// propagate "debug" if set
-		int32_t debug = hr->getLong("debug",0);
-		if ( debug ) sb.safePrintf("&debug=%"INT32"",debug);
-		// propagate "s"
-		int32_t ss = hr->getLong("s",-1);
-		if ( ss > 0 ) sb.safePrintf("&s=%"INT32"",ss);
-		// propagate "n"
-		int32_t n = hr->getLong("n",-1);
-		if ( n >= 0 ) sb.safePrintf("&n=%"INT32"",n);
-		// show banned results?
-		int32_t showBanned = hr->getLong("sb",0);
-		if ( showBanned ) sb.safePrintf("&sb=1");
-		// propagate collection
-		int32_t clen;
-		const char *coll = hr->getString("c",&clen,"",NULL);
-		if ( coll ) sb.safePrintf("&c=%s",coll);
-		// forward the "ff" family filter as well
-		int32_t ff = hr->getLong("ff",0);
-		if ( ff ) sb.safePrintf("&ff=%"INT32"",ff);
-		// provide hash of the query so clients can't just pass in
-		// a bogus id to get search results from us
-		uint32_t h32 = hash32n(qstr);
-		if ( h32 == 0 ) h32 = 1;
-		// add this timestamp so when we hit back button this
-		// parent page will be cached and so will this ajax url.
-		// but if they hit reload the parent page reloads with a
-		// different ajax url because "rand" is different
-		uint64_t rand64 = gettimeofdayInMillisecondsLocal();
-		sb.safePrintf("&id=%"UINT32"&rand=%"UINT64"';\n"
-			      "client.open('GET', url );\n"
-			      "client.send();\n"
-			      "\">"
-			      , h32
-			      , rand64
-			      );
-
-		// 
-		// logo header
-		//
-		printLogoAndSearchBox ( &sb , hr , NULL );
-
-		//
-		// script to populate search results
-		//
-		sb.safePrintf("<script type=\"text/javascript\">\n"
-			      "function handler() {\n" 
-			      "if(this.readyState == 4 ) {\n"
-			      "document.getElementById('results').innerHTML="
-			      "this.responseText;\n"
-			      //"alert(this.status+this.statusText+"
-			      //"this.responseXML+this.responseText);\n"
-			      "}}\n"
-
-
-			      // put search results into this div
-			      "<div id=results>"
-			      "<img height=50 width=50 "
-			      "src=http://www.gigablast.com/gears.gif>"
-			      "<br/>"
-			      "<br/>"
-			      "<b>"
-			      "Waiting for results... "
-			      "</b>"
-			      "<br/>"
-			      "<br/>"
-			      "Please be a little "
-			      "patient I am trying to get more servers."
-			      "</div>\n"
-
-
-			      "<br/>"
-			      "<center>"
-			      "<font color=gray>"
-			      "Copyright &copy; 2014. "
-			      "All Rights Reserved.<br/>"
-			      "Powered by the "
-			      "<a href=\"http://www.gigablast.com/\">"
-			      "GigaBlast</a> open source search engine."
-			      "</font>"
-			      "</center>\n"
-
-			      "</body>\n"
-			      "</html>\n"
-			      );
-		// one hour cache time... no 1000 hours, basically infinite
-		int32_t cacheTime = 3600; // *1000;
-		//if ( hr->getLong("usecache",-1) == 0 ) cacheTime = 0;
-		//
-		// send back the parent stub containing the ajax
-		//
-		return g_httpServer.sendDynamicPage(s,
-						    sb.getBufStart(),
-						    sb.length(),
-						    cacheTime,//0,
-						    false, // POST?
-						    "text/html", 
-						    200,  // httpstatus
-						    NULL, // cookie
-						    "UTF-8"); // charset
-	}
-
-
 	// make a new state
 	State0 *st;
 	try {
@@ -908,15 +754,12 @@ bool printSearchResultsHeader ( State0 *st ) {
 	}
 				 
 
-	// . if not matt wells we do not do ajax
-	// . the ajax is just there to prevent bots from slamming me 
-	//   with queries.
-	if ( ! g_conf.m_isMattWells && si->m_format == FORMAT_HTML ) {
+	if ( si->m_format == FORMAT_HTML ) {
 		printCSSHead ( sb ,si->m_format );
 		sb->safePrintf("<body>");
 	}
 
-	if ( ! g_conf.m_isMattWells && si->m_format==FORMAT_WIDGET_IFRAME ) {
+	if ( si->m_format==FORMAT_WIDGET_IFRAME ) {
 		printCSSHead ( sb ,si->m_format );
 		sb->safePrintf("<body style=padding:0px;margin:0px;>");
 	}
@@ -937,11 +780,11 @@ bool printSearchResultsHeader ( State0 *st ) {
 
 	// if we are xml/json we call this below otherwise we lose
 	// the header of <?xml...> or whatever
-	if ( ! g_conf.m_isMattWells && si->m_format == FORMAT_HTML ) {
+	if ( si->m_format == FORMAT_HTML ) {
 		printLeftNavColumn ( *sb,st );
 	}
 
-	if ( ! g_conf.m_isMattWells && si->m_format == FORMAT_HTML ) {
+	if ( si->m_format == FORMAT_HTML ) {
 		printLogoAndSearchBox ( sb, &st->m_hr, si );
 	}
 
@@ -1857,7 +1700,6 @@ bool printSearchResultsTail ( State0 *st ) {
 	}
 
 	if ( si->m_format == FORMAT_HTML && 
-	     ! g_conf.m_isMattWells &&
 	     cr->m_htmlTail.length() == 0 ) {
 		sb->safePrintf ( "<br>"
 				 "<center>"
@@ -1875,7 +1717,7 @@ bool printSearchResultsTail ( State0 *st ) {
 
 
 	// if we did not use ajax, print this tail here now
-	if ( si->m_format == FORMAT_HTML && ! g_conf.m_isMattWells ) {
+	if ( si->m_format == FORMAT_HTML ) {
 		sb->safePrintf( "</body>\n"
 				"</html>\n"
 				);
@@ -4237,10 +4079,7 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg20Reply
 	// the word position
 	sb->safePrintf("<td>");
 
-	if ( g_conf.m_isMattWells )
-		sb->safePrintf("<a href=\"/seo?d=");
-	else
-		sb->safePrintf("<a href=\"/get?d=");
+	sb->safePrintf("<a href=\"/get?d=");
 
 	sb->safePrintf("<a href=\"/get?d=");
 
@@ -4304,10 +4143,7 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg20Reply
 	// the word position
 	sb->safePrintf("<td>");
 
-	if ( g_conf.m_isMattWells )
-		sb->safePrintf("<a href=\"/seo?d=");
-	else
-		sb->safePrintf("<a href=\"/get?d=");
+	sb->safePrintf("<a href=\"/get?d=");
 
 	sb->safePrintf("%"INT64""
 		      "&page=4&"

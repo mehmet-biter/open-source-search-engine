@@ -382,10 +382,6 @@ class Conf {
 	// . if false we will not keep spelling information in memory
 	bool   m_doSpellChecking;
 
-	// are we running in Matt Wells's private data center? if so we
-	// use seo tools and control datacenter fans, etc.
-	bool   m_isMattWells;
-
 	bool   m_forceIt;
 
 	// new syncing information

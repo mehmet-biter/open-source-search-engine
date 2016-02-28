@@ -891,21 +891,7 @@ static bool printAddUrlHomePage ( SafeBuf &sb , const char *url , HttpRequest *r
 
 	sb.safePrintf("<br><br>\n");
 	sb.safePrintf("<br><br><br>\n");
-	/*
-	sb.safePrintf("<b>web</b> &nbsp;&nbsp;&nbsp;&nbsp; ");
-	if ( g_conf.m_isMattWells )
-		sb.safePrintf("<a href=http://www.gigablast.com/seo>seo</a> "
-			      "&nbsp;&nbsp;&nbsp;&nbsp; "
-			      );
-	sb.safePrintf( "<a href=\"/Top\">directory</a> "
-		      "&nbsp;&nbsp;&nbsp;&nbsp; \n");
-	sb.safePrintf("<a href=/adv.html>advanced search</a>");
-	sb.safePrintf(" &nbsp;&nbsp;&nbsp;&nbsp; ");
-	sb.safePrintf("<a href=/addurl title=\"Instantly add your url to "
-		      "Gigablast's index\">add url</a>");
-	sb.safePrintf("\n");
-	sb.safePrintf("<br><br>\n");
-	*/
+
 	// submit to https now
 	sb.safePrintf("<form method=GET "
 		      "action=/addurl name=f>\n" );
@@ -1021,8 +1007,6 @@ static bool printAddUrlHomePage ( SafeBuf &sb , const char *url , HttpRequest *r
 	//   immediately replace its content...
 	if ( url ) {
 		char *root = "";
-		if ( g_conf.m_isMattWells )
-			root = "http://www.gigablast.com";
 
 		sb.safePrintf("<br>"
 			      "<br>"

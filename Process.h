@@ -86,17 +86,12 @@ class Process {
 
 	bool m_suspendAutoSave;
 
-	bool gotPower ( TcpSocket *s );
-	bool        m_powerReqOut;
 	bool        m_powerIsOn;
 	int64_t   m_powerOffTime;
 	HttpRequest m_r;
 	bool        m_exiting;
 	bool        m_calledSave;
 
-	bool gotFanReply ( TcpSocket *s );
-	void checkFanSwitch ( ) ;
-	bool m_fanReqOut;
 	float m_dataCtrTemp;
 	float m_roofTemp;
 	int32_t  m_currentFanState;
