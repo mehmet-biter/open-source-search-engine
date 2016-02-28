@@ -824,28 +824,8 @@ public:
 	char     m_fragBufValid;
 	char     m_wordSpamBufValid;
 	char     m_finalSummaryBufValid;
-	char     m_matchingQueryBufValid;
-	char     m_matchesCrawlPatternValid;
-	char     m_relatedQueryBufValid;
-	char     m_queryLinkBufValid;
 	char     m_redirSpiderRequestValid;
-	char     m_queryOffsetsValid;
-	char     m_queryPtrsWholeValid;
-	char     m_relatedDocIdBufValid;
-	char     m_topMatchingQueryBufValid;
-	char     m_relatedDocIdsScoredBufValid;
-	char     m_relatedDocIdsWithTitlesValid;
-	char     m_relatedTitleBufValid;
-	char     m_missingTermBufValid;
-	char     m_matchingTermBufValid;
-	char     m_sortedPosdbListBufValid;
-	char     m_wpSortedPosdbListBufValid;
-	char     m_insertableTermsBufValid;
-	char     m_scoredInsertableTermsBufValid;
-	char     m_wordPosInfoBufValid;
-	char     m_recommendedLinksBufValid;
 
-	char     m_queryOffsetTableValid;
 	char     m_hopCountValid;
 	char     m_isInjectingValid;
 	char     m_isImportingValid;
@@ -1174,8 +1154,6 @@ public:
 
 	// related query algo stuff
 	int64_t m_tlbufTimer;
-
-	SafeBuf m_sortedPosdbListBuf;
 
 	// flow flags
 

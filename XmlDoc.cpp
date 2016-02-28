@@ -168,8 +168,6 @@ void XmlDoc::reset ( ) {
 	m_doledbKey.n0 = 0LL;
 	m_doledbKey.n1 = 0;
 
-	m_sortedPosdbListBuf.purge();
-
 	m_wordSpamBuf.purge();
 	m_fragBuf.purge();
 
@@ -15872,20 +15870,8 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// the new tags for tagdb
 	int32_t needTagdb = 0;
 	if ( ntb ) needTagdb = ntb->length() ;
-	// add 1 byte for up to 128 rdbids
-	//needTagdb += needTagdb/sizeof(Tag) + 1;
 	// add that in
 	need += needTagdb;
-
-	// . add in title rec size
-	// . should be valid because we called getTitleRecBuf() above
-	// . this should include the key
-	// . add in possible negative key for deleting old title rec
-	//int32_t needTitledb = sizeof(key96_t);
-	// +1 for rdbId
-	//if ( nd && m_useTitledb ) needTitledb = m_titleRecSize + 1;
-	//need += needTitledb;
-
 
 	//
 	// . CHECKSUM PARSING CONSISTENCY TEST
@@ -15901,17 +15887,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		int32_t ck32 = 0;
 		ck32 ^= tt1.getKeyChecksum32();
 
-		// show tt1
-		//
-		// UNCOMMENT this to debug parsing inconsistencies!!!
-		//
-		// SafeBuf sb;
-		// tt1.print(&sb);
-		// if(sb.getBufStart()) fprintf(stderr,"%s", sb.getBufStart());
-
-		//ck32 ^= ns1.getKeyChecksum32();
-		//ck32 ^= kt1.getKeyChecksum32();
-		//ck32 ^= pt1.getKeyChecksum32();
 		// set this before calling getTitleRecBuf() below
 		uint8_t currentMetaListCheckSum8 = (uint8_t)ck32;
 		// see if matches what was in old titlerec
