@@ -125,14 +125,11 @@ class SearchInput {
 
 
 	// do not include these in makeKey()
-	int32_t   m_refs_numToDisplay;
 
 	char  *m_queryCharset;
 
 	char  *m_gbcountry;
 	uint8_t m_country;
-
-	//char  *m_query2;                      
 
 	// advanced query parms
 	char  *m_url; // for url: search
@@ -190,19 +187,6 @@ class SearchInput {
 	char   m_sortBy;
 
 	char *m_filetype;
-
-	// . reference page parameters
-	// . copied from CollectionRec.h
-	int32_t   m_refs_numToGenerate;          // msg40
-	int32_t   m_refs_docsToScan;             // msg40
-	int32_t   m_refs_minQuality;             // msg40
-	int32_t   m_refs_minLinksPerReference;   // msg40
-	int32_t   m_refs_maxLinkers;             // msg40
-	float  m_refs_additionalTRFetch;      // msg40
-	int32_t   m_refs_numLinksCoefficient;    // msg40
-	int32_t   m_refs_qualityCoefficient;     // msg40
-	int32_t   m_refs_linkDensityCoefficient; // msg40
-	char   m_refs_multiplyRefScore;       // msg40
 
 	// unused pqr stuff
 	int8_t			m_langHint;

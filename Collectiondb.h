@@ -700,25 +700,6 @@ class CollectionRec {
 
 	char m_sendingAlertInProgress;
 
-	// . reference pages parameters
-	// . copied from Parms.cpp
-	int32_t  m_refs_numToGenerate;         // total # wanted by default.
-	int32_t  m_refs_numToDisplay;          // how many will be displayed?
-	int32_t  m_refs_docsToScan;            // how many to scan by default?
-	int32_t  m_refs_minQuality;            // min qual(b4 # links factored in)
-	int32_t  m_refs_minLinksPerReference;  // links required to be a reference
-	int32_t  m_refs_maxLinkers;            // max number of linkers to process
-        float m_refs_additionalTRFetch;
-        int32_t  m_refs_numLinksCoefficient;
-        int32_t  m_refs_qualityCoefficient;
-        int32_t  m_refs_linkDensityCoefficient;
-        char  m_refs_multiplyRefScore;
-	// reference ceilings parameters
-	int32_t  m_refs_numToGenerateCeiling;   
-	int32_t  m_refs_docsToScanCeiling;
-	int32_t  m_refs_maxLinkersCeiling;
-	float m_refs_additionalTRFetchCeiling;
-
 	class SpiderColl *m_spiderColl;
 
 	int32_t m_overflow;
