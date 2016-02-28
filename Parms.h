@@ -104,9 +104,6 @@ class GigablastRequest {
 	// TYPE_CHARPTR
 	char *m_coll;
 
-	// pretty universal char ptr
-	char *m_formatStr;
-
 	////////////
 	//
 	// /admin/inject parms

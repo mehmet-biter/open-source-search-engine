@@ -265,9 +265,6 @@ class SearchInput {
 	int32_t   m_displayOutlinks;
 	char   m_justMarkClusterLevels;
 
-	// new sort/constrain by date stuff
-	char   m_useDateLists;
-
 	int32_t   m_maxQueryTerms;
 
 	// for the news collection really
