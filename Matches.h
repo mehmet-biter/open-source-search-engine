@@ -109,8 +109,6 @@ class Matches {
 	void reset ( ) ;
 	void reset2 ( ) ;
 
-	bool docHasQueryTerms(int32_t totalInlinks);
-
 	// used internally and by PageGet.cpp
 	bool isMatchableTerm ( class QueryTerm *qt );
 
