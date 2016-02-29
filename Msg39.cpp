@@ -291,7 +291,7 @@ bool Msg39::controlLoop ( ) {
 			//estimated completion time crosses the deadline.
 			log(LOG_INFO,"Msg39::controlLoop(): range %d/%d would cross deadline. Skipping", m_docIdSplitNumber, m_r->m_numDocIdSplits);
 			m_ddd = m_dddEnd;
-			m_phase = 4;
+			m_phase = 3;
 		}
 	}
 
