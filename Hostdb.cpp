@@ -2146,7 +2146,6 @@ bool Hostdb::syncHost ( int32_t syncHostId, bool useSecondaryIps ) {
 		     "host. Aborting." );
 }
 
-int startUp ( void *cmd );
 
 void Hostdb::syncStart_r ( bool amThread ) {
 	// get the twin we'll copy from
