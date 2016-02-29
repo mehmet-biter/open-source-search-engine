@@ -1807,7 +1807,6 @@ char *serializeMsg2 ( void *thisPtr ,
 		      int32_t *retSize ) {
 
 	// make a buffer to serialize into
-	char *buf  = NULL;
 	int32_t baseSize = (char *)firstStrPtr - (char *)thisPtr;
 	int nptrs=((char *)firstSizeParm-(char *)firstStrPtr)/sizeof(char *);
 	int32_t need = baseSize;
@@ -1824,8 +1823,8 @@ char *serializeMsg2 ( void *thisPtr ,
 	}
 	int32_t stringBufferOffset = need;
 	need += totalStringSizes;
-	// alloc if we should
-	if ( ! buf ) buf = (char *)mmalloc ( need , "sm2" );
+	// alloc serialization buffer
+	char *buf = (char *)mmalloc ( need , "sm2" );
 	// bail on error, g_errno should be set
 	if ( ! buf ) return NULL;
 	// set how many bytes we will serialize into
