@@ -57,8 +57,8 @@ bool Words::set( char *s, int32_t slen, bool computeWordIds, int32_t niceness ) 
 // a quickie
 // this url gives a m_preCount that is too low. why?
 // http://go.tfol.com/163/speed.asp
-int32_t countWords ( char *p , int32_t plen ) {
-	char *pend  = p + plen;
+static int32_t countWords ( const char *p , int32_t plen ) {
+	const char *pend  = p + plen;
 	int32_t  count = 1;
 
 	while ( p < pend ) {
@@ -83,7 +83,7 @@ int32_t countWords ( char *p , int32_t plen ) {
 	return count+10;
 }
 
-int32_t countWords ( char *p ) {
+static int32_t countWords ( const char *p ) {
 	int32_t  count = 1;
 
 	while ( *p ) {
