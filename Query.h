@@ -110,7 +110,7 @@ typedef uint64_t qvec_t;
 #define FIELD_GBOTHER 92
 
 // returns a FIELD_* code above, or FIELD_GENERIC if not in the list
-char getFieldCode  ( char *s , int32_t len , bool *hasColon = NULL ) ;
+char getFieldCode  ( const char *s , int32_t len , bool *hasColon = NULL ) ;
 
 int32_t getNumFieldCodes ( );
 
@@ -561,7 +561,7 @@ class Query {
 	bool setBooleanOperands ( );
 
 	// helper funcs for parsing query into m_qwords[]
-	bool        isConnection ( char *s , int32_t len ) ;
+	bool        isConnection ( const char *s , int32_t len ) ;
 
 	// . used by IndexTable.cpp to make a ptr map of the query terms
 	//   to make intersecting the termlists one at a time efficient

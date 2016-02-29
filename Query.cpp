@@ -3237,7 +3237,7 @@ static bool initFieldTable(){
 }
 
 
-char getFieldCode ( char *s , int32_t len , bool *hasColon ) {
+char getFieldCode ( const char *s , int32_t len , bool *hasColon ) {
 	// default
 	if ( hasColon ) {
 		*hasColon = false;
@@ -3258,7 +3258,7 @@ char getFieldCode ( char *s , int32_t len , bool *hasColon ) {
 }
 
 // guaranteed to be punctuation
-bool Query::isConnection ( char *s , int32_t len ) {
+bool Query::isConnection ( const char *s , int32_t len ) {
 	if ( len == 1 ) {
 		switch (*s) {
 			// . only allow apostrophe if it's NOT a 's
