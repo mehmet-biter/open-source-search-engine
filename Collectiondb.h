@@ -550,7 +550,7 @@ class CollectionRec {
 	char  m_useCanonicalRedirects   ;
 
 	int32_t  m_maxNumSpiders             ; // per local spider host
-	float m_spiderNewPct;             ; // appx. percentage new documents
+	float m_spiderNewPct            ; // appx. percentage new documents
 
 	int32_t m_lastResetCount;
 

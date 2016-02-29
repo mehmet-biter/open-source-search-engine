@@ -3102,7 +3102,7 @@ static char *s_ubuf5 =
 	"http://www.functionaltrainingpro.com/xmlrpc.php?rsd "
 	"http://mississippisociety.com/index.php/feed "
 	;
-				      ;
+
 
 bool qaxml ( ) {
 	//
