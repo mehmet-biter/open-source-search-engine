@@ -548,7 +548,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 
 
 	if ( (int32_t)m_numAllocated + 100 >= (int32_t)m_memtablesize ) { 
-		bool s_printed = false;
+		static bool s_printed = false;
 		if ( ! s_printed ) {
 			log("mem: using too many slots");
 			printMem();
