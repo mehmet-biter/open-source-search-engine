@@ -3582,9 +3582,55 @@ bool Query::isSplit() {
 }
 
 void QueryTerm::constructor ( ) {
+	m_qword = NULL;
+	m_isPhrase = false;
+	m_phrasePart = 0;
+	m_termId = 0;
+	m_rawTermId = 0;
+	m_rightRawWordId = 0;
+	m_leftRawWordId = 0;
+	m_termSign = 0;
+	m_explicitBit = 0;
+	m_matchesExplicitBits = 0;
+	m_hardCount = 0;
+	m_bitNum = 0;
+	m_term = NULL;
+	m_termLen = 0;
+	m_posdbListPtr = NULL;
 	m_langIdBits = 0;
 	m_langIdBitsValid = false;
+	m_parenList = NULL;
+	m_parenListLen = 0;
+	m_componentCode = 0;
+	m_termFreq = 0;
+	m_termFreqWeight = 0.0;
+	m_implicitBits = 0;
+	m_isQueryStopWord = false;
+	m_inQuotes = false;
+	m_underNOT = false;
+	m_repeat = false;
+	m_userWeight = 0;
+	m_userType = 0; //?
+	m_piped = false;
+	m_ignored = false;
+	m_isUORed = false;
+	m_UORedTerm = NULL;
+	m_synonymOf = NULL;
+	m_synWids0 = 0;
+	m_synWids1 = 0;
 	m_numAlnumWordsInSynonym = 1;
+	m_fieldCode = 0;
+	m_isRequired = false;
+	m_inPhrase = 0; //should be bool
+	m_isWikiHalfStopBigram = 0;
+	m_leftPhraseTermNum = 0;
+	m_rightPhraseTermNum = 0;
+	m_leftPhraseTerm = NULL;
+	m_rightPhraseTerm = NULL;
+	m_score = 0.0;
+	memset(m_startKey,0,sizeof(m_startKey));
+	memset(m_endKey,0,sizeof(m_endKey));
+	m_ks = 0;
 }
 
 bool QueryTerm::isSplit() {
