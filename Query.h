@@ -415,7 +415,7 @@ class QueryTerm {
 	bool m_isRequired;
 	// . true if we are a word IN a phrase
 	// . used by IndexTable2's getWeightedScore()
-	char  m_inPhrase;
+	bool  m_inPhrase;
 	unsigned char  m_isWikiHalfStopBigram:1;
 	// if a single word term, what are the term #'s of the 2 phrases
 	// we can be in? uses -1 to indicate none.

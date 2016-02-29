@@ -3621,7 +3621,7 @@ void QueryTerm::constructor ( ) {
 	m_numAlnumWordsInSynonym = 1;
 	m_fieldCode = 0;
 	m_isRequired = false;
-	m_inPhrase = 0; //should be bool
+	m_inPhrase = false;
 	m_isWikiHalfStopBigram = 0;
 	m_leftPhraseTermNum = 0;
 	m_rightPhraseTermNum = 0;
