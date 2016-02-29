@@ -2201,7 +2201,6 @@ bool Dns::isInCache ( key_t key , int32_t *ip ) {
 	// . TODO: is it ok to leave the caller hanging??
 	// . the callback, gotIp(), can be NULL if we're just updating times
 	// . TODO: ensure list owns the data
-	RdbList list;
 	// if not found, return false;
 	char *rec;
 	int32_t  recSize;

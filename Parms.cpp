@@ -3169,7 +3169,6 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 	//char *pend = buf + MAX_CONF_SIZE;
 	int32_t  len ;
 	//int32_t  n   ;
-	File  ff  ;
 	int32_t  j   ;
 	int32_t  count;
 	char *s;

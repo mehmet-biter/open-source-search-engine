@@ -5073,7 +5073,6 @@ void dumpMissing ( char *coll ) {
 	// get a meg at a time
 	minRecSizes = 5*1024*1024;
 
-	Msg5 msg5b;
 	//uint32_t groupId = g_hostdb.m_groupId;
 	uint32_t shardNum = g_hostdb.getMyShardNum();
 	count = 0;
@@ -5242,7 +5241,6 @@ void dumpDups ( char *coll ) {
 	RdbList list;
 	Msg5 msg5;
 
-	Msg5 msg5b;
 	uint32_t count = 0;
 	uint32_t count2 = 0;
 	int64_t byteCount = 0;
@@ -5761,7 +5759,6 @@ void removeDocIds  ( char *coll , char *filename ) {
 	int32_t minRecSizes = 5*1024*1024;
 
 	Msg5 msg5;
-	Msg5 msg5b;
 	RdbList list;
 
 	//
@@ -8465,7 +8462,6 @@ void dumpIndexdb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 	}
 
 	Msg5 msg5;
-	Msg5 msg5b;
 	RdbList list;
 	CollectionRec *cr = g_collectiondb.getRec(coll);
 
@@ -8563,7 +8559,6 @@ void dumpPosdb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTre
 	lastKey.setMin();
 
 	Msg5 msg5;
-	Msg5 msg5b;
 	RdbList list;
 
 	// set this flag so Msg5.cpp if it does error correction does not
@@ -8793,7 +8788,6 @@ void dumpDatedb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTr
 	g_threads.disableThreads();
 
 	Msg5 msg5;
-	Msg5 msg5b;
 	IndexList list;
 	CollectionRec *cr = g_collectiondb.getRec(coll);
  loop:
@@ -8994,7 +8988,6 @@ void dumpClusterdb ( char *coll,
 	}
 
 	Msg5 msg5;
-	Msg5 msg5b;
 	RdbList list;
 	CollectionRec *cr = g_collectiondb.getRec(coll);
  loop:
@@ -9290,7 +9283,6 @@ void dumpLinkdb ( char *coll,
 	}
 
 	Msg5 msg5;
-	Msg5 msg5b;
 	RdbList list;
 	CollectionRec *cr = g_collectiondb.getRec(coll);
 
@@ -13354,7 +13346,6 @@ int copyFiles ( char *dstDir ) {
 
 void rmTest() {
 
-	File f;
 	// make five files
 	int32_t max = 100;
 

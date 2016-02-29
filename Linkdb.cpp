@@ -3021,8 +3021,6 @@ LinkInfo *makeLinkInfo ( char        *coll                    ,
 			 Msg25 *msg25 ,
 			 SafeBuf *linkInfoBuf ) {
 
-	// for parsing the link text
-	Words words;
 	// a table for counting words per link text
 	HashTableX tt;
 	// buf for tt

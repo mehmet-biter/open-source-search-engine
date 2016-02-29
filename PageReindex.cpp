@@ -89,8 +89,6 @@ bool sendPageReindex ( TcpSocket *s , HttpRequest *r ) {
 
 	collnum_t collnum = cr->m_collnum;
 
-	SafeBuf sb;
-
 	// if no query send back the page blanked out i guess
 	if ( ! gr->m_query || ! gr->m_query[0] ) {
 		doneReindexing ( st );
