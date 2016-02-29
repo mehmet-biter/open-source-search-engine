@@ -22,7 +22,7 @@ int32_t 	ucToAny(char *outbuf, int32_t outbuflen, char *charset_out,
 
 // table for decoding utf8...says how many bytes in the character
 // based on value of first byte.  0 is an illegal value
-static int bytes_in_utf8_code[] = {
+static const int bytes_in_utf8_code[] = {
 	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
