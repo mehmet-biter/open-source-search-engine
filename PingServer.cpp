@@ -1336,7 +1336,7 @@ void PingServer::setMinRepairMode ( Host *hhh ) {
 //
 
 // this wrapper is called once 100ms, or so...
-void sleepWrapper ( int fd , void *state ) {
+static void sleepWrapper ( int fd , void *state ) {
 	// . do not do anything if still doing initial pinging above
 	// . in fact, launch as many pings as we can right now
 	//if ( ! g_host0Replied ||
@@ -1604,7 +1604,7 @@ bool PingServer::sendEmail ( Host *h            ,
 	return status;
 }
 
-void emailSleepWrapper ( int fd, void *state ){
+static void emailSleepWrapper ( int fd, void *state ){
 	g_loop.unregisterSleepCallback( state, emailSleepWrapper );
 	//check if the host is still dead and if the last host to die is this
 	//host
