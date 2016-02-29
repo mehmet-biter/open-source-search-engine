@@ -74,7 +74,6 @@ class Datedb {
 
 	bool addColl ( char *coll, bool doVerify = true );
 
-	bool addIndexList ( class IndexList *list ) ;
 	// . make a 16-byte key from all these components
 	// . since it is 16 bytes, the big bit will be set
 	key128_t makeKey ( int64_t          termId   , 
