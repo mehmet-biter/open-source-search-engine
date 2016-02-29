@@ -251,7 +251,7 @@ bool Msge0::sendMsg8a ( int32_t i ) {
 	return doneSending ( i );
 }
 
-void gotTagRecWrapper ( void *state ) { 
+static void gotTagRecWrapper ( void *state ) { 
 	Msg8a *m     = (Msg8a *)state;
 	//TagRec *m    = (TagRec *)state;
 	Msge0  *THIS = (Msge0  *)m->m_state2;

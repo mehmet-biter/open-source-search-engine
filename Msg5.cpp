@@ -709,7 +709,7 @@ bool Msg5::needsRecall ( ) {
 	return false;
 }
 
-void gotListWrapper ( void *state ) {
+static void gotListWrapper ( void *state ) {
 	Msg5 *THIS = (Msg5 *) state;
 	// . this sets g_errno on error
 	// . this will merge cache/tree and disk lists into m_list

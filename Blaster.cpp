@@ -280,7 +280,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 	return;
 }
 
-void sleepWrapper ( int fd , void *state ) {
+static void sleepWrapper ( int fd , void *state ) {
 	g_blaster.startBlastering();
 }
 
