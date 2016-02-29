@@ -486,8 +486,6 @@ class Query {
 		    bool     useQueryStopWords = true ,
 		    int32_t  maxQueryTerms = 0x7fffffff );
 
-	bool setQueryTermScores ( int64_t *termFreqsArg ) ;
-
 	char *getQuery    ( ) { return m_orig  ; };
 	int32_t  getQueryLen ( ) { return m_origLen; };
 
@@ -518,8 +516,6 @@ class Query {
 
 	int32_t getNumComponentTerms ( ) { return m_numComponents; };
 
-	// sets m_bmap[][] so getImplicits() works
-	void setBitMap ( );
 	bool testBoolean(unsigned char *bits,int32_t vecSize);
 	// print to log
 	void printBooleanTree();
@@ -546,9 +542,6 @@ class Query {
 			m_bmap[7][ev[7]] ;
 	};
 
-	// returns false if no truths possible
-	bool setBitScoresBoolean ( char *buf , int32_t bufSize );
-
 	// sets m_qwords[] array, this function is the heart of the class
 	bool setQWords ( char boolFlag , bool keepAllSingles ,
 			 class Words &words , class Phrases &phrases ) ;
@@ -556,34 +549,8 @@ class Query {
 	// sets m_qterms[] array from the m_qwords[] array
 	bool setQTerms ( class Words &words , class Phrases &phrases ) ;
 
-	// set m_expressions[] and m_operands[] arrays and m_numOperands 
-	// for boolean queries
-	bool setBooleanOperands ( );
-
 	// helper funcs for parsing query into m_qwords[]
 	bool        isConnection ( const char *s , int32_t len ) ;
-
-	// . used by IndexTable.cpp to make a ptr map of the query terms
-	//   to make intersecting the termlists one at a time efficient
-	// . "imap" is a list of the termlist numbers, but especially sorted
-	// . 0 <= imap[i] < m_numTerms
-	// . sizes[i] is the total docids for query term #i (up to the current
-	//   tier being examined in IndexTable.cpp)
-	// . we set blocksize[i] only when imap[i] is a termlist which is not
-	//   a signless phrase. it is a number, N, such that
-	//   imap[i], imap[i+1], ... imap[i+N-1] are a "block" that has all
-	//   the signless phrase terms that contain query term # imap[i].
-	//   we cluster them together like this because IndexTable needs to
-	//   hash them all together since the phrase terms can imply the single
-	//   terms.
-	// . it now returns the number of terms put into imap[]
-	// . it sets *retNumBlocks to the number of blocks put into 
-	//   blocksizes[]
-	// . "sizes" is the size of each list (all tiers combined). this is
-	//   in query term num space, not IMAP space, and must be provided by
-	//   the caller. it is the only arg that is input, the rest are output.
-	int32_t getImap ( int32_t *sizes , int32_t *imap , int32_t *blocksizes ,
-		       int32_t *retNumBlocks );
 
  public:
 
