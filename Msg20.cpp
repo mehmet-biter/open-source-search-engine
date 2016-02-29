@@ -695,8 +695,6 @@ int32_t Msg20Reply::serialize ( char *buf , int32_t bufSize ) {
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_displaySum,size_displaySum);
 	if(ptr_dbuf)
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_dbuf,size_dbuf);
-	if(ptr_mbuf)
-		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_mbuf,size_mbuf);
 	if(ptr_vbuf)
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_vbuf,size_vbuf);
 	if(ptr_imgData)
