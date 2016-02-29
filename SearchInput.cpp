@@ -453,13 +453,8 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	}
 
 	// if &qlang was not given explicitly fall back to coll rec
-	if (cr && !langAbbr) {
-		langAbbr = cr->m_defaultSortLanguage2;
-	}
-
-	// if no coll rec use language unknown
 	if (!langAbbr) {
-		langAbbr = "xx";
+		langAbbr = cr->m_defaultSortLanguage2;
 	}
 
 	log(LOG_INFO,"query: using default lang of %s", langAbbr );
@@ -469,7 +464,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 
 	// allow for 'xx', which means langUnknown
 	if ( m_queryLangId == langUnknown &&
-	     langAbbr &&
 	     langAbbr[0] &&
 	     langAbbr[0]!='x' ) {
 		log("query: langAbbr of '%s' is NOT SUPPORTED. using langUnknown, 'xx'.", langAbbr);
