@@ -1485,7 +1485,7 @@ int cmp2 (const void *v1, const void *v2) {
 
 // . this is used by gbsort() above
 // . sorts Hosts by their shard
-int cmp (const void *v1, const void *v2) {
+static int cmp (const void *v1, const void *v2) {
 	Host *h1 = (Host *)v1;
 	Host *h2 = (Host *)v2;
 	// return if shards differ
