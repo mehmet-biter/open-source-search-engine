@@ -3333,9 +3333,6 @@ bool  Query::testBoolean( unsigned char *bits ,int32_t vecSize){//qvec_t bitmask
 	return e->isTruth(bits,vecSize);
 	
 }
-void  Query::printBooleanTree(){
-	if (!m_isBoolean) return;
-}
 
 // return false and set g_errno on error
 // returns how many words expression was

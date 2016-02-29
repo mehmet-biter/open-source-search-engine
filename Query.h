@@ -518,7 +518,6 @@ class Query {
 
 	bool testBoolean(unsigned char *bits,int32_t vecSize);
 	// print to log
-	void printBooleanTree();
 	void printQueryTerms();
 
 	// the new way as of 3/12/2014. just determine if matches the bool

@@ -608,7 +608,6 @@ bool Msg39::getLists () {
 			logf(LOG_DEBUG,"%s",sb.getBufStart());
 
 		}
-		m_tmpq.printBooleanTree();
 	}
 	// timestamp log
 	if ( m_debug ) 
