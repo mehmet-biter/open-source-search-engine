@@ -5193,13 +5193,11 @@ uint8_t *XmlDoc::getSummaryLangId ( ) {
 		return (uint8_t *)s;
 	}
 
-	char *sum = s->getSummary();
-
     int64_t start = logQueryTimingStart();
 
 	// now set the words class
 	Words ww;
-	if ( ! ww.set ( sum , true, m_niceness ) ) {
+	if ( ! ww.set ( s->getSummary(), s->getSummaryLen(), true, m_niceness ) ) {
 		return NULL;
 	}
 
