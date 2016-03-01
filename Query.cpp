@@ -3213,42 +3213,6 @@ bool Query::isConnection ( const char *s , int32_t len ) {
 	return false;
 }
 
-void Query::printQueryTerms(){
-	for (int32_t i=0;i<m_numTerms;i++){
-		char c = getTermSign(i);
-		char tt[512];
-		int32_t ttlen = getTermLen(i);
-		if ( ttlen > 254 ) ttlen = 254;
-		if ( ttlen < 0   ) ttlen = 0;
-		// this is utf8
-		gbmemcpy ( tt , getTerm(i) , ttlen );
-		tt[ttlen]='\0';
-		if ( c == '\0' ) c = ' ';
-		logf(LOG_DEBUG, "query: Query Term #%"INT32" "
-		     "phr=%"INT32" termId=%"UINT64" rawTermId=%"UINT64""
-		     " sign=%c "
-		     "ebit=0x%0"XINT64" "
-		     "impBits=0x%0"XINT64" "
-		     "hc=%"INT32" "
-		     "component=%"INT32" "
-		     "otermLen=%"INT32" "
-		     "term=%s ",
-		     i,
-		     (int32_t)isPhrase (i) ,
-		     getTermId      (i) ,
-		     getRawTermId   (i) ,
-		     c ,
-		     (int64_t)m_qterms[i].m_explicitBit  ,
-		     (int64_t)m_qterms[i].m_implicitBits ,
-		     (int32_t) m_qterms[i].m_hardCount ,
-		     m_qterms[i].m_componentCode,
-		     getTermLen(i),
-		     tt                        );
-	}
-	
-}
-
-
 ////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////
 //////////   ONLY BOOLEAN STUFF BELOW HERE  /////////////
