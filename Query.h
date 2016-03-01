@@ -241,6 +241,9 @@ class QueryWord {
 	// is this query word before a | (pipe) operator?
 	bool m_piped;
 
+	// used by Matches.cpp for highlighting under different colors
+	int32_t m_colorNum;
+
 	// for min/max score ranges like gbmin:price:1.99
 	float m_float;
 

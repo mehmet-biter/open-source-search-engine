@@ -172,6 +172,9 @@ void Matches::setQuery ( Query *q ) {
 		// get word #
 		int32_t qwn = qw - q->m_qwords;
 
+		// assign color # for term highlighting with different colors
+		qw->m_colorNum = colorNum++;
+
 		// do not overfill table
 		if ( colorNum > MAX_QUERY_WORDS_TO_MATCH ) {
 			break;
