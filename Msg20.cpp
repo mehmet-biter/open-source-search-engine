@@ -73,14 +73,6 @@ void Msg20::reset() {
 	m_callback2    = NULL;
 	m_state        = NULL;
 	m_ownReply     = true;
-	// resets
-	m_pqr_old_score        = 0.0;
-	m_pqr_factor_quality   = 1.0;
-	m_pqr_factor_diversity = 1.0;
-	m_pqr_factor_inlinkers = 1.0;
-	m_pqr_factor_proximity = 1.0;
-	m_pqr_factor_ctype     = 1.0;
-	m_pqr_factor_lang      = 1.0; // includes country
 }
 
 bool Msg20::registerHandler ( ) {

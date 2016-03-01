@@ -87,11 +87,6 @@ bool PostQueryRerank::set1 ( Msg40 *msg40, SearchInput *si ) {
 	if ( ! m_si->m_cr ) return false;
 
 	m_enabled = (m_si->m_docsToScanForReranking > 1);
-	//log( LOG_DEBUG, "query:  m_isEnabled:%"INT32"; "
-	//     "P_docsToScanForReranking:%"INT32" P_pqr_docsToSan:%"INT32"; AWL",
-	//     (int32_t)m_enabled, 
-	//     m_si->m_docsToScanForReranking,
-	//     m_si->m_cr->m_pqr_docsToScan );
 
 	return m_enabled;
 }
@@ -438,15 +433,6 @@ bool PostQueryRerank::rerank ( ) {
 			     "score of %.02f", 
 			     x, url, (float)startScore );
 
-		// resets
-		msg20->m_pqr_old_score        = score;
-		msg20->m_pqr_factor_quality   = 1.0;
-		msg20->m_pqr_factor_diversity = 1.0;
-		msg20->m_pqr_factor_inlinkers = 1.0;
-		msg20->m_pqr_factor_proximity = 1.0;
-		msg20->m_pqr_factor_ctype     = 1.0;
-		msg20->m_pqr_factor_lang      = 1.0; // includes country
-
 		Msg20Reply *mr = msg20->m_r;
 
 		// demote for language and country
@@ -462,11 +448,9 @@ bool PostQueryRerank::rerank ( ) {
 		int32_t  contentType= mr->m_contentType;
 		if ( contentType == CT_XML && xmlFactor > 0 ) {
 			score = score * xmlFactor;
-			msg20->m_pqr_factor_ctype = xmlFactor;
 		}
 		else if ( contentType != CT_HTML && htmlFactor > 0 ) {
 			score = score * htmlFactor;
-			msg20->m_pqr_factor_ctype = htmlFactor;
 		}
 
 		// demote for more paths in url
@@ -485,36 +469,6 @@ bool PostQueryRerank::rerank ( ) {
 		// . demote pages for older datedb dates
 		score = rerankDatedbDate( score,
 					  msg20->m_r->m_datedbDate );
-
-		/*
-		// . demote pages by proximity
-		// . a -1 prox implies did not have any query terms
-		// . see Summary.cpp proximity algo
-		float ps = msg20->m_r->m_proximityScore;//getProximityScore();
-		if ( ps > 0.0 && 
-		     m_si->m_pqr_demFactProximity > 0 &&
-		     minProximityScore != -1.0 ) {
-			// what percent were we of the max?
-			float factor = minProximityScore / ps ;
-			// this can be weighted
-			//factor *= m_si->m_pqr_demFactProximity;
-			// apply the factor to the score
-			score *= factor;
-			// this is the factor
-			msg20->m_pqr_factor_proximity = factor;
-		}
-
-		// . demote pages which only have the query as a part of a
-		// . larger phrase
-		if ( maxDiversity != 0 ) {
-			float diversity = msg20->m_r->m_diversity;
-			float df = (1 - (diversity/maxDiversity)) *
-				m_si->m_pqr_demFactSubPhrase;
-			score = (rscore_t)(score * (1.0 - df));
-			if ( score <= 0.0 ) score = 0.001;
-			msg20->m_pqr_factor_diversity = 1.0 - df;
-		}
-		*/
 
 		// . COMMON INLINKER RERANK
 		// . no need to create a superfluous function call here
@@ -539,8 +493,6 @@ bool PostQueryRerank::rerank ( ) {
 			score = score * (1.0 - penalty);
 			// do not decrease all the way to 0!
 			if ( score <= 0.0 ) score = 0.001;
-			// store it!
-			msg20->m_pqr_factor_inlinkers = 1.0 - penalty;
 		}
 
 		//	finishloop:
@@ -635,7 +587,6 @@ rscore_t PostQueryRerank::rerankLanguageAndCountry ( rscore_t score,
 	//   languages
 	if ( lang == langUnknown &&
 	     m_si->m_languageUnknownWeight > 0 ) {
-		msg20->m_pqr_factor_lang =m_si->m_languageUnknownWeight;
 		return rerankAssignPenalty(score, 
 					   m_si->m_languageUnknownWeight,
 					   "pqrlangunk", 
@@ -649,7 +600,6 @@ rscore_t PostQueryRerank::rerankLanguageAndCountry ( rscore_t score,
 	// . first, apply score factors for non-preferred summary languages 
 	//   that don't match the page language
 	if ( summaryLang != langUnknown && summaryLang != langWanted ) {
-		msg20->m_pqr_factor_lang = m_si->m_languageWeightFactor;
 		return rerankAssignPenalty( score, 
 					    m_si->m_languageWeightFactor,
 					    "pqrlang", 
@@ -689,8 +639,6 @@ rscore_t PostQueryRerank::rerankLanguageAndCountry ( rscore_t score,
 	// . if no language written by query country is written by page 
 	//   country, don't penalize
 	if ( (uint64_t)(qLangs & pLangs) == (uint64_t)0LL ) return score;
-
-	msg20->m_pqr_factor_lang = m_si->m_cr->m_pqr_demFactCountry;
 
 	// countries do share at least one language - demote!
 	return rerankAssignPenalty( score,

@@ -393,15 +393,6 @@ class Msg20 {
 	bool     (*m_callback ) ( void *state );
 	void     (*m_callback2) ( void *state );
 	void      *m_state;
-
-	// PostQueryRerank storage area for printing out in PageResults.cpp
-	float m_pqr_old_score        ;
-	float m_pqr_factor_diversity ;
-	float m_pqr_factor_quality   ;
-	float m_pqr_factor_inlinkers ;
-	float m_pqr_factor_proximity ;
-	float m_pqr_factor_ctype     ;
-	float m_pqr_factor_lang      ; // includes country
 };
 
 #endif
