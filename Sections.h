@@ -176,8 +176,6 @@ public:
 		if ( m_a <= arg->m_a && m_b >  arg->m_b ) return true;
 		return false;
 	}
-
-	bool isVirtualSection ( ) ;
 };
 
 
@@ -198,8 +196,7 @@ public:
 	// . returns false if blocked, true otherwise
 	// . returns true and sets g_errno on error
 	// . sets m_sections[] array, 1-1 with words array "w"
-	bool set(class Words *w, class Bits *bits, class Url *url,
-			  int64_t siteHash64, char *coll, int32_t niceness, uint8_t contentType );
+	bool set(class Words *w, class Bits *bits, class Url *url, char *coll, int32_t niceness, uint8_t contentType );
 
 	bool verifySections ( ) ;
 
@@ -235,10 +232,8 @@ public:
 	class Words *m_words    ;
 	class Bits  *m_bits     ;
 	class Url   *m_url      ;
-	int64_t    m_siteHash64 ;
 	char        *m_coll     ;
 	int32_t         m_niceness ;
-	int32_t         m_cpuNiceness ;	
 	uint8_t      m_contentType;
 
 	int32_t *m_wposVec;
@@ -251,7 +246,6 @@ public:
 
 	// word #'s (-1 means invalid)
 	int32_t m_titleStart;
-	int32_t m_titleEnd;
 
 	// these are 1-1 with the Words::m_words[] array
 	class Section **m_sectionPtrs;
@@ -274,7 +268,6 @@ public:
 	bool m_isTestColl;
 
 	// assume no malloc
-	bool  m_needsFree;
 	char  m_localBuf [ SECTIONS_LOCALBUFSIZE ];
 
 	int64_t  *m_wids;
@@ -283,8 +276,6 @@ public:
 	nodeid_t   *m_tids;
 
 	int32_t       m_hiPos;
-
-	bool addImpliedLists ( ) ;
 
 	bool addSentenceSections ( ) ;
 

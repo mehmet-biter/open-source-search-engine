@@ -53,12 +53,8 @@ class Tagx {
 public:
 	// id of the fron tag we pushed
 	nodeid_t m_tid;
-	// cumulative hash of all tag ids containing this one, includes us
-	//int32_t     m_cumHash;
 	// section number we represent
 	int32_t     m_secNum;
-	// hash of all the alnum words in this section
-	//int32_t     m_contentHash;
 	// set to TXF_MATCHED
 	char     m_flags;
 };
@@ -75,8 +71,7 @@ public:
 // . sets m_sections[] array, 1-1 with words array "w"
 // . the Weights class can look at these sections and zero out the weights
 //   for words in script, style, select and marquee sections
-bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
-					char *coll, int32_t niceness, uint8_t contentType ) {
+bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness, uint8_t contentType ) {
 	reset();
 
 	if ( ! w ) return true;
@@ -91,7 +86,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 	m_words           = w;
 	m_bits            = bits;
 	m_url             = url;
-	m_siteHash64      = siteHash64;
 	m_coll            = coll;
 	m_niceness        = niceness;
 	m_contentType     = contentType;
@@ -159,14 +153,8 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		max = 1000000;
 	}
 
-	//max += 5000;
 	int32_t need = max * sizeof(Section);
 
-
-	// and we need one section ptr for every word!
-	//need += nw * 4;
-	// and a section ptr for m_sorted[]
-	//need += max * sizeof(Section *);
 	// set this
 	m_maxNumSections = max;
 
@@ -191,7 +179,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 	m_sections = (Section *)m_sectionBuf.getBufStart();
 
 	m_titleStart = -1;
-	m_titleEnd   = -1;
 
 	// save this too
 	m_nw = nw;
@@ -284,8 +271,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 			sn->m_parent = current;
 			// need to keep a word range that the section covers
 			sn->m_a = i;
-			// init the flags of the section
-			//sn->m_flags = inFlag ;
 			// count em up
 			int32_t brcnt = 1;
 			// scan for whole sequence
@@ -484,8 +469,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 			// get it
 			Section *sn = &m_sections[xn];
 
-			// we are now back in the parent section
-			//current = sn;
 			// record the word range of the secion we complete
 			sn->m_b = i+1;
 
@@ -565,18 +548,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 			if ( fullTid != tid ) continue;
 		}
 
-		// ignore paragraph/center tags, too many people are careless
-		// with them... santafeplayhouse.com
-		// i can't ignore <p> tags anymore because for
-		// http://www.abqfolkfest.org/resources.shtml we are allowing
-		// "Halloween" to have "SEP-DEC" as a header even though
-		// that header is BELOW "Halloween" just because we THINK
-		// they are in the same section BUT in reality they were
-		// in different <p> tags. AND now it seems that the 
-		// improvements we made to Sections.cpp for closing open
-		// ended tags are pretty solid that we can unignore <p>
-		// tags again, it only helped the qa run...
-		//if ( tid == TAG_P ) continue;
 		if ( tid == TAG_CENTER ) continue;
 
 		if ( tid == TAG_SPAN ) continue;
@@ -587,12 +558,16 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		// try to realloc i guess. should keep ptrs in tact.
 		if ( m_numSections >= m_maxNumSections && ! growSections() ) 
 			return true;
+
 		// get the section
 		Section *sn = &m_sections[m_numSections];
+
 		// clear
 		memset ( sn , 0 , sizeof(Section) );
+
 		// inc it
 		m_numSections++;
+
 		// sanity check - breach check
 		if ( m_numSections > max ) { char *xx=NULL;*xx=0; }
 		
@@ -611,9 +586,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		// push a unique id on the stack so we can pop if we
 		// enter a subsection
 		stackPtr->m_tid         = tid;
-		//stackPtr->m_cumHash   = h;
 		stackPtr->m_secNum      = m_numSections - 1;
-		//stackPtr->m_contentHash = ch;
 		stackPtr->m_flags       = 0;
 		stackPtr++;
 
@@ -859,8 +832,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		// its first word #
 		for ( ; next && i == next->m_a ; ) {
 			dstack[ns++] = next;
-			// sanity check
-			//if ( next->m_a == next->m_b ) { char *xx=NULL;*xx=0;}
 			// set our current section to this now
 			current = next;
 			// get next section for setting "next"
@@ -931,9 +902,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 			p++;
 			// skip following alnums, that is the tag name
 			for ( ; is_alnum_a(*p) ; p++ );
-			//if ( tid == TAG_DIV ) p += 4;
-			// skip "<td" or "<tr"
-			//else p += 3;
 			// scan for "id" or "class" in it
 			// . i had to increase this because we were missing
 			//   some stuff causing us to get the wrong implied
@@ -1000,7 +968,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		if ( sn != rootSection )
 			sn->m_tagId = tid;
 	}
-
 
 	// set up our linked list, the functions below will insert sections
 	// and modify this linked list
@@ -1170,11 +1137,10 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		if ( isHidden ) {
 			// turn it off if not contained
 			if      ( wn >= endHide   ) isHidden = false;
-			//else if ( wn <= startHide ) isHidden = false;
 			else    sn->m_flags |= SEC_HIDDEN;
 		}
 		// get tag id
-		nodeid_t tid = sn->m_tagId;//tids[wn];
+		nodeid_t tid = sn->m_tagId;
 		// is div, td or tr tag start?
 		if ( tid!=TAG_DIV && 
 		     tid!=TAG_TD && 
@@ -1196,9 +1162,11 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		int32_t  slen = wlens[wn];
 		char *s    = wptrs[wn];
 		char *send = s + slen;
+
 		// check out any div tag that has a style
 		char *style = gb_strncasestr(s,slen,"style=") ;
 		if ( ! style ) continue;
+
 		// . check for hidden
 		// . if no hidden tag assume it is UNhidden
 		// . TODO: later push & pop on stack
@@ -1219,7 +1187,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 		if ( sn->m_b   > endHide   ) endHide   = sn->m_b;
 		if ( sn->m_a < startHide ) startHide = sn->m_a;
 	}
-
 
 	// now set the content hash of each section
 	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
@@ -1326,7 +1293,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, int64_t siteHash64,
 	//
 	///////////////////////////////////////
 	setNextBrotherPtrs ( true );
-
 
 	///////////////////////////////////////
 	//
@@ -1570,13 +1536,6 @@ bool Sections::addSentenceSections ( ) {
 					      m_wids[aw] == h_https) )
 						isLower = false;
 
-					// this almost always breaks a sentence
-					// and adding this line here fixes
-					// "Sunday<p>noon" the thewoodencow.com
-					// and let's villr.com stay the same
-					// since its first part ends in "and"
-					//if ( m_wids[aw] == h_noon ||
-					//     m_wids[aw] == h_midnight )
 					if ( tid == TAG_P &&
 					     isLower &&
 					     // Oscar G<p>along with xxxx
@@ -1682,7 +1641,6 @@ bool Sections::addSentenceSections ( ) {
 				//   made into two sentences and Hours is
 				//   seen as a heading section and causes
 				//   addImpliedSections() to be wrong.
-				//if ( *p == ':' ) lastWasComma =true;
 				// . why not the colon?
 				if ( *p == ':' ) {
 
@@ -1840,7 +1798,6 @@ bool Sections::addSentenceSections ( ) {
 		//Section *parent = NULL;
 		int32_t     start  = -1;
 		Section *pp;
-		//Section *np;
 		int32_t     lastk = 0;
 		Section *splitSection = NULL;
 		Section *lastGuy = NULL;

@@ -4721,12 +4721,6 @@ Sections *XmlDoc::getSections ( ) {
 	// bail on error
 	if ( ! bits ) return NULL;
 
-	// the site hash
-	int64_t *sh64 = getSiteHash64();
-	// sanity check
-	if ( ! sh64 && ! g_errno ) { char *xx=NULL; *xx=0; }
-	if ( ! sh64 || sh64 == (void *)-1 ) return (Sections *)sh64;
-
 	// the docid
 	int64_t *d = getDocId();
 	if ( ! d || d == (int64_t *)-1 ) return (Sections *)d;
@@ -4745,7 +4739,7 @@ Sections *XmlDoc::getSections ( ) {
 	// this uses the sectionsReply to see which sections are "text", etc.
 	// rather than compute it expensively
 	if ( !m_calledSections &&
-		 !m_sections.set( &m_words, bits, getFirstUrl(), *sh64, cr->m_coll, m_niceness, *ct ) ) {
+		 !m_sections.set( &m_words, bits, getFirstUrl(), cr->m_coll, m_niceness, *ct ) ) {
 		m_calledSections = true;
 		// it blocked, return -1
 		return (Sections *) -1;
