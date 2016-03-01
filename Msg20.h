@@ -54,7 +54,7 @@ class Msg20Request {
 	int32_t       m_titleMaxLen               ;
 	int32_t       m_summaryMaxLen             ;
 	int32_t       m_summaryMaxNumCharsPerLine ;
-	int32_t       m_maxCacheAge               ;
+	int64_t       m_maxCacheAge               ;
 	int32_t       m_discoveryDate             ;
 
 	// special shit so we can remove an inlinker to a related docid

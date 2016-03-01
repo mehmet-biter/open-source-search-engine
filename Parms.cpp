@@ -6236,6 +6236,17 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "document summary (w/desc) cache max age";
+	m->m_desc = "How many milliseconds should we cache document summaries";
+	m->m_cgi  = "dswdmca";
+	m->m_off  = (char *)&g_conf.m_docSummaryWithDescriptionMaxCacheAge - g;
+	m->m_def  = "86400000"; // 1 day
+	m->m_type = TYPE_LONG_LONG;
+	m->m_units = "milliseconds";
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "max heartbeat delay in milliseconds";
 	m->m_desc  = "If a heartbeat is delayed this many milliseconds "
 		"dump a core so we can see where the CPU was. "

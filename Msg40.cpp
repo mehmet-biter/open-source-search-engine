@@ -790,12 +790,13 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 	if ( m_socketHadError ) { char *xx=NULL; *xx=0; }
 
 	// these are just like for passing to Msg39 above
-	int32_t maxAge = 0 ;
+	int64_t maxCacheAge = 0 ;
 	// may it somewhat jive with the search results caching, otherwise
 	// it will tell me a search result was indexed like 3 days ago
 	// when it was just indexed 10 minutes ago because the 
 	// titledbMaxCacheAge was set way too high
-	if ( m_si->m_rcache ) maxAge = g_conf.m_searchResultsMaxCacheAge;
+	if ( m_si->m_rcache )
+		maxCacheAge = g_conf.m_docSummaryWithDescriptionMaxCacheAge;
 
 	int32_t maxOut = (int32_t)MAX_OUTSTANDING_MSG20S;
 	if ( g_udpServer.getNumUsedSlots() > 500 ) maxOut = 10;
@@ -947,7 +948,7 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 			req.m_collnum = m_msg3a.m_rrr.m_collnum;
 
 		req.m_numSummaryLines    = m_si->m_numLinesInSummary;
-		req.m_maxCacheAge        = maxAge;
+		req.m_maxCacheAge        = maxCacheAge;
 		req.m_state              = this;
 		req.m_callback           = gotSummaryWrapper;
 		req.m_niceness           = m_si->m_niceness;

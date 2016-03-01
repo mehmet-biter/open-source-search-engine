@@ -242,6 +242,7 @@ class Conf {
 	int32_t  m_searchResultsMaxCacheMem    ;
 	int32_t  m_searchResultsMaxCacheAge    ; // in seconds
 	bool  m_searchResultsSaveCache;
+	int64_t m_docSummaryWithDescriptionMaxCacheAge; //cache timeout for document summaries for documents with a meta-tag with description, in milliseconds
 
 	// a sitelinkinfo cache (for Msg25)
 	int32_t  m_siteLinkInfoMaxCacheMem;
