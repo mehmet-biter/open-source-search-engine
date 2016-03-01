@@ -181,13 +181,6 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		return false;
 	}
 
-	// zero out all word weights
-	for ( int32_t i = 0 ; i < q->m_numWords; i++ ) {
-		m_wordWeights[i] = 0.0;
-	}
-
-	// query terms
-	int32_t numTerms = q->getNumTerms();
 	for ( int32_t i = 0 ; i < q->m_numWords; i++ ) {
 		m_wordWeights[i] = 1.0;
 	}
