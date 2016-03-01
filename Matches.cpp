@@ -171,12 +171,10 @@ void Matches::setQuery ( Query *q ) {
 		QueryWord *qw = qt->m_qword;
 		// get word #
 		int32_t qwn = qw - q->m_qwords;
-		// assign color # for term highlighting with different colors
-		qw->m_colorNum = colorNum++;
+
 		// do not overfill table
 		if ( colorNum > MAX_QUERY_WORDS_TO_MATCH ) {
-			//m_maxNQT = nqt; 
-			break; 
+			break;
 		}
 		// this should be equivalent to the word id
 		int64_t qid = qt->m_rawTermId;//qw->m_rawWordId;

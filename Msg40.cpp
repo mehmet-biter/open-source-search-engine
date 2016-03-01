@@ -908,17 +908,13 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 			     (PTRTYPE)this,i,m_msg3a.m_docIds[i]);
 		// launch it
 		m_numRequests++;
-		// keep for-loops shorter with this
-		//if ( i > m_maxiLaunched ) m_maxiLaunched = i;
-		
-		//getRec(m_si->m_coll2,m_si->m_collLen2);
+
 		if ( ! cr ) {
 			log("msg40: missing coll");
 			g_errno = ENOCOLLREC;
 			if ( m_numReplies < m_numRequests ) return false;
 			return true;
 		}
-
 
 		// set the summary request then get it!
 		Msg20Request req;

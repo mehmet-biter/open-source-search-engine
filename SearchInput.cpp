@@ -11,17 +11,12 @@
 #include "third-party/cld2/public/encodings.h"
 
 SearchInput::SearchInput() {
-	reset();
 }
+
 SearchInput::~SearchInput() {
-	reset();
-}
-void SearchInput::reset ( ) {
 }
 
 void SearchInput::clear ( int32_t niceness ) {
-	// reset it first
-	reset();
 	// set all to 0 just to avoid any inconsistencies
 	int32_t size = (char *)&m_END_TEST - (char *)&m_START;
 	memset ( &m_START , 0x00 , size );
@@ -33,16 +28,13 @@ void SearchInput::clear ( int32_t niceness ) {
 	m_docsWanted         = 10;
 	m_maxQueryTerms      = 1000;
 	m_niceness           = niceness;
-
-	//m_defaultSortLanguageLen = 0;
 }
-
 
 // . make a key for caching the search results page based on this input
 // . do not use all vars, like the m_*ToDisplay should not be included
 key_t SearchInput::makeKey ( ) {
 	// hash the query
-	int32_t       n       = m_q.getNumTerms  ();
+	int32_t n = m_q.getNumTerms();
 	key_t k;
 	k.n1 = 0;
 
@@ -54,7 +46,7 @@ key_t SearchInput::makeKey ( ) {
 		k.n0 = hash64 ((char *)&m_q.m_qterms[i].m_userType  ,1, k.n0);
 	}
 	// space separated, NULL terminated, list of meta tag names to display
-	if ( m_displayMetas          ) 
+	if ( m_displayMetas )
 		k.n0 = hash64b ( m_displayMetas          , k.n0 );
 
 	// . now include the hash of the search parameters
@@ -72,18 +64,6 @@ key_t SearchInput::makeKey ( ) {
 		k.n0 = hash64 ( q , qlen , k.n0 );
 	}
 
-	// Language stuff
-	//k.n0 = hash64(m_defaultSortLanguage, m_defaultSortLanguageLen, k.n0);
-	//k.n0 = hash64(m_defaultSortCountry , m_defaultSortCountryLen , k.n0);
-
-	// debug
-	//logf(LOG_DEBUG,"query: q=%s k.n0=%"UINT64"",m_q.getQuery(),k.n0);
-
-	//Msg1aParms* m1p = msg40->getReferenceParms();
-	//if( m1p ) {
-	//	k.n0=hash64(((char*)m1p)+sizeof(int32_t), 
-	//		    sizeof(Msg1aParms)-8,k.n0);
-	//}
 	return k;
 }
 
@@ -124,8 +104,7 @@ void SearchInput::copy ( class SearchInput *si ) {
 	gbmemcpy ( (char *)this , (char *)si , sizeof(SearchInput) );
 }
 
-bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
-
+bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	// store list of collection #'s to search here. usually just one.
 	m_collnumBuf.reset();
 
@@ -266,10 +245,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 		m_doSiteClustering        = false;
 	}
 
-
-	
-
-
 	// and set from the http request. will set m_coll, etc.
 	g_parms.setFromRequest ( &m_hr , sock , cr , (char *)this , OBJ_SI );
 
@@ -308,23 +283,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	//
 	//////////////////////////////////////
 
-	// allow for "qlang" if still don't have it
-	//int32_t gglen2;
-	//char *gg2 = r->getString ( "qlang" , &gglen2 , NULL );
-	//if ( m_gblang == 0 && gg2 && gglen2 > 1 )
-	//	m_gblang = getLanguageFromAbbr(gg2);
-	
-	// fix query by removing lang:xx from ask.com queries
-	//char *end = m_query + m_queryLen -8;
-	//if ( m_queryLen > 8 && m_query && end > m_query && 
-	//     strncmp(end," lang:",6)==0 ) {
-	//	char *asklang = m_query+m_queryLen - 2;
-	//	m_gblang = getLanguageFromAbbr(asklang);
-	//	m_queryLen -= 8;
-	//	m_query[m_queryLen] = 0;
-	//	
-	//}
-
 	// . returns false and sets g_errno on error
 	// . sets m_qbuf1 and m_qbuf2
 	// . sets:
@@ -338,16 +296,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	if ( ! setQueryBuffers (r) ) {
 		return log("query: setQueryBuffers: %s",mstrerror(g_errno));
 	}
-
-
-	// this overrides though
-	//int32_t qlen2;
-	//char *qs2 = r->getString ("qlang",&qlen2,NULL);
-	//if ( qs2 ) qs1 = qs2;
-	
-	//m_queryLang = getLanguageFromAbbr ( qs1 );
-
-	//char *qs1 = getLanguageAbbr(m_queryLang);
 
 	// this parm is in Parms.cpp and should be set
 	const char *langAbbr = m_defaultSortLang;
@@ -494,8 +442,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 		return false;
 	}
 
-	m_q.m_containingParent = (void *)this;
-
 	if ( m_q.m_truncated && m_q.m_isBoolean ) {
 		g_errno = EQUERYTOOBIG;
 		g_msg = " (error: query is too long)";
@@ -538,17 +484,17 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) { //, Query *q ) {
 	// if useCache is still -1 then turn it on
 	if ( m_useCache == -1 ) m_useCache = 1;
 
-	// never use cache if doing a rerank (msg3b)
-	//if ( m_rerankRuleset >= 0 ) m_useCache = 0;
 	bool readFromCache = false;
 	if ( m_useCache ==  1  ) readFromCache = true;
 	if ( m_rcache   ==  0  ) readFromCache = false;
 	if ( m_useCache ==  0  ) readFromCache = false;
+
 	// if useCache is false, don't write to cache if it was not specified
 	if ( m_wcache == -1 ) {
 		if ( m_useCache ==  0 ) m_wcache = 0;
 		else                    m_wcache = 1;
 	}
+
 	// save it
 	m_rcache = readFromCache;
 
@@ -570,58 +516,14 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 		int32_t qclen = gbstrlen(m_queryCharset);
 		qcs = get_iana_charset(m_queryCharset, qclen );
 		if (qcs == csUnknown) {
-			//g_errno = EBADCHARSET;
-			//g_msg = "(error: unknown query charset)";
-			//return false;
 			qcs = csUTF8;
 		}
 	}
-	// prepend sites terms
-	int32_t numSites = 0;
-	char *csStr = NULL;
-	numSites = 0;
-	csStr = get_charset_str(qcs);
-
-	/*
-	if ( m_sites && m_sites[0] ) {
-		char *s = m_sites;
-		char *t;
-		int32_t  len;
-		m_sbuf1.pushChar('(');// *p++ = '(';
-	loop:
-		// skip white space
-		while ( *s && ! is_alnum_a(*s) ) s++;
-		// bail if done
-		if ( ! *s ) goto done;
-		// get length of it
-		t = s;
-		while ( *t && ! is_wspace_a(*t) ) t++;
-		len = t - s;
-		// add site: term
-		//if ( p + 12 + len >= pend ) goto toobig;
-		if ( numSites > 0 ) m_sbuf1.safeStrcpy ( " UOR " );
-		m_sbuf1.safeStrcpy ( "site:" );
-		//p += ucToUtf8(p, pend-p,s, len, csStr, 0,0);
-		m_sbuf1.safeMemcpy ( s , len );
-		//gbmemcpy ( p , s , len     ); p += len;
-		// *p++ = ' ';
-		m_sbuf1.pushChar(' ');
-		s = t;
-		numSites++;
-		goto loop;
-	done:
-		m_sbuf1.safePrintf(") | ");
-		// inc totalLen
-		m_sitesQueryLen = m_sitesLen + (numSites * 10);
-	}
-	*/
 
 	// prepend
 	const char *qp = hr->getString("prepend",NULL,NULL);
 	if( qp && qp[0] ) {
-		//if( p > pstart ) *p++ =  ' ';
 		if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
-		//p += sprintf( p, "+gblang:%"INT32" |", m_gblang );
 		m_sbuf1.safePrintf( "%s", qp );
 	}
 
@@ -658,8 +560,6 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	if ( ! first ) m_sbuf1.safeStrcpy(") AND ");
 	if ( ! first ) m_sbuf2.safeStrcpy(") AND ");
 	if ( ! first ) boolq = true;
-
-
 
 	// and this
 	if ( m_secsBack > 0 ) {
@@ -874,7 +774,7 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 	if ( ! m_sbuf2.nullTerm() ) return false;
 
 	// the natural query
-	m_displayQuery = m_sbuf2.getBufStart();// + displayQueryOffset;
+	m_displayQuery = m_sbuf2.getBufStart();
 
 	if ( ! m_displayQuery ) m_displayQuery = "";
 

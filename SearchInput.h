@@ -33,7 +33,7 @@ public:
 	// Msg40 likes to use this to pass the parms to a remote host
 	SearchInput      ( );
 	~SearchInput     ( );
-	void  reset                 ( );
+
 	void  copy                  ( class SearchInput *si ) ;
 
 	///////////

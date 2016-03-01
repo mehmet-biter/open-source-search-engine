@@ -2681,9 +2681,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	for ( int32_t i = 0 ; i < m_q->m_numTerms ; i++ ) {
 		QueryTerm *qt = &m_q->m_qterms[i];
 
-		// default this to off
-		qt->m_queryTermInfoNum = -1;
-
 		if ( ! qt->m_isRequired ) continue;
 		// set this stff
 		QueryWord     *qw =   qt->m_qword;
@@ -2693,8 +2690,6 @@ bool PosdbTable::setQueryTermInfo ( ) {
 		// and set it
 		qti->m_qt            = qt;
 		qti->m_qtermNum      = i;
-		// and vice versa
-		qt->m_queryTermInfoNum = nrg;
 
 		// this is not good enough, we need to count 
 		// non-whitespace punct as 2 units not 1 unit

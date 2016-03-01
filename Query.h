@@ -21,13 +21,7 @@
 // . we now use a int64_t to hold the query term bits for non-boolean queries
 #define ABS_MAX_QUERY_TERMS 9000
 
-// only allow up to 200 interests from facebook plus manually entered
-// because we are limited by the query terms above so we can only
-// UOR so many in SearchInput.cpp
-#define MAX_INTERESTS 200
-
 #define GBUF_SIZE (16*1024)
-#define SYNBUF_SIZE (16*1024)
 
 // let's support up to 64 query terms for now
 typedef uint64_t qvec_t;
@@ -35,9 +29,6 @@ typedef uint64_t qvec_t;
 #define MAX_EXPLICIT_BITS (sizeof(qvec_t)*8)
 
 #define MAX_OVEC_SIZE 256
-
-// only can use 16-bit since have to make a 64k truth table!
-#define MAX_EXPLICIT_BITS_BOOLEAN (16*8)
 
 // field codes
 #define FIELD_URL      1
@@ -142,13 +133,6 @@ extern struct QueryField g_fields[];
 #define IGNORE_BREECH    6 // query exceeded MAX_QUERY_TERMS so we ignored part
 #define IGNORE_BOOLOP    7 // boolean operator (OR,AND,NOT)
 #define IGNORE_QUOTED    8 // word in quotes is ignored. "the day"
-//#define IGNORE_SYNONYM   9 // part of a gbsynonym: field
-
-// . reasons why we ignore a QueryTerm
-// . we replace sequences of UOR'd terms with a compound term, which is
-//   created by merging the termlists of the UOR'd terms together. We store
-//   this compound termlist into a cache to avoid having to do the merge again.
-#define IGNORE_COMPONENT 9 // if term was replaced by a compound term
 
 // boolean query operators (m_opcode field in QueryWord)
 #define OP_OR         1
@@ -167,13 +151,7 @@ class QueryWord {
 
  public:
 	bool isAlphaWord() { return is_alnum_utf8(m_word); };
-	bool hasWhiteSpace() { 
-		char *p = m_word;
-		char *pend = m_word + m_wordLen;
-		for ( ; p < pend ; p += getUtf8CharSize ( p ) )
-			if ( is_wspace_utf8 ( p ) ) return true;
-		return false;
-	};
+
 	void constructor ();
 	void destructor ();
 
@@ -188,19 +166,15 @@ class QueryWord {
 	int64_t   m_phraseId;
 	// hash of field name then collection, used to hash termId
 	int64_t   m_prefixHash;
-	int32_t        m_wordNum;
 	int32_t        m_posNum;
 	// are we in a phrase in a wikipedia title?
 	int32_t        m_wikiPhraseId;
-	int32_t        m_wikiPhraseStart;
-	int32_t        m_numWordsInWikiPhrase;
 
 	// . this is just the hash of m_term and is used for highlighting, etc.
 	// . it is 0 for terms in a field?
 	int64_t   m_rawWordId ;
 	int64_t   m_rawPhraseId ;
-	// if we are phrase, the end word's raw id
-	int64_t   m_rightRawWordId;
+
 	// the field as a convenient numeric code
 	char        m_fieldCode ;
 	// . '-' means to exclude from search results
@@ -217,9 +191,6 @@ class QueryWord {
 	// the parenthetical level of this word in the boolean expression.
 	// level 0 is the first level.
 	char        m_level;
-	// . how many plusses preceed this query term?
-	// . the more plusses the more weight it is given
-	//char        m_numPlusses ;
 	// is this word a query stop word?
 	bool        m_isQueryStopWord ; 
 	// is it a plain stop word?
@@ -257,8 +228,8 @@ class QueryWord {
 	// . what QueryTerm does our "word" map to? NULL if none.
 	// . used by QueryBoolean since it uses QueryWords heavily
 	class QueryTerm *m_queryWordTerm;
-	// user defined weights
 
+	// user defined weights
 	int32_t m_userWeight;
 	char m_userType;
 	float m_userWeightPhrase;
@@ -269,11 +240,10 @@ class QueryWord {
 	bool m_underNOT;
 	// is this query word before a | (pipe) operator?
 	bool m_piped;
-	// used by Matches.cpp for highlighting under different colors
-	int32_t m_colorNum;
 
 	// for min/max score ranges like gbmin:price:1.99
 	float m_float;
+
 	// for gbminint:99 etc. uses integers instead of floats for better res
 	int32_t  m_int;
 
@@ -292,25 +262,20 @@ class QueryTerm {
 
 	// the query word we were derived from
 	QueryWord *m_qword;
+
 	// . are we a phrase termid or single word termid from that QueryWord?
 	// . the QueryWord instance represents both, so we must choose
 	bool       m_isPhrase;
-	// for compound phrases like, "cat dog fish" we do not want docs
-	// with "cat dog" and "dog fish" to match, so we extended our hackfix
-	// in Summary.cpp to use m_phrasePart to do this post-query filtering
-	int32_t       m_phrasePart;
+
 	// this is phraseId for phrases, and wordId for words
 	int64_t  m_termId;
+
 	// used by Matches.cpp
 	int64_t  m_rawTermId;
 
-	// . if we are a phrase these are the termids of the word that
-	//   starts the phrase and the word that ends the phrase respectively
-	int64_t  m_rightRawWordId;
-	int64_t  m_leftRawWordId;
-
 	// sign of the phrase or word we used
 	char       m_termSign;
+
 	// our representative bit (up to 16 MAX_QUERY_TERMS)
 	qvec_t     m_explicitBit;
 
@@ -346,13 +311,6 @@ class QueryTerm {
 	uint64_t m_langIdBits;
 	bool m_langIdBitsValid;
 
-	// the ()'s following an int/float facet term dictate the
-	// ranges for clustering the numeric values. like 
-	// gbfacetfloat:price:(0-10,10-20,...)
-	// values outside the ranges will be ignored
-	char *m_parenList;
-	int32_t  m_parenListLen;
-
 	int32_t   m_componentCode;
 	int64_t   m_termFreq;
 	float     m_termFreqWeight;
@@ -365,79 +323,55 @@ class QueryTerm {
 	// . therefore we also OR the bits for term A and B into m_implicitBits
 	// . THIS SHIT SHOULD be just used in setBitScores() !!!
 	qvec_t m_implicitBits;
+
 	// Summary.cpp and Matches.cpp use this one
 	bool m_isQueryStopWord ; 
+
 	// IndexTable.cpp uses this one
 	bool m_inQuotes;
-	// . is this term under the influence of a boolean NOT operator?
-	// . used in IndexReadInfo.cpp, if so we must read the WHOLE termlist
-	bool m_underNOT;
-	// is it a repeat?
-	char m_repeat;
+
 	// user defined weight for this term, be it phrase or word
 	float m_userWeight;
 	char m_userType;
+
 	// . is this query term before a | (pipe) operator?
 	// . if so we must read the whole termlist, like m_underNOT above
 	bool m_piped;
+
 	// . we ignore component terms unless their compound term is not cached
 	// . now this is used to ignore low tf synonym terms only
 	char m_ignored ;
+
 	// is it part of a UOR chain?
 	bool m_isUORed;
 	QueryTerm *m_UORedTerm;
+
 	// . if synonymOf is not NULL, then m_term points into m_synBuf, not
 	//   m_buf
-	//int32_t m_affinity; 	// affinity to the synonym
 	QueryTerm *m_synonymOf;
 	int64_t m_synWids0;
 	int64_t m_synWids1;
 	int32_t      m_numAlnumWordsInSynonym;
+
 	// like if we are the "nj" syn of "new jersey", this will be 2 words
 	// since "new jersey", our base, is 2 alnum words.
 	int32_t      m_numAlnumWordsInBase;
-	// the phrase affinity from the wikititles.txt file used in Wiki.cpp
-	//float m_wikiAff ;
-	// if later, after getting a more accurate term freq because we 
-	// actually download the termlist, its term freq drops a lot, we may
-	// end up filtering it in Query::filterSynonyms() called by Msg39. in
-	// which case the termlist is reset to 0 so it does not play a role
-	// in the search results computations in IndexTable2.cpp.
-	//char m_isFilteredSynonym;
+
 	// copied from derived QueryWord
 	char m_fieldCode  ;
 	bool isSplit();
-	// . weights and affinities calculated in IndexTable2
-	// . do not store in here, just pass along as a separate vector
-	// . analogous to how Phrases is to Words is to Bits, etc.
-	//float m_termWeight;
-	//float m_phraseAffinity;
 	bool m_isRequired;
-	// . true if we are a word IN a phrase
-	// . used by IndexTable2's getWeightedScore()
-	bool  m_inPhrase;
+
 	unsigned char  m_isWikiHalfStopBigram:1;
+
 	// if a single word term, what are the term #'s of the 2 phrases
 	// we can be in? uses -1 to indicate none.
 	int32_t  m_leftPhraseTermNum;
 	int32_t  m_rightPhraseTermNum;
-	// . what operand # are we a part of in a boolean query?
-	// . like for (x AND y) x would have an opNum of 0 and y an
-	//   opNum of 1 for instance.
-	// . for things like (x1 OR x2 OR x3 ... ) we try to give all
-	//   those query terms the same m_opNum for efficiency since
-	//   they all have the same effecct
-	//int32_t  m_opNum;
-	
+
 	// same as above basically
 	class QueryTerm *m_leftPhraseTerm;
 	class QueryTerm *m_rightPhraseTerm;
-	// for scoring summary sentences from XmlDoc::getEventSummary()
-	float m_score;
-
-	// a queryTermInfo class is multiple "related"/synonym terms.
-	// we have an array of these we set in Posdb.cpp:setQueryTermInfo().
-	int m_queryTermInfoNum;
 
 	char m_startKey[MAX_KEY_BYTES];
 	char m_endKey  [MAX_KEY_BYTES];
@@ -460,7 +394,6 @@ public:
 	// . returned bit vector is 1-1 with m_qterms in Query class
 	void print (SafeBuf *sbuf);
 
-	bool m_hadOpCode;
 	int32_t m_expressionStartWord;
 	int32_t m_numWordsInExpression;
 	Query *m_q;
@@ -496,29 +429,7 @@ class Query {
 	int64_t  getRawTermId ( int32_t i ) { return m_qterms[i].m_rawTermId; };
 	char      *getTerm      ( int32_t i ) { return m_qterms[i].m_term; };
 	int32_t       getTermLen   ( int32_t i ) { return m_qterms[i].m_termLen; };
-	bool       isQueryStopWord (int32_t i ) { 
-		return m_qterms[i].m_isQueryStopWord; };
-	// . not HARD required, but is term #i used for an EXACT match?
-	// . this includes negatives and phrases with signs in addition to
-	//   the standard signless single word query term
-	bool       isRequired ( int32_t i ) { 
-		if ( ! m_qterms[i].m_isPhrase ) return true;
-		if (   m_qterms[i].m_termSign ) return true;
-		return false;
-	};
-
-	//int32_t getNumRequired ( ) ;
 	bool isSplit();
-
-	bool isSplit(int32_t i) { return m_qterms[i].isSplit(); };
-
-	int64_t  getRawWordId ( int32_t i ) { return m_qwords[i].m_rawWordId;};
-
-	int32_t getNumComponentTerms ( ) { return m_numComponents; };
-
-	bool testBoolean(unsigned char *bits,int32_t vecSize);
-	// print to log
-	void printQueryTerms();
 
 	// the new way as of 3/12/2014. just determine if matches the bool
 	// query or not. let's try to offload the scoring logic to other places
@@ -526,20 +437,6 @@ class Query {
 	// bitVec is all the QueryWord::m_opBits some docid contains, so
 	// does it match our boolean query or not?
 	bool matchesBoolQuery ( unsigned char *bitVec , int32_t vecSize ) ;
-
-	// return an implicit vector from an explicit which contains the explic
-	qvec_t getImplicits ( qvec_t ebits ) {
-		if ( ! m_bmapIsSet ) { char *xx=NULL;*xx=0; }
-		uint8_t *ev = (uint8_t *)&ebits;
-		return	m_bmap[0][ev[0]] | 
-			m_bmap[1][ev[1]] | 
-			m_bmap[2][ev[2]] | 
-			m_bmap[3][ev[3]] | 
-			m_bmap[4][ev[4]] | 
-			m_bmap[5][ev[5]] | 
-			m_bmap[6][ev[6]] | 
-			m_bmap[7][ev[7]] ;
-	};
 
 	// sets m_qwords[] array, this function is the heart of the class
 	bool setQWords ( char boolFlag , bool keepAllSingles ,
@@ -556,27 +453,9 @@ class Query {
 	// hash of all the query terms
 	int64_t getQueryHash();
 
-	bool isCompoundTerm ( int32_t i ) ;
-
-	class QueryTerm *getQueryTermByTermId64 ( int64_t termId ) {
-		for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-			if ( m_qterms[i].m_termId == termId ) 
-				return &m_qterms[i];
-		}
-		return NULL;
-	};
-
 	// return -1 if does not exist in query, otherwise return the 
 	// query word num
 	int32_t getWordNum ( int64_t wordId );
-
-	// this is now just used for boolean queries to deteremine if a docid
-	// is a match or not
-	unsigned char *m_bitScores ;
-	int32_t           m_bitScoresSize;
-
-	// one bmap per byte of qvec_t
-	qvec_t m_bmap[sizeof(qvec_t)][256];
 
 	// . bit vector that is 1-1 with m_qterms[]
 	// . only has bits that we must have if we were default AND
@@ -604,14 +483,11 @@ class Query {
 
 	// QueryWords are converted to QueryTerms
 	int32_t      m_numTerms;
-	int32_t      m_numTermsSpecial;
 
 	int32_t m_numTermsUntruncated;
 
 	SafeBuf    m_stackBuf;
 	QueryTerm *m_qterms         ;
-
-	int32_t   m_numComponents;
 
 	// site: field will disable site clustering
 	// ip: field will disable ip clustering
@@ -625,22 +501,14 @@ class Query {
 	bool m_hasGBCountryField;
 	char m_hasQuotaField;
 
-	// query id set by Msg39.cpp
-	int32_t m_qid;
-
 	// . we set this to true if it is a boolean query
 	// . when calling Query::set() above you can tell it explicitly
 	//   if query is boolean or not, OR you can tell it to auto-detect
 	//   by giving different values to the "boolFlag" parameter.
 	bool m_isBoolean;
 
-	int32_t m_synTerm;		// first term that's a synonym
-	class SynonymInfo *m_synInfo;
-	int32_t m_synInfoAllocSize;
-
 	// if they got a gbdocid: in the query and it's not boolean, set these
 	int64_t m_docIdRestriction;
-	class Host *m_groupThatHasDocId;
 
 	// for holding the filtered query, in utf8
 	SafeBuf m_sb;
@@ -656,28 +524,13 @@ class Query {
 	Expression        m_expressions[MAX_EXPRESSIONS];
 	int32_t              m_numExpressions;
 
-	// does query contain the pipe operator
-	bool m_piped;
-
 	int32_t m_maxQueryTerms ;
 
 	bool m_queryExpansion;
 
 	bool m_truncated;
-	bool m_hasDupWords;
 
 	bool m_hasUOR;
-	bool m_hasLinksOperator;
-
-	bool m_bmapIsSet ;
-
-	bool m_hasSynonyms;
-
-	SafeBuf m_debugBuf;
-
-	void *m_containingParent;
 };
-	
-bool queryTest();
 
 #endif
