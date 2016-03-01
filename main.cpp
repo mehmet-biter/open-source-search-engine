@@ -8102,7 +8102,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		//if ( ! words.set ( &xml , true , true ) )
 		// do not supply xd so it will be set from scratch
-		if ( !sections.set( &words, &bits, NULL, 0, NULL, 0, 0 ) )
+		if ( !sections.set( &words, &bits, NULL, NULL, 0, 0 ) )
 			return log("build: speedtestxml: sections set: %s",
 				   mstrerror(g_errno));
 
