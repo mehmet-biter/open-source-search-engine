@@ -1486,7 +1486,6 @@ bool Msg25::sendRequests ( ) {
 		r->m_j               = j;
 		r->m_callback        = gotLinkTextWrapper;
 		// do NOT get summary stuff!! slows us down...
-		r->m_maxNumCharsPerLine = 0;
 		r->m_numSummaryLines    = 0;
 		// get title now for steve
 		r->m_titleMaxLen        = 300;

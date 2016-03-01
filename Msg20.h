@@ -26,7 +26,6 @@ class Msg20Request {
 		memset ( (char *)this,0,sizeof(Msg20Request) ); 
 		// these are the only non-zero defaults
 		m_version            = MSG20_CURRENT_VERSION;
-		m_maxNumCharsPerLine = 80;
 		m_numSummaryLines    = 1;
 		m_expected           = false;
 		m_docId              = -1LL; // set docid to "invalid"
@@ -55,7 +54,6 @@ class Msg20Request {
 	int32_t       m_titleMaxLen               ;
 	int32_t       m_summaryMaxLen             ;
 	int32_t       m_summaryMaxNumCharsPerLine ;
-	int32_t       m_maxNumCharsPerLine        ;
 	int32_t       m_maxCacheAge               ;
 	int32_t       m_discoveryDate             ;
 
@@ -71,11 +69,9 @@ class Msg20Request {
 	collnum_t  m_collnum;
 
 	unsigned char       m_highlightQueryTerms       :1;
-	unsigned char       m_wcache                    :1;
 	unsigned char       m_getSummaryVector          :1;
 	unsigned char       m_showBanned                :1;
 	unsigned char       m_includeCachedCopy         :1;
-	unsigned char       m_getOutlinks               :1;
 	unsigned char       m_getTitleRec               :1; // sets ptr_tr in reply
 	unsigned char       m_doLinkSpamCheck           :1;
 	unsigned char       m_isLinkSpam                :1; // Msg25 uses for storage
@@ -146,22 +142,9 @@ public:
 		size_vbuf = 0;
 	}
 
-	// a new one for getting the display contents sequentially used 
-	// by Msg24.cpp. this routine is the exclusive user of the "next"
-	// variable which must be set to "ptr_dbuf" when first called.
-	char *getNextDisplayBuf ( int32_t *len , char **next ) { 
-		if ( ! *next                       ) return NULL;
-		if ( *next >= (char *)ptr_dbuf + size_dbuf ) return NULL;
-		char *s = *next;
-		*len = gbstrlen(*next);
-		*next += *len + 1;
-		return s;
-	};
-
 	int32_t       m_ip                  ;
 	int32_t       m_firstIp             ;
 	int32_t       m_wordPosStart        ;
-	int64_t  m_domHash             ;
 	int64_t  m_docId               ;
 	int32_t       m_firstSpidered       ;
 	int32_t       m_lastSpidered        ;
@@ -175,9 +158,6 @@ public:
 	char       m_contentType         ;
 	char       m_siteRank            ;
 	char       m_isBanned            ;
-	char       m_isFiltered          ;
-	char       m_hasLinkToOurDomOrHost;
-	char       m_urlFilterNum        ;
 	char       m_hopcount            ;
 	char       m_recycled            ;
 	uint8_t    m_language            ;
@@ -185,8 +165,7 @@ public:
 	uint16_t   m_country             ;
 	uint16_t   m_computedCountry     ;
 	int16_t      m_charset             ;
-	// for use by caller
-	class Msg20Reply *m_nextMerged   ;
+
 	int32_t       m_contentLen          ; // was m_docLen
 	int32_t       m_contentHash32       ;  // for deduping diffbot json objects streaming
 	int32_t       m_pageNumInlinks      ;
@@ -300,8 +279,7 @@ public:
 };
 
 class Msg20 {
-
- public:
+public:
 
 	// . this should only be called once
 	// . should also register our get record handlers with the udpServer
@@ -316,13 +294,12 @@ class Msg20 {
 
 	// this is cast to m_replyPtr
 	Msg20Reply *m_r ;
-	// m_replyPtr pts to either m_replyBuf or to mem allocated from the
-	// udp server to hold the reply.
-	//char  *m_replyPtr;
 	int32_t   m_replySize;
 	int32_t   m_replyMaxSize;
+
 	// i guess Msg40.cpp looks at this flag
 	char   m_gotReply;
+
 	// set if we had an error
 	int32_t   m_errno;
 
@@ -331,39 +308,32 @@ class Msg20 {
 
 	int32_t getStoredSize ( ) { 
 		if ( ! m_r ) return 0; 
-		return m_r->getStoredSize(); };
+		return m_r->getStoredSize();
+	}
+
 	// . return how many bytes we serialize into "buf"
 	// . sets g_errno and returns -1 on error
 	int32_t serialize ( char *buf , int32_t bufSize ) {
 		if ( ! m_r ) return 0;
-		return m_r->serialize ( buf , bufSize ); };
+		return m_r->serialize ( buf , bufSize );
+	}
+
 	// . this is destructive on the "buf". it converts offs to ptrs
 	// . sets m_r to the modified "buf" when done
 	// . sets g_errno and returns -1 on error, otherwise # of bytes deseril
 	int32_t deserialize ( char *buf , int32_t bufSize ) ;
+
 	// Msg40 caches each Msg20Reply when it caches the page of results, so,
 	// to keep the size of the cached Msg40 down, we do not cache certain
 	// things. so we have to "clear" these guys out before caching.
-	//void clearBigSample () { m_r->clearBigSample(); };
 	void clearOutlinks  () { if ( m_r ) m_r->clearOutlinks (); };
 	void clearLinks     () { if ( m_r ) m_r->clearOutlinks (); };
 	void clearVectors   () { if ( m_r ) m_r->clearVectors  (); };
 	// copy "src" to ourselves
 	void copyFrom ( class Msg20 *src ) ;
 
-	// inlinker information, used by PostQueryRerank.cpp
-	//class LinkInfo *getInlinks  () { 
-	//	return (class LinkInfo *)m_r->ptr_inlinks ; };
-	//class LinkInfo *getOutlinks () { 
-	//	return (class LinkInfo *)m_r->ptr_outlinks; };
-
 	// just let caller parse it up
 	Msg20Reply *getReply () { return m_r; };
-
-	//static int32_t getLinkHashes(Links& ln, char* buf, int32_t bufSize);
-
-	//char *getNextDisplayBuf ( int32_t *len , char **next ) { 
-	//	return m_r->getNextDisplayBuf(len,next); };
 
 	// for sending the request
 	Multicast m_mcast;

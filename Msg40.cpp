@@ -994,7 +994,6 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 
 		req.m_numSummaryLines    = m_si->m_numLinesInSummary;
 		req.m_maxCacheAge        = maxAge;
-		req.m_wcache             = m_si->m_wcache; // addToCache
 		req.m_state              = this;
 		req.m_callback           = gotSummaryWrapper;
 		req.m_niceness           = m_si->m_niceness;
@@ -1023,8 +1022,6 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		//   is already using "&inlinks=1"
 		if ( m_si->m_displayInlinks == 2 ) 
 			req.m_getLinkInfo     = true;
-		if ( m_si->m_displayOutlinks )
-			req.m_getOutlinks     = true;
 
 		// it copies this using a serialize() function
 		if ( ! m->getSummary ( &req ) ) continue;

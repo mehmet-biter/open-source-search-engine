@@ -19221,9 +19221,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// breathe
 	QUICKPOLL(m_niceness);
 
-	// init
-	reply->m_nextMerged = NULL;
-
 	reply->m_collnum = m_collnum;
 
 	// MsgE uses this one
@@ -19307,9 +19304,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		if ( ufn < 0 ) {
 			log("msg20: bad url filter for url %s", sreq.m_url);
 		}
-
-		// save it
-		reply->m_urlFilterNum = ufn;
 
 		// get spider priority if ufn is valid
 		int32_t pr = 0;
@@ -19551,16 +19545,11 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		int32_t dh32 = links->getDomHash32(i);
 		if ( dh32 == m_req->m_ourDomHash32 ) break;
 	}
-	reply->m_hasLinkToOurDomOrHost = false;
-	if ( i < nl )
-		reply->m_hasLinkToOurDomOrHost = true;
-
 
 	// easy ones
 	reply->m_isPermalink      = m_isPermalink;
 	reply->m_ip               = m_ip;
 	reply->m_firstIp          = *fip;
-	reply->m_domHash          = getDomHash32();//domHash;
 	reply->m_docId            = m_docId;
 	reply->m_contentLen       = size_utf8Content;
 	reply->m_lastSpidered     = getSpideredTime();//m_spideredTime;
