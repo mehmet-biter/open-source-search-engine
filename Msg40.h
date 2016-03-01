@@ -43,7 +43,6 @@ public:
 			  void              *state    ,
 			  void             (* callback)(void *state));
 
-	bool gotCacheReply();
 	// a continuation function of getResults() above
 	bool prepareToGetDocIds ( );
 	bool getDocIds ( bool recall );
@@ -63,11 +62,6 @@ public:
 	int32_t  serialize     ( char *buf , int32_t bufLen ) ;
 	int32_t  deserialize   ( char *buf , int32_t bufLen ) ;
 
-
-	// see Msg51.h for CR_* values of crId
-	int32_t getFilterStats ( int32_t crId ) { return m_filterStats[crId]; }
-	int32_t getNumCensored         ( ) { return m_filterStats[CR_DIRTY]; }
-
 	// . estimated # of total hits
 	// . this is now an EXACT count... since we read all posdb termlists
 	int64_t getNumTotalHits () { return m_msg3a.getNumTotalEstimatedHits(); }
@@ -86,7 +80,6 @@ public:
 	char   getClusterLevel(int32_t i){return m_msg3a.getClusterLevels()[i];}
 
 	int64_t getDocId  ( int32_t i ){return m_msg3a.m_docIds[i]; }
-	int64_t *getDocIds(        ){return m_msg3a.m_docIds; }
 	double  getScore  ( int32_t i ){return m_msg3a.getScores()[i]; }
 
 	class DocIdScore *getScoreInfo(int32_t i){
@@ -97,15 +90,11 @@ public:
 	bool  moreResultsFollow ( )   {return m_moreToCome; }
 	time_t getCachedTime ( )      {return m_cachedTime; }
 
-	int64_t *getDocIdPtr() { return m_msg3a.m_docIds; }
-
-	bool printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
-				  class Msg20Reply *mr ) ;
+	bool printSearchResult9 ( int32_t ix, int32_t *numPrintedSoFar, class Msg20Reply *mr ) ;
 
 	SafeBuf m_unusedBuf;
 	int32_t m_numMsg20sOut ;
 	int32_t m_numMsg20sIn  ;
-	bool m_doneWithLookup;
 
 	int32_t m_omitCount;
 
@@ -113,7 +102,6 @@ public:
 	bool printCSVHeaderRow ( class SafeBuf *sb );
 	bool printJsonItemInCSV ( class State0 *st , int32_t ix );
 	int32_t m_numCSVColumns;
-
 
 	HashTableX m_dedupTable;
 
@@ -139,11 +127,9 @@ public:
 	char      *m_msg20StartBuf;
 	int32_t       m_numToFree;
 
-	bool m_hadPrintError ;
 	int32_t m_numPrinted    ;
 	bool m_printedHeader ;
 	bool m_printedTail   ;
-	bool m_lastChunk     ;
 	int32_t m_sendsOut      ;
 	int32_t m_sendsIn       ;
 	int32_t m_printi        ;
@@ -154,11 +140,6 @@ public:
 
 	// use msg3a to get docIds
 	Msg3a      m_msg3a;
-
-	// use this for getting compressed, cached images of ourselves
-	Msg17      m_msg17;
-	char      *m_cachePtr;
-	int32_t       m_cacheSize;
 
 	// count summary replies (msg20 replies) we get
 	int32_t       m_numRequests;
@@ -178,7 +159,6 @@ public:
 	int64_t  m_startTime;
 
 	// was Msg40 cached? if so, at what time?
-	bool       m_cachedResults;
 	time_t     m_cachedTime;
 
 	int32_t m_tasksRemaining;
@@ -195,15 +175,6 @@ public:
 
 	int32_t  m_errno;
 
-	// was family filter on and query had dirty words?
-	bool m_queryCensored;
-
-	// did we have dups in the list of docids that we had to remove?
-	bool m_removedDupContent;
-
-	// up to 30 different CR_ values in Msg51.h
-	int32_t       m_filterStats[30];
-
 	SearchInput   *m_si;
 
 	bool mergeDocIdsIntoBaseMsg3a();
@@ -216,7 +187,7 @@ public:
 
 	PostQueryRerank m_postQueryRerank;
 
-        HashTableT<uint64_t, uint64_t> m_urlTable;
-};		
+	HashTableT<uint64_t, uint64_t> m_urlTable;
+};
 
 #endif

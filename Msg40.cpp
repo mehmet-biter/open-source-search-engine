@@ -25,17 +25,14 @@ static bool gotSummaryWrapper            ( void *state );
 bool isSubDom(char *s , int32_t len);
 
 Msg40::Msg40() {
-	m_doneWithLookup = false;
 	m_socketHadError = 0;
 	m_buf           = NULL;
 	m_buf2          = NULL;
-	m_cachedResults = false;
 	m_msg20         = NULL;
 	m_numMsg20s     = 0;
 	m_msg20StartBuf = NULL;
 	m_numToFree     = 0;
 	// new stuff for streaming results:
-	m_hadPrintError = false;
 	m_numPrinted    = 0;
 	m_printedHeader = false;
 	m_printedTail   = false;
@@ -44,7 +41,6 @@ Msg40::Msg40() {
 	m_printi        = 0;
 	m_numDisplayed  = 0;
 	m_numPrintedSoFar = 0;
-	m_lastChunk     = false;
 	m_didSummarySkip = false;
 	m_omitCount      = 0;
 	m_printCount = 0;
@@ -144,17 +140,11 @@ bool Msg40::getResults ( SearchInput *si      ,
 	// save that
 	m_firstCollnum = cr->m_collnum;
 
-	// reset this for family filter
-	m_queryCensored = false;
-	m_filterStats[CR_DIRTY]	= 0;  //m_numCensored = 0;
-
 	// . reset these
 	// . Next X Results links? yes or no?
 	m_moreToCome = false;
 	// set this to zero -- assume not in cache
 	m_cachedTime = 0;
-	// assume we are not taken from the serp cache
-	m_cachedResults  = false;
 
 	// bail now if 0 requested!
 	// crap then we don't stream anything if in streaming mode.
@@ -237,34 +227,6 @@ bool Msg40::getResults ( SearchInput *si      ,
 	return status;
 }
 
-bool Msg40::gotCacheReply ( ) {
-	// if not found, get the result the hard way
-	if ( ! m_msg17.wasFound() ) return prepareToGetDocIds ( );
-	// otherwise, get the deserialized stuff
-	int32_t nb = deserialize(m_cachePtr, m_cacheSize);
-	if ( nb <= 0 ) {
-		log ("query: Deserialization of cached search results "
-		     "page failed." );
-		// free m_buf!
-		if ( m_buf ) 
-			mfree ( m_buf , m_bufMaxSize , "deserializeMsg40");
-		// get results the hard way!
-		return prepareToGetDocIds ( );
-	}
-	// log the time it took for cache lookup
-	if ( g_conf.m_logTimingQuery ) {
-		int64_t now  = gettimeofdayInMilliseconds();
-		int64_t took = now - m_startTime;
-		log(LOG_TIMING,
-		    "query: [%"PTRFMT"] found in cache. "
-		    "lookup took %"INT64" ms.",(PTRTYPE)this,took);
-	}
-	m_cachedTime = m_msg17.getCachedTime();
-	m_cachedResults = true;
-	// if it was found, we return true, m_cachedTime should be set
-	return true;
-}
-
 bool Msg40::prepareToGetDocIds ( ) {
 
 	// log the time it took for cache lookup
@@ -289,7 +251,6 @@ bool Msg40::prepareToGetDocIds ( ) {
 			      NULL ) ) {
 		// make sure the m_numDocIds gets set to 0
 		m_msg3a.reset();
-		m_queryCensored = true;
 		return true;
 	}
 
@@ -1293,7 +1254,6 @@ bool Msg40::gotSummary ( ) {
 		     // code
 		     mr->m_contentType != CT_STATUS &&
 		     ! m_dedupTable.addKey ( &mr->m_contentHash32 ) ) {
-			m_hadPrintError = true;
 			log("msg40: error adding to dedup table: %s",
 			    mstrerror(g_errno));
 		}
@@ -1617,10 +1577,6 @@ bool Msg40::gotSummary ( ) {
 		}
 	}
 
-	// . assume no dups removed
-	// . we print "click here to show ommitted results" if this is true
-	m_removedDupContent = false;
-
 	// what is the deduping threshhold? 0 means do not do deuping
 	int32_t dedupPercent = 0;
 	if ( m_si->m_doDupContentRemoval && m_si->m_percentSimilarSummary )
@@ -1679,8 +1635,6 @@ bool Msg40::gotSummary ( ) {
 				      m, m_msg3a.m_docIds[m] , 
 				      s, i, m_msg3a.m_docIds[i] );
 			*level = CR_DUP_SUMMARY;
-                        //m_visibleContiguous--;
-			m_removedDupContent = true;
 			// uncluster the next clustered docid from this 
 			// hostname below "m"
 			if ( m_unclusterCount-- > 0 ) uncluster ( m );
@@ -1758,8 +1712,6 @@ bool Msg40::gotSummary ( ) {
                                                         m_urlTable.
 					     getValueFromSlot(slot));
                                 *level = CR_DUP_URL;
-                                //m_visibleContiguous--;
-                                m_removedDupContent = true;
                         }
                 }
         }
@@ -2255,7 +2207,6 @@ bool Msg40::printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
 		// oom?
 		if ( ! g_errno ) g_errno = EBADENGINEER;
 		log("query: had error: %s",mstrerror(g_errno));
-		m_hadPrintError = true;
 	}
 
 	// count it
