@@ -965,13 +965,6 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		req.size_qbuf            = q->getQueryLen()+1;
 		req.m_langId             = m_si->m_queryLangId;
 
-		// set highlight query
-		if ( m_si->m_highlightQuery &&
-		     m_si->m_highlightQuery[0] ) {
-			req.ptr_hqbuf = m_si->m_highlightQuery;
-			req.size_hqbuf = gbstrlen(req.ptr_hqbuf)+1;
-		}
-
 		req.m_highlightQueryTerms = m_si->m_doQueryHighlighting;
 
 		req.m_isDebug            = (bool)m_si->m_debug;
