@@ -49,6 +49,8 @@ public:
 	int32_t getSummaryDisplayLen();
 	int32_t getSummaryLen();
 
+	bool isSetFromTags();
+
 private:
 	bool verifySummary( char *titleBuf, int32_t titleBufLen );
 
@@ -69,6 +71,8 @@ private:
 	int32_t m_displayLen;
 
 	int32_t  m_maxNumCharsPerLine;
+
+	bool m_isSetFromTags;
 
 	// ptr to the query
 	Query     *m_q;

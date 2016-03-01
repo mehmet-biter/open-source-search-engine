@@ -14,6 +14,7 @@ Summary::Summary()
     , m_numDisplayLines(0)
     , m_displayLen(0)
     , m_maxNumCharsPerLine(0)
+	, m_isSetFromTags(false)
     , m_q(NULL)
     , m_wordWeights(NULL)
     , m_wordWeightSize(0)
@@ -43,6 +44,10 @@ int32_t Summary::getSummaryDisplayLen() {
 
 int32_t Summary::getSummaryLen() {
 	return m_summaryLen;
+}
+
+bool Summary::isSetFromTags() {
+	return m_isSetFromTags;
 }
 
 bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
@@ -89,6 +94,8 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBu
 	// itemprop = "description"
 	if ( xml->getTagContent("itemprop", "description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen) ) {
 		if ( verifySummary( titleBuf, titleBufLen ) ) {
+			m_isSetFromTags = true;
+
 			if ( g_conf.m_logDebugSummary ) {
 				log(LOG_DEBUG, "sum: generated from itemprop description. summary='%.*s'", m_summaryLen, m_summary);
 			}
@@ -100,6 +107,8 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBu
 	// meta property = "og:description"
 	if ( xml->getTagContent("property", "og:description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen, true, TAG_META ) ) {
 		if ( verifySummary( titleBuf, titleBufLen ) ) {
+			m_isSetFromTags = true;
+
 			if ( g_conf.m_logDebugSummary ) {
 				log(LOG_DEBUG, "sum: generated from meta property og:description. summary='%.*s'", m_summaryLen, m_summary);
 			}
@@ -111,6 +120,8 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBu
 	// meta name = "description"
 	if ( xml->getTagContent("name", "description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen, true, TAG_META ) ) {
 		if ( verifySummary( titleBuf, titleBufLen ) ) {
+			m_isSetFromTags = true;
+
 			if ( g_conf.m_logDebugSummary ) {
 				log(LOG_DEBUG, "sum: generated from meta name description. summary='%.*s'", m_summaryLen, m_summary);
 			}

@@ -633,7 +633,7 @@ public:
 	SafeBuf *getHeaderTagBuf();
 	class Title *getTitle ();
 	class Summary *getSummary () ;
-	char *getHighlightedSummary ();
+	char *getHighlightedSummary ( bool *isSetFromTagsPtr );
 	char *getIsNoArchive ( ) ;
 	int32_t *getUrlFilterNum();
 	char *getIsLinkSpam ( ) ;
@@ -786,6 +786,7 @@ public:
 	SafeBuf    m_fragBuf;
 	SafeBuf    m_wordSpamBuf;
 	SafeBuf    m_finalSummaryBuf;
+	bool m_isFinalSummarySetFromTags;
 	int32_t       m_firstIp;
 
 	class SafeBuf     *m_savedSb;

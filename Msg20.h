@@ -184,6 +184,8 @@ public:
 	char       m_outlinkInContent    ; // set for m_getLinkText
 	char       m_outlinkInComment    ; // set for m_getLinkText
 	char       m_isPermalink         ; // set for m_getLinkText (buzz)
+
+	bool m_isDisplaySumSetFromTags;
 	
 	// . serialize() converts these ptrs into offsets in m_buf[] and
 	//   deserialize() converts them back into ptrs on the receiver's end

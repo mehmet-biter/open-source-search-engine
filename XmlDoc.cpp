@@ -19353,7 +19353,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	// do they want a summary?
 	if ( m_req->m_numSummaryLines>0 && ! reply->ptr_displaySum ) {
-		char *hsum = getHighlightedSummary();
+		char *hsum = getHighlightedSummary( &(reply->m_isDisplaySumSetFromTags) );
 
 		if ( ! hsum || hsum == (void *)-1 ) {
 			return (Msg20Reply *)hsum;
@@ -20315,8 +20315,12 @@ Summary *XmlDoc::getSummary () {
 	return &m_summary;
 }
 
-char *XmlDoc::getHighlightedSummary ( ) {
+char *XmlDoc::getHighlightedSummary ( bool *isSetFromTagsPtr ) {
 	if ( m_finalSummaryBufValid ) {
+		if ( isSetFromTagsPtr ) {
+			*isSetFromTagsPtr = m_isFinalSummarySetFromTags;
+		}
+
 		return m_finalSummaryBuf.getBufStart();
 	}
 
@@ -20333,12 +20337,18 @@ char *XmlDoc::getHighlightedSummary ( ) {
 	// get the summary
 	char *sum    = s->getSummary();
 	int32_t sumLen = s->getSummaryDisplayLen();
+	m_isFinalSummarySetFromTags = s->isSetFromTags();
 
 	// assume no highlighting?
 	if ( ! m_req->m_highlightQueryTerms || sumLen == 0 ) {
 		m_finalSummaryBuf.safeMemcpy ( sum , sumLen );
 		m_finalSummaryBuf.nullTerm();
 		m_finalSummaryBufValid = true;
+
+		if ( isSetFromTagsPtr ) {
+			*isSetFromTagsPtr = m_isFinalSummarySetFromTags;
+		}
+
 		return m_finalSummaryBuf.getBufStart();
 	}
 
@@ -20365,6 +20375,10 @@ char *XmlDoc::getHighlightedSummary ( ) {
 	m_finalSummaryBuf.safeMemcpy ( &hb );
 	m_finalSummaryBufValid = true;
 	m_finalSummaryBuf.nullTerm();
+
+	if ( isSetFromTagsPtr ) {
+		*isSetFromTagsPtr = m_isFinalSummarySetFromTags;
+	}
 
 	return m_finalSummaryBuf.getBufStart();
 }
