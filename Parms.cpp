@@ -6206,19 +6206,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	// we use wikipedia cluster for quick categorization
-	m->m_title = "is wikipedia cluster";
-	m->m_desc  = "Is this cluster just used for indexing wikipedia pages?";
-	m->m_cgi   = "iswiki";
-	m->m_off   = (char *)&g_conf.m_isWikipedia - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-
         m->m_title = "ask for gzipped docs when downloading";
         m->m_desc  = "If this is true, gb will send Accept-Encoding: gzip "
 		"to web servers when doing http downloads. It does have "

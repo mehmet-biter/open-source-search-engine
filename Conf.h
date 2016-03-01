@@ -194,12 +194,6 @@ class Conf {
 	// . we enforce the 'elvtune -w 32 /dev/sd?' cmd on all drives because
 	//   that yields higher performance when dumping/merging on disk
 	bool  m_isLive;
-	
-	// is this a buzzlogic cluster?
-	//bool m_isBuzzLogic;
-
-	// is this a wikipedia cluster?
-	bool   m_isWikipedia;
 
 	// for holding robot.txt files for various hostnames
 	int32_t  m_robotdbMaxCacheMem  ;

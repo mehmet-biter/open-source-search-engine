@@ -1062,10 +1062,6 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	}
 	else if (m_buckets.getNumKeys() <= 0 ) return true;
 
-	// never dump indexdb if we are the wikipedia cluster
-	if ( g_conf.m_isWikipedia && m_rdbId == RDB_INDEXDB )
-		return true;
-
 	// never dump doledb any more. it's rdbtree only.
 	if ( m_rdbId == RDB_DOLEDB )
 		return true;
