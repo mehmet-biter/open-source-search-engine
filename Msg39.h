@@ -16,7 +16,6 @@
 #include "Msg51.h"
 #include "HashTableX.h"
 
-#define MAX_MSG39_REQUEST_SIZE (500+MAX_QUERY_LEN)
 
 void  handleRequest39 ( UdpSlot *slot , int32_t netnice ) ;
 
