@@ -105,8 +105,6 @@ public:
 	SafeBuf m_unusedBuf;
 	int32_t m_numMsg20sOut ;
 	int32_t m_numMsg20sIn  ;
-	int32_t m_j ;
-	int32_t m_i ;
 	bool m_doneWithLookup;
 
 	int32_t m_omitCount;

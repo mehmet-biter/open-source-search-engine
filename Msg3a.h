@@ -85,10 +85,7 @@ public:
 	int32_t m_numQueriedHosts;
 
 	bool m_moreDocIdsAvail;
-	int32_t m_totalDocCount;
 
-	// don't get more docIds than this from any one split
-	int32_t       m_maxDocIdsToCompute;
 	// this is set if IndexTable::addLists() had an error
 	int32_t       m_errno;
 
