@@ -2397,7 +2397,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       , mr->m_docId
 			       // this is a double now. this won't work
 			       // for streaming...
-			       , msg40->m_msg3a.m_scores[ix]
+			       , msg40->m_msg3a.getScores()[ix]
 			       // subtract 8 for scrollbar on right
 			       , widgetWidth - 2*8 - 8 // padding is 8px
 			       , (int32_t)RESULT_HEIGHT

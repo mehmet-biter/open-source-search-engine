@@ -70,7 +70,7 @@ public:
 
 	// . estimated # of total hits
 	// . this is now an EXACT count... since we read all posdb termlists
-	int64_t getNumTotalHits (){return m_msg3a.m_numTotalEstimatedHits; }
+	int64_t getNumTotalHits () { return m_msg3a.getNumTotalEstimatedHits(); }
 
 	// . we copy query and coll to our own local buffer
 	// . these routines give us back our inputted parameters we saved
@@ -80,14 +80,14 @@ public:
 	int32_t  getDocsWanted         ( ) { return m_si->m_docsWanted; }
 	int32_t  getFirstResultNum     ( ) { return m_si->m_firstResultNum; }
 
-	int32_t  getNumResults (        ){return m_msg3a.m_numDocIds; }
-	int32_t  getNumDocIds  (        ){return m_msg3a.m_numDocIds; }
+	int32_t  getNumResults (        ){return m_msg3a.getNumDocIds(); }
+	int32_t  getNumDocIds  (        ){return m_msg3a.getNumDocIds(); }
 
-	char   getClusterLevel(int32_t i){return m_msg3a.m_clusterLevels[i];}
+	char   getClusterLevel(int32_t i){return m_msg3a.getClusterLevels()[i];}
 
 	int64_t getDocId  ( int32_t i ){return m_msg3a.m_docIds[i]; }
 	int64_t *getDocIds(        ){return m_msg3a.m_docIds; }
-	double  getScore  ( int32_t i ){return m_msg3a.m_scores[i]; }
+	double  getScore  ( int32_t i ){return m_msg3a.getScores()[i]; }
 
 	class DocIdScore *getScoreInfo(int32_t i){
 		if ( ! m_msg3a.m_scoreInfos ) return NULL;

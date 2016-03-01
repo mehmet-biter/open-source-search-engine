@@ -582,7 +582,7 @@ bool PostQueryRerank::postRerank ( ) {
 		int32_t     x = m_positionList [ y ];
 		m_msg40->m_msg20                 [ x ] = a->m_m20;
 		//m_msg40->m_msg3a.m_tiers         [ x ] = a->m_tier;
-		m_msg40->m_msg3a.m_scores        [ x ] = a->m_score;
+		m_msg40->m_msg3a.getScores()     [ x ] = a->m_score;
 		m_msg40->m_msg3a.m_docIds        [ x ] = a->m_docId;
 		m_msg40->m_msg3a.m_clusterLevels [ x ] = a->m_clusterLevel;
 		//log( LOG_DEBUG, "pqr: post: mapped y:%"INT32" "
