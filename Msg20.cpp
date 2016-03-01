@@ -447,7 +447,10 @@ bool gotReplyWrapperxd ( void *state ) {
 	// print time
 	int64_t now = gettimeofdayInMilliseconds();
 	int64_t took = now - xd->m_setTime;
-	int64_t took2 = now - xd->m_cpuSummaryStartTime;
+	int64_t took2 = 0;
+	if ( xd->m_cpuSummaryStartTime) {
+		took2 = now - xd->m_cpuSummaryStartTime;
+	}
 
 	// if there is a baclkog of msg20 summary generation requests this
 	// is really not the cpu it took to make the smmary, but how long it
@@ -456,22 +459,16 @@ bool gotReplyWrapperxd ( void *state ) {
 	// meanwhile its clock was ticking. TODO: make this better?
 	// only do for niceness 0 otherwise it gets interrupted by quickpoll
 	// and can take a int32_t time.
-	if ( (req->m_isDebug || took > 100) && req->m_niceness == 0 )
-		log(LOG_TIMING, "query: Took %"INT64" ms to compute summary for d=%"INT64" u=%s "
-		    "niceness=%"INT32" status=%s",
-		    took,
+	if ( req->m_niceness == 0 && (req->m_isDebug || took > 100 || took2 > 100 ) ) {
+		log(LOG_TIMING, "query: Took %" INT64" ms (total=%" INT64" ms) to compute summary for d=%" INT64" "
+		    "u=%s status=%s q=%s",
+		    took2,
+			took,
 		    xd->m_docId,xd->m_firstUrl.m_url,
-		    xd->m_niceness ,
-		    mstrerror(g_errno));
-	if ( (req->m_isDebug || took2 > 100) &&
-	     xd->m_cpuSummaryStartTime &&
-	     req->m_niceness == 0 )
-		log(LOG_TIMING, "query: Took %"INT64" ms of CPU to compute summary for d=%"INT64" "
-		    "u=%s niceness=%"INT32" q=%s",
-		    took2 ,
-		    xd->m_docId,xd->m_firstUrl.m_url,
-		    xd->m_niceness ,
-		    req->ptr_qbuf );
+		    mstrerror(g_errno),
+		    req->ptr_qbuf);
+	}
+
 	// error?
 	if ( g_errno ) { xd->m_reply.sendReply ( xd ); return true; }
 	// this should not block now
