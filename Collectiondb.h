@@ -610,8 +610,8 @@ class CollectionRec {
 	SafeBuf m_diffbotUrlProcessRegEx;
 	regex_t m_ucr;
 	regex_t m_upr;
-	int32_t m_hasucr:1;
-	int32_t m_hasupr:1;
+	bool m_hasucr;
+	bool m_hasupr;
   
 	// only crawl pages within hopcount of a seed. 0 for no limit 
 	int32_t m_diffbotMaxHops;

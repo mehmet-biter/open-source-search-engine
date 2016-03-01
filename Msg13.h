@@ -84,42 +84,42 @@ public:
 	char m_isCustomCrawl;
 	// send back error ENOGOODDATE if it does not have one. but if
 	// harvestLinks is true, just send back a filtered list of links
-	int32_t  m_requireGoodDate:1;
-	int32_t  m_harvestLinksIfNoGoodDate:1;
-	int32_t  m_compressReply:1;
-	int32_t  m_useCompressionProxy:1;
+	unsigned  m_requireGoodDate:1;
+	unsigned  m_harvestLinksIfNoGoodDate:1;
+	unsigned  m_compressReply:1;
+	unsigned  m_useCompressionProxy:1;
 	// if m_forwardDownloadRequest is true then we pick the host to 
 	// download this url based on the IP address, the idea being that
 	// only one host is responsible for downloading from a particular
 	// ip address. this keeps webmasters happier so they can block us
 	// by just blocking one ip address. and it makes it easier for them
 	// to analyze their web logs.
-	int32_t  m_forwardDownloadRequest:1;
+	unsigned  m_forwardDownloadRequest:1;
 	// does url end in /robots.txt ?
-	int32_t  m_isRobotsTxt:1; 
+	unsigned  m_isRobotsTxt:1; 
 	// should we call getTestDoc()/addTestDoc() like for the "test" coll
 	// and for Test.cpp?
-	int32_t  m_useTestCache:1; 
-	int32_t  m_addToTestCache:1;
-	int32_t  m_skipHammerCheck:1;
-	int32_t  m_attemptedIframeExpansion:1;
-	int32_t  m_crawlDelayFromEnd:1;
-	int32_t  m_forEvents:1;
+	unsigned  m_useTestCache:1; 
+	unsigned  m_addToTestCache:1;
+	unsigned  m_skipHammerCheck:1;
+	unsigned  m_attemptedIframeExpansion:1;
+	unsigned  m_crawlDelayFromEnd:1;
+	unsigned  m_forEvents:1;
 
 	// does m_url represent a FULL http request mime and NOT just a url?
 	// this happens when gigablast is being used like a squid proxy.
-	int32_t  m_isSquidProxiedUrl:1;
+	unsigned  m_isSquidProxiedUrl:1;
 
-	int32_t  m_foundInCache:1;
-	int32_t  m_forceUseFloaters:1;
+	unsigned  m_foundInCache:1;
+	unsigned  m_forceUseFloaters:1;
 
-	int32_t  m_wasInTableBeforeStarting:1;
-	int32_t  m_isRootSeedUrl:1;
+	unsigned  m_wasInTableBeforeStarting:1;
+	unsigned  m_isRootSeedUrl:1;
 
-	//int32_t  m_testParserEnabled:1;
-	//int32_t  m_testSpiderEnabled:1;
-	//int32_t  m_isPageParser:1;
-	//int32_t  m_isPageInject:1;
+	//unsigned  m_testParserEnabled:1;
+	//unsigned  m_testSpiderEnabled:1;
+	//unsigned  m_isPageParser:1;
+	//unsigned  m_isPageInject:1;
 
 	// if we just end up calling HttpServer::getDoc() via calling
 	// downloadDoc() then we set this for callback purposes
