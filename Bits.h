@@ -10,8 +10,6 @@
 #ifndef _BITS_H_
 #define _BITS_H_
 
-#include "Words.h"
-
 // . here's the bit define's:
 // . used for phrasing 
 // . no punctuation or "big" numbers can be in a phrase
@@ -106,14 +104,12 @@ typedef uint32_t wbit_t;
 // summary bits used for doing summaries at query time
 typedef uint16_t swbit_t;
 
+class Words;
+
 class Bits {
 public:
 	Bits();
 	~Bits();
-
-	bool set2( Words *words, int32_t niceness ) {
-		return set( words, TITLEREC_CURRENT_VERSION, niceness );
-	}
 
 	// . returns false and sets errno on error
 	// provide it with a buffer to prevent a malloc
