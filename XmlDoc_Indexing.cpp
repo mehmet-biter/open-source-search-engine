@@ -3259,7 +3259,7 @@ skipsingleword:
 		if ( wts && npid ) {
 			// get phrase as a string
 			int32_t plen;
-			char *phr=phrases->getPhrase(i,&plen,2);
+			char *phr= phrases->getPhrase(i, &plen);
 			// store it
 			if ( ! storeTerm ( phr,plen,ph2,hi,i,
 					   wposvec[i], // wordPos

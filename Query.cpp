@@ -1281,7 +1281,6 @@ bool Query::setQWords ( char boolFlag ,
 	// . break query up into Words and phrases
 	// . because we now deal with boolean queries, we make parentheses
 	//   their own separate Word, so tell "words" we're setting a query
-	//Words words;
 	if ( !words.set( m_sb.getBufStart(), m_sb.length(), true, 1 ) )
 		return log("query: Had error parsing query: %s.",
 			   mstrerror(g_errno));
@@ -2291,17 +2290,13 @@ bool Query::setQWords ( char boolFlag ,
 		// get the first word # to our left that starts a phrase
 		// of which we are a member
 		qw->m_leftPhraseStart = -1;
-		//int64_t tmp;
 		for ( int32_t j = i - 1 ; j >= 0 ; j-- ) {
-			//if ( ! bits.isIndexable(j)     ) continue;
 			if ( ! bits.canPairAcross(j+1) ) break;
-			//if ( ! bits.canStartPhrase(j)  ) continue;
 			if ( ! wids[j] ) continue;
 
 			qw->m_leftPhraseStart = j;
 			// we can't pair across alnum words now, we just want bigrams
 			if ( wids[j] ) break;
-			//break;
 			// now we do bigrams so only allow two words even
 			// if they are stop words
 			break;
@@ -2346,7 +2341,7 @@ bool Query::setQWords ( char boolFlag ,
 
 			// how many regular words int32_t is the bigram?
 			int32_t plen2;
-			phrases.getPhrase ( i , &plen2 ,2);
+			phrases.getPhrase(i, &plen2);
 
 			// get just the bigram for now
 			qw->m_phraseLen = plen2;
