@@ -1440,7 +1440,7 @@ bool HttpServer::sendSuccessReply ( TcpSocket *s , char format, char *addMsg) {
 bool HttpServer::sendErrorReply ( GigablastRequest *gr ) {
 
 	int32_t error = g_errno;
-	char *errmsg = mstrerror(error);
+	const char *errmsg = mstrerror(error);
 
 	time_t now ;//= getTimeGlobal();
 	if ( isClockInSync() ) now = getTimeGlobal();
@@ -1506,7 +1506,7 @@ bool HttpServer::sendErrorReply ( GigablastRequest *gr ) {
 // . send an error reply, like "HTTP/1.1 404 Not Found"
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , char *errmsg ,
+bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , const char *errmsg ,
 				  int32_t *bytesSent ) {
 	if ( bytesSent ) *bytesSent = 0;
 	// clear g_errno so the send goes through
@@ -1619,7 +1619,7 @@ bool HttpServer::sendErrorReply ( TcpSocket *s , int32_t error , char *errmsg ,
 	*/
 }
 bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error , 
-				      char *errmsg, 
+				      const char *errmsg, 
 				      //int32_t  rawFormat, 
 				      char format ,
 				      int errnum, char *content) {

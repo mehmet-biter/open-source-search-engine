@@ -1763,7 +1763,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	}
 	
 	// what is the reason it cannot vote...?
-	char *note    = NULL;
+	const char *note    = NULL;
 	int32_t  noteLen = 0;
 	
 	// assume it CAN VOTE for now
@@ -2007,7 +2007,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		m_replySizes[m_numReplyPtrs] = rsize;
 		// why we do this?
 		if ( note && ! r->ptr_note ) {
-			r->ptr_note = note;
+			r->ptr_note = (char*)note;
 			r->size_note = noteLen+1;
 		}
 		// store this in the reply for convenience
@@ -2928,7 +2928,7 @@ char *Msg25::isDup ( Msg20Reply *r , Msg20Reply *p ) {
 	return NULL;
 }
 
-bool Msg25::addNote ( char *note , int32_t noteLen , int64_t docId ) {
+bool Msg25::addNote ( const char *note , int32_t noteLen , int64_t docId ) {
 	// return right away if no note
 	if ( ! note || noteLen <= 0 ) return true;
 	// get hash

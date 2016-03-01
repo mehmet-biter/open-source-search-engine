@@ -446,7 +446,7 @@ class Msg25 {
 	class Msg20Reply *getLoser (class Msg20Reply *r, class Msg20Reply *p);
 	char             *isDup    (class Msg20Reply *r, class Msg20Reply *p);
 
-	bool addNote ( char *note , int32_t noteLen , int64_t docId );
+	bool addNote ( const char *note , int32_t noteLen , int64_t docId );
 
 	// m_linkInfo ptr references into here. provided by caller.
 	SafeBuf *m_linkInfoBuf;

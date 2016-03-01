@@ -21647,7 +21647,7 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	int32_t ufn = -1;
 	if ( m_urlFilterNumValid ) ufn = m_urlFilterNum;
 
-	char *es = mstrerror(m_indexCode);
+	const char *es = mstrerror(m_indexCode);
 	if ( ! m_indexCode ) es = mstrerror(g_errno);
 
 	int32_t isXml = hr->getLong("xml",0);
