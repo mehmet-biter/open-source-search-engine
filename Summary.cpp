@@ -62,11 +62,8 @@ bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
 
 		m_summaryExcerptLen[0] = m_summaryLen;
 		m_numExcerpts = 1;
-
-		// in this case we only have one summary line
-		if ( m_numDisplayLines > 0 ) {
-			m_displayLen = m_summaryLen;
-		}
+		m_numDisplayLines = 1;
+		m_displayLen = m_summaryLen;
 
 		return true;
 	}
