@@ -83,8 +83,6 @@ void gbiconv_reset(){
 
 
 
-#define MAX_BAD_CHARS 500
-
 #define VERIFY_UNICODE_CHECKSUMS 1
 
 #define CHKSUM_UPPERMAP          1241336150

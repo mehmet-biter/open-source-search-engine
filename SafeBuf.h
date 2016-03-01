@@ -317,7 +317,6 @@ public:
 	char  m_renderHtml;
 };
 
-#define XSTRMACRO(s) STRMACRO(s)
 #define STRMACRO(s) #s
 #define TOKENPASTE(x, y) x ## y
 #define TOKENPASTE2(x, y) TOKENPASTE(x, y)

@@ -605,7 +605,6 @@ class PosdbTable {
 	int32_t m_realMaxTop;
 };
 
-#define MAXDST 10
 
 // distance used when measuring word from title/linktext/etc to word in body
 #define FIXED_DISTANCE 400
@@ -703,8 +702,6 @@ class DocIdScore {
 	// . record offset into PosdbTable.m_singleScoreBuf
 	// . Msg39Reply::ptr_singleScoreBuf will be this
 	int32_t m_singlesOffset;
-	//PairScore   m_pairScores  [MAXDST][MAXDST][MAX_TOP];
-	//SingleScore m_singleScores[MAXDST]        [MAX_TOP];
 
 	// Msg3a.cpp::mergeLists() should set these ptrs after it
 	// copies over a top DocIdScore for storing the final results array

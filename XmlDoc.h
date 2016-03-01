@@ -62,8 +62,6 @@
 
 #define POST_VECTOR_SIZE   (32*4)
 
-#define XD_GQ_MAX_SIZE        1000
-
 #define MAX_LINK_TEXT_LEN     512
 #define MAX_SURROUNDING_TEXT_WIDTH 600
 #define MAX_RSSITEM_SIZE  30000

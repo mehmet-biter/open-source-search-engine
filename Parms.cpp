@@ -29,8 +29,6 @@
 #include "SpiderProxy.h" // buildProxyTable()
 #include "PageInject.h" // InjectionRequest
 
-// width of input box in characters for url filter expression
-#define REGEX_TXT_MAX 80
 
 Parms g_parms;
 
@@ -2016,13 +2014,7 @@ bool Parms::printParm ( SafeBuf* sb,
 				"size=12>",cgi,*(int64_t *)s);
 	else if ( t == TYPE_STRING || t == TYPE_STRINGNONEMPTY ) {
 		int32_t size = m->m_size;
-		// give regular expression box on url filters page more room
-		//if ( m->m_page == PAGE_FILTERS ) {
-		//	if ( size > REGEX_TXT_MAX ) size = REGEX_TXT_MAX;
-		//}
-		//else {
 		if ( size > 20 ) size = 20;
-		//}
 		sb->safePrintf ("<input type=text name=%s size=%"INT32" value=\"",
 				cgi,size);
 
@@ -2061,7 +2053,6 @@ bool Parms::printParm ( SafeBuf* sb,
 		int32_t size = m->m_size;
 		// give regular expression box on url filters page more room
 		if ( m->m_page == PAGE_FILTERS ) {
-			//if ( size > REGEX_TXT_MAX ) size = REGEX_TXT_MAX;
 			size = 40;
 		}
 		else {

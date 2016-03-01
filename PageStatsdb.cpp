@@ -1,6 +1,5 @@
 #include "gb-include.h"
 
-#define X_DISPLAY_MISSING 1
 //#include <plotter.h>
 //#include <fstream.h>
 #include <math.h>
