@@ -108,6 +108,10 @@ public:
 	// . # estimated total hits
 	int64_t  m_numTotalEstimatedHits;
 
+	// estimated percentage of index searched of the desired scope
+	// unresponsive shards count as 0.0 toward the global estimate
+	double m_pctSearched;
+
 	// we have one request that we send to each split
 	class Msg39Request *m_r;
 	char               *m_rbufPtr;

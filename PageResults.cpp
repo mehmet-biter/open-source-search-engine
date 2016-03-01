@@ -953,6 +953,8 @@ bool printSearchResultsHeader ( State0 *st ) {
 			       msg40->m_msg3a.m_skippedShards);
 		sb->safePrintf("\t<totalShards>%"INT32"</totalShards>\n",
 			       g_hostdb.m_numShards );
+		sb->safePrintf("\t<pctSearched>%f</pctSearched>\n",
+			       msg40->m_msg3a.m_pctSearched);
 	}
 
 	if ( st->m_header && si->m_format == FORMAT_JSON ) {
@@ -962,6 +964,8 @@ bool printSearchResultsHeader ( State0 *st ) {
 			       msg40->m_msg3a.m_skippedShards);
 		sb->safePrintf("\"totalShards\":%"INT32",\n",
 			       g_hostdb.m_numShards );
+		sb->safePrintf("\"pctSearched\":%f,\n",
+			       msg40->m_msg3a.m_pctSearched);
 	}
 
 	// save how many docs are in this collection

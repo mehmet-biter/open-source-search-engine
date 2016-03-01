@@ -1041,6 +1041,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 		// . total estimated hits
 		// . this is now an EXACT count!
 		mr.m_estimatedHits = m_numTotalHits;
+		mr.m_pctSearched = m_docIdSplitNumber * 100.0 / m_r->m_numDocIdSplits;
 		// sanity check
 		mr.m_nqt = nqt;
 		// the m_errno if any

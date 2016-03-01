@@ -522,6 +522,7 @@ bool Msg3a::gotAllShardReplies ( ) {
 
 	// update our estimated total hits
 	m_numTotalEstimatedHits = 0;
+	double pctSearchedSum = 0.0;
 
 	for ( int32_t i = 0; i < m_numQueriedHosts ; i++ ) {
 		// get that host that gave us the reply
@@ -632,6 +633,7 @@ bool Msg3a::gotAllShardReplies ( ) {
 		// . THIS should now be exact since we read all termlists
 		//   of posdb...
 		m_numTotalEstimatedHits += mr->m_estimatedHits;
+		pctSearchedSum += mr->m_pctSearched;
 
 		// debug log stuff
 		if ( ! m_debug ) continue;
@@ -654,6 +656,8 @@ bool Msg3a::gotAllShardReplies ( ) {
 			      scores[j] );
 		}
 	}
+
+	m_pctSearched = pctSearchedSum/m_numQueriedHosts;
 
 	// this seems to always return true!
 	mergeLists ( );

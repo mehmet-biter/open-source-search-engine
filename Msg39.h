@@ -153,6 +153,8 @@ public:
 	int32_t   m_nqt;
 	// # of estimated hits we had
 	int32_t   m_estimatedHits;
+	// estimated percentage of index searched of the desired scope
+	double    m_pctSearched;
 	// error code
 	int32_t   m_errno;
 

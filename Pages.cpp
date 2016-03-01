@@ -2003,6 +2003,12 @@ bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) {
 			     , cols , "\n\t# " , false );
 		sb->safePrintf("<b>\t\"numShardsSkipped\":0,\n\n</b>");
 
+		sb->brify2 ( "\t# This is how much of the index we managed to "
+		             "search. Normally 100.0, but dead shards and "
+			     "deadline-cutoffs reduce this."
+			     , cols , "\n\t# " , false );
+		sb->safePrintf("<b>\t\"pctSearched\":98.4,\n\n</b>");
+
 
 		sb->brify2 ( "\t# This is how many shards are "
 			     "ideally in use by Gigablast to generate "
