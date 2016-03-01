@@ -57,7 +57,7 @@ static void generateSummary(Summary &summary, char *htmlInput, char *queryStr, c
 	matches.setQuery(&query);
 	ASSERT_TRUE(matches.set(&words, &phrases, &sections, &bitsForSummary, &pos, &xml, &title, &url, &linkInfo, 0));
 
-	summary.setSummary(&xml, &words, &sections, &pos, &query, NULL, 180, 3, 3, 180, &url, &matches, title.getTitle(), title.getTitleLen());
+	summary.setSummary(&xml, &words, &sections, &pos, &query, 180, 3, 3, 180, &url, &matches, title.getTitle(), title.getTitleLen());
 }
 
 TEST (SummaryTest, StripSamePunct) {

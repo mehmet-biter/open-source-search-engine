@@ -39,7 +39,7 @@ public:
 	Summary();
 	~Summary();
 
-	bool setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q, int64_t *termFreqs,
+	bool setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q,
 			          int32_t maxSummaryLen, int32_t numDisplayLines, int32_t maxNumLines, int32_t maxNumCharsPerLine,
 			          Url *f, Matches *matches, char *titleBuf, int32_t titleBufLen );
 

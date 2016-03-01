@@ -20306,9 +20306,8 @@ Summary *XmlDoc::getSummary () {
 	}
 
 	// compute the summary
-	bool status = m_summary.setSummary( xml, ww, sections, pos, q, (int64_t *)m_req->ptr_termFreqs,
-	                                    m_req->m_summaryMaxLen, numLines, m_req->m_numSummaryLines,
-	                                    m_req->m_summaryMaxNumCharsPerLine, getFirstUrl(), mm,
+	bool status = m_summary.setSummary( xml, ww, sections, pos, q, m_req->m_summaryMaxLen, numLines,
+	                                    m_req->m_numSummaryLines, m_req->m_summaryMaxNumCharsPerLine, getFirstUrl(), mm,
 	                                    ti->getTitle(), ti->getTitleLen() );
 
 	// error, g_errno should be set!

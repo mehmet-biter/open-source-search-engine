@@ -89,7 +89,6 @@ class Msg20Request {
 	// and deserialize() converts them back into ptrs on the receiver's end
 	char      *ptr_qbuf          ;
 	char      *ptr_ubuf          ; // url buffer
-	char      *ptr_termFreqs     ;
 	char      *ptr_linkee        ; // used by Msg25 for getting link text
 	char      *ptr_displayMetas  ;
 
@@ -99,7 +98,6 @@ class Msg20Request {
 	//   so that serialize()/deserialize() still work
 	int32_t       size_qbuf         ;
 	int32_t       size_ubuf         ; // url buffer
-	int32_t       size_termFreqs    ;
 	int32_t       size_linkee       ; // size includes terminating \0
 	int32_t       size_displayMetas ; // size includes terminating \0
 

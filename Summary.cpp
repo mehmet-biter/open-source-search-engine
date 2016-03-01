@@ -127,9 +127,8 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBu
 }
 
 // returns false and sets g_errno on error
-bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q,
-                           int64_t *termFreqs, int32_t maxSummaryLen,  int32_t maxNumLines,
-                           int32_t numDisplayLines, int32_t maxNumCharsPerLine, Url *f,
+bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos, Query *q, int32_t maxSummaryLen,
+						   int32_t maxNumLines, int32_t numDisplayLines, int32_t maxNumCharsPerLine, Url *f,
                            Matches *matches, char *titleBuf, int32_t titleBufLen ) {
 	m_numDisplayLines = numDisplayLines;
 	m_displayLen      = 0;
@@ -189,52 +188,8 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 
 	// query terms
 	int32_t numTerms = q->getNumTerms();
-
-	// . compute our word weights wrt each query. words which are more rare
-	//   have a higher weight. We use this to weight the terms importance 
-	//   when generating the summary.
-	// . used by the proximity algo
-	// . used in setSummaryScores() for scoring summaries
-	if ( termFreqs && q->m_numWords > 1 ) {
-		float maxTermFreq = 0;
-		for ( int32_t i = 0 ; i < numTerms ; i++ ) {
-			// www.abc.com --> treat www.abc as same term freq
-			// 'www.infonavit.gob.mx do de carne? mxa'
-			if(termFreqs[i] > maxTermFreq) {
-				maxTermFreq = termFreqs[i];
-			}
-		}
-
-		maxTermFreq++; //don't div by 0!
-
-		for ( int32_t i = 0 ; i < numTerms ; i++ ) {
-			// if this is a phrase the other words following
-			// the first word will have a word weight of 0
-			// so should be ignored for that...
-			int32_t ndx = q->m_qterms[i].m_qword - q->m_qwords;
-
-			// oh it is already complemented up here
-			m_wordWeights[ndx] = 1.0 - ((float)termFreqs[i] / maxTermFreq);
-
-			//make sure everything has a little weight:
-			if (m_wordWeights[ndx] < .10) {
-				m_wordWeights[ndx] = .10;
-			}
-		}
-	} else {
-		for ( int32_t i = 0 ; i < q->m_numWords; i++ ) {
-			m_wordWeights[i] = 1.0;
-		}
-	}
-
-	if ( g_conf.m_logDebugSummary ) {
-		for ( int32_t i = 0 ; i < q->m_numWords; i++ ) {
-			int64_t tf = -1;
-			if ( termFreqs ) {
-				tf = termFreqs[i];
-			}
-			log("sum: u=%s wordWeights[%" INT32"]=%f tf=%" INT64"", f->m_url,i,m_wordWeights[i],tf);
-		}
+	for ( int32_t i = 0 ; i < q->m_numWords; i++ ) {
+		m_wordWeights[i] = 1.0;
 	}
 
 	// convenience
