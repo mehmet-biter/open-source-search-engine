@@ -704,12 +704,6 @@ int32_t Msg20Reply::serialize ( char *buf , int32_t bufSize ) {
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_categories,size_categories);
 	if(ptr_content)
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_content,size_content);
-	if(ptr_tr)
-		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_tr,size_tr);
-	if(ptr_tlistBuf)
-		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_tlistBuf,size_tlistBuf);
-	if(ptr_tiBuf)
-		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_tiBuf,size_tiBuf);
 	if(ptr_templateVector)
 		VALGRIND_CHECK_MEM_IS_DEFINED(ptr_templateVector,size_templateVector);
 	if(ptr_metadataBuf)
