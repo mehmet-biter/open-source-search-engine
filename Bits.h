@@ -7,58 +7,42 @@
 // . TODO: separate words in phrases w/ period OR space so a search for
 //   "chicken.rib" gives you the renderman file, not a recipe or something
 
-#ifndef _BITS_H_
-#define _BITS_H_
+#ifndef BITS_H
+#define BITS_H
 
 // . here's the bit define's:
 // . used for phrasing 
 // . no punctuation or "big" numbers can be in a phrase
 #define D_CAN_BE_IN_PHRASE      0x0001 
 // is this word a stop word?
-#define D_IS_STOPWORD           0x0002 
-// . used for phrasing 
-// . stop words can have a period preceeding them in the phrase
-// . words preceeded by "/" , "." or "/~" can have a period preceed them
-#define D_CAN_PERIOD_PRECEED    0x0004 
+#define D_IS_STOPWORD           0x0002
 
-// this means the word is in a verified address (bit set in Address.cpp)
-#define D_IS_IN_ADDRESS         0x0008
-
-// . used for phrasing
-// . stop words can only start a phrase if prev word could not "pair across"
-#define D_CAN_START_PHRASE      0x0010 
+//#define D_UNUSED              0x0004
+//#define D_UNUSED              0x0008
+//#define D_UNUSED              0x0010
 
 // . used for phrasing 
 // . can we continue forming our phrase after this word?
 // . some puntuation words and all stop words can be paired across
 #define D_CAN_PAIR_ACROSS       0x0020 
 
-// it it capitalized?
-#define D_IS_CAP                0x0040
-
-// is it in a date?
-#define D_IS_IN_DATE            0x0080
-
-//#define D_UNUSED_1            0x0100
+//#define D_UNUSED              0x0040
+//#define D_UNUSED              0x0080
+//#define D_UNUSED              0x0100
 
 #define D_BREAKS_SENTENCE       0x0200
 // set by Sections.cpp::setMenu() function
 #define D_IN_LINK               0x0400
 
 //#define D_UNUSED              0x0800
-
-// this is so we can still set EV_HASTITLEBYVOTES if a tod date is in the
-// title, all other dates are no-no!
-#define D_IS_DAYNUM             0x1000
-// for setting event titles in Events.cpp
-#define D_GENERIC_WORD          0x2000
+//#define D_UNUSED              0x1000
+//#define D_UNUSED              0x2000
 //#define D_UNUSED              0x4000
-#define D_IS_NUM            0x00008000
+//#define D_UNUSED          0x00008000
 //#define D_UNUSED          0x00010000
 #define D_IS_IN_URL         0x00020000
-// like D_IS_TOD above
-#define D_IS_MONTH          0x00040000
-#define D_IS_HEX_NUM        0x00080000
+//#define D_UNUSED          0x00040000
+//#define D_UNUSED          0x00080000
 
 //
 // the bits below here are used for Summary.cpp when calling 
@@ -113,10 +97,10 @@ public:
 
 	// . returns false and sets errno on error
 	// provide it with a buffer to prevent a malloc
-	bool set( Words *words, char titleRecVersion, int32_t niceness, char *buf = NULL, int32_t bufSize = 0 );
+	bool set( Words *words, int32_t niceness );
 
 	// provide it with a buffer to prevent a malloc
-	bool setForSummary( Words *words, char *buf = NULL, int32_t bufSize = 0 );
+	bool setForSummary( Words *words );
 
 	void reset();
 
@@ -128,24 +112,9 @@ public:
 		return m_bits[i] & D_CAN_BE_IN_PHRASE;
 	}
 
-	bool canStartPhrase( int32_t i ) {
-		return m_bits[i] & D_CAN_START_PHRASE;
-	}
-
-	bool canPeriodPreceed( int32_t i ) {
-		return m_bits[i] & D_CAN_PERIOD_PRECEED;
-	}
-
 	bool canPairAcross( int32_t i ) {
 		return m_bits[i] & D_CAN_PAIR_ACROSS;
 	}
-
-	bool isCap( int32_t i ) {
-		return m_bits[i] & D_IS_CAP;
-	}
-
-	void printBits ( );
-	void printBit  ( int32_t i );
 
 	void setInLinkBits ( class Sections *ss ) ;
 	void setInUrlBits  ( int32_t niceness );
@@ -169,7 +138,6 @@ public:
 
  private:
 	 Words *m_words;
-	 char m_titleRecVersion;
 	 bool m_needsFree;
 
 	 // get bits for the ith word

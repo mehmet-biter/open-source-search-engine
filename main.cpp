@@ -2986,7 +2986,7 @@ bool doCmd ( const char *cmd , int32_t hostId , char *filename ,
 	// doCmdAll()'s call to convertHttpRequestToParmList
 	sock.m_ip = atoip("127.0.0.1");
 	s_r.set ( s_buffer , gbstrlen ( s_buffer ) , &sock );
-	// do not do sig alarms! for now just set this to null so 
+	// do not do sig alarms! for now just set this to null so
 	// the sigalarmhandler doesn't core
 	//g_hostdb.m_myHost = NULL;
 	// run the loop
@@ -7931,7 +7931,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	int32_t  listSize = tlist.getListSize ();
 	// set the titleRec we got
 	//TitleRec tr ;
-	//if ( ! tr.set ( rec , listSize , false /*own data?*/ ) ) 
+	//if ( ! tr.set ( rec , listSize , false /*own data?*/ ) )
 	//	return log("build: speedtestxml: Error setting "
 	//		   "titleRec." );
 	XmlDoc xd;
@@ -7992,7 +7992,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 
 	// print time it took
 	e = gettimeofdayInMilliseconds_force();
-	log("build: Xml::set() took %.3f ms to parse docId %"INT64".", 
+	log("build: Xml::set() took %.3f ms to parse docId %"INT64".",
 	    (double)(e - t)/100.0,docId);
 	double bpms = contentLen/((double)(e-t)/100.0);
 	log("build: %.3f bytes/msec", bpms);
@@ -8097,7 +8097,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	Sections sections;
 	// computeWordIds from xml
 	words.set ( &xml , true , true ) ;
-	bits.set ( &words ,TITLEREC_CURRENT_VERSION, 0);
+	bits.set(&words, 0);
 	t = gettimeofdayInMilliseconds_force();
 	for ( int32_t i = 0 ; i < 100 ; i++ ) 
 		//if ( ! words.set ( &xml , true , true ) )

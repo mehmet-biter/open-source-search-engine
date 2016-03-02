@@ -30,12 +30,11 @@ void Bits::reset() {
 // . set bits for each word
 // . these bits are used for phrasing and by spam detector
 // . returns false and sets errno on error
-bool Bits::set ( Words *words , char titleRecVersion , int32_t niceness , char *buf , int32_t bufSize ) {
+bool Bits::set(Words *words, int32_t niceness) {
 	reset();
 	// save words so printBits works
 	m_words = words;
 	// save for convenience/speed
-	m_titleRecVersion = titleRecVersion;
 	m_niceness        = niceness;
 	// how many words?
 	int32_t numBits = words->getNumWords();
@@ -45,11 +44,9 @@ bool Bits::set ( Words *words , char titleRecVersion , int32_t niceness , char *
 	m_needsFree = false;
 
 	// use local buf?
-	if ( need < BITS_LOCALBUFSIZE ) m_bits = (wbit_t *)m_localBuf;
-	// use provided buf?
-	else if ( need < bufSize ) m_bits = (wbit_t *)buf;
-	// i guess need to malloc
-	else {
+	if ( need < BITS_LOCALBUFSIZE ) {
+		m_bits = (wbit_t *) m_localBuf;
+	} else {
 		m_bitsSize = need;
 		m_bits = (wbit_t *)mmalloc ( need , "Bits1" );
 		m_needsFree = true;
@@ -72,7 +69,6 @@ bool Bits::set ( Words *words , char titleRecVersion , int32_t niceness , char *
 
 	int64_t prevWid = 0LL;
 
-	//int32_t  *wlens     = words->getWordLens();
 	int32_t   brcount   = 0;
 
 	wbit_t bits;
@@ -105,10 +101,6 @@ bool Bits::set ( Words *words , char titleRecVersion , int32_t niceness , char *
 			//   a space before it, was causing issues here!
 			bits= D_CAN_PAIR_ACROSS;
 		}
-		// now everybody has a period before them since i don't
-		// want "project S" to phrase to "projects" or
-		// "the rapist" to phrase to "therapist"
-		bits |= D_CAN_PERIOD_PRECEED;
 
 		// remember our bits.
 		m_bits [ i ] = bits;
@@ -239,67 +231,20 @@ void Bits::setInUrlBits ( int32_t niceness ) {
 	}
 }
 
-void Bits::printBits ( ) {
-	for ( int32_t i = 0 ; i < m_words->getNumWords(); i++ ) {
-		m_words->printWord(i);
-		fprintf(stderr," ");
-		printBit(i);
-		fprintf(stderr,"\n");
-	}
-}
-
-void Bits::printBit ( int32_t i ) {
-	if (m_bits[i]&D_CAN_BE_IN_PHRASE ) fprintf(stderr," canBeInPhrse");
-	else                               fprintf(stderr,"             ");
-	if (m_bits[i]&D_IS_STOPWORD ) fprintf(stderr," stopword");
-	else                          fprintf(stderr,"         ");
-	if (m_bits[i]&D_CAN_PERIOD_PRECEED)fprintf(stderr," periodCanPreceed");
-	else                               fprintf(stderr,"                 ");
-	if (m_bits[i]&D_CAN_START_PHRASE) fprintf(stderr," canStartPhrase");
-	else                              fprintf(stderr,"               ");
-	if (m_bits[i]&D_CAN_PAIR_ACROSS ) fprintf(stderr," canPairAcross");
-	else                              fprintf(stderr,"              ");
-}
-
 // . if we're a stop word and previous word was an apostrophe
 //   then set D_CAN_APOSTROPHE_PRECEED to true and PERIOD_PRECEED to false
 wbit_t Bits::getAlnumBits ( int32_t i , wbit_t prevBits ) {
-
 	char      *s   = m_words->getWord    ( i );
 	int32_t       len = m_words->getWordLen ( i );
 	int64_t  wid = m_words->getWordId  ( i );
 
 	wbit_t bits = 0;
 
-	// this is used by Weights.cpp
-	if ( is_cap_utf8 ( s , len ) ) bits |= D_IS_CAP;
-
 	// this is not case sensitive -- all non-stop words can start phrases
 	if ( ! ::isStopWord ( s , len , wid ) )
-	       return bits | D_CAN_BE_IN_PHRASE | D_CAN_START_PHRASE;
+	       return bits | D_CAN_BE_IN_PHRASE ;
 
-	bits |= 
-		D_CAN_BE_IN_PHRASE   | 
-		D_CAN_PAIR_ACROSS    | 
-		D_IS_STOPWORD        | 
-		D_CAN_PERIOD_PRECEED ;
-
-	// stopwords preceeding an immediate hyphen (i-phone) can start phrases
-	if ( s[len]=='-' && is_alnum_utf8(s+len+1) )
-		return bits | D_CAN_START_PHRASE;
-
-	// capitalized stop words can start phrases. ( kick Him in the *** )
-	if ( is_upper_utf8(s) ) return bits | D_CAN_START_PHRASE;
-
-	// if the previous word could not be paired across then
-	// this stop word can start a phrase.  ( int16_t end.  it happened 
-	// yesterday. )
-	if ((prevBits & D_CAN_PAIR_ACROSS) == 0)
-		return bits | D_CAN_START_PHRASE;
-
-	// . the first alnum word can start a phrase as well
-	// . prevBits may nto be zero if first word was punctuation
-	if ( i <= 1 ) return bits | D_CAN_START_PHRASE;
+	bits |= D_CAN_BE_IN_PHRASE | D_CAN_PAIR_ACROSS | D_IS_STOPWORD  ;
 
 	return bits;
 }
@@ -315,7 +260,7 @@ static nodeid_t s_bt [ 1000 ];
 // . set bits for each word
 // . these bits are used for phrasing and by spam detector
 // . returns false and sets errno on error
-bool Bits::setForSummary ( Words *words , char *buf , int32_t bufSize ) {
+bool Bits::setForSummary ( Words *words ) {
 	// clear the mem
 	reset();
 
@@ -353,9 +298,6 @@ bool Bits::setForSummary ( Words *words , char *buf , int32_t bufSize ) {
 	// use local buf?
 	if ( need < BITS_LOCALBUFSIZE ) {
 		m_swbits = (swbit_t *)m_localBuf;
-	} else if ( need < bufSize ) {
-		// use provided buf?
-		m_swbits = (swbit_t *)buf;
 	} else {
 		// i guess need to malloc
 		m_swbitsSize = need;
@@ -370,7 +312,7 @@ bool Bits::setForSummary ( Words *words , char *buf , int32_t bufSize ) {
 					mstrerror( g_errno ) );
 	}
 
-	// set 
+	// set
 	// D_STRONG_CONNECTOR
 	// D_STARTS_SENTENCE
 	// D_STARTS_FRAGMENT

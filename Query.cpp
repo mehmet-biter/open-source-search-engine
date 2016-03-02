@@ -361,7 +361,7 @@ bool Query::set2 ( const char *query        ,
 // returns false and sets g_errno on error
 bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 
-	// . set m_qptrs/m_qtermIds/m_qbits 
+	// . set m_qptrs/m_qtermIds/m_qbits
 	// . use one bit position for each phraseId and wordId
 	// . first set phrases
 	int32_t n = 0;
@@ -1308,16 +1308,16 @@ bool Query::setQWords ( char boolFlag ,
 	// . STAGE #1
 	// . reset all query words to default
 	//   set all m_ignoreWord and m_ignorePhrase to IGNORE_DEFAULT
-	// . set m_isFieldName, m_fieldCode and m_quoteStart for query words. 
+	// . set m_isFieldName, m_fieldCode and m_quoteStart for query words.
 	//   no field names in quotes. +title:"hey there". 
-	//   set m_quoteStart to -1 if not in quotes. 
+	//   set m_quoteStart to -1 if not in quotes.
 	// . if quotes immediately follow field code's ':' then distribute
 	//   the field code to all words in the quotes
 	// . distribute +/- signs across quotes and fields to m_wordSigns.
 	//   support -title:"hey there".
-	// . set m_quoteStart to -1 if only one alnum word is 
+	// . set m_quoteStart to -1 if only one alnum word is
 	//   in quotes, what's the point of that?
-	// . set boolean op codes (m_opcode). cannot be in quotes. 
+	// . set boolean op codes (m_opcode). cannot be in quotes.
 	//   cannot have a field code. cannot have a word sign (+/-).
 	// . set m_wordId of FIELD_LINK, _URL, _SITE, _IP  fields.
 	//   m_wordId of first should be hash of the whole field value.
@@ -1358,7 +1358,7 @@ bool Query::setQWords ( char boolFlag ,
 
 	// set the Bits used for making phrases from the Words class
 	Bits bits;
-	if ( ! bits.set ( &words, TITLEREC_CURRENT_VERSION , 0 ))
+	if ( !bits.set(&words, 0))
 		return log("query: Had error processing query: %s.",
 			   mstrerror(g_errno));
 
@@ -1966,7 +1966,6 @@ bool Query::setQWords ( char boolFlag ,
 		skipin:
 			// no pair across or even include any boolean op phrs
 			if ( opcode ) {
-				bits.m_bits[i] &= ~D_CAN_START_PHRASE;
 				bits.m_bits[i] &= ~D_CAN_PAIR_ACROSS;
 				bits.m_bits[i] &= ~D_CAN_BE_IN_PHRASE;
 				qw->m_ignoreWord = IGNORE_BOOLOP;
@@ -2109,29 +2108,13 @@ bool Query::setQWords ( char boolFlag ,
 			}
 		}
 		else {
-			// . not even capped query stop words can start phrase
-			// . 'Mice And Men' is just one phrase then
-			// . TODO: "12345678 it was rainy" 
-			//   ("it" should start a phrase)
-			if ( qw->m_isStopWord ) b &= ~D_CAN_START_PHRASE;
-			// . first alnum word can start phrase.
-			// . example: 'the tigers'
-			if ( i <= 1 ) b |= D_CAN_START_PHRASE;
-			// first alnum word in quotes can start phrase.
-			if ( qw->m_quoteStart == i ) // + 1 ) 
-				b |= D_CAN_START_PHRASE;
-			// . right connected but not left can start phrase
-			// . example: 'buy a-rom' , 'buy i-phone'
-			if ( qw->m_rightConnected && ! qw->m_leftConnected )
-				b |= D_CAN_START_PHRASE;
 			// . no field names, bool operators, cruft in fields
 			//   can be any part of a phrase
 			// . no pair across any change of field code
 			// . 'girl title:boy' --> no "girl title" phrase!
-			if ( qw->m_ignoreWord ) { //== IGNORE_FIELDNAME ) {
+			if ( qw->m_ignoreWord ) {
 				b &= ~D_CAN_PAIR_ACROSS;
 				b &= ~D_CAN_BE_IN_PHRASE;
-				b &= ~D_CAN_START_PHRASE;
 			}
 			// . no boolean ops
 			// . 'this OR that' --> no "this OR that" phrase
@@ -2148,22 +2131,6 @@ bool Query::setQWords ( char boolFlag ,
 	next:
 		// set it back all tweaked
 		bits.m_bits[i] = b;
-	}
-
-	// . now since we may have prevented pairing across certain things
-	//   we need to set D_CAN_START_PHRASE for stop words whose left
-	//   punct word can no longer be paired across
-	// . "dancing in the rain" is fun --> will include phrase "is fun".
-	// . title:"is it right"? --> will include phrase "is it"
-	for ( int32_t i = 1 ; i < numWords ; i++ ) {
-		// no punct, alnum only
-		if ( words.isPunct(i) ) continue;
-		// skip if not a stop word
-		if ( ! (bits.m_bits[i] & D_IS_STOPWORD) ) continue;
-		// continue if you can still pair across prev punct word
-		if ( bits.m_bits[i-1] & D_CAN_PAIR_ACROSS ) continue;
-		// otherwise, we can now start a phrase
-		bits.m_bits[i] |= D_CAN_START_PHRASE;
 	}
 
 	// treat strongly connected phrases like cd-rom and 3.2.0.3 as being

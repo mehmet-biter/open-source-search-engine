@@ -2778,7 +2778,7 @@ bool XmlDoc::hashString3( char       *s              ,
 
 	if ( ! words.set   ( s , slen , true , niceness ) )
 		return false;
-	if ( ! bits.set    ( &words , version , niceness ) )
+	if ( !bits.set(&words, niceness))
 		return false;
 	if ( !phrases.set( &words, &bits, niceness ) )
 		return false;

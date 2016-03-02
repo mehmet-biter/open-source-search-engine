@@ -4621,7 +4621,7 @@ Bits *XmlDoc::getBits ( ) {
 	int64_t start = logQueryTimingStart();
 
 	// now set what we need
-	if ( ! m_bits.set ( words , m_version , m_niceness ) )
+	if ( !m_bits.set(words, m_niceness))
 		return NULL;
 
 	logQueryTimingEnd( __func__, start );
@@ -5139,7 +5139,7 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 	Phrases phrases;
 	if ( ! words.set   ( s , slen , true , m_niceness ) )
 		return false;
-	if ( ! bits.set    ( &words , m_version , m_niceness ) )
+	if ( !bits.set(&words, m_niceness))
 		return false;
 	if ( !phrases.set( &words, &bits, m_niceness ) )
 		return false;
