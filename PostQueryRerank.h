@@ -29,13 +29,6 @@ public:
 	bool set1 ( Msg40 *, SearchInput * );
 	bool set2 ( int32_t resultsNeeded );
 
-	bool isEnabled ( ) { return m_enabled; };
-
-	bool preRerank    ( );
-	bool rerank       ( );
-	bool postRerank   ( );
-	void rerankFailed ( );
-
 private:
 	rscore_t rerankLowerDemotesMore ( rscore_t score, 
 				      float value, float maxValue,
