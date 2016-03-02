@@ -34,10 +34,6 @@ private:
 				      float value, float maxValue,
 				      float factor,
 				      char *method, char *reason ) {
-		//log( LOG_DEBUG, "query: rerankLowerDemotesMore -- "
-		//     "score:%"INT32", value:%3.3f, maxValue:%3.3f, factor:%3.3f AWL",
-		//     score, value, maxValue, factor );
-
 		if ( value >= maxValue ) return score;
 
 		rscore_t temp = score;
@@ -58,10 +54,6 @@ private:
 				       float value, float maxValue,
 				       float factor,
 				       char *method, char *reason ) {
-		//log( LOG_DEBUG, "query: rerankHigherDemotesMore -- "
-		//     "score:%"INT32", value:%3.3f, maxValue:%3.3f, factor:%3.3f AWL",
-		//     score, value, maxValue, factor );
-
 		rscore_t temp = score;
 		if ( value >= maxValue ) 
 			score = (rscore_t)((1.0-factor)*score);
@@ -80,10 +72,6 @@ private:
 	};
 	rscore_t rerankAssignPenalty ( rscore_t score, float factor,
 				   char *method, char *reason ) {
-		//log( LOG_DEBUG, "query: rerankAssignPenalty -- "
-		//     "score:%"INT32", factor:%3.3f AWL",
-		//     score, factor );
-
 		rscore_t temp = score;
 		score = (rscore_t)(score * (1.0 - factor));
 		if (score < MINSCORE) score = MINSCORE;
@@ -116,8 +104,6 @@ private:
 	rscore_t rerankDatedbDate( rscore_t score,
 			       time_t datedbDate );
 
-	bool attemptToCluster( );
-
 private:
 	Msg40 *m_msg40;
 	SearchInput *m_si;
@@ -132,12 +118,8 @@ private:
 	// Urls for pqrqttiu, pqrfsh and clustering
 	Url *m_pageUrl;
 
-	// for rerankNonLocationSpecificQueries
-	//uint64_t                   m_querysLoc;
-	//HashTableT<uint64_t, bool> m_ignoreLocs;
-
 	// for rerankOtherPagesFromSameHost
-        HashTableT<uint64_t, int32_t> m_hostCntTable;
+	HashTableT<uint64_t, int32_t> m_hostCntTable;
 
 	// for rerankDatedbDate
 	time_t m_now;

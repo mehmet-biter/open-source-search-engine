@@ -11,26 +11,15 @@
 
 #define TOTAL_RERANKING_TIME_STR  "PostQueryRerank Total Reranking Time" 
 
-//#define DEBUGGING_LANGUAGE
-
 // Type for post query reranking weighted sort list
 struct M20List {
 	Msg20 *m_m20;
-	//int32_t m_score;
 	rscore_t m_score;
-	//int m_tier;
 	int64_t m_docId;
 	char m_clusterLevel;
-	//int32_t m_bitScore;
 	int32_t m_numCommonInlinks;
 	uint32_t m_host;
 };
-
-static int32_t s_reSortFunction   ( const M20List * a, const M20List * b );
-#ifdef DEBUGGING_LANGUAGE
-static void DoDump(char *loc, Msg20 **m20, int32_t num, 
-		   score_t *scores, char *tiers);
-#endif
 
 bool PostQueryRerank::init ( ) {
 	return true;
@@ -200,13 +189,6 @@ rscore_t PostQueryRerank::rerankLanguageAndCountry ( rscore_t score,
 					    "it's summary/title "
 					    "language is foreign" );
 	}
-	
-	// second, apply score factors for non-preferred page languages
-	//if ( lang != langWanted )
-	//	return rerankAssignPenalty( score, 
-	//				    m_si->m_languageWeightFactor,
-	//				    "pqrlang", 
-	//				    "it's page language is foreign" );
 	
 	// . if we got here languages of query and page match and are not
 	//   unknown, so rerank based on country
@@ -408,124 +390,4 @@ rscore_t PostQueryRerank::rerankDatedbDate( rscore_t score,
 				       "pqrdate",
 				       "publish date" );
 }
-
-
-bool PostQueryRerank::attemptToCluster ( ) {
-	// find results that should be clustered
-	bool                       needResort   = false;
-	HashTableT<uint32_t, int32_t> hostPosTable;
-	hostPosTable.set(m_numToSort);
-	for (int32_t i = 0; i < m_numToSort; i++) {
-		// look up this hostname to see if it's been clustered
-		uint32_t key     = m_m20List[i].m_host;
-		if ( key == 0 ) key = 1;
-		int32_t     slot    = hostPosTable.getSlot(key);
-		if (slot != -1) {
-			// see if we are within 10 results of first result
-			// from same host
-			int32_t firstPos = hostPosTable.getValueFromSlot(slot);
-			if (i - firstPos > 1 && i - firstPos < 10) {
-				// this result can be clustered
-				rscore_t maxNewScore;
-				maxNewScore = m_m20List[firstPos].m_score;
-				if (maxNewScore <= m_m20List[i].m_score)
-					continue;
-				needResort = true;
-				if(m_si->m_debug||g_conf.m_logDebugPQR )
-					logf(LOG_DEBUG, "pqr: re-ranking result "
-					     "%"INT32" (%s) from score %.02f to "
-					     "score %.02f "
-					     "in order to cluster it with "
-					     "result "
-					     "%"INT32" (%s)",
-					     i, 
-					     m_m20List[i].m_m20->m_r->ptr_ubuf,
-					     (float)m_m20List[i].m_score, 
-					     (float)maxNewScore,
-					     firstPos, 
-					     m_m20List[firstPos].m_m20->m_r->ptr_ubuf);
-				// bump up the score to cluster this result
-				m_m20List[i].m_score = maxNewScore;
-			}
-			else {
-				hostPosTable.setValue(slot, i);
-			}
-		}
-		else {
-			// add the hostname of this result to the table
-			if (!hostPosTable.addKey(key, i)) {
-				g_errno = ENOMEM;
-				return false;
-			}
-		}
-	}
-
-	// re-sort the array if necessary
-	if (needResort) {
-		log(LOG_DEBUG, "pqr: re-sorting results for clustering");
-		gbmergesort( (void *) m_m20List, (size_t) m_numToSort, 
-			     (size_t) sizeof(M20List),
-			     (int (*)(const void *, const void *))s_reSortFunction);
-	}
-
-	return true;
-}
-
-// Sort function for post query reranking's M20List
-static int32_t s_reSortFunction(const M20List * a, const M20List * b)
-{
-	// Sort by tier first, then score
-	// When sorting by tier, an explicit match (0x40) in a higher tier 
-	// gets precedence over an implicit match (0x20) from a lower tier
-	// Note: don't sort by tier, don't consider bitscores
-	//if ( a->tier < b->tier && 
-	//    (a->bitScore & 0x40 || !b->bitScore & 0x40) ) 
-	//	return -1; 
-	//if ( a->tier > b->tier && 
-	//    (b->bitScore & 0x40 || !a->bitScore & 0x40) )
-	//	return 1; 
-
-	// Absolute match proximity
-	//if ( a->m20->m_proximityScore > b->m20->proximityScore )
-	//	return -1;
-	//else if ( a->m20->m_proximityScore < b->m20->proximityScore )
-	//	return 1;
-
-	// same tier, same proximity, sort by score
-	if ( a->m_score > b->m_score ) 
-		return -1;
-	if ( a->m_score < b->m_score ) 
-		return 1;
-
-	// same tier, same proximity, same score, sort by docid
-	//if ( a->docId < b->docId )
-	//	return -1;
-	//if ( a->docId > b->docId )
-	//	return 1;
-
-	// same score, sort by host
-	if ( a->m_host > b->m_host )
-		return -1;
-	if ( a->m_host < b->m_host )
-		return 1;
-
-	return 0;
-}
-
-#ifdef DEBUGGING_LANGUAGE
-// Debug stuff, remove before flight
-static void DoDump(char *loc, Msg20 **m20, int32_t num, 
-		   score_t *scores, char *tiers) {
-	int x;
-	char *url;
-	//log(LOG_DEBUG, "query: DoDump(): checkpoint %s AWL DEBUG", loc);
-	for(x = 0; x < num; x++) {
-		url = m20[x]->getUrl();
-		if(!url) url = "None";
-		//log( LOG_DEBUG, "query: DoDump(%d): "
-		//     "tier:%d score:%"INT32" [url:'%s'] msg20:%p\n AWL DEBUG",
-		//     x, tiers[x], scores[x], url, m20[x] );
-	}
-}
-#endif // DEBUGGING_LANGUAGE
 
