@@ -520,15 +520,7 @@ bool Msg39::getLists () {
 			if ( qt->m_rightPhraseTerm &&
 			     qt->m_rightPhraseTerm->m_isWikiHalfStopBigram )
 				rightwikibigram = 1;
-			/*
-			char c = m_tmpq.getTermSign(i);
-			char tt[512];
-			int32_t ttlen = m_tmpq.getTermLen(i);
-			if ( ttlen > 254 ) ttlen = 254;
-			if ( ttlen < 0   ) ttlen = 0;
-			// old:painful: convert each term from unicode to ascii
-			gbmemcpy ( tt , m_tmpq.getTerm(i) , ttlen );
-			*/
+
 			int32_t isSynonym = 0;
 			QueryTerm *st = qt->m_synonymOf;
 			if ( st ) isSynonym = true;
@@ -655,16 +647,6 @@ bool Msg39::getLists () {
 		return false;
 	}
 
-	// error?
-	//if ( g_errno ) { 
-	//	log("msg39: Had error getting termlists2: %s.",
-	//	    mstrerror(g_errno));
-	//	// don't bail out here because we are in docIdSplitLoop()
-	//	//sendReply (m_slot,this,NULL,0,0,true);
-	//	return true; 
-	//}
-	
-	//return gotLists ( true );
 	return true;
 }
 

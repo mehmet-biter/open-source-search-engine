@@ -15,8 +15,6 @@ public:
 
 	int32_t getNumWordsInWikiPhrase ( int32_t i , class Words *words );
 
-	bool isInWiki ( uint32_t h ) { return ( m_ht.getSlot ( &h ) >= 0 ); }
-
 	// . load from disk
 	// . wikititles.txt (loads wikititles.dat if and date is newer)
 	bool load();

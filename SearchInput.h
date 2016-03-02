@@ -101,9 +101,6 @@ public:
 
 	char   m_debug;                      // msg40
 
-	char   m_spiderResults;
-	char   m_spiderResultRoots;
-
 	char   m_spellCheck;
 
 	char  *m_displayMetas;               // msg40
@@ -137,8 +134,6 @@ public:
 
 	// prefer what lang in the results. it gets a 20x boost. "en" "xx" "fr"
 	char 	      *m_defaultSortLang;
-	// prefer what country in the results. currently unused. support later.
-	char 	      *m_defaultSortCountry;
 
 	// general parameters
         char   m_dedupURL;
@@ -181,9 +176,6 @@ public:
 	char   m_doQueryHighlighting;         // msg40
 	char  *m_highlightQuery;
 	Query  m_hqq;
-
-	int32_t   m_docsToScanForReranking;
-	float  m_pqr_demFactCommonInlinks;
 
 	// . buzz stuff (buzz)
 	// . these controls the set of results, so should be in the makeKey()

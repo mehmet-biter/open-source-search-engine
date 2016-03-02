@@ -575,12 +575,6 @@ bool downloadTestUrlFromProxies ( ) {
 		char *tu = g_conf.m_proxyTestUrl.getBufStart();
 		if ( ! tu ) continue;
 
-		//spip *ss = (spip *)mmalloc(8,"sptb");
-		//	if ( ! ss ) return false;
-		//	ss->m_ip = sp->m_ip;
-		//	ss->m_port = sp->m_port;
-		
-
 		sp->m_isWaiting = true;
 
 		sp->m_lastDownloadTestAttemptMS = nowms;

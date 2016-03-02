@@ -2,8 +2,8 @@
 
 // . gets the title/summary/docLen/url results from a query
 
-#ifndef _MSG40_H_
-#define _MSG40_H_
+#ifndef MSG40_H
+#define MSG40_H
 
 #define SAMPLE_VECTOR_SIZE (32*4)
 
@@ -75,7 +75,6 @@ public:
 	int32_t  getFirstResultNum     ( ) { return m_si->m_firstResultNum; }
 
 	int32_t  getNumResults (        ){return m_msg3a.getNumDocIds(); }
-	int32_t  getNumDocIds  (        ){return m_msg3a.getNumDocIds(); }
 
 	char   getClusterLevel(int32_t i){return m_msg3a.getClusterLevels()[i];}
 

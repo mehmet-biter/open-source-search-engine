@@ -1338,10 +1338,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 				 "kick in.");
 	}
 	else if ( moreFollow && si->m_format == FORMAT_HTML ) {
-		if ( isAdmin && si->m_docsToScanForReranking > 1 ) {
-			sb->safePrintf ( "PQR'd " );
-		}
-
 		sb->safePrintf ("Results <b>%"INT32"</b> to <b>%"INT32"</b> of "
 			       "exactly <b>%s</b> from an index "
 			       "of about %s pages" , 
@@ -1353,8 +1349,6 @@ bool printSearchResultsHeader ( State0 *st ) {
 	}
 	// otherwise, we didn't get enough results to show this page
 	else if ( si->m_format == FORMAT_HTML ) {
-		if ( isAdmin && si->m_docsToScanForReranking > 1 )
-			sb->safePrintf ( "PQR'd " );
 		sb->safePrintf ("Results <b>%"INT32"</b> to <b>%"INT32"</b> of "
 			       "exactly <b>%s</b> from an index "
 			       "of about %s pages" , 
@@ -3021,26 +3015,18 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	char *coll = "UNKNOWN";
 	if ( scr ) coll = scr->m_coll;
 
-	if ( si->m_format == FORMAT_HTML ) {
-		if ( printCached && cr->m_clickNScrollEnabled ) 
-			sb->safePrintf ( " - <a href=/scroll.html?page="
-					"get?"
-					"q=%s&c=%s&d=%"INT64">"
-					"cached</a>\n",
-					 st->m_qesb.getBufStart() , coll ,
-					mr->m_docId );
-		else if ( printCached )
-			sb->safePrintf ( "<a href=\""
-					"/get?"
-					"q=%s&"
-					"qlang=%s&"
-					"c=%s&d=%"INT64"&cnsp=0\">"
-					"cached</a>\n", 
-					 st->m_qesb.getBufStart() , 
-					// "qlang" parm
-					si->m_defaultSortLang,
-					coll , 
-					mr->m_docId ); 
+	if ( si->m_format == FORMAT_HTML  && printCached ) {
+		sb->safePrintf ( "<a href=\""
+				"/get?"
+				"q=%s&"
+				"qlang=%s&"
+				"c=%s&d=%"INT64"&cnsp=0\">"
+				"cached</a>\n",
+				 st->m_qesb.getBufStart() ,
+				// "qlang" parm
+				si->m_defaultSortLang,
+				coll ,
+				mr->m_docId );
 	}
 
 	// unhide the divs on click

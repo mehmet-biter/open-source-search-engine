@@ -195,85 +195,29 @@ class Conf {
 	//   that yields higher performance when dumping/merging on disk
 	bool  m_isLive;
 
-	// for holding robot.txt files for various hostnames
-	int32_t  m_robotdbMaxCacheMem  ;
-	bool  m_robotdbSaveCache;
-
 	int32_t  m_maxTotalSpiders;
 
 	// indexdb has a max cached age for getting IndexLists (10 mins deflt)
-	int32_t  m_indexdbMaxTreeMem   ;
-	int32_t  m_indexdbMaxCacheMem;
-	//int32_t  m_indexdbMaxDiskPageCacheMem; // for DiskPageCache class only
 	int32_t  m_indexdbMaxIndexListAge;
-	int32_t  m_indexdbTruncationLimit;
-	int32_t  m_indexdbMinFilesToMerge;
-	bool  m_indexdbSaveCache;
 
 	int32_t  m_datedbMaxTreeMem   ;
 	int32_t  m_datedbMaxCacheMem;
-	//int32_t  m_datedbMaxDiskPageCacheMem; // for DiskPageCache class only
-	int32_t  m_datedbMaxIndexListAge;
-	int32_t  m_datedbTruncationLimit;
 	int32_t  m_datedbMinFilesToMerge;
 	bool  m_datedbSaveCache;
 	// for caching exact quotas in Msg36.cpp
 
-	// used by qa.cpp and Msg13.cpp
-	//bool  m_qaBuildMode;
-
-	//int32_t  m_quotaTableMaxMem;
-
-	//bool  m_useBuckets;
-
-	// port of the main udp server
-	int16_t m_udpPort;
-
 	// TODO: parse these out!!!!
-	//char  m_httpRootDir[256]  ;
-	//int16_t m_httpPort           ; now in hosts.conf only
 	int32_t  m_httpMaxSockets     ;
 	int32_t  m_httpsMaxSockets    ;
-	//int32_t  m_httpMaxReadBufSize ;
 	int32_t  m_httpMaxSendBufSize ;
-	//int32_t  m_httpMaxDownloadSockets ;
 
 	// a search results cache (for Msg40)
 	int32_t  m_searchResultsMaxCacheMem    ;
 	int32_t  m_searchResultsMaxCacheAge    ; // in seconds
-	bool  m_searchResultsSaveCache;
 	int64_t m_docSummaryWithDescriptionMaxCacheAge; //cache timeout for document summaries for documents with a meta-tag with description, in milliseconds
-
-	// a sitelinkinfo cache (for Msg25)
-	int32_t  m_siteLinkInfoMaxCacheMem;
-	int32_t  m_siteLinkInfoMaxCacheAge;
-	bool  m_siteLinkInfoSaveCache;
-
-	// a sitelinkinfo cache (for MsgD)
-	int32_t  m_siteQualityMaxCacheMem;
-	int32_t  m_siteQualityMaxCacheAge;
-	bool  m_siteQualitySaveCache;
-
-	// a sitelinkinfo cache (for Msg25)
-
-	// for downloading an rdb
-	//int32_t  m_downloadBufSize; // how big should hosts read buf be?
-
-	// . how many incoming links should we sample?
-	// . used for linkText and quality weighting from number of links
-	//   and their total base quality
-	int32_t  m_maxIncomingLinksToSample;
-
-	// phrase weighting
-	float  m_queryPhraseWeight;
 
 	// for Weights.cpp
 	int32_t   m_sliderParm;
-
-	//int32_t   m_indexTableIntersectionAlgo;
-	// . maxmimum relative weight of a query term (1.0 to inf)
-	// . default about 8?
-	//float  m_queryMaxMultiplier;
 
 	// use sendmail to forward emails we send out
 	char   m_sendmailIp[MAX_MX_LEN];
@@ -286,14 +230,7 @@ class Conf {
 	char   m_delayEmailsAfter[6];
 	//delay emails before
 	char   m_delayEmailsBefore[6];
-	//bool   m_sendEmailAlertsToMattTmobile;
-	//bool   m_sendEmailAlertsToMattAlltell;
-	//bool   m_sendEmailAlertsToJavier;
-	//bool   m_sendEmailAlertsToMelissa;
-	//bool   m_sendEmailAlertsToPartap;
-	//bool   m_sendEmailAlertsToCinco;
 	bool   m_sendEmailAlertsToSysadmin;
-	//bool   m_sendEmailAlertsToZak;
 
 	bool   m_sendEmailAlertsToEmail1;
 	char   m_email1MX[MAX_MX_LEN]; 

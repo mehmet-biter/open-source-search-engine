@@ -296,10 +296,6 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 		log("db: Increase MAX_SHARDS");
 		char *xx = NULL; *xx = 0; 
 	}
-	// and always keep a decent site quality cache of at least 3M
-	if ( g_conf.m_siteQualityMaxCacheMem < 3000000 )
-		g_conf.m_siteQualityMaxCacheMem = 3000000;
-
 
 	// HACK: set this now
 	setRootIps();

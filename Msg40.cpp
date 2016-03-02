@@ -767,16 +767,6 @@ bool Msg40::reallocMsg20Buf ( ) {
 	return true;
 }
 
-void didTaskWrapper ( void* state ) {
-	Msg40 *THIS = (Msg40 *) state;
-	// one less task
-	THIS->m_tasksRemaining--;
-	// this returns false if blocked
-	if ( ! THIS->launchMsg20s ( false ) ) return;
-	// we are done, call the callback
-	THIS->m_callback ( THIS->m_state );
-}
-
 bool Msg40::launchMsg20s ( bool recalled ) {
 
 	// don't launch any more if client browser closed socket
@@ -956,8 +946,6 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		// let "ns" parm override
 		req.m_numSummaryLines    = m_si->m_numLinesInSummary;
 
-		if ( m_si->m_pqr_demFactCommonInlinks > 0.0 )
-			req.m_getLinkInfo = true;
 		// . buzz likes to do the &inlinks=1 parm to get inlinks
 		// . use "&inlinks=1" for realtime inlink info, use 
 		//   "&inlinks=2" to just get it from the title rec, which is 

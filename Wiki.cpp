@@ -53,13 +53,7 @@ bool Wiki::load() {
 		// "dir" is NULL since already included in ff2
 		return m_ht.load ( NULL , ff2 );
 	}
-	// if we got a newer binary version, use that
-	// add in 10 seconds i guess
-	if ( ! errno2 && ! errno1 && stats2.st_mtime +10> stats1.st_mtime ) {
-		log(LOG_INFO,"wiki: Loading %s",ff2);
-		// "dir" is NULL since already included in ff2
-		return m_ht.load ( NULL , ff2 );
-	}
+
 	// if no text file that is bad
 	if ( errno1 ) { 
 		g_errno = errno1 ; 

@@ -1446,11 +1446,6 @@ CollectionRec::CollectionRec() {
 	m_overflow2 = 0x12345678;
 	// the spiders are currently uninhibited i guess
 	m_spiderStatus = SP_INITIALIZING; // this is 0
-	//m_spiderStatusMsg = NULL;
-	// for Url::getSite()
-	m_updateSiteRulesTable = 1;
-	//m_lastUpdateTime = 0LL;
-	m_clickNScrollEnabled = false;
 	// inits for sortbydatetable
 	m_msg5       = NULL;
 	m_importState = NULL;

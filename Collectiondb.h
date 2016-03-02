@@ -357,14 +357,10 @@ class CollectionRec {
 	char  m_getLinkInfo             ; // turn off to save seeks
 	char  m_computeSiteNumInlinks   ;
 	char  m_indexInlinkNeighborhoods;
-	char  m_newAlgo                 ; // use new links: termlist algo
 	char  m_removeBannedPages       ;
 
-    char  m_dedupURLDefault             ;
-	float m_numDocsMultiplier           ;
 	int32_t  m_percentSimilarSummary       ; // Dedup by summary similiarity
 	int32_t  m_summDedupNumLines           ;
-	int32_t  m_contentLenMaxForSummary     ;
 
 	int32_t  m_maxQueryTerms;
 
@@ -373,11 +369,7 @@ class CollectionRec {
 	float m_sameLangWeight;
 
 	// Language stuff
-	float			m_languageUnknownWeight;
-	float			m_languageWeightFactor;
-	char			m_enableLanguageSorting;
 	char 			m_defaultSortLanguage2[6];
-	char 			m_defaultSortCountry[3];
 
 	// for Spider.cpp
 	int32_t m_updateRoundNum;
@@ -399,8 +391,6 @@ class CollectionRec {
 
 	char  m_dedupResultsByDefault   ;
 	char  m_doTagdbLookups        ;
-	char  m_useOldIps               ;
-	int32_t  m_summaryMode		;
 	char  m_deleteTimeouts          ; // can delete docs that time out?
 	char  m_allowAdultDocs          ;
 	char  m_useCanonicalRedirects   ;
@@ -559,13 +549,6 @@ class CollectionRec {
 	// how long a robots.txt can be in the cache (Msg13.cpp/Robotdb.cpp)
 	int32_t m_maxRobotsCacheAge;
 
-	// for importing search results from another cluster
-	int32_t  m_numResultsToImport ;
-	float m_importWeight;
-	int32_t  m_numLinkerWeight;
-	int32_t  m_minLinkersPerImportedResult ;
-	char  m_importColl [ MAX_COLL_LEN + 1 ];
-
 	// use query expansion for this collection?
 	char m_queryExpansion;
 
@@ -573,45 +556,6 @@ class CollectionRec {
 	char m_rcache;
 
 	char m_hideAllClustered;
-
-	// display indexed date, last modified date, datedb (published) date
-	char m_displayIndexedDate;
-	char m_displayLastModDate;
-	char m_displayPublishDate;
-
-	// data feed parms
-	char m_useDFAcctServer;
-	int32_t m_dfAcctIp;
-	int32_t m_dfAcctPort;
-
-	// enable click 'n' scroll
-	char m_clickNScrollEnabled;
-
-	// post query reranking
-	int32_t  m_pqr_docsToScan; // also for # docs for language
-	float m_pqr_demFactCountry; // demotion for foreign countries
-	float m_pqr_demFactPaths; // demotion factor for more paths
-	int32_t  m_pqr_maxValPaths; // max value for more paths
-	float m_pqr_demFactPageSize; // demotion factor for higher page sizes
-	int32_t  m_pqr_maxValPageSize; // max value for higher page sizes
-	int32_t  m_pqr_maxValLoc; // max value for non-location specific queries with location specific results
-	float m_pqr_demFactNonHtml; // demotion factor for non-html content type
-	float m_pqr_demFactXml; // demotion factor for xml content type
-	float m_pqr_demFactOthFromHost; // demotion factor for no other pages from same host
-	int32_t  m_pqr_maxValOthFromHost; // max value for no other pages from same host
-	float m_pqr_demFactDatedbDate; // demotion for datedb date
-	int32_t  m_pqr_minValDatedbDate; // dates earlier than this will be demoted to the max
-	int32_t  m_pqr_maxValDatedbDate; // dates later than this will not be demoted
-	float m_pqr_demFactProximity; // demotion for proximity of query terms
-	int32_t  m_pqr_maxValProximity; // max value for proximity of query terms
-	int32_t  m_pqr_maxValInSection; // max value for section of query terms
-	float m_pqr_demFactOrigScore;
-
-	float m_pqr_demFactSubPhrase;
-	float m_pqr_demFactCommonInlinks;
-
-        // lookup table for sitedb filter
-	char      m_updateSiteRulesTable;
 
 	// special var to prevent Collectiondb.cpp from copying the crap
 	// below here

@@ -3658,27 +3658,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "robotdb max cache mem";
-	m->m_desc  = "Robotdb caches robot.txt files.";
-	m->m_off   = (char *)&g_conf.m_robotdbMaxCacheMem - g;
-	m->m_def   = "128000"; 
-	m->m_type  = TYPE_LONG;
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "robotdb save cache";
-	m->m_cgi   = "rdbsc";
-	m->m_desc  = "";
-	m->m_off   = (char *)&g_conf.m_robotdbSaveCache - g;
-	m->m_def   = "0"; 
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m->m_flags = PF_NOAPI;
-	m++;
-
 	m->m_title = "statsdb max tree mem";
 	m->m_desc  = "";
 	m->m_off   = (char *)&g_conf.m_statsdbMaxTreeMem - g;
@@ -4190,21 +4169,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-
-	m->m_title = "fast results";
-	m->m_desc  = "Use &fast=1 to obtain seach results from the much "
-		"faster Gigablast index, although the results are not "
-		"searched as thoroughly.";
-	m->m_obj   = OBJ_SI;
-	m->m_page  = PAGE_RESULTS;
-	m->m_off   = (char *)&si.m_query - y;
-	m->m_type  = TYPE_CHARPTR;//STRING;
-	m->m_def   = "0";
-	m->m_cgi   = "fast";
-	m->m_flags = PF_COOKIE | PF_WIDGET_PARM | PF_API;
-	m++;
-
-
 	m->m_title = "query";
 	m->m_desc  = "The query to perform. See <a href=/help.html>help</a>. "
 		"See the <a href=#qops>query operators</a> below for "
@@ -4488,22 +4452,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-
-	m->m_title = "use language weights";
-	m->m_desc  = "Use Language weights to sort query results. "
-		"This will give results that match the specified &qlang "
-		"higher ranking.";
-	m->m_cgi   = "lsort";
-	m->m_off   = (char *)&cr.m_enableLanguageSorting - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_group = 1;
-	m->m_smin  = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "sort language preference";
 	m->m_desc  = "Default language to use for ranking results. "
 		//"This should only be used on limited collections. "
@@ -4538,393 +4486,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_SI;
 	m++;
 
-
-	m->m_title = "sort country preference";
-	m->m_desc  = "Default country to use for ranking results. "
-		//"This should only be used on limited collections. "
-		"Value should be any country code abbreviation, for example "
-		"\"us\" for United States. This is currently not working.";
-	m->m_cgi   = "qcountry";
-	m->m_off   = (char *)&si.m_defaultSortCountry - y;
-	m->m_type  = TYPE_CHARPTR;
-	m->m_size  = 2+1;
-	m->m_def   = "us";
-	m->m_group = 0;
-	m->m_flags = PF_API;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m->m_flags = PF_NOAPI;
-	m++;
-
-	m->m_title = "docs to check for post query";
-	m->m_desc  = "How many search results should we "
-		"scan for post query demotion? "
-		"0 disables all post query reranking. ";
-	m->m_cgi   = "pqrds";
-	m->m_off   = (char *)&si.m_docsToScanForReranking - y;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "0";
-	m->m_group = 1;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-	m->m_title = "demotion for foreign languages";
-	m->m_desc  = "Demotion factor of non-relevant languages.  Score "
-		"will be penalized by this factor as a percent if "
-		"it's language is foreign. "
-		"A safe value is probably anywhere from 0.5 to 1. ";
-	m->m_cgi   = "pqrlang";
-	m->m_off   = (char *)&cr.m_languageWeightFactor - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0.999";
-	m->m_group = 0;
-	m->m_smin  = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion for unknown languages";
-	m->m_desc  = "Demotion factor for unknown languages. "
-		"Page's score will be penalized by this factor as a percent "
-		"if it's language is not known. "
-		"A safe value is 0, as these pages will be reranked by "
-		"country (see below). "
-		"0 means no demotion.";
-	m->m_cgi   = "pqrlangunk";
-	m->m_off   = (char *)&cr.m_languageUnknownWeight- x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0.0";
-	m->m_group = 0;
-	m->m_smin  = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion for pages where the country of the page writes "
-		"in the same language as the country of the query";
-	m->m_desc  = "Demotion for pages where the country of the page writes "
-		"in the same language as the country of the query. "
-		"If query language is the same as the language of the page, "
-		"then if a language written in the country of the page matches "
-		"a language written by the country of the query, then page's "
-		"score will be demoted by this factor as a percent. "
-		"A safe range is between 0.5 and 1. ";
-	m->m_cgi   = "pqrcntry";
-	m->m_off   = (char *)&cr.m_pqr_demFactCountry - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0.98";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion for pages that are not "
-		"root or have many paths in the url";
-	m->m_desc  = "Demotion factor each path in the url. "
-		"Score will be demoted by this factor as a percent "
-		"multiplied by the number of paths in the url divided "
-		"by the max value below. "
-		"Generally, the page will not be demoted more than this "
-		"value as a percent. "
-		"0 means no demotion. "
-		"A safe range is from 0 to 0.75. ";
-	m->m_cgi   = "pqrpaths";
-	m->m_off   = (char *)&cr.m_pqr_demFactPaths - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "max value for pages that have many paths in the url";
-	m->m_desc  = "Max number of paths in a url. "
-		"This should be set to a value representing a very high "
-		"number of paths for a url. Lower values increase the "
-		"difference between how much each additional path demotes. ";
-	m->m_cgi   = "pqrpathsm";
-	m->m_off   = (char *)&cr.m_pqr_maxValPaths - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "16";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion for larger pages";
-	m->m_desc  = "Demotion factor for larger pages. "
-		"Page will be penalized by its size times this factor "
-		"divided by the max page size below. "
-		"Generally, a page will not be demoted more than this "
-		"factor as a percent. "
-		"0 means no demotion. "
-		"A safe range is between 0 and 0.25. ";
-	m->m_cgi   = "pqrpgsz";
-	m->m_off   = (char *)&cr.m_pqr_demFactPageSize - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "max value for larger pages";
-	m->m_desc  = "Max page size. "
-		"Pages with a size greater than or equal to this will be "
-		"demoted by the max amount (the factor above as a percent). ";
-	m->m_cgi   = "pqrpgszm";
-	m->m_off   = (char *)&cr.m_pqr_maxValPageSize - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "524288";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "max value for non-location specific queries "
-		"with location specific results";
-	m->m_desc  = "Max place population. "
-		"Places with a population greater than or equal to this "
-		"will be demoted to the maximum amount given by the "
-		"factor above as a percent. ";
-	m->m_cgi   = "pqrlocm";
-	m->m_off   = (char *)&cr.m_pqr_maxValLoc - x;
-	m->m_type  = TYPE_LONG;
-	// charlottesville was getting missed when this was 1M
-	m->m_def   = "100000";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion for non-html";
-	m->m_desc  = "Demotion factor for content type that is non-html. "
-		"Pages which do not have an html content type will be "
-		"demoted by this factor as a percent. "
-		"0 means no demotion. "
-		"A safe range is between 0 and 0.35. ";
-	m->m_cgi   = "pqrhtml";
-	m->m_off   = (char *)&cr.m_pqr_demFactNonHtml - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion for xml";
-	m->m_desc  = "Demotion factor for content type that is xml. "
-		"Pages which have an xml content type will be "
-		"demoted by this factor as a percent. "
-		"0 means no demotion. "
-		"Any value between 0 and 1 is safe if demotion for non-html "
-		"is set to 0. Otherwise, 0 should probably be used. ";
-	m->m_cgi   = "pqrxml";
-	m->m_off   = (char *)&cr.m_pqr_demFactXml - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0.95";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion for pages with other pages from same "
-		"hostname";
-	m->m_desc  = "Demotion factor for pages with fewer other pages from "
-		"same hostname. "
-		"Pages with results from the same host will be "
-		"demoted by this factor times each fewer host than the max "
-		"value given below, divided by the max value. "
-		"Generally, a page will not be demoted more than this "
-		"factor as a percent. "
-		"0 means no demotion. "
-		"A safe range is between 0 and 0.35. ";
-	m->m_cgi   = "pqrfsd";
-	m->m_off   = (char *)&cr.m_pqr_demFactOthFromHost - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "max value for pages with other pages from same "
-		"domain";
-	m->m_desc  = "Max number of pages from same domain. "
-		"Pages which have this many or more pages from the same "
-		"domain will not be demoted. "; 
-	m->m_cgi   = "pqrfsdm";
-	m->m_off   = (char *)&cr.m_pqr_maxValOthFromHost - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "12";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion for pages based on datedb date";
-	m->m_desc  = "Demotion factor for pages based on datedb date. "
-		"Pages will be penalized for being published earlier than the "
-		"max date given below. "
-		"The older the page, the more it will be penalized based on "
-		"the time difference between the page's date and the max date, "
-		"divided by the max date. "
-		"Generally, a page will not be demoted more than this "
-		"value as a percent. "
-		"0 means no demotion. "
-		"A safe range is between 0 and 0.4. ";
-	m->m_cgi   = "pqrdate";
-	m->m_off   = (char *)&cr.m_pqr_demFactDatedbDate - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-	
-	m->m_title = "min value for demotion based on datedb date ";
-	m->m_desc  = "Pages with a publish date equal to or earlier than "
-		"this date will be demoted to the max (the factor above as "
-		"a percent). "
-		"Use this parm in conjunction with the max value below "
-		"to specify the range of dates where demotion occurs. "
-		"If you set this parm near the estimated earliest publish "
-		"date that occurs somewhat frequently, this method can better "
-		"control the additional demotion per publish day. "
-		"This number is given as seconds since the epoch, January 1st, "
-		"1970 divided by 1000. "
-		"0 means use the epoch. ";
-	m->m_cgi   = "pqrdatei";
-	m->m_off   = (char *)&cr.m_pqr_minValDatedbDate - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "631177"; // Jan 01, 1990 
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "max value for demotion based on datedb date ";
-	m->m_desc  = "Pages with a publish date greater than or equal to "
-		"this value divided by 1000 will not be demoted. "
-		"Use this parm in conjunction with the min value above "
-		"to specify the range of dates where demotion occurs. "
-		"This number is given as seconds before the current date "
-		"and time taken from the system clock divided by 1000. "
-		"0 means use the current time of the current day. ";
-	m->m_cgi   = "pqrdatem";
-	m->m_off   = (char *)&cr.m_pqr_maxValDatedbDate - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "0"; 
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion for pages based on proximity";
-	m->m_desc  = "Demotion factor for proximity of query terms in "
-		"a document.  The closer together terms occur in a "
-		"document, the higher it will score."
-		"0 means no demotion. ";
-	m->m_cgi   = "pqrprox";
-	m->m_off   = (char *)&cr.m_pqr_demFactProximity - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "weight of indexed score on pqr";
-	m->m_desc  = "The proportion that the original score affects "
-		"its rerank position. A factor of 1 will maintain "
-		"the original score, 0 will only use the indexed "
-		"score to break ties.";
-	m->m_cgi   = "pqrorig";
-	m->m_off   = (char *)&cr.m_pqr_demFactOrigScore - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "1";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-
-
-	m->m_title = "max value for demotion for pages based on proximity";
-	m->m_desc  = "Max summary score where no more demotion occurs above. "
-		"Pages with a summary score greater than or equal to this "
-		"value will not be demoted. ";
-	m->m_cgi   = "pqrproxm";
-	m->m_off   = (char *)&cr.m_pqr_maxValProximity - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "100000"; 
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-
-	m->m_title = "demotion for query being exclusivly in a subphrase";
-	m->m_desc  = "Search result which contains the query terms only"
-		" as a subphrase of a larger phrase will have its score "
-		" reduced by this percent.";
-	m->m_cgi   = "pqrspd";
-	m->m_off   = (char *)&cr.m_pqr_demFactSubPhrase - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "demotion based on common inlinks";
-	m->m_desc  = "Based on the number of inlinks a search results has "
-		"which are in common with another search result.";
-	m->m_cgi   = "pqrcid";
-	m->m_off   = (char *)&cr.m_pqr_demFactCommonInlinks - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = ".5";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "number of document calls multiplier";
-	m->m_desc  = "Allows more results to be gathered in the case of "
-		"an index having a high rate of duplicate results.  Generally"
-		" expressed as 1.2";
-	m->m_cgi   = "ndm";
-	m->m_off   = (char *)&cr.m_numDocsMultiplier - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "1.2";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "max query terms";
 	m->m_desc  = "Do not allow more than this many query terms. Helps "
 		"prevent big queries from resource hogging.";
@@ -4934,81 +4495,6 @@ void Parms::init ( ) {
 	m->m_def   = "999999"; // now we got synonyms... etc
 	m->m_group = 0;
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE; 
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	// import search results controls
-	m->m_title = "how many imported results should we insert";
-	m->m_desc  = "Gigablast will import X search results from the "
-		"external cluster given by hosts2.conf and merge those "
-		"search results into the current set of search results. "
-		"Set to 0 to disable.";
-	m->m_cgi   = "imp";
-	m->m_off   = (char *)&cr.m_numResultsToImport - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "imported score weight";
-	m->m_desc  = "The score of all imported results will be multiplied "
-		"by this number. Since results are mostly imported from "
-		"a large collection they will usually have higher scores "
-		"because of having more link texts or whatever, so tone it "
-		"down a bit to put it on par with the integrating collection.";
-	m->m_cgi   = "impw";
-	m->m_off   = (char *)&cr.m_importWeight - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = ".80";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "how many linkers must each imported result have";
-	m->m_desc  = "The urls of imported search results must be linked to "
-		"by at least this many documents in the primary collection.";
-	m->m_cgi   = "impl";
-	m->m_off   = (char *)&cr.m_minLinkersPerImportedResult - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "3";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "num linkers weight";
-	m->m_desc  = "The number of linkers an imported result has from "
-		"the base collection is multiplied by this weight and then "
-		"added to the final score. The higher this is the more an "
-		"imported result with a lot of linkers will be boosted. "
-		"Currently, 100 is the max number of linkers permitted.";
-	m->m_cgi   = "impnlw";
-	m->m_off   = (char *)&cr.m_numLinkerWeight - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "50";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "the name of the collection to import from";
-	m->m_desc  = "Gigablast will import X search results from this "
-		"external collection and merge them into the current search "
-		"results.";
-	m->m_cgi   = "impc";
-	m->m_off   = (char *)&cr.m_importColl - x;
-	m->m_type  = TYPE_STRING;
-	m->m_size  = MAX_COLL_LEN;
-	m->m_def   = "main";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
 	m++;
@@ -5033,22 +4519,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_maxTitleInLinkers - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "128";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "summary mode";
-	m->m_desc  = "0 = old compatibility mode, 1 = UTF-8 mode, "
-		"2 = fast ASCII mode, "
-		"3 = Ascii Proximity Summary, "
-		"4 = Utf8 Proximity Summary, "
-		"5 = Ascii Pre Proximity Summary, "
-		"6 = Utf8 Pre Proximity Summary:";
-	m->m_cgi   = "smd";
-	m->m_off   = (char *)&cr.m_summaryMode - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -5622,32 +5092,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_flags = PF_NOAPI;
-	m++;
-
-	// buzz
-	m->m_title = "spider results";
-	m->m_desc  = "Results of this query will be forced into the spider "
-		"queue for reindexing.";
-	m->m_off   = (char *)&si.m_spiderResults - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_cgi   = "spiderresults";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
-	m++;
-
-	// buzz
-	m->m_title = "spider result roots";
-	m->m_desc  = "Root urls of the results of this query will be forced "
-		"into the spider queue for reindexing.";
-	m->m_off   = (char *)&si.m_spiderResultRoots - y;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_cgi   = "spiderresultroots";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_RESULTS;
-	m->m_obj   = OBJ_SI;
 	m++;
 
 	m->m_title = "include cached copy of page";
@@ -7634,20 +7078,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "phrase weight";
-	m->m_desc  = "Percent to weight phrases in queries.";
-	m->m_cgi   = "qp";
-	m->m_off   = (char *)&g_conf.m_queryPhraseWeight - g;
-	m->m_type  = TYPE_FLOAT;
-	// was 350, but 'new mexico tourism' and 'boots uk'
-	// emphasized the phrase terms too much!!
-	m->m_def   = "100"; 
-	m->m_units = "%%";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "weights.cpp slider parm (tmp)";
 	m->m_desc  = "Percent of how much to use words to phrase ratio weights.";
 	m->m_cgi   = "wsp";
@@ -8715,21 +8145,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
 	m++;       
-	
-
-	m->m_title = "dedup URLs by default";
-	m->m_desc  = "Should we dedup URLs with case insensitivity? This is "
-                     "mainly to correct duplicate wiki pages.";
-	m->m_cgi   = "ddu";
-	m->m_off   = (char *)&cr.m_dedupURLDefault - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 
 	m->m_title = "sort language preference default";
 	m->m_desc  = "Default language to use for ranking results. "
@@ -8745,39 +8160,6 @@ void Parms::init ( ) {
 	m->m_size  = 6; // up to 5 chars + NULL, e.g. "en_US"
 	m->m_def   = "xx";//_US";
 	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-
-	m->m_title = "sort country preference default";
-	m->m_desc  = "Default country to use for ranking results. "
-		//"This should only be used on limited collections. "
-		"Value should be any country code abbreviation, for example "
-		"\"us\" for United States. This is currently not working.";
-	m->m_cgi   = "qcountry";
-	m->m_off   = (char *)&cr.m_defaultSortCountry - x;
-	m->m_type  = TYPE_STRING;
-	m->m_size  = 2+1;
-	m->m_def   = "us";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	// for post query reranking 
-	m->m_title = "docs to check for post query demotion by default";
-	m->m_desc  = "How many search results should we "
-		"scan for post query demotion? "
-		"0 disables all post query reranking. ";
-	m->m_cgi   = "pqrds";
-	m->m_off   = (char *)&cr.m_pqr_docsToScan - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "0";
-	m->m_group = 1;
-	//m->m_scgi  = "pqrds";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
 	m++;
@@ -8837,19 +8219,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "bytes of doc to scan for summary generation";
-	m->m_desc  = "Truncating this will miss out on good summaries, but "
-		"performance will increase.";
-	m->m_cgi   = "clmfs";
-	m->m_off   = (char *)&cr.m_contentLenMaxForSummary - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "70000";
-	m->m_group = 0;
-	m->m_flags = PF_API | PF_CLONE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;       
-
 	m->m_title = "front highlight tag";
 	m->m_desc  = "Front html tag used for highlightig query terms in the "
 		"summaries displated in the search results.";
@@ -8877,90 +8246,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
 	m++;
-
-	m->m_title = "display indexed date";
-	m->m_desc  = "Display the indexed date along with results.";
-	m->m_cgi   = "didt";
-	m->m_off   = (char *)&cr.m_displayIndexedDate - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "display last modified date";
-	m->m_desc  = "Display the last modified date along with results.";
-	m->m_cgi   = "dlmdt";
-	m->m_off   = (char *)&cr.m_displayLastModDate - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "display published date";
-	m->m_desc  = "Display the published date along with results.";
-	m->m_cgi   = "dipt";
-	m->m_off   = (char *)&cr.m_displayPublishDate - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "enable click 'n' scroll";
-	m->m_desc  = "The [cached] link on results pages loads click n "
-		"scroll.";
-	m->m_cgi   = "ecns";
-	m->m_off   = (char *)&cr.m_clickNScrollEnabled - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-        m->m_title = "use data feed account server";
-        m->m_desc  = "Enable/disable the use of a remote account verification "
-                "for Data Feed Customers.";
-        m->m_cgi   = "dfuas";
-        m->m_off   = (char *)&cr.m_useDFAcctServer - x;
-        m->m_type  = TYPE_BOOL;
-        m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-        m++;
-
-        m->m_title = "data feed server ip";
-        m->m_desc  = "The ip address of the Gigablast data feed server to "
-                "retrieve customer account information from.";
-        m->m_cgi   = "dfip";
-        m->m_off   = (char *)&cr.m_dfAcctIp - x;
-        m->m_type  = TYPE_IP;
-        m->m_def   = "2130706433";
-        m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-        m++;
-
-        m->m_title = "data feed server port";
-        m->m_desc  = "The port of the Gigablast data feed server to retrieve "
-                "customer account information from.";
-        m->m_cgi   = "dfport";
-        m->m_off   = (char *)&cr.m_dfAcctPort - x;
-        m->m_type  = TYPE_LONG;
-        m->m_def   = "8040";
-        m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-        m++;
 
 	m->m_title = "home page";
 	static SafeBuf s_tmpBuf;
@@ -8999,18 +8284,6 @@ void Parms::init ( ) {
 			      "<br><br>"
 			      "<b>My Search Engine</b>"
 			      "<br><br>"
-			      // "<br><br><br>"
-			      // "<b>web</b> "
-			      // "&nbsp;&nbsp;&nbsp;&nbsp; "
-			      // "<a href=\"/Top\">directory</a> "
-			      // "&nbsp;&nbsp;&nbsp;&nbsp; "
-			      // "<a href=/adv.html>advanced search</a> "
-			      // "&nbsp;&nbsp;&nbsp;&nbsp; "
-			      // "<a href=/addurl "
-			      // "title=\"Instantly add your url to "
-			      //"the index\">"
-			      // "add url</a>"
-			      // "<br><br>"
 			      "<form method=get action=/search name=f>"
 			      "<input type=hidden name=c value=\"%c\">"
 			      "<input name=q type=text size=60 value=\"\">"
@@ -9029,9 +8302,7 @@ void Parms::init ( ) {
 	m->m_xml  = "homePageHtml";
 	m->m_cgi   = "hp";
 	m->m_off   = (char *)&cr.m_htmlRoot - x;
-	//m->m_plen  = (char *)&cr.m_htmlRootLen - x; // length of string
 	m->m_type  = TYPE_SAFEBUF;//STRINGBOX;
-	//m->m_size  = MAX_HTML_LEN + 1;
 	m->m_def   = "";
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -9050,11 +8321,6 @@ void Parms::init ( ) {
 		"%q, to represent the query to display in a "
 		"text box. "
 		"Use %e to print the url encoded query.  "
-		//"Use %e to print the page encoding. "
-		// i guess this is out for now
-		//"Use %D to "
-		//"print a drop down "
-		//"menu for the number of search results to return. "
 		"Use %S "
 		"to print sort by date or relevance link. Use "
 		"%L to "
@@ -9069,22 +8335,6 @@ void Parms::init ( ) {
 		"not duplicate them in the html tail. "
 		"Use %f to display "
 		"the family filter radio buttons. "
-		// take this out for now
-		//"Directory: Use %s to display the directory "
-		//"search type options. "
-		//"Use %l to specify the "
-		//"location of "
-		//"dir=rtl in the body tag for RTL pages. "
-		//"Use %where and %when to substitute the where "
-		//"and when of "
-		//"the query. "
-		//"These values may be set based on the cookie "
-		//"if "
-		//"none was explicitly given. "
-		//"IMPORTANT: In the xml configuration file, "
-		//"this html "
-		//"must be encoded (less thans mapped to &lt;, "
-		//"etc.).";
 		"Example to paste into textbox: <br><i>";
 	s_tmpBuf2.safeStrcpy(fff);
 	s_tmpBuf2.htmlEncode(
@@ -9097,23 +8347,12 @@ void Parms::init ( ) {
 		"content=\"text/html; charset=utf-8\">\n"
 		"</head>\n"
 		"<body%l>\n"
-
-		//"<form method=\"get\" action=\"/search\" name=\"f\">\n"
-		// . %F prints the <form method=...> tag
-		// . method will be GET or POST depending on the size of the
-		//   input data. MSIE can't handle sending large GETs requests
-		//   that are more than like 1k or so, which happens a lot with
-		//   our CTS technology (the sites= cgi parm can be very large)
 		"%F"
 		"<table cellpadding=\"2\" cellspacing=\"0\" border=\"0\">\n"
 		"<tr>\n"
 		"<td valign=top>"
 		// this prints the Logo
 		"%L"
-		//"<a href=\"/\">"
-		//"<img src=\"logo2.gif\" alt=\"Gigablast Logo\" "
-		//"width=\"210\" height=\"25\" border=\"0\" valign=\"top\">"
-		//"</a>"
 		"</td>\n"
 
 		"<td valign=top>\n"
@@ -9126,15 +8365,12 @@ void Parms::init ( ) {
 		// family filter
 		// %R radio button for site(s) search
 		"<br>%f %R\n"
-		// directory search options
-		// MDW: i guess this is out for now
-		//"</td><td>%s</td>\n"
 		"</tr>\n"
 		"</table>\n"
-		// %H prints the hidden for vars. Print them *after* the input 
-		// text boxes, radio buttons, etc. so these hidden vars can be 
+		// %H prints the hidden for vars. Print them *after* the input
+		// text boxes, radio buttons, etc. so these hidden vars can be
 		// overriden as they should be.
-		"%H"); 
+		"%H");
 	s_tmpBuf2.safePrintf("</i>");
 	m->m_desc  = s_tmpBuf2.getBufStart();
 	m->m_xml   = "htmlHead";
@@ -9157,21 +8393,8 @@ void Parms::init ( ) {
 	s_tmpBuf3.safeStrcpy(fff);
 	s_tmpBuf3.htmlEncode (
 		"<br>\n"
-		//"%F"
 		"<table cellpadding=2 cellspacing=0 border=0>\n"
 		"<tr><td></td>\n"
-		//"<td valign=top align=center>\n"
-		// this old query is overriding a newer query above so
-		// i commented out. mfd 6/2014
-		//"<nobr>"
-		//"<input type=text name=q size=60 value=\"%q\"> %D\n"
-		//"<input type=submit value=\"Blast It!\" border=0>\n"
-		//"</nobr>"
-		// family filter
-		//"<br>%f %R\n"
-		//"<br>"
-		//"%R\n"
-		//"</td>"
 		"<td>%s</td>\n"
 		"</tr>\n"
 		"</table>\n"
@@ -9179,15 +8402,8 @@ void Parms::init ( ) {
 		"<a href=http://www.google.com/search?q=%e>google</a> &nbsp;\n"
 		"<a href=http://search.yahoo.com/bin/search?p=%e>yahoo</a> "
 		"&nbsp;\n"
-		//"<a href=http://www.alltheweb.com/search?query=%e>alltheweb"
-		//"</a>\n"
 		"<a href=http://search.dmoz.org/cgi-bin/search?search=%e>"
 		"dmoz</a> &nbsp;\n"
-		//"<a href=http://search01.altavista.com/web/results?q=%e>"
-		//"alta vista</a>\n"
-		//"<a href=http://s.teoma.com/search?q=%e>teoma</a> &nbsp;\n"
-		//"<a href=http://wisenut.com/search/query.dll?q=%e>wisenut"
-		//"</a>\n"
 		"</font></body>\n");
 	s_tmpBuf3.safePrintf("</i>");
 	m->m_desc  = s_tmpBuf3.getBufStart();
@@ -9857,22 +9073,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_CLONE;
 	m++;
 
-	m->m_title = "use new link algo";
-	m->m_desc  = "Use the links: termlists instead of link:. Also "
-		"allows pages linking from the same domain or IP to all "
-		"count as a single link from a different IP. This is also "
-		"required for incorporating RSS and Atom feed information "
-		"when indexing a document.";
-	m->m_cgi   = "na";
-	m->m_off   = (char *)&cr.m_newAlgo - x;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_group = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "index inlink neighborhoods";
 	m->m_desc  = "If this is true Gigablast will "
 		"index the plain text surrounding the hyper-link text. The "
@@ -9924,21 +9124,6 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_doIpLookups - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "use old IPs";
-	m->m_desc = "Should the stored IP "
-		"of documents we are reindexing be used? Useful for "
-		"pages banned by IP address and then reindexed with "
-		"the reindexer tool.";
-	m->m_cgi = "useOldIps";
-	m->m_off = (char *)&cr.m_useOldIps - x;
-	m->m_type = TYPE_BOOL;
-	m->m_def = "0";
-	m->m_group = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;

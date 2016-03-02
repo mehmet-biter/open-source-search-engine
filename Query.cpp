@@ -2481,8 +2481,7 @@ bool Query::setQWords ( char boolFlag ,
 
 	int32_t wkid = 0;
 	int32_t upTo = -1;
-	int32_t wk_start;
-	int32_t wk_nwk;
+
 	//
 	// set the wiki phrase ids
 	//
@@ -2503,9 +2502,7 @@ bool Query::setQWords ( char boolFlag ,
 		nwk = g_wiki.getNumWordsInWikiPhrase ( i , &words );
 		// bail if none
 		if ( nwk <= 1 ) continue;
-		// save these too
-		wk_start = i;
-		wk_nwk = nwk;
+
 		// inc it
 		wkid++;
 		// store it
@@ -2513,7 +2510,6 @@ bool Query::setQWords ( char boolFlag ,
 		// set loop parm
 		upTo = i + nwk;
 	}
-
 
 	// consider terms strongly connected like wikipedia title phrases
 	for ( int32_t i = 0 ; i + 2 < m_numWords ; i++ ) {
