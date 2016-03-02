@@ -774,7 +774,7 @@ inline char KEYCMPNEGEQ ( char *k1, char *k2, char keySize ) {
 	return 0;
 }
 
-inline char *KEYSTR ( void *vk , int32_t ks ) {
+static inline char *KEYSTR ( void *vk , int32_t ks ) {
 	char *k = (char *)vk;
 	static char tmp1[128];
 	static char tmp2[128];
