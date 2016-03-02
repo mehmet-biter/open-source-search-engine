@@ -312,7 +312,6 @@ class QueryTerm {
 	uint64_t m_langIdBits;
 	bool m_langIdBitsValid;
 
-	int32_t   m_componentCode;
 	int64_t   m_termFreq;
 	float     m_termFreqWeight;
 

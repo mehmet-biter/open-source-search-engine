@@ -8,7 +8,6 @@
 #include "HashTableT.h"
 
 static void gotReplyWrapper3a     ( void *state , void *state2 ) ;
-//static void gotRerankedDocIds     ( void *state );
 
 Msg3a::Msg3a ( ) {
 	constructor();
@@ -111,12 +110,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 			Query        *q          ,
 			void         *state      ,
 			void        (* callback) ( void *state ),
-			class Host *specialHost
-			// initially this is the same as r->m_docsToGet but
-			// we may up it if too many results got clustered.
-			// then we re-call this function.
-			//int32_t          docsToGet  ) {
-			) {
+			class Host *specialHost ) {
 
 	// in case re-using it
 	reset();
@@ -165,7 +159,6 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	if ( g_conf.m_logDebugQuery  ) m_debug = true;
 	if ( g_conf.m_logTimingQuery ) m_debug = true;
 
-
 	// time how long it takes to get the term freqs
 	if ( m_debug ) {
 		// show the query terms
@@ -174,7 +167,6 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 		logf(LOG_DEBUG,"query: msg3a: [%"PTRFMT"] getting termFreqs.",
 		     (PTRTYPE)this);
 	}
-
 
 	setTermFreqWeights ( m_r->m_collnum,m_q );
 

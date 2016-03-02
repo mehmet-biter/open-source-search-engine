@@ -6,7 +6,6 @@
 #define POPS_BUF_SIZE (10*1024)
 
 // the max popularity score a word can have
-//#define MAX_POP 10000
 #define MAX_POP 0x7fff
 
 // the popularity vector for the Words class, 1-1 with those words

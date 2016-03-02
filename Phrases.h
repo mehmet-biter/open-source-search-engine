@@ -5,8 +5,8 @@
 // . will it hash a word as a phrase if it's the only word? No, it will not.
 //   it only hashes 2+ word phrases
 
-#ifndef _PHRASES_H_
-#define _PHRASES_H_
+#ifndef PHRASES_H
+#define PHRASES_H
 
 #include "Bits.h"
 #include "Words.h"
@@ -37,8 +37,6 @@ class Phrases {
 	char *getPhrase(int32_t i, int32_t *phrLen);
 
 	int32_t  getNumWordsInPhrase2( int32_t i ) { return m_numWordsTotal2[i]; }
-
-	int32_t  getMinWordsInPhrase( int32_t i , int64_t *pid ) ;
 
 private:
 	// . called by Phrases::set() above for each i

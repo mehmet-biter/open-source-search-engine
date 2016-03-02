@@ -960,16 +960,6 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 		m_qterms[0].m_termSign = '*';
 	}
 
-	// . set m_componentCodes all to -2
-	// . addCompoundTerms() will set these appropriately
-	// . see Msg2.cpp for more info on componentCodes
-	// . -2 means unset, neither a compound term nor a component term at
-	//   this time
-	for ( int32_t i = 0 ; i < m_numTerms ; i++ ) {
-		QueryTerm *qt = &m_qterms[i];
-		qt->m_componentCode = -2;
-	}
-
 	// . now set m_phrasePart for Summary.cpp's hackfix filter
 	// . only set this for the non-phrase terms, since keepAllSingles is
 	//   set to true when setting the Query for Summary.cpp::set in order
@@ -1205,12 +1195,7 @@ bool Query::setQTerms ( Words &words , Phrases &phrases ) {
 		// as a halfstopwikibigram
 		if ( ! qw1->m_isQueryStopWord && ! qw2->m_isQueryStopWord )
 			continue;
-		// don't require it, if query is 'the tigers' accept
-		// just 'tigers' but give a bonus for 'the tigers' in
-		// the document.
-		//qt->m_isRequired = true;
-		// count them
-		//m_numRequired++;
+
 		// special flag
 		qt->m_isWikiHalfStopBigram = true;
 	}
@@ -1243,7 +1228,6 @@ bool Query::setQWords ( char boolFlag ,
 	// sanity check
 	if ( m_qwords || m_qwordsAllocSize ) { char *xx = NULL; *xx = 0; }
 	// point m_qwords to our generic buffer if it will fit
-	//	if ( need < GBUF_SIZE ) {
 	if ( m_gnext + need < m_gbuf + GBUF_SIZE && 
 	     // it can wrap so watch out with this:
 	     need < GBUF_SIZE ) {
@@ -2123,7 +2107,7 @@ bool Query::setQWords ( char boolFlag ,
 	// treat strongly connected phrases like cd-rom and 3.2.0.3 as being
 	// in quotes for the most part, therefore, set m_quoteStart for them
 	int32_t j;
-	int32_t qs = -1;
+	int32_t qs = -1;0
 	for ( j = 0 ; j < numWords ; j++ ) {
 		// skip all but strongly connected words
 		if ( m_qwords[j].m_ignoreWord != IGNORE_CONNECTED &&
@@ -2580,7 +2564,6 @@ int32_t Query::getWordNum ( int64_t wordId ) {
 	return -1;
 }
 
-//static TermTable  s_table;
 static HashTableX s_table;
 static bool       s_isInitialized = false;
 
@@ -3415,7 +3398,6 @@ void QueryTerm::constructor ( ) {
 	m_posdbListPtr = NULL;
 	m_langIdBits = 0;
 	m_langIdBitsValid = false;
-	m_componentCode = 0;
 	m_termFreq = 0;
 	m_termFreqWeight = 0.0;
 	m_implicitBits = 0;

@@ -540,7 +540,6 @@ bool Msg39::getLists () {
 			     "query: msg39: [%"PTRFMT"] "
 			     "query term #%"INT32" \"%s\" "
 			     "phr=%"INT32" termId=%"UINT64" rawTermId=%"UINT64" "
-			     //"estimatedTermFreq=%"INT64" (+/- ~16000) "
 			     "tfweight=%.02f "
 			     "sign=%c "
 			     "numPlusses=%hhu "
@@ -553,13 +552,8 @@ bool Msg39::getLists () {
 			     "wikiphrid=%"INT32" "
 			     "leftwikibigram=%"INT32" "
 			     "rightwikibigram=%"INT32" "
-			     //"range.startTermNum=%hhi range.endTermNum=%hhi "
-			     //"minRecSizes=%"INT32" "
 			     "readSizeInBytes=%"INT32" "
-			     //"ebit=0x%"XINT64" "
-			     //"impBits=0x%"XINT64" "
 			     "hc=%"INT32" "
-			     "component=%"INT32" "
 			     "otermLen=%"INT32" "
 			     "isSynonym=%"INT32" "
 			     "querylangid=%"INT32" " ,
@@ -582,10 +576,7 @@ bool Msg39::getLists () {
 			     (int32_t)leftwikibigram,
 			     (int32_t)rightwikibigram,
 			     ((int32_t *)m_r->ptr_readSizes)[i]         ,
-			     //(int64_t)m_tmpq.m_qterms[i].m_explicitBit  ,
-			     //(int64_t)m_tmpq.m_qterms[i].m_implicitBits ,
 			     (int32_t)m_tmpq.m_qterms[i].m_hardCount ,
-			     (int32_t)m_tmpq.m_qterms[i].m_componentCode,
 			     (int32_t)m_tmpq.getTermLen(i) ,
 			     isSynonym,
 			     (int32_t)m_tmpq.m_langId ); // ,tt
