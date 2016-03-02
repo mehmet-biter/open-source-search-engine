@@ -22136,7 +22136,7 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 
 	if ( ! isXml ) {
 		// try the new print function
-		sections->print2( sb, hiPos, wposVec, densityVec, wordSpamVec, fragVec, FMT_HTML );
+		sections->print( sb, hiPos, wposVec, densityVec, wordSpamVec, fragVec );
 		return true;
 	}
 

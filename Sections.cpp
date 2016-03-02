@@ -102,7 +102,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	char      **wptrs  = w->getWords    ();
 	int32_t        *wlens = w->getWordLens ();
 
-	// set these up 
+	// set these up
 	m_wids  = wids;
 	m_wlens = wlens;
 	m_wptrs = wptrs;
@@ -861,7 +861,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		QUICKPOLL ( m_niceness );
 		// these have to be in order of sn->m_a to work right
 		// because we rely on the parent tag hash, which would not
-		// necessarily be set if we were not sorted, because the 
+		// necessarily be set if we were not sorted, because the
 		// parent section could have SEC_FAKE flag set because it is
 		// a br section added afterwards.
 		Section *sn = &m_sections[i];
@@ -3100,7 +3100,7 @@ bool Sections::setHeadingBit ( ) {
 			if ( isHardSection(pp) )  hasHard = true;
 			// . allow bold and strong tags
 			// . fixes gwair.org which has the dates of the
-			//   month in strong tags. so we need to set 
+			//   month in strong tags. so we need to set
 			//   SEC_HEADING for those so getDelimHash() will
 			//   recognize such tags as date header tags in the
 			//   METHOD_DOM algorithm and we get the proper
@@ -3199,7 +3199,7 @@ void Sections::setTagHashes ( ) {
 
 		// these have to be in order of sn->m_a to work right
 		// because we rely on the parent tag hash, which would not
-		// necessarily be set if we were not sorted, because the 
+		// necessarily be set if we were not sorted, because the
 		// parent section could have SEC_FAKE flag set because it is
 		// a br section added afterwards.
 
@@ -3246,13 +3246,7 @@ void Sections::setTagHashes ( ) {
 }
 
 // make this replace ::print() when it works
-bool Sections::print2 ( SafeBuf *sbuf ,
-			int32_t hiPos,
-			int32_t *wposVec,
-			char *densityVec,
-			char *wordSpamVec,
-			char *fragVec,
-			char format ) {
+bool Sections::print( SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *densityVec, char *wordSpamVec, char *fragVec ) {
 	// save ptrs
 	m_sbuf = sbuf;
 
@@ -3287,7 +3281,7 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 		// breathe
 		QUICKPOLL ( m_niceness );
 		// print this section
-		printSectionDiv ( sk , format );//forProCog );
+		printSectionDiv(sk);
 		// advance
 		int32_t b = sk->m_b;
 		// stop if last
@@ -3295,8 +3289,6 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 		// get section after that
 		sk = m_sectionPtrs[b];
 	}
-
-	if ( format != FORMAT_HTML ) return true; // forProCog
 
 	// print header
 	char *hdr =
@@ -3416,8 +3408,7 @@ bool Sections::print2 ( SafeBuf *sbuf ,
 	return true;
 }
 
-bool Sections::printSectionDiv ( Section *sk , char format ) {
-	//log("sk=%"INT32"",sk->m_a);
+bool Sections::printSectionDiv( Section *sk ) {
 	// enter a new div section now
 	m_sbuf->safePrintf("<br>");
 	// only make font color different
@@ -3503,7 +3494,7 @@ bool Sections::printSectionDiv ( Section *sk , char format ) {
 		// if it belongs to another sections, print that section
 		if ( ws != sk ) {
 			// print out this subsection
-			printSectionDiv ( ws , format ); // forProCog );
+			printSectionDiv(ws);
 			// advance to end of that then
 			i = ws->m_b - 1;
 			// and try next word

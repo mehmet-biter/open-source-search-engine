@@ -178,13 +178,7 @@ public:
 	}
 };
 
-
-
 #define SECTIONS_LOCALBUFSIZE 500
-
-#define FMT_HTML   1
-#define FMT_PROCOG 2
-#define FMT_JSON   3
 
 class Sections {
 public:
@@ -207,15 +201,12 @@ public:
 	// this is used by Events.cpp Section::m_nextSent
 	void setNextSentPtrs();
 
-	bool print( SafeBuf *sbuf, class HashTableX *pt, class HashTableX *et, class HashTableX *st,
-				class HashTableX *at, class HashTableX *tt, class HashTableX *priceTable );
-
 	void printFlags ( class SafeBuf *sbuf , class Section *sn ) ;
 
-	bool print2(SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *densityVec,
-				 char *wordSpamVec, char *fragVec, char format = FMT_HTML );
+	bool print(SafeBuf *sbuf, int32_t hiPos, int32_t *wposVec, char *densityVec,
+			   char *wordSpamVec, char *fragVec );
 
-	bool printSectionDiv ( Section *sk , char format = FMT_HTML );
+	bool printSectionDiv( Section *sk );
 	class SafeBuf *m_sbuf;
 
 	bool isHardSection ( Section *sn );

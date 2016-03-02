@@ -96,10 +96,7 @@ public:
 	~Bits();
 
 	// . returns false and sets errno on error
-	// provide it with a buffer to prevent a malloc
 	bool set( Words *words, int32_t niceness );
-
-	// provide it with a buffer to prevent a malloc
 	bool setForSummary( Words *words );
 
 	void reset();
@@ -119,16 +116,9 @@ public:
 	void setInLinkBits ( class Sections *ss ) ;
 	void setInUrlBits  ( int32_t niceness );
 
-	bool m_inLinkBitsSet;
-	bool m_inUrlBitsSet;
-
-	char m_localBuf [ BITS_LOCALBUFSIZE ];
-
 	// leave public so Query.cpp can tweak this
 	wbit_t *m_bits;
 	int32_t m_bitsSize;
-
-	int32_t m_niceness;
 
 	// . wordbits
 	// . used only by setForSummary() now to avoid having to update a
@@ -137,10 +127,17 @@ public:
 	int32_t m_swbitsSize;
 
  private:
-	 Words *m_words;
-	 bool m_needsFree;
+	int32_t m_niceness;
 
-	 // get bits for the ith word
+	Words *m_words;
+
+	bool m_inLinkBitsSet;
+	bool m_inUrlBitsSet;
+
+	bool m_needsFree;
+	char m_localBuf [ BITS_LOCALBUFSIZE ];
+
+	// get bits for the ith word
 	 wbit_t getAlnumBits( int32_t i, wbit_t prevBits );
 };
 
