@@ -58,7 +58,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Msg51.o \
 	Msg40.o Msg4.o SpiderProxy.o \
 	Statsdb.o PageStatsdb.o \
-	PostQueryRerank.o Msge0.o Msge1.o \
+	Msge0.o Msge1.o \
 	CountryCode.o DailyMerge.o Tagdb.o \
 	Images.o Wiki.o Wiktionary.o \
 	Timezone.o Sections.o SiteGetter.o qa.o \

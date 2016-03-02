@@ -120,13 +120,6 @@ bool Msg40::getResults ( SearchInput *si      ,
 	m_numMsg20s      = 0;
 	// reset our error keeper
 	m_errno = 0;
-	// we need this info for caching as well
-	//m_numGigabitInfos = 0;
-
-	//just getfrom searchinput
-	//....	m_catId = hr->getLong("catid",0);m_si->m_catId;
-
- 	m_postQueryRerank.set1( this, si );
 
 	// take search parms i guess from first collnum
 	collnum_t *cp = (collnum_t *)m_si->m_collnumBuf.getBufStart();

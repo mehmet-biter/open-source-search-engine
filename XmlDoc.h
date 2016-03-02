@@ -265,7 +265,7 @@ public:
 	int32_t      *ptr_unused13;
 	void      *ptr_unused8;
 	int64_t *ptr_unused10;
-	rscore_t  *ptr_unused11;
+	float  *ptr_unused11;
 	char      *ptr_imageData;
 	int32_t      *ptr_unused6;
 	int32_t      *ptr_unused7;

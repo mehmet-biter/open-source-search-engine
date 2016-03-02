@@ -15,7 +15,7 @@
 #include "Msg20.h"      // for getting summary from docId
 #include "Msg17.h"      // a distributed cache of serialized/compressed Msg40s
 #include "Msg3a.h"
-#include "PostQueryRerank.h"
+#include "HashTableT.h"
 
 // make it 2B now. no reason not too limit it so low.
 #define MAXDOCIDSTOCOMPUTE 2000000000
@@ -184,8 +184,6 @@ public:
 	int32_t m_num3aRequests;
 	int32_t m_num3aReplies;
 	collnum_t m_firstCollnum;
-
-	PostQueryRerank m_postQueryRerank;
 
 	HashTableT<uint64_t, uint64_t> m_urlTable;
 };
