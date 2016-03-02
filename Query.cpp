@@ -2107,7 +2107,7 @@ bool Query::setQWords ( char boolFlag ,
 	// treat strongly connected phrases like cd-rom and 3.2.0.3 as being
 	// in quotes for the most part, therefore, set m_quoteStart for them
 	int32_t j;
-	int32_t qs = -1;0
+	int32_t qs = -1;
 	for ( j = 0 ; j < numWords ; j++ ) {
 		// skip all but strongly connected words
 		if ( m_qwords[j].m_ignoreWord != IGNORE_CONNECTED &&
