@@ -83,27 +83,6 @@ private:
 		return score;
 	};
 
-	rscore_t rerankLanguageAndCountry ( rscore_t score, 
-					uint8_t lang, uint8_t summaryLang,
-					    uint16_t country ,
-					    class Msg20 *msg20 );
-
-	inline 
-	rscore_t rerankPathsInUrl ( rscore_t score,
-				char *url,
-				int32_t urlLen );
-
-	inline 
-	rscore_t rerankPageSize ( rscore_t score,
-			      int32_t docLen );
-
-	bool preRerankOtherPagesFromSameHost( Url *pageUrl );
-	rscore_t rerankOtherPagesFromSameHost ( rscore_t score, 
-					    Url *pageUrl );
-	inline
-	rscore_t rerankDatedbDate( rscore_t score,
-			       time_t datedbDate );
-
 private:
 	Msg40 *m_msg40;
 	SearchInput *m_si;
