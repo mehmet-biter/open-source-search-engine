@@ -404,8 +404,6 @@ class CollectionRec {
 
 	// controls for query-dependent summary/title generation
 	int32_t m_titleMaxLen;
-	int32_t m_minTitleInLinkers;
-	int32_t m_maxTitleInLinkers;
 	int32_t m_summaryMaxLen;
 	int32_t m_summaryMaxNumLines;
 	int32_t m_summaryMaxNumCharsPerLine;

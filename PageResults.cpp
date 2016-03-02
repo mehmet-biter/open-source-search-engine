@@ -2972,10 +2972,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			      getLanguageString(mr->m_language));
 		sb->safePrintf("\t\t<langAbbr>%s</langAbbr>\n", 
 			      getLanguageAbbr(mr->m_language));
-		char *charset = get_charset_str(mr->m_charset);
-		if(charset)
-			sb->safePrintf("\t\t<charset><![CDATA[%s]]>"
-				      "</charset>\n", charset);
 	}
 
 	if ( si->m_format == FORMAT_JSON ) {
@@ -2984,9 +2980,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			      getLanguageString(mr->m_language));
 		sb->safePrintf("\t\t\"langAbbr\":\"%s\",\n",
 			      getLanguageAbbr(mr->m_language));
-		char *charset = get_charset_str(mr->m_charset);
-		if(charset)
-			sb->safePrintf("\t\t\"charset\":\"%s\",\n",charset);
 	}
 
 	//
@@ -2998,10 +2991,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	if ( si->m_format == FORMAT_HTML ) {
 		int32_t lang = mr->m_language;
 		if ( lang ) sb->safePrintf(" - %s",getLanguageString(lang));
-		uint16_t cc = mr->m_computedCountry;
-		if( cc ) sb->safePrintf(" - %s", g_countryCode.getName(cc));
-		char *charset = get_charset_str(mr->m_charset);
-		if ( charset ) sb->safePrintf(" - %s ", charset);
 	}
 
 	if ( si->m_format == FORMAT_HTML ) sb->safePrintf("<br>\n");

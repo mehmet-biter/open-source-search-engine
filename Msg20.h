@@ -72,7 +72,6 @@ class Msg20Request {
 	unsigned char       m_getSummaryVector          :1;
 	unsigned char       m_showBanned                :1;
 	unsigned char       m_includeCachedCopy         :1;
-	unsigned char       m_getTitleRec               :1; // sets ptr_tr in reply
 	unsigned char       m_doLinkSpamCheck           :1;
 	unsigned char       m_isLinkSpam                :1; // Msg25 uses for storage
 	unsigned char       m_isSiteLinkInfo            :1; // site link info?
@@ -158,8 +157,6 @@ public:
 	char       m_recycled            ;
 	uint8_t    m_language            ;
 	uint16_t   m_country             ;
-	uint16_t   m_computedCountry     ;
-	int16_t      m_charset             ;
 
 	int32_t       m_contentLen          ; // was m_docLen
 	int32_t       m_contentHash32       ;  // for deduping diffbot json objects streaming
@@ -223,9 +220,6 @@ public:
 	char       *ptr_rssItem              ; // set for m_getLinkText
 	char       *ptr_categories           ;
 	char       *ptr_content              ; // page content in utf8
-	char       *ptr_tr                   ; // like just using msg22
-	char       *ptr_tlistBuf             ;
-	char       *ptr_tiBuf                ; // terminfobuf
 	char       *ptr_templateVector       ;
 	char       *ptr_metadataBuf;
 
@@ -259,9 +253,6 @@ public:
 	int32_t       size_rssItem              ;
 	int32_t       size_categories           ;
 	int32_t       size_content              ; // page content in utf8
-	int32_t       size_tr                   ;
-	int32_t       size_tlistBuf             ;
-	int32_t       size_tiBuf                ;
 	int32_t       size_templateVector       ;
 	int32_t       size_metadataBuf          ;
 

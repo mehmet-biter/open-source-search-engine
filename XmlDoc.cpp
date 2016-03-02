@@ -19179,16 +19179,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	reply->m_collnum = m_collnum;
 
-	// MsgE uses this one
-	if ( m_req->m_getTitleRec ) {
-		// this is the original compressed titleRec, preceeded
-		// by key and dataSize and followed by the data
-		reply-> ptr_tr = m_oldTitleRec;
-		reply->size_tr = m_oldTitleRecSize;
-		m_replyValid = true;
-		return reply;
-	}
-
 	// lookup the tagdb rec fresh if setting for a summary. that way we
 	// can see if it is banned or not. but for getting m_getTermListBuf
 	// and stuff above, skip the tagrec lookup!

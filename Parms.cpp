@@ -4499,31 +4499,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "Minimum number of in linkers required to consider getting"
-		" the title from in linkers";
-	m->m_desc  = "Minimum number of in linkers required to consider getting"
-	       "	the title from in linkers";
-	m->m_cgi   = "mininlinkers";
-	m->m_off   = (char *)&cr.m_minTitleInLinkers - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "10";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "Max number of in linkers to consider";
-	m->m_desc  = "Max number of in linkers to consider for getting in "
-		"linkers titles.";
-	m->m_cgi   = "maxinlinkers";
-	m->m_off   = (char *)&cr.m_maxTitleInLinkers - x;
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "128";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "number of summary excerpts";
 	m->m_desc  = "How many summary excerpts to display per search result?";
 	m->m_cgi   = "ns";
