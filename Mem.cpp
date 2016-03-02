@@ -65,7 +65,7 @@ bool g_inMemFunction = false;
 #define OVERPAD  4
 #endif
 
-#define MAGICCHAR 0xda
+#define MAGICCHAR ((char)0xda)
 
 class Mem g_mem;
 

@@ -952,7 +952,7 @@ inline void KEYMIN ( char *k, char keySize ) {
 }
 
 inline void KEYMAX ( char *k, char keySize ) {
-	for ( int32_t i = 0 ; i < keySize ; i++ ) k[i]=0xff;
+	for ( int32_t i = 0 ; i < keySize ; i++ ) k[i]=(char)0xff;
 }
 
 inline char *KEYMIN() { return  "\0\0\0\0"
