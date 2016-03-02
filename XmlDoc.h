@@ -15,8 +15,8 @@
 //   Msg4::addMetaList(), which is only called by Msg14 or Repair.cpp for now
 
 
-#ifndef _XMLDOC_H_
-#define _XMLDOC_H_
+#ifndef XMLDOC_H
+#define XMLDOC_H
 
 #include "Lang.h"
 #include "Words.h"
@@ -190,15 +190,9 @@ public:
 	int32_t    m_reserved1;
 	int32_t    m_reserved2;
 	uint32_t   m_spideredTime; // time_t
-
-	// just don't throw away any relevant SpiderRequests and we have
-	// the data that m_minPubDate and m_maxPubDate provided
-	//time_t    m_minPubDate;
-	//time_t    m_maxPubDate;
 	uint32_t  m_indexedTime; // slightly > m_spideredTime (time_t)
 	uint32_t  m_reserved32;
 	uint32_t  reserved3; //was: m_pubDate;    // aka m_datedbDate // time_t
-	//time_t  m_nextSpiderTime;
 	uint32_t    m_firstIndexedDate; // time_t
 	uint32_t    m_outlinksAddedDate; // time_t
 
@@ -317,10 +311,6 @@ public:
 
 
  public:
-
-
-	void print   ( );
-
 	bool set2 ( char *titleRec,
 		    int32_t maxSize, 
 		    char *coll,
@@ -362,7 +352,6 @@ public:
 	void nukeDoc ( class XmlDoc *);
 	void reset ( ) ;
 	bool setFirstUrl ( char *u , bool addWWW , Url *base = NULL ) ;
-	bool setRedirUrl ( char *u , bool addWWW ) ;
 	void setStatus ( char *s ) ;
 	void setCallback ( void *state, void (*callback) (void *state) ) ;
 	void setCallback ( void *state, bool (*callback) (void *state) ) ;
@@ -372,7 +361,6 @@ public:
 	bool indexDoc2 ( );
 
 	key_t *getTitleRecKey() ;
-	//char *getSkipIndexing ( );
 	char *prepareToMakeTitleRec ( ) ;
 	// store TitleRec into "buf" so it can be added to metalist
 	bool setTitleRecBuf ( SafeBuf *buf , int64_t docId, int64_t uh48 );
@@ -385,7 +373,6 @@ public:
 	SafeBuf m_spiderStatusDocMetaList;
 	char *getIsAdult ( ) ;
 
-	int32_t getOutlinkAge ( int32_t outlinkNum ) ;
 	char *getIsPermalink ( ) ;
 	char *getIsUrlPermalinkFormat ( ) ;
 	char *getIsRSS ( ) ;
@@ -404,7 +391,6 @@ public:
 	class Links *getLinks ( bool doQuickSet = false ) ;
 	class HashTableX *getCountTable ( ) ;
 	bool hashString_ct ( class HashTableX *ht, char *s , int32_t slen ) ;
-	uint8_t *getSummaryLangId ( ) ;
 	int32_t *getSummaryVector ( ) ;
 	int32_t *getPageSampleVector ( ) ;
 	int32_t *getPostLinkTextVector ( int32_t linkNode ) ;
@@ -415,15 +401,12 @@ public:
 	uint64_t *getFuzzyDupHash ( );
 	int64_t *getExactContentHash64();
 	class RdbList *getDupList ( ) ;
-	class RdbList *getLikedbListForReq ( );
-	class RdbList *getLikedbListForIndexing ( );
 	char *getIsDup ( ) ;
 	char *getMetaDescription( int32_t *mdlen ) ;
 	char *getMetaSummary ( int32_t *mslen ) ;
 	char *getMetaKeywords( int32_t *mklen ) ;
 	char *getMetaGeoPlacename( int32_t *mgplen );
-	
-	int32_t *getSiteSpiderQuota ( ) ;
+
 	class Url *getCurrentUrl ( ) ;
 	class Url *getFirstUrl() ;
 	int64_t getFirstUrlHash48();
@@ -434,21 +417,13 @@ public:
 	class Url **getCanonicalRedirUrl ( ) ;
 	int32_t *getFirstIndexedDate ( ) ;
 	int32_t *getOutlinksAddedDate ( ) ;
-	//int32_t *getNumBannedOutlinks ( ) ;
 	uint16_t *getCountryId ( ) ;
 	class XmlDoc **getOldXmlDoc ( ) ;
-	//bool isRobotsTxtFile ( char *url , int32_t urlLen ) ;
 	class XmlDoc **getExtraDoc ( char *url , int32_t maxCacheAge = 0 ) ;
 	bool getIsPageParser ( ) ;
 	class XmlDoc **getRootXmlDoc ( int32_t maxCacheAge = 0 ) ;
-	//class XmlDoc **getGatewayXmlDoc ( ) ;
-	// . returns false if blocked, true otherwise.
-	// . returns true and sets g_errno on error
-	//bool setFromOldTitleRec ( ) ;
-	//RdbList *getOldMetaList ( ) ;
 	char **getOldTitleRec ( );
 	uint8_t *getRootLangId ();
-	//bool *updateRootLangId ( );
 	char **getRootTitleRec ( ) ;
 	int64_t *getAvailDocIdOnly ( int64_t preferredDocId ) ;
 	int64_t *getDocId ( ) ;
@@ -456,12 +431,6 @@ public:
 	class TagRec *getTagRec ( ) ;
 	// non-dup/nondup addresses only
 	int32_t *getFirstIp ( ) ;
-	bool *updateFirstIp ( ) ;
-	//int32_t *getSiteNumInlinksUniqueIp ( ) ;
-	//int32_t *getSiteNumInlinksUniqueCBlock ( ) ;
-	//int32_t *getSiteNumInlinksTotal ( );
-	//int32_t *getSiteNumInlinksFresh ( ) ;
-	//int32_t *getSitePop ( ) ;
 	uint8_t *getSiteNumInlinks8 () ;
 	int32_t *getSiteNumInlinks ( ) ;
 	class LinkInfo *getSiteLinkInfo() ;
@@ -470,10 +439,6 @@ public:
 	bool *getIsAllowed ( ) ;
 	int32_t *getFinalCrawlDelay();
 	int32_t      m_finalCrawlDelay;
-	//int32_t getTryAgainTimeDelta() { 
-	//	if ( ! m_tryAgainTimeDeltaValid ) { char *xx=NULL;*xx=0;}
-	//	return m_tryAgainTimeDelta;
-	//};
 	char *getIsWWWDup ( ) ;
 	class LinkInfo *getLinkInfo1 ( ) ;
 	char *getSite ( ) ;
@@ -503,7 +468,6 @@ public:
 	// we download large files to a file on disk, like warcs and arcs
 	int32_t *getContentHash32 ( ) ;
 	int32_t *getContentHashJson32 ( ) ;
-	//int32_t *getTagHash32 ( ) ;
 	int32_t     *getTagPairHashVector ( ) ;
 	uint32_t *getTagPairHash32 ( ) ;
 	int32_t getHostHash32a ( ) ;
@@ -511,22 +475,13 @@ public:
 	int32_t getDomHash32 ( );
 	char **getThumbnailData();
 	class Images *getImages ( ) ;
-	int8_t *getNextSpiderPriority ( ) ;
-	int32_t *getPriorityQueueNum ( ) ;
 	class TagRec ***getOutlinkTagRecVector () ;
 	char *hasNoIndexMetaTag();
 	char *hasFakeIpsMetaTag ( );
 	int32_t **getOutlinkFirstIpVector () ;
-	//char **getOutlinkIsIndexedVector () ;
-	int32_t *getRegExpNum ( int32_t outlinkNum ) ;
-	int32_t *getRegExpNum2 ( int32_t outlinkNum ) ;
 	char *getIsSiteRoot ( ) ;
-	bool getIsOutlinkSiteRoot ( char *u , class TagRec *gr ) ;
 	int8_t *getHopCount ( ) ;
-	//int8_t *getOutlinkHopCountVector ( ) ;
 	char *getSpiderLinks ( ) ;
-	int32_t *getNextSpiderTime ( ) ;
-	//char *getIsSpam() ;
 	char *getIsFiltered ();
 	bool getIsInjecting();
 	int32_t *getSpiderPriority ( ) ;
@@ -534,7 +489,6 @@ public:
 	int32_t *getIndexCode2 ( ) ;
 	SafeBuf *getNewTagBuf ( ) ;
 
-	char *updateTagdb ( ) ;
 	bool logIt ( class SafeBuf *bb = NULL ) ;
 	bool m_doConsistencyTesting;
 	bool doConsistencyTest ( bool forceTest ) ;
@@ -550,7 +504,6 @@ public:
 	char *getMetaList ( bool forDelete = false );
 
 	uint64_t m_downloadStartTime;
-	//uint64_t m_downloadEndTime;
 
 	uint64_t m_ipStartTime;
 	uint64_t m_ipEndTime;
@@ -565,8 +518,6 @@ public:
 	// m_indexCode or g_errno was set!
 	class SpiderReply *getNewSpiderReply ( );
 
-
-	SpiderRequest **getRedirSpiderRequest ( );
 	SpiderRequest m_redirSpiderRequest;
 	SpiderRequest *m_redirSpiderRequestPtr;
 
@@ -590,10 +541,7 @@ public:
 
 	bool hashNoSplit ( class HashTableX *tt ) ;
 	char *hashAll ( class HashTableX *table ) ;
-	int32_t getBoostFromSiteNumInlinks ( int32_t inlinks ) ;
-	bool hashSpiderReply (class SpiderReply *reply ,class HashTableX *tt) ;
 	bool hashMetaTags ( class HashTableX *table ) ;
-	bool hashIsClean ( class HashTableX *table ) ;
 	bool hashMetaZip ( class HashTableX *table ) ;
 	bool hashContentType ( class HashTableX *table ) ;
 	
@@ -642,9 +590,7 @@ public:
 	char* matchErrorMsg(char* p, char* pend );
 
 	bool hashWords( class HashInfo *hi );
-	bool hashSingleTerm( int64_t termId, class HashInfo *hi );
 	bool hashSingleTerm( char *s, int32_t slen, class HashInfo *hi );
-	bool hashString( class HashTableX *ht, class Bits *bits, char *s, int32_t slen );
 	bool hashString( char *s, int32_t slen, class HashInfo *hi );
 	bool hashString( char *s, class HashInfo *hi );
 
@@ -1408,17 +1354,9 @@ public:
 			 uint32_t lastSpideredDate = 0 ,
 			 int32_t  injectDocIp = 0 );
 
-
-	bool injectLinks  ( HashTableX *linkDedupTable ,
-			    HashTableX *domDedupTable ,
-			    void *finalState , 
-			    void (* finalCallback)(void *));
-
 	int64_t logQueryTimingStart();
 	void logQueryTimingEnd(const char* function, int64_t startTime);
 
-	bool doInjectLoop ( );
-	void doneInjecting ( class XmlDoc *xd );
 	int32_t  m_i;
 	int32_t  m_blocked;
 	void *m_finalState;

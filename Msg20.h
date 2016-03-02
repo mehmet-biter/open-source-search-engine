@@ -92,7 +92,7 @@ class Msg20Request {
 	char      *ptr_linkee        ; // used by Msg25 for getting link text
 	char      *ptr_displayMetas  ;
 
-	// . from here down: automatically set in Msg20Request::serialize() 
+	// . from here down: automatically set in Msg20Request::serialize()
 	//   from the above parms
 	// . add new size_* parms after size_qbuf and before size_displayMetas
 	//   so that serialize()/deserialize() still work
@@ -157,7 +157,6 @@ public:
 	char       m_hopcount            ;
 	char       m_recycled            ;
 	uint8_t    m_language            ;
-	uint8_t    m_summaryLanguage     ;
 	uint16_t   m_country             ;
 	uint16_t   m_computedCountry     ;
 	int16_t      m_charset             ;
@@ -178,7 +177,6 @@ public:
 	int32_t       m_linkTextNumWords    ;
 
 	int32_t       m_midDomHash          ; // set for m_getLinkText
-	void         *m_parentOwner;
 
 	char       m_isLinkSpam          ; // set for m_getLinkText
 	char       m_outlinkInContent    ; // set for m_getLinkText

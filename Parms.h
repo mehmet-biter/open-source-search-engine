@@ -4,35 +4,13 @@
 // from Parms.cpp. But Parms need to be marked if they contribute to 
 // SearchInput::makeKey() for caching the SERPS.
 
-#ifndef _PARMS_H_
-#define _PARMS_H_
+#ifndef PARMS_H
+#define PARMS_H
 
 #include "Rdb.h"
 
-//#include "CollectionRec.h"
-
 void handleRequest3e ( UdpSlot *slot , int32_t niceness ) ;
 void handleRequest3f ( UdpSlot *slot , int32_t niceness ) ;
-
-// "url filters profile" values. used to set default crawl rules
-// in Collectiondb.cpp's CollectionRec::setUrlFiltersToDefaults(). 
-// for instance, UFP_NEWS spiders sites more frequently but less deep in
-// order to get "news" pages and articles
-//enum {
-//	UFP_CUSTOM = 0 ,
-//	UFP_NONE   = 0 ,
-//	UFP_WEB    = 1 ,
-//	UFP_NEWS   = 2 ,
-//	UFP_LANG = 3,
-//	UFP_SHALLOW = 4
-//};
-
-// special priorities for the priority drop down 
-// in the url filters table
-//enum {
-//	SPIDER_PRIORITY_FILTERED  = -3 ,
-//	SPIDER_PRIORITY_BANNED    = -2 ,
-//	SPIDER_PRIORITY_UNDEFINED = -1 };
 
 enum {
 	OBJ_CONF    = 1 ,
@@ -129,7 +107,6 @@ class GigablastRequest {
 	int64_t m_docId;
 	int32_t      m_strip;
 	char      m_includeHeader;
-	char      m_highlightQuery;
 
 	///////////
 	//
@@ -153,26 +130,7 @@ class GigablastRequest {
 	char *m_qlang;
         bool  m_forceDel;
 	char  m_recycleContent;
-	// useful bufs to copy data over
-	SafeBuf m_tmpBuf1;
-	SafeBuf m_tmpBuf2;
-	SafeBuf m_tmpBuf3;
 };
-
-
-// values for Parm::m_subMenu
-#define SUBMENU_DISPLAY     1
-#define SUBMENU_MAP         2
-#define SUBMENU_CALENDAR    3
-#define SUBMENU_LOCATION    4
-#define SUBMENU_SOCIAL      5
-#define SUBMENU_TIME        6
-#define SUBMENU_CATEGORIES  7
-#define SUBMENU_LINKS       8
-#define SUBMENU_WIDGET      9
-#define SUBMENU_SUGGESTIONS 10
-#define SUBMENU_SEARCH      11
-#define SUBMENU_CHECKBOX    0x80 // flag
 
 // values for Parm::m_flags
 #define PF_COOKIE  0x01  // store in cookie?
@@ -205,9 +163,7 @@ class Parm {
 	const char *m_title; // displayed above m_desc on admin gui page
 	const char *m_desc;  // description of variable displayed on admin gui page
 	const char *m_cgi;   // cgi name, contains %i if an array
-	const char *m_cgi2;  // alias
-	const char *m_cgi3;  // alias
-	const char *m_cgi4;  // alias
+
 	char *m_xml;   // default to rendition of m_title if NULL
 	int32_t  m_off;   // this variable's offset into the CollectionRec class
 	char  m_colspan;
@@ -219,8 +175,6 @@ class Parm {
 	// in such cases a "count" is NOT stored before the parm in 
 	// CollectionRec.h or Conf.h.
 	bool isArray() { return (m_max>1); };
-
-	int32_t getNumInArray() ;
 
 	int32_t  m_max;   // max elements in the array
 	// if array is fixed size, how many elements in it?
@@ -243,8 +197,6 @@ class Parm {
 	char *m_qterm;
 	char *m_pstr; // for sorting by in sendPageAPI()
 	int32_t  m_parmNum; // slot # in the m_parms[] array that we are
-	//bool (*m_func)(TcpSocket *s , HttpRequest *r,
-	//	       bool (*cb)(TcpSocket *s , HttpRequest *r));
 	bool (*m_func)(char *parmRec);
 	// some functions can block, like when deleting a coll because
 	// the tree might be saving, so they take a "we" ptr
@@ -254,16 +206,11 @@ class Parm {
 	char  m_save;  // save to xml file? almost always true
 	int32_t  m_min;
 	// these are used for search parms in PageResults.cpp
-	//char m_sparm;// is this a search parm? for passing to PageResults.cpp
-	//char *m_scgi;  // parm in the search url
 	char  m_spriv; // is it private? only admins can see/use private parms
-	//char *m_scmd;  // the url path for this m_scgi variable
-	//int32_t  m_sdefo; // offset of default into CollectionRec (use m_off)
 	int32_t  m_sminc ;// offset of min in CollectionRec (-1 for none)
 	int32_t  m_smaxc ;// offset of max in CollectionRec (-1 for none)
 	int32_t  m_smin;  // absolute min
 	int32_t  m_smax;  // absolute max
-	//int32_t  m_soff;  // offset into SearchInput to store value in
 	char  m_sprpg; // propagate the cgi variable to other pages via GET?
 	char  m_sprpp; // propagate the cgi variable to other pages via POST?
 	bool  m_sync;  // this parm should be synced
@@ -298,7 +245,6 @@ class Parms {
 
 	bool printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r );
 
-	//char *printParms (char *p, char *pend, TcpSocket *s, HttpRequest *r);
 	bool printParms (SafeBuf* sb, TcpSocket *s , HttpRequest *r );
 
 	bool printParms2 (SafeBuf* sb, 
@@ -314,7 +260,6 @@ class Parms {
 			  );
 
 	bool printParm ( SafeBuf* sb,
-			 //int32_t  user ,
 			  char *username,
 			  Parm *m    , 
 			  int32_t  mm   , // m = &m_parms[mm]
@@ -357,13 +302,9 @@ class Parms {
 			   char *filenameDef ,
 			   char  objType ) ;
 
-	bool setParmsFromXml ( Xml &xml , void *THIS, char objType ) ;
-
 	bool setXmlFromFile(Xml *xml, char *filename, class SafeBuf *sb );
 
 	bool saveToXml ( char *THIS , char *f , char objType ) ;
-
-	bool convertToXml ( char *buf , char *THIS , char objType ) ;
 
 	bool getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s );
 
@@ -376,27 +317,7 @@ class Parms {
 	//   freeing the safebufs now used by the new one.
 	void detachSafeBufs ( class CollectionRec *cr ) ;
 
-	// calc checksum of parms
-	uint32_t calcChecksum();
-
-	// get size of serialized parms
-	//int32_t getStoredSize();
-	// . serialized to buf
-	// . if buf is NULL, just calcs size
-	//bool serialize( char *buf, int32_t *bufSize );
-	//void deserialize( char *buf );
-
 	void overlapTest ( char step ) ;
-
-
-	/////
-	//
-	// parms now in parmdb
-	//
-	/////
-
-	// all parm recs need to be in the tree
-	//Rdb m_rdb;
 
 	//
 	// new functions
@@ -432,7 +353,6 @@ class Parms {
 	bool doParmSendingLoop ( ) ;
 	bool syncParmsWithHost0 ( ) ;
 	bool makeSyncHashList ( SafeBuf *hashList ) ;
-	int32_t getNumInArray ( collnum_t collnum ) ;
 	bool addAllParmsToList ( SafeBuf *parmList, collnum_t collnum ) ;
 	bool updateParm ( char *rec , class WaitEntry *we ) ;
 

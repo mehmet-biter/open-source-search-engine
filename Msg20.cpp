@@ -324,8 +324,6 @@ void Msg20::gotReply ( UdpSlot *slot ) {
 	// cast it
 	m_r = (Msg20Reply *)rp;
 
-	m_r->m_parentOwner = (void *)this;
-
 	// we own it now
 	m_ownReply = true;
 
@@ -474,11 +472,6 @@ bool gotReplyWrapperxd ( void *state ) {
 }
 
 Msg20Reply::Msg20Reply ( ) {
-	// this is free in destructor, so clear it here
-	//ptr_eventSummaryLines = NULL;
-
-	m_parentOwner = NULL;
-
 	// seems to be an issue... caused a core with bogus size_dbuf
 	int32_t *sizePtr = &size_tbuf;
 	int32_t *sizeEnd = &size_note;
@@ -577,7 +570,6 @@ int32_t Msg20::deserialize ( char *buf , int32_t bufSize ) {
 	if ( bufSize < (int32_t)sizeof(Msg20Reply) ) {
 		g_errno = ECORRUPTDATA; return -1; }
 	m_r = (Msg20Reply *)buf;
-	m_r->m_parentOwner = (void *)this;
 	// do not free "buf"/"m_r"
 	m_ownReply = false;
 	return m_r->deserialize ( );

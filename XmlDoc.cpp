@@ -5175,44 +5175,6 @@ bool XmlDoc::hashString_ct ( HashTableX *ct , char *s , int32_t slen ) {
 	return true;
 }
 
-
-uint8_t *XmlDoc::getSummaryLangId ( ) {
-	// return if we got it already
-	if ( m_summaryLangIdValid ) {
-		return &m_summaryLangId;
-	}
-
-	Summary *s = getSummary();
-	if ( !s || s == (void *)-1 ) {
-		return (uint8_t *)s;
-	}
-
-    int64_t start = logQueryTimingStart();
-
-	// now set the words class
-	Words ww;
-	if ( ! ww.set ( s->getSummary(), s->getSummaryLen(), true, m_niceness ) ) {
-		return NULL;
-	}
-
-	// check it out. 0 means langUnknown. -1 means error.
-	int32_t ret = ww.getLanguage ( NULL , 100 , m_niceness , NULL );
-
-	logQueryTimingEnd(__func__, start);
-
-	// -1 means error! g_errno should be set
-	if ( ret < 0 ) {
-		return NULL;
-	}
-
-	// set it
-	m_summaryLangId = (uint8_t)ret;
-	// assume valid
-	m_summaryLangIdValid = true;
-	// return it
-	return &m_summaryLangId;
-}
-
 int cmp ( const void *h1 , const void *h2 ) ;
 
 // vector components are 32-bit hashes
@@ -19473,16 +19435,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		if ( ! sv || sv == (void *)-1 ) return (Msg20Reply *)sv;
 		reply-> ptr_vbuf = (char *)m_summaryVec;
 		reply->size_vbuf = m_summaryVecSize;
-	}
-
-	// breathe
-	QUICKPOLL ( m_niceness );
-
-	if ( m_req->m_numSummaryLines > 0 ) {
-		// turn off for now since we added this to posdb
-		uint8_t *sl = getSummaryLangId();
-		if ( ! sl || sl == (void *)-1 ) return (Msg20Reply *)sl;
-		reply->m_summaryLanguage = *sl;
 	}
 
 	// breathe
