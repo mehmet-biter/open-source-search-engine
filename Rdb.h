@@ -523,13 +523,9 @@ class Rdb {
 
 	// timedb support
 	time_t            m_nowGlobal;
-	class HashTableX *m_sortByDateTablePtr;
 
 	// used for deduping spiderdb tree
 	Msg5 m_msg5;
 };
-
-//extern RdbCache g_forcedCache;
-//extern RdbCache g_alreadyAddedCache;
 
 #endif

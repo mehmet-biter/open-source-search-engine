@@ -1452,7 +1452,6 @@ CollectionRec::CollectionRec() {
 	//m_lastUpdateTime = 0LL;
 	m_clickNScrollEnabled = false;
 	// inits for sortbydatetable
-	m_inProgress = false;
 	m_msg5       = NULL;
 	m_importState = NULL;
 	// JAB - track which regex parsers have been initialized
@@ -1490,14 +1489,6 @@ CollectionRec::CollectionRec() {
 CollectionRec::~CollectionRec() {
 	//invalidateRegEx ();
         reset();
-}
-
-// new collection recs get this called on them
-void CollectionRec::setToDefaults ( ) {
-	g_parms.setFromFile ( this , NULL , NULL  , OBJ_COLL );
-	// add default reg ex
-	//setUrlFiltersToDefaults();
-	rebuildUrlFilters();
 }
 
 void CollectionRec::reset() {
@@ -2799,26 +2790,6 @@ bool CollectionRec::save ( ) {
 	// do not need a save now
 	m_needsSave = false;
 
-	return true;
-}
-
-// calls hasPermissin() below
-bool CollectionRec::hasPermission ( HttpRequest *r , TcpSocket *s ) {
-	int32_t  plen;
-	const char *p  = r->getString ( "pwd" , &plen );
-	int32_t  ip    = s->m_ip;
-	return hasPermission ( p , plen , ip );
-}
-
-
-// . does this password work for this collection?
-bool CollectionRec::isAssassin ( int32_t ip ) {
-	return false;
-}
-
-// . does this password work for this collection?
-bool CollectionRec::hasPermission ( const char *p, int32_t plen , int32_t ip ) {
-	// just return true
 	return true;
 }
 

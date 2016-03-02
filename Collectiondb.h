@@ -5,12 +5,6 @@
 #ifndef COLLECTIONDB_H
 #define COLLECTIONDB_H
 
-// . max # of collections we're serving
-// . may have to update if business gets going (or make dynamic)
-// . lowered to 16 to save some mem
-//#define MAX_COLL_RECS 16 // 256
-//#define MAX_COLLS (MAX_COLL_RECS)
-
 #include "SafeBuf.h"
 
 bool addCollToTable ( char *coll , collnum_t collnum ) ;
@@ -44,9 +38,6 @@ class Collectiondb  {
 	// does nothing
 	void reset() ;
 
-	// this loads all the recs from host #0 
-	//bool load ( bool isDump = false );
-
 	// called by main.cpp to fill in our m_recs[] array with
 	// all the coll.*.*/coll.conf info
 	bool loadAllCollRecs ( );
@@ -74,9 +65,6 @@ class Collectiondb  {
 	// do not support diffbot style token/name style for this one:
 	const char *getDefaultColl ( HttpRequest *r ) ;
 
-	//class CollectionRec *getRec2 ( class HttpRequest *r ,
-	//			       bool useDefaultRec = true );
-	
 	// . get collectionRec from name
 	// returns NULL if not available
 	class CollectionRec *getRec ( const char *coll );
@@ -95,27 +83,8 @@ class Collectiondb  {
 	// . only counts valid existing collections
 	int32_t getNumRecsUsed() { return m_numRecsUsed; };
 
-	// . does this requester have root admin privledges???
-	// . uses the root collection record!
-	//bool isAdmin ( class HttpRequest *r , class TcpSocket *s );
-
-	//collnum_t getNextCollnum ( collnum_t collnum );
-
 	// what collnum will be used the next time a coll is added?
 	collnum_t reserveCollNum ( ) ;
-
-	//int64_t getLastUpdateTime () { return m_lastUpdateTime; };
-	// updates m_lastUpdateTime so g_spiderCache know when to reload
-	//void     updateTime         ();
-
-	// private:
-
-	// . these are called by handleRequest
-	// . based on "action" cgi var, 1-->add,2-->delete,3-->update
-	//bool addRec     ( char *coll , char *cc , int32_t cclen , bool isNew ,
-	//		  collnum_t collnum , bool isDump , //  = false );
-	//		  bool saveRec ); // = true
-
 
 	bool addExistingColl ( char *coll, collnum_t collnum );
 
@@ -135,14 +104,12 @@ class Collectiondb  {
 	bool setRecPtr ( collnum_t collnum , CollectionRec *cr ) ;
 
 	// returns false if blocked, true otherwise. 
-	//bool deleteRec  ( char *coll , WaitEntry *we );
 	bool deleteRec2 ( collnum_t collnum );//, WaitEntry *we ) ;
 
 	//void deleteSpiderColl ( class SpiderColl *sc );
 
 	// returns false if blocked, true otherwise. 
-	//bool resetColl ( char *coll , WaitEntry *we , bool purgeSeeds );
-	bool resetColl2 ( collnum_t oldCollnum, 
+	bool resetColl2 ( collnum_t oldCollnum,
 			  collnum_t newCollnum,
 			  //WaitEntry *we , 
 			  bool purgeSeeds );
@@ -156,8 +123,6 @@ class Collectiondb  {
 	// in order to add a new collection rec ptr to m_recs
 	SafeBuf m_recPtrBuf;
 
-	//bool            m_needsSave      [ MAX_COLLS ];
-	//int64_t       m_lastUpdateTime [ MAX_COLLS ];
 	int32_t            m_numRecs;
 	int32_t            m_numRecsUsed;
 	
@@ -201,43 +166,15 @@ extern class Collectiondb g_collectiondb;
 #define MAX_FILTERS    96  // up to 96 url regular expression patterns
 //#define MAX_PRIORITY_QUEUES MAX_SPIDER_PRIORITIES * 2//each can be old or new
 #define MAX_REGEX_LEN  256 // each regex can be up to this many bytes
-// max html head length
-//#define MAX_HTML_LEN (4*1024)
 // max chars the executable path+name can be
 #define MAX_FILTER_LEN 64
-// max length of a tagdb filter, typically just a domain/site
-//#define MAX_TAG_FILTER_LEN 128
-
-//#define MAX_SEARCH_PASSWORDS 5
-//#define MAX_BANNED_IPS       400
-//#define MAX_SEARCH_IPS       32
-//#define MAX_SPAM_IPS         5
-//#define MAX_ADMIN_IPS        15
-//#define MAX_ADMIN_PASSWORDS  10
-//#define MAX_SITEDB_FILTERS 256
-
-#define MAX_AD_FEEDS         10
-#define MAX_CGI_URL          1024
-#define MAX_XML_LEN          256
 
 #define SUMMARYHIGHLIGHTTAGMAXSIZE 128
-
-// max length of a sitedb filter, typically just a domain/site
-//#define MAX_SITE_EXPRESSION_LEN 128
-//#define MAX_SITE_EXPRESSIONS    256
 
 #include "regex.h"
 
 #include "Url.h"  // MAX_COLL_LEN
-//#include "Sync.h"
-//#include "Parms.h"       // for MAX_PARMS
-//#include "HttpRequest.h"
-//#include "Collectiondb.h" // PASSWORD_MAX_LEN
-//#include "Spider.h" //MAX_SPIDER_PRIORITIES
-//#include "HashTable.h"
 #include "HashTableX.h"
-//#include "RdbList.h"
-//#include "Rdb.h" // for RdbBase
 
 // fake this for now
 #define RDB_END2 80
@@ -293,8 +230,6 @@ class CrawlInfo {
 
 
 	void reset() { memset ( this , 0 , sizeof(CrawlInfo) ); };
-	//bool print (class SafeBuf *sb ) ;
-	//bool setFromSafeBuf (class SafeBuf *sb ) ;
 };
 
 
@@ -308,19 +243,6 @@ class CollectionRec {
 	// these just set m_xml to NULL
 	CollectionRec();
 	virtual ~CollectionRec();
-	
-	//char *getDiffbotToken ( int32_t *tokenLen );
-
-	// calls hasPermission() below
-	bool hasPermission ( class HttpRequest *r , class TcpSocket *s ) ;
-
-	// . does this user have permission for editing this collection?
-	// . "p" is the password for this collection in question
-	// . "ip" is the connecting ip
-	bool hasPermission ( const char *p, int32_t plen , int32_t ip ) ;
-
-	// is this ip from a spam assassin?
-	bool isAssassin ( int32_t ip );
 
 	int64_t getNumDocsIndexed();
 
@@ -330,29 +252,6 @@ class CollectionRec {
 	void sentLocalCrawlInfoToHost ( int32_t hostId );
 	void localCrawlInfoUpdate();
 
-	// how many bytes would this record occupy in raw binary format?
-	//int32_t getStoredSize () { return m_recSize; };
-
-	// . serialize ourselves into the provided buffer
-	// . used by Collectiondb::addRec()
-	// . return # of bytes stored
-	// . first 4 bytes in "buf" will also be the size of all the data
-	//   which should be what is returned - 4
-	//int32_t store ( char *buf , int32_t bufMaxSize );
-
-	// . deserialize from a buf
-	// . first 4 bytes must be the total size
-	// . returns false and sets g_errno on error
-	//bool set ( char *buf );
-
-	// . store it in raw binary format
-	// . returns # of bytes stored into "buf"
-	// . returs -1 and sets errno on error
-	//int32_t store ( char *buf , char *bufEnd );
-
-	// reset to default values
-	void setToDefaults () ;
-
 	// . stuff used by Collectiondb
 	// . do we need a save or not?
 	bool      save ();
@@ -360,8 +259,6 @@ class CollectionRec {
 
 	bool      load ( char *coll , int32_t collNum ) ;
 	void reset();
-
-	//void setUrlFiltersToDefaults();
 
 	// for customcrawls
 	bool rebuildUrlFilters();
@@ -380,12 +277,6 @@ class CollectionRec {
 	bool rebuildShallowRules();
 
 	bool m_urlFiltersHavePageCounts;
-
-	// moved from SpiderColl so we can load up at startup
-	//HashTableX m_pageCountTable;
-
-	// . when was the last time we changed?
-	//int64_t m_lastUpdateTime;
 
 	// the all important collection name, NULL terminated
 	char  m_coll [ MAX_COLL_LEN + 1 ] ;
@@ -416,7 +307,6 @@ class CollectionRec {
 
 	// spider controls for this collection
 	char m_spideringEnabled ;
-	float m_newSpiderWeight         ;
 	int32_t  m_spiderDelayInMilliseconds;
 
 	// is in active list in spider.cpp?
@@ -437,8 +327,6 @@ class CollectionRec {
 	char  m_indexSpiderReplies;
 	char  m_indexBody;
 
-	char  m_sameHostLinks           ; // spider links from same host only?
-
 	// do not re-add outlinks to spiderdb if less than this many days
 	// have elapsed since the last time we added them to spiderdb
 	float m_outlinksRecycleFrequencyDays ;
@@ -454,17 +342,10 @@ class CollectionRec {
 	char  m_useSimilarityPublishDate;
 	char  m_oneVotePerIpDom         ;
 	char  m_doUrlSpamCheck          ; //filter urls w/ naughty hostnames
-	int32_t  m_deadWaitMaxAge          ;
 	char  m_doLinkSpamCheck         ; //filters dynamically generated pages
-	int32_t  m_linkTextAnomalyThresh   ; //filters linktext that is unique
 	char  m_tagdbColl [MAX_COLL_LEN+1]; // coll to use for tagdb lookups
-	char  m_doChineseDetection      ;
 	char  m_delete404s              ;
-	char  m_defaultRatForXML        ;
-	char  m_defaultRatForHTML       ;
 	char  m_siteClusterByDefault    ;
-	char  m_doInnerLoopSiteClustering;
-	char  m_enforceNewQuotas        ;
 	char  m_doIpLookups             ; // considered iff using proxy
 	char  m_useRobotsTxt            ;
 	char  m_obeyRelNoFollowLinks    ;
@@ -476,20 +357,10 @@ class CollectionRec {
 	char  m_getLinkInfo             ; // turn off to save seeks
 	char  m_computeSiteNumInlinks   ;
 	char  m_indexInlinkNeighborhoods;
-	char  m_doRobotChecking         ;
-	char  m_needDollarSign          ;
-	char  m_getNewsTopic            ;
 	char  m_newAlgo                 ; // use new links: termlist algo
-	char  m_useGigabitVector        ;
 	char  m_removeBannedPages       ;
 
-	float m_inlinkNeighborhoodsScoreScalar;
-
-	float m_sortByDateWeight        ;
-
     char  m_dedupURLDefault             ;
-	char  m_useNewDeduping              ;
-	char  m_doTierJumping               ;
 	float m_numDocsMultiplier           ;
 	int32_t  m_percentSimilarSummary       ; // Dedup by summary similiarity
 	int32_t  m_summDedupNumLines           ;
@@ -498,7 +369,6 @@ class CollectionRec {
 	int32_t  m_maxQueryTerms;
 
 	char  m_spiderStatus;
-	//char *m_spiderStatusMsg;
 
 	float m_sameLangWeight;
 
@@ -507,11 +377,6 @@ class CollectionRec {
 	float			m_languageWeightFactor;
 	char			m_enableLanguageSorting;
 	char 			m_defaultSortLanguage2[6];
-	char 			m_languageMethodWeights[10];
-	int32_t 			m_languageBailout;
-	int32_t 			m_languageThreshold;
-	int32_t 			m_languageSamples;
-	int32_t 			m_langPageLimit;
 	char 			m_defaultSortCountry[3];
 
 	// for Spider.cpp
@@ -529,45 +394,23 @@ class CollectionRec {
 	// from Conf.h
 	int32_t m_posdbMinFilesToMerge ;
 	int32_t m_titledbMinFilesToMerge ;
-	int32_t m_sectiondbMinFilesToMerge ;
 	int32_t m_linkdbMinFilesToMerge ;
 	int32_t m_tagdbMinFilesToMerge ;
 
-	int32_t m_numCols; // number of columns for results page
-	int32_t m_screenWidth; // screen width to balance columns
-	int32_t m_adWidth; // how wide the ad Column is in pixels
-
 	char  m_dedupResultsByDefault   ;
 	char  m_doTagdbLookups        ;
-	char  m_clusterByTopicDefault    ;
-	char  m_restrictTitledbForQuery ; // move this down here
 	char  m_useOldIps               ;
-	char  m_banDomains              ;
-	char  m_requireAllTerms         ;
 	int32_t  m_summaryMode		;
 	char  m_deleteTimeouts          ; // can delete docs that time out?
 	char  m_allowAdultDocs          ;
 	char  m_useCanonicalRedirects   ;
 
 	int32_t  m_maxNumSpiders             ; // per local spider host
-	float m_spiderNewPct            ; // appx. percentage new documents
 
 	int32_t m_lastResetCount;
 
 	// start another set of flags using the old m_spiderTimeShift
 	char  m_useCurrentTime          ; // ... for m_spiderTime2
-
-	// max # of pages for this collection
-	int64_t  m_maxNumPages;
-
-	//double m_maxPagesPerSecond;
-	float m_maxPagesPerSecond;
-
-	int32_t  m_maxSimilarityToIndex;
-
-	// . only the root admin can set the % of spider time this coll. gets
-	// . OBSOLETE: this has been replaced by max pages per second var!!
-	int32_t m_spiderTimePercent;
 
 	// controls for query-dependent summary/title generation
 	int32_t m_titleMaxLen;
@@ -576,7 +419,6 @@ class CollectionRec {
 	int32_t m_summaryMaxLen;
 	int32_t m_summaryMaxNumLines;
 	int32_t m_summaryMaxNumCharsPerLine;
-	char m_useNewSummaries;
 
 	char m_getDocIdScoringInfo;
 
@@ -641,7 +483,6 @@ class CollectionRec {
 
 	// list of url patterns to be indexed.
 	SafeBuf m_siteListBuf;
-	char m_spiderToo;
 
 	// can be "web" "english" "romantic" "german" etc.
 	SafeBuf m_urlFiltersProfile;
@@ -693,8 +534,6 @@ class CollectionRec {
 	SafeBuf m_htmlHead;
 	SafeBuf m_htmlTail;
 
-	int32_t  m_compoundListMaxSize;
-
 	// SPELL CHECK
 	char  m_spellCheck;
 
@@ -707,31 +546,11 @@ class CollectionRec {
 
 	HashTableX m_seedHashTable;
 
-	char  m_familyFilter;
-
-	int32_t      	m_tagdbRefreshRate;
-	int32_t      	m_linkSamplesToGet;	//was 256
-	int32_t    	m_linkQualityDivisor;	//was 8
-	int32_t    	m_negPointsPerBannedLink;	// was 1
-	int32_t    	m_numSitesOnIpToSample;	//100
-	int32_t    	m_negPointsPerBannedSiteOnIp;	// was 1
-	int32_t    	m_siteOnIpQualityDivisor;	//was 8
-	int32_t    	m_maxPenaltyFromIp;	        //was 30
-	int32_t            m_minPagesToEvaluate;
-
-	int32_t 		m_siteQualityBanThreshold;
-	int32_t 		m_siteQualityReindexThreshold;
-	float 		m_maxSitesPerSecond;
-	int32_t            m_linkBonusDivisor;
-	int32_t            m_penaltyForLinksToDifferentSiteSameIp;
-
 	// only spider urls due to be spidered in this time range
 	int32_t  m_spiderTimeMin;
 	int32_t  m_spiderTimeMax;
 
 	int32_t  m_maxAddUrlsPerIpDomPerDay;
-
-	float m_maxKbps;
 
 	// . puts <br>s in the summary to keep its width below this
 	// . but we exceed this width before we would split a word
@@ -740,29 +559,12 @@ class CollectionRec {
 	// how long a robots.txt can be in the cache (Msg13.cpp/Robotdb.cpp)
 	int32_t m_maxRobotsCacheAge;
 
-	// collection name in the other/external cluster from which we
-	// fetch link information. (gov.gigablast.com)
-	char m_getExternalLinkInfo;
-	// use hosts2.conf (otherwise uses hosts.conf for import)
-	char m_importFromHosts2Conf;
-	// should we ask the external collection to RECOMPUTE the link info
-	// before giving it to us. we are using this to incorporate new info
-	// not yet fully soaked through into gk, for slingshot.
-	//char m_getExternalLinkInfoFresh;
-	char m_externalColl [ MAX_COLL_LEN + 1 ] ;
-
-	// collection name in the other/external cluster from which we
-	// fetch related pages titleRecs. (gov.gigablast.com)
-	char m_getExternalRelatedPages;
-	char m_externalRelatedPagesColl [ MAX_COLL_LEN + 1 ] ;
 	// for importing search results from another cluster
 	int32_t  m_numResultsToImport ;
 	float m_importWeight;
 	int32_t  m_numLinkerWeight;
 	int32_t  m_minLinkersPerImportedResult ;
 	char  m_importColl [ MAX_COLL_LEN + 1 ];
-
-	char m_classificationMode;
 
 	// use query expansion for this collection?
 	char m_queryExpansion;
@@ -772,36 +574,19 @@ class CollectionRec {
 
 	char m_hideAllClustered;
 
-	// . cut off age in number of days old 
-	// . if pub date is older than this we do not add to datedb
-	//   and we remove it from datedb during a datedb merge
-	int32_t  m_datedbCutoff;
-	// date parsing parms
-	int32_t  m_datedbDefaultTimezone;
-
 	// display indexed date, last modified date, datedb (published) date
 	char m_displayIndexedDate;
 	char m_displayLastModDate;
 	char m_displayPublishDate;
 
-        // data feed parms
-        char m_useDFAcctServer; 
-        int32_t m_dfAcctIp;
-        int32_t m_dfAcctPort;
+	// data feed parms
+	char m_useDFAcctServer;
+	int32_t m_dfAcctIp;
+	int32_t m_dfAcctPort;
 
 	// enable click 'n' scroll
 	char m_clickNScrollEnabled;
 
-	// . do not keep in ruleset, store in title rec at time of parsing
-	// . allows admin to quickly and easily change how we parse docs
-	int32_t  m_titleWeight;
-	int32_t  m_headerWeight;
-	int32_t  m_urlPathWeight;
-	int32_t  m_externalLinkTextWeight;
-	int32_t  m_internalLinkTextWeight;
-	int32_t  m_conceptWeight;
-	float m_siteNumInlinksBoostBase;
-	
 	// post query reranking
 	int32_t  m_pqr_docsToScan; // also for # docs for language
 	float m_pqr_demFactCountry; // demotion for foreign countries
@@ -846,18 +631,8 @@ class CollectionRec {
 	class RdbBase *m_bases[RDB_END2];
 
  public:
-
-	// this is basically a cache on timedb, one per collection
-	HashTableX m_sortByDateTable;
-	// are we currently in the midst of updating the sortbydate table?
-	bool m_inProgress;
-	// last time we updates m_sortByDateTable (start time of the update)
-	uint32_t m_lastUpdateTime; // time_t
 	// for poulating the sortbydate table
 	class Msg5 *m_msg5;
-	key128_t m_timedbStartKey;
-	key128_t m_timedbEndKey;
-	//RdbList  m_timedbList;
 
 	// used by Parms.cpp
 	char m_hackFlag;
@@ -867,20 +642,6 @@ class CollectionRec {
 	// MAX_COLLS which we did away with because we made this dynamic.
 	int32_t m_numPosKeysInTree[RDB_END2];
 	int32_t m_numNegKeysInTree[RDB_END2];
-
-	//int32_t m_numEventsOnHost;
-
-	// do we have the doc:quality var in any url filter?
-	//bool      m_hasDocQualityFilter;
-	// do we have "isindexed" in any url filter?
-	//bool      m_hasIsIndexedKeyword;
-
-	// this means someone re-submitted some new filters or changes, so
-	// we need to update "m_hasDocQualityFilter"
-	//void updateFilters();
-
-        // company name to use for cached page messages
-	//char m_cachedPageName[MAX_NAME_LEN];
 };
 
 #endif

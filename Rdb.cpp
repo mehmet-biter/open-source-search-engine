@@ -1787,9 +1787,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 
 	// set this for event interval records
 	m_nowGlobal = 0;//getTimeGlobal();
-	// shortcut this too
-	CollectionRec    *cr = g_collectiondb.getRec(collnum);
-	m_sortByDateTablePtr = &cr->m_sortByDateTable;
 
  loop:
 
