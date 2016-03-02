@@ -57,13 +57,6 @@ int32_t  ipdom ( int32_t ip ) { return ip & 0x00ffffff; };
 // most significant 2 bytes of ip
 int32_t  iptop ( int32_t ip ) { return ip & 0x0000ffff; };
 
-// . is least significant byte a zero?
-// . if it is then this ip is probably representing a whole ip domain
-bool  isIpDom ( int32_t ip ) { return ( (ip & 0xff000000) == 0 ); };
-
-// are last 2 bytes 0's?
-int32_t  isIpTop ( int32_t ip ) { return ( (ip & 0xffff0000) == 0 ); };
-
 // returns number of top bytes in comon
 int32_t  ipCmp ( int32_t ip1 , int32_t ip2 ) {
 	char *a = (char *)&ip1;

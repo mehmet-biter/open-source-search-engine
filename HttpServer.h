@@ -144,8 +144,7 @@ class HttpServer {
 
 	// cancel the transaction that had this state
 	void cancel ( void *state ) {
-		//void (*callback)(void *state, TcpSocket *s) ) {
-		m_tcp.cancel ( state );//, callback );
+		m_tcp.cancel ( state );
 	};
 
 	int32_t m_maxOpenSockets;
@@ -161,21 +160,9 @@ class HttpServer {
 			return 0.0;
 	};
 
-	//this is for low priority requests which come in while we are
-	//in a quickpoll
-	bool addToQueue(TcpSocket *s, HttpRequest *r, int32_t page);
-	bool callQueuedPages();
-
 	bool processSquidProxyRequest ( TcpSocket *sock, HttpRequest *hr);
 
 	// private:
-
-	// like above but you supply the ip
-	bool sendRequest ( int32_t   ip       ,
-			   int16_t  port     ,
-			   char  *request  ,
-			   void  *state    ,
-			   void (* callback) ( void *state , TcpSocket *s ));
 
 	// go ahead and start sending the file ("path") over the socket
 	bool sendReply ( TcpSocket *s , HttpRequest *r , bool isAdmin);
