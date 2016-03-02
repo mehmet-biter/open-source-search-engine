@@ -4638,21 +4638,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "spider proxy test url";
-	m->m_desc  = "Download this url every minute through each proxy "
-		"listed above to ensure they are up. Typically you should "
-		"make this a URL you own so you do not aggravate another "
-		"webmaster.";
-	m->m_xml   = "proxyTestUrl";
-	m->m_cgi   = "proxytesturl";
-	m->m_off   = (char *)&g_conf.m_proxyTestUrl - g;
-	m->m_type  = TYPE_SAFEBUF;
-	m->m_def   = "http://www.gigablast.com/";
-	m->m_flags = 0;
-	m->m_page  = PAGE_SPIDERPROXIES;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "reset proxy table";
 	m->m_desc  = "Reset the proxy statistics in the table below. Makes "
 		"all your proxies treated like new again.";

@@ -124,7 +124,6 @@ class Conf {
 	int32_t m_wikiProxyPort;
 
 	SafeBuf m_proxyIps;
-	SafeBuf m_proxyTestUrl;
 	bool    m_useProxyIps;
 	bool    m_automaticallyUseProxyIps;
 	SafeBuf m_proxyAuth;

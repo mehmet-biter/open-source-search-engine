@@ -363,10 +363,6 @@ void hdtempWrapper ( int fd , void *state ) {
 		resetProxyStats();
 	}
 
-	// also download test urls from spider proxies to ensure they
-	// are up and running properly
-	downloadTestUrlFromProxies();
-
 	// reset this... why?
 	g_errno = 0;
 	// do not get if already getting
