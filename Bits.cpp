@@ -32,10 +32,11 @@ void Bits::reset() {
 // . returns false and sets errno on error
 bool Bits::set(Words *words, int32_t niceness) {
 	reset();
+
 	// save words so printBits works
 	m_words = words;
 	// save for convenience/speed
-	m_niceness        = niceness;
+	m_niceness = niceness;
 	// how many words?
 	int32_t numBits = words->getNumWords();
 	// how much space do we need?
@@ -63,39 +64,37 @@ bool Bits::set(Words *words, int32_t niceness) {
 	wbit_t prevBits  = 0;
 
 	nodeid_t *tagIds = words->getTagIds();
-	char **w         = words->getWords();
-	int64_t *wids  = words->getWordIds();
-	char **wptrs     = words->getWords();
+	char **w = words->getWords();
 
-	int64_t prevWid = 0LL;
-
-	int32_t   brcount   = 0;
+	int32_t brcount = 0;
 
 	wbit_t bits;
-	bool isInSentence = false;
 
 	for ( int32_t i = 0 ; i < numBits ; i++ ) {
 		// breathe
 		QUICKPOLL ( m_niceness );
-
 		if ( tagIds && tagIds[i] ) {
 			// shortcut
 			nodeid_t tid = tagIds[i] & BACKBITCOMP;
 			// count the <br>s, we can't pair across more than 1
-			if ( g_nodes[tid].m_isBreaking ) 
+			if ( g_nodes[tid].m_isBreaking ) {
 				bits = 0;
-			// can only pair across one <br> tag, not two
-			else if ( tid == TAG_BR ) {
-				if ( brcount > 0 ) bits = 0;
-				else { brcount++; bits = D_CAN_PAIR_ACROSS; }
+			} else if ( tid == TAG_BR ) {
+				// can only pair across one <br> tag, not two
+				if ( brcount > 0 ) {
+					bits = 0;
+				} else {
+					brcount++;
+					bits = D_CAN_PAIR_ACROSS;
+				}
+			} else {
+				bits = D_CAN_PAIR_ACROSS;
 			}
-			else bits = D_CAN_PAIR_ACROSS;
 		}
 		else if ( is_alnum_utf8 ( w[i]+0 )) {
-			bits=getAlnumBits(i,prevBits);
+			bits = getAlnumBits(i,prevBits);
 			brcount = 0;
-		}
-		else {
+		} else {
 			// . just allow anything now!
 			// . the curved quote in utf8 is 3 bytes long and with
 			//   a space before it, was causing issues here!
@@ -106,62 +105,7 @@ bool Bits::set(Words *words, int32_t niceness) {
 		m_bits [ i ] = bits;
 
 		// these bits will be the previous bits the next time around.
-		prevBits = bits; //m_bits [ i - 1 ];
-
-		/////////////////////////
-		//
-		// . identify which tags and punct words break a sentence
-		// . Sections.cpp uses this to carve out sentence sections
-		//
-		/////////////////////////
-
-		// a word never breaks a sentence
-		if ( wids[i] ) {
-			isInSentence = true;
-			prevWid = wids[i];
-			continue;
-		}
-
-		// if not in a sentence, just keep going
-		if ( ! isInSentence ) continue;
-
-		// if punct it breaks unless it is a comma, semicolon,
-		// colon, space, etc.
-		if ( ! tagIds || ! tagIds[i] ) {
-			// not a break if no period right there
-			if ( wptrs[i][0] != '.' &&
-			     wptrs[i][0] != '!' &&
-			     wptrs[i][0] != '?' )
-				continue;
-			// if an alnum char follows the ., it is ok
-			// probably a hostname or ip or phone #
-			if ( is_alnum_utf8(wptrs[i]+1) ) continue;
-			// if abbreviation before we are ok too
-			if ( wptrs[i][0]=='.' && isAbbr(prevWid) ) continue;
-			// otherwise, break that sentence
-			m_bits[i] |= D_BREAKS_SENTENCE;
-			// stop it
-			isInSentence = false;
-			// keep going
-			continue;
-		}
-
-		// skip non breaking tags like font
-		if ( ! isBreakingTagId(tagIds[i]) ) continue;
-
-		// now we assume br tags break sentences until we can figure 
-		// out if the page is microsoft front page or not.
-		m_bits[i] |= D_BREAKS_SENTENCE;
-		// stop it
-		isInSentence = false;
-
-
-		//
-		// pick the longest line in a hard section which ends in
-		// a period and contains a br tag.  then any line that
-		// is 80%+ of that line's number of chars is also a line
-		// where the br should not terminate it as a sentence.
-		// ?????
+		prevBits = bits;
 	}
 
 	return true;

@@ -29,8 +29,8 @@
 //#define D_UNUSED              0x0040
 //#define D_UNUSED              0x0080
 //#define D_UNUSED              0x0100
+//#define D_UNUSED              0x0200
 
-#define D_BREAKS_SENTENCE       0x0200
 // set by Sections.cpp::setMenu() function
 #define D_IN_LINK               0x0400
 
