@@ -418,7 +418,7 @@ class Query {
 	// . after calling this you can call functions below
 	bool set2 ( const char *query    , 
 		    uint8_t  langId ,
-		    char     queryExpansion ,
+		    bool     queryExpansion ,
 		    bool     useQueryStopWords = true ,
 		    int32_t  maxQueryTerms = 0x7fffffff );
 

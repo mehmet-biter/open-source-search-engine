@@ -11,8 +11,8 @@
 //   values from the "sites=" and "site=" cgi parms, since they show up with
 //   radio buttons below the search text box on the web page.
 
-#ifndef _SEARCHINPUT_H_
-#define _SEARCHINPUT_H_
+#ifndef SEARCHINPUT_H
+#define SEARCHINPUT_H
 
 #include "Query.h" // MAX_QUERY_LEN
 
@@ -46,14 +46,10 @@ public:
 	// here since the original one is on the stack
 	HttpRequest  m_hr;
 
-	TcpSocket   *m_sock;
-
 	int32_t   m_niceness;                   // msg40
 
 	// array of collnum_t's to search... usually just one
 	SafeBuf m_collnumBuf;
-	// first collection # listed in m_collnumBuf
-	collnum_t m_firstCollnum;
 
 	char          *m_displayQuery;     // pts into m_qbuf1
 
@@ -112,13 +108,11 @@ public:
 
 	char  *m_displayMetas;               // msg40
 
-
 	// do not include these in makeKey()
 
 	char  *m_queryCharset;
 
 	char  *m_gbcountry;
-	uint8_t m_country;
 
 	// advanced query parms
 	char  *m_url; // for url: search
@@ -150,9 +144,6 @@ public:
         char   m_dedupURL;
 	int32_t   m_percentSimilarSummary;   // msg40
 	char   m_showBanned;
-	char   m_excludeLinkText;
-	char   m_excludeMetaText;
-	char   m_doBotDetection;
 	int32_t   m_includeCachedCopy;
 	char   m_familyFilter;            // msg40
 	char   m_showErrors;
@@ -177,14 +168,6 @@ public:
 
 	char *m_filetype;
 
-	// unused pqr stuff
-	int8_t			m_langHint;
-	float			m_languageUnknownWeight;
-	float			m_languageWeightFactor;
-	char			m_enableLanguageSorting;
-	uint8_t                 m_countryHint;
-
-
 	// search result knobs
 	int32_t   m_realMaxTop;
 
@@ -195,35 +178,22 @@ public:
 
 	int32_t   m_docsWanted;                  // msg40
 	int32_t   m_firstResultNum;              // msg40
-	int32_t   m_numResultsToImport;          // msg40
-	float  m_importWeight;
-	int32_t   m_numLinkerWeight;
-	int32_t   m_minLinkersPerImportedResult; // msg40
 	char   m_doQueryHighlighting;         // msg40
 	char  *m_highlightQuery;
 	Query  m_hqq;
-	int32_t   m_summaryMode;
-
-	// are we doing a QA query for quality assurance consistency
-	char   m_qa;
 
 	int32_t   m_docsToScanForReranking;
-	float  m_pqr_demFactSubPhrase;
 	float  m_pqr_demFactCommonInlinks;
-	float  m_pqr_demFactProximity;
-	float  m_pqr_demFactOrigScore;
+
 	// . buzz stuff (buzz)
 	// . these controls the set of results, so should be in the makeKey()
 	//   as it is, in between the start and end hash vars
 	int32_t   m_displayInlinks;
 	int32_t   m_displayOutlinks;
 
-	int32_t   m_maxQueryTerms;
-
 	// we do not do summary deduping, and other filtering with docids
 	// only, so can change the result and should be part of the key
 	char   m_docIdsOnly;                 // msg40
-
 
 	char  *m_formatStr;
 

@@ -26,7 +26,6 @@ void SearchInput::clear ( int32_t niceness ) {
 	// set these
 	m_numLinesInSummary  = 2;
 	m_docsWanted         = 10;
-	m_maxQueryTerms      = 1000;
 	m_niceness           = niceness;
 }
 
@@ -113,9 +112,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	// zero out everything, set niceness to 0
 	clear ( 0 ) ;
 
-	// save it now
-	m_sock = sock;
-
 	// still his buffer. m_hr will free the stuff, but "r" can
 	// still access it for the time being, and not free it
 	m_hr.stealBuf ( r );
@@ -129,7 +125,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	//
 	///////
 
-	m_firstCollnum = -1;
 	// set this to the collrec of the first valid collnum we encounter
 	CollectionRec *cr = NULL;
 	// now convert list of space-separated coll names into list of collnums
@@ -153,7 +148,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 		// . set initial junk
 		if ( ! cr ) {
 			cr = tmpcr;
-			m_firstCollnum = tmpcr->m_collnum;
 		}
 		// save the collection #
 		if ( ! m_collnumBuf.safeMemcpy ( &tmpcr->m_collnum, 
@@ -170,7 +164,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 		// set defaults from the FIRST one
 		if ( tmpcr && ! cr ) {
 			cr = tmpcr;
-			m_firstCollnum = tmpcr->m_collnum;
 		}
 		if ( ! tmpcr ) { 
 			g_errno = ENOCOLLREC;
@@ -422,11 +415,11 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	// . the query to use for highlighting... can be overriden with "hq"
 	// . we need the language id for doing synonyms
 	if ( m_prepend && m_prepend[0] )
-		m_hqq.set2 ( m_prepend , m_queryLangId , true ,maxQueryTerms);
+		m_hqq.set2 ( m_prepend , m_queryLangId , true , true, maxQueryTerms);
 	else if ( m_highlightQuery && m_highlightQuery[0] )
-		m_hqq.set2 (m_highlightQuery,m_queryLangId,true,maxQueryTerms);
+		m_hqq.set2 (m_highlightQuery,m_queryLangId,true, true, maxQueryTerms);
 	else if ( m_query && m_query[0] )
-		m_hqq.set2 ( m_query , m_queryLangId , true,maxQueryTerms);
+		m_hqq.set2 ( m_query , m_queryLangId , true, true, maxQueryTerms);
 
 	// log it here
 	log(LOG_INFO, "query: got query %s (len=%i)" ,m_sbuf1.getBufStart() ,m_sbuf1.length());

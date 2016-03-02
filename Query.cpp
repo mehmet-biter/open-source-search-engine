@@ -91,7 +91,7 @@ void Query::reset ( ) {
 bool Query::set2 ( const char *query        , 
 		   // need language for doing synonyms
 		   uint8_t  langId ,
-		   char     queryExpansion ,
+		   bool     queryExpansion ,
 		   bool     useQueryStopWords ,
 		   int32_t  maxQueryTerms  ) {
 
@@ -109,8 +109,6 @@ bool Query::set2 ( const char *query        ,
 
 	if ( ! query ) return true;
 
-	// set to 256 for synonyms?
-	//m_maxQueryTerms = 256;
 	m_queryExpansion = queryExpansion;
 
 	int32_t queryLen = gbstrlen(query);
