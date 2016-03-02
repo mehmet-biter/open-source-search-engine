@@ -902,7 +902,6 @@ public:
 	RdbList m_dupList;
 	int64_t m_exactContentHash64;
 	Msg0 m_msg0;
-	Msg5 m_msg5;
 	char m_isDup;
 	int64_t m_docIdWeAreADupOf;
 	Msg22Request m_msg22Request;
@@ -944,13 +943,14 @@ public:
 	uint8_t m_siteNumInlinks8;
 	SafeBuf m_mySiteLinkInfoBuf;
 	SafeBuf m_myPageLinkInfoBuf;
-	SafeBuf m_myTempLinkInfoBuf;
+
 	char m_isInjecting;
 	char m_isImporting;
 	char m_useFakeMime;
 	char m_useSiteLinkBuf;
 	char m_usePageLinkBuf;
 	char m_printInXml;
+
 	SafeBuf m_tmpBuf11;
 	SafeBuf m_tmpBuf12;
 	Multicast m_mcast11;
@@ -970,7 +970,7 @@ public:
 	SafeBuf m_linkSiteHashBuf;
 	SafeBuf m_linkdbDataBuf;
 	SafeBuf m_langVec;
-	Msg0 m_msg0b;
+
 	SiteGetter m_siteGetter;
 	int64_t  m_siteHash64;
 	int32_t m_siteHash32;
@@ -1184,7 +1184,6 @@ public:
 	char *m_oldp;
 	bool  m_didExpansion;
 	SafeBuf m_esbuf;
-	SafeBuf m_xbuf;
 
 	// used by msg13
 	class Msg13Request *m_r;

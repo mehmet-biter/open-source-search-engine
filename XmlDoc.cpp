@@ -133,10 +133,6 @@ void XmlDoc::reset ( ) {
 
 	m_mySiteLinkInfoBuf.purge();
 	m_myPageLinkInfoBuf.purge();
-	m_myTempLinkInfoBuf.purge();
-
-	// notifications pending?
-	//if ( m_notifyBlocked ) { char *xx=NULL;*xx=0; }
 
 	m_loaded = false;
 
@@ -293,7 +289,6 @@ void XmlDoc::reset ( ) {
 	m_dupList.reset();
 	m_msg8a.reset();
 	m_msg13.reset();
-	m_msg0b.reset();
 	m_msge0.reset();
 	m_msge1.reset();
 	m_reply.reset();
@@ -304,7 +299,6 @@ void XmlDoc::reset ( ) {
 	m_pageLinkBuf.reset();
 	m_siteLinkBuf.reset();
 	m_esbuf.reset();
-	m_xbuf.reset();
 	m_tagRecBuf.reset();
 
 	// origin of this XmlDoc
@@ -1418,13 +1412,6 @@ void indexDocWrapper2 ( int fd , void *state ) {
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
 
-
-
-// . inject from http request
-// . replace more of Msg7.cpp logic with this?
-//bool XmlDoc::injectDoc ( HttpRequest *hr ) {
-//}
-
 // . the highest level function in here
 // . user is requesting to inject this url
 // . returns false if blocked and your callback will be called when done
@@ -1717,10 +1704,6 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 					   false );//isDel
 	sreq->setDataSize();
 }
-
-
-
-#include <execinfo.h>
 
 ////////////////////////////////////////////////////////////////////
 //   THIS IS THE HEART OF HOW THE PARSER ADDS TO THE RDBS
@@ -6637,63 +6620,6 @@ int32_t *XmlDoc::getOutlinksAddedDate ( ) {
 	return (int32_t *)&m_outlinksAddedDate;
 }
 
-/*
-int32_t *XmlDoc::getNumBannedOutlinks ( ) {
-	if ( m_numBannedOutlinksValid ) return &m_numBannedOutlinks;
-
-	setStatus ( "getting num banned outlinks" );
-
-	// get the outlinks
-	Links *links = getLinks();
-	if ( ! links || links == (Links *)-1 ) return (int32_t *)links;
-	// count em
-	int32_t n = links->getNumLinks();
-	// reset
-	m_numBannedOutlinks = 0;
-	// one vote per domain hash table
-	char buf[20000];
-	HashTableX ht; ht.set ( 4 , 0 , -1 , buf , 20000 ,false,m_niceness);
-	// loop through them
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// get the link
-		char *u = links->getLinkPtr(i);
-		// get domain of the link
-		int32_t dlen; char *dom  = getDomFast ( u , &dlen , false );
-		// skip if bad domain
-		if ( ! dom || dlen <= 0 ) continue;
-		// get domHash
-		int32_t h = hash32 ( dom , dlen );
-		// one check per domain
-		if ( ht.getSlot ( &h ) >= 0 ) continue;
-		// add it, return NULL on error, g_errno should be set
-		if ( ! ht.addKey ( &h ) ) return NULL;
-		// . loop over all regular expression in the url filters table
-		// . stop at first regular expression it matches
-		int32_t *rn = getRegExpNum2 ( i );
-		// need to wait for a callback at this point
-		if ( ! rn || rn == (int32_t *)-1 ) return (int32_t *)rn;
-		// skip if no match in url filters table
-		if ( *rn == -1 ) continue;
-		// get spider priority
-		int32_t pr = cr->m_spiderPriorities[*rn];
-		// skip if not banned
-		if ( pr != -2 ) continue;
-		// count it
-		m_numBannedOutlinks++;
-	}
-	// all done
-	m_numBannedOutlinksValid = true;
-	// convert this too!
-	//m_numBannedOutlinks8 = score32to8 ( m_numBannedOutlinks );
-	// sanity check on score32to8()
-	//if(m_numBannedOutlinks8>0&&!m_numBannedOutlinks){char*xx=NULL;*xx=0;}
-
-	return &m_numBannedOutlinks;
-}
-*/
-
 uint16_t *XmlDoc::getCountryId ( ) {
 	if ( m_countryIdValid ) return &m_countryId;
 
@@ -6711,24 +6637,6 @@ uint16_t *XmlDoc::getCountryId ( ) {
 
 	return &m_countryId;
 }
-
-
-/*
-XmlDoc *XmlDoc::getOldDoc ( ) {
-	if ( m_oldDocValid ) return &m_oldDoc;
-	// get current url
-	Url *u = getCurrentUrl();
-	// set its url otherwise
-	m_oldDoc.setFirstUrl ( u , false );
-	// get the old title rec
-	char *ret = getOldTitleRec();
-	if ( ! ret || ret == (char *)-1 ) return (XmlDoc *)ret;
-	// all done
-	m_oldDocValid = true;
-	// return it
-	return m_oldDoc;
-}
-*/
 
 uint8_t *XmlDoc::getRootLangId ( ) {
 
@@ -12802,62 +12710,6 @@ int32_t **XmlDoc::getOutlinkFirstIpVector () {
 	return &m_msge1.m_ipBuf;
 }
 
-/*
-// really this could just check titledb in memory tree and tfndb and should
-// be really fast!!
-char **XmlDoc::getOutlinkIsIndexedVector () {
-	if ( m_outlinkIsIndexedVectorValid ) return &m_msge2.m_isIndexedBuf;
-	setStatus ( "getting outlink is indexed vector" );
-	Links *links = getLinks();
-	if ( ! links ) return NULL;
-	// assume valid
-	m_outlinkIsIndexedVectorValid = true;
-	// go get it
-	bool status = m_msge2.getIsIndexed ( links->m_linkPtrs  ,
-					     links->m_linkFlags ,
-					     links->m_numLinks  ,
-					     false              , // skip old?
-					     m_coll             ,
-					     m_niceness         ,
-					     m_masterState      ,
-					     m_masterLoop       );
-	// set it
-	//m_outlinkIsIndexedVector = m_msge2.m_isIndexedBuf;
-	// we blocked
-	if ( ! status ) return (char **)-1;
-	// error?
-	if ( g_errno ) return NULL;
-	// ptr to a list of ptrs to tag recs
-	return &m_msge2.m_isIndexedBuf;
-}
-*/
-
-/*
-char *XmlDoc::getIsVisible ( ) {
-	if ( m_isVisibleValid ) return &m_isVisible;
-	setStatus ( "getting is visible" );
-	// to get a live reading, invalidate tag rec from title rec
-	m_oldTagRecValid = false;
-	// . loop over all regular expression in the url filters table
-	// . stop at first regular expression it matches
-	int32_t *rn = getRegExpNum2 ( -1 );
-	// need to wait for a callback at this point (or we had critical error)
-	if ( ! rn || rn == (int32_t *)-1 ) return (char *)rn;
-	// assume yes
-	m_isVisible = true;
-	// and valid
-	m_isVisibleValid = true;
-	// no match
-	if ( *rn == -1 ) return &m_isVisible;
-	// get spider priority
-	int32_t pr = m_cr->m_spiderPriorities[*rn];
-	// test it
-	if ( pr == -2 ) m_isVisible = false;
-	if ( pr == -3 ) m_isVisible = false;
-	return &m_isVisible;
-}
-*/
-
 int32_t *XmlDoc::getUrlFilterNum ( ) {
 	// return it if already set
 	if ( m_urlFilterNumValid ) return &m_urlFilterNum;
@@ -13010,40 +12862,6 @@ char *XmlDoc::getIsSiteRoot ( ) {
 	return &m_isSiteRoot2;
 }
 
-/*
-bool XmlDoc::getIsOutlinkSiteRoot ( char *u , TagRec *gr ) {
-	// get our site
-	Tag *tag = gr->getTag("site");
-	// make "host" point to u's hostname
-	int32_t hostLen; char *host = getHostFast ( u , &hostLen );
-	// use hostname?
-	char *site;
-	int32_t  slen;
-	if ( tag ) {
-		site = tag->getTagData();
-		slen = tag->getTagDataSize() - 1;
-	}
-	// otherwise, use hostname as site
-	else {
-		// must be end, or could be '/'
-		if ( ! host[hostLen] || ! host[hostLen+1] ) return true;
-		// i guess we were more than just a hostname, so not site root
-		return false;
-	}
-	// get length of each
-	int32_t ulen = gbstrlen(u);
-	// "site" may or may not end in /, so remove that
-	if ( site[slen-1] == '/' ) slen--;
-	// same for url
-	if ( u[ulen-1] == '/' ) ulen--;
-	// now they must match exactly
-	if ( slen == ulen && ! strncmp ( site, u, ulen ) ) return true;
-	// all done
-	return false;
-}
-*/
-
-
 int8_t *XmlDoc::getHopCount ( ) {
 	// return now if valid
 	if ( m_hopCountValid ) return &m_hopCount;
@@ -13160,50 +12978,6 @@ int8_t *XmlDoc::getHopCount ( ) {
 	m_hopCount      = hc;
 	return &m_hopCount;
 }
-
-/*
-int8_t *XmlDoc::getOutlinkHopCountVector ( ) {
-	if ( m_outlinkHopCountVectorValid ) return m_outlinkHopCountVector;
-	// need these of course
-	Links *links = getLinks();
-	if ( ! links || links == (Links *)-1 ) return (int8_t *)links;
-	// and these for seeing if outlink is a site root
-	TagRec ***grv = getOutlinkTagRecVector();
-	if ( ! grv || grv == (void *)-1 ) return (int8_t *)grv;
-	// hop count of parent
-	int8_t *ph = getHopCount();
-	if ( ! ph || ph == (void *)-1 ) return (int8_t *)ph;
-	// shortcut
-	int32_t n = links->getNumLinks();
-	// sanity check
-	if ( m_outlinkHopCountVector ) { char *xx=NULL;*xx=0; }
-	// make some space
-	m_outlinkHopCountVector = (int8_t *)mmalloc ( n * 4 ,"xdhc");
-	// return NULL on error with g_errno set
-	if ( ! m_outlinkHopCountVector ) return NULL;
-	// save size
-	m_outlinkHopCountVectorSize = n * 4;
-	// stock it
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-		// get it
-		char *u = links->getLinkPtr(i);
-		// and this
-		TagRec *gr = (*grv)[i];
-		// flags
-		linkflags_t flags = links->m_linkFlags[i];
-		// hop count. default to 1.
-		int32_t hc = 1;
-		if      ( getIsOutlinkSiteRoot ( u , gr ) ) hc = 0;
-		else if ( isPingServer ( u )              ) hc = 0;
-		else if ( flags & LF_RSS                  ) hc = 0;
-		else                                        hc = *ph + 1;
-		// assign it
-		m_outlinkHopCountVector[i] = hc;
-	}
-	m_outlinkHopCountVectorValid = true;
-	return m_outlinkHopCountVector;
-}
-*/
 
 //set to false fo rinjecting and validate it... if &spiderlinks=0
 // should we spider links?
@@ -14407,51 +14181,6 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 	// must be exactly equal to end
 	if ( p != pend ) return false;
 	return true;
-
-	/*
-	int32_t recSize = 0;
-	int32_t count = 0;
-	for ( ; p < pend ; p += recSize , count++ ) {
-		// get rdbid
-		char rdbId = *p & 0x7f;
-		// get nosplit flag
-		char noSplit = *p & 0x80;
-		// skip
-		p++;
-		// get key size
-		int32_t ks = getKeySizeFromRdbId ( rdbId );
-		// sanity
-		if ( ks > 16 ) { char *xx=NULL;*xx=0;}
-		// negative key?
-		bool del;
-		if ( *p & 0x01 ) del = false;
-		else             del = true;
-		// convert into a key128_t, the biggest possible key
-		char k[16];
-		gbmemcpy ( &k , p , ks );
-		// skip it
-		p += ks;
-		// flip this
-		char split = ! noSplit;
-		// test it
-		g_hostdb.getGroupId(rdbId,k,split);
-		// if negative, no data size allowed
-		if ( ( k[0] & 0x01 ) == 0x00 ) continue;
-		// get datasize
-		int32_t dataSize = getDataSizeFromRdbId ( rdbId );
-		// no negative key has data
-		if ( del ) dataSize = 0;
-		// if -1, read it in
-		if ( dataSize == -1 ) {
-			dataSize = *(int32_t *)p;
-			// sanity check
-                        if ( dataSize < 0 ) { char *xx=NULL;*xx=0; }
-			p += 4;
-                }
-		// skip the data
-		p += dataSize;
-	}
-	*/
 }
 
 bool XmlDoc::hashMetaList ( HashTableX *ht        ,
