@@ -1186,7 +1186,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 	m_spideredTimeValid           = true;
 	m_indexedTimeValid            = true;
 
-	m_firstIndexedValid   	      = true;
 	m_outlinksAddedDateValid      = true;
 	m_charsetValid                = true;
 	m_countryIdValid              = true;
@@ -17299,8 +17298,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	// count how many we add
 	int32_t numAdded = 0;
 	int32_t numAddedFromSameDomain = 0;
-	int32_t linksBanned = 0;
-	int32_t linksFiltered = 0;
 
 	bool isParentPingServer = false;
 	if ( fu && fu->isPingServer() ) isParentPingServer = true;
@@ -17756,17 +17753,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			     sb2.getBufStart(),
 			     m_firstUrl.m_url);
 		}
-		// do not add if bad priority, SPIDER_PRIORITY_FILTERED, ...
-		// . mdw: oct 24, 2013. now i add so the urls show up in
-		//   the pagecrawlbot.cpp spiderdb dump, so you can examine
-		//   exactly why a url was crawled or not. plus if you change
-		//   your mind about banning/filtering then it'd be nice to
-		//   have these urls readily available.
-		//if ( priority == SPIDER_PRIORITY_FILTERED ) {
-		//	linksFiltered++; continue; }
-		//if ( priority == SPIDER_PRIORITY_BANNED   ) {
-		//	linksBanned++; continue; }
-
 
 		// serialize into the buffer
 		int32_t need = ksr.getRecSize();
