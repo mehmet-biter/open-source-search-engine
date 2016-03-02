@@ -567,12 +567,6 @@ class SpiderRequest {
 	//int32_t m_reservedc1;
 	int32_t m_reservedc2;
 
-	//int32_t  m_parentPubDate;
-
-	// . pub date taken from url directly, not content
-	// . ie. http://mysite.com/blog/nov-06-2009/food.html
-	// . ie. http://mysite.com/blog/11062009/food.html
-	//int32_t    m_urlPubDate;
 	// . replace this with something we need for smart compression
 	// . this is zero if none or invalid
 	int32_t    m_contentHash32;

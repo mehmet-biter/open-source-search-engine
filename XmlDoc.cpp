@@ -100,7 +100,6 @@ XmlDoc::XmlDoc() {
 	m_wasInIndex = false;
 	m_outlinkHopCountVector = NULL;
 	m_extraDoc = NULL;
-	m_wikiqbuf = NULL;
 
 	reset();
 }
@@ -126,16 +125,11 @@ void XmlDoc::reset ( ) {
 
 	m_printedMenu = false;
 
-	m_tmpBuf2.purge();
-
 	m_bodyStartPos = 0;
 
-	m_skipIframeExpansion = false;
 	m_indexedTime = 0;
 
 	m_metaList2.purge();
-	m_zbuf.purge();
-	m_kbuf.purge();
 
 	m_mySiteLinkInfoBuf.purge();
 	m_myPageLinkInfoBuf.purge();
@@ -154,10 +148,6 @@ void XmlDoc::reset ( ) {
 
 	m_fakeIpBuf.purge();
 	m_fakeTagRecPtrBuf.purge();
-
-	m_tlbufTimer = 0LL;
-	m_gsbuf.reset();
-
 
 	m_doConsistencyTesting = g_conf.m_doConsistencyTesting;
 
@@ -190,9 +180,6 @@ void XmlDoc::reset ( ) {
 			log("doc: resetting xmldoc with outstanding msg4. should "
 			    "be saved in addsinprogress.dat.");
 	}
-
-	m_ei = 0;
-	m_lastLaunch = -1;
 
 	m_pbuf = NULL;
 	m_wts  = NULL;
@@ -277,9 +264,6 @@ void XmlDoc::reset ( ) {
 	}
 	m_outlinkHopCountVector = NULL;
 
-	m_gsbuf.reset();
-
-
 	// reset all *valid* flags to false
 	void *p    = &m_VALIDSTART;
 	void *pend = &m_VALIDEND;
@@ -329,7 +313,6 @@ void XmlDoc::reset ( ) {
 	m_setFromDocId       = false;
 	m_setFromSpiderRec   = false;
 	m_freeLinkInfo1      = false;
-	m_freeLinkInfo2      = false;
 
 	m_checkedUrlFilters  = false;
 
@@ -351,49 +334,34 @@ void XmlDoc::reset ( ) {
 	// keep track of updates to the rdbs we have done, so we do not re-do
 	m_listAdded                = false;
 	m_listFlushed              = false;
-	m_updatedCounts            = false;
-	m_updatedCounts2           = false;
 	m_copied1                  = false;
 	m_updatingSiteLinkInfoTags = false;
 	m_hashedTitle              = false;
 
 	m_registeredSleepCallback  = false;
-	m_addedNegativeDoledbRec   = false;
 
 	m_numRedirects             = 0;
 	m_numOutlinksAdded         = 0;
-	m_spamCheckDisabled        = false;
 	m_useRobotsTxt             = true;
-	m_redirectFlag             = false;
 
 	m_allowSimplifiedRedirs    = false;
 
 	m_didDelay                 = false;
 	m_didDelayUnregister       = false;
-	m_calledMsg22d             = 0LL;
 	m_calledMsg22e             = false;
 	m_calledMsg22f             = false;
 	m_calledMsg25              = false;
-	m_calledMsg25b             = false;
-	m_calledMsg40              = false;
 	m_calledSections           = false;
 	m_calledThread             = false;
 	m_alreadyRegistered        = false;
 	m_loaded                   = false;
-	m_firstEntry               = true;
-	m_firstEntry2              = true;
-	m_launchedSpecialMsg8a     = false;
-	m_launchedMsg8a2           = false;
 
 	m_setTr                    = false;
-	m_calledMsg8b              = false;
 
 	m_recycleContent           = false;
 	m_callback1                = NULL;
 	m_callback2                = NULL;
 	m_state                    = NULL;
-
-	m_processedLang            = false;
 
 	m_doingConsistencyCheck    = false;
 
@@ -431,19 +399,6 @@ void XmlDoc::reset ( ) {
 	void *px    = &ptr_firstUrl;
 	void *pxend = &m_dummyEnd;
 	memset ( px , 0 , (char *)pxend - (char *)px );
-
-	ptr_unused6 = NULL;
-	size_unused6 = 0;
-	ptr_unused7 = NULL;
-	size_unused7 = 0;
-	ptr_unused1 = NULL;
-	size_unused1 = 0;
-	ptr_unused2 = NULL;
-	size_unused2 = 0;
-	ptr_unused3 = NULL;
-	size_unused3 = 0;
-	ptr_unused5 = NULL;
-	size_unused5 = 0;
 }
 
 int64_t XmlDoc::logQueryTimingStart() {
@@ -638,8 +593,6 @@ bool XmlDoc::setCollNum ( const char *coll ) {
 	// we can store this safely:
 	m_collnum = cr->m_collnum;
 	m_collnumValid = true;
-	// if user "resets" the collection we need to know
-	m_lastCollRecResetCount = cr->m_lastResetCount;
 	return true;
 }
 
@@ -1285,10 +1238,6 @@ bool XmlDoc::set2 ( char    *titleRec ,
 		g_errno = ECORRUPTDATA;
 		return false;
 	}
-
-	// debug thing
-	ptr_sectiondbData = NULL;
-	size_sectiondbData = 0;
 
 	// success, return true then
 	return true;
@@ -2254,37 +2203,6 @@ bool XmlDoc::indexDoc2 ( ) {
 		g_loop.unregisterSleepCallback(m_masterState,indexDocWrapper2);
 		m_registeredSleepCallback = false;
 	}
-
-	//////////
-	// . add the doledb negative key quickly to our tree to avoid a
-	//   respider because the msg4 doledb negative key is buffered by msg4
-	// . make it negative
-	// . well it should not be respidered because the lock is on it!!
-	//   -- so let's comment this out
-	/////////
-	/*
-	key_t negative = m_doledbKey;
-	// make it negative
-	negative.n0 &= 0xfffffffffffffffeLL;
-	// . store it in our tree if we can
-	// . returns false and sets g_errno on error
-	// . i.e. g_errno == ETRYAGAIN
-	if ( ! m_addedNegativeDoledbRec &&
-	     ! g_doledb.m_rdb.addRecord(m_coll,(char *)&negative,
-					NULL,0,m_niceness)){
-		log("build: error trying to add to doledb: %s",
-		    mstrerror(g_errno));
-		// set sleep wrapper
-		g_loop.registerSleepCallback(1000,m_masterState,
-					     indexDocWrapper2,m_niceness);
-		// note it
-		m_registeredSleepCallback = true;
-		// sleep and retry
-		return false;
-	}
-	*/
-	// we did that
-	m_addedNegativeDoledbRec = true;
 
 	// now add it
 	if ( ! m_listAdded && m_metaListSize ) {
@@ -5610,18 +5528,6 @@ int32_t XmlDoc::computeVector( Words *words, uint32_t *vec, int32_t start, int32
 	return nd * 4;
 }
 
-float *XmlDoc::getTagSimilarity ( XmlDoc *xd2 ) {
-	int32_t *tv1 = getTagPairHashVector();
-	if ( ! tv1 || tv1 == (int32_t *)-1 ) return (float *)tv1;
-	int32_t *tv2 = xd2->getTagPairHashVector();
-	if ( ! tv2 || tv2 == (int32_t *)-1 ) return (float *)tv2;
-	m_tagSimilarity = computeSimilarity ( tv1, tv2, NULL, NULL, NULL ,
-					      m_niceness );
-	// this means error, g_errno should be set
-	if ( m_tagSimilarity == -1.0 ) return NULL;
-	return &m_tagSimilarity;
-}
-
 float *XmlDoc::getPageSimilarity ( XmlDoc *xd2 ) {
 	int32_t *sv1 = getPageSampleVector();
 	if ( ! sv1 || sv1 == (int32_t *)-1 ) return (float *)sv1;
@@ -5867,17 +5773,6 @@ bool isSimilar_sorted ( int32_t   *vec0 ,
 	p1++;
 	p0++;
 	goto mergeLoop;
-}
-
-uint64_t *XmlDoc::getFuzzyDupHash ( ) {
-
-	if ( m_dupHashValid ) return &m_dupHash;
-	uint32_t *h1 = getTagPairHash32();
-	if ( ! h1 || h1 == (uint32_t *)-1 ) return (uint64_t *)h1;
-
-	m_dupHash = *h1;
-	m_dupHashValid = true;
-	return &m_dupHash;
 }
 
 int64_t *XmlDoc::getExactContentHash64 ( ) {
@@ -6599,7 +6494,6 @@ Url **XmlDoc::getRedirUrl() {
 	if      ( cu->getDomainLen() != dlen                   ) sameDom=false;
 	else if ( strncmp(cu->getDomain(),loc->getDomain(),dlen))sameDom=false;
 	if ( ! sameDom ) {
-		m_redirectFlag = true;
 		m_redirUrl.set ( loc , false ); // addWWW=false
 		m_redirUrlPtr   = &m_redirUrl;
 		ptr_redirUrl    = m_redirUrl.m_url;
@@ -6701,7 +6595,6 @@ Url **XmlDoc::getRedirUrl() {
 		return &m_redirUrlPtr;
 	}
 	// good to go
-	m_redirectFlag = true;
 	m_redirUrl.set ( loc , false ); // addWWW=false
 	m_redirUrlPtr   = &m_redirUrl;
 	ptr_redirUrl    = m_redirUrl.m_url;
@@ -7117,9 +7010,6 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 
 	// carry this forward always!
 	m_extraDoc->m_isSpiderProxy = m_isSpiderProxy;
-
-	// disable spam check because that is not necessary for this doc!
-	m_extraDoc->m_spamCheckDisabled = true;
 
 	// tell msg13 to get this from it robots.txt cache if it can. it also
 	// keeps a separate html page cache for the root pages, etc. in case
@@ -12559,14 +12449,6 @@ int32_t XmlDoc::getHostHash32a ( ) {
 	return m_hostHash32a;
 }
 
-int32_t XmlDoc::getHostHash32b ( ) {
-	if ( m_hostHash32bValid ) return m_hostHash32b;
-	m_hostHash32bValid = true;
-	Url *c = getCurrentUrl();
-	m_hostHash32b = c->getHostHash32();
-	return m_hostHash32b;
-}
-
 int32_t XmlDoc::getDomHash32( ) {
 	if ( m_domHash32Valid ) return m_domHash32;
 	m_domHash32Valid = true;
@@ -13421,19 +13303,6 @@ char *XmlDoc::getSpiderLinks ( ) {
 	return &m_spiderLinks2;
 }
 
-// should we index the doc? if already indexed, and is filtered, we delete it
-char *XmlDoc::getIsFiltered ( ) {
-	if ( m_isFilteredValid ) return &m_isFiltered;
-	int32_t *priority = getSpiderPriority();
-	if ( ! priority || priority == (void *)-1 ) return (char *)priority;
-	m_isFiltered = false;
-	// if ( *priority == SPIDER_PRIORITY_FILTERED ) m_isFiltered = true;
-	// if ( *priority == SPIDER_PRIORITY_BANNED   ) m_isFiltered = true;
-	if ( *priority == -3 ) m_isFiltered = true;
-	m_isFilteredValid = true;
-	return &m_isFiltered;
-}
-
 int32_t *XmlDoc::getSpiderPriority ( ) {
 	if ( m_priorityValid ) return &m_priority;
 	setStatus ("getting spider priority");
@@ -14120,17 +13989,6 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 	// no serious error, although there might be an inconsistency
 	return true;
 }
-
-int32_t XmlDoc::printMetaList ( ) {
-
-	SafeBuf sb;
-	printMetaList ( m_metaList ,
-			m_metaList + m_metaListSize ,
-			&sb );
-	fprintf(stderr,"%s\n",sb.getBufStart());
-	return 0;
-}
-
 
 #define TABLE_ROWS 25
 
@@ -16684,10 +16542,6 @@ void XmlDoc::copyFromOldDoc ( XmlDoc *od ) {
 	size_linkInfo1 = od->size_linkInfo1;
 	if ( ptr_linkInfo1 && size_linkInfo1 ) m_linkInfo1Valid = true;
 	else m_linkInfo1Valid = false;
-
-	// turn off for debug
-	ptr_sectiondbData = NULL;
-	size_sectiondbData = 0;
 }
 
 // for adding a quick reply for EFAKEIP and for diffbot query reindex requests
@@ -17726,7 +17580,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
 		ksr.m_addedTime        = getSpideredTime();//m_spideredTime;
 		//ksr.m_lastAttempt    = 0;
-		//ksr.m_urlPubDate       = urlPubDate;
 		//ksr.m_errCode        = 0;
 		ksr.m_parentHostHash32 = hostHash32a;
 		ksr.m_parentDomHash32  = m_domHash32;
@@ -17955,8 +17808,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	m_numOutlinksAdded      = numAdded;
 	m_numOutlinksAddedValid = true;
 	m_numOutlinksAddedFromSameDomain = numAddedFromSameDomain;
-	m_numOutlinksFiltered = linksFiltered;
-	m_numOutlinksBanned = linksBanned;
 	// update end of list once we have successfully added all spider recs
 	m_p = p;
 	// return current ptr
@@ -23457,8 +23308,6 @@ char *XmlDoc::getWordSpamVec ( ) {
 	// fix this a bit so we're not always totally spammed
 	maxPercent = 25;
 
-	// assume not totally spammed
-	m_totallySpammed = false;
 	// get # of words we have to set spam for
 	int32_t numWords = words->getNumWords();
 
@@ -23670,9 +23519,7 @@ char *XmlDoc::getWordSpamVec ( ) {
 	// if we had < 100 candidates and < 20% spam, don't bother
 	//if ( percent < 5 ) goto done;
 	if ( percent <= maxPercent ) goto done;
-	// set flag so linkspam.cpp can see if all is spam and will not allow
-	// this page to vote
-	m_totallySpammed = true;
+
 	// now only set to 99 so each singleton usually gets hashed
 	for ( i = 0 ; i < numWords ; i++ )
 		if ( words->getWordId(i) && spam[i] < 99 )
@@ -24626,70 +24473,6 @@ bool XmlDoc::getIsInjecting ( ) {
 	if ( m_isInjecting && m_isInjectingValid ) isInjecting = true;
 	return isInjecting;
 }
-
-// this is still used by Title.cpp to get the title: field quickly
-char *getJSONFieldValue ( char *json , char *field , int32_t *valueLen ) {
-
-	if ( ! json ) return NULL;
-
-	// get length
-	int32_t fieldLen = gbstrlen(field);
-	// keep track of in a quote or not
-	bool inQuotes = false;
-	char *stringStart = NULL;
-	char *p = json;
-	bool gotOne = false;
-	int32_t depth = 0;
-	// scan
-	for ( ; *p ; p++ ) {
-		// escaping a quote? ignore quote then.
-		if ( *p == '\\' && p[1] == '\"' ) {
-			// skip two bytes then..
-			p++;
-			continue;
-		}
-		// count {} depth
-		if ( ! inQuotes ) {
-			if ( *p == '{' ) depth++;
-			if ( *p == '}' ) depth--;
-		}
-		// a quote?
-		if ( *p == '\"' ) {
-			inQuotes = ! inQuotes;
-			// set start of the string if quote is beginning
-			if ( inQuotes ) stringStart = p + 1;
-			// if quote is ending and a colon follows then
-			// it was a json field name. so if it matches the
-			// field we want return the following field for it.
-			else if ( ! inQuotes &&
-				  ! gotOne &&
-				  p[1] == ':' &&
-				  // {"title":"whatever",...}
-				  // could be product:{title:... depth=2
-				  (depth == 1 ||depth==2) &&
-				  stringStart &&
-				  (p - stringStart) == fieldLen &&
-				  strncmp(field,stringStart,fieldLen)==0 ) {
-				// now, the next time we set stringStart
-				// it will be set to the VALUE of this field
-				// assuming the field is a STRING!!!!
-				gotOne = true;
-				// return after the quote
-				//return p + 2;
-			}
-			// ok, we got the string after the field string...
-			else if ( ! inQuotes && gotOne ) {
-				if ( valueLen ) *valueLen = p - stringStart;
-				return stringStart;
-			}
-			// keep chugging
-			continue;
-		}
-	}
-	// done, not found
-	return NULL;
-}
-
 
 Json *XmlDoc::getParsedJson ( ) {
 

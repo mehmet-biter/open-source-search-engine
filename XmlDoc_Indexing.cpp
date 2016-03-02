@@ -431,9 +431,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashCountry failed", __FILE__,__func__, __LINE__);
 		return NULL;
 	}
-	
-// BR 20160117 removed:	if ( ! hashSiteNumInlinks( table ) ) return NULL;
-// BR 20160117 removed:	if ( ! hashTagRec        ( table ) ) return NULL;
+
 // BR 20160106 removed:	if ( ! hashAds           ( table ) ) return NULL;
 // BR 20160106 removed:	if ( ! hashSubmitUrls    ( table ) ) return NULL;
 	if ( ! hashIsAdult       ( table ) ) 
@@ -444,10 +442,6 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 
 	// has gbhasthumbnail:1 or 0
 // BR 20160106 removed:	if ( ! hashImageStuff    ( table ) ) return NULL;
-
-	// . hash sectionhash:xxxx terms
-	// . diffbot still needs to hash this for voting info
-// BR 20160106 removed:	if ( ! hashSections   ( table ) ) return NULL;
 
 	// now hash the terms sharded by termid and not docid here since they
 	// just set a special bit in posdb key so Rebalance.cpp can work.
@@ -477,17 +471,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		return (char *)1;
 	}
 
-	// hash json fields
-	if ( *ct == CT_JSON ) {
-		// this hashes both with and without the fieldname
-// BR 20160107 removed:		hashJSONFields ( table );
-		goto skip;
-	}
-
-	// same for xml now, so we can search for field:value like w/ json
-	if ( *ct == CT_XML ) {
-		// this hashes both with and without the fieldname
-// BR 20160107 removed:		hashXMLFields ( table );
+	if ( *ct == CT_JSON || *ct == CT_XML ) {
 		goto skip;
 	}
 
@@ -579,18 +563,8 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashMetaTags failed", __FILE__,__func__, __LINE__);
 		return NULL;
 	}
-	
-/*
-	BR 20160220 removed.
-	if ( ! hashMetaZip       ( table ) ) 
-	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashMetaZip failed", __FILE__,__func__, __LINE__);
-		return NULL;
-	}
-*/
-// BR 20160107 removed:	if ( ! hashCharset       ( table ) ) return NULL;
-// BR 20160107 removed:		if ( ! hashRSSInfo       ( table ) ) return NULL;
-	if ( ! hashPermalink     ( table ) ) 
+
+	if ( ! hashPermalink     ( table ) )
 	{
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashPermaLink failed", __FILE__,__func__, __LINE__);
 		return NULL;
@@ -617,8 +591,6 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, OK", __FILE__,__func__, __LINE__);
 	return (char *)1;
 }
-
-
 
 
 bool XmlDoc::setSpiderStatusDocMetaList ( SafeBuf *jd , int64_t uqd ) {
@@ -868,57 +840,6 @@ bool XmlDoc::hashDateNumbers ( HashTableX *tt ) { // , bool isStatusDoc ) {
 
 	// all done
 	return true;
-}
-
-bool XmlDoc::hashMetaZip ( HashTableX *tt ) {
-
-	setStatus ( "hashing meta zip" );
-
-	// . set the score based on quality
-	// . scores are multiplied by 256 to preserve fractions for adding
-	uint32_t score = *getSiteNumInlinks8() * 256 ;
-	if ( score <= 0   ) score = 1;
-	// search for meta date
-	char buf [ 32 ];
-	int32_t bufLen = m_xml.getMetaContent ( buf, 32, "zipcode", 7 );
-	if ( bufLen <= 0 ) bufLen = m_xml.getMetaContent ( buf, 32, "zip",3);
-	char *p     = buf;
-	char *pend  = buf + bufLen ;
-	if ( bufLen <= 0 ) return true;
-
-	// set up the hashing parms
-	HashInfo hi;
-	hi.m_hashGroup = HASHGROUP_INTAG;
-	hi.m_tt        = tt;
-	//hi.m_prefix    = "zipcode";
-	hi.m_prefix    = "gbzipcode";
-
- nextZip:
-	// . parse out the zip codes, may be multiple ones
-	// . skip non-digits
-	while ( p < pend && ! is_digit(*p) ) p++;
-	// skip if no digits
-	if ( p == pend ) return true;
-	// need at least 5 consecutive digits
-	if ( p + 5 > pend  ) return true;
-	// if not a zip code, skip it
-	if ( ! is_digit(p[1]) ) { p += 1; goto nextZip; }
-	if ( ! is_digit(p[2]) ) { p += 2; goto nextZip; }
-	if ( ! is_digit(p[3]) ) { p += 3; goto nextZip; }
-	if ( ! is_digit(p[4]) ) { p += 4; goto nextZip; }
-	// do we have too many consectuive digits?
-	if ( p + 5 != pend && is_digit(p[5]) ) {
-		// if so skip this whole string of digits
-		p += 5; while ( p < pend && is_digit(*p) ) p++;
-		goto nextZip;
-	}
-
-	// 90210 --> 90 902 9021 90210
-	for ( int32_t i = 0 ; i <= 3 ; i++ )
-		// use prefix as description
-		if ( ! hashString ( p,5-i,&hi ) ) return false;
-	p += 5;
-	goto nextZip;
 }
 
 // returns false and sets g_errno on error
@@ -1788,13 +1709,6 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	return true;
 }
 
-
-// . returns false and sets g_errno on error
-bool XmlDoc::hashSections ( HashTableX *tt ) {
-	// BR 20160106: No longer store xpath-hashes in posdb as we do not use them.
-	return true;
-}
-
 // . returns false and sets g_errno on error
 bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 				    bool        hashAnomalies    ,
@@ -1979,186 +1893,6 @@ bool XmlDoc::hashNeighborhoods ( HashTableX *tt ) {
 
 	// get the next Inlink
 	goto loop;
-}
-
-
-// . returns false and sets g_errno on error
-bool XmlDoc::hashRSSInfo ( HashTableX *tt ) {
-
-	setStatus ( "hashing rss info" );
-
-	uint8_t *ct = getContentType();
-	if ( ! ct || ct == (void *)-1 ) { char *xx=NULL;*xx=0; }
-
-	// . finally hash in the linkText terms from the LinkInfo
-	// . the LinkInfo class has all the terms of hashed anchor text for us
-	// . if we're using an old TitleRec linkTermList is just a ptr to
-	//   somewhere in TitleRec
-	// . otherwise, we generated it from merging a bunch of LinkInfos
-	//   and storing them in this new TitleRec
-	LinkInfo  *linkInfo = getLinkInfo1();
-
-	// get the xml of the first rss/atom item/entry referencing this url
-	Xml xml;
-	// . returns NULL if no item xml
-	// . this could also be a "channel" blurb now, so we index channel pgs
-	if ( ! linkInfo->getItemXml ( &xml , m_niceness ) ) return false;
-
-	if ( xml.isEmpty() )
-		// hash gbrss:0
-		return hashRSSTerm ( tt , false );
-
-	// parser info msg
-	//if ( m_pbuf ) {
-	//	m_pbuf->safePrintf(
-	//		"<br><b>--BEGIN RSS/ATOM INFO HASH--</b><br><br>");
-	//}
-
-	// hash nothing if not a permalink and eliminating "menus"
-	//if ( ! *getIsPermalink() && m_eliminateMenus ) return true;
-
-	// . IMPORTANT: you must be using the new link algo, so turn it on
-	//   in the spider controls. this allows us to include LinkTexts from
-	//   the same IP in our LinkInfo class in the TitleRec.
-	// . is it rss or atom? both use title tag, so doesn't matter
-	// . get the title tag
-	bool  isHtmlEncoded;
-	int32_t  titleLen;
-	char *title = xml.getRSSTitle ( &titleLen , &isHtmlEncoded );
-	char  c = 0;
-
-	// sanity check
-	if ( ! m_utf8ContentValid ) { char *xx=NULL;*xx=0; }
-
-	bool hashIffUnique = true;
-	// but if we had no content because we were an mp3 or whatever,
-	// do not worry about avoiding double hashing
-	if ( size_utf8Content <= 0 ) hashIffUnique = false;
-
-	// decode it?
-	// should we decode it? if they don't use [CDATA[]] then we should
-	// ex: http://www.abc.net.au/rn/podcast/feeds/lawrpt.xml has CDATA,
-	// but most other feeds do not use it
-	if ( isHtmlEncoded && title && titleLen > 0 ) {
-		// it is html encoded so that the <'s are encoded to &lt;'s so
-		// we must decode them back. this could turn latin1 into utf8
-		// though? no, because the &'s should have been encoded, too!
-		int32_t newLen =htmlDecode(title,title,titleLen,false,m_niceness);
-		// make sure we don't overflow the buffer
-		if ( newLen > titleLen ) { char *xx = NULL; *xx = 0; }
-		// reassign the length
-		titleLen = newLen;
-		// NULL terminate it
-		c = title[titleLen];
-		title[titleLen] = '\0';
-	}
-
-	// update hash parms
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_hashGroup = HASHGROUP_TITLE;
-	hi.m_desc      = "rss title";
-
-	// . hash the rss title
-	// . only hash the terms if they are unique to stay balanced with docs
-	//   that are not referenced by an rss feed
-	bool status = hashString ( title,titleLen,&hi ) ;
-	// pop the end back just in case
-	if ( c ) title[titleLen] = c;
-	// return false with g_errno set on error
-	if ( ! status ) return false;
-
-	// get the rss description
-	int32_t  descLen;
-	char *desc = xml.getRSSDescription ( &descLen , &isHtmlEncoded );
-
-	// for adavanced hashing
-	Xml     xml2;
-	Words   w;
-	//Scores  scores;
-	Words  *wordsPtr = NULL;
-	//Scores *scoresPtr = NULL;
-	c = 0;
-	// should we decode it? if they don't use [CDATA[]] then we should
-	// ex: http://www.abc.net.au/rn/podcast/feeds/lawrpt.xml has CDATA,
-	// but most other feeds do not use it
-	if ( isHtmlEncoded && desc && descLen > 0 ) {
-		// it is html encoded so that the <'s are encoded to &lt;'s so
-		// we must decode them back. this could turn latin1 into utf8
-		// though? no, because the &'s should have been encoded, too!
-		int32_t newLen = htmlDecode(desc,desc,descLen,false,m_niceness);
-		// make sure we don't overflow the buffer
-		if ( newLen > descLen ) { char *xx = NULL; *xx = 0; }
-		// reassign the length
-		descLen = newLen;
-	}
-
-	// NULL terminate it
-	if ( desc ) {
-		c = desc[descLen];
-		desc[descLen] = '\0';
-		// set the xml class from the decoded html
-		if ( !xml2.set( desc, descLen, m_version, m_niceness, *ct ) ) {
-			return false;
-		}
-
-		// set the words class from the xml, returns false and sets
-		// g_errno on error
-		if ( !w.set( &xml2, true, true ) ) {
-			return false;
-		}
-
-		// pass it in to TermTable::hash() below
-		wordsPtr = &w;
-	}
-
-	// update hash parms
-	hi.m_tt        = tt;
-	hi.m_desc      = "rss body";
-	hi.m_hashGroup = HASHGROUP_BODY;
-	// . hash the rss/atom description
-	// . only hash the terms if they are unique to stay balanced with docs
-	//   that are not referenced by an rss feed
-	status = hashString ( desc, descLen, &hi );
-	// pop the end back just in case
-	if ( c ) desc[descLen] = c;
-	// return false with g_errno set
-	if ( ! status ) return false;
-
-	// hash gbrss:1
-       	if ( ! hashRSSTerm ( tt , true ) ) return false;
-
-	// parser info msg
-	//if ( m_pbuf ) {
-	//	m_pbuf->safePrintf("<br><b>--END RSS/ATOM INFO HASH--"
-	//			   "</b><br><br>");
-	//}
- 	return true;
-}
-
-bool XmlDoc::hashRSSTerm ( HashTableX *tt , bool inRSS ) {
-	// hash gbrss:0 or gbrss:1
-	char *value;
-	if ( inRSS ) value = "1";
-	else         value = "0";
-
-	// update hash parms
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_prefix    = "gbinrss";
-	hi.m_hashGroup = HASHGROUP_INTAG;
-
-	// returns false and sets g_errno on error
-	if ( ! hashString(value,1,&hi ) ) return false;
-
-	// hash gbisrss:1 if we are an rss page ourselves
-	if ( *getIsRSS() ) value = "1";
-	else               value = "0";
-	// update hash parms
-	hi.m_prefix = "gbisrss";
-	// returns false and sets g_errno on error
-	if ( ! hashString(value,1,&hi) ) return false;
-	return true;
 }
 
 // . we now do the title hashing here for newer titlerecs, version 80+, rather
@@ -2426,170 +2160,6 @@ bool XmlDoc::hashCountry ( HashTableX *tt ) {
 	return true;
 }
 
-bool XmlDoc::hashSiteNumInlinks ( HashTableX *tt ) {
-
-	setStatus ( "hashing site num inlinks" );
-
-	char s[32];
-	int32_t slen = sprintf(s, "%"INT32"", (int32_t)*getSiteNumInlinks() );
-
-	// update hash parms
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_hashGroup = HASHGROUP_INTAG;
-	hi.m_prefix    = "gbsitenuminlinks";
-
-	// hack test
-	// slen = sprintf(s,"%"UINT32"",
-	// 	       ((uint32_t)m_firstUrl.getUrlHash32()) % 1000);
-	// log("xmldoc: sitenuminlinks for %s is %s",m_firstUrl.getUrl(),s);
-
-	return hashString ( s, slen, &hi );
-}
-
-bool XmlDoc::hashCharset ( HashTableX *tt ) {
-
-	setStatus ( "hashing charset" );
-
-	char s[128]; // charset string
-	int32_t slen;
-
-	// hash the charset as a string
-	if ( ! get_charset_str(*getCharset()))
-		slen = sprintf(s, "unknown");
-	else
-		slen = sprintf(s, "%s", get_charset_str(*getCharset()));
-
-	// update hash parms
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_hashGroup = HASHGROUP_INTAG;
-	hi.m_prefix    = "gbcharset";
-
-	if ( ! hashString ( s,slen, &hi ) ) return false;
-
-	// hash charset as a number
-	slen = sprintf(s, "%d", *getCharset());
-
-	return hashString ( s,slen, &hi ) ;
-}
-
-
-// . only hash certain tags (single byte scores and ST_COMMENT)
-// . do not hash clocks, ST_SITE, ST_COMMENT
-// . term = gbtag:blog1     score=0-100
-// . term = gbtag:blog2     score=0-100
-// . term = gbtag:english1  score=0-100
-// . term = gbtag:pagerank1 score=0-100, etc. ...
-// . term = gbtagmeta:"this site"(special hashing,ST_META,score=qlty)
-// . later we can support query like gbtag:english1>30
-bool XmlDoc::hashTagRec ( HashTableX *tt ) {
-
-	setStatus ( "hashing tag rec" );
-
-	//char *field    = "gbtag:";
-	//int32_t  fieldlen = gbstrlen(field);
-	//bool  retval   = true;
-
-	// . this tag rec does not have the ST_SITE tag in it to save space
-	// . it does not have clocks either?
-	TagRec *gr = getTagRec();
-
-	// count occurence of each tag id
-	//int16_t count [ LAST_TAG ];
-	//memset ( count , 0 , 2 * LAST_TAG );
-
-	// loop over all tags in the title rec
-	for ( Tag *tag = gr->getFirstTag(); tag ; tag = gr->getNextTag(tag) ) {
-		// breathe
-		QUICKPOLL(m_niceness);
-		// get id
-		int32_t type = tag->m_type;
-		// skip tags we are not supposed to index, like
-		// ST_CLOCK, etc. or anything with a dataSize not 1
-		if ( ! tag->isIndexable() ) continue;
-		// hash these metas below
-		//if ( type == ST_META ) continue;
-		//if ( tag->isType("meta") ) continue;
-		// only single byters. this should have been covered by the
-		// isIndexable() function.
-		//if ( tag->getTagDataSize() != 1 ) continue;
-		// get the name
-		char *str = getTagStrFromType ( type );
-		// get data size
-		//uint8_t *data = (uint8_t *)tag->getTagData();
-		// make it a string
-		//char dataStr[6];
-		//sprintf ( dataStr , "%"INT32"",(int32_t)*data );
-		// skip if has non numbers
-		//bool num = true;
-		//for ( int32_t i = 0 ; i < tag->getTagDataSize() ; i++ )
-		//	if ( ! is_digit(tag->getTagData()[i]) ) num = false;
-		// skip if it has more than just digits, we are not indexing
-		// strings at this point
-		//if ( ! num ) continue;
-		// point to it, should be a NULL terminated string
-		char *dataStr = tag->getTagData();
-		// skip if number is too big
-		//int32_t val = atol ( dataStr );
-		// boost by one so we can index "0" score
-		//val++;
-		// we really only want to index scores from 0-255
-		//if ( val > 255 ) continue;
-		// no negatives
-		//if ( val <= 0 ) continue;
-		// count occurence
-		//count [ type ]++;
-		// . make the term name to hash after the gbtag:
-		// . we want to hash "gbtag:english3" for example, for the
-		//   ST_ENGLISH tag id.
-		char prefix[64];
-		// . do not include the count for the first occurence
-		// . follows the gbruleset:36 convention
-		// . index gbtagspam:0 or gbtagspam:1, etc.!!!
-		//if ( count[type] == 1 )
-		sprintf ( prefix , "gbtag%s",str);
-		// assume that is good enough
-		//char *prefix = tmp;
-		// store prefix into m_wbuf so XmlDoc::print() works!
-		//if ( m_pbuf ) {
-		//	int32_t tlen = gbstrlen(tmp);
-		//	m_wbuf.safeMemcpy(tmp,tlen+1);
-		//	prefix = m_wbuf.getBuf() - (tlen+1);
-		//}
-		//else
-		//	sprintf ( tmp , "gbtag%s%"INT32"",str,(int32_t)count[type]);
-		// "unmap" it so when it is hashed it will have the correct
-		// 8-bit score. IndexList.cpp will convert it back to 8 bits
-		// in IndexList::set(table), which sets our termlist from
-		// this "table".
-		//int32_t score = score8to32 ( val );
-		// we already incorporate the score as a string when we hash
-		// gbtagtagname:tagvalue so why repeat it?
-		//int32_t score = 1;
-
-		// update hash parms
-		HashInfo hi;
-		hi.m_tt        = tt;
-		hi.m_prefix    = prefix;
-		hi.m_hashGroup = HASHGROUP_INTAG;
-
-		// meta is special now
-		if ( tag->isType("meta") ) {
-			hi.m_prefix    = NULL;
-		}
-
-		// hash it. like "gbtagenglish:1" with a score of 1, etc.
-		// or "gbtagspam:33" with a score of 33. this would also
-		// hash gbtagclock:0xfe442211 type things as well.
-		int32_t dlen = gbstrlen(dataStr);
-		if ( ! hashString ( dataStr,dlen,&hi ) ) return false;
-	}
-
-	return true;
-}
-
-
 bool XmlDoc::hashPermalink ( HashTableX *tt ) {
 
 	setStatus ( "hashing is permalink" );
@@ -2606,15 +2176,6 @@ bool XmlDoc::hashPermalink ( HashTableX *tt ) {
 
 	return hashString ( s,1,&hi );
 }
-
-
-bool XmlDoc::hashVectors ( HashTableX *tt ) {
-
-	setStatus ( "hashing vectors" );
-
-	return true;
-}
-
 
 // returns false and sets g_errno on error
 bool XmlDoc::hashIsAdult ( HashTableX *tt ) {
@@ -3399,20 +2960,6 @@ bool XmlDoc::hashNumberForSorting ( char *beginBuf ,
 	// negative sign?
 	if ( p > beginBuf && p[-1] == '-' ) p--;
 
-	// BR 20160108: Removed all float numbers as we don't plan to use them
-	// . convert it to a float
-	// . this now allows for commas in numbers like "1,500.62"
-//	float f = atof2 ( p , bufEnd - p );
-
-//	if ( ! hashNumberForSortingAsFloat ( f , hi , "gbsortby" ) )
-//		return false;
-
-	// also hash in reverse order for sorting from low to high
-//	f = -1.0 * f;
-
-//	if ( ! hashNumberForSortingAsFloat ( f , hi , "gbrevsortby" ) )
-//		return false;
-
 	//
 	// also hash as an int, 4 byte-integer so our lastSpidered timestamps
 	// dont lose 128 seconds of resolution
@@ -3429,116 +2976,6 @@ bool XmlDoc::hashNumberForSorting ( char *beginBuf ,
 	if ( ! hashNumberForSortingAsInt32 ( i , hi , "gbrevsortbyint" ) )
 		return false;
 
-
-	return true;
-}
-
-
-
-
-bool XmlDoc::hashNumberForSortingAsFloat ( float f , HashInfo *hi , char *sortByStr ) {
-
-	// prefix is something like price. like the meta "name" or
-	// the json name with dots in it like "product.info.price" or something
-	int64_t nameHash = 0LL;
-	int32_t nameLen = 0;
-	if ( hi->m_prefix ) nameLen = gbstrlen ( hi->m_prefix );
-	if ( hi->m_prefix && nameLen )
-		nameHash = hash64Lower_utf8_nospaces( hi->m_prefix , nameLen );
-	// need a prefix for hashing numbers... for now
-	else { char *xx=NULL; *xx=0; }
-
-	// combine prefix hash with a special hash to make it unique to avoid
-	// collisions. this is the "TRUE" prefix.
-	int64_t truePrefix64 = hash64n ( sortByStr ); // "gbsortby");
-	// hash with the "TRUE" prefix
-	int64_t ph2 = hash64 ( nameHash , truePrefix64 );
-
-	// . now store it
-	// . use field hash as the termid. normally this would just be
-	//   a prefix hash
-	// . use mostly fake value otherwise
-	key144_t k;
-	g_posdb.makeKey ( &k ,
-			  ph2 ,
-			  0,//docid
-			  0,// word pos #
-			  0,// densityRank , // 0-15
-			  0 , // MAXDIVERSITYRANK
-			  0 , // wordSpamRank ,
-			  0 , //siterank
-			  0 , // hashGroup,
-			  // we set to docLang final hash loop
-			  //langUnknown, // langid
-			  // unless already set. so set to english here
-			  // so it will not be set to something else
-			  // otherwise our floats would be ordered by langid!
-			  // somehow we have to indicate that this is a float
-			  // termlist so it will not be mangled any more.
-			  //langEnglish,
-			  langUnknown,
-			  0 , // multiplier
-			  false, // syn?
-			  false , // delkey?
-			  hi->m_shardByTermId );
-
-	//int64_t final = hash64n("products.offerprice",0);
-	//int64_t prefix = hash64n("gbsortby",0);
-	//int64_t h64 = hash64 ( final , prefix);
-	//if ( ph2 == h64 )
-	//	log("hey: got offer price");
-
-	// now set the float in that key
-	g_posdb.setFloat ( &k , f );
-
-	// HACK: this bit is ALWAYS set by Posdb::makeKey() to 1
-	// so that we can b-step into a posdb list and make sure
-	// we are aligned on a 6 byte or 12 byte key, since they come
-	// in both sizes. but for this, hack it off to tell
-	// addTable144() that we are a special posdb key, a "numeric"
-	// key that has a float stored in it. then it will NOT
-	// set the siterank and langid bits which throw our sorting
-	// off!!
-	g_posdb.setAlignmentBit ( &k , 0 );
-
-	// sanity
-	float t = g_posdb.getFloat ( &k );
-	if ( t != f ) { char *xx=NULL;*xx=0; }
-
-	HashTableX *dt = hi->m_tt;
-
-	// the key may indeed collide, but that's ok for this application
-	if ( ! dt->addTerm144 ( &k ) )
-		return false;
-
-	if ( ! m_wts )
-		return true;
-
-	// store in buffer
-	char buf[128];
-	snprintf(buf,126,"%s:%s float32=%f",sortByStr,hi->m_prefix,f);
-	int32_t bufLen = gbstrlen(buf);
-
-	// add to wts for PageParser.cpp display
-	// store it
-	if ( ! storeTerm ( buf,
-			   bufLen,
-				ph2,
-			   hi,
-			   0, // word#, i,
-			   0, // wordPos
-			   0,// densityRank , // 0-15
-			   0, // MAXDIVERSITYRANK,//phrase
-			   0, // ws,
-			   0, // hashGroup,
-			   //true,
-			   &m_wbuf,
-			   m_wts,
-			   // a hack for display in wts:
-			   SOURCE_NUMBER, // SOURCE_BIGRAM, // synsrc
-			   langUnknown ,
-			   k) )
-		return false;
 
 	return true;
 }
@@ -3661,22 +3098,6 @@ bool XmlDoc::hashNumberForSortingAsInt32 ( int32_t n , HashInfo *hi , char *sort
 //   [{"id":"b7df5d33-3fe5-4a6c-8ad4-dad495b586cd","finish":1378322570280,"matched":64,"status":"Stopped","start":1378322184332,"token":"poo","parameterMap":{"token":"poo","seed":"www.alleyinsider.com","api":"article"},"crawled":64},{"id":"830e0584-7f69-4bdd-
 
 #include "Json.h"
-
-char *XmlDoc::hashJSONFields ( HashTableX *table ) {
-
-	setStatus ( "hashing json fields" );
-
-	HashInfo hi;
-	hi.m_tt        = table;
-	hi.m_desc      = "json object";
-
-	// use new json parser
-	Json *jp = getParsedJson();
-	if ( ! jp || jp == (void *)-1 ) return (char *)jp;
-
-	return hashJSONFields2 ( table , &hi , jp , true );
-}
-
 
 char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
 				HashInfo *hi , Json *jp ,
@@ -3815,63 +3236,3 @@ char *XmlDoc::hashJSONFields2 ( HashTableX *table ,
 
 	return (char *)0x01;
 }
-
-char *XmlDoc::hashXMLFields ( HashTableX *table ) {
-
-	setStatus ( "hashing xml fields" );
-
-	HashInfo hi;
-	hi.m_tt        = table;
-	hi.m_desc      = "xml object";
-	hi.m_hashGroup = HASHGROUP_BODY;
-
-
-	Xml *xml = getXml();
-	int32_t n = xml->getNumNodes();
-	XmlNode *nodes = xml->getNodes   ();
-
-	SafeBuf nameBuf;
-
-	// scan the xml nodes
-	for ( int32_t i = 0 ; i < n ; i++ ) {
-
-		// breathe
-		QUICKPOLL(m_niceness);
-
-		// . skip if it's a tag not text node skip it
-		// . we just want the "text" nodes
-		if ( nodes[i].isTag() ) continue;
-
-		//if(!strncmp(nodes[i].m_node,"Congress%20Presses%20Uber",20))
-		//	log("hey:hy");
-
-		// assemble the full parent name
-		// like "tag1.tag2.tag3"
-		nameBuf.reset();
-		xml->getCompoundName ( i , &nameBuf );
-
-		// this is \0 terminated
-		char *tagName = nameBuf.getBufStart();
-
-		// get the utf8 text
-		char *val = nodes[i].m_node;
-		int32_t vlen = nodes[i].m_nodeLen;
-
-		// index like "title:whatever"
-		if ( tagName && tagName[0] ) {
-			hi.m_prefix = tagName;
-			hashString ( val , vlen , &hi );
-		}
-
-		// hash without the field name as well
-		hi.m_prefix = NULL;
-		hashString ( val , vlen , &hi );
-	}
-
-	return (char *)0x01;
-}
-
-
-
-
-

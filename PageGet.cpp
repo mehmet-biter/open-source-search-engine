@@ -312,20 +312,6 @@ bool processLoop ( void *state ) {
 		return status;
 	}
 
-	/*
-	  // this was calling XmlDoc and setting sections, etc. to
-	  // get the SpiderReply junk... no no no
-	// is it banned or filtered? this ignores the TagRec in the titleRec
-	// and uses msg8a to get it fresh instead
-	char *vi = xd->getIsFiltered();//Visible( );
-	// wait if blocked
-	if ( vi == (void *)-1 ) return false;
-	// error?
-	if ( ! vi ) return sendErrorReply ( st , g_errno );
-	// banned?
-	if ( ! st->m_isMasterAdmin && ! *vi ) return sendErrorReply (st,EDOCBANNED);
-	*/
-
 	// get the utf8 content
 	char **utf8 = xd->getUtf8Content();
 	//int32_t   len  = xd->size_utf8Content - 1;

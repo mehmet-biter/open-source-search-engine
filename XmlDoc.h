@@ -71,10 +71,6 @@ bool setLangVec ( class Words *words ,
 		  class Sections *sections ,
 		  int32_t niceness ) ;
 
-char *getJSONFieldValue ( char *json, char *field , int32_t *valueLen ) ;
-
-bool logQueryLogs ( );
-
 bool getDensityRanks ( int64_t *wids , 
 		       int32_t nw,
 		       //int32_t wordStart , 
@@ -192,7 +188,7 @@ public:
 	uint32_t   m_spideredTime; // time_t
 	uint32_t  m_indexedTime; // slightly > m_spideredTime (time_t)
 	uint32_t  m_reserved32;
-	uint32_t  reserved3; //was: m_pubDate;    // aka m_datedbDate // time_t
+	uint32_t  reserved3;
 	uint32_t    m_firstIndexedDate; // time_t
 	uint32_t    m_outlinksAddedDate; // time_t
 
@@ -206,7 +202,7 @@ public:
 	uint16_t  m_bodyStartPos;
 	uint16_t  m_reserved5;
 
-	uint16_t  m_unused0; //was: m_diffbotJSONCount
+	uint16_t  m_unused0;
 
 	int16_t   m_httpStatus; // -1 if not found (empty http reply)
 	
@@ -230,9 +226,9 @@ public:
 	uint16_t  m_reserved799:1;
 	uint16_t  m_isSiteRoot:1;
 
-	uint16_t  m_reserved800:1; //was:m_isDiffbotJSONObject
-	uint16_t  m_reserved801:1; //was:m_sentToDiffbot
-	uint16_t  m_reserved802:1; //was:m_gotDiffbotSuccessfulReply
+	uint16_t  m_reserved800:1;
+	uint16_t  m_reserved801:1;
+	uint16_t  m_reserved802:1;
 	uint16_t  m_useTimeAxis:1; // m_reserved804:1;
 	uint16_t  m_reserved805:1;
 	uint16_t  m_reserved806:1;
@@ -273,7 +269,7 @@ public:
 	char      *ptr_site;
 	LinkInfo  *ptr_linkInfo1;
 	char      *ptr_linkdbData;
-	char      *ptr_sectiondbData;
+	char      *ptr_unused14;
 	char      *ptr_tagRecData;
 	LinkInfo  *ptr_unused9;
 
@@ -296,7 +292,7 @@ public:
 	int32_t       size_site;
 	int32_t       size_linkInfo1;
 	int32_t       size_linkdbData;
-	int32_t       size_sectiondbData;
+	int32_t       size_unused14;
 	int32_t       size_tagRecData;
 	int32_t       size_unused9;
 
@@ -395,10 +391,8 @@ public:
 	int32_t *getPageSampleVector ( ) ;
 	int32_t *getPostLinkTextVector ( int32_t linkNode ) ;
 	int32_t computeVector ( class Words *words, uint32_t *vec , int32_t start = 0 , int32_t end = -1 );
-	float *getTagSimilarity ( class XmlDoc *xd2 ) ;
 	float *getPageSimilarity ( class XmlDoc *xd2 ) ;
 	float *getPercentChanged ( );
-	uint64_t *getFuzzyDupHash ( );
 	int64_t *getExactContentHash64();
 	class RdbList *getDupList ( ) ;
 	char *getIsDup ( ) ;
@@ -471,7 +465,6 @@ public:
 	int32_t     *getTagPairHashVector ( ) ;
 	uint32_t *getTagPairHash32 ( ) ;
 	int32_t getHostHash32a ( ) ;
-	int32_t getHostHash32b ( ) ;
 	int32_t getDomHash32 ( );
 	char **getThumbnailData();
 	class Images *getImages ( ) ;
@@ -482,7 +475,6 @@ public:
 	char *getIsSiteRoot ( ) ;
 	int8_t *getHopCount ( ) ;
 	char *getSpiderLinks ( ) ;
-	char *getIsFiltered ();
 	bool getIsInjecting();
 	int32_t *getSpiderPriority ( ) ;
 	int32_t *getIndexCode ( ) ;
@@ -492,7 +484,7 @@ public:
 	bool logIt ( class SafeBuf *bb = NULL ) ;
 	bool m_doConsistencyTesting;
 	bool doConsistencyTest ( bool forceTest ) ;
-	int32_t printMetaList ( ) ;
+
 	void printMetaList ( char *metaList , char *metaListEnd ,
 			     class SafeBuf *pbuf );
 	bool verifyMetaList ( char *p , char *pend , bool forDelete ) ;
@@ -518,10 +510,6 @@ public:
 	// m_indexCode or g_errno was set!
 	class SpiderReply *getNewSpiderReply ( );
 
-	SpiderRequest m_redirSpiderRequest;
-	SpiderRequest *m_redirSpiderRequestPtr;
-
-
 	void  setSpiderReqForMsg20 ( class SpiderRequest *sreq , 
 				     class SpiderReply   *srep );
 
@@ -542,7 +530,6 @@ public:
 	bool hashNoSplit ( class HashTableX *tt ) ;
 	char *hashAll ( class HashTableX *table ) ;
 	bool hashMetaTags ( class HashTableX *table ) ;
-	bool hashMetaZip ( class HashTableX *table ) ;
 	bool hashContentType ( class HashTableX *table ) ;
 	
 	bool hashLinks ( class HashTableX *table ) ;
@@ -550,12 +537,9 @@ public:
 	SafeBuf *getTimeAxisUrl ( );
 	bool hashUrl ( class HashTableX *table, bool urlOnly );
 	bool hashDateNumbers ( class HashTableX *tt );
-	bool hashSections ( class HashTableX *table ) ;
 	bool hashIncomingLinkText( class HashTableX *table, bool hashAnomalies, bool hashNonAnomalies );
 	bool hashLinksForLinkdb ( class HashTableX *table ) ;
 	bool hashNeighborhoods ( class HashTableX *table ) ;
-	bool hashRSSInfo ( class HashTableX *table ) ;
-	bool hashRSSTerm ( class HashTableX *table , bool inRSS ) ;
 	bool hashTitle ( class HashTableX *table );
 	bool hashBody2 ( class HashTableX *table );
 	bool hashMetaKeywords ( class HashTableX *table );
@@ -564,12 +548,8 @@ public:
 	bool hashLanguage ( class HashTableX *table ) ;
 	bool hashLanguageString ( class HashTableX *table ) ;
 	bool hashCountry ( class HashTableX *table ) ;
-	bool hashSiteNumInlinks ( class HashTableX *table ) ;
-	bool hashCharset ( class HashTableX *table ) ;
-	bool hashTagRec ( class HashTableX *table ) ;
 	bool hashPermalink ( class HashTableX *table ) ;
-	bool hashVectors(class HashTableX *table ) ;
-	
+
 	class Url *getBaseUrl ( ) ;
 	bool hashIsAdult    ( class HashTableX *table ) ;
 
@@ -610,10 +590,6 @@ public:
 			  char *buf , 
 			  int32_t bufLen , 
 			  class HashInfo *hi ) ;
-
-	bool hashNumberForSortingAsFloat ( float f , 
-			   class HashInfo *hi ,
-			   char *gbsortByStr ) ;
 
 	bool hashNumberForSortingAsInt32 ( int32_t x,
 			   class HashInfo *hi ,
@@ -678,9 +654,7 @@ public:
 	int64_t  m_firstUrlHash64;
 	Url        m_currentUrl;
 
-	CollectionRec *m_lastcr;
 	collnum_t      m_collnum;
-	int32_t           m_lastCollRecResetCount;
 	class CollectionRec *getCollRec ( ) ;
 	bool setCollNum ( const char *coll ) ;
 
@@ -696,8 +670,6 @@ public:
 	int32_t m_addedStatusDocSize;
 
 	SafeBuf  m_metaList2;
-	SafeBuf  m_zbuf;
-	SafeBuf  m_kbuf;
 
 	// used by msg7 to store udp slot
 	class UdpSlot *m_injectionSlot;
@@ -718,8 +690,6 @@ public:
 	// . Repair.cpp sets these based on titlerec
 	char m_logLangId;
 	int32_t m_logSiteNumInlinks;
-
-	SafeBuf m_tmpBuf2;
 
 	SafeBuf m_timeAxisUrl;
 
@@ -767,7 +737,6 @@ public:
 	char     m_fragBufValid;
 	char     m_wordSpamBufValid;
 	char     m_finalSummaryBufValid;
-	char     m_redirSpiderRequestValid;
 
 	char     m_hopCountValid;
 	char     m_isInjectingValid;
@@ -782,7 +751,6 @@ public:
 	char     m_datedbDateValid;
 	char     m_isRSSValid;
 	char     m_isSiteMapValid;
-	char     m_spiderLinksArgValid;
 	char     m_isContentTruncatedValid;
 	char     m_xmlValid;
 	char     m_linksValid;
@@ -790,10 +758,8 @@ public:
 	char     m_bitsValid;
 	char     m_bits2Valid;
 	char     m_posValid;
-	char     m_isUrlBadYearValid;
 	char     m_phrasesValid;
 	char     m_sectionsValid;
-	char     m_subSentsValid;
 
 	char     m_imageDataValid;
 	char     m_imagesValid;
@@ -806,7 +772,6 @@ public:
 	bool m_firstIpValid;
 	bool m_spideredTimeValid;
 	bool m_indexedTimeValid;
-	bool m_firstIndexedValid;
 	bool m_isInIndexValid;
 	bool m_wasInIndexValid;
 	bool m_outlinksAddedDateValid;
@@ -828,9 +793,7 @@ public:
 	bool m_canonicalRedirUrlValid;
 	bool m_statusMsgValid;
 	bool m_mimeValid;
-	bool m_pubDateValid;
 	bool m_hostHash32aValid;
-	bool m_hostHash32bValid;
 	bool m_indexCodeValid;
 	bool m_priorityValid;
 	bool m_downloadStatusValid;
@@ -845,29 +808,23 @@ public:
 	bool m_isPermalinkValid;
 
 	bool m_isAdultValid;
-	bool m_urlPubDateValid;
 	bool m_isUrlPermalinkFormatValid;
 	bool m_percentChangedValid;
 	bool m_unchangedValid;
 	bool m_countTableValid;
-	bool m_summaryLangIdValid;
 	bool m_tagPairHashVecValid;
 	bool m_summaryVecValid;
-	bool m_titleVecValid;
 	bool m_pageSampleVecValid;
 	bool m_postVecValid;
 	bool m_dupListValid;
-	bool m_likedbListValid;
 	bool m_isDupValid;
 	bool m_metaDescValid;
 	bool m_metaSummaryValid;
 	bool m_metaKeywordsValid;
 	bool m_metaGeoPlacenameValid;
-	bool m_siteSpiderQuotaValid;
 	bool m_oldDocValid;
 	bool m_extraDocValid;
 	bool m_rootDocValid;
-	bool m_oldMetaListValid;
 	bool m_oldTitleRecValid;
 	bool m_rootTitleRecValid;
 	bool m_isIndexedValid;
@@ -881,12 +838,10 @@ public:
 	bool m_siteHash32Valid;
 	bool m_httpReplyValid;
 	bool m_contentTypeValid;
-	bool m_priorityQueueNumValid;
 	bool m_outlinkTagRecVectorValid;
 	bool m_outlinkIpVectorValid;
 	bool m_hasNoIndexMetaTagValid;
 	bool m_hasUseFakeIpsMetaTagValid;
-	bool m_outlinkIsIndexedVectorValid;
 	bool m_isSiteRootValid;
 	bool m_wasContentInjectedValid;
 	bool m_outlinkHopCountVectorValid;
@@ -906,7 +861,6 @@ public:
 	bool m_htbValid;
 	bool m_collnumValid;
 	bool m_summaryValid;
-	bool m_gsbufValid;
 	bool m_spiderStatusDocMetaListValid;
 	bool m_isCompromisedValid;
 	bool m_isNoArchiveValid;
@@ -914,9 +868,7 @@ public:
 	bool m_isLinkSpamValid;
 	bool m_isErrorPageValid;
 	bool m_isHijackedValid;
-	bool m_dupHashValid;
 	bool m_exactContentHash64Valid;
-	bool m_looseContentHash64Valid;
 	bool m_jpValid;
 
 	char m_isSiteMap;
@@ -933,43 +885,31 @@ public:
 	// DO NOT add validity flags below this line!
 	char     m_VALIDEND;
 
-
 	bool m_printedMenu;
-	int32_t m_urlPubDate;
 	char m_isUrlPermalinkFormat;
-	uint8_t m_summaryLangId;
 	int32_t m_tagPairHashVec[MAX_TAG_PAIR_HASHES];
 	int32_t m_tagPairHashVecSize;
 	int32_t m_summaryVec [SAMPLE_VECTOR_SIZE/4];
 	int32_t m_summaryVecSize;
-	int32_t m_titleVec [SAMPLE_VECTOR_SIZE/4];
-	int32_t m_titleVecSize;
 	int32_t m_pageSampleVec[SAMPLE_VECTOR_SIZE/4];
 	int32_t m_pageSampleVecSize;
 	int32_t m_postVec[POST_VECTOR_SIZE/4];
 	int32_t m_postVecSize;
-	float m_tagSimilarity;
 	float m_pageSimilarity;
 	float m_percentChanged;
 	bool  m_unchanged;
 	// what docids are similar to us? docids are in this list
 	RdbList m_dupList;
-	RdbList m_likedbList;
-	uint64_t m_dupHash;
 	int64_t m_exactContentHash64;
-	int64_t m_looseContentHash64;
 	Msg0 m_msg0;
 	Msg5 m_msg5;
 	char m_isDup;
 	int64_t m_docIdWeAreADupOf;
-	int32_t m_ei;
-	int32_t m_lastLaunch;
 	Msg22Request m_msg22Request;
 	Msg22Request m_msg22Requestc;
 	Msg22 m_msg22a;
 	Msg22 m_msg22b;
 	Msg22 m_msg22c;
-	Msg22 m_msg22d;
 	Msg22 m_msg22e;
 	Msg22 m_msg22f;
 	// these now reference directly into the html src so our 
@@ -983,13 +923,10 @@ public:
 	
 	char *m_metaGeoPlacename;
 	int32_t  m_metaGeoPlacenameLen;
-	
-	
-	int32_t  m_siteSpiderQuota;
+
 	class XmlDoc *m_oldDoc;
 	class XmlDoc *m_extraDoc;
 	class XmlDoc *m_rootDoc;
-	RdbList m_oldMetaList;
 	char   *m_oldTitleRec;
 	int32_t    m_oldTitleRecSize;
 	char   *m_rootTitleRec;
@@ -1002,12 +939,9 @@ public:
 	char m_wasInIndex;
 
 	Msg8a   m_msg8a;
-	char   *m_tagdbColl;
-	int32_t    m_tagdbCollLen;
 
 	Url   m_extraUrl;
 	uint8_t m_siteNumInlinks8;
-	LinkInfo m_siteLinkInfo;
 	SafeBuf m_mySiteLinkInfoBuf;
 	SafeBuf m_myPageLinkInfoBuf;
 	SafeBuf m_myTempLinkInfoBuf;
@@ -1021,9 +955,6 @@ public:
 	SafeBuf m_tmpBuf12;
 	Multicast m_mcast11;
 	Multicast m_mcast12;
-	// lists from cachedb for msg25's msg20 replies serialized
-	RdbList m_siteReplyList;
-	RdbList m_pageReplyList;
 	MsgC m_msgc;
 	bool m_isAllowed;
 	bool m_forwardDownloadRequest;
@@ -1035,22 +966,17 @@ public:
 	int32_t m_numExpansions;
 	char m_newOnly;
 	char m_isWWWDup;
-	char m_calledMsg0b;
 
 	SafeBuf m_linkSiteHashBuf;
 	SafeBuf m_linkdbDataBuf;
 	SafeBuf m_langVec;
 	Msg0 m_msg0b;
-	class RdbList *m_ulist;
-	char     *m_linkInfoColl;
 	SiteGetter m_siteGetter;
 	int64_t  m_siteHash64;
 	int32_t m_siteHash32;
 	char *m_httpReply;
 	char m_incrementedAttemptsCount;
 	char m_incrementedDownloadCount;
-	char m_redirectFlag;
-	char m_spamCheckDisabled;
 	char m_useRobotsTxt;
 	int32_t m_robotsTxtLen;
 	int32_t m_httpReplySize;
@@ -1062,16 +988,13 @@ public:
 	char m_calledThread;
 	int32_t m_errno;
 	int32_t m_hostHash32a;
-	int32_t m_hostHash32b;
 	int32_t m_domHash32;
-	int32_t m_priorityQueueNum;
 
 	// this points into m_msge0 i guess
 	Msge0 m_msge0;
 
 	// this points into m_msge1 i guess
 	int32_t *m_outlinkIpVector;
-	SafeBuf m_outlinkTagRecPtrBuf;
 	SafeBuf m_fakeIpBuf;
 	char m_hasNoIndexMetaTag;
 	char m_hasUseFakeIpsMetaTag;
@@ -1080,22 +1003,12 @@ public:
 	SafeBuf m_fakeTagRecPtrBuf;
 	TagRec m_fakeTagRec;
 
-	//
-	// diffbot parms for indexing diffbot's json output
-	//
-
-	char *hashJSONFields ( HashTableX *table );
 	char *hashJSONFields2 ( HashTableX *table , HashInfo *hi , Json *jp ,
 				bool hashWithoutFieldNames ) ;
-
-	char *hashXMLFields ( HashTableX *table );
 
 	Json *getParsedJson();
 	// object that parses the json
 	Json m_jp;
-
-	// related query algo stuff
-	int64_t m_tlbufTimer;
 
 	// flow flags
 
@@ -1104,18 +1017,11 @@ public:
 	// cachedb related args
 	bool    m_allHashed;
 
-	// for getRelatedDocIdsWithTitles() launching msg20s
-	int32_t m_numMsg20Replies;
-	int32_t m_numMsg20Requests;
-
 	int8_t *m_outlinkHopCountVector;
 	int32_t  m_outlinkHopCountVectorSize;
-	char m_isFiltered;
 	int32_t m_urlFilterNum;
 	int32_t m_numOutlinksAdded;
 	int32_t m_numOutlinksAddedFromSameDomain;
-	int32_t m_numOutlinksFiltered;
-	int32_t m_numOutlinksBanned;
 	int32_t m_numRedirects;
 	bool m_isPageParser;
 	Url m_baseUrl;
@@ -1124,12 +1030,8 @@ public:
 	char  m_linkTextBuf[MAX_LINK_TEXT_LEN];
 	char m_surroundingTextBuf[MAX_SURROUNDING_TEXT_WIDTH];
 	char m_rssItemBuf[MAX_RSSITEM_SIZE];
-	SafeBuf m_gsbuf;
+
 	char *m_note;
-	char *m_imageUrl;
-	char *m_imageUrl2;
-	SafeBuf m_imageUrlBuf;
-	SafeBuf m_imageUrlBuf2;
 	Query m_query;
 	Matches m_matches;
 	// meta description buf
@@ -1138,7 +1040,6 @@ public:
 	SafeBuf m_htb;
 	Title m_title;
 	Summary m_summary;
-	char m_isCompromised;
 	char m_isNoArchive;
 	char m_isErrorPage;
 	char m_isHijacked;
@@ -1146,8 +1047,6 @@ public:
 	// stuff
 	char *m_statusMsg;
 	Msg4  m_msg4;
-	bool  m_incCount;
-	bool  m_decCount;
 
 	bool  m_deleteFromIndex;
 
@@ -1171,32 +1070,18 @@ public:
 	bool m_check1                   ;
 	bool m_check2                   ;
 	bool m_prepared                 ;
-	bool m_updatedCounts            ;
-	bool m_updatedCounts2           ;
 	bool m_copied1                  ;
 	bool m_updatingSiteLinkInfoTags ;
 
-	int64_t m_calledMsg22d             ;
 	bool m_didDelay                 ;
 	bool m_didDelayUnregister       ;
 	bool m_calledMsg22e             ;
 	bool m_calledMsg22f             ;
 	bool m_calledMsg25              ;
-	bool m_calledMsg25b             ;
-	bool m_calledMsg8b              ;
-	bool m_calledMsg40              ;
 	bool m_calledSections           ;
-	bool m_firstEntry               ;
-	bool m_firstEntry2              ;
-	bool m_launchedSpecialMsg8a     ;
-	bool m_launchedMsg8a2           ;
 	bool m_loaded                   ;
 
-	bool m_processedLang            ;
-
 	bool m_doingConsistencyCheck ;
-
-	int32_t    m_langIdScore;
 
 	int32_t m_dist;
 
@@ -1217,7 +1102,6 @@ public:
 	char   m_titleBuf[ROOT_TITLE_BUF_MAX];
 	int32_t   m_titleBufSize;
 
-
 	bool m_setTr                    ;
 
 	void (* m_masterLoop) ( void *state );
@@ -1226,8 +1110,6 @@ public:
 	void (* m_callback1) ( void *state );	
 	bool (* m_callback2) ( void *state );	
 	void  *m_state;
-
-	bool m_skipIframeExpansion;
 
 	// this is non-zero if we decided not to index the doc
 	int32_t m_indexCode;
@@ -1250,12 +1132,8 @@ public:
 
 	int32_t  m_maxCacheAge;
 
-	char     *m_wikiqbuf;
-	int32_t      m_wikiqbufSize;
-
 	bool      m_registeredSleepCallback;
-	bool      m_addedNegativeDoledbRec;
-	
+
 	bool          m_hashedTitle;
 	bool          m_hashedMetas;
 
@@ -1293,7 +1171,6 @@ public:
 	bool          m_setFromUrl;
 	bool          m_setFromDocId;
 	bool          m_freeLinkInfo1;
-	bool          m_freeLinkInfo2;
 	bool          m_contentInjected;
 
 	bool          m_recycleContent;
@@ -1329,7 +1206,6 @@ public:
 	int32_t  getProbSpam  ( int32_t *profile, int32_t plen , int32_t step );
 	bool m_isRepeatSpammer;
 	int32_t m_numRepeatSpam;
-	bool m_totallySpammed;
 
 	// frag vector (repeated fragments). 0 means repeated, 1 means not.
 	// vector is 1-1 with words in the document body.
@@ -1358,10 +1234,6 @@ public:
 	void logQueryTimingEnd(const char* function, int64_t startTime);
 
 	int32_t  m_i;
-	int32_t  m_blocked;
-	void *m_finalState;
-	void (* m_finalCallback) ( void *state );
-	int64_t m_cacheStartTime;
 };
 
 // . PageParser.cpp uses this class for printing hashed terms out by calling
