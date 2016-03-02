@@ -63,8 +63,6 @@ int32_t Highlight::set( SafeBuf *sb, char *content, int32_t contentLen, Query *q
 		return -1;
 	}
 
-	int32_t version = TITLEREC_CURRENT_VERSION;
-
 	Bits bits;
 	if ( !bits.set(&words, niceness)) {
 		return -1;
