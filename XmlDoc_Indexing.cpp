@@ -252,32 +252,6 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	// . let's try thumbnails for all...
 	//if ( ! *getIsPermalink() ) return true;
 
-
-/*
-	// BR 20160115: Don't store "gbsitetemplate" hash in posdb
-	
-	setStatus ( "hashing no-split gbsitetemplate keys" );
-
-	// must be valid
-	if ( ! m_siteValid ) { char *xx=NULL;*xx=0; }
-	char buf[MAX_URL_LEN+20];
-	//uint32_t th = m_tagVector.getVectorHash();
-	uint32_t tph = *getTagPairHash32();
-	// . skip this so we can do site:xyz.com queries
-	// . but if this is https:// then you will have to
-	//   specify that...
-	char *site = getSite();
-	// sanity check, must NOT start with http://
-	if ( ! strncmp ( site , "http://", 7 ) ) { char *xx=NULL;*xx=0;}
-	// this must match what we search in Images.cpp::getThumbnail()
-	int32_t blen = sprintf(buf,"%"UINT32"%s",tph,site);
-
-	// use the prefix as the description if description is NULL
-	hi.m_prefix = "gbsitetemplate";
-	//if ( ! hashString ( buf,blen,&hi ) ) return false;
-	if ( ! hashSingleTerm ( buf,blen,&hi ) ) return false;
-*/
-
 /*
 	BR 20160117: No longer has image URLs
 	setStatus ( "hashing no-split gbimage keys" );

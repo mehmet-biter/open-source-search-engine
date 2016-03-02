@@ -4,20 +4,11 @@
 // . TODO: ensure WordType m_types[] array is only 1 byte per entry
 // . ??? a word should end at any non-alnum ??? then using phrasing for "tim's"
 
-#ifndef _WORDS_H_
-#define _WORDS_H_
+#ifndef WORDS_H
+#define WORDS_H
 
-// . we can have up to about 16,000 words per doc
-// . can be big since we never use threads
-// . this was 1024*32 but using librt's aio_read somehow enforces a 500k
-//   stack onto us, even when we're not in a thread per se!!
-//#define MAX_WORDS (1024*16)
 // now keep this small and malloc if we need more... save some stack
 #define MAX_WORDS (1024)
-
-// Leaving MAX_WORDS alone because other classes use it...
-// We use LOCALBUFSIZE now for allocation here now
-//#define LOCALBUFSIZE (MAX_WORDS*16)
 
 // now Matches.h has 300 Words classes handy... try to do away with this
 // make sure it does not slow us down!!
@@ -120,7 +111,6 @@ class Words {
 		return ::isQueryStopWord( m_words[n], m_wordLens[n], m_wordIds[n], langId );
 	}
 
-
 	// . how many quotes in the nth word?
 	// . how many plusses in the nth word?
 	// . used exclusively by Query class for parsing query syntax
@@ -155,25 +145,6 @@ class Words {
 			}
 		}
 
-		return false;
-	}
-
-	bool hasDigit( int32_t n ) const {
-		for ( int32_t i = 0; i < m_wordLens[n]; i++ ) {
-			if ( is_digit( m_words[n][i] ) ) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	// this doesn't really work for utf8!!!
-	bool hasAlpha( int32_t n ) const {
-		for ( int32_t i = 0; i < m_wordLens[n]; i++ ) {
-			if ( is_alpha_a( m_words[n][i] ) ) {
-				return true;
-			}
-		}
 		return false;
 	}
 
@@ -319,8 +290,6 @@ class Words {
 
  	int32_t           m_numWords;      // # of words we have
 	int32_t           m_numAlnumWords;
-
-	int32_t           m_totalLen;  // of all words
 
 	bool           m_hasTags;
 

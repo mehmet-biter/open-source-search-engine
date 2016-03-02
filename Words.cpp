@@ -426,12 +426,6 @@ bool Words::addWords( char *s, int32_t nodeLen, bool computeWordIds, int32_t nic
 		log(LOG_LOGIC, "build: words: set: Fix counting routine.");
 		char *xx = NULL; *xx = 0;
 	}
-	// compute total length
-	if ( m_numWords <= 0 ) {
-		m_totalLen = 0;
-	} else {
-		m_totalLen = m_words[m_numWords-1] - s + m_wordLens[m_numWords-1];
-	}
 
 	if ( badCount )
 		log("words: had %"INT32" bad utf8 chars",badCount);

@@ -39,45 +39,45 @@ typedef uint64_t qvec_t;
 #define FIELD_TITLE    6
 #define FIELD_TYPE     7
 #define FIELD_EXT      21
-#define FIELD_COLL     22
+//#define FIELD_COLL     22
 #define FIELD_ILINK    23
 #define FIELD_LINKS    24
 #define FIELD_SITELINK 25
 // non-standard field codes
 #define FIELD_ZIP      8
-#define FIELD_CITY     9
-#define FIELD_STREET   10
-#define FIELD_AUTHOR   11
-#define FIELD_LANG     12
-#define FIELD_CLASS    13
-#define FIELD_COUNTRY  14
-#define FIELD_TAG      15
-#define FIELD_STATE    16
-#define FIELD_DATE     17
+//#define FIELD_UNUSED     9
+//#define FIELD_UNUSED   10
+//#define FIELD_UNUSED   11
+//#define FIELD_UNUSED     12
+//#define FIELD_UNUSED    13
+//#define FIELD_UNUSED  14
+//#define FIELD_UNUSED      15
+//#define FIELD_UNUSED    16
+//#define FIELD_UNUSED     17
 #define FIELD_GENERIC  18
 #define FIELD_ISCLEAN  19  // we hash field="isclean:" val="1" if doc clean
 //#define FIELD_UNUSED 20
 #define FIELD_CHARSET  30
 #define FIELD_GBRSS    31
-#define FIELD_URLHASH       32
+//#define FIELD_UNUSED       32
 //#define FIELD_UNUSED      33
 //#define FIELD_UNUSED      34
-#define FIELD_GBRULESET     35
+//#define FIELD_UNUSED     35
 #define FIELD_GBLANG        36
-#define FIELD_GBQUALITY     37
-#define FIELD_LINKTEXTIN    38
-#define FIELD_LINKTEXTOUT   39
-#define FIELD_KEYWORD       40
+//#define FIELD_UNUSED     37
+//#define FIELD_UNUSED    38
+//#define FIELD_UNUSED   39
+//#define FIELD_UNUSED       40
 #define FIELD_QUOTA            41
-#define FIELD_GBTAGVECTOR      42
+//#define FIELD_UNUSED      42
 //#define FIELD_UNUSED         43
-#define FIELD_GBSAMPLEVECTOR   44
-#define FIELD_SYNONYM          45
+//#define FIELD_UNUSED   44
+//#define FIELD_UNUSED          45
 #define FIELD_GBCOUNTRY        46
-#define FIELD_GBAD             47
-#define FIELD_GBSUBMITURL      48
+//#define FIELD_UNUSED             47
+//#define FIELD_UNUSED      48
 #define FIELD_GBPERMALINK      49
-#define FIELD_GBCSENUM         50
+//#define FIELD_UNUSED         50
 #define FIELD_GBSECTIONHASH    51
 #define FIELD_GBDOCID          52
 #define FIELD_GBCONTENTHASH    53 // for deduping at spider time
@@ -97,8 +97,6 @@ typedef uint64_t qvec_t;
 #define FIELD_GBNUMBEREQUALFLOAT 67
 #define FIELD_SUBURL2            68
 #define FIELD_GBFIELDMATCH       69
-
-#define FIELD_GBOTHER 92
 
 // returns a FIELD_* code above, or FIELD_GENERIC if not in the list
 char getFieldCode  ( const char *s , int32_t len , bool *hasColon = NULL ) ;
@@ -499,9 +497,6 @@ class Query {
 	bool m_hasIpField;
 	bool m_hasUrlField;
 	bool m_hasSubUrlField;
-	bool m_hasIlinkField;
-	bool m_hasGBLangField;
-	bool m_hasGBCountryField;
 	char m_hasQuotaField;
 
 	// . we set this to true if it is a boolean query

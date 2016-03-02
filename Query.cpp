@@ -72,9 +72,6 @@ void Query::reset ( ) {
 	m_hasIpField           = false;
 	m_hasUrlField          = false;
 	m_hasSubUrlField       = false;
-	m_hasIlinkField        = false;
-	m_hasGBLangField       = false;
-	m_hasGBCountryField    = false;
 	m_hasQuotaField        = false;
 	m_truncated            = false;
 }
@@ -256,12 +253,6 @@ bool Query::set2 ( const char *query        ,
 			m_hasIpField   = true;
 		else if ( qw->m_fieldCode == FIELD_URL )
 			m_hasUrlField  = true;
-		else if ( qw->m_fieldCode == FIELD_ILINK )
-			m_hasIlinkField  = true;
-		else if ( qw->m_fieldCode == FIELD_GBLANG )
-			m_hasGBLangField = true;
-		else if ( qw->m_fieldCode == FIELD_GBCOUNTRY )
-			m_hasGBCountryField = true;
 		else if ( qw->m_fieldCode == FIELD_QUOTA )
 			m_hasQuotaField = true;
 		else if ( qw->m_fieldCode == FIELD_SUBURL )
@@ -1734,9 +1725,7 @@ bool Query::setQWords ( char boolFlag ,
 		     fieldCode == FIELD_GBNUMBERMAXINT ||
 		     fieldCode == FIELD_GBNUMBEREQUALINT ||
 
-		     fieldCode == FIELD_GBFIELDMATCH ||
-
-		     fieldCode == FIELD_GBAD  ) {
+		     fieldCode == FIELD_GBFIELDMATCH ) {
 			// . find 1st space -- that terminates the field value
 			// . make "end" point to the end of the entire query
 			char *end =
@@ -3082,13 +3071,7 @@ struct QueryField g_fields[] = {
 	 0},
 
 	// they don't need to know about this
-	{"gbad",FIELD_GBAD,false,"","",NULL,QTF_HIDE},
-	{"gbsamplevector", FIELD_GBSAMPLEVECTOR, false,"","",NULL,QTF_HIDE},
-	{"gbcontenthash", FIELD_GBCONTENTHASH, false,"","",NULL,QTF_HIDE},
-	{"gbduphash"  ,FIELD_GBOTHER,false,"","",NULL,QTF_HIDE},
-
-	// call it field url to hash all up to the first space
-	{"gbsitetemplate"           ,FIELD_URL,false,"","",NULL,QTF_HIDE}
+	{"gbcontenthash", FIELD_GBCONTENTHASH, false,"","",NULL,QTF_HIDE}
 };
 
 void resetQuery ( ) {
@@ -3463,7 +3446,6 @@ void QueryTerm::constructor ( ) {
 bool QueryTerm::isSplit() {
 	if(!m_fieldCode) return true;
 	if(m_fieldCode == FIELD_QUOTA)           return false;
-	if(m_fieldCode == FIELD_GBSAMPLEVECTOR)  return false;
 	if(m_fieldCode == FIELD_GBSECTIONHASH)  return false;
 	if(m_fieldCode == FIELD_GBCONTENTHASH)  return false;
 	return true;
