@@ -34,7 +34,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Msg1.o \
 	Msg0.o Mem.o Matches.o Loop.o \
 	Log.o Lang.o \
-	Indexdb.o Posdb.o Clusterdb.o IndexList.o \
+	Posdb.o Clusterdb.o IndexList.o \
 	HttpServer.o HttpRequest.o \
 	HttpMime.o Hostdb.o \
 	Highlight.o File.o Errno.o Entities.o \
@@ -75,6 +75,7 @@ CPPFLAGS = -g -Wall -fno-stack-protector -DPTHREADS -Wstrict-aliasing=0
 
 ifeq ($(MAKECMDGOALS),debug)
 DEFS += -D_VALGRIND_
+#CPPFLAGS += -pg
 else
 # if defined, UI options that can damage our production index will be disabled
 DEFS += -DPRIVACORE_SAFE_VERSION

@@ -538,43 +538,12 @@ skip:
 		m_startTime = gettimeofdayInMilliseconds();
 	else
 		m_startTime = 0;
-	//if ( m_rdbId == RDB_INDEXDB ) log("Msg0:: getting remote indexlist. "
-	//			"termId=%"UINT64", "
-	//			"groupNum=%"UINT32"",
-	//			g_indexdb.getTermId(m_startKey) ,
-	//			g_hostdb.makeHostId ( m_groupId ) );
-
-	/*
-	// make the cache key so we can see what remote host cached it, if any
-	char cacheKey[MAX_KEY_BYTES];
-	//key_t cacheKey = makeCacheKey ( startKey     ,
-	makeCacheKey ( startKey     ,
-		       endKey       ,
-		       includeTree  ,
-		       minRecSizes  ,
-		       startFileNum ,
-		       numFiles     ,
-		       cacheKey     ,
-		       m_ks         );
-	*/
 
 	// . get the top int32_t of the key
 	// . i guess this will work for 128 bit keys... hmmmmm
 	int32_t keyTop = hash32 ( (char *)startKey , m_ks );
 
-	/*
-	// allocate space
-	if ( m_numSplit > 1 ) {
-		int32_t  need = m_numSplit * sizeof(Multicast) ;
-		char *buf  = (char *)mmalloc ( need,"msg0mcast" );
-		if ( ! buf ) return true;
-		m_mcasts = (Multicast *)buf;
-		for ( int32_t i = 0; i < m_numSplit ; i++ )
-			m_mcasts[i].constructor();
-	}
-	*/
-
-        // . otherwise, multicast to a host in group "groupId"
+	// . otherwise, multicast to a host in group "groupId"
 	// . returns false and sets g_errno on error
 	// . calls callback on completion
 	// . select first host to send to in group based on upper 32 bits
@@ -588,16 +557,7 @@ skip:
 	QUICKPOLL(m_niceness);
 	//int32_t gr;
 	char *buf;
-	/*
-	if ( m_numSplit > 1 ) {
-		gr  = g_indexdb.getSplitGroupId ( baseGroupId, i );
-		buf = &replyBuf[i*replyBufMaxSize];
-	}
-	else {
-	*/
-	//gr  = m_groupId;
 	buf = replyBuf;
-	//}
 
 	// get the multicast
 	Multicast *m = &m_mcast;

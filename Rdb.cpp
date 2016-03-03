@@ -4,7 +4,6 @@
 #include "Clusterdb.h"
 #include "Hostdb.h"
 #include "Tagdb.h"
-#include "Indexdb.h"
 #include "Posdb.h"
 #include "Titledb.h"
 #include "Spider.h"
@@ -163,8 +162,6 @@ bool Rdb::init ( char          *dir                  ,
 	if ( m_ks != getKeySizeFromRdbId(m_rdbId) ) { char*xx=NULL;*xx=0;}
 	// get page size
 	m_pageSize = GB_TFNDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_INDEXDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB2_INDEXDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_POSDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_POSDB2  ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_TITLEDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
@@ -182,14 +179,9 @@ bool Rdb::init ( char          *dir                  ,
 		
 	m_useTree = true;
 	if (//g_conf.m_useBuckets &&
-	    (m_rdbId == RDB_INDEXDB     ||
-	     m_rdbId == RDB2_INDEXDB2   ||
+	    (
 	     m_rdbId == RDB_POSDB      ||
 	     m_rdbId == RDB2_POSDB2     
-	     //m_rdbId == RDB_DATEDB      ||
-	     //m_rdbId == RDB2_DATEDB2    
-	     //m_rdbId == RDB_LINKDB      ||
- 	     //m_rdbId == RDB2_LINKDB2)) 
 	     ))
 		m_useTree = false;
 
@@ -1099,14 +1091,6 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 		return true;
 	}
 
-	// . do not dump tfndb if indexdb is dumping
-	// . i haven't tried this yet, but it might help
-	//if ( m_rdbId == RDB_TFNDB && g_indexdb.isDumping() ) {
-	//	s_lastTryTime = getTime();
-	//	log(LOG_INFO,"db: Can not dump tfndb while indexdb dumping.");
-	//	return true;
-	//}
-
 	// don't dump tfndb
 	if ( m_rdbId == RDB2_TFNDB2 || m_rdbId == RDB_TFNDB ) {
 		log("db: not dumping tfndb");
@@ -1706,7 +1690,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	     ( m_rdbId == RDB_TITLEDB    ||
 	       m_rdbId == RDB_PLACEDB    ||
 	       m_rdbId == RDB_TFNDB      ||
-	       m_rdbId == RDB_INDEXDB    || 
 	       m_rdbId == RDB_POSDB      ||
 	       m_rdbId == RDB_CLUSTERDB  ||
 	       m_rdbId == RDB_LINKDB     ||
@@ -2135,37 +2118,6 @@ bool Rdb::addRecord ( collnum_t collnum,
 	char oppKey[MAX_KEY_BYTES];
 	int32_t n = -1;
 
-	// if we are TFNDB, get the node independent of the
-	// tfnnum bits so we can overwrite it even though the key is
-	// technically a different key!! the tfn bits are in the lower 10
-	// bits so we have to mask those out!
-	/*
-	if ( m_rdbId == RDB_TFNDB ) {
-		char tfnKey[MAX_KEY_BYTES];
-		KEYSET(tfnKey,key,m_ks);
-		// zero out lower bits for lookup in tree
-		tfnKey[0]  = 0x00; // 00000000
-		tfnKey[1] &= 0xfc; // 11111100
-		// get key after that 
-		n = m_tree.getNextNode ( collnum , tfnKey );
-		// assume none
-		char *ok = NULL;
-		// get it
-		if ( n >= 0 ) {
-			// get uh48 being added
-			int64_t uh48 = g_tfndb.getUrlHash48((key_t *)key);
-			// get that key
-			ok = m_tree.getKey( n );
-			// see if it matches our uh48, if not then
-			// do not delete it!
-			if ( g_tfndb.getUrlHash48((key_t *)ok) != uh48 ) n= -1;
-		}
-		// set oppkey for checking dup below
-		if ( n >= 0 ) 
-			KEYSET ( oppKey , ok , m_ks );
-	}
-	else if ( m_useTree ) {
-	*/
 	if ( m_useTree ) {
 		// make the opposite key of "key"
 		KEYSET(oppKey,key,m_ks);
@@ -2378,13 +2330,6 @@ bool Rdb::addRecord ( collnum_t collnum,
 	int32_t tn;
 	if ( !m_useTree ) {
 		// debug indexdb
-		/*
-		if ( m_rdbId == RDB_INDEXDB ) {
-			int64_t termId = g_indexdb.getTermId ( (key_t *)key);
-			logf(LOG_DEBUG,"rdb: adding tid=%"UINT64" to indexb",
-			     termId);
-		}
-		*/
 		if ( m_buckets.addNode ( collnum , key , data , dataSize )>=0){
 			// sanity test
 			//int64_t tid = g_datedb.getTermId((key128_t *)key);
@@ -2756,7 +2701,6 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_init = true;
 		memset ( s_table9, 0, sizeof(s_table9) );
 		s_table9 [ RDB_TAGDB     ] = g_tagdb.getRdb();
-		s_table9 [ RDB_INDEXDB   ] = g_indexdb.getRdb();
 		s_table9 [ RDB_POSDB     ] = g_posdb.getRdb();
 		s_table9 [ RDB_TITLEDB   ] = g_titledb.getRdb();
 		s_table9 [ RDB_SPIDERDB  ] = g_spiderdb.getRdb();
@@ -2766,7 +2710,6 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB_STATSDB   ] = g_statsdb.getRdb();
 		s_table9 [ RDB_PARMDB    ] = NULL;
 
-		s_table9 [ RDB2_INDEXDB2   ] = g_indexdb2.getRdb();
 		s_table9 [ RDB2_POSDB2     ] = g_posdb2.getRdb();
 		s_table9 [ RDB2_TITLEDB2   ] = g_titledb2.getRdb();
 		s_table9 [ RDB2_SPIDERDB2  ] = g_spiderdb2.getRdb();
@@ -2781,7 +2724,6 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 // the opposite of the above
 char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_tagdb.getRdb    () ) return RDB_TAGDB;
-	if ( rdb == g_indexdb.getRdb   () ) return RDB_INDEXDB;
 	if ( rdb == g_posdb.getRdb   () ) return RDB_POSDB;
 	if ( rdb == g_titledb.getRdb   () ) return RDB_TITLEDB;
 	if ( rdb == g_spiderdb.getRdb  () ) return RDB_SPIDERDB;
@@ -2789,7 +2731,6 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_clusterdb.getRdb () ) return RDB_CLUSTERDB;
 	if ( rdb == g_statsdb.getRdb   () ) return RDB_STATSDB;
 	if ( rdb == g_linkdb.getRdb    () ) return RDB_LINKDB;
-	if ( rdb == g_indexdb2.getRdb   () ) return RDB2_INDEXDB2;
 	if ( rdb == g_posdb2.getRdb   () ) return RDB2_POSDB2;
 	if ( rdb == g_tagdb2.getRdb     () ) return RDB2_TAGDB2;
 	if ( rdb == g_titledb2.getRdb   () ) return RDB2_TITLEDB2;
@@ -2804,7 +2745,6 @@ char getIdFromRdb ( Rdb *rdb ) {
 char isSecondaryRdb ( uint8_t rdbId ) {
 	switch ( rdbId ) {
         case RDB2_CATDB2     : return true;
-		case RDB2_INDEXDB2   : return true;
 		case RDB2_POSDB2   : return true;
 		case RDB2_TAGDB2     : return true;
 		case RDB2_TITLEDB2   : return true;
@@ -2872,7 +2812,6 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 			int32_t ds = 0;
 			// only these are 16 as of now
 			if ( i == RDB_POSDB ||
-			     i == RDB_INDEXDB ||
 			     i == RDB_TFNDB ||
 			     i == RDB_CLUSTERDB ||
 			     i == RDB_DATEDB ||
@@ -2893,7 +2832,6 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 			else if ( i == RDB_STATSDB )
 				ds = sizeof(StatData);
 			else if ( i == RDB2_POSDB2 ||
-				  i == RDB2_INDEXDB2 ||
 				  i == RDB2_TFNDB2 ||
 				  i == RDB2_CLUSTERDB2 ||
 				  i == RDB2_LINKDB2 ||

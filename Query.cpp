@@ -17,6 +17,7 @@
 #include "HashTableX.h"
 #include "Synonyms.h"
 #include "Wiki.h"
+#include "RdbList.h"
 
 Query::Query ( ) {
 	constructor();

@@ -5,8 +5,10 @@
 #include "Threads.h"
 #include "TopTree.h"
 #include "UdpServer.h"
-//#include "CollectionRec.h"
 #include "SearchInput.h"
+#include "RdbList.h"
+#include "Msg5.h"
+
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

@@ -4,7 +4,6 @@
 
 #include "hash.h"
 #include "XmlDoc.h"
-#include "Indexdb.h"   // for TERMID_MASK definition and g_indexdb.getTermId()
 #include "Conf.h"
 #include "Query.h"     // getFieldCode()
 #include "Clusterdb.h" // g_clusterdb
@@ -13994,33 +13993,6 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 
 		// close it up
 		sb->safePrintf("</tr>\n");
-
-		/*
-		// hash the data into a int32_t for hash table
-		char *ns = "no";
-		if ( noSplit ) ns = "yes";
-		char *del = "";
-		if ( neg ) del = " (delete)";
-
-		if ( ks==12 ) {
-			key_t *k2 = (key_t *)k;
-			int64_t tid = g_indexdb.getTermId(k2);
-			uint8_t score8 = g_indexdb.getScore ( *k2 );
-			uint32_t score32 = score8to32 ( score8 );
-			log("build: key #%"INT32" rdb=%s ks=%"INT32" ds=%"INT32" "
-			    "tid=%"UINT64" score8=%"UINT32" score32=%"UINT32" nosplit=%s%s",
-			    count,getDbnameFromId(rdbId),(int32_t)ks,
-			    (int32_t)dataSize,tid ,(int32_t)score8,(int32_t)score32,
-			    ns,del);
-		}
-		else {
-			log("build: key #%"INT32" rdb=%s ks=%"INT32" ds=%"INT32" "
-			    "nosplit=%s%s",
-			    count,getDbnameFromId(rdbId),(int32_t)ks,
-			    (int32_t)dataSize,ns,del);
-		}
-		*/
-
 	}
 	sb->safePrintf("</table>\n");
 
@@ -14233,8 +14205,6 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 			key144_t *k2 = (key144_t *)k;
 			int64_t tid = g_posdb.getTermId(k2);
 			char shardByTermId = g_posdb.isShardedByTermId(k2);
-			//uint8_t score8 = g_indexdb.getScore ( *k2 );
-			//uint32_t score32 = score8to32 ( score8 );
 			log("build: missing key #%"INT32" rdb=%s ks=%"INT32" ds=%"INT32" "
 			    "tid=%"UINT64" "
 			    "key=%s "
@@ -14250,9 +14220,6 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 
 			// shortcut
 			HashTableX *wt = m_wts;
-
-			// point to keys, termids?
-			//TermInfo **tp = (TermInfo **)wt->m_keys;
 
 			// now print the table we stored all we hashed into
 			for ( int32_t i = 0 ; i < wt->m_numSlots ; i++ ) {
@@ -17640,35 +17607,6 @@ bool XmlDoc::addTable144 ( HashTableX *tt1 , int64_t docId , SafeBuf *buf ) {
 		*p++ = rdbId; // (rdbId | f);
 		// store it as is
 		gbmemcpy ( p , kp , sizeof(key144_t) );
-		// sanity check
-		//int64_t final = hash64n("products.offerprice",0);
-		//int64_t prefix = hash64n("gbsortby",0);
-		//int64_t h64 = hash64 ( final , prefix);
-		//h64 &= TERMID_MASK;
-		//if ( g_posdb.getTermId(kp) == h64 ) {
-		//	log("hey: docid=%"INT64" float=%f",m_docId,
-		//	    g_posdb.getFloat(kp) );
-		//}
-		/*
-		// get the score
-		int32_t score = tt1->getScoreFromSlot ( i ) ;
-		// set the M-bits to the score. used to accumulate link texts
-		// that are the same so pages like google.com do not have
-		// the word 'google' like 1 million times. this should reduce
-		// our "score" logarithmacly into the 7-bits or whatever.
-		//
-		// NO! now we just always increment the distance cursor
-		// m_dist so there will never be a collision of any posdb
-		// key we add... so we think
-		if ( score ) {
-			int32_t newScore = score;
-			if ( score >= 65 ) newScore = 65 +(score/100);
-			//if ( score >= 65+3200) newScore = 65 +(score/100);
-			if ( newScore > MAXMULTIPLIER )
-				newScore = MAXMULTIPLIER;
-			g_posdb.setMultiplierBits(m_p,(unsigned char)newScore);
-		}
-		*/
 		// this was zero when we added these keys to zero, so fix it
 		g_posdb.setDocIdBits ( p , docId );
 		// if this is a numeric field we do not want to set
@@ -24013,34 +23951,6 @@ void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 
 	if ( *retww > 1.0 ) { char *xx=NULL;*xx=0; }
 
-	/*
-	if ( phrcountMax >= 0 ) {
-		int64_t sh = getPrefixHash ( (char *)NULL , 0 , NULL , 0 );
-		int64_t tid = g_indexdb.getTermId ( sh , wid1 );
-		logf(LOG_DEBUG,"build: phrcountMax=%"INT32" wrdCount1=%"INT32" "
-		     "*ww=%.4f for word with tid=%"UINT64"",
-		     phrcountMax,wrdcount1,(float)*ww,tid);
-		//if ( phrcountMax < 10 && tid == 16944700235015LL )
-		//	log("hey");
-	}
-	*/
-
-	// sanity check
-	//if ( *ww == 0.0 ) { char *xx = NULL; *xx = 0; }
-
-	/*
-	// scale wrdcountMin/phrcount down for the g_ptab table
-	if ( wrdcountMin > 29 ) {
-		float ratio = (float)phrcount2 / (float)wrdcountMin;
-		phrcount2   = (int32_t)((29.0 * ratio) + 0.5);
-		wrdcountMin = 29;
-	}
-	if ( phrcount2 > 29 ) {
-		float ratio = (float)wrdcountMin / (float)phrcount2;
-		wrdcountMin = (int32_t)((29.0 * ratio) + 0.5);
-		phrcount2   = 29;
-	}
-	*/
 	// . if the word is Mexico in 'New Mexico good times' then
 	//   phrase term #i which is, say, "Mexico good" needs to
 	//   get the min word count when doings its word to phrase
@@ -24061,12 +23971,6 @@ void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 	//   the phrase.  -- MDW
 	//*retpw = 1.0;
 	return;
-
-	// do it the old way...
-	//*pw = g_ptab[wrdcountMin][phrcount2];
-
-	// sanity check
-	//if ( *pw == 0.0 ) { char *xx = NULL; *xx = 0; }
 }
 
 // for registerSleepCallback

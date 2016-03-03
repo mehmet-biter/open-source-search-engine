@@ -5,6 +5,7 @@
 
 #include "Query.h"
 #include "Msg0.h"
+#include "Msg5.h"
 
 /** define the max # of lists you can get as the max # of query terms for now */
 //#define MAX_NUM_LISTS MAX_QUERY_TERMS

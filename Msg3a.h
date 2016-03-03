@@ -10,6 +10,8 @@
 
 void setTermFreqWeights ( collnum_t collnum, class Query *q );
 
+#define MAX_SHARDS 1024
+
 // ALWAYS get at least 20 docids so we can do better ranking
 #define MIN_DOCS_TO_GET 20
 

@@ -2,8 +2,8 @@
 
 #include "Conf.h"
 #include "Parms.h"
-#include "Indexdb.h"
 #include "Proxy.h"
+#include "Msg3a.h" // MAX_SHARDS
 
 Conf g_conf;
 

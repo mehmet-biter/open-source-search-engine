@@ -9,7 +9,6 @@
 #include "Tagdb.h"        // g_tagdb
 #include "Collectiondb.h"
 #include "HttpMime.h"      // atotime()
-#include "Indexdb.h" // for MIN_TRUNC
 #include "SearchInput.h"
 #include "Unicode.h"
 #include "Threads.h"
@@ -34,7 +33,6 @@ Parms g_parms;
 
 #include "Spider.h"
 #include "Tagdb.h"
-#include "Indexdb.h"
 #include "Clusterdb.h"
 #include "Collectiondb.h"
 

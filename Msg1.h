@@ -19,9 +19,6 @@
 #include "Multicast.h"
 #include "Msg0.h"                         // for getRdb(char rdbId)
 #include "Titledb.h"
-//#include "Tfndb.h"
-#include "Indexdb.h"
-//#include "Spider.h"
 #include "Clusterdb.h"
 #include "Linkdb.h"
 #include "Tagdb.h"

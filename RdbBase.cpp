@@ -1352,21 +1352,6 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		return false;
 	}
 
-	// or if in repair mode, do not mess with any files in any coll
-	// unless they are secondary rdbs... allow tagdb to merge, too.
-	// secondary rdbs are like g_indexdb2, and should be merge. usually
-	// when adding to g_indexdb, it is in a different collection for a 
-	// full rebuild and we are not actively searching it so it doesn't
-	// need to be merged.
-	/*
-	if ( g_repair.isRepairActive() && 
-	     //! g_conf.m_fullRebuild &&
-	     //! g_conf.m_removeBadPages &&
-	     ! isSecondaryRdb ( (uint8_t)rdbId ) && 
-	     rdbId != RDB_TAGDB )
-		return;
-	*/
-
 	// if a dump is happening it will always be the last file, do not
 	// include it in the merge
 	int32_t numFiles = m_numFiles;
@@ -1415,18 +1400,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	// set the max files to merge in a single merge operation
 	m_absMaxFiles = -1;
 	m_absMaxFiles = 50;
-	/*
-	if ( cr && m_rdb == g_indexdb.getRdb() ) {
-		m_absMaxFiles = cr->m_indexdbMinTotalFilesToMerge;
-		// watch out for bad values
-		if ( m_absMaxFiles < 2 ) m_absMaxFiles = 2;
-	}
-	if ( cr && m_rdb == g_datedb.getRdb() ) {
-		m_absMaxFiles = cr->m_indexdbMinTotalFilesToMerge;
-		// watch out for bad values
-		if ( m_absMaxFiles < 2 ) m_absMaxFiles = 2;
-	}
-	*/
+
 	// m_minToMerge is -1 if we should let cr override but if m_minToMerge
 	// is actually valid at this point, use it as is, therefore, just set
 	// cr to NULL
@@ -1471,28 +1445,6 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		m_minToMerge = cr->m_tagdbMinFilesToMerge;
 		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: tagdb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
 	}
-
-	// if we are reblancing this coll then keep merges tight so all
-	// the negative recs annihilate with the positive recs to free
-	// up disk space since we could be short on disk space.
-	//if ( g_rebalance.m_isScanning &&
-	//     // if might have moved on if not able to merge because
-	//     // another was merging... so do this anyway...
-	//     g_rebalance.m_collnum == m_collnum )
-	//	m_minToMerge = 2;
-	
-
-	// secondary rdbs are used for rebuilding, so keep their limits high
-	//if ( m_rdb == g_indexdb2.getRdb    () ) m_minToMerge = 50;
-	// TODO: make this 200!!!
-	//if ( m_rdb == g_posdb2.getRdb    () ) m_minToMerge = 10;
-	//if ( m_rdb == g_spiderdb2.getRdb   () )	m_minToMerge = 20;
-	//if ( m_rdb == g_sectiondb2.getRdb  () )	m_minToMerge = 200;
-	//if ( m_rdb == g_clusterdb2.getRdb  () )	m_minToMerge = 20;
-	//if ( m_rdb == g_datedb2.getRdb     () )	m_minToMerge = 20;
-	//if ( m_rdb == g_tfndb2.getRdb      () )	m_minToMerge = 2;
-	//if ( m_rdb == g_tagdb2.getRdb     () )	m_minToMerge = 20;
-	//if ( m_rdb == g_statsdb2.getRdb    () ) m_minToMerge = 20;
 
 	// always obey the override
 	if ( minToMergeOverride >= 2 ) {
@@ -1547,12 +1499,6 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	// if we are tfndb and someone else is merging, do not merge unless
 	// we have 3 or more files
 	int32_t minToMerge = m_minToMerge;
-	//if (g_tfndb.getRdb()==m_rdb&& g_merge.isMerging() && minToMerge <=2 )
-	//	minToMerge = 3;
-	// do not start a tfndb merge while someone is dumping because the
-	// dump starves the tfndb merge and we clog up adding links. i think
-	// this is mainly just indexdb dumps, but we'll see.
-	//if(g_tfndb.getRdb() == m_rdb && g_indexdb.m_rdb.isDumping() ) return;
 
 	// are we resuming a killed merge?
 	bool resuming = false;

@@ -9,7 +9,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include "sort.h"
-#include "Rdb.h" // RDB_INDEXDB,...
+#include "Rdb.h"
 #include "Posdb.h"
 #include "Titledb.h"
 #include "Spider.h"

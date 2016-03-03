@@ -1,7 +1,6 @@
 #include "gb-include.h"
 
 #include "PageRoot.h"
-#include "Indexdb.h"     // makeKey(int64_t docId)
 #include "Titledb.h"
 #include "Spider.h"
 #include "Tagdb.h"

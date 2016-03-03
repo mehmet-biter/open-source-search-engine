@@ -55,7 +55,6 @@
 
 #include "Rdb.h"
 #include "Conf.h"
-//#include "Indexdb.h"
 #include "Titledb.h" // DOCID_MASK
 #include "HashTableX.h"
 #include "Sections.h"
@@ -98,6 +97,8 @@ float getTermFreqWeight  ( int64_t termFreq , int64_t numDocsInColl );
 #define SITERANKMULTIPLIER 0.33333333
 
 #define POSDBKEY key144_t
+
+#define TERMID_MASK (0x0000ffffffffffffLL)
 
 #define BF_HALFSTOPWIKIBIGRAM 0x01  // "to be" in "to be or not to be"
 #define BF_PIPED              0x02  // before a query pipe operator

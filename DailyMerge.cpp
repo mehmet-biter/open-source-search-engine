@@ -247,13 +247,9 @@ void DailyMerge::dailyMergeLoop ( ) {
 		// tell it to save, otherwise this might not get saved
 		m_cr->m_needsSave = true;
 		// initiate dumps
-		g_indexdb.getRdb  ()->dumpTree(1); // niceness = 1
-		//g_datedb.getRdb   ()->dumpTree(1); // niceness = 1
 		g_spiderdb.getRdb ()->dumpTree(1); // niceness = 1
 		g_linkdb.getRdb   ()->dumpTree(1); // niceness = 1
 		// if neither has recs in tree, go to next mode
-		if(g_indexdb .getRdb()->getNumUsedNodes()>0) return;
-		//if(g_datedb  .getRdb()->getNumUsedNodes()>0) return;
 		if(g_spiderdb.getRdb()->getNumUsedNodes()>0) return;
 		if(g_linkdb  .getRdb()->getNumUsedNodes()>0) return;
 		// ok, all trees are clear and dumped
@@ -265,22 +261,8 @@ void DailyMerge::dailyMergeLoop ( ) {
 	// start the merge
 	if ( m_mergeMode == 5 ) {
 		// kick off the merges if not already going
-		//g_indexdb.getRdb()->attemptMerge(1,true,false);
-		//g_datedb .getRdb()->attemptMerge(1,true,false);
 		// if has more than one file, bail on it
 		RdbBase *base;
-
-		base = g_indexdb .getRdb()->getBase(m_cr->m_collnum);
-		// . niceness,forced?,doLog?,minFilesToMerge
-		// . only does a merge if there are 2 or more "big" indexdb 
-		//   files present. Merges so that there are LESS THAN 2 files.
-		//   just another way of describing a tight merge.
-		base->attemptMerge (1,true,false,2);
-		if ( base->getNumFiles() >= 2 ) return;
-
-		//base = g_datedb  .getRdb()->getBase(m_cr->m_collnum);
-		//base->attemptMerge (1,true,false,2);
-		//if ( base->getNumFiles() >= 2 ) return;
 
 		base = g_spiderdb.getRdb()->getBase(m_cr->m_collnum);
 		base->attemptMerge (1,true,false,2);

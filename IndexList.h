@@ -25,9 +25,7 @@
 #define _INDEXLIST_H_
 
 #include "RdbList.h"
-//#include "SiteRec.h"
-//#include "TermTable.h" // for setting from TitleRec/SiteRec
-#include "Indexdb.h"   // g_indexdb.makeKey()
+#include "Titledb.h"
 
 class IndexList : public RdbList {
 

@@ -3,14 +3,10 @@
 #include "Msg5.h"
 #include "RdbBase.h"
 #include "Rdb.h"
-//#include "Indexdb.h"
 #include "Stats.h"
-//#include "RdbCache.h"
 #include "Threads.h"
 #include "Msg0.h"
 #include "PingServer.h"
-//#include "Indexdb.h"  // g_indexdb.getTruncationLimit()
-//#include "CollectionRec.h"
 
 //#define GBSANITYCHECK
 
@@ -220,22 +216,6 @@ bool Msg5::getList ( char     rdbId         ,
 	log("msg5: ek=%s", KEYSTR(m_endKey,m_ks));
 #endif
 
-
-	/*
-	if ( rdbId == RDB_INDEXDB ) {
-		CollectionRec *cr = g_collectiondb.getRec ( m_coll );
-		if ( ! cr ) { log("disk: Msg5 no coll rec."); return true; }
-		//m_indexdbTruncationLimit = cr->m_indexdbTruncationLimit;
-		// debug
-		//log("trunc limit = %"INT32"",m_indexdbTruncationLimit);
-		// Parms.cpp should never let this happen...
-		if ( m_indexdbTruncationLimit < MIN_TRUNC ) {
-			log("disk: trunc limit = %"INT32"",
-			    m_indexdbTruncationLimit);
-			char *xx = NULL; *xx = 0; 
-		}
-	}
-	*/
 
 	// debug msg and stuff
 	//m_startKey.n1 = 1616550649;
@@ -627,51 +607,9 @@ bool Msg5::needsRecall ( ) {
 	//if ( m_list->getEndKey() >= m_endKey ) goto done;
 	if ( KEYCMP(m_list->getEndKey(),m_endKey,m_ks)>=0 ) goto done;
 
-	// if this is NOT the first round and the sum of all our list sizes
-	// did not increase, then we hit the end...
-	//
-	// i think this is sometimes stopping us short. we need to verify
-	// that each list (from tree and files) is exhausted... which
-	// the statement above does... !!! it was causing us to miss urls
-	// in doledb and think a collection was done spidering. i think
-	// maybe because the startkey of each list would change since we
-	// merge them and accumulate into m_list. a better way would be
-	// to make sure doledb or any rdb dumps and tight merges when
-	// we start having a lot of key annihilations.
-	/*
-	if ( m_round >= 1 && m_totalSize == m_lastTotalSize ) {
-		log("msg5: increasing minrecsizes did nothing. assuming done. "
-		    "db=%s (newsize=%"INT32" origsize=%"INT32" total "
-		    "got %"INT32" totalListSizes=%"INT32" sk=%s) "
-		    "cn=%"INT32" this=0x%"XINT32" round=%"INT32".", 
-		    base->m_dbname , 
-		    m_newMinRecSizes,
-		    m_minRecSizes, 
-		    m_list->m_listSize,
-		    m_totalSize,
-		    KEYSTR(m_startKey,m_ks),
-		    (int32_t)m_collnum,(int32_t)this, m_round );
-		goto done;
-	}
-	*/
 	// ok, make sure if we go another round at least one list gains!
 	m_lastTotalSize = m_totalSize;
 
-	/*
-	// sanity check
-	if ( m_indexdbTruncationLimit < MIN_TRUNC ) {
-		log("disk: trunc limit2 = %"INT32"", m_indexdbTruncationLimit);
-		char *xx = NULL; *xx = 0; 
-	}
-	// if we are limited by truncation then we are done
-	if ( base->useHalfKeys() && 
-	     base->m_rdb != g_tfndb.getRdb() &&
-	     //m_prevCount >= g_indexdb.getTruncationLimit() &&
-	     m_prevCount >= m_indexdbTruncationLimit && 
-	     g_indexdb.getTermId(*(key_t *)m_startKey) == 
-	     g_indexdb.getTermId(*(key_t *)m_endKey) )
-		goto done;
-	*/
 	// debug msg
 	//if ( g_conf.m_timingDebugEnabled )
 	// this is kinda important. we have to know if we are abusing
@@ -1359,111 +1297,9 @@ void Msg5::mergeLists_r ( ) {
 	//RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) {
 	//	log("No collection found."); return; }
 
-	/*
-	if ( m_rdbId == RDB_POSDB ) {
-		m_list->posdbMerge_r (  m_listPtrs      ,
-					m_numListPtrs   ,
-					m_startKey      ,
-					m_minEndKey     ,
-					m_minRecSizes   ,
-					m_removeNegRecs ,
-					m_prevKey       ,
-					&m_prevCount    ,
-					&m_dupsRemoved  ,
-					base->m_rdb->m_rdbId ,
-					&m_filtered     ,
-					m_isRealMerge   , // do group mask?
-					m_isRealMerge   , // is real merge?
-					m_niceness      );
-
-	}
-	*/
-
 	int32_t niceness = m_niceness;
 	if ( niceness > 0  ) niceness = 2;
 	if ( m_isRealMerge ) niceness = 1;
-
-	// . all lists must be constrained because indexMerge_r does not check
-	//   merged keys to see if they're in [startKey,endKey]
-	// . RIGHT NOW indexdb is the only one that uses half keys!!
-	// . indexMerge_r() will return false and set g_errno on error
-	// . this is messing up linkdb!!
-	/*
-	if ( base->useHalfKeys() && 
-	     m_rdbId != RDB_POSDB && 
-	     m_rdbId != RDB2_POSDB2 && 
-	     1 == 3 ) {
-		// disable for now!
-		char *xx=NULL;*xx=0; 
-		// always assume to use it
-		bool useBigRootList = true;
-		// must include the first file always
-		if ( m_startFileNum != 0 ) useBigRootList = false;
-		// must be 12 bytes per key
-		if ( m_ks != 12 ) useBigRootList = false;
-		// just indexdb for now, tfndb has special merge rules
-		if ( m_rdbId != RDB_POSDB && m_rdbId != RDB2_POSDB2 ) 
-			useBigRootList = false;
-		// do not do if merging files on disk
-		if ( m_isRealMerge          ) useBigRootList = false;
-		// turn off for now
-		//useBigRootList = false;
-		// do the merge
-		m_list->indexMerge_r (  m_listPtrs      ,
-					m_numListPtrs   ,
-					m_startKey      ,
-					m_minEndKey     ,
-					m_minRecSizes   ,
-					m_removeNegRecs ,
-					m_prevKey       ,
-					&m_prevCount    ,
-					//g_indexdb.getTruncationLimit() ,
-					m_indexdbTruncationLimit ,
-					&m_dupsRemoved  ,
-					//base->m_rdb == g_tfndb.getRdb() ,
-					base->m_rdb->m_rdbId ,
-					&m_filtered     ,
-					m_isRealMerge   , // do group mask?
-					m_isRealMerge   , // is real merge?
-					useBigRootList  ,// useBigRootList?
-					niceness      );
-#ifdef _TESTNEWALGO_
-		// for testing useBigRootList
-		if ( useBigRootList ) {
-			logf(LOG_DEBUG,"db: TRYING bit root list algo.");
-			m_list2.indexMerge_r (  m_listPtrs      ,
-						m_numListPtrs   ,
-						m_startKey      ,
-						m_minEndKey     ,
-						m_minRecSizes   ,
-						m_removeNegRecs ,
-						m_prevKey       ,
-						&m_prevCount    ,
-						m_indexdbTruncationLimit ,
-						&m_dupsRemoved  ,
-						base->m_rdb->m_rdbId ,
-						&m_filtered     ,
-						m_isRealMerge   , //dogrpmask?
-						m_isRealMerge   , 
-						false           );//bigRootList
-			// sanity check
-			int32_t size1 = m_list->m_listSize;
-			int32_t size2 = m_list2.m_listSize;
-			char *list1 = (char *)m_list->m_list;
-			char *list2 = (char *)m_list2.m_list;
-			if ( size1 != size2 ||
-			     memcmp ( list1 , list2 , size1 ) != 0 ) {
-				log("db: Got bad list.");
-				m_list->printList();
-				m_list2.printList();
-				//char *xx = NULL; *xx = 0;
-			}
-		}
-#endif
-	}
-	*/
-
-	//g_conf.m_useThreads = false;
 
 	// . old Msg3 notes:
 	// . otherwise, merge the lists together

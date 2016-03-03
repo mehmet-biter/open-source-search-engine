@@ -4,7 +4,6 @@
 #include "Clusterdb.h"
 #include "Spider.h"
 #include "Rdb.h"
-//#include "Indexdb.h"
 #include "Profiler.h"
 #include "Repair.h"
 
@@ -252,39 +251,7 @@ bool Msg1::sendSomeOfList ( ) {
 	//uint32_t groupId ; 
 	// . use the new Hostdb.h inlined function
 	uint32_t shardNum = getShardNum ( m_rdbId , firstKey );
-	// . default is to use top bits of the key
-	// . but if we're adding to titledb use last bits in the top of key
-	// . but if we're adding to spiderdb we use the last int32_t in the key
-	// . tfndb urlRec key same as titleRec key
-	/*
-	if      ( m_rdbId == RDB_INDEXDB )
-		groupId = g_indexdb.getGroupIdFromKey((key_t *)firstKey);
-	else if ( m_rdbId == RDB_DATEDB )
-		groupId = g_datedb.getGroupIdFromKey((key128_t *)firstKey);
-	else if ( m_rdbId == RDB_TITLEDB)
-		groupId = g_titledb.getGroupIdFromKey((key_t *)firstKey);
-	else if ( m_rdbId == RDB_SPIDERDB )
-		groupId = g_spiderdb.getGroupId ( (key_t *)firstKey );
-	else if ( m_rdbId == RDB_TFNDB )
-		groupId = g_tfndb.getGroupId    ( (key_t *)firstKey );
-	else if ( m_rdbId == RDB_CLUSTERDB )
-		groupId = g_clusterdb.getGroupIdFromKey((key_t *)firstKey);
 
-	else if ( m_rdbId == RDB2_INDEXDB2 )
-		groupId = g_indexdb.getGroupIdFromKey((key_t *)firstKey);
-	else if ( m_rdbId == RDB2_DATEDB2 )
-		groupId = g_datedb.getGroupIdFromKey((key128_t *)firstKey);
-	else if ( m_rdbId == RDB2_TITLEDB2)
-		groupId = g_titledb.getGroupIdFromKey((key_t *)firstKey);
-	else if ( m_rdbId == RDB2_SPIDERDB2 )
-		groupId = g_spiderdb.getGroupId ( (key_t *)firstKey );
-	else if ( m_rdbId == RDB2_TFNDB2 )
-		groupId = g_tfndb.getGroupId    ( (key_t *)firstKey );
-	else if ( m_rdbId == RDB2_CLUSTERDB2 )
-		groupId = g_clusterdb.getGroupIdFromKey((key_t *)firstKey);
-	//else    groupId=firstKey.n1 & g_hostdb.m_groupMask;
-	else    groupId = (((key_t *)firstKey)->n1) & g_hostdb.m_groupMask;
-	*/
 	// point to start of data we're going to send
 	char *dataStart = m_list->getListPtr();
 	// how many records belong to the same group as "firstKey"
@@ -308,38 +275,7 @@ bool Msg1::sendSomeOfList ( ) {
 		// . tfndb now is like titledb(top 32 bits are top 32 of docId)
 		//if ( getGroupId(m_rdbId,key) != groupId ) goto done;
 		if ( getShardNum(m_rdbId,key) != shardNum ) goto done;
-		/*
-		switch ( m_rdbId ) {
-		case RDB_TITLEDB: 
-			if(g_titledb.getGroupIdFromKey((key_t *)key)!=groupId) 
-			goto done;
-			break;
-		case RDB_SPIDERDB: 
-			if ( g_spiderdb.getGroupId ((key_t *)key) != groupId) 
-			goto done;
-			break;
-		case RDB_TFNDB:	
-			if ( g_tfndb.getGroupId    ((key_t *)key) != groupId) 
-			goto done;
-			break;
-		case RDB_CLUSTERDB:
-		      if(g_clusterdb.getGroupIdFromKey((key_t *)key)!=groupId) 
-			goto done;
-			break;
-		case RDB_DATEDB:
-		       if(g_datedb.getGroupIdFromKey((key128_t *)key)!=groupId)
-			goto done;
-			break;
-		case RDB_INDEXDB:
-		       if(g_indexdb.getGroupIdFromKey((key_t *)key)!=groupId)
-			goto done;
-			break;
-		//default:if ((key.n1&g_hostdb.m_groupMask)  != groupId) 
-		default:  if ( ((((key_t *)key)->n1) & g_hostdb.m_groupMask) !=
-			       groupId) 
-			goto done;
-		}
-		*/
+
 		// . break so we don't send more than MAX_DGRAMS defined in 
 		//   UdpServer.cpp.
 		// . let's boost it from 16k to 64k for speed

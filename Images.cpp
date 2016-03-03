@@ -401,14 +401,7 @@ bool Images::launchRequests ( ) {
 		key144_t endKey   ;
 		g_posdb.makeStartKey(&startKey,m_termIds[i]);
 		g_posdb.makeEndKey  (&endKey  ,m_termIds[i]);
-		// get our residing groupid
-		//uint32_t gid = g_indexdb.getNoSplitGroupId(&startKey);
-		// no split is true for this one, so we do not split by docid
-		//uint32_t gid = getGroupId(RDB_INDEXDB,&startKey,false);
 		uint32_t shardNum;
-		//shardNum = getShardNum(RDB_POSDB,&startKey);
-		//uint32_t getShardNum (char rdbId, void *key );
-		//uint32_t getShardNumFromDocId ( int64_t d ) ;
 		// assume to be for posdb here
 		shardNum = g_hostdb.getShardNumByTermId ( &startKey );
 

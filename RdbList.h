@@ -3,6 +3,8 @@
 #ifndef _RDBLIST_H_
 #define _RDBLIST_H_
 
+#define NUMTERMIDBITS 48
+
 /**
  *
  * Core of the storage, this implements a list of <key><dataSize><data>.
