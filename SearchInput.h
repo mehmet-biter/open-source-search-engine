@@ -126,6 +126,8 @@ public:
 	int32_t   m_imgWidth;
 	int32_t   m_imgHeight;
 
+	int32_t m_titleMaxLen;
+
 	// for limiting results by score in the widget
 	double    m_maxSerpScore;
 	int64_t m_minSerpDocId;

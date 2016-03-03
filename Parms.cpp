@@ -4499,6 +4499,19 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
+    m->m_title = "max title len";
+	m->m_desc  = "What is the maximum number of "
+			"characters allowed in titles displayed in the search "
+			"results?";
+	m->m_cgi   = "tml";
+	m->m_defOff= (char *)&cr.m_titleMaxLen - x;
+	m->m_off   = (char *)&si.m_titleMaxLen - y;
+	m->m_type  = TYPE_LONG;
+	m->m_flags = PF_API;
+	m->m_page  = PAGE_RESULTS;
+	m->m_obj   = OBJ_SI;
+	m++;
+
 	m->m_title = "number of summary excerpts";
 	m->m_desc  = "How many summary excerpts to display per search result?";
 	m->m_cgi   = "ns";
