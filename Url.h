@@ -3,8 +3,8 @@
 // . a class for parsing urls
 // . used by many other classes
 
-#ifndef  URL_H
-#define  URL_H
+#ifndef URL_H
+#define URL_H
 
 #define MAX_URL_LEN 1024
 
@@ -12,7 +12,6 @@
 #define MAX_COLL_LEN  64
 
 #include "ip.h"      // atoip ( s,len)
-#include "SafeBuf.h"
 #include <cstddef>
 
 char *getPathFast  ( char *url );
@@ -73,7 +72,6 @@ public:
 		      bool stripSessionIds, bool stripPound,
 		      bool stripCommonFile, bool stripTrackingParams,
 		      int32_t titleRecVersion);
-	void setIp  ( int32_t ip ) { m_ip = ip; };
 
 	char isSessionId ( char *hh, int32_t titleRecVersion ) ;
 
@@ -87,11 +85,7 @@ public:
 	// is the url's hostname actually in ip in disguise ("a.b.c.d")
 	bool isIp   (); 
 
-	// is the hostname an ip #?
-	bool hasIp               () { return m_ip; }; // ip of 0 means none
 	bool isRoot              ();
-	// a super root url is a root url where the hostname is NULL or "www"
-	bool isSuperRoot         (); 
 	bool isCgi               () { return m_query ; };
 
 	//returns True if the extension is in the list of 
@@ -99,23 +93,17 @@ public:
 	bool hasNonIndexableExtension(int32_t xxx);
 	bool isDomainUnwantedForIndexing();
 	bool isPathUnwantedForIndexing();
-	
-	bool isSet()            { return m_ulen != 0; }
 
 	// is it http://rpc.weblogs.com/shortChanges.xml, etc.?
 	bool isPingServer ( ) ;
-
-	void setPort             (uint16_t port ) { m_port = port; };
 
 	int32_t getSubUrlLen        (int32_t i);
 	int32_t getSubPathLen       (int32_t i);
 
 	int32_t getPort             () { return m_port;};
 	int32_t getIp               () { return m_ip; };
-	int32_t getIpDomain         () { return ipdom(m_ip); };
 
 	char *getUrl         () { return m_url;};
-	char *getUrlEnd      () { return m_url + m_ulen;};
 	char *getScheme      () { return m_scheme;};
 	char *getHost        () { return m_host;};
 	char *getDomain      () { return m_domain;};
@@ -125,9 +113,7 @@ public:
 	char *getFilename    () { return m_filename;};
 	char *getExtension   () { return m_extension;};
 	char *getQuery       () { return m_query;};
-	char *getIpString    () { return iptoa ( m_ip ); };
-	char *getAnchor      () { return m_anchor;};
-	char *getPortStr     () { return m_portStr; }
+
 	int32_t  getUrlLen         () { return m_ulen;};
 	int32_t  getSchemeLen      () { return m_slen;};
 	int32_t  getHostLen        () { return m_hlen;};
@@ -140,11 +126,14 @@ public:
 	int32_t  getTLDLen         () { return m_tldLen; };
 	int32_t  getMidDomainLen   () { return m_mdlen;};
 	int32_t  getPortLen        () { return m_portLen;};
-	int32_t  getAnchorLen      () { return m_anchorLen;};
-	int32_t  getDefaultPort    () { return m_defPort;};
-	//int32_t  getSiteLen         () {return m_siteLen;};
+
 	int32_t  getPathLenWithCgi () {
-		if ( ! m_query ) return m_plen;	return m_plen + 1 + m_qlen; };
+		if ( ! m_query )
+			return m_plen;
+
+		return m_plen + 1 + m_qlen;
+	}
+
 	bool  isHttp            () { 
 		if ( m_ulen  < 4 ) return false;
 		if ( m_slen != 4 ) return false;
@@ -153,7 +142,8 @@ public:
 		if ( m_scheme[2] != 't' ) return false;
 		if ( m_scheme[3] != 'p' ) return false;
 		return true;
-	};
+	}
+
 	bool  isHttps           () { 
 		if ( m_ulen  < 5 ) return false;
 		if ( m_slen != 5 ) return false;
@@ -163,7 +153,7 @@ public:
 		if ( m_scheme[3] != 'p' ) return false;
 		if ( m_scheme[4] != 's' ) return false;
 		return true;
-	};
+	}
 
 	// used by buzz i guess
 	int32_t      getUrlHash32    ( ) ;
@@ -178,26 +168,16 @@ public:
 	int64_t getDomainHash64   ( ) ;
 
 	int64_t getUrlHash48    ( ) {
-		return getUrlHash64() & 0x0000ffffffffffffLL; }
+		return getUrlHash64() & 0x0000ffffffffffffLL;
+	}
 
 	bool hasMediaExtension();
 	bool hasScriptExtension();
 	bool hasXmlExtension();
 	bool hasJsonExtension();
 
-	
-	// . store url w/o http://
-	// . without trailing / if path is just "/"
-	// . without "www." if in hostname and "rmWWW" is true
-	// . returns length
-	// . if "buf" is NULL just returns the shorthand-form length
-	char *getShorthandUrl    ( bool rmWWW , int32_t *len );
-
 	// count the path components (root url as 0 path components)
 	int32_t  getPathDepth ( bool countFilename ); // = false );
-
-	// get path component #num. starts at 0.
-	char *getPathComponent ( int32_t num , int32_t *clen );
 
 	// is our hostname "www" ?
 	bool isHostWWW ( ) ;
@@ -207,15 +187,11 @@ public:
 	// is it xxx.com/* or www.xxx.com/* (CAUTION: www.xxx.yyy.com)
 	bool isSimpleSubdomain();
 
-	// spam means dirty/porn
-	bool isDirty () { return isSpam(); };
-
 	// is the url a porn/spam url?
 	bool isSpam();
 
 	// this is private
 	bool isSpam ( char *s , int32_t slen ) ;
-
 
 	// . detects crazy repetetive urls like this:
 	//   http://www.pittsburghlive.com:8000/x/tribune-review/opinion/
@@ -275,7 +251,6 @@ private:
 	int32_t    m_port;             
 	int32_t    m_defPort;
 	int32_t    m_portLen;
-	char   *m_portStr;
 
 	// anchor
 	char   *m_anchor;

@@ -734,7 +734,6 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 	if ( m_slen==3 && strncmp(m_scheme, "ftp"  ,3)==0 ) m_defPort =  21;
 	// assume we're using the default port for this scheme/protocol
 	m_port = m_defPort;
-	m_portStr = NULL;
 	// see if a port was provided in the hostname after a colon
 	if ( s[i] == ':' ) { 
 		// remember the ptr so far
@@ -745,7 +744,6 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 		j = i + 1;
 		while ( s[j] && s[j]!='/') m_url[m_ulen++] = s[j++];
 		// now read our port
-		m_portStr = s + i; // str includes ':'
 		m_port = atol2 ( s + (i + 1) , j - (i + 1) );
 		// if it's the default port, then remove what we copied
 		if ( m_port == m_defPort ) m_ulen = savedLen;
@@ -913,17 +911,6 @@ bool Url::isRoot() {
 	return true;
 }
 
-// a super root url is a root url where the hostname is NULL or "www"
-bool Url::isSuperRoot () {
-	if ( ! isRoot() ) return false;
-	// if hostname is same as domain, it's a super root
-	if ( m_host == m_domain && m_hlen == m_dlen ) return true;
-	// if host is not "www." followed by domain, it's NOT a super root
-	if ( m_hlen != m_dlen + 4 ) return false;
-	if ( strncmp ( m_host , "www." , 4 ) == 0 ) return true;
-	return false;
-}
-
 bool Url::isSimpleSubdomain ( ) {
 	// if hostname is same as domain, it's passes
 	if ( m_host == m_domain && m_hlen == m_dlen ) return true;
@@ -1014,30 +1001,6 @@ void print_string ( char *s , int32_t len ) {
 	while ( i < len ) printf("%c",s[i++]);
 }
 
-// . return url w/o http://
-// . without trailing / if path is just "/"
-// . without "www." if in hostname and "rmWWW" is true
-// . sets *len to it's length
-char *Url::getShorthandUrl  ( bool rmWWW , int32_t *len ) {
-	char *u    = m_url;
-	int32_t  ulen = m_ulen;
-	if ( ulen > 7 && strncasecmp ( u , "http://" , 7 ) == 0) { 
-		u    += 7 ; 
-		ulen -= 7 ;
-		// if hostname is just "www" then skip iff rmWWW is true
-		if ( rmWWW && m_hlen >= 4 &&  strncmp(m_host,"www.",4) == 0) { 
-			u    += 4; 
-			ulen -= 4; 
-		}
-	}
-	// skip trailing /
-	if ( m_plen == 1 && m_path[0]=='/'  && m_query == NULL ) ulen--;
-	// set the length
-	*len = ulen;
-	// return the url shorthand
-	return u;
-}
-
 int32_t  Url::getPathDepth ( bool countFilename ) {
 	char *s     = m_path + 1;
 	char *send  = m_url + m_ulen;
@@ -1047,34 +1010,6 @@ int32_t  Url::getPathDepth ( bool countFilename ) {
 	if ( countFilename && *(send-1) != '/' ) count++;
 	return count;
 }
-
-char *Url::getPathComponent ( int32_t num , int32_t *clen ) {
-	// start countint at path
-	char *start = m_path;
-	char *p     = m_path;
-	char *pend  = m_path + m_plen;
-	int32_t  count = 0;
-	// loop up here for each component
- loop:
-	// skip the '/'
-	p++;
-	start++;
-	// advance until next / or end
-	while ( p < pend && *p != '/' ) p++;
-	// set length of that
-	if ( clen ) *clen = p - start;
-	// all done?
-	if ( count == num ) return start;
-	// if none, simply does not exist
-	if ( p >= pend ) return NULL;
-	// advance
-	count++;
-	// set start to p now
-	start = p;
-	goto loop;
-}
-
-
 
 bool Url::isHostWWW ( ) {
 	if ( m_hlen < 4 ) return false;
