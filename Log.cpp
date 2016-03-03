@@ -151,8 +151,7 @@ bool Log::shouldLog ( int32_t type , const char *msg ) {
 	}
 
 	if ( type == LOG_INFO ) return g_conf.m_logInfo;
-	// treat INIT as INFO
-	//if ( type == LOG_INIT   && ! g_conf.m_logInfo      ) return true;
+
 	if ( type == LOG_LIMIT  ) return g_conf.m_logLimits;
 	if ( type == LOG_REMIND ) return g_conf.m_logReminders ;
 	if ( type == LOG_TIMING ) {
@@ -183,13 +182,11 @@ bool Log::shouldLog ( int32_t type , const char *msg ) {
 	if (msg[0]=='m'&&msg[2]=='m' ) return g_conf.m_logDebugMem    ;
 	if (msg[0]=='m'&&msg[2]=='r' ) return g_conf.m_logDebugMerge  ;
 	if (msg[0]=='n'&&msg[1]=='e' ) return g_conf.m_logDebugNet    ;
-	if (msg[0]=='p'&&msg[1]=='q' ) return g_conf.m_logDebugPQR    ;
 	if (msg[0]=='q'&&msg[1]=='u'&&msg[2]=='e' ) 
 		return g_conf.m_logDebugQuery  ;
 	if (msg[0]=='q'&&msg[1]=='u'&&msg[2]=='o' ) 
 		return g_conf.m_logDebugQuota  ;
 	if (msg[0]=='r'&&msg[1]=='o' ) return g_conf.m_logDebugRobots ;
-	//if (msg[0]=='s'&&msg[2]=='c' ) return g_conf.m_logDebugSpcache;
 	if (msg[0]=='s'&&msg[1]=='e' ) return g_conf.m_logDebugSEO;
 	if (msg[0]=='s'&&msg[2]=='e' ) return g_conf.m_logDebugSpeller;
 	if (msg[0]=='s'&&msg[2]=='a' ) return g_conf.m_logDebugStats  ;

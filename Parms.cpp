@@ -9885,16 +9885,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "log debug post query rerank messages";
-	m->m_cgi   = "ldpqr";
-	m->m_off   = (char *)&g_conf.m_logDebugPQR - g;
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "log debug query messages";
 	m->m_cgi   = "ldq";
 	m->m_off   = (char *)&g_conf.m_logDebugQuery - g;
