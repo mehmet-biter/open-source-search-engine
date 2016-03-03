@@ -22,23 +22,12 @@
 #include "Url.h"  // MAX_COLL_LEN
 #include "Collectiondb.h"
 
-#define MAX_MASTER_IPS        15
-#define MAX_MASTER_PASSWORDS  5
-
 #define USERAGENTMAXSIZE      128
-
-#define PASSWORD_MAX_LEN      12
-
-#define MAX_CONNECT_IPS       128
-
-#define AUTOBAN_TEXT_SIZE     (32*8192)
 
 #define MAX_DNSIPS            16
 #define MAX_RNSIPS            13
 #define MAX_MX_LEN            128
 #define MAX_EMAIL_LEN         64
-
-#define USERS_TEXT_SIZE       500000
 
 #define MAX_GEOCODERS         4
 
@@ -325,8 +314,6 @@ class Conf {
 	bool   m_syncDoUnion;
 	bool   m_syncDryRun;
 	char   m_syncHostIds [ 256 ]; // restrict syncing to these host ids
-	//int32_t   m_syncReadBufSize;     // limit disk activity for syncing
-	//int32_t   m_syncSeeksPerSecond;  // limit disk activity for syncing
 	int32_t   m_syncBytesPerSecond;  // limit disk activity for syncing
 
 	// if this is true we do not add indexdb keys that *should* already
@@ -481,14 +468,14 @@ class Conf {
 	bool m_generateVectorAtQueryTime;
 
 	char m_redirect[MAX_URL_LEN];
-        char m_useCompressionProxy;
-        char m_gzipDownloads;
+	char m_useCompressionProxy;
+	char m_gzipDownloads;
 
 	// used by proxy to make proxy point to the temp cluster while
 	// the original cluster is updated
-        char m_useTmpCluster;
+	char m_useTmpCluster;
 
-        char m_timeSyncProxy;
+	char m_timeSyncProxy;
 
 	Xml   m_xml;
 	char  m_buf[10*1024];
@@ -498,11 +485,6 @@ class Conf {
 	//   messages are rerouted from this machine to the main
 	//   cluster set in the hosts.conf.
 	bool m_interfaceMachine;
-
-	// after we take the natural log of each query term's DF (doc freq.)
-	// we 
-	float m_queryExp;
-	//char  m_useDynamicPhraseWeighting;
 
 	float m_minPopForSpeller; // 0% to 100%
 
@@ -539,9 +521,6 @@ class Conf {
 	char  m_rebuildSectiondb  ;
 	char  m_rebuildRoots      ;
 	char  m_rebuildNonRoots   ;
-
-	// for caching the qualities of urls (see Msg20.cpp)
-	int32_t  m_maxQualityCacheAge ;
 };
 
 extern class Conf g_conf;

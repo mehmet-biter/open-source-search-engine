@@ -259,22 +259,11 @@ bool Conf::init ( char *dir ) { // , int32_t hostId ) {
 	// and this on
 	g_conf.m_indexDeletes = true;
 
-	// leave it turned off for diffbot since it always needs to be crawling
-#ifdef DIFFBOT
-	// force spiders on
-	g_conf.m_spideringEnabled = true;
-#else
-	// always force off on startup if not diffbot
-	//g_conf.m_spideringEnabled = false;
-#endif
 	// this off
 	g_conf.m_repairingEnabled = false;
-	// make this 1 day for now (in seconds)
-	g_conf.m_maxQualityCacheAge = 3600*24;
+
 	// hack this off until the overrun bug is fixed
 	g_conf.m_datedbMaxCacheMem = 0;
-
-	//g_conf.m_qaBuildMode = true;// false
 
 	// force on for now
 	g_conf.m_useStatsdb = true;
