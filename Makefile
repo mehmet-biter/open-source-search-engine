@@ -67,6 +67,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Punycode.o Version.o \
 	HighFrequencyTermShortcuts.o \
 	IPAddressChecks.o \
+	SummaryCache.o \
 
 # common flags
 DEFS = -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I.

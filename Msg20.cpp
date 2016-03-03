@@ -3,10 +3,15 @@
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
+#include "SummaryCache.h"
 
 static void gotReplyWrapper20 ( void *state , void *state20 ) ;
 static void handleRequest20   ( UdpSlot *slot , int32_t netnice );
 static bool gotReplyWrapperxd ( void *state ) ;
+
+
+static bool sendCachedReply ( Msg20Request *req, const void *cached_summary, size_t cached_summary_len, UdpSlot *slot );
+
 
 Msg20::Msg20 () { constructor(); }
 Msg20::~Msg20() { reset(); }
@@ -356,6 +361,18 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 		return; 
 	}
 
+	int64_t cache_key = req->makeCacheKey();
+	const void *cached_summary;
+	size_t cached_summary_len;
+	if(g_stable_summary_cache.lookup(cache_key, &cached_summary, &cached_summary_len) ||
+	   g_unstable_summary_cache.lookup(cache_key, &cached_summary, &cached_summary_len))
+	{
+		log(LOG_DEBUG, "Summary cache hit");
+		sendCachedReply(req,cached_summary,cached_summary_len,slot);
+		return;
+	} else
+		log(LOG_DEBUG, "Summary cache miss");
+
 	// if it's not stored locally that's an error
 	if ( req->m_docId >= 0 && ! g_titledb.isLocal ( req->m_docId ) ) {
 		log("query: Got msg20 request for non-local docId %"INT64"",
@@ -447,7 +464,7 @@ bool gotReplyWrapperxd ( void *state ) {
 	}
 
 	// error?
-	if ( g_errno ) { xd->m_reply.sendReply ( xd ); return true; }
+	if ( g_errno ) { xd->m_reply.sendReply ( req, xd ); return true; }
 	// this should not block now
 	Msg20Reply *reply = xd->getMsg20Reply ( );
 	// sanity check, should not block here now
@@ -455,7 +472,7 @@ bool gotReplyWrapperxd ( void *state ) {
 	// NULL means error, -1 means blocked. on error g_errno should be set
 	if ( ! reply && ! g_errno ) { char *xx=NULL;*xx=0;}
 	// send it off. will send an error reply if g_errno is set
-	return reply->sendReply ( xd );
+	return reply->sendReply ( req, xd );
 }
 
 Msg20Reply::Msg20Reply ( ) {
@@ -481,7 +498,7 @@ void Msg20Reply::destructor ( ) {
 
 // . return ptr to the buffer we serialize into
 // . return NULL and set g_errno on error
-bool Msg20Reply::sendReply ( XmlDoc *xd ) {
+bool Msg20Reply::sendReply ( Msg20Request *req, XmlDoc *xd ) {
 
 	// get it
 	UdpSlot *slot = (UdpSlot *)xd->m_slot;
@@ -531,6 +548,12 @@ bool Msg20Reply::sendReply ( XmlDoc *xd ) {
 				    color                        );
 	
 	
+	//put the reply into the summary cache
+	if(m_isDisplaySumSetFromTags && !req->m_highlightQueryTerms)
+		g_stable_summary_cache.insert(req->makeCacheKey(), buf, need);
+	else
+		g_unstable_summary_cache.insert(req->makeCacheKey(), buf, need);
+
 	// . del the list at this point, we've copied all the data into reply
 	// . this will free a non-null State20::m_ps (ParseState) for us
 	mdelete ( xd , sizeof(XmlDoc) , "xd20" );
@@ -540,6 +563,23 @@ bool Msg20Reply::sendReply ( XmlDoc *xd ) {
 
 	return true;
 }
+
+
+static bool sendCachedReply ( Msg20Request *req, const void *cached_summary, size_t cached_summary_len, UdpSlot *slot )
+{
+	//copy the cached summary to a new temporary buffer, so that UDPSlot/Server can free it when possible
+	char *buf  = (char *)mmalloc ( cached_summary_len , "Msg20Reply" );
+	if(!buf) {
+		g_udpServer.sendErrorReply ( slot , g_errno ) ;
+		return true;
+	}
+	memcpy(buf,cached_summary,cached_summary_len);
+	
+	g_udpServer.sendReply_ass ( buf , cached_summary_len , NULL , 0 , slot );
+	
+	return true;
+}
+
 
 // . this is destructive on the "buf". it converts offs to ptrs
 // . sets m_r to the modified "buf" when done
@@ -621,6 +661,39 @@ int32_t Msg20Request::deserialize ( ) {
 	// return how many bytes we processed
 	return (int32_t)sizeof(Msg20Request) + (p - m_buf);
 }
+
+
+//make a cache key for a request
+int64_t Msg20Request::makeCacheKey() const
+{
+	SafeBuf hash_buffer;
+	hash_buffer.pushLong(m_version);
+	hash_buffer.pushLong(m_numSummaryLines);
+	hash_buffer.pushLong(m_getHeaderTag);
+	hash_buffer.pushLongLong(m_docId);
+	hash_buffer.pushLong(m_titleMaxLen);
+	hash_buffer.pushLong(m_summaryMaxLen);
+	hash_buffer.pushLong(m_summaryMaxNumCharsPerLine);
+	hash_buffer.pushLong(m_collnum);
+	hash_buffer.pushLong(m_highlightQueryTerms);
+	hash_buffer.pushLong(m_getSummaryVector);
+	hash_buffer.pushLong(m_showBanned);
+	hash_buffer.pushLong(m_includeCachedCopy);
+	hash_buffer.pushLong(m_doLinkSpamCheck);
+	hash_buffer.pushLong(m_isLinkSpam);
+	hash_buffer.pushLong(m_isSiteLinkInfo);
+	hash_buffer.pushLong(m_getLinkInfo);
+	hash_buffer.pushLong(m_onlyNeedGoodInlinks);
+	hash_buffer.pushLong(m_getLinkText);
+	if(m_highlightQueryTerms)
+		hash_buffer.safeMemcpy(ptr_qbuf,size_qbuf);
+	hash_buffer.safeMemcpy(ptr_ubuf,size_ubuf);
+	hash_buffer.safeMemcpy(ptr_linkee,size_linkee);
+	hash_buffer.safeMemcpy(ptr_displayMetas,size_displayMetas);
+	int64_t h = hash64(hash_buffer.getBufStart(), hash_buffer.length());
+	return h;
+}
+
 
 int32_t Msg20Reply::getStoredSize ( ) {
 	int32_t size = (int32_t)sizeof(Msg20Reply);

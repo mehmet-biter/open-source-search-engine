@@ -39,6 +39,7 @@ class Msg20Request {
 	int32_t  getStoredSize ( );
 	char *serialize     ( int32_t *sizePtr );
 	int32_t  deserialize   ( );
+	int64_t makeCacheKey() const;
 
 	char       m_version                   ; // non-zero default
 	char       m_numSummaryLines           ; // non-zero default
@@ -121,7 +122,7 @@ public:
 	int32_t  serialize ( char *buf , int32_t bufSize );
 
 
-	bool  sendReply ( class XmlDoc *xd ) ;
+	bool  sendReply ( Msg20Request *req, class XmlDoc *xd ) ;
 
 	// after calling these, when serialize() is called again it will 
 	// exclude these strings which were "cleared". Used by Msg40 to 

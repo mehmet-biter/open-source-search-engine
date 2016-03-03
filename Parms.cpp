@@ -6408,6 +6408,62 @@ void Parms::init ( ) {
 	m->m_group = 0;
 	m++;
 
+	m->m_title = "stable-summary cache size";
+	m->m_desc  = "How much memory to use for stable summaries, viz. generated from meta tags and the same for all users and queries";
+	m->m_cgi   = "stablesumcachemem";
+	m->m_xml   = "StableSummaryCacheSize";
+	m->m_off   = (char *)&g_conf.m_stableSummaryCacheSize - g;
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_def   = "30000000";
+	m->m_units = "bytes";
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = 0;
+	m++;
+
+	m->m_title = "stable-summary cache max age";
+	m->m_desc  = "How long to cache stable summaries, in milliseconds";
+	m->m_cgi   = "stablesumcacheage";
+	m->m_xml   = "StableSummaryCacheAge";
+	m->m_off   = offsetof(Conf,m_stableSummaryCacheMaxAge);
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_def   = "86400000";
+	m->m_units = "milliseconds";
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = 0;
+	m++;
+
+	m->m_title = "unstable-summary cache size";
+	m->m_desc  = "How much memory to use for stable summaries, viz. generated from content and depends on user and search terms";
+	m->m_cgi   = "unstablesumcachemem";
+	m->m_xml   = "UnstableSummaryCacheSize";
+	m->m_off   = offsetof(Conf,m_unstableSummaryCacheSize);
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_def   = "30000000";
+	m->m_units = "bytes";
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = 0;
+	m++;
+
+	m->m_title = "stable-summary cache max age";
+	m->m_desc  = "How long to cache unstable summaries, in milliseconds";
+	m->m_cgi   = "unstablesumcacheage";
+	m->m_xml   = "UnstableSummaryCacheAge";
+	m->m_off   = offsetof(Conf,m_unstableSummaryCacheMaxAge);
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_def   = "3600000";
+	m->m_units = "milliseconds";
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = 0;
+	m++;
+
 	m->m_title = "scan all if not found";
 	m->m_desc  = "Scan all titledb files if rec not found. You should "
 		"keep this on to avoid corruption. Do not turn it off unless "
@@ -6416,6 +6472,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_scanAllIfNotFound - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
+	m->m_units = "";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;

@@ -45,6 +45,7 @@
 #include "Pos.h"
 #include "Title.h"
 #include "Speller.h"
+#include "SummaryCache.h"
 
 // include all msgs that have request handlers, cuz we register them with g_udp
 #include "Msg0.h"
@@ -2724,6 +2725,9 @@ int main2 ( int argc , char *argv[] ) {
 	//if ( ! g_dnsLocal.init( 0 , false ) ) {
 	//	log("db: Dns local client init failed." ); return 1; }
 
+	g_stable_summary_cache.configure(g_conf.m_stableSummaryCacheMaxAge, g_conf.m_stableSummaryCacheSize);
+	g_unstable_summary_cache.configure(g_conf.m_unstableSummaryCacheMaxAge, g_conf.m_unstableSummaryCacheSize);
+	
 	// . then webserver
 	// . server should listen to a socket and register with g_loop
 	if ( ! g_httpServer.init( h9->m_httpPort, h9->m_httpsPort ) ) {

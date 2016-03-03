@@ -353,6 +353,10 @@ class Conf {
 	int64_t m_clusterdbFileCacheSize;
 	int64_t m_titledbFileCacheSize;
 	int64_t m_spiderdbFileCacheSize;
+	int64_t m_stableSummaryCacheSize;
+	int64_t m_stableSummaryCacheMaxAge;
+	int64_t m_unstableSummaryCacheSize;
+	int64_t m_unstableSummaryCacheMaxAge;
 
 	//bool   m_quickpollCoreOnError;
 	bool   m_useShotgun;
