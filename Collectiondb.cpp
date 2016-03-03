@@ -9,7 +9,6 @@
 #include "SpiderColl.h"
 #include "Doledb.h"
 #include "Posdb.h"
-#include "Datedb.h"
 #include "Titledb.h"
 #include "Tagdb.h"
 #include "Spider.h"
@@ -1419,7 +1418,6 @@ collnum_t Collectiondb::reserveCollNum ( ) {
 #include "HttpServer.h"     // printColors2()
 #include "Msg5.h"
 #include "Threads.h"
-#include "Datedb.h"
 #include "Spider.h"
 #include "Process.h"
 

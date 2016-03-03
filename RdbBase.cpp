@@ -5,7 +5,6 @@
 #include "Hostdb.h"
 #include "Tagdb.h"
 #include "Posdb.h"
-#include "Datedb.h"
 #include "Titledb.h"
 #include "Sections.h"
 #include "Spider.h"

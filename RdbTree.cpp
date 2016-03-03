@@ -7,7 +7,6 @@
 #include "RdbTree.h"
 #include "Loop.h"
 #include "Threads.h"
-#include "Datedb.h"
 #include "Linkdb.h"
 
 RdbTree::RdbTree () {

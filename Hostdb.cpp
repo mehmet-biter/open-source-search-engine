@@ -14,7 +14,6 @@
 #include "Titledb.h"
 #include "Spider.h"
 #include "Clusterdb.h"
-#include "Datedb.h"
 #include "Dns.h"
 
 // a global class extern'd in .h file
@@ -2369,8 +2368,7 @@ uint32_t Hostdb::getShardNum ( char rdbId, const void *k ) {
 		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
 	}
 	else if ( rdbId == RDB_DATEDB || rdbId == RDB2_DATEDB2 ) {
-		uint64_t d = g_datedb.getDocId ( k );
-		return m_map [ ((d>>14)^(d>>7)) & (MAX_KSLOTS-1) ];
+		//not supported anymore
 	}
 	else if ( rdbId == RDB_LINKDB || rdbId == RDB2_LINKDB2 ) {
 		return m_map [(*(uint16_t *)((char *)k + 26))>>3];	

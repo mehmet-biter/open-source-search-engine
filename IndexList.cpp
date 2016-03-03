@@ -2,7 +2,6 @@
 
 #include "IndexList.h"
 #include <math.h>       // log() math functions
-#include "Datedb.h"    // g_datedb
 
 // . clear the low bits on the keys so terms are DELETED
 // . used by Msg14 to delete a document completely from the index

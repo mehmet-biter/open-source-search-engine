@@ -45,7 +45,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Parms.o Pages.o \
 	Unicode.o iana_charset.o \
 	SearchInput.o \
-	SafeBuf.o Datedb.o \
+	SafeBuf.o \
 	UCPropTable.o UnicodeProperties.o \
 	Pops.o Title.o Pos.o \
 	Profiler.o \

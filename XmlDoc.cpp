@@ -13880,27 +13880,6 @@ void XmlDoc::printMetaList ( char *p , char *pend , SafeBuf *sb ) {
 				       //(int32_t)score32
 				       );
 		}
-		else if ( rdbId == RDB_DATEDB ) {
-			// get termid et al
-			key128_t *k2 = (key128_t *)k;
-			int64_t tid = g_datedb.getTermId(k2);
-			// use indexdb's function for this. should be the same
-			uint8_t score8 = g_indexdb.getScore ( (char *)k );
-			int32_t date = g_datedb.getDate ( k2 );
-			uint32_t score32 = score8to32 ( score8 );
-			// sanity check
-			if(dataSize!=0){char*xx=NULL;*xx=0;}
-			sb->safePrintf("<td>"
-				       "termId=%020"UINT64" "
-				       "date=%010"UINT32" "
-				       "score8=%03"UINT32" "
-				       "score32=%010"UINT32""
-				       "</td>",
-				       tid,
-				       date,
-				       (int32_t)score8,
-				       (int32_t)score32);
-		}
 		else if ( rdbId == RDB_LINKDB ) {
 			key224_t *k2 = (key224_t *)k;
 			int64_t linkHash=g_linkdb.getLinkeeUrlHash64_uk(k2);

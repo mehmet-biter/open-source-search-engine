@@ -17,7 +17,6 @@
 #include "Hostdb.h"
 #include "Indexdb.h"
 #include "Posdb.h"
-#include "Datedb.h"
 #include "Titledb.h"
 #include "Tagdb.h"
 #include "Spider.h"
@@ -106,8 +105,6 @@ void dumpPosdb  ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
 static void dumpWaitingTree( char *coll );
 static void dumpDoledb  ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
 
-void dumpDatedb   ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree, 
-		    int64_t termId , bool justVerify ) ;
 void dumpClusterdb       ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree);
 
 //void dumpStatsdb 	 ( int32_t startFileNum, int32_t numFiles, bool includeTree,
@@ -2254,9 +2251,6 @@ int main2 ( int argc , char *argv[] ) {
 				     termId);
 		else if ( argv[cmdarg+1][0] == 'p' )
 			dumpPosdb (coll,startFileNum,numFiles,includeTree,
-				     termId,false);
-		else if ( argv[cmdarg+1][0] == 'd' )
-			dumpDatedb  (coll,startFileNum,numFiles,includeTree,
 				     termId,false);
 #endif
 		/*
@@ -8745,221 +8739,6 @@ void dumpPosdb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTre
 	startKey += (uint32_t) 1;
 	// watch out for wrap around
 	if ( startKey < *(key144_t *)list.getLastKey() ) return;
-	goto loop;
-}
-
-void dumpDatedb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTree, 
-		 int64_t termId , bool justVerify ) {
-	// this is confidential data format
-#ifdef _CLIENT_
-	return;
-#endif
-	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	if ( ! justVerify ) {
-		g_datedb.init ();
-		//g_collectiondb.init(true);
-		g_datedb.getRdb()->addRdbBase1(coll );
-	}
-	char startKey[16];
-	char endKey  [16];
-	int64_t termId1 = 0x0000000000000000LL;
-	int64_t termId2 = 0xffffffffffffffffLL;
-	if ( termId >= 0 ) {
-		termId1 = termId;
-		termId2 = termId;
-	}
-	key128_t kk;
-	kk = g_datedb.makeStartKey ( termId1 , 0xffffffff );
-
-	// tmp hack
-	//kk.n1 = 0x51064d5bdd71bd51LL;
-	//kk.n0 = 0x649ffe3f20f617c6LL;
-
-	KEYSET(startKey,(char *)&kk,16);
-	kk = g_datedb.makeEndKey   ( termId2 , 0x00000000 );
-	KEYSET(endKey,(char *)&kk,16);
-	// get a meg at a time
-	int32_t minRecSizes = 1024*1024;
-
-	// bail if not
-	if ( g_datedb.m_rdb.getNumFiles() <= startFileNum ) {
-		printf("Request file #%"INT32" but there are only %"INT32" "
-		       "datedb files\n",startFileNum,
-		       g_datedb.m_rdb.getNumFiles());
-		//return;
-	}
-	// turn off threads
-	g_threads.disableThreads();
-
-	Msg5 msg5;
-	IndexList list;
-	CollectionRec *cr = g_collectiondb.getRec(coll);
- loop:
-	// use msg5 to get the list, should ALWAYS block since no threads
-	if ( ! msg5.getList ( RDB_DATEDB ,
-			      cr->m_collnum          ,
-			      &list         ,
-			      (char *)&startKey      ,
-			      (char *)&endKey        ,
-			      minRecSizes   ,
-			      includeTree   ,
-			      false         , // add to cache?
-			      0             , // max cache age
-			      startFileNum  ,
-			      numFiles      ,
-			      NULL          , // state
-			      NULL          , // callback
-			      0             , // niceness
-			      false         )){// err correction?
-		g_threads.enableThreads();
-		log(LOG_LOGIC,"db: getList did not block.");
-		return;
-	}
-	// all done if empty
-	if ( list.isEmpty() ) {
-		g_threads.enableThreads();
-		return;
-	}
-	uint8_t a,b;
-	int64_t lattid  = hash64n("gbxlatitude") & TERMID_MASK;
-	int64_t lontid  = hash64n("gbxlongitude")& TERMID_MASK;
-	//int64_t lattid2 = hash64n("gbxlatitudecity") & TERMID_MASK;
-	int64_t lattid2 = hash64n("gbxlatitude2") & TERMID_MASK;
-	//int64_t lontid2 = hash64n("gbxlongitudecity")& TERMID_MASK;
-	int64_t lontid2 = hash64n("gbxlongitude2")& TERMID_MASK;
-	int64_t starttid= hash64n("gbxstart")& TERMID_MASK;
-	int64_t endtid  = hash64n("gbxend")& TERMID_MASK;
-	// sanity check
-	if ( list.m_ks != 16 ) { char *xx = NULL; *xx = 0; }
-	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() && ! justVerify ;
-	      list.skipCurrentRecord() ) {
-		//key_t k    = list.getCurrentKey();
-		uint8_t k[MAX_KEY_BYTES];
-		list.getCurrentKey(k);
-		// is it a delete?
-		char *dd = "";
-		//if ( (k.n0 & 0x01) == 0x00 ) dd = " (delete)";
-		if ( KEYNEG((char *)k) ) dd = " (delete)";
-
-		// get event id range
-		a = 255 - k[7];
-		b = 255 - k[6];
-
-		// hack flag for indexing tag terms (complemented)
-		bool isTagTerm = (k[9] == 0x7f);
-		
-		int64_t tid =(int64_t)list.getTermId16((char *)k);
-
-		// print out for events
-		if ( tid && 
-		     tid != lattid  && 
-		     tid != lontid  &&
-		     tid != lattid2 && 
-		     tid != lontid2 &&
-		     tid != starttid &&
-		     tid != endtid ) {
-			char *ss = "";
-			if ( isTagTerm ) ss = " tagterm";
-			printf("k.n1=%016"XINT64" k.n0=%016"XINT64" "
-			       "tid=%015"UINT64" "
-			       //"date=%010"UINT32" "
-			       "eidrng=%"INT32"-%"INT32" "
-			       "score=%03"INT32" docId=%012"INT64"%s%s\n" , 
-			       KEY1((char *)k,16),KEY0((char *)k),
-			       tid,
-			       //list.getCurrentDate(),
-			       (int32_t)a,(int32_t)b,
-			       (int32_t)list.getScore((char *)k),
-			       list.getCurrentDocId() , ss, dd );
-		}
-		else if ( tid == starttid || tid == endtid ) {
-			// this will uncomplement it
-			uint32_t cd = (uint32_t)list.getCurrentDate();
-			char *desc;
-			if      ( tid == starttid ) desc = "startTime";
-			else if ( tid == endtid   ) desc = "endTime";
-			// convert to date str
-			time_t ts = (time_t)cd;
-			struct tm *timeStruct = localtime ( &ts );
-			char ppp[100];
-			strftime(ppp,100,"%b-%d-%Y-%H:%M:%S",timeStruct);
-			// but use time if its not
-			// otherwise a lat/lon/time key
-			printf("k.n1=%016"XINT64" "
-			       "k.n0=%016"XINT64" "
-			       "tid=%015"UINT64"=%s "
-			       "time=%s(%"UINT32") "
-			       "eventId=%03"INT32" docId=%012"INT64"%s\n" , 
-			       KEY1((char *)k,16),
-			       KEY0((char *)k),
-			       tid,
-			       desc,
-			       ppp,
-			       cd,
-			       (int32_t)list.getScore((char *)k),
-			       list.getCurrentDocId() , 
-			       dd );
-		}
-		else if ( tid ) {
-			// this will uncomplement it
-			uint32_t cd = list.getCurrentDate();
-			// convert to float
-			float latlon = (float)cd;
-			// denormalize (we scaled by 10M)
-			latlon /= 10000000.0;
-			char *desc;
-			if ( tid == lattid ) desc = "latitude";
-			else if ( tid == lontid ) desc = "longitude";
-			else if ( tid == lattid2 ) desc = "latitude2";
-			else if ( tid == lontid2 ) desc = "longitude2";
-			else desc = "unknownitude";
-			// but use time if its not
-			// otherwise a lat/lon/time key
-			printf("k.n1=%016"XINT64" "
-			       "k.n0=%016"XINT64" "
-			       "tid=%015"UINT64" "
-			       "%s=%.06f "
-			       "eventId=%03"INT32" docId=%012"INT64"%s\n" , 
-			       KEY1((char *)k,16),
-			       KEY0((char *)k),
-			       tid,
-			       desc,
-			       latlon,
-			       (int32_t)list.getScore((char *)k),
-			       list.getCurrentDocId() , 
-			       dd );
-		}
-
-		/*
-		if ( termId < 0 )
-			printf("k.n1=%016"XINT64" k.n0=%016"XINT64" "
-			       "tid=%015llu date=%010"UINT32" "
-			       "score=%03"INT32" docId=%012"INT64"%s\n" , 
-			       KEY1(k,16),KEY0(k),
-			       (int64_t)list.getTermId16(k),
-			       list.getCurrentDate(),
-			       (int32_t)list.getScore(k),
-			       list.getCurrentDocId() , dd );
-		else
-			printf("k.n1=%016"XINT64" k.n0=%016"XINT64" "
-			       "date=%010"UINT32" score=%03"INT32" docId=%012"INT64"%s\n" , 
-			       KEY1(k,16),KEY0(k),
-			       list.getCurrentDate(),
-			       (int32_t)list.getScore(k),
-			       list.getCurrentDocId() , dd );
-		*/
-		continue;
-	}
-
-	KEYSET(startKey,list.getLastKey(),16);
-	KEYADD(startKey,16);
-	// watch out for wrap around
-	//if ( startKey < *(key_t *)list.getLastKey() ) return;
-	if ( KEYCMP(startKey,list.getLastKey(),16)<0 ) {
-		g_threads.enableThreads();
-		return;
-	}
 	goto loop;
 }
 

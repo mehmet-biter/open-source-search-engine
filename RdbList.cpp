@@ -10,7 +10,6 @@
 #include "Indexdb.h"
 #include "Titledb.h"
 #include "Spider.h"
-#include "Datedb.h"
 #include "Linkdb.h"
 #include "sched.h"
 

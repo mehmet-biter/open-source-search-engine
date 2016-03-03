@@ -35,7 +35,6 @@ Parms g_parms;
 #include "Spider.h"
 #include "Tagdb.h"
 #include "Indexdb.h"
-#include "Datedb.h"
 #include "Clusterdb.h"
 #include "Collectiondb.h"
 

@@ -7,7 +7,6 @@
 #include "Posdb.h"
 #include "Titledb.h"
 #include "Spider.h"
-#include "Datedb.h"
 #include "Linkdb.h"
 #include "Msg5.h"                 // local getList()
 #include "XmlDoc.h"
