@@ -1,16 +1,11 @@
 #ifndef GB_INCLUDE_H
 #define GB_INCLUDE_H
 
-// fix on 64-bit architectures so sizeof(uint96_t) is 12, not 16!
-//#pragma pack(0)
-
 extern int g_inMemcpy;
 
 //The two gbmem* functions below are legacy. Don't use them in new code
 #define gbmemcpy(xx,yy,zz) memmove(xx,yy,zz)
 #define memcpy_ass(xx,yy,zz) memmove(xx,yy,zz)
-
-
 
 #include <inttypes.h>
 

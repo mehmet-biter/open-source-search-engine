@@ -39,7 +39,7 @@ bool Pops::set ( Words *words , int32_t a , int32_t b ) {
 		// methods because of it...
 		uint64_t key;
 		key = hash64d( wp[i], wlen[i] );
-		m_pops[i] = g_speller.getPhrasePopularity( wp[i], key, true );
+		m_pops[i] = g_speller.getPhrasePopularity( wp[i], key, 0 );
 
 		// sanity check
 		if ( m_pops[i] < 0 ) { char *xx=NULL;*xx=0; }

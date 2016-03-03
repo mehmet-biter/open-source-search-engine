@@ -14,33 +14,16 @@
 Speller g_speller;
 
 Speller::Speller(){
-	//m_unifiedBuf = NULL;
-	//mm_unifiedBufSize = 0;
 }
 
 Speller::~Speller(){
 	reset();
 }
-char *g_str=NULL;
-bool Speller::init(){
 
+bool Speller::init(){
 	static bool s_init = false;
 	if ( s_init ) return true;
 	s_init = true;
-
-	/*
-	m_hostsPerSplit = g_hostdb.m_numHosts / g_hostdb.m_indexSplits;
-	m_hostsPerSplit /= g_hostdb.m_numHostsPerShard;
-	if ( m_hostsPerSplit <= 0 )
-		return log("db: the <indexSplit> in gb.conf is probably not "
-			   "too big. Are you using the wrong hosts.conf?");
-	// check if we've got enough multicasts avaiable
-	if ( m_hostsPerSplit > MAX_UNIQUE_HOSTS_PER_SPLIT ){
-		log( LOG_WARN,"speller: not enough multicasts available for "
-		     "this host configuration. Increase multicasts" );
-		return false;
-	}
-	*/
 
 	if ( !loadUnifiedDict() )
 		return log("spell: Could not load unified dict from "
@@ -49,41 +32,15 @@ bool Speller::init(){
 	// this seems to slow our startup way down!!!
 	log("speller: turning off spell checking for now");
 	return true;
-
-	/*
-	int32_t myHash = g_hostdb.m_hostId % 
-		( m_hostsPerSplit * g_hostdb.m_indexSplits );
-	myHash /= g_hostdb.m_indexSplits;
-
-	//for ( int32_t i = 0; i < MAX_LANGUAGES; i++ )
-	m_language[langEnglish].init ( m_unifiedBuf.getBufStart(), 
-				       m_unifiedBuf.length(),
-				       langEnglish, 
-				       m_hostsPerSplit,
-				       myHash );
-
-	return true;
-	*/
 }
 
 void Speller::reset(){
-	//if ( m_unifiedBuf && m_unifiedBufSize > 0 )
-	//	mfree ( m_unifiedBuf, m_unifiedBufSize, "SpellerBuf" );
 	m_unifiedBuf.purge();
-	
 	m_unifiedDict.reset();
-	/*
-	for(int32_t i = 0; i < MAX_LANGUAGES; i++) 
-		m_language[i].reset();
-	*/
-
-	//m_unifiedBuf = NULL;
-	//m_unifiedBufSize = 0;
 }
 
 // test it.
 void Speller::test ( char *ff ) {
-	//char *ff = "/tmp/sctest";
 	FILE *fd = fopen ( ff, "r" );
 	if ( ! fd ) {
 		log("speller: test: Could not open %s for "
@@ -102,11 +59,6 @@ void Speller::test ( char *ff ) {
 		buf[wlen-1]='\0';
 		Query q;
 		q.set2 ( buf , langUnknown , false );
-
-		//if ( getRecommendation ( &q, dst , 1024 ) )
-		//  log(LOG_INIT,"speller: %s-->%s",buf,dst);
-		//  else
-		// log(LOG_INIT,"speller: %s",buf);
 	}
 	fclose(fd);
 }
@@ -115,18 +67,6 @@ bool Speller::generateDicts ( int32_t numWordsToDump , char *coll ){
 	//m_language[2].setLang(2);
 	//m_language[2].generateDicts ( numWordsToDump, coll );
 	return false;
-}
-
-char *Speller::getRandomWord() {
-	int32_t offset = rand() % m_unifiedBuf.length();//Size;
-	// find nearest \0
-	char *p = m_unifiedBuf.getBufStart() + offset;
-	// backup until we hit \0
-	for ( ; p > m_unifiedBuf.getBufStart() && *p ; p-- );
-	// now advance!
-	if ( p > m_unifiedBuf.getBufStart() ) p++;
-	// that is the word
-	return p;
 }
 
 // The unified dict is the combination of the word list, title rec and the top
@@ -361,11 +301,6 @@ bool Speller::loadUnifiedDict() {
 			// . NO! because it has "ein" as english with
 			//   a -1 popularity as well as "ist"! reconsider
 			if ( pops[i] < -1 ) pops[i] *= -1;
-			//if ( pops[i] < 0 ) pops[i] *= -1;
-
-		// debug
-		//if ( strcmp(phrase,"download") == 0 )
-		//	log("hey");
 
 		// now add in from wiktionary
 		int32_t slot = wkfMap.getSlot ( &key );
@@ -420,11 +355,6 @@ bool Speller::loadUnifiedDict() {
 
 	log (LOG_WARN,"spell: got %"INT32" TOTAL collisions in unified dict",
 	     totalCollisions);
-
-
-
-
-
 
 	HashTableX dedup;
 	dedup.set(8,0,1000000,NULL,0,false,0,"dmdm");
@@ -520,11 +450,6 @@ bool Speller::loadUnifiedDict() {
 
 	}
 
-
-
-	
-
-
 	// save the text too! a merge of unifiedDict.txt and
 	// wiktionary-lang.txt!!!
 	if ( m_unifiedBuf.saveToFile(g_hostdb.m_dir,"unifiedDict-buf.txt") <=0)
@@ -541,9 +466,7 @@ bool Speller::loadUnifiedDict() {
 
 // in case the language is unknown, just give the pop of the
 // first found language
-int32_t Speller::getPhrasePopularity ( char *str, uint64_t h,
-				    bool checkTitleRecDict,
-				    unsigned char langId ){
+int32_t Speller::getPhrasePopularity( char *str, uint64_t h, unsigned char langId ) {
 	//char *xx=NULL;*xx=0;
 
 	// hack fixes. 
@@ -627,11 +550,7 @@ int32_t Speller::getPhrasePopularity ( char *str, uint64_t h,
 // TODO: chatswingers.com NOT identified as porn because it is split as 
 // 'chats' and 'wingers'.
 
-bool Speller::canSplitWords( char *s, int32_t slen, bool *isPorn, 
-			     char *splitWords,
-			     unsigned char langId, int32_t encodeType ){
-	//char *xx=NULL;*xx=0;
-
+bool Speller::canSplitWords( char *s, int32_t slen, bool *isPorn, char *splitWords, unsigned char langId ) {
 	*isPorn = false;
 	char *index[1024];
 	if ( slen == 0 )
@@ -644,8 +563,7 @@ bool Speller::canSplitWords( char *s, int32_t slen, bool *isPorn,
 	index[curr] = s + slen;
 	while ( curr > 0 ){
 		char *nextWord = NULL;
-		while ( findNext( index[curr-1], index[curr], 
-				  &nextWord, isPorn, langId, encodeType ) ){
+		while (findNext( index[curr - 1], index[curr], &nextWord, isPorn, langId )){
 			// next word in chain
 			index[curr++] = nextWord;
 			index[curr] = s + slen;
@@ -676,8 +594,7 @@ bool Speller::canSplitWords( char *s, int32_t slen, bool *isPorn,
 	return false;
 }
 
-bool Speller::findNext( char *s, char *send, char **nextWord, bool *isPorn,
-			unsigned char langId, int32_t encodeType ){
+bool Speller::findNext( char *s, char *send, char **nextWord, bool *isPorn, unsigned char langId ) {
 	//char *xx=NULL;*xx=0;
 
 	char *loc = NULL;
@@ -843,7 +760,7 @@ bool Speller::findNext( char *s, char *send, char **nextWord, bool *isPorn,
 		// check if the word has popularity. if it is in the 
 		// unifiedDict, then it is considered to be a word
 		uint64_t h = hash64d(s, a-s);//a - s, encodeType);
-		int32_t pop = getPhrasePopularity(s, h, false, langId);
+		int32_t pop = getPhrasePopularity( s, h, langId );
 
 		// continue if did not find it
 		if ( pop <= 0 )
@@ -854,108 +771,6 @@ bool Speller::findNext( char *s, char *send, char **nextWord, bool *isPorn,
 	}
 	return false;
 }	
-
-//similar to one above but using recursion
-/*bool Speller::canSplitWords( char *s, int32_t slen, bool *isPorn, 
-  char *splitWords,
-  unsigned char langId, int32_t encodeType ){
-
-  if ( slen == 0 )
-  return true;
-  char *loc = NULL;
-  // check if there is an adult word in there
-  if ( isAdult ( s, slen, &loc ) ){
-  // if this string starts with the adult word
-  if ( loc == s ){
-  gbmemcpy ( splitWords, s, slen );
-  splitWords[slen] = ' ';
-  splitWords[slen + 1] = '\0';
-  *isPorn = true;
-  return true;
-  }
-  }
-
-  char *b = s + slen;
-  // split the phrase into two or more phrases.
-  for ( char *a = b; a > s; a-- ){
-  //	while ( a > s ){
-  // a hack, if the word is only one letter long, check if it
-  // is 'a' or 'i'. If not then continue
-  if ( a - s == 1 && *s != 'a' && *s != 'i')
-  continue;
-
-  // check if the word has popularity. if it is in the 
-  // unifiedDict, then it is considered to be a word
-  uint64_t h = hash64d(s, a - s, encodeType);
-  int32_t pop = getPhrasePopularity(s, h, false, langId);
-
-  // continue if did not find it
-  if ( pop <= 0 )
-  continue;
-  gbmemcpy ( splitWords, s, a - s );
-  splitWords[a - s] = ' ';
-  splitWords[a - s + 1] = '\0';
-  // see if we can split the rest
-  if ( canSplitWords ( a, b - a, isPorn, 
-  splitWords + (a - s + 1),
-  langId, encodeType ) )
-  return true;
-  }
-  // did not find any sequence of words that can make this string
-  return false;
-  }*/
-
-
-bool Speller::populateHashTable( char *ff, HashTableX *htable,
-				 unsigned char langId ){
-	File f;
-	f.set(ff);
-	// open file
-	if ( ! f.open ( O_RDONLY ) ) {
-		log("spell: open: %s",mstrerror(g_errno)); 
-		return false; 
-	}
-	
-	// get file size
-	int32_t fileSize = f.getFileSize() ;
-
-	int32_t bufSize = fileSize + 1;
-	char *buf = (char *) mmalloc(bufSize, "SpellerTmpBuf");
-	if (!buf)
-		return false;
-	if ( !f.read(buf, fileSize,0) ){
-		log("spell: read: %s", mstrerror(g_errno));
-		return false;
-	}
-	for ( int32_t i = 0; i < bufSize; i++ ){
-		if ( buf[i] == '\n' )
-			buf[i] = '\0';
-	}
-
-	char *p = buf;
-	while ( p < buf + fileSize ){
-		char *tuple = p;
-		int32_t score = atoi(p);
-		// many scores in dict have a pop of 0. ignore them
-		if ( score <= 0 ){
-			p += gbstrlen(p) + 1;
-			continue;
-		}
-		while ( *p != '\t' )
-			p++;
-		p++;
-		// at the phrase
-		char *phrase = p;
-		while ( *p != '\t' && *p != '\0' )
-			p++;
-		uint64_t key = hash64d(phrase, p-phrase );
-		int32_t slot = htable->getSlot(&key);
-		if ( slot == -1 )
-			htable->addKey(&key,&tuple);
-		p += gbstrlen(p) + 1;
-	}
-	return true;
-}
 
 // This isn't really much use except for the spider
 // language detection to keep from making 32 sequential
@@ -973,67 +788,6 @@ char *Speller::getPhraseRecord(char *phrase, int len ) {
 	char *p = m_unifiedBuf.getBufStart() + offset;
 	return p;
 }
-
-/*
-uint8_t Speller::getUniqueLang ( int64_t *wid ) {
-	int32_t slot = m_unifiedDict.getSlot(wid);
-	if (slot < 0) return langUnknown;
-	//char *p = *(char **)m_unifiedDict.getValueFromSlot(slot);
-	int32_t offset =  *(int32_t *)m_unifiedDict.getValueFromSlot(slot);
-	char *p = m_unifiedBuf.getBufStart() + offset;
-	int32_t langId = langUnknown;
-	char langCount = 0;
-	// skip over word
-	for ( ; *p && *p != '\t' ; ) p++;
-	// nothing after?
-	if ( !*p ) return langUnknown;
-	// skip tab
-	p++;
-	// skip over phonet
-	for ( ; *p && *p != '\t' ; ) p++;
-	// nothing after?
-	if ( !*p ) return langUnknown;
-	// skip tab
-	p++;
-	// loop over langid/pop pairs
-	while ( *p ) {
-		// get langid
-		langId = atoi(p);
-		// skip to next delimiter
-		for ( ; *p && *p != '\t' ; p++ );
-		// error?
-		if ( ! *p ) break;
-		// skip tab
-		p++;
-		// error?
-		if ( ! *p ) break;
-		// . if pop is zero ignore it
-		// . we now set pops to zero when generating
-		//   unifiedDict-buf.txt if they are not in the wiktionary
-		//   map for that language. seems like to many bad entries
-		//   were put in there by john nanny.
-		//char pop = 1;
-		//if ( *p == '0' ) pop = 0;
-		// require it be in the official dictionary here
-		bool official;
-		if ( *p == '-' ) official = true;
-		else             official = false;   
-		// skip pop
-		for ( ; *p && *p != '\t' ; p++ );
-		// multi lang count
-		if ( langId != langUnknown && official ) langCount++;
-		// no unique lang
-		//if ( langCount >= 2 ) return langTranslingual;
-		if ( langCount >= 2 ) return langUnknown;
-		// done?
-		if ( ! *p ) break;
-		// skip tab
-		p++;
-	}
-	// unique lang!
-	return langId;
-}
-*/
 
 int64_t Speller::getLangBits64 ( int64_t *wid ) {
 	int32_t slot = m_unifiedDict.getSlot(wid);
@@ -1092,28 +846,8 @@ int64_t Speller::getLangBits64 ( int64_t *wid ) {
 	return bits;
 }
 
-/*
-int64_t *Speller::getPhraseLanguages(char *phrase, int len ) {
-	//char *xx=NULL;*xx=0;
-
-	char *phraseRec = getPhraseRecord(phrase, len );
-	if(!phraseRec) return(NULL);
-	int64_t *rv = (int64_t *)mmalloc(sizeof(int64_t) * MAX_LANGUAGES,
-					     "PhraseRec");
-	if(!rv) return(NULL);
-	if(!getPhraseLanguages(phrase, len, rv)) {
-		mfree(rv, sizeof(int64_t) * MAX_LANGUAGES,
-		      "PhraseRec");
-		return(NULL);
-	}
-	return(rv);
-}
-*/
- 
 bool Speller::getPhraseLanguages(char *phrase, int len,
 				 int64_t *array) {
-	//char *xx=NULL;*xx=0;
-
 	char *phraseRec = getPhraseRecord(phrase, len);
 	if(!phraseRec || !array) return false;
 	return getPhraseLanguages2 ( phraseRec,array );
@@ -1161,92 +895,6 @@ bool Speller::getPhraseLanguages2 (char *phraseRec , int64_t *array) {
 	return(true);
 }
 
-bool Speller::getSynsInEnglish ( char *w , 
-				 int32_t wlen ,
-				 char nativeLang ,
-				 char wikiLang ) {
-	// no digits please!
-	if ( is_digit(w[0]) ) return false;
-
-	char *p = getPhraseRecord(w,wlen);
-	if ( ! p ) return false;
-	bool inEnglish = false;
-	// skip word
-	for ( ; *p != '\t' ; p++ );
-	// skip tab
-	p++;
-	// skip phonet
-	for ( ; *p != '\t' ; p++ );
-	// skip tab
-	p++;
-
-	for ( ; *p ; ) {
-		// end of line?
-		if ( !*p ) return inEnglish;
-		// get language id
-		int32_t l = atoi(p);
-		// english?
-		//if ( l == langEnglish ) inEnglish = true;
-		//if ( l > langEnglish && ! inEnglish ) return false;
-		//if ( l == nativeLang ) return false;
-		// skip langid
-		for ( ; *p && *p != '\t' ; p++ );
-		// end of line?
-		if ( !*p ) return inEnglish;
-		// skip tab
-		p++;
-		// . get popularity. if not negative undo inEnglish.
-		// . it has to be negative because that means it is in the
-		//   OFFICIAL wiktionary dictionary for that language
-		if ( l == langEnglish && p[0] == '-' ) inEnglish = true;
-		// if this word is in the doc's primary/native language
-		// then do not try to get english synonyms of it
-		if ( l == nativeLang && p[0] == '-' ) return false;
-		// no chance? it MUST be in english, and these are
-		// sorted by langid...
-		if ( l > langEnglish && ! inEnglish ) return false;
-		// skip popularity
-		for ( ; *p && *p != '\t' ; p++ );
-		// no more?
-		if ( ! *p ) 
-			return inEnglish;
-		// skip tab
-		p++;
-	}
-	return inEnglish;
-}
-
-/*
-static inline int s_findMaxVal(int64_t *vals, int numVals) {
-	int64_t max, oldmax, val;
-	if(!vals) return(0);
-	max = oldmax = INT_MIN;
-	val = 0;
-	for(int x = 0; x < numVals; x++) {
-		if(vals[x] >= max) {
-			oldmax = max;
-			max = vals[x];
-			val = x;
-		}
-	}
-	if(oldmax == max) return(0);
-	return(val);
-}
-
-char Speller::getPhraseLanguage(char *phrase, int len) {
-	//char *xx=NULL;*xx=0;
-
-	char lang;
-	int64_t *langs = getPhraseLanguages(phrase, len);
-	if(!langs) return(0);
-	lang = s_findMaxVal(langs, MAX_LANGUAGES);
-	if ( lang < 0 ) { char *xx=NULL;*xx=0; }
-	if(langs[(uint8_t)lang] == 0) lang = 0;
-	mfree(langs, sizeof(int) * MAX_LANGUAGES, "PhraseRec");
-	return(lang);
-}
-*/
-
 void Speller::dictLookupTest ( char *ff ){
 	//char *ff = "/tmp/sctest";
 	FILE *fd = fopen ( ff, "r" );
@@ -1266,7 +914,7 @@ void Speller::dictLookupTest ( char *ff ){
 		if ( wlen <= 0 ) continue;
 		buf[wlen-1]='\0';
 		uint64_t h = hash64d ( buf, gbstrlen(buf));
-		int32_t pop = g_speller.getPhrasePopularity(buf, h, true);
+		int32_t pop = g_speller.getPhrasePopularity( buf, h, 0 );
 		if ( pop < 0 ){
 			char *xx = NULL; *xx = 0;
 		}

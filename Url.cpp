@@ -1094,10 +1094,7 @@ bool Url::isSpam ( char *s , int32_t slen ) {
 		// TODO: do not include "ult" in the dictionary, it is
 		// always splitting "adult" as "ad ult". i'd say do not
 		// allow it to split a dirty word into two words like that.
-		if ( g_speller.canSplitWords( a, p - a, &isPorn,
-					      splitp,
-					      langEnglish,
-					      csUTF8 ) ){
+		if (g_speller.canSplitWords( a, p - a, &isPorn, splitp, langEnglish )){
 			if ( isPorn ){
 				log(LOG_DEBUG,"build: identified %s as "
 				    "porn  after splitting words as "

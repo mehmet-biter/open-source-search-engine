@@ -342,23 +342,6 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	// get our spelling correction if we should (spell checker)
 	st->m_gotSpell = true;
 	st->m_spell[0] = '\0';
-	/*
-	if ( si->m_spellCheck && 
-	     cr->m_spellCheck && 
-	     g_conf.m_doSpellChecking ) {
-		st->m_gotSpell = g_speller.
-			getRecommendation( &st->m_q,          // Query
-					   si->m_spellCheck,  // spellcheck
-					   st->m_spell,       // Spell buffer
-					   MAX_FRAG_SIZE,     // spell buf size
-					   false,      // narrow search?
-					   NULL,//st->m_narrow  // narrow buf
-					   MAX_FRAG_SIZE,    // narrow buf size
-					   NULL,// num of narrows  ptr
-					   st,               // state
-					   gotSpellingWrapper );// callback
-	}
-	*/
 
 	// LAUNCH RESULTS
 
