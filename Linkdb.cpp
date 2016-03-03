@@ -2160,11 +2160,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		}
 	}
 
-	// LinkInfo::set() probably filtered out even more!
-	//int32_t ng = m_inlinkingDocIdsRead - inlinkDocIdsFiltered;
-	// how many were filtered by LinkInfo::set()?
-	//int32_t inlinkingDocIdsFiltered2 = ng - m_linkInfo->getNumInlinks();
-
 	time_t ttt;
 	struct tm *timeStruct = localtime ( &ttt );
 	m_lastUpdateTime = ttt;
@@ -2181,7 +2176,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 
 	int32_t siteRank = ::getSiteRank ( info->m_numGoodInlinks );
 
-	if ( m_printInXml ) { // && m_xd ) {
+	if ( m_printInXml ) {
 
 		m_pbuf->safePrintf("\t<desc>inlinks to %s</desc>\n",ss);
 
@@ -2189,23 +2184,18 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 				   "</sampleCreatedUTC>\n"
 				   , m_lastUpdateTime
 				   );
-		//char *u = NULL;
-		//if ( m_xd ) u = m_xd->ptr_firstUrl;
+
 		// m_url should point into the Msg25Request buffer
 		char *u = m_url;
 		if ( u )
 			m_pbuf->safePrintf("\t<url><![CDATA[%s]]></url>\n",u);
 
-		//char *site = NULL;
-		//if ( m_xd ) site = m_xd->ptr_site;
 		// m_site should point into the Msg25Request buffer
 		char *site = m_site;
 		if ( site )
 			m_pbuf->safePrintf("\t<site><![CDATA[%s]]></site>\n",
 					   site);
 
-		//int64_t d = 0LL;
-		//if ( m_xd ) d = m_xd->m_docId;
 		int64_t d = m_docId;
 		if ( d && d != -1LL )
 			m_pbuf->safePrintf("\t<docId>%"INT64"</docId>\n",d);
@@ -2283,16 +2273,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 				      "<td>unique EXTERNAL IP inlinks</td>"
 				      "<td> &nbsp; </td>"
 				      "</tr>\n"
-
-				      
-				      //"<tr>"
-				      //"<td>sampled inlinkers</td>"
-				      //"<td>%"INT32"</td>"
-				      //"<td>how many docs "
-				      //"we sampled for inlink text. "
-				      //"Limited to %"INT32" docs.</td>"
-				      //"<td> &nbsp; </td>"
-				      //"</tr>\n"
 				      ,
 				      ss,
 				      m_url,
@@ -2302,10 +2282,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 				      // have read all of them from disk though
 				      m_numDocIds ,
 				      (int32_t)READSIZE/(int32_t)LDBKS,
-				      //(int32_t)MAX_LINKERS_IN_TERMLIST,
-				      // how many docids we read from disk
-				      //(m_list.getListSize()-6)/12 ,
-				      //(int32_t)MAX_DOCIDS_TO_SAMPLE);
 				      m_cblocks,
 				      m_uniqueIps
 				      );
@@ -2825,9 +2801,6 @@ Msg20Reply *Msg25::getLoser ( Msg20Reply *r , Msg20Reply *p ) {
 	// and vice versa
 	if ( pinternal && ! rinternal )
 		return p;
-	// then resort to doc quality
-	//if ( p->m_docQuality < r->m_docQuality ) return p;
-	//if ( r->m_docQuality < p->m_docQuality ) return r;
 	if ( p->m_siteRank < r->m_siteRank ) return p;
 	if ( r->m_siteRank < p->m_siteRank ) return r;
 	// . if they had the same quality... check docid
@@ -2893,11 +2866,6 @@ char *Msg25::isDup ( Msg20Reply *r , Msg20Reply *p ) {
 		}
 	}
 
-	//if ( p1 >= 80 ) 
-	//	log("test p1 failed1");
-
-
-
 	// only consider p2 if each vector is beefy. these
 	// can be small because these vectors represent the
 	// word pairs just to the right of the link in the
@@ -2958,8 +2926,6 @@ bool Msg25::addNote ( const char *note , int32_t noteLen , int64_t docId ) {
 			log("build: Msg25 could not add note.");
 		// did we add successfully?
 		if ( slot < 0 ) return false;
-		// get the ptr to the stuff
-		//val = (char *)m_table.getValueFromSlot(slot);
 		// advance to next spot
 		m_bufPtr = p;
 		return true;
