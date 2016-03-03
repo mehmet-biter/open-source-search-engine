@@ -72,6 +72,13 @@ OBJS =  UdpSlot.o Rebalance.o \
 DEFS = -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I.
 CPPFLAGS = -g -Wall -fno-stack-protector -DPTHREADS -Wstrict-aliasing=0
 
+ifeq ($(MAKECMDGOALS),debug)
+DEFS += -D_VALGRIND_
+else
+# if defined, UI options that can damage our production index will be disabled
+DEFS += -DPRIVACORE_SAFE_VERSION
+endif
+
 ifeq ($(CXX), g++)
 CPPFLAGS += -Wno-write-strings -Wno-uninitialized -Wno-unused-but-set-variable
 CPPFLAGS += -Wno-invalid-offsetof
@@ -111,10 +118,8 @@ ifneq ($(shell git diff --shortstat 2> /dev/null),)
 endif
 GIT_VERSION=$(shell git rev-parse HEAD)$(DIRTY)
 
-
 all: gb
 
-debug: DEFS += -D_VALGRIND_
 debug: all
 
 utils: blaster2 hashtest monitor seektest urlinfo treetest dnstest gbtitletest

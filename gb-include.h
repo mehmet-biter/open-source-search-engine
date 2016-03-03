@@ -1,13 +1,6 @@
 #ifndef GB_INCLUDE_H
 #define GB_INCLUDE_H
 
-
-//
-// If defined, UI options that can damage our production index will be
-// disabled
-//
-#define PRIVACORE_SAFE_VERSION
-
 // fix on 64-bit architectures so sizeof(uint96_t) is 12, not 16!
 //#pragma pack(0)
 
