@@ -2379,10 +2379,6 @@ void Sections::printFlags (SafeBuf *sbuf , Section *sn ) {
 	if ( f & SEC_MENU_HEADER )
 		sbuf->safePrintf("menuheader " );
 
-	if ( f & SEC_INPUT_HEADER )
-		sbuf->safePrintf("inputheader " );
-	if ( f & SEC_INPUT_FOOTER )
-		sbuf->safePrintf("inputfooter " );
 	if ( f & SEC_LINK_TEXT )
 		sbuf->safePrintf("linktext " );
 	if ( f & SEC_PLAIN_TEXT )
@@ -2571,63 +2567,6 @@ bool Sections::setMenus ( ) {
 		sk  ->m_flags |= SEC_MENU;
 	}
 
-	// . set text around input radio checkboxes text boxes and text areas
-	// . we need input tags to be their own sections though!
-	//for ( Section *sk = m_rootSection ; sk ; sk = sk->m_next ) {
-	for ( int32_t i = 0 ; i < m_nw ; i++ ) {
-		// breathe
-		QUICKPOLL ( m_niceness );
-		// need a tag
-		if ( ! m_tids[i] ) continue;
-		// must be an input tag
-		if ( m_tids[i] != TAG_INPUT &&
-		     m_tids[i] != TAG_TEXTAREA &&
-		     m_tids[i] != TAG_SELECT )
-			continue;
-		// get tag as a word
-		char *tag    = m_wptrs[i];
-		int32_t  tagLen = m_wlens[i];
-		// what type of input tag is this? hidden? radio? checkbox?...
-		int32_t  itlen;
-		char *it = getFieldValue ( tag , tagLen , "type" , &itlen );
-		// skip if hidden
-		if ( itlen==6 && !strncasecmp ( it,"hidden",6) ) continue;
-		// get word before first item in list
-		int32_t r = i - 1;
-		for ( ; r >= 0 ; r-- ) {
-			QUICKPOLL(m_niceness);
-			// skip if not wordid
-			if ( ! m_wids[r] ) continue;
-			// get its section
-			Section *sr = m_sectionPtrs[r];
-			// . skip if in div hidden section
-			// . fixes www.switchboard.com/albuquerque-nm/doughnuts
-			if ( sr->m_flags & SEC_HIDDEN ) continue;
-			// ok, stop
-			break;
-		}
-		// if no header, skip
-		if ( r < 0 ) continue;
-
-		// we are the first item
-		Section *first = m_sectionPtrs[i];
-
-		// set SEC_INPUT_HEADER
-		setHeader ( r , first , SEC_INPUT_HEADER );
-
-		// and the footer, if any
-		r = i + 1;
-
-		for ( ; r < m_nw && ! m_wids[r] ; r++ ) QUICKPOLL(m_niceness);
-
-		// if no header, skip
-		if ( r >= m_nw ) continue;
-
-		// set SEC_INPUT_FOOTER
-		setHeader ( r , first , SEC_INPUT_FOOTER );
-
-	}
-
 	int64_t h_copyright = hash64n("copyright");
 	// copyright check
 	// the copyright symbol in utf8 (see Entities.cpp for the code)
@@ -2655,7 +2594,7 @@ bool Sections::setMenus ( ) {
 		sp->m_flags |= SEC_MENU;
 	}
 
-	sec_t ff = SEC_MENU | SEC_INPUT_HEADER | SEC_INPUT_FOOTER;
+	sec_t ff = SEC_MENU;
 
 	// set SEC_MENU of child sections of SEC_MENU sections
 	for ( Section *si = m_rootSection; si; si = si->m_next ) {

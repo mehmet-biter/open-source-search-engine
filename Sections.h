@@ -50,8 +50,8 @@
 #define SEC_MENU               0x00010000
 #define SEC_LINK_TEXT          0x00020000
 #define SEC_MENU_HEADER        0x00040000
-#define SEC_INPUT_HEADER       0x00080000
-#define SEC_INPUT_FOOTER       0x00100000
+//#define SEC_UNUSED           0x00080000
+//#define SEC_UNUSED           0x00100000
 #define SEC_HEADING            0x00200000
 //#define SEC_UNUSED           0x00400000
 //#define SEC_UNUSED           0x00800000
