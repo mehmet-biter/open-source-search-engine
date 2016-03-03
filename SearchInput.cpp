@@ -159,7 +159,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	}
 
 	// use default collection if none provided
-	if ( ! p && ! token && m_collnumBuf.length() <= 0 ) {
+	if ( ! p && m_collnumBuf.length() <= 0 ) {
 		// get default collection rec
 		cr = g_collectiondb.getRec (coll);
 		// add to our list
