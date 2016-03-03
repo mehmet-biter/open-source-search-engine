@@ -632,11 +632,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 #include "sort.h"
 #include "RdbBase.h"
 #include "Msg39.h"
-//#include "CollectionRec.h"
 #include "SearchInput.h"
-
-// global var
-TopTree *g_topTree;
 
 PosdbTable::PosdbTable() { 
 	// top docid info
@@ -717,8 +713,7 @@ void PosdbTable::init ( Query     *q               ,
 
 	// save it
 	m_topTree = topTree;
-	// a ptr for debugging i guess
-	g_topTree = topTree;
+
 	// remember the query class, it has all the info about the termIds
 	m_q = q;
 	m_nqt = q->getNumTerms();
@@ -3666,8 +3661,6 @@ void PosdbTable::shrinkSubLists ( QueryTermInfo *qti ) {
 	}
 }
 
-//static int32_t s_sss = 0;
-Query *g_q;
 // . compare the output of this to intersectLists9_r()
 // . hopefully this will be easier to understand and faster
 // . IDEAS:
