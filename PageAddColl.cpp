@@ -32,7 +32,7 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 
 	//bool cast = r->getLong("cast",0);
 
-	char *msg = NULL;
+	const char *msg = NULL;
 
 	// if any host in network is dead, do not do this
 	//if ( g_hostdb.hasDeadHost() ) msg = "A host in the network is dead.";
@@ -63,8 +63,8 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 	if ( format == FORMAT_XML || format == FORMAT_JSON ) {
 		// no addcoll given?
 		int32_t  page = g_pages.getDynamicPageNumber ( r );
-		char *addcoll = r->getString("addcoll",NULL);
-		char *delcoll = r->getString("delcoll",NULL);
+		const char *addcoll = r->getString("addcoll",NULL);
+		const char *delcoll = r->getString("delcoll",NULL);
 		if ( ! addcoll ) addcoll = r->getString("addColl",NULL);
 		if ( ! delcoll ) delcoll = r->getString("delColl",NULL);
 		if ( page == PAGE_ADDCOLL && ! addcoll ) {
@@ -81,8 +81,8 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 	}
 
 	// error?
-	char *action = r->getString("action",NULL);
-	char *addColl = r->getString("addcoll",NULL);
+	const char *action = r->getString("action",NULL);
+	const char *addColl = r->getString("addcoll",NULL);
 
 	// add our ip to the list
 	//char *ips = r->getString("collips",NULL);
@@ -105,7 +105,7 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 		gmsg = gtmp.getBufStart();
 	}
 	// from Collectiondb.cpp::addNewColl() ensure coll name is legit
-	char *x = addColl;
+	const char *x = addColl;
 	for ( ; x && *x ; x++ ) {
 		if ( is_alnum_a(*x) ) continue;
 		if ( *x == '-' ) continue;
@@ -157,7 +157,9 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 				"getElementById('acbox').focus();");
 
 
-	if ( g_errno ) msg = mstrerror(g_errno);
+	if ( g_errno ) {
+		msg = mstrerror( g_errno );
+	}
 
 	if ( msg && ! guide ) {
 		char *cc = "deleting";
@@ -195,7 +197,7 @@ bool sendPageAddDelColl ( TcpSocket *s , HttpRequest *r , bool add ) {
 			      );
 		char *t2 = "collection";
 		if ( guide ) t2 = "search engine";
-		char *str = addColl;
+		const char *str = addColl;
 		if ( ! addColl ) str = "";
 		p.safePrintf (
 			      "<tr bgcolor=#%s>"
@@ -328,7 +330,7 @@ bool sendPageCloneColl ( TcpSocket *s , HttpRequest *r ) {
 #else
 	char format = r->getReplyFormat();
 
-	char *coll = r->getString("c");
+	const char *coll = r->getString("c");
 
 	if ( format == FORMAT_XML || format == FORMAT_JSON ) {
 		if ( ! coll ) {
@@ -345,7 +347,7 @@ bool sendPageCloneColl ( TcpSocket *s , HttpRequest *r ) {
 	// print standard header
 	g_pages.printAdminTop ( &p , s , r );
 
-	char *msg = NULL;
+	const char *msg = NULL;
 	if ( g_errno ) msg = mstrerror(g_errno);
 
 	if ( msg ) {
