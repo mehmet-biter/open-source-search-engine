@@ -224,7 +224,7 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	//
 	//////
 
-	// get the format. "xml" "html" "json" --> FORMAT_HTML, FORMAT_CSV ...
+	// get the format. "html" "json" --> FORMAT_HTML, FORMAT_JSON ...
 	char tmpFormat = m_hr.getReplyFormat();
 	// now override automatic defaults for special cases
 	if ( tmpFormat != FORMAT_HTML ) {
@@ -243,7 +243,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 
 	if ( m_streamResults &&
 	     tmpFormat != FORMAT_XML &&
-	     tmpFormat != FORMAT_CSV &&
 	     tmpFormat != FORMAT_JSON ) {
 		log("si: streamResults only supported for "
 		    "xml/csv/json. disabling");

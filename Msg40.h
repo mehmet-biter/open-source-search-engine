@@ -56,7 +56,6 @@ public:
 	bool gotSummary       ( ) ;
 	bool reallocMsg20Buf ( ) ;
 
-	void uncluster ( int32_t m ) ;
 	// serialization routines used for caching Msg40s by Msg17
 	int32_t  getStoredSize ( ) ;
 	int32_t  serialize     ( char *buf , int32_t bufLen ) ;
@@ -91,16 +90,10 @@ public:
 
 	bool printSearchResult9 ( int32_t ix, int32_t *numPrintedSoFar, class Msg20Reply *mr ) ;
 
-	SafeBuf m_unusedBuf;
 	int32_t m_numMsg20sOut ;
 	int32_t m_numMsg20sIn  ;
 
 	int32_t m_omitCount;
-
-	HashTableX m_columnTable;
-	bool printCSVHeaderRow ( class SafeBuf *sb );
-	bool printJsonItemInCSV ( class State0 *st , int32_t ix );
-	int32_t m_numCSVColumns;
 
 	HashTableX m_dedupTable;
 
@@ -112,12 +105,6 @@ public:
 	// incoming parameters 
 	void       *m_state;
 	void      (* m_callback ) ( void *state );
-
-	int32_t m_needFirstReplies;
-
-	// . do not uncluster more than this many docids! it slows things down.
-	// . kind of a HACK until we do it right
-	int32_t       m_unclusterCount;
 
 	// a bunch of msg20's for getting summaries/titles/...
 	Msg20    **m_msg20; 

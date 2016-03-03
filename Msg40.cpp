@@ -66,12 +66,6 @@ void Msg40::resetBuf2 ( ) {
 	// now free the msg20 ptrs and buffer space
 	if ( m_buf2 ) mfree ( m_buf2 , m_bufMaxSize2 , "Msg40b" );
 	m_buf2 = NULL;
-
-
-	// make a safebuf of 50 of them if we haven't yet
-	if ( m_unusedBuf.length() <= 0 ) return;
-	Msg20 *ma = (Msg20 *)m_unusedBuf.getBufStart();
-	for ( int32_t i = 0 ; i < (int32_t)MAX2 ; i++ ) ma[i].destructor();
 }
 
 Msg40::~Msg40() {
@@ -153,12 +147,6 @@ bool Msg40::getResults ( SearchInput *si      ,
 		m_si->m_streamResults = false;
 		return true;
 	}
-
-	// . do this now in case results were cached.
-	// . set SearchInput class instance, m_si
-	// . has all the input that we need to get the search results just
-	//   the way the caller wants them
-	//m_msg1a.setSearchInput(m_si);
 
 	// how many docids do we need to get?
 	int32_t get = m_si->m_docsWanted + m_si->m_firstResultNum ;
@@ -460,21 +448,6 @@ bool Msg40::gotDocIds ( ) {
 	// we haven't got any Msg20 responses as of yet or sent any requests
 	m_numRequests  =  0;
 	m_numReplies   =  0;
-
-	// when returning search results in csv let's get the first 100
-	// results and use those to determine the most common column headers
-	// for the csv. any results past those that have new json fields we
-	// will add a header for, but the column will not be labelled with
-	// the header name unfortunately.
-	m_needFirstReplies = 0;
-	if ( m_si->m_format == FORMAT_CSV ) {
-		m_needFirstReplies = m_msg3a.m_numDocIds;
-		if ( m_needFirstReplies > 100 ) m_needFirstReplies = 100;
-	}
-
-	// . do not uncluster more than 5 docids! it slows things down.
-	// . kind of a HACK until we do it right
-	m_unclusterCount = 5;
 
 	if ( ! m_urlTable.set ( m_msg3a.m_numDocIds * 2 ) ) {
 		m_errno = g_errno;
@@ -1044,8 +1017,10 @@ bool gotSummaryWrapper ( void *state ) {
 
 void doneSendingWrapper9 ( void *state , TcpSocket *sock ) {
 	Msg40 *THIS = (Msg40 *)state;
+
 	// the send completed, count it
 	THIS->m_sendsIn++;
+
 	// error?
 	if ( THIS->m_sendsIn > THIS->m_sendsOut ) {
 		log("msg40: sendsin > sendsout. bailing!!!");
@@ -1054,20 +1029,20 @@ void doneSendingWrapper9 ( void *state , TcpSocket *sock ) {
 		// state!!!
 		return;
 	}
-	// debug
-	//g_errno = ETCPTIMEDOUT;
 	// socket error? if client closes the socket midstream we get one.
 	if ( g_errno ) {
 		THIS->m_socketHadError = g_errno;
 		log("msg40: streaming socket had error: %s",
 		    mstrerror(g_errno));
 		// i guess destroy the socket here so we don't get called again?
-
 	}
+
 	// clear it so we don't think it was a msg20 error below
 	g_errno = 0;
+
 	// try to send more... returns false if blocked on something
 	if ( ! THIS->gotSummary() ) return;
+
 	// all done!!!???
 	THIS->m_callback ( THIS->m_state );
 }
@@ -1081,11 +1056,6 @@ bool Msg40::gotSummary ( ) {
 		logf(LOG_DEBUG,"query: msg40: [%"PTRFMT"] Got summary. "
 		     "Total got=#%"INT32".",
 		     (PTRTYPE)this,m_numReplies);
-
-	// come back up here if we have to get more docids from Msg3a and
-	// it gives us more right away without blocking, then we need to
-	// re-filter them!
-	// refilter:
 
 	// did we have a problem getting this summary?
 	if ( g_errno ) {
@@ -1107,7 +1077,6 @@ bool Msg40::gotSummary ( ) {
 
 	State0 *st = (State0 *)m_state;
 
-
  doAgain:
 
 	SafeBuf *sb = &st->m_sb;
@@ -1122,64 +1091,16 @@ bool Msg40::gotSummary ( ) {
 		printSearchResultsHeader ( st );
 	}
 
-	for ( ; m_si && m_si->m_streamResults&&m_printi<m_msg3a.m_numDocIds ;
-	      m_printi++){
-
+	for ( ; m_si && m_si->m_streamResults&&m_printi<m_msg3a.m_numDocIds ; m_printi++) {
 		// if we are waiting on our previous send to complete... wait..
 		if ( m_sendsOut > m_sendsIn ) break;
 
 		// get summary for result #m_printi
 		Msg20 *m20 = getCompletedSummary ( m_printi );
 
-		// if printing csv we need the first 100 results back
-		// to get the most popular csv headers for to print that
-		// as the first row in the csv output. if we print a
-		// results with a column not in the header row then we
-		// augment the headers then and there, although the header
-		// row will be blank for the new column, we can put
-		// the new header row at the end of the file i guess. this way
-		// we can immediately start streaming back the csv.
-		if ( m_needFirstReplies ) {
-			// need at least this many replies to process
-			if ( m_numReplies < m_needFirstReplies )
-				break;
-			// ensure we got the TOP needFirstReplies in order
-			// of their display to ensure consistency
-			int32_t k;
-			for ( k = 0 ; k < m_needFirstReplies ; k++ ) {
-				Msg20 *xx = getCompletedSummary(k);
-				if ( ! xx ) break;
-				if ( ! xx->m_r && 
-				     // and it did not have an error fetching
-				     // because m_r could be NULL and m_errno
-				     // is set to something like Bad Cached
-				     // Document
-				     ! xx->m_errno ) 
-					break;
-			}
-			// if not all have come back yet, wait longer...
-			if ( k < m_needFirstReplies ) break;
-			// now make the csv header and print it
-			printCSVHeaderRow ( sb );
-			// and no longer need to do this logic
-			m_needFirstReplies = 0;
-		}
-
-		// otherwise, get the summary for result #m_printi
-		//Msg20 *m20 = m_msg20[m_printi];
-
-		//if ( ! m20 ) {
-		//	log("msg40: m20 NULL #%"INT32"",m_printi);
-		//	continue;
-		//}
-
 		// if result summary #i not yet in, wait...
 		if ( ! m20 ) 
 			break;
-
-		// wait if no reply for it yet
-		//if ( m20->m_inProgress )
-		//	break;
 
 		if ( m20->m_errno ) {
 			log("msg40: sum #%"INT32" error: %s",
@@ -1192,7 +1113,6 @@ bool Msg40::gotSummary ( ) {
 		// get the next reply we are waiting on to print results order
 		Msg20Reply *mr = m20->m_r;
 		if ( ! mr ) break;
-		//if ( ! mr ) { char *xx=NULL;*xx=0; }
 
 		// primitive deduping. for diffbot json exclude url's from the
 		// XmlDoc::m_contentHash32.. it will be zero if invalid i guess
@@ -1212,16 +1132,6 @@ bool Msg40::gotSummary ( ) {
 			m20->reset();
 			continue;
 		}
-
-		// static int32_t s_bs = 0;
-		// if ( (s_bs++ % 5) != 0 ) {
-		// 	log("msg40: FAKE dup sum #%"INT32" (%"UINT32")(d=%"INT64")",m_printi,
-		// 	    mr->m_contentHash32,mr->m_docId);
-		// 	// make it available to be reused
-		// 	m20->reset();
-		// 	continue;
-		// }
-
 
 		// return true with g_errno set on error
 		if ( m_si && m_si->m_doDupContentRemoval && // &dr=1
@@ -1255,13 +1165,6 @@ bool Msg40::gotSummary ( ) {
 		// . ok, we got it, so print it and stream it
 		// . this might set m_hadPrintError to true
 		printSearchResult9 ( m_printi , &m_numPrintedSoFar , mr );
-
-		//m_numPrintedSoFar++;
-		//log("msg40: printedsofar=%"INT32"",m_numPrintedSoFar);
-
-		// now free the reply to save memory since we could be 
-		// streaming back 1M+. we call reset below, no need for this.
-		//m20->freeReply();
 
 		// return it so getAvailMsg20() can use it again
 		// this will set m_launched to false
@@ -1303,9 +1206,7 @@ bool Msg40::gotSummary ( ) {
 	     m_msg3a.m_moreDocIdsAvail &&
 	     // do not do this if client closed connection
 	     ! m_socketHadError ) { //&&
-		// doesn't work on multi-coll just yet, it cores.
-		// MAKE it.
-		//m_numCollsToSearch == 1 ) {
+
 		// can it cover us?
 		int32_t need = m_msg3a.m_docsToGet + 20;
 		// note it
@@ -1347,8 +1248,6 @@ bool Msg40::gotSummary ( ) {
 
 	TcpServer *tcp = &g_httpServer.m_tcp;
 
-	//g_conf.m_logDebugTcp = 1;
-
 	// do we still own this socket? i am thinking it got closed somewhere
 	// and the socket descriptor was re-assigned to another socket
 	// getting a diffbot reply from XmLDoc::getDiffbotReply()
@@ -1363,7 +1262,6 @@ bool Msg40::gotSummary ( ) {
 		// make it NULL to avoid us from doing anything to it
 		// since sommeone else is using it now.
 		st->m_socket = NULL;
-		//g_errno = EBADENGINEER;
 	}
 
 
@@ -1422,8 +1320,7 @@ bool Msg40::gotSummary ( ) {
 			// otherwise, keep chugging
 			goto complete;
 		}
-		// maybe some were cached?
-		//goto refilter;
+
 		// it returned true, so m_numRequests == m_numReplies and
 		// we don't need to launch any more! but that does NOT
 		// make sense because m_numContiguous < m_msg3a.m_numDocIds
@@ -1571,8 +1468,6 @@ bool Msg40::gotSummary ( ) {
 		// Skip if invalid
 		if ( m_msg20[i]->m_errno ) continue;
 
-		// start with the first docid we have not yet checked!
-		//int32_t m = oldNumContiguous;
 		// get it
 		Msg20Reply *mri = m_msg20[i]->m_r;
 		// do not dedup CT_STATUS results, those are
@@ -1580,8 +1475,7 @@ bool Msg40::gotSummary ( ) {
 		// time a doc was spidered and the error code or 
 		// success code
 		if ( mri->m_contentType == CT_STATUS ) continue;
-		// never let it be i
-		//if ( m <= i ) m = i + 1;
+
 		// see if any result lower-scoring than #i is a dup of #i
 		for( int32_t m = i+1 ; m < m_numReplies ; m++ ) {
 			// get current cluster level
@@ -1613,9 +1507,6 @@ bool Msg40::gotSummary ( ) {
 				      m, m_msg3a.m_docIds[m] , 
 				      s, i, m_msg3a.m_docIds[i] );
 			*level = CR_DUP_SUMMARY;
-			// uncluster the next clustered docid from this 
-			// hostname below "m"
-			if ( m_unclusterCount-- > 0 ) uncluster ( m );
 		}
 	}
 
@@ -1627,7 +1518,7 @@ bool Msg40::gotSummary ( ) {
         
         // . ONLY DEDUP URL if it explicitly enabled AND we are not performing
         //   a site: or suburl: query.
-        if(m_si->m_dedupURL && 
+	if(m_si->m_dedupURL &&
 	   !q->m_hasPositiveSiteField && 
 	   !q->m_hasSubUrlField) { 
 		for(int32_t i = 0 ; i < m_msg3a.m_numDocIds ; i++) {
@@ -1646,57 +1537,57 @@ bool Msg40::gotSummary ( ) {
 				ulen = mr->size_rubuf - 1;
 			}
 
-                        // fix for directories, sometimes they are indexed 
-                        // without a trailing slash, so let's normalize to 
-                        // this standard.
+			// fix for directories, sometimes they are indexed
+			// without a trailing slash, so let's normalize to
+			// this standard.
 			if(url[ulen-1] == '/')
 				ulen--;
+
 			Url u;
-                        u.set(url,ulen, false, false, false, false, false, 0x7fffffff);
-                        url   = u.getHost();
+			u.set(url,ulen, false, false, false, false, false, 0x7fffffff);
+			url   = u.getHost();
 
-                        if(u.getPathLen() > 1) {
-                                // . remove sub-domain to fix conflicts with
-                                //   sites having www,us,en,fr,de,uk,etc AND 
-                                //   it redirects to the same page.
-                                char *host = u.getHost();
-                                char *mdom = u.getMidDomain();
-                                if(mdom && host) {
-                                        int32_t  hlen = mdom - host;
-                                        if (isSubDom(host, hlen-1))
-                                                url = mdom;
-                                }
-                        }
+			if(u.getPathLen() > 1) {
+				// . remove sub-domain to fix conflicts with
+				//   sites having www,us,en,fr,de,uk,etc AND
+				//   it redirects to the same page.
+				char *host = u.getHost();
+				char *mdom = u.getMidDomain();
+				if(mdom && host) {
+					int32_t  hlen = mdom - host;
+					if (isSubDom(host, hlen-1))
+						url = mdom;
+				}
+			}
 
-                        // adjust url string length
-                        ulen -= url - u.getUrl();
+			// adjust url string length
+			ulen -= url - u.getUrl();
 
 			uint64_t h = hash64Lower_a(url, ulen);
-                        int32_t slot = m_urlTable.getSlot(h);
-                        // if there is no slot,this url doesn't exist => add it
-                        if(slot == -1) {
-                                m_urlTable.addKey(h,mr->m_docId);
-                        }
-                        else {
-                                // If there was a slot, denote with the 
-                                // cluster level URL already exited previously
-                                char *level = &m_msg3a.m_clusterLevels[i];
-                                if(m_si->m_debug || g_conf.m_logDebugQuery)
-                                        logf(LOG_DEBUG, "query: result #%"INT32" "
-                                                        "(docid=%"INT64") is the "
-                                                        "same URL as "
-                                                        "(docid=%"INT64")", 
-                                                        i,m_msg3a.m_docIds[i], 
-                                                        m_urlTable.
-					     getValueFromSlot(slot));
-                                *level = CR_DUP_URL;
-                        }
-                }
-        }
+			int32_t slot = m_urlTable.getSlot(h);
+			// if there is no slot,this url doesn't exist => add it
+			if(slot == -1) {
+				m_urlTable.addKey(h,mr->m_docId);
+			}
+			else {
+				// If there was a slot, denote with the
+				// cluster level URL already exited previously
+				char *level = &m_msg3a.m_clusterLevels[i];
+				if(m_si->m_debug || g_conf.m_logDebugQuery)
+					logf(LOG_DEBUG, "query: result #%"INT32" "
+								 "(docid=%"INT64") is the "
+								 "same URL as "
+								 "(docid=%"INT64")",
+						 i,m_msg3a.m_docIds[i],
+						 m_urlTable.getValueFromSlot(slot));
+				*level = CR_DUP_URL;
+			}
+		}
+	}
 
-        //
-        // END URL NORMALIZE AND COMPARE
-        // 
+	//
+	// END URL NORMALIZE AND COMPARE
+	//
 
 	m_omitCount = 0;
 
@@ -1754,7 +1645,6 @@ bool Msg40::gotSummary ( ) {
 	     // doesn't work on multi-coll just yet, it cores
 	     m_numCollsToSearch == 1 ) {
 		// can it cover us?
-		//int32_t need = m_msg3a.m_docsToGet + 20;
 		int32_t need = m_docsToGet + 20;
 		// increase by 25 percent as well
 		need *= 1.25;
@@ -1941,13 +1831,6 @@ bool Msg40::gotSummary ( ) {
 	// ignore errors
 	g_errno = 0;
  	return true;
-}
-
-// m_msg3a.m_docIds[m] was filtered because it was a dup or something so we
-// must "uncluster" the *next* docid from the same hostname that is clustered
-void Msg40::uncluster ( int32_t m ) {
-	// skip for now
-	return;
 }
 
 int32_t Msg40::getStoredSize ( ) {
@@ -2175,13 +2058,8 @@ bool Msg40::printSearchResult9 ( int32_t ix , int32_t *numPrintedSoFar ,
 		return true;
 	}
 
-	// prints in xml or html
-	if ( m_si->m_format == FORMAT_CSV ) {
-		printJsonItemInCSV ( st , ix );
-		//log("print: printing #%"INT32" csv",(int32_t)ix);
-	}
 	// print that out into st->m_sb safebuf
-	else if ( ! printResult ( st , ix , numPrintedSoFar ) ) {
+	if ( ! printResult ( st , ix , numPrintedSoFar ) ) {
 		// oom?
 		if ( ! g_errno ) g_errno = EBADENGINEER;
 		log("query: had error: %s",mstrerror(g_errno));
@@ -2205,17 +2083,13 @@ bool printHttpMime ( State0 *st ) {
 	// just in case it is empty, make it null terminated
 	sb->nullTerm();
 
-	char *ct = "text/csv";
-	if ( si->m_format == FORMAT_JSON )
+	// defaults to FORMAT_HTML
+	char *ct = "text/html";
+	if ( si->m_format == FORMAT_JSON ) {
 		ct = "application/json";
-	if ( si->m_format == FORMAT_XML )
+	} else if ( si->m_format == FORMAT_XML ) {
 		ct = "text/xml";
-	if ( si->m_format == FORMAT_HTML )
-		ct = "text/html";
-	//if ( si->m_format == FORMAT_TEXT )
-	//	ct = "text/plain";
-	if ( si->m_format == FORMAT_CSV )
-		ct = "text/csv";
+	}
 
 	// . if we haven't yet sent an http mime back to the user
 	//   then do so here, the content-length will not be in there
@@ -2235,209 +2109,3 @@ bool printHttpMime ( State0 *st ) {
 	sb->safeMemcpy(mime.getMime(),mime.getMimeLen() );
 	return true;
 }
-
-/////////////////
-//
-// CSV LOGIC from PageResults.cpp
-//
-/////////////////
-
-#include "Json.h"
-
-// 
-// print header row in csv
-//
-bool Msg40::printCSVHeaderRow ( SafeBuf *sb ) {
-	Msg20 *msg20s[100];
-	int32_t i;
-	for ( i = 0 ; i < m_needFirstReplies && i < 100 ; i++ ) {
-		Msg20 *m20 = getCompletedSummary(i);
-		if ( ! m20 ) break;
-		msg20s[i] = m20;
-	}
-
-	int32_t numPtrs = 0;
-
-	char tmp2[1024];
-	SafeBuf nameBuf (tmp2, 1024);
-
-	int32_t ct = 0;
-	if ( msg20s[0] && msg20s[0]->m_r ) ct = msg20s[0]->m_r->m_contentType;
-
-	CollectionRec *cr =g_collectiondb.getRec(m_firstCollnum);
-
-	// . set up table to map field name to col for printing the json items
-	// . call this from PageResults.cpp 
-	printCSVHeaderRow2 ( sb , 
-			     ct ,
-			     cr ,
-			     &nameBuf ,
-			     &m_columnTable ,
-			     msg20s ,
-			     i , // numResults ,
-			     &numPtrs 
-			     );
-
-	m_numCSVColumns = numPtrs;
-
-	if ( ! sb->pushChar('\n') )
-		return false;
-	if ( ! sb->nullTerm() )
-		return false;
-
-	return true;
-}
-
-// returns false and sets g_errno on error
-bool Msg40::printJsonItemInCSV ( State0 *st , int32_t ix ) {
-
-	int32_t niceness = 0;
-
-	//
-	// get the json from the search result
-	//
-	Msg20 *m20 = getCompletedSummary(ix);
-	if ( ! m20 ) return false;
-	if ( m20->m_errno ) return false;
-	if ( ! m20->m_r ) { char *xx=NULL;*xx=0; }
-	Msg20Reply *mr = m20->m_r;
-	// get content
-	char *json = mr->ptr_content;
-	// how can it be empty?
-	if ( ! json ) { char *xx=NULL;*xx=0; }
-
-
-	// parse the json
-	Json jp;
-	jp.parseJsonStringIntoJsonItems ( json , niceness );
-
-	HashTableX *columnTable = &m_columnTable;
-	int32_t numCSVColumns = m_numCSVColumns;
-
-	//SearchInput *si = m_si;
-	SafeBuf *sb = &st->m_sb;
-
-	
-	// make buffer space that we need
-	char ttt[1024];
-	SafeBuf ptrBuf(ttt,1024);
-	int32_t maxCols = numCSVColumns;
-	// allow for additionals colls
-	maxCols += 100;
-	int32_t need = maxCols * sizeof(JsonItem *);
-	if ( ! ptrBuf.reserve ( need ) ) return false;
-	JsonItem **ptrs = (JsonItem **)ptrBuf.getBufStart();
-
-	// reset json item ptrs for csv columns. all to NULL
-	memset ( ptrs , 0 , need );
-
-	char tmp1[1024];
-	SafeBuf tmpBuf (tmp1 , 1024);
-
-	JsonItem *ji;
-
-	///////
-	//
-	// print json item in csv
-	//
-	///////
-	for ( ji = jp.getFirstItem(); ji ; ji = ji->m_next ) {
-
-		// skip if not number or string
-		if ( ji->m_type != JT_NUMBER && 
-		     ji->m_type != JT_STRING )
-			continue;
-
-		// skip if not well suited for csv (see above comment)
-		if ( ji->isInArray() ) continue;
-
-		// . get the name of the item into "nameBuf"
-		// . returns false with g_errno set on error
-		if ( ! ji->getCompoundName ( tmpBuf ) )
-			return false;
-
-		// is it new?
-		int64_t h64 = hash64n ( tmpBuf.getBufStart() );
-
-		// ignore the "html" column
-		if ( strcmp(tmpBuf.getBufStart(),"html") == 0 ) continue;
-
-		int32_t slot = columnTable->getSlot ( &h64 ) ;
-		// MUST be in there
-		// get col #
-		int32_t column = -1;
-		if ( slot >= 0 )
-			column =*(int32_t *)columnTable->getValueFromSlot ( slot);
-
-		// sanity
-		if ( column == -1 ) {
-			// don't show it any more...
-			continue;
-		}
-
-		// set ptr to it for printing when done parsing every field
-		// for this json item
-		ptrs[column] = ji;
-	}
-
-	// now print out what we got
-	for ( int32_t i = 0 ; i < numCSVColumns ; i++ ) {
-		// , delimeted
-		if ( i > 0 ) sb->pushChar(',');
-		// get it
-		ji = ptrs[i];
-		// skip if none
-		if ( ! ji ) continue;
-
-		// skip "html" field... too spammy for csv and > 32k causes
-		// libreoffice calc to truncate it and break its parsing
-		if ( ji->m_name && 
-		     //! ji->m_parent &&
-		     strcmp(ji->m_name,"html")==0)
-			continue;
-
-		//
-		// get value and print otherwise
-		//
-		/*
-		if ( ji->m_type == JT_NUMBER ) {
-			// print numbers without double quotes
-			if ( ji->m_valueDouble *10000000.0 == 
-			     (double)ji->m_valueLong * 10000000.0 )
-				sb->safePrintf("%"INT32"",ji->m_valueLong);
-			else
-				sb->safePrintf("%f",ji->m_valueDouble);
-			continue;
-		}
-		*/
-
-		int32_t vlen;
-		char *str = ji->getValueAsString ( &vlen );
-
-		// print the value
-		sb->pushChar('\"');
-		// get the json item to print out
-		//int32_t  vlen = ji->getValueLen();
-		// truncate
-		char *truncStr = NULL;
-		if ( vlen > 32000 ) {
-			vlen = 32000;
-			truncStr = " ... value truncated because "
-				"Excel can not handle it. Download the "
-				"JSON to get untruncated data.";
-		}
-		// print it out
-		//sb->csvEncode ( ji->getValue() , vlen );
-		sb->csvEncode ( str , vlen );
-		// print truncate msg?
-		if ( truncStr ) sb->safeStrcpy ( truncStr );
-		// end the CSV
-		sb->pushChar('\"');
-	}
-
-	sb->pushChar('\n');
-	sb->nullTerm();
-
-	return true;
-}
-

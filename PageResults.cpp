@@ -63,9 +63,8 @@ bool sendReply ( State0 *st , char *reply ) {
 	char *ct = "text/html";
 	if ( si && si->m_format == FORMAT_XML ) ct = "text/xml"; 
 	if ( si && si->m_format == FORMAT_JSON ) ct = "application/json";
-	if ( si && si->m_format == FORMAT_CSV ) ct = "text/csv";
-	char *charset = "utf-8";
 
+	char *charset = "utf-8";
 	char format = si->m_format;
 
 	// . filter anything < 0x20 to 0x20 to keep XML legal
@@ -2046,27 +2045,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->safePrintf("<i>getting summary for docid %"INT64" had "
 			       "error: %s</i><br><br>"
 			       ,d,mstrerror(m20->m_errno));
-		return true;
-	}
-
-	// each "result" is the actual cached page, in this case, a json
-	// object, because we were called with &icc=1. in that situation
-	// ptr_content is set in the msg20reply.
-	if ( si->m_format == FORMAT_CSV &&
-	     mr->ptr_content &&
-	     // spider STATUS docs are json
-	     (mr->m_contentType == CT_JSON || mr->m_contentType == CT_STATUS)){
-		// parse it up
-		char *json = mr->ptr_content;
-		// only print header row once, so pass in that flag
-		if ( ! st->m_printedHeaderRow ) {
-			sb->reset();
-			printCSVHeaderRow ( sb , st , mr->m_contentType );
-			st->m_printedHeaderRow = true;
-		}
-		printJsonItemInCSV ( json , sb , st );
-		// inc it
-		*numPrintedSoFar = *numPrintedSoFar + 1;
 		return true;
 	}
 
