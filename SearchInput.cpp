@@ -129,31 +129,6 @@ bool SearchInput::set ( TcpSocket *sock , HttpRequest *r ) {
 	CollectionRec *cr = NULL;
 	// now convert list of space-separated coll names into list of collnums
 	const char *p = r->getString("c",NULL);
-	// if no collection list was specified look for "token=" and
-	// use those to make collections. hack for diffbot.
-	const char *token = r->getString("token",NULL);
-	// find all collections under this token
-	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-		// must not have a "&c="
-		if ( p ) break;
-		// must have a "&token="
-		if ( ! token ) break;
-		// skip if empty
-		CollectionRec *tmpcr = g_collectiondb.m_recs[i];
-		if ( ! tmpcr ) continue;
-		// skip if does not match token
-		if ( strcmp(token,tmpcr->m_diffbotToken.getBufStart()) ) 
-			continue;
-		// . we got a match
-		// . set initial junk
-		if ( ! cr ) {
-			cr = tmpcr;
-		}
-		// save the collection #
-		if ( ! m_collnumBuf.safeMemcpy ( &tmpcr->m_collnum, 
-						 sizeof(collnum_t) ) )
-			return false;
-	}
 
 	// if we had a "&c=..." in the GET request process that
 	if ( p ) {
