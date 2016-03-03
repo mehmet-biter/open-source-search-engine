@@ -734,8 +734,6 @@ bool Msg40::reallocMsg20Buf ( ) {
 		// remember num to free in reset() function
 		m_numToFree++;
 	}
-	// remember how many we got in here in case we have to realloc above
-	//m_numMsg20s = m_msg3a.m_numDocIds;
 
 	return true;
 }
@@ -959,6 +957,7 @@ bool Msg40::launchMsg20s ( bool recalled ) {
 		// otherwise, we're done
 		return true;
 	}
+
 	// . i guess crash here for now
 	// . seems like we can call reallocMsg20Buf() and the first 50
 	//   can already be set, so we drop down to here... so don't core
@@ -991,7 +990,6 @@ Msg20 *Msg40::getCompletedSummary ( int32_t ix ) {
 	}
 	return NULL;
 }
-
 
 bool gotSummaryWrapper ( void *state ) {
 	Msg40 *THIS  = (Msg40 *)state;
@@ -1329,7 +1327,6 @@ bool Msg40::gotSummary ( ) {
 		//   we had full requests/replies for m_msg3a.m_numDocIds
 		log("msg40: got all replies i guess");
 		goto doAgain;
-		//char *xx=NULL; *xx=0;
 	}
 
  complete:
@@ -1512,12 +1509,12 @@ bool Msg40::gotSummary ( ) {
 
 
 
-        //
-        // BEGIN URL NORMALIZE AND COMPARE
-        // 
+	//
+	// BEGIN URL NORMALIZE AND COMPARE
+	//
         
-        // . ONLY DEDUP URL if it explicitly enabled AND we are not performing
-        //   a site: or suburl: query.
+	// . ONLY DEDUP URL if it explicitly enabled AND we are not performing
+	//   a site: or suburl: query.
 	if(m_si->m_dedupURL &&
 	   !q->m_hasPositiveSiteField && 
 	   !q->m_hasSubUrlField) { 
