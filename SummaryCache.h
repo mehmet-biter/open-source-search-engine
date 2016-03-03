@@ -33,6 +33,7 @@ public:
 
 private:
 	void purge_step();
+	void forced_purge_step();
 };
 
 

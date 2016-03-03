@@ -72,6 +72,9 @@ void SummaryCache::insert(int64_t key, const void *data, size_t datalen)
 	iter->second.datalen = datalen;
 	iter->second.timestamp = gettimeofdayInMilliseconds();
 	memory_used += datalen;
+	
+	if(memory_used>max_memory)
+		forced_purge_step();
 }
 
 
@@ -102,5 +105,19 @@ void SummaryCache::purge_step()
 			m.erase(iter);
 		} else
 			++purge_iter;
+	}
+}
+
+
+void SummaryCache::forced_purge_step()
+{
+	if(purge_iter==m.end())
+		purge_iter = m.begin();
+	else {
+		std::map<int64_t,Item>::iterator iter = purge_iter;
+		++purge_iter;
+		mfree(iter->second.data,iter->second.datalen,memory_note);
+		memory_used -= iter->second.datalen;
+		m.erase(iter);
 	}
 }
