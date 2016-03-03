@@ -65,7 +65,7 @@ bool g_inMemFunction = false;
 #define OVERPAD  4
 #endif
 
-#define MAGICCHAR 0xda
+static const char MAGICCHAR = (char)0xda;
 
 class Mem g_mem;
 
@@ -1086,7 +1086,7 @@ int Mem::printBreech ( int32_t i , char core ) {
 	char *mem = (char *)s_mptrs[i];
 	char *bp = NULL;
 	for ( int32_t j = 0 ; j < UNDERPAD ; j++ ) {
-		if ( (unsigned char)mem[0-j-1] == MAGICCHAR ) continue;
+		if ( mem[0-j-1] == MAGICCHAR ) continue;
 		log(LOG_LOGIC,"mem: underrun at %"PTRFMT" loff=%"INT32" "
 		    "size=%"INT32" "
 		    "i=%"INT32" note=%s",
@@ -1126,7 +1126,7 @@ int Mem::printBreech ( int32_t i , char core ) {
 	// check for overruns
 	int32_t size = s_sizes[i];
 	for ( int32_t j = 0 ; j < OVERPAD ; j++ ) {
-		if ( (unsigned char)mem[size+j] == MAGICCHAR ) continue;
+		if ( mem[size+j] == MAGICCHAR ) continue;
 		log(LOG_LOGIC,"mem: overrun  at 0x%"PTRFMT" (size=%"INT32")"
 		    "roff=%"INT32" note=%s",
 		    (PTRTYPE)mem,size,j,&s_labels[i*16]);
