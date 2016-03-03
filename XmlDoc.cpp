@@ -19088,7 +19088,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// . no! think about it -- this can be huge for pages like
 	//   google.com!!!
 	LinkInfo *info1 = ptr_linkInfo1;
-	if ( info1 ) { // && m_req->m_getLinkInfo ) {
+	if ( info1 ) {
 		reply->m_pageNumInlinks        = info1->m_totalInlinkingDocIds;
 		reply->m_pageNumGoodInlinks     = info1->m_numGoodInlinks;
 		reply->m_pageNumUniqueIps       = info1->m_numUniqueIps;
@@ -19979,19 +19979,6 @@ char *XmlDoc::getIsLinkSpam ( ) {
 	// set shadow
 	m_isLinkSpam2 = (bool)m_isLinkSpam;
 	return &m_isLinkSpam2;
-}
-
-
-
-void *zliballoc ( void *opaque , unsigned int items , unsigned int size ) {
-	//log("db: got zlib alloc");
-	return (void *)mmalloc ( items * size , "zlib" );
-}
-
-void zlibfree ( void *opaque , void *address ) {
-	//log("db: got zlib free");
-	// -1 will tell Mem.cpp to look it up in the table
-	mfree ( address , -1 , "zlib" );
 }
 
 void *malloc_replace (void *pf , unsigned int nitems , unsigned int size ) {
