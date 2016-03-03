@@ -2,8 +2,8 @@
 
 // get various information from a query and a docId, like summary, title, etc.
 
-#ifndef _MSG20_H_
-#define _MSG20_H_
+#ifndef MSG20_H
+#define MSG20_H
 
 #include "UdpServer.h"
 #include "Hostdb.h"
@@ -313,14 +313,10 @@ public:
 	// Msg40 caches each Msg20Reply when it caches the page of results, so,
 	// to keep the size of the cached Msg40 down, we do not cache certain
 	// things. so we have to "clear" these guys out before caching.
-	void clearOutlinks  () { if ( m_r ) m_r->clearOutlinks (); };
 	void clearLinks     () { if ( m_r ) m_r->clearOutlinks (); };
 	void clearVectors   () { if ( m_r ) m_r->clearVectors  (); };
 	// copy "src" to ourselves
 	void copyFrom ( class Msg20 *src ) ;
-
-	// just let caller parse it up
-	Msg20Reply *getReply () { return m_r; };
 
 	// for sending the request
 	Multicast m_mcast;

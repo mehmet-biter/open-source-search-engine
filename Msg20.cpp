@@ -5,7 +5,6 @@
 #endif
 
 static void gotReplyWrapper20 ( void *state , void *state20 ) ;
-//static void gotReplyWrapper20b ( void *state , UdpSlot *slot );
 static void handleRequest20   ( UdpSlot *slot , int32_t netnice );
 static bool gotReplyWrapperxd ( void *state ) ;
 
@@ -27,26 +26,24 @@ void Msg20::destructor  () { reset(); m_mcast.destructor(); }
 #include "Process.h"
 
 void Msg20::freeReply() {
+	if (!m_r) {
+		return;
+	}
 
-	//log("msg20: freeing reply for msg20=0x%"PTRFMT" reply=0x%"PTRFMT"",
-	//    (PTRTYPE)this,(PTRTYPE)m_r);
-
-	if ( ! m_r ) return;
 	// sometimes the msg20 reply carries an merged bffer from
 	// msg40 that is a constructed ptr_eventSummaryLines from a
 	// merge operation in msg40. this fixes the "merge20buf1" memory
 	// leak from Msg40.cpp
 	m_r->destructor();
-	if ( m_ownReply ) mfree ( m_r, m_replyMaxSize , "Msg20b"  );
-	m_r = NULL;
 
+	if ( m_ownReply ) {
+		mfree(m_r, m_replyMaxSize, "Msg20b");
+	}
+
+	m_r = NULL;
 }
 
-void Msg20::reset() { 
-
-	//log("msg20: resetting msg20=0x%"PTRFMT" reply=0x%"PTRFMT"",
-	//    (PTRTYPE)this,(PTRTYPE)m_r);
-
+void Msg20::reset() {
 	// not allowed to reset one in progress
 	if ( m_inProgress ) { 
 		// do not core on abrupt exits!
@@ -57,14 +54,14 @@ void Msg20::reset() {
 		// otherwise core
 		char *xx=NULL;*xx=0; 
 	}
+
 	m_launched = false;
-	if ( m_request )
-		mfree ( m_request , m_requestSize  , "Msg20rb1" );
+	if ( m_request ) {
+		mfree( m_request, m_requestSize, "Msg20rb1" );
+	}
+
 	freeReply();
-	//if ( m_r ) m_r->destructor();
-	//if ( m_r && m_ownReply ) //&& (char *)m_r != m_replyBuf )
-	//	mfree ( m_r       , m_replyMaxSize , "Msg20b"  );
-	//m_r            = NULL; // the reply ptr
+
 	m_request      = NULL; // the request buf ptr
 	m_gotReply     = false;
 	m_errno        = 0;
@@ -76,31 +73,22 @@ void Msg20::reset() {
 }
 
 bool Msg20::registerHandler ( ) {
-        // . register ourselves with the udp server
-        // . it calls our callback when it receives a msg of type 0x20
-        if ( ! g_udpServer.registerHandler ( 0x20, handleRequest20 )) 
+	// . register ourselves with the udp server
+    // . it calls our callback when it receives a msg of type 0x20
+    if ( ! g_udpServer.registerHandler ( 0x20, handleRequest20 ))
 		return false;
-        return true;
+
+	return true;
 }
 
 // copy "src" to ourselves
 void Msg20::copyFrom ( Msg20 *src ) {
 	gbmemcpy ( this , src , sizeof(Msg20) );
-	// if the Msg20Reply was actually in src->m_replyBuf[] we have to
-	// re-serialize into our this->m_replyBuf[] in order for the ptrs
-	// to be correct
-	//if ( (char *)src->m_r == src->m_replyBuf ) {
-	//	// ok, point our Msg20Reply to our m_replyBuf[]
-	//	m_r = (Msg20Reply *)m_replyBuf;
-	//	// serialize the reply into that buf
-	//	src->m_r->serialize ( m_replyBuf , MSG20_MAX_REPLY_SIZE );
-	//	// then change the offsets to ptrs into this->m_replyBuf
-	//	m_r->deserialize ();
-	//}
 
 	// make sure it does not free it!
 	src->m_r = NULL;
 	m_request = NULL;
+
 	// make sure destructor does not free this
 	src->m_request = NULL;
 	src->destructor();
@@ -108,7 +96,6 @@ void Msg20::copyFrom ( Msg20 *src ) {
 
 // returns true and sets g_errno on error, otherwise, blocks and returns false
 bool Msg20::getSummary ( Msg20Request *req ) {
-
 	// reset ourselves in case recycled
 	reset();
 
@@ -217,11 +204,11 @@ bool Msg20::getSummary ( Msg20Request *req ) {
 	//   calling Msg40::launchMsg20s()
 	if ( ! m_request ) { gotReply(NULL); return true; }
 
-        // . otherwise, multicast to a host in group "groupId"
+	// . otherwise, multicast to a host in group "groupId"
 	// . returns false and sets g_errno on error
 	// . use a pre-allocated buffer to hold the reply
 	// . TMPBUFSIZE is how much a UdpSlot can hold w/o allocating
-        if ( ! m_mcast.send ( m_request         ,
+	if ( ! m_mcast.send ( m_request         ,
 			      m_requestSize     , 
 			      0x20              , // msgType 0x20
 			      false             , // m_mcast own m_request?
@@ -488,13 +475,6 @@ Msg20Reply::~Msg20Reply ( ) {
 }
 
 void Msg20Reply::destructor ( ) {
-	// m_tmp is set to be the allocated buffer size in Msg40.cpp
-	//if ( m_tmp == 0 ) return;
-	//char *p = ptr_eventSummaryLines;
-	//if ( ! p ) return;
-	// this was causing a core!... try again now with NULLing out above
-	//mfree ( p , m_tmp , "merge20buf" );
-	//m_tmp = 0;
 }
 
 #include "Stats.h"
@@ -529,22 +509,20 @@ bool Msg20Reply::sendReply ( XmlDoc *xd ) {
 	// sanity
 	if ( used != need ) { char *xx=NULL;*xx=0; }
 
-	// sanity check, no, might have been banned/filtered above around
-	// line 956 and just called sendReply directly
-	//if ( st->m_memUsed == 0 ) { char *xx=NULL;*xx=0; }
-
 	// use blue for our color
 	int32_t color = 0x0000ff;
+
 	// but use dark blue for niceness > 0
 	if ( xd->m_niceness > 0 ) color = 0x0000b0;
 
-	//Msg20Reply *tt = (Msg20Reply *)buf;
-
 	// sanity check
 	if ( ! xd->m_utf8ContentValid ) { char *xx=NULL;*xx=0; }
+
 	// for records
 	int32_t clen = 0;
+
 	if ( xd->m_utf8ContentValid ) clen = xd->size_utf8Content - 1;
+
 	// show it in performance graph
 	if ( xd->m_startTimeValid ) 
 		g_stats.addStat_r ( clen                         ,
@@ -746,7 +724,6 @@ int32_t Msg20Reply::deserialize ( ) {
 	int32_t  *sizePtr = &size_tbuf;
 	int32_t  *sizeEnd = &size_note;
 	char **strPtr  = &ptr_tbuf;
-	//char **strEnd= &ptr_note;
 	for ( ; sizePtr <= sizeEnd ;  ) {
 		// convert the offset to a ptr
 		*strPtr = p;
