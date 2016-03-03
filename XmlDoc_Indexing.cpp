@@ -2293,8 +2293,7 @@ bool XmlDoc::hashWords3( HashInfo *hi, Words *words, Phrases *phrases, Sections 
 	SafeBuf densBuf;
 	// returns false and sets g_errno on error
 	if ( ! getDensityRanks((int64_t *)wids,
-			       nw,//wordStart,
-			       //wordEnd,
+			       nw,
 			       hi->m_hashGroup,
 			       &densBuf,
 			       sections,
@@ -2342,18 +2341,9 @@ bool XmlDoc::hashWords3( HashInfo *hi, Words *words, Phrases *phrases, Sections 
 		//   from LinkInfo classes (incoming link text). And when
 		//   those IndexLists are hashed they used masked termIds.
 		//   So we should too...
-		//uint64_t h = g_indexdb.getTermId ( startHash , wids[i] ) ;
 		uint64_t h ;
 		if ( plen > 0 ) h = hash64 ( wids[i] , prefixHash );
 		else            h = wids[i];
-
-		// . get word spam rank. 0 means not spammed
-		// . just mod Weights class to ues a weight rank...
-		// . and diversity rank
-		// . need to separate weights by spam vs. diversity.
-		// . maybe just have a diversity class and a pattern class
-		//   and leave the poor weights class alone
-		//int32_t wsr = 0;
 
 		int32_t hashGroup = hi->m_hashGroup;
 

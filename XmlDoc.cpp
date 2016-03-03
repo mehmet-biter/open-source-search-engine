@@ -23529,11 +23529,9 @@ bool getDiversityVec( Words *words, Phrases *phrases, HashTableX *countTable, Sa
 	// . it will be diversity ranks, so one float per word for now
 	//   cuz we convert to rank below though, one byte rank
 	if ( ! sbWordVec  ->reserve ( nw*4 ) ) return false;
-	//if ( ! sbPhraseVec->reserve ( nw*4 ) ) return false;
 
 	// get it
 	float *ww = (float *)sbWordVec  ->getBufStart();
-	//float *pw = (float *)sbPhraseVec->getBufStart();
 
 	int32_t      nexti        = -10;
 	int64_t pidLast      = 0;
@@ -23557,68 +23555,28 @@ bool getDiversityVec( Words *words, Phrases *phrases, HashTableX *countTable, Sa
 		// get the word and phrase weights for term #i
 		float ww2;
 
-		getWordToPhraseRatioWeights ( lastPid  , // pids[i-1],
+		getWordToPhraseRatioWeights ( lastPid  ,
 					      wids[i]  ,
 					      pid      ,
-					      nextWid  , // wids[i+1] ,
+					      nextWid  ,
 					      &ww2     ,
-					      //&pw2     ,
 					      countTable ,
-					      1);//m_version );
+					      1);
 		// 0 to 1.0
 		if ( ww2 < 0 || ww2 > 1.0 ) { char *xx=NULL;*xx=0; }
 		// save the last phrase id
 		if ( nwp > 0 ) {
 			nexti        = i + nwp - 1;
-			pidLast      = pid; // pids[i] ;
+			pidLast      = pid;
 		}
 		// . apply the weights
 		// . do not hit all the way down to zero though...
 		// . Words.cpp::hash() will not index it then...
-		//if ( ww[i] > 0 ) {
 		ww[i] = ww2;
-		//}
-		/*
-		//if ( pw[i] > 0 ) {
-		pw[i] = (int32_t)(pw[i] * pw2);
-		if ( pw[i] <= 0 ) pw[i] = 1;
-		//}
-
-		// MDW: why was this here?
-		//if ( isLinkText ) continue;
-
-		// do not demote all the way to 0
-		//if ( ww[i] <= 0 ) ww[i] = 2;
-
-		// skip if phrase score is 0
-		if ( ! pw[i] ) continue;
-
-		if ( pid == 0 ) { pw[i] = 0; continue; }
-		// skip if does not start phrase
-		if ( nwp <= 0 ) continue;
-		// sanity check
-		if ( nwp == 99 ) { char *xx = NULL; *xx = 0; }
-		// now mod the score
-		float avg = pw[i];
-		// weight by punct in between
-		//for ( int32_t j = i+1 ; j < i+nwp ; j++ ) {
-		//	if ( wids[j] ) continue;
-		//	avg = (avg * (int64_t)pw[j]) / DW;
-		//}
-		// do not demote all the way to zero, we still want to index it
-		// and when normalized on a 100 point scale, like when printed
-		// out by PageParser.cpp, a score of 1 here gets normalized to
-		// 0, so make sure it is at least 2.
-		if ( avg < 2 )
-			avg = 2;
-		// set that as our new score
-		pw[i] = avg;
-		*/
 	}
 
 	// overwrite the array of floats with an array of chars (ranks)
 	char *nww = (char *)ww;
-	//char *npw = (char *)pw;
 
 	// convert from float into a rank from 0-15
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
@@ -23628,10 +23586,8 @@ bool getDiversityVec( Words *words, Phrases *phrases, HashTableX *countTable, Sa
 		// sanity
 		if ( wrank > MAXDIVERSITYRANK ) wrank = MAXDIVERSITYRANK;
 		if ( wrank < 0 ) { char *xx=NULL;*xx=0; }
-		//char prank = (char) ((pw[i] * 15.0) / 2.50);
 		// assign now
 		nww[i] = wrank;
-		//npw[i] = prank;
 	}
 
 	return true;

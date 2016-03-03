@@ -70,11 +70,10 @@ bool Phrases::set( Words *words, Bits *bits, int32_t niceness ) {
 	// . sets m_phraseIds [i]
 	// . sets m_phraseSpam[i] to PSKIP if NO phrase exists
 	for ( int32_t i = 0 ; i < words->getNumWords() ; ++i ) {
-		QUICKPOLL(niceness);
-
 		if ( ! m_wids[i] ) {
 			continue;
 		}
+		QUICKPOLL(niceness);
 
 		setPhrase ( i );
 	}

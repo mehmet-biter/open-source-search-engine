@@ -41,29 +41,32 @@ static const int bytes_in_utf8_code[] = {
 // how many bytes is char pointed to by p?
 inline char getUtf8CharSize ( const uint8_t *p ) {
 	uint8_t c = *p;
-	if(c<128)
+	if ( c < 128 ) {
 		return 1;
-	else
+	} else {
 		return bytes_in_utf8_code[c];
+	}
 }
 
 inline char getUtf8CharSize ( const char *p ) {
 	uint8_t c = (uint8_t)*p;
-	if(c<128)
+	if ( c < 128 ) {
 		return 1;
-	else
+	} else {
 		return bytes_in_utf8_code[c];
+	}
 }
 
 inline char getUtf8CharSize ( uint8_t c ) {
-	if(c<128)
+	if ( c < 128 ) {
 		return 1;
-	else
+	} else {
 		return bytes_in_utf8_code[c];
+	}
 }
 
 inline char getUtf8CharSize2 ( const uint8_t *p ) {
-        if ( ! (p[0] & 0x80) ) return 1;
+	if ( ! (p[0] & 0x80) ) return 1;
 	if ( ! (p[0] & 0x20) ) return 2;
 	if ( ! (p[0] & 0x10) ) return 3;
 	if ( ! (p[0] & 0x08) ) return 4;

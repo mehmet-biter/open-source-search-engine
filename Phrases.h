@@ -14,8 +14,7 @@
 #define PHRASE_BUF_SIZE (MAX_WORDS * 14)
 
 class Phrases {
-
- public:
+public:
 
 	Phrases();
 	~Phrases();
@@ -36,7 +35,9 @@ class Phrases {
 	// . return length
 	char *getPhrase(int32_t i, int32_t *phrLen);
 
-	int32_t  getNumWordsInPhrase2( int32_t i ) { return m_numWordsTotal2[i]; }
+	int32_t getNumWordsInPhrase2( int32_t i ) {
+		return m_numWordsTotal2[i];
+	}
 
 private:
 	// . called by Phrases::set() above for each i
