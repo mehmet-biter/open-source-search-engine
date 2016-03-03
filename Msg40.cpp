@@ -1519,11 +1519,13 @@ bool Msg40::gotSummary ( ) {
 	   !q->m_hasPositiveSiteField && 
 	   !q->m_hasSubUrlField) { 
 		for(int32_t i = 0 ; i < m_msg3a.m_numDocIds ; i++) {
-                        // skip if already invisible
-                        if(m_msg3a.m_clusterLevels[i] != CR_OK) continue;
+			// skip if already invisible
+			if(m_msg3a.m_clusterLevels[i] != CR_OK) continue;
+
 			// get it
 			Msg20Reply *mr = m_msg20[i]->m_r;
-                        // hash the URL all in lower case to catch wiki dups
+
+			// hash the URL all in lower case to catch wiki dups
 			char *url  = mr-> ptr_ubuf;
 			int32_t  ulen = mr->size_ubuf - 1;
 			
@@ -1565,8 +1567,7 @@ bool Msg40::gotSummary ( ) {
 			// if there is no slot,this url doesn't exist => add it
 			if(slot == -1) {
 				m_urlTable.addKey(h,mr->m_docId);
-			}
-			else {
+			} else {
 				// If there was a slot, denote with the
 				// cluster level URL already exited previously
 				char *level = &m_msg3a.m_clusterLevels[i];
@@ -1603,8 +1604,7 @@ bool Msg40::gotSummary ( ) {
 	// show time
 	took = gettimeofdayInMilliseconds() - startTime;
 	if ( took > 3 )
-		log(LOG_INFO,"query: Took %"INT64" ms to do clustering and dup "
-		    "removal.",took);
+		log(LOG_INFO,"query: Took %"INT64" ms to do clustering and dup removal.",took);
 
 	// . let's wait for the tasks to complete before even trying to launch
 	//   more than the first MAX_OUTSTANDING msg20s
@@ -1615,8 +1615,6 @@ bool Msg40::gotSummary ( ) {
 	// debug
 	bool debug = (m_si->m_debug || g_conf.m_logDebugQuery);
 	for ( int32_t i = 0 ; debug && i < m_msg3a.m_numDocIds ; i++ ) {
-		//uint32_t sh;
-		//sh = g_titledb.getHostHash(*(key_t*)m_msg20[i]->m_vectorRec);
 		int32_t cn = (int32_t)m_msg3a.m_clusterLevels[i];
 		if ( cn < 0 || cn >= CR_END ) { char *xx=NULL;*xx=0; }
 		char *s = g_crStrings[cn];
@@ -1625,6 +1623,7 @@ bool Msg40::gotSummary ( ) {
 		     "cl=%"INT32" (%s)", 
 		     i,m_msg3a.m_docIds[i],(int32_t)m_msg3a.m_clusterLevels[i],s);
 	}
+
 	if ( debug )
 		logf (LOG_DEBUG,"query: msg40: firstResult=%"INT32", "
 		      "totalDocIds=%"INT32", resultsWanted=%"INT32" "
@@ -1693,18 +1692,12 @@ bool Msg40::gotSummary ( ) {
 	//
 	////////////
 
-	// english? TEST!
-	unsigned char lang = m_si->m_queryLangId;
-	// just print warning i guess
-	if ( lang == 0 ) { 
-		log("query: queryLang is 0 for q=%s",q->m_orig);
-	}
 
 	// set m_moreToCome, if true, we print a "Next 10" link
-	m_moreToCome = (visible >
-			m_si->m_docsWanted+m_si->m_firstResultNum);
-	if ( m_si->m_debug || g_conf.m_logDebugQuery ) 
-		logf ( LOG_DEBUG, "query: msg40: more? %d",   m_moreToCome );
+	m_moreToCome = (visible > m_si->m_docsWanted+m_si->m_firstResultNum);
+	if ( m_si->m_debug || g_conf.m_logDebugQuery ) {
+		logf( LOG_DEBUG, "query: msg40: more? %d", m_moreToCome );
+	}
 
 	// alloc m_buf, which should be NULL
 	if ( m_buf ) { char *xx = NULL; *xx = 0; }
@@ -1785,10 +1778,9 @@ bool Msg40::gotSummary ( ) {
 	}
 	if ( m_si->m_docIdsOnly ) uc = false;
 
-
-
 	// all done if not storing in cache
 	if ( ! uc ) return true;
+
 	// debug
 	if ( m_si->m_debug )
 		logf(LOG_DEBUG,"query: [%"PTRFMT"] Storing output in cache.",

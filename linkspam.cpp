@@ -1059,8 +1059,8 @@ bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
 	//log(LOG_DEBUG,"build: doing %s",linker->m_url);
 
 	// if the linkee is internal (by domain) then not a link chain
-	if ( linkee->m_dlen == linker->m_dlen &&
-	     strncmp ( linkee->m_domain , linker->m_domain,linkee->m_dlen)==0)
+	if ( linkee->getDomainLen() == linker->getDomainLen() &&
+	     strncmp ( linkee->getDomain() , linker->getDomain(),linkee->getDomainLen())==0)
 		return false;
 
 	char *linkPos = NULL;
@@ -1158,10 +1158,10 @@ bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
 		//   there is left/right text, like the guy that had a list
 		//   to 3 different gigablast.com links in a row with no
 		//   text in between
-		if ( leftUrl.m_dlen != linkee->m_dlen  ) break;
-		if ( strncmp ( leftUrl.m_domain ,
-			       linkee->m_domain ,
-			       linkee->m_dlen   )       ) break;
+		if ( leftUrl.getDomainLen() != linkee->getDomainLen()  ) break;
+		if ( strncmp ( leftUrl.getDomain() ,
+			       linkee->getDomain() ,
+			       linkee->getDomainLen()   )       ) break;
 	}
 
 	// we start off in link text, since linkNode is an <a> tag
@@ -1229,10 +1229,10 @@ bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
 		//   there is left/right text, like the guy that had a list
 		//   to 3 different gigablast.com links in a row with no
 		//   text in between
-		if ( rightUrl.m_dlen != linkee->m_dlen  ) break;
-		if ( strncmp ( rightUrl.m_domain ,
-			       linkee->m_domain  ,
-			       linkee->m_dlen    )       ) break;
+		if ( rightUrl.getDomainLen() != linkee->getDomainLen()  ) break;
+		if ( strncmp ( rightUrl.getDomain() ,
+			       linkee->getDomain()  ,
+			       linkee->getDomainLen()    )       ) break;
 	}
 
 	if ( tableLeft && tableRight ) {

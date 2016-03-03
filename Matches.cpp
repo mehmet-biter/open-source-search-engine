@@ -259,7 +259,7 @@ bool Matches::set( Words *bodyWords, Phrases *bodyPhrases, Sections *bodySection
 	}
 
 	// add in the url terms
-	if ( !addMatches( firstUrl->m_url, firstUrl->m_ulen, MF_URL, niceness ) ) {
+	if ( !addMatches( firstUrl->getUrl(), firstUrl->getUrlLen(), MF_URL, niceness ) ) {
 		return false;
 	}
 

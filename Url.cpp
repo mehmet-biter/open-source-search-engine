@@ -2187,40 +2187,6 @@ char *getDomFast ( char *url , int32_t *domLen , bool hasHttp ) {
 	return udom;
 }
 
-// is it of a permalink form?
-bool isPermalinky ( char *u ) {
-	// get its path
-	char *path = getPathFast(u);
-	// our ptr
-	char *p = path;
-	// we must have a sequence of 3 or more digits in the path
-	int32_t  dcount = 0;
-	// start scanning at the path
-	for ( ; *p && *p !='?'  ; p++ ) {
-		// if not a digit, reset count
-		if ( ! is_digit(*p) ) { dcount = 0; continue; }
-		// count it if a digit
-		if ( ++dcount == 3 ) break;
-	}
-	// it can also have 2+ hyphens or 2+ underscores in a single
-	// path component to be a permalink
-	int32_t hcount = 0;
-	p = path;
-	for ( ; *p && *p !='?'  ; p++ ) {
-		// if not a digit, reset count
-		if ( *p == '/' ) { hcount = 0; continue; }
-		// is it a thing?
-		if ( *p != '_' && *p != '-' ) continue;
-		// count it
-		if ( ++hcount == 2 ) break;
-	}
-	// must be "permalinky"
-	if ( hcount < 2 && dcount < 3 ) return false;
-	// we are
-	return true;
-}
-
-
 // Is it a ping server? It might respond with huge documents with thousands of
 // links, which would normally be detected as link spam. This function is kept
 // around until we have a better way of handling it  than hardcoded URLs in a
@@ -2260,41 +2226,6 @@ char *getScheme ( char *s , int32_t *schemeLen )
 	*schemeLen = div - s;
 	return s;
 }
-
-
-
-char *getFilenameFast ( char *s , int32_t *filenameLen ) {
-	// skip proto
-	while ( *s != ':' ) s++;
-	// skip ://
-	s += 3;
-	// get length of hostname
-	for ( s++; *s && *s != '/' ; s++ );
-	// should always have a /
-	if ( *s != '/' ) { char *xx=NULL;*xx=0;}
-	// skip that
-	s++;
-	// this point to the filename
-	char *filename ;
-	// loop over every subdir name in the path
- subloop:
-	// assume that is filename
-	filename = s;
-	// advance s
-	for ( ; *s && *s !='/' && *s != '?' && *s !='#' ; s++ );
-	// if we hit another '/' re-set filename
-	if ( *s == '/' ) { s++; goto subloop; }
-	// set end of it
-	char *filenameEnd = s;
-	// set length
-	*filenameLen = filenameEnd - filename;
-	// if none, return null
-	if ( *filenameLen == 0 ) return NULL;
-	// return it
-	return filename;
-}
-	
-
 
 // . return ptrs to the end
 // . the character it points to SHOULD NOT BE part of the site

@@ -572,12 +572,10 @@ public:
 	bool hashWords( class HashInfo *hi );
 	bool hashSingleTerm( char *s, int32_t slen, class HashInfo *hi );
 	bool hashString( char *s, int32_t slen, class HashInfo *hi );
-	bool hashString( char *s, class HashInfo *hi );
 
-	bool hashWords3( class HashInfo *hi, class Words *words, class Phrases *phrases, class Synonyms *synonyms,
+	bool hashWords3( class HashInfo *hi, class Words *words, class Phrases *phrases,
 					 class Sections *sections, class HashTableX *countTable, char *fragVec, char *wordSpamVec,
-					 char *langVec, char docLangId, class SafeBuf *pbuf, class HashTableX *wts,
-					 class SafeBuf *wbuf, int32_t niceness );
+					 char *langVec, class HashTableX *wts, class SafeBuf *wbuf, int32_t niceness );
 
 	bool hashString3( char *s, int32_t slen, class HashInfo *hi, class HashTableX *countTable,
 					  class SafeBuf *pbuf, class HashTableX *wts, class SafeBuf *wbuf, int32_t version,
@@ -877,7 +875,7 @@ public:
 	char m_isRSS2;
 	char m_isPermalink2;
 	char m_isAdult2;
-        char m_spiderLinks2;
+	char m_spiderLinks2;
 	char m_isContentTruncated2;
 	char m_isLinkSpam2;
 	char m_isSiteRoot2;

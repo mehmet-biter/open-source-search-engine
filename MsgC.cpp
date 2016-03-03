@@ -289,7 +289,7 @@ int32_t MsgC::gotReply(){
 	if ( (uint32_t)*m_ipPtr <= 255 &&
 	     (uint32_t)*m_ipPtr >  0      ) {
 		log("dns: msgc: got msgc ip reply of %"UINT32" for %s. wtf? trying "
-		    "again.", *m_ipPtr,m_u.m_url);
+		    "again.", *m_ipPtr,m_u.getUrl());
 		g_errno = ETRYAGAIN;
 		*m_ipPtr = 0;
 		//char *xx=NULL;*xx=0; }

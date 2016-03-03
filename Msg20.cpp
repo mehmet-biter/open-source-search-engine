@@ -441,7 +441,7 @@ bool gotReplyWrapperxd ( void *state ) {
 		    "u=%s status=%s q=%s",
 		    took2,
 			took,
-		    xd->m_docId,xd->m_firstUrl.m_url,
+		    xd->m_docId,xd->m_firstUrl.getUrl(),
 		    mstrerror(g_errno),
 		    req->ptr_qbuf);
 	}

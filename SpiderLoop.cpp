@@ -1877,7 +1877,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 			// just note it for now
 			log("spider: spidering same url %s twice. "
 			    "different firstips?",
-			    xd->m_firstUrl.m_url);
+			    xd->m_firstUrl.getUrl());
 			//char *xx=NULL;*xx=0; }
 		}
 		// keep chugging
@@ -2369,7 +2369,7 @@ if( 	g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func
 		    //"Respidering "
 		    //"in %"INT32" seconds. MAX_LOCK_AGE when lock expires. "
 		    "cn=%"INT32"",
-		    xd->m_firstUrl.m_url,
+		    xd->m_firstUrl.getUrl(),
 		    mstrerror(g_errno),
 		    xd->getFirstUrlHash48(),
 		    //(int32_t)MAX_LOCK_AGE,

@@ -1056,7 +1056,7 @@ void StateCD::printTitledbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 			if ( xd.m_contentType == CT_JSON ) continue;
 			// . just print the cached page
 			// . size should include the \0
-			sb->safeStrcpy ( xd.m_firstUrl.m_url);
+			sb->safeStrcpy ( xd.m_firstUrl.getUrl());
 			// then \n
 			sb->pushChar('\n');
 			// then page content

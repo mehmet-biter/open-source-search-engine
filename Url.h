@@ -3,8 +3,8 @@
 // . a class for parsing urls
 // . used by many other classes
 
-#ifndef  _URL_H_
-#define  _URL_H_
+#ifndef  URL_H
+#define  URL_H
 
 #define MAX_URL_LEN 1024
 
@@ -16,12 +16,10 @@
 #include <cstddef>
 
 char *getPathFast  ( char *url );
-char *getFilenameFast ( char *url , int32_t *filenameLen ) ;
 char *getTLDFast   ( char *url , int32_t *tldLen  , bool hasHttp = true ) ;
 char *getDomFast   ( char *url , int32_t *domLen  , bool hasHttp = true ) ;
 bool  hasSubdomain ( char *url );
 char *getHostFast  ( char *url , int32_t *hostLen , int32_t *port = NULL ) ;
-bool  isPermalinky ( char *url );
 
 bool isHijackerFormat ( char *url );
 
@@ -129,7 +127,6 @@ public:
 	char *getQuery       () { return m_query;};
 	char *getIpString    () { return iptoa ( m_ip ); };
 	char *getAnchor      () { return m_anchor;};
-	//char *getSite         () {return m_site;};
 	char *getPortStr     () { return m_portStr; }
 	int32_t  getUrlLen         () { return m_ulen;};
 	int32_t  getSchemeLen      () { return m_slen;};
@@ -169,7 +166,6 @@ public:
 	};
 
 	// used by buzz i guess
-	//int32_t  getSiteHash32   ( char *coll );
 	int32_t      getUrlHash32    ( ) ;
 	int32_t      getHostHash32   ( ) ;
 	int32_t      getDomainHash32 ( ) ;
@@ -202,7 +198,6 @@ public:
 
 	// get path component #num. starts at 0.
 	char *getPathComponent ( int32_t num , int32_t *clen );
-	//char *getPathEnd       ( int32_t num );
 
 	// is our hostname "www" ?
 	bool isHostWWW ( ) ;
@@ -236,8 +231,7 @@ public:
 
 	static char* getDisplayUrl(char* url, SafeBuf* sb);
 
-	// private:
-
+private:
 	char    m_url[MAX_URL_LEN]; // the normalized url
 	int32_t    m_ulen;
 

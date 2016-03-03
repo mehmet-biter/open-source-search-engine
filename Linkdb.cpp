@@ -4857,7 +4857,7 @@ bool isPermalink ( //char        *coll         ,
 	}
 
 	// we can have a cgi of "?p=<digit>" and be a permalink
-	p = u->m_query;
+	p = u->getQuery();
 	bool hasp = ( p && p[0]=='p' && p[1]=='=' && is_digit(p[2]) ) ;
 	// fix for http://proglobalbusiness.org/?m=200806 being detected as
 	// a permalink... it has ?p=xxx outlinks.
@@ -4890,7 +4890,7 @@ bool isPermalink ( //char        *coll         ,
 	}
 
 	// http://proglobalbusiness.org/?m=200806 is never a permalink
-	p = u->m_query;
+	p = u->getQuery();
 	if ( p && p[0]=='m' && p[1]=='=' && is_digit(p[2]) ) {
 		int32_t n = atoi(p+2);
 		if ( n > 199000 && n < 205000 ) {

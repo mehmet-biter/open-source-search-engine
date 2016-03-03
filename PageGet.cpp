@@ -606,7 +606,7 @@ bool processLoop ( void *state ) {
 		sb->safePrintf("<statusCode>0</statusCode>\n");
 		sb->safePrintf("<statusMsg>Success</statusMsg>\n");
 		sb->safePrintf("<url><![CDATA[");
-		sb->cdataEncode(xd->m_firstUrl.m_url);
+		sb->cdataEncode(xd->m_firstUrl.getUrl());
 		sb->safePrintf("]]></url>\n");
 		sb->safePrintf("<docId>%"UINT64"</docId>\n",xd->m_docId);
 		sb->safePrintf("\t<cachedTimeUTC>%"INT32"</cachedTimeUTC>\n",
@@ -619,7 +619,7 @@ bool processLoop ( void *state ) {
 		sb->safePrintf("\t\"statusCode\":0,\n");
 		sb->safePrintf("\t\"statusMsg\":\"Success\",\n");
 		sb->safePrintf("\t\"url\":\"");
-		sb->jsonEncode(xd->m_firstUrl.m_url);
+		sb->jsonEncode(xd->m_firstUrl.getUrl());
 		sb->safePrintf("\",\n");
 		sb->safePrintf("\t\"docId\":%"UINT64",\n",xd->m_docId);
 		sb->safePrintf("\t\"cachedTimeUTC\":%"INT32",\n",

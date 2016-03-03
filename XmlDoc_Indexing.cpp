@@ -224,7 +224,7 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 	// and no cgi
 	if ( fu->isCgi()     ) add = false;
 	// skip if root
-	if ( fu->m_plen <= 1 ) add = false;
+	if ( fu->getPathLen() <= 1 ) add = false;
 	// sanity check
 	if ( ! m_linksValid ) { char *xx=NULL; *xx=0; }
 	// . skip if we have no subdirectory outlinks
@@ -236,7 +236,7 @@ bool XmlDoc::hashNoSplit ( HashTableX *tt ) {
 		// remove the last path component
 		char *end2 = s + slen - 2;
 		// back up over last component
-		for ( ; end2 > fu->m_path && *end2 != '/' ; end2-- ) ;
+		for ( ; end2 > fu->getPath() && *end2 != '/' ; end2-- ) ;
 		// hash that part of the url
 		hi.m_prefix    = "siteterm";
 		if ( ! hashSingleTerm ( host,end2-host,&hi) ) return false;
@@ -1287,8 +1287,6 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// BR 20160114: Skip numbers in urls when doing "inurl:" queries
 	hi.m_hashNumbers = false;
 	hi.m_hashCommonWebWords = false;
-	// no longer, we just index json now
-	//if ( isStatusDoc ) hi.m_prefix = "inurl2";
 	if ( ! hashString ( s,slen, &hi ) ) return false;
 
 
@@ -1303,143 +1301,14 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// copy it to save it
 	char ipbuf[64];
 	int32_t iplen = sprintf(ipbuf,"%s",iptoa(m_ip));
-	//char *tmp = iptoa ( m_ip );
-	//int32_t  tlen = gbstrlen(tmp);
 	hi.m_prefix = "ip";
-	// no longer, we just index json now
-	//if ( isStatusDoc ) hi.m_prefix = "ip2";
 	if ( ! hashSingleTerm(ipbuf,iplen,&hi) ) return false;
-
-	//
-	// BR 20160113: No longer store HASH ip:a.b.c
-	//
-	//char *end1 = ipbuf + iplen - 1;
-	//while ( *end1 != '.' ) end1--;
-	//if ( ! hashSingleTerm(ipbuf,end1-ipbuf,&hi) ) return false;
-
 
 	// . sanity check
 	if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
 
 	char buf[20];
 	int32_t blen;
-
-
-/*
-	// BR 20160106: No longer store gbpathdepth in posdb
-
-	//
-	// HASH the url path plain as if in body
-	//
-	// get number of components in the path. does not include the filename
-	int32_t pathDepth = fu->getPathDepth(false);
-	// make it a density thing
-	//pathScore /= ( pathDepth + 1 );
-	// ensure score positive
-	//if ( pathScore <= 0 ) pathScore = 1;
-	// get it
-	char *path = fu->getPath();
-	int32_t  plen = fu->getPathLen();
-
-	hi.m_prefix = NULL;
-	hi.m_desc = "url path";
-	hi.m_hashGroup = HASHGROUP_INURL;
-
-
-	setStatus ( "hashing gbpathdepth");
-
-	//
-	// HASH gbpathdepth:X
-	//
-	// xyz.com/foo      --> 0
-	// xyz.com/foo/     --> 1
-	// xyz.com/foo/boo  --> 1
-	// xyz.com/foo/boo/ --> 2
-
-	int32_t blen = sprintf(buf,"%"INT32"",pathDepth);
-	// update parms
-	hi.m_prefix    = "gbpathdepth";
-	// no longer, we just index json now
-	//if ( isStatusDoc ) hi.m_prefix = "gbpathdepth2";
-	hi.m_hashGroup = HASHGROUP_INTAG;
-	// hash gbpathdepth:X
-	if ( ! hashString ( buf,blen,&hi) ) return false;
-*/
-
-
-/*
-	// BR 20160106: No longer stored in our posdb as we don't use it
-
-	//
-	// HASH gbhopcount:X
-	//
-	setStatus ( "hashing gbhopcount");
-	if ( ! m_hopCountValid ) { char *xx=NULL;*xx=0; }
-	blen = sprintf(buf,"%"INT32"",(int32_t)m_hopCount);
-	// update parms
-	hi.m_prefix    = "gbhopcount";
-	// no longer, we just index json now
-	//if ( isStatusDoc ) hi.m_prefix = "gbhopcount2";
-	hi.m_hashGroup = HASHGROUP_INTAG;
-
-	// hash gbpathdepth:X
-	if ( ! hashString ( buf,blen,&hi) ) return false;
-*/
-
-
-/*
-	// BR 20160108: No longer stored in our posdb as we don't use it
-	setStatus ( "hashing gbhasfilename");
-
-	//
-	// HASH gbhasfilename:0 or :1
-	//
-	char *hm;
-	if ( fu->getFilenameLen() ) hm = "1";
-	else                        hm = "0";
-	// update parms
-	hi.m_prefix = "gbhasfilename";
-	// no longer, we just index json now
-	//if ( isStatusDoc ) hi.m_prefix = "gbhasfilename2";
-	// hash gbhasfilename:[0|1]
-	if ( ! hashString ( hm,1,&hi) ) return false;
-*/
-
-
-/*
-	// BR 20160106: No longer store gbiscgi in posdb
-
-	setStatus ( "hashing gbiscgi");
-
-	//
-	// HASH gbiscgi:0 or gbiscgi:1
-	//
-	if ( fu->isCgi() ) hm = "1";
-	else               hm = "0";
-	hi.m_prefix = "gbiscgi";
-	// no longer, we just index json now
-	//if ( isStatusDoc ) hi.m_prefix = "gbiscgi2";
-	if ( ! hashString ( hm,1,&hi) ) return false;
-*/
-
-
-/*
-	// BR 20160108: No longer stored in our posdb as we don't use it
-
-	setStatus ( "hashing gbext");
-	//
-	// HASH gbhasext:0 or gbhasext:1 (does it have a fileextension)
-	//
-	// . xyz.com/foo     --> gbhasext:0
-	// . xyz.com/foo.xxx --> gbhasext:1
-	if ( fu->getExtensionLen() ) hm = "1";
-	else                         hm = "0";
-	hi.m_prefix = "gbhasext";
-	// no longer, we just index json now
-	//if ( isStatusDoc ) hi.m_prefix = "gbhasext2";
-	if ( ! hashString ( hm,1,&hi) ) return false;
-*/
-
 
 	//
 	// HASH the url's mid domain and host as they were in the body
@@ -1476,8 +1345,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	char pbuf[12];
 	int pbufLen=0;
 	int32_t port = fu->getPort();
-	if( port > 0 && port != 80 && port != 443 )
-	{
+	if( port > 0 && port != 80 && port != 443 ) {
 		pbufLen=snprintf(pbuf, 12, ":%"UINT32"",fu->getPort());
 	}
 
@@ -1531,8 +1399,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	}
 
 	// now keep moving the period over in the hostname
-	while ( name < end3 && *name != '.' ) 
-	{ 
+	while ( name < end3 && *name != '.' ) {
 		name++; 
 		nameLen--; 
 	}
@@ -1622,7 +1489,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// and no cgi
 	if ( fu->isCgi()     ) add = false;
 	// skip if root
-	if ( fu->m_plen <= 1 ) add = false;
+	if ( fu->getPathLen() <= 1 ) add = false;
 	// sanity check
 	if ( ! m_linksValid ) { char *xx=NULL; *xx=0; }
 	// . skip if we have no subdirectory outlinks
@@ -1641,7 +1508,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 		// remove the last path component
 		char *end2 = s + slen - 2;
 		// back up over last component
-		for ( ; end2 > fu->m_path && *end2 != '/' ; end2-- ) ;
+		for ( ; end2 > fu->getPath() && *end2 != '/' ; end2-- ) ;
 		// hash that part of the url
 		hi.m_prefix    = "siteterm";
 		if ( ! hashSingleTerm ( host,end2-host,&hi) ) return false;
@@ -1783,7 +1650,7 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 		// sanity check
 		if ( ! verifyUtf8 ( txt , tlen ) ) {
 			log("xmldoc: bad link text 2 from url=%s for %s",
-			    k->getUrl(),m_firstUrl.m_url);
+			    k->getUrl(),m_firstUrl.getUrl());
 			continue;
 		}
 		// if it is anomalous, set this, we don't
@@ -2273,9 +2140,6 @@ bool XmlDoc::hashSingleTerm( char *s, int32_t slen, HashInfo *hi ) {
 	return true;
 }
 
-bool XmlDoc::hashString ( char *s, HashInfo *hi ) {
-	return hashString ( s , gbstrlen(s), hi ); }
-
 bool XmlDoc::hashString( char *s, int32_t slen, HashInfo *hi ) {
 	if ( ! m_versionValid        ) { char *xx=NULL;*xx=0; }
 
@@ -2321,27 +2185,10 @@ bool XmlDoc::hashString3( char       *s              ,
 	// use primary langid of doc
 	if ( ! m_langIdValid ) { char *xx=NULL;*xx=0; }
 
-	return hashWords3  ( //0                   ,
-			     //words.getNumWords() ,
-			     hi                  ,
-			     &words              ,
-			     &phrases            ,
-			     NULL,//sp                  , synonyms
-			     NULL                , // sections
-			     countTable          ,
-			     NULL , // fragvec
-			     NULL , // wordspamvec
-			     NULL , // langvec
-			     langUnknown , // default langid doclangid
-			     pbuf                ,
-			     wts                 ,
-			     wbuf                ,
-			     niceness            );
+	return hashWords3( hi, &words, &phrases, NULL, countTable, NULL, NULL, NULL, wts, wbuf, niceness );
 }
 
-bool XmlDoc::hashWords ( //int32_t        wordStart ,
-			 //int32_t        wordEnd   ,
-			 HashInfo   *hi        ) {
+bool XmlDoc::hashWords ( HashInfo   *hi ) {
 	// sanity checks
 	if ( ! m_wordsValid   ) { char *xx=NULL; *xx=0; }
 	if ( ! m_phrasesValid ) { char *xx=NULL; *xx=0; }
@@ -2360,42 +2207,14 @@ bool XmlDoc::hashWords ( //int32_t        wordStart ,
 	char *fragVec = m_fragBuf.getBufStart();
 	char *langVec = m_langVec.getBufStart();
 
-	return   hashWords3( //wordStart       ,
-			     //wordEnd         ,
-			     hi              ,
-			     &m_words        ,
-			     &m_phrases      ,
-			     NULL,//&m_synonyms     ,
-			     &m_sections     ,
-			     &m_countTable   ,
-			     fragVec ,
-			     wordSpamVec ,
-			     langVec ,
-			     m_langId , // defaultLangId docLangId
-			     m_pbuf          ,
-			     m_wts           ,
-			     &m_wbuf         ,
-			     m_niceness      );
+	return hashWords3( hi, &m_words, &m_phrases, &m_sections, &m_countTable, fragVec, wordSpamVec, langVec, m_wts,
+	                   &m_wbuf, m_niceness );
 }
 
 // . this now uses posdb exclusively
-bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
-			 //int32_t        wordEnd   ,
-		 HashInfo   *hi        ,
-		 Words      *words     ,
-		 Phrases    *phrases   ,
-		 Synonyms   *synonyms  ,
-		 Sections   *sectionsArg  ,
-		 HashTableX *countTable ,
-		 char *fragVec ,
-		 char *wordSpamVec ,
-		 char *langVec ,
-		 char docLangId , // default lang id
-		 //Weights    *weights   ,
-		 SafeBuf    *pbuf      ,
-		 HashTableX *wts       ,
-		 SafeBuf    *wbuf      ,
-		 int32_t        niceness  ) {
+bool XmlDoc::hashWords3( HashInfo *hi, Words *words, Phrases *phrases, Sections *sectionsArg, HashTableX *countTable,
+                         char *fragVec, char *wordSpamVec, char *langVec, HashTableX *wts, SafeBuf *wbuf,
+                         int32_t niceness ) {
 	Sections *sections = sectionsArg;
 	// for getSpiderStatusDocMetaList() we don't use sections it'll mess us up
 	if ( ! hi->m_useSections ) sections = NULL;
@@ -2440,7 +2259,6 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 	}
 
 	bool hashIffUnique = false;
-	//if ( hi->m_hashGroup == HASHGROUP_INLINKTEXT ) hashIffUnique = true;
 	if ( hi->m_hashGroup == HASHGROUP_INMETATAG  ) hashIffUnique = true;
 	if ( hi->m_hashGroup == HASHGROUP_INTAG      ) hashIffUnique = true;
 	HashTableX ut; ut.set ( 8,0,0,NULL,0,false,niceness,"uqtbl");
@@ -2492,15 +2310,11 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 	///////////
 	Section **sp = NULL;
 	if ( sections ) sp = sections->m_sectionPtrs;
+
 	SafeBuf wpos;
-	if ( ! getWordPosVec ( words ,
-			       sections,
-			       //wordStart,
-			       //wordEnd,
-			       m_dist, // hi->m_startDist,
-			       fragVec,
-			       niceness,
-			       &wpos) ) return false;
+	if ( ! getWordPosVec ( words , sections, m_dist, fragVec, niceness, &wpos) )
+		return false;
+
 	// a handy ptr
 	int32_t *wposvec = (int32_t *)wpos.getBufStart();
 
@@ -2517,10 +2331,8 @@ bool XmlDoc::hashWords3 ( //int32_t        wordStart ,
 		// do not breach wordpos bits
 		if ( wposvec[i] > MAXWORDPOS ) break;
 
-
 		// BR: 20160114 if digit, do not hash it if disabled
-		if( is_digit( wptrs[i][0] ) && !hi->m_hashNumbers )
-		{
+		if( is_digit( wptrs[i][0] ) && !hi->m_hashNumbers ) {
 			continue;
 		}
 

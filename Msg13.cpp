@@ -3250,15 +3250,21 @@ bool printHammerQueueTable ( SafeBuf *sb ) {
 	sb->safePrintf( "<td><a href=\"");
 	Url cu;
 	cu.set ( r->ptr_url );
-	bool isHttps = false;
-	if ( cu.m_url && cu.m_url[4] == 's' ) isHttps = true;
-	if ( isHttps ) sb->safeStrcpy ( "https://");
-	else           sb->safeStrcpy ( "http://" );
-        sb->safeMemcpy ( cu.getHost() , cu.getHostLen() );
+	bool isHttps = cu.isHttps();
+	if ( isHttps ) {
+		sb->safeStrcpy( "https://" );
+	} else {
+		sb->safeStrcpy( "http://" );
+	}
+
+	sb->safeMemcpy ( cu.getHost() , cu.getHostLen() );
 	int32_t port = cu.getPort();
-	int32_t defPort = 80;
-	if ( isHttps ) defPort = 443;
-	if ( port != defPort ) sb->safePrintf ( ":%"INT32"",port );
+	int32_t defPort = isHttps ? 443 : 80;
+
+	if ( port != defPort ) {
+		sb->safePrintf( ":%"INT32"", port );
+	}
+
 	sb->safePrintf ( "/robots.txt\">"
 			 "%i"
 			 "</a>"

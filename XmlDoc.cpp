@@ -1312,7 +1312,7 @@ void XmlDoc::setStatus ( char *s ) {
 			    "u=%s) took %"INT32"ms",
 			    s_last,
 			    (PTRTYPE)this,
-			    m_firstUrl.m_url,
+			    m_firstUrl.getUrl(),
 			    took);
 		s_lastTimeStart = now;
 	}
@@ -1334,7 +1334,7 @@ void XmlDoc::setStatus ( char *s ) {
 	//return;
 	if ( m_firstUrlValid )
 		logf(LOG_DEBUG,"build: status = %s for %s (this=0x%"PTRFMT")",
-		     s,m_firstUrl.m_url,(PTRTYPE)this);
+		     s,m_firstUrl.getUrl(),(PTRTYPE)this);
 	else
 		logf(LOG_DEBUG,"build: status = %s for docId %"INT64" "
 		     "(this=0x%"PTRFMT")",
@@ -1691,7 +1691,7 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 	// we need this now for ucp ucr upp upr new url filters that do
 	// substring matching on the url
 	if ( m_firstUrlValid )
-		strcpy(sreq->m_url,m_firstUrl.m_url);
+		strcpy(sreq->m_url,m_firstUrl.getUrl());
 
 	// re-make the key since it contains m_firstIp
 	long long uh48 = fu->getUrlHash48();
@@ -1823,7 +1823,7 @@ if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func_
 		log("build: done indexing child doc. error=%s. not adding "
 		    "spider reply for %s",
 		    mstrerror(g_errno),
-		    m_firstUrl.m_url);
+		    m_firstUrl.getUrl());
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, return true, indexed child doc", __FILE__, __func__, __LINE__);
 		return true;
 	}
@@ -1838,7 +1838,7 @@ if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func_
 	if ( m_firstUrlValid && g_errno )
 		log("build: %s had internal error = %s. adding spider "
 		    "error reply.",
-		    m_firstUrl.m_url,mstrerror(g_errno));
+		    m_firstUrl.getUrl(),mstrerror(g_errno));
 	else if ( g_errno )
 		log("build: docid=%"INT64" had internal error = %s. "
 		    "adding spider error reply.",
@@ -2148,7 +2148,7 @@ bool XmlDoc::indexDoc2 ( ) {
 			//char *xx=NULL;*xx=0; }
 		}
 		log("build: Error spidering for doc %s: %s",
-		    m_firstUrl.m_url,mstrerror(g_errno));
+		    m_firstUrl.getUrl(),mstrerror(g_errno));
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, return true. getMetaList returned false", __FILE__, __func__, __LINE__);
 		return true;
 	}
@@ -2371,7 +2371,7 @@ int32_t *XmlDoc::getIndexCode ( ) {
 	// if we could not get an ip we need to make a fake one
 	if ( ! m_ipValid || m_ip == 0 || m_ip == -1 ) {
 		log("build: ip unattainable. forcing ip address of %s "
-		    "to 10.5.123.45",m_firstUrl.m_url);
+		    "to 10.5.123.45",m_firstUrl.getUrl());
 		    
 		//@todo BR: Ehh??
 		m_ip = atoip("10.5.123.45");
@@ -2422,14 +2422,14 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 
 	if ( ! m_firstUrlValid ) { char *xx=NULL;*xx=0; }
 
-	if ( m_firstUrl.m_ulen <= 5 ) {
+	if ( m_firstUrl.getUrlLen() <= 5 ) {
 		m_indexCode = EBADURL;
 		m_indexCodeValid = true;
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, EBADURL. FirstURL len too short", __FILE__,__func__,__LINE__);
 		return &m_indexCode;
 	}
 
-	if ( m_firstUrl.m_ulen + 1 >= MAX_URL_LEN ) {
+	if ( m_firstUrl.getUrlLen() + 1 >= MAX_URL_LEN ) {
 		m_indexCode      = EURLTOOLONG;
 		m_indexCodeValid = true;
 		
@@ -2457,7 +2457,7 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 	}
 
 	// fix for "http://.xyz.com/...."
-	if ( m_firstUrl.m_host && m_firstUrl.m_host[0] == '.' ) {
+	if ( m_firstUrl.getHost() && m_firstUrl.getHost()[0] == '.' ) {
 		m_indexCode      = EBADURL;
 		m_indexCodeValid = true;
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, EBADURL (URL first char is .)", __FILE__,__func__,__LINE__);
@@ -3921,7 +3921,7 @@ char *XmlDoc::getIsAdult ( ) {
 
 	// score that up
 	int32_t total = getDirtyPoints ( ptr_utf8Content, size_utf8Content - 1 ,
-				      m_niceness , m_firstUrl.m_url );
+				      m_niceness , m_firstUrl.getUrl() );
 
 
 	// debug msg
@@ -3941,7 +3941,7 @@ char *XmlDoc::getIsAdult ( ) {
 
 	// note it
 	if ( m_isAdult2 && g_conf.m_logDebugDirty )
-		log("dirty: %s points = %"INT32"",m_firstUrl.m_url,total);
+		log("dirty: %s points = %"INT32"",m_firstUrl.getUrl(),total);
 
 	// no dirty words found
 	return &m_isAdult2;
@@ -5013,7 +5013,7 @@ HashTableX *XmlDoc::getCountTable ( ) {
 		plen = k->size_linkText - 1;
 		if ( ! verifyUtf8 ( p , plen ) ) {
 			log("xmldoc: bad link text 3 from url=%s for %s",
-			    k->getUrl(),m_firstUrl.m_url);
+			    k->getUrl(),m_firstUrl.getUrl());
 			continue;
 		}
 		if ( ! hashString_ct ( ct , p , plen ) )
@@ -5998,7 +5998,7 @@ char *XmlDoc::getIsDup ( ) {
 		// are the dup i guess...
 		if ( sr >= myRank ) {
 			log("build: doc %s is dup of docid %"INT64"",
-			    m_firstUrl.m_url,d);
+			    m_firstUrl.getUrl(),d);
 			m_isDup = true;
 			m_isDupValid = true;
 			m_docIdWeAreADupOf = d;
@@ -6131,7 +6131,7 @@ int64_t XmlDoc::getFirstUrlHash48() {
 		return m_firstUrlHash48;
 	}
 
-	m_firstUrlHash48 = hash64b ( m_firstUrl.m_url ) & 0x0000ffffffffffffLL;
+	m_firstUrlHash48 = hash64b ( m_firstUrl.getUrl() ) & 0x0000ffffffffffffLL;
 	m_firstUrlHash48Valid = true;
 	return m_firstUrlHash48;
 }
@@ -6147,7 +6147,7 @@ int64_t XmlDoc::getFirstUrlHash64() {
 		return m_firstUrlHash64;
 	}
 
-	m_firstUrlHash64 = hash64b ( m_firstUrl.m_url );
+	m_firstUrlHash64 = hash64b ( m_firstUrl.getUrl() );
 	m_firstUrlHash64Valid = true;
 	return m_firstUrlHash64;
 }
@@ -6346,8 +6346,8 @@ Url **XmlDoc::getRedirUrl() {
 			//logf(LOG_INFO,"build: %s force redirected to %s",
 			//     cu->getUrl(),m_redirUrl.getUrl());
 			m_redirUrlValid = true;
-			ptr_redirUrl    = m_redirUrl.m_url;
-			size_redirUrl   = m_redirUrl.m_ulen+1;
+			ptr_redirUrl    = m_redirUrl.getUrl();
+			size_redirUrl   = m_redirUrl.getUrlLen()+1;
 			// no error
 			m_redirError = 0;
 			m_redirErrorValid = true;
@@ -6361,7 +6361,7 @@ Url **XmlDoc::getRedirUrl() {
 	QUICKPOLL(m_niceness);
 
 	// if no location url, then no redirect a NULL redir url
-	if ( ! loc || loc->m_url[0] == '\0' ) {
+	if ( ! loc || loc->getUrl()[0] == '\0' ) {
 		// validate it
 		m_redirUrlValid = true;
 		// no error
@@ -6478,8 +6478,8 @@ Url **XmlDoc::getRedirUrl() {
 	if ( ! sameDom ) {
 		m_redirUrl.set ( loc , false ); // addWWW=false
 		m_redirUrlPtr   = &m_redirUrl;
-		ptr_redirUrl    = m_redirUrl.m_url;
-		size_redirUrl    = m_redirUrl.m_ulen+1;
+		ptr_redirUrl    = m_redirUrl.getUrl();
+		size_redirUrl    = m_redirUrl.getUrlLen()+1;
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, return redirUrl. Not same domain [%s]", __FILE__,__func__,__LINE__, m_redirUrlPtr->getUrl());
 		return &m_redirUrlPtr;
 	}
@@ -6579,8 +6579,8 @@ Url **XmlDoc::getRedirUrl() {
 	// good to go
 	m_redirUrl.set ( loc , false ); // addWWW=false
 	m_redirUrlPtr   = &m_redirUrl;
-	ptr_redirUrl    = m_redirUrl.m_url;
-	size_redirUrl   = m_redirUrl.m_ulen+1;
+	ptr_redirUrl    = m_redirUrl.getUrl();
+	size_redirUrl   = m_redirUrl.getUrlLen()+1;
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, return [%s]", __FILE__,__func__,__LINE__, m_redirUrlPtr->getUrl());
 	return &m_redirUrlPtr;
 }
@@ -6796,7 +6796,7 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 				cr->m_coll     ,
 				NULL       , // pbuf
 				m_niceness ) ) {
-		log("build: failed to set old doc for %s",m_firstUrl.m_url);
+		log("build: failed to set old doc for %s",m_firstUrl.getUrl());
 		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
 		int32_t saved = g_errno;
 		// ok, fix the memleak here
@@ -7735,7 +7735,7 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 		    (PTRTYPE)tag,
 		    // (PTRTYPE)tag2,
 		    // (PTRTYPE)tag3,
-		    m_firstUrl.m_url);
+		    m_firstUrl.getUrl());
 
 	LinkInfo *sinfo = NULL;
 	char *mysite = NULL;
@@ -8607,10 +8607,12 @@ bool *XmlDoc::getIsAllowed ( ) {
 	p += cu->getHostLen();
 	int32_t port = cu->getPort();
 	// 80 is the default port
-	int32_t defPort = 80;
-	// is it https://?
-	if ( cu->m_url[4] == 's' ) defPort = 443;
-	if ( port != defPort ) p += sprintf ( p , ":%"INT32"",port );
+	int32_t defPort = cu->isHttps() ? 443 : 80;
+
+	if ( port != defPort ) {
+		p += sprintf( p, ":%"INT32"", port );
+	}
+
 	p += sprintf ( p , "/robots.txt" );
 	m_extraUrl.set ( buf );
 
@@ -9640,11 +9642,11 @@ char **XmlDoc::getHttpReply2 ( ) {
 	//r->m_isPageParser = getIsPageParser();
 
 
-	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: cu->m_url [%s]", __FILE__,__func__,__LINE__, cu->m_url);
-	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: m_firstUrl.m_url [%s]", __FILE__,__func__,__LINE__, m_firstUrl.m_url);
+	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: cu->m_url [%s]", __FILE__,__func__,__LINE__, cu->getUrl());
+	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: m_firstUrl.m_url [%s]", __FILE__,__func__,__LINE__, m_firstUrl.getUrl());
 
 	// if current url IS NOT EQUAL to first url then set redir flag
-	if ( strcmp(cu->m_url,m_firstUrl.m_url) )
+	if ( strcmp(cu->getUrl(),m_firstUrl.getUrl()) )
 		r->m_skipHammerCheck = 1;
 	// or if this an m_extraDoc or m_rootDoc for another url then
 	// do not bother printing the hammer ip msg in msg13.cpp either
@@ -9856,7 +9858,7 @@ char **XmlDoc::gotHttpReply ( ) {
 		log("http: httpReplySize=%"INT32" http reply does not end in \\0 "
 		    "for %s in collnum=%"INT32". blanking out reply."
 		    ,m_httpReplySize
-		    ,m_firstUrl.m_url
+		    ,m_firstUrl.getUrl()
 		    ,(int32_t)m_collnum
 		    );
 		// free it i guess
@@ -10164,7 +10166,7 @@ char **XmlDoc::getContent ( ) {
 	if ( m_recycleContent ) {
 		if ( m_firstUrlValid )
 			log("xmldoc: failed to recycle content for %s. could "
-			    "not load title rec",m_firstUrl.m_url);
+			    "not load title rec",m_firstUrl.getUrl());
 		else if ( m_docIdValid )
 			log("xmldoc: failed to recycle content for %"UINT64". "
 			    "could "
@@ -11431,7 +11433,7 @@ char **XmlDoc::getRawUtf8Content ( ) {
 		for ( ; p < pend ; p++ ) *p = ' ';
 		// log it maybe due to us not being keep alive http server?
 		log("doc: fix bad utf8 overflow (because we are not "
-		    "keepalive?) in doc %s",m_firstUrl.m_url);
+		    "keepalive?) in doc %s",m_firstUrl.getUrl());
 	}
 	// overflow?
 	if ( p != pend ) { char *xx=NULL;*xx=0; }
@@ -11622,7 +11624,7 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		//   in the root doc that we have in the  main doc, like a
 		//   facebook iframe or something.
 		// . use a m_maxCacheAge of 5 seconds now!
-		ped = getExtraDoc ( furl.m_url , 5 );
+		ped = getExtraDoc ( furl.getUrl() , 5 );
 		// should never block
 		if ( ! ped ) {
 			log("xmldoc: getExpandedutf8content = %s",
@@ -12785,7 +12787,7 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 	// bad news?
 	if ( ufn < 0 ) {
 		log("build: failed to get url filter for xmldoc %s",
-		    m_firstUrl.m_url);
+		    m_firstUrl.getUrl());
 		//g_errno = EBADENGINEER;
 		//return NULL;
 	}
@@ -13268,7 +13270,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 			       m_sreq.m_pageNumInlinks);
 
 	// shortcut
-	int64_t uh48 = hash64b ( m_firstUrl.m_url );
+	int64_t uh48 = hash64b ( m_firstUrl.getUrl() );
 	// mask it
 	uh48 &= 0x0000ffffffffffffLL;
 	sb->safePrintf ("uh48=%"UINT64" ",uh48 );
@@ -13440,7 +13442,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 
 	// like how we index it, do not include the filename. so we can
 	// have a bunch of pathdepth 0 urls with filenames like xyz.com/abc.htm
-	if ( m_firstUrlValid && m_firstUrl.m_url && m_firstUrl.m_ulen >= 3 ) {
+	if ( m_firstUrlValid && m_firstUrl.getUrl() && m_firstUrl.getUrlLen() >= 3 ) {
 		int32_t pd = m_firstUrl.getPathDepth(false);
 		sb->safePrintf("pathdepth=%"INT32" ",pd);
 	}
@@ -13585,7 +13587,7 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 		sb->safePrintf("dupofdocid=%"INT64" ",m_docIdWeAreADupOf);
 
 	if ( m_firstUrlValid )
-		sb->safePrintf("url=%s ",m_firstUrl.m_url);
+		sb->safePrintf("url=%s ",m_firstUrl.getUrl());
 	else
 		sb->safePrintf("urldocid=%"INT64" ",m_docId);
 
@@ -13694,7 +13696,7 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 	char *rv = doc->getMetaList ( );
 
 	// sanity check - compare urls
-	if ( doc->m_firstUrl.m_ulen != m_firstUrl.m_ulen){char *xx=NULL;*xx=0;}
+	if ( doc->m_firstUrl.getUrlLen() != m_firstUrl.getUrlLen()){char *xx=NULL;*xx=0;}
 
 	// error setting it?
 	if ( ! rv ) {
@@ -15385,7 +15387,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	}
 	// or if we are rebuilding spiderdb
 	else if (m_useSecondaryRdbs && m_useSpiderdb)
-		needSpiderdb3 = sizeof(SpiderRequest) + m_firstUrl.m_ulen+1;
+		needSpiderdb3 = sizeof(SpiderRequest) + m_firstUrl.getUrlLen()+1;
 
 	need += needSpiderdb3;
 
@@ -16472,7 +16474,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	int64_t uh48        = 0LL;
 	// we might be a docid based spider request so fu could be invalid
 	// if the titlerec lookup failed
-	if ( fu ) uh48 = hash64b(fu->m_url) & 0x0000ffffffffffffLL;
+	if ( fu ) uh48 = hash64b(fu->getUrl()) & 0x0000ffffffffffffLL;
 	int64_t parentDocId = 0LL;
 	if ( m_sreqValid )
 		parentDocId = m_sreq.getParentDocId();
@@ -16745,7 +16747,7 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 		int64_t lock2 = makeLockTableKey(&m_srep);
 		if ( lock1 != lock2 ) {
 			log("build: lock1 != lock2 lock mismatch for %s",
-			    m_firstUrl.m_url);
+			    m_firstUrl.getUrl());
 			char *xx=NULL;*xx=0;
 		}
 	}
@@ -16824,7 +16826,7 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 	// we need this now for ucp ucr upp upr new url filters that do
 	// substring matching on the url
 	if ( m_firstUrlValid )
-		strcpy(sreq->m_url,m_firstUrl.m_url);
+		strcpy(sreq->m_url,m_firstUrl.getUrl());
 }
 
 // defined in PageCrawlBot.cpp
@@ -17480,7 +17482,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			     ksr.m_url,
 			     //sb1.getBufStart(),
 			     sb2.getBufStart(),
-			     m_firstUrl.m_url);
+			     m_firstUrl.getUrl());
 		}
 
 		// serialize into the buffer
@@ -17906,7 +17908,7 @@ SafeBuf *XmlDoc::getSpiderStatusDocMetaList2 ( SpiderReply *reply1 ) {
 	// sanity
 	if ( *uqd <= 0 || *uqd > MAX_DOCID ) {
 		log("xmldoc: avail docid = %"INT64". could not index spider "
-		    "reply or %s",*uqd,m_firstUrl.m_url);
+		    "reply or %s",*uqd,m_firstUrl.getUrl());
 		//char *xx=NULL;*xx=0; }
 		m_spiderStatusDocMetaListValid = true;
 		return &m_spiderStatusDocMetaList;
@@ -19193,7 +19195,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 			    "%s from linker %s",
 			    took,
 			    m_req->ptr_linkee,
-			    m_firstUrl.m_url );
+			    m_firstUrl.getUrl() );
 
 		logf(LOG_DEBUG,"build: Got linknode = %"INT32" < 0. Cached "
 		     "linker %s does not have outlink to %s like linkdb "
@@ -19215,7 +19217,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	if ( ! verifyUtf8 ( m_linkTextBuf , blen ) ) {
 		log("xmldoc: bad OUT link text from url=%s for %s",
-		    m_req->ptr_linkee,m_firstUrl.m_url);
+		    m_req->ptr_linkee,m_firstUrl.getUrl());
 		m_linkTextBuf[0] = '\0';
 		blen = 0;
 	}
@@ -19224,7 +19226,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// length/size is not in cahoots and [size-1] != '\0' sometimes
 	if ( ! verifyUtf8 ( rssItem , rssItemLen ) ) {
 		log("xmldoc: bad RSS ITEM text from url=%s for %s",
-		    m_req->ptr_linkee,m_firstUrl.m_url);
+		    m_req->ptr_linkee,m_firstUrl.getUrl());
 		rssItem[0] = '\0';
 		rssItemLen = 0;
 	}
@@ -19453,7 +19455,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		    "%s from linker %s",
 		    took,
 		    m_req->ptr_linkee,
-		    m_firstUrl.m_url );
+		    m_firstUrl.getUrl() );
 
 
 	m_replyValid = true;
@@ -21610,7 +21612,7 @@ bool XmlDoc::printRainbowSections ( SafeBuf *sb , HttpRequest *hr ) {
 	if ( ! isXml ) {
 		// put url in for steve to parse out
 		sb->safePrintf("%s\n",
-			       m_firstUrl.m_url);
+			       m_firstUrl.getUrl());
 		sb->safePrintf("<font color=black>w</font>"
 			       "/"
 			       "<font color=purple>x</font>"
@@ -22478,7 +22480,7 @@ char **XmlDoc::getTitleBuf ( ) {
 		// skip corrupted
 		if ( ! verifyUtf8 ( txt , tlen ) ) {
 			log("xmldoc: bad link text 4 from url=%s for %s",
-			    k->getUrl(),m_firstUrl.m_url);
+			    k->getUrl(),m_firstUrl.getUrl());
 			continue;
 		}
 		// store these
@@ -24144,7 +24146,7 @@ char XmlDoc::waitForTimeSync ( ) {
 	// unregister?
 	if ( isClockInSync() && m_alreadyRegistered ) {
 		// note it
-		log("build: clock now synced for %s",m_firstUrl.m_url);
+		log("build: clock now synced for %s",m_firstUrl.getUrl());
 		g_loop.unregisterSleepCallback(m_masterState,
 					       clockSyncWaitWrapper);
 	}
@@ -24155,7 +24157,7 @@ char XmlDoc::waitForTimeSync ( ) {
 	// flag it
 	m_alreadyRegistered = true;
 	// note it
-	log("build: waiting for clock to sync for %s",m_firstUrl.m_url);
+	log("build: waiting for clock to sync for %s",m_firstUrl.getUrl());
 	// this should mean it is re-called later
 	if ( g_loop.registerSleepCallback ( 1000 , // 1000 ms
 					    m_masterState ,
