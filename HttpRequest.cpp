@@ -15,46 +15,43 @@ char HttpRequest::getReplyFormat() {
 	char format = -1;//FORMAT_HTML;
 
 	// what format should search results be in? default is html
-	if ( formatStr && strcmp(formatStr,"html") == 0 ) format = FORMAT_HTML;
-	if ( formatStr && strcmp(formatStr,"json") == 0 ) format = FORMAT_JSON;
-	if ( formatStr && strcmp(formatStr,"xml") == 0 ) format = FORMAT_XML;
-	if ( formatStr && strcmp(formatStr,"csv") == 0 ) format = FORMAT_CSV;
-	if ( formatStr && strcmp(formatStr,"iframe")==0)
-		format=FORMAT_WIDGET_IFRAME;
-	if ( formatStr && strcmp(formatStr,"ajax")==0)
-		format=FORMAT_WIDGET_AJAX;
-	if ( formatStr && strcmp(formatStr,"append")==0)
-		format=FORMAT_WIDGET_APPEND;
-
-	// support old api &xml=1 to mean &format=1
-	if ( getLong("xml",0) ) {
-		format = FORMAT_XML;
-	}
-
-	// also support &json=1
-	if ( getLong("json",0) ) {
-		format = FORMAT_JSON;
-	}
-
-	if ( getLong("csv",0) ) {
-		format = FORMAT_CSV;
-	}
-
-	if ( getLong("iframe",0) ) {
-		format = FORMAT_WIDGET_IFRAME;
-	}
-
-	if ( getLong("ajax",0) ) {
-		format = FORMAT_WIDGET_AJAX;
-	}
-
-	if ( getLong("append",0) ) {
-		format = FORMAT_WIDGET_APPEND;
+	if ( formatStr ) {
+		if ( strcmp( formatStr, "html" ) == 0 ) {
+			format = FORMAT_HTML;
+		} else if ( strcmp( formatStr, "json" ) == 0 ) {
+			format = FORMAT_JSON;
+		} else if ( strcmp( formatStr, "xml" ) == 0 ) {
+			format = FORMAT_XML;
+		} else if ( strcmp( formatStr, "csv" ) == 0 ) {
+			format = FORMAT_CSV;
+		} else if ( strcmp( formatStr, "iframe" ) == 0 ) {
+			format = FORMAT_WIDGET_IFRAME;
+		} else if ( strcmp( formatStr, "ajax" ) == 0 ) {
+			format = FORMAT_WIDGET_AJAX;
+		} else if ( strcmp( formatStr, "append" ) == 0 ) {
+			format = FORMAT_WIDGET_APPEND;
+		}
+	} else {
+		// support old api &xml=1 to mean &format=xml
+		if (getLong( "xml", 0 )) {
+			format = FORMAT_XML;
+		} else if (getLong( "json", 0 )) {
+			format = FORMAT_JSON;
+		} else if (getLong( "csv", 0 )) {
+			format = FORMAT_CSV;
+		} else if (getLong( "iframe", 0 )) {
+			format = FORMAT_WIDGET_IFRAME;
+		} else if (getLong( "ajax", 0 )) {
+			format = FORMAT_WIDGET_AJAX;
+		} else if (getLong( "append", 0 )) {
+			format = FORMAT_WIDGET_APPEND;
+		}
 	}
 
 	// default to html
-	if ( format == -1 ) 
+	if ( format == -1 ) {
 		format = FORMAT_HTML;
+	}
 
 	m_replyFormat = format;
 	m_replyFormatValid = true;
