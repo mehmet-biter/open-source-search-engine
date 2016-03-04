@@ -10278,6 +10278,7 @@ uint8_t *XmlDoc::getContentType ( ) {
 }
 
 
+
 // . similar to getMetaRedirUrl but look for different strings
 // . rel="canonical" or rel=canonical in a link tag.
 Url **XmlDoc::getCanonicalRedirUrl ( ) {
@@ -10410,6 +10411,8 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 	return &m_canonicalRedirUrlPtr;
 }
 
+
+
 // returns false if none found
 bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness ,
 			      Url *cu ) {
@@ -10506,13 +10509,26 @@ bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness ,
 }
 
 
+
 // scan document for <meta http-equiv="refresh" content="0;URL=xxx">
 Url **XmlDoc::getMetaRedirUrl ( ) {
-	if ( m_metaRedirUrlValid ) return &m_metaRedirUrlPtr;
+	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__,__func__,__LINE__);
+	
+	if ( m_metaRedirUrlValid ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, already valid", __FILE__,__func__,__LINE__);
+		return &m_metaRedirUrlPtr;
+	}
+		
+		
 	// get ptr to utf8 content
 	//char **u8 = getHttpReply();
 	//if ( ! u8 || u8 == (void *)-1 ) return (Url **)u8;
-	if ( ! m_httpReplyValid ) { char *xx=NULL;*xx=0; }
+	if ( ! m_httpReplyValid ) 
+	{ 
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: DIE, reply not valid.", __FILE__,__func__,__LINE__);
+		char *xx=NULL;*xx=0; 
+	}
 
 	char *p    = m_httpReply;
 	// subtract one since this is a size not a length
@@ -10524,11 +10540,18 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 	m_metaRedirUrlValid = true;
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) return NULL;
+	if ( ! cr ) 
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getCollRec failed", __FILE__,__func__,__LINE__);
+		return NULL;
+	}
 
 	// if we are recycling or injecting, do not consider meta redirects
 	if ( cr->m_recycleContent || m_recycleContent )
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, recycleContent - do not consider meta redirects", __FILE__,__func__,__LINE__);
 		return &m_metaRedirUrlPtr;
+	}
 
 	// will this work in here?
 	//uint8_t *ct = getContentType();
@@ -10557,36 +10580,89 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		if ( to_lower_a(p[-8]) != 't' ) continue;
 		if ( to_lower_a(p[-9]) != 't' ) continue;
 		if ( to_lower_a(p[-10])!= 'h' ) continue;
+
+		// BR 20160306: Fix comparison where we have spaces before and/or after =
+		// limit the # of white spaces
+		char *limit = p + 20;
+		// skip white spaces
+		while ( *p && p < limit && is_wspace_a(*p) ) p++;
+
 		// skip the equal sign
+		// skip =
+		if ( *p != '=' ) 
+		{
+			continue;
+		}
 		p++;
+
+		// limit the # of white spaces
+		limit = p + 20;
+		// skip white spaces
+		while ( *p && p < limit && is_wspace_a(*p) ) p++;
+
 		// skip quote if there
-		if ( *p == '\"' ) p++;
+		if ( *p == '\"' || *p == '\'' ) p++;
 		// must be "refresh", continue if not
 		if ( strncasecmp(p,"refresh",7) ) continue;
 		// skip that
 		p += 7;
 		// skip another quote if there
-		if ( *p == '\"' ) p++;
+		if ( *p == '\"' || *p == '\'' ) p++;
+			
 		// limit the # of white spaces
-		char *limit = p + 20;
+		limit = p + 20;
 		// skip white spaces
 		while ( *p && p < limit && is_wspace_a(*p) ) p++;
+		
 		// must be content now
-		if ( strncasecmp(p,"content=",8) ) continue;
+		if ( strncasecmp(p,"content",7) ) continue;
 		// skip that
-		p += 8;
+		p += 7;
+		
+		
+		// BR 20160306: Fix comparison where we have spaces before and/or after =
+		// e.g. http://dnr.state.il.us/
+		
+		// limit the # of white spaces
+		limit = p + 20;
+		// skip white spaces
+		while ( *p && p < limit && is_wspace_a(*p) ) p++;
+		
+		// skip =
+		if ( *p != '=' ) 
+		{
+			continue;
+		}
+		p++;
+		
+		// limit the # of white spaces
+		limit = p + 20;
+		// skip white spaces
+		while ( *p && p < limit && is_wspace_a(*p) ) p++;
+
+		
 		// skip possible quote
-		if ( *p == '\"' ) p++;
+		if ( *p == '\"' || *p == '\'' ) p++;
 		// PARSE OUT THE URL
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Possible redirect URL [%s]", __FILE__,__func__,__LINE__, p);
+
 		Url dummy;
 		if ( ! setMetaRedirUrlFromTag ( p , &dummy , m_niceness ,cu))
+		{
+			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Failed to set redirect URL", __FILE__,__func__,__LINE__);
 			continue;
+		}
+		
 		gotOne = true;
 		break;
 	}
 
+	
 	if ( ! gotOne )
+	{
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, none found", __FILE__,__func__,__LINE__);
 		return &m_metaRedirUrlPtr;
+	}
 
 	// to fix issue with scripts containing
 	// document.write('<meta http-equiv="Refresh" content="0;URL=http://ww
@@ -10597,6 +10673,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 	// assume html since getContentType() is recursive on us.
 	if ( !xml.set( m_httpReply, m_httpReplySize - 1, m_version, m_niceness, CT_HTML ) ) {
 		// return NULL on error with g_errno set
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, xml.set failed", __FILE__,__func__,__LINE__);
 		return NULL;
 	}
 
@@ -10618,18 +10695,29 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		tag = xml.getString ( i ,"content", &tagLen );
 		// skip if empty
 		if ( ! tag || tagLen <= 0 ) continue;
+			
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Found possible URL in XmlNode", __FILE__,__func__,__LINE__);
 		// PARSE OUT THE URL
 		if (!setMetaRedirUrlFromTag(p,&m_metaRedirUrl,m_niceness,cu) )
+		{
+			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Failed to set URL from XmlNode data", __FILE__,__func__,__LINE__);
 			continue;
+		}
+		
 		// set it
 		m_metaRedirUrlPtr = &m_metaRedirUrl;
+		
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, got redirect URL from XmlNode data", __FILE__,__func__,__LINE__);
 		// return it
 		return &m_metaRedirUrlPtr;
 	}
 
 	// nothing found
+	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, nothing found", __FILE__,__func__,__LINE__);
 	return &m_metaRedirUrlPtr;
 }
+
+
 
 uint16_t getCharsetFast ( HttpMime *mime,
 			  char *url,
