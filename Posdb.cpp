@@ -7,6 +7,7 @@
 #include "Threads.h"
 #include "Posdb.h"
 #include "Rebalance.h"
+#include "ScalingFunctions.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -1097,18 +1098,7 @@ float getTermFreqWeight ( int64_t termFreq , int64_t numDocsInColl ) {
 	//if ( nd ) fw /= nd;
 	if ( numDocsInColl ) fw /= numDocsInColl;
 	// limit
-	if ( fw > .50 ) fw = .50;
-	// make a percent
-	//fw *= 100.0;
-	// . map <=  1% to a weight of 1.00
-	// . map <=  2% to a weight of 0.99
-	// . map <=  3% to a weight of 0.98
-	// . map <= 50% to a weight of 0.50
-	//return 1.00 - fw;
-	// . invert since we use the MIN algorithm for scoring!
-	// . so the more important terms need to score much higher now
-	//   to avoid being in the min scoring term pair
-	return .50 + fw;
+	return scale_linear(fw, g_conf.m_termFreqWeightFreqMin, g_conf.m_termFreqWeightFreqMax, g_conf.m_termFreqWeightMin, g_conf.m_termFreqWeightMax);
 }
 
 /*

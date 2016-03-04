@@ -4540,14 +4540,14 @@ void Parms::init ( ) {
 
 
 	///////////////////////////////////////////
-	//  RANKING PROXY CONTROLS
+	//  RANKING CONTROLS
 	///////////////////////////////////////////
 	
 	m->m_title = "language weight";
-	m->m_desc  = "Defalt language weight if document matches quer "
+	m->m_desc  = "Default language weight if document matches query "
 		"language. Use this to give results that match the specified "
-		"the speicified &qlang higher ranking, or docs whose language "
-		"is unnknown. Can be override with "
+		"the specified &qlang higher ranking, or docs whose language "
+		"is unknown. Can be overridden with "
 		"&langw in the query url.";
 	m->m_cgi   = "langweight";
 	m->m_off   = offsetof(CollectionRec,m_sameLangWeight);
@@ -4557,6 +4557,54 @@ void Parms::init ( ) {
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_RANKING;
 	m->m_obj   = OBJ_COLL;
+	m++;
+
+	m->m_title = "termfreq min";
+	m->m_desc  = "Term frequency estimate minimum";
+	m->m_cgi   = "termfreqweightfreqmin";
+	m->m_off   = offsetof(Conf,m_termFreqWeightFreqMin);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "0.00";
+	m->m_group = false;
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "termfreq min";
+	m->m_desc  = "Term frequency estimate maximum";
+	m->m_cgi   = "termfreqweightfreqmax";
+	m->m_off   = offsetof(Conf,m_termFreqWeightFreqMax);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "0.50";
+	m->m_group = false;
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "termfreq weight min";
+	m->m_desc  = "Term frequency weight minimum";
+	m->m_cgi   = "termfreqweightmin";
+	m->m_off   = offsetof(Conf,m_termFreqWeightMin);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "0.50";
+	m->m_group = false;
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "termfreq weight max";
+	m->m_desc  = "Term frequency weight maximum";
+	m->m_cgi   = "termfreqweightmax";
+	m->m_off   = offsetof(Conf,m_termFreqWeightMax);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "1.00";
+	m->m_group = false;
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
 	m++;
 
 	///////////////////////////////////////////

@@ -207,6 +207,12 @@ class Conf {
 	// for Weights.cpp
 	int32_t   m_sliderParm;
 
+	//ranking settings
+	float m_termFreqWeightFreqMin;
+	float m_termFreqWeightFreqMax;
+	float m_termFreqWeightMin;
+	float m_termFreqWeightMax;
+
 	// use sendmail to forward emails we send out
 	char   m_sendmailIp[MAX_MX_LEN];
 
