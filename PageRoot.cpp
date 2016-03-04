@@ -876,6 +876,11 @@ static bool printAddUrlHomePage ( SafeBuf &sb , const char *url , HttpRequest *r
 
 	printFrontPageShell ( &sb , "add url" , cr , true );
 
+	sb.safePrintf("<br><br><br><br>\n");
+	sb.safePrintf("<b>WARNING</b>: Adding URLs this way DOES NOT handle redirects.");
+	sb.safePrintf("<br><br>");
+	sb.safePrintf("If you add somesite.com and it redirects to www.somesite.com, it will be indexed as somesite.com, NOT www.somesite.com!<br>");
+	sb.safePrintf("Use Admin -> Add Urls instead if you want redirects handled correctly.");
 
 	sb.safePrintf("<script type=\"text/javascript\">\n"
 		      "function handler() {\n" 
