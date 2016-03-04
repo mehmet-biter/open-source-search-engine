@@ -60,9 +60,6 @@ bool Bits::set(Words *words, int32_t niceness) {
 	// breathe
 	QUICKPOLL ( m_niceness );
 
-	// sometimes the next bits are dependent on the previous bits.
-	wbit_t prevBits  = 0;
-
 	nodeid_t *tagIds = words->getTagIds();
 	char **w = words->getWords();
 
@@ -92,7 +89,7 @@ bool Bits::set(Words *words, int32_t niceness) {
 			}
 		}
 		else if ( is_alnum_utf8 ( w[i]+0 )) {
-			bits = getAlnumBits(i,prevBits);
+			bits = getAlnumBits( i );
 			brcount = 0;
 		} else {
 			// . just allow anything now!
@@ -103,9 +100,6 @@ bool Bits::set(Words *words, int32_t niceness) {
 
 		// remember our bits.
 		m_bits [ i ] = bits;
-
-		// these bits will be the previous bits the next time around.
-		prevBits = bits;
 	}
 
 	return true;
@@ -177,20 +171,12 @@ void Bits::setInUrlBits ( int32_t niceness ) {
 
 // . if we're a stop word and previous word was an apostrophe
 //   then set D_CAN_APOSTROPHE_PRECEED to true and PERIOD_PRECEED to false
-wbit_t Bits::getAlnumBits ( int32_t i , wbit_t prevBits ) {
-	char      *s   = m_words->getWord    ( i );
-	int32_t       len = m_words->getWordLen ( i );
-	int64_t  wid = m_words->getWordId  ( i );
-
-	wbit_t bits = 0;
-
+wbit_t Bits::getAlnumBits( int32_t i ) {
 	// this is not case sensitive -- all non-stop words can start phrases
-	if ( ! ::isStopWord ( s , len , wid ) )
-	       return bits | D_CAN_BE_IN_PHRASE ;
+	if ( ! ::isStopWord ( m_words->getWord( i ) , m_words->getWordLen( i ) , m_words->getWordId( i ) ) )
+		return (D_CAN_BE_IN_PHRASE) ;
 
-	bits |= D_CAN_BE_IN_PHRASE | D_CAN_PAIR_ACROSS | D_IS_STOPWORD  ;
-
-	return bits;
+	return (D_CAN_BE_IN_PHRASE | D_CAN_PAIR_ACROSS | D_IS_STOPWORD);
 }
 
 //
