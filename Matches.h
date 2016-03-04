@@ -64,10 +64,6 @@ class Match {
 	// this is 1
 	int32_t m_numQWords;
 
-	// . used for highlighting under different colors (Highlight.cpp)
-	// . words in the same quote should use the same highlight color
-	int32_t m_colorNum;
-
 	// "match group" or type of match. i.e. MF_TITLETAG, MF_METASUMM, ...
 	mf_t m_flags;
 
@@ -161,8 +157,6 @@ class Matches {
 	int64_t *m_pids3;
 	int64_t *m_pids4;
 	int64_t *m_pids5;
-
-	bool getMatchGroup( mf_t matchFlag, Words **wp, Pos **pp, Sections **sp );
 };
 
 #endif

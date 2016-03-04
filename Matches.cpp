@@ -10,9 +10,6 @@
 #include "Sections.h"
 #include "XmlDoc.h"
 
-//#define DEBUG_MATCHES 1
-
-
 // TODO: have Matches set itself from all the meta tags, titles, link text,
 //       neighborhoods and body. then proximity algo can utilize that info
 //       as well as the summary generator, Summary.cpp. right now prox algo
@@ -35,12 +32,10 @@ void Matches::reset   ( ) {
 
 void Matches::reset2() {
 	m_numMatches = 0;
-	//m_maxNQT     = -1;
 	m_numAlnums  = 0;
 	// free all the classes' buffers
 	for ( int32_t i = 0 ; i < m_numMatchGroups ; i++ ) {
 		m_wordsArray   [i].reset();
-		//m_sectionsArray[i].reset();
 		m_posArray     [i].reset();
 		m_bitsArray    [i].reset();
 	}
@@ -48,25 +43,17 @@ void Matches::reset2() {
 }
 
 bool Matches::isMatchableTerm ( QueryTerm *qt ) { // , int32_t i ) {
-	// . skip if negative sign
-	// . no, we need to match negative words/phrases now so we can
-	//   big hack them out...
-	//if ( qw->m_wordSign == '-'                     ) return false;
 	QueryWord *qw = qt->m_qword;
 	// not derived from  a query word? how?
 	if ( ! qw ) return false;
 	if ( qw->m_ignoreWord == IGNORE_DEFAULT        ) return false;
 	if ( qw->m_ignoreWord == IGNORE_FIELDNAME      ) return false;
 	if ( qw->m_ignoreWord == IGNORE_BOOLOP         ) return false;
-	// stop words in 'all the king's men' query need to be highlighted
-	//if ( qw->m_isQueryStopWord && ! qw->m_inQuotes ) return false;
-	//if ( qw->m_isStopWord      && ! qw->m_inQuotes ) return false;
 	// take this out for now so we highlight for title: terms
 	if ( qw->m_fieldCode && qw->m_fieldCode != FIELD_TITLE ) return false;
 	// what word # are we?
 	int32_t qwn = qw - m_q->m_qwords;
 	// do not include if in a quote and does not start it!!
-	//if ( qw->m_inQuotes && i-1 != qw->m_quoteStart ) return false;
 	if ( qw->m_quoteStart >= 0 && qw->m_quoteStart != qwn ) return false;
 	// if query is too long, a query word can be truncated!
 	// this happens for some words if they are ignored, too!
@@ -74,12 +61,6 @@ bool Matches::isMatchableTerm ( QueryTerm *qt ) { // , int32_t i ) {
 	// after a NOT operator?
 	if ( qw->m_underNOT ) 
 		return false;
-	// in a field?
-	//if ( qw->m_fieldCode != fieldCode ) continue;
-	// skip if a query stop word w/o a sign and ignored
-	//if ( q->m_isStopWord[i] &&
-	//     q->m_termSigns[i] == '\0' &&
-	//     q->m_ignore[i] ) continue;
 	return true;
 }
 
@@ -111,15 +92,10 @@ void Matches::setQuery ( Query *q ) {
 	// how many query words do we have that can be matched?
 	int32_t numToMatch = 0;
 	for ( int32_t i = 0 ; i < nqt ; i++ ) {
-		// rest this
-		//m_qwordFlags[i] = 0;
 		// get query word #i
-		//QueryWord *qw = &m_q->m_qwords[i];
 		QueryTerm *qt = &m_q->m_qterms[i];
 		// skip if ignored *in certain ways only*
 		if ( ! isMatchableTerm ( qt ) ) {
-			//if( (qw->m_wordSign == '-') && !qw->m_fieldCode )
-			//	m_numNegTerms++;
 			continue;
 		}
 		// count it
@@ -147,38 +123,26 @@ void Matches::setQuery ( Query *q ) {
 	// clear hash table
 	memset ( m_qtableIds   , 0 , m_numSlots * 8 );
 	memset ( m_qtableFlags , 0 , m_numSlots     );
-	//memset ( m_qtableNegIds, 0 , m_numNegTerms  );
 
-	// alternate colors for highlighting
-	int32_t colorNum = 0;
-
-	//int32_t negIds = 0;
-	// . hash all the query terms into the hash table
-	// . the term's score should be 100 for a very rare term,
-	//   and 1 for a stop word.
-	//m_maxNQT = nqt;
 	for ( int32_t i = 0 ; i < nqt ; i++ ) {
 		// get query word #i
-		//QueryWord *qw = &m_q->m_qwords[i];
 		QueryTerm *qt = &m_q->m_qterms[i];
 		// skip if ignored *in certain ways only*
 		if ( ! isMatchableTerm ( qt ) ) {
-			//if( (qw->m_wordSign == '-') && !qw->m_fieldCode )
-			//	m_qtableNegIds[negIds++] = qw->m_rawWordId;
 			continue;
 		}
+
 		// get the word it is from
 		QueryWord *qw = qt->m_qword;
+
 		// get word #
 		int32_t qwn = qw - q->m_qwords;
 
-		// assign color # for term highlighting with different colors
-		qw->m_colorNum = colorNum++;
-
 		// do not overfill table
-		if ( colorNum > MAX_QUERY_WORDS_TO_MATCH ) {
+		if ( i >= MAX_QUERY_WORDS_TO_MATCH ) {
 			break;
 		}
+
 		// this should be equivalent to the word id
 		int64_t qid = qt->m_rawTermId;//qw->m_rawWordId;
 
@@ -194,15 +158,19 @@ void Matches::setQuery ( Query *q ) {
 
 		// put in hash table
 		n = ((uint32_t)qid) & mask;
+
 		// chain to an empty slot
 		while ( m_qtableIds[n] && m_qtableIds[n] != qid ) 
 			if ( ++n >= m_numSlots ) n = 0;
+
 		// . if already occupied, do not overwrite this, keep this
 		//   first word, the other is often ignored as IGNORE_REPEAT
 		// . what word # in the query are we. save this.
 		if ( ! m_qtableIds[n] ) m_qtableWordNums[n] = qwn;
+
 		// store it
 		m_qtableIds[n] = qid;
+
 		// in quotes? this term may appear multiple times in the
 		// query, in some cases in quotes, and in some cases not.
 		// we need to know either way for logic below.
@@ -371,7 +339,6 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int32_t niceness ) 
 
 	// get some new ptrs for this match group
 	Words    *wp = &m_wordsArray    [ m_numMatchGroups ];
-	//Sections *sp = &m_sectionsArray [ m_numMatchGroups ];
 	Sections *sp = NULL;
 	Bits     *bp = &m_bitsArray     [ m_numMatchGroups ];
 	Pos      *pb = &m_posArray      [ m_numMatchGroups ];
@@ -381,9 +348,6 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int32_t niceness ) 
 		return false;
 	}
 
-	// scores vector
-	//if ( ! sp->set ( wp , TITLEREC_CURRENT_VERSION , false ) )
-	//	return false;
 	// bits vector
 	if ( ! bp->setForSummary ( wp ) ) {
 		return false;
@@ -422,25 +386,6 @@ bool Matches::addMatches( char *s, int32_t slen, mf_t flags, int32_t niceness ) 
 	m_numMatchGroups--;
 
 	return status;
-}
-
-bool Matches::getMatchGroup ( mf_t       matchFlag ,
-			      Words    **wp        ,
-			      Pos      **pp        ,
-			      Sections **sp        ) {
-
-	for ( int32_t i = 0 ; i < m_numMatchGroups ; i++ ) {
-		// must be the type we want
-		if ( m_flags[i] != matchFlag ) continue;
-		// get it
-		*wp = &m_wordsArray    [i];
-		*pp = &m_posArray      [i];
-		//*sp = &m_sectionsArray [i];
-		*sp = NULL;
-		return true;
-	}
-	// not found
-	return false;
 }
 
 // . TODO: support stemming later. each word should then have multiple ids.
@@ -733,12 +678,6 @@ bool Matches::addMatches(Words *words, Phrases *phrases, Sections *sections, Bit
 
 		// get the first query word # of this match
 		qw = &m_q->m_qwords[qwn];
-
-		// get its color. for highlighting under different colors.
-		m->m_colorNum = qw->m_colorNum;
-
-		// sanity check
-		if ( m->m_colorNum < 0 ) { char *xx = NULL; *xx = 0; }
 
 		// convenience, used by Summary.cpp
 		m->m_words    = words;

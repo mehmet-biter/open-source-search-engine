@@ -6,51 +6,33 @@
 #include "Synonyms.h"
 #include "XmlDoc.h"
 
-
 // use different front tags for matching different term #'s
-static char *s_frontTags[] = {
-	"<span class=\"gbcnst gbcnst00\">" ,
-	"<span class=\"gbcnst gbcnst01\">" ,
-	"<span class=\"gbcnst gbcnst02\">" ,
-	"<span class=\"gbcnst gbcnst03\">" ,
-	"<span class=\"gbcnst gbcnst04\">" ,
-	"<span class=\"gbcnst gbcnst05\">" ,
-	"<span class=\"gbcnst gbcnst06\">" ,
-	"<span class=\"gbcnst gbcnst07\">" ,
-	"<span class=\"gbcnst gbcnst08\">" ,
-	"<span class=\"gbcnst gbcnst09\">" 
+static const char *s_frontTags[] = {
+	"<span class='gbcnst00'>" ,
+	"<span class='gbcnst01'>" ,
+	"<span class='gbcnst02'>" ,
+	"<span class='gbcnst03'>" ,
+	"<span class='gbcnst04'>" ,
+	"<span class='gbcnst05'>" ,
+	"<span class='gbcnst06'>" ,
+	"<span class='gbcnst07'>" ,
+	"<span class='gbcnst08'>" ,
+	"<span class='gbcnst09'>"
 };
 
-int32_t s_frontTagLen=gbstrlen("<span class=\"gbcnst gbcnst00\">");
-
-static char *s_styleSheet =
-"<style type=\"text/css\">"
-"span.gbcns{font-weight:600}"
-"span.gbcnst00{color:black;background-color:#ffff66}"
-"span.gbcnst01{color:black;background-color:#a0ffff}"
-"span.gbcnst02{color:black;background-color:#99ff99}"
-"span.gbcnst03{color:black;background-color:#ff9999}"
-"span.gbcnst04{color:black;background-color:#ff66ff}"
-"span.gbcnst05{color:white;background-color:#880000}"
-"span.gbcnst06{color:white;background-color:#00aa00}"
-"span.gbcnst07{color:white;background-color:#886800}"
-"span.gbcnst08{color:white;background-color:#004699}"
-"span.gbcnst09{color:white;background-color:#990099}"
-"span.gbcnst00x{color:white;background-color:black;border:2px solid #ffff66}"
-"span.gbcnst01x{color:white;background-color:black;border:2px solid #a0ffff}"
-"span.gbcnst02x{color:white;background-color:black;border:2px solid #99ff99}"
-"span.gbcnst03x{color:white;background-color:black;border:2px solid #ff9999}"
-"span.gbcnst04x{color:white;background-color:black;border:2px solid #ff66ff}"
-"span.gbcnst05x{color:white;background-color:black;border:2px solid #880000}"
-"span.gbcnst06x{color:white;background-color:black;border:2px solid #00aa00}"
-"span.gbcnst07x{color:white;background-color:black;border:2px solid #886800}"
-"span.gbcnst08x{color:white;background-color:black;border:2px solid #004699}"
-"span.gbcnst09x{color:white;background-color:black;border:2px solid #990099}"
+static const char *s_styleSheet =
+"<style type='text/css'>"
+	"span.gbcnst00{color:black;background-color:#ffff66}"
+	"span.gbcnst01{color:black;background-color:#a0ffff}"
+	"span.gbcnst02{color:black;background-color:#99ff99}"
+	"span.gbcnst03{color:black;background-color:#ff9999}"
+	"span.gbcnst04{color:black;background-color:#ff66ff}"
+	"span.gbcnst05{color:white;background-color:#880000}"
+	"span.gbcnst06{color:white;background-color:#00aa00}"
+	"span.gbcnst07{color:white;background-color:#886800}"
+	"span.gbcnst08{color:white;background-color:#004699}"
+	"span.gbcnst09{color:white;background-color:#990099}"
 "</style>";
-int32_t s_styleSheetLen = gbstrlen( s_styleSheet );
-
-//buffer for writing term list items
-char s_termList[1024];
 
 // . return length stored into "buf"
 // . content must be NULL terminated
@@ -124,22 +106,6 @@ bool Highlight::highlightWords ( Words *words , Matches *m, Query *q ) {
 	char *w;
 	int32_t  wlen;
 
-	// length of our front tag should be constant
-	int32_t frontTagLen ;
-	if ( m_frontTag ) frontTagLen = m_frontTagLen;
-	else              frontTagLen = s_frontTagLen;
-	// set the back tag, should be constant
-	const char *backTag ;
-	int32_t  backTagLen;
-	if ( m_backTag ) {
-		backTag    = m_backTag;
-		backTagLen = m_backTagLen;
-	}
-	else {
-		backTag = "</span>";
-		backTagLen = 7;
-	}
-
 	// set nexti to the word # of the first word that matches a query word
 	int32_t nextm = -1;
 	int32_t nexti = -1;
@@ -150,26 +116,20 @@ bool Highlight::highlightWords ( Words *words , Matches *m, Query *q ) {
 
 	int32_t backTagi = -1;
 	bool inTitle  = false;
-	bool endHead  = false;
-	bool endHtml  = false;
 
 	for ( int32_t i = 0 ; i < numWords  ; i++ ) {
 		// set word's info
 		w    = words->getWord(i);
 		wlen = words->getWordLen(i);
-		endHead = false;
-		endHtml = false;
+		bool endHead = false;
+		bool endHtml = false;
 
 		if ( (words->getTagId(i) ) == TAG_TITLE ) {
 			inTitle = !(words->isBackTag(i));
 		} else if ( (words->getTagId(i) ) == TAG_HTML ) {
-			if ( words->isBackTag( i ) ) {
-				endHtml = true;
-			}
+			endHtml = words->isBackTag( i );
 		} else if ( (words->getTagId(i) ) == TAG_HEAD ) {
-			if (words->isBackTag(i) ) {
-				endHead = true;
-			}
+			endHead = words->isBackTag(i);
 		}
 
 		// match class ptr
@@ -187,26 +147,20 @@ bool Highlight::highlightWords ( Words *words , Matches *m, Query *q ) {
 				}
 			}
 			else {
-				// now each match is the entire quote, so write the
-				// fron tag right now
-				const char *frontTag;
+				// now each match is the entire quote, so write the front tag right now
 				if ( m_frontTag ) {
-					frontTag = m_frontTag;
+					m_sb->safeStrcpy ( m_frontTag );
 				} else {
-					frontTag = s_frontTags[mat->m_colorNum%10];
+					m_sb->safeStrcpy( s_frontTags[(mat->m_qwordNum % 10)] );
 				}
 
-				m_sb->safeStrcpy ( (char *)frontTag );
-				
 				// when to write the back tag? add the number of
 				// words in the match to i.
 				backTagi = i + mat->m_numWords;
 			}
-		}
-		else if ( endHead ) {
-			// include the tags style sheet immediately before
-			// the closing </TITLE> tag
-			m_sb->safeMemcpy( s_styleSheet , s_styleSheetLen );
+		} else if ( endHead ) {
+			// include the tags style sheet immediately before the closing </TITLE> tag
+			m_sb->safeStrcpy( s_styleSheet );
 		}
 
 		if ( i == nexti ) {
@@ -224,7 +178,11 @@ bool Highlight::highlightWords ( Words *words , Matches *m, Query *q ) {
 		// back tag
 		if ( i == backTagi-1 ) {
 			// store the back tag
-			m_sb->safeMemcpy ( (char *)backTag , backTagLen );
+			if ( m_backTag ) {
+				m_sb->safeMemcpy( m_backTag, m_backTagLen );
+			} else {
+				m_sb->safeStrcpy("</span>");
+			}
 		}
 	}
 
