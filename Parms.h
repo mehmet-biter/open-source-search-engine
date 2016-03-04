@@ -202,7 +202,7 @@ class Parm {
 	// the tree might be saving, so they take a "we" ptr
 	bool (*m_func2)(char *parmRec,class WaitEntry *we);
 	int32_t  m_plen;  // offset of length for TYPE_STRINGS (m_htmlHeadLen...)
-	char  m_group; // start of a new group of controls?
+	bool  m_group; // start of a new group of controls?
 	char  m_save;  // save to xml file? almost always true
 	int32_t  m_min;
 	// these are used for search parms in PageResults.cpp
