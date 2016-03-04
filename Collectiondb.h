@@ -366,6 +366,7 @@ class CollectionRec {
 
 	char  m_spiderStatus;
 
+	//ranking settings
 	float m_sameLangWeight;
 
 	// Language stuff
