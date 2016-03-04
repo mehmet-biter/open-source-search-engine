@@ -3693,11 +3693,11 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg20Reply
 	float sw2 = 1.0;
 	if ( ps->m_isSynonym1 ) {
 		syn1 = "yes";
-		sw1  = SYNONYM_WEIGHT;
+		sw1  = g_conf.m_synonymWeight;
 	}
 	if ( ps->m_isSynonym2 ) {
 		syn2 = "yes";
-		sw2  = SYNONYM_WEIGHT;
+		sw2  = g_conf.m_synonymWeight;
 	}
 
 	char *bs1  = "no";
@@ -4279,7 +4279,7 @@ bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Msg20Repl
 	float sw = 1.0;
 	if ( ss->m_isSynonym ) {
 		syn = "yes";
-		sw = SYNONYM_WEIGHT; // Posdb.h
+		sw = g_conf.m_synonymWeight;
 	}
 	//char bf = ss->m_bflags;
 	float wbw = 1.0;

@@ -91,7 +91,6 @@ char *getHashGroupString ( unsigned char hg );
 float getHashGroupWeight ( unsigned char hg );
 float getTermFreqWeight  ( int64_t termFreq , int64_t numDocsInColl );
 
-#define SYNONYM_WEIGHT 0.90
 #define WIKI_WEIGHT    0.10 // was 0.20
 #define SITERANKDIVISOR 3.0
 #define SITERANKMULTIPLIER 0.33333333

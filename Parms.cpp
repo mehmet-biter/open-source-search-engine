@@ -4796,6 +4796,18 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "Synonym weight";
+	m->m_desc  = "Weight of synonyms in relation to original words";
+	m->m_cgi   = "synonym_weight";
+	m->m_off   = offsetof(Conf,m_synonymWeight);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "0.900000";
+	m->m_group = true;
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	///////////////////////////////////////////
 	//  SPIDER PROXY CONTROLS
 	//  

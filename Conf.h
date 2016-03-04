@@ -230,6 +230,8 @@ class Conf {
 	float m_hashGroupWeightInternalLinkText;
 	float m_hashGroupWeightInUrl;
 	float m_hashGroupWeightInMenu;
+	
+	float m_synonymWeight;
 
 	// use sendmail to forward emails we send out
 	char   m_sendmailIp[MAX_MX_LEN];

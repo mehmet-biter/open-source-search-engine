@@ -22077,7 +22077,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 		// square this like we do in the query ranking algo
 		score *= getHashGroupWeight(hg) * getHashGroupWeight(hg);
 		score *= getDensityWeight(tp[i]->m_densityRank);
-		if ( tp[i]->m_synSrc ) score *= SYNONYM_WEIGHT;
+		if ( tp[i]->m_synSrc ) score *= g_conf.m_synonymWeight;
 		if ( hg == HASHGROUP_INLINKTEXT ) score *= getLinkerWeight(ws);
 		else                           score *= getWordSpamWeight(ws);
 		if ( isXml )

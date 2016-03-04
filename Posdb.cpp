@@ -1432,8 +1432,8 @@ float PosdbTable::getSingleTermScore ( int32_t i,
 
 	// synonym
 	if ( g_posdb.getIsSynonym(wpi) ) {
-		score *= SYNONYM_WEIGHT;
-		score *= SYNONYM_WEIGHT;
+		score *= g_conf.m_synonymWeight;
+		score *= g_conf.m_synonymWeight;
 	}
 
 
@@ -1676,10 +1676,10 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 		score *= s_hashGroupWeights[hg1];
 		score *= s_hashGroupWeights[hg2];
 		// if synonym or alternate word form
-		if ( g_posdb.getIsSynonym(wpi) ) score *= SYNONYM_WEIGHT;
-		if ( g_posdb.getIsSynonym(wpj) ) score *= SYNONYM_WEIGHT;
-		//if (m_bflags[i] & BF_SYNONYM) score *= SYNONYM_WEIGHT;
-		//if (m_bflags[j] & BF_SYNONYM) score *= SYNONYM_WEIGHT;
+		if ( g_posdb.getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
+		if ( g_posdb.getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
+		//if (m_bflags[i] & BF_SYNONYM) score *= g_conf.m_synonymWeight;
+		//if (m_bflags[j] & BF_SYNONYM) score *= g_conf.m_synonymWeight;
 
 		// word spam weights
 		score *= spamw1 * spamw2;
@@ -1765,10 +1765,10 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 		score *= s_hashGroupWeights[hg1];
 		score *= s_hashGroupWeights[hg2];
 		// if synonym or alternate word form
-		if ( g_posdb.getIsSynonym(wpi) ) score *= SYNONYM_WEIGHT;
-		if ( g_posdb.getIsSynonym(wpj) ) score *= SYNONYM_WEIGHT;
-		//if ( m_bflags[i] & BF_SYNONYM ) score *= SYNONYM_WEIGHT;
-		//if ( m_bflags[j] & BF_SYNONYM ) score *= SYNONYM_WEIGHT;
+		if ( g_posdb.getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
+		if ( g_posdb.getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
+		//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+		//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
 		// word spam weights
 		score *= spamw1 * spamw2;
 		// huge title? do not allow 11th+ word to be weighted high
@@ -1872,10 +1872,10 @@ float PosdbTable::getTermPairScoreForWindow ( int32_t i,
 	score *= s_hashGroupWeights[hg1];
 	score *= s_hashGroupWeights[hg2];
 	// if synonym or alternate word form
-	if ( g_posdb.getIsSynonym(wpi) ) score *= SYNONYM_WEIGHT;
-	if ( g_posdb.getIsSynonym(wpj) ) score *= SYNONYM_WEIGHT;
-	//if ( m_bflags[i] & BF_SYNONYM ) score *= SYNONYM_WEIGHT;
-	//if ( m_bflags[j] & BF_SYNONYM ) score *= SYNONYM_WEIGHT;
+	if ( g_posdb.getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
+	if ( g_posdb.getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
+	//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+	//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
 	// word spam weights
 	score *= spamw1 * spamw2;
 	// mod by distance
@@ -2073,15 +2073,15 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		score *= s_hashGroupWeights[hg1];
 		score *= s_hashGroupWeights[hg2];
 		// if synonym or alternate word form
-		if ( syn1 ) score *= SYNONYM_WEIGHT;
-		if ( syn2 ) score *= SYNONYM_WEIGHT;
+		if ( syn1 ) score *= g_conf.m_synonymWeight;
+		if ( syn2 ) score *= g_conf.m_synonymWeight;
 		// the new logic
 		if ( g_posdb.getIsHalfStopWikiBigram(wpi) ) 
 			score *= WIKI_BIGRAM_WEIGHT;
 		if ( g_posdb.getIsHalfStopWikiBigram(wpj) ) 
 			score *= WIKI_BIGRAM_WEIGHT;
-		//if ( m_bflags[i] & BF_SYNONYM ) score *= SYNONYM_WEIGHT;
-		//if ( m_bflags[j] & BF_SYNONYM ) score *= SYNONYM_WEIGHT;
+		//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+		//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
 		// word spam weights
 		score *= spamw1 * spamw2;
 		// huge title? do not allow 11th+ word to be weighted high
@@ -2282,10 +2282,10 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		score *= s_hashGroupWeights[hg1];
 		score *= s_hashGroupWeights[hg2];
 		// if synonym or alternate word form
-		if ( g_posdb.getIsSynonym(wpi) ) score *= SYNONYM_WEIGHT;
-		if ( g_posdb.getIsSynonym(wpj) ) score *= SYNONYM_WEIGHT;
-		//if ( m_bflags[i] & BF_SYNONYM ) score *= SYNONYM_WEIGHT;
-		//if ( m_bflags[j] & BF_SYNONYM ) score *= SYNONYM_WEIGHT;
+		if ( g_posdb.getIsSynonym(wpi) ) score *= g_conf.m_synonymWeight;
+		if ( g_posdb.getIsSynonym(wpj) ) score *= g_conf.m_synonymWeight;
+		//if ( m_bflags[i] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
+		//if ( m_bflags[j] & BF_SYNONYM ) score *= g_conf.m_synonymWeight;
 		// word spam weights
 		score *= spamw1 * spamw2;
 		// huge title? do not allow 11th+ word to be weighted high
