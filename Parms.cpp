@@ -1044,6 +1044,15 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 			"Add url is temporarily disabled in Master Controls."
 			"</font></td></tr>\n";
 
+	if( page == PAGE_INJECT )
+	{
+		e1 = "<tr><td colspan=20><font color=#000000>"
+			"<b>WARNING</b>: Adding URLs this way DOES NOT handle redirects.<br><br>"
+			"If you add somesite.com and it redirects to www.somesite.com, it will be indexed as somesite.com, NOT www.somesite.com!<br>"
+			"Use Admin -> Advanced -> Add Urls instead if you want redirects handled correctly."
+			"</font></td></tr>\n";
+	}
+
 	if ( format == FORMAT_XML || format == FORMAT_JSON ) {
 		const char *coll = g_collectiondb.getDefaultColl(r);
 		CollectionRec *cr = g_collectiondb.getRec(coll);//2(r,true);
