@@ -212,8 +212,24 @@ class Conf {
 	float m_termFreqWeightFreqMax;
 	float m_termFreqWeightMin;
 	float m_termFreqWeightMax;
-	float m_densityWightMin;
-	float m_densityWightMax;
+	
+	float m_densityWeightMin;
+	float m_densityWeightMax;
+	
+	float m_diversityWeightMin;
+	float m_diversityWeightMax;
+	
+	float m_hashGroupWeightBody;
+	float m_hashGroupWeightTitle;
+	float m_hashGroupWeightHeading;
+	float m_hashGroupWeightInlist;
+	float m_hashGroupWeightInMetaTag;
+	float m_hashGroupWeightInLinkText;
+	float m_hashGroupWeightInTag;
+	float m_hashGroupWeightNeighborhood;
+	float m_hashGroupWeightInternalLinkText;
+	float m_hashGroupWeightInUrl;
+	float m_hashGroupWeightInMenu;
 
 	// use sendmail to forward emails we send out
 	char   m_sendmailIp[MAX_MX_LEN];

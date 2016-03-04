@@ -968,11 +968,11 @@ void initWeights ( ) {
 	s_init = true;
 	for ( int32_t i = 0 ; i <= MAXDIVERSITYRANK ; i++ ) {
 		// disable for now
-		s_diversityWeights[i] = 1.0; // scale_quadratic(i,0,MAXDIVERSITYRANK,0.15,1.0);
+		s_diversityWeights[i] = scale_quadratic(i,0,MAXDIVERSITYRANK,g_conf.m_diversityWeightMin,g_conf.m_diversityWeightMax);
 	}
 	// density rank to weight
 	for ( int32_t i = 0 ; i <= MAXDENSITYRANK ; i++ ) {
-		s_densityWeights[i] = scale_quadratic(i,0,MAXDENSITYRANK,g_conf.m_densityWightMin,g_conf.m_densityWightMax);
+		s_densityWeights[i] = scale_quadratic(i,0,MAXDENSITYRANK,g_conf.m_densityWeightMin,g_conf.m_densityWeightMax);
 	}
 	// . word spam rank to weight
 	// . make sure if word spam is 0 that the weight is not 0!
@@ -1032,19 +1032,17 @@ void initWeights ( ) {
 		}
 	}
 
-	s_hashGroupWeights[HASHGROUP_BODY              ] = 1.0;
-	s_hashGroupWeights[HASHGROUP_TITLE             ] = 8.0;
-	s_hashGroupWeights[HASHGROUP_HEADING           ] = 1.5;//3.0
-	s_hashGroupWeights[HASHGROUP_INLIST            ] = 0.3;
-	// fix toyota cressida photos GALLERY by making this 0.1!
-	s_hashGroupWeights[HASHGROUP_INMETATAG         ] = 0.1;//1.5;//2.0;
-	s_hashGroupWeights[HASHGROUP_INLINKTEXT        ] = 16.0;
-	s_hashGroupWeights[HASHGROUP_INTAG             ] = 1.0;
-	// ignore neighborhoods for now kinda
-	s_hashGroupWeights[HASHGROUP_NEIGHBORHOOD      ] = 0.0; // 2.0;
-	s_hashGroupWeights[HASHGROUP_INTERNALINLINKTEXT] = 4.0;
-	s_hashGroupWeights[HASHGROUP_INURL             ] = 1.0;
-	s_hashGroupWeights[HASHGROUP_INMENU            ] = 0.2;
+	s_hashGroupWeights[HASHGROUP_BODY              ] = g_conf.m_hashGroupWeightBody;
+	s_hashGroupWeights[HASHGROUP_TITLE             ] = g_conf.m_hashGroupWeightTitle;
+	s_hashGroupWeights[HASHGROUP_HEADING           ] = g_conf.m_hashGroupWeightHeading;
+	s_hashGroupWeights[HASHGROUP_INLIST            ] = g_conf.m_hashGroupWeightInlist;
+	s_hashGroupWeights[HASHGROUP_INMETATAG         ] = g_conf.m_hashGroupWeightInMetaTag;
+	s_hashGroupWeights[HASHGROUP_INLINKTEXT        ] = g_conf.m_hashGroupWeightInLinkText;
+	s_hashGroupWeights[HASHGROUP_INTAG             ] = g_conf.m_hashGroupWeightInTag;
+	s_hashGroupWeights[HASHGROUP_NEIGHBORHOOD      ] = g_conf.m_hashGroupWeightNeighborhood;
+	s_hashGroupWeights[HASHGROUP_INTERNALINLINKTEXT] = g_conf.m_hashGroupWeightInternalLinkText;
+	s_hashGroupWeights[HASHGROUP_INURL             ] = g_conf.m_hashGroupWeightInUrl;
+	s_hashGroupWeights[HASHGROUP_INMENU            ] = g_conf.m_hashGroupWeightInMenu;
 }
 
 
