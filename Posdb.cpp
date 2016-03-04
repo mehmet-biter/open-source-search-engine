@@ -966,23 +966,13 @@ static char  s_inBody           [HASHGROUP_END];
 void initWeights ( ) {
 	if ( s_init ) return;
 	s_init = true;
-	float sum = 0.15;
 	for ( int32_t i = 0 ; i <= MAXDIVERSITYRANK ; i++ ) {
-		//s_diversityWeights[i] = sum;
 		// disable for now
-		s_diversityWeights[i] = 1.0; // sum
-		sum *= 1.135; // so a rank of 15 implies a weight of 1.0
+		s_diversityWeights[i] = 1.0; // scale_quadratic(i,0,MAXDIVERSITYRANK,0.15,1.0);
 	}
 	// density rank to weight
-	//sum = 0.0;
-	sum = 0.35;
 	for ( int32_t i = 0 ; i <= MAXDENSITYRANK ; i++ ) {
-		//sum += 1.0/(MAXDENSITYRANK+1);
-		if ( sum > 1.0 ) sum = 1.0;
-		s_densityWeights[i] = sum;
-		// used wolframalpha.com to get this
-		// entered '.15 * X^31 = 1.00'
-		sum *= 1.03445; // so a rank of 31 implies a weight of 1.0
+		s_densityWeights[i] = scale_quadratic(i,0,MAXDENSITYRANK,0.35,1.0);
 	}
 	// . word spam rank to weight
 	// . make sure if word spam is 0 that the weight is not 0!
