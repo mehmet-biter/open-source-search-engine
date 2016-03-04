@@ -360,13 +360,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 			note = "path has reciprocallink" ;
 		else if ( strncasestr ( p , "/trackbacks/",plen,12 ) ) 
 			note = "path has /trackbacks/"   ;
-		//if ( gb_strcasestr ( p , "archive"   ) ) val = true;
-		//if ( gb_strcasestr ( p , ".asp"      ) ) val = true;
-		//if ( gb_strcasestr ( p , ".aspx"     ) ) val = true;
-		// these are mostly link exchange pages. no they are not!
-		//if ( gb_strcasestr ( p , "link"   ) ) val = true;
-		//p[plen-1] = c;
-		//if ( val ) { note = "cgi or guestbook url"; return true; }
 		if ( note ) return links->setAllSpamBits(note);
 	}
 
@@ -415,18 +408,6 @@ bool setLinkSpam ( int32_t       ip                 ,
 	char *haystack     = xml->getContent();
 	int32_t  haystackSize = xml->getContentLen();
 
-	// get our page quality, it serves as a threshold for some algos
-	//char quality = tr->getNewQuality();
-
-	//char *linkPos = NULL;
-	//if ( linkNode >= 0 ) linkPos = xml->getNode ( linkNode );
-
-	//if ( strstr ( linker->getUrl() , "usa_apartments1.htm") ) {
-	//	log("hey");
-	//	sleep(7);
-	//}
-
-	// loop:
 	// do not call them "bad links" if our link occurs before any
 	// comment section. our link's position therefore needs to be known,
 	// that is why we pass in linkPos. 
@@ -684,32 +665,8 @@ bool isLinkSpam ( Url *linker,
 		return true;
 	}
 
-	// if this page fails zak's page quality algo, do not let it vote
-	// like if from .biz or lots of hyphens in the url or an ip-based 
-	// url.
-	// now we do this on a site by site basis, more accurate that way.
-	//  --z
-	//unsigned char spamScore = tr->getSpamScore();
-	// 	unsigned char spamScore ;
-	// 	spamScore = getNegativeQualityWeight ( linker ,
-	// 					       xml   ,
-	// 					       links ,
-	// 					       NULL  , // words
-	// 					       coll  ,
-	// 					       NULL  , // sr    ,
-	// 					       NULL  ,// safebuf
-	// 					       0  /*niceness*/); 
-	// 	if ( spamScore >= 30 ) {
-	// 		*note = "had big spam score";
-	// 		return true;
-	// 	}
-
-	// big pages may have keywords identifying them as log pages cutoff
-	// so assume the worst
-	//if ( tr->getContentLen() > 100*1024 ) return true;
 	// i saw a german doc get its textarea cut out because of this, so
 	// we need this here
-	//if ( tr && tr->getContentLen() > maxDocLen ) {
 	if ( xml && xml->getContentLen() > maxDocLen ) {
 		*note ="doc too big";
 		return true; 
@@ -789,14 +746,6 @@ bool isLinkSpam ( Url *linker,
 			*note = "path has reciprocallink" ; return true; }
 		else if ( strncasestr ( p , "/trackbacks/",plen,12 ) ) { 
 			*note = "path has /trackbacks/"   ; return true; }
-
-		//if ( gb_strcasestr ( p , "archive"   ) ) val = true;
-		//if ( gb_strcasestr ( p , ".asp"      ) ) val = true;
-		//if ( gb_strcasestr ( p , ".aspx"     ) ) val = true;
-		// these are mostly link exchange pages. no they are not!
-		//if ( gb_strcasestr ( p , "link"   ) ) val = true;
-		//p[plen-1] = c;
-		//if ( val ) { *note = "cgi or guestbook url"; return true; }
 	}
 
 	QUICKPOLL( niceness );
@@ -942,16 +891,7 @@ bool isLinkSpam ( Url *linker,
 			if ( xml->getNodeId ( i ) == TAG_INPUT &&
 			     xml->getString(i,"submit",&len)) gotSubmit = true;
 		}
-		// check for script tag
-		/*
-		if ( xml->getNodeId(i) == TAG_SCRIPT && quality < 80 ) {
-			// <script src=blah.com/fileparse.js" 
-			// type="text/javascript"> is used to hide google
-			// ads, so don't allow those pages to vote either
-			int32_t  slen; xml->getString(i,"src",&slen);
-			if ( slen > 0 ) { *note = "script src"; return true; }
-		}
-		*/
+
 		if ( xml->getNodeId ( i ) != TAG_FORM ) continue;
 			
 		// get the method field of this base tag
@@ -959,9 +899,6 @@ bool isLinkSpam ( Url *linker,
 		char *s = (char *) xml->getString(i,"method",&slen);
 		// if not thee, skip it
 		if ( ! s || slen <= 0 ) continue;
-		//if ( slen != 4 ) continue;
-		// if not a post, skip it
-		//if ( strncasecmp ( s , "post" , 4 ) ) continue;
 		// get the action url
 		s = (char *) xml->getString(i,"action",&slen);
 		if ( ! s || slen <= 0 ) continue;
@@ -975,9 +912,6 @@ bool isLinkSpam ( Url *linker,
 		else if ( strstr ( s , "/mt/" ) ) val = true;
 		// they can have these search boxes though
 		if ( val && strstr ( s , "/mt/mt-search" ) ) val = false;
-		//else if ( strstr ( s , "cgi"     ) ) val = true;
-		// eliminate some false positives
-		//if ( val && strstr ( s , "search" ) ) val = false;
 		s[slen] = c;
 		if ( val ) { *note = "post page"; return true; }
 	}
