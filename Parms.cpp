@@ -4433,22 +4433,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m++;
 
-	m->m_title = "language weight";
-	m->m_desc  = "Defalt language weight if document matches quer "
-		"language. Use this to give results that match the specified "
-		"the speicified &qlang higher ranking, or docs whose language "
-		"is unnknown. Can be override with "
-		"&langw in the query url.";
-	m->m_cgi   = "langweight";
-	m->m_off   = (char *)&cr.m_sameLangWeight - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "20.000000";
-	m->m_group = 1;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "sort language preference";
 	m->m_desc  = "Default language to use for ranking results. "
 		//"This should only be used on limited collections. "
@@ -4553,6 +4537,26 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_SI;
 	m++;
 
+
+	///////////////////////////////////////////
+	//  RANKING PROXY CONTROLS
+	///////////////////////////////////////////
+	
+	m->m_title = "language weight";
+	m->m_desc  = "Defalt language weight if document matches quer "
+		"language. Use this to give results that match the specified "
+		"the speicified &qlang higher ranking, or docs whose language "
+		"is unnknown. Can be override with "
+		"&langw in the query url.";
+	m->m_cgi   = "langweight";
+	m->m_off   = (char *)&cr.m_sameLangWeight - x;
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "20.000000";
+	m->m_group = 1;
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_COLL;
+	m++;
 
 	///////////////////////////////////////////
 	//  SPIDER PROXY CONTROLS

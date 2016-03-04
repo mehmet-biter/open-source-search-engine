@@ -206,6 +206,7 @@ enum {
 	PAGE_HOSTS       ,
 	PAGE_MASTER      , 
 	PAGE_SEARCH      ,  // 15
+	PAGE_RANKING     ,
 	PAGE_SPIDER      , 
 	PAGE_SPIDERPROXIES ,
 	PAGE_LOG         ,

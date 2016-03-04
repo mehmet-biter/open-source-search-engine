@@ -85,6 +85,10 @@ static WebPage s_pages[] = {
 	  "search controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_ACTIVE},
 
+	{ PAGE_RANKING   , "admin/ranking"   , 0 , "ranking controls" ,1, 0,
+	  "ranking controls", sendPageGeneric  , 0 ,NULL,NULL,
+	  PG_ACTIVE},
+
 	// use post now for the "site list" which can be big
 	{ PAGE_SPIDER    , "admin/spider"   , 0 , "spider controls" ,1,M_POST,
 	  "spider controls", sendPageGeneric  , 0 ,NULL,NULL,
