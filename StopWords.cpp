@@ -180,24 +180,6 @@ bool isStopWord ( char *s , int32_t len , int64_t h ) {
 	return s_stopWordTable.getScore ( &h );
 }		
 
-bool isStopWord2 ( int64_t *h ) {
-	if ( ! s_stopWordsInitialized ) {
-		s_stopWordsInitialized = 
-			initWordTable(&s_stopWordTable, s_stopWords, 
-				      //sizeof(s_stopWords)
-				      "stopwrds2");
-		if (!s_stopWordsInitialized) return false;
-	} 
-
-	// . all 1 char letter words are stop words
-	// . good for initials and some contractions
-	//if ( len == 1 && is_alpha_a(*s) ) return true;
-
-	// get from table
-	return s_stopWordTable.getScore ( h );
-}		
-
-
 // . damn i forgot to include these above
 // . i need these so m_bitScores in IndexTable.cpp doesn't have to require
 //   them! Otherwise, it's like all queries have quotes around them again...

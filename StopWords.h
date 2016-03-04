@@ -10,9 +10,6 @@
 // . stop words with "mdw" next to them are ones I added
 bool isStopWord ( char *s , int32_t len , int64_t h ) ;
 
-// used by Synonyms.cpp
-bool isStopWord2 ( int64_t *h ) ;
-
 // . damn i forgot to include these above
 // . i need these so m_bitScores in IndexTable.cpp doesn't have to require
 //   them! Otherwise, it's like all queries have quotes around them again...
