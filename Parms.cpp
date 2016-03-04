@@ -4549,7 +4549,7 @@ void Parms::init ( ) {
 		"is unnknown. Can be override with "
 		"&langw in the query url.";
 	m->m_cgi   = "langweight";
-	m->m_off   = (char *)&cr.m_sameLangWeight - x;
+	m->m_off   = offsetof(CollectionRec,m_sameLangWeight);
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "20.000000";
 	m->m_group = 1;
