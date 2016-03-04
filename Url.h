@@ -14,6 +14,8 @@
 #include "ip.h"      // atoip ( s,len)
 #include <cstddef>
 
+class SafeBuf;
+
 char *getPathFast  ( char *url );
 char *getTLDFast   ( char *url , int32_t *tldLen  , bool hasHttp = true ) ;
 char *getDomFast   ( char *url , int32_t *domLen  , bool hasHttp = true ) ;
