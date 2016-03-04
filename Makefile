@@ -1,10 +1,9 @@
 SHELL = /bin/bash
 
+config=release
+
 uname_m = $(shell uname -m)
 ARCH=$(uname_m)
-
-# for building packages
-VERSION=20
 
 BASE_DIR=$(shell pwd)
 export BASE_DIR
@@ -74,10 +73,20 @@ OBJS =  UdpSlot.o Rebalance.o \
 DEFS = -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I.
 CPPFLAGS = -g -Wall -fno-stack-protector -DPTHREADS -Wstrict-aliasing=0
 
-ifeq ($(MAKECMDGOALS),debug)
-DEFS += -D_VALGRIND_
-#CPPFLAGS += -pg
+# optimization
+ifeq ($(config),debug)
+O1 =
+O2 =
+O3 =
 else
+O1 = -O1
+O2 = -O2
+O3 = -O3
+endif
+
+ifeq ($(config),debug)
+DEFS += -D_VALGRIND_
+else ifeq ($(config),release)
 # if defined, UI options that can damage our production index will be disabled
 DEFS += -DPRIVACORE_SAFE_VERSION
 endif
@@ -122,8 +131,6 @@ endif
 GIT_VERSION=$(shell git rev-parse HEAD)$(DIRTY)
 
 all: gb
-
-debug: all
 
 utils: blaster2 hashtest monitor seektest urlinfo treetest dnstest gbtitletest
 
@@ -234,9 +241,6 @@ unittest:
 systemtest:
 	make -C test $@
 
-run_parser: test_parser
-	./test_parser ~/turkish.html
-
 test_parser: $(OBJS) test_parser.o Makefile
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ test_parser.o $(OBJS) $(LIBS)
 test_parser2: $(OBJS) test_parser2.o Makefile
@@ -265,13 +269,13 @@ threadtest: threadtest.o
 memtest: memtest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o
 hashtest: hashtest.cpp
-	$(CXX) -O3 -o hashtest hashtest.cpp
+	$(CXX) $(O3) -o hashtest hashtest.cpp
 mergetest: $(OBJS) mergetest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 seektest: seektest.cpp
 	$(CXX) -o seektest seektest.cpp -lpthread
 treetest: $(OBJ) treetest.o
-	$(CXX) $(DEFS) -O2 $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
+	$(CXX) $(DEFS) $(O2) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 nicetest: nicetest.o
 	$(CXX) -o nicetest nicetest.cpp
 
@@ -293,164 +297,161 @@ clean:
 	make -C test $@
 
 StopWords.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 Loop.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 hash.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 fctypes.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 IndexList.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 Matches.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 Highlight.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 matches2.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 linkspam.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 # Url::set() seems to take too much time
 Url.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -c $*.cpp
 
 Catdb.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 # when making a new file, add the recs to the map fast
 RdbMap.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
-# this was getting corruption, was it cuz we used -O2 compiler option?
+# this was getting corruption, was it cuz we used $(O2) compiler option?
 # RdbTree.o:
-# 	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
+# 	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 RdbBuckets.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 Linkdb.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 #XmlDoc.o:
-#	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+#	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 # final gigabit generation in here:
 Msg40.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 TopTree.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 UdpServer.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 RdbList.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 Rdb.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 # take this out. seems to not trigger merges when percent of
 # negative titlerecs is over 40.
 RdbBase.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
-# RdbCache.cpp gets "corrupted" with -O2... like RdbTree.cpp
+# RdbCache.cpp gets "corrupted" with $(O2)... like RdbTree.cpp
 #RdbCache.o:
-#	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+#	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 # fast dictionary generation and spelling recommendations
 #Speller.o:
-#	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+#	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 Posdb.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 # Query::setBitScores() needs this optimization
 #Query.o:
-#	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+#	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 # Msg3's should calculate the page ranges fast
 #Msg3.o:
-#	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+#	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 # fast parsing
 Xml.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 XmlNode.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 Words.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 Unicode.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 UCPropTable.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 UnicodeProperties.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 Pos.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 Pops.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 Bits.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 Sections.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 Summary.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 Title.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 SafeBuf.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 Profiler.o:
-	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 HashTableT.o:
-	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 HashTableX.o:
-	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 # getUrlFilterNum2()
 Spider.o:
-	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 SpiderColl.o:
-	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 SpiderLoop.o:
-	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 Doledb.o:
-	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 Msg12.o:
-	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 test_parser2.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 PostQueryRerank.o:
-	$(CXX) $(DEFS) $(CPPFLAGS)  -O2 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 sort.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -O3 -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 Version.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -DGIT_COMMIT_ID=$(GIT_VERSION) -c $*.cpp
-
-# dpkg-buildpackage calls 'make binary' to create the files for the deb pkg
-# which must all be stored in ./debian/gb/
 
 install:
 # gigablast will copy over the necessary files. it has a list of the
@@ -466,12 +467,6 @@ install:
 # if user types 'gb' it will use the binary in /var/gigablast/data0/gb
 	rm -f $(DESTDIR)/usr/bin/gb
 	ln -s /var/gigablast/data0/gb $(DESTDIR)/usr/bin/gb
-# if machine restarts...
-# the new way that does not use run-levels anymore
-#	rm -f $(DESTDIR)/etc/init.d/gb
-#	ln -s /lib/init/upstart-job $(DESTDIR)/etc/init.d/gb
-# initctl upstart-job conf file (gb stop|start|reload)
-#	cp init.gb.conf $(DESTDIR)/etc/init/gb.conf
 	cp S99gb $(DESTDIR)/etc/init.d/gb
 	ln -s /etc/init.d/gb $(DESTDIR)/etc/rc3.d/S99gb
 
@@ -481,192 +476,12 @@ install:
 .c.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -c $*.c
 
-#.cpp: $(OBJS)
-#	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-#	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.cpp $(OBJS) $(LIBS)
-
-##
-## Auto dependency generation
-## This is broken, if you edit Version.h and recompile it doesn't work. (mdw)
-#%.d: %.cpp	
-#	@echo "generating dependency information for $<"
-#	@set -e; $(CXX) -M $(DEFS) $(CPPFLAGS) $< \
-#	| sed 's/\($*\)\.o[ :]*/\1.o $@ : /g' > $@; \
-#	[ -s $@ ] || rm -f $@
-#-include $(SRCS:.cpp=.d)
-
 .PHONY: depend
 depend:
 	@echo "generating dependency information"
 	$(CXX) -MM $(DEFS) $(DPPFLAGS) *.cpp > Make.depend
 
 -include Make.depend
-
-# REDHAT PACKAGE SECTION BEGIN
-
-# try building the .deb and then running 'alien --to-rpm gb_1.0-1_i686.deb'
-# to build the .rpm
-
-# move this tarball into ~/rpmbuild/?????
-# then run rpmbuild -ba gb-1.0.spec to build the rpms
-# rpm -ivh gb-1.0-...  to install the pkg
-# testing-rpm:
-# 	git archive --format=tar --prefix=gb-1.0/ testing > gb-1.0.tar
-# 	mv gb-1.0.tar /home/mwells/rpmbuild/SOURCES/
-# 	rpmbuild -bb gb-1.0.spec
-# 	scp /home/mwells/rpmbuild/RPMS/x86_64/gb-*rpm www.gigablast.com:/w/html/
-
-# master-rpm:
-# 	git archive --format=tar --prefix=gb-1.0/ master > gb-1.0.tar
-# 	mv gb-1.0.tar /home/mwells/rpmbuild/SOURCES/
-# 	rpmbuild -bb gb-1.0.spec
-# 	scp /home/mwells/rpmbuild/RPMS/x86_64/gb-*rpm www.gigablast.com:/w/html/
-
-# REDHAT PACKAGE SECTION END
-
-# DEBIAN PACKAGE SECTION BEGIN
-
-# need to do 'apt-get install dh-make'
-# deb-master
-master-deb32:
-	git archive --format=tar --prefix=gb-1.$(VERSION)/ master > ../gb_1.$(VERSION).orig.tar
-	rm -rf debian
-# change "-p gb_1.0" to "-p gb_1.1" to update version for example
-	dh_make -y -s -e gigablast@mail.com -p gb_1.$(VERSION) -f ../gb_1.$(VERSION).orig.tar
-# zero this out, it is just filed with the .txt files erroneously and it'll
-# try to automatiicaly install in /usr/docs/
-	rm debian/docs
-	touch debian/docs
-# make the debian/copyright file contain the license
-	cp copyright.head  debian/copyright
-#	cat LICENSE | awk -Fxvcty '{print " "$1}' >> debian/copyright
-	cat LICENSE >> debian/copyright
-	cat copyright.tail >> debian/copyright
-# the control file describes the package
-	cp control.deb debian/control
-# try to use our own rules so we can override dh_shlibdeps and others
-	cp gb.deb.rules debian/rules
-# make our own changelog file
-	echo "gb (1."$(VERSION)"-1) unstable; urgency=low" > changelog
-	echo "" >> changelog
-	echo "  * More bug fixes." >> changelog
-	echo "" >> changelog
-	echo -n " -- mwells <gigablast@mail.com>  " >> changelog	
-	date +"%a, %d %b %Y %T %z" >> changelog
-	echo "" >> changelog
-	cp changelog debian/changelog
-# fix dh_shlibdeps from bitching about dependencies on shared libs
-# YOU HAVE TO RUN THIS before you run 'make'
-#	export LD_LIBRARY_PATH=./debian/gb/var/gigablast/data0
-# build the package now
-#	dpkg-buildpackage -j6 -nc -ai386 -ti386 -b -uc -rfakeroot
-	dpkg-buildpackage -j6 -nc -b -uc -rfakeroot
-
-# move to current dur
-	mv ../gb_*.deb .	
-# upload deb
-	scp gb_1.$(VERSION)*.deb gk268:/w/html/	
-# alien it
-	sudo alien --to-rpm gb_1.$(VERSION)-1_i386.deb
-# upload rpm
-	scp gb-1.$(VERSION)*.rpm gk268:/w/html/	
-
-
-master-deb64:
-	git archive --format=tar --prefix=gb-1.$(VERSION)/ master > ../gb_1.$(VERSION).orig.tar
-	rm -rf debian
-# change "-p gb_1.0" to "-p gb_1.1" to update version for example
-	dh_make -y -s -e gigablast@mail.com -p gb_1.$(VERSION) -f ../gb_1.$(VERSION).orig.tar
-# zero this out, it is just filed with the .txt files erroneously and it'll
-# try to automatiicaly install in /usr/docs/
-	rm debian/docs
-	touch debian/docs
-# make the debian/copyright file contain the license
-	cp copyright.head  debian/copyright
-#	cat LICENSE | awk -Fxvcty '{print " "$1}' >> debian/copyright
-	cat LICENSE >> debian/copyright
-	cat copyright.tail >> debian/copyright
-# the control file describes the package
-	cp control.deb debian/control
-# try to use our own rules so we can override dh_shlibdeps and others
-	cp gb.deb.rules debian/rules
-# make our own changelog file
-	echo "gb (1.$(VERSION)-1) unstable; urgency=low" > changelog
-	echo "" >> changelog
-	echo "  * More bug fixes." >> changelog
-	echo "" >> changelog
-	echo -n " -- mwells <gigablast@mail.com>  " >> changelog	
-	date +"%a, %d %b %Y %T %z" >> changelog
-	echo "" >> changelog
-	cp changelog debian/changelog
-# fix dh_shlibdeps from bitching about dependencies on shared libs
-# YOU HAVE TO RUN THIS before you run 'make'
-#	export LD_LIBRARY_PATH=./debian/gb/var/gigablast/data0
-# build the package now
-	dpkg-buildpackage -nc -aamd64 -tamd64 -b -uc -rfakeroot
-# move to current dur
-	mv ../gb_*.deb .	
-# upload deb
-	scp gb_1.$(VERSION)*.deb gk268:/w/html/	
-# alien it
-	sudo alien --to-rpm gb_1.$(VERSION)-1_amd64.deb
-# upload rpm
-	scp gb-1.$(VERSION)*.rpm gk268:/w/html/	
-
-
-
-#deb-testing
-#testing-deb:
-#	git archive --format=tar --prefix=gb-1.5/ testing > ../gb_1.5.orig.tar
-#	rm -rf debian
-# change "-p gb_1.0" to "-p gb_1.1" to update version for example
-#	dh_make -e gigablast@mail.com -p gb_1.5 -f ../gb_1.5.orig.tar
-# zero this out, it is just filed with the .txt files erroneously and it'll
-# try to automatiicaly install in /usr/docs/
-#	rm debian/docs
-#	touch debian/docs
-# make the debian/copyright file contain the license
-#	cp copyright.head  debian/copyright
-##	cat LICENSE | awk -Fxvcty '{print " "$1}' >> debian/copyright
-#	cat LICENSE >> debian/copyright
-#	cat copyright.tail >> debian/copyright
-# the control file describes the package
-#	cp control.deb debian/control
-# try to use our own rules so we can override dh_shlibdeps and others
-#	cp gb.deb.rules debian/rules
-#	cp changelog debian/changelog
-# make the pkg dependencies file ourselves since we overrode dh_shlibdeps
-# with our own debian/rules file. see that file for more info.
-##	echo  "shlibs:Depends=libc6 (>= 2.3)" > debian/gb.substvars
-##	echo  "shlibs:Depends=netpbm (>= 0.0)" > debian/gb.substvars
-##	echo  "misc:Depends=netpbm (>= 0.0)" > debian/gb.substvars
-# fix dh_shlibdeps from bitching about dependencies on shared libs
-# YOU HAVE TO RUN THIS before you run 'make'
-##	export LD_LIBRARY_PATH=./debian/gb/var/gigablast/data0
-# build the package now. if we don't specify -ai386 -ti386 then some users
-# get a wrong architecture msg and 'dpkg -i' fails
-#	dpkg-buildpackage -nc -ai686 -ti686 -b -uc -rfakeroot
-##	dpkg-buildpackage -nc -b -uc -rfakeroot
-# move to current dur
-#	mv ../gb_*.deb .	
-
-install-pkgs-local:
-	sudo alien --to-rpm gb_1.5-1_i686.deb
-# upload
-	scp gb*.deb gb*.rpm gk268:/w/html/
-
-
-# DEBIAN PACKAGE SECTION END
-
-
-# You may need:
-# sudo apt-get install libffi-dev libssl-dev
-warcinjector:
-	-rm -r /home/zak/.pex/build/inject-*
-	-rm -r /home/zak/.pex/install/inject-*
-	cd script && pex -v . gevent gevent-socketio requests pyopenssl ndg-httpsclient pyasn1 multiprocessing -e inject -o warc-inject --inherit-path --no-wheel
-
-
 
 .PHONY: cleandb
 cleandb:
