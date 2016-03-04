@@ -1044,16 +1044,6 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 			"Add url is temporarily disabled in Master Controls."
 			"</font></td></tr>\n";
 
-	if( page == PAGE_INJECT )
-	{
-		e1 = "<tr><td colspan=20><font color=#000000>"
-			"<b>WARNING</b>: Adding URLs this way DOES NOT handle redirects.<br><br>"
-			"If you add somesite.com and it redirects to www.somesite.com, it will be indexed as somesite.com, NOT www.somesite.com!<br>"
-			"Use Admin -> Advanced -> Add Urls instead if you want redirects handled correctly."
-			"</font></td></tr>\n";
-	}
-
-
 	if ( format == FORMAT_XML || format == FORMAT_JSON ) {
 		const char *coll = g_collectiondb.getDefaultColl(r);
 		CollectionRec *cr = g_collectiondb.getRec(coll);//2(r,true);
@@ -1110,6 +1100,7 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 		       //"</div>"
 		       "</td></tr>%s%s\n",
 		       tt,e1,e2);
+
 	//bool isCrawlbot = false;
 	//if ( collOveride ) isCrawlbot = true;
 		
@@ -1364,7 +1355,7 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 		if ( m->m_max > 1 && ss ) size = *(int32_t *)ss;
 		if ( size < jend        ) jend = size;
 		// toggle background color on group boundaries...
-		if ( m->m_group == 1 ) {
+		if ( m->m_group ) {
 			if ( bg == bg1 ) bg = bg2;
 			else             bg = bg1;
 		}
@@ -3439,7 +3430,7 @@ void Parms::init ( ) {
 		m_parms[i].m_hdrs   =  1 ; // assume to always print headers
 		m_parms[i].m_perms  =  0 ; // same as containing WebPages perms
 		m_parms[i].m_plen   = -1 ; // offset for strings length
-		m_parms[i].m_group  =  1 ; // start of a new group of controls?
+		m_parms[i].m_group  =  true      ; // start of a new group of controls?
 		m_parms[i].m_save   =  1 ; // save to xml file?
 		m_parms[i].m_min    = -1 ; // min value (for int32_t parms)
 		m_parms[i].m_flags  = 0;
@@ -4264,7 +4255,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_API;
 	m++;
 
@@ -4278,7 +4269,7 @@ void Parms::init ( ) {
 	m->m_defOff= (char *)&cr.m_dedupResultsByDefault - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 1;
+	m->m_group = true;
 	m->m_cgi   = "dr";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
@@ -4296,7 +4287,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&si.m_percentSimilarSummary - y;
 	m->m_defOff= (char *)&cr.m_percentSimilarSummary - x;
 	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_smin  = 0;
 	m->m_smax  = 100;
 	m->m_flags = PF_API;
@@ -4312,7 +4303,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&si.m_dedupURL - y;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4442,22 +4433,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m++;
 
-	m->m_title = "language weight";
-	m->m_desc  = "Defalt language weight if document matches quer "
-		"language. Use this to give results that match the specified "
-		"the speicified &qlang higher ranking, or docs whose language "
-		"is unnknown. Can be override with "
-		"&langw in the query url.";
-	m->m_cgi   = "langweight";
-	m->m_off   = (char *)&cr.m_sameLangWeight - x;
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "20.000000";
-	m->m_group = 1;
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SEARCH;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
 	m->m_title = "sort language preference";
 	m->m_desc  = "Default language to use for ranking results. "
 		//"This should only be used on limited collections. "
@@ -4470,7 +4445,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&si.m_defaultSortLang - y;
 	m->m_type  = TYPE_CHARPTR;
 	m->m_def   = "";//"xx";//_US";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4499,10 +4474,11 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_maxQueryTerms - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "999999"; // now we got synonyms... etc
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE; 
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
+	m->m_group = true;
 	m++;
 
     m->m_title = "max title len";
@@ -4523,7 +4499,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "ns";
 	m->m_type  = TYPE_LONG;
 	m->m_defOff= (char *)&cr.m_summaryMaxNumLines - x;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_off   = (char *)&si.m_numLinesInSummary - y;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
@@ -4542,7 +4518,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&si.m_summaryMaxWidth - y;
 	m->m_defOff= (char *)&cr.m_summaryMaxWidth - x;
 	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
@@ -4556,12 +4532,80 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&si.m_summaryMaxNumCharsPerLine - y;
 	m->m_defOff= (char *)&cr.m_summaryMaxNumCharsPerLine - x;
 	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_RESULTS;
 	m->m_obj   = OBJ_SI;
 	m++;
 
+
+	///////////////////////////////////////////
+	//  RANKING CONTROLS
+	///////////////////////////////////////////
+	
+	m->m_title = "language weight";
+	m->m_desc  = "Default language weight if document matches query "
+		"language. Use this to give results that match the specified "
+		"the specified &qlang higher ranking, or docs whose language "
+		"is unknown. Can be overridden with "
+		"&langw in the query url.";
+	m->m_cgi   = "langweight";
+	m->m_off   = offsetof(CollectionRec,m_sameLangWeight);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "20.000000";
+	m->m_group = true;
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_COLL;
+	m++;
+
+	m->m_title = "termfreq min";
+	m->m_desc  = "Term frequency estimate minimum";
+	m->m_cgi   = "termfreqweightfreqmin";
+	m->m_off   = offsetof(Conf,m_termFreqWeightFreqMin);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "0.00";
+	m->m_group = false;
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "termfreq min";
+	m->m_desc  = "Term frequency estimate maximum";
+	m->m_cgi   = "termfreqweightfreqmax";
+	m->m_off   = offsetof(Conf,m_termFreqWeightFreqMax);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "0.50";
+	m->m_group = false;
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "termfreq weight min";
+	m->m_desc  = "Term frequency weight minimum";
+	m->m_cgi   = "termfreqweightmin";
+	m->m_off   = offsetof(Conf,m_termFreqWeightMin);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "0.50";
+	m->m_group = false;
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "termfreq weight max";
+	m->m_desc  = "Term frequency weight maximum";
+	m->m_cgi   = "termfreqweightmax";
+	m->m_off   = offsetof(Conf,m_termFreqWeightMax);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "1.00";
+	m->m_group = false;
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
+	m++;
 
 	///////////////////////////////////////////
 	//  SPIDER PROXY CONTROLS
@@ -5263,7 +5307,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_maxTotalSpiders - g;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "100";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5342,7 +5386,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_httpsMaxSockets - g;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "100";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5404,7 +5448,7 @@ void Parms::init ( ) {
 	m->m_func  = CommandSpiderTestInit;
 	m->m_def   = "1";
 	m->m_cast  = 1;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5435,7 +5479,7 @@ void Parms::init ( ) {
 	m->m_func  = CommandSpiderTestInit;
 	m->m_def   = "1";
 	m->m_cast  = 1;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5448,7 +5492,7 @@ void Parms::init ( ) {
 	m->m_func  = CommandSpiderTestCont;
 	m->m_def   = "1";
 	m->m_cast  = 1;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5463,7 +5507,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
 	//m->m_cast  = 0;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5483,7 +5527,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "save";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandSaveAndExit;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5498,7 +5542,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "rebalance";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandRebalance;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5541,7 +5585,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandMergeTitledb;
 	m->m_cast  = 1;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5552,7 +5596,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandMergeSpiderdb;
 	m->m_cast  = 1;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5564,7 +5608,7 @@ void Parms::init ( ) {
         m->m_type  = TYPE_CMD;
         m->m_func  = CommandMergeLinkdb;
         m->m_cast  = 1;
-        m->m_group = 0;
+        m->m_group = false;
         m->m_page  = PAGE_MASTER;
         m->m_obj   = OBJ_CONF;
         m++;
@@ -5758,7 +5802,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_spiderRoundStartTime - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_HIDDEN | PF_REBUILDURLFILTERS ;
@@ -5773,7 +5817,7 @@ void Parms::init ( ) {
 	m->m_cgi   = "roundStart";
 	m->m_type  = TYPE_CMD;
 	m->m_func  = NULL;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_HIDDEN;
@@ -5791,7 +5835,7 @@ void Parms::init ( ) {
 	//m->m_off   = (char *)&cr.m_spiderRoundStartTime - x;
 	m->m_type  = TYPE_CMD;
 	m->m_func  = CommandForceNextSpiderRound;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_HIDDEN | PF_REBUILDURLFILTERS ;
@@ -5803,7 +5847,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_spiderRoundNum - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_HIDDEN ;
@@ -5856,7 +5900,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "100";
 	m->m_units = "milliseconds";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5893,7 +5937,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_numQueryTimes - g;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "300";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5906,7 +5950,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_maxCorruptLists - g;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "5";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -5945,7 +5989,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
 	m->m_size  = MAX_URL_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5959,7 +6003,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
 	m->m_size  = MAX_URL_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -5981,7 +6025,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendParmChangeAlertsToEmail1 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6001,7 +6045,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "127.0.0.1";
 	m->m_size  = MAX_MX_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6013,7 +6057,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "4081234567@vtext.com";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6025,7 +6069,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "sysadmin@mydomain.com";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6047,7 +6091,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendParmChangeAlertsToEmail2 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6059,7 +6103,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "mail.mydomain.com";
 	m->m_size  = MAX_MX_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6071,7 +6115,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6083,7 +6127,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "sysadmin@mydomain.com";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6105,7 +6149,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendParmChangeAlertsToEmail3 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6117,7 +6161,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "mail.mydomain.com";
 	m->m_size  = MAX_MX_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6129,7 +6173,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6141,7 +6185,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "sysadmin@mydomain.com";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6164,7 +6208,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sendParmChangeAlertsToEmail4 - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6177,7 +6221,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "mail.mydomain.com";
 	m->m_size  = MAX_MX_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6190,7 +6234,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6203,7 +6247,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_def   = "sysadmin@mydomain.com";
 	m->m_size  = MAX_EMAIL_LEN;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6232,7 +6276,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_corruptRetries - g;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "100";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6302,7 +6346,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_doConsistencyTesting - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6377,7 +6421,7 @@ void Parms::init ( ) {
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "clusterdb disk cache size";
@@ -6394,7 +6438,7 @@ void Parms::init ( ) {
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "titledb disk cache size";
@@ -6409,7 +6453,7 @@ void Parms::init ( ) {
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "spiderdb disk cache size";
@@ -6424,7 +6468,7 @@ void Parms::init ( ) {
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "stable-summary cache size";
@@ -6438,7 +6482,7 @@ void Parms::init ( ) {
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "stable-summary cache max age";
@@ -6452,7 +6496,7 @@ void Parms::init ( ) {
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "unstable-summary cache size";
@@ -6466,7 +6510,7 @@ void Parms::init ( ) {
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "stable-summary cache max age";
@@ -6480,7 +6524,7 @@ void Parms::init ( ) {
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "scan all if not found";
@@ -6614,7 +6658,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_IP;
 	// default to google public dns #2
 	m->m_def   = (char*)PUBLICLY_AVAILABLE_DNS2;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6626,7 +6670,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[2] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6637,7 +6681,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[3] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6648,7 +6692,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[4] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6659,7 +6703,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[5] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6670,7 +6714,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[6] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6681,7 +6725,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[7] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6692,7 +6736,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[8] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6703,7 +6747,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[9] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6714,7 +6758,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[10] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6725,7 +6769,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[11] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6736,7 +6780,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[12] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6747,7 +6791,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[13] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6758,7 +6802,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[14] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6769,7 +6813,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_dnsIps[15] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m++;
@@ -6792,7 +6836,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_geocoderIps[1] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6804,7 +6848,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_geocoderIps[2] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6816,7 +6860,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_geocoderIps[3] - g;
 	m->m_type  = TYPE_IP;
 	m->m_def   = "0.0.0.0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6840,7 +6884,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_wikiProxyPort - g;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6868,7 +6912,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_size  = MAX_COLL_LEN+1;
 	m->m_def   = "main";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6882,7 +6926,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_size  = MAX_URL_LEN;
 	m->m_def   = "";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6910,7 +6954,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "0.0";
 	m->m_units = "";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6924,7 +6968,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "999999.0";
 	m->m_units = "pages/second";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6975,7 +7019,7 @@ void Parms::init ( ) {
 	m->m_flags = 0;//PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "use threads for system calls";
@@ -6988,7 +7032,7 @@ void Parms::init ( ) {
 	m->m_flags = 0;//PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 
@@ -7006,7 +7050,7 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "max cpu merge threads";
@@ -7021,7 +7065,7 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "max write threads";
@@ -7037,7 +7081,7 @@ void Parms::init ( ) {
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "flush disk writes";
@@ -7047,11 +7091,11 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_flushWrites - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_API;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "verify disk writes";
@@ -7062,11 +7106,11 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_verifyWrites - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "max spider read threads";
@@ -7083,7 +7127,7 @@ void Parms::init ( ) {
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "separate disk reads";
@@ -7202,7 +7246,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_minProfThreshold - g;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "10";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7217,7 +7261,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_sequentialProfiling - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -7229,7 +7273,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_useStatsdb - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -8114,7 +8158,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
 	m++;
 
@@ -8126,7 +8170,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_dedupResultsByDefault - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_group = 1;
+	m->m_group = true;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -8142,7 +8186,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_doTagdbLookups - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_group = 1;
+	m->m_group = true;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -8158,7 +8202,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_percentSimilarSummary - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "90";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_smin  = 0;
 	m->m_smax  = 100;
 	m->m_flags = PF_API | PF_CLONE;
@@ -8176,7 +8220,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_summDedupNumLines - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "4";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -8219,7 +8263,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_summaryMaxNumLines - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "1";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -8232,7 +8276,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_summaryMaxNumCharsPerLine - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "180";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -8249,7 +8293,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_summaryMaxWidth - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "80";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -8263,7 +8307,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_size  = SUMMARYHIGHLIGHTTAGMAXSIZE ;
 	m->m_def   = "<b style=\"color:black;background-color:#ffff66\">";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -8277,7 +8321,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_STRING;
 	m->m_size  = SUMMARYHIGHLIGHTTAGMAXSIZE ;
 	m->m_def   = "</b>";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_API | PF_CLONE;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -8584,7 +8628,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_spiderDelayInMilliseconds - x; 
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_CLONE;
@@ -8627,7 +8671,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "86400"; // 24*60*60 = 1day
 	m->m_units = "seconds";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_CLONE;
@@ -8663,7 +8707,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_automaticallyUseProxies - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_CLONE;
@@ -8684,7 +8728,7 @@ void Parms::init ( ) {
 	// so leave this off for now... they have it in a hidden div which
 	// popups to email the article link or whatever to someone.
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_CLONE;
@@ -8732,7 +8776,7 @@ void Parms::init ( ) {
 	m->m_size  = 48;
 	// make sunday the default
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_CLONE;
@@ -8745,7 +8789,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_dailyMergeStarted - x;
 	m->m_type  = TYPE_LONG_CONST;
 	m->m_def   = "-1";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_NOAPI;
@@ -8760,7 +8804,7 @@ void Parms::init ( ) {
 	m->m_off = (char *)&cr.m_maxAddUrlsPerIpDomPerDay - x;
 	m->m_type = TYPE_LONG;
 	m->m_def = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_CLONE;
@@ -8806,7 +8850,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_dupCheckWWW - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_CLONE;
@@ -8846,7 +8890,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_deleteTimeouts - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -8879,7 +8923,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_CLONE;
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "use ifModifiedSince";
@@ -8922,7 +8966,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_useSimilarityPublishDate - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -8938,7 +8982,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_maxPercentSimilarPublishDate - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "80";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -8966,7 +9010,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_linkdbMinFilesToMerge - x;
 	m->m_def   = "6"; 
 	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -8979,7 +9023,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_tagdbMinFilesToMerge - x;
 	m->m_def   = "2"; 
 	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -9008,7 +9052,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_posdbMinFilesToMerge - x;
 	m->m_def   = "6"; 
 	m->m_type  = TYPE_LONG;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -9069,7 +9113,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_computeSiteNumInlinks - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_CLONE|PF_API;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -9084,7 +9128,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_doLinkSpamCheck - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_CLONE;
@@ -9103,7 +9147,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_oneVotePerIpDom - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_CLONE;
@@ -9118,7 +9162,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_indexInlinkNeighborhoods - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -9146,7 +9190,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_allowAdultDocs - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_group =  0 ;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -9212,7 +9256,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_thumbnailMaxWidthHeight - x;
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "250";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_CLONE;
@@ -9294,7 +9338,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_def   = "";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_REBUILDURLFILTERS | PF_CLONE;
 	m++;
 
@@ -9309,7 +9353,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_def   = "";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_REBUILDURLFILTERS | PF_CLONE;
 	m++;
 
@@ -9326,7 +9370,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m->m_def   = "";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_REBUILDURLFILTERS | PF_CLONE;
 	m++;
 
@@ -9353,7 +9397,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_spiderTimeMax - x;
 	m->m_type  = TYPE_DATE2;
 	m->m_def   = "01 Jan 2010";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -9365,7 +9409,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&cr.m_useCurrentTime - x;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "1";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
@@ -9407,7 +9451,7 @@ void Parms::init ( ) {
 	m->m_def   = "";
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_flags = PF_REQUIRED;// | PF_COLLDEFAULT;//| PF_NOHTML;
 	m++;
 
@@ -9419,7 +9463,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 
@@ -9432,7 +9476,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "200000000";
 	m->m_units = "bytes";
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "max rebuild injections";
@@ -9444,7 +9488,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "2";
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "full rebuild";
@@ -9457,7 +9501,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "1";
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "add spiderdb recs of non indexed urls";
@@ -9474,7 +9518,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "recycle link text";
@@ -9492,7 +9536,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "1";
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "rebuild titledb";
@@ -9513,7 +9557,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "rebuild clusterdb";
@@ -9524,7 +9568,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "rebuild spiderdb";
@@ -9535,7 +9579,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "rebuild linkdb";
@@ -9546,7 +9590,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 	m->m_title = "rebuild root urls";
@@ -9567,7 +9611,7 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_REPAIR;
 	m->m_obj   = OBJ_CONF;
 	m->m_def   = "1";
-	m->m_group = 0;
+	m->m_group = false;
 	m++;
 
 #endif
@@ -9707,7 +9751,7 @@ void Parms::init ( ) {
 	m->m_off   = (char *)&g_conf.m_logQueryReply - g;
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
-	m->m_group = 0;
+	m->m_group = false;
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
