@@ -212,6 +212,8 @@ class Conf {
 	float m_termFreqWeightFreqMax;
 	float m_termFreqWeightMin;
 	float m_termFreqWeightMax;
+	float m_densityWightMin;
+	float m_densityWightMax;
 
 	// use sendmail to forward emails we send out
 	char   m_sendmailIp[MAX_MX_LEN];

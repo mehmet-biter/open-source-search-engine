@@ -972,7 +972,7 @@ void initWeights ( ) {
 	}
 	// density rank to weight
 	for ( int32_t i = 0 ; i <= MAXDENSITYRANK ; i++ ) {
-		s_densityWeights[i] = scale_quadratic(i,0,MAXDENSITYRANK,0.35,1.0);
+		s_densityWeights[i] = scale_quadratic(i,0,MAXDENSITYRANK,g_conf.m_densityWightMin,g_conf.m_densityWightMax);
 	}
 	// . word spam rank to weight
 	// . make sure if word spam is 0 that the weight is not 0!

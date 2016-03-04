@@ -4580,7 +4580,7 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "termfreq min";
+	m->m_title = "termfreq max";
 	m->m_desc  = "Term frequency estimate maximum";
 	m->m_cgi   = "termfreqweightfreqmax";
 	m->m_off   = offsetof(Conf,m_termFreqWeightFreqMax);
@@ -4608,6 +4608,30 @@ void Parms::init ( ) {
 	m->m_desc  = "Term frequency weight maximum";
 	m->m_cgi   = "termfreqweightmax";
 	m->m_off   = offsetof(Conf,m_termFreqWeightMax);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "1.00";
+	m->m_group = false;
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "density weight min";
+	m->m_desc  = "Term density weight minimum. Normally less than 1.0";
+	m->m_cgi   = "densityweightmin";
+	m->m_off   = offsetof(Conf,m_densityWightMin);
+	m->m_type  = TYPE_FLOAT;
+	m->m_def   = "0.35";
+	m->m_group = false;
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_RANKING;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "density weight max";
+	m->m_desc  = "Term density weight maximum. Normally 1.0";
+	m->m_cgi   = "densityweightmax";
+	m->m_off   = offsetof(Conf,m_densityWightMax);
 	m->m_type  = TYPE_FLOAT;
 	m->m_def   = "1.00";
 	m->m_group = false;
