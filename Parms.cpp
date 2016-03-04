@@ -4478,6 +4478,7 @@ void Parms::init ( ) {
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE; 
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
+	m->m_group = true;
 	m++;
 
     m->m_title = "max title len";
