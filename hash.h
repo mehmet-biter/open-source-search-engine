@@ -258,29 +258,23 @@ inline uint64_t hash64Lower_utf8_cont ( const char *p,
 		cs = getUtf8CharSize(p);
 		// deal with one ascii char quickly
 		if ( cs == 1 ) {
-			h ^= g_hashtab [i++] 
-				[(uint8_t)to_lower_a(*p)];
+			h ^= g_hashtab [i++][(uint8_t)to_lower_a(*p)];
 			continue;
 		}
-		// convert utf8 apostrophe to ascii apostrophe so Words.cpp
-		// gets the right wid for stuff like "you're" when the
-		// apostrophe is in utf8
-		//if ( p[0]==(char)0xe2 && 
-		//     p[1]==(char)0x80 && 
-		//     cs==3 && 
-		//     (p[2]==(char)0x99||p[2]==(char)0x9c) ) {
-		//	h ^= g_hashtab [i++][(uint8_t)'\''];
-		//	continue;
-		//}
+
 		// otherwise, lower case it
 		x = utf8Decode((char *)p);
+
 		// convert to lower
 		y = ucToLower (x);
+
 		// back to utf8
 		char tmp[4];
 		char ncs = utf8Encode ( y , tmp );
+
 		// sanity check
 		if ( ncs > 4 ) { char *xx=NULL;*xx=0; }
+
 		// i've seen this happen for 4 byte char =
 		// -16,-112,-51,-125  which has x=66371 and y=66371
 		// but utf8Encode() returned 0!
@@ -292,13 +286,17 @@ inline uint64_t hash64Lower_utf8_cont ( const char *p,
 			if ( cs >= 3 ) tmp[3] = p[3];
 			ncs = cs;
 		}
+
 		// hash it up
 		h ^= g_hashtab [i++][(uint8_t)tmp[0]];
-		if ( ncs == 1 ) continue;
+		if ( ncs == 1 )
+			continue;
 		h ^= g_hashtab [i++][(uint8_t)tmp[1]];
-		if ( ncs == 2 ) continue;
+		if ( ncs == 2 )
+			continue;
 		h ^= g_hashtab [i++][(uint8_t)tmp[2]];
-		if ( ncs == 3 ) continue;
+		if ( ncs == 3 )
+			continue;
 		h ^= g_hashtab [i++][(uint8_t)tmp[3]];
 	}
 	// update this so caller can re-call with the right i
