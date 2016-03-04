@@ -208,6 +208,7 @@ dist: all
 	wiktionary-syns.dat \
 	sitelinks.txt \
 	unifiedDict.txt \
+	valgrind.cfg \
 	$(DIST_DIR)
 	@cp third-party/cld2/LICENSE $(DIST_DIR)/LICENSE-3RD-PARTY-CLD2
 	@tar -czvf $(DIST_DIR).tar.gz $(DIST_DIR)
