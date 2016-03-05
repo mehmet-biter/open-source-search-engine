@@ -62,9 +62,6 @@ char *g_files[] = {
 
 	// might have localhosts.conf
 	//"hosts.conf",
-	
-	"catcountry.dat",
-	"badcattable.dat",
 
 	"ucdata/kd_data.dat",
 	"ucdata/kdmap.dat",

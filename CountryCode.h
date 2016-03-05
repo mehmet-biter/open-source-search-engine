@@ -1,6 +1,6 @@
 
-#ifndef _COUNTRYCODE_H
-#define _COUNTRYCODE_H
+#ifndef COUNTRYCODE_H
+#define COUNTRYCODE_H
 
 #include "HashTableT.h"
 #include "types.h"
@@ -17,15 +17,13 @@ class CountryCode {
 		CountryCode();
 		~CountryCode();
 		void init(void);
-		int getNumCodes(void);
 		const char *getAbbr(int index);
 		const char *getName(int index);
 		int getIndexOfAbbr(const char *abbr);
 		bool loadHashTable(void);
 		void reset();
-		int32_t getNumEntries(void);
-		void debugDumpNumbers(void);
-         	uint64_t getLanguagesWritten(int index);
+		uint64_t getLanguagesWritten(int index);
+
 	private:
 		bool m_init;
 		HashTableT<uint16_t, int>m_abbrToIndex;
@@ -34,8 +32,5 @@ class CountryCode {
 
 extern CountryCode g_countryCode;
 
-// We're currently at 24x or so...
-#define MAX_COUNTRIES (255)
-
-#endif // _COUNTRYCODE_H
+#endif // COUNTRYCODE_H
 

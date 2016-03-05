@@ -7,18 +7,7 @@
 #include "LanguageIdentifier.h"
 #include "Threads.h"
 
-// record for unified language/country hash table
-typedef union catcountryrec_t {
-	int32_t lval;
-	struct {
-		uint16_t country;
-		uint8_t lang;
-	} sval;
-} catcountryrec_t;
-
 CountryCode g_countryCode;
-
-static HashTable s_catToCountry;
 
 static char * s_countryCode[] = {
 	"zz", // Unknown
@@ -875,18 +864,11 @@ void CountryCode::init(void) {
 
 bool CountryCode::loadHashTable(void) {
 	init();
-	if(!m_init) return(false);
-	s_catToCountry.reset();
-	s_catToCountry.setLabel("ctrycode");
-	return(s_catToCountry.load(g_hostdb.m_dir, "catcountry.dat"));
+
+	return m_init;
 }
 
 void CountryCode::reset ( ) {
-	s_catToCountry.reset();
-}
-
-int CountryCode::getNumCodes(void) {
-	return(s_numCountryCodes);
 }
 
 const char *CountryCode::getAbbr(int index) {
@@ -909,23 +891,6 @@ int CountryCode::getIndexOfAbbr(const char *abbr) {
 	int32_t slot = m_abbrToIndex.getSlot(idx);
 	if(slot < 0) return(0);
 	return(m_abbrToIndex.getValueFromSlot(slot));
-}
-
-int32_t CountryCode::getNumEntries(void) {
-	if(!m_init) return(0);
-	return(s_catToCountry.getNumSlotsUsed());
-}
-
-void CountryCode::debugDumpNumbers(void) {
-	int32_t slot;
-	catcountryrec_t ccr;
-	for(slot = 0; slot < s_catToCountry.getNumSlotsUsed(); slot++) {
-		ccr.lval = 0L;
-		ccr.lval = s_catToCountry.getValueFromSlot(slot);
-		if(ccr.lval)
-			log( "Slot %"INT32" has lang %d, country %d (%"INT32")\n",
-					slot, ccr.sval.lang, ccr.sval.country, ccr.lval);
-	}
 }
 
 uint64_t CountryCode::getLanguagesWritten(int index) {

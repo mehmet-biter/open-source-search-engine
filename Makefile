@@ -184,9 +184,7 @@ gb32:
 dist: DIST_DIR=gb-$(shell date +'%Y%m%d')-$(shell git rev-parse --short HEAD)
 dist: all
 	@mkdir $(DIST_DIR)
-	@cp -prL catcountry.dat \
-	badcattable.dat \
-	ucdata/ \
+	@cp -prL ucdata/ \
 	antiword \
 	antiword-dir/ \
 	html/ \

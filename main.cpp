@@ -2556,11 +2556,6 @@ int main2 ( int argc , char *argv[] ) {
 
 	// Load the category language table
 	g_countryCode.loadHashTable();
-	int32_t nce = g_countryCode.getNumEntries();
-
-	if ( nce != 544729 ) {
-		log("cat: unsupported catcountry.dat file with %"INT32" entries", nce);
-	}
 
 	// init the cache in Msg40 for caching search results
 	// if cache not initialized now then do it now
