@@ -3112,7 +3112,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 			    "for coll %s",cr->m_coll);
 			cr->m_localCrawlInfo.m_sentCrawlDoneAlert = 0;
 		}
-=
+
 		// update cache time
 		cr->m_globalCrawlInfo.m_lastUpdateTime = getTime();
 		
