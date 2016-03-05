@@ -2432,13 +2432,6 @@ void doneGettingNotifyUrlWrapper ( void *state , TcpSocket *sock ) {
 // . used to send email and get a url when a crawl hits a maxToCrawl
 //   or maxToProcess limitation.
 bool sendNotification ( EmailInfo *ei ) {
-
-	// disable for now
-	//log("ping: NOT SENDING NOTIFICATION -- DEBUG!!");
-	//return true;
-
-	//if ( ei->m_inUse ) { char *xx=NULL;*xx=0; }
-
 	// caller must set this, as well as m_finalCallback/m_finalState
 	CollectionRec *cr = g_collectiondb.m_recs[ei->m_collnum];
 
@@ -2452,9 +2445,6 @@ bool sendNotification ( EmailInfo *ei ) {
 
 	// sanity check, can only call once
 	if ( ei->m_notifyBlocked != 0 ) { char *xx=NULL;*xx=0; }
-
-	//ei->m_inUse = true;
-
 
 	if ( email && email[0] ) {
 		log("build: sending email notification to %s for "
@@ -2474,14 +2464,6 @@ bool sendNotification ( EmailInfo *ei ) {
 		ei->m_fromAddress.reset();
 		ei->m_fromAddress.safePrintf("support@diffbot.com");
 
-		/*
-		ei->m_subject.safePrintf("crawl paused");
-		ei->m_body.safePrintf("Your crawl for collection \"%s\" "
-				      "has been paused because it hit "
-				      "a maxPagesToCrawl or maxPagesToProcess "
-				      "limitation."
-				      , cr->m_coll);
-		*/
 		ei->m_state = ei;//this;
 		ei->m_callback = doneSendingNotifyEmailWrapper;
 		// this will usually block, unless error maybe

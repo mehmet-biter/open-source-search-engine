@@ -713,11 +713,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "-l" ) == 0 ) g_conf.m_logToFile = true;
 	if ( strcmp ( cmd2 , "-l" ) == 0 ) g_conf.m_logToFile = true;
 
-	bool testMandrill = false;
-	if ( strcmp ( cmd , "emailmandrill" ) == 0 ) {
-		testMandrill = true;
-	}
-
 	// gb gendbs, preset the hostid at least
 	if ( //strcmp ( cmd , "gendbs"   ) == 0 ||
 	     //strcmp ( cmd , "gencatdb" ) == 0 ||
@@ -781,9 +776,6 @@ int main2 ( int argc , char *argv[] ) {
 	}
 	if ( strcmp ( cmd , "parsetest"  ) == 0 ) {
 		if ( cmdarg+1 >= argc ) goto printHelp;
-		// load up hosts.conf
-		//if ( ! g_hostdb.init(hostId) ) {
-		//	log("db: hostdb init failed." ); return 1; }
 		// init our table for doing zobrist hashing
 		if ( ! hashinit() ) {
 			log("db: Failed to init hashtable." ); return 1; }
@@ -2595,16 +2587,6 @@ int main2 ( int argc , char *argv[] ) {
 				 3500     ,   // max udp slots
 				 false    )){ // is dns?
 		log("db: UdpServer init failed." ); return 1; }
-	// . this is the high priority udpServer, it's stuff is handled 1st
-	//   sock read/write buf sizes are both almost 2 megs
-	// . a niceness of -1 means its signal won't be blocked, real time
-	// . poll time is 20ms
-	//if ( ! g_udpServer2.init( g_hostdb.getMyPort2(),&g_dp,-1/*niceness*/,
-	//			  10000000 ,   // readBufSIze
-	//			  10000000 ,   // writeBufSize
-	//			  20       ,   // pollTime in ms
-	//			  1000     )){ // max udp slots
-	//	log("db: UdpServer2 init failed." ); return 1; }
 
 	// start pinging right away
 	if ( ! g_pingServer.init() ) {
@@ -2624,10 +2606,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( ! g_dns.init( h9->m_dnsClientPort ) ) {
 		log("db: Dns distributed client init failed." ); return 1; }
 
-	// . then dns Local client
-	//if ( ! g_dnsLocal.init( 0 , false ) ) {
-	//	log("db: Dns local client init failed." ); return 1; }
-
 	g_stable_summary_cache.configure(g_conf.m_stableSummaryCacheMaxAge, g_conf.m_stableSummaryCacheSize);
 	g_unstable_summary_cache.configure(g_conf.m_unstableSummaryCacheMaxAge, g_conf.m_unstableSummaryCacheSize);
 	
@@ -2638,13 +2616,6 @@ int main2 ( int argc , char *argv[] ) {
 		    "running?" ); 
 		// this is dangerous!!! do not do the shutdown thing
 		return 1;
-		/*
-		// just open a socket to port X and send GET /master?save=1
-		if ( shutdownOldGB(h->m_httpPort) ) goto again;
-		log("db: Shutdown failed.");
-		resetAll();
-		return 1;
-		*/
 	}
 
 	if(!Msg1f::init()) {
@@ -2655,16 +2626,6 @@ int main2 ( int argc , char *argv[] ) {
 	// . now register all msg handlers with g_udp server
 	if ( ! registerMsgHandlers() ) {
 		log("db: registerMsgHandlers failed" ); return 1; }
-
-	// save our rdbs every 5 seconds and save rdb if it hasn't dumped
-	// in the last 10 mins
-	//if ( ! g_loop.registerSleepCallback(5, NULL, saveRdbs ) ) {
-	//	return log("db: save register failed"); return 1; }
-
-	//
-	// the new way to save all rdbs and conf
-	//
-	//g_process.init();
 
 	// gb spellcheck
 	if ( strcmp ( cmd , "spellcheck" ) == 0 ) {	
@@ -2679,23 +2640,6 @@ int main2 ( int argc , char *argv[] ) {
 		g_speller.dictLookupTest ( argv[cmdarg + 1] );
 		return 0;
 	}
-
-	// bdflush needs to be turned off because we need to control the
-	// writes directly. we do this by killing the write thread.
-	// we kill it when we need to do important reads, otherwise, if
-	// we cannot control the writes it fucks up our reading.
-	// no, now i use fsync(fd) in BigFile.cpp
-	//log("WARNING: burstify bdflush with a "
-	// "'echo 1 > /proc/sys/vm/bdflush' to optimize query response time "
-	//    "during spidering.");
-	//log("WARNING: mount with noatime option to speed up writes.");
-	//log("         since we now call fsync(fd) after each write." );
-
-	// debug msgs
-	//log("REMINDER: make HOT again!");
-	//log("REMINDER: reinsert thread call failed warning in BigFile.cpp.");
-	//log("REMINDER: remove mem leack checking");
-	//log("REMINDER: put thread back in Msg39");
 
 	// . register a callback to try to merge everything every 2 seconds
 	// . do not exit if we couldn't do this, not a huge deal
@@ -2718,18 +2662,6 @@ int main2 ( int argc , char *argv[] ) {
 		sprintf(buf, "Host %"INT32" respawning after crash.(%s)",
 			h9->m_hostId, iptoa(g_hostdb.getMyIp()));
 		g_pingServer.sendEmail(NULL, buf);
-	}
-
-	if ( testMandrill ) {
-		static EmailInfo ei;
-		//ei.m_cr = g_collectiondb.getRec(1);
-		ei.m_collnum = 1;
-		ei.m_fromAddress.safePrintf("support@diffbot.com");
-		ei.m_toAddress.safePrintf("matt@diffbot.com");
-		ei.m_callback = exitWrapper;
-		sendEmailThroughMandrill ( &ei );
-		g_conf.m_spideringEnabled = false;
-		g_conf.m_save = true;
 	}
 
 	// . start the spiderloop

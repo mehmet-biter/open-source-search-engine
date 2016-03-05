@@ -2741,50 +2741,25 @@ void doneSendingNotification ( void *state ) {
 }
 
 bool sendNotificationForCollRec ( CollectionRec *cr )  {
-
-	// do not send email for maxrounds hit, it will send a round done
-	// email for that. otherwise we end up calling doneSendingEmail()
-	// twice and increment the round twice
-	//if ( cr->m_spiderStatus == SP_MAXROUNDS ) {
-	//	log("spider: not sending email for max rounds limit "
-	//	    "since already sent for round done.");
-	//	return true;
-	//}
-
 	// wtf? caller must set this
 	if ( ! cr->m_spiderStatus ) { char *xx=NULL; *xx=0; }
 
 	log(LOG_INFO,
 	    "spider: sending notification for crawl status %"INT32" in "
 	    "coll %s. "
-	    //"current sent state is %"INT32""
 	    ,(int32_t)cr->m_spiderStatus
 	    ,cr->m_coll
-	    //cr->m_spiderStatusMsg,
-	    //,(int32_t)cr->m_localCrawlInfo.m_sentCrawlDoneAlert);
 	    );
-
-	// if we already sent it return now. we set this to false everytime
-	// we spider a url, which resets it. use local crawlinfo for this
-	// since we reset global.
-	//if ( cr->m_localCrawlInfo.m_sentCrawlDoneAlert ) return true;
 
 	if ( cr->m_sendingAlertInProgress ) return true;
 
 	// ok, send it
-	//EmailInfo *ei = &cr->m_emailInfo;
 	EmailInfo *ei = (EmailInfo *)mcalloc ( sizeof(EmailInfo),"eialrt");
 	if ( ! ei ) {
 		log("spider: could not send email alert: %s",
 		    mstrerror(g_errno));
 		return true;
 	}
-
-	// in use already?
-	//if ( ei->m_inUse ) return true;
-
-	// pingserver.cpp sets this
-	//ei->m_inUse = true;
 
 	// set it up
 	ei->m_finalCallback = doneSendingNotification;
@@ -2801,8 +2776,6 @@ bool sendNotificationForCollRec ( CollectionRec *cr )  {
 					 
 	// if no email address or webhook provided this will not block!
 	// DISABLE THIS UNTIL FIXED
-
-	//log("spider: SENDING EMAIL NOT");
 
 	// do not re-call this stuff
 	cr->m_sendingAlertInProgress = true;
@@ -2835,10 +2808,6 @@ static int32_t s_updateRoundNum = 1;
 void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 
 	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
-	
-	// debug test
-	//int32_t mr = g_collectiondb.m_recs[0]->m_maxCrawlRounds;
-	//log("mcr: %"INT32"",mr);
 
 	// i don't know why we have locks in the lock table that are not
 	// getting removed... so log when we remove an expired locks and see.
@@ -2862,26 +2831,9 @@ void updateAllCrawlInfosSleepWrapper ( int fd , void *state ) {
 
 	s_inUse = true;
 
-	// reset tmp crawlinfo classes to hold the ones returned to us
-	//for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
-	//	CollectionRec *cr = g_collectiondb.m_recs[i];
-	//	if ( ! cr ) continue;
-	//	cr->m_tmpCrawlInfo.reset();
-	//}
-
 	// send out the msg request
 	for ( int32_t i = 0 ; i < g_hostdb.m_numHosts ; i++ ) {
 		Host *h = g_hostdb.getHost(i);
-		// skip if dead. no! we need replies from all hosts
-		// otherwise our counts could be short and we might end up
-		// re-spidering stuff even though we've really hit maxToCrawl
-		//if ( g_hostdb.isDead(i) ) {
-		//	if ( g_conf.m_logDebugSpider )
-		//		log("spider: skipping dead host #%"INT32" "
-		//		    "when getting "
-		//		    "crawl info",i);
-		//	continue;
-		//}
 		// count it as launched
 		s_requests++;
 		// launch it
@@ -2973,32 +2925,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 		g_errno = 0;
 		// if never had any reply... can't be valid then
 		if ( ! ptr ) s_validReplies--;
-		/*
-		// just use his last known good reply
-		ptr = (CrawlInfo *)h->m_lastKnownGoodCrawlInfoReply;
-		end = (CrawlInfo *)h->m_lastKnownGoodCrawlInfoReplyEnd;
-		*/
 	}
-	// otherwise, if reply was good it is the last known good now!
-	/*
-	else {
-		
-		// free the old good one and replace it with the new one
-		if ( h->m_lastKnownGoodCrawlInfoReply ) {
-			//log("spider: skiipping possible bad free!!!! until we fix");
-			mfree ( h->m_lastKnownGoodCrawlInfoReply , 
-				h->m_replyAllocSize , 
-				"lknown" );
-		}
-		// add in the new good in case he goes down in the future
-		h->m_lastKnownGoodCrawlInfoReply    = (char *)ptr;
-		h->m_lastKnownGoodCrawlInfoReplyEnd = (char *)end;
-		// set new alloc size
-		h->m_replyAllocSize = allocSize;
-		// if valid, don't let him free it now!
-		slot->m_readBuf = NULL;
-	}
-	*/
 
 	// inc it
 	s_replies++;
@@ -3057,13 +2984,6 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 
 		if ( cia )
 			gbmemcpy ( &cia[h->m_hostId] , ptr , sizeof(CrawlInfo));
-		
-		// debug
-		// log("spd: got ci from host %"INT32" downloads=%"INT64", replies=%"INT32"",
-		//     h->m_hostId,
-		//     ptr->m_pageDownloadSuccessesThisRound,
-		//     s_replies
-		//     );
 
 		// mark it for computation once we got all replies
 		cr->m_updateRoundNum = s_updateRoundNum;
@@ -3082,21 +3002,15 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 		// this will tell us to halt all spidering
 		// because a host is essentially down!
 		s_countsAreValid = false;
-		// might as well stop the loop here since we are
-		// not updating our crawlinfo states.
-		//break;
-	}
-	else {
+	} else {
 		if ( ! s_countsAreValid )
 			log("spider: got all crawlinfo replies. all shards "
 			    "up. spidering back on.");
 		s_countsAreValid = true;
 	}
 
-
 	// loop over 
 	for ( int32_t x = 0 ; x < g_collectiondb.m_numRecs ; x++ ) {
-
 		QUICKPOLL ( slot->m_niceness );
 
 		// a niceness 0 routine could have nuked it?
@@ -3109,10 +3023,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 		// must be in need of computation
 		if ( cr->m_updateRoundNum != s_updateRoundNum ) continue;
 
-		//log("spider: processing c=%s",cr->m_coll);
-
 		CrawlInfo *gi = &cr->m_globalCrawlInfo;
-
 		int32_t hadUrlsReady = gi->m_hasUrlsReadyToSpider;
 
 		// clear it out
@@ -3144,14 +3055,10 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 				ss++;
 			}
 			// . special counts
-			// . assume round #'s match!
-			//if ( ss->m_spiderRoundNum == 
-			//     cr->m_localCrawlInfo.m_spiderRoundNum ) {
 			gi->m_pageDownloadSuccessesThisRound +=
 				stats->m_pageDownloadSuccessesThisRound;
 			gi->m_pageProcessSuccessesThisRound +=
 				stats->m_pageProcessSuccessesThisRound;
-			//}
 
 			if ( ! stats->m_hasUrlsReadyToSpider ) continue;
 			// inc the count otherwise
@@ -3165,37 +3072,12 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 			// m_spiderStatus was SP_MAXTOCRAWL or 
 			// SP_ROUNDDONE...
 			cr->m_spiderStatus = SP_INPROGRESS;
-			// unflag the sent flag if we had sent an alert
-			// but only if it was a crawl round done alert,
-			// not a maxToCrawl or maxToProcess or 
-			// maxRounds alert.
-			// we can't do this because on startup we end 
-			// up setting hasUrlsReadyToSpider to true and
-			// we may have already sent an email, and it 
-			// gets RESET here when it shouldn't be
-			//if(cr->m_localCrawlInfo.m_sentCrawlDoneAlert
-			//== SP_ROUNDDONE )
-			//cr->m_localCrawlInfo.m_sentCrawlDoneAlert=0;
+
 			// revival?
 			if ( ! cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider )
-				log("spider: reviving crawl %s "
-				    "from host %"INT32"", cr->m_coll,k);
+				log("spider: reviving crawl %s from host %" INT32"", cr->m_coll,k);
 		} // end loop over hosts
 
-
-		// log("spider: %"INT64" (%"INT64") total downloads for c=%s",
-		//     gi->m_pageDownloadSuccessesThisRound,
-		//     gi->m_pageDownloadSuccesses,
-		//     cr->m_coll);
-
-		// revival?
-		//if ( cr->m_tmpCrawlInfo.m_hasUrlsReadyToSpider &&
-		//     ! cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider ) {
-		//	log("spider: reviving crawl %s (%"INT32")",cr->m_coll,
-		//	    cr->m_tmpCrawlInfo.m_hasUrlsReadyToSpider);
-		//}
-
-		//bool has = cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider;
 		if ( hadUrlsReady &&
 		     // and it no longer does now...
 		     ! cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider ) {
@@ -3207,20 +3089,6 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 			// set crawl end time
 			cr->m_diffbotCrawlEndTime = getTimeGlobalNoCore();
 		}
-
-
-		// now copy over to global crawl info so things are not
-		// half ass should we try to read globalcrawlinfo
-		// in between packets received.
-		//gbmemcpy ( &cr->m_globalCrawlInfo , 
-		//	 &cr->m_tmpCrawlInfo ,
-		//	 sizeof(CrawlInfo) );
-
-		// turn not assume we are out of urls just yet if a host
-		// in the network has not reported...
-		//if ( g_hostdb.hasDeadHost() && has )
-		//	cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = true;
-		     
 
 		// should we reset our "sent email" flag?
 		bool reset = false;
@@ -3244,9 +3112,7 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 			    "for coll %s",cr->m_coll);
 			cr->m_localCrawlInfo.m_sentCrawlDoneAlert = 0;
 		}
-
-
-
+=
 		// update cache time
 		cr->m_globalCrawlInfo.m_lastUpdateTime = getTime();
 		
@@ -3273,13 +3139,6 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 		     ! hadUrlsReady ) 
 			continue;
 
-		// if urls were considered and roundstarttime is still 0 then
-		// set it to the current time...
-		//if ( cr->m_spiderRoundStartTime == 0 )
-		//	// all hosts in the network should sync with host #0 
-		//      // on this
-		//	cr->m_spiderRoundStartTime = getTimeGlobal();
-
 		// but of course if it has urls ready to spider, do not send 
 		// alert... or if this is -1, indicating "unknown".
 		if ( cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider ) 
@@ -3297,7 +3156,6 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 		// maxtocrawl, maxtoprocess, etc. based on the counts.
 		//
 
-
 		// only host #0 sends emails
 		if ( g_hostdb.m_myHost->m_hostId != 0 )
 			continue;
@@ -3314,15 +3172,11 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 			continue;
 		}
 
-		
 		// do email and web hook...
 		sendNotificationForCollRec ( cr );
 
 		// deal with next collection rec
 	}
-
-	// wait for more replies to come in
-	//if ( s_replies < s_requests ) return;
 
 	// initialize
 	s_replies  = 0;
@@ -3331,9 +3185,6 @@ void gotCrawlInfoReply ( void *state , UdpSlot *slot ) {
 	s_inUse    = false;
 	s_updateRoundNum++;
 }
-
-
-
 
 void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 	//char *request = slot->m_readBuf;
