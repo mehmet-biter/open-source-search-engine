@@ -180,10 +180,6 @@ inline bool relabel   ( void *ptr , int32_t size , const char *note ) {
 //#ifndef DMALLOC
 void operator delete ( void *p ) throw();
 void * operator new (size_t size) throw (std::bad_alloc);
-// you MUST call mmalloc, mcalloc and mrealloc!!
-#define malloc coreme 
-#define calloc coreme 
-#define realloc coreme 
 //#endif
 inline void *coreme ( int /*x*/ ) { char *xx = NULL; *xx = 0; return NULL; }
 

@@ -4623,9 +4623,7 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 	// a read/write buffer of 30M
 	int32_t bufSize = 30000000;  // 30M
 	//int64_t fileSize = 4000000000LL; // 4G
-#undef malloc
 	char *buf = (char *) malloc ( bufSize );
-#define malloc coreme
 	if ( ! buf ) return log("speedtestdisk: %s",strerror(errno));
 	// store stuff in there
 	for ( int32_t i = 0 ; i < bufSize ; i++ ) buf[i] = (char)i;
@@ -4799,9 +4797,7 @@ skip:
 
 	int32_t stksize = 1000000 ;
 	int32_t bufsize = stksize * s_numThreads ;
-#undef malloc
 	char *buf = (char *)malloc ( bufsize );
-#define malloc coreme
 	if ( ! buf ) { log("test: malloc of %"INT32" failed.",bufsize); return; }
 	g_conf.m_useThreads = true;
 	//int pid;
@@ -4821,9 +4817,7 @@ skip:
 void *startUp ( void *state , ThreadEntry *t ) {
 	int32_t id = (int32_t) (PTRTYPE)state;
 	// read buf
-#undef malloc
 	char *buf = (char *) malloc ( s_maxReadSize );
-#define malloc coreme
 	if ( ! buf ) { 
 		fprintf(stderr,"MALLOC FAILED in thread\n");
 		return 0; // NULL;

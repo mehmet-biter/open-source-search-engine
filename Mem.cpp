@@ -23,12 +23,8 @@
 // default overflow checks
 //#define CHECKUNDERFLOW
 
-// only Mem.cpp can call ::malloc, everyone else must call mmalloc() so
-// we can keep tabs on memory usage. in Mem.h we #define this to be coreme()
-
-#undef malloc
-#undef calloc
-#undef realloc
+// only Mem.cpp should call ::malloc, everyone else must call mmalloc() so
+// we can keep tabs on memory usage.
 
 bool g_inMemFunction = false;
 
@@ -2103,9 +2099,3 @@ void freeElecMem ( void *fakeMem ) {
 			s_freeCursor = s_cursorStart;
 	}
 }
-
-// only Mem.cpp can call ::malloc, everyone else must call mmalloc() so
-// we can keep tabs on memory usage.
-#define malloc coreme
-#define calloc coreme
-#define realloc coreme
