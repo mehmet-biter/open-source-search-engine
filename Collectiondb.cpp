@@ -242,6 +242,7 @@ bool Collectiondb::addExistingColl ( char *coll, collnum_t collnum ) {
 	// point to this, so Rdb and RdbBase can reference it
 	coll = cr->m_coll;
 
+	cr->m_needsSave = false;
 	//log("admin: loaded old coll \"%s\"",coll);
 
 	// load coll.conf file
