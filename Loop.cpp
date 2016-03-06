@@ -50,8 +50,6 @@ int32_t g_numSigIOs = 0;
 int32_t g_numSigQueues = 0;
 int32_t g_numSigOthers = 0;
 
-static char g_inWaitState = false;
-
 // a global class extern'd in .h file
 Loop g_loop;
 
@@ -64,21 +62,8 @@ class UdpSlot *g_callSlot = NULL;
 static int32_t g_lastTransId  = 0;
 static int32_t g_transIdCount = 0;
 
-// keep the sig wait time static so we can change it based on m_minTick
-static struct timespec s_sigWaitTime ;
-static struct timespec s_sigWaitTime2 ;
-static struct timespec* s_sigWaitTimePtr ;
-
 // use this in case we unregister the "next" callback
 static Slot *s_callbacksNext;
-
-// set it from milliseconds
-void Loop::setSigWaitTime ( int32_t ms ) {
-	int32_t secs = ms / 1000;
-	ms -= secs * 1000;
-	s_sigWaitTime.tv_sec  = secs;
-	s_sigWaitTime.tv_nsec = ms * 1000000;
-}
 
 // free up all our mem
 void Loop::reset() {
@@ -116,7 +101,6 @@ void Loop::unregisterSleepCallback ( void *state ,
 
 static fd_set s_selectMaskRead;
 static fd_set s_selectMaskWrite;
-static fd_set s_selectMaskExcept;
 
 static int s_readFds[MAX_NUM_FDS];
 static int32_t s_numReadFds = 0;
@@ -184,7 +168,6 @@ void Loop::unregisterCallback ( Slot **slots , int fd , void *state ,
 					    "write #wrts=%"INT32"",
 					    (int32_t)fd,
 					    (int32_t)s_numWriteFds);
-			// 	FD_CLR(fd,&s_selectMaskExcept);
 			 	break;
 			}
 		}
@@ -205,11 +188,6 @@ void Loop::unregisterCallback ( Slot **slots , int fd , void *state ,
 	// set our new minTick if we were unregistering a sleep callback
 	if ( fd == MAX_NUM_FDS ) {
 		m_minTick = min;
-		// . set s_sigWaitTime to m_minTick
-		// . 1 billion nanoseconds = 1 second
-		// . m_minTick is in milliseconds, 1000 ms in a second
-		// . multiply m_minTick in ms by 1 million to get nano
-		setSigWaitTime ( m_minTick );
 	}
 
 	return;
@@ -242,8 +220,6 @@ bool Loop::registerSleepCallback ( int32_t tick ,
 	if ( ! addSlot ( true, MAX_NUM_FDS, state, callback , niceness ,tick) )
 		return log("loop: Unable to register sleep callback");
 	if ( tick < m_minTick ) m_minTick = tick;
-	// wait this int32_t in the sig wait loop
-	setSigWaitTime ( m_minTick );
 	return true;
 }
 
@@ -451,14 +427,6 @@ void Loop::callCallbacks_ass ( bool forReading , int fd , int64_t now ,
 }
 
 Loop::Loop ( ) {
-	// . default sig wait time to 10 ms (10,000,000 nanoseconds)
-	// . 1 billion nanoseconds = 1 second
-	setSigWaitTime ( 1000 /*ms*/ );
-
-	s_sigWaitTime2.tv_sec  = 0;
-	s_sigWaitTime2.tv_nsec = 0;
-	s_sigWaitTimePtr = &s_sigWaitTime;
-
 	m_inQuickPoll      = false;
 	m_needsToQuickPoll = false;
 	m_canQuickPoll     = false;
@@ -550,7 +518,6 @@ bool Loop::init ( ) {
 	// clear this up here before using in doPoll()
 	FD_ZERO(&s_selectMaskRead);
 	FD_ZERO(&s_selectMaskWrite);
-	FD_ZERO(&s_selectMaskExcept);
 
 	// sighupHandler() will set this to true so we know when to shutdown
 	m_shutdown  = 0;
@@ -1029,10 +996,6 @@ void Loop::doPoll ( ) {
 	if ( g_conf.m_logDebugLoop )
 		log("loop: in select");
 
-	// used to measure cpu usage. sigalarm needs to know if we are
-	// sitting idle in select() or are actively doing something w/ the cpu
-	g_inWaitState = true;
-
 	// . poll the fd's searching for socket closes
 	// . the sigalrms and sigvtalrms and SIGCHLDs knock us out of this
 	//   select() with n < 0 and errno equal to EINTR.
@@ -1045,8 +1008,6 @@ void Loop::doPoll ( ) {
 		    &writefds,
 		    NULL,//&exceptfds,
 		    &v );
-
-	g_inWaitState = false;
 
 	if ( n >= 0 ) errno = 0;
 
