@@ -612,12 +612,6 @@ int main2 ( int argc , char *argv[] ) {
 			"ramdisktest\n\t"
 			"test ramdisk functionality\n\n"
 
-			"xmldiff [-td] <file1> <file2>\n"
-			"\tTest xml diff routine on file1 and file2.\n"
-			"\t-t: only show diffs in tag structure.\n"
-			"\t-d: run as daemon.\n"
-			"\n"
-
 			"dump e <coll> <UTCtimestamp>\n\tdump all events "
 			"as if the time is UTCtimestamp.\n\n"
 
@@ -873,38 +867,6 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg+4 < argc ) q  = argv[cmdarg+4];
 		
 		qaTest(s1, s2, u, q);
-		return 0;
-	}
-	// gb xmldiff file1 file2
-	if (strcmp ( cmd, "xmldiff" )  == 0 ) {
-		if ( cmdarg+2 >= argc ) goto printHelp;
-		// init our table for doing zobrist hashing
-		if ( ! g_hostdb.init(hostsConf, hostId) ) {
-			log("db: hostdb init failed." ); return 1; }
-		if ( ! hashinit() ) {
-			log("db: Failed to init hashtable." ); return 1; }
-		if (!ucInit(g_hostdb.m_dir)) {
-			log("Unicode initialization failed!");
-			return 1;
-		}
-		DiffOpt opt;
-		int nextArg = cmdarg+1;
-		while ( argc > nextArg && argv[nextArg][0] == '-'){
-			char *c = argv[nextArg] + 1;
-			while (*c){
-				switch(*c++){
-				case 't': opt.m_tagOnly = true; break;
-				case 'd': opt.m_debug++       ; break;
-				case 'c': opt.m_context++     ; break;
-				default: goto printHelp;
-				}
-			}
-			nextArg++;
-		}
-		if ( nextArg+1 >= argc ) goto printHelp;
-		char *file1         = argv[nextArg  ];
-		char *file2         = argv[nextArg+1];
-		xmlDiffTest(file1, file2, &opt);
 		return 0;
 	}
 	*/
