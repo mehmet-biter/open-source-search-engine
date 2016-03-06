@@ -838,8 +838,6 @@ char *gb_strncasestr ( char *haystack , int32_t haystackSize , const char *needl
 // . NULL terminates "s" if slen > 0
 int32_t saftenTags ( char *dst , int32_t dstlen , const char *src , int32_t srclen ) {
 	char *start = dst ;
-	// bail if slen is 0
-	if ( dst <= 0 ) return 0;
 	// leave a char for the \0
 	char *dstend  = dst + dstlen - 1;
 	const char *srcend  = src + srclen;
