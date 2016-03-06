@@ -221,7 +221,7 @@ int32_t XmlNode::set( char *node, bool pureXml ) {
 		s_check = true;
 
 		// how many NodeTypes do we have in g_nodes?
-		static int32_t nn = sizeof(g_nodes) / sizeof(NodeType);
+		static const int32_t nn = sizeof(g_nodes) / sizeof(NodeType);
 
 		// set the hash table
 		for ( int32_t i = 0 ; i < nn ; i++ ) {
@@ -878,7 +878,7 @@ nodeid_t getTagId ( char *s , NodeType **retp ) {
 		s_ht.set ( 4 ,4,1024,s_buf,10000,false,0,"tagids");
 
 		// how many NodeTypes do we have in g_nodes?
-		static int32_t nn = sizeof(g_nodes) / sizeof(NodeType);
+		static const int32_t nn = sizeof(g_nodes) / sizeof(NodeType);
 
 		// set the hash table
 		for ( int32_t i = 0 ; i < nn ; i++ ) {
@@ -946,7 +946,7 @@ nodeid_t XmlNode::setNodeInfo ( int64_t  nodeHash ){
 	static nodeid_t  s_num  [512];
 
 	// how many NodeTypes do we have in g_nodes?
-	static int32_t s_numNodeTypes = sizeof( g_nodes ) / sizeof( NodeType );
+	static const int32_t s_numNodeTypes = sizeof( g_nodes ) / sizeof( NodeType );
 
 	// we only need to fill in the hash table once since it's static
 	if ( !s_isHashed ) {

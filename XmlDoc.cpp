@@ -12145,7 +12145,7 @@ int32_t getContentHash32Fast ( unsigned char *p ,
 	static char s_qtab0[256];
 	static char s_qtab1[256];
 	static char s_qtab2[256];
-	static char *s_skips[] = {
+	static const char * const s_skips[] = {
 		"jan",
 		"feb",
 		"mar",
@@ -18377,7 +18377,7 @@ uint8_t score32to8 ( uint32_t score ) {
 }
 
 // for score8to32() below
-static uint32_t s_scoreMap[] = {
+static const uint32_t s_scoreMap[] = {
 	0UL,
 	1UL,
         385UL,

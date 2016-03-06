@@ -1136,7 +1136,7 @@ bool Url::isSpam ( char *s , int32_t slen ) {
 // followed by string of at least 4 letters/numbers
 		
 //List of extensions NOT to parse
-static char *s_badExtensions[] = {
+static const char * const s_badExtensions[] = {
         "ai",
         "aif",
         "aifc",

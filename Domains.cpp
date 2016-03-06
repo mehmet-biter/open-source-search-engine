@@ -113,7 +113,7 @@ bool isTLD ( char *tld , int32_t tldLen ) {
 	static bool       s_isInitialized = false;
 	// . i shrunk this list a lot
 	// . see backups for the hold list
-	static char      *s_tlds[] = {
+	static char * const s_tlds[] = {
 	"AB.CA",
 	"AC",
 	"AC.AE",

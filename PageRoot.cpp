@@ -427,7 +427,7 @@ bool printLeftColumnRocketAndTabs ( SafeBuf *sb ,
 		char *m_url;
 	};
 
-	static MenuItem mi[] = {
+	static const MenuItem mi[] = {
 		{"SEARCH","/"},
 		{"ADVANCED","/adv.html"},
 		{"ADD URL","/addurl"},
