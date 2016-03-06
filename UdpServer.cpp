@@ -285,7 +285,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	getsockopt( m_sock , SOL_SOCKET , SO_SNDBUF , &opt , &optLen );
 	log(LOG_DEBUG,"udp: Send    buffer size is %i bytes.",opt);
         // bind this name to the socket
-        if ( bind ( m_sock, (struct sockaddr *)&name, sizeof(name)) < 0) {
+        if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
 		// copy errno to g_errno
 		g_errno = errno;
                 //if ( g_errno == EINVAL ) { port++; goto again; }
@@ -993,7 +993,7 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 				  peek              , 
 				  maxPeekSize       ,
 				  MSG_PEEK          ,
-				  (sockaddr *)&from , 
+				  (sockaddr *)(void*)&from ,
 				  &fromLen          );	
 
 	// note it

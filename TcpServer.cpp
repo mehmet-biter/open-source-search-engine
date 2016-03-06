@@ -174,7 +174,7 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 	}
  retry15:
 	// bind this name to the socket
-	if ( bind ( m_sock, (struct sockaddr *)&name, sizeof(name)) < 0) {
+	if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
 		// valgrind
 		if ( errno == EINTR ) goto retry15;
 		// copy errno to g_errno
@@ -317,7 +317,7 @@ bool TcpServer::testBind ( uint16_t port , bool printMsg ) {
 	}
 retry19:
 	// bind this name to the socket
-	if ( bind ( m_sock, (struct sockaddr *)&name, sizeof(name)) < 0) {
+	if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
 		// valgrind
 		if ( errno == EINTR ) goto retry19;
 		// copy errno to g_errno
@@ -2010,7 +2010,7 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 
  retry3:
 	// connect to the socket. This should be non-blocking!
-	if ( ::connect ( s->m_sd, (sockaddr *)&to, sizeof(to) ) == 0 ) {
+	if ( ::connect ( s->m_sd, (sockaddr *)(void*)&to, sizeof(to) ) == 0 ) {
 		// debug msg
 		if ( g_conf.m_logDebugTcp ) {
 			log( "........... TcpServer connected %i to %s port %" UINT32 "", s->m_sd, iptoa( s->m_ip ),
@@ -2515,7 +2515,7 @@ TcpSocket *TcpServer::acceptSocket ( ) {
 	struct sockaddr_in name; 
 	socklen_t  nameLen = sizeof(sockaddr);
  retry12:
-	int newsd = accept ( m_sock , (sockaddr *)&name , &nameLen );
+	int newsd = accept ( m_sock , (sockaddr *)(void*)&name , &nameLen );
 	// valgrind
 	if ( newsd < 0 && errno == EINTR ) goto retry12;
 	// assume none
