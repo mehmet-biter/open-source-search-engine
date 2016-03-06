@@ -2141,6 +2141,9 @@ int main2 ( int argc , char *argv[] ) {
 			return 1;
 		}
 
+		if ( ! g_collectiondb.loadAllCollRecs()   ) {
+			log("db: Collectiondb init failed." ); return 1; }
+
 		countdomains( coll, numRecs, verb, outpt );
 		g_log.m_disabled = true;
 		return 0;
@@ -8393,7 +8396,7 @@ void countdomains( char* coll, int32_t numRecs, int32_t verbosity, int32_t outpu
 			//value = ipHT.getValue( ip_table[i] );
 			//if(value == 0) continue;
 			tmpipi = (struct ip_info *)ip_table[i]; 
-			mfree( tmpipi->dom_list, tmpipi->numDom*sizeof(int32_t),
+			mfree( tmpipi->dom_list, tmpipi->numDom*sizeof(tmpipi->dom_list[0]),
 			       "main-dcflip" );
 			ima += tmpipi->numDom * sizeof(int32_t);
 			mfree( tmpipi, sizeof(struct ip_info), "main-dcfip" );
@@ -8410,7 +8413,7 @@ void countdomains( char* coll, int32_t numRecs, int32_t verbosity, int32_t outpu
 			       tmpdomi->tableSize*sizeof(int32_t), 
 			       "main-dcfsdlt" );
 			dma += tmpdomi->tableSize * sizeof(int32_t);
-			mfree( tmpdomi->ip_list, tmpdomi->numIp*sizeof(int32_t),
+			mfree( tmpdomi->ip_list, tmpdomi->numIp*sizeof(tmpdomi->ip_list[0]),
 			       "main-dcfldom" );
 			dma += tmpdomi->numIp * sizeof(int32_t);
 			mfree( tmpdomi->dom, tmpdomi->domLen, "main-dcfsdom" );
