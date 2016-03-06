@@ -3201,54 +3201,6 @@ void handleRequestc1 ( UdpSlot *slot , int32_t niceness ) {
 		return;
 	}
 
-	//if ( ! isClockSynced() ) {
-	//}
-
-	//collnum_t collnum = *(collnum_t *)request;
-	//CollectionRec *cr = g_collectiondb.getRec(collnum);
-
-	// deleted from under us? i've seen this happen
-	//if ( ! cr ) {
-	//	log("spider: c1: coll deleted returning empty reply");
-	//	g_udpServer.sendReply_ass ( "", // reply
-	//				    0, 
-	//				    0 , // alloc
-	//				    0 , //alloc size
-	//				    slot );
-	//	return;
-	//}
-
-
-	// while we are here update CrawlInfo::m_nextSpiderTime
-	// to the time of the next spider request to spider.
-	// if doledb is empty and the next rec in the waiting tree
-	// does not have a time of zero, but rather, in the future, then
-	// return that future time. so if a crawl is enabled we should
-	// actively call updateCrawlInfo a collection every minute or
-	// so.
-	//cr->m_localCrawlInfo.m_hasUrlsReadyToSpider = 1;
-
-	//int64_t nowGlobalMS = gettimeofdayInMillisecondsGlobal();
-	//int64_t nextSpiderTimeMS;
-	// this will be 0 for ip's which have not had their SpiderRequests
-	// in spiderdb scanned yet to get the best SpiderRequest, so we
-	// just have to wait for that.
-	/*
-	nextSpiderTimeMS = sc->getEarliestSpiderTimeFromWaitingTree(0); 
-	if ( ! sc->m_waitingTreeNeedsRebuild &&
-	     sc->m_lastDoledbReadEmpty && 
-	     cr->m_spideringEnabled &&
-	     g_conf.m_spideringEnabled &&
-	     nextSpiderTimeMS > nowGlobalMS +10*60*1000 ) 
-		// turn off this flag, "ready queue" is empty
-		cr->m_localCrawlInfo.m_hasUrlsReadyToSpider = 0;
-
-	// but send back a -1 if we do not know yet because we haven't
-	// read the doledblists from disk from all priorities for this coll
-	if ( sc->m_numRoundsDone == 0 )
-		cr->m_localCrawlInfo.m_hasUrlsReadyToSpider = -1;
-	*/
-
 	//int32_t now = getTimeGlobal();
 	SafeBuf replyBuf;
 

@@ -150,9 +150,7 @@ class Msg0 {
 
 	// gotta keep this handler public so the C wrappers can call them
 	void gotReply   ( char *reply , int32_t replySize , int32_t replyMaxSize );
-//#ifdef SPLIT_INDEXDB
 	void gotSplitReply ( );
-//#endif
 
 	// maps an rdbId to an Rdb
 	class Rdb *getRdb ( char rdbId ) ;

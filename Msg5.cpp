@@ -1648,16 +1648,12 @@ bool Msg5::getRemoteList ( ) {
 				 NULL                 , // msg5
 				 NULL                 , // msg5b
 				 m_isRealMerge        , // merging files?
-//#ifdef SPLIT_INDEXDB
 				 m_allowPageCache     , // allow page cache?
 				 false                , // force local Indexdb
 				 false                , // doIndexdbSplit
 				 // "forceParitySplit" is a group # 
 				 // (the groupId is a mask)
 				 forceParitySplit     ))
-//#else
-//				 m_allowPageCache     ))// allow page cache?
-//#endif
 		return false;
 	// this is strange
 	log("msg5: call to msg0 did not block");

@@ -36,7 +36,6 @@ typedef int32_t mf_t;
 #define MF_RSSTITLE                   0x1000 
 #define MF_RSSDESC                    0x2000 
 #define MF_URL                        0x4000  // in url
-#define MF_SYNONYM                    0x8000
 
 class Xml;
 class Words;
@@ -116,8 +115,6 @@ class Matches {
 	Match  m_matches[MAX_MATCHES];
 	int32_t   m_numMatches;
 
-	qvec_t m_explicitBitsMatched;
-
 	// . hash query word ids into a small hash table
 	// . we use this to see what words in the document are query terms
 	int64_t m_qtableIds      [ MAX_QUERY_WORDS_TO_MATCH * 3 ];
@@ -132,9 +129,6 @@ class Matches {
 	mf_t     *m_qwordFlags;
 	int32_t m_qwordAllocSize;
 	char m_tmpBuf[128];
-
-	int32_t m_leftDiversity;
-	int32_t m_rightDiversity;
 
 	// . one words/scores/bits/pos/flags class per "match group"
 	// . match groups examples = body, a single link text, a meta tag, etc.
@@ -152,11 +146,6 @@ class Matches {
 	Words    m_wordsArray    [MAX_MATCHGROUPS];
 	Bits     m_bitsArray     [MAX_MATCHGROUPS];
 	Pos      m_posArray      [MAX_MATCHGROUPS];
-
-	int64_t *m_pids2;
-	int64_t *m_pids3;
-	int64_t *m_pids4;
-	int64_t *m_pids5;
 };
 
 #endif

@@ -25,10 +25,6 @@ Msg0::Msg0 ( ) {
 void Msg0::constructor ( ) {
 	m_msg5  = NULL;
 	m_msg5b = NULL;
-//#ifdef SPLIT_INDEXDB
-	//for ( int32_t i = 0; i < INDEXDB_SPLIT; i++ )
-	//for ( int32_t i = 0; i < MAX_SHARDS; i++ )
-	//	m_mcast[i].constructor();
 	m_mcast.constructor();
 	m_mcasts      = NULL;
 	m_numRequests = 0;
@@ -39,7 +35,6 @@ void Msg0::constructor ( ) {
 	m_replyBuf     = NULL;
 	m_replyBufSize = 0;
 	m_handyList.constructor();
-//#endif
 }
 
 Msg0::~Msg0 ( ) {
@@ -58,12 +53,10 @@ void Msg0::reset ( ) {
 	}
 	m_msg5  = NULL;
 	m_msg5b = NULL;
-//#ifdef SPLIT_INDEXDB
 	if ( m_replyBuf )
 		mfree ( m_replyBuf, m_replyBufSize, "Msg0" );
 	m_replyBuf = NULL;
 	m_replyBufSize = 0;
-//#endif
 	if ( m_mcasts ) {
 		mfree(m_mcasts,sizeof(Multicast),"msg0mcast");
 		m_mcasts = NULL;
@@ -122,15 +115,10 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     Msg5     *msg5             ,
 		     Msg5     *msg5b            ,
 		     bool      isRealMerge      ,
-//#ifdef SPLIT_INDEXDB
 		     bool      allowPageCache    ,
 		     bool      forceLocalIndexdb ,
 		     bool      noSplit , // doIndexdbSplit    ,
 		     int32_t      forceParitySplit  ) {
-//#else
-//		     bool      allowPageCache ) {
-//#endif
-
 	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN. hostId: %"INT64", rdbId: %d", __FILE__,__func__, __LINE__, hostId, (int)rdbId);
 
 	// this is obsolete! mostly, but we need it for PageIndexdb.cpp to 
@@ -432,22 +420,8 @@ skip:
 		// . when getting titleRecs we often exceed the minRecSizes 
 		// . ?Msg8? was having trouble. was int16_t 32 bytes sometimes.
 		replyBufMaxSize += 36;
-		// why add ten percent?
-		//replyBufMaxSize *= 110 ;
-		//replyBufMaxSize /= 100 ;
 		// make a buffer to hold the reply
-//#ifdef SPLIT_INDEXDB
-/*
-		if ( m_numSplit > 1 ) {
-			m_replyBufSize = replyBufMaxSize * m_numSplit;
-			replyBuf = (char *) mmalloc(m_replyBufSize, "Msg0");
-			m_replyBuf  = replyBuf;
-			freeReply = false;
-		}
-		else
-*/
-//#endif
-			replyBuf = (char *) mmalloc(replyBufMaxSize , "Msg0");
+		replyBuf = (char *) mmalloc(replyBufMaxSize , "Msg0");
 		// g_errno is set and we return true if it failed
 		if ( ! replyBuf ) {
 			log("net: Failed to pre-allocate %"INT32" bytes to hold "
@@ -548,7 +522,6 @@ skip:
 	// . calls callback on completion
 	// . select first host to send to in group based on upper 32 bits
 	//   of termId (m_startKey.n1)
-//#ifdef SPLIT_INDEXDB
 	// . need to send out to all the indexdb split hosts
 	m_numRequests = 0;
 	m_numReplies  = 0;
@@ -561,21 +534,12 @@ skip:
 
 	// get the multicast
 	Multicast *m = &m_mcast;
-	//if ( m_numSplit > 1 ) m = &m_mcasts[i];
 
         if ( ! m->send ( m_request    , 
-//#else
-//        if ( ! m_mcast.send ( m_request    , 
-//#endif
-			      m_requestSize, 
+			      m_requestSize,
 			      0x00         , // msgType 0x00
 			      false        , // does multicast own request?
 			 m_shardNum ,
-//#ifdef SPLIT_INDEXDB
-//			      gr           , // group + offset
-//#else
-//			      m_groupId    , // group to send to (groupKey)
-//#endif
 			      false        , // send to whole group?
 			      //m_startKey.n1, // key is passed on startKey
 			      keyTop       , // key is passed on startKey
@@ -585,11 +549,6 @@ skip:
 			      timeout*1000 , // timeout
 			      niceness     ,
 			      firstHostId  ,
-//#ifdef SPLIT_INDEXDB
-//			      &replyBuf[i*replyBufMaxSize] ,
-//#else
-//			      replyBuf        ,
-//#endif
 			      buf             ,
 			      replyBufMaxSize ,
 			      freeReply       , // free reply buf?
@@ -609,10 +568,7 @@ skip:
 		log(LOG_ERROR, "net: Failed to send request for data from %s in shard "
 		    "#%"UINT32" over network: %s.",
 		    getDbnameFromId(m_rdbId),m_shardNum, mstrerror(g_errno));
-		// no, multicast will free this when it is destroyed
-		//if (replyBuf) mfree ( replyBuf , replyBufMaxSize , "Msg22" );
 		// but speed it up
-//#ifdef SPLIT_INDEXDB
 		m_errno = g_errno;
 		m->reset();
 		if ( m_numRequests > 0 )
@@ -621,16 +577,11 @@ skip:
 			
 			return false;
 		}
-//#else
-//		m_mcast.reset();
-//#endif
 		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END - returning true", __FILE__, __func__, __LINE__);
 		return true;
 	}
-//#ifdef SPLIT_INDEXDB
-	m_numRequests++;
 
-//#endif
+	m_numRequests++;
 
 	// we blocked
 	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END - returning false, blocked", __FILE__, __func__, __LINE__);
@@ -674,37 +625,7 @@ void gotMulticastReplyWrapper0 ( void *state , void *state2 )
 	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 
 	Msg0 *THIS = (Msg0 *)state;
-//#ifdef SPLIT_INDEXDB
-	//if ( g_hostdb.m_indexSplits > 1 ) {
-	/*
-	if ( THIS->m_numSplit > 1 ) {
-		THIS->m_numReplies++;
-		if ( ! g_errno ) {
-			QUICKPOLL(THIS->m_niceness);
-			// for split, wait for all replies
-			if ( THIS->m_numReplies < THIS->m_numRequests )
-				return;
-			else {
-				// got it all, call the reply
-				// watch out for someone having an error
-				if ( ! THIS->m_errno )
-					THIS->gotSplitReply();
-				else
-					g_errno = THIS->m_errno;
-			}
-		}
-		else {
-			// got an error, set an error state and wait for all
-			// replies
-			THIS->m_errno = g_errno;
-			if ( THIS->m_numReplies < THIS->m_numRequests )
-				return;
-		}
-		THIS->m_callback ( THIS->m_state );//, THIS->m_list );
-	}
-//#else
-	else {
-	*/
+
 	if ( ! g_errno ) {
 		int32_t  replySize;
 		int32_t  replyMaxSize;
@@ -714,115 +635,9 @@ void gotMulticastReplyWrapper0 ( void *state , void *state2 )
 							  &freeit);
 		THIS->gotReply( reply , replySize , replyMaxSize ) ;
 	}
-	THIS->m_callback ( THIS->m_state );//, THIS->m_list );
-	//}
-//#endif
+	THIS->m_callback ( THIS->m_state );
 	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
-
-
-/*
-//#ifdef SPLIT_INDEXDB
-// . we are responsible for freeing reply/replySize
-void Msg0::gotSplitReply ( ) {
-	// sanity check
-	if ( m_numSplit <= 1 ) { char *xx = NULL; *xx = 0; }
-	// i don't think we use this, otherwise need to update for posdb
-	char *xx=NULL;*xx=0;
-	// get all the split lists
-	int32_t totalSize = 0;
-	RdbList lists[MAX_SHARDS];
-	RdbList *listPtrs[MAX_SHARDS];
-	for ( int32_t i = 0; i < m_numSplit; i++ ) {
-		listPtrs[i] = &lists[i];
-		int32_t replySize;
-		int32_t replyMaxSize;
-		bool freeit;
-		char *reply = m_mcasts[i].getBestReply ( &replySize,
-							&replyMaxSize,
-							&freeit );
-		lists[i].set ( reply,
-			       replySize,
-			       reply,
-			       replyMaxSize,
-			       m_startKey,
-			       m_endKey,
-			       m_fixedDataSize,
-			       freeit,
-			       m_useHalfKeys,
-			       m_ks );
-		totalSize += lists[i].m_listSize;
-
-		QUICKPOLL(m_niceness);
-		//log(LOG_INFO, "Msg0: ls=%"INT32" rs=%"INT32" rms=%"INT32" fi=%"INT32" r=%"XINT32"",
-		//	      lists[i].m_listSize, replySize,
-		//	      replyMaxSize, (int32_t)freeit, reply);
-		//log(LOG_INFO, "Msg0: ------------------------------------");
-		//lists[i].printList();
-	}
-	// empty list?
-	if ( totalSize <= 0 ) {
-		m_list->set ( NULL,
-			      0,
-			      NULL,
-			      0,
-			      m_fixedDataSize,
-			      true,
-			      m_useHalfKeys,
-			      m_ks );
-		return;
-	}
-	// init the list
-	char *alloc = (char*)mmalloc(totalSize, "Msg0");
-	if ( !alloc ) {
-		g_errno = ENOMEM;
-		log ( "Msg0: Could not allocate %"INT32" bytes for split merge",
-		      totalSize );
-		return;
-	}
-	m_list->set ( alloc,
-		      0,
-		      alloc,
-		      totalSize,
-		      m_fixedDataSize,
-		      true,
-		      m_useHalfKeys,
-		      m_ks );
-
-	QUICKPOLL(m_niceness);
-	// merge them together into one list
-	// NOTE: This should only be happening for index lists
-	char prevKey[MAX_KEY_BYTES];
-	memset(prevKey, 0, MAX_KEY_BYTES);
-	int32_t prevCount = 0;
-	int32_t dupsRemoved = 0;
-	int32_t filtered    = 0;
-	m_list->indexMerge_r ( (RdbList**)listPtrs,
-			       m_numSplit,
-			       m_startKey,
-			       m_endKey,
-			       m_minRecSizes,  // minRecSizes
-			       false,          // remove negative keys
-			       (char*)prevKey, // prevKey
-			       &prevCount,     // prevCountPtr
-			       0x7fffffff,     // truncLimit
-			       &dupsRemoved,   // dupsRemoved
-			       m_rdbId,        // rdbId
-			       &filtered,      // filtered
-			       false,          // doGroupMask
-			       false ,         // isRealMerge
-			       false         , // fast merge?
-			       m_niceness    );
-	//log(LOG_INFO, "Msg0: ------------------------------------");
-	//log(LOG_INFO, "Msg0: ls=%"INT32"",
-	//	      m_list->m_listSize);
-	//m_list->printList();
-	// cache?
-	if ( ! m_addToCache ) return;
-	// cache...
-}
-//#endif
-*/
 
 // . returns false and sets g_errno on error
 // . we are responsible for freeing reply/replySize
