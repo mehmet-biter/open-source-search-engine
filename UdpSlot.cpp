@@ -775,7 +775,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 				 dgram     ,
 				 dgramSize ,
 				 0         , // makes dns fail->MSG_DONTROUTE ,
-				 (struct sockaddr *)&to , 
+				 (struct sockaddr *)(void*)&to , 
 				 sizeof ( to ) );
 	// restore what we overwrote
 	if ( dgramNum != 0 ) memcpy_ass ( dgram , saved , headerSize );
@@ -1081,7 +1081,7 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 				 dgram     ,
 				 dgramSize ,
 				 0         ,
-				 (struct sockaddr *)&to , 
+				 (struct sockaddr *)(void*)&to , 
 				 sizeof ( to ) );
 	// return -1 on error, 0 if blocked
 	if ( bytesSent < 0 ) {
