@@ -8371,7 +8371,7 @@ void countdomains( char* coll, int32_t numRecs, int32_t verbosity, int32_t outpu
 		fprintf( fhndl, "</table>\n<br><br><br>" );
 		if( loop == 0 ) {
 			loop = 1;
-			gbsort( ip_table, countIp, sizeof(struct ip_table *), ip_dcmp );
+			gbsort( ip_table, countIp, sizeof(struct ip_info *), ip_dcmp );
 			fprintf( fhndl, "<a name=\"dii\">"
 				 "<h2>IPs Sorted By Domains</h2>\n%s", menu );
 			goto printIpLp;
@@ -8400,7 +8400,7 @@ void countdomains( char* coll, int32_t numRecs, int32_t verbosity, int32_t outpu
 			ima += sizeof(struct ip_info);
 			tmpipi = NULL;
 		}
-		mfree( ip_table, numRecs * sizeof(struct ip_table *), "main-dcfit" );
+		mfree( ip_table, numRecs * sizeof(struct ip_info *), "main-dcfit" );
 
 		log( LOG_INFO, "cntDm: Freeing domain info struct..." );
 		for( int32_t i = 0; i < countDom; i++ ) {
