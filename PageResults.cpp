@@ -3475,7 +3475,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       (int32_t)mr->m_siteNumInlinks );
 
 		struct tm *timeStruct3;
-		timeStruct3 = gmtime((time_t *)&mr->m_pageInlinksLastUpdated);
+		time_t pageInlinksLastUpdated = mr->m_pageInlinksLastUpdated;
+		timeStruct3 = gmtime(&pageInlinksLastUpdated);
 		char tmp3[64];
 		strftime ( tmp3 , 64 , "%b-%d-%Y(%H:%M:%S)" , timeStruct3 );
 		// -1 means unknown
