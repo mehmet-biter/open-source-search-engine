@@ -4589,9 +4589,6 @@ bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Msg20Repl
 	return true;
 }
 
-bool printFrontPageShell ( SafeBuf *sb , char *tabName , CollectionRec *cr,
-			   bool printGigablast ) ;
-
 // if catId >= 1 then print the dmoz radio button
 bool printLogoAndSearchBox ( SafeBuf *sb, HttpRequest *hr, SearchInput *si ) {
 	const char *coll = hr->getString("c");

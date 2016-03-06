@@ -6,10 +6,6 @@
 #include "Tagdb.h"
 #include "Statsdb.h"
 
-extern void dumpDatedb   ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
-			   int64_t termId , bool justVerify ) ;
-extern void dumpPosdb    ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
-			   int64_t termId , bool justVerify ) ;
 
 void doneReadingForVerifyWrapper ( void *state ) ;
 //void gotTfndbListWrapper ( void *state , RdbList *list, Msg5 *msg5 ) ;

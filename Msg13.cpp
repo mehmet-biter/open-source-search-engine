@@ -17,8 +17,6 @@ char *g_fakeReply =
 	"Connection: Close\r\n"
 	"Content-Type: text/html\r\n\r\n\0";
 
-int32_t convertIntoLinks ( char *reply , int32_t replySize ) ;
-
 bool getIframeExpandedContent ( Msg13Request *r , TcpSocket *ts );
 void gotIframeExpandedContent ( void *state ) ;
 

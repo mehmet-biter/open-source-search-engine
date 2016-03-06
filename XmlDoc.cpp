@@ -16863,8 +16863,6 @@ void XmlDoc::setSpiderReqForMsg20 ( SpiderRequest *sreq   ,
 		strcpy(sreq->m_url,m_firstUrl.getUrl());
 }
 
-// defined in PageCrawlBot.cpp
-int32_t isInSeedBuf ( CollectionRec *cr , char *url, int len ) ;
 
 // . add the spiderdb recs to the meta list
 // . used by XmlDoc::setMetaList()

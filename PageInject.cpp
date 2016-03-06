@@ -10,8 +10,6 @@
 #include "HttpRequest.h"
 #include "Stats.h"
 
-// from XmlDoc.cpp
-bool isRobotsTxtFile ( char *url , int32_t urlLen ) ;
 
 static bool sendHttpReply        ( void *state );
 
