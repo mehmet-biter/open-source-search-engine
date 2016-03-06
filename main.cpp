@@ -123,9 +123,6 @@ int copyFiles ( char *dstDir ) ;
 
 char *getcwd2 ( char *arg ) ;
 
-static void dumpIndexdbFile ( int32_t fn , int64_t off , char *f , int32_t ks ,
-			      char *NAME = NULL );
-
 static int32_t checkDirPerms ( char *dir ) ;
 
 // benchmark RdbTree::addRecord() for indexdb
@@ -740,10 +737,6 @@ int main2 ( int argc , char *argv[] ) {
 		trietest();
 		return 0;
 	}
-	if (strcmp ( cmd, "matchertest" ) == 0 ) {
-		matchertest(argc - 2, argv + 2);
-		return 0;
-	}
 	*/
 
 	// these tests do not need a hosts.conf
@@ -793,8 +786,6 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	if ( strcmp ( cmd , "booltest" ) == 0 ){
-		//if ( ! g_hostdb.init(hostId) ) {
-		//	log("db: hostdb init failed." ); return 1; }
 		// init our table for doing zobrist hashing
 		if ( ! hashinit() ) {
 			log("db: Failed to init hashtable." ); return 1; }
@@ -2020,19 +2011,6 @@ int main2 ( int argc , char *argv[] ) {
 
 	if ( strcmp ( cmd , "rmtest" ) == 0 ) {
 		rmTest();
-		return 0;
-	}
-
-	if ( strcmp ( cmd , "dump" ) == 0 && argc > cmdarg + 1 &&
-	     argv[cmdarg+1][0]=='T')  {
-
-		int32_t      fileNum = 0;
-		int64_t off     = 0LL;
-		if ( cmdarg + 2 < argc ) fileNum = atoi  (argv[cmdarg+2]);
-		if ( cmdarg + 3 < argc ) off     = atoll1(argv[cmdarg+3]);
-		dumpIndexdbFile ( fileNum , off , "datedb" , 16 );
-		// disable any further logging so final log msg is clear
-		g_log.m_disabled = true;
 		return 0;
 	}
 
@@ -5459,82 +5437,6 @@ bool summaryTest1   ( char *rec , int32_t listSize, char *coll , int64_t docId ,
 	double bpms = contentLen/((double)(e-t)/100.0);
 	log("build: %.3f bytes/msec", bpms);
 	return true;
-}
-
-void dumpIndexdbFile ( int32_t fn , int64_t off , char *ff , int32_t ks ,
-		       char *NAME ) {
-	char buf [ 1000000 ];
-	int32_t bufSize = 1000000;
-	char fname[64];
-	sprintf ( fname , "%s%04"INT32".dat" , ff,fn );
-	if ( NAME ) sprintf ( fname , "%s", NAME );
-	BigFile f;
-	fprintf(stderr,"opening ./%s\n",fname);
-	f.set ( "./" , fname );
-	if ( ! f.open ( O_RDONLY ) ) return;
-	// init our vars
-	bool haveTop = false;
-	char top[6];
-	memset ( top , 0 , 6 );
-	bool warned = false;
-	// how big is this guy?
-	int64_t filesize = f.getFileSize();
-	fprintf(stderr,"filesize=%"INT64"\n",filesize);
-	fprintf(stderr,"off=%"INT64"\n",off);
-	// reset error number
-	g_errno = 0;
-	// the big read loop
- loop:
-	int64_t readSize = bufSize;
-	if ( off + readSize > filesize ) readSize = filesize - off;
-	// return if we're done reading the whole file
-	if ( readSize <= 0 ) return;
-	// read in as much as we can
-	f.read ( buf , readSize , off );
-	// bail on read error
-	if ( g_errno ) {
-		fprintf(stderr,"read of %s failed",f.getFilename());
-		return;
-	}
-	char *p    = buf;
-	char *pend = buf + readSize;
- inner:
-	// parse out the keys
-	int32_t size;
-	if ( ((*p) & 0x02) == 0x00 ) size = ks;
-	else                         size = ks-6;
-	if ( p + size > pend ) {
-		// skip what we read
-		off  += readSize ;
-		// back up so we don't split a key we should not
-		off -= ( pend - p );
-		// read more
-		goto loop;
-	}
-	// new top?
-	if ( size == ks ) { gbmemcpy ( top , p + (ks-6) , 6 ); haveTop = true; }
-	// warning msg
-	if ( ! haveTop && ! warned ) {
-		warned = true;
-		log("db: Warning: first key is a half key.");
-	}
-	// make the key
-	char tmp [ MAX_KEY_BYTES ];
-	gbmemcpy ( tmp , p , ks-6 );
-	gbmemcpy ( tmp + ks-6 , top , 6 );
-	// print the key
-	if ( ks == 12 )
-		fprintf(stdout,"%08"INT64") %08"XINT32" %016"XINT64"\n",
-			off + (p - buf) ,
-			*(int32_t *)(tmp+8),*(int64_t *)tmp );
-	else
-		fprintf(stdout,"%08"INT64") %016"XINT64" %016"XINT64"\n",
-			off + (p - buf) ,
-			*(int64_t *)(tmp+8),*(int64_t *)tmp );
-	// go to next key
-	p += size;
-	// loop up
-	goto inner;
 }
 
 void dumpPosdb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTree, 
