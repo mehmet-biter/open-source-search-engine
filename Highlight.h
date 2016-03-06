@@ -8,18 +8,17 @@
 #include "Xml.h"
 #include "Url.h"
 
-#ifndef _HIGHLIGHT_H_
-#define _HIGHLIGHT_H_
+#ifndef HIGHLIGHT_H
+#define HIGHLIGHT_H
 
 class Highlight {
-
- public:
+public:
 
 	// . content is an html/xml doc
 	// . we highlight Query "q" in "xml" as best as we can
 	// . store highlighted text into "buf"
 	// . return length stored into "buf"
-	 int32_t set( SafeBuf *sb, char *content, int32_t contentLen, Query *q, const char *frontTag,
+	int32_t set( SafeBuf *sb, char *content, int32_t contentLen, Query *q, const char *frontTag,
 				  const char *backTag, int32_t niceness );
 
 	int32_t set( SafeBuf *sb, Words *words, Matches *matches, const char *frontTag = NULL,

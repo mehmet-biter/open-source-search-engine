@@ -317,20 +317,6 @@ bool expandHtml (  SafeBuf& sb,
 			i += 1;
 			continue;
 		}
-		/*
-		if ( head[i+1] == 'E' ) { 
-			// now each host tells us how many docs it has in its
-			// ping request
-			int64_t c = g_hostdb.getNumGlobalEvents();
-			char *p = (char*) sb.getBuf();
-			sb.reserve2x(16);
-			int32_t len = ulltoa(p, c);
-			sb.incrementLength(len);
-			// skip over %E
-			i += 1;
-			continue;
-		}
-		*/
 		if ( head[i+1] == 'n' ) { 
 			// now we got the %n, insert the collection doc count
 			//p+=ulltoa(p,docsInColl);
