@@ -94,7 +94,7 @@ class Tag {
 int32_t  getTagTypeFromStr( const char *tagTypeName , int32_t tagnameLen = -1 );
 
 // . convert ST_DOMAIN_SQUATTER to "domain_squatter"
-char *getTagStrFromType ( int32_t tagType ) ;
+const char *getTagStrFromType ( int32_t tagType ) ;
 
 // max "oustanding" msg0 requests sent by TagRec::lookup()
 #define MAX_TAGDB_REQUESTS 3

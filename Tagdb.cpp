@@ -291,7 +291,7 @@ bool Tag::printDataToBuf ( SafeBuf *sb ) {
 // /admin/tagdb?c=mdw&u=www.mdw123.com&ufu=&username=admin&tagtype0=sitenuminlinks&tagdata0=10&tagtype1=rootlang&tagdata1=&tagtype2=rootlang&tagdata2=&add=Add+Tags
 bool Tag::printToBufAsAddRequest ( SafeBuf *sb ) {
 	// print the tagname
-	char *str = getTagStrFromType ( m_type );
+	const char *str = getTagStrFromType ( m_type );
 	sb->safePrintf("/admin/tagdb?");
 	// print the site
 	//sb->safePrintf("u=");
@@ -324,7 +324,7 @@ bool Tag::printToBufAsAddRequest ( SafeBuf *sb ) {
 
 bool Tag::printToBufAsXml ( SafeBuf *sb ) {
 	// print the tagname
-	char *str = getTagStrFromType ( m_type );
+	const char *str = getTagStrFromType ( m_type );
 	// print the user that added this tag
 	sb->safePrintf ("\t\t<tag>\n\t\t\t<name>%s</name>\n\t\t\t<user>%s",
 			str,getUser());
@@ -345,7 +345,7 @@ bool Tag::printToBufAsXml ( SafeBuf *sb ) {
 
 bool Tag::printToBufAsHtml ( SafeBuf *sb , char *prefix ) {
 	// print the tagname
-	char *str = getTagStrFromType ( m_type );
+	const char *str = getTagStrFromType ( m_type );
 	// print the user that added this tag
 	sb->safePrintf ("<tr><td>%s</td><td><b>%s</b>", prefix, str);
 	// the "score"
@@ -368,7 +368,7 @@ bool Tag::printToBufAsHtml ( SafeBuf *sb , char *prefix ) {
 
 bool Tag::printToBufAsTagVector ( SafeBuf *sb ) {
 	// print the tagname
-	char *str = getTagStrFromType ( m_type );
+	const char *str = getTagStrFromType ( m_type );
 	sb->safePrintf("%s:",str);
 	// print the m_data
 	if ( ! printDataToBuf ( sb ) ) return false;
@@ -843,7 +843,7 @@ Tag *TagRec::getTag ( char *tagTypeStr , char *dataPtr , int32_t dataSize ) {
 
 class TagDesc {
 public:
-	char *m_name;
+	const char *m_name;
 	char  m_flags;
 	// we compute the m_type of each TD on init
 	int32_t  m_type;
@@ -868,7 +868,6 @@ static TagDesc s_tagDesc[] = {
 
 	{"manualban"            ,0x00,0},
 
-	{"ruleset"              ,0x00,0},
 	{"deep"                 ,0x00,0},
 
 	// we now index this. really we need it for storing into title rec.
@@ -928,6 +927,8 @@ static TagDesc s_tagDesc[] = {
 	{"sitenuminlinksfresh"  ,0x00,0},
 
 	{"pagerank"             ,0x00,0},
+	{"ruleset"              ,0x00,0}
+
 };
 
 // . convert "domain_squatter" to ST_DOMAIN_SQUATTER
@@ -950,7 +951,7 @@ int32_t getTagTypeFromStr( const char *tagname , int32_t tagnameLen ) {
 }
 
 // . convert ST_DOMAIN_SQUATTER to "domain_squatter"
-char *getTagStrFromType ( int32_t tagType ) {
+const char *getTagStrFromType ( int32_t tagType ) {
 	// make sure table is valid
 	if ( ! s_initialized ) g_tagdb.setHashTable();
 	TagDesc **ptd = (TagDesc **)s_ht.getValue ( &tagType );
@@ -986,7 +987,7 @@ bool Tagdb::setHashTable ( ) {
 	int32_t n = (int32_t)sizeof(s_tagDesc)/(int32_t)sizeof(TagDesc);
 	for ( int32_t i = 0 ; i < n ; i++ ) { 
 		TagDesc *td = &s_tagDesc[i];
-		char *s    = td->m_name;
+		const char *s    = td->m_name;
 		int32_t  slen = gbstrlen(s);
 		// use the same algo that Words.cpp computeWordIds does 
 		int32_t h = hash64Lower_a ( s , slen );
@@ -1611,12 +1612,9 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 }
 
 bool getTagRec ( State12 *st ) {
-	bool doInheritance = st->m_mergeTags;
-	char rdbId = RDB_TAGDB;
-
 	// this replaces msg8a
 	if ( !st->m_msg8a.getTagRec( &st->m_url, st->m_collnum, st->m_niceness, st, sendReplyWrapper, &st->m_tagRec,
-	                             doInheritance, rdbId ))
+	                             st->m_mergeTags, RDB_TAGDB ))
 		return false;
 
 	return sendReply ( st );
@@ -1645,8 +1643,7 @@ bool sendReply ( void *state ) {
 	// no permmission?
 	bool isMasterAdmin = g_conf.isMasterAdmin ( s , r );
 	bool isCollAdmin = g_conf.isCollAdmin ( s , r );
-	if ( ! isMasterAdmin &&
-	     ! isCollAdmin ) {
+	if ( ! isMasterAdmin && ! isCollAdmin ) {
 		g_errno = ENOPERM;
 		return sendReply2 ( st );
 	}
@@ -1950,7 +1947,7 @@ bool sendReply2 ( void *state ) {
 		for ( int32_t i = 0 ; ! ctag && i < n ; i++ ) {
 			TagDesc *td = &s_tagDesc[i];
 			// get tag name
-			char *tagName = td->m_name;
+			const char *tagName = td->m_name;
 			// skip if a reserved tag
 			//if ( strncasecmp ( tagName , "reserved" ,8)==0 ) 
 			//	continue;
@@ -1966,7 +1963,7 @@ bool sendReply2 ( void *state ) {
 		// close up the drop down list
 		if ( ! ctag ) sb.safePrintf("</select>");
 		else {
-			char *tagName = getTagStrFromType ( ctag->m_type );
+			const char *tagName = getTagStrFromType ( ctag->m_type );
 			sb.safePrintf("<input type=hidden name=tagtype%"INT32" "
 				      "value=\"%s\">%s",
 				      count,tagName,tagName);
