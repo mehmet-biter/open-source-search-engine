@@ -126,7 +126,6 @@ bool getLinkInfo ( SafeBuf *reqBuf , // store msg25 request in here
 		   //class XmlDoc *xd ,
 		   bool printInXml ,
 		   int32_t       siteNumInlinks      ,
-		   //int32_t       sitePop             ,
 		   LinkInfo  *oldLinkInfo         ,
 		   int32_t       niceness            ,
 		   bool       doLinkSpamCheck     ,
@@ -763,7 +762,7 @@ class Inlink {
 	// record the word position we hashed this link text with
 	// so we can match it to the DocIdScoringInfo stuff
 	int32_t       m_wordPosStart;//reservedc;//pagePop        // 40
-	int32_t       m_firstIp;//wordPosEnd;//reservedd;//sitePop // 44
+	int32_t       m_firstIp; // 44
 
 	// . int32_t     m_reserved1           ;
 	// . how many strings do we have?

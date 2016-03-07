@@ -859,7 +859,6 @@ bool Msg25::getLinkInfo2( char      *site                ,
 			  //XmlDoc *xd ,
 			  bool     printInXml ,
 			  int32_t       siteNumInlinks      ,
-			  //int32_t       sitePop             ,
 			  LinkInfo  *oldLinkInfo         ,
 			  int32_t       niceness            ,
 			  bool       doLinkSpamCheck     ,
@@ -943,7 +942,6 @@ bool Msg25::getLinkInfo2( char      *site                ,
 	m_doLinkSpamCheck     = doLinkSpamCheck;
 	m_canBeCancelled      = canBeCancelled;
 	m_siteNumInlinks      = siteNumInlinks; // -1 --> unknown
-	//m_sitePop             = sitePop;        // -1 --> unknown
 	m_qbuf                = qbuf;
 	m_qbufSize            = qbufSize;
 	m_isInjecting         = isInjecting;
@@ -1505,7 +1503,7 @@ bool Msg25::sendRequests ( ) {
 		// so that Msg25 should not be called. thus avoiding an
 		// infinite loop!
 		// we need the LinkInfo of each inlinker to get the inlinker's
-		// sitePop and numInlinksToSite, which is needed to call
+		// numInlinksToSite, which is needed to call
 		// makeLinkInfo() below.
 		r->m_getLinkInfo        = true;
 
@@ -2497,7 +2495,6 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 				     "<tr>"
 				     "<td colspan=20>Inlinks "
 				     "to %s%s &nbsp; (IP=%s) " // pagePop=%"INT32" "
-				     //"sitePop=%"INT32" numLinksToSite=%"INT32")"
 				     "</td>"
 				     "</tr>\n"
 				     "<tr>"
@@ -2971,11 +2968,8 @@ bool Msg25::addNote ( const char *note , int32_t noteLen , int64_t docId ) {
 LinkInfo *makeLinkInfo ( char        *coll                    ,
 			 int32_t         ip                      ,
 			 int32_t         siteNumInlinks          ,
-			 //int32_t         sitePop                 ,
 			 Msg20Reply **replies                 ,
 			 int32_t         numReplies              ,
-			 //int32_t         extrapolated            ,
-			 //int32_t         xfactor                 ,
 			 // if link spam give this weight
 			 int32_t         spamWeight              ,
 			 bool         oneVotePerIpTop         ,
@@ -3112,15 +3106,7 @@ LinkInfo *makeLinkInfo ( char        *coll                    ,
 	info->m_reserved2              = 0;
 	// how many total GOOD inlinks we got. does not include internal cblock
 	info->m_numGoodInlinks  = numGoodInlinks;
-	//info->m_siteRootQuality      = siteRootQuality; // bye-bye
-	// these two guys will be 0 if we called Msg25::getSiteInfo()
-	//info->m_sitePop                = sitePop;
-	//info->m_siteNumInlinks         = siteNumInlinks;
-	// if we do not read all the inlinkers on disk because there are
-	// more than MAX_LINKRES_IN_TERMLIST inlinkers, then we must 
-	// extrapolate the total # of inlinkers we have. Msg25 does this
-	// and passes it in to us.
-	//info->m_numInlinksExtrapolated = extrapolated;
+
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(info,sizeof(*info));
 #endif
@@ -3517,8 +3503,6 @@ bool LinkInfo::print ( SafeBuf *sb , char *coll ) {
 			       "hopcount=%03"INT32" "
 			       "outlinks=%05"INT32", "
 			       "ip=%s "
-			       //"pagepop=%"INT32" "
-			       //"sitepop=%"INT32" "
 			       "numLinksToSite=%"INT32" "
 			       //"anomaly=%"INT32" "
 			       "<b>url</b>=\"%s\" "
@@ -3540,8 +3524,6 @@ bool LinkInfo::print ( SafeBuf *sb , char *coll ) {
 			       (int32_t)k->m_hopcount,
 			       (int32_t)k->m_numOutlinks ,
 			       iptoa(k->m_ip),
-			       //(int32_t)k->m_pagePop,
-			       //(int32_t)k->m_sitePop,
 			       (int32_t)k->m_siteNumInlinks,
 			       //(int32_t)k->m_isAnomaly,
 			       k->getUrl(),//ptr_urlBuf, // the linker url
