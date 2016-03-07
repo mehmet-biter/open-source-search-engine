@@ -5616,6 +5616,8 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 
 		s_num = n;
 		if ( n > 200 ) { char *xx=NULL;*xx=0; }
+		
+		s_init = true;
 	}
 
 
