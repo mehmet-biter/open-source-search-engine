@@ -11,7 +11,6 @@ public:
 	int32_t            m_score;
 	char           *m_docIdBitsPtr;
 	uint16_t  m_termBits;
-	//uint16_t align;
 };
 
 class fslot2 {
@@ -19,10 +18,7 @@ public:
 	int32_t            m_score;
 	int64_t       m_docIdBits;
 	uint16_t  m_termBits;
-	//uint16_t align;
 };
-
-static int64_t gettimeofdayInMilliseconds() ;
 
 int64_t gettimeofdayInMilliseconds() {
 	struct timeval tv;

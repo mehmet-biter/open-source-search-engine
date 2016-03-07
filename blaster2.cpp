@@ -296,7 +296,7 @@ void startSpidering ( ) {
 				p += gbstrlen(s_append);
 			}
 			*p++ = '\0';
-			u.set ( url , p - url);
+			u.set ( url , p - url, false, false, false, false, false, 0x7fffffff );
 			t = g_mem.strdup(url, "saved url");
 		}
 		else {
@@ -309,7 +309,7 @@ void startSpidering ( ) {
 			*p ='\0';
 
 			// make into a url class
-			u.set ( url , gbstrlen(url) );
+			u.set ( url , gbstrlen(url), false, false, false, false, false, 0x7fffffff  );
 			// set port if port switch is true
 			//if ( s_portSwitch ) {
 			//	int32_t r = rand() % 32;
