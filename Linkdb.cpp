@@ -4457,6 +4457,7 @@ int32_t Links::getLinkText ( char  *linkee ,
 			  int32_t  *retNode1  ,
 			  int32_t  *retLinkNum ,
 			  int32_t   niceness  ) {
+	log(LOG_DEBUG, "Links::getLinkText: linkee=%s", linkee);
 	// assume none
 	if ( retNode1   ) *retNode1 = -1;
 	// assume no link text
