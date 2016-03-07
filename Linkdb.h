@@ -1005,12 +1005,12 @@ public:
 		   bool doQuickSet = false );
 
 	// set from a simple text buffer
-	bool set ( char *buf , int32_t niceness ) ;
+	bool set ( const char *buf , int32_t niceness ) ;
 
 	bool print ( SafeBuf *sb ) ;
 
 	// Link in ascii text
-	bool addLink(char *link,int32_t linkLen,int32_t nodeNum,bool setLinkHashes,
+	bool addLink(const char *link, int32_t linkLen, int32_t nodeNum, bool setLinkHashes,
 		     int32_t titleRecVersion, int32_t niceness , bool isRSS ,
 		     int32_t tagId , linkflags_t flagsArg );
 
@@ -1058,7 +1058,7 @@ public:
 	// . returns false on error and sets errno
 	// . get our outgoing link text for this url
 	// . store it into "buf"
-	int32_t getLinkText ( char  *linkee ,
+	int32_t getLinkText ( const char  *linkee ,
 			   bool   getSiteLinkInfo ,
 			   char  *buf       ,
 			   int32_t   maxBufLen ,

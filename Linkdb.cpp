@@ -3908,7 +3908,7 @@ bool Links::set ( bool useRelNoFollow ,
 }
 
 // just a NULL-terminated text buffer/file of links to add
-bool Links::set ( char *buf ,  int32_t niceness ) { //char *coll,int32_t niceness ) {
+bool Links::set ( const char *buf ,  int32_t niceness ) { //char *coll,int32_t niceness ) {
 	reset();
 	// need "coll" for Url::isSiteRoot(), etc.
 	//m_coll = coll;
@@ -3916,12 +3916,12 @@ bool Links::set ( char *buf ,  int32_t niceness ) { //char *coll,int32_t nicenes
 	m_baseUrl = NULL;
 	m_addSiteRootFlags = false;
 	m_xml = NULL;
-	char *p = buf;
+	const char *p = buf;
 	while ( *p ) {
 		// skip spaces
 		while ( *p && is_wspace_a(*p) ) p++;
 		// get the length of the link
-		char *q = p;
+		const char *q = p;
 		while ( *q && ! is_wspace_a(*q) ) q++;
 		int32_t len = q - p;
 		// add the link
@@ -3961,7 +3961,7 @@ bool Links::print ( SafeBuf *sb ) {
 	return true;
 }
 
-bool Links::addLink ( char *link , int32_t linkLen , int32_t nodeNum ,
+bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 		      bool setLinkHash , int32_t titleRecVersion ,
 		      int32_t niceness , bool isRSS , int32_t tagId ,
 		      int32_t flagsArg ){
@@ -4447,7 +4447,7 @@ bool Links::hasLinkText ( int32_t n, int32_t version ) {
 
 // . stores link text into "buf" and returns the length
 // . TODO: speed up so we don't have to set Url for every link in doc
-int32_t Links::getLinkText ( char  *linkee ,
+int32_t Links::getLinkText ( const char  *linkee ,
 			  bool   getSiteLinkInfo ,
 			  char  *buf       , 
 			  int32_t   bufMaxLen , 
@@ -4469,7 +4469,7 @@ int32_t Links::getLinkText ( char  *linkee ,
 	// if it is site based, skip the protocol because the site might
 	// be just a domain and not a subdomain
 	if ( getSiteLinkInfo ) {
-		char *pp = strstr ( linkee, "://");
+		const char *pp = strstr ( linkee, "://");
 		if ( pp ) linkee = pp + 3;
 	}
 
