@@ -90,19 +90,15 @@ SiteGetter::~SiteGetter ( ) {
 bool SiteGetter::getSite ( char   *url      ,
 			   TagRec *gr       ,
 			   int32_t    timestamp,
-			   //char   *coll     ,
 			   collnum_t collnum,
 			   int32_t    niceness ,
-			   //bool    addTags  ,
 			   void   *state    ,
-			   void (* callback)(void *state) ) {
+			   void (* callback)(void *) ) {
 	
 	// save it
 	m_gr       = gr;
 	m_url      = url;
-	//m_coll     = coll;
 	m_collnum = collnum;
-	//m_addTags  = addTags;
 	m_state    = state;
 	m_callback = callback;
 	m_timestamp= timestamp;
@@ -145,14 +141,12 @@ bool SiteGetter::getSite ( char   *url      ,
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
 	// g_errno should be set if this is NULL
 	if ( ! cr ) return true;
-	//if ( ! cr->m_subsiteDetectionEnabled ) return true;
 
 	// check the current tag for an age
 	Tag *tag = gr->getTag("sitepathdepth");
 	// if there and the age is young, skip it
 	int32_t age = -1;
-	//int32_t now = getTimeGlobal();
-	//if ( tag ) age = now - tag->m_timestamp;
+
 	// to parse conssitently for the qa test "qatest123" coll use 
 	// "timestamp" as the "current time"
 	if ( tag ) age = timestamp - tag->m_timestamp;
@@ -218,9 +212,6 @@ bool SiteGetter::getSite ( char   *url      ,
 		return true;
 	}
 
-	// how many can we do? false = countFilename?
-	//m_maxPathDepth = m_u.getPathDepth ( false );
-
 	// . pathDepth==0 for "www.xyz.com"
 	// . pathDepth==0 for "www.xyz.com/"
 	// . pathDepth==0 for "www.xyz.com/foo"
@@ -279,17 +270,10 @@ top:
 	// . i'd say 100 nodes is good enough to qualify as a homestead site
 
 	int32_t minRecSizes = 5000000;
-	// get the group this list is in
-	//uint32_t gid ;
-	//gid = getGroupId ( RDB_POSDB , (char *)&start , false ); //split?
-	//uint32_t shardNum ;
-	//shardNum = getShardNum( RDB_POSDB , (char *)&start , false ); //split?
 
 	// i guess this is split by termid and not docid????
 	int32_t shardNum = g_hostdb.getShardNumByTermId ( &start );
 
-	// we need a group #. the column #.
-	//int32_t split = g_hostdb.getGroupNum ( gid );
 	// shortcut
 	Msg0 *m = &m_msg0;
 	// get the list. returns false if blocked.
@@ -396,12 +380,6 @@ bool SiteGetter::gotSiteList ( ) {
 	return setSite ( ) ;
 }
 
-//void addedTagWrapper ( void *state ) {
-//	SiteGetter *THIS = (SiteGetter *)state;
-//	// all done
-//	THIS->m_callback ( THIS->m_state );
-//}
-
 // . return false if blocked, return true with g_errno set on error
 // . returns true if did not block
 bool SiteGetter::setSite ( ) {
@@ -409,54 +387,10 @@ bool SiteGetter::setSite ( ) {
 	// no more looping
 	m_allDone = true;
 
-	// assume this is false for now
-	//m_isIndependentSubsite = false;
-
-
-	// we need to distinguish this from the "site" tags that
-	// Tagdb.cpp adds to new TagRecs that do not have a "site" tag. but
-	// for now maybe we can comment out?
-
-	/*
-	  MDW: take out for now
-	// . extract from tag rec
-	// . must not have a "sitepathdepth" for us to do this
-	Tag *tag = NULL;
-	// get the "site" tag if we should
-	if ( m_gr && m_sitePathDepth == -1 ) tag = m_gr->getTag("site");
-	// . if we hade a "site" tag and no "sitepathdepth" tag, use that site
-	// . but if sitepathdepth is zero, ignore this too and use the hostname
-	//   as the site. i never want to use domains themselves as a site
-	//   because XmlDoc::getSite() ends up returning a domain only
-	//   and thus XmlDoc::getRootXmlDoc() uses the domain as the 
-	//   url and that is not what we want for XmlDoc::getRootLangId()
-	if ( tag && tag->getTagDataSize() > 1 && m_sitePathDepth > 0 ) {
-		// get length
-		m_siteLen = tag->getTagDataSize() - 1;
-		// sanity check
-		if ( m_siteLen > MAX_SITE_LEN ) {
-			m_site [ 0 ] = '\0';
-			m_siteLen = 0;
-			g_errno = EURLTOOBIG;
-			return true;
-		}
-		// get the data, including terminating \0
-		gbmemcpy ( m_site , tag->getTagData() , m_siteLen + 1 );
-		// sanity check - must include the \0
-		if (m_site[m_siteLen]!= '\0') {char*xx=NULL;*xx=0;}
-		// all done
-		return true;
-	}
-	*/
-
 	// . get the host of our normalized url
 	// . assume the hostname is the site
 	int32_t hostLen;
 	char *host = ::getHost ( m_url , &hostLen );
-
-	// no, assume domain since Tagdb.cpp adds the domain as the value
-	// for the "site" tag when it adds a TagRec to Tagdb
-	//char *site = ::getDomFast ( m_url , &m_siteLen );
 
 	// truncated?
 	if ( hostLen + 6 > MAX_SITE_LEN ) {
@@ -465,7 +399,6 @@ bool SiteGetter::setSite ( ) {
 		g_errno = EURLTOOBIG;
 		return true;
 	}
-
 
 	// . get the scheme of our normalized url
 	// . assume the hostname is the site
@@ -478,8 +411,6 @@ bool SiteGetter::setSite ( ) {
 		m_scheme[schemeLen] = '\0';
 		m_schemeLen = schemeLen;
 	}
-
-
 
 	char *x = m_site;
 	// check it
@@ -496,95 +427,7 @@ bool SiteGetter::setSite ( ) {
 	// null terminate
 	m_site [ m_siteLen ] = '\0';
 
-	// . -1 means to use the hostname as the site
-	// . i am trying to obsolete the site filters table here...
-	//if ( m_sitePathDepth == -1 ) return true;
-
-	// TODO:
-	// if we are linked to by the hostname root, ignore sitePathDepth
-	// as well. that way we separate the subsites from subdirs off the root
-
-	// we are an independent subsite. Tagdb.cpp needs to know this so
-	// it will not inherit from the root url's tagdb rec
-	//m_isIndependentSubsite = true;
-
-	// . otherwise we got a subsite
-	// . if m_pathDepth==0 use "www.xyz.com" as site
-	// . if m_pathDepth==1 use "www.xyz.com/foo/" as site ...
-	/*
-	  MDW: take out for now
-	if ( m_sitePathDepth >= 0 ) {
-		char *end = getPathEnd ( m_url , m_sitePathDepth );
-		// set the site length
-		m_siteLen = end - site;
-	}
-
-	// truncated?
-	if ( m_siteLen > MAX_SITE_LEN ) {
-		m_site [ 0 ] = '\0';
-		m_siteLen = 0;
-		g_errno = EURLTOOBIG;
-		return true;
-	}
-	*/
-
-
-	//logf(LOG_DEBUG,"site: site of %s is %s",m_url,m_site);
-
-	// do not add if this is NULL, caller does not want us to block
-	//if ( ! m_state ) return true;
-
-	//if ( ! m_addTags ) return true;
-
 	return true;
-	/*
-	// . to prevent slamming indexdb, store the site in tagdb now
-	//   make it a string so tagdb likes it
-	// . this could be -1 which indicates to use hostname!
-	char buf[12];
-	sprintf ( buf , "%"INT32"",m_sitePathDepth);
-
-	// sanity check
-	if ( m_timestamp == 0 ) { char *xx=NULL;*xx=0; }
-
-	// . now update tagdb with the new date and path depth
-	// . this might be -1, which is nice because it gives us a timestamp
-	//   so we only have to do this like once every 2 weeks or so
-	//TagRec gr;
-	m_addedTag.addTag ( "sitepathdepth" , 
-			    // now XmlDoc must provide it to ensure that are 
-			    // injects into the "qatest123" coll are consistent
-			    m_timestamp     ,//getTime()// use now as timestamp
-			    "sitegit"       , // username
-			    0               , // ip
-			    buf             , // data
-			    gbstrlen(buf)+1   );// dateSize (includes \0)
-
-	// we apply the sitepathdepth tag to tag for this subdomain
-	int32_t hlen; char *host = getHostFast ( m_url , &hlen );
-
-	// null term temporarily
-	char c = host[hlen];
-	host[hlen] = '\0';
-
-	// add it
-	bool status = m_msg9a.addTags ( host            , // "sites"
-					NULL            , // site ptrs
-					0               , // num site ptrs
-					m_coll          ,
-					this            ,
-					addedTagWrapper ,
-					m_niceness      ,
-					// contains the tags to add
-					&m_addedTag     ,
-					false           , // nuke tags?
-					NULL            );// ip vec
-	// remove NULL
-	host[hlen] = c;
-
-	// return false if blocked, true otherwise (g_errno could be set)
-	return status;
-	*/
 }
 
 //

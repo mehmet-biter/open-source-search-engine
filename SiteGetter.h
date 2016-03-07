@@ -24,9 +24,8 @@ public:
 		       int32_t          timestamp,
 		       collnum_t collnum,
 		       int32_t          niceness ,
-		       //bool          addTags  = false,
 		       void         *state    = NULL ,
-		       void (* callback)(void *state) = NULL ) ;
+		       void (* callback)(void *) = NULL ) ;
 
 
 	bool setRecognizedSite ( );
@@ -34,17 +33,13 @@ public:
 	char *getSite    ( ) { return m_site   ; };
 	int32_t  getSiteLen ( ) { return m_siteLen; };
 
-	//bool isIndependentSubsite() { return m_isIndependentSubsite; };
-
 	bool getSiteList ( ) ;
 	bool gotSiteList ( ) ;
 	bool setSite ( ) ;
 
 	class TagRec *m_gr;
-	//class Url    *m_url;
 	char         *m_url;
 	collnum_t m_collnum;
-	//bool          m_addTags;
 	void         *m_state;
 	void        (*m_callback) (void *state );
 	RdbList       m_list;
@@ -54,7 +49,6 @@ public:
 	// use Msg0 for getting the no-split termlist that combines 
 	// gbpathdepth: with the site hash in a single termid
 	Msg0   m_msg0;
-	//Msg9a  m_msg9a;
 	int32_t   m_pathDepth;
 	int32_t   m_maxPathDepth;
 	int32_t   m_niceness;
@@ -70,9 +64,6 @@ public:
 
 	char   m_scheme[MAX_SCHEME_LEN+1];
 	int32_t   m_schemeLen;
-
-
-	//bool   m_isIndependentSubsite;
 
 	bool   m_tryAgain;
 
