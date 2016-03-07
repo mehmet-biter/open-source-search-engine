@@ -7,6 +7,9 @@
 #include "Speller.h"
 #include "Punycode.h"
 #include "Unicode.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 static void print_string ( char *s , int32_t len );
 
@@ -151,6 +154,9 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
                 bool stripPound , bool stripCommonFile , bool stripTrackingParams,
 		int32_t titleRecVersion ) 
 {
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(t,tlen);
+#endif
 	reset();
 
 
@@ -203,11 +209,20 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 		// not widespread yet.
 		// If it is a non ascii domain it needs to take the form 
 		// xn--<punycoded label>.xn--<punycoded label>.../
+
+#ifdef _VALGRIND_
+		char vbits;
+		VALGRIND_GET_VBITS(t+tlen,vbits,1);
+		VALGRIND_MAKE_MEM_DEFINED(t+tlen,1);
+#endif
 		char tmp = t[tlen];
 
 		if (t[tlen]) {
 			((char*)t)[tlen] = '\0'; //hack
 		}
+#ifdef _VALGRIND_
+		VALGRIND_SET_VBITS(t+tlen,vbits,1);
+#endif
 
 		log(LOG_DEBUG, "build: attempting to decode unicode url %s pos at %"INT32, t, nonAsciiPos);
 
