@@ -1981,12 +1981,6 @@ int main2 ( int argc , char *argv[] ) {
 	//   gb dump s [coll][fileNum] [numFiles] [includeTree] [0=old|1=new]
 	//           [priority] [printStats?]
 	if ( strcmp ( cmd , "dump" ) == 0 ) {
-
-		// if ( ! hadHostId ) {
-		// 	log("you must supply hostid in the dump cmd");
-		// 	return 0;
-		// }
-
 		//
 		// tell Collectiondb, not to verify each rdb's data
 		//
@@ -2098,22 +2092,11 @@ int main2 ( int argc , char *argv[] ) {
 			char *url = NULL;
 			if ( cmdarg+6 < argc ) url = argv[cmdarg+6];
 			dumpLinkdb(coll,startFileNum,numFiles,includeTree,url);
+		}  else if ( argv[cmdarg+1][0] == 'p' ) {
+			dumpPosdb( coll, startFileNum, numFiles, includeTree, termId, false );
+		} else {
+			goto printHelp;
 		}
-		else if ( argv[cmdarg+1][0] == 'p' )
-			dumpPosdb (coll,startFileNum,numFiles,includeTree,
-				     termId,false);
-		/*
-		else if      ( argv[cmdarg+1][0] == 'R' ) {
-			int64_t docId = 0LL;
-			if ( cmdarg+6 < argc ) docId = atoll1(argv[cmdarg+6]);
-			testSpamRules (coll,startFileNum,numFiles,includeTree,
-				       docId);
-		}
-		*/
-
-
-
-		else goto printHelp;
 		// disable any further logging so final log msg is clear
 		g_log.m_disabled = true;
 		return 0;
