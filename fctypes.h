@@ -15,6 +15,9 @@ bool verifyUtf8 ( const char *txt , int32_t tlen ) ;
 class SafeBuf;
 // this too
 char *strncasestr( char *haystack, int32_t haylen, const char *needle);
+static inline const char *strncasestr( const char *haystack, int32_t haylen, const char *needle) {
+	return strncasestr(const_cast<char *>(haystack), haylen, needle);
+}
 
 // just like sprintf(s,"%"UINT64"",n), but we insert commas
 int32_t ulltoa ( char *s , uint64_t n ) ;
