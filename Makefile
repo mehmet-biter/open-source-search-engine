@@ -132,7 +132,7 @@ GIT_VERSION=$(shell git rev-parse HEAD)$(DIRTY)
 
 all: gb
 
-utils: blaster2 hashtest monitor seektest urlinfo treetest dnstest gbtitletest
+utils: blaster2 hashtest monitor urlinfo treetest dnstest gbtitletest
 
 # third party libraries
 LIBFILES = libcld2_full.so
@@ -270,8 +270,6 @@ hashtest: hashtest.cpp
 	$(CXX) $(O3) -o hashtest hashtest.cpp
 mergetest: $(OBJS) mergetest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-seektest: seektest.cpp
-	$(CXX) -o seektest seektest.cpp -lpthread
 treetest: $(OBJ) treetest.o
 	$(CXX) $(DEFS) $(O2) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 nicetest: nicetest.o
@@ -291,7 +289,7 @@ gbtitletest: gbtitletest.o
 
 # comment this out for faster deb package building
 clean:
-	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest mergetest seektest monitor reindex urlinfo dnstest gbtitletest gmon.* quarantine core core.* libgb.a
+	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest mergetest monitor reindex urlinfo dnstest gbtitletest gmon.* quarantine core core.* libgb.a
 	make -C test $@
 
 StopWords.o:
