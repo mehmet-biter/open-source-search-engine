@@ -70,12 +70,12 @@ public:
 		      bool stripSessionIds, bool stripPound,
 		      bool stripCommonFile, bool stripTrackingParams,
 		      int32_t titleRecVersion);
-	void set    ( Url *baseUrl , char *s , int32_t len , bool addWWW,
+	void set    ( Url *baseUrl , const char *s , int32_t len , bool addWWW,
 		      bool stripSessionIds, bool stripPound,
 		      bool stripCommonFile, bool stripTrackingParams,
 		      int32_t titleRecVersion);
 
-	char isSessionId ( char *hh, int32_t titleRecVersion ) ;
+	char isSessionId ( const char *hh, int32_t titleRecVersion ) ;
 
 	// compare another url to us
 	bool equals ( Url *u ) {

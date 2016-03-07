@@ -45,7 +45,7 @@ void Url::set ( Url *url , bool addWWW ) {
 }
 
 
-void Url::set (Url *baseUrl,char *s,int32_t len,bool addWWW,bool stripSessionId,
+void Url::set (Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripSessionId,
 	       bool stripPound , bool stripCommonFile, bool stripTrackingParams, int32_t titleRecVersion ) {
 
 	reset();
@@ -79,7 +79,7 @@ void Url::set (Url *baseUrl,char *s,int32_t len,bool addWWW,bool stripSessionId,
 	if ( blen==0 && len==0 ) return;
 
 	// skip s over spaces
-	char *send = s + len;
+	const char *send = s + len;
 	while ( s < send && is_wspace_a ( *s ) ) { s++; len--; }
 
 	// . is s a relative url? search for ://, but break at first /
@@ -876,7 +876,7 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 	flag = 0;
 }
 
-char Url::isSessionId ( char *hh, int32_t titleRecVersion ) {
+char Url::isSessionId ( const char *hh, int32_t titleRecVersion ) {
 	int32_t count = 0;
 	int32_t step = 0;
 	int32_t nonNumCount = 0;
