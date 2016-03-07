@@ -2919,16 +2919,22 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 	//if ( ! gr || gr == (TagRec *)-1 ) return (int32_t *)gr;
 
 	bool spamCheck = true;
+
 	// if we are a root, allow repeat spam
 	if ( *isRoot ) spamCheck = false;
+
 	// if we are being spidered deep, allow repeat spam
 	if ( gr->getLong("deep",0) ) spamCheck = false;
+
 	// not for crawlbot
 	if ( cr->m_isCustomCrawl ) spamCheck = false;
+
 	// only html for now
 	if ( m_contentTypeValid && m_contentType != CT_HTML ) spamCheck =false;
+
 	// turn this off for now
 	spamCheck = false;
+
 	// otherwise, check the weights
 	if ( spamCheck ) {
 		char *ws = getWordSpamVec();
@@ -7481,7 +7487,7 @@ TagRec *XmlDoc::getTagRec ( ) {
 	Url *u = getFirstUrl();
 
 	// get it, user our collection for lookups, not m_tagdbColl[] yet!
-	if ( !m_msg8a.getTagRec( u, cr->m_collnum, m_niceness, this, gotTagRecWrapper, &m_tagRec, false, 0 )) {
+	if ( !m_msg8a.getTagRec( u, cr->m_collnum, m_niceness, this, gotTagRecWrapper, &m_tagRec ) ) {
 		// we blocked, return -1
 		return (TagRec *) -1;
 	}
@@ -22533,8 +22539,6 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 
 	// always just use the primary tagdb so we can cache our sitenuminlinks
 	char rdbId = RDB_TAGDB;
-	//if ( m_useSecondaryRdbs ) rdbId = RDB2_TAGDB2;
-	//else                      rdbId = RDB_TAGDB;
 
 	// sitenuminlinks special for repair
 	if ( m_useSecondaryRdbs &&
@@ -22701,17 +22705,13 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	// if not there or if bogus, add it!! should override bogus firstips
 	if ( ! ip3 || ip3 == -1 ) {
 		char *ipstr = iptoa(m_ip);
-		//if ( m_ip == 0 || m_ip == -1 ) { char *xx=NULL;*xx=0; }
-		//int32_t  iplen = gbstrlen(ipstr);
-		//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
 		tbuf->addTag3(mysite,"firstip",now,"xmldoc",*ip,ipstr,
 			     rdbId);
 	}
 
 	// sitenuminlinks
 	int32_t old1 = gr->getLong("sitenuminlinks",-1,NULL,&timestamp);
-	if ( old1 == -1 || old1 != m_siteNumInlinks ||
-	     m_updatingSiteLinkInfoTags ) {
+	if ( old1 == -1 || old1 != m_siteNumInlinks || m_updatingSiteLinkInfoTags ) {
 		if ( g_conf.m_logDebugLinkInfo )
 			log("xmldoc: adding tag site=%s sitenuminlinks=%"INT32"",
 			    mysite,m_siteNumInlinks);
