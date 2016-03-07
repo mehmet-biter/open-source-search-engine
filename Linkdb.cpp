@@ -4614,6 +4614,9 @@ skipItem:
 
 	// now we can call Xml::getText()
 	int32_t bufLen = m_xml->getText( buf, bufMaxLen, node1, node2, false );
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(buf,bufLen);
+#endif
 
 	// set it
 	if ( retNode1 ) *retNode1 = node1;
