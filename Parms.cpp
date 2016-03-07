@@ -8725,6 +8725,18 @@ void Parms::init ( ) {
 	m->m_def   = "250";
 	m->m_flags = 0;
 	m++;
+	
+	m->m_title = "use high frequency term cache";
+	m->m_desc  = "If enabled, return generated DocIds from cache "
+		"when detecting a high frequency term.";
+	m->m_cgi   = "hifreqcache";
+	m->m_off   = offsetof(Conf,m_useHighFrequencyTermCache);
+	m->m_type  = TYPE_BOOL;
+	m->m_page  = PAGE_SEARCH;
+	m->m_obj   = OBJ_CONF;
+	m->m_def   = "1";
+	m->m_flags = 0;
+	m++;
 
 	///////////////////////////////////////////
 	// PAGE SPIDER CONTROLS
