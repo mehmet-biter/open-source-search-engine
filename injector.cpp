@@ -17,6 +17,7 @@ int main ( int argc , char *argv[] ) {
 	if ( sd < 0 ) { fprintf(stderr,"no socket\n"); return -1; }
 	// now we have a connect just starting or already in progress
 	struct sockaddr_in to;
+	memset(&to,0,sizeof(to));
 	to.sin_family = AF_INET;
 	// our ip's are always in network order, but ports are in host order
 	// convert to int
@@ -26,7 +27,6 @@ int main ( int argc , char *argv[] ) {
 
 	to.sin_addr.s_addr =  in.s_addr;
 	to.sin_port        = htons ((uint16_t)( 8000));
-	bzero ( &(to.sin_zero) , 8 ); // TODO: bzero too slow?
 	if ( connect ( sd, (sockaddr *)&to, sizeof(to) ) != 0 ) {
 		fprintf(stderr,"connect failed\n"); 
 		return -1;

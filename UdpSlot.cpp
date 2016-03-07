@@ -698,6 +698,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 	// get sending info from the send control slot (network order)
 	// TODO: ensure network order
 	struct sockaddr_in to;
+	memset(&to,0,sizeof(to));
 	to.sin_family      = AF_INET;
 	// never use shotgun network if turned off...
 	if ( ! g_conf.m_useShotgun ) s_shotgunBit = 0;
@@ -764,7 +765,6 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		g_udpServer.m_outsiderBytesOut   += dgramSize;
 	}
 
-	memset ( (char *)&(to.sin_zero), 0 , 8 );
 	// debug msg
 	//log("sendto");
 	// debug msg
@@ -1058,6 +1058,7 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 
 	// get the ip address of dest. host from the slot
 	struct sockaddr_in to;
+	memset(&to,0,sizeof(to));
 	to.sin_family = AF_INET;
 	to.sin_addr.s_addr =         ip;
 	to.sin_port        = htons ( m_port );
@@ -1072,7 +1073,6 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 	//		to.sin_addr.s_addr = m_host->m_ip;
 	//}
 
-	memset ( (char *)&(to.sin_zero), 0 , 8 );
 	// stat count
 	if ( cancelTrans ) g_cancelAcksSent++;
 	// . this socket should be non-blocking (i.e. return immediately)

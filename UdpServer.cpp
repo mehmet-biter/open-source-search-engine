@@ -204,7 +204,7 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
         // sockaddr_in provides interface to sockaddr
         struct sockaddr_in name; 
         // reset it all just to be safe
-        bzero((char *)&name, sizeof(name));
+        memset(&name,0,sizeof(name));
         name.sin_family      = AF_INET;
         name.sin_addr.s_addr = INADDR_ANY;
         name.sin_port        = htons(port);

@@ -7445,11 +7445,11 @@ bool shutdownOldGB ( int16_t port ) {
 		return false;
 	}
 	struct sockaddr_in to;
+	memset(&to,0,sizeof(to));
 	to.sin_family = AF_INET;
 	// our ip's are always in network order, but ports are in host order
 	to.sin_addr.s_addr =  atoip("127.0.0.1",9);
 	to.sin_port        =  htons((uint16_t)port);
-	bzero ( &(to.sin_zero) , 8 ); // TODO: bzero too slow?
 	// note it
 	log("db: Connecting to port %hu.",port);
 	// connect to the socket. This should block until it does

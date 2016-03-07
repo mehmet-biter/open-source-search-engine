@@ -158,7 +158,7 @@ bool TcpServer::init ( void (* requestHandler)(TcpSocket *s) ,
 		   	"listening :%s.",mstrerror(g_errno));
 	}
 	// reset it all just to be safe
-	bzero((char *)&name, sizeof(name));
+	memset(&name,0,sizeof(name));
 	name.sin_family      = AF_INET;
 	name.sin_addr.s_addr = INADDR_ANY;
 	name.sin_port        = htons(port);
@@ -300,7 +300,7 @@ bool TcpServer::testBind ( uint16_t port , bool printMsg ) {
 		   	"listening :%s.",mstrerror(g_errno));
 	}
 	// reset it all just to be safe
-	bzero((char *)&name, sizeof(name));
+	memset(&name,0,sizeof(name));
 	name.sin_family      = AF_INET;
 	name.sin_addr.s_addr = INADDR_ANY;
 	name.sin_port        = htons(port);
@@ -1998,11 +1998,11 @@ int32_t TcpServer::connectSocket ( TcpSocket *s ) {
 	//	if ( ! s->isConnecting() ) return true;
 	// now we have a connect just starting or already in progress
 	struct sockaddr_in to;
+	memset(&to,0,sizeof(to));
 	to.sin_family = AF_INET;
 	// our ip's are always in network order, but ports are in host order
 	to.sin_addr.s_addr =  s->m_ip;
 	to.sin_port        = htons ((uint16_t)( s->m_port));
-	bzero ( &(to.sin_zero) , 8 ); // TODO: bzero too slow?
 	if ( g_conf.m_logDebugTcp ) {
 		log( "........... TcpServer connecting %i to %s port %" UINT32 "", s->m_sd, iptoa( s->m_ip ),
 			 ( uint32_t )(uint16_t)s->m_port );
