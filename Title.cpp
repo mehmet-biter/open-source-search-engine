@@ -841,14 +841,14 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		int32_t  rootTitleLens[20];
 
 		// loop over each root title segment
-		for ( ; pr && pr < rootTitleBufEnd ; pr += gbstrlen(pr) + 1 ) {
+		for ( ; pr && pr < rootTitleBufEnd ; pr += strnlen(pr,rootTitleBufEnd-pr) + 1 ) {
 			// if we had a query...
 			if ( query ) {
 				// reset it
 				m.reset();
 
 				// see if root title segment has query terms in it
-				m.addMatches ( pr, gbstrlen(pr), MF_TITLEGEN, m_niceness );
+				m.addMatches ( pr, strnlen(pr,rootTitleBufEnd-pr), MF_TITLEGEN, m_niceness );
 
 				// if matches query, do NOT add it, we only add it for
 				// removing from the title of the page...
