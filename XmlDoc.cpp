@@ -19102,6 +19102,12 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// not the full url... and maybe match the one with the shortest path.
 	//
 
+	//workaround for truncation causeing a multibyte utf8 character to be
+	//split and then text parsing traversing past the defined bytes.
+	m_linkTextBuf[sizeof(m_linkTextBuf)-3] = '\0';
+	m_linkTextBuf[sizeof(m_linkTextBuf)-2] = '\0';
+	m_linkTextBuf[sizeof(m_linkTextBuf)-1] = '\0';
+
 	// . get the link text
 	// . linkee might be a site if m_isSiteLinkInfo is true in which
 	//   case we get the best inlink to that site, and linkee is
