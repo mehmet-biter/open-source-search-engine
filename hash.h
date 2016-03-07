@@ -51,7 +51,7 @@ uint32_t hashLong         ( uint32_t x ) ;
 // . these only take utf8 strings
 uint64_t hash64d ( const char *s, int32_t slen );
 
-uint64_t       hash64Upper_a    ( char *s, int32_t len, uint64_t startHash = 0 );
+uint64_t       hash64Upper_a    ( const char *s, int32_t len, uint64_t startHash = 0 );
 
 
 inline uint64_t hash64b ( const char *s , uint64_t startHash ) {
@@ -369,7 +369,7 @@ inline uint64_t hash64Lower_utf8 ( const char *p ) {
 }
 
 
-inline uint64_t hash64Upper_a ( char *s , int32_t len , 
+inline uint64_t hash64Upper_a ( const char *s , int32_t len ,
 					  uint64_t startHash ) {
 	uint64_t h = startHash;
 	int32_t i = 0;
