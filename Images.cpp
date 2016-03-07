@@ -1,3 +1,4 @@
+#include "gb-include.h"
 #include "Images.h"
 #include "Query.h"
 #include "Xml.h"

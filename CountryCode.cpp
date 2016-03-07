@@ -1,11 +1,10 @@
-
-#include <sys/types.h>
-#include <regex.h>
-
 #include "CountryCode.h"
 #include "HashTable.h"
 #include "LanguageIdentifier.h"
 #include "Threads.h"
+#include <sys/types.h>
+#include <regex.h>
+
 
 CountryCode g_countryCode;
 
