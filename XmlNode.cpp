@@ -633,7 +633,7 @@ static bool isValidAttrNameChar(char nodeChar) {
  *
  * @return Attribute value
  */
-char *XmlNode::getAttrValue( const char *field, int32_t *valueLen ) {
+char *XmlNode::getAttrValue( const char *field, int32_t fieldLen, int32_t *valueLen ) {
 	if (valueLen) {
 		*valueLen = 0;
 	}
@@ -657,8 +657,6 @@ char *XmlNode::getAttrValue( const char *field, int32_t *valueLen ) {
 	 *     - single-quoted attribute-value syntax
 	 *     - double-quoted attribute-value syntax
 	 */
-
-	int32_t fieldLen = strlen(field);
 
 	bool found = false;
 
@@ -867,7 +865,7 @@ char *XmlNode::getFieldValue ( const char *field , int32_t *valueLen ) {
 
 #include "HashTableX.h"
 
-nodeid_t getTagId ( char *s , NodeType **retp ) {
+nodeid_t getTagId ( const char *s , NodeType **retp ) {
 	// init table?
 	static bool s_init = false;
 	static HashTableX  s_ht;
@@ -903,7 +901,7 @@ nodeid_t getTagId ( char *s , NodeType **retp ) {
 
 	// find end of tag name. hyphens are ok to be in name.
 	// facebook uses underscores like <start_time>
-	char *e = s;
+	const char *e = s;
 	for ( ; *e && (is_alnum_a(*e) || *e=='-'|| *e=='_'); e++);
 
 	// hash it for lookup

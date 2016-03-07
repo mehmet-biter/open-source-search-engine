@@ -14,7 +14,7 @@ bool hasBackTag ( nodeid_t tagId ) ;
 int32_t getTagLen ( char *node ) ;
 
 // s points to tag name - first char
-nodeid_t getTagId ( char *s , class NodeType **retp = NULL ); 
+nodeid_t getTagId ( const char *s , class NodeType **retp = NULL );
 
 enum {
 	TAG_TEXTNODE = 0,
@@ -236,7 +236,7 @@ public:
 		return m_nodeId > 0 && m_node[1] != '/' && m_nodeId != TAG_META && m_nodeId != TAG_COMMENT;
 	}
 
-	char* getAttrValue( const char *field, int32_t *valueLen );
+	char* getAttrValue(const char *field, int32_t fieldLen, int32_t *valueLen );
 
 	// . get the value of a field like "href" in the <a href="blah"> tag
 	char *getFieldValue ( const char *fieldName , int32_t *valueLen );

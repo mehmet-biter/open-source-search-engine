@@ -935,7 +935,6 @@ static int32_t filterContent( Words *wp, Pos *pp, char *buf, int32_t bufLen, int
 
 		return contentLen;
 	}
-
 	return contentLen;
 }
 
@@ -960,7 +959,7 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 		bool found = false;
 		if ( fieldNameLen > 0 ) {
 			int32_t tagLen = 0;
-			char *tag = getNodePtr(i)->getAttrValue(fieldName, &tagLen);
+			char *tag = getNodePtr(i)->getAttrValue(fieldName, fieldNameLen, &tagLen);
 			if ( tagLen == fieldContentLen && strncasecmp( tag, fieldContent, fieldContentLen ) == 0 ) {
 				found = true;
 			}
@@ -982,7 +981,7 @@ bool Xml::getTagContent( const char *fieldName, const char *fieldContent, char *
 
 				// extract content from meta tag
 				int32_t len = 0;
-				char *s = getNodePtr(i)->getAttrValue("content", &len);
+				char *s = getNodePtr(i)->getAttrValue("content", 7, &len);
 				if ( ! s || len <= 0 ) {
 					// no content
 					continue;
