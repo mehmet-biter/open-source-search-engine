@@ -410,9 +410,9 @@ void XmlDoc::logQueryTimingEnd(const char* function, int64_t startTime) {
 	int64_t endTime = gettimeofdayInMilliseconds();
 	int64_t diff = endTime - startTime;
 
-	if (diff > 5) {
+	//if (diff > 5) {
 		log( LOG_TIMING, "query: XmlDoc::%s took %" INT64 " ms for docId=%" INT64, function, diff, m_docId );
-	}
+	//}
 }
 
 char *XmlDoc::getTestDir ( ) {
@@ -1319,18 +1319,8 @@ void XmlDoc::setStatus ( char *s ) {
 	s_last = s;
 
 	bool logIt = g_conf.m_logDebugBuild;
-	// CollectionRec *cr = NULL;
-	// if ( m_collnumValid )
-	// 	cr = g_collectiondb.m_recs[m_collnum];
-	// if ( cr &&
-	//      cr->m_coll &&
-	//      cr->m_coll[0] == 'c' &&
-	//      cr->m_coll[1] == 'r' &&
-	//      strncmp(cr->m_coll,"crawlbottesting-",16) == 0 )
-	// 	logIt = true;
-
 	if ( ! logIt ) return;
-	//return;
+
 	if ( m_firstUrlValid )
 		logf(LOG_DEBUG,"build: status = %s for %s (this=0x%"PTRFMT")",
 		     s,m_firstUrl.getUrl(),(PTRTYPE)this);
@@ -7459,15 +7449,15 @@ void gotTagRecWrapper ( void *state ) {
 TagRec *XmlDoc::getTagRec ( ) {
 	// if we got it give it
 	if ( m_tagRecValid ) return &m_tagRec;
+
 	// do we got a title rec?
-	if ( m_setFromTitleRec && m_version >= 118 &&
+	if ( m_setFromTitleRec &&
 	     // lookup up fresh from tagdb when doing a rebuild so we get
 	     // the latest sitenuminlinks! nah, we set m_tagRecValid and
 	     // m_tagRecDataValid to false in Repair.cpp iff rebuilding
 	     // titledb!! otherwise, we have to use what is in titlerec
 	     // to avoid parsing inconsistencies that would result in
 	     // undeletable posdb data.
-	     //! m_useSecondaryRdbs &&
 	     // lookup the tagdb rec fresh if setting for a summary. that way
 	     // we can see if it is banned or not
 	     m_tagRecDataValid ) {
@@ -7477,6 +7467,7 @@ TagRec *XmlDoc::getTagRec ( ) {
 
 		// just return empty otherwise
 		m_tagRec.setFromBuf ( ptr_tagRecData , size_tagRecData );
+
 		return &m_tagRec;
 	}
 
@@ -7490,28 +7481,23 @@ TagRec *XmlDoc::getTagRec ( ) {
 	Url *u = getFirstUrl();
 
 	// get it, user our collection for lookups, not m_tagdbColl[] yet!
-	if ( ! m_msg8a.getTagRec ( u ,
-				   // we have to guess the site because
-				   // we can't hit tagdb to get it at this
-				   // point!!!
-				   NULL, // guess it! // mysite ,
-				   cr->m_collnum ,
-				   false, // skip domain lookup? // true
-				   m_niceness ,
-				   this ,
-				   gotTagRecWrapper ,
-				   &m_tagRec ) )
+	if ( !m_msg8a.getTagRec( u, cr->m_collnum, m_niceness, this, gotTagRecWrapper, &m_tagRec, false, 0 )) {
 		// we blocked, return -1
-		return (TagRec *)-1;
+		return (TagRec *) -1;
+	}
+
 	// error? ENOCOLLREC?
-	if ( g_errno ) return NULL;
+	if ( g_errno ) {
+		return NULL;
+	}
+
 	// assign it
 	m_tagRec.serialize ( m_tagRecBuf );
 	ptr_tagRecData =  m_tagRecBuf.getBufStart();
 	size_tagRecData = m_tagRecBuf.length();
-	// validate
-	m_tagRecValid = true;
+
 	// our tag rec should be all valid now
+	m_tagRecValid = true;
 	return &m_tagRec;
 }
 
@@ -7706,14 +7692,7 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 		// invalidate for that as wel
 		if ( age > maxAge ) valid = false;
 	}
-	// our companion tags, sitePop and fresh inlinks
-	// Tag *tag2 = gr->getTag ( "sitenuminlinksuniqueip" );
-	// Tag *tag3 = gr->getTag ( "sitenuminlinksuniquecblock");
-	// Tag *tag4 = gr->getTag ( "sitenuminlinkstotal");
-	// if we are missing either of those, invalidate as well
-	// if ( ! tag2 ) valid = false;
-	// if ( ! tag3 ) valid = false;
-	// if ( ! tag4 ) valid = false;
+
 	// if we have already been through this
 	if ( m_updatingSiteLinkInfoTags ) valid = false;
 	// if rebuilding linkdb assume we have no links to sample from!
@@ -7745,43 +7724,10 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 		m_siteNumInlinks = atol(tag->getTagData());
 		m_siteNumInlinksValid = true;
 
-		// companion tags
-		// if ( tag2 ) {
-		// 	m_siteNumInlinksUniqueIp = atol(tag2->getTagData());
-		// 	m_siteNumInlinksUniqueIpValid = true;
-		// }
-		// if ( tag3 ) {
-		// 	m_siteNumInlinksUniqueCBlock =atol(tag3->getTagData());
-		// 	m_siteNumInlinksUniqueCBlockValid = true;
-		// }
-		// if ( tag4 ) {
-		// 	m_siteNumInlinksTotal =atol(tag4->getTagData());
-		// 	m_siteNumInlinksTotalValid = true;
-		// }
-
 		// . consult our sitelinks.txt file
 		// . returns -1 if not found
 		goto updateToMin;
 	}
-
-	// set status. we can time status changes with this routine!
-	//setStatus ( "getting site link info");
-
-
-	// if ip is bad we can't do this. we need to have a legit ip
-	// so we know if a linker is internal or not
-	/*
-	if ( *ip == 0 || *ip == -1 ) {
-		log("gb: bad ip so we can't get site num inlinks right");
-		m_siteNumInlinks = 0;
-		m_sitePop = 0;
-		m_siteNumInlinksFresh = 0;
-		m_siteNumInlinksValid = true;
-		m_siteNumInlinksFreshValid = true;
-		m_sitePopValid = true;
-		return &m_siteNumInlinks;
-	}
-	*/
 
 	// set this flag so when we are re-called, "valid" will be set to false
 	// so we can come down here and continue this. "flutter" might
@@ -7812,19 +7758,8 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	if ( m_doingConsistencyCheck ) {char*xx=NULL;*xx=0;}
 
 	// do not re-call at this point
-	//m_siteNumInlinks      = sinfo->m_numInlinksExtrapolated;
 	m_siteNumInlinks      = (int32_t)sinfo->m_numGoodInlinks;
-	//m_siteNumInlinksFresh = sinfo->m_numInlinksFresh;
-	//m_sitePop             = sinfo->m_pagePop;
-	// m_siteNumInlinksUniqueIp     = sinfo->m_numUniqueIps;
-	// m_siteNumInlinksUniqueCBlock = sinfo->m_numUniqueCBlocks;
-	// m_siteNumInlinksTotal        = sinfo->m_totalInlinkingDocIds;
-
 	m_siteNumInlinksValid      = true;
-	// m_siteNumInlinksUniqueIpValid = true;
-	// m_siteNumInlinksUniqueCBlockValid = true;
-	// m_siteNumInlinksTotalValid = true;
-
 
  updateToMin:
 
@@ -7954,7 +7889,6 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 				sb                  ,
 			     m_printInXml        ,
 				0 , // sitenuminlinks -- dunno!
-				//0 , // sitePop
 				NULL , // oldLinkInfo1        ,
 				m_niceness          ,
 				cr->m_doLinkSpamCheck ,
@@ -9055,7 +8989,6 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 					sb                  ,
 					m_printInXml        ,
 					*sni                ,
-					//m_sitePop           ,
 					oldLinkInfo1        ,
 					m_niceness          ,
 					doLinkSpamCheck ,
@@ -15073,19 +15006,13 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		}
 		
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: call getOutlinkFirstIpVector", __FILE__, __func__, __LINE__);
-		//char    **iiv = getOutlinkIsIndexedVector();
-		//if ( ! iiv || iiv == (void *)-1 ) return (char *)iiv;
+
 		int32_t    **ipv = getOutlinkFirstIpVector();
 		if ( ! ipv || ipv == (void *)-1 ) 
 		{
 			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getOutlinkFirstIpVector returned -1", __FILE__, __func__, __LINE__);
 			return (char *)ipv;
 		}
-		
-		//int8_t  *hcv = getOutlinkHopCountVector();
-		//if ( ! hcv || hcv == (void *)-1 ) return (char *)hcv;
-		//char     *ipi = getIsIndexed(); // is the parent indexed?
-		//if ( ! ipi || ipi == (char *)-1 ) return (char *)ipi;
 	}
 
 //}
@@ -15472,7 +15399,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		     m_setFromTitleRec &&
 		     // fix for import log spam
 		     ! m_isImporting &&
-		     m_version >= 120 &&
 		     m_metaListCheckSum8 != currentMetaListCheckSum8 ) {
 			log("xmldoc: checksum parsing inconsistency for %s "
 			    "(old)%i != %i(new). Uncomment tt1.print() "
@@ -16251,7 +16177,6 @@ void XmlDoc::copyFromOldDoc ( XmlDoc *od ) {
 	m_contentHash32 = od->m_contentHash32;
 	//m_tagHash32     = od->m_tagHash32;
 	m_tagPairHash32 = od->m_tagPairHash32;
-	//m_sitePop       = od->m_sitePop;
 	m_httpStatus    = od->m_httpStatus;
 	m_isRSS         = od->m_isRSS;
 	m_isPermalink   = od->m_isPermalink;
@@ -16266,7 +16191,6 @@ void XmlDoc::copyFromOldDoc ( XmlDoc *od ) {
 	m_contentHash32Valid = true;
 	//m_tagHash32Valid     = true;
 	m_tagPairHash32Valid = true;
-	//m_sitePopValid       = true;
 	m_httpStatusValid    = true;
 	m_isRSSValid         = true;
 	m_isPermalinkValid   = true;
@@ -18782,7 +18706,6 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 		}
 	}
 
-
 	// if we are showing sites that have been banned in tagdb, we dont
 	// have to do a tagdb lookup. that should speed things up.
 	TagRec *gr = NULL;
@@ -20725,15 +20648,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 	// prevent (null) from being displayed
 	tb.pushChar('\0');
 
-
-	//Tag *tag1 = gr->getTag ("sitenuminlinks");
-	//Tag *tag2 = gr->getTag ("sitepop");
-	//int32_t sni  = 0;
-	//int32_t spop = 0;
-	//if ( tag1 ) sni  = atol(tag1->m_data);
-	//if ( tag2 ) spop = atol(tag2->m_data);
 	int32_t sni  = m_siteNumInlinks;
-	//int32_t spop = m_sitePop;
 
 	LinkInfo *info1 = ptr_linkInfo1;
 
@@ -21459,13 +21374,8 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			       g_countryCode.getName(m_countryId) );
 	}
 
-	//sb->safePrintf("<tr><td>site</td><td>");
-	//sb->safeMemcpy(ptr_site,size_site-1);
-	//sb->safePrintf("</td></tr>\n");
-
-
 	TagRec *ogr = NULL;
-	if ( m_tagRecDataValid && m_version >= 118 ) {
+	if ( m_tagRecDataValid ) {
 		ogr = getTagRec(); // &m_tagRec;
 		// sanity. should be set from titlerec, so no blocking!
 		if ( ! ogr || ogr == (void *)-1 ) { char *xx=NULL;*xx=0; }

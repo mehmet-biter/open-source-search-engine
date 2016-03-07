@@ -28,7 +28,6 @@ int32_t Tag::print ( ) {
 }
 
 bool Tag::printToBuf ( SafeBuf *sb ) {
-
 	sb->safePrintf("k.hsthash=%016"XINT64" "
 		       "k.duphash=%08"XINT32" "
 		       "k.sitehash=%08"XINT32" ",
@@ -39,22 +38,17 @@ bool Tag::printToBuf ( SafeBuf *sb ) {
 	sb->safePrintf ( "TAG=%s,\"%s\",", 
 			 getTagStrFromType(m_type),
 			 getUser() );
-	// data size
-	//sb->safePrintf( "%"INT32",", (int32_t)getTagDataSize());
+
 	// print the date when this tag was added
 	time_t ts = m_timestamp;
 	struct tm *timeStruct = localtime ( &ts );
 	char tmp[100];
 	strftime(tmp,100,"%b-%d-%Y-%H:%M:%S,",timeStruct);
 	sb->safePrintf("%s(%"UINT32"),",tmp,m_timestamp);
-	// print the time as a int32_t, seconds since epoch
-	//sb->safePrintf("%"UINT32",",m_timestamp);
+
 	// print the ip added from
 	sb->safePrintf("%s,",iptoa(m_ip));
-	// print the tag id
-	//sb->safePrintf("%"UINT32",\"",(int32_t)m_tagId);
-	// key.n1 is hash of the subdomain i think
-	//sb->safePrintf("%"UINT32",\"",m_key.n1);
+
 	sb->safePrintf("\"");
 	if ( ! printDataToBuf ( sb ) ) return false;
 	// final quote
@@ -73,35 +67,18 @@ void Tag::set ( const char *site ,
 		int32_t  dataSize ) {
 	// get type from name
 	m_type = getTagTypeFromStr ( tagname , strlen(tagname) );
-	// sanity
-	//isTagTypeIndexable ( m_type );
+
 	m_timestamp = timestamp;
 	m_ip        = ip;
 	int32_t userLen = 0;
 	if ( user ) userLen = gbstrlen(user);
 	// truncate to 127 byte int32_t
 	if ( userLen > 126 ) userLen = 126;
-	// first byte is size of user, then user plus \0 then data
-	//m_bufSize  = 1 + userLen + 1 + dataSize;
-	// "site" must skip http://
-	//int32_t slen = gbstrlen(site);
-	//if      ( slen > 8 && strncasecmp(site,"http://",7)==0 ) 
-	//	site += 7;
-	//else if ( slen > 8 && strncasecmp(site,"https://",8)==0 ) 
-	//	site += 8;
 
 	// normalize
 	Url norm;
 	norm.set ( site );
 
-	// store user into special buffer
-	//int32_t ulen = 0;
-	//if ( user ) {
-	//	ulen = gbstrlen(user);
-	//	if ( ulen > 7 ) ulen = 7;
-	//}
-	//memset ( m_user , 0    , 8    );
-	//gbmemcpy ( m_user , user , ulen );
 	char *p = m_buf;
 	// store size (includes \0)
 	*p++ = userLen + 1;
@@ -115,28 +92,12 @@ void Tag::set ( const char *site ,
 	p += dataSize;
 	// NULL terminate if they did not! now all tag are strings and must
 	// be NULL terminated.
-	if ( data && p[-1] ) { // data && m_data[dataSize-1] ) {
-		//m_data[dataSize] = '\0';
+	if ( data && p[-1] ) {
 		*p++ = '\0';
-		//dataSize++;
-		//m_dataSize++;
 	}
 	// set it
 	m_bufSize = p - m_buf;
 
-	// top X bits should be hash of the domain only so all recs are on the
-	// same host near each other
-	//m_key.n1 = hash32 ( norm.getDomain() , norm.getDomainLen());
-	//
-	// too many tags were being read when k.n1 was the domain hash for
-	// sites like az.com that had hundreds of subdomains. so go based on
-	// host instead.
-	//
-	// CRAP: using 32 bit hash we get collisions for crap like
-	// thedietsolutionprogramscam.com and
-	// 2witchdoctors.a-livejasmin.com
-	// so let's move to 64bit keys
-	//m_key.n1 = hash64 ( norm.getHost() , norm.getHostLen());
 	// i had to make this the hash of the site, not host, 
 	// because www.last.fm/user/xxxxx/
 	// was making the rdblist a few megabytes big!!
@@ -148,17 +109,7 @@ void Tag::set ( const char *site ,
 	m_key.n0 = upper32;
 	// shift it up
 	m_key.n0 <<= 32;
-	// . then or in url hash
-	// . for the site "www.paypal.com:1234" this included the port!
-	//   but for the most part if the site is just a hostname then
-	//   this is basically just a hostname, too, but the hash will
-	//   include the http:// and the ending /
-	// . www.paypal.com:1234 was added as a site. so it has the
-	//   same m_key.n1 as www.paypal.com, but this part is different
-	//   here. this is the full site hash really. so during the lookup
-	//   i'd say filter out such tags if they don't match the site you
-	//   are looking up.
-	//m_key.n0 |= (uint32_t) hash32 ( norm.getUrl() , norm.getUrlLen() );
+
 	// set positive bit so its not a delete record
 	m_key.n0 |= 0x01;
 
@@ -208,10 +159,7 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 	int32_t userLen = p - user;
 	// sanity. username total buf space including \0 <= 8
 	if ( userLen > 126 ) userLen = 126;
-	// copy it over into us
-	//gbmemcpy ( m_user , user , userLen );
-	// NULL terminate
-	//m_user[userLen] = '\0';
+
 	// first byte is username size
 	*dst++ = userLen+1;
 	// then the username
@@ -221,15 +169,6 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 	*dst++ = '\0';
 	// skip quote and comma
 	p+=2;
-
-	// now the datasize
-	//int32_t m_dataSize = atoi(p);
-	// skip till comma
-	//while ( p < pend && *p != ',' ) p++;
-	// error?
-	//if ( p == pend ) return 0;
-	// skip comma
-	//p++;
 
 	// that is the time stamp in canonical form
 	// skip till comma
@@ -261,19 +200,6 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 	// skip comma
 	p++;
 
-	// get the tag identifier
-	//m_tagId = atol(p);
-	//sscanf ( p , "%"UINT32",",&m_tagId);
-	//int64_t big = atoll(p);
-	//m_tagId = (int32_t)big;
-	// skip until comma again
-	//while ( p < pend && *p != ',' ) p++;
-	// error?
-	//if ( p == pend ) return 0;
-	// skip comma
-	//p++;
-
-
 	// . now is the data
 	// . return # of chars scanned in "p"
 	p += setDataFromBuf ( p , pend );
@@ -281,12 +207,6 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 	// . sanity check
 	// . all tags must be NULL terminated now
 	if ( m_buf[m_bufSize-1] != '\0' ) {char *xx=NULL; *xx=0; }
-
-	// we reset this since we now require that all tags are NULL terminated
-	// strings
-	//m_tagId = hash32 ( (char *)this,(int32_t)sizeof(Tag)+m_dataSize , 0 );
-	// 0 is not valid
-	//if ( m_tagId == 0 ) m_tagId = 1;
 
 	// return how many bytes we read
 	return p - start;
@@ -360,14 +280,9 @@ int32_t hexToBinary ( char *src , char *srcEnd , char *dst , bool decrement ) {
 
 
 bool Tag::printDataToBuf ( SafeBuf *sb ) {
-	// string are special
-	//if ( isTagTypeString ( m_type ) ) {
-
 	char *data     = getTagData();
 	int32_t  dataSize = getTagDataSize();
-	// because of a bug of not appending the \0 and incrementing
-	// Tag::m_dataSize when we should have, we must deal with this!
-	//sb->safePrintf("%s",m_data);
+
 	for ( int32_t i = 0 ; data[i] && i < dataSize ; i++ )
 		sb->safePrintf ( "%c" , data[i] );
 	return true;
@@ -428,34 +343,6 @@ bool Tag::printToBufAsXml ( SafeBuf *sb ) {
 	return true;
 }
 
-//if ( ! sb->safePrintf("\t\t<eventTagFromTagdb>"
-//		      "<![CDATA[") )
-bool Tag::printToBufAsXml2 ( SafeBuf *sb ) {
-	// print the tagname
-	char *str = getTagStrFromType ( m_type );
-	// print the user that added this tag
-	sb->safePrintf ("\t\t<eventTagdbTag>\n"
-			// who added the tag:
-			"\t\t\t<addedBy><![CDATA[%s]]></addedBy>\n"
-			// when tag was added:
-			"\t\t\t<addedTimestamp>%"UINT32"</addedTimestamp>\n"
-			// ip added from
-			"\t\t\t<addedFromIP><![CDATA[%s]]></addedFromIP>\n"
-			// name of the tag:
-			"\t\t\t<name><![CDATA[%s]]></name>\n"
-			// the tag data
-			"\t\t\t<data><![CDATA[",
-			getUser(),
-			m_timestamp,
-			iptoa(m_ip),
-			str);
-	// print the m_data
-	if ( ! printDataToBuf ( sb ) ) return false;
-	sb->safePrintf("]]></data>\n"
-		       "\t\t</eventTagdbTag>\n");
-	return true;
-}
-
 bool Tag::printToBufAsHtml ( SafeBuf *sb , char *prefix ) {
 	// print the tagname
 	char *str = getTagStrFromType ( m_type );
@@ -482,30 +369,17 @@ bool Tag::printToBufAsHtml ( SafeBuf *sb , char *prefix ) {
 bool Tag::printToBufAsTagVector ( SafeBuf *sb ) {
 	// print the tagname
 	char *str = getTagStrFromType ( m_type );
-	// print strings data types special
-	//if ( isTagTypeString ( m_type ) ) {
-	//sb->safePrintf("%s:%s ",str,m_data);
 	sb->safePrintf("%s:",str);
 	// print the m_data
 	if ( ! printDataToBuf ( sb ) ) return false;
 	sb->safePrintf(" ");
 	return true;
-	/*
-	}
-	// print the user that added this tag
-	sb->safePrintf ("%s:", str );
-	if ( ! printDataToBuf ( sb ) ) return false;
-	sb->safePrintf(" ");
-	return true;
-	*/
 }
 
 bool Tag::isType ( char *t ) {
 	int32_t h = hash32n ( t );
 	return (m_type == h);
 }
-
-
 
 TagRec::TagRec ( ) {
 	m_numListPtrs = 0;
@@ -743,15 +617,6 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 	// make it null terminated since we no longer do this automatically
 	fou.pushChar('\0');
 
-	// normalize it
-	//Url u; u.set ( us , uslen );
-	// point to it
-	//char *site = u.getUrl();
-	// skip http + ://
-	//site += u.getSchemeLen() + 3; 
-	// include the \0
-	//int32_t psize = gbstrlen(p) + 1;
-
 	// loop over all tags in the TagRec to mod them
 	for ( int32_t i = 0 ; ; i++ ) {
 
@@ -987,12 +852,10 @@ public:
 // map the tags to names
 static TagDesc s_tagDesc[] = {
 
-
-	// BR: DO NOT REMOVE unused entries as we may have them in our TagDB already,
-	//     and removing them will cause missing info in the TagDB dump code
-	//     (when clicking 'page info' in search results)
-	
-	
+	/// @warning
+	/// BR: DO NOT REMOVE unused entries as we may have them in our TagDB already,
+	///     and removing them will cause missing info in the TagDB dump code
+	///     (when clicking 'page info' in search results)
 
 	// data for the "lang" tag is 2 char language id followed by
 	// a comma then a score from 1 to 100 to indicate percentage.
@@ -1003,30 +866,13 @@ static TagDesc s_tagDesc[] = {
 	// for determining default venue addresses
 	{"roottitles"             ,TDF_STRING|TDF_NOINDEX,0},
 
-	// for addresses of the website, can be multiple
-	{"venueaddress"             ,TDF_STRING|TDF_ARRAY|TDF_NOINDEX,0},	// BR: NO LONGER SET
-
 	{"manualban"            ,0x00,0},
-
-	{"manualfilter"         ,0x00,0},									// BR: NO LONGER SET
-	{"dateformat"           ,0x00,0}, // 1 = american, 2 = european		// BR: NO LONGER SET
 
 	{"ruleset"              ,0x00,0},
 	{"deep"                 ,0x00,0},
 
-	{"comment"              ,TDF_STRING|TDF_NOINDEX,0},
 	// we now index this. really we need it for storing into title rec.
 	{"site"                 ,TDF_STRING|TDF_ARRAY,0},
-
-	// this is "0" or "1". if it is "0" then the date lets XmlDoc.cpp know
-	// when we last tried to get the contact info for the site
-	{"hascontactinfo"       ,0x00,0},
-
-	// street address using ; as delimeter
-	{"contactaddress"              ,TDF_ARRAY|TDF_NOINDEX,0},			// BR: NO LONGER SET
-	{"contactemails"               ,TDF_ARRAY|TDF_NOINDEX,0},			// BR: NO LONGER SET
-
-	{"hascontactform"       ,0x00,0},									// BR: NO LONGER SET
 
 	// . this is used to define INDEPENDENT subsites
 	// . such INDEPENDENT subsites should never inherit from this tag rec
@@ -1046,23 +892,7 @@ static TagDesc s_tagDesc[] = {
 	// . allow multiple tags of this type from same "user"
 	{"authorityinlink"      ,TDF_STRING|TDF_ARRAY,0},
 
-	{"pagerank"             ,0x00,0},
-	{"ingoogle"             ,0x00,0},									// BR: NO LONGER SET
-	{"ingoogleblogs"        ,0x00,0},									// BR: NO LONGER SET
-	{"ingooglenews"         ,0x00,0},									// BR: NO LONGER SET
-
-	// geo location from this news site directory
-	{"abyznewslinks.address",0x00,0},									// BR: NO LONGER SET
-
-	// we now store site pop, etc. in tagdb
 	{"sitenuminlinks"       ,0x00,0},
-	{"sitenuminlinksuniqueip"  ,0x00,0},
-	{"sitenuminlinksuniquecblock"  ,0x00,0},
-	{"sitenuminlinkstotal"  ,0x00,0},
-
-	// keep these although no longer used
-	{"sitepop"  ,0x00,0},
-	{"sitenuminlinksfresh"  ,0x00,0},
 
 	// . the first ip we lookup for this domain
 	// . this is permanent and should never change
@@ -1070,7 +900,34 @@ static TagDesc s_tagDesc[] = {
 	//   all urls/SpiderRequests from that ip
 	// . so if we did change it then that would result in two hosts
 	//   doing the throttling, really messing things up
-	{"firstip"              ,0x00,0}
+	{"firstip"              ,0x00,0},
+
+    // As above, we can't remove the following definition unless if we're sure it's not set anymore
+    // Anything below this point is unused.
+	{"manualfilter", 0x00, 0},
+	{"dateformat", 0x00, 0}, // 1 = american, 2 = european
+
+	{"venueaddress", TDF_STRING|TDF_ARRAY|TDF_NOINDEX, 0},
+	{"hascontactinfo", 0x00, 0},
+	{"contactaddress", TDF_ARRAY|TDF_NOINDEX, 0},
+	{"contactemails", TDF_ARRAY|TDF_NOINDEX, 0},
+	{"hascontactform", 0x00, 0},
+
+	{"ingoogle", 0x00, 0},
+	{"ingoogleblogs", 0x00, 0},
+	{"ingooglenews", 0x00, 0},
+	{"abyznewslinks.address", 0x00, 0},
+
+	{"sitenuminlinksuniqueip"  ,0x00,0},
+	{"sitenuminlinksuniquecblock"  ,0x00,0},
+	{"sitenuminlinkstotal"  ,0x00,0},
+
+	{"comment", TDF_STRING|TDF_NOINDEX, 0},
+
+	{"sitepop"  ,0x00,0},
+	{"sitenuminlinksfresh"  ,0x00,0},
+
+	{"pagerank"             ,0x00,0},
 };
 
 // . convert "domain_squatter" to ST_DOMAIN_SQUATTER
@@ -1101,7 +958,6 @@ char *getTagStrFromType ( int32_t tagType ) {
 	if ( ! ptd ) 
 	{ 	
 		log(LOG_ERROR,"%s:%s:%d: Failed to lookup tagType %"INT32"", __FILE__, __func__, __LINE__, tagType);
-		//char *xx=NULL;*xx=0; 
 		return "UNKNOWN";
 	}
 	// return it
@@ -1117,7 +973,6 @@ void Tagdb::reset() {
 	m_rdb.reset();
 	m_siteBuf1.purge();
 	m_siteBuf2.purge();
-	//s_lockTable2.reset();
 }
 
 bool Tagdb::setHashTable ( ) {
@@ -1149,12 +1004,6 @@ bool Tagdb::setHashTable ( ) {
 }
 
 bool Tagdb::init ( ) {
-	// snity test
-	//if ( TAGREC_CURRENT_VERSION >= 30 ) {
-	//	log("tagdb: fix call to convert()");
-	//	char *xx = NULL; *xx = 0; 
-	//}
-
 	// force it now
 	g_conf.m_tagdbMaxTreeMem = 101028000;
 
@@ -1162,24 +1011,6 @@ bool Tagdb::init ( ) {
 	// . assume avg tagdb rec size (siteUrl) is about 82 bytes we get:
 	// . NOTE: 32 bytes of the 82 are overhead
 	int32_t maxTreeNodes = g_conf.m_tagdbMaxTreeMem  / 82;
-
-	//int64_t pcmem = 250000000; // 250MB
-	// TODO: make it a biased disk page cache!
-	int64_t pcmem = 160000000; // 160MB
-	// turn it off for rebuilding posdb, to 10MB anyway
-	pcmem = 10000000;
-	//int32_t pcmem = 100000000;
-	// each entry in the cache is usually just a single record, no lists,
-	// unless a hostname has multiple sites in it. has 24 bytes more 
-	// overhead in cache.
-	//int32_t maxCacheNodes = g_conf.m_tagdbMaxCacheMem / 106;
-	// we now use a page cache
-	// if ( ! m_pc.init ("tagdb",RDB_TAGDB,pcmem,GB_TFNDB_PAGE_SIZE))
-	// 	return log("tagdb: Tagdb init failed.");
-
-	// init this
-	//if ( ! s_lockTable2.set(8,4,32,NULL,0,false,0,"taglocktbl") )
-	//	return log("tagdb: lock table init failed.");
 
 	// . initialize our own internal rdb
 	// . i no longer use cache so changes to tagdb are instant
@@ -1204,37 +1035,8 @@ bool Tagdb::init ( ) {
 			    true ); // bias disk page cache?
 }
 
-bool Tagdb::init2 ( int32_t treeMem ) {
-	// . what's max # of tree nodes?
-	// . assume avg tagdb rec size (siteUrl) is about 82 bytes we get:
-	// . NOTE: 32 bytes of the 82 are overhead
-	int32_t maxTreeNodes = treeMem / 82;
-	// . initialize our own internal rdb
-	// . i no longer use cache so changes to tagdb are instant
-	// . we still use page cache however, which is good enough!
-	return m_rdb.init ( g_hostdb.m_dir               ,
-			    "tagdbRebuild"               ,
-			    true                       , // dedup same keys?
-			    -1                         , // fixed record size
-			    50,//g_conf.m_tagdbMinFilesToMerge   ,
-			    treeMem ,
-			    maxTreeNodes               ,
-			    // now we balance so Sync.cpp can ordered huge list
-			    true                        , // balance tree?
-			    0 , //g_conf.m_tagdbMaxCacheMem ,
-			    0 , //maxCacheNodes              ,
-			    false                      , // half keys?
-			    false                      , //m_tagdbSaveCache
-			    NULL , // pc
-			    false,  // is titledb
-			    false ,  // preload disk page cache
-			    sizeof(key128_t),     // key size
-			    false ); // bias disk page cache?
-}
-
 bool Tagdb::verify ( char *coll ) {
-	char *rdbName = NULL;
-	rdbName = "Tagdb";
+	char *rdbName = "Tagdb";
 	
 	log ( LOG_DEBUG, "db: Verifying %s for coll %s...", rdbName, coll );
 	
@@ -1277,25 +1079,14 @@ bool Tagdb::verify ( char *coll ) {
 
 	int32_t count  = 0;
 	int32_t got    = 0;
-	//int32_t numOld = 0;
 	for ( list.resetListPtr() ; ! list.isExhausted() ;
 	      list.skipCurrentRecord() ) {
-		//key128_t k = list.getCurrentKey();
 		key128_t k;
 		list.getCurrentKey ( &k );
 		// skip negative keys
 		if ( (k.n0 & 0x01) == 0x00 ) continue;
 		count++;
-		// see if it is the "old" school tagdb rec
-		//char *data       = list.getCurrentData();
-		//int32_t  dataSize = list.getCurrentDataSize();
-		// this is the file number in the old school tagdb recs
-		// and it is the version number in the new school style recs.
-		// just make sure the new school version number stays below 30!
-		//char  version  = *data;
-		// lower 3 bytes are the file number. >= 30 on gk
-		//if ( version >= 30 ) numOld++;
-		//uint32_t groupId = g_tagdb.getGroupId ( &k );
+
 		uint32_t shardNum = getShardNum ( RDB_TAGDB , &k );
 		if ( shardNum == getMyShardNum() ) got++;
 	}
@@ -1336,11 +1127,7 @@ bool Tagdb::verify ( char *coll ) {
 // . xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
 key128_t Tagdb::makeStartKey ( char *site ) { // Url *u ) {
 	key128_t k;
-	// hash full hostname
-	//k.n1 = hash64 ( u->getHost() , u->getHostLen() );
 	k.n1 = hash64n ( site );
-	//k.n1 = hash32 ( u->getUrl(), u->getUrlLen() );
-	//k.n1 = hash32 ( u->getDomain(), u->getDomainLen() );
 	// set lower 64 bits of key to hash of this url
 	k.n0 = 0;
 	return k;
@@ -1348,11 +1135,7 @@ key128_t Tagdb::makeStartKey ( char *site ) { // Url *u ) {
 
 key128_t Tagdb::makeEndKey ( char *site ) { //  Url *u ) {
 	key128_t k;
-	// hash full hostname
-	//k.n1 = hash64 ( u->getHost() , u->getHostLen() );
 	k.n1 = hash64n ( site );
-	//k.n1 = hash32 ( u->getUrl(), u->getUrlLen() );
-	//k.n1 = hash32 ( u->getDomain(), u->getDomainLen() );
 	// set lower 64 bits of key to hash of this url
 	k.n0 = 0xffffffffffffffffLL;
 	return k;
@@ -1362,8 +1145,6 @@ key128_t Tagdb::makeDomainStartKey ( Url *u ) {
 	key128_t k;
 	// hash full hostname
 	k.n1 = hash64 ( u->getDomain() , u->getDomainLen() );
-	//k.n1 = hash32 ( u->getUrl(), u->getUrlLen() );
-	//k.n1 = hash32 ( u->getDomain(), u->getDomainLen() );
 	// set lower 64 bits of key to hash of this url
 	k.n0 = 0;
 	return k;
@@ -1373,8 +1154,6 @@ key128_t Tagdb::makeDomainEndKey ( Url *u ) {
 	key128_t k;
 	// hash full hostname
 	k.n1 = hash64 ( u->getDomain() , u->getDomainLen() );
-	//k.n1 = hash32 ( u->getUrl(), u->getUrlLen() );
-	//k.n1 = hash32 ( u->getDomain(), u->getDomainLen() );
 	// set lower 64 bits of key to hash of this url
 	k.n0 = 0xffffffffffffffffLL;
 	return k;
@@ -1399,9 +1178,8 @@ Msg8a::~Msg8a ( ) {
 void Msg8a::reset() {
 	// do no free if in progress, reply may come in and corrupt the mem
 	if ( m_replies != m_requests && ! g_process.m_exiting ) { 
-		char *xx=NULL;*xx=0; }
-	//for ( int32_t i = 0 ; i < m_replies ; i++ ) 
-	//	m_lists[i].reset();
+		char *xx=NULL;*xx=0;
+	}
 	m_replies  = 0;
 	m_requests = 0;
 }
@@ -1411,20 +1189,8 @@ void Msg8a::reset() {
 // . all matching records are merge into a final record
 //   i.e. site tags are also propagated accordingly
 // . closest matching "site" is used as the "site" (the site url)
-bool Msg8a::getTagRec ( Url   *url , 
-			// site of the url
-			char  *site ,
-			//char  *coll             , 
-			collnum_t collnum,
-			bool   skipDomainLookup , // useCanonicalName ,
-			int32_t   niceness         ,
-			void  *state            ,
-			void (* callback)(void *state ),
-			TagRec *tagRec ,
-			bool   doInheritance ,
-			char   rdbId ) {
-
-
+bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *state, void (*callback)( void * ),
+                       TagRec *tagRec, bool doInheritance, char rdbId ) {
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
 	if ( ! cr ) { 
 		g_errno = ENOCOLLREC;
@@ -1432,7 +1198,7 @@ bool Msg8a::getTagRec ( Url   *url ,
 	}
 	
 	// reset tag rec
-	tagRec->reset();//m_numListPtrs = 0;
+	tagRec->reset();
 
 	// sanity check
 	if ( rdbId != RDB_TAGDB ) {char *xx=NULL;*xx=0;}
@@ -1445,39 +1211,30 @@ bool Msg8a::getTagRec ( Url   *url ,
 	reset();
 
 	m_niceness = niceness;
-	//m_coll     = coll;
+
 	m_collnum = collnum;
 	m_tagRec   = tagRec;
 	m_callback = callback;
 	m_state    = state;
-	//m_url      = url;
+
 	// reset
 	m_errno    = 0;
 	m_requests = 0;
 	m_replies  = 0;
 	m_doneLaunching = false;
-	//m_doFullUrl = true;
-	//m_skipDomainLookup = skipDomainLookup;
 
 	// set siteLen to the provided site if it is non-NULL
 	int32_t siteLen = 0;
-	if ( site ) siteLen = gbstrlen(site);
+	char *site = NULL;
 
 	// . get the site
 	// . msge0 passes this in as NULL an expects us to figure it out
 	// . if site was NULL that means we guess it. default to hostname
 	//   unless in a recognized for like /~mwells/
-	if ( ! site ) {
+	{
 		SiteGetter sg;
-		sg.getSite ( url->getUrl() ,
-			     NULL , // tagrec
-			     0 , // timestamp
-			     collnum, // coll
-			     m_niceness,
-			     NULL, // state
-			     NULL); // callback
-		// if it set it to a recognized site, like ~mwells
-		// then set "site"
+		sg.getSite ( url->getUrl(), NULL, 0, collnum, m_niceness, NULL, NULL);
+		// if it set it to a recognized site, like ~mwells, then set "site"
 		if ( sg.m_siteLen ) {
 			site    = sg.m_site;
 			siteLen = sg.m_siteLen;
@@ -1502,40 +1259,24 @@ bool Msg8a::getTagRec ( Url   *url ,
 	// un NULL terminate it
 	site[siteLen] = c;
 
-
-
-
-	// ignore this part of url is already root like
-	//if ( m_url->isRoot() ) m_doFullUrl = false;
-
-	// makeStartKey only works on the hostname of the url, so doing the
-	// full url has no effect right now
-	//m_doFullUrl = false;
-
-	// sendPageInject keeps "url" on the stack!
-	//m_url.set ( url->getUrl() , url->getUrlLen() );
 	m_url = url;
 	
-
 	// save this
 	m_doInheritance = doInheritance;
-	// . launch a request for each subdomain of the url
-	// . the request format is 
-	// . <url>\0<niceness><coll>\0
-	// . that way we can use a small request buffer and have different
-	//   pointers to the different subdomains
-	//char *p = m_request;
+
 	// point to url
 	char *u    = url->getUrl();
 	int32_t  ulen = url->getUrlLen();
+
 	// point to the TLD of the url
 	char *tld  = url->getTLD();
+
 	// . if NULL, that is bad... TLD is unsupported
 	// . no! it could be an ip address!
 	// . anyway, if the tld does not exist, just return an empty tagrec
 	//   do not set g_errno
 	if ( ! tld && ! url->isIp() ) return true;
-	//if ( ! tld ) { g_errno = EBADURL; return true; }
+
 	// url cannot have NULLs in it because handleRequest8a() uses
 	// gbstrlen() on it to get its size
 	for ( int32_t i = 0 ; i < ulen ; i++ ) {
@@ -1545,34 +1286,28 @@ bool Msg8a::getTagRec ( Url   *url ,
 		g_errno = EBADURL;
 		return true;
 	}
-	// skip over http://
-	int32_t  plen = url->getSchemeLen() + 3;
-	u    += plen;
-	ulen -= plen;
-	// copy over url without the protocol thingy (http://)
-	//gbmemcpy ( p , u , ulen ); 
+
 	// get the domain
 	m_dom = url->getDomain();
+
 	// if none, bad!
 	if ( ! m_dom && ! url->isIp() ) return true;
-	// save this
-	//m_host = url->getHost();
-	// get its delta
-	//int32_t delta = dom - u;
+
 	// . save ptr for launchGetRequests()
 	// . move this BACKWARDS for subdomains that have a ton of .'s
 	// . no, now move towards domain
 	m_p = m_url->getHost();
+
 	// and save this too
 	m_hostEnd = m_url->getHost() + m_url->getHostLen();
-	// if ip just use the full "hostname" which is the full ip address
-	//if ( url->isIp() ) m_p = m_host;
 
 	// launch the requests
 	if ( ! launchGetRequests() ) return false;
+
 	// . they did it without blocking
 	// . this sets g_errno on error
 	gotAllReplies();
+
 	// did not block
 	return true;
 }
@@ -1593,47 +1328,8 @@ bool Msg8a::launchGetRequests ( ) {
 	// take a breath
 	QUICKPOLL(m_niceness);
 
-	// . first, try it by canonical domain name
-	// . if that finds no matches, then try it by ip domain
-	// get host
-	//char *subdom    = m_p;
-	//int32_t  subdomLen = m_hostEnd - m_p;
-
 	key128_t startKey ;
 	key128_t endKey   ;
-	//int32_t     siteHash32;
-	// . if our first time, do the full url!
-	// . need to do this because the turking process (XmlDoc::getTurkForm()
-	//   and PageReindex.cpp:processTurkForm()) add tags to tagdb based on
-	//   the full url.
-	/*
-	if ( m_doFullUrl ) {
-		startKey = g_tagdb.makeStartKey ( m_url );
-		endKey   = g_tagdb.makeEndKey   ( m_url );
-		// . like the "norm" url above
-		// . we'll get back a list of tags for this hostname,
-		//   but they could all be from different sites, some sites
-		//   would be the hostname, other tags might be from sites
-		//   that are a subsite of the hostname, so we have to make
-		//   sure the tag's key.n0 matches this siteHash32
-		siteHash32 = hash32 ( m_url->getUrl() , m_url->getUrlLen());
-	}
-	else {
-		// make into a url
-		Url u;
-		u.set ( subdom , subdomLen );
-		// set key range now
-		startKey = g_tagdb.makeStartKey ( &u );
-		endKey   = g_tagdb.makeEndKey   ( &u );
-		// . like the "norm" url above
-		// . we'll get back a list of tags for this hostname,
-		//   but they could all be from different sites, some sites
-		//   would be the hostname, other tags might be from sites
-		//   that are a subsite of the hostname, so we have to make
-		//   sure the tag's key.n0 matches this siteHash32
-		siteHash32 = hash32 ( u.getUrl() , u.getUrlLen() );
-	}
-	*/
 
 	if ( tryDomain ) {
 		startKey = g_tagdb.makeDomainStartKey ( m_url );
@@ -1645,13 +1341,11 @@ bool Msg8a::launchGetRequests ( ) {
 	else {
 		// usually the site is the hostname but sometimes it is like
 		// "www.last.fm/user/breendaxx/"
-		//startKey = g_tagdb.makeStartKey ( m_site );//url );
-		//endKey   = g_tagdb.makeEndKey   ( m_site ); // url );
 		startKey = m_siteStartKey;
 		endKey   = m_siteEndKey;
-		if ( g_conf.m_logDebugTagdb )
-			log("tagdb: looking up site tags for %s",
-			    m_url->getUrl());
+		if ( g_conf.m_logDebugTagdb ) {
+			log( "tagdb: looking up site tags for %s", m_url->getUrl());
+		}
 	}
 
 	// get the next mcast
@@ -1692,8 +1386,7 @@ bool Msg8a::launchGetRequests ( ) {
 				   0                   , // startFileNum
 				   -1                  , // numFiles
 				   msg0_getlist_infinite_timeout );// timeout
-	// all done?
-	//if ( m_p == m_url->getDomain() ) m_doneLaunching = true;
+
 	// error?
 	if ( status && g_errno ) {
 		// g_errno should be set, we had an error
@@ -1705,9 +1398,7 @@ bool Msg8a::launchGetRequests ( ) {
 	// if we got a reply instantly
 	if ( status ) m_replies++;
 
-	if ( ! tryDomain ) { //&& 
-	     //! m_skipDomainLookup &&
-	     //m_url->getHostLen() != m_url->getDomainLen() ) {
+	if ( ! tryDomain ) {
 		tryDomain = true;
 		goto loop;
 	}
@@ -1763,43 +1454,6 @@ void Msg8a::gotAllReplies ( ) {
 		m_tagRec->m_numListPtrs++;
 	}
 
-	// . now scan all the tags for this HOSTNAME
-	// . filter out tags that are not for a supersite of our url
-	// . i.e. if our url is www.xyz.com/tim/bob/file.html
-	//   then hash
-	//   http://www.xyz.com/
-	//   http://www.xyz.com/tim/
-	//   http://www.xyz.com/tim/bob/
-	//   and skip over any tag whose lower 32 bits does not match
-	//   one of those hashes...
-	// . see where we set Tag::m_key.n0 in Tag::set() above:
-	//   m_key.n0 |= (uint32_t) hash32 ( norm.getUrl(),norm.getUrlLen() );
-	//   where "norm" is the provided site but with a http:// in front
-	//   and a / at the end since Url::set() normalized it
-	// . m_url is the url we want to get the tags for
-	// . HACK: right now just restrict to the hostname!
-	/*
-	Url norm;
-	norm.set ( m_url->getHost() , m_url->getHostLen() );
-	uint32_t siteHash32 = hash32 ( norm.getUrl(),norm.getUrlLen() );
-	// . and the domain too so we can ban domains
-	// . this is messed up because we can't just hash the domain, we have
-	//   to hash it like a complete url because that is what Tag::set()
-	//   does when it makes the key's top 32 bits.
-	uint32_t siteHash32d = 0;
-	int32_t conti = 0;
-	siteHash32d = hash32_cont ( "http://",7,siteHash32d,&conti);
-	siteHash32d = hash32_cont ( norm.getDomain(),
-				    norm.getDomainLen(),
-				    siteHash32d,
-				    &conti);
-	siteHash32d = hash32_cont ( "/",1,siteHash32d,&conti);
-	// the non-del bit i guess. we forgot to shift up when we made
-	// the key above!
-	siteHash32  |= 0x01;
-	siteHash32d |= 0x01;
-	*/
-
 	// scan tags in list and set Tag::m_type to TT_DUP if its a dup
 	Tag *tag = m_tagRec->getFirstTag();
 	HashTableX cx;
@@ -1812,30 +1466,9 @@ void Msg8a::gotAllReplies ( ) {
 		// breathe
 		QUICKPOLL(m_niceness);
 
-		// skip tag if it is not from the proper site. we are
-		// only guarenteed that all tags in this list are for the
-		// same HOSTNAME not SITE! site is in the lower bits
-		// of the tagdb key.
-		// should fix www.paypal.com:1234 bug where we were reading
-		// sitenuminlinks from that tag and was always 0!! even
-		// when we'd add a count of 2k to the www.paypal.com site...
-		// now filter out www.paypal.com:1234's tags!
-		// TODO: allow multiple different siteHash32 values to match
-		// here, use one siteHash32 for each possible suburl of "m_url"
-		// so if m_url is "http://www.xyz.com/tim/" then we also
-		// can match hash32("http://www.xyz.com/tim/" not just
-		// "http://www.xyz.com/" which is how it is now.
-		//uint32_t th32 = tag->m_key.n0 & 0xffffffff;
-		//if ( th32 != siteHash32 && th32 != siteHash32d ) { 
-		//	// maybe use TT_DIFFSITE instead of this! TODO!
-		//	tag->m_type = TT_DUP;
-		//	continue;
-		//}
-
 		// form the hash!
 		uint32_t h32 = (uint32_t)((tag->m_key.n0) >> 32);
-		// skip if not unique
-		//if ( ! isTagTypeUnique ( tag->m_type ) ) continue;
+
 		// otherwise, record it
 		if ( cx.isInTable(&h32 ) ) // tag->m_type) ) 
 			tag->m_type = TT_DUP;
@@ -1885,8 +1518,6 @@ public:
 // . show a textarea for sites, then list all the different site tags
 //   and have an option to add/delete them
 bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
-	// are we the admin?
-	//bool isAdmin    = g_collectiondb.isAdmin    ( req , s );
 	// get the collection record
 	CollectionRec *cr = g_collectiondb.getRec ( req );
 	if ( ! cr ) {
@@ -1907,8 +1538,6 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 		    (int32_t)sizeof(State12),mstrerror(g_errno));
 		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));}
 	mnew ( st , sizeof(State12) , "PageTagdb" );
-	//st->m_isMasterAdmin    = isAdmin;
-	//st->m_isAssassin = isAssassin;
 
 	// assume we've nothing to add
 	st->m_adding = false;
@@ -1982,25 +1611,12 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 }
 
 bool getTagRec ( State12 *st ) {
-
-	bool doInheritance = st->m_mergeTags;//(bool)merge;
+	bool doInheritance = st->m_mergeTags;
 	char rdbId = RDB_TAGDB;
-	// fbid09729034234.com then use facebookdb
-	//char *host = site.getHost();
-	//if ( strncmp(host,"fbid",4)==0 &&  is_digit(host[4]) )
-	//	rdbId = RDB_FACEBOOKDB;
+
 	// this replaces msg8a
-	if ( ! st->m_msg8a.getTagRec ( &st->m_url,//&site , 
-				       // tell msg8a to try to guess the site
-				       NULL,
-				       st->m_collnum ,
-				       false, // skip dom lookup?
-				       st->m_niceness ,
-				       st ,
-				       sendReplyWrapper ,
-				       &st->m_tagRec ,
-				       doInheritance ,
-				       rdbId))
+	if ( !st->m_msg8a.getTagRec( &st->m_url, st->m_collnum, st->m_niceness, st, sendReplyWrapper, &st->m_tagRec,
+	                             doInheritance, rdbId ))
 		return false;
 
 	return sendReply ( st );
@@ -2014,11 +1630,9 @@ static void sendReplyWrapper2 ( void *state ) {
 	State12 *st = (State12 *)state;
 	// re-get the tags from msg8a since we changed them
 	getTagRec(st);
-	//sendReply2 ( state );
 }
 
 bool sendReply ( void *state ) {
-
 	// get our state class
 	State12 *st = (State12 *) state;
 	// get the request
@@ -2076,9 +1690,8 @@ bool sendReply ( void *state ) {
 				    st->m_niceness ) )
 		return false;
 
-        // . if addTagRecs() doesn't block then sendReply right away
-        // . this returns false if blocks, true otherwise
-        //return sendReply2 ( st );
+	// . if addTagRecs() doesn't block then sendReply right away
+	// . this returns false if blocks, true otherwise
 	return getTagRec ( st );
 }
 
@@ -2109,8 +1722,6 @@ bool sendReply2 ( void *state ) {
 		// extract the socket
 		TcpSocket *s = st->m_socket;
 		// . nuke the state
-		// . first free the buffer, if non-NULL
-		//if (st->m_buf) mfree (st->m_buf, st->m_bufLen, "PageTagdb");
 		mdelete(st, sizeof(State12), "PageTagdb");
 		delete (st);
 		// . send this page
@@ -2157,14 +1768,6 @@ bool sendReply2 ( void *state ) {
 	// it like freezes the silly browser
 	char *uu = st->m_urls;
 	if ( st->m_urlsLen > 100000 ) uu = "";
-	
-
-	//sb.safePrintf ( "<tr bgcolor=#%s><td colspan=2>"
-	//		"<center>"
-	//		"</center>"
-	//		"</td></tr>",
-	//		DARK_BLUE);
-	
 
 	sb.safePrintf ( "<tr class=poo><td>"
 			"<b>urls</b>"
@@ -2187,10 +1790,6 @@ bool sendReply2 ( void *state ) {
 
 			"</td>");
 
-	// text area for adding space separated sites/urls
-	//char *pp = "put sites here";
-	//char *pp = "";
-	//if ( st->m_bufLen > 0 ) pp = st->m_buf; // no, print out "urls"
 	sb.safePrintf (""
 		       "<td width=70%%>"
 		       "<br>"
@@ -2210,10 +1809,6 @@ bool sendReply2 ( void *state ) {
 		      "</td>"
 		      "<td><input name=ufu "
 		      "type=text size=40>"//<br>"
-		      //"<i>file can also be dumped output of "
-		      //"tagdb from the <b>gb dump S ...</b> "
-		      //"command.</i>"
-		      //"<br><br>" );
 		      "</td></tr>"
 		      );
 
@@ -2227,7 +1822,7 @@ bool sendReply2 ( void *state ) {
 		      "<input name=username type=text size=6 "
 		      "value=\"admin\"> " 
 		      "</td></tr>"
-		      );//,st->m_username);
+		      );
 
 	// as a safety, this must be checked for any delete operation
 	sb.safePrintf ("<tr class=poo><td><b>delete operation</b>"
@@ -2252,17 +1847,6 @@ bool sendReply2 ( void *state ) {
 		       // should be ok
 		       "<input type=submit name=get "
 		       "value=\"Get Tags\" border=0>"
-
-		       //"<input type=submit name=get "
-		       //"value=\"get best rec\" border=0>"
-
-		       //"<input type=submit name=tags "
-		       //"value=\"merge all matching recs\" border=0>"
-
-		       //"<input type=submit name=nuke "
-		       //"value=\"delete recs\" border=0>"
-
-		       //		  "</form>"
 		       "</center>"
 		       "</td></tr></table>"
 		       "<br><br>"
@@ -2291,7 +1875,6 @@ bool sendReply2 ( void *state ) {
 		// skip dups
 		if ( jtag->m_type == TT_DUP ) continue;
 		// count # of TagRecs contributing to the tags
-		//if ( tag && tag->m_type == ST_SITE ) numTagRecs++;
 		if ( jtag && jtag->isType("site") ) numTagRecs++;
 	}
 
@@ -2309,7 +1892,6 @@ bool sendReply2 ( void *state ) {
 
 	// headers
 	sb.safePrintf("<tr bgcolor=#%s>"
-		      //"<td><b>delete?</b></td>"
 		      "<td><b>del?</b></td>"
 		      "<td><b>tag name</b></td>"
 		      "<td><b>tag value</b></td>"
@@ -2479,16 +2061,9 @@ bool sendReply2 ( void *state ) {
 	
 	// clear g_errno, if any, so our reply send goes through
 	g_errno = 0;
-	// calculate buffer length
-	// extract the socket
-	//TcpSocket *s = st->m_socket;
 	// . nuke the state
-	// . first free the buffer, if non-NULL
-	//if ( st->m_buf ) mfree ( st->m_buf , st->m_bufLen , "PageTagdb" );
 	mdelete ( st , sizeof(State12) , "PageTagdb" );
 	delete (st);
-	// print it out
-	//logf(LOG_DEBUG,"tagdb: %s",sb.getBufStart()+sb.length()-256);
 	// . send this page
 	// . encapsulates in html header and tail
 	// . make a Mime
@@ -2768,8 +2343,6 @@ int32_t Tagdb::getMinSiteInlinks ( uint32_t hostHash32 ) {
 	Entry2 *fp = NULL;
 	int32_t i = ne / 2;
 	int32_t step = ne / 2;
-	int32_t count = 0;
-	int32_t divs = 0;
 	int32_t dir = 0;
 
  loop1:
@@ -2816,8 +2389,6 @@ int32_t Tagdb::getMinSiteInlinks ( uint32_t hostHash32 ) {
 	fp = (Entry2 *)m_siteBuf2.getBufStart();
 	i = ne / 2;
 	step = ne / 2;
-	count = 0;
-	divs = 0;
 	dir = 0;
 
  loop2:

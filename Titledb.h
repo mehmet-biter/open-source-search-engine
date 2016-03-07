@@ -10,18 +10,14 @@
 #define DOCID_MASK   (0x0000003fffffffffLL)
 #define MAX_DOCID    DOCID_MASK
 
-// replace m_docQuality and m_prevQuality with
-// m_siteNumInlinks, m_sitePop and m_prevSiteNumInlinks
-//#define TITLEREC_CURRENT_VERSION 114
-// fix bug with badly serialized tagrecs in ptr_tagRec
-//#define TITLEREC_CURRENT_VERSION 118
-// add new link stats into LinkInfo
-//#define TITLEREC_CURRENT_VERSION 119
+// Starting version when Gigablast was open-sourced
 //#define TITLEREC_CURRENT_VERSION 120
+
+// better parsing of <script> tags
 //#define TITLEREC_CURRENT_VERSION 121
 
 // BR 20160106. New version that eliminates values in posdb that we do not need.
-// See checks for m_version >= 122 in XmlDoc.cpp
+// we also stop decoding &amp; &gt; &lt; to avoid losing information
 #define TITLEREC_CURRENT_VERSION 	122
 
 #include "Rdb.h"

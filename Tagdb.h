@@ -8,8 +8,6 @@
 #include "Xml.h"
 #include "Url.h"
 #include "Loop.h"
-//#include "DiskPageCache.h"
-//#include "CollectionRec.h"
 #include "SafeBuf.h"
 #include "Msg0.h"
 
@@ -19,7 +17,6 @@
 
 bool isTagTypeUnique    ( int32_t tt ) ;
 bool isTagTypeIndexable ( int32_t tt ) ;
-//bool isTagTypeString ( int32_t tt ) ;
 int32_t hexToBinary     ( char *src , char *srcEnd , char *dst , bool decrement );
 
 // . Tag::m_type is this if its a dup in the TagRec
@@ -49,7 +46,6 @@ class Tag {
 	bool printToBuf             ( SafeBuf *sb );
 	bool printToBufAsAddRequest ( SafeBuf *sb );
 	bool printToBufAsXml        ( SafeBuf *sb );
-	bool printToBufAsXml2       ( SafeBuf *sb );
 	bool printToBufAsHtml       ( SafeBuf *sb , char *prefix );
 	bool printToBufAsTagVector  ( SafeBuf *sb );
 	// just print the m_data...
@@ -57,7 +53,7 @@ class Tag {
 	bool isType                 ( char    *t  );
 	bool isIndexable            ( ) {
 		return isTagTypeIndexable ( m_type ); }
-	//( m_dataSize == 1 || isType("meta") ); };
+
 	// for parsing output of printToBuf()
 	int32_t setFromBuf            ( char *p , char *pend ) ;
 	int32_t setDataFromBuf        ( char *p , char *pend ) ;
@@ -85,9 +81,6 @@ class Tag {
 	// . prevent multiple turk voters from same ip!
 	int32_t     m_ip;        
 
-	// each tag in a TagRec now has a unique id for ez deletion
-	//int32_t     m_tagId;
-
 	// the "type" of tag. see the TagDesc array in Tagdb.cpp for a list
 	// of all the tag types. m_type is a hash of the type name.
 	int32_t     m_type;
@@ -103,16 +96,8 @@ int32_t  getTagTypeFromStr( const char *tagTypeName , int32_t tagnameLen = -1 );
 // . convert ST_DOMAIN_SQUATTER to "domain_squatter"
 char *getTagStrFromType ( int32_t tagType ) ;
 
-// . max # of tags any one site or url can have
-// . even AFTER the "inheritance loop"
-// . includes the 4 bytes used for size and # of tags
-//#define MAX_TAGREC_SIZE 1024
-
 // max "oustanding" msg0 requests sent by TagRec::lookup()
 #define MAX_TAGDB_REQUESTS 3
-
-// . the latest version of the TagRec
-//#define TAGREC_CURRENT_VERSION 0
 
 class TagRec {
 public:
@@ -249,8 +234,7 @@ class Tagdb  {
 	// . TODO: specialized cache because to store pre-parsed tagdb recs
 	// . TODO: have m_useSeals parameter???
 	bool init  ( );
-	bool init2 ( int32_t treeMem );
-	
+
 	bool verify ( char *coll );
 
 	bool addColl ( char *coll, bool doVerify = true );
@@ -308,18 +292,8 @@ class Msg8a {
 	//   i.e. site tags are also propagated accordingly
 	// . closest matching "site" is used as the "site" (the site url)
 	// . stores the tagRec in your "tagRec"
-	bool getTagRec ( Url      *url              , 
-			 char     *site , // set to NULL to auto set
-			 //char     *coll             , 
-			 collnum_t collnum,
-			 //bool      useCanonicalName ,
-			 bool skipDomainLookup ,
-			 int32_t      niceness         ,
-			 void     *state            ,
-			 void    (* callback)(void *state ),
-			 TagRec   *tagRec           ,
-			 bool      doInheritance = true ,
-			 char      rdbId         = RDB_TAGDB);
+	bool getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *state, void (*callback)( void * ),
+	                TagRec *tagRec, bool doInheritance, char rdbId );
 	
 	bool launchGetRequests();
 	void gotAllReplies ( ) ;

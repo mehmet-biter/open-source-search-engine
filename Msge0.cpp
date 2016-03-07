@@ -231,22 +231,11 @@ bool Msge0::sendMsg8a ( int32_t i ) {
 	// advance it
 	m_slabPtr += sizeof(TagRec);
 
-	// skip for debug
-	//return doneSending(i);
-	
 	// . this now employs the tagdb filters table for lookups
 	// . that is really a hack until we find a way to identify subsites
 	//   on a domain automatically, like blogspot.com/users/harry/ is a 
 	//   subsite.
-	if ( ! m->getTagRec ( &m_urls[i]    ,
-			      NULL, // sites[i] ,
-			      m_collnum        ,
-			      // if domain is banned, we will miss that here!
-			      true          , // skip domain lookup?
-			      m_niceness    ,
-			      m             , // state
-			      gotTagRecWrapper ,
-			      m_tagRecPtrs[n]) )
+	if ( !m->getTagRec( &m_urls[i], m_collnum, m_niceness, m, gotTagRecWrapper, m_tagRecPtrs[n], false, 0 ))
 		return false;
 	return doneSending ( i );
 }
