@@ -13,11 +13,6 @@ bool verifyUtf8 ( const char *txt , int32_t tlen ) ;
 
 
 class SafeBuf;
-// this too
-char *strncasestr( char *haystack, int32_t haylen, const char *needle);
-static inline const char *strncasestr( const char *haystack, int32_t haylen, const char *needle) {
-	return strncasestr(const_cast<char *>(haystack), haylen, needle);
-}
 
 // just like sprintf(s,"%"UINT64"",n), but we insert commas
 int32_t ulltoa ( char *s , uint64_t n ) ;
@@ -88,10 +83,19 @@ double    atof2       ( const char *s, int32_t len ) ;
 double    atod2       (       char *s, int32_t len ) ;
 bool      atob        ( const char *s, int32_t len ) ;
 
-// like strstr but haystack need not be NULL terminated
+char *strncasestr( char *haystack, int32_t haylen, const char *needle);
+static inline const char *strncasestr( const char *haystack, int32_t haylen, const char *needle) {
+	return strncasestr(const_cast<char *>(haystack), haylen, needle);
+}
 char *strncasestr ( char *haystack , const char *needle , int32_t haystackSize ) ;
-char *strncasestr ( char *haystack , const char *needle , 
-		    int32_t haystackSize, int32_t needleSize ) ;
+static inline const char *strncasestr( const char *haystack, const char *needle, int32_t haystackSize ) {
+	return strncasestr(const_cast<char*>(haystack),needle,haystackSize);
+}
+char *strncasestr( char *haystack , const char *needle, int32_t haystackSize, int32_t needleSize ) ;
+static inline char *strncasestr( const char *haystack, const char *needle, int32_t haystackSize, int32_t needleSize ) {
+	return strncasestr(const_cast<char*>(haystack),needle,haystackSize,needleSize);
+}
+
 
 // independent of case
 char *gb_strcasestr ( char *haystack , const char *needle );
