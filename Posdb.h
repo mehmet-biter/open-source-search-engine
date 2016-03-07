@@ -241,7 +241,7 @@ class Posdb {
 				 MAXHASHGROUP,
 				 MAXLANGID,
 				 MAXMULTIPLIER,
-				 MAXISSYNONYM, // issynonym/etc.
+				 true, // issynonym/etc.
 				 false, // isdelkey
 				 true);// shard by termid?
 	};
