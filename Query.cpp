@@ -2213,6 +2213,8 @@ bool Query::setQWords ( char boolFlag ,
 		// . raw phrase termId
 		uint64_t pid = 0LL;
 
+		phrases.getMinWordsInPhrase(i,(int64_t *)&pid);;
+
 		// store it
 		qw->m_rawPhraseId = pid;
 

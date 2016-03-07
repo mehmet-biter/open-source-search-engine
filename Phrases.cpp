@@ -262,3 +262,15 @@ char *Phrases::getPhrase(int32_t i, int32_t *phrLen) {
 	// return ptr to buf
 	return buf;
 }
+
+int32_t Phrases::getMinWordsInPhrase ( int32_t i , int64_t *pid ) {
+	*pid = 0LL;
+
+	if ( m_numWordsTotal2[i] ) {
+		*pid = m_phraseIds2[i];
+		return m_numWordsTotal2[i];
+	}
+
+	return 0;
+}
+

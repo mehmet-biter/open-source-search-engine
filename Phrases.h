@@ -39,6 +39,8 @@ public:
 		return m_numWordsTotal2[i];
 	}
 
+    int32_t  getMinWordsInPhrase( int32_t i , int64_t *pid ) ;
+
 private:
 	// . called by Phrases::set() above for each i
 	// . we set phraseSpam to 0 to 100% typically
