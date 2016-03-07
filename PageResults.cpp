@@ -31,8 +31,8 @@ static void gotResultsWrapper  ( void *state ) ;
 static void gotState           ( void *state ) ;
 static bool gotResults         ( void *state ) ;
 
-bool replaceParm ( char *cgi , SafeBuf *newUrl , HttpRequest *hr ) ;
-bool replaceParm2 ( char *cgi , SafeBuf *newUrl , 
+bool replaceParm ( const char *cgi , SafeBuf *newUrl , HttpRequest *hr ) ;
+bool replaceParm2 ( const char *cgi , SafeBuf *newUrl , 
 		    char *oldUrl , int32_t oldUrlLen ) ;
 
 
@@ -5210,13 +5210,11 @@ bool printJsonItemInCSV ( char *json , SafeBuf *sb , State0 *st ) {
 class MenuItem {
 public:
 	int32_t  m_menuNum;
-	char *m_title;
+	const char *m_title;
 	// we append this to the url
-	char *m_cgi;
+	const char *m_cgi;
 	char  m_tmp[25];
-	char *m_icon; // for languages - the language flag
-	char  m_iconWidth;
-	char  m_iconHeight;
+	const char *m_icon; // for languages - the language flag
 };
 
 static MenuItem s_mi[200];
@@ -5321,7 +5319,7 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 		for ( int32_t i = 0 ; i < langLast ; i++ ) {
 			s_mi[n].m_menuNum  = menuNum;
 			s_mi[n].m_title    = getLanguageString(i);
-			char *abbr = getLanguageAbbr(i);
+			const char *abbr = getLanguageAbbr(i);
 			snprintf(s_mi[n].m_tmp,10,"qlang=%s",abbr);
 			s_mi[n].m_cgi      = s_mi[n].m_tmp;
 			s_mi[n].m_icon     = g_flagBytes[i]; //base64encoded
@@ -5832,7 +5830,7 @@ bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 	return true;
 }
 
-bool replaceParm ( char *cgi , SafeBuf *newUrl , HttpRequest *hr ) { 
+bool replaceParm ( const char *cgi , SafeBuf *newUrl , HttpRequest *hr ) { 
 	if ( ! cgi[0] ) return true;
 	// get original request url. this is not \0 terminated
 	char *src    = hr->m_origUrlRequest;
@@ -5840,22 +5838,22 @@ bool replaceParm ( char *cgi , SafeBuf *newUrl , HttpRequest *hr ) {
 	return replaceParm2 ( cgi ,newUrl, src, srcLen );
 }
 
-bool replaceParm2 ( char *cgi , SafeBuf *newUrl , 
+bool replaceParm2 ( const char *cgi , SafeBuf *newUrl , 
 		    char *oldUrl , int32_t oldUrlLen ) {
 
 	char *src    = oldUrl;
 	int32_t  srcLen = oldUrlLen;
 
-	char *srcEnd = src + srcLen;
+	const char *srcEnd = src + srcLen;
 
-	char *equal = strstr(cgi,"=");
+	const char *equal = strstr(cgi,"=");
 	if ( ! equal ) 
 		return log("results: %s has no equal sign",cgi);
 	int32_t cgiLen = equal - cgi;
 
-	char *found = NULL;
+	const char *found = NULL;
 
-	char *p = src;
+	const char *p = src;
 
  tryagain:
 
@@ -5891,7 +5889,7 @@ bool replaceParm2 ( char *cgi , SafeBuf *newUrl ,
 	// then insert our new cgi there
 	if ( ! newUrl->safeStrcpy ( cgi ) ) return false;
 	// then resume it
-	char *foundEnd = strncasestr ( found , "&" , srcEnd - found );
+	const char *foundEnd = strncasestr ( found , "&" , srcEnd - found );
 	// if nothing came after...
 	if ( ! foundEnd ) {
 		if ( ! newUrl->nullTerm() ) return false;
