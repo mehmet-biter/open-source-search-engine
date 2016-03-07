@@ -212,7 +212,7 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 
 #ifdef _VALGRIND_
 		char vbits;
-		VALGRIND_GET_VBITS(t+tlen,vbits,1);
+		(void)VALGRIND_GET_VBITS(t+tlen,vbits,1);
 		VALGRIND_MAKE_MEM_DEFINED(t+tlen,1);
 #endif
 		char tmp = t[tlen];
@@ -221,7 +221,7 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 			((char*)t)[tlen] = '\0'; //hack
 		}
 #ifdef _VALGRIND_
-		VALGRIND_SET_VBITS(t+tlen,vbits,1);
+		(void)VALGRIND_SET_VBITS(t+tlen,vbits,1);
 #endif
 
 		log(LOG_DEBUG, "build: attempting to decode unicode url %s pos at %"INT32, t, nonAsciiPos);
