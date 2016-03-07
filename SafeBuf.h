@@ -1,8 +1,6 @@
 #ifndef _SAFEBUF_H_
 #define _SAFEBUF_H_
 
-//#include "Mem.h"
-//#include "Unicode.h"
 #include "gb-include.h"
 
 /**

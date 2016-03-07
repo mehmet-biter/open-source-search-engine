@@ -6,7 +6,6 @@
 #include "Xml.h"
 #include "Pos.h"
 #include "Matches.h"
-#include "XmlDoc.h"
 
 Summary::Summary()
     : m_summaryLen(0)
