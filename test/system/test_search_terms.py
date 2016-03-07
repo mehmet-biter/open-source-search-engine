@@ -7,7 +7,7 @@ import pytest
     ('to be or not to be',  ['to be', 'be or', 'or not', 'not to', 'to', 'be', 'or']),
     ('html',                ['html', 'Hypertext Markup Language'])
 ])
-def test_search_language_hint(gb_api, query, expected_terms):
+def test_search_terms(gb_api, query, expected_terms):
     result = gb_api.search(query)
 
     result_terms = []
