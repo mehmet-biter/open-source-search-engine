@@ -1,7 +1,7 @@
 // Matt Wells, copyright Jul 2008
 
-#ifndef _TAGDB_H_
-#define _TAGDB_H_
+#ifndef TAGDB_H
+#define TAGDB_H
 
 #include "Conf.h"       // for setting rdb from Conf file
 #include "Rdb.h"
@@ -34,13 +34,8 @@ class Tag {
 	int32_t  getSize    ( ) { return sizeof(key128_t) + 4 + m_recDataSize; };
 	int32_t  getRecSize ( ) { return sizeof(key128_t) + 4 + m_recDataSize; };
 
-	void set ( const char *site ,
-		   const char *tagname ,
-		   int32_t  timestamp ,
-		   const char *user ,
-		   int32_t  ip ,
-		   const char *data ,
-		   int32_t  dataSize );
+	void set ( const char *site, const char *tagname, int32_t  timestamp, const char *user,
+	           int32_t ip, const char *data, int32_t  dataSize );
 
 	int32_t print ( ) ; 
 	bool printToBuf             ( SafeBuf *sb );
@@ -293,7 +288,7 @@ class Msg8a {
 	// . closest matching "site" is used as the "site" (the site url)
 	// . stores the tagRec in your "tagRec"
 	bool getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *state, void (*callback)( void * ),
-	                TagRec *tagRec, bool doInheritance, char rdbId );
+	                TagRec *tagRec, bool doInheritance = true, char rdbId = RDB_TAGDB );
 	
 	bool launchGetRequests();
 	void gotAllReplies ( ) ;
@@ -308,7 +303,6 @@ class Msg8a {
 	void     *m_state;
 
 	Msg0    m_msg0s[MAX_TAGDB_REQUESTS];
-
 
 	key128_t m_siteStartKey ;
 	key128_t m_siteEndKey   ;

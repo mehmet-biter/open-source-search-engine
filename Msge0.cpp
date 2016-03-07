@@ -235,7 +235,7 @@ bool Msge0::sendMsg8a ( int32_t i ) {
 	// . that is really a hack until we find a way to identify subsites
 	//   on a domain automatically, like blogspot.com/users/harry/ is a 
 	//   subsite.
-	if ( !m->getTagRec( &m_urls[i], m_collnum, m_niceness, m, gotTagRecWrapper, m_tagRecPtrs[n], false, 0 ))
+	if ( !m->getTagRec( &m_urls[i], m_collnum, m_niceness, m, gotTagRecWrapper, m_tagRecPtrs[n] ))
 		return false;
 	return doneSending ( i );
 }
