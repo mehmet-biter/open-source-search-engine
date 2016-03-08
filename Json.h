@@ -6,8 +6,6 @@
 #define JT_STRING 4
 #define JT_ARRAY 5
 #define JT_OBJECT 6
-	
-//#define JT_IsReference 256
 
 #include "gb-include.h"
 #include "Unicode.h"
@@ -75,8 +73,6 @@ class Json {
  public:
 
 	JsonItem *parseJsonStringIntoJsonItems ( const char *json , int32_t niceness );
-
-	bool printToString(SafeBuf& out);
 
 	JsonItem *getFirstItem ( ) ;
 
