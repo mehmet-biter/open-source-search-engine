@@ -2711,7 +2711,6 @@ void doCmdAll ( int fd, void *state ) {
 					 s_hostId2 ) ) { // -1 means all
 		log("cmd: error sending command: %s",mstrerror(g_errno));
 		exit(0);
-		return;
 	}
 	// wait for it
 	log("cmd: sent command");
@@ -4010,7 +4009,7 @@ void dumpDoledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTr
 		if ( ! g_spiderdb.isSpiderRequest((key128_t *)srec) ) {
 			// error!
 			continue;
-			char *xx=NULL;*xx=0; }
+		}
 		// cast it
 		SpiderRequest *sreq = (SpiderRequest *)srec;
 		// skip negatives

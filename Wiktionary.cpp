@@ -1649,9 +1649,6 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	addWord ( word, flag , langId , normBuf ); // start );
 	// try another line
 	goto lineLoop;
-
-	// success
-	return true;
 }
 
 bool Wiktionary::addWord ( char *word , 

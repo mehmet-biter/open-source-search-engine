@@ -367,7 +367,7 @@ bool CommandDeleteColl2 ( char *rec , WaitEntry *we ) {
 
 	if ( collnum < 0 ) {
 		g_errno = ENOCOLLREC;
-		return true;;
+		return true;
 	}
 	// the delete might block because the tree is saving and we can't
 	// remove our collnum recs from it while it is doing that
