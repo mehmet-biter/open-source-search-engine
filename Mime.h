@@ -2,8 +2,8 @@
 
 // . class to parse a standard MIME file
 
-#ifndef _MIME_H_
-#define _MIME_H_
+#ifndef GB_MIME_H
+#define GB_MIME_H
 
 #include <time.h>   // time_t mktime()
 #include "Url.h"
@@ -36,4 +36,4 @@ class Mime {
 	char *m_mimeEnd;
 };
 
-#endif
+#endif // GB_MIME_H

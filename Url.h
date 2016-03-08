@@ -3,8 +3,8 @@
 // . a class for parsing urls
 // . used by many other classes
 
-#ifndef URL_H
-#define URL_H
+#ifndef GB_URL_H
+#define GB_URL_H
 
 #define MAX_URL_LEN 1024
 
@@ -259,6 +259,4 @@ private:
 	int32_t    m_anchorLen;
 };
 
-#endif
-
-	
+#endif // GB_URL_H

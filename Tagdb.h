@@ -1,7 +1,7 @@
 // Matt Wells, copyright Jul 2008
 
-#ifndef TAGDB_H
-#define TAGDB_H
+#ifndef GB_TAGDB_H
+#define GB_TAGDB_H
 
 #include "Conf.h"       // for setting rdb from Conf file
 #include "Rdb.h"
@@ -333,7 +333,7 @@ class Msg8a {
 	bool  m_doInheritance;
 };
 
-#endif
+#endif // GB_TAGDB_H
 
 // Lookup order for the url hostname.domainname.com/mydir/mypage.html 
 // (aka 192.0.2.4/mydir/mypage.html):

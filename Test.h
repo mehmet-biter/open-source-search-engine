@@ -1,7 +1,7 @@
 // Copyright Matt Wells 2009
 
-#ifndef _TEST_H_
-#define _TEST_H_
+#ifndef GB_TEST_H
+#define GB_TEST_H
 
 #include "Msg4.h"
 #include "Spider.h"
@@ -68,4 +68,4 @@ class Test {
 // the global class
 extern Test g_test;
 
-#endif
+#endif // GB_TEST_H

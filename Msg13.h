@@ -6,8 +6,8 @@
 // . if m_compressReply then the host compressed the http reply before
 //   sending it back to you via udp
 
-#ifndef _MSG13_H_
-#define _MSG13_H_
+#ifndef GB_MSG13_H
+#define GB_MSG13_H
 
 #include "Url.h" // MAX_URL_LEN
 #include "SpiderProxy.h" // MAXUSERNAMEPWD
@@ -209,4 +209,4 @@ bool addTestSpideredDate ( Url *u , int32_t  spideredTime     , char *testDir ) 
 
 extern RdbCache s_hammerCache;
 
-#endif
+#endif // GB_MSG13_H

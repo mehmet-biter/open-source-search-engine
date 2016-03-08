@@ -1,5 +1,5 @@
-#ifndef _MSG3A_H_
-#define _MSG3A_H_
+#ifndef GB_MSG3A_H_
+#define GB_MSG3A_H_
 
 #include "Msg39.h"
 #include "Msg0.h"
@@ -148,4 +148,4 @@ public:
 	int32_t m_cursor;
 };
 
-#endif
+#endif // GB_MSG3A_H

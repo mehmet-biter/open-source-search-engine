@@ -1,7 +1,7 @@
 // Matt Wells, Copyright Apr 2004
 
-#ifndef _PINGSERVER_H_
-#define _PINGSERVER_H_
+#ifndef GB_PINGSERVER_H
+#define GB_PINGSERVER_H
 
 #include "gb-include.h"
 #include "Hostdb.h"
@@ -147,5 +147,4 @@ bool sendEmailThroughMandrill ( class EmailInfo *ei ) ;
 // send email and webhook notification
 bool sendNotification ( class EmailInfo *ei );
 
-#endif
-
+#endif // GB_PINGSERVER_H

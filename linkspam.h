@@ -1,7 +1,7 @@
 // Matt Wells, copyright Nov 2001
 
-#ifndef _LINKSPAM_H_
-#define _LINKSPAM_H_
+#ifndef GB_LINKSPAM_H
+#define GB_LINKSPAM_H
 
 #include "gb-include.h"
 #include "ip.h"
@@ -26,4 +26,4 @@ bool isLinkSpam  ( class Url       *linker         ,
 		   int32_t             linkNode       , 
 		   int32_t             niceness       );
 
-#endif
+#endif // GB_LINKSPAM_H

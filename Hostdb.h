@@ -9,8 +9,8 @@
 // . format of hosts in the xml conf file
 // . <host0> <ip> 1.2.3.4 </> <port> 1234 </>
 
-#ifndef _HOSTDB_H_
-#define _HOSTDB_H_
+#ifndef GB_HOSTDB_H
+#define GB_HOSTDB_H
 
 #include <sys/ioctl.h>            // ioctl() - get our ip address from a socket
 #include <net/if.h>               // for struct ifreq passed to ioctl()    
@@ -523,4 +523,4 @@ inline uint32_t getShardNumFromDocId ( int64_t d ) {
 	return g_hostdb.getShardNumFromDocId ( d );
 };
 
-#endif
+#endif // GB_HOSTDB_H

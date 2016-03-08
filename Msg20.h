@@ -2,8 +2,8 @@
 
 // get various information from a query and a docId, like summary, title, etc.
 
-#ifndef MSG20_H
-#define MSG20_H
+#ifndef GB_MSG20_H
+#define GB_MSG20_H
 
 #include "UdpServer.h"
 #include "Hostdb.h"
@@ -349,5 +349,4 @@ public:
 	void      *m_state;
 };
 
-#endif
-
+#endif // GB_MSG20_H

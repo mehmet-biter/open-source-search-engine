@@ -1,7 +1,7 @@
 // Matt Wells, copyright Aug 2005
 
-#ifndef _TITLE_H_
-#define _TITLE_H_
+#ifndef GB_TITLE_H
+#define GB_TITLE_H
 
 #include <stdint.h>
 
@@ -60,4 +60,4 @@ private:
 	int32_t m_titleTagEnd;
 };
 
-#endif
+#endif // GB_TITLE_H

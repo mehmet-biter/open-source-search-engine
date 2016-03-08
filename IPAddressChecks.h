@@ -1,5 +1,5 @@
-#ifndef IPADDRESS_CHECKS_H_
-#define IPADDRESS_CHECKS_H_
+#ifndef GB_IPADDRESSCHECKS_H
+#define GB_IPADDRESSCHECKS_H
 
 #include <inttypes.h>
 
@@ -20,4 +20,4 @@ bool is_internal_net_ip(uint32_t ip/*network-order*/);
 bool is_trusted_protocol_ip(uint32_t ip/*network-order*/);
 
 
-#endif
+#endif // GB_IPADDRESSCHECKS_H

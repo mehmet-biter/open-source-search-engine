@@ -1,5 +1,5 @@
-#ifndef _SECTIONS_H_
-#define _SECTIONS_H_
+#ifndef GB_SECTIONS_H
+#define GB_SECTIONS_H
 
 #include "HashTableX.h"
 #include "Msg0.h"
@@ -300,4 +300,4 @@ public:
 	float m_numSampled;
 };
 
-#endif
+#endif // GB_SECTIONS_H

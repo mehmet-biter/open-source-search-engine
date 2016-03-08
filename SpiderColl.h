@@ -1,7 +1,7 @@
 // Matt Wells, copyright Nov 2002
 
-#ifndef SPIDERCOLLH
-#define SPIDERCOLLH
+#ifndef GB_SPIDERCOLL_H
+#define GB_SPIDERCOLL_H
 
 
 #include "Rdb.h"
@@ -19,9 +19,6 @@
 #include "RdbCache.h"
 #include "Msg12.h"
 #include "Spider.h"
-
-
-
 
 
 #define OVERFLOWLISTSIZE 200
@@ -289,4 +286,4 @@ class SpiderColl {
 key_t makeWaitingTreeKey ( uint64_t spiderTimeMS , int32_t firstIp );
 
 
-#endif
+#endif // GB_SPIDERCOLL_H

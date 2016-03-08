@@ -1,7 +1,7 @@
 // Matt Wells, copyright Aug 2012
 
-#ifndef _WIKTIONARY_H_
-#define _WIKTIONARY_H_
+#ifndef GB_WIKTIONARY_H
+#define GB_WIKTIONARY_H
 
 #define WF_NOUN         0x0001
 #define WF_VERB         0x0002
@@ -177,4 +177,4 @@ class Wiktionary {
 
 extern class Wiktionary g_wiktionary;
 
-#endif
+#endif // GB_WIKTIONARY_H

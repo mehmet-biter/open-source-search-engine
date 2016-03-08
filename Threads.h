@@ -3,8 +3,8 @@
 
 // . this calls let's us use threads
 
-#ifndef _GBTHREADS_
-#define _GBTHREADS_
+#ifndef GB_THREADS_H
+#define GB_THREADS_H
 
 #define MAX_THREAD_QUEUES 7
 
@@ -328,4 +328,4 @@ extern class Threads g_threads;
 
 void ohcrap ( void *state , class ThreadEntry *t ) ;
 
-#endif
+#endif // GB_THREADS_H

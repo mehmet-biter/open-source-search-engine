@@ -2,8 +2,8 @@
 
 // . db of XmlDocs
 
-#ifndef _TITLEDB_H_
-#define _TITLEDB_H_
+#ifndef GB_TITLEDB_H
+#define GB_TITLEDB_H
 
 // how many bits is our docId? (4billion * 64 = 256 billion docs)
 #define NUMDOCIDBITS 38
@@ -163,4 +163,4 @@ class Titledb {
 extern class Titledb g_titledb;
 extern class Titledb g_titledb2;
 
-#endif
+#endif // GB_TITLEDB_H

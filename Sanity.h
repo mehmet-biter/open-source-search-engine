@@ -1,7 +1,5 @@
-
-
-#ifndef _SANITY_H_
-#define _SANITY_H_
+#ifndef GB_SANITY_H
+#define GB_SANITY_H
 
 #define GBASSERT(c)            (gb_sanityCheck((c),__FILE__,__FUNCTION__,__LINE__))
 #define GBASSERTMSG(c, msg)    (gb_sanityCheckMsg((c),(msg),__FILE__,__FUNCTION__,__LINE__))
@@ -26,5 +24,4 @@ inline void gb_sanityCheckMsg ( bool cond, char *msg,
 }
 
 
-#endif // _SANITY_H_
-
+#endif // GB_SANITY_H

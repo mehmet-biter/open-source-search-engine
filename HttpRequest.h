@@ -2,8 +2,8 @@
 
 // . class to parse and form HTTP requests
 
-#ifndef _HTTPREQUEST_H_
-#define _HTTPREQUEST_H_
+#ifndef GB_HTTPREQUEST_H
+#define GB_HTTPREQUEST_H
 
 // . allow for up to 256 cgi fields
 // . this was stopping us from having more than about 253 banned ips, so i
@@ -294,4 +294,4 @@ const int HTTP_REQUEST_DEFAULT_REQUEST_VERSION = 2;
 
 int getVersionFromRequest ( HttpRequest *r );
 
-#endif
+#endif // GB_HTTPREQUEST_H

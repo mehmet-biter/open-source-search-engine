@@ -1,5 +1,5 @@
-#ifndef _PAGEPARSER_H_
-#define _PAGEPARSER_H_
+#ifndef GB_PAGEPARSER_H_
+#define GB_PAGEPARSER_H_
 
 // global flag
 extern bool g_inPageParser ;
@@ -16,4 +16,4 @@ extern bool g_inPageInject ;
 
 bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) ;
 
-#endif
+#endif // GB_PAGEPARSER_H

@@ -3,8 +3,8 @@
 // . datagram send control slot
 // . UdpServer stores these things in an RdbTree
 
-#ifndef _UDPSLOT_H_
-#define _UDPSLOT_H_
+#ifndef GB_UDPSLOT_H
+#define GB_UDPSLOT_H
 
 #include "Mem.h"
 #include "UdpProtocol.h"
@@ -463,6 +463,4 @@ class UdpSlot {
 extern int32_t g_cancelAcksSent;
 extern int32_t g_cancelAcksRead;
 
-#endif
-
-
+#endif // GB_UDPSLOT_H

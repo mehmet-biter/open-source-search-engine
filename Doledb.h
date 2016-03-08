@@ -1,7 +1,7 @@
 // Matt Wells, copyright Nov 2002
 
-#ifndef DOLEDB_H
-#define DOLEDB_H
+#ifndef GB_DOLEDB_H
+#define GB_DOLEDB_H
 
 
 #include "Rdb.h"
@@ -129,4 +129,4 @@ extern class Doledb g_doledb;
 
 void nukeDoledb ( collnum_t collnum ) ;
 
-#endif
+#endif // GB_DOLEDB_H

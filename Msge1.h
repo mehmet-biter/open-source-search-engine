@@ -1,9 +1,9 @@
 // Gigablast Inc., copyright November 2007
 
-#define MAX_OUTSTANDING_MSGE1 20
+#ifndef GB_MSGE1_H
+#define GB_MSGE1_H
 
-#ifndef _MSGE1_H_
-#define _MSGE1_H_
+#define MAX_OUTSTANDING_MSGE1 20
 
 #include "MsgC.h"
 #include "Linkdb.h"
@@ -104,4 +104,4 @@ extern bool saveTestBuf ( char *testDir ) ;
 
 void resetTestIpTable ( ) ;
 
-#endif
+#endif // GB_MSGE1_H

@@ -1,7 +1,7 @@
 // Matt Wells, copyright Jul 2001
 
-#ifndef _MATCHES_H_
-#define _MATCHES_H_
+#ifndef GB_MATCHES_H
+#define GB_MATCHES_H
 
 #include "Query.h"
 #include "Words.h"
@@ -148,4 +148,4 @@ class Matches {
 	Pos      m_posArray      [MAX_MATCHGROUPS];
 };
 
-#endif
+#endif // GB_MATCHES_H

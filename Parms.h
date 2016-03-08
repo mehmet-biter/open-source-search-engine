@@ -4,8 +4,8 @@
 // from Parms.cpp. But Parms need to be marked if they contribute to 
 // SearchInput::makeKey() for caching the SERPS.
 
-#ifndef PARMS_H
-#define PARMS_H
+#ifndef GB_PARMS_H
+#define GB_PARMS_H
 
 #include "Rdb.h"
 
@@ -383,5 +383,4 @@ class Parms {
 
 extern Parms g_parms;
 
-#endif
-
+#endif // GB_PARMS_H

@@ -1,7 +1,7 @@
 // Matt Wells, copyright Aug 2005
 
-#ifndef _POPS_H_
-#define _POPS_H_
+#ifndef GB_POPS_H
+#define GB_POPS_H
 
 #define POPS_BUF_SIZE (10*1024)
 
@@ -31,4 +31,4 @@ private:
 	char  m_localBuf [ POPS_BUF_SIZE ];
 };
 
-#endif
+#endif // GB_POPS_H

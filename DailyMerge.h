@@ -2,8 +2,8 @@
 
 // tight merge indexdb and datedb at the given time every day
 
-#ifndef _DAILYMERGE_H_
-#define _DAILYMERGE_H_
+#ifndef GB_DAILYMERGE_H
+#define GB_DAILYMERGE_H
 
 #include "gb-include.h"
 #include "Collectiondb.h"
@@ -29,4 +29,4 @@ public:
 // the global class
 extern DailyMerge g_dailyMerge;
 
-#endif
+#endif // GB_DAILYMERGE_H

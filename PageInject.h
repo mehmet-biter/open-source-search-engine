@@ -1,5 +1,5 @@
-#ifndef GBINJECT_H
-#define GBINJECT_H    
+#ifndef GB_PAGEINJECT_H
+#define GB_PAGEINJECT_H
 
 // for getting list of injections currently being processed on this host
 // for printing in the Spider Queue table in Spider.cpp
@@ -117,4 +117,4 @@ public:
 
 extern bool g_inPageInject;
 
-#endif
+#endif // GB_PAGEINJECT_H

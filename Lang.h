@@ -3,8 +3,8 @@
 // . language detector
 // . TODO: use stopwords in doc to determine the language
 
-#ifndef _LANG_H_
-#define _LANG_H_
+#ifndef GB_LANG_H
+#define GB_LANG_H
 
 #define MAX_LANGUAGES 64
 // for langs 1-55, exclude translingual
@@ -84,4 +84,4 @@ char*    getLanguageAbbr ( unsigned char langId);
 
 bool     isAdult( char *s, int32_t slen, char **loc = NULL );
 
-#endif
+#endif // GB_LANG_H

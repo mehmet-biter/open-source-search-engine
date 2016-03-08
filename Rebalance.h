@@ -1,7 +1,7 @@
 // Matt Wells, Jan 2014
 
-#ifndef REBALANCE_H
-#define REBALANCE_H
+#ifndef GB_REBALANCE_H
+#define GB_REBALANCE_H
 
 #include "gb-include.h"
 #include "types.h"
@@ -54,4 +54,4 @@ class Rebalance {
 
 extern Rebalance g_rebalance;
 
-#endif
+#endif // GB_REBALANCE_H

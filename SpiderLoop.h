@@ -1,7 +1,7 @@
 // Matt Wells, copyright Nov 2002
 
-#ifndef SPIDERLOOPH
-#define SPIDERLOOPH
+#ifndef GB_SPIDERLOOP_H
+#define GB_SPIDERLOOP_H
 
 #include "Rdb.h"
 #include "Conf.h"
@@ -161,4 +161,4 @@ extern class SpiderLoop g_spiderLoop;
 void gotDoledbListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) ;
 void handleRequestc1 ( UdpSlot *slot , int32_t niceness );
 
-#endif
+#endif // GB_SPIDERLOOP_H

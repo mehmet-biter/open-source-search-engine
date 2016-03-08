@@ -17,8 +17,8 @@
 //       which improves performance quite a bit. unsetting TCP_CORK flushes it.
 // TODO: investigate sendfile() (copies data between file descriptors)
 
-#ifndef _HTTPSERVER_H_
-#define _HTTPSERVER_H_
+#ifndef GB_HTTPSERVER_H
+#define GB_HTTPSERVER_H
 
 #define MAX_DOWNLOADS (MAX_TCP_SOCKS-50)
 
@@ -185,6 +185,4 @@ class HttpServer {
 
 extern class HttpServer g_httpServer;
 
-#endif
-
-
+#endif // GB_HTTPSERVER_H

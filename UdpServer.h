@@ -27,8 +27,8 @@
 // . this ACK window helps highPing/highBandwidth connections (distant hosts)
 // . readPoll(), sendAckPoll(), readTimeoutPoll() can call callbacks/handlers
 
-#ifndef _UDPSERVER_H_
-#define _UDPSERVER_H_
+#ifndef GB_UDPSERVER_H
+#define GB_UDPSERVER_H
 
 #include <sys/time.h>          // select()
 #include <sys/types.h>         // select()
@@ -407,5 +407,4 @@ extern int32_t g_dropped;
 extern int32_t g_corruptPackets;
 extern bool g_inHandler;
 
-#endif
-
+#endif // GB_UDPSERVER_H

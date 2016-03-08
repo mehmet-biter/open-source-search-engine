@@ -1,5 +1,5 @@
-#ifndef _XML_H_
-#define _XML_H_
+#ifndef GB_XML_H
+#define GB_XML_H
 
 // . this is used for parsing tagdb records
 // . used for pasrsing tagdb records, conf file, and html/xml documents
@@ -185,4 +185,4 @@ private:
 	int32_t m_niceness;
 };
 
-#endif
+#endif // GB_XML_H

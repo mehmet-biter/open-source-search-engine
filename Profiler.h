@@ -1,7 +1,7 @@
+#ifndef GB_PROFILER_H
+#define GB_PROFILER_H
 
 #define EI_NIDENT 16
-#ifndef _PROFILER_H_
-#define _PROFILER_H_
 #define SHT_SYMTAB 2
 #define SHT_DYNSYM 11
 
@@ -10,7 +10,6 @@
 #include "Parms.h"
 #include "SafeBuf.h"
 #include "Pages.h"
-//#include "HashTableT.h"
 #include "HashTableX.h"
 
 typedef struct elf_internal_ehdr {
@@ -281,4 +280,4 @@ protected:
 extern Profiler g_profiler;
 
 
-#endif
+#endif // GB_PROFILER_H

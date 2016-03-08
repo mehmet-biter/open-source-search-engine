@@ -11,8 +11,8 @@
 //   values from the "sites=" and "site=" cgi parms, since they show up with
 //   radio buttons below the search text box on the web page.
 
-#ifndef SEARCHINPUT_H
-#define SEARCHINPUT_H
+#ifndef GB_SEARCHINPUT_H
+#define GB_SEARCHINPUT_H
 
 #include "Query.h" // MAX_QUERY_LEN
 
@@ -209,4 +209,4 @@ public:
 
 };
 
-#endif
+#endif // GB_SEARCHINPUT_H

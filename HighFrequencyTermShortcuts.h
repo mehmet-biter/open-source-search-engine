@@ -1,5 +1,5 @@
-#ifndef HIGHFREQUENCYTERMSHORTCUTS_H_
-#define HIGHFREQUENCYTERMSHORTCUTS_H_
+#ifndef GB_HIGHFREQUENCYTERMSHORTCUTS_H
+#define GB_HIGHFREQUENCYTERMSHORTCUTS_H
 
 #include <inttypes.h>
 #include <map>
@@ -33,4 +33,4 @@ public:
 
 extern HighFrequencyTermShortcuts g_hfts;
 
-#endif //HIGHFREQUENCYTERMSHORTCUTS_H_
+#endif // GB_HIGHFREQUENCYTERMSHORTCUTS_H

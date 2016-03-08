@@ -2,8 +2,8 @@
 
 // . get a TitleRec from url/coll or docId
 
-#ifndef _MSG22_H_
-#define _MSG22_H_
+#ifndef GB_MSG22_H
+#define GB_MSG22_H
 
 #include "Url.h"
 #include "Multicast.h"
@@ -95,4 +95,4 @@ class Msg22 {
 	class Msg22Request *m_r;
 };
 
-#endif
+#endif // GB_MSG22_H

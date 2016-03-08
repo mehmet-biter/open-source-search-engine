@@ -2,14 +2,14 @@
 
 // . highlights the terms in Query "q" in "xml" and puts results in m_buf
 
+#ifndef GB_HIGHLIGHT_H
+#define GB_HIGHLIGHT_H
+
 #include "Words.h"
 #include "Query.h"
 #include "Matches.h"
 #include "Xml.h"
 #include "Url.h"
-
-#ifndef HIGHLIGHT_H
-#define HIGHLIGHT_H
 
 class Highlight {
 public:
@@ -40,5 +40,5 @@ public:
 	int32_t m_numMatches;
 };
 
-#endif
+#endif // GB_HIGHLIGHT_H
 

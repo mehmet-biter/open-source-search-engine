@@ -2,8 +2,8 @@
 
 // . generic hash table class
 
-#ifndef _HASHTABLE_H_
-#define _HASHTABLE_H_
+#ifndef GB_HASHTABLE_H
+#define GB_HASHTABLE_H
 
 #include "Mem.h"     // for mcalloc and mmalloc
 
@@ -83,9 +83,4 @@ class HashTable {
 	char *m_label;
 };
 
-#endif
-
-
-
-
-
+#endif // GB_HASHTABLE_H

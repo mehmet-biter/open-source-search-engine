@@ -1,7 +1,7 @@
 // Matt Wells, copyright Nov 2002
 
-#ifndef SPIDERH
-#define SPIDERH
+#ifndef GB_SPIDER_H
+#define GB_SPIDER_H
 
 #define MAX_SPIDER_PRIORITIES 128
 #define MAX_DAYS 365
@@ -1060,4 +1060,4 @@ key192_t makeWinnerTreeKey ( int32_t firstIp ,
 			     int64_t spiderTimeMS ,
 			     int64_t uh48 );
 
-#endif
+#endif // GB_SPIDER_H

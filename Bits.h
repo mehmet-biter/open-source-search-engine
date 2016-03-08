@@ -7,8 +7,8 @@
 // . TODO: separate words in phrases w/ period OR space so a search for
 //   "chicken.rib" gives you the renderman file, not a recipe or something
 
-#ifndef BITS_H
-#define BITS_H
+#ifndef GB_BITS_H
+#define GB_BITS_H
 
 // . here's the bit define's:
 // . used for phrasing 
@@ -141,4 +141,4 @@ public:
 	wbit_t getAlnumBits( int32_t i );
 };
 
-#endif
+#endif // GB_BITS_H

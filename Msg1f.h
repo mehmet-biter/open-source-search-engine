@@ -3,13 +3,12 @@
 //Get stuff from remote hosts...
 //
 
+#ifndef GB_MSG1F_H
+#define GB_MSG1F_H
 
-#ifndef _MSG1F_H_
-#define _MSG1F_H_
 #include "UdpSlot.h"
 #include "UdpServer.h"
 #include "TcpSocket.h"
-
 
 class Msg1f {
  public:
@@ -31,4 +30,4 @@ class Msg1f {
 };
 
 
-#endif
+#endif // GB_MSG1F_H

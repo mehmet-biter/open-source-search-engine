@@ -1,5 +1,5 @@
-#ifndef UCPROPTABLE_H___
-#define UCPROPTABLE_H___
+#ifndef GB_UCPROPTABLE_H
+#define GB_UCPROPTABLE_H
 
 #include <sys/types.h>
 #include <stdlib.h> //NULL
@@ -37,4 +37,5 @@ private:
 	uint32_t m_tableMask;
 	uint32_t m_numTables;
 };
-#endif
+
+#endif // GB_UCPROPTABLE_H

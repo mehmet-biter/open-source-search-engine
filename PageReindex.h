@@ -1,5 +1,5 @@
-#ifndef _PAGEREINDEX_H_
-#define _PAGEREINDEX_H_
+#ifndef GB_PAGEREINDEX_H
+#define GB_PAGEREINDEX_H
 
 #include "Msg4.h"
 #include "SafeBuf.h"
@@ -42,4 +42,4 @@ public:
 	Query  m_qq;
 };
 
-#endif
+#endif // GB_PAGEREINDEX_H

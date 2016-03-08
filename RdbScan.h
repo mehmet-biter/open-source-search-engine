@@ -8,8 +8,8 @@
 // . originally you could call getNextRecord() before the entire read
 //   was complete. 
 
-#ifndef _RDBSCAN_H_
-#define _RDBSCAN_H_
+#ifndef GB_RDBSCAN_H
+#define GB_RDBSCAN_H
 
 #include "BigFile.h"
 #include "Loop.h"
@@ -92,4 +92,4 @@ class RdbScan {
 	char m_inPageCache;
 };
 
-#endif
+#endif // GB_RDBSCAN_H

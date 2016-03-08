@@ -1,7 +1,7 @@
 // Matt Wells, copyright Nov 2001
 
-#ifndef _DOMAINS_H_
-#define _DOMAINS_H_
+#ifndef GB_DOMAINS_H
+#define GB_DOMAINS_H
 
 // . get the domain name (name + tld) from a hostname
 // . returns NULL if not in the accepted list
@@ -18,4 +18,4 @@ char *getTLD ( char *host , int32_t hostLen ) ;
 // used by getTLD() above
 bool isTLD ( char *tld , int32_t tldLen ) ;
 
-#endif
+#endif // GB_DOMAINS_H

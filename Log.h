@@ -6,8 +6,8 @@
 // . netLogdb can send error msgs for you with it's sendError cmd
 // . sendError ( UdpSlot *slot , char *errFormat , ...); (also logs it)
 
-#ifndef _MYLOG_H_
-#define _MYLOG_H_
+#ifndef GB_LOG_H
+#define GB_LOG_H
 
 #include <stdarg.h>
 #include <stdint.h>
@@ -183,4 +183,4 @@ class Log {
 
 extern class Log g_log;
 
-#endif
+#endif // GB_LOG_H

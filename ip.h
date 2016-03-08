@@ -1,7 +1,7 @@
 // Matt Wells, copyright Jun 2001
 
-#ifndef _IPROUTINES_H_
-#define _IPROUTINES_H_
+#ifndef GB_IP_H
+#define GB_IP_H
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -21,6 +21,4 @@ int32_t  iptop ( int32_t ip ) ;
 // returns number of top bytes in comon
 int32_t  ipCmp ( int32_t ip1 , int32_t ip2 ) ;
 
-
-#endif
-
+#endif // GB_IP_H

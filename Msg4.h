@@ -2,8 +2,8 @@
 
 // like Msg1.h but buffers up the add requests to avoid packet storms
 
-#ifndef _MSG4_H_
-#define _MSG4_H_
+#ifndef GB_MSG4_H
+#define GB_MSG4_H
 
 bool registerHandler4   ( ) ;
 bool saveAddsInProgress ( const char *filenamePrefix );
@@ -91,4 +91,4 @@ class Msg4 {
 // returns false if blocked and callback will be called when flush is done
 bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) ;
 
-#endif
+#endif // GB_MSG4_H

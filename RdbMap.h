@@ -9,8 +9,8 @@
 //   map can be easily freed like during a merge 
 // . TODO: use a getKey(),getOffset(),getDataSize() to make this easier to do
 
-#ifndef _RDBMAP_H_
-#define _RDBMAP_H_
+#ifndef GB_RDBMAP_H
+#define GB_RDBMAP_H
 
 #include "BigFile.h"
 #include "RdbList.h"
@@ -399,4 +399,4 @@ class RdbMap {
 
 };
 
-#endif
+#endif // GB_RDBMAP_H

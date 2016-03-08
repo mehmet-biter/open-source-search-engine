@@ -1,5 +1,5 @@
-#ifndef _SAFEBUF_H_
-#define _SAFEBUF_H_
+#ifndef GB_SAFEBUF_H
+#define GB_SAFEBUF_H
 
 #include "gb-include.h"
 
@@ -328,4 +328,4 @@ public:
 	SafeBuf name(TOKENPASTE2(tmpsafebuf, __LINE__), 1024, STRMACRO(TOKENPASTE2(__FILE__, __LINE__)))
 
 
-#endif
+#endif // GB_SAFEBUF_H

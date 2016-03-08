@@ -1,7 +1,7 @@
 // Matt Wells, copyright Nov 2002
 
-#ifndef _MSG12_H_
-#define _MSG12_H_
+#ifndef GB_MSG12_H
+#define GB_MSG12_H
 
 
 #include "Rdb.h"
@@ -94,4 +94,4 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) ;
 void removeExpiredLocks ( int32_t hostId );
 
 
-#endif
+#endif // GB_MSG12_H

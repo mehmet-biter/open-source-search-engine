@@ -7,8 +7,8 @@
 // . can also do a non-key-ordered dump for quick saving of an RdbTree
 // . Then you can use RdbDump::load() to load it back to the tree
 
-#ifndef _RDBDUMP_H_
-#define _RDBDUMP_H_
+#ifndef GB_RDBDUMP_H
+#define GB_RDBDUMP_H
 
 #include "BigFile.h"
 #include "Loop.h"
@@ -196,4 +196,4 @@ class RdbDump {
 	int32_t m_unforced;
 };
 
-#endif
+#endif // GB_RDBDUMP_H

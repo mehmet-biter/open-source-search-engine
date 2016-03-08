@@ -8,8 +8,8 @@
 //   and we'll have a new primary
 // . if a request times out we try the next dns
 
-#ifndef _DNSSERVER_H_
-#define _DNSSERVER_H_
+#ifndef GB_DNS_H
+#define GB_DNS_H
 
 #include "UdpServer.h"
 #include "DnsProtocol.h"
@@ -229,5 +229,4 @@ class Dns {
 //hash96(hostname) % g_hostdb.m_numHosts = cluster(group)
 extern class Dns g_dns;
 
-#endif
-
+#endif // GB_DNS_H

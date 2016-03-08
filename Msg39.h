@@ -3,8 +3,8 @@
 // . gets the resulting docIds from a query
 // . TODO: use our own facility to replace Msg2? hash a list as it comes.
 
-#ifndef _MSG39_H_
-#define _MSG39_H_
+#ifndef GB_MSG39_H
+#define GB_MSG39_H
 
 #include "UdpServer.h"      // UdpSlot type
 #include "Multicast.h"      // multicast send
@@ -275,4 +275,4 @@ public:
 	bool    m_debug;
 };		
 
-#endif
+#endif // GB_MSG39_H

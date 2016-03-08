@@ -35,8 +35,8 @@
 // more disk space. Use the "cdb" database to couple your data with your
 // keys for you. It is much better suited to handling data of variable length.
 
-#ifndef _RDBTREE_H_
-#define _RDBTREE_H_
+#ifndef GB_RDBTREE_H
+#define GB_RDBTREE_H
 
 #include "Mem.h"          // for g_mem.calloc and g_mem.malloc
 #include "BigFile.h"      // for saving and loading the tree
@@ -469,4 +469,4 @@ class RdbTree {
 	//int32_t m_numNegKeysPerColl[MAX_COLL_RECS];
 };
 
-#endif
+#endif // GB_RDBTREE_H

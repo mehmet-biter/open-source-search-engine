@@ -1,7 +1,7 @@
 // Matt Wells, copyright Nov 2008
 
-#ifndef _IMAGES_H_
-#define _IMAGES_H_
+#ifndef GB_IMAGES_H
+#define GB_IMAGES_H
 
 #include "Msg0.h"
 #include "Msg13.h"
@@ -193,4 +193,4 @@ class Images {
 	int32_t  m_tdy;
 };
 
-#endif
+#endif // GB_IMAGES_H

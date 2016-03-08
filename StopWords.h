@@ -1,7 +1,7 @@
 // Matt Wells, copyright Jul 2001
 
-#ifndef _STOPWORDS_H_
-#define _STOPWORDS_H_
+#ifndef GB_STOPWORDS_H
+#define GB_STOPWORDS_H
 
 #include "Unicode.h"
 
@@ -26,4 +26,4 @@ bool initWordTable(class HashTableX *table, char* words[],
 void resetStopWordTables();
 
 
-#endif
+#endif // GB_STOPWORDS_H

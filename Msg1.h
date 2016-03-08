@@ -11,8 +11,8 @@
 // . TODO: send all at once or at least X at a time, don't wait for each one
 //         before sending the next
 
-#ifndef _MSG1_H_
-#define _MSG1_H_
+#ifndef GB_MSG1_H
+#define GB_MSG1_H
 
 #include "Rdb.h"
 #include "UdpServer.h"
@@ -120,4 +120,4 @@ class Msg1 {
 	char m_buf [ MSG1_BUF_SIZE ];
 };
 
-#endif
+#endif // GB_MSG1_H

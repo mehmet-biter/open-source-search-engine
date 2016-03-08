@@ -5,8 +5,8 @@
 // . will it hash a word as a phrase if it's the only word? No, it will not.
 //   it only hashes 2+ word phrases
 
-#ifndef PHRASES_H
-#define PHRASES_H
+#ifndef GB_PHRASES_H
+#define GB_PHRASES_H
 
 #include "Bits.h"
 #include "Words.h"
@@ -68,4 +68,4 @@ private:
 	Bits *m_bits;
 };
 
-#endif
+#endif // GB_PHRASES_H

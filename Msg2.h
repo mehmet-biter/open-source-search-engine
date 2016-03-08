@@ -1,7 +1,7 @@
 // Matt Wells, copyright July 2001
 
-#ifndef _MSG2_H_
-#define _MSG2_H_
+#ifndef GB_MSG2_H
+#define GB_MSG2_H
 
 #include "Query.h"
 #include "Msg0.h"
@@ -143,4 +143,4 @@ public:
 	int64_t m_startTime;
 };
 
-#endif
+#endif // GB_MSG2_H

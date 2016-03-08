@@ -1,7 +1,7 @@
 // Matt Wells, copyright Mar 2001
 
-#ifndef _DNSPROTOCOL_H_
-#define _DNSPROTOCOL_H_
+#ifndef GB_DNSPROTOCOL_H
+#define GB_DNSPROTOCOL_H
 
 #include "UdpProtocol.h"
 
@@ -168,4 +168,4 @@ public:
 	}
 };
 
-#endif
+#endif // GB_DNSPROTOCOL_H

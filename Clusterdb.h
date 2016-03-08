@@ -24,10 +24,9 @@
 //   					  h = half bit
 //   					  z = del bit
 
-#ifndef _CLUSTERDB_H_
-#define _CLUSTERDB_H_
+#ifndef GB_CLUSTERDB_H
+#define GB_CLUSTERDB_H
 
-//#include "TitleRec.h"  // SAMPLE_VECTOR_SIZE
 #include "Rdb.h"
 #include "Url.h"
 #include "Conf.h"
@@ -121,4 +120,4 @@ private:
 extern class Clusterdb g_clusterdb;
 extern class Clusterdb g_clusterdb2;
 
-#endif
+#endif // GB_CLUSTERDB_H

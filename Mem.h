@@ -6,16 +6,13 @@
 // . TODO: primealloc(int slotSize,int numSlots) :
 //         pre-allocs a table of these slots for faster mmalloc'ing
 
-#ifndef _MEM_H_
-#define _MEM_H_
+#ifndef GB_MEM_H
+#define GB_MEM_H
 
 #include <sys/mman.h>        // mlockall
 #include <netinet/in.h>      // for htonll
 #include "Conf.h"
 #include <new>
-//#ifdef DMALLOC
-//#include <dmalloc.h>
-//#endif
 
 extern bool g_inMemFunction;
 
@@ -274,4 +271,4 @@ inline int32_t getBitPosLL ( uint8_t *bit ) {
 }
 
 
-#endif
+#endif // GB_MEM_H

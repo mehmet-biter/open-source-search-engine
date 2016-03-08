@@ -1,5 +1,5 @@
-#ifndef UNICODEH
-#define UNICODEH
+#ifndef GB_UNICODE_H
+#define GB_UNICODE_H
 
 #include <sys/types.h>
 #include <stdint.h>
@@ -319,4 +319,4 @@ inline int32_t utf8Size(UChar32 c){
 	return 6;
 }
 
-#endif
+#endif // GB_UNICODE_H

@@ -3,8 +3,8 @@
 // . extensions of errno
 // . have 16th bit set to avoid collisions with existing errnos
 
-#ifndef _MYERRNO_H_
-#define _MYERRNO_H_
+#ifndef GB_ERRNO_H
+#define GB_ERRNO_H
 
 // use our own errno so threads don't fuck with it
 extern int g_errno;
@@ -201,4 +201,5 @@ enum {
 	EMALFORMEDQUERY,
 	ESHARDDOWN
 };
-#endif
+
+#endif // GB_ERRNO_H

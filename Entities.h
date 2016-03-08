@@ -1,5 +1,5 @@
-#ifndef ENTITIES_H__
-#define ENTITIES_H__
+#ifndef GB_ENTITIES_H
+#define GB_ENTITIES_H
 
 // Matt Wells, copyright Jul 2001
 
@@ -15,4 +15,4 @@ int32_t getEntity_a          ( const char *s , int32_t maxLen , uint32_t *c );
 
 //int32_t getEntity_utf8 (char *s , int32_t maxLen , int32_t *d , int32_t *ds ) ;
 
-#endif
+#endif // GB_ENTITIES_H

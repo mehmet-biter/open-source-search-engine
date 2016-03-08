@@ -2,8 +2,8 @@
 
 // maintains a simple array of CollectionRecs
 
-#ifndef COLLECTIONDB_H
-#define COLLECTIONDB_H
+#ifndef GB_COLLECTIONDB_H
+#define GB_COLLECTIONDB_H
 
 #include "SafeBuf.h"
 
@@ -587,4 +587,4 @@ class CollectionRec {
 	int32_t m_numNegKeysInTree[RDB_END2];
 };
 
-#endif
+#endif // GB_COLLECTIONDB_H

@@ -1,7 +1,7 @@
 // Matt Wells, copyright Jul 2005
 
-#ifndef _POS_H_
-#define _POS_H_
+#ifndef GB_POS_H
+#define GB_POS_H
 
 #include <stdint.h>
 #include "Titledb.h"
@@ -44,4 +44,4 @@ private:
 	bool  m_needsFree;
 };
 
-#endif
+#endif // GB_POS_H

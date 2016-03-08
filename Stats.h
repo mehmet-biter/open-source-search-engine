@@ -6,12 +6,11 @@
 // . you may add stats to this class, but do not remove them as they may
 //   be necessary for Statsdb.
 
-#ifndef _STATS_H_
-#define _STATS_H_
+#ifndef GB_STATS_H
+#define GB_STATS_H
 
 #include "SafeBuf.h"
 #include "UdpProtocol.h" // MAX_MSG_TYPES
-//#include "IndexReadInfo.h"
 
 class StatPoint {
  public:
@@ -275,4 +274,4 @@ class Stats {
 
 extern class Stats g_stats;
 
-#endif
+#endif // GB_STATS_H

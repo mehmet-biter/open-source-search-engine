@@ -1,5 +1,5 @@
-#ifndef JSON_H
-#define JSON_H
+#ifndef GB_JSON_H
+#define GB_JSON_H
 
 #define JT_NULL 2
 #define JT_NUMBER 3
@@ -96,4 +96,4 @@ class Json {
 	void reset() { m_sb.purge(); };
 };
 
-#endif
+#endif // GB_JSON_H

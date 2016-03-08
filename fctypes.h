@@ -1,7 +1,7 @@
 // Matt Wells, copyright Jun 2001
 
-#ifndef _FCTYPES_H_
-#define _FCTYPES_H_
+#ifndef GB_FCTYPES_H
+#define GB_FCTYPES_H
 
 #include <sys/time.h>  // gettimeofday()
 #include <math.h>      // floor()
@@ -395,4 +395,4 @@ int32_t deserializeMsg ( int32_t  baseSize ,
 
 bool deserializeMsg2 ( char **firstStrPtr , int32_t  *firstSizeParm );
 
-#endif 
+#endif // GB_FCTYPES_H

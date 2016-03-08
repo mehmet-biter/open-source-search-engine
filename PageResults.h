@@ -1,5 +1,5 @@
-#ifndef _PAGERESULTS_H_
-#define _PAGERESULTS_H_
+#ifndef GB_PAGERESULTS_H
+#define GB_PAGERESULTS_H
 
 #include "SafeBuf.h"
 #include "Msg40.h"
@@ -74,4 +74,4 @@ bool printLogoAndSearchBox (SafeBuf *sb , class HttpRequest *hr, SearchInput *si
 bool printTermPairs ( SafeBuf *sb , class Query *q , class PairScore *ps ) ;
 bool printSingleTerm ( SafeBuf *sb , class Query *q , class SingleScore *ss );
 
-#endif
+#endif // GB_PAGERESULTS_H

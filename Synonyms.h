@@ -1,7 +1,7 @@
 // Matt Wells, copyright Feb 2011
 
-#ifndef _SYNONYMS_H_
-#define _SYNONYMS_H_
+#ifndef GB_SYNONYMS_H
+#define GB_SYNONYMS_H
 
 #include "Xml.h"
 #include "SafeBuf.h"
@@ -88,4 +88,4 @@ public:
 	uint64_t m_termId64;
 };
 
-#endif
+#endif // GB_SYNONYMS_H

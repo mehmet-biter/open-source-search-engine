@@ -6,8 +6,8 @@
 //         we might have to use a different distance metric (getSimilarity()) 
 //         that is more word based and less letter based.
 
-#ifndef SPELLER_H
-#define SPELLER_H
+#ifndef GB_SPELLER_H
+#define GB_SPELLER_H
 
 #define MAX_FRAG_SIZE 1024
 
@@ -61,4 +61,4 @@ class Speller {
 
 extern class Speller g_speller;
 
-#endif
+#endif // GB_SPELLER_H

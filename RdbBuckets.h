@@ -20,8 +20,8 @@
 //add 1 to a key and get the next list and adding 1 to a pos key will get
 //the negative one.
 
-#ifndef _RDBBUCKETS_H_
-#define _RDBBUCKETS_H_
+#ifndef GB_RDBBUCKETS_H
+#define GB_RDBBUCKETS_H
 
 #include "Mem.h"          // for g_mem.calloc and g_mem.malloc
 #include "BigFile.h"      // for saving and loading the tree
@@ -239,4 +239,4 @@ class RdbBuckets {
 	char   *m_allocName;
 };
 
-#endif
+#endif // GB_RDBBUCKETS_H

@@ -15,8 +15,8 @@
 //   Msg4::addMetaList(), which is only called by Msg14 or Repair.cpp for now
 
 
-#ifndef XMLDOC_H
-#define XMLDOC_H
+#ifndef GB_XMLDOC_H
+#define GB_XMLDOC_H
 
 #include "Lang.h"
 #include "Words.h"
@@ -1332,5 +1332,4 @@ inline int32_t XmlDoc::getProbSpam(int32_t *profile, int32_t plen, int32_t step)
 	return prob;
 }
 
-#endif
-
+#endif // GB_XMLDOC_H

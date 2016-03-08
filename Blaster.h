@@ -1,10 +1,11 @@
+#ifndef GB_BLASTER_H
+#define GB_BLASTER_H
 
 #include "Conf.h"
 #include "Dns.h"
 #include "HttpServer.h"
 #include "HashTableT.h"
 #include "Loop.h"
-//#include "Links.h"
 #include "iana_charset.h"
 #include <sys/resource.h>  // setrlimit
 
@@ -89,3 +90,5 @@ class Blaster {
 };
 
 extern Blaster g_blaster;
+
+#endif // GB_BLASTER_H

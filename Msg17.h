@@ -7,8 +7,8 @@
 // . the compressed Msg40 class should fit into MSG17_BUF_SIZE bytes of buffer
 // . g_conf.m_pageCacheEnabled will turn on/off this cache
 
-#ifndef _MSG17_H_
-#define _MSG17_H_
+#ifndef GB_MSG17_H
+#define GB_MSG17_H
 
 // no use to make this bigger than UdpSlot's TMPBUFSIZE because
 // these are based on real-time signals we can't alloc in a async signal
@@ -132,4 +132,4 @@ extern int32_t *g_genericCacheMaxAge[MAX_GENERIC_CACHES] ;
 //   the m_buf.
 extern char g_genericCacheCompress[MAX_GENERIC_CACHES];
 
-#endif
+#endif // GB_MSG17_H

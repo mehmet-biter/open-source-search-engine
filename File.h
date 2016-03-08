@@ -14,8 +14,8 @@
 
 // the sockets must share with these so we'd like to set a maximum for each.
 
-#ifndef _FILE_H_
-#define _FILE_H_
+#ifndef GB_FILE_H
+#define GB_FILE_H
 
 #define MAX_FILENAME_LEN 128
 
@@ -188,5 +188,4 @@ private:
 	int32_t   m_st_size;   // file size
 };
 
-
-#endif
+#endif // GB_FILE_H

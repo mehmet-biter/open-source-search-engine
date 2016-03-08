@@ -13,14 +13,13 @@ appropriate dns server. It is like an L1a/L1b/L2/L3 architecture, where L1
 is local, L2 is on a host in the network and L3 is on the dns server. The
 returned result (the IP address) should be stored in all 4 caches.*/
 
-#ifndef _MSGC_H_
-#define _MSGC_H_
+#ifndef GB_MSGC_H
+#define GB_MSGC_H
 
 #include "UdpServer.h"
 #include "Dns.h"
 #include "Multicast.h"
 #include "Rdb.h"
-//#include "Spider.h"
 
 class MsgC {
 
@@ -60,4 +59,4 @@ class MsgC {
 	bool     m_forwardToProxy;
 };
 
-#endif
+#endif // GB_MSGC_H

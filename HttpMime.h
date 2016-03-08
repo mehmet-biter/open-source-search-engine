@@ -2,8 +2,8 @@
 
 // . class to parse an html MIME header
 
-#ifndef _HTTPMIME_H_
-#define _HTTPMIME_H_
+#ifndef GB_HTTPMIME_H
+#define GB_HTTPMIME_H
 
 // convert text/html to CT_HTML for instance
 // convert application/json to CT_JSON for instance
@@ -184,4 +184,4 @@ class HttpMime {
 	int32_t  m_cookieLen;
 };
 
-#endif
+#endif // GB_HTTPMIME_H

@@ -7,8 +7,8 @@
 // . actually only stores the lower 64 bits of each cluster rec, that is all
 //   that is interesting
 
-#ifndef _MSG51_H_
-#define _MSG51_H_
+#ifndef GB_MSG51_H
+#define GB_MSG51_H
 
 #include "Msg0.h"
 #include "Clusterdb.h"
@@ -184,4 +184,4 @@ class Msg51 {
 
 extern RdbCache s_clusterdbQuickCache;
 
-#endif
+#endif // GB_MSG51_H

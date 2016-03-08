@@ -50,8 +50,8 @@
 //   the search results ranking.
 
 
-#ifndef _POSDB_H_
-#define _POSDB_H_
+#ifndef GB_POSDB_H
+#define GB_POSDB_H
 
 #include "Rdb.h"
 #include "Conf.h"
@@ -714,4 +714,4 @@ extern Posdb g_posdb;
 extern Posdb g_posdb2;
 extern RdbCache g_termFreqCache;
 
-#endif
+#endif // GB_POSDB_H

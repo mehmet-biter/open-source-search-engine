@@ -19,8 +19,8 @@
 // them to the lower ip byte so steve can show the # of unique ips linking
 // to your page or site.
 
-#ifndef _LINKDB_H_
-#define _LINKDB_H_
+#ifndef GB_LINKDB_H
+#define GB_LINKDB_H
 
 #define LDBKS sizeof(key224_t)
 
@@ -1188,4 +1188,4 @@ public:
 };
 
 
-#endif
+#endif // GB_LINKDB_H

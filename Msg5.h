@@ -2,8 +2,8 @@
 
 // . get a lists from tree, cache and disk
 
-#ifndef _MSG5_H_
-#define _MSG5_H_
+#ifndef GB_MSG5_H
+#define GB_MSG5_H
 
 #include "Msg3.h"
 #include "RdbList.h"
@@ -306,4 +306,4 @@ class Msg5 {
 	Msg2 *m_parent;
 };
 
-#endif
+#endif // GB_MSG5_H

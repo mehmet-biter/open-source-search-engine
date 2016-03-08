@@ -2,8 +2,8 @@
 
 // . gets the title/summary/docLen/url results from a query
 
-#ifndef MSG40_H
-#define MSG40_H
+#ifndef GB_MSG40_H
+#define GB_MSG40_H
 
 #define SAMPLE_VECTOR_SIZE (32*4)
 
@@ -174,4 +174,4 @@ public:
 	HashTableT<uint64_t, uint64_t> m_urlTable;
 };
 
-#endif
+#endif // GB_MSG40_H

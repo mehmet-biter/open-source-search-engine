@@ -24,8 +24,8 @@
 //   read in 1 meg or less (as close as we can get to 1 meg) from each
 //   rdb file...  TODO
 
-#ifndef _RDBMERGE_H_
-#define _RDBMERGE_H_
+#ifndef GB_RDBMERGE_H
+#define GB_RDBMERGE_H
 
 #include "RdbDump.h"
 #include "Msg5.h"
@@ -162,4 +162,4 @@ class RdbMerge {
 	char      m_ks;
 };
 
-#endif
+#endif // GB_RDBMERGE_H

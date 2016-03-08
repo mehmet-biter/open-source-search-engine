@@ -1,7 +1,7 @@
 // Matt Wells, copyright Jan 2007
 
-#ifndef _MATCHES_FUNC_H_
-#define _MATCHES_FUNC_H_
+#ifndef GB_MATCHES2_H
+#define GB_MATCHES2_H
 
 // use these routines for matching any of a list of substrings in the haystack.
 // the Matches array is the list of substrings to match in the "haystack". this
@@ -34,4 +34,4 @@ char *getMatches2 ( Needle *needles          ,
 
 
 
-#endif 
+#endif // GB_MATCHES2_H

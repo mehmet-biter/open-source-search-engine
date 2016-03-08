@@ -1,5 +1,5 @@
-#ifndef SPIDERPROXYH
-#define SPIDERPROXYH
+#ifndef GB_SPIDERPROXY_H
+#define GB_SPIDERPROXY_H
 
 // called by main.cpp to set msg handlers for 0x54 and 0x55
 bool initSpiderProxyStuff();
@@ -99,4 +99,4 @@ public:
 	char m_usernamePwd[MAXUSERNAMEPWD];
 };
 
-#endif
+#endif // GB_SPIDERPROXY_H

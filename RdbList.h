@@ -1,7 +1,7 @@
 // Matt Wells, Copyright May 2001
 
-#ifndef _RDBLIST_H_
-#define _RDBLIST_H_
+#ifndef GB_RDBLIST_H
+#define GB_RDBLIST_H
 
 #define NUMTERMIDBITS 48
 
@@ -642,4 +642,4 @@ inline char bfcmpPosdb ( char *alo , char *ame , char *ahi ,
 	return 0;
 };
 
-#endif
+#endif // GB_RDBLIST_H

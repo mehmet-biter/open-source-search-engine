@@ -1,6 +1,6 @@
 
-#ifndef CRAWLBOT_H
-#define CRAWLBOT_H
+#ifndef GB_PAGECRAWLBOT_H
+#define CB_PAGECRAWLBOT_H
 
 #include "gb-include.h"
 
@@ -38,4 +38,4 @@ bool getSpiderRequestMetaList ( const char *doc,
 				bool spiderLinks,
 				class CollectionRec *cr);
 
-#endif
+#endif // GB_PAGECRAWLBOT_H

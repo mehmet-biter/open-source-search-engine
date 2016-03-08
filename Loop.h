@@ -3,8 +3,8 @@
 // . core class for handling interupts-based i/o on non-blocking descriptors
 // . when an fd/state/callback is registered for reading we call your callback //   when fd has a read event (same for write and sleeping)
 
-#ifndef _LOOP_H_
-#define _LOOP_H_
+#ifndef GB_LOOP_H
+#define GB_LOOP_H
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -224,4 +224,4 @@ extern class Loop g_loop;
 //#define QUICKPOLL(a) if(g_niceness && g_loop.m_needsToQuickPoll) g_loop.quickPoll(a, __PRETTY_FUNCTION__, __LINE__)
 #define QUICKPOLL(a)
 
-#endif
+#endif // GB_LOOP_H

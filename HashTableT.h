@@ -1,7 +1,7 @@
 // . generic hash table class
 
-#ifndef _HASHTABLET_H_
-#define _HASHTABLET_H_
+#ifndef GB_HASHTABLET_H
+#define GB_HASHTABLET_H
 
 #include "Mem.h"     // for mcalloc and mmalloc
 #include "SafeBuf.h"
@@ -106,9 +106,4 @@ class HashTableT {
 
 bool hashFromString ( HashTableT<int64_t,char> *ht , char *x ) ;
 
-#endif
-
-
-
-
-
+#endif // GB_HASHTABLET_H

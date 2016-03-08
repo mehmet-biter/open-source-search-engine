@@ -1,18 +1,14 @@
 // Copyright Gigablast, Inc. Mar 2007
 
-#ifndef _REPAIR_H_
-#define _REPAIR_H_
+#ifndef GB_REPAIR_H
+#define GB_REPAIR_H
 
 #include "RdbList.h"
 #include "Msg5.h"
 #include "RdbCache.h"
 #include "Msg1.h"
 #include "Msg4.h"
-//#include "Msg23.h"
-//#include "LinkText.h"
-//#include "Msg14.h"
 #include "XmlDoc.h"
-//#include "TitleRec.h"
 #include "Tagdb.h"
 
 #define SR_BUFSIZE 2048
@@ -205,4 +201,4 @@ public:
 // the global class
 extern Repair g_repair;
 
-#endif
+#endif // GB_REPAIR_H

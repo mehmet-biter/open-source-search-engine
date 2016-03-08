@@ -1,5 +1,5 @@
-#ifndef _GBTYPES_H_
-#define _GBTYPES_H_
+#ifndef GB_TYPES_H
+#define GB_TYPES_H
 
 // . max # of tags any one site or url can have
 // . even AFTER the "inheritance loop"
@@ -974,4 +974,4 @@ static int s_foo[] = { (int)0xffffffff ,
 inline char *KEYMAX() { return (char *)s_foo; };
 
 
-#endif
+#endif // GB_TYPES_H

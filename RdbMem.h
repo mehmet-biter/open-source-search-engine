@@ -4,8 +4,8 @@
 // . Rdb::addRecord often copies the record data to add to the tree
 //   so it now uses the RdbMem::dup() here
 
-#ifndef _RDBMEM_
-#define _RDBMEM_
+#ifndef GB_RDBMEM_H
+#define GB_RDBMEM_H
 
 class RdbMem {
 
@@ -82,4 +82,4 @@ class RdbMem {
 	char *m_allocName;
 };
 
-#endif
+#endif // GB_RDBMEM_H

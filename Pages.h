@@ -2,8 +2,8 @@
 
 // used for sending all dynamic html pages
 
-#ifndef _PAGES_H_
-#define _PAGES_H_
+#ifndef GB_PAGES_H
+#define GB_PAGES_H
 
 bool printRedBox2 ( SafeBuf *sb , 
 		    class TcpSocket *sock , 
@@ -229,4 +229,4 @@ enum {
 
 bool printApiForPage ( SafeBuf *sb , int32_t PAGENUM , CollectionRec *cr ) ;
 
-#endif
+#endif // GB_PAGES_H

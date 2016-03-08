@@ -2,8 +2,8 @@
 
 // Query is a class for parsing queries
 
-#ifndef _QUERY_H_
-#define _QUERY_H_
+#ifndef GB_QUERY_H
+#define GB_QUERY_H
 
 #include "SafeBuf.h"
 #include "Mem.h"
@@ -527,4 +527,4 @@ class Query {
 	bool m_hasUOR;
 };
 
-#endif
+#endif // GB_QUERY_H

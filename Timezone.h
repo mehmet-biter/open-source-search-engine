@@ -1,5 +1,5 @@
-#ifndef TIMEZONE_H_
-#define TIMEZONE_H_
+#ifndef GB_TIMEZONE_H
+#define GB_TIMEZONE_H
 
 #include "gb-include.h"
 
@@ -12,4 +12,4 @@ int32_t getTimeZone ( const char *s ) ;
 
 void resetTimezoneTables();
 
-#endif
+#endif // GB_TIMEZONE_H

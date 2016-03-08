@@ -1,9 +1,9 @@
 // Gigablast Inc., copyright November 2007
 
-#define MAX_OUTSTANDING_MSGE0 20
+#ifndef GB_MSGE0_H
+#define GB_MSGE0_H
 
-#ifndef _MSGE_H_
-#define _MSGE_H_
+#define MAX_OUTSTANDING_MSGE0 20
 
 #include "Tagdb.h"
 #include "Linkdb.h"
@@ -79,4 +79,4 @@ public:
 	int32_t      m_errno;
 };
 
-#endif
+#endif // GB_MSGE0_H

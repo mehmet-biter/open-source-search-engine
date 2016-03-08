@@ -3,8 +3,8 @@
 //
 // Rdb to store the stats for each host
 
-#ifndef _STATSDB_H_
-#define _STATSDB_H_
+#ifndef GB_STATSDB_H
+#define GB_STATSDB_H
 
 #include "zlib.h"
 #include "Rdb.h"
@@ -208,4 +208,4 @@ class StatData {
 	//int32_t      getTime1     () { return m_time1; };
 };
 
-#endif
+#endif // GB_STATSDB_H

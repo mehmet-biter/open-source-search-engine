@@ -53,4 +53,4 @@ extern int g_inMemcpy;
 #define O_ASYNC 0
 #endif
 
-#endif
+#endif // GB_INCLUDE_H

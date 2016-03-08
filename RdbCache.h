@@ -28,8 +28,8 @@
 //   allocating if the record size is 256k or more. Copying 256k only
 //   takes .1 ms on the P4 2.60CGHz. This is on the TODO list.
 
-#ifndef RDBCACHE_H
-#define RDBCACHE_H
+#ifndef GB_RDBCACHE_H
+#define GB_RDBCACHE_H
 
 // . TODO:
 // . if size of added rec is ABOVE this, then don't use our memory buffer
@@ -371,4 +371,4 @@ class RdbCache {
 	int64_t m_maxColls;
 };	
 
-#endif
+#endif // GB_RDBCACHE_H

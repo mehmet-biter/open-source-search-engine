@@ -1,5 +1,5 @@
-#ifndef _DIR_H
-#define _DIR_H
+#ifndef GB_DIR_H
+#define GB_DIR_H
 
 #include <sys/types.h>      // for opendir
 #include <dirent.h>         // for opendir
@@ -52,4 +52,4 @@ class Dir {
 	bool m_needsClose;
 };
 
-#endif
+#endif // GB_DIR_H

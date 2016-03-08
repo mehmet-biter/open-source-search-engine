@@ -1,5 +1,6 @@
-#ifndef UNICODE_PROPERTIES_H__
-#define UNICODE_PROPERTIES_H__
+#ifndef GB_UNICODEPROPERTIES_H
+#define GB_UNICODEPROPERTIES_H
+
 #include <sys/types.h>
 #include "UCPropTable.h"
 
@@ -296,4 +297,4 @@ inline UCScript ucGetScript(UChar32 c) {
 	return *(UCScript*)p;
 }
 
-#endif
+#endif // GB_UNICODEPROPERTIES_H

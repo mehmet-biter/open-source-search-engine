@@ -7,8 +7,8 @@
 // . TODO: fix the O_SYNC option
 // . TODO: provide ability to pass flags
 
-#ifndef _BIGFILE_H_
-#define _BIGFILE_H_
+#ifndef GB_BIGFILE_H
+#define GB_BIGFILE_H
 
 #include "File.h"
 
@@ -365,4 +365,4 @@ extern bool      g_diskIsStuck;
 
 extern void *readwriteWrapper_r ( void *state , class ThreadEntry *t ) ;
 
-#endif
+#endif // GB_BIGFILE_H

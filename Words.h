@@ -4,8 +4,8 @@
 // . TODO: ensure WordType m_types[] array is only 1 byte per entry
 // . ??? a word should end at any non-alnum ??? then using phrasing for "tim's"
 
-#ifndef WORDS_H
-#define WORDS_H
+#ifndef GB_WORDS_H
+#define GB_WORDS_H
 
 // now keep this small and malloc if we need more... save some stack
 #define MAX_WORDS (1024)
@@ -296,4 +296,4 @@ class Words {
 	int32_t m_numTags;
 };
 
-#endif
+#endif // GB_WORDS_H

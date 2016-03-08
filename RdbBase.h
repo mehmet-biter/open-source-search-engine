@@ -23,8 +23,8 @@
 // . we can only dump the RdbTree to disk if it's using at least "minMem" or 
 //   we are shutting down and Rdb::close() was called 
 
-#ifndef _RDBBASE_H_
-#define _RDBBASE_H_
+#ifndef GB_RDBBASE_H
+#define GB_RDBBASE_H
 
 #include "Conf.h"
 #include "Mem.h"
@@ -478,4 +478,4 @@ extern int32_t g_numThreads;
 
 extern char g_dumpMode;
 
-#endif
+#endif // GB_RDBBASE_H

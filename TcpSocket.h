@@ -3,8 +3,8 @@
 // . it's used to control the non-blocking polling etc. of the sockets
 // . we also use it for re-using sockets w/o having to reconnect
 
-#ifndef _TCPSOCKET_H_
-#define _TCPSOCKET_H_
+#ifndef GB_TCPSOCKET_H
+#define GB_TCPSOCKET_H
 
 #include <sys/time.h>             // timeval data type
 #include <openssl/ssl.h>
@@ -148,4 +148,4 @@ class TcpSocket {
 	char *m_tmp;
 };
 
-#endif
+#endif // GB_TCPSOCKET_H

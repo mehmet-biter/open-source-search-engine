@@ -1,7 +1,7 @@
 // Gigablast, Inc., Copyright Mar 2007
 
-#ifndef _PROCESS_H_
-#define _PROCESS_H_
+#ifndef GB_PROCESS_H
+#define GB_PROCESS_H
 
 #define NO_MODE   0
 #define EXIT_MODE 1
@@ -104,4 +104,4 @@ extern Process g_process;
 
 extern char *g_files[];
 
-#endif
+#endif // GB_PROCESS_H

@@ -2,8 +2,8 @@
 
 // . don't use XOR for hashing, "dog" would be the same as "god"
 
-#ifndef _HASH_H_
-#define _HASH_H_
+#ifndef GB_HASH_H
+#define GB_HASH_H
 
 #include "Unicode.h"
 
@@ -392,4 +392,4 @@ inline uint32_t hashLong ( uint32_t x ) {
 	return h;
 }
 
-#endif
+#endif // GB_HASH_H

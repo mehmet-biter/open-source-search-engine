@@ -1,5 +1,5 @@
-#ifndef PAGEROOT_H_
-#define PAGEROOT_H_
+#ifndef GB_PAGEROOT_H
+#define GB_PAGEROOT_H
 
 #include "SafeBuf.h"
 #include "Collectiondb.h"
@@ -26,4 +26,4 @@ bool printLeftColumnRocketAndTabs ( SafeBuf *sb ,
 				    CollectionRec *cr ,
 				    const char *tabName );
 
-#endif
+#endif // GB_PAGEROOT_H

@@ -1,5 +1,5 @@
-#ifndef _SITEGETTER_H_
-#define _SITEGETTER_H_
+#ifndef GB_SITEGETTER_H
+#define GB_SITEGETTER_H
 
 #include "gb-include.h"
 #include "Msg0.h"
@@ -73,4 +73,4 @@ public:
 	TagRec m_addedTag;
 };
 
-#endif
+#endif // GB_SITEGETTER_H

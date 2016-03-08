@@ -2,8 +2,8 @@
 
 // . generic hash table class
 
-#ifndef _HASHTABLEX_H_
-#define _HASHTABLEX_H_
+#ifndef GB_HASHTABLEX_H
+#define GB_HASHTABLEX_H
 
 #include "SafeBuf.h"
 
@@ -524,4 +524,4 @@ class HashTableX {
 	int32_t  m_txtBufSize;
 };
 
-#endif
+#endif // GB_HASHTABLEX_H

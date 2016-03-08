@@ -21,8 +21,8 @@
 // or make those classes have specialized functions for IndexLists... in 
 // addition to the RdbLists they already support
 
-#ifndef _INDEXLIST_H_
-#define _INDEXLIST_H_
+#ifndef GB_INDEXLIST_H
+#define GB_INDEXLIST_H
 
 #include "RdbList.h"
 #include "Titledb.h"
@@ -118,7 +118,4 @@ class IndexList : public RdbList {
 	int32_t getCurrentDate ( ) { return ~*(int32_t *)(m_listPtr+6); };
 };
 
-#endif
-
-
-
+#endif // GB_INDEXLIST_H

@@ -15,8 +15,8 @@
 // . if a msg being received is too big we make call(s) to putMsgPiece() to
 //   empty the receive buffer when it gets full (m_maxReadBufSize)
 
-#ifndef _TCPSERVER_H_
-#define _TCPSERVER_H_
+#ifndef GB_TCPSERVER_H
+#define GB_TCPSERVER_H
 
 #include <sys/time.h>             // time()
 #include <sys/types.h>            // setsockopt()
@@ -209,4 +209,4 @@ class TcpServer {
 	int32_t m_numClosed;
 };
 
-#endif
+#endif // GB_TCPSERVER_H

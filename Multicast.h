@@ -14,8 +14,8 @@
 //         change the groups we select
 // . TODO: set individual host timeouts yourself based on their std.dev pings
 
-#ifndef _MULTICAST_H_
-#define _MULTICAST_H_
+#ifndef GB_MULTICAST_H
+#define GB_MULTICAST_H
 
 #include "Hostdb.h"  // getGroup(), getTimes(), stampHost()
 #include "UdpServer.h"        // sendRequest()
@@ -221,4 +221,4 @@ class Multicast {
 	class ImportState *m_importState;
 };
 
-#endif
+#endif // GB_MULTICAST_H

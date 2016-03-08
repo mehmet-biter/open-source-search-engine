@@ -3,8 +3,8 @@
 // . get a list from any rdb (hostmap,tagdb,termdb,titledb,quotadb)
 // . TODO: support concatenation of lists from different groups
 
-#ifndef _MSG0_H_
-#define _MSG0_H_
+#ifndef GB_MSG0_H
+#define GB_MSG0_H
 
 #include "UdpServer.h"
 #include "Multicast.h"
@@ -236,4 +236,4 @@ class Msg0 {
 	char  m_inUse;
 };
 
-#endif
+#endif // GB_MSG0_H

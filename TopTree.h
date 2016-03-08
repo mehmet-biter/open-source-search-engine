@@ -5,8 +5,8 @@
 // . used by Msg38 to get cluster info for each TopNode
 // . used by Msg39 to serialize into a reply
 
-#ifndef _TOPTREE_H_
-#define _TOPTREE_H_
+#ifndef GB__TOPTREE_H
+#define GB__TOPTREE_H
 
 #include "Clusterdb.h"   // SAMPLE_VECTOR_SIZE, 48 bytes for now
 //#include "IndexTable2.h" // score_t definition
@@ -153,4 +153,4 @@ class TopTree {
 	int32_t rotateRight ( int32_t i ) ;
 };
 
-#endif
+#endif // GB_TOPTREE_H

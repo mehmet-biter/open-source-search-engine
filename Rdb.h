@@ -2,8 +2,8 @@
 
 // contains one RdbBase for each collection
 
-#ifndef _RDB_H_
-#define _RDB_H_
+#ifndef GB_RDB_H
+#define GB_RDB_H
 
 #include "RdbBase.h"
 #include "RdbTree.h"
@@ -525,4 +525,4 @@ class Rdb {
 	Msg5 m_msg5;
 };
 
-#endif
+#endif // GB_RDB_H

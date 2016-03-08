@@ -1,5 +1,5 @@
-#ifndef SUMMARY_CACHE_
-#define SUMMARY_CACHE_
+#ifndef GB_SUMMARYCACHE_H
+#define GB_SUMMARYCACHE_H
 
 #include <inttypes.h>
 #include <stddef.h>

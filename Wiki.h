@@ -1,7 +1,7 @@
 // Matt Wells, copyright Dec 2008
 
-#ifndef _WIKI_H_
-#define _WIKI_H_
+#ifndef GB_WIKI_H
+#define GB_WIKI_H
 
 #include "gb-include.h"
 #include "BigFile.h"
@@ -35,4 +35,4 @@ private:
 
 extern class Wiki g_wiki;
 
-#endif
+#endif // GB_WIKI_H

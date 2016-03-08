@@ -1,3 +1,6 @@
+#ifndef GB_PUNYCODE_H
+#define GB_PUNYCODE_H
+
 /*
 punycode-sample.c 2.0.0 (2004-Mar-21-Sun)
 http://www.nicemice.net/idn/
@@ -152,3 +155,5 @@ enum punycode_status punycode_decode(
         punycode_success, then output_length, output, and case_flags
         might contain garbage.
 */
+
+#endif // GB_PUNYCODE_H

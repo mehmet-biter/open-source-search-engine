@@ -5,8 +5,8 @@
 ///
 
 // using a different macro because there's already a Language.h
-#ifndef LANGUAGEIDENTIFIER_H
-#define LANGUAGEIDENTIFIER_H
+#ifndef GB_LANGUAGEIDENTIFIER_H
+#define GB_LANGUAGEIDENTIFIER_H
 
 #include <stdint.h>
 
@@ -16,4 +16,4 @@ public:
 	static uint8_t guessCountryTLD(const char *url);
 };
 
-#endif // LANGUAGEIDENTIFIER_H
+#endif // GB_LANGUAGEIDENTIFIER_H

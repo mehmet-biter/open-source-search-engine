@@ -1,6 +1,5 @@
-
-#ifndef COUNTRYCODE_H
-#define COUNTRYCODE_H
+#ifndef GB_COUNTRYCODE_H
+#define GB_COUNTRYCODE_H
 
 #include "HashTableT.h"
 #include "types.h"
@@ -32,5 +31,4 @@ class CountryCode {
 
 extern CountryCode g_countryCode;
 
-#endif // COUNTRYCODE_H
-
+#endif // GB_COUNTRYCODE_H

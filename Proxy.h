@@ -1,3 +1,6 @@
+#ifndef GB_PROXY_H
+#define GB_PROXY_H
+
 #include "UdpServer.h"
 #include "Stats.h"
 #include "Pages.h"
@@ -61,3 +64,5 @@ class Proxy {
 };
 
 extern Proxy g_proxy;
+
+#endif // GB_PROXY_H

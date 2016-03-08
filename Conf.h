@@ -10,8 +10,8 @@
 // . use Conf remotely to get setup info about a specific host
 // . get your local ip/port/groupMask/etc. from this class not HostMap
 
-#ifndef _CONF_H_
-#define _CONF_H_
+#ifndef GB_CONF_H
+#define GB_CONF_H
 
 #include "Xml.h"         // Xml class
 #include "File.h"        // File class
@@ -556,5 +556,4 @@ class Conf {
 
 extern class Conf g_conf;
 
-#endif
-
+#endif // GB_CONF_H

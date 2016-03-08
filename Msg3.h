@@ -3,8 +3,8 @@
 // . gets an RdbList from disk
 // . reads from N specified files and stores results in N RdbLists
 
-#ifndef MSG3_H
-#define MSG3_H
+#ifndef GB_MSG3_H
+#define GB_MSG3_H
 
 class RdbCache *getDiskPageCache ( char rdbId ) ;
 
@@ -192,4 +192,4 @@ class Msg3 {
 
 extern int32_t g_numIOErrors;
 
-#endif
+#endif // GB_MSG3_H

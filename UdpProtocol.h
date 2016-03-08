@@ -22,8 +22,8 @@
 // . TODO: verify you keep network order here, i found lots of mistakes
 // . byte order is different on different machines
 
-#ifndef _UDPPROTOCOL_H_
-#define _UDPPROTOCOL_H_
+#ifndef GB_UDPPROTOCOL_H
+#define GB_UDPPROTOCOL_H
 
 #include <netinet/in.h>
 
@@ -258,4 +258,4 @@ class UdpProtocol {
 	};
 };
 
-#endif
+#endif // GB_UDPPROTOCOL_H
