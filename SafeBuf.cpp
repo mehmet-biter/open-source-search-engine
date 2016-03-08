@@ -478,7 +478,6 @@ int32_t SafeBuf::fillFromFile(const char *filename) {
 	
  retry:
 	int32_t fd = open ( filename , O_RDONLY , getFileCreationFlags() );
-			 // S_IRUSR |S_IWUSR |S_IRGRP |S_IWGRP| S_IROTH );
 	if ( ! fd ) {
 		// valgrind
 		if ( errno == EINTR ) goto retry;

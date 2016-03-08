@@ -68,9 +68,14 @@ public:
 
 	int32_t  fillFromFile(const char *filename);
 	int32_t  fillFromFile(const char *dir, const char *filename, const char *label=NULL);
+
 	int32_t  load(const char *dir, const char *fname, const char *label = NULL) { 
-		return fillFromFile(dir,fname,label);};
-	int32_t  load(const char *fname) { return fillFromFile(fname);};
+		return fillFromFile(dir,fname,label);
+	}
+
+	int32_t  load(const char *fname) {
+		return fillFromFile(fname);
+	}
 
 	bool safeTruncateEllipsis ( char *src , int32_t maxLen );
 	bool safeTruncateEllipsis ( char *src , int32_t srcLen, int32_t maxLen );
