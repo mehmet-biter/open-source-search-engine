@@ -3157,8 +3157,7 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 		if ( ! *ps ) continue;
 		// or empty string ptr
 		if ( ! *pd ) continue;
-		// skip utf8content if we should -- no events or addresses
-		//if ( m_skipIndexing && pd == &ptr_utf8Content ) continue;
+
 		// store size first
 		*(int32_t *)p = *ps;
 		p += 4;
@@ -3173,43 +3172,33 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 	// sanity check
 	if ( p != ubuf + need1 ) { char *xx=NULL; *xx=0; }
 
-	// now restore it for other functions to use
-	//size_content = saved;
-
-	// . now compress our "title rec" data into a titleRec
-	// . cbuf should not be set
-	//if ( cbuf ) {
-	//	log(LOG_LOGIC,"db: titlerec: compress: cbuf is set.");
-	//	char *p = NULL; *p = 0;	exit(-1);
-	//}
-	// should we free cbuf on our reset/destruction?
-	//m_owncbuf = ownCompressedData;
 	// . make a buf big enough to hold compressed, we'll realloc afterwards
 	// . according to zlib.h line 613 compress buffer must be .1% larger
 	//   than source plus 12 bytes. (i add one for round off error)
 	// . now i added another extra 12 bytes cuz compress seemed to want it
 	int32_t need2 = ((int64_t)need1 * 1001LL) / 1000LL + 13 + 12;
+
 	// we also need to store a key then regular dataSize then
 	// the uncompressed size in cbuf before the compression of m_ubuf
 	int32_t hdrSize = sizeof(key_t) + 4 + 4;
+
 	// . now i add 12 bytes more so Msg14.cpp can also squeeze in a
 	//   negative key to delete the old titleRec, cuz we use this cbuf
 	//   to set our list that we add to our twins with
 	// . we now store the negative rec before the positive rec in Msg14.cpp
 	//hdrSize += sizeof(key_t) + 4;
 	need2 += hdrSize;
-	// alloc what we need
-	//char *cbuf = (char *) mmalloc ( need2 ,"TitleRecc");
-	//if ( ! cbuf ) return false;
+
 	// return false on error
 	if ( ! tbuf->reserve ( need2 ,"titbuf" ) ) return false;
+
 	// shortcut
 	char *cbuf = tbuf->getBufStart();
-	// set cbuf sizes, we set cbufSize below to fit exactly used buf
-	//int32_t cbufMaxSize = need2;
+
 	// . how big is the buf we're passing to ::compress()?
 	// . don't include the last 12 byte, save for del key in Msg14.cpp
 	int32_t size = need2 - hdrSize ;
+
 	// . uncompress the data into ubuf
 	// . this will reset cbufSize to a smaller value probably
 	// . "size" is set to how many bytes we wrote into "cbuf + hdrSize"
@@ -3217,14 +3206,12 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 			       (uint32_t *)&size,
 			       (unsigned char *)ubuf ,
 			       (uint32_t  )need1 );
-	// note it
-	//log("test: compressed %s from %"INT32" to %"INT32" bytes",
-	//    m_firstUrl.m_url,need2-hdrSize,size);
+
 	// free the buf we were trying to compress now
 	mfree ( ubuf , need1 , "trub" );
+
 	// we should check ourselves
 	if ( err == Z_OK && size > (need2 - hdrSize ) ) {
-		//mfree ( cbuf , need2 ,"TitleRecc" );
 		tbuf->purge();
 		g_errno = ECOMPRESSFAILED;
 		log("db: Failed to compress document of %"INT32" bytes. "
@@ -3232,43 +3219,39 @@ bool XmlDoc::setTitleRecBuf ( SafeBuf *tbuf, int64_t docId, int64_t uh48 ){
 		    size, (need2 - hdrSize ) );
 		return false;
 	}
+
 	// check for error
 	if ( err != Z_OK ) {
-		//mfree ( cbuf , need2 ,"TitleRecc" );
 		tbuf->purge();
 		g_errno = ECOMPRESSFAILED;
 		log("db: Failed to compress document.");
 		return false;
 	}
-	// calc cbufSize, the uncompressed header + compressed stuff
-	//cbufSize = hdrSize + size ;
 
-	//int64_t uh48 = getFirstUrlHash48();
-	// . make the key from docId
-	// . false = delkey?
-	//m_titleRecKey = g_titledb.makeKey (*getDocId(),uh48,false);//delkey?
 	key_t tkey = g_titledb.makeKey (docId,uh48,false);//delkey?
-	// validate it
-	//m_titleRecKeyValid = true;
 
 	// get a ptr to the Rdb record at start of the header
 	p = cbuf;
-	// skip over the negative rec reserved space for Msg14.cpp
-	//p += 12 + 4;
+
 	// . store key in header of cbuf
 	// . store in our host byte ordering so we can be a rec in an RdbList
 	*(key_t *) p = tkey;
 	p += sizeof(key_t);
+
 	// store total dataSize in header (excluding itself and key only)
 	int32_t dataSize = size + 4;
 	*(int32_t  *) p = dataSize ;
 	p += 4;
+
 	// store uncompressed size in header
 	*(int32_t  *) p = need1 ; p += 4;
+
 	// sanity check
 	if ( p != cbuf + hdrSize ) { char *xx = NULL; *xx = 0; }
+
 	// sanity check
 	if ( need1 <= 0 ) { char *xx = NULL; *xx = 0; }
+
 	// advance over data
 	p += size;
 
