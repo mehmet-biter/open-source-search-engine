@@ -46,7 +46,7 @@ enum {
 	TYPE_RULESET        ,
 	TYPE_FILTER         ,
 	TYPE_COMMENT        ,
-        TYPE_CONSTANT       ,
+	TYPE_CONSTANT       ,
 	TYPE_MONOD2         ,
 	TYPE_MONOM2         ,
 	TYPE_LONG_CONST     ,
@@ -277,8 +277,6 @@ class Parms {
 			 bool isMasterAdmin ,
 			 bool isCollAdmin ,
 			 class TcpSocket *sock );
-
-	char *getTHIS ( HttpRequest *r , int32_t page );
 
 	class Parm *getParmFromParmHash ( int32_t parmHash );
 
