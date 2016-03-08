@@ -2306,7 +2306,7 @@ bool printCrawlBotPage2 ( TcpSocket *socket ,
 			// grab it
 			SpiderRequest *oldsr = &xd->m_sreq;
 			// get status
-			char *status = xd->m_statusMsg;
+			const char *status = xd->m_statusMsg;
 			// show that
 			if ( ! oldsr->printToTableSimple ( &sb , status,xd,j)) 
 				return false;

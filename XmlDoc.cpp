@@ -1290,10 +1290,10 @@ bool XmlDoc::setFirstUrl ( char *u , bool addWWW , Url *baseUrl ) {
 
 
 
-void XmlDoc::setStatus ( char *s ) {
+void XmlDoc::setStatus ( const char *s ) {
 	m_statusMsg = s;
 	m_statusMsgValid = true;
-	static char *s_last = NULL;
+	static const char *s_last = NULL;
 
 	if ( s == s_last ) return;
 

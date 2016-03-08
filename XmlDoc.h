@@ -348,7 +348,7 @@ public:
 	void nukeDoc ( class XmlDoc *);
 	void reset ( ) ;
 	bool setFirstUrl ( char *u , bool addWWW , Url *base = NULL ) ;
-	void setStatus ( char *s ) ;
+	void setStatus ( const char *s ) ;
 	void setCallback ( void *state, void (*callback) (void *state) ) ;
 	void setCallback ( void *state, bool (*callback) (void *state) ) ;
 	void getRevisedSpiderRequest ( class SpiderRequest *revisedReq );
@@ -1043,7 +1043,7 @@ public:
 	char m_isHijacked;
 
 	// stuff
-	char *m_statusMsg;
+	const char *m_statusMsg;
 	Msg4  m_msg4;
 
 	bool  m_deleteFromIndex;

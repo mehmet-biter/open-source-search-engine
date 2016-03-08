@@ -789,10 +789,10 @@ class SpiderRequest {
 
 	int32_t print( class SafeBuf *sb );
 
-	int32_t printToTable     ( SafeBuf *sb , char *status ,
+	int32_t printToTable     ( SafeBuf *sb , const char *status ,
 				class XmlDoc *xd , int32_t row ) ;
 	// for diffbot...
-	int32_t printToTableSimple     ( SafeBuf *sb , char *status ,
+	int32_t printToTableSimple     ( SafeBuf *sb , const char *status ,
 				      class XmlDoc *xd , int32_t row ) ;
 	static int32_t printTableHeader ( SafeBuf *sb , bool currentlSpidering ) ;
 	static int32_t printTableHeaderSimple ( SafeBuf *sb , 

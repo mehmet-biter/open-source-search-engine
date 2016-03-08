@@ -263,7 +263,7 @@ int32_t SpiderReply::print ( SafeBuf *sbarg ) {
 
 
 
-int32_t SpiderRequest::printToTable ( SafeBuf *sb , char *status ,
+int32_t SpiderRequest::printToTable ( SafeBuf *sb , const char *status ,
 				   XmlDoc *xd , int32_t row ) {
 
 	sb->safePrintf("<tr bgcolor=#%s>\n",LIGHT_BLUE);
@@ -401,7 +401,7 @@ int32_t SpiderRequest::printTableHeaderSimple ( SafeBuf *sb ,
 	return sb->length();
 }
 
-int32_t SpiderRequest::printToTableSimple ( SafeBuf *sb , char *status ,
+int32_t SpiderRequest::printToTableSimple ( SafeBuf *sb , const char *status ,
 					 XmlDoc *xd , int32_t row ) {
 
 	sb->safePrintf("<tr bgcolor=#%s>\n",LIGHT_BLUE);
@@ -1500,7 +1500,7 @@ bool sendPage ( State11 *st ) {
 		// grab it
 		SpiderRequest *oldsr = &xd->m_sreq;
 		// get status
-		char *status = xd->m_statusMsg;
+		const char *status = xd->m_statusMsg;
 		// show that
 		if ( ! oldsr->printToTable ( &sb , status,xd,j) ) return false;
 		// inc count
