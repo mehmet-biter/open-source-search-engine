@@ -20906,7 +20906,7 @@ bool XmlDoc::printDocForProCog ( SafeBuf *sb , HttpRequest *hr ) {
 
 
 	// for some reason sections page blocks forever in browser
-	if ( page != 7 && ! m_printedMenu ) { // && page != 5 )
+	if ( page != 7 && ! m_printedMenu ) {
 		printFrontPageShell ( sb , "search" , cr , false );
 		m_printedMenu = true;
 		//printMenu ( sb );
@@ -20975,17 +20975,9 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return true;
 
-	//char *ls = getIsLinkSpam();
-	//Links *links = getLinks();
-	// blocked?
-	//if ( links == (void *)-1 ) { char *xx=NULL;*xx=0;}//return false;
-	// error?
-	//if ( ! links ) return true;
-
 	// make it a URL
-	Url uu; uu.set ( fu );
-
-
+	Url uu;
+	uu.set ( fu );
 
 	char *allowed = "???";
 	int32_t allowedInt = 1;
@@ -21182,33 +21174,16 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			"<tr><td><b>good inlinks to site</b>"
 			"</td><td>%"INT32"</td></tr>\n"
 
-			// "<tr><td>unique IP inlinks to site"
-			// "</td><td>%"INT32"</td></tr>\n"
-
-			// "<tr><td>unique CBlock inlinks to site"
-			// "</td><td>%"INT32"</td></tr>\n"
-
 			"<tr><td><b>site rank</b></td><td>%"INT32"</td></tr>\n"
 
 			"<tr><td>good inlinks to page"
 			"</td><td>%"INT32"</td></tr>\n"
-
-			// "<tr><td>unique IP inlinks to page"
-			// "</td><td>%"INT32"</td></tr>\n"
-
-			// "<tr><td>unique CBlock inlinks to page"
-			// "</td><td>%"INT32"</td></tr>\n"
-
-			// "<tr><td>total inlinks to page"
-			// "</td><td>%"INT32"</td></tr>\n"
 
 			"<tr><td><nobr>page inlinks last computed</nobr></td>"
 			"<td>%s</td></tr>\n"
 			"</td></tr>\n",
 			get_charset_str(m_charset),
 			(int32_t)m_isAdult,
-			//(int32_t)m_isLinkSpam,
-			//m_note,
 			(int32_t)m_isPermalink,
 			(int32_t)m_isRSS,
 			ipString,
@@ -21220,14 +21195,8 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			strLanguage,
 			g_countryCode.getName(m_countryId) ,
 			sni,
-			//m_siteNumInlinksUniqueIp,
-			//m_siteNumInlinksUniqueCBlock,
 			::getSiteRank(sni),
-			//info1->getNumTotalInlinks(),
 			info1->getNumGoodInlinks(),
-			// info1->m_numUniqueIps,
-			// info1->m_numUniqueCBlocks,
-			// info1->m_totalInlinkingDocIds,
 
 			tmp3
 			);
@@ -21239,27 +21208,6 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			"\t<siteRank>%"INT32"</siteRank>\n"
 
 			"\t<numGoodSiteInlinks>%"INT32"</numGoodSiteInlinks>\n"
-			//"\t<numTotalSiteInlinks>%"INT32"</numTotalSiteInlinks>\n"
-			// "\t<numUniqueIpsLinkingToSite>%"INT32""
-			// "</numUniqueIpsLinkingToSite>\n"
-			// "\t<numUniqueCBlocksLinkingToSite>%"INT32""
-			// "</numUniqueCBlocksLinkingToSite>\n"
-
-
-
-
-			// how many inlinks, external and internal, we have
-			// to this page not filtered in any way!!!
-			//"\t<numTotalPageInlinks>%"INT32"</numTotalPageInlinks>\n"
-			// how many inlinking ips we got, including our own if
-			// we link to ourself
-			// "\t<numUniqueIpsLinkingToPage>%"INT32""
-			// "</numUniqueIpsLinkingToPage>\n"
-			// how many inlinking cblocks we got, including our own
-			// if we link to ourself
-			// "\t<numUniqueCBlocksLinkingToPage>%"INT32""
-			// "</numUniqueCBlocksLinkingToPage>\n"
-
 
 			"\t<numGoodPageInlinks>%"INT32"</numGoodPageInlinks>\n"
 			"\t<pageInlinksLastComputed>%"INT32""
@@ -21270,22 +21218,10 @@ bool XmlDoc::printGeneralInfo ( SafeBuf *sb , HttpRequest *hr ) {
 			,(int32_t)m_isLinkSpam
 			,::getSiteRank(sni)
 			,sni
-			// ,m_siteNumInlinksTotal
-			// ,m_siteNumInlinksUniqueIp
-			// ,m_siteNumInlinksUniqueCBlock
-
-			//,info1->m_totalInlinkingDocIds
-			//,info1->m_numUniqueIps
-			//,info1->m_numUniqueCBlocks
 
 			,info1->getNumGoodInlinks()
-			//,tmp3
 			,(int32_t)info1->m_lastUpdated
 			);
-		//if ( m_note )
-		//	sb->safePrintf("\t<isLinkSpamReason><![CDATA[%s]]>"
-		//		       "</isLinkSpamReason>\n"
-		//		       , m_note );
 		sb->safePrintf("\t<isPermalink>%"INT32"</isPermalink>\n"
 			       "\t<isRSSFeed>%"INT32"</isRSSFeed>\n"
 			       "\t<ipAddress><![CDATA[%s]]></ipAddress>\n"
