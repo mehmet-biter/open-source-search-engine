@@ -483,7 +483,7 @@ bool TopTree::addNode ( TopNode *t , int32_t tnn ) {
 		// get the node from t2
 		int32_t min = m_t2.getNode ( 0 , (char *)&k );
 		// sanity check. LEAVE THIS HERE!
-		if ( min < 0 ) { break; char *xx=NULL; *xx=0; }
+		if ( min < 0 ) { break; }
 		// sanity check
 		//key_t *kp1 = (key_t *)m_t2.getKey(min);
 		//if ( (kp1->n1) >>24 != domHash2 ) {char*xx=NULL;*xx=0;}
