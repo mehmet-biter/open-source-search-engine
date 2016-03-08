@@ -697,10 +697,7 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 		// . electric fence (efence) seg faults here on iptoa() for
 		//   some strange reason
 		else if ( g_conf.m_logHttpRequests ) // && ! cgi[0] ) 
-			logf (LOG_INFO,"http: %s %s %s %s "
-			      //"cookie=\"%s\" "
-			      //"%s "
-			      "%s",
+			logf (LOG_INFO,"http: %s %s %s %s %s",
 			      buf,iptoa(ip),
 			      // can't use s->m_readBuf[] here because
 			      // might have called TcpServer::sendMsg() which
@@ -708,25 +705,8 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 			      // can't use r.getRequest() because it inserts
 			      // \0's in there for cgi parm parsing.
 			      stackMem,
-			      //s->m_readBuf,//r.getRequest(),
 			      ref,
-			      //r.m_cookiePtr,
-			      //r.getUserAgent(),
 			      g_msg);
-		/*
-		else if ( g_conf.m_logHttpRequests ) 
-			logf (LOG_INFO,"http: %s %s %s %s %s "
-			      //"cookie=\"%s\" "
-			      //"%s "
-			      "%s",
-			      buf,iptoa(ip),
-			      s->m_readBuf,//r.getRequest(),
-			      cgi,
-			      ref,
-			      //cbuf,//r.m_cookiePtr,
-			      //r.getUserAgent(),
-			      g_msg);
-		*/
 	}
 
 	// if no error, we completed w/o blocking so return
