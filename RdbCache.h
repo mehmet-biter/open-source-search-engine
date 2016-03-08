@@ -79,7 +79,6 @@ class RdbCache {
 		    int32_t maxCacheNodes ,
 		    bool useHalfKeys   ,
 		    char *dbname       ,
-		    //bool  loadFromDisk );
 		    bool  loadFromDisk ,
 		    char  cacheKeySize = 12 ,
 		    char  dataKeySize  = 12 ,
@@ -122,7 +121,6 @@ class RdbCache {
 	// . sets *cachedTime to time the rec was cached
 	// . use maxAge of -1 to have no limit to the age of cached rec
 	bool getRecord ( collnum_t collnum   ,
-			 //key_t    cacheKey   ,
 			 char    *cacheKey   ,
 			 char   **rec        ,
 			 int32_t    *recSize    ,
@@ -133,7 +131,6 @@ class RdbCache {
 			 bool     promoteRecord = true );
 
 	bool getRecord ( char    *coll       ,
-			 //key_t    cacheKey   ,
 			 char    *cacheKey   ,
 			 char   **rec        ,
 			 int32_t    *recSize    ,
@@ -192,8 +189,6 @@ class RdbCache {
 	// . if "incCounts" is true and we hit  we inc the hit  count
 	// . if "incCounts" is true and we miss we inc the miss count
 	bool getList ( collnum_t collnum  ,
-		       //key_t    cacheKey  ,
-		       //key_t    startKey  ,
 		       char    *cacheKey  ,
 		       char    *startKey  ,
 		       RdbList *list      ,
@@ -205,17 +200,18 @@ class RdbCache {
 	// startKey/endKey
 	bool addList ( collnum_t collnum , char *cacheKey , RdbList *list );
 	bool addList ( collnum_t collnum , key_t cacheKey , RdbList *list ) {
-		return addList(collnum,(char *)&cacheKey,list); };
+		return addList(collnum,(char *)&cacheKey,list);
+	}
 
 	bool addList ( char *coll , char *cacheKey , RdbList *list );
 	bool addList ( char *coll , key_t cacheKey , RdbList *list ) {
-		return addList(coll,(char *)&cacheKey,list); };
+		return addList(coll,(char *)&cacheKey,list);
+	}
 
 	// . add a list of only 1 record
 	// . return false on error and set g_errno, otherwise return true
 	// . recOffset is proper offset into the buffer system
 	bool addRecord ( collnum_t collnum ,
-			 //key_t cacheKey , 
 			 char *cacheKey , 
 			 char *rec      ,
 			 int32_t  recSize  ,
@@ -223,7 +219,6 @@ class RdbCache {
 			 char **retRecPtr = NULL ) ;
 
 	bool addRecord ( char *coll     ,
-			 //key_t cacheKey , 
 			 char *cacheKey , 
 			 char *rec      ,
 			 int32_t  recSize  ,
@@ -235,7 +230,8 @@ class RdbCache {
 			 int32_t  recSize  ,
 			 int32_t  timestamp = 0 ) {
 		return addRecord(collnum,(char *)&cacheKey,rec,recSize,
-				 timestamp); };
+				 timestamp);
+	}
 
 	bool addRecord ( char *coll     ,
 			 key_t cacheKey , 
@@ -243,33 +239,36 @@ class RdbCache {
 			 int32_t  recSize  ,
 			 int32_t  timestamp = 0 ) {
 		return addRecord(coll,(char *)&cacheKey,rec,recSize,
-				 timestamp); };
+				 timestamp);
+	}
 
 	void verify();
 
 	// . just checks to see if a record is in the cache
 	// . does not promote record
 	bool isInCache ( collnum_t collnum , char *cacheKey , int32_t maxAge );
+
 	bool isInCache ( collnum_t collnum , key_t cacheKey , int32_t maxAge ) {
-		return isInCache(collnum,(char *)&cacheKey,maxAge);};
+		return isInCache(collnum,(char *)&cacheKey,maxAge);
+	}
 
 	// these include our mem AND our tree's mem combined
 	int32_t getMemOccupied () {
-		return m_memOccupied ; };
-	int32_t getMemAlloced  () {
-		return m_memAlloced ;  };
-	//int32_t getRecOverhead () {
-	//	return 3*4 + m_tree.m_overhead; };
-	int32_t getMaxMem      () { return m_maxMem; };
+		return m_memOccupied ;
+	}
 
-	//int32_t getBaseMem     () {
-	//	return m_baseMem         + m_tree.m_baseMem; };
+	int32_t getMemAlloced  () {
+		return m_memAlloced ;
+	}
+
+	int32_t getMaxMem      () { return m_maxMem; }
+
 	// cache stats
-	int64_t getNumHits   () { return m_numHits;   };
-	int64_t getNumMisses () { return m_numMisses; };
-	int64_t getHitBytes  () { return m_hitBytes; };
-	int32_t getNumUsedNodes  () { return m_numPtrsUsed; };
-	int32_t getNumTotalNodes () { return m_numPtrsMax ; };
+	int64_t getNumHits   () { return m_numHits;   }
+	int64_t getNumMisses () { return m_numMisses; }
+	int64_t getHitBytes  () { return m_hitBytes; }
+	int32_t getNumUsedNodes  () { return m_numPtrsUsed; }
+	int32_t getNumTotalNodes () { return m_numPtrsMax ; }
 
 	bool useDisk ( ) { return m_useDisk; };
 	bool load ( char *dbname );
@@ -295,7 +294,6 @@ class RdbCache {
 	// private:
 
 	bool addRecord ( collnum_t collnum ,
-			 //key_t cacheKey , 
 			 char *cacheKey , 
 			 char *rec1     ,
 			 int32_t  recSize1 ,
@@ -305,8 +303,6 @@ class RdbCache {
 			 char **retRecPtr = NULL ) ;
 
 	bool deleteRec ( );
-	//void addKey     ( collnum_t collnum , key_t key , char *ptr ) ;
-	//void removeKey  ( collnum_t collnum , key_t key , char *rec ) ;
 	void addKey     ( collnum_t collnum , char *key , char *ptr ) ;
 	void removeKey  ( collnum_t collnum , char *key , char *rec ) ;
 	void markDeletedRecord(char *ptr);
@@ -321,10 +317,10 @@ class RdbCache {
 	// . mem stats -- just for arrays we contain -- not in tree
 	// . memory that is allocated and in use, including dataSizes
 	int32_t m_memOccupied;
+
 	// total memory allocated including dataSizes of our records
 	int32_t m_memAlloced;
-	// allocated memory for m_next/m_prev/m_time arrays
-	//int32_t m_baseMem;
+
 	// don't let m_memAlloced exceed this
 	int32_t  m_maxMem;
 
@@ -344,12 +340,9 @@ class RdbCache {
 	int32_t       m_numPtrsMax;
 	int32_t       m_numPtrsUsed;
 	int32_t       m_threshold;
-	// use this for testing to make sure cache doesn't fuck up the content
-	//int32_t      *m_crcs;
 
 	// cache hits and misses
 	int64_t m_numHits; // includes partial hits & cached not-founds too
-	//int64_t m_numPartialHits;
 	int64_t m_numMisses;
 	int64_t m_hitBytes;
 

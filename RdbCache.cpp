@@ -4,15 +4,11 @@
 #define _XOPEN_SOURCE 500
 #include <unistd.h>
 #include "Threads.h"
-
 #include "RdbCache.h"
 #include "Collectiondb.h"
 #include "Loop.h"
 #include "Msg17.h"
-//#include "Dns.h"   // g_dns
-//#include "Msg36.h" // g_qtable
 #include "Msg13.h"
-//#include "Msg10.h"   // g_deadWaitCache
 #include "Dns.h"
 #include "BigFile.h"
 #include "Spider.h"
@@ -380,7 +376,6 @@ void RdbCache::addLong ( collnum_t collnum ,
 
 
 bool RdbCache::getRecord ( char    *coll       ,
-			   //key_t    cacheKey   ,
 			   char    *cacheKey   ,
 			   char   **rec        ,
 			   int32_t    *recSize    ,
@@ -426,7 +421,6 @@ bool RdbCache::setTimeStamp ( collnum_t  collnum      ,
 // . returns true if found, false if not found in cache
 // . sets *rec and *recSize iff found
 bool RdbCache::getRecord ( collnum_t collnum   ,
-			   //key_t    cacheKey   ,
 			   char    *cacheKey   ,
 			   char   **rec        ,
 			   int32_t    *recSize    ,
@@ -756,7 +750,6 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 }
 
 bool RdbCache::addRecord ( char  *coll      ,
-			   //key_t  cacheKey  , 
 			   char  *cacheKey  , 
 			   char  *rec       , 
 			   int32_t   recSize   ,
@@ -770,7 +763,6 @@ bool RdbCache::addRecord ( char  *coll      ,
 }
 
 bool RdbCache::addRecord ( collnum_t collnum ,
-			   //key_t  cacheKey  , 
 			   char  *cacheKey  , 
 			   char  *rec1      ,
 			   int32_t   recSize1  ,
@@ -895,39 +887,19 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	// point to storage area
 	char *p = start;
 
-	// before we start writing over possible record data,
-	// if we are promoting a rec, "rec" may actually point
-	// somewhere into here, so be careful!
-	//if ( rec2 <= start && rec2+recSize2 > start ) { char*xx=NULL;*xx=0;}
-	//if ( start <= rec2 && start+32>= rec2       ) { char*xx=NULL;*xx=0;}
-
-	//if ( this == &g_robotdb.m_rdbCache )
-	// if ( this == &g_spiderLoop.m_winnerListCache )
-	// 	logf(LOG_DEBUG, "db: cachebug: adding rec k.n0=0x%"XINT64" "
-	// 	     "rs=%"INT32" "
-	// 	     "off=%"INT32" bufNum=%"INT32" ptr=0x%"PTRFMT" "
-	// 	     "oldtail=%"INT32" "
-	// 	     "newtail=%"INT32" "
-	// 	     "numPtrs=%"INT32"",
-	// 	     ((key_t *)cacheKey)->n0,recSize1+recSize2,
-	// 	     i1c,bufNumStart,(PTRTYPE)p,saved,m_tail,m_numPtrsUsed);
-
 	// if we wiped out all recs then reset tail to m_offset
 	if ( m_numPtrsUsed == 0 ) {
-		//if ( this == &g_robotdb.m_rdbCache )
-		// if ( this == &g_spiderLoop.m_winnerListCache )
-		// 	logf(LOG_DEBUG,"db: cachebug: full tail reset. "
-		// 	     "tail=0");
 		m_tail = 0;
 	}
 
 	// store collnum
 	*(collnum_t *)p = collnum; p += sizeof(collnum_t);
-	// store key
-	//*(key_t *)p = cacheKey; p += sizeof(key_t);
+
 	KEYSET(p,cacheKey,m_cks); p += m_cks;
+
 	// store timestamp
 	*(int32_t *)p = timestamp; p += 4;
+
 	// then dataSize if we need to
 	if ( m_fixedDataSize == -1 || m_supportLists ) { 
 		*(int32_t *)p = recSize1+recSize2; p +=4; } //datasize
@@ -936,12 +908,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 		char *xx = NULL; *xx = 0; }
 	// save for returning
 	if ( retRecPtr ) *retRecPtr = p;
-	// sanity check
-	//if ( rec1 < p && rec1 + recSize1 > p ) { char*xx=NULL;*xx=0;}
-	//if ( rec2 < p && rec2 + recSize2 > p ) { char*xx=NULL;*xx=0;}
-	//if ( rec1 >= p && rec1 < p + need ) { char*xx=NULL;*xx=0;}
-	//if ( rec2 >= p && rec2 < p + need ) { 
-	//	log("cache: poop");}//char*xx=NULL;*xx=0;}
+
 	// then data
 	gbmemcpy ( p , rec1 , recSize1 ); p += recSize1;
 	gbmemcpy ( p , rec2 , recSize2 ); p += recSize2;
@@ -955,27 +922,8 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	// count the occupied memory, excluding the terminating 0 key
 	m_memOccupied += ( p - start ); 
 
-	// debug msg (MDW)
-	// if ( this == &g_spiderLoop.m_winnerListCache ) {
-	// log("cache: adding rec @ %"UINT32" size=%i tail=%"INT32"",
-	//     i1c,(int)(p-start),m_tail);
-	// log("cache: stored k.n1=%"UINT32" k.n0=%"UINT64" %"INT32" bytes @ %"UINT32" tail=%"UINT32"",
-	//     ((key_t *)cacheKey)->n1,
-	//     ((key_t *)cacheKey)->n0,(int)(p-start),i1c,m_tail);
-	// }
-	//if ( m_cks == 4 )
-	//	log("stored k=%"XINT32" %"INT32" bytes @ %"UINT32"",
-	//	    *(int32_t *)cacheKey,p-start,i);//(uint32_t)start);
-
 	// update offset, excluding the terminating 0 key
 	m_offset = i1c + ( p - start );
-
-	// . debug testing -- remove later
-	// . get the crc of the whole thing
-	//char *s    = start; 
-	//char *send = p        - 3;
-	//int32_t crc = 0;
-	//while ( s < send ) { crc += *(int32_t *)s; s += 4; }
 
 	// . add to hash table
 	// . if we are already in there, preserve the 
@@ -989,18 +937,7 @@ bool RdbCache::addRecord ( collnum_t collnum ,
 	    ((key_t *)(&cacheKey))->n1 ,
 	    ((key_t *)(&cacheKey))->n0 );
 
-
-	//log("%s addRecord %"INT32" bytes @ offset=%"INT32" k.n1=%"UINT32" n0=%"UINT64" "
-	//     "TOOK %"INT64" ms" , 
-	//     m_dbname , need , i , 
-	//     cacheKey.n1 , cacheKey.n0 ,
 	m_adds++;
-
-	//int64_t now = gettimeofdayInMillisecondsLocal();
-	//int64_t took = now - startTime;
-	//if(took > 10) 
-	//	log(LOG_INFO, "admin: adding to RdbCache %s of %"INT32" bytes "
-	//	    "took %"INT64" ms.",m_dbname,recSize1+recSize2,took);
 
 	m_needsSave = true;
 
@@ -1012,16 +949,6 @@ bool RdbCache::deleteRec ( ) {
 	// sanity. 
 	if ( m_tail < 0 || m_tail >= m_totalBufSize ) {
 		char *xx = NULL; *xx = 0;}
-
-	// don't do anything if we're empty
-	// ...fix...we ned to make sure the head doesn't eat the tail, so
-	// don't ever skip this stuff
-	//if ( m_numPtrsUsed <= 0 ) return;
-	//if ( b == 36887 )
-	//	log("hey");
-	// delete all recs in [a,b]		
-	//if (b > m_totalBufSize) b = m_totalBufSize;
-	//while ( m_tail < b ) {
 
 	// get ptr from offset
 	int32_t  bufNum = m_tail / BUFSIZE;
@@ -1069,8 +996,9 @@ bool RdbCache::deleteRec ( ) {
 	}
 	
 	// get key
-	//key_t k = *(key_t *)p ; p += sizeof(key_t);
-	char *k = p ; p += m_cks;
+	char *k = p ;
+	p += m_cks;
+
 	// get time stamp
 	int32_t  timestamp = *(int32_t  *)p ; p += 4;
 	// a timestamp of 0 and 0 key, means go to next buffer
