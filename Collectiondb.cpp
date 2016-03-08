@@ -435,9 +435,9 @@ bool Collectiondb::addNewColl ( char *coll ,
 		cr->m_diffbotPageProcessPattern.set ( "" );
 		cr->m_diffbotUrlCrawlRegEx.set ( "" );
 		cr->m_diffbotUrlProcessRegEx.set ( "" );
-    cr->m_diffbotMaxHops = -1; 
-    
-    cr->m_spiderStatus = SP_INITIALIZING;
+		cr->m_diffbotMaxHops = -1; 
+
+		cr->m_spiderStatus = SP_INITIALIZING;
 		// do not spider more than this many urls total. 
 		// -1 means no max.
 		cr->m_maxToCrawl = 100000;

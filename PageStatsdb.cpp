@@ -150,10 +150,8 @@ bool sendPageGraph ( TcpSocket *s, HttpRequest *r ) {
 void genStatsDataset(SafeBuf *buf, StateStatsdb *st) {
 	if ( ! g_conf.m_useStatsdb ) {
 		buf->safePrintf("{\"error\":\"statsdb disabled\"}\n" );
-        return;
-    }
-    
-
+		return;
+	}
 }
 
 static void writeControls ( SafeBuf *buf, StateStatsdb *st ) ;
@@ -216,8 +214,8 @@ void sendReply ( void *state ) {
 	TcpSocket *s = st->m_socket;
 
 	if(st->m_request.getLong("json", 0)) {
-        //xxxxxxxxxxxxxxxxxxxxxxxxx
-    }
+		//xxxxxxxxxxxxxxxxxxxxxxxxx
+	}
 
 	if(st->m_request.getLong("justgraph", 0)) {
 		SafeBuf buf( 1024*32 , "tmpbuf0" );

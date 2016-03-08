@@ -1570,7 +1570,7 @@ bool Parms::printParm ( SafeBuf* sb,
 			sb->jsonEncode(js.getBufStart());
 			sb->safePrintf("\",\n");
 		}
-    sb->m_length -= 2; // hack of trailing comma
+		sb->m_length -= 2; // hack of trailing comma
 		sb->safePrintf("\n\t},\n");
 		return true;
 	}

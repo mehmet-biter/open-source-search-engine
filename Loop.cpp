@@ -1299,16 +1299,16 @@ FILE* gbpopen(char* cmd) {
 	sigfillset ( &sigs );
 
 	if ( sigprocmask ( SIG_BLOCK  , &sigs, &oldSigs ) < 0 ) {
-        log("build: had error blocking signals for popen");
-    }
+		log("build: had error blocking signals for popen");
+	}
 	FILE* fh = popen(cmd, "r");
 
 	if ( sigprocmask ( SIG_SETMASK  , &oldSigs, NULL ) < 0 ) {
-        log("build: had error unblocking signals for popen");
-    }
+		log("build: had error unblocking signals for popen");
+	}
 
 	g_loop.enableQuickpollTimer();
-    return fh;
+	return fh;
 }
 
 

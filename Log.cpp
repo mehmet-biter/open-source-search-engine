@@ -703,50 +703,50 @@ bool logf ( int32_t type , const char *formatString , ...) {
 
 void hexdump(void const *data, const unsigned int len, char *dest, const int dest_len)
 {
-    unsigned int i;
-    unsigned int r,c;
-    
-   
-    if (!data || len <= 0)
-    {
+	unsigned int i;
+	unsigned int r,c;
+
+
+	if (!data || len <= 0)
+	{
 		return;
 	}
 
-    int	dest_used = 0;
-    char *destptr = dest;
+	int	dest_used = 0;
+	char *destptr = dest;
 
-    
-    char line[80]; // line length is actually 78 + null terminator
-    char *lptr;
-    
-    for (r=0,i=0; (r<(len/16+(len%16!=0))) && (dest_len - (dest_used+80)>= 0); r++,i+=16)
-    {
-    	lptr = line;
-       	lptr += sprintf(lptr, "\n%04X:   ",i); 
-	
-        for (c=i; c<i+8; c++) /* left half of hex dump */
-        {
-		    if (c<len)
-		    {
-	        	lptr += sprintf(lptr, "%02X ",((unsigned char const *)data)[c]);
-	        }
-		    else
-		    {
+
+	char line[80]; // line length is actually 78 + null terminator
+	char *lptr;
+
+	for (r=0,i=0; (r<(len/16+(len%16!=0))) && (dest_len - (dest_used+80)>= 0); r++,i+=16)
+	{
+		lptr = line;
+			lptr += sprintf(lptr, "\n%04X:   ",i); 
+
+		for (c=i; c<i+8; c++) /* left half of hex dump */
+		{
+			if (c<len)
+			{
+				lptr += sprintf(lptr, "%02X ",((unsigned char const *)data)[c]);
+			}
+			else
+			{
 				lptr += sprintf(lptr, "   "); /* pad if short line */
 			}
 		}
 
 		lptr += sprintf(lptr, "  ");
-	
+
 		
 		for (c=i+8; c<i+16; c++) /* right half of hex dump */
 		{
-		    if (c<len)
-		    {
+			if (c<len)
+			{
 				lptr += sprintf(lptr, "%02X ",((unsigned char const *)data)[c]);
 			}
-		    else
-		    {
+			else
+			{
 				lptr += sprintf(lptr, "   "); /* pad if short line */
 			}
 		}
@@ -755,27 +755,27 @@ void hexdump(void const *data, const unsigned int len, char *dest, const int des
 		
 		for (c=i; c<i+16; c++) /* ASCII dump */
 		{
-		    if (c<len)
-		    {
+			if (c<len)
+			{
 				if (((unsigned char const *)data)[c]>=32 &&
 				    ((unsigned char const *)data)[c]<127)
 				{
-				    lptr += sprintf(lptr, "%c",((char const *)data)[c]);
+					lptr += sprintf(lptr, "%c",((char const *)data)[c]);
 				}
 				else
 				{
-				    lptr += sprintf(lptr, "."); /* put this for non-printables */
+					lptr += sprintf(lptr, "."); /* put this for non-printables */
 				}
-			}    
-		    else
-		    {
+			}
+			else
+			{
 				lptr += sprintf(lptr, " "); /* pad if short line */
 			}
 		}
 		
 		destptr += sprintf(destptr, "%s", line);
 		dest_used = destptr - dest;
-    }
+	}
 
 	destptr += sprintf(destptr, "\n");
 }

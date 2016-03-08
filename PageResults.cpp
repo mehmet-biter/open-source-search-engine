@@ -962,9 +962,9 @@ bool printSearchResultsHeader ( State0 *st ) {
 	// include number of docs in the collection corpus
 	if ( docsInColl >= 0LL ) {
 		if ( si->m_format == FORMAT_XML) {
-	        sb->safePrintf ( "\t<docsInCollection>%"INT64"</docsInCollection>\n", docsInColl );
+			sb->safePrintf ( "\t<docsInCollection>%"INT64"</docsInCollection>\n", docsInColl );
 		} else if ( st->m_header && si->m_format == FORMAT_JSON) {
-            sb->safePrintf("\"docsInCollection\":%"INT64",\n", docsInColl);
+			sb->safePrintf("\"docsInCollection\":%"INT64",\n", docsInColl);
 		}
 	}
 

@@ -960,7 +960,7 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 		else {
 		    if (cr && cr->m_isCustomCrawl == 1 && sreq && !sreq->m_isAddUrl && !sreq->m_isInjecting) {
 		        if (cr->m_diffbotUrlCrawlPattern.m_length == 0
-                    && cr->m_diffbotUrlProcessPattern.m_length == 0) {
+		            && cr->m_diffbotUrlProcessPattern.m_length == 0) {
 		            // If a crawl and there are no urlCrawlPattern or urlCrawlRegEx values, only return URLs from seed domain
 		            if (sreq && !sreq->m_sameDom)
 		                continue;

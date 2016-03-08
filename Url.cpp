@@ -367,7 +367,7 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 		encoded[newUrlLen] = '\0';
 		return this->set(encoded, newUrlLen, addWWW, stripSessionId, 
 						 stripPound, stripCommonFile, stripTrackingParams, titleRecVersion);
-    }
+	}
 
 	// truncate length to the first occurence of an unacceptable char
 	tlen = i;
