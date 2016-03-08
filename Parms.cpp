@@ -11758,16 +11758,16 @@ Parm *Parms::getParmFast2 ( int32_t cgiHash32 ) {
 			// sanity!
 			if ( s_pht.isInTable ( &ph32 ) ) {
 				// get the dup guy
-				Parm *dup = *(Parm **)s_pht.getValue(&ph32);
+				Parm *duplicate = *(Parm **)s_pht.getValue(&ph32);
 				// same underlying parm?
 				// like for "all spiders on" vs.
 				// "all spiders off"?
-				if ( dup->m_off == parm->m_off )
+				if ( duplicate->m_off == parm->m_off )
 					continue;
 				// otherwise bitch about it and drop core
 				log("parms: dup parm h32=%"INT32" "
 				    "\"%s\" vs \"%s\"",
-				    ph32, dup->m_title,parm->m_title);
+				    ph32, duplicate->m_title,parm->m_title);
 				char *xx=NULL;*xx=0;
 			}
 			// add that to hash table
@@ -13000,9 +13000,9 @@ bool Parms::updateParm ( char *rec , WaitEntry *we ) {
 		cr->m_localCrawlInfo.m_lastSpiderAttempt = 0;
 	if ( base == &g_conf && dst == (char *)&g_conf.m_spideringEnabled ){
 		for(int32_t i = 0;i<g_collectiondb.m_numRecs;i++){
-			CollectionRec *cr = g_collectiondb.m_recs[i];
-			if ( ! cr ) continue;
-			cr->m_localCrawlInfo.m_lastSpiderAttempt = 0;
+			CollectionRec *cr2 = g_collectiondb.m_recs[i];
+			if ( ! cr2 ) continue;
+			cr2->m_localCrawlInfo.m_lastSpiderAttempt = 0;
 		}
 	}
 
