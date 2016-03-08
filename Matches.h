@@ -5,7 +5,6 @@
 
 #include "Query.h"
 #include "Words.h"
-#include "Xml.h"
 #include "HashTableT.h"
 #include "Pos.h"
 #include "Bits.h"
@@ -40,8 +39,6 @@ typedef int32_t mf_t;
 class Xml;
 class Words;
 class Sections;
-class Bits;
-class Pos;
 class Url;
 class LinkInfo;
 class Title;
