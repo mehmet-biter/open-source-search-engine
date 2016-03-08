@@ -7426,16 +7426,13 @@ TagRec *XmlDoc::getTagRec ( ) {
 	if ( m_tagRecValid ) return &m_tagRec;
 
 	// do we got a title rec?
-	if ( m_setFromTitleRec &&
-	     // lookup up fresh from tagdb when doing a rebuild so we get
-	     // the latest sitenuminlinks! nah, we set m_tagRecValid and
-	     // m_tagRecDataValid to false in Repair.cpp iff rebuilding
-	     // titledb!! otherwise, we have to use what is in titlerec
-	     // to avoid parsing inconsistencies that would result in
-	     // undeletable posdb data.
-	     // lookup the tagdb rec fresh if setting for a summary. that way
-	     // we can see if it is banned or not
-	     m_tagRecDataValid ) {
+	if ( m_setFromTitleRec && m_tagRecDataValid ) {
+		// we set m_tagRecValid and m_tagRecDataValid to false in Repair.cpp
+		// if rebuilding titledb!! otherwise, we have to use what is in titlerec
+	    // to avoid parsing inconsistencies that would result in undeletable posdb data.
+
+	    // lookup the tagdb rec fresh if setting for a summary. that way
+		// we can see if it is banned or not
 
 		// all done
 		m_tagRecValid = true;
