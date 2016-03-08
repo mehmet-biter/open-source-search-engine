@@ -260,10 +260,6 @@ class Threads {
 		    void *(* startRoutine      )(void *state,
 						 class ThreadEntry *t) );
 
-	bool call ( char type , int32_t niceness ,
-		    void *state  , void (* callback)(void *state,
-						     class ThreadEntry *t) );
-
 	// try to launch threads waiting to be launched in any queue
 	int32_t launchThreads ();
 

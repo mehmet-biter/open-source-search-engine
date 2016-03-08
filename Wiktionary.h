@@ -127,8 +127,6 @@ class Wiktionary {
 	bool test();
 	bool test2();
 
-	bool generateWiktionaryTxt ();
-
 	bool generateHashTableFromWiktionaryTxt ( int32_t fileSize );
 
 	bool addSynsets ( char *filename ) ;
