@@ -2483,7 +2483,7 @@ int main2 ( int argc , char *argv[] ) {
 	//   MAX_DGRAM_SIZE as the size so when sending you don't drop dgrams
 	// . the 400k size allows us to cover Sync.cpp's activity well
 	if ( ! g_udpServer.init( g_hostdb.getMyPort() ,&g_dp,
-				 20000000 ,   // readBufSIze
+				 40000000 ,   // readBufSIze
 				 20000000 ,   // writeBufSize
 				 20       ,   // pollTime in ms
 				 3500     ,   // max udp slots

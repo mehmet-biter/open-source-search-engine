@@ -110,6 +110,39 @@ UdpServer::~UdpServer() {
 }
 
 
+//Enlarge receive or send buffer on UDP socket. The trouble is that if we try
+//to set them too high then setsockopt() just fails, so we have to do a binary
+//search for the maximum size. Or use some ghastly linux-specificy way of
+//seeing what the kernel will allow.
+static void enlargeUdpSocketBufffer(int fd, const char *bufname, int optname, int proposed_size)
+{
+	int current_buffer_size;
+	socklen_t optlen = sizeof(current_buffer_size);
+
+	if(getsockopt(fd, SOL_SOCKET, optname, (char*)&current_buffer_size, &optlen))	{
+		log(LOG_ERROR,"udp: Could not getsockopt() on fd %d, errno = %d", fd, errno);
+		return;
+	}
+	
+	if(current_buffer_size>=proposed_size) {
+		log(LOG_DEBUG, "udp: %s buffer on fd %d is already at %d", bufname, fd, current_buffer_size);
+		return;
+	}
+	
+
+	int buffer_size = proposed_size;
+
+	while(buffer_size > current_buffer_size) {
+		if(setsockopt(fd, SOL_SOCKET, optname, (const char*)&buffer_size, sizeof(buffer_size)) == 0)
+			break;
+		// Buffer too large, let's try with half the size...
+		buffer_size /=2;
+	}
+
+	log(LOG_DEBUG, "udp: %s buffer on fd %d enlarged from %d to %d", bufname, fd, current_buffer_size, buffer_size);
+}           
+
+
 // . returns false and sets g_errno on error
 // . use 1 socket for recving and sending
 // . pollTime is how often to call timePollWrapper() (in milliseconds)
@@ -269,21 +302,8 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 	// . echo 262144 > /proc/sys/net/core/wmem_max
 	//if ( niceness == 0 ) opt = 2*1024*1024 ;
 	// print the size of the buffers
-	int opt = readBufSize;
-	socklen_t optLen = 4;
-	// set the buffer space
-	if ( setsockopt ( m_sock , SOL_SOCKET , SO_RCVBUF , &opt , optLen ) ) 
-		log("udp: Call to setsockopt (%d) failed: %s.",
-		     opt,mstrerror(errno));
-	opt = writeBufSize;
-	if ( setsockopt ( m_sock , SOL_SOCKET , SO_SNDBUF, &opt , optLen ) )
-		log("udp: Call to setsockopt (%d) failed: %s.",
-		     opt,mstrerror(errno));
-	// log the buffer sizes
-	getsockopt( m_sock , SOL_SOCKET , SO_RCVBUF , &opt , &optLen );
-	log(LOG_DEBUG,"udp: Receive buffer size is %i bytes.",opt);
-	getsockopt( m_sock , SOL_SOCKET , SO_SNDBUF , &opt , &optLen );
-	log(LOG_DEBUG,"udp: Send    buffer size is %i bytes.",opt);
+	enlargeUdpSocketBufffer(m_sock, "Receive", SO_RCVBUF, readBufSize);
+	enlargeUdpSocketBufffer(m_sock, "Send", SO_SNDBUF, writeBufSize);
         // bind this name to the socket
         if ( bind ( m_sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
 		// copy errno to g_errno
