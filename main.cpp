@@ -2461,8 +2461,7 @@ int main2 ( int argc , char *argv[] ) {
 				     maxMem/2048 ,   // max cache nodes 
 				     false       ,   // use half keys?
 				     "results"   ,   // filename
-				     //g_conf.m_searchResultsSaveCache ) ) {
-				     true)){
+				     true)) {
 		log("db: ResultsCache: %s",mstrerror(g_errno)); 
 		return 1;
 	}
