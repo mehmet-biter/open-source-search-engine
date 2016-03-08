@@ -10,6 +10,9 @@
 #include "HashTable.h"
 #include "HttpMime.h"
 #include "Linkdb.h"
+#ifdef _VALGRIND_
+#include <valgrind/memcheck.h>
+#endif
 
 // test urls
 // http://www.thehindu.com/2009/01/05/stories/2009010555661000.htm
@@ -147,7 +150,7 @@ bool isWordQualified ( char *wp , int32_t wlen ) {
 
 // returns false and sets g_errno on error
 bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query,
-                       LinkInfo *linkInfo, Url *firstUrl, char **filteredRootTitleBuf, int32_t filteredRootTitleBufSize,
+                       LinkInfo *linkInfo, Url *firstUrl, const char *filteredRootTitleBuf, int32_t filteredRootTitleBufSize,
                        uint8_t contentType, uint8_t langId, int32_t niceness ) {
 	// make Msg20.cpp faster if it is just has
 	// Msg20Request::m_setForLinkInfo set to true, no need to extricate a title.
@@ -818,14 +821,17 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 	}
 
 	// point to list of \0 separated titles
-	char *rootTitleBuf    = NULL;
-	char *rootTitleBufEnd = NULL;
+	const char *rootTitleBuf    = NULL;
+	const char *rootTitleBufEnd = NULL;
 
 	// get the root title if we are not root!
 	if (filteredRootTitleBuf) {
+#ifdef _VALGRIND_
+		VALGRIND_CHECK_MEM_IS_DEFINED(*filteredRootTitleBuf,filteredRootTitleBufSize);
+#endif
 		// point to list of \0 separated titles
-		rootTitleBuf    = *filteredRootTitleBuf;
-		rootTitleBufEnd =  *filteredRootTitleBuf + filteredRootTitleBufSize;
+		rootTitleBuf    = filteredRootTitleBuf;
+		rootTitleBufEnd =  filteredRootTitleBuf + filteredRootTitleBufSize;
 	}
 
 	{
@@ -836,8 +842,8 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 
 		// convert into an array
 		int32_t nr = 0;
-		char *pr = rootTitleBuf;
-		char *rootTitles[20];
+		const char *pr = rootTitleBuf;
+		const char *rootTitles[20];
 		int32_t  rootTitleLens[20];
 
 		// loop over each root title segment
@@ -848,7 +854,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 				m.reset();
 
 				// see if root title segment has query terms in it
-				m.addMatches ( pr, strnlen(pr,rootTitleBufEnd-pr), MF_TITLEGEN, m_niceness );
+				m.addMatches ( const_cast<char*>(pr), strnlen(pr,rootTitleBufEnd-pr), MF_TITLEGEN, m_niceness );
 
 				// if matches query, do NOT add it, we only add it for
 				// removing from the title of the page...

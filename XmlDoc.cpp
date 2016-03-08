@@ -19638,8 +19638,8 @@ Title *XmlDoc::getTitle() {
 
 	m_titleValid = true;
 
-	char **filteredRootTitleBuf = getFilteredRootTitleBuf();
-	if ( filteredRootTitleBuf == (char**) -1) {
+	char *filteredRootTitleBuf = getFilteredRootTitleBuf();
+	if ( filteredRootTitleBuf == (char*) -1) {
 		filteredRootTitleBuf = NULL;
 	}
 
@@ -22074,17 +22074,17 @@ bool XmlDoc::printCachedPage ( SafeBuf *sb , HttpRequest *hr ) {
 // . used to match the VERIFIED place name 1 or 2 of addresses on this
 //   site in order to set Address::m_flags's AF_VENUE_DEFAULT bit which
 //   indicates the address is the address of the website (a venue website)
-char **XmlDoc::getRootTitleBuf ( ) {
+char *XmlDoc::getRootTitleBuf ( ) {
 
 	// return if valid
-	if ( m_rootTitleBufValid ) return (char **)&m_rootTitleBuf;
+	if ( m_rootTitleBufValid ) return m_rootTitleBuf;
 
 	// get it from the tag rec first
 	setStatus ( "getting root title buf");
 
 	// get it from the tag rec if we can
 	TagRec *gr = getTagRec ();
-	if ( ! gr || gr == (void *)-1 ) return (char **)gr;
+	if ( ! gr || gr == (void *)-1 ) return (char *)(void*)gr;
 
 	// PROBLEM: new title rec is the only thing which has sitetitles tag
 	// sometimes and we do not store that in the title rec. in this case
@@ -22110,7 +22110,7 @@ char **XmlDoc::getRootTitleBuf ( ) {
 		// . get the root doc
  		// . allow for a one hour cache of the titleRec
 		XmlDoc **prd = getRootXmlDoc( 3600 );
-		if ( ! prd || prd == (void *)-1 ) return (char **)prd;
+		if ( ! prd || prd == (void *)-1 ) return (char*)(void*)prd;
 		// shortcut
 		XmlDoc *rd = *prd;
 		// . if no root doc, then assume no root title
@@ -22120,12 +22120,12 @@ char **XmlDoc::getRootTitleBuf ( ) {
 			m_rootTitleBuf[0] = '\0';
 			m_rootTitleBufSize = 0;
 			m_rootTitleBufValid = true;
-			return (char **)&m_rootTitleBuf;
+			return m_rootTitleBuf;
 		}
 
 		// a \0 separated list
-		char **rtl = rd->getTitleBuf();
-		if ( ! rtl || rtl == (void *)-1 ) return (char **)rtl;
+		char *rtl = rd->getTitleBuf();
+		if ( ! rtl || rtl == (void *)-1 ) return rtl;
 
 		// ptr
 		src     = rd->m_titleBuf;
@@ -22157,7 +22157,7 @@ char **XmlDoc::getRootTitleBuf ( ) {
 		ptr_rootTitleBuf = NULL;
 		size_rootTitleBuf = 0;
 		m_rootTitleBufValid = true;
-		return (char **)&m_rootTitleBuf;
+		return m_rootTitleBuf;
 	}
 
 	// sanity check - breach check
@@ -22169,22 +22169,25 @@ char **XmlDoc::getRootTitleBuf ( ) {
 
 	m_rootTitleBufValid = true;
 
-	return (char **)&m_rootTitleBuf;
+	return m_rootTitleBuf;
 }
 
 
-char **XmlDoc::getFilteredRootTitleBuf ( ) {
+char *XmlDoc::getFilteredRootTitleBuf ( ) {
 
 	if ( m_filteredRootTitleBufValid )
-		return (char **)&m_filteredRootTitleBuf;
+		return m_filteredRootTitleBuf;
 
 	// get unfiltered. m_rootTitleBuf should be set from this call.
-	char **rtbp = getRootTitleBuf();
-	if ( ! rtbp || rtbp == (void *)-1 ) return (char **)rtbp;
+	char *rtbp = getRootTitleBuf();
+	if ( ! rtbp || rtbp == (void *)-1 ) return rtbp;
 
 	// filter all the punct to \0 so that something like
 	// "walmart.com : live better" is reduced to 3 potential
 	// names, "walmart", "com" and "live better"
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(m_rootTitleBuf,m_rootTitleBufSize);
+#endif
 	char *src    =       m_rootTitleBuf;
 	char *srcEnd = src + m_rootTitleBufSize;
 	char *dst    =       m_filteredRootTitleBuf;
@@ -22269,10 +22272,11 @@ char **XmlDoc::getFilteredRootTitleBuf ( ) {
 
 	m_filteredRootTitleBufValid = true;
 
-	// make this static to avoid compiler warning
-	static char *fp = m_filteredRootTitleBuf;
+#ifdef _VALGRIND_
+	VALGRIND_CHECK_MEM_IS_DEFINED(m_filteredRootTitleBuf,m_filteredRootTitleBufSize);
+#endif
 
-	return (char **)&fp;
+	return m_filteredRootTitleBuf;
 }
 
 //static bool s_dummyBool = 1;
@@ -22292,15 +22296,15 @@ int cmpbk ( const void *v1, const void *v2 ) {
 	return b1->m_score - b2->m_score;
 }
 
-char **XmlDoc::getTitleBuf ( ) {
-	if ( m_titleBufValid ) return (char **)&m_titleBuf;
+char *XmlDoc::getTitleBuf ( ) {
+	if ( m_titleBufValid ) return m_titleBuf;
 
 	// recalc this everytime the root page is indexed
 	setStatus ( "getting title buf on root");
 
 	// are we a root?
 	char *isRoot = getIsSiteRoot();
-	if ( ! isRoot || isRoot == (char *)-1 ) return (char **)isRoot;
+	if ( ! isRoot || isRoot == (char *)-1 ) return (char*)isRoot;
 	// this should only be called on the root!
 	// . if the site changed for us, but the title rec of what we
 	//   think is now the root thinks that it is not the root because
@@ -22316,7 +22320,7 @@ char **XmlDoc::getTitleBuf ( ) {
 		m_titleBuf[0] = '\0';
 		m_titleBufSize = 0;
 		m_titleBufValid = true;
-		return (char **)&m_titleBuf;
+		return m_titleBuf;
 	}
 
 	// sanity check
@@ -22324,20 +22328,20 @@ char **XmlDoc::getTitleBuf ( ) {
 		gbmemcpy(m_titleBuf, ptr_rootTitleBuf, size_rootTitleBuf );
 		m_titleBufSize  = size_rootTitleBuf;
 		m_titleBufValid = true;
-		return (char **)&m_titleBuf;
+		return m_titleBuf;
 	}
 
 	char *mysite = getSite();
-	if ( ! mysite || mysite == (char *)-1 ) return (char **)mysite;
+	if ( ! mysite || mysite == (char *)-1 ) return mysite;
 	// get link info first
 	LinkInfo   *info1  = getLinkInfo1();
 	// error or blocked
-	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (char **)info1;
+	if ( ! info1 || info1 == (LinkInfo *)-1 ) return (char*)(void*)info1;
 
 	// sanity check
 	Xml *xml = getXml();
 	// return -1 if it blocked
-	if ( xml == (void *)-1 ) return (char **)-1;
+	if ( xml == (void *)-1 ) return (char*)-1;
 	// set up for title
 	int32_t tlen ;
 	char *title ;
@@ -22497,7 +22501,7 @@ char **XmlDoc::getTitleBuf ( ) {
 	if ( size > 0 && m_titleBuf[size-1] ) { char *xx=NULL;*xx=0; }
 	//ptr_siteTitleBuf = m_siteTitleBuf;
 	//size_siteTitleBuf = m_siteTitleBufSize;
-	return (char **)&m_titleBuf;
+	return m_titleBuf;
 }
 
 
@@ -22632,8 +22636,8 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 
 	// . this gets the root doc and and parses titles out of it
 	// . sets our m_rootTitleBuf/m_rootTitleBufSize
-	char **rtbufp = getRootTitleBuf();
-	if ( ! rtbufp || rtbufp == (void *)-1) return (SafeBuf *)rtbufp;
+	char *rtbufp = getRootTitleBuf();
+	if ( ! rtbufp || rtbufp == (void *)-1) return (SafeBuf*)(void*)rtbufp;
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) return NULL;

@@ -23,7 +23,7 @@ public:
 	void reset();
 
 	bool setTitle( Xml *xml, Words *words, int32_t maxTitleLen, Query *query, LinkInfo *linkInfo, Url *firstUrl,
-				   char **filteredRootTitleBuf, int32_t filteredRootTitleBufSize, uint8_t contentType,
+				   const char *filteredRootTitleBuf, int32_t filteredRootTitleBufSize, uint8_t contentType,
 				   uint8_t langId, int32_t niceness );
 
 	bool setTitleFromTags(Xml *xml, int32_t maxTitleLen , uint8_t contentType);
