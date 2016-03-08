@@ -1945,6 +1945,7 @@ bool sendReply2 ( void *state ) {
 
 		// skip dups
 		if ( ctag && ctag->m_type == TT_DUP ) {
+			--count;
 			continue;
 		}
 
