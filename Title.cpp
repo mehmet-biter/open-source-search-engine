@@ -827,7 +827,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 	// get the root title if we are not root!
 	if (filteredRootTitleBuf) {
 #ifdef _VALGRIND_
-		VALGRIND_CHECK_MEM_IS_DEFINED(*filteredRootTitleBuf,filteredRootTitleBufSize);
+		VALGRIND_CHECK_MEM_IS_DEFINED(filteredRootTitleBuf,filteredRootTitleBufSize);
 #endif
 		// point to list of \0 separated titles
 		rootTitleBuf    = filteredRootTitleBuf;
