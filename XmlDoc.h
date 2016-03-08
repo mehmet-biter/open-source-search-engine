@@ -439,7 +439,6 @@ public:
 	char *getScheme ( ) ;	
 	
 	void  gotSite ( ) ;
-	int64_t *getSiteHash64 ( ) ;
 	int32_t *getSiteHash32 ( ) ;
 	char **getHttpReply ( ) ;
 	char **getHttpReply2 ( ) ;
@@ -832,7 +831,6 @@ public:
 	bool m_isWWWDupValid;
 	bool m_linkInfo1Valid;
 	bool m_linkSiteHashesValid;
-	bool m_siteHash64Valid;
 	bool m_siteHash32Valid;
 	bool m_httpReplyValid;
 	bool m_contentTypeValid;
@@ -970,7 +968,6 @@ public:
 	SafeBuf m_langVec;
 
 	SiteGetter m_siteGetter;
-	int64_t  m_siteHash64;
 	int32_t m_siteHash32;
 	char *m_httpReply;
 	char m_incrementedAttemptsCount;

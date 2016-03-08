@@ -9095,17 +9095,6 @@ void XmlDoc::gotSite ( ) {
 	if ( ! m_tagRecValid ) { char *xx=NULL;*xx=0; }
 }
 
-int64_t *XmlDoc::getSiteHash64 ( ) {
-	if ( m_siteHash64Valid ) return &m_siteHash64;
-	char *site = getSite();
-	// sanity check
-	if ( ! site && ! g_errno ) { char *xx=NULL;*xx=0; }
-	if ( ! site || site == (void *)-1) return (int64_t *)site;
-	m_siteHash64 = hash64 ( site , gbstrlen(site) );
-	m_siteHash64Valid = true;
-	return &m_siteHash64;
-}
-
 
 int32_t *XmlDoc::getSiteHash32 ( ) {
 	if ( m_siteHash32Valid ) return &m_siteHash32;
@@ -14463,8 +14452,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		//m_tagHash32 = 0;
 		m_tagPairHash32Valid = true;
 		m_tagPairHash32 = 0;
-		m_siteHash64Valid = true;
-		m_siteHash64 = 0LL;
 		m_spiderLinksValid = true;
 		m_spiderLinks2 = 1;
 		m_langIdValid = true;
@@ -14514,14 +14501,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	{
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getIsSiteRoot failed", __FILE__, __func__, __LINE__);
 		return (char *)isr;
-	}
-
-
-	int64_t *sh64 = getSiteHash64();
-	if ( ! sh64 || sh64 == (void *)-1 ) 
-	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getSiteHash64 failed", __FILE__, __func__, __LINE__);
-		return (char *)sh64;
 	}
 
 	// make sure docid valid
