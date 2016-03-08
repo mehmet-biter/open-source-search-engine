@@ -82,10 +82,4 @@ class Synonyms {
 
 };
 
-// put these in the safebuf now
-class TermInfo {
-public:
-	uint64_t m_termId64;
-};
-
 #endif // GB_SYNONYMS_H
