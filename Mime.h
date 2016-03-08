@@ -15,16 +15,12 @@ class Mime {
 	// just sets m_mime/m_mimeLen
 	void set ( char *mime , int32_t mimeLen );
 
-	char *getLine ( char   *line  ,
-			char  **field , int32_t *fieldLen ,
-			char  **value , int32_t *valueLen ) ;
-
 	// . returns a ptr to next line
 	// . fills in your "field/value" pair of this line
 	// . skips empty and comment lines automatically
-	char *getLine ( char  *line  ,
-			char **field , int32_t fieldLen ,
-			char **value , int32_t valueLen );
+	char *getLine ( char   *line  ,
+			char  **field , int32_t *fieldLen ,
+			char  **value , int32_t *valueLen ) ;
 
 	// use this to get the value of a unique field
 	char *getValue ( char *field , int32_t *valueLen );
