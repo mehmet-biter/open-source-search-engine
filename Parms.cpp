@@ -10600,7 +10600,6 @@ void Parms::init ( ) {
 	char *p    = s_tbuf;
 	char *pend = s_tbuf + 18000;
 	int32_t  size;
-	char  t;
 
 	// . set hashes of title
 	// . used by Statsdb.cpp for identifying a parm
@@ -10719,6 +10718,7 @@ void Parms::init ( ) {
 				exit(-1);
 			}
 		}
+		char  t = 0;
 		// skip if already set
 		if ( m_parms[i].m_size ) goto skipSize;
 		// string sizes should already be set!
