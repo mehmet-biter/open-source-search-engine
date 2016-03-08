@@ -148,6 +148,15 @@ bool Msg40::getResults ( SearchInput *si      ,
 		return true;
 	}
 
+	//enforce hard limits
+	if(m_si->m_docsWanted > g_conf.m_maxDocsWanted) {
+		log(LOG_DEBUG,"msg40: limiting docs-wanted from %d to %d", m_si->m_docsWanted, g_conf.m_maxDocsWanted);
+		m_si->m_docsWanted = g_conf.m_maxDocsWanted;
+	}
+	if(m_si->m_firstResultNum > g_conf.m_maxFirstResultNum) {
+		log(LOG_DEBUG,"msg40: limiting docs-offset from %d to %d", m_si->m_firstResultNum, g_conf.m_maxFirstResultNum);
+		m_si->m_firstResultNum = g_conf.m_maxFirstResultNum;
+	}
 	// how many docids do we need to get?
 	int32_t get = m_si->m_docsWanted + m_si->m_firstResultNum ;
 	// we get one extra for so we can set m_moreToFollow so we know

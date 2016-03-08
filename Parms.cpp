@@ -8701,6 +8701,31 @@ void Parms::init ( ) {
 	m++;
 
 
+	m->m_title = "max results per page";
+	m->m_desc  = "Maximum allowed number of results per page. Puts a limit to what user can request with CGI parameters";
+	m->m_cgi   = "max_results_per_page";
+	m->m_off   = offsetof(Conf,m_maxDocsWanted);
+	m->m_xml   = "max_results_per_page";
+	m->m_type  = TYPE_LONG;
+	m->m_page  = PAGE_SEARCH;
+	m->m_obj   = OBJ_CONF;
+	m->m_def   = "100";
+	m->m_flags = 0;
+	m++;
+
+	m->m_title = "max results offset";
+	m->m_desc  = "Maximum result offset. Puts a limit to what user can request with CGI parameters";
+	m->m_cgi   = "max_results_offset";
+	m->m_off   = offsetof(Conf,m_maxFirstResultNum);
+	m->m_xml   = "max_results_offset";
+	m->m_type  = TYPE_LONG;
+	m->m_page  = PAGE_SEARCH;
+	m->m_obj   = OBJ_CONF;
+	m->m_def   = "200";
+	m->m_flags = 0;
+	m++;
+
+
 	m->m_title = "msg40->39 timeout";
 	m->m_desc  = "Timeout for Msg40/Msg3a to collect candidate docids with Msg39. In milliseconds";
 	m->m_cgi   = "msgfourty_msgthirtynine_timeout";
