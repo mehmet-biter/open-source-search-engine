@@ -334,60 +334,6 @@ int32_t stripAccentMarks (char *outbuf, int32_t outbufsize,
 	return dst - outbuf;
 }
 
-static iconv_t cd_latin1_u8 = (iconv_t)-1;
-int32_t latin1ToUtf8(char *outbuf, int32_t outbufsize, 
-		  char *inbuf, int32_t inbuflen){
-	if ( cd_latin1_u8 == (iconv_t)-1 ) {
-		cd_latin1_u8 = gbiconv_open("UTF-8", "WINDOWS-1252");
-		if ( cd_latin1_u8 ==(iconv_t)-1 ) {
-			log("uni: Error opening output conversion"
-			    " descriptor for utf-8: %s (%d)\n", 
-			    strerror(g_errno),g_errno);
-			return 0;		
-		}
-	}
-
-	char *pin = (char*)inbuf;
-	size_t inRemaining = inbuflen;
-	char *pout = outbuf;
-	size_t outRemaining = outbufsize;
-	while (inRemaining && outRemaining) {
-		int res = iconv(cd_latin1_u8,&pin, &inRemaining,
-				&pout, &outRemaining);
-		if (res < 0 && errno){
-			switch(errno) {
-			case EILSEQ:
-			case EINVAL:
-				log(LOG_DEBUG, 
-				    "uni: Bad character in utf-8 conversion");
-				*pout++ = '?';outRemaining--;
-				pin++; inRemaining--;
-				continue;
-			case E2BIG:
-				// this happens a bunch when we are guessing
-				// the charset i think, so don't spam the
-				// log with warning, keep it a LOG_INFO
-				// I'm making this a log debug --zak
-				log(LOG_DEBUG,
-				    "uni: error converting to utf-8: %s",
-				    strerror(errno));
-				goto done;
-			default:
-				log("uni: unknown error occurred "
-				    "converting to utf-8: %s (%d)",
-				    strerror(errno), errno);
-				goto done;
-			}
-		}
-	}
-done:
-	int32_t len =  outbufsize - outRemaining;
-	len = len>=outbufsize?outbufsize-1:len;
-	//len = outbuf[len]=='\0'?len-1:len;
-	outbuf[len] = '\0';
-	return len;
-	
-}
 
 void resetUnicode ( ) {
 	//s_convTable.reset();

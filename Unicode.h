@@ -227,10 +227,6 @@ int32_t	utf8Encode(UChar32 c, char* buf);
 // Try to detect the Byte Order Mark of a Unicode Document
 char *	ucDetectBOM(char *buf, int32_t bufsize);
 
-// Special case converter...for web page output
-int32_t latin1ToUtf8(char *outbuf, int32_t outbufsize,
-		  char *inbuf, int32_t inbuflen);
-
 //int32_t utf8ToAscii(char *outbuf, int32_t outbufsize,
 //		  unsigned char *inbuf, int32_t inbuflen);
 int32_t stripAccentMarks(char *outbuf, int32_t outbufsize,
