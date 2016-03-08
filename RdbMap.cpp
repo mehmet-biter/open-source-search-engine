@@ -497,6 +497,7 @@ bool RdbMap::verifyMap2 ( ) {
 		exit(1);
 
 
+#if 0
 		//char *xx=NULL;*xx=0;
 		// was k too small?
 		//if ( i + 1 < m_numPages && lastKey <= getKey(i+1) ) {
@@ -553,6 +554,7 @@ bool RdbMap::verifyMap2 ( ) {
 		    "syncing from a twin.",b-a+1);
 		// try from the top
 		goto top;
+#endif
 	}
 	return true;
 }
@@ -735,7 +737,7 @@ bool RdbMap::addRecord ( char *key, char *rec , int32_t recSize ) {
 		// let's ignore it for now and just add the corrupt
 		// record (or maybe the one before was corrupted) but we
 		// need to verify the map afterwards to fix these problems
-		m_needVerify = true;
+		//m_needVerify = true;
 	//	sleep(50000);
 	}
 	//#endif

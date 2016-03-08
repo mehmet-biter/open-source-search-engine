@@ -13572,7 +13572,7 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 
 	// skip for now it was coring on a json doc test
 	return true;
-
+#if 0
 	CollectionRec *cr = getCollRec();
 	if ( ! cr )
 		return true;
@@ -13716,6 +13716,7 @@ bool XmlDoc::doConsistencyTest ( bool forceTest ) {
 
 	// no serious error, although there might be an inconsistency
 	return true;
+#endif
 }
 
 #define TABLE_ROWS 25

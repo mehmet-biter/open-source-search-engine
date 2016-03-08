@@ -329,6 +329,7 @@ bool Posdb::addColl ( char *coll, bool doVerify ) {
 
 bool Posdb::verify ( char *coll ) {
 	return true;
+#if 0
 	log ( LOG_DEBUG, "db: Verifying Posdb for coll %s...", coll );
 	g_threads.disableThreads();
 
@@ -418,6 +419,7 @@ bool Posdb::verify ( char *coll ) {
 	// DONE
 	g_threads.enableThreads();
 	return true;
+#endif
 }
 
 

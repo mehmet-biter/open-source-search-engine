@@ -2975,6 +2975,7 @@ void RdbTree::setNumKeys ( CollectionRec *cr ) {
 
 	return;
 
+#if 0
 	if ( ((unsigned char)m_rdbId) >= RDB_END ) { char *xx=NULL;*xx=0; }
 
 	collnum_t collnum = cr->m_collnum;
@@ -2993,4 +2994,5 @@ void RdbTree::setNumKeys ( CollectionRec *cr ) {
 		else
 			cr->m_numPosKeysInTree[(unsigned char)m_rdbId]++;
 	}
+#endif
 }	
