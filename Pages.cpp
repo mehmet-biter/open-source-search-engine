@@ -50,10 +50,6 @@ static WebPage s_pages[] = {
 	 sendPageLogin, 0 ,NULL,NULL,
 	  PG_NOAPI|PG_ACTIVE},
 
-	{ PAGE_REPORTSPAM , "reportspam"   , 0 , "report spam" , 0 , 0 ,
-	  "report spam",
-	  sendPageReportSpam , 0 ,NULL,NULL,PG_NOAPI},
-
 	// use post now for the "site list" which can be big
 	{ PAGE_BASIC_SETTINGS, "admin/settings", 0 , "settings",1, M_POST , 
 	  "basic settings", sendPageGeneric , 0 ,NULL,NULL,
@@ -250,10 +246,6 @@ char *Pages::getPath ( int32_t page ) {
 	return s_pages[page].m_filename; 
 }
 
-int32_t Pages::getNumPages(){
-	return s_numPages;
-}
-
 void Pages::init ( ) {
 	// array of dynamic page descriptions
 	s_numPages = sizeof(s_pages) / sizeof(WebPage);
@@ -269,35 +261,6 @@ void Pages::init ( ) {
 	// set the m_flen member
 	for ( int32_t i = 0 ; i < s_numPages ; i++ ) 
 		s_pages[i].m_flen = gbstrlen ( s_pages[i].m_filename );
-}
-
-// Used by Users.cpp to get PAGE_* from the given filename
-int32_t Pages::getPageNumber ( char *filename ){
-	//
-	static bool s_init = false;
-	static char s_buff[8192];
-	static HashTableX s_ht;
-	if ( !s_init ){
-		s_ht.set(8,4,256,s_buff,8192,false,0,"pgnummap");
-		for ( int32_t i=0; i < PAGE_NONE; i++ ){
-			if ( ! s_pages[i].m_filename  ) continue;
-			if (   s_pages[i].m_flen <= 0 ) continue;
-			int64_t pageHash = hash64( s_pages[i].m_filename,
-			                             s_pages[i].m_flen    );
-			if ( ! s_ht.addKey(&pageHash,&i) ){
-				char *xx = NULL; *xx = 0;
-			}
-		}
-		s_init = true;
-		// make sure stay in s_buff
-		if ( s_ht.m_buf != s_buff ) { char *xx=NULL;*xx=0; }
-	}
-	int64_t pageHash = hash64(filename,gbstrlen(filename));
-	int32_t slot = s_ht.getSlot(&pageHash);
-	if ( slot== -1 )  return -1;
-	int32_t value = *(int32_t *)s_ht.getValueFromSlot(slot);
-	
-	return value;
 }
 
 // return the PAGE_* number thingy
@@ -1257,7 +1220,7 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 			continue;
 
 		// print it out
-		if ( i == PAGE_LOGIN || i == PAGE_LOGIN2 ) 
+		if ( i == PAGE_LOGIN )
 			sb->safePrintf(
 				       //"<span style=\"white-space:nowrap\">"
 				       "<a href=\"/%s?"
@@ -1492,37 +1455,6 @@ bool Pages::printCollectionNavBar ( SafeBuf *sb, int32_t page, const char *coll,
 
 	return status;
 }
-
-bool sendPageReportSpam ( TcpSocket *s , HttpRequest *r ) {
-	char pbuf[32768];
-	SafeBuf p(pbuf, 32768);
-
-	p.safePrintf("<html><head><title>Help Fight Search Engine Spam</title></head><body>");
-
-	int32_t clen;
-	const char* coll = r->getString("c", &clen, "");
-	p.safePrintf ("<a href=\"/?c=%s\">"
-		      "<img width=\"295\" height=\"64\" border=\"0\" "
-		      "alt=\"Gigablast\" src=\"/logo-small.png\" />"
-		      "</a>\n", coll);
-
-
-	p.safePrintf("<br/><br/>Thank you for your submission.  "
-		     "<a href=\"%s\">Back To Search Results</a><br/><br/>",
-		     r->getReferer());	
-
-	p.safePrintf("</body></html>");
-
-	char* sbuf = p.getBufStart();
-	int32_t sbufLen = p.length();
-
-	bool retval = g_httpServer.sendDynamicPage(s,
-						   sbuf,
-						   sbufLen,
-						   -1/*cachetime*/);
-	return 	retval;
-}
-
 
 // let's use a separate section for each "page"
 // then have 3 tables, the input parms,
@@ -2429,9 +2361,7 @@ bool sendPageLogin ( TcpSocket *socket , HttpRequest *hr ) {
 	// try to the get reference Page
 	int32_t refPage = hr->getLong("ref",-1);
 	// if they cam to login page directly... to to basic page then
-	if ( refPage == PAGE_LOGIN ||
-	     refPage == PAGE_LOGIN2 ||
-	     refPage < 0 )
+	if ( refPage == PAGE_LOGIN || refPage < 0 )
 		refPage = PAGE_BASIC_SETTINGS;
 
 	// if they had an original destination, redirect there NOW

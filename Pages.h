@@ -62,7 +62,6 @@ bool sendPageAddUrl2  ( TcpSocket *s , HttpRequest *r );
 bool sendPageGeneric  ( TcpSocket *s , HttpRequest *r ); // in Parms.cpp
 bool sendPageLogView    ( TcpSocket *s , HttpRequest *r );
 bool sendPageProfiler   ( TcpSocket *s , HttpRequest *r );
-bool sendPageReportSpam ( TcpSocket *s , HttpRequest *r );
 bool sendPageThreads    ( TcpSocket *s , HttpRequest *r );
 bool sendPageAPI        ( TcpSocket *s , HttpRequest *r );
 bool sendPageHelp       ( TcpSocket *s , HttpRequest *r );
@@ -114,33 +113,14 @@ class Pages {
 	// . associate each page with a security level
 	void init ( );
 
-	// return page number for a filename
-	// returns -1 if page not found
-	int32_t getPageNumber ( char *filename );
-
 	// a request like "GET /sockets" should return PAGE_SOCKETS
 	int32_t getDynamicPageNumber ( HttpRequest *r ) ;
 
 	char *getPath ( int32_t page ) ;
 
-	int32_t getNumPages ( );
 	// this passes control to the dynamic page generation routine based
 	// on the path of the GET request
 	bool sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page );
-
-	// . each dynamic page generation routine MUST call this to send
-	//   its reply to the requesting client's browser
-	// . returns false if blocked, true otherwise
-	// . sets g_errno on error
-	bool sendPage ( TcpSocket *s           ,
-			char      *page        ,
-			int32_t       pageLen     ,
-			int32_t       cacheTime   ,
-			bool       POSTReply   ,
-			char      *contentType ) ;
-
-
-	bool broadcastRequest ( TcpSocket *s , HttpRequest *r , int32_t page ) ;
 
 	bool getNiceness ( int32_t page );
 
@@ -191,13 +171,12 @@ enum {
 	// public pages
 	PAGE_ROOT        =0,
 	PAGE_RESULTS     ,
-	PAGE_ADDURL      , // 5
+	PAGE_ADDURL      ,
 	PAGE_GET         ,
 	PAGE_LOGIN       ,
-	PAGE_REPORTSPAM  ,
 
 	// basic controls page /admin/basic
-	PAGE_BASIC_SETTINGS , //10
+	PAGE_BASIC_SETTINGS ,
 	PAGE_BASIC_STATUS ,
 	PAGE_COLLPASSWORDS ,//BASIC_SECURITY ,
 	PAGE_BASIC_SEARCH ,
@@ -205,15 +184,15 @@ enum {
 	// master admin pages
 	PAGE_HOSTS       ,
 	PAGE_MASTER      , 
-	PAGE_SEARCH      ,  // 15
+	PAGE_SEARCH      ,
 	PAGE_RANKING     ,
 	PAGE_SPIDER      , 
 	PAGE_SPIDERPROXIES ,
 	PAGE_LOG         ,
 	PAGE_COLLPASSWORDS2 ,//BASIC_SECURITY ,
-	PAGE_MASTERPASSWORDS , // 19
+	PAGE_MASTERPASSWORDS ,
 #ifndef PRIVACORE_SAFE_VERSION
-	PAGE_ADDCOLL     , //20	 
+	PAGE_ADDCOLL     ,
 	PAGE_DELCOLL     , 
 	PAGE_CLONECOLL   ,
 	PAGE_REPAIR      ,
@@ -221,10 +200,10 @@ enum {
 
 	PAGE_FILTERS     ,
 	PAGE_INJECT      , 
-	PAGE_ADDURL2     , // 26
+	PAGE_ADDURL2     ,
 	PAGE_REINDEX     ,	
 
-	PAGE_STATS       , // 10
+	PAGE_STATS       ,
 	PAGE_GRAPH       ,
 	PAGE_PERF        ,
 	PAGE_SOCKETS     ,
@@ -240,13 +219,11 @@ enum {
 
 	PAGE_TITLEDB     ,
 
-	PAGE_CRAWLBOT    , // 35
+	PAGE_CRAWLBOT    ,
 	PAGE_SPIDERDB    ,
 	PAGE_SEARCHBOX   ,
 	PAGE_PARSER      ,
-	PAGE_SITEDB      ,  
-	PAGE_LOGIN2      ,
-	PAGE_INFO        , 
+	PAGE_SITEDB      ,
 	PAGE_NONE     	};
 	
 
