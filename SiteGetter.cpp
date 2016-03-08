@@ -463,14 +463,9 @@ bool SiteGetter::setRecognizedSite ( ) {
 	// . these are applied to all domains uniformly
 	// . if it is xyz.com/users/  use xyz.com/users/fred/ as the site
 
-	// a lot of times these were not indivual blogs, but the blog subsite
-	// of a site... http://dccc.org/blog/P4575/
-	//if ( strncasecmp(p,"/blogs/"       , 7) == 0 ) len = 7;
-	//if ( strncasecmp(p,"/blog/"        , 6) == 0 ) len = 6;
 	// commented out a bunch cuz they were profiles mostly, not blogs...
 	if ( strncasecmp(p,"/~"            , 2) == 0 ) len = 2;
 	// assume this is a username. skip the first /
-	//if ( sitepathdepth == 1                      ) len = 1;
 	if ( strncasecmp(p,"/users/"       , 7) == 0 ) len = 7;
 	if ( strncasecmp(p,"/user/"        , 6) == 0 ) len = 6;
 	if ( strncasecmp(p,"/members/"     , 9) == 0 ) len = 9;
