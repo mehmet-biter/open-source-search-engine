@@ -38,8 +38,6 @@ class SpiderLoop {
 	~SpiderLoop();
 	SpiderLoop();
 
-	bool isInLockTable ( int64_t probDocId );
-
 	bool printLockTable ( );
 
 	int32_t getNumSpidersOutPerIp ( int32_t firstIp , collnum_t collnum ) ;
@@ -51,13 +49,6 @@ class SpiderLoop {
 	// . if spidering is disabled this will sleep about 10 seconds or so
 	//   before checking to see if it's been enabled
 	void startLoop();
-
-	void doLoop();
-
-	void doleUrls1();
-	void doleUrls2();
-
-	int32_t getMaxAllowableSpidersOut ( int32_t pri ) ;
 
 	void spiderDoledUrls ( ) ;
 	bool gotDoledbList2  ( ) ;
@@ -86,17 +77,6 @@ class SpiderLoop {
 	key_t     *m_doledbKey;
 	void      *m_state;
 	void     (*m_callback)(void *state);
-
-	// . the one that was just indexed
-	// . Msg7.cpp uses this to see what docid the injected doc got so it
-	//   can forward it to external program
-	int64_t getLastDocId ( );
-
-	// delete m_msg14[i], decrement m_numSpiders, m_maxUsed
-	void cleanUp ( int32_t i );
-
-	// registers sleep callback iff not already registered
-	void doSleep ( ) ;
 
 	bool indexedDoc ( class XmlDoc *doc );
 
