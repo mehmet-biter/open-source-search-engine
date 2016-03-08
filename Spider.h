@@ -436,8 +436,6 @@ class Spiderdb {
 
 	Rdb *getRdb  ( ) { return &m_rdb; };
 
-	//DiskPageCache *getDiskPageCache() { return &m_pc; };
-
 	// this rdb holds urls waiting to be spidered or being spidered
 	Rdb m_rdb;
 
@@ -486,10 +484,6 @@ class Spiderdb {
 
 	// print the spider rec
 	int32_t print( char *srec , SafeBuf *sb = NULL );
-
-  private:
-
-	//DiskPageCache m_pc;
 };
 
 void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs );

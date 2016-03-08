@@ -80,9 +80,6 @@ public:
 	int64_t       m_startTime;
 	int64_t       m_doneTime;
 	bool 			m_usePartFiles;
-	// this is used for calling DiskPageCache::addPages() when done 
-	// with the read/write
-	//class DiskPageCache *m_pc;
 	// this is just used for accessing the DiskPageCache, m_pc, it is
 	// a "virtual fd" for this whole file
 	int64_t            m_vfd;
@@ -139,7 +136,6 @@ class BigFile {
 	// . if you are opening a new file for writing, you need to provide it
 	//   if you pass in a DiskPageCache ptr
 	bool open  ( int flags , 
-		     //class DiskPageCache *pc = NULL ,
 		     void *pc = NULL ,
 		     int64_t maxFileSize = -1 ,
 		     int permissions    = 
@@ -346,7 +342,6 @@ public:
 	// maximum part #
 	int32_t      m_maxParts;
 
-	//class DiskPageCache *m_pc;
 	int32_t             m_vfd;
 	//bool             m_vfdAllowed;
 

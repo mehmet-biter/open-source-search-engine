@@ -1420,7 +1420,7 @@ bool Rdb::dumpCollLoop ( ) {
 			     //0              ,  // prev last key
 			     KEYMIN()       ,  // prev last key
 			     m_ks           ,  // keySize
-			     NULL,//m_pc           ,  // DiskPageCache ptr
+			     NULL,
 			     maxFileSize    ,
 			     this           )) {// for setting m_needsToSave
 		return false;

@@ -113,7 +113,6 @@ class Rdb {
 		    int32_t   maxCacheNodes   ,
 		    bool   useHalfKeys     ,
 		    bool   loadCacheFromDisk ,
-		    //class DiskPageCache *pc = NULL ,
 		    void *pc = NULL,
 		    bool   isTitledb    = false , // use fileIds2[]?
 		    bool   preloadDiskPageCache = false ,
@@ -485,8 +484,6 @@ class Rdb {
 
 	// so only one save thread launches at a time
 	bool m_isSaving;
-
-	//class DiskPageCache *m_pc;
 
 	bool m_isTitledb;
 

@@ -37,7 +37,6 @@ bool RdbMerge::merge ( char     rdbId        ,
 		       int32_t     startFileNum , 
 		       int32_t     numFiles     ,
 		       int32_t     niceness     ,
-		       //class DiskPageCache *pc   ,
 		       void *pc ,
 		       int64_t maxTargetFileSize ,
 		       char     keySize      ) {

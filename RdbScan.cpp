@@ -1,7 +1,6 @@
 #include "gb-include.h"
 
 #include "RdbScan.h"
-#include "DiskPageCache.h"
 #include "Rdb.h"
 
 void gotListWrapper ( void *state ) ;

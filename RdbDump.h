@@ -50,7 +50,6 @@ class RdbDump {
 		    //key_t      prevLastKey   ,
 		    char      *prevLastKey   ,
 		    char       keySize       ,
-		   //class DiskPageCache *pc  ,
 		   void *pc ,
 		    int64_t  maxFileSize   ,
 		    class Rdb    *rdb        );
@@ -75,8 +74,7 @@ class RdbDump {
 	// . overriden in LdbDumper to pass an LdbFile casted as an RdbFile
 	// . this override makes the file's getSlot() return LdbSlots
 	//   which can be appropriately added to an RdbTable or LdbTable
-	bool load ( class Rdb *rdb , int32_t fixedDataSize , BigFile *file ,
-		    void *pc ); // class DiskPageCache *pc );
+	bool load ( class Rdb *rdb , int32_t fixedDataSize , BigFile *file , void *pc );
 
 	// . calls the callback specified in set() when done
 	// . errno set to indicate error #, if any

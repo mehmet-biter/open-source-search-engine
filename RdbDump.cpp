@@ -32,7 +32,6 @@ bool RdbDump::set ( //char     *coll          ,
 		    //key_t     prevLastKey   ,
 		    char     *prevLastKey   ,
 		    char      keySize       ,
-		   //class DiskPageCache *pc     ,
 		   void *pc ,
 		    int64_t maxFileSize   ,
 		    Rdb      *rdb           ) {

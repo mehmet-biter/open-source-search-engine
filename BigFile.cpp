@@ -9,7 +9,6 @@
 #include "Threads.h"
 #include "Stats.h"
 #include "Statsdb.h"
-//#include "DiskPageCache.h"
 
 #ifdef ASYNCIO
 #include <aio.h>
@@ -423,7 +422,6 @@ static int64_t s_vfd = 0;
 //   DiskPageCache
 // . use maxFileSize of -1 for us to use getFileSize() to set it
 bool BigFile::open ( int flags , 
-		     //class DiskPageCache *pc , 
 		     void *pc ,
 		     int64_t maxFileSize ,
 		     int permissions ) {
@@ -2381,9 +2379,6 @@ bool BigFile::close ( ) {
 	// remove all queued threads that point to us that have not
 	// yet been launched
 	g_threads.m_threadQueues[DISK_THREAD].removeThreads(this);
-	// release our pages from the DiskPageCache
-	//if ( m_pc ) m_pc->rmVfd ( m_vfd );
-	//if ( pc ) pc->rmVfd ( vfd );
 	return true;
 }
 
