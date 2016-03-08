@@ -695,14 +695,11 @@ class SpiderRequest {
 	unsigned    m_reserved3g              :1;
 	unsigned    m_siteNumInlinksValid     :1;
 
-	// . only support certain tags in url filters now i guess
-	// . use the tag value from most recent SpiderRequest only
-	// . the "deep" tag is popular for hitting certain sites hard
-	//unsigned    m_tagDeep:1;
 	// we set this to one from Diffbot.cpp when urldata does not
 	// want the url's to have their links spidered. default is to make
 	// this 0 and to not avoid spidering the links.
 	unsigned    m_avoidSpiderLinks:1;
+
 	// when indexing urls for dmoz, i.e. the urls outputted from
 	// 'dmozparse urldump -s' we need to index them even if there
 	// was a ETCPTIMEDOUT because we have to have indexed the same
