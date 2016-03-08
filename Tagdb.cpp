@@ -618,8 +618,7 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 	fou.pushChar('\0');
 
 	// loop over all tags in the TagRec to mod them
-	for ( int32_t i = 0 ; ; i++ ) {
-
+	for ( int32_t i = 0 ; ; ++i ) {
 		char buf[32];
 		sprintf ( buf , "tagtype%"INT32"",i );
 		const char *tagTypeStr = r->getString(buf,NULL,NULL);
@@ -629,11 +628,9 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 		// should we delete it?
 		sprintf ( buf , "deltag%"INT32"",i);
 		const char *deltag = r->getString(buf,NULL,NULL);
-		//if ( deltag && deltag[0] ) continue;
 
 		sprintf ( buf , "taguser%"INT32"",i);
-		const char *tagUser = r->getString( buf,NULL,"admin");//user);
-		//if ( tagUser && tagUser[0]==0 ) tagUser = user;
+		const char *tagUser = r->getString( buf,NULL,"admin");
 
 		sprintf ( buf , "tagtime%"INT32"",i);
 		int32_t  tagTime = r->getLong(buf,now);
@@ -661,10 +658,10 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 		key.n1 = v1;
 		key.n0 = v0;
 
-
 		// if empty skip it
-		if ( ! dataPtr    ) continue;
-		if ( ! dataPtr[0] ) continue;
+		if ( ! dataPtr || ! dataPtr[0] ) {
+			continue;
+		}
 
 		// everything is now a string
 		int32_t dataSize = gbstrlen(dataPtr) + 1;
@@ -688,7 +685,7 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 			// . add to tag rdb recs in safebuf
 			// . this pushes the rdbid as first byte
 			// . mdwmdwmdw
-			Tag *tag = m_sbuf.addTag ( urlPtr, // us, // site ,
+			Tag *tag = m_sbuf.addTag ( urlPtr,
 						   tagTypeStr ,
 						   tagTime ,
 						   tagUser ,
@@ -699,17 +696,20 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 						   // do not push rdbid into safebuf
 						   false ) ;
 			// error?
-			if ( ! tag )
+			if ( ! tag ) {
 				return false;
+			}
 
 			// hack the key
-			if ( hackKey ) // key.n1 != 0 || key.n0 != 0 ) 
+			if ( hackKey ) {
 				tag->m_key = key;
+			}
 
 			bool deleteOldKey = false;
 
 			// if tag has different key, delete the old one
-			if ( key.n1 && tag->m_key != key ) deleteOldKey = true;
+			if ( key.n1 && tag->m_key != key )
+				deleteOldKey = true;
 			
 			// if del was marked, delete old one and do not add new one
 			if ( deltag && deltag[0] ) {
@@ -977,30 +977,40 @@ void Tagdb::reset() {
 }
 
 bool Tagdb::setHashTable ( ) {
-	if ( s_initialized ) return true;
+	if ( s_initialized ) {
+		return true;
+	}
+
 	s_initialized = true;
+
 	// the hashtable of TagDescriptors
-	//if ( ! s_ht.set ( 1024 ) ) 
 	if ( ! s_ht.set ( 4,sizeof(TagDesc *),1024,NULL,0,false,0,"tgdbtb" ) ) 
 		return log("tagdb: Tagdb hash init failed.");
+
 	// stock it
 	int32_t n = (int32_t)sizeof(s_tagDesc)/(int32_t)sizeof(TagDesc);
-	for ( int32_t i = 0 ; i < n ; i++ ) { 
+	for ( int32_t i = 0 ; i < n ; i++ ) {
 		TagDesc *td = &s_tagDesc[i];
 		const char *s    = td->m_name;
 		int32_t  slen = gbstrlen(s);
+
 		// use the same algo that Words.cpp computeWordIds does 
 		int32_t h = hash64Lower_a ( s , slen );
+
 		// call it a bad name if already in there
 		TagDesc **petd = (TagDesc **)s_ht.getValue ( &h );
-		if ( petd )
-			return log("tagdb: Tag %s collides with old tag %s",
-				   td->m_name,(*petd)->m_name);
+		if ( petd ) {
+			return log( "tagdb: Tag %s collides with old tag %s",
+			            td->m_name, (*petd)->m_name );
+		}
+
 		// set the type
 		td->m_type = h;
+
 		// add it
 		s_ht.addKey ( &h , &td );
 	}
+
 	return true;
 }
 
@@ -1254,8 +1264,8 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	site[siteLen] = '\0';
 
 	// use that
-	m_siteStartKey = g_tagdb.makeStartKey ( site );//url );
-	m_siteEndKey   = g_tagdb.makeEndKey   ( site ); // url );
+	m_siteStartKey = g_tagdb.makeStartKey( site );
+	m_siteEndKey = g_tagdb.makeEndKey( site );
 
 	// un NULL terminate it
 	site[siteLen] = c;
@@ -1276,7 +1286,9 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	// . no! it could be an ip address!
 	// . anyway, if the tld does not exist, just return an empty tagrec
 	//   do not set g_errno
-	if ( ! tld && ! url->isIp() ) return true;
+	if ( ! tld && ! url->isIp() ) {
+		return true;
+	}
 
 	// url cannot have NULLs in it because handleRequest8a() uses
 	// gbstrlen() on it to get its size
@@ -1292,7 +1304,9 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	m_dom = url->getDomain();
 
 	// if none, bad!
-	if ( ! m_dom && ! url->isIp() ) return true;
+	if ( ! m_dom && ! url->isIp() ) {
+		return true;
+	}
 
 	// . save ptr for launchGetRequests()
 	// . move this BACKWARDS for subdomains that have a ton of .'s
@@ -1319,13 +1333,20 @@ bool Msg8a::launchGetRequests ( ) {
 	// clear it
 	g_errno = 0;
 	bool tryDomain = false;
+
  loop:
 	// return true if nothing to launch
-	if ( m_doneLaunching ) return (m_requests == m_replies);
+	if ( m_doneLaunching )
+		return (m_requests == m_replies);
+
 	// don't bother if already got an error
-	if ( m_errno ) return (m_requests == m_replies);
+	if ( m_errno )
+		return (m_requests == m_replies);
+
 	// limit max to 5ish
-	if (m_requests >=MAX_TAGDB_REQUESTS) return (m_requests==m_replies);
+	if (m_requests >=MAX_TAGDB_REQUESTS)
+		return (m_requests==m_replies);
+
 	// take a breath
 	QUICKPOLL(m_niceness);
 
@@ -1654,12 +1675,14 @@ bool sendReply ( void *state ) {
 
 	// shrotcut
 	SafeBuf *sbuf = &newtr->m_sbuf;
+
 	// use the list we got
 	RdbList *list = &st->m_list;
 	key128_t startKey;
 	key128_t endKey;
 	startKey.setMin();
 	endKey.setMax();
+
 	// set it from safe buf
 	list->set ( sbuf->getBufStart() ,
 		    sbuf->length() ,
@@ -1903,44 +1926,60 @@ bool sendReply2 ( void *state ) {
 
 	// set up the loop
 	Tag *itag  = st->m_tagRec.getFirstTag();
-	//last = NULL;
 	int32_t count = 0;
 	int32_t empty = 0;
 	// loop over all tags in TagRec
-	for ( ; empty < 3 ; count++ ) {
+	for ( ; empty < 3 ; ++count ) {
 		// use this tag to print from
 		Tag *ctag = itag;
+
 		// advance
-		if ( itag ) itag = st->m_tagRec.getNextTag(itag);
+		if ( itag ) {
+			itag = st->m_tagRec.getNextTag(itag);
+		}
+
 		// make it NULL, do not start over at the beginning
-		if ( empty > 0 ) ctag = NULL;
+		if ( empty > 0 ) {
+			ctag = NULL;
+		}
+
 		// skip dups
-		if ( ctag && ctag->m_type == TT_DUP ) continue;
+		if ( ctag && ctag->m_type == TT_DUP ) {
+			continue;
+		}
+
 		// if ctag NULL and we are getting all tags, break
-		if ( ! canEdit && ! ctag ) break;
-		// assign for looping
-		//last = tag;
+		if ( ! canEdit && ! ctag ) {
+			break;
+		}
+
 		// if we are NULL, print out 3 empty tags
-		if ( ! ctag ) empty++;
+		if ( ! ctag ) {
+			empty++;
+		}
+
 		// start the section
 		sb.safePrintf("<tr class=poo>");
+
 		// the delete tag checkbox
-		//sb.safePrintf("<tr bgcolor=#%s><td>",DARK_BLUE);
 		sb.safePrintf("<td>");
-		if ( ctag && canEdit ) // && tag->m_type != ST_SITE ) 
-			sb.safePrintf("<input name=deltag%"INT32" "
-				      "type=checkbox>",count);
-		else     
+
+		if ( ctag && canEdit ) {
+			sb.safePrintf("<input name=deltag%"INT32" type=checkbox>", count);
+		} else {
 			sb.safePrintf("&nbsp;");
+		}
+
 		sb.safePrintf("</td>");
+
 		// start the next cell
 		sb.safePrintf("<td>");
-		// . skip ST_SITE, do not show dropdown for that
-		// . no, because for looking up tagRecs i like to see
-		//   the site tag value, to see what subdomain is matched
-		//if ( ctag && ctag->m_type == ST_SITE ) continue;
+
 		// print drop down
-		if ( ! ctag ) sb.safePrintf("<select name=tagtype%"INT32">",count);
+		if ( ! ctag ) {
+			sb.safePrintf("<select name=tagtype%"INT32">", count);
+		}
+
 		// how many tags do we have?
 		int32_t n = (int32_t)sizeof(s_tagDesc)/(int32_t)sizeof(TagDesc);
 		// the options
@@ -1948,9 +1987,7 @@ bool sendReply2 ( void *state ) {
 			TagDesc *td = &s_tagDesc[i];
 			// get tag name
 			const char *tagName = td->m_name;
-			// skip if a reserved tag
-			//if ( strncasecmp ( tagName , "reserved" ,8)==0 ) 
-			//	continue;
+
 			// select the item in the dropdown
 			char *selected = "";
 			// was it selected?
@@ -1960,24 +1997,34 @@ bool sendReply2 ( void *state ) {
 			sb.safePrintf("<option value=\"%s\"%s>%s",
 				      tagName,selected,tagName);
 		}
+
 		// close up the drop down list
-		if ( ! ctag ) sb.safePrintf("</select>");
-		else {
+		if ( ! ctag ) {
+			sb.safePrintf("</select>");
+		} else {
 			const char *tagName = getTagStrFromType ( ctag->m_type );
 			sb.safePrintf("<input type=hidden name=tagtype%"INT32" "
 				      "value=\"%s\">%s",
 				      count,tagName,tagName);
 		}
 		sb.safePrintf("</td><td>");
+
 		// the score field for the drop down list, whatever tag id
 		// was selected will have this score
-		if ( canEdit )
-			sb.safePrintf("<input type=text name=tagdata%"INT32" "
-				      "size=50 value=\"",count);
+		if ( canEdit ) {
+			sb.safePrintf( "<input type=text name=tagdata%"INT32" size=50 value=\"", count );
+		}
+
 		// show the value
-		if ( ctag ) ctag->printDataToBuf ( &sb );
+		if ( ctag ) {
+			ctag->printDataToBuf( &sb );
+		}
+
 		// close up the input tag
-		if ( canEdit ) sb.safePrintf("\">");
+		if ( canEdit ) {
+			sb.safePrintf( "\">" );
+		}
+
 		// close up table cell
 		sb.safePrintf("\n</td>");
 
@@ -1991,37 +2038,40 @@ bool sendReply2 ( void *state ) {
 				      "<td>&nbsp;</td></tr>");
 			continue;
 		}
+
 		// data size
 		sb.safePrintf("<td>%"INT32"</td>",(int32_t)ctag->getTagDataSize());
+
 		// username, timestamp only for non-empty tags
 		char *username = ctag->getUser();
 		int32_t timestamp = ctag->m_timestamp;
 		int32_t  ip  = 0;
 		char *ips = "&nbsp;";
-		if ( ctag->m_ip ) { ip=ctag->m_ip; ips=iptoa(ctag->m_ip);}
+		if ( ctag->m_ip ) {
+			ip=ctag->m_ip;
+			ips=iptoa(ctag->m_ip);
+		}
+
 		// convert timestamp to string
 		char tmp[64];
 		sprintf(tmp,"&nbsp;");
 		time_t ts = timestamp;
 		struct tm *timeStruct = localtime ( &ts );
-		if ( timestamp ) 
+		if ( timestamp ) {
 			strftime(tmp,64,"%b-%d-%Y-%H:%M:%S",timeStruct);
-		sb.safePrintf("<td><input type=hidden name=taguser%"INT32" "
-			      "value=%s>%s</td>",
+		}
+
+		sb.safePrintf("<td><input type=hidden name=taguser%"INT32" value=%s>%s</td>",
 			      count,username,username);
-		sb.safePrintf("<td><input type=hidden name=tagtime%"INT32" "
-			      "value=%"INT32">%s</td>",
+		sb.safePrintf("<td><input type=hidden name=tagtime%"INT32" value=%"INT32">%s</td>",
 			      count,timestamp,tmp);
 
-		sb.safePrintf("<td><input type=hidden name=tagip%"INT32" "
-			      "value=%"INT32">%s",
+		sb.safePrintf("<td><input type=hidden name=tagip%"INT32" value=%"INT32">%s",
 			      count,ip,ips);
 
-		sb.safePrintf("<input type=hidden name=tagn1key%"INT32" "
-			      "value=%"UINT64">",
+		sb.safePrintf("<input type=hidden name=tagn1key%"INT32" value=%"UINT64">",
 			      count,ctag->m_key.n1);
-		sb.safePrintf("<input type=hidden name=tagn0key%"INT32" "
-			      "value=%"UINT64">",
+		sb.safePrintf("<input type=hidden name=tagn0key%"INT32" value=%"UINT64">",
 			      count,ctag->m_key.n0);
 
 		sb.safePrintf("</td>");
@@ -2034,33 +2084,30 @@ bool sendReply2 ( void *state ) {
 			      // above in Tag::set() when it sets m_key.n0
 			      (int32_t)(ctag->m_key.n0&0xffffffff) | 0x01);
 
-		//sb.safePrintf("<td>%s</td><td>%s</td><td>%s</td>",
-		//	      username,tmp,ips);
 		sb.safePrintf("</tr>");
 	}
 
 	// do not print add or del tags buttons if we got tags from more
 	// than one TagRec!
-	if ( canEdit )
-		sb.safePrintf ("<tr bgcolor=#%s><td colspan=10><center>"
-			       
-			       "<input type=submit name=add "
-			       "value=\"Add Tags\" border=0>"
-			       
-			       "</center></td>"
-			       "</tr>\n",DARK_BLUE);
+	if ( canEdit ) {
+		sb.safePrintf( "<tr bgcolor=#%s><td colspan=10><center>"
+		               "<input type=submit name=add "
+		               "value=\"Add Tags\" border=0>"
+		               "</center></td>"
+		               "</tr>\n", DARK_BLUE );
+	}
 
 	sb.safePrintf ( "</center></table>" );
-
 	sb.safePrintf ("</form>");
-
 	sb.safePrintf ("</html>");
 	
 	// clear g_errno, if any, so our reply send goes through
 	g_errno = 0;
+
 	// . nuke the state
 	mdelete ( st , sizeof(State12) , "PageTagdb" );
 	delete (st);
+
 	// . send this page
 	// . encapsulates in html header and tail
 	// . make a Mime
