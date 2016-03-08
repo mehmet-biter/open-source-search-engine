@@ -35,8 +35,6 @@ class Statsdb {
 	// initialize m_rdb
 	bool init( );
 
-	bool addColl ( char *coll, bool doVerify = false );
-
 	void addDocsIndexed ( ) ;
 
 	int32_t getImgHeight() ;
@@ -73,7 +71,6 @@ class Statsdb {
 	char *plotGraph ( char *pstart ,
 			  char *pend ,
 			  int32_t graphHash ,
-			  //class GIFPlotter *plotter ,
 			  SafeBuf &gw,
 			  int32_t  zoff );
 
@@ -87,7 +84,6 @@ class Statsdb {
 	void drawHR ( float z ,
 		      float ymin , 
 		      float ymax ,
-		      //class GIFPlotter *plotter ,
 		      SafeBuf &gw,
 		      class Label *label ,
 		      float zoff ,
@@ -96,9 +92,6 @@ class Statsdb {
 	bool gifLoop ( ) ;
 	bool processList ( ) ;
 	class StatState *getStatState ( int32_t us ) ;
-	// if graphVal is false we graph the count (num ops)
-	bool addPointsFromStatsTable1 ( );
-	bool addPointsFromStatsTable2 ( class Label *label ) ;
 
 	bool addPointsFromList ( class Label *label );
 
@@ -201,11 +194,6 @@ class StatData {
 	float     getNewVal () { return m_newVal ; };
 	bool      isStatusChange() { return (m_totalOps==0); };
 	bool      isEvent       () { return (m_totalOps==0); };
-	//void      setKey ( int64_t t1 , uint32_t labelHash ) {
-	//	m_key.n1 = t1; m_key.n0 = labelHash; };
-	//int32_t      getLabelHash () { return (int32_t)m_labelHash; };
-	//int32_t      getParmHash  () { return (int32_t)m_labelHash; };
-	//int32_t      getTime1     () { return m_time1; };
 };
 
 #endif // GB_STATSDB_H
