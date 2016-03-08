@@ -5,11 +5,10 @@
 // . used by Msg38 to get cluster info for each TopNode
 // . used by Msg39 to serialize into a reply
 
-#ifndef GB__TOPTREE_H
-#define GB__TOPTREE_H
+#ifndef GB_TOPTREE_H
+#define GB_TOPTREE_H
 
 #include "Clusterdb.h"   // SAMPLE_VECTOR_SIZE, 48 bytes for now
-//#include "IndexTable2.h" // score_t definition
 #include "RdbTree.h"
 
 class TopNode {
