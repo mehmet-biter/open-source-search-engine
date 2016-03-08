@@ -6691,33 +6691,19 @@ uint8_t *XmlDoc::getRootLangId ( ) {
 		if ( ! rd->m_langIdValid ) { char *xx=NULL;*xx=0;}
 		// now validate our stuff
 		m_rootLangIdValid = true;
-		//m_rootLangIdScore = rd->m_langIdScore;
 		m_rootLangId      = rd->m_langId;
 		return &m_rootLangId;
 	}
+
 	// sanity check ( must be like "en,50\0" or could be
 	// "en_US,50\0" or "zh_cn,50"
 	if ( tag->getTagDataSize() > 6 ) { char *xx=NULL;*xx=0; }
+
 	// point to 2 character language abbreviation
 	char *abbr = tag->getTagData();
-	/*
-	// find comma
-	char *comma = strchr(abbr,',' );
-	// sanity check
-	if ( ! comma ) { char *xx=NULL;*xx=0; }
-	// tmp NULL
-	*comma = '\0';
-	*/
 	// map it to an id
 	uint8_t langId = getLangIdFromAbbr( abbr );
-	/*
-	// put it back
-	*comma = ',';
-	// get score
-	int32_t score = atol(comma+1);
-	// sanity check
-	if ( score < 0 || score > 100 ) { char *xx=NULL;*xx=0; }
-	*/
+
 	// set that up
 	m_rootLangId      = langId;
 	//m_rootLangIdScore = score;
@@ -7749,12 +7735,6 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 	// now update tagdb!
 	//
 
-	// ok, get the sites of the external outlinks and they must
-	// also be NEW outlinks, added to the page since the last time
-	// we spidered it...
-	//Links *links = getLinks ();
-	//if ( ! links || links == (Links *)-1 ) return (int32_t *)links;
-
 	mysite = getSite();
 	if ( ! mysite || mysite == (void *)-1 ) return (int32_t *)mysite;
 
@@ -7786,24 +7766,7 @@ int32_t *XmlDoc::getSiteNumInlinks ( ) {
 			m_siteNumInlinks = min;
 			m_siteNumInlinksValid = true;
 		}
-		// if ( ! m_siteNumInlinksUniqueIpValid ||
-		//      m_siteNumInlinksUniqueIp < min ) {
-		// 	m_siteNumInlinksUniqueIp = min;
-		// 	m_siteNumInlinksUniqueIpValid = true;
-		// }
-		// if ( ! m_siteNumInlinksUniqueCBlockValid ||
-		//      m_siteNumInlinksUniqueCBlock < min ) {
-		// 	m_siteNumInlinksUniqueCBlock = min;
-		// 	m_siteNumInlinksUniqueCBlockValid = true;
-		// }
-		// if ( ! m_siteNumInlinksTotalValid ||
-		//      m_siteNumInlinksTotal < min ) {
-		// 	m_siteNumInlinksTotal = min;
-		// 	m_siteNumInlinksTotalValid = true;
-		// }
 	}
-
-
 
 	// deal with it
 	return &m_siteNumInlinks;
@@ -7909,13 +7872,7 @@ LinkInfo *XmlDoc::getSiteLinkInfo() {
 				&m_mySiteLinkInfoBuf) )
 		// return -1 if it blocked
 		return (LinkInfo *)-1;
-	// sanity check
-	//if ( ! m_msg25.m_linkInfo ) {
-	//	log("build: error making link info: %s",mstrerror(g_errno));
-	//	return NULL;
-	//}
-	// we got it
-	//return m_msg25.m_linkInfo;
+
 	// getLinkInfo() now calls multicast so it returns true on errors only
 	log("build: error making link info: %s",mstrerror(g_errno));
 	return NULL;
@@ -9059,7 +9016,10 @@ char *XmlDoc::getSite ( ) {
 		return NULL;
 	}
 	// ok, return it
-	if ( m_siteValid ) return ptr_site;//m_siteGetter.m_site;
+	if ( m_siteValid ) {
+		return ptr_site;
+	}
+
 	// note it
 	setStatus ( "getting site");
 	// need this
@@ -9078,29 +9038,29 @@ char *XmlDoc::getSite ( ) {
 		g_errno = EBADURL;
 		return NULL;
 	}
-	// this must be valid
-	//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
-	int32_t timestamp = getSpideredTime();//m_spideredTime;
-	// add tags to tagdb?
-	//bool addTags = true;
-	//if ( m_sreqValid && m_sreq.m_isPageParser ) addTags = false;
-	//if ( getIsPageParser() ) addTags = false;
+
+	int32_t timestamp = getSpideredTime();
+
 	// do it
 	if ( ! m_siteGetter.getSite ( f->getUrl()    ,
 				      gr             ,
 				      timestamp      ,
 				      cr->m_collnum         ,
 				      m_niceness     ,
-				      //addTags        ,
 				      this           , // state
-				      gotSiteWrapper ))
+				      gotSiteWrapper )) {
 		// return -1 if we blocked
-		return (char *)-1;
+		return (char *) -1;
+	}
+
 	// error?
-	if ( g_errno ) return NULL;
+	if ( g_errno ) {
+		return NULL;
+	}
+
 	// set these then
 	gotSite();
-	return ptr_site;//m_siteGetter.m_site;
+	return ptr_site;
 }
 
 // set it
@@ -9115,6 +9075,7 @@ void gotSiteWrapper ( void *state ) {
 void XmlDoc::gotSite ( ) {
 	// sanity check
 	if ( ! m_siteGetter.m_allDone && ! g_errno ) { char *xx=NULL;*xx=0; }
+
 	// this sets g_errno on error
 	ptr_site    = m_siteGetter.m_site;
 	size_site   = m_siteGetter.m_siteLen+1; // include \0
@@ -9127,14 +9088,11 @@ void XmlDoc::gotSite ( ) {
 	ptr_scheme    = m_siteGetter.m_scheme;
 	size_scheme   = m_siteGetter.m_schemeLen+1; // include \0
 
-
 	// sitegetter.m_errno might be set!
 	m_siteValid = true;
+
 	// must be valid
 	if ( ! m_tagRecValid ) { char *xx=NULL;*xx=0; }
-	// add the sitepathdepth tag to our tagrec
-	//Tag *a = m_siteGetter.m_addedTag.getFirstTag();
-	//if ( a ) m_newTagRec.addTag ( a );
 }
 
 int64_t *XmlDoc::getSiteHash64 ( ) {
@@ -22423,29 +22381,6 @@ char *XmlDoc::getTitleBuf ( ) {
 		// it's good
 		bk[linkNum].m_score = 1;
 		linkNum++;
-		/*
-		// set into words
-		Words w;
-		// return NULL on error with g_errno set
-		if ( ! w.setx ( txt , tlen , m_niceness ) ) return NULL;
-		// shortcut
-		int64_t *wids = w.getWordIds();
-		// init hash
-		int64_t h = 0LL;
-		// hash all words together
-		for ( int32_t i = 0 ; i < w.m_numWords ; i++ ) {
-			// skip if not hashable
-			if ( ! wids[i] ) continue;
-			// mix it up
-			h <<= 1LL;
-			// xor it in
-			h ^= wids[i];
-		}
-		// update hash
-		bk[linkNum].m_hash = h;
-		// store in table, return NULL with g_errno set on error
-		if ( ! scoreTable.addTerm ( &h ) ) return NULL;
-		*/
 	}
 	// init this
 	char dtbuf[1000];
