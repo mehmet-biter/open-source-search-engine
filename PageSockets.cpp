@@ -47,14 +47,6 @@ bool sendPageSockets ( TcpSocket *s , HttpRequest *r ) {
 	// from msg13.cpp print the queued url download requests
 	printHammerQueueTable ( &p );
 
-	// get # of disks per machine
-	int32_t count = 0;
-	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts(); i++ ) {
-		int32_t hid = g_hostdb.m_hostPtrs[i]->m_hostId;
-		int32_t m   = g_hostdb.getMachineNum ( hid );
-		if ( m == 0 ) count++;
-	}
-
 	// calculate buffer length
 	int32_t bufLen = p.length();
 	// . send this page
