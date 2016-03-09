@@ -110,17 +110,19 @@ bool sendPageAddUrl2 ( TcpSocket *sock , HttpRequest *hr ) {
 	// error?
 	if ( ! status ) {
 		// nuke it
+		bool rc = g_httpServer.sendErrorReply(gr);
 		mdelete ( gr , sizeof(gr) , "PageAddUrl" );
-		delete (gr);
-		return g_httpServer.sendErrorReply(gr);
+		delete gr;
+		return rc;
 	}
 	// if not list
 	if ( ! size ) {
 		// nuke it
-		mdelete ( gr , sizeof(gr) , "PageAddUrl" );
-		delete (gr);
 		g_errno = EMISSINGINPUT;
-		return g_httpServer.sendErrorReply(gr);
+		bool rc = g_httpServer.sendErrorReply(gr);
+		mdelete ( gr , sizeof(gr) , "PageAddUrl" );
+		delete gr;
+		return rc;
 	}
 
 	// add to spiderdb
