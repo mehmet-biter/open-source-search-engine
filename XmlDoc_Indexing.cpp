@@ -39,9 +39,9 @@ public:
 		m_hashCommonWebWords	= true;
 	};
 	class HashTableX *m_tt;
-	char			*m_prefix;
+	const char		*m_prefix;
 	// "m_desc" should detail the algorithm
-	char			*m_desc;
+	const char		*m_desc;
 	int32_t			m_date;
 	bool			m_shardByTermId;
 	char			m_linkerSiteRank;
@@ -76,7 +76,7 @@ static bool storeTerm ( char	*s        ,
 	// store prefix
 	int32_t poff = wbuf->length();
 	// shortcut
-	char *p = hi->m_prefix;
+	const char *p = hi->m_prefix;
 	// add the prefix too!
 	if ( p  && ! wbuf->safeMemcpy(p,gbstrlen(p)+1)) return false;
 	// none?
@@ -86,7 +86,7 @@ static bool storeTerm ( char	*s        ,
 	// store description
 	int32_t doff = wbuf->length();
 	// shortcut
-	char *d = hi->m_desc;
+	const char *d = hi->m_desc;
 	// add the desc too!
 	if ( d && ! wbuf->safeMemcpy(d,gbstrlen(d)+1) ) return false;
 	// none?
@@ -341,10 +341,7 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		return (char *)cnt;
 	}
 	if ( cnt == (void *)-1 ) { char *xx=NULL;*xx=0; }
-		
-	// and this
-	//Weights *we = getWeights();
-	//if ( ! we || we == (void *)-1 ) return (char *)we;
+
 	// and this
 	Links *links = getLinks();
 	if ( ! links ) 
@@ -353,10 +350,6 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		return (char *)links;
 	}
 	if ( links == (Links *)-1 ) { char *xx=NULL;*xx=0; }
-		
-	// and now this
-	//Synonyms *syn = getSynonyms();
-	//if ( ! syn || syn == (void *)-1 ) return (char *)syn;
 
 	char *wordSpamVec = getWordSpamVec();
 	if (!wordSpamVec) 
@@ -384,14 +377,6 @@ char *XmlDoc::hashAll ( HashTableX *table ) {
 		}
 		if ( lv == (void *)-1 ) { char *xx=NULL;*xx=0; }
 	}
-
-	TagRec *gr = getTagRec();
-	if ( ! gr ) 
-	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getTagRec failed", __FILE__,__func__, __LINE__);
-		return (char *)gr;
-	}
-	if ( gr == (void *)-1 ) {char *xx=NULL;*xx=0; }
 
 	CollectionRec *cr = getCollRec();
 	if ( ! cr ) 
