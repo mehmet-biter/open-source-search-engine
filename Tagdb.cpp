@@ -1201,23 +1201,19 @@ void Msg8a::reset() {
 //   i.e. site tags are also propagated accordingly
 // . closest matching "site" is used as the "site" (the site url)
 bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *state, void (*callback)( void * ),
-                       TagRec *tagRec, bool doInheritance, char rdbId ) {
+                       TagRec *tagRec ) {
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
 	if ( ! cr ) { 
 		g_errno = ENOCOLLREC;
 		return true;
 	}
-	
+
 	// reset tag rec
 	tagRec->reset();
 
-	// sanity check
-	if ( rdbId != RDB_TAGDB ) {char *xx=NULL;*xx=0;}
-	// save it
-	m_rdbId = rdbId;
-
 	// in use? need to wait before reusing
 	if ( m_replies != m_requests ) {char *xx=NULL;*xx=0; }
+
 	// then we gotta free the lists if any
 	reset();
 
@@ -1244,7 +1240,7 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	//   unless in a recognized for like /~mwells/
 	{
 		SiteGetter sg;
-		sg.getSite ( url->getUrl(), NULL, 0, collnum, m_niceness, NULL, NULL);
+		sg.getSite ( url->getUrl(), NULL, 0, collnum, m_niceness );
 		// if it set it to a recognized site, like ~mwells, then set "site"
 		if ( sg.m_siteLen ) {
 			site    = sg.m_site;
@@ -1271,9 +1267,6 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	site[siteLen] = c;
 
 	m_url = url;
-	
-	// save this
-	m_doInheritance = doInheritance;
 
 	// point to url
 	char *u    = url->getUrl();
@@ -1376,10 +1369,9 @@ bool Msg8a::launchGetRequests ( ) {
 	RdbList *listPtr = &m_tagRec->m_lists[m_requests];
 
 	// bias based on the top 64 bits which is the hash of the "site" now
-	//uint32_t gid = g_hostdb.getGroupId ( m_rdbId , &startKey , true );
-	//Host *group = g_hostdb.getGroup ( gid );
-	int32_t shardNum = getShardNum ( m_rdbId , &startKey );//, true );
+	int32_t shardNum = getShardNum ( RDB_TAGDB , &startKey );//, true );
 	Host *firstHost ;
+
 	// if niceness 0 can't pick noquery host.
 	// if niceness 1 can't pick nospider host.
 	firstHost = g_hostdb.getLeastLoadedInShard ( shardNum , m_niceness );
@@ -1392,7 +1384,7 @@ bool Msg8a::launchGetRequests ( ) {
 				   0          , // port
 				   0          , // maxCacheAge
 				   false      , // addToCache
-				   m_rdbId, //RDB_TAGDB  ,
+				   RDB_TAGDB  ,
 				   m_collnum     ,
 				   listPtr    ,
 				   (char *) &startKey  ,
@@ -1634,8 +1626,7 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 
 bool getTagRec ( State12 *st ) {
 	// this replaces msg8a
-	if ( !st->m_msg8a.getTagRec( &st->m_url, st->m_collnum, st->m_niceness, st, sendReplyWrapper, &st->m_tagRec,
-	                             st->m_mergeTags, RDB_TAGDB ))
+	if ( !st->m_msg8a.getTagRec( &st->m_url, st->m_collnum, st->m_niceness, st, sendReplyWrapper, &st->m_tagRec ) )
 		return false;
 
 	return sendReply ( st );

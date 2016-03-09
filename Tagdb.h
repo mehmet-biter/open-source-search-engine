@@ -288,14 +288,13 @@ class Msg8a {
 	// . closest matching "site" is used as the "site" (the site url)
 	// . stores the tagRec in your "tagRec"
 	bool getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *state, void (*callback)( void * ),
-	                TagRec *tagRec, bool doInheritance = true, char rdbId = RDB_TAGDB );
+	                TagRec *tagRec );
 	
 	bool launchGetRequests();
 	void gotAllReplies ( ) ;
 
 	// some specified input
 	Url   *m_url;
-	char   m_rdbId;
 
 	collnum_t m_collnum;
 
@@ -322,15 +321,9 @@ class Msg8a {
 	// we set this for the caller
 	TagRec *m_tagRec;
 
-	// hacks for msg6b
-	void *m_parent;
-	int32_t  m_slotNum;
-
 	// hack for MsgE
 	void *m_state2;
 	void *m_state3;
-	
-	bool  m_doInheritance;
 };
 
 #endif // GB_TAGDB_H
