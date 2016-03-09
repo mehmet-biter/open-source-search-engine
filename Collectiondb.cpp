@@ -1389,8 +1389,6 @@ collnum_t Collectiondb::reserveCollNum ( ) {
 #include "Spider.h"
 #include "Process.h"
 
-static CollectionRec g_default;
-
 
 CollectionRec::CollectionRec() {
 	m_nextLink = NULL;
