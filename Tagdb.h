@@ -17,7 +17,6 @@
 
 bool isTagTypeUnique    ( int32_t tt ) ;
 bool isTagTypeIndexable ( int32_t tt ) ;
-int32_t hexToBinary     ( char *src , char *srcEnd , char *dst , bool decrement );
 
 // . Tag::m_type is this if its a dup in the TagRec
 // . so if www.xyz.com has one tag and xyz.com has another, then
@@ -41,7 +40,7 @@ class Tag {
 	bool printToBuf             ( SafeBuf *sb );
 	bool printToBufAsAddRequest ( SafeBuf *sb );
 	bool printToBufAsXml        ( SafeBuf *sb );
-	bool printToBufAsHtml       ( SafeBuf *sb , char *prefix );
+	bool printToBufAsHtml       ( SafeBuf *sb , const char *prefix );
 	bool printToBufAsTagVector  ( SafeBuf *sb );
 	// just print the m_data...
 	bool printDataToBuf         ( SafeBuf *sb );
@@ -57,8 +56,10 @@ class Tag {
 	// as the first byte in the m_recData buffer
 	char *getTagData     ( ) {return m_buf + *m_buf + 1;};
 	int32_t  getTagDataSize ( ) {return m_bufSize - *m_buf - 1; };
+
 	// what user added this tag?
 	char *getUser ( ) { return m_buf + 1;};
+
 	// remove the terminating \0 which is included as part of the size
 	int32_t  getUserLen ( ) { return *m_buf - 1; };
 
@@ -71,7 +72,8 @@ class Tag {
 	int32_t      m_recDataSize;
 
 	// when tag was added/updated
-	int32_t     m_timestamp; 
+	int32_t     m_timestamp;
+
 	// . ip address of user adding tag
 	// . prevent multiple turk voters from same ip!
 	int32_t     m_ip;        
@@ -150,7 +152,7 @@ public:
 	int32_t           getNumTagTypes ( char *tagTypeStr );
 
 	// get a tag from the tagType
-	class Tag *getTag        ( char *tagTypeStr );
+	class Tag *getTag        ( const char *tagTypeStr );
 	class Tag *getTag2       ( int32_t tagType );
 
 	// . for showing under the summary of a search result in PageResults
@@ -159,41 +161,22 @@ public:
 	bool printToBuf             ( SafeBuf *sb );
 	bool printToBufAsAddRequest ( SafeBuf *sb );
 	bool printToBufAsXml        ( SafeBuf *sb );
-	bool printToBufAsHtml       ( SafeBuf *sb , char *prefix );
+	bool printToBufAsHtml       ( SafeBuf *sb , const char *prefix );
 	bool printToBufAsTagVector  ( SafeBuf *sb );
-
-	// . make sure not a dup of a pre-existing tag
-	// . used by the clock code to not at a clock if already in there
-	//   in Msg14.cpp
-	Tag *getTag ( char *tagTypeStr , char *dataPtr , int32_t dataSize );
-
-	int32_t getTimestamp ( char *tagTypeStr , int32_t defalt );
 
 	// . functions to act on a site "tag buf", like that in Msg16::m_tagRec
 	// . first 2 bytes is size, 2nd to bytes is # of tags, then the tags
-	int32_t getLong ( char        *tagTypeStr       ,
-		       int32_t         defalt    , 
-		       Tag        **bookmark  = NULL ,
-		       int32_t        *timeStamp = NULL ,
-		       char       **user      = NULL );
-	int32_t getLong ( int32_t         tagId     ,
-		       int32_t         defalt    , 
-		       Tag        **bookmark  = NULL ,
-		       int32_t        *timeStamp = NULL ,
-		       char       **user      = NULL );
-	
-	int64_t getLongLong ( char        *tagTypeStr,
-				int64_t    defalt    , 
-				Tag        **bookmark  = NULL ,
-				int32_t        *timeStamp = NULL ,
-				char       **user      = NULL );
+	int32_t getLong ( const char *tagTypeStr, int32_t defalt, Tag **bookmark  = NULL,
+	                  int32_t *timeStamp = NULL, const char **user = NULL );
 
-	char *getString ( char      *tagTypeStr       ,
-			  char      *defalt    = NULL ,
-			  int32_t      *size      = NULL ,
-			  Tag      **bookmark  = NULL ,
-			  int32_t      *timestamp = NULL ,
-			  char     **user      = NULL );
+	int32_t getLong ( int32_t tagId, int32_t defalt, Tag **bookmark  = NULL,
+	                  int32_t *timeStamp = NULL, const char **user = NULL );
+	
+	int64_t getLongLong ( const char *tagTypeStr, int64_t defalt, Tag **bookmark  = NULL,
+	                      int32_t *timeStamp = NULL , const char **user = NULL );
+
+	const char *getString ( const char *tagTypeStr, const char *defalt = NULL, int32_t *size = NULL,
+	                        Tag **bookmark  = NULL, int32_t *timestamp = NULL, const char **user = NULL );
 
 	bool setFromBuf ( char *buf , int32_t bufSize );
 	bool serialize ( SafeBuf &dst );

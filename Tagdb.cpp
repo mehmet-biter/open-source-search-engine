@@ -237,48 +237,6 @@ int32_t Tag::setDataFromBuf ( char *p , char *pend ) {
 	return m_bufSize - 1;
 }
 
-int32_t hexToBinary ( char *src , char *srcEnd , char *dst , bool decrement ) {
-	// keep tabs on how many bytes we store into "dst"
-	char *start = dst;
-	// read in hex values
-	while ( src < srcEnd ) {
-		// get FIRST hex digit
-		unsigned char v;
-		v = *(unsigned char *)src;
-                if      ( v >= 'a' && v <= 'f' ) v = v - 'a' + 10;
-		else if ( v >= 'A' && v <= 'F' ) v = v - 'A' + 10;
-		else if ( v >= '0' && v <= '9' ) v = v - '0';
-		else break;
-		// sanity check
-		if ( v >= 16 ) { char *xx=NULL;*xx=0;}
-		// next character
-		src++;
-		// store it in the destination
-		*dst = v;
-		// sanity check, need one more char FOR SURE!
-		if ( src >= srcEnd ) { char*xx=NULL;*xx=0;}
-		// get the SECOND hex digit of this byte
-		v = *(unsigned char *)src;
-                if      ( v >= 'a' && v <= 'f' ) v = v - 'a' + 10;
-		else if ( v >= 'A' && v <= 'F' ) v = v - 'A' + 10;
-		else if ( v >= '0' && v <= '9' ) v = v - '0';
-		else break;
-		// sanity check
-		if ( v >= 16 ) { char *xx=NULL;*xx=0;}
-		// next character
-		src++;
-		// shift last guy up 4 bits
-		*dst = *dst << 4;
-		// or in the new guy
-		*dst |= v;
-		// point to next byte now
-		if ( decrement ) dst--;
-		else             dst++;
-	}
-	return dst - start;
-}
-
-
 bool Tag::printDataToBuf ( SafeBuf *sb ) {
 	char *data     = getTagData();
 	int32_t  dataSize = getTagDataSize();
@@ -343,7 +301,7 @@ bool Tag::printToBufAsXml ( SafeBuf *sb ) {
 	return true;
 }
 
-bool Tag::printToBufAsHtml ( SafeBuf *sb , char *prefix ) {
+bool Tag::printToBufAsHtml ( SafeBuf *sb , const char *prefix ) {
 	// print the tagname
 	const char *str = getTagStrFromType ( m_type );
 	// print the user that added this tag
@@ -404,7 +362,7 @@ void TagRec::reset ( ) {
 		m_lists[i].freeList();
 }
 
-Tag *TagRec::getTag ( char *tagTypeStr ) {
+Tag *TagRec::getTag ( const char *tagTypeStr ) {
 	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
 	return getTag2 ( tagType );
 }
@@ -426,11 +384,11 @@ Tag *TagRec::getTag2 ( int32_t tagType ) {
 
 // . functions to act on a site "tag buf", like that in Msg16::m_tagRec
 // . first 2 bytes is size, 2nd to bytes is # of tags, then the tags
-int32_t TagRec::getLong ( char        *tagTypeStr,
+int32_t TagRec::getLong ( const char        *tagTypeStr,
 		       int32_t         defalt    , 
 		       Tag        **bookmark  ,
 		       int32_t        *timestamp ,
-		       char       **user      ) {
+		                  const char       **user      ) {
 	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
 	return getLong ( tagType   ,
 			 defalt    ,
@@ -443,7 +401,7 @@ int32_t TagRec::getLong ( int32_t         tagType   ,
 		       int32_t         defalt    , 
 		       Tag        **bookmark  ,
 		       int32_t        *timestamp ,
-		       char       **user      ) {
+		                  const char       **user      ) {
 	// start here
 	Tag *tag ;
 	if ( ! bookmark ) tag = getFirstTag();
@@ -481,11 +439,11 @@ int32_t TagRec::getLong ( int32_t         tagType   ,
 	return defalt;
 }
 
-int64_t TagRec::getLongLong ( char        *tagTypeStr,
+int64_t TagRec::getLongLong ( const char        *tagTypeStr,
 				int64_t    defalt    , 
 				Tag        **bookmark  ,
 				int32_t        *timestamp ,
-				char       **user      ) {
+				              const char       **user      ) {
 	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
 	// start here
 	Tag *tag ;
@@ -520,12 +478,12 @@ int64_t TagRec::getLongLong ( char        *tagTypeStr,
 	return defalt;
 }
 
-char *TagRec::getString ( char      *tagTypeStr,
-			  char      *defalt    ,
+const char *TagRec::getString ( const char      *tagTypeStr,
+                          const char      *defalt    ,
 			  int32_t      *size      ,
 			  Tag      **bookmark  ,
 			  int32_t      *timestamp ,
-			  char     **user      ) {
+			              const char     **user      ) {
 	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
 	// start here
 	Tag *tag ;
@@ -793,7 +751,7 @@ bool TagRec::printToBufAsXml ( SafeBuf *sb ) {
 	return true;
 }
 
-bool TagRec::printToBufAsHtml ( SafeBuf *sb , char *prefix ) {
+bool TagRec::printToBufAsHtml ( SafeBuf *sb , const char *prefix ) {
 	Tag *tag = getFirstTag();
 	for ( ; tag ; tag = getNextTag ( tag ) ) 
 		if ( tag->m_type != TT_DUP ) tag->printToBufAsHtml (sb,prefix);
@@ -805,25 +763,6 @@ bool TagRec::printToBufAsTagVector  ( SafeBuf *sb ) {
 	for ( ; tag ; tag = getNextTag ( tag ) ) 
 		if ( tag->m_type != TT_DUP ) tag->printToBufAsTagVector ( sb );
 	return true;
-}
-
-Tag *TagRec::getTag ( char *tagTypeStr , char *dataPtr , int32_t dataSize ) {
-	// get the tag type numerically
-	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
-	Tag *tag = getFirstTag();
-	for ( ; tag ; tag = getNextTag ( tag ) ) {
-		// skip if tag does not match "tagType"
-		if ( tag->m_type != tagType ) continue;
-		// skip dup tags
-		if ( tag->m_type == TT_DUP )  continue;
-		// skip if dataSize does not match
-		if ( tag->getTagDataSize() != dataSize ) continue;
-		// skip if data does not match
-		if ( memcmp ( tag->getTagData() , dataPtr , dataSize ) ) continue;
-		// we got a match
-		return tag;
-	}
-	return NULL;
 }
 
 //
@@ -937,16 +876,24 @@ static TagDesc s_tagDesc[] = {
 int32_t getTagTypeFromStr( const char *tagname , int32_t tagnameLen ) {
 	// this is now the hash
 	int32_t tagType;
-	if ( tagnameLen == -1 ) tagType = hash32n ( tagname );
-	else                    tagType = hash32 ( tagname , tagnameLen );
+	if ( tagnameLen == -1 ) {
+		tagType = hash32n( tagname );
+	} else {
+		tagType = hash32( tagname, tagnameLen );
+	}
+
 	// make sure table is valid
-	if ( ! s_initialized ) g_tagdb.setHashTable();
+	if ( ! s_initialized ) {
+		g_tagdb.setHashTable();
+	}
+
 	// sanity check, make sure it is a supported tag!
 	if ( ! s_ht.getValue ( &tagType ) ) { 
 		log("tagdb: unsupported tagname \"%s\"",tagname);
 		char *xx=NULL;*xx=0;
 		return -1;
 	}
+
 	return tagType;
 }
 

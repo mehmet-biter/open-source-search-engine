@@ -4734,7 +4734,7 @@ int32_t *XmlDoc::getLinkSiteHashes ( ) {
 		int32_t hostHash32 = hash32 ( host , hostLen , 0 );
 		// get the site
 		TagRec *gr = (*grv)[i];
-		char *site = NULL;
+		const char *site = NULL;
 		int32_t  siteLen = 0;
 		if ( gr ) {
 			int32_t dataSize = 0;
@@ -22497,7 +22497,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	//
 	// add root langid if we need to
 	//
-	char *oldrl = gr->getString("rootlang",NULL,&timestamp);
+	const char *oldrl = gr->getString("rootlang",NULL,&timestamp);
 	// assume no valid id
 	int32_t oldrlid = -99;
 	// convert to id
@@ -22526,14 +22526,14 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	//
 	// add "site" tag
 	//
-	char *oldsite = gr->getString("site",NULL);
+	const char *oldsite = gr->getString("site",NULL);
 	if ( ! oldsite || strcmp(oldsite,mysite) || now-timestamp > 10*86400)
 		tbuf->addTag3(mysite,"site",now,"xmldoc",*ip,mysite,rdbId);
 
 	//
 	// add firstip if not there at all
 	//
-	char *oldfip = gr->getString("firstip",NULL);
+	const char *oldfip = gr->getString("firstip",NULL);
 	// convert it
 	int32_t ip3 = 0;
 	if ( oldfip ) ip3 = atoip(oldfip);
@@ -22624,7 +22624,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 		TagRec *gr = (*grv)[i];
 
 		// does this hostname have a "firstIp" tag?
-		char *ips = gr->getString("firstip",NULL);
+		const char *ips = gr->getString("firstip",NULL);
 
 		bool skip = false;
 		// skip if we are not "old" high quality root
