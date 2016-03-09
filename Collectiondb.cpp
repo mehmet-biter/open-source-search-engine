@@ -981,39 +981,6 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 	return true;
 }
 
-// moves a file by first trying rename, then copying since cross device renaming doesn't work
-// returns 0 on success
-int mv(char* src, char* dest) {
-    int status = rename( src , dest );
-
-    if (status == 0)
-        return 0;
-    FILE *fsrc, *fdest;
-    fsrc = fopen(src, "r");
-    if (fsrc == NULL)
-        return -1;
-    fdest = fopen(dest, "w");
-    if (fdest == NULL) {
-        fclose(fsrc);
-        return -1;
-    }
-
-    const int BUF_SIZE = 1024;
-    char buf[BUF_SIZE];
-    while (!ferror(fdest) && !ferror(fsrc) && !feof(fsrc)) {
-        int read = fread(buf, 1, BUF_SIZE, fsrc);
-        fwrite(buf, 1, read, fdest);
-    }
-
-    fclose(fsrc);
-    fclose(fdest);
-    if (ferror(fdest) || ferror(fsrc))
-        return -1;
-
-    remove(src);
-    return 0;
-}
-
 // . returns false if we need a re-call, true if we completed
 // . returns true with g_errno set on error
 bool Collectiondb::resetColl2( collnum_t oldCollnum,
