@@ -1834,7 +1834,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	p.safePrintf("<td><i><b>Total</b></i></tr>\n");
 
 	//int64_t total ;
-	float totalf ;
+	//float totalf ;
 
 	// print # big files
 	p.safePrintf("<tr class=poo><td><b># big files</b>*</td>");
@@ -2056,7 +2056,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 
 	p.safePrintf("<tr class=poo><td><b>file cache hits %%</b></td>");
-	totalf = 0.0;
+	//totalf = 0.0;
 	for ( int32_t i = 0 ; i < nr ; i++ ) {
 		Rdb *rdb = rdbs[i];
 		RdbCache *rpc = getDiskPageCache ( rdb->m_rdbId );
