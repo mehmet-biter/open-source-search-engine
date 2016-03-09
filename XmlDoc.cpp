@@ -9022,13 +9022,7 @@ char *XmlDoc::getSite ( ) {
 	int32_t timestamp = getSpideredTime();
 
 	// do it
-	if ( ! m_siteGetter.getSite ( f->getUrl()    ,
-				      gr             ,
-				      timestamp      ,
-				      cr->m_collnum         ,
-				      m_niceness     ,
-				      this           , // state
-				      gotSiteWrapper )) {
+	if ( ! m_siteGetter.getSite ( f->getUrl(), gr, timestamp, cr->m_collnum, m_niceness, this, gotSiteWrapper )) {
 		// return -1 if we blocked
 		return (char *) -1;
 	}
