@@ -384,53 +384,35 @@ Tag *TagRec::getTag2 ( int32_t tagType ) {
 
 // . functions to act on a site "tag buf", like that in Msg16::m_tagRec
 // . first 2 bytes is size, 2nd to bytes is # of tags, then the tags
-int32_t TagRec::getLong ( const char        *tagTypeStr,
-		       int32_t         defalt    , 
-		       Tag        **bookmark  ,
-		       int32_t        *timestamp ,
-		                  const char       **user      ) {
+int32_t TagRec::getLong ( const char *tagTypeStr, int32_t defalt, int32_t *timestamp, const char **user ) {
 	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
-	return getLong ( tagType   ,
-			 defalt    ,
-			 bookmark  ,
-			 timestamp ,
-			 user      );
-}
 
-int32_t TagRec::getLong ( int32_t         tagType   ,
-		       int32_t         defalt    , 
-		       Tag        **bookmark  ,
-		       int32_t        *timestamp ,
-		                  const char       **user      ) {
 	// start here
-	Tag *tag ;
-	if ( ! bookmark ) tag = getFirstTag();
-	else              tag = getNextTag ( *bookmark );
+	Tag *tag = getFirstTag();
+
 	// loop over all tags in the buf
 	for ( ; tag ; tag = getNextTag ( tag ) ) {
 		// skip if not a match
 		if ( tag->m_type != tagType ) continue;
+
 		// skip dups
 		if ( tag->m_type == TT_DUP ) continue;
+
 		// get the value as a int32_t
 		int32_t score = 0;
+
 		// the size
 		char *data     = tag->getTagData();
 		int32_t  dataSize = tag->getTagDataSize();
-		//int32_t size = m_dataSize;
+
 		// if ends in NULL trunc it
 		if ( data[dataSize-1] == '\0' ) dataSize--;
-		// trunc it
-		//if ( size > 4 ) size = 4;
+
 		// convert string to value, MUST be signed!!! the data
-		// should inclue a \0
+		// should include a \0
 		score = atol2(data,dataSize);
-		// if only a single byte.need to preserve negatives (twos comp)
-		//if      ( size == 1 ) score = (int32_t)tag->m_data[0];
-		//else if ( size == 2 ) score = (int32_t)*((int16_t *)tag->m_data);
-		//else    gbmemcpy ( &score , tag->m_data , size );
-		// bookmark, et al
-		if ( bookmark  ) *bookmark  = tag;
+
+		// timestamp, et al
 		if ( timestamp ) *timestamp = tag->m_timestamp;
 		if ( user      ) *user      = tag->getUser();
 		return score;
@@ -439,37 +421,34 @@ int32_t TagRec::getLong ( int32_t         tagType   ,
 	return defalt;
 }
 
-int64_t TagRec::getLongLong ( const char        *tagTypeStr,
-				int64_t    defalt    , 
-				Tag        **bookmark  ,
-				int32_t        *timestamp ,
-				              const char       **user      ) {
+int64_t TagRec::getLongLong ( const char *tagTypeStr, int64_t defalt, int32_t *timestamp, const char **user ) {
 	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
+
 	// start here
-	Tag *tag ;
-	if ( ! bookmark ) tag = getFirstTag();
-	else              tag = getNextTag ( *bookmark );
+	Tag *tag = getFirstTag();
+
 	// loop over all tags in the buf
 	for ( ; tag ; tag = getNextTag ( tag ) ) {
 		// skip if not a match
 		if ( tag->m_type != tagType ) continue;
+
 		// skip dups
 		if ( tag->m_type == TT_DUP ) continue;
+
 		// get the value as a int32_t
 		int64_t score = 0;
+
 		// the size
 		char *data     = tag->getTagData();
 		int32_t  dataSize = tag->getTagDataSize();
+
 		// if ends in NULL trunc it
 		if ( data[dataSize-1] == '\0' ) dataSize--;
-		// trunc it
-		//if ( size > 8 ) size = 8;
+
 		// now everything is a string
 		score = atoll2(data,dataSize);
-		// store it
-		//gbmemcpy ( &score , tag->m_data , size );
-		// bookmark, et al
-		if ( bookmark  ) *bookmark  = tag;
+
+		// timestamp, et al
 		if ( timestamp ) *timestamp = tag->m_timestamp;
 		if ( user      ) *user      = tag->getUser();
 		return score;
@@ -478,31 +457,30 @@ int64_t TagRec::getLongLong ( const char        *tagTypeStr,
 	return defalt;
 }
 
-const char *TagRec::getString ( const char      *tagTypeStr,
-                          const char      *defalt    ,
-			  int32_t      *size      ,
-			  Tag      **bookmark  ,
-			  int32_t      *timestamp ,
-			              const char     **user      ) {
+const char *TagRec::getString ( const char *tagTypeStr, const char *defalt, int32_t *size,
+                                int32_t *timestamp, const char **user ) {
 	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
+
 	// start here
-	Tag *tag ;
-	if ( ! bookmark ) tag = getFirstTag();
-	else              tag = getNextTag ( *bookmark );
+	Tag *tag = getFirstTag();
+
 	// loop over all tags in the buf
 	for ( ; tag ; tag = getNextTag ( tag ) ) {
 		// skip if not a match
 		if ( tag->m_type != tagType ) continue;
+
 		// skip dups
 		if ( tag->m_type == TT_DUP ) continue;
+
 		// want size? includes \0 probably
-		if ( size      ) *size = tag->getTagDataSize();//m_dataSize;
-		// bookmark, et al
-		if ( bookmark  ) *bookmark  = tag;
+		if ( size      ) *size = tag->getTagDataSize();
+
+		// timestamp, et al
 		if ( timestamp ) *timestamp = tag->m_timestamp;
 		if ( user      ) *user      = tag->getUser();
+
 		// return it
-		return tag->getTagData();//m_data;
+		return tag->getTagData();
 	}
 	// not found
 	return defalt;
@@ -526,12 +504,18 @@ int32_t TagRec::getNumTagTypes ( char *tagTypeStr ) {
 
 int32_t TagRec::getNumTags ( ) {
 	int32_t numTags = 0;
+
 	// start at the first tag
 	Tag *tag = getFirstTag();
+
 	// loop over all tags in the buf, see if we got a dup
-	for ( ; tag ; tag = getNextTag ( tag ) )
+	for ( ; tag ; tag = getNextTag ( tag ) ) {
 		// skip dups
-		if ( tag->m_type != TT_DUP ) numTags++;
+		if (tag->m_type != TT_DUP) {
+			numTags++;
+		}
+	}
+
 	return numTags;
 }
 
@@ -712,7 +696,6 @@ bool TagRec::printToBuf (  SafeBuf *sb ) {
 }
 
 bool TagRec::setFromBuf ( char *p , int32_t bufSize ) {
-
 	// assign to list! but do not free i guess
 	m_lists[0].m_list = p;
 	m_lists[0].m_listSize = bufSize;

@@ -2914,17 +2914,15 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 		return (int32_t *)isRoot;
 	}
 
-	// get the tag rec
-	//TagRec *gr = getTagRec ();
-	//if ( ! gr || gr == (TagRec *)-1 ) return (int32_t *)gr;
-
 	bool spamCheck = true;
 
 	// if we are a root, allow repeat spam
 	if ( *isRoot ) spamCheck = false;
 
 	// if we are being spidered deep, allow repeat spam
-	if ( gr->getLong("deep",0) ) spamCheck = false;
+	if ( gr->getLong("deep",0) ) {
+		spamCheck = false;
+	}
 
 	// not for crawlbot
 	if ( cr->m_isCustomCrawl ) spamCheck = false;
@@ -22381,7 +22379,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	     ! m_useTitledb ) {
 		m_newTagBuf.reset();
 		m_newTagBufValid = true;
-		int32_t old1 = gr->getLong("sitenuminlinks",-1,NULL,&timestamp);
+		int32_t old1 = gr->getLong("sitenuminlinks",-1,&timestamp);
 		if ( old1 == m_siteNumInlinks &&
 		     old1 != -1 &&
 		     ! m_updatingSiteLinkInfoTags )
@@ -22497,7 +22495,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	//
 	// add root langid if we need to
 	//
-	const char *oldrl = gr->getString("rootlang",NULL,&timestamp);
+	const char *oldrl = gr->getString("rootlang", NULL, NULL, &timestamp);
 	// assume no valid id
 	int32_t oldrlid = -99;
 	// convert to id
@@ -22545,7 +22543,7 @@ SafeBuf *XmlDoc::getNewTagBuf ( ) {
 	}
 
 	// sitenuminlinks
-	int32_t old1 = gr->getLong("sitenuminlinks",-1,NULL,&timestamp);
+	int32_t old1 = gr->getLong("sitenuminlinks",-1,&timestamp);
 	if ( old1 == -1 || old1 != m_siteNumInlinks || m_updatingSiteLinkInfoTags ) {
 		if ( g_conf.m_logDebugLinkInfo )
 			log("xmldoc: adding tag site=%s sitenuminlinks=%"INT32"",

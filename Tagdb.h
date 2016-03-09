@@ -166,17 +166,14 @@ public:
 
 	// . functions to act on a site "tag buf", like that in Msg16::m_tagRec
 	// . first 2 bytes is size, 2nd to bytes is # of tags, then the tags
-	int32_t getLong ( const char *tagTypeStr, int32_t defalt, Tag **bookmark  = NULL,
+	int32_t getLong ( const char *tagTypeStr, int32_t defalt,
 	                  int32_t *timeStamp = NULL, const char **user = NULL );
 
-	int32_t getLong ( int32_t tagId, int32_t defalt, Tag **bookmark  = NULL,
-	                  int32_t *timeStamp = NULL, const char **user = NULL );
-	
-	int64_t getLongLong ( const char *tagTypeStr, int64_t defalt, Tag **bookmark  = NULL,
+	int64_t getLongLong ( const char *tagTypeStr, int64_t defalt,
 	                      int32_t *timeStamp = NULL , const char **user = NULL );
 
 	const char *getString ( const char *tagTypeStr, const char *defalt = NULL, int32_t *size = NULL,
-	                        Tag **bookmark  = NULL, int32_t *timestamp = NULL, const char **user = NULL );
+	                        int32_t *timestamp = NULL, const char **user = NULL );
 
 	bool setFromBuf ( char *buf , int32_t bufSize );
 	bool serialize ( SafeBuf &dst );
