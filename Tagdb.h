@@ -103,57 +103,19 @@ public:
 	void reset();
 	void constructor ();
 
-	int32_t           getNumTags    ( );
+	int32_t getNumTags ( );
 
-	int32_t getSize ( ) { return sizeof(TagRec); };
-
-	class Tag *getFirstTag   ( ) { 
-		if ( m_numListPtrs == 0 ) return NULL;
-		return (Tag *)m_listPtrs[0]->m_list; 
-	}
-
-	bool isEmpty ( ) { return (getFirstTag()==NULL); };
+	Tag *getFirstTag ( );
 
 	// lists should be in order of precedence i guess
-	class Tag *getNextTag ( class Tag *tag ) {
-		// watch out
-		if ( ! tag ) return NULL;
-		// get rec size
-		int32_t recSize = tag->getRecSize();
-		// point to current tag
-		char *current = (char *)tag;
-		// find what list we are in
-		int32_t i;
-		for ( i = 0 ; i < m_numListPtrs ; i++ ) {
-			if ( current <  m_listPtrs[i]->m_list    ) continue;
-			if ( current >= m_listPtrs[i]->m_listEnd ) continue;
-			break;
-		}
-		// sanity
-		if ( i >= m_numListPtrs ) { char *xx=NULL;*xx=0; }
-		// advance
-		current += recSize;
-		// sanity check
-		if ( recSize > 500000 || recSize < 12 ) { 
-			log("tagdb: corrupt tag recsize %i",(int)recSize);
-			return NULL;
-		}
-		// breach list?
-		if ( current < m_listPtrs[i]->m_listEnd) return (Tag *)current;
-		// advance list
-		i++;
-		// breach of lists?
-		if ( i >= m_numListPtrs ) return NULL;
-		// return that list record then
-		return (Tag *)(m_listPtrs[i]->m_list);
-	};
+	Tag *getNextTag ( Tag *tag );
 
 	// return the number the tags having particular tag types
-	int32_t           getNumTagTypes ( char *tagTypeStr );
+	int32_t getNumTagTypes ( char *tagTypeStr );
 
 	// get a tag from the tagType
-	class Tag *getTag        ( const char *tagTypeStr );
-	class Tag *getTag2       ( int32_t tagType );
+	Tag *getTag ( const char *tagTypeStr );
+	Tag *getTag2 ( int32_t tagType );
 
 	// . for showing under the summary of a search result in PageResults
 	// . also for Msg6a
@@ -180,7 +142,7 @@ public:
 
 	bool setFromHttpRequest ( HttpRequest *r , TcpSocket *s );
 
-
+private:
 	// use this for setFromBuf()
 	SafeBuf m_sbuf;
 	

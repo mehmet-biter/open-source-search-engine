@@ -362,6 +362,44 @@ void TagRec::reset ( ) {
 		m_lists[i].freeList();
 }
 
+Tag* TagRec::getFirstTag ( ) {
+	if ( m_numListPtrs == 0 ) return NULL;
+	return (Tag *)m_listPtrs[0]->m_list;
+}
+
+Tag* TagRec::getNextTag ( Tag *tag ) {
+	// watch out
+	if ( ! tag ) return NULL;
+	// get rec size
+	int32_t recSize = tag->getRecSize();
+	// point to current tag
+	char *current = (char *)tag;
+	// find what list we are in
+	int32_t i;
+	for ( i = 0 ; i < m_numListPtrs ; i++ ) {
+		if ( current <  m_listPtrs[i]->m_list    ) continue;
+		if ( current >= m_listPtrs[i]->m_listEnd ) continue;
+		break;
+	}
+	// sanity
+	if ( i >= m_numListPtrs ) { char *xx=NULL;*xx=0; }
+	// advance
+	current += recSize;
+	// sanity check
+	if ( recSize > 500000 || recSize < 12 ) {
+		log("tagdb: corrupt tag recsize %i",(int)recSize);
+		return NULL;
+	}
+	// breach list?
+	if ( current < m_listPtrs[i]->m_listEnd) return (Tag *)current;
+	// advance list
+	i++;
+	// breach of lists?
+	if ( i >= m_numListPtrs ) return NULL;
+	// return that list record then
+	return (Tag *)(m_listPtrs[i]->m_list);
+}
+
 Tag *TagRec::getTag ( const char *tagTypeStr ) {
 	int32_t tagType = getTagTypeFromStr ( tagTypeStr );
 	return getTag2 ( tagType );
