@@ -9,7 +9,6 @@
 #define MAX_SCHEME_LEN 	16
 
 
-
 class SiteGetter {
 
 public:
@@ -19,13 +18,8 @@ public:
 
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on erorr
-	bool getSite ( char         *url      ,
-		       class TagRec *gr       ,
-		       int32_t          timestamp,
-		       collnum_t collnum,
-		       int32_t          niceness ,
-		       void         *state    = NULL ,
-		       void (* callback)(void *) = NULL ) ;
+	bool getSite ( char *url, class TagRec *gr, int32_t timestamp, collnum_t collnum, int32_t niceness,
+	               void *state    = NULL, void (* callback)(void *) = NULL ) ;
 
 
 	bool setRecognizedSite ( );
@@ -37,7 +31,6 @@ public:
 	bool gotSiteList ( ) ;
 	bool setSite ( ) ;
 
-	class TagRec *m_gr;
 	char         *m_url;
 	collnum_t m_collnum;
 	void         *m_state;

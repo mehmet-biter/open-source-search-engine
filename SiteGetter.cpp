@@ -87,16 +87,9 @@ SiteGetter::~SiteGetter ( ) {
 //   pass a bunch of site ptrs to msg9a
 // . "url" MUST BE NORMALIZED via Url.cpp. so using Links' buffer is ok!
 // . TODO: consider setting "state" to null if your url host has tons of inlinx
-bool SiteGetter::getSite ( char   *url      ,
-			   TagRec *gr       ,
-			   int32_t    timestamp,
-			   collnum_t collnum,
-			   int32_t    niceness ,
-			   void   *state    ,
-			   void (* callback)(void *) ) {
-	
+bool SiteGetter::getSite ( char *url, TagRec *gr, int32_t timestamp, collnum_t collnum, int32_t niceness,
+                           void   *state, void (* callback)(void *) ) {
 	// save it
-	m_gr       = gr;
 	m_url      = url;
 	m_collnum = collnum;
 	m_state    = state;
@@ -125,11 +118,8 @@ bool SiteGetter::getSite ( char   *url      ,
 	// reset this just in case
 	g_errno = 0;
 
-	//
 	// HARDCODED algos
-	//
-	// ~ /user/ /users/ /profile/ myspace facebook linkedin
-	//
+	// ~ /user/ /users/ /profile/ vimeo myspace twitter facebook
 	if ( setRecognizedSite ( ) ) {
 		m_allDone = true;
 		return true;
@@ -139,35 +129,48 @@ bool SiteGetter::getSite ( char   *url      ,
 	if ( ! gr ) return setSite ( ) ;
 
 	CollectionRec *cr = g_collectiondb.getRec ( collnum );
-	// g_errno should be set if this is NULL
-	if ( ! cr ) return true;
+	if ( ! cr ) {
+		// g_errno should be set if this is NULL
+		return true;
+	}
 
 	// check the current tag for an age
 	Tag *tag = gr->getTag("sitepathdepth");
+
 	// if there and the age is young, skip it
 	int32_t age = -1;
 
 	// to parse conssitently for the qa test "qatest123" coll use 
 	// "timestamp" as the "current time"
-	if ( tag ) age = timestamp - tag->m_timestamp;
-	// if there, at least get it (might be -1)
-	if ( tag ) m_oldSitePathDepth = atol ( tag->getTagData() );
+	if ( tag ) {
+		age = timestamp - tag->m_timestamp;
+
+		// if there, at least get it (might be -1)
+		m_oldSitePathDepth = atol( tag->getTagData());
+	}
+
+
 	// . if older than 10 days, we need to redo it
 	// . if caller give us a timestamp of 0, never redo it!
-	if ( age > 10*24*60*60 && timestamp != 0 ) age = -1;
+	if ( age > 10*24*60*60 && timestamp != 0 ) {
+		age = -1;
+	}
 
 	// . if our site quality is low, forget about dividing it up too
 	// . if age is valid, skip it
 	// . also if caller does not want a callback, like XmlDoc.cpp,
 	//   then use whatever we got
-	if ( age >= 0 || ! m_state ) { // || hostRootNumInlinks < 500 ) {
+	if ( age >= 0 || ! m_state ) {
 		// do not add to tagdb
 		m_state = NULL;
+
 		// just use what we had, it is not expired
 		m_sitePathDepth = m_oldSitePathDepth;
+
 		// . now set the site with m_sitePathDepth
 		// . sanity check, should not block since m_state is NULL
 		if ( ! setSite () ) { char *xx=NULL;*xx=0; }
+
 		// we did not block
 		return true;
 	}
@@ -177,13 +180,16 @@ bool SiteGetter::getSite ( char   *url      ,
 	if ( g_hostdb.m_hostId != 0 ) { 
 		// do not add to tagdb and do not block!
 		m_state = NULL;
+
 		// . use a sitepathdepth of -1 by default then, until host #0
 		//   has a chance to evaluate
 		// . a sitepathdepth of -1 means to use the full hostname
 		//   as the site
 		m_sitePathDepth = -1;
+
 		// sanity check, should not block since m_state is NULL
 		if ( ! setSite () ) { char *xx=NULL;*xx=0; }
+
 		// we did not block
 		return true;
 	}
@@ -203,11 +209,8 @@ bool SiteGetter::getSite ( char   *url      ,
 	//   then we need the first set to take precedence!
 	m_pathDepth = 0;
 
-	// set our fill url class. do not addWWW
-	//m_u.set ( m_url , gbstrlen(m_url) , false );
-
 	// must have http:// i guess
-	if ( strncmp(m_url,"http",4) ) { 
+	if ( strncmp( m_url, "http", 4 ) ) {
 		g_errno = EBADURL;
 		return true;
 	}
@@ -230,94 +233,107 @@ bool SiteGetter::getSite ( char   *url      ,
 // . returns false if blocked, true otherwise
 // . returns true on error and sets g_errno
 bool SiteGetter::getSiteList ( ) {
+	for (;;) {
+		// . setSite() will return TRUE and set g_errno on error, and returns
+		//   false if it blocked adding a tag, which will call callback once
+		//   tag is added
+		// . stop at this point
+		// or if no more
+		if (m_pathDepth >= 3 || m_pathDepth >= m_maxPathDepth) {
+			return setSite();
+		}
 
-top:
-	// . setSite() will return TRUE and set g_errno on error, and returns
-	//   false if it blocked adding a tag, which will call callback once
-	//   tag is added
-	// . stop at this point
-	if ( m_pathDepth >= 3 ) return setSite();
-	// or if no more
-	if ( m_pathDepth >= m_maxPathDepth ) return setSite();
+		// . make the termid
+		// . but here we get are based on "m_pathDepth" which ranges
+		//   from 1 to N
+		// . if m_pathDepth==0 use "www.xyz.com" as site
+		// . if m_pathDepth==1 use "www.xyz.com/foo/" as site ...
+		char *pend = getPathEnd( m_url, m_pathDepth );
 
-	// . make the termid
-	// . but here we get are based on "m_pathDepth" which ranges
-	//   from 1 to N
-	// . if m_pathDepth==0 use "www.xyz.com" as site
-	// . if m_pathDepth==1 use "www.xyz.com/foo/" as site ...
-	char *pend = getPathEnd ( m_url , m_pathDepth );
-	// hash up to that
-	//char *host = m_u.getHost();
-	char *host = getHostFast ( m_url , NULL );
-	// hash the prefix first to match XmlDoc::hashNoSplit()
-	char *prefix = "siteterm";
-	// hash that and we will incorporate it to match XmlDoc::hashNoSplit()
-	int64_t ph = hash64 ( prefix , gbstrlen(prefix) );
-	// . this should match basically what is in XmlDoc.cpp::hash()
-	// . and this now does not include pages that have no outlinks 
-	//   "underneath" them.
-	int64_t termId = hash64 ( host , pend - host , ph ) & TERMID_MASK;
+		// hash up to that
+		char *host = getHostFast( m_url, NULL );
 
-	// get all pages that have this as their termid!
-	key144_t start ;
-	key144_t end   ;
-	g_posdb.makeStartKey ( &start, termId );
-	g_posdb.makeEndKey   ( &end  , termId );
+		// hash the prefix first to match XmlDoc::hashNoSplit()
+		const char *prefix = "siteterm";
 
-	// . now see how many urls art at this path depth from this hostname
-	// . if it is a huge # then we know they are all subsites!
-	//   because it is too bushy to be anything else
-	// . i'd say 100 nodes is good enough to qualify as a homestead site
+		// hash that and we will incorporate it to match XmlDoc::hashNoSplit()
+		int64_t ph = hash64( prefix, gbstrlen( prefix ));
 
-	int32_t minRecSizes = 5000000;
+		// . this should match basically what is in XmlDoc.cpp::hash()
+		// . and this now does not include pages that have no outlinks
+		//   "underneath" them.
+		int64_t termId = hash64( host, pend - host, ph ) & TERMID_MASK;
 
-	// i guess this is split by termid and not docid????
-	int32_t shardNum = g_hostdb.getShardNumByTermId ( &start );
+		// get all pages that have this as their termid!
+		key144_t start;
+		key144_t end;
+		g_posdb.makeStartKey( &start, termId );
+		g_posdb.makeEndKey( &end, termId );
 
-	// shortcut
-	Msg0 *m = &m_msg0;
-	// get the list. returns false if blocked.
-	if ( ! m->getList ( -1                 , // hostId
-			    0                  , // ip
-			    0                  , // port
-			    0                  , // maxCacheAge
-			    false              , // addToCache
-			    RDB_POSDB        ,
-			    m_collnum             ,
-			    &m_list            ,
-			    (char *)&start     ,
-			    (char *)&end       ,
-			    minRecSizes        ,
-			    this               ,
-			    gotSiteListWrapper ,
-			    m_niceness         , // MAX_NICENESS
-			    // default parms follow
-			    true  ,  // doErrorCorrection?
-			    true  ,  // includeTree?
-			    true  ,  // doMerge?
-			    -1    ,  // firstHostId
-			    0     ,  // startFileNum
-			    -1    ,  // numFiles
-			    msg0_getlist_infinite_timeout,  // timeout
-			    -1    ,  // syncPoint
-			    -1    ,  // preferLocalReads
-			    NULL  ,  // msg5
-			    NULL  ,  // msg5b
-			    false ,  // isrealmerge?
-			    true  ,  // allowpagecache?
-			    false ,  // forceLocalIndexdb?
-			    false ,  // doIndexdbSplit? nosplit
-			    shardNum ) )//split ))
-		return false;
+		// . now see how many urls art at this path depth from this hostname
+		// . if it is a huge # then we know they are all subsites!
+		//   because it is too bushy to be anything else
+		// . i'd say 100 nodes is good enough to qualify as a homestead site
 
-	// return false if this blocked
-	if ( ! gotSiteList() ) return false;
-	// error?
-	if ( g_errno ) return true;
-	// or all done
-	if ( m_allDone ) return true;
-	// otherwise, try the next path component!
-	goto top;
+		int32_t minRecSizes = 5000000;
+
+		// i guess this is split by termid and not docid????
+		int32_t shardNum = g_hostdb.getShardNumByTermId( &start );
+
+		// shortcut
+		Msg0 *m = &m_msg0;
+
+		// get the list. returns false if blocked.
+		if (!m->getList( -1, // hostId
+		                 0, // ip
+		                 0, // port
+		                 0, // maxCacheAge
+		                 false, // addToCache
+		                 RDB_POSDB,
+		                 m_collnum,
+		                 &m_list,
+		                 (char *) &start,
+		                 (char *) &end,
+		                 minRecSizes,
+		                 this,
+		                 gotSiteListWrapper,
+		                 m_niceness, // MAX_NICENESS
+		                 // default parms follow
+				         true,  // doErrorCorrection?
+				         true,  // includeTree?
+				         true,  // doMerge?
+				         -1,  // firstHostId
+				         0,  // startFileNum
+				         -1,  // numFiles
+				         msg0_getlist_infinite_timeout,  // timeout
+				         -1,  // syncPoint
+				         -1,  // preferLocalReads
+				         NULL,  // msg5
+				         NULL,  // msg5b
+				         false,  // isrealmerge?
+				         true,  // allowpagecache?
+				         false,  // forceLocalIndexdb?
+				         false,  // doIndexdbSplit? nosplit
+				         shardNum ))//split ))
+			return false;
+
+		// return false if this blocked
+		if (!gotSiteList()) {
+			return false;
+		}
+
+		// error?
+		if (g_errno) {
+			return true;
+		}
+
+		// or all done
+		if (m_allDone) {
+			return true;
+		}
+
+		// otherwise, try the next path component!
+	}
 }
 
 void gotSiteListWrapper ( void *state ) {
@@ -405,8 +421,7 @@ bool SiteGetter::setSite ( ) {
 	int32_t schemeLen;
 	char *scheme = ::getScheme ( m_url , &schemeLen );
 
-	if( schemeLen < MAX_SCHEME_LEN )
-	{
+	if ( schemeLen < MAX_SCHEME_LEN ) {
 		gbmemcpy(m_scheme, scheme, schemeLen);
 		m_scheme[schemeLen] = '\0';
 		m_schemeLen = schemeLen;
@@ -465,6 +480,7 @@ bool SiteGetter::setRecognizedSite ( ) {
 
 	// commented out a bunch cuz they were profiles mostly, not blogs...
 	if ( strncasecmp(p,"/~"            , 2) == 0 ) len = 2;
+
 	// assume this is a username. skip the first /
 	if ( strncasecmp(p,"/users/"       , 7) == 0 ) len = 7;
 	if ( strncasecmp(p,"/user/"        , 6) == 0 ) len = 6;
@@ -476,21 +492,23 @@ bool SiteGetter::setRecognizedSite ( ) {
 
 	// point to after the /users/, /blogs/, /user/, /blog/ or /~xxx/
 	p += len;
+
 	// assume there is NOT an alpha char after this
 	char username = false;
+
 	// . skip to next / OR ?
 	// . stop at . or -, because we do not allow those in usernames and
 	//   they are often indicative of filenames without file extensions
 	// . no, fix http://www.rus-obr.ru/users/maksim-sokolov (no - or _ or.)
-	while ( len && *p && *p!= '/'&&*p!='?' ) {
+	while ( len && *p && ( *p != '/' ) && ( *p != '?' ) ) {
 		// sometimes usernames are numbers!!!
-		//if ( is_alpha_a(*p) ) username = true;
 		// http://stackoverflow.com/users/271376/sigterm
-		if ( is_alnum_a(*p) ) username = true;
+		if ( is_alnum_a(*p) ) {
+			username = true;
+		}
 		p++;
 	}
-	// if we hit this, not a username
-	//if ( *p=='.' || *p == '-' || *p == '_' ) username = false;
+
 	// did we get a match?
 	// . www.cits.ucsb.edu/users/michael-osborne
 	// . www.cits.ucsb.edu/users/michael-osborne/
@@ -541,7 +559,9 @@ bool SiteGetter::setRecognizedSite ( ) {
 	*path = c;
 
 	// return false to indicate no recognized site detected
-	if ( ! depth ) return false;
+	if ( ! depth ) {
+		return false;
+	}
 
 	// skip over the initial root / after the hostname
 	p = path + 1;
@@ -564,10 +584,15 @@ bool SiteGetter::setRecognizedSite ( ) {
 	}
 
 	// for depth
-	for ( ; *p ; p++ ) 
-		if ( *p == '/' && --depth == 0 ) break;
+	for ( ; *p ; p++ ) {
+		if ( ( *p == '/' ) && ( --depth == 0 ) ) {
+			break;
+		}
+	}
 
-	if ( p - host + 6 >= MAX_SITE_LEN ) return false;
+	if ( p - host + 6 >= MAX_SITE_LEN ) {
+		return false;
+	}
 
 	goto storeIt;
 }
