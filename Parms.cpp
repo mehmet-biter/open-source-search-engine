@@ -3442,11 +3442,6 @@ void Parms::init ( ) {
 		m_parms[i].m_save   =  1 ; // save to xml file?
 		m_parms[i].m_min    = -1 ; // min value (for int32_t parms)
 		m_parms[i].m_flags  = 0;
-		m_parms[i].m_icon   = NULL;
-		m_parms[i].m_class  = NULL;
-		m_parms[i].m_qterm  = NULL;
-		m_parms[i].m_subMenu= 0;
-		m_parms[i].m_spriv  = 0;
 		m_parms[i].m_sminc  = -1;  // min in collection rec
 		m_parms[i].m_smaxc  = -1;  // max in collection rec
 		m_parms[i].m_smin   = 0x80000000; // 0xffffffff;

@@ -190,12 +190,7 @@ class Parm {
 	char  m_rdonly;// if in read-only mode, blank out this control?
 	char  m_hdrs;  // print headers for row or print title/desc for single?
 	char  m_perms; // 0 means same as WebPages' m_perms
-	char  m_subMenu;
 	int32_t  m_flags;
-	char *m_class;
-	char *m_icon;
-	char *m_qterm;
-	char *m_pstr; // for sorting by in sendPageAPI()
 	int32_t  m_parmNum; // slot # in the m_parms[] array that we are
 	bool (*m_func)(char *parmRec);
 	// some functions can block, like when deleting a coll because
@@ -206,7 +201,6 @@ class Parm {
 	char  m_save;  // save to xml file? almost always true
 	int32_t  m_min;
 	// these are used for search parms in PageResults.cpp
-	char  m_spriv; // is it private? only admins can see/use private parms
 	int32_t  m_sminc ;// offset of min in CollectionRec (-1 for none)
 	int32_t  m_smaxc ;// offset of max in CollectionRec (-1 for none)
 	int32_t  m_smin;  // absolute min
