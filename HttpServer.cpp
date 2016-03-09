@@ -1332,13 +1332,13 @@ void cleanUp ( void *state , TcpSocket *s ) {
 	if ( g_conf.m_logDebugTcp )
 		log("tcp: deleting filestate=0x%"PTRFMT" fd=%"INT32" [7] "
 		    "s=0x%"PTRFMT"", (PTRTYPE)f,fd,(PTRTYPE)s);
-	// this should also close f
-	mdelete ( f, sizeof(File), "HttpServer");
-	delete (f);
 	// . i guess this is the file state!?!?!
 	// . it seems the socket sometimes is not destroyed when we return
 	//   and we get a sig hangup and call this again!! so make this NULL
 	if ( s && s->m_state == f ) s->m_state = NULL;
+	// this should also close f
+	mdelete ( f, sizeof(File), "HttpServer");
+	delete (f);
 }
 
 bool HttpServer::sendSuccessReply ( GigablastRequest *gr , char *addMsg ) {

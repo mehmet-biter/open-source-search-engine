@@ -6790,9 +6790,6 @@ void XmlDoc::nukeDoc ( XmlDoc *nd ) {
 	if ( nd == this ) return;
 	// or root doc!
 	//if ( nd == m_rootDoc ) return;
-	// nuke it
-	mdelete ( nd , sizeof(XmlDoc) , "xdnuke");
-	delete ( nd );
 	// invalidate
 	if ( nd == m_extraDoc ) {
 		m_extraDocValid = false;
@@ -6806,6 +6803,9 @@ void XmlDoc::nukeDoc ( XmlDoc *nd ) {
 		m_oldDocValid     = false;
 		m_oldDoc          = NULL;
 	}
+	// nuke it
+	mdelete ( nd , sizeof(XmlDoc) , "xdnuke");
+	delete ( nd );
 }
 
 static LinkInfo s_dummy;

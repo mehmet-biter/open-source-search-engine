@@ -114,8 +114,8 @@ bool sendPageLogView    ( TcpSocket *s , HttpRequest *r ) {
 	if(!st->m_readBuf) {
 		g_httpServer.sendErrorReply(st->m_s,
 					    500,"Out of Memory");
-		delete st;
 		mdelete(st, sizeof(StateLogView), "StateLogViewA");
+		delete st;
 		return true;
 
 	}
@@ -261,8 +261,8 @@ void gotRemoteLogWrapper(void *state, UdpSlot *slot) {
 		g_httpServer.sendErrorReply(st->m_s,
 					    500,"couldn't get logs");
 		mfree(st->m_readBuf, st->m_readBufSize,"PageLogViewB");
-		delete st;
 		mdelete(st, sizeof(StateLogView), "StateLogViewA");
+		delete st;
 		return;
 	}
 
@@ -300,8 +300,8 @@ void gotRemoteLogWrapper(void *state, UdpSlot *slot) {
 						     sbufLen,
 						     -1/*cachetime*/);
 			mfree(st->m_readBuf, st->m_readBufSize,"PageLogViewB");
-			delete st;
 			mdelete(st, sizeof(StateLogView), "StateLogViewA");
+			delete st;
 
 			return;
 		}
