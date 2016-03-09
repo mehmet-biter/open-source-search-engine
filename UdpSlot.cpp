@@ -1689,7 +1689,7 @@ void UdpSlot::readAck ( int sock , int32_t dgramNum , int64_t now ) {
 	if ( ! hasAcksToRead() ) {
 		//if ( m_msgType == 0x39 )
 		//	log("jey");
-		int64_t now = gettimeofdayInMilliseconds();
+		now = gettimeofdayInMilliseconds();
 		int32_t delta = now - m_startTime;
 		// but if we were sending a reply, use m_queuedTime
 		// as the start time of the send. we set m_queuedTime
@@ -1741,7 +1741,7 @@ void UdpSlot::readAck ( int sock , int32_t dgramNum , int64_t now ) {
 		    "tid=%"INT32" "
 		    "src=%s:%hu "
 		    "init=%"INT32" "
-		    "age=%"INT32" "
+		    "age=%"PRId64" "
 		    "dsent=%"INT32" "
 		    "aread=%"INT32" "
 		    "hid=%"INT32"",
@@ -1751,7 +1751,7 @@ void UdpSlot::readAck ( int sock , int32_t dgramNum , int64_t now ) {
 		    iptoa(m_ip) , 
 		    (uint16_t)m_port, 
 		    (int32_t)kk , 
-		    (int32_t)(now -m_startTime) , 
+		    now - m_startTime, 
 		    (int32_t)m_sentBitsOn , 
 		    (int32_t)m_readAckBitsOn ,
 		    hid);
