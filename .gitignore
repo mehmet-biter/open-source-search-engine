@@ -1,19 +1,32 @@
-*.o
-/.project
+# collections
 /coll.main.0/
-/catdb/
-/cachedb/
+/statsdb/
+# generated file/binary
+*.o
 *.dat
-*.txt
 *.conf.saving
 *.conf
-/diskusage
 *.cache
-gb
-libcld2_full.so
+diskusage
 Make.depend
-log000*
+gb
+gb.oldsave
 urlinfo
 create_ucd_tables
+libcld2_full.so
 libgb.a
+file_state_before_run.txt
+rebalance.txt
+unifiedDict-buf.txt
+# log files
+log000*
+# kdevelop
 .kdev4/
+# clion
+.idea/
+# qtcreator
+*.config
+*.creator
+*.creator.user
+*.files
+*.includes
