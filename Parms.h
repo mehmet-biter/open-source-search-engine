@@ -184,7 +184,7 @@ class Parm {
 	const char *m_def;   // default value of this variable if not in either conf
 	int32_t  m_defOff; // if default value points to a collectionrec parm!
 	char  m_cast;  // true if we should broadcast to all hosts (default)
-	char *m_units;
+	const char *m_units;
 	char  m_addin; // add "insert above" link to gui when displaying array
 	char  m_rowid; // id of row controls are in, if any
 	char  m_rdonly;// if in read-only mode, blank out this control?
