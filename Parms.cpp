@@ -3164,7 +3164,6 @@ bool Parms::saveToXml ( char *THIS , char *f , char objType ) {
 	SafeBuf sb(tmpbuf,200000);
 	//char *p    = buf;
 	//char *pend = buf + MAX_CONF_SIZE;
-	int32_t  len ;
 	//int32_t  n   ;
 	int32_t  j   ;
 	int32_t  count;
@@ -3323,8 +3322,8 @@ skip2:
 	//		   ff.getFilename(),mstrerror(g_errno));
 
 	// save the parm to the file
-	//len = gbstrlen(buf);
-	len = sb.length();
+	//int32_t len = gbstrlen(buf);
+	// len = sb.length();
 	// use -1 for offset so we do not use pwrite() so it will not leave
 	// garbage at end of file
 	//n    = ff.write ( buf , len , -1 );
