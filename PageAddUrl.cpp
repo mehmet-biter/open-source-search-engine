@@ -174,7 +174,7 @@ bool sendReply ( void *state , bool addUrlEnabled ) {
 
 
 	int32_t ulen = 0;
-	char *url = gr->m_urlsBuf;
+	const char *url = gr->m_urlsBuf;
 	if ( url ) ulen = gbstrlen (url);
 
 	// re-null it out if just http://
@@ -190,14 +190,7 @@ bool sendReply ( void *state , bool addUrlEnabled ) {
 	char buf[1024*32+MAX_URL_LEN*2];
 	SafeBuf sb(buf, 1024*32+MAX_URL_LEN*2);
 
-	// collection name
-	char tt [ 128 ];
-	tt[0] = '\0';
-
 	g_pages.printAdminTop ( &sb , sock , &gr->m_hr );
-
-	// watch out for NULLs
-	if ( ! url ) url = "http://";
 
 	// if there was an error let them know
 	SafeBuf mbuf;
