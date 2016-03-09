@@ -5828,10 +5828,10 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	ip = atoip("127.0.0.1",9);
 
 	startTime = gettimeofdayInMilliseconds_force();
+	memset(&to,0,sizeof(to));
 	to.sin_family      = AF_INET;
 	to.sin_addr.s_addr = h->m_ip;
 	to.sin_port        = ntohs(h->m_port);
-	memset ( &(to.sin_zero) , 0,8 );
 	log("net: pingtest: Testing hostId #%"INT32" at %s:%hu from client "
 	    "port %hu", hid,iptoa(h->m_ip),h->m_port,clientPort);
 	// if this is higher than number of avail slots UdpServer.cpp
