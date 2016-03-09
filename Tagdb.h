@@ -142,7 +142,6 @@ public:
 
 	bool setFromHttpRequest ( HttpRequest *r , TcpSocket *s );
 
-private:
 	// use this for setFromBuf()
 	SafeBuf m_sbuf;
 	
