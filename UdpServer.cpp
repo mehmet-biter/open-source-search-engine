@@ -250,12 +250,12 @@ bool UdpServer::init ( uint16_t port, UdpProtocol *proto,
 		g_errno = errno;
 		return log("udp: Call to  setsockopt: %s.",mstrerror(g_errno));
 	}
-	options = 1;
 	// only do this if not dns!!! some dns servers require it and will
 	// just drop the packets if it doesn't match, because this will make
 	// it always 0
 	// NO! we really need this now that we use roadrunner wirless which
 	// has bad udp packet checksums all the time!
+	// options = 1;
 	//if ( ! m_isDns && setsockopt(m_sock, SOL_SOCKET, SO_NO_CHECK, 
 	//		&options,sizeof(options)) < 0 ) {
 	//	// copy errno to g_errno
@@ -1783,13 +1783,11 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 			     (int32_t)slot->m_msgType,
 			     (int32_t)slot->m_niceness,
 			     (PTRTYPE)slot->m_callback);
-		int64_t elapsed;
 		numCalled++;
 
 		// log how long callback took
 		if(niceness > 0 && 
-		   (elapsed = gettimeofdayInMillisecondsLocal() - 
-		    startTime) > 5 ) {
+		   (gettimeofdayInMillisecondsLocal() - startTime) > 5 ) {
 			//bail if we're taking too long and we're a 
 			//low niceness request.  we can always come 
 			//back.
@@ -1865,7 +1863,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	//int32_t mt ;
 	int64_t now ;
 	int32_t delta , n , bucket;
-	float mem;
 	int32_t saved;
 	bool saved2;
 	//bool incInt;
@@ -2186,7 +2183,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 
 	// if we are out of mem basically, do not waste time fucking around
 	if ( slot->m_msgType != 0x11 && slot->m_niceness == 0 &&
-	     (mem = ((float)g_mem.getUsedMem())/(float)g_mem.getMaxMem()) >=
+	     (((float)g_mem.getUsedMem())/(float)g_mem.getMaxMem()) >=
 	     .990 ) {
 		// log it
 		static int32_t lcount = 0;
