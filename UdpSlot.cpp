@@ -169,8 +169,8 @@ void UdpSlot::connect ( UdpProtocol    *proto    ,
 	// avoid that heavy memset_ass() call using this logic.
 	// we will clear on demand using m_numBitsInitialized logic
 	// in UdpSlot.h
-	int32_t size = (char *)&m_sentBits2 - (char *)this ;
-	memset ( (char *)this , 0 , size );
+	int32_t size = offsetof(UdpSlot,m_sentBits2);
+	memset ( (void*)this , 0 , size );
 	// store this info
 	m_proto    = proto    ;
 	m_ip       = ip       ; // keep in network order
