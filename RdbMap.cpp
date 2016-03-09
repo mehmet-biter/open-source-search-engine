@@ -452,7 +452,7 @@ bool RdbMap::verifyMap ( BigFile *dataFile )
 
 // this just fixes a bad map
 bool RdbMap::verifyMap2 ( ) {
- top:
+// top:
 	//key_t lastKey ; lastKey.n0 = 0LL; lastKey.n1 = 0;
 	char lastKey[MAX_KEY_BYTES];
 	KEYMIN(lastKey,m_ks);
