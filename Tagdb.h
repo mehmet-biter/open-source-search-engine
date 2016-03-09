@@ -145,14 +145,6 @@ public:
 	// use this for setFromBuf()
 	SafeBuf m_sbuf;
 	
-	// some specified input
-	Url   *m_url;
-
-	collnum_t m_collnum;
-
-	void    (*m_callback ) ( void *state );
-	void     *m_state;
-
 	// hold possible tagdb records
 	RdbList m_lists[MAX_TAGDB_REQUESTS];
 
