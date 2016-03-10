@@ -921,7 +921,10 @@ int32_t getTagTypeFromStr( const char *tagname , int32_t tagnameLen ) {
 // . convert ST_DOMAIN_SQUATTER to "domain_squatter"
 const char *getTagStrFromType ( int32_t tagType ) {
 	// make sure table is valid
-	if ( ! s_initialized ) g_tagdb.setHashTable();
+	if ( ! s_initialized ) {
+		g_tagdb.setHashTable();
+	}
+
 	TagDesc **ptd = (TagDesc **)s_ht.getValue ( &tagType );
 	// sanity check
 	if ( ! ptd ) 
@@ -1072,8 +1075,8 @@ bool Tagdb::verify ( char *coll ) {
 	if ( got != count ) {
 		// tally it up
 		g_rebalance.m_numForeignRecs += count - got;
-		log ("tagdb: Out of first %"INT32" records in %s, only %"INT32" belong "
-		     "to our group.",count,rdbName,got);
+		log ("tagdb: Out of first %" INT32" records in %s, only %" INT32" belong "
+		     "to our group.", count, rdbName, got);
 		// exit if NONE, we probably got the wrong data
 		if ( got == 0 ) log("tagdb: Are you sure you have the "
 					   "right "
@@ -1317,9 +1320,10 @@ bool Msg8a::launchGetRequests ( ) {
 	if ( tryDomain ) {
 		startKey = g_tagdb.makeDomainStartKey ( m_url );
 		endKey   = g_tagdb.makeDomainEndKey   ( m_url );
-		if ( g_conf.m_logDebugTagdb )
-			log("tagdb: looking up domain tags for %s",
-			    m_url->getUrl());
+		if ( g_conf.m_logDebugTagdb ) {
+			log( "tagdb: looking up domain tags for %.*s",
+			     m_url->getDomainLen(), m_url->getDomain());
+		}
 	}
 	else {
 		// usually the site is the hostname but sometimes it is like
@@ -1337,7 +1341,7 @@ bool Msg8a::launchGetRequests ( ) {
 	RdbList *listPtr = &m_tagRec->m_lists[m_requests];
 
 	// bias based on the top 64 bits which is the hash of the "site" now
-	int32_t shardNum = getShardNum ( RDB_TAGDB , &startKey );//, true );
+	int32_t shardNum = getShardNum ( RDB_TAGDB , &startKey );
 	Host *firstHost ;
 
 	// if niceness 0 can't pick noquery host.
@@ -1398,16 +1402,22 @@ bool Msg8a::launchGetRequests ( ) {
 	
 void gotMsg0ReplyWrapper ( void *state ) {
 	Msg8a *THIS = (Msg8a *)state;
+
 	// we got one
 	THIS->m_replies++;
+
 	// error?
 	if ( g_errno ) THIS->m_errno = g_errno;
+
 	// launchGetRequests() returns false if still waiting for replies...
 	if ( ! THIS->launchGetRequests() ) return;
+
 	// get all the replies
 	THIS->gotAllReplies();
+
 	// set g_errno for the callback
 	if ( THIS->m_errno ) g_errno = THIS->m_errno;
+
 	// otherwise, call callback
 	THIS->m_callback ( THIS->m_state );
 }
