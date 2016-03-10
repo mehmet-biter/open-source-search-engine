@@ -1,6 +1,6 @@
 
 #ifndef GB_PAGECRAWLBOT_H
-#define CB_PAGECRAWLBOT_H
+#define GB_PAGECRAWLBOT_H
 
 #include "gb-include.h"
 
