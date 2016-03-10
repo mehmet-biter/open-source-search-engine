@@ -49,8 +49,6 @@ Msg40::Msg40() {
 	m_numMsg20sOut = 0;
 }
 
-#define MAX2 50
-
 void Msg40::resetBuf2 ( ) {
 	// remember num to free in reset() function
 	char *p = m_msg20StartBuf;
