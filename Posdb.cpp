@@ -789,7 +789,7 @@ void PosdbTable::init ( Query     *q               ,
 	//m_numLists = q->m_numTerms;
 	m_msg2 = msg2;
 	// sanity
-	if ( m_msg2 && ! m_msg2->m_query ) { char *xx=NULL;*xx=0; }
+	if ( ! m_msg2->m_query ) { char *xx=NULL;*xx=0; }
 	// save this
 	m_collnum = r->m_collnum;
 	// save the request
@@ -1715,14 +1715,6 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 	bool firsti = true;
 	bool firstj = true;
 
-	// if m_msg2 is NULL that means we are being called from seo.cpp
-	// which gives us 6-byte keys only since we are restricted to just
-	// one particular docid
-	if ( ! m_msg2 ) {
-		firsti = false;
-		firstj = false;
-	}
-
 	float score;
 	float max = -1.0;
 	int32_t  dist;
@@ -2183,43 +2175,6 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		score /= (dist + 1.0);
 		// tmp hack
 		//score *= (dist+1.0);
-
-		// log it for debug
-		if ( ! m_msg2 && m_debug >= 2 )
-		log("seo: "
-		    "gottermpairscore2=%.010f "
-		    "term1=%"INT32" "
-		    "term2=%"INT32" "
-		    "wpos1=%"INT32" "
-		    "wpos2=%"INT32" "
-		    "dist=%"INT32" "
-		    "qdist=%"INT32" "
-		    "syn1=%"INT32" "
-		    "syn2=%"INT32" "
-		    "hg1=%s "
-		    "hg2=%s "
-		    "dr1=%"INT32" "
-		    "dr2=%"INT32" "
-		    "wts=%f "
-		    "tfw1=%f "
-		    "tfw2=%f "
-		    ,score * wts * m_freqWeights[i] * m_freqWeights[j]
-		    ,i
-		    ,j
-		    ,p1
-		    ,p2
-		    ,dist
-		    ,qdist
-		    ,(int32_t)syn1
-		    ,(int32_t)syn2
-		    ,getHashGroupString(hg1)
-		    ,getHashGroupString(hg2)
-		    ,(int32_t)g_posdb.getDensityRank(wpi)
-		    ,(int32_t)g_posdb.getDensityRank(wpj)
-		    ,wts
-		    ,m_freqWeights[i]
-		    ,m_freqWeights[j]
-		    );
 
 		// if our hg1/hg2 hashgroup pairing already exists
 		// in the bestScores array we have to beat it and then
@@ -3741,12 +3696,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		
 	m_finalScore = 0.0;
 
-	//log("seo: intersecting query %s",m_q->m_orig);
-
-	bool seoHack = false;
-	if ( ! m_msg2 ) seoHack = true;
-
-	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: seoHack: %s, numTerms: %"INT32"", __FILE__,__func__, __LINE__, seoHack?"true":"false", m_q->m_numTerms);
+	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: numTerms: %"INT32"", __FILE__,__func__, __LINE__, m_q->m_numTerms);
 
 	//
 	// hash the docids in the whitelist termlists into a hashtable.
@@ -3817,7 +3767,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	// now we only do this if m_msg2 is valid, because we do this
 	// ahead of time in seo.cpp which sets msg2 to NULL. so skip in that
 	// case.
-	for ( int32_t k = 0 ; ! seoHack && k < m_q->m_numTerms ; k++ ) {
+	for ( int32_t k = 0 ; k < m_q->m_numTerms ; k++ ) {
 		// count
 		int64_t total = 0LL;
 		// loop over each list in this group
@@ -4152,11 +4102,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	if ( m_sortByTermNum >= 0 ) nnn = 0;
 	if ( m_sortByTermNumInt >= 0 ) nnn = 0;
 
-
-	// ok, lists should be set now
-	if ( ! m_msg2 ) 
-		goto seoHackSkip2;
-		
 
 	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Before secondPassLoop", __FILE__,__func__, __LINE__);
  secondPassLoop:
@@ -4564,10 +4509,6 @@ void PosdbTable::intersectLists10_r ( ) {
 		}
 	}
 
-	// we need to do this for seo hacks to merge the synonyms together
-	// into one list
- seoHackSkip2:
-
 	//
 	// PERFORMANCE HACK:
 	//
@@ -4618,8 +4559,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			//	char *xx=NULL;*xx=0;}
 			// if doing seohack then m_cursor was not advanced
 			// so advance it here
-			if ( m_msg2 ) nwpEnd [nsub] = qti->m_cursor [k];
-			else          nwpEnd [nsub] = qti->m_newSubListEnd[k];
+			nwpEnd [nsub] = qti->m_cursor [k];
 			nwpFlags [nsub] = qti->m_bigramFlags [k];
 			nsub++;
 		}
@@ -4782,7 +4722,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	}
 
 	// second pass already sets m_docId above
-	if ( ! secondPass && m_msg2 ) {
+	if ( ! secondPass ) {
 		// docid ptr points to 5 bytes of docid shifted up 2
 		m_docId = *(uint32_t *)(docIdPtr+1);
 		m_docId <<= 8;
@@ -5389,7 +5329,7 @@ void PosdbTable::intersectLists10_r ( ) {
 	}
 	// if doing the second pass for printint out transparency info
 	// then do not mess with top tree
-	else if ( m_msg2 ) { // ! secondPass ) {
+	else { // ! secondPass ) {
 		// add to top tree then!
 		int32_t tn = m_topTree->getEmptyNode();
 		TopNode *t  = &m_topTree->m_nodes[tn];
@@ -5427,12 +5367,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	}
 	
  advance:
-
-	if ( ! m_msg2 ) {
-		// if doing this for seo.cpp
-		m_finalScore = score;
-		return;
-	}
 
 	// advance to next docid
 	docIdPtr += 6;
