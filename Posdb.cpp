@@ -1051,7 +1051,7 @@ static float s_wordSpamWeights  [MAXWORDSPAMRANK+1]; // wordspam
 // siterank of inlinker for link text:
 static float s_linkerWeights    [MAXWORDSPAMRANK+1]; 
 static float s_hashGroupWeights [HASHGROUP_END];
-static char  s_isCompatible     [HASHGROUP_END][HASHGROUP_END];
+static bool  s_isCompatible     [HASHGROUP_END][HASHGROUP_END];
 static char  s_inBody           [HASHGROUP_END];
 
 // initialize the weights table
@@ -1091,7 +1091,7 @@ void initWeights ( ) {
 			s_inBody[i] = 1;
 		for ( int32_t j = 0 ; j < HASHGROUP_END ; j++ ) {
 			// assume not
-			s_isCompatible[i][j] = 0;
+			s_isCompatible[i][j] = false;
 			// or both in body (and not title)
 			bool inBody1 = true;
 			if ( i != HASHGROUP_BODY &&
@@ -1117,7 +1117,7 @@ void initWeights ( ) {
 			// allow those here, but they will be penalized
 			// some with the fixed distance of like 64 units or
 			// something...
-			s_isCompatible[i][j] = 1;
+			s_isCompatible[i][j] = true;
 			// if either is in the body then do not allow now
 			// and handle in the sliding window algo
 			//s_isCompatible[i][j] = 1;
