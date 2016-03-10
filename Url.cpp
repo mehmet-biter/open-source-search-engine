@@ -11,8 +11,6 @@
 #include <valgrind/memcheck.h>
 #endif
 
-static void print_string ( char *s , int32_t len );
-
 void Url::reset() {
 	m_scheme    = NULL; 
 	m_host      = NULL; 
@@ -976,44 +974,17 @@ int32_t Url::getSubPathLen ( int32_t j ) {
 }
 
 void Url::print() {
-
-	printf("############ url ############\n");
-
-	printf("url: %s\n",m_url);
-
-	printf("host: ");
-	print_string( m_host, m_hlen );
-	printf("\n");
-
-
-	printf("scheme: ");
-	print_string( m_scheme , m_slen );
-	printf("\n");
-
-
-	printf("path: ");
-	print_string(m_path , m_plen );
-	printf("\n");
-
-	printf("query: %s\n",m_query);
-
-	printf("port: %"INT32"\n", m_port );
-
-	printf("domain: ");
-	print_string(m_domain, m_dlen );
-	printf("tld: ");
-	print_string(m_tld, m_tldLen );
-	printf("mid domain: ");
-	print_string(m_domain, m_mdlen );
-	printf("\n");
-
-	printf("is root %i\n",isRoot());
-}
-
-void print_string ( char *s , int32_t len ) {
-	int32_t i = 0;
-	if ( ! s ) return;
-	while ( i < len ) printf("%c",s[i++]);
+	logf(LOG_DEBUG, "############ url ############");
+	logf(LOG_DEBUG, "url: %s",m_url);
+	logf(LOG_DEBUG, "host: %.*s", m_hlen, m_host);
+	logf(LOG_DEBUG, "scheme: %.*s", m_slen, m_scheme);
+	logf(LOG_DEBUG, "path: %.*s", m_plen, m_path);
+	logf(LOG_DEBUG, "query: %s",m_query);
+	logf(LOG_DEBUG, "port: %"INT32"", m_port );
+	logf(LOG_DEBUG, "domain: %.*s", m_dlen, m_domain);
+	logf(LOG_DEBUG, "tld: %.*s", m_tldLen, m_tld);
+	logf(LOG_DEBUG, "mid domain: %.*s", m_mdlen, m_domain);
+	logf(LOG_DEBUG, "is root %i",isRoot());
 }
 
 int32_t  Url::getPathDepth ( bool countFilename ) {
