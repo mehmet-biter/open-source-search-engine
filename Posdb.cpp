@@ -1475,109 +1475,107 @@ float PosdbTable::getSingleTermScore ( int32_t i,
 	// assume no terms!
 	*bestPos = NULL;
 
-	// empty list? no terms!
-	if ( ! wpi ) goto done;
+	if ( wpi ) {
 
-	float score;
-	unsigned char hg;
-	unsigned char mhg;
-	unsigned char dens;
-	unsigned char wspam;
-	unsigned char div;
-	int32_t bro;
+		float score;
+		unsigned char hg;
+		unsigned char mhg;
+		unsigned char dens;
+		unsigned char wspam;
+		unsigned char div;
+		int32_t bro;
 
- loop:
-	score = 100.0;
-	// good diversity?
-	div = g_posdb.getDiversityRank ( wpi );
-	score *= s_diversityWeights[div];
-	score *= s_diversityWeights[div];
+		do {
+			score = 100.0;
+			// good diversity?
+			div = g_posdb.getDiversityRank ( wpi );
+			score *= s_diversityWeights[div];
+			score *= s_diversityWeights[div];
 
-	// hash group? title? body? heading? etc.
-	hg = g_posdb.getHashGroup ( wpi );
-	mhg = hg;
-	if ( s_inBody[mhg] ) mhg = HASHGROUP_BODY;
-	score *= s_hashGroupWeights[hg];
-	score *= s_hashGroupWeights[hg];
+			// hash group? title? body? heading? etc.
+			hg = g_posdb.getHashGroup ( wpi );
+			mhg = hg;
+			if ( s_inBody[mhg] ) mhg = HASHGROUP_BODY;
+			score *= s_hashGroupWeights[hg];
+			score *= s_hashGroupWeights[hg];
 
-	// good density?
-	dens = g_posdb.getDensityRank ( wpi );
-	score *= s_densityWeights[dens];
-	score *= s_densityWeights[dens];
+			// good density?
+			dens = g_posdb.getDensityRank ( wpi );
+			score *= s_densityWeights[dens];
+			score *= s_densityWeights[dens];
 
-	// to make more compatible with pair scores divide by distance of 2
-	//score /= 2.0;
+			// to make more compatible with pair scores divide by distance of 2
+			//score /= 2.0;
 
-	// word spam?
-	wspam = g_posdb.getWordSpamRank ( wpi );
-	// word spam weight update
-	if ( hg == HASHGROUP_INLINKTEXT ) {
-		score *= s_linkerWeights  [wspam];
-		score *= s_linkerWeights  [wspam];
+			// word spam?
+			wspam = g_posdb.getWordSpamRank ( wpi );
+			// word spam weight update
+			if ( hg == HASHGROUP_INLINKTEXT ) {
+				score *= s_linkerWeights  [wspam];
+				score *= s_linkerWeights  [wspam];
+			}
+			else {
+				score *= s_wordSpamWeights[wspam];
+				score *= s_wordSpamWeights[wspam];
+			}
+
+			// synonym
+			if ( g_posdb.getIsSynonym(wpi) ) {
+				score *= g_conf.m_synonymWeight;
+				score *= g_conf.m_synonymWeight;
+			}
+
+
+			// do not allow duplicate hashgroups!
+			bro = -1;
+			for ( int32_t k = 0 ; k < numTop ; k++ ) {
+				if ( bestmhg[k] == mhg && hg !=HASHGROUP_INLINKTEXT ){
+					bro = k;
+					break;
+				}
+			}
+			if ( bro >= 0 ) {
+				if ( score > bestScores[bro] ) {
+					bestScores[bro] = score;
+					bestwpi   [bro] = wpi;
+					bestmhg   [bro] = mhg;
+				}
+			}
+			// best?
+			else if ( numTop < m_realMaxTop ) { // MAX_TOP ) {
+				bestScores[numTop] = score;
+				bestwpi   [numTop] = wpi;
+				bestmhg   [numTop] = mhg;
+				numTop++;
+			}
+			else if ( score > bestScores[minx] ) {
+				bestScores[minx] = score;
+				bestwpi   [minx] = wpi;
+				bestmhg   [minx] = mhg;
+			}
+
+			// set "minx" to the lowest score out of the top scores
+			if ( numTop >= m_realMaxTop ) { // MAX_TOP ) {
+				minx = 0;
+				for ( int32_t k = 1 ; k < m_realMaxTop; k++ ){//MAX_TOP ; k++ ) {
+					if ( bestScores[k] > bestScores[minx] ) continue;
+					minx = k;
+				}
+			}
+
+			// for evalSlidingWindow() sub-out algo, i guess we need this?
+			if ( score > nonBodyMax && ! s_inBody[hg] ) {
+				nonBodyMax = score;
+				*bestPos = wpi;
+			}
+
+			// first key is 12 bytes
+			if ( first ) { wpi += 6; first = false; }
+			// advance
+			wpi += 6;
+			// exhausted?
+		} while( wpi < endi && g_posdb.getKeySize(wpi) == 6 );
 	}
-	else {
-		score *= s_wordSpamWeights[wspam];
-		score *= s_wordSpamWeights[wspam];
-	}
-
-	// synonym
-	if ( g_posdb.getIsSynonym(wpi) ) {
-		score *= g_conf.m_synonymWeight;
-		score *= g_conf.m_synonymWeight;
-	}
-
-
-	// do not allow duplicate hashgroups!
-	bro = -1;
-	for ( int32_t k = 0 ; k < numTop ; k++ ) {
-		if ( bestmhg[k] == mhg && hg !=HASHGROUP_INLINKTEXT ){
-			bro = k;
-			break;
-		}
-	}
-	if ( bro >= 0 ) {
-		if ( score > bestScores[bro] ) {
-			bestScores[bro] = score;
-			bestwpi   [bro] = wpi;
-			bestmhg   [bro] = mhg;
-		}
-	}
-	// best?
-	else if ( numTop < m_realMaxTop ) { // MAX_TOP ) {
-		bestScores[numTop] = score;
-		bestwpi   [numTop] = wpi;
-		bestmhg   [numTop] = mhg;
-		numTop++;
-	}
-	else if ( score > bestScores[minx] ) {
-		bestScores[minx] = score;
-		bestwpi   [minx] = wpi;
-		bestmhg   [minx] = mhg;
-	}
-
-	// set "minx" to the lowest score out of the top scores
-	if ( numTop >= m_realMaxTop ) { // MAX_TOP ) {
-		minx = 0;
-		for ( int32_t k = 1 ; k < m_realMaxTop; k++ ){//MAX_TOP ; k++ ) {
-			if ( bestScores[k] > bestScores[minx] ) continue;
-			minx = k;
-		}
-	}
-
-	// for evalSlidingWindow() sub-out algo, i guess we need this?
-	if ( score > nonBodyMax && ! s_inBody[hg] ) {
-		nonBodyMax = score;
-		*bestPos = wpi;
-	}
-
-	// first key is 12 bytes
-	if ( first ) { wpi += 6; first = false; }
-	// advance
-	wpi += 6;
-	// exhausted?
-	if ( wpi < endi && g_posdb.getKeySize(wpi) == 6 ) goto loop;
-
- done:
 
 	// add up the top scores
 	float sum = 0.0;
