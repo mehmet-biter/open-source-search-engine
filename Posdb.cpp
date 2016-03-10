@@ -3170,44 +3170,44 @@ void PosdbTable::rmDocIdVotes ( QueryTermInfo *qti ) {
 		dp    =      m_docIdVoteBuf.getBufStart();
 		dpEnd = dp + m_docIdVoteBuf.length();
 		// loop it
-	subLoop:
-		// scan for his docids and inc the vote
-		for ( ; dp < dpEnd ; dp += 6 ) {
-			// if current docid in docid list is >= the docid
-			// in the sublist, stop. docid in list is 6 bytes and
-			// recPtr must be pointing to a 12 byte posdb rec.
-			if ( *(uint32_t *)(dp+1) >
-			     *(uint32_t *)(recPtr+8) ) 
+		while ( recPtr < subListEnd ) {
+			// scan for his docids and inc the vote
+			for ( ; dp < dpEnd ; dp += 6 ) {
+				// if current docid in docid list is >= the docid
+				// in the sublist, stop. docid in list is 6 bytes and
+				// recPtr must be pointing to a 12 byte posdb rec.
+				if ( *(uint32_t *)(dp+1) >
+				     *(uint32_t *)(recPtr+8) ) 
+					break;
+				// less than? keep going
+				if ( *(uint32_t *)(dp+1) <
+				     *(uint32_t *)(recPtr+8) ) 
+					continue;
+				// top 4 bytes are equal. check lower single byte then.
+				if ( *(unsigned char *)(dp) >
+				     (*(unsigned char *)(recPtr+7) & 0xfc ) )
+					break;
+				if ( *(unsigned char *)(dp) <
+				     (*(unsigned char *)(recPtr+7) & 0xfc ) )
+					continue;
+				// . equal! mark it as nuked!
+				dp[5] = -1;//listGroupNum;
+				// skip it
+				dp += 6;
+				// advance recPtr now
 				break;
-			// less than? keep going
-			if ( *(uint32_t *)(dp+1) <
-			     *(uint32_t *)(recPtr+8) ) 
-				continue;
-			// top 4 bytes are equal. check lower single byte then.
-			if ( *(unsigned char *)(dp) >
-			     (*(unsigned char *)(recPtr+7) & 0xfc ) )
-				break;
-			if ( *(unsigned char *)(dp) <
-			     (*(unsigned char *)(recPtr+7) & 0xfc ) )
-				continue;
-			// . equal! mark it as nuked!
-			dp[5] = -1;//listGroupNum;
-			// skip it
-			dp += 6;
-			// advance recPtr now
-			break;
+			}
+			// if we've exhausted this docid list go to next sublist
+			if ( dp >= dpEnd ) continue;
+			// skip that docid record in our termlist. it MUST have been
+			// 12 bytes, a docid heading record.
+			recPtr += 12;
+			// skip any following keys that are 6 bytes, that means they
+			// share the same docid
+			for ( ; recPtr < subListEnd && ((*recPtr)&0x04); recPtr += 6 );
+			// if we have more posdb recs in this sublist, then keep
+			// adding our docid votes into the docid list
 		}
-		// if we've exhausted this docid list go to next sublist
-		if ( dp >= dpEnd ) continue;
-		// skip that docid record in our termlist. it MUST have been
-		// 12 bytes, a docid heading record.
-		recPtr += 12;
-		// skip any following keys that are 6 bytes, that means they
-		// share the same docid
-		for ( ; recPtr < subListEnd && ((*recPtr)&0x04); recPtr += 6 );
-		// if we have more posdb recs in this sublist, then keep
-		// adding our docid votes into the docid list
-		if ( recPtr < subListEnd ) goto subLoop;
 		// otherwise, advance to next sublist
 	}
 
