@@ -1042,8 +1042,6 @@ bool PosdbTable::allocTopTree ( ) {
 	return true;
 }
 
-PosdbTable *g_this = NULL;
-
 static bool  s_init = false;
 static float s_diversityWeights [MAXDIVERSITYRANK+1];
 static float s_densityWeights   [MAXDENSITYRANK+1];
@@ -3740,8 +3738,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	m_addedSites = true;
 
 	initWeights();
-
-	g_this = this;
 
 	// clear, set to ECORRUPTDATA below
 	m_errno = 0;
