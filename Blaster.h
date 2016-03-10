@@ -92,3 +92,4 @@ class Blaster {
 extern Blaster g_blaster;
 
 #endif // GB_BLASTER_H
+
