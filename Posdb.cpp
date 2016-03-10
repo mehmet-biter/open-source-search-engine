@@ -1067,7 +1067,7 @@ void initWeights ( ) {
 	// . word spam rank to weight
 	// . make sure if word spam is 0 that the weight is not 0!
 	for ( int32_t i = 0 ; i <= MAXWORDSPAMRANK ; i++ )
-		s_wordSpamWeights[i] = scale_linear(i, 0,MAXWORDSPAMRANK, 1/MAXWORDSPAMRANK, 1.0);
+		s_wordSpamWeights[i] = scale_linear(i, 0,MAXWORDSPAMRANK, 1.0/MAXWORDSPAMRANK, 1.0);
 
 	// site rank of inlinker
 	// to be on the same level as multiplying the final score
