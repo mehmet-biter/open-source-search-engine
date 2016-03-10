@@ -125,8 +125,6 @@ class Conf {
 	// tagdb parameters
 	int32_t  m_tagdbMaxTreeMem;
 
-	int32_t  m_timedbMaxTreeMem;
-
 	// clusterdb for site clustering, each rec is 16 bytes
 	int32_t  m_clusterdbMaxTreeMem; 
 	int32_t  m_clusterdbMinFilesToMerge;
@@ -188,12 +186,6 @@ class Conf {
 
 	// indexdb has a max cached age for getting IndexLists (10 mins deflt)
 	int32_t  m_indexdbMaxIndexListAge;
-
-	int32_t  m_datedbMaxTreeMem   ;
-	int32_t  m_datedbMaxCacheMem;
-	int32_t  m_datedbMinFilesToMerge;
-	bool  m_datedbSaveCache;
-	// for caching exact quotas in Msg36.cpp
 
 	// TODO: parse these out!!!!
 	int32_t  m_httpMaxSockets     ;
