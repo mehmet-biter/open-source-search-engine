@@ -3807,10 +3807,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	// assume we return early
 	m_addListsTime = 0;
 
-	//for ( int32_t i = 0 ; i < m_numSubLists ; i++ ) 
-	//	m_lists[i].checkList_r(false,false,RDB_POSDB);
-
-
 	// . now swap the top 12 bytes of each list
 	// . this gives a contiguous list of 6-byte score/docid entries
 	//   because the first record is always 12 bytes and the rest are
@@ -3937,20 +3933,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: addDocIdVotes", __FILE__,__func__, __LINE__);
 	addDocIdVotes ( &qip[m_minListi] , listGroupNum );
 
-	/*
-	// test docid buf
-	char *xdp = m_docIdVoteBuf.getBufStart();
-	char *xdpEnd = xdp + m_docIdVoteBuf.length();
-	for ( ; xdp < xdpEnd ; xdp += 6 ) {
-		uint64_t actualDocId;
-		actualDocId = *(uint32_t *)(xdp+1);
-		actualDocId <<= 8;
-		actualDocId |= (unsigned char)xdp[0];
-		actualDocId >>= 2;
-		log("posdb: intact docid %"INT64"",actualDocId);
-	}
-	*/
-
 	// now repeat the docid scan for successive lists but only
 	// inc the docid count for docids we match. docids that are 
 	// in m_docIdVoteBuf but not in sublist group #i will be removed
@@ -3990,20 +3972,6 @@ void PosdbTable::intersectLists10_r ( ) {
 		rmDocIdVotes ( qti );
 	}
 	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: Removed DocIdVotes for negative query terms", __FILE__,__func__, __LINE__);
-
-	/*
-	// test docid buf
-	xdp = m_docIdVoteBuf.getBufStart();
-	xdpEnd = xdp + m_docIdVoteBuf.length();
-	for ( ; xdp < xdpEnd ; xdp += 6 ) {
-		uint64_t actualDocId;
-		actualDocId = *(uint32_t *)(xdp+1);
-		actualDocId <<= 8;
-		actualDocId |= (unsigned char)xdp[0];
-		actualDocId >>= 2;
-		log("posdb: intact docid %"INT64"",actualDocId);
-	}
-	*/
 
  skip3:
 
@@ -4056,7 +4024,6 @@ void PosdbTable::intersectLists10_r ( ) {
 		phase++;
 	}
 
-	//seoHackSkip:
 
 	//
 	// TRANSFORM QueryTermInfo::m_* vars into old style arrays
@@ -4185,62 +4152,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	if ( m_sortByTermNum >= 0 ) nnn = 0;
 	if ( m_sortByTermNumInt >= 0 ) nnn = 0;
 
-	/*
-	// skip all this if getting score of just one docid on special
-	// posdb termlists that are 6-byte only keys
-	// no, because we have to merge syn lists!!!!
-	for ( int32_t j = 0 ; ! m_msg2 && j < m_numQueryTermInfos ; j++ ) {
-		// get the query term info
-		QueryTermInfo *qti = &qip[j];
-		// just use the flags from first term i guess
-		// NO! this loses the wikihalfstopbigram bit! so we 
-		// gotta add that in for the key i guess the same way 
-		// we add in the syn bits below!!!!!
-		bflags [j] = qti->m_bigramFlags[0];
-		// if we have a negative term, skip it
-		if ( qti->m_bigramFlags[0] & BF_NEGATIVE )
-			// if its empty, that's good!
-			continue;
-		// get query term #
-		int32_t qtn = qti->m_qtermNum;
-		// get list
-		RdbList *list = m_q->m_qterms[qtn].m_posdbListPtr;
-		// skip if list empty
-		if ( ! list ) {
-			miniMergedList[j] = NULL;
-			miniMergedEnd [j] = NULL;
-			continue;
-		}
-		// . because we are special, we only have one 
-		//   "sublist", the posdb termlist for this docid, so
-		//   there's no need to merge a bunch of lists
-		// . assign that. first key is 12 bytes, the others 
-		//   are 6
-		miniMergedList[j] = list->m_list;
-		miniMergedEnd [j] = list->m_listEnd;
-		// shit, if it's a synonym, we gotta set the syn bits
-		if ( !(nwpFlags[0] & BF_SYNONYM) &&
-		     !(nwpFlags[0] & BF_HALFSTOPWIKIBIGRAM) )
-			continue;
-		// ok, set that 0x02 bit on each key
-		char *p = list->m_list;
-		char *pend = list->m_listEnd;
-		bool firstKey = true;
-		for ( ; p < pend ;  ) {
-			// set the synbit so we know its a syn of term
-			if ( bflags[j] & (BF_BIGRAM|BF_SYNONYM) )
-				p[2] |= 0x02;
-			// set wiki half stop bigram bit
-			if ( bflags[j] & (BF_HALFSTOPWIKIBIGRAM) )
-				p[2] |= 0x01;
-			// skip to next key
-			p += 6;
-			if ( ! firstKey ) continue;
-			p += 6;
-			firstKey = false;
-		}
-	}
-	*/
 
 	// ok, lists should be set now
 	if ( ! m_msg2 ) 
@@ -4274,22 +4185,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	// is this right?
 	if ( docIdPtr >= docIdEnd ) goto done;
 
-	// assume all sublists exhausted for this query term
-	//docId = *(int64_t *)docIdPtr;
-
-	// advance for next loop iteration
-	//docIdPtr += 6;
-
-	// docid ptr points to 5 bytes of docid shifted up 2
-	/*
-	int64_t tmpDocId;
-	tmpDocId = *(uint32_t *)(docIdPtr+1);
-	tmpDocId <<= 8;
-	tmpDocId |= (unsigned char)docIdPtr[0];
-	tmpDocId >>= 2;
-	if ( tmpDocId == 236271972369LL )
-		log("hey");
-	*/
 
 	// . second pass? for printing out transparency info
 	// . skip if not a winner
@@ -4451,10 +4346,6 @@ void PosdbTable::intersectLists10_r ( ) {
 		// we can't jump over setting of miniMergeList. do that.
 		goto boolJump1;
 	}
-
-	// or if term is gbsectionhash:
-	//minScore = 1.0;
-	//goto boolJump1;
 
 	// TODO: consider skipping this pre-filter if it sucks, as it does
 	// for 'time enough for love'. it might save time!
@@ -4677,13 +4568,6 @@ void PosdbTable::intersectLists10_r ( ) {
 	// into one list
  seoHackSkip2:
 
-	//log("seo: special=%"INT32"",s_special);
-	//s_special++;
-	//if ( m_q->m_numTerms >= 3 && 
-	//     strncmp(m_q->m_qterms[1].m_term,"fine ",5)==0)
-	//	log("seo: debug. (special=%"INT32") posdblistptr2size=%"INT32"",
-	//	    special,m_q->m_qterms[2].m_posdbListPtr->m_listSize);
-
 	//
 	// PERFORMANCE HACK:
 	//
@@ -4867,8 +4751,6 @@ void PosdbTable::intersectLists10_r ( ) {
 			//int32_t pos = g_posdb.getWordPos(mptr);
 			//log("j2=%"INT32" mink=%"INT32" hgx=%"INT32" pos=%"INT32"",
 			//    (int32_t)j,(int32_t)mink,(int32_t)hgx,(int32_t)pos);
-			//if ( pos == 8949 ) { // 73779 ) {
-			//	char *xx=NULL;*xx=0; }
 			// save it
 			lastMptr = mptr;
 			mptr += 6;
@@ -4958,13 +4840,6 @@ void PosdbTable::intersectLists10_r ( ) {
 		if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
 			continue;
 
-		// // skip if not in same field
-		// QueryTermInfo *qtjy = &qip[j];
-		// QueryTerm     *qtj  = &m_q->m_qterms[qtjy->m_qtermNum];
-
-		// if ( qti->m_fieldCode != qtj->m_fieldCode )
-		// 	continue;
-
 		// but if they are in the same wikipedia phrase
 		// then try to keep their positions as in the query.
 		// so for 'time enough for love' ideally we want
@@ -5044,13 +4919,6 @@ void PosdbTable::intersectLists10_r ( ) {
 		// skip if to the left of a pipe operator
 		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
 			continue;
-
-		// skip if in a field. although should make exception
-		// for title:
-		//QueryTermInfo *qtix = &qip[i];
-		//QueryTerm     *qti  = &m_q->m_qterms[qtix->m_qtermNum];
-		//if ( qti->m_fieldCode )
-		//	continue;
 
 		// sometimes there is no wordpos subtermlist for this docid
 		// because it just has the bigram, like "streetlight" and not
@@ -5263,9 +5131,6 @@ void PosdbTable::intersectLists10_r ( ) {
 
 	minPairScore = -1.0;
 
-	// debug
-	//log("posdb: eval docid %"INT64"",m_docId);
-
 	//
 	//
 	// BEGIN ZAK'S ALGO, BUT RESTRICT ALL BODY TERMS TO SLIDING WINDOW
@@ -5289,13 +5154,6 @@ void PosdbTable::intersectLists10_r ( ) {
 		// skip if to the left of a pipe operator
 		if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
 			continue;
-
-		// skip if not in same field
-		// QueryTermInfo *qtjy = &qip[j];
-		// QueryTerm     *qtj  = &m_q->m_qterms[qtjy->m_qtermNum];
-
-		// if ( qti->m_fieldCode != qtj->m_fieldCode )
-		// 	continue;
 
 		//
 		// get score for term pair from non-body occuring terms
@@ -5344,10 +5202,6 @@ void PosdbTable::intersectLists10_r ( ) {
 
 	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: m_preFinalScore=%f, minScore=%f", __FILE__,__func__, __LINE__, m_preFinalScore, minScore);
 	
-	//score = -1.0;
-	//log("score: minPairScore=%f",minPairScore);
-	// fix "Recently I posted a question about how"
-
 	// comment out for gbsectionhash: debug:
 	if ( minScore <= 0.0 ) 
 		goto advance;
@@ -5387,49 +5241,12 @@ void PosdbTable::intersectLists10_r ( ) {
 		//score = (float)intScore;
 	}
 
-	/*
+	// this logic now moved into isInRange2() when we fill up
+	// the docidVoteBuf. we won't add the docid if it fails one
+	// of these range terms. But if we are a boolean query then
+	// we handle it in makeDocIdVoteBufForBoolQuery_r() below.
+	// [snip: range checks]
 
-	  // this logic now moved into isInRange2() when we fill up
-	  // the docidVoteBuf. we won't add the docid if it fails one
-	  // of these range terms. But if we are a boolean query then
-	  // we handle it in makeDocIdVoteBufForBoolQuery_r() below.
-
-	// skip docid if outside of range
-	if ( m_minScoreTermNum >= 0 ) {
-		// no term?
-		if ( ! miniMergedList[m_minScoreTermNum] ) goto advance;
-		float score2 ;
-		score2= g_posdb.getFloat ( miniMergedList[m_minScoreTermNum] );
-		if ( score2 < m_minScoreVal ) goto advance;
-	}
-
-	// skip docid if outside of range
-	if ( m_maxScoreTermNum >= 0 ) {
-		// no term?
-		if ( ! miniMergedList[m_maxScoreTermNum] ) goto advance;
-		float score2 ;
-		score2= g_posdb.getFloat ( miniMergedList[m_maxScoreTermNum] );
-		if ( score2 > m_maxScoreVal ) goto advance;
-	}
-
-	// skip docid if outside of range
-	if ( m_minScoreTermNumInt >= 0 ) {
-		// no term?
-		if ( ! miniMergedList[m_minScoreTermNumInt] ) goto advance;
-		int32_t score3;
-		score3=g_posdb.getInt(miniMergedList[m_minScoreTermNumInt]);
-		if ( score3 < m_minScoreValInt ) goto advance;
-	}
-
-	// skip docid if outside of range
-	if ( m_maxScoreTermNumInt >= 0 ) {
-		// no term?
-		if ( ! miniMergedList[m_maxScoreTermNumInt] ) goto advance;
-		int32_t score3 ;
-		score3= g_posdb.getInt ( miniMergedList[m_maxScoreTermNumInt]);
-		if ( score3 > m_maxScoreValInt ) goto advance;
-	}
-	*/
 
 	// now we have a maxscore/maxdocid upper range so the widget
 	// can append only new results to an older result set.
