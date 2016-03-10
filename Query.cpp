@@ -2571,7 +2571,7 @@ struct QueryField g_fields[] = {
 	{"url",
 	 FIELD_URL, 
 	 true,
-	 "url:www.abc.com/page.html",
+	 "url:www.example.com/page.html",
 	 "Matches the page with that exact url. Uses the first url, not "
 	 "the url it redirects to, if any." , 
 	 NULL,
@@ -2589,9 +2589,9 @@ struct QueryField g_fields[] = {
 	{"link", 
 	 FIELD_LINK, 
 	 true,
-	 "link:www.gigablast.com/foo.html",
+	 "link:www.example.com/foo.html",
 	 "Matches all the documents that have a link to "
-	 "http://www.gigablast.com/foobar.html",
+	 "http://www.example.com/foobar.html",
 	 NULL,
 	 0 },
 
@@ -2607,17 +2607,17 @@ struct QueryField g_fields[] = {
 	{"site", 
 	 FIELD_SITE, 
 	 true,
-	 "site:mysite.com",
-	 "Matches all documents on the mysite.com domain.",
+	 "site:example.com",
+	 "Matches all documents on the example.com domain.",
 	 NULL,
 	 0 },
 
 	{"site", 
 	 FIELD_SITE, 
 	 true,
-	 "site:www.mysite.com/dir1/dir2/",
+	 "site:www.example.com/dir1/dir2/",
 	 "Matches all documents whose url starts with "
-	 "www.mysite.com/dir1/dir2/",
+	 "www.example.com/dir1/dir2/",
 	 NULL,
 	 QTF_DUP },
 
@@ -2625,7 +2625,7 @@ struct QueryField g_fields[] = {
 	 FIELD_IP, 
 	 true,
 	 "ip:192.0.2.1",
-	 "Matches all documents whose IP is192.0.2.1.",
+	 "Matches all documents whose IP is 192.0.2.1.",
 	 NULL,
 	 0 },
 
@@ -2633,8 +2633,8 @@ struct QueryField g_fields[] = {
 	{"ip", 
 	 FIELD_IP, 
 	 true,
-	 "ip:1.2.3",
-	 "Matches all documents whose IP STARTS with 1.2.3.",
+	 "ip:192.0.2",
+	 "Matches all documents whose IP STARTS with 192.0.2.",
 	 NULL,
 	 QTF_DUP },
 
@@ -2644,8 +2644,8 @@ struct QueryField g_fields[] = {
 	 true,
 	 "inurl:dog",
 	 "Matches all documents that have the word dog in their url, like "
-	 "http://www.mysite.com/dog/food.html. However will not match "
-	 "http://www.mysite.com/dogfood.html because it is not an "
+	 "http://www.example.com/dog/food.html. However will not match "
+	 "http://www.example.com/dogfood.html because it is not an "
 	 "individual word. It must be delineated by punctuation.",
 	 NULL,
 	 0 },
@@ -2746,10 +2746,10 @@ struct QueryField g_fields[] = {
 	{"gbparenturl", 
 	 FIELD_GBPARENTURL, 
 	 true,
-	 "gbparenturl:www.xyz.com/abc.html",
+	 "gbparenturl:www.example.com/foo.html",
 	 "Diffbot only. Match the json urls that "
 	 "were extract from this parent url. Example: "
-	 "gbparenturl:www.gigablast.com/addurl.htm",
+	 "gbparenturl:www.example.com/addurl.htm",
 	 NULL,
 	 0},
 
@@ -2864,7 +2864,7 @@ struct QueryField g_fields[] = {
 	{"gbssFinalRedirectUrl",
 	 FIELD_GENERIC,
 	 false,
-	 "gbssFinalRedirectUrl:abc.com/page2.html",
+	 "gbssFinalRedirectUrl:example.com/page2.html",
 	 "Query on the last url redirect to, if any.",
 	 NULL, // title
 	 0},
