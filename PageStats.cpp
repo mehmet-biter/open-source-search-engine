@@ -555,12 +555,10 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 	//
 
 	RdbCache *resultsCache  = &g_genericCache[SEARCHRESULTS_CACHEID];
-	//RdbCache *siteLinkCache = &g_genericCache[SITELINKINFO_CACHEID];
-	//RdbCache *siteQualityCache = &g_genericCache[SITEQUALITY_CACHEID];
 
 	RdbCache *caches[20];
-	caches[0] = Msg13::getHttpCacheRobots();//&g_robotdb.m_rdbCache;
-	caches[1] = Msg13::getHttpCacheOthers();//&g_robotdb.m_rdbCache;
+	caches[0] = Msg13::getHttpCacheRobots();
+	caches[1] = Msg13::getHttpCacheOthers();
 	caches[2] = g_dns.getCache();
 	caches[3] = g_dns.getCacheLocal();
 	caches[4] = resultsCache;

@@ -1423,14 +1423,8 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	}
 	//if ( cr && m_rdb == g_spiderdb.getRdb() ) 
 	//	m_minToMerge = cr->m_spiderdbMinFilesToMerge;
-	//if ( cr && m_rdb == g_sectiondb.getRdb() )
-	//	m_minToMerge = cr->m_sectiondbMinFilesToMerge;
-	//if ( cr && m_rdb == g_sectiondb.getRdb() )
-	//	m_minToMerge = cr->m_sectiondbMinFilesToMerge;
 	//if ( cr && m_rdb == g_clusterdb.getRdb() )
 	//	m_minToMerge = cr->m_clusterdbMinFilesToMerge;
-	//if ( cr && m_rdb == g_datedb.getRdb() ) 
-	//	m_minToMerge = cr->m_datedbMinFilesToMerge;
 	//if ( cr && m_rdb == g_statsdb.getRdb() )
 	//if ( m_rdb == g_statsdb.getRdb() )
 	//	m_minToMerge = g_conf.m_statsdbMinFilesToMerge;
