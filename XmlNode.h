@@ -1,5 +1,5 @@
-#ifndef _XMLNODE_H_
-#define _XMLNODE_H_
+#ifndef GB_XMLNODE_H
+#define GB_XMLNODE_H
 
 #include "gb-include.h"
 
@@ -378,6 +378,5 @@ inline char *getTagName( nodeid_t tagId ) {
 	return g_nodes[tagId].m_nodeName;
 }
 
-#endif
-
+#endif // GB_XMLNODE_H
 

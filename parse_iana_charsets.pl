@@ -85,8 +85,8 @@ open CFILE, ">iana_charset.h" or die "Can't open iana_charset.h for writing";
 print CFILE "// iana_charset.h\n";
 print CFILE "// Generated automatically by parse_iana_charsets.pl ".gmtime()."\n";
 print CFILE "// DO NOT EDIT!!!\n\n";
-print CFILE "#ifndef IANA_CHARSET_H__\n";
-print CFILE "#define IANA_CHARSET_H__\n";
+print CFILE "#ifndef GB_IANACHARSET_H\n";
+print CFILE "#define GB_IANACHARSET_H\n";
 
 print CFILE "enum eIANACharset{\n";
 print CFILE "\tcsOther = 1, // unregistered character set\n";
@@ -107,7 +107,7 @@ print CFILE "short get_iana_charset(char *cs, int len); \n";
 print CFILE "char *get_charset_str(short cs); \n";
 print CFILE "bool supportedCharset(short cs); \n";
 print CFILE "void setSupportedCharsets(short *cs, int numCharsets);\n";
-print CFILE "#endif\n";
+print CFILE "#endif // GB_IANACHARSET_H\n";
 close CFILE;
 
 open CFILE, ">iana_charset.cpp" or die "Can't open iana_charset.cpp for writing";

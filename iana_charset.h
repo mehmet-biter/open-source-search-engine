@@ -2,8 +2,8 @@
 // Generated automatically by parse_iana_charsets.pl Thu Apr 10 03:09:39 2014
 // DO NOT EDIT!!!
 
-#ifndef IANA_CHARSET_H__
-#define IANA_CHARSET_H__
+#ifndef GB_IANACHARSET_H
+#define GB_IANACHARSET_H
 enum eIANACharset{
 	csOther = 1, // unregistered character set
 	csUnknown = 2, // used as a default value
@@ -262,4 +262,4 @@ int16_t get_iana_charset(const char *cs, int len);
 char *get_charset_str(int16_t cs); 
 bool supportedCharset(int16_t cs); 
 void setSupportedCharsets(int16_t *cs, int numCharsets);
-#endif
+#endif // GB_IANACHARSET_H
