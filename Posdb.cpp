@@ -1465,42 +1465,33 @@ float PosdbTable::getSingleTermScore ( int32_t i,
 
 	float nonBodyMax = -1.0;
 	//char *maxp;
-	bool first = true;
 	int32_t minx;
 	float bestScores[MAX_TOP];
 	char *bestwpi   [MAX_TOP];
-	char  bestmhg   [MAX_TOP];
 	int32_t numTop = 0;
 
 	// assume no terms!
 	*bestPos = NULL;
 
 	if ( wpi ) {
-
-		float score;
-		unsigned char hg;
-		unsigned char mhg;
-		unsigned char dens;
-		unsigned char wspam;
-		unsigned char div;
-		int32_t bro;
-
+		bool first = true;
+		char  bestmhg[MAX_TOP];
 		do {
-			score = 100.0;
+			float score = 100.0;
 			// good diversity?
-			div = g_posdb.getDiversityRank ( wpi );
+			unsigned char div = g_posdb.getDiversityRank ( wpi );
 			score *= s_diversityWeights[div];
 			score *= s_diversityWeights[div];
 
 			// hash group? title? body? heading? etc.
-			hg = g_posdb.getHashGroup ( wpi );
-			mhg = hg;
+			unsigned char hg = g_posdb.getHashGroup ( wpi );
+			unsigned char mhg = hg;
 			if ( s_inBody[mhg] ) mhg = HASHGROUP_BODY;
 			score *= s_hashGroupWeights[hg];
 			score *= s_hashGroupWeights[hg];
 
 			// good density?
-			dens = g_posdb.getDensityRank ( wpi );
+			unsigned char dens = g_posdb.getDensityRank ( wpi );
 			score *= s_densityWeights[dens];
 			score *= s_densityWeights[dens];
 
@@ -1508,7 +1499,7 @@ float PosdbTable::getSingleTermScore ( int32_t i,
 			//score /= 2.0;
 
 			// word spam?
-			wspam = g_posdb.getWordSpamRank ( wpi );
+			unsigned char wspam = g_posdb.getWordSpamRank ( wpi );
 			// word spam weight update
 			if ( hg == HASHGROUP_INLINKTEXT ) {
 				score *= s_linkerWeights  [wspam];
@@ -1527,7 +1518,7 @@ float PosdbTable::getSingleTermScore ( int32_t i,
 
 
 			// do not allow duplicate hashgroups!
-			bro = -1;
+			int32_t bro = -1;
 			for ( int32_t k = 0 ; k < numTop ; k++ ) {
 				if ( bestmhg[k] == mhg && hg !=HASHGROUP_INLINKTEXT ){
 					bro = k;
