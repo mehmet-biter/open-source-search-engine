@@ -42,10 +42,6 @@ Sections::~Sections ( ) {
 	reset();
 }
 
-// for debug watch point
-class Sections *g_sections = NULL;
-class Section *g_sec = NULL;
-
 #define TXF_MATCHED 1
 
 // an element on the stack is a Tag
@@ -211,9 +207,6 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 		// advance
 		m_numSections++;
 	}
-
-	// for debug
-	g_sections = this;
 
 	// Sections are no longer 1-1 with words, just with front tags
 	for ( int32_t i = 0 ; i < nw ; i++ ) {
