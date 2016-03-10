@@ -4589,16 +4589,8 @@ void PosdbTable::intersectLists10_r ( ) {
 				mink = k;
 				continue;
 			}
-			if ( *(uint32_t *)(nwp[k   ]+2) >
-			     *(uint32_t *)(nwp[mink]+2) )
-				continue;
-			if ( *(uint32_t  *)(nwp[k   ]+2) ==
-			     *(uint32_t  *)(nwp[mink]+2) &&
-			     *(uint16_t *)(nwp[k   ]) >=
-			     *(uint16_t *)(nwp[mink]) )
-				continue;
-			// a new min...
-			mink = k;
+			if ( KEYCMP(nwp[k],nwp[mink],6) < 0 )
+				mink = k; // a new min...
 		}
 		// all exhausted? merge next set of sublists then for term #j
 		if ( mink == -1 ) {
@@ -5612,17 +5604,7 @@ void printTermList ( int32_t i, char *list, int32_t listSize ) {
 
 // sort in descending order
 int dcmp6 ( const void *h1 , const void *h2 ) {
-	if ( *(uint32_t *)((char *)h1+2) < 
-	     *(uint32_t *)((char *)h2+2) )
-		return -1;
-	if ( *(uint32_t *)((char *)h1+2) > 
-	     *(uint32_t *)((char *)h2+2) )
-		return  1;
-	if ( *(uint16_t *)((char *)h1) < 
-	     *(uint16_t *)((char *)h2) )
-		return -1;
-	// they shouldn't be any dups in there...
-	return 1;
+	return KEYCMP((const char*)h1,(const char*)h2,6);
 }
 
 // TODO: do this in docid range phases to save memory and be much faster
