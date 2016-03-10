@@ -6,7 +6,7 @@
 
 #define MAX_BUF_SIZE 1024
 
-#define HTML_FORMAT "<html><head>%s</head><body></body></html>"
+#define HTML_HEAD_FORMAT "<html><head>%s</head><body></body></html>"
 
 TEST( XmlTest, MetaDescription) {
 	char* input_strs[] =  {
@@ -48,7 +48,7 @@ TEST( XmlTest, MetaDescription) {
 			std::sprintf(desc, format_strs[j], input_str, input_str);
 
 			char input[MAX_BUF_SIZE];
-			std::sprintf(input, HTML_FORMAT, desc);
+			std::sprintf(input, HTML_HEAD_FORMAT, desc);
 
 			Xml xml;
 			ASSERT_TRUE(xml.set(input, strlen(input), 0, 0, CT_HTML));
@@ -95,7 +95,7 @@ TEST( XmlTest, MetaDescriptionStripTags) {
 		std::sprintf(desc, format_str, input_str, input_str);
 
 		char input[MAX_BUF_SIZE];
-		std::sprintf(input, HTML_FORMAT, desc);
+		std::sprintf(input, HTML_HEAD_FORMAT, desc);
 
 		Xml xml;
 		ASSERT_TRUE(xml.set(input, strlen(input), 0, 0, CT_HTML));
