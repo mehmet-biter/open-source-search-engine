@@ -3182,14 +3182,14 @@ void PosdbTable::rmDocIdVotes ( QueryTermInfo *qti ) {
 				// less than? keep going
 				if ( *(uint32_t *)(dp+1) <
 				     *(uint32_t *)(recPtr+8) ) 
-					goto endloop2;
+					continue;
 				// top 4 bytes are equal. check lower single byte then.
 				if ( *(unsigned char *)(dp) >
 				     (*(unsigned char *)(recPtr+7) & 0xfc ) )
 					break;
 				if ( *(unsigned char *)(dp) <
 				     (*(unsigned char *)(recPtr+7) & 0xfc ) )
-					goto endloop2;
+					continue;
 				// . equal! mark it as nuked!
 				dp[5] = -1;//listGroupNum;
 				// skip it
