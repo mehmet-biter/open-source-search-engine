@@ -7004,53 +7004,6 @@ void Parms::init ( ) {
 	m++;
 
 
-	m->m_title = "geocoder IP #1";
-	m->m_desc  = "";
-	m->m_cgi   = "gca";
-	m->m_off   = offsetof(Conf,m_geocoderIps[0]);
-	m->m_type  = TYPE_IP;
-	m->m_def   = "0.0.0.0"; // sp1
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "geocoder IP #2";
-	m->m_desc  = "";
-	m->m_cgi   = "gcb";
-	m->m_off   = offsetof(Conf,m_geocoderIps[1]);
-	m->m_type  = TYPE_IP;
-	m->m_def   = "0.0.0.0";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "geocoder IP #3";
-	m->m_desc  = "";
-	m->m_cgi   = "gcc";
-	m->m_off   = offsetof(Conf,m_geocoderIps[2]);
-	m->m_type  = TYPE_IP;
-	m->m_def   = "0.0.0.0";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "geocoder IP #4";
-	m->m_desc  = "";
-	m->m_cgi   = "gcd";
-	m->m_off   = offsetof(Conf,m_geocoderIps[3]);
-	m->m_type  = TYPE_IP;
-	m->m_def   = "0.0.0.0";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "wiki proxy ip";
 	m->m_desc  = "Access the wiki coll through this proxy ip";
 	m->m_cgi   = "wpi";

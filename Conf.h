@@ -29,8 +29,6 @@
 #define MAX_MX_LEN            128
 #define MAX_EMAIL_LEN         64
 
-#define MAX_GEOCODERS         4
-
 //Publicly accessible and generallyy HA / reachable DNS servers. Use Google's servers - works reasonably well
 #define PUBLICLY_AVAILABLE_DNS1 "8.8.8.8"
 #define PUBLICLY_AVAILABLE_DNS2 "8.8.4.4"
@@ -106,8 +104,6 @@ class Conf {
 
 	int32_t  m_dnsMaxCacheMem;
 	bool  m_dnsSaveCache;
-
-	int32_t  m_geocoderIps[MAX_GEOCODERS];
 
 	int32_t m_wikiProxyIp;
 	int32_t m_wikiProxyPort;
