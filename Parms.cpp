@@ -5858,23 +5858,23 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-        m->m_title = "ask for gzipped docs when downloading";
-        m->m_desc  = "If this is true, gb will send Accept-Encoding: gzip "
+	m->m_title = "ask for gzipped docs when downloading";
+	m->m_desc  = "If this is true, gb will send Accept-Encoding: gzip "
 		"to web servers when doing http downloads. It does have "
 		"a tendency to cause out-of-memory errors when you enable "
 		"this, so until that is fixed better, it's probably a good "
 		"idea to leave this disabled.";
-        m->m_cgi   = "afgdwd";
-        m->m_off   = offsetof(Conf,m_gzipDownloads);
-        m->m_type  = TYPE_BOOL;
+	m->m_cgi   = "afgdwd";
+	m->m_off   = offsetof(Conf,m_gzipDownloads);
+	m->m_type  = TYPE_BOOL;
 	// keep this default off because it seems some pages are huge
 	// uncomressed causing OOM errors and possibly corrupting stuff?
 	// not sure exactly, but i don't like going OOM. so maybe until
 	// that is fixed leave this off.
-        m->m_def   = "0";
+	m->m_def   = "0";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-        m++;
+	m++;
 	
 	m->m_title = "search results cache max age";
 	m->m_desc = "How many seconds should we cache a search results "
@@ -6752,45 +6752,43 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-
-
-        m->m_title = "redirect non-raw traffic";
-        m->m_desc  = "If this is non empty, http traffic will be redirected "
-		"to the specified address.";
-        m->m_cgi   = "redir";
-        m->m_off   = offsetof(Conf,m_redirect);
-        m->m_type  = TYPE_STRING;
-	m->m_size  = MAX_URL_LEN;
-        m->m_def   = "";
+	m->m_title = "redirect non-raw traffic";
+	m->m_desc = "If this is non empty, http traffic will be redirected "
+				"to the specified address.";
+	m->m_cgi = "redir";
+	m->m_off = offsetof( Conf, m_redirect );
+	m->m_type = TYPE_STRING;
+	m->m_size = MAX_URL_LEN;
+	m->m_def = "";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-        m++;
+	m->m_page = PAGE_MASTER;
+	m->m_obj = OBJ_CONF;
+	m++;
 
-        m->m_title = "send requests to compression proxy";
-        m->m_desc  = "If this is true, gb will route download requests for"
+	m->m_title = "send requests to compression proxy";
+	m->m_desc  = "If this is true, gb will route download requests for"
 		" web pages to proxies in hosts.conf.  Proxies will"
 		" download and compress docs before sending back. ";
-        m->m_cgi   = "srtcp";
-        m->m_off   = offsetof(Conf,m_useCompressionProxy);
-        m->m_type  = TYPE_BOOL;
-        m->m_def   = "0";
+	m->m_cgi   = "srtcp";
+	m->m_off   = offsetof(Conf,m_useCompressionProxy);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
-        m++;
+	m++;
 
-        m->m_title = "synchronize proxy to cluster time";
-        m->m_desc  = "Enable/disable the ability to synchronize time between "
-                "the cluster and the proxy";
-        m->m_cgi   = "sptct";
-        m->m_off   = offsetof(Conf,m_timeSyncProxy);
-        m->m_type  = TYPE_BOOL;
-        m->m_def   = "0";
+	m->m_title = "synchronize proxy to cluster time";
+	m->m_desc = "Enable/disable the ability to synchronize time between "
+	            "the cluster and the proxy";
+	m->m_cgi = "sptct";
+	m->m_off = offsetof( Conf, m_timeSyncProxy );
+	m->m_type = TYPE_BOOL;
+	m->m_def = "0";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-        m++;
+	m->m_page = PAGE_MASTER;
+	m->m_obj = OBJ_CONF;
+	m++;
 
 	m->m_title = "allow scaling of hosts";
 	m->m_desc  = "Allows scaling up of hosts by deleting recs not in "
