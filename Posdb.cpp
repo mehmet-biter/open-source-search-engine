@@ -1052,7 +1052,7 @@ static float s_wordSpamWeights  [MAXWORDSPAMRANK+1]; // wordspam
 static float s_linkerWeights    [MAXWORDSPAMRANK+1]; 
 static float s_hashGroupWeights [HASHGROUP_END];
 static bool  s_isCompatible     [HASHGROUP_END][HASHGROUP_END];
-static char  s_inBody           [HASHGROUP_END];
+static bool  s_inBody           [HASHGROUP_END];
 
 // initialize the weights table
 void initWeights ( ) {
@@ -1082,13 +1082,13 @@ void initWeights ( ) {
 	// if two hashgroups are comaptible they can be paired
 	for ( int32_t i = 0 ; i < HASHGROUP_END ; i++ ) {
 		// set this
-		s_inBody[i] = 0;
+		s_inBody[i] = false;
 		// is it body?
 		if ( i == HASHGROUP_BODY    ||
 		     i == HASHGROUP_HEADING ||
 		     i == HASHGROUP_INLIST  ||
 		     i == HASHGROUP_INMENU   )
-			s_inBody[i] = 1;
+			s_inBody[i] = true;
 		for ( int32_t j = 0 ; j < HASHGROUP_END ; j++ ) {
 			// assume not
 			s_isCompatible[i][j] = false;
