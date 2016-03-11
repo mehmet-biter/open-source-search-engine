@@ -99,13 +99,6 @@ float getTermFreqWeight  ( int64_t termFreq , int64_t numDocsInColl );
 
 #define TERMID_MASK (0x0000ffffffffffffLL)
 
-#define BF_HALFSTOPWIKIBIGRAM 0x01  // "to be" in "to be or not to be"
-#define BF_PIPED              0x02  // before a query pipe operator
-#define BF_SYNONYM            0x04
-#define BF_NEGATIVE           0x08  // query word has a negative sign before it
-#define BF_BIGRAM             0x10
-#define BF_NUMBER             0x20  // is it like gbsortby:price? numeric?
-
 void printTermList ( int32_t i, char *list, int32_t listSize ) ;
 
 // if query is 'the tigers' we weight bigram "the tigers" x 1.20 because

@@ -12,6 +12,14 @@
 #include <valgrind/memcheck.h>
 #endif
 
+#define BF_HALFSTOPWIKIBIGRAM 0x01  // "to be" in "to be or not to be"
+#define BF_PIPED              0x02  // before a query pipe operator
+#define BF_SYNONYM            0x04
+#define BF_NEGATIVE           0x08  // query word has a negative sign before it
+#define BF_BIGRAM             0x10
+#define BF_NUMBER             0x20  // is it like gbsortby:price? numeric?
+
+
 // a global class extern'd in .h file
 Posdb g_posdb;
 
