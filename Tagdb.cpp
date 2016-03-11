@@ -23,21 +23,17 @@ static bool s_initialized = false;
 int32_t Tag::print ( ) {
 	SafeBuf sb;
 	printToBuf ( &sb );
+
 	// dump that
 	return fprintf(stderr,"%s\n",sb.getBufStart());
 }
 
 bool Tag::printToBuf ( SafeBuf *sb ) {
-	sb->safePrintf("k.hsthash=%016"XINT64" "
-		       "k.duphash=%08"XINT32" "
-		       "k.sitehash=%08"XINT32" ",
-		       m_key.n1,
-		       (int32_t)(m_key.n0>>32),
-		       (int32_t)(m_key.n0&0xffffffff));
+	sb->safePrintf("k.hsthash=%016"XINT64" k.duphash=%08"XINT32" k.sitehash=%08"XINT32" ",
+	               m_key.n1, (int32_t)(m_key.n0>>32), (int32_t)(m_key.n0&0xffffffff));
+
 	// print the tagname
-	sb->safePrintf ( "TAG=%s,\"%s\",", 
-			 getTagStrFromType(m_type),
-			 getUser() );
+	sb->safePrintf ( "TAG=%s,\"%s\",", getTagStrFromType(m_type), getUser() );
 
 	// print the date when this tag was added
 	time_t ts = m_timestamp;
@@ -50,7 +46,10 @@ bool Tag::printToBuf ( SafeBuf *sb ) {
 	sb->safePrintf("%s,",iptoa(m_ip));
 
 	sb->safePrintf("\"");
-	if ( ! printDataToBuf ( sb ) ) return false;
+	if ( ! printDataToBuf ( sb ) ) {
+		return false;
+	}
+
 	// final quote
 	sb->safePrintf("\"");
 	return true;
@@ -58,43 +57,49 @@ bool Tag::printToBuf ( SafeBuf *sb ) {
 
 // . "site" can also be a specific url, but it must be normalized
 // . i.e. of the form http://xyz.com/
-void Tag::set ( const char *site ,
-		const char *tagname ,
-		int32_t  timestamp ,
-		const char *user ,
-		int32_t  ip ,
-		const char *data ,
-		int32_t  dataSize ) {
+void Tag::set ( const char *site, const char *tagname, int32_t  timestamp, const char *user, int32_t  ip,
+                const char *data, int32_t  dataSize ) {
 	// get type from name
 	m_type = getTagTypeFromStr ( tagname , strlen(tagname) );
 
 	m_timestamp = timestamp;
 	m_ip        = ip;
 	int32_t userLen = 0;
-	if ( user ) userLen = gbstrlen(user);
+	if ( user ) {
+		userLen = gbstrlen( user );
+	}
+
 	// truncate to 127 byte int32_t
-	if ( userLen > 126 ) userLen = 126;
+	if ( userLen > 126 ) {
+		userLen = 126;
+	}
 
 	// normalize
 	Url norm;
 	norm.set ( site );
 
 	char *p = m_buf;
+
 	// store size (includes \0)
 	*p++ = userLen + 1;
+
 	// then user name
 	gbmemcpy ( p , user , userLen );
 	p += userLen;
+
 	// then \0
 	*p++ = '\0';
+
 	// store data now too
 	gbmemcpy ( p , data , dataSize );
 	p += dataSize;
+
 	// NULL terminate if they did not! now all tag are strings and must
 	// be NULL terminated.
 	if ( data && p[-1] ) {
 		*p++ = '\0';
 	}
+
 	// set it
 	m_bufSize = p - m_buf;
 
@@ -102,6 +107,7 @@ void Tag::set ( const char *site ,
 	// because www.last.fm/user/xxxxx/
 	// was making the rdblist a few megabytes big!!
 	m_key.n1 = hash64n ( site );
+
 	// assume we are unique tag, that many of this type can exist
 	uint32_t upper32 = getDedupHash(); // m_type;
 
@@ -124,79 +130,105 @@ void Tag::set ( const char *site ,
 int32_t Tag::setFromBuf ( char *p , char *pend ) {
 	// save our place
 	char *start = p;
+
 	// tags always start with " TAG="
 	if ( strncmp(p," TAG=",5) ) {
 		log("tagdb: error processing tag in setFromBuf().");
 		return 0;
 	}
+
 	// skip that
 	p += 5;
 
 	// get the type
 	char *type = p;
+
 	// get type length
 	while ( p < pend && *p != ',' ) p++;
+
 	// error?
 	if ( p == pend ) return 0;
+
 	// that is the length
 	int32_t typeLen = p - type;
+
 	// convert to number
 	m_type = getTagTypeFromStr ( type , typeLen );
+
 	// panic?
 	if ( m_type == -1 ) { char *xx=NULL;*xx=0;}
+
 	// now the user, skip comma and quote
 	p+=2;
 
 	// data buffer
 	char *dst = m_buf;
+
 	// point to it
 	char *user = p;
+
 	// get end of it
 	while ( p < pend && *p != '\"' ) p++;
+
 	// error?
 	if ( p == pend ) return 0;
+
 	// set length
 	int32_t userLen = p - user;
+
 	// sanity. username total buf space including \0 <= 8
 	if ( userLen > 126 ) userLen = 126;
 
 	// first byte is username size
 	*dst++ = userLen+1;
+
 	// then the username
 	gbmemcpy ( dst , user , userLen );
 	dst += userLen;
+
 	// and finall null termination
 	*dst++ = '\0';
+
 	// skip quote and comma
 	p+=2;
 
 	// that is the time stamp in canonical form
 	// skip till comma
 	while ( p < pend && *p != ',' ) p++;
+
 	// error?
 	if ( p == pend ) return 0;
+
 	// skip comma
 	p++;
 
 	// save start
 	char *ts = p;
+
 	// skip until comma again
 	while ( p < pend && *p != ',' ) p++;
+
 	// error?
 	if ( p == pend ) return 0;
+
 	// this is the timestamp in seconds since epoch
 	m_timestamp = atoi(ts);
+
 	// skip comma
 	p++;
 
 	// ip address as text
 	char *ips = p;
+
 	// skip until comma again
 	while ( p < pend && *p != ',' ) p++;
+
 	// error?
 	if ( p == pend ) return 0;
+
 	// convert it to binary
 	m_ip = atoip ( ips , p - ips );
+
 	// skip comma
 	p++;
 
@@ -215,23 +247,28 @@ int32_t Tag::setFromBuf ( char *p , char *pend ) {
 // . return # of chars scanned in "p"
 // . return 0 on error
 int32_t Tag::setDataFromBuf ( char *p , char *pend ) {
-	// string are special
-	//if ( isTagTypeString ( m_type ) ) {
 	// skip over username in the buffer to point to where to put tag data
 	char *dst = m_buf + *m_buf + 1;
+
 	// stop at space of 
 	gbmemcpy(dst,p,pend-p);
+
 	// advance
 	dst += (pend-p);
+
 	// update
 	m_bufSize = dst - m_buf;
+
 	// should be end delimter
 	char c = m_buf[m_bufSize-1];
+
 	// sanity check
 	if ( c && ! isspace(c) ) { char *xx=NULL;*xx=0; }
+
 	// strings are always NULL terminated, the datasize should
 	// include the NULL termination
 	m_buf[m_bufSize-1]='\0';
+
 	// we basically insert the \0, and *p should point to the space
 	// right after the string...! so return m_dataSize - 1
 	return m_bufSize - 1;
@@ -251,76 +288,86 @@ bool Tag::printToBufAsAddRequest ( SafeBuf *sb ) {
 	// print the tagname
 	const char *str = getTagStrFromType ( m_type );
 	sb->safePrintf("/admin/tagdb?");
-	// print the site
-	//sb->safePrintf("u=");
-	//sb->urlEncode ( m_url->getUrl() );
+
 	// print key of the tag as 16 byte key in ascii hex notation
 	// we don't know the "site" for all tags because "site" is a tag
 	// itself. we should take this in lieu of the "u=" url parm
 	// which is made to generate the key anyhow.
-	//sb->safePrintf("tagkey0=%s",KEYSTR(&m_key,16));
 	sb->safePrintf("&tagn0keyb0=%"INT64"",m_key.n0);
 	sb->safePrintf("&tagn1keyb0=%"INT64"",m_key.n1);
+
 	// print the user that added this tag
 	sb->safePrintf ( "&username=%s" , getUser() );
+
 	// the tag type, like "sitenuminlinks" or "rootlang"
 	sb->safePrintf("&tagtype0=%s",str);
-	// print the date when this tag was added
-	//sb->safePrintf ("&%s.time=%"INT32"", str, m_timestamp );
-	// print the tag id
-	//sb->safePrintf("&%s.id=%"UINT32"",str,(int32_t)m_tagId);
+
 	// the "score"
-	sb->safePrintf("&tagdata0=");//,str);
+	sb->safePrintf("&tagdata0=");
+
 	// print the m_data
 	SafeBuf tmp;
-	if ( ! printDataToBuf ( &tmp ) ) return false;
+	if ( ! printDataToBuf ( &tmp ) ) {
+		return false;
+	}
 	tmp.nullTerm();
+
 	sb->urlEncode(tmp.getBufStart());
 	sb->nullTerm();
+
 	return true;
 }
 
 bool Tag::printToBufAsXml ( SafeBuf *sb ) {
 	// print the tagname
 	const char *str = getTagStrFromType ( m_type );
+
 	// print the user that added this tag
-	sb->safePrintf ("\t\t<tag>\n\t\t\t<name>%s</name>\n\t\t\t<user>%s",
-			str,getUser());
+	sb->safePrintf ("\t\t<tag>\n\t\t\t<name>%s</name>\n\t\t\t<user>%s", str,getUser());
+
 	// print the date when this tag was added
-	sb->safePrintf("</user>\n\t\t\t<timestamp>%"INT32"</timestamp>\n",
-		       m_timestamp);
+	sb->safePrintf("</user>\n\t\t\t<timestamp>%"INT32"</timestamp>\n", m_timestamp);
+
 	// print the ip added from
 	sb->safePrintf("\t\t\t<ip>%s</ip>\n",iptoa(m_ip));
-	// print the tag id
-	//sb->safePrintf("\t\t\t<id>%"UINT32"</id>\n",(int32_t)m_tagId);
+
 	// the "score"
 	sb->safePrintf("\t\t\t<score>");
+
 	// print the m_data
 	if ( ! printDataToBuf ( sb ) ) return false;
+
 	sb->safePrintf("</score>\n\t\t</tag>");
+
 	return true;
 }
 
 bool Tag::printToBufAsHtml ( SafeBuf *sb , const char *prefix ) {
 	// print the tagname
 	const char *str = getTagStrFromType ( m_type );
+
 	// print the user that added this tag
 	sb->safePrintf ("<tr><td>%s</td><td><b>%s</b>", prefix, str);
+
 	// the "score"
 	sb->safePrintf(" value=<b>");
+
 	// print the m_data
 	if ( ! printDataToBuf ( sb ) ) return false;
+
 	// print the date when this tag was added
 	sb->safePrintf("</b> user=%s time=",getUser());
+
 	time_t ts = m_timestamp;
 	struct tm *timeStruct = localtime ( &ts );
 	char tmp[100];
 	strftime(tmp,100,"%b-%d-%Y-%H:%M:%S",timeStruct);
 	sb->safePrintf("%s(%"UINT32")",tmp,m_timestamp);
+
 	// print the ip added from
 	sb->safePrintf(" ip=%s",iptoa(m_ip));
-	//sb->safePrintf(" id=%"UINT32"",(int32_t)m_tagId);
 	sb->safePrintf("</td></tr>\n");
+
 	return true;
 }
 
@@ -328,9 +375,12 @@ bool Tag::printToBufAsTagVector ( SafeBuf *sb ) {
 	// print the tagname
 	const char *str = getTagStrFromType ( m_type );
 	sb->safePrintf("%s:",str);
+
 	// print the m_data
 	if ( ! printDataToBuf ( sb ) ) return false;
+
 	sb->safePrintf(" ");
+
 	return true;
 }
 
@@ -345,10 +395,10 @@ TagRec::TagRec ( ) {
 
 void TagRec::constructor ( ) {
 	m_numListPtrs = 0;
+
 	// run a constructor on the lists
-	for ( int32_t i = 0 ; i < MAX_TAGDB_REQUESTS ; i++ ) {
-		m_lists[i].constructor();//m_alloc     = NULL;
-		//m_lists[i].m_allocSize = 0;
+	for ( int32_t i = 0 ; i < MAX_TAGDB_REQUESTS ; ++i ) {
+		m_lists[i].constructor();
 	}
 }
 
@@ -358,22 +408,30 @@ TagRec::~TagRec ( ) {
 
 void TagRec::reset ( ) {
 	m_numListPtrs = 0;
-	for ( int32_t i = 0 ; i < MAX_TAGDB_REQUESTS ; i++ ) 
+
+	for ( int32_t i = 0 ; i < MAX_TAGDB_REQUESTS ; ++i ) {
 		m_lists[i].freeList();
+	}
 }
 
 Tag* TagRec::getFirstTag ( ) {
-	if ( m_numListPtrs == 0 ) return NULL;
+	if ( m_numListPtrs == 0 ) {
+		return NULL;
+	}
+
 	return (Tag *)m_listPtrs[0]->m_list;
 }
 
 Tag* TagRec::getNextTag ( Tag *tag ) {
 	// watch out
 	if ( ! tag ) return NULL;
+
 	// get rec size
 	int32_t recSize = tag->getRecSize();
+
 	// point to current tag
 	char *current = (char *)tag;
+
 	// find what list we are in
 	int32_t i;
 	for ( i = 0 ; i < m_numListPtrs ; i++ ) {
@@ -381,21 +439,32 @@ Tag* TagRec::getNextTag ( Tag *tag ) {
 		if ( current >= m_listPtrs[i]->m_listEnd ) continue;
 		break;
 	}
+
 	// sanity
 	if ( i >= m_numListPtrs ) { char *xx=NULL;*xx=0; }
+
 	// advance
 	current += recSize;
+
 	// sanity check
 	if ( recSize > 500000 || recSize < 12 ) {
 		log("tagdb: corrupt tag recsize %i",(int)recSize);
 		return NULL;
 	}
+
 	// breach list?
-	if ( current < m_listPtrs[i]->m_listEnd) return (Tag *)current;
+	if ( current < m_listPtrs[i]->m_listEnd) {
+		return (Tag *)current;
+	}
+
 	// advance list
 	i++;
+
 	// breach of lists?
-	if ( i >= m_numListPtrs ) return NULL;
+	if ( i >= m_numListPtrs ) {
+		return NULL;
+	}
+
 	// return that list record then
 	return (Tag *)(m_listPtrs[i]->m_list);
 }
@@ -717,19 +786,20 @@ bool TagRec::setFromHttpRequest ( HttpRequest *r, TcpSocket *s ) {
 int32_t TagRec::print ( ) {
 	SafeBuf sb;
 	printToBuf ( &sb );
+
 	// dump that
-	return fprintf(stderr,"%s\n",sb.getBufStart());
+	return fprintf( stderr, "%s\n", sb.getBufStart() );
 }
 
 bool TagRec::printToBuf (  SafeBuf *sb ) {
 	Tag *tag = getFirstTag();
-	//sb->safePrintf("k.n1=0x%08"XINT32" k.n0=0x%016"XINT64" version=%"INT32"",
-	//	       m_key.n1,m_key.n0,(int32_t)m_version);
+
 	for ( ; tag ; tag = getNextTag ( tag ) ) {
 		if ( tag->m_type == TT_DUP ) continue; 
 		tag->printToBuf ( sb );
 		sb->pushChar('\n');
 	}
+
 	return true;
 }
 
@@ -792,8 +862,7 @@ bool TagRec::printToBufAsTagVector  ( SafeBuf *sb ) {
 
 // is the tag a string type?
 #define TDF_STRING 0x01
-// can we have multiple tags of this type from the same user in the 
-// same TagRec?
+// can we have multiple tags of this type from the same user in the same TagRec?
 #define TDF_ARRAY  0x02
 // . should we index it?
 // . index gbtagjapanese:<score>
@@ -909,8 +978,9 @@ int32_t getTagTypeFromStr( const char *tagname , int32_t tagnameLen ) {
 	}
 
 	// sanity check, make sure it is a supported tag!
-	if ( ! s_ht.getValue ( &tagType ) ) { 
-		log("tagdb: unsupported tagname \"%s\"",tagname);
+	if ( ! s_ht.getValue ( &tagType ) ) {
+		/// @todo we should cater for deprecated/removed tagname here
+		log( "tagdb: unsupported tagname '%s'", tagname );
 		char *xx=NULL;*xx=0;
 		return -1;
 	}
@@ -927,11 +997,11 @@ const char *getTagStrFromType ( int32_t tagType ) {
 
 	TagDesc **ptd = (TagDesc **)s_ht.getValue ( &tagType );
 	// sanity check
-	if ( ! ptd ) 
-	{ 	
+	if ( ! ptd ) {
 		log(LOG_ERROR,"%s:%s:%d: Failed to lookup tagType %"INT32"", __FILE__, __func__, __LINE__, tagType);
 		return "UNKNOWN";
 	}
+
 	// return it
 	return (*ptd)->m_name;
 }
@@ -955,11 +1025,12 @@ bool Tagdb::setHashTable ( ) {
 	s_initialized = true;
 
 	// the hashtable of TagDescriptors
-	if ( ! s_ht.set ( 4,sizeof(TagDesc *),1024,NULL,0,false,0,"tgdbtb" ) ) 
-		return log("tagdb: Tagdb hash init failed.");
+	if ( ! s_ht.set ( 4, sizeof(TagDesc *), 1024, NULL, 0, false, 0, "tgdbtb" ) ) {
+		return log( "tagdb: Tagdb hash init failed." );
+	}
 
 	// stock it
-	int32_t n = (int32_t)sizeof(s_tagDesc)/(int32_t)sizeof(TagDesc);
+	int32_t n = (int32_t)sizeof(s_tagDesc) / (int32_t)sizeof(TagDesc);
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		TagDesc *td = &s_tagDesc[i];
 		const char *s    = td->m_name;
@@ -1061,8 +1132,7 @@ bool Tagdb::verify ( char *coll ) {
 
 	int32_t count  = 0;
 	int32_t got    = 0;
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
+	for ( list.resetListPtr(); ! list.isExhausted(); list.skipCurrentRecord() ) {
 		key128_t k;
 		list.getCurrentKey ( &k );
 		// skip negative keys
@@ -1072,32 +1142,28 @@ bool Tagdb::verify ( char *coll ) {
 		uint32_t shardNum = getShardNum ( RDB_TAGDB , &k );
 		if ( shardNum == getMyShardNum() ) got++;
 	}
+
 	if ( got != count ) {
 		// tally it up
 		g_rebalance.m_numForeignRecs += count - got;
-		log ("tagdb: Out of first %" INT32" records in %s, only %" INT32" belong "
-		     "to our group.", count, rdbName, got);
+		log (LOG_DEBUG, "tagdb: Out of first %" INT32" records in %s, only %" INT32" belong to our group.",
+		     count, rdbName, got);
 		// exit if NONE, we probably got the wrong data
-		if ( got == 0 ) log("tagdb: Are you sure you have the "
-					   "right "
-					   "data in the right directory? "
-					   "Exiting.");
+		if ( got == 0 ) {
+			log( "tagdb: Are you sure you have the right data in the right directory? Exiting." );
+		}
 		log ( "tagdb: Exiting due to %s inconsistency.", rdbName );
 		g_threads.enableThreads();
 		return g_conf.m_bypassValidation;
 	}
-	log ( LOG_DEBUG, "db: %s passed verification successfully for %"INT32" "
-	      "recs.",rdbName, count );
+
+	log ( LOG_DEBUG, "db: %s passed verification successfully for %"INT32" recs.", rdbName, count );
 
 	// turn threads back on
 	g_threads.enableThreads();
 
 	// if no recs in tagdb, but sitedb exists, convert it
 	if ( count > 0 ) return true;
-
-	// . convert them
-	// . returns false and sets g_errno on error
-	//if ( ! convert ( coll ) ) return false;
 
 	// DONE
 	g_threads.enableThreads();
@@ -1107,7 +1173,7 @@ bool Tagdb::verify ( char *coll ) {
 // . ssssssss ssssssss ssssssss ssssssss  hash of site/url
 // . xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx  tagType OR hash of that+user+data
 // . xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
-key128_t Tagdb::makeStartKey ( char *site ) { // Url *u ) {
+key128_t Tagdb::makeStartKey ( char *site ) {
 	key128_t k;
 	k.n1 = hash64n ( site );
 	// set lower 64 bits of key to hash of this url
@@ -1115,7 +1181,7 @@ key128_t Tagdb::makeStartKey ( char *site ) { // Url *u ) {
 	return k;
 }
 
-key128_t Tagdb::makeEndKey ( char *site ) { //  Url *u ) {
+key128_t Tagdb::makeEndKey ( char *site ) {
 	key128_t k;
 	k.n1 = hash64n ( site );
 	// set lower 64 bits of key to hash of this url
@@ -1308,8 +1374,8 @@ bool Msg8a::launchGetRequests ( ) {
 		return (m_requests == m_replies);
 
 	// limit max to 5ish
-	if (m_requests >=MAX_TAGDB_REQUESTS)
-		return (m_requests==m_replies);
+	if (m_requests >= MAX_TAGDB_REQUESTS)
+		return (m_requests == m_replies);
 
 	// take a breath
 	QUICKPOLL(m_niceness);
@@ -1462,9 +1528,9 @@ void Msg8a::gotAllReplies ( ) {
 		uint32_t h32 = (uint32_t)((tag->m_key.n0) >> 32);
 
 		// otherwise, record it
-		if ( cx.isInTable(&h32 ) ) // tag->m_type) ) 
+		if ( cx.isInTable(&h32 ) ) {
 			tag->m_type = TT_DUP;
-		else if ( ! cx.addKey(&h32) ) {
+		} else if ( ! cx.addKey(&h32) ) {
 			m_errno = g_errno;
 			return;
 		}
@@ -1797,7 +1863,7 @@ bool sendReply2 ( void *state ) {
 		      "</font>"
 		      "</td>"
 		      "<td><input name=ufu "
-		      "type=text size=40>"//<br>"
+		      "type=text size=40>"
 		      "</td></tr>"
 		      );
 
