@@ -56,8 +56,6 @@ class Msg39Request {
 		size_whiteList            = 0;
 		m_sameLangWeight          = 20.0;
 
-		m_getDocIdScoringInfo = 1;
-
 		// -1 means to not to docid range restriction
 		m_minDocId = -1LL;
 		m_maxDocId = -1LL;
