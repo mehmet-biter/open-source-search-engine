@@ -556,24 +556,15 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 	RdbCache *resultsCache  = &g_genericCache[SEARCHRESULTS_CACHEID];
 
+	int32_t numCaches = 0;
 	RdbCache *caches[20];
-	caches[0] = Msg13::getHttpCacheRobots();
-	caches[1] = Msg13::getHttpCacheOthers();
-	caches[2] = g_dns.getCache();
-	caches[3] = g_dns.getCacheLocal();
-	caches[4] = resultsCache;
-	caches[5] = &g_spiderLoop.m_winnerListCache;
-	//caches[5] = &g_termListCache;
-	//caches[6] = &g_genericCache[SEORESULTS_CACHEID];
-	//caches[5] = &g_qtable;
-	//caches[5] = siteLinkCache;
-	//caches[6] = siteQualityCache;
-	//caches[7]=&g_deadWaitCache;
-	//caches[5] = &g_alreadyAddedCache;
-	//caches[6] = &g_forcedCache;
-	//caches[9] = &g_msg20Cache;
-	//caches[10] = &g_tagdb.m_listCache;
-	int32_t numCaches = 6;
+	caches[numCaches++] = Msg13::getHttpCacheRobots();
+	caches[numCaches++] = Msg13::getHttpCacheOthers();
+	caches[numCaches++] = g_dns.getCache();
+	caches[numCaches++] = g_dns.getCacheLocal();
+	caches[numCaches++] = resultsCache;
+	caches[numCaches++] = &g_spiderLoop.m_winnerListCache;
+	caches[numCaches++] = Msg8a::getCache();
 
 	if ( format == FORMAT_HTML )
 		p.safePrintf (
@@ -586,12 +577,7 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 		  numCaches+2 );
 
 	// hack since some are not init'd yet
-	//g_qtable.m_dbname = "quota";
-	//g_deadWaitCache.m_dbname = "deadwait";
-	//g_alreadyAddedCache.m_dbname = "alreadyAdded";
-	//g_forcedCache.m_dbname = "forced";
-	//g_msg20Cache.m_dbname = "parser";
-	//g_tagdb.m_listCache.m_dbname = "tagdbList";
+	Msg8a::getCache()->m_dbname = "tagreccache";
 
 	if ( format == FORMAT_HTML )
 		// 1st column is empty

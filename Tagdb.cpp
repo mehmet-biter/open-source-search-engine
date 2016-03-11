@@ -1235,6 +1235,10 @@ void Msg8a::reset() {
 	m_requests = 0;
 }
 
+RdbCache* Msg8a::getCache() {
+	return &s_cache;
+}
+
 // . get records from multiple subdomains of url
 // . calls g_udpServer.sendRequest() on each subdomain of url
 // . all matching records are merge into a final record
