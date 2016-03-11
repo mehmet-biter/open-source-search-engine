@@ -1607,19 +1607,6 @@ bool BigFile::unlink ( )
 	bool rc;
 	
 	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. filename [%s]", __FILE__, __func__, __LINE__, getFilename());
-
-
-#ifdef PRIVACORE_SAFE_VERSION
-	//@@@ BR 20151218: Hard coded check to help us debug file deletion problem
-	if( strstr(getFilename(),"posdb0001") )
-	{
-		log(LOG_ERROR,"%s:%s:%d: TRYING TO unlink posdb0001!!", __FILE__, __func__, __LINE__);
-		logAllData(LOG_ERROR);
-
-		g_process.shutdownAbort(false);
-		return false;
-	}
-#endif
 	
 	rc=unlinkRename( NULL , -1 , false, NULL, NULL );
 	// rc indicates blocked/unblocked
@@ -1636,18 +1623,6 @@ bool BigFile::move ( char *newDir )
 	
 	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. filename [%s] newDir [%s]", __FILE__, __func__, __LINE__, getFilename(), newDir);
 
-#ifdef PRIVACORE_SAFE_VERSION
-	//@@@ BR 20151218: Hard coded check to help us debug file deletion problem
-	if( strstr(getFilename(),"posdb0001") )
-	{
-		log(LOG_ERROR,"%s:%s:%d: TRYING TO move posdb0001!!", __FILE__, __func__, __LINE__);
-		logAllData(LOG_ERROR);
-
-		g_process.shutdownAbort(false);
-		return false;
-	}
-#endif
-
 	rc = rename( m_baseFilename.getBufStart() , newDir );
 	// rc indicates blocked/unblocked
 	
@@ -1661,18 +1636,6 @@ bool BigFile::rename(char *newBaseFilename , char *newBaseFilenameDir )
 	bool rc;
 
 	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. newBaseFilename [%s] newBaseFilenameDir [%s]", __FILE__, __func__, __LINE__, newBaseFilename, newBaseFilenameDir);
-
-#ifdef PRIVACORE_SAFE_VERSION
-	//@@@ BR 20151218: Hard coded check to help us debug file deletion problem
-	if( strstr(getFilename(),"posdb0001") )
-	{
-		log(LOG_ERROR,"%s:%s:%d: TRYING TO rename posdb0001!!", __FILE__, __func__, __LINE__);
-		logAllData(LOG_ERROR);
-
-		g_process.shutdownAbort(false);
-		return false;
-	}
-#endif
 	
 	rc=unlinkRename ( newBaseFilename, -1, false, NULL, NULL, newBaseFilenameDir );
 	// rc indicates blocked/unblocked
@@ -1688,18 +1651,6 @@ bool BigFile::chopHead(int32_t part )
 
 	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. part %"INT32"", __FILE__, __func__, __LINE__, part);
 	
-#ifdef PRIVACORE_SAFE_VERSION
-	//@@@ BR 20151218: Hard coded check to help us debug file deletion problem
-	if( strstr(getFilename(),"posdb0001") )
-	{
-		log(LOG_ERROR,"%s:%s:%d: TRYING TO chopHead ON posdb0001!! part=%"INT32"", __FILE__, __func__, __LINE__, part);
-		logAllData(LOG_ERROR);
-
-		g_process.shutdownAbort(false);
-		return false;
-	}
-#endif
-	
 	rc=unlinkRename ( NULL, part, false, NULL, NULL );
 	// rc indicates blocked/unblocked
 	
@@ -1714,18 +1665,6 @@ bool BigFile::unlink(void (* callback) ( void *state ) , void *state )
 
 	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN.", __FILE__, __func__, __LINE__);
 
-#ifdef PRIVACORE_SAFE_VERSION
-	//@@@ BR 20151218: Hard coded check to help us debug file deletion problem
-	if( strstr(getFilename(),"posdb0001") )
-	{
-		log(LOG_ERROR,"%s:%s:%d: TRYING TO unlink posdb0001!! (callback)", __FILE__, __func__, __LINE__);
-		logAllData(LOG_ERROR);
-
-		g_process.shutdownAbort(false);
-		return false;
-	}
-#endif
-	
 	rc=unlinkRename ( NULL , -1 , true, callback , state );
 	// rc indicates blocked/unblocked
 	
@@ -1740,18 +1679,6 @@ bool BigFile::rename(char *newBaseFilename, void (*callback)(void *state), void 
 
 	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. filename [%s] newBaseFilename [%s]", __FILE__, __func__, __LINE__, getFilename(), newBaseFilename);
 
-#ifdef PRIVACORE_SAFE_VERSION
-	//@@@ BR 20151218: Hard coded check to help us debug file deletion problem
-	if( strstr(getFilename(),"posdb0001") )
-	{
-		log(LOG_ERROR,"%s:%s:%d: TRYING TO rename posdb0001!! (callback)", __FILE__, __func__, __LINE__);
-		logAllData(LOG_ERROR);
-
-		g_process.shutdownAbort(false);
-		return false;
-	}
-#endif
-	
 	rc=unlinkRename ( newBaseFilename, -1, true, callback, state);
 	// rc indicates blocked/unblocked
 	
@@ -1766,17 +1693,6 @@ bool BigFile::chopHead(int32_t part, void (*callback)(void *state), void *state)
 
 	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. part %"INT32"", __FILE__, __func__, __LINE__, part);
 
-#ifdef PRIVACORE_SAFE_VERSION
-	//@@@ BR 20151218: Hard coded check to help us debug file deletion problem
-	if( strstr(getFilename(),"posdb0001") )
-	{
-		log(LOG_ERROR,"%s:%s:%d: TRYING TO chopHead ON posdb0001!! (callback) part %"INT32"", __FILE__, __func__, __LINE__, part);
-		logAllData(LOG_ERROR);
-		g_process.shutdownAbort(false);
-		return false;
-	}
-#endif
-		
 	//for ( int32_t i = 0 ; i < part ; i++ ) 
 	// set return value to false if we blocked somewhere
 	rc=unlinkRename ( NULL, part, true, callback, state );
@@ -2124,16 +2040,6 @@ void *unlinkWrapper_r ( void *state , ThreadEntry *t )
 	//if ( fd >= 0 ) fsync ( fd );
 	// and unlink it
 
-#ifdef PRIVACORE_SAFE_VERSION
-	//@@@ BR 20151218: Hard coded check to help us debug file deletion problem
-	if( strstr(f->getFilename(),"posdb0001") )
-	{
-		log(LOG_ERROR,"%s:%s:%d: TRYING TO unlink posdb0001!!", __FILE__, __func__, __LINE__);
-		g_process.shutdownAbort(false);
-		return NULL;
-	}
-#endif
-	
 	::unlink ( f->getFilename() );
 	// we must close the file descriptor in the thread otherwise the
 	// file will not actually be unlinked in this thread
