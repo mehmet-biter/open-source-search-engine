@@ -3440,10 +3440,15 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 			// print it
 			printSingleScore ( sb , si , ss , mr );
+			if(si->m_format == FORMAT_JSON && j+1<dp->m_numSingles)
+				sb->safePrintf(",\n");
+			else
+				sb->safePrintf("\n");
 
 			// add up
 			totalSingleScore += ss->m_finalScore;
 		}
+		
 		if ( ft.length() ) ft.safePrintf(" , ");
 		ft.safePrintf("%f",totalSingleScore);
 		// min?
@@ -4304,6 +4309,131 @@ bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Msg20Repl
 	int64_t tf = qt->m_termFreq;
 	float tfw = ss->m_tfWeight;
 	
+	if ( si->m_format == FORMAT_JSON ) {
+		sb->safePrintf("\t\t\"terminfo\": {\n");
+
+		sb->safePrintf("\t\t\t\"densityRank\": %"INT32",\n", (int32_t)ss->m_densityRank);
+		sb->safePrintf("\t\t\t\"densityWeight\": %f,\n", dnw);
+		sb->safePrintf("\t\t\t\"term\": \"%*.*s\",\n", (int)q->m_qterms[qtn].m_termLen, (int)q->m_qterms[qtn].m_termLen,q->m_qterms[qtn].m_term);
+		
+		sb->safePrintf("\t\t\t\"location\": \"%s\",\n", getHashGroupString(ss->m_hashGroup));
+		sb->safePrintf("\t\t\t\"locationWeight\": %.01f,\n", hgw );
+		sb->safePrintf("\t\t\t\"wordPos\": %"INT32",\n", (int32_t)ss->m_wordPos );
+		sb->safePrintf("\t\t\t\"isSynonym\": \"%s\",\n", syn);
+		sb->safePrintf("\t\t\t\"synonymWeight\": %.01f,\n", sw);
+		sb->safePrintf("\t\t\t\"isWikiBigram\": %"INT32",\n", (int32_t)(ss->m_isHalfStopWikiBigram) );
+		sb->safePrintf("\t\t\t\"wikiBigramWeight\": %.01f,\n", (float)WIKI_BIGRAM_WEIGHT);
+		// word spam
+		if ( ss->m_hashGroup == HASHGROUP_INLINKTEXT ) {
+			sb->safePrintf("\t\t\t\"inlinkSiteRank>%"INT32",\n", (int32_t)ss->m_wordSpamRank);
+			sb->safePrintf("\t\t\t\"inlinkTextWeight\": %.02f,\n", wsw);
+		}
+		else {
+			sb->safePrintf("\t\t\t\"wordSpamRank\": %"INT32",\n", (int32_t)ss->m_wordSpamRank);
+			sb->safePrintf("\t\t\t\"wordSpamWeight\": %.02f,\n", wsw);
+		}
+
+
+		// if offsite inlink text show the inlinkid for matching
+		// to an <inlink>
+		LinkInfo *info = (LinkInfo *)mr->ptr_linkInfo;//inlinks;
+		Inlink *k = info->getNextInlink(NULL);
+		sb->safePrintf("\t\t\t\"inlinkIds\": [,\n");
+		for ( ; k && ss->m_hashGroup==HASHGROUP_INLINKTEXT ;
+		      k=info->getNextInlink(k)){
+			if ( ! k->getLinkText() ) continue;
+			if ( k->m_wordPosStart > ss->m_wordPos ) continue;
+			if ( k->m_wordPosStart + 50 < ss->m_wordPos ) continue;
+			// got it. we HACKED this to put the id
+			// in k->m_siteHash
+			sb->safePrintf("\t\t\t\t\"%"INT32",\n", k->m_siteHash);
+		}
+		sb->safePrintf("\t\t\t],\n");
+
+		// term freq
+		sb->safePrintf("\t\t\t\"termFreq\": %"INT64",\n", tf);
+		sb->safePrintf("\t\t\t\"termFreqWeight\": %f,\n", tfw);
+		
+		sb->safePrintf("\t\t\t\"score\": %f,\n", ss->m_finalScore);
+		
+		sb->safePrintf("\t\t\t\"equationCanonical\": \""
+			      "score = "
+			      " 100 * "
+			      " locationWeight" // hgw
+			      " * "
+			      " locationWeight" // hgw
+			      " * "
+			      " synonymWeight" // synweight
+			      " * "
+			      " synonymWeight" // synweight
+			      " * "
+			      " wikiBigramWeight"
+			      " * "
+			      " wikiBigramWeight"
+			      " * "
+			      //" diversityWeight" // divweight
+			      //" * "
+			      //" diversityWeight" // divweight
+			      //" * "
+			      "densityWeight" // density weight
+			      " * "
+			      "densityWeight" // density weight
+			      " * "
+			      "wordSpamWeight" // wordspam weight
+			      " * "
+			      "wordSpamWeight" // wordspam weight
+			      " * "
+			      "termFreqWeight" // tfw
+			      " * "
+			      "termFreqWeight" // tfw
+			      "\",\n"
+			      );
+		
+		sb->safePrintf("\t\t\t\"equation>\": \""
+			      "%f="
+			      "100*"
+			      "%.1f" // hgw
+			      "*"
+			      "%.1f" // hgw
+			      "*"
+			      "%.1f" // synweight
+			      "*"
+			      "%.1f" // synweight
+			      "*"
+			      "%.02f" // wikibigram weight
+			      "*"
+			      "%.02f" // wikibigram weight
+			      "*"
+			      "%.02f" // density weight
+			      "*"
+			      "%.02f" // density weight
+			      "*"
+			      "%.02f" // wordspam weight
+			      "*"
+			      "%.02f" // wordspam weight
+			      "*"
+			      "%.02f" // tfw
+			      "*"
+			      "%.02f" // tfw
+			      "\"\n"
+			      , ss->m_finalScore
+			      , hgw
+			      , hgw
+			      , sw
+			      , sw
+			      , wbw
+			      , wbw
+			      , dnw
+			      , dnw
+			      , wsw
+			      , wsw
+			      , tfw
+			      , tfw
+			      );
+		sb->safePrintf("\t\t}");
+		return true;
+	}
+
 	if ( si->m_format == FORMAT_XML ) {
 		sb->safePrintf("\t\t<termInfo>\n");
 
