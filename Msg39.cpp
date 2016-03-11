@@ -504,11 +504,9 @@ bool Msg39::getLists () {
 		for ( int32_t i = 0 ; i < m_tmpq.getNumTerms() ; i++ ) {
 			// get the term in utf8
 			//char bb[256];
-			QueryTerm *qt = &m_tmpq.m_qterms[i];
+			const QueryTerm *qt = &m_tmpq.m_qterms[i];
 			//utf16ToUtf8(bb, 256, qt->m_term, qt->m_termLen);
-			char *tpc = qt->m_term + qt->m_termLen;
-			char  tmp = *tpc;
-			*tpc = '\0';
+			//char *tpc = qt->m_term + qt->m_termLen;
 			char sign = qt->m_termSign;
 			if ( sign == 0 ) sign = '0';
 			QueryWord *qw = qt->m_qword;
@@ -524,15 +522,13 @@ bool Msg39::getLists () {
 				rightwikibigram = 1;
 
 			int32_t isSynonym = 0;
-			QueryTerm *st = qt->m_synonymOf;
-			if ( st ) isSynonym = true;
+			const QueryTerm *synterm = qt->m_synonymOf;
+			if ( synterm )
+				isSynonym = true;
 			SafeBuf sb;
-			// now we can display it
-			//tt[ttlen]='\0';
-			//if ( c == '\0' ) c = ' ';
 			sb.safePrintf(
 			     "query: msg39: [%"PTRFMT"] "
-			     "query term #%"INT32" \"%s\" "
+			     "query term #%"INT32" \"%*.*s\" "
 			     "phr=%"INT32" termId=%"UINT64" rawTermId=%"UINT64" "
 			     "tfweight=%.02f "
 			     "sign=%c "
@@ -553,7 +549,7 @@ bool Msg39::getLists () {
 			     "querylangid=%"INT32" " ,
 			     (PTRTYPE)this ,
 			     i          ,
-			     qt->m_term,//bb ,
+			     (int)qt->m_termLen, (int)qt->m_termLen, qt->m_term,
 			     (int32_t)m_tmpq.isPhrase (i) ,
 			     m_tmpq.getTermId      (i) ,
 			     m_tmpq.getRawTermId   (i) ,
@@ -574,10 +570,8 @@ bool Msg39::getLists () {
 			     (int32_t)m_tmpq.getTermLen(i) ,
 			     isSynonym,
 			     (int32_t)m_tmpq.m_langId ); // ,tt
-			// put it back
-			*tpc = tmp;
-			if ( st ) {
-				int32_t stnum = st - m_tmpq.m_qterms;
+			if ( synterm ) {
+				int32_t stnum = synterm - m_tmpq.m_qterms;
 				sb.safePrintf("synofterm#=%"INT32"",stnum);
 				//sb.safeMemcpy(st->m_term,st->m_termLen);
 				sb.pushChar(' ');
@@ -589,6 +583,7 @@ bool Msg39::getLists () {
 				// "new jersey" has 2 alnum words!
 				sb.safePrintf("synbasealnumwords=%"INT32" ",
 					      qt->m_numAlnumWordsInBase);
+				sb.safePrintf("synterm=\"%*.*s\" ", (int)synterm->m_termLen, (int)synterm->m_termLen, synterm->m_term);
 			}
 			logf(LOG_DEBUG,"%s",sb.getBufStart());
 
@@ -744,16 +739,15 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 
 	// print query term bit numbers here
 	for ( int32_t i = 0 ; m_debug && i < m_tmpq.getNumTerms() ; i++ ) {
-		QueryTerm *qt = &m_tmpq.m_qterms[i];
+		const QueryTerm *qt = &m_tmpq.m_qterms[i];
 		//utf16ToUtf8(bb, 256, qt->m_term, qt->m_termLen);
-		char *tpc = qt->m_term + qt->m_termLen;
-		char  tmp = *tpc;
-		*tpc = '\0';
 		SafeBuf sb;
-		sb.safePrintf("query: msg39: BITNUM query term #%"INT32" \"%s\" "
-			      "bitnum=%"INT32" ", i , qt->m_term, qt->m_bitNum );
+		sb.safePrintf("query: msg39: BITNUM query term #%"INT32" \"%*.*s\" "
+			      "termid=%"PRId64" bitnum=%"INT32" ",
+			      i,
+			      (int)qt->m_termLen, (int)qt->m_termLen, qt->m_term,
+			      qt->m_termId, qt->m_bitNum );
 		// put it back
-		*tpc = tmp;
 		logf(LOG_DEBUG,"%s",sb.getBufStart());
 	}
 
