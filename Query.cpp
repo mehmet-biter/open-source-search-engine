@@ -241,7 +241,7 @@ bool Query::set2 ( const char *query        ,
 		return false;
 
 	// set m_qterms from m_qwords, always succeeds
-	setQTerms ( words , phrases );
+	setQTerms ( words );
 
 	// disable stuff for site:, ip: and url: queries
 	for ( int32_t i = 0 ; i < m_numWords ; i++ ) {
@@ -342,14 +342,14 @@ bool Query::set2 ( const char *query        ,
 	// . non-quoted phrases that contain a "required" single word should
 	//   themselves have 0 for their implicit bits, BUT 0x8000 for their
 	//   explicit bit
-	if ( ! setQTerms ( words , phrases ) )
+	if ( ! setQTerms ( words ) )
 		return false;
 
 	return true;
 }
 
 // returns false and sets g_errno on error
-bool Query::setQTerms ( Words &words , Phrases &phrases ) {
+bool Query::setQTerms ( Words &words ) {
 
 	// . set m_qptrs/m_qtermIds/m_qbits
 	// . use one bit position for each phraseId and wordId
