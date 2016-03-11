@@ -1159,35 +1159,17 @@ bool Tagdb::verify ( const char *coll ) {
 // . ssssssss ssssssss ssssssss ssssssss  hash of site/url
 // . xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx  tagType OR hash of that+user+data
 // . xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
-key128_t Tagdb::makeStartKey ( const char *site ) {
+key128_t Tagdb::makeStartKey ( const char *str, int32_t strLen ) {
 	key128_t k;
-	k.n1 = hash64n ( site );
+	k.n1 = hash64 ( str, strLen );
 	// set lower 64 bits of key to hash of this url
 	k.n0 = 0;
 	return k;
 }
 
-key128_t Tagdb::makeEndKey ( const char *site ) {
+key128_t Tagdb::makeEndKey ( const char *str, int32_t strLen ) {
 	key128_t k;
-	k.n1 = hash64n ( site );
-	// set lower 64 bits of key to hash of this url
-	k.n0 = 0xffffffffffffffffLL;
-	return k;
-}
-
-key128_t Tagdb::makeDomainStartKey ( Url *u ) {
-	key128_t k;
-	// hash full hostname
-	k.n1 = hash64 ( u->getDomain() , u->getDomainLen() );
-	// set lower 64 bits of key to hash of this url
-	k.n0 = 0;
-	return k;
-}
-
-key128_t Tagdb::makeDomainEndKey ( Url *u ) {
-	key128_t k;
-	// hash full hostname
-	k.n1 = hash64 ( u->getDomain() , u->getDomainLen() );
+	k.n1 = hash64 ( str, strLen );
 	// set lower 64 bits of key to hash of this url
 	k.n0 = 0xffffffffffffffffLL;
 	return k;
@@ -1204,9 +1186,11 @@ static bool s_cacheInitialized = false;
 static RdbCache s_cache;
 static GbMutex s_cacheInitializedMutex;
 
-Msg8a::Msg8a() {
-	m_replies  = 0;
-	m_requests = 0;
+Msg8a::Msg8a()
+	: m_site()
+	, m_siteLen(0)
+	, m_requests(0)
+	, m_replies(0) {
 }
 
 Msg8a::~Msg8a ( ) {
@@ -1218,6 +1202,10 @@ void Msg8a::reset() {
 	if ( m_replies != m_requests && ! g_process.m_exiting ) { 
 		g_process.shutdownAbort(true);
 	}
+
+	m_site[0] = '\0';
+	m_siteLen = 0;
+
 	m_replies  = 0;
 	m_requests = 0;
 }
@@ -1261,49 +1249,37 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	m_replies  = 0;
 	m_doneLaunching = false;
 
-	// set siteLen to the provided site if it is non-NULL
-	int32_t siteLen = 0;
-	char *site = NULL;
-
-	// . get the site
-	// . msge0 passes this in as NULL an expects us to figure it out
-	// . if site was NULL that means we guess it. default to hostname
-	//   unless in a recognized for like /~mwells/
 	{
+		char *site = NULL;
+
+		// . get the site
+		// . msge0 passes this in as NULL an expects us to figure it out
+		// . if site was NULL that means we guess it. default to hostname
+		//   unless in a recognized for like /~mwells/
 		SiteGetter sg;
-		sg.getSite ( url->getUrl(), NULL, 0, collnum, m_niceness );
+		sg.getSite( url->getUrl(), NULL, 0, collnum, m_niceness );
 		// if it set it to a recognized site, like ~mwells, then set "site"
-		if ( sg.m_siteLen ) {
-			site    = sg.m_site;
-			siteLen = sg.m_siteLen;
+		if ( sg.m_site && sg.m_siteLen > 0 ) {
+			site = sg.m_site;
+			m_siteLen = sg.m_siteLen;
+		} else {
+			// if provided site was NULL and not of a ~mwells type of form
+			// then default it to hostname
+			site = url->getHost();
+			m_siteLen = url->getHostLen();
 		}
+
+		// if still the host is bad, then forget it
+		if ( !site || m_siteLen <= 0 ) {
+			log("tagdb: got bad url with no site");
+			m_errno = EBADURL;
+			g_errno = EBADURL;
+			return true;
+		}
+
+		memcpy(m_site, site, m_siteLen);
+		m_site[m_siteLen] = '\0';
 	}
-
-	// if provided site was NULL and not of a ~mwells type of form
-	// then default it to hostname
-	if ( ! site || siteLen <= 0 ) {
-		site    = url->getHost();
-		siteLen = url->getHostLen();
-	}
-
-	// if still the host is bad, then forget it
-	if ( ! site || siteLen <= 0 ) {
-		log("tagdb: got bad url with no site");
-		m_errno = EBADURL;
-		g_errno = EBADURL;
-		return true;
-	}
-
-	// temp null terminate it
-	char c = site[siteLen];
-	site[siteLen] = '\0';
-
-	// use that
-	m_siteStartKey = g_tagdb.makeStartKey( site );
-	m_siteEndKey = g_tagdb.makeEndKey( site );
-
-	// un NULL terminate it
-	site[siteLen] = c;
 
 	m_url = url;
 
@@ -1362,46 +1338,76 @@ struct Msg8aState {
 	int32_t m_requestNum;
 };
 
+
+bool Msg8a::launchGetRequest( const char* str, int32_t strLen ) {
+	// take a breath
+	QUICKPOLL( m_niceness );
+
+	key128_t startKey = g_tagdb.makeStartKey( str, strLen );
+	key128_t endKey = g_tagdb.makeEndKey( str, strLen );
+
+	// get the next mcast
+	Msg0 *m = &m_msg0s[m_requests];
+
+	// and the list
+	RdbList *listPtr = &m_tagRec->m_lists[m_requests];
+
+	// try to get from cache
+	if (s_cache.getList( m_collnum, (char *) &startKey, (char *) &startKey, listPtr, true,
+	                     g_conf.m_tagRecCacheMaxAge, true )) {
+		// got from cache
+		log( LOG_DEBUG, "tagdb: got key=%s from cache", KEYSTR( &startKey, sizeof( startKey )));
+
+		m_requests++;
+		m_replies++;
+	} else {
+		// bias based on the top 64 bits which is the hash of the "site" now
+		int32_t shardNum = getShardNum( RDB_TAGDB, &startKey );
+		Host *firstHost;
+
+		// if niceness 0 can't pick noquery host.
+		// if niceness 1 can't pick nospider host.
+		firstHost = g_hostdb.getLeastLoadedInShard( shardNum, m_niceness );
+		int32_t firstHostId = firstHost->m_hostId;
+
+		Msg8aState *state = NULL;
+		try {
+			state = new Msg8aState( this, startKey, endKey, m_requests );
+		} catch (...) {
+			g_errno = ENOMEM;
+			log( LOG_WARN, "tagdb: unable to allocate memory for Msg8aState" );
+			return false;
+		}
+		mnew( state, sizeof( *state ), "msg8astate" );
+
+		// . launch this request, even if to ourselves
+		bool status = m->getList( firstHostId, 0, 0, 0, false, RDB_TAGDB, m_collnum, listPtr,
+		                          (char *) &startKey, (char *) &endKey, 10000000, state,
+		                          gotMsg0ReplyWrapper, m_niceness, true, true, true, firstHostId,
+		                          0, -1, msg0_getlist_infinite_timeout );
+
+		// error?
+		if (status && g_errno) {
+			// g_errno should be set, we had an error
+			m_errno = g_errno;
+			return (m_requests == m_replies);
+		}
+
+		// successfully launched
+		m_requests++;
+
+		// if we got a reply instantly
+		if (status) {
+			m_replies++;
+		}
+	}
+
+	return true;
+}
+
 // . returns false if blocked, true otherwise
 // . sets g_errno and returns true on error
 bool Msg8a::launchGetRequests ( ) {
-	// clear it
-	g_errno = 0;
-	bool tryDomain = false;
-
- loop:
-	// return true if nothing to launch
-	if ( m_doneLaunching )
-		return (m_requests == m_replies);
-
-	// don't bother if already got an error
-	if ( m_errno )
-		return (m_requests == m_replies);
-
-	// limit max to 5ish
-	if (m_requests >= MAX_TAGDB_REQUESTS)
-		return (m_requests == m_replies);
-
-	// take a breath
-	QUICKPOLL(m_niceness);
-
-	key128_t startKey ;
-	key128_t endKey   ;
-
-	if ( tryDomain ) {
-		startKey = g_tagdb.makeDomainStartKey ( m_url );
-		endKey   = g_tagdb.makeDomainEndKey   ( m_url );
-		log( LOG_DEBUG, "tagdb: looking up domain tags for %.*s", m_url->getDomainLen(), m_url->getDomain() );
-	}
-	else {
-		// usually the site is the hostname but sometimes it is like
-		// "www.last.fm/user/breendaxx/"
-		startKey = m_siteStartKey;
-		endKey   = m_siteEndKey;
-
-		log( LOG_DEBUG, "tagdb: looking up site tags for %s", m_url->getUrl() );
-	}
-
 	// initialize cache
 	ScopedLock sl(s_cacheInitializedMutex);
 	if ( !s_cacheInitialized ) {
@@ -1413,83 +1419,37 @@ bool Msg8a::launchGetRequests ( ) {
 	}
 	sl.unlock();
 
-	// get the next mcast
-	Msg0 *m = &m_msg0s[m_requests];
+	// clear it
+	g_errno = 0;
 
-	// and the list
-	RdbList *listPtr = &m_tagRec->m_lists[m_requests];
+	// return true if nothing to launch
+	if ( m_doneLaunching ) {
+		return ( m_requests == m_replies );
+	}
 
-	// try to get from cache
-	if ( s_cache.getList( m_collnum, (char*)&startKey, (char*)&startKey, listPtr, true,
-	                      g_conf.m_tagRecCacheMaxAge, true) ) {
-		// got from cache
-		log( LOG_DEBUG, "tagdb: got key=%s from cache", KEYSTR(&startKey, sizeof(startKey)) );
+	// don't bother if already got an error
+	if ( m_errno ) {
+		return ( m_requests == m_replies );
+	}
 
-		m_requests++;
-		m_replies++;
-	} else {
-		// bias based on the top 64 bits which is the hash of the "site" now
-		int32_t shardNum = getShardNum ( RDB_TAGDB , &startKey );
-		Host *firstHost ;
+	// usually the site is the hostname but sometimes it is like
+	// "www.last.fm/user/breendaxx/"
+	log( LOG_DEBUG, "tagdb: looking up site tags for %.*s", m_siteLen, m_site );
+	if ( !launchGetRequest( m_site, m_siteLen ) ) {
+		return ( m_requests == m_replies );
+	}
 
-		// if niceness 0 can't pick noquery host.
-		// if niceness 1 can't pick nospider host.
-		firstHost = g_hostdb.getLeastLoadedInShard ( shardNum , m_niceness );
-		int32_t firstHostId = firstHost->m_hostId;
-
-		Msg8aState *state = NULL;
-		try {
-			state = new Msg8aState(this, startKey, endKey, m_requests);
-		} catch (...) {
-			g_errno = ENOMEM;
-			log(LOG_WARN, "tagdb: unable to allocate memory for Msg8aState");
-			return false;
-		}
-		mnew(state, sizeof(*state), "msg8astate");
-
-		// . launch this request, even if to ourselves
-		// . TODO: just use msg0!!
-		bool status = m->getList ( firstHostId     , // hostId
-		                           0          , // ip
-		                           0          , // port
-		                           0          , // maxCacheAge
-		                           false      , // addToCache
-		                           RDB_TAGDB  ,
-		                           m_collnum     ,
-		                           listPtr    ,
-		                           (char *) &startKey  ,
-		                           (char *) &endKey    ,
-		                           10000000            , // minRecSizes
-		                           state                , // state
-		                           gotMsg0ReplyWrapper ,
-		                           m_niceness          ,
-		                           true                , // error correction?
-		                           true                , // include tree?
-		                           true                , // doMerge?
-		                           firstHostId         , // firstHostId
-		                           0                   , // startFileNum
-		                           -1                  , // numFiles
-		                           msg0_getlist_infinite_timeout );// timeout
-
-		// error?
-		if ( status && g_errno ) {
-			// g_errno should be set, we had an error
-			m_errno = g_errno;
-			return (m_requests == m_replies);
-		}
-
-		// successfully launched
-		m_requests++;
-
-		// if we got a reply instantly
-		if ( status ) {
-			m_replies++;
+	// see if m_site != m_url->getHost
+	if ( ( m_siteLen != m_url->getHostLen() ) || ( memcmp(m_site, m_url->getHost(), m_siteLen) != 0 ) ) {
+		log( LOG_DEBUG, "tagdb: looking up host tags for %.*s", m_url->getHostLen(), m_url->getHost());
+		if ( !launchGetRequest( m_url->getHost(), m_url->getHostLen() ) ) {
+			return ( m_requests == m_replies );
 		}
 	}
 
-	if ( ! tryDomain ) {
-		tryDomain = true;
-		goto loop;
+	log( LOG_DEBUG, "tagdb: looking up domain tags for %.*s", m_url->getDomainLen(), m_url->getDomain());
+	if ( !launchGetRequest( m_url->getDomain(), m_url->getDomainLen() ) ) {
+		return ( m_requests == m_replies );
 	}
 
 	//
