@@ -1564,32 +1564,44 @@ void gotMsg0ReplyWrapper ( void *state ) {
 // get the TagRec from the reply
 void Msg8a::gotAllReplies ( ) {
 	// if any had an error, don't do anything
-	if ( m_errno ) return;
+	if ( m_errno ) {
+		return;
+	}
+
 	// scan the lists
 	for ( int32_t i = 0 ; i < m_replies ; i++ ) {
 		// breathe
 		QUICKPOLL(m_niceness);
+
 		// get list
 		RdbList *list = &m_tagRec->m_lists[i];
+
 		// skip if empty
-		if ( list->m_listSize <= 0 ) continue;
+		if ( list->m_listSize <= 0 ) {
+			continue;
+		}
+
 		// panic msg
 		if ( list->m_listSize >= 10000000 ) {
 			log("tagdb: CAUTION!!! cutoff tagdb list!");
 			log("tagdb: CAUTION!!! will lost useful info!!");
 			char *xx=NULL;*xx=0;
 		}
+
 		// otherwise, add to array
 		m_tagRec->m_listPtrs[m_tagRec->m_numListPtrs] = list;
+
 		// advance
 		m_tagRec->m_numListPtrs++;
 	}
 
 	// scan tags in list and set Tag::m_type to TT_DUP if its a dup
-	Tag *tag = m_tagRec->getFirstTag();
 	HashTableX cx;
 	char cbuf[2048];
-	cx.set ( 4,0,64,cbuf,2048,false,m_niceness,"tagtypetab");
+	cx.set ( 4, 0, 64, cbuf, 2048, false, m_niceness, "tagtypetab" );
+
+	Tag *tag = m_tagRec->getFirstTag();
+
 	// . loop over all tags in all lists in order by key
 	// . each list should be from a different suburl?
 	// . the first list should be the narrowest/longest?
