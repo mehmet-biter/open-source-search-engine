@@ -1407,19 +1407,15 @@ bool Msg8a::launchGetRequests ( ) {
 	if ( tryDomain ) {
 		startKey = g_tagdb.makeDomainStartKey ( m_url );
 		endKey   = g_tagdb.makeDomainEndKey   ( m_url );
-		if ( g_conf.m_logDebugTagdb ) {
-			log( "tagdb: looking up domain tags for %.*s",
-			     m_url->getDomainLen(), m_url->getDomain());
-		}
+		log( LOG_DEBUG, "tagdb: looking up domain tags for %.*s", m_url->getDomainLen(), m_url->getDomain() );
 	}
 	else {
 		// usually the site is the hostname but sometimes it is like
 		// "www.last.fm/user/breendaxx/"
 		startKey = m_siteStartKey;
 		endKey   = m_siteEndKey;
-		if ( g_conf.m_logDebugTagdb ) {
-			log( "tagdb: looking up site tags for %s", m_url->getUrl());
-		}
+
+		log( LOG_DEBUG, "tagdb: looking up site tags for %s", m_url->getUrl() );
 	}
 
 	// initialize cache
@@ -1442,6 +1438,7 @@ bool Msg8a::launchGetRequests ( ) {
 	                      g_conf.m_tagRecCacheMaxAge, true) ) {
 		// got from cache
 		log( LOG_DEBUG, "tagdb: got key=%s from cache", KEYSTR(&startKey, sizeof(startKey)) );
+
 		m_requests++;
 		m_replies++;
 	} else {
