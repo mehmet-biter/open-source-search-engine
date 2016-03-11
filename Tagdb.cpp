@@ -1513,6 +1513,8 @@ bool Msg8a::launchGetRequests ( ) {
 	// corresponds to the actual SITE hash. so we gotta filter those
 	// out i guess after we read the whole list.
 	//
+	m_doneLaunching = true;
+
 	return (m_requests == m_replies);
 }
 	
