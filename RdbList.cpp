@@ -1330,13 +1330,10 @@ int RdbList::printList ( int32_t logtype ) {
 // . CAUTION: ensure we update m_lastKey and make it valid if m_listSize > 0
 // . mincRecSizes is really only important when we read just 1 list
 // . it's a really good idea to keep it as -1 otherwise
-//bool RdbList::constrain ( key_t   startKey    ,
-//			  key_t   endKey      ,
 bool RdbList::constrain ( char   *startKey    ,
 			  char   *endKey      ,
 			  int32_t    minRecSizes ,
 			  int32_t    hintOffset  ,
-			  //key_t   hintKey     ,
 			  char   *hintKey     ,
 			  char   *filename    ,
 			  int32_t    niceness    ) {
@@ -1348,8 +1345,6 @@ bool RdbList::constrain ( char   *startKey    ,
 	// bail if empty
 	if ( m_listSize == 0 ) {
 		// tighten the keys
-		//m_startKey  = startKey;
-		//m_endKey    = endKey;
 		KEYSET(m_startKey,startKey,m_ks);
 		KEYSET(m_endKey,endKey,m_ks);
 		return true;
@@ -1374,11 +1369,6 @@ bool RdbList::constrain ( char   *startKey    ,
 			   ,hintOffset,
 			   m_listSize);
 	}
-
-
-	// . no need to constrain if our keys are stricter
-	// . yes... need to set m_lastKey
-	//if ( m_startKey >= startKey && m_endKey <= endKey ) return true;
 
 	// save original stuff in case we encounter corruption so we can
 	// roll it back and let checkList_r and repairList_r deal with it
@@ -1455,8 +1445,6 @@ bool RdbList::constrain ( char   *startKey    ,
 		m_listSize  = 0;
 		m_listEnd   = m_list;
 		// tighten the keys
-		//m_startKey  = startKey;
-		//m_endKey    = endKey;
 		KEYSET(m_startKey,startKey,m_ks);
 		KEYSET(m_endKey,endKey,m_ks);
 		// reset to set m_listPtr and m_listPtrHi
@@ -1485,9 +1473,6 @@ bool RdbList::constrain ( char   *startKey    ,
 		//*(key_t *)p = k;
 		KEYSET(p,k,m_ks);
 	}
-
-	// sanity
-	//if ( p < m_list ) { char *xx=NULL;*xx=0; }
 
 #ifdef GBSANITYCHECK
 	log("constrain: hk=%s",KEYSTR(hintKey,m_ks));

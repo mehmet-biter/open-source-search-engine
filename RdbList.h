@@ -241,7 +241,6 @@ class RdbList {
 			 char   *endKey      ,
 			 int32_t    minRecSizes ,
 			 int32_t    hintOffset  ,
-			 //key_t   hintKey     ,
 			 char   *hintKey     ,
 			 char   *filename    ,
 			 int32_t    niceness    ) ;
