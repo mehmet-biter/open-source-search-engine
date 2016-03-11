@@ -6712,6 +6712,34 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
+	m->m_title = "TagRec (Msg8a) cache size";
+	m->m_desc  = "How much memory to use for caching TagRec";
+	m->m_cgi   = "tagreccachemem";
+	m->m_xml   = "TagRecCacheSize";
+	m->m_off   = offsetof(Conf, m_tagRecCacheSize);
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_def   = "10000000";
+	m->m_units = "bytes";
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "TagRec (Msg8a) cache max age";
+	m->m_desc  = "How long to cache TagRec, in milliseconds";
+	m->m_cgi   = "tagreccacheage";
+	m->m_xml   = "TagRecCacheAge";
+	m->m_off   = offsetof(Conf, m_tagRecCacheMaxAge);
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_def   = "3600000";
+	m->m_units = "milliseconds";
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "scan all if not found";
 	m->m_desc  = "Scan all titledb files if rec not found. You should "
 		"keep this on to avoid corruption. Do not turn it off unless "

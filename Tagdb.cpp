@@ -1214,6 +1214,9 @@ key128_t Tagdb::makeDomainEndKey ( Url *u ) {
 //
 ///////////////////////////////////////////////
 
+static bool s_cacheInitialized = false;
+static RdbCache s_cache;
+
 Msg8a::Msg8a() {
 	m_replies  = 0;
 	m_requests = 0;
@@ -1357,6 +1360,20 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	return true;
 }
 
+struct Msg8aState {
+	Msg8aState(Msg8a *msg8a, key128_t startKey, key128_t endKey, int32_t requestNum)
+	  : m_msg8a(msg8a)
+	  , m_startKey(startKey)
+	  , m_endKey(endKey)
+	  , m_requestNum(requestNum) {
+	}
+
+	Msg8a *m_msg8a;
+	key128_t m_startKey;
+	key128_t m_endKey;
+	int32_t m_requestNum;
+};
+
 // . returns false if blocked, true otherwise
 // . sets g_errno and returns true on error
 bool Msg8a::launchGetRequests ( ) {
@@ -1401,54 +1418,87 @@ bool Msg8a::launchGetRequests ( ) {
 		}
 	}
 
+	// initialize cache
+	if ( !s_cacheInitialized ) {
+		int64_t maxCacheSize = g_conf.m_tagRecCacheSize;
+		int64_t maxCacheNodes = ( maxCacheSize / 200 );
+
+		s_cacheInitialized = true;
+		s_cache.init( maxCacheSize, -1, true, maxCacheNodes, false, "tagreccache", false, 16, 16, -1 );
+	}
+
 	// get the next mcast
 	Msg0 *m = &m_msg0s[m_requests];
+
 	// and the list
 	RdbList *listPtr = &m_tagRec->m_lists[m_requests];
 
-	// bias based on the top 64 bits which is the hash of the "site" now
-	int32_t shardNum = getShardNum ( RDB_TAGDB , &startKey );
-	Host *firstHost ;
+	// try to get from cache
+	if ( s_cache.getList( m_collnum, (char*)&startKey, (char*)&startKey, listPtr, true,
+	                      g_conf.m_tagRecCacheMaxAge, true) ) {
+		// got from cache
+		log( LOG_DEBUG, "tagdb: got key=%s from cache", KEYSTR(&startKey, sizeof(startKey)) );
+		m_requests++;
+		m_replies++;
+	} else {
+		// bias based on the top 64 bits which is the hash of the "site" now
+		int32_t shardNum = getShardNum ( RDB_TAGDB , &startKey );
+		Host *firstHost ;
 
-	// if niceness 0 can't pick noquery host.
-	// if niceness 1 can't pick nospider host.
-	firstHost = g_hostdb.getLeastLoadedInShard ( shardNum , m_niceness );
-	int32_t firstHostId = firstHost->m_hostId;
+		// if niceness 0 can't pick noquery host.
+		// if niceness 1 can't pick nospider host.
+		firstHost = g_hostdb.getLeastLoadedInShard ( shardNum , m_niceness );
+		int32_t firstHostId = firstHost->m_hostId;
 
-	// . launch this request, even if to ourselves
-	// . TODO: just use msg0!!
-	bool status = m->getList ( firstHostId     , // hostId
-				   0          , // ip
-				   0          , // port
-				   0          , // maxCacheAge
-				   false      , // addToCache
-				   RDB_TAGDB  ,
-				   m_collnum     ,
-				   listPtr    ,
-				   (char *) &startKey  ,
-				   (char *) &endKey    ,
-				   10000000            , // minRecSizes
-				   this                , // state
-				   gotMsg0ReplyWrapper ,
-				   m_niceness          ,
-				   true                , // error correction?
-				   true                , // include tree?
-				   true                , // doMerge?
-				   firstHostId         , // firstHostId
-				   0                   , // startFileNum
-				   -1                  , // numFiles
-				   msg0_getlist_infinite_timeout );// timeout
+		Msg8aState *state = NULL;
+		try {
+			state = new Msg8aState(this, startKey, endKey, m_requests);
+		} catch (...) {
+			g_errno = ENOMEM;
+			log(LOG_WARN, "tagdb: unable to allocate memory for Msg8aState");
+			return false;
+		}
+		mnew(state, sizeof(*state), "msg8astate");
 
-	// error?
-	if ( status && g_errno ) {
-		// g_errno should be set, we had an error
-		m_errno = g_errno;
-		return (m_requests == m_replies);
+		// . launch this request, even if to ourselves
+		// . TODO: just use msg0!!
+		bool status = m->getList ( firstHostId     , // hostId
+		                           0          , // ip
+		                           0          , // port
+		                           0          , // maxCacheAge
+		                           false      , // addToCache
+		                           RDB_TAGDB  ,
+		                           m_collnum     ,
+		                           listPtr    ,
+		                           (char *) &startKey  ,
+		                           (char *) &endKey    ,
+		                           10000000            , // minRecSizes
+		                           state                , // state
+		                           gotMsg0ReplyWrapper ,
+		                           m_niceness          ,
+		                           true                , // error correction?
+		                           true                , // include tree?
+		                           true                , // doMerge?
+		                           firstHostId         , // firstHostId
+		                           0                   , // startFileNum
+		                           -1                  , // numFiles
+		                           msg0_getlist_infinite_timeout );// timeout
+
+		// error?
+		if ( status && g_errno ) {
+			// g_errno should be set, we had an error
+			m_errno = g_errno;
+			return (m_requests == m_replies);
+		}
+
+		// successfully launched
+		m_requests++;
+
+		// if we got a reply instantly
+		if ( status ) {
+			m_replies++;
+		}
 	}
-	// successfully launched
-	m_requests++;
-	// if we got a reply instantly
-	if ( status ) m_replies++;
 
 	if ( ! tryDomain ) {
 		tryDomain = true;
@@ -1467,25 +1517,48 @@ bool Msg8a::launchGetRequests ( ) {
 }
 	
 void gotMsg0ReplyWrapper ( void *state ) {
-	Msg8a *THIS = (Msg8a *)state;
+	Msg8aState *msg8aState = (Msg8aState*)state;
+
+	Msg8a *msg8a = msg8aState->m_msg8a;
+	int32_t requestNum = msg8aState->m_requestNum;
+	key128_t startKey = msg8aState->m_startKey;
+	key128_t endKey = msg8aState->m_endKey;
+	mdelete( msg8aState, sizeof(*msg8aState), "msg8astate" );
+	delete msg8aState;
 
 	// we got one
-	THIS->m_replies++;
+	msg8a->m_replies++;
 
 	// error?
-	if ( g_errno ) THIS->m_errno = g_errno;
+	if ( g_errno ) {
+		msg8a->m_errno = g_errno;
+	} else {
+		log( LOG_DEBUG, "tagdb: adding key=%s to cache", KEYSTR(&startKey, sizeof(startKey)) );
+
+		// only add to cache when we don't have error for this reply
+		RdbList *list = &(msg8a->m_tagRec->m_lists[requestNum]);
+
+		/// @todo hack to get addList working (verify if there will be issue)
+		list->setLastKey((char*)&endKey);
+
+		s_cache.addList( msg8a->m_collnum, (char*)&startKey, list);
+	}
 
 	// launchGetRequests() returns false if still waiting for replies...
-	if ( ! THIS->launchGetRequests() ) return;
+	if ( ! msg8a->launchGetRequests() ) {
+		return;
+	}
 
 	// get all the replies
-	THIS->gotAllReplies();
+	msg8a->gotAllReplies();
 
 	// set g_errno for the callback
-	if ( THIS->m_errno ) g_errno = THIS->m_errno;
+	if ( msg8a->m_errno ) {
+		g_errno = msg8a->m_errno;
+	}
 
 	// otherwise, call callback
-	THIS->m_callback ( THIS->m_state );
+	msg8a->m_callback ( msg8a->m_state );
 }
 
 // get the TagRec from the reply

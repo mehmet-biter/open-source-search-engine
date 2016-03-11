@@ -364,6 +364,10 @@ class Conf {
 	int64_t m_unstableSummaryCacheSize;
 	int64_t m_unstableSummaryCacheMaxAge;
 
+	// tagrec cache (for Msg8a)
+	int64_t m_tagRecCacheSize;
+	int64_t m_tagRecCacheMaxAge;
+
 	//bool   m_quickpollCoreOnError;
 	bool   m_useShotgun;
 	bool   m_testMem;
