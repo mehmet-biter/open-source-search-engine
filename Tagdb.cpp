@@ -1332,21 +1332,10 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 		return true;
 	}
 
-	// get the domain
-	m_dom = url->getDomain();
-
 	// if none, bad!
-	if ( ! m_dom && ! url->isIp() ) {
+	if ( ! url->getDomain() && ! url->isIp() ) {
 		return true;
 	}
-
-	// . save ptr for launchGetRequests()
-	// . move this BACKWARDS for subdomains that have a ton of .'s
-	// . no, now move towards domain
-	m_p = m_url->getHost();
-
-	// and save this too
-	m_hostEnd = m_url->getHost() + m_url->getHostLen();
 
 	// launch the requests
 	if ( ! launchGetRequests() ) return false;
