@@ -122,9 +122,13 @@ Host *getHostToHandleInjection ( char *url ) {
 	// get iroupId from docId
 	uint32_t shardNum = getShardNumFromDocId ( docId );
 	// from Msg22.cpp
-	Host *group = g_hostdb.getShard ( shardNum );
-	int32_t hostNum = docId % g_hostdb.m_numHostsPerShard;
-	Host *host = &group[hostNum];
+//	Host *group = g_hostdb.getShard ( shardNum );
+//	int32_t hostNum = docId % g_hostdb.m_numHostsPerShard;
+//	Host *host = &group[hostNum];
+
+	Host *host = g_hostdb.getHostWithSpideringEnabled (shardNum);
+
+
 
 	bool isWarcInjection = false;
 	int32_t ulen = gbstrlen(url);

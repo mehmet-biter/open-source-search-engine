@@ -334,6 +334,7 @@ class Hostdb {
 
 	Host *getLeastLoadedInShard ( uint32_t shardNum , char niceness );
 	int32_t getHostIdWithSpideringEnabled ( uint32_t shardNum );
+	Host *getHostWithSpideringEnabled ( uint32_t shardNum );
 
 	// in the entire cluster. return host #0 if its alive, otherwise
 	// host #1, etc.

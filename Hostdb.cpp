@@ -1188,6 +1188,25 @@ int32_t Hostdb::getHostIdWithSpideringEnabled ( uint32_t shardNum ) {
 	return hosts [ hostNum ].m_hostId ;
 }
 
+
+Host *Hostdb::getHostWithSpideringEnabled ( uint32_t shardNum ) {
+	Host *hosts = g_hostdb.getShard ( shardNum);
+	int32_t numHosts = g_hostdb.getNumHostsPerShard();
+
+	int32_t hostNum = 0;
+	int32_t numTried = 0;
+	while( !hosts [ hostNum ].m_spiderEnabled && numTried < numHosts ) {
+		hostNum = (hostNum+1) % numHosts;
+		numTried++;
+	}
+	if( !hosts [ hostNum ].m_spiderEnabled) {
+		log("build: cannot spider when entire shard has nospider enabled");
+		char *xx = NULL; *xx = 0;
+	}
+	return &hosts [ hostNum ];
+}
+
+
 // if niceness 0 can't pick noquery host.
 // if niceness 1 can't pick nospider host.
 Host *Hostdb::getLeastLoadedInShard ( uint32_t shardNum , char niceness ) {
