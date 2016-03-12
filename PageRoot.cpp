@@ -174,11 +174,11 @@ static bool printLogo ( SafeBuf& sb , SearchInput *si ) {
 bool expandHtml (  SafeBuf& sb,
 		   const char *head , 
 		   int32_t hlen ,
-		   char *q    , 
+		   const char *q    , 
 		   int32_t qlen ,
 		   HttpRequest *r ,
 		   SearchInput *si,
-		   char *method ,
+		   const char *method ,
 		   CollectionRec *cr ) {
 	//char *pend = p + plen;
 	// store custom header into buf now
