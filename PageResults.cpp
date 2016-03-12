@@ -719,7 +719,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 	// if there's a ton of sites use the post method otherwise
 	// they won't fit into the http request, the browser will reject
 	// sending such a large request with "GET"
-	char *method = "GET";
+	const char *method = "GET";
 	if ( si->m_sites && gbstrlen(si->m_sites)>800 ) method = "POST";
 
 
@@ -772,12 +772,12 @@ bool printSearchResultsHeader ( State0 *st ) {
 	}
 
 	// the calling function checked this so it should be non-null
-	char *coll = cr->m_coll;
+	const char *coll = cr->m_coll;
 	int32_t collLen = gbstrlen(coll);
 
 	if ( si->m_format == FORMAT_WIDGET_IFRAME ||
 	     si->m_format == FORMAT_WIDGET_AJAX ) {
-		char *pos = "relative";
+		const char *pos = "relative";
 		if ( si->m_format == FORMAT_WIDGET_IFRAME ) pos = "absolute";
 		int32_t widgetwidth = hr->getLong("widgetwidth",150);
 		int32_t widgetHeight = hr->getLong("widgetheight",400);
@@ -1051,7 +1051,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 			char c = term[qt->m_termLen];
 			term[qt->m_termLen] = '\0';
 			sb->safePrintf("\t\t\t<termStr><![CDATA[");
-			char *printTerm = qt->m_term;
+			const char *printTerm = qt->m_term;
 			if ( is_wspace_a(term[0])) printTerm++;
 			sb->cdataEncode(printTerm);
 			sb->safePrintf("]]>"
@@ -1068,7 +1068,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 				for ( int i = 0 ; i < langLast ; i++ ) {
 					uint64_t bit = (uint64_t)1 << i;
 					if ( ! (qt->m_langIdBits&bit))continue;
-					char *str = getLanguageAbbr(i);
+					const char *str = getLanguageAbbr(i);
 					if ( ! first ) sb->pushChar(',');
 					first = false;
 					sb->safeStrcpy ( str );
@@ -1080,7 +1080,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 				char *term = sq->m_term;
 				char c = term[sq->m_termLen];
 				term[sq->m_termLen] = '\0';
-				char *printTerm = term;
+				const char *printTerm = term;
 				if ( is_wspace_a(term[0])) printTerm++;
 				sb->safePrintf("\t\t\t<synonymOf>"
 					       "<![CDATA[%s]]>"
@@ -1294,7 +1294,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 	st->m_qesb.nullTerm();
 
 	// encode query buf
-	char *dq    = si->m_displayQuery;
+	const char *dq    = si->m_displayQuery;
 	if ( dq ) {
 		st->m_qesb.urlEncode(dq);
 	}
@@ -1350,13 +1350,13 @@ bool printSearchResultsHeader ( State0 *st ) {
 	//
 	// if query was a url print add url msg
 	//
-	char *url = NULL;
+	const char *url = NULL;
 	if ( !strncmp(q,"url:"    ,4) && qlen > 4 ) url = q+4;
 	if ( !strncmp(q,"http://" ,7) && qlen > 7 ) url = q;
 	if ( !strncmp(q,"https://",8) && qlen > 8 ) url = q;
 	if ( !strncmp(q,"www."    ,4) && qlen > 4 ) url = q;
 	// find end of url
-	char *ue = url;
+	const char *ue = url;
 	for ( ; ue && *ue && ! is_wspace_a(*ue) ; ue++ ) ;
 	if ( numResults == 0 && si->m_format == FORMAT_HTML && url ) {
 		sb->safePrintf("<br><br>"
@@ -1444,11 +1444,11 @@ bool printSearchResultsTail ( State0 *st ) {
 	Msg40 *msg40 = &(st->m_msg40);
 
 	CollectionRec *cr = si->m_cr;
-	char *coll = cr->m_coll;
+	const char *coll = cr->m_coll;
 
 	if ( si->m_format == FORMAT_JSON ) {	
 		// remove last },\n if there and replace with just \n
-		char *e = sb->getBuf() - 2;
+		const char *e = sb->getBuf() - 2;
 		if ( sb->length()>=2 &&
 		     e[0]==',' && e[1]=='\n') {
 			sb->m_length -= 2;
@@ -1469,7 +1469,7 @@ bool printSearchResultsTail ( State0 *st ) {
 	}
 
 	// grab the query
-	char  *q    = msg40->getQuery();
+	const char  *q    = msg40->getQuery();
 	int32_t   qlen = msg40->getQueryLen();
 
 	HttpRequest *hr = &st->m_hr;
@@ -1935,7 +1935,7 @@ static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 			      ,k->m_docId);
 		if ( ! sb->safeMemcpy(&hb) ) return false;
 		int32_t hostLen = 0;
-		char *host = getHostFast(k->getUrl(),&hostLen,NULL);
+		const char *host = getHostFast(k->getUrl(),&hostLen,NULL);
 		sb->safePrintf("</td><td>");
 		if ( host ) sb->safeMemcpy(host,hostLen);
 		sb->safePrintf("</td><td>");
@@ -2070,7 +2070,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		//   we can ensure it is ordered correctly
 		// As of the update on 5/13/2014, the end of sb may have whitespace, so first move away from that
 		int distance; // distance from end to first non-whitespace char
-		char *end;
+		const char *end;
 		for (distance = 1; distance < sb->getLength(); distance++) {
 		    end = sb->getBuf() - distance;
 		    if (!is_wspace_a(*end))
@@ -2149,24 +2149,24 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		if ( *numPrintedSoFar )
 			sb->safePrintf("<br><hr><br>\n");
 		// skip to gbssurl
-		char *s = strstr ( mr->ptr_content,"\"gbssUrl\":");
+		const char *s = strstr ( mr->ptr_content,"\"gbssUrl\":");
 		if ( ! s ) {
 			log("results: missing gbssUrl");
 			goto badformat;
 		}
 		// then do two columns after the two urls
-		char *e = strstr ( s , "\"gbssStatusCode\":" );
+		const char *e = strstr ( s , "\"gbssStatusCode\":" );
 		if ( ! e ) {
 			log("results: missing gbssStatusCode");
 			goto badformat;
 		}
-		char *m = strstr ( e , "\"gbssConsecutiveErrors\":");
+		const char *m = strstr ( e , "\"gbssConsecutiveErrors\":");
 		if ( ! m ) {
 			log("results: missing gbssConsecutiveErrors");
 			goto badformat;
 		}
 		// exclude \0
-		char *end = mr->ptr_content + mr->size_content - 1;
+		const char *end = mr->ptr_content + mr->size_content - 1;
 		// use a table with 2 columns
 		// so we can use \n to separate lines and don't have to add brs
 		// and boldify just the main url, not the redir url!
@@ -2178,8 +2178,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       , cr->m_coll
 			       , mr->m_docId
 			       );
-		char *s2 = strstr ( s , "\"gbssFinalRedirectUrl\":");
-		char *bend = e - 3;
+		const char *s2 = strstr ( s , "\"gbssFinalRedirectUrl\":");
+		const char *bend = e - 3;
 		if ( s2 ) bend = s2 - 3;
 		sb->safeMemcpy ( s+11 , bend - (s+11));
 		sb->safePrintf("</a></b></pre>\",<br>");
@@ -2275,7 +2275,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		return true;
 	}
 
-	char *diffbotSuffix = strstr(url,"-diffbotxyz");
+	const char *diffbotSuffix = strstr(url,"-diffbotxyz");
 
 	// if we have a thumbnail show it next to the search result,
 	// base64 encoded. do NOT do this for the WIDGET, only for search
@@ -2825,7 +2825,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// . for www.xyz.edu/~foo/burp/ this will be
 		//   www.xyz.edu/~foo/ etc.
 		int32_t  siteLen = 0;
-		char *site = NULL;
+		const char *site = NULL;
 		// seems like this isn't the way to do it, cuz Tagdb.cpp
 		// adds the "site" tag itself and we do not always have it
 		// in the XmlDoc::ptr_tagRec... so do it this way:
@@ -2877,7 +2877,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		// . for www.xyz.edu/~foo/burp/ this will be
 		//   www.xyz.edu/~foo/ etc.
 		int32_t  siteLen = 0;
-		char *site = NULL;
+		const char *site = NULL;
 		// seems like this isn't the way to do it, cuz Tagdb.cpp
 		// adds the "site" tag itself and we do not always have it
 		// in the XmlDoc::ptr_tagRec... so do it this way:
@@ -2965,7 +2965,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	//collnum_t collnum = si->m_cr->m_collnum;
 	// if searching multiple collections  - federated search
 	CollectionRec *scr = g_collectiondb.getRec ( mr->m_collnum );
-	char *coll = "UNKNOWN";
+	const char *coll = "UNKNOWN";
 	if ( scr ) coll = scr->m_coll;
 
 	if ( si->m_format == FORMAT_HTML  && printCached ) {
@@ -3268,7 +3268,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			nameBuf.nullTerm();
 
 			int32_t valLen;
-			char* valBuf = ji->getValueAsString(&valLen);
+			const char* valBuf = ji->getValueAsString(&valLen);
 			SafeBuf queryBuf(tmpBuf2, 1024);
 			// log("compound name is %s %d %d",nameBuf.getBufStart(),
 			// nameBuf.length(), valLen);
@@ -3469,8 +3469,8 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	
 
-	char *ff = "";
-	char *ff2 = "sum";
+	const char *ff = "";
+	const char *ff2 = "sum";
 
 	// final score!!!
 	if ( si->m_format == FORMAT_XML ) {
@@ -3558,7 +3558,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	if ( si->m_format != FORMAT_HTML ) return true;
 
-	char *cc = getCountryCode ( mr->m_country );
+	const char *cc = getCountryCode ( mr->m_country );
 	if ( mr->m_country == 0 ) cc = "Unknown";
 
 	sb->safePrintf("<table border=1>"
@@ -3696,8 +3696,8 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 	if ( hg2 == HASHGROUP_INLINKTEXT )
 		wsw2 = getLinkerWeight(wr2);
 	
-	char *syn1 = "no";
-	char *syn2 = "no";
+	const char *syn1 = "no";
+	const char *syn2 = "no";
 	float sw1 = 1.0;
 	float sw2 = 1.0;
 	if ( ps->m_isSynonym1 ) {
@@ -3709,8 +3709,8 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 		sw2  = g_conf.m_synonymWeight;
 	}
 
-	char *bs1  = "no";
-	char *bs2  = "no";
+	const char *bs1  = "no";
+	const char *bs2  = "no";
 	if ( ps->m_isHalfStopWikiBigram1 ) bs1 = "yes";
 	if ( ps->m_isHalfStopWikiBigram2 ) bs2 = "yes";
 	float wbw1 = 1.0;
@@ -3726,7 +3726,7 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 	float tfw1 = ps->m_tfWeight1;
 	float tfw2 = ps->m_tfWeight2;
 	
-	char *wp = "no";
+	const char *wp = "no";
 	float wiw = 1.0;
 	if ( ps->m_inSameWikiPhrase ) {
 		wp = "yes";
@@ -3734,8 +3734,8 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 	}
 	int32_t a = ps->m_wordPos2;
 	int32_t b = ps->m_wordPos1;
-	char *es = "";
-	char *bes = "";
+	const char *es = "";
+	const char *bes = "";
 	if ( a < b ) {
 		a = ps->m_wordPos1;
 		b = ps->m_wordPos2;
@@ -3803,10 +3803,10 @@ static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg
 			      sw2);
 		
 		// word spam / link text weight
-		char *r1 = "wordSpamRank1";
-		char *r2 = "wordSpamRank2";
-		char *t1 = "wordSpamWeight1";
-		char *t2 = "wordSpamWeight2";
+		const char *r1 = "wordSpamRank1";
+		const char *r2 = "wordSpamRank2";
+		const char *t1 = "wordSpamWeight1";
+		const char *t2 = "wordSpamWeight2";
 		if ( hg1 == HASHGROUP_INLINKTEXT ) {
 			r1 = "inlinkSiteRank1";
 			t1 = "inlinkTextWeight1";
@@ -4284,7 +4284,7 @@ static bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Ms
 	// store in final score calc
 	//if ( ft.length() ) ft.safePrintf(" + ");
 	//ft.safePrintf("%f",ss->m_finalScore);
-	char *syn = "no";
+	const char *syn = "no";
 	float sw = 1.0;
 	if ( ss->m_isSynonym ) {
 		syn = "yes";
@@ -4292,7 +4292,7 @@ static bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Ms
 	}
 	//char bf = ss->m_bflags;
 	float wbw = 1.0;
-	char *bs = "no";
+	const char *bs = "no";
 	if ( ss->m_isHalfStopWikiBigram ) {
 		bs = "yes";
 		wbw = WIKI_BIGRAM_WEIGHT;
@@ -4864,7 +4864,7 @@ static int32_t s_num = 0;
 static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 
 	// 1-1 with the langs in Lang.h
-	char *g_flagBytes[] = {
+	const char * const g_flagBytes[] = {
 		// base64 encoding
 		NULL, // langunknown
 		// english
@@ -5289,8 +5289,8 @@ static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 	char *src    = hr->m_origUrlRequest;
 	int32_t  srcLen = hr->m_origUrlRequestLen;
 
-	char *frontTag = "";
-	char *backTag = "";
+	const char *frontTag = "";
+	const char *backTag = "";
 
 	bool isDefaultHeader = true;
 
@@ -5302,7 +5302,7 @@ static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 		if ( mi->m_menuNum != menuNum ) continue;
 
 		// is it in the url
-		char *match = strnstr2 ( src , srcLen, mi->m_cgi );
+		const char *match = strnstr2 ( src , srcLen, mi->m_cgi );
 
 		// or if empty quotes it is the true header like
 		// for 'hide spider log' option
