@@ -67,8 +67,6 @@ bool is_cap_utf8  (const char *s,int32_t len) ;
 // does it have at least one upper case character in it?
 void to_lower3_a  (const char *s,int32_t len, char *buf) ;
 
-void to_lower1            (char *s) ;
-int32_t to_lower_alnum       (char *s,int32_t len, char *buf) ;
 int32_t to_lower_utf8        (char *dst , const char *src ) ;
 int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src ) ;
 int32_t to_lower_utf8        (char *dst , char *dstEnd, const char *src, const char *srcEnd) ;
@@ -134,10 +132,8 @@ time_t getTimeSynced (); // synced with host #0's system clock
 
 int32_t stripHtml( char *content, int32_t contentLen, int32_t version, int32_t strip );
 
-extern const char g_map_is_vowel[];
 extern const unsigned char g_map_to_lower[];
 extern const unsigned char g_map_to_upper[];
-extern const unsigned char g_map_to_ascii[];
 extern const char g_map_is_upper[];
 extern const char g_map_is_binary[];
 extern const char g_map_is_lower[];
@@ -148,10 +144,8 @@ extern const char g_map_is_alpha[];
 extern const char g_map_is_digit[];
 extern const char g_map_is_hex[];
 extern const char g_map_is_tagname_char[];
-extern const char g_map_is_tag_control_char[];
 
 //extern bool      g_clockInSync;
-extern int64_t g_adjustment;
 
 bool isClockInSync();
 
@@ -165,7 +159,6 @@ bool saveTimeAdjustment ( ) ;
 #define is_upper_a(c)          g_map_is_upper[(unsigned char)c]
 #define to_upper_a(c)          g_map_to_upper[(unsigned char)c]
 // c is latin1 in this case:
-#define to_ascii(c)            g_map_to_ascii[(unsigned char)c]
 #define is_binary_a(c)         g_map_is_binary[(unsigned char)c]
 #define is_wspace_a(c)         (((c)==32) || ((c)==9) || ((c)==10) || ((c)==13))
 #define is_ascii(c)            (((c)>=32) && ((c)<=126))
@@ -346,7 +339,6 @@ void getCalendarFromMs(int64_t ms,
 		       int32_t* msecs);
 
 uint32_t calculateChecksum(char *buf, int32_t bufLen);
-char* getNextNum(char* input, char** numPtr);
 
 // use ucIsAlnum instead...
 inline bool ucIsWordChar(UChar32 c) {

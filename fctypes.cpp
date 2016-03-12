@@ -87,42 +87,6 @@ bool isClockInSync() {
 		216,217,218,219,220,221,222,255
 	};
 
-	const unsigned char g_map_to_ascii[] = {
-		0  , 1  , 2  ,  3 ,  4 ,  5 ,  6 ,  7 ,           
-		8  , 9  , 10 , 11 , 12 , 13 , 14 , 15 ,       
-		16 , 17 , 18 , 19 , 20 , 21 , 22 , 23 ,       
-		24 , 25 , 26 , 27 , 28 , 29 , 30 , 31 ,       
-		32 , 33 , 34 , 35 , 36 , 37 , 38 , 39 ,       
-		40 , 41 , 42 , 43 , 44 , 45 , 46 , 47 ,       
-		48 , 49 , 50 , 51 , 52 , 53 , 54 , 55 ,       
-		56 , 57 , 58 , 59 , 60 , 61 , 62 , 63 ,       
-		64 , 'A','B' ,'C' ,'D' ,'E' ,'F' ,'G' ,   
-		'H', 'I','J' ,'K' ,'L' ,'M' ,'N' ,'O' ,   
-		'P', 'Q','R' ,'S' ,'T' ,'U' ,'V' ,'W' ,   
-		'X', 'Y','Z' , 91 , 92 ,93  ,94  ,95  ,       
-		96 , 'a','b' ,'c' ,'d' ,'e' ,'f' ,'g' ,   
-		'h', 'i','j' ,'k' ,'l' ,'m' ,'n' ,'o' ,   
-		'p', 'q','r' ,'s' ,'t' ,'u' ,'v' ,'w' ,   
-		'x', 'y','z' ,123 ,124 ,125 ,126 ,127 ,   
-		128,129,130,131,  132,133,134,135,   
-		136,137,138,139,  140,141,142,143,   
-		144,145,146,147,  148,149,150,151,   
-		152,153,154,155,  156,157,158,159,   
-		160,161,162,'#',  'o','Y','|','S',      
-		168,169,'a',171,  172,173,174,175, 
-		176,177,'2','3',  180,'u',182,183,      
-		' ','1','o',187,  188,189,190,'?', 
-		'A','A','A','A',  'A','A','A'/*198-AE*/,'C',
-		'E','E','E','E',  'I','I','I','I', 
-		'D','N','O','O',  'O','O','O','x',      
-		'O','U','U','U',  'U','Y',222/*TH*/,'s'/*changed from B*/, 
-		'a','a','a','a',  'a','a','a'/*230-ae*/,'c',
-		'e','e','e','e',  'i','i','i','i', 
-		'd','n','o','o',  'o','o','o','/',      
-		'o','u','u','u',  'u','y',254/*th*/,'y' 
-	};
-
-
 	const char g_map_is_upper[] = {
 		0,0,0,0,0,0,0,0,  // 0 -7        
 		0,0,0,0,0,0,0,0,           
@@ -191,41 +155,6 @@ bool isClockInSync() {
 		0,0,0,0,0,0,0,0, // 232
 		0,0,0,0,0,0,0,0, // 240
 		0,0,0,0,0,0,0,0};  // 248
-
-const char g_map_is_vowel[] = {
-		0,0,0,0,0,0,0,0,  // 0 -7        
-		0,0,0,0,0,0,0,0,  // 8-15
-		0,0,0,0,0,0,0,0,  // 16-  
-		0,0,0,0,0,0,0,0,  // 24-   
-		0,0,0,0,0,0,0,0,  // 32-   
-		0,0,0,0,0,0,0,0,  // 40-
-		0,0,0,0,0,0,0,0,  // 48-   
-		0,0,0,0,0,0,0,0,  // 56-   
-		0,1,0,0,0,1,0,0,  // 64  (A=65)
-		0,1,0,0,0,0,0,1,  // 72
-		0,0,0,0,0,1,0,0,  // 80    
-		0,0,0,0,0,0,0,0,  // 88-    
-		0,1,0,0,0,1,0,0,  // 96- (a=97)
-		0,1,0,0,0,0,0,1,           
-		0,0,0,0,0,1,0,0,           
-		0,0,0,0,0,0,0,0,           
-		0,0,0,0,0,0,0,0, // 128
-		0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0, 
-		0,0,0,0,0,0,0,0, // 160
-		0,0,0,0,0,0,0,0, 
-		0,0,0,0,0,0,0,0, 
-		0,0,0,0,0,0,0,0, 
-		0,0,0,0,0,0,0,0, // 192
-		0,0,0,0,0,0,0,0, 
-		0,0,0,0,0,0,0,0, 
-		0,0,0,0,0,0,0,0, 
-		0,0,0,0,0,0,0,0, 
-		0,0,0,0,0,0,0,0, 
-		0,0,0,0,0,0,0,0, 
-		0,0,0,0,0,0,0,0};
-
 
 
 // converts ascii chars and IS_O chars to their lower case versions
@@ -703,20 +632,6 @@ bool atob ( const char *s, int32_t len ) {
 	if ( s[0] == 'y' || s[0] == 'y' ) return true;
 	if ( ! is_digit ( *s ) || *s == '0' ) return false;
 	return true;
-}
-
-// hexadecimal ascii to key_t
-int64_t htoint32_tint32_t ( const char *s, int32_t len ) {
-	// skip over spaces
-	const char *end = s + len;
-	while ( s < end && is_wspace_a ( *s ) ) s++;
-	// return 0 if all spaces
-	if ( s == end ) return 0;
-	int32_t i   = 0;
-	int64_t val = 0;
-	while ( i < len && is_hex(s[i]) )
-		val = val * 16 + htob ( s[i++] );
-	return val;
 }
 
 // convert hex ascii string into binary at "dst"
@@ -1431,47 +1346,6 @@ time_t getTimeLocal () {
 	return (time_t)now;
 }
 
-// . make it so we can display the ascii string on an html browser
-int32_t saftenTags2 ( char *s , int32_t slen , char *t , int32_t tlen ) {
-	char *start = s ;
-	// bail if slen is 0
-	if ( slen <= 0 ) return 0;
-	// leave a char for the \0
-	char *send  = s + slen - 1;
-	char *tend  = t + tlen;
-	for ( ; t < tend && s + 6 < send ; t++ ) {
-		if ( *t == '<' ) {
-			*s++ = '&';
-			*s++ = 'l';
-			*s++ = 't';
-			*s++ = ';';
-			continue;
-		}			
-		if ( *t == '>' ) {
-			*s++ = '&';
-			*s++ = 'g';
-			*s++ = 't';
-			*s++ = ';';
-			continue;
-		}	
-		if ( *t == '&' ) {
-			*s++ = '&';
-			*s++ = 'a';
-			*s++ = 'm';
-			*s++ = 'p';
-			*s++ = ';';
-			continue;
-		}
-		*s++ = *t;
-	}
-	// return NULL if we broke out because there was not enough room
-	//if ( s + 6 >= send ) return NULL;
-	// NULL terminate "s"
-	*s = '\0';
-	// return # of bytes, excluding \0, stored into s
-	return s - start;
-}
-
 void getCalendarFromMs(int64_t ms, 
 		       int32_t* days, 
 		       int32_t* hours, 
@@ -1501,12 +1375,6 @@ uint32_t calculateChecksum(char *buf, int32_t bufLen){
 	return sum;
 }
 
-bool anchorIsLink( char *tag, int32_t tagLen){
-	if (strncasestr(tag, tagLen, "href")) return true;
-	if (strncasestr(tag, tagLen, "onclick")) return true;
-	return false;
-}
-
 bool has_alpha_utf8 ( char *s , char *send ) {
 	char cs = 0;
 	for ( ; s < send ; s += cs ) {
@@ -1518,20 +1386,6 @@ bool has_alpha_utf8 ( char *s , char *send ) {
 		if ( is_alpha_utf8(s) ) return true;
 	}
 	return false;
-}
-
-//takes an input skips leading spaces 
-//puts next nonspace char* in numPtr
-//an returns the next space after that.
-char* getNextNum(char* input, char** numPtr) {
-	char* p = input;
-	char* nextspace;
-	while(*p && isspace(*p)) p++;
-	nextspace = p;
-	*numPtr = p;
-	while(*nextspace && !isspace(*nextspace)) 
-		nextspace++;
-	return nextspace;
 }
 
 #include "HttpMime.h" // CT_HTML
