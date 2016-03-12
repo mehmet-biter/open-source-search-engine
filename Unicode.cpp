@@ -2,7 +2,6 @@
 
 #include "Mem.h"
 #include "HashTable.h"
-#include "iana_charset.h"
 #include "Titledb.h"
 
 static HashTableX s_convTable;

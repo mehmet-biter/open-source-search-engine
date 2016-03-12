@@ -5,7 +5,6 @@
 #include "Dns.h"
 #include "HttpServer.h"
 #include "Loop.h"
-#include <sys/resource.h>  // setrlimit
 
 #include "Speller.h"
 #include <stdio.h>

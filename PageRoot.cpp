@@ -10,7 +10,6 @@
 #include "Pages.h"
 #include "Query.h"        // MAX_QUERY_LEN
 #include "SafeBuf.h"
-#include "LanguageIdentifier.h"
 #include "Proxy.h"
 #include "HashTable.h"
 #ifdef _VALGRIND_

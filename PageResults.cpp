@@ -12,11 +12,9 @@
 #include "SearchInput.h"
 #include <math.h>
 #include "SafeBuf.h"
-#include "iana_charset.h"
 #include "Pos.h"
 #include "Bits.h"
 #include "sort.h"
-#include "LanguageIdentifier.h"
 #include "CountryCode.h"
 #include "Unicode.h"
 #include "Posdb.h" // MAX_TOP definition

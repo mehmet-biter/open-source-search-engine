@@ -2,7 +2,6 @@
 
 #include "Url.h"
 #include "Domains.h"
-#include "Errno.h"
 #include "HashTable.h"
 #include "Speller.h"
 #include "Punycode.h"

@@ -7,7 +7,6 @@
 #include "HashTableX.h"
 #include "XmlDoc.h"
 #include "Test.h"
-#include "Speller.h"
 #include "SpiderProxy.h" // OP_GETPROXY OP_RETPROXY
 #include "zlib.h"
 

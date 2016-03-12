@@ -7,7 +7,6 @@
 #include "Process.h"
 #include <sched.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include "sort.h"
 #include "Rdb.h"
 #include "Posdb.h"

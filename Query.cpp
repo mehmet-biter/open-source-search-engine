@@ -1,7 +1,5 @@
 #include "gb-include.h"
 
-#include <limits>
-
 #include "Query.h"
 #include "Words.h"
 #include "Bits.h"

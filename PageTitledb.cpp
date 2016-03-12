@@ -9,7 +9,6 @@
 //#include "TitleRec.h" 	// containsAdultWords()
 #include "XmlDoc.h"
 #include "Title.h"
-#include "Pos.h"
 #include "SafeBuf.h"
 #include "linkspam.h"
 #include "CountryCode.h"

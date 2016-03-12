@@ -356,7 +356,6 @@ key224_t Linkdb::makeKey_uk ( uint32_t  linkeeSiteHash32       ,
 /////////
 
 #include "Collectiondb.h"
-#include "matches2.h"
 
 // 1MB read size for now
 #define READSIZE 1000000
