@@ -13,14 +13,6 @@
 #define PADDING 8
 #define SCROLLBAR_WIDTH 20
 
-bool printCSVHeaderRow2 ( class SafeBuf *sb ,
-			  int32_t ct ,
-			  class CollectionRec *cr ,
-			  class SafeBuf *nameBuf ,
-			  class HashTableX *columnTable ,
-			  class Msg20 **msg20s ,
-			  int32_t numMsg20s ,
-			  int32_t *numPtrsArg ) ;
 
 class State0 {
 public:
@@ -69,9 +61,6 @@ bool printSearchResultsHeader ( class State0 *st ) ;
 bool printResult ( class State0 *st,  int32_t ix , int32_t *numPrintedSoFar );
 bool printSearchResultsTail ( class State0 *st ) ;
 
-bool printLogoAndSearchBox (SafeBuf *sb , class HttpRequest *hr, SearchInput *si );
 
-bool printTermPairs ( SafeBuf *sb , class Query *q , class PairScore *ps ) ;
-bool printSingleTerm ( SafeBuf *sb , class Query *q , class SingleScore *ss );
 
 #endif // GB_PAGERESULTS_H

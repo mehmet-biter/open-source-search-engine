@@ -31,23 +31,25 @@ static void gotResultsWrapper  ( void *state ) ;
 static void gotState           ( void *state ) ;
 static bool gotResults         ( void *state ) ;
 
-bool replaceParm ( const char *cgi , SafeBuf *newUrl , HttpRequest *hr ) ;
-bool replaceParm2 ( const char *cgi , SafeBuf *newUrl , 
-		    char *oldUrl , int32_t oldUrlLen ) ;
+static bool replaceParm ( const char *cgi , SafeBuf *newUrl , HttpRequest *hr ) ;
+static bool replaceParm2 ( const char *cgi , SafeBuf *newUrl ,
+			   const char *oldUrl , int32_t oldUrlLen ) ;
 
 
-bool printCSVHeaderRow ( SafeBuf *sb , State0 *st , int32_t ct ) ;
+static bool printPairScore (SafeBuf *sb , SearchInput *si , PairScore *ps , Msg20Reply *mr ) ;
 
-bool printJsonItemInCSV ( char *json , SafeBuf *sb , class State0 *st ) ;
+static bool printScoresHeader ( SafeBuf *sb ) ;
 
-bool printPairScore (SafeBuf *sb , SearchInput *si , PairScore *ps , Msg20Reply *mr ) ;
+static bool printMetaContent ( Msg40 *msg40 , int32_t i ,State0 *st, SafeBuf *sb );
 
-bool printScoresHeader ( SafeBuf *sb ) ;
-
-bool printMetaContent ( Msg40 *msg40 , int32_t i ,State0 *st, SafeBuf *sb );
-
-bool printSingleScore (SafeBuf *sb , SearchInput *si , SingleScore *ss ,
+static bool printSingleScore (SafeBuf *sb , SearchInput *si , SingleScore *ss ,
 			Msg20Reply *mr ) ;
+
+static bool printSingleTerm ( SafeBuf *sb , class Query *q , class SingleScore *ss );
+static bool printTermPairs ( SafeBuf *sb , class Query *q , class PairScore *ps ) ;
+
+static bool printLogoAndSearchBox (SafeBuf *sb , class HttpRequest *hr, SearchInput *si );
+
 
 bool sendReply ( State0 *st , char *reply ) {
 
@@ -186,7 +188,7 @@ bool sendReply ( State0 *st , char *reply ) {
 	return true;
 }
 
-bool printCSSHead ( SafeBuf *sb , char format ) {
+static bool printCSSHead ( SafeBuf *sb , char format ) {
 	sb->safePrintf(
 			      "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML "
 			      "4.01 Transitional//EN\">\n"
@@ -370,7 +372,7 @@ bool sendPageResults ( TcpSocket *s , HttpRequest *hr ) {
 	return status2;
 }
 
-void gotResultsWrapper ( void *state ) {
+static void gotResultsWrapper ( void *state ) {
 	// cast our State0 class from this
 	State0 *st = (State0 *) state;
 	// save error
@@ -380,7 +382,7 @@ void gotResultsWrapper ( void *state ) {
 	gotState (st);
 }
 
-void gotState ( void *state ){
+static void gotState ( void *state ) {
 	// cast our State0 class from this
 	State0 *st = (State0 *) state;
 	if ( !st->m_gotSpell || !st->m_gotResults )
@@ -393,7 +395,7 @@ void gotState ( void *state ){
 // . send it on TcpSocket "s" when done
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool gotResults ( void *state ) {
+static bool gotResults ( void *state ) {
 	// cast our State0 class from this
 	State0 *st = (State0 *) state;
 
@@ -559,7 +561,7 @@ bool gotResults ( void *state ) {
 }
 
 
-bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
+static bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 
 	SearchInput *si = &st->m_si;
 	CollectionRec *cr = si->m_cr;
@@ -641,10 +643,10 @@ bool printLeftNavColumn ( SafeBuf &sb, State0 *st ) {
 	return true;
 }
 
-bool printIgnoredWords ( SafeBuf *sb , SearchInput *si ) {
+static bool printIgnoredWords ( SafeBuf *sb , const SearchInput *si ) {
 	// mention ignored query terms
 	// we need to set another Query with "keepAllSingles" set to false
-	Query *qq2 = &si->m_q;
+	const Query *qq2 = &si->m_q;
 	bool firstIgnored = true;
 	for ( int32_t i = 0 ; i < qq2->m_numWords ; i++ ) {
 		//if ( si->m_xml ) break;
@@ -1749,7 +1751,7 @@ bool printSearchResultsTail ( State0 *st ) {
 	return true;
 }
 
-bool printTimeAgo ( SafeBuf *sb, time_t ts , char *prefix , SearchInput *si ) {
+static bool printTimeAgo ( SafeBuf *sb, time_t ts , const char *prefix , SearchInput *si ) {
 	// Jul 23, 1971
 	sb->reserve2x(200);
 	int32_t now = getTimeGlobal();
@@ -1790,13 +1792,13 @@ bool printTimeAgo ( SafeBuf *sb, time_t ts , char *prefix , SearchInput *si ) {
 	return true;
 }
 
-int linkSiteRankCmp (const void *v1, const void *v2) {
+static int linkSiteRankCmp (const void *v1, const void *v2) {
 	Inlink *i1 = *(Inlink **)v1;
 	Inlink *i2 = *(Inlink **)v2;
 	return i2->m_siteRank - i1->m_siteRank;
 }
 
-bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
+static bool printInlinkText ( SafeBuf *sb , Msg20Reply *mr , SearchInput *si ,
 		       int32_t *numPrinted ) {
 	*numPrinted = 0;
 	// . show the "LinkInfo"
@@ -3660,7 +3662,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 
 
-bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg20Reply *mr) {
+static bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg20Reply *mr) {
 
 	// shortcut
 	Query *q = &si->m_q;
@@ -4209,7 +4211,7 @@ bool printPairScore ( SafeBuf *sb , SearchInput *si , PairScore *ps , Msg20Reply
 	return true;
 }
 
-bool printSingleTerm ( SafeBuf *sb , Query *q , SingleScore *ss ) {
+static bool printSingleTerm ( SafeBuf *sb , Query *q , SingleScore *ss ) {
 
 	int32_t qtn = ss->m_qtermNum;
 
@@ -4230,7 +4232,7 @@ bool printSingleTerm ( SafeBuf *sb , Query *q , SingleScore *ss ) {
 	return true;
 }
 
-bool printTermPairs ( SafeBuf *sb , Query *q , PairScore *ps ) {
+static bool printTermPairs ( SafeBuf *sb , Query *q , PairScore *ps ) {
 	// print pair text
 	int32_t qtn1 = ps->m_qtermNum1;
 	int32_t qtn2 = ps->m_qtermNum2;
@@ -4252,7 +4254,7 @@ bool printTermPairs ( SafeBuf *sb , Query *q , PairScore *ps ) {
 	return true;
 }
 
-bool printScoresHeader ( SafeBuf *sb ) {
+static bool printScoresHeader ( SafeBuf *sb ) {
 
 	sb->safePrintf("<tr>"
 		      "<td>score</td>"
@@ -4273,7 +4275,7 @@ bool printScoresHeader ( SafeBuf *sb ) {
 	return true;
 }
 
-bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Msg20Reply *mr ) {
+static bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Msg20Reply *mr ) {
 
 	// shortcut
 	Query *q = &si->m_q;
@@ -4722,7 +4724,7 @@ bool printSingleScore ( SafeBuf *sb, SearchInput *si, SingleScore *ss, Msg20Repl
 }
 
 // if catId >= 1 then print the dmoz radio button
-bool printLogoAndSearchBox ( SafeBuf *sb, HttpRequest *hr, SearchInput *si ) {
+static bool printLogoAndSearchBox ( SafeBuf *sb, HttpRequest *hr, SearchInput *si ) {
 	const char *coll = hr->getString("c");
 	if ( ! coll ) coll = "";
 
@@ -4842,500 +4844,9 @@ bool printLogoAndSearchBox ( SafeBuf *sb, HttpRequest *hr, SearchInput *si ) {
 	return true;
 }
 
-// return 1 if a should be before b
-int csvPtrCmp ( const void *a, const void *b ) {
-	//JsonItem *ja = (JsonItem **)a;
-	//JsonItem *jb = (JsonItem **)b;
-	char *pa = *(char **)a;
-	char *pb = *(char **)b;
-	if ( strcmp(pa,"type") == 0 ) return -1;
-	if ( strcmp(pb,"type") == 0 ) return  1;
-	// force title on top
-	if ( strcmp(pa,"product.title") == 0 ) return -1;
-	if ( strcmp(pb,"product.title") == 0 ) return  1;
-	if ( strcmp(pa,"title") == 0 ) return -1;
-	if ( strcmp(pb,"title") == 0 ) return  1;
-
-	// this is now taken care of from the 'supps[]' array below
-	// by prepending two digits before each field name
-
-	// otherwise string compare
-	int val = strcmp(pa,pb);
-
-	return val;
-}
-	
 
 #include "Json.h"
 
-bool printCSVHeaderRow2 ( SafeBuf *sb ,
-			  int32_t ct ,
-			  CollectionRec *cr ,
-			  SafeBuf *nameBuf ,
-			  HashTableX *columnTable ,
-			  Msg20 **msg20s ,
-			  int32_t numMsg20s ,
-			  int32_t *numPtrsArg ) {
-
-	*numPtrsArg = 0;
-
-	char tmp1[1024];
-	SafeBuf tmpBuf (tmp1 , 1024);
-
-	char nbuf[27000];
-	HashTableX nameTable;
-	if ( ! nameTable.set ( 8,4,2048,nbuf,27000,false,0,"ntbuf") )
-		return false;
-
-	int32_t niceness = 0;
-
-	// if doing spider status docs not all will have dupofdocid field
-	char *supps [] = { 
-		"00gbssUrl",
-		"01gbssDocId",
-		"02gbssDiscoveredTime",
-		"03gbssSpiderTime",
-		"06gbssContentLen",
-		"07gbssDupOfDocId" ,
-		"08gbssNumRedirects",
-		"09gbssFinalRedirectUrl",
-		"10gbssCrawlDelayMS",
-		"11gbssCrawlRound",
-		"12gbssPrevTotalNumIndexAttempts",
-		"13gbssHopCount",
-		"14gbssStatusMsg",
-		"15gbssDiffbotUri",
-		"16gbssSentToDiffbotThisTime",
-		"17gbssDiffbotReplyMsg",
-
-		"gbssIp",
-		"gbssPercentContentChanged",
-		"gbssDownloadStartTime",
-		"gbssDownloadEndTime",
-		"gbssContentType",
-		"gbssHttpStatus",
-		"gbssWasIndexed",
-		"gbssAgeInIndex",
-		"gbssPrevTotalNumIndexSuccesses",
-		"gbssPrevTotalNumIndexFailures",
-		"gbssDownloadStartTimeMS",
-		"gbssDownloadEndTimeMS",
-		"gbssDownloadDurationMS",
-		"gbssIpLookupTimeMS",
-		"gbssSiteNumInlinks",
-		"gbssSiteRank",
-		"gbssLanguage",
-		"gbssDiffbotReplyCode",
-		"gbssDiffbotLen",
-		"gbssDiffbotReplyResponseTimeMS",
-		"gbssDiffbotReplyRetries",
-		NULL };
-
-	for ( int32_t i = 0 ; supps[i] ; i++ ) {
-		// don't add these column headers to non spider status docs
-		if ( ct != CT_STATUS ) break;
-		char *skip = supps[i];
-		// if custom crawl only show fields in supps with digits
-		if ( cr->m_isCustomCrawl && ! is_digit(skip[0]) ) continue;
-		// skip over the two order digits
-		if ( is_digit(skip[0]) ) skip += 2;
-		// don't include the order digits in the hash
-		int64_t h64 = hash64n ( skip );
-		if ( nameTable.isInTable ( &h64 ) ) continue;
-		// only show diffbot column headers for custom (diffbot) crawls
-		if ( strncmp(skip,"gbssDiffbot",11) == 0 &&
-		     ( ! cr || ! cr->m_isCustomCrawl ) )
-			break;
-		// record offset of the name for our hash table
-		int32_t nameBufOffset = nameBuf->length();
-		// store the name in our name buffer
-		if ( ! nameBuf->safeStrcpy (supps[i])) return false;
-		if ( ! nameBuf->pushChar ( '\0' ) ) return false;
-		// it's new. add it
-		if ( ! nameTable.addKey ( &h64 ,&nameBufOffset)) return false;
-	}
-	
-	// . scan every fucking json item in the search results.
-	// . we still need to deal with the case when there are so many
-	//   search results we have to dump each msg20 reply to disk in
-	//   order. then we'll have to update this code to scan that file.
-
-	for ( int32_t i = 0 ; i < numMsg20s ; i++ ) { // numResults
-
-		// if custom crawl urls.csv only show the supps[] from above
-		if ( ct == CT_STATUS && cr->m_isCustomCrawl )
-			break;
-
-		// get the msg20 reply for search result #i
-		//Msg20      *m20 = msg40->m_msg20[i];
-		//Msg20Reply *mr  = m20->m_r;
-		Msg20Reply *mr  = msg20s[i]->m_r;
-
-		if ( ! mr ) {
-			log("results: missing msg20 reply for result #%"INT32"",i);
-			continue;
-		}
-
-		// get content
-		char *json = mr->ptr_content;
-		// how can it be empty?
-		if ( ! json ) continue;
-
-		// parse it up
-		Json jp;
-		jp.parseJsonStringIntoJsonItems ( json , niceness );
-
-		// scan each json item
-		for ( JsonItem *ji = jp.getFirstItem(); ji ; ji = ji->m_next ){
-
-			// skip if not number or string
-			if ( ji->m_type != JT_NUMBER && 
-			     ji->m_type != JT_STRING )
-				continue;
-
-			// if in an array, do not print! csv is not
-			// good for arrays... like "media":[....] . that
-			// one might be ok, but if the elements in the
-			// array are not simple types, like, if they are
-			// unflat json objects then it is not well suited
-			// for csv.
-			if ( ji->isInArray() ) continue;
-
-
-			// skip "html" field... too spammy for csv and > 32k 
-			// causes libreoffice calc to truncate it and break 
-			// its parsing
-			if ( ji->m_name && 
-			     //! ji->m_parent &&
-			     strcmp(ji->m_name,"html")==0)
-				continue;
-
-			// for spider status docs skip these
-			if ( ct == CT_STATUS && ji->m_name ) {
-				if (!strcmp(ji->m_name,"") )
-					continue;
-			}
-
-
-			// reset length of buf to 0
-			tmpBuf.reset();
-
-			// . get the name of the item into "nameBuf"
-			// . returns false with g_errno set on error
-			if ( ! ji->getCompoundName ( tmpBuf ) )
-				return false;
-
-			// is it new?
-			int64_t h64 = hash64n ( tmpBuf.getBufStart() );
-			if ( nameTable.isInTable ( &h64 ) ) continue;
-
-			// record offset of the name for our hash table
-			int32_t nameBufOffset = nameBuf->length();
-			
-			// store the name in our name buffer
-			if ( ! nameBuf->safeStrcpy ( tmpBuf.getBufStart() ) )
-				return false;
-			if ( ! nameBuf->pushChar ( '\0' ) )
-				return false;
-
-			// it's new. add it
-			if ( ! nameTable.addKey ( &h64 , &nameBufOffset ) )
-				return false;
-		}
-	}
-
-	// . make array of ptrs to the names so we can sort them
-	// . try to always put title first regardless
-	char *ptrs [ 1024 ];
-	int32_t numPtrs = 0;
-	for ( int32_t i = 0 ; i < nameTable.m_numSlots ; i++ ) {
-		if ( ! nameTable.m_flags[i] ) continue;
-		int32_t off = *(int32_t *)nameTable.getValueFromSlot(i);
-		char *p = nameBuf->getBufStart() + off;
-		ptrs[numPtrs++] = p;
-		if ( numPtrs >= 1024 ) break;
-	}
-
-	// pass back to caller
-	*numPtrsArg = numPtrs;
-
-	// sort them
-	qsort ( ptrs , numPtrs , sizeof(char *) , csvPtrCmp );
-
-	// set up table to map field name to column for printing the json items
-	//HashTableX *columnTable = &st->m_columnTable;
-	if ( ! columnTable->set ( 8,4, numPtrs * 4,NULL,0,false,0,"coltbl" ) )
-		return false;
-
-	// now print them out as the header row
-	for ( int32_t i = 0 ; i < numPtrs ; i++ ) {
-
-		char *hdr = ptrs[i];
-
-		if ( i > 0 && ! sb->pushChar(',') ) return false;
-
-		// skip the two order digits
-		if ( ct == CT_STATUS && is_digit(hdr[0]) ) hdr += 2;
-
-		// save it
-		char *skip = hdr;
-
-		// now transform the hdr from gbss* into the old way
-		if ( ! cr->m_isCustomCrawl )
-			goto skipTransform;
-
-		if ( ! strcmp(hdr,"gbssUrl") ) 
-			hdr = "Url";
-		if ( ! strcmp(hdr,"gbssDocId") ) 
-			hdr = "Doc ID";
-		// when url was first discovered
-		if ( ! strcmp(hdr,"gbssDiscoveredTime") ) // need this!
-			hdr = "Url Discovered Time";
-		// when it was crawled this time
-		if ( ! strcmp(hdr,"gbssSpiderTime" ) )
-			hdr = "Crawled Time";
-		if ( ! strcmp(hdr,"gbssContentLen") ) 
-			hdr = "Content Length";
-		if ( ! strcmp(hdr,"gbssDupOfDocId") ) 
-			hdr = "Duplicate Of";
-		if ( ! strcmp(hdr,"gbssNumRedirects") ) 
-			hdr = "Redirects";
-		if ( ! strcmp(hdr,"gbssFinalRedirectUrl") )
-			hdr = "Redirected To";
-		if ( ! strcmp(hdr,"gbssCrawlDelayMS") ) 
-			hdr = "Robots.txt Crawl Delay (ms)";
-		if ( ! strcmp(hdr,"gbssPercentContentChanged") )
-			hdr = "Percent Changed";
-		if ( ! strcmp(hdr,"gbssCrawlRound") ) 
-			hdr = "Crawl Round";
-		if ( ! strcmp(hdr,"gbssPrevTotalNumIndexAttempts") )
-			hdr = "Crawl Try #";
-		if ( ! strcmp(hdr,"gbssHopCount") ) 
-			hdr = "Hop Count";
-		if ( ! strcmp(hdr,"gbssIp") ) 
-			hdr = "IP";
-		// csv report is regular urls not diffbot object urls so
-		// regular urls do not have a just a single diffboturi,
-		// they could have 0 or multiple diffboturis
-		//if ( ! strcmp(hdr,"gbssDiffbotUri" ) )
-		//	hdr = "Diffbot URI";
-		if ( ! strcmp(hdr,"gbssSentToDiffbotThisTime") ) 
-			hdr = "Process Attempted";
-		if ( ! strcmp(hdr,"gbssDiffbotReplyMsg") )
-			hdr = "Process Response";
-		if ( ! strcmp(hdr,"gbssStatusMsg") ) 
-			hdr = "Crawl Status";
-
-		//if ( ! strcmp(hdr,"gbssMatchingUrlFilter") ) 
-		//	hdr = "Matching Expression";
-		// value is 'url ignored', 'will spider next round', 'error' or 
-		// a numeric priority
-		// if ( ! strcmp(hdr,"gbssSpiderPriority") ) 
-		// 	hdr = "Matching Action";
-
-		// new columns
-		// if ( ! strcmp(hdr,"gbssAgeInIndex") ) 
-		// 	hdr = "Age in Index";
-
-		// if not transformed, then do not print it out
-		if ( ! strncmp(hdr,"gbss",4) )
-			continue;
-
-	skipTransform:
-		if ( ! sb->safeStrcpy ( hdr ) ) return false;
-
-		// record the hash of each one for printing out further json
-		// objects in the same order so columns are aligned!
-		int64_t h64 = hash64n ( skip ); // ptrs[i] );
-		if ( ! columnTable->addKey ( &h64 , &i ) ) 
-			return false;
-	}
-
-	return true;
-}
-
-// 
-// print header row in csv
-//
-bool printCSVHeaderRow ( SafeBuf *sb , State0 *st , int32_t ct ) {
-
-	Msg40 *msg40 = &st->m_msg40;
- 	int32_t numResults = msg40->getNumResults();
-
-	char tmp2[1024];
-	SafeBuf nameBuf (tmp2, 1024);
-
-	CollectionRec *cr = g_collectiondb.getRec ( st->m_collnum );
-
-	int32_t numPtrs = 0;
-
-	printCSVHeaderRow2 ( sb , 
-			     ct ,
-			     cr ,
-			     &nameBuf ,
-			     &st->m_columnTable ,
-			     msg40->m_msg20 ,
-			     numResults ,
-			     &numPtrs 
-			     );
-
-	st->m_numCSVColumns = numPtrs;
-
-	if ( ! sb->pushChar('\n') )
-		return false;
-	if ( ! sb->nullTerm() )
-		return false;
-
-	return true;
-}
-
-// returns false and sets g_errno on error
-bool printJsonItemInCSV ( char *json , SafeBuf *sb , State0 *st ) {
-
-	CollectionRec *cr = g_collectiondb.getRec ( st->m_collnum );
-
-	int32_t niceness = 0;
-
-	// parse the json
-	Json jp;
-	jp.parseJsonStringIntoJsonItems ( json , niceness );
-
-	HashTableX *columnTable = &st->m_columnTable;
-	int32_t numCSVColumns = st->m_numCSVColumns;
-
-	
-	// make buffer space that we need
-	char ttt[1024];
-	SafeBuf ptrBuf(ttt,1024);
-	int32_t need = numCSVColumns * sizeof(JsonItem *);
-	if ( ! ptrBuf.reserve ( need ) ) return false;
-	JsonItem **ptrs = (JsonItem **)ptrBuf.getBufStart();
-
-	// reset json item ptrs for csv columns. all to NULL
-	memset ( ptrs , 0 , need );
-
-	char tmp1[1024];
-	SafeBuf tmpBuf (tmp1 , 1024);
-
-	JsonItem *ji;
-
-	///////
-	//
-	// print json item in csv
-	//
-	///////
-	for ( ji = jp.getFirstItem(); ji ; ji = ji->m_next ) {
-
-		// skip if not number or string
-		if ( ji->m_type != JT_NUMBER && 
-		     ji->m_type != JT_STRING )
-			continue;
-
-		// skip if not well suited for csv (see above comment)
-		if ( ji->isInArray() ) continue;
-
-		// . get the name of the item into "nameBuf"
-		// . returns false with g_errno set on error
-		if ( ! ji->getCompoundName ( tmpBuf ) )
-			return false;
-
-		// skip "html" field... too spammy for csv and > 32k causes
-		// libreoffice calc to truncate it and break its parsing
-		if ( ji->m_name && 
-		     //! ji->m_parent &&
-		     strcmp(ji->m_name,"html")==0)
-			continue;
-
-		// is it new?
-		int64_t h64 = hash64n ( tmpBuf.getBufStart() );
-
-		int32_t slot = columnTable->getSlot ( &h64 ) ;
-		// MUST be in there
-		if ( slot < 0 ) { 
-			// we do not transform all gbss fields any more for
-			// diffbot to avoid overpopulating the csv
-			if ( cr && cr->m_isCustomCrawl ) continue;
-			// do not core on this anymore...
-			log("serps: json column not in table : %s",ji->m_name);
-			continue;
-			//char *xx=NULL;*xx=0;}
-		}
-
-		// get col #
-		int32_t column = *(int32_t *)columnTable->getValueFromSlot ( slot );
-
-		// sanity
-		if ( column >= numCSVColumns ) { char *xx=NULL;*xx=0; }
-
-		// set ptr to it for printing when done parsing every field
-		// for this json item
-		ptrs[column] = ji;
-	}
-
-	// now print out what we got
-	for ( int32_t i = 0 ; i < numCSVColumns ; i++ ) {
-
-		// get it
-		ji = ptrs[i];
-
-		// skip "html" field... too spammy for csv and > 32k causes
-		// libreoffice calc to truncate it and break its parsing
-		if ( ji &&
-		     ji->m_name && 
-		     //! ji->m_parent &&
-		     strcmp(ji->m_name,"html")==0)
-			continue;
-
-		// , delimeted
-		if ( i > 0 ) sb->pushChar(',');
-
-		// skip if none
-		if ( ! ji ) continue;
-
-
-		//
-		// get value and print otherwise
-		//
-		/*
-		if ( ji->m_type == JT_NUMBER ) {
-			// print numbers without double quotes
-			if ( ji->m_valueDouble *10000000.0 == 
-			     (double)ji->m_valueLong * 10000000.0 )
-				sb->safePrintf("%"INT32"",ji->m_valueLong);
-			else
-				sb->safePrintf("%f",ji->m_valueDouble);
-			continue;
-		}
-		*/
-
-		int32_t vlen;
-		char *str = ji->getValueAsString ( &vlen );
-
-		// print the value
-		sb->pushChar('\"');
-		// get the json item to print out
-		//int32_t  vlen = ji->getValueLen();
-		// truncate
-		char *truncStr = NULL;
-		if ( vlen > 32000 ) {
-			vlen = 32000;
-			truncStr = " ... value truncated because "
-				"Excel can not handle it. Download the "
-				"JSON to get untruncated data.";
-		}
-		// print it out
-		sb->csvEncode ( str , vlen ); // ji->getValue() , vlen );
-		// print truncate msg?
-		if ( truncStr ) sb->safeStrcpy ( truncStr );
-		// end the CSV
-		sb->pushChar('\"');
-	}
-
-	sb->pushChar('\n');
-	sb->nullTerm();
-
-	return true;
-}
 
 class MenuItem {
 public:
@@ -5350,7 +4861,7 @@ public:
 static MenuItem s_mi[200];
 static int32_t s_num = 0;
 
-bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
+static bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 
 	// 1-1 with the langs in Lang.h
 	char *g_flagBytes[] = {
@@ -5769,7 +5280,7 @@ bool printSearchFiltersBar ( SafeBuf *sb , HttpRequest *hr ) {
 	return true;
 }
 
-bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
+static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 
 	bool firstOne = true;
 
@@ -5962,7 +5473,7 @@ bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 	return true;
 }
 
-bool replaceParm ( const char *cgi , SafeBuf *newUrl , HttpRequest *hr ) { 
+static bool replaceParm ( const char *cgi , SafeBuf *newUrl , HttpRequest *hr ) { 
 	if ( ! cgi[0] ) return true;
 	// get original request url. this is not \0 terminated
 	char *src    = hr->m_origUrlRequest;
@@ -5970,10 +5481,10 @@ bool replaceParm ( const char *cgi , SafeBuf *newUrl , HttpRequest *hr ) {
 	return replaceParm2 ( cgi ,newUrl, src, srcLen );
 }
 
-bool replaceParm2 ( const char *cgi , SafeBuf *newUrl , 
-		    char *oldUrl , int32_t oldUrlLen ) {
+static bool replaceParm2 ( const char *cgi , SafeBuf *newUrl , 
+			   const char *oldUrl , int32_t oldUrlLen ) {
 
-	char *src    = oldUrl;
+	const char *src    = oldUrl;
 	int32_t  srcLen = oldUrlLen;
 
 	const char *srcEnd = src + srcLen;
@@ -6033,7 +5544,7 @@ bool replaceParm2 ( const char *cgi , SafeBuf *newUrl ,
 	return true;
 }
 
-bool printMetaContent ( Msg40 *msg40 , int32_t i , State0 *st, SafeBuf *sb ) {
+static bool printMetaContent ( Msg40 *msg40 , int32_t i , State0 *st, SafeBuf *sb ) {
 	// store the user-requested meta tags content
 	SearchInput *si = &st->m_si;
 	char *pp      =      si->m_displayMetas;
