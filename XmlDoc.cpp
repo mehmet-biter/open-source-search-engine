@@ -8024,7 +8024,7 @@ int32_t *XmlDoc::getIp ( ) {
 	
 	// wrap it up
 	int32_t *rval2 = gotIp ( true );
-	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, return [%s]", __FILE__, __func__, __LINE__, iptoa(*rval2));
+	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, return [%s]", __FILE__, __func__, __LINE__, rval2 ? iptoa(*rval2) : "NULL");
 	return rval2;
 }
 
