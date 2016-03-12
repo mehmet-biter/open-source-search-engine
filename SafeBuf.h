@@ -77,8 +77,8 @@ public:
 		return fillFromFile(fname);
 	}
 
-	bool safeTruncateEllipsis ( char *src , int32_t maxLen );
-	bool safeTruncateEllipsis ( char *src , int32_t srcLen, int32_t maxLen );
+	bool safeTruncateEllipsis ( const char *src , int32_t maxLen );
+	bool safeTruncateEllipsis ( const char *src , int32_t srcLen, int32_t maxLen );
 
 	bool safeDecodeJSONToUtf8 ( const char *json, int32_t jsonLen, int32_t niceness);
 

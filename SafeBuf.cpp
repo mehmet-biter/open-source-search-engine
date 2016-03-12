@@ -1499,12 +1499,12 @@ redo:
 
 #include "XmlDoc.h"
 
-bool SafeBuf::safeTruncateEllipsis ( char *src , int32_t maxLen ) {
+bool SafeBuf::safeTruncateEllipsis ( const char *src , int32_t maxLen ) {
 	int32_t  srcLen = gbstrlen(src);
 	return safeTruncateEllipsis ( src , srcLen , maxLen );
 }
 
-bool SafeBuf::safeTruncateEllipsis ( char *src , int32_t srcLen , int32_t maxLen ) {
+bool SafeBuf::safeTruncateEllipsis ( const char *src , int32_t srcLen , int32_t maxLen ) {
 	int32_t  printLen = srcLen;
 	if ( printLen > maxLen ) printLen = maxLen;
 	if ( ! safeMemcpy ( src , printLen ) )
