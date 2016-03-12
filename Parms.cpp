@@ -1047,9 +1047,7 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 	if( page == PAGE_INJECT )
 	{
 		e1 = "<tr><td colspan=20><font color=#000000>"
-			"<b>WARNING 1</b>: Does NOT respect page encoding.<br>"
-			"E.g. Danish characters will be indexed wrong (will be missing) when injecting a URL. DO NOT use on production system.<br><br>"
-			"<b>WARNING 2</b>: Does NOT handle redirects.<br>"
+			"<b>WARNING</b>: Does NOT handle redirects.<br>"
 			"If you add somesite.com and it redirects to www.somesite.com, it will be indexed as somesite.com, NOT www.somesite.com!<br>"
 			"Use Admin -> Advanced -> Add Urls instead if you want redirects handled correctly."
 			"</font></td></tr>\n";
@@ -8051,13 +8049,12 @@ void Parms::init ( ) {
 	m->m_title = "content charset";
 	m->m_desc  = "A number representing the charset of the content "
 		"if provided below and no HTTP mime header "
-		"is given. Defaults to utf8 "
-		"which is 106. "
+		"is given. 106 is utf8. Only set if supplying content below. "
 		"See iana_charset.h for the numeric values.";
 	m->m_cgi   = "charset";
 	m->m_obj   = OBJ_IR;
 	m->m_type  = TYPE_LONG;
-	m->m_def   = "106";
+	m->m_def   = "-1";
 	m->m_flags = PF_API;
 	m->m_page  = PAGE_INJECT;
 	m->m_off   = offsetof(InjectionRequest,m_charset);
