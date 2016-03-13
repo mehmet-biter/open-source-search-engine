@@ -8,6 +8,7 @@
 #include "Posdb.h"
 #include "Rebalance.h"
 #include "ScalingFunctions.h"
+#include "BitOperations.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -727,7 +728,6 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 #include "Stats.h"
 #include <math.h>
 #include "Conf.h"
-#include "Mem.h"        // getHighestLitBitValue()
 #include "TopTree.h"
 #include "sort.h"
 #include "RdbBase.h"

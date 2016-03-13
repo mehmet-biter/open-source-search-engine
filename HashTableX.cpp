@@ -7,6 +7,7 @@
 #include "SafeBuf.h"
 #include "Threads.h"
 #include "Mem.h"     // for mcalloc and mmalloc
+#include "BitOperations.h"
 
 
 void HashTableX::constructor() {

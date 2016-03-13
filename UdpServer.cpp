@@ -9,6 +9,7 @@
 #include "Process.h"
 #include "Loop.h"
 #include "IPAddressChecks.h"
+#include "BitOperations.h"
 
 // . any changes made to the slots should only be done without risk of
 //   interruption because makeCallbacks_ass() reads from the slots to call

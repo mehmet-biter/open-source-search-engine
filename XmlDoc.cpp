@@ -36,6 +36,7 @@
 #include "Doledb.h"
 #include "IPAddressChecks.h"
 #include "PageRoot.h"
+#include "BitOperations.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

@@ -5,6 +5,7 @@
 #include "Stats.h"
 #include "Proxy.h"
 #include "IPAddressChecks.h"
+#include "BitOperations.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

@@ -9,6 +9,7 @@
 #include "Domains.h"
 #include "Sections.h"
 #include "XmlDoc.h"
+#include "BitOperations.h"
 
 // TODO: have Matches set itself from all the meta tags, titles, link text,
 //       neighborhoods and body. then proximity algo can utilize that info

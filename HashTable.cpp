@@ -1,6 +1,7 @@
 #include "gb-include.h"
 
 #include "HashTable.h"
+#include "BitOperations.h"
 
 HashTable::HashTable () {
 	m_keys = NULL;

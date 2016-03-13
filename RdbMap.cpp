@@ -4,6 +4,7 @@
 #include "BigFile.h"
 #include "IndexList.h"
 #include "Process.h"
+#include "BitOperations.h"
 
 RdbMap::RdbMap() {
 	m_numSegments = 0;
