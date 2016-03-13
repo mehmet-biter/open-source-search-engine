@@ -2615,7 +2615,6 @@ static       bool  s_sendToHosts;
 static       bool  s_sendToProxies;
 static       int32_t  s_hostId;
 static       int32_t  s_hostId2;
-static const char *s_cmd ;
 static       char  s_buffer[128];
 static HttpRequest s_r;
 bool doCmd ( const char *cmd , int32_t hostId , char *filename , 
@@ -2623,7 +2622,6 @@ bool doCmd ( const char *cmd , int32_t hostId , char *filename ,
 	// need loop to work
 	if ( ! g_loop.init() ) return log("db: Loop init failed." ); 
 	// save it
-	s_cmd = cmd;
 	// we are no part of it
 	//g_hostdb.m_hostId = -1;
 	// pass it on
@@ -4715,7 +4713,6 @@ static void *startUp ( void *state , ThreadEntry *t ) ;
 static int32_t s_count = 0;
 static int64_t s_filesize = 0;
 //static int32_t s_lock = 1;
-static int32_t s_launched = 0;
 //static int s_fd1 ; // , s_fd2;
 static BigFile s_f;
 static int32_t s_numThreads = 0;
@@ -4807,7 +4804,6 @@ void *startUp ( void *state , ThreadEntry *t ) {
 		return 0; // NULL;
 	}
 	// we got ourselves
-	s_launched++;
 	// msg
 	fprintf(stderr,"id=%"INT32" launched. Performing 100000 reads.\n",id);
 	// now do a stupid loop
