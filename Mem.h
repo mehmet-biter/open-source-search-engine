@@ -23,12 +23,6 @@ int64_t ntohll ( uint64_t a );
 key_t ntohkey ( key_t key ) ;
 key_t htonkey ( key_t key ) ;
 
-/*
-int32_t getNumBitsOn ( unsigned char      bits );
-int32_t getNumBitsOn ( uint16_t     bits );
-int32_t getNumBitsOn ( uint32_t      bits );
-int32_t getNumBitsOn ( uint64_t bits );
-*/
 
 inline int gbstrlen ( const char *s ) {
 	if ( ! s ) { char *xx=NULL;*xx=0; }
