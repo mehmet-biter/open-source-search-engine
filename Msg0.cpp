@@ -92,11 +92,8 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     int32_t      maxCacheAge , // max cached age in seconds
 		     bool      addToCache  , // add net recv'd list to cache?
 		     char      rdbId       , // specifies the rdb
-		     //char     *coll        ,
 		     collnum_t collnum ,
 		     RdbList  *list        ,
-		     //key_t     startKey    , 
-		     //key_t     endKey      , 
 		     char     *startKey    ,
 		     char     *endKey      ,
 		     int32_t      minRecSizes ,  // use -1 for no max
@@ -121,14 +118,14 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     int32_t      forceParitySplit  ) {
 	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN. hostId: %"INT64", rdbId: %d", __FILE__,__func__, __LINE__, hostId, (int)rdbId);
 
-	// this is obsolete! mostly, but we need it for PageIndexdb.cpp to 
-	// show a "termlist" for a given query term in its entirety so you 
+	// this is obsolete! mostly, but we need it for PageIndexdb.cpp to
+	// show a "termlist" for a given query term in its entirety so you
 	// don't have to check each machine in the network. if this is true it
 	// means to query each split and merge the results together into a
 	// single unified termlist. only applies to indexdb/datedb.
 	//if ( doIndexdbSplit ) { char *xx = NULL; *xx = 0; }
 	// note this because if caller is wrong it hurts performance major!!
-	//if ( doIndexdbSplit ) 
+	//if ( doIndexdbSplit )
 	//	logf(LOG_DEBUG,"net: doing msg0 with indexdb split true");
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: NULL collection. msg0.");
@@ -165,25 +162,14 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		return true;
 	}
 
-	// debug msg
-	//if ( niceness != 0 ) log("HEY start");
-	// ensure startKey last bit clear, endKey last bit set
-	//if ( (startKey.n0 & 0x01) == 0x01 ) 
-	//	log("Msg0::getList: warning startKey lastbit set"); 
-	//if ( (endKey.n0   & 0x01) == 0x00 ) 
-	//	log("Msg0::getList: warning endKey lastbit clear"); 
 	// remember these
 	m_state         = state;
 	m_callback      = callback;
 	m_list          = list;
 	m_hostId        = hostId;
 	m_niceness      = niceness;
-	//m_ip            = ip;
-	//m_port          = port;
 	m_addToCache    = addToCache;
 	// . these define our request 100%
-	//m_startKey      = startKey;
-	//m_endKey        = endKey;
 	KEYSET(m_startKey,startKey,m_ks);
 	KEYSET(m_endKey,endKey,m_ks);
 	m_minRecSizes   = minRecSizes;
@@ -218,7 +204,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		m_shardNum = g_hostdb.getShardNumByTermId ( startKey );
 
 	// how is this used?
-	//if ( forceLocalIndexdb ) m_groupId = g_hostdb.m_groupId;
 	if ( forceLocalIndexdb ) m_shardNum = getMyShardNum();
 
 
