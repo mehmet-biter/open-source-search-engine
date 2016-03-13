@@ -9,19 +9,14 @@
 #ifndef GB_MEM_H
 #define GB_MEM_H
 
-#include <sys/mman.h>        // mlockall
-#include <netinet/in.h>      // for htonll
-#include "Conf.h"
 #include <new>
+#include <stddef.h>            //for NULL
+#include <string.h>            //for strlen()
+#include <inttypes.h>
 
 extern bool g_inMemFunction;
 
 class SafeBuf;
-// some memory manipulation functions inlined below
-int64_t htonll ( uint64_t a );
-int64_t ntohll ( uint64_t a );
-key_t ntohkey ( key_t key ) ;
-key_t htonkey ( key_t key ) ;
 
 
 inline int gbstrlen ( const char *s ) {

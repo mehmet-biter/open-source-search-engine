@@ -1589,36 +1589,6 @@ uint64_t getHighestLitBitValueLL ( uint64_t bits ) {
 	return highest;
 }
 
-// TODO: speed up
-int64_t htonll ( uint64_t a ) {
-	int64_t b;
-	unsigned int int0 = htonl ( ((uint32_t *)&a)[0] );
-	unsigned int int1 = htonl ( ((uint32_t *)&a)[1] );
-
-	((unsigned int *)&b)[0] = int1;
-	((unsigned int *)&b)[1] = int0;
-	return b;
-}
-
-// just swap 'em back
-int64_t ntohll ( uint64_t a ) { 
-	return htonll ( a );
-}
-
-key_t htonkey ( key_t key ) {
-	key_t newKey;
-	newKey.n0 = htonll ( key.n0 );
-	newKey.n1 = htonl  ( key.n1 );
-	return newKey;
-}
-
-key_t ntohkey ( key_t key ) {
-	key_t newKey;
-	newKey.n0 = ntohll ( key.n0 );
-	newKey.n1 = ntohl  ( key.n1 );
-	return newKey;
-}
-
 
 // . TODO: avoid byteCopy by copying remnant bytes
 // . ass = async signal safe, dumb ass

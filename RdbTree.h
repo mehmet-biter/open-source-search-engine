@@ -43,6 +43,7 @@
 #include "RdbList.h"
 #include "BigFile.h"
 #include "RdbMem.h"
+#include <sys/mman.h> //PROT_READ etc.
 
 class RdbTree {
 

@@ -15,6 +15,8 @@
 #define GB_SEARCHINPUT_H
 
 #include "Query.h" // MAX_QUERY_LEN
+#include "HttpRequest.h"
+#include "Collectiondb.h"
 
 class SearchInput {
 public:

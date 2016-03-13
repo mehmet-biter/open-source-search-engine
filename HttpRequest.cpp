@@ -2,6 +2,7 @@
 
 #include "HttpRequest.h"
 #include "ip.h"
+#include "Conf.h"
 
 HttpRequest::HttpRequest () { m_cgiBuf = NULL; m_cgiBuf2 = NULL; reset(); }
 HttpRequest::~HttpRequest() { reset();      }

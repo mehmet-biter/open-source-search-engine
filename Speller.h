@@ -17,6 +17,7 @@
 #include "StopWords.h"
 #include "Query.h"
 #include "Multicast.h"
+#include "HashTableX.h"
 
 class Speller {
 

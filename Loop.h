@@ -15,6 +15,7 @@
 #define F_SETSIG 10     // F_SETSIG
 #endif
 #include "Mem.h"        // mmalloc, mfree
+#include <stdio.h>
 #define QUERYPRIORITYWEIGHT 16
 #define QUICKPOLL_INTERVAL 10
 

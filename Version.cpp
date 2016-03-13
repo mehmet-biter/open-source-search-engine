@@ -2,6 +2,7 @@
 // automated versioning for gigablast
 #include <stdio.h>
 #include "Mem.h"
+#include "Log.h"
 
 static char s_vbuf[32];
 
@@ -18,7 +19,7 @@ char *getVersion ( ) {
 	sprintf(s_vbuf,"%s %s", __DATE__, __TIME__ );
 	// PingServer.cpp needs this exactly to be 24
 	if ( gbstrlen(s_vbuf) != getVersionSize() - 1 ) { 
-		log("getVersion: %s %"INT32" != %"INT32"",
+		log("getVersion: %s %"PRId32" != %"PRId32"",
 		    s_vbuf,
 		    (int32_t)gbstrlen(s_vbuf),
 		    getVersionSize() - 1);

@@ -2,6 +2,8 @@
 #include "HashTable.h"
 #include "LanguageIdentifier.h"
 #include "Threads.h"
+#include "HashTableX.h"
+#include "Lang.h"
 #include <sys/types.h>
 
 

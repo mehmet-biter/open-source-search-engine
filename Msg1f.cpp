@@ -1,6 +1,7 @@
 #include "gb-include.h"
 
 #include "Msg1f.h"
+#include "Conf.h"
 
 static void handleRequest ( UdpSlot *slot , int32_t netnice );
 #define  LOG_WINDOW 2048

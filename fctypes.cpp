@@ -5,6 +5,7 @@
 #include "SafeBuf.h"
 #include "Xml.h"
 #include "XmlNode.h"
+#include "Conf.h"
 
 static bool g_clockInSync = false;
 

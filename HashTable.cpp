@@ -2,6 +2,7 @@
 
 #include "HashTable.h"
 #include "BitOperations.h"
+#include "File.h"
 
 HashTable::HashTable () {
 	m_keys = NULL;

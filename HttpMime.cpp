@@ -5,6 +5,8 @@
 #include "HttpMime.h"
 #include "HashTable.h"
 #include "Timezone.h"
+#include "HashTableX.h"
+
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

@@ -8,6 +8,9 @@
 #include "Threads.h"
 #include "Mem.h"     // for mcalloc and mmalloc
 #include "BitOperations.h"
+#include "Loop.h"
+#include "File.h"
+#include "Conf.h"
 
 
 void HashTableX::constructor() {
