@@ -168,16 +168,8 @@ inline void mdelete ( void *ptr , int32_t size , const char *note ) {
 inline bool relabel   ( void *ptr , int32_t size , const char *note ) {
 	return g_mem.lblMem( ptr, size, note ); };
 
-//#ifdef _LEAKCHECK_
-// use a macro to make delete calls call g_mem.rmMem()
-//#define delete(X) { delete X; g_mem.m_freed += sizeof(*X); g_mem.rmMem(X,sizeof(*X),"new"); }
-//#elif
-//#define delete(X) { delete X; g_mem.m_freed += sizeof(*X); }
-//#endif
-//#ifndef DMALLOC
 void operator delete ( void *p ) throw();
 void * operator new (size_t size) throw (std::bad_alloc);
-//#endif
 inline void *coreme ( int /*x*/ ) { char *xx = NULL; *xx = 0; return NULL; }
 
 int32_t getAllocSize(void *p);
