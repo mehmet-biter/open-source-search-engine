@@ -72,68 +72,6 @@ static void *getElecMem ( int32_t size ) ;
 static void  freeElecMem ( void *p  ) ;
 #endif
 
-/*
-static int32_t s_mutexLockAvail = 1;
-
-// usually we can use the UdpServer ptr as the pid, or if the main process,
-// then just use 0
-void mutexLock ( ) {
-
-	//log("gb: mutex lock");
- loop:
-
-	//log("gb: mutex lock loop 1");
-
-	// wait for the lock if already taken
-	while ( s_mutexLockAvail != 1 ) sched_yield();
-	
-	//log("gb: mutex lock loop 2");
-	
-	// . it now *seems* to be available, i.e. equal to 1 so try to get it
-	// . similar to atomic.h in kernel source
-	
-	// Atomically decrements @s_mutexLockAvail by 1
-	// and returns true if the result is zero, or false for all
-	// other cases.  Note that the guaranteed
-	// useful range of an atomic_t is only 24 bits.
-	unsigned char c;
-	__asm__ __volatile__(
-			     "lock;"
-			     "decl %0; sete %1"
-			     :"=m" (s_mutexLockAvail), "=qm" (c)
-			     :"m" (s_mutexLockAvail) 
-			     : "memory");
-
-
-	//log("gb c=%"INT32" mutexAvail=%"INT32"",c,s_mutexLockAvail);
-	
-	// if c is 0, we got the lock, otherwise, keep trying
-	if ( c != 1 ) {
-		//log("gb: failed to get lock. retrying.");
-		goto loop;
-	}
-	// log("gb: got mutex lock");
-	s_mutexLockAvail = 0;
-}
-
-void mutexUnlock ( ) {
-	//if ( s_mutexLockAvail != 0 ) {
-	//	log("gb: mutex unlock HEY lock=%"INT32"",s_mutexLockAvail);
-	//	//char *xx = NULL; *xx = 0;
-	//}
-
-	// a single instruction is atomic
-	__asm__ __volatile__(
-			     //"lock;"
-			     "movl $1,%0;"
-			     :"=m" (s_mutexLockAvail)
-			     :"m" (s_mutexLockAvail) 
-			     : "memory");
-
-	if ( s_mutexLockAvail != 1 )
-		logf(LOG_INFO,"gb: mutex unlock lock=%"INT32"",s_mutexLockAvail);
-}
-*/
 
 // if we alloc too much in one call, pthread_create() fails for some reason
 //#define MAXMEMPERCALL (256*1024*1024-1)
@@ -240,10 +178,6 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 		// return NULL; }
 	} 
 
-	//char unlock = true;
-	//if ( ! g_stats.m_gotLock || g_threads.amThread() ) mutexLock();
-	//else                                               unlock = false;
-
 	// hack so hostid #0 can use more mem
 	int64_t max = g_conf.m_maxMem;
 	//if ( g_hostdb.m_hostId == 0 )  max += 2000000000;
@@ -252,7 +186,6 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 	if ( g_mem.m_used + (int32_t)size >= max &&
 	     g_conf.m_maxMem > 1000000 ) {
 		log("mem: new(%"UINT32"): Out of memory.", (uint32_t)size );
-		//if ( unlock ) mutexUnlock();
 		throw std::bad_alloc();
 		//throw 1;
 	}
@@ -281,7 +214,6 @@ newmemloop:
 		g_mem.m_outOfMems++;
 		g_errno = errno;
 		log("mem: new(%"INT32"): %s",(int32_t)size,mstrerror(g_errno));
-		//if ( unlock ) mutexUnlock();
 		throw std::bad_alloc();
 		//throw 1;
 		//return NULL;
@@ -308,7 +240,6 @@ newmemloop:
 					"memory allocation 100 times, "
 					"aborting and returning ENOMEM." );
 			g_errno = ENOMEM;
-			//if ( unlock ) mutexUnlock();
 			throw std::bad_alloc();
 		}
 		goto newmemloop;
@@ -316,7 +247,6 @@ newmemloop:
 
 	g_mem.addMem ( mem , size , "TMPMEM" , 1 );
 
-	//if ( unlock ) mutexUnlock();
 	return mem;
 }
 
@@ -375,7 +305,6 @@ newmemloop:
 		g_mem.m_outOfMems++;
 		log("mem: new(%"UINT32"): %s",
 		    (uint32_t)size, mstrerror(g_errno));
-		//if ( unlock ) mutexUnlock();
 		throw std::bad_alloc();
 		//throw 1;
 		//return NULL;
@@ -401,7 +330,6 @@ newmemloop:
 					"memory allocation 100 times, "
 					"aborting and returning ENOMEM." );
 			g_errno = ENOMEM;
-			//if ( unlock ) mutexUnlock();
 			throw std::bad_alloc();
 		}
 		goto newmemloop;
@@ -409,7 +337,6 @@ newmemloop:
 
 	g_mem.addMem ( (char*)mem , size, "TMPMEM" , 1 );
 
-	//if ( unlock ) mutexUnlock();
 	return mem;
 }
 

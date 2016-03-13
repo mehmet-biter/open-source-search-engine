@@ -16,10 +16,6 @@
 
 extern bool g_inMemFunction;
 
-// we share malloc between threads, so you need to get the lock
-//void mutexLock   ( );
-//void mutexUnlock ( );
-
 class SafeBuf;
 // some memory manipulation functions inlined below
 int64_t htonll ( uint64_t a );
