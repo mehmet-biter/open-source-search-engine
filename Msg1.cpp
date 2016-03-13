@@ -553,7 +553,6 @@ void gotReplyWrapper1 ( void *state , void *state2 ) {
 }
 
 static void addedList   ( UdpSlot *slot , Rdb *rdb );
-//static bool updateTfndb ( RdbList *list , bool isTitledb ) ;
 
 // . destroys the slot if false is returned
 // . this is registered in Msg1::set() to handle add rdb record msgs
@@ -627,94 +626,6 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 	// retry on some errors
 	addedList ( slot , rdb );
 }
-
-// . this code is taken from RdbDump::updateTfndb() so when injecting a url
-//   we have an entry for it in tfndb
-// . returns false and sets g_errno on error
-// . Sync.cpp may now call this as well
-// . OBSOLETE: now handled in Rdb.cpp::addRecord()
-/*
-bool updateTfndb ( char *coll , RdbList *list , bool isTitledb, 
-		   int32_t niceness ) {
-	// if this is titledb then add to tfndb first so it doesn't
-	// get dumped after we add it
-	list->resetListPtr();
-	Rdb *udb = g_tfndb.getRdb();
- loop:
-	// get next
-	if ( list->isExhausted() ) return true;
-	// get the TitleRec key
-	//key_t k = list->getCurrentKey();
-	char k[MAX_KEY_BYTES];
-	list->getCurrentKey(k);
-	// skip if a delete
-	//if ( (k.n0 & 0x01) == 0x00 ) {
-	if ( KEYNEG(k) ) {
-		// advance for next call
-		list->skipCurrentRecord();
-		goto loop;
-	}
-	// make the tfndb record
-	key_t ukey;
-	if ( isTitledb ) {
-		int64_t d = g_titledb.getDocIdFromKey ( (key_t *)k );
-		int32_t e = g_titledb.getHostHash ( (key_t *)k );
-		ukey = g_tfndb.makeKey ( d, e, 255, false, false );//255=tfn
-		//g_tfndb.makeKey ( d, e, 255, false, false , ukey );
-	}
-	// otherwise spiderdb
-	else {
-		key_t k        = list->getCurrentKey() ;
-		char *data     = list->getCurrentData();
-		int32_t  dataSize = list->getCurrentDataSize();
-		// is it a delete?
-		if ( dataSize == 0 ) {
-			// if not a delete, that's weird...
-			if ( (k.n0 & 0x01) == 0x01 )
-			       log("net: Got mysterious corrupted spiderdb "
-				   "record. Ignoring.");
-			// don't update tfndb on deletes either
-			return true;
-		}
-		// otherwise we should have a good data size
-		SpiderRec sr;
-		sr.set ( k , data , dataSize );
-		int64_t d = sr.getDocId();
-		int32_t e = g_tfndb.makeExt ( sr.getUrl() );
-		ukey = g_tfndb.makeKey ( d, e, 255, false, false );//255=tfn
-		//g_tfndb.makeKey ( d, e, 255, false, false , ukey );
-	}
-	// advance for next call
-	list->skipCurrentRecord();
-
-	QUICKPOLL(niceness);
-
-	// add it, returns false and sets g_errno on error
-	if ( udb->addRecord ( coll , ukey , NULL , 0, niceness) ) goto loop;
-	// . at this point, g_errno should be set, since addRecord() failed
-	// . return true with g_errno set for most errors, that's bad
-	// . why return true on error? always should be false
-	if ( g_errno != ETRYAGAIN && g_errno != ENOMEM ) return false;
-	// save it
-	int32_t saved = g_errno;
-	// try starting a dump, Rdb::addRecord() does not do this like it
-	// should, only Rdb::addList() does
-	if ( udb->needsDump() ) {
-		log(LOG_INFO,"net: Dumping tfndb tree to disk.");
-		// . CAUTION! must use niceness one because if we go into
-		//   urgent mode all niceness 2 stuff will freeze up until
-		//   we exit urgent mode! so when tfndb dumps out too much
-		//   stuff he'll go into urgent mode and freeze himself
-		if ( ! udb->dumpTree ( 1 ) ) // niceness
-			log("net: Got error while dumping tfndb tree to disk: "
-			    "%s", mstrerror(g_errno));
-	}
-	// resetore it
-	g_errno = saved;
-	// return false on error
-	return false;
-}
-*/
 
 static void tryAgainWrapper ( int fd , void *state ) ;
 
