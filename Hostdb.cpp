@@ -79,6 +79,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	//m_myPort2          = 0;
 	m_numHosts         = 0;
 	m_numHostsPerShard = 0;
+	m_numStripeHostsPerShard = 0;
 	m_loopbackIp       = atoip ( "127.0.0.1" , 9 );
 	m_useTmpCluster    = useTmpCluster;
 	m_initialized = true;
@@ -156,6 +157,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	m_numSpareHosts = 0;
 	m_numProxyHosts = 0;
 	m_numHosts      = 0;
+	
 	for ( ; *p ; p++ ) {
 		if ( is_wspace_a (*p) ) continue;
 		// skip comments
@@ -227,6 +229,10 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	char *wdir2 = NULL;
 	int32_t  wdirlen2 = 0;
 	int32_t numMirrors = -1;
+
+	int32_t num_nospider = 0;
+	int32_t num_noquery  = 0;
+//	int32_t num_fullfunc = 0;
 
 	for ( ; *p ; p++ , line++ ) {
 		if ( is_wspace_a (*p) ) continue;
@@ -538,10 +544,15 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 
 			if(strstr(h->m_note, "noquery")) {
 				h->m_queryEnabled = false;
+				num_noquery++;
 			}
 			if(strstr(h->m_note, "nospider")) {
 				h->m_spiderEnabled = false;
+				num_nospider++;
 			}
+//			else {
+//				num_fullfunc++;
+//			}
 		}
 		else
 			*p   = '\0';
@@ -641,6 +652,17 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	}
 	//m_numHosts = i;
 	m_numTotalHosts = i;
+
+	// BR 20160313: Sanity check. I doubt the striping functionality works with an odd mix 
+	// of noquery and nospider hosts. Make sure the number of each kind is the same for now.
+	if( num_nospider && num_noquery && num_nospider != num_noquery )
+	{
+		g_errno = EBADENGINEER;
+		log(LOG_ERROR,"Number of nospider and noquery hosts must match in hosts.conf");
+		return false;
+	}
+
+
 
 	// # of mirrors is zero if no mirrors,
 	// if it is 1 then each host has ONE MIRROR host
@@ -851,6 +873,16 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 			break;
 		}
 	}
+
+	// BR 20160316: Make sure noquery hosts are not used when dividing
+	// docIds for querying (Msg39)
+	m_numStripeHostsPerShard = m_numHostsPerShard;
+	if( m_numStripeHostsPerShard > 1 )
+	{
+		// Make sure we don't include noquery hosts
+		m_numStripeHostsPerShard = (m_numHosts - num_noquery) / m_numShards;
+	}
+
 
 	// get THIS host
 	Host *h = getHost ( m_hostId );

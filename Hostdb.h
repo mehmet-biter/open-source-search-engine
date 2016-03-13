@@ -383,7 +383,11 @@ class Hostdb {
 	int32_t  getNumHostsPerShard ( ) { return m_numHostsPerShard; };
 
 	// goes with Host::m_stripe
-	int32_t  getNumStripes ( ) { return m_numHostsPerShard; };
+	int32_t  getNumStripes ( ) { 
+		// BR 20160316: Make sure noquery hosts are not used when dividing
+		// docIds for querying (Msg39)
+		return m_numStripeHostsPerShard; 
+	};
 
 	// hash the hosts into the hash tables for lookup
 	bool  hashHosts();
@@ -446,6 +450,9 @@ class Hostdb {
 
 	// we must have the same number of hosts in each group
 	int32_t   m_numHostsPerShard;
+
+	// Number of hosts per shared not counting noquery hosts
+	int32_t	m_numStripeHostsPerShard;
 
 	// store the file in m_buf
 	char m_buf [MAX_HOSTS * 128];

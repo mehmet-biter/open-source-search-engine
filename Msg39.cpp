@@ -441,18 +441,10 @@ bool Msg39::getLists () {
 	
 	// if we have twins, then make sure the twins read different
 	// pieces of the same docid range to make things 2x faster
-	//bool useTwins = false;
-	//if ( g_hostdb.getNumStripes() == 2 ) useTwins = true;
-	//if ( useTwins ) {
-	//	int64_t delta2 = ( docIdEnd - docIdStart ) / 2;
-	//	if ( m_r->m_stripe == 0 ) docIdEnd = docIdStart + delta2;
-	//	else                      docIdStart = docIdStart + delta2;
-	//}
-	// new striping logic:
 	int32_t numStripes = g_hostdb.getNumStripes();
 	int64_t delta2 = ( docIdEnd - docIdStart ) / numStripes;
 	int32_t stripe = g_hostdb.getMyHost()->m_stripe;
-	docIdStart += delta2 * stripe; // is this right?
+	docIdStart += delta2 * stripe; // is this right? // BR 20160313: Doubt it..
 	docIdEnd = docIdStart + delta2;
 	// add 1 to be safe so we don't lose a docid
 	docIdEnd++;
@@ -466,7 +458,12 @@ bool Msg39::getLists () {
 	// from "whiteList" as well
 	m_docIdStart = docIdStart;
 	m_docIdEnd   = docIdEnd;
-	
+
+	if ( g_conf.m_logDebugQuery )
+	{
+		log(LOG_DEBUG,"query: docId start %"INT64"", m_docIdStart);
+		log(LOG_DEBUG,"query: docId   end %"INT64"", m_docIdEnd);
+	}
 
 	//
 	// set startkey/endkey for each term/termlist
