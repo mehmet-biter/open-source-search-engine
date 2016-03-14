@@ -433,14 +433,14 @@ class PosdbTable {
 				 float *scoreMatrix  ,
 				 int32_t   advancedTermNum );
 	float getTermPairScoreForWindow ( int32_t i, int32_t j,
-					  char *wpi,
-					  char *wpj,
+					  const char *wpi,
+					  const char *wpj,
 					  int32_t fixedDistance
 					  );
 
 	float getTermPairScoreForAny   ( int32_t i, int32_t j,
-					 char *wpi, char *wpj, 
-					 char *endi, char *endj,
+					 const char *wpi, const char *wpj, 
+					 const char *endi, const char *endj,
 					 class DocIdScore *pdcs );
 
 	bool makeDocIdVoteBufForBoolQuery_r ( ) ;

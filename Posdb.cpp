@@ -1896,8 +1896,8 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 
 float PosdbTable::getTermPairScoreForWindow ( int32_t i,
 					      int32_t j,
-					      char *wpi , 
-					      char *wpj ,
+					      const char *wpi , 
+					      const char *wpj ,
 					      int32_t fixedDistance ) {
 
 	if ( ! wpi ) return -1.00;
@@ -1969,8 +1969,8 @@ float PosdbTable::getTermPairScoreForWindow ( int32_t i,
 // . TODO: add all up, then basically taking a weight of the top 6 or so...
 // . skip body terms not in the sliding window as defined by m_windowTermPtrs[]
 float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
-					  char *wpi , char *wpj , 
-					  char *endi, char *endj,
+					  const char *wpi, const char *wpj , 
+					  const char *endi, const char *endj,
 					   DocIdScore *pdcs ) {
 
 	// wiki phrase weight?
@@ -2060,8 +2060,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	float score;
 	int32_t  minx = -1;
 	float bestScores[MAX_TOP];
-	char *bestwpi   [MAX_TOP];
-	char *bestwpj   [MAX_TOP];
+	const char *bestwpi   [MAX_TOP];
+	const char *bestwpj   [MAX_TOP];
 	char  bestmhg1  [MAX_TOP];
 	char  bestmhg2  [MAX_TOP];
 	char  bestFixed [MAX_TOP];
@@ -2534,8 +2534,8 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 	for ( int32_t k = 0 ; k < numTop ; k++ , px++ ) {
 		pdcs->m_numPairs++;
 		memset(px,0,sizeof(*px));
-		char *maxp1 = bestwpi[k];
-		char *maxp2 = bestwpj[k];
+		const char *maxp1 = bestwpi[k];
+		const char *maxp2 = bestwpj[k];
 		float score = bestScores[k];
 		bool fixedDist = bestFixed[k];
 		score *= wts;
