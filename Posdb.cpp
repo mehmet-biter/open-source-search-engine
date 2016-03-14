@@ -5065,43 +5065,39 @@ void PosdbTable::intersectLists10_r ( ) {
 
 	for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
 
-	// skip if to the left of a pipe operator
-	if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) continue;
-
-	// get the query term info
-	// QueryTermInfo *qtix = &qip[i];
-	// QueryTerm     *qti  = &m_q->m_qterms[qtix->m_qtermNum];
-
-	for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
-
 		// skip if to the left of a pipe operator
-		if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
-			continue;
+		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) continue;
 
-		//
-		// get score for term pair from non-body occuring terms
-		//
-		if ( ! miniMergedList[i] ) continue;
-		if ( ! miniMergedList[j] ) continue;
-		// . this limits its scoring to the winning sliding window
-		//   as far as the in-body terms are concerned
-		// . it will do sub-outs using the score matrix
-		// . this will skip over body terms that are not 
-		//   in the winning window defined by m_windowTermPtrs[]
-		//   that we set in evalSlidingWindow()
-		// . returns the best score for this term
-		float score = getTermPairScoreForAny (i,
-						      j,
-						      miniMergedList[i],
-						      miniMergedList[j],
-						      miniMergedEnd[i],
-						      miniMergedEnd[j],
-						      pdcs );
-		// get min of all term pair scores
-		if ( score >= minPairScore && minPairScore >= 0.0 ) continue;
-		// got a new min
-		minPairScore = score;
-	}
+		for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
+
+			// skip if to the left of a pipe operator
+			if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
+				continue;
+
+			//
+			// get score for term pair from non-body occuring terms
+			//
+			if ( ! miniMergedList[i] ) continue;
+			if ( ! miniMergedList[j] ) continue;
+			// . this limits its scoring to the winning sliding window
+			//   as far as the in-body terms are concerned
+			// . it will do sub-outs using the score matrix
+			// . this will skip over body terms that are not 
+			//   in the winning window defined by m_windowTermPtrs[]
+			//   that we set in evalSlidingWindow()
+			// . returns the best score for this term
+			float score = getTermPairScoreForAny (i,
+							      j,
+							      miniMergedList[i],
+							      miniMergedList[j],
+							      miniMergedEnd[i],
+							      miniMergedEnd[j],
+							      pdcs );
+			// get min of all term pair scores
+			if ( score >= minPairScore && minPairScore >= 0.0 ) continue;
+			// got a new min
+			minPairScore = score;
+		}
 	}
 	//
 	//
