@@ -326,9 +326,9 @@ bool HashTableX::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 	// don't change size if we do not need to
 	if ( oldn == m_numSlots ) return true;
 
-	int64_t n = (int64_t)oldn;
+	//int64_t n = (int64_t)oldn;
 	// make it a power of 2 for speed if small
-	n = getHighestLitBitValueLL((uint64_t)oldn * 2LL -1);
+	int64_t n = getHighestLitBitValueLL((uint64_t)oldn * 2LL -1);
 	// sanity check, must be less than 1B
 	if ( n > 1000000000 ) { char *xx=NULL;*xx=0; }
 	// limit...

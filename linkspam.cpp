@@ -642,14 +642,12 @@ bool isLinkSpam ( Url *linker,
 	// same host linkers can be link spam (TODO: make same ip block)
 	// because we only allow up to 10 to vote as a single voter
 	if ( linkee ) {
-		char *h1    = linkee->getHost();
+		const char *h1    = linkee->getHost();
 		int32_t  h1len = linkee->getHostLen();
-		char *h2    = NULL;
-		int32_t  h2len = 0;
+		const char *h2    = linker->getHost();
+		int32_t h2len = linker->getHostLen();
 		//if ( tr ) h2    = tr->getUrl()->getHost();
 		//if ( tr ) h2len = tr->getUrl()->getHostLen();
-		h2    = linker->getHost();
-		h2len = linker->getHostLen();
 		if ( h1len == h2len && strncmp ( h1 , h2 , h1len ) == 0 ) 
 			return false;
 	}

@@ -1925,13 +1925,12 @@ if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func_
 			// now add a spider status doc for this so we know
 			// why a crawl might have failed to start
 			//
-			SafeBuf *ssDocMetaList = NULL;
 			// save this
 			int32_t saved = m_indexCode;
 			// make it the real reason for the spider status doc
 			m_indexCode = EDNSERROR;
 			// get the spiderreply ready to be added. false=del
-			ssDocMetaList =getSpiderStatusDocMetaList(NULL ,false);
+			SafeBuf *ssDocMetaList =getSpiderStatusDocMetaList(NULL ,false);
 			// revert
 			m_indexCode = saved;
 			// error?
@@ -3971,7 +3970,7 @@ int32_t getDirtyPoints ( char *s , int32_t slen , int32_t niceness , char *url )
 	// so many needles in one haystack.
 	//
 	///
-	int32_t numDirty2 = sizeof(s_dirtyWordsPart2) / sizeof(Needle);
+	// int32_t numDirty2 = sizeof(s_dirtyWordsPart2) / sizeof(Needle);
 
 	// . disable this for now. most of these are phrases and they
 	//   will not be detected.
@@ -3981,7 +3980,7 @@ int32_t getDirtyPoints ( char *s , int32_t slen , int32_t niceness , char *url )
 	//   with isDirtyUrl() which will split the string into words
 	//   and call isDirtyWord() on each one. also use bi and tri grams
 	//   in the hash table.
-	numDirty2 = 0;
+	int32_t numDirty2 = 0;
 
 	getMatches2 ( s_dirtyWordsPart2 ,
 		      numDirty2     ,
@@ -8593,7 +8592,6 @@ bool *XmlDoc::getIsAllowed ( ) {
 	char *cacheStart;
 	int32_t  cacheLen;
 	bool  hadAllowOrDisallow;
-	int32_t  savedCrawlDelay = -1;
 	// now use left-anchored substring match so we can match Botname/1.0
 	allowed = isAllowed2 ( cu                       ,
 			       g_conf.m_spiderBotName ,
@@ -8610,7 +8608,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 	if( g_conf.m_logTraceXmlDoc ) log("%s:%s:%d: isAllowed2 returned %s for our bot", __FILE__,__func__,__LINE__, (allowed?"true":"false"));
 
 	// save it
-	savedCrawlDelay = m_crawlDelay;
+	int32_t savedCrawlDelay = m_crawlDelay;
 	// . if didn't find our user agent so check for * as a user-agent
 	// . www.wikihow.com/robots.txt just has "Botname: crawl-delay:10\n"
 	//   and then a "User-Agent: *" after that with the disallows, so
@@ -14655,11 +14653,8 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		//   doc as a whole
 
 		// i guess it is safe to do this after getting the spiderreply
-		SafeBuf *spiderStatusDocMetaList = NULL;
-
 		// get the spiderreply ready to be added
-		spiderStatusDocMetaList = getSpiderStatusDocMetaList(newsr ,
-								    forDelete);
+		SafeBuf *spiderStatusDocMetaList = getSpiderStatusDocMetaList(newsr, forDelete);
 		// error?
 		if ( ! spiderStatusDocMetaList ) 
 		{
@@ -15258,7 +15253,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	     //m_useSpiderdb &&
 	     /// don't add requests like http://xyz.com/xxx-diffbotxyz0 though
 	   ) {
-		needSpiderdb3 = m_sreq.getRecSize() + 1;
+		//needSpiderdb3 = m_sreq.getRecSize() + 1;
 		// NO! because when injecting a warc and the subdocs
 		// it contains, gb then tries to spider all of them !!! sux...
 		needSpiderdb3 = 0;
@@ -16917,9 +16912,9 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	}
 
 	// do not do this if not test collection for now
-	bool isTestColl = (! strcmp(cr->m_coll,"qatest123") );
+	//bool isTestColl = (! strcmp(cr->m_coll,"qatest123") );
 	// turn off for now
-	isTestColl = false;
+	bool isTestColl = false;
 
 
 

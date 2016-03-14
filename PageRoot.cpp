@@ -1677,10 +1677,8 @@ bool sendPageHelp ( TcpSocket *sock , HttpRequest *hr ) {
 	// 		      cr->m_coll);
 
 
-	char *qc = "demo";
-	char *host = "http://www.gigablast.com";
-	// for debug make it local on laptop
-	host = "";
+	const char *qc = "demo";
+	const char *host = ""; // for debug make it local on laptop
 
 	sb.safePrintf(
 	"<br>"

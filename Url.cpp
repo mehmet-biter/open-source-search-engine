@@ -180,7 +180,7 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 
 	// . stop t at first space or binary char
 	// . url should be in encoded form!
-	int32_t i = 0;
+	int32_t i;
 	int32_t nonAsciiPos = -1;
 	for ( i = 0 ; i < tlen ; i++ )	{
 		if ( is_wspace_a(t[i]) ) {

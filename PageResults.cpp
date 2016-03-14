@@ -125,9 +125,9 @@ bool sendReply ( State0 *st , char *reply ) {
 		g_stats.m_numSuccess++;
 		// . one hour cache time... no 1000 hours, basically infinite
 		// . no because if we redo the query the results are cached
-		int32_t cacheTime = 3600;//*1000;
+		//int32_t cacheTime = 3600;//*1000;
 		// no... do not use cache
-		cacheTime = -1;
+		int32_t cacheTime = -1;
 		// the "Check it" link on add url uses &usecache=0 to tell
 		// the browser not to use its cache...
 		//if ( hr->getLong("usecache",-1) == 0 ) cacheTime = 0;
@@ -1970,8 +1970,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 
 	HttpRequest *hr = &st->m_hr;
 
-	CollectionRec *cr = NULL;
-	cr = g_collectiondb.getRec ( st->m_collnum );
+	CollectionRec *cr = g_collectiondb.getRec ( st->m_collnum );
 	if ( ! cr ) {
 		log("query: printResult: collnum %"INT32" gone",
 		    (int32_t)st->m_collnum);
@@ -2511,8 +2510,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	     si->m_format == FORMAT_WIDGET_AJAX ) {
 		frontTag = "<font style=\"background-color:yellow\">" ;
 	}
-	int32_t cols = 80;
-	cols = si->m_summaryMaxWidth;
+	int32_t cols = si->m_summaryMaxWidth;
 
 	// url encode title
 	StackBuf(tmpTitle);
@@ -2822,13 +2820,11 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		//   homepages.com/users/fred/
 		// . for www.xyz.edu/~foo/burp/ this will be
 		//   www.xyz.edu/~foo/ etc.
-		int32_t  siteLen = 0;
-		const char *site = NULL;
 		// seems like this isn't the way to do it, cuz Tagdb.cpp
 		// adds the "site" tag itself and we do not always have it
 		// in the XmlDoc::ptr_tagRec... so do it this way:
-		site    = mr->ptr_site;
-		siteLen = mr->size_site-1;
+		const char *site    = mr->ptr_site;
+		int32_t siteLen = mr->size_site-1;
 		//char *site=uu.getSite( &siteLen , si->m_coll, false, tagRec);
 		sb->safePrintf("\t\t<site><![CDATA[");
 		if ( site && siteLen > 0 ) sb->safeMemcpy ( site , siteLen );
@@ -2874,13 +2870,11 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		//   homepages.com/users/fred/
 		// . for www.xyz.edu/~foo/burp/ this will be
 		//   www.xyz.edu/~foo/ etc.
-		int32_t  siteLen = 0;
-		const char *site = NULL;
 		// seems like this isn't the way to do it, cuz Tagdb.cpp
 		// adds the "site" tag itself and we do not always have it
 		// in the XmlDoc::ptr_tagRec... so do it this way:
-		site    = mr->ptr_site;
-		siteLen = mr->size_site-1;
+		const char *site = mr->ptr_site;
+		int32_t siteLen = mr->size_site-1;
 		//char *site=uu.getSite( &siteLen , si->m_coll, false, tagRec);
 		sb->safePrintf("\t\t\"site\":\"");
 		if ( site && siteLen > 0 ) sb->safeMemcpy ( site , siteLen );
@@ -5492,13 +5486,11 @@ static bool replaceParm2 ( const char *cgi , SafeBuf *newUrl ,
 		return log("results: %s has no equal sign",cgi);
 	int32_t cgiLen = equal - cgi;
 
-	const char *found = NULL;
-
 	const char *p = src;
 
  tryagain:
 
-	found = strncasestr ( p , cgi , srcEnd - p , cgiLen );
+	const char *found = strncasestr ( p , cgi , srcEnd - p , cgiLen );
 
 	// if no ? or & before it it is bogus!
 	if ( found && found[-1] != '&' && found[-1] != '?' ) {

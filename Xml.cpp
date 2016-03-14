@@ -88,11 +88,10 @@ int32_t Xml::getEndNode ( int32_t num ) {
 		return -1;
 	}
 
-	int32_t i = 0;
-
 	int innerTagCount = 1;
 
 	// scan for ending back tag
+	int32_t i;
 	for ( i = num + 1 ; i < m_numNodes ; ++i ) {
 		if ( m_nodes[i].m_hash == node->m_hash ) {
 			if ( m_nodes[i].isFrontTag() ) {

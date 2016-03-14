@@ -200,17 +200,12 @@ retry16:
 	if (m_useSSL) {
 		// init SSL
   		// older ssl does not use "const". depends on the include files
-		//#if OPENSSL_VERSION_NUMBER <= 0x009080bfL
-		//SSL_METHOD *meth = NULL;
-		//#else
-		const SSL_METHOD *meth = NULL;
-		//#endif
 		SSL_library_init();
 		SSL_load_error_strings();
 		//SSLeay_add_all_algorithms();
 		//SSLeay_add_ssl_algorithms();
 		signal(SIGPIPE, sigpipe_handle);
-		meth = SSLv23_method();
+		const SSL_METHOD *meth = SSLv23_method();
 		m_ctx = SSL_CTX_new(meth);
 		// get the certificate location
 		char sslCertificate[256];
@@ -2622,9 +2617,8 @@ bool TcpServer::sslAccept ( TcpSocket *s ) {
 
 	// build the ssl
 	if ( ! s->m_ssl ) {
-		SSL *ssl = NULL;
 		//log("ssl: SSL_new");
-		ssl = SSL_new(m_ctx);
+		SSL *ssl = SSL_new(m_ctx);
 		//log("ssl: SSL_set_fd %"INT32"",(int32_t)newsd);
 		SSL_set_fd(ssl, newsd);
 		//log("ssl: SSL_set_accept_state");

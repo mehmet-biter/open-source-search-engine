@@ -604,8 +604,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	//collnum_t collnum = g_collectiondb.getCollnum ( coll );
 
 	if ( ! s_cacheInit ) {
-		int32_t maxMem = 20000000; // 20MB
-		maxMem = 5000000; // 5MB now... save mem
+		int32_t maxMem = 5000000; // 5MB now... save mem (was: 20000000)
 		int32_t maxNodes = maxMem / 17; // 8+8+1
 		if( ! g_termFreqCache.init ( maxMem   , // maxmem 20MB
 					     8        , // fixed data size

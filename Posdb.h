@@ -265,7 +265,7 @@ class Posdb {
 	};
 
 	int64_t getDocId ( const void *key ) {
-		uint64_t d = 0LL;
+		uint64_t d;
 		d = ((const unsigned char *)key)[11];
 		d <<= 32;
 		d |= *(const uint32_t *)(((unsigned char *)key)+7);
