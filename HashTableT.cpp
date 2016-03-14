@@ -115,7 +115,7 @@ void HashTableT<Key_t, Val_t>::clear ( ) {
 // . returns the slot number for "key"
 // . returns -1 if key not in hash table
 template<class Key_t, class Val_t> 
-int32_t HashTableT<Key_t, Val_t>::getOccupiedSlotNum ( Key_t& key ) const {
+int32_t HashTableT<Key_t, Val_t>::getOccupiedSlotNum ( const Key_t& key ) const {
 	if ( m_numSlots <= 0 ) return -1;
         int64_t n;
 	/*

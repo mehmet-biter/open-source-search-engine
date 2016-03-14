@@ -81,7 +81,7 @@ class HashTableT {
 
 	bool setTableSize ( int32_t numSlots, char *buf, int32_t bufSize );
 
-	int32_t getOccupiedSlotNum ( Key_t& key ) const;
+	int32_t getOccupiedSlotNum ( const Key_t& key ) const;
 
 	//private:
 	//friend class RequestTable;
