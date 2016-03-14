@@ -23,7 +23,7 @@
 // +1 for langid at end
 #define TMPSYNBUFSIZE (MAX_SYNS*(8+8+8+1+4+4+4+4+sizeof(char *)+1))
 
-char *getSourceString ( char source );
+const char *getSourceString ( char source );
 
 class Synonyms {
 
@@ -34,7 +34,7 @@ class Synonyms {
 
 	void reset();
 
-	int32_t getSynonyms ( class Words *words , 
+	int32_t getSynonyms ( const class Words *words , 
 			   int32_t wordNum , 
 			   uint8_t langId ,
 			   char *tmpBuf ,
@@ -45,12 +45,7 @@ class Synonyms {
 	bool addAmpPhrase ( int32_t wordNum , class HashTableX *dt ) ;
 	bool addStripped ( char *w,int32_t wlen, class HashTableX *dt ) ;
 
-	int32_t m_niceness;
-	int32_t m_version; // titlerec version
-
-	//char    *m_langVec;
-	char     m_queryLangId;
-	class Words *m_words;
+	const class Words *m_words;
 
 	// temporarily store all synonyms here of the word for synonyms
 	// like the accent-stripped version of the word. otherwise we
@@ -69,6 +64,7 @@ class Synonyms {
 	char       *m_src;
 	uint8_t    *m_langIds;
 
+private:
 	int64_t *m_aidsPtr;
 	int64_t *m_wids0Ptr;
 	int64_t *m_wids1Ptr;

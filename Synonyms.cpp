@@ -32,7 +32,7 @@ void Synonyms::reset() {
 //   which we pre-alloc upon calling the set() function based on the # of
 //   words we got
 // . returns # of synonyms stored into "tmpBuf"
-int32_t Synonyms::getSynonyms ( Words *words , 
+int32_t Synonyms::getSynonyms ( const Words *words , 
 			     int32_t wordNum , 
 			     uint8_t langId ,
 			     char *tmpBuf ,
@@ -43,8 +43,6 @@ int32_t Synonyms::getSynonyms ( Words *words ,
 
 	// store these
 	m_words     = words;
-	m_queryLangId = langId;
-	m_niceness = niceness;
 
 	// sanity check
 	if ( wordNum > m_words->m_numWords ) { char *xx=NULL;*xx=0; }
@@ -52,7 +50,7 @@ int32_t Synonyms::getSynonyms ( Words *words ,
 	// init the dedup table to dedup wordIds
 	HashTableX dt;
 	char dbuf[512];
-	dt.set(8,0,12,dbuf,512,false,m_niceness,"altwrds");
+	dt.set(8,0,12,dbuf,512,false,niceness,"altwrds");
 
 
 	int32_t maxSyns = (int32_t)MAX_SYNS;
@@ -126,7 +124,7 @@ int32_t Synonyms::getSynonyms ( Words *words ,
 	char *ss = NULL;
 	char *savedss = NULL;
 	int64_t bwid;
-	char wikiLangId = m_queryLangId;
+	char wikiLangId = langId;
 	bool hadSpace ;
 	int32_t klen ;
 	int32_t baseNumAlnumWords;
@@ -262,11 +260,11 @@ int32_t Synonyms::getSynonyms ( Words *words ,
 		int32_t count = 0;
 	addSynSet:
 		// do we have another set following this
-		char *next = g_wiktionary.getNextSynSet(bwid,m_queryLangId,ss);
+		char *next = g_wiktionary.getNextSynSet(bwid,langId,ss);
 		// if so, init the dedup table then
 		if ( next && ! dd ) {
 			dd = &dedup;
-			dd->set ( 8,0,8,dbuf,512,false,m_niceness,"sddbuf");
+			dd->set ( 8,0,8,dbuf,512,false,niceness,"sddbuf");
 		}
 		// get lang, 2 chars, unless zh_ch
 		char *synLangAbbr = ss;
@@ -353,7 +351,7 @@ int32_t Synonyms::getSynonyms ( Words *words ,
 		// and for multi alnum word synonyms
 		if ( hadSpace ) {
 			Words sw;
-			sw.set ( p , e - p , true, m_niceness );
+			sw.set ( p , e - p , true, niceness );
 
 			*(int64_t *)m_wids0Ptr = sw.m_wordIds[0];
 			*(int64_t *)m_wids1Ptr = sw.m_wordIds[2];
@@ -560,7 +558,7 @@ bool Synonyms::addStripped ( char *w , int32_t wlen , HashTableX *dt ) {
 	return true;
 }
 
-char *getSourceString ( char source ) {
+const char *getSourceString ( char source ) {
 	if ( source == SOURCE_NONE ) return "none";
 	if ( source == SOURCE_PRESET ) return "preset";
 	if ( source == SOURCE_WIKTIONARY ) return "wiktionary";
