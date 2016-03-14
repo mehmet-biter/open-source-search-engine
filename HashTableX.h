@@ -18,11 +18,11 @@ class HashTableX {
 		   int32_t  bufSize         , // = 0    ,
 		   bool  allowDups       , // = false ,
 		   int32_t  niceness        , // = MAX_NICENESS ,
-		   char *allocName       ,
+		   const char *allocName  ,
 		   bool  useKeyMagic = false );
 
 	// key size is 0 if UNinitialized
-	bool isInitialized ( ) { return (m_ks != 0); };
+	bool isInitialized ( ) const { return (m_ks != 0); };
 
 	 HashTableX       ( );
 	~HashTableX       ( );
@@ -48,10 +48,10 @@ class HashTableX {
 	bool removeSlot ( int32_t n );
 
 	// see how optimal the hashtable is
-	int32_t getLongestString ();
+	int32_t getLongestString () const;
 
 	// how many keys are dups
-	int32_t getNumDups();
+	int32_t getNumDups() const;
 
 	// if in a thread to dont allow it to grow
 	void setNonGrow() { m_allowGrowth = false; }
@@ -83,16 +83,16 @@ class HashTableX {
 	bool addTerm64 ( const int64_t *wid , int32_t score = 1 ) {
 		return addTerm(wid,score); }
 	// a replacement for TermTable.cpp
-	uint32_t getScore ( const int64_t *wid ) {
+	uint32_t getScore ( const int64_t *wid ) const {
 		int32_t slot = getSlot ( wid );
 		if ( slot < 0 ) return 0;
-		return *(uint32_t *)getValueFromSlot ( slot );
+		return *(const uint32_t *)getValueFromSlot ( slot );
 	};
 	// a replacement for TermTable.cpp
-	uint32_t getScoreFromSlot ( int32_t slot ) {
-		return *(uint32_t *)getValueFromSlot ( slot ); };
-	uint64_t getScore64FromSlot ( int32_t slot ) {
-		return *(uint64_t *)getValueFromSlot ( slot ); };
+	uint32_t getScoreFromSlot ( int32_t slot ) const {
+		return *(const uint32_t *)getValueFromSlot ( slot ); };
+	uint64_t getScore64FromSlot ( int32_t slot ) const {
+		return *(const uint64_t *)getValueFromSlot ( slot ); };
 
 
 	bool addTerm32 ( const char *str ) {
@@ -130,15 +130,15 @@ class HashTableX {
 	bool addScore ( const int32_t *key , int32_t score = 1 ) {
 		return addTerm32 ( key , score ); 
 	};
-	uint32_t getScore32 ( const int32_t *wid ) {
+	uint32_t getScore32 ( const int32_t *wid ) const {
 		int32_t slot = getSlot ( wid );
 		if ( slot < 0 ) return 0;
-		return *(uint32_t *)getValueFromSlot ( slot );
+		return *(const uint32_t *)getValueFromSlot ( slot );
 	};
-	uint32_t getScore32 ( const uint32_t *wid ) {
+	uint32_t getScore32 ( const uint32_t *wid ) const {
 		int32_t slot = getSlot ( wid );
 		if ( slot < 0 ) return 0;
-		return *(uint32_t *)getValueFromSlot ( slot );
+		return *(const uint32_t *)getValueFromSlot ( slot );
 	};
 
 
@@ -200,9 +200,9 @@ class HashTableX {
 	};
 
 	// return 32-bit checksum of keys in table
-	int32_t getKeyChecksum32 ();
+	int32_t getKeyChecksum32 () const;
 
-	int32_t getSlot144 ( const key144_t *kp ) {
+	int32_t getSlot144 ( const key144_t *kp ) const {
 		// return NULL if completely empty
 		if ( m_numSlots <= 0 ) return -1;
 		// sanity check
@@ -211,7 +211,7 @@ class HashTableX {
 		//int32_t n = *((uint32_t *)(((char *)kp)+12));
 		// xor with word posand hashgroup ,etc
 		//n ^= *((uint32_t *)(((char *)kp)+2));
-		int32_t n = hash32 ( (char *)kp, 18 );
+		int32_t n = hash32 ( (const char *)kp, 18 );
 		// then mask it
 		n &= m_mask;
 		int32_t count = 0;
@@ -240,7 +240,7 @@ class HashTableX {
 		return &m_vals[n*m_ds];
 	};
 
-	int32_t getSlot32 ( int32_t key ) {
+	int32_t getSlot32 ( int32_t key ) const {
 		// return NULL if completely empty
 		if ( m_numSlots <= 0 ) return -1;
 		// sanity check
@@ -339,28 +339,30 @@ class HashTableX {
 	};
 
 	// value of 0 means empty
-	bool isEmpty ( const void *key ) { return (getSlot(key) < 0); };
+	bool isEmpty ( const void *key ) const { return (getSlot(key) < 0); };
 
-	bool isInTable ( const void *key ) { return (getSlot(key) >= 0); };
+	bool isInTable ( const void *key ) const { return (getSlot(key) >= 0); };
 
-	bool isEmpty ( int32_t n ) { return (m_flags[n] == 0); };
+	bool isEmpty ( int32_t n ) const { return (m_flags[n] == 0); };
 
-	bool isTableEmpty ( ) { return (m_numSlotsUsed == 0); };
+	bool isTableEmpty ( ) const { return (m_numSlotsUsed == 0); };
 
-	void *getKey ( int32_t n ) { return m_keys + n * m_ks; };
-	void *getKeyFromSlot ( int32_t n ) { return m_keys + n * m_ks; };
+	void *      getKey ( int32_t n )       { return m_keys + n * m_ks; };
+	const void *getKey ( int32_t n ) const { return m_keys + n * m_ks; };
+	void *      getKeyFromSlot ( int32_t n )       { return m_keys + n * m_ks; };
+	const void *getKeyFromSlot ( int32_t n ) const { return m_keys + n * m_ks; };
 
-	int64_t getKey64FromSlot ( int32_t n ) {
+	int64_t getKey64FromSlot ( int32_t n ) const {
 		return *(int64_t *)(m_keys+n*m_ks); }
 
-	int32_t getKey32FromSlot ( int32_t n ) {
+	int32_t getKey32FromSlot ( int32_t n ) const {
 		return *(int32_t *)(m_keys+n*m_ks); }
 
-	int32_t getSlot ( const void *key ) { return getOccupiedSlotNum ( key ); };
+	int32_t getSlot ( const void *key ) const { return getOccupiedSlotNum ( key ); };
 
 	// . specialized for 64-bit keys for speed
 	// . returns -1 if not in table
-	int32_t getSlot64 ( const int64_t *key ) {
+	int32_t getSlot64 ( const int64_t *key ) const {
 		// return NULL if completely empty
 		if ( m_numSlots <= 0 ) return -1;
 		// sanity check
@@ -390,10 +392,10 @@ class HashTableX {
 		return -1;
 	};
 
-	int32_t getNextSlot ( int32_t slot, const void *key );
+	int32_t getNextSlot ( int32_t slot, const void *key ) const;
 
 	// count how many slots have this key
-	int32_t getCount ( const void *key );
+	int32_t getCount ( const void *key ) const;
 
 	void setValue ( int32_t n , const void *val ) { 
 		if      (m_ds == 4) ((int32_t *)m_vals)[n] = *(const int32_t *)val;
@@ -401,12 +403,13 @@ class HashTableX {
 		else                gbmemcpy(m_vals+n*m_ds,val,m_ds);
 	};
 
-	void *getValueFromSlot ( int32_t n ) { return m_vals + n * m_ds; };
-	void *getValFromSlot   ( int32_t n ) { return m_vals + n * m_ds; };
-	void *getDataFromSlot  ( int32_t n ) { return m_vals + n * m_ds; };
+	void *      getValueFromSlot ( int32_t n )       { return m_vals + n * m_ds; };
+	const void *getValueFromSlot ( int32_t n ) const { return m_vals + n * m_ds; };
+	void *      getDataFromSlot  ( int32_t n )       { return m_vals + n * m_ds; };
+	const void *getDataFromSlot  ( int32_t n ) const { return m_vals + n * m_ds; };
 
-	int32_t getVal32FromSlot ( int32_t n ){return *(int32_t *)(m_vals+n*m_ds);};
-	int32_t getValue32FromSlot ( int32_t n ){return *(int32_t *)(m_vals+n*m_ds);};
+	int32_t getVal32FromSlot ( int32_t n ) const {return *(const int32_t *)(m_vals+n*m_ds);};
+	int32_t getValue32FromSlot ( int32_t n ) const {return *(const int32_t *)(m_vals+n*m_ds);};
 
 	// frees the used memory, etc.
 	void  reset  ( );
@@ -415,27 +418,27 @@ class HashTableX {
 	void  clear  ( );
 
 	// how many are occupied?
-	int32_t getNumSlotsUsed ( ) { return m_numSlotsUsed; };
-	int32_t getNumUsedSlots ( ) { return m_numSlotsUsed; };
+	int32_t getNumSlotsUsed ( ) const { return m_numSlotsUsed; };
+	int32_t getNumUsedSlots ( ) const { return m_numSlotsUsed; };
 
-	bool isEmpty() { 
+	bool isEmpty() const { 
 		if ( m_numSlotsUsed == 0 ) return true;
 		return false; };
 
 	// how many are there total? used and unused.
-	int32_t getNumSlots ( ) { return m_numSlots; };
+	int32_t getNumSlots ( ) const { return m_numSlots; };
 
 	// how many bytes are required to serialize this hash table?
-	int32_t getStoredSize();
+	int32_t getStoredSize() const;
 	// return buffer we allocated and stored into. return -1 on error
 	// with g_errno set.
-	char *serialize ( int32_t *bufSize ) ;
+	char *serialize ( int32_t *bufSize ) const;
 	// shortcut
-	int32_t serialize ( class SafeBuf *sb );
+	int32_t serialize ( class SafeBuf *sb ) const ;
 	// returns # bytes written into "buf"
-	int32_t serialize ( char *buf , int32_t bufSize );
+	int32_t serialize ( char *buf , int32_t bufSize ) const ;
 	// inflate it. returns false with g_errno set on error
-	bool deserialize ( char *buf , int32_t bufSize , int32_t niceness );
+	bool deserialize ( const char *buf , int32_t bufSize , int32_t niceness );
 
 	// both return false and set g_errno on error, true otherwise
 	bool load ( const char *dir, const char *filename , 
@@ -465,7 +468,7 @@ class HashTableX {
 	bool setTableSize ( int32_t numSlots , char *buf , int32_t bufSize );
 
 	// print as text into sb for debugging
-	void print ( class SafeBuf *sb );
+	void print ( class SafeBuf *sb ) const;
 
 	void disableWrites () { m_isWritable = false; };
 	void enableWrites  () { m_isWritable = true ; };
@@ -473,7 +476,7 @@ class HashTableX {
 
  private:
 
-	int32_t getOccupiedSlotNum ( const void *key ) ;
+	int32_t getOccupiedSlotNum ( const void *key ) const;
 
  public:
 
@@ -514,7 +517,7 @@ class HashTableX {
 	// limits growing to this # of slots total
 	int64_t  m_maxSlots;
 
-	char *m_allocName;
+	const char *m_allocName;
 	
 	int32_t m_maskKeyOffset;
 

@@ -15,7 +15,7 @@ HashTable::HashTable () {
 
 // returns false and sets errno on error
 bool HashTable::set ( int32_t initialNumTerms , char *buf , int32_t bufSize ,
-		      char *label ) {
+		      const char *label ) {
 	reset();
 	m_label = label;
 	if ( ! m_label ) m_label = "hashtablekv";
@@ -182,7 +182,7 @@ bool HashTable::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 	}
 	else {
 		m_doFree = true;
-		char *label = m_label;
+		const char *label = m_label;
 		if ( ! label ) label = "hashtablev";
 		newKeys = (int32_t *)mcalloc ( n * sizeof(int32_t) , label);
 		if ( ! newKeys ) return false;
@@ -222,7 +222,7 @@ bool HashTable::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 }
 
 // both return false and set g_errno on error, true otherwise
-bool HashTable::load ( char *dir , char *filename ) {
+bool HashTable::load ( const char *dir, const char *filename ) {
 	reset();
 	File f;
 	f.set ( dir , filename );
@@ -246,7 +246,7 @@ bool HashTable::load ( char *dir , char *filename ) {
 	return true;
 }
 
-bool HashTable::save ( char *dir , char *filename ) {
+bool HashTable::save ( const char *dir, const char *filename ) {
 	File f;
 	f.set ( dir , filename );
 	log(LOG_INFO,"admin: Saving hashtable from %s%s",dir,filename);

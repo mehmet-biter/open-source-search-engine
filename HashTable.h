@@ -14,12 +14,12 @@ class HashTable {
 	bool set ( int32_t  initialNumSlots = 0    ,
 		   char *buf             = NULL ,
 		   int32_t  bufSize         = 0    ,
-		   char *label           = NULL );
+		   const char *label     = NULL );
 
 	 HashTable       ( );
 	~HashTable       ( );
 
-	void setLabel ( char *label ) { m_label = label; };
+	void setLabel ( const char *label ) { m_label = label; }
 
 	// . add key/value entry to hash table
 	// . will grow hash table if it needs to
@@ -53,14 +53,14 @@ class HashTable {
 	void  clear  ( );
 
 	// how many are occupied?
-	int32_t getNumSlotsUsed ( ) { return m_numSlotsUsed; };
+	int32_t getNumSlotsUsed ( ) const { return m_numSlotsUsed; }
 
 	// how many are there total? used and unused.
-	int32_t getNumSlots ( ) { return m_numSlots; };
+	int32_t getNumSlots ( ) const { return m_numSlots; }
 
 	// both return false and set g_errno on error, true otherwise
-	bool load ( char *dir , char *filename );
-	bool save ( char *dir , char *filename );
+	bool load ( const char *dir, const char *filename );
+	bool save ( const char *dir, const char *filename );
 
  private:
 
@@ -77,10 +77,9 @@ class HashTable {
 	int32_t m_numSlotsUsed;
 	uint32_t m_mask;
 
-	//char m_needsSave;
-	char m_doFree;
+	bool m_doFree;
 
-	char *m_label;
+	const char *m_label;
 };
 
 #endif // GB_HASHTABLE_H

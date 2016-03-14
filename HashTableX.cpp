@@ -56,7 +56,7 @@ bool HashTableX::set ( int32_t  ks              ,
 		       int32_t  bufSize         ,
 		       bool  allowDups       ,
 		       int32_t  niceness        ,
-		       char *allocName       ,
+		       const char *allocName ,
 		       // in general you want keymagic to ensure your
 		       // keys are "random" for good hashing. it doesn't
 		       // really slow things down either.
@@ -119,7 +119,7 @@ void HashTableX::clear ( ) {
 }	 
 
 // #n is the slot
-int32_t HashTableX::getNextSlot ( int32_t n , const void *key ) {
+int32_t HashTableX::getNextSlot ( int32_t n , const void *key ) const {
 	if ( n < 0 ) return -1;
  loop:
 	// inc it
@@ -135,7 +135,7 @@ int32_t HashTableX::getNextSlot ( int32_t n , const void *key ) {
 }
 
 // how many slots have this key
-int32_t HashTableX::getCount ( const void *key ) {
+int32_t HashTableX::getCount ( const void *key ) const {
 	int32_t n = getSlot ( key );
 	if ( n < 0 ) return 0;
 	int32_t count = 1;
@@ -155,7 +155,7 @@ int32_t HashTableX::getCount ( const void *key ) {
 
 // . returns the slot number for "key"
 // . returns -1 if key not in hash table
-int32_t HashTableX::getOccupiedSlotNum ( const void *key ) {
+int32_t HashTableX::getOccupiedSlotNum ( const void *key ) const {
 	if ( m_numSlots <= 0 ) return -1;
 
         int32_t n = *(const uint32_t *)(((const char *)key)+m_maskKeyOffset);
@@ -409,7 +409,7 @@ bool HashTableX::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 	}
 
 	if ( startTime ) {
-		char *name ="";
+		const char *name ="";
 		if ( m_allocName ) name = m_allocName;
 		//if ( name && strcmp(name,"HashTableX")==0 )
 		//	log("hey");
@@ -692,7 +692,7 @@ bool HashTableX::save ( const char *dir ,
 }
 
 // how many bytes are required to serialize this hash table?
-int32_t HashTableX::getStoredSize() {
+int32_t HashTableX::getStoredSize() const {
 	// see serialize() function below to explain this
 	return 4 + 4 + 1 + 2 + 1 + m_numSlotsUsed*(m_ks+m_ds);
 }
@@ -701,7 +701,7 @@ int32_t HashTableX::getStoredSize() {
 // . returns ptr to buf used
 // . set size of buf allocated and used
 // . returns -1 on error
-char *HashTableX::serialize ( int32_t *bufSize ) {
+char *HashTableX::serialize ( int32_t *bufSize ) const {
 	int32_t need = getStoredSize();
 	char *buf = (char *)mmalloc ( need , m_allocName );
 	if ( ! buf ) return (char *)-1;
@@ -714,7 +714,7 @@ char *HashTableX::serialize ( int32_t *bufSize ) {
 }
 
 // shortcut
-int32_t HashTableX::serialize ( SafeBuf *sb ) {
+int32_t HashTableX::serialize ( SafeBuf *sb ) const {
 	int32_t nb = serialize ( sb->getBuf() , sb->getAvail() );
 	// update sb
 	sb->incrementLength ( nb );
@@ -722,7 +722,7 @@ int32_t HashTableX::serialize ( SafeBuf *sb ) {
 }
 
 // returns # bytes written into "buf"
-int32_t HashTableX::serialize ( char *buf , int32_t bufSize ) {
+int32_t HashTableX::serialize ( char *buf , int32_t bufSize ) const {
 	// shortcuts
 	char *p    = buf;
 	//char *pend = buf + bufSize;
@@ -782,12 +782,12 @@ int32_t HashTableX::serialize ( char *buf , int32_t bufSize ) {
 }
 
 // inflate it. returns false with g_errno set on error
-bool HashTableX::deserialize ( char *buf , int32_t bufSize , int32_t niceness ) {
+bool HashTableX::deserialize ( const char *buf , int32_t bufSize , int32_t niceness ) {
 	// clear it
 	reset();
 
 	// shortcuts
-	char *p    = buf;
+	const char *p    = buf;
 	//char *pend = buf + bufSize;
 
 	// get stuff
@@ -795,11 +795,11 @@ bool HashTableX::deserialize ( char *buf , int32_t bufSize , int32_t niceness ) 
 	// how may slots to add?
 	int32_t numSlotsUsed = *(int32_t *)p; p += 4;
 	// key size
-	int32_t ks = *(char *)p; p += 1;
+	int32_t ks = *(const char *)p; p += 1;
 	// data size
 	int32_t ds = *(int16_t *)p; p += 2;
 	// flags (allowDups)
-	bool allowDups = *(char *)p; p += 1;
+	bool allowDups = *(const char *)p; p += 1;
 
 	// init it
 	if ( ! set ( ks , ds , numSlots , NULL , 0 , allowDups , niceness,
@@ -810,9 +810,9 @@ bool HashTableX::deserialize ( char *buf , int32_t bufSize , int32_t niceness ) 
 	if ( m_numSlots != numSlots ) { char *xx=NULL;*xx=0; }
 	
 	// add keys etc. now
-	char *kp = p;
-	char *dpstart = p + ks * numSlotsUsed;
-	char *dp      = dpstart;
+	const char *kp = p;
+	const char *dpstart = p + ks * numSlotsUsed;
+	const char *dp      = dpstart;
 	// loop over all keys
 	for ( ; kp < dpstart ; kp += ks , dp += ds ) 
 		// add this pair. should NEVER fail
@@ -830,7 +830,7 @@ bool HashTableX::deserialize ( char *buf , int32_t bufSize , int32_t niceness ) 
 
 // . see how optimal the hashtable is
 // . return max number of consectuive filled slots/buckets
-int32_t HashTableX::getLongestString () {
+int32_t HashTableX::getLongestString () const {
 	int32_t count = 0;
 	int32_t max = 0;
 	for ( int32_t i = 0 ; i < m_numSlots ; i++ ) {
@@ -844,7 +844,7 @@ int32_t HashTableX::getLongestString () {
 		
 // . how many keys are dups
 // . returns -1 on error
-int32_t HashTableX::getNumDups() {
+int32_t HashTableX::getNumDups() const {
 	if ( ! m_allowDups ) return 0;
 	HashTableX tmp;
 	if ( ! tmp.set ( m_ks, 0, m_numSlots, NULL , 0 , false , m_niceness,
@@ -855,7 +855,7 @@ int32_t HashTableX::getNumDups() {
 		// skip empty bucket
 		if ( ! m_flags[i] ) continue;
 		// get the key
-		char *kp = (char *)getKeyFromSlot(i);
+		const char *kp = (const char *)getKeyFromSlot(i);
 		// add to new table
 		if ( ! tmp.addKey ( kp ) ) return -1;
 	}
@@ -868,13 +868,13 @@ int32_t HashTableX::getNumDups() {
 }
 
 // return 32-bit checksum of keys in table
-int32_t HashTableX::getKeyChecksum32 () {
+int32_t HashTableX::getKeyChecksum32 () const {
 	int32_t checksum = 0;
 	for ( int32_t i = 0 ; i < m_numSlots ; i++ ) {
 		// skip empty bucket
 		if ( ! m_flags[i] ) continue;
 		// get the key
-		char *kp = (char *)getKeyFromSlot(i);
+		const char *kp = (const char *)getKeyFromSlot(i);
 		// do it
 		if ( m_ks == 18 ) {
 			checksum ^= *(int32_t *)(kp);
@@ -908,15 +908,15 @@ int32_t HashTableX::getKeyChecksum32 () {
 }
 
 // print as text into sb for debugging
-void HashTableX::print ( class SafeBuf *sb ) {
+void HashTableX::print ( class SafeBuf *sb ) const {
 	for ( int32_t i = 0 ; i < m_numSlots ; i++ ) {
 		// skip empty bucket
 		if ( ! m_flags[i] ) continue;
 		// get the key
-		char *kp = (char *)getKeyFromSlot(i);
+		const char *kp = (const char *)getKeyFromSlot(i);
 		//char *dp = (char *)getValFromSlot(i);
 		// show key in hex
-		char *kstr = KEYSTR ( kp , m_ks );
+		const char *kstr = KEYSTR ( kp , m_ks );
 		//char *dstr = KEYSTR ( kp , m_ds );
 		// show key
 		//sb->safePrintf("\n%s -> %s", kstr , dstr );
