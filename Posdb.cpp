@@ -1442,7 +1442,7 @@ void PosdbTable::evalSlidingWindow ( char **ptrs ,
 	*/
 }
 
-char *getHashGroupString ( unsigned char hg ) {
+const char *getHashGroupString ( unsigned char hg ) {
 	if ( hg == HASHGROUP_BODY ) return "body";
 	if ( hg == HASHGROUP_TITLE ) return "title";
 	if ( hg == HASHGROUP_HEADING ) return "header";
@@ -5562,11 +5562,11 @@ float PosdbTable::getMaxPossibleScore ( QueryTermInfo *qti ,
 	return score;
 }
 
-void printTermList ( int32_t i, char *list, int32_t listSize ) {
+void printTermList ( int32_t i, const char *list, int32_t listSize ) {
 	// first key is 12 bytes
 	bool firstKey = true;
-	char *px = list;//->m_list;
-	char *pxend = px + listSize;//list->m_listSize;
+	const char *px = list;//->m_list;
+	const char *pxend = px + listSize;//list->m_listSize;
 	for ( ; px < pxend ; ) {
 		int32_t wp = g_posdb.getWordPos(px);
 		int32_t dr = g_posdb.getDensityRank(px);

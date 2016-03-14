@@ -21778,7 +21778,7 @@ bool XmlDoc::printTermList ( SafeBuf *sb , HttpRequest *hr ) {
 			sb->safePrintf("\t\t<wordPos>%"INT32"</wordPos>\n",
 				       tp[i]->m_wordPos);
 
-		char *desc = NULL;
+		const char *desc = NULL;
 		if ( tp[i]->m_descOff >= 0 )
 			desc = start + tp[i]->m_descOff;
 

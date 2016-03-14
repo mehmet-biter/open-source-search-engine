@@ -87,7 +87,7 @@ float getDiversityWeight ( unsigned char diversityRank );
 float getDensityWeight   ( unsigned char densityRank );
 float getWordSpamWeight  ( unsigned char wordSpamRank );
 float getLinkerWeight    ( unsigned char wordSpamRank );
-char *getHashGroupString ( unsigned char hg );
+const char *getHashGroupString ( unsigned char hg );
 float getHashGroupWeight ( unsigned char hg );
 float getTermFreqWeight  ( int64_t termFreq , int64_t numDocsInColl );
 
@@ -99,7 +99,7 @@ float getTermFreqWeight  ( int64_t termFreq , int64_t numDocsInColl );
 
 #define TERMID_MASK (0x0000ffffffffffffLL)
 
-void printTermList ( int32_t i, char *list, int32_t listSize ) ;
+void printTermList ( int32_t i, const char *list, int32_t listSize ) ;
 
 // if query is 'the tigers' we weight bigram "the tigers" x 1.20 because
 // its in wikipedia.
