@@ -121,17 +121,17 @@ void HashTableX::clear ( ) {
 // #n is the slot
 int32_t HashTableX::getNextSlot ( int32_t n , const void *key ) const {
 	if ( n < 0 ) return -1;
- loop:
-	// inc it
-	if ( ++n == m_numSlots ) n = 0;
-	// this is set to 0x01 if non-empty
-	if ( m_flags [ n ] == 0   ) return -1;
-	// if key matches return it
-	if ( *(int32_t *)(m_keys + m_ks * n) == *(const int32_t *)key  &&
-	     ( memcmp (m_keys + m_ks * n, key, m_ks ) == 0 ) )
-		return n;
-	// loop up
-	goto loop;
+
+	for(;;) {
+		// inc it
+		if ( ++n == m_numSlots ) n = 0;
+		// this is set to 0x01 if non-empty
+		if ( m_flags [ n ] == 0   ) return -1;
+		// if key matches return it
+		if ( *(int32_t *)(m_keys + m_ks * n) == *(const int32_t *)key  &&
+		     ( memcmp (m_keys + m_ks * n, key, m_ks ) == 0 ) )
+			return n;
+	}
 }
 
 // how many slots have this key
@@ -140,17 +140,17 @@ int32_t HashTableX::getCount ( const void *key ) const {
 	if ( n < 0 ) return 0;
 	int32_t count = 1;
 	if ( ! m_allowDups ) return count;
- loop:
-	// inc it
-	if ( ++n == m_numSlots ) n = 0;
-	// this is set to 0x01 if non-empty
-	if ( m_flags [ n ] == 0   ) return count;
-	// count it if key matches
-	if ( *(int32_t *)(m_keys + m_ks * n) == *(int32_t *)key  &&
-	     ( memcmp (m_keys + m_ks * n, key, m_ks ) == 0 ) )
-		count++;
-	// loop up
-	goto loop;
+
+	for(;;) {
+		// inc it
+		if ( ++n == m_numSlots ) n = 0;
+		// this is set to 0x01 if non-empty
+		if ( m_flags [ n ] == 0   ) return count;
+		// count it if key matches
+		if ( *(int32_t *)(m_keys + m_ks * n) == *(int32_t *)key  &&
+		     ( memcmp (m_keys + m_ks * n, key, m_ks ) == 0 ) )
+			count++;
+	}
 }
 
 // . returns the slot number for "key"
@@ -527,7 +527,7 @@ bool HashTableX::load ( const char *dir, const char *filename, char **tbuf, int3
 // . so Process.cpp's call to g_spiderCache.save() can save the doleiptable
 //   without blocking...
 //
-static void *saveWrapper ( void *state , class ThreadEntry *t ) {
+static void *saveWrapper ( void *state , class ThreadEntry * /*t*/ ) {
 	// get this class
 	HashTableX *THIS = (HashTableX *)state;
 	// this returns false and sets g_errno on error
@@ -540,7 +540,7 @@ static void *saveWrapper ( void *state , class ThreadEntry *t ) {
 }
 
 // we come here after thread exits
-static void threadDoneWrapper ( void *state , class ThreadEntry *t ) {
+static void threadDoneWrapper ( void *state , class ThreadEntry * /*t*/ ) {
 	// get this class
 	HashTableX *THIS = (HashTableX *)state;
 	// store save error into g_errno
