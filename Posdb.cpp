@@ -4754,76 +4754,72 @@ void PosdbTable::intersectLists10_r ( ) {
 	// QueryTermInfo)
 	for ( int32_t i = 0   ; i < m_numQueryTermInfos ; i++ ) {
 
-	// skip if not part of score
-	if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) continue;
-
-	// // get the query term info
-	// QueryTermInfo *qtix = &qip[i];
-	// QueryTerm     *qti  = &m_q->m_qterms[qtix->m_qtermNum];
-
-	// and pair it with each other possible query term
-	for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
 		// skip if not part of score
-		if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
-			continue;
+		if ( bflags[i] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) ) continue;
 
-		// but if they are in the same wikipedia phrase
-		// then try to keep their positions as in the query.
-		// so for 'time enough for love' ideally we want
-		// 'time' to be 6 units apart from 'love'
-		if ( wikiPhraseIds[j] == wikiPhraseIds[i] &&
-		     // zero means not in a phrase
-		     wikiPhraseIds[j] ) {
-			// . the distance between the terms in the query
-			// . ideally we'd like this distance to be reflected
-			//   in the matched terms in the body
-			qdist = qpos[j] - qpos[i];
-			// wiki weight
-			wts = (float)WIKI_WEIGHT; // .50;
+		// and pair it with each other possible query term
+		for ( int32_t j = i+1 ; j < m_numQueryTermInfos ; j++ ) {
+			// skip if not part of score
+			if ( bflags[j] & (BF_PIPED|BF_NEGATIVE|BF_NUMBER) )
+				continue;
+
+			// but if they are in the same wikipedia phrase
+			// then try to keep their positions as in the query.
+			// so for 'time enough for love' ideally we want
+			// 'time' to be 6 units apart from 'love'
+			if ( wikiPhraseIds[j] == wikiPhraseIds[i] &&
+			     // zero means not in a phrase
+			     wikiPhraseIds[j] ) {
+				// . the distance between the terms in the query
+				// . ideally we'd like this distance to be reflected
+				//   in the matched terms in the body
+				qdist = qpos[j] - qpos[i];
+				// wiki weight
+				wts = (float)WIKI_WEIGHT; // .50;
+			}
+			else {
+				// basically try to get query words as close
+				// together as possible
+				qdist = 2;
+				// this should help fix
+				// 'what is an unsecured loan' so we are more likely
+				// to get the page that has that exact phrase in it.
+				// yes, but hurts how to make a lock pick set.
+				//qdist = qpos[j] - qpos[i];
+				// wiki weight
+				wts = 1.0;
+			}
+			pss = 0.0;
+			//
+			// get score for term pair from non-body occuring terms
+			//
+			if ( miniMergedList[i] && miniMergedList[j] )
+				getTermPairScoreForNonBody(i,
+							   j,
+							   miniMergedList[i],
+							   miniMergedList[j],
+							   miniMergedEnd[i],
+							   miniMergedEnd[j],
+							   qdist ,
+							   &pss);
+			// it's -1 if one term is in the body/header/menu/etc.
+			if ( pss < 0 ) {
+				scoreMatrix[i*nqt+j] = -1.00;
+				wts = -1.0;
+			}
+			else {
+				wts *= pss;
+				wts *= m_freqWeights[i];//sfw[i];
+				wts *= m_freqWeights[j];//sfw[j];
+				// store in matrix for "sub out" algo below
+				// when doing sliding window
+				scoreMatrix[i*nqt+j] = wts;
+				// if terms is a special wiki half stop bigram
+				//if ( bflags[i] == 1 ) wts *= WIKI_BIGRAM_WEIGHT;
+				//if ( bflags[j] == 1 ) wts *= WIKI_BIGRAM_WEIGHT;
+				//if ( ts < minScore ) minScore = ts;
+			}
 		}
-		else {
-			// basically try to get query words as close
-			// together as possible
-			qdist = 2;
-			// this should help fix
-			// 'what is an unsecured loan' so we are more likely
-			// to get the page that has that exact phrase in it.
-			// yes, but hurts how to make a lock pick set.
-			//qdist = qpos[j] - qpos[i];
-			// wiki weight
-			wts = 1.0;
-		}
-		pss = 0.0;
-		//
-		// get score for term pair from non-body occuring terms
-		//
-		if ( miniMergedList[i] && miniMergedList[j] )
-			getTermPairScoreForNonBody(i,
-						   j,
-						   miniMergedList[i],
-						   miniMergedList[j],
-						   miniMergedEnd[i],
-						   miniMergedEnd[j],
-						   qdist ,
-						   &pss);
-		// it's -1 if one term is in the body/header/menu/etc.
-		if ( pss < 0 ) {
-			scoreMatrix[i*nqt+j] = -1.00;
-			wts = -1.0;
-		}
-		else {
-			wts *= pss;
-			wts *= m_freqWeights[i];//sfw[i];
-			wts *= m_freqWeights[j];//sfw[j];
-			// store in matrix for "sub out" algo below
-			// when doing sliding window
-			scoreMatrix[i*nqt+j] = wts;
-			// if terms is a special wiki half stop bigram
-			//if ( bflags[i] == 1 ) wts *= WIKI_BIGRAM_WEIGHT;
-			//if ( bflags[j] == 1 ) wts *= WIKI_BIGRAM_WEIGHT;
-			//if ( ts < minScore ) minScore = ts;
-		}
-	}
 	}
 
 
