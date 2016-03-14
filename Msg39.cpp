@@ -689,9 +689,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 			    m_debug              ,
 			    this                   ,
 			    &m_tt                  ,
-			    m_r->m_collnum,//ptr_coll          , 
-			    &m_msg2 , // m_lists                ,
-			    //m_tmpq.m_numTerms      , // m_numLists
+			    &m_msg2 ,
 			    m_r                              );
 
 	// breathe

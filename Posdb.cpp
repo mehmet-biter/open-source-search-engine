@@ -776,10 +776,7 @@ void PosdbTable::init ( Query     *q               ,
 			char       debug         , 
 			void      *logstate        ,
 			TopTree   *topTree         ,
-			collnum_t collnum , // char      *coll            , 
 			Msg2 *msg2 ,
-			//IndexList *lists           ,
-			//int32_t       numLists        ,
 			Msg39Request *r            ) {
 	// sanity check -- watch out for double calls
 	if ( m_initialized ) { char *xx= NULL; *xx =0; }

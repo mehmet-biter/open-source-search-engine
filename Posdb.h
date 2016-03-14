@@ -408,7 +408,6 @@ class PosdbTable {
 		   char           debug           ,
 		   void          *logstate        ,
 		   class TopTree *topTree         ,
-		   collnum_t collnum ,
 		   class Msg2 *msg2, 
 		   class          Msg39Request *r );
 
