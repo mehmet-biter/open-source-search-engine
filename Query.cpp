@@ -3138,6 +3138,30 @@ bool Query::isConnection ( const char *s , int32_t len ) {
 	return false;
 }
 
+
+void Query::dumpToLog() const
+{
+	log(LOG_DEBUG, "Query:setQTerms: dumping words:");
+	for(int i=0; i<m_numWords; i++) {
+		const QueryWord &qw = m_qwords[i];
+		log("  %d",i);
+		log("    word='%*.*s'", (int)qw.m_wordLen, (int)qw.m_wordLen, qw.m_word);
+		log("    phrase='%*.*s'", (int)qw.m_phraseLen, (int)qw.m_phraseLen, qw.m_word);
+		log("    m_wordId=%"PRId64, qw.m_wordId);
+		log("    m_phraseId=%"PRId64, qw.m_phraseId);
+	}
+	log("Query:setQTerms: dumping query-terms:");
+	for(int i=0; i<m_numTerms; i++) {
+		const QueryTerm &qt = m_qterms[i];
+		log("%d",i);
+		log("  m_isPhrase=%s", qt.m_isPhrase?"true":"false");
+		log("  m_termId=%"PRId64, qt.m_termId);
+		log("  m_rawTermId=%"PRId64, qt.m_rawTermId);
+		log("  m_term='%*.*s'", (int)qt.m_termLen, (int)qt.m_termLen, qt.m_term);
+	}
+}
+
+
 ////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////
 //////////   ONLY BOOLEAN STUFF BELOW HERE  /////////////

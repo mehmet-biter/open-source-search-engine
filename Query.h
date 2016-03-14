@@ -445,6 +445,8 @@ class Query {
 	// helper funcs for parsing query into m_qwords[]
 	bool        isConnection ( const char *s , int32_t len ) ;
 
+	void dumpToLog() const;
+
  public:
 
 	// hash of all the query terms
