@@ -37,7 +37,10 @@ const char * const g_contentTypeStrings [] = {
 	"css"  , // 15
 	"json" ,  // 16
 	"image", // 17
-	"spiderstatus" // 18
+	"spiderstatus", // 18
+	"gzip",	// 19
+	"arc",	// 20
+	"warc"	// 21
 };
 
 HttpMime::HttpMime () { reset(); }
