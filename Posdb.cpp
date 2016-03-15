@@ -893,8 +893,6 @@ void PosdbTable::prepareWhiteListTable()
 	// specified subdomains. there can be up to MAX_WHITELISTS (500)
 	// sites right now. this hash table must have been pre-allocated
 	// in Posdb::allocTopTree() above since we might be in a thread.
-	if ( !m_msg2 )
-		return;
 	if ( m_addedSites )
 		return;
 
@@ -2378,43 +2376,6 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		score /= (dist + 1.0);
 		// tmp hack
 		//score *= (dist+1.0);
-
-		// log it for debug
-		if ( ! m_msg2 && m_debug >= 2 )
-		log("seo: "
-		    "gottermpairscore3=%.010f "
-		    "term1=%"INT32" "
-		    "term2=%"INT32" "
-		    "wpos1=%"INT32" "
-		    "wpos2=%"INT32" "
-		    "dist=%"INT32" "
-		    "qdist=%"INT32" "
-		    "syn1=%"INT32" "
-		    "syn2=%"INT32" "
-		    "hg1=%s "
-		    "hg2=%s "
-		    "dr1=%"INT32" "
-		    "dr2=%"INT32" "
-		    "wts=%f "
-		    "tfw1=%f "
-		    "tfw2=%f "
-		    ,score * wts * m_freqWeights[i] * m_freqWeights[j]
-		    ,i
-		    ,j
-		    ,p1
-		    ,p2
-		    ,dist
-		    ,qdist
-		    ,(int32_t)g_posdb.getIsSynonym(wpi)
-		    ,(int32_t)g_posdb.getIsSynonym(wpj)
-		    ,getHashGroupString(hg1)
-		    ,getHashGroupString(hg2)
-		    ,(int32_t)g_posdb.getDensityRank(wpi)
-		    ,(int32_t)g_posdb.getDensityRank(wpj)
-		    ,wts
-		    ,m_freqWeights[i]
-		    ,m_freqWeights[j]
-		    );
 
 		// if our hg1/hg2 hashgroup pairing already exists
 		// in the bestScores array we have to beat it and then
