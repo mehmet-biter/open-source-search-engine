@@ -397,6 +397,13 @@ public:
 
 #include "Query.h"         // MAX_QUERY_TERMS, qvec_t
 
+//forward declarations
+class TopTree;
+class Msg2;
+class Msg39Request;
+class DocIdScore;
+
+
 class PosdbTable {
 
  public:
@@ -407,9 +414,9 @@ class PosdbTable {
 	void init (Query         *q               ,
 		   char           debug           ,
 		   void          *logstate        ,
-		   class TopTree *topTree         ,
-		   class Msg2 *msg2, 
-		   class          Msg39Request *r );
+		   TopTree       *topTree,
+		   Msg2          *msg2, 
+		   Msg39Request  *r );
 
 	// pre-allocate m_whiteListTable
 	bool allocWhiteListTable ( ) ;
@@ -425,7 +432,7 @@ class PosdbTable {
 					     int32_t qdist ,
 					     float *retMax );
 	float getSingleTermScore ( int32_t i, char *wpi , char *endi,
-				   class DocIdScore *pdcs,
+				   DocIdScore *pdcs,
 				   char **bestPos );
 
 	void evalSlidingWindow ( char **ptrs , 
@@ -442,7 +449,7 @@ class PosdbTable {
 	float getTermPairScoreForAny   ( int32_t i, int32_t j,
 					 const char *wpi, const char *wpj, 
 					 const char *endi, const char *endj,
-					 class DocIdScore *pdcs );
+					 DocIdScore *pdcs );
 
 	bool makeDocIdVoteBufForBoolQuery_r ( ) ;
 
@@ -497,11 +504,11 @@ class PosdbTable {
 	// how many docs in the collection?
 	int64_t m_docsInColl;
 
-	class Msg2 *m_msg2;
+	Msg2 *m_msg2;
 
 	// if getting more than MAX_RESULTS results, use this top tree to hold
 	// them rather than the m_top*[] arrays above
-	class TopTree *m_topTree;
+	TopTree *m_topTree;
 
 	SafeBuf m_scoreInfoBuf;
 	SafeBuf m_pairScoreBuf;
@@ -522,7 +529,7 @@ class PosdbTable {
 	// for debug msgs
 	void *m_logstate;
 
-	class Msg39Request *m_r;
+	Msg39Request *m_r;
 
 	// for gbsortby:item.price ...
 	int32_t m_sortByTermNum;
@@ -559,19 +566,19 @@ class PosdbTable {
 	// sets stuff used by intersect10_r()
 	bool setQueryTermInfo ( );
 
-	void shrinkSubLists ( class QueryTermInfo *qti );
+	void shrinkSubLists ( QueryTermInfo *qti );
 
 	// for intersecting docids
-	void addDocIdVotes ( class QueryTermInfo *qti , int32_t listGroupNum );
+	void addDocIdVotes ( const QueryTermInfo *qti , int32_t listGroupNum );
 
 	// for negative query terms...
-	void rmDocIdVotes ( class QueryTermInfo *qti );
+	void rmDocIdVotes ( const QueryTermInfo *qti );
 
 	// upper score bound
-	float getMaxPossibleScore ( class QueryTermInfo *qti ,
+	float getMaxPossibleScore ( const QueryTermInfo *qti ,
 				    int32_t bestDist ,
 				    int32_t qdist ,
-				    class QueryTermInfo *qtm ) ;
+				    const QueryTermInfo *qtm ) ;
 
 	// stuff set in setQueryTermInf() function:
 	SafeBuf              m_qiBuf;

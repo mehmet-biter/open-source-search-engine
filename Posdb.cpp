@@ -1102,7 +1102,7 @@ static bool  s_isCompatible     [HASHGROUP_END][HASHGROUP_END];
 static bool  s_inBody           [HASHGROUP_END];
 
 // initialize the weights table
-void initWeights ( ) {
+static void initWeights ( ) {
 	if ( s_init ) return;
 	s_init = true;
 	for ( int32_t i = 0 ; i <= MAXDIVERSITYRANK ; i++ ) {
@@ -3201,7 +3201,7 @@ bool PosdbTable::setQueryTermInfo ( ) {
 	return true;
 }
 
-void PosdbTable::rmDocIdVotes ( QueryTermInfo *qti ) {
+void PosdbTable::rmDocIdVotes ( const QueryTermInfo *qti ) {
 	// shortcut
 	char *bufStart = m_docIdVoteBuf.getBufStart();
 
@@ -3336,7 +3336,7 @@ inline bool isInRange2 ( char *recPtr , char *subListEnd, QueryTerm *qt ) {
 // . add a QueryTermInfo for a term (synonym lists,etc) to the docid vote buf
 //   "m_docIdVoteBuf"
 // . this is how we intersect all the docids to end up with the winners
-void PosdbTable::addDocIdVotes ( QueryTermInfo *qti , int32_t   listGroupNum) {
+void PosdbTable::addDocIdVotes ( const QueryTermInfo *qti , int32_t   listGroupNum) {
 
 	// sanity check, we store this in a single byte below for voting
 	if ( listGroupNum >= 256 ) { char *xx=NULL;*xx=0; }
@@ -5417,10 +5417,10 @@ void PosdbTable::intersectLists10_r ( ) {
 
 // . "bestDist" is closest distance to query term # m_minListi
 // . set "bestDist" to 1 to ignore it
-float PosdbTable::getMaxPossibleScore ( QueryTermInfo *qti , 
+float PosdbTable::getMaxPossibleScore ( const QueryTermInfo *qti , 
 					int32_t bestDist ,
 					int32_t qdist ,
-					QueryTermInfo *qtm ) {
+					const QueryTermInfo *qtm ) {
 
 	// get max score of all sublists
 	float bestHashGroupWeight = -1.0;
@@ -5596,7 +5596,7 @@ void printTermList ( int32_t i, const char *list, int32_t listSize ) {
 }
 
 // sort in descending order
-int dcmp6 ( const void *h1 , const void *h2 ) {
+static int dcmp6 ( const void *h1 , const void *h2 ) {
 	return KEYCMP((const char*)h1,(const char*)h2,6);
 }
 
