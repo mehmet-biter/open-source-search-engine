@@ -4582,9 +4582,7 @@ void PosdbTable::intersectLists10_r ( ) {
 		// if the first key in our merged list store the docid crap
 		if ( isFirstKey ) {
 			// store a 12 byte key in the merged list buffer
-			gbmemcpy ( mptr , nwp[mink] , 12 );
-			// sanity check! make sure these not being used...
-			//if ( mptr[2] & 0x03 ) { char *xx=NULL;*xx=0; }
+			memcpy ( mptr, nwp[mink], 12 );
 			// wipe out its syn bits and re-use our way
 			mptr[2] &= 0xfc;
 			// set the synbit so we know if its a synonym of term
@@ -4603,11 +4601,7 @@ void PosdbTable::intersectLists10_r ( ) {
 			// the first key for the termid, and 18 bytes.
 			mptr[0] &= 0xf9;
 			mptr[0] |= 0x02;
-			// show hg
-			//char hgx = g_posdb.getHashGroup(mptr);
-			//int32_t pos = g_posdb.getWordPos(mptr);
-			//log("j1=%"INT32" mink=%"INT32" hgx=%"INT32" pos=%"INT32"",
-			//    (int32_t)j,(int32_t)mink,(int32_t)hgx,(int32_t)pos);
+			// save it
 			lastMptr = mptr;
 			mptr += 12;
 			isFirstKey = false;
@@ -4621,13 +4615,9 @@ void PosdbTable::intersectLists10_r ( ) {
 			// otherwise, they are added after the regular term.
 			// should fix double scoring bug for 'cheat codes'
 			// query!
-			if ( lastMptr[4] == nwp[mink][4] &&
-			     lastMptr[5] == nwp[mink][5] &&
-			     (lastMptr[3] & 0xc0) == (nwp[mink][3] & 0xc0) ){
+			if ( g_posdb.getWordPos(lastMptr) == g_posdb.getWordPos(nwp[mink]) )
 				goto skipOver;
-			}
-			*(int32_t  *) mptr    = *(int32_t  *) nwp[mink];
-			*(int16_t *)(mptr+4) = *(int16_t *)(nwp[mink]+4);
+			memcpy ( mptr, nwp[mink], 6 );
 			// wipe out its syn bits and re-use our way
 			mptr[2] &= 0xfc;
 			// set the synbit so we know if its a synonym of term
@@ -4638,12 +4628,8 @@ void PosdbTable::intersectLists10_r ( ) {
 			// if it was the first key of its list it may not
 			// have its bit set for being 6 bytes now! so turn
 			// on the 2 compression bits
+			mptr[0] &= 0xf9;
 			mptr[0] |= 0x06;
-			// show hg
-			//char hgx = g_posdb.getHashGroup(mptr);
-			//int32_t pos = g_posdb.getWordPos(mptr);
-			//log("j2=%"INT32" mink=%"INT32" hgx=%"INT32" pos=%"INT32"",
-			//    (int32_t)j,(int32_t)mink,(int32_t)hgx,(int32_t)pos);
 			// save it
 			lastMptr = mptr;
 			mptr += 6;
