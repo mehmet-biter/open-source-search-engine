@@ -884,6 +884,51 @@ bool PosdbTable::allocWhiteListTable ( ) {
 }
 
 
+void PosdbTable::prepareWhiteListTable()
+{
+	// hash the docids in the whitelist termlists into a hashtable.
+	// every docid in the search results must be in there. the
+	// whitelist termlists are from a provided "&sites=abc.com+xyz.com+.."
+	// cgi parm. the user only wants search results returned from the
+	// specified subdomains. there can be up to MAX_WHITELISTS (500)
+	// sites right now. this hash table must have been pre-allocated
+	// in Posdb::allocTopTree() above since we might be in a thread.
+	if ( !m_msg2 )
+		return;
+	if ( m_addedSites )
+		return;
+
+	RdbList *whiteLists = m_msg2->m_whiteLists;
+	int32_t nw = m_msg2->m_w;
+
+	for ( int32_t i = 0 ; i < nw ; i++ ) {
+		RdbList *list = &whiteLists[i];
+		if ( list->isEmpty() ) continue;
+		// sanity test
+		int64_t d1 = g_posdb.getDocId(list->getList());
+		if ( d1 > m_msg2->m_docIdEnd ) { 
+			log("posdb: d1=%"INT64" > %"INT64"",
+			    d1,m_msg2->m_docIdEnd);
+			//char *xx=NULL;*xx=0; 
+		}
+		if ( d1 < m_msg2->m_docIdStart ) { 
+			log("posdb: d1=%"INT64" < %"INT64"",
+			    d1,m_msg2->m_docIdStart);
+			//char *xx=NULL;*xx=0; 
+		}
+		// first key is always 18 bytes cuz it has the termid
+		// scan recs in the list
+		for ( ; ! list->isExhausted() ; list->skipCurrentRecord() ) {
+			char *rec = list->getCurrentRec();
+			// point to the 5 bytes of docid
+			m_whiteListTable.addKey ( rec + 7 );
+		}
+	}
+
+	m_addedSites = true;
+}
+
+
 bool PosdbTable::allocTopTree ( ) {
 	int64_t nn1 = m_r->m_docsToGet;
 	int64_t nn2 = 0;
@@ -3691,46 +3736,7 @@ void PosdbTable::intersectLists10_r ( ) {
 
 	if( g_conf.m_logTracePosdb ) log(LOG_TRACE,"%s:%s:%d: numTerms: %"INT32"", __FILE__,__func__, __LINE__, m_q->m_numTerms);
 
-	//
-	// hash the docids in the whitelist termlists into a hashtable.
-	// every docid in the search results must be in there. the
-	// whitelist termlists are from a provided "&sites=abc.com+xyz.com+.."
-	// cgi parm. the user only wants search results returned from the
-	// specified subdomains. there can be up to MAX_WHITELISTS (500)
-	// sites right now. this hash table must have been pre-allocated
-	// in Posdb::allocTopTree() above since we might be in a thread.
-	//
-	RdbList *whiteLists = NULL;
-	int32_t nw = 0;
-	if ( m_msg2 ) {
-		whiteLists = m_msg2->m_whiteLists;
-		nw = m_msg2->m_w;
-	}
-	for ( int32_t i = 0 ; ! m_addedSites && i < nw ; i++ ) {
-		RdbList *list = &whiteLists[i];
-		if ( list->isEmpty() ) continue;
-		// sanity test
-		int64_t d1 = g_posdb.getDocId(list->getList());
-		if ( d1 > m_msg2->m_docIdEnd ) { 
-			log("posdb: d1=%"INT64" > %"INT64"",
-			    d1,m_msg2->m_docIdEnd);
-			//char *xx=NULL;*xx=0; 
-		}
-		if ( d1 < m_msg2->m_docIdStart ) { 
-			log("posdb: d1=%"INT64" < %"INT64"",
-			    d1,m_msg2->m_docIdStart);
-			//char *xx=NULL;*xx=0; 
-		}
-		// first key is always 18 bytes cuz it has the termid
-		// scan recs in the list
-		for ( ; ! list->isExhausted() ; list->skipCurrentRecord() ) {
-			char *rec = list->getCurrentRec();
-			// point to the 5 bytes of docid
-			m_whiteListTable.addKey ( rec + 7 );
-		}
-	}
-
-	m_addedSites = true;
+	prepareWhiteListTable();
 
 	initWeights();
 

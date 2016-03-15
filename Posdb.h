@@ -414,6 +414,8 @@ class PosdbTable {
 	// pre-allocate m_whiteListTable
 	bool allocWhiteListTable ( ) ;
 
+	void prepareWhiteListTable();
+
 	// pre-allocate memory since intersection runs in a thread
 	bool allocTopTree ( );
 
