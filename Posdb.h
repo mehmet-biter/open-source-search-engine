@@ -119,9 +119,9 @@ class Posdb {
 	// init the rebuild/secondary rdb, used by PageRepair.cpp
 	bool init2 ( int32_t treeMem );
 
-	bool verify ( char *coll );
+	bool verify ( const char *coll );
 
-	bool addColl ( char *coll, bool doVerify = true );
+	bool addColl ( const char *coll, bool doVerify = true );
 
 	// . make a 16-byte key from all these components
 	// . since it is 16 bytes, the big bit will be set
@@ -187,11 +187,11 @@ class Posdb {
 		*(int32_t *)(((char *)vkp) + 2) = x; };
 
 	// and read the float as well
-	float getFloat ( void *vkp ) {
-		return *(float *)(((char *)vkp) + 2); };
+	float getFloat ( const void *vkp ) {
+		return *(const float *)(((char *)vkp) + 2); };
 
-	int32_t getInt ( void *vkp ) {
-		return *(int32_t *)(((char *)vkp) + 2); };
+	int32_t getInt ( const void *vkp ) {
+		return *(const int32_t *)(((char *)vkp) + 2); };
 
 	void setAlignmentBit ( void *vkp , char val ) {
 		char *p = (char *)vkp;
@@ -199,8 +199,8 @@ class Posdb {
 		else       p[1] = p[1] & 0xfd;
 	};
 
-	bool isAlignmentBitClear ( void *vkp ) {
-		return ( ( ((char *)vkp)[1] & 0x02 ) == 0x00 );
+	bool isAlignmentBitClear ( const void *vkp ) {
+		return ( ( ((const char *)vkp)[1] & 0x02 ) == 0x00 );
 	};
 
 	void makeStartKey ( void *kp, int64_t termId , 
@@ -427,8 +427,8 @@ class PosdbTable {
 	bool allocTopTree ( );
 
 	void  getTermPairScoreForNonBody   ( int32_t i, int32_t j,
-					     char *wpi, char *wpj, 
-					     char *endi, char *endj,
+					     const char *wpi,  const char *wpj, 
+					     const char *endi, const char *endj,
 					     int32_t qdist ,
 					     float *retMax );
 	float getSingleTermScore ( int32_t i, char *wpi , char *endi,

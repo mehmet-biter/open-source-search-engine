@@ -326,7 +326,7 @@ bool Posdb::init2 ( int32_t treeMem ) {
 }
 
 
-bool Posdb::addColl ( char *coll, bool doVerify ) {
+bool Posdb::addColl ( const char *coll, bool doVerify ) {
 	if ( ! m_rdb.addRdbBase1 ( coll ) ) return false;
 	if ( ! doVerify ) return true;
 	// verify
@@ -340,7 +340,7 @@ bool Posdb::addColl ( char *coll, bool doVerify ) {
 	return true;
 }
 
-bool Posdb::verify ( char *coll ) {
+bool Posdb::verify ( const char *coll ) {
 	return true;
 #if 0
 	log ( LOG_DEBUG, "db: Verifying Posdb for coll %s...", coll );
@@ -1715,8 +1715,8 @@ float PosdbTable::getSingleTermScore ( int32_t i,
 // . advace two ptrs at the same time so it's just a linear scan
 // . TODO: add all up, then basically taking a weight of the top 6 or so...
 void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
-					      char *wpi , char *wpj , 
-					      char *endi, char *endj,
+					      const char *wpi,  const char *wpj , 
+					      const char *endi, const char *endj,
 					      int32_t qdist ,
 					      float *retMax ) {
 
@@ -1740,8 +1740,8 @@ void PosdbTable::getTermPairScoreForNonBody ( int32_t i, int32_t j,
 	if ( hg2 == HASHGROUP_INLINKTEXT ) spamw2 = s_linkerWeights[wsr2];
 	else                               spamw2 = s_wordSpamWeights[wsr2];
 
-	char *maxp1;
-	char *maxp2;
+	const char *maxp1;
+	const char *maxp2;
 
 	// density weight
 	//float denw ;
@@ -3244,7 +3244,7 @@ void PosdbTable::rmDocIdVotes ( const QueryTermInfo *qti ) {
 
 }
 // for boolean queries containing terms like gbmin:offerprice:190
-inline bool isInRange( char *p , QueryTerm *qt ) {
+static inline bool isInRange( const char *p, const QueryTerm *qt ) {
 
 	// return false if outside of range
 	if ( qt->m_fieldCode == FIELD_GBNUMBERMIN ) {
@@ -3287,7 +3287,7 @@ inline bool isInRange( char *p , QueryTerm *qt ) {
 	return true;
 }
 		
-inline bool isInRange2 ( char *recPtr , char *subListEnd, QueryTerm *qt ) {
+static inline bool isInRange2 ( const char *recPtr, const char *subListEnd, const QueryTerm *qt ) {
 	// if we got a range term see if in range.
 	if ( isInRange(recPtr,qt) ) return true;
 	recPtr += 12;
