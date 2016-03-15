@@ -28,6 +28,10 @@ Posdb g_posdb;
 Posdb g_posdb2;
 
 
+#define gbmin(a,b) ((a)<(b) ? (a) : (b))
+#define gbmax(a,b) ((a)>(b) ? (a) : (b))
+
+
 // . b-step into list looking for docid "docId"
 // . assume p is start of list, excluding 6 byte of termid
 static inline char *getWordPosList ( int64_t docId , char *list , int32_t listSize ) {
@@ -967,8 +971,7 @@ bool PosdbTable::allocTopTree ( ) {
 		
 	// do not go OOM just because client asked for 10B results and we
 	// only have like 100 results.
-	int64_t nn = nn2;
-	if ( nn1 < nn2 ) nn = nn1;
+	int64_t nn = gbmin(nn1,nn2);
 
 	
 
@@ -986,7 +989,7 @@ bool PosdbTable::allocTopTree ( ) {
 	// m_scoreInfoBuf capacity and it cores
 	//if ( nn < 100 ) nn = 100;
 	// but 30 is ok since m_scoreInfo buf uses 32
-	if ( nn < 30 ) nn = 30;
+	nn = gbmax(nn,30);
 
 
 	if ( m_r->m_doSiteClustering ) nn *= 2;
@@ -996,7 +999,7 @@ bool PosdbTable::allocTopTree ( ) {
         //if ( ! cr ) return false;
 
 	// limit to 2B docids i guess
-	if ( nn > 2000000000 ) nn = 2000000000;
+	nn = gbmin(nn,2000000000);
 
 	if ( m_debug )
 		log("toptree: toptree: initializing %"INT64" nodes",nn);
@@ -1024,7 +1027,7 @@ bool PosdbTable::allocTopTree ( ) {
 	// it may still not work!
 	int32_t xx = nn;//m_r->m_docsToGet ;
 	// try to fix a core of growing this table in a thread when xx == 1
-	if ( xx < 32 ) xx = 32;
+	xx = gbmax(xx,32);
 	//if ( m_r->m_doSiteClustering ) xx *= 4;
 	m_maxScores = xx;
 	// for seeing if a docid is in toptree. niceness=0.
@@ -1043,7 +1046,7 @@ bool PosdbTable::allocTopTree ( ) {
 		// likewise how many query term pair scores should we get?
 		int32_t numTerms = m_q->m_numTerms;
 		// limit
-		if ( numTerms > 10 ) numTerms = 10;
+		numTerms = gbmin(numTerms,10);
 		// the pairs. divide by 2 since (x,y) is same as (y,x)
 		int32_t numPairs = (numTerms * numTerms) / 2;
 		// then for each pair assume no more than MAX_TOP reps, usually
