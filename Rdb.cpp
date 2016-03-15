@@ -112,8 +112,8 @@ void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
 // JAB: warning abatement
 //static bool g_init = false;
 
-bool Rdb::init ( char          *dir                  ,
-		  char          *dbname               ,
+bool Rdb::init ( const char     *dir                  ,
+		  const char    *dbname               ,
 		  bool           dedup                ,
 		  int32_t           fixedDataSize        ,
 		  int32_t           minToMerge           ,
@@ -411,7 +411,7 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 
 // . returns false and sets g_errno on error, returns true on success
 // . if this rdb is collectionless we set m_collectionlessBase in addBase()
-bool Rdb::addRdbBase1 ( char *coll ) { // addColl()
+bool Rdb::addRdbBase1 ( const char *coll ) { // addColl()
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	return addRdbBase2 ( collnum );
 }
@@ -661,7 +661,7 @@ bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
 }
 
 // returns false and sets g_errno on error, returns true on success
-bool Rdb::delColl ( char *coll ) {
+bool Rdb::delColl ( const char *coll ) {
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	RdbBase *base = getBase ( collnum );
 	// ensure its there
@@ -2863,7 +2863,7 @@ char *getDbnameFromId ( uint8_t rdbId ) {
 }
 
 // get the RdbBase class for an rdbId and collection name
-RdbBase *getRdbBase ( uint8_t rdbId , char *coll ) {
+RdbBase *getRdbBase ( uint8_t rdbId, const char *coll ) {
 	Rdb *rdb = getRdbFromId ( rdbId );
 	if ( ! rdb ) {
 		log("db: Collection \"%s\" does not exist.",coll);
@@ -2896,7 +2896,7 @@ RdbBase *getRdbBase ( uint8_t rdbId , collnum_t collnum ) {
 }
 
 // calls addList above
-bool Rdb::addList ( char *coll , RdbList *list, int32_t niceness ) {
+bool Rdb::addList ( const char *coll , RdbList *list, int32_t niceness ) {
 	// catdb has no collection per se
 	if ( m_isCollectionLess )
 		return addList ((collnum_t)0,list,niceness);
@@ -2910,7 +2910,7 @@ bool Rdb::addList ( char *coll , RdbList *list, int32_t niceness ) {
 }
 
 //bool Rdb::addRecord ( char *coll , key_t &key, char *data, int32_t dataSize ) {
-bool Rdb::addRecord ( char *coll , char *key, char *data, int32_t dataSize,
+bool Rdb::addRecord ( const char *coll , char *key, char *data, int32_t dataSize,
 		      int32_t niceness) {
 	// catdb has no collection per se
 	if ( m_isCollectionLess )

@@ -66,7 +66,7 @@ enum {
 extern int32_t g_numUrgentMerges;
 
 // get the RdbBase class for an rdbId and collection name
-class RdbBase *getRdbBase ( uint8_t rdbId , char *coll );
+class RdbBase *getRdbBase ( uint8_t rdbId, const char *coll );
 class RdbBase *getRdbBase ( uint8_t rdbId , collnum_t collnum );
 // maps an rdbId to an Rdb
 class Rdb *getRdbFromId ( uint8_t rdbId ) ;
@@ -93,16 +93,16 @@ class Rdb {
 	 Rdb ( );
 	~Rdb ( );
 
-	bool addRdbBase1 ( char *coll );
+	bool addRdbBase1 ( const char *coll );
 	bool addRdbBase2 ( collnum_t collnum );
-	bool delColl ( char *coll );
+	bool delColl ( const char *coll );
 
 	bool resetBase ( collnum_t collnum );
 	bool deleteAllRecs ( collnum_t collnum ) ;
 	bool deleteColl ( collnum_t collnum , collnum_t newCollnum ) ;
 
-	bool init ( char  *dir             , // working directory
-		    char  *dbname          , // "indexdb","tagdb",...
+	bool init ( const char  *dir          , // working directory
+		    const char  *dbname       , // "indexdb","tagdb",...
 		    bool   dedup           , //= true ,
 		    int32_t   fixedDataSize   , //= -1   ,
 		    int32_t   minToMerge      , //, //=  2   ,
@@ -144,9 +144,9 @@ class Rdb {
 			 //key_t &key, char *data, int32_t dataSize );
 			 char *key, char *data, int32_t dataSize,
 			 int32_t niceness);
-	bool addRecord ( char *coll , char *key, char *data, int32_t dataSize,
+	bool addRecord ( const char *coll , char *key, char *data, int32_t dataSize,
 			 int32_t niceness);
-	bool addRecord (char *coll , key_t &key, char *data, int32_t dataSize,
+	bool addRecord (const char *coll , key_t &key, char *data, int32_t dataSize,
 			int32_t niceness) {
 		return addRecord(coll,(char *)&key,data,dataSize, niceness);};
 
@@ -164,7 +164,7 @@ class Rdb {
 	bool addList ( collnum_t collnum , RdbList *list, int32_t niceness );
 
 	// calls addList above
-	bool addList ( char *coll , RdbList *list, int32_t niceness );
+	bool addList ( const char *coll , RdbList *list, int32_t niceness );
 
 	// . add a record without any data, just a key (faster)
 	// . returns the node # in the tree it added the record to
