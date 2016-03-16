@@ -131,7 +131,7 @@ bool BigFile::set ( char *dir , char *baseFilename , char *stripeDir ) {
 	m_usePartFiles = true;
 
 	// use this 32 byte char buf to avoid a malloc if possible
-	m_baseFilename.setBuf (m_tmpBaseBuf,32,0,false);
+	m_baseFilename.setBuf (m_tmpBaseBuf,sizeof(m_tmpBaseBuf),0,false);
 
 	if ( ! m_dir.safeStrcpy          ( dir          ) ) 
 	{
