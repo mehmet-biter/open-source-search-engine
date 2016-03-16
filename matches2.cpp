@@ -7,7 +7,7 @@
 
 //make the key, it is just the needles ptr 
 //static HashTableT<uint64_t , char*> s_quickTables;
-static HashTableX s_quickTables;
+//static HashTableX s_quickTables;
 
 /*
 // returns false and sets g_errno on error
