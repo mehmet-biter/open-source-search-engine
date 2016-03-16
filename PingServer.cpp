@@ -58,7 +58,6 @@ static void updatePingTime ( Host *h , int32_t *pingPtr , int32_t tripTime ) ;
 static bool sendAdminEmail ( Host  *h, char  *fromAddress,
 			     char  *toAddress, char  *body ,
 			     char  *emailServIp );//= "mail.gigablast.com" );
-static void emailSleepWrapper ( int fd, void *state );
 
 bool PingServer::registerHandler ( ) {
 	// . we'll handle msgTypes of 0x11 for pings
@@ -1240,23 +1239,6 @@ bool PingServer::sendEmail ( Host *h            ,
 	//m_maxRequests2 = m_numRequests2;
 	// did we block or not? return true if nobody blocked
 	return status;
-}
-
-static void emailSleepWrapper ( int fd, void *state ){
-	g_loop.unregisterSleepCallback( state, emailSleepWrapper );
-	//check if the host is still dead and if the last host to die is this
-	//host
-	Host *h = (Host *)state;
-	//if he is still dead and no other host has died after it
-	if ( g_hostdb.isDead( h ) && s_lastSentHostId == h->m_hostId ){
-		//reset s_lastSentHostId for sendEmail()
-		s_lastSentHostId = -1;
-		//reset hosts emailcode so that it sends the email
-		h->m_emailCode = 0;
-		g_pingServer.sendEmail ( h , NULL , false );//sendToAdmin
-	}
-	//if we're alive then no need to send email. If some other host has
-	//died, that host will send an email anyway.
 }
 
 
