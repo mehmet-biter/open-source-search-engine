@@ -22,7 +22,7 @@
 
 #include "gb-include.h"
 
-#define MAX_SUMMARY_LEN 1024*20
+#define MAX_SUMMARY_LEN (1024*20)
 #define MAX_SUMMARY_EXCERPTS 1024
 
 class XmlDoc;

@@ -2143,7 +2143,7 @@ int32_t getMsgSize ( char *buf, int32_t bufSize, TcpSocket *s ) {
 // . TODO: also allow banning by user agents...
 
 // support up to 100,000 or so ips in the access table at one time
-#define AT_SLOTS 1000*150
+#define AT_SLOTS (1000*150)
 
 // . how many freebies per day?
 // . an ip domain can do this many queries without a key
