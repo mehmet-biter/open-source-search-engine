@@ -52,7 +52,7 @@ OBJS_O2 = \
 	Title.o \
 	UCPropTable.o UdpServer.o Unicode.o UnicodeProperties.o \
 	Words.o \
-	Xml.o XmlDoc.o XmlDoc_Indexing.o XmlNode.o \
+	Xml.o XmlDoc.o XmlDoc_Indexing.o XmlNode.o XmlXPath.o \
 
 
 OBJS_O3 = \

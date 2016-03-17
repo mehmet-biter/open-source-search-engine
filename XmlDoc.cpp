@@ -17583,8 +17583,16 @@ Summary *XmlDoc::getSummary () {
 		return (Summary *)ti;
 	}
 
+	// get summaryxpath
+	TagRec *gr = getTagRec();
+	if ( ! gr || gr == (TagRec *)-1 ) {
+		return (Summary *)gr;
+	}
+
+	const char *xpath = gr->getString("summaryxpath", NULL);
+
 	int64_t start = logQueryTimingStart();
-    if ( m_summary.setSummaryFromTags( xml, m_req->m_summaryMaxLen, ti->getTitle(), ti->getTitleLen() ) ) {
+    if ( m_summary.setSummaryFromTags( xml, xpath, m_req->m_summaryMaxLen, ti->getTitle(), ti->getTitleLen() ) ) {
 		logQueryTimingEnd( __func__, start );
 
 		m_summaryValid = true;

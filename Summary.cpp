@@ -7,7 +7,7 @@
 #include "Pos.h"
 #include "Matches.h"
 #include "Process.h"
-
+#include "XmlXPath.h"
 
 Summary::Summary()
     : m_summaryLen(0)
@@ -78,10 +78,12 @@ bool Summary::verifySummary( char *titleBuf, int32_t titleBufLen ) {
 
 // let's try to get a nicer summary by using what the website set as description
 // Use the following in priority order (highest first)
+// - configured xpath
 // - itemprop = "description"
 // - meta name = "og:description"
 // - meta name = "description"
-bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen ) {
+bool Summary::setSummaryFromTags( Xml *xml, const char *xpath, int32_t maxSummaryLen,
+                                  char *titleBuf, int32_t titleBufLen ) {
 	// sanity check
 	if ( maxSummaryLen >= MAX_SUMMARY_LEN ) {
 		g_errno = EBUFTOOSMALL;
@@ -91,6 +93,20 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBu
 
 	/// @todo ALC configurable minSummaryLen so we can tweak this as needed
 	const int minSummaryLen = (maxSummaryLen / 3);
+
+	// xpath
+	XmlXPath xmlXPath(xpath);
+	if ( xmlXPath.getContent( xml, m_summary, maxSummaryLen, &m_summaryLen ) ) {
+		if ( verifySummary( titleBuf, titleBufLen ) ) {
+			m_isSetFromTags = true;
+
+			if ( g_conf.m_logDebugSummary ) {
+				log(LOG_DEBUG, "sum: generated from xpath='%s'. summary='%.*s'", xpath, m_summaryLen, m_summary);
+			}
+
+			return true;
+		}
+	}
 
 	// itemprop = "description"
 	if ( xml->getTagContent("itemprop", "description", m_summary, MAX_SUMMARY_LEN, minSummaryLen, maxSummaryLen, &m_summaryLen) ) {
@@ -132,7 +148,7 @@ bool Summary::setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBu
 	}
 
 	if ( g_conf.m_logDebugSummary ) {
-		log(LOG_DEBUG, "sum: unable to generate summary from itemprop/meta tags");
+		log(LOG_DEBUG, "sum: unable to generate summary from xpath/itemprop/meta tags");
 	}
 
 	return false;

@@ -43,7 +43,8 @@ public:
 			          int32_t maxSummaryLen, int32_t numDisplayLines, int32_t maxNumLines, int32_t maxNumCharsPerLine,
 			          Url *f, Matches *matches, char *titleBuf, int32_t titleBufLen );
 
-	bool setSummaryFromTags( Xml *xml, int32_t maxSummaryLen, char *titleBuf, int32_t titleBufLen );
+	bool setSummaryFromTags( Xml *xml, const char *xpath, int32_t maxSummaryLen,
+	                         char *titleBuf, int32_t titleBufLen );
 
 	char *getSummary();
 	int32_t getSummaryDisplayLen();
