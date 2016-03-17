@@ -8386,17 +8386,6 @@ bool *XmlDoc::getIsAllowed ( ) {
 		return &m_isAllowed;
 	}
 
-	// HACK: so we can spider archive.org warcs and arcs internally
-	if ( m_firstUrlValid &&
-	     m_firstUrl.getDomainLen() == 11 &&
-	     strncmp ( m_firstUrl.getDomain() , "archive.org" , 11 ) == 0 ) {
-		m_isAllowed      = true;
-		m_isAllowedValid = true;
-		if( g_conf.m_logTraceXmlDoc ) log("%s:%s:%d: END. Allowed, archive.org", __FILE__,__func__,__LINE__);
-		return &m_isAllowed;
-	}
-
-
 	// double get?
 	if ( m_crawlDelayValid ) { char *xx=NULL;*xx=0; }
 
