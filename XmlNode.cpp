@@ -543,7 +543,7 @@ static bool findCharSingle( char nodeChar, char expectedChar, char expectedOther
 }
 
 // allow whitespace when looking for char
-static bool findChar( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
+static bool findChar( const char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
 					  char expectedOtherChar, char *foundChar, bool onlyAllowWhiteSpace ) {
 	int32_t i;
 	for ( i=start; i<end; i++ ) {
@@ -568,12 +568,12 @@ static bool findChar( char *node, int32_t start, int32_t end, int32_t *pos, char
 	return false;
 }
 
-static bool findChar( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
+static bool findChar( const char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
 					  bool onlyAllowWhiteSpace ) {
 	return findChar(node, start, end, pos, expectedChar, '\0', NULL, onlyAllowWhiteSpace);
 }
 
-static bool findCharReverse( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
+static bool findCharReverse( const char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
                              char expectedOtherChar, char *foundChar, bool onlyAllowWhiteSpace ) {
 	int32_t i;
 	for ( i = start; i>end && i>0; i-- ) {
@@ -599,11 +599,11 @@ static bool findCharReverse( char *node, int32_t start, int32_t end, int32_t *po
 }
 
 
-static bool findCharReverse( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar) {
+static bool findCharReverse( const char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar) {
 	return findCharReverse(node, start, end, pos, expectedChar, '\0', NULL, true);
 }
 
-static bool findQuoteChar( char *node, int32_t start, int32_t end, int32_t *pos, char *foundChar) {
+static bool findQuoteChar( const char *node, int32_t start, int32_t end, int32_t *pos, char *foundChar) {
 	if (start > end) {
 		return findCharReverse(node, start, end, pos, '\'', '"', foundChar, false);
 	}
@@ -611,7 +611,7 @@ static bool findQuoteChar( char *node, int32_t start, int32_t end, int32_t *pos,
 	return findChar(node, start, end, pos, '\'', '"', foundChar, false);
 }
 
-static bool findEqualChar( char *node, int32_t start, int32_t end, int32_t *pos ) {
+static bool findEqualChar( const char *node, int32_t start, int32_t end, int32_t *pos ) {
 	if (start > end) {
 		return findCharReverse(node, start, end, pos, '=');
 	}
