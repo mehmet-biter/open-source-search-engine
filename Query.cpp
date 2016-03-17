@@ -3141,7 +3141,7 @@ bool Query::isConnection ( const char *s , int32_t len ) {
 
 void Query::dumpToLog() const
 {
-	log(LOG_DEBUG, "Query:setQTerms: dumping words:");
+	log(LOG_DEBUG, "Query:setQTerms: dumping %d query-words:", m_numWords);
 	for(int i=0; i<m_numWords; i++) {
 		const QueryWord &qw = m_qwords[i];
 		log("  %d",i);
@@ -3150,7 +3150,7 @@ void Query::dumpToLog() const
 		log("    m_wordId=%"PRId64, qw.m_wordId);
 		log("    m_phraseId=%"PRId64, qw.m_phraseId);
 	}
-	log("Query:setQTerms: dumping query-terms:");
+	log("Query:setQTerms: dumping %d query-terms:", m_numTerms);
 	for(int i=0; i<m_numTerms; i++) {
 		const QueryTerm &qt = m_qterms[i];
 		log("%d",i);
@@ -3158,6 +3158,9 @@ void Query::dumpToLog() const
 		log("  m_termId=%"PRId64, qt.m_termId);
 		log("  m_rawTermId=%"PRId64, qt.m_rawTermId);
 		log("  m_term='%*.*s'", (int)qt.m_termLen, (int)qt.m_termLen, qt.m_term);
+		log("  m_isWikiHalfStopBigram=%s", qt.m_isWikiHalfStopBigram?"true":"false");
+		log("  m_leftPhraseTermNum=%d, m_leftPhraseTerm=%p", qt.m_leftPhraseTermNum, qt.m_leftPhraseTerm);
+		log("  m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, qt.m_rightPhraseTerm);
 	}
 }
 
