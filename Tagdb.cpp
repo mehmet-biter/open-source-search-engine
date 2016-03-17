@@ -1294,9 +1294,17 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 
 	// if provided site was NULL and not of a ~mwells type of form
 	// then default it to hostname
-	if ( ! site ) {
+	if ( ! site || siteLen <= 0 ) {
 		site    = url->getHost();
 		siteLen = url->getHostLen();
+	}
+
+	// if still the host is bad, then forget it
+	if ( ! site || siteLen <= 0 ) {
+		log("tagdb: got bad url with no site");
+		m_errno = EBADURL;
+		g_errno = EBADURL;
+		return true;
 	}
 
 	// temp null terminate it
