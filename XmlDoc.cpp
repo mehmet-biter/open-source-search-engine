@@ -18154,6 +18154,11 @@ Url *XmlDoc::getBaseUrl ( ) {
 		m_baseUrl.set(link, linkLen, false, false, false, false, false, 0x7fffffff);
 		break;
 	}
+	
+	// fix invalid <base href="/" target="_self"/> tag
+	if ( m_baseUrl.getHostLen  () <= 0 || m_baseUrl.getDomainLen() <= 0 )
+		m_baseUrl.set ( cu , false );
+		
 	m_baseUrlValid = true;
 	return &m_baseUrl;
 }
