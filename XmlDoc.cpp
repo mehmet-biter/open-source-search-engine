@@ -6269,7 +6269,20 @@ Url **XmlDoc::getRedirUrl() {
 	// breathe
 	QUICKPOLL(m_niceness);
 
+	// did we send a cookie with our last request?
+	bool sentCookieLastTime = false;
+	if ( m_redirCookieBuf.length() )
+		sentCookieLastTime = true;
 
+	// get cookie for redirect to fix nyt.com/nytimes.com
+	// for gap.com it uses multiple Set-Cookie:\r\n lines so we have
+	// to accumulate all of them into a buffer now
+	m_redirCookieBuf.reset();
+	mime.addCookiesIntoBuffer ( &m_redirCookieBuf );
+	m_redirCookieBufValid = true;
+
+
+	/*
 	// get cookie for redirect to fix nyt.com
 	const char *cookie = mime.getCookie();
 	// find end of cookie at the semicolon
@@ -6286,6 +6299,7 @@ Url **XmlDoc::getRedirUrl() {
 
 		m_redirCookieBufValid = true;
 	}
+	*/
 
 	// mdw23
 	//log("http: reply=%s",m_httpReply);
@@ -6389,8 +6403,16 @@ Url **XmlDoc::getRedirUrl() {
 	//   until you send a cookie!!
 	// . www.twomileborris.com does the cookie thing, too
 	if ( strcmp ( cu->getUrl(), loc->getUrl() ) == 0 ) {
+		// try sending the cookie if we got one now and didn't have
+		// one for this last request
+		if ( ! sentCookieLastTime && m_redirCookieBuf.length() ) {
+		        m_redirUrl.set ( loc->getUrl() );
+		        m_redirUrlPtr = &m_redirUrl;
+		        return &m_redirUrlPtr;
+		}
 		if ( ! keep ) m_redirError = EDOCREDIRECTSTOSELF;
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, EDOCREDIRECTSTOSELF", __FILE__,__func__,__LINE__);
+
+		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, redir err", __FILE__,__func__,__LINE__);
 		return &m_redirUrlPtr;
 	}
 
@@ -6523,7 +6545,12 @@ Url **XmlDoc::getRedirUrl() {
 	if ( dlen2 == 11 && strncmp(dom2,"nytimes.com",dlen2)==0 )
 		allowSimplifiedRedirs = true;
 	// same for bananarepublic.gap.com ?
-	if ( dlen2 == 7 && strncmp(dom2,"gap.com",dlen2)==0 )
+//	if ( dlen2 == 7 && strncmp(dom2,"gap.com",dlen2)==0 )
+//		allowSimplifiedRedirs = true;
+
+	// if redirect is setting cookies we have to follow the redirect
+	// all the way through so we can stop now.
+	if ( m_redirCookieBufValid && m_redirCookieBuf.getLength() )
 		allowSimplifiedRedirs = true;
 
 	// . don't bother indexing this url if the redir is better
@@ -9279,7 +9306,7 @@ char **XmlDoc::getHttpReply2 ( ) {
 		// . only do once per redirect
 		// . do not invalidate because we might have to carry it
 		//   through to the next redir... unless we change domain
-		// . this fixes the nyt.com bug some more
+		// . this fixes the nyt.com/nytimes.com bug some more
 		//m_redirCookieBufValid = false;
 	}
 
