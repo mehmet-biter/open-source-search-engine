@@ -35,26 +35,3 @@ double scale_quadratic(double x, double min_x, double max_x, double min_y, doubl
 	return ((r+1)*(r+1)-1)/3*y_range+min_y;
 }
 
-
-
-#ifdef UNITTEST
-
-#include <assert.h>
-
-int main(void) {
-	assert(scale_linear(  0, 0.0,10.0, 0.0,100.0) == 0);
-	assert(scale_linear( 10, 0.0,10.0, 0.0,100.0) == 100);
-	assert(scale_linear(  5, 0.0,10.0, 0.0,100.0) == 50);
-	assert(scale_linear( -4, 0.0,10.0, 0.0,100.0) == 0);
-	assert(scale_linear( 15, 0.0,10.0, 0.0,100.0) == 100);
-
-	assert(scale_quadratic(  0, 0.0,10.0, 0.0,100.0) == 0);
-	assert(scale_quadratic( 10, 0.0,10.0, 0.0,100.0) == 100);
-	assert(scale_quadratic( 1.0, 1.0,2.0, 1.0,4.0) == 1);
-	assert(scale_quadratic( 2.0, 1.0,2.0, 1.0,4.0) == 4);
-	assert(scale_quadratic( 1.1, 1.0,2.0, 1.0,4.0) < 1.5);
-	assert(scale_quadratic( 1.5, 1.0,2.0, 1.0,4.0) < 2.5);
-	assert(scale_quadratic( 1.9, 1.0,2.0, 1.0,4.0) > 3);
-}
-
-#endif
