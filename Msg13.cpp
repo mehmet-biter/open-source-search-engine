@@ -882,7 +882,7 @@ void gotProxyHostReplyWrapper ( void *state , UdpSlot *slot ) {
 	r->m_proxyUsernamePwdAuth[0] = '\0';
 
 	// if proxy had one copy into the buf
-	if ( prep->m_usernamePwd && prep->m_usernamePwd[0] ) {
+	if ( prep->m_usernamePwd[0] ) {
 		int32_t len = gbstrlen(prep->m_usernamePwd);
 		gbmemcpy ( r->m_proxyUsernamePwdAuth , 
 			   prep->m_usernamePwd ,

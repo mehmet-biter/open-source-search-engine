@@ -657,7 +657,7 @@ bool processLoop ( void *state ) {
 		// . save the ips.txt file if we are the test coll
 		// . saveTestBuf() is a function in Msge1.cpp
 		CollectionRec *cr = xd->getCollRec();
-		if ( xd && cr && cr->m_coll && !strcmp(cr->m_coll,"qatest123"))
+		if ( cr && cr->m_coll && !strcmp(cr->m_coll,"qatest123"))
 			// use same dir that XmlDoc::getTestDir() would use
 			//saveTestBuf ( "test-page-parser" );
 			saveTestBuf("qa");
@@ -773,7 +773,6 @@ bool sendPageAnalyze ( TcpSocket *s , HttpRequest *r ) {
 	// get the collection
 	const char *coll    = r->getString ( "c" , &st->m_collLen ,NULL /*default*/);
 	if ( ! coll ) coll = g_conf.m_defaultColl;
-	if ( ! coll ) coll = "main";
 	int32_t collLen = gbstrlen(coll);
 	if ( collLen > MAX_COLL_LEN ) return sendErrorReply ( st , ENOBUFS );
 	strcpy ( st->m_coll , coll );

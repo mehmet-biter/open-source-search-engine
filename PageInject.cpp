@@ -56,8 +56,7 @@ void setInjectionRequestFromParms ( TcpSocket *sock ,
 			int32_t count = ptrPtr - &ir->ptr_url;
 			// and length. include \0
 			int32_t *sizePtr = &ir->size_url + count;
-			if ( str ) *sizePtr = stringLen + 1;
-			else *sizePtr = 0;
+			*sizePtr = stringLen + 1;
 			continue;
 		}
 		// numbers are easy

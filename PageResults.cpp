@@ -61,8 +61,8 @@ bool sendReply ( State0 *st , char *reply ) {
 	}
 	SearchInput *si = &st->m_si;
 	char *ct = "text/html";
-	if ( si && si->m_format == FORMAT_XML ) ct = "text/xml"; 
-	if ( si && si->m_format == FORMAT_JSON ) ct = "application/json";
+	if ( si->m_format == FORMAT_XML ) ct = "text/xml"; 
+	if ( si->m_format == FORMAT_JSON ) ct = "application/json";
 
 	char *charset = "utf-8";
 	char format = si->m_format;
@@ -797,7 +797,7 @@ bool printSearchResultsHeader ( State0 *st ) {
 		const char *prepend = hr->getString("prepend");
 		if ( ! prepend ) prepend = "";
 		const char *displayStr = "none";
-		if ( prepend && prepend[0] ) displayStr = "";
+		if ( prepend[0] ) displayStr = "";
 		// to do a search we need to re-call the ajax,
 		// just call reload like the one that is called every 15s or so
 		sb->safePrintf("<form "//method=get action=/search "
@@ -1725,7 +1725,7 @@ bool printSearchResultsTail ( State0 *st ) {
 				 );
 	}
 
-	if ( sb->length() == 0 && si && si->m_format == FORMAT_JSON )
+	if ( sb->length() == 0 && si->m_format == FORMAT_JSON )
 		sb->safePrintf("[]\n");
 
 	if ( sb->length() == 0 ) {
@@ -2230,14 +2230,9 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	uint64_t siteHash = 0;
 	if ( uu.getHostLen() > 0 ) 
 		siteHash = hash64(uu.getHost(),uu.getHostLen());
-	// indent it if level is 2
-	bool indent = false;
 
 	bool isAdmin = (si->m_isMasterAdmin || si->m_isCollAdmin);
 	if ( si->m_format == FORMAT_XML ) isAdmin = false;
-
-	if ( indent && si->m_format == FORMAT_HTML ) 
-		sb->safePrintf("<blockquote>"); 
 
 	if ( si->m_format == FORMAT_HTML ) {
 		sb->safePrintf("<table><tr><td>");
@@ -2264,8 +2259,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		log("query: docId %"INT64" had error: %s.",
 		    mr->m_docId,mstrerror(err));
 		// wrap it up if clustered
-		if ( indent && si->m_format == FORMAT_HTML) 
-			sb->safeMemcpy("</blockquote>",13);
 		// DO NOT inc it otherwise puts a comma in there and
 		// screws up the json
 		//*numPrintedSoFar = *numPrintedSoFar + 1;
@@ -3183,7 +3176,6 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 			       "more from this site</a></nobr>"
 				, newUrl.getBufStart()
 				);
-		if ( indent ) sb->safePrintf ( "</blockquote><br>\n");
 		//else sb->safePrintf ( "<br><br>\n");
 	}
 
