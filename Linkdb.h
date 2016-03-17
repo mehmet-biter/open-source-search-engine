@@ -148,7 +148,6 @@ bool getLinkInfo ( SafeBuf *reqBuf , // store msg25 request in here
 		   SafeBuf *myLinkInfoBuf );
 
 
-void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) ;
 
 int32_t getSiteRank ( int32_t sni ) ;
 
@@ -385,7 +384,6 @@ extern class Linkdb g_linkdb2;
 
 #define MSG25_MAX_REQUEST_SIZE (MAX_URL_LEN+MAX_COLL_LEN+64)
 
-void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) ;
 
 class Msg25 {
 
