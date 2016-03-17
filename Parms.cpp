@@ -9433,6 +9433,38 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
+    m->m_title = "max text doc length";
+    m->m_desc  = "Gigablast will not download, index or "
+            "store more than this many bytes of an HTML or text "
+            "document. XML is NOT considered to be HTML or text, use "
+            "the rule below to control the maximum length of an XML "
+            "document. "
+            "Use -1 for no max.";
+    m->m_cgi   = "mtdl";
+    m->m_off   = offsetof(CollectionRec,m_maxTextDocLen);
+    m->m_type  = TYPE_LONG;
+    m->m_def   = "10000000";
+    m->m_page  = PAGE_SPIDER;
+    m->m_obj   = OBJ_COLL;
+    m->m_flags = PF_CLONE|PF_API;
+    m++;
+
+    m->m_title = "max other doc length";
+    m->m_desc  = "Gigablast will not download, index or "
+            "store more than this many bytes of a non-html, non-text "
+            "document. XML documents will be restricted to this "
+            "length. "
+            "Use -1 for no max.";
+    m->m_cgi   = "modl";
+    m->m_off   = offsetof(CollectionRec,m_maxOtherDocLen);
+    m->m_type  = TYPE_LONG;
+    m->m_def   = "10000000"; 
+    m->m_group = 0;
+    m->m_page  = PAGE_SPIDER;
+    m->m_obj   = OBJ_COLL;
+    m->m_flags = PF_CLONE|PF_API;
+    m++;
+
 	m->m_title = "make image thumbnails";
 	m->m_desc  = "Try to find the best image on each page and "
 		"store it as a thumbnail for presenting in the search "
