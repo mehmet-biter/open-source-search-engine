@@ -2245,6 +2245,14 @@ bool SpiderColl::evalIpLoop ( ) {
 	bool inCache = false;
 	bool useCache = true;
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
+	
+
+	// did our collection rec get deleted? since we were doing a read
+	// the SpiderColl will have been preserved in that case but its
+	// m_deleteMyself flag will have been set.
+	if ( tryToDeleteSpiderColl ( this ,"6") ) return false;
+
+
 	// if doing site or page quotes for the sitepages or domainpages
 	// url filter expressions, we can't muck with the cache because
 	// we end up skipping the counting part.
@@ -4658,6 +4666,7 @@ uint64_t SpiderColl::getSpiderTimeMS ( SpiderRequest *sreq,
 	int64_t waitInSecs = (uint64_t)(m_cr->m_spiderFreqs[ufn]*3600*24.0);
 	// do not spider more than once per 15 seconds ever!
 	// no! might be a query reindex!!
+	/*
 	if ( waitInSecs < 15 && ! sreq->m_isPageReindex ) { //urlIsDocId ) { 
 		static bool s_printed = false;
 		if ( ! s_printed ) {
@@ -4667,6 +4676,7 @@ uint64_t SpiderColl::getSpiderTimeMS ( SpiderRequest *sreq,
 		}
 		waitInSecs = 15;//900; this was 15 minutes
 	}
+	*/
 	// in fact, force docid based guys to be zero!
 	//if ( sreq->m_urlIsDocId ) waitInSecs = 0;
 	if ( sreq->m_isPageReindex ) waitInSecs = 0;
