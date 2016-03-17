@@ -133,6 +133,9 @@ void XmlDoc::reset ( ) {
 	m_mySiteLinkInfoBuf.purge();
 	m_myPageLinkInfoBuf.purge();
 
+	// we need to reset this to false
+	m_useTimeAxis = false;
+
 	m_loaded = false;
 
 	m_msg4Launched = false;
@@ -6226,8 +6229,7 @@ Url **XmlDoc::getRedirUrl() {
 	Url *loc = NULL;
 
 	// quickly see if we are a robots.txt url originally
-	Url *fu = getFirstUrl();
-	bool isRobotsTxt = isRobotsTxtFile ( fu->getUrl() , fu->getUrlLen() );
+	bool isRobotsTxt = isFirstUrlRobotsTxt ( );
 
 	//
 	// check for <meta http-equiv="Refresh" content="1; URL=contact.htm">
@@ -7367,10 +7369,41 @@ int64_t *XmlDoc::getDocId ( ) {
 	XmlDoc **od = getOldXmlDoc( );
 	if ( ! od || od == (XmlDoc **)-1 ) return (int64_t *)od;
 	setStatus ("getting docid");
+
 	// . set our docid
 	// . *od is NULL if no title rec found with that docid in titledb
-	if ( *od ) m_docId = *(*od)->getDocId();
-	else       m_docId = m_msg22a.getAvailDocId();
+	if ( *od ) {
+		m_docId = *(*od)->getDocId();
+		m_docIdValid = true;
+		return &m_docId;
+	}
+
+	m_docId = m_msg22a.getAvailDocId();
+
+	// if titlerec was there but not od it had an error uncompressing
+	// because of the corruption bug in RdbMem.cpp when dumping to disk.
+	if ( m_docId == 0 && m_oldTitleRec && m_oldTitleRecSize > 12 ) {
+		m_docId = g_titledb.getDocIdFromKey ( (key_t *)m_oldTitleRec );
+		log("build: salvaged docid %"INT64" from corrupt title rec "
+			"for %s",m_docId,m_firstUrl.getUrl());
+	}
+
+	if ( m_docId == 0 ) {
+		log("build: docid is 0 for %s",m_firstUrl.getUrl());
+		g_errno = ENODOCID;
+		return NULL;
+	}
+
+	// ensure it is within probable range
+	if ( ! getUseTimeAxis () ) {
+		char *u = getFirstUrl()->getUrl();
+		int64_t pd = g_titledb.getProbableDocId(u);
+		int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
+		int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
+		if ( m_docId < d1 || m_docId > d2 ) {
+			char *xx=NULL;*xx=0; }
+	}
+
 	// if docid is zero, none is a vailable!!!
 	//if ( m_docId == 0LL ) m_indexCode = ENODOCID;
 	m_docIdValid = true;
@@ -8218,6 +8251,16 @@ int32_t *XmlDoc::getFinalCrawlDelay() {
 }
 
 
+bool XmlDoc::isFirstUrlRobotsTxt ( ) {
+	if ( m_isRobotsTxtUrlValid )
+		return m_isRobotsTxtUrl;
+	Url *fu = getFirstUrl();
+	m_isRobotsTxtUrl = isRobotsTxtFile ( fu->getUrl() , fu->getUrlLen() );
+	m_isRobotsTxtUrlValid = true;
+	return m_isRobotsTxtUrl;
+}
+
+
 // . get the Robots.txt and see if we are allowed
 // . returns NULL and sets g_errno on error
 // . returns -1 if blocked, will re-call m_callback
@@ -8267,9 +8310,7 @@ bool *XmlDoc::getIsAllowed ( ) {
 
 	// . if WE are robots.txt that is always allowed!!!
 	// . check the *first* url since these often redirect to wierd things
-	Url *fu = getFirstUrl();
-	bool isRobotsTxt = isRobotsTxtFile ( fu->getUrl() , fu->getUrlLen() );
-	if ( isRobotsTxt ) {
+	if ( isFirstUrlRobotsTxt() ) {
 		m_isAllowed      = true;
 		m_isAllowedValid = true;
 		m_crawlDelayValid = true;
@@ -8297,11 +8338,11 @@ bool *XmlDoc::getIsAllowed ( ) {
 		return (bool *)ip;
 	}
 	
+	Url *fu = getFirstUrl();
 	// if ip does not exist on the dns, do not try to download robots.txt
 	// it is pointless... this can happen in the dir coll and we basically
 	// have "m_siteInCatdb" set to true
 	if( g_conf.m_logTraceXmlDoc ) log("%s:%s:%d: IP=%s", __FILE__,__func__,__LINE__, iptoa(*ip));
-
 
 	if ( *ip == 1 || *ip == 0 || *ip == -1 ) {
 		// note this
@@ -9174,16 +9215,19 @@ char **XmlDoc::getHttpReply2 ( ) {
 	//if ( ! hc || hc == (void *)-1 ) return (char **)hc;
 
 	XmlDoc *od = NULL;
-	if ( ! m_isSpiderProxy ) {
-		XmlDoc **pod = getOldXmlDoc ( );
-		if ( ! pod || pod == (XmlDoc **)-1 ) 
-		{
-			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, return, error calling getOldXmlDoc", __FILE__,__func__,__LINE__);
-			return (char **)pod;
-		}
-		// get ptr to old xml doc, could be NULL if non exists
-		od = *pod;
+	if ( ! m_isSpiderProxy &&
+		 // don't lookup xyz.com/robots.txt in titledb
+		 ! isFirstUrlRobotsTxt() ) {
+		    XmlDoc **pod = getOldXmlDoc ( );
+		    if ( ! pod || pod == (XmlDoc **)-1 ) {
+		    	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, return, error calling getOldXmlDoc", __FILE__,__func__,__LINE__);
+		    	return (char **)pod;
+		    }
+		    // get ptr to old xml doc, could be NULL if non exists
+		    od = *pod;
 	}
+
+
 
 	// sanity check
 	if ( od && m_recycleContent ) {char *xx=NULL;*xx=0; }
@@ -13142,6 +13186,15 @@ bool XmlDoc::logIt (SafeBuf *bb ) {
 
 	if (  m_docIdValid )
 		sb->safePrintf("docid=%"UINT64" ",m_docId);
+
+	char *u = getFirstUrl()->getUrl();
+	int64_t pd = g_titledb.getProbableDocId(u);
+	int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
+	int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
+	sb->safePrintf("probdocid=%"UINT64" ",pd);
+	sb->safePrintf("probdocidmin=%"UINT64" ",d1);
+	sb->safePrintf("probdocidmax=%"UINT64" ",d2);
+	sb->safePrintf("usetimeaxis=%i ",(int)m_useTimeAxis);
 
 	if ( m_siteNumInlinksValid ) {
 		sb->safePrintf("siteinlinks=%04"INT32" ",m_siteNumInlinks );
