@@ -20272,6 +20272,11 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 			"</tr>\n"
 
 			"<tr>"
+			"<td>http status</td>"
+			"<td>%i</td>"
+			"</tr>\n"
+
+			"<tr>"
 			"<td>url filter num</td>"
 			"<td>%"INT32"</td>"
 			"</tr>\n"
@@ -20306,6 +20311,7 @@ bool XmlDoc::printDoc ( SafeBuf *sb ) {
 			getFirstUrlHash64(), // uh48
 
 			mstrerror(m_indexCode),
+			m_httpStatus,
 			ufn,
 			mstrerror(g_errno),
 			allowed,
