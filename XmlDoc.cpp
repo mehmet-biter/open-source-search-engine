@@ -5897,6 +5897,16 @@ char *XmlDoc::getIsDup ( ) {
 		return &m_isDup;
 	}
 
+
+	// do not dedup seeds
+	bool isSeed = ( m_sreqValid && m_sreq.m_isAddUrl );
+	if ( cr->m_isCustomCrawl && isSeed ) {
+		m_isDupValid = true;
+		m_isDup = false;
+		return &m_isDup;
+	}
+
+
 	setStatus ( "checking for dups" );
 
 	// BUT if we are already indexed and a a crawlbot/bulk diffbot job
