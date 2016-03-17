@@ -6760,14 +6760,29 @@ XmlDoc **XmlDoc::getOldXmlDoc ( ) {
 				m_niceness ) ) {
 		log("build: failed to set old doc for %s",m_firstUrl.getUrl());
 		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
-		int32_t saved = g_errno;
+		//int32_t saved = g_errno;
 		// ok, fix the memleak here
 		mdelete ( m_oldDoc , sizeof(XmlDoc), "odnuke" );
 		delete ( m_oldDoc );
+		
+		//m_oldDocExistedButHadError = true;
 		//log("xmldoc: nuke xmldoc1=%"PTRFMT"",(PTRTYPE)m_oldDoc);
 		m_oldDoc = NULL;
-		g_errno = saved;
-		return NULL;
+		// g_errno = saved;
+		// MDW: i removed this on 2/8/2016 again so the code below
+		// would execute.
+		//return NULL; //mdwmdwmdw
+		// if it is data corruption, just assume empty so
+		// we don't stop spidering a url because of this. so we'll
+		// think this is the first time indexing it. otherwise
+		// we get "Bad cached document" in the logs and the
+		// SpiderReply and it never gets re-spidered because it is
+		// not a 'temporary' error according to the url filters.
+		log("build: treating corrupted titlerec as not found");
+		g_errno = 0;
+		m_oldDoc = NULL;
+		m_oldDocValid = true;
+		return &m_oldDoc;
 	}
 	m_oldDocValid = true;
 	// share our masterloop and state!
