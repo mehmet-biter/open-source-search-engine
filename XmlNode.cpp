@@ -543,17 +543,20 @@ static bool findCharSingle( char nodeChar, char expectedChar, char expectedOther
 }
 
 // allow whitespace when looking for char
-static bool findChar( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
-					  char expectedOtherChar, char *foundChar, bool onlyAllowWhiteSpace = true ) {
-	for ( *pos = start; *pos < end; ++(*pos) ) {
-		if ( is_wspace_a( node[*pos] ) ) {
+static bool findChar( const char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
+					  char expectedOtherChar, char *foundChar, bool onlyAllowWhiteSpace ) {
+	int32_t i;
+	for ( i=start; i<end; i++ ) {
+		if ( is_wspace_a( node[i] ) ) {
 			continue;
 		}
 
-		if ( findCharSingle( node[*pos], expectedChar, expectedOtherChar, foundChar ) ) {
+		if ( findCharSingle( node[i], expectedChar, expectedOtherChar, foundChar ) ) {
+			*pos = i;
 			return true;
 		} else {
 			if ( onlyAllowWhiteSpace ) {
+				*pos = i;
 				return false;
 			}
 
@@ -561,25 +564,29 @@ static bool findChar( char *node, int32_t start, int32_t end, int32_t *pos, char
 		}
 	}
 
+	*pos = i;
 	return false;
 }
 
-static bool findChar( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
-					  bool onlyAllowWhiteSpace = true ) {
+static bool findChar( const char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
+					  bool onlyAllowWhiteSpace ) {
 	return findChar(node, start, end, pos, expectedChar, '\0', NULL, onlyAllowWhiteSpace);
 }
 
-static bool findCharReverse( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
-                             char expectedOtherChar, char *foundChar, bool onlyAllowWhiteSpace = true ) {
-	for ( *pos = start; (*pos > end) && (*pos > 0); --(*pos) ) {
-		if ( is_wspace_a( node[*pos] ) ) {
+static bool findCharReverse( const char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
+                             char expectedOtherChar, char *foundChar, bool onlyAllowWhiteSpace ) {
+	int32_t i;
+	for ( i = start; i>end && i>0; i-- ) {
+		if ( is_wspace_a( node[i] ) ) {
 			continue;
 		}
 
-		if ( findCharSingle( node[*pos], expectedChar, expectedOtherChar, foundChar ) ) {
+		if ( findCharSingle( node[i], expectedChar, expectedOtherChar, foundChar ) ) {
+			*pos = i;
 			return true;
 		} else {
 			if ( onlyAllowWhiteSpace ) {
+				*pos = i;
 				return false;
 			}
 
@@ -587,30 +594,29 @@ static bool findCharReverse( char *node, int32_t start, int32_t end, int32_t *po
 		}
 	}
 
+	*pos = i;
 	return false;
 }
 
 
-static bool findCharReverse( char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar,
-					  bool onlyAllowWhiteSpace = true ) {
-	return findCharReverse(node, start, end, pos, expectedChar, '\0', NULL, onlyAllowWhiteSpace);
+static bool findCharReverse( const char *node, int32_t start, int32_t end, int32_t *pos, char expectedChar) {
+	return findCharReverse(node, start, end, pos, expectedChar, '\0', NULL, true);
 }
 
-static bool findQuoteChar( char *node, int32_t start, int32_t end, int32_t *pos, char *foundChar = NULL,
-						   bool onlyAllowWhiteSpace = true ) {
+static bool findQuoteChar( const char *node, int32_t start, int32_t end, int32_t *pos, char *foundChar) {
 	if (start > end) {
-		return findCharReverse(node, start, end, pos, '\'', '"', foundChar, onlyAllowWhiteSpace);
+		return findCharReverse(node, start, end, pos, '\'', '"', foundChar, false);
 	}
 
-	return findChar(node, start, end, pos, '\'', '"', foundChar, onlyAllowWhiteSpace);
+	return findChar(node, start, end, pos, '\'', '"', foundChar, false);
 }
 
-static bool findEqualChar( char *node, int32_t start, int32_t end, int32_t *pos, bool onlyAllowWhiteSpace = true) {
+static bool findEqualChar( const char *node, int32_t start, int32_t end, int32_t *pos ) {
 	if (start > end) {
-		return findCharReverse(node, start, end, pos, '=', onlyAllowWhiteSpace);
+		return findCharReverse(node, start, end, pos, '=');
 	}
 
-	return findChar(node, start, end, pos, '=', onlyAllowWhiteSpace);
+	return findChar(node, start, end, pos, '=', true);
 }
 
 static bool isValidAttrNameChar(char nodeChar) {
@@ -670,7 +676,7 @@ char *XmlNode::getAttrValue( const char *field, int32_t fieldLen, int32_t *value
 		char foundQuoteChar = '\0';
 
 		// look for start quote (forward)
-		found = findQuoteChar(m_node, startPos, m_nodeLen, &startQuotePos, &foundQuoteChar, false);
+		found = findQuoteChar(m_node, startPos, m_nodeLen, &startQuotePos, &foundQuoteChar);
 		if ( !found ) {
 			// we should have at least one quote char to be able to have any value
 			return NULL;
@@ -679,7 +685,7 @@ char *XmlNode::getAttrValue( const char *field, int32_t fieldLen, int32_t *value
 		int32_t equalsPos = 0;
 
 		// look for equals (reverse)
-		found = findEqualChar( m_node, startQuotePos - 1, startPos, &equalsPos );
+		found = findEqualChar( m_node, startQuotePos - 1, startPos, &equalsPos);
 		if ( !found ) {
 			// unable to find equals, assume dangling quote
 			startPos = startQuotePos + 1;
@@ -700,7 +706,7 @@ char *XmlNode::getAttrValue( const char *field, int32_t fieldLen, int32_t *value
 			int32_t nextQuotePos = 0;
 			char nextFoundQuoteChar = '\0';
 
-			found = findQuoteChar(m_node, endQuotePos + 1, m_nodeLen, &nextQuotePos, &nextFoundQuoteChar, false);
+			found = findQuoteChar(m_node, endQuotePos + 1, m_nodeLen, &nextQuotePos, &nextFoundQuoteChar);
 			if ( found ) {
 				// let's see if it's preceeded by equals
 				int32_t nextEqualsPos = 0;
