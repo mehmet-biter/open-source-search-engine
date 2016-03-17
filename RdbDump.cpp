@@ -424,10 +424,12 @@ bool RdbDump::dumpTree ( bool recall ) {
 		// . check the list we got from the tree for problems
 		// . ensures keys are ordered from lowest to highest as well
 		//#ifdef GBSANITYCHECK
-		if ( g_conf.m_verifyWrites ) {
+		if ( g_conf.m_verifyWrites || g_conf.m_verifyDumpedLists ) {
 			char *s = "none";
 			if ( m_rdb ) s = getDbnameFromId(m_rdb->m_rdbId);
-			log("dump: verifying list before dumping (rdb=%s)",s);
+			log("dump: verifying list before dumping (rdb=%s "
+				"collnum=%i)",s,(int)m_collnum);
+				
 			m_list->checkList_r ( false , // removeNegRecs?
 					      false , // sleep on problem?
 					      m_rdb->m_rdbId );

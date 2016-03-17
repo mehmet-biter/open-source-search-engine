@@ -3131,13 +3131,20 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 		m_regExs[i].set("matchesucp");
 		m_spiderPriorities   [i] = 53;
 		if ( m_collectiveRespiderFrequency<=0.0) m_spiderFreqs [i] = 0;
+		// let's always make this without delay because if we
+		// restart the round we want these to process right away
+		if ( respiderFreq > 0.0 ) m_spiderFreqs[i] = 0.0;
 		i++;
+
 		// crawl everything else, but don't harvest links,
 		// we have to see if the page content matches the "ppp"
 		// to determine whether the page should be processed or not.
 		m_regExs[i].set("default");
 		m_spiderPriorities   [i] = 52;
 		if ( m_collectiveRespiderFrequency<=0.0) m_spiderFreqs [i] = 0;
+		// let's always make this without delay because if we
+		// restart the round we want these to process right away
+		if ( respiderFreq > 0.0 ) m_spiderFreqs[i] = 0.0;
 		m_harvestLinks       [i] = false;
 		i++;
 		goto done;
@@ -3148,6 +3155,9 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 		m_regExs[i].set("matchesucp && matchesupp");
 		m_spiderPriorities   [i] = 55;
 		if ( m_collectiveRespiderFrequency<=0.0) m_spiderFreqs [i] = 0;
+		// let's always make this without delay because if we
+		// restart the round we want these to process right away
+		if ( respiderFreq > 0.0 ) m_spiderFreqs[i] = 0.0;
 
 		//m_spiderDiffbotApiUrl[i].set ( api );
 		i++;
@@ -3155,12 +3165,18 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 		m_regExs[i].set("matchesucp");
 		m_spiderPriorities   [i] = 53;
 		if ( m_collectiveRespiderFrequency<=0.0) m_spiderFreqs [i] = 0;
+		// let's always make this without delay because if we
+		// restart the round we want these to process right away
+		if ( respiderFreq > 0.0 ) m_spiderFreqs[i] = 0.0;
 		i++;
 		// just process, do not spider links if does not match ucp
 		m_regExs[i].set("matchesupp");
 		m_spiderPriorities   [i] = 54;
 		m_harvestLinks       [i] = false;
 		if ( m_collectiveRespiderFrequency<=0.0) m_spiderFreqs [i] = 0;
+		// let's always make this without delay because if we
+		// restart the round we want these to process right away
+		if ( respiderFreq > 0.0 ) m_spiderFreqs[i] = 0.0;
 		//m_spiderDiffbotApiUrl[i].set ( api );
 		i++;
 		// do not crawl anything else
@@ -3182,6 +3198,9 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 		m_regExs[i].set("matchesucp");
 		m_spiderPriorities   [i] = 53;
 		if ( m_collectiveRespiderFrequency<=0.0) m_spiderFreqs [i] = 0;
+		// let's always make this without delay because if we
+		// restart the round we want these to process right away
+		if ( respiderFreq > 0.0 ) m_spiderFreqs[i] = 0.0;
 		// process everything since upp is empty
 		//m_spiderDiffbotApiUrl[i].set ( api );
 		i++;
@@ -3204,6 +3223,9 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 		m_regExs[i].set("matchesupp");
 		m_spiderPriorities   [i] = 54;
 		if ( m_collectiveRespiderFrequency<=0.0) m_spiderFreqs [i] = 0;
+		// let's always make this without delay because if we
+		// restart the round we want these to process right away
+		if ( respiderFreq > 0.0 ) m_spiderFreqs[i] = 0.0;
 		//m_harvestLinks       [i] = false;
 		//m_spiderDiffbotApiUrl[i].set ( api );
 		i++;
