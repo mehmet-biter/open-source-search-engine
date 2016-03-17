@@ -68,7 +68,6 @@ OBJS =  UdpSlot.o Rebalance.o \
 	IPAddressChecks.o \
 	SummaryCache.o \
 	ScalingFunctions.o \
-	BitOperations.o \
 	Robots.o \
 
 
