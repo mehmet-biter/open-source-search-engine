@@ -1566,29 +1566,6 @@ void Mem::gbfree ( void *ptr , int size , const char *note ) {
 	g_inMemFunction = false;
 }
 
-int32_t getLowestLitBitLL ( uint64_t bits ) {
-	// count how many bits we have to shift so that the first bit is 0
-	int32_t shift = 0;
-	while ( (bits & (1LL<<shift)) == 0 && (shift < 63 ) ) shift++;
-	return shift;
-}
-
-uint32_t getHighestLitBitValue ( uint32_t bits ) {
-	// count how many bits we have to shift so that the first bit is 0
-	uint32_t highest =  0;
-	for ( int32_t shift = 0 ; shift < 32 ; shift++ ) 
-		if ( bits & (1<<shift) ) highest = (1 << shift);
-	return highest;
-}
-
-uint64_t getHighestLitBitValueLL ( uint64_t bits ) {
-	// count how many bits we have to shift so that the first bit is 0
-	uint64_t highest =  0;
-	for ( int32_t shift = 0 ; shift < 64 ; shift++ ) 
-		if ( bits & (1LL<<shift) ) highest = (1LL << shift);
-	return highest;
-}
-
 
 // . TODO: avoid byteCopy by copying remnant bytes
 // . ass = async signal safe, dumb ass
