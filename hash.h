@@ -19,6 +19,7 @@
 extern uint64_t g_hashtab[256][256];
 
 #include "types.h"
+#include "fctypes.h"
 
 bool hashinit ();
 

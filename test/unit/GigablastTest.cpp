@@ -3,6 +3,7 @@
 #include "Mem.h"
 #include "Unicode.h"
 #include "hash.h"
+#include "Conf.h"
 
 int g_inMemcpy=0;
 bool g_recoveryMode = false;

@@ -13,6 +13,7 @@
 
 #include "ip.h"      // atoip ( s,len)
 #include <cstddef>
+#include <string.h>
 
 class SafeBuf;
 
