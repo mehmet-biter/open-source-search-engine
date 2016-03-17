@@ -592,7 +592,7 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 	bool  isBmp = ( f && flen >= 4 && strncmp(&f[flen-4],".bmp",4) == 0 );
 	bool  isPng = ( f && flen >= 4 && strncmp(&f[flen-4],".png",4) == 0 );
 	bool  isIco = ( f && flen >= 4 && strncmp(&f[flen-4],".ico",4) == 0 );
-	bool  isPic = (isGif | isJpg | isBmp | isPng || isIco);
+	bool  isPic = (isGif || isJpg || isBmp || isPng || isIco);
 	// get time format: 7/23/1971 10:45:32
 	// . crap this cores if we use getTimeGlobal() and we are not synced
 	//   with host #0, so just use local time i guess in that case
