@@ -387,6 +387,7 @@ void handleRequest ( UdpSlot *slot , int32_t niceness  ) {
 	try { msgc = new ( MsgC ); }
 	catch ( ... ) {
 		g_errno = ENOMEM;
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , g_errno );
 		return;
 	}

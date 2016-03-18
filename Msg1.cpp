@@ -574,6 +574,7 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 	// must at least have an rdbId
 	if ( readBufSize <= 4 ) {
 		g_errno = EREQUESTTOOSHORT;
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , g_errno );
 		return;
 	}
@@ -583,7 +584,11 @@ void handleRequest1 ( UdpSlot *slot , int32_t netnice ) {
 	char rdbId = *p++;
 	// get the rdb to which it belongs, use Msg0::getRdb()
 	Rdb *rdb = getRdbFromId ( (char) rdbId );
-	if ( ! rdb ) { us->sendErrorReply ( slot, EBADRDBID ); return;}
+	if ( ! rdb ) { 
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		us->sendErrorReply ( slot, EBADRDBID ); 
+		return;
+	}
 	// keep track of stats
 	rdb->readRequestAdd ( readBufSize );
 	// reset g_errno
@@ -681,6 +686,7 @@ void addedList ( UdpSlot *slot , Rdb *rdb ) {
 		return;
 	}
 	// on other errors just send the err code back
+	log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 	us->sendErrorReply ( slot , g_errno );
 }
 

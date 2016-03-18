@@ -624,7 +624,11 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 		    "reply: %s", mstrerror(g_errno));
 		mfree ( alloc , allocSize , "UdpServer");
 		// was EBADENGINEER
-		if ( ! g_inSigHandler ) sendErrorReply ( slot , g_errno);
+		if ( ! g_inSigHandler ) 
+		{
+			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+			sendErrorReply ( slot , g_errno);
+		}
 		return ;
 	}
 	// set the callback2 , it might not be NULL if we're recording stats
@@ -2192,6 +2196,8 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 			log(LOG_DEBUG,"loop: sending back enomem for "
 			    "msg 0x%0hhx", slot->m_msgType);
 		if ( ++lcount == 20 ) lcount = 0;
+			
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		sendErrorReply ( slot , ENOMEM );
 	}
 	else {

@@ -355,6 +355,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	if ( requestSize < r->getMinSize() ) {
 		log("db: Got bad request size of %"INT32" bytes for title record. "
 		    "Need at least 28.",  requestSize );
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , EBADREQUESTSIZE );
 		return;
 	}
@@ -366,6 +367,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 		    "because rdbbase is null.",
 		    (int32_t)r->m_collnum);
 		g_errno = EBADENGINEER;
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , g_errno ); 
 		return; 
 	}
@@ -396,6 +398,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	       g_errno = ENOMEM;
 	       log("query: Msg22: new(%"INT32"): %s", (int32_t)sizeof(State22),
 		   mstrerror(g_errno));
+		   log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 	       us->sendErrorReply ( slot , g_errno );
 	       return;
        }
@@ -453,6 +456,7 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 			   "hostid %"INT32" for msg22 call ",
 			   r->m_url,slot->m_host->m_hostId);
 		       g_errno = EBADURL;
+		       log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		       us->sendErrorReply ( slot , g_errno ); 
 		       mdelete ( st , sizeof(State22) , "Msg22" );
 		       delete ( st );
@@ -855,6 +859,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 		log("db: Had error getting title record from titledb: %s.",
 		    mstrerror(g_errno));
 		if ( ! g_errno ) { char *xx=NULL;*xx=0; }
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( st->m_slot , g_errno ); 
 		mdelete ( st , sizeof(State22) , "Msg22" );
 		delete ( st ); 

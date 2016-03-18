@@ -334,12 +334,14 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 	//   state20->m_msg22.m_parent = slot;
 	if ( g_errno ) {
 		log("net: Msg20 handler got error: %s.",mstrerror(g_errno));
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , g_errno );
 		return;
 	}
 
 	// ensure request is big enough
 	if ( slot->m_readBufSize < (int32_t)sizeof(Msg20Request) ) {
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , EBADREQUESTSIZE );
 		return;
 	}
@@ -357,7 +359,9 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 	if ( req->m_collnum < 0 ) {
 		log("query: Got empty collection in msg20 handler. FIX! "
 		    "from ip=%s port=%i",iptoa(slot->m_ip),(int)slot->m_port);
-	        g_udpServer.sendErrorReply ( slot , ENOTFOUND );
+		    
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		g_udpServer.sendErrorReply ( slot , ENOTFOUND );
 		return; 
 	}
 
@@ -377,7 +381,8 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 	if ( req->m_docId >= 0 && ! g_titledb.isLocal ( req->m_docId ) ) {
 		log("query: Got msg20 request for non-local docId %"INT64"",
 		    req->m_docId);
-	        g_udpServer.sendErrorReply ( slot , ENOTLOCAL ); 
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		g_udpServer.sendErrorReply ( slot , ENOTLOCAL ); 
 		return; 
 	}
 
@@ -385,7 +390,9 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 	if ( req->m_docId == 0 && ! req->ptr_ubuf ) { //char *xx=NULL;*xx=0; }
 		log("query: Got msg20 request for docid of 0 and no url for "
 		    "collnum=%"INT32" query %s",(int32_t)req->m_collnum,req->ptr_qbuf);
-	        g_udpServer.sendErrorReply ( slot , ENOTFOUND );
+		    
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		g_udpServer.sendErrorReply ( slot , ENOTFOUND );
 		return; 
 	}
 
@@ -399,6 +406,7 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 		g_errno = ENOMEM;
 		log("query: msg20 new(%"INT32"): %s", (int32_t)sizeof(XmlDoc),
 		    mstrerror(g_errno));
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot, g_errno ); 
 		return; 
 	}
@@ -511,6 +519,7 @@ bool Msg20Reply::sendReply ( Msg20Request *req, XmlDoc *xd ) {
 	haderror:
 		mdelete ( xd, sizeof(XmlDoc) , "Msg20" );
 		delete ( xd );
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , g_errno ) ;
 		return true;
 	}
@@ -570,6 +579,7 @@ static bool sendCachedReply ( Msg20Request *req, const void *cached_summary, siz
 	//copy the cached summary to a new temporary buffer, so that UDPSlot/Server can free it when possible
 	char *buf  = (char *)mmalloc ( cached_summary_len , "Msg20Reply" );
 	if(!buf) {
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , g_errno ) ;
 		return true;
 	}

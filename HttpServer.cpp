@@ -413,7 +413,7 @@ void handleRequestfd ( UdpSlot *slot , int32_t niceness ) {
 	TcpSocket *s = (TcpSocket *)mcalloc(sizeof(TcpSocket),"tcpudp");
 	// this sucks
 	if ( ! s ) {
-		log("http: could not allocate for TcpSocket. Out of memory.");
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. could not allocate for TcpSocket. Out of memory.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , g_errno );
 		return;
 	}
@@ -550,6 +550,7 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 			s_count = 0;
 			s_last = now;
 		}
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Too many sockets open", __FILE__, __func__, __LINE__);
 		sendErrorReply ( s , 500 , "Too many sockets open."); 
 		// count as a failed query so we send an email alert if too
 		// many of these happen
@@ -574,6 +575,7 @@ void HttpServer::requestHandler ( TcpSocket *s ) {
 		// . this returns false if blocked, true otherwise
 		// . this sets g_errno on error
 		// . this will destroy(s) if cannot malloc send buffer
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Bad Request", __FILE__, __func__, __LINE__);
 		sendErrorReply ( s , 400, "Bad Request" );
 		return;
 	}
@@ -798,7 +800,10 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// paths with ..'s are from hackers!
 	for ( char *p = path ; *p ; p++ )
 		if ( *p == '.' && *(p+1) == '.' )
+		{
+			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Bad request", __FILE__, __func__, __LINE__);
 			return sendErrorReply(s,404,"bad request");
+		}
 
 	// dump urls or json objects or pages? 
 	// "GET /crawlbot/downloadurls"
@@ -953,8 +958,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// return true and set g_errno if couldn't make a new File class
 	catch ( ... ) { 
 		g_errno = ENOMEM;
-		log("HttpServer: new(%"INT32"): %s",
-		    (int32_t)sizeof(File),mstrerror(g_errno));
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. new(%"INT32": %s", __FILE__, __func__, __LINE__, (int32_t)sizeof(File),mstrerror(g_errno));
 		return sendErrorReply(s,500,mstrerror(g_errno)); 
 	}
 	mnew ( f, sizeof(File), "HttpServer");
@@ -969,6 +973,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f);
 		g_errno = EBADREQUEST;
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. request url path too big", __FILE__, __func__, __LINE__);
 		return sendErrorReply(s,500,"request url path too big");
 	}
 	// set the filepath/name
@@ -1011,6 +1016,8 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 			    (PTRTYPE)f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f);
+		
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Not found", __FILE__, __func__, __LINE__);
 		return sendErrorReply ( s , 404 , "Not Found" );
 	}
 	// when was this file last modified
@@ -1038,6 +1045,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 			    (PTRTYPE)f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Not found", __FILE__, __func__, __LINE__);
 		return sendErrorReply ( s , 404 , "Not Found" );
 	}
 	// are we sending partial content?
@@ -1088,6 +1096,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
 		g_errno = EBADREQUEST;
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Bad request", __FILE__, __func__, __LINE__);
 		return sendErrorReply(s,500,mstrerror(g_errno));
 	}
 	// . move the reply to a send buffer
@@ -1103,6 +1112,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 			    (PTRTYPE)f);
 		mdelete ( f, sizeof(File), "HttpServer");
 		delete (f); 
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Could not alloc sendBuf (%"INT32")", __FILE__, __func__, __LINE__, sendBufSize);
 		return sendErrorReply(s,500,mstrerror(g_errno));
 	}
 	gbmemcpy ( sendBuf , m.getMime() , mimeLen );
@@ -1605,6 +1615,7 @@ bool HttpServer::sendQueryErrorReply( TcpSocket *s , int32_t error ,
 				      int errnum, char *content) {
 
 	// just use this for now. it detects the format already...
+	log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. %d [%s]", __FILE__, __func__, __LINE__, errnum, errmsg);
 	return sendErrorReply ( s,error,errmsg,NULL);
 
 	/*
@@ -2602,13 +2613,19 @@ bool HttpServer::processSquidProxyRequest ( TcpSocket *sock, HttpRequest *hr) {
 
 	// sanity
 	if ( hr->m_squidProxiedUrlLen > MAX_URL_LEN )
+	{
 		// what is ip lookup failure for proxy?
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Url too long", __FILE__, __func__, __LINE__);
 		return sendErrorReply ( sock,500,"Url too long (via Proxy)" );
+	}
 
 	int32_t maxRequestLen = MAX_URL_LEN + PADDING_SIZE;
 	if ( sock->m_readOffset >= maxRequestLen )
+	{
 		// what is ip lookup failure for proxy?
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Request too long", __FILE__, __func__, __LINE__);
 		return sendErrorReply(sock,500,"Request too long (via Proxy)");
+	}
 
 	SquidState *sqs;
 	try { sqs = new (SquidState) ; }
@@ -2617,6 +2634,7 @@ bool HttpServer::processSquidProxyRequest ( TcpSocket *sock, HttpRequest *hr) {
 		g_errno = ENOMEM;
 		log("squid: new(%"INT32"): %s",
 		    (int32_t)sizeof(SquidState),mstrerror(g_errno));
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Could not alloc SquidState (%"INT32")", __FILE__, __func__, __LINE__, (int32_t)sizeof(SquidState));
 		return sendErrorReply(sock,500,mstrerror(g_errno)); 
 	}
 	mnew ( sqs, sizeof(SquidState), "squidst");
@@ -2648,6 +2666,7 @@ bool HttpServer::processSquidProxyRequest ( TcpSocket *sock, HttpRequest *hr) {
 		mdelete ( sqs, sizeof(SquidState), "sqs");
 		delete (sqs);
 		// what is ip lookup failure for proxy?
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Not found.", __FILE__, __func__, __LINE__);
 		return sendErrorReply ( sock , 404 , "Not Found (via Proxy)" );
 	}
 	
@@ -2673,6 +2692,7 @@ void gotSquidProxiedUrlIp ( void *state , int32_t ip ) {
 		mdelete ( sqs, sizeof(SquidState), "sqs");
 		delete (sqs);
 		// what is ip lookup failure for proxy?
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Not found", __FILE__, __func__, __LINE__);
 		g_httpServer.sendErrorReply(sock,404,"Not Found (via Proxy)");
 		return;
 	}
@@ -2776,6 +2796,7 @@ void gotSquidProxiedContent ( void *state ) {
 		mdelete ( sqs, sizeof(SquidState), "sqs");
 		delete (sqs);
 		// what is ip lookup failure for proxy?
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. Timed out", __FILE__, __func__, __LINE__);
 		g_httpServer.sendErrorReply(sock,505,"Timed Out (via Proxy)");
 		return;
 	}

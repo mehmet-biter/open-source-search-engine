@@ -635,6 +635,8 @@ static void sendReplyWrapper ( void *state ) {
 		int32_t err = saved;
 		if ( ! err ) err = g_errno;
 		if ( ! err ) { char *xx=NULL;*xx=0; }
+		
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply(udpSlot,err);
 	}
 	else {
@@ -711,6 +713,8 @@ void  handleRequest25 ( UdpSlot *slot , int32_t netnice ) {
 		g_errno = ENOMEM;
 		log("build: msg25: new(%"INT32"): %s", 
 		    (int32_t)sizeof(Msg25),mstrerror(g_errno));
+		    
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot , g_errno );
 		return;
 	}

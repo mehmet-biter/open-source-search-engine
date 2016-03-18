@@ -1679,6 +1679,8 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 		log("admin: No collection record found "
 		    "for specified collection name. Could not add sites to "
 		    "tagdb. Returning HTTP status of 500.");
+		    
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		return g_httpServer.sendErrorReply ( s , 500 ,
 						  "collection does not exist");
 	}
@@ -1690,7 +1692,10 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 		g_errno = ENOMEM;
 		log("PageTagdb: new(%"INT32"): %s", 
 		    (int32_t)sizeof(State12),mstrerror(g_errno));
-		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));}
+		    
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));
+	}
 	mnew ( st , sizeof(State12) , "PageTagdb" );
 
 	// assume we've nothing to add
@@ -1717,8 +1722,8 @@ bool sendPageTagdb ( TcpSocket *s , HttpRequest *req ) {
 		    "tagdb. Returning HTTP status of 500.");
 		mdelete ( st , sizeof(State12) , "PageTagdb" );
 		delete (st);
-		return g_httpServer.sendErrorReply ( s , 500 ,
-						  "collection does not exist");
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		return g_httpServer.sendErrorReply ( s , 500 , "collection does not exist");
 	}
 
 	// . get fields from cgi field of the requested url

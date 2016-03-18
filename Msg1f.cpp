@@ -54,6 +54,7 @@ void handleRequest ( UdpSlot *slot , int32_t netnice ) {
 	// running just ./gb will log to stderr...
 	if ( strcmp(filename ,"/dev/stderr") == 0 ) {
 		g_errno = EBADFILE;
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot, g_errno ); 
 		return;
 	}
@@ -65,6 +66,7 @@ void handleRequest ( UdpSlot *slot , int32_t netnice ) {
 		log(LOG_DEBUG, "logviewer: Failed to open %s for reading: ",
 		    filename);
 		g_errno = EBADFILE;
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot, g_errno ); 
 		return;
 	}
@@ -107,6 +109,7 @@ void handleRequest ( UdpSlot *slot , int32_t netnice ) {
 		if(allocBuf) mfree(allocBuf,	allocBufSize, "Msg1fA");
 		allocBufSize = 0;
 		allocBuf = NULL;
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		g_udpServer.sendErrorReply ( slot, EBADFILE ); 
 		return;
 	}

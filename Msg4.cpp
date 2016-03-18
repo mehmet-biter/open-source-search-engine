@@ -1074,6 +1074,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 	// since last time we were up, so it is up to us to check this
 	if ( g_pingServer.m_hostsConfInDisagreement ) {
 		g_errno = EBADHOSTSCONF;
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , g_errno );
 		
 		log(LOG_WARN,"%s:%s: END - hostsConfInDisagreement", __FILE__,__func__);
@@ -1086,6 +1087,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		// . this is 0 if not received yet
 		if ( ! slot->m_host->m_pingInfo.m_hostsConfCRC ) {
 			g_errno = EWAITINGTOSYNCHOSTSCONF;
+			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 			us->sendErrorReply ( slot , g_errno );
 			
 			log(LOG_WARN,"%s:%s: END - EWAITINGTOSYNCHOSTCONF", __FILE__,__func__);
@@ -1096,6 +1098,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		if ( slot->m_host->m_pingInfo.m_hostsConfCRC != 
 		     g_hostdb.getCRC() ) {
 			g_errno = EBADHOSTSCONF;
+			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 			us->sendErrorReply ( slot , g_errno );
 			
 			log(LOG_WARN,"%s:%s: END - EBADHOSTSCONF", __FILE__,__func__);
@@ -1112,6 +1115,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 	// must at least have an rdbId
 	if ( readBufSize < 7 ) {
 		g_errno = EREQUESTTOOSHORT;
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , g_errno );
 		
 		log(LOG_ERROR,"%s:%s: END - EREQUESTTOOSHORT", __FILE__,__func__);
@@ -1155,6 +1159,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		}
 		// tell send to try again shortly
 		g_errno = ETRYAGAIN;
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply(slot,g_errno);
 		
 		if( g_conf.m_logTraceMsg ) {
@@ -1165,6 +1170,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 
 	// this returns false with g_errno set on error
    if ( ! addMetaList ( readBuf , slot ) ) {
+   		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply(slot,g_errno);
 		
 		if( g_conf.m_logTraceMsg ) {

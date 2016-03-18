@@ -1255,6 +1255,7 @@ bool sendPageSpiderdb ( TcpSocket *s , HttpRequest *r ) {
 		g_errno = ENOMEM;
 		log("PageSpiderdb: new(%i): %s", 
 		    (int)sizeof(State11),mstrerror(g_errno));
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		return g_httpServer.sendErrorReply(s,500,mstrerror(g_errno));}
 	mnew ( st , sizeof(State11) , "PageSpiderdb" );
 	// get the priority/#ofRecs from the cgi vars

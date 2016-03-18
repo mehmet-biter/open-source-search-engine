@@ -570,6 +570,8 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 			    " or reset "
 			    "while lock request was outstanding.");
 			g_errno = EBADENGINEER;
+			
+			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 			us->sendErrorReply ( udpSlot , g_errno );
 			return;
 			//char *xx=NULL;*xx=0; }
@@ -597,6 +599,8 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 			if ( g_errno != ETRYAGAIN ) {msg = "error adding neg rec to doledb";	log("spider: %s %s",msg,mstrerror(g_errno));
 			}
 			//char *xx=NULL;*xx=0;
+			
+			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 			us->sendErrorReply ( udpSlot , g_errno );
 			return;
 		}
@@ -625,6 +629,8 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 		     g_errno ) {
 			msg = "FAILED TO ADD TO WAITING TREE";
 			log("spider: %s %s",msg,mstrerror(g_errno));
+			
+			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 			us->sendErrorReply ( udpSlot , g_errno );
 			return;
 		}
@@ -639,6 +645,8 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 	// sanity check
 	if ( reqSize != sizeof(LockRequest) ) {
 		log("spider: bad msg12 request size of %"INT32"",reqSize);
+		
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( udpSlot , EBADREQUEST );
 		return;
 	}
@@ -649,6 +657,8 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 		//log("spider: clock not in sync with host #0. so "
 		//    "returning etryagain for lock reply");
 		// let admin know why we are not spidering
+		
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( udpSlot , ETRYAGAIN );
 		return;
 	}
@@ -767,6 +777,8 @@ void handleRequest12 ( UdpSlot *udpSlot , int32_t niceness ) {
 	// put it into the table
 	if ( ! ht->addKey ( &lockKey , &tmp ) ) {
 		// return error if that failed!
+		
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( udpSlot , g_errno );
 		return;
 	}

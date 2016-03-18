@@ -306,6 +306,7 @@ void handleRequest17 ( UdpSlot *slot , int32_t niceness  ) {
 	if ( requestSize < (int32_t)sizeof(key_t) ) {
 		log("query: Request size for cache (%"INT32") "
 		    "is too small for some reason.", (int32_t)sizeof(key_t));
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , EBADREQUESTSIZE );
 		return;
 	}
