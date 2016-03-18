@@ -494,27 +494,29 @@ void RdbList::getKey ( char *rec , char *key ) {
 	// posdb?
 	if ( m_ks == 18 ) {
 		if ( rec[0]&0x04 ) {
-			gbmemcpy ( key+12,m_listPtrHi,6);
-			gbmemcpy ( key+6 ,m_listPtrLo,6);
-			gbmemcpy ( key,rec,6);
+			memcpy ( key+12,m_listPtrHi,6);
+			memcpy ( key+6 ,m_listPtrLo,6);
+			memcpy ( key,rec,6);
 			// clear compressionbits (1+2+4+8)
 			key[0] &= 0xf9;
 			return;
 		}
 		if ( rec[0]&0x02 ) {
-			gbmemcpy ( key+12 ,m_listPtrHi,6);
-			gbmemcpy ( key,rec,12);
+			memcpy ( key+12 ,m_listPtrHi,6);
+			memcpy ( key,rec,12);
 			// clear compressionbits (1+2+4+8)
 			key[0] &= 0xf9;
 			return;
 		}
-		gbmemcpy ( key , rec , 18 );
+		memcpy ( key , rec , 18 );
 		return;
 	}
 
 	//if ( ! m_useHalfKeys ) return *(key_t *)rec;
 	if ( ! m_useHalfKeys || ! isHalfBitOn ( rec ) ) {
-		KEYSET(key,rec,m_ks); return; }
+		KEYSET(key,rec,m_ks);
+		return;
+	}
 	// seems like we don't have to be aligned to do this!
 	//if ( ! isHalfBitOn ( rec ) ) return *(key_t *)rec;
 	// set to last big key we read
