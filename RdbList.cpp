@@ -20,6 +20,77 @@
 /////
 //#define ALLOW_SCALE
 
+// . compares to keys split into 6 byte ptrs
+// . returns -1, 0 , 1 if a < b , a == b , a > b
+// . for comparison purposes, we must set 0x02 (half bits) on all keys
+//   so negative keys will always be ordered before their positive
+
+#define fcmp(alo,ahi,blo,bhi) \
+          (*(uint32_t  *)&((char *)ahi)[2] <      \
+	   *(uint32_t  *)&((char *)bhi)[2]  ? -1  \
+       :  (*(uint32_t  *)&((char *)ahi)[2] >      \
+	   *(uint32_t  *)&((char *)bhi)[2]  ?  1  \
+       :  (*(uint16_t *) ((char *)ahi)    <      \
+	   *(uint16_t *) ((char *)bhi)     ? -1  \
+       :  (*(uint16_t *) ((char *)ahi)    >      \
+	   *(uint16_t *) ((char *)bhi)     ?  1  \
+       :  (*(uint32_t  *)&((char *)alo)[2] <      \
+	   *(uint32_t  *)&((char *)blo)[2]  ? -1  \
+       :  (*(uint32_t  *)&((char *)alo)[2] >      \
+	   *(uint32_t  *)&((char *)blo)[2]  ?  1  \
+       :(((*(uint16_t *) ((char *)alo)    )|0x02) <        \
+	 ((*(uint16_t *) ((char *)blo)    )|0x02)    ? -1  \
+       :(((*(uint16_t *) ((char *)alo)    )|0x02) >        \
+	 ((*(uint16_t *) ((char *)blo)    )|0x02)    ?  1  \
+	 : 0 ))))))))
+
+
+// this is for 16-byte keys
+#define bfcmp(alo,ahi,blo,bhi) \
+          (*(uint32_t  *)&((char *)ahi)[2] <      \
+	   *(uint32_t  *)&((char *)bhi)[2]  ? -1  \
+       :  (*(uint32_t  *)&((char *)ahi)[2] >      \
+	   *(uint32_t  *)&((char *)bhi)[2]  ?  1  \
+       :  (*(uint16_t *) ((char *)ahi)    <      \
+	   *(uint16_t *) ((char *)bhi)     ? -1  \
+       :  (*(uint16_t *) ((char *)ahi)    >      \
+	   *(uint16_t *) ((char *)bhi)     ?  1  \
+       :  (*(uint64_t *)&((char *)alo)[2] <      \
+	   *(uint64_t *)&((char *)blo)[2]  ? -1  \
+       :  (*(uint64_t *)&((char *)alo)[2] >      \
+	   *(uint64_t *)&((char *)blo)[2]  ?  1  \
+       :(((*(uint16_t *) ((char *)alo)    )|0x02) <        \
+	 ((*(uint16_t *) ((char *)blo)    )|0x02)    ? -1  \
+       :(((*(uint16_t *) ((char *)alo)    )|0x02) >        \
+	 ((*(uint16_t *) ((char *)blo)    )|0x02)    ?  1  \
+	 : 0 ))))))))
+
+
+static inline char bfcmpPosdb ( char *alo , char *ame , char *ahi , 
+			 char *blo , char *bme , char *bhi ) {
+	if (*(uint32_t  *)( ahi+2 )<*(uint32_t  *)(bhi+2)) return -1;
+	if (*(uint32_t  *)( ahi+2 )>*(uint32_t  *)(bhi+2)) return  1;
+	if (*(uint16_t *)( ahi   )<*(uint16_t *)(bhi  )) return -1;
+	if (*(uint16_t *)( ahi   )>*(uint16_t *)(bhi  )) return  1;
+
+	if (*(uint32_t  *)( ame+2 )<*(uint32_t  *)(bme+2)) return -1;
+	if (*(uint32_t  *)( ame+2 )>*(uint32_t  *)(bme+2)) return  1;
+	if (*(uint16_t *)( ame   )<*(uint16_t *)(bme  )) return -1;
+	if (*(uint16_t *)( ame   )>*(uint16_t *)(bme  )) return  1;
+
+	if (*(uint32_t  *)( alo+2 )<*(uint32_t  *)(blo+2)) return -1;
+	if (*(uint32_t  *)( alo+2 )>*(uint32_t  *)(blo+2)) return  1;
+
+	if ( ((*(uint16_t *)( alo   ))|0x0007) <
+	     ((*(uint16_t *)  blo    )|0x0007)  ) return -1;
+	if ( ((*(uint16_t *)( alo   ))|0x0007) >
+	     ((*(uint16_t *)  blo    )|0x0007)  ) return  1;
+
+	return 0;
+};
+
+
+
 void RdbList::constructor () {
 	m_list        = NULL;
 	m_alloc       = NULL;
