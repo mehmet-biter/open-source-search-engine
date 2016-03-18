@@ -367,11 +367,11 @@ void handleRequest20 ( UdpSlot *slot , int32_t netnice ) {
 	if(g_stable_summary_cache.lookup(cache_key, &cached_summary, &cached_summary_len) ||
 	   g_unstable_summary_cache.lookup(cache_key, &cached_summary, &cached_summary_len))
 	{
-		log(LOG_DEBUG, "Summary cache hit");
+		log(LOG_DEBUG, "query: Summary cache hit");
 		sendCachedReply(req,cached_summary,cached_summary_len,slot);
 		return;
 	} else
-		log(LOG_DEBUG, "Summary cache miss");
+		log(LOG_DEBUG, "query: Summary cache miss");
 
 	// if it's not stored locally that's an error
 	if ( req->m_docId >= 0 && ! g_titledb.isLocal ( req->m_docId ) ) {

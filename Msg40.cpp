@@ -337,7 +337,7 @@ bool Msg40::federatedLoop ( ) {
 	numDocIdSplits *= mult;
 	// prevent going OOM for type:article AND html
 	if ( numDocIdSplits < 5 ) numDocIdSplits = 5;
-	log(LOG_DEBUG,"Msg40::federatedLoop: numDocIdSplits=%d", numDocIdSplits);
+	log(LOG_DEBUG,"query: Msg40::federatedLoop: numDocIdSplits=%d", numDocIdSplits);
 	//}
 
 	if ( cr ) mr.m_maxQueryTerms = cr->m_maxQueryTerms; 

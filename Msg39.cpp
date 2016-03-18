@@ -273,7 +273,7 @@ void Msg39_controlLoopWrapper ( void *state ) {
 // 3. increment docid ranges and keep going
 // 4. when done return the top docids
 bool Msg39::controlLoop ( ) {
-	log(LOG_DEBUG,"Msg39::controlLoop(): m_r->m_numDocIdSplits=%d m_r->m_timeout=%"PRId64, m_r->m_numDocIdSplits, m_r->m_timeout);
+	log(LOG_DEBUG,"query: Msg39::controlLoop(): m_r->m_numDocIdSplits=%d m_r->m_timeout=%"PRId64, m_r->m_numDocIdSplits, m_r->m_timeout);
 	//log("@@@ Msg39::controlLoop: m_startTimeQuery=%"PRId64, m_startTimeQuery);
 	//log("@@@ Msg39::controlLoop: now             =%"PRId64, gettimeofdayInMilliseconds());
 	//log("@@@ Msg39::controlLoop: m_phase=%d", m_phase);
@@ -287,7 +287,7 @@ bool Msg39::controlLoop ( ) {
 		int64_t time_per_range = time_spent_so_far / m_docIdSplitNumber;
 		int64_t estimated_this_range_finish_time = now + time_per_range;
 		int64_t deadline = m_startTimeQuery + m_r->m_timeout;
-		log(LOG_DEBUG,"Msg39::controlLoop(): now=%"PRId64" time_spent_so_far=%"PRId64" time_per_range=%"PRId64" estimated_this_range_finish_time=%"PRId64" deadline=%"PRId64,
+		log(LOG_DEBUG,"query: Msg39::controlLoop(): now=%"PRId64" time_spent_so_far=%"PRId64" time_per_range=%"PRId64" estimated_this_range_finish_time=%"PRId64" deadline=%"PRId64,
 		    now, time_spent_so_far, time_per_range, estimated_this_range_finish_time, deadline);
 		if(estimated_this_range_finish_time > deadline) {
 			//estimated completion time crosses the deadline.
