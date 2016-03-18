@@ -8703,6 +8703,33 @@ void Parms::init ( ) {
 	m++;
 
 
+	m->m_title = "Min DocId splits";
+	m->m_desc  = "Minimum number of Docid splits when deciding how many 'chunks' to use for limiting memory use while intersecting lists";
+	m->m_cgi   = "min_docid_splits";
+	m->m_off   = offsetof(Conf,min_docid_splits);
+	m->m_xml   = "min_docid_splits";
+	m->m_type  = TYPE_LONG;
+	m->m_page  = PAGE_SEARCH;
+	m->m_obj   = OBJ_CONF;
+	m->m_def   = "5";
+	m->m_min   = 1;
+	m->m_flags = 0;
+	m++;
+
+	m->m_title = "Max DocId splits";
+	m->m_desc  = "Maximum number of Docid splits when deciding how many 'chunks' to use for limiting memory use while intersecting lists";
+	m->m_cgi   = "max_docid_splits";
+	m->m_off   = offsetof(Conf,max_docid_splits);
+	m->m_xml   = "max_docid_splits";
+	m->m_type  = TYPE_LONG;
+	m->m_page  = PAGE_SEARCH;
+	m->m_obj   = OBJ_CONF;
+	m->m_def   = "15";
+	m->m_min   = 1;
+	m->m_flags = 0;
+	m++;
+
+
 	m->m_title = "msg40->39 timeout";
 	m->m_desc  = "Timeout for Msg40/Msg3a to collect candidate docids with Msg39. In milliseconds";
 	m->m_cgi   = "msgfourty_msgthirtynine_timeout";

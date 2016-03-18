@@ -151,6 +151,8 @@ class Conf {
 	int32_t m_maxDocsWanted;        //maximum number of results in one go. Puts a limit on SearchInput::m_docsWanted
 	int32_t m_maxFirstResultNum;    //maximum document offset / result-page. Puts a limit on SearchInput::m_firstResultNum
 
+	int32_t  min_docid_splits; //minimum number of DocId splits using Msg40
+	int32_t  max_docid_splits; //maximum number of DocId splits using Msg40
 	int64_t  m_msg40_msg39_timeout; //timeout for entire get-docid-list phase, in milliseconds.
 	int64_t  m_msg3a_msg39_network_overhead; //additional latency/overhead of sending reqeust+response over network.
 

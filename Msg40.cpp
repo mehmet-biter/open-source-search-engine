@@ -335,21 +335,21 @@ bool Msg40::federatedLoop ( ) {
 	if ( numDocIdSplits <= 0 ) numDocIdSplits = 1;
 	// and mult based on index size
 	numDocIdSplits *= mult;
-	// prevent going OOM for type:article AND html
-	if ( numDocIdSplits < 5 ) numDocIdSplits = 5;
-	log(LOG_DEBUG,"query: Msg40::federatedLoop: numDocIdSplits=%d", numDocIdSplits);
-	//}
 
 	if ( cr ) mr.m_maxQueryTerms = cr->m_maxQueryTerms; 
 	else      mr.m_maxQueryTerms = 100;
 
+	// prevent going OOM for type:article AND html
 	// special oom hack fix
 	if ( cr && cr->m_isCustomCrawl && numDocIdSplits < 4 ) 
 		numDocIdSplits = 4;
 
-	// limit to 10
-	if ( numDocIdSplits > 15 ) 
-		numDocIdSplits = 15;
+	// limit numDocIdSplits to the range specified in the configuration
+	if ( numDocIdSplits < g_conf.min_docid_splits ) 
+		numDocIdSplits = g_conf.min_docid_splits;
+	if ( numDocIdSplits > g_conf.max_docid_splits ) 
+		numDocIdSplits = g_conf.max_docid_splits;
+	log(LOG_DEBUG,"query: Msg40::federatedLoop: numDocIdSplits=%d", numDocIdSplits);
 	// store it in the reuquest now
 	mr.m_numDocIdSplits = numDocIdSplits;
 
