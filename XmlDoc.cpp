@@ -8506,8 +8506,6 @@ bool *XmlDoc::getIsAllowed ( ) {
 	// this is set to true if our userAgent was found explicitly
 	bool uaFound;
 	bool allowed;
-	char *cacheStart;
-	int32_t  cacheLen;
 	bool  hadAllowOrDisallow;
 	// now use left-anchored substring match so we can match Botname/1.0
 	allowed = Robots::isAllowed ( cu                       ,
@@ -8517,8 +8515,6 @@ bool *XmlDoc::getIsAllowed ( ) {
 			       &uaFound                 ,
 			       true                     , // substrmatch?
 			       &m_crawlDelay            ,
-			       &cacheStart              ,
-			       &cacheLen                ,
 			       &hadAllowOrDisallow        );
 
 
@@ -8539,8 +8535,6 @@ bool *XmlDoc::getIsAllowed ( ) {
 				       &uaFound            ,
 				       false               ,  // substrmatch?
 				       &m_crawlDelay       ,
-				       &cacheStart         ,
-				       &cacheLen           ,
 				       &hadAllowOrDisallow   );
 
 		if( g_conf.m_logTraceXmlDoc ) log("%s:%s:%d: Robots::isAllowed returned %s for '*' bot", __FILE__,__func__,__LINE__, (allowed?"true":"false"));

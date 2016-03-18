@@ -6,12 +6,7 @@
 
 // taken from Robotdb.cpp
 bool Robots::isAllowed ( Url *url, char *userAgent, char *file, int32_t fileLen, bool *userAgentFound,
-	                     bool substringMatch, int32_t *crawlDelay, char **cacheStart, int32_t *cacheLen,
-	                     bool  *hadAllowOrDisallow ) {
-	// assume nothing to cache yet
-	*cacheLen   = 0;
-	*cacheStart = file;
-
+	                     bool substringMatch, int32_t *crawlDelay, bool  *hadAllowOrDisallow ) {
 	// assume user agent is not in the file
 	*userAgentFound = false;
 	*hadAllowOrDisallow = false;
@@ -91,19 +86,12 @@ bool Robots::isAllowed ( Url *url, char *userAgent, char *file, int32_t fileLen,
 		goto loop;
 	}
 
-	// we got it, if first instance start our cache here
-	if ( !*userAgentFound ) {
-		*cacheStart = f;
-	}
-
 	*userAgentFound = true;
 	flag = 0;
 
  urlLoop:
 	// if p is NULL now there is no more lines
 	if ( ! p ) {
-		// set our cache stop to the end of the file
-		*cacheLen = (file + fileLen) - *cacheStart;
 		return allowed;
 	}
 
@@ -113,8 +101,6 @@ bool Robots::isAllowed ( Url *url, char *userAgent, char *file, int32_t fileLen,
 	// if it's another user-agent line ... ignore it unless we already
 	// have seen another line (not user-agent), in which case we got another set of group
 	if ( flag && flen==10 && strncasecmp( f, "user-agent", 10 ) == 0 ) {
-		// set our cache stop here
-		*cacheLen = f - *cacheStart;
 		goto gotAgent;
 	}
 
