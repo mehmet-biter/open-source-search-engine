@@ -8441,17 +8441,6 @@ bool *XmlDoc::getIsAllowed ( ) {
 		return NULL;
 	}
 
-
-	// inherit this
-	//if ( ! m_useIpsTxtFile ) ed->m_useIpsTxtFile = false;
-	// . steal m_firstIp from us to avoid tag rec lookup
-	// . why was this commented out?
-	// . maybe because if we redirect, this is not the same!!!
-	//ed->m_firstIp      = m_firstIp;
-	//ed->m_firstIpValid = m_firstIpValid;//true;
-	// also, steal our ip! neither is this!
-	//ed->m_ip      = m_ip;
-	//ed->m_ipValid = m_ipValid;
 	// . now try the content
 	// . should call getHttpReply
 	char **pcontent = ed->getContent();
@@ -8469,14 +8458,16 @@ bool *XmlDoc::getIsAllowed ( ) {
 		return (bool *)mime;
 	}
 
-
 	// get this
 	int32_t contentLen = ed->m_contentLen;
+
 	// save this
 	m_robotsTxtLen = contentLen;
 	m_robotsTxtLenValid = true;
+
 	// get content
 	char *content = *pcontent;
+
 	// sanity check
 	if ( content && contentLen>0 && content[contentLen] != '\0'){
 		char*xx=NULL;*xx=0;}
@@ -8492,8 +8483,13 @@ bool *XmlDoc::getIsAllowed ( ) {
 
 	if ( mime->getHttpStatus() != 200 )
 	{
-		// BR 20151215: Do not allow spidering if we cannot read robots.txt EXCEPT
-		// if the error code is 404 (Not Found).
+		/// @todo ALC we should allow more error codes
+		/// 2xx (successful) : allow
+		/// 3xx (redirection) : follow
+		/// 4xx (client errors) : allow
+		/// 5xx (server errors) : disallow
+
+		// BR 20151215: Do not allow spidering if we cannot read robots.txt EXCEPT if the error code is 404 (Not Found).
 		if( mime->getHttpStatus() != 404 )
 		{
 			m_isAllowed = false;
