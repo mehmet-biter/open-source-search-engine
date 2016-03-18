@@ -5,19 +5,19 @@
 
 // . returns false if could not get a valid mime
 // . we need the url in case there's a Location: mime that's base-relative
-void Mime::set ( char *mime , int32_t mimeLen ) {
+void Mime::set ( const char *mime , int32_t mimeLen ) {
 	m_mime    = mime;
 	m_mimeLen = mimeLen;
 	m_mimeEnd = mime + mimeLen;
 }
 
-char *Mime::getValue ( char *field , int32_t *valueLen ) {
+const char *Mime::getValue ( const char *field , int32_t *valueLen ) {
 	// caller's field length
 	int32_t fieldLen = gbstrlen ( field );
 	// parms to getLine()
-	char *f    , *v;
+	const char *f    , *v;
 	int32_t  flen ,  vlen;
-	char *line = m_mime;
+	const char *line = m_mime;
 	// keep getting lines from the mime
 	while ( ( line = getLine ( line , &f, &flen, &v , &vlen ) ) ) {
 		if ( flen != fieldLen ) continue;
@@ -31,17 +31,17 @@ char *Mime::getValue ( char *field , int32_t *valueLen ) {
 
 // . return ptr to next line to try
 // . return NULL if no lines left
-char *Mime::getLine ( char   *line  ,
-		      char  **field , int32_t *fieldLen ,
-		      char  **value , int32_t *valueLen ) {
+const char *Mime::getLine ( const char   *line  ,
+		      const char  **field , int32_t *fieldLen ,
+		      const char  **value , int32_t *valueLen ) {
 	// reset field and value lengths
 	*fieldLen = 0;
 	*valueLen = 0;
 	// a NULL line means the start
 	if ( line == NULL ) line = m_mime;
 	// a simple ptr
-	char *p    = line;
-	char *pend = m_mimeEnd;
+	const char *p    = line;
+	const char *pend = m_mimeEnd;
  loop:
 	// skip to next field (break on comment)
 	while ( p < pend && *p!='#' && !is_alnum_a(*p) ) p++;
@@ -56,7 +56,7 @@ char *Mime::getLine ( char   *line  ,
 		goto loop;
 	}
 	// save p's position
-	char *s = p;
+	const char *s = p;
 	// continue until : or \n or \r or EOF
 	while ( p < pend && *p != ':' && *p != '\n' && *p !='\r' ) p++;
 	// NULL on EOF

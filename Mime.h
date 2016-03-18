@@ -13,23 +13,23 @@ class Mime {
  public:
 
 	// just sets m_mime/m_mimeLen
-	void set ( char *mime , int32_t mimeLen );
+	void set ( const char *mime , int32_t mimeLen );
 
 	// . returns a ptr to next line
 	// . fills in your "field/value" pair of this line
 	// . skips empty and comment lines automatically
-	char *getLine ( char   *line  ,
-			char  **field , int32_t *fieldLen ,
-			char  **value , int32_t *valueLen ) ;
+	const char *getLine ( const char   *line  ,
+			const char  **field , int32_t *fieldLen ,
+			const char  **value , int32_t *valueLen ) ;
 
 	// use this to get the value of a unique field
-	char *getValue ( char *field , int32_t *valueLen );
+	const char *getValue ( const char *field , int32_t *valueLen );
 
  private:
 
-	char *m_mime;
+	const char *m_mime;
 	int32_t  m_mimeLen;
-	char *m_mimeEnd;
+	const char *m_mimeEnd;
 };
 
 #endif // GB_MIME_H

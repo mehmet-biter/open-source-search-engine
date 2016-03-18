@@ -5,7 +5,7 @@
 #include "Mem.h" // gbstrlen
 
 // taken from Robotdb.cpp
-bool Robots::isAllowed ( Url *url, char *userAgent, char *file, int32_t fileLen, bool *userAgentFound,
+bool Robots::isAllowed ( Url *url, const char *userAgent, const char *file, int32_t fileLen, bool *userAgentFound,
 	                     bool substringMatch, int32_t *crawlDelay, bool  *hadAllowOrDisallow ) {
 	// assume user agent is not in the file
 	*userAgentFound = false;
@@ -28,16 +28,16 @@ bool Robots::isAllowed ( Url *url, char *userAgent, char *file, int32_t fileLen,
 	mime.set ( file , fileLen );
 
 	// get a line of Mime
-	char *f = NULL;
+	const char *f = NULL;
 	int32_t flen = 0;
-	char *v = NULL;
+	const char *v = NULL;
 	int32_t vlen = 0;
 
 	// user agent length
 	int32_t uaLen = gbstrlen (userAgent);
 
 	// ptr into "file"
-	char *p = file;
+	const char *p = file;
 	char flag;
 	bool allowed = true;
 
@@ -58,7 +58,7 @@ bool Robots::isAllowed ( Url *url, char *userAgent, char *file, int32_t fileLen,
  gotAgent:
 	//some webmasters put comments at the end of their lines,
 	//because they think this is a shell script or something.
-	char* vv = v;
+	const char* vv = v;
 	while ( vv - v < vlen && *vv != '#' ) {
 		vv++;
 	}
@@ -159,8 +159,8 @@ bool Robots::isAllowed ( Url *url, char *userAgent, char *file, int32_t fileLen,
 	flag = 1;
 
 	// now stop at first space after url or end of line
-	char *s    = v;
-	char *send = v + vlen;
+	const char *s    = v;
+	const char *send = v + vlen;
 
 	// skip all non-space chars
 	while ( s < send && ! is_wspace_a(*s) ) {
