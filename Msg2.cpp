@@ -172,8 +172,10 @@ bool Msg2::getLists ( ) {
 			                 false,                                //owndata
 			                 true,                                 //usehalfkeys
 			                 18);                                  //keysize
+			char ek2_copy[18];
+			memcpy(ek2_copy, ek2, sizeof(ek2_copy)); //RdbList::constrain() modifies endkey, so give it a copy
 			m_lists[m_i].constrain(sk2,            //startKey
-			                       ek2,            //endKey
+			                       ek2_copy,       //endKey
 			                       -1,             //minRecSizes
 			                       0,              //hintOffset
 			                       NULL,           //hintKey
