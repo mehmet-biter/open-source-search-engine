@@ -2227,6 +2227,21 @@ int main2 ( int argc , char *argv[] ) {
 	cleanFileName.safePrintf("%s/cleanexit",g_hostdb.m_dir);
 	::unlink ( cleanFileName.getBufStart() );
 
+	// move the log file name logxxx to logxxx-2016_03_16-14:59:24
+	// we did the test bind so no gb process is bound on the port yet
+	// TODO: probably should bind on the port before doing this
+	if ( doesFileExist ( g_hostdb.m_logFilename ) ) {
+		char tmp2[128];
+		SafeBuf newName(tmp2,128);
+		time_t ts = getTimeLocal();
+		struct tm *timeStruct = localtime ( &ts );
+		//struct tm *timeStruct = gmtime ( &ts );
+		char ppp[100];
+		strftime(ppp,100,"%Y%m%d-%H%M%S",timeStruct);
+		newName.safePrintf("%s-bak%s",g_hostdb.m_logFilename, ppp );
+		::rename ( g_hostdb.m_logFilename, newName.getBufStart() );
+	}
+
 
 	log("db: Logging to file %s.",
 	    g_hostdb.m_logFilename );
