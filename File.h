@@ -27,6 +27,8 @@
 #include "Loop.h"            // for g_loop.setNonBlocking(int fd)
 #include "SafeBuf.h"
 
+bool doesFileExist ( char *filename ) ;
+
 int64_t getFileSize ( const char *filename ) ;
 
 int64_t getFileSize_cygwin ( const char *filename ) ;
