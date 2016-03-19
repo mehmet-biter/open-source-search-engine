@@ -497,6 +497,10 @@ bool RdbDump::dumpTree ( bool recall ) {
 	// . this doesn't work if you're doing an unordered dump, but we should
 	//   not allow adds when closing
 	m_lastKeyInQueue  = m_list->getLastKey();
+	
+	// ensure we are getting the first key of the list
+	m_list->resetListPtr();
+	
 	//m_firstKeyInQueue = m_list->getCurrentKey();
 	m_list->getCurrentKey(m_firstKeyInQueue);
 	// . write this list to disk
