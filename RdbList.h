@@ -62,9 +62,6 @@ class RdbList {
 	// like reset, but frees m_alloc/m_allocSize and resets all to 0
 	void freeList ( );
 
-	// return false and sets g_errno on error
-	bool copyList ( class RdbList *list );
-
 	// . set it to this list
 	// . "list" is a serialized sequence of rdb records sorted by key
 	// . startKey/endKey specifies the list's range
@@ -83,21 +80,6 @@ class RdbList {
 		  bool  useHalfKeys   ,
 		  char  keySize       ); // 12 is default
 
-	// call the above set()
-	void set (char *list          , 
-		  int32_t  listSize      , 
-		  char *alloc         ,
-		  int32_t  allocSize     ,
-		  key_t startKey      , 
-		  key_t endKey        ,
-		  int32_t  fixedDataSize , 
-		  bool  ownData       ,
-		  bool  useHalfKeys   ) {
-		set(list,listSize,alloc,allocSize,(char *)&startKey,
-		    (char *)&endKey,fixedDataSize,ownData,useHalfKeys,
-		    sizeof(key_t));
-	}
-
 	// like above but uses 0/maxKey for startKey/endKey
 	void set (char *list          , 
 		  int32_t  listSize      , 
@@ -108,7 +90,6 @@ class RdbList {
 		  bool  useHalfKeys   ,
 		  char  keySize       = sizeof(key_t) );
 
-	void setFromSafeBuf ( class SafeBuf *sb , char rdbId );
 	void setFromPtr ( char *p , int32_t psize , char rdbId ) ;
 
 	// just set the start and end keys
@@ -217,18 +198,9 @@ class RdbList {
 	// . add this record to the end of the list,  @ m_list+m_listSize
 	// . returns false and sets errno on error
 	// . grows list (m_allocSize) if we need more space
-	//bool addRecord ( key_t &key , int32_t dataSize , char *data ,
-	bool addRecord ( key_t &key , int32_t dataSize , char *data ,
-			 bool bitch = true ) {
-		return addRecord ((char *)&key,dataSize,data,bitch); };
 	bool addRecord ( char *key , int32_t dataSize , char *data ,
 			 bool bitch = true );
 	//bool addKey    ( key_t &key );
-
-	// . record has key included in this case
-	// . returns false and sets errno on error
-	// . grows list (m_allocSize) if we need more space
-	bool addRecordRaw ( char *rec , int32_t recSize );
 
 	// . constrain a list to [startKey,endKey]
 	// . returns false and sets g_errno on error
@@ -415,8 +387,6 @@ class RdbList {
 	//void testIndexMerge ( );
 
 	// private:
-
-	bool checkIndexList_r ( bool removedNegRecs , bool sleepOnProblem );
 
 	// so RdbDump can avoid dumping out neg recs the first time it
 	// dumps to a file.

@@ -158,37 +158,6 @@ void RdbList::reset ( ) {
 	m_ks = 12;
 }
 
-// returns false and sets g_errno on error
-bool RdbList::copyList ( RdbList *listSrc ) {
-	// do not copy over yourself!
-	if ( listSrc == this ) { char *xx=NULL;*xx=0; }
-	// sanity
-	if ( listSrc->m_listSize < 0 ) { char *xx=NULL;*xx=0; }
-	// basically just copy
-	gbmemcpy ( this , listSrc , sizeof(RdbList) );
-	// null out our crap in case the copy fails or list is empty
-	m_list      = NULL;
-	m_listSize  = 0;
-	m_alloc     = NULL;
-	m_allocSize = 0;
-	// all done if empty
-	if ( listSrc->m_listSize == 0 || ! listSrc->m_list )
-		return true;
-	// otherwise we gotta copy the list data itself
-	char *copy = (char *)mmalloc ( listSrc->m_listSize, "lstcp");
-	if ( ! copy ) return false;
-	gbmemcpy ( copy , listSrc->m_list , listSrc->m_listSize );
-	// now we use the copy
-	m_list      = copy;
-	m_listSize  = listSrc->m_listSize;
-	m_alloc     = copy;
-	m_allocSize = listSrc->m_listSize;
-	m_listEnd   = copy + m_listSize;
-	m_ownData   = true;
-	resetListPtr();
-	return true;
-}
-
 // . set from a pre-existing list
 // . all keys of records in list must be in [startKey,endKey]
 void RdbList::set ( char  *list          ,
@@ -317,26 +286,6 @@ int32_t RdbList::getNumRecs ( ) {
 	// return the count
 	return count;
 }
-
-// . returns false and sets g_errno on error
-// . only used by Msg14.cpp for clusterdb at the time I wrote this
-bool RdbList::addRecordRaw ( char *rec , int32_t recSize ) {
-	// return false if we don't own the data
-	if ( ! m_ownData ) {
-		log("db: rdblist: addRecord: Data not owned.");
-		char *p = NULL; *p = 0;	exit(-1);
-	}
-	// grow the list if we need to
-	if ( m_listEnd + recSize >  m_alloc + m_allocSize )
-		if ( ! growList ( m_allocSize + recSize ) )
-			return false;// log("RdbList::merge: growList failed");
-	// gbmemcpy the key to the end of the list
-	gbmemcpy ( m_list + m_listSize , rec , recSize );
-	m_listSize += recSize;
-	m_listEnd  += recSize;
-	return true;
-}
-
 
 // . returns false and sets g_errno on error
 // . used by merge() above to add records to merged list
@@ -768,10 +717,6 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 		return false;
 	}
 
-	// if ( m_useHalfKeys && m_ks == 12 ) // m_ks != 18 && m_ks != 24 )
-	// 	return checkIndexList_r ( removeNegRecs  ,
-	// 				  sleepOnProblem );
-
 	//log("m_list=%"INT32"",(int32_t)m_list);
 	//key_t oldk;
 	//oldk.n0 = 0 ; oldk.n1 = 0;
@@ -982,203 +927,6 @@ bool RdbList::checkList_r ( bool removeNegRecs , bool sleepOnProblem ,
 	if ( ! m_lastKeyIsValid ) {
 		//m_lastKey = oldk;
 		KEYSET(m_lastKey,oldk,m_ks);
-		m_lastKeyIsValid = true;
-	}
-	// don't do this any more cuz we like to call merge_r back-to-back
-	// and like to keep our m_listPtr/m_listPtrHi intact
-	//resetListPtr();
-	// all is ok
-	return true;
-}
-
-// . TODO: check keys to make sure they belong to this group!!
-// . I had a problem where a foreign spider rec was in our spiderdb and
-//   i couldn't delete it because the del key would go to the foreign group!
-// . as a temp patch i added a msg1 force local group option
-bool RdbList::checkIndexList_r ( bool removeNegRecs , bool sleepOnProblem ) {
-	// sanity check
-	//if ( m_ks != 12 ) {
-	//	log(LOG_LOGIC,"db: Key size is not 12.");
-	//	char *xx = NULL; *xx = 0;
-	//}
-	//logf(LOG_DEBUG,"db: checking list");
-	// first key must be 12 bytes for lists that support half keys
-	if ( isHalfBitOn ( m_list ) ) {
-		log(LOG_LOGIC,"db: rdblist: checkIndexList_r: First key in "
-		    "list is a half key. Bad.");
-		if ( sleepOnProblem ) {char *xx = NULL; *xx=0;}
-		if ( sleepOnProblem ) sleep(50000);
-		return false;
-	}
-	// if first key can have a non-contiguous hi ptr we'll have to change
-	// the setting of phi here
-	char *p          = m_list;
-	//char *phi        = m_list + 6;
-	char *phi        = m_list + (m_ks-6);
-	char *pend       = m_listEnd;
-	char *oldp       = NULL;
-	char *oldphi     = NULL;
-
-	// bail now if empty
-	if ( p >= pend ) return true;
-
-	// compare first key to start key
-	//char *startPtr   = (char *)&m_startKey;
-	char *startPtr   = m_startKey;
-	//char *startPtrHi = startPtr + 6;
-	char *startPtrHi = startPtr + (m_ks-6);
-	int32_t status ;
-	if ( m_ks == 12 ) status = fcmp   ( p , phi , startPtr , startPtrHi );
-	else              status = bfcmp  ( p , phi , startPtr , startPtrHi );
-	//if ( fcmp ( p , phi , startPtr , startPtrHi ) < 0 ) {
-	if ( status < 0 ) {
-		log("db: Record key in list is before start key.");
-		//key_t k ;
-		//gbmemcpy ( ((char *)&k)   , p   , 6 );
-		//gbmemcpy ( ((char *)&k)+6 , phi , 6 );
-		//log("db: k.n1=%"XINT32" k.n0=%"XINT64"",
-		//    k.n1,k.n0);
-		//log("db: s.n1=%"XINT32" s.n0=%"XINT64"",
-		//    m_startKey.n1,m_startKey.n0);
-		if ( sleepOnProblem ) {char *xx = NULL; *xx=0;}
-		if ( sleepOnProblem ) sleep(50000);
-		return false;
-	}
-
-
- loop:
-#ifdef GBSANITYCHECK
-	// if upper 6 bytes of current key matches upper 6 of
-	// the last key, then it must be a half key
-	if (!isHalfBitOn(p) && oldp && memcmp(p+(m_ks-6),oldp+(m_ks-6),6)==0){
-		log("db: Key is 12 bytes, but should be 6 bytes.");
-		if ( sleepOnProblem ) {char *xx = NULL; *xx=0;}
-		if ( sleepOnProblem ) sleep(50000);
-		return false;
-	}
-#endif
-	// dups are ok, cuz, if we get saved or crash halfway through
-	// an add command, then url could be re-spidered next time
-	// and the stuff gets re-added
-	//if ( oldp && fcmp ( p , phi , oldp , oldphi ) < 0 ) {
-	if ( oldp ) {
-		if ( m_ks == 12 ) status = fcmp   ( p , phi , oldp, oldphi );
-		else              status = bfcmp  ( p , phi , oldp, oldphi );
-		if ( status < 0 ) {
-			log("db: Key out of order in list of records.");
-			//char *xx = NULL; *xx=0;
-			if ( sleepOnProblem ) {char *xx = NULL; *xx=0;}
-			if ( sleepOnProblem ) sleep(50000);
-			return false;
-		}
-	}
-	// check for delete keys
-	if ( (*p & 0x01LL) == 0LL && removeNegRecs ) {
-		log("db: Got unmet del key.");
-		if ( sleepOnProblem ) {char *xx = NULL; *xx=0;}
-		if ( sleepOnProblem ) sleep(50000);
-		return false;
-	}
-
-	// we now become the old key
-	oldp   = p;
-	oldphi = phi;
-
-	// skip to next
-	//if   ( isHalfBitOn ( p ) ) p += 6;
-	//else                       p += 12;
-	if   ( isHalfBitOn ( p ) ) p += (m_ks-6);
-	else                       p += m_ks;
-
-	// are more keys left?
-	if ( p < pend ) {
-		// if new key is 12 bytes he has the top 6 then
-		//if ( ! isHalfBitOn ( p ) ) phi = p + 6;
-		if ( ! isHalfBitOn ( p ) ) phi = p + (m_ks-6);
-		// check him out
-		goto loop;
-	}
-
-	// . otherwise, we're done
-	// . if p is not right on m_listEnd there was a problem
-	// . sometimes dataSize is too big in corrupt lists
-	if ( p != pend ) {
-		log("db: Had record with bad data size field.");
-		if ( sleepOnProblem ) {char *xx = NULL; *xx=0;}
-		if ( sleepOnProblem ) sleep(50000);
-		return false;
-	}
-
-	// was the last key we read under the endkey?
-	//char *endPtr     = (char *)&m_endKey;
-	//char *endPtrHi   = endPtr + 6;
-	char *endPtr     = m_endKey;
-	char *endPtrHi   = endPtr + (m_ks-6);
-	// TODO: can be greater by 1???? acceptable key we removed?
-	//if ( fcmp ( oldp , oldphi , endPtr , endPtrHi ) > 0 ) {
-	if ( m_ks == 12 ) status = fcmp   ( oldp , oldphi , endPtr , endPtrHi);
-	else              status = bfcmp  ( oldp , oldphi , endPtr , endPtrHi);
-	if ( status > 0 ) {
-		log("db: Got record key in list over end key.");
-		//key_t k ;
-		//gbmemcpy ( ((char *)&k)   , oldp   , 6 );
-		//gbmemcpy ( ((char *)&k)+6 , oldphi , 6 );
-		//log("db: k.n1=%"XINT32" k.n0=%"XINT64"",k.n1,k.n0);
-		//log("db: e.n1=%"XINT32" e.n0=%"XINT64"",m_endKey.n1,m_endKey.n0);
-		if ( sleepOnProblem ) {char *xx = NULL; *xx=0;}
-		if ( sleepOnProblem ) sleep(50000);
-		return false;
-	}
-
-	// . check last key
-	// . oldk ALWAYS has the half bit clear, so clear it on lastKey
-	//key_t lastKey = m_lastKey ;
-	char lastKey[MAX_KEY_BYTES];
-	KEYSET(lastKey,m_lastKey,m_ks);
-	// clear the half bit
-	//lastKey.n0 &= 0xfffffffffffffffdLL;
-	lastKey[0] &= 0xfd;
-	// break up last key
-	//char *lastPtr   = (char *)&m_lastKey;
-	//char *lastPtrHi = lastPtr + 6;
-	char *lastPtr   = m_lastKey;
-	char *lastPtrHi = lastPtr + (m_ks-6);
-	// . did it match what we got?
-	// . this isn't so much a check for corruption as it is a check
-	//   to see if the routines that set the m_lastKey were correct
-	if ( m_lastKeyIsValid ) {
-		if ( m_ks == 12 ) status =fcmp (oldp,oldphi,lastPtr,lastPtrHi);
-		else              status =bfcmp(oldp,oldphi,lastPtr,lastPtrHi);
-	}
-	if ( m_lastKeyIsValid &&
-	     //fcmp ( oldp , oldphi , lastPtr , lastPtrHi ) != 0 ) {
-	     status != 0 ) {
-		log(LOG_LOGIC,"db: Got bad last key.");
-		//key_t k ;
-		//gbmemcpy ( ((char *)&k)   , oldp   , 6 );
-		//gbmemcpy ( ((char *)&k)+6 , oldphi , 6 );
-		char k[MAX_KEY_BYTES];
-		gbmemcpy ( k          , oldp   , m_ks-6 );
-		gbmemcpy ( k+(m_ks-6) , oldphi , 6 );
-		//log(LOG_LOGIC,"db: k.n1=%"XINT32" k.n0=%"XINT64"",k.n1,k.n0);
-		//log(LOG_LOGIC,"db: l.n1=%"XINT32" l.n0=%"XINT64"",
-		//    m_lastKey.n1,m_lastKey.n0);
-		log(LOG_LOGIC,"db: k.n1=%"XINT64" k.n0=%"XINT64"",KEY1(k,m_ks),KEY0(k));
-		log(LOG_LOGIC,"db: L.n1=%"XINT64" L.n0=%"XINT64"",
-		    KEY1(m_lastKey,m_ks),KEY0(m_lastKey));
-		if ( sleepOnProblem ) {char *xx = NULL; *xx=0;}
-		if ( sleepOnProblem ) sleep(50000);
-		// fix it
-		//m_lastKey = k;
-		KEYSET(m_lastKey,k,m_ks);
-	}
-	// . otherwise, last key is now valid
-	// . this is only good for the call to Msg5::getRemoteList()
-	if ( ! m_lastKeyIsValid ) {
-		//gbmemcpy ( ((char *)&m_lastKey)   , oldp   , 6 );
-		//gbmemcpy ( ((char *)&m_lastKey)+6 , oldphi , 6 );
-		gbmemcpy ( m_lastKey          , oldp   , (m_ks-6) );
-		gbmemcpy ( m_lastKey+(m_ks-6) , oldphi , 6 );
 		m_lastKeyIsValid = true;
 	}
 	// don't do this any more cuz we like to call merge_r back-to-back
@@ -2775,34 +2523,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		KEYSET(m_endKey,orig,m_ks);
 
 	return true;
-}
-
-void RdbList::setFromSafeBuf ( SafeBuf *sb , char rdbId ) {
-
-	// free and NULLify any old m_list we had to make room for our new list
-	freeList();
-
-	// set this first since others depend on it
-	m_ks = getKeySizeFromRdbId ( rdbId );
-
-	// set our list parms
-	m_list          = sb->getBufStart();
-	m_listSize      = sb->length();
-	m_alloc         = sb->getBufStart();
-	m_allocSize     = sb->getCapacity();
-	m_listEnd       = m_list + m_listSize;
-
-	KEYMIN(m_startKey,m_ks);
-	KEYMAX(m_endKey  ,m_ks);
-
-	m_fixedDataSize = getDataSizeFromRdbId ( rdbId );
-
-	m_ownData       = false;//ownData;
-	m_useHalfKeys   = false;//useHalfKeys;
-
-	// use this call now to set m_listPtr and m_listPtrHi based on m_list
-	resetListPtr();
-
 }
 
 void RdbList::setFromPtr ( char *p , int32_t psize , char rdbId ) {
