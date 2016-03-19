@@ -73,8 +73,8 @@ class RdbList {
 		  int32_t  allocSize     ,
 		  //key_t startKey      , 
 		  //key_t endKey        ,
-		  char *startKey      , 
-		  char *endKey        ,
+		  const char *startKey      ,
+		  const char *endKey        ,
 		  int32_t  fixedDataSize , 
 		  bool  ownData       ,
 		  bool  useHalfKeys   ,
@@ -205,7 +205,7 @@ class RdbList {
 	// . only called by Msg3.cpp for 1 list reads to avoid memmov()'ing
 	//   and malloc()'ing
 	// . may change m_list and/or m_listSize
-	bool constrain ( char   *startKey    , 
+	bool constrain ( const char   *startKey    ,
 			 char   *endKey      ,
 			 int32_t    minRecSizes ,
 			 int32_t    hintOffset  ,
@@ -226,8 +226,8 @@ class RdbList {
 		       int32_t      numLists      , 
 		       //key_t     startKey      , 
 		       //key_t     endKey        , 
-		       char     *startKey      , 
-		       char     *endKey        , 
+		       const  char    *startKey      ,
+		       const char     *endKey        ,
 		       int32_t      minRecSizes   ,
 		       bool      removeNegRecs ,
 		       char      rdbId         ,
@@ -299,8 +299,8 @@ class RdbList {
 
 	bool posdbMerge_r ( RdbList **lists         ,  
 			    int32_t      numLists      ,
-			    char     *startKey      ,
-			    char     *endKey        ,
+			    const char     *startKey      ,
+			    const char     *endKey        ,
 			    int32_t      minRecSizes   ,
 			    bool      removeNegKeys ,
 			    int32_t     *filtered      ,

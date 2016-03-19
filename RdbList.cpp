@@ -125,8 +125,8 @@ void RdbList::set ( char  *list          ,
 		    int32_t   allocSize     ,
 		    //key_t  startKey      ,
 		    //key_t  endKey        ,
-		    char  *startKey      ,
-		    char  *endKey        ,
+		    const char  *startKey      ,
+		    const char  *endKey        ,
 		    int32_t   fixedDataSize ,
 		    bool   ownData       ,
 		    bool   useHalfKeys   ,
@@ -179,8 +179,8 @@ void RdbList::set (char *list          ,
 		   char  keySize       ) {
 	//key_t startKey = 0;
 	//key_t endKey ; endKey.setMax();
-	char *startKey = KEYMIN();
-	char *endKey   = KEYMAX();
+	const char *startKey = KEYMIN();
+	const char *endKey   = KEYMAX();
 	set ( list          ,
 	      listSize      ,
 	      alloc         ,
@@ -1110,7 +1110,7 @@ int RdbList::printList ( int32_t logtype ) {
 // . CAUTION: ensure we update m_lastKey and make it valid if m_listSize > 0
 // . mincRecSizes is really only important when we read just 1 list
 // . it's a really good idea to keep it as -1 otherwise
-bool RdbList::constrain ( char   *startKey    ,
+bool RdbList::constrain ( const char   *startKey    ,
 			  char   *endKey      ,
 			  int32_t    minRecSizes ,
 			  int32_t    hintOffset  ,
@@ -1415,8 +1415,8 @@ void RdbList::merge_r ( RdbList **lists         ,
 			int32_t      numLists      ,
 			//key_t     startKey      ,
 			//key_t     endKey        ,
-			char     *startKey      ,
-			char     *endKey        ,
+			const char     *startKey      ,
+			const char     *endKey        ,
 			int32_t      minRecSizes   ,
 			bool      removeNegRecs ,
 			char      rdbId         ,
@@ -1981,8 +1981,8 @@ void RdbList::merge_r ( RdbList **lists         ,
 
 bool RdbList::posdbMerge_r ( RdbList **lists         ,
 			     int32_t      numLists      ,
-			     char     *startKey      ,
-			     char     *endKey        ,
+			     const char     *startKey      ,
+			     const char     *endKey        ,
 			     int32_t      minRecSizes   ,
 			     bool      removeNegKeys ,
 			     //char     *prevKey       ,
