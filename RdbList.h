@@ -94,7 +94,7 @@ class RdbList {
 
 	// just set the start and end keys
 	//void set ( key_t startKey , key_t endKey );
-	void set ( char *startKey , char *endKey );
+	void set ( const char *startKey, const char *endKey );
 
 	void setStartKey ( key_t startKey ){
 	  if ( m_ks!=12 ) { char *xx=NULL;*xx=0;}
@@ -106,8 +106,8 @@ class RdbList {
 	  KEYSET(m_endKey,(char *)&endKey,12);
 	  //*(key_t *)m_endKey   = endKey  ; };
 	};
-	void setStartKey ( char *startKey ){KEYSET(m_startKey,startKey,m_ks);};
-	void setEndKey   ( char *endKey   ){KEYSET(m_endKey  ,endKey  ,m_ks);};
+	void setStartKey ( const char *startKey ){KEYSET(m_startKey,startKey,m_ks);}
+	void setEndKey   ( const char *endKey   ){KEYSET(m_endKey  ,endKey  ,m_ks);}
 
 	void setUseHalfKeys ( bool use ) { m_useHalfKeys = use; };
 
@@ -136,7 +136,7 @@ class RdbList {
 
 	// these operate on the whole list
 	char *getList            () { return m_list; };
-	int32_t  getListSize        () { return m_listSize; };
+	int32_t  getListSize        () const { return m_listSize; }
 	char *getListEnd         () { return m_list + m_listSize; };
 	//key_t getListStartKey    () { return m_startKey; };
 	//key_t getListEndKey      () { return m_endKey; };
@@ -146,7 +146,7 @@ class RdbList {
 
 	// often these equal m_list/m_listSize, but they may encompass
 	char *getAlloc           () { return m_alloc; };
-	int32_t  getAllocSize       () { return m_allocSize; };
+	int32_t  getAllocSize       () const { return m_allocSize; }
 
 	// . skip over the current record and point to the next one
 	// . returns false if we skipped into a black hole (end of list)
@@ -178,43 +178,39 @@ class RdbList {
 		return true;
 	};
 
-	bool  isExhausted        () { return (m_listPtr >= m_listEnd); };
-	//key_t getCurrentKey      () { return getKey      ( m_listPtr );};
-	key_t getCurrentKey      () { 
-		key_t key ; getKey ( m_listPtr,(char *)&key ); return key; };
-	void  getCurrentKey      (void *key) { getKey(m_listPtr,(char *)key);};
-	int32_t  getCurrentDataSize () { return getDataSize ( m_listPtr );};
+	bool  isExhausted        () const { return (m_listPtr >= m_listEnd); }
+	key_t getCurrentKey      () const { 
+		key_t key ; getKey ( m_listPtr,(char *)&key ); return key; }
+	void  getCurrentKey      (void *key) const { getKey(m_listPtr,(char *)key);};
+	int32_t  getCurrentDataSize () const { return getDataSize ( m_listPtr );}
 	char *getCurrentData     () { return getData     ( m_listPtr );};
-	int32_t  getCurrentRecSize  () { return getRecSize  ( m_listPtr );};
-	int32_t  getCurrentSize     () { return m_listEnd - m_listPtr; };
+	int32_t  getCurrentRecSize  () const { return getRecSize  ( m_listPtr );}
+	int32_t  getCurrentSize     () const { return m_listEnd - m_listPtr; }
 	char *getCurrentRec      () { return m_listPtr; };
 	char *getListPtr         () { return m_listPtr; };
 	char *getListPtrHi       () { return m_listPtrHi; };
 	void  resetListPtr       () ;
 
 	// are there any records in the list?
-	bool  isEmpty     ( ) { return (m_listSize == 0); };
+	bool  isEmpty     ( ) const { return (m_listSize == 0); }
 
 	// . add this record to the end of the list,  @ m_list+m_listSize
 	// . returns false and sets errno on error
 	// . grows list (m_allocSize) if we need more space
-	bool addRecord ( char *key , int32_t dataSize , char *data ,
+	bool addRecord ( const char *key, int32_t dataSize, const char *data,
 			 bool bitch = true );
-	//bool addKey    ( key_t &key );
 
 	// . constrain a list to [startKey,endKey]
 	// . returns false and sets g_errno on error
 	// . only called by Msg3.cpp for 1 list reads to avoid memmov()'ing
 	//   and malloc()'ing
 	// . may change m_list and/or m_listSize
-	//bool constrain ( key_t   startKey    , 
-	//		 key_t   endKey      ,
 	bool constrain ( char   *startKey    , 
 			 char   *endKey      ,
 			 int32_t    minRecSizes ,
 			 int32_t    hintOffset  ,
 			 char   *hintKey     ,
-			 char   *filename    ,
+			 const char   *filename    ,
 			 int32_t    niceness    ) ;
 
 	// . this MUST be called before calling merge_r() 
@@ -314,7 +310,7 @@ class RdbList {
 
 
 	// returns false if we skipped into a black hole (end of list)
-	int32_t getRecSize ( char *rec ) {
+	int32_t getRecSize ( const char *rec ) const {
 		// posdb?
 		if ( m_ks == 18 ) {
 			if ( rec[0]&0x04 ) return 6;
@@ -340,25 +336,25 @@ class RdbList {
 	// . is the format bit set? that means it's a 12-byte key
 	// . used exclusively for index lists (indexdb)
 	// . see Indexdb.h for format of the 12-byte and 6-byte indexdb keys
-	bool isHalfBitOn ( char *rec ) { return ( *rec & 0x02 ); };
+	bool isHalfBitOn ( const char *rec ) const { return ( *rec & 0x02 ); }
 
-	bool useHalfKeys () { return m_useHalfKeys; };
+	bool useHalfKeys () const { return m_useHalfKeys; }
 
 	char *getData     ( char *rec ) ;
-	int32_t  getDataSize ( char *rec ) ;
-	void  getKey      ( char *rec , char *key ) ;
-	key_t getKey      ( char *rec ) {
-		key_t k; getKey(rec,(char *)&k); return k; };
+	int32_t  getDataSize ( const char *rec ) const;
+	void  getKey      ( const char *rec , char *key ) const;
+	key_t getKey      ( const char *rec ) const {
+		key_t k; getKey(rec,(char *)&k); return k; }
 
 	// . merge_r() sets m_lastKey for the list it merges the others into
 	// . otherwise, this may be invalid
 	//key_t getLastKey  ( ) ;
 	char *getLastKey  ( ) ;
 	//void  setLastKey  ( key_t k );
-	void  setLastKey  ( char *k );
+	void  setLastKey  ( const char *k );
 	// sometimes we don't have a valid m_lastKey because it is only
 	// set in calls to constrain(), merge_r() and indexMerge_r()
-	bool  isLastKeyValid () { return m_lastKeyIsValid; };
+	bool  isLastKeyValid () const { return m_lastKeyIsValid; };
 
 	//key_t getFirstKey ( ) { return *(key_t *)m_list; };
 	char *getFirstKey ( ) { return m_list; };
@@ -426,7 +422,7 @@ class RdbList {
 	char  *m_listPtrHi;
 
 	// for the secondary compression bit for posdb
-	char  *m_listPtrLo;
+	const char  *m_listPtrLo;
 
 	// do we own the list data (m_list)? if so free it on destruction
 	bool   m_ownData;       

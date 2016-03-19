@@ -238,7 +238,7 @@ void RdbList::set (char *list          ,
 
 // just set the start and end keys
 //void RdbList::set ( key_t startKey , key_t endKey ) {
-void RdbList::set ( char *startKey , char *endKey ) {
+void RdbList::set ( const char *startKey, const char *endKey ) {
 	//m_startKey = startKey;
 	//m_endKey   = endKey;
 	KEYSET ( m_startKey , startKey , m_ks );
@@ -255,7 +255,7 @@ char *RdbList::getLastKey  ( ) {
 };
 
 //void RdbList::setLastKey  ( key_t k ) {
-void RdbList::setLastKey  ( char *k ) {
+void RdbList::setLastKey  ( const char *k ) {
 	//m_lastKey = k;
 	KEYSET ( m_lastKey , k , m_ks );
 	m_lastKeyIsValid = true;
@@ -292,7 +292,7 @@ int32_t RdbList::getNumRecs ( ) {
 // . used by RdbTree to construct an RdbList from branches of records
 // . NOTE: does not set m_endKey/m_startKey/ etc..
 //bool RdbList::addRecord ( key_t &key , int32_t dataSize , char *data ,
-bool RdbList::addRecord ( char *key , int32_t dataSize , char *data ,
+bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 			  bool bitch ) {
 
 	if ( m_ks == 18 ) { // m_rdbId == RDB_POSDB ) {
@@ -509,7 +509,7 @@ bool RdbList::prepareForMerge ( RdbList **lists         ,
 // . get the current records key
 // . this needs to be fast!!
 //key_t RdbList::getKey ( char *rec ) {
-void RdbList::getKey ( char *rec , char *key ) {
+void RdbList::getKey ( const char *rec , char *key ) const {
 
 	// posdb?
 	if ( m_ks == 18 ) {
@@ -613,7 +613,7 @@ void RdbList::getKey ( char *rec , char *key ) {
 	*key &= 0xfd;
 }
 
-int32_t RdbList::getDataSize ( char *rec ) {
+int32_t RdbList::getDataSize ( const char *rec ) const {
 	if ( m_fixedDataSize == 0 ) return 0;
 	// negative keys always have no datasize entry
 	if ( (rec[0] & 0x01) == 0 ) return 0;
@@ -1156,7 +1156,7 @@ bool RdbList::constrain ( char   *startKey    ,
 			  int32_t    minRecSizes ,
 			  int32_t    hintOffset  ,
 			  char   *hintKey     ,
-			  char   *filename    ,
+			  const char   *filename    ,
 			  int32_t    niceness    ) {
 	// return false if we don't own the data
 	if ( ! m_ownData ) {
@@ -1195,7 +1195,7 @@ bool RdbList::constrain ( char   *startKey    ,
 	// roll it back and let checkList_r and repairList_r deal with it
 	char *savelist      = m_list;
 	char *savelistPtrHi = m_listPtrHi;
-	char *savelistPtrLo = m_listPtrLo;
+	const char *savelistPtrLo = m_listPtrLo;
 
 #ifdef GBSANITYCHECK
 	char lastKey[MAX_KEY_BYTES];
