@@ -139,11 +139,7 @@ inline void mdelete ( void *ptr , int32_t size , const char *note ) {
 inline bool relabel   ( void *ptr , int32_t size , const char *note ) {
 	return g_mem.lblMem( ptr, size, note ); };
 
-void operator delete ( void *p ) throw();
-void * operator new (size_t size) throw (std::bad_alloc);
-
 int32_t getAllocSize(void *p);
-//void * operator new (size_t size) ;
 
 
 #endif // GB_MEM_H
