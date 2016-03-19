@@ -4607,20 +4607,33 @@ skipItem:
 	// set it
 	if ( retNode1 ) *retNode1 = node1;
 	// hunt for an alnum in the link text
+	// Sligtly unusual looping because we may have cut the last utf8
+	// character in half by using the limited buffer. This happens quite
+	// often when the closing </a> tag is missing and the text is utf8.
 	char *p    = buf;
 	char *pend = buf + bufLen;
-	for ( ; p < pend ; p += getUtf8CharSize(p) ) {
+	while ( p < pend ) {
 		QUICKPOLL ( niceness );
-		if ( is_alnum_utf8(p) ) break;
+		int character_len = getUtf8CharSize(p);
+		if ( p+character_len > pend ) //truncated utf8 character
+			break;
+		if ( is_alnum_utf8(p) )
+			break;
+		p += character_len;
 	}
 	// if no alnum then return 0 as the link text len
 	if ( p >= pend ) return 0;
 	// find last non-space char
 	char *q = p;
 	char *last = NULL;
-	for ( ; q < pend ; q += getUtf8CharSize(p) ) {
+	while ( q < pend ) {
 		QUICKPOLL ( niceness );
-		if ( ! is_wspace_utf8(q) ) last = q;
+		int character_len = getUtf8CharSize(q);
+		if ( q+character_len > pend ) //truncated utf8 character
+			break;
+		if ( ! is_wspace_utf8(q) )
+			last = q;
+		q += character_len;
 	}
 	// hack off trailing spaces
 	if ( last ) pend = last + getUtf8CharSize(last); // +1;
