@@ -19,7 +19,7 @@ const char *mstrerror ( int errnum ) ;
 //#define REMOTE_ERROR_BIT (0x40000000)
 
 enum {
-	EDUMPFAILED    = (0x00008000 | 0) , // tree dump failed 32768
+	EDUMPFAILED    = 0x00008000  , // tree dump failed 32768
 	ETRYAGAIN        , // try doing it again
 	ECLOSING         , // can't add cuz we're closing the db
 	ENOTFOUND        , // can't find in the db
