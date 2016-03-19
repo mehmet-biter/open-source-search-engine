@@ -99,12 +99,10 @@ class RdbList {
 	void setStartKey ( key_t startKey ){
 	  if ( m_ks!=12 ) { char *xx=NULL;*xx=0;}
 	  KEYSET(m_startKey,(char *)&startKey,12);
-	  //*((key_t *)m_startKey) = startKey; };
 	};
 	void setEndKey   ( key_t endKey   ){
 	  if ( m_ks!=12 ) { char *xx=NULL;*xx=0;}
 	  KEYSET(m_endKey,(char *)&endKey,12);
-	  //*(key_t *)m_endKey   = endKey  ; };
 	};
 	void setStartKey ( const char *startKey ){KEYSET(m_startKey,startKey,m_ks);}
 	void setEndKey   ( const char *endKey   ){KEYSET(m_endKey  ,endKey  ,m_ks);}
@@ -117,8 +115,6 @@ class RdbList {
 	void setFixedDataSize ( int32_t fixedDataSize ) { 
 		m_fixedDataSize = fixedDataSize; };
 
-	//key_t getStartKey        () { return m_startKey; };
-	//key_t getEndKey          () { return m_endKey;   };
 	char *getStartKey        () { return m_startKey; };
 	char *getEndKey          () { return m_endKey;   };
 	int32_t  getFixedDataSize   () { return m_fixedDataSize; };
@@ -138,8 +134,6 @@ class RdbList {
 	char *getList            () { return m_list; };
 	int32_t  getListSize        () const { return m_listSize; }
 	char *getListEnd         () { return m_list + m_listSize; };
-	//key_t getListStartKey    () { return m_startKey; };
-	//key_t getListEndKey      () { return m_endKey; };
 	char *getListStartKey    () { return m_startKey; };
 	char *getListEndKey      () { return m_endKey; };
 
@@ -236,66 +230,6 @@ class RdbList {
 		       RdbList  *tfndbList     , // used for titledb
 		       bool      isRealMerge   ,
 		       int32_t      niceness      );
-	/*
-	// . we now use half keys for Tfndb, cuts mem usage in half.
-	// . Tfndb keys are special in that we ignore the 'f' and C' bits
-	//   when comparing keys in this routine
-	bool indexMerge_r ( RdbList **lists         ,  
-			    int32_t      numLists      ,
-			    //key_t     startKey      ,
-			    //key_t     endKey        ,
-			    char     *startKey      ,
-			    char     *endKey        ,
-			    int32_t      minRecSizes   ,
-			    bool      removeNegKeys ,
-			    //key_t     prevKey       ,
-			    char     *prevKey       ,
-			    int32_t     *prevCountPtr  ,
-			    int32_t      truncLimit    ,
-			    int32_t     *dupsRemoved   ,
-			    //bool      isTfndb       ,
-			    char      rdbId         ,
-			    int32_t     *filtered      ,
-			    bool      doGroupMask   , //= true ,
-			    bool      isRealMerge   , //= false );
-			    bool      useBigRootList ,
-			    int32_t      niceness       );
-
-	bool indexMerge_r ( RdbList **lists         ,  
-			    int32_t      numLists      ,
-			    key_t     startKey      ,
-			    key_t     endKey        ,
-			    int32_t      minRecSizes   ,
-			    bool      removeNegKeys ,
-			    key_t     prevKey       ,
-			    int32_t     *prevCountPtr  ,
-			    int32_t      truncLimit    ,
-			    int32_t     *dupsRemoved   ,
-			    //bool      isTfndb       ,
-			    char      rdbId         ,
-			    int32_t     *filtered      ,
-			    bool      doGroupMask   ,//= true ,
-			    bool      isRealMerge   ,//= false ) {
-			    bool      useBigRootList ,
-			    int32_t      niceness       ) {
-		return indexMerge_r ( lists         ,  
-				      numLists      ,
-				      (char *)&startKey      ,
-				      (char *)&endKey        ,
-				      minRecSizes   ,
-				      removeNegKeys ,
-				      (char *)&prevKey       ,
-				      prevCountPtr  ,
-				      truncLimit    ,
-				      dupsRemoved   ,
-				      //isTfndb       ,
-				      rdbId         ,
-				      filtered      ,
-				      doGroupMask   ,
-				      isRealMerge   ,
-				      useBigRootList ,
-				      niceness       ); };
-	*/
 
 	bool posdbMerge_r ( RdbList **lists         ,  
 			    int32_t      numLists      ,
@@ -348,7 +282,6 @@ class RdbList {
 
 	// . merge_r() sets m_lastKey for the list it merges the others into
 	// . otherwise, this may be invalid
-	//key_t getLastKey  ( ) ;
 	char *getLastKey  ( ) ;
 	//void  setLastKey  ( key_t k );
 	void  setLastKey  ( const char *k );
@@ -356,7 +289,6 @@ class RdbList {
 	// set in calls to constrain(), merge_r() and indexMerge_r()
 	bool  isLastKeyValid () const { return m_lastKeyIsValid; };
 
-	//key_t getFirstKey ( ) { return *(key_t *)m_list; };
 	char *getFirstKey ( ) { return m_list; };
 
 
@@ -380,19 +312,11 @@ class RdbList {
 
 	void setListSize ( int32_t size ) { m_listSize = size; };
 
-	//void testIndexMerge ( );
-
 	// private:
-
-	// so RdbDump can avoid dumping out neg recs the first time it
-	// dumps to a file.
-	//void removeNegRecs ();
 
 	// the unalterd raw list. keys may be outside of [m_startKey,m_endKey]
 	char  *m_list;
 	int32_t   m_listSize;     // how many bytes we're using for a list
-	//key_t  m_startKey;
-	//key_t  m_endKey;
 	char   m_startKey [ MAX_KEY_BYTES ];
 	// the list contains all the keys in [m_startKey,m_endKey] so make
 	// sure if the list is truncated by minrecsizes that you decrease
@@ -432,9 +356,6 @@ class RdbList {
 
 	// keysize, usually 12, for 12 bytes. can be 16 for date index (datedb)
 	char   m_ks;
-	// if first key is only 6 bytes, we store the top 6 here and
-	// point m_listPtrHi to it when list ptrs are reset
-	//char   m_tmp[6];
 };
 
 #endif // GB_RDBLIST_H
