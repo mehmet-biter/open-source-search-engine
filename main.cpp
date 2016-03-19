@@ -2141,15 +2141,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	// start up log file
-	if ( ! g_log.init( g_hostdb.m_logFilename ) ) {
-		fprintf (stderr,"db: Log file init failed. Exiting.\n" );
-		return 1;
-	}
-
-	g_log.m_logTimestamps = true;
-	g_log.m_logReadableTimestamps = true;	// @todo BR: Should be configurable..
-
 	// temp merge test
 	//RdbList list;
 	//list.testIndexMerge();
@@ -2165,7 +2156,6 @@ int main2 ( int argc , char *argv[] ) {
 	//if ( !g_speller.init ( ) ) return 1;
 
 	g_errno = 0;
-
 	//g_speller.test ( );
 	//exit(-1);
 	/*
@@ -2222,7 +2212,6 @@ int main2 ( int argc , char *argv[] ) {
 	// // exit status of 0
 	// g_createdPidFile = true;
 
-
 	// remove the file called 'cleanexit' so if we get killed suddenly
 	// the bashloop will know we did not exit cleanly
 	cleanFileName.safePrintf("%s/cleanexit",g_hostdb.m_dir);
@@ -2261,6 +2250,15 @@ int main2 ( int argc , char *argv[] ) {
 	return 0;
 	*/
 
+
+	// start up log file
+	if ( ! g_log.init( g_hostdb.m_logFilename ) ) {
+		fprintf (stderr,"db: Log file init failed. Exiting.\n" );
+		return 1;
+	}
+
+	g_log.m_logTimestamps = true;
+	g_log.m_logReadableTimestamps = true;	// @todo BR: Should be configurable..
 
 	// in case we do not have one, we need it for Images.cpp
 	if ( ! makeTrashDir() ) {
