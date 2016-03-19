@@ -2185,7 +2185,8 @@ int main2 ( int argc , char *argv[] ) {
 	// make sure port is available, no use loading everything up then
 	// failing because another process is already running using this port
 	if ( ! g_httpServer.m_tcp.testBind(g_hostdb.getMyHost()->m_httpPort, true)) {
-		return 1;
+		// return 0 so keep alive bash loop exits
+		exit(0);
 	}
 
 	int32_t *ips;
@@ -3476,7 +3477,7 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 
 				// also stop if ./cleanexit is there
 				// because the above exit(0) does not always
-				    // work for some strange reasons
+				// work for some strange reasons
 				"if [ -f \"./cleanexit\" ]; then  break; fi;"
 				"%s"
 				"ADDARGS='-r'\\$INC ; "
