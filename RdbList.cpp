@@ -25,47 +25,6 @@
 // . for comparison purposes, we must set 0x02 (half bits) on all keys
 //   so negative keys will always be ordered before their positive
 
-#define fcmp(alo,ahi,blo,bhi) \
-          (*(uint32_t  *)&((char *)ahi)[2] <      \
-	   *(uint32_t  *)&((char *)bhi)[2]  ? -1  \
-       :  (*(uint32_t  *)&((char *)ahi)[2] >      \
-	   *(uint32_t  *)&((char *)bhi)[2]  ?  1  \
-       :  (*(uint16_t *) ((char *)ahi)    <      \
-	   *(uint16_t *) ((char *)bhi)     ? -1  \
-       :  (*(uint16_t *) ((char *)ahi)    >      \
-	   *(uint16_t *) ((char *)bhi)     ?  1  \
-       :  (*(uint32_t  *)&((char *)alo)[2] <      \
-	   *(uint32_t  *)&((char *)blo)[2]  ? -1  \
-       :  (*(uint32_t  *)&((char *)alo)[2] >      \
-	   *(uint32_t  *)&((char *)blo)[2]  ?  1  \
-       :(((*(uint16_t *) ((char *)alo)    )|0x02) <        \
-	 ((*(uint16_t *) ((char *)blo)    )|0x02)    ? -1  \
-       :(((*(uint16_t *) ((char *)alo)    )|0x02) >        \
-	 ((*(uint16_t *) ((char *)blo)    )|0x02)    ?  1  \
-	 : 0 ))))))))
-
-
-// this is for 16-byte keys
-#define bfcmp(alo,ahi,blo,bhi) \
-          (*(uint32_t  *)&((char *)ahi)[2] <      \
-	   *(uint32_t  *)&((char *)bhi)[2]  ? -1  \
-       :  (*(uint32_t  *)&((char *)ahi)[2] >      \
-	   *(uint32_t  *)&((char *)bhi)[2]  ?  1  \
-       :  (*(uint16_t *) ((char *)ahi)    <      \
-	   *(uint16_t *) ((char *)bhi)     ? -1  \
-       :  (*(uint16_t *) ((char *)ahi)    >      \
-	   *(uint16_t *) ((char *)bhi)     ?  1  \
-       :  (*(uint64_t *)&((char *)alo)[2] <      \
-	   *(uint64_t *)&((char *)blo)[2]  ? -1  \
-       :  (*(uint64_t *)&((char *)alo)[2] >      \
-	   *(uint64_t *)&((char *)blo)[2]  ?  1  \
-       :(((*(uint16_t *) ((char *)alo)    )|0x02) <        \
-	 ((*(uint16_t *) ((char *)blo)    )|0x02)    ? -1  \
-       :(((*(uint16_t *) ((char *)alo)    )|0x02) >        \
-	 ((*(uint16_t *) ((char *)blo)    )|0x02)    ?  1  \
-	 : 0 ))))))))
-
-
 static inline char bfcmpPosdb ( char *alo , char *ame , char *ahi , 
 			 char *blo , char *bme , char *bhi ) {
 	if (*(uint32_t  *)( ahi+2 )<*(uint32_t  *)(bhi+2)) return -1;
