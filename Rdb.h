@@ -62,8 +62,6 @@ enum {
 	RDB2_CATDB2,
 	RDB_END
 };
-// how many rdbs are in "urgent merge" mode?
-extern int32_t g_numUrgentMerges;
 
 // get the RdbBase class for an rdbId and collection name
 class RdbBase *getRdbBase ( uint8_t rdbId, const char *coll );
