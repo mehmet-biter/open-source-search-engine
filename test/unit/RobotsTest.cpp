@@ -5,31 +5,53 @@
 
 #define TEST_DOMAIN "http://example.com"
 
-static void generateRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, const char *allow = "", const char *disallow = "" ) {
-	int32_t pos = snprintf( robotsTxt, 1024, "user-agent: ua-test\n" );
+//
+// helper method
+//
 
-	if (allow != "") {
-		pos += snprintf ( robotsTxt + pos, 1024 - pos, "allow: %s\n", allow );
-	}
-
-	pos += snprintf (robotsTxt + pos, 1024 - pos, "disallow: %s\n", disallow );
-
+static void logRobotsTxt( const char *robotsTxt ) {
 	logf (LOG_INFO, "===== robots.txt =====\n%s", robotsTxt);
 }
 
-// helper method
-static bool isUrlAllowed( const char *path, const char *robotsTxt ) {
+static void generateRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, int32_t *pos, const char *userAgent = "testbot", const char *allow = "", const char *disallow = "" ) {
+	if ( *pos != 0 ) {
+		*pos += snprintf ( robotsTxt + *pos, robotsTxtSize - *pos, "\n" );
+	}
+
+	*pos += snprintf ( robotsTxt + *pos, robotsTxtSize - *pos, "user-agent: %s\n", userAgent );
+
+	if ( allow != "" ) {
+		*pos += snprintf ( robotsTxt + *pos, robotsTxtSize - *pos, "allow: %s\n", allow );
+	}
+
+	if ( disallow != "" ) {
+		*pos += snprintf (robotsTxt + *pos, robotsTxtSize - *pos, "disallow: %s\n", disallow );
+	}
+}
+
+static void generateTestRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, const char *allow = "", const char *disallow = "" ) {
+	int32_t pos = 0;
+	generateRobotsTxt( robotsTxt, robotsTxtSize, &pos, "testbot", allow, disallow);
+	logRobotsTxt( robotsTxt );
+}
+
+static bool isUrlAllowed( const char *path, const char *robotsTxt, bool *userAgentFound, bool *hadAllowOrDisallow, const char *userAgent = "testbot" ) {
 	char urlStr[1024];
 	snprintf( urlStr, 1024, TEST_DOMAIN "%s", path );
 
 	Url url;
 	url.set( urlStr );
 
-	bool userAgentFound = false;
 	int32_t crawlDelay = -1;
+
+	return Robots::isAllowed( &url, userAgent, robotsTxt, strlen(robotsTxt), userAgentFound, true, &crawlDelay, hadAllowOrDisallow);
+}
+
+static bool isUrlAllowed( const char *path, const char *robotsTxt, const char *userAgent = "testbot" ) {
+	bool userAgentFound = false;
 	bool hadAllowOrDisallow = false;
 
-	bool isAllowed = Robots::isAllowed( &url, "ua-test", robotsTxt, strlen(robotsTxt), &userAgentFound, true, &crawlDelay, &hadAllowOrDisallow);
+	bool isAllowed = isUrlAllowed( path, robotsTxt, &userAgentFound, &hadAllowOrDisallow, userAgent );
 	EXPECT_TRUE( userAgentFound );
 	EXPECT_TRUE( hadAllowOrDisallow );
 
@@ -37,12 +59,247 @@ static bool isUrlAllowed( const char *path, const char *robotsTxt ) {
 }
 
 //
+// Test user-agent
+//
+
+TEST(RobotsTest, UserAgentSingleUANoMatch) {
+	static const char *allow = "";
+	static const char *disallow = "/";
+
+	int32_t pos = 0;
+	char robotsTxt[1024];
+	generateRobotsTxt( robotsTxt, 1024, &pos, "abcbot", allow, disallow);
+	logRobotsTxt( robotsTxt );
+
+	bool userAgentFound = false;
+	bool hadAllowOrDisallow = false;
+
+	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+
+	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+}
+
+TEST(RobotsTest, DISABLED_UserAgentSingleUAPrefixNoMatch) {
+	static const char *allow = "";
+	static const char *disallow = "/";
+
+	int32_t pos = 0;
+	char robotsTxt[1024];
+	generateRobotsTxt( robotsTxt, 1024, &pos, "testbotabc", allow, disallow);
+	logRobotsTxt( robotsTxt );
+
+	bool userAgentFound = false;
+	bool hadAllowOrDisallow = false;
+
+	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+
+	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+}
+
+TEST(RobotsTest, UserAgentSingleUAPrefixMatch) {
+	static const char *allow = "";
+	static const char *disallow = "/";
+
+	int32_t pos = 0;
+	char robotsTxt[1024];
+	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot/1.0", allow, disallow);
+	logRobotsTxt( robotsTxt );
+
+	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
+	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
+}
+
+TEST(RobotsTest, UserAgentSingleUAMatch) {
+	static const char *allow = "";
+	static const char *disallow = "/";
+
+	char robotsTxt[1024];
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow);
+
+	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
+	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
+}
+
+TEST(RobotsTest, UserAgentSeparateUANone) {
+	int32_t pos = 0;
+	char robotsTxt[1024];
+	generateRobotsTxt( robotsTxt, 1024, &pos, "atestbot", "", "/test");
+	generateRobotsTxt( robotsTxt, 1024, &pos, "abcbot", "", "/abc");
+	generateRobotsTxt( robotsTxt, 1024, &pos, "defbot", "", "/def");
+	logRobotsTxt( robotsTxt );
+
+	bool userAgentFound = false;
+	bool hadAllowOrDisallow = false;
+
+	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+
+	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+
+	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+
+	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+
+	EXPECT_TRUE( isUrlAllowed( "/test.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+}
+
+TEST(RobotsTest, UserAgentSeparateUAFirst) {
+	int32_t pos = 0;
+	char robotsTxt[1024];
+	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot", "", "/test");
+	generateRobotsTxt( robotsTxt, 1024, &pos, "abcbot", "", "/abc");
+	generateRobotsTxt( robotsTxt, 1024, &pos, "defbot", "", "/def");
+	logRobotsTxt( robotsTxt );
+
+	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt ) );
+	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
+}
+
+TEST(RobotsTest, UserAgentSeparateUASecond) {
+	int32_t pos = 0;
+	char robotsTxt[1024];
+	generateRobotsTxt( robotsTxt, 1024, &pos, "abcbot", "", "/abc");
+	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot", "", "/test");
+	generateRobotsTxt( robotsTxt, 1024, &pos, "defbot", "", "/def");
+	logRobotsTxt( robotsTxt );
+
+	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt ) );
+	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
+}
+
+TEST(RobotsTest, UserAgentSeparateUALast) {
+	int32_t pos = 0;
+	char robotsTxt[1024];
+	generateRobotsTxt( robotsTxt, 1024, &pos, "abcbot", "", "/abc");
+	generateRobotsTxt( robotsTxt, 1024, &pos, "defbot", "", "/def");
+	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot", "", "/test");
+	logRobotsTxt( robotsTxt );
+
+	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt ) );
+	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
+}
+
+TEST(RobotsTest, UserAgentMultiUANone) {
+	int32_t pos = 0;
+	char robotsTxt[1024];
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "abcbot" );
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "atestbot" );
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "defbot" );
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "disallow: %s\n", "/test" );
+	logRobotsTxt( robotsTxt );
+
+	bool userAgentFound = false;
+	bool hadAllowOrDisallow = false;
+
+	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+
+	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+
+	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+
+	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+
+	EXPECT_TRUE( isUrlAllowed( "/test.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE ( userAgentFound );
+	EXPECT_FALSE ( hadAllowOrDisallow );
+}
+
+TEST(RobotsTest, UserAgentMultiUAFirst) {
+	int32_t pos = 0;
+	char robotsTxt[1024];
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "testbot" );
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "abcbot" );
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "defbot" );
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "disallow: %s\n", "/test" );
+	logRobotsTxt( robotsTxt );
+
+	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt ) );
+	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
+}
+
+TEST(RobotsTest, UserAgentMultiUASecond) {
+	static const char *disallow = "/";
+
+	int32_t pos = 0;
+	char robotsTxt[1024];
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "abcbot" );
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "testbot" );
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "defbot" );
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "disallow: %s\n", "/test" );
+	logRobotsTxt( robotsTxt );
+
+	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt ) );
+	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
+}
+
+TEST(RobotsTest, UserAgentMultiUALast) {
+	static const char *disallow = "/";
+
+	int32_t pos = 0;
+	char robotsTxt[1024];
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "abcbot" );
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "defbot" );
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "testbot" );
+	pos += snprintf ( robotsTxt + pos, 1024 - pos, "disallow: %s\n", "/test" );
+	logRobotsTxt( robotsTxt );
+
+	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
+	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt ) );
+	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
+}
+
+//
 // Test allow/disallow
 //
 
 TEST(RobotsTest, AllowAll) {
+	static const char *allow = "";
+	static const char *disallow = " ";
+
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024 );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -53,7 +310,7 @@ TEST(RobotsTest, DisallowAll) {
 	static const char *disallow = "/";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -65,7 +322,7 @@ TEST(RobotsTest, DISABLED_PathMatch) {
 	static const char *disallow = "/123";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -83,7 +340,7 @@ TEST(RobotsTest, DISABLED_PathMatchWithEndSlash) {
 	static const char *disallow = "/123/";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -101,7 +358,7 @@ TEST(RobotsTest, DISABLED_PathMatchWildcardStart) {
 	static const char *disallow = "/*abc";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_TRUE( isUrlAllowed ( "/123", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed ( "/123ab", robotsTxt ) );
@@ -118,7 +375,7 @@ TEST(RobotsTest, DISABLED_PathMatchWildcardMid) {
 	static const char *disallow = "/123*xyz";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_TRUE( isUrlAllowed ( "/123/qwerty/xy", robotsTxt ) );
 
@@ -133,7 +390,7 @@ TEST(RobotsTest, DISABLED_PathMatchEnd) {
 	static const char *disallow = "/123$";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_TRUE( isUrlAllowed ( "/123/", robotsTxt ) );
 
@@ -146,7 +403,7 @@ TEST(RobotsTest, DISABLED_PathMatchWildcardEnd) {
 	static const char *disallow = "/*abc$";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_TRUE( isUrlAllowed ( "/123/abc/x", robotsTxt ) );
 
@@ -177,7 +434,7 @@ TEST(RobotsTest, DISABLED_GPathMatchPrefixDisallow) {
 	static const char *disallow = "/fish";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_FALSE( isUrlAllowed( "/fish", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/fish.html", robotsTxt ) );
@@ -196,7 +453,7 @@ TEST(RobotsTest, DISABLED_GPathMatchPrefixAllow) {
 	static const char *disallow = "/";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_TRUE( isUrlAllowed( "/fish", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/fish.html", robotsTxt ) );
@@ -222,7 +479,7 @@ TEST(RobotsTest, DISABLED_GPathMatchPrefixWildcardDisallow) {
 	static const char *disallow = "/fish*";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_FALSE( isUrlAllowed( "/fish", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/fish.html", robotsTxt ) );
@@ -241,7 +498,7 @@ TEST(RobotsTest, DISABLED_GPathMatchPrefixWildcardAllow) {
 	static const char *disallow = "/";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_TRUE( isUrlAllowed( "/fish", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/fish.html", robotsTxt ) );
@@ -264,7 +521,7 @@ TEST(RobotsTest, DISABLED_GPathMatchPrefixDirDisallow) {
 	static const char *disallow = "/fish/";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_FALSE( isUrlAllowed( "/fish/", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/fish/?id=anything", robotsTxt ) );
@@ -280,7 +537,7 @@ TEST(RobotsTest, DISABLED_GPathMatchPrefixDirAllow) {
 	static const char *disallow = "/";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_TRUE( isUrlAllowed( "/fish/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/fish/?id=anything", robotsTxt ) );
@@ -302,7 +559,7 @@ TEST(RobotsTest, DISABLED_GPathMatchWildcardExtDisallow) {
 	static const char *disallow = "*.php";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_FALSE( isUrlAllowed( "/filename.php", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/folter/filename.php", robotsTxt ) );
@@ -319,7 +576,7 @@ TEST(RobotsTest, DISABLED_GPathMatchWildcardExtAllow) {
 	static const char *disallow = "/";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_TRUE( isUrlAllowed( "/filename.php", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/folter/filename.php", robotsTxt ) );
@@ -341,7 +598,7 @@ TEST(RobotsTest, DISABLED_GPathMatchWildcardExtEndDisallow) {
 	static const char *disallow = "/*.php$";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_FALSE( isUrlAllowed( "/filename.php", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/folder/filename.php", robotsTxt ) );
@@ -357,7 +614,7 @@ TEST(RobotsTest, DISABLED_GPathMatchWildcardExtEndAllow) {
 	static const char *disallow = "/";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_TRUE( isUrlAllowed( "/filename.php", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/folder/filename.php", robotsTxt ) );
@@ -376,7 +633,7 @@ TEST(RobotsTest, DISABLED_GPathMatchPrefixWildcardExtDisallow) {
 	static const char *disallow = "/fish*.php";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_FALSE( isUrlAllowed( "/fish.php", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/fishheads/catfish.php?parameters", robotsTxt ) );
@@ -389,7 +646,7 @@ TEST(RobotsTest, DISABLED_GPathMatchPrefixWildcardExtAllow) {
 	static const char *disallow = "/";
 
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, allow, disallow );
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
 	EXPECT_TRUE( isUrlAllowed( "/fish.php", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/fishheads/catfish.php?parameters", robotsTxt ) );
@@ -410,17 +667,17 @@ TEST(RobotsTest, DISABLED_GPathMatchPrefixWildcardExtAllow) {
 // http://example.com/page.htm		/$			/				disallow
 TEST(RobotsTest, DISABLED_GPrecedence) {
 	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, "/p", "/" );
+	generateTestRobotsTxt( robotsTxt, 1024, "/p", "/" );
 	EXPECT_TRUE( isUrlAllowed ( "/page", robotsTxt) );
 
-	generateRobotsTxt( robotsTxt, 1024, "/folder/", "/folder" );
+	generateTestRobotsTxt( robotsTxt, 1024, "/folder/", "/folder" );
 	EXPECT_TRUE( isUrlAllowed ( "/folder/page", robotsTxt) );
 
 	/// @todo ALC decide what's the result
-	generateRobotsTxt( robotsTxt, 1024, "/page", "/*.htm" );
+	generateTestRobotsTxt( robotsTxt, 1024, "/page", "/*.htm" );
 	//EXPECT_TRUE( isUrlAllowed ( "/page.htm", robotsTxt) );
 
-	generateRobotsTxt( robotsTxt, 1024, "/$", "/" );
+	generateTestRobotsTxt( robotsTxt, 1024, "/$", "/" );
 	EXPECT_TRUE( isUrlAllowed ( "/", robotsTxt) );
 	EXPECT_FALSE( isUrlAllowed ( "/page.htm", robotsTxt) );
 }
