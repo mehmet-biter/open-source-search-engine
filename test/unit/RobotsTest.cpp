@@ -36,6 +36,10 @@ static bool isUrlAllowed( const char *path, const char *robotsTxt ) {
 	return isAllowed;
 }
 
+//
+// Test allow/disallow
+//
+
 TEST(RobotsTest, AllowAll) {
 	char robotsTxt[1024];
 	generateRobotsTxt( robotsTxt, 1024 );
@@ -150,15 +154,16 @@ TEST(RobotsTest, DISABLED_PathMatchWildcardEnd) {
 	EXPECT_FALSE( isUrlAllowed ( "/123/abc", robotsTxt ) );
 }
 
-// test cases based on google's robots.txt specification
+//
+// Test cases based on google's robots.txt specification
 // https://developers.google.com/webmasters/control-crawl-index/docs/robots_txt?hl=en#example-path-matches
+//
 
 // [path]		[match]								[no match]					[comments]
 // /			any valid url													Matches the root and any lower level URL
 // /*			equivalent to /						equivalent to /				Equivalent to "/" -- the trailing wildcard is ignored.
 TEST(RobotsTest, DISABLED_GPathMatchDisallow) {
 }
-
 
 // [path]		[match]								[no match]					[comments]
 // /fish		/fish								/Fish.asp					Note the case-sensitive matching.
@@ -286,7 +291,6 @@ TEST(RobotsTest, DISABLED_GPathMatchPrefixDirAllow) {
 	EXPECT_FALSE( isUrlAllowed( "/Fish/Salmon.php", robotsTxt ) );
 }
 
-
 // [path]		[match]								[no match]					[comments]
 // *.php		/filename.php						/ 							(even if it maps to /index.php)
 // 				/folder/filename.php				/windows.PHP
@@ -367,7 +371,6 @@ TEST(RobotsTest, DISABLED_GPathMatchWildcardExtEndAllow) {
 // [path]		[match]								[no match]					[comments]
 // /fish*.php	/fish.php							/Fish.PHP
 // 				/fishheads/catfish.php?parameters
-
 TEST(RobotsTest, DISABLED_GPathMatchPrefixWildcardExtDisallow) {
 	static const char *allow = "";
 	static const char *disallow = "/fish*.php";
@@ -394,3 +397,30 @@ TEST(RobotsTest, DISABLED_GPathMatchPrefixWildcardExtAllow) {
 	EXPECT_FALSE( isUrlAllowed( "/Fish.PHP", robotsTxt ) );
 }
 
+//
+// Test cases based on google's robots.txt specification
+// https://developers.google.com/webmasters/control-crawl-index/docs/robots_txt?hl=en#order-of-precedence-for-group-member-records
+//
+
+// [url]							[allow]		[disallow]		[verdict]
+// http://example.com/page			/p			/				allow
+// http://example.com/folder/page	/folder/	/folder			allow
+// http://example.com/page.htm		/page		/*.htm			undefined
+// http://example.com/				/$			/				allow
+// http://example.com/page.htm		/$			/				disallow
+TEST(RobotsTest, DISABLED_GPrecedence) {
+	char robotsTxt[1024];
+	generateRobotsTxt( robotsTxt, 1024, "/p", "/" );
+	EXPECT_TRUE( isUrlAllowed ( "/page", robotsTxt) );
+
+	generateRobotsTxt( robotsTxt, 1024, "/folder/", "/folder" );
+	EXPECT_TRUE( isUrlAllowed ( "/folder/page", robotsTxt) );
+
+	/// @todo ALC decide what's the result
+	generateRobotsTxt( robotsTxt, 1024, "/page", "/*.htm" );
+	//EXPECT_TRUE( isUrlAllowed ( "/page.htm", robotsTxt) );
+
+	generateRobotsTxt( robotsTxt, 1024, "/$", "/" );
+	EXPECT_TRUE( isUrlAllowed ( "/", robotsTxt) );
+	EXPECT_FALSE( isUrlAllowed ( "/page.htm", robotsTxt) );
+}
