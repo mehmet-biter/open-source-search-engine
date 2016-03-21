@@ -13,18 +13,22 @@ static void logRobotsTxt( const char *robotsTxt ) {
 	logf (LOG_INFO, "===== robots.txt =====\n%s", robotsTxt);
 }
 
-static void generateRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, int32_t *pos, const char *userAgent = "testbot", const char *allow = "", const char *disallow = "" ) {
+static void generateRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, int32_t *pos, const char *userAgent = "testbot", const char *allow = "", const char *disallow = "", bool reversed = false ) {
 	if ( *pos != 0 ) {
 		*pos += snprintf ( robotsTxt + *pos, robotsTxtSize - *pos, "\n" );
 	}
 
 	*pos += snprintf ( robotsTxt + *pos, robotsTxtSize - *pos, "user-agent: %s\n", userAgent );
 
+	if ( reversed && disallow != "" ) {
+		*pos += snprintf (robotsTxt + *pos, robotsTxtSize - *pos, "disallow: %s\n", disallow );
+	}
+
 	if ( allow != "" ) {
 		*pos += snprintf ( robotsTxt + *pos, robotsTxtSize - *pos, "allow: %s\n", allow );
 	}
 
-	if ( disallow != "" ) {
+	if ( !reversed && disallow != "" ) {
 		*pos += snprintf (robotsTxt + *pos, robotsTxtSize - *pos, "disallow: %s\n", disallow );
 	}
 }
@@ -32,6 +36,12 @@ static void generateRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, int32_t *
 static void generateTestRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, const char *allow = "", const char *disallow = "" ) {
 	int32_t pos = 0;
 	generateRobotsTxt( robotsTxt, robotsTxtSize, &pos, "testbot", allow, disallow);
+	logRobotsTxt( robotsTxt );
+}
+
+static void generateTestReversedRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, const char *allow = "", const char *disallow = "" ) {
+	int32_t pos = 0;
+	generateRobotsTxt( robotsTxt, robotsTxtSize, &pos, "testbot", allow, disallow, true);
 	logRobotsTxt( robotsTxt );
 }
 
@@ -44,7 +54,11 @@ static bool isUrlAllowed( const char *path, const char *robotsTxt, bool *userAge
 
 	int32_t crawlDelay = -1;
 
-	return Robots::isAllowed( &url, userAgent, robotsTxt, strlen(robotsTxt), userAgentFound, true, &crawlDelay, hadAllowOrDisallow);
+	bool isAllowed = Robots::isAllowed( &url, userAgent, robotsTxt, strlen(robotsTxt), userAgentFound, true, &crawlDelay, hadAllowOrDisallow);
+
+	logf( LOG_INFO, "isUrlAllowed: result=%d userAgent='%s' url='%s'", isAllowed, userAgent, urlStr );
+
+	return isAllowed;
 }
 
 static bool isUrlAllowed( const char *path, const char *robotsTxt, const char *userAgent = "testbot" ) {
@@ -111,6 +125,19 @@ TEST(RobotsTest, UserAgentSingleUAPrefixMatch) {
 	int32_t pos = 0;
 	char robotsTxt[1024];
 	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot/1.0", allow, disallow);
+	logRobotsTxt( robotsTxt );
+
+	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
+	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
+}
+
+TEST(RobotsTest, UserAgentSingleUAIgnoreCase) {
+	static const char *allow = "";
+	static const char *disallow = "/";
+
+	int32_t pos = 0;
+	char robotsTxt[1024];
+	generateRobotsTxt( robotsTxt, 1024, &pos, "TestBot/1.0", allow, disallow);
 	logRobotsTxt( robotsTxt );
 
 	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
@@ -439,6 +466,10 @@ TEST(RobotsTest, DISABLED_PathMatchWildcardEnd) {
 	EXPECT_FALSE( isUrlAllowed ( "/123/abc", robotsTxt ) );
 }
 
+/// @todo ALC test multiple wildcard
+
+/// @todo ALC test multiple wildcard end
+
 //
 // Test crawl delay
 //
@@ -447,6 +478,18 @@ TEST(RobotsTest, DISABLED_PathMatchWildcardEnd) {
 
 //
 // Test site map
+//
+
+/// @todo ALC
+
+//
+// Test line endings
+//
+
+/// @todo ALC
+
+//
+// Test utf-8 encoding (non-ascii)
 //
 
 /// @todo ALC
@@ -706,7 +749,7 @@ TEST(RobotsTest, DISABLED_GPathMatchPrefixWildcardExtAllow) {
 // http://example.com/page.htm		/page		/*.htm			undefined
 // http://example.com/				/$			/				allow
 // http://example.com/page.htm		/$			/				disallow
-TEST(RobotsTest, DISABLED_GPrecedence) {
+TEST(RobotsTest, DISABLED_GPrecedenceAllowDisallow) {
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, "/p", "/" );
 	EXPECT_TRUE( isUrlAllowed ( "/page", robotsTxt) );
@@ -722,6 +765,28 @@ TEST(RobotsTest, DISABLED_GPrecedence) {
 	EXPECT_TRUE( isUrlAllowed ( "/", robotsTxt) );
 	EXPECT_FALSE( isUrlAllowed ( "/page.htm", robotsTxt) );
 }
+
+TEST(RobotsTest, DISABLED_GPrecedenceDisallowAllow) {
+	char robotsTxt[1024];
+	generateTestReversedRobotsTxt( robotsTxt, 1024, "/p", "/" );
+	EXPECT_TRUE( isUrlAllowed ( "/page", robotsTxt) );
+
+	generateTestReversedRobotsTxt( robotsTxt, 1024, "/folder/", "/folder" );
+	EXPECT_TRUE( isUrlAllowed ( "/folder/page", robotsTxt) );
+
+	/// @todo ALC decide what's the result
+	generateTestReversedRobotsTxt( robotsTxt, 1024, "/page", "/*.htm" );
+	//EXPECT_TRUE( isUrlAllowed ( "/page.htm", robotsTxt) );
+
+	generateTestReversedRobotsTxt( robotsTxt, 1024, "/$", "/" );
+	EXPECT_TRUE( isUrlAllowed ( "/", robotsTxt) );
+	EXPECT_FALSE( isUrlAllowed ( "/page.htm", robotsTxt) );
+}
+
+//
+// Test cases based on RFC
+// http://www.robotstxt.org/norobots-rfc.txt
+//
 
 //
 // Test real robots.txt
