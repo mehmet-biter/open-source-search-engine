@@ -3151,6 +3151,18 @@ bool SpiderColl::scanListForWinners ( ) {
 			m_cr->m_spiderCorruptCount++;
 			continue;
 		}
+		if ( sreq->m_dataSize > (int32_t)sizeof(SpiderRequest) ||
+			sreq->m_dataSize < 0 ) {
+				if ( m_cr->m_spiderCorruptCount == 0 )
+					log("spider: got corrupt 11 spiderRequest in "
+						"scan because size=%i u=%s (cn=%"INT32")"
+						,(int)sreq->m_dataSize
+						,sreq->m_url,(int32_t)m_collnum);
+				m_cr->m_spiderCorruptCount++;
+				continue;
+		}
+		
+		
 		int32_t delta = sreq->m_addedTime - nowGlobal;
 		if ( delta > 86400 ) {
 			static bool s_first = true;

@@ -382,16 +382,19 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 	//t += 13; tlen -= 13; }
 
 	// strip the "#anchor" from http://www.xyz.com/somepage.html#anchor"
-	int32_t anchorPos = 0;
-	int32_t anchorLen = 0;
-	for ( int32_t i = 0 ; i < tlen ; i++ ) {
+    int32_t anchorPos = 0;
+    int32_t anchorLen = 0;
+    for ( int32_t i = 0 ; i < tlen ; i++ ) {
 		if ( t[i] != '#' ) continue;
+		// ignore anchor if a ! follows it. 'google hash bang hack'
+		// which breaks the web and is now deprecated, but, there it is
+		if ( i+1<tlen && t[i+1] == '!' ) continue;
 		anchorPos = i;
 		anchorLen = tlen - i;
 		if ( stripPound )
 			tlen = i;
 		break;
-	}
+    }
 
 	// copy to "s" so we can NULL terminate it
 	char s [ MAX_URL_LEN ];
