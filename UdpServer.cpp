@@ -18,6 +18,7 @@
 
 int32_t g_dropped = 0;
 int32_t g_corruptPackets = 0;
+int32_t g_consecutiveOOMErrors = 0;
 bool g_inHandler = false;
 
 // . making a hot udp server (realtime signal based)
@@ -2196,11 +2197,20 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 			log(LOG_DEBUG,"loop: sending back enomem for "
 			    "msg 0x%0hhx", slot->m_msgType);
 		if ( ++lcount == 20 ) lcount = 0;
-			
-		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		
+		g_consecutiveOOMErrors++;
+		
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply. UsedMem=%"INT64", MaxMem=%"INT64"", __FILE__, __func__, __LINE__, g_mem.getUsedMem(), g_mem.getMaxMem() );
 		sendErrorReply ( slot , ENOMEM );
+		
+		if( g_consecutiveOOMErrors == 200 )
+		{
+			log(LOG_ERROR,"%s:%s:%d: 200 replies could not be sent due to of Out of Memory. SHUTTING DOWN.", __FILE__, __func__, __LINE__);
+			g_process.shutdownAbort(false);
+		}
 	}
 	else {
+		g_consecutiveOOMErrors = 0;
 		// save it
 		bool saved2 = g_inHandler;
 		// flag it so Loop.cpp does not re-nice quickpoll niceness
