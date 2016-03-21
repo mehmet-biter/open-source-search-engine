@@ -1876,6 +1876,9 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// debug timing
 	if ( g_conf.m_logDebugUdp )
 		start = gettimeofdayInMillisecondsLocal();
+
+	bool oom = ((((float)g_mem.getUsedMem())/(float)g_mem.getMaxMem()) >= .990);
+
 	// callback is non-NULL if we initiated the transaction 
 	if ( slot->m_callback ) { 
 
@@ -2188,9 +2191,7 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	g_callSlot = slot;
 
 	// if we are out of mem basically, do not waste time fucking around
-	if ( slot->m_msgType != 0x11 && slot->m_niceness == 0 &&
-	     (((float)g_mem.getUsedMem())/(float)g_mem.getMaxMem()) >=
-	     .990 ) {
+	if ( slot->m_msgType != 0x11 && slot->m_niceness == 0 && oom ) {
 		// log it
 		static int32_t lcount = 0;
 		if ( lcount == 0 )
@@ -2210,7 +2211,10 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		}
 	}
 	else {
-		g_consecutiveOOMErrors = 0;
+		if( !oom )
+		{
+			g_consecutiveOOMErrors = 0;
+		}
 		// save it
 		bool saved2 = g_inHandler;
 		// flag it so Loop.cpp does not re-nice quickpoll niceness
