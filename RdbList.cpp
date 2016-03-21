@@ -271,7 +271,7 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 			// compare next 6 bytes
 			if ( memcmp ( m_listPtrLo,key+6,6)==0) {
 				// store in end key
-				gbmemcpy(m_listEnd,key,6);
+				memcpy(m_listEnd,key,6);
 				// turn on both half bits
 				*m_listEnd |= 0x06;
 				// clear magic bit
@@ -282,7 +282,7 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 				return true;
 			}
 			// no match...
-			gbmemcpy(m_listEnd,key,12);
+			memcpy(m_listEnd,key,12);
 			// need to update this then
 			m_listPtrLo = m_listEnd+6;
 			// turn on just one compression bit
@@ -293,7 +293,7 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 			return true;
 		}
 		// no compression
-		gbmemcpy(m_listEnd,key,18);
+		memcpy(m_listEnd,key,18);
 		m_listPtrLo = m_listEnd+6;
 		m_listPtrHi = m_listEnd+12;
 		m_listSize += 18;
@@ -334,7 +334,7 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 		//*(int16_t *)(&m_list[m_listSize+4]) =
 		//	*(int16_t *)&(((char *)&key)[4]);
 		//KEYSET(&m_list[m_listSize],key,m_ks-6);
-		gbmemcpy(m_listEnd,key,m_ks-6);
+		memcpy(m_listEnd,key,m_ks-6);
 		// turn on half bit
 		//m_list[m_listSize] |= 0x02;
 		*m_listEnd |= 0x02;
@@ -369,7 +369,7 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 		m_listEnd  += 4;
 	}
 	// copy the data itself to the list
-	gbmemcpy ( &m_list[m_listSize] , data , dataSize );
+	memcpy ( &m_list[m_listSize] , data , dataSize );
 	m_listSize += dataSize;
 	m_listEnd  += dataSize;
 	return true;
