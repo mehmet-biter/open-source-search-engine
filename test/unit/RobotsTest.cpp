@@ -291,6 +291,34 @@ TEST(RobotsTest, UserAgentMultiUALast) {
 }
 
 //
+// Test comments
+//
+
+TEST(RobotsTest, DISABLED_CommentsFullLine) {
+/// @todo ALC
+}
+
+TEST(RobotsTest, DISABLED_CommentsAfter) {
+/// @todo ALC
+}
+
+//
+// Test whitespace
+//
+
+TEST(RobotsTest, DISABLED_WhitespaceDirectiveBefore) {
+/// @todo ALC
+}
+
+TEST(RobotsTest, DISABLED_WhitespaceDirectiveAfter) {
+/// @todo ALC
+}
+
+TEST(RobotsTest, DISABLED_WhitespaceDirectiveBoth) {
+/// @todo ALC
+}
+
+//
 // Test allow/disallow
 //
 
@@ -412,6 +440,18 @@ TEST(RobotsTest, DISABLED_PathMatchWildcardEnd) {
 }
 
 //
+// Test crawl delay
+//
+
+/// @todo ALC
+
+//
+// Test site map
+//
+
+/// @todo ALC
+
+//
 // Test cases based on google's robots.txt specification
 // https://developers.google.com/webmasters/control-crawl-index/docs/robots_txt?hl=en#example-path-matches
 //
@@ -420,6 +460,7 @@ TEST(RobotsTest, DISABLED_PathMatchWildcardEnd) {
 // /			any valid url													Matches the root and any lower level URL
 // /*			equivalent to /						equivalent to /				Equivalent to "/" -- the trailing wildcard is ignored.
 TEST(RobotsTest, DISABLED_GPathMatchDisallow) {
+/// @todo ALC
 }
 
 // [path]		[match]								[no match]					[comments]
@@ -681,3 +722,8 @@ TEST(RobotsTest, DISABLED_GPrecedence) {
 	EXPECT_TRUE( isUrlAllowed ( "/", robotsTxt) );
 	EXPECT_FALSE( isUrlAllowed ( "/page.htm", robotsTxt) );
 }
+
+//
+// Test real robots.txt
+//
+/// @todo ALC
