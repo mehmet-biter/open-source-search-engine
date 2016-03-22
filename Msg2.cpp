@@ -164,12 +164,12 @@ bool Msg2::getLists ( ) {
 			memcpy(rdblistmem,hfterm_shortcut_posdb_buffer,hfterm_shortcut_buffer_bytes);
 			m_lists[m_i].set(rdblistmem,                           //list
 			                 hfterm_shortcut_buffer_bytes,         //listSize
-			                 NULL,                                 //alloc
-			                 0,                                    //allocSize
+			                 rdblistmem,                           //alloc
+			                 hfterm_shortcut_buffer_bytes,         //allocSize
 			                 startKey,                             //startkey
 			                 endKey,                               //endkey
 			                 0,                                    //fixeddatasize
-			                 false,                                //owndata
+			                 true,                                 //owndata
 			                 true,                                 //usehalfkeys
 			                 18);                                  //keysize
 			char ek2_copy[18];
