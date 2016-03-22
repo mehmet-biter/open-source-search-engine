@@ -585,7 +585,7 @@ static bool sendCachedReply ( Msg20Request *req, const void *cached_summary, siz
 	}
 	memcpy(buf,cached_summary,cached_summary_len);
 	
-	g_udpServer.sendReply_ass ( buf , cached_summary_len , NULL , 0 , slot );
+	g_udpServer.sendReply_ass ( buf , cached_summary_len , buf , cached_summary_len , slot );
 	
 	return true;
 }
