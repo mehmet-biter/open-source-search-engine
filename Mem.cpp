@@ -646,7 +646,7 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 	int32_t len = gbstrlen(note);
 	if ( len > 15 ) len = 15;
 	char *here = &s_labels [ h * 16 ];
-	gbmemcpy ( here , note , len );
+	memcpy ( here , note , len );
 	// make sure NULL terminated
 	here[len] = '\0';
 	// unlock for threads
@@ -929,7 +929,7 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 		s_mptrs[k] = (void *)mem;
 		s_sizes[k] = s_sizes[h];
 		s_isnew[k] = s_isnew[h];
-		gbmemcpy(&s_labels[k*16],&s_labels[h*16],16);
+		memcpy(&s_labels[k*16],&s_labels[h*16],16);
 		// try next bucket now
 		h++;
 		// wrap if we need to
@@ -1406,7 +1406,7 @@ void *Mem::gbrealloc ( void *ptr , int oldSize , int newSize ,
 	mem = (char *)mmalloc ( newSize , note );
 	if ( ! mem ) return NULL;
 	// copy over to it
-	gbmemcpy ( mem , ptr , oldSize );
+	memcpy ( mem , ptr , oldSize );
 	// free the old
 	mfree ( ptr , oldSize , note );
 	// done
@@ -1433,7 +1433,7 @@ void *Mem::gbrealloc ( void *ptr , int oldSize , int newSize ,
 			mem = (char *)mmalloc ( newSize , note );
 			if ( ! mem ) return NULL;
 			// copy over to it
-			gbmemcpy ( mem , ptr , oldSize );
+			memcpy ( mem , ptr , oldSize );
 			// free the old
 			mfree ( ptr , oldSize , note );
 			return mem;
@@ -1477,7 +1477,7 @@ void *Mem::gbrealloc ( void *ptr , int oldSize , int newSize ,
 	log(LOG_INFO,"mem: had to use malloc/gbmemcpy instead of "
 	    "realloc.");
 	// copy over to it
-	gbmemcpy ( mem , ptr , oldSize );
+	memmove ( mem , ptr , oldSize );
 	// we already called rmMem() so don't double call
 	sysfree ( (char *)ptr - UNDERPAD );	
 	// free the old. this was coring because it was double calling rmMem()
@@ -1489,7 +1489,7 @@ void *Mem::gbrealloc ( void *ptr , int oldSize , int newSize ,
 char *Mem::dup ( const void *data , int32_t dataSize , const char *note ) {
 	// keep it simple
 	char *mem = (char *)mmalloc ( dataSize , note );
-	if ( mem ) gbmemcpy ( mem , data , dataSize );
+	if ( mem ) memcpy ( mem , data , dataSize );
 	return mem;
 }
 
