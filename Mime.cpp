@@ -1,7 +1,6 @@
 #include "gb-include.h"
 
 #include "Mime.h"
-#include "Mem.h"
 
 // . returns false if could not get a valid mime
 // . we need the url in case there's a Location: mime that's base-relative
@@ -9,24 +8,6 @@ void Mime::set ( const char *mime , int32_t mimeLen ) {
 	m_mime    = mime;
 	m_mimeLen = mimeLen;
 	m_mimeEnd = mime + mimeLen;
-}
-
-const char *Mime::getValue ( const char *field , int32_t *valueLen ) {
-	// caller's field length
-	int32_t fieldLen = gbstrlen ( field );
-	// parms to getLine()
-	const char *f    , *v;
-	int32_t  flen ,  vlen;
-	const char *line = m_mime;
-	// keep getting lines from the mime
-	while ( ( line = getLine ( line , &f, &flen, &v , &vlen ) ) ) {
-		if ( flen != fieldLen ) continue;
-		if ( strncasecmp ( f , field , flen ) != 0 ) continue;
-		*valueLen = vlen;
-		return v;
-	}
-	// return NULL if no value found for "field"
-	return NULL;
 }
 
 // . return ptr to next line to try

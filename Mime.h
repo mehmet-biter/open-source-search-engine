@@ -22,9 +22,6 @@ class Mime {
 			const char  **field , int32_t *fieldLen ,
 			const char  **value , int32_t *valueLen ) ;
 
-	// use this to get the value of a unique field
-	const char *getValue ( const char *field , int32_t *valueLen );
-
  private:
 
 	const char *m_mime;
