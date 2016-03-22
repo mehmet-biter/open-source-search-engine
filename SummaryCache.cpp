@@ -44,6 +44,9 @@ void SummaryCache::insert(int64_t key, const void *data, size_t datalen)
 {
 	purge_step();
 	
+	if(max_age==0 || max_memory==0)
+		return; //cache disabled
+	
 	std::map<int64_t,Item>::iterator iter = m.find(key);
 	if(iter!=m.end()) {
 		//remove the old entry first
