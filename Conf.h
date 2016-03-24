@@ -474,6 +474,7 @@ class Conf {
 	bool  m_logTraceSpider;
 	bool  m_logTraceXmlDoc;
 	bool  m_logTraceMsg0;
+	bool  m_logTraceRobots;
 	
 	bool m_logTraceMsg;
 	// expensive timing messages
