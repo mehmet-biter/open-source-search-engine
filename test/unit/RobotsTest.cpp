@@ -6,11 +6,141 @@
 #define TEST_DOMAIN "http://example.com"
 
 //
+// test class
+//
+class TestRobots : public Robots {
+public:
+	TestRobots( const char* robotsTxt, int32_t robotsTxtLen, const char *userAgent = "testbot" )
+		: Robots (robotsTxt, robotsTxtLen, userAgent ) {
+	}
+
+	using Robots::getNextLine;
+	using Robots::getField;
+	using Robots::getValue;
+	using Robots::parse;
+};
+
+static void expectRobotsNoNextLine( TestRobots *robots, int32_t *currentPos ) {
+	const char *line = NULL;
+	int32_t lineLen = 0;
+
+	EXPECT_FALSE( robots->getNextLine( currentPos, &line, &lineLen ) );
+}
+
+static void expectRobots( TestRobots *robots, int32_t *currentPos, const char *expectedLine, const char *expectedField = "", const char *expectedValue = "" ) {
+	std::stringstream ss;
+	ss << __func__ << "expectedField='" << expectedField << "'";
+	SCOPED_TRACE(ss.str());
+
+	const char *line = NULL;
+	int32_t lineLen = 0;
+
+	robots->parse();
+
+	EXPECT_TRUE( robots->getNextLine( currentPos, &line, &lineLen ) );
+	EXPECT_EQ( strlen( expectedLine ), lineLen );
+	EXPECT_EQ( 0, memcmp( expectedLine, line, lineLen ) );
+
+	if ( expectedField != "" ) {
+		const char *field = NULL;
+		int32_t fieldLen = 0;
+		int32_t valueStartPos = 0;
+
+		EXPECT_TRUE( robots->getField( line, lineLen, &valueStartPos, &field, &fieldLen ) );
+
+		EXPECT_EQ( strlen( expectedField ), fieldLen );
+		EXPECT_EQ( 0, memcmp( expectedField, field, fieldLen ) );
+
+		if ( expectedValue != "" ) {
+			const char *value = NULL;
+			int32_t valueLen = 0;
+
+			EXPECT_TRUE( robots->getValue( line, lineLen, valueStartPos, &value, &valueLen ) );
+			EXPECT_EQ( strlen( expectedValue ), valueLen );
+			EXPECT_EQ( 0, memcmp( expectedValue, value, valueLen ) );
+		}
+	}
+}
+
+TEST( RobotsTest, RobotsGetNextLineLineEndings ) {
+	const char *robotsTxt = "line 1\n"
+							"line 2\r"
+							"line 3\r\n"
+							"line 4\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	int32_t currentPos = 0;
+
+	expectRobots( &robots, &currentPos, "line 1" );
+	expectRobots( &robots, &currentPos, "line 2" );
+	expectRobots( &robots, &currentPos, "line 3" );
+	expectRobots( &robots, &currentPos, "line 4" );
+
+	expectRobotsNoNextLine( &robots, &currentPos);
+}
+
+TEST( RobotsTest, RobotsGetNextLineWhitespaces ) {
+	const char *robotsTxt = "   line 1  \n"
+							"  line 2    \r"
+							"       \n"
+							"\tline 3\t\r\n"
+							"\t\tline 4   \n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	int32_t currentPos = 0;
+
+	expectRobots( &robots, &currentPos, "line 1" );
+	expectRobots( &robots, &currentPos, "line 2" );
+	expectRobots( &robots, &currentPos, "line 3" );
+	expectRobots( &robots, &currentPos, "line 4" );
+
+	expectRobotsNoNextLine( &robots, &currentPos);
+}
+
+TEST( RobotsTest, RobotsGetNextLineComments ) {
+	const char *robotsTxt = "   line 1  # comment \n"
+							"  line 2#comment    \r"
+							"    # line 2a \n"
+							"\tline 3\t#\tcomment\r\n"
+							"\t\t#line 4\t\t\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	int32_t currentPos = 0;
+
+	expectRobots( &robots, &currentPos, "line 1" );
+	expectRobots( &robots, &currentPos, "line 2" );
+	expectRobots( &robots, &currentPos, "line 3" );
+
+	expectRobotsNoNextLine( &robots, &currentPos);
+}
+
+TEST( RobotsTest, RobotsGetFieldValue ) {
+	const char *robotsTxt = "   field1: value1  # comment \n"
+							"  field2   : value2#comment    \r"
+							"    # line 2a \n"
+							"\tfield3\t\t:\tvalue3\t#\tcomment\r\n"
+							"\t\t#line 4\t\t\n"
+							"\tfield4\t\t:\tvalue four#comment\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	int32_t currentPos = 0;
+
+	expectRobots( &robots, &currentPos, "field1: value1", "field1", "value1" );
+	expectRobots( &robots, &currentPos, "field2   : value2", "field2", "value2" );
+	expectRobots( &robots, &currentPos, "field3\t\t:\tvalue3", "field3", "value3" );
+	expectRobots( &robots, &currentPos, "field4\t\t:\tvalue four", "field4", "value four" );
+
+	expectRobotsNoNextLine( &robots, &currentPos);
+}
+
+//
 // helper method
 //
 
 static void logRobotsTxt( const char *robotsTxt ) {
 	logf (LOG_INFO, "===== robots.txt =====\n%s", robotsTxt);
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	robots.parse();
 }
 
 static void generateRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, int32_t *pos, const char *userAgent = "testbot", const char *allow = "", const char *disallow = "", bool reversed = false ) {
@@ -886,3 +1016,39 @@ TEST( RobotsTest, DISABLED_GPrecedenceDisallowAllow ) {
 // Test real robots.txt
 //
 /// @todo ALC
+
+TEST( RobotsTest, RRobotsEmpty ) {
+	char robotsTxt[1024] = { 0 };
+
+	bool userAgentFound = false;
+	bool hadAllowOrDisallow = false;
+
+	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE( userAgentFound );
+	EXPECT_FALSE( hadAllowOrDisallow );
+
+	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE( userAgentFound );
+	EXPECT_FALSE( hadAllowOrDisallow );
+}
+
+TEST( RobotsTest, RRobotsCommentsOnly ) {
+	char robotsTxt[1024] =
+			"# See http://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file\n"
+			"#\n"
+			"# To ban all spiders from the entire site uncomment the next two lines:\n"
+			"# User-agent: *\n"
+			"# Disallow: /\n";
+
+	bool userAgentFound = false;
+	bool hadAllowOrDisallow = false;
+
+	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE( userAgentFound );
+	EXPECT_FALSE( hadAllowOrDisallow );
+
+	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
+	EXPECT_FALSE( userAgentFound );
+	EXPECT_FALSE( hadAllowOrDisallow );
+}
+

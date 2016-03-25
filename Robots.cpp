@@ -2,9 +2,235 @@
 #include "Url.h"
 #include "Mime.h"
 #include "fctypes.h"
-#include "Mem.h" // gbstrlen
+#include "Log.h"
+#include "Conf.h"
 
-// taken from Robotdb.cpp
+Robots::Robots( const char* robotsTxt, int32_t robotsTxtLen, const char *userAgent )
+	: m_robotsTxt( robotsTxt )
+	, m_robotsTxtLen( robotsTxtLen )
+	, m_userAgent( userAgent )
+	, m_userAgentLen( strlen( userAgent ) ) {
+}
+
+bool Robots::getNextLine( int32_t *lineStartPos, const char **line, int32_t *lineLen ) {
+	// clear values
+	*line = NULL;
+	*lineLen = 0;
+
+	int32_t currentPos = *lineStartPos;
+
+	// strip starting whitespaces
+	while ( is_wspace_a( m_robotsTxt[currentPos] ) && ( currentPos < m_robotsTxtLen ) ) {
+		++currentPos;
+	}
+
+	int32_t linePos = currentPos;
+	*line = m_robotsTxt + currentPos;
+
+	bool foundLineLen = false;
+	// get line ending
+	{
+		bool foundLineEnding = false;
+		char currentChar = m_robotsTxt[currentPos];
+		while ( currentPos < m_robotsTxtLen ) {
+			if ( !foundLineEnding ) {
+				if ( currentChar == '#' || currentChar == '\r' || currentChar == '\n' ) {
+					if ( !foundLineLen ) {
+						foundLineLen = true;
+						*lineLen = currentPos - linePos;
+					}
+
+					if ( currentChar != '#' ) {
+						foundLineEnding = true;
+					}
+				}
+			} else {
+				if ( currentChar != '\r' && currentChar != '\n' ) {
+					break;
+				}
+			}
+
+			currentChar = m_robotsTxt[++currentPos];
+		}
+	}
+
+	// sanity check
+	if ( currentPos <= *lineStartPos ) {
+		return false;
+	}
+
+	if ( !foundLineLen ) {
+		// set to end of robots.txt
+		*lineLen = m_robotsTxtLen - *lineStartPos;
+	}
+
+	// store next lineStartPos
+	*lineStartPos = currentPos;
+
+	// strip ending whitespaces
+	while ( *lineLen > 0 && is_wspace_a( (*line)[*lineLen - 1] ) ) {
+		--(*lineLen);
+	}
+
+	// at this point, if lineLen is still 0, it means we should get the next line (full line comment)
+	if ( *lineLen == 0 ) {
+		return getNextLine( lineStartPos, line, lineLen );
+	}
+
+	return true;
+}
+
+// assume starting whitespace have been striped away
+bool Robots::getField( const char *line, int32_t lineLen, int32_t *valueStartPos, const char **field, int32_t *fieldLen ) {
+	int32_t currentLinePos = *valueStartPos;
+
+	const char *colonPos = (const char*)memchr( line + currentLinePos, ':', lineLen );
+
+	// no colon
+	if ( colonPos == NULL ) {
+		return false;
+	}
+
+	currentLinePos = colonPos - line;
+	*valueStartPos = currentLinePos + 1;
+
+	*field = line;
+	*fieldLen = currentLinePos;
+
+	// strip ending whitespaces
+	while ( *fieldLen > 0 && is_wspace_a( line[*fieldLen - 1] ) ) {
+		--(*fieldLen);
+	}
+
+	if ( g_conf.m_logTraceRobots ) {
+		log( LOG_TRACE, "%s: len=%d field='%.*s'", __func__, *fieldLen, *fieldLen, *field );
+	}
+	return ( *fieldLen > 0 );
+}
+
+bool Robots::getValue( const char *line, int32_t lineLen, int32_t valueStartPos, const char **value, int32_t *valueLen ) {
+	// strip starting whitespaces
+	while ( is_wspace_a( line[valueStartPos] ) && ( valueStartPos < lineLen ) ) {
+		++valueStartPos;
+	}
+
+	*value = line + valueStartPos;
+	*valueLen = lineLen - valueStartPos;
+
+	if ( g_conf.m_logTraceRobots ) {
+		logf( LOG_TRACE, "%s: len=%d value='%.*s'", __func__, *valueLen, *valueLen, *value );
+	}
+	return ( *valueLen > 0 );
+}
+
+bool Robots::parse() {
+	logf(LOG_INFO, "===== Robots::%s =====", __func__);
+
+	static const char *s_userAgent = "user-agent";
+	static const int32_t s_userAgentLen = 10;
+
+	static const char *s_allow = "allow";
+	static const int32_t s_allowLen = 5;
+
+	static const char *s_disallow = "disallow";
+	static const int32_t s_disallowLen = 8;
+
+	static const char *s_crawlDelay = "crawl-delay";
+	static const int32_t s_crawlDelayLen = 11;
+
+	int32_t currentPos = 0;
+	const char *line = NULL;
+	int32_t lineLen = 0;
+
+	bool foundDefaultUserAgent = false;
+	bool foundUserAgent = false;
+
+	bool inUserAgentGroup = false;
+	bool isUserAgent = false;
+	while ( getNextLine( &currentPos, &line, &lineLen ) ) {
+		if ( !inUserAgentGroup ) {
+			// find group start (user agent)
+			const char *field = NULL;
+			int32_t fieldLen = 0;
+			int32_t valueStartPos = 0;
+
+			if ( getField( line, lineLen, &valueStartPos, &field, &fieldLen ) &&
+			     fieldLen == s_userAgentLen && strncasecmp( field, s_userAgent, fieldLen ) == 0 ) {
+				// user-agent
+				const char *value = NULL;
+				int32_t valueLen = 0;
+
+				/// @todo match default user agent
+				// prefix match
+				if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) ) {
+					if ( valueLen == 1 && *value == '*' ) {
+						foundUserAgent = true;
+						inUserAgentGroup = true;
+					} else if ( strncasecmp( value, m_userAgent, m_userAgentLen ) == 0 ) {
+						foundUserAgent = true;
+						inUserAgentGroup = true;
+						isUserAgent = true;
+					}
+				}
+			}
+		} else {
+			// find group end
+			const char *field = NULL;
+			int32_t fieldLen = 0;
+			int32_t valueStartPos = 0;
+
+			if ( getField( line, lineLen, &valueStartPos, &field, &fieldLen ) ) {
+				const char *value = NULL;
+				int32_t valueLen = 0;
+
+				switch (fieldLen) {
+					case s_allowLen:
+						if ( strncasecmp( field, s_allow, fieldLen ) == 0 ) {
+							// store allow
+							if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) ) {
+								logf(LOG_INFO, "allow='%.*s'", valueLen, value);
+								if ( isUserAgent ) {
+									m_allow.push_back( std::make_pair( valueLen, value ));
+								}
+							}
+						}
+						break;
+					case s_disallowLen:
+						if ( strncasecmp( field, s_disallow, fieldLen ) == 0 ) {
+							// store disallow
+							if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) ) {
+								logf(LOG_INFO, "disallow='%.*s'", valueLen, value);
+								m_disallow.push_back( std::make_pair( valueLen, value ) );
+							}
+						}
+						break;
+					case s_userAgentLen:
+						if ( strncasecmp( field, s_userAgent, fieldLen ) == 0 ) {
+							inUserAgentGroup = false;
+
+							// check if we're still in the same group
+							if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) &&
+							     strncasecmp( value, userAgent, userAgentLen ) == 0 ) {
+								inUserAgentGroup = true;
+							}
+						}
+						break;
+					case s_crawlDelayLen:
+						if ( strncasecmp( field, s_crawlDelay, fieldLen ) == 0 ) {
+							// store crawl delay
+							/// @todo ALC
+						}
+						break;
+					default:
+						break;
+				}
+			}
+		}
+	}
+
+	return foundUserAgent;
+}
+
 bool Robots::isAllowed ( Url *url, const char *userAgent, const char *file, int32_t fileLen, bool *userAgentFound,
 	                     bool substringMatch, int32_t *crawlDelay, bool  *hadAllowOrDisallow ) {
 	// assume user agent is not in the file
@@ -34,7 +260,7 @@ bool Robots::isAllowed ( Url *url, const char *userAgent, const char *file, int3
 	int32_t vlen = 0;
 
 	// user agent length
-	int32_t uaLen = gbstrlen (userAgent);
+	int32_t uaLen = strlen (userAgent);
 
 	// ptr into "file"
 	const char *p = file;
