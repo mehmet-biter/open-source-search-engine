@@ -125,7 +125,7 @@ class Posdb {
 
 	// . make a 16-byte key from all these components
 	// . since it is 16 bytes, the big bit will be set
-	void makeKey ( void              *kp             ,
+	static void makeKey ( void              *kp             ,
 		       int64_t          termId         ,
 		       uint64_t docId          , 
 		       int32_t               wordPos        ,
@@ -145,7 +145,7 @@ class Posdb {
 	int printList ( RdbList &list ) ;
 
 	// we map the 32bit score to like 7 bits here
-	void setMultiplierBits ( void *vkp , unsigned char mbits ) {
+	static void setMultiplierBits ( void *vkp , unsigned char mbits ) {
 		key144_t *kp = (key144_t *)vkp;
 		if ( mbits > MAXMULTIPLIER ) { char *xx=NULL;*xx=0; }
 		kp->n0 &= 0xfc0f;
@@ -153,7 +153,7 @@ class Posdb {
 		kp->n0 |= ((uint16_t)mbits) << 4;
 	}
 	
-	void setDocIdBits ( void *vkp , uint64_t docId ) {
+	static void setDocIdBits ( void *vkp , uint64_t docId ) {
 		key144_t *kp = (key144_t *)vkp;
 		kp->n1 &= 0x000003ffffffffffLL;
 		kp->n1 |= (docId<<(32+10));
@@ -161,14 +161,14 @@ class Posdb {
 		kp->n2 |= docId>>22;
 	}
 	
-	void setSiteRankBits ( void *vkp , char siteRank ) {
+	static void setSiteRankBits ( void *vkp , char siteRank ) {
 		key144_t *kp = (key144_t *)vkp;
 		if ( siteRank > MAXSITERANK ) { char *xx=NULL;*xx=0; }
 		kp->n1 &= 0xfffffe1fffffffffLL;
 		kp->n1 |= ((uint64_t)siteRank)<<(32+5);
 	}
 	
-	void setLangIdBits ( void *vkp , char langId ) {
+	static void setLangIdBits ( void *vkp , char langId ) {
 		key144_t *kp = (key144_t *)vkp;
 		if ( langId > MAXLANGID ) { char *xx=NULL;*xx=0; }
 		kp->n1 &= 0xffffffe0ffffffffLL;
@@ -180,30 +180,30 @@ class Posdb {
 	}
 
 	// set the word position bits et al to this float
-	void setFloat ( void *vkp , float f ) {
+	static void setFloat ( void *vkp , float f ) {
 		*(float *)(((char *)vkp) + 2) = f; };
 
-	void setInt ( void *vkp , int32_t x ) {
+	static void setInt ( void *vkp , int32_t x ) {
 		*(int32_t *)(((char *)vkp) + 2) = x; };
 
 	// and read the float as well
-	float getFloat ( const void *vkp ) {
+	static float getFloat ( const void *vkp ) {
 		return *(const float *)(((char *)vkp) + 2); };
 
-	int32_t getInt ( const void *vkp ) {
+	static int32_t getInt ( const void *vkp ) {
 		return *(const int32_t *)(((char *)vkp) + 2); };
 
-	void setAlignmentBit ( void *vkp , char val ) {
+	static void setAlignmentBit ( void *vkp , char val ) {
 		char *p = (char *)vkp;
 		if ( val ) p[1] = p[1] | 0x02;
 		else       p[1] = p[1] & 0xfd;
 	};
 
-	bool isAlignmentBitClear ( const void *vkp ) {
+	static bool isAlignmentBitClear ( const void *vkp ) {
 		return ( ( ((const char *)vkp)[1] & 0x02 ) == 0x00 );
 	};
 
-	void makeStartKey ( void *kp, int64_t termId , 
+	static void makeStartKey ( void *kp, int64_t termId , 
 			    int64_t docId=0LL){
 		return makeKey ( kp,
 				 termId , 
@@ -221,7 +221,7 @@ class Posdb {
 				 false ); // shardbytermid?
 	};
 
-	void makeEndKey  ( void *kp,int64_t termId, 
+	static void makeEndKey  ( void *kp,int64_t termId, 
 			   int64_t docId = MAX_DOCID ) {
 		return makeKey ( kp,
 				 termId , 
@@ -240,7 +240,7 @@ class Posdb {
 	};
 
 	// we got two compression bits!
-	unsigned char getKeySize ( const void *key ) {
+	static unsigned char getKeySize ( const void *key ) {
 		if ( (((const char *)key)[0])&0x04 ) return 6;
 		if ( (((const char *)key)[0])&0x02 ) return 12;
 		return 18;
@@ -248,7 +248,7 @@ class Posdb {
 
 	// PosdbTable uses this to skip from one docid to the next docid
 	// in a posdblist
-	char *getNextDocIdSublist ( char *p ,  char *listEnd ) {
+	static char *getNextDocIdSublist ( char *p ,  char *listEnd ) {
 		// key must be 12
 		//if ( getKeySize(p) != 12 ) { char *xx=NULL;*xx=0; }
 		// skip that first key
@@ -260,11 +260,11 @@ class Posdb {
 	}
 		
 
-	int64_t getTermId ( const void *key ) {
+	static int64_t getTermId ( const void *key ) {
 		return ((const key144_t *)key)->n2 >> 16;
 	};
 
-	int64_t getDocId ( const void *key ) {
+	static int64_t getDocId ( const void *key ) {
 		uint64_t d;
 		d = ((const unsigned char *)key)[11];
 		d <<= 32;
@@ -277,28 +277,28 @@ class Posdb {
 		//return d;
 	};
 
-	unsigned char getSiteRank ( const void *key ) {
+	static unsigned char getSiteRank ( const void *key ) {
 		return (((const key144_t *)key)->n1 >> 37) & MAXSITERANK;
 	};
 
-	unsigned char getLangId ( const void *key ) {
+	static unsigned char getLangId ( const void *key ) {
 		if ( ((const char *)key)[0] & 0x08 )
 			return ((((const key144_t *)key)->n1 >> 32) & 0x1f) | 0x20;
 		else
 			return ((((const key144_t *)key)->n1 >> 32) & 0x1f) ;
 	};
 
-	unsigned char getHashGroup ( const void *key ) {
+	static unsigned char getHashGroup ( const void *key ) {
 		//return (((key144_t *)key)->n1 >> 10) & MAXHASHGROUP;
 		return ((((const unsigned char *)key)[3]) >>2) & MAXHASHGROUP;
 	};
 
-	int32_t getWordPos ( const void *key ) {
+	static int32_t getWordPos ( const void *key ) {
 		//return (((key144_t *)key)->n1 >> 14) & MAXWORDPOS;
 		return (*((const uint32_t *)((unsigned char *)key+2))) >> (8+6);
 	};
 
-	inline void setWordPos ( char *key , uint32_t wpos ) {
+	static inline void setWordPos ( char *key , uint32_t wpos ) {
 		// truncate
 		wpos &= MAXWORDPOS;
 		if ( wpos & 0x01 ) key[3] |= 0x40;
@@ -310,29 +310,29 @@ class Posdb {
 		key[5] = ((char *)&wpos)[1];
 	};
 
-	unsigned char getWordSpamRank ( const void *key ) {
+	static unsigned char getWordSpamRank ( const void *key ) {
 		//return (((const key144_t *)key)->n1 >> 6) & MAXWORDSPAMRANK;
 		return ((((const uint16_t *)key)[1]) >>6) & MAXWORDSPAMRANK;
 	};
 
-	unsigned char getDiversityRank ( const void *key ) {
+	static unsigned char getDiversityRank ( const void *key ) {
 		//return (((const key144_t *)key)->n1 >> 2) & MAXDIVERSITYRANK;
 		return ((((const unsigned char *)key)[2]) >>2) & MAXDIVERSITYRANK;
 	};
 
-	unsigned char getIsSynonym ( const void *key ) {
+	static unsigned char getIsSynonym ( const void *key ) {
 		return (((const key144_t *)key)->n1 ) & 0x03;
 	};
 
-	unsigned char getIsHalfStopWikiBigram ( const void *key ) {
+	static unsigned char getIsHalfStopWikiBigram ( const void *key ) {
 		return ((const char *)key)[2] & 0x01;
 	};
 
-	unsigned char getDensityRank ( const void *key ) {
+	static unsigned char getDensityRank ( const void *key ) {
 		return ((*(const uint16_t *)key) >> 11) & MAXDENSITYRANK;
 	};
 
-	inline void setDensityRank ( char *key , unsigned char dr ) {
+	static inline void setDensityRank ( char *key , unsigned char dr ) {
 		// shift up
 		dr <<= 3;
 		// clear out
@@ -341,14 +341,14 @@ class Posdb {
 		key[1] |= dr;
 	};
 
-	char isShardedByTermId ( const void *key ){return ((const char *)key)[1] & 0x01; };
+	static char isShardedByTermId ( const void *key ) {return ((const char *)key)[1] & 0x01; }
 
-	void setShardedByTermIdBit ( void *key ) { 
+	static void setShardedByTermIdBit ( void *key ) { 
 		char *k = (char *)key;
 		k[1] |= 0x01;
 	};
 
-	unsigned char getMultiplier ( const void *key ) {
+	static unsigned char getMultiplier ( const void *key ) {
 		return ((*(const uint16_t *)key) >> 4) & MAXMULTIPLIER; };
 
 	int64_t getTermFreq ( collnum_t collnum, int64_t termId ) ;
