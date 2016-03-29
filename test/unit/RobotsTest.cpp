@@ -17,6 +17,10 @@ public:
 	using Robots::getNextLine;
 	using Robots::getField;
 	using Robots::getValue;
+
+	using Robots::isUserAgentFound;
+	using Robots::isRulesEmpty;
+	using Robots::isDefaultRulesEmpty;
 };
 
 static void expectRobotsNoNextLine( TestRobots *robots, int32_t *currentPos ) {
@@ -203,266 +207,165 @@ static bool isUrlAllowed( const char *path, const char *robotsTxt, const char *u
 //
 
 TEST( RobotsTest, UserAgentSingleUANoMatch ) {
-	static const char *allow = "";
-	static const char *disallow = "/";
-
-	int32_t pos = 0;
-	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, &pos, "abcbot", allow, disallow );
-	logRobotsTxt( robotsTxt );
+	char robotsTxt[1024] = "user-agent: abcbot\n"
+	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-
-	bool userAgentFound = false;
-	bool hadAllowOrDisallow = false;
-
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
-
-	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
-}
-
-TEST( RobotsTest, DISABLED_UserAgentSingleUAPrefixNoMatch ) {
-	static const char *allow = "";
-	static const char *disallow = "/";
-
-	int32_t pos = 0;
-	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, &pos, "testbotabc", allow, disallow );
-	logRobotsTxt( robotsTxt );
-
-	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-
-	bool userAgentFound = false;
-	bool hadAllowOrDisallow = false;
-
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
-
-	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_EQ( -1, robots.getCrawlDelay() );
 }
 
 TEST( RobotsTest, UserAgentSingleUAPrefixMatch ) {
-	static const char *allow = "";
-	static const char *disallow = "/";
-
-	int32_t pos = 0;
-	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot/1.0", allow, disallow );
-	logRobotsTxt( robotsTxt );
+	char robotsTxt[1024] = "user-agent: testbotabc\n"
+	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
+}
 
-	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
+TEST( RobotsTest, UserAgentSingleUAPrefixVersionMatch ) {
+	char robotsTxt[1024] = "user-agent: testbot/1.0\n"
+	                       "crawl-delay: 1\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
 TEST( RobotsTest, UserAgentSingleUAIgnoreCase ) {
-	static const char *allow = "";
-	static const char *disallow = "/";
-
-	int32_t pos = 0;
-	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, &pos, "TestBot/1.0", allow, disallow );
-	logRobotsTxt( robotsTxt );
+	char robotsTxt[1024] = "user-agent: TestBot/1.0\n"
+	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-
-	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
 TEST( RobotsTest, UserAgentSingleUAMatch ) {
-	static const char *allow = "";
-	static const char *disallow = "/";
-
-	char robotsTxt[1024];
-	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+	char robotsTxt[1024] = "user-agent: testbot\n"
+	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-
-	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
 TEST( RobotsTest, UserAgentSeparateUANone ) {
-	int32_t pos = 0;
-	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, &pos, "atestbot", "", "/test" );
-	generateRobotsTxt( robotsTxt, 1024, &pos, "abcbot", "", "/abc" );
-	generateRobotsTxt( robotsTxt, 1024, &pos, "defbot", "", "/def" );
-	logRobotsTxt( robotsTxt );
+	char robotsTxt[1024] = "user-agent: atestbot\n"
+	                       "crawl-delay: 1\n"
+	                       "user-agent: abcbot\n"
+	                       "crawl-delay: 2\n"
+	                       "user-agent: defbot\n"
+	                       "crawl-delay: 3\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-
-	bool userAgentFound = false;
-	bool hadAllowOrDisallow = false;
-
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
-
-	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
-
-	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
-
-	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
-
-	EXPECT_TRUE( isUrlAllowed( "/test.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_EQ( -1, robots.getCrawlDelay() );
 }
 
 TEST( RobotsTest, UserAgentSeparateUAFirst ) {
-	int32_t pos = 0;
-	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot", "", "/test" );
-	generateRobotsTxt( robotsTxt, 1024, &pos, "abcbot", "", "/abc" );
-	generateRobotsTxt( robotsTxt, 1024, &pos, "defbot", "", "/def" );
-	logRobotsTxt( robotsTxt );
+	char robotsTxt[1024] = "user-agent: testbot\n"
+	                       "crawl-delay: 1\n"
+	                       "user-agent: abcbot\n"
+	                       "crawl-delay: 2\n"
+	                       "user-agent: defbot\n"
+	                       "crawl-delay: 3\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
 TEST( RobotsTest, UserAgentSeparateUASecond ) {
-	int32_t pos = 0;
-	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, &pos, "abcbot", "", "/abc" );
-	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot", "", "/test" );
-	generateRobotsTxt( robotsTxt, 1024, &pos, "defbot", "", "/def" );
-	logRobotsTxt( robotsTxt );
+	char robotsTxt[1024] = "user-agent: abcbot\n"
+	                       "crawl-delay: 1\n"
+	                       "user-agent: testbot\n"
+	                       "crawl-delay: 2\n"
+	                       "user-agent: defbot\n"
+	                       "crawl-delay: 3\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_EQ( 2000, robots.getCrawlDelay() );
 }
 
 TEST( RobotsTest, UserAgentSeparateUALast ) {
-	int32_t pos = 0;
-	char robotsTxt[1024];
-	generateRobotsTxt( robotsTxt, 1024, &pos, "abcbot", "", "/abc" );
-	generateRobotsTxt( robotsTxt, 1024, &pos, "defbot", "", "/def" );
-	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot", "", "/test" );
-	logRobotsTxt( robotsTxt );
+	char robotsTxt[1024] = "user-agent: abcbot\n"
+	                       "crawl-delay: 1\n"
+	                       "user-agent: defbot\n"
+	                       "crawl-delay: 2\n"
+	                       "user-agent: testbot\n"
+	                       "crawl-delay: 3\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_EQ( 3000, robots.getCrawlDelay() );
 }
 
 TEST( RobotsTest, UserAgentMultiUANone ) {
-	int32_t pos = 0;
-	char robotsTxt[1024];
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "abcbot" );
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "atestbot" );
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "defbot" );
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "disallow: %s\n", "/test" );
-	logRobotsTxt( robotsTxt );
+	char robotsTxt[1024] = "user-agent: abcbot\n"
+	                       "crawl-delay: 1\n"
+	                       "user-agent: atestbot\n"
+	                       "crawl-delay: 2\n"
+	                       "user-agent: defbot\n"
+	                       "crawl-delay: 3\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-
-	bool userAgentFound = false;
-	bool hadAllowOrDisallow = false;
-
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
-
-	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
-
-	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
-
-	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
-
-	EXPECT_TRUE( isUrlAllowed( "/test.html", robotsTxt, &userAgentFound, &hadAllowOrDisallow ) );
-	EXPECT_FALSE( userAgentFound );
-	EXPECT_FALSE( hadAllowOrDisallow );
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_EQ( -1, robots.getCrawlDelay() );
 }
 
 TEST( RobotsTest, UserAgentMultiUAFirst ) {
-	int32_t pos = 0;
-	char robotsTxt[1024];
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "testbot" );
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "abcbot" );
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "defbot" );
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "disallow: %s\n", "/test" );
-	logRobotsTxt( robotsTxt );
+	char robotsTxt[1024] = "user-agent: testbot\n"
+	                       "user-agent: abcbot\n"
+	                       "user-agent: defbot\n"
+	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
 TEST( RobotsTest, UserAgentMultiUASecond ) {
-	int32_t pos = 0;
-	char robotsTxt[1024];
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "abcbot" );
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "testbot" );
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "defbot" );
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "disallow: %s\n", "/test" );
-	logRobotsTxt( robotsTxt );
+	char robotsTxt[1024] = "user-agent: abcbot\n"
+	                       "user-agent: testbot\n"
+	                       "user-agent: defbot\n"
+	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
 TEST( RobotsTest, UserAgentMultiUALast ) {
-	int32_t pos = 0;
-	char robotsTxt[1024];
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "abcbot" );
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "defbot" );
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "testbot" );
-	pos += snprintf( robotsTxt + pos, 1024 - pos, "disallow: %s\n", "/test" );
-	logRobotsTxt( robotsTxt );
+	char robotsTxt[1024] = "user-agent: abcbot\n"
+	                       "user-agent: defbot\n"
+	                       "user-agent: testbot\n"
+	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
+}
 
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/def.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
+TEST( RobotsTest, UserAgentFieldCaseInsensitive ) {
+	char robotsTxt[1024] = "User-Agent: testbot\n"
+	                       "crawl-delay: 1\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
 //

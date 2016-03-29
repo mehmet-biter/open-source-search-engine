@@ -41,6 +41,12 @@ protected:
 	bool getField( const char *line, int32_t lineLen, int32_t *valueStartPos, const char **field, int32_t *fieldLen );
 	bool getValue( const char *line, int32_t lineLen, int32_t valueStartPos, const char **value, int32_t *valueLen );
 
+	bool isUserAgentFound();
+	bool isDefaultUserAgentFound();
+
+	bool isRulesEmpty();
+	bool isDefaultRulesEmpty();
+
 private:
 	bool parse();
 
@@ -50,8 +56,8 @@ private:
 	const char *m_userAgent;
 	int32_t m_userAgentLen;
 
-	bool m_foundUserAgent;
-	bool m_foundDefaultUserAgent;
+	bool m_userAgentFound;
+	bool m_defaultUserAgentFound;
 
 	int32_t m_crawlDelay;
 	int32_t m_defaultCrawlDelay;

@@ -16,8 +16,8 @@ Robots::Robots( const char* robotsTxt, int32_t robotsTxtLen, const char *userAge
 	, m_robotsTxtLen( robotsTxtLen )
 	, m_userAgent( userAgent )
 	, m_userAgentLen( strlen( userAgent ) )
-	, m_foundUserAgent( false )
-	, m_foundDefaultUserAgent( false )
+	, m_userAgentFound( false )
+	, m_defaultUserAgentFound( false )
 	, m_crawlDelay( -1 )
 	, m_defaultCrawlDelay( -1 ) {
 	// parse robots.txt into what we need
@@ -139,14 +139,25 @@ bool Robots::parse() {
 	static const char *s_userAgent = "user-agent";
 	static const int32_t s_userAgentLen = 10;
 
-	static const char *s_allow = "allow";
-	static const int32_t s_allowLen = 5;
-
 	static const char *s_disallow = "disallow";
 	static const int32_t s_disallowLen = 8;
 
+	// non-standard extension
+	static const char *s_allow = "allow";
+	static const int32_t s_allowLen = 5;
+
 	static const char *s_crawlDelay = "crawl-delay";
 	static const int32_t s_crawlDelayLen = 11;
+
+//	static const char *s_sitemap = "sitemap";
+//	static const int32_t s_sitemapLen = 7;
+//
+//	static const char *s_host = "host";
+//	static const int32_t s_hostLen = 4;
+//
+//  // yandex
+//	static const char *s_cleanParam = "clean-param";
+//	static const int32_t s_cleanParamLen = 11;
 
 	int32_t currentPos = 0;
 	const char *line = NULL;
@@ -154,6 +165,7 @@ bool Robots::parse() {
 
 	bool inUserAgentGroup = false;
 	bool isUserAgent = false;
+	bool hasGroupRecord = false;
 	while ( getNextLine( &currentPos, &line, &lineLen ) ) {
 		if ( !inUserAgentGroup ) {
 			// find group start (user agent)
@@ -170,10 +182,12 @@ bool Robots::parse() {
 				// prefix match
 				if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) ) {
 					if ( valueLen == 1 && *value == '*' ) {
-						m_foundDefaultUserAgent = true;
+						hasGroupRecord = false;
+						m_defaultUserAgentFound = true;
 						inUserAgentGroup = true;
 					} else if ( strncasecmp( value, m_userAgent, m_userAgentLen ) == 0 ) {
-						m_foundUserAgent = true;
+						hasGroupRecord = false;
+						m_userAgentFound = true;
 						inUserAgentGroup = true;
 						isUserAgent = true;
 					}
@@ -192,6 +206,8 @@ bool Robots::parse() {
 				switch ( fieldLen ) {
 					case s_allowLen:
 						if ( strncasecmp( field, s_allow, fieldLen ) == 0 ) {
+							hasGroupRecord = true;
+
 							// store allow
 							if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) ) {
 								if ( g_conf.m_logTraceRobots ) {
@@ -209,6 +225,8 @@ bool Robots::parse() {
 						break;
 					case s_disallowLen:
 						if ( strncasecmp( field, s_disallow, fieldLen ) == 0 ) {
+							hasGroupRecord = true;
+
 							// store disallow
 							if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) ) {
 								if ( g_conf.m_logTraceRobots ) {
@@ -226,16 +244,20 @@ bool Robots::parse() {
 						break;
 					case s_userAgentLen:
 						if ( strncasecmp( field, s_userAgent, fieldLen ) == 0 ) {
-							inUserAgentGroup = false;
-							isUserAgent = false;
+							// we should only reset when we have found group records
+							// this is to cater for multiple consecutive user-agent lines
+							if ( hasGroupRecord ) {
+								inUserAgentGroup = false;
+								isUserAgent = false;
+							}
 
 							// check if we're still in the same group
 							if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) ) {
 								if ( valueLen == 1 && *value == '*' ) {
-									m_foundDefaultUserAgent = true;
+									m_defaultUserAgentFound = true;
 									inUserAgentGroup = true;
 								} else if ( strncasecmp( value, m_userAgent, m_userAgentLen ) == 0 ) {
-									m_foundUserAgent = true;
+									m_userAgentFound = true;
 									inUserAgentGroup = true;
 									isUserAgent = true;
 								}
@@ -244,12 +266,14 @@ bool Robots::parse() {
 						break;
 					case s_crawlDelayLen:
 						if ( strncasecmp( field, s_crawlDelay, fieldLen ) == 0 ) {
+							hasGroupRecord = true;
+
 							// store crawl delay
 							if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) ) {
 								char *endPtr = NULL;
 								double crawlDelay = strtod( value, &endPtr );
 
-								if (endPtr == (value + valueLen)) {
+								if ( endPtr == ( value + valueLen ) ) {
 									if (g_conf.m_logTraceRobots) {
 										log( LOG_TRACE, "Robots::%s: isUserAgent=%s crawlDelay='%.4f'",
 										     __func__, isUserAgent ? "true" : "false", crawlDelay );
@@ -271,17 +295,33 @@ bool Robots::parse() {
 		}
 	}
 
-	return m_foundUserAgent;
+	return m_userAgentFound;
 }
 
 int32_t Robots::getCrawlDelay() {
-	if ( m_foundUserAgent ) {
+	if (m_userAgentFound) {
 		return m_crawlDelay;
-	} else if ( m_foundDefaultUserAgent ) {
+	} else if (m_defaultUserAgentFound) {
 		return m_defaultCrawlDelay;
 	} else {
 		return -1;
 	}
+}
+
+bool Robots::isUserAgentFound() {
+	return m_userAgentFound;
+}
+
+bool Robots::isDefaultUserAgentFound() {
+	return m_defaultUserAgentFound;
+}
+
+bool Robots::isRulesEmpty() {
+	return m_rules.empty();
+}
+
+bool Robots::isDefaultRulesEmpty() {
+	return m_defaultRules.empty();
 }
 
 bool Robots::isAllowed ( Url *url, const char *userAgent, const char *file, int32_t fileLen, bool *userAgentFound,
