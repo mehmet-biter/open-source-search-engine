@@ -18,36 +18,49 @@ public:
 	using Robots::getField;
 	using Robots::getValue;
 
+	using Robots::getCurrentLine;
+	using Robots::getCurrentLineLen;
+
 	using Robots::isUserAgentFound;
+	using Robots::isDefaultUserAgentFound;
+
 	using Robots::isRulesEmpty;
 	using Robots::isDefaultRulesEmpty;
+
+
+	bool isAllowed( const char *path ) {
+		char urlStr[1024];
+		snprintf( urlStr, 1024, TEST_DOMAIN "%s", path );
+
+		Url url;
+		url.set( urlStr );
+
+		return Robots::isAllowed( &url );
+	}
 };
 
-static void expectRobotsNoNextLine( TestRobots *robots, int32_t *currentPos ) {
-	const char *line = NULL;
-	int32_t lineLen = 0;
-
-	EXPECT_FALSE( robots->getNextLine( currentPos, &line, &lineLen ) );
+static void expectRobotsNoNextLine( TestRobots *robots ) {
+	EXPECT_FALSE( robots->getNextLine() );
 }
 
-static void expectRobots( TestRobots *robots, int32_t *currentPos, const char *expectedLine, const char *expectedField = "", const char *expectedValue = "" ) {
+static void expectRobots( TestRobots *robots, const char *expectedLine, const char *expectedField = "", const char *expectedValue = "" ) {
+	logf(LOG_INFO, "expectLine='%s' expectField='%s' expectValue='%s'", expectedLine, expectedField, expectedValue);
 	std::stringstream ss;
-	ss << __func__ << "expectedField='" << expectedField << "'";
+	ss << __func__ << ":"
+			<< " expectedLine='" << expectedLine << "'"
+			<< " expectedField='" << expectedField << "'"
+			<< " expectedValue='" << expectedValue << "'";
 	SCOPED_TRACE(ss.str());
 
-	const char *line = NULL;
-	int32_t lineLen = 0;
-
-	EXPECT_TRUE( robots->getNextLine( currentPos, &line, &lineLen ) );
-	EXPECT_EQ( strlen( expectedLine ), lineLen );
-	EXPECT_EQ( 0, memcmp( expectedLine, line, lineLen ) );
+	EXPECT_TRUE( robots->getNextLine() );
+	EXPECT_EQ( strlen( expectedLine ), robots->getCurrentLineLen() );
+	EXPECT_EQ( 0, memcmp( expectedLine, robots->getCurrentLine(), robots->getCurrentLineLen() ) );
 
 	if ( expectedField != "" ) {
 		const char *field = NULL;
 		int32_t fieldLen = 0;
-		int32_t valueStartPos = 0;
 
-		EXPECT_TRUE( robots->getField( line, lineLen, &valueStartPos, &field, &fieldLen ) );
+		EXPECT_TRUE( robots->getField( &field, &fieldLen ) );
 
 		EXPECT_EQ( strlen( expectedField ), fieldLen );
 		EXPECT_EQ( 0, memcmp( expectedField, field, fieldLen ) );
@@ -56,7 +69,7 @@ static void expectRobots( TestRobots *robots, int32_t *currentPos, const char *e
 			const char *value = NULL;
 			int32_t valueLen = 0;
 
-			EXPECT_TRUE( robots->getValue( line, lineLen, valueStartPos, &value, &valueLen ) );
+			EXPECT_TRUE( robots->getValue( &value, &valueLen ) );
 			EXPECT_EQ( strlen( expectedValue ), valueLen );
 			EXPECT_EQ( 0, memcmp( expectedValue, value, valueLen ) );
 		}
@@ -70,14 +83,13 @@ TEST( RobotsTest, RobotsGetNextLineLineEndings ) {
 							"line 4\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-	int32_t currentPos = 0;
 
-	expectRobots( &robots, &currentPos, "line 1" );
-	expectRobots( &robots, &currentPos, "line 2" );
-	expectRobots( &robots, &currentPos, "line 3" );
-	expectRobots( &robots, &currentPos, "line 4" );
+	expectRobots( &robots, "line 1" );
+	expectRobots( &robots, "line 2" );
+	expectRobots( &robots, "line 3" );
+	expectRobots( &robots, "line 4" );
 
-	expectRobotsNoNextLine( &robots, &currentPos);
+	expectRobotsNoNextLine( &robots);
 }
 
 TEST( RobotsTest, RobotsGetNextLineWhitespaces ) {
@@ -88,14 +100,13 @@ TEST( RobotsTest, RobotsGetNextLineWhitespaces ) {
 							"\t\tline 4   \n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-	int32_t currentPos = 0;
 
-	expectRobots( &robots, &currentPos, "line 1" );
-	expectRobots( &robots, &currentPos, "line 2" );
-	expectRobots( &robots, &currentPos, "line 3" );
-	expectRobots( &robots, &currentPos, "line 4" );
+	expectRobots( &robots, "line 1" );
+	expectRobots( &robots, "line 2" );
+	expectRobots( &robots, "line 3" );
+	expectRobots( &robots, "line 4" );
 
-	expectRobotsNoNextLine( &robots, &currentPos);
+	expectRobotsNoNextLine( &robots);
 }
 
 TEST( RobotsTest, RobotsGetNextLineComments ) {
@@ -106,13 +117,12 @@ TEST( RobotsTest, RobotsGetNextLineComments ) {
 							"\t\t#line 4\t\t\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-	int32_t currentPos = 0;
 
-	expectRobots( &robots, &currentPos, "line 1" );
-	expectRobots( &robots, &currentPos, "line 2" );
-	expectRobots( &robots, &currentPos, "line 3" );
+	expectRobots( &robots, "line 1" );
+	expectRobots( &robots, "line 2" );
+	expectRobots( &robots, "line 3" );
 
-	expectRobotsNoNextLine( &robots, &currentPos);
+	expectRobotsNoNextLine( &robots);
 }
 
 TEST( RobotsTest, RobotsGetFieldValue ) {
@@ -124,14 +134,13 @@ TEST( RobotsTest, RobotsGetFieldValue ) {
 							"\tfield4\t\t:\tvalue four#comment\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-	int32_t currentPos = 0;
 
-	expectRobots( &robots, &currentPos, "field1: value1", "field1", "value1" );
-	expectRobots( &robots, &currentPos, "field2   : value2", "field2", "value2" );
-	expectRobots( &robots, &currentPos, "field3\t\t:\tvalue3", "field3", "value3" );
-	expectRobots( &robots, &currentPos, "field4\t\t:\tvalue four", "field4", "value four" );
+	expectRobots( &robots, "field1: value1", "field1", "value1" );
+	expectRobots( &robots, "field2   : value2", "field2", "value2" );
+	expectRobots( &robots, "field3\t\t:\tvalue3", "field3", "value3" );
+	expectRobots( &robots, "field4\t\t:\tvalue four", "field4", "value four" );
 
-	expectRobotsNoNextLine( &robots, &currentPos);
+	expectRobotsNoNextLine( &robots);
 }
 
 //
@@ -202,17 +211,22 @@ static bool isUrlAllowed( const char *path, const char *robotsTxt, const char *u
 	return isAllowed;
 }
 
-//
-// Test user-agent
-//
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// Test user-agent                                                            //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 TEST( RobotsTest, UserAgentSingleUANoMatch ) {
 	char robotsTxt[1024] = "user-agent: abcbot\n"
 	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_FALSE( robots.isUserAgentFound() );
 	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( -1, robots.getCrawlDelay() );
 }
 
@@ -221,8 +235,11 @@ TEST( RobotsTest, UserAgentSingleUAPrefixMatch ) {
 	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( robots.isUserAgentFound() );
 	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
@@ -231,8 +248,11 @@ TEST( RobotsTest, UserAgentSingleUAPrefixVersionMatch ) {
 	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( robots.isUserAgentFound() );
 	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
@@ -241,8 +261,11 @@ TEST( RobotsTest, UserAgentSingleUAIgnoreCase ) {
 	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( robots.isUserAgentFound() );
 	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
@@ -251,8 +274,11 @@ TEST( RobotsTest, UserAgentSingleUAMatch ) {
 	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( robots.isUserAgentFound() );
 	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
@@ -265,8 +291,11 @@ TEST( RobotsTest, UserAgentSeparateUANone ) {
 	                       "crawl-delay: 3\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_FALSE( robots.isUserAgentFound() );
 	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( -1, robots.getCrawlDelay() );
 }
 
@@ -279,8 +308,11 @@ TEST( RobotsTest, UserAgentSeparateUAFirst ) {
 	                       "crawl-delay: 3\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( robots.isUserAgentFound() );
 	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
@@ -293,8 +325,11 @@ TEST( RobotsTest, UserAgentSeparateUASecond ) {
 	                       "crawl-delay: 3\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( robots.isUserAgentFound() );
 	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 2000, robots.getCrawlDelay() );
 }
 
@@ -307,8 +342,11 @@ TEST( RobotsTest, UserAgentSeparateUALast ) {
 	                       "crawl-delay: 3\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( robots.isUserAgentFound() );
 	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 3000, robots.getCrawlDelay() );
 }
 
@@ -321,8 +359,11 @@ TEST( RobotsTest, UserAgentMultiUANone ) {
 	                       "crawl-delay: 3\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_FALSE( robots.isUserAgentFound() );
 	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( -1, robots.getCrawlDelay() );
 }
 
@@ -333,7 +374,11 @@ TEST( RobotsTest, UserAgentMultiUAFirst ) {
 	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
@@ -344,7 +389,11 @@ TEST( RobotsTest, UserAgentMultiUASecond ) {
 	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
@@ -355,7 +404,108 @@ TEST( RobotsTest, UserAgentMultiUALast ) {
 	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, UserAgentDefaultMultiUAFirst ) {
+	char robotsTxt[1024] = "user-agent: *\n"
+	                       "crawl-delay: 1\n"
+	                       "user-agent: testbot\n"
+	                       "user-agent: abcbot\n"
+	                       "user-agent: defbot\n"
+	                       "crawl-delay: 2\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
+	EXPECT_EQ( 2000, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, UserAgentDefaultMultiUASecond ) {
+	char robotsTxt[1024] = "user-agent: *\n"
+	                       "crawl-delay: 1\n"
+	                       "user-agent: abcbot\n"
+	                       "user-agent: testbot\n"
+	                       "user-agent: defbot\n"
+	                       "crawl-delay: 2\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
+	EXPECT_EQ( 2000, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, UserAgentDefaultMultiUALast ) {
+	char robotsTxt[1024] = "user-agent: *\n"
+	                       "crawl-delay: 1\n"
+	                       "user-agent: abcbot\n"
+	                       "user-agent: defbot\n"
+	                       "user-agent: testbot\n"
+	                       "crawl-delay: 2\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
+	EXPECT_EQ( 2000, robots.getCrawlDelay() );
+}
+
+
+TEST( RobotsTest, UserAgentMultiDefaultUAFirst ) {
+	char robotsTxt[1024] = "user-agent: *\n"
+	                       "user-agent: abcbot\n"
+	                       "user-agent: defbot\n"
+	                       "crawl-delay: 1\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, UserAgentMultiDefaultUASecond ) {
+	char robotsTxt[1024] = "user-agent: abcbot\n"
+	                       "user-agent: *\n"
+	                       "user-agent: defbot\n"
+	                       "crawl-delay: 1\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, UserAgentMultiDefaultUALast ) {
+	char robotsTxt[1024] = "user-agent: abcbot\n"
+	                       "user-agent: defbot\n"
+	                       "user-agent: *\n"
+	                       "crawl-delay: 1\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
@@ -364,13 +514,19 @@ TEST( RobotsTest, UserAgentFieldCaseInsensitive ) {
 	                       "crawl-delay: 1\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
-//
-// Test comments
-//
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// Test comments                                                              //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 TEST(RobotsTest, DISABLED_CommentsFullLine) {
 /// @todo ALC
@@ -402,9 +558,11 @@ TEST(RobotsTest, DISABLED_CommentsAfterNoSpace) {
 	EXPECT_TRUE( isUrlAllowed( "/test.html", robotsTxt ) );
 }
 
-//
-// Test whitespace
-//
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// Test whitespace                                                            //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 TEST( RobotsTest, WhitespaceSpaceDirectiveBefore ) {
 	int32_t pos = 0;
@@ -490,9 +648,11 @@ TEST( RobotsTest, WhitespaceTabsDirectiveBoth ) {
 	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
 }
 
-//
-// Test allow/disallow
-//
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// Test allow/disallow                                                        //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 TEST( RobotsTest, AllowAll ) {
 	static const char *allow = "";
@@ -516,12 +676,12 @@ TEST( RobotsTest, DisallowAll ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/" ) );
+	EXPECT_FALSE( robots.isAllowed( "/index.html" ) );
 }
 
 // /123 matches /123 and /123/ and /1234 and /123/456
-TEST( RobotsTest, DISABLED_PathMatch ) {
+TEST( RobotsTest, PathMatch ) {
 	static const char *allow = "";
 	static const char *disallow = "/123";
 
@@ -530,18 +690,18 @@ TEST( RobotsTest, DISABLED_PathMatch ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/12", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/" ) );
+	EXPECT_TRUE( robots.isAllowed( "/index.html" ) );
+	EXPECT_TRUE( robots.isAllowed( "/12" ) );
 
-	EXPECT_FALSE( isUrlAllowed( "/123", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/123/", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/1234", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/123/456", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/123" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/" ) );
+	EXPECT_FALSE( robots.isAllowed( "/1234" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/456" ) );
 }
 
 // /123/ matches /123/ and /123/456
-TEST( RobotsTest, DISABLED_PathMatchWithEndSlash ) {
+TEST( RobotsTest, PathMatchWithEndSlash ) {
 	static const char *allow = "";
 	static const char *disallow = "/123/";
 
@@ -550,14 +710,14 @@ TEST( RobotsTest, DISABLED_PathMatchWithEndSlash ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/123", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/1234", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/" ) );
+	EXPECT_TRUE( robots.isAllowed( "/index.html" ) );
+	EXPECT_TRUE( robots.isAllowed( "/123" ) );
+	EXPECT_TRUE( robots.isAllowed( "/1234" ) );
 
-	EXPECT_FALSE( isUrlAllowed( "/123/", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/123/456", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/123/456/", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/456" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/456/" ) );
 }
 
 // /*abc matches /123abc and /123/abc and /123abc456 and /123/abc/456
@@ -597,7 +757,7 @@ TEST( RobotsTest, DISABLED_PathMatchWildcardMid ) {
 }
 
 // /123$ matches ONLY /123
-TEST( RobotsTest, DISABLED_PathMatchEnd ) {
+TEST( RobotsTest, PathMatchEnd ) {
 	static const char *allow = "";
 	static const char *disallow = "/123$";
 
@@ -606,9 +766,9 @@ TEST( RobotsTest, DISABLED_PathMatchEnd ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_TRUE( isUrlAllowed( "/123/", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/123/" ) );
 
-	EXPECT_FALSE( isUrlAllowed( "/123", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/123" ) );
 }
 
 // /*abc$ matches /123abc and /123/abc but NOT /123/abc/x etc.
@@ -633,15 +793,22 @@ TEST( RobotsTest, DISABLED_PathMatchWildcardEnd ) {
 
 /// @todo ALC test _escaped_fragment_
 
-//
-// Test crawl delay
-//
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// Test crawl delay                                                           //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 TEST( RobotsTest, CrawlDelayValueNone ) {
 	char robotsTxt[1024] = "user-agent: testbot\n"
 	                       "crawl-delay:";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( -1, robots.getCrawlDelay() );
 }
 
@@ -650,6 +817,11 @@ TEST( RobotsTest, CrawlDelayValueInvalid ) {
 	                       "crawl-delay: abc";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( -1, robots.getCrawlDelay() );
 }
 
@@ -658,6 +830,11 @@ TEST( RobotsTest, CrawlDelayNoMatch ) {
 	                       "crawl-delay: 1";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( -1, robots.getCrawlDelay() );
 }
 
@@ -666,6 +843,11 @@ TEST( RobotsTest, CrawlDelayMissing ) {
 	                       "disallow: /";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_FALSE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( -1, robots.getCrawlDelay() );
 }
 
@@ -674,6 +856,11 @@ TEST( RobotsTest, CrawlDelayValueFractionPartial ) {
 	                       "crawl-delay: .5";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 500, robots.getCrawlDelay() );
 }
 
@@ -682,6 +869,11 @@ TEST( RobotsTest, CrawlDelayValueFractionFull ) {
 	                       "crawl-delay: 1.5\n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 1500, robots.getCrawlDelay() );
 }
 
@@ -690,6 +882,11 @@ TEST( RobotsTest, CrawlDelayValueIntegerValid ) {
 	                       "crawl-delay: 30 \n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 30000, robots.getCrawlDelay() );
 }
 
@@ -698,6 +895,11 @@ TEST( RobotsTest, CrawlDelayValueIntegerInvalid ) {
 	                       "crawl-delay: 60abc \n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( -1, robots.getCrawlDelay() );
 }
 
@@ -706,6 +908,11 @@ TEST( RobotsTest, CrawlDelayValueComment ) {
 	                       "crawl-delay: 60#abc \n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 60000, robots.getCrawlDelay() );
 }
 
@@ -716,26 +923,41 @@ TEST( RobotsTest, CrawlDelayDefaultFirstNoMatch ) {
 	                       "crawl-delay: 2 \n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 2000, robots.getCrawlDelay() );
 }
 
 TEST( RobotsTest, CrawlDelayDefaultLastNoMatch ) {
-char robotsTxt[1024] = "user-agent: testbot\n"
-	                   "crawl-delay: 1 \n"
-	                   "user-agent: * \n"
-	                   "crawl-delay: 2 \n";
+	char robotsTxt[1024] = "user-agent: testbot\n"
+	                       "crawl-delay: 1 \n"
+	                       "user-agent: * \n"
+	                       "crawl-delay: 2 \n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
 TEST( RobotsTest, CrawlDelayDefaultFirstMatch ) {
-char robotsTxt[1024] = "user-agent: *\n"
-	                   "crawl-delay: 1 \n"
-	                   "user-agent: abcbot\n"
-	                   "crawl-delay: 2 \n";
+	char robotsTxt[1024] = "user-agent: *\n"
+	                       "crawl-delay: 1 \n"
+	                       "user-agent: abcbot\n"
+	                       "crawl-delay: 2 \n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
@@ -746,31 +968,58 @@ TEST( RobotsTest, CrawlDelayDefaultLastMatch ) {
 	                       "crawl-delay: 2 \n";
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
 	EXPECT_EQ( 2000, robots.getCrawlDelay() );
 }
 
-//
-// Test site map
-//
+TEST( RobotsTest, CrawlDelayFieldCaseInsensitive ) {
+	char robotsTxt[1024] = "user-agent: testbot\n"
+	                       "Crawl-Delay: 1\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_FALSE( robots.isDefaultUserAgentFound() );
+	EXPECT_TRUE( robots.isDefaultRulesEmpty() );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// Test site map                                                              //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 /// @todo ALC
 
-//
-// Test line endings
-//
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// Test line endings                                                          //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 /// @todo ALC
 
-//
-// Test utf-8 encoding (non-ascii)
-//
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// Test utf-8 encoding (non-ascii)                                            //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 /// @todo ALC
 
-//
-// Test cases based on google's robots.txt specification
-// https://developers.google.com/webmasters/control-crawl-index/docs/robots_txt?hl=en#example-path-matches
-//
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+// Test cases based on google's robots.txt specification                                //
+// https://developers.google.com/webmasters/control-crawl-index/docs/robots_txt         //
+//     #example-path-matches                                                            //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
 
 // [path]		[match]								[no match]					[comments]
 // /			any valid url													Matches the root and any lower level URL
@@ -808,7 +1057,7 @@ TEST( RobotsTest, DISABLED_GPathMatchDisallowAllWildcard ) {
 // 				/fishheads
 // 				/fishheads/yummy.html
 // 				/fish.php?id=anything
-TEST( RobotsTest, DISABLED_GPathMatchPrefixDisallow ) {
+TEST( RobotsTest, GPathMatchPrefixDisallow ) {
 	static const char *allow = "";
 	static const char *disallow = "/fish";
 
@@ -817,19 +1066,19 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixDisallow ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_FALSE( isUrlAllowed( "/fish", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fish.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fish/salmon.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fishheads", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fishheads/yummy.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fish.php?id=anything", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish.html" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish/salmon.html" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fishheads" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fishheads/yummy.html" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish.php?id=anything" ) );
 
-	EXPECT_TRUE( isUrlAllowed( "/Fish.asp", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/catfish", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/?id=fish", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/Fish.asp" ) );
+	EXPECT_TRUE( robots.isAllowed( "/catfish" ) );
+	EXPECT_TRUE( robots.isAllowed( "/?id=fish" ) );
 }
 
-TEST( RobotsTest, DISABLED_GPathMatchPrefixAllow ) {
+TEST( RobotsTest, GPathMatchPrefixAllow ) {
 	static const char *allow = "/fish";
 	static const char *disallow = "/";
 
@@ -838,16 +1087,16 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixAllow ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_TRUE( isUrlAllowed( "/fish", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fish.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fish/salmon.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fishheads", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fishheads/yummy.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fish.php?id=anything", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish.html" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish/salmon.html" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fishheads" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fishheads/yummy.html" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish.php?id=anything" ) );
 
-	EXPECT_FALSE( isUrlAllowed( "/Fish.asp", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/catfish", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/?id=fish", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/Fish.asp" ) );
+	EXPECT_FALSE( robots.isAllowed( "/catfish" ) );
+	EXPECT_FALSE( robots.isAllowed( "/?id=fish" ) );
 }
 
 // [path]		[match]								[no match]					[comments]
@@ -903,7 +1152,7 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardAllow ) {
 // /fish/		/fish/								/fish						The trailing slash means this matches anything in this folder.
 // 				/fish/?id=anything					/fish.html
 // 				/fish/salmon.htm					/Fish/Salmon.php
-TEST( RobotsTest, DISABLED_GPathMatchPrefixDirDisallow ) {
+TEST( RobotsTest, GPathMatchPrefixDirDisallow ) {
 	static const char *allow = "";
 	static const char *disallow = "/fish/";
 
@@ -912,16 +1161,16 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixDirDisallow ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_FALSE( isUrlAllowed( "/fish/", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fish/?id=anything", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fish/salmon.htm", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish/" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish/?id=anything" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish/salmon.htm" ) );
 
-	EXPECT_TRUE( isUrlAllowed( "/fish", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fish.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/Fish/Salmon.php", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish.html" ) );
+	EXPECT_TRUE( robots.isAllowed( "/Fish/Salmon.php" ) );
 }
 
-TEST( RobotsTest, DISABLED_GPathMatchPrefixDirAllow ) {
+TEST( RobotsTest, GPathMatchPrefixDirAllow ) {
 	static const char *allow = "/fish/";
 	static const char *disallow = "/";
 
@@ -930,13 +1179,13 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixDirAllow ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_TRUE( isUrlAllowed( "/fish/", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fish/?id=anything", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fish/salmon.htm", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish/" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish/?id=anything" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish/salmon.htm" ) );
 
-	EXPECT_FALSE( isUrlAllowed( "/fish", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fish.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/Fish/Salmon.php", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish.html" ) );
+	EXPECT_FALSE( robots.isAllowed( "/Fish/Salmon.php" ) );
 }
 
 // [path]		[match]								[no match]					[comments]
@@ -1057,10 +1306,13 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardExtAllow ) {
 	EXPECT_FALSE( isUrlAllowed( "/Fish.PHP", robotsTxt ) );
 }
 
-//
-// Test cases based on google's robots.txt specification
-// https://developers.google.com/webmasters/control-crawl-index/docs/robots_txt?hl=en#order-of-precedence-for-group-member-records
-//
+//////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                      //
+// Test cases based on google's robots.txt specification                                //
+// https://developers.google.com/webmasters/control-crawl-index/docs/robots_txt         //
+//     #order-of-precedence-for-group-member-records                                    //
+//                                                                                      //
+//////////////////////////////////////////////////////////////////////////////////////////
 
 // [url]							[allow]		[disallow]		[verdict]
 // http://example.com/page			/p			/				allow
@@ -1068,48 +1320,97 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardExtAllow ) {
 // http://example.com/page.htm		/page		/*.htm			undefined
 // http://example.com/				/$			/				allow
 // http://example.com/page.htm		/$			/				disallow
-TEST( RobotsTest, DISABLED_GPrecedenceAllowDisallow ) {
+TEST( RobotsTest, GPrecedenceAllowDisallow ) {
 	char robotsTxt[1024];
-	generateTestRobotsTxt( robotsTxt, 1024, "/p", "/" );
-	EXPECT_TRUE( isUrlAllowed( "/page", robotsTxt ) );
 
-	generateTestRobotsTxt( robotsTxt, 1024, "/folder/", "/folder" );
-	EXPECT_TRUE( isUrlAllowed( "/folder/page", robotsTxt ) );
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/p", "/" );
 
-	/// @todo ALC decide what's the result
-	generateTestRobotsTxt( robotsTxt, 1024, "/page", "/*.htm" );
-	// EXPECT_TRUE( isUrlAllowed ( "/page.htm", robotsTxt) );
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	generateTestRobotsTxt( robotsTxt, 1024, "/$", "/" );
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/page.htm", robotsTxt ) );
+		EXPECT_TRUE( robots.isAllowed( "/page" ));
+	}
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/folder/", "/folder" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_TRUE( robots.isAllowed( "/folder/page" ));
+	}
+
+	{
+		/// @todo ALC decide what's the result
+		generateTestRobotsTxt( robotsTxt, 1024, "/page.h", "/*.htm" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		// EXPECT_TRUE( robots.isAllowed ( "/page.htm" ) );
+	}
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/$", "/" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_TRUE( robots.isAllowed( "/" ));
+		EXPECT_FALSE( robots.isAllowed( "/page.htm" ));
+	}
 }
 
-TEST( RobotsTest, DISABLED_GPrecedenceDisallowAllow ) {
+TEST( RobotsTest, GPrecedenceDisallowAllow ) {
 	char robotsTxt[1024];
-	generateTestReversedRobotsTxt( robotsTxt, 1024, "/p", "/" );
-	EXPECT_TRUE( isUrlAllowed( "/page", robotsTxt ) );
 
-	generateTestReversedRobotsTxt( robotsTxt, 1024, "/folder/", "/folder" );
-	EXPECT_TRUE( isUrlAllowed( "/folder/page", robotsTxt ) );
+	{
+		generateTestReversedRobotsTxt( robotsTxt, 1024, "/p", "/" );
 
-	/// @todo ALC decide what's the result
-	generateTestReversedRobotsTxt( robotsTxt, 1024, "/page", "/*.htm" );
-	// EXPECT_TRUE( isUrlAllowed ( "/page.htm", robotsTxt) );
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	generateTestReversedRobotsTxt( robotsTxt, 1024, "/$", "/" );
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/page.htm", robotsTxt ) );
+		EXPECT_TRUE( robots.isAllowed( "/page" ));
+	}
+
+	{
+		generateTestReversedRobotsTxt( robotsTxt, 1024, "/folder/", "/folder" );
+
+		TestRobots robots( robotsTxt, strlen( robotsTxt ));
+
+		EXPECT_TRUE( robots.isAllowed( "/folder/page" ));
+	}
+
+	{
+		/// @todo ALC decide what's the result
+		generateTestReversedRobotsTxt( robotsTxt, 1024, "/page.h", "/*.htm" );
+
+		TestRobots robots( robotsTxt, strlen( robotsTxt ));
+
+		// EXPECT_TRUE( robots.isAllowed ( "/page.htm" ) );
+	}
+
+	{
+		generateTestReversedRobotsTxt( robotsTxt, 1024, "/$", "/" );
+
+		TestRobots robots( robotsTxt, strlen( robotsTxt ));
+
+		EXPECT_TRUE( robots.isAllowed( "/" ));
+		EXPECT_FALSE( robots.isAllowed( "/page.htm" ));
+	}
 }
 
-//
-// Test cases based on RFC
-// http://www.robotstxt.org/norobots-rfc.txt
-//
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// Test cases based on RFC                                                    //
+// http://www.robotstxt.org/norobots-rfc.txt                                  //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
-//
-// Test real robots.txt
-//
+/// @todo ALC
+
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// Test real robots.txt                                                       //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
 /// @todo ALC
 
 TEST( RobotsTest, RRobotsEmpty ) {

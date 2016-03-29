@@ -3,32 +3,15 @@
 
 #include <stdint.h>
 #include <list>
+#include "RobotRule.h"
 
 class Url;
-
-class RobotRule {
-public:
-	enum RuleType {
-		TYPE_ALLOW,
-		TYPE_DISALLOW
-	};
-
-	RobotRule( RuleType type, const char *path, int32_t pathLen );
-
-	bool isMatching( Url *url );
-
-	bool isAllow();
-	bool isDisallow();
-
-private:
-	RuleType m_type;
-	const char *m_path;
-	int32_t m_pathLen;
-};
 
 class Robots {
 public:
 	Robots( const char* robotsTxt, int32_t robotsTxtLen, const char *userAgent );
+
+	bool isAllowed( Url *url );
 	int32_t getCrawlDelay();
 
 	static bool isAllowed( Url *url, const char *userAgent, const char *file, int32_t fileLen,
@@ -36,22 +19,53 @@ public:
 	                       bool *hadAllowOrDisallow );
 
 protected:
-	bool getNextLine( int32_t *startPos, const char **line, int32_t *lineLen );
+	bool getNextLine();
 
-	bool getField( const char *line, int32_t lineLen, int32_t *valueStartPos, const char **field, int32_t *fieldLen );
-	bool getValue( const char *line, int32_t lineLen, int32_t valueStartPos, const char **value, int32_t *valueLen );
+	bool getField( const char **field, int32_t *fieldLen );
+	bool getValue( const char **value, int32_t *valueLen );
 
-	bool isUserAgentFound();
-	bool isDefaultUserAgentFound();
+	const char* getCurrentLine() const {
+		return m_currentLine;
+	}
 
-	bool isRulesEmpty();
-	bool isDefaultRulesEmpty();
+	int32_t getCurrentLineLen() const {
+		return m_currentLineLen;
+	}
+
+	bool isUserAgentFound() const {
+		return m_userAgentFound;
+	}
+
+	bool isDefaultUserAgentFound() const {
+		return m_defaultUserAgentFound;
+	}
+
+	bool isRulesEmpty() const {
+		return m_rules.empty();
+	}
+
+	bool isDefaultRulesEmpty() const {
+		return m_defaultRules.empty();
+	}
 
 private:
-	bool parse();
+	void parse();
+
+	bool parseUserAgent( const char *field, int32_t fieldLen, bool *isUserAgentPtr, bool *isDefaultUserAgentPtr );
+	bool parseCrawlDelay( const char *field, int32_t fieldLen, bool isUserAgent );
+	void parsePath( bool isAllow, bool isUserAgent );
+	bool parseAllow( const char *field, int32_t fieldLen, bool isUserAgent );
+	bool parseDisallow( const char *field, int32_t fieldLen, bool isUserAgent );
+
+	void print() const;
 
 	const char *m_robotsTxt;
 	int32_t m_robotsTxtLen;
+
+	const char *m_currentLine;
+	int32_t m_currentLineLen;
+	int32_t m_nextLineStartPos;
+	int32_t m_valueStartPos;
 
 	const char *m_userAgent;
 	int32_t m_userAgentLen;
