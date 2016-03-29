@@ -5491,10 +5491,10 @@ void dumpPosdb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTre
 	int32_t minRecSizes = 1024*1024;
 
 	// bail if not
-	if ( g_posdb.m_rdb.getNumFiles() <= startFileNum && numFiles > 0 ) {
+	if ( g_posdb.getRdb()->getNumFiles() <= startFileNum && numFiles > 0 ) {
 		printf("Request file #%"INT32" but there are only %"INT32" "
 		       "posdb files\n",startFileNum,
-		       g_posdb.m_rdb.getNumFiles());
+		       g_posdb.getRdb()->getNumFiles());
 		return;
 	}
 

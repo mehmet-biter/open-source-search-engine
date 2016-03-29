@@ -356,6 +356,7 @@ class Posdb {
 	//RdbCache *getCache ( ) { return &m_rdb.m_cache; };
 	Rdb      *getRdb   ( ) { return &m_rdb; };
 
+private:
 	Rdb m_rdb;
 };
 
