@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 	g_conf.m_logDebugBuild = true;
 	g_conf.m_logTraceRobots = true;
 
-	if (!ucInit()) {
+	if ( !ucInit() ) {
 		log("Unicode initialization failed!");
 		exit(1);
 	}

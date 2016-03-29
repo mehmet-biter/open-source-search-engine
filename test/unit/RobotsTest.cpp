@@ -17,7 +17,6 @@ public:
 	using Robots::getNextLine;
 	using Robots::getField;
 	using Robots::getValue;
-	using Robots::parse;
 };
 
 static void expectRobotsNoNextLine( TestRobots *robots, int32_t *currentPos ) {
@@ -34,8 +33,6 @@ static void expectRobots( TestRobots *robots, int32_t *currentPos, const char *e
 
 	const char *line = NULL;
 	int32_t lineLen = 0;
-
-	robots->parse();
 
 	EXPECT_TRUE( robots->getNextLine( currentPos, &line, &lineLen ) );
 	EXPECT_EQ( strlen( expectedLine ), lineLen );
@@ -140,7 +137,6 @@ TEST( RobotsTest, RobotsGetFieldValue ) {
 static void logRobotsTxt( const char *robotsTxt ) {
 	logf (LOG_INFO, "===== robots.txt =====\n%s", robotsTxt);
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-	robots.parse();
 }
 
 static void generateRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, int32_t *pos, const char *userAgent = "testbot", const char *allow = "", const char *disallow = "", bool reversed = false ) {
@@ -215,6 +211,8 @@ TEST( RobotsTest, UserAgentSingleUANoMatch ) {
 	generateRobotsTxt( robotsTxt, 1024, &pos, "abcbot", allow, disallow );
 	logRobotsTxt( robotsTxt );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	bool userAgentFound = false;
 	bool hadAllowOrDisallow = false;
 
@@ -235,6 +233,8 @@ TEST( RobotsTest, DISABLED_UserAgentSingleUAPrefixNoMatch ) {
 	char robotsTxt[1024];
 	generateRobotsTxt( robotsTxt, 1024, &pos, "testbotabc", allow, disallow );
 	logRobotsTxt( robotsTxt );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	bool userAgentFound = false;
 	bool hadAllowOrDisallow = false;
@@ -257,6 +257,8 @@ TEST( RobotsTest, UserAgentSingleUAPrefixMatch ) {
 	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot/1.0", allow, disallow );
 	logRobotsTxt( robotsTxt );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
 }
@@ -270,6 +272,8 @@ TEST( RobotsTest, UserAgentSingleUAIgnoreCase ) {
 	generateRobotsTxt( robotsTxt, 1024, &pos, "TestBot/1.0", allow, disallow );
 	logRobotsTxt( robotsTxt );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
 }
@@ -280,6 +284,8 @@ TEST( RobotsTest, UserAgentSingleUAMatch ) {
 
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -292,6 +298,8 @@ TEST( RobotsTest, UserAgentSeparateUANone ) {
 	generateRobotsTxt( robotsTxt, 1024, &pos, "abcbot", "", "/abc" );
 	generateRobotsTxt( robotsTxt, 1024, &pos, "defbot", "", "/def" );
 	logRobotsTxt( robotsTxt );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	bool userAgentFound = false;
 	bool hadAllowOrDisallow = false;
@@ -325,6 +333,8 @@ TEST( RobotsTest, UserAgentSeparateUAFirst ) {
 	generateRobotsTxt( robotsTxt, 1024, &pos, "defbot", "", "/def" );
 	logRobotsTxt( robotsTxt );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
@@ -339,6 +349,8 @@ TEST( RobotsTest, UserAgentSeparateUASecond ) {
 	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot", "", "/test" );
 	generateRobotsTxt( robotsTxt, 1024, &pos, "defbot", "", "/def" );
 	logRobotsTxt( robotsTxt );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -355,6 +367,8 @@ TEST( RobotsTest, UserAgentSeparateUALast ) {
 	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot", "", "/test" );
 	logRobotsTxt( robotsTxt );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
@@ -370,6 +384,8 @@ TEST( RobotsTest, UserAgentMultiUANone ) {
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "defbot" );
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "disallow: %s\n", "/test" );
 	logRobotsTxt( robotsTxt );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	bool userAgentFound = false;
 	bool hadAllowOrDisallow = false;
@@ -404,6 +420,8 @@ TEST( RobotsTest, UserAgentMultiUAFirst ) {
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "disallow: %s\n", "/test" );
 	logRobotsTxt( robotsTxt );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
@@ -420,6 +438,8 @@ TEST( RobotsTest, UserAgentMultiUASecond ) {
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "disallow: %s\n", "/test" );
 	logRobotsTxt( robotsTxt );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/abc.html", robotsTxt ) );
@@ -435,6 +455,8 @@ TEST( RobotsTest, UserAgentMultiUALast ) {
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent: %s\n", "testbot" );
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "disallow: %s\n", "/test" );
 	logRobotsTxt( robotsTxt );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -457,6 +479,8 @@ TEST(RobotsTest, DISABLED_CommentsAfterWithSpace) {
 	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot #user-agent", "/test #allow", "/ #disallow");
 	logRobotsTxt( robotsTxt );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/test.html", robotsTxt ) );
@@ -467,6 +491,8 @@ TEST(RobotsTest, DISABLED_CommentsAfterNoSpace) {
 	char robotsTxt[1024];
 	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot#user-agent", "/test#allow", "/#disallow");
 	logRobotsTxt( robotsTxt );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -484,6 +510,8 @@ TEST( RobotsTest, WhitespaceSpaceDirectiveBefore ) {
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "        disallow:%s\n", "/test" );
 	logRobotsTxt( robotsTxt );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
@@ -495,6 +523,8 @@ TEST( RobotsTest, WhitespaceSpaceDirectiveAfter ) {
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "user-agent:   %s\n", "testbot" );
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "disallow:     %s\n", "/test" );
 	logRobotsTxt( robotsTxt );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -508,6 +538,8 @@ TEST( RobotsTest, WhitespaceSpaceDirectiveBoth ) {
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "        disallow:  %s\n", "/test" );
 	logRobotsTxt( robotsTxt );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
@@ -519,6 +551,8 @@ TEST( RobotsTest, WhitespaceTabsDirectiveBefore ) {
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "\tuser-agent:%s\n", "testbot" );
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "\t\tdisallow:%s\n", "/test" );
 	logRobotsTxt( robotsTxt );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -532,6 +566,8 @@ TEST( RobotsTest, WhitespaceTabsDirectiveAfter ) {
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "disallow:\t%s\n", "/test" );
 	logRobotsTxt( robotsTxt );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/test.html", robotsTxt ) );
@@ -543,6 +579,8 @@ TEST( RobotsTest, WhitespaceTabsDirectiveBoth ) {
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "\tuser-agent:\t%s\n", "testbot" );
 	pos += snprintf( robotsTxt + pos, 1024 - pos, "\t\tdisallow:\t%s\n", "/test" );
 	logRobotsTxt( robotsTxt );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -560,6 +598,8 @@ TEST( RobotsTest, AllowAll ) {
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
 }
@@ -570,6 +610,8 @@ TEST( RobotsTest, DisallowAll ) {
 
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -582,6 +624,8 @@ TEST( RobotsTest, DISABLED_PathMatch ) {
 
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -601,6 +645,8 @@ TEST( RobotsTest, DISABLED_PathMatchWithEndSlash ) {
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/index.html", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/123", robotsTxt ) );
@@ -619,6 +665,8 @@ TEST( RobotsTest, DISABLED_PathMatchWildcardStart ) {
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( isUrlAllowed( "/123", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/123ab", robotsTxt ) );
 
@@ -636,6 +684,8 @@ TEST( RobotsTest, DISABLED_PathMatchWildcardMid ) {
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( isUrlAllowed( "/123/qwerty/xy", robotsTxt ) );
 
 	EXPECT_FALSE( isUrlAllowed( "/123qwertyxyz", robotsTxt ) );
@@ -651,6 +701,8 @@ TEST( RobotsTest, DISABLED_PathMatchEnd ) {
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_TRUE( isUrlAllowed( "/123/", robotsTxt ) );
 
 	EXPECT_FALSE( isUrlAllowed( "/123", robotsTxt ) );
@@ -663,6 +715,8 @@ TEST( RobotsTest, DISABLED_PathMatchWildcardEnd ) {
 
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_TRUE( isUrlAllowed( "/123/abc/x", robotsTxt ) );
 
@@ -680,7 +734,117 @@ TEST( RobotsTest, DISABLED_PathMatchWildcardEnd ) {
 // Test crawl delay
 //
 
-/// @todo ALC
+TEST( RobotsTest, CrawlDelayValueNone ) {
+	char robotsTxt[1024] = "user-agent: testbot\n"
+	                       "crawl-delay:";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_EQ( -1, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, CrawlDelayValueInvalid ) {
+	char robotsTxt[1024] = "user-agent: testbot\n"
+	                       "crawl-delay: abc";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_EQ( -1, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, CrawlDelayNoMatch ) {
+	char robotsTxt[1024] = "user-agent: abcbot\n"
+	                       "crawl-delay: 1";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_EQ( -1, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, CrawlDelayMissing ) {
+	char robotsTxt[1024] = "user-agent: testbot\n"
+	                       "disallow: /";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_EQ( -1, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, CrawlDelayValueFractionPartial ) {
+	char robotsTxt[1024] = "user-agent: testbot\n"
+	                       "crawl-delay: .5";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_EQ( 500, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, CrawlDelayValueFractionFull ) {
+	char robotsTxt[1024] = "user-agent: testbot\n"
+	                       "crawl-delay: 1.5\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_EQ( 1500, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, CrawlDelayValueIntegerValid ) {
+	char robotsTxt[1024] = "user-agent: testbot\n"
+	                       "crawl-delay: 30 \n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_EQ( 30000, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, CrawlDelayValueIntegerInvalid ) {
+	char robotsTxt[1024] = "user-agent: testbot\n"
+	                       "crawl-delay: 60abc \n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_EQ( -1, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, CrawlDelayValueComment ) {
+	char robotsTxt[1024] = "user-agent: testbot\n"
+	                       "crawl-delay: 60#abc \n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_EQ( 60000, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, CrawlDelayDefaultFirstNoMatch ) {
+	char robotsTxt[1024] = "user-agent: *\n"
+	                       "crawl-delay: 1 \n"
+	                       "user-agent: testbot\n"
+	                       "crawl-delay: 2 \n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_EQ( 2000, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, CrawlDelayDefaultLastNoMatch ) {
+char robotsTxt[1024] = "user-agent: testbot\n"
+	                   "crawl-delay: 1 \n"
+	                   "user-agent: * \n"
+	                   "crawl-delay: 2 \n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, CrawlDelayDefaultFirstMatch ) {
+char robotsTxt[1024] = "user-agent: *\n"
+	                   "crawl-delay: 1 \n"
+	                   "user-agent: abcbot\n"
+	                   "crawl-delay: 2 \n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_EQ( 1000, robots.getCrawlDelay() );
+}
+
+TEST( RobotsTest, CrawlDelayDefaultLastMatch ) {
+	char robotsTxt[1024] = "user-agent: abcbot\n"
+	                       "crawl-delay: 1 \n"
+	                       "user-agent: *\n"
+	                       "crawl-delay: 2 \n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	EXPECT_EQ( 2000, robots.getCrawlDelay() );
+}
 
 //
 // Test site map
@@ -715,6 +879,8 @@ TEST( RobotsTest, GPathMatchDisallowAll ) {
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
 }
@@ -725,6 +891,8 @@ TEST( RobotsTest, DISABLED_GPathMatchDisallowAllWildcard ) {
 
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
@@ -744,6 +912,8 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixDisallow ) {
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_FALSE( isUrlAllowed( "/fish", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/fish.html", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/fish/salmon.html", robotsTxt ) );
@@ -762,6 +932,8 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixAllow ) {
 
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_TRUE( isUrlAllowed( "/fish", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/fish.html", robotsTxt ) );
@@ -789,6 +961,8 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardDisallow ) {
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_FALSE( isUrlAllowed( "/fish", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/fish.html", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/fish/salmon.html", robotsTxt ) );
@@ -807,6 +981,8 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardAllow ) {
 
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_TRUE( isUrlAllowed( "/fish", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/fish.html", robotsTxt ) );
@@ -831,6 +1007,8 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixDirDisallow ) {
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_FALSE( isUrlAllowed( "/fish/", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/fish/?id=anything", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/fish/salmon.htm", robotsTxt ) );
@@ -846,6 +1024,8 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixDirAllow ) {
 
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_TRUE( isUrlAllowed( "/fish/", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/fish/?id=anything", robotsTxt ) );
@@ -869,6 +1049,8 @@ TEST( RobotsTest, DISABLED_GPathMatchWildcardExtDisallow ) {
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_FALSE( isUrlAllowed( "/filename.php", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/folter/filename.php", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/folder/filename.php?parameters", robotsTxt ) );
@@ -885,6 +1067,8 @@ TEST( RobotsTest, DISABLED_GPathMatchWildcardExtAllow ) {
 
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_TRUE( isUrlAllowed( "/filename.php", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/folter/filename.php", robotsTxt ) );
@@ -908,6 +1092,8 @@ TEST( RobotsTest, DISABLED_GPathMatchWildcardExtEndDisallow ) {
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_FALSE( isUrlAllowed( "/filename.php", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/folder/filename.php", robotsTxt ) );
 
@@ -923,6 +1109,8 @@ TEST( RobotsTest, DISABLED_GPathMatchWildcardExtEndAllow ) {
 
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_TRUE( isUrlAllowed( "/filename.php", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/folder/filename.php", robotsTxt ) );
@@ -943,6 +1131,8 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardExtDisallow ) {
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	EXPECT_FALSE( isUrlAllowed( "/fish.php", robotsTxt ) );
 	EXPECT_FALSE( isUrlAllowed( "/fishheads/catfish.php?parameters", robotsTxt ) );
 
@@ -955,6 +1145,8 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardExtAllow ) {
 
 	char robotsTxt[1024];
 	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	EXPECT_TRUE( isUrlAllowed( "/fish.php", robotsTxt ) );
 	EXPECT_TRUE( isUrlAllowed( "/fishheads/catfish.php?parameters", robotsTxt ) );
@@ -1020,6 +1212,8 @@ TEST( RobotsTest, DISABLED_GPrecedenceDisallowAllow ) {
 TEST( RobotsTest, RRobotsEmpty ) {
 	char robotsTxt[1024] = { 0 };
 
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
 	bool userAgentFound = false;
 	bool hadAllowOrDisallow = false;
 
@@ -1039,6 +1233,8 @@ TEST( RobotsTest, RRobotsCommentsOnly ) {
 			"# To ban all spiders from the entire site uncomment the next two lines:\n"
 			"# User-agent: *\n"
 			"# Disallow: /\n";
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
 	bool userAgentFound = false;
 	bool hadAllowOrDisallow = false;

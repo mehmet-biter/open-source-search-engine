@@ -5,11 +5,23 @@
 #include "Log.h"
 #include "Conf.h"
 
+RobotRule::RobotRule( RuleType type, const char *path, int32_t pathLen )
+	: m_type( type )
+	, m_path( path )
+	, m_pathLen( pathLen ) {
+}
+
 Robots::Robots( const char* robotsTxt, int32_t robotsTxtLen, const char *userAgent )
 	: m_robotsTxt( robotsTxt )
 	, m_robotsTxtLen( robotsTxtLen )
 	, m_userAgent( userAgent )
-	, m_userAgentLen( strlen( userAgent ) ) {
+	, m_userAgentLen( strlen( userAgent ) )
+	, m_foundUserAgent( false )
+	, m_foundDefaultUserAgent( false )
+	, m_crawlDelay( -1 )
+	, m_defaultCrawlDelay( -1 ) {
+	// parse robots.txt into what we need
+	parse();
 }
 
 bool Robots::getNextLine( int32_t *lineStartPos, const char **line, int32_t *lineLen ) {
@@ -103,7 +115,7 @@ bool Robots::getField( const char *line, int32_t lineLen, int32_t *valueStartPos
 	}
 
 	if ( g_conf.m_logTraceRobots ) {
-		log( LOG_TRACE, "%s: len=%d field='%.*s'", __func__, *fieldLen, *fieldLen, *field );
+		log( LOG_TRACE, "Robots::%s: len=%d field='%.*s'", __func__, *fieldLen, *fieldLen, *field );
 	}
 	return ( *fieldLen > 0 );
 }
@@ -118,14 +130,12 @@ bool Robots::getValue( const char *line, int32_t lineLen, int32_t valueStartPos,
 	*valueLen = lineLen - valueStartPos;
 
 	if ( g_conf.m_logTraceRobots ) {
-		logf( LOG_TRACE, "%s: len=%d value='%.*s'", __func__, *valueLen, *valueLen, *value );
+		logf( LOG_TRACE, "Robots::%s: len=%d value='%.*s'", __func__, *valueLen, *valueLen, *value );
 	}
 	return ( *valueLen > 0 );
 }
 
 bool Robots::parse() {
-	logf(LOG_INFO, "===== Robots::%s =====", __func__);
-
 	static const char *s_userAgent = "user-agent";
 	static const int32_t s_userAgentLen = 10;
 
@@ -142,9 +152,6 @@ bool Robots::parse() {
 	const char *line = NULL;
 	int32_t lineLen = 0;
 
-	bool foundDefaultUserAgent = false;
-	bool foundUserAgent = false;
-
 	bool inUserAgentGroup = false;
 	bool isUserAgent = false;
 	while ( getNextLine( &currentPos, &line, &lineLen ) ) {
@@ -160,14 +167,13 @@ bool Robots::parse() {
 				const char *value = NULL;
 				int32_t valueLen = 0;
 
-				/// @todo match default user agent
 				// prefix match
 				if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) ) {
 					if ( valueLen == 1 && *value == '*' ) {
-						foundUserAgent = true;
+						m_foundDefaultUserAgent = true;
 						inUserAgentGroup = true;
 					} else if ( strncasecmp( value, m_userAgent, m_userAgentLen ) == 0 ) {
-						foundUserAgent = true;
+						m_foundUserAgent = true;
 						inUserAgentGroup = true;
 						isUserAgent = true;
 					}
@@ -183,14 +189,20 @@ bool Robots::parse() {
 				const char *value = NULL;
 				int32_t valueLen = 0;
 
-				switch (fieldLen) {
+				switch ( fieldLen ) {
 					case s_allowLen:
 						if ( strncasecmp( field, s_allow, fieldLen ) == 0 ) {
 							// store allow
 							if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) ) {
-								logf(LOG_INFO, "allow='%.*s'", valueLen, value);
+								if ( g_conf.m_logTraceRobots ) {
+									log( LOG_TRACE, "Robots::%s: isUserAgent=%s allow='%.*s'",
+									     __func__, isUserAgent ? "true" : "false", valueLen, value );
+								}
+
 								if ( isUserAgent ) {
-									m_allow.push_back( std::make_pair( valueLen, value ));
+									m_rules.push_back( RobotRule( RobotRule::TYPE_ALLOW, value, valueLen ) );
+								} else {
+									m_defaultRules.push_back( RobotRule( RobotRule::TYPE_ALLOW, value, valueLen ) );
 								}
 							}
 						}
@@ -199,26 +211,57 @@ bool Robots::parse() {
 						if ( strncasecmp( field, s_disallow, fieldLen ) == 0 ) {
 							// store disallow
 							if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) ) {
-								logf(LOG_INFO, "disallow='%.*s'", valueLen, value);
-								m_disallow.push_back( std::make_pair( valueLen, value ) );
+								if ( g_conf.m_logTraceRobots ) {
+									log( LOG_TRACE, "Robots::%s: isUserAgent=%s disallow='%.*s'",
+									     __func__, isUserAgent ? "true" : "false", valueLen, value );
+								}
+
+								if ( isUserAgent ) {
+									m_rules.push_back( RobotRule( RobotRule::TYPE_DISALLOW, value, valueLen ) );
+								} else {
+									m_defaultRules.push_back( RobotRule( RobotRule::TYPE_DISALLOW, value, valueLen ) );
+								}
 							}
 						}
 						break;
 					case s_userAgentLen:
 						if ( strncasecmp( field, s_userAgent, fieldLen ) == 0 ) {
 							inUserAgentGroup = false;
+							isUserAgent = false;
 
 							// check if we're still in the same group
-							if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) &&
-							     strncasecmp( value, userAgent, userAgentLen ) == 0 ) {
-								inUserAgentGroup = true;
+							if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) ) {
+								if ( valueLen == 1 && *value == '*' ) {
+									m_foundDefaultUserAgent = true;
+									inUserAgentGroup = true;
+								} else if ( strncasecmp( value, m_userAgent, m_userAgentLen ) == 0 ) {
+									m_foundUserAgent = true;
+									inUserAgentGroup = true;
+									isUserAgent = true;
+								}
 							}
 						}
 						break;
 					case s_crawlDelayLen:
 						if ( strncasecmp( field, s_crawlDelay, fieldLen ) == 0 ) {
 							// store crawl delay
-							/// @todo ALC
+							if ( getValue( line, lineLen, valueStartPos, &value, &valueLen ) ) {
+								char *endPtr = NULL;
+								double crawlDelay = strtod( value, &endPtr );
+
+								if (endPtr == (value + valueLen)) {
+									if (g_conf.m_logTraceRobots) {
+										log( LOG_TRACE, "Robots::%s: isUserAgent=%s crawlDelay='%.4f'",
+										     __func__, isUserAgent ? "true" : "false", crawlDelay );
+									}
+
+									if (isUserAgent) {
+										m_crawlDelay = static_cast<int32_t>(crawlDelay * 1000);
+									} else {
+										m_defaultCrawlDelay = static_cast<int32_t>(crawlDelay * 1000);
+									}
+								}
+							}
 						}
 						break;
 					default:
@@ -228,7 +271,17 @@ bool Robots::parse() {
 		}
 	}
 
-	return foundUserAgent;
+	return m_foundUserAgent;
+}
+
+int32_t Robots::getCrawlDelay() {
+	if ( m_foundUserAgent ) {
+		return m_crawlDelay;
+	} else if ( m_foundDefaultUserAgent ) {
+		return m_defaultCrawlDelay;
+	} else {
+		return -1;
+	}
 }
 
 bool Robots::isAllowed ( Url *url, const char *userAgent, const char *file, int32_t fileLen, bool *userAgentFound,
