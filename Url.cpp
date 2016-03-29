@@ -2216,7 +2216,7 @@ int32_t getPathDepth ( char *s , bool hasHttp ) {
 
 char* Url::getDisplayUrl(char* url, SafeBuf* sb) {
 	char* found;
-    char* labelCursor = url;
+	char* labelCursor = url;
 	if((found = strstr(labelCursor, "xn--"))) {
 		sb->safeMemcpy(url, found - url);
 
@@ -2251,7 +2251,7 @@ char* Url::getDisplayUrl(char* url, SafeBuf* sb) {
 				return url;
 			}
 			sb->utf32Encode(decoded, decodedLen);
-			//sb->pushChar(*labelEnd);
+			if(*labelEnd == '.') sb->pushChar(*labelEnd++);
 			labelCursor = labelEnd;
 		} while((found = strstr(labelCursor, "xn--")));
 	}
