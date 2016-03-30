@@ -700,6 +700,46 @@ TEST( RobotsTest, PathMatch ) {
 	EXPECT_FALSE( robots.isAllowed( "/123/456" ) );
 }
 
+// treat /123* as /123
+TEST( RobotsTest, PathMatchWildcardEnd ) {
+	static const char *allow = "";
+	static const char *disallow = "/123*";
+
+	char robotsTxt[1024];
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isAllowed( "/" ) );
+	EXPECT_TRUE( robots.isAllowed( "/index.html" ) );
+	EXPECT_TRUE( robots.isAllowed( "/12" ) );
+
+	EXPECT_FALSE( robots.isAllowed( "/123" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/" ) );
+	EXPECT_FALSE( robots.isAllowed( "/1234" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/456" ) );
+}
+
+// treat /123*** as /123
+TEST( RobotsTest, PathMatchMultipleWildcardEnd ) {
+	static const char *allow = "";
+	static const char *disallow = "/123***";
+
+	char robotsTxt[1024];
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isAllowed( "/" ) );
+	EXPECT_TRUE( robots.isAllowed( "/index.html" ) );
+	EXPECT_TRUE( robots.isAllowed( "/12" ) );
+
+	EXPECT_FALSE( robots.isAllowed( "/123" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/" ) );
+	EXPECT_FALSE( robots.isAllowed( "/1234" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/456" ) );
+}
+
 // /123/ matches /123/ and /123/456
 TEST( RobotsTest, PathMatchWithEndSlash ) {
 	static const char *allow = "";
@@ -720,8 +760,28 @@ TEST( RobotsTest, PathMatchWithEndSlash ) {
 	EXPECT_FALSE( robots.isAllowed( "/123/456/" ) );
 }
 
+// treat /123/* as /123/
+TEST( RobotsTest, PathMatchWithEndSlashWildcardEnd ) {
+	static const char *allow = "";
+	static const char *disallow = "/123/*";
+
+	char robotsTxt[1024];
+	generateTestRobotsTxt( robotsTxt, 1024, allow, disallow );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isAllowed( "/" ) );
+	EXPECT_TRUE( robots.isAllowed( "/index.html" ) );
+	EXPECT_TRUE( robots.isAllowed( "/123" ) );
+	EXPECT_TRUE( robots.isAllowed( "/1234" ) );
+
+	EXPECT_FALSE( robots.isAllowed( "/123/" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/456" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/456/" ) );
+}
+
 // /*abc matches /123abc and /123/abc and /123abc456 and /123/abc/456
-TEST( RobotsTest, DISABLED_PathMatchWildcardStart ) {
+TEST( RobotsTest, PathMatchWildcardStart ) {
 	static const char *allow = "";
 	static const char *disallow = "/*abc";
 
@@ -730,17 +790,17 @@ TEST( RobotsTest, DISABLED_PathMatchWildcardStart ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_TRUE( isUrlAllowed( "/123", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/123ab", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/123" ) );
+	EXPECT_TRUE( robots.isAllowed( "/123ab" ) );
 
-	EXPECT_FALSE( isUrlAllowed( "/123abc", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/123/abc", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/123abc456", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/123/abc/456", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/123abc" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/abc" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123abc456" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/abc/456" ) );
 }
 
 // /123*xyz matches /123qwertyxyz and /123/qwerty/xyz/789
-TEST( RobotsTest, DISABLED_PathMatchWildcardMid ) {
+TEST( RobotsTest, PathMatchWildcardMid ) {
 	static const char *allow = "";
 	static const char *disallow = "/123*xyz";
 
@@ -749,15 +809,15 @@ TEST( RobotsTest, DISABLED_PathMatchWildcardMid ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_TRUE( isUrlAllowed( "/123/qwerty/xy", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/123/qwerty/xy" ) );
 
-	EXPECT_FALSE( isUrlAllowed( "/123qwertyxyz", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/123qwertyxyz/", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/123/qwerty/xyz/789", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/123qwertyxyz" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123qwertyxyz/" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/qwerty/xyz/789" ) );
 }
 
 // /123$ matches ONLY /123
-TEST( RobotsTest, PathMatchEnd ) {
+TEST( RobotsTest, PathMatchEndAnchor ) {
 	static const char *allow = "";
 	static const char *disallow = "/123$";
 
@@ -772,7 +832,7 @@ TEST( RobotsTest, PathMatchEnd ) {
 }
 
 // /*abc$ matches /123abc and /123/abc but NOT /123/abc/x etc.
-TEST( RobotsTest, DISABLED_PathMatchWildcardEnd ) {
+TEST( RobotsTest, PathMatchWildcardEndAnchor ) {
 	static const char *allow = "";
 	static const char *disallow = "/*abc$";
 
@@ -781,15 +841,15 @@ TEST( RobotsTest, DISABLED_PathMatchWildcardEnd ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_TRUE( isUrlAllowed( "/123/abc/x", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/123/abc/x" ) );
 
-	EXPECT_FALSE( isUrlAllowed( "/123abc", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/123/abc", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/123abc" ) );
+	EXPECT_FALSE( robots.isAllowed( "/123/abc" ) );
 }
 
 /// @todo ALC test multiple wildcard
 
-/// @todo ALC test multiple wildcard end
+/// @todo ALC test multiple wildcard end (line anchor)
 
 /// @todo ALC test _escaped_fragment_
 
@@ -1037,7 +1097,7 @@ TEST( RobotsTest, GPathMatchDisallowAll ) {
 	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
 }
 
-TEST( RobotsTest, DISABLED_GPathMatchDisallowAllWildcard ) {
+TEST( RobotsTest, GPathMatchDisallowAllWildcard ) {
 	static const char *allow = "";
 	static const char *disallow = "/*";
 
@@ -1046,8 +1106,8 @@ TEST( RobotsTest, DISABLED_GPathMatchDisallowAllWildcard ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/index.html", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/" ) );
+	EXPECT_FALSE( robots.isAllowed( "/index.html" ) );
 }
 
 // [path]		[match]								[no match]					[comments]
@@ -1106,7 +1166,7 @@ TEST( RobotsTest, GPathMatchPrefixAllow ) {
 // 				/fishheads
 // 				/fishheads/yummy.html
 // 				/fish.php?id=anything
-TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardDisallow ) {
+TEST( RobotsTest, GPathMatchPrefixWildcardDisallow ) {
 	static const char *allow = "";
 	static const char *disallow = "/fish*";
 
@@ -1115,19 +1175,19 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardDisallow ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_FALSE( isUrlAllowed( "/fish", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fish.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fish/salmon.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fishheads", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fishheads/yummy.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fish.php?id=anything", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish.html" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish/salmon.html" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fishheads" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fishheads/yummy.html" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish.php?id=anything" ) );
 
-	EXPECT_TRUE( isUrlAllowed( "/Fish.asp", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/catfish", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/?id=fish", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/Fish.asp" ) );
+	EXPECT_TRUE( robots.isAllowed( "/catfish" ) );
+	EXPECT_TRUE( robots.isAllowed( "/?id=fish" ) );
 }
 
-TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardAllow ) {
+TEST( RobotsTest, GPathMatchPrefixWildcardAllow ) {
 	static const char *allow = "/fish*";
 	static const char *disallow = "/";
 
@@ -1136,16 +1196,16 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardAllow ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_TRUE( isUrlAllowed( "/fish", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fish.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fish/salmon.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fishheads", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fishheads/yummy.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fish.php?id=anything", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish.html" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish/salmon.html" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fishheads" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fishheads/yummy.html" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish.php?id=anything" ) );
 
-	EXPECT_FALSE( isUrlAllowed( "/Fish.asp", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/catfish", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/?id=fish", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/Fish.asp" ) );
+	EXPECT_FALSE( robots.isAllowed( "/catfish" ) );
+	EXPECT_FALSE( robots.isAllowed( "/?id=fish" ) );
 }
 
 // [path]		[match]								[no match]					[comments]
@@ -1194,7 +1254,7 @@ TEST( RobotsTest, GPathMatchPrefixDirAllow ) {
 // 				/folder/filename.php?parameters
 // 				/folder/any.php.file.html
 // 				/filename.php/
-TEST( RobotsTest, DISABLED_GPathMatchWildcardExtDisallow ) {
+TEST( RobotsTest, GPathMatchWildcardExtDisallow ) {
 	static const char *allow = "";
 	static const char *disallow = "*.php";
 
@@ -1203,17 +1263,17 @@ TEST( RobotsTest, DISABLED_GPathMatchWildcardExtDisallow ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_FALSE( isUrlAllowed( "/filename.php", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/folter/filename.php", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/folder/filename.php?parameters", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/folder/any.php.file.html", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/filename.php/", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/filename.php" ) );
+	EXPECT_FALSE( robots.isAllowed( "/folter/filename.php" ) );
+	EXPECT_FALSE( robots.isAllowed( "/folder/filename.php?parameters" ) );
+	EXPECT_FALSE( robots.isAllowed( "/folder/any.php.file.html" ) );
+	EXPECT_FALSE( robots.isAllowed( "/filename.php/" ) );
 
-	EXPECT_TRUE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/windows.PHP", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/" ) );
+	EXPECT_TRUE( robots.isAllowed( "/windows.PHP" ) );
 }
 
-TEST( RobotsTest, DISABLED_GPathMatchWildcardExtAllow ) {
+TEST( RobotsTest, GPathMatchWildcardExtAllow ) {
 	static const char *allow = "/*.php";
 	static const char *disallow = "/";
 
@@ -1222,14 +1282,14 @@ TEST( RobotsTest, DISABLED_GPathMatchWildcardExtAllow ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_TRUE( isUrlAllowed( "/filename.php", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/folter/filename.php", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/folder/filename.php?parameters", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/folder/any.php.file.html", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/filename.php/", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/filename.php" ) );
+	EXPECT_TRUE( robots.isAllowed( "/folter/filename.php" ) );
+	EXPECT_TRUE( robots.isAllowed( "/folder/filename.php?parameters" ) );
+	EXPECT_TRUE( robots.isAllowed( "/folder/any.php.file.html" ) );
+	EXPECT_TRUE( robots.isAllowed( "/filename.php/" ) );
 
-	EXPECT_FALSE( isUrlAllowed( "/", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/windows.PHP", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/" ) );
+	EXPECT_FALSE( robots.isAllowed( "/windows.PHP" ) );
 }
 
 // [path]		[match]								[no match]					[comments]
@@ -1237,7 +1297,7 @@ TEST( RobotsTest, DISABLED_GPathMatchWildcardExtAllow ) {
 // 				/folder/filename.php				/filename.php/
 // 													/filename.php5
 // 													/windows.PHP
-TEST( RobotsTest, DISABLED_GPathMatchWildcardExtEndDisallow ) {
+TEST( RobotsTest, GPathMatchWildcardExtEndDisallow ) {
 	static const char *allow = "";
 	static const char *disallow = "/*.php$";
 
@@ -1246,16 +1306,16 @@ TEST( RobotsTest, DISABLED_GPathMatchWildcardExtEndDisallow ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_FALSE( isUrlAllowed( "/filename.php", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/folder/filename.php", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/filename.php" ) );
+	EXPECT_FALSE( robots.isAllowed( "/folder/filename.php" ) );
 
-	EXPECT_TRUE( isUrlAllowed( "/filename.php?parameters", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/filename.php/", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/filename.php5", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/windows.PHP", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/filename.php?parameters" ) );
+	EXPECT_TRUE( robots.isAllowed( "/filename.php/" ) );
+	EXPECT_TRUE( robots.isAllowed( "/filename.php5" ) );
+	EXPECT_TRUE( robots.isAllowed( "/windows.PHP" ) );
 }
 
-TEST( RobotsTest, DISABLED_GPathMatchWildcardExtEndAllow ) {
+TEST( RobotsTest, GPathMatchWildcardExtEndAllow ) {
 	static const char *allow = "/*.php$";
 	static const char *disallow = "/";
 
@@ -1264,19 +1324,19 @@ TEST( RobotsTest, DISABLED_GPathMatchWildcardExtEndAllow ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_TRUE( isUrlAllowed( "/filename.php", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/folder/filename.php", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/filename.php" ) );
+	EXPECT_TRUE( robots.isAllowed( "/folder/filename.php" ) );
 
-	EXPECT_FALSE( isUrlAllowed( "/filename.php?parameters", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/filename.php/", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/filename.php5", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/windows.PHP", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/filename.php?parameters" ) );
+	EXPECT_FALSE( robots.isAllowed( "/filename.php/" ) );
+	EXPECT_FALSE( robots.isAllowed( "/filename.php5" ) );
+	EXPECT_FALSE( robots.isAllowed( "/windows.PHP" ) );
 }
 
 // [path]		[match]								[no match]					[comments]
 // /fish*.php	/fish.php							/Fish.PHP
 // 				/fishheads/catfish.php?parameters
-TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardExtDisallow ) {
+TEST( RobotsTest, GPathMatchPrefixWildcardExtDisallow ) {
 	static const char *allow = "";
 	static const char *disallow = "/fish*.php";
 
@@ -1285,13 +1345,13 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardExtDisallow ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_FALSE( isUrlAllowed( "/fish.php", robotsTxt ) );
-	EXPECT_FALSE( isUrlAllowed( "/fishheads/catfish.php?parameters", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/fish.php" ) );
+	EXPECT_FALSE( robots.isAllowed( "/fishheads/catfish.php?parameters" ) );
 
-	EXPECT_TRUE( isUrlAllowed( "/Fish.PHP", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/Fish.PHP" ) );
 }
 
-TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardExtAllow ) {
+TEST( RobotsTest, GPathMatchPrefixWildcardExtAllow ) {
 	static const char *allow = "/fish*.php";
 	static const char *disallow = "/";
 
@@ -1300,10 +1360,10 @@ TEST( RobotsTest, DISABLED_GPathMatchPrefixWildcardExtAllow ) {
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-	EXPECT_TRUE( isUrlAllowed( "/fish.php", robotsTxt ) );
-	EXPECT_TRUE( isUrlAllowed( "/fishheads/catfish.php?parameters", robotsTxt ) );
+	EXPECT_TRUE( robots.isAllowed( "/fish.php" ) );
+	EXPECT_TRUE( robots.isAllowed( "/fishheads/catfish.php?parameters" ) );
 
-	EXPECT_FALSE( isUrlAllowed( "/Fish.PHP", robotsTxt ) );
+	EXPECT_FALSE( robots.isAllowed( "/Fish.PHP" ) );
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -1340,12 +1400,11 @@ TEST( RobotsTest, GPrecedenceAllowDisallow ) {
 	}
 
 	{
-		/// @todo ALC decide what's the result
-		generateTestRobotsTxt( robotsTxt, 1024, "/page.h", "/*.htm" );
+		generateTestRobotsTxt( robotsTxt, 1024, "/page.", "/*.htm" );
 
 		TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
-		// EXPECT_TRUE( robots.isAllowed ( "/page.htm" ) );
+		EXPECT_TRUE( robots.isAllowed ( "/page.htm" ) );
 	}
 
 	{
@@ -1378,12 +1437,11 @@ TEST( RobotsTest, GPrecedenceDisallowAllow ) {
 	}
 
 	{
-		/// @todo ALC decide what's the result
-		generateTestReversedRobotsTxt( robotsTxt, 1024, "/page.h", "/*.htm" );
+		generateTestReversedRobotsTxt( robotsTxt, 1024, "/page.", "/*.htm" );
 
 		TestRobots robots( robotsTxt, strlen( robotsTxt ));
 
-		// EXPECT_TRUE( robots.isAllowed ( "/page.htm" ) );
+		EXPECT_FALSE( robots.isAllowed ( "/page.htm" ) );
 	}
 
 	{

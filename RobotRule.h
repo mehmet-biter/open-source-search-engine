@@ -27,6 +27,8 @@ private:
 	int32_t m_pathLen;
 
 	bool m_wildcardFound;
+	int32_t m_wildcardCount;
+
 	bool m_lineAnchorFound;
 };
 
