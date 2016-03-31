@@ -40,7 +40,7 @@ static bool matchWildcard( const char *haystack, int32_t haystackLen, const char
 				}
 
 				if ( haystackPos == haystackLen ) {
-					return false;
+					return ( fullMatch && ( needlePos + 1 ) == needleLen );
 				}
 
 				isInWildcard = false;
@@ -108,3 +108,4 @@ void RobotRule::print( int level ) const {
 	logf( LOG_DEBUG, "%*s RobotRule: type=%s wildcardFound=%d wildcardCount=%d lineAnchorFound=%d path=%.*s", level, "",
 	      m_isAllow ? "allow" : "disallow", m_wildcardFound, m_wildcardCount, m_lineAnchorFound, m_pathLen, m_path );
 }
+

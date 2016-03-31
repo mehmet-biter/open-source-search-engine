@@ -35,6 +35,12 @@ void expectRobotRule( const char *urlPath, const char *rulePath, bool expectedMa
 // Test cases roughly based on Matching Wildcards article on Dr. Dobb's
 // http://www.drdobbs.com/architecture-and-design/matching-wildcards-an-empirical-way-to-t/240169123#ListingOne
 //
+TEST( RobotRuleTest, WildcardCharacter ) {
+	expectRobotRule("", "*", true);
+	expectRobotRule("/", "/*", true);
+	expectRobotRule("/a", "/a*", true);
+}
+
 TEST( RobotRuleTest, WildcardCharacterRepeat ) {
 	// Cases with repeating character sequences.
 	expectRobotRule("/abcccd", "*ccd", true);
@@ -109,4 +115,7 @@ TEST( RobotRuleTest, WildcardMultipleLineAnchor ) {
 	expectRobotRule( "/---------------------------------abc-def", "/-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*c-*f$" , true );
 	expectRobotRule( "/---------------------------------abc-def", "/-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-c-f$" , false );
 	expectRobotRule( "/---------------------------------abc-def", "/-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*z-f$" , false );
+	expectRobotRule("/aa", "*$", true);
+	expectRobotRule("/abefcdgiescdfimde", "/ab*cd*i*de$", true);
 }
+
