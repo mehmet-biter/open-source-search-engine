@@ -25,10 +25,6 @@ RobotRule::RobotRule( bool isAllow, const char *path, int32_t pathLen )
 }
 
 static bool matchWildcard( const char *haystack, int32_t haystackLen, const char *needle, int32_t needleLen, bool fullMatch ) {
-//	logf( LOG_INFO, "%s: ==========================================================================", __func__ );
-//	logf( LOG_DEBUG, "haystack='%.*s' haystackLen=%d needle='%.*s' needleLen=%d fullMatch=%d",
-//	      haystackLen, haystack, haystackLen, needleLen, needle, needleLen, fullMatch );
-
 	bool isInWildcard = false;
 	int32_t haystackPos = 0;
 	int32_t savedHaystackPos = 0;
@@ -36,37 +32,26 @@ static bool matchWildcard( const char *haystack, int32_t haystackLen, const char
 	int32_t savedNeedlePos = 0;
 
 	while ( haystackPos < haystackLen && needlePos < needleLen ) {
-//		logf( LOG_DEBUG, "while start haystack[%d]=%c needle[%d]=%c savedHaystackPos=%d savedNeedlePos=%d",
-//		      haystackPos, haystack[haystackPos], needlePos, needle[needlePos], savedHaystackPos, savedNeedlePos);
-
 		if ( needle[needlePos] != '*' ) {
-//			logf( LOG_DEBUG, "not asterisk");
 			if ( isInWildcard ) {
-//				logf( LOG_DEBUG, "not asterisk: is in wildcard");
 				// fast forward
 				while ( haystackPos < haystackLen && needle[needlePos] != haystack[haystackPos] ) {
-//					logf( LOG_DEBUG, "not asterisk: is in wildcard: fast-forward haystackPos=%d", haystackPos);
 					++haystackPos;
 				}
 
 				if ( haystackPos == haystackLen ) {
-//					logf( LOG_DEBUG, "not asterisk: is in wildcard return false");
 					return false;
 				}
 
 				isInWildcard = false;
 				continue;
 			} else {
-//				logf( LOG_DEBUG, "not asterisk: not in wildcard");
 				if ( needle[needlePos++] == haystack[haystackPos++] ) {
-//					logf( LOG_DEBUG, "not asterisk: not in wildcard: equals");
 					continue;
 				}
-//				logf( LOG_DEBUG, "not asterisk: not in wildcard: not equals");
 			}
 
 			if ( savedHaystackPos || savedNeedlePos ) {
-//				logf( LOG_DEBUG, "not asterisk: saved haystack/needle");
 				isInWildcard = true;
 				haystackPos = ++savedHaystackPos;
 				needlePos = savedNeedlePos;
@@ -74,10 +59,8 @@ static bool matchWildcard( const char *haystack, int32_t haystackLen, const char
 				continue;
 			}
 
-//			logf( LOG_DEBUG, "not asterisk: is in wildcard end");
 			return false;
 		} else {
-//			logf( LOG_DEBUG, "asterisk");
 			isInWildcard = true;
 
 			// ignore multiple asterisk
@@ -87,11 +70,7 @@ static bool matchWildcard( const char *haystack, int32_t haystackLen, const char
 			savedHaystackPos = haystackPos;
 			savedNeedlePos = needlePos;
 		}
-//		logf( LOG_DEBUG, "while end");
 	}
-
-//	logf( LOG_DEBUG, "while outside haystackLen=%d haystackPos=%d needleLen=%d needlePos=%d",
-//	      haystackLen, haystackPos, needleLen, needlePos );
 
 	if ( fullMatch ) {
 		return ( haystackPos == haystackLen && ( needlePos + 1 ) == needleLen );
