@@ -8503,51 +8503,16 @@ bool *XmlDoc::getIsAllowed ( ) {
 	}
 
 
-	// this is set to true if our userAgent was found explicitly
-	bool uaFound;
-	bool allowed;
-	bool  hadAllowOrDisallow;
-	// now use left-anchored substring match so we can match Botname/1.0
-	allowed = Robots::isAllowed ( cu                       ,
-			       g_conf.m_spiderBotName ,
-			       content                  ,
-			       contentLen               ,
-			       &uaFound                 ,
-			       true                     , // substrmatch?
-			       &m_crawlDelay            ,
-			       &hadAllowOrDisallow        );
+	/// @todo cache robots instead of robots.txt
+	// initialize robots
+	Robots robots( content, contentLen, g_conf.m_spiderBotName );
 
+	m_isAllowed = robots.isAllowed( cu );
+	m_crawlDelay = robots.getCrawlDelay();
+	m_isAllowedValid = true;
 
-	if( g_conf.m_logTraceXmlDoc ) log("%s:%s:%d: Robots::isAllowed returned %s for our bot", __FILE__,__func__,__LINE__, (allowed?"true":"false"));
-
-	// save it
-	int32_t savedCrawlDelay = m_crawlDelay;
-	// . if didn't find our user agent so check for * as a user-agent
-	// . www.wikihow.com/robots.txt just has "Botname: crawl-delay:10\n"
-	//   and then a "User-Agent: *" after that with the disallows, so
-	//   i added the hadAllowDisallow parm
-	if ( ! uaFound || ! hadAllowOrDisallow )
-	{
-		allowed = Robots::isAllowed ( cu                  ,
-				       "*"                 ,
-				       content             ,
-				       contentLen          ,
-				       &uaFound            ,
-				       false               ,  // substrmatch?
-				       &m_crawlDelay       ,
-				       &hadAllowOrDisallow   );
-
-		if( g_conf.m_logTraceXmlDoc ) log("%s:%s:%d: Robots::isAllowed returned %s for '*' bot", __FILE__,__func__,__LINE__, (allowed?"true":"false"));
-	}
-
-
-	// bring back?
-	if ( savedCrawlDelay != -1 ) m_crawlDelay = savedCrawlDelay;
 	// nuke it to save mem
 	nukeDoc ( ed );
-	// we are legit
-	m_isAllowed      = allowed;
-	m_isAllowedValid = true;
 
 	if( g_conf.m_logTraceXmlDoc ) log("%s:%s:%d: END. Returning %s", __FILE__,__func__,__LINE__, (m_isAllowed?"true":"false") );
 
