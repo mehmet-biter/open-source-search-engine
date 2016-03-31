@@ -12,7 +12,6 @@ class TestRobots : public Robots {
 public:
 	TestRobots( const char* robotsTxt, int32_t robotsTxtLen, const char *userAgent = "testbot" )
 		: Robots (robotsTxt, robotsTxtLen, userAgent ) {
-		print();
 	}
 
 	using Robots::getNextLine;

@@ -27,7 +27,6 @@ public:
 
 void expectRobotRule( const char *urlPath, const char *rulePath, bool expectedMatching ) {
 	TestRobotRule robotRule( rulePath );
-	robotRule.print();
 
 	EXPECT_EQ( expectedMatching, robotRule.isMatching( urlPath ) );
 }

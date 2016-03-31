@@ -115,7 +115,7 @@ bool Robots::getField( const char **field, int32_t *fieldLen ) {
 	}
 
 	if ( g_conf.m_logTraceRobots ) {
-		log( LOG_TRACE, "Robots::%s: len=%d field='%.*s'", __func__, *fieldLen, *fieldLen, *field );
+		log( LOG_TRACE, "robots::%s: len=%d field='%.*s'", __func__, *fieldLen, *fieldLen, *field );
 	}
 	return ( *fieldLen > 0 );
 }
@@ -130,7 +130,7 @@ bool Robots::getValue( const char **value, int32_t *valueLen ) {
 	*valueLen = m_currentLineLen - m_valueStartPos;
 
 	if ( g_conf.m_logTraceRobots ) {
-		logf( LOG_TRACE, "Robots::%s: len=%d value='%.*s'", __func__, *valueLen, *valueLen, *value );
+		logf( LOG_TRACE, "robots::%s: len=%d value='%.*s'", __func__, *valueLen, *valueLen, *value );
 	}
 	return ( *valueLen > 0 );
 }
@@ -176,7 +176,7 @@ bool Robots::parseCrawlDelay( const char *field, int32_t fieldLen, bool isUserAg
 
 			if ( endPtr == ( value + valueLen ) ) {
 				if (g_conf.m_logTraceRobots) {
-					log( LOG_TRACE, "Robots::%s: isUserAgent=%s crawlDelay='%.4f'",
+					log( LOG_TRACE, "robots::%s: isUserAgent=%s crawlDelay='%.4f'",
 					     __func__, isUserAgent ? "true" : "false", crawlDelay );
 				}
 
@@ -200,7 +200,7 @@ void Robots::parsePath( bool isAllow, bool isUserAgent ) {
 
 	if ( getValue( &value, &valueLen ) ) {
 		if ( g_conf.m_logTraceRobots ) {
-			log( LOG_TRACE, "Robots::%s: isAllow=%s isUserAgent=%s path='%.*s'",
+			log( LOG_TRACE, "robots::%s: isAllow=%s isUserAgent=%s path='%.*s'",
 			     __func__, isAllow ? "true" : "false", isUserAgent ? "true" : "false", valueLen, value );
 		}
 
@@ -323,6 +323,11 @@ bool Robots::isAllowed( Url *url ) {
 	if ( rules ) {
 		for ( std::list<RobotRule>::const_iterator it = rules->begin(); it != rules->end(); ++it ) {
 			if ( it->isMatching( url ) ) {
+				if ( g_conf.m_logDebugRobots ) {
+					log( LOG_DEBUG, "robots::%s: isAllowed='%d' for path='%.*s' with %s user-agent",
+					     __func__, it->isAllow(), url->getPathLenWithCgi(), url->getPath(),
+					     ( rules == &m_rules ) ? "configured" : "default" );
+				}
 				return it->isAllow();
 			}
 		}
@@ -334,10 +339,19 @@ bool Robots::isAllowed( Url *url ) {
 
 int32_t Robots::getCrawlDelay() {
 	if ( m_userAgentFound ) {
+		if ( g_conf.m_logDebugRobots ) {
+			log( LOG_DEBUG, "robots::%s: crawl-delay='%d' for configured user-agent", __func__, m_crawlDelay );
+		}
 		return m_crawlDelay;
 	} else if ( m_defaultUserAgentFound ) {
+		if ( g_conf.m_logDebugRobots ) {
+			log( LOG_DEBUG, "robots::%s: crawl-delay='%d' for default user-agent", __func__, m_defaultCrawlDelay );
+		}
 		return m_defaultCrawlDelay;
 	} else {
+		if ( g_conf.m_logDebugRobots ) {
+			log( LOG_DEBUG, "robots::%s: unable to find configured/default user-agent", __func__ );
+		}
 		return -1;
 	}
 }
