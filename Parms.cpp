@@ -7206,12 +7206,10 @@ void Parms::init ( ) {
 	m->m_cgi   = "mct";
 	m->m_off   = offsetof(Conf,m_maxCpuThreads);
 	m->m_type  = TYPE_LONG;
-	// make it 3 for new gb in case one query takes way longer 
-	// than the others
-	m->m_def   = "6"; // "2";
+	m->m_def   = "1";
 	m->m_units = "threads";
 	m->m_min   = 1;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
@@ -7223,10 +7221,10 @@ void Parms::init ( ) {
 	m->m_cgi   = "mcmt";
 	m->m_off   = offsetof(Conf,m_maxCpuMergeThreads);
 	m->m_type  = TYPE_LONG;
-	m->m_def   = "10";
+	m->m_def   = "1";
 	m->m_units = "threads";
 	m->m_min   = 1;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;

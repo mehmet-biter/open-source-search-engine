@@ -2078,7 +2078,10 @@ int32_t Threads::getNumActiveHighPriorityThreads() {
 bool ThreadQueue::launchThread2 ( ) {
 
 	// or if no stacks left, don't even try
-	if ( s_head == -1 ) return false;
+	if ( s_head == -1 ) {
+		log("thread: ThreadQueue::launchThread2: no stacks available");
+		return false;
+	}
 	// . how many threads are active now?
 	// . NOTE: not perfectly thread safe here
 	int64_t active = m_launched - m_returned ;
@@ -2087,12 +2090,20 @@ bool ThreadQueue::launchThread2 ( ) {
 		log(LOG_DEBUG,"thread: q=%s launchThread: active=%"INT64" "
 		    "max=%"INT32".",getThreadType(), active,m_maxLaunched);
 	// return if the max is already launched for this thread queue
-	if ( active >= m_maxLaunched ) return false;
+	if ( active >= m_maxLaunched ) {
+		log("thread: ThreadQueue::launchThread2: active>m_maxLaunched (%ld>%d)", active, m_maxLaunched);
+		return false;
+	}
 
 
 	if ( m_threadType != DISK_THREAD ) {
 		// if one thread of this type is already out, forget it
-		if ( m_launchedHead ) return false;
+		if ( m_threadType!=MERGE_THREAD &&
+		     m_threadType!=INTERSECT_THREAD &&
+		     m_launchedHead ) {
+			log("@@@@ ThreadQueue::launchThread2: already one of that tpe");
+			return false;
+		}
 		// first try niceness 0 queue
 		ThreadEntry **bestHeadPtr = &m_waitHead0;
 		ThreadEntry **bestTailPtr = &m_waitTail0;
