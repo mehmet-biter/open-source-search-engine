@@ -102,7 +102,7 @@ enum {
 	ETCPTIMEDOUT     , //op timed out TcpServer.cpp
 	EUDPTIMEDOUT     , //udp reply timed out
 	ESOCKETCLOSED    , //device disconnected (POLL_HUP) Loop.cpp
-	EBADMIME         , //Mime.cpp
+	EBADMIME         , //HttpMime.cpp
 	ENOHOSTSFILE     , //Hostdb::init() needs a hosts file
 	ENOHOSTIP        , //host file missing an IP entry for a host
 	EURLHASNOIP      , //parser/url/Url2.cpp::hashIp()

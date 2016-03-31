@@ -16,10 +16,6 @@ public:
 
 	void print() const;
 
-	static bool isAllowed( Url *url, const char *userAgent, const char *file, int32_t fileLen,
-	                       bool *userAgentFound, bool substringMatch, int32_t *crawlDelay,
-	                       bool *hadAllowOrDisallow );
-
 protected:
 	bool getNextLine();
 
