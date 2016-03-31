@@ -237,6 +237,11 @@ bool Robots::parseDisallow( const char *field, int32_t fieldLen, bool isUserAgen
 }
 
 void Robots::parse() {
+	int64_t startTime = 0;
+	if ( g_conf.m_logTimingRobots ) {
+		startTime = gettimeofdayInMilliseconds();
+	}
+
 	bool inUserAgentGroup = false;
 	bool isUserAgent = false;
 
@@ -308,9 +313,18 @@ void Robots::parse() {
 	m_currentLineLen = 0;
 	m_valueStartPos = 0;
 	m_nextLineStartPos = 0;
+
+	if ( g_conf.m_logTimingRobots ) {
+		log( LOG_TIMING, "robots: Robots::%s took %" INT64 " ms", __func__, ( gettimeofdayInMilliseconds() - startTime ) );
+	}
 }
 
 bool Robots::isAllowed( Url *url ) {
+	int64_t startTime = 0;
+	if ( g_conf.m_logTimingRobots ) {
+		startTime = gettimeofdayInMilliseconds();
+	}
+
 	std::list<RobotRule> *rules = NULL;
 
 	if ( !m_rules.empty() ) {
@@ -327,9 +341,18 @@ bool Robots::isAllowed( Url *url ) {
 					     __func__, it->isAllow(), url->getPathLenWithCgi(), url->getPath(),
 					     ( rules == &m_rules ) ? "configured" : "default" );
 				}
+
+				if ( g_conf.m_logTimingRobots ) {
+					log( LOG_TIMING, "robots: Robots::%s took %" INT64 " ms", __func__, ( gettimeofdayInMilliseconds() - startTime ) );
+				}
+
 				return it->isAllow();
 			}
 		}
+	}
+
+	if ( g_conf.m_logTimingRobots ) {
+		log( LOG_TIMING, "robots: Robots::%s took %" INT64 " ms", __func__, ( gettimeofdayInMilliseconds() - startTime ) );
 	}
 
 	// default allow
