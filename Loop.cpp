@@ -557,14 +557,12 @@ bool Loop::init ( ) {
 	sigaddset   ( &sigs , SIGPIPE      ); //if we write to a close socket
 	sigaddset   ( &sigs , SIGCHLD      );
 
-#ifdef PTHREADS
 	// now since we took out SIGIO... (see below)
 	// we should ignore this signal so it doesn't suddenly stop the gb
 	// process since we took out the SIGIO handler because newer kernels
 	// were throwing SIGIO signals ALL the time, on every datagram
 	// send/receive it seemed and bogged us down.
 	sigaddset   ( &sigs , SIGIO );
-#endif
 	// . block on any signals in this set (in addition to current sigs)
 	// . use SIG_UNBLOCK to remove signals from block list
 	// . this returns -1 and sets g_errno on error
@@ -740,11 +738,9 @@ void sigbadHandler ( int x , siginfo_t *info , void *y ) {
 
 void sigvtalrmHandler ( int x , siginfo_t *info , void *y ) {
 
-#ifdef PTHREADS
 	// do not allow threads
 	// this call is very fast, can be called like 400M times per second
 	if ( g_threads.amThread() ) return;
-#endif
 
 	// stats
 	g_numVTAlarms++;
@@ -766,9 +762,7 @@ void sigvtalrmHandler ( int x , siginfo_t *info , void *y ) {
 		// it's not safe to call fprintf() even with
 		// mutex locks for sig handlers with pthreads
 		// going on!!!
-#ifdef PTHREADS
 		logIt = false;
-#endif
 		// panic if hogging
 		if ( logIt ) {
 			if ( g_callSlot->m_callback )
@@ -795,10 +789,6 @@ void sigvtalrmHandler ( int x , siginfo_t *info , void *y ) {
 	     // likewise if doing a page parser test...
 	     ! g_inPageParser &&
 	     ! g_inPageInject     ) {
-#ifndef PTHREADS
-		// i guess sometimes niceness 1 things call niceness 0 things?
-		log("loop: crap crap crap!!!");
-#endif
 		//char *xx=NULL;*xx=0; }
 	}
 	// basically ignore this alarm if already in a quickpoll
@@ -819,10 +809,6 @@ void sigvtalrmHandler ( int x , siginfo_t *info , void *y ) {
 	if ( g_niceness == 1 && g_missedQuickPolls >= 4 ) {
 		//g_inSigHandler = true;
 		// NOT SAFE for pthreads cuz we're in sig handler
-#ifndef PTHREADS
-		log("loop: missed quickpoll. Dumping stack.");
-		printStackTrace();
-#endif
 		//g_inSigHandler = false;
 		// seems to core a lot in gbcompress() we need to
 		// put a quickpoll into zlib deflate() or
@@ -840,10 +826,6 @@ void sigvtalrmHandler ( int x , siginfo_t *info , void *y ) {
 	if ( g_conf.m_maxHeartbeatDelay <= 0 ) return;
 	if ( gettimeofdayInMilliseconds() - g_process.m_lastHeartbeatApprox >
 	     g_conf.m_maxHeartbeatDelay ) {
-#ifndef PTHREADS
-		logf(LOG_DEBUG,"gb: CPU seems blocked. Dumping stack.");
-		printStackTrace();
-#endif
 		//char *xx=NULL; *xx=0;
 
 	}

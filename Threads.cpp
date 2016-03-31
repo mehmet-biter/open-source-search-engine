@@ -14,18 +14,7 @@
 #include "Stats.h"
 #include "Process.h"
 
-// try using pthreads again
-//#define PTHREADS
-
-// use these stubs so libplotter.a works
-
-#ifndef PTHREADS
-int pthread_mutex_lock   (pthread_mutex_t *t ) { return 0; }
-int pthread_mutex_unlock (pthread_mutex_t *t ) { return 0; }
-#else
 #include <pthread.h>
-//pthread_attr_t s_attr;
-#endif
 
 // main process id (or thread id if using pthreads)
 //static pid_t  s_pid    = (pid_t) -1;
@@ -39,15 +28,11 @@ static pid_t g_pid    = -1;
 //pid_t getpidtid() {
 // on 64-bit architectures pthread_t is 64 bit and pid_t is 32 bit:
 pthread_t getpidtid() {
-#ifdef PTHREADS
 	// gettid() is a bit newer so not in our libc32...
 	// so kinda fake it. return the "thread" id, not process id.
 	// Threads::amThread() should still work based on thread ids because
 	// the main process has a unique thread id as well.
 	return pthread_self();
-#else
-	return (pthread_t)getpid();
-#endif
 }
 
 
@@ -89,42 +74,13 @@ static void makeCallback ( ThreadEntry *t ) ;
 // is the caller a thread?
 bool Threads::amThread () {
 	if ( s_pid == (pthread_t)-1 ) return false;
-#ifdef PTHREADS
 	// gettid() is a bit newer so not in our libc32...
 	// so kinda fake it. return the "thread" id, not process id.
 	// Threads::amThread() should still work based on thread ids because
 	// the main process has a unique thread id as well.
 	return (pthread_self() != s_pid);
-#else
-	return ( getpidtid() != s_pid );
-#endif
 }
 
-#ifndef PTHREADS
-static int32_t s_bad    = 0;
-static int32_t s_badPid = -1;
-#endif
-
-#define MAX_PID 32767
-
-#ifndef PTHREADS
-
-static int  s_errno ;
-static int  s_errnos [ MAX_PID + 1 ];
-
-// this was improvised from linuxthreads/errno.c
-//#define CURRENT_STACK_FRAME  ({ char __csf; &__csf; })
-// WARNING: you MUST compile with -DREENTRANT for this to work
-int *__errno_location (void) {
-	int32_t pid = (int32_t) getpid();
-	//if ( pid == s_pid ) return &g_errno;
-	if ( pid <= (int32_t)MAX_PID ) return &s_errnos[pid];
-	s_bad++;
-	s_badPid = pid;
-	return &s_errno; 
-}
-
-#endif
 
 // stack must be page aligned for mprotect
 #define THRPAGESIZE 8192
@@ -152,11 +108,9 @@ int *__errno_location (void) {
 static char *s_stackAlloc = NULL;
 static int32_t  s_stackAllocSize;
 
-//#ifndef PTHREADS
 static char *s_stack      = NULL;
 static int32_t  s_stackSize;
 static char *s_stackPtrs [ MAX_STACKS ];
-//#endif
 
 static int32_t  s_next      [ MAX_STACKS ];
 static int32_t  s_head ;
@@ -193,7 +147,6 @@ Threads::Threads ( ) {
 
 void Threads::setPid ( ) {
 	// set s_pid to the main process id
-#ifdef PTHREADS
 	// on 64bit arch pid is 32 bit and pthread_t is 64 bit
 	s_pid = (pthread_t)pthread_self();
 	//log(LOG_INFO,
@@ -208,9 +161,6 @@ void Threads::setPid ( ) {
 	//    (int32_t)sched_get_priority_min(policy),
 	//    (int32_t)sched_get_priority_max(policy),
 	//    (int32_t)policy);
-#else
-	s_pid = getpid();
-#endif
 }
 
 bool Threads::init ( ) {
@@ -276,19 +226,6 @@ bool Threads::init ( ) {
 	// debug
 	//log("thread: main process has pid=%"INT32"",(int32_t)s_pid);
 
-	// . set priority of the main process to 0
-	// . setpriority() only applies to SCHED_OTHER threads
-	// . priority of threads with niceness 0  will be  0
-	// . priority of threads with niceness 1  will be 10
-	// . priority of threads with niceness 2  will be 20
-	// . see 'man sched_setscheduler' for detail scheduling info
-	// . no need to call getpid(), 0 for pid means the current process
-#ifndef PTHREADS
-	if ( setpriority ( PRIO_PROCESS, getpid() , 0 ) < 0 ) 
-		log("thread: Call to setpriority failed: %s.",
-		    mstrerror(errno));
-#endif
-
 	// make multiplier higher for raids, can do more seeks
 	//int32_t m = 1;
 	// register the types of threads here instead of in main.cpp
@@ -343,8 +280,6 @@ bool Threads::init ( ) {
 	//if (!g_threads.registerType (SSLACCEPT_THREAD,20/*maxThreads*/,100)) 
 	//	return log("thread: Failed to register thread type." );
 
-//#ifndef PTHREADS
-
 	// sanity check
 	if ( GUARDSIZE >= STACK_SIZE )
 		return log("thread: Stack guard size too big.");
@@ -382,21 +317,6 @@ bool Threads::init ( ) {
 
 	// don't do real time stuff for now
 	return true;
-
-//#else
-
-	// . keep stack size small, 128k
-	// . if we get problems, we'll increase this to 256k
-	// . seems like it grows dynamically from 4K to up to 2M as needed
-	//if ( pthread_attr_setstacksize ( &s_attr , (size_t)128*1024 ) )
-	//	return log("thread: init: pthread_attr_setstacksize: %s",
-	//		    mstrerror(errno));
-	//pthread_attr_setschedparam  ( &s_attr , PTHREAD_EXPLICIT_SCHED  );
-	//pthread_attr_setscope       ( &s_attr , PTHREAD_SCOPE_SYSTEM    );
-//	return true;
-
-//#endif
-
 }
 
 // all types should be registered in main.cpp before any threads launch
@@ -1271,22 +1191,8 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 		//   set so t->m_pid was a bogus value
 		// . thread may have seg faulted, in which case sigbadhandler()
 		//   in Loop.cpp will get it and set errno to 0x7fffffff
-#ifndef PTHREADS
-		// MDW: i hafta take this out because the errno_location thing
-		// is not working on the newer gcc
-		if ( ! t->m_isDone && t->m_pid >= 0 && 
-		     s_errnos [t->m_pid] == 0x7fffffff ) {
-			log("thread: Got abnormal thread termination. Seems "
-			    "like the thread might have cored.");
-			s_errnos[t->m_pid] = 0;
-			goto again;
-		}
-#endif
 		// skip if not done yet
 		if ( ! t->m_isDone     ) continue;
-
-#ifdef PTHREADS		
-
 
 		// if pthread_create() failed it returns the errno and we
 		// needsJoin is false, so do not try to join
@@ -1326,50 +1232,6 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 
 		}
 		
-#else
-
-	again:
-		int status ;
-		pid_t pid = waitpid ( t->m_pid , &status , 0 );
-		int err = errno;
-		// debug the waitpid
-		if ( g_conf.m_logDebugThread || g_process.m_exiting ) 
-			log(LOG_DEBUG,"thread: Waiting for t=0x%"PTRFMT" "
-			    "pid=%"INT32".",
-			    (PTRTYPE)t,(int32_t)t->m_pid);
-		// bitch and continue if join failed
-		if ( pid != t->m_pid ) {
-			// waitpid() gets interrupted by various signals so
-			// we need to repeat (SIGCHLD?)
-			if ( err == EINTR ) goto again;
-			log("thread: Call to waitpid(%"INT32") returned %"INT32": %s.",
-			    (int32_t)t->m_pid,(int32_t)pid,mstrerror(err));
-			continue;
-		}
-		// if status not 0 then process got abnormal termination
-		if ( ! WIFEXITED(status) ) {
-			if ( WIFSIGNALED(status) )
-				log("thread: Child process (pid=%i) exited "
-				    "from unhandled signal number %"INT32".",
-				    pid,(int32_t)WTERMSIG(status));
-			else
-				log("thread: Child process (pid=%i) exited "
-				    "for unknown reason." , pid );
-		}
-		//mfree ( t->m_stack , STACK_SIZE , "Threads" );
-		// re-protect this stack
-		mprotect ( t->m_stack + GUARDSIZE , STACK_SIZE - GUARDSIZE, 
-			   PROT_NONE );
-		g_threads.returnStack ( t->m_si );
-		t->m_stack = NULL;
-		// debug msg
-		if ( g_conf.m_logDebugThread )
-			log(LOG_DEBUG,"thread: joined with pid=%"INT32" pid=%"INT32".",
-			    (int32_t)t->m_pid,(int32_t)t->m_pid);
-
-
-#endif
-
 		// we may get cleaned up and re-used and our niceness reassignd
 		// right after set m_isDone to true, so save niceness
 		//int32_t niceness = t->m_niceness;
@@ -1646,22 +1508,9 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 		//   set so t->m_pid was a bogus value
 		// . thread may have seg faulted, in which case sigbadhandler()
 		//   in Loop.cpp will get it and set errno to 0x7fffffff
-#ifndef PTHREADS
-		// MDW: i hafta take this out because the errno_location thing
-		// is not working on the newer gcc
-		if ( ! t->m_isDone && t->m_pid >= 0 && 
-		     s_errnos [t->m_pid] == 0x7fffffff ) {
-			log("thread: Got abnormal thread termination. Seems "
-			    "like the thread might have cored.");
-			s_errnos[t->m_pid] = 0;
-			goto again;
-		}
-#endif
 		// skip if not done yet
 		if ( ! t->m_isDone     ) continue;
 
-
-#ifdef PTHREADS		
 
 		if ( t->m_needsJoin ) {
 			// . join up with that thread
@@ -1689,44 +1538,6 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 			t->m_stack = NULL;
 
 		}
-#else
-
-	again:
-		int status ;
-		pid_t pid = waitpid ( t->m_pid , &status , 0 );
-		int err = errno;
-		// debug the waitpid
-		if ( g_conf.m_logDebugThread ) 
-			log(LOG_DEBUG,"thread: Waiting for "
-			    "t=0x%"PTRFMT" pid=%"INT32".",
-			    (PTRTYPE)t,(int32_t)t->m_pid);
-		// bitch and continue if join failed
-		if ( pid != t->m_pid ) {
-			// waitpid() gets interrupted by various signals so
-			// we need to repeat (SIGCHLD?)
-			if ( err == EINTR ) goto again;
-			log("thread: Call to waitpid(%"INT32") returned %"INT32": %s.",
-			    (int32_t)t->m_pid,(int32_t)pid,mstrerror(err));
-			continue;
-		}
-		// if status not 0 then process got abnormal termination
-		if ( ! WIFEXITED(status) ) {
-			if ( WIFSIGNALED(status) )
-				log("thread: Child process (pid=%i) exited "
-				    "from unhandled signal number %"INT32".",
-				    pid,(int32_t)WTERMSIG(status));
-			else
-				log("thread: Child process (pid=%i) exited "
-				    "for unknown reason." , pid );
-		}
-		//mfree ( t->m_stack , STACK_SIZE , "Threads" );
-		// re-protect this stack
-		mprotect ( t->m_stack + GUARDSIZE , STACK_SIZE - GUARDSIZE, 
-			   PROT_NONE );
-		g_threads.returnStack ( t->m_si );
-		t->m_stack = NULL;
-
-#endif
 
 		// debug msg
 		if ( g_conf.m_logDebugThread )
@@ -2616,61 +2427,6 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 	int32_t  count = 0;
 	pid_t pid;
 
-#ifndef PTHREADS
-
-	//int status;
-	//int ret;
-	// random failure test
-	//if ( rand() %10 == 1 ) { err = ENOMEM; goto hadError; }
-	// malloc twice the size
-	t->m_stackSize = STACK_SIZE;
-	//t->m_stack = (char *)mmalloc ( t->m_stackSize , "Threads" );
-	int32_t si = g_threads.getStack ( );
-	if ( si < 0 ) {
-		log(LOG_LOGIC,"thread: Unable to get stack. Bad engineer.");
-		goto hadError;
-	}
-	t->m_si    = si;
-	t->m_stack = s_stackPtrs [ si ];
-	// UNprotect the whole stack so we can use it
-	mprotect ( t->m_stack + GUARDSIZE , STACK_SIZE - GUARDSIZE , 
-		   PROT_READ | PROT_WRITE );
-	// clear g_errno
-	g_errno = 0;
-	// . make another process
-	// . do not use sig handlers, so if a child process gets any unhandled 
-	//   signal (like SEGV) it will just exit
-	pid = clone ( startUp , t->m_stack + t->m_stackSize ,
-		      CLONE_FS | CLONE_FILES | CLONE_VM | //CLONE_SIGHAND |
-		      SIGCHLD ,
-		      (void *)t );
-	// . we set the pid because we are the one that checks it!
-	// . if we just let him do it, when we check in cleanup routine
-	//   we can get an uninitialized pid
-	t->m_pid = pid;
-	// might as well bitch if we should here
-	if ( s_bad ) {
-		log(LOG_LOGIC,"thread: PID received: %"INT32" > %"INT32". Bad.",
-		    s_badPid, (int32_t)MAX_PID);
-		//char *xx = NULL; *xx = 0;
-	}
-	// wait for him
-	//ret = waitpid ( -1*pid , &status , 0 );
-	//if ( ret != pid )
-	//	log("waitpid(pid=%"INT32"): ret=%"INT32" err=%s",
-	//	     (int32_t)pid,(int32_t)ret,mstrerror(errno));
-	// check if he's done
-	//if ( ! t->m_isDone ) log("NOT DONE");
-	// set the pid
-	//t->m_pid = pid;
-	// error?
-	if ( pid == (pid_t)-1 ) g_errno = errno;
-
-	// 
-	// now use pthreads again... are they stable yet?
-	//
-#else
-
 	// assume it does not go through
 	t->m_needsJoin = false;
 
@@ -2738,9 +2494,6 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 	// if ( sigprocmask ( SIG_UNBLOCK  , &sigs , NULL ) < 0 )
 	// 	log("threads: failed to unblock sig");
 
-
-#endif
-
 	// we're back from pthread_create
 	if ( g_conf.m_logDebugThread ) 
 		log(LOG_DEBUG,"thread: Back from clone "
@@ -2778,9 +2531,7 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 		log("thread: Call to clone was interrupted. Trying again.");
 		goto loop;
 	}
-	//#ifndef _PTHREADS_
  hadError:
-	//#endif
 
 	if ( g_errno )
 		log("thread: pthread_create had error = %s",
@@ -2901,9 +2652,6 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 	*/
 }
 
-#ifndef PTHREADS
-static bool s_firstTime = true;
-#endif
 
 // threads start up with cacnellation deferred until pthreads_testcancel()
 // is called, but we never call that
@@ -2917,10 +2665,6 @@ int startUp ( void *state ) {
 	//t->m_pid = getpid();
 	// . sanity check
 	// . a thread can NOT call this
-#ifndef PTHREADS
-	if ( getpid() == s_pid )
-		log("thread: Thread has same pid %i as main process.",s_pid);
-#endif
 	// the cleanup handler
 	//pthread_cleanup_push ( exitWrapper , t ) ; // t->m_state );
 	// our signal set
@@ -2933,15 +2677,11 @@ int startUp ( void *state ) {
 	// ignore the real time signal, man...
 	//sigaddset(&set, GB_SIGRTMIN);
 	//pthread_sigmask(SIG_BLOCK, &set, NULL);
-#ifndef PTHREADS
-	sigprocmask(SIG_BLOCK, &set, NULL);
-#else
 	// turn these off in the thread
 	sigaddset   ( &set , SIGALRM );
 	sigaddset   ( &set , SIGVTALRM );
 	sigaddset   ( &set , SIGPROF );
 	pthread_sigmask(SIG_BLOCK,&set,NULL);
-#endif
 	// . what this lwp's priority be?
 	// . can range from -20 to +20
 	// . the lower p, the more cpu time it gets
@@ -2964,20 +2704,6 @@ int startUp ( void *state ) {
 	// . set this process's priority
 	// . setpriority() is only used for SCHED_OTHER threads
 	//if ( pthread_setschedprio ( getpidtid() , p ) ) {
-#ifndef PTHREADS
-	if ( setpriority ( PRIO_PROCESS, getpidtid() , p ) < 0 ) {
-		// do we even support logging from a thread?
-		if ( s_firstTime ) {
-			log("thread: Call to "
-			    "setpriority(%"UINT32",%i) in thread "
-			    "failed: %s. This "
-			    "message will not be repeated.",
-			    (uint32_t)getpidtid(),p,mstrerror(errno));
-			s_firstTime = false;
-		}
-		errno = 0;
-	}
-#endif
 	/*
 	sched_param sp;
 	int         pp;
@@ -3052,12 +2778,7 @@ int startUp ( void *state ) {
 	// on 64bit arch pthread_t is 64bit and pid_t is 32bit
 	// i dont think this makes sense with pthreads any more, they don't
 	// use pid_t they use pthread_t
-#ifndef PTHREADS
-	sigqueue ( (pid_t)(int64_t)s_pid, SIGCHLD, svt ) ;
-#else
 	pthread_kill ( s_pid , SIGCHLD );
-#endif
-
 
 	return 0;
 }

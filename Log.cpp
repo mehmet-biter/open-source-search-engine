@@ -13,11 +13,9 @@
 // a global class extern'd in Log.h
 Log g_log;
 
-#ifdef PTHREADS
 #include <pthread.h>
 // the thread lock
 static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;
-#endif
 
 char      *g_dbuf          = NULL;
 int32_t       g_dbufSize       = 0;
@@ -232,10 +230,8 @@ bool Log::logR ( int64_t now , int32_t type , const char *msg , bool asterisk ,
 	// get "msg"'s length
 	int32_t msgLen = gbstrlen ( msg );
 
-#ifdef PTHREADS
 	// lock for threads
 	pthread_mutex_lock ( &s_lock );
-#endif
 
 	// do a timestamp, too. use the time synced with host #0 because
 	// it is easier to debug because all log timestamps are in sync.
@@ -244,9 +240,7 @@ bool Log::logR ( int64_t now , int32_t type , const char *msg , bool asterisk ,
 	// . skip all logging if power out, we do not want to screw things up
 	// . allow logging for 10 seconds after power out though
 	if ( ! g_process.m_powerIsOn && now - g_process.m_powerOffTime >10000){
-#ifdef PTHREADS
 		pthread_mutex_unlock ( &s_lock );
-#endif
 		return false;
 	}
 
@@ -317,9 +311,7 @@ bool Log::logR ( int64_t now , int32_t type , const char *msg , bool asterisk ,
 		// this sets m_bufPtr to 0
 		if ( ! dumpLog ( ) ) {
 			fprintf(stderr,"Log::log: could not dump to file!\n");
-#ifdef PTHREADS
 			pthread_mutex_unlock ( &s_lock );
-#endif
 			return false;
 		}
 	}
@@ -363,10 +355,8 @@ bool Log::logR ( int64_t now , int32_t type , const char *msg , bool asterisk ,
 	// increase the # of errors
 	m_numErrors++;
 
-#ifdef PTHREADS
 	// unlock for threads
 	pthread_mutex_unlock ( &s_lock );
-#endif
 	return false;
 }
 
