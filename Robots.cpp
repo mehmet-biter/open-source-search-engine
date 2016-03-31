@@ -21,8 +21,6 @@ Robots::Robots( const char* robotsTxt, int32_t robotsTxtLen, const char *userAge
 	, m_defaultCrawlDelay( -1 ) {
 	// parse robots.txt into what we need
 	parse();
-
-	print();
 }
 
 bool Robots::getNextLine() {

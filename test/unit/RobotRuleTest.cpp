@@ -36,7 +36,7 @@ void expectRobotRule( const char *urlPath, const char *rulePath, bool expectedMa
 // Test cases roughly based on Matching Wildcards article on Dr. Dobb's
 // http://www.drdobbs.com/architecture-and-design/matching-wildcards-an-empirical-way-to-t/240169123#ListingOne
 //
-TEST( RobotRuleTest, Wildcard ) {
+TEST( RobotRuleTest, WildcardCharacterRepeat ) {
 	// Cases with repeating character sequences.
 	expectRobotRule("/abcccd", "*ccd", true);
 	expectRobotRule("/mississipissippi", "*issip*ss*", true);
@@ -52,13 +52,17 @@ TEST( RobotRuleTest, Wildcard ) {
 	expectRobotRule("/aaazz", "/a*zz*", true);
 	expectRobotRule("/a12b12", "*12*23", false);
 	expectRobotRule("/a12b12", "*12*12*", true);
+}
 
-	// Additional cases where the '*' char appears in the tame string.
+TEST( RobotRuleTest, WildcardCharacterHaystack ) {
+	// Additional cases where the '*' char appears in haystack
 	expectRobotRule("/*", "*", true);
 	expectRobotRule("/a*abab", "/a*b", true);
 	expectRobotRule("/a*r", "/a*", true);
 	expectRobotRule("/a*ar", "/a*aar", false);
+}
 
+TEST( RobotRuleTest, WildcardDouble ) {
 	// More double wildcard scenarios.
 	expectRobotRule("/XYXYXYZYXYz", "/XY*Z*XYz", true);
 	expectRobotRule("/missisSIPpi", "*SIP*", true);
@@ -72,7 +76,9 @@ TEST( RobotRuleTest, Wildcard ) {
 	expectRobotRule("/A12b12", "*12*23", false);
 	expectRobotRule("/a12B12", "*12*12*", true);
 	expectRobotRule("/oWn", "/*oWn*", true);
+}
 
+TEST( RobotRuleTest, WildcardMultiple ) {
 	// Many-wildcard scenarios.
 	expectRobotRule("/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", "/a*a*a*a*a*a*aa*aaa*a*a*b", true);
 	expectRobotRule("/abababababababababababababababababababaacacacacacacacadaeafagahaiajakalaaaaaaaaaaaaaaaaaffafagaagggagaaaaaaaab", "/*a*b*ba*ca*a*aa*aaa*fa*ga*b*", true);
@@ -93,9 +99,11 @@ TEST( RobotRuleTest, Wildcard ) {
 
 	expectRobotRule( "/--------------------------------abc-def-", "/-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-" , true );
 	expectRobotRule( "/---------------------------------abc-def", "/-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*" , true );
+
+	expectRobotRule( "/acgfhdhbbcfbhchacchigdhfibhcifabnhieahnaaibcafhigbihaihj", "/*a*b*c*d*e*f*g*h*i*j", true );
 }
 
-TEST( RobotRuleTest, WildcardLineAnchor ) {
+TEST( RobotRuleTest, WildcardMultipleLineAnchor ) {
 	expectRobotRule("/abc*abcd*abcd*abc*abcd", "/abc*abc*abc*abc*abc$", false);
 	expectRobotRule( "/---------------------------------abc-def", "/-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-$" , false );
 	expectRobotRule( "/---------------------------------abc-def", "/-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*f$" , true );

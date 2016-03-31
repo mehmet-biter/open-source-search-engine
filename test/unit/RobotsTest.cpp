@@ -12,6 +12,7 @@ class TestRobots : public Robots {
 public:
 	TestRobots( const char* robotsTxt, int32_t robotsTxtLen, const char *userAgent = "testbot" )
 		: Robots (robotsTxt, robotsTxtLen, userAgent ) {
+		print();
 	}
 
 	using Robots::getNextLine;
@@ -44,7 +45,6 @@ static void expectRobotsNoNextLine( TestRobots *robots ) {
 }
 
 static void expectRobots( TestRobots *robots, const char *expectedLine, const char *expectedField = "", const char *expectedValue = "" ) {
-	logf(LOG_INFO, "expectLine='%s' expectField='%s' expectValue='%s'", expectedLine, expectedField, expectedValue);
 	std::stringstream ss;
 	ss << __func__ << ":"
 			<< " expectedLine='" << expectedLine << "'"
@@ -147,11 +147,6 @@ TEST( RobotsTest, RobotsGetFieldValue ) {
 // helper method
 //
 
-static void logRobotsTxt( const char *robotsTxt ) {
-	logf (LOG_INFO, "===== robots.txt =====\n%s", robotsTxt);
-	TestRobots robots( robotsTxt, strlen(robotsTxt) );
-}
-
 static void generateRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, int32_t *pos, const char *userAgent = "testbot", const char *allow = "", const char *disallow = "", bool reversed = false ) {
 	if ( *pos != 0 ) {
 		*pos += snprintf ( robotsTxt + *pos, robotsTxtSize - *pos, "\n" );
@@ -175,13 +170,11 @@ static void generateRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, int32_t *
 static void generateTestRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, const char *allow = "", const char *disallow = "" ) {
 	int32_t pos = 0;
 	generateRobotsTxt( robotsTxt, robotsTxtSize, &pos, "testbot", allow, disallow);
-	logRobotsTxt( robotsTxt );
 }
 
 static void generateTestReversedRobotsTxt ( char *robotsTxt, size_t robotsTxtSize, const char *allow = "", const char *disallow = "" ) {
 	int32_t pos = 0;
 	generateRobotsTxt( robotsTxt, robotsTxtSize, &pos, "testbot", allow, disallow, true);
-	logRobotsTxt( robotsTxt );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -501,7 +494,7 @@ TEST( RobotsTest, UserAgentFieldCaseInsensitive ) {
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-TEST(RobotsTest, CommentsFullLine) {
+TEST( RobotsTest, CommentsFullLine ) {
 	char robotsTxt[1024] = "user-agent: *\n"
 	                       "#user-agent: testbot\n"
 	                       "user-agent: defbot\n"
@@ -516,11 +509,10 @@ TEST(RobotsTest, CommentsFullLine) {
 	EXPECT_EQ( 1000, robots.getCrawlDelay() );
 }
 
-TEST(RobotsTest, CommentsAfterWithSpace) {
+TEST( RobotsTest, CommentsAfterWithSpace ) {
 	int32_t pos = 0;
 	char robotsTxt[1024];
 	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot #user-agent", "/test #allow", "/ #disallow");
-	logRobotsTxt( robotsTxt );
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 
@@ -529,11 +521,10 @@ TEST(RobotsTest, CommentsAfterWithSpace) {
 	EXPECT_TRUE( robots.isAllowed( "/test.html" ) );
 }
 
-TEST(RobotsTest, CommentsAfterNoSpace) {
+TEST( RobotsTest, CommentsAfterNoSpace ) {
 	int32_t pos = 0;
 	char robotsTxt[1024];
 	generateRobotsTxt( robotsTxt, 1024, &pos, "testbot#user-agent", "/test#allow", "/#disallow");
-	logRobotsTxt( robotsTxt );
 
 	TestRobots robots( robotsTxt, strlen(robotsTxt) );
 

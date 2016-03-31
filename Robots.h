@@ -14,6 +14,8 @@ public:
 	bool isAllowed( Url *url );
 	int32_t getCrawlDelay();
 
+	void print() const;
+
 	static bool isAllowed( Url *url, const char *userAgent, const char *file, int32_t fileLen,
 	                       bool *userAgentFound, bool substringMatch, int32_t *crawlDelay,
 	                       bool *hadAllowOrDisallow );
@@ -56,8 +58,6 @@ private:
 	void parsePath( bool isAllow, bool isUserAgent );
 	bool parseAllow( const char *field, int32_t fieldLen, bool isUserAgent );
 	bool parseDisallow( const char *field, int32_t fieldLen, bool isUserAgent );
-
-	void print() const;
 
 	const char *m_robotsTxt;
 	int32_t m_robotsTxtLen;
