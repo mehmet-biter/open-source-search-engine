@@ -17,7 +17,6 @@ int main(int argc, char **argv) {
 	g_mem.init();
 
 	g_log.init("/dev/stdout");
-	g_conf.m_logDebugBuild = true;
 
 	if ( !ucInit() ) {
 		log("Unicode initialization failed!");
