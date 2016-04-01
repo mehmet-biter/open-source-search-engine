@@ -328,11 +328,14 @@ bool Robots::isAllowed( Url *url ) {
 
 	std::vector<RobotRule> *rules = NULL;
 
-	if ( !m_rules.empty() ) {
+	if ( m_userAgentFound ) {
 		rules = &m_rules;
-	} else if ( !m_defaultRules.empty() ) {
+	} else if ( m_defaultUserAgentFound ) {
 		rules = &m_defaultRules;
 	}
+
+	// default allow
+	bool isAllowed = true;
 
 	if ( rules ) {
 		for ( std::vector<RobotRule>::const_iterator it = rules->begin(); it != rules->end(); ++it ) {
@@ -343,11 +346,8 @@ bool Robots::isAllowed( Url *url ) {
 					     ( rules == &m_rules ) ? "configured" : "default" );
 				}
 
-				if ( g_conf.m_logTimingRobots ) {
-					log( LOG_TIMING, "robots: Robots::%s took %" INT64 " ms", __func__, ( gettimeofdayInMilliseconds() - startTime ) );
-				}
-
-				return it->isAllow();
+				isAllowed = it->isAllow();
+				break;
 			}
 		}
 	}
@@ -356,8 +356,7 @@ bool Robots::isAllowed( Url *url ) {
 		log( LOG_TIMING, "robots: Robots::%s took %" INT64 " ms", __func__, ( gettimeofdayInMilliseconds() - startTime ) );
 	}
 
-	// default allow
-	return true;
+	return isAllowed;
 }
 
 int32_t Robots::getCrawlDelay() {
