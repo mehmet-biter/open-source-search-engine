@@ -3,6 +3,10 @@
 #include "Url.h"
 #include "Log.h"
 
+#include <fstream>
+#include <sstream>
+#include <string>
+
 #define TEST_DOMAIN "http://example.com"
 
 //
@@ -10,7 +14,7 @@
 //
 class TestRobots : public Robots {
 public:
-	TestRobots( const char* robotsTxt, int32_t robotsTxtLen, const char *userAgent = "testbot" )
+	TestRobots( const char *robotsTxt, int32_t robotsTxtLen, const char *userAgent = "testbot" )
 		: Robots (robotsTxt, robotsTxtLen, userAgent ) {
 	}
 
@@ -37,6 +41,8 @@ public:
 
 		return Robots::isAllowed( &url );
 	}
+private:
+	std::string m_fileRobotsTxt;
 };
 
 static void expectRobotsNoNextLine( TestRobots *robots ) {
@@ -697,7 +703,7 @@ TEST( RobotsTest, PathMatchMultipleWildcardEnd ) {
 }
 
 // /123/ matches /123/ and /123/456
-TEST( RobotsTest, PathMatchWithEndSlash ) {
+TEST( RobotsTest, PathMatchDir ) {
 	static const char *allow = "";
 	static const char *disallow = "/123/";
 
@@ -717,7 +723,7 @@ TEST( RobotsTest, PathMatchWithEndSlash ) {
 }
 
 // treat /123/* as /123/
-TEST( RobotsTest, PathMatchWithEndSlashWildcardEnd ) {
+TEST( RobotsTest, PathMatchDirWildcardEnd ) {
 	static const char *allow = "";
 	static const char *disallow = "/123/*";
 
@@ -1024,6 +1030,14 @@ TEST( RobotsTest, CrawlDelayFieldCaseInsensitive ) {
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 // Test utf-8 encoding (non-ascii)                                            //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
+/// @todo ALC
+
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// Test url encoded path                                                      //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1417,7 +1431,251 @@ TEST( RobotsTest, GPrecedenceDisallowAllow ) {
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-/// @todo ALC
+TEST( RobotsTest, RFCPathMatchPrefixDisallow ) {
+	char robotsTxt[1024];
+
+	generateTestRobotsTxt( robotsTxt, 1024, "/", "/tmp" );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_FALSE( robots.isAllowed( "/tmp" ));
+	EXPECT_FALSE( robots.isAllowed( "/tmp.html" ));
+	EXPECT_FALSE( robots.isAllowed( "/tmp/a.html" ));
+}
+
+TEST( RobotsTest, RFCPathMatchPrefixAllow ) {
+	char robotsTxt[1024];
+
+	generateTestRobotsTxt( robotsTxt, 1024, "/tmp", "/" );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isAllowed( "/tmp" ));
+	EXPECT_TRUE( robots.isAllowed( "/tmp.html" ));
+	EXPECT_TRUE( robots.isAllowed( "/tmp/a.html" ));
+}
+
+TEST( RobotsTest, RFCPathMatchPrefixDirDisallow ) {
+	char robotsTxt[1024];
+
+	generateTestRobotsTxt( robotsTxt, 1024, "/", "/tmp/" );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_TRUE( robots.isAllowed( "/tmp" ));
+	EXPECT_FALSE( robots.isAllowed( "/tmp/" ));
+	EXPECT_FALSE( robots.isAllowed( "/tmp/a.html" ));
+}
+
+TEST( RobotsTest, RFCPathMatchPrefixDirAllow ) {
+	char robotsTxt[1024];
+
+	generateTestRobotsTxt( robotsTxt, 1024, "/tmp/", "/" );
+
+	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+	EXPECT_FALSE( robots.isAllowed( "/tmp" ));
+	EXPECT_TRUE( robots.isAllowed( "/tmp/" ));
+	EXPECT_TRUE( robots.isAllowed( "/tmp/a.html" ));
+}
+
+TEST( RobotsTest, DISABLED_RFCPathMatchUrlEncodeDisallow ) {
+	char robotsTxt[1024];
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/", "/a%3cd.html" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_FALSE( robots.isAllowed( "/a%3cd.html" ));
+		EXPECT_FALSE( robots.isAllowed( "/a%3Cd.html" ));
+	}
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/", "/a%3Cd.html" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_FALSE( robots.isAllowed( "/a%3cd.html" ));
+		EXPECT_FALSE( robots.isAllowed( "/a%3Cd.html" ));
+	}
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/", "/a%2fb.html" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_FALSE( robots.isAllowed( "/a%2fb.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/a/b.html" ));
+	}
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/", "/a/b.html" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_TRUE( robots.isAllowed( "/a%2fb.html" ));
+		EXPECT_FALSE( robots.isAllowed( "/a/b.html" ));
+	}
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/", "/%7ejoe/index.html" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_FALSE( robots.isAllowed( "/~joe/index.html" ));
+	}
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/", "/~joe/index.html" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_FALSE( robots.isAllowed( "/%7ejoe/index.html" ));
+	}
+}
+
+TEST( RobotsTest, DISABLED_RFCPathMatchUrlEncodeAllow ) {
+	char robotsTxt[1024];
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/a%3cd.html", "/" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_TRUE( robots.isAllowed( "/a%3cd.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/a%3Cd.html" ));
+	}
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/a%3Cd.html", "/" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_TRUE( robots.isAllowed( "/a%3cd.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/a%3Cd.html" ));
+	}
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/a%2fb.html", "/" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_TRUE( robots.isAllowed( "/a%2fb.html" ));
+		EXPECT_FALSE( robots.isAllowed( "/a/b.html" ));
+	}
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/a/b.html", "/" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_FALSE( robots.isAllowed( "/a%2fb.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/a/b.html" ));
+	}
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/%7ejoe/index.html", "/" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_TRUE( robots.isAllowed( "/~joe/index.html" ));
+	}
+
+	{
+		generateTestRobotsTxt( robotsTxt, 1024, "/~joe/index.html", "/" );
+
+		TestRobots robots( robotsTxt, strlen(robotsTxt) );
+
+		EXPECT_TRUE( robots.isAllowed( "/%7ejoe/index.html" ));
+	}
+}
+
+TEST( RobotsTest, DISABLED_RFCExample ) {
+	char robotsTxt[1024] = "# /robots.txt for http://www.fict.org/\n"
+	                       "# comments to webmaster@fict.org\n"
+	                       "\n"
+	                       "User-agent: unhipbot\n"
+	                       "Disallow: /\n"
+	                       "\n"
+	                       "User-agent: webcrawler\n"
+	                       "User-agent: excite\n"
+	                       "Disallow: \n"
+	                       "\n"
+	                       "User-agent: *\n"
+	                       "Disallow: /org/plans.html\n"
+	                       "Allow: /org/\n"
+	                       "Allow: /serv\n"
+	                       "Allow: /~mak\n"
+	                       "Disallow: /";
+	{
+		// unhipbot
+		TestRobots robots( robotsTxt, strlen(robotsTxt), "unhipbot" );
+
+		EXPECT_FALSE( robots.isAllowed( "/" ));
+		EXPECT_FALSE( robots.isAllowed( "/index.html" ));
+		//EXPECT_FALSE( robots.isAllowed( "/robots.txt" ));
+		EXPECT_FALSE( robots.isAllowed( "/server.html" ));
+		EXPECT_FALSE( robots.isAllowed( "/services/fast.html" ));
+		EXPECT_FALSE( robots.isAllowed( "/services/slow.html" ));
+		EXPECT_FALSE( robots.isAllowed( "/orgo.gif" ));
+		EXPECT_FALSE( robots.isAllowed( "/org/about.html" ));
+		EXPECT_FALSE( robots.isAllowed( "/org/plans.html" ));
+		EXPECT_FALSE( robots.isAllowed( "/%7Ejim/jim.html" ));
+		EXPECT_FALSE( robots.isAllowed( "/%7Emak/mak.html" ));
+	}
+
+	{
+		// webcrawler
+		TestRobots robots( robotsTxt, strlen(robotsTxt), "webcrawler" );
+
+		EXPECT_TRUE( robots.isAllowed( "/" ));
+		EXPECT_TRUE( robots.isAllowed( "/index.html" ));
+		//EXPECT_TRUE( robots.isAllowed( "/robots.txt" ));
+		EXPECT_TRUE( robots.isAllowed( "/server.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/services/fast.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/services/slow.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/orgo.gif" ));
+		EXPECT_TRUE( robots.isAllowed( "/org/about.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/org/plans.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/%7Ejim/jim.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/%7Emak/mak.html" ));
+	}
+
+	{
+		// excite
+		TestRobots robots( robotsTxt, strlen(robotsTxt), "excite" );
+
+		EXPECT_TRUE( robots.isAllowed( "/" ));
+		EXPECT_TRUE( robots.isAllowed( "/index.html" ));
+		//EXPECT_TRUE( robots.isAllowed( "/robots.txt" ));
+		EXPECT_TRUE( robots.isAllowed( "/server.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/services/fast.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/services/slow.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/orgo.gif" ));
+		EXPECT_TRUE( robots.isAllowed( "/org/about.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/org/plans.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/%7Ejim/jim.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/%7Emak/mak.html" ));
+	}
+
+	{
+		// other
+		TestRobots robots( robotsTxt, strlen(robotsTxt), "testbot" );
+
+		EXPECT_FALSE( robots.isAllowed( "/" ));
+		EXPECT_FALSE( robots.isAllowed( "/index.html" ));
+		//EXPECT_TRUE( robots.isAllowed( "/robots.txt" ));
+		EXPECT_TRUE( robots.isAllowed( "/server.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/services/fast.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/services/slow.html" ));
+		EXPECT_FALSE( robots.isAllowed( "/orgo.gif" ));
+		EXPECT_TRUE( robots.isAllowed( "/org/about.html" ));
+		EXPECT_FALSE( robots.isAllowed( "/org/plans.html" ));
+		EXPECT_FALSE( robots.isAllowed( "/%7Ejim/jim.html" ));
+		EXPECT_TRUE( robots.isAllowed( "/%7Emak/mak.html" ));
+	}
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
@@ -1425,12 +1683,23 @@ TEST( RobotsTest, GPrecedenceDisallowAllow ) {
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-/// @todo ALC
+static std::string loadRobotsFile( const char *fileName ) {
+	std::ifstream file( fileName );
+	if ( file.is_open() ) {
+		std::stringstream contents;
+		contents << file.rdbuf();
+		file.close();
+		return contents.str();
+	}
 
-TEST( RobotsTest, RRobotsEmpty ) {
-	char robotsTxt[1024] = { 0 };
+	return "";
+}
 
-	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+// empty file
+TEST( RobotsTest, RRobotsSpeedtestNet ) {
+	std::string robotsTxt = loadRobotsFile( "robots/speedtest.net" );
+
+	TestRobots robots( robotsTxt.c_str(), robotsTxt.length() );
 
 	EXPECT_FALSE( robots.isUserAgentFound() );
 	EXPECT_TRUE( robots.isRulesEmpty() );
@@ -1441,15 +1710,11 @@ TEST( RobotsTest, RRobotsEmpty ) {
 	EXPECT_TRUE( robots.isAllowed( "/index.html" ) );
 }
 
-TEST( RobotsTest, RRobotsCommentsOnly ) {
-	char robotsTxt[1024] =
-			"# See http://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file\n"
-			"#\n"
-			"# To ban all spiders from the entire site uncomment the next two lines:\n"
-			"# User-agent: *\n"
-			"# Disallow: /\n";
+// comments only
+TEST( RobotsTest, RRobotsThekitchnCom ) {
+	std::string robotsTxt = loadRobotsFile( "robots/thekitchn.com" );
 
-	TestRobots robots( robotsTxt, strlen(robotsTxt) );
+	TestRobots robots( robotsTxt.c_str(), robotsTxt.length() );
 
 	EXPECT_FALSE( robots.isUserAgentFound() );
 	EXPECT_TRUE( robots.isRulesEmpty() );
@@ -1460,3 +1725,77 @@ TEST( RobotsTest, RRobotsCommentsOnly ) {
 	EXPECT_TRUE( robots.isAllowed( "/index.html" ) );
 }
 
+// wildcard use
+TEST( RobotsTest, RRobotsRedditCom ) {
+	std::string robotsTxt = loadRobotsFile( "robots/reddit.com" );
+
+	TestRobots robots( robotsTxt.c_str(), robotsTxt.length() );
+
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_FALSE( robots.isDefaultRulesEmpty() );
+
+	EXPECT_FALSE( robots.isAllowed( "/r/GameDeals/comments/4csg7b/steam_baldurs_gate_enhanced_edition_75_off_499/?sort=top") );
+	EXPECT_FALSE( robots.isAllowed( "/r/GameDeals/search?q=humble+bundle&restrict_sr=on") );
+	EXPECT_TRUE( robots.isAllowed( "/r/GameDeals/hot/") );
+	EXPECT_FALSE( robots.isAllowed( "/r/GameDeals.json" ) );
+}
+
+// many user agents
+TEST( RobotsTest, RRobotsNeedromCom ) {
+	std::string robotsTxt = loadRobotsFile( "robots/needrom.com" );
+
+	TestRobots robots( robotsTxt.c_str(), robotsTxt.length() );
+
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_FALSE( robots.isDefaultRulesEmpty() );
+
+	EXPECT_FALSE( robots.isAllowed( "/wp-admin/" ) );
+	EXPECT_TRUE( robots.isAllowed( "/download/galaxy-ace-duos-s6802/" ) );
+}
+
+// many disallow (no wildcard)
+TEST( RobotsTest, RRobotsStateGov ) {
+	std::string robotsTxt = loadRobotsFile( "robots/state.gov" );
+
+	TestRobots robots( robotsTxt.c_str(), robotsTxt.length() );
+
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_FALSE( robots.isDefaultRulesEmpty() );
+
+	EXPECT_TRUE( robots.isAllowed( "/documents/organization/81807.pdf" ) );
+	EXPECT_FALSE( robots.isAllowed( "/g/abc") );
+}
+
+// many disallow (with wildcard)
+TEST( RobotsTest, RRobotsBoeEs ) {
+	std::string robotsTxt = loadRobotsFile( "robots/boe.es" );
+
+	TestRobots robots( robotsTxt.c_str(), robotsTxt.length() );
+
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_FALSE( robots.isDefaultRulesEmpty() );
+
+	EXPECT_TRUE( robots.isAllowed( "/buscar/" ) );
+	EXPECT_FALSE( robots.isAllowed( "/buscar/doc.php?id=BOE-B-2015-14008") );
+}
+
+// url encoded / utf-8
+TEST( RobotsTest, DISABLED_RRobotsWikipediaOrg ) {
+	std::string robotsTxt = loadRobotsFile( "robots/wikipedia.org" );
+
+	TestRobots robots( robotsTxt.c_str(), robotsTxt.length() );
+
+	EXPECT_FALSE( robots.isUserAgentFound() );
+	EXPECT_TRUE( robots.isRulesEmpty() );
+	EXPECT_TRUE( robots.isDefaultUserAgentFound() );
+	EXPECT_FALSE( robots.isDefaultRulesEmpty() );
+
+}

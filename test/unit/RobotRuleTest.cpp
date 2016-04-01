@@ -39,6 +39,7 @@ TEST( RobotRuleTest, WildcardCharacter ) {
 	expectRobotRule("", "*", true);
 	expectRobotRule("/", "/*", true);
 	expectRobotRule("/a", "/a*", true);
+	expectRobotRule("/a", "/*a", true);
 }
 
 TEST( RobotRuleTest, WildcardCharacterRepeat ) {
@@ -106,6 +107,7 @@ TEST( RobotRuleTest, WildcardMultiple ) {
 	expectRobotRule( "/---------------------------------abc-def", "/-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*" , true );
 
 	expectRobotRule( "/acgfhdhbbcfbhchacchigdhfibhcifabnhieahnaaibcafhigbihaihj", "/*a*b*c*d*e*f*g*h*i*j", true );
+	expectRobotRule( "/ababcbdccedfdgeheifjfkgghhiijjkkllmmnnop", "/*a*b*c*d*e*f*g*h*i*j*k*l*m*n*o*p", true );
 }
 
 TEST( RobotRuleTest, WildcardMultipleLineAnchor ) {
