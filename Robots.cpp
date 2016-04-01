@@ -4,6 +4,7 @@
 #include "Log.h"
 #include "Conf.h"
 #include <functional>
+#include <algorithm>
 
 Robots::Robots( const char* robotsTxt, int32_t robotsTxtLen, const char *userAgent )
 	: m_robotsTxt( robotsTxt )
@@ -303,9 +304,9 @@ void Robots::parse() {
 
 	// sort rules
 	if ( m_userAgentFound ) {
-		m_rules.sort( std::greater<RobotRule>() );
+		std::sort( m_rules.begin(), m_rules.end(), std::greater<RobotRule>() );
 	} else if ( m_defaultUserAgentFound ) {
-		m_defaultRules.sort( std::greater<RobotRule>() );
+		std::sort( m_defaultRules.begin(), m_defaultRules.end(), std::greater<RobotRule>() );
 	}
 
 	// clear values
@@ -325,7 +326,7 @@ bool Robots::isAllowed( Url *url ) {
 		startTime = gettimeofdayInMilliseconds();
 	}
 
-	std::list<RobotRule> *rules = NULL;
+	std::vector<RobotRule> *rules = NULL;
 
 	if ( !m_rules.empty() ) {
 		rules = &m_rules;
@@ -334,7 +335,7 @@ bool Robots::isAllowed( Url *url ) {
 	}
 
 	if ( rules ) {
-		for ( std::list<RobotRule>::const_iterator it = rules->begin(); it != rules->end(); ++it ) {
+		for ( std::vector<RobotRule>::const_iterator it = rules->begin(); it != rules->end(); ++it ) {
 			if ( it->isMatching( url ) ) {
 				if ( g_conf.m_logDebugRobots ) {
 					log( LOG_DEBUG, "robots::%s: isAllowed='%d' for path='%.*s' with %s user-agent",
@@ -387,12 +388,12 @@ void Robots::print() const {
 	logf( LOG_DEBUG, "Robots::m_defaultUserAgentFound=%s", m_defaultUserAgentFound ? "true" : "false" );
 	logf( LOG_DEBUG, "Robots::m_defaultCrawlDelay=%d", m_defaultCrawlDelay );
 	logf( LOG_DEBUG, "Robots::m_rules.size=%lu", m_rules.size() );
-	for ( std::list<RobotRule>::const_iterator it = m_rules.begin(); it != m_rules.end(); ++it ) {
+	for ( std::vector<RobotRule>::const_iterator it = m_rules.begin(); it != m_rules.end(); ++it ) {
 		it->print( 1 );
 	}
 
 	logf( LOG_DEBUG, "Robots::m_defaultRules.size=%lu", m_defaultRules.size() );
-	for ( std::list<RobotRule>::const_iterator it = m_defaultRules.begin(); it != m_defaultRules.end(); ++it ) {
+	for ( std::vector<RobotRule>::const_iterator it = m_defaultRules.begin(); it != m_defaultRules.end(); ++it ) {
 		it->print( 1 );
 	}
 

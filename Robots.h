@@ -2,7 +2,7 @@
 #define GB_ROBOTS_H
 
 #include <stdint.h>
-#include <list>
+#include <vector>
 #include "RobotRule.h"
 
 class Url;
@@ -72,8 +72,8 @@ private:
 	int32_t m_crawlDelay;
 	int32_t m_defaultCrawlDelay;
 
-	std::list<RobotRule> m_rules;
-	std::list<RobotRule> m_defaultRules;
+	std::vector<RobotRule> m_rules;
+	std::vector<RobotRule> m_defaultRules;
 };
 
 #endif // GB_ROBOTS_H
