@@ -1832,7 +1832,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 
 	// get the linker url
 	Url linker; 
-	if ( r ) linker.set ( r->ptr_ubuf , r->size_ubuf, false, false, false, false, false, 0x7fffffff );
+	if ( r ) linker.set( r->ptr_ubuf, r->size_ubuf, false, false, false, false, false );
 
 	// sanity check, Xml::set() requires this...
 	if ( r&&r->size_rssItem > 0 && r->ptr_rssItem[r->size_rssItem-1]!=0 ) {
@@ -4094,24 +4094,17 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 		linkLen = dst;
 		tmp[dst] = '\0';
 	}
-		
 
-
-	url.set ( m_baseUrl       ,
-		  link            ,
-		  linkLen         ,
-		  addWWW          , // addWWW?
-		  m_stripIds      ,
-		  // now i strip this thang because the rss
-		  // feeds have a link to every comment but it is
-		  // really the same url...
-		  true            , // stripPound? 
-		  // convert /index.html to /
-		  // turned this back on per john's request
-		  // will cause undeletable data in existing indexes.
-		  true            , // stripCommonFile?
-		  true, 		// strip common tracking parameters
-		  titleRecVersion );// used for removing session ids
+	url.set( m_baseUrl, link, linkLen, addWWW, m_stripIds,
+	         // now i strip this thang because the rss
+	         // feeds have a link to every comment but it is
+	         // really the same url...
+	         true,
+	         // convert /index.html to /
+	         // turned this back on per john's request
+	         // will cause undeletable data in existing indexes.
+	         true,
+	         true ); // titleRecVersion (add here if needed again)
 
 	// sometimes there's links like:
 	// http://'+ycso[8]+ \n'commentsn?blog_id=... which is within

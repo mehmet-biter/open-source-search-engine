@@ -57,26 +57,22 @@ public:
 	void set    ( const char *s ) 
 	{
 		if ( ! s ) { char *xx=NULL;*xx=0; }
-		return set ( s , strlen(s), false, false, false, false, false, 0x7fffffff); 
+		return set( s, strlen( s ), false, false, false, false, false );
 	}
 
 	void set ( Url *baseUrl , char *s ) 
 	{
 		if ( ! s ) { char *xx=NULL;*xx=0; }
-		set ( baseUrl , s , strlen(s), false, false, false, false, false, 0x7fffffff); 
+		set( baseUrl, s, strlen( s ), false, false, false, false, false );
 	}
 
 	// . "s" must be an ENCODED url
-	void set    ( const char *s , int32_t len , bool addWWW,
-		      bool stripSessionIds, bool stripPound,
-		      bool stripCommonFile, bool stripTrackingParams,
-		      int32_t titleRecVersion);
-	void set    ( Url *baseUrl , const char *s , int32_t len , bool addWWW,
-		      bool stripSessionIds, bool stripPound,
-		      bool stripCommonFile, bool stripTrackingParams,
-		      int32_t titleRecVersion);
+	void set( const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripPound, bool stripCommonFile,
+	          bool stripTrackingParams );
+	void set( Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripPound,
+		          bool stripCommonFile, bool stripTrackingParams );
 
-	char isSessionId ( const char *hh, int32_t titleRecVersion ) ;
+	char isSessionId ( const char *hh ) ;
 
 	// compare another url to us
 	bool equals ( Url *u ) {

@@ -932,14 +932,7 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 		// Url.cpp, too, so we have to version that.
 		// Since this is just for hashing, it shouldn't matter that
 		// www.tmblr.co has no IP whereas only tmblr.co does.
-		link.set ( m_links.m_linkPtrs[i] ,
-			   m_links.m_linkLens[i] ,
-			   true          , // addWWW?
-			   m_links.m_stripIds    ,
-			   false         , // stripPound?
-			   false         , // stripCommonFile?
-			   true          , // stripTrackingParams?
-			   m_version     );// used for new session id stripping
+		link.set( m_links.m_linkPtrs[i], m_links.m_linkLens[i], true, m_links.m_stripIds, false, false, true ); // m_version (add here if needed again)
 
 
 		// BR 20160105: Do not create "link:" hashes for media URLs etc.
@@ -1240,7 +1233,8 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	// HASH url: term
 	//
 	// append a "www." for doing url: searches
-	Url uw; uw.set ( fu->getUrl() , fu->getUrlLen() , true, false, false, false, false, 0x7fffffff );
+	Url uw;
+	uw.set( fu->getUrl(), fu->getUrlLen(), true, false, false, false, false );
 	hi.m_prefix    = "url";
 	// no longer, we just index json now
 	//if ( isStatusDoc ) hi.m_prefix = "url2";

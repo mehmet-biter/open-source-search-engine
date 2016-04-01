@@ -848,7 +848,7 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 		// 1 means spidered, 0 means not spidered, -1 means error
 		int32_t status = 1;
 		// if unspidered, then we don't match the prev reply
-		// so set "status" to 0 to indicate hasn't been 
+		// so set "status" to 0 to indicate hasn't been
 		// downloaded yet.
 		if ( m_lastUh48 != m_prevReplyUh48 ) status = 0;
 		if ( m_lastFirstIp != m_prevReplyFirstIp ) status = 0;
@@ -3236,7 +3236,7 @@ bool getSpiderRequestMetaList ( const char *doc ,
 		const char *end = p;
 		// get that url
 		Url url;
-		url.set ( saved , end - saved, false, false, false, false, false, 0x7fffffff );
+		url.set( saved, end - saved, false, false, false, false, false );
 		// if not legit skip
 		if ( url.getUrlLen() <= 0 ) continue;
 		// need this

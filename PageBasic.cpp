@@ -292,7 +292,7 @@ bool updateSiteListBuf ( collnum_t collnum ,
 		}
 
 
-		u.set ( s , slen, false, false, false, false, false, 0x7fffffff );
+		u.set( s, slen, false, false, false, false, false );
 
 		// error? skip it then...
 		if ( u.getHostLen() <= 0 ) {

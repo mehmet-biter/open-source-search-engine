@@ -435,7 +435,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		if ( i == 0 && s_needles1[i].m_count < 5 ) continue;
 		// skip if no matches on this string
 		if ( s_needles1[i].m_count <= 0  ) continue;
-		// ok, if it had its section bit set to 0 that means the 
+		// ok, if it had its section bit set to 0 that means the
 		// whole page is link spam!
 		if ( s_needles1[i].m_isSection == 0 )
 			return links->setAllSpamBits(s_needles1[i].m_string );
@@ -590,7 +590,8 @@ bool setLinkSpam ( int32_t       ip                 ,
 		// anyway... this will save us some processing time
 		if ( links->isInternalDom(i) ) continue;
 		// otherwise, normalize it...
-		Url uu; uu.set ( links->getLink(i), links->getLinkLen(i), false, false, false, false, false, 0x7fffffff);
+		Url uu;
+		uu.set( links->getLink( i ), links->getLinkLen( i ), false, false, false, false, false );
 
 		// take a break
 		QUICKPOLL ( niceness );
@@ -1081,8 +1082,8 @@ bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
 		// malformed... like the href had a quote right b4 it
 		if ( ulen == 0 ) leftMalformed = true;
 		// normalize
-		if ( ulen > 0 ) 
-			leftUrl.set ( linker , u , ulen, false, false, false, false, false, 0x7fffffff);
+		if ( ulen > 0 )
+			leftUrl.set( linker, u, ulen, false, false, false, false, false );
 		// . if NOT from the same domain, break out, otherwise continue
 		// . this helps us find the <table> tag in ad tables with 
 		//   multiple links to the same domain
@@ -1152,8 +1153,8 @@ bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
 		// malformed... like the href had a quote right b4 it
 		if ( ulen == 0 ) rightMalformed = true;
 		// normalize
-		if ( ulen > 0 ) 
-			rightUrl.set ( linker, u , ulen, false, false, false, false, false, 0x7fffffff );
+		if ( ulen > 0 )
+			rightUrl.set( linker, u, ulen, false, false, false, false, false );
 		// . if NOT from the same domain, break out, otherwise continue
 		// . this helps us find the <table> tag in ad tables with 
 		//   multiple links to the same domain

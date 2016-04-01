@@ -67,7 +67,7 @@ bool HttpServer::init ( int16_t port,
 
 	//if we haven't been given the handlerwrapper, use default
 	//used only by proxy right now
-	// qatest sets up a client-only httpserver, so don't set a 
+	// qatest sets up a client-only httpserver, so don't set a
 	// handlerWrapper if no listening port
 	if (!handlerWrapper && (port || sslPort))
 		handlerWrapper = requestHandlerWrapper;
@@ -2645,7 +2645,7 @@ bool HttpServer::processSquidProxyRequest ( TcpSocket *sock, HttpRequest *hr) {
 
 	// normalize the url. MAX_URL_LEN is an issue...
 	Url url;
-	url.set ( hr->m_squidProxiedUrl , hr->m_squidProxiedUrlLen, false, false, false, false, false, 0x7fffffff );
+	url.set( hr->m_squidProxiedUrl, hr->m_squidProxiedUrlLen, false, false, false, false, false );
 
 	// get hostname for ip lookup
 	char *host = url.getHost();

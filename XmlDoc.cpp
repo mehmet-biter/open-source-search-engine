@@ -1261,7 +1261,7 @@ bool XmlDoc::setFirstUrl ( char *u , bool addWWW , Url *baseUrl ) {
 	//if ( gbstrlen (u) + 1 > MAX_URL_LEN )
 	//	m_indexCode = EURLTOOLONG;
 
-	m_firstUrl.set ( baseUrl , u , gbstrlen(u) , addWWW, false, false, false, false, 0x7fffffff ) ;
+	m_firstUrl.set( baseUrl, u, gbstrlen( u ), addWWW, false, false, false, false );
 
 	// it is the active url
 	m_currentUrl.set ( &m_firstUrl , false );
@@ -1444,7 +1444,7 @@ bool XmlDoc::injectDoc ( char *url ,
 	Url uu;
 	// do not add www to fix tmblr.co/ZHw5yo1E5TAaW injection
 	// which has no www.tmblr.co IP!
-	uu.set(url,gbstrlen(url),false, false, false, false, false, 0x7fffffff);
+	uu.set( url, gbstrlen( url ), false, false, false, false, false );
 
 	// if (!strncmp(url , "http://www.focusinfo.com/products/mxprodv" ,40))
         //          log("hey");
@@ -6329,14 +6329,7 @@ Url **XmlDoc::getRedirUrl() {
 	     	
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Found session id", __FILE__,__func__,__LINE__);
 		Url *tt = &m_redirUrl;
-		tt->set ( cu->getUrl() ,
-			  cu->getUrlLen() ,
-			  true,  	// addwww?
-			  true, 	// strip sessid?
-			  false,	// strip #
-			  false,	// strip common file
-			  true,		// strip tracking params
-			  0x7fffffff);
+		tt->set( cu->getUrl(), cu->getUrlLen(), true, true, false, false, true );
 			  
 		// if it no longer has the session id, force redirect it
 		if ( ! gb_strcasestr( tt->getUrl(), "sessionid") &&
@@ -10124,7 +10117,7 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		// allow for relative urls
 		Url *cu = getCurrentUrl();
 		// set base to it. addWWW=false
-		m_canonicalRedirUrl.set(cu,link,linkLen,false, false, false, false, false, 0x7fffffff);
+		m_canonicalRedirUrl.set( cu, link, linkLen, false, false, false, false, false );
 		// assume it is not our url
 		bool isMe = false;
 		// if it is us, then skip!
@@ -10267,13 +10260,7 @@ bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness ,
 	// . redirUrl is set to the original at the top
 	else
 		// addWWW = false, stripSessId=true
-		metaRedirUrl->set(cu,decoded,decBytes,
-				false,  // addwww?
-			  true, 	// strip sessid?
-			  false,	// strip pound
-			  false,	// strip common file
-			  true,		// strip tracking params
-				0x7fffffff);
+		metaRedirUrl->set( cu, decoded, decBytes, false, true, false, false, true );
 
 	return true;
 }
@@ -11489,7 +11476,7 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		// get our current url
 		//cu = getCurrentUrl();
 		// set our frame url
-		furl.set ( cu , url , urlLen, false, false, false, false, false, 0x7fffffff );
+		furl.set( cu, url, urlLen, false, false, false, false, false );
 		// no recursion
 		if ( strcmp(furl.getUrl(),m_firstUrl.getUrl()) == 0 )
 			continue;
@@ -16993,7 +16980,8 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// set it. addWWW = true! no.. make it false because of issues
 		// like tmblr.co/ZHw5yo1E5TAaW injection where
 		// www.tmblr.co has no IP
-		Url url; url.set ( s , slen , false, false, false, false, false, 0x7fffffff );
+		Url url;
+		url.set( s, slen, false, false, false, false, false );
 
 		// if hostname length is <= 2 then SILENTLY reject it
 		if ( url.getHostLen() <= 2 ) continue;
@@ -18106,7 +18094,7 @@ Url *XmlDoc::getBaseUrl ( ) {
 		// skip if not valid
 		if ( ! link || linkLen == 0 ) continue;
 		// set base to it. addWWW=false
-		m_baseUrl.set(link, linkLen, false, false, false, false, false, 0x7fffffff);
+		m_baseUrl.set( link, linkLen, false, false, false, false, false );
 		break;
 	}
 	

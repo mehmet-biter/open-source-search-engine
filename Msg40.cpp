@@ -1398,7 +1398,7 @@ bool Msg40::gotSummary ( ) {
 		// if any msg20 has m_errno set, then set ours so at least the
 		// xml feed will know there was a problem even though it may 
 		// have gotten search results.
-		// the BIG HACK is done in Msg20. Msg20::m_errno is set to 
+		// the BIG HACK is done in Msg20. Msg20::m_errno is set to
 		// something like EMISSINGQUERYTERMS if the document really
 		// doesn't match the query, maybe because of indexdb corruption
 		if ( m->m_errno ) {
@@ -1556,7 +1556,7 @@ bool Msg40::gotSummary ( ) {
 				ulen--;
 
 			Url u;
-			u.set(url,ulen, false, false, false, false, false, 0x7fffffff);
+			u.set( url, ulen, false, false, false, false, false );
 			url   = u.getHost();
 
 			if(u.getPathLen() > 1) {

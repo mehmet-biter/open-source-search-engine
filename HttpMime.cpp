@@ -215,9 +215,7 @@ bool HttpMime::parse ( char *mime , int32_t mimeLen , Url *url ) {
 			// . we don't add the "www." because of slashdot.com
 			// . we skip initial spaces in this Url::set() routine
 			if(url)
-				m_locUrl.set ( url, p + 9, len - 9,
-					       false/*addWWW?*/,
-					       false, false, false, false, 0x7fffffff);
+				m_locUrl.set( url, p + 9, len - 9, false, false, false, false, false );
 		}
 		else if ( strncasecmp ( p , "Content-Encoding:", 17) == 0 ) {
 			//only support gzip now, it doesn't seem like servers
@@ -952,7 +950,7 @@ void HttpMime::makeMime  ( int32_t    totalContentLen    ,
 //FILE EXTENSIONS to MIME CONTENT-TYPE
 //------------------------------------
 
-// set hash table 
+// set hash table
 static char *s_ext[] = {
       "ai" , "application/postscript",
      "aif" , "audio/x-aiff",

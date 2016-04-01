@@ -41,12 +41,12 @@ void Url::reset() {
 // set from another Url, does a copy
 void Url::set ( Url *url , bool addWWW ) {
 	if ( ! url ) { reset(); return; }
-	set ( url->getUrl() , url->getUrlLen() , addWWW, false, false, false, false, 0x7fffffff );
+	set( url->getUrl(), url->getUrlLen(), addWWW, false, false, false, false );
 }
 
 
-void Url::set (Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripSessionId,
-	       bool stripPound , bool stripCommonFile, bool stripTrackingParams, int32_t titleRecVersion ) {
+void Url::set( Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripSessionId, bool stripPound,
+               bool stripCommonFile, bool stripTrackingParams ) {
 
 	reset();
 	// debug msg
@@ -54,8 +54,8 @@ void Url::set (Url *baseUrl, const char *s, int32_t len, bool addWWW, bool strip
 	//	log("Url::set: warning, forcing WWW\n");
 
 	if ( ! baseUrl ) 
-	{ 
-		set ( s , len , addWWW, false, false, false, false, 0x7fffffff ); 
+	{
+		set( s, len, addWWW, false, false, false, false );
 		return; 
 	}
 
@@ -111,10 +111,7 @@ void Url::set (Url *baseUrl, const char *s, int32_t len, bool addWWW, bool strip
 
 	// don't use base if s is not relative
 	if ( blen==0 || isAbsolute ) {
-		set(s,len,addWWW,stripSessionId,stripPound,
-		    false, // stripCommonFile?
-		    stripTrackingParams,
-		    titleRecVersion);
+		set( s, len, addWWW, stripSessionId, stripPound, false, stripTrackingParams );
 		return;
 	}
 
@@ -133,10 +130,7 @@ void Url::set (Url *baseUrl, const char *s, int32_t len, bool addWWW, bool strip
 	if ( len > 0 && s[0] != '/' && s[0] !='?' && temp[blen-1] != '/' ) 
 		temp[blen++] ='/';
 	strncpy(temp+blen,s,len);
-	set ( temp, blen+len , addWWW , stripSessionId , stripPound ,
-	      stripCommonFile ,
-	      stripTrackingParams,
-	      titleRecVersion );
+	set( temp, blen + len, addWWW, stripSessionId, stripPound, stripCommonFile, stripTrackingParams );
 }
 
 
@@ -147,9 +141,8 @@ void Url::set (Url *baseUrl, const char *s, int32_t len, bool addWWW, bool strip
 //    reserved purposes may be used unencoded within a URL."
 // . i know sun.com has urls like "http://sun.com/;$sessionid=123ABC$"
 // . url should be ENCODED PROPERLY for this to work properly
-void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId ,
-                bool stripPound , bool stripCommonFile , bool stripTrackingParams,
-		int32_t titleRecVersion ) 
+void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bool stripPound, bool stripCommonFile,
+               bool stripTrackingParams )
 {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(t,tlen);
@@ -362,8 +355,7 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 
 		//gbmemcpy(encodedDomStart, p, restOfUrlLen);
 		encoded[newUrlLen] = '\0';
-		return this->set(encoded, newUrlLen, addWWW, stripSessionId, 
-						 stripPound, stripCommonFile, stripTrackingParams, titleRecVersion);
+		return this->set( encoded, newUrlLen, addWWW, stripSessionId, stripPound, stripCommonFile, stripTrackingParams );
 	}
 
 	// truncate length to the first occurence of an unacceptable char
@@ -427,49 +419,44 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 			if ( ! tt ) { tt = strstr        ( p , "SID="       ); x =  4;}
 			// . osCsid and XTCsid are new session ids
 			// . keep this up here so "sid=" doesn't override it
-			if ( ! tt && titleRecVersion >= 59 ) { 
+			if ( ! tt  ) {
 				tt = strstr ( p , "osCsid=" ); 
 				x =  7;
 				if ( ! tt ) tt = strstr ( p , "XTCsid=" );
 				// a hex sequence of at least 10 digits must follow
-				if ( tt && ! isSessionId ( tt + x, titleRecVersion ) )
+				if ( tt && ! isSessionId ( tt + x ) )
 					tt = NULL;
 			}
-			if ( ! tt && titleRecVersion >= 59 ) { 
+			if ( ! tt ) {
 				tt = strstr ( p , "osCsid/" ); 
 				x =  7;
 				// a hex sequence of at least 10 digits must follow
-				if ( tt && ! isSessionId ( tt + x, titleRecVersion ) )
+				if ( tt && ! isSessionId ( tt + x ) )
 					tt = NULL;
 			}
 			// this is a new session id thing
-			if ( ! tt && titleRecVersion >= 54 ) { 
+			if ( ! tt ) {
 				tt = strstr ( p , "sid=" ); x =  4;
 				// a hex sequence of at least 10 digits must follow
-				if ( tt && ! isSessionId ( tt + x, titleRecVersion ) ) 
+				if ( tt && ! isSessionId ( tt + x ) )
 					tt = NULL;
 			}
 			// osCsid and XTCsid are new session ids
-			if ( ! tt && titleRecVersion >= 57 ) { 
+			if ( ! tt ) {
 				tt = strstr ( p , "osCsid=" ); 
 				x =  7;
 				if ( ! tt ) tt = strstr ( p , "XTCsid=" );
 				// a hex sequence of at least 10 digits must follow
-				if ( tt && ! isSessionId ( tt + x, titleRecVersion ) ) 
+				if ( tt && ! isSessionId ( tt + x ) )
 					tt = NULL;
 			}
 			// fixes for bug of matching plain &sessionid= first and
 			// then realizing char before is an alnum...
-			if ( ! tt && titleRecVersion >= 59 ) { 
-				tt = gb_strcasestr ( p, "jsessionid="); x = 11; }
-			if ( ! tt && titleRecVersion >= 59 ) { 
-				tt = gb_strcasestr ( p , "vbsessid="  ); x =  9;}
-			if ( ! tt && titleRecVersion >= 59 ) { 
-				tt = gb_strcasestr ( p, "asesessid=" ); x = 10; }
-			if ( ! tt && titleRecVersion >= 59 ) { 
-				tt = gb_strcasestr ( p, "nlsessid="  ); x =  9; }
-			if ( ! tt && titleRecVersion >= 59 ) { 
-				tt = gb_strcasestr ( p, "psession="  ); x =  9; }
+			if ( ! tt ) { tt = gb_strcasestr ( p, "jsessionid="); x = 11; }
+			if ( ! tt ) { tt = gb_strcasestr ( p , "vbsessid="  ); x =  9;}
+			if ( ! tt ) { tt = gb_strcasestr ( p, "asesessid=" ); x = 10; }
+			if ( ! tt ) { tt = gb_strcasestr ( p, "nlsessid="  ); x =  9; }
+			if ( ! tt ) { tt = gb_strcasestr ( p, "psession="  ); x =  9; }
 	
 			if ( ! tt ) { tt = gb_strcasestr ( p , "session_id="); x = 11;}
 			if ( ! tt ) { tt = gb_strcasestr ( p , "sessionid=" ); x = 10;}
@@ -563,7 +550,7 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 		// keep the '?'
 		if ( s[a]=='?' ) a++;
 		// back up over any semicolon
-		if ( s[a-1] == ';' && titleRecVersion >= 59 ) a--;
+		if ( s[a-1] == ';' ) a--;
 		// advance b until we hit & or end or ? or a ';'
 		while ( s[b] && s[b] != '&' && s[b] != '?' && s[b] != ';') b++;
 		// if we don't have 5+ chars in session id itself, skip it
@@ -641,7 +628,7 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 	// . protocol may only have alnums and hyphens in it
 	for ( i = 0 ; s[i] && (is_alnum_a(s[i]) || s[i]=='-') ; i++ );
 	
-	// if we have a legal protocol, then set "m_scheme", "slen" and "sch" 
+	// if we have a legal protocol, then set "m_scheme", "slen" and "sch"
 	// and advance i to the m_host
 	if ( i + 2 < len && s[i]==':' && s[i+1]=='/' && s[i+2]=='/') 
 	{
@@ -828,9 +815,7 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 		// sessionId...
 		// I was going to add other possible dup separators, but now
 		// it seems as though it might cause problems
-		if (titleRecVersion >= 78){
-			if (s[i] == ';' && s[i+1] == '?') continue;
-		}
+		if (s[i] == ';' && s[i+1] == '?') continue;
 
 		// store char and advance to next
 		m_url[m_ulen++] = s[i];
@@ -890,8 +875,7 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 	Url u2;
 	flag = 1;
 	// Must not use defaults!
-	u2.set ( m_url, m_ulen , addWWW, stripSessionId ,
-		 stripPound , stripCommonFile , stripTrackingParams, titleRecVersion );
+	u2.set( m_url, m_ulen, addWWW, stripSessionId, stripPound, stripCommonFile, stripTrackingParams );
 		 
 	if ( strcmp(u2.getUrl(),m_url) != 0 ) {
 		log(LOG_REMIND,"db: *********url %s-->%s\n",m_url,u2.getUrl());
@@ -900,29 +884,25 @@ void Url::set ( const char *t , int32_t tlen , bool addWWW , bool stripSessionId
 	flag = 0;
 }
 
-char Url::isSessionId ( const char *hh, int32_t titleRecVersion ) {
+char Url::isSessionId ( const char *hh ) {
 	int32_t count = 0;
-	int32_t step = 0;
 	int32_t nonNumCount = 0;
-	// old bug didn't step through characters
-	if (titleRecVersion >= 69) step = 1;
+
 	// do not limit count to 12, the hex numbers may only be
 	// after the 12th character! we were not identifying these
 	// as sessionids when we shold have been because of that.
-	for ( ; *hh ; count++, hh+=step ) {
+	for ( ; *hh ; ++count, ++hh ) {
 		if ( *hh >= '0' && *hh <= '9' ) continue;
 		nonNumCount++;
 		if ( *hh >= 'a' && *hh <= 'f' ) continue;
 		// we got an illegal session id character
 		return false;
 	}
-	// if we got at least 12 of em, consider it a valid id
-	if (titleRecVersion >= 69)
-		// make sure it's a hexadecimal number...lots of product
-		// ids and dates use only decimal numbers
-		return ( nonNumCount > 0 && count >= 12);
 
-	return ( count >= 12 );
+	// if we got at least 12 of em, consider it a valid id
+	// make sure it's a hexadecimal number...lots of product
+	// ids and dates use only decimal numbers
+	return ( nonNumCount > 0 && count >= 12);
 }
 
 // hostname must also be www or NULL to be a root url
@@ -2081,7 +2061,7 @@ char *getDomFast ( char *url , int32_t *domLen , bool hasHttp ) {
 		//   http://www.marcom1.unimelb.edu.au/public/contact.html
 		//   parsing host email address
 		if ( uhostLen == 0 ) return NULL;
-		// to be consistent with how Url::m_domain/m_dlen is set we 
+		// to be consistent with how Url::m_domain/m_dlen is set we
 		// need to remove the last .X from the ip address
 		// skip back over digits
 		for ( hostEnd-- ; is_digit(*hostEnd); hostEnd-- );
