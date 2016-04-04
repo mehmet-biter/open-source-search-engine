@@ -2213,46 +2213,6 @@ int32_t getPathDepth ( char *s , bool hasHttp ) {
 	return depth;
 }
 
-// must be like xyz.com/xxxx/yyyy/[a-z]*.htm format
-bool isHijackerFormat ( char *url ) {
-
-	if ( ! url ) return false;
-
-	// get the path
-	char *p = getPathFast ( url );
-
-	if ( strstr(p,"/docs.php?id=") ) return true;
-	if ( strstr(p,"/mods.php?id=") ) return true;
-	if ( strstr(p,"/show.php?p=") ) return true;
-
-	// count the /'s
-	int32_t pc = 0;
-
-	for ( ; *p=='-' || *p=='_' || *p=='/' || (*p>='a'&&*p<='z') || 
-		      is_digit(*p); p++) 
-		if ( *p == '/' ) pc++;
-
-	// too many /'s? 
-	if ( pc >= 5 ) return false;
-	// too few. need at least 3
-	if ( pc <= 2 ) return false;
-
-	// need a .htm
-	if ( *p != '.' ) return false;
-
-	// skip .
-	p++;
-	// need "htm\0" now
-	if ( p[0] != 'h' ) return false;
-	if ( p[1] != 't' ) return false;
-	if ( p[2] != 'm' ) return false;
-	if ( p[3] != 0   ) return false;
-	return true;
-}
-
-
-
-
 char* Url::getDisplayUrl(char* url, SafeBuf* sb) {
 	char* found;
     char* labelCursor = url;

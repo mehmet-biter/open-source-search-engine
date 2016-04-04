@@ -145,7 +145,6 @@ enum {
 	EINJECTIONSDISABLED        , // injection is disabled
 	ETAGBREACH       , // Sections.cpp ran out of stack space
 	EDISKSTUCK       ,
-	EDOCHIJACKED     ,
 	EDOCREPEATSPAMMER,
 	EDOCEVILREDIRECT ,
 	EDOCBADSECTIONS  ,

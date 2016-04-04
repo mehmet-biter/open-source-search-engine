@@ -564,7 +564,6 @@ public:
 	char *getIsNoArchive ( ) ;
 	int32_t *getUrlFilterNum();
 	char *getIsLinkSpam ( ) ;
-	char *getIsHijacked();
 	char *getIsErrorPage ( ) ;
 	char* matchErrorMsg(char* p, char* pend );
 
@@ -867,7 +866,6 @@ public:
 	bool m_titleRecBufValid;
 	bool m_isLinkSpamValid;
 	bool m_isErrorPageValid;
-	bool m_isHijackedValid;
 	bool m_exactContentHash64Valid;
 	bool m_jpValid;
 
@@ -1041,7 +1039,6 @@ public:
 	Summary m_summary;
 	char m_isNoArchive;
 	char m_isErrorPage;
-	char m_isHijacked;
 
 	// stuff
 	const char *m_statusMsg;

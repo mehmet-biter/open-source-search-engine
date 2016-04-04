@@ -23,8 +23,6 @@ char *getDomFast   ( char *url , int32_t *domLen  , bool hasHttp = true ) ;
 bool  hasSubdomain ( char *url );
 char *getHostFast  ( char *url , int32_t *hostLen , int32_t *port = NULL ) ;
 
-bool isHijackerFormat ( char *url );
-
 // . returns the host of a normalized url pointed to by "s"
 // . i.e. "s" must start with the protocol (i.e. http:// or https:// etc.)
 // . used by Links.cpp for fast parsing and SiteGetter.cpp too

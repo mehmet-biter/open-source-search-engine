@@ -141,7 +141,6 @@ const char *mstrerrno ( int errnum ) {
 		case	EINJECTIONSDISABLED: return "Injection is disabled in Master Controls";
 		case	ETAGBREACH       : return "Sections parser ran out of tag stack space";
 		case	EDISKSTUCK       : return "Disk is stuck";
-		case	EDOCHIJACKED     : return "Doc is hijacked";
 		case    EDOCREPEATSPAMMER: return "Doc is repetitive spam";
 		case	EDOCEVILREDIRECT : return "Doc evil redirect url";
 		case	EDOCBADSECTIONS  : return "Doc has malformed sections";

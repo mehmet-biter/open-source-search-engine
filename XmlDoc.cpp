@@ -2336,7 +2336,6 @@ int32_t *XmlDoc::getIndexCode ( ) {
 		&& *indexCode != EDOCREPEATSPAMMER
 		&& *indexCode != EDOCDUP
 		&& *indexCode != EDOCISERRPG
-		&& *indexCode != EDOCHIJACKED
 		&& *indexCode != EDOCBADHTTPSTATUS
 		&& *indexCode != EDOCDISALLOWED
 		&& *indexCode != EBADCHARSET
@@ -2691,23 +2690,6 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 	//	m_indexCodeValid = true;
 	//	return &m_indexCode;
 	//}
-
-	// if this page is hijacked, toss it!
-	//@todo: BR not save at all.
-	char *hj = getIsHijacked();
-	if ( ! hj || hj == (char *)-1 ) 
-	{
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, getIsHijacked failed", __FILE__,__func__,__LINE__);
-		return (int32_t *)hj;
-	}
-	
-	// if not allowed m_indexCode will be set
-	if ( *hj ) {
-		m_indexCode      = EDOCHIJACKED;
-		m_indexCodeValid = true;
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, EDOCHIJACKED", __FILE__,__func__,__LINE__);
-		return &m_indexCode;
-	}
 
 	// check for EDOCISERRPG (custom error pages)
 	char *isErrorPage = getIsErrorPage();
@@ -19914,28 +19896,6 @@ int gbcompress ( unsigned char *dest      ,
 
 	err = deflateEnd(&stream);
 	return err;
-}
-
-
-// . many many websites got hijacked pages in them...
-// . revkim.org/mcdrt/mgntf/sata/sata.htm
-// . collegefootballweekly.net/hswsj/riime/sata/sata.htm
-//@todo BR: Not safe at all. Remove?
-char *XmlDoc::getIsHijacked() {
-	bool hj = false;
-	if ( ! hj ) hj = isHijackerFormat ( ptr_firstUrl );
-	if ( ! hj ) hj = isHijackerFormat ( ptr_redirUrl );
-	if ( ! hj ) {
-		m_isHijacked      = false;
-		m_isHijackedValid = true;
-		return &m_isHijacked;
-	}
-	uint32_t *h1 = getTagPairHash32();
-	if ( ! h1 || h1 == (void *)-1 ) return (char *)h1;
-	// TODO: check it for the malicious tag formats here!!
-	m_isHijacked      = false;
-	m_isHijackedValid = true;
-	return &m_isHijacked;
 }
 
 // is it a custom error page? ppl do not always use status 404!
