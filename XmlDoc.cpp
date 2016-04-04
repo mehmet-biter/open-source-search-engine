@@ -860,12 +860,8 @@ bool XmlDoc::set4 ( SpiderRequest *sreq      ,
 		if ( m_docId == 0LL ) { char *xx=NULL;*xx=0; }
 	}
 	else {
-		// add www is now REQUIRED for all!
-		// crap, injection of tmblr.co/ZHw5yo1E5TAaW fails because
-		// www.tmblr.co has no IP
-		
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Calling setFirstUrl with [%s]", __FILE__, __func__, __LINE__, m_sreq.m_url);
-		setFirstUrl ( m_sreq.m_url , false );//true ); // false );
+		setFirstUrl ( m_sreq.m_url );
 		// you can't call this from a docid based url until you
 		// know the uh48
 		//setSpideredTime();
@@ -1239,15 +1235,11 @@ bool XmlDoc::set2 ( char    *titleRec ,
 }
 
 
-bool XmlDoc::setFirstUrl ( char *u , bool addWWW , Url *baseUrl ) {
-
+bool XmlDoc::setFirstUrl ( char *u ) {
 	m_firstUrl.reset();
 	m_currentUrl.reset();
 
 	m_firstUrlValid = true;
-
-	// sanity check. "u" must be normalized
-	//if ( strncmp(u,"http",4 ) != 0 ) { char *xx=NULL;*xx=0; }
 
 	// assume url is not correct format
 	ptr_firstUrl  = NULL;
@@ -1261,7 +1253,7 @@ bool XmlDoc::setFirstUrl ( char *u , bool addWWW , Url *baseUrl ) {
 	//if ( gbstrlen (u) + 1 > MAX_URL_LEN )
 	//	m_indexCode = EURLTOOLONG;
 
-	m_firstUrl.set( baseUrl, u, gbstrlen( u ), addWWW, false, false, false, false );
+	m_firstUrl.set( u );
 
 	// it is the active url
 	m_currentUrl.set ( &m_firstUrl );
@@ -1270,23 +1262,6 @@ bool XmlDoc::setFirstUrl ( char *u , bool addWWW , Url *baseUrl ) {
 	// set this to the normalized url
 	ptr_firstUrl  = m_firstUrl.getUrl();
 	size_firstUrl = m_firstUrl.getUrlLen() + 1;
-
-	// is it is a link loop?
-	//if ( m_firstUrl.isLinkLoop() ) {
-	//	if ( ! m_indexCode ) m_indexCode = ELINKLOOP;
-	//	return true;
-	//}
-	// it it illegal?
-	//if ( m_firstUrl.m_host && m_firstUrl.m_host[0] == '.' ) {
-	//	if ( ! m_indexCode ) m_indexCode = EBADURL;
-	//	return true;
-	//}
-
-	// check if url is porn words in it
-	//if ( cr->m_doUrlSpamCheck && m_firstUrl.isSpam() ) {
-	//	if ( ! m_indexCode ) m_indexCode = EDOCURLSPAM;
-	//	return true;
-	//}
 
 	return true;
 }
@@ -6064,7 +6039,7 @@ Url *XmlDoc::getFirstUrl() {
 	if ( m_firstUrlValid ) return &m_firstUrl;
 	// we might have a title rec
 	if ( m_setFromTitleRec ) {
-		setFirstUrl ( ptr_firstUrl , false );
+		setFirstUrl ( ptr_firstUrl );
 		m_firstUrlValid = true;
 		return &m_firstUrl;
 	}
@@ -6079,7 +6054,7 @@ Url *XmlDoc::getFirstUrl() {
 	// shortcut
 	XmlDoc *od = *pod;
 	// now set it
-	setFirstUrl ( od->ptr_firstUrl , false );
+	setFirstUrl ( od->ptr_firstUrl );
 	m_firstUrlValid = true;
 	return &m_firstUrl;
 }
@@ -6305,7 +6280,7 @@ Url **XmlDoc::getRedirUrl() {
 	     	
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Found session id", __FILE__,__func__,__LINE__);
 		Url *tt = &m_redirUrl;
-		tt->set( cu->getUrl(), cu->getUrlLen(), true, true, false, false, true );
+		tt->set( cu->getUrl(), cu->getUrlLen(), true, true, true );
 			  
 		// if it no longer has the session id, force redirect it
 		if ( ! gb_strcasestr( tt->getUrl(), "sessionid") &&
@@ -10092,8 +10067,8 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		if ( strncasecmp(rel,"canonical",relLen) ) continue;
 		// allow for relative urls
 		Url *cu = getCurrentUrl();
-		// set base to it. addWWW=false
-		m_canonicalRedirUrl.set( cu, link, linkLen, false, false, false, false, false );
+		// set base to it
+		m_canonicalRedirUrl.set( cu, link, linkLen );
 		// assume it is not our url
 		bool isMe = false;
 		// if it is us, then skip!
@@ -11452,7 +11427,7 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		// get our current url
 		//cu = getCurrentUrl();
 		// set our frame url
-		furl.set( cu, url, urlLen, false, false, false, false, false );
+		furl.set( cu, url, urlLen );
 		// no recursion
 		if ( strcmp(furl.getUrl(),m_firstUrl.getUrl()) == 0 )
 			continue;
@@ -18419,7 +18394,7 @@ void XmlDoc::set20 ( Msg20Request *req ) {
 	}
 	// set url too if we should
 	if ( m_req->size_ubuf > 1 )
-		setFirstUrl ( m_req->ptr_ubuf , false );
+		setFirstUrl ( m_req->ptr_ubuf );
 }
 
 

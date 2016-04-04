@@ -3624,8 +3624,6 @@ bool Links::set ( bool useRelNoFollow ,
 
 	m_hasRelNoFollow   = false;
 
-	m_stripIds = false;
-
 	// ok, let's remove it for the links: hashing, it just makes more
 	// sense this way i think. we can normalize the links: terms in the
 	// query if you are worried about it.
@@ -4049,10 +4047,6 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 	// normalize the link and prepend base url if needed
 	Url url;
 
-
-	// we now use everything has is for sites like file.org
-	bool addWWW = false;
-
 	/////
 	//
 	// hack fix. if link has spaces in it convert to +'s
@@ -4095,7 +4089,7 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 		tmp[dst] = '\0';
 	}
 
-	url.set( m_baseUrl, link, linkLen, addWWW, m_stripIds,
+	url.set( m_baseUrl, link, linkLen, false, m_stripIds,
 	         // now i strip this thang because the rss
 	         // feeds have a link to every comment but it is
 	         // really the same url...

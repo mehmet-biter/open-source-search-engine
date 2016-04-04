@@ -1083,7 +1083,7 @@ bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
 		if ( ulen == 0 ) leftMalformed = true;
 		// normalize
 		if ( ulen > 0 )
-			leftUrl.set( linker, u, ulen, false, false, false, false, false );
+			leftUrl.set( linker, u, ulen );
 		// . if NOT from the same domain, break out, otherwise continue
 		// . this helps us find the <table> tag in ad tables with 
 		//   multiple links to the same domain
@@ -1154,7 +1154,7 @@ bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
 		if ( ulen == 0 ) rightMalformed = true;
 		// normalize
 		if ( ulen > 0 )
-			rightUrl.set( linker, u, ulen, false, false, false, false, false );
+			rightUrl.set( linker, u, ulen );
 		// . if NOT from the same domain, break out, otherwise continue
 		// . this helps us find the <table> tag in ad tables with 
 		//   multiple links to the same domain

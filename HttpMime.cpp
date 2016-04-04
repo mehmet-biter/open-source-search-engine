@@ -212,10 +212,9 @@ bool HttpMime::parse ( char *mime , int32_t mimeLen , Url *url ) {
 			// at least set this for Msg13.cpp to use
 			m_locationField    = tt;
 			m_locationFieldLen = gbstrlen(tt);
-			// . we don't add the "www." because of slashdot.com
 			// . we skip initial spaces in this Url::set() routine
 			if(url)
-				m_locUrl.set( url, p + 9, len - 9, false, false, false, false, false );
+				m_locUrl.set( url, p + 9, len - 9 );
 		}
 		else if ( strncasecmp ( p , "Content-Encoding:", 17) == 0 ) {
 			//only support gzip now, it doesn't seem like servers

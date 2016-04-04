@@ -53,9 +53,6 @@ void Url::set( Url *baseUrl, const char *s, int32_t len, bool addWWW, bool strip
                bool stripCommonFile, bool stripTrackingParams ) {
 
 	reset();
-	// debug msg
-	//if ( addWWW )
-	//	log("Url::set: warning, forcing WWW\n");
 
 	if ( ! baseUrl ) 
 	{

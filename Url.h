@@ -48,18 +48,24 @@ public:
 	void set( Url *url );
 
 	void set( const char *s ) {
-		return set( s, strlen( s ), false, false, false, false, false );
+		return set( s, strlen( s ), false, false, false );
 	}
 
 	void set( const char *s, int32_t len ) {
-		return set( s, len, false, false, false, false, false );
+		return set( s, len, false, false, false );
+	}
+
+	void set( const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripTrackingParams ) {
+		return set( s, len, addWWW, stripSessionIds, false, false, stripTrackingParams );
+	}
+
+	void set( Url *baseUrl, const char *s, int32_t len ) {
+		return set( baseUrl, s, len, false, false, false, false, false);
 	}
 
 	// . "s" must be an ENCODED url
-	void set( const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripPound, bool stripCommonFile,
-	          bool stripTrackingParams );
 	void set( Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripPound,
-		          bool stripCommonFile, bool stripTrackingParams );
+	          bool stripCommonFile, bool stripTrackingParams );
 
 	void print  ();
 	void reset  ();
@@ -197,6 +203,9 @@ public:
 	static char* getDisplayUrl(char* url, SafeBuf* sb);
 
 private:
+	void set( const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripPound, bool stripCommonFile,
+	          bool stripTrackingParams );
+
 	char    m_url[MAX_URL_LEN]; // the normalized url
 	int32_t    m_ulen;
 

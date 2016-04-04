@@ -1854,7 +1854,7 @@ bool Query::setQWords ( char boolFlag ,
 				fieldCode == FIELD_LINKS ||
 				fieldCode == FIELD_SITE) {
 				Url url;
-				url.set( w, wlen, ( fieldCode != FIELD_SITE ), false, false, false, false );
+				url.set( w, wlen, ( fieldCode != FIELD_SITE ), false, false );
 
 				if (fieldCode == FIELD_SITELINK) {
 					wid = hash64(url.getHost(), url.getHostLen());

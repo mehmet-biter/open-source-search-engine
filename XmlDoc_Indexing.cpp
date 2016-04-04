@@ -932,7 +932,7 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 		// Url.cpp, too, so we have to version that.
 		// Since this is just for hashing, it shouldn't matter that
 		// www.tmblr.co has no IP whereas only tmblr.co does.
-		link.set( m_links.m_linkPtrs[i], m_links.m_linkLens[i], true, m_links.m_stripIds, false, false, true ); // m_version (add here if needed again)
+		link.set( m_links.m_linkPtrs[i], m_links.m_linkLens[i], true, m_links.m_stripIds, true ); // m_version (add here if needed again)
 
 
 		// BR 20160105: Do not create "link:" hashes for media URLs etc.
@@ -1234,7 +1234,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	//
 	// append a "www." for doing url: searches
 	Url uw;
-	uw.set( fu->getUrl(), fu->getUrlLen(), true, false, false, false, false );
+	uw.set( fu->getUrl(), fu->getUrlLen(), true, false, false );
 	hi.m_prefix    = "url";
 	// no longer, we just index json now
 	//if ( isStatusDoc ) hi.m_prefix = "url2";

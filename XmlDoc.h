@@ -347,7 +347,7 @@ public:
 	~XmlDoc() ; 
 	void nukeDoc ( class XmlDoc *);
 	void reset ( ) ;
-	bool setFirstUrl ( char *u , bool addWWW , Url *base = NULL ) ;
+	bool setFirstUrl ( char *u ) ;
 	void setStatus ( const char *s ) ;
 	void setCallback ( void *state, void (*callback) (void *state) ) ;
 	void setCallback ( void *state, bool (*callback) (void *state) ) ;

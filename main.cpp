@@ -5768,7 +5768,7 @@ void dumpLinkdb ( char *coll,
 	// set to docid
 	if ( url ) {
 		Url u;
-		u.set( url, gbstrlen( url ), true, false, false, false, false ); // addWWW?
+		u.set( url, gbstrlen( url ), true, false, false ); // addWWW?
 		uint32_t h32 = u.getHostHash32();//g_linkdb.getUrlHash(&u)
 		int64_t uh64 = hash64n(url,0);
 		startKey = g_linkdb.makeStartKey_uk ( h32 , uh64 );
