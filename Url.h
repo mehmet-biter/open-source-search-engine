@@ -53,11 +53,6 @@ public:
 		return set( s, strlen( s ), false, false, false, false, false );
 	}
 
-	void set ( Url *baseUrl , char *s ) {
-		if ( ! s ) { char *xx=NULL;*xx=0; }
-		set( baseUrl, s, strlen( s ), false, false, false, false, false );
-	}
-
 	// . "s" must be an ENCODED url
 	void set( const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripPound, bool stripCommonFile,
 	          bool stripTrackingParams );
