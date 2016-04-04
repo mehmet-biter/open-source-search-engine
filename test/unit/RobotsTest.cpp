@@ -51,22 +51,28 @@ static void expectRobotsNoNextLine( TestRobots *robots ) {
 }
 
 static void expectRobots( TestRobots *robots, const char *expectedLine, const char *expectedField = "", const char *expectedValue = "" ) {
-	std::stringstream ss;
-	ss << __func__ << ":"
-			<< " expectedLine='" << expectedLine << "'"
-			<< " expectedField='" << expectedField << "'"
-			<< " expectedValue='" << expectedValue << "'";
-	SCOPED_TRACE(ss.str());
+	{
+		std::stringstream ss;
+		ss << __func__ << ":"
+				<< " expectedLine='" << expectedLine << "'"
+				<< " currentLine='" << robots->getCurrentLineLen() << "'";
+		SCOPED_TRACE(ss.str());
 
-	EXPECT_TRUE( robots->getNextLine() );
-	EXPECT_EQ( strlen( expectedLine ), robots->getCurrentLineLen() );
-	EXPECT_EQ( 0, memcmp( expectedLine, robots->getCurrentLine(), robots->getCurrentLineLen() ) );
+		EXPECT_TRUE( robots->getNextLine() );
+		EXPECT_EQ( strlen( expectedLine ), robots->getCurrentLineLen() );
+		EXPECT_EQ( 0, memcmp( expectedLine, robots->getCurrentLine(), robots->getCurrentLineLen() ) );
+	}
 
 	if ( expectedField != "" ) {
 		const char *field = NULL;
 		int32_t fieldLen = 0;
 
 		EXPECT_TRUE( robots->getField( &field, &fieldLen ) );
+		std::stringstream ss;
+		ss << __func__ << ":"
+				<< " expectedField='" << expectedField << "'"
+				<< " currentField='" << std::string( field, fieldLen ) << "'";
+		SCOPED_TRACE(ss.str());
 
 		EXPECT_EQ( strlen( expectedField ), fieldLen );
 		EXPECT_EQ( 0, memcmp( expectedField, field, fieldLen ) );
@@ -76,6 +82,12 @@ static void expectRobots( TestRobots *robots, const char *expectedLine, const ch
 			int32_t valueLen = 0;
 
 			EXPECT_TRUE( robots->getValue( &value, &valueLen ) );
+			std::stringstream ss;
+			ss << __func__ << ":"
+					<< " expectedValue='" << expectedValue << "'"
+					<< " currentValue='" << std::string( value, valueLen ) << "'";
+			SCOPED_TRACE(ss.str());
+
 			EXPECT_EQ( strlen( expectedValue ), valueLen );
 			EXPECT_EQ( 0, memcmp( expectedValue, value, valueLen ) );
 		}
