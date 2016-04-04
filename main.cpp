@@ -3481,7 +3481,7 @@ int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir ,
 				"ADDARGS='-r'\\$INC ; "
 				"INC=\\$((INC+1));"
 				//"} "
-				"done >& /dev/null & \" %s",
+				"done > /dev/null 2>&1 & \" %s",
 				//"done & \" %s",
 				//"done & \" %s",
 
