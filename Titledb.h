@@ -70,7 +70,7 @@ class Titledb {
 	// a different way to do it
 	uint64_t getProbableDocId ( char *url  ) {
 		Url u;
-		u.set( url, gbstrlen( url ), false, false, false, false, false );
+		u.set( url );
 		return getProbableDocId ( &u ); 
 	};
 

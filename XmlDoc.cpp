@@ -1442,13 +1442,7 @@ bool XmlDoc::injectDoc ( char *url ,
 
 	// normalize url
 	Url uu;
-	// do not add www to fix tmblr.co/ZHw5yo1E5TAaW injection
-	// which has no www.tmblr.co IP!
-	uu.set( url, gbstrlen( url ), false, false, false, false, false );
-
-	// if (!strncmp(url , "http://www.focusinfo.com/products/mxprodv" ,40))
-        //          log("hey");
-
+	uu.set( url );
 
 	// remove >'s i guess and store in st1->m_url[] buffer
 	char cleanUrl[MAX_URL_LEN+1];
