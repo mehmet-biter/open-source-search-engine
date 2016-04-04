@@ -985,6 +985,7 @@ void Msg39::estimateHitsAndSendReply ( ) {
 
 	// make the reply?
 	Msg39Reply mr;
+	mr.reset();
 
 	if ( true ) { //silly condition so we don't have to un-indent a lot of lines
 		// if we got clusterdb recs in here, use 'em
