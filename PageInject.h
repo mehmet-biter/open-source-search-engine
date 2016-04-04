@@ -60,8 +60,7 @@ class InjectionRequest {
 	int32_t size_content;
 	int32_t size_metadata;
 
-	// serialized space for the ptr_* strings above
-	char m_buf[0];
+	// variable data begins here
 };
 
 
