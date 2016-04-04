@@ -82,23 +82,18 @@ class Msg20Request {
 	// if true, sets ptr_linkText, etc.
 	unsigned char       m_getLinkText               :1;
 
-	// serialize() converts these ptrs into offsets in m_buf[]
-	// and deserialize() converts them back into ptrs on the receiver's end
+	// pointer+size variable section
 	char      *ptr_qbuf          ;
 	char      *ptr_ubuf          ; // url buffer
 	char      *ptr_linkee        ; // used by Msg25 for getting link text
 	char      *ptr_displayMetas  ;
 
-	// . from here down: automatically set in Msg20Request::serialize()
-	//   from the above parms
-	// . add new size_* parms after size_qbuf and before size_displayMetas
-	//   so that serialize()/deserialize() still work
 	int32_t       size_qbuf         ;
 	int32_t       size_ubuf         ; // url buffer
 	int32_t       size_linkee       ; // size includes terminating \0
 	int32_t       size_displayMetas ; // size includes terminating \0
 
-	char       m_buf[0] ;
+	// variable data comes here
 };
 
 class Msg20Reply {
@@ -180,14 +175,7 @@ public:
 
 	bool m_isDisplaySumSetFromTags;
 	
-	// . serialize() converts these ptrs into offsets in m_buf[] and
-	//   deserialize() converts them back into ptrs on the receiver's end
-	// . note: there must be an associated size_* for each ptr_* in the
-	//   same relative position to the members surrounding it
-	// . if a ptr_* is added above ptr_tbuf or underneath 
-	//   ptr_outlinkRulesets, then the serialize() and deserialize() 
-	//   methods must be changed
-	// . also, all ptr_* should be char* and all size_* should be in bytes
+	// pointer+size variable section
 	char       *ptr_tbuf                 ; // title buffer
 	char       *ptr_htag                 ; // h1 tag buf
 	char       *ptr_ubuf                 ; // url buffer
@@ -223,11 +211,6 @@ public:
 
 	char       *ptr_note                 ; // reason why it cannot vote
 
-	// . add new size_* parms after size_tbuf and before
-	//   size_outlinkRulesets
-	//   so that serialize()/deserialize() still work
-	// . string sizes of the strings we store into m_buf[]
-	// . wordCountBuf is an exact word count 1-1 with each "range"
 	int32_t       size_tbuf                 ;
 	int32_t       size_htag                 ;
 	int32_t       size_ubuf                 ;
@@ -254,13 +237,9 @@ public:
 	int32_t       size_templateVector       ;
 	int32_t       size_metadataBuf          ;
 
-	// CAUTION: do not add any parms below size_note!!!
 	int32_t       size_note                 ;
 
-	// . this is the "string buffer" and it is a variable size
-	// . this whole class is cast to a udp reply, so the size of "buf"
-	//   depends on the size of that udp reply
-	char       m_buf[0];
+	// variable data comes here
 };
 
 class Msg20 {
