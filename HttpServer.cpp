@@ -2645,7 +2645,7 @@ bool HttpServer::processSquidProxyRequest ( TcpSocket *sock, HttpRequest *hr) {
 
 	// normalize the url. MAX_URL_LEN is an issue...
 	Url url;
-	url.set( hr->m_squidProxiedUrl, hr->m_squidProxiedUrlLen, false, false, false, false, false );
+	url.set( hr->m_squidProxiedUrl, hr->m_squidProxiedUrlLen );
 
 	// get hostname for ip lookup
 	char *host = url.getHost();

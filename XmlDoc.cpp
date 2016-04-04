@@ -16953,16 +16953,11 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		//   before it was not!
 		//if ( flags & LF_OLDLINK ) continue;
 
-		// set it. addWWW = true! no.. make it false because of issues
-		// like tmblr.co/ZHw5yo1E5TAaW injection where
-		// www.tmblr.co has no IP
 		Url url;
-		url.set( s, slen, false, false, false, false, false );
+		url.set( s, slen );
 
 		// if hostname length is <= 2 then SILENTLY reject it
 		if ( url.getHostLen() <= 2 ) continue;
-
-
 
 		// BR 20160125: Do not create spiderdb entries for media URLs etc.
 		if(	url.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION) ||	
@@ -18068,8 +18063,8 @@ Url *XmlDoc::getBaseUrl ( ) {
 		char *link = (char *) xml->getString ( i, "href", &linkLen );
 		// skip if not valid
 		if ( ! link || linkLen == 0 ) continue;
-		// set base to it. addWWW=false
-		m_baseUrl.set( link, linkLen, false, false, false, false, false );
+		// set base to it
+		m_baseUrl.set( link, linkLen );
 		break;
 	}
 	

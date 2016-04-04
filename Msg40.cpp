@@ -1556,7 +1556,7 @@ bool Msg40::gotSummary ( ) {
 				ulen--;
 
 			Url u;
-			u.set( url, ulen, false, false, false, false, false );
+			u.set( url, ulen );
 			url   = u.getHost();
 
 			if(u.getPathLen() > 1) {

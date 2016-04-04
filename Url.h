@@ -44,13 +44,15 @@ int32_t getPathDepth ( char *s , bool hasHttp );
 
 class Url {
 public:
-
 	// set from another Url, does a copy
-	void set ( Url *url );
+	void set( Url *url );
 
-	void set    ( const char *s ) {
-		if ( ! s ) { char *xx=NULL;*xx=0; }
+	void set( const char *s ) {
 		return set( s, strlen( s ), false, false, false, false, false );
+	}
+
+	void set( const char *s, int32_t len ) {
+		return set( s, len, false, false, false, false, false );
 	}
 
 	// . "s" must be an ENCODED url

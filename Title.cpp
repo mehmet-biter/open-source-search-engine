@@ -222,7 +222,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 
 		// set Url
 		Url u;
-		u.set( k->getUrl(), k->size_urlBuf, false, false, false, false, false );
+		u.set( k->getUrl(), k->size_urlBuf );
 
 		// is it the same host as us?
 		bool sh = true;

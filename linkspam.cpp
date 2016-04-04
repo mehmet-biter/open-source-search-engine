@@ -591,7 +591,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		if ( links->isInternalDom(i) ) continue;
 		// otherwise, normalize it...
 		Url uu;
-		uu.set( links->getLink( i ), links->getLinkLen( i ), false, false, false, false, false );
+		uu.set( links->getLink( i ), links->getLinkLen( i ) );
 
 		// take a break
 		QUICKPOLL ( niceness );

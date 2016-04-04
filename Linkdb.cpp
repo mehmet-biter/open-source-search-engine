@@ -1832,7 +1832,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 
 	// get the linker url
 	Url linker; 
-	if ( r ) linker.set( r->ptr_ubuf, r->size_ubuf, false, false, false, false, false );
+	if ( r ) linker.set( r->ptr_ubuf, r->size_ubuf );
 
 	// sanity check, Xml::set() requires this...
 	if ( r&&r->size_rssItem > 0 && r->ptr_rssItem[r->size_rssItem-1]!=0 ) {

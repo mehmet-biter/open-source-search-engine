@@ -98,7 +98,7 @@ bool MsgC::getIp(char  *hostname    , int32_t   hostnameLen ,
 
 	// So its not in the local dns cache, so lets look in the 
 	// s_localDnsCache. For that I need to pass the url
-	m_u.set( hostname, hostnameLen, false, false, false, false, false );
+	m_u.set( hostname, hostnameLen );
 	/*
 	*ip=g_spiderCache.getLocalIp(&m_u);
 	if (*ip !=0) {

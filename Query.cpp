@@ -1854,24 +1854,13 @@ bool Query::setQWords ( char boolFlag ,
 				fieldCode == FIELD_LINKS ||
 				fieldCode == FIELD_SITE) {
 				Url url;
-				// do we add www?
-				bool addwww = false;
-				if (fieldCode == FIELD_LINK) addwww = true;
-				if (fieldCode == FIELD_ILINK) addwww = true;
-				if (fieldCode == FIELD_LINKS) addwww = true;
-				if (fieldCode == FIELD_URL) addwww = true;
-				if (fieldCode == FIELD_GBPARENTURL)
-					addwww = true;
-				if (fieldCode == FIELD_SITELINK)
-					addwww = true;
-				url.set( w, wlen, addwww, false, false, false, false );
-				char *site = url.getHost();
-				int32_t siteLen = url.getHostLen();
-				if (fieldCode == FIELD_SITELINK)
-					wid = hash64(site, siteLen);
-				else
-					wid = hash64(url.getUrl(),
-								 url.getUrlLen());
+				url.set( w, wlen, ( fieldCode != FIELD_SITE ), false, false, false, false );
+
+				if (fieldCode == FIELD_SITELINK) {
+					wid = hash64(url.getHost(), url.getHostLen());
+				} else {
+					wid = hash64(url.getUrl(), url.getUrlLen());
+				}
 			}
 
 			// like we do it in XmlDoc.cpp's hashString()

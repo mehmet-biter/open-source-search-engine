@@ -157,7 +157,7 @@ bool Msge0::launchRequests ( int32_t starti ) {
 	// sanity check
 	if ( i >= MAX_OUTSTANDING_MSGE0 ) { char *xx = NULL; *xx = 0; }
 	// normalize the url
-	m_urls[i].set( p, plen, false, false, false, false, false );
+	m_urls[i].set( p, plen );
 	// save the url number, "n"
 	m_ns  [i] = m_n;
 	// claim it
