@@ -148,8 +148,7 @@ public:
 	int32_t  size_url;
 	int32_t  size_cookie;
 
-	// string buf for deserializeMsg() function
-	char m_buf[0];
+	// variable data starts here
 
 	int32_t getSize() {
 		return ((char *)ptr_url-(char *)this) +size_url+size_cookie;};
