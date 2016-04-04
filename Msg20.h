@@ -31,9 +31,6 @@ class Msg20Request {
 		m_docId              = -1LL; // set docid to "invalid"
 		m_titleMaxLen        = 80  ;
 		m_summaryMaxLen      = 180 ;
-		// reset ptr sizes
-		int32_t size = m_buf - (char *)&size_qbuf;
-		memset ( &size_qbuf , 0 , size );
 	};
 
 	int32_t  getStoredSize ( );
