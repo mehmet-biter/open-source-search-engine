@@ -43,23 +43,17 @@ char *getPathEnd ( char *s , int32_t num );
 int32_t getPathDepth ( char *s , bool hasHttp );
 
 class Url {
-
 public:
 
-	void print  ();
-	void reset  ();
-
 	// set from another Url, does a copy
-	void set ( Url *url , bool addWWW );
+	void set ( Url *url );
 
-	void set    ( const char *s ) 
-	{
+	void set    ( const char *s ) {
 		if ( ! s ) { char *xx=NULL;*xx=0; }
 		return set( s, strlen( s ), false, false, false, false, false );
 	}
 
-	void set ( Url *baseUrl , char *s ) 
-	{
+	void set ( Url *baseUrl , char *s ) {
 		if ( ! s ) { char *xx=NULL;*xx=0; }
 		set( baseUrl, s, strlen( s ), false, false, false, false, false );
 	}
@@ -70,13 +64,14 @@ public:
 	void set( Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripPound,
 		          bool stripCommonFile, bool stripTrackingParams );
 
+	void print  ();
+	void reset  ();
+
 	char isSessionId ( const char *hh ) ;
 
 	// compare another url to us
 	bool equals ( Url *u ) {
-		if ( m_ulen != u->m_ulen ) return false;
-		if ( strcmp(m_url,u->m_url) == 0 ) return true;
-		return false;
+		return ( m_ulen == u->m_ulen && strcmp( m_url, u->m_url ) == 0 );
 	};
 
 	// is the url's hostname actually in ip in disguise ("a.b.c.d")

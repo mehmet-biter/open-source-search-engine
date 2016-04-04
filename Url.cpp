@@ -39,9 +39,13 @@ void Url::reset() {
 }
 
 // set from another Url, does a copy
-void Url::set ( Url *url , bool addWWW ) {
-	if ( ! url ) { reset(); return; }
-	set( url->getUrl(), url->getUrlLen(), addWWW, false, false, false, false );
+void Url::set ( Url *url ) {
+	if ( ! url ) {
+		reset();
+		return;
+	}
+
+	set( url->getUrl(), url->getUrlLen(), false, false, false, false, false );
 }
 
 

@@ -1264,7 +1264,7 @@ bool XmlDoc::setFirstUrl ( char *u , bool addWWW , Url *baseUrl ) {
 	m_firstUrl.set( baseUrl, u, gbstrlen( u ), addWWW, false, false, false, false );
 
 	// it is the active url
-	m_currentUrl.set ( &m_firstUrl , false );
+	m_currentUrl.set ( &m_firstUrl );
 	m_currentUrlValid = true;
 
 	// set this to the normalized url
@@ -6052,7 +6052,7 @@ Url *XmlDoc::getCurrentUrl ( ) {
 	Url *fu = getFirstUrl();
 	if ( ! fu || fu == (void *)-1 ) return (Url *)fu;
 	// make that current url
-	m_currentUrl.set ( &m_firstUrl , false );
+	m_currentUrl.set ( &m_firstUrl );
 	m_currentUrlValid = true;
 	return &m_currentUrl;
 	/*
@@ -6460,7 +6460,7 @@ Url **XmlDoc::getRedirUrl() {
 	if      ( cu->getDomainLen() != dlen                   ) sameDom=false;
 	else if ( strncmp(cu->getDomain(),loc->getDomain(),dlen))sameDom=false;
 	if ( ! sameDom ) {
-		m_redirUrl.set ( loc , false ); // addWWW=false
+		m_redirUrl.set ( loc );
 		m_redirUrlPtr   = &m_redirUrl;
 		ptr_redirUrl    = m_redirUrl.getUrl();
 		size_redirUrl    = m_redirUrl.getUrlLen()+1;
@@ -6559,7 +6559,7 @@ Url **XmlDoc::getRedirUrl() {
 		m_redirError = EDOCSIMPLIFIEDREDIR;
 		// set this because getLinks() treats this redirUrl
 		// as a link now, it will add a SpiderRequest for it:
-		m_redirUrl.set ( loc , false ); // addWWW=false
+		m_redirUrl.set ( loc );
 		m_redirUrlPtr   = &m_redirUrl;
 		// mdw: let this path through so contactXmlDoc gets a proper
 		// redirect that we can follow. for the base xml doc at
@@ -6568,7 +6568,7 @@ Url **XmlDoc::getRedirUrl() {
 		return &m_redirUrlPtr;
 	}
 	// good to go
-	m_redirUrl.set ( loc , false ); // addWWW=false
+	m_redirUrl.set ( loc );
 	m_redirUrlPtr   = &m_redirUrl;
 	ptr_redirUrl    = m_redirUrl.getUrl();
 	size_redirUrl   = m_redirUrl.getUrlLen()+1;
@@ -9026,7 +9026,7 @@ char **XmlDoc::getHttpReply ( ) {
 	m_contentValid            = false;
 	m_mimeValid               = false;
 	// update our current url now to be the redirected url
-	m_currentUrl.set ( *redirp , false );
+	m_currentUrl.set ( *redirp );
 	m_currentUrlValid = true;
 	// loop it
 	goto loop;
@@ -18063,9 +18063,8 @@ Url *XmlDoc::getBaseUrl ( ) {
 	if ( ! xml || xml == (Xml *)-1 ) return (Url *)xml;
 	Url *cu = getCurrentUrl();
 	if ( ! cu || cu == (void *)-1 ) return (Url *)cu;
-	// no longer set addWWW to true since tmblr.co has an IP but
-	// www.tmblr.co does not
-	m_baseUrl.set ( cu , false ); // addWWW = true
+
+	m_baseUrl.set ( cu );
 	// look for base url
 	for ( int32_t i=0 ; i < xml->getNumNodes() ; i++ ) {
 		// 12 is the <base href> tag id
@@ -18082,7 +18081,7 @@ Url *XmlDoc::getBaseUrl ( ) {
 	
 	// fix invalid <base href="/" target="_self"/> tag
 	if ( m_baseUrl.getHostLen  () <= 0 || m_baseUrl.getDomainLen() <= 0 )
-		m_baseUrl.set ( cu , false );
+		m_baseUrl.set ( cu );
 		
 	m_baseUrlValid = true;
 	return &m_baseUrl;
