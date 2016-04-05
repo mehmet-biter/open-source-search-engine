@@ -10622,7 +10622,7 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "log timing messages for robots";
-	m->m_cgi   = "lt_robots";
+	m->m_cgi   = "ltr";
 	m->m_off   = offsetof(Conf,m_logTimingRobots);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
