@@ -230,7 +230,7 @@ class CrawlInfo {
 
 
 	void reset() { memset ( this , 0 , sizeof(CrawlInfo) ); };
-};
+} __attribute__((packed, aligned(4)));
 
 
 class CollectionRec {

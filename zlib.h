@@ -44,8 +44,6 @@ extern "C" {
 #define ZLIB_VER_REVISION 8
 #define ZLIB_VER_SUBREVISION 0
 
-#pragma pack(4)
-
 /*
     The 'zlib' compression library provides in-memory compression and
   decompression functions, including integrity checks of the uncompressed data.
@@ -103,7 +101,7 @@ typedef struct z_stream_s {
     int     data_type;  /* best guess about the data type: binary or text */
     uLong   adler;      /* adler32 value of the uncompressed data */
     uLong   reserved;   /* reserved for future use */
-} z_stream;
+} __attribute__((packed, aligned(4))) z_stream;
 
 typedef z_stream FAR *z_streamp;
 
@@ -126,7 +124,7 @@ typedef struct gz_header_s {
     int     hcrc;       /* true if there was or will be a header crc */
     int     done;       /* true when done reading gzip header (not used
                            when writing a gzip file) */
-} gz_header;
+} __attribute__((packed, aligned(4))) gz_header;
 
 typedef gz_header FAR *gz_headerp;
 

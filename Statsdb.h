@@ -179,7 +179,7 @@ class StatKey {
 	uint32_t m_labelHash;
 	// force to 32-bit even though time_t is 64-bit on 64-bit systems
 	int32_t m_time1;
-};
+} __attribute__((packed, aligned(4)));
 
 class StatData {
  public:
@@ -194,6 +194,6 @@ class StatData {
 	float     getNewVal () { return m_newVal ; };
 	bool      isStatusChange() { return (m_totalOps==0); };
 	bool      isEvent       () { return (m_totalOps==0); };
-};
+} __attribute__((packed, aligned(4)));
 
 #endif // GB_STATSDB_H

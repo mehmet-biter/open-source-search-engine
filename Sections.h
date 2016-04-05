@@ -298,6 +298,6 @@ public:
 	// . seems like pastdate and futuredate and eurdatefmt 
 	//   are the only vote types that actually really use this...
 	float m_numSampled;
-};
+} __attribute__((packed, aligned(4)));
 
 #endif // GB_SECTIONS_H

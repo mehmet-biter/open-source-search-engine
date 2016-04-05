@@ -698,7 +698,7 @@ class LinkInfo {
 
 	// serialize "Inlinks" into this buffer, m_buf[]
 	char   m_buf[0];
-};
+} __attribute__((packed, aligned(4)));
 
 
 #define MAXINLINKSTRINGBUFSIZE 2048
@@ -914,7 +914,7 @@ class Inlink {
 
 
 	char       m_buf[MAXINLINKSTRINGBUFSIZE] ;
-};
+} __attribute__((packed, aligned(4)));
 
 // . this function is normally called like "info = makeLinkInfo()"
 //   to create a new LinkInfo based on a bunch of Msg20 replies
