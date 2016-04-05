@@ -8657,7 +8657,7 @@ char *XmlDoc::getIsWWWDup ( ) {
 
 
 
-LinkInfo s_dummy2;
+static LinkInfo s_dummy2;
 
 // . returns NULL and sets g_errno on error
 // . returns -1 if blocked, will re-call m_callback
