@@ -33,7 +33,6 @@ libgtest.so:
 	ln -s $(GTEST_DIR)/$@ .
 
 CPPFLAGS += -g
-CPPFLAGS += -fno-stack-protector # @todo remove after the #pragma pack stuff is fixed
 CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wl,-rpath=. -Wl,-rpath=$(BASE_DIR)
 CPPFLAGS += -I$(BASE_DIR) -I$(GTEST_DIR)/include

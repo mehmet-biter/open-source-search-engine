@@ -1,5 +1,4 @@
 #include "gtest/gtest.h"
-#include "gb-include.h" /// @todo remove after the #pragma pack stuff is fixed
 #include "RobotRule.h"
 #include "Url.h"
 #include "Log.h"
