@@ -6,22 +6,17 @@
 #include "Tagdb.h"
 #include "Titledb.h"
 #include "Spider.h"
+#include "BitOperations.h"
 
-/////
-//
-// we no longer do ALLOW_SCALE! now user can click "rebalance shards"
-// to scan all rdbs of every coll and move the recs to the appropriate
-// shard in real time.
-//
-/////
-//#define ALLOW_SCALE
+//#define _MERGEDEBUG_
+
 
 // . compares to keys split into 6 byte ptrs
 // . returns -1, 0 , 1 if a < b , a == b , a > b
 // . for comparison purposes, we must set 0x02 (half bits) on all keys
 //   so negative keys will always be ordered before their positive
 
-static inline char bfcmpPosdb ( char *alo , char *ame , char *ahi , 
+static inline char bfcmpPosdb ( char *alo , char *ame , char *ahi ,
 			 char *blo , char *bme , char *bhi ) {
 	if (*(uint32_t  *)( ahi+2 )<*(uint32_t  *)(bhi+2)) return -1;
 	if (*(uint32_t  *)( ahi+2 )>*(uint32_t  *)(bhi+2)) return  1;
@@ -252,12 +247,12 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 
 	if ( m_ks == 18 ) { // m_rdbId == RDB_POSDB ) {
 		// sanity
-		if ( key[0] & 0x06 ) { 
+		if ( key[0] & 0x06 ) {
 			log("rdblist: posdb: cannot add bad key. please "
 			    "delete posdb-buckets-saved.dat and restart.");
 			// return true so rdbbuckets::getlist doesn't stop
 			//return true;
-			char *xx=NULL;*xx=0; 
+			char *xx=NULL;*xx=0;
 		}
 		// grow the list if we need to
 		if ( m_listEnd + 18 >  m_alloc + m_allocSize )
@@ -1048,7 +1043,120 @@ bool RdbList::removeBadData_r ( ) {
 	return true;
 }
 
+
+int RdbList::printPosdbList ( int32_t logtype ) {
+
+	log(logtype, "%s:%s: BEGIN",__FILE__,__func__);
+
+	//log("m_list=%"INT32"",(int32_t)m_list);
+	// save
+	char *oldp   = m_listPtr;
+	char *oldphi = m_listPtrHi;
+	resetListPtr();
+	log(logtype, "db: STARTKEY=%s, m_ks=%d, datasize=%"INT32"",KEYSTR(m_startKey,m_ks), (int)m_ks, m_listSize);
+
+	size_t key_size;
+	// 48bit 38bit 4bit 4bit 18bit
+	log(logtype,"db:   ........term_id ......doc_id rank lang wordpos del ");
+
+
+	while ( ! isExhausted() ) {
+		//key_t k = getCurrentKey();
+		char k[MAX_KEY_BYTES];
+		getCurrentKey(k);
+
+		if( m_ks == 18 )
+		{
+	        if(m_listPtr[0]&0x04) {
+	                //it is a 6-byte pos key
+	                key_size = 6;
+	        } else if(m_listPtr[0]&0x02) {
+	                //it is a 12-byte docid+pos key
+	                key_size = 12;
+	        } else {
+	                key_size = 18;
+	        }
+		}
+		else
+		{
+			key_size = m_ks;
+		}
+
+		char *key = &m_listPtr[0];
+
+		uint64_t term_id = 0;
+		uint64_t doc_id = 0;
+		uint64_t site_rank = 0;
+		uint64_t lang_id = 0;
+		uint64_t alignment_bit0 = 0;
+		uint64_t lang_bit6 = 0;
+
+		if( key_size == 18 )
+		{
+			term_id				= extract_bits(key,96,144);
+		}
+
+		if( key_size >= 12 )
+		{
+	        doc_id				= extract_bits(key,58,96);
+	        alignment_bit0		= extract_bits(key,57,58);
+        	site_rank			= extract_bits(key,53,57);
+        	lang_id				= extract_bits(key,48,53);
+	        lang_bit6 			= extract_bits(key, 3, 4);
+	        if(lang_bit6!=0) {
+                lang_id |= 0x20;
+			}
+		}
+
+        uint64_t	word_pos			= extract_bits(key,30,48);
+//        uint64_t	hash_group			= extract_bits(key,26,30);
+//        uint64_t	word_spam_rank		= extract_bits(key,22,26);
+//        uint64_t	diversity_rank		= extract_bits(key,18,22);
+//        uint64_t	synonym_flags		= extract_bits(key,16,18);
+//        uint64_t	density_rank		= extract_bits(key,11,16);
+//        uint64_t	in_outlink_text		= extract_bits(key,10,11);
+//        uint64_t	alignment_bit1		= extract_bits(key, 9,10);
+//        uint64_t	nosplit				= extract_bits(key, 8, 9);
+//        uint64_t	multiplier			= extract_bits(key, 4, 8);
+        uint64_t	nodelete_marker		= extract_bits(key, 0, 1);
+
+		switch(key_size)
+		{
+			case 18:
+				log(logtype,"db:   %15"INT64" %12"INT64" %4"INT64" %4"INT64" %7"INT64" %3s", term_id, doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N");
+				break;
+			case 12:
+				log(logtype,"db:   %15s %12"INT64" %4"INT64" %4"INT64" %7"INT64" %3s", "-", doc_id, site_rank, lang_id, word_pos, !nodelete_marker?"Y":"N");
+				break;
+			default:
+				log(logtype,"db:   %15s %12s %4s %4s %7"INT64" %3s", "-", "-", "-", "-", word_pos, !nodelete_marker?"Y":"N");
+				break;
+		}
+
+		skipCurrentRecord();
+	}
+
+	if ( m_lastKeyIsValid )
+		log(logtype,  "db: LASTKEY=%s", KEYSTR(m_lastKey,m_ks));
+
+	log(logtype, "db: ENDKEY=%s",KEYSTR(m_endKey,m_ks));
+
+	//resetListPtr();
+	m_listPtr   = oldp;
+	m_listPtrHi = oldphi;
+
+	log(logtype, "%s:%s: END",__FILE__,__func__);
+	return 0;
+}
+
+
+
+
 int RdbList::printList ( int32_t logtype ) {
+
+	if ( m_ks == 18 ) { // m_rdbId == RDB_POSDB ) {
+		return printPosdbList(logtype);
+	}
 
 	log(logtype, "%s:%s: BEGIN",__FILE__,__func__);
 
@@ -1571,13 +1679,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 	int64_t tt1 = getTagTypeFromStr( "sitenuminlinksfresh");
 	int64_t tt2 = getTagTypeFromStr( "sitepop");
 
-#ifdef ALLOW_SCALE
-	// remove keys that don't belong -- for when scaling number of servers
-	uint32_t groupId ;
-	uint32_t myGroupId = g_hostdb.m_groupId;
-	//uint32_t groupMask = g_hostdb.m_groupMask;
-#endif
-
  top:
 	// get the biggest possible minKey so everyone's <= it
 	//key_t minKey;
@@ -1665,57 +1766,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 		}
 	}
 
-	// . skip the junk below if not a real merge
-	// . this is kinda a hack so that dumpTitledb() in main.cpp works
-	//   because i don't think it reads in myGroupId properly because
-	//   it is 0 at this point... when it shouldn't be
-	if ( ! isRealMerge ) goto notRealMerge;
-
-	// if we are scaling, skip this stuff
-	//if ( g_conf.m_allowScale ) goto skipfilter;
-
-#ifdef ALLOW_SCALE
-
-	groupId = getGroupId ( rdbId , (key_t *)minKey );
-
-	if ( groupId != myGroupId ) {
-		if ( filtered ) *filtered = *filtered + 1;
-		required -= m_ks;
-		goto skip;
-	}
-
-	/*
-	// skip this filter logic for now, only used for scaling, this is
-	// dangerous and i don't want to risk deleting data
-	//goto skipfilter;
-
-	// . filter out if does not belong in our group
-	// . used when scaling number of servers
-	groupId = getGroupId ( rdbId , (key_t *)minKey );
-
-	if ( groupId != myGroupId ) {
-		if ( g_conf.m_allowScale ) {
-			if ( filtered ) *filtered = *filtered + 1;
-			goto skip;
-		}
-		else {
-			// this means corruption, don't allow it anymore!
-			log ( "db: Found invalid rec in db. key=%"XINT32" %"XINT64" "
-			      "group=%"INT32" myGroup=%"INT32"",
-			      ((key_t*)minKey)->n1,
-			      ((key_t*)minKey)->n0,
-			      groupId, myGroupId );
-			//char *xx = NULL; *xx = 0;
-			if ( filtered ) *filtered = *filtered + 1;
-			goto skip;
-		}
-	}
-
-	// skipfilter:
-	*/
-#endif
-
- notRealMerge:
 	// remember state before we are stored in case we're annihilated and
 	// we hafta roll back to it
 	lastListSize   = m_listSize;
@@ -1965,10 +2015,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 
 #include "Msg3.h" // #define for MAX_RDB_FILES
 
-#ifdef _MERGEDEBUG_
-#include "Indexdb.h"
-#endif
-
 ////////
 //
 // SPECIALTY MERGE FOR POSDB
@@ -1998,14 +2044,19 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// count how many removed due to scaling number of servers
 	if ( filtered ) *filtered = 0;
 	if ( numLists == 0 ) return true;
+
 #ifdef _MERGEDEBUG_
+	log(LOG_LOGIC,"%s:%s: removeNegKeys: %s", __FILE__, __func__, removeNegKeys?"true":"false");
 	//log(LOG_INFO,"mdw: sk.n1=%"UINT32" sk.n0=%"UINT64" ek.n1=%"UINT32" ek.n0=%"UINT64"",
 	    //startKey.n1, startKey.n0, endKey.n1, endKey.n0 );
-	log(LOG_INFO,"mdw: sk.n1=%"XINT64" sk.n0=%"XINT64" ek.n1=%"XINT64" ek.n0=%"XINT64"",
-	    KEY1(startKey,m_ks),KEY0(startKey),KEY1(endKey,m_ks),KEY0(endKey));
+	log(LOG_LOGIC,"%s:%s: sk.n1=%"XINT64" sk.n0=%"XINT64" ek.n1=%"XINT64" ek.n0=%"XINT64"",
+	    __FILE__,__func__, KEY1(startKey,m_ks),KEY0(startKey),KEY1(endKey,m_ks),KEY0(endKey));
+	log(LOG_LOGIC,"%s:%s: numLists: %"INT32", m_allocSize=%"INT32", m_mergeMinListSize=%"INT32", minRecSizes=%"INT32"",
+		__FILE__,__func__, numLists, m_allocSize, m_mergeMinListSize, minRecSizes);
 	int32_t omini = -1;
 	int32_t fns[MAX_RDB_FILES+1];
 #endif
+
 	// did they call prepareForMerge()?
 	if ( m_allocSize < m_mergeMinListSize ) {
 		log(LOG_LOGIC,"db: rdblist: posdbMerge_r: prepareForMerge() "
@@ -2076,6 +2127,12 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	for ( i = 0 ; i < numLists ; i++ ) {
 		// skip if empty
 		if ( lists[i]->isEmpty() ) continue;
+
+#ifdef _MERGEDEBUG_
+		log(LOG_LOGIC,"%s:%s: DUMPING LIST %"INT32"", __FILE__,__func__, i);
+		lists[i]->printList(LOG_LOGIC);
+#endif
+
 		// reset list ptr
 		//lists[i]->resetListPtr();
 		// debug msg
@@ -2136,21 +2193,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	if ( isRealMerge ) uflag = 1;
 
 	char ss;
-	//int32_t foo;
-
-#ifdef ALLOW_SCALE
-	uint32_t groupId ;
-	uint32_t myGroupId = g_hostdb.m_groupId;
-	bool skipFilter = false;
-	// do not bother with the groupid filter if we are not scaling,
-	// this will save some time. this should usually be false.
-	if ( ! g_conf.m_allowScale ) skipFilter = true;
-	// if not doing a real disk merge, we don't go through this code either
-	if ( ! doGroupMask         ) skipFilter = true;
-	key_t key;
-	char *k ;
-#endif
-
 	char *pp = NULL;
 
 	// see Posdb.h for format of a 12-byte or 6-byte indexdb key
@@ -2192,31 +2234,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 
 	// ignore if negative i guess, just skip it
 	if ( removeNegKeys && (minPtrBase[0] & 0x01) == 0x00 ) goto skip;
-
-#ifdef ALLOW_SCALE
-	// if this is true, we do not need to call this groupid filter code
-	if ( skipFilter ) goto skipfilter;
-	k = (char*)&key;
-	gbmemcpy(k, minPtrBase, 6);
-	gbmemcpy(&k[6], minPtrHi, 6);
-	groupId = getGroupId ( RDB_POSDB , &key );
-	// filter out if does not belong in this group due to scaling servers
-	if ( groupId != myGroupId && doGroupMask ) {
-		if ( g_conf.m_allowScale ) {
-			if ( filtered ) *filtered = *filtered + 1;
-			goto skip;
-		}
-		else {
-			// this means corruption, don't allow it anymore!
-			log ( "db: Found invalid rec in db. (posdbMerge) "
-			      "group=%"INT32" myGroup=%"INT32"", groupId, myGroupId );
-			//char *xx = NULL; *xx = 0;
-			if ( filtered ) *filtered = *filtered + 1;
-			goto skip;
-		}
-	}
- skipfilter:
-#endif
 
 	// save ptr
 	pp = m_listPtr;
@@ -2455,10 +2472,22 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		log("db: why last key not valid?");
 
 	// under what was requested? then done.
-	if ( m_listSize < minRecSizes ) return true;
+	if ( m_listSize < minRecSizes ) {
+#ifdef _MERGEDEBUG_
+		log(LOG_LOGIC,"%s:%s:%d: Done.", __FILE__,__func__, __LINE__);
+		printList(LOG_LOGIC);
+#endif
+		return true;
+	}
 
 	// or if no more lists
-	if ( numLists <= 0 ) return true;
+	if ( numLists <= 0 ) {
+#ifdef _MERGEDEBUG_
+		log(LOG_LOGIC,"%s:%s:%d: Done.", __FILE__,__func__, __LINE__);
+		printList(LOG_LOGIC);
+#endif
+		return true;
+	}
 
 	// save original end key
 	char orig[MAX_KEY_BYTES];
@@ -2476,6 +2505,11 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// be careful not to increase original endkey, though
 	if ( KEYCMP(orig,m_endKey,m_ks)<0 )
 		KEYSET(m_endKey,orig,m_ks);
+
+#ifdef _MERGEDEBUG_
+		log(LOG_LOGIC,"%s:%s:%d: Done.", __FILE__,__func__, __LINE__);
+		printList(LOG_LOGIC);
+#endif
 
 	return true;
 }

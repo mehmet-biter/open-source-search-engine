@@ -307,6 +307,7 @@ class RdbList {
 
 	// . print out the list (uses log())
 	int printList ( int32_t logtype=LOG_INFO);
+	int printPosdbList ( int32_t logtype );
 
 	void  setListPtrs ( char *p , char *hi ) {m_listPtr=p;m_listPtrHi=hi;};
 

@@ -71,4 +71,16 @@ static inline int32_t getBitPosLL ( const uint8_t *bit ) {
 }
 
 
+static inline uint64_t extract_bits(char *key, unsigned lsb, unsigned msb) {
+//        assert(msb>lsb);
+        unsigned start_byte = lsb/8;
+        unsigned start_bit_in_first_byte = lsb%8;
+        uint64_t v = *(const uint64_t*)(key+start_byte);
+        v >>= start_bit_in_first_byte;
+        uint64_t mask = ~((~UINT64_C(0))<<(msb-lsb));
+        v &= mask;
+        return v;
+}
+
+
 #endif
