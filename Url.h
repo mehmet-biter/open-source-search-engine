@@ -200,7 +200,7 @@ public:
 	//   is probably more accurate than this function.
 	bool isLinkLoop();
 
-	static char* getDisplayUrl(char* url, SafeBuf* sb);
+	static char* getDisplayUrl( const char* url, SafeBuf* sb );
 
 private:
 	void set( const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripPound, bool stripCommonFile,
