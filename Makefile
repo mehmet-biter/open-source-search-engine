@@ -270,8 +270,6 @@ udptest: $(OBJS) udptest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
 dnstest: $(OBJS) dnstest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-threadtest: threadtest.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o -lpthread
 memtest: memtest.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o
 hashtest: hashtest.cpp
@@ -291,13 +289,9 @@ reindex: $(OBJS) reindex.o
 urlinfo: $(OBJS) urlinfo.o
 	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $(OBJS) urlinfo.o $(LIBS)
 
-gbtitletest: gbtitletest.o
-	$(CXX) $(DEFS) $(CPPFLAGS) -o $@ $@.o $(OBJS) $(LIBS)
-
-
 # comment this out for faster deb package building
 clean:
-	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest mergetest monitor reindex urlinfo dnstest gbtitletest gmon.* quarantine core core.* libgb.a
+	-rm -f *.o gb *.bz2 blaster2 udptest memtest hashtest mergetest monitor reindex urlinfo dnstest gmon.* quarantine core core.* libgb.a
 	make -C test $@
 
 StopWords.o:
