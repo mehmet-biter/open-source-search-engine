@@ -125,20 +125,24 @@ bool RdbMap::writeMap ( bool allDone ) {
 
 
 	if ( g_conf.m_readOnlyMode ) {
-		log(LOG_TRACE, "%s:%s:d: END. Read-only mode, not writing map. filename [%s]. Returning true.",
-		    __FILE__, __func__, m_file.getFilename());
+		if ( g_conf.m_logTraceRdbMap ) {
+			log( LOG_TRACE, "%s:%s:d: END. Read-only mode, not writing map. filename [%s]. Returning true.",
+			     __FILE__, __func__, m_file.getFilename());
+		}
 		return true;
 	}
 
 	if ( ! m_needToWrite ) {
-		log(LOG_TRACE, "%s:%s:d: END. no need, not writing map. filename [%s]. Returning true.",
-		    __FILE__, __func__, m_file.getFilename());
+		if ( g_conf.m_logTraceRdbMap ) {
+			log( LOG_TRACE, "%s:%s:d: END. no need, not writing map. filename [%s]. Returning true.",
+			     __FILE__, __func__, m_file.getFilename());
+		}
 		return true;
 	}
 
 	// open a new file
 	if ( ! m_file.open ( O_RDWR | O_CREAT | O_TRUNC ) ) {
-		log(LOG_ERROR, "%s:%s: END. Could not open %s for writing: %s. Returning true.",
+		log(LOG_ERROR, "%s:%s: END. Could not open %s for writing: %s. Returning false.",
 		    __FILE__, __func__, m_file.getFilename(), mstrerror(g_errno));
 		return false;
 	}
