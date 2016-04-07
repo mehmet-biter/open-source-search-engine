@@ -1912,7 +1912,7 @@ bool ThreadQueue::launchThread2 ( ) {
 		if ( m_threadType!=MERGE_THREAD &&
 		     m_threadType!=INTERSECT_THREAD &&
 		     m_launchedHead ) {
-			log(LOG_TRACE, "thread: ThreadQueue::launchThread2: already one of that type");
+			log("thread: ThreadQueue::launchThread2: already one of that type");
 			return false;
 		}
 		// first try niceness 0 queue
