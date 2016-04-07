@@ -330,7 +330,7 @@ Catdb.o:
 
 # when making a new file, add the recs to the map fast
 RdbMap.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 # this was getting corruption, was it cuz we used $(O2) compiler option?
 # RdbTree.o:
@@ -356,7 +356,7 @@ UdpServer.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
 
 RdbList.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 Rdb.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
