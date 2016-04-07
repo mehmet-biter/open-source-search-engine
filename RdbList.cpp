@@ -1522,8 +1522,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 			int32_t      minRecSizes   ,
 			bool      removeNegRecs ,
 			char      rdbId         ,
-			int32_t     *tfns          ,  // used for titledb
-			RdbList  *tfndbList     ,  // used for titledb
 			int32_t      niceness      ) {
 	// tfndb merging should always use indexMerge_r() now
 	if ( rdbId == RDB_TFNDB || rdbId == RDB2_TFNDB2 ) {
@@ -1533,9 +1531,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 		log("list: merge_r data not owned");
 		char *xx=NULL;*xx=0;
 	}
-	// this is used for merging titledb lists
-	//if ( tfndbList ) tfndbList->resetListPtr();
-	if ( tfndbList ) { char *xx=NULL;*xx=0; }
 	// bail if none! i saw a doledb merge do this from Msg5.cpp
 	// and it was causing a core because m_MergeMinListSize was -1
 	if ( numLists == 0 ) return;

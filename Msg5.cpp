@@ -1328,8 +1328,6 @@ void Msg5::mergeLists_r ( ) {
 			  m_removeNegRecs ,
 			  //getIdFromRdb ( base->m_rdb ) ,
 			  m_rdbId ,
-			  NULL,//m_tfns          , // used for titledb
-			  NULL,//&m_tfndbList    , // used for titledb
 			  niceness      );
 	
 	// maintain this info for truncation purposes

@@ -223,8 +223,6 @@ class RdbList {
 		       int32_t      minRecSizes   ,
 		       bool      removeNegRecs ,
 		       char      rdbId         ,
-		       int32_t     *tfns          , // used for titledb
-		       RdbList  *tfndbList     , // used for titledb
 		       int32_t      niceness      );
 
 	bool posdbMerge_r ( RdbList **lists         ,  
