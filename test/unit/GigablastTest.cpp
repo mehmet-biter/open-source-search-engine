@@ -5,7 +5,6 @@
 #include "hash.h"
 #include "Conf.h"
 
-int g_inMemcpy=0;
 bool g_recoveryMode = false;
 int32_t g_recoveryLevel = 0;
 
