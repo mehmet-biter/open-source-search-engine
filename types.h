@@ -476,104 +476,6 @@ class key144_t {
 
 
 // handy quicky functions
-inline char KEYCMP ( const char *k1, int32_t a, const char *k2, int32_t b , char keySize ) {
-	// posdb
-	if ( keySize == 18 ) {
-		if ( (*(const uint64_t *)(k1+a*keySize+2+8)) <
-		     (*(const uint64_t *)(k2+b*keySize+2+8)) ) return -1;
-		if ( (*(const uint64_t *)(k1+a*keySize+2+8)) >
-		     (*(const uint64_t *)(k2+b*keySize+2+8)) ) return  1;
-		if ( (*(const uint64_t *)(k1+a*keySize+2)) < 
-		     (*(const uint64_t *)(k2+b*keySize+2)) ) return -1;
-		if ( (*(const uint64_t *)(k1+a*keySize+2)) > 
-		     (*(const uint64_t *)(k2+b*keySize+2)) ) return  1;
-		if ( (*(const uint16_t *)(k1+a*keySize+0)) <
-		     (*(const uint16_t *)(k2+b*keySize+0)) ) return -1;
-		if ( (*(const uint16_t *)(k1+a*keySize+0)) >
-		     (*(const uint16_t *)(k2+b*keySize+0)) ) return  1;
-		return 0;
-	}
-	if ( keySize == 12 ) { 
-		if ( (*(const uint64_t *)(k1+a*keySize+4)) < 
-		     (*(const uint64_t *)(k2+b*keySize+4)) ) return -1;
-		if ( (*(const uint64_t *)(k1+a*keySize+4)) > 
-		     (*(const uint64_t *)(k2+b*keySize+4)) ) return  1;
-		if ( (*(const uint32_t *)(k1+a*keySize+0)) < 
-		     (*(const uint32_t *)(k2+b*keySize+0)) ) return -1;
-		if ( (*(const uint32_t *)(k1+a*keySize+0)) > 
-		     (*(const uint32_t *)(k2+b*keySize+0)) ) return  1;
-		return 0;
-	}
-	// must be size of 16 then
-	if ( keySize == 16 ) {
-		if ( (*(const uint64_t *)(k1+a*keySize+8)) < 
-		     (*(const uint64_t *)(k2+b*keySize+8)) ) return -1;
-		if ( (*(const uint64_t *)(k1+a*keySize+8)) > 
-		     (*(const uint64_t *)(k2+b*keySize+8)) ) return  1;
-		if ( (*(const uint64_t *)(k1+a*keySize+0)) <
-		     (*(const uint64_t *)(k2+b*keySize+0)) ) return -1;
-		if ( (*(const uint64_t *)(k1+a*keySize+0)) >
-		     (*(const uint64_t *)(k2+b*keySize+0)) ) return  1;
-		return 0;
-	}
-	// allow half key comparison too
-	if ( keySize == 6 ) {
-		if ( (*(const uint32_t *)(k1+a*keySize+2)) <
-		     (*(const uint32_t *)(k2+b*keySize+2)) ) return -1;
-		if ( (*(const uint32_t *)(k1+a*keySize+2)) >
-		     (*(const uint32_t *)(k2+b*keySize+2)) ) return  1;
-		if ( (*(const uint16_t *)(k1+a*keySize+0)) <
-		     (*(const uint16_t *)(k2+b*keySize+0)) ) return -1;
-		if ( (*(const uint16_t *)(k1+a*keySize+0)) >
-		     (*(const uint16_t *)(k2+b*keySize+0)) ) return  1;
-		return 0;
-	}
-	// 128+64= 196bit keys for m_orderKey in Spider.cpp in RdbTree.cpp
-	if ( keySize == 24 ) {
-		if ( (*(const uint64_t *)(k1+a*keySize+16)) <
-		     (*(const uint64_t *)(k2+b*keySize+16)) ) return -1;
-		if ( (*(const uint64_t *)(k1+a*keySize+16)) >
-		     (*(const uint64_t *)(k2+b*keySize+16)) ) return  1;
-		if ( (*(const uint64_t *)(k1+a*keySize+8)) < 
-		     (*(const uint64_t *)(k2+b*keySize+8)) ) return -1;
-		if ( (*(const uint64_t *)(k1+a*keySize+8)) > 
-		     (*(const uint64_t *)(k2+b*keySize+8)) ) return  1;
-		if ( (*(const uint64_t *)(k1+a*keySize+0)) <
-		     (*(const uint64_t *)(k2+b*keySize+0)) ) return -1;
-		if ( (*(const uint64_t *)(k1+a*keySize+0)) >
-		     (*(const uint64_t *)(k2+b*keySize+0)) ) return  1;
-		return 0;
-	}
-	if ( keySize == 28 ) {
-		if ( (*(const uint64_t *)(k1+a*keySize+20)) <
-		     (*(const uint64_t *)(k2+b*keySize+20)) ) return -1;
-		if ( (*(const uint64_t *)(k1+a*keySize+20)) >
-		     (*(const uint64_t *)(k2+b*keySize+20)) ) return  1;
-		if ( (*(const uint64_t *)(k1+a*keySize+12)) < 
-		     (*(const uint64_t *)(k2+b*keySize+12)) ) return -1;
-		if ( (*(const uint64_t *)(k1+a*keySize+12)) > 
-		     (*(const uint64_t *)(k2+b*keySize+12)) ) return  1;
-		if ( (*(const uint64_t *)(k1+a*keySize+4)) <
-		     (*(const uint64_t *)(k2+b*keySize+4)) ) return -1;
-		if ( (*(const uint64_t *)(k1+a*keySize+4)) >
-		     (*(const uint64_t *)(k2+b*keySize+4)) ) return  1;
-		if ( (*(const uint32_t *)(k1+a*keySize)) <
-		     (*(const uint32_t *)(k2+b*keySize)) ) return -1;
-		if ( (*(const uint32_t *)(k1+a*keySize)) >
-		     (*(const uint32_t *)(k2+b*keySize)) ) return  1;
-		return 0;
-	}
-	if ( keySize == 8 ) {
-		if ( (*(const uint64_t *)(k1+a*keySize+0)) <
-		     (*(const uint64_t *)(k2+b*keySize+0)) ) return -1;
-		if ( (*(const uint64_t *)(k1+a*keySize+0)) >
-		     (*(const uint64_t *)(k2+b*keySize+0)) ) return  1;
-		return 0;
-	}
-	char *xx=NULL;*xx=0;
-	return 0;
-}
-
 inline char KEYCMP ( const char *k1, const char *k2, char keySize ) {
 	// posdb
 	if ( keySize == 18 ) {
@@ -670,6 +572,11 @@ inline char KEYCMP ( const char *k1, const char *k2, char keySize ) {
 	}
 	char *xx=NULL;*xx=0;
 	return 0;
+}
+
+
+inline char KEYCMP( const char *k1, int32_t a, const char *k2, int32_t b, char keySize ) {
+	return KEYCMP(k1+a*keySize, k2+b*keySize, keySize);
 }
 
 
