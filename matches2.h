@@ -8,7 +8,7 @@
 // should be *very* fast.
 class Needle {
 public:
-	char *m_string;
+	const char *m_string;
 	char  m_stringSize;
 	char  m_id;
 	// if m_isSection is true, getMatch() only matches if haystack 

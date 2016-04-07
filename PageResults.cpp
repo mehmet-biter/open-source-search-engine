@@ -2215,7 +2215,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	Highlight hi;
 
 	// get the url
-	char *url    = mr->ptr_ubuf      ;
+	const char *url    = mr->ptr_ubuf      ;
 	int32_t  urlLen = mr->size_ubuf - 1 ;
 	int32_t  err    = mr->m_errno       ;
 

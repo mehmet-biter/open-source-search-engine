@@ -95,32 +95,44 @@ public:
 	int32_t getSubUrlLen        (int32_t i);
 	int32_t getSubPathLen       (int32_t i);
 
-	int32_t getPort             () { return m_port;};
-	int32_t getIp               () { return m_ip; };
+	int32_t getPort() { return m_port; }
+	int32_t getPortLen() { return m_portLen; }
 
-	char *getUrl         () { return m_url;};
-	char *getScheme      () { return m_scheme;};
-	char *getHost        () { return m_host;};
-	char *getDomain      () { return m_domain;};
-	char *getTLD         () { return m_tld; };
-	char *getMidDomain   () { return m_domain; }; // w/o the tld
-	char *getPath        () { return m_path;};
-	char *getFilename    () { return m_filename;};
-	char *getExtension   () { return m_extension;};
-	char *getQuery       () { return m_query;};
+	int32_t getDefaultPort() { return m_defPort; }
 
-	int32_t  getUrlLen         () { return m_ulen;};
-	int32_t  getSchemeLen      () { return m_slen;};
-	int32_t  getHostLen        () { return m_hlen;};
-	int32_t  getDomainLen      () { return m_dlen;};
-	int32_t  getPathLen        () { return m_plen;};
-	char *getPathEnd        () { return m_path + m_plen; };
-	int32_t  getFilenameLen    () { return m_flen;};
-	int32_t  getExtensionLen   () { return m_elen;};
-	int32_t  getQueryLen       () { return m_qlen;};
-	int32_t  getTLDLen         () { return m_tldLen; };
-	int32_t  getMidDomainLen   () { return m_mdlen;};
-	int32_t  getPortLen        () { return m_portLen;};
+	int32_t getIp() { return m_ip; }
+
+	char *getUrl() { return m_url; }
+	int32_t getUrlLen() { return m_ulen; }
+
+	const char *getScheme() { return m_scheme; }
+	int32_t getSchemeLen() { return m_slen; }
+
+	char *getHost() { return m_host; }
+	int32_t getHostLen() { return m_hlen; }
+
+	char *getDomain() { return m_domain; }
+	int32_t getDomainLen() { return m_dlen; }
+
+	char *getTLD() { return m_tld; }
+	int32_t getTLDLen() { return m_tldLen; }
+
+	// w/o the tld
+	const char *getMidDomain() { return m_domain; }
+	int32_t getMidDomainLen() { return m_mdlen; }
+
+	char *getPath() { return m_path; }
+	int32_t getPathLen() { return m_plen; }
+	char *getPathEnd() { return m_path + m_plen; }
+
+	char *getFilename() { return m_filename; }
+	int32_t getFilenameLen() { return m_flen; }
+
+	const char *getExtension() { return m_extension; }
+	int32_t getExtensionLen() { return m_elen; }
+
+	char *getQuery() { return m_query; }
+	int32_t getQueryLen() { return m_qlen; }
 
 	int32_t  getPathLenWithCgi () {
 		if ( ! m_query )
@@ -206,53 +218,54 @@ private:
 	void set( const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripPound, bool stripCommonFile,
 	          bool stripTrackingParams );
 
-	char    m_url[MAX_URL_LEN]; // the normalized url
-	int32_t    m_ulen;
+	// the normalized url
+	char m_url[MAX_URL_LEN];
+	int32_t m_ulen;
 
 	// points into "url" (http, ftp, mailto, ...)(all lowercase)
-	char   *m_scheme;           
-	int32_t    m_slen;
+	char *m_scheme;
+	int32_t m_slen;
 
 	// points into "url" (a.com, www.yahoo.com, 192.0.2.1, ...)(allLowercase)
-	char   *m_host;             
-	int32_t    m_hlen;
+	char *m_host;
+	int32_t m_hlen;
 
 	// it's 0 if we don't have one
-	int32_t    m_ip;  
+	int32_t m_ip;
 
 	// points into "url" (/  /~mwells/  /a/b/ ...) (always ends in /)
-	char   *m_path;             
-	int32_t    m_plen;
+	char *m_path;
+	int32_t m_plen;
 
 	// points into "url" (a=hi+there, ...)
-	char   *m_query;            
-	int32_t    m_qlen;
+	char *m_query;
+	int32_t m_qlen;
 
 	// points into "url" (html, mpg, wav, doc, ...)
-	char   *m_extension;        
-	int32_t    m_elen;
+	char *m_extension;
+	int32_t m_elen;
 
 	// (a.html NULL index.html) (can be NULL)
-	char   *m_filename;         
-	int32_t    m_flen;
+	char *m_filename;
+	int32_t m_flen;
 
-	char   *m_domain;
-	int32_t    m_dlen;
+	char *m_domain;
+	int32_t m_dlen;
 
-	char   *m_tld;
-	int32_t    m_tldLen;
+	char *m_tld;
+	int32_t m_tldLen;
 
 	// char *m_midDomain equals m_domain
-	int32_t    m_mdlen;
+	int32_t m_mdlen;
 
 	// (80, 8080, 8000, ...)
-	int32_t    m_port;             
-	int32_t    m_defPort;
-	int32_t    m_portLen;
+	int32_t m_port;
+	int32_t m_defPort;
+	int32_t m_portLen;
 
 	// anchor
-	char   *m_anchor;
-	int32_t    m_anchorLen;
+	char *m_anchor;
+	int32_t m_anchorLen;
 };
 
 #endif // GB_URL_H

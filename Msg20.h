@@ -209,7 +209,7 @@ public:
 	char       *ptr_templateVector       ;
 	char       *ptr_metadataBuf;
 
-	char       *ptr_note                 ; // reason why it cannot vote
+	const char       *ptr_note           ; // reason why it cannot vote
 
 	int32_t       size_tbuf                 ;
 	int32_t       size_htag                 ;

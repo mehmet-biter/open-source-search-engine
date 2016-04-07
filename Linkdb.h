@@ -1014,9 +1014,9 @@ public:
 	// . link spam functions. used by linkspam.cpp's setLinkSpam().
 	// . also used by Linkdb.cpp to create a linkdb list to add to rdb
 	// . we do not add outlinks to linkdb if they are "link spam"
-	bool setAllSpamBits ( char *note ) { m_spamNote = note; return true; }
-	void setSpamBit  ( char *note , int32_t i ) { m_spamNotes[i] = note; }
-	void setSpamBits ( char *note , int32_t i ) { 
+	bool setAllSpamBits ( const char *note ) { m_spamNote = note; return true; }
+	void setSpamBit  ( const char *note , int32_t i ) { m_spamNotes[i] = note; }
+	void setSpamBits ( const char *note , int32_t i ) {
 		for (int32_t j=i ; j<m_numLinks ; j++) m_spamNotes[j] = note;}
 	// . m_spamNote is set if it is ALL link spam... set above
 	// . internal outlinks are never considered link spam since we "dedup"
@@ -1136,7 +1136,7 @@ public:
 	// otherwise, individual outlinks will have their m_spamNotes[i] be
 	// non-NULL, and point to the string that describes why they are 
 	// link spam.
-	char  *m_spamNote;
+	const char  *m_spamNote;
 
 	char          **m_linkPtrs;//   [MAX_LINKS];
 	int32_t           *m_linkLens;//   [MAX_LINKS];
@@ -1145,7 +1145,7 @@ public:
 	uint64_t       *m_hostHashes;// [MAX_LINKS];
 	int32_t           *m_domHashes;// [MAX_LINKS];
 	linkflags_t    *m_linkFlags;
-	char          **m_spamNotes;
+	const char          **m_spamNotes;
 
 	bool m_doQuickSet;
 

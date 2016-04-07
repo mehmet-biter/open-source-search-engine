@@ -568,7 +568,7 @@ public:
 	char* matchErrorMsg(char* p, char* pend );
 
 	bool hashWords( class HashInfo *hi );
-	bool hashSingleTerm( char *s, int32_t slen, class HashInfo *hi );
+	bool hashSingleTerm( const char *s, int32_t slen, class HashInfo *hi );
 	bool hashString( char *s, int32_t slen, class HashInfo *hi );
 
 	bool hashWords3( class HashInfo *hi, class Words *words, class Phrases *phrases,
@@ -1028,7 +1028,7 @@ public:
 	char m_surroundingTextBuf[MAX_SURROUNDING_TEXT_WIDTH];
 	char m_rssItemBuf[MAX_RSSITEM_SIZE];
 
-	char *m_note;
+	const char *m_note;
 	Query m_query;
 	Matches m_matches;
 	// meta description buf

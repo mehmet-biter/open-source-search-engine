@@ -965,10 +965,9 @@ bool Msg25::getLinkInfo2( char      *site                ,
 
 	// and the "mid domain hash" so that ibm.com and ibm.ru cannot both
 	// vote even if from totally different ips
-	Url u; u.set(url);
-	char *m      = u.getMidDomain();
-	int32_t  mlen   = u.getMidDomainLen();
-	m_midDomHash = hash32 ( m , mlen );
+	Url u;
+	u.set(url);
+	m_midDomHash = hash32 ( u.getMidDomain() , u.getMidDomainLen() );
 
 	// do not prepend "www." to the root url
 	m_prependWWW = false;
@@ -1605,12 +1604,12 @@ bool gotLinkTextWrapper ( void *state ) { // , LinkTextReply *linkText ) {
 	return true;
 }
 
-char *getExplanation ( char *note ) {
+const char *getExplanation ( const char *note ) {
 
 	if ( ! note ) return NULL;
 	if ( strcmp(note,"good")==0) return NULL;
 
-	static char *s_notes[] = {
+	static const char *s_notes[] = {
 
 		"same mid domain",
 		"inlinker's domain, excluding TLD, is same as page it "
@@ -2293,7 +2292,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		if ( m_table.isEmpty(i) ) continue;
 		// who is in this slot
 		NoteEntry *e = *(NoteEntry **)m_table.getValueFromSlot(i);
-		char *exp = getExplanation ( e->m_note );
+		const char *exp = getExplanation ( e->m_note );
 		// show it
 		if ( m_printInXml ) {
 			m_pbuf->safePrintf ( "\t<inlinkStat>\n");
@@ -2486,7 +2485,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 	}
 
 
-	char *tt = "";
+	const char *tt = "";
 	if ( m_mode == MODE_SITELINKINFO ) tt = "site ";
 
 	if ( ! m_printInXml ) {
@@ -2536,7 +2535,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		// the "external" string
 		//char *ext = "Y"; if ( internal ) ext = "N";
 		// are we an "anomaly"?
-		char *note = r->ptr_note;
+		const char *note = r->ptr_note;
 		if ( r->m_isLinkSpam && !note )
 			note = "unknown";
 		// get our ip as a string
@@ -2573,12 +2572,12 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		else 
 			sprintf(discBuf,"---");
 
-		char *title = r->ptr_tbuf;
+		const char *title = r->ptr_tbuf;
 		if ( ! title ) title = "";
 		
 		// show the linking docid, the its weight
 		if ( m_printInXml ) {
-			char *ns = note;
+			const char *ns = note;
 			if ( ! note ) ns = "good";
 			//if ( internal ) note = "internal";
 			m_pbuf->safePrintf("\t<inlink>\n"
@@ -2605,7 +2604,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 					   );
 
 			// get explanation of note
-			char *exp = getExplanation ( ns );
+			const char *exp = getExplanation ( ns );
 			if ( exp )
 				m_pbuf->safePrintf("\t\t<explanation>"
 						   "<![CDATA[%s]]>"
@@ -3954,8 +3953,6 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 	// do we need to alloc more link space?
 	if (m_numLinks >= m_allocLinks) {
 		int32_t newAllocLinks;
-		// older titlerecs can't hold more than 10000 links
-		//if(titleRecVersion<72 && m_allocLinks >= 10000) return true;
 
 		if (!m_allocLinks)            newAllocLinks =10000;
 		else if (m_allocLinks<100000) newAllocLinks =m_allocLinks*2;
@@ -3998,7 +3995,7 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 		linkflags_t *newLinkFlags = (linkflags_t *)p;
 		p += newAllocLinks * sizeof(linkflags_t) ;
 
-		char **newSpamNotes = (char **)p;
+		const char **newSpamNotes = (const char **)p;
 		p += newAllocLinks * sizeof(char **);
 
 		// sanity check -- check for breach
@@ -4212,7 +4209,7 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 			flags |= LF_SAMEHOST;
 	}		
 
-	char *tld  = url.getTLD();
+	const char *tld  = url.getTLD();
 	int32_t  tlen = url.getTLDLen();
 	if ( tlen == 3 && ! strncmp(tld,"edu",3) ) flags |= LF_EDUTLD;
 	if ( tlen == 3 && ! strncmp(tld,"gov",3) ) flags |= LF_GOVTLD;

@@ -56,7 +56,7 @@ public:
 
 
 
-static bool storeTerm ( char	*s        ,
+static bool storeTerm ( const char	*s        ,
 		 int32_t        slen     ,
 		 int64_t		termId   ,
 		 HashInfo		*hi       ,
@@ -973,8 +973,7 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 		if ( ru ) {
 			mdlen = ru->getMidDomainLen();
 			if ( mdlen == link.getMidDomainLen() &&
-			     strncmp(ru->getMidDomain(),
-				     link.getMidDomain(),mdlen)==0)
+			     strncmp(ru->getMidDomain(), link.getMidDomain(),mdlen)==0)
 				//continue; // sameMidDomain = true;
 				internal = true;
 		}
@@ -1417,7 +1416,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 
 	// BR 20160121: Make searching for e.g. site:dk work
 	setStatus ( "hashing tld for site search");
-	char *tld = fu->getTLD();
+	const char *tld = fu->getTLD();
 	int32_t tldLen = fu->getTLDLen();
 	
 	char *p = buf;
@@ -1433,7 +1432,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	//
 	// i.e. ext:gif ext:html ext:htm ext:pdf, etc.
 	setStatus ( "hashing ext colon");
-	char *ext  = fu->getExtension();
+	const char *ext  = fu->getExtension();
 	int32_t  elen = fu->getExtensionLen();
 	// update hash parms
 	hi.m_prefix    = "ext";
@@ -2051,7 +2050,7 @@ bool XmlDoc::hashIsAdult ( HashTableX *tt ) {
 	return true;
 }
 
-bool XmlDoc::hashSingleTerm( char *s, int32_t slen, HashInfo *hi ) {
+bool XmlDoc::hashSingleTerm( const char *s, int32_t slen, HashInfo *hi ) {
 	// empty?
 	if ( slen <= 0 ) return true;
 	if ( ! m_versionValid    ) { char *xx=NULL;*xx=0; }

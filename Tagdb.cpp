@@ -1325,7 +1325,7 @@ bool Msg8a::getTagRec( Url *url, collnum_t collnum, int32_t niceness, void *stat
 	int32_t  ulen = url->getUrlLen();
 
 	// point to the TLD of the url
-	char *tld  = url->getTLD();
+	const char *tld  = url->getTLD();
 
 	// . if NULL, that is bad... TLD is unsupported
 	// . no! it could be an ip address!

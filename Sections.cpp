@@ -105,7 +105,7 @@ bool Sections::set( Words *w, Bits *bits, Url *url, char *coll, int32_t niceness
 	m_tids  = tids;
 
 	m_isRSSExt = false;
-	char *ext = m_url->getExtension();
+	const char *ext = m_url->getExtension();
 	if ( ext && strcasecmp(ext,"rss") == 0 ) m_isRSSExt = true;
 	if ( m_contentType == CT_XML ) m_isRSSExt = true;
 

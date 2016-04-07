@@ -4008,7 +4008,7 @@ char *XmlDoc::getIsUrlPermalinkFormat ( ) {
 	// just guess if we are rss here since we most likely do not have
 	// access to the url's content...
 	bool isRSS = false;
-	char *ext = url->getExtension();
+	const char *ext = url->getExtension();
 	if ( ext && strcasecmp(ext,"rss") == 0 ) isRSS = true;
 	// GUESS if it is a permalink by the format of the url
 	int32_t p = ::isPermalink ( NULL    , // Links ptr
@@ -6404,18 +6404,13 @@ Url **XmlDoc::getRedirUrl() {
 	// . protocol of url must be http or https
 	// . we had one url redirect to an ihttp:// protocol and caused
 	//   spider to core dump when it saw that SpiderRequest record
-	char *proto = loc->getScheme();
+	const char *proto = loc->getScheme();
 	if ( strncmp(proto,"http://" ,7) && strncmp(proto,"https://",8) ) {
 		m_redirError = EDOCBADREDIRECTURL;
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, EBADREDIRECTURL (wrong scheme)", __FILE__,__func__,__LINE__);
 		return &m_redirUrlPtr;
 	}
-	// do not allow redirects to evil-G or bing
-	//if ( strstr(loc->getUrl(),".google.com/")  ||
-	//     strstr(loc->getUrl(),".bing.com/")  ) {
-	//	m_redirError = EDOCEVILREDIRECT;
-	//	return &m_redirUrlPtr;
-	//}
+
 	// log a msg
 	if ( g_conf.m_logSpideredUrls )
 		logf(LOG_INFO,"build: %s redirected to %s",
@@ -8342,12 +8337,10 @@ bool *XmlDoc::getIsAllowed ( ) {
 	if ( ! cu->getHost() ) { char *xx=NULL;*xx=0; }
 	gbmemcpy ( p , cu->getHost() , cu->getHostLen() );
 	p += cu->getHostLen();
-	int32_t port = cu->getPort();
-	// 80 is the default port
-	int32_t defPort = cu->isHttps() ? 443 : 80;
 
-	if ( port != defPort ) {
-		p += sprintf( p, ":%"INT32"", port );
+	// add port if not default
+	if ( cu->getPort() != cu->getDefaultPort() ) {
+		p += sprintf( p, ":%"INT32"", cu->getPort() );
 	}
 
 	p += sprintf ( p , "/robots.txt" );
@@ -17000,7 +16993,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		//bool isrss = false;
 		//if (slen>6 && !strncasecmp(s+slen-4,".rss",4)) isrss = true;
 		bool isRSSExt = false;
-		char *ext = url.getExtension();
+		const char *ext = url.getExtension();
 		if ( ext && strcasecmp(ext,"rss" ) == 0 ) isRSSExt = true;
 		if ( ext && strcasecmp(ext,"xml" ) == 0 ) isRSSExt = true;
 		if ( ext && strcasecmp(ext,"atom") == 0 ) isRSSExt = true;
@@ -18858,9 +18851,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	// . the reply is zeroed out in call the reply->reset() above so
 	//   if this is not yet set it will be 0
 	if ( reply->m_midDomHash == 0 ) {
-		char *m      = linker->getMidDomain();
-		int32_t  mlen   = linker->getMidDomainLen();
-		reply->m_midDomHash = hash32 ( m , mlen );
+		reply->m_midDomHash = hash32 ( linker->getMidDomain(), linker->getMidDomainLen() );
 	}
 
 	// breathe
@@ -19006,7 +18997,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 
 	if ( m_req->m_doLinkSpamCheck ) {
 		// reset to NULL to avoid gbstrlen segfault
-		char *note = NULL;
+		const char *note = NULL;
 		// need this
 		if ( ! m_xmlValid ) { char *xx=NULL;*xx=0; }
 

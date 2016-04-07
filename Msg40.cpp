@@ -1539,7 +1539,7 @@ bool Msg40::gotSummary ( ) {
 			Msg20Reply *mr = m_msg20[i]->m_r;
 
 			// hash the URL all in lower case to catch wiki dups
-			char *url  = mr-> ptr_ubuf;
+			const char *url  = mr-> ptr_ubuf;
 			int32_t  ulen = mr->size_ubuf - 1;
 			
 			// since the redirect url is a more accurate 
@@ -1564,7 +1564,7 @@ bool Msg40::gotSummary ( ) {
 				//   sites having www,us,en,fr,de,uk,etc AND
 				//   it redirects to the same page.
 				char *host = u.getHost();
-				char *mdom = u.getMidDomain();
+				const char *mdom = u.getMidDomain();
 				if(mdom && host) {
 					int32_t  hlen = mdom - host;
 					if (isSubDom(host, hlen-1))

@@ -21,7 +21,7 @@ bool isLinkSpam  ( class Url       *linker         ,
 		   class Xml       *xml            ,
 		   class Links     *links          ,
 		   int32_t             maxDocLen      , 
-		   char           **note           , 
+		   const char           **note           ,
 		   Url             *linkee         ,
 		   int32_t             linkNode       , 
 		   int32_t             niceness       );

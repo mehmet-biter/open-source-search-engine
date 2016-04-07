@@ -11,7 +11,7 @@
 #include "matches2.h"
 
 bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
-		   char **note ) ;
+		   const char **note ) ;
 
 // . here's some additional things to mark it as a log page, but these
 //   depend on the content of the page, not the url itself.
@@ -279,7 +279,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 	// get linker quality
 	//int32_t q = tr->getDocQuality();
 	// do not allow .info or .biz to vote ever for now
-	char *tld    = linker->getTLD();
+	const char *tld    = linker->getTLD();
 	int32_t  tldLen = linker->getTLDLen();
 	if ( tldLen == 4 && strncmp ( tld, "info" , tldLen) == 0 && //q < 55 )
 	     siteNumInlinks < 20 )
@@ -317,7 +317,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		//char  c    = p[plen-1];
 		//p[plen-1] = '\0';
 		//bool val = false;
-		char *note = NULL;
+		const char *note = NULL;
 		if ( strncasestr ( p , "guest",plen,5) ) 
 			note = "path has guest"          ;
 		else if ( strncasestr ( p , "cgi",plen,3) ) 
@@ -429,7 +429,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 
 	// see if we got a hit
 	char *minPtr = NULL;
-	char *note   = NULL;
+	const char *note   = NULL;
 	for ( int32_t i = 0 ; i < numNeedles1 ; i++ ) {
 		// open.thumbshots.org needs multiple counts
 		if ( i == 0 && s_needles1[i].m_count < 5 ) continue;
@@ -609,9 +609,7 @@ bool setLinkSpam ( int32_t       ip                 ,
 		// check if this url is a link chain
 		//if ( q >= 60 ) continue;
 		if ( siteNumInlinks >= 50 ) continue;
-		char *np = NULL;
-		//if ( strncmp("http://www.reliant.com",uu.getUrl(),18)==0 )
-		//     log("hey");
+		const char *np = NULL;
 		// get the xml node of link #i
 		int32_t xmlNode = links->getNodeNum ( i );
 		if ( isLinkChain ( xml , linker, &uu, xmlNode, &np ))
@@ -631,7 +629,7 @@ bool isLinkSpam ( Url *linker,
 		  Xml *xml, 
 		  Links *links ,
 		  int32_t maxDocLen , 
-		  char **note , 
+		  const char **note ,
 		  Url *linkee , 
 		  // node position of the linkee in the linker's content
 		  int32_t  linkNode ,
@@ -653,7 +651,7 @@ bool isLinkSpam ( Url *linker,
 			return false;
 	}
 	// do not allow .info or .biz to vote ever for now
-	char *tld    = linker->getTLD();
+	const char *tld    = linker->getTLD();
 	int32_t  tldLen = linker->getTLDLen();
 	if ( tldLen == 4 && strncmp ( tld, "info" , tldLen) == 0 ) {
 		*note = ".info tld";
@@ -986,8 +984,7 @@ bool isLinkSpam ( Url *linker,
 //    outlinks in the chain
 // 4. this might hurt blogrolls, and resource pages, but such links
 //    are kind of low quality anyway.
-bool isLinkChain ( Xml *xml , Url *linker , Url *linkee , int32_t linkNode ,
-		   char **note ) {
+bool isLinkChain ( Xml *xml, Url *linker, Url *linkee, int32_t linkNode, const char **note ) {
 
 	//log(LOG_DEBUG,"build: doing %s",linker->m_url);
 
