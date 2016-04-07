@@ -218,8 +218,6 @@ class RdbList {
 	// . exclude any records from lists not in that range
 	void merge_r ( RdbList **lists         , 
 		       int32_t      numLists      , 
-		       //key_t     startKey      , 
-		       //key_t     endKey        , 
 		       const  char    *startKey      ,
 		       const char     *endKey        ,
 		       int32_t      minRecSizes   ,

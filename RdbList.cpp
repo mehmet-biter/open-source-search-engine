@@ -1517,8 +1517,6 @@ bool RdbList::constrain ( const char   *startKey    ,
 //   so we don't have to do boundary checks on the keys here
 void RdbList::merge_r ( RdbList **lists         ,
 			int32_t      numLists      ,
-			//key_t     startKey      ,
-			//key_t     endKey        ,
 			const char     *startKey      ,
 			const char     *endKey        ,
 			int32_t      minRecSizes   ,
@@ -2023,14 +2021,8 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 			     const char     *endKey        ,
 			     int32_t      minRecSizes   ,
 			     bool      removeNegKeys ,
-			     //char     *prevKey       ,
-			     //int32_t     *prevCountPtr  ,
-			     //int32_t      truncLimit    ,
-			     //int32_t     *dupsRemoved   ,
-			     //char      rdbId         ,
 			     bool      doGroupMask   ,
 			     bool      isRealMerge   ,
-			     //bool      useBigRootList ,
 			     int32_t      niceness       ) {
 	// sanity
 	if ( m_ks != sizeof(key144_t) ) { char *xx=NULL;*xx=0; }
