@@ -1524,7 +1524,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 			int32_t      minRecSizes   ,
 			bool      removeNegRecs ,
 			char      rdbId         ,
-			int32_t     *filtered      ,
 			int32_t     *tfns          ,  // used for titledb
 			RdbList  *tfndbList     ,  // used for titledb
 			bool      isRealMerge   ,
@@ -1540,8 +1539,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 	// this is used for merging titledb lists
 	//if ( tfndbList ) tfndbList->resetListPtr();
 	if ( tfndbList ) { char *xx=NULL;*xx=0; }
-	// count how many removed due to scaling number of servers
-	if ( filtered ) *filtered = 0;
 	// bail if none! i saw a doledb merge do this from Msg5.cpp
 	// and it was causing a core because m_MergeMinListSize was -1
 	if ( numLists == 0 ) return;
@@ -1609,7 +1606,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 			       endKey ,
 			       m_mergeMinListSize,
 			       removeNegRecs ,
-			       filtered ,
 			       isRealMerge, // doGroupMask ,
 			       isRealMerge ,
 			       niceness );
@@ -2032,7 +2028,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 			     //int32_t      truncLimit    ,
 			     //int32_t     *dupsRemoved   ,
 			     //char      rdbId         ,
-			     int32_t     *filtered      ,
 			     bool      doGroupMask   ,
 			     bool      isRealMerge   ,
 			     //bool      useBigRootList ,
@@ -2041,8 +2036,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	if ( m_ks != sizeof(key144_t) ) { char *xx=NULL;*xx=0; }
 	// how big is our half key? (half key size)
 	//uint8_t hks = m_ks - 6;
-	// count how many removed due to scaling number of servers
-	if ( filtered ) *filtered = 0;
 	if ( numLists == 0 ) return true;
 
 #ifdef _MERGEDEBUG_

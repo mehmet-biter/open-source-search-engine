@@ -225,7 +225,6 @@ class RdbList {
 		       int32_t      minRecSizes   ,
 		       bool      removeNegRecs ,
 		       char      rdbId         ,
-		       int32_t     *filtered      ,
 		       int32_t     *tfns          , // used for titledb
 		       RdbList  *tfndbList     , // used for titledb
 		       bool      isRealMerge   ,
@@ -237,7 +236,6 @@ class RdbList {
 			    const char     *endKey        ,
 			    int32_t      minRecSizes   ,
 			    bool      removeNegKeys ,
-			    int32_t     *filtered      ,
 			    bool      doGroupMask   ,
 			    bool      isRealMerge   ,
 			    int32_t      niceness       ) ;
