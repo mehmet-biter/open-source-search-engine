@@ -43,8 +43,6 @@
 #include <valgrind/memcheck.h>
 #endif
 
-extern int g_inMemcpy;
-
 
 #define SENT_UNITS 30
 
@@ -19755,15 +19753,8 @@ int gbuncompress ( unsigned char *dest      ,
 	stream.zalloc = malloc_replace;//zliballoc;
 	stream.zfree  = free_replace;//zlibfree;
 
-	// this calls memcpy so make sure Profiler.cpp doesn't crash
-	// since when it calls backtrace() that calls memcpy() too
-	// and it's not async safe
-	g_inMemcpy = 2;
-
 	//we can be gzip or deflate
 	err = inflateInit2(&stream, 47);
-
-	g_inMemcpy = 0;
 
 	if (err != Z_OK) return err;
 
@@ -19842,14 +19833,7 @@ int gbcompress ( unsigned char *dest      ,
 	//setQuickPoll ( (char *)&g_loop.m_needsToQuickPoll, deflateQuickPoll);
 #endif
 
-	// this calls memcpy so make sure Profiler.cpp doesn't crash
-	// since when it calls backtrace() that calls memcpy() too
-	// and it's not async safe
-	g_inMemcpy = 3;
-
 	err = deflate(&stream, Z_FINISH);
-
-	g_inMemcpy = 0;
 
 	if (err != Z_STREAM_END) {
 		deflateEnd(&stream);

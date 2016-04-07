@@ -28,7 +28,6 @@ static int g_canonicalDecompCount = 0;
 static int g_excludeCount = 0;
 
 
-int g_inMemcpy=0;
 bool g_recoveryMode = false;
 int32_t g_recoveryLevel = 0;
 

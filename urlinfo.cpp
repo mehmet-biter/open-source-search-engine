@@ -17,7 +17,6 @@ bool mainShutdown ( bool urgent ) { return true; }
 bool closeAll ( void *state , void (* callback)(void *state) ) {return true;}
 bool allExit ( ) { return true; }
 
-int g_inMemcpy=0;
 bool g_recoveryMode = false;
 int32_t g_recoveryLevel = 0;
 

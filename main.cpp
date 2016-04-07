@@ -87,8 +87,6 @@ void allExitWrapper ( int fd , void *state ) ;
 
 void rmTest();
 
-int g_inMemcpy=0;
-
 static void dumpTitledb  (char *coll, int32_t sfn, int32_t numFiles, bool includeTree,
 			   int64_t docId , bool justPrintDups );
 static int32_t dumpSpiderdb ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,

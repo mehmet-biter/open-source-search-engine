@@ -17,7 +17,6 @@ static void gotDocWrapper ( void *state , TcpSocket *s ) ;
 static void sleepWrapper ( int fd , void *state ) ;
 
 bool g_recoveryMode;
-int g_inMemcpy;
 int32_t g_recoveryLevel;
 
 static int32_t  s_maxNumThreads = 1 ;

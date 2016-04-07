@@ -1,8 +1,6 @@
 #ifndef GB_INCLUDE_H
 #define GB_INCLUDE_H
 
-extern int g_inMemcpy;
-
 //The two gbmem* functions below are legacy. Don't use them in new code
 #define gbmemcpy(xx,yy,zz) memmove(xx,yy,zz)
 #define memcpy_ass(xx,yy,zz) memmove(xx,yy,zz)
