@@ -1330,7 +1330,6 @@ void Msg5::mergeLists_r ( ) {
 			  m_rdbId ,
 			  NULL,//m_tfns          , // used for titledb
 			  NULL,//&m_tfndbList    , // used for titledb
-			  m_isRealMerge   ,
 			  niceness      );
 	
 	// maintain this info for truncation purposes

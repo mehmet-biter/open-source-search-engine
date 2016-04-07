@@ -1524,7 +1524,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 			char      rdbId         ,
 			int32_t     *tfns          ,  // used for titledb
 			RdbList  *tfndbList     ,  // used for titledb
-			bool      isRealMerge   ,
 			int32_t      niceness      ) {
 	// tfndb merging should always use indexMerge_r() now
 	if ( rdbId == RDB_TFNDB || rdbId == RDB2_TFNDB2 ) {
@@ -1604,8 +1603,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 			       endKey ,
 			       m_mergeMinListSize,
 			       removeNegRecs ,
-			       isRealMerge, // doGroupMask ,
-			       isRealMerge ,
 			       niceness );
 		return;
 	}
@@ -1971,8 +1968,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 				   m_mergeMinListSize,
 				   removeNegRecs ,
 				   filtered ,
-				   isRealMerge, // doGroupMask ,
-				   isRealMerge ,
 				   niceness );
 		// compare
 		int32_t min = ttt.m_listSize;
@@ -2021,8 +2016,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 			     const char     *endKey        ,
 			     int32_t      minRecSizes   ,
 			     bool      removeNegKeys ,
-			     bool      doGroupMask   ,
-			     bool      isRealMerge   ,
 			     int32_t      niceness       ) {
 	// sanity
 	if ( m_ks != sizeof(key144_t) ) { char *xx=NULL;*xx=0; }
@@ -2170,12 +2163,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 
 	// keep stats of dups removed
 	//int32_t dupCount = 0;
-
-	char  uflag  = 0;
-	// this was disabled for a while, so uflag was always 0 because
-	// isRealMerge was always false when called from Msg5.cpp, so if we
-	// have troubles look into this.
-	if ( isRealMerge ) uflag = 1;
 
 	char ss;
 	char *pp = NULL;

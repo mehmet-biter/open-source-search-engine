@@ -225,7 +225,6 @@ class RdbList {
 		       char      rdbId         ,
 		       int32_t     *tfns          , // used for titledb
 		       RdbList  *tfndbList     , // used for titledb
-		       bool      isRealMerge   ,
 		       int32_t      niceness      );
 
 	bool posdbMerge_r ( RdbList **lists         ,  
@@ -234,8 +233,6 @@ class RdbList {
 			    const char     *endKey        ,
 			    int32_t      minRecSizes   ,
 			    bool      removeNegKeys ,
-			    bool      doGroupMask   ,
-			    bool      isRealMerge   ,
 			    int32_t      niceness       ) ;
 
 
