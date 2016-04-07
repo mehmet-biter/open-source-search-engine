@@ -1328,7 +1328,7 @@ void Msg5::mergeLists_r ( ) {
 			  m_removeNegRecs ,
 			  //getIdFromRdb ( base->m_rdb ) ,
 			  m_rdbId ,
-			  &m_filtered     ,
+			  NULL,
 			  NULL,//m_tfns          , // used for titledb
 			  NULL,//&m_tfndbList    , // used for titledb
 			  m_isRealMerge   ,
