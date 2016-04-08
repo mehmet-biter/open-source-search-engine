@@ -33,6 +33,7 @@
 #include "PageInject.h"
 #include "Timezone.h"
 #include "CountryCode.h"
+#include <sys/statvfs.h>
 
 bool g_inAutoSave;
 
@@ -437,58 +438,14 @@ void hdtempDoneWrapper ( void *state , ThreadEntry *t ) {
 
 // set Process::m_diskUsage
 static float getDiskUsage ( int64_t *diskAvail ) {
-
-	// first get disk usage now
-	char cmd[10048];
-	char out[1024];
-	sprintf(out,"%sdiskusage",g_hostdb.m_dir);
-	snprintf(cmd,10000,"df -ka %s | tail -1 | "
-		 "awk '{print $4\" \"$5}' > %s",
-		 g_hostdb.m_dir,
-		 out);
-	errno = 0;
-	// time it to see how long it took. could it be causing load spikes?
-	//log("process: begin df -ka");
-	int err = system ( cmd );
-	//log("process: end   df -ka");
-	if ( err == 127 ) {
-		log("build: /bin/sh does not exist. can not get disk usage.");
-		return -1.0; // unknown
+	struct statvfs s;
+	if(statvfs(g_hostdb.m_dir,&s)!=0) {
+		log("build: statvfs(%s) failed: %s.", g_hostdb.m_dir, mstrerror(errno));
+		return -1;
 	}
-	// this will happen if you don't upgrade glibc to 2.2.4-32 or above
-	if ( err != 0 ) {
-		log("build: Call to system(\"%s\") had error: %s",
-		    cmd,mstrerror(errno));
-		return -1.0; // unknown
-	}
-
-	// read in temperatures from file
-	int fd = open ( out , O_RDONLY );
-	if ( fd < 0 ) {
-		//m_errno = errno;
-		log("build: Could not open %s for reading: %s.",
-		    out,mstrerror(errno));
-		return -1.0; // unknown
-	}
-	char buf[2000];
-	int32_t r = read ( fd , buf , sizeof(buf)-1 );
-	// did we get an error
-	if ( r <= 0 ) {
-		//m_errno = errno;
-		log("build: Error reading %s: %s.",out,mstrerror(errno));
-		close ( fd );
-		return -1.0; // unknown
-	}
-	buf[(size_t)r] = '\0';
-	// clean up shop
-	close ( fd );
-
-	float usage;
-	int64_t avail;
-	sscanf(buf,"%"INT64" %f",&avail,&usage);
-	// it is in KB so make it into bytes
-	if ( diskAvail ) *diskAvail = avail * 1000LL;
-	return usage;
+	
+	*diskAvail = s.f_bavail * s.f_frsize;
+	return (s.f_blocks-s.f_bavail)*100.0/s.f_blocks;
 }
 
 // . sets m_errno on error
