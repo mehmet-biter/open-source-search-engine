@@ -7200,6 +7200,20 @@ void Parms::init ( ) {
 	m++;
 
 
+	m->m_title = "max total threads";
+	m->m_desc  = "Maximum number of threads to use per Gigablast process.";
+	m->m_cgi   = "max_threads";
+	m->m_off   = offsetof(Conf,m_max_threads);
+	m->m_type  = TYPE_LONG;
+	m->m_def   = "20";
+	m->m_units = "threads";
+	m->m_min   = 1;
+	m->m_flags = 0;
+	m->m_page  = PAGE_MASTER;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
 	m->m_title = "max cpu threads";
 	m->m_desc  = "Maximum number of threads to use per Gigablast process "
 		"for intersecting docid lists.";

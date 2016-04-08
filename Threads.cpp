@@ -105,14 +105,16 @@ bool Threads::amThread () {
 // obviously some stack overwriting going on!
 //#define STACK_SIZE (128 * 1024)
 
+#define ABSOLUTE_MAX_THREAD 50
+
 static char *s_stackAlloc = NULL;
 static int32_t  s_stackAllocSize;
 
 static char *s_stack      = NULL;
 static int32_t  s_stackSize;
-static char *s_stackPtrs [ MAX_STACKS ];
+static char *s_stackPtrs [ ABSOLUTE_MAX_THREAD ];
 
-static int32_t  s_next      [ MAX_STACKS ];
+static int32_t  s_next [ ABSOLUTE_MAX_THREAD ];
 static int32_t  s_head ;
 
 // returns NULL if none left
@@ -288,7 +290,9 @@ bool Threads::init ( ) {
 	for ( int32_t i = 0 ; i < m_numQueues ; i++ ) 
 		maxThreads += m_threadQueues[i].m_maxLaunched;
 	// limit to stack we got
-	if ( maxThreads > MAX_STACKS ) maxThreads = MAX_STACKS;
+	if ( maxThreads > g_conf.m_max_threads ) maxThreads = g_conf.m_max_threads;
+	if ( maxThreads > ABSOLUTE_MAX_THREAD ) maxThreads = ABSOLUTE_MAX_THREAD;
+
 	// allocate the stack space
 	s_stackAllocSize = STACK_SIZE * maxThreads + THRPAGESIZE ;
 	// clear stack to help check for overwrites
@@ -308,8 +312,8 @@ bool Threads::init ( ) {
 	// test
 	//s_stack[0] = 1;
 	// init the linked list
-	for ( int32_t i = 0 ; i < MAX_STACKS ; i++ ) {
-		if ( i == MAX_STACKS - 1 ) s_next[i] = -1;
+	for ( int32_t i = 0 ; i < g_conf.m_max_threads ; i++ ) {
+		if ( i == g_conf.m_max_threads - 1 ) s_next[i] = -1;
 		else                       s_next[i] = i + 1;
 		s_stackPtrs[i] = s_stack + STACK_SIZE * i;
 	}

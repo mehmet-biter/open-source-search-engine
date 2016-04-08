@@ -54,7 +54,7 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 			       (int32_t)q->m_launched,
 			       (int32_t)q->m_returned,
 			       total,
-			       (int)MAX_STACKS);
+			       (int)g_conf.m_max_threads);
 
 
 		p.safePrintf ("<tr bgcolor=#%s>"

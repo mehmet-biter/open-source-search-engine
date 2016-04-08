@@ -141,6 +141,7 @@ class Conf {
 	// dup vector cache max mem
 	int32_t  m_maxVectorCacheMem;
 
+	int32_t  m_max_threads;         //global limit / max stacks
 	int32_t  m_maxCpuThreads;
 	int32_t  m_maxCpuMergeThreads;
 
