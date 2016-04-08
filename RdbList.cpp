@@ -1658,8 +1658,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 	char ckey[MAX_KEY_BYTES];
 	char mkey[MAX_KEY_BYTES];
 	//int64_t prevDocId = 0LL;
-	// set the yield point for yielding the processor
-	char *yieldPoint = NULL;
 	char minKey[MAX_KEY_BYTES];
 
 	int64_t tt1 = getTagTypeFromStr( "sitenuminlinksfresh");
@@ -1717,16 +1715,6 @@ void RdbList::merge_r ( RdbList **lists         ,
                 //minKey  = lists[i]->getCurrentKey();
 		lists[i]->getCurrentKey(minKey);
                 mini    = i;
-	}
-	// if we are high niceness, yield every 100k we merge
-	if ( m_listPtr >= yieldPoint ) {
-		if ( niceness > 0 ) yieldPoint = m_listPtr + 100000;
-		else                yieldPoint = m_listPtr + 500000;
-		// only do this for low priority stuff now, i am concerned
-		// about long merge times during queries (MDW)
-		// this is showing up in the profiler, not sure why
-		// so try taking out.
-		//if ( niceness > 0 ) sched_yield();
 	}
 	// we're done if all lists are exhausted
 	if ( mini == -1 ) goto done;
