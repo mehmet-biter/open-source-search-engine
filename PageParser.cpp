@@ -7,11 +7,9 @@
 
 class State8 {
 public:
-	TopTree m_topTree;
 	//Msg16 m_msg16;
 	//Msg14 m_msg14;
 	//Msg15 m_msg15;
-	Msg22 m_msg22;
 	SafeBuf m_dbuf;
 	//XmlDoc m_doc;
 	//Url   m_url;
@@ -65,10 +63,6 @@ public:
 	// these are from rearranging the code
 	int32_t      m_indexCode;
 	//uint64_t m_chksum1;
-	int64_t m_took1;
-	int64_t m_took1b;
-	int64_t m_took2;
-	int64_t m_took3;
 
 	char m_didRootDom;
 	char m_didRootWWW;

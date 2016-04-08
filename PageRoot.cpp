@@ -1132,8 +1132,6 @@ public:
 	bool       m_forceRespider;
  	// buf filled by the links coming from google, msn, yahoo, etc
 	//State2     m_state2[5]; // gb, goog, yahoo, msn, ask
-	int32_t       m_numSent;
-	int32_t       m_numReceived;
 	//int32_t       m_raw;
 	//SpiderRequest m_sreq;
 };

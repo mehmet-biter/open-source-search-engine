@@ -28,8 +28,6 @@ public:
 	const char  *m_pwd;
 	const char  *m_coll;
 	int32_t         m_collLen;
-	XmlDoc       m_doc;
-	Msg20Request m_request;
 	HttpRequest  m_r;
 };
 

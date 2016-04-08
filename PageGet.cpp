@@ -19,13 +19,9 @@ static bool processLoop ( void *state ) ;
 
 class State2 {
 public:
-	Msg22      m_msg22;
 	char m_format;
-	//TitleRec   m_tr;
 	int32_t       m_niceness;
 	XmlDoc     m_xd;
-	char      *m_tr;
-	int32_t       m_trSize;
 	uint8_t    m_langId;
 	//Msg8a      m_msg8a;
 	//SiteRec    m_sr;
