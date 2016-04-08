@@ -34,9 +34,6 @@
 #include "Timezone.h"
 #include "CountryCode.h"
 
-// normally in seo.cpp, but here so it compiles
-SafeBuf    g_qbuf;
-int32_t       g_qbufNeedSave = 0;
 bool g_inAutoSave;
 
 // for resetAll()
@@ -57,7 +54,7 @@ Process g_process;
 //static int32_t s_flag = 1;
 static int32_t s_nextTime = 0;
 
-char *g_files[] = {
+static const char * const g_files[] = {
 	//"gb.conf",
 
 	// might have localhosts.conf
@@ -439,7 +436,7 @@ void hdtempDoneWrapper ( void *state , ThreadEntry *t ) {
 
 
 // set Process::m_diskUsage
-float getDiskUsage ( int64_t *diskAvail ) {
+static float getDiskUsage ( int64_t *diskAvail ) {
 
 	// first get disk usage now
 	char cmd[10048];
@@ -1345,17 +1342,6 @@ bool Process::saveBlockingFiles1 ( ) {
 	// save stats on spider proxies if any
 	saveSpiderProxyStats();
 
-	// save the query log buffer if it was modified by the 
-	// runSeoQueryLoop() in seo.cpp which updates its
-	// QueryLogEntry::m_minTop50Score member and corresponding timestamp
-	if ( g_qbufNeedSave ) {
-		char fname[1024];
-		sprintf(fname,"querylog.host%"INT32".dat",g_hostdb.m_hostId);
-		g_qbuf.saveToFile(g_hostdb.m_dir,fname);
-		log("process: saving changes to %s",fname);
-		g_qbufNeedSave = false;
-	}
-	
 	// . save the add state from Msg4.cpp
 	// . these are records in the middle of being added to rdbs across
 	//   the cluster
@@ -1486,8 +1472,6 @@ void Process::resetAll ( ) {
 	g_spiderCache.reset();
 	g_spiderLoop.reset();
 	g_wiki.reset();
-	// query log buffer
-	g_qbuf.reset();
 	g_profiler.reset();
 	resetMsg13Caches();
 	resetStopWordTables();

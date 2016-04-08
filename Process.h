@@ -98,6 +98,4 @@ class Process {
 
 extern Process g_process;
 
-extern char *g_files[];
-
 #endif // GB_PROCESS_H
