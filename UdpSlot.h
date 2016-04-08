@@ -390,9 +390,6 @@ class UdpSlot {
 	// remember our niceness level
 	int32_t           m_niceness;
 
-	// when did we call it (ms)
-	int64_t      m_calledHandlerTime;
-
 	// these are for measuring bps (bandwidth) for g_stats
 	int64_t      m_firstSendTime;
 

@@ -2133,9 +2133,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// let loop.cpp know we're done then
 	g_inHandler = saved2;
 
-	// . stats
-	// . time how long for us to generate a reply
-	//slot->m_calledHandlerTime = gettimeofdayInMillisecondsLocal();
 	// debug msg
 	if ( g_conf.m_logDebugUdp )
 		log(LOG_DEBUG,"udp: Calling handler for transId=%"INT32" "

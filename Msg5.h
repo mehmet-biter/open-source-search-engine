@@ -280,7 +280,6 @@ class Msg5 {
 	// used for reading a corresponding tfndb list for a titledb read
 	class Msg5 *m_msg5b;
 	bool        m_isRealMerge;
-	int64_t   m_time1;
 
 	int32_t m_indexdbTruncationLimit;
 
@@ -297,9 +296,6 @@ class Msg5 {
 	//char m_waitingForMerge;
 	collnum_t m_collnum;
 	
-	// actually part of a different algo than m_waitingForList!
-	uint64_t m_waitingKey;
-
 	// hack parms
 	Msg2 *m_parent;
 };

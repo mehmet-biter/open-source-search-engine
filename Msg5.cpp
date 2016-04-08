@@ -720,7 +720,6 @@ bool Msg5::gotList ( ) {
 		log(LOG_LOGIC,"net: No msg5b supplied.");
 		char *xx = NULL; *xx = 0;
 	}
-	m_time1 = gettimeofdayInMilliseconds();
 	int64_t docId1  =g_titledb.getDocIdFromKey((key_t *)m_fileStartKey);
 	int64_t docId2  =g_titledb.getDocIdFromKey((key_t *)m_msg3.m_endKey);
 	key_t     startKey = g_tfndb.makeMinKey ( docId1 ) ;
@@ -832,9 +831,6 @@ bool Msg5::gotList2 ( ) {
 	// reading in a much bigger tfndb list.
 	if ( m_rdbId == RDB_TITLEDB && m_isRealMerge && ! g_errno ) {
 		int64_t time2 = gettimeofdayInMilliseconds();
-		int64_t diff  =  time2 - m_time1 ;
-		log(LOG_DEBUG,"db: Read tfndblist in %"INT64" ms "
-		    "(size=%"INT32").",diff,m_tfndbList.m_listSize);
 		// cut it down to m_msg3.m_endKey because that's what we used 
 		// to constrain this tfndb list read
 		//if ( m_msg3.m_constrainKey < m_minEndKey ) {

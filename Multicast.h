@@ -202,7 +202,6 @@ class Multicast {
 	int32_t        m_retryCount;
 
 	char        m_sentToTwin;
-	bool        m_callbackCalled;
 
 	int32_t        m_redirectTimeout;
 	char        m_inUse;

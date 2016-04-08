@@ -107,8 +107,6 @@ public:
 
 	// used for getting component lists if compound list is empty
 	void mergeLists_r();
-	int32_t *m_componentCodes;
-	char *m_ignore;
 	class Query *m_query;
 	class QueryTerm *m_qterms;
 	//char     m_cacheKeys[MAX_NUM_LISTS * MAX_KEY_BYTES];
@@ -117,10 +115,8 @@ public:
 	bool m_getComponents;
 	char m_rdbId;
 	bool m_addToCache;collnum_t m_collnum;
-	int32_t m_compoundListMaxSize;
 	bool m_checkCache;
 	int32_t m_k;
-	int32_t m_n;
 
 	/** the parent Msg39Request */
 	class Msg39Request *m_req;

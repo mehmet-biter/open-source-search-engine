@@ -427,9 +427,6 @@ class RdbBase {
 
 	int32_t      m_pageSize;
 
-	// are we waiting on another merge/dump to complete before our turn?
-	bool      m_inWaiting;
-
 	// . is our merge urgent? (if so, it will starve spider disk reads)
 	// . also see Threads.cpp for the starvation
 	bool      m_mergeUrgent;
@@ -468,8 +465,6 @@ class RdbBase {
 	char m_oldname [ 256 ];
 
 	//BigFile m_dummyFile;
-
-	int64_t m_lastWrite;
 
 	char m_doLog;
 };

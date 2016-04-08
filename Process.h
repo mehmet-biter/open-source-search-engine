@@ -95,7 +95,6 @@ class Process {
 	float m_dataCtrTemp;
 	float m_roofTemp;
 	int32_t  m_currentFanState;
-	int32_t  m_desiredFanState;
 	float m_diskUsage;
 	int64_t m_diskAvail;
 };

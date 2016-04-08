@@ -80,7 +80,6 @@ void RdbBase::reset ( ) {
 	//m_numNetSentAdd = 0 ;
 	// we no longer need to be saved
 	//m_needsSave = false;
-	//m_inWaiting = false;
 	// we're not in urgent merge mode yet
 	m_mergeUrgent = false;
 	//m_waitingForTokenForDump  = false;
@@ -242,8 +241,6 @@ bool RdbBase::init ( char  *dir            ,
 	m_pageSize         = pageSize;
 	//m_pc               = pc;
 	m_isTitledb        = isTitledb;
-	// wa haven't done a dump yet
-	//m_lastWrite        = gettimeofdayInMilliseconds();
 	//m_groupMask        = groupMask;
 	//m_groupId          = groupId;
 	// . set up our cache
@@ -1579,41 +1576,6 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	//log(0,"RdbBase::attemptMerge: attempting merge for %s",m_dbname );
 	// this merge forced?
 	//m_nextMergeForced = forceMergeAll;
-	// . bail if already merging
-	// . no, RdbMerge will sleep in 5 sec cycles into they're done
-	// . we may have multiple hosts running on the same cpu/hardDrive
-	// . therefore, to maximize disk space, we should only have 1 merge
-	//   at a time going on between these hosts
-	// . we cannot merge files that are being dumped either because we'll
-	//   lose data!!
-	// . obsolete this shit for the token stuff
-	/*
-	if ( g_merge.isMerging() ) {
-		// if we've been here once already, return now
-		if ( m_inWaiting ) return;
-		// otherwise let everyone know we're waiting
-		log("RdbBase::attemptMerge: waiting for another merge to finish.");
-		// set a flag so we don't keep printing the above msg
-		m_inWaiting = true;
-		// if it fails then sleep until it works
-		g_loop.registerSleepCallback (5000,this,attemptMergeWrapper);
-		return;
-	}
-	if ( m_dump.isDumping() ) {
-		// bail if we've been here
-		if ( m_inWaiting  ) return;
-		// otherwise let everyone know we're waiting
-		log("RdbBase::attemptMerge: waiting for dump to finish.");
-		// set a flag so we don't keep printing the above msg
-		m_inWaiting = true;
-		// . if it fails then sleep until it works
-		// . wait shorter to try and sneak a merge in if our
-		//   buffer is so small that we're always dumping!
-		//   should the next merge we do be forced?
-		g_loop.registerSleepCallback (5000,this,attemptMergeWrapper);
-		return;
-	}
-	*/
 	// remember niceness for calling g_merge.merge()
 	m_niceness = niceness;
 	// debug msg
@@ -1708,8 +1670,6 @@ void RdbBase::gotTokenForMerge ( ) {
 	}
 
 	// clear for take-off
-	//m_inWaiting = false;
-	//	log(0,"RdbBase::attemptMerge: someone else merging"); return; }
 	// . i used to just merge all the files into 1
 	// . but it may be more efficient to merge just enough files as
 	//   to put m_numFiles below m_minToMerge
