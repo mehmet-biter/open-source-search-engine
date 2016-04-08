@@ -2014,8 +2014,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 			     int32_t      niceness       ) {
 	// sanity
 	if ( m_ks != sizeof(key144_t) ) { char *xx=NULL;*xx=0; }
-	// how big is our half key? (half key size)
-	//uint8_t hks = m_ks - 6;
+	//no-op check
 	if ( numLists == 0 ) return true;
 
 #ifdef _MERGEDEBUG_
@@ -2074,9 +2073,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		log(LOG_LOGIC,"db: storing recs in a non-empty list for merge"
 		    " probably from recall from negative key loss");
 
-	// convenience vars
-	int32_t i ;
-
 	// bitch if too many lists
 	if ( numLists > MAX_RDB_FILES + 1 ) {
 		// set errno, cuz g_errno is used by main process only
@@ -2095,7 +2091,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// set the ptrs that are non-empty
 	int32_t n = 0;
 	// convenience ptr
-	for ( i = 0 ; i < numLists ; i++ ) {
+	for ( int32_t i = 0 ; i < numLists ; i++ ) {
 		// skip if empty
 		if ( lists[i]->isEmpty() ) continue;
 
@@ -2135,29 +2131,12 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// . all their keys are supposed to be <= m_endKey
 	if ( numLists <= 0 ) return true;
 
-	// debug msg
-	//log("merge start.n1=%"XINT32" n0=%"XINT64"", m_startKey.n1 , m_startKey.n0 );
-	//log("merge end  .n1=%"XINT32" n0=%"XINT64"", m_endKey.n1   , m_endKey.n0   );
-
 	// point to most significant 4 bytes of "tmp"
 	char *minPtrBase ; // lowest  6 bytes
 	char *minPtrLo ;   // next    6 bytes
 	char *minPtrHi ;   // highest 6 bytes
 	int16_t mini = -1; // int16_t -> must be able to accomodate MAX_RDB_FILES!!
 
-	// a flag that helps eliminate dangling negatives
-	//bool firstTime = true;
-
-	// for saving state for eliminating dangling negatives
-	//char *savedListPtr         = NULL;
-	//char *savedLastPtrLo       = NULL;
-	//char *savedListPtrHi       = NULL;
-	//char *savedpp              = NULL;
-
-	// keep stats of dups removed
-	//int32_t dupCount = 0;
-
-	char ss;
 	char *pp = NULL;
 
 	// see Posdb.h for format of a 12-byte or 6-byte indexdb key
@@ -2171,13 +2150,13 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	mini       = 0;
 
 	// merge loop over the lists, get the smallest key
-	for ( i = 1 ; i < numLists ; i++ ) {
+	for ( int32_t i = 1 ; i < numLists ; i++ ) {
 		// sanity check
 		//if ( fcmp (minPtrBase,minPtrHi,ptrs[i],hiKeys[i]) !=
 		//     cmp (minPtrBase,minPtrHi,ptrs[i],hiKeys[i])  ) {
 		//	char *xx = NULL; *xx = 0; }
 		// this cmp() function is inlined in RdbList.h
-		ss = bfcmpPosdb (minPtrBase,minPtrLo,minPtrHi,
+		char ss = bfcmpPosdb (minPtrBase,minPtrLo,minPtrHi,
 				 ptrs[i],loKeys[i],hiKeys[i]);
 		// . continue if tie, so we get the oldest first
 		// . treat negative and positive keys as identical for this
@@ -2192,10 +2171,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		minPtrHi   = hiKeys[i];
 		mini     = i;
 	}
-
-	// watch out
-	//if ( m_ks == 18 && m_listPtr - m_list == 20136 )
-	//	foo = 1;
 
 	// ignore if negative i guess, just skip it
 	if ( removeNegKeys && (minPtrBase[0] & 0x01) == 0x00 ) goto skip;
@@ -2332,64 +2307,17 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
  done:
 
 	// if last key we added is positive, skip this stuff
-	if ( (*minPtrBase & 0x01) == 0x01 ) goto positive;
+	//if ( (*minPtrBase & 0x01) == 0x01 ) goto positive;
 
 	// if no lists left and no recyclable trash remains, nothing we can do
-	if ( numLists <= 0 ) goto positive;
+	//if ( numLists <= 0 ) goto positive;
 
-	// . WHY DO WE NEED THIS? if there is a negative/positive key combo
+	// . if there is a negative/positive key combo
 	//   they should annihilate in the primary for loop above!! UNLESS
 	//   one list was truncated at the end and we did not get its
 	//   annihilating key... strange, but i guess it could happen...
-	/*
-	// . we are done iff the next key does not match us (+ or -)
-	// . so keep running until last key is positive, or we
-	//   have two different, adjacent negatives on the top at which time
-	//   we can peel the last one off and accept the dangling negative
-	// . if this is our first time here, set some flags
-	if ( firstTime ) {
-		// next time we come here, it won't be our first time
-		firstTime = false;
-		// sometimes we force it... see below
-	forceFirst:
-		// save our state because next rec may not annihilate
-		// with this one and be saved on the list and we have to
-		// peel it off and accept this dangling negative as unmatched
-		savedListPtr         = m_listPtr;
-		savedLastPtrLo       = m_listPtrLo;
-		savedListPtrHi       = m_listPtrHi;
-		savedpp              = pp;
-		//savedHighestKeyPtrLo = highestKeyPtrLo;
-		//savedHighestKeyPtrHi = highestKeyPtrHi;
-		goto top;
-	}
 
-	// . if this is our second time here then our original dangling
-	//   negative annihilated and was replaced by another negative,
-	//   OR it stayed there and another negative fell on top of it
-	// . if the listSize is the same, then it was replaced! so pretend
-	//   this was the first time again
-	// . a dup negative key might have fallen on top, but we don't store
-	//   those so m_listPtr should remain the same (we just inc delDup)
-	// . normally we could just do a "goto top", but m_listPtrHi might
-	//   have changed if last negative key was only 6 bytes and new one
-	//   is 12
-	if ( savedListPtr == m_listPtr ) goto forceFirst;
-
-	// . otherwise, a different negative fell on top of it, so our
-	//   dangling negative is acceptable
-	// . if it was positive, we would have jumped to "positive:" above
-	// . if it was a dup negative, savedListPtr would equal m_listPtr
-	//   and we would have did a "goto forceFirst" above
-	// . roll back over that unnecessary unmatching negative key to
-	//   expose our original negative key, an acceptable dangling negative
-	m_listPtr       = savedListPtr;
-	m_listPtrLo     = savedLastPtrLo;
-	m_listPtrHi     = savedListPtrHi;
-	pp              = savedpp;
-	*/
-
- positive:
+	//positive:
 
 	// set new size and end of this merged list
 	m_listSize = m_listPtr - m_list;
@@ -2397,11 +2325,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 
 	// return now if we're empty... all our recs annihilated?
 	if ( m_listSize <= 0 ) return true;
-
-	// . return if we added nothing
-	// . this happens if everything was trashed, too, so m_endKey
-	//   should not need to be changed
-	//if ( ! lastPtrLo ) return true;
 
 	// if we are tacking this merge onto a non-empty list
 	// and we just had negative keys then pp could be NULL.
