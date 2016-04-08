@@ -2041,8 +2041,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	if ( m_listPtr != m_listEnd )
 		log(LOG_LOGIC,"db: rdblist: posdbMerge_r: warning. "
 		    "merge not storing at end of list.");
-	// set the yield point for yielding the processor
-	char *yieldPoint = NULL;
 	// sanity check
 	if ( numLists>0 && lists[0]->m_ks != m_ks ) { char *xx=NULL; *xx=0; }
 	// set this list's boundary keys
@@ -2210,17 +2208,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	*(int16_t *)(&m_listPtr[4]) = *(int16_t     *)(&minPtrBase[4]) ;
 
 	m_listPtr += 6;
-
-	// if we are high niceness, yield every 100k we merge
-	if ( m_listPtr >= yieldPoint ) {
-		if ( niceness > 0 ) yieldPoint = m_listPtr + 100000;
-		else                yieldPoint = m_listPtr + 500000;
-		// only do this for low priority stuff now, i am concerned
-		// about long merge times during queries (MDW)
-		// this is showing up in the profiler, not sure why
-		// so try taking out.
-		//if ( niceness > 0 ) sched_yield();
-	}
 
 #ifdef _MERGEDEBUG_
 	omini = mini;
