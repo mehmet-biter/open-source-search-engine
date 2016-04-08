@@ -246,8 +246,6 @@ bool Process::init ( ) {
 	// -1 means unknown
 	m_diskUsage = -1.0;
 	m_diskAvail = -1LL;
-	// we do not know if the fans are turned off or on
-	m_currentFanState = -1;
 	m_threadOut = false;
 	m_powerIsOn = true;
 	m_numRdbs = 0;
@@ -322,10 +320,6 @@ bool Process::init ( ) {
 	// . well use it for disk usage i guess
 	if ( ! g_loop.registerSleepCallback(10000,NULL,hdtempWrapper,0))
 		return false;
-
-	// -99 means unknown
-	m_dataCtrTemp = -99;
-	m_roofTemp    = -99;
 
 	// success
 	return true;

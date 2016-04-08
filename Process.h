@@ -92,9 +92,6 @@ class Process {
 	bool        m_exiting;
 	bool        m_calledSave;
 
-	float m_dataCtrTemp;
-	float m_roofTemp;
-	int32_t  m_currentFanState;
 	float m_diskUsage;
 	int64_t m_diskAvail;
 };
