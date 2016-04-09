@@ -23,9 +23,9 @@ pthread_t getpidtid();
 #define SAVETREE_THREAD  4
 #define UNLINK_THREAD    5
 #define GENERIC_THREAD   6
-//#define SSLACCEPT_THREAD 7
-//#define GB_SIGRTMIN	 (SIGRTMIN+4)
+
 #define MAX_NICENESS     2
+
 // . a ThreadQueue has a list of thread entries
 // . each thread entry represents a thread in progress or waiting to be created
 class ThreadEntry {
@@ -116,40 +116,7 @@ class ThreadQueue {
 	ThreadEntry *m_waitTail6;
 
 
-	/*
-	// counts the high/low priority (niceness <= 0) threads
-	int64_t   m_hiLaunched;
-	int64_t   m_hiReturned;
-	int64_t   m_mdLaunched;
-	int64_t   m_mdReturned;
-	int64_t   m_loLaunched;
-	int64_t   m_loReturned;
-	// disk writing
-	int64_t   m_writesLaunched;
-	int64_t   m_writesReturned;
-	// now for disk threads we partition by the read size
-	int64_t   m_hiLaunchedBig;
-	int64_t   m_hiReturnedBig;
-	int64_t   m_mdLaunchedBig;
-	int64_t   m_mdReturnedBig;
-	int64_t   m_loLaunchedBig;
-	int64_t   m_loReturnedBig;
-	int64_t   m_hiLaunchedMed;
-	int64_t   m_hiReturnedMed;
-	int64_t   m_mdLaunchedMed;
-	int64_t   m_mdReturnedMed;
-	int64_t   m_loLaunchedMed;
-	int64_t   m_loReturnedMed;
-	int64_t   m_hiLaunchedSma;
-	int64_t   m_hiReturnedSma;
-	int64_t   m_mdLaunchedSma;
-	int64_t   m_mdReturnedSma;
-	int64_t   m_loLaunchedSma;
-	int64_t   m_loReturnedSma;
-	*/
-
-	// init
-	bool         init (char threadType, int32_t maxThreads, int32_t maxEntries);
+	bool init (char threadType, int32_t maxThreads, int32_t maxEntries);
 
 	ThreadQueue();
 	void reset();
@@ -160,7 +127,7 @@ class ThreadQueue {
 
 	// . for adding an entry
 	// . returns false and sets errno on error
-	ThreadEntry *addEntry ( int32_t   niceness                     ,
+	ThreadEntry *addEntry ( int32_t   niceness,
 				void  *state                        , 
 				void  (* callback    )(void *state,
 						       class ThreadEntry *t) ,
@@ -203,6 +170,8 @@ class ThreadQueue {
 
 	void removeThreads ( class BigFile *bf ) ;
 };
+
+
 
 // this Threads class has a list of ThreadQueues, 1 per thread type
 class Threads {

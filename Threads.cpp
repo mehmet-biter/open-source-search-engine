@@ -25,6 +25,7 @@ static int32_t  g_ticker = 0;
 static int32_t  g_filterTimeout = -1;
 static pid_t g_pid    = -1;
 
+
 //pid_t getpidtid() {
 // on 64-bit architectures pthread_t is 64 bit and pid_t is 32 bit:
 pthread_t getpidtid() {
@@ -34,7 +35,6 @@ pthread_t getpidtid() {
 	// the main process has a unique thread id as well.
 	return pthread_self();
 }
-
 
 
 // BIG PROBLEM:
@@ -65,8 +65,6 @@ Threads g_threads;
 int startUp ( void *state ) ;
 void *startUp2 ( void *state ) ;
 
-// JAB: warning abatement
-//static void launchThreadsWrapper      ( int fd , void *state );
 static void killStalledFiltersWrapper ( int fd , void *state );
 
 static void makeCallback ( ThreadEntry *t ) ;
@@ -90,20 +88,8 @@ bool Threads::amThread () {
 
 // . crashed in saving with 800k, so try 1M
 // . must be multiple of THRPAGESIZE
-//#define STACK_SIZE ((512+256) * 1024)
 // pthread_create() cores in calloc() if we don't make STACK_SIZE bigger:
 #define STACK_SIZE ((512+256+1024) * 1024)
-
-// jeta was having some problems, but i don't think they were related to
-// this stack size of 512k, but i will try boosting to 800k anyway.
-//#define STACK_SIZE (512 * 1024)
-
-// 256k was not enough, try 512k
-//#define STACK_SIZE (256 * 1024)
-
-// at 128k (and even 200k) some threads do not return! why?? there's
-// obviously some stack overwriting going on!
-//#define STACK_SIZE (128 * 1024)
 
 #define ABSOLUTE_MAX_THREAD 50
 
@@ -125,11 +111,13 @@ int32_t Threads::getStack ( ) {
 	return i;
 }
 
+
 void Threads::returnStack ( int32_t si ) {
 	if ( s_head == -1 ) { s_head = si; s_next[si] = -1; return; }
 	s_next[si] = s_head;
 	s_head = si;
 }
+
 
 void Threads::reset ( ) {
 	if ( s_stackAlloc ) {
@@ -142,10 +130,12 @@ void Threads::reset ( ) {
 		m_threadQueues[i].reset();
 }
 
+
 Threads::Threads ( ) {
 	m_numQueues = 0;
 	m_initialized = false;
 }
+
 
 void Threads::setPid ( ) {
 	// set s_pid to the main process id
@@ -158,12 +148,8 @@ void Threads::setPid ( ) {
 	int policy;
 	// scheduling parameters of target thread
 	pthread_getschedparam ( tid, &policy, &param);
-	//log(LOG_INFO,
-	//  "threads: min/max thread priority settings = %"INT32"/%"INT32" (policy=%"INT32")",
-	//    (int32_t)sched_get_priority_min(policy),
-	//    (int32_t)sched_get_priority_max(policy),
-	//    (int32_t)policy);
 }
+
 
 bool Threads::init ( ) {
 
@@ -183,35 +169,8 @@ bool Threads::init ( ) {
 	return log("thread: Stack growing up not supported.");
 #endif
 
-	//g_conf.m_logDebugThread = true;
-
-	// . damn, this only applies to fork() calls, i guess
-	// . a quick a dirty way to restrict # of threads so we don't explode
-	/*
-	struct rlimit lim;
-	lim.rlim_max = 100;
-	if ( setrlimit(RLIMIT_NPROC,&lim) )
-		log("thread::init: setrlimit: %s", mstrerror(errno) );
-	else
-		log("thread::init: set max number of processes to 100");
-	*/
-
 	// allow threads until disabled
 	m_disabled = false;
-	/*
-	// # of low priority threads launched and returned
-	m_hiLaunched = 0;
-	m_hiReturned = 0;
-	m_loLaunched = 0;
-	m_loReturned = 0;
-	*/
-	//int32_t  m_queryMaxBigDiskThreads  ; // > 1M read
-	//int32_t  m_queryMaxMedDiskThreads  ; // 100k - 1M read
-	//int32_t  m_queryMaxSmaDiskThreads  ; // < 100k per read
-	// categorize the disk read sizes by these here
-	// g_conf.m_bigReadSize = 0x7fffffff;
-	// g_conf.m_medReadSize = 1000000;
-	// g_conf.m_smaReadSize = 100000;
 
 	// . register a sleep wrapper to launch threads every 30ms
 	// . somtimes a bunch of threads mark themselves as done and the
@@ -225,13 +184,6 @@ bool Threads::init ( ) {
 					    killStalledFiltersWrapper,0))
 		return log("thread: Failed to initialize timer callback2.");
 
-	// debug
-	//log("thread: main process has pid=%"INT32"",(int32_t)s_pid);
-
-	// make multiplier higher for raids, can do more seeks
-	//int32_t m = 1;
-	// register the types of threads here instead of in main.cpp
-	//if ( ! g_threads.registerType ( DISK_THREAD     ,m*20/*maxThreads*/))
 	// try running blaster with 5 threads and you'll
 	// . see like a double degrade in performance for some reason!!
 	// . TODO: why? 
@@ -323,6 +275,7 @@ bool Threads::init ( ) {
 	return true;
 }
 
+
 // all types should be registered in main.cpp before any threads launch
 bool Threads::registerType ( char type , int32_t maxThreads , int32_t maxEntries ) {
 	// return false and set g_errno if no more room
@@ -339,6 +292,7 @@ bool Threads::registerType ( char type , int32_t maxThreads , int32_t maxEntries
 	return true;
 }
 
+
 int32_t Threads::getNumThreadsOutOrQueued() {
 	int32_t n = 0;
 	for ( int32_t i = 0 ; i < m_numQueues ; i++ ) {
@@ -354,9 +308,11 @@ int32_t Threads::getNumThreadsOutOrQueued() {
 	return n;
 }
 
+
 int32_t Threads::getNumWriteThreadsOut() {
 	return m_threadQueues[DISK_THREAD].getNumWriteThreadsOut();
 }
+
 
 // . returns false (and may set errno) if failed to launch a thread
 // . returns true if thread added to queue successfully
@@ -387,23 +343,6 @@ bool Threads::call ( char   type                         ,
 	if ( ! m_initialized && ! init() )
 		return log("db: Threads init failed." );
 
-	// . sanity check
-	// . a thread can NOT call this
-	//if ( getpid() != s_pid ) {
-	//	fprintf(stderr,"thread: call: bad engineer\n");
-	//	::exit(-1);
-	//}
-	// don't launch for now
-	//return false;
-	// . sanity check
-	// . ensure top 4 bytes of state is the callback
-	//if ( *(int32_t *)state != (int32_t)callback ) {
-	//	g_errno = EBADENGINEER;
-	//	sleep(50000);
-	//	return log("thread: call: top 4 bytes of state != callback");
-	//}
-	// debug msg
-	//log("adding thread to queue, type=%"INT32"",(int32_t)type);
 	// find the type
 	int32_t i;
 	for ( i = 0 ; i < m_numQueues ; i++ ) 
@@ -414,46 +353,27 @@ bool Threads::call ( char   type                         ,
 		return log(LOG_LOGIC,"thread: addtoqueue: Unregistered "
 			   "thread type %"INT32"",(int32_t)type);
 	}
-	// debug msg
-	//log("thread: call: adding entry for thread");
+
 	// . add to this queue
 	// . returns NULL and sets g_errno on error
 	ThreadEntry *t = m_threadQueues[i].addEntry(niceness,state,
 						    callback,startRoutine);
 	if ( ! t ) return log("thread: Failed to add entry to thread pool: "
 			      "%s.",mstrerror(g_errno));
-	// debug msg
-	//log("added");
-	// clear g_errno
-	//g_errno = 0;
+
 	// . try to launch as many threads as we can
 	// . this sets g_errno on error
 	// . if it has an error, just ignore it, our thread is queued
  launchLoop:
 	if ( m_threadQueues[i].launchThread2 ( ) ) 
 		goto launchLoop;
-	//if ( ! m_threadQueues[i].launchThread2 ( t ) && g_errno ) {
-	//	log("thread: failed thread launch: %s",mstrerror(g_errno));
-	//	return false;
-	//}
 
-	// return false if there was an error launching the thread
-	//if ( g_errno ) return false;
 	// clear g_errno
 	g_errno = 0;
 	// success
 	return true;
 }
 
-// static void launchThreadsWrapper ( int fd , void *state ) {
-// 	// debug msg
-// 	//if ( g_conf.m_timingDebugEnabled ) 
-// 	//	log("thread: launchThreadsWrapper: entered");
-// 	// clean up
-// 	g_threads.cleanUp(NULL,1000);
-// 	// and launch
-// 	g_threads.launchThreads();
-// }
 
 static void killStalledFiltersWrapper ( int fd , void *state ) {
 	// bail if no pid
@@ -525,10 +445,6 @@ void Threads::resumeLowPriorityThreads() {
 		m_threadQueues[i].resumeLowPriorityThreads();
 }
 
-//void Threads::cancelLowPriorityThreads () {
-//	for ( int32_t i = 0 ; i < m_numQueues; i++ ) 
-//		m_threadQueues[i].cancelLowPriorityThreads();
-//}
 
 void checkList  ( ThreadEntry **headPtr , ThreadEntry **tailPtr ) {
 	ThreadEntry *t = *headPtr;
@@ -685,51 +601,16 @@ bool ThreadQueue::init ( char threadType, int32_t maxThreads, int32_t maxEntries
 	m_launched    = 0;
 	m_returned    = 0;
 	m_maxLaunched = maxThreads;
-	// # of low priority threads launched and returned
-	/*
-	m_hiLaunched = 0;
-	m_hiReturned = 0;
-	m_mdLaunched = 0;
-	m_mdReturned = 0;
-	m_loLaunched = 0;
-	m_loReturned = 0;
-	// we now count write threads so we can limit that
-	m_writesLaunched = 0;
-	m_writesReturned = 0;
-	// these are for disk threads, which we now limit based on read sizes
-	m_hiLaunchedBig = 0;
-	m_hiReturnedBig = 0;
-	m_mdLaunchedBig = 0;
-	m_mdReturnedBig = 0;
-	m_loLaunchedBig = 0;
-	m_loReturnedBig = 0;
-	m_hiLaunchedMed = 0;
-	m_hiReturnedMed = 0;
-	m_mdLaunchedMed = 0;
-	m_mdReturnedMed = 0;
-	m_loLaunchedMed = 0;
-	m_loReturnedMed = 0;
-	m_hiLaunchedSma = 0;
-	m_hiReturnedSma = 0;
-	m_mdLaunchedSma = 0;
-	m_mdReturnedSma = 0;
-	m_loLaunchedSma = 0;
-	m_loReturnedSma = 0;
-	*/
 
-	//m_entriesUsed = 0;
-	//m_top         = 0;
 	m_isLowPrioritySuspended = false;
+
 	// alloc space for entries
 	m_maxEntries  = maxEntries;
 	m_entriesSize = sizeof(ThreadEntry)*m_maxEntries;
 	m_entries = (ThreadEntry *)mmalloc ( m_entriesSize , "Threads" );
 	if ( ! m_entries ) return log("thread: Failed to allocate %"INT32" bytes "
 				      "for thread queue.",m_entriesSize);
-	// debug msg
-	//log("INIT CALLED. setting all m_isDone to 1.");
-	// clear m_isOccupied et al for new guys
-	//for ( int32_t i = 0 ; i < MAX_THREAD_ENTRIES ; i++ ) {
+
 	for ( int32_t i = 0 ; i < m_maxEntries ; i++ ) {
 		m_entries[i].m_isOccupied = false;
 		m_entries[i].m_isLaunched = false;
@@ -773,6 +654,8 @@ bool ThreadQueue::init ( char threadType, int32_t maxThreads, int32_t maxEntries
 	return true;
 }
 
+
+
 int32_t ThreadQueue::getNumThreadsOutOrQueued() {
 	// MDW: we also need to count threads that are returned but need their
 	// callback called so, in the case of RdbDump, the rdblist that was written
@@ -785,22 +668,8 @@ int32_t ThreadQueue::getNumThreadsOutOrQueued() {
 		if ( e->m_isOccupied ) n++;
 	}
 	return n;
-	/*
-	int32_t n = m_launched - m_returned;
-	for ( int32_t i = 0 ; i < m_maxEntries ; i++ ) {
-		ThreadEntry *e = &m_entries[i];
-		if ( ! e->m_isOccupied ) continue;
-		if (   e->m_isLaunched ) continue;
-		if (   e->m_isDone     ) continue;
-		// do not count "reads", only count writes
-		//if ( m_threadType == DISK_THREAD && e->m_state ) {
-		//	FileState *fs = (FileState *)e->m_state;
-		//	if ( fs->m_doWrite ) continue;
-		//}
-	}
-	return n;
-	*/
 }
+
 
 int32_t ThreadQueue::getNumWriteThreadsOut () {
 	// only consider disk threads
@@ -820,7 +689,6 @@ int32_t ThreadQueue::getNumWriteThreadsOut () {
 }
 
 
-
 // return NULL and set g_errno on error
 ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     , 
 				     void  *state                        , 
@@ -828,13 +696,6 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     ,
 							    ThreadEntry *t) ,
 				     void *(* startRoutine)(void *state,
 							    ThreadEntry *t) ) {
-
-	// if we are 90% full and niceness is > 0, knock it off
-	// int32_t max = m_maxEntries;
-	// if ( m_threadType == DISK_THREAD && niceness > 0 ) {
-	// 	max = (m_maxEntries * 90) / 100;
-	// 	if ( max <= 0 ) max = 1;
-	// }
 
 	ThreadEntry *t = m_emptyHead;
 	if ( ! t ) {
@@ -852,35 +713,6 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     ,
 	// sanity
 	if ( t->m_isOccupied ) { char *xx=NULL;*xx=0; }
 
-
-	// debug test
-	//if ( rand() %10 == 1 ) { g_errno = ENOTHREADSLOTS; return NULL; }
-	// get first available entry, not in use
-	//int32_t i;
-	//for ( i = 0 ; i < MAX_THREAD_ENTRIES ; i++ )
-	// for ( i = 0 ; i < max ; i++ )
-	// 	if ( ! m_entries[i].m_isOccupied ) break;
-	// caution
-	// //if ( i >= MAX_THREAD_ENTRIES ) {
-	// if ( i >= max ) {
-	// 	g_errno = ENOTHREADSLOTS;
-	// 	static time_t s_time  = 0;
-	// 	time_t now = getTime();
-	// 	if ( now - s_time > 5 ) {
-	// 		log("thread: Could not add thread to queue. Already "
-	// 		    "have %"INT32" entries.",max);
-	// 		s_time = now;
-	// 	}
-	// 	return NULL;
-	// }
-	// debug msg
-	//fprintf(stderr,"addEntry my pid=%"UINT32"\n", (int32_t)getpid() );
-	// get an available entry
-	//ThreadEntry *t = &m_entries [ i ];
-	// debug msg
-	//log("claiming entry state=%"UINT32", occupied=%"INT32"",(int32_t)t->m_state, 
-	//    (int32_t)t->m_isOccupied);
-	// stick it in
 	t->m_niceness     = niceness;
 	t->m_state        = state;
 	t->m_callback     = callback;
@@ -888,8 +720,6 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     ,
 	t->m_isOccupied   = true;
 	t->m_isCancelled  = false;
 	t->m_stack        = NULL;
-	// debug msg
-	//log("setting t=%"UINT32" m_isDone to 0", (int32_t)t );
 	t->m_isDone       = false;
 	t->m_isLaunched   = false;
 	t->m_queuedTime   = gettimeofdayInMilliseconds();
@@ -915,13 +745,6 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     ,
 		t->m_bytesToGo = 0;
 		t->m_doWrite   = false;
 	}
-
-	// inc the used count
-	//m_entriesUsed++;
-	// debug msg
-	//log("m_entriesUsed now %"INT32"",m_entriesUsed);
-	// might have to inc top as well
-	//if ( i == m_top ) m_top++;
 
 	// there's only two linked lists we can wait in if we are not disk
 	if ( m_threadType != DISK_THREAD ) {
@@ -972,14 +795,7 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     ,
 		bestHeadPtr = &m_waitHead0; 
 		bestTailPtr = &m_waitTail0;
 	}
-	// if ( ! bestHeadPtr && nice == 0 && rs <= g_conf.m_medReadSize ) {
-	// 	bestHeadPtr = &m_waitHead1; 
-	// 	bestTailPtr = &m_waitTail1;
-	// }
-	// if ( ! bestHeadPtr && nice == 0 ) {
-	// 	bestHeadPtr = &m_waitHead2; 
-	// 	bestTailPtr = &m_waitTail2;
-	// }
+
 	// low priority (merge or dump) disk WRITES go in waithead4
 	if ( ! bestHeadPtr && t->m_doWrite ) {
 		bestHeadPtr = &m_waitHead4;
@@ -1021,6 +837,7 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     ,
 	return t;
 }
 
+
 int32_t Threads::timedCleanUp (int32_t maxTime, int32_t niceness) {
 
 	// skip it if exiting
@@ -1054,9 +871,11 @@ int32_t Threads::timedCleanUp (int32_t maxTime, int32_t niceness) {
 	return took;
 }
 
+
 bool Threads::isHittingFile ( BigFile *bf ) {
 	return m_threadQueues[DISK_THREAD].isHittingFile(bf);
 }
+
 
 bool ThreadQueue::isHittingFile ( BigFile *bf ) {
 	// loop through candidates
@@ -1079,9 +898,11 @@ bool ThreadQueue::isHittingFile ( BigFile *bf ) {
 	return false;
 }
 
+
 void Threads::bailOnReads ( ) {
 	m_threadQueues[DISK_THREAD].bailOnReads();
 }
+
 
 // Process.cpp calls these callbacks before their time in order to
 // set EDISKSTUCK
@@ -1156,6 +977,7 @@ void ThreadQueue::bailOnReads ( ) {
 	}
 }
 
+
 // BigFile.cpp's readwriteWrapper_r() ThreadEntry::m_callback gets set to
 // ohcrap() because it was taking too long to do its read and we prematurely
 // called its callback above in bailOnReads(). In that case we still have to 
@@ -1167,6 +989,7 @@ void ohcrap ( void *state , ThreadEntry *t ) {
 		mfree ( t->m_allocBuf , t->m_allocSize , "RdbScan" );
 	log("threads: got one");
 }
+
 
 // . cleans up any threads that have exited
 // . their m_isDone should be set to true
@@ -1252,40 +1075,6 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 			isWrite = t->m_doWrite ;
 		}
 
-		/*
-		if      ( niceness <= 0) tq->m_hiReturned++;
-		else if ( niceness == 1) tq->m_mdReturned++;
-		else if ( niceness >= 2) tq->m_loReturned++;
-		// deal with the tiers for disk threads based on read sizes
-		if ( tq->m_threadType == DISK_THREAD ) {
-			// writes are special cases
-			if ( isWrite ) m_writesReturned++;
-			if ( rs >= 0 && niceness >= 2 ) {
-				if      ( rs > g_conf.m_medReadSize )
-					tq->m_loReturnedBig++;
-				else if ( rs > g_conf.m_smaReadSize ) 
-					tq->m_loReturnedMed++;
-				else
-					tq->m_loReturnedSma++;
-			}
-			else if ( rs >= 0 && niceness >= 1 ) {
-				if      ( rs > g_conf.m_medReadSize )
-					tq->m_mdReturnedBig++;
-				else if ( rs > g_conf.m_smaReadSize ) 
-					tq->m_mdReturnedMed++;
-				else
-					tq->m_mdReturnedSma++;
-			}
-			else if ( rs >= 0 ) {
-				if      ( rs > g_conf.m_medReadSize )
-					tq->m_hiReturnedBig++;
-				else if ( rs > g_conf.m_smaReadSize ) 
-					tq->m_hiReturnedMed++;
-				else
-					tq->m_hiReturnedSma++;
-			}
-		}
-		*/
 
 		// now count him as returned
 		m_returned++;		
@@ -1325,39 +1114,11 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 		// now move it to the empty list
 		removeLink ( &m_launchedHead , t );
 		addLink    ( &m_emptyHead    , t );
-		// send a cancel sig to the thread in case it's still there
-		//int err = pthread_cancel ( t->m_tid );
-		//if ( err != 0 ) log("thread: cleanUp: pthread_cancel: %s",
-		//		     mstrerror(err) );
-		// one less entry occupied
-		//m_entriesUsed--;
-		// debug msg
-		//log("m_entriesUsed now %"INT32"",m_entriesUsed);
-		// one more returned
-		//m_returned++;
-		// clear the g_errno in case set by a previous callback
-		//g_errno = 0;
-		// launch as many threads as we can before calling the
-		// callback since this may hog the CPU like Msg20 does
-		//g_threads.launchThreads();
 
 		
 		g_errno = 0; 
-		//only allow a quickpoll if we are nice.
-		//g_loop.canQuickPoll(t->m_niceness);
-
 		makeCallback ( t );
 
-		//int64_t took = gettimeofdayInMilliseconds()-startTime;
-		//if(took > 8 && maxNiceness > 0) {
-		//	if(g_conf.m_sequentialProfiling)
-		//		log(LOG_TIMING, 
-		//		    "admin: Threads spent %"INT64" ms to callback "
-		//		    "%"INT32" callbacks, nice: %"INT32"",
-		//		    took, numCallbacks, maxNiceness);
-		//	g_threads.m_needBottom = true;
-		//	maxNiceness = 0;
-		//}
 
 		// clear errno again
 		g_errno = 0;
@@ -1388,13 +1149,8 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 	return numCallbacks != 0;
 }
 
-void makeCallback ( ThreadEntry *t ) {
 
-	// sanity check - if in a high niceness callback, we should
-	// only be calling niceness 0 callbacks here
-	// no, this is only called from sleep wrappers originating from
-	// Loop.cpp, so we should be ok
-	//if ( g_niceness==0 && t->m_niceness ) { char *xx=NULL;*xx=0; }
+void makeCallback ( ThreadEntry *t ) {
 
 	// save it
 	int32_t saved = g_niceness;
@@ -1447,14 +1203,12 @@ void makeCallback ( ThreadEntry *t ) {
 	
 }
 
+
 bool Threads::cleanUp ( ThreadEntry *t , int32_t maxNiceness ) {
 	bool didSomething = false;
  loop:
 	// assume no more cleanup needed
 	m_needsCleanup = false;
-	//m_needBottom = false;
-	// debug msg
-	//log("cleanUp");
 
 	// debug msg
 	//log("cleaning up exited threads and calling callbacks");
@@ -1469,6 +1223,7 @@ bool Threads::cleanUp ( ThreadEntry *t , int32_t maxNiceness ) {
 	if ( m_needsCleanup ) goto loop;
 	return didSomething;
 }
+
 
 // . cleans up any threads that have exited
 // . their m_isDone should be set to true
@@ -1556,49 +1311,6 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 		ThreadQueue *tq = &g_threads.m_threadQueues[(int)qnum];
 		if ( tq != this ) { char *xx = NULL; *xx = 0; }
 
-		/*
-		// get read size before cleaning it up -- it could get nuked
-		int32_t rs = 0;
-		bool isWrite = false;
-		if ( tq->m_threadType == DISK_THREAD ) { // && t->m_state ) {
-			//FileState *fs = (FileState *)t->m_state;
-			rs = t->m_bytesToGo;
-			isWrite = t->m_doWrite ;
-		}
-
-		if      ( niceness <= 0) tq->m_hiReturned++;
-		else if ( niceness == 1) tq->m_mdReturned++;
-		else if ( niceness >= 2) tq->m_loReturned++;
-		// deal with the tiers for disk threads based on read sizes
-		if ( tq->m_threadType == DISK_THREAD ) {
-			// writes are special cases
-			if ( isWrite ) m_writesReturned++;
-			if ( rs >= 0 && niceness >= 2 ) {
-				if      ( rs > g_conf.m_medReadSize )
-					tq->m_loReturnedBig++;
-				else if ( rs > g_conf.m_smaReadSize ) 
-					tq->m_loReturnedMed++;
-				else
-					tq->m_loReturnedSma++;
-			}
-			else if ( rs >= 0 && niceness >= 1 ) {
-				if      ( rs > g_conf.m_medReadSize )
-					tq->m_mdReturnedBig++;
-				else if ( rs > g_conf.m_smaReadSize ) 
-					tq->m_mdReturnedMed++;
-				else
-					tq->m_mdReturnedSma++;
-			}
-			else if ( rs >= 0 ) {
-				if      ( rs > g_conf.m_medReadSize )
-					tq->m_hiReturnedBig++;
-				else if ( rs > g_conf.m_smaReadSize ) 
-					tq->m_hiReturnedMed++;
-				else
-					tq->m_hiReturnedSma++;
-			}
-		}
-		*/
 
 		// . we should count down here, not in the master thread
 		// . solves Problem #2 ?
@@ -1627,20 +1339,6 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 			    "for relaunch");
 			continue;
 		}
-		// debug msg
-		//log("[%"UINT32"] CLEANING UP THREAD type=%"INT32", numLaunched=%"INT32"",
-		//     m_entries[i].m_tid , m_threadType , m_launched );
-		// remove it
-		// debug msg
-		//log("CLN  TID=%"UINT32" t=%"UINT32"",(int32_t)t->m_tid , (int32_t)t);
-		//log("thread callback for tid=%"UINT32"",(int32_t)t->m_tid );
-		// . save important stuff before freeing up the ThreadEntry
-		//   for possible take over.
-		// . calling the callback may launch a thread which may
-		//   claim THIS thread entry, t
-		//void (* callback)(void *state);
-		//callback    = t->m_callback;
-		//void *state = t->m_state;
 
 		callbacks [ numCallbacks ] = t->m_callback;
 		states    [ numCallbacks ] = t->m_state;
@@ -1671,37 +1369,11 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 		// now move it to the empty list
 		removeLink ( &m_launchedHead , t );
 		addLink    ( &m_emptyHead    , t );
-		// send a cancel sig to the thread in case it's still there
-		//int err = pthread_cancel ( t->m_tid );
-		//if ( err != 0 ) log("thread: cleanUp: pthread_cancel: %s",
-		//		     mstrerror(err) );
-		// one less entry occupied
-		//m_entriesUsed--;
-		// debug msg
-		//log("m_entriesUsed now %"INT32"",m_entriesUsed);
-		// one more returned
-		//m_returned++;
-		// clear the g_errno in case set by a previous callback
-		//g_errno = 0;
-		// launch as many threads as we can before calling the
-		// callback since this may hog the CPU like Msg20 does
-		//g_threads.launchThreads();
-
 
 		g_errno = 0; 
 
 		makeCallback ( t );
 
-// 		int64_t took = gettimeofdayInMilliseconds()-startTime;
-// 		if(took > 8 && maxNiceness > 0) {
-// 			if(g_conf.m_sequentialProfiling)
-// 				log(LOG_TIMING, 
-// 				    "admin: Threads spent %"INT64" ms to callback "
-// 				    "%"INT32" callbacks, nice: %"INT32"",
-// 				    took, numCallbacks, maxNiceness);
-// 			g_threads.m_needBottom = true;
-// 			maxNiceness = 0;
-// 		}
 
 		// clear errno again
 		g_errno = 0;
@@ -1723,19 +1395,6 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 			    (uint64_t)(now - t->m_exitTime) );
 		}
 
-
-
-
-		// calling thread callback
-		//log("calling thread id %"INT32" callback", (int32_t)(t->m_tid));
-		// first call it's callback
-		//callback ( state );
-		// clear after just in case
-		//g_errno = 0;
-		// debug msg
-		//log("CLN2 TID=%"UINT32" t=%"INT32"",(int32_t)t->m_tid ,(int32_t)t);
-		// return now if tt was specified
-		//if ( tt ) return;
 	}
 
 	int64_t took2 = gettimeofdayInMilliseconds()-startTime;
@@ -1748,101 +1407,8 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 	//that way we can break out if we start taking too long and 
 	//give control back to udpserver.
 	return numCallbacks != 0;
-
-	/*
-	// print out that we got them
-	if ( g_conf.m_logDebugThread ) {
-		int64_t now = gettimeofdayInMilliseconds();
-		for ( int32_t i = 0 ; i < numCallbacks ; i++ ) 
-			log(LOG_DEBUG,"thread: [tid=%"PTRFMT"] %s done3. "
-			    "active=%"INT32" "
-			    "time since queued = %"UINT64" ms  "
-			    "time since launch = %"UINT64" ms  "
-			    "time since pre-exit = %"UINT64" ms  "
-			    "time since exit = %"UINT64" ms",
-			    (PTRTYPE)tids[i], 
-			    getThreadType() ,
-			    (int32_t)(m_launched - m_returned) ,
-			    (uint64_t)(now - times [i]),
-			    (uint64_t)(now - times2[i]) ,
-			    (uint64_t)(now - times3[i]) ,
-			    (uint64_t)(now - times4[i]) );
-	}
-
-	// . before calling callbacks, launch any other threads waiting in 
-	//   this queue
-	// . TODO: break into parts, cleanup, launch, call callbacks
-	//while ( launchThread() );
-
-	// . sort callbacks by queued time
-	// . do bubble sort cuz usually it's not too many threads we cleaned up
-	bool    flag ;
-	void (* tmpCallback)(void *state,ThreadEntry *t);
-	int64_t tmpTime;
-	void   *tmpState;
-	int64_t now = gettimeofdayInMilliseconds();
-
- bubble:
-	flag = false;
-	for ( int32_t i = 1 ; i < numCallbacks ; i++ ) {
-		if ( times[i] >= times[i-1] ) continue;
-		tmpTime          = times    [i  ];
-		tmpState         = states   [i  ];
-		tmpCallback      = callbacks[i  ];
-		times      [i  ] = times    [i-1];
-		states     [i  ] = states   [i-1];
-		tids       [i  ] = tids     [i-1];
-		callbacks  [i  ] = callbacks[i-1];
-		times      [i-1] = tmpTime;
-		states     [i-1] = tmpState;
-		callbacks  [i-1] = tmpCallback;
-		flag = true;
-	}
-	if ( flag ) goto bubble;
-
-	// call the callbacks now in order of oldest queued time first
-	for ( int32_t i = 0 ; i < numCallbacks ; i++ ) {
-		g_errno = 0; 
-		callbacks[i] ( states[i] , NULL );
-	}
-
-	int64_t took = gettimeofdayInMilliseconds()-now;
-	if(numCallbacks > 0 && took > 5)
-		log(LOG_TIMING, "admin: took %"INT64" ms to callback %"INT32" "
-		    "callbacks, nice: %"INT32"", took, numCallbacks, maxNiceness);
-
-#if 0   //I think this is more efficient, for now we'll just use the old way
-	//theres no reason to sort these, lets just find the top one
-	//and call it.  do it again it until we've called all of them.
-	int32_t newNumCallbacks = numCallbacks;
-	for ( int32_t i = 0 ; i < numCallbacks ; i++ ) {
-		int64_t maxTime = 0;
-		int32_t maxNdx = 0;
-		for ( int32_t j = 0 ; j < newNumCallbacks ; j++ ) {
-			if(maxTime >= times[i]) {
-				maxTime = times[i];
-				maxNdx = i;
-			}
-		}
-		g_errno = 0; 
-		callbacks[maxNdx] ( states[maxNdx] );
-		//copy last one into called slot and decrement
-		newNumCallbacks--;
-		times      [maxNdx] = times    [newNumCallbacks];
-		states     [maxNdx] = states   [newNumCallbacks];
-		callbacks  [maxNdx] = callbacks[newNumCallbacks];
-	}
-#endif
-	g_errno = 0;
-
-	// close more threads if we were limited by callbacks[] size
-	if ( numCallbacks >= 64 ) goto top;
-
-	//return true if we called something back;
-	//returns wrong value if numCallbacks was exactly 64, not too serious...
-	return numCallbacks != 0;
-	*/
 }
+
 
 // used by UdpServer to see if it should call a low priority callback
 bool Threads::hasHighPriorityCpuThreads() {
@@ -1861,6 +1427,7 @@ bool Threads::hasHighPriorityCpuThreads() {
 	//hiActive += q->m_hiLaunched - q->m_hiReturned;
 	return false;
 }
+
 
 // used by UdpServer to see if it should call a low priority callback
 int32_t Threads::getNumActiveHighPriorityThreads() {
@@ -1884,6 +1451,7 @@ int32_t Threads::getNumActiveHighPriorityThreads() {
 	//hiActive += q->m_hiLaunched - q->m_hiReturned;
 	return hiActive;
 }
+
 
 // . returns false if no thread launched
 // . returns true if thread was launched
@@ -1947,67 +1515,12 @@ bool ThreadQueue::launchThread2 ( ) {
 		return launchThreadForReals ( bestHeadPtr , bestTailPtr );
 	}
 
-	// disk thread is much more complicated
-	// use several queues
-
-	// debug msg
-	//log("trying to launch for type=%"INT32"",(int32_t)m_threadType);
-	// clean up any threads that have exited
-	//cleanUp ();
-
-	// if no entries then nothing to launch
-	//if ( m_top <= 0 ) return false;
-
-
-
-	//	return log("MAX. %"INT32" are launched. %"INT32" now in queue.",
-	//		   active , m_entriesUsed );
-	// . sanity check
-	// . a thread can NOT call this
-	//if ( getpid() != s_pid ) {
-	//	fprintf(stderr,"thread: launchThread: bad engineer\n");
-	//	::exit(-1);
-	//}
-	//int64_t now = gettimeofdayInMilliseconds();
-	/*
-	int64_t now = -1LL;
-	// pick thread with lowest niceness first
-	int32_t      minNiceness = 0x7fffffff;
-	int64_t maxWait     = -1;
-	//int32_t      mini        = -1;
-	//bool      minIsWrite  = false;
-	int32_t      lowest      = 0x7fffffff;
-	int32_t      highest     =  0;
-	// . now base our active thread counts on niceness AND read sizes
-	// . this is only used for DISK_THREADs
-	// . loActive* includes niceness >= 1
-	int32_t loActiveBig = m_loLaunchedBig - m_loReturnedBig;
-	int32_t loActiveMed = m_loLaunchedMed - m_loReturnedMed;
-	int32_t loActiveSma = m_loLaunchedSma - m_loReturnedSma;
-	int32_t mdActiveBig = m_mdLaunchedBig - m_mdReturnedBig;
-	int32_t mdActiveMed = m_mdLaunchedMed - m_mdReturnedMed;
-	int32_t mdActiveSma = m_mdLaunchedSma - m_mdReturnedSma;
-	int32_t hiActiveBig = m_hiLaunchedBig - m_hiReturnedBig;
-	int32_t hiActiveMed = m_hiLaunchedMed - m_hiReturnedMed;
-	int32_t hiActiveSma = m_hiLaunchedSma - m_hiReturnedSma;
-	int32_t activeWrites = m_writesLaunched - m_writesReturned;
-	// how many niceness=2 threads are currently running now?
-	int64_t loActive = m_loLaunched - m_loReturned;
-	int64_t mdActive = m_mdLaunched - m_mdReturned;
-	//int64_t hiActive = m_hiLaunched - m_hiReturned;
-	int32_t      total    = loActive + mdActive;
-	*/
-	// hi priority max
-	// JAB: warning abatement
-	//int64_t hiActive = m_hiLaunched - m_hiReturned;
 
 	// get lowest niceness level of launched threads
 	ThreadEntry *t = m_launchedHead;
 	bool hasLowNicenessOut = false;
 	int32_t activeCount = 0;
 	int32_t spiderCount = 0;
-	// int32_t launchedBig0 = 0 , launchedMed0 = 0 , launchedSma0 = 0;
-	// int32_t launchedBig1 = 0 , launchedMed1 = 0 , launchedSma1 = 0;
 	for ( ; t ; t = t->m_nextLink ) {
 		// if he's done, skip him. maybe he hasn't been cleaned up yet
 		if ( t->m_isDone ) continue;
@@ -2028,15 +1541,8 @@ bool ThreadQueue::launchThread2 ( ) {
 		else {
 			spiderCount++;
 		}
-		// if      ( rs > g_conf.m_medReadSize ) launchedBig1++;
-		// else if ( rs > g_conf.m_smaReadSize ) launchedMed1++;
-		// else                                  launchedSma1++;
 	}
 
-	// int32_t max = g_conf.m_spiderMaxDiskThreads;
-	// if ( max <= 0 ) max = 1;
-	// if ( activeCount >= max ) 
-	// 	return false;
 
 	// get best thread candidate from best linked list of candidates
 	ThreadEntry **bestHeadPtr = NULL;
@@ -2048,18 +1554,6 @@ bool ThreadQueue::launchThread2 ( ) {
 		bestHeadPtr = &m_waitHead0; 
 		bestTailPtr = &m_waitTail0;
 	}
-	// if ( ! bestHeadPtr && 
-	//      m_waitHead1   &&
-	//      launchedMed0 < g_conf.m_queryMaxMedDiskThreads ) {
-	// 	bestHeadPtr = &m_waitHead1; 
-	// 	bestTailPtr = &m_waitTail1;
-	// }
-	// if ( ! bestHeadPtr && 
-	//      m_waitHead2   &&
-	//      launchedBig0 < g_conf.m_queryMaxBigDiskThreads ) {
-	// 	bestHeadPtr = &m_waitHead2; 
-	// 	bestTailPtr = &m_waitTail2;
-	// }
 
 	// if we have a niceness 0 disk read/write outstandind and we are 
 	// 1 or 2, do not launch! we do not want low priority disk reads 
@@ -2067,13 +1561,6 @@ bool ThreadQueue::launchThread2 ( ) {
 	// now we only do this if the 'separate disk reads' parms is true.
 	if ( g_conf.m_separateDiskReads && hasLowNicenessOut && ! bestHeadPtr )
 		return false;
-
-	// threads to save conf and tree/bucket files to disk go in waitHead3
-	// no these use SAVETREE Thread type
-	// if ( ! bestHead ) {
-	// 	bestHead = m_waitHead3;
-	// 	bestTail = m_waitTail3;
-	// }
 
 	// do not allow too high niceness read threads out
 	if ( spiderCount >= g_conf.m_spiderMaxDiskThreads )
@@ -2110,211 +1597,8 @@ bool ThreadQueue::launchThread2 ( ) {
 
 	// point to entry in the best linked list to launch from
 	return launchThreadForReals ( bestHeadPtr , bestTailPtr );
-
-	/*
-	// loop through candidates
-	for ( int32_t i = 0 ; i < m_top ; i++ ) {
-		// skip if not occupied
-		if ( ! m_entries[i].m_isOccupied ) continue;
-		int32_t niceness = m_entries[i].m_niceness;
-		// get lowest niceness level of launched threads
-		if ( m_entries[i].m_isLaunched ) {
-			// if he's done, skip him
-			if ( m_entries[i].m_isDone ) continue;
-			// get the highest niceness for all that are launched
-			if ( niceness > highest ) highest = niceness;
-			// get the lowest niceness for all that are launched
-			if ( niceness < lowest ) lowest = niceness;
-			// continue now since it's already launched
-			continue;
-		}
-
-		// . these filters really make it so the spider does not
-		//   impact query response time
-
-		//if ( niceness >= 1 && hiActive > 0 ) continue;
-
-		// don't consider any lows if one already running
-		//if ( niceness >= 2 && loActive > 0 ) continue;
-		// don't consider any lows if a hi already running
-		//if ( niceness >= 2 && hiActive > 0 ) continue;
-		// don't consider any mediums if one already running
-		//if ( niceness == 1 && mdActive > 0 ) continue;
-		// don't consider any mediums if a hi already running
-		//if ( niceness == 1 && hiActive > 0 ) continue;
-		
-		//if ( m_threadType == DISK_THREAD ) {
-		//	if ( niceness >= 1 && hiActive > 0    ) continue;
-		//	if ( niceness >= 2 && loActive >= max ) continue;
-		//	if ( niceness == 1 && mdActive >= max ) continue;
-		//}
-		
-		// treat niceness 1 as niceness 2 for ranking purposes
-		// IFF we're not too backlogged with file merges. i.e.
-		// IFF we're merging faster than we're dumping.
-		// only merges and dumps have niceness 1 really.
-		// spider disk reads are all niceness 2.
-		// Now Rdb::addList just refuses to add data if we have too
-		// many unmerged files on disk!
-		// now we use niceness 1 for "real merges" so those reads take
-		// priority over spider build reads. (8/14/12)
-		//if(niceness == 1 ) niceness = 2;
-
-		// if he doesn't beat or tie us, skip him
-		if ( niceness > minNiceness ) continue;
-
-		// no more than "max" medium and low priority threads should
-		// be active/launched at any one time
-		if ( niceness >= 1 && total >= max ) continue;
-
-		// shortcut
-		ThreadEntry *t = &m_entries[i];
-
-		// what is this guy's read size?
-		// the filestate provided could have been 
-		//FileState *fs ;
-		int32_t readSize = 0 ;
-		bool isWrite = false;
-		if ( m_threadType == DISK_THREAD ){//&&m_entries[i].m_state ) {
-			//fs = (FileState *)m_entries[i].m_state;
-			readSize = t->m_bytesToGo;
-			isWrite = t->m_doWrite ;
-		}
-		if ( isWrite && activeWrites > g_conf.m_maxWriteThreads )
-			continue;
-
-		if ( m_threadType == MERGE_THREAD     ||
-		     m_threadType == INTERSECT_THREAD ||
-		     m_threadType == FILTER_THREAD     )
-			if ( niceness > 0 && hiActive2 > 0 ) 
-				continue;
-
-		// how many threads can be launched for this readSize/niceness?
-		if ( niceness >= 1 && m_threadType == DISK_THREAD ) {
-			if      ( readSize > g_conf.m_medReadSize ) {
-				if ( loActiveBig + mdActiveBig >=
-				     g_conf.m_spiderMaxBigDiskThreads ) 
-					continue;
-			}
-			else if ( readSize > g_conf.m_smaReadSize ) {
-				if ( loActiveMed + mdActiveMed >=
-				     g_conf.m_spiderMaxMedDiskThreads ) 
-					continue;
-			}
-			else if ( loActiveSma + mdActiveSma >=
-				  g_conf.m_spiderMaxSmaDiskThreads ) 
-				continue;
-		}
-		else if ( niceness < 1 && m_threadType == DISK_THREAD ) {
-			if      ( readSize > g_conf.m_medReadSize ) {
-				if ( hiActiveBig >=
-				     g_conf.m_queryMaxBigDiskThreads ) 
-					continue;
-			}
-			else if ( readSize > g_conf.m_smaReadSize ) {
-				if ( hiActiveMed >=
-				     g_conf.m_queryMaxMedDiskThreads ) 
-					continue;
-			}
-			else if ( hiActiveSma >=
-				  g_conf.m_queryMaxSmaDiskThreads ) 
-				continue;
-		}
-		// be lazy with this since it uses a significant amount of cpu
-		if ( now == -1LL ) now = gettimeofdayInMilliseconds();
-		// how long has this entry been waiting in the queue to launch?
-		int64_t waited = now - m_entries[i].m_queuedTime ;
-		// adjust "waited" if it originally had a niceness of 1
-		if ( m_entries[i].m_niceness >= 1 ) {
-			// save threads gain precedence
-			if ( m_threadType == SAVETREE_THREAD ) 
-				waited += 49999999;
-			else if ( m_threadType == UNLINK_THREAD ) 
-				waited += 39999999;
-			else if ( m_threadType == MERGE_THREAD ) 
-				waited += 29999999;
-			else if ( m_threadType == INTERSECT_THREAD )
-				waited += 29999999;
-			else if ( m_threadType == FILTER_THREAD )
-				waited +=  9999999;
-			// if its a write thread... do it quick
-			else if ( isWrite ) 
-				waited += 19999999;
-			// . if it has waited more than 500 ms it needs
-			//   to launch now...
-			// . these values seem to be VERY well tuned on
-			//   my production machines, but they may have to
-			//   be tuned for other machines? TODO.
-			// . they should auto-tune so when merge is more 
-			//   important it should starve the other spider reads
-			else if ( waited >= 500 ) 
-				waited +=  9999999;
-			// it hurts for these guys to wait that int32_t
-			else waited *= 4;
-		}
-		// is real merge?
-		if ( m_entries[i].m_niceness == 1 )
-			waited += 19999999;
-		// watch out for clock skew
-		if ( waited < 0 ) waited = 0;
-		// if tied, the lowest time wins
-		if ( niceness == minNiceness && waited <= maxWait ) continue;
-		// we got a new winner
-		mini        = i;
-		minNiceness = niceness;
-		maxWait     = waited;
-		minIsWrite  = isWrite;
-	}
-	// if no candidate, bail honorably
-	if ( mini == -1 ) return false;
-	// . if we've got an urgent thread (niceness=1) going on, do not allow
-	//   niceness=2 threads to launch
-	// . actually, don't launch *ANY* if doing an urgent merge even if
-	//   no niceness=1 thread currently launched
-	// . CAUTION! when titledb is merging it dumps tfndb and if tfndb
-	//   goes urgent,make sure it dumps out with niceness 1, otherwise
-	//   this will freeze us!! since titledb won't be able to continue
-	//   merging until tfndb finishes dumping...
-	// . Now Rdb::addList just refuses to add data if we have too
-	//   many unmerged files on disk! Let others still read from us,
-	//   just not add to us...
-	//if ( minNiceness >= 2 && g_numUrgentMerges > 0 ) // && lowest <= 1 ) 
-	//	return false;
-	// if we're urgent, don't launch a niceness 2 unless he's waited
-	// at least 200ms in the queue
-	//if ( minNiceness >= 2 && g_numUrgentMerges > 0 && maxWait < 200 )
-	//	return false;
-	// . if the thread to launch has niceness > lowest launched then bail
-	// . i.e. don't launch a low-priority thread if we have highs running
-	// . we no longer let a niceness of 1 prevent a niceness of 2 from
-	//   launching, this way we can launch merge threads at a niceness
-	//   of 1 w/o hurting the spidering too much, but still giving the
-	//   merge some preferential treatment over the disk so we don't
-	//   RdbDump data faster than we can finish the merge.
-	if ( minNiceness > lowest && lowest < 1 ) return false;
-	// . don't launch a low priority thread if there's a high launched
-	//   from any ThreadQueue 
-	// . hi priority is niceness <= 0, med/lo priority is niceness >= 1
-	//int64_t hiActive = g_threads.m_hiLaunched - g_threads.m_hiReturned;
-	// now just limit it to this queue... so you can launch a low
-	// merge thread even if there's a high disk read going on
-	//if ( minNiceness >= 1 && hiActive > 0 ) return false;
-	// if we're low priority and suspended is true then bail
-	//if ( minNiceness > 0 && m_isLowPrioritySuspended ) return false;
-	// if we're going to launch a high priority thread then CANCEL
-	// any low priority disk-read threads already in progress
-	//if ( minNiceness <= 0 && highest > 0 ) cancelLowPriorityThreads ();
-	// . let's cancel ALL low priority threads if we're launching a high
-	// . hi priority is niceness <= 0, low priority is niceness >= 1
-	//int64_t loActive = g_threads.m_loLaunched - g_threads.m_loReturned;
-	int32_t realNiceness = m_entries[mini].m_niceness;
-	//if ( realNiceness <= 0 && (loActive + mdActive) > 0 )
-	//	// this actually cancels medium priority threads, too
-	//	g_threads.cancelLowPriorityThreads();
-	// point to winning entry
-	ThreadEntry *t = &m_entries[mini];
-	*/
 }
+
 
 bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 					 ThreadEntry **tailPtr ) {
@@ -2361,55 +1645,13 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 
 	// count it as launched now, before we actually launch it
 	m_launched++;
-	/*
-	// priority-based GLOBAL & LOCAL launch count
-	if      ( realNiceness <= 0 ) m_hiLaunched++;
-	else if ( realNiceness == 1 ) m_mdLaunched++;
-	else if ( realNiceness >= 2 ) m_loLaunched++;
-	// deal with the tiers for disk threads based on read sizes
-	if ( m_threadType == DISK_THREAD ) {
-		// writes are special cases
-		if ( t->m_doWrite ) m_writesLaunched++;
-		//FileState *fs = (FileState *)m_entries[mini].m_state;
-		int32_t rs = t->m_bytesToGo; // 0;
-		//if ( fs ) rs = fs->m_bytesToGo;
-		if ( realNiceness >= 2 ) {
-			if      ( rs > g_conf.m_medReadSize )
-				m_loLaunchedBig++;
-			else if ( rs > g_conf.m_smaReadSize ) 
-				m_loLaunchedMed++;
-			else
-				m_loLaunchedSma++;
-		}
-		else if ( realNiceness >= 1 ) {
-			if      ( rs > g_conf.m_medReadSize )
-				m_mdLaunchedBig++;
-			else if ( rs > g_conf.m_smaReadSize ) 
-				m_mdLaunchedMed++;
-			else
-				m_mdLaunchedSma++;
-		}
-		else {
-			if      ( rs > g_conf.m_medReadSize )
-				m_hiLaunchedBig++;
-			else if ( rs > g_conf.m_smaReadSize ) 
-				m_hiLaunchedMed++;
-			else
-				m_hiLaunchedSma++;
-		}
-	}
-	*/
-	// debug msg
-	//if ( m_threadType == 0 ) 
-	//	log("creating thread, t=%"UINT32" state=%"UINT32" 
-	//launched = %"INT32"", 
-	//	     t , (int32_t)t->m_state , m_launched );
+
 	// and set the flag
 	t->m_isLaunched = true;
 	// . launch it
 	// . this sets the pthread_t ptr for identificatoin
 	// . returns false on error
-	//pthread_t tmp;
+
  loop:
 	// debug msg
 	if ( g_conf.m_logDebugThread ) {
@@ -2433,18 +1675,6 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 
 	// assume it does not go through
 	t->m_needsJoin = false;
-
-	// pthread inherits our sigmask, so don't let it handle sigalrm
-	// signals in Loop.cpp, it'll screw things up. that handler
-	// is only meant to be called by the main process. if we end up
-	// double calling it, this thread may think g_callback is non-null
-	// then it gets set to NULL, then the thread cores! seen it...
-	// sigset_t sigs;
-	// sigemptyset ( &sigs );
-	// sigaddset   ( &sigs , SIGALRM );
-	// sigaddset   ( &sigs , SIGVTALRM );
-	// if ( sigprocmask ( SIG_BLOCK  , &sigs , NULL ) < 0 )
-	// 	log("threads: failed to block sig");
 
 
 	// supply our own stack to make pthread_create() fast otherwise
@@ -2515,21 +1745,15 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 		return true;
 	}
 
-	//#undef usleep
 
 	// forever loop
 	if ( g_errno == EAGAIN ) {
 		if ( count++ == 0 ) 
 			log("thread: Call to clone had error: %s.",
 			    mstrerror(g_errno));
-		//usleep(1);
-		//goto loop2;
 		goto hadError;
 	}
-	// debug msg
-	//	log("created tid=%"INT32"",(int32_t)t->m_tid);
-	//	return true;
-	//}
+
 	// do again if g_errno is AGAIN
 	if ( g_errno == EINTR ) {
 		log("thread: Call to clone was interrupted. Trying again.");
@@ -2550,46 +1774,6 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 	g_threads.returnStack ( t->m_si );
 	t->m_stack = NULL;
 
-	/*
-	// priority-based LOCAL & GLOBAL launch counts
-	if      ( realNiceness <= 0 ) m_hiLaunched--;
-	else if ( realNiceness == 1 ) m_mdLaunched--;
-	else if ( realNiceness >= 2 ) m_loLaunched--;
-	// . deal with the tiers for disk threads based on read sizes
-	// . WARNING: we cannot easily change tiers dynamically 
-	//   because it will throw these  counts off
-	if ( m_threadType == DISK_THREAD ) {
-		// writes are special cases
-		if ( t->m_doWrite ) m_writesLaunched--;
-		//FileState *fs = (FileState *)m_entries[mini].m_state;
-		int32_t rs = t->m_bytesToGo; // 0;
-		//if ( fs ) rs = fs->m_bytesToGo;
-		if ( realNiceness >= 2 ) {
-			if      ( rs > g_conf.m_medReadSize )
-				m_loLaunchedBig--;
-			else if ( rs > g_conf.m_smaReadSize ) 
-				m_loLaunchedMed--;
-			else
-				m_loLaunchedSma--;
-		}
-		else if ( realNiceness >= 1 ) {
-			if      ( rs > g_conf.m_medReadSize )
-				m_mdLaunchedBig--;
-			else if ( rs > g_conf.m_smaReadSize ) 
-				m_mdLaunchedMed--;
-			else
-				m_mdLaunchedSma--;
-		}
-		else {
-			if      ( rs > g_conf.m_medReadSize )
-				m_hiLaunchedBig--;
-			else if ( rs > g_conf.m_smaReadSize ) 
-				m_hiLaunchedMed--;
-			else
-				m_hiLaunchedSma--;
-		}
-	}
-	*/
 	// unset the flag
 	t->m_isLaunched = false;
 	// bail on other errors
@@ -2616,44 +1800,6 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 	// i'm not sure return value matters at this point? the thread
 	// is queued and hopefully will launch at some point
 	return false;
-
-	/*
-	// if this is the direct thread request do not call callback, just
-	// return false, otherwise we get into an unexpected loop thingy
-	if ( t == te )
-		return log("thread: Returning false.");
-	// do it blocking
-	log("thread: Calling without thread. This will crash many times. "
-	    "Please fix it.");
-	// return false so caller will re-do without thread!
-	// so BigFile::readwrite() will retry without thread and we won't
-	// get into a wierd loop thingy
-	if ( te ) return false;
-
-// 	uint64_t profilerStart,profilerEnd;
-// 	uint64_t statStart,statEnd;
-
-	//if (g_conf.m_profilingEnabled){
-	//	address=(int32_t)t->m_startRoutine;
-	//	g_profiler.startTimer(address, __PRETTY_FUNCTION__);
-	//}
-	t->m_startRoutine ( t->m_state , t );
-	//if (g_conf.m_profilingEnabled) {
-	//	if(!g_profiler.endTimer(address, __PRETTY_FUNCTION__))
-	//		log(LOG_WARN,"admin: Couldn't add the fn %"INT32"",
-	//		    (int32_t)address);
-	//}
-	t->m_exitTime = gettimeofdayInMilliseconds();
-	// flag it for cleanup
-	t->m_isDone     = true;
-	t->m_isLaunched = true;
-	// clean it up
-	cleanUp ( t , 200);//maxNiceness thread can have to be cleaned up
-	// ignore error
-	g_errno = 0;
-	// we kinda launched one, so say true here
-	return true; // false;
-	*/
 }
 
 
@@ -2663,14 +1809,6 @@ int startUp ( void *state ) {
 	// get thread entry
 	ThreadEntry *t = (ThreadEntry *)state;
 
-	// no! now parent does since he is the one that needs to check it
-	// in the cleanup routine
-	// remember the pid
-	//t->m_pid = getpid();
-	// . sanity check
-	// . a thread can NOT call this
-	// the cleanup handler
-	//pthread_cleanup_push ( exitWrapper , t ) ; // t->m_state );
 	// our signal set
 	sigset_t set;
 	sigemptyset(&set);
@@ -2702,26 +1840,7 @@ int startUp ( void *state ) {
 		log(LOG_DEBUG,"thread: [t=0x%"PTRFMT"] "
 		    "in startup pid=%"INT64" pppid=%"INT32"",
 		    (PTRTYPE)t,(int64_t)getpidtid(),(int32_t)getppid());
-	// debug msg
-	//fprintf(stderr,"new thread tid=%"INT32" pid=%"INT32"\n",
-	//	(int32_t)t->m_tid,(int32_t)t->m_pid);
-	// . set this process's priority
-	// . setpriority() is only used for SCHED_OTHER threads
-	//if ( pthread_setschedprio ( getpidtid() , p ) ) {
-	/*
-	sched_param sp;
-	int         pp;
-	int err = pthread_getschedparam ( t->m_tid , &pp , &sp ) ;
-	if ( err ) log("thread: startUp: pthread_getschedparam: %s",
-		       mstrerror(err));
-	// adjust the priority
-	p = 1;
-	sp.sched_priority = p;
-	// and reassign
-	err = pthread_setschedparam ( t->m_tid , SCHED_OTHER , &sp ) ;
-	log("thread: startUp: pthread_setschedparam(%"INT32"): %s",
-		       p,mstrerror(err));
-	*/
+
 	// somehow, it works ok when we have this print statement delay!!!
 	//fprintf(stderr,"thread pid = %"INT32"\n",(int32_t)getpid());
 	// . call the startRoutine
@@ -2759,24 +1878,6 @@ int startUp ( void *state ) {
 	// let Loop.cpp's sigHandler_r call g_thread.cleanUp()
 	g_threads.m_needsCleanup = true;
 
-	//if(t->m_niceness > 0) g_threads.m_needBottom = true;
-
-	// . send the signal
-	// . if queue is full g_loop will get a SIGIO and call 
-	//   g_threads.cleanUp()/launchThreads() in it's doPoll() routine
-	// . we reserve GB_SIGRTMIN itself for unblocked interrupts for 
-	//   UdpServer
-	// . damn, it seems that if the queue is full pthread_join is unable
-	//   to detach threads.... so sleep until it clears up
-	// . HEY! process is supposed to send us an ECHLD signal? right?
-	//sigqueue ( s_pid, GB_SIGRTMIN + 1 + t->m_niceness, svt ) ;
-
-	// . it does not send us a signal automatically, so we must do it!
-	// . i noticed during the linkdb rebuild we were not getting the signal
-	//sigqueue ( s_pid, GB_SIGRTMIN + 1 + t->m_niceness, svt ) ;
-
-	// i verified this breaks select() in Loop.cpp out of it's sleep
-	//fprintf(stderr,"threads sending SIGCHLD\n");
 
 	// try a sigchld now! doesn't it already do this? no...
 	// on 64bit arch pthread_t is 64bit and pid_t is 32bit
@@ -2787,21 +1888,19 @@ int startUp ( void *state ) {
 	return 0;
 }
 
+
 // pthread_create uses this one
 void *startUp2 ( void *state ) {
   startUp ( state );
   return NULL;
 }
 
+
 // watch out, UdpServer::getEmptySlot() calls UdpServer::suspend() and we
 // could be in a signal handler here
 void ThreadQueue::suspendLowPriorityThreads() {
-	// disable for now
-	//return;
 	// just return if already suspended
 	if ( m_isLowPrioritySuspended ) return;
-	// log it
-	//log("ThreadQueue:: suspending low priority threads!!!!!!");
 	// set the flag so low priority threads won't be launched
 	m_isLowPrioritySuspended = true;
 	// . cancel any outstanding low priority threads that are running
@@ -2810,23 +1909,17 @@ void ThreadQueue::suspendLowPriorityThreads() {
 	//cancelLowPriorityThreads();
 }
 
+
 // this is called by UdpServer::destroySlot() and should NOT be in a sig handlr
 void ThreadQueue::resumeLowPriorityThreads() {
-	// disable for now
-	//return;
 	// bail if no need
 	if ( ! m_isLowPrioritySuspended ) return;
 	// turn em back on
 	m_isLowPrioritySuspended = false;
-	// just in case, though
-	//if ( g_inSigHandler ) {
-	//	log(LOG_LOGIC,"thread: resumeLowPriorityThreads: In sig "
-	//	    "handler.");
-	//	return;
-	//}
 	// try to start up some threads then
 	g_threads.launchThreads();
 }
+
 
 void ThreadQueue::print ( ) {
 	// loop through candidates
@@ -2842,6 +1935,7 @@ void ThreadQueue::print ( ) {
 	}
 }
 
+
 const char *ThreadQueue::getThreadType ( ) {
 	const char *s = "unknown";
 	if ( m_threadType == DISK_THREAD      ) s = "disk";
@@ -2854,46 +1948,8 @@ const char *ThreadQueue::getThreadType ( ) {
 	return s;
 }
 
+
 #include "BigFile.h" // FileState class
-/*
-MDW: this is unused
-int32_t Threads::getDiskThreadLoad ( int32_t maxNiceness , int32_t *totalToRead ) {
-	ThreadQueue *q = &m_threadQueues[DISK_THREAD];
-	ThreadEntry *e = q->m_entries;
-	int32_t top = q->m_top;
-	*totalToRead = 0;
-	int32_t n     = 0;
-	// we really can't suspend threads cuz they might have the
-	// mutex lock so we just cancel the disk threads here then
-	for ( int32_t i = 0 ; i < top ; i++ ) {
-		// get entry
-		ThreadEntry *t = &e[i];
-		// skip if not occupied
-		if ( ! t->m_isOccupied  ) continue;
-		// skip if it's nicer than what we want
-		if (t->m_niceness > maxNiceness && ! t->m_isLaunched) continue;
-		// skip if already done
-		if ( t->m_isDone ) continue;
-		// cast state data
-		FileState *fs = (FileState *) t->m_state;
-		// sometimes NULL, like from Sync.cpp's call
-		if ( ! fs ) continue;
-		// only remove read operations, since write operations get
-		// the fd up front
-		if ( t->m_doWrite ) continue;
-		// how many byte to do
-		//int32_t todo = fs->m_bytesToGo - fs->m_bytesDone;
-		int32_t todo = t->m_bytesToGo;
-		// multiply by 2 if a write
-		if ( t->m_doWrite ) todo *= 2;
-		// add to total bytes to read
-		*totalToRead += todo;
-		// count the thread
-		n++;
-	}
-	return n;
-}
-*/
 
 // when a BigFile is removed, much like we remove its pages from DiskPageCache
 // we also remove any unlaunched reads/writes on it from the thread queue.
@@ -2901,8 +1957,7 @@ void ThreadQueue::removeThreads ( BigFile *bf ) {
 	// did the BigFile get hosed? that means our BigFile was
 	// unlinked or closed before we got a chance to launch the 
 	// thread.
-	//int32_t maxi = -1;
-	//ThreadEntry *head ;
+
 	removeThreads2 ( &m_waitHead0 , &m_waitTail0 , bf );
 	removeThreads2 ( &m_waitHead1 , &m_waitTail1 , bf );
 	removeThreads2 ( &m_waitHead2 , &m_waitTail2 , bf );
@@ -2911,6 +1966,7 @@ void ThreadQueue::removeThreads ( BigFile *bf ) {
 	removeThreads2 ( &m_waitHead5 , &m_waitTail5 , bf );
 	removeThreads2 ( &m_waitHead6 , &m_waitTail6 , bf );
 }
+
 
 void ThreadQueue::removeThreads2 ( ThreadEntry **headPtr ,
 				   ThreadEntry **tailPtr ,
@@ -2975,14 +2031,7 @@ void ThreadQueue::removeThreads2 ( ThreadEntry **headPtr ,
 		makeCallback ( t );
 
 	}
-	// do we have to decrement top
-	// if ( m_top == maxi + 1 )
-	// 	while ( m_top>0 && !m_entries[m_top-1].m_isOccupied) m_top--;
 
-	// this was causing us to lose a g_errno value when XmlDoc::~XmlDoc()
-	// called BigFile::~BigFile() called removeThreads() 
-	//called removeThreads2()
-	//g_errno = 0;
 	g_errno = saved;
 }
 
@@ -2993,17 +2042,6 @@ void Threads::printState() {
 
 	for ( int32_t i = 0 ; i < m_numQueues; i++ ) {
 		ThreadQueue *q = &m_threadQueues[i];
-
-		// int32_t loActive = q->m_loLaunched - q->m_loReturned;
-		// int32_t mdActive = q->m_mdLaunched - q->m_mdReturned;
-		// int32_t hiActive = q->m_hiLaunched - q->m_hiReturned;
-		// int32_t      total    = loActive + mdActive + hiActive;
-	
-		//if( total == 0) continue;
-		// log(LOG_TIMING,
-		//     "admin: Thread counts: type:%s "
-		//     "%"INT32":low %"INT32":med%"INT32":high %"INT32":total",
-		//     q->getThreadType(),loActive, mdActive, hiActive, total);
 
 		for ( int32_t j = 0 ; j < q->m_top ; j++ ) {
 			ThreadEntry *t = &q->m_entries[j];
