@@ -54,7 +54,6 @@ public:
 	int64_t    m_exitTime                 ; // when thread was done
 	char         m_qnum                     ; // what thread queue we r in
 	char         m_doWrite                  ; // BigFile.cpp stuck reads
-	char         m_isCancelled              ; // got cancel sig?
 
 	char        *m_stack                    ;
 	int32_t         m_stackSize                ;

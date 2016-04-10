@@ -1059,7 +1059,6 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness,
 	t->m_callback     = callback;
 	t->m_startRoutine = startRoutine;
 	t->m_isOccupied   = true;
-	t->m_isCancelled  = false;
 	t->m_stack        = NULL;
 	t->m_isDone       = false;
 	t->m_isLaunched   = false;
@@ -1383,22 +1382,6 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 		// now count him as returned
 		m_returned++;
 
-		// prepare for relaunch if we were cancelled
-		if ( t->m_isCancelled ) {
-			t->m_isCancelled = false;
-			t->m_isLaunched  = false;
-			t->m_isDone      = false;
-			// take out of launched linked list
-			removeLink ( &m_launchedHead , t );
-			// get the waiting linked list from whence we came
-			ThreadEntry **bestHeadPtr = t->m_bestHeadPtr;
-			ThreadEntry **bestTailPtr = t->m_bestTailPtr;
-			// put BACK into the waiting linked list at the head
-			addLinkToHead ( bestHeadPtr , bestTailPtr  , t );
-			log("thread: Thread cancelled. Preparing thread "
-			    "for relaunch");
-			continue;
-		}
 		numCallbacks++;
 
 		// not running any more
@@ -1544,24 +1527,6 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 		// now count him as returned
 		m_returned++;
 
-		// prepare for relaunch if we were cancelled
-		if ( t->m_isCancelled ) {
-			t->m_isCancelled = false;
-			t->m_isLaunched  = false;
-			t->m_isDone      = false;
-			// take out of the linked list of launched threads
-			removeLink ( &m_launchedHead , t );
-			// what waiting linked list did it come from?
-			// get the waiting linked list from whence we came
-			ThreadEntry **bestHeadPtr = t->m_bestHeadPtr;
-			ThreadEntry **bestTailPtr = t->m_bestTailPtr;
-			// and put it back at the head
-			addLinkToHead ( bestHeadPtr , bestTailPtr , t );
-			log("thread: Thread cancelled. Preparing thread "
-			    "for relaunch");
-			continue;
-		}
-
 		callbacks [ numCallbacks ] = t->m_callback;
 		states    [ numCallbacks ] = t->m_state;
 		times     [ numCallbacks ] = t->m_queuedTime;
@@ -1652,7 +1617,7 @@ bool ThreadQueue::launchThread2 ( ) {
 
 	// return if the max is already launched for this thread queue
 	if ( active >= m_maxLaunched ) {
-		log("thread: ThreadQueue::launchThread2: active>m_maxLaunched (%ld>%d)", active, m_maxLaunched);
+		log("thread: ThreadQueue::launchThread2: THREADS MAXED OUT. active > m_maxLaunched (%ld>%d)", active, m_maxLaunched);
 		return false;
 	}
 
@@ -1661,9 +1626,11 @@ bool ThreadQueue::launchThread2 ( ) {
 		if ( m_threadType!=THREAD_TYPE_MERGE &&
 		     m_threadType!=THREAD_TYPE_INTERSECT &&
 		     m_launchedHead ) {
+			// @todo: BR: OK with only one of all these (FILTER, SAVETREE, UNLINK, GENERIC)?
 			log("thread: ThreadQueue::launchThread2: already one of that type");
 			return false;
 		}
+		
 		// first try niceness 0 queue
 		ThreadEntry **bestHeadPtr = &m_waitHead0;
 		ThreadEntry **bestTailPtr = &m_waitTail0;
@@ -1797,8 +1764,7 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 				allocated = true;
 			}
 			else
-				log("thread: read buf alloc failed "
-				    "for %"INT32" bytes.",need);
+				log("thread: read buf alloc failed for %"INT32" bytes.",need);
 			// just let the BigFile::readWrite_r() handle the
 			// error for the NULL read buf
 		}
