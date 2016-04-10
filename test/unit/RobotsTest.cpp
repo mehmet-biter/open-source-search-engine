@@ -1063,9 +1063,9 @@ TEST( RobotsTest, CrawlDelayFieldCaseInsensitive ) {
 //                                                                                      //
 //////////////////////////////////////////////////////////////////////////////////////////
 
-// [path]		[match]								[no match]					[comments]
-// /			any valid url													Matches the root and any lower level URL
-// /*			equivalent to /						equivalent to /				Equivalent to "/" -- the trailing wildcard is ignored.
+// [path]       [match]                             [no match]                  [comments]
+// /            any valid url                                                   Matches the root and any lower level URL
+// /*           equivalent to /                     equivalent to /             Equivalent to "/" -- the trailing wildcard is ignored.
 TEST( RobotsTest, GPathMatchDisallowAll ) {
 	static const char *allow = "";
 	static const char *disallow = "/";
@@ -1092,13 +1092,13 @@ TEST( RobotsTest, GPathMatchDisallowAllWildcard ) {
 	EXPECT_FALSE( robots.isAllowed( "/index.html" ) );
 }
 
-// [path]		[match]								[no match]					[comments]
-// /fish		/fish								/Fish.asp					Note the case-sensitive matching.
-// 				/fish.html							/catfish
-// 				/fish/salmon.html					/?id=fish
-// 				/fishheads
-// 				/fishheads/yummy.html
-// 				/fish.php?id=anything
+// [path]       [match]                             [no match]                  [comments]
+// /fish        /fish                               /Fish.asp                   Note the case-sensitive matching.
+//              /fish.html                          /catfish
+//              /fish/salmon.html                   /?id=fish
+//              /fishheads
+//              /fishheads/yummy.html
+//              /fish.php?id=anything
 TEST( RobotsTest, GPathMatchPrefixDisallow ) {
 	static const char *allow = "";
 	static const char *disallow = "/fish";
@@ -1141,13 +1141,13 @@ TEST( RobotsTest, GPathMatchPrefixAllow ) {
 	EXPECT_FALSE( robots.isAllowed( "/?id=fish" ) );
 }
 
-// [path]		[match]								[no match]					[comments]
-// /fish*		/fish								/Fish.asp					Equivalent to "/fish" -- the trailing wildcard is ignored.
-// 				/fish.html							/catfish
-// 				/fish/salmon.html					/?id=fish
-// 				/fishheads
-// 				/fishheads/yummy.html
-// 				/fish.php?id=anything
+// [path]       [match]                             [no match]                  [comments]
+// /fish*       /fish                               /Fish.asp                   Equivalent to "/fish" -- the trailing wildcard is ignored.
+//              /fish.html                          /catfish
+//              /fish/salmon.html                   /?id=fish
+//              /fishheads
+//              /fishheads/yummy.html
+//              /fish.php?id=anything
 TEST( RobotsTest, GPathMatchPrefixWildcardDisallow ) {
 	static const char *allow = "";
 	static const char *disallow = "/fish*";
@@ -1190,10 +1190,10 @@ TEST( RobotsTest, GPathMatchPrefixWildcardAllow ) {
 	EXPECT_FALSE( robots.isAllowed( "/?id=fish" ) );
 }
 
-// [path]		[match]								[no match]					[comments]
-// /fish/		/fish/								/fish						The trailing slash means this matches anything in this folder.
-// 				/fish/?id=anything					/fish.html
-// 				/fish/salmon.htm					/Fish/Salmon.php
+// [path]       [match]                             [no match]                  [comments]
+// /fish/       /fish/                              /fish                       The trailing slash means this matches anything in this folder.
+//              /fish/?id=anything                  /fish.html
+//              /fish/salmon.htm                    /Fish/Salmon.php
 TEST( RobotsTest, GPathMatchPrefixDirDisallow ) {
 	static const char *allow = "";
 	static const char *disallow = "/fish/";
@@ -1230,12 +1230,12 @@ TEST( RobotsTest, GPathMatchPrefixDirAllow ) {
 	EXPECT_FALSE( robots.isAllowed( "/Fish/Salmon.php" ) );
 }
 
-// [path]		[match]								[no match]					[comments]
-// *.php		/filename.php						/ 							(even if it maps to /index.php)
-// 				/folder/filename.php				/windows.PHP
-// 				/folder/filename.php?parameters
-// 				/folder/any.php.file.html
-// 				/filename.php/
+// [path]       [match]                             [no match]                  [comments]
+// *.php        /filename.php                       /                           (even if it maps to /index.php)
+//              /folder/filename.php                /windows.PHP
+//              /folder/filename.php?parameters
+//              /folder/any.php.file.html
+//              /filename.php/
 TEST( RobotsTest, GPathMatchWildcardExtDisallow ) {
 	static const char *allow = "";
 	static const char *disallow = "*.php";
@@ -1274,11 +1274,11 @@ TEST( RobotsTest, GPathMatchWildcardExtAllow ) {
 	EXPECT_FALSE( robots.isAllowed( "/windows.PHP" ) );
 }
 
-// [path]		[match]								[no match]					[comments]
-// /*.php$		/filename.php						/filename.php?parameters
-// 				/folder/filename.php				/filename.php/
-// 													/filename.php5
-// 													/windows.PHP
+// [path]       [match]                             [no match]                  [comments]
+// /*.php$      /filename.php                       /filename.php?parameters
+//              /folder/filename.php                /filename.php/
+//                                                  /filename.php5
+//                                                  /windows.PHP
 TEST( RobotsTest, GPathMatchWildcardExtEndDisallow ) {
 	static const char *allow = "";
 	static const char *disallow = "/*.php$";
@@ -1315,9 +1315,9 @@ TEST( RobotsTest, GPathMatchWildcardExtEndAllow ) {
 	EXPECT_FALSE( robots.isAllowed( "/windows.PHP" ) );
 }
 
-// [path]		[match]								[no match]					[comments]
+// [path]       [match]                             [no match]                  [comments]
 // /fish*.php	/fish.php							/Fish.PHP
-// 				/fishheads/catfish.php?parameters
+//              /fishheads/catfish.php?parameters
 TEST( RobotsTest, GPathMatchPrefixWildcardExtDisallow ) {
 	static const char *allow = "";
 	static const char *disallow = "/fish*.php";
@@ -1356,12 +1356,12 @@ TEST( RobotsTest, GPathMatchPrefixWildcardExtAllow ) {
 //                                                                                      //
 //////////////////////////////////////////////////////////////////////////////////////////
 
-// [url]							[allow]		[disallow]		[verdict]
-// http://example.com/page			/p			/				allow
-// http://example.com/folder/page	/folder/	/folder			allow
-// http://example.com/page.htm		/page		/*.htm			undefined
-// http://example.com/				/$			/				allow
-// http://example.com/page.htm		/$			/				disallow
+// [url]                            [allow]     [disallow]      [verdict]
+// http://example.com/page          /p          /               allow
+// http://example.com/folder/page   /folder/    /folder         allow
+// http://example.com/page.htm      /page       /*.htm          undefined
+// http://example.com/              /$          /               allow
+// http://example.com/page.htm      /$          /               disallow
 TEST( RobotsTest, GPrecedenceAllowDisallow ) {
 	char robotsTxt[1024];
 
