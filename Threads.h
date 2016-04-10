@@ -84,10 +84,7 @@ public:
 	int64_t    m_returned;
 	// how many can we launch at one time?
 	int32_t         m_maxLaunched;
-	// how many are in the queue now?
-	//int32_t         m_entriesUsed;
-	// m_top is the first unused entry with nothing used above it
-	int32_t         m_top;
+
 	// the list of entries in this queue
 	//ThreadEntry  m_entries [ MAX_THREAD_ENTRIES ];
 	ThreadEntry *m_entries ;

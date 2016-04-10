@@ -549,7 +549,7 @@ void Threads::printState() {
 	for ( int32_t i = 0 ; i < m_numQueues; i++ ) {
 		ThreadQueue *q = &m_threadQueues[i];
 
-		for ( int32_t j = 0 ; j < q->m_top ; j++ ) {
+		for ( int32_t j = 0 ; j < q->m_maxEntries ; j++ ) {
 			ThreadEntry *t = &q->m_entries[j];
 
 			if(!t->m_isOccupied)
@@ -938,7 +938,6 @@ ThreadQueue::ThreadQueue ( ) {
 void ThreadQueue::reset ( ) {
 	if ( m_entries ) mfree ( m_entries , m_entriesSize , "Threads" );
 	m_entries = NULL;
-	m_top = 0;
 }
 
 
@@ -1182,7 +1181,7 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness,
 
 bool ThreadQueue::isHittingFile ( BigFile *bf ) {
 	// loop through candidates
-	for ( int32_t i = 0 ; i < m_top; i++ ) {
+	for ( int32_t i = 0 ; i < m_maxEntries; i++ ) {
 		// point to it
 		ThreadEntry *t = &m_entries[i];
 
@@ -1978,7 +1977,7 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 
 void ThreadQueue::print ( ) {
 	// loop through candidates
-	for ( int32_t i = 0 ; i < m_top ; i++ ) {
+	for ( int32_t i = 0 ; i < m_maxEntries ; i++ ) {
 		ThreadEntry *t = &m_entries[i];
 		// print it
 		log(LOG_INIT,"thread: address=%"PTRFMT" "
