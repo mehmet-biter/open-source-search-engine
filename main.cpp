@@ -4874,7 +4874,7 @@ skip:
 	//int pid;
 	for ( int32_t i = 0 ; i < s_numThreads ; i++ ) {
 		//int err = pthread_create ( &tid1,&s_attr,startUp,(void *)i) ;
-		if (!g_threads.call(GENERIC_THREAD,0,
+		if (!g_threads.call(THREAD_TYPE_GENERIC,0,
 				    (void *)(PTRTYPE)i,NULL,startUp)){
 			log("test: Thread launch failed."); return; }
 		log(LOG_INIT,"test: Launched thread #%"INT32".",i);

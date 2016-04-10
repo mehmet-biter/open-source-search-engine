@@ -1552,7 +1552,7 @@ bool Hostdb::syncHost ( int32_t syncHostId, bool useSecondaryIps ) {
         m_syncSecondaryIps = useSecondaryIps;
         h->m_doingSync = 1;
 	// start the sync in a thread, complete when it's done
-	if ( g_threads.call ( GENERIC_THREAD     ,
+	if ( g_threads.call ( THREAD_TYPE_GENERIC     ,
 			      MAX_NICENESS       ,
 			      this               ,
 			      syncDoneWrapper    ,

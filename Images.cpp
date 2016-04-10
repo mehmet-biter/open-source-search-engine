@@ -849,7 +849,7 @@ bool Images::makeThumb ( ) {
 	// reset this since filterStart_r() will set it on error
 	m_errno = 0;
 	// callThread returns true on success, in which case we block
-	if ( g_threads.call ( FILTER_THREAD        ,
+	if ( g_threads.call ( THREAD_TYPE_FILTER,
 			      MAX_NICENESS         ,
 			      this                 ,
 			      makeThumbWrapper    ,

@@ -6,7 +6,6 @@
 #ifndef GB_THREADS_H
 #define GB_THREADS_H
 
-#define MAX_THREAD_QUEUES 7
 
 #include <sys/types.h>  // pid_t
 
@@ -16,33 +15,37 @@
 pthread_t getpidtid();
 
 // user-defined thread types
-#define DISK_THREAD      0
-#define MERGE_THREAD     1
-#define INTERSECT_THREAD 2
-#define FILTER_THREAD    3
-#define SAVETREE_THREAD  4
-#define UNLINK_THREAD    5
-#define GENERIC_THREAD   6
+enum
+{
+	THREAD_TYPE_DISK,
+	THREAD_TYPE_MERGE,
+	THREAD_TYPE_INTERSECT,
+	THREAD_TYPE_FILTER,
+	THREAD_TYPE_SAVETREE,
+	THREAD_TYPE_UNLINK,
+	THREAD_TYPE_GENERIC,
+	THREAD_TYPE_MAX
+};
+
 
 #define MAX_NICENESS     2
 
 // . a ThreadQueue has a list of thread entries
 // . each thread entry represents a thread in progress or waiting to be created
 class ThreadEntry {
-
- public:
+public:
 	int32_t         m_niceness                 ;
 	void        (* m_callback)(void *state,class ThreadEntry *) ;
 	void         *m_state                   ;
 	// returns a void * :
-	void        *(* m_startRoutine)(void *,class ThreadEntry *) ; 
+	void        *(* m_startRoutine)(void *,class ThreadEntry *) ;
 	pid_t        m_pid                      ; // process id for waitpid()
 	bool         m_isOccupied               ; // is thread waiting/going?
 	bool         m_isLaunched               ; // has it been launched?
 	bool         m_isDone                   ; // is it done running?
 	bool         m_readyForBail             ; // BigFile.cpp stuck reads
 	char        *m_allocBuf                 ; // BigFile.cpp stuck reads
-	int32_t         m_allocSize                ; // BigFile.cpp stuck reads
+	int32_t      m_allocSize                ; // BigFile.cpp stuck reads
 	int32_t         m_errno                    ; // BigFile.cpp stuck reads
 	int32_t         m_bytesToGo                ; // BigFile.cpp stuck reads
 	int64_t    m_queuedTime               ; // when call() was called
@@ -68,12 +71,11 @@ class ThreadEntry {
 	ThreadEntry **m_bestTailPtr;
 };
 
-//#define MAX_THREAD_ENTRIES 1024
+
 
 // our Thread class has one ThreadQueue per thread type
 class ThreadQueue {
-
- public:
+public:
 	// what type of threads are in this queue (used-defined)?
 	char         m_threadType;
 	// how many threads have been launched total over time?
@@ -98,11 +100,11 @@ class ThreadQueue {
 	// linked list head for empty thread entries
 	ThreadEntry *m_emptyHead;
 
-	// 8 heads/tails for linked lists of thread entries waiting to launch
+	// heads/tails for linked lists of thread entries waiting to launch
 	ThreadEntry *m_waitHead0;
 	ThreadEntry *m_waitHead1;
 	ThreadEntry *m_waitHead2;
-	ThreadEntry *m_waitHead3;
+//	ThreadEntry *m_waitHead3;
 	ThreadEntry *m_waitHead4;
 	ThreadEntry *m_waitHead5;
 	ThreadEntry *m_waitHead6;
@@ -110,7 +112,7 @@ class ThreadQueue {
 	ThreadEntry *m_waitTail0;
 	ThreadEntry *m_waitTail1;
 	ThreadEntry *m_waitTail2;
-	ThreadEntry *m_waitTail3;
+//	ThreadEntry *m_waitTail3;
 	ThreadEntry *m_waitTail4;
 	ThreadEntry *m_waitTail5;
 	ThreadEntry *m_waitTail6;
@@ -121,14 +123,13 @@ class ThreadQueue {
 	ThreadQueue();
 	void reset();
 
-	int32_t getNumThreadsOutOrQueued();
 	int32_t getNumWriteThreadsOut() ;
 
 
 	// . for adding an entry
 	// . returns false and sets errno on error
 	ThreadEntry *addEntry ( int32_t   niceness,
-				void  *state                        , 
+				void  *state                        ,
 				void  (* callback    )(void *state,
 						       class ThreadEntry *t) ,
 				void *(* startRoutine)(void *state,
@@ -154,16 +155,8 @@ class ThreadQueue {
 
 	void print ( ) ;
 
-	// these are called by g_udpServer2, the high priority udp server
-	void suspendLowPriorityThreads();
-	void resumeLowPriorityThreads();
-
 	// this is true if low priority threads are temporarily suspended
 	bool m_isLowPrioritySuspended ;
-
-	// . cancel running low priority threads
-	// . called by suspendLowPriorityThreads() when first called
-	//void cancelLowPriorityThreads();
 
 	// return m_threadType as a NULL-terminated string
 	const char *getThreadType () ;
@@ -175,9 +168,7 @@ class ThreadQueue {
 
 // this Threads class has a list of ThreadQueues, 1 per thread type
 class Threads {
-
- public:
-
+public:
 	Threads();
 
 	// returns false and sets errno on error, true otherwise
@@ -202,7 +193,6 @@ class Threads {
 	void printQueue ( int32_t q ) { m_threadQueues[q].print(); };
 	void printState();
 
-
 	// disable all threads... no more will be created, those in queues
 	// will never be spawned
 	void disableThreads () { m_disabled = true;  };
@@ -216,13 +206,11 @@ class Threads {
 	//   sigqueue to call "callback" with "state" as the parameter
 	// . niceness deteremines the niceness of this signal as well as
 	//   the thread's priority
-	bool call ( char   type                               ,
-		    int32_t   niceness                           ,
-		    void  *state                              , 
-		    void  (* threadDoneCallback)(void *state,
-						 class ThreadEntry *t) ,
-		    void *(* startRoutine      )(void *state,
-						 class ThreadEntry *t) );
+	bool call ( char		type,
+				int32_t   	niceness,
+				void  		*state,
+				void  		(* threadDoneCallback)(void *state, class ThreadEntry *t) ,
+				void 		*(* startRoutine      )(void *state, class ThreadEntry *t) );
 
 	// try to launch threads waiting to be launched in any queue
 	int32_t launchThreads ();
@@ -236,13 +224,6 @@ class Threads {
 	//calls callbacks and launches all threads
 	int32_t timedCleanUp (int32_t maxTime, int32_t niceness );//= MAX_NICENESS);
 
-	// these are called by g_udpServer2, the high priority udp server
-	void suspendLowPriorityThreads();
-	void resumeLowPriorityThreads();
-
-	// cancels low priority threads running in each ThreadQueue
-	//void cancelLowPriorityThreads();
-
 	// . gets the number of disk threads (seeks) and total bytes to read
 	// . ignores disk threads that are too nice (over maxNiceness)
 	int32_t getDiskThreadLoad ( int32_t maxNiceness , int32_t *totalToRead ) ;
@@ -250,35 +231,22 @@ class Threads {
 	ThreadQueue* getThreadQueues() { return &m_threadQueues[0];}
 	int32_t      getNumThreadQueues() { return m_numQueues; }
 
-	// used by UdpServer to see if it should call a low priority callback
-	//int32_t getNumActiveHighPriorityCpuThreads() ;
 	// all high priority threads...
 	int32_t getNumActiveHighPriorityThreads() ;
 
 	bool hasHighPriorityCpuThreads() ;
 
-	int32_t getNumThreadsOutOrQueued();
 	int32_t getNumWriteThreadsOut() ;
 
-	// counts the high/low priority (niceness <= 0) threads
-	//int64_t   m_hiLaunched;
-	//int64_t   m_hiReturned;
-	//int64_t   m_loLaunched;
-	//int64_t   m_loReturned;
-
 	bool m_needsCleanup;
-	//bool m_needBottom;
-
 	bool m_initialized;
 
-	// private:
-
-	// . allow up to MAX_THREAD_QUEUES different thread types for now
+	// . allow up to THREAD_TYPE_MAX different thread types for now
 	// . types are user-defined numbers
 	// . each type has a corresponding thread queue
 	// . when a thread is done we place a signal on g_loop's sigqueue so
-	//   that it will call m_callback w/ m_state 
-	ThreadQueue m_threadQueues  [ MAX_THREAD_QUEUES ];
+	//   that it will call m_callback w/ m_state
+	ThreadQueue m_threadQueues  [ THREAD_TYPE_MAX ];
 	int32_t        m_numQueues;
 
 	bool        m_disabled;

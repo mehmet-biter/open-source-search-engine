@@ -597,7 +597,7 @@ bool HashTableX::fastSave ( bool useThread ,
 	// skip thread call if we should
 	if ( ! useThread ) goto skip;
 	// make this a thread now
-	if ( g_threads.call ( SAVETREE_THREAD   , // threadType
+	if ( g_threads.call ( THREAD_TYPE_SAVETREE   , // threadType
 			      1                 , // niceness
 			      this              , // top 4 bytes must be cback
 			      threadDoneWrapper ,

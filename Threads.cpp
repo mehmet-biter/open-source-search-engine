@@ -48,11 +48,11 @@ pthread_t getpidtid() {
 // He gets control back when cleanUp() calls t->m_callback. And he launches
 // another read thread in there, which calls Threads::exit(state) before
 // the original thread entry's m_isOccupied is set to false. So
-// Threads::exit(state) mistakenly picks the thread entry from the former 
+// Threads::exit(state) mistakenly picks the thread entry from the former
 // thread picks it has the same state as its thread!
 
 // PROBLEM #2: technically, a thread in Threads::exit() can set its m_done
-// bit then send the signal. When the Loop sig handler sees the done bit is 
+// bit then send the signal. When the Loop sig handler sees the done bit is
 // set it decrements the global thread count even though the thread may
 // not have actually exited yet!! I spawned like 1,000 threads this way!!!!!
 
@@ -126,7 +126,7 @@ void Threads::reset ( ) {
 			"ThreadStack");
 	}
 	s_stackAlloc = NULL;
-	for ( int32_t i = 0 ; i < MAX_THREAD_QUEUES ; i++ ) 
+	for ( int32_t i = 0 ; i < THREAD_TYPE_MAX ; i++ )
 		m_threadQueues[i].reset();
 }
 
@@ -157,10 +157,8 @@ bool Threads::init ( ) {
 	m_initialized = true;
 
 	m_needsCleanup = false;
-	//m_needBottom = false;
 
 	// sanity check
-	//if ( sizeof(pthread_t) > sizeof(pid_t) ) { char *xx=NULL;*xx=0; }
 	if ( sizeof(pid_t) > sizeof(pthread_t) ) { char *xx=NULL;*xx=0; }
 
 	setPid();
@@ -180,19 +178,19 @@ bool Threads::init ( ) {
  	//if ( ! g_loop.registerSleepCallback(30,NULL,launchThreadsWrapper))
  	//	return log("thread: Failed to initialize timer callback.");
 
-	if ( ! g_loop.registerSleepCallback(1000,NULL,
-					    killStalledFiltersWrapper,0))
+	if ( ! g_loop.registerSleepCallback(1000,NULL, killStalledFiltersWrapper,0))
 		return log("thread: Failed to initialize timer callback2.");
 
 	// try running blaster with 5 threads and you'll
 	// . see like a double degrade in performance for some reason!!
-	// . TODO: why? 
+	// . TODO: why?
 	// . well, this should be controlled g_conf.m_maxSpiderDiskThreads
 	//   for niceness 1+ threads, and g_conf.m_maxPriorityDiskThreads for
 	//   niceness 0 and below disk threads
 	// . 100 maxThreads out at a time, 32000 can be queued
-	if ( ! g_threads.registerType ( DISK_THREAD ,100/*maxThreads*/,32000))
+	if ( ! g_threads.registerType ( THREAD_TYPE_DISK ,100/*maxThreads*/,32000))
 		return log("thread: Failed to register thread type." );
+
 	// . these are used by Msg5 to merge what it reads from disk
 	// . i raised it from 1 to 2 and got better response time from Msg10
 	// . i leave one open in case one is used for doing a big merge
@@ -200,73 +198,83 @@ bool Threads::init ( ) {
 	// . TODO: is there a better way? cancel it when UdpServer calls
 	//   Threads::suspendLowPriorityThreads() ?
 	// . this used to be 2 but now defaults to 10 in Parms.cpp. i found
-	//   i have less int32_t gray lines in the performance graph when i
+	//   i have less short gray lines in the performance graph when i
 	//   did that on trinity.
 	int32_t max2 = g_conf.m_maxCpuMergeThreads;
 	if ( max2 < 1 ) max2 = 1;
-	if ( ! g_threads.registerType ( MERGE_THREAD , max2,1000) ) 
+	if ( ! g_threads.registerType ( THREAD_TYPE_MERGE , max2,1000) )
 		return log("thread: Failed to register thread type." );
+
 	// will raising this from 1 to 2 make it faster too?
 	// i raised since global specs new servers have 2 (hyperthreaded?) cpus
 	int32_t max = g_conf.m_maxCpuThreads;
 	if ( max < 1 ) max = 1;
-	if ( ! g_threads.registerType ( INTERSECT_THREAD,max,200) ) 
+	if ( ! g_threads.registerType ( THREAD_TYPE_INTERSECT,max,200) )
 		return log("thread: Failed to register thread type." );
+
 	// filter thread spawned to call popen() to filter an http reply
-	if ( ! g_threads.registerType ( FILTER_THREAD, 2/*maxThreads*/,300) ) 
+	if ( ! g_threads.registerType ( THREAD_TYPE_FILTER, 2/*maxThreads*/,300) )
 		return log("thread: Failed to register thread type." );
+
 	// RdbTree uses this to save itself
-	if ( ! g_threads.registerType ( SAVETREE_THREAD,1/*maxThreads*/,100) ) 
+	if ( ! g_threads.registerType ( THREAD_TYPE_SAVETREE,1/*maxThreads*/,100) )
 		return log("thread: Failed to register thread type." );
+
 	// . File.cpp spawns a rename thread for doing renames and unlinks
 	// . doing a tight merge on titldb can be ~250 unlinks
 	// . MDW up from 1 to 30 max, after doing a ddump on 3000+ collections
 	//   it was taking forever to go one at a time through the unlink
 	//   thread queue. seemed like a 1 second space between unlinks.
 	//   1/23/1014
-	if ( ! g_threads.registerType ( UNLINK_THREAD,30/*maxThreads*/,3000) ) 
+	if ( ! g_threads.registerType ( THREAD_TYPE_UNLINK,30/*maxThreads*/,3000) )
 		return log("thread: Failed to register thread type." );
+
 	// generic multipurpose
-	if ( ! g_threads.registerType (GENERIC_THREAD,100/*maxThreads*/,100) ) 
+	if ( ! g_threads.registerType (THREAD_TYPE_GENERIC,100/*maxThreads*/,100) )
 		return log("thread: Failed to register thread type." );
-	// for call SSL_accept() which blocks for 10ms even when socket
-	// is non-blocking...
-	//if (!g_threads.registerType (SSLACCEPT_THREAD,20/*maxThreads*/,100)) 
-	//	return log("thread: Failed to register thread type." );
 
 	// sanity check
 	if ( GUARDSIZE >= STACK_SIZE )
 		return log("thread: Stack guard size too big.");
+
 	// not more than this outstanding
 	int32_t maxThreads = 0;
-	for ( int32_t i = 0 ; i < m_numQueues ; i++ ) 
+	for ( int32_t i = 0 ; i < m_numQueues ; i++ )
 		maxThreads += m_threadQueues[i].m_maxLaunched;
+
 	// limit to stack we got
-	if ( maxThreads > g_conf.m_max_threads ) maxThreads = g_conf.m_max_threads;
-	if ( maxThreads > ABSOLUTE_MAX_THREAD ) maxThreads = ABSOLUTE_MAX_THREAD;
+	if ( maxThreads > g_conf.m_max_threads )
+		maxThreads = g_conf.m_max_threads;
+	if ( maxThreads > ABSOLUTE_MAX_THREAD )
+		maxThreads = ABSOLUTE_MAX_THREAD;
 
 	// allocate the stack space
 	s_stackAllocSize = STACK_SIZE * maxThreads + THRPAGESIZE ;
 	// clear stack to help check for overwrites
 	s_stackAlloc = (char *) mcalloc ( s_stackAllocSize , "ThreadStack" );
-	if ( ! s_stackAlloc ) 
+	if ( ! s_stackAlloc )
 		return log("thread: Unable to allocate %"INT32" bytes for thread "
 			   "stacks.", s_stackAllocSize);
+
 	log(LOG_INIT,"thread: Using %"INT32" bytes for %"INT32" thread stacks.",
 	    s_stackAllocSize,maxThreads);
+
 	// align
 	s_stack = (char *)(((uint64_t)s_stackAlloc+THRPAGESIZE-1)&~(THRPAGESIZE-1));
 	// new size
 	s_stackSize = s_stackAllocSize - (s_stack - s_stackAlloc);
+
 	// protect the whole stack while not in use
-	if ( mprotect ( s_stack , s_stackSize , PROT_NONE ) ) 
+	if ( mprotect ( s_stack , s_stackSize , PROT_NONE ) )
 		log("thread: Call to mprotect failed: %s.",mstrerror(errno));
-	// test
-	//s_stack[0] = 1;
+
 	// init the linked list
 	for ( int32_t i = 0 ; i < g_conf.m_max_threads ; i++ ) {
-		if ( i == g_conf.m_max_threads - 1 ) s_next[i] = -1;
-		else                       s_next[i] = i + 1;
+		if ( i == g_conf.m_max_threads - 1 )
+			s_next[i] = -1;
+		else
+			s_next[i] = i + 1;
+
 		s_stackPtrs[i] = s_stack + STACK_SIZE * i;
 	}
 	s_head = 0;
@@ -279,65 +287,53 @@ bool Threads::init ( ) {
 // all types should be registered in main.cpp before any threads launch
 bool Threads::registerType ( char type , int32_t maxThreads , int32_t maxEntries ) {
 	// return false and set g_errno if no more room
-	if ( m_numQueues >= MAX_THREAD_QUEUES ) {
+	if ( m_numQueues >= THREAD_TYPE_MAX ) {
 		g_errno = EBUFTOOSMALL;
 		return log(LOG_LOGIC,"thread: registerType: Too many thread "
 			   "queues");
 	}
+
 	// initialize the ThreadQueue class for this type
-	if ( ! m_threadQueues[m_numQueues].init(type,maxThreads,maxEntries)) 
+	if ( ! m_threadQueues[m_numQueues].init(type, maxThreads, maxEntries))
 		return false;
+
 	// we got one more queue now
 	m_numQueues++;
 	return true;
 }
 
 
-int32_t Threads::getNumThreadsOutOrQueued() {
-	int32_t n = 0;
-	for ( int32_t i = 0 ; i < m_numQueues ; i++ ) {
-		// skip INTERSECT_THREAD, used to intersect termlists to
-		// resolve a query. i've seen these get stuck in an infinite
-		// loop sometimes.
-		if ( i == INTERSECT_THREAD ) continue;
-		// skip filter threads, those get stuck sometimes
-		if ( i == FILTER_THREAD   ) continue;
-		// tally up all other threads
-		n += m_threadQueues[i].getNumThreadsOutOrQueued();
-	}
-	return n;
-}
-
 
 int32_t Threads::getNumWriteThreadsOut() {
-	return m_threadQueues[DISK_THREAD].getNumWriteThreadsOut();
+	return m_threadQueues[THREAD_TYPE_DISK].getNumWriteThreadsOut();
 }
 
 
 // . returns false (and may set errno) if failed to launch a thread
 // . returns true if thread added to queue successfully
 // . may be launched instantly or later depending on # of threads in the queue
-bool Threads::call ( char   type                         ,
-		     int32_t   niceness                     , 
-		     void  *state                        , 
-		     void  (* callback    )(void *state,ThreadEntry *t) ,
-		     void *(* startRoutine)(void *state,ThreadEntry *t) ) {
+bool Threads::call(	char type, int32_t niceness, void *state,
+					void (* callback    )(void *state,ThreadEntry *t) ,
+					void *(* startRoutine)(void *state,ThreadEntry *t) ) {
 	// debug
 	//return false;
 
 	g_errno = 0;
 
 	// don't spawn any if disabled
-	if ( m_disabled ) return false;
-	if ( ! g_conf.m_useThreads ) return false;
+	if ( m_disabled )
+		return false;
 
-	if ( type == DISK_THREAD && ! g_conf.m_useThreadsForDisk ) 
+	if ( ! g_conf.m_useThreads )
 		return false;
-	if ( type == MERGE_THREAD && ! g_conf.m_useThreadsForIndexOps )
+
+	if ( type == THREAD_TYPE_DISK && !g_conf.m_useThreadsForDisk )
 		return false;
-	if ( type == INTERSECT_THREAD && ! g_conf.m_useThreadsForIndexOps )
+	if ( type == THREAD_TYPE_MERGE && !g_conf.m_useThreadsForIndexOps )
 		return false;
-	if ( type == FILTER_THREAD && ! g_conf.m_useThreadsForSystemCalls )
+	if ( type == THREAD_TYPE_INTERSECT && !g_conf.m_useThreadsForIndexOps )
+		return false;
+	if ( type == THREAD_TYPE_FILTER && !g_conf.m_useThreadsForSystemCalls )
 		return false;
 
 	if ( ! m_initialized && ! init() )
@@ -345,27 +341,27 @@ bool Threads::call ( char   type                         ,
 
 	// find the type
 	int32_t i;
-	for ( i = 0 ; i < m_numQueues ; i++ ) 
-		if ( m_threadQueues[i].m_threadType == type ) break;
+	for ( i = 0 ; i < m_numQueues ; i++ )
+		if ( m_threadQueues[i].m_threadType == type )
+			break;
+
 	// bitch if type not added via registerType() call
 	if ( i == m_numQueues ) {
 		g_errno = EBADENGINEER;
-		return log(LOG_LOGIC,"thread: addtoqueue: Unregistered "
-			   "thread type %"INT32"",(int32_t)type);
+		return log(LOG_LOGIC,"thread: addtoqueue: Unregistered thread type %"INT32"",(int32_t)type);
 	}
 
 	// . add to this queue
 	// . returns NULL and sets g_errno on error
-	ThreadEntry *t = m_threadQueues[i].addEntry(niceness,state,
-						    callback,startRoutine);
-	if ( ! t ) return log("thread: Failed to add entry to thread pool: "
-			      "%s.",mstrerror(g_errno));
+	ThreadEntry *t = m_threadQueues[i].addEntry(niceness,state,callback,startRoutine);
+	if ( ! t )
+		return log("thread: Failed to add entry to thread pool: %s.",mstrerror(g_errno));
 
 	// . try to launch as many threads as we can
 	// . this sets g_errno on error
 	// . if it has an error, just ignore it, our thread is queued
  launchLoop:
-	if ( m_threadQueues[i].launchThread2 ( ) ) 
+	if ( m_threadQueues[i].launchThread2 ( ) )
 		goto launchLoop;
 
 	// clear g_errno
@@ -375,6 +371,7 @@ bool Threads::call ( char   type                         ,
 }
 
 
+//@todo. BR: Wtf? Why would this ever be needed?
 static void killStalledFiltersWrapper ( int fd , void *state ) {
 	// bail if no pid
 	if ( g_pid == -1 ) return;
@@ -392,6 +389,7 @@ static void killStalledFiltersWrapper ( int fd , void *state ) {
 	g_pid = -1;
 	if ( err != 0 ) log("threads: kill filter: %s", mstrerror(err) );
 }
+
 
 // . called by g_loop in Loop.cpp after getting a SI_QUEUE signal that it
 //   is from when a thread exited
@@ -413,7 +411,7 @@ int32_t Threads::launchThreads ( ) {
 		// clear g_errno
 		g_errno = 0;
 		// launch as many threads as we can from queue #i
-		while ( m_threadQueues[i].launchThread2( ) ) 
+		while ( m_threadQueues[i].launchThread2( ) )
 			numLaunched++;
 		// continue if no g_errno set
 	        if ( ! g_errno ) continue;
@@ -425,25 +423,192 @@ int32_t Threads::launchThreads ( ) {
 	return numLaunched;
 }
 
-// . will cancel currently running low priority threads 
-// . will prevent any low priority threads from launching
-// . will only cancel disk threads for now
-void Threads::suspendLowPriorityThreads() {
-	// debug msg
-	if ( g_conf.m_logDebugThread ) 
-		log(LOG_DEBUG,"thread: SUSPENDING LOW-PRIORITY THREADS.");
-	// just cancel disk threads for now
-	for ( int32_t i = 0 ; i < m_numQueues; i++ ) 
-		m_threadQueues[i].suspendLowPriorityThreads();
+
+int32_t Threads::timedCleanUp (int32_t maxTime, int32_t niceness) {
+
+	// skip it if exiting
+	if ( g_process.m_mode == EXIT_MODE )
+		return 0;
+
+	if ( ! m_needsCleanup )
+		return 0;
+
+	//if ( g_inSigHandler ) return 0;
+	int64_t startTime = gettimeofdayInMillisecondsLocal();
+	int64_t took = 0;
+
+	if ( niceness >= MAX_NICENESS ) m_needsCleanup = false;
+
+	for ( int32_t i = 0 ; i <= niceness ; i++ ) {
+
+		for ( int32_t j = 0 ; j < m_numQueues ; j++ )
+			m_threadQueues[j].timedCleanUp ( niceness );
+
+		launchThreads();
+
+		if ( maxTime < 0 )
+			continue;
+
+		took = startTime - gettimeofdayInMillisecondsLocal();
+		if ( took <= maxTime )
+			continue;
+
+		// ok, we have to cut if short...
+		m_needsCleanup = true;
+		break;
+	}
+	return took;
 }
 
-void Threads::resumeLowPriorityThreads() {
-	// debug msg
-	if ( g_conf.m_logDebugThread ) 
-		log(LOG_DEBUG,"thread: RESUMING LOW-PRIORITY THREADS.");
-	for ( int32_t i = 0 ; i < m_numQueues; i++ ) 
-		m_threadQueues[i].resumeLowPriorityThreads();
+
+bool Threads::isHittingFile ( BigFile *bf ) {
+	return m_threadQueues[THREAD_TYPE_DISK].isHittingFile(bf);
 }
+
+
+void Threads::bailOnReads ( ) {
+	m_threadQueues[THREAD_TYPE_DISK].bailOnReads();
+}
+
+
+bool Threads::cleanUp ( ThreadEntry *t , int32_t maxNiceness ) {
+	bool didSomething = false;
+ loop:
+	// assume no more cleanup needed
+	m_needsCleanup = false;
+
+	// debug msg
+	//log("cleaning up exited threads and calling callbacks");
+	for ( int32_t i = 0 ; i < m_numQueues ; i++ ) {
+		didSomething |= m_threadQueues[i].cleanUp( t , maxNiceness );
+	}
+
+	// . loop more if we got a new one
+	// . thread will set this when about to exit
+	// . waitpid() may be interrupted by a SIGCHLD and not get his pid
+	if ( m_needsCleanup )
+		goto loop;
+
+	return didSomething;
+}
+
+
+// used by UdpServer to see if it should call a low priority callback
+bool Threads::hasHighPriorityCpuThreads() {
+	ThreadQueue *q;
+	ThreadEntry *t;
+
+	q = &g_threads.m_threadQueues[THREAD_TYPE_INTERSECT];
+	t = q->m_launchedHead;
+
+	for ( ; t ; t = t->m_nextLink )
+		if ( t->m_niceness == 0 )
+			return true;
+
+	q = &g_threads.m_threadQueues[THREAD_TYPE_MERGE];
+	t = q->m_launchedHead;
+	for ( ; t ; t = t->m_nextLink )
+		if ( t->m_niceness == 0 )
+			return true;
+
+	return false;
+}
+
+
+// used by UdpServer to see if it should call a low priority callback
+int32_t Threads::getNumActiveHighPriorityThreads() {
+	ThreadQueue *q;
+	ThreadEntry *t;
+	int32_t hiActive = 0 ;
+
+	q = &g_threads.m_threadQueues[THREAD_TYPE_DISK];
+	t = q->m_launchedHead;
+	for ( ; t ; t = t->m_nextLink )
+		if ( t->m_niceness == 0 )
+			hiActive++;
+
+	q = &g_threads.m_threadQueues[THREAD_TYPE_INTERSECT];
+	t = q->m_launchedHead;
+	for ( ; t ; t = t->m_nextLink )
+		if ( t->m_niceness == 0 )
+			hiActive++;
+
+	q = &g_threads.m_threadQueues[THREAD_TYPE_MERGE];
+	t = q->m_launchedHead;
+	for ( ; t ; t = t->m_nextLink )
+		if ( t->m_niceness == 0 )
+			hiActive++;
+
+	return hiActive;
+}
+
+
+void Threads::printState() {
+	int64_t now = gettimeofdayInMilliseconds();
+
+	for ( int32_t i = 0 ; i < m_numQueues; i++ ) {
+		ThreadQueue *q = &m_threadQueues[i];
+
+		for ( int32_t j = 0 ; j < q->m_top ; j++ ) {
+			ThreadEntry *t = &q->m_entries[j];
+
+			if(!t->m_isOccupied)
+				continue;
+
+			if(t->m_isDone) {
+				log(LOG_TIMING,
+				    "admin: Thread -done- "
+				    "nice: %"INT32" "
+				    "totalTime: %"INT64" (ms) "
+				    "queuedTime: %"INT64"(ms) "
+				    "runTime: %"INT64"(ms) "
+				    "cleanup: %"INT64"(ms) "
+				    "callback:%s",
+				    t->m_niceness,
+				    now - t->m_queuedTime,
+				    t->m_launchedTime - t->m_queuedTime,
+				    t->m_exitTime - t->m_launchedTime,
+				    now - t->m_exitTime,
+				    g_profiler.
+				    getFnName((PTRTYPE)t->m_callback));
+				continue;
+			}
+
+			if(t->m_isLaunched) {
+				log(LOG_TIMING,
+				    "admin: Thread -launched- "
+				    "nice: %"INT32" "
+				    "totalTime: %"INT64"(ms) "
+				    "queuedTime: %"INT64"(ms) "
+				    "runTime: %"INT64"(ms) "
+				    "callback:%s",
+				    t->m_niceness,
+				    now - t->m_queuedTime,
+				    t->m_launchedTime - t->m_queuedTime,
+				    now - t->m_launchedTime,
+				    g_profiler.
+				    getFnName((PTRTYPE)t->m_callback));
+				continue;
+			}
+
+			log(LOG_TIMING,
+			    "admin: Thread -queued- "
+			    "nice: %"INT32" "
+			    "queueTime: %"INT64"(ms) "
+			    "callback:%s",
+			    t->m_niceness,
+			    now - t->m_queuedTime,
+			    g_profiler.getFnName((PTRTYPE)t->m_callback));
+		}
+	}
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////
+// Global functions :-/
+///////////////////////////////////////////////////////////////////////
 
 
 void checkList  ( ThreadEntry **headPtr , ThreadEntry **tailPtr ) {
@@ -475,21 +640,28 @@ void checkList  ( ThreadEntry **headPtr , ThreadEntry **tailPtr ) {
 
 // remove from a head-only linked list
 void removeLink ( ThreadEntry **headPtr , ThreadEntry *t ) {
-	// if ( g_conf.m_logDebugThread )
-	// 	logf(LOG_DEBUG,"thread: removeLink [t=0x%"PTRFMT"]",
-	// 	     (PTRTYPE)t);
 	if ( g_conf.m_logDebugThread )
 		checkList ( headPtr , NULL );
-	if ( t->m_prevLink ) t->m_prevLink->m_nextLink = t->m_nextLink;
-	else                 *headPtr = t->m_nextLink;
-	if ( t->m_nextLink ) t->m_nextLink->m_prevLink = t->m_prevLink;
+
+	if ( t->m_prevLink )
+		t->m_prevLink->m_nextLink = t->m_nextLink;
+	else
+		*headPtr = t->m_nextLink;
+
+	if ( t->m_nextLink )
+		t->m_nextLink->m_prevLink = t->m_prevLink;
+
 	t->m_nextLink = NULL;
 	t->m_prevLink = NULL;
+
 	if ( g_conf.m_logDebugThread )
 		checkList ( headPtr , NULL );
 }
+
+
 // MDW: verify this::::: and the one above!!!!!!!!!!!!!!!!
-void removeLink2 ( ThreadEntry **headPtr , 
+// @todo: BR: ^^ meh...
+void removeLink2 ( ThreadEntry **headPtr ,
 		   ThreadEntry **tailPtr ,
 		   ThreadEntry *t ) {
 	// if ( g_conf.m_logDebugThread )
@@ -497,15 +669,24 @@ void removeLink2 ( ThreadEntry **headPtr ,
 	// 	     (PTRTYPE)t);
 	if ( g_conf.m_logDebugThread )
 		checkList ( headPtr , tailPtr );
-	if ( t->m_prevLink ) t->m_prevLink->m_nextLink = t->m_nextLink;
-	else                 *headPtr = t->m_nextLink;
-	if ( t->m_nextLink ) t->m_nextLink->m_prevLink = t->m_prevLink;
-	else                 *tailPtr = t->m_prevLink;
+
+	if ( t->m_prevLink )
+		t->m_prevLink->m_nextLink = t->m_nextLink;
+	else
+		*headPtr = t->m_nextLink;
+
+	if ( t->m_nextLink )
+		t->m_nextLink->m_prevLink = t->m_prevLink;
+	else
+		*tailPtr = t->m_prevLink;
+
 	t->m_nextLink = NULL;
 	t->m_prevLink = NULL;
+
 	if ( g_conf.m_logDebugThread )
 		checkList ( headPtr , tailPtr );
 }
+
 
 // add to a head/tail linked list's tail
 void addLinkToTail ( ThreadEntry **headPtr ,
@@ -516,6 +697,7 @@ void addLinkToTail ( ThreadEntry **headPtr ,
 	// 	     (PTRTYPE)t);
 	if ( g_conf.m_logDebugThread )
 		checkList ( headPtr , tailPtr );
+
 	if ( *tailPtr ) {
 		(*tailPtr)->m_nextLink = t;
 		t->m_nextLink = NULL;
@@ -528,9 +710,11 @@ void addLinkToTail ( ThreadEntry **headPtr ,
 		t->m_nextLink = NULL;
 		t->m_prevLink = NULL;
 	}
+
 	if ( g_conf.m_logDebugThread )
 		checkList ( headPtr , tailPtr );
 }
+
 
 // add to a head/tail linked list's head
 void addLinkToHead ( ThreadEntry **headPtr ,
@@ -541,6 +725,7 @@ void addLinkToHead ( ThreadEntry **headPtr ,
 	// 	     (PTRTYPE)t);
 	if ( g_conf.m_logDebugThread )
 		checkList ( headPtr , tailPtr );
+
 	if ( *headPtr ) {
 		(*headPtr)->m_prevLink = t;
 		t->m_prevLink = NULL;
@@ -553,9 +738,11 @@ void addLinkToHead ( ThreadEntry **headPtr ,
 		t->m_nextLink = NULL;
 		t->m_prevLink = NULL;
 	}
+
 	if ( g_conf.m_logDebugThread )
 		checkList ( headPtr , tailPtr );
 }
+
 
 // add to a head-only linked list
 void addLink ( ThreadEntry **headPtr ,
@@ -565,6 +752,7 @@ void addLink ( ThreadEntry **headPtr ,
 	// 	     (PTRTYPE)t);
 	if ( g_conf.m_logDebugThread )
 		checkList ( headPtr , NULL );
+
 	if ( *headPtr ) {
 		(*headPtr)->m_prevLink = t;
 		t->m_prevLink = NULL;
@@ -576,8 +764,164 @@ void addLink ( ThreadEntry **headPtr ,
 		t->m_nextLink = NULL;
 		t->m_prevLink = NULL;
 	}
+
 	if ( g_conf.m_logDebugThread )
 		checkList ( headPtr , NULL );
+}
+
+
+void makeCallback ( ThreadEntry *t ) {
+
+	// save it
+	int32_t saved = g_niceness;
+
+	// log it now
+	if ( g_conf.m_logDebugLoop || g_conf.m_logDebugThread )
+		log(LOG_DEBUG,"thread: enter thread callback t=0x%"PTRFMT" "
+		    //"type=%s "
+		    "state=0x%"PTRFMT" "
+		    "nice=%"INT32"",
+		    (PTRTYPE)t,
+		    //getThreadType(),
+		    (PTRTYPE)t->m_state,
+		    (int32_t)t->m_niceness);
+
+	// time it?
+	int64_t start;
+	if ( g_conf.m_maxCallbackDelay >= 0 )
+		start = gettimeofdayInMillisecondsLocal();
+
+	// then set it
+	if ( t->m_niceness >= 1 )
+		g_niceness = 1;
+	else
+		g_niceness = 0;
+
+	t->m_callback ( t->m_state , t );
+
+	// time it?
+	if ( g_conf.m_maxCallbackDelay >= 0 ) {
+		int64_t elapsed = gettimeofdayInMillisecondsLocal() - start;
+		if ( elapsed >= g_conf.m_maxCallbackDelay )
+			log("threads: Took %"INT64" ms to call "
+			    "thread callback niceness=%"INT32"",
+			    elapsed,(int32_t)saved);
+	}
+
+	// log it now
+	if ( g_conf.m_logDebugLoop || g_conf.m_logDebugThread )
+		log(LOG_DEBUG,"loop: exit thread callback t=0x%"PTRFMT" "
+		    "nice=%"INT32"",
+		    (PTRTYPE)t,
+		    (int32_t)t->m_niceness);
+
+	// restore global niceness
+	g_niceness = saved;
+}
+
+
+// threads start up with cacnellation deferred until pthreads_testcancel()
+// is called, but we never call that
+int startUp ( void *state ) {
+	// get thread entry
+	ThreadEntry *t = (ThreadEntry *)state;
+
+	// our signal set
+	sigset_t set;
+	sigemptyset(&set);
+	//sigaddset(&set, SIGHUP);
+	// we need this here so if we break the gb process with gdb it
+	// does not kill the child processes when it sends out the SIGINT.
+	sigaddset(&set, SIGINT);
+	// ignore the real time signal, man...
+	//sigaddset(&set, GB_SIGRTMIN);
+	//pthread_sigmask(SIG_BLOCK, &set, NULL);
+	// turn these off in the thread
+	sigaddset   ( &set , SIGALRM );
+	sigaddset   ( &set , SIGVTALRM );
+	sigaddset   ( &set , SIGPROF );
+	pthread_sigmask(SIG_BLOCK,&set,NULL);
+	// . what this lwp's priority be?
+	// . can range from -20 to +20
+	// . the lower p, the more cpu time it gets
+	// . this is really the niceness, not the priority
+	int p ;
+	// currently our niceness ranges from -1 to 2 for us
+	if      ( t->m_niceness == 2 ) p = 19 ;
+	else if ( t->m_niceness == 1 ) p = 10 ;
+	else                           p =  0 ;
+	// remember the tid
+	//t->m_tid = pthread_self();
+	// debug
+	if ( g_conf.m_logDebugThread )
+		log(LOG_DEBUG,"thread: [t=0x%"PTRFMT"] "
+		    "in startup pid=%"INT64" pppid=%"INT32"",
+		    (PTRTYPE)t,(int64_t)getpidtid(),(int32_t)getppid());
+
+	// somehow, it works ok when we have this print statement delay!!!
+	//fprintf(stderr,"thread pid = %"INT32"\n",(int32_t)getpid());
+	// . call the startRoutine
+	// . IMPORTANT: this can NEVER do non-blocking stuff
+	t->m_startRoutine ( t->m_state , t );
+	// pop it off
+	//pthread_cleanup_pop ( 1 /*execute handler?*/ );
+
+	// . now throw it on g_loop's sigqueue
+	// . the first 4 bytes of t->m_state should be t->m_callback
+	// . no! just use 1 to tell Loop to call g_threads.cleanUp()
+	// . TODO: pass in a ptr to cleanUpWrapper() instead of "t"
+	// . sival_int is only 4 bytes on a 64 bit arch...
+	sigval_t svt;
+	svt.sival_int = 1;//(int64_t)t ; //(int)(t->m_state); // fd;
+
+
+	// set exit time
+	int64_t now = gettimeofdayInMilliseconds();
+	t->m_preExitTime = now;
+	t->m_exitTime    = now;
+	if ( g_conf.m_logDebugThread ) {
+
+		log(LOG_DEBUG,"thread: [t=0x%"PTRFMT"] "
+		    "done with startup pid=%"INT64"",
+		    (PTRTYPE)t,(int64_t)getpidtid());
+	}
+
+	// . now mark thread as ready for removal
+	// . do this BEFORE queing the signal since we're still a thread!!!
+	// . cleanUp() will take care of the rest
+	// . cleanUp() will call pthread_join on us!
+	t->m_isDone = true;
+
+	// let Loop.cpp's sigHandler_r call g_thread.cleanUp()
+	g_threads.m_needsCleanup = true;
+
+
+	// try a sigchld now! doesn't it already do this? no...
+	// on 64bit arch pthread_t is 64bit and pid_t is 32bit
+	// i dont think this makes sense with pthreads any more, they don't
+	// use pid_t they use pthread_t
+	pthread_kill ( s_pid , SIGCHLD );
+
+	return 0;
+}
+
+
+// pthread_create uses this one
+void *startUp2 ( void *state ) {
+  startUp ( state );
+  return NULL;
+}
+
+
+// BigFile.cpp's readwriteWrapper_r() ThreadEntry::m_callback gets set to
+// ohcrap() because it was taking too long to do its read and we prematurely
+// called its callback above in bailOnReads(). In that case we still have to
+// free the disk read buffer which was never used. And doneWrapper() in
+// BigFile.cpp is never called.
+void ohcrap ( void *state , ThreadEntry *t ) {
+	// free the read buffer here then
+	if ( t->m_allocBuf )
+		mfree ( t->m_allocBuf , t->m_allocSize , "RdbScan" );
 }
 
 
@@ -590,11 +934,13 @@ ThreadQueue::ThreadQueue ( ) {
 	m_entriesSize = 0;
 }
 
+
 void ThreadQueue::reset ( ) {
 	if ( m_entries ) mfree ( m_entries , m_entriesSize , "Threads" );
 	m_entries = NULL;
 	m_top = 0;
 }
+
 
 bool ThreadQueue::init ( char threadType, int32_t maxThreads, int32_t maxEntries ) {
 	m_threadType  = threadType;
@@ -608,22 +954,23 @@ bool ThreadQueue::init ( char threadType, int32_t maxThreads, int32_t maxEntries
 	m_maxEntries  = maxEntries;
 	m_entriesSize = sizeof(ThreadEntry)*m_maxEntries;
 	m_entries = (ThreadEntry *)mmalloc ( m_entriesSize , "Threads" );
-	if ( ! m_entries ) return log("thread: Failed to allocate %"INT32" bytes "
-				      "for thread queue.",m_entriesSize);
+
+	if ( ! m_entries )
+		return log("thread: Failed to allocate %"INT32" bytes for thread queue.", m_entriesSize);
 
 	for ( int32_t i = 0 ; i < m_maxEntries ; i++ ) {
 		m_entries[i].m_isOccupied = false;
 		m_entries[i].m_isLaunched = false;
 		m_entries[i].m_isDone     = true;
-                m_entries[i].m_qnum       = threadType;
-                m_entries[i].m_stack      = NULL;
+		m_entries[i].m_qnum       = threadType;
+		m_entries[i].m_stack      = NULL;
 	}
 
 	m_emptyHead = NULL;
 	m_waitHead0 = NULL;
 	m_waitHead1 = NULL;
 	m_waitHead2 = NULL;
-	m_waitHead3 = NULL;
+//	m_waitHead3 = NULL;
 	m_waitHead4 = NULL;
 	m_waitHead5 = NULL;
 	m_waitHead6 = NULL;
@@ -631,7 +978,7 @@ bool ThreadQueue::init ( char threadType, int32_t maxThreads, int32_t maxEntries
 	m_waitTail0 = NULL;
 	m_waitTail1 = NULL;
 	m_waitTail2 = NULL;
-	m_waitTail3 = NULL;
+//	m_waitTail3 = NULL;
 	m_waitTail4 = NULL;
 	m_waitTail5 = NULL;
 	m_waitTail6 = NULL;
@@ -656,33 +1003,30 @@ bool ThreadQueue::init ( char threadType, int32_t maxThreads, int32_t maxEntries
 
 
 
-int32_t ThreadQueue::getNumThreadsOutOrQueued() {
-	// MDW: we also need to count threads that are returned but need their
-	// callback called so, in the case of RdbDump, the rdblist that was written
-	// to disk can update the rdbmap before it gets saved, so it doesn't get
-	// out of sync. Process.cpp calls .suspendMerge() to make sure that all
-	// merge operations are suspended as well.
-	int32_t n = 0;
-	for ( int32_t i = 0 ; i < m_maxEntries ; i++ ) {
-		ThreadEntry *e = &m_entries[i];
-		if ( e->m_isOccupied ) n++;
-	}
-	return n;
-}
-
-
 int32_t ThreadQueue::getNumWriteThreadsOut () {
 	// only consider disk threads
-	if ( m_threadType != DISK_THREAD ) return 0;
+	if ( m_threadType != THREAD_TYPE_DISK )
+		return 0;
+
 	int32_t n = 0;
 	for ( int32_t i = 0 ; i < m_maxEntries ; i++ ) {
 		ThreadEntry *e = &m_entries[i];
-		if ( ! e->m_isOccupied ) continue;
-		if ( ! e->m_isLaunched ) continue;
-		if ( e->m_isDone ) continue;
+		if ( ! e->m_isOccupied )
+			continue;
+
+		if ( ! e->m_isLaunched )
+			continue;
+
+		if ( e->m_isDone )
+			continue;
+
 		FileState *fs = (FileState *)e->m_state;
-		if ( ! fs ) continue;
-		if ( ! fs->m_doWrite ) continue;
+		if ( ! fs )
+			continue;
+
+		if ( ! fs->m_doWrite )
+			continue;
+
 		n++;
 	}
 	return n;
@@ -690,21 +1034,19 @@ int32_t ThreadQueue::getNumWriteThreadsOut () {
 
 
 // return NULL and set g_errno on error
-ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     , 
-				     void  *state                        , 
-				     void  (* callback    )(void *state,
-							    ThreadEntry *t) ,
-				     void *(* startRoutine)(void *state,
-							    ThreadEntry *t) ) {
+ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness,
+				     void  *state,
+				     void  (* callback    )(void *state, ThreadEntry *t) ,
+				     void *(* startRoutine)(void *state, ThreadEntry *t) ) {
 
 	ThreadEntry *t = m_emptyHead;
+
 	if ( ! t ) {
 		g_errno = ENOTHREADSLOTS;
 		static time_t s_time  = 0;
 		time_t now = getTime();
 		if ( now - s_time > 5 ) {
-			log("thread: Could not add thread to queue. Already "
-			    "have %"INT32" entries.",m_maxEntries);
+			log("thread: Could not add thread to queue. Already have %"INT32" entries.",m_maxEntries);
 			s_time = now;
 		}
 		return NULL;
@@ -736,10 +1078,10 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     ,
 	// m_isWrite to see which launch counts to decrement, so
 	// since FileState will be corrupted, we need to store
 	// this info directly into the thread entry.
-	if ( m_threadType == DISK_THREAD && t->m_state ) {
+	if ( m_threadType == THREAD_TYPE_DISK && t->m_state ) {
 		FileState *fs = (FileState *)t->m_state;
 		t->m_bytesToGo = fs->m_bytesToGo;
-		t->m_doWrite = fs->m_doWrite ;
+		t->m_doWrite = fs->m_doWrite;
 	}
 	else {
 		t->m_bytesToGo = 0;
@@ -747,7 +1089,7 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     ,
 	}
 
 	// there's only two linked lists we can wait in if we are not disk
-	if ( m_threadType != DISK_THREAD ) {
+	if ( m_threadType != THREAD_TYPE_DISK ) {
 		ThreadEntry **bestHeadPtr = NULL;
 		ThreadEntry **bestTailPtr = NULL;
 		if ( niceness <= 0 ) {
@@ -781,8 +1123,6 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     ,
 	// otherwise we are a disk thread, there's 7 linked lists to use
 	//
 
-	// shortcuts
-	//int32_t rs   = t->m_bytesToGo;
 	char    nice = t->m_niceness;
 
 	// get best thread candidate from best linked list of candidates
@@ -791,8 +1131,8 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     ,
 
 	// short/med/long high priority (niceness 0) disk reads in head0/1/2
 	// but we can't launch one more if already at our quota.
-	if ( ! bestHeadPtr && nice == 0 ) { //&& rs <= g_conf.m_smaReadSize ) {
-		bestHeadPtr = &m_waitHead0; 
+	if ( ! bestHeadPtr && nice == 0 ) {
+		bestHeadPtr = &m_waitHead0;
 		bestTailPtr = &m_waitTail0;
 	}
 
@@ -804,13 +1144,13 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     ,
 
 	// niceness 1 read threads here
 	if ( ! bestHeadPtr && nice == 1 ) {
-		bestHeadPtr = &m_waitHead5; 
+		bestHeadPtr = &m_waitHead5;
 		bestTailPtr = &m_waitTail5;
 	}
 
 	// niceness 2 read threads here
 	if ( ! bestHeadPtr ) {
-		bestHeadPtr = &m_waitHead6; 
+		bestHeadPtr = &m_waitHead6;
 		bestTailPtr = &m_waitTail6;
 	}
 
@@ -822,8 +1162,10 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     ,
 
 	// remove from empty list
 	removeLink ( &m_emptyHead , t );
+
 	// sanity
 	if ( m_emptyHead == t ) { char *xx=NULL;*xx=0; }
+
 	// add to the new waiting list at the end
 	addLinkToTail ( bestHeadPtr , bestTailPtr , t );
 
@@ -838,69 +1180,32 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness                     ,
 }
 
 
-int32_t Threads::timedCleanUp (int32_t maxTime, int32_t niceness) {
-
-	// skip it if exiting
-	if ( g_process.m_mode == EXIT_MODE )
-		return 0;
-
-	if ( ! m_needsCleanup ) return 0;
-
-	//if ( g_inSigHandler ) return 0;
-	int64_t startTime = gettimeofdayInMillisecondsLocal();
-	int64_t took = 0;
-
-	if ( niceness >= MAX_NICENESS ) m_needsCleanup = false;
-
-	//for ( int32_t i = -1 ; i <= niceness ; i++ ) {
-	for ( int32_t i = 0 ; i <= niceness ; i++ ) {
-
-		for ( int32_t j = 0 ; j < m_numQueues ; j++ ) 
-			m_threadQueues[j].timedCleanUp ( niceness );
-
-		launchThreads();
-
-		if ( maxTime < 0 ) continue;
-
-		took = startTime - gettimeofdayInMillisecondsLocal();
-		if ( took <= maxTime ) continue;
-		// ok, we have to cut if short...
-		m_needsCleanup = true;
-		break;
-	}
-	return took;
-}
-
-
-bool Threads::isHittingFile ( BigFile *bf ) {
-	return m_threadQueues[DISK_THREAD].isHittingFile(bf);
-}
-
-
 bool ThreadQueue::isHittingFile ( BigFile *bf ) {
 	// loop through candidates
 	for ( int32_t i = 0 ; i < m_top; i++ ) {
 		// point to it
 		ThreadEntry *t = &m_entries[i];
+
 		// must be occupied to be done (sanity check)
-		if ( ! t->m_isOccupied ) continue;
+		if ( ! t->m_isOccupied )
+			continue;
+
 		// must not be done
-		if ( t->m_isDone ) continue;
-		// must be launched.. really??
-		//if ( ! t->m_isLaunched ) continue;
+		if ( t->m_isDone )
+			continue;
+
 		// must be a read
-		if ( t->m_startRoutine != readwriteWrapper_r ) continue;
+		if ( t->m_startRoutine != readwriteWrapper_r )
+			continue;
+
 		// shortcut
 		FileState *fs = (FileState *)t->m_state;
+
 		// get bigfile ptr
-		if ( fs->m_this == bf ) return true;
+		if ( fs->m_this == bf )
+			return true;
 	}
 	return false;
-}
-
-
-void Threads::bailOnReads ( ) {
-	m_threadQueues[DISK_THREAD].bailOnReads();
 }
 
 
@@ -911,29 +1216,42 @@ void ThreadQueue::bailOnReads ( ) {
 	log("threads: bypassing read threads");
 	ThreadEntry *t = m_launchedHead;
 	ThreadEntry *nextLink = NULL;
+
 	// loop through candidates
-	//for ( int32_t i = 0 ; i < m_top; i++ ) {
 	for ( ; t ; t = nextLink ) {
 		// do it here in case we modify the linked list below
 		nextLink = t->m_nextLink;
+
 		// must be occupied to be done (sanity check)
-		if ( ! t->m_isOccupied ) continue;
-		// skip if not launched yet
-		//if ( ! t->m_isLaunched ) continue;
+		if ( ! t->m_isOccupied )
+			continue;
+
 		// must be niceness 0
-		if ( t->m_niceness != 0 ) continue;
+		if ( t->m_niceness != 0 )
+			continue;
+
 		// must not be done
-		if ( t->m_isDone ) continue;
+		if ( t->m_isDone )
+			continue;
+
 		// must not have already called callback
-		if ( t->m_callback == ohcrap ) continue;
+		if ( t->m_callback == ohcrap )
+			continue;
+
 		// must be a read
-		if ( t->m_startRoutine != readwriteWrapper_r ) continue;
+		if ( t->m_startRoutine != readwriteWrapper_r )
+			continue;
+
 		// shortcut
 		FileState *fs = (FileState *)t->m_state;
 		// do not stop writes
-		if ( fs->m_doWrite ) continue;
+		if ( fs->m_doWrite )
+			continue;
+
 		// must be niceness 0 too!
-		if ( fs->m_niceness != 0 ) continue;
+		if ( fs->m_niceness != 0 )
+			continue;
+
 		// what is this? unlaunched...
 		//if ( t->m_pid == 0 ) continue;
 		// can only bail on a thread after it copies its FileState
@@ -941,7 +1259,9 @@ void ThreadQueue::bailOnReads ( ) {
 		// original FileState without causing a core. if thread
 		// is not yet launched we have to call the callback here too
 		// otherwise it never gets launched until the disk is unstuck!
-		if ( ! t->m_readyForBail && t->m_isLaunched ) continue;
+		if ( ! t->m_readyForBail && t->m_isLaunched )
+			continue;
+
 		// set error
 		t->m_errno = EDISKSTUCK;
 		// set this too
@@ -958,10 +1278,13 @@ void ThreadQueue::bailOnReads ( ) {
 		t->m_callback = ohcrap;
 		// invalidate state (FileState usually)
 		t->m_state = NULL;
+
 		// do not launch if not yet launched
-		if ( t->m_isLaunched ) continue;
-		// delete him if not yet launched, otherwise we try to 
-		// launch it later with a corrupted/unstable FileState... 
+		if ( t->m_isLaunched )
+			continue;
+
+		// delete him if not yet launched, otherwise we try to
+		// launch it later with a corrupted/unstable FileState...
 		// and that causes our launch counts to get out of whack i
 		// think...
 		t->m_isOccupied = false;
@@ -970,24 +1293,7 @@ void ThreadQueue::bailOnReads ( ) {
 		// remove from linked list then
 		removeLink ( &m_launchedHead , t );
 		addLink    ( &m_emptyHead , t );
-		// do we have to decrement top
-		// if ( m_top == i + 1 ) 
-		// 	while (m_top > 0 && ! m_entries[m_top-1].m_isOccupied) 
-		// 		m_top--;
 	}
-}
-
-
-// BigFile.cpp's readwriteWrapper_r() ThreadEntry::m_callback gets set to
-// ohcrap() because it was taking too long to do its read and we prematurely
-// called its callback above in bailOnReads(). In that case we still have to 
-// free the disk read buffer which was never used. And doneWrapper() in
-// BigFile.cpp is never called.
-void ohcrap ( void *state , ThreadEntry *t ) {
-	// free the read buffer here then
-	if ( t->m_allocBuf )
-		mfree ( t->m_allocBuf , t->m_allocSize , "RdbScan" );
-	log("threads: got one");
 }
 
 
@@ -1005,21 +1311,27 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 	for ( ; t ; t = nextLink ) {
 		// get it here in case we remove 't' from the linked list below
 		nextLink = t->m_nextLink;
-		// point to it
-		//ThreadEntry *t = &m_entries[i];
+
 		// skip if not qualified
-		if ( t->m_niceness > maxNiceness ) continue;
+		if ( t->m_niceness > maxNiceness )
+			continue;
+
 		// must be occupied to be done (sanity check)
-		if ( ! t->m_isOccupied ) continue;
+		if ( ! t->m_isOccupied )
+			continue;
+
 		// skip if not launched yet
-		if ( ! t->m_isLaunched ) continue;
+		if ( ! t->m_isLaunched )
+			continue;
+
 		// . we were segfaulting right here before because the thread
 		//   was setting t->m_pid and at this point it was not
 		//   set so t->m_pid was a bogus value
 		// . thread may have seg faulted, in which case sigbadhandler()
 		//   in Loop.cpp will get it and set errno to 0x7fffffff
 		// skip if not done yet
-		if ( ! t->m_isDone     ) continue;
+		if ( ! t->m_isDone     )
+			continue;
 
 		// if pthread_create() failed it returns the errno and we
 		// needsJoin is false, so do not try to join
@@ -1028,7 +1340,7 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 		if ( t->m_needsJoin ) {
 			// . join up with that thread
 			// . damn, sometimes he can block forever on his
-			//   call to sigqueue(), 
+			//   call to sigqueue(), @todo: BR: eh??
 			int64_t startTime = gettimeofdayInMillisecondsLocal();
 			int64_t took;
 			int32_t status =  pthread_join ( t->m_joinTid , NULL );
@@ -1051,33 +1363,26 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 				    (PTRTYPE)t,(int64_t)t->m_joinTid);
 
 			// re-protect this stack
-			mprotect ( t->m_stack + GUARDSIZE , 
-				   STACK_SIZE - GUARDSIZE, 
+			mprotect ( t->m_stack + GUARDSIZE ,
+				   STACK_SIZE - GUARDSIZE,
 				   PROT_NONE );
 			g_threads.returnStack ( t->m_si );
 			t->m_stack = NULL;
 
 		}
-		
-		// we may get cleaned up and re-used and our niceness reassignd
-		// right after set m_isDone to true, so save niceness
-		//int32_t niceness = t->m_niceness;
+
 		char qnum     = t->m_qnum;
 		ThreadQueue *tq = &g_threads.m_threadQueues[(int)qnum];
 		if ( tq != this ) { char *xx = NULL; *xx = 0; }
 
 		// get read size before cleaning it up -- it could get nuked
-		//int32_t rs = 0;
 		bool isWrite = false;
-		if ( tq->m_threadType == DISK_THREAD ) { // && t->m_state ) {
-			//FileState *fs = (FileState *)t->m_state;
-			//rs = t->m_bytesToGo;
+		if ( tq->m_threadType == THREAD_TYPE_DISK ) {
 			isWrite = t->m_doWrite ;
 		}
 
-
 		// now count him as returned
-		m_returned++;		
+		m_returned++;
 
 		// prepare for relaunch if we were cancelled
 		if ( t->m_isCancelled ) {
@@ -1097,14 +1402,10 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 		}
 		numCallbacks++;
 
-		// not running any more 
+		// not running any more
 		t->m_isLaunched = false;
 		// not occupied any more
 		t->m_isOccupied = false;
-		// do we have to decrement top
-		// if ( m_top == i + 1 ) 
-		// 	while (m_top > 0 && ! m_entries[m_top-1].m_isOccupied) 
-		// 		m_top--;
 
 		if ( g_conf.m_logDebugThread )
 			log(LOG_DEBUG,"thread: [t=0x%"PTRFMT"] "
@@ -1115,10 +1416,8 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 		removeLink ( &m_launchedHead , t );
 		addLink    ( &m_emptyHead    , t );
 
-		
-		g_errno = 0; 
+		g_errno = 0;
 		makeCallback ( t );
-
 
 		// clear errno again
 		g_errno = 0;
@@ -1131,7 +1430,7 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 			    "time since launch = %"UINT64" ms  "
 			    "time since pre-exit = %"UINT64" ms  "
 			    "time since exit = %"UINT64" ms",
-			    (PTRTYPE)t, 
+			    (PTRTYPE)t,
 			    getThreadType() ,
 			    (int32_t)(m_launched - m_returned) ,
 			    (uint64_t)(now - t->m_queuedTime),
@@ -1144,84 +1443,9 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 
 	//since we need finer grained control in loop, we no longer collect
 	//the callbacks, sort, then call them.  we now call them right away
-	//that way we can break out if we start taking too long and 
+	//that way we can break out if we start taking too long and
 	//give control back to udpserver.
 	return numCallbacks != 0;
-}
-
-
-void makeCallback ( ThreadEntry *t ) {
-
-	// save it
-	int32_t saved = g_niceness;
-
-	// log it now
-	if ( g_conf.m_logDebugLoop || g_conf.m_logDebugThread )
-		log(LOG_DEBUG,"thread: enter thread callback t=0x%"PTRFMT" "
-		    //"type=%s "
-		    "state=0x%"PTRFMT" "
-		    "nice=%"INT32"",
-		    (PTRTYPE)t,
-		    //getThreadType(),
-		    (PTRTYPE)t->m_state,
-		    (int32_t)t->m_niceness);
-
-	// time it?
-	int64_t start;
-	if ( g_conf.m_maxCallbackDelay >= 0 ) 
-		start = gettimeofdayInMillisecondsLocal();
-
-
-	// then set it
-	if ( t->m_niceness >= 1 ) g_niceness = 1;
-	else                      g_niceness = 0;
-
-	t->m_callback ( t->m_state , t );
-
-	// time it?
-	if ( g_conf.m_maxCallbackDelay >= 0 ) {
-		int64_t elapsed = gettimeofdayInMillisecondsLocal() - start;
-		if ( elapsed >= g_conf.m_maxCallbackDelay )
-			log("threads: Took %"INT64" ms to call "
-			    "thread callback niceness=%"INT32"",
-			    elapsed,(int32_t)saved);
-	}
-
-
-	// log it now
-	if ( g_conf.m_logDebugLoop || g_conf.m_logDebugThread )
-		log(LOG_DEBUG,"loop: exit thread callback t=0x%"PTRFMT" "
-		    //"type=%s "
-		    "nice=%"INT32"", 
-		    (PTRTYPE)t,
-		    //getThreadType(),
-		    (int32_t)t->m_niceness);
-	
-
-	// restore global niceness
-	g_niceness = saved;
-	
-}
-
-
-bool Threads::cleanUp ( ThreadEntry *t , int32_t maxNiceness ) {
-	bool didSomething = false;
- loop:
-	// assume no more cleanup needed
-	m_needsCleanup = false;
-
-	// debug msg
-	//log("cleaning up exited threads and calling callbacks");
-	for ( int32_t i = 0 ; i < m_numQueues ; i++ ) {
-		didSomething |= m_threadQueues[i].cleanUp( t , maxNiceness );
-		// . if we broke from the loop 
-		//if(m_needBottom) maxNiceness = 0;
-	}
-	// . loop more if we got a new one
-	// . thread will set this when about to exit
-	// . waitpid() may be interrupted by a SIGCHLD and not get his pid
-	if ( m_needsCleanup ) goto loop;
-	return didSomething;
 }
 
 
@@ -1239,42 +1463,41 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 	ThreadEntry *tids      [64];
 	int64_t startTime = gettimeofdayInMilliseconds();
 
-	// top:
 	ThreadEntry *t = m_launchedHead;
 	ThreadEntry *nextLink = NULL;
 	int32_t   numCallbacks = 0;
+
 	// loop through candidates
-	//for ( int32_t i = 0 ; i < m_top && numCallbacks < 64 ; i++ ) {
 	for ( ; t && numCallbacks < 64 ; t = nextLink ) {
 		// do it here in case we modify the linked list below
 		nextLink = t->m_nextLink;
-		// point to it
-		//ThreadEntry *t = &m_entries[i];
+
 		// skip if not qualified
 		if ( t->m_niceness > maxNiceness ) {
- 			//if(t->m_isDone)	{
- 			//	g_threads.m_needBottom = true;
- 			//	//g_threads.m_needsCleanup = true;
- 			//}
 			continue;
 		}
+
 		// must be occupied to be done (sanity check)
-		if ( ! t->m_isOccupied ) continue;
+		if ( ! t->m_isOccupied )
+			continue;
+
 		// skip if not launched yet
-		if ( ! t->m_isLaunched ) continue;
+		if ( ! t->m_isLaunched )
+			continue;
+
 		// . we were segfaulting right here before because the thread
 		//   was setting t->m_pid and at this point it was not
 		//   set so t->m_pid was a bogus value
 		// . thread may have seg faulted, in which case sigbadhandler()
 		//   in Loop.cpp will get it and set errno to 0x7fffffff
 		// skip if not done yet
-		if ( ! t->m_isDone     ) continue;
-
+		if ( ! t->m_isDone     )
+			continue;
 
 		if ( t->m_needsJoin ) {
 			// . join up with that thread
 			// . damn, sometimes he can block forever on his
-			//   call to sigqueue(), 
+			//   call to sigqueue(),
 			int32_t status =  pthread_join ( t->m_joinTid , NULL );
 			if ( status != 0 ) {
 				log("threads: "
@@ -1290,8 +1513,8 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 				    (PTRTYPE)t,(int64_t)t->m_joinTid);
 
 			// re-protect this stack
-			mprotect ( t->m_stack + GUARDSIZE , 
-				   STACK_SIZE - GUARDSIZE, 
+			mprotect ( t->m_stack + GUARDSIZE ,
+				   STACK_SIZE - GUARDSIZE,
 				   PROT_NONE );
 			g_threads.returnStack ( t->m_si );
 			t->m_stack = NULL;
@@ -1320,7 +1543,7 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 		//g_threads.m_threadQueues[qnum].m_returned++;
 
 		// now count him as returned
-		m_returned++;		
+		m_returned++;
 
 		// prepare for relaunch if we were cancelled
 		if ( t->m_isCancelled ) {
@@ -1352,14 +1575,10 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 		// SOLUTION: before calling the callback which may launch
 		// another thread with this same tid, thus causing an error,
 		// we should set these to false first:
-		// not running any more 
+		// not running any more
 		t->m_isLaunched = false;
 		// not occupied any more
 		t->m_isOccupied = false;
-		// do we have to decrement top
-		//if ( m_top == i + 1 ) 
-		//	while (m_top > 0 && ! m_entries[m_top-1].m_isOccupied)
-		//		m_top--;
 
 		if ( g_conf.m_logDebugThread )
 			log(LOG_DEBUG,"thread: [t=0x%"PTRFMT"] "
@@ -1370,10 +1589,9 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 		removeLink ( &m_launchedHead , t );
 		addLink    ( &m_emptyHead    , t );
 
-		g_errno = 0; 
+		g_errno = 0;
 
 		makeCallback ( t );
-
 
 		// clear errno again
 		g_errno = 0;
@@ -1386,7 +1604,7 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 			    "time since launch = %"UINT64" ms  "
 			    "time since pre-exit = %"UINT64" ms  "
 			    "time since exit = %"UINT64" ms",
-			    (PTRTYPE)t, 
+			    (PTRTYPE)t,
 			    getThreadType() ,
 			    (int32_t)(m_launched - m_returned) ,
 			    (uint64_t)(now - t->m_queuedTime),
@@ -1404,52 +1622,9 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 
 	//since we need finer grained control in loop, we no longer collect
 	//the callbacks, sort, then call them.  we now call them right away
-	//that way we can break out if we start taking too long and 
+	//that way we can break out if we start taking too long and
 	//give control back to udpserver.
 	return numCallbacks != 0;
-}
-
-
-// used by UdpServer to see if it should call a low priority callback
-bool Threads::hasHighPriorityCpuThreads() {
-	ThreadQueue *q ;
-	//int32_t hiActive = 0 ;
-	ThreadEntry *t ;
-	q         = &g_threads.m_threadQueues[INTERSECT_THREAD];
-	t = q->m_launchedHead;
-	for ( ; t ; t = t->m_nextLink ) 
-		if ( t->m_niceness == 0 ) return true;
-	//hiActive += q->m_hiLaunched - q->m_hiReturned;
-	q         = &g_threads.m_threadQueues[MERGE_THREAD];
-	t = q->m_launchedHead;
-	for ( ; t ; t = t->m_nextLink ) 
-		if ( t->m_niceness == 0 ) return true;
-	//hiActive += q->m_hiLaunched - q->m_hiReturned;
-	return false;
-}
-
-
-// used by UdpServer to see if it should call a low priority callback
-int32_t Threads::getNumActiveHighPriorityThreads() {
-	ThreadQueue *q ;
-	ThreadEntry *t;
-	int32_t hiActive = 0 ;
-	q         = &g_threads.m_threadQueues[DISK_THREAD];
-	t = q->m_launchedHead;
-	for ( ; t ; t = t->m_nextLink ) 
-		if ( t->m_niceness == 0 ) hiActive++;
-	//hiActive += q->m_hiLaunched - q->m_hiReturned;
-	q         = &g_threads.m_threadQueues[INTERSECT_THREAD];
-	t = q->m_launchedHead;
-	for ( ; t ; t = t->m_nextLink ) 
-		if ( t->m_niceness == 0 ) hiActive++;
-	//hiActive += q->m_hiLaunched - q->m_hiReturned;
-	q         = &g_threads.m_threadQueues[MERGE_THREAD];
-	t = q->m_launchedHead;
-	for ( ; t ; t = t->m_nextLink ) 
-		if ( t->m_niceness == 0 ) hiActive++;
-	//hiActive += q->m_hiLaunched - q->m_hiReturned;
-	return hiActive;
 }
 
 
@@ -1465,24 +1640,27 @@ bool ThreadQueue::launchThread2 ( ) {
 		log("thread: ThreadQueue::launchThread2: no stacks available");
 		return false;
 	}
+
 	// . how many threads are active now?
 	// . NOTE: not perfectly thread safe here
+	// @todo: BR: ^^ eek...
 	int64_t active = m_launched - m_returned ;
+
 	// debug msg
-	if ( g_conf.m_logDebugThread && m_threadType == DISK_THREAD ) 
+	if ( g_conf.m_logDebugThread && m_threadType == THREAD_TYPE_DISK )
 		log(LOG_DEBUG,"thread: q=%s launchThread: active=%"INT64" "
 		    "max=%"INT32".",getThreadType(), active,m_maxLaunched);
+
 	// return if the max is already launched for this thread queue
 	if ( active >= m_maxLaunched ) {
 		log("thread: ThreadQueue::launchThread2: active>m_maxLaunched (%ld>%d)", active, m_maxLaunched);
 		return false;
 	}
 
-
-	if ( m_threadType != DISK_THREAD ) {
+	if ( m_threadType != THREAD_TYPE_DISK ) {
 		// if one thread of this type is already out, forget it
-		if ( m_threadType!=MERGE_THREAD &&
-		     m_threadType!=INTERSECT_THREAD &&
+		if ( m_threadType!=THREAD_TYPE_MERGE &&
+		     m_threadType!=THREAD_TYPE_INTERSECT &&
 		     m_launchedHead ) {
 			log("thread: ThreadQueue::launchThread2: already one of that type");
 			return false;
@@ -1501,17 +1679,20 @@ bool ThreadQueue::launchThread2 ( ) {
 			bestTailPtr = &m_waitTail2;
 		}
 		// if bother empty, that was easy
-		if ( ! *bestHeadPtr ) return false;
-		// do not launch a low priority merge, intersect or filter 
-		// thread if we/ have high priority cpu threads already going 
-		// on. this way a low priority spider thread will not launch 
+		if ( ! *bestHeadPtr )
+			return false;
+
+		// do not launch a low priority merge, intersect or filter
+		// thread if we/ have high priority cpu threads already going
+		// on. this way a low priority spider thread will not launch
 		// if a high priority cpu-based thread of any kind (right now
 		// just MERGE or INTERSECT) is already running.
-		if ( (*bestHeadPtr)->m_niceness > 0 && 
+		if ( (*bestHeadPtr)->m_niceness > 0 &&
 		     g_threads.hasHighPriorityCpuThreads ( ) )
 			return false;
+
 		// otherwise launch the next one
-		// MERGE_THREAD, INTERSECT, FILTER, UNLINK, SAVETREE
+		// THREAD_TYPE_MERGE, INTERSECT, FILTER, UNLINK, SAVETREE
 		return launchThreadForReals ( bestHeadPtr , bestTailPtr );
 	}
 
@@ -1524,19 +1705,14 @@ bool ThreadQueue::launchThread2 ( ) {
 	for ( ; t ; t = t->m_nextLink ) {
 		// if he's done, skip him. maybe he hasn't been cleaned up yet
 		if ( t->m_isDone ) continue;
+
 		// count active out
 		activeCount++;
-		// get the highest niceness for all that are launched
-		//if ( niceness > highest ) highest = niceness;
-		//int32_t rs = t->m_bytesToGo;
+
 		// is the launched thread niceness 0? (i.e. high priority)
 		if ( t->m_niceness == 0 ) {
 			// set a flag
 			hasLowNicenessOut = true;
-			// count read sizes
-			// if      (rs > g_conf.m_medReadSize ) launchedBig0++;
-			// else if (rs > g_conf.m_smaReadSize ) launchedMed0++;
-			// else                                 launchedSma0++;
 		}
 		else {
 			spiderCount++;
@@ -1551,12 +1727,12 @@ bool ThreadQueue::launchThread2 ( ) {
 	// but we can't launch one more if already at our quota.
 	if ( ! bestHeadPtr &&  m_waitHead0   ) {
 		//launchedSma0 < g_conf.m_queryMaxSmaDiskThreads ) {
-		bestHeadPtr = &m_waitHead0; 
+		bestHeadPtr = &m_waitHead0;
 		bestTailPtr = &m_waitTail0;
 	}
 
-	// if we have a niceness 0 disk read/write outstandind and we are 
-	// 1 or 2, do not launch! we do not want low priority disk reads 
+	// if we have a niceness 0 disk read/write outstanding and we are
+	// 1 or 2, do not launch! we do not want low priority disk reads
 	// having to contend with high priority ones.
 	// now we only do this if the 'separate disk reads' parms is true.
 	if ( g_conf.m_separateDiskReads && hasLowNicenessOut && ! bestHeadPtr )
@@ -1573,16 +1749,15 @@ bool ThreadQueue::launchThread2 ( ) {
 	}
 
 	// niceness 1. for merge reads so they superscede regular spider reads
-
 	// niceness 1 read threads:
 	if ( ! bestHeadPtr && m_waitHead5 ) {
-		bestHeadPtr = &m_waitHead5; 
+		bestHeadPtr = &m_waitHead5;
 		bestTailPtr = &m_waitTail5;
 	}
 
 	// niceness 2 read threads:
 	if ( ! bestHeadPtr && m_waitHead6 ) {
-		bestHeadPtr = &m_waitHead6; 
+		bestHeadPtr = &m_waitHead6;
 		bestTailPtr = &m_waitTail6;
 	}
 
@@ -1593,7 +1768,7 @@ bool ThreadQueue::launchThread2 ( ) {
 	//int32_t max2 = g_conf.m_queryMaxDiskThreads ;
 	//if ( max2 <= 0 ) max2 = 1;
 	// only do this check if we're a addlists/instersect thread queue
-	//if (m_threadType == INTERSECT_THREAD&& hiActive >= max2)return false;
+	//if (m_threadType == THREAD_TYPE_INTERSECT&& hiActive >= max2)return false;
 
 	// point to entry in the best linked list to launch from
 	return launchThreadForReals ( bestHeadPtr , bestTailPtr );
@@ -1605,13 +1780,13 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 
 	ThreadEntry *t = *headPtr;
 
-	// if descriptor was closed, just return error now, we 
+	// if descriptor was closed, just return error now, we
 	// cannot try to re-open because the file might have been
-	// unlinked. Sync.cpp does a DISK_THREAD but does not pass in a valid
+	// unlinked. Sync.cpp does a THREAD_TYPE_DISK but does not pass in a valid
 	// FileState ptr because it does its own saving, so check for NULLs.
 	FileState *fs = (FileState *)t->m_state;
 	bool allocated = false;
-	if ( m_threadType == DISK_THREAD && fs && ! fs->m_doWrite ) {
+	if ( m_threadType == THREAD_TYPE_DISK && fs && ! fs->m_doWrite ) {
 		// allocate the read buffer here!
 		if ( ! fs->m_doWrite && ! fs->m_buf && t->m_bytesToGo > 0 ) {
 			int32_t need = t->m_bytesToGo + fs->m_allocOff;
@@ -1622,23 +1797,26 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 				fs->m_allocSize = need;
 				allocated = true;
 			}
-			else 
+			else
 				log("thread: read buf alloc failed "
 				    "for %"INT32" bytes.",need);
 			// just let the BigFile::readWrite_r() handle the
 			// error for the NULL read buf
 		}
+
 		// . otherwise, they are intact, so get the real fds
 		// . we know the stored File is still around because of that
 		bool doWrite = fs->m_doWrite;
 		BigFile *bb = fs->m_this;
-		fs->m_fd1 = bb->getfd (fs->m_filenum1,!doWrite);//&fs->m_vfd1);
-		fs->m_fd2 = bb->getfd (fs->m_filenum2,!doWrite);//&fs->m_vfd2);
+		fs->m_fd1 = bb->getfd (fs->m_filenum1,!doWrite);
+		fs->m_fd2 = bb->getfd (fs->m_filenum2,!doWrite);
+
 		// is this bad?
-		if ( fs->m_fd1 < 0 ) log("disk: fd1 is %i for %s",
-					 fs->m_fd1,bb->getFilename());
-		if ( fs->m_fd2 < 0 ) log("disk: fd2 is %i for %s.",
-					 fs->m_fd2,bb->getFilename());
+		if ( fs->m_fd1 < 0 )
+			log("disk: fd1 is %i for %s", fs->m_fd1,bb->getFilename());
+		if ( fs->m_fd2 < 0 )
+			log("disk: fd2 is %i for %s.", fs->m_fd2,bb->getFilename());
+
 		fs->m_closeCount1 = getCloseCount_r ( fs->m_fd1 );
 		fs->m_closeCount2 = getCloseCount_r ( fs->m_fd2 );
 	}
@@ -1655,7 +1833,7 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
  loop:
 	// debug msg
 	if ( g_conf.m_logDebugThread ) {
-		int32_t active = m_launched - m_returned ;		
+		int32_t active = m_launched - m_returned ;
 		int64_t now = gettimeofdayInMilliseconds();
 		log(LOG_DEBUG,"thread: [t=0x%"PTRFMT"] launched %s thread. "
 		    "active=%"INT32" "
@@ -1693,7 +1871,7 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 	if ( (uint64_t)(t->m_stack) & (THRPAGESIZE-1) ) {
 		char *xx=NULL;*xx=0; }
 	// UNprotect the whole stack so we can use it
-	mprotect ( t->m_stack + GUARDSIZE , STACK_SIZE - GUARDSIZE , 
+	mprotect ( t->m_stack + GUARDSIZE , STACK_SIZE - GUARDSIZE ,
 		   PROT_READ | PROT_WRITE );
 
 	pthread_attr_t attr;
@@ -1725,30 +1903,25 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 	// this returns 0 on success, or the errno otherwise
 	g_errno = pthread_create ( &t->m_joinTid , &attr, startUp2 , t) ;
 
-	// if ( sigprocmask ( SIG_UNBLOCK  , &sigs , NULL ) < 0 )
-	// 	log("threads: failed to unblock sig");
-
 	// we're back from pthread_create
-	if ( g_conf.m_logDebugThread ) 
+	if ( g_conf.m_logDebugThread )
 		log(LOG_DEBUG,"thread: Back from clone "
 		    "t=0x%"PTRFMT" pid=%"INT32".",
 		    (PTRTYPE)t,(int32_t)pid);
-
 
 	// return true on successful creation of the thread
 	if ( g_errno == 0 ) {
 		// good stuff, the thread needs a join now
 		t->m_needsJoin = true;
-		if ( count > 0 ) 
+		if ( count > 0 )
 			log("thread: Call to clone looped %"INT32" times.",
 			    count);
 		return true;
 	}
 
-
 	// forever loop
 	if ( g_errno == EAGAIN ) {
-		if ( count++ == 0 ) 
+		if ( count++ == 0 )
 			log("thread: Call to clone had error: %s.",
 			    mstrerror(g_errno));
 		goto hadError;
@@ -1768,9 +1941,9 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 	// it didn't launch, did it? dec the count.
 	m_launched--;
 	// re-protect this stack
-	mprotect ( t->m_stack + GUARDSIZE , STACK_SIZE - GUARDSIZE, 
-		   PROT_NONE );
-	// RETURN THE STACK
+	mprotect ( t->m_stack + GUARDSIZE , STACK_SIZE - GUARDSIZE, PROT_NONE );
+
+	// return the stack
 	g_threads.returnStack ( t->m_si );
 	t->m_stack = NULL;
 
@@ -1803,124 +1976,6 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 }
 
 
-// threads start up with cacnellation deferred until pthreads_testcancel()
-// is called, but we never call that
-int startUp ( void *state ) {
-	// get thread entry
-	ThreadEntry *t = (ThreadEntry *)state;
-
-	// our signal set
-	sigset_t set;
-	sigemptyset(&set);
-	//sigaddset(&set, SIGHUP);
-	// we need this here so if we break the gb process with gdb it
-	// does not kill the child processes when it sends out the SIGINT.
-	sigaddset(&set, SIGINT);
-	// ignore the real time signal, man...
-	//sigaddset(&set, GB_SIGRTMIN);
-	//pthread_sigmask(SIG_BLOCK, &set, NULL);
-	// turn these off in the thread
-	sigaddset   ( &set , SIGALRM );
-	sigaddset   ( &set , SIGVTALRM );
-	sigaddset   ( &set , SIGPROF );
-	pthread_sigmask(SIG_BLOCK,&set,NULL);
-	// . what this lwp's priority be?
-	// . can range from -20 to +20
-	// . the lower p, the more cpu time it gets
-	// . this is really the niceness, not the priority
-	int p ;
-	// currently our niceness ranges from -1 to 2 for us
-	if      ( t->m_niceness == 2 ) p = 19 ;
-	else if ( t->m_niceness == 1 ) p = 10 ;
-	else                           p =  0 ;
-	// remember the tid
-	//t->m_tid = pthread_self();
-	// debug
-	if ( g_conf.m_logDebugThread ) 
-		log(LOG_DEBUG,"thread: [t=0x%"PTRFMT"] "
-		    "in startup pid=%"INT64" pppid=%"INT32"",
-		    (PTRTYPE)t,(int64_t)getpidtid(),(int32_t)getppid());
-
-	// somehow, it works ok when we have this print statement delay!!!
-	//fprintf(stderr,"thread pid = %"INT32"\n",(int32_t)getpid());
-	// . call the startRoutine
-	// . IMPORTANT: this can NEVER do non-blocking stuff
-	t->m_startRoutine ( t->m_state , t );
-	// pop it off
-	//pthread_cleanup_pop ( 1 /*execute handler?*/ );
-
-	// . now throw it on g_loop's sigqueue
-	// . the first 4 bytes of t->m_state should be t->m_callback
-	// . no! just use 1 to tell Loop to call g_threads.cleanUp()
-	// . TODO: pass in a ptr to cleanUpWrapper() instead of "t"
-	// . sival_int is only 4 bytes on a 64 bit arch...
-	sigval_t svt; 
-	svt.sival_int = 1;//(int64_t)t ; //(int)(t->m_state); // fd;
-
-
-	// set exit time
-	int64_t now = gettimeofdayInMilliseconds();
-	t->m_preExitTime = now;
-	t->m_exitTime    = now;
-	if ( g_conf.m_logDebugThread ) {
-
-		log(LOG_DEBUG,"thread: [t=0x%"PTRFMT"] "
-		    "done with startup pid=%"INT64"",
-		    (PTRTYPE)t,(int64_t)getpidtid());
-	}
-
-	// . now mark thread as ready for removal
-	// . do this BEFORE queing the signal since we're still a thread!!!
-	// . cleanUp() will take care of the rest
-	// . cleanUp() will call pthread_join on us!
-	t->m_isDone = true;
-	
-	// let Loop.cpp's sigHandler_r call g_thread.cleanUp()
-	g_threads.m_needsCleanup = true;
-
-
-	// try a sigchld now! doesn't it already do this? no...
-	// on 64bit arch pthread_t is 64bit and pid_t is 32bit
-	// i dont think this makes sense with pthreads any more, they don't
-	// use pid_t they use pthread_t
-	pthread_kill ( s_pid , SIGCHLD );
-
-	return 0;
-}
-
-
-// pthread_create uses this one
-void *startUp2 ( void *state ) {
-  startUp ( state );
-  return NULL;
-}
-
-
-// watch out, UdpServer::getEmptySlot() calls UdpServer::suspend() and we
-// could be in a signal handler here
-void ThreadQueue::suspendLowPriorityThreads() {
-	// just return if already suspended
-	if ( m_isLowPrioritySuspended ) return;
-	// set the flag so low priority threads won't be launched
-	m_isLowPrioritySuspended = true;
-	// . cancel any outstanding low priority threads that are running
-	// . no, only cancel if we run another disk thread
-	// . this will happen above in ThreadQueue::launchThread()
-	//cancelLowPriorityThreads();
-}
-
-
-// this is called by UdpServer::destroySlot() and should NOT be in a sig handlr
-void ThreadQueue::resumeLowPriorityThreads() {
-	// bail if no need
-	if ( ! m_isLowPrioritySuspended ) return;
-	// turn em back on
-	m_isLowPrioritySuspended = false;
-	// try to start up some threads then
-	g_threads.launchThreads();
-}
-
-
 void ThreadQueue::print ( ) {
 	// loop through candidates
 	for ( int32_t i = 0 ; i < m_top ; i++ ) {
@@ -1929,7 +1984,7 @@ void ThreadQueue::print ( ) {
 		log(LOG_INIT,"thread: address=%"PTRFMT" "
 		    "pid=%u state=%"PTRFMT" "
 		    "occ=%i done=%i lnch=%i",
-		     (PTRTYPE)t , t->m_pid , 
+		     (PTRTYPE)t , t->m_pid ,
 		     (PTRTYPE)t->m_state , t->m_isOccupied , t->m_isDone ,
 		     t->m_isLaunched );
 	}
@@ -1938,13 +1993,13 @@ void ThreadQueue::print ( ) {
 
 const char *ThreadQueue::getThreadType ( ) {
 	const char *s = "unknown";
-	if ( m_threadType == DISK_THREAD      ) s = "disk";
-	if ( m_threadType == MERGE_THREAD     ) s = "merge";
-	if ( m_threadType == INTERSECT_THREAD ) s = "intersectlists";
-	if ( m_threadType == FILTER_THREAD    ) s = "filter";
-	if ( m_threadType == SAVETREE_THREAD  ) s = "savetree";
-	if ( m_threadType == UNLINK_THREAD    ) s = "unlink";
-	if ( m_threadType == GENERIC_THREAD   ) s = "generic";
+	if ( m_threadType == THREAD_TYPE_DISK		) s = "disk";
+	if ( m_threadType == THREAD_TYPE_MERGE		) s = "merge";
+	if ( m_threadType == THREAD_TYPE_INTERSECT	) s = "intersectlists";
+	if ( m_threadType == THREAD_TYPE_FILTER		) s = "filter";
+	if ( m_threadType == THREAD_TYPE_SAVETREE	) s = "savetree";
+	if ( m_threadType == THREAD_TYPE_UNLINK		) s = "unlink";
+	if ( m_threadType == THREAD_TYPE_GENERIC	) s = "generic";
 	return s;
 }
 
@@ -1955,13 +2010,13 @@ const char *ThreadQueue::getThreadType ( ) {
 // we also remove any unlaunched reads/writes on it from the thread queue.
 void ThreadQueue::removeThreads ( BigFile *bf ) {
 	// did the BigFile get hosed? that means our BigFile was
-	// unlinked or closed before we got a chance to launch the 
+	// unlinked or closed before we got a chance to launch the
 	// thread.
 
 	removeThreads2 ( &m_waitHead0 , &m_waitTail0 , bf );
 	removeThreads2 ( &m_waitHead1 , &m_waitTail1 , bf );
 	removeThreads2 ( &m_waitHead2 , &m_waitTail2 , bf );
-	removeThreads2 ( &m_waitHead3 , &m_waitTail3 , bf );
+//	removeThreads2 ( &m_waitHead3 , &m_waitTail3 , bf );
 	removeThreads2 ( &m_waitHead4 , &m_waitTail4 , bf );
 	removeThreads2 ( &m_waitHead5 , &m_waitTail5 , bf );
 	removeThreads2 ( &m_waitHead6 , &m_waitTail6 , bf );
@@ -1982,9 +2037,13 @@ void ThreadQueue::removeThreads2 ( ThreadEntry **headPtr ,
 		// get the filestate
 		FileState *fs = (FileState *)t->m_state;
 		// skip if NULL
-		if ( ! fs ) continue;
+		if ( ! fs )
+			continue;
+
 		// skip if not match
-		if ( fs->m_this != (void *)bf ) continue;
+		if ( fs->m_this != (void *)bf )
+			continue;
+
 		// . let it finish writing if it is a write thread
 		// . otherwise, if we are exiting, we could free the
 		//   buffer being written and cause the thread to core...
@@ -1992,6 +2051,7 @@ void ThreadQueue::removeThreads2 ( ThreadEntry **headPtr ,
 			log(LOG_INFO,"disk: Not removing write thread.");
 			continue;
 		}
+
 		// . should we really? if we renamed the file to another,
 		//   we need to recompute the offsets to read, etc.. so we
 		//   should fail up to Msg5 with EFILECLOSED or something...
@@ -2004,17 +2064,21 @@ void ThreadQueue::removeThreads2 ( ThreadEntry **headPtr ,
 		// log it
 		logf(LOG_INFO,"disk: Removing/flagging operation in thread "
 		    "queue. fs=0x%"PTRFMT"", (PTRTYPE)fs);
+
 		// skip if already done
-		if ( t->m_isDone ) continue;
+		if ( t->m_isDone )
+			continue;
+
 		// skip if launched
-		if ( t->m_isLaunched ) continue;
+		if ( t->m_isLaunched )
+			continue;
+
 		// note in the log it is launched
 		log(LOG_INFO,"disk: Thread is launched.");
 		// tell donewrapper what happened
 		fs->m_errno = EFILECLOSED;
 		g_errno     = EFILECLOSED;
-		// note it
-		//log(LOG_INFO,"disk: Removing operation from thread queue.");
+
 		// remove it from the thread queue
 		t->m_isDone     = true;
 		t->m_isLaunched = false;
@@ -2027,70 +2091,10 @@ void ThreadQueue::removeThreads2 ( ThreadEntry **headPtr ,
 		// add to 'empty' linked list
 		addLink ( &m_emptyHead , t );
 
-
 		makeCallback ( t );
-
 	}
 
 	g_errno = saved;
 }
 
 
-void Threads::printState() {
-	int64_t now = gettimeofdayInMilliseconds();
-
-
-	for ( int32_t i = 0 ; i < m_numQueues; i++ ) {
-		ThreadQueue *q = &m_threadQueues[i];
-
-		for ( int32_t j = 0 ; j < q->m_top ; j++ ) {
-			ThreadEntry *t = &q->m_entries[j];
-
-			if(!t->m_isOccupied) continue;
-			if(t->m_isDone) {
-				log(LOG_TIMING,
-				    "admin: Thread -done- "
-				    "nice: %"INT32" "
-				    "totalTime: %"INT64" (ms) "
-				    "queuedTime: %"INT64"(ms) "
-				    "runTime: %"INT64"(ms) "
-				    "cleanup: %"INT64"(ms) "
-				    "callback:%s",
-				    t->m_niceness, 
-				    now - t->m_queuedTime, 
-				    t->m_launchedTime - t->m_queuedTime, 
-				    t->m_exitTime - t->m_launchedTime, 
-				    now - t->m_exitTime,
-				    g_profiler.
-				    getFnName((PTRTYPE)t->m_callback));
-				continue;
-			}
-			if(t->m_isLaunched) {
-				log(LOG_TIMING,
-				    "admin: Thread -launched- "
-				    "nice: %"INT32" "
-				    "totalTime: %"INT64"(ms) "
-				    "queuedTime: %"INT64"(ms) "
-				    "runTime: %"INT64"(ms) "
-				    "callback:%s",
-				    t->m_niceness, 
-				    now - t->m_queuedTime, 
-				    t->m_launchedTime - t->m_queuedTime, 
-				    now - t->m_launchedTime,
-				    g_profiler.
-				    getFnName((PTRTYPE)t->m_callback));
-				continue;
-			}
-
-			log(LOG_TIMING,
-			    "admin: Thread -queued- "
-			    "nice: %"INT32" "
-			    "queueTime: %"INT64"(ms) "
-			    "callback:%s",
-			    t->m_niceness, 
-			    now - t->m_queuedTime, 
-			    g_profiler.getFnName((PTRTYPE)t->m_callback));
-			
-		}
-	}
-}

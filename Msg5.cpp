@@ -1115,7 +1115,7 @@ bool Msg5::gotList2 ( ) {
 	// . if size is big, make a thread
 	// . let's always make niceness 0 since it wasn't being very
 	//   aggressive before
-	if ( g_threads.call ( MERGE_THREAD        , // threadType
+	if ( g_threads.call ( THREAD_TYPE_MERGE        , // threadType
 			      m_niceness          , // m_niceness        , 
 			      this                , // state data for callback
 			      threadDoneWrapper   ,

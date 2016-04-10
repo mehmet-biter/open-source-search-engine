@@ -842,7 +842,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	// . this returns false and sets g_errno on error, true on success
 	// . we should return false cuz we blocked
 	// . thread will add signal to g_loop on completion to call
-	if ( g_threads.call ( DISK_THREAD/*threadType*/, niceness , fstate ,
+	if ( g_threads.call ( THREAD_TYPE_DISK, niceness , fstate ,
 			      doneWrapper , readwriteWrapper_r) ) return false;
 
 	saved = g_errno;
@@ -1468,8 +1468,8 @@ bool readwrite_r ( FileState *fstate , ThreadEntry *t ) {
 	if ( t && t->m_callback == ohcrap ) return false;
 
 	// only set this now if we are the first one
-	// if ( g_threads.m_threadQueues[DISK_THREAD].m_hiReturned ==
-	//      g_threads.m_threadQueues[DISK_THREAD].m_hiLaunched ) 
+	// if ( g_threads.m_threadQueues[THREAD_TYPE_DISK].m_hiReturned ==
+	//      g_threads.m_threadQueues[THREAD_TYPE_DISK].m_hiLaunched ) 
 	// 	g_lastDiskReadStarted = fstate->m_startTime;
 
 	// fake it out
@@ -1874,7 +1874,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		// . returns true on successful spawning
 		// . we can't make a disk thread cuz Threads.cpp checks its
 		//   FileState member for readSize for thread throttling
-		if ( g_threads.call (UNLINK_THREAD/*threadType*/,1/*niceness*/,
+		if ( g_threads.call (THREAD_TYPE_UNLINK,1/*niceness*/,
 				     f , doneRoutine , startRoutine ) )
 		{
 			if( g_conf.m_logTraceBigFile ) {
@@ -1921,7 +1921,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		//if ( m_pc ) m_pc->rmVfd ( m_vfd );
 		// remove all queued threads that point to us that have not
 		// yet been launched
-		g_threads.m_threadQueues[DISK_THREAD].removeThreads(this);
+		g_threads.m_threadQueues[THREAD_TYPE_DISK].removeThreads(this);
 	}
 	// close em up
 	//close();
@@ -2284,7 +2284,7 @@ bool BigFile::close ( ) {
 
 	// remove all queued threads that point to us that have not
 	// yet been launched
-	g_threads.m_threadQueues[DISK_THREAD].removeThreads(this);
+	g_threads.m_threadQueues[THREAD_TYPE_DISK].removeThreads(this);
 	return true;
 }
 
