@@ -2007,8 +2007,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 
 #ifdef _MERGEDEBUG_
 	log(LOG_LOGIC,"%s:%s: removeNegKeys: %s", __FILE__, __func__, removeNegKeys?"true":"false");
-	//log(LOG_INFO,"mdw: sk.n1=%"UINT32" sk.n0=%"UINT64" ek.n1=%"UINT32" ek.n0=%"UINT64"",
-	    //startKey.n1, startKey.n0, endKey.n1, endKey.n0 );
 	log(LOG_LOGIC,"%s:%s: sk.n1=%"XINT64" sk.n0=%"XINT64" ek.n1=%"XINT64" ek.n0=%"XINT64"",
 	    __FILE__,__func__, KEY1(startKey,m_ks),KEY0(startKey),KEY1(endKey,m_ks),KEY0(endKey));
 	log(LOG_LOGIC,"%s:%s: numLists: %"INT32", m_allocSize=%"INT32", m_mergeMinListSize=%"INT32", minRecSizes=%"INT32"",
@@ -2088,10 +2086,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		lists[i]->printList(LOG_LOGIC);
 #endif
 
-		// reset list ptr
-		//lists[i]->resetListPtr();
-		// debug msg
-		//lists[i]->printList();
 		// . first key of a list must ALWAYS be 12 byte
 		// . bitch if it isn't, that should be fixed!
 		// . cheap sanity check
@@ -2139,11 +2133,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 
 	// merge loop over the lists, get the smallest key
 	for ( int32_t i = 1 ; i < numLists ; i++ ) {
-		// sanity check
-		//if ( fcmp (minPtrBase,minPtrHi,ptrs[i],hiKeys[i]) !=
-		//     cmp (minPtrBase,minPtrHi,ptrs[i],hiKeys[i])  ) {
-		//	char *xx = NULL; *xx = 0; }
-		// this cmp() function is inlined in RdbList.h
 		char ss = bfcmpPosdb (minPtrBase,minPtrLo,minPtrHi,
 				 ptrs[i],loKeys[i],hiKeys[i]);
 		// . continue if tie, so we get the oldest first
@@ -2239,9 +2228,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// . TODO: what if last key we were able to add was NEGATIVE???
 
  skip:
-	//sched_yield();
-	// if lastKey was not from root list, mark it as so now
-	//lastmini = mini;
 	// advance winning src list ptr
 	if      ( ptrs[mini][0] & 0x04 ) ptrs [ mini ] += 6;
 	else if ( ptrs[mini][0] & 0x02 ) ptrs [ mini ] += 12;
@@ -2272,8 +2258,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// REMOVE THE LIST at mini
 	//
 
-	// debug msg
-	//log("removing list #%"INT32"", mini);
 	// otherwise, remove him from array
 	for ( int32_t i = mini ; i < numLists - 1 ; i++ ) {
 		ptrs    [i] = ptrs    [i+1];
