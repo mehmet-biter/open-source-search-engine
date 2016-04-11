@@ -71,8 +71,6 @@ class RdbList {
 		  int32_t  listSize      , 
 		  char *alloc         ,
 		  int32_t  allocSize     ,
-		  //key_t startKey      , 
-		  //key_t endKey        ,
 		  const char *startKey      ,
 		  const char *endKey        ,
 		  int32_t  fixedDataSize , 
@@ -93,17 +91,8 @@ class RdbList {
 	void setFromPtr ( char *p , int32_t psize , char rdbId ) ;
 
 	// just set the start and end keys
-	//void set ( key_t startKey , key_t endKey );
 	void set ( const char *startKey, const char *endKey );
 
-	void setStartKey ( key_t startKey ){
-	  if ( m_ks!=12 ) { char *xx=NULL;*xx=0;}
-	  KEYSET(m_startKey,(char *)&startKey,12);
-	};
-	void setEndKey   ( key_t endKey   ){
-	  if ( m_ks!=12 ) { char *xx=NULL;*xx=0;}
-	  KEYSET(m_endKey,(char *)&endKey,12);
-	};
 	void setStartKey ( const char *startKey ){KEYSET(m_startKey,startKey,m_ks);}
 	void setEndKey   ( const char *endKey   ){KEYSET(m_endKey  ,endKey  ,m_ks);}
 
@@ -134,8 +123,6 @@ class RdbList {
 	char *getList            () { return m_list; };
 	int32_t  getListSize        () const { return m_listSize; }
 	char *getListEnd         () { return m_list + m_listSize; };
-	char *getListStartKey    () { return m_startKey; };
-	char *getListEndKey      () { return m_endKey; };
 
 
 	// often these equal m_list/m_listSize, but they may encompass
@@ -268,13 +255,10 @@ class RdbList {
 	char *getData     ( char *rec ) ;
 	int32_t  getDataSize ( const char *rec ) const;
 	void  getKey      ( const char *rec , char *key ) const;
-	key_t getKey      ( const char *rec ) const {
-		key_t k; getKey(rec,(char *)&k); return k; }
 
 	// . merge_r() sets m_lastKey for the list it merges the others into
 	// . otherwise, this may be invalid
 	char *getLastKey  ( ) ;
-	//void  setLastKey  ( key_t k );
 	void  setLastKey  ( const char *k );
 	// sometimes we don't have a valid m_lastKey because it is only
 	// set in calls to constrain(), merge_r() and indexMerge_r()
@@ -326,7 +310,6 @@ class RdbList {
 	int32_t  m_fixedDataSize;
 
 	// this is set to the last key in this list if we were made by merge()
-	//key_t m_lastKey;
 	char  m_lastKey [ MAX_KEY_BYTES ];
 	bool  m_lastKeyIsValid;
 
