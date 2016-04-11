@@ -2074,8 +2074,8 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// initialize the arrays, 1-1 with the unignored lists
 	char  *ptrs    [ MAX_RDB_FILES + 1 ];
 	char  *ends    [ MAX_RDB_FILES + 1 ];
-	char  *hiKeys  [ MAX_RDB_FILES + 1 ];
-	char  *loKeys  [ MAX_RDB_FILES + 1 ];
+	char  hiKeys  [ MAX_RDB_FILES + 1 ][6];
+	char  loKeys  [ MAX_RDB_FILES + 1 ][6];
 	// set the ptrs that are non-empty
 	int32_t n = 0;
 	// convenience ptr
@@ -2107,8 +2107,8 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		// set ptrs
 		ends    [n] = lists[i]->getListEnd ();
 		ptrs    [n] = lists[i]->getList    ();
-		hiKeys  [n] = lists[i]->getList    () + 12; //hks;
-		loKeys  [n] = lists[i]->getList    () + 6; //hks;
+		memcpy(hiKeys[n], lists[i]->getList() + 12, 6);
+		memcpy(loKeys[n], lists[i]->getList() +  6, 6);
 		n++;
 	}
 
@@ -2254,12 +2254,12 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		}
 		// is new key 12 bytes?
 		else if ( ptrs[mini][0] & 0x02 ) {
-			loKeys [ mini ]  = ptrs [ mini ] + 6;
+			memcpy(loKeys[mini], ptrs[mini] +  6, 6);
 		}
 		// is new key 18 bytes? full key.
 		else {
-			hiKeys [ mini ]  = ptrs [ mini ] + 12;
-			loKeys [ mini ]  = ptrs [ mini ] + 6;
+			memcpy(hiKeys[mini], ptrs[mini] + 12, 6);
+			memcpy(loKeys[mini], ptrs[mini] +  6, 6);
 		}
 		// but if we got enough recs and this list doesn't need to
 		// be remove, we should be about done
@@ -2278,8 +2278,8 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	for ( int32_t i = mini ; i < numLists - 1 ; i++ ) {
 		ptrs    [i] = ptrs    [i+1];
 		ends    [i] = ends    [i+1];
-		hiKeys  [i] = hiKeys  [i+1];
-		loKeys  [i] = loKeys  [i+1];
+		memcpy(hiKeys[i], hiKeys[i+1], 6);
+		memcpy(loKeys[i], loKeys[i+1], 6);
 #ifdef _MERGEDEBUG_
 		fns     [i] = fns     [i+1];
 #endif
