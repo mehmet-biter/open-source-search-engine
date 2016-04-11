@@ -69,13 +69,10 @@ class Msg5 {
 	// . if maxCacheAge is > 0, we lookup in cache first
 	bool getList ( //class RdbBase *base      ,
 		       char       rdbId         ,
-		       //char      *coll          ,
 		       collnum_t collnum ,
 		       RdbList   *list          ,
-		       //key_t      startKey      , 
-		       //key_t      endKey        , 
-		       void      *startKey      , 
-		       void      *endKey        , 
+		       const void      *startKey      ,
+		       const void      *endKey        ,
 		       int32_t       recSizes      , // requestd scan size(-1 all)
 		       bool       includeTree   ,
 		       bool       addToCache    ,
@@ -88,7 +85,6 @@ class Msg5 {
 						Msg5    *msg5  ) ,
 		       int32_t       niceness      ,
 		       bool       doErrorCorrection  ,
-		       //key_t     *cacheKeyPtr  = NULL ,
 		       char      *cacheKeyPtr  = NULL ,
 		       int32_t       retryNum     =  0  ,
 		       int32_t       maxRetries   = -1  ,
@@ -101,9 +97,7 @@ class Msg5 {
 		       // if this is false we just return all lists unmerged
 		       bool        mergeLists     = true );
 
-	bool getList ( //class RdbBase *base      ,
-		       char       rdbId         ,
-		       //char      *coll          ,
+	bool getList ( char       rdbId         ,
 		       collnum_t collnum ,
 		       RdbList   *list          ,
 		       key_t      startKey      , 
@@ -132,8 +126,8 @@ class Msg5 {
 		return getList ( rdbId         ,
 				 collnum       ,
 				 list          ,
-				 (char *)&startKey      , 
-				 (char *)&endKey        , 
+				 (const void *)&startKey      ,
+				 (const void *)&endKey        ,
 				 recSizes      , 
 				 includeTree   ,
 				 addToCache    ,

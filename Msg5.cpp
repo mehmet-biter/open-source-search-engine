@@ -65,10 +65,8 @@ void Msg5::reset() {
 bool Msg5::getList ( char     rdbId         ,
 		     collnum_t collnum ,
 		     RdbList *list          ,
-		     //key_t    startKey      , 
-		     //key_t    endKey        , 
-		     void    *startKey      , 
-		     void    *endKey        , 
+		     const void    *startKey      ,
+		     const void    *endKey        ,
 		     int32_t     minRecSizes   , // requested scan size(-1 none)
 		     bool     includeTree   ,
 		     bool     addToCache    ,
