@@ -364,7 +364,7 @@ void hdtempWrapper ( int fd , void *state ) {
 	g_process.m_threadOut = true;
 	// . call thread to call popen
 	// . callThread returns true on success, in which case we block
-	if ( g_threads.call ( FILTER_THREAD        ,
+	if ( g_threads.call ( THREAD_TYPE_FILTER,
 			      MAX_NICENESS         ,
 			      NULL                 , // this
 			      hdtempDoneWrapper    ,
@@ -884,7 +884,6 @@ bool Process::shutdown2 ( ) {
 	static bool s_printed = false;
 
 	// wait for all threads to return
-	//int32_t n = g_threads.getNumThreadsOutOrQueued() ;
 	int32_t n = g_threads.getNumWriteThreadsOut();
 	if ( n != 0 && ! m_urgent ) {
 		log(LOG_INFO,"gb: Has %"INT32" write threads out. Waiting for them to finish.", n);
@@ -1037,17 +1036,8 @@ bool Process::shutdown2 ( ) {
 	}
 
 
-
 	// cleanup threads, this also launches them too
 	g_threads.timedCleanUp(0x7fffffff,MAX_NICENESS);
-
-	// wait for all threads to complete...
-	//int32_t n = g_threads.getNumThreadsOutOrQueued() ;
-	//if ( n > 0 )
-	//	return log(LOG_INFO,
-	//		   "gb: Waiting for %"INT32" threads to complete.",n);
-
-	//log(LOG_INFO,"gb: Has %"INT32" threads out.",n);
 
 
 	//ok, resetAll will close httpServer's socket so now is the time to 

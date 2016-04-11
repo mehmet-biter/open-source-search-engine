@@ -1355,7 +1355,7 @@ bool RdbCache::save ( bool useThreads ) {
 		m_isSaving = true;
 		// make a thread. returns true on success, in which case
 		// we return false to indicate we blocked.
-		if ( g_threads.call ( SAVETREE_THREAD   ,
+		if ( g_threads.call ( THREAD_TYPE_SAVETREE   ,
 				      1                 , // niceness
 				      this              , // state
 				      threadDoneWrapper , // callback

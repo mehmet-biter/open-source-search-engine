@@ -10860,7 +10860,7 @@ char **XmlDoc::getFilteredContent ( ) {
 	if ( ! m_mimeValid ) { char *xx=NULL;*xx=0; }
 
 	// do it
-	if ( g_threads.call ( FILTER_THREAD        ,
+	if ( g_threads.call ( THREAD_TYPE_FILTER,
 			      MAX_NICENESS         ,
 			      this                 ,
 			      filterDoneWrapper    ,

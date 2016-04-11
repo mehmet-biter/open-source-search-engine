@@ -79,7 +79,7 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 
 			FileState *fs = (FileState *)t->m_state;
 			bool diskThread = false;
-			if(q->m_threadType == DISK_THREAD && fs) 
+			if(q->m_threadType == THREAD_TYPE_DISK && fs) 
 				diskThread = true;
 
 			// might have got pre-called from EDISKSTUCK
@@ -167,7 +167,7 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 		p.safePrintf("</table><br><br>"); 
 
 		
-		if(q->m_threadType == DISK_THREAD) disk = q;
+		if(q->m_threadType == THREAD_TYPE_DISK) disk = q;
 
 	}
 
