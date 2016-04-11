@@ -705,20 +705,20 @@ static inline char *KEYSTR ( const void *vk , int32_t ks ) {
 	return tmp;
 }
 
-inline uint16_t KEY0 ( const char *k , int32_t ks ) {
+static inline uint16_t KEY0 ( const char *k , int32_t ks ) {
 	if ( ks == 18 ) return *(const uint16_t *)k;
 	else { char *xx=NULL;*xx=0; }
 	return 0;
 }
 
-inline int64_t KEY1 ( const char *k , char keySize ) {
+static inline int64_t KEY1 ( const char *k , char keySize ) {
 	if ( keySize == 12 ) return *(const int32_t *)(k+8);
 	if ( keySize == 18 ) return *(const int64_t *)(k+2);
 	// otherwise, assume 16
 	return *(int64_t *)(k+8);
 }
 
-inline int64_t KEY2 ( const char *k , char keySize ) {
+static inline int64_t KEY2 ( const char *k , char keySize ) {
 	if ( keySize == 18 ) return *(const int64_t *)(k+10);
 	char *xx=NULL;*xx=0;
 	return 0;
@@ -726,10 +726,10 @@ inline int64_t KEY2 ( const char *k , char keySize ) {
 
 
 
-inline int64_t KEY0 ( const char *k ) {
+static inline int64_t KEY0 ( const char *k ) {
 	return *(const int64_t *)k;
 }
-inline void KEYSET ( char *k1 , const char *k2 , char keySize ) {
+static inline void KEYSET ( char *k1 , const char *k2 , char keySize ) {
 	// posdb
 	if ( keySize == 18 ) {
 		*(int16_t *)(k1  ) = *(const int16_t *)(k2  );
@@ -773,7 +773,7 @@ inline void KEYSET ( char *k1 , const char *k2 , char keySize ) {
 	return;
 }
 
-inline char KEYNEG ( char *k , int32_t a , char keySize ) {
+static inline char KEYNEG ( char *k , int32_t a , char keySize ) {
 	// posdb
 	if ( keySize == 18 ) {
 		if ( (k[a*18] & 0x01) == 0x00 ) return 1;
@@ -804,22 +804,22 @@ inline char KEYNEG ( char *k , int32_t a , char keySize ) {
 	return 0;
 }
 
-inline char KEYNEG ( const char *k ) {
+static inline char KEYNEG ( const char *k ) {
 	if ( (k[0] & 0x01) == 0x00 ) return 1;
 	return 0;
 }
 
-inline char KEYNEG ( key_t k ) {
+static inline char KEYNEG ( key_t k ) {
 	if ( (k.n0 & 0x01) == 0x00 ) return 1;
 	return 0;
 }
 
-inline char KEYPOS ( const char *k ) {
+static inline char KEYPOS ( const char *k ) {
 	if ( (k[0] & 0x01) == 0x01 ) return 1;
 	return 0;
 }
 
-inline void KEYADD ( char *k , char keySize ) {
+static inline void KEYADD ( char *k , char keySize ) {
 	// posdb
 	if ( keySize == 18 ) { *((key144_t *)k) += (int32_t)1; return; }
 	if ( keySize == 12 ) { *((key96_t  *)k) += (int32_t)1; return; }
@@ -830,7 +830,7 @@ inline void KEYADD ( char *k , char keySize ) {
 	char *xx=NULL;*xx=0;
 }
 
-inline void KEYSUB ( char *k , char keySize ) {
+static inline void KEYSUB ( char *k , char keySize ) {
 	if ( keySize == 18 ) { *((key144_t *)k) -= (int32_t)1; return; }
 	if ( keySize == 12 ) { *((key96_t  *)k) -= (int32_t)1; return; }
 	if ( keySize == 16 ) { *((key128_t *)k) -= (int32_t)1; return; }
@@ -838,25 +838,25 @@ inline void KEYSUB ( char *k , char keySize ) {
 	char *xx=NULL;*xx=0;
 }
 
-inline void KEYOR ( char *k , int32_t opor ) {
+static inline void KEYOR ( char *k , int32_t opor ) {
 	*((uint32_t *)k) |= opor;
 	//if ( keySize == 12 ) ((key12_t *)k)->n0 |= or;
 	//else                 ((key16_t *)k)->n0 |= or;
 }
 
-inline void KEYXOR ( char *k , int32_t opxor ) {
+static inline void KEYXOR ( char *k , int32_t opxor ) {
 	*((uint32_t *)k) ^= opxor;
 }
 
-inline void KEYMIN ( char *k, char keySize ) {
+static inline void KEYMIN ( char *k, char keySize ) {
 	memset ( k , 0 , keySize );
 }
 
-inline void KEYMAX ( char *k, char keySize ) {
+static inline void KEYMAX ( char *k, char keySize ) {
 	for ( int32_t i = 0 ; i < keySize ; i++ ) k[i]=(char)0xff;
 }
 
-inline char *KEYMIN() { return  "\0\0\0\0"
+static inline char *KEYMIN() { return  "\0\0\0\0"
 			 "\0\0\0\0"
 			 "\0\0\0\0"
 			 "\0\0\0\0"
@@ -864,15 +864,19 @@ inline char *KEYMIN() { return  "\0\0\0\0"
 			 "\0\0\0\0"
 			 "\0\0\0\0"
 			 "\0\0\0\0"; };
-static int s_foo[] = { (int)0xffffffff ,
-		       (int)0xffffffff ,
-		       (int)0xffffffff ,
-		       (int)0xffffffff ,
-		       (int)0xffffffff ,
-		       (int)0xffffffff ,
-		       (int)0xffffffff ,
-		       (int)0xffffffff };
-inline char *KEYMAX() { return (char *)s_foo; };
+static inline char *KEYMAX() {
+	static int s_foo[] = {
+		(int)0xffffffff ,
+	        (int)0xffffffff ,
+		(int)0xffffffff ,
+		(int)0xffffffff ,
+		(int)0xffffffff ,
+		(int)0xffffffff ,
+		(int)0xffffffff ,
+		(int)0xffffffff
+	};
+	return (char *)s_foo;
+}
 
 
 #endif // GB_TYPES_H
