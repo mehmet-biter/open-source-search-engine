@@ -40,6 +40,16 @@ static inline char bfcmpPosdb ( char *alo , char *ame , char *ahi ,
 };
 
 
+static bool cmp_6bytes_equal(const void *p1, const void *p2)
+{
+	uint32_t u32_1 = *(const uint32_t*)p1;
+	uint32_t u32_2 = *(const uint32_t*)p2;
+	if(u32_1!=u32_2) return false;
+	uint16_t u16_1 = *(const uint16_t*)(((const char*)p1)+4);
+	uint16_t u16_2 = *(const uint16_t*)(((const char*)p2)+4);
+	return u16_1==u16_2;
+}
+
 
 void RdbList::constructor () {
 	m_list        = NULL;
@@ -258,9 +268,9 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 		if ( m_listEnd + 18 >  m_alloc + m_allocSize )
 			if ( ! growList ( m_allocSize + 18 ) )
 				return false;
-		if ( m_listPtrHi && memcmp ( m_listPtrHi, key+12, 6 ) == 0){
+		if ( m_listPtrHi && cmp_6bytes_equal ( m_listPtrHi, key+12 ) ){
 			// compare next 6 bytes
-			if ( memcmp ( m_listPtrLo,key+6,6)==0) {
+			if ( cmp_6bytes_equal ( m_listPtrLo,key+6) ) {
 				// store in end key
 				memcpy(m_listEnd,key,6);
 				// turn on both half bits
@@ -319,7 +329,7 @@ bool RdbList::addRecord ( const char *key, int32_t dataSize, const char *data,
 	if ( m_useHalfKeys &&
 	     m_listPtrHi   &&
 	     //memcmp ( m_listPtrHi, ((char *)&key)+6, 6 ) == 0 ) {
-	     memcmp ( m_listPtrHi, key+(m_ks-6), 6 ) == 0 ) {
+	     cmp_6bytes_equal ( m_listPtrHi, key+(m_ks-6) ) ) {
 		// store low 6 bytes of key into m_list
 		//*(int32_t *)&m_list[m_listSize] = *(int32_t *)&key;
 		//*(int16_t *)(&m_list[m_listSize+4]) =
@@ -1993,6 +2003,8 @@ void RdbList::merge_r ( RdbList **lists         ,
 //
 ///////
 
+
+
 bool RdbList::posdbMerge_r ( RdbList **lists         ,
 			     int32_t      numLists      ,
 			     const char     *startKey      ,
@@ -2164,7 +2176,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// if hi 6 bytes different, MUST do the low
 	bool hiDiff;
 	if ( ! m_listPtrHi ||
-	     memcmp(minPtrHi,m_listPtrHi,6)!=0 )
+	     !cmp_6bytes_equal(minPtrHi,m_listPtrHi) )
 		hiDiff = true;
 	else
 		hiDiff = false;
@@ -2178,7 +2190,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	//   and we should always store the top 6 bytes
 	if ( hiDiff ||
 	     ! m_listPtrLo ||
-	     memcmp(minPtrLo,m_listPtrLo,6)!=0 ) {
+	     !cmp_6bytes_equal(minPtrLo,m_listPtrLo) ) {
 		// store most significant 6 bytes
 		memcpy(m_listPtr, minPtrLo, 6);
 		// point to the new lo key
