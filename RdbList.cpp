@@ -2068,7 +2068,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		char *xx=NULL;*xx=0;
 	}
 
-	//sched_yield();
 	// initialize the arrays, 1-1 with the unignored lists
 	char  *ptrs    [ MAX_RDB_FILES + 1 ];
 	char  *ends    [ MAX_RDB_FILES + 1 ];
@@ -2086,7 +2085,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		lists[i]->printList(LOG_LOGIC);
 #endif
 
-		// . first key of a list must ALWAYS be 12 byte
+		// . first key of a list must ALWAYS be 18 byte
 		// . bitch if it isn't, that should be fixed!
 		// . cheap sanity check
 		if ( (lists[i]->getList()[0]) & 0x06 ) {
@@ -2113,7 +2112,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// . all their keys are supposed to be <= m_endKey
 	if ( numLists <= 0 ) return true;
 
-	// point to most significant 4 bytes of "tmp"
 	char *minPtrBase ; // lowest  6 bytes
 	char *minPtrLo ;   // next    6 bytes
 	char *minPtrHi ;   // highest 6 bytes
@@ -2121,9 +2119,8 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 
 	char *pp = NULL;
 
-	// see Posdb.h for format of a 12-byte or 6-byte indexdb key
+	// see Posdb.h for format of a 18/12/6-byte posdb key
  top:
-	//	sched_yield();
 
 	// assume key in first list is the winner
 	minPtrBase = ptrs  [0];
@@ -2156,8 +2153,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	pp = m_listPtr;
 
 	// store lowest 6 bytes, the base
-	*(int32_t  *)  m_listPtr     = *(int32_t *)  minPtrBase;
-	*(int16_t *)(&m_listPtr[4]) = *(int16_t     *)(&minPtrBase[4]) ;
+	memcpy(m_listPtr, minPtrBase, 6);
 
 	m_listPtr += 6;
 
@@ -2168,8 +2164,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// if hi 6 bytes different, MUST do the low
 	bool hiDiff;
 	if ( ! m_listPtrHi ||
-	     ( *(int32_t  *) &minPtrHi[0]  != *(int32_t  *)  m_listPtrHi   ||
-	       *(int16_t *)(&minPtrHi[4]) != *(int16_t *)(&m_listPtrHi[4])  ) )
+	     memcmp(minPtrHi,m_listPtrHi,6)!=0 )
 		hiDiff = true;
 	else
 		hiDiff = false;
@@ -2183,11 +2178,9 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	//   and we should always store the top 6 bytes
 	if ( hiDiff ||
 	     ! m_listPtrLo ||
-	     ( *(int32_t  *)  minPtrLo     != *(int32_t  *)  m_listPtrLo   ||
-	       *(int16_t *)(&minPtrLo[4]) != *(int16_t *)(&m_listPtrLo[4])  ) ) {
+	     memcmp(minPtrLo,m_listPtrLo,6)!=0 ) {
 		// store most significant 6 bytes
-		*(int16_t *)&m_listPtr[0] = *(int16_t *) minPtrLo;
-		*(int32_t  *)&m_listPtr[2] = *(int32_t  *)&minPtrLo[2] ;
+		memcpy(m_listPtr, minPtrLo, 6);
 		// point to the new lo key
 		m_listPtrLo  = m_listPtr;
 		// skip that
@@ -2207,8 +2200,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	//   and we should always store the top 6 bytes
 	if ( hiDiff ) {
 		// store most significant 6 bytes
-		*(int16_t *)&m_listPtr[0] = *(int16_t *) minPtrHi;
-		*(int32_t  *)&m_listPtr[2] = *(int32_t  *)&minPtrHi[2] ;
+		memcpy(m_listPtr, minPtrHi, 6);
 		// point to the new hi key
 		m_listPtrHi  = m_listPtr;
 		// skip that
