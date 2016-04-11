@@ -2041,8 +2041,8 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// sanity check
 	if ( numLists>0 && lists[0]->m_ks != m_ks ) { char *xx=NULL; *xx=0; }
 	// set this list's boundary keys
-	KEYSET(m_startKey,startKey,m_ks);
-	KEYSET(m_endKey,endKey,m_ks);
+	KEYSET(m_startKey,startKey,sizeof(key144_t));
+	KEYSET(m_endKey,endKey,sizeof(key144_t));
 	// . NEVER end in a negative rec key (dangling negative rec key)
 	// . we don't want any positive recs to go un annhilated
 	// . but don't worry about this check if start and end keys are equal
