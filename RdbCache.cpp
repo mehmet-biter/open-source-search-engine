@@ -1331,8 +1331,8 @@ bool RdbCache::load ( ) {
 	return load ( m_dbname );
 }
 
-static void *saveWrapper      ( void *state , ThreadEntry *te ) ;
-static void threadDoneWrapper ( void *state , ThreadEntry *te ) ;
+static void *saveWrapper      ( void *state , ThreadEntry * /*te*/ ) ;
+static void threadDoneWrapper ( void *state , ThreadEntry * /*te*/ ) ;
 
 // . just like RdbTree::fastSave()
 // . returns false if blocked and is saving
@@ -1373,7 +1373,8 @@ bool RdbCache::save ( bool useThreads ) {
 	return true;
 }
 
-void threadDoneWrapper ( void *state , ThreadEntry *te ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void threadDoneWrapper ( void *state , ThreadEntry * /*te*/ ) {
 	if (state) {
 		RdbCache *THIS = (RdbCache *)state;
 		THIS->threadDone ( );
@@ -1391,7 +1392,8 @@ void RdbCache::threadDone ( ) {
 		    m_dbname,mstrerror(m_saveError));
 }
 
-void *saveWrapper ( void *state , ThreadEntry *te ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void *saveWrapper ( void *state , ThreadEntry * /*te*/ ) {
 	RdbCache *THIS = (RdbCache *)state;
 	// assume no error
 	THIS->m_saveError = 0;

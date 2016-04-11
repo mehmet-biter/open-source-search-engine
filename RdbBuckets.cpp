@@ -1995,7 +1995,9 @@ bool RdbBuckets::fastSave ( char    *dir       ,
 	return true;
 }
 
-void *saveBucketsWrapper ( void *state , ThreadEntry *t ) {
+
+// Use of ThreadEntry parameter is NOT thread safe
+void *saveBucketsWrapper ( void *state , ThreadEntry * /*t*/ ) {
 	// get this class
 	RdbBuckets *THIS = (RdbBuckets *)state;
 	// this returns false and sets g_errno on error
@@ -2005,7 +2007,8 @@ void *saveBucketsWrapper ( void *state , ThreadEntry *t ) {
 }
 
 // we come here after thread exits
-void threadDoneBucketsWrapper ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void threadDoneBucketsWrapper ( void *state , ThreadEntry * /*t*/ ) {
 	// get this class
 	RdbBuckets *THIS = (RdbBuckets *)state;
 	// store save error into g_errno

@@ -2404,8 +2404,8 @@ int32_t RdbTree::getBalancePercent() {
 
 #define BLOCK_SIZE 10000
 
-static void *saveWrapper      ( void *state , ThreadEntry *t ) ;
-static void threadDoneWrapper ( void *state , ThreadEntry *t ) ;
+static void *saveWrapper      ( void *state , ThreadEntry * /*t*/ ) ;
+static void threadDoneWrapper ( void *state , ThreadEntry * /*t*/ ) ;
 
 // . caller should call f->set() himself
 // . we'll open it here
@@ -2463,7 +2463,8 @@ bool RdbTree::fastSave ( char    *dir       ,
 	return true;
 }
 
-void *saveWrapper ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void *saveWrapper ( void *state , ThreadEntry * /*t*/ ) {
 	// get this class
 	RdbTree *THIS = (RdbTree *)state;
 	// this returns false and sets g_errno on error
@@ -2473,7 +2474,8 @@ void *saveWrapper ( void *state , ThreadEntry *t ) {
 }
 
 // we come here after thread exits
-void threadDoneWrapper ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void threadDoneWrapper ( void *state , ThreadEntry * /*t*/ ) {
 	// get this class
 	RdbTree *THIS = (RdbTree *)state;
 	// store save error into g_errno

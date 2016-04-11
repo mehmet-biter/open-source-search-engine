@@ -1482,12 +1482,13 @@ bool Hostdb::saveHostsConf ( ) {
 	return true;
 }
 
-void syncDoneWrapper ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void syncDoneWrapper ( void *state , ThreadEntry * /*t*/ ) {
 	Hostdb *THIS = (Hostdb*)state;
 	THIS->syncDone();
 }
 
-void *syncStartWrapper_r ( void *state , ThreadEntry *t ) {
+void *syncStartWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
 	Hostdb *THIS = (Hostdb*)state;
 	THIS->syncStart_r(true);
 	return NULL;

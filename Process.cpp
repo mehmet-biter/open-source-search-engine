@@ -226,8 +226,8 @@ bool Process::checkFiles ( const char *dir ) {
 }
 
 static void  hdtempWrapper        ( int fd , void *state ) ;
-static void  hdtempDoneWrapper    ( void *state , ThreadEntry *t ) ;
-static void *hdtempStartWrapper_r ( void *state , ThreadEntry *t ) ;
+static void  hdtempDoneWrapper    ( void *state , ThreadEntry * /*t*/ ) ;
+static void *hdtempStartWrapper_r ( void *state , ThreadEntry * /*t*/ ) ;
 static void heartbeatWrapper    ( int fd , void *state ) ;
 //static void diskHeartbeatWrapper ( int fd , void *state ) ;
 static void processSleepWrapper ( int fd , void *state ) ;
@@ -387,7 +387,8 @@ void hdtempWrapper ( int fd , void *state ) {
 }
 
 // come back here
-void hdtempDoneWrapper ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void hdtempDoneWrapper ( void *state , ThreadEntry * /*t*/ ) {
 	// we are back
 	g_process.m_threadOut = false;
 	// current local time
@@ -450,7 +451,8 @@ static float getDiskUsage ( int64_t *diskAvail ) {
 
 // . sets m_errno on error
 // . taken from Msg16.cpp
-void *hdtempStartWrapper_r ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void *hdtempStartWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
 
 	// run the df -ka cmd
 	g_process.m_diskUsage = getDiskUsage( &g_process.m_diskAvail );

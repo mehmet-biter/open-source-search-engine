@@ -4799,7 +4799,7 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 
 //static pthread_attr_t s_attr;
 //static int startUp ( void *state ) ;
-static void *startUp ( void *state , ThreadEntry *t ) ;
+static void *startUp ( void *state , ThreadEntry * /*t*/ ) ;
 static int32_t s_count = 0;
 static int64_t s_filesize = 0;
 //static int32_t s_lock = 1;
@@ -4885,7 +4885,9 @@ skip:
 #define sleep(a) { char *xx=NULL;*xx=0; }
 }
 
-void *startUp ( void *state , ThreadEntry *t ) {
+
+// Use of ThreadEntry parameter is NOT thread safe
+void *startUp ( void *state , ThreadEntry * /*t*/ ) {
 	int32_t id = (int32_t) (PTRTYPE)state;
 	// read buf
 	char *buf = (char *) malloc ( s_maxReadSize );

@@ -22,8 +22,8 @@ int64_t g_lastDiskReadStarted = 0LL;
 int64_t g_lastDiskReadCompleted = 0LL;
 bool      g_diskIsStuck = false;
 
-static void  doneWrapper        ( void *state , ThreadEntry *t ) ;
-static bool  readwrite_r        ( FileState *fstate , ThreadEntry *t ) ;
+static void  doneWrapper        ( void *state , ThreadEntry * /*t*/ ) ;
+static bool  readwrite_r        ( FileState *fstate , ThreadEntry * /*t*/ ) ;
 
 BigFile::~BigFile () {
 	close();
@@ -1096,6 +1096,7 @@ bool BigFile::readwrite ( void         *buf      ,
 
 
 // . this should be called from the main process after getting our call OUR callback here
+// Use of ThreadEntry parameter is NOT thread safe
 void doneWrapper ( void *state , ThreadEntry *t ) {
 
 	FileState *fstate = (FileState *)state;
@@ -1104,6 +1105,8 @@ void doneWrapper ( void *state , ThreadEntry *t ) {
 	// "tmp" FileState class on the stack, so now we have the real deal
 	// we can update all this junk.
 	fstate->m_bytesDone = fstate->m_bytesToGo;
+
+	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/	
 	fstate->m_doneTime  = t->m_exitTime; // set in Threads.cpp
 	fstate->m_errno     = t->m_errno;
 
@@ -1242,6 +1245,7 @@ void doneWrapper ( void *state , ThreadEntry *t ) {
 }
 
 
+// Use of ThreadEntry parameter is NOT thread safe
 void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	// debug msg
 	//log("disk: this thread id = %"INT32"",(int32_t)pthread_self());
@@ -1254,6 +1258,7 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 
 	// if we got hit before we set m_readyForBail to true we must have
 	// been hit pre-launch... so bail quickly in that case...
+	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/
 	if ( t && t->m_callback == ohcrap ) {
 		t->m_errno = EDISKSTUCK;
 		return NULL;
@@ -1270,6 +1275,7 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	// lead Threads::bailOnReads() know we can be bailed on now since
 	// we have copied over all the date we can from fstate, which can
 	// be pulled out from under us now
+	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/
 	t->m_readyForBail = true;
 
 	// get THIS
@@ -1294,6 +1300,7 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	bool status = readwrite_r ( fstate , t ) ;
 	// did our callback get pre-called by Process.cpp/Threads.cpp? 
 	// fstate is probably invalid then, so watch out!
+	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/
 	if ( t && t->m_callback == ohcrap ) return NULL;
 	// set errno
 	if ( ! status ) fstate->m_errno = errno;
@@ -1399,6 +1406,7 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 
 	// update this since our updates were done to the FileState "tmp"
 	// which is just on the stack
+	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/
 	t->m_errno = fstate->m_errno;
 
 	// bogus return
@@ -1410,6 +1418,7 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 // . don't log shit when you're in a thread anymore
 // . if we receive a cancel sig while in pread/pwrite it will return -1
 //   and set errno to EINTR
+// Use of ThreadEntry parameter is NOT thread safe
 bool readwrite_r ( FileState *fstate , ThreadEntry *t ) {
 	// if no buffer to read into the alloc in Threads.cpp failed
 	if ( ! fstate->m_buf ) {
@@ -1465,6 +1474,7 @@ bool readwrite_r ( FileState *fstate , ThreadEntry *t ) {
 	}
 
 	// did our callback get pre-called by Process.cpp/Threads.cpp?
+	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/
 	if ( t && t->m_callback == ohcrap ) return false;
 
 	// only set this now if we are the first one
@@ -1946,7 +1956,8 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	return true;
 }
 
-void *renameWrapper_r ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void *renameWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
 	
 	if( g_conf.m_logTraceBigFile ) {
 		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
@@ -2024,7 +2035,8 @@ void *renameWrapper_r ( void *state , ThreadEntry *t ) {
 }
 
 
-void *unlinkWrapper_r ( void *state , ThreadEntry *t ) 
+// Use of ThreadEntry parameter is NOT thread safe
+void *unlinkWrapper_r ( void *state , ThreadEntry * /*t*/ ) 
 {
 	if( g_conf.m_logTraceBigFile ) {
 		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
@@ -2056,7 +2068,8 @@ void *unlinkWrapper_r ( void *state , ThreadEntry *t )
 }
 
 
-void doneRenameWrapper ( void *state , ThreadEntry *t ) 
+// Use of ThreadEntry parameter is NOT thread safe 
+void doneRenameWrapper ( void *state , ThreadEntry * /*t*/ ) 
 {
 	if( g_conf.m_logTraceBigFile ) {
 		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
@@ -2143,7 +2156,8 @@ void doneRenameWrapper ( void *state , ThreadEntry *t )
 }
 
 
-void doneUnlinkWrapper ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe 
+void doneUnlinkWrapper ( void *state , ThreadEntry * /*t*/ ) {
 
 	if( g_conf.m_logTraceBigFile ) {
 		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);

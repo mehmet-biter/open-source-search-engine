@@ -10743,8 +10743,8 @@ uint16_t *XmlDoc::getCharset ( ) {
 
 
 // declare these two routines for using threads
-static void  filterDoneWrapper    ( void *state , ThreadEntry *te ) ;
-static void *filterStartWrapper_r ( void *state , ThreadEntry *te ) ;
+static void  filterDoneWrapper    ( void *state , ThreadEntry * /*te*/ ) ;
+static void *filterStartWrapper_r ( void *state , ThreadEntry * /*te*/ ) ;
 
 // filters m_content if its pdf, word doc, etc.
 char **XmlDoc::getFilteredContent ( ) {
@@ -10898,7 +10898,8 @@ skip:
 }
 
 // come back here
-void filterDoneWrapper ( void *state , ThreadEntry *te ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void filterDoneWrapper ( void *state , ThreadEntry * /*te*/ ) {
 	// jump back into the brawl
 	XmlDoc *THIS = (XmlDoc *)state;
 
@@ -10918,7 +10919,8 @@ void filterDoneWrapper ( void *state , ThreadEntry *te ) {
 }
 
 // thread starts here
-void *filterStartWrapper_r ( void *state , ThreadEntry *te ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void *filterStartWrapper_r ( void *state , ThreadEntry * /*te*/ ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	THIS->filterStart_r ( true ); // am thread?
 	return NULL;
@@ -11572,8 +11574,8 @@ static SafeBuf s_cookieBuf;
 
 
 
-
-void *systemStartWrapper_r ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void *systemStartWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
 
 	XmlDoc *THIS = (XmlDoc *)state;
 
@@ -11618,7 +11620,8 @@ void *systemStartWrapper_r ( void *state , ThreadEntry *t ) {
 }
 
 // come back here
-void systemDoneWrapper ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void systemDoneWrapper ( void *state , ThreadEntry * /*t*/ ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	THIS->m_masterLoop ( THIS->m_masterState );
 }

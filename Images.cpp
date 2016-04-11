@@ -12,7 +12,7 @@
 
 //static void gotTermFreqWrapper ( void *state ) ;
 static void gotTermListWrapper ( void *state ) ;
-static void *thumbStartWrapper_r ( void *state , ThreadEntry *te );
+static void *thumbStartWrapper_r ( void *state , ThreadEntry * /*te*/ );
 static void getImageInfo ( char *buf, int32_t size, int32_t *dx, int32_t *dy, int32_t *it);
 
 Images::Images ( ) {
@@ -689,7 +689,8 @@ bool Images::downloadImage ( ) {
 	return true;
 }
 
-static void makeThumbWrapper ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe
+static void makeThumbWrapper ( void *state , ThreadEntry * /*t*/ ) {
 	Images *THIS = (Images *)state;
 	// control loop
 	if ( ! THIS->downloadImages() ) return;
@@ -860,7 +861,8 @@ bool Images::makeThumb ( ) {
 	return true;
 }
 
-void *thumbStartWrapper_r ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void *thumbStartWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
 	Images *THIS = (Images *)state;
 	THIS->thumbStart_r ( true /* am thread?*/ );
 	return NULL;

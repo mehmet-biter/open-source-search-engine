@@ -666,8 +666,8 @@ static void gotListWrapper ( void *state ) {
 	THIS->m_callback ( THIS->m_state , THIS->m_list , THIS );
 }
 
-static void  threadDoneWrapper   ( void *state , ThreadEntry *t ) ;
-static void *mergeListsWrapper_r ( void *state , ThreadEntry *t ) ;
+static void  threadDoneWrapper   ( void *state , ThreadEntry * /*t*/ ) ;
+static void *mergeListsWrapper_r ( void *state , ThreadEntry * /*t*/ ) ;
 //static void  gotListWrapper2     ( void *state , RdbList *list , Msg5 *msg5);
 
 #define TFNDBMINRECSIZES (256*1024)
@@ -1144,7 +1144,8 @@ bool Msg5::gotList2 ( ) {
 }
 
 // thread will run this first
-void *mergeListsWrapper_r ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void *mergeListsWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
 	// we're in a thread now!
 	Msg5 *THIS = (Msg5 *)state;
 	// debug msg
@@ -1161,7 +1162,8 @@ void *mergeListsWrapper_r ( void *state , ThreadEntry *t ) {
 
 // . now we're done merging
 // . when the thread is done we get control back here, in the main process
-void threadDoneWrapper ( void *state , ThreadEntry *t ) {
+// Use of ThreadEntry parameter is NOT thread safe
+void threadDoneWrapper ( void *state , ThreadEntry * /*t*/ ) {
 	// we MAY be in a thread now
 	Msg5 *THIS = (Msg5 *)state;
 	// debug msg
