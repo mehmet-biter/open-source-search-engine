@@ -616,7 +616,7 @@ bool Msg39::getLists () {
 	int32_t need = sizeof(RdbList) * nqt ;
 	m_stackBuf.setLabel("stkbuf2");
 	if ( ! m_stackBuf.reserve ( need ) ) return true;
-	m_lists = (IndexList *)m_stackBuf.getBufStart();
+	m_lists = (RdbList *)m_stackBuf.getBufStart();
 	m_stackBuf.setLength ( need );
 	for ( int32_t i = 0 ; i < nqt ; i++ ) {
 		m_lists[i].constructor();
