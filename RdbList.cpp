@@ -2292,20 +2292,21 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 
 	// save original end key
 	char orig[MAX_KEY_BYTES];
-	gbmemcpy ( orig , m_endKey , m_ks );
+	memcpy ( orig, m_endKey, sizeof(key144_t) );
 
 	// . we only need to shrink the endKey if we fill up our list and
 	//   there's still keys under m_endKey left over to merge
 	// . if no keys remain to merge, then don't decrease m_endKey
 	// . i don't want the endKey decreased unnecessarily because
 	//   it means there's no recs up to the endKey
-	gbmemcpy ( m_endKey , m_lastKey , m_ks );
+	memcpy ( m_endKey, m_lastKey, sizeof(key144_t) );
 	// if endkey is now negative we must have a dangling negative
 	// so make it positive (dangling = unmatched)
-	if ( KEYNEG(m_endKey) ) KEYADD(m_endKey,m_ks);
+	if ( KEYNEG(m_endKey) )
+		KEYADD(m_endKey, sizeof(key144_t));
 	// be careful not to increase original endkey, though
-	if ( KEYCMP(orig,m_endKey,m_ks)<0 )
-		KEYSET(m_endKey,orig,m_ks);
+	if ( KEYCMP(orig,m_endKey,sizeof(key144_t))<0 )
+		KEYSET(m_endKey, orig, sizeof(key144_t));
 
 #ifdef _MERGEDEBUG_
 		log(LOG_LOGIC,"%s:%s:%d: Done.", __FILE__,__func__, __LINE__);
