@@ -2023,8 +2023,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	    __FILE__,__func__, KEY1(startKey,m_ks),KEY0(startKey),KEY1(endKey,m_ks),KEY0(endKey));
 	log(LOG_LOGIC,"%s:%s: numLists: %"INT32", m_allocSize=%"INT32", m_mergeMinListSize=%"INT32", minRecSizes=%"INT32"",
 		__FILE__,__func__, numLists, m_allocSize, m_mergeMinListSize, minRecSizes);
-	int32_t omini = -1;
-	int32_t fns[MAX_RDB_FILES+1];
 #endif
 
 	// did they call prepareForMerge()?
@@ -2106,9 +2104,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 			    "a compressed key.");
 			char *xx=NULL;*xx=0;
 		}
-#ifdef _MERGEDEBUG_
-		fns     [n] = i;
-#endif
 		// set ptrs
 		ends    [n] = lists[i]->getListEnd ();
 		ptrs    [n] = lists[i]->getList    ();
@@ -2189,10 +2184,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 			*pp = *pp&~0x06; //turn off all compression bits
 		}
 		
-#ifdef _MERGEDEBUG_
-		omini = mini;
-#endif
-
 		// . if it is truncated then we just skip it
 		// . it may have set oldList* stuff above, but that should not matter
 		// . TODO: BUT! if endKey has same termid as currently truncated key
@@ -2231,9 +2222,6 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 				ends    [i] = ends    [i+1];
 				memcpy(hiKeys[i], hiKeys[i+1], 6);
 				memcpy(loKeys[i], loKeys[i+1], 6);
-#ifdef _MERGEDEBUG_
-				fns     [i] = fns     [i+1];
-#endif
 			}
 			// one less list to worry about
 			numLists--;
