@@ -101,9 +101,6 @@ public:
 	key_t      m_spiderdbKey;
 	char       m_srBuf[SR_BUFSIZE];
 	char       m_tmpBuf[32];
-	IndexList *m_newIndexList;
-	IndexList *m_dateListToAdd;
-	IndexList *m_noSplitList;
 	RdbList    m_linkdbListToAdd;
 	uint64_t   m_chksum1LongLong;
 	XmlDoc     m_doc;
