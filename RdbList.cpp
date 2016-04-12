@@ -2160,65 +2160,38 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		// save ptr
 		pp = m_listPtr;
 
-		// store lowest 6 bytes, the base
-		memcpy(m_listPtr, minPtrBase, 6);
-
-		m_listPtr += 6;
-
+		// store key
+		if ( m_listPtrHi && cmp_6bytes_equal(minPtrHi,m_listPtrHi)) {
+			if(m_listPtrLo && cmp_6bytes_equal(minPtrLo,m_listPtrLo)) {
+				// 6-byte entry
+				memcpy(m_listPtr, minPtrBase, 6);
+				m_listPtr += 6;
+				*pp |= 0x06; //turn on both compression bits
+			} else  {
+				// 12-byte entry
+				memcpy(m_listPtr, minPtrBase, 6);
+				m_listPtr += 6;
+				memcpy(m_listPtr, minPtrLo, 6);
+				m_listPtrLo  = m_listPtr; // point to the new lo key
+				m_listPtr += 6;
+				*pp = (*pp&~0x04)|0x02; //turn on exactly 1 compression bit
+			}
+		} else {
+			// 18-byte entry
+			memcpy(m_listPtr, minPtrBase, 6);
+			m_listPtr += 6;
+			memcpy(m_listPtr, minPtrLo, 6);
+			m_listPtrLo  = m_listPtr; // point to the new lo key
+			m_listPtr += 6;
+			memcpy(m_listPtr, minPtrHi, 6);
+			m_listPtrHi  = m_listPtr; // point to the new hi key
+			m_listPtr += 6;
+			*pp = *pp&~0x06; //turn off all compression bits
+		}
+		
 #ifdef _MERGEDEBUG_
 		omini = mini;
 #endif
-
-		// if hi 6 bytes different, MUST do the low
-		bool hiDiff;
-		if ( ! m_listPtrHi ||
-		     !cmp_6bytes_equal(minPtrHi,m_listPtrHi) )
-			hiDiff = true;
-		else
-			hiDiff = false;
-
-		// turn off all compression bits
-		*pp &= 0xf9;
-
-		// . if our mid 6 bytes don't match the last key stored, we must
-		//   store them as well
-		// . if we are the first key in this list m_listPtrLo should be NULL
-		//   and we should always store the top 6 bytes
-		if ( hiDiff ||
-		     ! m_listPtrLo ||
-		     !cmp_6bytes_equal(minPtrLo,m_listPtrLo) ) {
-			// store most significant 6 bytes
-			memcpy(m_listPtr, minPtrLo, 6);
-			// point to the new lo key
-			m_listPtrLo  = m_listPtr;
-			// skip that
-			m_listPtr   += 6;
-		}
-		else {
-			// assume we are a 6 byte key
-			// turn on both bits to be compatible with addRecord()
-			*pp |= 0x06;
-		}
-
-
-
-		// . if our top 6 bytes don't match the last key stored, we must
-		//   store them as well
-		// . if we are the first key in this list m_listPtrHi should be NULL
-		//   and we should always store the top 6 bytes
-		if ( hiDiff ) {
-			// store most significant 6 bytes
-			memcpy(m_listPtr, minPtrHi, 6);
-			// point to the new hi key
-			m_listPtrHi  = m_listPtr;
-			// skip that
-			m_listPtr   += 6;
-		}
-		else {
-			// we are a 12 byte key then... or 6 byte... depending
-			// on if we set the 0x04 bit above
-			if ( ! (*pp & 0x04) ) *pp |= 0x02;
-		}
 
 		// . if it is truncated then we just skip it
 		// . it may have set oldList* stuff above, but that should not matter
