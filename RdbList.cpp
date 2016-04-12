@@ -2124,163 +2124,150 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	// . all their keys are supposed to be <= m_endKey
 	if ( numLists <= 0 ) return true;
 
-	char *minPtrBase ; // lowest  6 bytes
-	char *minPtrLo ;   // next    6 bytes
-	char *minPtrHi ;   // highest 6 bytes
-	int16_t mini = -1; // int16_t -> must be able to accomodate MAX_RDB_FILES!!
-
 	char *pp = NULL;
 
 	// see Posdb.h for format of a 18/12/6-byte posdb key
- top:
 
-	// assume key in first list is the winner
-	minPtrBase = ptrs  [0];
-	minPtrLo   = loKeys[0];
-	minPtrHi   = hiKeys[0];
-	mini       = 0;
+	while ( numLists > 0 && m_listPtr < maxPtr) {
 
-	// merge loop over the lists, get the smallest key
-	for ( int32_t i = 1 ; i < numLists ; i++ ) {
-		char ss = bfcmpPosdb (minPtrBase,minPtrLo,minPtrHi,
-				 ptrs[i],loKeys[i],hiKeys[i]);
-		// . continue if tie, so we get the oldest first
-		// . treat negative and positive keys as identical for this
-		if ( ss <  0 ) continue;
-		// advance old winner. this happens if this key is positive
-		// and minPtrBase/Lo/Hi was a negative key! so this is
-		// the annihilation. skip the positive key.
-		if ( ss == 0 ) goto skip;
-		// we got a new min
-		minPtrBase = ptrs  [i];
-		minPtrLo   = loKeys[i];
-		minPtrHi   = hiKeys[i];
-		mini     = i;
-	}
+		// assume key in first list is the winner
+		char *minPtrBase = ptrs  [0]; // lowest  6 bytes
+		char *minPtrLo   = loKeys[0]; // next    6 bytes
+		char *minPtrHi   = hiKeys[0]; // highest 6 bytes
+		int16_t mini     = 0;         // int16_t -> must be able to accomodate MAX_RDB_FILES!!
 
-	// ignore if negative i guess, just skip it
-	if ( removeNegKeys && (minPtrBase[0] & 0x01) == 0x00 ) goto skip;
+		// merge loop over the lists, get the smallest key
+		for ( int32_t i = 1 ; i < numLists ; i++ ) {
+			char ss = bfcmpPosdb (minPtrBase,minPtrLo,minPtrHi,
+					 ptrs[i],loKeys[i],hiKeys[i]);
+			// . continue if tie, so we get the oldest first
+			// . treat negative and positive keys as identical for this
+			if ( ss <  0 ) continue;
+			// advance old winner. this happens if this key is positive
+			// and minPtrBase/Lo/Hi was a negative key! so this is
+			// the annihilation. skip the positive key.
+			if ( ss == 0 ) goto skip;
+			// we got a new min
+			minPtrBase = ptrs  [i];
+			minPtrLo   = loKeys[i];
+			minPtrHi   = hiKeys[i];
+			mini     = i;
+		}
 
-	// save ptr
-	pp = m_listPtr;
+		// ignore if negative i guess, just skip it
+		if ( removeNegKeys && (minPtrBase[0] & 0x01) == 0x00 ) goto skip;
 
-	// store lowest 6 bytes, the base
-	memcpy(m_listPtr, minPtrBase, 6);
+		// save ptr
+		pp = m_listPtr;
 
-	m_listPtr += 6;
+		// store lowest 6 bytes, the base
+		memcpy(m_listPtr, minPtrBase, 6);
+
+		m_listPtr += 6;
 
 #ifdef _MERGEDEBUG_
-	omini = mini;
+		omini = mini;
 #endif
 
-	// if hi 6 bytes different, MUST do the low
-	bool hiDiff;
-	if ( ! m_listPtrHi ||
-	     !cmp_6bytes_equal(minPtrHi,m_listPtrHi) )
-		hiDiff = true;
-	else
-		hiDiff = false;
+		// if hi 6 bytes different, MUST do the low
+		bool hiDiff;
+		if ( ! m_listPtrHi ||
+		     !cmp_6bytes_equal(minPtrHi,m_listPtrHi) )
+			hiDiff = true;
+		else
+			hiDiff = false;
 
-	// turn off all compression bits
-	*pp &= 0xf9;
+		// turn off all compression bits
+		*pp &= 0xf9;
 
-	// . if our mid 6 bytes don't match the last key stored, we must
-	//   store them as well
-	// . if we are the first key in this list m_listPtrLo should be NULL
-	//   and we should always store the top 6 bytes
-	if ( hiDiff ||
-	     ! m_listPtrLo ||
-	     !cmp_6bytes_equal(minPtrLo,m_listPtrLo) ) {
-		// store most significant 6 bytes
-		memcpy(m_listPtr, minPtrLo, 6);
-		// point to the new lo key
-		m_listPtrLo  = m_listPtr;
-		// skip that
-		m_listPtr   += 6;
-	}
-	else {
-		// assume we are a 6 byte key
-		// turn on both bits to be compatible with addRecord()
-		*pp |= 0x06;
-	}
-
-
-
-	// . if our top 6 bytes don't match the last key stored, we must
-	//   store them as well
-	// . if we are the first key in this list m_listPtrHi should be NULL
-	//   and we should always store the top 6 bytes
-	if ( hiDiff ) {
-		// store most significant 6 bytes
-		memcpy(m_listPtr, minPtrHi, 6);
-		// point to the new hi key
-		m_listPtrHi  = m_listPtr;
-		// skip that
-		m_listPtr   += 6;
-	}
-	else {
-		// we are a 12 byte key then... or 6 byte... depending
-		// on if we set the 0x04 bit above
-		if ( ! (*pp & 0x04) ) *pp |= 0x02;
-	}
-
-	// . if it is truncated then we just skip it
-	// . it may have set oldList* stuff above, but that should not matter
-	// . TODO: BUT! if endKey has same termid as currently truncated key
-	//   then we should bail out now and boost the endKey to the max for
-	//   this termid (the we can fix Msg5::needsRecall() )
-	// . TODO: what if last key we were able to add was NEGATIVE???
-
- skip:
-	// advance winning src list ptr
-	if      ( ptrs[mini][0] & 0x04 ) ptrs [ mini ] += 6;
-	else if ( ptrs[mini][0] & 0x02 ) ptrs [ mini ] += 12;
-	else                             ptrs [ mini ] += 18;
-
-	// if the src list that we advanced is not exhausted, then continue
-	if ( ptrs[mini] < ends[mini] ) {
-		// is new key 6 bytes? then do not touch hi/lo ptrs
-		if ( ptrs[mini][0] & 0x04 ) {
+		// . if our mid 6 bytes don't match the last key stored, we must
+		//   store them as well
+		// . if we are the first key in this list m_listPtrLo should be NULL
+		//   and we should always store the top 6 bytes
+		if ( hiDiff ||
+		     ! m_listPtrLo ||
+		     !cmp_6bytes_equal(minPtrLo,m_listPtrLo) ) {
+			// store most significant 6 bytes
+			memcpy(m_listPtr, minPtrLo, 6);
+			// point to the new lo key
+			m_listPtrLo  = m_listPtr;
+			// skip that
+			m_listPtr   += 6;
 		}
-		// is new key 12 bytes?
-		else if ( ptrs[mini][0] & 0x02 ) {
-			memcpy(loKeys[mini], ptrs[mini] +  6, 6);
-		}
-		// is new key 18 bytes? full key.
 		else {
-			memcpy(hiKeys[mini], ptrs[mini] + 12, 6);
-			memcpy(loKeys[mini], ptrs[mini] +  6, 6);
+			// assume we are a 6 byte key
+			// turn on both bits to be compatible with addRecord()
+			*pp |= 0x06;
 		}
-		// but if we got enough recs and this list doesn't need to
-		// be remove, we should be about done
-		if ( m_listPtr >= maxPtr ) goto done;
-		// otherwise, we need more recs and this list is NOT exhausted
-		goto top;
-	}
 
-	//
-	// REMOVE THE LIST at mini
-	//
 
-	// otherwise, remove him from array
-	for ( int32_t i = mini ; i < numLists - 1 ; i++ ) {
-		ptrs    [i] = ptrs    [i+1];
-		ends    [i] = ends    [i+1];
-		memcpy(hiKeys[i], hiKeys[i+1], 6);
-		memcpy(loKeys[i], loKeys[i+1], 6);
+
+		// . if our top 6 bytes don't match the last key stored, we must
+		//   store them as well
+		// . if we are the first key in this list m_listPtrHi should be NULL
+		//   and we should always store the top 6 bytes
+		if ( hiDiff ) {
+			// store most significant 6 bytes
+			memcpy(m_listPtr, minPtrHi, 6);
+			// point to the new hi key
+			m_listPtrHi  = m_listPtr;
+			// skip that
+			m_listPtr   += 6;
+		}
+		else {
+			// we are a 12 byte key then... or 6 byte... depending
+			// on if we set the 0x04 bit above
+			if ( ! (*pp & 0x04) ) *pp |= 0x02;
+		}
+
+		// . if it is truncated then we just skip it
+		// . it may have set oldList* stuff above, but that should not matter
+		// . TODO: BUT! if endKey has same termid as currently truncated key
+		//   then we should bail out now and boost the endKey to the max for
+		//   this termid (the we can fix Msg5::needsRecall() )
+		// . TODO: what if last key we were able to add was NEGATIVE???
+
+	 skip:
+		// advance winning src list ptr
+		if      ( ptrs[mini][0] & 0x04 ) ptrs [ mini ] += 6;
+		else if ( ptrs[mini][0] & 0x02 ) ptrs [ mini ] += 12;
+		else                             ptrs [ mini ] += 18;
+
+		// if the src list that we advanced is not exhausted, then continue
+		if ( ptrs[mini] < ends[mini] ) {
+			// is new key 6 bytes? then do not touch hi/lo ptrs
+			if ( ptrs[mini][0] & 0x04 ) {
+			}
+			// is new key 12 bytes?
+			else if ( ptrs[mini][0] & 0x02 ) {
+				memcpy(loKeys[mini], ptrs[mini] +  6, 6);
+			}
+			// is new key 18 bytes? full key.
+			else {
+				memcpy(hiKeys[mini], ptrs[mini] + 12, 6);
+				memcpy(loKeys[mini], ptrs[mini] +  6, 6);
+			}
+		} else {
+			//
+			// REMOVE THE LIST at mini
+			//
+
+			// otherwise, remove him from array
+			for ( int32_t i = mini ; i < numLists - 1 ; i++ ) {
+				ptrs    [i] = ptrs    [i+1];
+				ends    [i] = ends    [i+1];
+				memcpy(hiKeys[i], hiKeys[i+1], 6);
+				memcpy(loKeys[i], loKeys[i+1], 6);
 #ifdef _MERGEDEBUG_
-		fns     [i] = fns     [i+1];
+				fns     [i] = fns     [i+1];
 #endif
+			}
+			// one less list to worry about
+			numLists--;
+		}
 	}
-	// one less list to worry about
-	numLists--;
-	// if we got minRecSizes, we're done
-	if ( m_listPtr >= maxPtr ) goto done;
-	// if we have more lists, continue adding
-	if ( numLists > 0 ) goto top;
 
 	// come here to try to fix any dangling negatives
- done:
 
 	// if last key we added is positive, skip this stuff
 	//if ( (*minPtrBase & 0x01) == 0x01 ) goto positive;
