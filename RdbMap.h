@@ -318,9 +318,6 @@ class RdbMap {
 
  private:
 
-	// specialized routine for adding a list to an indexdb map
-	bool addIndexList ( class IndexList *list ) ;
-
 	void printMap ();
 
 	// the map file
