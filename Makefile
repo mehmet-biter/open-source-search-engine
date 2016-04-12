@@ -108,26 +108,26 @@ CPPFLAGS += -Wno-sometimes-uninitialized -Wno-conditional-uninitialized
 CPPFLAGS += -Wno-invalid-source-encoding
 endif
 
-LIBS = -lm -lpthread -lssl -lcrypto
+LIBS = -lm -lpthread -lssl -lcrypto -lz
 
 # to build static libiconv.a do a './configure --enable-static' then 'make' in the iconv directory
 
 # platform specific flags
 ifeq ($(ARCH), i686)
 CPPFLAGS += -m32
-LIBS += ./libiconv.a ./libz.a
+LIBS += ./libiconv.a
 
 else ifeq ($(ARCH), i386)
 CPPFLAGS += -m32
-LIBS +=  ./libiconv.a ./libz.a
+LIBS +=  ./libiconv.a
 
 else ifeq ($(ARCH), x86_64)
 CPPFLAGS +=
-LIBS += ./libiconv64.a ./libz64.a
+LIBS += ./libiconv64.a
 
 else
 CPPFLAGS +=
-LIBS += ./libiconv64.a ./libz64.a
+LIBS += ./libiconv64.a
 endif
 
 
@@ -180,7 +180,7 @@ cygwin:
 
 
 gb32:
-	make CPPFLAGS="-m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable" LIBS=" -L. ./libz.a ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libstdc++.a -lpthread " gb
+	make CPPFLAGS="-m32 -g -Wall -pipe -fno-stack-protector -Wno-write-strings -Wstrict-aliasing=0 -Wno-uninitialized -DPTHREADS -Wno-unused-but-set-variable" LIBS=" -L. ./libssl.a ./libcrypto.a ./libiconv.a ./libm.a ./libstdc++.a -lpthread " gb
 
 #iana_charset.cpp: parse_iana_charsets.pl character-sets supported_charsets.txt
 #	./parse_iana_charsets.pl < character-sets
