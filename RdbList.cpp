@@ -2123,7 +2123,8 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 
 	// see Posdb.h for format of a 18/12/6-byte posdb key
 
-	while ( numLists > 0 && m_listPtr < maxPtr) {
+	char *new_listPtr = m_listPtr;
+	while ( numLists > 0 && new_listPtr < maxPtr) {
 
 		// assume key in first list is the winner
 		const char *minPtrBase = ptrs  [0]; // lowest  6 bytes
@@ -2153,34 +2154,34 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 		if ( removeNegKeys && (minPtrBase[0] & 0x01) == 0x00 ) goto skip;
 
 		// save ptr
-		pp = m_listPtr;
+		pp = new_listPtr;
 
 		// store key
 		if ( m_listPtrHi && cmp_6bytes_equal(minPtrHi,m_listPtrHi)) {
 			if(m_listPtrLo && cmp_6bytes_equal(minPtrLo,m_listPtrLo)) {
 				// 6-byte entry
-				memcpy(m_listPtr, minPtrBase, 6);
-				m_listPtr += 6;
+				memcpy(new_listPtr, minPtrBase, 6);
+				new_listPtr += 6;
 				*pp |= 0x06; //turn on both compression bits
 			} else  {
 				// 12-byte entry
-				memcpy(m_listPtr, minPtrBase, 6);
-				m_listPtr += 6;
-				memcpy(m_listPtr, minPtrLo, 6);
-				m_listPtrLo  = m_listPtr; // point to the new lo key
-				m_listPtr += 6;
+				memcpy(new_listPtr, minPtrBase, 6);
+				new_listPtr += 6;
+				memcpy(new_listPtr, minPtrLo, 6);
+				m_listPtrLo  = new_listPtr; // point to the new lo key
+				new_listPtr += 6;
 				*pp = (*pp&~0x04)|0x02; //turn on exactly 1 compression bit
 			}
 		} else {
 			// 18-byte entry
-			memcpy(m_listPtr, minPtrBase, 6);
-			m_listPtr += 6;
-			memcpy(m_listPtr, minPtrLo, 6);
-			m_listPtrLo  = m_listPtr; // point to the new lo key
-			m_listPtr += 6;
-			memcpy(m_listPtr, minPtrHi, 6);
-			m_listPtrHi  = m_listPtr; // point to the new hi key
-			m_listPtr += 6;
+			memcpy(new_listPtr, minPtrBase, 6);
+			new_listPtr += 6;
+			memcpy(new_listPtr, minPtrLo, 6);
+			m_listPtrLo  = new_listPtr; // point to the new lo key
+			new_listPtr += 6;
+			memcpy(new_listPtr, minPtrHi, 6);
+			m_listPtrHi  = new_listPtr; // point to the new hi key
+			new_listPtr += 6;
 			*pp = *pp&~0x06; //turn off all compression bits
 		}
 		
@@ -2227,6 +2228,8 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 			numLists--;
 		}
 	}
+
+	m_listPtr = new_listPtr;
 
 	// come here to try to fix any dangling negatives
 
