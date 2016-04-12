@@ -3,7 +3,6 @@
 
 #include "HashTableX.h"
 #include "Msg0.h"
-#include "IndexList.h"
 #include "Bits.h"
 #include "Words.h"
 #include "Rdb.h"

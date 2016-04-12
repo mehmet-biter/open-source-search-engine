@@ -12,7 +12,6 @@
 
 #include "Msg0.h"
 #include "Clusterdb.h"
-#include "IndexList.h"
 #include "Msg5.h"
 
 // how many Msg0 requests can we launch at the same time?
