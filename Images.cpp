@@ -472,6 +472,8 @@ void Images::gotTermList ( ) {
 	if ( g_errno ) return;
 	// check docids in termlist
 	m_list.resetListPtr();
+#if 0
+	IndexList doesnt know how to deal with modern posdb format, so the check below gives undefined results
 	// loop over it
 	for ( ; ! m_list.isExhausted() ; m_list.skipCurrentRecord() ) {
 		// get the first rec
@@ -485,6 +487,8 @@ void Images::gotTermList ( ) {
 		// no need to go further
 		break;
 	}
+#endif
+	
 }
 
 bool Images::downloadImages () {
