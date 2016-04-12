@@ -16,25 +16,25 @@
 // . for comparison purposes, we must set 0x02 (half bits) on all keys
 //   so negative keys will always be ordered before their positive
 
-static inline char bfcmpPosdb ( char *alo , char *ame , char *ahi ,
-			 char *blo , char *bme , char *bhi ) {
-	if (*(uint32_t  *)( ahi+2 )<*(uint32_t  *)(bhi+2)) return -1;
-	if (*(uint32_t  *)( ahi+2 )>*(uint32_t  *)(bhi+2)) return  1;
-	if (*(uint16_t *)( ahi   )<*(uint16_t *)(bhi  )) return -1;
-	if (*(uint16_t *)( ahi   )>*(uint16_t *)(bhi  )) return  1;
+static inline char bfcmpPosdb ( const char *alo, const char *ame, const char *ahi ,
+			        const char *blo, const char *bme, const char *bhi ) {
+	if (*(const uint32_t *)( ahi+2 )<*(const uint32_t *)(bhi+2)) return -1;
+	if (*(const uint32_t *)( ahi+2 )>*(const uint32_t *)(bhi+2)) return  1;
+	if (*(const uint16_t *)( ahi   )<*(const uint16_t *)(bhi  )) return -1;
+	if (*(const uint16_t *)( ahi   )>*(const uint16_t *)(bhi  )) return  1;
 
-	if (*(uint32_t  *)( ame+2 )<*(uint32_t  *)(bme+2)) return -1;
-	if (*(uint32_t  *)( ame+2 )>*(uint32_t  *)(bme+2)) return  1;
-	if (*(uint16_t *)( ame   )<*(uint16_t *)(bme  )) return -1;
-	if (*(uint16_t *)( ame   )>*(uint16_t *)(bme  )) return  1;
+	if (*(const uint32_t *)( ame+2 )<*(const uint32_t *)(bme+2)) return -1;
+	if (*(const uint32_t *)( ame+2 )>*(const uint32_t *)(bme+2)) return  1;
+	if (*(const uint16_t *)( ame   )<*(const uint16_t *)(bme  )) return -1;
+	if (*(const uint16_t *)( ame   )>*(const uint16_t *)(bme  )) return  1;
 
 	if (*(uint32_t  *)( alo+2 )<*(uint32_t  *)(blo+2)) return -1;
 	if (*(uint32_t  *)( alo+2 )>*(uint32_t  *)(blo+2)) return  1;
 
-	if ( ((*(uint16_t *)( alo   ))|0x0007) <
-	     ((*(uint16_t *)  blo    )|0x0007)  ) return -1;
-	if ( ((*(uint16_t *)( alo   ))|0x0007) >
-	     ((*(uint16_t *)  blo    )|0x0007)  ) return  1;
+	if ( ((*(const uint16_t *)( alo   ))|0x0007) <
+	     ((*(const uint16_t *)  blo    )|0x0007)  ) return -1;
+	if ( ((*(const uint16_t *)( alo   ))|0x0007) >
+	     ((*(const uint16_t *)  blo    )|0x0007)  ) return  1;
 
 	return 0;
 };
@@ -2060,7 +2060,7 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	if ( minRecSizes == 0 ) return true;
 
 	// maxPtr set by minRecSizes
-	char *maxPtr = m_list + minRecSizes;
+	const char *maxPtr = m_list + minRecSizes;
 	// watch out for wrap around
 	if ( maxPtr < m_list ) maxPtr = m_alloc + m_allocSize;
 	// don't exceed what we alloc'd though
@@ -2081,10 +2081,10 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	}
 
 	// initialize the arrays, 1-1 with the unignored lists
-	char  *ptrs    [ MAX_RDB_FILES + 1 ];
-	char  *ends    [ MAX_RDB_FILES + 1 ];
-	char  hiKeys  [ MAX_RDB_FILES + 1 ][6];
-	char  loKeys  [ MAX_RDB_FILES + 1 ][6];
+	const char  *ptrs[ MAX_RDB_FILES + 1 ];
+	const char  *ends[ MAX_RDB_FILES + 1 ];
+	char       hiKeys[ MAX_RDB_FILES + 1 ][6];
+	char       loKeys[ MAX_RDB_FILES + 1 ][6];
 	// set the ptrs that are non-empty
 	int32_t n = 0;
 	// convenience ptr
@@ -2131,9 +2131,9 @@ bool RdbList::posdbMerge_r ( RdbList **lists         ,
 	while ( numLists > 0 && m_listPtr < maxPtr) {
 
 		// assume key in first list is the winner
-		char *minPtrBase = ptrs  [0]; // lowest  6 bytes
-		char *minPtrLo   = loKeys[0]; // next    6 bytes
-		char *minPtrHi   = hiKeys[0]; // highest 6 bytes
+		const char *minPtrBase = ptrs  [0]; // lowest  6 bytes
+		const char *minPtrLo   = loKeys[0]; // next    6 bytes
+		const char *minPtrHi   = hiKeys[0]; // highest 6 bytes
 		int16_t mini     = 0;         // int16_t -> must be able to accomodate MAX_RDB_FILES!!
 
 		// merge loop over the lists, get the smallest key
@@ -2381,5 +2381,3 @@ void RdbList::setFromPtr ( char *p , int32_t psize , char rdbId ) {
 	resetListPtr();
 
 }
-
-
