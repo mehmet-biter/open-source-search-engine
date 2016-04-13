@@ -1250,6 +1250,9 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	// debug msg
 	//log("disk: this thread id = %"INT32"",(int32_t)pthread_self());
 
+	int64_t time_start = gettimeofdayInMilliseconds();
+	int64_t time_took;
+
 	// if we were queued and now we are launching stuck, just return now
 	//if ( g_diskIsStuck ) {
 	//	t->m_errno = EDISKSTUCK;
@@ -1301,7 +1304,15 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	// did our callback get pre-called by Process.cpp/Threads.cpp? 
 	// fstate is probably invalid then, so watch out!
 	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/
-	if ( t && t->m_callback == ohcrap ) return NULL;
+	if ( t && t->m_callback == ohcrap ) 
+	{
+		time_took = gettimeofdayInMilliseconds() - time_start;
+	
+		if ( !fstate->m_doWrite && time_took >= g_conf.m_logDiskReadTimeThreshold ) {
+			log(LOG_WARN, "Disk read of %"INT64" bytes took %"INT64" ms", fstate->m_bytesDone, gettimeofdayInMilliseconds() - time_start);
+		}
+		return NULL;
+	}
 	// set errno
 	if ( ! status ) fstate->m_errno = errno;
 	// test again here
@@ -1409,6 +1420,12 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/
 	t->m_errno = fstate->m_errno;
 
+	time_took = gettimeofdayInMilliseconds() - time_start;
+
+	if ( !fstate->m_doWrite && time_took >= g_conf.m_logDiskReadTimeThreshold ) {
+		log(LOG_WARN, "Disk read of %"INT64" bytes took %"INT64" ms", fstate->m_bytesDone, gettimeofdayInMilliseconds() - time_start);
+	}
+	
 	// bogus return
 	return NULL;
 }

@@ -10020,7 +10020,7 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "log query time threshold";
-	m->m_desc  = "If query took this many millliseconds or longer, then log the "
+	m->m_desc  = "If a query took this many millliseconds or longer, then log the "
 		"query and the time it took to process.";
 	m->m_cgi   = "lqtt";
 	m->m_off   = offsetof(Conf,m_logQueryTimeThreshold);
@@ -10029,6 +10029,18 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
+
+	m->m_title = "log disk read time threshold";
+	m->m_desc  = "If a disk read took this many millliseconds or longer, then log the "
+		"bytes read and the time it took to process.";
+	m->m_cgi   = "ldrtt";
+	m->m_off   = offsetof(Conf,m_logDiskReadTimeThreshold);
+	m->m_type  = TYPE_LONG;
+	m->m_def   = "50";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 
 	m->m_title = "log query reply";
 	m->m_desc  = "Log query reply in proxy, but only for those queries "

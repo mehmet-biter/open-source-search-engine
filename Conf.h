@@ -409,6 +409,9 @@ class Conf {
 	//bool  m_logQueryTimes;
 	// if query took this or more milliseconds, log its time
 	int32_t  m_logQueryTimeThreshold;
+	// if disk read took this or more milliseconds, log its time
+	int32_t  m_logDiskReadTimeThreshold;
+	
 	bool  m_logQueryReply;
 	bool  m_logQueryDebug;
 	// log what gets into the index

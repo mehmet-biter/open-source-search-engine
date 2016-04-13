@@ -109,7 +109,7 @@ bool sendReply ( State0 *st , char *reply ) {
 	//   it failed to allocate its buf to hold terminating \0 in
 	//   SearchInput::setQueryBuffers()
 	if ( ! g_errno && st->m_took >= g_conf.m_logQueryTimeThreshold ) {
-		logf(LOG_TIMING,"query: Took %"INT64" ms for %s. results=%"INT32"",
+		logf(LOG_WARN,"Query took %"INT64" ms for %s. results=%"INT32"",
 		     st->m_took,
 		     si->m_sbuf1.getBufStart(),
 		     st->m_msg40.getNumResults());
