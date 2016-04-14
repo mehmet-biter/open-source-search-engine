@@ -19,7 +19,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Collectiondb.o \
 	linkspam.o ip.o sort.o \
 	fctypes.o XmlNode.o XmlDoc.o XmlDoc_Indexing.o Xml.o \
-	Words.o Url.o UdpServer.o \
+	Words.o UdpServer.o \
 	Titledb.o HashTable.o \
 	TcpServer.o Summary.o \
 	Spider.o SpiderColl.o SpiderLoop.o Doledb.o Msg12.o \
@@ -71,6 +71,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	RobotRule.o Robots.o \
 	JobScheduler.o \
 	AdultCheck.o \
+	Url.o UrlParser.o UrlComponent.o \
 
 # common flags
 DEFS = -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I.
@@ -197,7 +198,7 @@ gb32:
 #iana_charset.h: parse_iana_charsets.pl character-sets supported_charsets.txt
 #	./parse_iana_charsets.pl < character-sets
 
-
+.PHONY: dist
 dist: DIST_DIR=gb-$(shell date +'%Y%m%d')-$(shell git rev-parse --short HEAD)
 dist: all
 	@mkdir $(DIST_DIR)

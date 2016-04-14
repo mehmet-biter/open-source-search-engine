@@ -10,16 +10,7 @@
 #define DOCID_MASK   (0x0000003fffffffffLL)
 #define MAX_DOCID    DOCID_MASK
 
-// Starting version when Gigablast was open-sourced
-//#define TITLEREC_CURRENT_VERSION 120
-
-// better parsing of <script> tags
-//#define TITLEREC_CURRENT_VERSION 121
-
-// BR 20160106. New version that eliminates values in posdb that we do not need.
-// we also stop decoding &amp; &gt; &lt; to avoid losing information
-#define TITLEREC_CURRENT_VERSION 	122
-
+#include "TitleRecVersion.h"
 #include "Rdb.h"
 #include "Url.h"
 #include "Conf.h"

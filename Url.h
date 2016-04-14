@@ -12,6 +12,7 @@
 #define MAX_COLL_LEN  64
 
 #include "ip.h"      // atoip ( s,len)
+#include "TitleRecVersion.h"
 #include <cstddef>
 #include <string.h>
 
@@ -45,32 +46,37 @@ int32_t getPathDepth ( char *s , bool hasHttp );
 class Url {
 public:
 	// set from another Url, does a copy
-	void set( Url *url );
+	void set( Url *url ) {
+		if ( ! url ) {
+			reset();
+			return;
+		}
+
+		set( url->getUrl(), url->getUrlLen(), false, false, false );
+	}
 
 	void set( const char *s ) {
-		return set( s, strlen( s ), false, false, false );
+		set( s, strlen( s ), false, false, false );
 	}
 
 	void set( const char *s, int32_t len ) {
-		return set( s, len, false, false, false );
+		set( s, len, false, false, false );
 	}
 
-	void set( const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripTrackingParams ) {
-		return set( s, len, addWWW, stripSessionIds, false, false, stripTrackingParams );
+	void set( const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripTrackingParams, int32_t titledbVersion = TITLEREC_CURRENT_VERSION ) {
+		set( s, len, addWWW, stripSessionIds, false, false, stripTrackingParams, titledbVersion );
 	}
 
 	void set( Url *baseUrl, const char *s, int32_t len ) {
-		return set( baseUrl, s, len, false, false, false, false, false);
+		set( baseUrl, s, len, false, false, false, false, false);
 	}
 
 	// . "s" must be an ENCODED url
 	void set( Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripPound,
-	          bool stripCommonFile, bool stripTrackingParams );
+	          bool stripCommonFile, bool stripTrackingParams, int32_t titledbVersion = TITLEREC_CURRENT_VERSION );
 
 	void print  ();
 	void reset  ();
-
-	char isSessionId ( const char *hh ) ;
 
 	// compare another url to us
 	bool equals ( Url *u ) {
@@ -135,32 +141,11 @@ public:
 	int32_t getQueryLen() { return m_qlen; }
 
 	int32_t  getPathLenWithCgi () {
-		if ( ! m_query )
-			return m_plen;
-
-		return m_plen + 1 + m_qlen;
+		return m_query ? (m_plen + 1 + m_qlen) : m_plen;
 	}
 
-	bool  isHttp            () { 
-		if ( m_ulen  < 4 ) return false;
-		if ( m_slen != 4 ) return false;
-		if ( m_scheme[0] != 'h' ) return false;
-		if ( m_scheme[1] != 't' ) return false;
-		if ( m_scheme[2] != 't' ) return false;
-		if ( m_scheme[3] != 'p' ) return false;
-		return true;
-	}
-
-	bool  isHttps           () { 
-		if ( m_ulen  < 5 ) return false;
-		if ( m_slen != 5 ) return false;
-		if ( m_scheme[0] != 'h' ) return false;
-		if ( m_scheme[1] != 't' ) return false;
-		if ( m_scheme[2] != 't' ) return false;
-		if ( m_scheme[3] != 'p' ) return false;
-		if ( m_scheme[4] != 's' ) return false;
-		return true;
-	}
+	bool  isHttp() { return ( m_defPort == 80 ); }
+	bool  isHttps() { return ( m_defPort == 443 ); }
 
 	// used by buzz i guess
 	int32_t      getUrlHash32    ( ) ;
@@ -197,9 +182,6 @@ public:
 	// is the url a porn/spam url?
 	bool isSpam();
 
-	// this is private
-	bool isSpam ( char *s , int32_t slen ) ;
-
 	// . detects crazy repetetive urls like this:
 	//   http://www.pittsburghlive.com:8000/x/tribune-review/opinion/
 	//   steigerwald/letters/send/archive/letters/send/archive/bish/
@@ -216,7 +198,9 @@ public:
 
 private:
 	void set( const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripPound, bool stripCommonFile,
-	          bool stripTrackingParams );
+	          bool stripTrackingParams, int32_t titledbVersion );
+
+	bool isSpam ( char *s , int32_t slen ) ;
 
 	// the normalized url
 	char m_url[MAX_URL_LEN];

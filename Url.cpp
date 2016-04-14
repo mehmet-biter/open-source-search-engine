@@ -1,11 +1,13 @@
 #include "gb-include.h"
 
 #include "Url.h"
+#include "UrlParser.h"
 #include "Domains.h"
 #include "HashTable.h"
 #include "Speller.h"
 #include "Punycode.h"
 #include "Unicode.h"
+
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -20,7 +22,6 @@ void Url::reset() {
 	m_domain    = NULL;
 	m_tld       = NULL;
 	m_anchor    = NULL;
-	//m_site      = NULL;
 
 	m_url[0]    = '\0';
 	m_ulen      = 0;
@@ -31,88 +32,81 @@ void Url::reset() {
 	m_elen      = 0;
 	m_mdlen     = 0;
 	m_anchorLen = 0;
-	//m_siteLen   = 0;
 	// ip related stuff
 	m_ip          = 0;
-	// m_isWarcValid = false;
-	// m_isArcValid  = false;
 }
-
-// set from another Url, does a copy
-void Url::set ( Url *url ) {
-	if ( ! url ) {
-		reset();
-		return;
-	}
-
-	set( url->getUrl(), url->getUrlLen(), false, false, false, false, false );
-}
-
 
 void Url::set( Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripSessionId, bool stripPound,
-               bool stripCommonFile, bool stripTrackingParams ) {
+               bool stripCommonFile, bool stripTrackingParams, int32_t titledbVersion ) {
 
 	reset();
 
-	if ( ! baseUrl ) 
-	{
-		set( s, len, addWWW, false, false, false, false );
+	if ( ! baseUrl ) {
+		set( s, len, addWWW, false, false, false, false, titledbVersion );
 		return; 
 	}
 
 	char *base = (char *) baseUrl->m_url;
-	int32_t  blen =          baseUrl->m_ulen;
+	int32_t  blen = baseUrl->m_ulen;
+
 	// don't include cgi crap
-	if ( baseUrl->m_query ) blen -= (baseUrl->m_qlen + 1);
+	if ( baseUrl->m_query ) {
+		blen -= ( baseUrl->m_qlen + 1 );
+	}
 
 	// . adjust length of the base url.
-	// . if base url does not end in / then it must have a m_filename at 
+	// . if base url does not end in / then it must have a m_filename at
 	//   the end, therefore we should strip the m_filename
-	if ( blen > 0 && base[blen-1] != '/' ) 
-		while (blen > 0 && base[blen-1] != '/')   blen--;
+	if ( blen > 0 && base[blen - 1] != '/' ) {
+		while ( blen > 0 && base[blen - 1] != '/' ) {
+			blen--;
+		}
+	}
 
 	// . fix baseurl = "http://xyz.com/poo/all" and s = "?page=3"
 	// . if "s" starts with ? then keep the filename in the base url
 	if ( s[0] == '?' ) {
-		for ( ; base[blen] && base[blen]!='?'; blen++ );
+		for ( ; base[blen] && base[blen] != '?'; blen++ )
+			;
 	}
 
-	if ( blen==0 && len==0 ) return;
+	if ( blen == 0 && len == 0 ) {
+		return;
+	}
 
 	// skip s over spaces
 	const char *send = s + len;
-	while ( s < send && is_wspace_a ( *s ) ) { s++; len--; }
+	while ( s < send && is_wspace_a( *s ) ) {
+		s++;
+		len--;
+	}
 
 	// . is s a relative url? search for ://, but break at first /
 	// . but break at any non-alnum or non-hyphen
 	bool isAbsolute = false;
 	int32_t i;
-	for ( i = 0; i < len && (is_alnum_a(s[i]) || s[i]=='-') ; i++ );
-        //for ( i = 0 ; s[i] && (is_alnum_a(s[i]) || s[i]=='-') ; i++ );
-	if ( ! isAbsolute )
-		isAbsolute = ( i + 2 < len &&
-			       s[i+0]==':' &&
-			       s[i+1]=='/' ); // some are missing both /'s!
-	                     //s[i+2]=='/'  ) ;
-	if ( ! isAbsolute )
-		isAbsolute = ( i + 2 < len &&
-		       s[i+0]==':' &&
-		       s[i+1]=='\\' );
+	for ( i = 0; i < len && ( is_alnum_a( s[i] ) || s[i] == '-' ); i++ )
+		;
+
+	// for ( i = 0 ; s[i] && (is_alnum_a(s[i]) || s[i]=='-') ; i++ );
+	if ( !isAbsolute )
+		isAbsolute = ( i + 2 < len && s[i + 0] == ':' && s[i + 1] == '/' ); // some are missing both /'s!
+
+	// s[i+2]=='/'  ) ;
+	if ( !isAbsolute )
+		isAbsolute = ( i + 2 < len && s[i + 0] == ':' && s[i + 1] == '\\' );
+
 	// or if s starts with // then it's also considered absolute!
-	if ( ! isAbsolute && len > 1 && s[0]=='/' && s[1]=='/' )
+	if ( !isAbsolute && len > 1 && s[0] == '/' && s[1] == '/' )
 		isAbsolute = true;
+
 	// watch out for idiots
-	if ( ! isAbsolute && len > 1 && s[0]=='\\' && s[1]=='\\' )
+	if ( !isAbsolute && len > 1 && s[0] == '\\' && s[1] == '\\' )
 		isAbsolute = true;
-
-
-	// debug msg
-	//log("base=%s, abs=%i, slen=%i, s=%s, i=%i\n",
-	// base,isAbsolute,len,s,i);
 
 	// don't use base if s is not relative
 	if ( blen==0 || isAbsolute ) {
-		set( s, len, addWWW, stripSessionId, stripPound, false, stripTrackingParams );
+		set( s, len, addWWW, stripSessionId, stripPound, false, stripTrackingParams, titledbVersion );
 		return;
 	}
 
@@ -120,21 +114,459 @@ void Url::set( Url *baseUrl, const char *s, int32_t len, bool addWWW, bool strip
 	// . careful not to hack of the port, if any
 	// . blen = baseUrl->m_slen + 3 + baseUrl->m_hlen;
 	if ( len > 0 && s[0]=='/' ) 
-		blen = baseUrl->m_path - baseUrl->m_url ; 
-		
-	char temp[MAX_URL_LEN*2+1];
-	strncpy(temp,base,blen);
-	if (len>MAX_URL_LEN) len = MAX_URL_LEN-2;
+		blen = baseUrl->m_path - baseUrl->m_url ;
+
+	char temp[MAX_URL_LEN * 2 + 1];
+	strncpy( temp, base, blen );
+
+	if ( len > MAX_URL_LEN ) {
+		len = MAX_URL_LEN - 2;
+	}
+
 	// if s does NOT start with a '/' then add one here in case baseUrl
 	// does NOT end in one.
 	// fix baseurl = "http://xyz.com/poo/all" and s = "?page=3"
-	if ( len > 0 && s[0] != '/' && s[0] !='?' && temp[blen-1] != '/' ) 
-		temp[blen++] ='/';
-	strncpy(temp+blen,s,len);
-	set( temp, blen + len, addWWW, stripSessionId, stripPound, stripCommonFile, stripTrackingParams );
+	if ( len > 0 && s[0] != '/' && s[0] != '?' && temp[blen - 1] != '/' ) {
+		temp[blen++] = '/';
+	}
+	strncpy( temp + blen, s, len );
+	set( temp, blen + len, addWWW, stripSessionId, stripPound, stripCommonFile, stripTrackingParams, titledbVersion );
 }
 
 
+static bool isSessionId ( const char *hh ) {
+	int32_t count = 0;
+	int32_t nonNumCount = 0;
+
+	// do not limit count to 12, the hex numbers may only be
+	// after the 12th character! we were not identifying these
+	// as sessionids when we shold have been because of that.
+	for ( ; *hh ; ++count, ++hh ) {
+		if ( *hh >= '0' && *hh <= '9' ) continue;
+		nonNumCount++;
+		if ( *hh >= 'a' && *hh <= 'f' ) continue;
+		// we got an illegal session id character
+		return false;
+	}
+
+	// if we got at least 12 of em, consider it a valid id
+	// make sure it's a hexadecimal number...lots of product
+	// ids and dates use only decimal numbers
+	return ( nonNumCount > 0 && count >= 12);
+}
+
+static void stripParametersv122( char *s, int32_t *len, bool stripSessionId, bool stripTrackingParams ) {
+	// . remove session ids from s
+	// . ';' most likely preceeds a session id
+	// . http://www.b.com/p.jhtml;jsessionid=J4QMFWBG1SPRVWCKUUXCJ0W?pp=1
+	// . http://www.b.com/generic.html;$sessionid$QVBMODQAAAGNA?pid=7
+	// . http://www.b.com/?PHPSESSID=737aec14eb7b360983d4fe39395&p=1
+	// . http://www.b.com/cat.cgi/process?mv_session_id=xrf2EY3q&p=1
+	// . http://www.b.com/default?SID=f320a739cdecb4c3edef67e&p=1
+
+	// CHECK FOR A SESSION ID USING QUERY STRINGS
+	char *p = s;
+	while ( *p && *p != '?' && *p != ';' ) p++;
+
+	// bail if no ?
+	if ( ! *p ) {
+		return;
+	}
+
+	// now search for severl strings in the cgi query string
+	char *tt = NULL;
+	int32_t x;
+
+	if ( stripSessionId ) {
+		if ( ! tt ) { tt = gb_strcasestr ( p, "PHPSESSID=" ); x = 10;}
+		if ( ! tt ) { tt = strstr        ( p , "SID="       ); x =  4;}
+		// . osCsid and XTCsid are new session ids
+		// . keep this up here so "sid=" doesn't override it
+		if ( ! tt  ) {
+			tt = strstr ( p , "osCsid=" );
+			x =  7;
+			if ( ! tt ) tt = strstr ( p , "XTCsid=" );
+			// a hex sequence of at least 10 digits must follow
+			if ( tt && ! isSessionId ( tt + x ) )
+				tt = NULL;
+		}
+		if ( ! tt ) {
+			tt = strstr ( p , "osCsid/" );
+			x =  7;
+			// a hex sequence of at least 10 digits must follow
+			if ( tt && ! isSessionId ( tt + x ) )
+				tt = NULL;
+		}
+		// this is a new session id thing
+		if ( ! tt ) {
+			tt = strstr ( p , "sid=" ); x =  4;
+			// a hex sequence of at least 10 digits must follow
+			if ( tt && ! isSessionId ( tt + x ) )
+				tt = NULL;
+		}
+		// osCsid and XTCsid are new session ids
+		if ( ! tt ) {
+			tt = strstr ( p , "osCsid=" );
+			x =  7;
+			if ( ! tt ) tt = strstr ( p , "XTCsid=" );
+			// a hex sequence of at least 10 digits must follow
+			if ( tt && ! isSessionId ( tt + x ) )
+				tt = NULL;
+		}
+
+		// fixes for bug of matching plain &sessionid= first and
+		// then realizing char before is an alnum...
+		if ( ! tt ) { tt = gb_strcasestr ( p, "jsessionid="); x = 11; }
+		if ( ! tt ) { tt = gb_strcasestr ( p, "vbsessid="  ); x =  9;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "asesessid=" ); x = 10; }
+		if ( ! tt ) { tt = gb_strcasestr ( p, "nlsessid="  ); x =  9; }
+		if ( ! tt ) { tt = gb_strcasestr ( p, "psession="  ); x =  9; }
+
+		if ( ! tt ) { tt = gb_strcasestr ( p, "session_id="); x = 11;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "sessionid=" ); x = 10;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "sessid="    ); x =  7;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "session="   ); x =  8;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "session/"   ); x =  8;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "POSTNUKESID=");x = 12;}
+		// some new session ids as of Feb 2005
+		if ( ! tt ) { tt = gb_strcasestr ( p, "auth_sess=" ); x = 10; }
+		if ( ! tt ) { tt = gb_strcasestr ( p, "mysid="     ); x =  6; }
+		if ( ! tt ) { tt = gb_strcasestr ( p, "oscsid="    ); x =  7; }
+		if ( ! tt ) { tt = gb_strcasestr ( p, "cg_sess="   ); x =  8; }
+		if ( ! tt ) { tt = gb_strcasestr ( p, "galileoSession");x=14; }
+		// new as of Jan 2006. is hurting news5 collection on gb6
+		if ( ! tt ) { tt = gb_strcasestr ( p, "sess="      ); x =  5; }
+
+		// .php?s=8af9d6d0d59e8a3108f3bf3f64166f5a&
+		// .php?s=eae5808588c0708d428784a483083734&
+		// .php?s=6256dbb2912e517e5952caccdbc534f3&
+		if ( ! tt && (tt = strstr ( p-4 , ".php?s=" )) ) {
+			// point to the value of the s=
+			char *pp = tt + 7;
+			int32_t i = 0;
+			// ensure we got 32 hexadecimal chars
+			while ( pp[i] &&
+				( is_digit(pp[i]) ||
+				  ( pp[i]>='a' && pp[i]<='f' ) ) ) i++;
+			// if not, do not consider it a session id
+			if ( i < 32 ) tt = NULL;
+			// point to s= for removal
+			else { tt += 5; x = 2; }
+		}
+
+		// BR 20160117
+		// http://br4622.customervoice360.com/about_us.php?SES=652ee78702fe135cd96ae925aa9ec556&frmnd=registration
+		if ( ! tt ) { tt = strstr        ( p , "SES="       ); x =  4;}
+	}
+
+	// BR 20160117: Skip most common tracking parameters
+	if( !tt && stripTrackingParams ) {
+		// Oracle Eloqua
+		// http://app.reg.techweb.com/e/er?s=2150&lid=25554&elq=00000000000000000000000000000000&elqaid=2294&elqat=2&elqTrackId=3de2badc5d7c4a748bc30253468225fd
+		if ( ! tt ) { tt = gb_strcasestr ( p, "elq="); x = 4;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "elqat="); x = 6;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "elqaid="); x = 7;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "elq_mid="); x = 8;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "elqTrackId="); x = 11;}
+
+		// Google Analytics
+		// http://kikolani.com/blog-post-promotion-ultimate-guide?utm_source=kikolani&utm_medium=320banner&utm_campaign=bpp
+		if ( ! tt ) { tt = gb_strcasestr ( p, "utm_term="); x = 9;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "utm_hp_ref="); x = 11;}	// Lots on huffingtonpost.com
+		if ( ! tt ) { tt = gb_strcasestr ( p, "utm_source="); x = 11;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "utm_medium="); x = 11;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "utm_content="); x = 12;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "utm_campaign="); x = 13;}
+
+		// Piwik
+		if ( ! tt ) { tt = gb_strcasestr ( p, "pk_kwd="); x = 7;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "pk_source="); x = 10;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "pk_medium="); x = 10;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "pk_campaign="); x = 12;}
+
+		// Misc
+		if ( ! tt ) { tt = gb_strcasestr ( p, "trk="); x = 4;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "promoid="); x = 8;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "promCode="); x = 9;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "promoCode="); x = 10;}
+		if ( ! tt ) { tt = gb_strcasestr ( p, "partnerref="); x = 11;}
+	}
+
+
+	// bail if none were found
+	if ( ! tt ) {
+		return;
+	}
+
+	// . must not have an alpha char before it!
+	// . prevent "DAVESID=" from being labeled as session id
+	if ( is_alnum_a ( *(tt-1) ) ) {
+		return;
+	}
+
+	// start of the shit
+	int32_t a = tt - s;
+
+	// get the end of the shit
+	int32_t b = a + x;
+
+	// back up until we hit a ? or & or / or ;
+	while ( a > 0 && s[a-1] != '?' && s[a-1] != '&' &&
+		s[a-1] != '/' && s[a-1] != ';' ) a--;
+
+	// keep the '?'
+	if ( s[a]=='?' ) a++;
+
+	// back up over any semicolon
+	if ( s[a-1] == ';' ) a--;
+
+	// advance b until we hit & or end or ? or a ';'
+	while ( s[b] && s[b] != '&' && s[b] != '?' && s[b] != ';') b++;
+
+	// if we don't have 5+ chars in session id itself, skip it
+	if ( b - (a + x) < 5 ) {
+		return;
+	}
+
+	// go over a & or a ;
+	if ( s[b] == '&' || s[b] == ';' ) b++;
+
+	// remove the session id by covering it up
+	memmove ( &s[a] , &s[b] , *len - b );
+
+	// reduce length
+	*len -= (b-a);
+
+	// if s ends in ? or & or ;, backup
+	while ( *len > 0 && (s[*len-1]=='?'||s[*len-1]=='&'||s[*len-1]==';'))
+		(*len)--;
+
+	// NULL terminate
+	s[*len] = '\0';
+}
+
+static void stripParameters( char *s, int32_t *len, bool stripSessionId, bool stripTrackingParams ) {
+	static const UrlComponent::Validator s_noCheck( 0, false, ALLOW_ALL, MANDATORY_NONE );
+	static const UrlComponent::Validator s_noCheckAllowEmpty( 0, true, ALLOW_ALL, MANDATORY_NONE );
+
+	UrlParser urlParser( s, *len );
+
+	// . remove session ids from s
+	// . ';' most likely preceeds a session id
+	// . http://www.b.com/p.jhtml;jsessionid=J4QMFWBG1SPRVWCKUUXCJ0W?pp=1
+	// . http://www.b.com/generic.html;$sessionid$QVBMODQAAAGNA?pid=7
+	// . http://www.b.com/?PHPSESSID=737aec14eb7b360983d4fe39395&p=1
+	// . http://www.b.com/cat.cgi/process?mv_session_id=xrf2EY3q&p=1
+	// . http://www.b.com/default?SID=f320a739cdecb4c3edef67e&p=1
+
+
+	/// @todo make parameter unique
+	/// eg: ?section=australia&adsSiteOverride=au&section=australia
+
+	/// @todo reorder parameter?
+	/// if we have ?abc=123&def=456
+	/// wouldn't it be the same as ?def=456&abc=123
+
+	/// @todo remove apache dir sort
+	/// http://www.bolognarugby.it/immagini/502/?C=N;O=A
+	/// C={N,M,S,D} O={A,D}
+
+	/// @todo redirect ??
+	/// redirect_to, redirect, redirect_url
+
+	/// @todo referer??
+	/// /referer/, referer=
+
+	/// @todo login pages?
+	/// should we even spider them?
+
+	/// @todo remove multiple of the same parameter name
+	/// !!! investigate if it's allowed
+	// http://www.luxuryhomespittsburgh.com/listman/exec/search.cgi?search=1&perpage=4&sort_order=5%2C123%2Cbackward&sear&pagenum=2&pagenum=1&pagenum=2&pagenum=1&pagenum=2&pagenum=1&pagenum=2&pagenum=1&pagenum=2&pagenum=1&pagenum=2
+	// only take the last value
+
+
+	if ( stripSessionId ) {
+		{
+			std::vector<UrlComponent*> result = urlParser.matchQuery( UrlComponent::Matcher( "sid" ) );
+			urlParser.removeQuery( result, UrlComponent::Validator( 12, true, ALLOW_ALL, (MANDATORY_ALPHA | MANDATORY_DIGIT) ) );
+		}
+
+		// osCommerce
+		urlParser.removePath( UrlComponent::Matcher( "osCsid" ), UrlComponent::Validator( 22, true ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "osCsid" ) );
+
+		urlParser.removePath( UrlComponent::Matcher( "osCAdminID" ), UrlComponent::Validator( 22, true ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "osCAdminID" ) );
+
+		// XT-commerce
+		urlParser.removePath( UrlComponent::Matcher( "XTCsid", MATCH_CASE ), UrlComponent::Validator( 18, true ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "XTCsid", MATCH_CASE ) );
+
+		// jsessionid
+		urlParser.removePath( UrlComponent::Matcher( "jsessionid", MATCH_PARTIAL ), UrlComponent::Validator( 20, true, ( ALLOW_DIGIT | ALLOW_ALPHA ) ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "jsessionid", MATCH_PARTIAL ), UrlComponent::Validator( 20 ) );
+
+		// ColdFusion
+		// http://help.adobe.com/en_US/ColdFusion/9.0/Developing/WSc3ff6d0ea77859461172e0811cbec0c35c-7fef.html#WSc3ff6d0ea77859461172e0811cbec22c24-7cbf
+		urlParser.removePath( UrlComponent::Matcher( "CFID" ), s_noCheck ); /// @todo
+		urlParser.removeQuery( UrlComponent::Matcher( "CFID" ) );/// @todo
+		urlParser.removePath( UrlComponent::Matcher( "CFTOKEN" ), s_noCheck );/// @todo
+		urlParser.removeQuery( UrlComponent::Matcher( "CFTOKEN" ) );/// @todo
+
+		/// SAP load balancer
+		// https://help.sap.com/saphelp_nw70/helpdata/de/f2/d7914b8deb48f090c0343ef1d907f0/content.htm
+		urlParser.removePath( UrlComponent::Matcher( "saplb_*" ), s_noCheck );
+
+		// Atlassian
+		// https://developer.atlassian.com/confdev/confluence-plugin-guide/writing-confluence-plugins/form-token-handling
+		urlParser.removeQuery( UrlComponent::Matcher( "atl_token" ), UrlComponent::Validator() ); /// @todo value verification?
+
+		// limited use
+		urlParser.removeQuery( UrlComponent::Matcher( "psession" ), UrlComponent::Validator() );
+		urlParser.removeQuery( UrlComponent::Matcher( "GalileoSession" ), UrlComponent::Validator() );  /// @todo 19 chars?
+
+		// session id variations
+		urlParser.removePath( UrlComponent::Matcher( "phpsessid" ), UrlComponent::Validator() ); /// @todo value verification
+		urlParser.removeQuery( UrlComponent::Matcher( "phpsessid" ), UrlComponent::Validator( 0, true ) ); /// @todo value verification
+		urlParser.removeQuery( UrlComponent::Matcher( "sessid", MATCH_PARTIAL ), UrlComponent::Validator() ); /// @todo value verification
+		//urlParser.removeQuery( "vbsessid" ); // @todo 32 char hex
+		//urlParser.removeQuery( "asesessid" ); // hardwarelogic.com, aselabs.com, aronschatz.com, asemail.net, aseforums.com
+		//urlParser.removeQuery( "nlsessid" ); // netleih.de, videobuster.de
+		//urlParser.removeQuery( "GLBSESSID" ); // georges.be
+		//urlParser.removeQuery( "sessid" );
+
+
+		urlParser.removeQuery( UrlComponent::Matcher( "session_id" ), UrlComponent::Validator() );  /// @todo add sessionid check
+		urlParser.removeQuery( UrlComponent::Matcher( "sessionid" ), UrlComponent::Validator() );  /// @todo add sessionid check
+
+		urlParser.removePath( UrlComponent::Matcher( "session" ), UrlComponent::Validator() );
+		urlParser.removeQuery( UrlComponent::Matcher( "session" ), UrlComponent::Validator() );
+
+		urlParser.removeQuery( UrlComponent::Matcher( "auth_sess" ), UrlComponent::Validator() ); // mostly job sites (same group?)
+		urlParser.removeQuery( UrlComponent::Matcher( "cg_sess" ), UrlComponent::Validator() );
+		urlParser.removeQuery( UrlComponent::Matcher( "sess" ), UrlComponent::Validator() ); /// @todo make sure this is okay
+
+		/// @todo double check
+		// BR 20160117
+		// http://br4622.customervoice360.com/about_us.php?SES=652ee78702fe135cd96ae925aa9ec556&frmnd=registration
+		urlParser.removeQuery( UrlComponent::Matcher( "SES", MATCH_CASE ), UrlComponent::Validator( 10, true, ALLOW_ALPHA | ALLOW_DIGIT ) );
+
+		// postnuke
+		urlParser.removeQuery( UrlComponent::Matcher( "POSTNUKESID" ), UrlComponent::Validator() );
+
+		urlParser.removeQuery( UrlComponent::Matcher( "mysid" ), UrlComponent::Validator( 10, false, ALLOW_ALPHA | ALLOW_DIGIT ) );
+
+
+
+		/// @todo how do we do this?
+		// .php?s=8af9d6d0d59e8a3108f3bf3f64166f5a&
+		// .php?s=eae5808588c0708d428784a483083734&
+		// .php?s=6256dbb2912e517e5952caccdbc534f3&
+//		if ( ! tt && (tt = strstr ( p-4 , ".php?s=" )) ) {
+//			// point to the value of the s=
+//			char *pp = tt + 7;
+//			int32_t i = 0;
+//			// ensure we got 32 hexadecimal chars
+//			while ( pp[i] &&
+//			        ( is_digit(pp[i]) ||
+//			          ( pp[i]>='a' && pp[i]<='f' ) ) ) i++;
+//			// if not, do not consider it a session id
+//			if ( i < 32 ) tt = NULL;
+//				// point to s= for removal
+//			else { tt += 5; x = 2; }
+//		}
+
+		/// @todo token?
+	}
+
+	// BR 20160117: Skip most common tracking parameters
+	if ( stripTrackingParams ) {
+		// Oracle Eloqua
+		// http://docs.oracle.com/cloud/latest/marketingcs_gs/OMCAA/index.html#Help/General/EloquaTrackingParameters.htm
+		/// @todo s=<customer side id>
+		urlParser.removeQuery( UrlComponent::Matcher( "elqTrackId" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "elq" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "elqCampaignId" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "elqaid" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "elqat" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "elq_mid" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "elq_cid" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "elq2" ) ); // others
+
+		// Google Analytics
+		// https://support.google.com/analytics/answer/1033867
+		urlParser.removeQuery( UrlComponent::Matcher( "utm_source" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "utm_medium" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "utm_term" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "utm_content" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "utm_campaign" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "utm_hp_ref" ) ); // Lots on huffingtonpost.com
+		urlParser.removeQuery( UrlComponent::Matcher( "utm_rid" ) ); // others
+
+		// https://support.google.com/analytics/answer/1033981?hl=en
+		// https://support.google.com/ds/answer/6292795?hl=en
+		urlParser.removeQuery( UrlComponent::Matcher( "gclid" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "gclsrc" ) );
+
+		// Piwik
+		// http://piwik.org/docs/tracking-campaigns/
+		// https://plugins.piwik.org/AdvancedCampaignReporting
+		urlParser.removeQuery( UrlComponent::Matcher( "pk_campaign" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "pk_kwd" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "pk_source" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "pk_medium" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "pk_keyword" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "pk_content" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "pk_cid" ) );
+
+		// Open Web Analytics
+		// https://github.com/padams/Open-Web-Analytics/wiki/Campaign-Tracking
+		urlParser.removeQuery( UrlComponent::Matcher( "owa_medium" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "owa_source" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "owa_campaign" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "owa_ad" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "owa_ad_type" ) );
+
+		// Webtrends
+		// http://help.webtrends.com/en/queryparameters/index.html
+		/// @todo webtrends tracking parameter
+
+		// Mailchimp
+		// https://apidocs.mailchimp.com/api/how-to/ecommerce.php
+		urlParser.removeQuery( UrlComponent::Matcher( "mc_cid" ) );
+		urlParser.removeQuery( UrlComponent::Matcher( "mc_eid" ) );
+
+		// Marketo
+		// http://developers.marketo.com/documentation/websites/lead-tracking-munchkin-js/
+		urlParser.removeQuery( UrlComponent::Matcher( "mkt_tok" ) );
+
+		// Misc
+		urlParser.removeQuery( UrlComponent::Matcher( "trk" ) ); /// @todo dangerous?
+		urlParser.removeQuery( UrlComponent::Matcher( "partnerref" ) );
+	}
+
+	/// @todo affiliate links
+	// https://www.reddit.com/r/GameDeals/wiki/affiliate
+	// https://www.reddit.com/r/amiibo/wiki/affiliate-links
+
+	// amazon
+	// affiliate
+	//  urlParser.removeQuery( "tag" );
+	// wishlist
+	//  urlParser.removeQuery( "coliid" );
+	//  urlParser.removeQuery( "colid" );
+	// reference
+	//  urlParser.removeQuery( "ref" );
+
+	// ebay
+	// afepn=[code], campid=[code], pid=[code]
+
+
+	// rebuild url
+	strcpy( s, urlParser.unparse() );
+	*len = strlen(s);
+}
 
 // . url rfc = http://www.blooberry.com/indexdot/html/topics/urlencoding.htm
 // . "...Only alphanumerics [0-9a-zA-Z], the special characters "$-_.+!*'()," 
@@ -143,23 +575,19 @@ void Url::set( Url *baseUrl, const char *s, int32_t len, bool addWWW, bool strip
 // . i know sun.com has urls like "http://sun.com/;$sessionid=123ABC$"
 // . url should be ENCODED PROPERLY for this to work properly
 void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bool stripPound, bool stripCommonFile,
-               bool stripTrackingParams )
-{
+               bool stripTrackingParams, int32_t titledbVersion ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(t,tlen);
 #endif
 	reset();
 
-
-	if ( ! t || tlen == 0 ) 
-	{
+	if ( ! t || tlen == 0 ) {
 		return;
 	}
-	
+
 	// we may add a "www." a trailing backslash and \0, ...
 	if ( tlen > MAX_URL_LEN - 10 ) {
-		log( LOG_LIMIT,"db: Encountered url of length %"INT32". "
-		     "Truncating to %i" , tlen , MAX_URL_LEN - 10 );
+		log( LOG_LIMIT, "db: Encountered url of length %" INT32 ". Truncating to %i", tlen, MAX_URL_LEN - 10 );
 		tlen = MAX_URL_LEN - 10;
 	}
 
@@ -167,7 +595,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 	// . if url begins with // then it's just missing the http: (slashdot)
 	// . watch out for hostname like: -dark-.deviantart.com(yes, it's real)
 	// . so all protocols are hostnames MUST start with alnum OR hyphen
-	while ( tlen > 0 && !is_alnum_a(*t) && *t != '-' && *t != '/') {
+	while ( tlen > 0 && !is_alnum_a( *t ) && *t != '-' && *t != '/' ) {
 		t++;
 		tlen--;
 	}
@@ -192,8 +620,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 		}
 	}
 
-	
-	if (nonAsciiPos != -1) {
+	if ( nonAsciiPos != -1 ) {
 		// Try turning utf8 and latin1 encodings into punycode.
 		// All labels(between dots) in the domain are encoded 
 		// separately.  We don't support encoded tlds, but they are 
@@ -217,8 +644,8 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 
 		log(LOG_DEBUG, "build: attempting to decode unicode url %s pos at %"INT32, t, nonAsciiPos);
 
-		if (tmp) {
-			((char*)t)[tlen] = tmp;
+		if ( tmp ) {
+			( (char *)t )[tlen] = tmp;
 		}
 
 		char encoded [ MAX_URL_LEN ];
@@ -226,24 +653,25 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 		char *encodedDomStart = encoded;
 		const char *p = t;
 		const char *pend = t+tlen;
-		
+
 		// Find the start of the domain
-		if (tlen > 7 && strncmp(p, "http://", 7) == 0) {
+		if ( tlen > 7 && strncmp( p, "http://", 7 ) == 0 ) {
 			p += 7;
-		} else if (tlen > 8 && strncmp(p, "https://", 8) == 0) {
+		} else if ( tlen > 8 && strncmp( p, "https://", 8 ) == 0 ) {
 			p += 8;
 		}
 
 		gbmemcpy(encodedDomStart, t, p-t);
 		encodedDomStart += p-t;
 
-		while (p < pend && *p != '/') {
+		while ( p < pend && *p != '/' ) {
 			const char *labelStart = p;
 			uint32_t tmpBuf[MAX_URL_LEN];
 			int32_t tmpLen = 0;
-		
-			while(p < pend && *p != '.' && *p != '/') p++;
-			int32_t	labelLen = p - labelStart;
+
+			while ( p < pend && *p != '.' && *p != '/' )
+				p++;
+			int32_t labelLen = p - labelStart;
 
 			bool tryLatin1 = false;
 			// For utf8 urls
@@ -251,42 +679,41 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 			bool labelIsAscii = true;
 
 			// Convert the domain to code points and copy it to tmpbuf to be punycoded
-			for (;p-labelStart<labelLen; p += utf8Size(tmpBuf[tmpLen]), tmpLen++) {
-				labelIsAscii &= is_ascii(*p);
-				tmpBuf[tmpLen] = utf8Decode(p);
-				if (!tmpBuf[tmpLen]) { // invalid char?
+			for ( ; p - labelStart < labelLen; p += utf8Size( tmpBuf[tmpLen] ), tmpLen++ ) {
+				labelIsAscii &= is_ascii( *p );
+				tmpBuf[tmpLen] = utf8Decode( p );
+				if ( !tmpBuf[tmpLen] ) { // invalid char?
 					tryLatin1 = true;
 					break;
 				}
 			}
 
-			if (labelIsAscii) {
-				if (labelStart[labelLen] == '.') {
+			if ( labelIsAscii ) {
+				if ( labelStart[labelLen] == '.' ) {
 					labelLen++;
 					p++;
 				}
-				gbmemcpy(encodedDomStart, labelStart, labelLen);
+				gbmemcpy( encodedDomStart, labelStart, labelLen );
 				encodedDomStart += labelLen;
 				continue;
 			}
 
-			if (tryLatin1) {
+			if ( tryLatin1 ) {
 				// For latin1 urls
 				tmpLen = 0;
-				for (; tmpLen<labelLen; tmpLen++) {
+				for ( ; tmpLen < labelLen; tmpLen++ ) {
 					tmpBuf[tmpLen] = labelStart[tmpLen];
 				}
 			}
 
-			gbmemcpy(encodedDomStart, "xn--", 4);
+			gbmemcpy( encodedDomStart, "xn--", 4 );
 			encodedDomStart += 4;
 
-			punycode_status status = punycode_encode(tmpLen, tmpBuf, NULL, &encodedLen, encodedDomStart);
+			punycode_status status = punycode_encode( tmpLen, tmpBuf, NULL, &encodedLen, encodedDomStart );
 
 			if ( status != 0 ) {
 				// Give up? try again?
-				log("build: Bad Engineer, failed to "
-				    "punycode international url %s", t);
+				log( "build: Bad Engineer, failed to punycode international url %s", t );
 				return;
 			}
 
@@ -294,22 +721,22 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 			// FIXME: should we exclude just the bad chars? I've seen plenty of urls with
 			// a newline in the middle.  Just discard the whole chunk for now
 			bool badUrlChars = false;
-			for (uint32_t i = 0; i < encodedLen; i++) {
-				if (is_wspace_a(encodedDomStart[i])){
+			for ( uint32_t i = 0; i < encodedLen; i++ ) {
+				if ( is_wspace_a( encodedDomStart[i] ) ) {
 					badUrlChars = true;
 					break;
 				}
 			}
 
-			if (encodedLen == 0 || badUrlChars) {
-				encodedDomStart -= 4; //don't need the xn--
+			if ( encodedLen == 0 || badUrlChars ) {
+				encodedDomStart -= 4; // don't need the xn--
 				p++;
 			} else {
 				encodedDomStart += encodedLen;
 				*encodedDomStart++ = *p++; // Copy in the . or the /
 			}
 		}
-		
+
 		// p now points to the end of the domain
 		// encodedDomStart now points to the first free space in encoded string
 
@@ -354,38 +781,40 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 			encoded[newUrlLen++] = *p++;
 		}
 
-		//gbmemcpy(encodedDomStart, p, restOfUrlLen);
 		encoded[newUrlLen] = '\0';
-		return this->set( encoded, newUrlLen, addWWW, stripSessionId, stripPound, stripCommonFile, stripTrackingParams );
+		return this->set( encoded, newUrlLen, addWWW, stripSessionId, stripPound, stripCommonFile, stripTrackingParams, titledbVersion );
 	}
 
 	// truncate length to the first occurence of an unacceptable char
 	tlen = i;
-	// . decode characters that should not have been encoded
-	// . also NULL terminates
-	//char tmp[MAX_URL_LEN];
-	//int32_t tmpLen;
-	//tmpLen = safeDecode ( t , tlen , tmp );
+
 	// . jump over http:// if it starts with http://http://
 	// . a common mistake...
 	while ( tlen > 14 && ! strncasecmp ( t , "http://http://" , 14 ) ) {
-		t += 7;	tlen -= 7; }
-	//if ( tlen > 26 )
-	//while ( ! strncasecmp ( t , "http%3A%2F%2Fhttp%3A%2F%2F",26)){
-	//t += 13; tlen -= 13; }
+		t += 7;
+		tlen -= 7;
+	}
 
 	// strip the "#anchor" from http://www.xyz.com/somepage.html#anchor"
     int32_t anchorPos = 0;
     int32_t anchorLen = 0;
     for ( int32_t i = 0 ; i < tlen ; i++ ) {
-		if ( t[i] != '#' ) continue;
+		if ( t[i] != '#' ) {
+			continue;
+		}
+
 		// ignore anchor if a ! follows it. 'google hash bang hack'
 		// which breaks the web and is now deprecated, but, there it is
-		if ( i+1<tlen && t[i+1] == '!' ) continue;
+		if ( i+1<tlen && t[i+1] == '!' ) {
+			continue;
+		}
+
 		anchorPos = i;
 		anchorLen = tlen - i;
-		if ( stripPound )
+
+		if ( stripPound ) {
 			tlen = i;
+		}
 		break;
     }
 
@@ -396,180 +825,14 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 	gbmemcpy ( s , t , tlen );
 	s[len]='\0';
 
-	// . remove session ids from s
-	// . ';' most likely preceeds a session id
-	// . http://www.b.com/p.jhtml;jsessionid=J4QMFWBG1SPRVWCKUUXCJ0W?pp=1
-	// . http://www.b.com/generic.html;$sessionid$QVBMODQAAAGNA?pid=7
-	// . http://www.b.com/?PHPSESSID=737aec14eb7b360983d4fe39395&p=1
-	// . http://www.b.com/cat.cgi/process?mv_session_id=xrf2EY3q&p=1
-	// . http://www.b.com/default?SID=f320a739cdecb4c3edef67e&p=1
-	if ( stripSessionId || stripTrackingParams ) 
-	{
-		// CHECK FOR A SESSION ID USING QUERY STRINGS
-		char *p = s;
-		while ( *p && *p != '?' && *p != ';' ) p++;
-		// bail if no ?
-		if ( ! *p ) goto skip;
-		// now search for severl strings in the cgi query string
-		char *tt = NULL;
-		int32_t x;
-
-		if( stripSessionId )
-		{
-			if ( ! tt ) { tt = gb_strcasestr ( p , "PHPSESSID=" ); x = 10;}
-			if ( ! tt ) { tt = strstr        ( p , "SID="       ); x =  4;}
-			// . osCsid and XTCsid are new session ids
-			// . keep this up here so "sid=" doesn't override it
-			if ( ! tt  ) {
-				tt = strstr ( p , "osCsid=" ); 
-				x =  7;
-				if ( ! tt ) tt = strstr ( p , "XTCsid=" );
-				// a hex sequence of at least 10 digits must follow
-				if ( tt && ! isSessionId ( tt + x ) )
-					tt = NULL;
-			}
-			if ( ! tt ) {
-				tt = strstr ( p , "osCsid/" ); 
-				x =  7;
-				// a hex sequence of at least 10 digits must follow
-				if ( tt && ! isSessionId ( tt + x ) )
-					tt = NULL;
-			}
-			// this is a new session id thing
-			if ( ! tt ) {
-				tt = strstr ( p , "sid=" ); x =  4;
-				// a hex sequence of at least 10 digits must follow
-				if ( tt && ! isSessionId ( tt + x ) )
-					tt = NULL;
-			}
-			// osCsid and XTCsid are new session ids
-			if ( ! tt ) {
-				tt = strstr ( p , "osCsid=" ); 
-				x =  7;
-				if ( ! tt ) tt = strstr ( p , "XTCsid=" );
-				// a hex sequence of at least 10 digits must follow
-				if ( tt && ! isSessionId ( tt + x ) )
-					tt = NULL;
-			}
-			// fixes for bug of matching plain &sessionid= first and
-			// then realizing char before is an alnum...
-			if ( ! tt ) { tt = gb_strcasestr ( p, "jsessionid="); x = 11; }
-			if ( ! tt ) { tt = gb_strcasestr ( p , "vbsessid="  ); x =  9;}
-			if ( ! tt ) { tt = gb_strcasestr ( p, "asesessid=" ); x = 10; }
-			if ( ! tt ) { tt = gb_strcasestr ( p, "nlsessid="  ); x =  9; }
-			if ( ! tt ) { tt = gb_strcasestr ( p, "psession="  ); x =  9; }
-	
-			if ( ! tt ) { tt = gb_strcasestr ( p , "session_id="); x = 11;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "sessionid=" ); x = 10;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "sessid="    ); x =  7;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "vbsessid="  ); x =  9;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "session="   ); x =  8;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "session/"   ); x =  8;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "POSTNUKESID=");x = 12;}
-			// some new session ids as of Feb 2005
-			if ( ! tt ) { tt = gb_strcasestr ( p, "auth_sess=" ); x = 10; }
-			if ( ! tt ) { tt = gb_strcasestr ( p, "mysid="     ); x =  6; }
-			if ( ! tt ) { tt = gb_strcasestr ( p, "oscsid="    ); x =  7; }
-			if ( ! tt ) { tt = gb_strcasestr ( p, "cg_sess="   ); x =  8; }
-			if ( ! tt ) { tt = gb_strcasestr ( p, "galileoSession");x=14; }
-			if ( ! tt ) { tt = gb_strcasestr ( p, "asesessid=" ); x = 10; }
-			if ( ! tt ) { tt = gb_strcasestr ( p, "nlsessid="  ); x =  9; }
-			if ( ! tt ) { tt = gb_strcasestr ( p, "jsessionid="); x = 11; }
-			if ( ! tt ) { tt = gb_strcasestr ( p, "psession="  ); x =  9; }
-			// new as of Jan 2006. is hurting news5 collection on gb6
-			if ( ! tt ) { tt = gb_strcasestr ( p, "sess="      ); x =  5; }
-			
-			// .php?s=8af9d6d0d59e8a3108f3bf3f64166f5a&
-			// .php?s=eae5808588c0708d428784a483083734&
-			// .php?s=6256dbb2912e517e5952caccdbc534f3&
-			if ( ! tt && (tt = strstr ( p-4 , ".php?s=" )) ) {
-				// point to the value of the s=
-				char *pp = tt + 7; 
-				int32_t i = 0;
-				// ensure we got 32 hexadecimal chars
-				while ( pp[i] && 
-					( is_digit(pp[i]) || 
-					  ( pp[i]>='a' && pp[i]<='f' ) ) ) i++;
-				// if not, do not consider it a session id
-				if ( i < 32 ) tt = NULL;
-				// point to s= for removal
-				else { tt += 5; x = 2; }
-			}
-
-			// BR 20160117
-			// http://br4622.customervoice360.com/about_us.php?SES=652ee78702fe135cd96ae925aa9ec556&frmnd=registration		
-			if ( ! tt ) { tt = strstr        ( p , "SES="       ); x =  4;}
+	if ( stripSessionId || stripTrackingParams ) {
+		if (titledbVersion <= 122) {
+			stripParametersv122( s, &len, stripSessionId, stripTrackingParams );
+		} else {
+			stripParameters( s, &len, stripSessionId, stripTrackingParams );
 		}
-		
-		// BR 20160117: Skip most common tracking parameters
-		if( !tt && stripTrackingParams )
-		{
-			// Oracle Eloqua
-			// http://app.reg.techweb.com/e/er?s=2150&lid=25554&elq=00000000000000000000000000000000&elqaid=2294&elqat=2&elqTrackId=3de2badc5d7c4a748bc30253468225fd
-			if ( ! tt ) { tt = gb_strcasestr ( p , "elq="); x = 4;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "elqat="); x = 6;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "elqaid="); x = 7;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "elq_mid="); x = 8;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "elqTrackId="); x = 11;}
-
-			// Google Analytics
-			// http://kikolani.com/blog-post-promotion-ultimate-guide?utm_source=kikolani&utm_medium=320banner&utm_campaign=bpp
-			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_term="); x = 9;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_hp_ref="); x = 11;}	// Lots on huffingtonpost.com
-			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_source="); x = 11;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_medium="); x = 11;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_content="); x = 12;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "utm_campaign="); x = 13;}
-
-			// Piwik
-			if ( ! tt ) { tt = gb_strcasestr ( p , "pk_kwd="); x = 7;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "pk_source="); x = 10;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "pk_medium="); x = 10;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "pk_campaign="); x = 12;}
-
-			// Misc				
-			if ( ! tt ) { tt = gb_strcasestr ( p , "trk="); x = 4;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "promoid="); x = 8;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "promCode="); x = 9;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "promoCode="); x = 10;}
-			if ( ! tt ) { tt = gb_strcasestr ( p , "partnerref="); x = 11;}
-		}
-
-			
-		// bail if none were found
-		if ( ! tt ) goto skip;
-		// . must not have an alpha char before it!
-		// . prevent "DAVESID=" from being labeled as session id
-		if ( is_alnum_a ( *(tt-1) ) ) goto skip;
-		// start of the shit
-		int32_t a = tt - s;
-		// get the end of the shit
-		int32_t b = a + x;
-		// back up until we hit a ? or & or / or ;
-		while ( a > 0 && s[a-1] != '?' && s[a-1] != '&' &&
-			s[a-1] != '/' && s[a-1] != ';' ) a--;
-		// keep the '?'
-		if ( s[a]=='?' ) a++;
-		// back up over any semicolon
-		if ( s[a-1] == ';' ) a--;
-		// advance b until we hit & or end or ? or a ';'
-		while ( s[b] && s[b] != '&' && s[b] != '?' && s[b] != ';') b++;
-		// if we don't have 5+ chars in session id itself, skip it
-		if ( b - (a + x) < 5 ) goto skip;
-		// go over a & or a ;
-		if ( s[b] == '&' || s[b] == ';' ) b++;
-		// remove the session id by covering it up
-		memmove ( &s[a] , &s[b] , len - b );
-		// reduce length
-		len -= (b-a);
-		// if s ends in ? or & or ;, backup
-		while ( len > 0 &&
-			(s[len-1]=='?'||s[len-1]=='&'||s[len-1]==';')) len--;
-		// NULL terminate
-		s[len] = '\0';
 	}
 
- skip:
 	// remove common filenames like index.html
 	if ( stripCommonFile ) {
 		if ( len - 14 > 0 &&
@@ -676,21 +939,20 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 	while ( m_hlen > 0 && m_host[m_hlen-1]=='.' ) m_hlen--;
 	// NULL terminate for strchr()
 	m_host [ m_hlen ] = '\0';
-	// . common mistake: if hostname has no '.' in it append a ".com"
-	// . now that we use hosts in /etc/hosts we no longer do this
-	//if ( m_hlen > 0 && strchr ( m_host ,'.' ) == NULL ) {
-	//	gbmemcpy ( &m_host[m_hlen] , ".com" , 4 );
-	//	m_hlen += 4;
-	//}
+
 	// advance m_ulen to end of hostname
 	m_ulen += m_hlen;
+
 	// . set our m_ip if hostname is in a.b.c.d format
 	// . this returns 0 if not a valid ip string
 	m_ip = atoip ( m_host , m_hlen );
+
 	// advance i to the : for the port, if it exists
 	i = j;
+
 	// NULL terminate m_host for getTLD(), getDomain() and strchr() below
 	m_host [ m_hlen ] = '\0';
+
 	// use ip as domain if we're just an ip address like 192.0.2.1
 	if ( m_ip ) {
 		// ip address has no tld, or mid domain
@@ -762,8 +1024,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 		if ( m_port >= 1000  ) m_portLen += 1;
 		if ( m_port >= 10000 ) m_portLen += 1;
 	}
-	//m_site = m_url;
-	//m_siteLen = m_ulen+1;
+
 	// append a '/' to m_url then bail if there is no m_path after the port
 	if ( s[i]=='\0' || s[i] != '/') {
 		m_path    = m_url + m_ulen;
@@ -773,6 +1034,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 		// debug change
 		goto done;
 	}
+
 	// . get the m_path and m_path length
 	// . j,i should point to start of path slash '/'
 	// . scan so it points to end or a ? or # 
@@ -786,7 +1048,6 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 		j++;
 	}
 
-	
 	// point the path inside m_url even though we haven't written it yet
 	m_path = m_url + m_ulen;
 	m_plen = m_ulen; 
@@ -824,14 +1085,10 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 	// reset the path length in case we had to remove some wierd stuff
 	m_plen = m_ulen - m_plen;
 
-	// . remove trailing /'s from path, but not first one!
-	// . NO! this is WRONG! we need it so we know it's a dir name
-	//while ( m_plen > 1 && m_path[m_plen-1]=='/' ) { m_plen--; m_ulen--; }
 	// . get the m_query
 	// . the query is anything after the path that starts with ?
 	// . NOTE: we ignore strings beginning with '#' (page relative anchors)
 	if ( i < len && s[i] != '#' ) {
-		//gbmemcpy ( m_url + m_ulen , s + i , len - i );
 		//remove back to back &'s in the cgi query
 		//http://www.nyasatimes.com/national/politics/160.html?print&&&
 		char *kstart = s + i;
@@ -845,7 +1102,6 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 		}
 		// point after the '?' i guess
 		m_query   = m_url + m_ulen + 1;
-		//m_qlen  = len - i - 1;
 		m_qlen    = dst - m_query;
 		m_ulen += m_qlen + 1;
 	}
@@ -853,13 +1109,16 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 	m_flen = 0;
 	while (m_path[m_plen-1-m_flen]!='/' && m_flen<m_plen) m_flen++;
 	m_filename = m_path + m_plen - m_flen;
+
 	// get the m_extension from the m_path
 	m_elen = 0;
 	while (is_alnum_a(m_path[m_plen-1-m_elen]) && m_elen < m_plen)m_elen++;
 	if ( m_path[ m_plen-1-m_elen] != '.' ) m_elen = 0; // no m_extension
 	m_extension = m_path + m_plen - m_elen;
+
 	// null terminate our s
 	m_url[ m_ulen ]='\0';
+
 	// add the anchor after
 	m_anchor = NULL;
 	m_anchorLen = anchorLen;
@@ -869,41 +1128,20 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripSessionId, bo
 		gbmemcpy(&m_url[m_ulen+1], &t[anchorPos], anchorLen);
 		m_url[m_ulen+1+anchorLen] = '\0';
 	}
- done:
+
+done:
 	// check for iterative stablization
 	static int32_t flag = 0;
 	if ( flag == 1 ) return;
 	Url u2;
 	flag = 1;
 	// Must not use defaults!
-	u2.set( m_url, m_ulen, addWWW, stripSessionId, stripPound, stripCommonFile, stripTrackingParams );
+	u2.set( m_url, m_ulen, addWWW, stripSessionId, stripPound, stripCommonFile, stripTrackingParams, titledbVersion );
 		 
 	if ( strcmp(u2.getUrl(),m_url) != 0 ) {
-		log(LOG_REMIND,"db: *********url %s-->%s\n",m_url,u2.getUrl());
-		//sleep(5000);
+		log( LOG_WARN, "url: not stable. original='%s' check='%s'", m_url, u2.getUrl() );
 	}
 	flag = 0;
-}
-
-char Url::isSessionId ( const char *hh ) {
-	int32_t count = 0;
-	int32_t nonNumCount = 0;
-
-	// do not limit count to 12, the hex numbers may only be
-	// after the 12th character! we were not identifying these
-	// as sessionids when we shold have been because of that.
-	for ( ; *hh ; ++count, ++hh ) {
-		if ( *hh >= '0' && *hh <= '9' ) continue;
-		nonNumCount++;
-		if ( *hh >= 'a' && *hh <= 'f' ) continue;
-		// we got an illegal session id character
-		return false;
-	}
-
-	// if we got at least 12 of em, consider it a valid id
-	// make sure it's a hexadecimal number...lots of product
-	// ids and dates use only decimal numbers
-	return ( nonNumCount > 0 && count >= 12);
 }
 
 // hostname must also be www or NULL to be a root url

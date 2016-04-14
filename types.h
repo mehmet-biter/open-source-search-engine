@@ -1,6 +1,8 @@
 #ifndef GB_TYPES_H
 #define GB_TYPES_H
 
+#include <string.h>
+
 // . max # of tags any one site or url can have
 // . even AFTER the "inheritance loop"
 // . includes the 4 bytes used for size and # of tags
