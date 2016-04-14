@@ -10,8 +10,6 @@
 
 //#define GBSANITYCHECK
 
-//#define _TESTNEWALGO_ 1
-
 static void gotListWrapper ( void *state ) ;
 
 int32_t g_numCorrupt = 0;
@@ -1018,16 +1016,6 @@ bool Msg5::gotList2 ( ) {
 		return true;
 	}		
 	QUICKPOLL((m_niceness));
-#ifdef _TESTNEWALGO_
-	// for testing useBigRootList
-	if ( ! m_list2.prepareForMerge ( m_listPtrs    , 
-					 m_numListPtrs , 
-					 m_minRecSizes ) ) {
-		log("net: Had error preparing to merge lists from %s: %s",
-		    base->m_dbname,mstrerror(g_errno));
-		return true;
-	}		
-#endif
 
 	// . if size < 32k of don't bother with thread, should be < ~1 ms
 	// . it seems to be about 1ms per 10k for tfndb recs

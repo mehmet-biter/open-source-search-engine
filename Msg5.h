@@ -148,9 +148,6 @@ class Msg5 {
 	// we add our m_finalList(s) to this, the user's list
 	RdbList  *m_list;
 
-	// used for testing integrity of the big root list merge algo
-	RdbList   m_list2;
-
 	// hold the caller of getList()'s callback here
 	void    (* m_callback )( void *state , RdbList *list , Msg5 *msg );
 	void    *m_state       ;
