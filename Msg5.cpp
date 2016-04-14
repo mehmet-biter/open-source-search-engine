@@ -34,11 +34,8 @@ void Msg5::reset() {
 		// g_process.shutdown(), so do not core here
 		//char *xx = NULL; *xx = 0; 
 	}
-	m_treeList.freeList();
-	//m_tfndbList.freeList();
 	m_msg3.reset();
 	m_prevCount = 0;
-	//m_prevKey.setMin();
 	KEYMIN(m_prevKey,MAX_KEY_BYTES);// m_ks); m_ks is invalid
 	// free lists if m_mergeLists was false
 	for ( int32_t i = 0 ; ! m_mergeLists && i < m_numListPtrs ; i++ )
