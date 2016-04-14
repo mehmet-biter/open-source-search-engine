@@ -363,7 +363,7 @@ RdbBucket* RdbBucket::split(RdbBucket* newBucket) {
 }
 
 
-bool RdbBucket::addKey(char *key , char *data , int32_t dataSize) {
+bool RdbBucket::addKey(const char *key , char *data , int32_t dataSize) {
 
 	uint8_t ks = m_parent->getKeySize();
 	int32_t recSize = m_parent->getRecSize();
@@ -413,7 +413,7 @@ bool RdbBucket::addKey(char *key , char *data , int32_t dataSize) {
 	return true;
 }
 
-char* RdbBucket::getKeyVal ( char *key , char **data , int32_t* dataSize ) {
+char* RdbBucket::getKeyVal ( const char *key , char **data , int32_t* dataSize ) {
 
 	sort();
 	int32_t i = getKeyNumExact(key);
@@ -431,7 +431,7 @@ char* RdbBucket::getKeyVal ( char *key , char **data , int32_t* dataSize ) {
 	return rec;
 }
 
-int32_t RdbBucket::getKeyNumExact(char* key) {
+int32_t RdbBucket::getKeyNumExact(const char* key) {
 
 	uint8_t ks = m_parent->getKeySize();
 	int32_t recSize = m_parent->getRecSize();
@@ -542,10 +542,10 @@ RdbBuckets::RdbBuckets() {
 
 bool RdbBuckets::set ( int32_t fixedDataSize , int32_t maxMem, 
 		       bool ownData ,
-		       char *allocName ,
+		       const char *allocName,
 		       char rdbId,
 		       bool dataInPtrs  ,
-		       char *dbname ,
+		       const char *dbname,
 		       char keySize ,
 		       bool useProtection ) {
 	m_numBuckets = 0;
@@ -892,7 +892,7 @@ bool RdbBuckets::addBucket (RdbBucket* newBucket, int32_t i) {
 // }
 
 bool RdbBuckets::getList ( collnum_t collnum ,
-			   char *startKey, char *endKey, int32_t minRecSizes ,
+			   const char *startKey, const char *endKey, int32_t minRecSizes ,
 			   RdbList *list , int32_t *numPosRecs , 
 			   int32_t *numNegRecs,
 			   bool useHalfKeys ) {
@@ -1014,8 +1014,8 @@ bool RdbBuckets::getList ( collnum_t collnum ,
 
 
 int RdbBuckets::getListSizeExact ( collnum_t collnum ,
-				   char *startKey, 
-				   char *endKey ) {
+				   const char *startKey, 
+				   const char *endKey ) {
 
 	int numBytes = 0;
 
@@ -1172,14 +1172,14 @@ bool RdbBuckets::selfTest(bool thorough, bool core) {
 }
 
 
-char RdbBuckets::bucketCmp(char *akey, collnum_t acoll, 
-			   char *bkey, collnum_t bcoll) {
+char RdbBuckets::bucketCmp(const char *akey, collnum_t acoll, 
+			   const char *bkey, collnum_t bcoll) {
 	if (acoll == bcoll) return KEYCMPNEGEQ(akey, bkey, m_ks);
 	if (acoll <  bcoll) return -1;
 	return 1;
 }
 
-char RdbBuckets::bucketCmp(char *akey, collnum_t acoll, 
+char RdbBuckets::bucketCmp(const char *akey, collnum_t acoll, 
 			   RdbBucket* b) {
 	if (acoll == b->getCollnum())
 		return KEYCMPNEGEQ(akey, b->getEndKey(), m_ks);
@@ -1189,7 +1189,7 @@ char RdbBuckets::bucketCmp(char *akey, collnum_t acoll,
 
 
 
-int32_t RdbBuckets::getBucketNum(char* key, collnum_t collnum) {
+int32_t RdbBuckets::getBucketNum(const char* key, collnum_t collnum) {
 
 	if(m_numBuckets < 10) {
 		int32_t i = 0;
@@ -1274,7 +1274,7 @@ int32_t  RdbBuckets::getNumPositiveKeys ( ) {
 }
 
 
-char* RdbBuckets::getKeyVal ( collnum_t collnum , char *key , 
+char* RdbBuckets::getKeyVal ( collnum_t collnum, const char *key,
 			      char **data , int32_t* dataSize ) {
 
 	int32_t i = getBucketNum(key, collnum);
@@ -1312,8 +1312,8 @@ int32_t RdbBucket::getNumNegativeKeys ( ) {
 
 
 bool RdbBucket::getList(RdbList* list, 
-			char* startKey, 
-			char* endKey,
+			const char* startKey, 
+			const char* endKey,
 			int32_t minRecSizes,
 			int32_t *numPosRecs, 
 			int32_t *numNegRecs, 
@@ -1527,7 +1527,7 @@ bool RdbBucket::getList(RdbList* list,
 
 
 
-int RdbBucket::getListSizeExact (char* startKey, char* endKey ) {
+int RdbBucket::getListSizeExact (const char* startKey, const char* endKey ) {
 
 	int32_t numRecs = 0;
 
@@ -1916,7 +1916,7 @@ bool RdbBuckets::addList(RdbList* list, collnum_t collnum) {
 
 //return the total bytes of the list bookended by startKey and endKey
 int64_t RdbBuckets::getListSize ( collnum_t collnum,
-				    char *startKey , char *endKey , 
+				  const char *startKey, const char *endKey,
 				    char *minKey , char *maxKey ) {
 
 	if ( minKey ) KEYSET ( minKey , endKey   , m_ks );

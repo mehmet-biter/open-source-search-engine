@@ -45,14 +45,14 @@ public:
 	collnum_t getCollnum()    { return m_collnum; }
 	void  setCollnum(collnum_t c){ m_collnum = c; }
 
-	bool  addKey(char *key , char *data , int32_t dataSize);
-	char *getKeyVal ( char *key , char **data , int32_t* dataSize ); 
-	int32_t  getKeyNumExact(char* key); //returns -1 if not found
+	bool  addKey(const char *key , char *data , int32_t dataSize);
+	char *getKeyVal ( const char *key , char **data , int32_t* dataSize ); 
+	int32_t  getKeyNumExact(const char* key); //returns -1 if not found
 	int32_t  getNumNegativeKeys ( );
 	void  resetLastSorted() { m_lastSorted = 0; }
 	bool  getList(RdbList* list, 
-		      char *startKey, 
-		      char *endKey,
+		      const char *startKey, 
+		      const char *endKey,
 		      int32_t minRecSizes,
 		      int32_t *numPosRecs, 
 		      int32_t *numNegRecs, 
@@ -60,7 +60,7 @@ public:
 
 	bool deleteList(RdbList *list);
 
-	int getListSizeExact ( char *startKey, char *endKey ) ;
+	int getListSizeExact ( const char *startKey, const char *endKey ) ;
 
 	//Save State
 	int64_t fastSave_r(int fd, int64_t offset);
@@ -98,10 +98,10 @@ class RdbBuckets {
 	bool set ( int32_t fixedDataSize , 
 		   int32_t maxMem, 
 		   bool ownData ,
-		   char *allocName ,
+		   const char *allocName,
 		   char rdbId ,
 		   bool dataInPtrs ,//= false ,
-		   char *dbname ,//= NULL , 
+		   const char *dbname ,//= NULL,
 		   char keySize ,//= 12 ,
 		   bool useProtection );//= false );
 
@@ -113,34 +113,34 @@ class RdbBuckets {
 	
 	bool addList(RdbList* list, collnum_t collnum);
 
-	char* getKeyVal ( collnum_t collnum , char *key , 
+	char* getKeyVal ( collnum_t collnum, const char *key ,
 			  char **data , int32_t* dataSize ); 
 	
 	bool getList ( collnum_t collnum ,
-		       char *startKey, char *endKey, int32_t minRecSizes ,
+		       const char *startKey, const char *endKey, int32_t minRecSizes ,
 		       RdbList *list , int32_t *numPosRecs , int32_t *numNegRecs ,
 		       bool useHalfKeys );
 
 	bool deleteList(collnum_t collnum, RdbList *list);
 
 	int64_t getListSize ( collnum_t collnum,
-				char *startKey, char *endKey, 
+			      const char *startKey, const char *endKey,
 				char *minKey, char *maxKey );
 
 	int getListSizeExact ( collnum_t collnum ,
-			       char *startKey, 
-			       char *endKey ) ;
+			       const char *startKey, 
+			       const char *endKey ) ;
 
 
 	bool addBucket (RdbBucket *newBucket, int32_t i);
-	int32_t getBucketNum(char *key, collnum_t collnum);
-	char bucketCmp(char *akey, collnum_t acoll, char *bkey, collnum_t bcoll);
-	char bucketCmp(char *akey, collnum_t acoll, RdbBucket* b);
+	int32_t getBucketNum(const char *key, collnum_t collnum);
+	char bucketCmp(const char *akey, collnum_t acoll, const char *bkey, collnum_t bcoll);
+	char bucketCmp(const char *akey, collnum_t acoll, RdbBucket* b);
 
 	bool collExists(collnum_t coll);
 
 	//MEMBER ACCESS
-	char     *getDbname()         { return m_dbname;       }
+	const char *getDbname() const { return m_dbname;       }
 	uint8_t   getKeySize()        { return m_ks;           }
 	int32_t      getFixedDataSize()  { return m_fixedDataSize;}
 	int32_t      getRecSize()        { return m_recSize;      }
@@ -222,7 +222,7 @@ class RdbBuckets {
 	int32_t       m_dataMemOccupied;
 
 	char        m_rdbId;
-	char       *m_dbname;
+	const char *m_dbname;
 	char       *m_swapBuf;
 	char       *m_sortBuf;
 	int32_t        m_sortBufSize;
@@ -236,7 +236,7 @@ class RdbBuckets {
 	void   *m_state; 
 	void  (*m_callback) (void *state);
 	int32_t    m_saveErrno;
-	char   *m_allocName;
+	const char   *m_allocName;
 };
 
 #endif // GB_RDBBUCKETS_H
