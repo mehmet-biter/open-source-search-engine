@@ -19,7 +19,7 @@ void Dir::reset ( ) {
 	m_dirname = NULL;
 }
 
-bool Dir::set ( char *d1 , char *d2 ) {
+bool Dir::set ( const char *d1, const char *d2 ) {
 	reset ();
 	char tmp[1024];
 	if ( gbstrlen(d1) + gbstrlen(d2) + 1 > 1024 ) {
@@ -31,7 +31,7 @@ bool Dir::set ( char *d1 , char *d2 ) {
 	return set ( tmp );
 }
 
-bool Dir::set ( char *dirname ) {
+bool Dir::set ( const char *dirname ) {
 	reset ();
 	m_dirname = strdup ( dirname );
 	if ( m_dirname ) return true;

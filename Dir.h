@@ -9,8 +9,8 @@ class Dir {
 
  public:
 
-	bool set      ( char *dirName );
-	bool set      ( char *d1 , char *d2 );
+	bool set      ( const char *dirName );
+	bool set      ( const char *d1, const char *d2 );
 
 	void reset    ( );
 
