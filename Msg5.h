@@ -216,8 +216,6 @@ class Msg5 {
 
 	int32_t m_maxRetries;
 
-	// used for reading a corresponding tfndb list for a titledb read
-	class Msg5 *m_msg5b;
 	bool        m_isRealMerge;
 
 	int32_t m_indexdbTruncationLimit;

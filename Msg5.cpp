@@ -184,7 +184,6 @@ bool Msg5::getList ( char     rdbId         ,
 	m_oldListSize   = 0;
 	m_compensateForMerge = compensateForMerge;
 	//m_syncPoint          = syncPoint;
-	m_msg5b              = msg5b;
 	m_isRealMerge        = isRealMerge;
 	m_allowPageCache     = allowPageCache;
 	m_hitDisk            = hitDisk;
@@ -689,75 +688,7 @@ bool Msg5::gotList ( ) {
 	// this is now obsolete!
 	return gotList2();
 }
-/*
 
-	// The Tfndb Tfn Bug Fix. We've had this bug for over a year. Now we 
-	// need to load the corresponding tfndb list with every titledb list 
-	// so we can remove titleRecs that are from files whose tfn does not 
-	// match the ones in the tfndblist for that docid. 
-
-	// This will remove titlerecs that would only get removed in a tight
-	// merge. But even more importantly, fixes the problem that when
-	// merging to older titledb files, the tfndb rec of a titlerec in
-	// that merge gets re-added to tfndb, and override the newer one in
-	// tfndb that corresponds to a newer titledb file that contains the
-	// document.
-
-	// We load the tfndb list after the titledb list because if a titlerec
-	// got added to the tree just after we loaded the titledb list, then
-	// 
-
-	// MUST have this
-	if ( ! m_msg5b ) {
-		log(LOG_LOGIC,"net: No msg5b supplied.");
-		char *xx = NULL; *xx = 0;
-	}
-	int64_t docId1  =g_titledb.getDocIdFromKey((key_t *)m_fileStartKey);
-	int64_t docId2  =g_titledb.getDocIdFromKey((key_t *)m_msg3.m_endKey);
-	key_t     startKey = g_tfndb.makeMinKey ( docId1 ) ;
-	key_t     endKey   = g_tfndb.makeMaxKey ( docId2 ) ;
-
-	QUICKPOLL((m_niceness));
-	//endKey.setMax();
-	// the tfndb list is often already in the page cache, so this is fast
-	if ( ! m_msg5b->getList ( RDB_TFNDB   ,
-				  m_coll      ,
-				  &m_tfndbList,
-				  startKey    ,
-				  endKey      ,
-				  TFNDBMINRECSIZES , // minRecSizes 
-				  true        , // includeTree
-				  false       , // addToCache
-				  0           , // maxCacheAge
-				  0           , // startFileNum
-				  -1          , // numFiles
-				  this        , // state
-				  gotListWrapper2, // callback
-				  m_niceness  ,
-				  false       , // do error correction
-				  NULL        , // cacheKeyPtr
-				  0           , // retryNum
-				  m_maxRetries, // was 5 -- maxRetries
-				  true        , // compensateForMerge
-				  -1LL        , // syncpoint
-				  NULL        , // msg5b
-				  false       , // isRealMerge
-				  m_allowPageCache ))
-		return false;
-	return gotList2();
-}
-
-void gotListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
-	Msg5 *THIS = (Msg5 *)state;
-	if ( ! THIS->gotList2() ) return;
-	// sanity check
-	if ( THIS->m_calledCallback ) { char *xx=NULL;*xx=0; }
-	// set it now
-	THIS->m_calledCallback = 2;
-	// call the original callback
-	THIS->m_callback ( THIS->m_state , THIS->m_list , THIS );
-}
-*/
 
 // . this is the NEW gotList() !!! mdw
 // . returns false if blocked, true otherwise
