@@ -202,8 +202,6 @@ bool Msg5::getList ( char     rdbId         ,
 	KEYSET(m_fileStartKey,m_startKey,m_ks);
 
 	QUICKPOLL(m_niceness);
-	// get trunc limit by collection now, not just in g_conf
-	m_indexdbTruncationLimit = 0x7fffffff;
 
 #ifdef GBSANITYCHECK
 	log("msg5: sk=%s", KEYSTR(m_startKey,m_ks));

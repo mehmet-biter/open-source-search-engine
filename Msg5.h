@@ -215,8 +215,6 @@ class Msg5 {
 
 	bool        m_isRealMerge;
 
-	int32_t m_indexdbTruncationLimit;
-
 	char m_ks;
 
 	// for allowing the page cache
