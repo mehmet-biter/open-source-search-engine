@@ -362,7 +362,7 @@ bool Msg5::readList ( ) {
 			start = gettimeofdayInMilliseconds();
 		// . returns false on error and sets g_errno
 		// . endKey of m_treeList may be less than m_endKey
-		char *structName = "tree";
+		const char *structName;
 
 		if(base->m_rdb->useTree()) {
 			if ( ! tree->getList ( base->m_collnum    ,
@@ -374,7 +374,7 @@ bool Msg5::readList ( ) {
 					       &numNegativeRecs     , // # neg
 					       base->useHalfKeys() ) ) 
 				return true;
-			// debug msg
+			structName = "tree";
 		}
 		else {
 			RdbBuckets *buckets = &base->m_rdb->m_buckets;
