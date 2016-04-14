@@ -19,7 +19,7 @@ RdbMap::~RdbMap() {
 	reset();
 }
 
-void RdbMap::set ( char *dir , char *mapFilename,
+void RdbMap::set ( const char *dir, const char *mapFilename,
 		   int32_t fixedDataSize , bool useHalfKeys , char keySize ,
 		   int32_t pageSize )
 {
@@ -915,10 +915,8 @@ bool RdbMap::addList ( RdbList *list ) {
 // . this can now return negative sizes
 int64_t RdbMap::getMinRecSizes ( int32_t   sp       ,
 			      int32_t   ep       ,
-			      //key_t  startKey ,
-			      //key_t  endKey   ,
-			      char  *startKey ,
-			      char  *endKey   ,
+			      const char  *startKey ,
+			      const char  *endKey   ,
 			      bool   subtract ) {
 	// . calculate first page, "sp", whose key is >= startKey
 	// . NOTE: sp may have a relative offset of -1
@@ -939,10 +937,8 @@ int64_t RdbMap::getMinRecSizes ( int32_t   sp       ,
 // . like above, but sets an upper bound for recs in [startKey,endKey]
 int64_t RdbMap::getMaxRecSizes ( int32_t   sp       ,
 			      int32_t   ep       ,
-			      //key_t  startKey ,
-			      //key_t  endKey   ,
-			      char  *startKey ,
-			      char  *endKey   ,
+			      const char  *startKey ,
+			      const char  *endKey   ,
 			      bool   subtract ) {
 	// . calculate first page, "sp", whose key is >= startKey
 	// . NOTE: sp may have a relative offset of -1
@@ -1037,7 +1033,7 @@ int64_t RdbMap::getNextAbsoluteOffset ( int32_t page ) {
 // . by cover i mean have all recs with those keys
 // . returns the endPage #
 //int32_t RdbMap::getEndPage ( int32_t startPage , key_t endKey ) {
-int32_t RdbMap::getEndPage ( int32_t startPage , char *endKey ) {
+int32_t RdbMap::getEndPage ( int32_t startPage, const char *endKey ) {
 	// use "ep" for the endPage we're computing
 	int32_t ep = startPage;
 	// advance if "ep"'s key <= endKey
@@ -1056,13 +1052,10 @@ int32_t RdbMap::getEndPage ( int32_t startPage , char *endKey ) {
 // . if *endPage equals m_numPages then you must read to the end of file
 // . returns false if no keys in [startKey,endKey] are present
 // . *maxKey will be an APPROXIMATION of the max key we have
-//bool RdbMap::getPageRange ( key_t  startKey  ,
-//			    key_t  endKey    ,
-bool RdbMap::getPageRange ( char  *startKey  ,
-			    char  *endKey    ,
+bool RdbMap::getPageRange ( const char  *startKey  ,
+			    const char  *endKey    ,
 			    int32_t  *startPage ,
 			    int32_t  *endPage   ,
-			    //key_t *maxKey    ,
 			    char  *maxKey    ,
 			    int64_t oldTruncationLimit ) {
 	// the first key on n1 is usually <= startKey, but can be > startKey
@@ -1146,7 +1139,7 @@ bool RdbMap::getPageRange ( key_t  startKey  , key_t endKey  ,
 // . if m_keys[N] > startKey then m_keys[N-1] spans multiple pages so that
 //   the key immediately after it on disk is in fact, m_keys[N]
 //int32_t RdbMap::getPage ( key_t startKey ) {
-int32_t RdbMap::getPage ( char *startKey ) {
+int32_t RdbMap::getPage ( const char *startKey ) {
 	// if the key exceeds our lastKey then return m_numPages
 	//if ( startKey > m_lastKey ) return m_numPages;
 	if ( KEYCMP(startKey,m_lastKey,m_ks)>0 ) return m_numPages;

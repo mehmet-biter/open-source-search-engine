@@ -73,17 +73,19 @@ class RdbMap {
 	void reset ( );
 
 	// set the filename, and if it's fixed data size or not
-	void set ( char *dir , char *mapFilename, 
+	void set ( const char *dir, const char *mapFilename,
 		   //int32_t fixedDataSize , bool useHalfKeys );
 		   int32_t fixedDataSize , bool useHalfKeys , char keySize ,
 		   int32_t pageSize );
 
-	bool rename ( char *newMapFilename ) {
-		return m_file.rename ( newMapFilename ); };
+	bool rename ( const char *newMapFilename ) {
+		return m_file.rename ( newMapFilename );
+	}
 
-	bool rename ( char *newMapFilename ,
+	bool rename ( const char *newMapFilename,
 		      void (* callback)(void *state) , void *state ) { 
-		return m_file.rename ( newMapFilename , callback , state ); };
+		return m_file.rename ( newMapFilename , callback , state );
+	}
 
 	char *getFilename ( ) { return m_file.getFilename(); };
 
@@ -148,19 +150,15 @@ class RdbMap {
 	// like above, but recSizes is guaranteed to be in [startKey,endKey]
 	int64_t getMinRecSizes ( int32_t   sp       , 
 			      int32_t   ep       , 
-			      //key_t  startKey , 
-			      //key_t  endKey   ,
-			      char  *startKey ,
-			      char  *endKey   ,
+			      const char  *startKey ,
+			      const char  *endKey   ,
 			      bool   subtract );
 
 	// like above, but sets an upper bound for recs in [startKey,endKey]
 	int64_t getMaxRecSizes ( int32_t   sp       , 
 			      int32_t   ep       , 
-			      //key_t  startKey , 
-			      //key_t  endKey   ,
-			      char  *startKey , 
-			      char  *endKey   ,
+			      const char  *startKey ,
+			      const char  *endKey   ,
 			      bool   subtract );
 
 	// get a key range from a page range
@@ -172,16 +170,15 @@ class RdbMap {
 	// . maxKey will be sampled under "oldTruncationLimit" so you
 	//   can increase the trunc limit w/o messing up Indexdb::getTermFreq()
 	//bool getPageRange ( key_t  startKey  , key_t endKey  ,
-	bool getPageRange ( char  *startKey  , char *endKey ,
+	bool getPageRange ( const char  *startKey, const char *endKey,
 			    int32_t  *startPage , int32_t *endPage ,
-			    //key_t *maxKey    ,
 			    char  *maxKey ,
 			    int64_t oldTruncationLimit = -1 ) ;
 
 	// get the ending page so that [startPage,endPage] has ALL the recs
 	// whose keys are in [startKey,endKey] 
 	//int32_t getEndPage   ( int32_t startPage , key_t endKey );
-	int32_t getEndPage   ( int32_t startPage , char *endKey );
+	int32_t getEndPage   ( int32_t startPage, const char *endKey );
 
 	// like above, but endPage may be smaller as int32_t as we cover at least
 	// minRecSizes worth of records in [startKey,endKey]
@@ -229,7 +226,7 @@ class RdbMap {
 		return m_offsets [page/PAGES_PER_SEG][page%PAGES_PER_SEG]; 
 	};
 	//void setKey               ( int32_t page , key_t &k ) { 
-	void setKey ( int32_t page , char *k ) { 
+	void setKey ( int32_t page, const char *k ) {
 		//#ifdef GBSANITYCHECK
 		if ( page >= m_maxNumPages ) {
 			char *xx = NULL; *xx = 0;
@@ -277,7 +274,7 @@ class RdbMap {
 	// . if m_keys[N] > startKey then m_keys[N-1] spans multiple pages so 
 	//   that the key immediately after it on disk is in fact, m_keys[N]
 	//int32_t getPage ( key_t startKey ) ;
-	int32_t getPage ( char *startKey ) ;
+	int32_t getPage ( const char *startKey );
 
 	// used in Rdb class before calling setMapSize
 	//int32_t setMapSizeFromFile ( int32_t fileSize ) ;
