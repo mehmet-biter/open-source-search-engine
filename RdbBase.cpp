@@ -988,17 +988,11 @@ bool RdbBase::incorporateMerge ( ) {
 		g_process.shutdownAbort();
 	}
 
-	RdbMerge *m = &g_merge;
-
 	// print out info of newly merged file
 	int64_t tp = m_maps[x]->getNumPositiveRecs();
 	int64_t tn = m_maps[x]->getNumNegativeRecs();
 	log(LOG_INFO, "merge: Merge succeeded. %s (#%"INT32") has %"INT64" positive "
 	    "and %"INT64" negative recs.", m_files[x]->getFilename(), x, tp, tn);
-
-	if ( m_rdb == g_posdb.getRdb() ) {
-		log(LOG_INFO,"merge: Removed %"INT64" dup keys.", m->getDupsRemoved() );
-	}
 
 	// . bitch if bad news
 	// . sanity checks to make sure we didn't mess up our data from merging

@@ -138,9 +138,6 @@ class Msg5 {
 	void mergeLists_r  ();
 	bool doneMerging   ();
 
-	// how many dup keys removed from the IndexList merge, if any?
-	int32_t getDupsRemoved ( ) { return m_dupsRemoved; };
-
 	// . when a list is bad we try to patch it by getting a list from
 	//   a host in our redundancy group
 	// . we also get a local list from ALL files and tree to remove
@@ -215,9 +212,6 @@ class Msg5 {
 
 	int32_t  m_oldListSize;
 	
-	// how many dup keys removed from the IndexList merge, if any?
-	int32_t  m_dupsRemoved;
-
 	bool m_compensateForMerge;
 
 	int32_t m_maxRetries;

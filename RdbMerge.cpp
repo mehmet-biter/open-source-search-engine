@@ -554,9 +554,6 @@ bool RdbMerge::dumpList ( ) {
 	// . filter the records that don't belong in this group via groupId
 	//filterList ( &m_list );
 
-	// keep track of how many dups we removed for indexdb
-	m_dupsRemoved += m_msg5.getDupsRemoved();
-
 	// . compute the new m_startKey to get the next list from disk
 	// . m_list was formed via RdbList::merge() 
 	// . m_list may be empty because of negative/positive collisions

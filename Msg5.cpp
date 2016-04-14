@@ -182,7 +182,6 @@ bool Msg5::getList ( char     rdbId         ,
 	m_niceness      = niceness;
 	m_maxRetries    = maxRetries;
 	m_oldListSize   = 0;
-	m_dupsRemoved   = 0;
 	m_compensateForMerge = compensateForMerge;
 	//m_syncPoint          = syncPoint;
 	m_msg5b              = msg5b;

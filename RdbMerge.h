@@ -98,9 +98,6 @@ class RdbMerge {
 	// set to true when m_startKey wraps back to 0
 	bool        m_doneMerging;
 
-	// how many dup keys removed from the IndexList merge, if any?
-	int64_t getDupsRemoved ( ) { return m_dupsRemoved; };
-
 	void doSleep();
 
 	int32_t      m_numThreads;
@@ -146,9 +143,6 @@ class RdbMerge {
 	RdbList     m_list;
 
 	int32_t        m_niceness;
-
-	// count for indexdb
-	int64_t   m_dupsRemoved;
 
 	int64_t m_maxTargetFileSize;
 
