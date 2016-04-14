@@ -168,7 +168,7 @@ void File::set ( const char *filename ) {
 	// TODO: make this a bool returning function if ( ! m_filename ) g_log
 }
 
-bool File::rename ( char *newFilename ) {
+bool File::rename ( const char *newFilename ) {
 	// close ourselves if we were open... why? historical reasons?
 	close();
 	// do the rename
@@ -1029,7 +1029,7 @@ time_t File::getLastModifiedTime ( ) {
 }
 
 
-bool doesFileExist ( char *filename ) {
+bool doesFileExist ( const char *filename ) {
 	// allow the substitution of another filename
 	struct stat stats;
 	// return true if it exists

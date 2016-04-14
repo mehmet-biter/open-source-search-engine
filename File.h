@@ -27,7 +27,7 @@
 #include "Loop.h"            // for g_loop.setNonBlocking(int fd)
 #include "SafeBuf.h"
 
-bool doesFileExist ( char *filename ) ;
+bool doesFileExist ( const char *filename ) ;
 
 int64_t getFileSize ( const char *filename ) ;
 
@@ -63,7 +63,7 @@ class File {
 	void set ( const char *filename );
 
 	// returns false and sets errno on error, returns true on success
-	bool rename ( char *newFilename );
+	bool rename ( const char *newFilename );
 
 	bool calledOpen () { return m_calledOpen; };
 	bool calledSet  () { return m_calledSet; };
