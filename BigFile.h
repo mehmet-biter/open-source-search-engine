@@ -122,7 +122,7 @@ class BigFile {
 	// . set a big file's name
 	// . we split little files that make up this BigFile between
 	//   "dir" and "stripeDir"
-	bool set ( char *dir , char *baseFilename , char *stripeDir = NULL );
+	bool set ( const char *dir, const char *baseFilename, const char *stripeDir = NULL );
 
 	// self explanatory
 	bool doesExist ( ) ;
@@ -194,9 +194,9 @@ class BigFile {
 	// . renames ALL parts too
 	// . doesn't change directory, just the base filename
 	// . use m_dir if newBaseFilenameDir is NULL
-	bool rename ( char *newBaseFilename , char *newBaseFilenameDir=NULL) ;
+	bool rename ( const char *newBaseFilename, const char *newBaseFilenameDir=NULL) ;
 
-	bool move ( char *newDir );
+	bool move ( const char *newDir );
 
 	// . returns false and sets g_errno on failure
 	// . chop only parts LESS THAN "part"
@@ -207,7 +207,7 @@ class BigFile {
 	// . they set g_errno on error
 	bool unlink   ( void (* callback) ( void *state ) , 
 		        void *state ) ;
-	bool rename   ( char *newBaseFilename ,
+	bool rename   ( const char *newBaseFilename,
 		        void (* callback) ( void *state ) , 
 		        void *state ) ;
 	bool chopHead ( int32_t part , 
@@ -293,17 +293,17 @@ class BigFile {
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
 private:	
-	bool unlinkRename ( char *newBaseFilename             ,
+	bool unlinkRename ( const char *newBaseFilename,
 			    int32_t  part                        ,
 			    bool  useThread                   ,
 			    void (* callback) ( void *state ) ,
 			    void *state                       ,
-			    char *newBaseFilenameDir = NULL   ) ;
+			    const char *newBaseFilenameDir = NULL   );
 
 
 	// . add all parts from this directory
 	// . called by set() above for normal dir as well as stripe dir
-	bool addParts ( char *dirname ) ;
+	bool addParts ( const char *dirname ) ;
 
 	bool addPart ( int32_t n ) ;
 

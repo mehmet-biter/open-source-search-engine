@@ -111,7 +111,7 @@ void BigFile::logAllData(int32_t log_type)
 
 // we alternate parts into "dirname" and "stripeDir"
 // . return false and set g_errno on error
-bool BigFile::set ( char *dir , char *baseFilename , char *stripeDir ) {
+bool BigFile::set ( const char *dir, const char *baseFilename, const char *stripeDir ) {
 
 	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. dir [%s] baseFilename [%s] stripeDir [%s]", __FILE__, __func__, __LINE__,dir, baseFilename, stripeDir);
 
@@ -196,7 +196,7 @@ bool BigFile::reset ( ) {
 }
 	
 
-bool BigFile::addParts ( char *dirname ) {
+bool BigFile::addParts ( const char *dirname ) {
 	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. dirname [%s]", __FILE__, __func__, __LINE__, dirname);
 	
 	// if dirname is NULL return true
@@ -1644,7 +1644,7 @@ bool BigFile::unlink ( )
 
 
 
-bool BigFile::move ( char *newDir ) 
+bool BigFile::move ( const char *newDir ) 
 {
 	bool rc;
 	
@@ -1658,7 +1658,7 @@ bool BigFile::move ( char *newDir )
 }
 
 
-bool BigFile::rename(char *newBaseFilename , char *newBaseFilenameDir ) 
+bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir )
 {
 	bool rc;
 
@@ -1700,7 +1700,7 @@ bool BigFile::unlink(void (* callback) ( void *state ) , void *state )
 }
 
 
-bool BigFile::rename(char *newBaseFilename, void (*callback)(void *state), void *state) 
+bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state), void *state) 
 {
 	bool rc;
 
@@ -1742,13 +1742,13 @@ static void  doneUnlinkWrapper ( void *state , ThreadEntry *t ) ;
 // . "newBaseFilenameDir" if NULL, defaults to m_dir, the current dir
 //   in which this file already exists
 bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
-			     char *newBaseFilename             ,
+			     const char *newBaseFilename             ,
 			     // part num to unlink, -1 for all (or rename)
 			     int32_t  part                        , 
 			     bool  useThread                   ,
 			     void (* callback) ( void *state ) , 
 			     void *state                       ,
-			     char *newBaseFilenameDir          ) {
+			     const char *newBaseFilenameDir          ) {
 			     	
 	if( g_conf.m_logTraceBigFile ) {
 		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
@@ -1776,7 +1776,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	if ( newBaseFilename ) {
 		// well, now Rdb.cpp's moveToTrash() moves an old rdb file
 		// into the trash subdir, so we must preserve the full path
-		char *s ;
+		const char *s ;
 		while( (s=strchr(newBaseFilename,'/'))) 
 		{
 			newBaseFilename = s+1;
