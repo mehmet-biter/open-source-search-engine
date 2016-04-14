@@ -41,7 +41,6 @@ UrlParser::UrlParser( const char *url, size_t urlLen )
 
 void UrlParser::parse() {
 	// URI = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
-	logf(LOG_INFO, "url='%.*s'", m_urlLen, m_url);
 	const char *urlEnd = m_url + m_urlLen;
 	const char *currentPos = m_url;
 
@@ -100,7 +99,7 @@ void UrlParser::parse() {
 //		logf(LOG_INFO, "\tpath key='%s'", it->first.c_str() );
 //	}
 	for ( std::vector<UrlComponent>::const_iterator it = m_paths.begin(); it != m_paths.end(); ++it ) {
-		logf(LOG_TRACE, "\tseparator='%c' key='%s' path='%.*s'", it->m_separator, it->getKey().c_str(), it->m_len, it->m_pos );
+		logf(LOG_TRACE, "\tseparator='%c' key='%s' path='%.*s'", it->m_separator, it->getKey().c_str(), static_cast<int32_t>( it->m_len ), it->m_pos );
 	}
 
 	// query
@@ -142,7 +141,7 @@ void UrlParser::parse() {
 			logf(LOG_INFO, "\tqueries key='%s'", it->first.c_str() );
 		}
 		for ( std::vector<UrlComponent>::const_iterator it = m_queries.begin(); it != m_queries.end(); ++it ) {
-			logf(LOG_TRACE, "\tseparator='%c' key='%s' query='%.*s'", it->m_separator, it->getKey().c_str(), it->m_len, it->m_pos );
+			logf(LOG_TRACE, "\tseparator='%c' key='%s' query='%.*s'", it->m_separator, it->getKey().c_str(), static_cast<int32_t>( it->m_len ), it->m_pos );
 		}
 	}
 }
@@ -186,7 +185,7 @@ const char* UrlParser::unparse() {
 	}
 
 	if ( m_urlLen != m_urlParsed.size() ) {
-		logf( LOG_INFO, "@@@ in =%.*s", m_urlLen, m_url );
+		logf( LOG_INFO, "@@@ in =%.*s", static_cast<int32_t>( m_urlLen ), m_url );
 		logf( LOG_INFO, "@@@ out=%s", m_urlParsed.c_str());
 	}
 
