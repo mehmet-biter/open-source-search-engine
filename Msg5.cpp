@@ -369,8 +369,6 @@ bool Msg5::readList ( ) {
 		int64_t start ;
 		if ( m_newMinRecSizes > 64 ) 
 			start = gettimeofdayInMilliseconds();
-		// save for later
-		m_treeMinRecSizes = m_newMinRecSizes;
 		// . returns false on error and sets g_errno
 		// . endKey of m_treeList may be less than m_endKey
 		char *structName = "tree";
@@ -604,9 +602,6 @@ bool Msg5::needsRecall ( ) {
 	}
 	//if ( m_list->getEndKey() >= m_endKey ) goto done;
 	if ( KEYCMP(m_list->getEndKey(),m_endKey,m_ks)>=0 ) goto done;
-
-	// ok, make sure if we go another round at least one list gains!
-	m_lastTotalSize = m_totalSize;
 
 	// debug msg
 	//if ( g_conf.m_timingDebugEnabled )

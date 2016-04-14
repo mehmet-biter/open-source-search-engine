@@ -15,37 +15,6 @@ extern HashTableX g_waitingTable;
 
 extern int32_t g_isDumpingRdbFromMain;
 
-// this is used internally and by Msg0 for generating a cacheKey
-// to see if its request can be satisfied by any remote host without
-// hitting disk.
-//key_t makeCacheKey ( key_t startKey     ,
-//		     key_t endKey       ,
-// void  makeCacheKey ( char *startKey     ,
-// 		     char *endKey       ,
-// 		     bool  includeTree  ,
-// 		     int32_t  minRecSizes  ,
-// 		     int32_t  startFileNum ,
-// 		     int32_t  numFiles     ,
-// 		     char *cacheKeyPtr  ,
-// 		     char  keySize      ) ;
-// 
-// inline key_t makeCacheKey ( key_t startKey     ,
-// 		     key_t endKey       ,
-// 		     bool  includeTree  ,
-// 		     int32_t  minRecSizes  ,
-// 		     int32_t  startFileNum ,
-// 		     int32_t  numFiles     ) {
-// 	key_t k;
-// 	makeCacheKey ( (char *)&startKey ,
-// 		       (char *)&endKey   ,
-// 		       includeTree ,
-// 		       minRecSizes ,
-// 		       startFileNum ,
-// 		       numFiles ,
-// 		       (char *)&k ,
-// 		       sizeof(key_t) );
-// 	return k;
-// }
 
 class Msg2;
 
@@ -201,8 +170,6 @@ class Msg5 {
 	RdbList   m_dummy;
 
 	// holds list parms
-	//key_t     m_startKey;
-	//key_t     m_endKey;
 	char      m_startKey[MAX_KEY_BYTES];
 	char      m_endKey[MAX_KEY_BYTES];
 	bool      m_includeTree;
@@ -212,26 +179,20 @@ class Msg5 {
 	int32_t      m_numFiles;
 	int32_t      m_startFileNum;
 	int32_t      m_minRecSizes;
-	//RdbBase  *m_base;
-	//char     *m_coll;
 	char      m_rdbId;
 
 	// . cache may modify these
 	// . gotLists() may modify these before reading more
-	//key_t     m_fileStartKey;
 	char      m_fileStartKey[MAX_KEY_BYTES];
 	int32_t      m_newMinRecSizes;
 	int32_t      m_round;
 	int32_t      m_totalSize;
-	int32_t      m_lastTotalSize;
-	int32_t      m_treeMinRecSizes;
 	bool      m_readAbsolutelyNothing;
 
 	int32_t      m_niceness;
 	// error correction stuff
 	bool      m_doErrorCorrection;
 	bool      m_hadCorruption;
-	//int64_t m_checkTime;
 	class Msg0 *m_msg0;
 	
 	// for timing debug
@@ -239,24 +200,16 @@ class Msg5 {
 
 	// hold pointers to lists to merge
 	RdbList  *m_listPtrs [ MAX_RDB_FILES + 1 ]; // plus tree
-	//int32_t      m_tfns     [ MAX_RDB_FILES + 1 ]; // plus tree
 	int32_t      m_numListPtrs;
 
-	//RdbList   m_tfndbList;
-
-	// cache ptr
-	//class RdbCache *m_cache;
 	// key for hitting the cache
-	//key_t           m_cacheKey;
 	char           m_cacheKey[MAX_KEY_BYTES];
 
 	bool m_removeNegRecs;
 
-	//key_t m_minEndKey;
 	char m_minEndKey[MAX_KEY_BYTES];
 
 	// info for truncating and passing to RdbList::indexMerge_r()
-	//key_t m_prevKey;
 	char  m_prevKey[MAX_KEY_BYTES];
 	int32_t  m_prevCount;
 
@@ -268,8 +221,6 @@ class Msg5 {
 	bool m_compensateForMerge;
 
 	int32_t m_maxRetries;
-
-	//int64_t m_syncPoint;
 
 	// used for reading a corresponding tfndb list for a titledb read
 	class Msg5 *m_msg5b;
@@ -287,7 +238,6 @@ class Msg5 {
 	bool  m_mergeLists;
 
 	bool m_waitingForList;
-	//char m_waitingForMerge;
 	collnum_t m_collnum;
 	
 	// hack parms
