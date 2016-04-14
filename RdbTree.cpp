@@ -51,9 +51,9 @@ bool RdbTree::set ( int32_t fixedDataSize ,
 		    bool doBalancing   , 
 		    int32_t memMax        ,
 		    bool ownData       ,
-		    char *allocName    ,
+		    const char *allocName    ,
 		    bool dataInPtrs    ,
-		    char *dbname       ,
+		    const char *dbname       ,
 		    char  keySize      ,
 		    bool  useProtection ,
 		    bool  allowDups     ,
@@ -255,7 +255,7 @@ int32_t RdbTree::clear ( ) {
 
 // . used by cache 
 // . wrapper for getNode()
-int32_t RdbTree::getNode ( collnum_t collnum , char *key ) { // key_t &key ) { 
+int32_t RdbTree::getNode ( collnum_t collnum, const char *key ) {
 	int32_t i = m_headNode;
 	// get the node (about 4 cycles per loop, 80cycles for 1 million items)
 	while ( i != -1 ) {
@@ -278,7 +278,7 @@ int32_t RdbTree::getNode ( collnum_t collnum , char *key ) { // key_t &key ) {
 // . TODO: keep a m_lastStartNode and start from that since it tends to only
 //         increase startKey via Msg3. if the key at m_lastStartNode is <=
 //         the provided key then we did well.
-int32_t RdbTree::getNextNode ( collnum_t collnum , char *key ) { //key_t &key ) {
+int32_t RdbTree::getNextNode ( collnum_t collnum, const char *key ) {
 	// return -1 if no non-empty nodes in the tree
 	if ( m_headNode < 0 ) return -1;
 	// get the node (about 4 cycles per loop, 80cycles for 1 million items)
@@ -311,25 +311,25 @@ int32_t RdbTree::getNextNode ( collnum_t collnum , char *key ) { //key_t &key ) 
 
 int32_t RdbTree::getFirstNode ( ) {
 	//key_t k;  k.n0 = 0LL; k.n1 = 0;
-	char *k = KEYMIN();
+	const char *k = KEYMIN();
 	return getNextNode ( 0 , k );
 }
 
 int32_t RdbTree::getFirstNode2 ( collnum_t collnum ) {
 	//key_t k;  k.n0 = 0LL; k.n1 = 0;
-	char *k = KEYMIN();
+	const char *k = KEYMIN();
 	return getNextNode ( collnum , k );
 }
 
 int32_t RdbTree::getLastNode ( ) {
 	//key_t k;  k.setMax();
-	char *k = KEYMAX();
+	const char *k = KEYMAX();
 	return getPrevNode ( (collnum_t)0x7fff , k );
 }
 
 // . get the node whose key is <= "key"
 // . returns -1 if none
-int32_t RdbTree::getPrevNode ( collnum_t collnum , char *key ) { // key_t &key ) {
+int32_t RdbTree::getPrevNode ( collnum_t collnum, const char *key ) {
 	// return -1 if no non-empty nodes in the tree
 	if ( m_headNode < 0  ) return -1;
 	// get the node (about 4 cycles per loop, 80cycles for 1 million items)
@@ -351,7 +351,7 @@ int32_t RdbTree::getPrevNode ( collnum_t collnum , char *key ) { // key_t &key )
 	return getPrevNode ( parent );
 }
 
-char *RdbTree::getData ( collnum_t collnum , char *key ) { // key_t &key ) {
+char *RdbTree::getData ( collnum_t collnum, const char *key ) {
 	int32_t n = getNode ( collnum , key ); if ( n < 0 ) return NULL;
 	return m_data[n];
 };
@@ -432,7 +432,7 @@ int32_t RdbTree::getLowestNode ( ) {
 // . probably about 120 cycles per add means we can add 2 million per sec
 // . NOTE: does not check to see if it will exceed m_maxMem
 int32_t RdbTree::addNode ( collnum_t collnum , 
-			char *key , char *data , int32_t dataSize ) {
+			const char *key , char *data , int32_t dataSize ) {
 	// cannot add if saving, tell them to try again later
 	if ( m_isSaving ) { g_errno = ETRYAGAIN; return -1; }
 	// nor if not writable
@@ -667,8 +667,7 @@ int32_t RdbTree::addNode ( collnum_t collnum ,
 	return i;
 }
 
-//int32_t RdbTree::deleteNode  ( collnum_t collnum , key_t &key , bool freeData ){
-int32_t RdbTree::deleteNode  ( collnum_t collnum , char *key , bool freeData ) {
+int32_t RdbTree::deleteNode  ( collnum_t collnum, const char *key, bool freeData ) {
 	int32_t node = getNode ( collnum , key );
 	// debug
 	//log("db: deleting n1=%"XINT64" n0=%"XINT64" node=%"INT32".",
@@ -681,7 +680,7 @@ int32_t RdbTree::deleteNode  ( collnum_t collnum , char *key , bool freeData ) {
 // delete all nodes with keys in [startKey,endKey]
 void RdbTree::deleteNodes ( collnum_t collnum ,
 			    //key_t startKey , key_t endKey , bool freeData ) {
-			    char *startKey , char *endKey , bool freeData ) {
+			    const char *startKey, const char *endKey, bool freeData ) {
 
 	// sanity check
 	if ( ! m_isWritable ) {
@@ -1586,8 +1585,8 @@ void RdbTree::gbmprotect ( void *p , int32_t size , int prot ) {
 }
 
 int32_t RdbTree::getMemOccupiedForList2 ( collnum_t collnum  ,
-				       char      *startKey ,
-				       char      *endKey   ,
+				       const char      *startKey,
+				       const char      *endKey  ,
 				       int32_t      minRecSizes ,
 				       int32_t      niceness ) {
 	int32_t ne = 0;
@@ -1648,7 +1647,7 @@ int32_t RdbTree::getMemOccupiedForList ( ) {
 // . if this turns out to be bottleneck we can use hardcore RdbGet later
 // . RdbDump should use this
 bool RdbTree::getList ( collnum_t collnum ,
-			char *startKey, char *endKey, int32_t minRecSizes ,
+			const char *startKey, const char *endKey, int32_t minRecSizes,
 			RdbList *list , int32_t *numPosRecs , int32_t *numNegRecs ,
 			bool useHalfKeys ,
 			int32_t niceness ) {
@@ -1991,9 +1990,7 @@ bool RdbTree::getListUnordered ( int32_t startNode , int32_t minRecSizes ,
 // . if the count is < 200 it returns an EXACT count
 // . right now it only works for dataless nodes (keys only)
 int32_t RdbTree::getListSize ( collnum_t collnum ,
-			    //key_t  startKey , key_t endKey  , 
-			    //key_t *minKey   , key_t *maxKey ) {
-			    char *startKey , char *endKey  , 
+			    const char *startKey, const char *endKey,
 			    char *minKey   , char *maxKey ) {
 	// make these as benign as possible
 	//if ( minKey ) *minKey = endKey;
@@ -2037,8 +2034,7 @@ int32_t RdbTree::getListSize ( collnum_t collnum ,
 // . *retKey is the key that has the returned order
 // . *retKey gets as close to "key" as it can
 // . returns # of NODES
-//int32_t RdbTree::getOrderOfKey ( collnum_t collnum , key_t key , key_t *retKey){
-int32_t RdbTree::getOrderOfKey ( collnum_t collnum , char *key , char *retKey ) {
+int32_t RdbTree::getOrderOfKey ( collnum_t collnum, const char *key, char *retKey ) {
 	if ( m_numUsedNodes <= 0 ) return 0;
 	int32_t i     = m_headNode;
 	// estimate the depth of tree if not balanced
@@ -2411,8 +2407,8 @@ static void threadDoneWrapper ( void *state , ThreadEntry * /*t*/ ) ;
 // . we'll open it here
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool RdbTree::fastSave ( char    *dir       ,
-			 char    *dbname    ,
+bool RdbTree::fastSave ( const char *dir,
+			 const char *dbname,
 			 bool     useThread ,
 			 void    *state     ,
 			 void    (* callback) (void *state) ) {

@@ -88,9 +88,9 @@ class RdbTree {
 	// . returns false & sets errno if fails to alloc "maxNumNodes" nodes
 	bool set ( int32_t fixedDataSize , int32_t maxNumNodes ,
 		   bool doBalancing   , int32_t maxMem      , bool ownData ,
-		   char *allocName ,
+		   const char *allocName,
 		   bool dataInPtrs = false ,
-		   char *dbname = NULL , char keySize = 12 ,
+		   const char *dbname = NULL , char keySize = 12 ,
 		   bool useProtection = false ,
 		   bool allowDups     = false ,
 		   char rdbId = -1 );
@@ -116,30 +116,33 @@ class RdbTree {
 	// . don't free your data because we don't copy it!
 	// . sets errno if it returns -1
 	//int32_t addNode ( collnum_t collnum , key_t  key, char *data, 
-	int32_t addKey  ( void *key ) {
-		return addNode ( 0,(char *)key,NULL,0);};
-	int32_t addNode ( collnum_t collnum , char *key, char *data, 
-		       int32_t dataSize );
-	int32_t addNode ( collnum_t collnum , key_t key, char *data, 
-		       int32_t dataSize ) {
-		return addNode(collnum,(char *)&key,data,dataSize);};
-	int32_t addNode ( collnum_t collnum , char *key ) { //key_t &key ) {
-		return addNode ( collnum , key , NULL , 0 ); };
+	int32_t addKey  ( const void *key ) {
+		return addNode ( 0,(const char *)key,NULL,0);
+	}
+	int32_t addNode ( collnum_t collnum , const char *key, char *data, int32_t dataSize );
+	int32_t addNode ( collnum_t collnum , key_t key, char *data, int32_t dataSize ) {
+		return addNode(collnum,(const char *)&key,data,dataSize);
+	}
+	int32_t addNode ( collnum_t collnum , const char *key ) {
+		return addNode ( collnum , key , NULL , 0 );
+	}
 			
 	// . returns -1 if not found
 	// . otherwise return the node #
-	int32_t getNode ( collnum_t collnum , char *key ); //key_t &key );
+	int32_t getNode ( collnum_t collnum, const char *key );
 	int32_t getNode ( collnum_t collnum , key_t &key ) {
-		return getNode(collnum,(char *)&key);};
+		return getNode(collnum,(const char *)&key);
+	}
 
 	// . get the node's data directly
-	char *getData ( collnum_t collnum , char *key ); // key_t &key ) ;
+	char *getData ( collnum_t collnum, const char *key );
 
         // . get the node whose key is >= key 
         // . much much slower than getNextNode() below
-        int32_t getNextNode ( collnum_t collnum , char *key ); // key_t &key );
+        int32_t getNextNode ( collnum_t collnum, const char *key );
         int32_t getNextNode ( collnum_t collnum , key_t &key ) {
-		return getNextNode ( collnum, (char *)&key); };
+		return getNextNode ( collnum, (const char *)&key);
+	}
 
         // . get the next node # AFTER "node" by key
         // . used for dumping out the nodes ordered by their keys
@@ -152,9 +155,10 @@ class RdbTree {
 	int32_t getFirstNode2 ( collnum_t collnum );
 
 	// . get the node whose key is <= "key"
-        int32_t getPrevNode ( collnum_t collnum , char *key ); // key_t &key );
+        int32_t getPrevNode ( collnum_t collnum, const char *key );
         int32_t getPrevNode ( collnum_t collnum , key_t &key ) {
-		return getPrevNode(collnum,(char *)&key);};
+		return getPrevNode(collnum,(const char *)&key);
+	}
 
 	// . get the prev node # whose key is <= to key of node #i
 	int32_t getPrevNode ( int32_t i ) ;
@@ -166,8 +170,7 @@ class RdbTree {
 	// . returns false iff not found 
 	// . frees m_data[node] if freeIt is true
 	void deleteNode3  ( int32_t  node , bool freeData );
-	//int32_t deleteNode  ( collnum_t collnum , key_t &key,bool freeData) ;
-	int32_t deleteNode  ( collnum_t collnum , char *key , bool freeData ) ;
+	int32_t deleteNode  ( collnum_t collnum, const char *key, bool freeData );
 	int32_t deleteNode  ( collnum_t collnum , key_t &key , bool freeData) {
 		return deleteNode ( collnum , (char *)&key , freeData ); };
 
@@ -179,7 +182,7 @@ class RdbTree {
 
 	void deleteNodes ( collnum_t collnum ,
 			   //key_t startKey , key_t endKey , bool freeData );
-			   char *startKey , char *endKey , bool freeData );
+			   const char *startKey, const char *endKey, bool freeData );
 
 	// . delete all records in this list from the tree
 	// . call deleteNode()
@@ -242,8 +245,8 @@ class RdbTree {
 	int32_t getMemOccupiedForList2 ( collnum_t collnum  ,
 				      //key_t     startKey ,
 				      //key_t     endKey   ,
-				      char     *startKey ,
-				      char     *endKey   ,
+				      const char     *startKey,
+				      const char     *endKey  ,
 				      int32_t      minRecSizes ,
 				      int32_t      niceness ) ;
 
@@ -262,10 +265,8 @@ class RdbTree {
 	// . "antiNumRecs" is set to # of keys w/ low bit cleared (antiKeys)
 	//   that were added to "list"
 	bool getList ( collnum_t collnum    ,
-		       //key_t    startKey    , 
-		       //key_t    endKey      , 
-		       char    *startKey    , 
-		       char    *endKey      , 
+		       const char *startKey    ,
+		       const char *endKey      ,
 		       int32_t     minRecSizes ,
 		       RdbList *list        ,
 		       int32_t    *numPosRecs  ,
@@ -283,7 +284,7 @@ class RdbTree {
 		       int32_t    *numPosRecs  ,
 		       int32_t    *numNegRecs ,   // = NULL 
 		       bool     useHalfKeys ) {  // = false 
-		return getList(collnum,(char *)&startKey,(char *)&endKey,
+		return getList(collnum,(const char *)&startKey,(const char *)&endKey,
 			       minRecSizes,list,numPosRecs,numNegRecs,
 			       useHalfKeys);};
 
@@ -297,9 +298,7 @@ class RdbTree {
 
 	// estimate the size of the list defined by these keys
 	int32_t getListSize ( collnum_t collnum ,
-			   //key_t startKey ,key_t endKey , 
-			   //key_t *minKey , key_t *maxKey );
-			   char *startKey , char *endKey , 
+			   const char *startKey, const char *endKey,
 			   char *minKey   , char *maxKey );
 
 	// how balanced is this tree? = #nodes w/ right kids / # node w/ left
@@ -316,8 +315,8 @@ class RdbTree {
 	//   is called
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
-	bool fastSave ( char    *dir       ,
-			char    *dbname    ,
+	bool fastSave ( const char *dir,
+			const char *dbname,
 			bool     useThread ,
 			void    *state     , 
 			void    (* callback)(void *state ) );
@@ -385,8 +384,7 @@ class RdbTree {
 	bool m_doBalancing;
 
 	// used by getListSize() to estiamte a list size
-	//int32_t getOrderOfKey ( collnum_t collnum , key_t key , key_t *retKey );
-	int32_t getOrderOfKey ( collnum_t collnum , char *key , char *retKey );
+	int32_t getOrderOfKey ( collnum_t collnum , const char *key , char *retKey );
 	// used by getrderOfKey() (have to estimate if tree not balanced)
 	int32_t getTreeDepth  ();
 
@@ -438,7 +436,7 @@ class RdbTree {
 	// maximum node # that was ever used at some point in time
 	int32_t    m_minUnusedNode;
 
-	char *m_allocName;
+	const char *m_allocName;
 
 	// so we can save the tree within a file that has other stuff
 	int64_t m_bytesWritten;
