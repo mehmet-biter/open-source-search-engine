@@ -704,7 +704,7 @@ TEST( UrlTest, StripTrackingParamV122 ) {
 		"http://www.staffnet.manchester.ac.uk/news/display/?id=10341&;utm_source=newsletter&utm_medium=email&utm_campaign=eUpdate",
 		"http://www.nightdivestudios.com/games/turok-dinosaur-hunter/?utm_source=steampowered.com&utm_medium=product&utm_campaign=website%20-%20turok%20dinosaur%20hunter",
 		"http://www.mihomes.com/Find-Your-New-Home/Virginia-Homes?utm_source=NewHomesDirectory.com&utm_campaign=referral-division&utm_medium=feed&utm_content=&utm_term=consumer&cookiecheck=true",
-		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&utm_hp_ref=healthy-living&utm_hp_ref=au-life&adsSiteOverride=au&section=australia",
+		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&utm_hp_ref=healthy-living&utm_hp_ref=au-life&adsSiteOverride=au",
 		"http://maersklinereefer.com/about/merry-christmas/?elqTrackId=786C9D2AE676DEC435B578D75CB0B4FD&elqaid=2666&elqat=2",
 		"https://community.oracle.com/community/topliners/?elq_mid=21557&elq_cid=1618237&elq=3c0cfe27635443ca9b6410238cc876a9&elqCampaignId=2182&elqaid=21557&elqat=1&elqTrackId=40772b5725924f53bc2c6a6fb04759a3",
 		"http://app.reg.techweb.com/e/er?s=2150&lid=25554&elq=00000000000000000000000000000000&elqaid=2294&elqat=2&elqTrackId=3de2badc5d7c4a748bc30253468225fd",
@@ -720,7 +720,7 @@ TEST( UrlTest, StripTrackingParamV122 ) {
 		"http://www.staffnet.manchester.ac.uk/news/display/?id=10341&utm_medium=email&utm_campaign=eUpdate",
 		"http://www.nightdivestudios.com/games/turok-dinosaur-hunter/?utm_medium=product&utm_campaign=website%20-%20turok%20dinosaur%20hunter",
 		"http://www.mihomes.com/Find-Your-New-Home/Virginia-Homes?utm_source=NewHomesDirectory.com&utm_campaign=referral-division&utm_medium=feed&utm_content=&cookiecheck=true",
-		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&utm_hp_ref=au-life&adsSiteOverride=au&section=australia",
+		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&utm_hp_ref=au-life&adsSiteOverride=au",
 		"http://maersklinereefer.com/about/merry-christmas/?elqTrackId=786C9D2AE676DEC435B578D75CB0B4FD&elqaid=2666&elqat=2",
 		"https://community.oracle.com/community/topliners/?elq_mid=21557&elq_cid=1618237&elqCampaignId=2182&elqaid=21557&elqat=1&elqTrackId=40772b5725924f53bc2c6a6fb04759a3",
 		"http://app.reg.techweb.com/e/er?s=2150&lid=25554&elqaid=2294&elqat=2&elqTrackId=3de2badc5d7c4a748bc30253468225fd",
@@ -742,7 +742,7 @@ TEST( UrlTest, StripTrackingParamV122 ) {
 	}
 }
 
-TEST( UrlTest, StripTrackingParam ) {
+TEST( UrlTest, StripTrackingParamGoogleAnalytics ) {
 	const char *input_urls[] = {
 		// google analytics
 		"http://www.urchin.com/download.html?utm_source=newsletter4&utm_medium=email&utm_term=urchin&utm_content=easter&utm_campaign=product",
@@ -750,28 +750,7 @@ TEST( UrlTest, StripTrackingParam ) {
         "http://www.staffnet.manchester.ac.uk/news/display/?id=10341&;utm_source=newsletter&utm_medium=email&utm_campaign=eUpdate",
         "http://www.nightdivestudios.com/games/turok-dinosaur-hunter/?utm_source=steampowered.com&utm_medium=product&utm_campaign=website%20-%20turok%20dinosaur%20hunter",
 		"http://www.mihomes.com/Find-Your-New-Home/Virginia-Homes?utm_source=NewHomesDirectory.com&utm_campaign=referral-division&utm_medium=feed&utm_content=&utm_term=consumer&cookiecheck=true",
-        "http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&utm_hp_ref=healthy-living&utm_hp_ref=au-life&adsSiteOverride=au&section=australia",
-
-        // oracle eloqua
-		"http://maersklinereefer.com/about/merry-christmas/?elqTrackId=786C9D2AE676DEC435B578D75CB0B4FD&elqaid=2666&elqat=2",
-        "https://community.oracle.com/community/topliners/?elq_mid=21557&elq_cid=1618237&elq=3c0cfe27635443ca9b6410238cc876a9&elqCampaignId=2182&elqaid=21557&elqat=1&elqTrackId=40772b5725924f53bc2c6a6fb04759a3",
-	    "http://app.reg.techweb.com/e/er?s=2150&lid=25554&elq=00000000000000000000000000000000&elqaid=2294&elqat=2&elqTrackId=3de2badc5d7c4a748bc30253468225fd",
-	    "http://www.biography.com/people/louis-armstrong-9188912?elq=7fd0dd577ebf4eafa1e73431feee849f&elqCampaignId=2887",
-
-	    // webtrends
-	    "http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html?elq_mid=1089&elq_cid=107687&wt.mc_id=CAD_MOL_MC_PR_EM1_0815_NewHaakeMars_English_GLB_2647&elq=f17d2c276ed045c0bb391e4c273b789c&elqCampaignId=&elqaid=1089&elqat=1&elqTrackId=ce2a4c4879ee4f6488a14d924fa1f8a5",
-
-	    // piwik
-		"https://astro-report.com/lp2.html?pk_campaign=1%20Natal%20Chart%20-%20RDMs&pk_kwd=astrological%20chart%20free&gclid=CPfkwKfP2LgCFcJc3godgSMAHA",
-		"http://lapprussia.lappgroup.com/kontakty.html?pk_campaign=yadirect-crossselling&pk_kwd=olflex&pk_source=yadirect&pk_medium=cpc&pk_content=olflex&rel=bytib",
-
-	    // trk
-		"https://www.nerdwallet.com/investors/?trk=nw_gn_2.0",
-		"https://www.linkedin.com/company/intel-corporation?trk=ppro_cprof",
-
-		// partnerref
-		"http://www.lookfantastic.com/offers/20-off-your-top-20.list?partnerref=ENLF-_EmailExclusive"
-
+        "http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&utm_hp_ref=healthy-living&utm_hp_ref=au-life&adsSiteOverride=au"
 	};
 
 	const char *expected_urls[] = {
@@ -781,25 +760,131 @@ TEST( UrlTest, StripTrackingParam ) {
 		"http://www.staffnet.manchester.ac.uk/news/display/?id=10341",
 		"http://www.nightdivestudios.com/games/turok-dinosaur-hunter/",
 		"http://www.mihomes.com/Find-Your-New-Home/Virginia-Homes?cookiecheck=true",
-		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au&section=australia",
+		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au"
+	};
 
+	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
+			   sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
+
+	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+		Url url;
+		url.set( input_urls[i], strlen( input_urls[i] ), false, false, true, 123 );
+
+		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
+	}
+}
+
+TEST( UrlTest, StripTrackingParamOracleEloqua ) {
+	const char *input_urls[] = {
+        // oracle eloqua
+		"http://maersklinereefer.com/about/merry-christmas/?elqTrackId=786C9D2AE676DEC435B578D75CB0B4FD&elqaid=2666&elqat=2",
+        "https://community.oracle.com/community/topliners/?elq_mid=21557&elq_cid=1618237&elq=3c0cfe27635443ca9b6410238cc876a9&elqCampaignId=2182&elqaid=21557&elqat=1&elqTrackId=40772b5725924f53bc2c6a6fb04759a3",
+	    "http://app.reg.techweb.com/e/er?s=2150&lid=25554&elq=00000000000000000000000000000000&elqaid=2294&elqat=2&elqTrackId=3de2badc5d7c4a748bc30253468225fd",
+	    "http://www.biography.com/people/louis-armstrong-9188912?elq=7fd0dd577ebf4eafa1e73431feee849f&elqCampaignId=2887"
+	};
+
+	const char *expected_urls[] = {
 		// oracle eloqua
 		"http://maersklinereefer.com/about/merry-christmas/",
 		"https://community.oracle.com/community/topliners/",
 		"http://app.reg.techweb.com/e/er?s=2150&lid=25554",
-		"http://www.biography.com/people/louis-armstrong-9188912",
+		"http://www.biography.com/people/louis-armstrong-9188912"
+	};
 
+	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
+			   sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
+
+	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+		Url url;
+		url.set( input_urls[i], strlen( input_urls[i] ), false, false, true, 123 );
+
+		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
+	}
+}
+
+TEST( UrlTest, DISABLED_StripTrackingParamWebTrends ) {
+	const char *input_urls[] = {
+	    // webtrends
+	    "http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html?elq_mid=1089&elq_cid=107687&wt.mc_id=CAD_MOL_MC_PR_EM1_0815_NewHaakeMars_English_GLB_2647&elq=f17d2c276ed045c0bb391e4c273b789c&elqCampaignId=&elqaid=1089&elqat=1&elqTrackId=ce2a4c4879ee4f6488a14d924fa1f8a5"
+	};
+
+	const char *expected_urls[] = {
 		// webtrends
-		"http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html",
+		"http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html"
+	};
 
+	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
+			   sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
+
+	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+		Url url;
+		url.set( input_urls[i], strlen( input_urls[i] ), false, false, true, 123 );
+
+		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
+	}
+}
+
+TEST( UrlTest, StripTrackingParamPiwik ) {
+	const char *input_urls[] = {
+	    // piwik
+		"https://astro-report.com/lp2.html?pk_campaign=1%20Natal%20Chart%20-%20RDMs&pk_kwd=astrological%20chart%20free&gclid=CPfkwKfP2LgCFcJc3godgSMAHA",
+		"http://lapprussia.lappgroup.com/kontakty.html?pk_campaign=yadirect-crossselling&pk_kwd=olflex&pk_source=yadirect&pk_medium=cpc&pk_content=olflex&rel=bytib"
+	};
+
+	const char *expected_urls[] = {
 	    // piwik
 		"https://astro-report.com/lp2.html",
-		"http://lapprussia.lappgroup.com/kontakty.html?rel=bytib",
+		"http://lapprussia.lappgroup.com/kontakty.html?rel=bytib"
+	};
 
+	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
+			   sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
+
+	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+		Url url;
+		url.set( input_urls[i], strlen( input_urls[i] ), false, false, true, 123 );
+
+		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
+	}
+}
+
+TEST( UrlTest, StripTrackingParamTrk ) {
+	const char *input_urls[] = {
+	    // trk
+		"https://www.nerdwallet.com/investors/?trk=nw_gn_2.0",
+		"https://www.linkedin.com/company/intel-corporation?trk=ppro_cprof"
+	};
+
+	const char *expected_urls[] = {
 	    // trk
 		"https://www.nerdwallet.com/investors/",
-		"https://www.linkedin.com/company/intel-corporation",
+		"https://www.linkedin.com/company/intel-corporation"
+	};
 
+	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
+			   sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
+
+	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+		Url url;
+		url.set( input_urls[i], strlen( input_urls[i] ), false, false, true, 123 );
+
+		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
+	}
+}
+
+TEST( UrlTest, StripTrackingParamPartnerRef ) {
+	const char *input_urls[] = {
+		// partnerref
+		"http://www.lookfantastic.com/offers/20-off-your-top-20.list?partnerref=ENLF-_EmailExclusive"
+
+	};
+
+	const char *expected_urls[] = {
 		// partnerref
 		"http://www.lookfantastic.com/offers/20-off-your-top-20.list"
 	};
@@ -812,18 +897,19 @@ TEST( UrlTest, StripTrackingParam ) {
 		Url url;
 		url.set( input_urls[i], strlen( input_urls[i] ), false, false, true, 123 );
 
-		//url.print();
-		//EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
+		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
 TEST( UrlTest, Normalization ) {
 	const char *input_urls[] = {
-		"http://puddicatcreationsdigitaldesigns.com/index.php?route=product/product&amp;product_id=1510"
+		"http://puddicatcreationsdigitaldesigns.com/index.php?route=product/product&amp;product_id=1510",
+		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au&section=australia"
 	};
 
 	const char *expected_urls[] = {
-		"http://puddicatcreationsdigitaldesigns.com/index.php?route=product/product&product_id=1510"
+		"http://puddicatcreationsdigitaldesigns.com/index.php?route=product/product&product_id=1510",
+		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au"
 	};
 
 	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
