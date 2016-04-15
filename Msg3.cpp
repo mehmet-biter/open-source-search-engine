@@ -157,7 +157,6 @@ bool Msg3::readList  ( char           rdbId         ,
 		       int32_t           retryNum      ,
 		       int32_t           maxRetries    ,
 		       bool           compensateForMerge ,
-		       int64_t      syncPoint     ,
 		       bool           justGetEndKey ,
 		       bool           allowPageCache ,
 		       bool           hitDisk        ) {
@@ -347,10 +346,6 @@ bool Msg3::readList  ( char           rdbId         ,
 	for ( int32_t i = startFileNum ; i < startFileNum + numFiles ; i++ )
 		m_fileNums [ m_numFileNums++ ] = i;
 
-	// we skip down to here when a syncPoint was used to set the
-	// m_fileNums/m_numFileNums array of files to read from
-// JAB: warning abatement
-// skip:
 	// . remove file nums that are being unlinked after a merge now
 	// . keep it here (below skip: label) so sync point reads can use it
 	int32_t n = 0;
@@ -1136,7 +1131,6 @@ bool Msg3::doneSleeping ( ) {
 			  m_retryNum         ,
 			  m_maxRetries       ,
 			  m_compensateForMerge ,
-			  -1,//m_syncPoint          ,
 			  false                ,
 			  m_allowPageCache     ,
 			  m_hitDisk            ) ) return false;

@@ -178,7 +178,6 @@ bool Msg5::getList ( char     rdbId         ,
 	m_maxRetries    = maxRetries;
 	m_oldListSize   = 0;
 	m_compensateForMerge = compensateForMerge;
-	//m_syncPoint          = syncPoint;
 	m_isRealMerge        = isRealMerge;
 	m_allowPageCache     = allowPageCache;
 	m_hitDisk            = hitDisk;
@@ -316,7 +315,6 @@ bool Msg5::readList ( ) {
 				   0                , // retry num
 				   m_maxRetries     , // -1=def
 				   m_compensateForMerge ,
-				   -1,//m_syncPoint          ,
 				   true                 , // just get endKey?
 				   allowPageCache     );
 		if ( g_errno ) {
@@ -541,7 +539,6 @@ bool Msg5::readList ( ) {
 				  0                , // retry num
 				  m_maxRetries     , // max retries (-1=def)
 				  m_compensateForMerge ,
-				  -1,//m_syncPoint          ,
 				  false                ,
 				  m_allowPageCache     ,
 				  m_hitDisk            ))

@@ -67,7 +67,6 @@ class Msg3 {
 			 int32_t           retryNum      , // = 0             ,
 			 int32_t           maxRetries    , // = -1
 			 bool           compensateForMerge ,
-			 int64_t      syncPoint     , // = -1 (none)
 			 bool           justGetEndKey = false ,
 			 bool           allowPageCache = true ,
 			 bool           hitDisk        = true );
@@ -171,8 +170,6 @@ class Msg3 {
 	char        m_hintKey[MAX_KEY_BYTES];
 
 	bool        m_compensateForMerge;
-
-	//int64_t   m_syncPoint;
 
 	char  m_buf[MSG3_BUF_SIZE];
 	char *m_alloc;
