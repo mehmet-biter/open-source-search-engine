@@ -88,6 +88,8 @@ bool Msg5::getList ( char     rdbId         ,
 		     bool        mergeLists ) {
 	const char *startKey = static_cast<const char*>(startKey_);
 	const char *endKey = static_cast<const char*>(endKey_);
+	char fixedEndKey[MAX_KEY_BYTES];
+	
 	// make sure we are not being re-used prematurely
 	if ( m_waitingForList ) {
 		log("disk: Trying to reset a class waiting for a reply.");
@@ -131,7 +133,13 @@ bool Msg5::getList ( char     rdbId         ,
 	// fix endkey
 	if ( KEYNEG(endKey) ) {
 		log(LOG_REMIND,"net: msg5: EndKey lastbit clear. Fixing.");
-		*(const_cast<char *>(endKey)) |= 0x01; //URG.... why is it modifying an input parameter and not just its local copy?
+		//Previously it was fixed by setting the LSB in the endKey
+		//input parameter. Code review showed that it should only
+		//happend when called from doInject in main.cpp due to a bug.
+		//Still, it could happen due to damaged network packets.
+		KEYSET(fixedEndKey,endKey,m_ks);
+		fixedEndKey[0] |= 0x01;
+		endKey = fixedEndKey;
 	}
 	QUICKPOLL(niceness);
 
