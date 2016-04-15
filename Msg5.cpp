@@ -60,8 +60,8 @@ void Msg5::reset() {
 bool Msg5::getList ( char     rdbId         ,
 		     collnum_t collnum ,
 		     RdbList *list          ,
-		     const void    *startKey      ,
-		     const void    *endKey        ,
+		     const void    *startKey_      ,
+		     const void    *endKey_        ,
 		     int32_t     minRecSizes   , // requested scan size(-1 none)
 		     bool     includeTree   ,
 		     bool     addToCache    ,
@@ -86,6 +86,8 @@ bool Msg5::getList ( char     rdbId         ,
 		     // if this is false we only check the page cache
 		     bool        hitDisk ,
 		     bool        mergeLists ) {
+	const char *startKey = static_cast<const char*>(startKey_);
+	const char *endKey = static_cast<const char*>(endKey_);
 	// make sure we are not being re-used prematurely
 	if ( m_waitingForList ) {
 		log("disk: Trying to reset a class waiting for a reply.");
@@ -114,7 +116,7 @@ bool Msg5::getList ( char     rdbId         ,
 	// . complain if endKey < startKey
 	// . no because IndexReadInfo does this to prevent us from reading
 	//   a list
-	if ( KEYCMP((char *)startKey,(char *)endKey,m_ks)>0 ) return true;
+	if ( KEYCMP(startKey,endKey,m_ks)>0 ) return true;
 	// log("Msg5::readList: startKey > endKey warning"); 
 	// we no longer allow negative minRecSizes
 	if ( minRecSizes < 0 ) {
@@ -124,13 +126,12 @@ bool Msg5::getList ( char     rdbId         ,
 		//char *xx = NULL; *xx = 0;
 	}
 	// ensure startKey last bit clear, endKey last bit set
-	if ( !KEYNEG((char *)startKey) )
+	if ( !KEYNEG(startKey) )
 		log(LOG_REMIND,"net: msg5: StartKey lastbit set."); 
 	// fix endkey
-	if ( KEYNEG((char *)endKey) ) {
+	if ( KEYNEG(endKey) ) {
 		log(LOG_REMIND,"net: msg5: EndKey lastbit clear. Fixing.");
-		//endKey.n0 |= 0x01;
-		*((char *)endKey) |= 0x01;
+		*(const_cast<char *>(endKey)) |= 0x01; //URG.... why is it modifying an input parameter and not just its local copy?
 	}
 	QUICKPOLL(niceness);
 
@@ -147,8 +148,8 @@ bool Msg5::getList ( char     rdbId         ,
 	//}
 
 	m_list          = list;
-	KEYSET(m_startKey,(char *)startKey,m_ks);
-	KEYSET(m_endKey,(char *)endKey,m_ks);
+	KEYSET(m_startKey,startKey,m_ks);
+	KEYSET(m_endKey,endKey,m_ks);
 	m_minRecSizes   = minRecSizes;
 	m_includeTree   = includeTree;
 	m_addToCache    = addToCache;
@@ -253,7 +254,7 @@ bool Msg5::readList ( ) {
 	// . also now for tfndb, since we scan that in RdbDump.cpp to dedup
 	//   the spiderdb list we are dumping to disk. it is really for any
 	//   time when the endKey is unbounded, so check that now
-	char *treeEndKey = m_endKey;
+	const char *treeEndKey = m_endKey;
 	bool compute = true;
 	if ( ! m_includeTree           ) compute = false;
 	// if endKey is "unbounded" then bound it...
@@ -1507,8 +1508,8 @@ bool Msg5::gotRemoteList ( ) {
 		//    "endKey.n1=%"XINT32" n0=%"XINT64"",
 		//    m_minRecSizes , m_list->getListSize() ,
 		//    sk.n1,sk.n0,ek.n1,ek.n0);
-		char *sk = m_list->getStartKey();
-		char *ek = m_list->getEndKey  ();
+		const char *sk = m_list->getStartKey();
+		const char *ek = m_list->getEndKey  ();
 		log("net: Received good list from twin. Requested %"INT32" bytes "
 		    "and got %"INT32". "
 		    "startKey=%s endKey=%s",
@@ -1523,7 +1524,7 @@ bool Msg5::gotRemoteList ( ) {
 			m_list->setEndKey ( m_list->getLastKey() );
 		//key_t k ;
 		//k = m_list->getStartKey();
-		char *k = m_list->getStartKey();
+		const char *k = m_list->getStartKey();
 		log(LOG_DEBUG,
 		    //"net: Received list skey.n1=%08"XINT32" skey.n0=%016"XINT64"." ,
 		    //  k.n1 , k.n0 );
