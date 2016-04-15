@@ -105,11 +105,6 @@ bool Msg5::getList ( char     rdbId         ,
 	if ( ! list && mergeLists ) { char *xx=NULL;*xx=0; }
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg5.");
-	// MUST have this
-	//if ( rdbId == RDB_TITLEDB && ! msg5b ) {
-	//	log(LOG_LOGIC,"net: No msg5b supplied. 1.");
-	//	char *xx = NULL; *xx = 0;
-	//}
 	// . reset the provided list
 	// . this will not free any mem it may have alloc'd but it will set
 	//   m_listSize to 0 so list->isEmpty() will return true
@@ -119,7 +114,6 @@ bool Msg5::getList ( char     rdbId         ,
 	// . complain if endKey < startKey
 	// . no because IndexReadInfo does this to prevent us from reading
 	//   a list
-	//if ( startKey > endKey ) return true;
 	if ( KEYCMP((char *)startKey,(char *)endKey,m_ks)>0 ) return true;
 	// log("Msg5::readList: startKey > endKey warning"); 
 	// we no longer allow negative minRecSizes
@@ -130,11 +124,9 @@ bool Msg5::getList ( char     rdbId         ,
 		//char *xx = NULL; *xx = 0;
 	}
 	// ensure startKey last bit clear, endKey last bit set
-	//if ( (startKey.n0 & 0x01) == 0x01 ) 
 	if ( !KEYNEG((char *)startKey) )
 		log(LOG_REMIND,"net: msg5: StartKey lastbit set."); 
 	// fix endkey
-	//if ( (endKey.n0   & 0x01) == 0x00 ) {
 	if ( KEYNEG((char *)endKey) ) {
 		log(LOG_REMIND,"net: msg5: EndKey lastbit clear. Fixing.");
 		//endKey.n0 |= 0x01;
@@ -142,12 +134,6 @@ bool Msg5::getList ( char     rdbId         ,
 	}
 	QUICKPOLL(niceness);
 
-	// debug msg
-	//log("doing msg5 niceness=%"INT32"",niceness);
-	//if ( niceness == 1 ) 
-	//	log("hey!");
-	// timing debug
-	//m_startTime = gettimeofdayInMilliseconds();
 	// remember stuff
 	m_rdbId         = rdbId;
 	m_collnum          = collnum;
@@ -161,8 +147,6 @@ bool Msg5::getList ( char     rdbId         ,
 	//}
 
 	m_list          = list;
-	//m_startKey      = startKey;
-	//m_endKey        = endKey;
 	KEYSET(m_startKey,(char *)startKey,m_ks);
 	KEYSET(m_endKey,(char *)endKey,m_ks);
 	m_minRecSizes   = minRecSizes;
@@ -185,8 +169,6 @@ bool Msg5::getList ( char     rdbId         ,
 
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) return true;
-	// point to cache
-	//RdbCache *cache = base->m_rdb->getCache();
 	// . these 2 vars are used for error correction
 	// . doRemoteLookup is -2 if it's up to us to decide
 	m_doErrorCorrection = doErrorCorrection;
@@ -194,7 +176,6 @@ bool Msg5::getList ( char     rdbId         ,
 	m_newMinRecSizes = minRecSizes;
 	m_round          = 0;
 	m_readAbsolutelyNothing = false;
-	//m_fileStartKey   = startKey;
 	KEYSET(m_fileStartKey,m_startKey,m_ks);
 
 	QUICKPOLL(m_niceness);
@@ -203,15 +184,6 @@ bool Msg5::getList ( char     rdbId         ,
 	log("msg5: sk=%s", KEYSTR(m_startKey,m_ks));
 	log("msg5: ek=%s", KEYSTR(m_endKey,m_ks));
 #endif
-
-
-	// debug msg and stuff
-	//m_startKey.n1 = 1616550649;
-	//m_startKey.n0 = (uint64_t)10489958987685363408LL;
-	//m_includeTree = true;
-	//m_minRecSizes = 10080000;
-	//m_startFileNum = 0;
-	//m_numFiles     = -1;
 
 	// hack it down
 	if ( numFiles > base->getNumFiles() ) 
@@ -234,12 +206,9 @@ bool Msg5::getList ( char     rdbId         ,
 						 m_ks           );
 	}
 	*/
-	//log("ck.n1=%"UINT32" ck.n0=%"UINT64"",m_cacheKey.n1,m_cacheKey.n0);
-	//exit(-1);
 
 	// . make sure we set base above so Msg0.cpp:268 doesn't freak out
 	// . if startKey is > endKey list is empty
-	//if ( m_startKey > m_endKey ) return true;
 	if ( KEYCMP(m_startKey,m_endKey,m_ks)>0 ) return true;
 	// same if minRecSizes is 0
 	if ( m_minRecSizes == 0    ) return true;
@@ -451,17 +420,12 @@ bool Msg5::readList ( ) {
 		// . that can happen because we don't do an annihilation
 		//   because the positive key may be being dumped out to disk
 		//   but it really wasn't and we get stuck with it
-		//key_t kk = m_startKey ;
-		//kk += (uint32_t)1;
-		//if ( m_endKey == kk && ! m_treeList.isEmpty() ) {
 		char kk[MAX_KEY_BYTES];
 		KEYSET(kk,m_startKey,m_ks);
 		KEYADD(kk,m_ks);
-		// no no no.... gotList() might be returning false because
-		// it's doing a threaded call to merge_r to take out 
-		// the negative recs i guess...
 		if ( KEYCMP(m_endKey,kk,m_ks)==0 && ! m_treeList.isEmpty() ) {
-			return gotList(); } // return true; }
+			return gotList();
+		}
 	}
 	// if we don't use the tree then at least set the key bounds cuz we
 	// pick the min endKey between diskList and treeList below
@@ -504,14 +468,6 @@ bool Msg5::readList ( ) {
 	     
 
 	QUICKPOLL((m_niceness));
-	// debug msg
-	//log("msg5 calling msg3 for %"INT32" bytes (msg5=%"UINT32")",
-	//    m_newMinRecSizes,(int32_t)this);
-
-	// . it's pointless to fetch data from disk passed treeList's endKey
-	// . he only differs from m_endKey if his listSize is at least 
-	//   newMinRecSizes
-	//key_t diskEndKey = m_treeList.getEndKey();
 	char *diskEndKey = m_treeList.getEndKey();
 	// sanity check
 	if ( m_treeList.m_ks != m_ks ) { char *xx = NULL; *xx = 0; }
@@ -588,11 +544,8 @@ bool Msg5::needsRecall ( ) {
 		    base->m_dbname,(int32_t)m_collnum);
 		goto done;
 	}
-	//if ( m_list->getEndKey() >= m_endKey ) goto done;
 	if ( KEYCMP(m_list->getEndKey(),m_endKey,m_ks)>=0 ) goto done;
 
-	// debug msg
-	//if ( g_conf.m_timingDebugEnabled )
 	// this is kinda important. we have to know if we are abusing
 	// the disk... we should really keep stats on this...
 	logIt = true;
@@ -651,7 +604,7 @@ static void gotListWrapper ( void *state ) {
 
 static void  threadDoneWrapper   ( void *state , ThreadEntry * /*t*/ ) ;
 static void *mergeListsWrapper_r ( void *state , ThreadEntry * /*t*/ ) ;
-//static void  gotListWrapper2     ( void *state , RdbList *list , Msg5 *msg5);
+
 
 #define TFNDBMINRECSIZES (256*1024)
 
@@ -737,51 +690,6 @@ bool Msg5::gotList2 ( ) {
 	}
 	// sanity check
 	//if ( KEYNEG( m_minEndKey) ) {char *xx=NULL;*xx=0; }
-	/*
-	// if we got a tfndblist, constrain the title rec lists to its 
-	// transformed endkey. we only read in up to 500k of tfndb list so if 
-	// merging two really small titledb files we could potentially be 
-	// reading in a much bigger tfndb list.
-	if ( m_rdbId == RDB_TITLEDB && m_isRealMerge && ! g_errno ) {
-		int64_t time2 = gettimeofdayInMilliseconds();
-		// cut it down to m_msg3.m_endKey because that's what we used 
-		// to constrain this tfndb list read
-		//if ( m_msg3.m_constrainKey < m_minEndKey ) {
-		//	log(LOG_DEBUG,"db: Constraining to tfndb Msg3 "
-		//	    "m_endKey.");
-		//	m_minEndKey = m_msg3.m_constrainKey ;
-		//}
-		// only mess with m_minEndKey if our list was NOT limited
-		// by it. if we were not limited by it, our endKey should
-		// really be virtual inifinite. because the most our endKey
-		// will ever be is g_tfndb.makeMaxKey ( docIdMAX ) as can
-		// be seen above.
-		if ( m_tfndbList.m_listSize >= TFNDBMINRECSIZES ) {
-			// constrain titledb lists to tfndb's endkey if 
-			// it's smaller
-			//key_t     ekey  = m_tfndbList.getEndKey();
-			char     *ekey  = m_tfndbList.getEndKey();
-			int64_t docid = g_tfndb.getDocId ( (key_t *)ekey );
-			if ( docid >  0 ) docid = docid - 1;
-			//key_t nkey = g_titledb.makeLastKey ( docid );
-			char nkey[MAX_KEY_BYTES];
-			key_t trk = g_titledb.makeLastKey ( docid );
-			KEYSET ( nkey , (char *)&trk , m_ks );
-			// sanity check
-			//if ( g_titledb.getKeySize() != m_ks ) {
-			//	char *xx = NULL; *xx = 0; }
-			// only do constrain if docid is not 0
-			//if ( docid > 0 && nkey < m_minEndKey ) {
-			if ( docid > 0 && KEYCMP(nkey,m_minEndKey,m_ks)<0 ) {
-				log(LOG_DEBUG,"db: Tfndb had min key: "
-				    //"0x%"XINT64"",nkey.n0);
-				    "0x%"XINT64"",KEY0(nkey));
-				//m_minEndKey = nkey;
-				KEYSET(m_minEndKey,nkey,m_ks);
-			}
-		}
-	}
-	*/
 
 	QUICKPOLL(m_niceness);
 	// . is treeList included?
@@ -801,7 +709,6 @@ bool Msg5::gotList2 ( ) {
 					       m_minEndKey ,
 					       -1          , // min rec sizes
 					       0           , // hint offset
-					       //m_treeList.getCurrentKey() ,
 					       k,
 					       "tree" ,
 					       m_niceness );
