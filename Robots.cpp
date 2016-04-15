@@ -385,12 +385,12 @@ void Robots::print() const {
 	logf( LOG_DEBUG, "Robots::m_crawlDelay=%d", m_crawlDelay );
 	logf( LOG_DEBUG, "Robots::m_defaultUserAgentFound=%s", m_defaultUserAgentFound ? "true" : "false" );
 	logf( LOG_DEBUG, "Robots::m_defaultCrawlDelay=%d", m_defaultCrawlDelay );
-	logf( LOG_DEBUG, "Robots::m_rules.size=%lu", m_rules.size() );
+	logf( LOG_DEBUG, "Robots::m_rules.size=%zu", m_rules.size() );
 	for ( std::vector<RobotRule>::const_iterator it = m_rules.begin(); it != m_rules.end(); ++it ) {
 		it->print( 1 );
 	}
 
-	logf( LOG_DEBUG, "Robots::m_defaultRules.size=%lu", m_defaultRules.size() );
+	logf( LOG_DEBUG, "Robots::m_defaultRules.size=%zu", m_defaultRules.size() );
 	for ( std::vector<RobotRule>::const_iterator it = m_defaultRules.begin(); it != m_defaultRules.end(); ++it ) {
 		it->print( 1 );
 	}

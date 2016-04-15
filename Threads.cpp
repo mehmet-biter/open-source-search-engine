@@ -1617,7 +1617,7 @@ bool ThreadQueue::launchThread2 ( ) {
 
 	// return if the max is already launched for this thread queue
 	if ( active >= m_maxLaunched ) {
-		log("thread: ThreadQueue::launchThread2: THREADS MAXED OUT. active > m_maxLaunched (%ld>%d)", active, m_maxLaunched);
+		log("thread: ThreadQueue::launchThread2: THREADS MAXED OUT. active > m_maxLaunched (%"INT64">%d)", active, m_maxLaunched);
 		return false;
 	}
 
