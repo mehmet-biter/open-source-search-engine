@@ -84,7 +84,11 @@ else
 O1 = -O1
 O2 = -O2
 O3 = -O3
+
+ifeq ($(ARCH), x86_64)
 CPPFLAGS += -march=corei7 -msse4.2
+endif
+
 endif
 
 ifeq ($(config),debug)
