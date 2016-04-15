@@ -346,20 +346,6 @@ static void stripParametersv122( char *s, int32_t *len, bool stripSessionId, boo
 }
 
 static void stripParameters( char *s, int32_t *len, bool stripSessionId, bool stripTrackingParams ) {
-	static const UrlComponent::Validator s_noCheck( 0, false, ALLOW_ALL, MANDATORY_NONE );
-	static const UrlComponent::Validator s_noCheckAllowEmpty( 0, true, ALLOW_ALL, MANDATORY_NONE );
-
-	UrlParser urlParser( s, *len );
-
-	// . remove session ids from s
-	// . ';' most likely preceeds a session id
-	// . http://www.b.com/p.jhtml;jsessionid=J4QMFWBG1SPRVWCKUUXCJ0W?pp=1
-	// . http://www.b.com/generic.html;$sessionid$QVBMODQAAAGNA?pid=7
-	// . http://www.b.com/?PHPSESSID=737aec14eb7b360983d4fe39395&p=1
-	// . http://www.b.com/cat.cgi/process?mv_session_id=xrf2EY3q&p=1
-	// . http://www.b.com/default?SID=f320a739cdecb4c3edef67e&p=1
-
-
 	/// @todo make parameter unique
 	/// eg: ?section=australia&adsSiteOverride=au&section=australia
 
@@ -380,82 +366,169 @@ static void stripParameters( char *s, int32_t *len, bool stripSessionId, bool st
 	/// @todo login pages?
 	/// should we even spider them?
 
-	/// @todo remove multiple of the same parameter name
-	/// !!! investigate if it's allowed
-	// http://www.luxuryhomespittsburgh.com/listman/exec/search.cgi?search=1&perpage=4&sort_order=5%2C123%2Cbackward&sear&pagenum=2&pagenum=1&pagenum=2&pagenum=1&pagenum=2&pagenum=1&pagenum=2&pagenum=1&pagenum=2&pagenum=1&pagenum=2
-	// only take the last value
+	static const UrlComponent::Validator s_noCheck( 0, 0, false, ALLOW_ALL, MANDATORY_NONE );
+	static const UrlComponent::Validator s_defaultParamValidator( 0, 0, true, ALLOW_ALL, MANDATORY_NONE );
 
+	// 3 different component that we can remove from
+	// - path (we have a much more restrictive criteria on path to avoid removing valid path)
+	//   eg: http://www.example.com/search/keywords/chardonnay/osCAdminID/45de8edd68f8bc05e9fde0d2c528a619/sort/3d/
+	//
+	// - path param
+	//   eg: http://www.example.com/search/keywords,chardonnay/osCAdminID,45de8edd68f8bc05e9fde0d2c528a619/sort,3d/
+	//   eg: http://www.example.com/search/;keywords=chardonnay;osCAdminID=45de8edd68f8bc05e9fde0d2c528a619;sort=3d/
+	//
+	// - query string
+	//   eg: http://www.example.com/search/?keywords=chardonnay&osCAdminID=45de8edd68f8bc05e9fde0d2c528a619&sort=3d
+
+	UrlParser urlParser( s, *len );
 
 	if ( stripSessionId ) {
+		// osCommerce (osCsid)
+		// eg:
+		//   b8d15fefe8648f7f77c6e47f7bc0b881
+		//   ddtvpkt3rpqdprsagsi52tj5o4
 		{
-			std::vector<UrlComponent*> result = urlParser.matchQuery( UrlComponent::Matcher( "sid" ) );
-			urlParser.removeQuery( result, UrlComponent::Validator( 12, true, ALLOW_ALL, (MANDATORY_ALPHA | MANDATORY_DIGIT) ) );
+			std::vector<std::pair<UrlComponent*, UrlComponent*> > pathMatches = urlParser.matchPath( UrlComponent::Matcher( "osCsid" ) );
+			urlParser.removePath( pathMatches, UrlComponent::Validator( 32, 32, true, ALLOW_HEX ) );
+			urlParser.removePath( pathMatches, UrlComponent::Validator( 26, 26, true, ( ALLOW_DIGIT | ALLOW_ALPHA ) ) );
+
+			urlParser.removeQueryParam( UrlComponent::Matcher( "osCsid" ), s_defaultParamValidator );
 		}
 
-		// osCommerce
-		urlParser.removePath( UrlComponent::Matcher( "osCsid" ), UrlComponent::Validator( 22, true ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "osCsid" ) );
+		// osCommerce (osCAdminID)
+		// eg:
+		//   20d2f836fd203140dc6391b7ba3cdd82
+		//   c40fe2ad32efad2e9cc2748a3f1f90cc
+		{
+			std::vector<std::pair<UrlComponent*, UrlComponent*> > pathMatches = urlParser.matchPath( UrlComponent::Matcher( "osCAdminID" ) );
+			urlParser.removePath( pathMatches, UrlComponent::Validator( 32, 32, true, ALLOW_HEX ) );
+			urlParser.removePath( pathMatches, UrlComponent::Validator( 26, 26, true, ( ALLOW_DIGIT | ALLOW_ALPHA ) ) );
 
-		urlParser.removePath( UrlComponent::Matcher( "osCAdminID" ), UrlComponent::Validator( 22, true ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "osCAdminID" ) );
+			urlParser.removeQueryParam( UrlComponent::Matcher( "osCAdminID" ), s_defaultParamValidator );
+		}
 
 		// XT-commerce
-		urlParser.removePath( UrlComponent::Matcher( "XTCsid", MATCH_CASE ), UrlComponent::Validator( 18, true ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "XTCsid", MATCH_CASE ) );
+		// eg:
+		//   ha6n43ndtnlm53tpqgnclbv7ukkroue9k7m1e2o7t7rr5nb366a1
+		//   7ib1soln64vslra70ep2qcvde4s8dsm1
+		//   big3ika24atc4j19mlaha6d906
+		{
+			std::vector<std::pair<UrlComponent*, UrlComponent*> > pathMatches = urlParser.matchPath( UrlComponent::Matcher( "XTCsid", MATCH_CASE ) );
+			urlParser.removePath( pathMatches, UrlComponent::Validator( 26, 52, true, ( ALLOW_DIGIT | ALLOW_ALPHA ) ) );
 
-		// jsessionid
-		urlParser.removePath( UrlComponent::Matcher( "jsessionid", MATCH_PARTIAL ), UrlComponent::Validator( 20, true, ( ALLOW_DIGIT | ALLOW_ALPHA ) ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "jsessionid", MATCH_PARTIAL ), UrlComponent::Validator( 20 ) );
+			urlParser.removeQueryParam( UrlComponent::Matcher( "XTCsid", MATCH_CASE ), s_defaultParamValidator );
+		}
 
 		// ColdFusion
 		// http://help.adobe.com/en_US/ColdFusion/9.0/Developing/WSc3ff6d0ea77859461172e0811cbec0c35c-7fef.html#WSc3ff6d0ea77859461172e0811cbec22c24-7cbf
-		urlParser.removePath( UrlComponent::Matcher( "CFID" ), s_noCheck ); /// @todo
-		urlParser.removeQuery( UrlComponent::Matcher( "CFID" ) );/// @todo
-		urlParser.removePath( UrlComponent::Matcher( "CFTOKEN" ), s_noCheck );/// @todo
-		urlParser.removeQuery( UrlComponent::Matcher( "CFTOKEN" ) );/// @todo
+
+		// ColdFusion (CTOKEN)
+		// eg:
+		//   e718cd6cc29050df-8051DC1E-C29B-554E-6DFF6B5D2704A9A5
+		//   92566684.html
+		//   94175176
+		//   322257
+		{
+			std::vector<std::pair<UrlComponent*, UrlComponent*> > pathMatches = urlParser.matchPath( UrlComponent::Matcher( "CFTOKEN" ) );
+			urlParser.removePath( pathMatches, UrlComponent::Validator( 52, 52, true, ALLOW_ALL ) );
+			urlParser.removePath( pathMatches, UrlComponent::Validator( 10, 14, true, ALLOW_ALL, MANDATORY_PUNCTUATION ) );
+			urlParser.removePath( pathMatches, UrlComponent::Validator( 6, 0, true, ALLOW_DIGIT ) );
+
+			urlParser.removePathParam( UrlComponent::Matcher( "CFTOKEN" ), s_defaultParamValidator );
+			urlParser.removeQueryParam( UrlComponent::Matcher( "CFTOKEN" ), s_defaultParamValidator );
+		}
+
+		// ColdFusion (CFID)
+		{
+			std::vector<std::pair<UrlComponent*, UrlComponent*> > pathMatches = urlParser.matchPath( UrlComponent::Matcher( "CFID" ) );
+			urlParser.removePath( pathMatches, UrlComponent::Validator( 0, 0, true, ALLOW_DIGIT ) );
+			urlParser.removePathParam( UrlComponent::Matcher( "CFID" ), s_defaultParamValidator );
+			urlParser.removeQueryParam( UrlComponent::Matcher( "CFID" ), s_defaultParamValidator );
+		}
+
+		urlParser.removeQueryParam( UrlComponent::Matcher( "cftokenPass" ), s_defaultParamValidator );
 
 		/// SAP load balancer
 		// https://help.sap.com/saphelp_nw70/helpdata/de/f2/d7914b8deb48f090c0343ef1d907f0/content.htm
-		urlParser.removePath( UrlComponent::Matcher( "saplb_*" ), s_noCheck );
+		urlParser.removePathParam( UrlComponent::Matcher( "saplb_*" ), s_defaultParamValidator );
 
 		// Atlassian
-		// https://developer.atlassian.com/confdev/confluence-plugin-guide/writing-confluence-plugins/form-token-handling
-		urlParser.removeQuery( UrlComponent::Matcher( "atl_token" ), UrlComponent::Validator() ); /// @todo value verification?
-
-		// limited use
-		urlParser.removeQuery( UrlComponent::Matcher( "psession" ), UrlComponent::Validator() );
-		urlParser.removeQuery( UrlComponent::Matcher( "GalileoSession" ), UrlComponent::Validator() );  /// @todo 19 chars?
+		//   https://developer.atlassian.com/confdev/confluence-plugin-guide/writing-confluence-plugins/form-token-handling
+		//   3 different format
+		//   eg:
+		//     AFP6-ISR2-ZLJY-KBY3|926a76e0017be6a18e889d2ddffb0aaab21865c1|lout
+		//     56c1bb338d5ad3ac262dd4e97bda482efc151f30
+		//     15BWJdAr0U
+		{
+			std::vector<UrlComponent*> result = urlParser.matchQueryParam( UrlComponent::Matcher( "atl_token" ) );
+			if ( !result.empty() ) {
+				urlParser.removeQueryParam( result, UrlComponent::Validator( 65, 0, true, ALLOW_ALL ) );
+				urlParser.removeQueryParam( result, UrlComponent::Validator( 40, 40, true, ALLOW_HEX ) );
+				urlParser.removeQueryParam( result, UrlComponent::Validator( 10, 10, true, ( ALLOW_ALPHA | ALLOW_DIGIT ) ) );
+			}
+		}
 
 		// session id variations
+
+		// jsessionid
+		urlParser.removePath( UrlComponent::Matcher( "jsessionid" ), UrlComponent::Validator( 32, 32, false, ALLOW_HEX ) );
+		urlParser.removePathParam( UrlComponent::Matcher( "jsessionid", MATCH_PARTIAL ), UrlComponent::Validator( 20, 0, true ) );
+		urlParser.removeQueryParam( UrlComponent::Matcher( "jsessionid", MATCH_PARTIAL ), UrlComponent::Validator( 20, 0, true ) );
+
+		// Galileo
+		//   eg:
+		//     65971783A4.z17ZHFAI
+		//     63105032A6BFxgQFfV8
+		urlParser.removeQueryParam( UrlComponent::Matcher( "GalileoSession" ), UrlComponent::Validator( 19, 19, ALLOW_ALL ) );
+
+		// postnuke
+		//   normally it would be hex string length of 32. but shorter length exist (looks to be chopped off somehow)
+		//   eg:
+		//     549178d5035b622229a39cd5baf75d2a
+		//     4ed3b0a832d4687020b05ce70
+		urlParser.removeQueryParam( UrlComponent::Matcher( "POSTNUKESID" ), UrlComponent::Validator( 16, 32 , ( ALLOW_HEX ) ) );
+
+		/// @todo
+		// limited use
+		urlParser.removeQueryParam( UrlComponent::Matcher( "psession" ), UrlComponent::Validator() );
+
+
+		{
+			/// @todo
+			std::vector<UrlComponent*> matches = urlParser.matchQueryParam( UrlComponent::Matcher( "sid" ) );
+			urlParser.removeQueryParam( matches, UrlComponent::Validator( 12, 0, true, ALLOW_ALL, (MANDATORY_ALPHA | MANDATORY_DIGIT) ) );
+		}
+
+		/// @todo
 		urlParser.removePath( UrlComponent::Matcher( "phpsessid" ), UrlComponent::Validator() ); /// @todo value verification
-		urlParser.removeQuery( UrlComponent::Matcher( "phpsessid" ), UrlComponent::Validator( 0, true ) ); /// @todo value verification
-		urlParser.removeQuery( UrlComponent::Matcher( "sessid", MATCH_PARTIAL ), UrlComponent::Validator() ); /// @todo value verification
-		//urlParser.removeQuery( "vbsessid" ); // @todo 32 char hex
-		//urlParser.removeQuery( "asesessid" ); // hardwarelogic.com, aselabs.com, aronschatz.com, asemail.net, aseforums.com
-		//urlParser.removeQuery( "nlsessid" ); // netleih.de, videobuster.de
-		//urlParser.removeQuery( "GLBSESSID" ); // georges.be
-		//urlParser.removeQuery( "sessid" );
+		urlParser.removeQueryParam( UrlComponent::Matcher( "phpsessid" ), UrlComponent::Validator( 0, 0, true ) ); /// @todo value verification
+		urlParser.removeQueryParam( UrlComponent::Matcher( "sessid", MATCH_PARTIAL ), UrlComponent::Validator() ); /// @todo value verification
+		//urlParser.removeQueryParam( "vbsessid" ); // @todo 32 char hex
+		//urlParser.removeQueryParam( "asesessid" ); // hardwarelogic.com, aselabs.com, aronschatz.com, asemail.net, aseforums.com
+		//urlParser.removeQueryParam( "nlsessid" ); // netleih.de, videobuster.de
+		//urlParser.removeQueryParam( "GLBSESSID" ); // georges.be
+		//urlParser.removeQueryParam( "sessid" );
 
+		/// @todo
+		urlParser.removeQueryParam( UrlComponent::Matcher( "session_id" ), UrlComponent::Validator() );  /// @todo add sessionid check
+		urlParser.removeQueryParam( UrlComponent::Matcher( "sessionid" ), UrlComponent::Validator() );  /// @todo add sessionid check
 
-		urlParser.removeQuery( UrlComponent::Matcher( "session_id" ), UrlComponent::Validator() );  /// @todo add sessionid check
-		urlParser.removeQuery( UrlComponent::Matcher( "sessionid" ), UrlComponent::Validator() );  /// @todo add sessionid check
-
+		/// @todo
 		urlParser.removePath( UrlComponent::Matcher( "session" ), UrlComponent::Validator() );
-		urlParser.removeQuery( UrlComponent::Matcher( "session" ), UrlComponent::Validator() );
+		urlParser.removeQueryParam( UrlComponent::Matcher( "session" ), UrlComponent::Validator() );
 
-		urlParser.removeQuery( UrlComponent::Matcher( "auth_sess" ), UrlComponent::Validator() ); // mostly job sites (same group?)
-		urlParser.removeQuery( UrlComponent::Matcher( "cg_sess" ), UrlComponent::Validator() );
-		urlParser.removeQuery( UrlComponent::Matcher( "sess" ), UrlComponent::Validator() ); /// @todo make sure this is okay
+		/// @todo
+		urlParser.removeQueryParam( UrlComponent::Matcher( "auth_sess" ), UrlComponent::Validator() ); // mostly job sites (same group?)
+		urlParser.removeQueryParam( UrlComponent::Matcher( "cg_sess" ), UrlComponent::Validator() );
+		urlParser.removeQueryParam( UrlComponent::Matcher( "sess" ), UrlComponent::Validator() ); /// @todo make sure this is okay
 
 		/// @todo double check
 		// BR 20160117
 		// http://br4622.customervoice360.com/about_us.php?SES=652ee78702fe135cd96ae925aa9ec556&frmnd=registration
-		urlParser.removeQuery( UrlComponent::Matcher( "SES", MATCH_CASE ), UrlComponent::Validator( 10, true, ALLOW_ALPHA | ALLOW_DIGIT ) );
+		urlParser.removeQueryParam( UrlComponent::Matcher( "SES", MATCH_CASE ), UrlComponent::Validator( 10, 0, true, ALLOW_ALPHA | ALLOW_DIGIT ) );
 
-		// postnuke
-		urlParser.removeQuery( UrlComponent::Matcher( "POSTNUKESID" ), UrlComponent::Validator() );
-
-		urlParser.removeQuery( UrlComponent::Matcher( "mysid" ), UrlComponent::Validator( 10, false, ALLOW_ALPHA | ALLOW_DIGIT ) );
+		/// @todo
+		urlParser.removeQueryParam( UrlComponent::Matcher( "mysid" ), UrlComponent::Validator( 10, 0, false, ALLOW_ALPHA | ALLOW_DIGIT ) );
 
 
 
@@ -485,65 +558,65 @@ static void stripParameters( char *s, int32_t *len, bool stripSessionId, bool st
 		// Oracle Eloqua
 		// http://docs.oracle.com/cloud/latest/marketingcs_gs/OMCAA/index.html#Help/General/EloquaTrackingParameters.htm
 		/// @todo s=<customer side id>
-		urlParser.removeQuery( UrlComponent::Matcher( "elqTrackId" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "elq" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "elqCampaignId" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "elqaid" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "elqat" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "elq_mid" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "elq_cid" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "elq2" ) ); // others
+		urlParser.removeQueryParam( "elqTrackId" );
+		urlParser.removeQueryParam( "elq" );
+		urlParser.removeQueryParam( "elqCampaignId" );
+		urlParser.removeQueryParam( "elqaid" );
+		urlParser.removeQueryParam( "elqat" );
+		urlParser.removeQueryParam( "elq_mid" );
+		urlParser.removeQueryParam( "elq_cid" );
+		urlParser.removeQueryParam( "elq2" ); // others
 
 		// Google Analytics
 		// https://support.google.com/analytics/answer/1033867
-		urlParser.removeQuery( UrlComponent::Matcher( "utm_source" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "utm_medium" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "utm_term" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "utm_content" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "utm_campaign" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "utm_hp_ref" ) ); // Lots on huffingtonpost.com
-		urlParser.removeQuery( UrlComponent::Matcher( "utm_rid" ) ); // others
+		urlParser.removeQueryParam( "utm_source" );
+		urlParser.removeQueryParam( "utm_medium" );
+		urlParser.removeQueryParam( "utm_term" );
+		urlParser.removeQueryParam( "utm_content" );
+		urlParser.removeQueryParam( "utm_campaign" );
+		urlParser.removeQueryParam( "utm_hp_ref" ); // Lots on huffingtonpost.com
+		urlParser.removeQueryParam( "utm_rid" ); // others
 
 		// https://support.google.com/analytics/answer/1033981?hl=en
 		// https://support.google.com/ds/answer/6292795?hl=en
-		urlParser.removeQuery( UrlComponent::Matcher( "gclid" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "gclsrc" ) );
+		urlParser.removeQueryParam( "gclid" );
+		urlParser.removeQueryParam( "gclsrc" );
 
 		// Piwik
 		// http://piwik.org/docs/tracking-campaigns/
 		// https://plugins.piwik.org/AdvancedCampaignReporting
-		urlParser.removeQuery( UrlComponent::Matcher( "pk_campaign" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "pk_kwd" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "pk_source" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "pk_medium" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "pk_keyword" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "pk_content" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "pk_cid" ) );
+		urlParser.removeQueryParam( "pk_campaign" );
+		urlParser.removeQueryParam( "pk_kwd" );
+		urlParser.removeQueryParam( "pk_source" );
+		urlParser.removeQueryParam( "pk_medium" );
+		urlParser.removeQueryParam( "pk_keyword" );
+		urlParser.removeQueryParam( "pk_content" );
+		urlParser.removeQueryParam( "pk_cid" );
 
 		// Open Web Analytics
 		// https://github.com/padams/Open-Web-Analytics/wiki/Campaign-Tracking
-		urlParser.removeQuery( UrlComponent::Matcher( "owa_medium" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "owa_source" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "owa_campaign" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "owa_ad" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "owa_ad_type" ) );
+		urlParser.removeQueryParam( "owa_medium" );
+		urlParser.removeQueryParam( "owa_source" );
+		urlParser.removeQueryParam( "owa_campaign" );
+		urlParser.removeQueryParam( "owa_ad" );
+		urlParser.removeQueryParam( "owa_ad_type" );
 
 		// Webtrends
 		// http://help.webtrends.com/en/queryparameters/index.html
-		/// @todo webtrends tracking parameter
+		urlParser.removeQueryParam( "wt.mc_id" );
 
 		// Mailchimp
 		// https://apidocs.mailchimp.com/api/how-to/ecommerce.php
-		urlParser.removeQuery( UrlComponent::Matcher( "mc_cid" ) );
-		urlParser.removeQuery( UrlComponent::Matcher( "mc_eid" ) );
+		urlParser.removeQueryParam( "mc_cid" );
+		urlParser.removeQueryParam( "mc_eid" );
 
 		// Marketo
 		// http://developers.marketo.com/documentation/websites/lead-tracking-munchkin-js/
-		urlParser.removeQuery( UrlComponent::Matcher( "mkt_tok" ) );
+		urlParser.removeQueryParam( "mkt_tok" );
 
 		// Misc
-		urlParser.removeQuery( UrlComponent::Matcher( "trk" ) ); /// @todo dangerous?
-		urlParser.removeQuery( UrlComponent::Matcher( "partnerref" ) );
+		urlParser.removeQueryParam( "trk" ); /// @todo dangerous?
+		urlParser.removeQueryParam( "partnerref" );
 	}
 
 	/// @todo affiliate links
@@ -552,12 +625,12 @@ static void stripParameters( char *s, int32_t *len, bool stripSessionId, bool st
 
 	// amazon
 	// affiliate
-	//  urlParser.removeQuery( "tag" );
+	//  urlParser.removeQueryParam( "tag" );
 	// wishlist
-	//  urlParser.removeQuery( "coliid" );
-	//  urlParser.removeQuery( "colid" );
+	//  urlParser.removeQueryParam( "coliid" );
+	//  urlParser.removeQueryParam( "colid" );
 	// reference
-	//  urlParser.removeQuery( "ref" );
+	//  urlParser.removeQueryParam( "ref" );
 
 	// ebay
 	// afepn=[code], campid=[code], pid=[code]

@@ -10,22 +10,30 @@ public:
 	UrlParser( const char *url, size_t urlLen );
 
 	// path
+	std::vector<std::pair<UrlComponent*, UrlComponent*> > matchPath( const UrlComponent::Matcher &keyMatch );
+
+	bool removePath( const std::vector<std::pair<UrlComponent*, UrlComponent*> > &urlComponents, const UrlComponent::Validator &validator );
 	bool removePath( const UrlComponent::Matcher &keyMatch, const UrlComponent::Validator &validator );
 
+	// path param
+	std::vector<UrlComponent*> matchPathParam( const UrlComponent::Matcher &keyMatch );
+
+	bool removePathParam( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator );
+	bool removePathParam( const UrlComponent::Matcher &matcher, const UrlComponent::Validator &validator );
+
 	// query
-	std::vector<UrlComponent*> matchQuery( const UrlComponent::Matcher &keyMatch );
+	std::vector<UrlComponent*> matchQueryParam( const UrlComponent::Matcher &keyMatch );
 
-	
-	bool removeQuery( const std::vector<UrlComponent*> &urlComponents );
-	bool removeQuery( const UrlComponent::Matcher &keyMatch );
-
-	bool removeQuery( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator );
-	bool removeQuery( const UrlComponent::Matcher &keyMatch, const UrlComponent::Validator &validator );
+	bool removeQueryParam( const char *param );
+	bool removeQueryParam( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator );
+	bool removeQueryParam( const UrlComponent::Matcher &keyMatch, const UrlComponent::Validator &validator );
 
 	const char* unparse();
 
 private:
 	void parse();
+
+	bool removeComponent( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator );
 
 	const char *m_url;
 	size_t m_urlLen;

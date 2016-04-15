@@ -115,7 +115,7 @@ inline MandatoryCriteria operator&( MandatoryCriteria a, MandatoryCriteria b ) {
 
 class UrlComponent::Validator {
 public:
-	Validator( size_t minLength = 0, bool allowEmpty = false, AllowCriteria allowCriteria = ALLOW_ALL, MandatoryCriteria mandatoryCriteria = MANDATORY_NONE );
+	Validator( size_t minLength = 0, size_t maxLength = 0, bool allowEmpty = false, AllowCriteria allowCriteria = ALLOW_ALL, MandatoryCriteria mandatoryCriteria = MANDATORY_NONE );
 
 	bool allowEmptyValue() const {
 		return m_allowEmpty;
@@ -125,6 +125,7 @@ public:
 
 private:
 	size_t m_minLength;
+	size_t m_maxLength;
 	bool m_allowEmpty;
 
 	AllowCriteria m_allowCriteria;

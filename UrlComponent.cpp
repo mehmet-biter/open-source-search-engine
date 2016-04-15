@@ -1,6 +1,7 @@
 #include "UrlComponent.h"
 #include "fctypes.h"
 #include <algorithm>
+#include "Log.h"
 
 UrlComponent::UrlComponent( const char *pos, size_t len, char separator )
 	: m_pos( pos )
@@ -8,9 +9,14 @@ UrlComponent::UrlComponent( const char *pos, size_t len, char separator )
 	, m_separator( separator )
 	, m_keyLen( len )
 	, m_deleted( false) {
-	const char *equalPos = static_cast<const char*>( memchr( m_pos, '=', m_len ) );
-	if ( equalPos ) {
-		m_keyLen = equalPos - m_pos;
+	const char *separatorPos = static_cast<const char*>( memchr( m_pos, '=', m_len ) );
+	if ( !separatorPos ) {
+		// try again with comma
+		separatorPos = static_cast<const char*>( memchr( m_pos, ',', m_len ) );
+	}
+
+	if ( separatorPos ) {
+		m_keyLen = separatorPos - m_pos;
 	}
 
 	m_key = std::string( m_pos, m_keyLen );
@@ -43,15 +49,17 @@ bool UrlComponent::Matcher::isMatching( const UrlComponent &urlPart ) const {
 	return ( urlPart.getKey() == m_param );
 }
 
-UrlComponent::Validator::Validator( size_t minLength, bool allowEmpty, AllowCriteria allowCriteria, MandatoryCriteria mandatoryCriteria )
+UrlComponent::Validator::Validator( size_t minLength, size_t maxLength, bool allowEmpty,
+                                    AllowCriteria allowCriteria, MandatoryCriteria mandatoryCriteria )
 	: m_minLength( minLength )
+	, m_maxLength( maxLength )
 	, m_allowEmpty( allowEmpty )
 	, m_allowCriteria( allowCriteria )
 	, m_mandatoryCriteria( mandatoryCriteria )
 	, m_allowAlpha ( allowCriteria & ( ALLOW_HEX | ALLOW_ALPHA | ALLOW_ALPHA_LOWER | ALLOW_ALPHA_UPPER ) )
 	, m_allowAlphaLower( allowCriteria & ALLOW_ALPHA_LOWER )
 	, m_allowAlphaUpper( allowCriteria & ALLOW_ALPHA_UPPER )
-	, m_allowAlphaHex( allowCriteria & ALLOW_HEX )
+	, m_allowAlphaHex( allowCriteria & ( ALLOW_HEX | ALLOW_ALPHA_LOWER | ALLOW_ALPHA_UPPER ) )
 	, m_allowDigit( allowCriteria & ( ALLOW_DIGIT | ALLOW_HEX ) )
 	, m_allowPunctuation( allowCriteria & ( ALLOW_PUNCTUATION ) ) {
 }
@@ -64,8 +72,8 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 		return true;
 	}
 
-	// check min length
-	if ( m_minLength > valueLen ) {
+	// check length
+	if ( ( m_minLength && m_minLength > valueLen ) || ( m_maxLength && m_maxLength < valueLen ) ) {
 		return false;
 	}
 
@@ -77,8 +85,7 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 	bool hasAlpha = false;
 	bool hasAlphaNoHexLower = false;
 	bool hasAlphaNoHexUpper = false;
-	bool hasAlphaHexLower = false;
-	bool hasAlphaHexUpper = false;
+	bool hasAlphaHex = false;
 	bool hasDigit = false;
 	bool hasPunctuation = false;
 
@@ -86,17 +93,12 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 	for ( size_t i = 0; i < valueLen; ++i ) {
 		char c = value[i];
 
-		if ( !hasAlphaNoHexLower || !hasAlphaNoHexUpper || !hasAlphaHexLower || !hasAlphaHexUpper ) {
+		if ( !hasAlphaNoHexLower || !hasAlphaNoHexUpper || !hasAlphaHex ) {
 			if ( is_alpha_a( c ) ) {
 				hasAlpha = true;
 
-				if ( !hasAlphaHexLower && c >= 'a' && c <= 'f' ) {
-					hasAlphaHexLower = true;
-					continue;
-				}
-
-				if ( !hasAlphaHexUpper && c >= 'A' && c <= 'F' ) {
-					hasAlphaHexUpper = true;
+				if ( ( c >= 'a' && c <= 'f' ) || ( c >= 'A' && c <= 'F' ) ) {
+					hasAlphaHex = true;
 					continue;
 				}
 
@@ -125,12 +127,12 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 	bool validMandatory = true;
 
 	if ( m_allowCriteria != ALLOW_ALL ) {
-		validAllow = ( ( !m_allowAlpha && hasAlpha ) &&
-		               ( !m_allowAlphaLower && ( hasAlphaHexLower || hasAlphaNoHexLower ) ) &&
-		               ( !m_allowAlphaUpper && ( hasAlphaHexUpper || hasAlphaNoHexUpper ) ) &&
-		               ( !m_allowAlphaHex && ( hasAlphaHexLower || hasAlphaHexUpper ) ) &&
-		               ( !m_allowDigit && hasDigit ) &&
-		               ( !m_allowPunctuation && hasPunctuation ) );
+		validAllow = !( ( !m_allowAlpha && hasAlpha ) &&
+		                ( !m_allowAlphaLower && hasAlphaNoHexLower ) &&
+		                ( !m_allowAlphaUpper && hasAlphaNoHexUpper ) &&
+		                ( !m_allowAlphaHex && hasAlphaHex ) &&
+		                ( !m_allowDigit && hasDigit ) &&
+		                ( !m_allowPunctuation && hasPunctuation ) );
 	}
 
 	if ( m_mandatoryCriteria != MANDATORY_NONE ) {

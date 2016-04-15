@@ -297,7 +297,6 @@ TEST( UrlTest, DISABLED_StripSessionIdSid ) {
 		Url url;
 		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
 
-		//url.print();
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
@@ -333,7 +332,6 @@ TEST( UrlTest, StripSessionIdPhpSessId ) {
 		Url url;
 		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
 
-		//url.print();
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
@@ -363,7 +361,6 @@ TEST( UrlTest, StripSessionIdOsCommerce ) {
 		Url url;
 		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
 
-		//url.print();
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
@@ -391,7 +388,6 @@ TEST( UrlTest, StripSessionIdXTCommerce ) {
 		Url url;
 		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
 
-		//url.print();
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
@@ -400,13 +396,17 @@ TEST( UrlTest, StripSessionIdPostNuke ) {
 	const char *input_urls[] = {
 		// postnuke
 		"http://eeagrants.org/News?POSTNUKESID=c9965f0db1606c402015743d1cda55f5",
-		"http://www.bkamager.dk/modules.php?op=modload&name=News&file=article&sid=166&mode=thread&order=0&thold=0&POSTNUKESID=78ac739940c636f94bf9b3fac3afb4d2"
+		"http://www.bkamager.dk/modules.php?op=modload&name=News&file=article&sid=166&mode=thread&order=0&thold=0&POSTNUKESID=78ac739940c636f94bf9b3fac3afb4d2",
+	    "http://zspieszyce.nazwa.pl/modules.php?set_albumName=pieszyce-schortens&op=modload&name=gallery&file=index&include=view_album.php&POSTNUKESID=549178d5035b622229a39cd5baf75d2a",
+	    "http://myrealms.net/PostNuke/html/print.php?sid=2762&POSTNUKESID=4ed3b0a832d4687020b05ce70"
 	};
 
 	const char *expected_urls[] = {
 		// postnuke
 		"http://eeagrants.org/News",
-		"http://www.bkamager.dk/modules.php?op=modload&name=News&file=article&sid=166&mode=thread&order=0&thold=0"
+		"http://www.bkamager.dk/modules.php?op=modload&name=News&file=article&sid=166&mode=thread&order=0&thold=0",
+		"http://zspieszyce.nazwa.pl/modules.php?set_albumName=pieszyce-schortens&op=modload&name=gallery&file=index&include=view_album.php",
+		"http://myrealms.net/PostNuke/html/print.php?sid=2762"
 	};
 
 	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
@@ -417,7 +417,6 @@ TEST( UrlTest, StripSessionIdPostNuke ) {
 		Url url;
 		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
 
-		//url.print();
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
@@ -426,13 +425,19 @@ TEST( UrlTest, StripSessionIdColdFusion ) {
 	const char *input_urls[] = {
 		// coldfusion
 		"http://www.vineyard2door.com/web/clubs_browse.cfm?CFID=3843950&CFTOKEN=cfd5b9e083fb3e24-03C2F487-DAB8-1365-521658E43AB8A0DC&jsessionid=22D5211D9EB291522DE9A4258ECB94D2.cfusion",
-		"http://www.liquidhighwaycarwash.com/category/1118&CFID=11366594&CFTOKEN=9178789d30437e83-FD850740-F9A2-39F0-AA850FED06D46D4B/employment.htm"
+		"http://www.liquidhighwaycarwash.com/category/1118&CFID=11366594&CFTOKEN=9178789d30437e83-FD850740-F9A2-39F0-AA850FED06D46D4B/employment.htm",
+	    "http://shop.arslonga.ch/index.cfm/shop/homestyle/site/article/id/16834/CFID/3458787/CFTOKEN/e718cd6cc29050df-8051DC1E-C29B-554E-6DFF6B5D2704A9A5",
+		"http://www.lifeguide-augsburg.de/index.cfm/fuseaction/themen/theID/7624/ml1/7624/zg/0/cfid/43537465/cftoken/92566684.html",
+	    "https://www.mutualscrew.com/cart/cart.cfm?cftokenPass=CFID%3D31481352%26CFTOKEN%3D6aac7a0fc9fa6be0%2DBF3514D1%2D155D%2D8226%2D0EF8291F836B567D%26jsessionid%3D175051907615629E4C2CB4BFC8297FF3%2Ecfusion"
 	};
 
 	const char *expected_urls[] = {
 		// coldfusion
 		"http://www.vineyard2door.com/web/clubs_browse.cfm",
-		"http://www.liquidhighwaycarwash.com/category/1118/employment.htm"
+		"http://www.liquidhighwaycarwash.com/category/1118/employment.htm",
+		"http://shop.arslonga.ch/index.cfm/shop/homestyle/site/article/id/16834",
+		"http://www.lifeguide-augsburg.de/index.cfm/fuseaction/themen/theID/7624/ml1/7624/zg/0",
+		"https://www.mutualscrew.com/cart/cart.cfm"
 	};
 
 	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
@@ -443,12 +448,40 @@ TEST( UrlTest, StripSessionIdColdFusion ) {
 		Url url;
 		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
 
-		//url.print();
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, DISABLED_StripSessionIdJSessionId ) {
+TEST( UrlTest, StripSessionIdAtlassian ) {
+	const char *input_urls[] = {
+		// atlassian
+		"https://track.systrends.com/secure/IssueNavigator.jspa?mode=show&atl_token=CUqRyjtmwj",
+		"https://jira.kansalliskirjasto.fi/secure/WorkflowUIDispatcher.jspa?id=76139&action=51&atl_token=B12X-5XYK-TDON-8SC7|9724becbc02f07cdd6217c60b7662fe0b6c6f6d2|lout",
+		"https://support.highwinds.com/login.action?os_destination=%2Fdisplay%2FDOCS%2FUser%2BAPI&atl_token=56c1bb338d5ad3ac262dd4e97bda482efc151f30",
+	    "https://bugs.dlib.indiana.edu/secure/IssueNavigator.jspa?mode=hide&atl_token=AT3D-YZ9T-9TL1-ICW1%7C06900f3197f333cf03f196af7a36c63767c4e8fb%7Clout&requestId=10606"
+	};
+
+	const char *expected_urls[] = {
+		// atlassian
+		"https://track.systrends.com/secure/IssueNavigator.jspa?mode=show",
+		"https://jira.kansalliskirjasto.fi/secure/WorkflowUIDispatcher.jspa?id=76139&action=51",
+		"https://support.highwinds.com/login.action?os_destination=%2Fdisplay%2FDOCS%2FUser%2BAPI",
+		"https://bugs.dlib.indiana.edu/secure/IssueNavigator.jspa?mode=hide&requestId=10606"
+	};
+
+	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
+	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
+
+	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+		Url url;
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+
+		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
+	}
+}
+
+TEST( UrlTest, StripSessionIdJSessionId ) {
 	const char *input_urls[] = {
 		// jessionid
 		"https://scholarships.wisc.edu/Scholarships/recipientDetails;jsessionid=D2DCE4F10608F15CA177E29EB2AB162F?recipId=850",
@@ -456,7 +489,9 @@ TEST( UrlTest, DISABLED_StripSessionIdJSessionId ) {
 		"https://jobs.bathspa.ac.uk/wrl/pages/vacancy.jsf;jsessionid=C4882E8D70D04244661C8A8E811D3290?latest=01001967",
 		"https://sa.www4.irs.gov/wmar/start.do;jsessionid=DQnV2P-nFQir0foo7ThxBejZ",
 		"https://webshop.lic.co.nz/cws001/catalog/productDetail.jsf;jsessionid=0_cVS0dqWe1zHDcxyveGcysJVfbkUwHPDMUe_SAPzI8IIDaGbNUXn59V-PZnbFVZ;saplb_*=%28J2EE516230320%29516230351?sort=TA&wec-appid=WS001&page=B43917ED9DD446288421D9F817EE305E&itemKey=463659D75F2F005D000000000A0A0AF0&show=12&view=grid&wec-locale=en_NZ",
-		"http://www.oracle.com/technetwork/developer-tools/adf/overview/index.html;jsessionid=6R39V8WhqTQ7HMb2vTQTkzbP5XRFgs4RQzyxQ7fqxH9y6p6vKXk4!-460884186"
+		"http://www.oracle.com/technetwork/developer-tools/adf/overview/index.html;jsessionid=6R39V8WhqTQ7HMb2vTQTkzbP5XRFgs4RQzyxQ7fqxH9y6p6vKXk4!-460884186",
+		"http://www.cnpas.org/portal/media-type/html/language/ro/user/anon/page/default.psml/jsessionid/A27DF3C8CF0C66C480EC74FF6A7C837C?action=forum.ScreenAction",
+		"http://www.medienservice-online.de/dyn/epctrl/jsessionid/FA082288A00623E49FCC553D95D484C9/mod/wwpress002431/cat/wwpress005964/pri/wwpress"
 	};
 
 	const char *expected_urls[] = {
@@ -466,7 +501,9 @@ TEST( UrlTest, DISABLED_StripSessionIdJSessionId ) {
 		"https://jobs.bathspa.ac.uk/wrl/pages/vacancy.jsf?latest=01001967",
 		"https://sa.www4.irs.gov/wmar/start.do",
 		"https://webshop.lic.co.nz/cws001/catalog/productDetail.jsf?sort=TA&wec-appid=WS001&page=B43917ED9DD446288421D9F817EE305E&itemKey=463659D75F2F005D000000000A0A0AF0&show=12&view=grid&wec-locale=en_NZ",
-		"http://www.oracle.com/technetwork/developer-tools/adf/overview/index.html"
+		"http://www.oracle.com/technetwork/developer-tools/adf/overview/index.html",
+		"http://www.cnpas.org/portal/media-type/html/language/ro/user/anon/page/default.psml?action=forum.ScreenAction",
+		"http://www.medienservice-online.de/dyn/epctrl/mod/wwpress002431/cat/wwpress005964/pri/wwpress"
 	};
 
 	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
@@ -477,7 +514,6 @@ TEST( UrlTest, DISABLED_StripSessionIdJSessionId ) {
 		Url url;
 		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
 
-		//url.print();
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
@@ -577,7 +613,6 @@ TEST( UrlTest, StripSessionIdSessId ) {
 		Url url;
 		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
 
-		//url.print();
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
@@ -603,7 +638,6 @@ TEST( UrlTest, StripSessionIdPSession ) {
 		Url url;
 		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
 
-		//url.print();
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
@@ -631,7 +665,6 @@ TEST( UrlTest, StripSessionIdGalileoSession ) {
 		Url url;
 		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
 
-		//url.print();
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
@@ -657,7 +690,6 @@ TEST( UrlTest, StripSessionIdAuthSess ) {
 		Url url;
 		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
 
-		//url.print();
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
@@ -691,7 +723,6 @@ TEST( UrlTest, DISABLED_StripSessionIdMySid ) {
 		Url url;
 		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
 
-		//url.print();
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
@@ -804,7 +835,7 @@ TEST( UrlTest, StripTrackingParamOracleEloqua ) {
 	}
 }
 
-TEST( UrlTest, DISABLED_StripTrackingParamWebTrends ) {
+TEST( UrlTest, StripTrackingParamWebTrends ) {
 	const char *input_urls[] = {
 	    // webtrends
 	    "http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html?elq_mid=1089&elq_cid=107687&wt.mc_id=CAD_MOL_MC_PR_EM1_0815_NewHaakeMars_English_GLB_2647&elq=f17d2c276ed045c0bb391e4c273b789c&elqCampaignId=&elqaid=1089&elqat=1&elqTrackId=ce2a4c4879ee4f6488a14d924fa1f8a5"
