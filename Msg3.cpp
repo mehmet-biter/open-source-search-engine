@@ -144,10 +144,8 @@ class RdbCache *getDiskPageCache ( char rdbId ) {
 //   since the last sync point.
 bool Msg3::readList  ( char           rdbId         ,
 		       collnum_t collnum ,
-		       //key_t          startKey      , 
-		       //key_t          endKey        , 
-		       char          *startKeyArg      , 
-		       char          *endKeyArg        , 
+		       const char       *startKeyArg   ,
+		       const char       *endKeyArg     ,
 		       int32_t           minRecSizes   , // max size of scan
 		       int32_t           startFileNum  , // first file to scan
 		       int32_t           numFiles      , // rel. to startFileNum
@@ -1145,9 +1143,7 @@ bool Msg3::doneSleeping ( ) {
 void  Msg3::setPageRanges ( RdbBase *base ,
 			    int32_t  *fileNums      ,
 			    int32_t   numFileNums   ,
-			    //key_t  startKey      , 
-			    //key_t  endKey        ,
-			    char  *startKey      , 
+			    const char  *startKey   ,
 			    char  *endKey        ,
 			    int32_t   minRecSizes   ) {
 	// sanity check

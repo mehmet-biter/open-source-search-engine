@@ -52,12 +52,9 @@ class Msg3 {
 	//   by Msg5.cpp to constrain the endKey so it can read the recs
 	//   from the tree using that endKey, and not waste time.
 	bool readList  ( char           rdbId         ,
-			 //char          *coll          ,
 			 collnum_t collnum ,
-			 //key_t          startKey      , 
-			 //key_t          endKey        , 
-			 char          *startKey      , 
-			 char          *endKey        , 
+			 const char       *startKey      ,
+			 const char       *endKey        ,
 			 int32_t           minRecSizes   , // scan size(-1 all)
 			 int32_t           startFileNum  , // first file to scan
 			 int32_t           numFiles      , // rel.2 startFileNum
@@ -93,15 +90,11 @@ class Msg3 {
 
 	// . sets page ranges for RdbScan (m_startpg[i], m_endpg[i])
 	// . returns the endKey for all RdbScans
-	//key_t setPageRanges ( class RdbBase *base     ,
 	void  setPageRanges ( class RdbBase *base     ,
 			      int32_t      *fileNums     ,
 			      int32_t       numFileNums  ,
-			      //key_t      startKey     , 
-			      //key_t      endKey       ,
-			      char      *startKey     , 
+			      const char  *startKey     ,
 			      char      *endKey       ,
-			      //int32_t       minRecSizes  );
 			      int32_t       minRecSizes  );
 
 	// the rdb we're scanning for
@@ -132,10 +125,7 @@ class Msg3 {
 	RdbList  *m_lists ; // [ MAX_RDB_FILES ];
 
 	// key range to read
-	//key_t     m_fileStartKey;
-	//key_t     m_startKey;
-	//key_t     m_endKey;
-	char     *m_fileStartKey;
+	const char     *m_fileStartKey;
 	char      m_startKey[MAX_KEY_BYTES];
 	char      m_endKey[MAX_KEY_BYTES];
 
