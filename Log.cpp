@@ -223,11 +223,7 @@ bool Log::logR ( int64_t now , int32_t type , const char *msg , bool asterisk ,
 		return true;
 	// return true if we should not log this
 	if ( ! forced && ! shouldLog ( type , msg ) ) return true;
-	// skipfilter:
-	// can we log if we're a sig handler? don't take changes
-	if ( g_inSigHandler ) 
-		return logLater ( now , type , msg , NULL );
-	//if ( g_inSigHandler ) return false;
+
 	// get "msg"'s length
 	int32_t msgLen = gbstrlen ( msg );
 
@@ -394,116 +390,9 @@ bool Log::makeNewLogFile ( ) {
 
 // keep a special buf
 static char  s_buf[1024*64];
-static char *s_bufEnd   = s_buf + 1024*64;
 static char *s_ptr      = s_buf;
 static bool  s_overflow = false;
 static char  s_problem  = '\0';
-
-// . if we're in a sig handler come here
-// . store:
-// . 4 bytes = size of string space
-// . X bytes = NULL terminated format string
-// . X bytes = 0-3 bytes word-alignment padding
-bool Log::logLater ( int64_t now, int32_t type, const char *format, va_list ap ) {
-	//return false;
-	// we have to be in a sig handler
-	//if ( ! g_inSigHandler ) 
-	// fprintf(stderr,"Log::logLater: this should not have been called\n");
-	// was it set before us?
-	//bool queueSig = ! m_needsPrinting;
-	// set the signal to print this out later
-	m_needsPrinting = true;
-	// save old s_ptr in case we have error
-	char *start = s_ptr;
-	// size of format string we must store
-	int32_t flen = gbstrlen ( format ) + 1;
-	// do we have room to store the stuff?
-	if ( s_ptr + 4 + 4 + flen > s_bufEnd ) {
-		s_overflow = true; 
-		return false;
-	}
-	// first 4 bytes are the size of the string space, write later
-	int32_t stringSizes = 0;
-	s_ptr += 4;
-	// the priorty is the 2nd 4 bytes
-	memcpy_ass ( s_ptr , (char *)&type , 4 );
-	s_ptr += 4;
-	// store the format string first
-	memcpy_ass ( s_ptr , format , flen );
-	s_ptr += flen;
-	// the type of each arg is given by format
-	const char *p = format;
-	// point to the variable args data
-	char *pap = (char *)ap;
-	// loop looking for %s, %"INT32", etc.
- loop:
-	while ( *p && *p != '%' ) p++;
-	// bail if done
-	if ( ! *p ) goto done;
-	// skip the percent
-	p++;
-	// skip if back to back
-	if ( *p == '%' ) { p++; goto loop; }
-	// skip following numbers, those are part of format
-	while ( *p && is_digit(*p) ) p++;
-	// is it a int32_t, half or int? if so, leave as is.
-	if ( *p == 'l' ) { 
-		pap += 4; 
-		// it could be a int64_t
-		if ( (*p+1) == 'l' ) pap += 4;
-		goto loop; 
-	}
-	if ( *p == 'h' ) { pap += 4; goto loop; }
-	if ( *p == 'i' ) { pap += 4; goto loop; }
-	if ( *p == 'c' ) { pap += 4; goto loop; }
-	// . it it a string?
-	// . if so store it on s_ptr
-	if ( *p == 's' ) {
-		char *s = *(char **)pap;
-		int32_t  slen = gbstrlen(s) + 1;
-		if ( s_ptr + slen >= s_bufEnd ) {
-			s_ptr = start;
-			s_overflow = true; 
-			return false;
-		}
-		memcpy_ass ( s_ptr , s , slen );
-		*(char **)pap = s_ptr; // replace old char ptr to use ours now
-		s_ptr += slen;
-		stringSizes += slen;
-		pap += 4; // skip over a char ptr arg
-		goto loop;
-	}
-	// panic if we don't know the type!!!
-	s_ptr = start;
-	s_problem = *p;
-	return false;
-
-	// save the args themselves and the time
- done:
-	// how big were the strings we stored, if any
-	memcpy_ass ( start , (char *)&stringSizes , 4 );
-	// size of args we must store
-	int32_t apsize = pap - (char *)ap;
-	// bail if not enough room
-	if ( s_ptr + 8 + 4 + 3 + apsize >= s_bufEnd ) {
-		s_ptr = start;
-		s_overflow = true;
-		return false;
-	}
-	// store the time stamp in milliseconds
-	memcpy_ass ( s_ptr , (char *)&now , 8 );
-	s_ptr += 8;
-	// store arg sizes
-	memcpy_ass ( s_ptr , (char *)&apsize , 4 );
-	s_ptr += 4;
-	// dword align
-	int32_t rem = ((PTRTYPE)s_ptr) % 4;
-	if ( rem > 0 ) s_ptr +=  4 - rem;
-	// store the args themselves
-	memcpy_ass ( s_ptr , (char *)ap , apsize );
-	s_ptr += apsize;
-	return false;
-}
 
 // once we're no longer in a sig handler this is called by Loop.cpp
 // if g_log.needsPrinting() is true
@@ -626,9 +515,6 @@ bool log ( int32_t type , const char *formatString , ...) {
 	char buf[1024*10];
 	// copy the error into the buffer space
 	va_start ( ap, formatString);
-	// debug hack for testing
-	if ( g_inSigHandler ) 
-		return g_log.logLater ( gettimeofdayInMilliseconds() , type , formatString , ap);
 	// print it into our buf now
 	vsnprintf ( buf , 1024*10 , formatString , ap );
 	va_end(ap);
@@ -651,9 +537,6 @@ bool log ( const char *formatString , ... ) {
 	char buf[1024*10];
 	// copy the error into the buffer space
 	va_start ( ap, formatString);
-	// debug hack for testing
-	if ( g_inSigHandler ) 
-		return g_log.logLater ( gettimeofdayInMilliseconds() , LOG_WARN , formatString , ap);
 	// print it into our buf now
 	vsnprintf ( buf , 1024*10 , formatString , ap );
 	va_end(ap);
@@ -678,9 +561,6 @@ bool logf ( int32_t type , const char *formatString , ...) {
 	char buf[1024*10];
 	// copy the error into the buffer space
 	va_start ( ap, formatString);
-	// debug hack for testing
-	if ( g_inSigHandler ) 
-		return g_log.logLater ( gettimeofdayInMilliseconds() , type , formatString , ap);
 	// print it into our buf now
 	vsnprintf ( buf , 1024*10 , formatString , ap );
 	va_end(ap);

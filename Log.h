@@ -146,10 +146,6 @@ class Log {
 	// print the stuff that needs printing
 	void printBuf ( );
 
-	// this is only called when in a signal handler
-	bool logLater ( int64_t now , int32_t type , const char *formatString ,
-			va_list ap );
-
 	bool          m_disabled;
 
 	bool m_logTimestamps;
