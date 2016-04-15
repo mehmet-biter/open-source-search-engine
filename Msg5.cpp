@@ -615,7 +615,6 @@ static void  threadDoneWrapper   ( void *state , ThreadEntry * /*t*/ ) ;
 static void *mergeListsWrapper_r ( void *state , ThreadEntry * /*t*/ ) ;
 
 
-#define TFNDBMINRECSIZES (256*1024)
 
 // . this is the NEW gotList() !!! mdw
 // . returns false if blocked, true otherwise
@@ -625,19 +624,9 @@ bool Msg5::gotList ( ) {
 	// we are no longer waiting for the list
 	//m_waitingForList = false;
 
-	// debug msg
-	//log("msg5 got lists from msg3 (msg5=%"UINT32")",(int32_t)this);
 	// return if g_errno is set
 	if ( g_errno && g_errno != ECORRUPTDATA ) return true;
 
-	// if reading from titledb, read corresponding tfndb list so
-	// we can remove overwritten titleRecs
-	if ( m_rdbId != RDB_TITLEDB ) return gotList2();
-
-	// if not merging files on disk, skip this stuff
-	if ( ! m_isRealMerge ) return gotList2();
-
-	// this is now obsolete!
 	return gotList2();
 }
 
