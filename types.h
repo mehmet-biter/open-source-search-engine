@@ -773,7 +773,7 @@ static inline void KEYSET ( char *k1 , const char *k2 , char keySize ) {
 	return;
 }
 
-static inline char KEYNEG ( char *k , int32_t a , char keySize ) {
+static inline char KEYNEG ( const char *k , int32_t a , char keySize ) {
 	// posdb
 	if ( keySize == 18 ) {
 		if ( (k[a*18] & 0x01) == 0x00 ) return 1;
