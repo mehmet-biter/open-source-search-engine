@@ -47,13 +47,10 @@ class Msg0 {
 		       int32_t      maxCacheAge , // max cached age in seconds
 		       bool      addToCache  , // add net recv'd list to cache?
 		       char      rdbId       , // specifies the rdb
-		       //char     *coll        ,
 		       collnum_t collnum ,
 		       class RdbList  *list  ,
-		       //key_t     startKey    , 
-		       //key_t     endKey      , 
-		       char     *startKey    ,
-		       char     *endKey      ,
+		       const char     *startKey    ,
+		       const char     *endKey      ,
 		       int32_t      minRecSizes ,  // Positive values only
 		       void     *state       ,
 		       //void  (* callback)(void *state , class RdbList *list),
@@ -82,7 +79,6 @@ class Msg0 {
 		       int32_t      maxCacheAge , // max cached age in seconds
 		       bool      addToCache  , // add net recv'd list to cache?
 		       char      rdbId       , // specifies the rdb
-		       //char     *coll        ,
 		       collnum_t collnum ,
 		       class RdbList  *list  ,
 		       key_t     startKey    , 
@@ -118,8 +114,8 @@ class Msg0 {
 				 rdbId       ,
 				 collnum     ,
 				 list  ,
-				 (char *)&startKey    , 
-				 (char *)&endKey      , 
+				 (const char *)&startKey    ,
+				 (const char *)&endKey      ,
 				 minRecSizes ,
 				 state       ,
 				 callback    ,

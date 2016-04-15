@@ -94,8 +94,8 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     char      rdbId       , // specifies the rdb
 		     collnum_t collnum ,
 		     RdbList  *list        ,
-		     char     *startKey    ,
-		     char     *endKey      ,
+		     const char     *startKey    ,
+		     const char     *endKey      ,
 		     int32_t      minRecSizes ,  // use -1 for no max
 		     void     *state       ,
 		     void    (* callback)(void *state ),//, RdbList *list ) ,
