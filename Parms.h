@@ -164,7 +164,7 @@ class Parm {
 	const char *m_desc;  // description of variable displayed on admin gui page
 	const char *m_cgi;   // cgi name, contains %i if an array
 
-	char *m_xml;   // default to rendition of m_title if NULL
+	const char *m_xml;   // default to rendition of m_title if NULL
 	int32_t  m_off;   // this variable's offset into the CollectionRec class
 	char  m_colspan;
 	char  m_type;  // TYPE_BOOL, TYPE_LONG, ...

@@ -56,7 +56,7 @@ public:
 	// . obsolete compound name = myhouse[0].bedroom[2].nightstand[1]
 	// . returns -1 if not found
 	// . only searches nodes in [n0,n1] node range
-	int32_t getNodeNum( int32_t n0, int32_t n1, char *tagName, int32_t tagNameLen ) const;
+	int32_t getNodeNum( int32_t n0, int32_t n1, const char *tagName, int32_t tagNameLen ) const;
 
 	// . get the back tag node for a given node
 	int32_t getEndNode ( int32_t num );
@@ -169,7 +169,7 @@ public:
 
 private:
 	// used because "s" may have words separated by periods
-	int64_t getCompoundHash( char *s, int32_t len ) const;
+	int64_t getCompoundHash( const char *s, int32_t len ) const;
 
 	XmlNode *m_nodes;
 	int32_t m_numNodes;

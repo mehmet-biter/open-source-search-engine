@@ -113,10 +113,10 @@ int32_t Xml::getEndNode ( int32_t num ) {
 	return i;
 }
 
-int64_t Xml::getCompoundHash ( char *s , int32_t len ) const {
+int64_t Xml::getCompoundHash ( const char *s , int32_t len ) const {
 	// setup
-	char *p     = s;
-	char *start = s;
+	const char *p     = s;
+	const char *start = s;
 	int32_t i   = 0;
 	int64_t h = 0;
  loop:
@@ -139,7 +139,7 @@ int64_t Xml::getCompoundHash ( char *s , int32_t len ) const {
 
 // . return -1 if not found
 // . "tagName" is compound (i.e. "myhouse.myroom" )
-int32_t Xml::getNodeNum ( int32_t n0 , int32_t n1 , char *tagName , int32_t tagNameLen ) const {
+int32_t Xml::getNodeNum ( int32_t n0 , int32_t n1 , const char *tagName , int32_t tagNameLen ) const {
 	// . since i changed the hash to a zobrist hash, hashing
 	//   "dns.ip" is not the same as hashing "dns" then "." then "ip"
 	//   by passing the hash of the last to the next as the startHash
