@@ -2984,28 +2984,6 @@ bool Parms::setFromFile ( void *THIS        ,
 		nn = m_xml2.getNodeNum(nn,1000000,m->m_xml,gbstrlen(m->m_xml));
 		// otherwise, we had one in file, but now we're out
 		if ( nn < 0 ) {
-			// if it was ONLY a search input parm, with no
-			// default value that can be changed in the 
-			// CollectionRec then skip it
-			// if ( m->m_soff  != -1 && 
-			//      m->m_off   == -1 &&
-			//      m->m_smaxc == -1 ) 
-			// 	continue;
-			// . if it is a string, like <adminIp> and default is 
-			//   NULL then don't worry about reporting it
-			// . no, just make the default "" then
-			//if ( m->m_type==TYPE_STRING && ! m->m_def) continue;
-			// bitch that it was not found
-			//if ( ! m->m_def[0] ) 
-			//	log("conf: %s does not have <%s> tag. "
-			//	    "Ommitting.",filename,m->m_xml);
-			//else 
-			/*
-			if ( ! m->m_def ) //m->m_def[0] )
-				log("conf: %s does not have <%s> tag. Using "
-				    "default value of \"%s\".", filename,
-				    m->m_xml,m->m_def);
-			*/
 			continue;
 		}
 		// . next node is the value of this tag
@@ -5478,7 +5456,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER; // PAGE_NONE;
 	m->m_type  = TYPE_LONG_LONG;
 	m++;
-
 	
 	m->m_title = "max total spiders";
 	m->m_desc  = "What is the maximum number of web "
@@ -8260,8 +8237,6 @@ void Parms::init ( ) {
 		"XML feed, 1 otherwise.";
 	m->m_cgi   = "spell";
 	m->m_off   = offsetof(CollectionRec,m_spellCheck);
-	//m->m_soff  = offsetof(SearchInput,m_spellCheck);
-	//m->m_sparm = 1;
 	m->m_type  = TYPE_BOOL;
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
@@ -8648,8 +8623,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(CollectionRec,m_htmlHead);
 	m->m_type  = TYPE_SAFEBUF;//STRINGBOX;
 	m->m_def   = "";
-	//m->m_sparm = 1;
-	//m->m_soff  = offsetof(SearchInput,m_htmlHead);
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_TEXTAREA | PF_CLONE;
@@ -8682,8 +8655,6 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(CollectionRec,m_htmlTail);
 	m->m_type  = TYPE_SAFEBUF;//STRINGBOX;
 	m->m_def   = "";
-	//m->m_sparm = 1;
-	//m->m_soff  = offsetof(SearchInput,m_htmlHead);
 	m->m_page  = PAGE_SEARCH;
 	m->m_obj   = OBJ_COLL;
 	m->m_flags = PF_TEXTAREA | PF_CLONE;
@@ -10755,7 +10726,6 @@ void Parms::init ( ) {
 	for ( int32_t i = 0 ; i < m_numParms ; i++ ) {
 		// sanity check
 		if ( m_parms[i].m_off   > mm ||
-		     //m_parms[i].m_soff  > mm ||
 		     m_parms[i].m_smaxc > mm   ) {
 			log(LOG_LOGIC,"conf: Bad offset in parm #%"INT32" %s."
 			    " (%"INT32",%"INT32",%"INT32"). Did you FORGET to include "
@@ -10765,7 +10735,6 @@ void Parms::init ( ) {
 			    i,m_parms[i].m_title,
 			    mm,
 			    m_parms[i].m_off,
-			    //m_parms[i].m_soff,
 			    m_parms[i].m_smaxc);
 			exit(-1);
 		}
