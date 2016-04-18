@@ -18070,8 +18070,11 @@ Matches *XmlDoc::getMatches () {
 	// set it up
 	m_matches.setQuery ( q );
 
+	LinkInfo *linkInfo = getLinkInfo1();
+	if(linkInfo==(LinkInfo*)-1)
+		linkInfo = NULL;
 	// returns false and sets g_errno on error
-	if ( !m_matches.set( ww, phrases, ss, bits, pos, xml, ti, getFirstUrl(), getLinkInfo1(), m_niceness ) ) {
+	if ( !m_matches.set( ww, phrases, ss, bits, pos, xml, ti, getFirstUrl(), linkInfo, m_niceness ) ) {
 		return NULL;
 	}
 
