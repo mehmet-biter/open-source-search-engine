@@ -22,6 +22,10 @@ public:
 	bool removePathParam( const UrlComponent::Matcher &matcher, const UrlComponent::Validator &validator );
 
 	// query
+	size_t getQueryParamCount() {
+		return m_queries.size();
+	}
+
 	std::vector<UrlComponent*> matchQueryParam( const UrlComponent::Matcher &keyMatch );
 
 	bool removeQueryParam( const char *param );
@@ -35,6 +39,8 @@ private:
 
 	bool removeComponent( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator );
 
+	void incrementDeleteCount( const UrlComponent *urlComponent );
+
 	const char *m_url;
 	size_t m_urlLen;
 
@@ -46,9 +52,11 @@ private:
 
 	std::vector<UrlComponent> m_paths;
 	char m_pathEndChar;
+	size_t m_pathsDeleteCount;
 
 	std::vector<UrlComponent> m_queries;
 	std::map<std::string, size_t> m_queriesMap;
+	size_t m_queriesDeleteCount;
 
 	std::string m_urlParsed;
 };

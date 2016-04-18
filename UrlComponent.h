@@ -5,7 +5,16 @@
 
 class UrlComponent {
 public:
-	UrlComponent( const char *pos, size_t len, char separator );
+	enum Type {
+		TYPE_PATH,
+		TYPE_QUERY
+	};
+
+	UrlComponent( Type type, const char *pos, size_t len, char separator );
+
+	Type getType() const {
+		return m_type;
+	}
 
 	std::string getKey() const {
 		return m_key;
@@ -31,6 +40,10 @@ public:
 		return m_len - m_keyLen - 1;
 	}
 
+	bool isDeleted() const {
+		return m_deleted;
+	}
+
 	void setDeleted() {
 		m_deleted = true;
 	}
@@ -39,6 +52,8 @@ public:
 	class Validator;
 
 //private:
+	Type m_type;
+
 	const char *m_pos;
 	size_t m_len;
 	char m_separator;
@@ -129,14 +144,20 @@ private:
 	bool m_allowEmpty;
 
 	AllowCriteria m_allowCriteria;
-	MandatoryCriteria m_mandatoryCriteria;
-
 	bool m_allowAlpha;
 	bool m_allowAlphaLower;
 	bool m_allowAlphaUpper;
 	bool m_allowAlphaHex;
 	bool m_allowDigit;
 	bool m_allowPunctuation;
+
+	MandatoryCriteria m_mandatoryCriteria;
+	bool m_mandatoryAlpha;
+	bool m_mandatoryAlphaLower;
+	bool m_mandatoryAlphaUpper;
+	bool m_mandatoryAlphaHex;
+	bool m_mandatoryDigit;
+	bool m_mandatoryPunctuation;
 };
 
 #endif // GB_URLCOMPONENT_H

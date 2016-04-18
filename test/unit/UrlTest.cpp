@@ -270,23 +270,33 @@ TEST( UrlTest, StripSessionIdV122 ) {
 	}
 }
 
-TEST( UrlTest, DISABLED_StripSessionIdSid ) {
+TEST( UrlTest, StripSessionIdSid ) {
 	const char *input_urls[] = {
 		// sid
 		"http://astraklubpolska.pl/viewtopic.php?f=149&t=829138&sid=1d5e1e9ba356dc2f848f6223d914ca19&start=10",
+	    "http://jx3.net/tdg/forum/viewtopic.php?f=74&t=2860&sid=0b721aa1c34b75fcf41e17304537d965&start=0",
+		"http://www.classicbabygift.com/cgi-bin/webc.cgi/st_main.html?p_catid=3&sid=3KnGJS3ga7ae891-33115175851.04",
+	    "http://order.bephoto.be/?langue=nl&step=2&sid=v0uqho4nv0mnghv4ap3ieeqp94&check=AzEBNVg6BGQBagM",
+	    "http://www02.ktzhk.com/plugin_midi.php?action=list&midi_type=2&tids=49&sid=K6FYyt",
 
 		// sid (no strip)
 		"http://www.fibsry.fi/fi/component/sobipro/?pid=146&sid=203:Bank4Hope",
-	    "http://www.bzga.de/?sid=1366"
+	    "http://www.bzga.de/?sid=1366",
+	    "http://tw.school.uschoolnet.com/?id=es00000113&mode=news&key=134726811289359&sid=detail&news=141981074080101"
 	};
 
 	const char *expected_urls[] = {
 		// sid
 		"http://astraklubpolska.pl/viewtopic.php?f=149&t=829138&start=10",
+		"http://jx3.net/tdg/forum/viewtopic.php?f=74&t=2860&start=0",
+		"http://www.classicbabygift.com/cgi-bin/webc.cgi/st_main.html?p_catid=3",
+		"http://order.bephoto.be/?langue=nl&step=2&check=AzEBNVg6BGQBagM",
+		"http://www02.ktzhk.com/plugin_midi.php?action=list&midi_type=2&tids=49",
 
 		// sid (no strip)
 		"http://www.fibsry.fi/fi/component/sobipro/?pid=146&sid=203:Bank4Hope",
-	    "http://www.bzga.de/?sid=1366"
+	    "http://www.bzga.de/?sid=1366",
+		"http://tw.school.uschoolnet.com/?id=es00000113&mode=news&key=134726811289359&sid=detail&news=141981074080101"
 	};
 
 	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
@@ -518,7 +528,36 @@ TEST( UrlTest, StripSessionIdJSessionId ) {
 	}
 }
 
-TEST( UrlTest, DISABLED_StripSessionIdSessionId ) {
+TEST( UrlTest, StripSessionIdPHPSessId ) {
+	const char *input_urls[] = {
+		// phpsessid
+		"http://www.praxis-jennewein.de/?&sitemap&PHPSESSID_netsh107345=84b58a8e5c56d8d1f9d459311caf18ee",
+
+	    // phpsessid (no strip)
+		"http://korel.com.au/disable-phpsessid/feed/"
+	};
+
+	const char *expected_urls[] = {
+		// phpsessid
+		"http://www.praxis-jennewein.de/?sitemap",
+
+	    // phpsessid (no strip)
+		"http://korel.com.au/disable-phpsessid/feed/"
+	};
+
+	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
+	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
+
+	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+		Url url;
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+
+		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
+	}
+}
+
+TEST( UrlTest, StripSessionIdSessionId ) {
 	const char *input_urls[] = {
 		// sessionid
 		"http://ualberta.intelliresponse.com/index.jsp?requestType=NormalRequest&source=3&id=474&sessionId=f5b80817-fa7e-11e5-9343-5f3e78a954d2&question=How+many+students+are+enrolled",
@@ -617,31 +656,6 @@ TEST( UrlTest, StripSessionIdSessId ) {
 	}
 }
 
-TEST( UrlTest, StripSessionIdPSession ) {
-	const char *input_urls[] = {
-		// psession
-		"http://ebretsteiner.at/kinderwagen/kinderwagen-Kat97.html?pSession=7d01p6qvcl2e72j8ivmppk12k0",
-		"http://kontorlokaler.dk/show_unique/index.asp?Psession=491022863920110420135759"
-	};
-
-	const char *expected_urls[] = {
-		// psession
-		"http://ebretsteiner.at/kinderwagen/kinderwagen-Kat97.html",
-		"http://kontorlokaler.dk/show_unique/index.asp"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
-}
-
 TEST( UrlTest, StripSessionIdGalileoSession ) {
 	const char *input_urls[] = {
 		// galileosession
@@ -694,7 +708,7 @@ TEST( UrlTest, StripSessionIdAuthSess ) {
 	}
 }
 
-TEST( UrlTest, DISABLED_StripSessionIdMySid ) {
+TEST( UrlTest, StripSessionIdMySid ) {
 	const char *input_urls[] = {
 	    // mysid
 		"https://www.worldvision.de/_downloads/allgemein/Haiti_3years_Earthquake%20Response%20Report.pdf?mysid=glwcjvci",
@@ -717,6 +731,66 @@ TEST( UrlTest, DISABLED_StripSessionIdMySid ) {
 
 	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
 			   sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
+
+	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+		Url url;
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+
+		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
+	}
+}
+
+TEST( UrlTest, StripSessionIdS ) {
+	const char *input_urls[] = {
+		// s
+		"http://forum.tuningracers.de/index.php?page=Thread&threadID=5995&s=1951704681f7fd088ef0489a29c5753ea333208b",
+	    "https://www.futanaripalace.com/member.php?63612-SizeLover&s=6c526e0872ce06f974f456a897ef2b1c",
+
+	    // s (no strip)
+		"http://www.medpharmjobs.pl/job-offers?p=88&s=976&c=8"
+	};
+
+	const char *expected_urls[] = {
+		// s
+		"http://forum.tuningracers.de/index.php?page=Thread&threadID=5995",
+		"https://www.futanaripalace.com/member.php?63612-SizeLover",
+
+		// s (no strip)
+		"http://www.medpharmjobs.pl/job-offers?p=88&s=976&c=8"
+	};
+
+	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
+	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
+
+	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+		Url url;
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+
+		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
+	}
+}
+
+TEST( UrlTest, StripApacheDirSort ) {
+	const char *input_urls[] = {
+		"http://www.amphonesinh.info/poemes/sa/livre/images/tmp/?C=D;O=",
+	    "http://gda.reconcavo.org.br/gda_repository/pesquisas/pos/?C=D;",
+	    "http://mirrors.psychz.net/Centos/2.1/?C=S;O=A",
+	    "http://www.3ddx.com/blog/wp-includes/SimplePie/Decode/HTML/?C=N;O=D",
+	    "http://macports.mirror.ac.za/release/ports/www/midori/?C=M&O=A"
+	};
+
+	const char *expected_urls[] = {
+		"http://www.amphonesinh.info/poemes/sa/livre/images/tmp/",
+		"http://gda.reconcavo.org.br/gda_repository/pesquisas/pos/",
+		"http://mirrors.psychz.net/Centos/2.1/",
+		"http://www.3ddx.com/blog/wp-includes/SimplePie/Decode/HTML/",
+		"http://macports.mirror.ac.za/release/ports/www/midori/"
+	};
+
+	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
+	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
 
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {

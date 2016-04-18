@@ -29,8 +29,11 @@ UrlParser::UrlParser( const char *url, size_t urlLen )
 	, m_domain( NULL )
 	, m_domainLen( 0 )
 	, m_paths()
+	, m_pathEndChar('\0')
+	, m_pathsDeleteCount( 0 )
 	, m_queries()
 	, m_queriesMap()
+	, m_queriesDeleteCount( 0 )
 	, m_urlParsed() {
 	m_urlParsed.reserve( m_urlLen );
 	parse();
@@ -84,10 +87,9 @@ void UrlParser::parse() {
 			len = currentPos - prevPos;
 		}
 
-		UrlComponent urlPart = UrlComponent( prevPos, len, *( prevPos - 1 ) );
+		UrlComponent urlPart = UrlComponent( UrlComponent::TYPE_PATH, prevPos, len, *( prevPos - 1 ) );
 
 		m_paths.push_back( urlPart );
-//		m_pathsMap[ urlPart.getKey() ] = m_paths.size() - 1;
 
 		prevPos = currentPos ? currentPos + 1 : NULL;
 	}
@@ -95,9 +97,9 @@ void UrlParser::parse() {
 //	for ( std::map<std::string, size_t>::const_iterator it = m_pathsMap.begin(); it != m_pathsMap.end(); ++it ) {
 //		logf(LOG_INFO, "\tpath key='%s'", it->first.c_str() );
 //	}
-	for ( std::vector<UrlComponent>::const_iterator it = m_paths.begin(); it != m_paths.end(); ++it ) {
-		logf(LOG_TRACE, "\tseparator='%c' key='%s' path='%.*s'", it->m_separator, it->getKey().c_str(), static_cast<int32_t>( it->m_len ), it->m_pos );
-	}
+//	for ( std::vector<UrlComponent>::const_iterator it = m_paths.begin(); it != m_paths.end(); ++it ) {
+//		logf(LOG_TRACE, "\tseparator='%c' key='%s' path='%.*s'", it->m_separator, it->getKey().c_str(), static_cast<int32_t>( it->m_len ), it->m_pos );
+//	}
 
 	// query
 	if ( queryPos ) {
@@ -111,7 +113,7 @@ void UrlParser::parse() {
 				len = currentPos - prevPos;
 			}
 
-			UrlComponent urlPart = UrlComponent( prevPos, len, *( prevPos - 1 ) );
+			UrlComponent urlPart = UrlComponent( UrlComponent::TYPE_QUERY, prevPos, len, *( prevPos - 1 ) );
 			std::string key = urlPart.getKey();
 
 			// check previous urlPart
@@ -121,6 +123,7 @@ void UrlParser::parse() {
 
 			bool isAmpersand = ( !urlPart.hasValue() && urlPart.getKey() == "amp" );
 			if ( !key.empty() && !isAmpersand ) {
+				// we don't cater for case sensitive query parameter (eg: parm, Parm, PARM is assumed to be the same)
 				std::map<std::string, size_t>::const_iterator it = m_queriesMap.find( key );
 				if (it == m_queriesMap.end()) {
 					m_queries.push_back( urlPart );
@@ -151,7 +154,7 @@ const char* UrlParser::unparse() {
 
 	bool isFirst = true;
 	for ( std::vector<UrlComponent>::const_iterator it = m_paths.begin(); it != m_paths.end(); ++it ) {
-		if ( !it->m_deleted ) {
+		if ( !it->isDeleted() ) {
 			if ( isFirst ) {
 				isFirst = false;
 				if ( it->m_separator != '/' ) {
@@ -169,7 +172,7 @@ const char* UrlParser::unparse() {
 
 	isFirst = true;
 	for ( std::vector<UrlComponent>::const_iterator it = m_queries.begin(); it != m_queries.end(); ++it ) {
-		if ( !it->m_deleted ) {
+		if ( !it->isDeleted() ) {
 			if ( isFirst ) {
 				isFirst = false;
 				m_urlParsed.append( "?" );
@@ -181,26 +184,40 @@ const char* UrlParser::unparse() {
 		}
 	}
 
-	if ( m_urlLen != m_urlParsed.size() ) {
-		logf( LOG_INFO, "@@@ in =%.*s", static_cast<int32_t>( m_urlLen ), m_url );
-		logf( LOG_INFO, "@@@ out=%s", m_urlParsed.c_str());
-	}
+//	if ( m_urlLen != m_urlParsed.size() ) {
+//		logf( LOG_INFO, "@@@ in =%.*s", static_cast<int32_t>( m_urlLen ), m_url );
+//		logf( LOG_INFO, "@@@ out=%s", m_urlParsed.c_str());
+//	}
 
 	return m_urlParsed.c_str();
+}
+
+void UrlParser::incrementDeleteCount( const UrlComponent *urlComponent ) {
+	if ( urlComponent ) {
+		switch ( urlComponent->getType() ) {
+			case UrlComponent::TYPE_PATH:
+				++m_pathsDeleteCount;
+				break;
+			case UrlComponent::TYPE_QUERY:
+				++m_queriesDeleteCount;
+				break;
+		}
+	}
 }
 
 bool UrlParser::removeComponent( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator ) {
 	bool hasRemoval = false;
 
 	for ( std::vector<UrlComponent*>::const_iterator it = urlComponents.begin(); it != urlComponents.end(); ++it ) {
-		if ( (*it)->m_deleted ) {
+		if ( (*it)->isDeleted() ) {
 			continue;
 		}
 
 		if ( ( (*it)->hasValue() && validator.isValid( *(*it) ) ) ||
 		     ( !(*it)->hasValue() && validator.allowEmptyValue() ) ) {
 			hasRemoval = true;
-			(*it)->m_deleted = true;
+			(*it)->setDeleted();
+			incrementDeleteCount( *it );
 		}
 	}
 
@@ -210,8 +227,13 @@ bool UrlParser::removeComponent( const std::vector<UrlComponent*> &urlComponents
 std::vector<std::pair<UrlComponent*, UrlComponent*> > UrlParser::matchPath( const UrlComponent::Matcher &matcher ) {
 	std::vector<std::pair<UrlComponent*, UrlComponent*> > result;
 
+	// don't need to loop if it's all deleted
+	if ( m_pathsDeleteCount == m_paths.size() ) {
+		return result;
+	}
+
 	for ( std::vector<UrlComponent>::iterator it = m_paths.begin(); it != m_paths.end(); ++it ) {
-		if ( it->m_deleted ) {
+		if ( it->isDeleted() ) {
 			continue;
 		}
 
@@ -234,13 +256,17 @@ bool UrlParser::removePath( const std::vector<std::pair<UrlComponent*, UrlCompon
 		if ( it->second == NULL ) {
 			if ( validator.allowEmptyValue() ) {
 				hasRemoval = true;
-				it->first->m_deleted = true;
+				it->first->setDeleted();
+				incrementDeleteCount( it->first );
 			}
 		} else {
 			if ( validator.isValid( *( it->second ) ) ) {
 				hasRemoval = true;
-				it->first->m_deleted = true;
-				it->second->m_deleted = true;
+				it->first->setDeleted();
+				incrementDeleteCount( it->first );
+
+				it->second->setDeleted();
+				incrementDeleteCount( it->second );
 			}
 		}
 	}
@@ -257,8 +283,13 @@ bool UrlParser::removePath( const UrlComponent::Matcher &matcher, const UrlCompo
 std::vector<UrlComponent*> UrlParser::matchPathParam( const UrlComponent::Matcher &matcher ) {
 	std::vector<UrlComponent*> result;
 
+	// don't need to loop if it's all deleted
+	if ( m_pathsDeleteCount == m_paths.size() ) {
+		return result;
+	}
+
 	for ( std::vector<UrlComponent>::iterator it = m_paths.begin(); it != m_paths.end(); ++it ) {
-		if ( it->m_deleted ) {
+		if ( it->isDeleted() ) {
 			continue;
 		}
 
@@ -283,8 +314,13 @@ bool UrlParser::removePathParam( const UrlComponent::Matcher &matcher, const Url
 std::vector<UrlComponent*> UrlParser::matchQueryParam( const UrlComponent::Matcher &matcher ) {
 	std::vector<UrlComponent*> result;
 
+	// don't need to loop if it's all deleted
+	if ( m_queriesDeleteCount == m_queries.size() ) {
+		return result;
+	}
+
 	for ( std::vector<UrlComponent>::iterator it = m_queries.begin(); it != m_queries.end(); ++it ) {
-		if ( it->m_deleted ) {
+		if ( it->isDeleted() ) {
 			continue;
 		}
 

@@ -3,8 +3,9 @@
 #include <algorithm>
 #include "Log.h"
 
-UrlComponent::UrlComponent( const char *pos, size_t len, char separator )
-	: m_pos( pos )
+UrlComponent::UrlComponent( UrlComponent::Type type, const char *pos, size_t len, char separator )
+	: m_type ( type )
+	, m_pos( pos )
 	, m_len( len )
 	, m_separator( separator )
 	, m_keyLen( len )
@@ -55,13 +56,19 @@ UrlComponent::Validator::Validator( size_t minLength, size_t maxLength, bool all
 	, m_maxLength( maxLength )
 	, m_allowEmpty( allowEmpty )
 	, m_allowCriteria( allowCriteria )
-	, m_mandatoryCriteria( mandatoryCriteria )
 	, m_allowAlpha ( allowCriteria & ( ALLOW_HEX | ALLOW_ALPHA | ALLOW_ALPHA_LOWER | ALLOW_ALPHA_UPPER ) )
 	, m_allowAlphaLower( allowCriteria & ALLOW_ALPHA_LOWER )
 	, m_allowAlphaUpper( allowCriteria & ALLOW_ALPHA_UPPER )
 	, m_allowAlphaHex( allowCriteria & ( ALLOW_HEX | ALLOW_ALPHA_LOWER | ALLOW_ALPHA_UPPER ) )
 	, m_allowDigit( allowCriteria & ( ALLOW_DIGIT | ALLOW_HEX ) )
-	, m_allowPunctuation( allowCriteria & ( ALLOW_PUNCTUATION ) ) {
+	, m_allowPunctuation( allowCriteria & ( ALLOW_PUNCTUATION ) )
+	, m_mandatoryCriteria( mandatoryCriteria )
+	, m_mandatoryAlpha( mandatoryCriteria & ( MANDATORY_HEX | MANDATORY_ALPHA | MANDATORY_ALPHA_LOWER | MANDATORY_ALPHA_UPPER ) )
+	, m_mandatoryAlphaLower( mandatoryCriteria & MANDATORY_ALPHA_LOWER )
+	, m_mandatoryAlphaUpper( mandatoryCriteria & MANDATORY_ALPHA_UPPER )
+	, m_mandatoryAlphaHex( mandatoryCriteria & MANDATORY_HEX )
+	, m_mandatoryDigit( mandatoryCriteria & MANDATORY_DIGIT )
+	, m_mandatoryPunctuation( mandatoryCriteria & MANDATORY_PUNCTUATION ) {
 }
 
 bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
@@ -85,7 +92,8 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 	bool hasAlpha = false;
 	bool hasAlphaNoHexLower = false;
 	bool hasAlphaNoHexUpper = false;
-	bool hasAlphaHex = false;
+	bool hasAlphaHexUpper = false;
+	bool hasAlphaHexLower = false;
 	bool hasDigit = false;
 	bool hasPunctuation = false;
 
@@ -93,12 +101,17 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 	for ( size_t i = 0; i < valueLen; ++i ) {
 		char c = value[i];
 
-		if ( !hasAlphaNoHexLower || !hasAlphaNoHexUpper || !hasAlphaHex ) {
+		if ( !hasAlphaNoHexLower || !hasAlphaNoHexUpper || !hasAlphaHexLower || !hasAlphaNoHexUpper ) {
 			if ( is_alpha_a( c ) ) {
 				hasAlpha = true;
 
-				if ( ( c >= 'a' && c <= 'f' ) || ( c >= 'A' && c <= 'F' ) ) {
-					hasAlphaHex = true;
+				if ( c >= 'a' && c <= 'f' ) {
+					hasAlphaHexLower = true;
+					continue;
+				}
+
+				if ( c >= 'A' && c <= 'F' ) {
+					hasAlphaNoHexUpper = true;
 					continue;
 				}
 
@@ -130,14 +143,18 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 		validAllow = !( ( !m_allowAlpha && hasAlpha ) &&
 		                ( !m_allowAlphaLower && hasAlphaNoHexLower ) &&
 		                ( !m_allowAlphaUpper && hasAlphaNoHexUpper ) &&
-		                ( !m_allowAlphaHex && hasAlphaHex ) &&
+		                ( !m_allowAlphaHex && ( hasAlphaHexLower || hasAlphaHexUpper ) ) &&
 		                ( !m_allowDigit && hasDigit ) &&
 		                ( !m_allowPunctuation && hasPunctuation ) );
 	}
 
 	if ( m_mandatoryCriteria != MANDATORY_NONE ) {
-		/// @todo
-		//validMandatory
+		validMandatory = ( !m_mandatoryAlpha || ( m_mandatoryAlpha && hasAlpha ) ) &&
+		                 ( !m_mandatoryAlphaLower || ( m_mandatoryAlphaLower && ( hasAlphaHexLower || hasAlphaNoHexLower ) ) ) &&
+		                 ( !m_mandatoryAlphaUpper || ( m_mandatoryAlphaUpper && ( hasAlphaHexUpper || hasAlphaNoHexUpper ) ) ) &&
+		                 ( !m_mandatoryAlphaHex || ( m_mandatoryAlphaHex && ( hasAlphaHexLower || hasAlphaHexUpper ) ) ) &&
+		                 ( !m_mandatoryDigit || ( m_mandatoryDigit && hasDigit ) ) &&
+		                 ( !m_mandatoryPunctuation || ( m_mandatoryPunctuation && hasPunctuation ) );
 	}
 
 	return ( validAllow && validMandatory );
