@@ -230,7 +230,7 @@ int32_t RdbList::getNumRecs ( ) {
 		return m_listSize / ( m_ks + m_fixedDataSize );
 	// save the list ptr
 	char *saved = m_listPtr;
-	char *hi    = m_listPtrHi;
+	const char *hi    = m_listPtrHi;
 	// reset m_listPtr and m_listPtrHi
 	resetListPtr();
 	// count each record individually since they're variable size
@@ -1061,7 +1061,7 @@ int RdbList::printPosdbList ( int32_t logtype ) {
 	//log("m_list=%"INT32"",(int32_t)m_list);
 	// save
 	char *oldp   = m_listPtr;
-	char *oldphi = m_listPtrHi;
+	const char *oldphi = m_listPtrHi;
 	resetListPtr();
 	log(logtype, "db: STARTKEY=%s, m_ks=%d, datasize=%"INT32"",KEYSTR(m_startKey,m_ks), (int)m_ks, m_listSize);
 
@@ -1173,7 +1173,7 @@ int RdbList::printList ( int32_t logtype ) {
 	//log("m_list=%"INT32"",(int32_t)m_list);
 	// save
 	char *oldp   = m_listPtr;
-	char *oldphi = m_listPtrHi;
+	const char *oldphi = m_listPtrHi;
 	resetListPtr();
 	log(logtype, "db: STARTKEY=%s",KEYSTR(m_startKey,m_ks));
 
@@ -1228,7 +1228,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 			  char   *endKey      ,
 			  int32_t    minRecSizes ,
 			  int32_t    hintOffset  ,
-			  char   *hintKey     ,
+			  const char   *hintKey     ,
 			  const char   *filename    ,
 			  int32_t    niceness    ) {
 	// return false if we don't own the data
@@ -1267,7 +1267,7 @@ bool RdbList::constrain ( const char   *startKey    ,
 	// save original stuff in case we encounter corruption so we can
 	// roll it back and let checkList_r and repairList_r deal with it
 	char *savelist      = m_list;
-	char *savelistPtrHi = m_listPtrHi;
+	const char *savelistPtrHi = m_listPtrHi;
 	const char *savelistPtrLo = m_listPtrLo;
 
 #ifdef GBSANITYCHECK

@@ -468,7 +468,7 @@ bool Msg5::readList ( ) {
 	     
 
 	QUICKPOLL((m_niceness));
-	char *diskEndKey = m_treeList.getEndKey();
+	const char *diskEndKey = m_treeList.getEndKey();
 	// sanity check
 	if ( m_treeList.m_ks != m_ks ) { char *xx = NULL; *xx = 0; }
 
@@ -1046,8 +1046,8 @@ void Msg5::repairLists_r ( ) {
 			//    "startKey.n1=%"XINT32" n0=%"XINT64" "
 			//    "endKey.n1=%"XINT32" n0=%"XINT64"",
 			//    sk.n1,sk.n0,ek.n1,ek.n0);
-			char *sk = m_listPtrs[i]->getStartKey();
-			char *ek = m_listPtrs[i]->getEndKey  ();
+			const char *sk = m_listPtrs[i]->getStartKey();
+			const char *ek = m_listPtrs[i]->getEndKey  ();
 			log("db: "
 			    "startKey=%s "
 			    "endKey=%s ",

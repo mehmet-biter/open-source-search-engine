@@ -169,7 +169,6 @@ class RdbList {
 	int32_t  getCurrentSize     () const { return m_listEnd - m_listPtr; }
 	char *getCurrentRec      () { return m_listPtr; };
 	char *getListPtr         () { return m_listPtr; };
-	char *getListPtrHi       () { return m_listPtrHi; };
 	void  resetListPtr       () ;
 
 	// are there any records in the list?
@@ -190,7 +189,7 @@ class RdbList {
 			 char   *endKey      ,
 			 int32_t    minRecSizes ,
 			 int32_t    hintOffset  ,
-			 char   *hintKey     ,
+			 const char   *hintKey     ,
 			 const char   *filename    ,
 			 int32_t    niceness    ) ;
 
@@ -318,7 +317,7 @@ class RdbList {
 
 	// . this points to the most significant 6 bytes of a key
 	// . only valid if m_useHalfKeys is true
-	char  *m_listPtrHi;
+	const char  *m_listPtrHi;
 
 	// for the secondary compression bit for posdb
 	const char  *m_listPtrLo;
