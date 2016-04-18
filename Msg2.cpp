@@ -220,8 +220,7 @@ bool Msg2::getLists ( ) {
 					   -1, // syncpoint
 					   NULL, // msg5b
 					   false, // isrealmerge?
-					   true,// allow disk page cache?
-					   true) ) { // hit disk?
+					   true) ) { // allow disk page cache?
 			m_numRequests++;
 			continue;
 		}
@@ -332,8 +331,7 @@ bool Msg2::getLists ( ) {
 					   -1, // syncpoint
 					   NULL, // msg5b
 					   false, // isrealmerge?
-					   true,// allow disk page cache?
-					   true) ) { // hit disk?
+					   true ) ) { // allow disk page cache?
 			m_numRequests++;
 			continue;
 		}

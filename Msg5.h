@@ -61,8 +61,7 @@ class Msg5 {
 		       int64_t      syncPoint = -1 ,
 		       class Msg5 *msg5b = NULL ,
 		       bool        isRealMerge = false ,
-		       bool        allowPageCache = true ,
-		       bool        hitDisk        = true );
+		       bool        allowPageCache = true );
 
 	bool getList ( char       rdbId         ,
 		       collnum_t collnum ,
@@ -88,8 +87,7 @@ class Msg5 {
 		       int64_t      syncPoint = -1 ,
 		       class Msg5 *msg5b = NULL ,
 		       bool        isRealMerge = false ,
-		       bool        allowPageCache = true ,
-		       bool        hitDisk        = true ) {
+		       bool        allowPageCache = true ) {
 		return getList ( rdbId         ,
 				 collnum       ,
 				 list          ,
@@ -112,8 +110,7 @@ class Msg5 {
 				 syncPoint     ,
 				 msg5b         ,
 				 isRealMerge   ,
-				 allowPageCache ,
-				 hitDisk        ); };
+				 allowPageCache ); }
 
 	// need niceness to pass on to others
 	int32_t getNiceness ( ) { return m_niceness; };
@@ -217,8 +214,6 @@ class Msg5 {
 
 	// for allowing the page cache
 	bool  m_allowPageCache;
-
-	bool  m_hitDisk;
 
 	bool m_waitingForList;
 	collnum_t m_collnum;
