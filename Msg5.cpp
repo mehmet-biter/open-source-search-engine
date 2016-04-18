@@ -832,49 +832,48 @@ bool Msg5::gotList2 ( ) {
 	       // seo.cpp quite a bit
 	       (m_rdbId == RDB_POSDB && m_numFiles==1) ) ) {
 		// log any problems
-		if ( ! m_listPtrs[0]->m_ownData ) {
+		if ( m_listPtrs[0]->m_ownData ) {
+			// . bitch if not empty
+			// . NO! might be our second time around if we had key
+			//   annihilations between file #0 and the tree, and now
+			//   we only have 1 non-empty list ptr, either from the tree
+			//   or from the file
+			//if ( ! m_list->isEmpty() ) 
+			//	log("Msg5::gotList: why is it not empty? size=%"INT32"",
+			//	    m_list->getListSize() );
+			// just copy ptrs from this list into m_list
+			m_list->set ( m_listPtrs[0]->getList          () ,
+			              m_listPtrs[0]->getListSize      () ,
+			              m_listPtrs[0]->getAlloc         () ,
+			              m_listPtrs[0]->getAllocSize     () ,
+			              m_listPtrs[0]->getStartKey      () ,
+			              m_listPtrs[0]->getEndKey        () ,
+			              m_listPtrs[0]->getFixedDataSize () ,
+			              true                               , // own data?
+			              m_listPtrs[0]->useHalfKeys      () ,
+			              m_ks                               );
+			// ensure we don't free it when we loop on freeLists() below
+			m_listPtrs[0]->setOwnData ( false );
+			// gotta set this too!
+			if ( m_listPtrs[0]->m_lastKeyIsValid )
+			     m_list->setLastKey ( m_listPtrs[0]->m_lastKey );
+			// . remove titleRecs that shouldn't be there
+			// . if the tfn of the file we read the titlerec from does not
+			//   match the one in m_tfndbList, then remove it
+			// . but if we're not merging lists, why remove it?
+			//if ( m_rdbId == RDB_TITLEDB && m_msg3.m_numFileNums > 1 )
+			//     stripTitleRecs ( m_list , m_tfns[0] , m_tfndbList );
+			// . add m_list to our cache if we should
+			// . this returns false if blocked, true otherwise
+			// . sets g_errno on error
+			// . only blocks if calls msg0 to patch a corrupted list
+			// . it will handle calling callback if that happens
+			return doneMerging();
+		} else {
 			log(LOG_LOGIC,"db: Msg5: list does not own data.");
-			goto skip;
 		}
-		// . bitch if not empty
-		// . NO! might be our second time around if we had key
-		//   annihilations between file #0 and the tree, and now
-		//   we only have 1 non-empty list ptr, either from the tree
-		//   or from the file
-		//if ( ! m_list->isEmpty() ) 
-		//	log("Msg5::gotList: why is it not empty? size=%"INT32"",
-		//	    m_list->getListSize() );
-		// just copy ptrs from this list into m_list
-		m_list->set ( m_listPtrs[0]->getList          () ,
-			      m_listPtrs[0]->getListSize      () ,
-			      m_listPtrs[0]->getAlloc         () ,
-			      m_listPtrs[0]->getAllocSize     () ,
-			      m_listPtrs[0]->getStartKey      () ,
-			      m_listPtrs[0]->getEndKey        () ,
-			      m_listPtrs[0]->getFixedDataSize () ,
-			      true                               , // own data?
-			      m_listPtrs[0]->useHalfKeys      () ,
-			      m_ks                               );
-		// ensure we don't free it when we loop on freeLists() below
-		m_listPtrs[0]->setOwnData ( false );
-		// gotta set this too!
-		if ( m_listPtrs[0]->m_lastKeyIsValid )
-			m_list->setLastKey ( m_listPtrs[0]->m_lastKey );
-		// . remove titleRecs that shouldn't be there
-		// . if the tfn of the file we read the titlerec from does not
-		//   match the one in m_tfndbList, then remove it
-		// . but if we're not merging lists, why remove it?
-		//if ( m_rdbId == RDB_TITLEDB && m_msg3.m_numFileNums > 1 )
-		//	stripTitleRecs ( m_list , m_tfns[0] , m_tfndbList );
-		// . add m_list to our cache if we should
-		// . this returns false if blocked, true otherwise
-		// . sets g_errno on error
-		// . only blocks if calls msg0 to patch a corrupted list
-		// . it will handle calling callback if that happens
-		return doneMerging();
 	}
 
- skip:
 	// time the perparation and merge
 	m_startTime = gettimeofdayInMilliseconds();
 
@@ -904,29 +903,28 @@ bool Msg5::gotList2 ( ) {
 	// . it seems to be about 1ms per 10k for tfndb recs
 	// . it seems to core dump if we spawn a thread with totalSizes too low
 	// . why???
-	if ( m_totalSize < 32*1024 ) goto skipThread;
+	if ( m_totalSize >= 32*1024 ) {
+		// . if size is big, make a thread
+		// . let's always make niceness 0 since it wasn't being very
+		//   aggressive before
+		if ( g_threads.call ( THREAD_TYPE_MERGE   , // threadType
+				      m_niceness          , // m_niceness
+				      this                , // state data for callback
+				      threadDoneWrapper   ,
+				      mergeListsWrapper_r ) ) 
+			return false;
 
-	// . if size is big, make a thread
-	// . let's always make niceness 0 since it wasn't being very
-	//   aggressive before
-	if ( g_threads.call ( THREAD_TYPE_MERGE        , // threadType
-			      m_niceness          , // m_niceness        , 
-			      this                , // state data for callback
-			      threadDoneWrapper   ,
-			      mergeListsWrapper_r ) ) 
-		return false;
+		//m_waitingForMerge = false;
 
-	//m_waitingForMerge = false;
+		// thread creation failed
+		if ( g_errno ) // g_conf.m_useThreads && ! g_threads.m_disabled )
+			log(LOG_INFO,
+			    "net: Failed to create thread to merge lists. Doing "
+			    "blocking merge. (%s)",mstrerror(g_errno));
+		// clear g_errno because it really isn't a problem, we just block
+		g_errno = 0;
+	}
 
-	// thread creation failed
-	if ( g_errno ) // g_conf.m_useThreads && ! g_threads.m_disabled )
-		log(LOG_INFO,
-		    "net: Failed to create thread to merge lists. Doing "
-		    "blocking merge. (%s)",mstrerror(g_errno));
-	// clear g_errno because it really isn't a problem, we just block
-	g_errno = 0;
-	// come here to skip the thread
- skipThread:
 	// repair any corruption
 	repairLists_r();
 	// do it
