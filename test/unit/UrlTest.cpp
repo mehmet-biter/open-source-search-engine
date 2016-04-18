@@ -225,7 +225,7 @@ TEST( UrlTest, GetDisplayUrlFromUrl ) {
 }
 
 // make sure we don't break backward compatibility
-TEST( UrlTest, StripSessionIdV122 ) {
+TEST( UrlTest, StripParamsV122 ) {
 	const char *input_urls[] = {
 		"http://retailer.esignserver2.com/holzboden-direkt/gallery.do;jsessionid=D6C14EE54E6AF0B89885D129D817A505",
 		"https://scholarships.wisc.edu/Scholarships/recipientDetails;jsessionid=D2DCE4F10608F15CA177E29EB2AB162F?recipId=850",
@@ -238,7 +238,21 @@ TEST( UrlTest, StripSessionIdV122 ) {
 		"https://webshop.lic.co.nz/cws001/catalog/productDetail.jsf;jsessionid=0_cVS0dqWe1zHDcxyveGcysJVfbkUwHPDMUe_SAPzI8IIDaGbNUXn59V-PZnbFVZ;saplb_*=%28J2EE516230320%29516230351?sort=TA&wec-appid=WS001&page=B43917ED9DD446288421D9F817EE305E&itemKey=463659D75F2F005D000000000A0A0AF0&show=12&view=grid&wec-locale=en_NZ",
 		"http://www.vineyard2door.com/web/clubs_browse.cfm?CFID=3843950&CFTOKEN=cfd5b9e083fb3e24-03C2F487-DAB8-1365-521658E43AB8A0DC&jsessionid=22D5211D9EB291522DE9A4258ECB94D2.cfusion",
 		"http://tbinternet.ohchr.org/_layouts/treatybodyexternal/SessionDetails1.aspx?SessionID=1016&Lang=en",
-		"https://collab365.conferencehosts.com/SitePages/sessionDetails.aspx?sessionid=C365117"
+		"https://collab365.conferencehosts.com/SitePages/sessionDetails.aspx?sessionid=C365117",
+		"http://www.urchin.com/download.html?utm_source=newsletter4&utm_medium=email&utm_term=urchin&utm_content=easter&utm_campaign=product",
+		"http://www.huffingtonpost.com/parker-marie-molloy/todd-kincannon-transgender-camps_b_4100777.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+HP%2FPolitics+%28Politics+on+The+Huffington+Post",
+		"http://www.staffnet.manchester.ac.uk/news/display/?id=10341&;utm_source=newsletter&utm_medium=email&utm_campaign=eUpdate",
+		"http://www.nightdivestudios.com/games/turok-dinosaur-hunter/?utm_source=steampowered.com&utm_medium=product&utm_campaign=website%20-%20turok%20dinosaur%20hunter",
+		"http://www.mihomes.com/Find-Your-New-Home/Virginia-Homes?utm_source=NewHomesDirectory.com&utm_campaign=referral-division&utm_medium=feed&utm_content=&utm_term=consumer&cookiecheck=true",
+		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&utm_hp_ref=healthy-living&utm_hp_ref=au-life&adsSiteOverride=au",
+		"http://maersklinereefer.com/about/merry-christmas/?elqTrackId=786C9D2AE676DEC435B578D75CB0B4FD&elqaid=2666&elqat=2",
+		"https://community.oracle.com/community/topliners/?elq_mid=21557&elq_cid=1618237&elq=3c0cfe27635443ca9b6410238cc876a9&elqCampaignId=2182&elqaid=21557&elqat=1&elqTrackId=40772b5725924f53bc2c6a6fb04759a3",
+		"http://app.reg.techweb.com/e/er?s=2150&lid=25554&elq=00000000000000000000000000000000&elqaid=2294&elqat=2&elqTrackId=3de2badc5d7c4a748bc30253468225fd",
+		"http://www.biography.com/people/louis-armstrong-9188912?elq=7fd0dd577ebf4eafa1e73431feee849f&elqCampaignId=2887",
+		"http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html?elq_mid=1089&elq_cid=107687&wt.mc_id=CAD_MOL_MC_PR_EM1_0815_NewHaakeMars_English_GLB_2647&elq=f17d2c276ed045c0bb391e4c273b789c&elqCampaignId=&elqaid=1089&elqat=1&elqTrackId=ce2a4c4879ee4f6488a14d924fa1f8a5",
+		"https://astro-report.com/lp2.html?pk_campaign=1%20Natal%20Chart%20-%20RDMs&pk_kwd=astrological%20chart%20free&gclid=CPfkwKfP2LgCFcJc3godgSMAHA",
+		"http://lapprussia.lappgroup.com/kontakty.html?pk_campaign=yadirect-crossselling&pk_kwd=olflex&pk_source=yadirect&pk_medium=cpc&pk_content=olflex&rel=bytib",
+	    "http://scriptfest.com/session/million-dollar-screenwriting/"
 	};
 
 	const char *expected_urls[] = {
@@ -250,12 +264,24 @@ TEST( UrlTest, StripSessionIdV122 ) {
 		"https://jobs.bathspa.ac.uk/wrl/pages/vacancy.jsf?latest=01001967",
 		"https://sa.www4.irs.gov/wmar/start.do",
 		"http://www.oracle.com/technetwork/developer-tools/adf/overview/index.html",
-
-		// this is wrong, but it's the was it is now
 		"https://webshop.lic.co.nz/cws001/catalog/productDetail.jsfsaplb_*=%28J2EE516230320%29516230351?sort=TA&wec-appid=WS001&page=B43917ED9DD446288421D9F817EE305E&itemKey=463659D75F2F005D000000000A0A0AF0&show=12&view=grid&wec-locale=en_NZ",
 		"http://www.vineyard2door.com/web/clubs_browse.cfm?CFID=3843950&CFTOKEN=cfd5b9e083fb3e24-03C2F487-DAB8-1365-521658E43AB8A0DC",
 		"http://tbinternet.ohchr.org/_layouts/treatybodyexternal/SessionDetails1.aspx?SessionID=1016&Lang=en",
-		"https://collab365.conferencehosts.com/SitePages/sessionDetails.aspx"
+		"https://collab365.conferencehosts.com/SitePages/sessionDetails.aspx",
+		"http://www.urchin.com/download.html?utm_source=newsletter4&utm_medium=email&utm_content=easter&utm_campaign=product",
+		"http://www.huffingtonpost.com/parker-marie-molloy/todd-kincannon-transgender-camps_b_4100777.html?utm_medium=feed&utm_campaign=Feed%3A+HP%2FPolitics+%28Politics+on+The+Huffington+Post",
+		"http://www.staffnet.manchester.ac.uk/news/display/?id=10341&utm_medium=email&utm_campaign=eUpdate",
+		"http://www.nightdivestudios.com/games/turok-dinosaur-hunter/?utm_medium=product&utm_campaign=website%20-%20turok%20dinosaur%20hunter",
+		"http://www.mihomes.com/Find-Your-New-Home/Virginia-Homes?utm_source=NewHomesDirectory.com&utm_campaign=referral-division&utm_medium=feed&utm_content=&cookiecheck=true",
+		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&utm_hp_ref=au-life&adsSiteOverride=au",
+		"http://maersklinereefer.com/about/merry-christmas/?elqTrackId=786C9D2AE676DEC435B578D75CB0B4FD&elqaid=2666&elqat=2",
+		"https://community.oracle.com/community/topliners/?elq_mid=21557&elq_cid=1618237&elqCampaignId=2182&elqaid=21557&elqat=1&elqTrackId=40772b5725924f53bc2c6a6fb04759a3",
+		"http://app.reg.techweb.com/e/er?s=2150&lid=25554&elqaid=2294&elqat=2&elqTrackId=3de2badc5d7c4a748bc30253468225fd",
+		"http://www.biography.com/people/louis-armstrong-9188912?elqCampaignId=2887",
+		"http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html?elq_mid=1089&elq_cid=107687&wt.mc_id=CAD_MOL_MC_PR_EM1_0815_NewHaakeMars_English_GLB_2647&elqCampaignId=&elqaid=1089&elqat=1&elqTrackId=ce2a4c4879ee4f6488a14d924fa1f8a5",
+		"https://astro-report.com/lp2.html?pk_campaign=1%20Natal%20Chart%20-%20RDMs&gclid=CPfkwKfP2LgCFcJc3godgSMAHA",
+		"http://lapprussia.lappgroup.com/kontakty.html?pk_campaign=yadirect-crossselling&pk_source=yadirect&pk_medium=cpc&pk_content=olflex&rel=bytib",
+		"http://scriptfest.com/session/million-dollar-screenwriting/"
 	};
 
 	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
@@ -264,13 +290,13 @@ TEST( UrlTest, StripSessionIdV122 ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 122 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 122 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdSid ) {
+TEST( UrlTest, StripParamsSid ) {
 	const char *input_urls[] = {
 		// sid
 		"http://astraklubpolska.pl/viewtopic.php?f=149&t=829138&sid=1d5e1e9ba356dc2f848f6223d914ca19&start=10",
@@ -305,13 +331,13 @@ TEST( UrlTest, StripSessionIdSid ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdPhpSessId ) {
+TEST( UrlTest, StripParamsPhpSessId ) {
 	const char *input_urls[] = {
 		// phpsessid
 		"http://www.emeraldgrouppublishing.com/authors/guides/index.htm?PHPSESSID=gan1vvu81as0nnkc08fg38c3i2",
@@ -340,13 +366,13 @@ TEST( UrlTest, StripSessionIdPhpSessId ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdOsCommerce ) {
+TEST( UrlTest, StripParamsOsCommerce ) {
 	const char *input_urls[] = {
 		// osCommerce
 		"http://www.nailcosmetics.pl/?osCAdminID=70b4c843a51204ec897136bc04282462&osCAdminID=70b4c843a51204ec897136bc04282462&osCAdminID=70b4c843a51204ec897136bc04282462&osCAdminID=70b4c843a51204ec897136bc04282462",
@@ -369,13 +395,13 @@ TEST( UrlTest, StripSessionIdOsCommerce ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdXTCommerce ) {
+TEST( UrlTest, StripParamsXTCommerce ) {
 	const char *input_urls[] = {
 		// XT-commerce
 		"http://www.unitedloneliness.com/index.php/XTCsid/d929e97581813396ed8f360e7f186eab",
@@ -396,13 +422,13 @@ TEST( UrlTest, StripSessionIdXTCommerce ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdPostNuke ) {
+TEST( UrlTest, StripParamsPostNuke ) {
 	const char *input_urls[] = {
 		// postnuke
 		"http://eeagrants.org/News?POSTNUKESID=c9965f0db1606c402015743d1cda55f5",
@@ -425,13 +451,13 @@ TEST( UrlTest, StripSessionIdPostNuke ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdColdFusion ) {
+TEST( UrlTest, StripParamsColdFusion ) {
 	const char *input_urls[] = {
 		// coldfusion
 		"http://www.vineyard2door.com/web/clubs_browse.cfm?CFID=3843950&CFTOKEN=cfd5b9e083fb3e24-03C2F487-DAB8-1365-521658E43AB8A0DC&jsessionid=22D5211D9EB291522DE9A4258ECB94D2.cfusion",
@@ -456,13 +482,13 @@ TEST( UrlTest, StripSessionIdColdFusion ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdAtlassian ) {
+TEST( UrlTest, StripParamsAtlassian ) {
 	const char *input_urls[] = {
 		// atlassian
 		"https://track.systrends.com/secure/IssueNavigator.jspa?mode=show&atl_token=CUqRyjtmwj",
@@ -485,13 +511,13 @@ TEST( UrlTest, StripSessionIdAtlassian ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdJSessionId ) {
+TEST( UrlTest, StripParamsJSessionId ) {
 	const char *input_urls[] = {
 		// jessionid
 		"https://scholarships.wisc.edu/Scholarships/recipientDetails;jsessionid=D2DCE4F10608F15CA177E29EB2AB162F?recipId=850",
@@ -522,13 +548,13 @@ TEST( UrlTest, StripSessionIdJSessionId ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdPHPSessId ) {
+TEST( UrlTest, StripParamsPHPSessId ) {
 	const char *input_urls[] = {
 		// phpsessid
 		"http://www.praxis-jennewein.de/?&sitemap&PHPSESSID_netsh107345=84b58a8e5c56d8d1f9d459311caf18ee",
@@ -551,13 +577,13 @@ TEST( UrlTest, StripSessionIdPHPSessId ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdSessionId ) {
+TEST( UrlTest, StripParamsSessionId ) {
 	const char *input_urls[] = {
 		// sessionid
 		"http://ualberta.intelliresponse.com/index.jsp?requestType=NormalRequest&source=3&id=474&sessionId=f5b80817-fa7e-11e5-9343-5f3e78a954d2&question=How+many+students+are+enrolled",
@@ -602,14 +628,14 @@ TEST( UrlTest, StripSessionIdSessionId ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		//url.print();
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdSessId ) {
+TEST( UrlTest, StripParamsSessId ) {
 	const char *input_urls[] = {
 		// vbsessid
 		"https://www.westfalia.de/static/servicebereich/service/serviceangebote/impressum.html?&vbSESSID=50d96959db895a0adbfebd325a4a65e0",
@@ -650,13 +676,40 @@ TEST( UrlTest, StripSessionIdSessId ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdGalileoSession ) {
+TEST( UrlTest, StripSessionIdPSession ) {
+	const char *input_urls[] = {
+	    // psession
+	    "http://ebretsteiner.at/kinderwagen/kinderwagen-Kat97.html?pSession=7d01p6qvcl2e72j8ivmppk12k0",
+	    "http://kontorlokaler.dk/show_unique/index.asp?Psession=491022863920110420135759",
+	    "http://freespass.de/homepage.php?pSession=XUjuplcPFGlJD2ZF5O26ApqAj5ZNEZwZrUKX5kkA&id=716"
+	};
+
+	const char *expected_urls[] = {
+	    // psession
+	    "http://ebretsteiner.at/kinderwagen/kinderwagen-Kat97.html",
+	    "http://kontorlokaler.dk/show_unique/index.asp",
+	    "http://freespass.de/homepage.php?id=716"
+	};
+
+	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
+	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
+
+	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+	    Url url;
+	    url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
+
+	    EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
+	}
+}
+
+TEST( UrlTest, StripParamsGalileoSession ) {
 	const char *input_urls[] = {
 		// galileosession
 		"http://www.tutego.de/blog/javainsel/page/38/?GalileoSession=39387871A4pi84-MI8M",
@@ -677,13 +730,13 @@ TEST( UrlTest, StripSessionIdGalileoSession ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdAuthSess ) {
+TEST( UrlTest, StripParamsAuthSess ) {
 	const char *input_urls[] = {
 		// auth_sess
 		"http://www.jobxoom.com/location.php?province=Iowa&lid=738&auth_sess=kgq6kd4bl9ma1rap6pbks1c8b2",
@@ -702,13 +755,13 @@ TEST( UrlTest, StripSessionIdAuthSess ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdMySid ) {
+TEST( UrlTest, StripParamsMySid ) {
 	const char *input_urls[] = {
 	    // mysid
 		"https://www.worldvision.de/_downloads/allgemein/Haiti_3years_Earthquake%20Response%20Report.pdf?mysid=glwcjvci",
@@ -735,13 +788,13 @@ TEST( UrlTest, StripSessionIdMySid ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripSessionIdS ) {
+TEST( UrlTest, StripParamsS ) {
 	const char *input_urls[] = {
 		// s
 		"http://forum.tuningracers.de/index.php?page=Thread&threadID=5995&s=1951704681f7fd088ef0489a29c5753ea333208b",
@@ -766,7 +819,7 @@ TEST( UrlTest, StripSessionIdS ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
@@ -795,59 +848,13 @@ TEST( UrlTest, StripApacheDirSort ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, false, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-// make sure we don't break backward compatibility
-TEST( UrlTest, StripTrackingParamV122 ) {
-	const char *input_urls[] = {
-		"http://www.urchin.com/download.html?utm_source=newsletter4&utm_medium=email&utm_term=urchin&utm_content=easter&utm_campaign=product",
-		"http://www.huffingtonpost.com/parker-marie-molloy/todd-kincannon-transgender-camps_b_4100777.html?utm_source=feedburner&utm_medium=feed&utm_campaign=Feed%3A+HP%2FPolitics+%28Politics+on+The+Huffington+Post",
-		"http://www.staffnet.manchester.ac.uk/news/display/?id=10341&;utm_source=newsletter&utm_medium=email&utm_campaign=eUpdate",
-		"http://www.nightdivestudios.com/games/turok-dinosaur-hunter/?utm_source=steampowered.com&utm_medium=product&utm_campaign=website%20-%20turok%20dinosaur%20hunter",
-		"http://www.mihomes.com/Find-Your-New-Home/Virginia-Homes?utm_source=NewHomesDirectory.com&utm_campaign=referral-division&utm_medium=feed&utm_content=&utm_term=consumer&cookiecheck=true",
-		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&utm_hp_ref=healthy-living&utm_hp_ref=au-life&adsSiteOverride=au",
-		"http://maersklinereefer.com/about/merry-christmas/?elqTrackId=786C9D2AE676DEC435B578D75CB0B4FD&elqaid=2666&elqat=2",
-		"https://community.oracle.com/community/topliners/?elq_mid=21557&elq_cid=1618237&elq=3c0cfe27635443ca9b6410238cc876a9&elqCampaignId=2182&elqaid=21557&elqat=1&elqTrackId=40772b5725924f53bc2c6a6fb04759a3",
-		"http://app.reg.techweb.com/e/er?s=2150&lid=25554&elq=00000000000000000000000000000000&elqaid=2294&elqat=2&elqTrackId=3de2badc5d7c4a748bc30253468225fd",
-		"http://www.biography.com/people/louis-armstrong-9188912?elq=7fd0dd577ebf4eafa1e73431feee849f&elqCampaignId=2887",
-		"http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html?elq_mid=1089&elq_cid=107687&wt.mc_id=CAD_MOL_MC_PR_EM1_0815_NewHaakeMars_English_GLB_2647&elq=f17d2c276ed045c0bb391e4c273b789c&elqCampaignId=&elqaid=1089&elqat=1&elqTrackId=ce2a4c4879ee4f6488a14d924fa1f8a5",
-	    "https://astro-report.com/lp2.html?pk_campaign=1%20Natal%20Chart%20-%20RDMs&pk_kwd=astrological%20chart%20free&gclid=CPfkwKfP2LgCFcJc3godgSMAHA",
-	    "http://lapprussia.lappgroup.com/kontakty.html?pk_campaign=yadirect-crossselling&pk_kwd=olflex&pk_source=yadirect&pk_medium=cpc&pk_content=olflex&rel=bytib"
-	};
-
-	const char *expected_urls[] = {
-		"http://www.urchin.com/download.html?utm_source=newsletter4&utm_medium=email&utm_content=easter&utm_campaign=product",
-		"http://www.huffingtonpost.com/parker-marie-molloy/todd-kincannon-transgender-camps_b_4100777.html?utm_medium=feed&utm_campaign=Feed%3A+HP%2FPolitics+%28Politics+on+The+Huffington+Post",
-		"http://www.staffnet.manchester.ac.uk/news/display/?id=10341&utm_medium=email&utm_campaign=eUpdate",
-		"http://www.nightdivestudios.com/games/turok-dinosaur-hunter/?utm_medium=product&utm_campaign=website%20-%20turok%20dinosaur%20hunter",
-		"http://www.mihomes.com/Find-Your-New-Home/Virginia-Homes?utm_source=NewHomesDirectory.com&utm_campaign=referral-division&utm_medium=feed&utm_content=&cookiecheck=true",
-		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&utm_hp_ref=au-life&adsSiteOverride=au",
-		"http://maersklinereefer.com/about/merry-christmas/?elqTrackId=786C9D2AE676DEC435B578D75CB0B4FD&elqaid=2666&elqat=2",
-		"https://community.oracle.com/community/topliners/?elq_mid=21557&elq_cid=1618237&elqCampaignId=2182&elqaid=21557&elqat=1&elqTrackId=40772b5725924f53bc2c6a6fb04759a3",
-		"http://app.reg.techweb.com/e/er?s=2150&lid=25554&elqaid=2294&elqat=2&elqTrackId=3de2badc5d7c4a748bc30253468225fd",
-		"http://www.biography.com/people/louis-armstrong-9188912?elqCampaignId=2887",
-		"http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html?elq_mid=1089&elq_cid=107687&wt.mc_id=CAD_MOL_MC_PR_EM1_0815_NewHaakeMars_English_GLB_2647&elqCampaignId=&elqaid=1089&elqat=1&elqTrackId=ce2a4c4879ee4f6488a14d924fa1f8a5",
-		"https://astro-report.com/lp2.html?pk_campaign=1%20Natal%20Chart%20-%20RDMs&gclid=CPfkwKfP2LgCFcJc3godgSMAHA",
-		"http://lapprussia.lappgroup.com/kontakty.html?pk_campaign=yadirect-crossselling&pk_source=yadirect&pk_medium=cpc&pk_content=olflex&rel=bytib"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, false, true, 122 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
-}
-
-TEST( UrlTest, StripTrackingParamGoogleAnalytics ) {
+TEST( UrlTest, StripParamsGoogleAnalytics ) {
 	const char *input_urls[] = {
 		// google analytics
 		"http://www.urchin.com/download.html?utm_source=newsletter4&utm_medium=email&utm_term=urchin&utm_content=easter&utm_campaign=product",
@@ -874,13 +881,13 @@ TEST( UrlTest, StripTrackingParamGoogleAnalytics ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, false, true, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripTrackingParamOracleEloqua ) {
+TEST( UrlTest, StripParamsOracleEloqua ) {
 	const char *input_urls[] = {
         // oracle eloqua
 		"http://maersklinereefer.com/about/merry-christmas/?elqTrackId=786C9D2AE676DEC435B578D75CB0B4FD&elqaid=2666&elqat=2",
@@ -903,13 +910,13 @@ TEST( UrlTest, StripTrackingParamOracleEloqua ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, false, true, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripTrackingParamWebTrends ) {
+TEST( UrlTest, StripParamsWebTrends ) {
 	const char *input_urls[] = {
 	    // webtrends
 	    "http://www.thermoscientific.com/en/product/haake-mars-rotational-rheometers.html?elq_mid=1089&elq_cid=107687&wt.mc_id=CAD_MOL_MC_PR_EM1_0815_NewHaakeMars_English_GLB_2647&elq=f17d2c276ed045c0bb391e4c273b789c&elqCampaignId=&elqaid=1089&elqat=1&elqTrackId=ce2a4c4879ee4f6488a14d924fa1f8a5"
@@ -926,13 +933,13 @@ TEST( UrlTest, StripTrackingParamWebTrends ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, false, true, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripTrackingParamPiwik ) {
+TEST( UrlTest, StripParamsPiwik ) {
 	const char *input_urls[] = {
 	    // piwik
 		"https://astro-report.com/lp2.html?pk_campaign=1%20Natal%20Chart%20-%20RDMs&pk_kwd=astrological%20chart%20free&gclid=CPfkwKfP2LgCFcJc3godgSMAHA",
@@ -951,13 +958,13 @@ TEST( UrlTest, StripTrackingParamPiwik ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, false, true, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripTrackingParamTrk ) {
+TEST( UrlTest, StripParamsTrk ) {
 	const char *input_urls[] = {
 	    // trk
 		"https://www.nerdwallet.com/investors/?trk=nw_gn_2.0",
@@ -976,13 +983,13 @@ TEST( UrlTest, StripTrackingParamTrk ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, false, true, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
 }
 
-TEST( UrlTest, StripTrackingParamPartnerRef ) {
+TEST( UrlTest, StripParamsPartnerRef ) {
 	const char *input_urls[] = {
 		// partnerref
 		"http://www.lookfantastic.com/offers/20-off-your-top-20.list?partnerref=ENLF-_EmailExclusive"
@@ -1000,7 +1007,32 @@ TEST( UrlTest, StripTrackingParamPartnerRef ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, false, true, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
+
+		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
+	}
+}
+
+TEST( UrlTest, StripParamsWho ) {
+	const char *input_urls[] = {
+		// who
+		"http://www.bigchurch.com/go/page/privacy.html?who=r,/cu4qLiwvculGvDvGrNzyhKpyhktvMpoVzsk0AGO5LEkHr/CP73pECeMNUNAAnQxhyuVznsP0mN0_gc73W/4TBykmZSBM_dVZJuzeXuBRaskyEzrh1nIpIaeqHAY_dEZ",
+	    "https://affiliates.danni.com/p/partners/main.cgi?who=r,VgwuU_i/jKvDCoWe1vEMdEktDgo/UpGf6pX3qsopquP0xCYOlgReamC2S1RnQSdn5DG42QxPixcOP1q67s6_nK0kwqcf8YqW70Sux_iWenV/PNHPK9ddNE88CXGs9s2o&action=faq&trlid=affiliate_navbar_v1_0-15"
+	};
+
+	const char *expected_urls[] = {
+		// who
+		"http://www.bigchurch.com/go/page/privacy.html",
+		"https://affiliates.danni.com/p/partners/main.cgi?action=faq&trlid=affiliate_navbar_v1_0-15"
+	};
+
+	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
+	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
+
+	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
+	for ( size_t i = 0; i < len; i++ ) {
+		Url url;
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
@@ -1023,7 +1055,7 @@ TEST( UrlTest, Normalization ) {
 	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
 	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, true, 123 );
+		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}

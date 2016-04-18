@@ -39,7 +39,7 @@ private:
 
 	bool removeComponent( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator );
 
-	void incrementDeleteCount( const UrlComponent *urlComponent );
+	void deleteComponent( UrlComponent *urlComponent );
 
 	const char *m_url;
 	size_t m_urlLen;

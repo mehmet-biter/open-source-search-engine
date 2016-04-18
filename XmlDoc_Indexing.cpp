@@ -917,9 +917,10 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 			continue;
 		// if we have a <feedburner:origLink> tag, then ignore <link>
 		// tags and only get the links from the original links
-		if ( m_links.m_isFeedBurner &&
-		     !(m_links.m_linkFlags[i] & LF_FBTAG) )
+		if ( m_links.m_isFeedBurner && !(m_links.m_linkFlags[i] & LF_FBTAG) ) {
 			continue;
+		}
+
 		// normalize the link
 		Url link;
 		// now we always add "www" to these links so that any link
@@ -932,7 +933,7 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 		// Url.cpp, too, so we have to version that.
 		// Since this is just for hashing, it shouldn't matter that
 		// www.tmblr.co has no IP whereas only tmblr.co does.
-		link.set( m_links.m_linkPtrs[i], m_links.m_linkLens[i], true, m_links.m_stripIds, true ); // m_version (add here if needed again)
+		link.set( m_links.m_linkPtrs[i], m_links.m_linkLens[i], true, m_links.m_stripParams, m_version );
 
 
 		// BR 20160105: Do not create "link:" hashes for media URLs etc.
@@ -1233,7 +1234,7 @@ bool XmlDoc::hashUrl ( HashTableX *tt, bool urlOnly ) { // , bool isStatusDoc ) 
 	//
 	// append a "www." for doing url: searches
 	Url uw;
-	uw.set( fu->getUrl(), fu->getUrlLen(), true, false, false );
+	uw.set( fu->getUrl(), fu->getUrlLen(), true, false );
 	hi.m_prefix    = "url";
 	// no longer, we just index json now
 	//if ( isStatusDoc ) hi.m_prefix = "url2";

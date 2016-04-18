@@ -2233,7 +2233,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 	// . remove any session ids from the url
 	// . for speed reasons, only check if its a cgi url
 	Url uu;
-	uu.set( url, urlLen, false, true, false );
+	uu.set( url, urlLen, false, true );
 	url    = uu.getUrl();
 	urlLen = uu.getUrlLen();
 

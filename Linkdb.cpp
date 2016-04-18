@@ -3627,7 +3627,7 @@ bool Links::set ( bool useRelNoFollow ,
 	// ok, let's remove it for the links: hashing, it just makes more
 	// sense this way i think. we can normalize the links: terms in the
 	// query if you are worried about it.
-	m_stripIds = true;
+	m_stripParams = true;
 
 	// get the <base href=> tag if any (12)
 	if ( baseUrl ) m_baseUrl = baseUrl;
@@ -4087,7 +4087,7 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 		tmp[dst] = '\0';
 	}
 
-	url.set( m_baseUrl, link, linkLen, false, m_stripIds,
+	url.set( m_baseUrl, link, linkLen, false, m_stripParams,
 	         // now i strip this thang because the rss
 	         // feeds have a link to every comment but it is
 	         // really the same url...
@@ -4096,7 +4096,7 @@ bool Links::addLink ( const char *link , int32_t linkLen , int32_t nodeNum ,
 	         // turned this back on per john's request
 	         // will cause undeletable data in existing indexes.
 	         true,
-	         true ); // titleRecVersion (add here if needed again)
+	         titleRecVersion );
 
 	// sometimes there's links like:
 	// http://'+ycso[8]+ \n'commentsn?blog_id=... which is within

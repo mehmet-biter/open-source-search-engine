@@ -26,6 +26,7 @@ UrlComponent::UrlComponent( UrlComponent::Type type, const char *pos, size_t len
 
 UrlComponent::Matcher::Matcher( const char *param, MatchCriteria matchCriteria )
 	: m_param( param )
+	, m_matchCriteria( matchCriteria )
 	, m_matchPartial( matchCriteria & MATCH_PARTIAL )
 	, m_matchCase( matchCriteria & MATCH_CASE ) {
 	if ( !m_matchCase ) {

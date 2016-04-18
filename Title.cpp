@@ -371,7 +371,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 		// . set the url class to this
 		// . TODO: use the base url in the doc
 		Url u;
-		u.set( link, len, true, false, false );
+		u.set( link, len, true, false );
 
 		// compare
 		selfLink = u.equals ( firstUrl );

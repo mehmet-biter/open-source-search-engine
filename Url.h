@@ -52,28 +52,28 @@ public:
 			return;
 		}
 
-		set( url->getUrl(), url->getUrlLen(), false, false, false );
+		set( url->getUrl(), url->getUrlLen(), false, false );
 	}
 
 	void set( const char *s ) {
-		set( s, strlen( s ), false, false, false );
+		set( s, strlen( s ), false, false );
 	}
 
 	void set( const char *s, int32_t len ) {
-		set( s, len, false, false, false );
+		set( s, len, false, false );
 	}
 
-	void set( const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripTrackingParams, int32_t titledbVersion = TITLEREC_CURRENT_VERSION ) {
-		set( s, len, addWWW, stripSessionIds, false, false, stripTrackingParams, titledbVersion );
+	void set( const char *s, int32_t len, bool addWWW, bool stripParams, int32_t titledbVersion = TITLEREC_CURRENT_VERSION ) {
+		set( s, len, addWWW, stripParams, false, false, titledbVersion );
 	}
 
 	void set( Url *baseUrl, const char *s, int32_t len ) {
-		set( baseUrl, s, len, false, false, false, false, false);
+		set( baseUrl, s, len, false, false, false, false );
 	}
 
 	// . "s" must be an ENCODED url
-	void set( Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripPound,
-	          bool stripCommonFile, bool stripTrackingParams, int32_t titledbVersion = TITLEREC_CURRENT_VERSION );
+	void set( Url *baseUrl, const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound,
+	          bool stripCommonFile, int32_t titledbVersion = TITLEREC_CURRENT_VERSION );
 
 	void print  ();
 	void reset  ();
@@ -197,8 +197,8 @@ public:
 	static char* getDisplayUrl( const char* url, SafeBuf* sb );
 
 private:
-	void set( const char *s, int32_t len, bool addWWW, bool stripSessionIds, bool stripPound, bool stripCommonFile,
-	          bool stripTrackingParams, int32_t titledbVersion );
+	void set( const char *s, int32_t len, bool addWWW, bool stripParams, bool stripPound, bool stripCommonFile,
+	          int32_t titledbVersion );
 
 	bool isSpam ( char *s , int32_t slen ) ;
 

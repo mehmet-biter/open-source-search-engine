@@ -5707,7 +5707,7 @@ Url **XmlDoc::getRedirUrl() {
 	     	
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Found session id", __FILE__,__func__,__LINE__);
 		Url *tt = &m_redirUrl;
-		tt->set( cu->getUrl(), cu->getUrlLen(), true, true, true );
+		tt->set( cu->getUrl(), cu->getUrlLen(), true, true );
 			  
 		// if it no longer has the session id, force redirect it
 		if ( ! gb_strcasestr( tt->getUrl(), "sessionid") &&
@@ -9629,9 +9629,10 @@ static bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness
 	// . use "url" as the base Url
 	// . it may be the original url or the one we redirected to
 	// . redirUrl is set to the original at the top
-	else
+	else {
 		// addWWW = false, stripSessId=true
-		metaRedirUrl->set( cu, decoded, decBytes, false, true, false, false, true );
+		metaRedirUrl->set( cu, decoded, decBytes, false, true, false, false );
+	}
 
 	return true;
 }

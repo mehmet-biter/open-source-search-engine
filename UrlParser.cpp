@@ -137,12 +137,12 @@ void UrlParser::parse() {
 			isPrevAmpersand = isAmpersand;
 		}
 
-		for ( std::map<std::string, size_t>::const_iterator it = m_queriesMap.begin(); it != m_queriesMap.end(); ++it ) {
-			logf(LOG_INFO, "\tqueries key='%s'", it->first.c_str() );
-		}
-		for ( std::vector<UrlComponent>::const_iterator it = m_queries.begin(); it != m_queries.end(); ++it ) {
-			logf(LOG_TRACE, "\tseparator='%c' key='%s' query='%.*s'", it->m_separator, it->getKey().c_str(), static_cast<int32_t>( it->m_len ), it->m_pos );
-		}
+//		for ( std::map<std::string, size_t>::const_iterator it = m_queriesMap.begin(); it != m_queriesMap.end(); ++it ) {
+//			logf(LOG_INFO, "\tqueries key='%s'", it->first.c_str() );
+//		}
+//		for ( std::vector<UrlComponent>::const_iterator it = m_queries.begin(); it != m_queries.end(); ++it ) {
+//			logf(LOG_TRACE, "\tseparator='%c' key='%s' query='%.*s'", it->m_separator, it->getKey().c_str(), static_cast<int32_t>( it->m_len ), it->m_pos );
+//		}
 	}
 }
 
@@ -192,14 +192,19 @@ const char* UrlParser::unparse() {
 	return m_urlParsed.c_str();
 }
 
-void UrlParser::incrementDeleteCount( const UrlComponent *urlComponent ) {
+void UrlParser::deleteComponent( UrlComponent *urlComponent ) {
 	if ( urlComponent ) {
+		urlComponent->setDeleted();
+
 		switch ( urlComponent->getType() ) {
 			case UrlComponent::TYPE_PATH:
 				++m_pathsDeleteCount;
 				break;
 			case UrlComponent::TYPE_QUERY:
 				++m_queriesDeleteCount;
+
+				// also remove from map
+				m_queriesMap.erase( urlComponent->getKey() );
 				break;
 		}
 	}
@@ -216,8 +221,7 @@ bool UrlParser::removeComponent( const std::vector<UrlComponent*> &urlComponents
 		if ( ( (*it)->hasValue() && validator.isValid( *(*it) ) ) ||
 		     ( !(*it)->hasValue() && validator.allowEmptyValue() ) ) {
 			hasRemoval = true;
-			(*it)->setDeleted();
-			incrementDeleteCount( *it );
+			deleteComponent( *it );
 		}
 	}
 
@@ -256,17 +260,13 @@ bool UrlParser::removePath( const std::vector<std::pair<UrlComponent*, UrlCompon
 		if ( it->second == NULL ) {
 			if ( validator.allowEmptyValue() ) {
 				hasRemoval = true;
-				it->first->setDeleted();
-				incrementDeleteCount( it->first );
+				deleteComponent( it->first );
 			}
 		} else {
 			if ( validator.isValid( *( it->second ) ) ) {
 				hasRemoval = true;
-				it->first->setDeleted();
-				incrementDeleteCount( it->first );
-
-				it->second->setDeleted();
-				incrementDeleteCount( it->second );
+				deleteComponent( it->first );
+				deleteComponent( it->second );
 			}
 		}
 	}
@@ -319,13 +319,20 @@ std::vector<UrlComponent*> UrlParser::matchQueryParam( const UrlComponent::Match
 		return result;
 	}
 
-	for ( std::vector<UrlComponent>::iterator it = m_queries.begin(); it != m_queries.end(); ++it ) {
-		if ( it->isDeleted() ) {
-			continue;
+	if ( matcher.getMatchCriteria() == MATCH_DEFAULT ) {
+		std::map<std::string, size_t>::const_iterator it = m_queriesMap.find( matcher.getParam() );
+		if ( it != m_queriesMap.end() ) {
+			result.push_back( &(m_queries[ it->second ]) );
 		}
+	} else {
+		for (std::vector<UrlComponent>::iterator it = m_queries.begin(); it != m_queries.end(); ++it) {
+			if ( it->isDeleted() ) {
+				continue;
+			}
 
-		if ( matcher.isMatching( *it ) ) {
-			result.push_back( &( *it ) );
+			if ( matcher.isMatching( *it ) ) {
+				result.push_back( &(*it));
+			}
 		}
 	}
 

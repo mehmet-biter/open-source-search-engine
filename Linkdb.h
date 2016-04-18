@@ -1143,7 +1143,7 @@ public:
 
 	bool m_hasRelNoFollow;
 
-	bool m_stripIds;
+	bool m_stripParams;
 	
 	uint32_t  m_allocSize;
 	char          *m_allocBuf;

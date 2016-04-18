@@ -82,10 +82,19 @@ class UrlComponent::Matcher {
 public:
 	Matcher( const char *param, MatchCriteria matchCriteria = MATCH_DEFAULT );
 
+	MatchCriteria getMatchCriteria() const {
+		return m_matchCriteria;
+	}
+
+	const std::string& getParam() const {
+		return m_param;
+	}
+
 	bool isMatching( const UrlComponent &urlPart ) const; 
 
-//private:
+private:
 	std::string m_param;
+	MatchCriteria m_matchCriteria;
 	bool m_matchPartial;
 	bool m_matchCase;
 };
