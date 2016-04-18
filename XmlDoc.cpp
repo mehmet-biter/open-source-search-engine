@@ -7859,6 +7859,18 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 	if ( m_linkInfo1Valid && ptr_linkInfo1 )
 		return ptr_linkInfo1;
 
+	// do not generate in real-time from a msg20 request for a summary,
+	// because if this falls through then getFirstIp() below can return -1
+	// and we return -1, causing all kinds of bad things to happen for
+	// handling the msg20 request
+	if ( m_setFromTitleRec && m_req && ! ptr_linkInfo1 ) {
+		memset ( &s_dummy2 , 0 , sizeof(s_dummy2) );
+		s_dummy2.m_lisize = sizeof(s_dummy2);
+		ptr_linkInfo1  = &s_dummy2;
+		size_linkInfo1 = sizeof(s_dummy2);
+		return ptr_linkInfo1;
+	}
+
 	// at least get our firstip so if cr->m_getLinkInfo is false
 	// then getRevisedSpiderReq() will not core because it is invalid
 	int32_t *ip = getFirstIp();
@@ -7876,10 +7888,10 @@ LinkInfo *XmlDoc::getLinkInfo1 ( ) {
 
 	// sometimes it is NULL in title rec when setting from title rec
 	if ( m_linkInfo1Valid && ! ptr_linkInfo1 ) {
-		memset ( &s_dummy2 , 0 , sizeof(LinkInfo) );
-		s_dummy2.m_lisize = sizeof(LinkInfo);
+		memset ( &s_dummy2 , 0 , sizeof(s_dummy2) );
+		s_dummy2.m_lisize = sizeof(s_dummy2);
 		ptr_linkInfo1  = &s_dummy2;
-		size_linkInfo1 = sizeof(LinkInfo);
+		size_linkInfo1 = sizeof(s_dummy2);
 		return ptr_linkInfo1;
 	}
 
