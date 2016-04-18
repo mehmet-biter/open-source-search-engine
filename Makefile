@@ -129,6 +129,8 @@ else ifeq ($(ARCH), x86_64)
 CPPFLAGS +=
 LIBS += ./libiconv64.a
 
+else ifeq ($(ARCH), armv7l)
+CPPFLAGS += -fsigned-char
 else
 CPPFLAGS +=
 LIBS += ./libiconv64.a
