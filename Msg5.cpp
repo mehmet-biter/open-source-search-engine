@@ -18,7 +18,6 @@ Msg5::Msg5() {
 	m_waitingForList = false;
 	//m_waitingForMerge = false;
 	m_numListPtrs = 0;
-	m_mergeLists = true;
 	reset();
 }
 
@@ -37,9 +36,6 @@ void Msg5::reset() {
 	m_msg3.reset();
 	m_prevCount = 0;
 	KEYMIN(m_prevKey,MAX_KEY_BYTES);// m_ks); m_ks is invalid
-	// free lists if m_mergeLists was false
-	for ( int32_t i = 0 ; ! m_mergeLists && i < m_numListPtrs ; i++ )
-		m_listPtrs[i]->freeList();
 	m_numListPtrs = 0;
 	// and the tree list
 	m_treeList.freeList();
@@ -82,10 +78,7 @@ bool Msg5::getList ( char     rdbId         ,
 		     int64_t syncPoint ,
 		     class Msg5 *msg5b   ,
 		     bool        isRealMerge ,
-		     bool        allowPageCache ,
-		     // if this is false we only check the page cache
-		     bool        hitDisk ,
-		     bool        mergeLists ) {
+		     bool        allowPageCache ) {
 	const char *startKey = static_cast<const char*>(startKey_);
 	const char *endKey = static_cast<const char*>(endKey_);
 	char fixedEndKey[MAX_KEY_BYTES];
@@ -106,7 +99,7 @@ bool Msg5::getList ( char     rdbId         ,
 	// assume no error
 	g_errno = 0;
 	// sanity
-	if ( ! list && mergeLists ) { char *xx=NULL;*xx=0; }
+	if ( ! list && true ) { char *xx=NULL;*xx=0; }
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: bad collection. msg5.");
 	// . reset the provided list
@@ -173,8 +166,6 @@ bool Msg5::getList ( char     rdbId         ,
 	m_compensateForMerge = compensateForMerge;
 	m_isRealMerge        = isRealMerge;
 	m_allowPageCache     = allowPageCache;
-	m_hitDisk            = hitDisk;
-	m_mergeLists         = mergeLists;
 
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
 	RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) return true;
@@ -506,7 +497,7 @@ bool Msg5::readList ( ) {
 				  m_compensateForMerge ,
 				  false                ,
 				  m_allowPageCache     ,
-				  m_hitDisk            ))
+				  true             ))
 		return false;
 	// . this returns false if blocked, true otherwise
 	// . sets g_errno on error
@@ -541,7 +532,6 @@ bool Msg5::needsRecall ( ) {
 	//   records it won't read enough
 	if ( g_errno                         ) goto done;
 	if ( m_newMinRecSizes    <= 0        ) goto done;
-	if ( ! m_mergeLists ) goto done;
 	// limit to just doledb for now in case it results in data loss
 	if(m_readAbsolutelyNothing&&
 	   (m_rdbId==RDB_DOLEDB||m_rdbId==RDB_SPIDERDB ) ) 
@@ -769,10 +759,6 @@ bool Msg5::gotList2 ( ) {
 	for ( int32_t i = 0 ; i < m_numListPtrs ; i++ )
 		m_listPtrs[i]->checkList_r ( false , true );
 #endif
-
-	// if not doing merge, we're all done!
-	if ( ! m_mergeLists ) 
-		return doneMerging();
 
 	// . if no lists we're done
 	// . if we were a recall, then list may not be empty
@@ -1267,11 +1253,6 @@ bool Msg5::doneMerging ( ) {
 #ifdef GBSANITYCHECK
 	m_list->checkList_r ( false , true , m_rdbId );
 #endif
-
-	// . all done if we did not merge the lists
-	// . posdb doesn't need that so much for calling intersect9_r()
-	if ( ! m_mergeLists )
-		return true;
 
 	// . TODO: call freeList() on each m_list[i] here rather than destructr
 	// . free all lists we used
