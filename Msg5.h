@@ -62,9 +62,7 @@ class Msg5 {
 		       class Msg5 *msg5b = NULL ,
 		       bool        isRealMerge = false ,
 		       bool        allowPageCache = true ,
-		       bool        hitDisk        = true ,
-		       // if this is false we just return all lists unmerged
-		       bool        mergeLists     = true );
+		       bool        hitDisk        = true );
 
 	bool getList ( char       rdbId         ,
 		       collnum_t collnum ,
@@ -221,8 +219,6 @@ class Msg5 {
 	bool  m_allowPageCache;
 
 	bool  m_hitDisk;
-
-	bool  m_mergeLists;
 
 	bool m_waitingForList;
 	collnum_t m_collnum;

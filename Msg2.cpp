@@ -221,8 +221,7 @@ bool Msg2::getLists ( ) {
 					   NULL, // msg5b
 					   false, // isrealmerge?
 					   true,// allow disk page cache?
-					   true, // hit disk?
-					   true) ) { // merge lists?
+					   true) ) { // hit disk?
 			m_numRequests++;
 			continue;
 		}
@@ -334,8 +333,7 @@ bool Msg2::getLists ( ) {
 					   NULL, // msg5b
 					   false, // isrealmerge?
 					   true,// allow disk page cache?
-					   true, // hit disk?
-					   true) ) { // merge lists?
+					   true) ) { // hit disk?
 			m_numRequests++;
 			continue;
 		}
