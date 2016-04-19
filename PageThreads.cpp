@@ -10,26 +10,12 @@
 bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 	char  buf [ 64*1024 ];
 	SafeBuf p(buf, 64*1024);
-	// 	char *ss = p.getBuf();
-	// 	char *ssend = p.getBufEnd();
 	g_pages.printAdminTop ( &p , s , r );
-	//p.incrementLength(sss - ss);
 	
 	int64_t now = gettimeofdayInMilliseconds();
 
-	//p.safePrintf("the sizes are %"INT32" %"INT32"", g_conf.m_medReadSize ,g_conf.m_smaReadSize );
-
 	for ( int32_t i = 0 ; i < g_threads.getNumThreadQueues(); i++ ) {
 		const ThreadQueue* q = g_threads.getThreadQueue(i);
-
-		//if ( q->m_top <= 0 ) continue;
-
-
-
-		// int32_t loActive = q->m_loLaunched - q->m_loReturned;
-		// int32_t mdActive = q->m_mdLaunched - q->m_mdReturned;
-		// int32_t hiActive = q->m_hiLaunched - q->m_hiReturned;
-		// int32_t      total    = loActive + mdActive + hiActive;
 
 		int32_t total = q->m_launched - q->m_returned;
 		
@@ -38,16 +24,11 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 			       //"<center>"
 				//"<font size=+1>"
 				"<b>Thread Type: %s"
-				// "  (low: %"INT32""
-				// "  med: %"INT32""
-				// "  high: %"INT32""
 				" (launched: %"INT32" "
 			       "returned: %"INT32" "
 			       "total: %"INT32" maxpossibleout: %i)</td></tr>",
 			       TABLE_STYLE,
 				q->getThreadType(), 
-				// loActive, mdActive, 
-				// hiActive, 
 			       (int32_t)q->m_launched,
 			       (int32_t)q->m_returned,
 			       total,
