@@ -122,7 +122,7 @@ inline AllowCriteria operator&( AllowCriteria a, AllowCriteria b ) {
 enum MandatoryCriteria {
 	MANDATORY_NONE = 0,
 	MANDATORY_DIGIT = 1, // must have digit
-	MANDATORY_HEX = 2, // must have hex
+	MANDATORY_ALPHA_HEX = 2, // must have alpha hex
 	MANDATORY_ALPHA = 4, // must have alpha (lower/upper)
 	MANDATORY_ALPHA_LOWER = 8, // must have alpha lower
 	MANDATORY_ALPHA_UPPER = 16, // must have alpha upper

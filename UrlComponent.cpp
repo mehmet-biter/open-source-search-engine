@@ -64,10 +64,10 @@ UrlComponent::Validator::Validator( size_t minLength, size_t maxLength, bool all
 	, m_allowDigit( allowCriteria & ( ALLOW_DIGIT | ALLOW_HEX ) )
 	, m_allowPunctuation( allowCriteria & ( ALLOW_PUNCTUATION ) )
 	, m_mandatoryCriteria( mandatoryCriteria )
-	, m_mandatoryAlpha( mandatoryCriteria & ( MANDATORY_HEX | MANDATORY_ALPHA | MANDATORY_ALPHA_LOWER | MANDATORY_ALPHA_UPPER ) )
+	, m_mandatoryAlpha( mandatoryCriteria & ( MANDATORY_ALPHA_HEX | MANDATORY_ALPHA | MANDATORY_ALPHA_LOWER | MANDATORY_ALPHA_UPPER ) )
 	, m_mandatoryAlphaLower( mandatoryCriteria & MANDATORY_ALPHA_LOWER )
 	, m_mandatoryAlphaUpper( mandatoryCriteria & MANDATORY_ALPHA_UPPER )
-	, m_mandatoryAlphaHex( mandatoryCriteria & MANDATORY_HEX )
+	, m_mandatoryAlphaHex( mandatoryCriteria & MANDATORY_ALPHA_HEX )
 	, m_mandatoryDigit( mandatoryCriteria & MANDATORY_DIGIT )
 	, m_mandatoryPunctuation( mandatoryCriteria & MANDATORY_PUNCTUATION ) {
 }

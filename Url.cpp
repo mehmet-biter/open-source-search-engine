@@ -547,8 +547,8 @@ static void stripParameters( char *s, int32_t *len ) {
 	//   81cfba6ed9b66a8ad0df43c2f3d259bd
 	{
 		std::vector<UrlComponent*> queryMatches = urlParser.matchQueryParam( UrlComponent::Matcher( "s" ) );
-		urlParser.removeQueryParam( queryMatches, UrlComponent::Validator( 40, 40, false, ALLOW_HEX, MANDATORY_HEX ) );
-		urlParser.removeQueryParam( queryMatches, UrlComponent::Validator( 32, 32, false, ALLOW_HEX, MANDATORY_HEX ) );
+		urlParser.removeQueryParam( queryMatches, UrlComponent::Validator( 40, 40, false, ALLOW_HEX, MANDATORY_ALPHA_HEX ) );
+		urlParser.removeQueryParam( queryMatches, UrlComponent::Validator( 32, 32, false, ALLOW_HEX, MANDATORY_ALPHA_HEX ) );
 	}
 
 	// session_id
@@ -578,8 +578,8 @@ static void stripParameters( char *s, int32_t *len ) {
 	{
 		std::vector<UrlComponent*> queryMatches = urlParser.matchQueryParam( UrlComponent::Matcher( "sessid", MATCH_PARTIAL ) );
 		urlParser.removeQueryParam( queryMatches, UrlComponent::Validator( 52, 52, false, ( ALLOW_ALPHA | ALLOW_DIGIT ), ( MANDATORY_ALPHA | MANDATORY_DIGIT ) ) );
-		urlParser.removeQueryParam( queryMatches, UrlComponent::Validator( 40, 40, false, ALLOW_HEX, MANDATORY_HEX ) );
-		urlParser.removeQueryParam( queryMatches, UrlComponent::Validator( 32, 32, false, ALLOW_HEX, MANDATORY_HEX ) );
+		urlParser.removeQueryParam( queryMatches, UrlComponent::Validator( 40, 40, false, ALLOW_HEX, MANDATORY_ALPHA_HEX ) );
+		urlParser.removeQueryParam( queryMatches, UrlComponent::Validator( 32, 32, false, ALLOW_HEX, MANDATORY_ALPHA_HEX ) );
 		urlParser.removeQueryParam( queryMatches, UrlComponent::Validator( 26, 26, false, ( ALLOW_ALPHA | ALLOW_DIGIT ), ( MANDATORY_ALPHA | MANDATORY_DIGIT ) ) );
 	}
 
