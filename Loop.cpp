@@ -440,11 +440,21 @@ Loop::Loop ( ) {
 	// the extra sleep slots
 	//m_readSlots [ MAX_NUM_FDS ] = NULL;
 	m_slots = NULL;
+	m_pipeFd[0] = -1;
+	m_pipeFd[1] = -1;
 }
 
 // free all slots from addSlots
 Loop::~Loop ( ) {
 	reset();
+	if(m_pipeFd[0]>=0) {
+		close(m_pipeFd[0]);
+		m_pipeFd[0] = -1;
+	}
+	if(m_pipeFd[1]>=0) {
+		close(m_pipeFd[1]);
+		m_pipeFd[1] = -1;
+	}
 }
 
 // returns NULL and sets g_errno if none are left
@@ -479,9 +489,6 @@ void sigHandlerQueue_r ( int x , siginfo_t *info , void *v ) {
 	// if we just needed to cleanup a thread
 	if ( info->si_signo == SIGCHLD ) {
 		g_numSigChlds++;
-		// this has no fd really, Threads.cpp just sends it when
-		// the thread is done
-		g_threads.m_needsCleanup = true;
 		return;
 	}
 
@@ -518,6 +525,15 @@ bool Loop::init ( ) {
 	// clear this up here before using in doPoll()
 	FD_ZERO(&s_selectMaskRead);
 	FD_ZERO(&s_selectMaskWrite);
+
+	// set-up wakeup pipe
+	if(pipe(m_pipeFd)!=0) {
+		log(LOG_ERROR,"pipe() failed with errno=%d",errno);
+		return false;
+	}
+	setNonBlocking(m_pipeFd[0],0);
+	setNonBlocking(m_pipeFd[1],0);
+	FD_SET(m_pipeFd[0],&s_selectMaskRead);
 
 	// sighupHandler() will set this to true so we know when to shutdown
 	m_shutdown  = 0;
@@ -1061,6 +1077,14 @@ void Loop::doPoll ( ) {
 	bool calledOne = false;
 	const int64_t now = gettimeofdayInMilliseconds();
 
+	if(n>0 && FD_ISSET(m_pipeFd[0],&readfds)) {
+		//drain the wakeup pipe
+		char buf[32];
+		(void)read(m_pipeFd[0],buf,sizeof(buf));
+		n--;
+		FD_CLR(m_pipeFd[0],&readfds);
+	}
+	
 	// now keep this fast, too. just check fds we need to.
 	for ( int32_t i = 0 ; i < s_numReadFds ; i++ ) {
 		if ( n == 0 ) break;
@@ -1252,6 +1276,14 @@ void Loop::disableQuickpollTimer() {
 	m_canQuickPoll = false;
 //	setitimer(ITIMER_VIRTUAL, &m_noInterrupt, NULL);
 }
+
+
+void Loop::wakeupPollLoop() {
+	g_threads.m_needsCleanup = true;
+	char dummy='d';
+	(void)write(m_pipeFd[1],&dummy,1);
+}
+
 
 int gbsystem(char *cmd ) {
 	g_loop.disableQuickpollTimer();

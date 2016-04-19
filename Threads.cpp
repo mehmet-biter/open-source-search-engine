@@ -896,11 +896,7 @@ int startUp ( void *state ) {
 	g_threads.m_needsCleanup = true;
 
 
-	// try a sigchld now! doesn't it already do this? no...
-	// on 64bit arch pthread_t is 64bit and pid_t is 32bit
-	// i dont think this makes sense with pthreads any more, they don't
-	// use pid_t they use pthread_t
-	pthread_kill ( s_pid , SIGCHLD );
+	g_loop.wakeupPollLoop();
 
 	return 0;
 }

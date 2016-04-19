@@ -155,6 +155,8 @@ class Loop {
 	void callCallbacks_ass (bool forReading, int fd, int64_t now = 0LL,
 				int32_t niceness = -1 );
 
+	void wakeupPollLoop();
+
 	// set to true by sigioHandler() so doPoll() will be called
 	bool m_needToPoll;
 
@@ -217,6 +219,8 @@ class Loop {
 	Slot *m_slots;
 	Slot *m_head;
 	Slot *m_tail;
+	
+	int m_pipeFd[2]; //used for waking up from select/poll
 };
 
 extern class Loop g_loop;
