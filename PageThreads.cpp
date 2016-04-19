@@ -19,8 +19,6 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 
 	//p.safePrintf("the sizes are %"INT32" %"INT32"", g_conf.m_medReadSize ,g_conf.m_smaReadSize );
 
-	ThreadQueue* disk;
-	
 	ThreadQueue* queues = g_threads.getThreadQueues(); 
 	for ( int32_t i = 0 ; i < g_threads.getNumThreadQueues(); i++ ) {
 		ThreadQueue* q = &queues[i];
@@ -166,69 +164,8 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 		}
 		p.safePrintf("</table><br><br>"); 
 
-		
-		if(q->m_threadType == THREAD_TYPE_DISK) disk = q;
-
 	}
 
-	/*
-	int32_t loActiveBig = disk->m_loLaunchedBig - disk->m_loReturnedBig;
-	int32_t loActiveMed = disk->m_loLaunchedMed - disk->m_loReturnedMed;
-	int32_t loActiveSma = disk->m_loLaunchedSma - disk->m_loReturnedSma;
-	int32_t mdActiveBig = disk->m_mdLaunchedBig - disk->m_mdReturnedBig;
-	int32_t mdActiveMed = disk->m_mdLaunchedMed - disk->m_mdReturnedMed;
-	int32_t mdActiveSma = disk->m_mdLaunchedSma - disk->m_mdReturnedSma;
-	int32_t hiActiveBig = disk->m_hiLaunchedBig - disk->m_hiReturnedBig;
-	int32_t hiActiveMed = disk->m_hiLaunchedMed - disk->m_hiReturnedMed;
-	int32_t hiActiveSma = disk->m_hiLaunchedSma - disk->m_hiReturnedSma;
-	int32_t activeWrites = disk->m_writesLaunched - disk->m_writesReturned;
-	p.safePrintf ( "<table %s>"
-		       "<tr class=hdrow><td colspan=\"5\">"
-		       , TABLE_STYLE );
-	p.safePrintf ( "<center><b>Active Read Threads</b></center></td></tr>"
-		       "<tr bgcolor=#%s>"
-		       "<td></td><td colspan='3'>"
-		       "<center><b>Priority</b></center></td></tr>"
-		       "<tr bgcolor=#%s>"
-		       "<td><b>Size</b></td><td>Low</td><td>Medium</td><td>High</td>"
-		       "</tr>"
-		       // 			       "<tr>"
-		       // 			       "<td>Size</td>"
-		       // 			       "</tr>"
-		       "<tr bgcolor=#%s>"
-		       "<td>Small</td> <td>%"INT32"</td><td>%"INT32"</td><td>%"INT32"</td>"
-		       "</tr>"
-		       "<tr bgcolor=#%s>"
-		       "<td>Medium</td> <td>%"INT32"</td><td>%"INT32"</td><td>%"INT32"</td>"
-		       "</tr>"
-		       "<tr bgcolor=#%s>"
-		       "<td>Large</td> <td>%"INT32"</td><td>%"INT32"</td><td>%"INT32"</td>"
-		       "</tr>"
-		       "</table><br><br>",
-		       LIGHT_BLUE,
-		       LIGHT_BLUE,
-
-		       DARK_BLUE,
-		       loActiveSma,
-		       mdActiveSma,
-		       hiActiveSma,
-
-		       DARK_BLUE,
-		       loActiveMed,
-		       mdActiveMed,
-		       hiActiveMed,
-
-		       DARK_BLUE,
-		       loActiveBig,
-		       mdActiveBig,
-		       hiActiveBig);
-
-	p.safePrintf ("<table %s>",TABLE_STYLE);
-	p.safePrintf ("<tr class=hdrow>"
-		      "<td><b>Active Write Threads</b></td><td>%"INT32"</td>"
-		      "</tr></table>",
-		      activeWrites);
-	*/
 
 	return g_httpServer.sendDynamicPage ( s , (char*) p.getBufStart() ,
 						p.length() );
