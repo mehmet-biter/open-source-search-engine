@@ -39,7 +39,6 @@ public:
 	void         *m_state                   ;
 	// returns a void * :
 	void        *(* m_startRoutine)(void *,class ThreadEntry *) ;
-	pid_t        m_pid                      ; // process id for waitpid()
 	bool         m_isOccupied               ; // is thread waiting/going?
 	bool         m_isLaunched               ; // has it been launched?
 	bool         m_isDone                   ; // is it done running?

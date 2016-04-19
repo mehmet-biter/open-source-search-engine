@@ -1499,12 +1499,6 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 
 		}
 
-		// debug msg
-		if ( g_conf.m_logDebugThread )
-			log(LOG_DEBUG,"thread: joined with pid=%"INT32" pid=%"INT32".",
-			    (int32_t)t->m_pid,(int32_t)t->m_pid);
-
-
 		// we may get cleaned up and re-used and our niceness reassignd
 		// right after set m_isDone to true, so save niceness
 		//int32_t niceness = t->m_niceness;
@@ -1943,9 +1937,9 @@ void ThreadQueue::print ( ) {
 		ThreadEntry *t = &m_entries[i];
 		// print it
 		log(LOG_INIT,"thread: address=%"PTRFMT" "
-		    "pid=%u state=%"PTRFMT" "
+		    "state=%"PTRFMT" "
 		    "occ=%i done=%i lnch=%i",
-		     (PTRTYPE)t , t->m_pid ,
+		     (PTRTYPE)t,
 		     (PTRTYPE)t->m_state , t->m_isOccupied , t->m_isDone ,
 		     t->m_isLaunched );
 	}
