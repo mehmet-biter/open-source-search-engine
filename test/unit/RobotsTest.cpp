@@ -41,8 +41,6 @@ public:
 
 		return Robots::isAllowed( &url );
 	}
-private:
-	std::string m_fileRobotsTxt;
 };
 
 static void expectRobotsNoNextLine( TestRobots *robots ) {
@@ -1491,7 +1489,7 @@ TEST( RobotsTest, RFCPathMatchPrefixDirAllow ) {
 	EXPECT_TRUE( robots.isAllowed( "/tmp/a.html" ));
 }
 
-TEST( RobotsTest, DISABLED_RFCPathMatchUrlEncodeDisallow ) {
+TEST( RobotsTest, RFCPathMatchUrlEncodeDisallow ) {
 	char robotsTxt[1024];
 
 	{
@@ -1547,7 +1545,7 @@ TEST( RobotsTest, DISABLED_RFCPathMatchUrlEncodeDisallow ) {
 	}
 }
 
-TEST( RobotsTest, DISABLED_RFCPathMatchUrlEncodeAllow ) {
+TEST( RobotsTest, RFCPathMatchUrlEncodeAllow ) {
 	char robotsTxt[1024];
 
 	{
@@ -1603,7 +1601,7 @@ TEST( RobotsTest, DISABLED_RFCPathMatchUrlEncodeAllow ) {
 	}
 }
 
-TEST( RobotsTest, DISABLED_RFCExample ) {
+TEST( RobotsTest, RFCExample ) {
 	char robotsTxt[1024] = "# /robots.txt for http://www.fict.org/\n"
 	                       "# comments to webmaster@fict.org\n"
 	                       "\n"

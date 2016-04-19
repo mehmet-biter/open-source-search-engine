@@ -1041,12 +1041,14 @@ TEST( UrlTest, StripParamsWho ) {
 TEST( UrlTest, Normalization ) {
 	const char *input_urls[] = {
 		"http://puddicatcreationsdigitaldesigns.com/index.php?route=product/product&amp;product_id=1510",
-		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au&section=australia"
+		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au&section=australia",
+	    "http://www.example.com/%7ejoe/index.html"
 	};
 
 	const char *expected_urls[] = {
 		"http://puddicatcreationsdigitaldesigns.com/index.php?route=product/product&product_id=1510",
-		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au"
+		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au",
+		"http://www.example.com/~joe/index.html"
 	};
 
 	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),

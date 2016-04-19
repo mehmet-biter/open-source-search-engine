@@ -2,6 +2,7 @@
 #define GB_ROBOTRULE_H
 
 #include <stdint.h>
+#include <string>
 
 class Url;
 
@@ -23,8 +24,10 @@ public:
 
 private:
 	bool m_isAllow;
+
 	const char *m_path;
 	int32_t m_pathLen;
+	std::string m_pathNormalized;
 
 	bool m_wildcardFound;
 	int32_t m_wildcardCount;

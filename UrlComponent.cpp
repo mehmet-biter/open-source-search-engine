@@ -1,26 +1,63 @@
 #include "UrlComponent.h"
 #include "fctypes.h"
 #include <algorithm>
-#include "Log.h"
+
+void UrlComponent::normalize( std::string *component ) {
+	// normalize string
+	size_t percentPos = 0;
+	while ( ( percentPos = component->find( '%', percentPos ) ) != std::string::npos ) {
+		if ( percentPos + 2 < component->size() ) {
+			std::string encoded = component->substr( percentPos + 1, 2);
+			char *endPtr = NULL;
+			uint8_t value = static_cast<uint8_t>( strtol( encoded.c_str(), &endPtr, 16 ) );
+
+			size_t hexLen = endPtr - encoded.c_str();
+			if ( hexLen == 2 ) {
+				if ( ( value >= 0x41 && value <= 0x51 ) ||
+				     ( value >= 0x61 && value <= 0x7A ) ||
+				     ( value >= 0x30 && value <= 0x39 ) ||
+				     ( value == 0x2D ) || ( value == 0x2E ) || ( value == 0x5F ) || ( value == 0x7E ) ) {
+					component->erase( percentPos, 2 );
+					(*component)[ percentPos ] = value;
+				} else {
+					// change to upper case
+					if ( is_lower_a( encoded[0] ) ) {
+						(*component)[ percentPos + 1 ] = to_upper_a( encoded[0] );
+					}
+
+					if ( is_lower_a( encoded[1] ) ) {
+						(*component)[ percentPos + 2 ] = to_upper_a( encoded[1] );
+					}
+				}
+			} else {
+				// invalid url encoded (nothing much we can do)
+				component->erase( percentPos, hexLen + 1 );
+			}
+		}
+		++percentPos;
+	}
+}
 
 UrlComponent::UrlComponent( UrlComponent::Type type, const char *pos, size_t len, char separator )
 	: m_type ( type )
-	, m_pos( pos )
-	, m_len( len )
+	, m_componentStr( pos, len )
 	, m_separator( separator )
 	, m_keyLen( len )
 	, m_deleted( false) {
-	const char *separatorPos = static_cast<const char*>( memchr( m_pos, '=', m_len ) );
-	if ( !separatorPos ) {
+	// normalize string
+	normalize( &m_componentStr );
+
+	size_t separatorPos = m_componentStr.find( '=' );
+	if ( separatorPos == std::string::npos ) {
 		// try again with comma
-		separatorPos = static_cast<const char*>( memchr( m_pos, ',', m_len ) );
+		separatorPos = m_componentStr.find( ',' );
 	}
 
-	if ( separatorPos ) {
-		m_keyLen = separatorPos - m_pos;
+	if ( separatorPos != std::string::npos ) {
+		m_keyLen = separatorPos;
 	}
 
-	m_key = std::string( m_pos, m_keyLen );
+	m_key = m_componentStr.substr( 0, m_keyLen );
 	std::transform( m_key.begin(), m_key.end(), m_key.begin(), ::tolower );
 }
 
@@ -36,19 +73,18 @@ UrlComponent::Matcher::Matcher( const char *param, MatchCriteria matchCriteria )
 
 bool UrlComponent::Matcher::isMatching( const UrlComponent &urlPart ) const {
 	if ( m_matchCase ) {
-		// m_param -> p_urlPart->m_pos, p_urlPart->m_keyLen
-		if ( m_matchPartial ) {
-			return ( memmem( urlPart.m_pos, urlPart.m_keyLen, m_param.c_str(), m_param.size() ) != NULL );
+		if ( ( m_matchPartial && m_param.size() <= urlPart.m_keyLen ) || ( m_param.size() == urlPart.m_keyLen ) ) {
+			return ( std::equal( m_param.begin(), m_param.end(), urlPart.m_componentStr.begin() ) );
 		}
 
-		return ( urlPart.m_keyLen == m_param.size() && memcmp( urlPart.m_pos, m_param.c_str(), m_param.size() ) == 0 );
+		return false;
 	}
 
 	if ( m_matchPartial ) {
-		return ( urlPart.getKey().find(m_param) != std::string::npos );
+		return ( urlPart.m_key.find(m_param) != std::string::npos );
 	}
 
-	return ( urlPart.getKey() == m_param );
+	return ( urlPart.m_key == m_param );
 }
 
 UrlComponent::Validator::Validator( size_t minLength, size_t maxLength, bool allowEmpty,

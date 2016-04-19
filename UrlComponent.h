@@ -16,28 +16,40 @@ public:
 		return m_type;
 	}
 
+	const std::string& getString() const {
+		return m_componentStr;
+	}
+
+	char getSeparator() const {
+		return m_separator;
+	}
+
+	void setSeparator( char separator ) {
+		m_separator = separator;
+	}
+
 	std::string getKey() const {
 		return m_key;
 	}
 
 	bool hasValue() const {
-		return ( m_keyLen != m_len );
+		return ( m_keyLen != m_componentStr.size() );
 	}
 
 	const char* getValue() const {
-		if ( m_keyLen == m_len ) {
-			return m_pos;
+		if ( m_keyLen == m_componentStr.size() ) {
+			return m_componentStr.c_str();
 		}
 
-		return m_pos + m_keyLen + 1;
+		return m_componentStr.c_str() + m_keyLen + 1;
 	}
 
 	size_t getValueLen() const {
-		if ( m_keyLen == m_len ) {
-			return m_len;
+		if ( m_keyLen == m_componentStr.size() ) {
+			return m_componentStr.size();
 		}
 
-		return m_len - m_keyLen - 1;
+		return m_componentStr.size() - m_keyLen - 1;
 	}
 
 	bool isDeleted() const {
@@ -51,11 +63,13 @@ public:
 	class Matcher;
 	class Validator;
 
-//private:
+	static void normalize( std::string *component );
+
+private:
 	Type m_type;
 
-	const char *m_pos;
-	size_t m_len;
+	std::string m_componentStr;
+
 	char m_separator;
 
 	std::string m_key;

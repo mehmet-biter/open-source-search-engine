@@ -94,13 +94,6 @@ void UrlParser::parse() {
 		prevPos = currentPos ? currentPos + 1 : NULL;
 	}
 
-//	for ( std::map<std::string, size_t>::const_iterator it = m_pathsMap.begin(); it != m_pathsMap.end(); ++it ) {
-//		logf(LOG_INFO, "\tpath key='%s'", it->first.c_str() );
-//	}
-//	for ( std::vector<UrlComponent>::const_iterator it = m_paths.begin(); it != m_paths.end(); ++it ) {
-//		logf(LOG_TRACE, "\tseparator='%c' key='%s' path='%.*s'", it->m_separator, it->getKey().c_str(), static_cast<int32_t>( it->m_len ), it->m_pos );
-//	}
-
 	// query
 	if ( queryPos ) {
 		prevPos = queryPos + 1;
@@ -118,7 +111,7 @@ void UrlParser::parse() {
 
 			// check previous urlPart
 			if ( isPrevAmpersand ) {
-				urlPart.m_separator = '&';
+				urlPart.setSeparator( '&' );
 			}
 
 			bool isAmpersand = ( !urlPart.hasValue() && urlPart.getKey() == "amp" );
@@ -136,13 +129,6 @@ void UrlParser::parse() {
 			prevPos = currentPos ? currentPos + 1 : NULL;
 			isPrevAmpersand = isAmpersand;
 		}
-
-//		for ( std::map<std::string, size_t>::const_iterator it = m_queriesMap.begin(); it != m_queriesMap.end(); ++it ) {
-//			logf(LOG_INFO, "\tqueries key='%s'", it->first.c_str() );
-//		}
-//		for ( std::vector<UrlComponent>::const_iterator it = m_queries.begin(); it != m_queries.end(); ++it ) {
-//			logf(LOG_TRACE, "\tseparator='%c' key='%s' query='%.*s'", it->m_separator, it->getKey().c_str(), static_cast<int32_t>( it->m_len ), it->m_pos );
-//		}
 	}
 }
 
@@ -157,12 +143,13 @@ const char* UrlParser::unparse() {
 		if ( !it->isDeleted() ) {
 			if ( isFirst ) {
 				isFirst = false;
-				if ( it->m_separator != '/' ) {
+				if ( it->getSeparator() != '/' ) {
 					m_urlParsed.append( "/" );
 				}
 			}
 
-			m_urlParsed.append( it->m_pos - 1, it->m_len + 1 ); // include separator
+			m_urlParsed += it->getSeparator();
+			m_urlParsed.append( it->getString() );
 		}
 	}
 
@@ -177,17 +164,12 @@ const char* UrlParser::unparse() {
 				isFirst = false;
 				m_urlParsed.append( "?" );
 			} else {
-				m_urlParsed += ( it->m_separator == '?' ) ? '&' : it->m_separator;
+				m_urlParsed += ( it->getSeparator() == '?' ) ? '&' : it->getSeparator();
 			}
 
-			m_urlParsed.append( it->m_pos, it->m_len );
+			m_urlParsed.append( it->getString() );
 		}
 	}
-
-//	if ( m_urlLen != m_urlParsed.size() ) {
-//		logf( LOG_INFO, "@@@ in =%.*s", static_cast<int32_t>( m_urlLen ), m_url );
-//		logf( LOG_INFO, "@@@ out=%s", m_urlParsed.c_str());
-//	}
 
 	return m_urlParsed.c_str();
 }
