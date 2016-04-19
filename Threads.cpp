@@ -1952,7 +1952,7 @@ void ThreadQueue::print ( ) {
 }
 
 
-const char *ThreadQueue::getThreadType ( ) {
+const char *ThreadQueue::getThreadType ( ) const {
 	const char *s = "unknown";
 	if ( m_threadType == THREAD_TYPE_DISK		) s = "disk";
 	if ( m_threadType == THREAD_TYPE_MERGE		) s = "merge";

@@ -19,9 +19,8 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 
 	//p.safePrintf("the sizes are %"INT32" %"INT32"", g_conf.m_medReadSize ,g_conf.m_smaReadSize );
 
-	ThreadQueue* queues = g_threads.getThreadQueues(); 
 	for ( int32_t i = 0 ; i < g_threads.getNumThreadQueues(); i++ ) {
-		ThreadQueue* q = &queues[i];
+		const ThreadQueue* q = g_threads.getThreadQueue(i);
 
 		//if ( q->m_top <= 0 ) continue;
 

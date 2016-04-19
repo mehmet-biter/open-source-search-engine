@@ -155,7 +155,7 @@ public:
 	bool m_isLowPrioritySuspended ;
 
 	// return m_threadType as a NULL-terminated string
-	const char *getThreadType () ;
+	const char *getThreadType () const;
 
 	void removeThreads ( class BigFile *bf ) ;
 };
@@ -224,7 +224,7 @@ public:
 	// . ignores disk threads that are too nice (over maxNiceness)
 	int32_t getDiskThreadLoad ( int32_t maxNiceness , int32_t *totalToRead ) ;
 
-	ThreadQueue* getThreadQueues() { return &m_threadQueues[0];}
+	const ThreadQueue* getThreadQueue(int type) const { return &m_threadQueues[type]; }
 	int32_t      getNumThreadQueues() { return m_numQueues; }
 
 	// all high priority threads...
