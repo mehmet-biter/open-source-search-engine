@@ -229,7 +229,6 @@ static void  hdtempWrapper        ( int fd , void *state ) ;
 static void  hdtempDoneWrapper    ( void *state , ThreadEntry * /*t*/ ) ;
 static void *hdtempStartWrapper_r ( void *state , ThreadEntry * /*t*/ ) ;
 static void heartbeatWrapper    ( int fd , void *state ) ;
-//static void diskHeartbeatWrapper ( int fd , void *state ) ;
 static void processSleepWrapper ( int fd , void *state ) ;
 
 Process::Process ( ) {
@@ -301,9 +300,6 @@ bool Process::init ( ) {
 	// heartbeat check
 	if ( ! g_loop.registerSleepCallback(100,NULL,heartbeatWrapper,0))
 		return false;
-	// we use SSDs now so comment this out
-	//if ( !g_loop.registerSleepCallback(500,NULL,diskHeartbeatWrapper,0))
-	//	return false;
 
 	// get first snapshot of load average...
 	//update_load_average(gettimeofdayInMillisecondsLocal());
@@ -499,54 +495,6 @@ void heartbeatWrapper ( int fd , void *state ) {
 	g_process.m_lastHeartbeatApprox = gettimeofdayInMilliseconds();
 }
 
-
-/*
-void diskHeartbeatWrapper ( int fd , void *state ) {
-
-	// skip this now that we use SSDs
-	return;
-
-	bool stuck = false;
-
-	// do we have reads waiting?
-	bool isWaiting = 
-		( g_threads.m_threadQueues[DISK_THREAD].m_hiReturned <
-		  g_threads.m_threadQueues[DISK_THREAD].m_hiLaunched ) ;
-
-	// . must have been more than 1.5 secs since last read finished
-	// . if the disk read queue is empty when we add a new read thread
-	//   request in BigFile.cpp, we set g_diskRequestAdded to g_now
-	if ( isWaiting && 
-	     g_now - g_lastDiskReadCompleted >= 1500 &&
-	     g_now - g_lastDiskReadStarted   >= 1500  )
-		stuck = true;
-
-	// return if not stuck
-	if ( ! stuck ) {
-		// if we just got unstuck, log that
-		if ( g_diskIsStuck )
-			log("gb: disk is now unstuck.");
-		g_diskIsStuck = false;
-		return;
-	}
-
-	// if first time, log that
-	if ( ! g_diskIsStuck )
-		log("gb: disk appears to be stuck.");
-
-	// flag it so BigFile.cpp and File.cpp just return EDISKSTUCK and so
-	// we do not kill all disk read threads again
-	g_diskIsStuck = true;
-
-	// now call the callback of all disk read threads that have niceness
-	// 0 but set g_errno to EDISKSTUCK. when the actual read finally does
-	// complete it should just basically stop...
-	//
-	// take this out now that we have solid states!!!!!!!!!!!!!
-	//
-	//g_threads.bailOnReads();
-}
-*/
 
 // called by PingServer.cpp only as of now
 int64_t Process::getTotalDocsIndexed() {

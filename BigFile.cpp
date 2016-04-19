@@ -1259,14 +1259,6 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	//	return NULL;
 	//}
 
-	// if we got hit before we set m_readyForBail to true we must have
-	// been hit pre-launch... so bail quickly in that case...
-	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/
-	if ( t && t->m_callback == ohcrap ) {
-		t->m_errno = EDISKSTUCK;
-		return NULL;
-	}
-
 	// extract our class
 	FileState *orig = (FileState *)state;
 
@@ -1274,12 +1266,6 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	FileState tmp;
 	gbmemcpy ( &tmp , orig , sizeof(FileState ));
 	FileState *fstate = &tmp;
-
-	// lead Threads::bailOnReads() know we can be bailed on now since
-	// we have copied over all the date we can from fstate, which can
-	// be pulled out from under us now
-	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/
-	t->m_readyForBail = true;
 
 	// get THIS
 	//BigFile *THIS = fstate->m_this;
@@ -1301,18 +1287,6 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	//   and errno will be EINTR
  again:
 	bool status = readwrite_r ( fstate , t ) ;
-	// did our callback get pre-called by Process.cpp/Threads.cpp? 
-	// fstate is probably invalid then, so watch out!
-	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/
-	if ( t && t->m_callback == ohcrap ) 
-	{
-		time_took = gettimeofdayInMilliseconds() - time_start;
-	
-		if ( !fstate->m_doWrite && time_took >= g_conf.m_logDiskReadTimeThreshold ) {
-			log(LOG_WARN, "Disk read of %"INT64" bytes took %"INT64" ms", fstate->m_bytesDone, gettimeofdayInMilliseconds() - time_start);
-		}
-		return NULL;
-	}
 	// set errno
 	if ( ! status ) fstate->m_errno = errno;
 	// test again here
@@ -1489,10 +1463,6 @@ bool readwrite_r ( FileState *fstate , ThreadEntry *t ) {
 		log(LOG_LOGIC, "disk: fd < 0. Bad engineer.");
 		return false; //log("disk::readwrite_r: fd is negative");
 	}
-
-	// did our callback get pre-called by Process.cpp/Threads.cpp?
-	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/
-	if ( t && t->m_callback == ohcrap ) return false;
 
 	// only set this now if we are the first one
 	// if ( g_threads.m_threadQueues[THREAD_TYPE_DISK].m_hiReturned ==

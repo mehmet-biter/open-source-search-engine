@@ -42,7 +42,6 @@ public:
 	bool         m_isOccupied               ; // is thread waiting/going?
 	bool         m_isLaunched               ; // has it been launched?
 	bool         m_isDone                   ; // is it done running?
-	bool         m_readyForBail             ; // BigFile.cpp stuck reads
 	char        *m_allocBuf                 ; // BigFile.cpp stuck reads
 	int32_t      m_allocSize                ; // BigFile.cpp stuck reads
 	int32_t         m_errno                    ; // BigFile.cpp stuck reads
@@ -134,7 +133,6 @@ public:
 	bool         cleanUp      ( ThreadEntry *tt , int32_t maxNiceness );
 	bool         timedCleanUp ( int32_t maxNiceness );
 
-	void bailOnReads ();
 	bool isHittingFile ( class BigFile *bf );
 
 	// . launch a thread from our queue
@@ -213,7 +211,6 @@ public:
 	// call cleanUp() for each thread queue
 	bool cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) ;
 
-	void bailOnReads ();
 	bool isHittingFile ( class BigFile *bf ) ;
 
 	//calls callbacks and launches all threads
@@ -248,7 +245,5 @@ public:
 };
 
 extern class Threads g_threads;
-
-void ohcrap ( void *state , class ThreadEntry *t ) ;
 
 #endif // GB_THREADS_H

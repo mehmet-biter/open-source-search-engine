@@ -466,11 +466,6 @@ bool Threads::isHittingFile ( BigFile *bf ) {
 }
 
 
-void Threads::bailOnReads ( ) {
-	m_threadQueues[THREAD_TYPE_DISK].bailOnReads();
-}
-
-
 bool Threads::cleanUp ( ThreadEntry *t , int32_t maxNiceness ) {
 	bool didSomething = false;
  loop:
@@ -909,17 +904,6 @@ void *startUp2 ( void *state ) {
 }
 
 
-// BigFile.cpp's readwriteWrapper_r() ThreadEntry::m_callback gets set to
-// ohcrap() because it was taking too long to do its read and we prematurely
-// called its callback above in bailOnReads(). In that case we still have to
-// free the disk read buffer which was never used. And doneWrapper() in
-// BigFile.cpp is never called.
-void ohcrap ( void *state , ThreadEntry *t ) {
-	// free the read buffer here then
-	if ( t->m_allocBuf )
-		mfree ( t->m_allocBuf , t->m_allocSize , "RdbScan" );
-}
-
 
 ///////////////////////////////////////////////////////////////////////
 // functions for ThreadQueue
@@ -1059,7 +1043,6 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness,
 	t->m_isDone       = false;
 	t->m_isLaunched   = false;
 	t->m_queuedTime   = gettimeofdayInMilliseconds();
-	t->m_readyForBail = false;
 	t->m_allocBuf     = NULL;
 	t->m_allocSize    = 0;
 	t->m_errno        = 0;
@@ -1200,94 +1183,6 @@ bool ThreadQueue::isHittingFile ( BigFile *bf ) {
 			return true;
 	}
 	return false;
-}
-
-
-// Process.cpp calls these callbacks before their time in order to
-// set EDISKSTUCK
-void ThreadQueue::bailOnReads ( ) {
-	// note it
-	log("threads: bypassing read threads");
-	ThreadEntry *t = m_launchedHead;
-	ThreadEntry *nextLink = NULL;
-
-	// loop through candidates
-	for ( ; t ; t = nextLink ) {
-		// do it here in case we modify the linked list below
-		nextLink = t->m_nextLink;
-
-		// must be occupied to be done (sanity check)
-		if ( ! t->m_isOccupied )
-			continue;
-
-		// must be niceness 0
-		if ( t->m_niceness != 0 )
-			continue;
-
-		// must not be done
-		if ( t->m_isDone )
-			continue;
-
-		// must not have already called callback
-		if ( t->m_callback == ohcrap )
-			continue;
-
-		// must be a read
-		if ( t->m_startRoutine != readwriteWrapper_r )
-			continue;
-
-		// shortcut
-		FileState *fs = (FileState *)t->m_state;
-		// do not stop writes
-		if ( fs->m_doWrite )
-			continue;
-
-		// must be niceness 0 too!
-		if ( fs->m_niceness != 0 )
-			continue;
-
-		// what is this? unlaunched...
-		//if ( t->m_pid == 0 ) continue;
-		// can only bail on a thread after it copies its FileState
-		// class into its stack so we can bypass it and free the
-		// original FileState without causing a core. if thread
-		// is not yet launched we have to call the callback here too
-		// otherwise it never gets launched until the disk is unstuck!
-		if ( ! t->m_readyForBail && t->m_isLaunched )
-			continue;
-
-		// set error
-		t->m_errno = EDISKSTUCK;
-		// set this too
-		g_errno = EDISKSTUCK;
-		// do not allow caller to free the alloc'd buf in case
-		// its read finally comes through!
-		t->m_allocBuf   = fs->m_allocBuf;
-		t->m_allocSize  = fs->m_allocSize;
-		fs->m_allocBuf  = NULL;
-		fs->m_allocSize = 0;
-		// call it
-		t->m_callback ( t->m_state , t );
-		// do not re-call it...
-		t->m_callback = ohcrap;
-		// invalidate state (FileState usually)
-		t->m_state = NULL;
-
-		// do not launch if not yet launched
-		if ( t->m_isLaunched )
-			continue;
-
-		// delete him if not yet launched, otherwise we try to
-		// launch it later with a corrupted/unstable FileState...
-		// and that causes our launch counts to get out of whack i
-		// think...
-		t->m_isOccupied = false;
-		// note it
-		log("threads: bailing unlaunched thread");
-		// remove from linked list then
-		removeLink ( &m_launchedHead , t );
-		addLink    ( &m_emptyHead , t );
-	}
 }
 
 
