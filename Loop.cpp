@@ -588,7 +588,7 @@ bool Loop::init ( ) {
 	//   handling a SIGIO signal, so don't worry about that
 	// . what sigs should be blocked when in our handler? the same
 	//   sigs we are handling i guess
-	gbmemcpy ( &sa2.sa_mask , &sigs , sizeof(sigs) );
+	sa2.sa_mask = sigs;
 	sa2.sa_flags = SA_SIGINFO ; //| SA_ONESHOT;
 	// call this function
 	sa2.sa_sigaction = sigHandlerQueue_r;
@@ -965,15 +965,11 @@ void Loop::doPoll ( ) {
 	// based it only goes off when that much "cpu time" has elapsed.
 	else                 v.tv_usec = QUICKPOLL_INTERVAL * 1000;
 
-	// gotta copy to our own since bits get cleared by select() function
-	fd_set readfds;
-	fd_set writefds;
-
  again:
 
-	//fd_set exceptfds;
-	gbmemcpy ( &readfds, &s_selectMaskRead , sizeof(fd_set) );
-	gbmemcpy ( &writefds, &s_selectMaskWrite , sizeof(fd_set) );
+	// gotta copy to our own since bits get cleared by select() function
+	fd_set readfds = s_selectMaskRead;
+	fd_set writefds = s_selectMaskWrite;
 
 	if ( g_conf.m_logDebugLoop )
 		log("loop: in select");
