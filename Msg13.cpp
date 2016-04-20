@@ -31,7 +31,6 @@ bool addTestDoc ( int64_t urlHash64 , char *httpReply , int32_t httpReplySize ,
 
 static void gotForwardedReplyWrapper ( void *state , UdpSlot *slot ) ;
 static void handleRequest13 ( UdpSlot *slot , int32_t niceness ) ;
-//static bool downloadDoc     ( UdpSlot *slot, Msg13Request* r ) ;
 static void gotHttpReply    ( void *state , TcpSocket *ts ) ;
 static void gotHttpReply2 ( void *state , 
 			    char *reply , 
@@ -41,11 +40,6 @@ static void gotHttpReply2 ( void *state ,
 static void passOnReply     ( void *state , UdpSlot *slot ) ;
 
 bool hasIframe           ( char *reply, int32_t replySize , int32_t niceness );
-
-char getContentTypeQuick ( HttpMime *mime, char *reply, int32_t replySize , 
-			   int32_t niceness ) ;
-int32_t convertIntoLinks    ( char *reply, int32_t replySize , Xml *xml , 
-			   int32_t niceness ) ;
 
 
 static bool setProxiedUrlFromSquidProxiedRequest ( Msg13Request *r );
@@ -139,11 +133,6 @@ bool Msg13::getDoc ( Msg13Request *r,
 	// reset in case we are being reused
 	reset();
 
-	// set these even though we are not doing events, so we can use
-	// the event spider proxies on scproxy3
-	r->m_requireGoodDate = 0;
-	r->m_harvestLinksIfNoGoodDate = 1;
-
 	m_state    = state;
 	m_callback = callback;
 
@@ -194,21 +183,10 @@ bool Msg13::getDoc ( Msg13Request *r,
 	if ( r->m_isRobotsTxt )
 		r->m_compressReply = true;
 
-	// do not get .google.com/ crap
-	//if ( strstr(r->ptr_url,".google.com/") ) { char *xx=NULL;*xx=0; }
-
-	// set it for this too
-	//if ( g_conf.m_useCompressionProxy ) {
-	//	r->m_useCompressionProxy = true;
-	//	r->m_compressReply       = true;
-	//}
-
 	// make the cache key
 	r->m_cacheKey  = r->m_urlHash64;
 	// a compressed reply is different than a non-compressed reply
 	if ( r->m_compressReply ) r->m_cacheKey ^= 0xff;
-
-
 
 	if ( r->m_isSquidProxiedUrl )
 		// sets r->m_proxiedUrl that we use a few times below
@@ -237,15 +215,7 @@ bool Msg13::getDoc ( Msg13Request *r,
 	// download it ourselves rather than forward it off to another host?
 	//if ( r->m_forwardDownloadRequest ) return forwardRequest ( ); 
 
-	return forwardRequest ( ); 
-
-	// gotHttpReply() and passOnReply() call our Msg13::gotDocReply*() 
-	// functions if Msg13Request::m_parent is non-NULL
-	//r->m_parent = this;
-
-	// . returns false if blocked, etc.
-	// . if this doesn't block it calls getFinalReply()
-	//return downloadDoc ( NULL , r ) ;
+	return forwardRequest ( );
 }
 
 bool Msg13::forwardRequest ( ) {
@@ -363,9 +333,6 @@ void gotForwardedReplyWrapper ( void *state , UdpSlot *slot ) {
 }
 
 bool Msg13::gotForwardedReply ( UdpSlot *slot ) {
-	// don't let udpserver free the request, it's our m_request[]
-	// no, now let him free it because it was serialized into there
-	//slot->m_sendBufAlloc = NULL;
 	// what did he give us?
 	char *reply          = slot->m_readBuf;
 	int32_t  replySize      = slot->m_readBufSize;
@@ -395,9 +362,6 @@ bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSi
 
 	// shortcut
 	Msg13Request *r = m_request;
-
-	//log("msg13: reply=%"XINT32" replysize=%"INT32" g_errno=%s",
-	//    (int32_t)reply,(int32_t)replySize,mstrerror(g_errno));
 
 	if ( g_conf.m_logDebugRobots || g_conf.m_logDebugDownloads )
 		logf(LOG_DEBUG,"spider: FINALIZED %s firstIp=%s",
@@ -471,15 +435,6 @@ bool Msg13::gotFinalReply ( char *reply, int32_t replySize, int32_t replyAllocSi
 		g_errno = ECORRUPTDATA;//EBADREPLYSIZE;
 		return true;
 	}
-	// all http replies should end in a \0. otherwise its likely
-	// a compression error. i think i saw this on roadrunner core
-	// a machine once in XmlDoc.cpp because httpReply did not end in \0
-	//if ( uncompressedLen>0 && newBuf[uncompressedLen-1] ) {
-	//	log("spider: had http reply with no NULL term");
-	//	mfree(newBuf,unzippedLen,"Msg13Null");
-	//	g_errno = EBADREPLYSIZE;
-	//	return true;
-	//}
 
 	// count it for stats
 	g_stats.m_compressedBytesIn += replySize;
@@ -580,8 +535,6 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 				      r->m_maxCacheAge , // 24*60*60 ,
 				      true             ); // stats?
 
-	r->m_foundInCache = false;
-
 	// . an empty rec is a cached not found (no robot.txt file)
 	// . therefore it's allowed, so set *reply to 1 (true)
 	if ( inCache ) {
@@ -590,8 +543,6 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		if ( g_conf.m_logDebugSpider )
 			log("proxy: found %"INT32" bytes in cache for %s",
 			    recSize,r->ptr_url);
-
-		r->m_foundInCache = true;
 
 		// helpful for debugging. even though you may see a robots.txt
 		// redirect and think we are downloading that each time,
@@ -703,20 +654,6 @@ void handleRequest13 ( UdpSlot *slot , int32_t niceness  ) {
 		return;
 	}
 
-	// we skip it if its a frame page, robots.txt, root doc or some other
-	// page that is a "child" page of the main page we are spidering.
-	// MDW: i moved this AFTER sending to the compression proxy...
-	// if ( ! r->m_skipHammerCheck ) {
-	// 	// if addToHammerQueue() returns true and queues this url for
-	// 	// download later, when ready to download call this function
-	// 	r->m_hammerCallback = downloadTheDocForReals;
-	// 	// this returns true if added to the queue for later
-	// 	if ( addToHammerQueue ( r ) ) return;
-	// }
-
-	// do not get .google.com/ crap
-	//if ( strstr(r->ptr_url,".google.com/") ) { char *xx=NULL;*xx=0; }
-
 	CollectionRec *cr = g_collectiondb.getRec ( r->m_collnum );
 
 	// was it in our table of ips that are throttling us?
@@ -761,9 +698,6 @@ void downloadTheDocForReals2 ( Msg13Request *r ) {
 
 	bool useProxies = false;
 
-	// user can turn off proxy use with this switch
-	//if ( ! g_conf.m_useProxyIps ) useProxies = false;
-
 	// for diffbot turn ON if use robots is off
 	if ( r->m_forceUseFloaters ) useProxies = true;
 
@@ -774,8 +708,6 @@ void downloadTheDocForReals2 ( Msg13Request *r ) {
 	     cr &&
 	     r->m_urlIp != 0 &&
 	     r->m_urlIp != -1 &&
-	     // either the global or local setting will work
-	     //( g_conf.m_automaticallyUseProxyIps || 
 	     cr->m_automaticallyUseProxies &&
 	     isIpInTwitchyTable( cr, r->m_urlIp ) )
 		useProxies = true;
@@ -794,19 +726,6 @@ void downloadTheDocForReals2 ( Msg13Request *r ) {
 	// before we send out the msg13 request try to get the spider proxy
 	// that is the best one to use. only do this if we had spider proxies
 	// specified in m_spiderProxyBuf
-
-	// request is just the urlip
-	//ProxyRequest *pr ;
-	//pr = (ProxyRequest *)mmalloc ( sizeof(ProxyRequest),"proxreq");
-	//if ( ! pr ) {
-	//	log("sproxy: error: %s",mstrerror(g_errno));
-	//	g_udpServer.sendErrorReply(r->m_udpSlot,g_errno);
-	//}
-
-	// try to get a proxy ip/port to download our url with
-	//pr->m_urlIp      = r->m_urlIp;
-	//pr->m_retryCount = r->m_retryCount;
-	//pr->m_opCode     = OP_GETPROXY;
 
 	r->m_opCode = OP_GETPROXY;
 
@@ -913,20 +832,6 @@ void gotProxyHostReplyWrapper ( void *state , UdpSlot *slot ) {
 	//   (a hashtable) to disk so it should be persistent.
 	r->m_numBannedProxies = prep->m_numBannedProxies;
 
-	// if addToHammerQueue() returns true and queues this url for
-	// download later, when ready to download call this function
-	//r->m_hammerCallback = downloadTheDocForReals3;
-
-	// . returns true if we queued it for trying later
-	// . scanHammerQueue() will call downloadTheDocForReals3(r) for us
-	//if ( addToHammerQueue ( r ) ) return;
-
-	// now forward the request
-	// now the reply should have the proxy host to use
-	// return if this blocked
-	//if ( ! THIS->forwardRequest() ) return;
-	// it did not block...
-	//THIS->m_callback ( THIS->m_state );
 	downloadTheDocForReals3a ( r );
 }
 
@@ -990,10 +895,6 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 		    iptoa(r->m_firstIp),
 		    r->ptr_url);
 
-
-
-	// flag this
-	//if ( g_conf.m_qaBuildMode ) r->m_addToTestCache = true;
 	// note it here
 	if ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 )
 		log("spider: downloading %s (%s) (skiphammercheck=%"INT32")",
@@ -1008,9 +909,8 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 		int32_t slen = gbstrlen(g_fakeReply);
 		int32_t fakeBufSize = slen + 1;
 		// try to fix memleak
-		char *fakeBuf = g_fakeReply;//mdup ( s, fakeBufSize , "fkblk");
-		//r->m_freeMe = fakeBuf;
-		//r->m_freeMeSize = fakeBufSize;
+		char *fakeBuf = g_fakeReply;
+
 		gotHttpReply2 ( r , 
 				fakeBuf,
 				fakeBufSize, // include \0
@@ -1088,7 +988,6 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 	if ( maxDocLen2 < 0 || maxDocLen2 > MAX_ABSDOCLEN )
 		maxDocLen2 = MAX_ABSDOCLEN;
 
-
 	// . download it
 	// . if m_proxyIp is non-zero it will make requests like:
 	//   GET http://xyz.com/abc
@@ -1112,18 +1011,20 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 				     exactRequest , // our own mime!
 				     NULL , // postContent
 				     // this is NULL or '\0' if not there
-				     r->m_proxyUsernamePwdAuth ) )
+				     r->m_proxyUsernamePwdAuth ) ) {
 		// return false if blocked
 		return;
+	}
+
 	// . log this so i know about it
 	// . g_errno MUST be set so that we do not DECREMENT
 	//   the outstanding dom/ip counts in gotDoc() below
 	//   because we did not increment them above
 	logf(LOG_DEBUG,"spider: http server had error: %s",mstrerror(g_errno));
+
 	// g_errno should be set
 	if ( ! g_errno ) { char *xx=NULL;*xx=0; }
-	// if called from ourselves. return true with g_errno set.
-	//if ( r->m_parent ) return true;
+
 	// if did not block -- should have been an error. call callback
 	gotHttpReply ( r , NULL );
 	return ;
@@ -1132,18 +1033,16 @@ void downloadTheDocForReals3b ( Msg13Request *r ) {
 static int32_t s_55Out = 0;
 
 void doneReportingStatsWrapper ( void *state, UdpSlot *slot ) {
-	//Msg13Request *r = (Msg13Request *)state;
 	// note it
 	if ( g_errno )
 		log("sproxy: 55 reply: %s",mstrerror(g_errno));
-	// do not free request, it was part of original Msg13Request
-	//slot->m_sendBuf = NULL;
+
 	// clear g_errno i guess
 	g_errno = 0;
+
 	// don't let udpserver free the request, it's our m_urlIp
 	slot->m_sendBufAlloc = NULL;
-	// resume on our way down the normal pipeline
-	//gotHttpReply ( state , r->m_tcpSocket );
+
 	s_55Out--;
 }
 
@@ -1277,20 +1176,8 @@ void gotHttpReply9 ( void *state , TcpSocket *ts ) {
 		return;
 	}
 
-	//r->m_tcpSocket = ts;
-
-	//ProxyRequest *preq; // = &r->m_proxyRequest;
-	//preq = (ProxyRequest *)mmalloc ( sizeof(ProxyRequest),"stupid");
-	//preq->m_urlIp = r->m_urlIp;
-	//preq->m_retHttpProxyIp = r->m_proxyIp;
-	//preq->m_retHttpProxyPort = r->m_proxyPort;
-	//preq->m_lbId = r->m_lbId; // the LoadBucket ID
-	//preq->m_opCode = OP_RETPROXY; // tell host #0 to reduce proxy load cn
-
 	// tell host #0 to reduce proxy load cnt
 	r->m_opCode = OP_RETPROXY; 
-
-	//r->m_blocked = false;
 
 	Host *h = g_hostdb.getFirstAliveHost();
 	// now return the proxy. this will decrement the load count on
@@ -1320,114 +1207,8 @@ void gotHttpReply9 ( void *state , TcpSocket *ts ) {
 	// it failed i guess proceed
 	gotHttpReply( state , ts );
 }
-/*
-static void doneInjectingProxyReply ( void *state ) {
-	Msg7 *msg7 = (Msg7 *)state;
-	if ( g_errno )
-		log("msg13: got error injecting proxied req: %s",
-		    mstrerror(g_errno));
-	g_errno = 0;
-	mdelete ( msg7 , sizeof(Msg7) , "dm7");
-	delete ( msg7 );
-}
-
-static bool markupServerReply ( Msg13Request *r , TcpSocket *ts );
-*/
 
 void gotHttpReply ( void *state , TcpSocket *ts ) {
-
-	/*
- 	// cast it
-	Msg13Request *r = (Msg13Request *)state;
-
-	//////////
-	//
-	// before we mark it up, let's inject it!!
-	// if a squid proxied request.
-	// now inject this url into the main or GLOBAL-INDEX collection
-	// so we can start accumulating sectiondb vote/markup stats
-	// but do not wait for the injection to complete before sending
-	// it back to the requester.
-	//
-	//////////
-	if ( ! r->m_foundInCache && 
-	     r->m_isSquidProxiedUrl ) {
-		// make a new msg7 to inject it
-		Msg7 *msg7;
-		try { msg7 = new (Msg7); }
-		catch ( ... ) { 
-			g_errno = ENOMEM;
-			log("squid: msg7 new(%i): %s",
-			    (int)sizeof(Msg7),mstrerror(g_errno));
-			return;
-		}
-		mnew ( msg7, sizeof(Msg7), "m7st" );
-
-		int32_t httpReplyLen = ts->m_readOffset;
-
-		// parse out the http mime
-		HttpMime hm;
-		hm.set ( ts->m_readBuf , httpReplyLen , NULL );
-		if ( hm.getHttpStatus() != 200 ) 
-			goto skipInject;
-
-		// inject requires content be null terminated. sanity check
-		if ( ts->m_readBuf && httpReplyLen > 0 &&
-		     ts->m_readBuf[httpReplyLen] ) { char *xx=NULL;*xx=0;}
-
-		// . this may or may not block, we give it a callback that
-		//   just delete the msg7. we do not want this to hold up us 
-		//   returning the proxied reply to the client browser.
-		// . so frequently hit sites will accumulate useful voting 
-		//   info  since we inject each one
-		// . if we hit the page cache above we won't make it this far 
-		//   though
-		// . but i think that cache is only for 60 seconds
-		if ( msg7->inject ( "main", // put in main collection
-				    r->m_proxiedUrl,//url,
-				    r->m_proxiedUrlLen,
-				    ts->m_readBuf,
-				    msg7 ,
-				    doneInjectingProxyReply ) ) {
-			log("msg7: inject error: %s",mstrerror(g_errno));
-			mdelete ( msg7 , sizeof(Msg7) , "dm7");
-			delete ( msg7 );
-			// we can't return here we have to pass the request
-			// on to the browser client...
-			g_errno = 0;
-			//return;
-		}
-	}
-
- skipInject:
-
-	// now markup the reply with the sectiondb info
-	// . it can block reading the disk
-	// . returns false if blocked
-	// . only do markup if its a proxied request
-	// . our squid proxy simulator is only a markup simulator
-	if ( ! r->m_foundInCache && r->m_isSquidProxiedUrl ) {
-		// . now transform the html to include sectiondb data
-		// . this will also send the reply back so no need to
-		//   have a callback here
-		// . it returns false if it did nothing because the
-		//   content type was not html or http status was not 200
-		// . if it returns false then just pass through it
-		// . if it returns true, then it will be responsible for
-		//   sending back the udp reply of the marked up page
-		// . returns false if blocked, true otherwise
-		// . returns true and sets g_errno on error
-		// . when done it just calls gotHttpReply2() on its own
-		if ( ! markupServerReply ( r , ts ) ) 
-			return;
-		// oom error? force ts to NULL so it will be sent below
-		if ( g_errno ) {
-			log("msg13: markupserverply: %s",mstrerror(g_errno));
-			ts = NULL;
-		}
-	}
-	*/
-
 	// if we had no error, TcpSocket should be legit
 	if ( ts ) {
 		gotHttpReply2 ( state , 
@@ -1458,11 +1239,6 @@ void gotHttpReply2 ( void *state ,
 	UdpSlot      *slot = r->m_udpSlot;
 
 	CollectionRec *cr = g_collectiondb.getRec ( r->m_collnum );
-
-	// ' connection reset' debug stuff
-	// log("spider: httpreplysize=%i",(int)replySize);
-	// if ( replySize == 0 )
-	// 	log("hey");
 
 	// error?
 	if ( g_errno && ( g_conf.m_logDebugSpider || g_conf.m_logDebugMsg13 ) )
@@ -1682,59 +1458,8 @@ void gotHttpReply2 ( void *state ,
 	// fake http 200 reply?
 	if ( reply == g_fakeReply ) { content = NULL; contentLen = 0; }
 
-	/*
-	if ( replySize > 0 && 
-	     goodStatus && 
-	     r->m_forEvents &&
-	     ! r->m_isRobotsTxt &&
-	     r->m_compressReply ) {
-		// Links class required Xml class
-		if ( ! xml.set ( content   ,
-				 contentLen , // lennotsize! do not include \0
-				 false     , // ownData?
-				 false     , // purexml?
-				 0         , // version! (unused)
-				 false     , // set parents?
-				 niceness  ) )
-			log("scproxy: xml set had error: %s",
-			    mstrerror(g_errno));
-		// definitely compute the wordids so Dates.cpp can see if they
-		// are a month name or whatever...
-		if ( ! words.set ( &xml , true , niceness ) ) 
-			log("scproxy: words set had error: %s",
-			    mstrerror(g_errno));
-	}
-
 	if ( replySize > 0 && 
 	     goodStatus &&
-	     r->m_forEvents &&
-	     !r->m_isRobotsTxt && 
-	     r->m_compressReply ) {
-		int32_t cs = getCharsetFast ( &mime,
-					   r->ptr_url,
-					   content,
-					   contentLen,
-					   niceness);
-		if ( cs != csUTF8 && // UTF-8
-		     cs != csISOLatin1 && // ISO-8859-1
-		     cs != csASCII &&
-		     cs != csUnknown &&
-		     cs != cswindows1256 &&
-		     cs != cswindows1250 &&
-		     cs != cswindows1255 &&
-		     cs != cswindows1252 ) { // windows-1252
-			// record in the stats
-			docsPtr     = &g_stats.m_compressBadCharsetDocs;
-			bytesInPtr  = &g_stats.m_compressBadCharsetBytesIn;
-			bytesOutPtr = &g_stats.m_compressBadCharsetBytesOut;
-			replySize = 0;
-		}
-	}
-	*/
-
-	if ( replySize > 0 && 
-	     goodStatus &&
-	     //r->m_forEvents &&
 	     !r->m_isRobotsTxt && 
 	     r->m_compressReply ) {
 		// get the content type from mime
@@ -1754,30 +1479,6 @@ void gotHttpReply2 ( void *state ,
 			replySize = 0;
 		}
 	}
-
-	/*
-	if ( replySize > 0 && 
-	     goodStatus && 
-	     r->m_forEvents &&
-	     ! r->m_isRobotsTxt && 
-	     r->m_compressReply ) {
-		// make sure we loaded the unifiedDict (do now in main.cpp)
-		//g_speller.init();
-		// detect language, if we can
-		int32_t score;
-		// returns -1 and sets g_errno on error, 
-		// because 0 means langUnknown
-		int32_t langid = words.getLanguage(NULL,1000,niceness,&score);
-		// anything 2+ is non-english
-		if ( langid >= 2 ) {
-			// record in the stats
-			docsPtr     = &g_stats.m_compressBadLangDocs;
-			bytesInPtr  = &g_stats.m_compressBadLangBytesIn;
-			bytesOutPtr = &g_stats.m_compressBadLangBytesOut;
-			replySize = 0;
-		}
-	}
-	*/
 
 	// sanity
 	if ( reply && replySize>0 && reply[replySize-1]!='\0') {
@@ -1824,11 +1525,6 @@ void gotHttpReply2 ( void *state ,
 		// otherwise, i guess we had no iframes worthy of expanding
 		// so pretend we do not have any iframes
 		hasIframe2 = false;
-		// crap... had an error, give up i guess
-		// record in the stats
-		//docsPtr     = &g_stats.m_compressHasIframeDocs;
-		//bytesInPtr  = &g_stats.m_compressHasIframeBytesIn;
-		//bytesOutPtr = &g_stats.m_compressHasIframeBytesOut;
 	}
 
 	// sanity
@@ -1870,16 +1566,6 @@ void gotHttpReply2 ( void *state ,
 	if ( reply && replySize>0 && reply[replySize-1]!='\0') {
 		char *xx=NULL;*xx=0; }
 
-	// force it good for debugging
-	//status = 1;
-	// xml set error?
-	//if ( status == -1 ) {
-	//	// sanity
-	//	if ( ! g_errno ) { char *xx=NULL;*xx=0; }
-	//	// g_errno must have been set!
-	//	savedErr = g_errno;
-	//	replySize = 0;
-	//}
 	// these are typically roots!
 	if ( status == 1 && 
 	     // override HasIFrame with "FullPageRequested" if it has
@@ -1977,13 +1663,7 @@ void gotHttpReply2 ( void *state ,
 			g_udpServer.sendErrorReply(slot,g_errno);
 			return;
 		}
-		// . free the uncompressed reply so tcpserver does not have to
-		// . no, now TcpServer will nuke it!!! or if called from
-		//   gotIframeExpansion(), then deleting the xmldoc will nuke
-		//   it
-		//mfree ( reply , replyAllocSize , "msg13ubuf" );
-		// it is toast
-		//if ( ts ) ts->m_readBuf = NULL;
+
 		// record the uncompressed size.
 		reply          = compressedBuf;
 		replySize      = 4 + compressedLen;
@@ -2116,16 +1796,7 @@ void gotHttpReply2 ( void *state ,
 		if ( ts && ts->m_readBuf == reply && count == 0 ) 
 			ts->m_readBuf = NULL;
 	}
-	// return now if we sent a regular non-error reply. it will have
-	// sent the reply buffer and udpserver will free it when its done
-	// transmitting it. 
-	//if ( ts && ! savedErr ) return;
-	// otherwise, we sent back a quick little error reply and have to
-	// free the buffer here now. i think this was the mem leak we were
-	// seeing.
-	//if ( ! reply ) return;
-	// do not let tcpserver free it
-	//if ( ts ) ts->m_readBuf = NULL;
+
 	// we free it - if it was never sent over a udp slot
 	if ( savedErr && compressed ) 
 		mfree ( reply , replyAllocSize , "msg13ubuf" );
@@ -2138,18 +1809,9 @@ void gotHttpReply2 ( void *state ,
 void passOnReply ( void *state , UdpSlot *slot ) {
 	// send that back
 	Msg13Request *r = (Msg13Request *)state;
-	// core for now
-	//char *xx=NULL;*xx=0;
+
 	// don't let udpserver free the request, it's our m_request[]
 	slot->m_sendBufAlloc = NULL;
-
-	/*
-	// do not pass it on, we are where it stops if this is non-null
-	if ( r->m_parent ) {
-		r->m_parent->gotForwardedReply ( slot );
-		return ;
-	}
-	*/
 
 	if ( g_errno ) {
 		log("spider: error from proxy for %s: %s",
@@ -2383,89 +2045,6 @@ bool addTestDoc ( int64_t urlHash64 , char *httpReply , int32_t httpReplySize ,
 	return true;
 }
 
-// . convert html/xml doc in place into a buffer of links, \n separated
-// . return new reply size
-// . return -1 on error w/ g_errno set on error
-// . replySize includes terminating \0??? i dunno
-int32_t convertIntoLinks ( char *reply , 
-			int32_t replySize , 
-			Xml *xml ,
-			int32_t niceness ) {
-	// the "doQuickSet" is just for us and make things faster and
-	// more compressed...
-	Links links;
-	if ( ! links.set ( false , // useRelNoFollow
-			   xml , 
-			   NULL , // parentUrl
-			   false , // setLinkHashes
-			   NULL  , // baseUrl
-			   0 , // version (unused)
-			   niceness ,
-			   false ,
-			   NULL,
-			   true ) )  // doQuickSet? YES!!!
-		return -1;
-	// use this to ensure we do not breach
-	char *dstEnd = reply + replySize;
-	// . store into the new buffer
-	// . use gbmemcpy() because it deal with potential overlap issues
-	char *dst    = reply;
-	// store the thing first
-	if ( dst + 100 >= dstEnd ) 
-		// if no room, forget it
-		return 0;
-	// first the mime
-	dst += sprintf ( dst , 
-			 "HTTP/1.0 200\r\n"
-			 "Content-Length: " );
-	// save that place
-	char *saved = dst;
-	// now write a placeholder number
-	dst += sprintf ( dst , "00000000\r\n\r\n" );
-
-	// save this
-	char *content = dst;
-			 
-	// this tells xmldoc.cpp what's up
-	//gbmemcpy ( dst , "<!--links-->\n", 13 );
-	//dst += 13;
-	// iterate over the links
-	for ( int32_t i = 0 ; i < links.m_numLinks ; i++ ) {
-		// breathe
-		QUICKPOLL(niceness);
-		// get link
-		char *str = links.getLink(i);
-		// get size
-		int32_t len = links.getLinkLen(i);
-		// ensure no breach. if so, return now
-		if ( dst + len + 2 > dstEnd ) return dst - reply;
-		// lead it
-		gbmemcpy ( dst, "<a href=", 8 );
-		dst += 8;
-		// copy over, should be ok with overlaps
-		gbmemcpy ( dst , str , len );
-		dst += len;
-		// end tag and line
-		gbmemcpy ( dst , "></a>\n", 6 );
-		dst += 6;
-	}
-	// null term it!
-	*dst++ = '\0';
-	// content length
-	int32_t clen = dst - content - 1;
-	// the last digit
-	char *dptr = saved + 7;
-	// store it up top in the mime header
-	for ( int32_t x = 0 ; x < 8 ; x++ ) {
-		//if ( clen == 0 ) *dptr-- = ' ';
-		if ( clen == 0 ) break;
-		*dptr-- = '0' + (clen % 10);
-		clen /= 10;
-	}
-	// the new replysize is just this plain list of links
-	return dst - reply;
-}
-
 // returns true if <iframe> tag in there
 bool hasIframe ( char *reply, int32_t replySize , int32_t niceness ) {
 	if ( ! reply || replySize <= 0 ) return false;
@@ -2485,23 +2064,6 @@ bool hasIframe ( char *reply, int32_t replySize , int32_t niceness ) {
 	}
 	return false;
 }
-
-char getContentTypeQuick ( HttpMime *mime,
-			   char *reply , 
-			   int32_t replySize , 
-			   int32_t niceness ) {
-	char ctype = mime->getContentType();
-	char ctype2 = 0;
-	if ( replySize>0 && reply ) {
-		// mime is start of reply, so skip to content section
-		char *content = reply + mime->getMimeLen();
-		// defined in XmlDoc.cpp...
-		ctype2 = getContentTypeFromContent(content,niceness);
-	}
-	if ( ctype2 ) ctype = ctype2;
-	return ctype;
-}
-
 
 // returns false if blocks, true otherwise
 bool getIframeExpandedContent ( Msg13Request *r , TcpSocket *ts ) {
@@ -2650,20 +2212,15 @@ bool getIframeExpandedContent ( Msg13Request *r , TcpSocket *ts ) {
 
 	// this also means that the iframe tag was probably not expanded
 	// because it was from google.com or bing.com or had a bad src attribut
-	// or bad url in the src attribute. 
+	// or bad url in the src attribute.
 	// so we have set m_attemptedIframeExpansion, just recall using
 	// the original TcpSocket ptr... and this time we should not be
 	// re-called because m_attemptedIframeExpansion is now true
-	//gotHttpReply2 ( r, NULL , 0 , 0 , NULL );	
+	//gotHttpReply2 ( r, NULL , 0 , 0 , NULL );
 
 	// we can't be messing with it!! otherwise we'd have to reutrn
 	// a new reply size i guess
 	if ( xd->m_didExpansion ) { char *xx=NULL;*xx=0; }
-
-	// try to reconstruct ts
-	//ts->m_readBuf = xd->m_httpReply;
-	// and do not allow xmldoc to free that buf
-	//xd->m_httpReply = NULL;
 
 	// now nuke xmldoc
 	mdelete ( xd , sizeof(XmlDoc) , "msg13xd" );
@@ -2808,8 +2365,7 @@ bool addToHammerQueue ( Msg13Request *r ) {
 	// . try to be more sensitive for more sensitive website policies
 	// . we don't know why this proxy was banned, or if we were 
 	//   responsible, or who banned it, but be more sensitive anyway
-	if ( //r->m_hammerCallback == downloadTheDocForReals3b &&
-	     r->m_numBannedProxies &&
+	if ( r->m_numBannedProxies &&
 	     r->m_numBannedProxies * DELAYPERBAN > crawlDelayMS ) {
 		crawlDelayMS = r->m_numBannedProxies * DELAYPERBAN;
 		if ( crawlDelayMS > MAX_PROXYCRAWLDELAYMS )

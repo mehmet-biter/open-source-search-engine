@@ -471,10 +471,6 @@ int32_t XmlDoc::getSpideredTime ( ) {
 	// flags)
 	m_spideredTimeValid = true;
 	m_spideredTime      = date;
-	// hack for test coll which has fake vals for these because
-	// the SpiderRequest::m_addedTime and m_parentPrevSpiderTime
-	//m_minPubDate = m_spideredTime - 48*3600;
-	//m_maxPubDate = m_spideredTime - 24*3600;
 
 	return m_spideredTime;
 }
@@ -493,21 +489,9 @@ bool XmlDoc::set3 ( int64_t  docId       ,
 
 	m_docId       = docId;
 	m_docIdValid  = true;
-	//m_coll        = coll;
 	m_niceness    = niceness;
 
-	// . sanity check
-	// . why can't we allow this??? MDW
-	//if ( m_niceness == 0 ) { char *xx=NULL; *xx=0; }
-
-	// set this important member var
-	//cr = g_collectiondb.getRec ( m_coll , gbstrlen(m_coll) );
-	//if ( ! cr ) { m_errno = ENOCOLLREC; return false; }
 	if ( ! setCollNum ( coll ) ) return false;
-
-	// solidify some parms
-	//m_eliminateMenus       = cr->m_eliminateMenus;
-	//m_eliminateMenusValid  = true;
 
 	return true;
 }
@@ -8568,27 +8552,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 		return (char **)cu;
 	}
 
-
-	/*
-	// if on google, make it empty so we do not hit them
-	if ( strstr(cu->getUrl(),".google.com/") ) {
-		log("spider: encountered google.com url. emptying.");
-		m_httpReplyValid          = true;
-		m_isContentTruncated      = false;
-		m_isContentTruncatedValid = true;
-		// need this now too. but don't hurt a nonzero val if we have
-		if ( ! m_downloadEndTimeValid ) {
-			m_downloadEndTime      = 0;
-			m_downloadEndTimeValid = true;
-		}
-		return &m_httpReply;
-	}
-	*/
-
-	// no ip found means empty page i guess
-	//if ( *ip == 0 || *ip == -1 )
-	//	return gotHttpReply ( );
-
 	bool useTestCache = false;
 	if ( ! strcmp(cr->m_coll,"qatest123") ) useTestCache = true;
 	// unless its the pagesubmit.cpp event submission tool
@@ -8605,15 +8568,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 	//strcpy ( r->m_url , cu->getUrl() );
 	r->ptr_url  = cu->getUrl();
 	r->size_url = cu->getUrlLen()+1;
-
-	// caution: m_sreq.m_hopCountValid is false sometimes for page parser
-	// this is used for Msg13.cpp's ipWasBanned()
-	// we use hopcount now instead of isInSeedBuf(cr,r->ptr_url)
-	bool isInjecting = getIsInjecting();
-	if ( ! isInjecting && m_sreqValid     && m_sreq.m_hopCount == 0 )
-		r->m_isRootSeedUrl = 1;
-	if ( ! isInjecting && m_hopCountValid && m_hopCount        == 0 )
-		r->m_isRootSeedUrl = 1;
 
 	// sanity check
 	if ( ! m_firstIpValid ) { char *xx=NULL;*xx=0; }
@@ -8672,9 +8626,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 	// faster but could slam servers more.
 	r->m_crawlDelayFromEnd = false;
 
-	// need this in order to get all languages, etc. and avoid having
-	// to set words class at the spider compression proxy level
-	r->m_forEvents              = 0;
 	// new stuff
 	r->m_contentHash32 = 0;
 	// if valid in SpiderRequest, use it. if spider compression proxy
@@ -8686,11 +8637,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 	// if we have the old doc already set use that
 	if ( od )
 		r->m_contentHash32 = od->m_contentHash32;
-
-	// force floater usage on even if "use spider proxies" parms is off
-	// if we're a diffbot crawl and use robots is off.
-	//if ( cr && ! cr->m_useRobotsTxt && cr->m_isCustomCrawl )
-	//	r->m_forceUseFloaters = true;
 
 	// for beta testing, make it a collection specific parm for diffbot
 	// so we can turn on manually
@@ -8759,7 +8705,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 		r->m_useCompressionProxy = false;
 		r->m_compressReply       = false;
 		r->m_skipHammerCheck = 1;
-		//r->m_requireGoodDate = false;
 		// no frames within frames
 		r->m_attemptedIframeExpansion = 1;
 		log(LOG_DEBUG,"build: skipping hammer check 2");
@@ -10837,6 +10782,7 @@ char **XmlDoc::getExpandedUtf8Content ( ) {
 		// when trying to lookup the old title rec.
 		// http://sweetaub.ipower.com/ had an iframe with a ftp url.
 		if ( ! furl.isHttp() && ! furl.isHttps() ) continue;
+		/// @todo why are we ignoring specific domains here?
 		// ignore google.com/ assholes for now
 		if ( strstr(furl.getUrl(),"google.com/" ) ) continue;
 		// and bing just to be safe

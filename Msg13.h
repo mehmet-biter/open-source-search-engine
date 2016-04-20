@@ -11,6 +11,7 @@
 
 #include "Url.h" // MAX_URL_LEN
 #include "SpiderProxy.h" // MAXUSERNAMEPWD
+#include "RdbCache.h"
 
 // max crawl delay form proxy backoff of 1 minute (60 seconds)
 #define MAX_PROXYCRAWLDELAYMS 60000
@@ -80,10 +81,7 @@ public:
 	int32_t  m_contentHash32;
 	// copy of CollectionRec::m_customCrawl, 0 1 for crawls or 2 for bulks
 	char m_isCustomCrawl;
-	// send back error ENOGOODDATE if it does not have one. but if
-	// harvestLinks is true, just send back a filtered list of links
-	unsigned  m_requireGoodDate:1;
-	unsigned  m_harvestLinksIfNoGoodDate:1;
+
 	unsigned  m_compressReply:1;
 	unsigned  m_useCompressionProxy:1;
 	// if m_forwardDownloadRequest is true then we pick the host to 
@@ -102,22 +100,14 @@ public:
 	unsigned  m_skipHammerCheck:1;
 	unsigned  m_attemptedIframeExpansion:1;
 	unsigned  m_crawlDelayFromEnd:1;
-	unsigned  m_forEvents:1;
 
 	// does m_url represent a FULL http request mime and NOT just a url?
 	// this happens when gigablast is being used like a squid proxy.
 	unsigned  m_isSquidProxiedUrl:1;
 
-	unsigned  m_foundInCache:1;
 	unsigned  m_forceUseFloaters:1;
 
 	unsigned  m_wasInTableBeforeStarting:1;
-	unsigned  m_isRootSeedUrl:1;
-
-	//unsigned  m_testParserEnabled:1;
-	//unsigned  m_testSpiderEnabled:1;
-	//unsigned  m_isPageParser:1;
-	//unsigned  m_isPageInject:1;
 
 	// if we just end up calling HttpServer::getDoc() via calling
 	// downloadDoc() then we set this for callback purposes
@@ -127,18 +117,12 @@ public:
 	// then we set m_udpSlot.
 	class UdpSlot *m_udpSlot;
 
-	class TcpSocket *m_tcpSocket;
-
 	// used for addTestDoc() and caching. msg13 sets this
 	int64_t m_urlHash64;	
 	int32_t      m_spideredTime;
 	// used for caching (and for request table, wait in line table)
 	int64_t m_cacheKey;
 	char      m_testDir[32];
-	// msg13 sets this too, so you don't have to worry about setting it
-	//int32_t      m_urlLen;
-	// includes \0 termination
-	//char      m_url[MAX_URL_LEN+1];
 
 	char *ptr_url;
 	char *ptr_cookie;
@@ -149,7 +133,8 @@ public:
 	// variable data starts here
 
 	int32_t getSize() {
-		return ((char *)ptr_url-(char *)this) +size_url+size_cookie;};
+		return ((char *)ptr_url-(char *)this) +size_url+size_cookie;
+	}
 
 	// zero it all out
 	void reset() {
@@ -197,8 +182,6 @@ class Msg13 {
 
 	// point to it
 	Msg13Request *m_request;
-
-	//char m_tmpBuf32[32];
 };
 
 bool getTestSpideredDate ( Url *u , int32_t *origSpideredDate , char *testDir ) ;
