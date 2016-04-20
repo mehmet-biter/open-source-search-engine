@@ -899,8 +899,6 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 
 	// shortcuts
 	bool isRSSFeed = *getIsRSS();
-	Url *cu = getCurrentUrl() ;
-	Url *ru = *getRedirUrl() ;
 
 	char dbuf[8*4*1024];
 	HashTableX dedup;
@@ -909,12 +907,17 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 	// see ../url/Url2.cpp for hashAsLink() algorithm
 	for ( int32_t i = 0 ; i < m_links.m_numLinks ; i++ ) {
 		// skip links with zero 0 length
-		if ( m_links.m_linkLens[i] == 0 ) continue;
+		if ( m_links.m_linkLens[i] == 0 ) {
+			continue;
+		}
+
 		// . skip if we are rss page and this link is an <a href> link
 		// . we only harvest/index <link> urls from rss feeds
 		// . or in the case of feedburner, those orig tags
-		if ( isRSSFeed && (m_links.m_linkFlags[i] & LF_AHREFTAG) )
+		if ( isRSSFeed && (m_links.m_linkFlags[i] & LF_AHREFTAG) ) {
 			continue;
+		}
+
 		// if we have a <feedburner:origLink> tag, then ignore <link>
 		// tags and only get the links from the original links
 		if ( m_links.m_isFeedBurner && !(m_links.m_linkFlags[i] & LF_FBTAG) ) {
@@ -923,6 +926,7 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 
 		// normalize the link
 		Url link;
+
 		// now we always add "www" to these links so that any link
 		// to cnn.com is same as link to www.cnn.com, because either
 		// we index cnn.com or www.cnn.com but not both providing
@@ -935,76 +939,24 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 		// www.tmblr.co has no IP whereas only tmblr.co does.
 		link.set( m_links.m_linkPtrs[i], m_links.m_linkLens[i], true, m_links.m_stripParams, m_version );
 
-
 		// BR 20160105: Do not create "link:" hashes for media URLs etc.
 		if( link.hasNonIndexableExtension(TITLEREC_CURRENT_VERSION) ||	// @todo BR: For now ignore actual TitleDB version. // m_version) ||
 			link.hasScriptExtension() ||
 			link.hasJsonExtension() ||
 			link.hasXmlExtension() ||
 			link.isDomainUnwantedForIndexing() ||
-			link.isPathUnwantedForIndexing() )
-		{
+			link.isPathUnwantedForIndexing() ) {
 			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Unwanted for indexing [%s]", __FILE__, __func__, __LINE__, link.getUrl());
 			continue;			
 		}
 
-
 		// breathe
 		QUICKPOLL(m_niceness);
-		// . the score depends on some factors:
-		// . NOTE: these are no longer valid! (see score bitmap above)
-		// . 4 --> if link has different domain AND has link text
-		// . 3 --> if link has same domain AND has link text
-		// . 2 --> if link has different domain AND no link text
-		// . 1 --> if link has sam domain AND no link text
-		// . is domain the same as ours?
-		// . NOTE: ideally, using the IP domain would be better, but
-		//   we do not know the ip of the linker right now... so scores
-		//   may be topped with a bunch of same-ip domain links so that
-		//   we may not get as much link text as we'd like, since we
-		//   only sample from one link text per ip domain
-		// . now we also just use the mid domain! (excludes TLD)
-		bool internal = false;
-		int32_t mdlen = cu->getMidDomainLen();
-		if ( mdlen == link.getMidDomainLen() &&
-		     strncmp(cu->getMidDomain(),link.getMidDomain(),mdlen)==0)
-			//continue; // sameMidDomain = true;
-			internal = true;
-		// also check the redir url
-		if ( ru ) {
-			mdlen = ru->getMidDomainLen();
-			if ( mdlen == link.getMidDomainLen() &&
-			     strncmp(ru->getMidDomain(), link.getMidDomain(),mdlen)==0)
-				//continue; // sameMidDomain = true;
-				internal = true;
-		}
-		// now make the score
-		//unsigned char score ;
-		// . TODO: consider not hashing link w/o text!
-		// . otherwise, give it a higher score if it's got link TEXT
-		//bool gotLinkText = m_links.hasLinkText ( i, m_version );
-		// otherwise, beginning with version 21, allow internal links,
-		// but with lower scores
-		//                          score
-		// internal, no link text:  2
-		// internal, w/ link text:  4
-		// external, no link text:  6
-		// external, w/ link text:  8
-		//if ( internal ) {
-		//	if ( ! gotLinkText ) score = 0x02;
-		//	else                 score = 0x04;
-		//}
-		//else {
-		//	if ( ! gotLinkText ) score = 0x06;
-		//	else                 score = 0x08;
-		//}
-
 
 		// dedup this crap
 		int64_t h = hash64 ( link.getUrl(), link.getUrlLen() );
 		if ( dedup.isInTable ( &h ) ) continue;
 		if ( ! dedup.addKey ( &h ) ) return false;
-
 
 		// set up the hashing parms
 		HashInfo hi;
@@ -1013,50 +965,27 @@ bool XmlDoc::hashLinks ( HashTableX *tt ) {
 		hi.m_prefix    = "link";
 
 		// hash link:<url>
-		if ( ! hashSingleTerm ( link.getUrl(),link.getUrlLen(),&hi ))
+		if ( ! hashSingleTerm ( link.getUrl(),link.getUrlLen(),&hi )) {
 			return false;
-
+		}
 
 		h = hash64 ( link.getHost() , link.getHostLen() );
 		if ( dedup.isInTable ( &h ) ) continue;
 		if ( ! dedup.addKey ( &h ) ) return false;
 
-
 		// fix parm
 		hi.m_prefix    = "sitelink";
 
 		// hash sitelink:<urlHost>
-		if ( ! hashSingleTerm ( link.getHost(),link.getHostLen(),&hi))
+		if ( ! hashSingleTerm ( link.getHost(),link.getHostLen(),&hi)) {
 			return false;
+		}
+
 		// breathe
 		QUICKPOLL(m_niceness);
 	}
 
-	// skip this for now
 	return true;
-
-	/*
-	setStatus ("hashing gbhasbannedoutlink" );
-
-	// only lets a domain vote once
-	int32_t numBannedOutlinks = *getNumBannedOutlinks();
-	//if ( numBannedOutlinks <= 0 ) return true;
-	// a score of 235 seems to give a negative return for score8to32()
-	uint32_t score = score8to32 ( numBannedOutlinks );
-	// make score at least 1!
-	if ( score <= 0 ) score = 1;
-	// a hack fix
-	if ( score > 0x7fffffff ) score = 0x7fffffff;
-
-	// set up the hashing parms
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_prefix    = "gbhasbannedoutlink";
-
-	// hash this special thing to help us de-spam the index
-	if ( numBannedOutlinks > 0 ) return hashString ("1",1,&hi );
-	else                         return hashString ("0",1,&hi );
-	*/
 }
 
 
