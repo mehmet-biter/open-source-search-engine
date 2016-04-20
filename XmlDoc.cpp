@@ -2374,14 +2374,6 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 		return &m_indexCode;
 	}
 
-	// . internal callback
-	// . so if any of the functions we end up calling directly or
-	//   indirectly block and return -1, we will be re-called from the top
-	//if ( ! m_masterLoop ) {
-	//	m_masterLoop  = getTitleRecWrapper;
-	//	m_masterState = this;
-	//}
-
 	if ( ! m_firstUrlValid ) { char *xx=NULL;*xx=0; }
 
 	if ( m_firstUrl.getUrlLen() <= 5 ) {
@@ -2535,22 +2527,14 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, error. Could not getMime", __FILE__,__func__,__LINE__);
 		return (int32_t *)mime;
 	}
-	// no, now the smart compression will nuke a reply if it has
-	// no good date or for other reasons...
-	// if empty, bad mime
-	//if ( mime->getMimeLen() <= 0 && ! m_recycleContent ) {
-	//	m_indexCode      = EBADMIME;
-	//	m_indexCodeValid = true;
-	//	return &m_indexCode;
-	//}
 
 	// check redir url
 	Url **redirp = getRedirUrl();
-	if ( ! redirp || redirp == (void *)-1 ) 
-	{
+	if ( ! redirp || redirp == (void *)-1 ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, could not getRedirUrl", __FILE__,__func__,__LINE__);
 		return (int32_t *)redirp;
 	}
+
 	// this must be valid now
 	if ( ! m_redirErrorValid ) { char *xx=NULL;*xx=0; }
 	if ( m_redirError ) {
@@ -2590,6 +2574,7 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, EBADCHARSET", __FILE__,__func__,__LINE__);
 		return &m_indexCode;
 	}
+
 	if ( ! charset || charset == (void *)-1) return (int32_t *)charset;
 	// we had a 2024 for charset come back and that had a NULL
 	// get_charset_str() but it was not supported
@@ -2609,9 +2594,10 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 	}
 
 	// if robots.txt said no, and if we had no link text, then give up
-	bool disallowed = true;
-	if ( *isAllowed ) disallowed = false;
-	if ( info1 && info1->hasLinkText() ) disallowed = false;
+	bool disallowed = !( *isAllowed );
+	if ( info1 && info1->hasLinkText() ) {
+		disallowed = false;
+	}
 	// if we generated a new sitenuminlinks to store in tagdb, we might
 	// want to add this for that only reason... consider!
 	if ( disallowed ) {
@@ -2655,13 +2641,6 @@ int32_t *XmlDoc::getIndexCode2 ( ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, EBADHTTPSTATUS (%d)", __FILE__,__func__,__LINE__, *hstatus);
 		return &m_indexCode;
 	}
-
-	// debug point
-	//if ( cr->m_localCrawlInfo.m_pageDownloadAttempts >= 2 ) {
-	//	m_indexCode = ETCPTIMEDOUT;
-	//	m_indexCodeValid = true;
-	//	return &m_indexCode;
-	//}
 
 	// check for EDOCISERRPG (custom error pages)
 	char *isErrorPage = getIsErrorPage();
