@@ -126,10 +126,7 @@ bool Msg13::registerHandler ( ) {
 
 // . returns false if blocked, returns true otherwise
 // . returns true and sets g_errno on error
-bool Msg13::getDoc ( Msg13Request *r,
-		     bool isTestColl , 
-		     void *state,void(*callback)(void *state)){
-
+bool Msg13::getDoc ( Msg13Request *r, bool isTestColl, void *state, void(*callback)(void *) ) {
 	// reset in case we are being reused
 	reset();
 
@@ -137,21 +134,16 @@ bool Msg13::getDoc ( Msg13Request *r,
 	m_callback = callback;
 
 	m_request = r;
+
 	// sanity check
 	if ( r->m_urlIp ==  0 ) { char *xx = NULL; *xx = 0; }
 	if ( r->m_urlIp == -1 ) { char *xx = NULL; *xx = 0; }
 
 	// set this
-	//r->m_urlLen    = gbstrlen ( r->ptr_url );
-	r->m_urlHash64 = hash64 ( r->ptr_url , r->size_url-1);//m_urlLen );
-
-	// no! i don't want to store images in there
-	//if ( isTestColl )
-	//	r->m_useTestCache = true;
+	r->m_urlHash64 = hash64 ( r->ptr_url , r->size_url-1);
 
 	// default to 'qa' test coll if non given
-	if ( r->m_useTestCache &&
-	     ! r->m_testDir[0] ) {
+	if ( r->m_useTestCache && ! r->m_testDir[0] ) {
 		r->m_testDir[0] = 'q';
 		r->m_testDir[1] = 'a';
 	}
@@ -159,38 +151,33 @@ bool Msg13::getDoc ( Msg13Request *r,
 	// sanity check, if spidering the test coll make sure one of 
 	// these is true!! this prevents us from mistakenly turning it off
 	// and not using the doc cache on disk like we should
-	if ( isTestColl &&
-	     ! r->m_testDir[0] &&
-	     //! g_conf.m_testSpiderEnabled &&
-	     //! g_conf.m_testParserEnabled &&
-	     //! r->m_isPageParser &&
-	     r->m_useTestCache ) {
-		char *xx=NULL;*xx=0; }
-
-	//r->m_testSpiderEnabled = (bool)g_conf.m_testSpiderEnabled;
-	//r->m_testParserEnabled = (bool)g_conf.m_testParserEnabled;
-	// but default to parser dir if we are the test coll so that
-	// the [analyze] link works!
-	//if ( isTestColl && ! r->m_testSpiderEnabled )
-	//	r->m_testParserEnabled = true;
+	if ( isTestColl && !r->m_testDir[0] && r->m_useTestCache ) {
+		char *xx=NULL;*xx=0;
+	}
 
 	// is this a /robots.txt url?
 	if ( r->size_url - 1 > 12 && 
-	     ! strncmp ( r->ptr_url + r->size_url -1 -11,"/robots.txt",11))
+	     ! strncmp ( r->ptr_url + r->size_url -1 -11,"/robots.txt",11)) {
 		r->m_isRobotsTxt = true;
+	}
 
 	// force caching if getting robots.txt so is compressed in cache
-	if ( r->m_isRobotsTxt )
+	if ( r->m_isRobotsTxt ) {
 		r->m_compressReply = true;
+	}
 
 	// make the cache key
 	r->m_cacheKey  = r->m_urlHash64;
-	// a compressed reply is different than a non-compressed reply
-	if ( r->m_compressReply ) r->m_cacheKey ^= 0xff;
 
-	if ( r->m_isSquidProxiedUrl )
+	// a compressed reply is different than a non-compressed reply
+	if ( r->m_compressReply ) {
+		r->m_cacheKey ^= 0xff;
+	}
+
+	if ( r->m_isSquidProxiedUrl ) {
 		// sets r->m_proxiedUrl that we use a few times below
-		setProxiedUrlFromSquidProxiedRequest ( r );
+		setProxiedUrlFromSquidProxiedRequest( r );
+	}
 
 	// . if gigablast is acting like a squid proxy, then r->ptr_url
 	//   is a COMPLETE http mime request, so hash the following fields in 
@@ -198,22 +185,13 @@ bool Msg13::getDoc ( Msg13Request *r,
 	//   * url
 	//   * cookie
 	// . this is r->m_proxiedUrl which we set above
-	if ( r->m_isSquidProxiedUrl )
-		r->m_cacheKey = computeProxiedCacheKey64 ( r );
-
-
-	// always forward these so we can use the robots.txt cache
-	if ( r->m_isRobotsTxt ) r->m_forwardDownloadRequest = true;
-
-	// always forward for now until things work better!
-	r->m_forwardDownloadRequest = true;	
+	if ( r->m_isSquidProxiedUrl ) {
+		r->m_cacheKey = computeProxiedCacheKey64( r );
+	}
 
 	// assume no http proxy ip/port
 	r->m_proxyIp = 0;
 	r->m_proxyPort = 0;
-
-	// download it ourselves rather than forward it off to another host?
-	//if ( r->m_forwardDownloadRequest ) return forwardRequest ( ); 
 
 	return forwardRequest ( );
 }

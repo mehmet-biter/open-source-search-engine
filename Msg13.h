@@ -84,13 +84,7 @@ public:
 
 	unsigned  m_compressReply:1;
 	unsigned  m_useCompressionProxy:1;
-	// if m_forwardDownloadRequest is true then we pick the host to 
-	// download this url based on the IP address, the idea being that
-	// only one host is responsible for downloading from a particular
-	// ip address. this keeps webmasters happier so they can block us
-	// by just blocking one ip address. and it makes it easier for them
-	// to analyze their web logs.
-	unsigned  m_forwardDownloadRequest:1;
+
 	// does url end in /robots.txt ?
 	unsigned  m_isRobotsTxt:1; 
 	// should we call getTestDoc()/addTestDoc() like for the "test" coll

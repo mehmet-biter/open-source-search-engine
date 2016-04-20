@@ -2734,7 +2734,6 @@ void gotSquidProxiedUrlIp ( void *state , int32_t ip ) {
 	r->m_urlHash48              = 0LL;
 	r->m_maxTextDocLen          = -1;//maxDownload;
 	r->m_maxOtherDocLen         = -1;//maxDownload;
-	r->m_forwardDownloadRequest = false;
 	r->m_useTestCache           = false;
 	r->m_spideredTime           = 0;
 	r->m_ifModifiedSince        = 0;

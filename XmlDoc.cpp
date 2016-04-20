@@ -362,13 +362,6 @@ void XmlDoc::reset ( ) {
 
 	m_doingConsistencyCheck    = false;
 
-
-	// tell Msg13 to just call HttpServer::getDoc() and not to forward
-	// the download request to another host. although this does not
-	// exclude possible forwarding it to a compression proxy if
-	// g_conf.m_useCompressionProxy is set
-	m_forwardDownloadRequest = false;
-
 	m_isChildDoc = false;
 
 	// for utf8 content functions
@@ -6284,12 +6277,6 @@ XmlDoc **XmlDoc::getExtraDoc ( char *u , int32_t maxCacheAge ) {
 	m_extraDoc->m_urlFilterNum          = 0;
 	// for redirects
 	m_extraDoc->m_allowSimplifiedRedirs = true;
-	// always forward the http download request so that Msg13.cpp's
-	// handleRequest13() can avoid this same page
-	// from being downloaded at the same time. also, if we are robots.txt
-	// this allows us to use the same cache since we select the host we
-	// forward to based on ip address.
-	m_extraDoc->m_forwardDownloadRequest = true;
 	// set this flag so msg13.cpp doesn't print the "hammering ip" msg
 	m_extraDoc->m_isChildDoc = true;
 
@@ -6479,12 +6466,6 @@ XmlDoc **XmlDoc::getRootXmlDoc ( int32_t maxCacheAge ) {
 	m_rootDoc->m_urlFilterNum          = 0;
 	// for redirects
 	m_rootDoc->m_allowSimplifiedRedirs = true;
-	// always forward the http download request so that Msg13.cpp's
-	// handleRequest13() can avoid the same root page or contact page
-	// from being downloaded at the same time. also, if we are robots.txt
-	// this allows us to use the same cache since we select the host we
-	// forward to based on ip address.
-	m_rootDoc->m_forwardDownloadRequest = true;
 	// set this flag so msg13.cpp doesn't print the "hammering ip" msg
 	m_rootDoc->m_isChildDoc = true;
 
@@ -8594,9 +8575,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 	r->m_urlHash48              = getFirstUrlHash48();
  	if ( r->m_maxTextDocLen  < 100000 ) r->m_maxTextDocLen  = 100000;
 	if ( r->m_maxOtherDocLen < 200000 ) r->m_maxOtherDocLen = 200000;
-//	r->m_maxTextDocLen          = maxDownload;
-//	r->m_maxOtherDocLen         = maxDownload;
-	r->m_forwardDownloadRequest = (bool)m_forwardDownloadRequest;
 	r->m_useTestCache           = (bool)useTestCache;
 	r->m_spideredTime           = getSpideredTime();//m_spideredTime;
 	r->m_ifModifiedSince        = 0;

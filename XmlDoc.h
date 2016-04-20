@@ -944,7 +944,6 @@ public:
 	Multicast m_mcast12;
 	MsgC m_msgc;
 	bool m_isAllowed;
-	bool m_forwardDownloadRequest;
 	bool m_isChildDoc;
 	Msg13 m_msg13;
 	Msg13Request m_msg13Request;
