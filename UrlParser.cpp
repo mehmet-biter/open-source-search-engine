@@ -21,6 +21,8 @@ static const char* strnpbrk( const char *str1, size_t len, const char *str2 ) {
 	return NULL;
 }
 
+/// @todo we should see if we need to do relative path resolution here
+/// https://tools.ietf.org/html/rfc3986#section-5.2
 UrlParser::UrlParser( const char *url, size_t urlLen )
 	: m_url( url )
 	, m_urlLen( urlLen )

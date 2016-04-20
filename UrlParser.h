@@ -9,6 +9,8 @@ class UrlParser {
 public:
 	UrlParser( const char *url, size_t urlLen );
 
+	void deleteComponent( UrlComponent *urlComponent );
+
 	// path
 	std::vector<std::pair<UrlComponent*, UrlComponent*> > matchPath( const UrlComponent::Matcher &keyMatch );
 
@@ -38,8 +40,6 @@ private:
 	void parse();
 
 	bool removeComponent( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator );
-
-	void deleteComponent( UrlComponent *urlComponent );
 
 	const char *m_url;
 	size_t m_urlLen;

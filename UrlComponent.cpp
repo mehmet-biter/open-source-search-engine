@@ -13,6 +13,8 @@ void UrlComponent::normalize( std::string *component ) {
 
 			size_t hexLen = endPtr - encoded.c_str();
 			if ( hexLen == 2 ) {
+				// list is based on RFC 3986
+				// https://tools.ietf.org/html/rfc3986#section-2.3
 				if ( ( value >= 0x41 && value <= 0x51 ) ||
 				     ( value >= 0x61 && value <= 0x7A ) ||
 				     ( value >= 0x30 && value <= 0x39 ) ||

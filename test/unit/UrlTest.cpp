@@ -1017,13 +1017,19 @@ TEST( UrlTest, StripParamsWho ) {
 	const char *input_urls[] = {
 		// who
 		"http://www.bigchurch.com/go/page/privacy.html?who=r,/cu4qLiwvculGvDvGrNzyhKpyhktvMpoVzsk0AGO5LEkHr/CP73pECeMNUNAAnQxhyuVznsP0mN0_gc73W/4TBykmZSBM_dVZJuzeXuBRaskyEzrh1nIpIaeqHAY_dEZ",
-	    "https://affiliates.danni.com/p/partners/main.cgi?who=r,VgwuU_i/jKvDCoWe1vEMdEktDgo/UpGf6pX3qsopquP0xCYOlgReamC2S1RnQSdn5DG42QxPixcOP1q67s6_nK0kwqcf8YqW70Sux_iWenV/PNHPK9ddNE88CXGs9s2o&action=faq&trlid=affiliate_navbar_v1_0-15"
+	    "https://affiliates.danni.com/p/partners/main.cgi?who=r,VgwuU_i/jKvDCoWe1vEMdEktDgo/UpGf6pX3qsopquP0xCYOlgReamC2S1RnQSdn5DG42QxPixcOP1q67s6_nK0kwqcf8YqW70Sux_iWenV/PNHPK9ddNE88CXGs9s2o&action=faq&trlid=affiliate_navbar_v1_0-15",
+
+	    // who (no strip)
+	    "http://www.pailung.com.tw/tw/Applications_Show2.aspx?idNo=E&typeNo=0&QueryStr=E&Who=Application"
 	};
 
 	const char *expected_urls[] = {
 		// who
 		"http://www.bigchurch.com/go/page/privacy.html",
-		"https://affiliates.danni.com/p/partners/main.cgi?action=faq&trlid=affiliate_navbar_v1_0-15"
+		"https://affiliates.danni.com/p/partners/main.cgi?action=faq&trlid=affiliate_navbar_v1_0-15",
+
+		// who (no strip)
+		"http://www.pailung.com.tw/tw/Applications_Show2.aspx?idNo=E&typeNo=0&QueryStr=E&Who=Application"
 	};
 
 	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
@@ -1042,13 +1048,15 @@ TEST( UrlTest, Normalization ) {
 	const char *input_urls[] = {
 		"http://puddicatcreationsdigitaldesigns.com/index.php?route=product/product&amp;product_id=1510",
 		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au&section=australia",
-	    "http://www.example.com/%7ejoe/index.html"
+	    "http://www.example.com/%7ejoe/index.html",
+		"http://www.example.com/%7joe/index.html",
 	};
 
 	const char *expected_urls[] = {
 		"http://puddicatcreationsdigitaldesigns.com/index.php?route=product/product&product_id=1510",
 		"http://www.huffingtonpost.com.au/entry/tiny-moments-happiness_us_56ec1a35e4b084c672200a36?section=australia&adsSiteOverride=au",
-		"http://www.example.com/~joe/index.html"
+		"http://www.example.com/~joe/index.html",
+		"http://www.example.com/joe/index.html",
 	};
 
 	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),

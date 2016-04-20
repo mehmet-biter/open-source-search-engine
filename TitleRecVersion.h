@@ -11,7 +11,7 @@
 // we also stop decoding &amp; &gt; &lt; to avoid losing information
 //#define TITLEREC_CURRENT_VERSION  122
 
-// normalize url encoded url
+// normalize url encoded url (url encode, strip params)
 #define TITLEREC_CURRENT_VERSION    123
 
 #endif // GB_TITLERECVERSION_H
