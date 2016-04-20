@@ -5407,15 +5407,6 @@ Url *XmlDoc::getCurrentUrl ( ) {
 	m_currentUrl.set ( &m_firstUrl );
 	m_currentUrlValid = true;
 	return &m_currentUrl;
-	/*
-	// need a valid url
-	Url *u = getFirstUrl();
-	if ( ! u ) return NULL;
-	// but use redir if we got that
-	Url *r = getRedirUrl();
-	if ( r && m_redirUrlValid ) return r;
-	return u;
-	*/
 }
 
 Url *XmlDoc::getFirstUrl() {
@@ -5500,14 +5491,7 @@ Url **XmlDoc::getRedirUrl() {
 
 	// assume no redirect
 	m_redirUrlPtr = NULL;
-	//ptr_redirUrl  = NULL;
-	//size_redirUrl = 0;
-	// bail on this
-	//if ( ! m_checkForRedir ) {
-	//	m_redirError = 0;
-	//	m_redirErrorValid = true;
-	//	return &m_redirUrlPtr;
-	//}
+
 	// we might have a title rec
 	if ( m_setFromTitleRec ) { char *xx=NULL;*xx=0; }
 
@@ -5670,12 +5654,11 @@ Url **XmlDoc::getRedirUrl() {
 		     ! gb_strcasestr( tt->getUrl(), "oscsid")   )  {
 			m_redirUrlValid = true;
 			m_redirUrlPtr   = &m_redirUrl;
-			// TODO: log redir url in spider log output
-			//logf(LOG_INFO,"build: %s force redirected to %s",
-			//     cu->getUrl(),m_redirUrl.getUrl());
+
 			m_redirUrlValid = true;
 			ptr_redirUrl    = m_redirUrl.getUrl();
 			size_redirUrl   = m_redirUrl.getUrlLen()+1;
+
 			// no error
 			m_redirError = 0;
 			m_redirErrorValid = true;
@@ -5703,17 +5686,6 @@ Url **XmlDoc::getRedirUrl() {
 	// breathe
 	QUICKPOLL(m_niceness);
 
-	// this is handy
-	//Url tmp;
-
-	// TODO: make sure we got this logic elsewhere
-	// if robots.txt said no, and if we had no link text, then give up
-	//if(! *isAllowed && !info1->hasLinkText() && !info2->hasLinkText() ) {
-	//	m_indexCode = EDOCDISALLOWED;
-
-	// set our redir url from the mime's Location: field. addWWW=false
-	//if ( loc != &tmp ) tmp.set ( loc , false );
-
 	bool keep = false;
 	if ( info1->hasLinkText()          ) keep = true;
 
@@ -5732,10 +5704,6 @@ Url **XmlDoc::getRedirUrl() {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, EDOCBADREDIRECTURL", __FILE__,__func__,__LINE__);
 		return &m_redirUrlPtr;
 	}
-
-	//bool injected = false;
-	// get from spider request if there
-	//if ( m_sreqValid && m_sreq.m_isInjecting ) injected = true;
 
 	// . if redirect url is nothing new, then bail (infinite loop)
 	// . www.xbox.com/SiteRequirements.htm redirects to itself
@@ -5767,11 +5735,12 @@ Url **XmlDoc::getRedirUrl() {
 	//   injected reply... yet m_injectedReplyLen would still be
 	//   positive! can you say 'seg fault'?
 	// . hmmm... seems to have worked though
-	if ( cr->m_recycleContent || m_recycleContent ) { // || injected
+	if ( cr->m_recycleContent || m_recycleContent ) {
 		if ( ! keep ) m_redirError = EDOCTOOMANYREDIRECTS;
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, EDOCTOOMANYREDIRECTS (recycled)", __FILE__,__func__,__LINE__);
 		return &m_redirUrlPtr;
 	}
+
 	// . if we followed too many then bail
 	// . www.motorolamobility.com www.outlook.com ... failed when we
 	//   had >= 4 here
@@ -5780,12 +5749,14 @@ Url **XmlDoc::getRedirUrl() {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, EDOCTOOMANYREDIRECTS", __FILE__,__func__,__LINE__);
 		return &m_redirUrlPtr;
 	}
+
 	// sometimes idiots don't supply us with a Location: mime
 	if ( loc->getUrlLen() == 0 ) {
 		if ( ! keep ) m_redirError = EDOCBADREDIRECTURL;
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, EDOCBADREDIRECTURL", __FILE__,__func__,__LINE__);
 		return &m_redirUrlPtr;
 	}
+
 	// . protocol of url must be http or https
 	// . we had one url redirect to an ihttp:// protocol and caused
 	//   spider to core dump when it saw that SpiderRequest record
@@ -5817,10 +5788,13 @@ Url **XmlDoc::getRedirUrl() {
 
 	// get first url ever
 	Url *f = getFirstUrl();
+
 	// breathe
 	QUICKPOLL(m_niceness);
+
 	// set this to true if the redirected urls is much preferred
 	bool simplifiedRedir = false;
+
 	// . if it redirected to a simpler url then stop spidering now
 	//   and add the simpler url to the spider queue
 	// . by simpler, i mean one w/ fewer path components
@@ -5830,44 +5804,57 @@ Url **XmlDoc::getRedirUrl() {
 	char *u   = f->getUrl();
 	int32_t rlen = loc->getUrlLen();
 	int32_t ulen = f->getUrlLen();
+
 	// simpler if new path depth is shorter
-	if ( loc->getPathDepth (true) < f->getPathDepth (true) )
+	if ( loc->getPathDepth( true ) < f->getPathDepth( true ) ) {
 		simplifiedRedir = true;
+	}
+
 	// simpler if old has cgi and new does not
-	if ( f->isCgi() && ! loc->isCgi() )
+	if ( f->isCgi() && ! loc->isCgi() ) {
 		simplifiedRedir = true;
+	}
+
 	// simpler if new one is same as old but has a '/' at the end
-	if ( rlen == ulen+1 && r[rlen-1]=='/' && strncmp(r,u,ulen)==0)
+	if ( rlen == ulen+1 && r[rlen-1]=='/' && strncmp(r, u, ulen) == 0 ) {
 		simplifiedRedir = true;
+	}
+
 	// . if new url does not have semicolon but old one does
 	// . http://news.yahoo.com/i/738;_ylt=AoL4eFRYKEdXbfDh6W2cF
 	//   redirected to http://news.yahoo.com/i/738
-	if ( strchr (u,';') &&  ! strchr (r,';') )
+	if ( strchr ( u, ';' ) &&  ! strchr ( r, ';' ) ) {
 		simplifiedRedir = true;
+	}
+
 	// simpler is new host is www and old is not
-	if ( loc->isHostWWW() && ! f->isHostWWW() )
+	if ( loc->isHostWWW() && ! f->isHostWWW() ) {
 		simplifiedRedir = true;
+	}
+
 	// if redirect is to different domain, set simplified
 	// this helps locks from bunching on one domain
-	if ( loc->getDomainLen()!=f->getDomainLen() ||
-	     strncasecmp ( loc->getDomain(),
-			   f->getDomain(),
-			   loc->getDomainLen() ) != 0 )
+	if ( loc->getDomainLen() != f->getDomainLen() ||
+	     strncasecmp ( loc->getDomain(), f->getDomain(), loc->getDomainLen() ) != 0 ) {
 		// crap, but www.hotmail.com redirects to live.msn.com
 		// login page ... so add this check here
-		if ( ! f->isRoot() )
+		if ( !f->isRoot() ) {
 			simplifiedRedir = true;
+		}
+	}
 
 	bool allowSimplifiedRedirs = m_allowSimplifiedRedirs;
 
 	// follow redirects if injecting so we do not return
 	// EDOCSIMPLIFIEDREDIR
-	if ( getIsInjecting ( ) )
+	if ( getIsInjecting ( ) ) {
 		allowSimplifiedRedirs = true;
+	}
 
 	// or if disabled then follow the redirect
-	if ( ! cr->m_useSimplifiedRedirects )
+	if ( ! cr->m_useSimplifiedRedirects ) {
 		allowSimplifiedRedirs = true;
+	}
 
 	// special hack for nytimes.com. do not consider simplified redirs
 	// because it uses a cookie along with redirs to get to the final
@@ -5876,49 +5863,47 @@ Url **XmlDoc::getRedirUrl() {
 	int32_t  dlen2 = m_firstUrl.getDomainLen();
 	
 	//@todo BR: EEK! Improve this.	
-	if ( dlen2 == 11 && strncmp(dom2,"nytimes.com",dlen2)==0 )
+	if ( dlen2 == 11 && strncmp(dom2,"nytimes.com",dlen2)==0 ) {
 		allowSimplifiedRedirs = true;
+	}
+
 	// same for bananarepublic.gap.com ?
 //	if ( dlen2 == 7 && strncmp(dom2,"gap.com",dlen2)==0 )
 //		allowSimplifiedRedirs = true;
 
 	// if redirect is setting cookies we have to follow the redirect
 	// all the way through so we can stop now.
-	if ( m_redirCookieBufValid && m_redirCookieBuf.getLength() )
+	if ( m_redirCookieBufValid && m_redirCookieBuf.getLength() ) {
 		allowSimplifiedRedirs = true;
+	}
 
 	// . don't bother indexing this url if the redir is better
 	// . 301 means moved PERMANENTLY...
 	// . many people use 301 on their root pages though, so treat
 	//   it like a temporary redirect, like exclusivelyequine.com
 	if ( simplifiedRedir && ! allowSimplifiedRedirs &&
-	     // for custom BULK clients don't like this i guess
-	     // AND for custom crawl it was messing up the processing
-	     // url format for a nytimes blog subsite which was redirecting
-	     // to the proper nytimes.com site...
-	     // ! cr->m_isCustomCrawl ) {
 	     // no, we need this for custom crawls because otherwise we
-	     // get too many dups in the index. so for nyt we need something
-	     // else
+	     // get too many dups in the index. so for nyt we need something else
 	     cr->m_isCustomCrawl != 2 ) {
-		// returns false if blocked, true otherwise
-		//return addSimplifiedRedirect();
 		m_redirError = EDOCSIMPLIFIEDREDIR;
+
 		// set this because getLinks() treats this redirUrl
 		// as a link now, it will add a SpiderRequest for it:
 		m_redirUrl.set ( loc );
-		m_redirUrlPtr   = &m_redirUrl;
+		m_redirUrlPtr = &m_redirUrl;
+
 		// mdw: let this path through so contactXmlDoc gets a proper
 		// redirect that we can follow. for the base xml doc at
 		// least the m_indexCode will be set
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, return [%s]. Simplified, but not allowed.", __FILE__,__func__,__LINE__, m_redirUrlPtr->getUrl());
 		return &m_redirUrlPtr;
 	}
+
 	// good to go
 	m_redirUrl.set ( loc );
-	m_redirUrlPtr   = &m_redirUrl;
-	ptr_redirUrl    = m_redirUrl.getUrl();
-	size_redirUrl   = m_redirUrl.getUrlLen()+1;
+	m_redirUrlPtr = &m_redirUrl;
+	ptr_redirUrl = m_redirUrl.getUrl();
+	size_redirUrl = m_redirUrl.getUrlLen()+1;
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, return [%s]", __FILE__,__func__,__LINE__, m_redirUrlPtr->getUrl());
 	return &m_redirUrlPtr;
 }
