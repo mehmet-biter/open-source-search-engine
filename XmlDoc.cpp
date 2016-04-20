@@ -8277,77 +8277,84 @@ char **XmlDoc::getHttpReply ( ) {
 	setStatus("getting http reply");
 
 	// come back up here if a redirect invalidates it
- loop:
-	// sanity test -- only if not the test collection (NO, might be EBADIP)
-	//if ( m_indexCode && strcmp(m_coll,"qatest123")){char*xx=NULL;*xx=0;}
-	// get the http reply
-	char **replyPtr = getHttpReply2();
-	if ( ! replyPtr || replyPtr == (void *)-1 ) return (char **)replyPtr;
-	// . now if the reply was a redirect we should set m_redirUrl to it
-	//   and re-do all this code
-	// . this often sets m_indexCode to stuff like ESIMPLIFIEDREDIR, etc.
-	Url **redirp = getRedirUrl();
-	// we often lookup the assocaited linkInfo on the original url to
-	// see if it is worth keeping and indexing just to take advantage of
-	// the incoming link text it has, so we may block on that!
-	// but in the case of a contactDoc, getContactDoc() sets these things
-	// to NULL to avoid unnecessary lookups.
-	if ( ! redirp || redirp == (void *)-1 ) return (char **)redirp;
-	// sanity check
-	if ( *redirp && ! m_redirUrlValid ) { char *xx=NULL;*xx=0; }
-	// if NULL, we are done
-	if ( ! *redirp ) return &m_httpReply;
-	// . also, hang it up if we got a simplified redir url now
-	// . we set m_redirUrl so that getLinks() can add a spiderRequest
-	//   for it, but we do not want to actually redirect to it to get
-	//   the content for THIS document
-	if ( m_redirError ) return &m_httpReply;
-	// and invalidate the redir url because we do not know if the
-	// current url will redirect or not (mdwmdw)
-	m_redirUrlValid           = false;
-	m_metaRedirUrlValid       = false;
-	// free it
-	mfree ( m_httpReply , m_httpReplyAllocSize, "freehr" );
-	// always nullify if we free so we do not re-use freed mem
-	m_httpReply = NULL;
-	// otherwise, we had a redirect, so invalidate what we had set
-	m_httpReplyValid          = false;
-	// do not invalidate this any more, now it is when we STARTED spidering
-	// the document
-	//m_spideredTimeValid       = false;
-	m_isContentTruncatedValid = false;
-	// do not redo robots.txt lookup if the redir url just changed from
-	// http to https or vice versa
-	Url *ru = *redirp;
-	Url *cu = getCurrentUrl();
-	if ( ! cu || cu == (void *)-1) return (char **)cu;
-	if ( strcmp ( ru->getUrl() + ru->getSchemeLen() ,
-		      cu->getUrl() + cu->getSchemeLen() ) ) {
-		// redo robots.txt lookup. might be cached.
-		m_isAllowedValid  = false;
-		m_crawlDelayValid = false;
+	for ( ; ; ) {
+		// get the http reply
+		char **replyPtr = getHttpReply2();
+		if ( ! replyPtr || replyPtr == (void *)-1 ) return (char **)replyPtr;
+
+		// . now if the reply was a redirect we should set m_redirUrl to it
+		//   and re-do all this code
+		// . this often sets m_indexCode to stuff like ESIMPLIFIEDREDIR, etc.
+		Url **redirp = getRedirUrl();
+
+		// we often lookup the assocaited linkInfo on the original url to
+		// see if it is worth keeping and indexing just to take advantage of
+		// the incoming link text it has, so we may block on that!
+		// but in the case of a contactDoc, getContactDoc() sets these things
+		// to NULL to avoid unnecessary lookups.
+		if ( ! redirp || redirp == (void *)-1 ) return (char **)redirp;
+
+		// sanity check
+		if ( *redirp && ! m_redirUrlValid ) { char *xx=NULL;*xx=0; }
+
+		// if NULL, we are done
+		if ( ! *redirp ) return &m_httpReply;
+
+		// . also, hang it up if we got a simplified redir url now
+		// . we set m_redirUrl so that getLinks() can add a spiderRequest
+		//   for it, but we do not want to actually redirect to it to get
+		//   the content for THIS document
+		if ( m_redirError ) return &m_httpReply;
+
+		// and invalidate the redir url because we do not know if the
+		// current url will redirect or not (mdwmdw)
+		m_redirUrlValid           = false;
+		m_metaRedirUrlValid       = false;
+
+		// free it
+		mfree ( m_httpReply , m_httpReplyAllocSize, "freehr" );
+
+		// always nullify if we free so we do not re-use freed mem
+		m_httpReply = NULL;
+
+		// otherwise, we had a redirect, so invalidate what we had set
+		m_httpReplyValid          = false;
+
+		m_isContentTruncatedValid = false;
+
+		// do not redo robots.txt lookup if the redir url just changed from
+		// http to https or vice versa
+		Url *ru = *redirp;
+		Url *cu = getCurrentUrl();
+		if ( ! cu || cu == (void *)-1) return (char **)cu;
+		if ( strcmp ( ru->getUrl() + ru->getSchemeLen(), cu->getUrl() + cu->getSchemeLen() ) ) {
+			// redo robots.txt lookup. might be cached.
+			m_isAllowedValid  = false;
+			m_crawlDelayValid = false;
+		}
+
+		// keep the same ip if hostname is unchanged
+		if ( ru->getHostLen() != cu->getHostLen() || strncmp ( ru->getHost() , cu->getHost(), cu->getHostLen() ) ) {
+			// ip is supposed to be that of the current url, which changed
+			m_ipValid = false;
+		}
+
+		// we set our m_xml to the http reply to check for meta redirects
+		// in the html sometimes in getRedirUrl() so since we are redirecting,
+		// invalidate that xml
+		m_xmlValid                = false;
+		m_wordsValid              = false;
+		m_rawUtf8ContentValid     = false;
+		m_expandedUtf8ContentValid= false;
+		m_utf8ContentValid        = false;
+		m_filteredContentValid    = false;
+		m_contentValid            = false;
+		m_mimeValid               = false;
+
+		// update our current url now to be the redirected url
+		m_currentUrl.set ( *redirp );
+		m_currentUrlValid = true;
 	}
-	// keep the same ip if hostname is unchanged
-	if ( ru->getHostLen() != cu->getHostLen() ||
-	     strncmp ( ru->getHost() , cu->getHost(), cu->getHostLen() ) )
-		// ip is supposed to be that of the current url, which changed
-		m_ipValid         = false;
-	// we set our m_xml to the http reply to check for meta redirects
-	// in the html sometimes in getRedirUrl() so since we are redirecting,
-	// invalidate that xml
-	m_xmlValid                = false;
-	m_wordsValid              = false;
-	m_rawUtf8ContentValid     = false;
-	m_expandedUtf8ContentValid= false;
-	m_utf8ContentValid        = false;
-	m_filteredContentValid    = false;
-	m_contentValid            = false;
-	m_mimeValid               = false;
-	// update our current url now to be the redirected url
-	m_currentUrl.set ( *redirp );
-	m_currentUrlValid = true;
-	// loop it
-	goto loop;
 }
 
 static void gotHttpReplyWrapper ( void *state ) {
