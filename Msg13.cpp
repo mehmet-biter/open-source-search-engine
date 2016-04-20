@@ -1201,30 +1201,6 @@ bool ipWasBanned ( TcpSocket *ts , const char **msg , Msg13Request *r ) {
 		return true;
 	}
 
-	// if it has link to "google.com/recaptcha"
-	// TODO: use own gbstrstr so we can do QUICKPOLL(niceness)
-	// TODO: ensure NOT in an invisible div
-	if ( strstr ( ts->m_readBuf , "google.com/recaptcha/api/challenge") ) {
-		*msg = "recaptcha link";
-		return true;
-	}
-
-	//CollectionRec *cr = g_collectiondb.getRec ( r->m_collnum );
-
-	// if it is a seed url and there are no links, then perhaps we
-	// are in a blacklist somewhere already from triggering a spider trap
-	// i've seen this flub on a site where they just return a script
-	// and it is not banned, so let's remove this until we thinkg
-	// of something better.
-	// if ( //isInSeedBuf ( cr , r->ptr_url ) &&
-	//      // this is set in XmlDoc.cpp based on hopcount really
-	//      r->m_isRootSeedUrl &&
-	//      ! strstr ( ts->m_readBuf, "<a href" ) ) {
-	// 	*msg = "root/seed url with no outlinks";
-	// 	return true;
-	// }
-
-
 	// TODO: compare a simple checksum of the page content to what
 	// we have downloaded previously from this domain or ip. if it 
 	// seems to be the same no matter what the url, then perhaps we
@@ -2818,8 +2794,6 @@ bool addToHammerQueue ( Msg13Request *r ) {
 	     cr->m_automaticallyBackOff &&
 	     // and it is in the twitchy table
 	     isIpInTwitchyTable ( cr , r->m_urlIp ) ) {
-		// and no proxies are available to use
-		//! canUseProxies ) {
 		// then just back off with a crawldelay of 3 seconds
 		if ( ! canUseProxies && crawlDelayMS < AUTOCRAWLDELAY )
 			crawlDelayMS = AUTOCRAWLDELAY;
