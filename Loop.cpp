@@ -37,9 +37,6 @@
 // are some signals to call g_udpServer2.makeCallbacks() queued?
 bool g_someAreQueued = false;
 
-int32_t g_numAlarms = 0;
-int32_t g_numVTAlarms = 0;
-int32_t g_numQuickPolls = 0;
 static int32_t g_missedQuickPolls = 0;
 int32_t g_numSigChlds = 0;
 int32_t g_numSigPipes = 0;
@@ -1103,8 +1100,6 @@ void Loop::quickPoll(int32_t niceness, const char* caller, int32_t lineno) {
 	//int64_t took = now - m_lastPollTime;
 	int64_t now2 = gettimeofdayInMilliseconds();
 	int32_t gerrno = g_errno;
-
-	g_numQuickPolls++;
 
 	m_inQuickPoll = true;
 

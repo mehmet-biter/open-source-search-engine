@@ -463,11 +463,9 @@ void Process::callHeartbeat () {
 
 void heartbeatWrapper ( int fd , void *state ) {
 	static int64_t s_last = 0LL;
-	static int64_t s_lastNumAlarms = 0LL;
 	int64_t now = gettimeofdayInMilliseconds();
 	if ( s_last == 0LL ) {
 		s_last = now;
-		s_lastNumAlarms = g_numAlarms;
 		return;
 	}
 	// . log when we've gone 100+ ms over our scheduled beat
@@ -483,11 +481,8 @@ void heartbeatWrapper ( int fd , void *state ) {
 		log("db: missed calling niceness 0 heartbeatWrapper "
 		    "function by %"INT64" ms. Either you need a quickpoll "
 		    "somewhere or a niceness 0 function is taking too long. "
-		    "Num elapsed alarms = "
-		    "%"INT32"", elapsed-100,(int32_t)(g_numAlarms - 
-						      s_lastNumAlarms));
+		    , elapsed-100);
 	s_last = now;
-	s_lastNumAlarms = g_numAlarms;
 
 	// save this time so the sig alarm handler can see how long
 	// it has been since we've been called, so after 10000 ms it

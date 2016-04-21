@@ -75,11 +75,6 @@ extern bool g_someAreQueued;
 // . this is now the time synced with host #0
 //extern int64_t g_nowGlobal;
 
-// count of how many SIGVTALRM signals we had so far
-extern int32_t g_numAlarms;
-extern int32_t g_numVTAlarms;
-extern int32_t g_numQuickPolls;
-
 extern int32_t g_numSigChlds;
 extern int32_t g_numSigQueues;
 extern int32_t g_numSigPipes;

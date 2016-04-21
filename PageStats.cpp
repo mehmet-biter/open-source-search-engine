@@ -808,8 +808,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      "<tr class=poo><td><b>Uptime</b></td><td>%s</td></tr>\n"
 			      "<tr class=poo><td><b>Process ID</b></td><td>%"UINT32"</td></tr>\n"
 			      "<tr class=poo><td><b>Corrupted Disk Reads</b></td><td>%"INT32"</td></tr>\n"
-			      "<tr class=poo><td><b>SIGALRMS</b></td><td>%"INT32"</td></tr>\n"
-			      "<tr class=poo><td><b>SIGVTALRMS</b></td><td>%"INT32"</td></tr>\n"
 
 			      "<tr class=poo><td><b>SIGCHLDS</b></td><td>%"INT32"</td></tr>\n"
 			      "<tr class=poo><td><b>SIGQUEUES</b></td><td>%"INT32"</td></tr>\n"
@@ -819,7 +817,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 			      //"<tr class=poo><td><b>read signals</b></td><td>%"INT64"</td></tr>\n"
 			      //"<tr class=poo><td><b>write signals</b></td><td>%"INT64"</td></tr>\n"
-			      "<tr class=poo><td><b>quickpolls</b></td><td>%"INT32"</td></tr>\n"
 			      "<tr class=poo><td><b>Kernel Version</b></td><td>%s</td></tr>\n"
 			      "<tr class=poo><td><b>Gigablast Architecture</b></td><td>%i bit</td></tr>\n"
 			      
@@ -843,8 +840,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      ubuf.getBufStart(),
 			      (uint32_t)getpid(),
 			      g_numCorrupt,
-			      g_numAlarms,
-			      g_numVTAlarms,
 
 			      g_numSigChlds,
 			      g_numSigQueues,
@@ -854,7 +849,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 			      //g_stats.m_readSignals,
 			      //g_stats.m_writeSignals,
-			      g_numQuickPolls,
 			      kv , 
 			      arch,
 			      //GBPROJECTNAME,
@@ -877,9 +871,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      "\t\t<corruptedDiskReads>%"INT32""
 			      "</corruptedDiskReads>\n"
 
-			      "\t\t<SIGVTALARMS>%"INT32"</SIGVTALARMS>\n"
-			      "\t\t<quickpolls>%"INT32"</quickpolls>\n"
-
 			      "\t\t<kernelVersion><![CDATA[%s]]>"
 			      "</kernelVersion>\n"
 
@@ -900,8 +891,6 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      ,
 			      ubuf.getBufStart(),
 			      g_numCorrupt,
-			      g_numAlarms,
-			      g_numQuickPolls,
 			      kv , 
 			      arch,
 			      g_stats.m_parsingInconsistencies ,
@@ -918,15 +907,10 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 
 			      "\t\t\"corruptedDiskReads\":%"INT32",\n"
 
-			      "\t\t\"SIGVTALARMS\":%"INT32",\n"
-			      "\t\t\"quickpolls\":%"INT32",\n"
-
 			      "\t\t\"kernelVersion\":\""
 			      ,
 			      ubuf.getBufStart(),
-			      g_numCorrupt,
-			      g_numAlarms,
-			      g_numQuickPolls);
+			      g_numCorrupt);
 		// this has quotes in it
 		p.jsonEncode(kv);
 		p.safePrintf( "\",\n"
