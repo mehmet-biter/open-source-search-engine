@@ -69,9 +69,6 @@ class Slot {
 // . 1  niceness disk thread, when running, will not allow niceness 2 to launch
 //#define MAX_NICENESS 2
 
-// extern variable that let's us know if we're in a sig handler
-extern bool g_inSigHandler;
-
 // are there pending signals for which we should call g_udpServer.makeCallbacks
 extern bool g_someAreQueued;
 

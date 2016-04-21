@@ -34,9 +34,6 @@
 
 // TODO: don't mask signals, catch them as they arrive? (like in phhttpd)
 
-// extern this for all to use
-bool g_inSigHandler = false ;
-
 // are some signals to call g_udpServer2.makeCallbacks() queued?
 bool g_someAreQueued = false;
 

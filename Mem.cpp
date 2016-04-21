@@ -479,11 +479,6 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 		}
 	}
 
-	// sanity check
-	if ( g_inSigHandler ) {
-		log(LOG_LOGIC,"mem: In sig handler.");
-		char *xx = NULL; *xx = 0;
-	}
 	// debug msg (mdw)
 	//char bb[100];
 	//bb[0]=0;
@@ -811,11 +806,6 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 
 	//validate();
 
-	// sanity check
-	if ( g_inSigHandler ) {
-		log(LOG_LOGIC,"mem: In sig handler 2.");
-		char *xx = NULL; *xx = 0;
-	}
 	// debug msg (mdw)
 	if ( g_conf.m_logDebugMem )
 		log("mem: free %08"PTRFMT" %"INT32"bytes (%s)",

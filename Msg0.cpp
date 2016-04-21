@@ -1017,8 +1017,6 @@ void doneSending_ass ( void *state , UdpSlot *slot ) {
 		      slot->m_sendBufSize , now - slot->m_startTime , mbps ,
 		      st0->m_niceness );
 	}
-	// can't go any further if we're in a sig handler
-	//if ( g_inSigHandler ) return;
 	// . mark it in pinkish purple
 	// . BUT, do not add stats here for tagdb, we get WAY too many lookups
 	//   and it clutters the performance graph

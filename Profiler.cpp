@@ -620,8 +620,6 @@ bool Profiler::unpause() {
 bool Profiler::endTimer(int32_t address,
 			const char *caller,
 			bool isThread ) {
-	// disable - we do interrupt based profiling now
-	if(g_inSigHandler) return 1;
 	FnInfo *fnInfo;
 	int32_t slot = m_activeFns.getSlot(&address);
 	if (slot < 0 ) {

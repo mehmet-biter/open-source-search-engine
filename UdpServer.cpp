@@ -512,8 +512,6 @@ bool UdpServer::sendRequest ( char     *msg          ,
 
 // returns false and sets g_errno on error, true otherwise
 void UdpServer::sendErrorReply( UdpSlot *slot, int32_t errnum ) {
-	// not in sig handler
-	//if ( g_inSigHandler ) return;
 	// bitch if it is 0
 	if ( errnum == 0 ) {
 		log(LOG_LOGIC,"udp: sendErrorReply: errnum is 0.");
@@ -625,11 +623,8 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 		    "reply: %s", mstrerror(g_errno));
 		mfree ( alloc , allocSize , "UdpServer");
 		// was EBADENGINEER
-		if ( ! g_inSigHandler ) 
-		{
-			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-			sendErrorReply ( slot , g_errno);
-		}
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		sendErrorReply ( slot , g_errno);
 		return ;
 	}
 	// set the callback2 , it might not be NULL if we're recording stats
@@ -895,9 +890,7 @@ void UdpServer::process_ass ( int64_t now , int32_t maxNiceness) {
 
 	// if we call this while in the sighandler it crashes since
 	// gettimeofdayInMillisecondsLocal() is not async safe
-	int64_t startTimer;
-	if ( ! g_inSigHandler )
-		startTimer = gettimeofdayInMillisecondsLocal();
+	int64_t startTimer = gettimeofdayInMillisecondsLocal();
  bigloop:
 	bool needCallback = false;
  loop:
@@ -969,9 +962,7 @@ void UdpServer::process_ass ( int64_t now , int32_t maxNiceness) {
 	if(maxNiceness < 1) return;
 	// if we call this while in the sighandler it crashes since
 	// gettimeofdayInMillisecondsLocal() is not async safe
-	int64_t elapsed = 0;
-	if ( ! g_inSigHandler )
-	 	elapsed = gettimeofdayInMillisecondsLocal() - startTimer;
+	int64_t elapsed = gettimeofdayInMillisecondsLocal() - startTimer;
 	if(elapsed < 10) {
 		// we did not call any, so resort to nice callbacks
 		// . only go to bigloop if we called a callback
@@ -1175,11 +1166,10 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 				char tmp[512];
 				g_dnsDistributed.extractHostname(header,dgram+12,tmp);
 				// iptoa not async sig safe
-				if ( ! g_inSigHandler ) 
-					log("udp: dns reply too late "
-					     "or reply from a resend "
-					     "(host=%s,dnsip=%s)",
-					     tmp, iptoa(ip)); 
+				log("udp: dns reply too late "
+				     "or reply from a resend "
+				     "(host=%s,dnsip=%s)",
+				     tmp, iptoa(ip)); 
 				*/
 				log(LOG_REMIND,"dns: Dns reply too late "
 				     "or reply from a resend.");
@@ -1842,7 +1832,6 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 // . this is also called by readTimeoutPoll()
 // . IMPORTANT: call this every time after you read or send a dgram/ACK
 // .            or when g_errno gets set
-// . will just queue a signal for GB_SIGRTMIN + 1 queue if g_inSigHandler is true
 // . return true if we called one
 bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	// get msgType
@@ -1915,8 +1904,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 			    took , Mbps );
 			start = now;
 		}
-		// if we're in a sig handler, queue a signal and return
-		if ( g_inSigHandler ) goto queueSig;
 		// mark it in the stats for PageStats.cpp
 		if      ( g_errno == EUDPTIMEDOUT )
 			g_stats.m_timeouts[msgType][slot->m_niceness]++;
@@ -2038,9 +2025,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		//   more than once, but we also call m_callback2 later, too,
 		//   since we cannot call destroySlot() in a hot sig handler
 		if ( slot->m_callback2 ) {
-			// if we're in a sig handler and not hot, queue it
-			if ( g_inSigHandler && ! slot->m_isCallback2Hot )
-				goto queueSig;
 			// . since we can be re-entered by the sig handler
 			//   make sure he doesn't call this callback while
 			//   we are in the middle of it
@@ -2080,9 +2064,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 			// clear any g_errno that may have been set
 			g_errno = 0;
 		}
-		// . queue it if we're hot, m_callback2 may be called again ltr
-		// . TODO: make destroySlot_ass()
-		if ( g_inSigHandler ) goto queueSig;
 		// nuke the slot, we gave them a reply...
 		destroySlot ( slot );
 		//log("udp: why double calling handler?");
@@ -2098,8 +2079,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		//   get a response in X seconds, then it may move on to 
 		//   using another transaction id to resend the request
 		if ( ! g_errno ) return false;
-		// queue it if we're hot
-		if ( g_inSigHandler ) goto queueSig;
 		// log a msg
 		log(LOG_LOGIC,
 		    "udp: makeCallback_ass: Requester stopped sending: %s.",
@@ -2111,9 +2090,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 		destroySlot ( slot );
 		return false;
 	}
-	// . if we're in a sig handler, queue a signal and return
-	// . now only queue it if handler is not hot
-	if ( g_inSigHandler && ! m_isHandlerHot [ msgType ] ) goto queueSig;
 	// save it
 	saved2 = g_inHandler;
 	// flag it so Loop.cpp does not re-nice quickpoll niceness
@@ -2327,10 +2303,6 @@ void UdpServer::timePoll ( ) {
 	//if ( g_conf.m_logDebugUdp ) 
 	//	log(LOG_DEBUG,"udp: timepoll: inSigHandler=%"INT32", m_head2=%"INT32".",
 	//	    (int32_t)g_inSigHandler,(int32_t)m_head2);
-	// we cannot be in a live signal handler because readTimeoutPoll()
-	// will return true in an infinite loop because process_ass() will not
-	// be able to make callbacks to fix the situation
-	if ( g_inSigHandler ) return;
 	// timeout dead hosts if we should
 	//if ( g_conf.m_giveupOnDeadHosts ) timeoutDeadHosts ( );
 	// try shutting down
@@ -2584,11 +2556,6 @@ bool UdpServer::readTimeoutPoll ( int64_t now ) {
 //   so we know to set the key.n0 hi bit
 // . may be called twice on same slot by Multicast::destroySlotsInProgress()
 void UdpServer::destroySlot ( UdpSlot *slot ) {
-	// ensure not in a signal handler
-	if ( g_inSigHandler ) {
-		log(LOG_LOGIC,"udp: destroySlot: Called in sig handler.");
-		return;
-	}
 	// return if no slot
 	if ( ! slot ) return;
 	// if we're deleting a slot that was an incoming request then
@@ -2728,8 +2695,6 @@ bool UdpServer::shutdown ( bool urgent ) {
 }
 
 bool UdpServer::timeoutDeadHosts ( Host *h ) {
-	// signal handler cannot call this
-	if ( g_inSigHandler ) return false;
 	// we never have a request out to a proxy, and if we
 	// do take the proxy down i don't want us timing out gk0
 	// or gk1! which have hostIds 0 and 1, like the proxy0

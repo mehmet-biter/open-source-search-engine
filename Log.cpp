@@ -397,8 +397,6 @@ static char  s_problem  = '\0';
 // once we're no longer in a sig handler this is called by Loop.cpp
 // if g_log.needsPrinting() is true
 void Log::printBuf ( ) {
-	// not in sig handler
-	if ( g_inSigHandler ) return;
 	// was there a problem?
 	if ( s_problem  ) fprintf(stderr,"Log::printBuf: had problem. '%c'\n",
 				  s_problem);
@@ -667,12 +665,6 @@ bool loghex( int32_t type, void const *data, const unsigned int len, const char 
 	char buf[1024*10];
 	// copy the error into the buffer space
 	va_start ( ap, formatString);
-	// debug hack for testing
-	if ( g_inSigHandler ) 
-	{
-		// give up..
-		return false;
-	}
 	// print it into our buf now
 	vsnprintf ( buf , 1024*10 , formatString , ap );
 	va_end(ap);

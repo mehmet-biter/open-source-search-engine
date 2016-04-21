@@ -1777,24 +1777,6 @@ bool UdpSlot::makeReadBuf ( int32_t msgSize , int32_t numDgrams ) {
 	}
 	// if msgSize is -1 then it is under 1 dgram, but assume the worst
 	if ( msgSize == -1 ) msgSize = m_maxDgramSize;
-	// . if we're in a sig handler do not call malloc()
-	// . also, if read is small, don't bother calling malloc()
-	// . i took out msgSize < TMPBUFSIZE because caller may be expecting
-	//   to "steal" the reply for setting an RdbList or something and he
-	//   won't want to do a copy. Fixes segv we had with Msg0 calling
-	//   Multicast and setting the list with reply and ownData to true.
-	if ( g_inSigHandler ) { // || msgSize < TMPBUFSIZE ) {
-		// bitch if incoming read too big to handle
-		if ( msgSize > TMPBUFSIZE ) {
-			g_errno = EBUFTOOSMALL;
-			return log(LOG_LOGIC,"udp: makereadbuf: buffer size "
-				   "of %"INT32" is too big for async udp socket.",
-				   msgSize);
-		}
-		m_readBuf        = m_tmpBuf;
-		m_readBufMaxSize = TMPBUFSIZE;
-		return true;
-	}
 	// . if it is small enough, no need to malloc
 	// . but Msg0 requests like to set list to contents, so make it 
 	// . we'll have to check everything before doing this...

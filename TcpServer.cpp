@@ -261,7 +261,6 @@ retry16:
 // this wrapper is called every 15 ms by the Loop class
 void timePollWrapper ( int fd , void *state ) { 
 	TcpServer *THIS  = (TcpServer *)state;
-	if ( g_inSigHandler ) return;
 	// close ANY socket that is just reading and OVER 60 secs idle
 	THIS->closeLeastUsed( 60 );
 }

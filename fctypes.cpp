@@ -1199,8 +1199,6 @@ bool saveTimeAdjustment ( ) {
 
 // a "fake" settimeofdayInMilliseconds()
 void settimeofdayInMillisecondsGlobal ( int64_t newTime ) {
-	// can't do this in sig handler
-	if ( g_inSigHandler ) return;
 	// this isn't async signal safe...
 	struct timeval tv;
 	gettimeofday ( &tv , NULL );
