@@ -85,6 +85,11 @@ bool Threads::amThread () {
 // pthread_create() cores in calloc() if we don't make STACK_SIZE bigger:
 #define STACK_SIZE ((512+256+1024) * 1024)
 
+#if GUARDSIZE >= STACK_SIZE
+#error STACKSIZE must be larger than GUARDSIZE
+#endif
+
+
 #define ABSOLUTE_MAX_THREAD 50
 
 static char *s_stackAlloc = NULL;
@@ -223,10 +228,6 @@ bool Threads::init ( ) {
 	// generic multipurpose
 	if ( ! g_threads.registerType (THREAD_TYPE_GENERIC,100/*maxThreads*/,100) )
 		return log("thread: Failed to register thread type." );
-
-	// sanity check
-	if ( GUARDSIZE >= STACK_SIZE )
-		return log("thread: Stack guard size too big.");
 
 	// not more than this outstanding
 	int32_t maxThreads = 0;
@@ -702,9 +703,7 @@ void makeCallback ( ThreadEntry *t ) {
 		    (int32_t)t->m_niceness);
 
 	// time it?
-	int64_t start;
-	if ( g_conf.m_maxCallbackDelay >= 0 )
-		start = gettimeofdayInMillisecondsLocal();
+	int64_t start = gettimeofdayInMillisecondsLocal();
 
 	// then set it
 	if ( t->m_niceness >= 1 )
@@ -751,11 +750,6 @@ int startUp ( void *state ) {
 	// . can range from -20 to +20
 	// . the lower p, the more cpu time it gets
 	// . this is really the niceness, not the priority
-	int p ;
-	// currently our niceness ranges from -1 to 2 for us
-	if      ( t->m_niceness == 2 ) p = 19 ;
-	else if ( t->m_niceness == 1 ) p = 10 ;
-	else                           p =  0 ;
 	// remember the tid
 	//t->m_tid = pthread_self();
 	// debug
@@ -771,15 +765,6 @@ int startUp ( void *state ) {
 	t->m_startRoutine ( t->m_state , t );
 	// pop it off
 	//pthread_cleanup_pop ( 1 /*execute handler?*/ );
-
-	// . now throw it on g_loop's sigqueue
-	// . the first 4 bytes of t->m_state should be t->m_callback
-	// . no! just use 1 to tell Loop to call g_threads.cleanUp()
-	// . TODO: pass in a ptr to cleanUpWrapper() instead of "t"
-	// . sival_int is only 4 bytes on a 64 bit arch...
-	sigval_t svt;
-	svt.sival_int = 1;//(int64_t)t ; //(int)(t->m_state); // fd;
-
 
 	// set exit time
 	int64_t now = gettimeofdayInMilliseconds();
@@ -1167,12 +1152,6 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 		ThreadQueue *tq = &g_threads.m_threadQueues[(int)qnum];
 		if ( tq != this ) { char *xx = NULL; *xx = 0; }
 
-		// get read size before cleaning it up -- it could get nuked
-		bool isWrite = false;
-		if ( tq->m_threadType == THREAD_TYPE_DISK ) {
-			isWrite = t->m_doWrite ;
-		}
-
 		// now count him as returned
 		m_returned++;
 
@@ -1216,156 +1195,6 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 		}
 
 	}
-
-	//since we need finer grained control in loop, we no longer collect
-	//the callbacks, sort, then call them.  we now call them right away
-	//that way we can break out if we start taking too long and
-	//give control back to udpserver.
-	return numCallbacks != 0;
-}
-
-
-// . cleans up any threads that have exited
-// . their m_isDone should be set to true
-// . don't process threads whose niceness is > maxNiceness
-bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
-	// call all callbacks after all threads are cleaned up
-	void       (* callbacks[64])(void *state,ThreadEntry *);
-	void        *states    [64];
-	int64_t    times     [64];
-	int64_t    times2    [64];
-	int64_t    times3    [64];
-	int64_t    times4    [64];
-	ThreadEntry *tids      [64];
-	int64_t startTime = gettimeofdayInMilliseconds();
-
-	ThreadEntry *t = m_launchedHead;
-	ThreadEntry *nextLink = NULL;
-	int32_t   numCallbacks = 0;
-
-	// loop through candidates
-	for ( ; t && numCallbacks < 64 ; t = nextLink ) {
-		// do it here in case we modify the linked list below
-		nextLink = t->m_nextLink;
-
-		// skip if not qualified
-		if ( t->m_niceness > maxNiceness ) {
-			continue;
-		}
-
-		// must be occupied to be done (sanity check)
-		if ( ! t->m_isOccupied )
-			continue;
-
-		// skip if not launched yet
-		if ( ! t->m_isLaunched )
-			continue;
-
-		// skip if not done yet
-		if ( ! t->m_isDone     )
-			continue;
-
-		if ( t->m_needsJoin ) {
-			// . join up with that thread
-			// . damn, sometimes he can block forever on his
-			//   call to sigqueue(),
-			int32_t status =  pthread_join ( t->m_joinTid , NULL );
-			if ( status != 0 ) {
-				log("threads: "
-				    "pthread_join2 %"INT64" = %s (%"INT32")",
-				    (int64_t)t->m_joinTid,mstrerror(status),
-				    status);
-			}
-			// debug msg
-			if ( g_conf.m_logDebugThread )
-				log(LOG_DEBUG,"thread: joined2 with "
-				    "t=0x%"PTRFMT" "
-				    "jointid=0x%"XINT64".",
-				    (PTRTYPE)t,(int64_t)t->m_joinTid);
-
-			// re-protect this stack
-			mprotect ( t->m_stack + GUARDSIZE ,
-				   STACK_SIZE - GUARDSIZE,
-				   PROT_NONE );
-			g_threads.returnStack ( t->m_si );
-			t->m_stack = NULL;
-
-		}
-
-		// we may get cleaned up and re-used and our niceness reassignd
-		// right after set m_isDone to true, so save niceness
-		//int32_t niceness = t->m_niceness;
-		char qnum     = t->m_qnum;
-		ThreadQueue *tq = &g_threads.m_threadQueues[(int)qnum];
-		if ( tq != this ) { char *xx = NULL; *xx = 0; }
-
-
-		// . we should count down here, not in the master thread
-		// . solves Problem #2 ?
-		// . TODO: this is not necessaruly atomic we should set
-		//   t->m_aboutToExit to true so cleanUp can periodically set
-		//   m_returned to what it should be!!!
-		//g_threads.m_threadQueues[qnum].m_returned++;
-
-		// now count him as returned
-		m_returned++;
-
-		callbacks [ numCallbacks ] = t->m_callback;
-		states    [ numCallbacks ] = t->m_state;
-		times     [ numCallbacks ] = t->m_queuedTime;
-		times2    [ numCallbacks ] = t->m_launchedTime;
-		times3    [ numCallbacks ] = t->m_preExitTime;
-		times4    [ numCallbacks ] = t->m_exitTime;
-		tids      [ numCallbacks ] = t;
-		numCallbacks++;
-
-		// SOLUTION: before calling the callback which may launch
-		// another thread with this same tid, thus causing an error,
-		// we should set these to false first:
-		// not running any more
-		t->m_isLaunched = false;
-		// not occupied any more
-		t->m_isOccupied = false;
-
-		if ( g_conf.m_logDebugThread )
-			log(LOG_DEBUG,"thread: [t=0x%"PTRFMT"] "
-			    "remove from launched list, add to empty list",
-			    (PTRTYPE)t);
-
-		// now move it to the empty list
-		removeLink ( &m_launchedHead , t );
-		addLink    ( &m_emptyHead    , t );
-
-		g_errno = 0;
-
-		makeCallback ( t );
-
-		// clear errno again
-		g_errno = 0;
-
-		if ( g_conf.m_logDebugThread ) {
-			int64_t now = gettimeofdayInMilliseconds();
-			log(LOG_DEBUG,"thread: [t=0x%"PTRFMT"] %s done2. "
-			    "active=%"INT32" "
-			    "time since queued = %"UINT64" ms  "
-			    "time since launch = %"UINT64" ms  "
-			    "time since pre-exit = %"UINT64" ms  "
-			    "time since exit = %"UINT64" ms",
-			    (PTRTYPE)t,
-			    getThreadType() ,
-			    (int32_t)(m_launched - m_returned) ,
-			    (uint64_t)(now - t->m_queuedTime),
-			    (uint64_t)(now - t->m_launchedTime),
-			    (uint64_t)(now - t->m_preExitTime) ,
-			    (uint64_t)(now - t->m_exitTime) );
-		}
-
-	}
-
-	int64_t took2 = gettimeofdayInMilliseconds()-startTime;
-	if(numCallbacks > 0 && took2 > 5)
-		log(LOG_DEBUG, "threads: took %"INT64" ms to callback %"INT32" "
-		    "callbacks, nice: %"INT32"", took2, numCallbacks, maxNiceness);
 
 	//since we need finer grained control in loop, we no longer collect
 	//the callbacks, sort, then call them.  we now call them right away
@@ -1449,14 +1278,10 @@ bool ThreadQueue::launchThread2 ( ) {
 	// get lowest niceness level of launched threads
 	ThreadEntry *t = m_launchedHead;
 	bool hasLowNicenessOut = false;
-	int32_t activeCount = 0;
 	int32_t spiderCount = 0;
 	for ( ; t ; t = t->m_nextLink ) {
 		// if he's done, skip him. maybe he hasn't been cleaned up yet
 		if ( t->m_isDone ) continue;
-
-		// count active out
-		activeCount++;
 
 		// is the launched thread niceness 0? (i.e. high priority)
 		if ( t->m_niceness == 0 ) {
@@ -1596,8 +1421,6 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 	t->m_launchedTime = now;
 	// loop2:
 	// spawn the thread
-	int32_t  count = 0;
-	pid_t pid;
 
 	// assume it does not go through
 	t->m_needsJoin = false;
@@ -1654,24 +1477,18 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 	// we're back from pthread_create
 	if ( g_conf.m_logDebugThread )
 		log(LOG_DEBUG,"thread: Back from clone "
-		    "t=0x%"PTRFMT" pid=%"INT32".",
-		    (PTRTYPE)t,(int32_t)pid);
+		    "t=0x%"PTRFMT".",
+		    (PTRTYPE)t);
 
 	// return true on successful creation of the thread
 	if ( g_errno == 0 ) {
 		// good stuff, the thread needs a join now
 		t->m_needsJoin = true;
-		if ( count > 0 )
-			log("thread: Call to clone looped %"INT32" times.",
-			    count);
 		return true;
 	}
 
 	// forever loop
 	if ( g_errno == EAGAIN ) {
-		if ( count++ == 0 )
-			log("thread: Call to clone had error: %s.",
-			    mstrerror(g_errno));
 		goto hadError;
 	}
 

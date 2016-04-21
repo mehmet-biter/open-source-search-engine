@@ -127,7 +127,6 @@ public:
 						       class ThreadEntry *t) );
 	// calls the callback of threads that are done (exited) and then
 	// removes them from the queue
-	bool         cleanUp      ( ThreadEntry *tt , int32_t maxNiceness );
 	bool         timedCleanUp ( int32_t maxNiceness );
 
 	bool isHittingFile ( class BigFile *bf );
