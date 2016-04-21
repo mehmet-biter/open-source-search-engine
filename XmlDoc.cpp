@@ -4153,14 +4153,13 @@ Links *XmlDoc::getLinks ( bool doQuickSet ) {
 	// so addOutlinkSpiderRecsToMetaList() will add it to spiderdb
 	//
 	if ( m_indexCodeValid && m_indexCode == EDOCSIMPLIFIEDREDIR ) {
-		m_links.set ( m_redirUrl.getUrl(),m_redirUrl.getUrlLen() );
+		m_links.set ( m_redirUrl.getUrl(), m_redirUrl.getUrlLen() );
 		m_linksValid = true;
 		return &m_links;
 	}
 
 	if ( m_indexCodeValid && m_indexCode == EDOCNONCANONICAL ) {
-		m_links.set(m_canonicalRedirUrl.getUrl(),
-			    m_canonicalRedirUrl.getUrlLen());
+		m_links.set(m_canonicalRedirUrl.getUrl(), m_canonicalRedirUrl.getUrlLen());
 		m_linksValid = true;
 		return &m_links;
 	}
@@ -5509,12 +5508,15 @@ Url **XmlDoc::getRedirUrl() {
 
 	// set a mime on the stack
 	HttpMime mime;
+
 	// shortcut
-	int32_t LEN = m_httpReplySize - 1;
+	int32_t httpReplyLen = m_httpReplySize - 1;
+
 	// sanity check
-	if ( LEN > 0 && ! m_httpReply ) { char *xx=NULL;*xx=0; }
+	if ( httpReplyLen > 0 && ! m_httpReply ) { char *xx=NULL;*xx=0; }
+
 	// empty reply, no redir
-	if ( LEN == 0 ) {
+	if ( httpReplyLen == 0 ) {
 		// bad mime, but i guess valid empty redir url
 		m_redirUrlValid = true;
 		// no error
@@ -5525,24 +5527,26 @@ Url **XmlDoc::getRedirUrl() {
 		// return a fake thing. content length is 0.
 		return &m_redirUrlPtr;
 	}
+
 	// set it
-	if ( LEN<0 || ! mime.set ( m_httpReply, LEN, getCurrentUrl() ) ) {
-		// set this on mime error
-		//if ( ! m_indexCode ) m_indexCode = EBADMIME;
+	if ( httpReplyLen<0 || ! mime.set ( m_httpReply, httpReplyLen, getCurrentUrl() ) ) {
 		// bad mime, but i guess valid empty redir url
 		m_redirUrlValid = true;
+
 		// return nothing, no redirect url was there
 		m_redirUrlPtr = NULL;
+
 		// no error
 		m_redirError = 0;
 		m_redirErrorValid = true;
+
 		// return a fake thing. content length is 0.
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, returning fake. Bad mime.", __FILE__,__func__,__LINE__);
+
 		return &m_redirUrlPtr;
 	}
 
-	int32_t httpStatus = mime.getHttpStatus() ;
-
+	int32_t httpStatus = mime.getHttpStatus();
 
 	Url *loc = NULL;
 
@@ -5555,25 +5559,22 @@ Url **XmlDoc::getRedirUrl() {
 	//
 	if ( httpStatus < 300 || httpStatus > 399 ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Checking meta for redirect, if not robot.txt", __FILE__,__func__,__LINE__);
+
 		// ok, crap, i was getting the xml here to get the meta
 		// http-equiv refresh tag, but that added an element of
 		// recursion that is just too confusing to deal with. so
 		// let's just parse out the meta tag by hand
-		bool checkMeta = true;
-		if ( isRobotsTxt ) checkMeta = false;
-		if ( checkMeta ) {
+		if ( !isRobotsTxt ) {
 			Url **mrup = getMetaRedirUrl();
-			if ( ! mrup || mrup == (void *)-1) 
-			{
+			if ( ! mrup || mrup == (void *)-1) {
 				if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, bad meta?", __FILE__,__func__,__LINE__);
 				return (Url **)mrup;
 			}
+
 			// set it. might be NULL if not there.
 			loc = *mrup;
 		}
-	}
-	else
-	{
+	} else {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: call mime.getLocationUrl", __FILE__,__func__,__LINE__);
 		// get Location: url (the redirect url) from the http mime
 		loc = mime.getLocationUrl();
@@ -5581,17 +5582,15 @@ Url **XmlDoc::getRedirUrl() {
 
 	// get current url
 	Url *cu = getCurrentUrl();
-	if ( ! cu || cu == (void *)-1 ) 
-	{
+	if ( ! cu || cu == (void *)-1 ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, error, could not get current url", __FILE__,__func__,__LINE__);
 		return (Url **)cu;
 	}
 
 	// get local link info
-	LinkInfo   *info1 = getLinkInfo1();
+	LinkInfo *info1 = getLinkInfo1();
 	// error or blocked
-	if ( ! info1 || info1 == (LinkInfo *)-1 ) 
-	{
+	if ( ! info1 || info1 == (LinkInfo *)-1 ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, error, could not get LinkInfo1", __FILE__,__func__,__LINE__);
 		return (Url **)info1;
 	}
@@ -5601,8 +5600,9 @@ Url **XmlDoc::getRedirUrl() {
 
 	// did we send a cookie with our last request?
 	bool sentCookieLastTime = false;
-	if ( m_redirCookieBuf.length() )
+	if ( m_redirCookieBuf.length() ) {
 		sentCookieLastTime = true;
+	}
 
 	// get cookie for redirect to fix nyt.com/nytimes.com
 	// for gap.com it uses multiple Set-Cookie:\r\n lines so we have
@@ -5659,11 +5659,15 @@ Url **XmlDoc::getRedirUrl() {
 			ptr_redirUrl    = m_redirUrl.getUrl();
 			size_redirUrl   = m_redirUrl.getUrlLen()+1;
 
+			/// @todo should we use EDOCSIMPLIFIEDREDIR
+			// m_redirError = EDOCSIMPLIFIEDREDIR
+
 			// no error
 			m_redirError = 0;
+
 			m_redirErrorValid = true;
 
-			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, Removed session cookie, return redirUrl", __FILE__,__func__,__LINE__);
+			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, Forced redirect from '%s' to '%s'", __FILE__,__func__,__LINE__, cu->getUrl(),m_redirUrl.getUrl() );
 			return &m_redirUrlPtr;
 		}
 	}
@@ -5687,7 +5691,7 @@ Url **XmlDoc::getRedirUrl() {
 	QUICKPOLL(m_niceness);
 
 	bool keep = false;
-	if ( info1->hasLinkText()          ) keep = true;
+	if ( info1->hasLinkText() ) keep = true;
 
 	// at this point we do not block anywhere
 	m_redirUrlValid = true;
@@ -5724,8 +5728,7 @@ Url **XmlDoc::getRedirUrl() {
 	}
 
 	CollectionRec *cr = getCollRec();
-	if ( ! cr ) 
-	{
+	if ( ! cr ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, return NULL. getCollRec returned false", __FILE__,__func__,__LINE__);
 		return NULL;
 	}
@@ -5768,15 +5771,17 @@ Url **XmlDoc::getRedirUrl() {
 	}
 
 	// log a msg
-	if ( g_conf.m_logSpideredUrls )
-		logf(LOG_INFO,"build: %s redirected to %s",
-		     cu->getUrl(),loc->getUrl());
+	if ( g_conf.m_logSpideredUrls ) {
+		logf( LOG_INFO, "build: %s redirected to %s", cu->getUrl(), loc->getUrl());
+	}
 
 	// if not same Domain, it is not a simplified redirect
 	bool sameDom = true;
-	int32_t dlen    = loc->getDomainLen();
-	if      ( cu->getDomainLen() != dlen                   ) sameDom=false;
-	else if ( strncmp(cu->getDomain(),loc->getDomain(),dlen))sameDom=false;
+	int32_t dlen = loc->getDomainLen();
+	if ( cu->getDomainLen() != dlen  || ( strncmp(cu->getDomain(), loc->getDomain(), dlen) ) ) {
+		sameDom = false;
+	}
+
 	if ( ! sameDom ) {
 		m_redirUrl.set ( loc );
 		m_redirUrlPtr   = &m_redirUrl;
@@ -5806,36 +5811,36 @@ Url **XmlDoc::getRedirUrl() {
 	int32_t ulen = f->getUrlLen();
 
 	// simpler if new path depth is shorter
-	if ( loc->getPathDepth( true ) < f->getPathDepth( true ) ) {
+	if ( !simplifiedRedir && loc->getPathDepth( true ) < f->getPathDepth( true ) ) {
 		simplifiedRedir = true;
 	}
 
 	// simpler if old has cgi and new does not
-	if ( f->isCgi() && ! loc->isCgi() ) {
+	if ( !simplifiedRedir && f->isCgi() && ! loc->isCgi() ) {
 		simplifiedRedir = true;
 	}
 
 	// simpler if new one is same as old but has a '/' at the end
-	if ( rlen == ulen+1 && r[rlen-1]=='/' && strncmp(r, u, ulen) == 0 ) {
+	if ( !simplifiedRedir && rlen == ulen+1 && r[rlen-1]=='/' && strncmp(r, u, ulen) == 0 ) {
 		simplifiedRedir = true;
 	}
 
 	// . if new url does not have semicolon but old one does
 	// . http://news.yahoo.com/i/738;_ylt=AoL4eFRYKEdXbfDh6W2cF
 	//   redirected to http://news.yahoo.com/i/738
-	if ( strchr ( u, ';' ) &&  ! strchr ( r, ';' ) ) {
+	if ( !simplifiedRedir && strchr ( u, ';' ) &&  ! strchr ( r, ';' ) ) {
 		simplifiedRedir = true;
 	}
 
 	// simpler is new host is www and old is not
-	if ( loc->isHostWWW() && ! f->isHostWWW() ) {
+	if ( !simplifiedRedir && loc->isHostWWW() && ! f->isHostWWW() ) {
 		simplifiedRedir = true;
 	}
 
 	// if redirect is to different domain, set simplified
 	// this helps locks from bunching on one domain
-	if ( loc->getDomainLen() != f->getDomainLen() ||
-	     strncasecmp ( loc->getDomain(), f->getDomain(), loc->getDomainLen() ) != 0 ) {
+	if ( !simplifiedRedir && ( loc->getDomainLen() != f->getDomainLen() ||
+	     strncasecmp ( loc->getDomain(), f->getDomain(), loc->getDomainLen() ) != 0 ) ) {
 		// crap, but www.hotmail.com redirects to live.msn.com
 		// login page ... so add this check here
 		if ( !f->isRoot() ) {
@@ -14048,13 +14053,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 
 	// if we are adding a simplified redirect as a link to spiderdb
-	if ( m_indexCode == EDOCSIMPLIFIEDREDIR )
+	// likewise if the error was ENONCANONICAL treat it like that
+	if ( m_indexCode == EDOCSIMPLIFIEDREDIR || m_indexCode == EDOCNONCANONICAL ) {
 		spideringLinks = true;
-
-	// likewise if there error was ENONCANONICAL treat it like that
-	if ( m_indexCode == EDOCNONCANONICAL )
-		spideringLinks = true;
-
+	}
 
 
 //@@@ BR TEST. Awaiting Matt's sanity check
@@ -14324,18 +14326,20 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// . LINKDB
 	// . linkdb records. assume one per outlink
 	// . we may index 2 16-byte keys for each outlink
-	Links *nl2 = NULL;
-	//if ( spideringLinks ) nl2 = &m_links;
 	// if injecting, spideringLinks is false, but then we don't
 	// add the links to linkdb, which causes the qainlinks() test to fail
-	nl2 = &m_links;
+	Links *nl2 = &m_links;
+
 	// do not bother if deleting. but we do add simplified redirects
 	// to spiderdb as SpiderRequests now.
 	int32_t code = m_indexCode;
-	if  ( code == EDOCSIMPLIFIEDREDIR ) code = 0;
-	if  ( code == EDOCNONCANONICAL    ) code = 0;
-	if  ( code ) nl2 = NULL;
-	//Links *ol = NULL; if ( od ) ol = od->getLinks();
+	if  ( code == EDOCSIMPLIFIEDREDIR || code == EDOCNONCANONICAL ) {
+		code = 0;
+	}
+	if  ( code ) {
+		nl2 = NULL;
+	}
+
 	// . set key/data size
 	// . use a 16 byte key, not the usual 12
 	// . use 0 for the data, since these are pure keys, which have no
@@ -14357,22 +14361,15 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	//   but this will have to be for adding to Linkdb. basically take a
 	//   lot of it from Linkdb::fillLinkdbList()
 	// . these return false with g_errno set on error
-	if ( m_useLinkdb && nl2 && ! hashLinksForLinkdb(&kt1) ) 
-	{
+	if ( m_useLinkdb && nl2 && ! hashLinksForLinkdb(&kt1) ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, hashLinksForLinkdb failed", __FILE__, __func__, __LINE__);
 		return NULL;
 	}
-	
-	//if ( add2 && ol && ! !od->m_skipIndexing &&
-	//     ol->hash(&kt2,od,m_niceness) )
-	//	return NULL;
+
 	// add up what we need. +1 for rdbId
 	int32_t needLinkdb = 0;
 	needLinkdb += kt1.m_numSlotsUsed * (sizeof(key224_t)+1);
-	//needLinkdb += kt2.m_numSlotsUsed * (sizeof(key128_t)+1);
 	need += needLinkdb;
-	// sanity check
-	//if ( ! od && m_skipIndexing && needLinkdb ) { char *xx=NULL;*xx=0; }
 
 	// PLACEDB
 	HashTableX pt1;
@@ -14409,14 +14406,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( m_sreqValid &&
 	     m_sreq.m_isInjecting &&
 	     m_sreq.m_fakeFirstIp &&
-	     ! m_sreq.m_forceDelete
-	     // do not rebuild spiderdb if only rebuilding posdb
-	     // this is explicitly for injecting so we need to add
-	     // the spider request to spiderdb...
-	     //m_useSpiderdb &&
-	     /// don't add requests like http://xyz.com/xxx-diffbotxyz0 though
-	   ) {
-		//needSpiderdb3 = m_sreq.getRecSize() + 1;
+	     ! m_sreq.m_forceDelete ) {
 		// NO! because when injecting a warc and the subdocs
 		// it contains, gb then tries to spider all of them !!! sux...
 		needSpiderdb3 = 0;
@@ -14426,10 +14416,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		needSpiderdb3 = sizeof(SpiderRequest) + m_firstUrl.getUrlLen()+1;
 
 	need += needSpiderdb3;
-
-	//int32_t needSpiderdb3 = 0;
-	//if ( m_sreqValid ) needSpiderdb3 = m_sreq.getRecSize() + 1;
-	//need += needSpiderdb3;
 
 	// . for adding our outlinks to spiderdb
 	// . see SpiderRequest::getRecSize() for description
@@ -14558,21 +14544,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	setStatus ("adding titledb recs");
 	// checkpoint
 	char *saved = m_p;
-	// . delete old title rec key if different
-	// . Repair.cpp might set useTitledb to false!
-	//if ( od && m_useTitledb && ok != nk ) {
-	//	// rdbId
-	//	*m_p++ = RDB_TITLEDB;
-	//	// key
-	//	*(key_t *)m_p = *od->getTitleRecKey();
-	//	// make it negative
-	//	*m_p &= 0xfe;
-	//	// skip over it
-	//	m_p += sizeof(key_t);
-	//	// then data size, 0
-	//	//*(int32_t *)m_p = 0;
-	//	//m_p+= 4;
-	//}
+
 	// . store title rec
 	// . Repair.cpp might set useTitledb to false!
 	if ( nd && m_useTitledb ) {
@@ -14611,13 +14583,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, addTable144 failed", __FILE__, __func__, __LINE__);
 		return NULL;
 	}
-	//if(!addTable96 ( &tt2, &tt1, date2, date1, true ,false)) return NULL;
-	//if ( od ) tt2.clear();
+
 	// sanity check
 	if ( m_p - saved > needIndexdb ) { char*xx=NULL;*xx=0; }
 	// free all mem
 	tt1.reset();
-	//tt2.reset();
+
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
 
@@ -14633,7 +14604,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( m_p - saved > needSectiondb ) { char *xx=NULL;*xx=0; }
 	// free mem
 	st1.reset();
-	//st2.reset();
+
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
 
@@ -14656,13 +14627,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 						       *nd->getLangId(),
 						        nd->getHostHash32a(),
 						        false ); // del?
-	//key_t oldk; oldk.setMin();
-	//if ( od ) // && add2 )
-	//	oldk = g_clusterdb.makeClusterRecKey ( *od->getDocId(),
-	//					       *od->getIsAdult() ,
-	//					       *od->getLangId() ,
-	//					        od->getHostHash32a(),
-	//					        true ); // del?
+
 	// . store old only if new tr is good and keys are different from old
 	// . now we store even if skipIndexing is true because i'd like to
 	//   see how many titlerecs we have and count them towards the
@@ -14679,21 +14644,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// skip it
 		m_p += sizeof(key_t);
 	}
-	// store new if different
-	//if ( od && ( ! nd || newk != oldk ) ) { // && !od->m_skipIndexing ) {
-	//	// store rdbid
-	//	*m_p = RDB_CLUSTERDB;
-	//	// use secondary if we should
-	//	if ( m_useSecondaryRdbs ) *m_p = RDB2_CLUSTERDB2;
-	//	// skip
-	//	m_p++;
-	//	// turn on last bit (undo del)
-	//	//newk.n0 |= 0x01;
-	//	// and key
-	//	*(key_t *)m_p = oldk;
-	//	// skip it
-	//	m_p += sizeof(key_t);
-	//}
+
 	// sanity check
 	if ( m_p - saved > needClusterdb ) { char *xx=NULL;*xx=0; }
 	// sanity check
@@ -14718,7 +14669,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( m_p - saved > needLinkdb ) { char *xx=NULL;*xx=0; }
 	// all done
 	kt1.reset();
-	//kt2.reset();
+
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
 
@@ -14736,12 +14687,12 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: addTable128 failed", __FILE__, __func__, __LINE__);
 		return NULL;
 	}
-	//if(! addTable128 ( &pt2, &pt1, RDB_PLACEDB, true , true))return NULL;
+
 	// sanity check
 	if ( m_p - saved > needPlacedb ) { char *xx=NULL;*xx=0; }
 	// free mem
 	pt1.reset();
-	//pt2.reset();
+
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
 
