@@ -219,9 +219,6 @@ public:
 		m_needsCleanup = true;
 	}
 
-	// all high priority threads...
-	int32_t getNumActiveHighPriorityThreads() ;
-
 	bool hasHighPriorityCpuThreads() ;
 
 	int32_t getNumWriteThreadsOut() ;

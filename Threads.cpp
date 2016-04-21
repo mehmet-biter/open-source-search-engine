@@ -487,34 +487,6 @@ bool Threads::hasHighPriorityCpuThreads() {
 }
 
 
-// used by UdpServer to see if it should call a low priority callback
-int32_t Threads::getNumActiveHighPriorityThreads() {
-	ThreadQueue *q;
-	ThreadEntry *t;
-	int32_t hiActive = 0 ;
-
-	q = &g_threads.m_threadQueues[THREAD_TYPE_DISK];
-	t = q->m_launchedHead;
-	for ( ; t ; t = t->m_nextLink )
-		if ( t->m_niceness == 0 )
-			hiActive++;
-
-	q = &g_threads.m_threadQueues[THREAD_TYPE_INTERSECT];
-	t = q->m_launchedHead;
-	for ( ; t ; t = t->m_nextLink )
-		if ( t->m_niceness == 0 )
-			hiActive++;
-
-	q = &g_threads.m_threadQueues[THREAD_TYPE_MERGE];
-	t = q->m_launchedHead;
-	for ( ; t ; t = t->m_nextLink )
-		if ( t->m_niceness == 0 )
-			hiActive++;
-
-	return hiActive;
-}
-
-
 void Threads::printState() {
 	int64_t now = gettimeofdayInMilliseconds();
 
