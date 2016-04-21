@@ -213,10 +213,6 @@ public:
 	//calls callbacks and launches all threads
 	int32_t timedCleanUp (int32_t maxTime, int32_t niceness );//= MAX_NICENESS);
 
-	// . gets the number of disk threads (seeks) and total bytes to read
-	// . ignores disk threads that are too nice (over maxNiceness)
-	int32_t getDiskThreadLoad ( int32_t maxNiceness , int32_t *totalToRead ) ;
-
 	const ThreadQueue* getThreadQueue(int type) const { return &m_threadQueues[type]; }
 	int32_t      getNumThreadQueues() { return m_numQueues; }
 	void         removeThreadsForBigfile(BigFile *bf) {
