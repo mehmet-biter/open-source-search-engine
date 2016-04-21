@@ -21,10 +21,6 @@
 // on 64-bit architectures pthread_t is 64 bit and pid_t is 32 bit:
 static pthread_t  s_pid    = (pthread_t) -1;
 
-static int32_t  g_ticker = 0;
-static int32_t  g_filterTimeout = -1;
-static pid_t g_pid    = -1;
-
 
 //pid_t getpidtid() {
 // on 64-bit architectures pthread_t is 64 bit and pid_t is 32 bit:
@@ -64,8 +60,6 @@ Threads g_threads;
 // . allows us to set the priority of the thread
 int startUp ( void *state ) ;
 void *startUp2 ( void *state ) ;
-
-static void killStalledFiltersWrapper ( int fd , void *state );
 
 static void makeCallback ( ThreadEntry *t ) ;
 
@@ -177,9 +171,6 @@ bool Threads::init ( ) {
 
  	//if ( ! g_loop.registerSleepCallback(30,NULL,launchThreadsWrapper))
  	//	return log("thread: Failed to initialize timer callback.");
-
-	if ( ! g_loop.registerSleepCallback(1000,NULL, killStalledFiltersWrapper,0))
-		return log("thread: Failed to initialize timer callback2.");
 
 	// try running blaster with 5 threads and you'll
 	// . see like a double degrade in performance for some reason!!
@@ -368,26 +359,6 @@ bool Threads::call(	char type, int32_t niceness, void *state,
 	g_errno = 0;
 	// success
 	return true;
-}
-
-
-//@todo. BR: Wtf? Why would this ever be needed?
-static void killStalledFiltersWrapper ( int fd , void *state ) {
-	// bail if no pid
-	if ( g_pid == -1 ) return;
-	// . only kill after ticker reaches a count of 30
-	// . we are called once every second, so inc it each time
-	int32_t timeout = g_filterTimeout;
-	if ( timeout <= 0 ) timeout = 30;
-	if ( g_ticker++ < timeout ) return;
-	// debug
-	log("threads: killing stalled filter process of age %"INT32" "
-	    "seconds and pid=%"INT32".",g_ticker,(int32_t)g_pid);
-	// kill him
-	int err = kill ( g_pid , 9 );
-	// don't kill again
-	g_pid = -1;
-	if ( err != 0 ) log("threads: kill filter: %s", mstrerror(err) );
 }
 
 
