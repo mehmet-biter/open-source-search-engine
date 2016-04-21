@@ -296,9 +296,6 @@ class CollectionRec {
 
 	int32_t m_treeCount;
 
-	bool swapOut();
-	bool m_swappedOut;
-
 	int64_t m_spiderCorruptCount;
 
 	// holds ips that have been detected as being throttled and we need

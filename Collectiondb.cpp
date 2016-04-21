@@ -553,8 +553,6 @@ bool Collectiondb::addNewColl ( char *coll ,
 }
 
 void CollectionRec::setBasePtr ( char rdbId , class RdbBase *base ) {
-	// if in the process of swapping in, this will be false...
-	//if ( m_swappedOut ) { char *xx=NULL;*xx=0; }
 	if ( rdbId < 0 || rdbId >= RDB_END ) { char *xx=NULL;*xx=0; }
 	// Rdb::deleteColl() will call this even though we are swapped in
 	// but it calls it with "base" set to NULL after it nukes the RdbBase
@@ -576,66 +574,9 @@ RdbBase *CollectionRec::getBase ( char rdbId ) {
 
 	if ( s_inside ) { char *xx=NULL;*xx=0; }
 
-	if ( ! m_swappedOut ) return m_bases[(unsigned char)rdbId];
-
-	log("cdb: swapin collnum=%"INT32"",(int32_t)m_collnum);
-
-	// sanity!
-	if ( g_threads.amThread() ) { char *xx=NULL;*xx=0; }
-
-	s_inside = true;
-
-	// turn off quickpoll to avoid getbase() being re-called and
-	// coring from s_inside being true
-	int32_t saved = g_conf.m_useQuickpoll;
-	g_conf.m_useQuickpoll = false;
-
-	// load them back in. return NULL w/ g_errno set on error.
-	if ( ! g_collectiondb.addRdbBasesForCollRec ( this ) ) {
-		log("coll: error swapin: %s",mstrerror(g_errno));
-		g_conf.m_useQuickpoll = saved;
-		s_inside = false;
-		return NULL;
-	}
-
-	g_conf.m_useQuickpoll = saved;
-	s_inside = false;
-
-	g_collectiondb.m_numCollsSwappedOut--;
-	m_swappedOut = false;
-
-	log("coll: swapin was successful for collnum=%"INT32"",(int32_t)m_collnum);
-
-	return m_bases[(unsigned char)rdbId];	
+	return m_bases[(unsigned char)rdbId];
 }
 
-bool CollectionRec::swapOut ( ) {
-
-	if ( m_swappedOut ) return true;
-
-	log("cdb: swapout collnum=%"INT32"",(int32_t)m_collnum);
-
-	// free all RdbBases in each rdb
-	for ( int32_t i = 0 ; i < g_process.m_numRdbs ; i++ ) {
-	     Rdb *rdb = g_process.m_rdbs[i];
-	     // this frees all the RdbBase::m_files and m_maps for the base
-	     rdb->resetBase ( m_collnum );
-	}
-
-	// now free each base itself
-	for ( int32_t i = 0 ; i < g_process.m_numRdbs ; i++ ) {
-		RdbBase *base = m_bases[i];
-		if ( ! base ) continue;
-		mdelete (base, sizeof(RdbBase), "Rdb Coll");
-		delete  (base);
-		m_bases[i] = NULL;
-	}
-
-	m_swappedOut = true;
-	g_collectiondb.m_numCollsSwappedOut++;
-
-	return true;
-}
 
 // . called only by addNewColl() and by addExistingColl()
 bool Collectiondb::registerCollRec ( CollectionRec *cr ,  bool isNew ) {
@@ -652,8 +593,6 @@ bool Collectiondb::addRdbBaseToAllRdbsForEachCollRec ( ) {
 	for ( int32_t i = 0 ; i < m_numRecs ; i++ ) {
 		CollectionRec *cr = m_recs[i];
 		if ( ! cr ) continue;
-		// skip if swapped out
-		if ( cr->m_swappedOut ) continue;
 		// add rdb base files etc. for it
 		addRdbBasesForCollRec ( cr );
 	}
@@ -1408,7 +1347,6 @@ CollectionRec::CollectionRec() {
 	m_collnum = -1;
 	m_coll[0] = '\0';
 	m_updateRoundNum = 0;
-	m_swappedOut = false;
 	memset ( m_bases , 0 , sizeof(RdbBase *)*RDB_END );
 	// how many keys in the tree of each rdb? we now store this stuff
 	// here and not in RdbTree.cpp because we no longer have a maximum
