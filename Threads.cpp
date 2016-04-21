@@ -466,28 +466,6 @@ bool Threads::isHittingFile ( BigFile *bf ) {
 }
 
 
-bool Threads::cleanUp ( ThreadEntry *t , int32_t maxNiceness ) {
-	bool didSomething = false;
- loop:
-	// assume no more cleanup needed
-	m_needsCleanup = false;
-
-	// debug msg
-	//log("cleaning up exited threads and calling callbacks");
-	for ( int32_t i = 0 ; i < m_numQueues ; i++ ) {
-		didSomething |= m_threadQueues[i].cleanUp( t , maxNiceness );
-	}
-
-	// . loop more if we got a new one
-	// . thread will set this when about to exit
-	// . waitpid() may be interrupted by a SIGCHLD and not get his pid
-	if ( m_needsCleanup )
-		goto loop;
-
-	return didSomething;
-}
-
-
 // used by UdpServer to see if it should call a low priority callback
 bool Threads::hasHighPriorityCpuThreads() {
 	ThreadQueue *q;

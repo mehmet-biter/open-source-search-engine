@@ -205,9 +205,6 @@ public:
 	// try to launch threads waiting to be launched in any queue
 	int32_t launchThreads ();
 
-	// call cleanUp() for each thread queue
-	bool cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) ;
-
 	bool isHittingFile ( class BigFile *bf ) ;
 
 	//calls callbacks and launches all threads
