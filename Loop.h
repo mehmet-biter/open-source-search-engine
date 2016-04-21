@@ -69,9 +69,6 @@ class Slot {
 // . 1  niceness disk thread, when running, will not allow niceness 2 to launch
 //#define MAX_NICENESS 2
 
-// are there pending signals for which we should call g_udpServer.makeCallbacks
-extern bool g_someAreQueued;
-
 // . this is now the time synced with host #0
 //extern int64_t g_nowGlobal;
 

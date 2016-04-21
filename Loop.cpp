@@ -34,9 +34,6 @@
 
 // TODO: don't mask signals, catch them as they arrive? (like in phhttpd)
 
-// are some signals to call g_udpServer2.makeCallbacks() queued?
-bool g_someAreQueued = false;
-
 static int32_t g_missedQuickPolls = 0;
 int32_t g_numSigChlds = 0;
 int32_t g_numSigPipes = 0;
@@ -842,13 +839,6 @@ void Loop::doPoll ( ) {
 	// print log
 	if ( g_log.needsPrinting() ) g_log.printBuf();
 
-	// sigqueue() might have been called from a hot udp server and
-	// we queued some handlers to be called
-	if ( g_someAreQueued ) {
-		// assume none are queued now, we may get interrupted
-		// and it may get set back to true
-		g_someAreQueued = false;
-	}
 	if(g_udpServer.needBottom()) g_udpServer.makeCallbacks_ass ( 1 );
 
 	int32_t n;
