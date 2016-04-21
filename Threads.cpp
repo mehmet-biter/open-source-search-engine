@@ -802,13 +802,6 @@ int startUp ( void *state ) {
 	// our signal set
 	sigset_t set;
 	sigemptyset(&set);
-	//sigaddset(&set, SIGHUP);
-	// we need this here so if we break the gb process with gdb it
-	// does not kill the child processes when it sends out the SIGINT.
-	sigaddset(&set, SIGINT);
-	// ignore the real time signal, man...
-	//sigaddset(&set, GB_SIGRTMIN);
-	//pthread_sigmask(SIG_BLOCK, &set, NULL);
 	// turn these off in the thread
 	sigaddset   ( &set , SIGPROF );
 	pthread_sigmask(SIG_BLOCK,&set,NULL);

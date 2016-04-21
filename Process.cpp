@@ -978,9 +978,6 @@ bool Process::shutdown2 ( ) {
 		kill(getpid(), signum);
 		// default handler should be called after we return now
 
-		// . force an abnormal termination which will cause a core dump
-		// . do not dump core on SIGHUP signals any more though
-		//abort();
 		// keep compiler happy
 		return true;
 	}
