@@ -219,6 +219,12 @@ public:
 
 	const ThreadQueue* getThreadQueue(int type) const { return &m_threadQueues[type]; }
 	int32_t      getNumThreadQueues() { return m_numQueues; }
+	void         removeThreadsForBigfile(BigFile *bf) {
+		m_threadQueues[THREAD_TYPE_DISK].removeThreads(bf);
+	}
+	void notifyThreadCleanupNeeded() {
+		m_needsCleanup = true;
+	}
 
 	// all high priority threads...
 	int32_t getNumActiveHighPriorityThreads() ;

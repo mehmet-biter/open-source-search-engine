@@ -830,7 +830,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	// . if we're blocking then do it now
 	// . this should return false and set g_errno on error, true otherwise
 	if ( ! isNonBlocking ) 	goto skipThread;
-	if ( g_threads.m_disabled ) goto skipThread;
+	if ( g_threads.areThreadsDisabled() ) goto skipThread;
 	if ( ! g_conf.m_useThreads ) goto skipThread;
 
 
@@ -1907,7 +1907,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		//if ( m_pc ) m_pc->rmVfd ( m_vfd );
 		// remove all queued threads that point to us that have not
 		// yet been launched
-		g_threads.m_threadQueues[THREAD_TYPE_DISK].removeThreads(this);
+		g_threads.removeThreadsForBigfile(this);
 	}
 	// close em up
 	//close();
@@ -2274,7 +2274,7 @@ bool BigFile::close ( ) {
 
 	// remove all queued threads that point to us that have not
 	// yet been launched
-	g_threads.m_threadQueues[THREAD_TYPE_DISK].removeThreads(this);
+	g_threads.removeThreadsForBigfile(this);
 	return true;
 }
 

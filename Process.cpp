@@ -757,7 +757,7 @@ bool Process::save2 ( ) {
 	// returns false, so call it with checking the return value.
 	if ( ! g_process.m_powerIsOn ) saveBlockingFiles2() ;
 	// for Test.cpp parser test we want to save the waitingtree.dat
-	else if ( g_threads.m_disabled ) saveBlockingFiles2() ;
+	else if ( g_threads.areThreadsDisabled() ) saveBlockingFiles2() ;
 
 	// until all caches have saved, disable them
 	g_cacheWritesEnabled = false;

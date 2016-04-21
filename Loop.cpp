@@ -506,7 +506,7 @@ void sigHandlerQueue_r ( int x , siginfo_t *info , void *v ) {
 		g_numSigQueues++;
 		//log("admin: got sigqueue");
 		// the thread is done
-		g_threads.m_needsCleanup = true;
+		g_threads.notifyThreadCleanupNeeded();
 		return;
 	}
 
@@ -1279,7 +1279,7 @@ void Loop::disableQuickpollTimer() {
 
 
 void Loop::wakeupPollLoop() {
-	g_threads.m_needsCleanup = true;
+	g_threads.notifyThreadCleanupNeeded();
 	char dummy='d';
 	(void)write(m_pipeFd[1],&dummy,1);
 }

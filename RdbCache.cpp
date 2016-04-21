@@ -1362,7 +1362,7 @@ bool RdbCache::save ( bool useThreads ) {
 				      saveWrapper       ) )
 			return false;
 		// crap had an error spawning thread
-		if ( ! g_threads.m_disabled )
+		if ( g_threads.areThreadsEnabled() )
 			log("db: Error spawning cache write thread. "
 			    "Not using threads.");
 	}

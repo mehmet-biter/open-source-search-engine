@@ -2443,7 +2443,7 @@ bool RdbTree::fastSave ( const char *dir,
 			      threadDoneWrapper ,
 			      saveWrapper   ) ) return false;
 	// if it failed
-	if ( ! g_threads.m_disabled ) 
+	if ( g_threads.areThreadsEnabled() ) 
 		log("db: Thread creation failed. Blocking while saving tree. "
 		    "Hurts performance.");
  skip:
