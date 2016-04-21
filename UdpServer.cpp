@@ -1551,18 +1551,6 @@ bool UdpServer::makeCallbacks_ass ( int32_t niceness ) {
 		    "inquickpoll=%"INT32"",
 		    niceness,(int32_t)g_loop.m_inQuickPoll);
 
-	// . if there are active high priority threads, do not 
-	//   call low priority callbacks. in that case
-	// . This seems to block things up to much?
-	// . try again...
-	// . seems like it is hurting high niceness threads
-	//   from completing!!!
-	//int32_t active = g_threads.getNumActiveHighPriorityThreads() ;
-	//if ( active ) {
-	//	if ( niceness >=  1 ) return true;
-	//	if ( niceness == -1 ) niceness = 0;
-	//}
-
 	// assume noone called
 	int32_t numCalled = 0;
 	if(niceness > 0) m_needBottom = false;
