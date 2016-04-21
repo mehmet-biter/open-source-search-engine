@@ -1043,9 +1043,6 @@ ThreadEntry *ThreadQueue::addEntry ( int32_t   niceness,
 	t->m_isDone       = false;
 	t->m_isLaunched   = false;
 	t->m_queuedTime   = gettimeofdayInMilliseconds();
-	t->m_allocBuf     = NULL;
-	t->m_allocSize    = 0;
-	t->m_errno        = 0;
 
 	t->m_bestHeadPtr  = NULL;
 	t->m_bestTailPtr  = NULL;

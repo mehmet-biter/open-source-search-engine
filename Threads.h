@@ -42,16 +42,13 @@ public:
 	bool         m_isOccupied               ; // is thread waiting/going?
 	bool         m_isLaunched               ; // has it been launched?
 	bool         m_isDone                   ; // is it done running?
-	char        *m_allocBuf                 ; // BigFile.cpp stuck reads
-	int32_t      m_allocSize                ; // BigFile.cpp stuck reads
-	int32_t         m_errno                    ; // BigFile.cpp stuck reads
-	int32_t         m_bytesToGo                ; // BigFile.cpp stuck reads
+	int32_t         m_bytesToGo             ; // for memory alloc and stats
 	int64_t    m_queuedTime               ; // when call() was called
 	int64_t    m_launchedTime             ; // when thread was launched
 	int64_t    m_preExitTime              ; // when thread was about done
 	int64_t    m_exitTime                 ; // when thread was done
 	char         m_qnum                     ; // what thread queue we r in
-	char         m_doWrite                  ; // BigFile.cpp stuck reads
+	char         m_doWrite                  ; // read or write?
 
 	char        *m_stack                    ;
 	int32_t         m_stackSize                ;

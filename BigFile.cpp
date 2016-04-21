@@ -1108,7 +1108,6 @@ void doneWrapper ( void *state , ThreadEntry *t ) {
 
 	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/	
 	fstate->m_doneTime  = t->m_exitTime; // set in Threads.cpp
-	fstate->m_errno     = t->m_errno;
 
 	// exit write mode
 	if ( fstate->m_doWrite ) {
@@ -1260,12 +1259,7 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	//}
 
 	// extract our class
-	FileState *orig = (FileState *)state;
-
-	// save this shit on the stack in case fstate gets pull from under us
-	FileState tmp;
-	gbmemcpy ( &tmp , orig , sizeof(FileState ));
-	FileState *fstate = &tmp;
+	FileState *fstate = (FileState *)state;
 
 	// get THIS
 	//BigFile *THIS = fstate->m_this;
@@ -1388,11 +1382,6 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	// . the thread's cleanUp handler should call g_threads.exit(fstate)
 	//g_threads.exit ( fstate );
 	//pthread_exit ( NULL );
-
-	// update this since our updates were done to the FileState "tmp"
-	// which is just on the stack
-	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/
-	t->m_errno = fstate->m_errno;
 
 	time_took = gettimeofdayInMilliseconds() - time_start;
 
