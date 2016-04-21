@@ -2267,29 +2267,6 @@ bool UdpServer::makeCallback_ass ( UdpSlot *slot ) {
 	g_errno = 0;
 	// calling a handler counts
 	return true;
-	// come here if we can't make callbacks cuz we're in a sig handler
- queueSig:
-	// don't double queue
-	if ( slot->m_isQueued ) return false;
-	// mark it as queued so we don't queue it again
-	slot->m_isQueued = true;
-	// store any error code in slot so when callback is called
-	// it will be there
-	slot->m_errno = g_errno;
-	// debug msg
-	if ( g_conf.m_logDebugUdp ) 
-		log(LOG_DEBUG,"udp: Queuing makeCallbacks_ass() sig for "
-		    "msgType=0x%hhx slot=%"PTRFMT"", 
-		    slot->m_msgType,(PTRTYPE)slot);
-	// . if this fails it normally sends a SIGIO but I guess that won't
-	//   happen since we're already in an interrupt handler, so we have
-	//   to let g_loop know to poll
-	// . TODO: won't he have to wakeup before he'll poll?????
-	// . tell g_loop that we did a queue
-	// . he sets this to false before calling our makeCallbacks_ass()
-	g_someAreQueued = true;
-	// nothing was called, no callback or handler
-	return false;
 }
 
 // this wrapper is called every 15 ms by the Loop class
