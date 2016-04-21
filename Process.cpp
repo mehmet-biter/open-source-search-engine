@@ -813,17 +813,11 @@ bool Process::shutdown2 ( ) {
 	g_merge.suspendMerge () ;
 	g_merge2.suspendMerge() ;
 
-	// assume we will use threads
-	// no, not now that we disabled them
-	bool useThreads = false;//true;
-
 	// if urgent do not allow any further threads to be spawned unless
 	// they were already queued
 	if ( m_urgent ) {
-		// do not use thread spawning
-		useThreads = false;
 		// turn off all threads just in case
-		if ( ! useThreads ) g_threads.disableThreads();
+		g_threads.disableThreads();
 	}
 
 	static bool s_printed = false;
@@ -871,7 +865,7 @@ bool Process::shutdown2 ( ) {
 
 	// . tell all rdbs to save trees
 	// . will return true if no rdb tree needs a save
-	if ( ! saveRdbTrees ( useThreads , true ) ) 
+	if ( ! saveRdbTrees ( false , true ) ) 
 		if ( ! m_urgent ) return false;
 
 	// save this right after the trees in case we core
