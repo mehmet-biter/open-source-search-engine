@@ -1251,12 +1251,6 @@ int64_t gettimeofdayInMillisecondsGlobal() {
 #include "Threads.h"
 
 int64_t gettimeofdayInMillisecondsSynced() {
-	// if in a sig handler then return g_now
-	//if ( g_inSigHandler ) return g_nowGlobal;
-	// i find that a pthread can call this function even though
-	// a signal handler is underway in the main thread!
-	if ( g_inSigHandler && ! g_threads.amThread() ) { 
-		char *xx = NULL; *xx = 0; }
 	// sanity check
 	if ( ! isClockInSync() ) { 
 		static int s_printed = 0;
@@ -1279,12 +1273,6 @@ int64_t gettimeofdayInMillisecondsSynced() {
 }
 
 int64_t gettimeofdayInMillisecondsGlobalNoCore() {
-	// if in a sig handler then return g_now
-	//if ( g_inSigHandler ) return g_nowGlobal;
-	// i find that a pthread can call this function even though
-	// a signal handler is underway in the main thread!
-	if ( g_inSigHandler && ! g_threads.amThread() ) { 
-		char *xx = NULL; *xx = 0; }
 	// sanity check
 	//if ( ! g_clockInSync ) { char *xx = NULL; *xx = 0; }
 	//if ( ! g_clockInSync ) 
@@ -1332,18 +1320,9 @@ time_t getTime () {
 }
 
 // . get time in seconds
-// . use this instead of call to time(NULL) cuz it uses adjustment
 time_t getTimeLocal () {
-	// if in a sig handler then return g_now/1000
-	//if ( g_inSigHandler ) return (time_t)(g_now / 1000);
-	// i find that a pthread can call this function even though
-	// a signal handler is underway in the main thread!
-	if ( g_inSigHandler && ! g_threads.amThread() ) { 
-		char *xx = NULL; *xx = 0; }
 	// get time now
 	uint32_t now = gettimeofdayInMilliseconds() / 1000;
-	// and adjust it
-	//now += s_adjustment / 1000;
 	return (time_t)now;
 }
 
