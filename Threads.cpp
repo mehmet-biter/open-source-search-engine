@@ -1188,11 +1188,6 @@ bool ThreadQueue::timedCleanUp ( int32_t maxNiceness ) {
 		if ( ! t->m_isLaunched )
 			continue;
 
-		// . we were segfaulting right here before because the thread
-		//   was setting t->m_pid and at this point it was not
-		//   set so t->m_pid was a bogus value
-		// . thread may have seg faulted, in which case sigbadhandler()
-		//   in Loop.cpp will get it and set errno to 0x7fffffff
 		// skip if not done yet
 		if ( ! t->m_isDone     )
 			continue;
@@ -1333,11 +1328,6 @@ bool ThreadQueue::cleanUp ( ThreadEntry *tt , int32_t maxNiceness ) {
 		if ( ! t->m_isLaunched )
 			continue;
 
-		// . we were segfaulting right here before because the thread
-		//   was setting t->m_pid and at this point it was not
-		//   set so t->m_pid was a bogus value
-		// . thread may have seg faulted, in which case sigbadhandler()
-		//   in Loop.cpp will get it and set errno to 0x7fffffff
 		// skip if not done yet
 		if ( ! t->m_isDone     )
 			continue;

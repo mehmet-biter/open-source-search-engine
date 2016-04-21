@@ -711,11 +711,6 @@ void printStackTrace (bool print_location) {
 // TODO: if we get a segfault while saving, what then?
 void sigbadHandler ( int x , siginfo_t *info , void *y ) {
 
-	// thread should set it errno to 0x7fffffff which means that
-	// Threads.cpp should not look for its ThreadEntry::m_isDone flag
-	// to be set before calling waitpid() on it
-	if ( g_threads.amThread() ) errno = 0x7fffffff;
-
 	// turn off sigalarms
 	g_loop.disableQuickpollTimer();
 
