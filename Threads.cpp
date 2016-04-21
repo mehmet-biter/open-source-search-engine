@@ -810,8 +810,6 @@ int startUp ( void *state ) {
 	//sigaddset(&set, GB_SIGRTMIN);
 	//pthread_sigmask(SIG_BLOCK, &set, NULL);
 	// turn these off in the thread
-	sigaddset   ( &set , SIGALRM );
-	sigaddset   ( &set , SIGVTALRM );
 	sigaddset   ( &set , SIGPROF );
 	pthread_sigmask(SIG_BLOCK,&set,NULL);
 	// . what this lwp's priority be?

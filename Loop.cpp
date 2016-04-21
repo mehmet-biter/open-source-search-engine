@@ -59,8 +59,6 @@ char g_niceness = 0;
 // we make sure the same callback/handler is not hogging the cpu when it is
 // niceness 0 and we do not interrupt it, so this is a critical check
 class UdpSlot *g_callSlot = NULL;
-static int32_t g_lastTransId  = 0;
-static int32_t g_transIdCount = 0;
 
 // use this in case we unregister the "next" callback
 static Slot *s_callbacksNext;
@@ -77,7 +75,6 @@ void Loop::reset() {
 static void sigbadHandler ( int x , siginfo_t *info , void *y ) ;
 static void sigpwrHandler ( int x , siginfo_t *info , void *y ) ;
 static void sighupHandler ( int x , siginfo_t *info , void *y ) ;
-static void sigvtalrmHandler( int x , siginfo_t *info , void *y ) ;
 static void sigprofHandler(int signo, siginfo_t *info, void *context);
 
 void Loop::unregisterReadCallback ( int fd, void *state ,
@@ -652,11 +649,6 @@ bool Loop::init ( ) {
 	if ( sigaction ( SIGPWR, &sa, 0 ) < 0 ) g_errno = errno;
 
 
-	// block sigvtalarm
-	sa.sa_sigaction = sigvtalrmHandler;
-	if ( sigaction ( SIGVTALRM, &sa, 0 ) < 0 ) g_errno = errno;
-	if ( g_errno ) log("loop: sigaction SIGVTALRM: %s.", mstrerror(errno));
-
 	//SIGPROF is used by the profiler
 	sa.sa_sigaction = sigprofHandler;
 	if ( sigaction ( SIGPROF, &sa, NULL ) < 0 ) g_errno = errno;
@@ -727,7 +719,6 @@ void sigbadHandler ( int x , siginfo_t *info , void *y ) {
 	sigaction ( SIGBUS , &sa, 0 ) ;
 	sigaction ( SIGQUIT, &sa, 0 ) ;
 	sigaction ( SIGSYS , &sa, 0 ) ;
-	//sigaction ( SIGALRM, &sa, 0 ) ;
 	// if we've already been here, or don't need to be, then bail
 	if ( g_loop.m_shutdown ) {
 		log("loop: sigbadhandler. shutdown already called.");
@@ -746,105 +737,6 @@ void sigbadHandler ( int x , siginfo_t *info , void *y ) {
 	// . if "urgent" is true it won't broadcast its shutdown to all hosts
 	g_process.shutdown ( true );
 }
-
-void sigvtalrmHandler ( int x , siginfo_t *info , void *y ) {
-
-	// do not allow threads
-	// this call is very fast, can be called like 400M times per second
-	if ( g_threads.amThread() ) return;
-
-	// stats
-	g_numVTAlarms++;
-
-	// see if a niceness 0 algo is hogging the cpu
-	if ( g_callSlot && g_niceness == 0 ) {
-		// are we handling the same request or callback?
-		if ( g_callSlot->m_transId == g_lastTransId ) g_transIdCount++;
-		else                                          g_transIdCount=1;
-		// set it
-		g_lastTransId = g_callSlot->m_transId;
-		// sanity check
-		//if ( g_transIdCount >= 10 ) { char *xx=NULL;*xx=0; }
-		bool logIt = false;
-		if ( g_transIdCount >= 4 ) logIt = true;
-		// do not spam for msg99 handler so much
-		if ( g_callSlot->m_msgType == 0x99 && g_transIdCount != 50 )
-			logIt = false;
-		// it's not safe to call fprintf() even with
-		// mutex locks for sig handlers with pthreads
-		// going on!!!
-		logIt = false;
-		// panic if hogging
-		if ( logIt ) {
-			if ( g_callSlot->m_callback )
-				log("loop: msg type 0x%hhx reply callback "
-				    "hogging cpu for %"INT32" ticks",
-				    g_callSlot->m_msgType,
-				    g_transIdCount);
-			else
-				log("loop: msg type 0x%hhx handler "
-				    "hogging cpu for %"INT32" ticks",
-				    g_callSlot->m_msgType,
-				    g_transIdCount);
-		}
-	}
-
-	// sanity check
-	if ( g_loop.m_inQuickPoll &&
-	     g_niceness != 0 &&
-	     // seems to happen a lot when doing a qa test because we slow
-	     // things down a lot when that happens
-	     ! g_conf.m_testParserEnabled &&
-	     ! g_conf.m_testSpiderEnabled &&
-	     ! g_conf.m_testSearchEnabled &&
-	     // likewise if doing a page parser test...
-	     ! g_inPageParser &&
-	     ! g_inPageInject     ) {
-		//char *xx=NULL;*xx=0; }
-	}
-	// basically ignore this alarm if already in a quickpoll
-	if ( g_loop.m_inQuickPoll ) return;
-
-	if ( ! g_conf.m_useQuickpoll ) return;
-
-	g_loop.m_needsToQuickPoll = true;
-
-	//fprintf(stderr,"missed=%"INT32"\n",g_missedQuickPolls);
-
-	// another missed quickpoll
-	if ( g_niceness == 1 ) g_missedQuickPolls++;
-	// reset if niceness is 0
-	else if ( g_niceness == 0 ) g_missedQuickPolls = 0;
-
-	// if we missed to many, then dump core
-	if ( g_niceness == 1 && g_missedQuickPolls >= 4 ) {
-		//g_inSigHandler = true;
-		// NOT SAFE for pthreads cuz we're in sig handler
-		//g_inSigHandler = false;
-		// seems to core a lot in gbcompress() we need to
-		// put a quickpoll into zlib deflate() or
-		// deflat_slot() or logest_match() function
-		// for now do not dump core --- re-enable this later
-		// mdw TODO
-		//char *xx=NULL;*xx=0;
-	}
-
-	// if it has been a while since heartbeat (> 10000ms) dump core so
-	// we can see where the process was... we are in a long niceness 0
-	// function or a niceness 1 function without a quickpoll, so that
-	// heartbeatWrapper() function never gets called.
-	if ( g_process.m_lastHeartbeatApprox == 0 ) return;
-	if ( g_conf.m_maxHeartbeatDelay <= 0 ) return;
-	if ( gettimeofdayInMilliseconds() - g_process.m_lastHeartbeatApprox >
-	     g_conf.m_maxHeartbeatDelay ) {
-		//char *xx=NULL; *xx=0;
-
-	}
-
-	//logf(LOG_DEBUG, "xxx now: %"INT64"! approx: %"INT64"", g_now, g_nowApprox);
-
-}
-
 
 static void sigprofHandler(int signo, siginfo_t *info, void *context)
 {
@@ -1261,15 +1153,10 @@ void Loop::canQuickPoll(int32_t niceness) {
 
 void Loop::enableQuickpollTimer() {
 	m_canQuickPoll = true;
-	//	logf(LOG_WARN, "xxx enabling");
-//	setitimer(ITIMER_VIRTUAL, &m_quickInterrupt, NULL);
-//	setitimer(ITIMER_REAL, &m_realInterrupt, NULL);
 }
 
 void Loop::disableQuickpollTimer() {
-	//logf(LOG_WARN,"xxx disabling");
 	m_canQuickPoll = false;
-//	setitimer(ITIMER_VIRTUAL, &m_noInterrupt, NULL);
 }
 
 
