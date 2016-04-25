@@ -2547,31 +2547,13 @@ void doneSendingNotification ( void *state ) {
 	// sanity
 	if ( cr->m_spiderStatus == 0 ) { char *xx=NULL;*xx=0; }
 
-	// i guess each host advances its own round... so take this out
-	// sanity check
-	//if ( g_hostdb.m_myHost->m_hostId != 0 ) { char *xx=NULL;*xx=0; }
-
-	//float respiderFreq = -1.0;
 	float respiderFreq = cr->m_collectiveRespiderFrequency;
 
 	// if not REcrawling, set this to 0 so we at least update our
 	// round # and round start time...
-	if ( respiderFreq < 0.0 ) //== -1.0 ) 
+	if ( respiderFreq < 0.0 ) {
 		respiderFreq = 0.0;
-
-	//if ( respiderFreq < 0.0 ) {
-	//	log("spider: bad respiderFreq of %f. making 0.",
-	//	    respiderFreq);
-	//	respiderFreq = 0.0;
-	//}
-
-	// advance round if that round has completed, or there are no
-	// more urls to spider. if we hit maxToProcess/maxToCrawl then 
-	// do not increment the round #. otherwise we should increment it.
-	// do allow maxtocrawl guys through if they repeat, however!
-	//if(cr->m_spiderStatus == SP_MAXTOCRAWL && respiderFreq <= 0.0)return;
-	//if(cr->m_spiderStatus == SP_MAXTOPROCESS && respiderFreq<=0.0)return;
-
+	}
 	
 	////////
 	//
@@ -2586,28 +2568,12 @@ void doneSendingNotification ( void *state ) {
 	// their maxToCrawl limit or something.
 	if ( respiderFreq <= 0.0 ) return;
 
-
 	// if we hit the max to crawl rounds, then stop!!! do not
 	// increment the round...
 	if ( cr->m_spiderRoundNum >= cr->m_maxCrawlRounds &&
 	     // there was a bug when maxCrawlRounds was 0, which should
 	     // mean NO max, so fix that here:
 	     cr->m_maxCrawlRounds > 0 ) return;
-
-	// this should have been set below
-	//if ( cr->m_spiderRoundStartTime == 0 ) { char *xx=NULL;*xx=0; }
-
-	// find the "respider frequency" from the first line in the url
-	// filters table whose expressions contains "{roundstart}" i guess
-	//for ( int32_t i = 0 ; i < cr->m_numRegExs ; i++ ) {
-	//	// get it
-	//	char *ex = cr->m_regExs[i].getBufStart();
-	//	// compare
-	//	if ( ! strstr ( ex , "roundstart" ) ) continue;
-	//	// that's good enough
-	//	respiderFreq = cr->m_spiderFreqs[i];
-	//	break;
-	//}
 
 	int32_t seconds = (int32_t)(respiderFreq * 24*3600);
 	// add 1 for lastspidertime round off errors so we can be assured
@@ -2620,17 +2586,8 @@ void doneSendingNotification ( void *state ) {
 	//cr->m_spiderRoundStartTime += respiderFreq;
 	char roundTime[128];
 	sprintf(roundTime,"%"UINT32"", (uint32_t)(getTimeGlobal() + seconds));
-	// roundNum++ round++
 	char roundStr[128];
 	sprintf(roundStr,"%"INT32"", cr->m_spiderRoundNum + 1);
-
-	// waiting tree will usually be empty for this coll since no
-	// spider requests had a valid spider priority, so let's rebuild!
-	// this is not necessary because PF_REBUILD is set for the
-	// "spiderRoundStart" parm in Parms.cpp so it will rebuild if that parm
-	// changes already.
-	//if ( cr->m_spiderColl )
-	//	cr->m_spiderColl->m_waitingTreeNeedsRebuild = true;
 
 	// we have to send these two parms to all in cluster now INCLUDING
 	// ourselves, when we get it in Parms.cpp there's special
