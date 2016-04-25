@@ -1586,28 +1586,6 @@ bool XmlDoc::hashIncomingLinkText ( HashTableX *tt               ,
 		hi.m_startDist += 20;
 	}
 
-	/*
-	// . hash gbkeyword:numinlinks where score is # of inlinks from 1-255
-	// . do not hash gbkeyword:numinlinks if we don't got any
-	if ( ecount <= 0 ) return true;
-	// limit it since our score can't be more than 255 (8-bits)
-	//if ( ecount > 255 ) ecount = 255;
-	// convert our 32 bit score to 8-bits so we trick it!
-	//int32_t score = score8to32 ( (uint8_t)ecount );
-	// watch out for wrap
-	//if ( score < 0 ) score = 0x7fffffff;
-	// update hash parms
-	HashInfo hi;
-	hi.m_tt        = tt;
-	hi.m_prefix    = "gbkeyword";
-	hi.m_hashGroup = HASHGROUP_INTAG;
-	// for terms where word position/density/diversity is irrelevant,
-	// we can store this value...
-	hi.m_fakeValue = ecount;
-	// hash gbkeyword:numinlinks term
-	if ( ! hashString ( "numinlinks",10,&hi ) )return false;
-	*/
-
 	return true;
 }
 
