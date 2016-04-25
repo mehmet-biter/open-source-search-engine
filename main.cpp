@@ -68,7 +68,6 @@
 #include "Process.h"
 #include "sort.h"
 #include "RdbBuckets.h"
-#include "Test.h"
 #include "SpiderProxy.h"
 #include "HashTable.h"
 
@@ -2447,8 +2446,6 @@ int main2 ( int argc , char *argv[] ) {
 	// the spider cache used by SpiderLoop
 	if ( ! g_spiderCache.init() ) {
 		log("db: SpiderCache init failed." ); return 1; }
-	if ( ! g_test.init() ) {
-		log("db: test init failed" ); return 1; }
 
 	// ensure clusterdb tree is big enough for quicker generation
 	//if ( strcmp ( cmd, "genclusterdb" ) == 0 ) {

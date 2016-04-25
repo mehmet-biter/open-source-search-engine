@@ -22,7 +22,6 @@ int32_t klogctl( int, char *,int ) { return 0; }
 #include "Spider.h"
 #include "SpiderColl.h"
 #include "SpiderLoop.h"
-#include "Test.h"
 #include "Rebalance.h"
 #include "Version.h"
 
@@ -896,22 +895,6 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 	}
 	// always send back an empty reply
 	g_udpServer.sendReply_ass( reply, replySize, NULL, 0, slot, NULL, NULL, 500, 1000, true );
-
-	// . now in PingServer.cpp for hostid 0 it checks
-	//   the urlsindexed from each host if g_conf.m_testParserEnabled
-	//   is true to see if we should call g_test.stopIt()
-	// . add up each hosts urls indexed
-	if ( ! g_conf.m_testParserEnabled     ) return;
-	if ( g_hostdb.m_myHost->m_hostId != 0 ) return;
-	int32_t total = 0;
-	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
-		Host *h = &g_hostdb.m_hosts[i];
-		total += h->m_urlsIndexed;
-	}
-	// all done?
-	if ( total >= g_test.m_urlsAdded ) g_test.stopIt();
-
-	return;
 }
 
 // . sets m_minRepairMode

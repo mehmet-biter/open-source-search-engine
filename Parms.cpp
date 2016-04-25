@@ -23,7 +23,6 @@
 #include "PingServer.h"
 #include "Proxy.h"
 #include "hash.h"
-#include "Test.h"
 #include "Rebalance.h"
 #include "SpiderProxy.h" // buildProxyTable()
 #include "PageInject.h" // InjectionRequest
@@ -546,50 +545,6 @@ bool CommandResetColl ( char *rec , WaitEntry *we ) {
 }
 #endif
 
-
-bool CommandParserTestInit ( char *rec ) {
-	// enable testing for all other hosts
-	g_conf.m_testParserEnabled = 1;
-	// reset all files
-	g_test.removeFiles();
-	// turn spiders on globally
-	g_conf.m_spideringEnabled = 1;
-	//g_conf.m_webSpideringEnabled = 1;
-	// turn on for test coll too
-	CollectionRec *cr = g_collectiondb.getRec("qatest123");
-	// turn on spiders
-	if ( cr ) cr->m_spideringEnabled = 1;
-	// tell spider loop to update active list
-	g_spiderLoop.m_activeListValid = false;
-	// if we are not host 0, turn on spiders for testing
-	if ( g_hostdb.m_myHost->m_hostId != 0 ) return true;
-	// start the test loop to inject urls for parsing/spidering
-	g_test.initTestRun();
-	// done 
-	return true;
-}
-
-bool CommandSpiderTestInit ( char *rec ) {
-	// enable testing for all other hosts
-	g_conf.m_testSpiderEnabled = 1;
-	// reset all files
-	g_test.removeFiles();
-	// turn spiders on globally
-	g_conf.m_spideringEnabled = 1;
-	//g_conf.m_webSpideringEnabled = 1;
-	// turn on for test coll too
-	CollectionRec *cr = g_collectiondb.getRec("qatest123");
-	// turn on spiders
-	if ( cr ) cr->m_spideringEnabled = 1;
-	// tell spider loop to update active list
-	g_spiderLoop.m_activeListValid = false;
-	// if we are not host 0, turn on spiders for testing
-	if ( g_hostdb.m_myHost->m_hostId != 0 ) return true;
-	// start the test loop to inject urls for parsing/spidering
-	g_test.initTestRun();
-	// done 
-	return true;
-}
 
 bool CommandSpiderTestCont ( char *rec ) {
 	// enable testing for all other hosts
@@ -5593,59 +5548,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
         m++;
-
-	m->m_title = "init QA tests";
-	m->m_desc  = "If initiated gb performs some integrity tests "
-		"to ensure injecting, spidering and searching works "
-		"properly. Uses ./test/ subdirectory. Injects "
-		"urls in ./test/inject.txt. Spiders urls "
-		"in ./test/spider.txt. "
-		"Each of those two files is essentially a simple format of "
-		"a url followed by the http reply received from the server "
-		"for that url. "
-		// TODO: generate these files
-		;
-	m->m_cgi   = "qasptei";
-	m->m_type  = TYPE_CMD;
-	m->m_func  = CommandSpiderTestInit;
-	m->m_def   = "1";
-	m->m_cast  = 1;
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-
-	m->m_title = "init parser test run";
-	m->m_desc  = "If enabled gb injects the urls in the "
-		"./test-parser/urls.txt "
-		"file and outputs ./test-parser/qa.html";
-	m->m_cgi   = "qaptei";
-	m->m_type  = TYPE_CMD;
-	m->m_func  = CommandParserTestInit;
-	m->m_def   = "1";
-	m->m_cast  = 1;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-
-	m->m_title = "init spider test run";
-	m->m_desc  = "If enabled gb injects the urls in "
-		"./test-spider/spider.txt "
-		"and spiders links.";
-	m->m_cgi   = "qasptei";
-	m->m_type  = TYPE_CMD;
-	m->m_func  = CommandSpiderTestInit;
-	m->m_def   = "1";
-	m->m_cast  = 1;
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
 
 	m->m_title = "continue spider test run";
 	m->m_desc  = "Resumes the test.";

@@ -61,7 +61,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	CountryCode.o DailyMerge.o Tagdb.o \
 	Images.o Wiki.o Wiktionary.o \
 	Timezone.o Sections.o SiteGetter.o qa.o \
-	Test.o Synonyms.o \
+	Synonyms.o \
 	PageCrawlBot.o Json.o PageBasic.o \
 	Punycode.o Version.o \
 	HighFrequencyTermShortcuts.o \

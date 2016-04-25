@@ -13,7 +13,6 @@
 #include "CountryCode.h"
 #include "DailyMerge.h"
 #include "Process.h"
-#include "Test.h" // g_test
 #include "Threads.h"
 #include "XmlDoc.h"
 #include "HttpServer.h"
@@ -1751,9 +1750,7 @@ bool SpiderLoop::spiderUrl9 ( SpiderRequest *sreq ,
 
 	// sanity check
 	// core dump? just re-run gb and restart the parser test...
-	if ( //g_test.m_isRunning && 
-	     //! g_test.m_spiderLinks &&
-	     g_conf.m_testParserEnabled &&
+	if ( g_conf.m_testParserEnabled &&
 	     ! sreq->m_isInjecting ) { 
 		char *xx=NULL;*xx=0; }
 
@@ -2272,88 +2269,6 @@ if( 	g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func
 	bool respider = false;
 	if ( xd->m_oldDocValid && xd->m_oldDoc ) respider = true;
 
-	// . dump it out to a file in the "qatest123" subdir
-	// . but only the first time we spider it...
-	/*
-	if ( ! strcmp(xd->m_coll,"qatest123") && ! respider &&
-	     // no longer need this when qa testing spider, not parser
-	     g_conf.m_testParserEnabled ) {
-		// save the buffers
-		//saveTestBuf();
-		// get it
-		//SafeBuf *pbuf = xd->m_pbuf;
-		SafeBuf sb;
-		// get it
-		xd->printDoc ( &sb );
-		// get the first url
-		Url *u = xd->getFirstUrl();
-		// . get its hash
-		// . should be same hash we use to store doc.%"UINT64".html in
-		//   XmlDoc.cpp/Msg13.cpp stuff (getTestDoc())
-		int64_t h = hash64 ( u->getUrl() , u->getUrlLen() );
-		char *testDir = g_test.getTestDir();
-		// make filename to dump out to
-		char fn[1024]; 
-		sprintf(fn,"%s/%s/parse.%"UINT64".%"UINT32".html",
-			g_hostdb.m_dir,testDir,h,g_test.m_runId);
-		// . dump it out to a file
-		// . WATCH OUT. g_errno is set on internal errors, like OOM
-		//   or whatever, so don't save in those cases...???????
-		sb.dumpToFile ( fn );
-		// just dump the <div class=shotdisplay> tags into this file
-		sprintf(fn,"%s/%s/parse-shortdisplay.%"UINT64".%"UINT32".html",
-			g_hostdb.m_dir,testDir,h,g_test.m_runId);
-		// output to a special file
-		SafeBuf tmp;
-		// insert this
-		tmp.safeStrcpy("<meta http-equiv=\"Content-Type\" "
-			       "content=\"text/html; "
-			       "charset=utf-8\">\n");
-		// header stuff
-		tmp.safePrintf("<html><body>\n");
-		// put the onclick script in there
-		tmp.safeStrcpy ( xd->getCheckboxScript() );
-		// concatenate just these sections in "sb" to "tmp"
-		tmp.cat2 ( sb , 
-			   "<div class=shortdisplay>" ,
-			   "</div class=shortdisplay>" );
-		// header stuff
-		tmp.safePrintf("\n</body></html>\n");
-		// then dump
-		tmp.dumpToFile ( fn );
-		// if it had critical errors from XmlDoc::validateOutput()
-		// then create that file!
-		//if ( xd->m_validateMisses > 0 || xd->m_validateFlagged ) {
-		// make the critical file filename
-		char cf[1024];
-		sprintf (cf,"%s/%s/critical.%"UINT64".%"UINT32".txt",
-			 g_hostdb.m_dir,testDir,h,g_test.m_runId);
-		// save to that
-		ttt.dumpToFile ( cf );
-		//char cmd[256];
-		//sprintf(cmd,"touch %s/test/critical.%"UINT64".%"UINT32".txt",
-		//	g_hostdb.m_dir,h,g_test.m_runId);
-		//system(cmd);
-
-		// note it
-		//log("crazyin: %s",u->m_url );
-		// note it
-		//g_test.m_urlsAdded--;
-		g_test.m_urlsIndexed++;
-
-		// now in PingServer.cpp for hostid 0 it checks
-		// the urlsindexed from each host if g_conf.m_testParserEnabled
-		// is true to see if we should call g_test.stopIt()
-
-		// if that is zero we are done
-		//if ( g_test.m_urlsAdded == 0 && ! g_test.m_isAdding &&
-		//     // only stop if not spidering links
-		//     //! g_test.m_spiderLinks )
-		//     g_conf.m_testParserEnabled )
-		//	// wrap things up
-		//	g_test.stopIt();
-	}
-	*/
 
 	// note it
 	// this should not happen any more since indexDoc() will take

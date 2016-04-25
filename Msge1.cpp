@@ -1,7 +1,6 @@
 #include "gb-include.h"
 
 #include "Msge1.h"
-#include "Test.h"
 
 // utility functions
 bool getTestIp ( char *url , int32_t *retIp , bool *found , int32_t niceness ,
@@ -544,7 +543,6 @@ bool getTestIp ( char *url , int32_t *retIp , bool *found , int32_t niceness ,
 			char *xx=NULL;*xx=0; }
 		// null it out now, we freed it
 		s_testBuf = NULL;
-		//char *testDir = g_test.getTestDir();
 		// filename
 		char fn[100]; 
 		sprintf(fn,"%s/%s/ips.txt",g_hostdb.m_dir,testDir);
@@ -718,7 +716,6 @@ void makeQADir();
 // . save it back to disk
 // . we should call this from Test.cpp when the run is completed!!
 bool saveTestBuf ( char *testDir ) {
-	//char *testDir = g_test.getTestDir();
 	// ensure ./qa/ subdir exsts. in qa.cpp
 	makeQADir();
 	// filename

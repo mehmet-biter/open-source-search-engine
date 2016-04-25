@@ -22,7 +22,6 @@
 #include "Wiki.h"
 #include "Speller.h"
 #include "SiteGetter.h"
-#include "Test.h"
 #include "Synonyms.h"
 #include "PageInject.h"
 #include "HttpServer.h"

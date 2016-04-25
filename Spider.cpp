@@ -28,7 +28,6 @@
 #include "CountryCode.h"
 #include "DailyMerge.h"
 #include "Process.h"
-#include "Test.h" // g_test
 #include "Threads.h"
 #include "XmlDoc.h"
 #include "HttpServer.h"
