@@ -4,23 +4,18 @@
 #include "Titledb.h"
 #include "UdpServer.h"
 
-
 static void handleRequest22 ( UdpSlot *slot , int32_t netnice ) ;
 
-Msg22Request::Msg22Request()
-{
+Msg22Request::Msg22Request() {
 	//use memset() to clear out the padding bytes in the structure
 	memset(this, 0, sizeof(*this));
 	m_inUse = 0;
 }
 
-
 bool Msg22::registerHandler ( ) {
-        // . register ourselves with the udp server
-        // . it calls our callback when it receives a msg of type 0x23
-        if ( ! g_udpServer.registerHandler ( 0x22, handleRequest22 )) 
-                return false;
-        return true;
+	// . register ourselves with the udp server
+	// . it calls our callback when it receives a msg of type 0x23
+	return g_udpServer.registerHandler ( 0x22, handleRequest22 );
 }
 
 Msg22::Msg22() {
@@ -154,21 +149,6 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	// time by not having to cast a Msg36
 	bool balance = false;
 
-	/*
-	// if clusterdb, do bias
-	int32_t firstHostId = -1;
-	// i don't see why not to always bias it, this makes tfndb page cache
-	// twice as effective for all lookups
-	int32_t numTwins = g_hostdb.getNumHostsPerShard();
-	//int64_t bias=((0x0000003fffffffffLL)/(int64_t)numTwins);
-	int64_t sectionWidth = (DOCID_MASK/(int64_t)numTwins) + 1;
-	int32_t hostNum = (docId & DOCID_MASK) / sectionWidth;
-	int32_t numHosts = g_hostdb.getNumHostsPerShard();
-	Host *hosts = g_hostdb.getGroup ( groupId );
-	if ( hostNum >= numHosts ) { char *xx = NULL; *xx = 0; }
-	firstHostId = hosts [ hostNum ].m_hostId ;
-	*/
-	
 	Host *firstHost ;
 	// if niceness 0 can't pick noquery host.
 	// if niceness 1 can't pick nospider host.
@@ -279,11 +259,7 @@ void Msg22::gotReply ( ) {
 		mfree ( reply , maxSize , "Msg22");
 		// store error code
 		m_errno = ENOTFOUND;
-		// debug msg
-		//if ( m_availDocId != m_probableDocId && m_url )
-		//	log(LOG_DEBUG,"build: Avail docid %"INT64" != probable "
-		//	     "of %"INT64" for %s.", 
-		//	     m_availDocId, m_probableDocId , m_urlPtr );
+
 		// this is having problems in Msg23::gotTitleRec()
 		m_callback ( m_state );
 		return;
@@ -315,12 +291,9 @@ void Msg22::gotReply ( ) {
 class State22 {
 public:
 	UdpSlot   *m_slot;
-	//int32_t       m_tfn;
-	//int32_t       m_tfn2;
 	int64_t  m_pd;
 	int64_t  m_docId1;
 	int64_t  m_docId2;
-	//RdbList    m_ulist;
 	RdbList    m_tlist;
 	Msg5       m_msg5;
 	Msg5       m_msg5b;
@@ -340,15 +313,12 @@ public:
 };
 
 static void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) ;
-//void gotUrlListWrapper     ( void *state , RdbList *list , Msg5 *msg5 ) ;
 
 void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	// shortcut
 	UdpServer *us = &g_udpServer;
 	// get the request
 	Msg22Request *r = (Msg22Request *)slot->m_readBuf;
-       // get this
-	//char *coll = g_collectiondb.getCollName ( r->m_collnum );
 
 	// sanity check
 	int32_t  requestSize = slot->m_readBufSize;
@@ -376,437 +346,97 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	r->m_niceness = netnice;
 
 	// if just checking tfndb, do not do the cache lookup in clusterdb
-	if ( r->m_justCheckTfndb ) r->m_maxCacheAge = 0;
-
-	// keep track of stats
-	//if    (r->m_justCheckTfndb)
-	//       g_tfndb.getRdb()->readRequestGet(requestSize);
-	//      else    
-       g_titledb.getRdb()->readRequestGet  (requestSize);
-
-       // breathe
-       QUICKPOLL ( r->m_niceness);
-
-       // sanity check
-       if ( r->m_collnum < 0 ) { char *xx=NULL;*xx=0; }
-
-
-       // make the state now
-       State22 *st ;
-       try { st = new (State22); }
-       catch ( ... ) {
-	       g_errno = ENOMEM;
-	       log("query: Msg22: new(%"INT32"): %s", (int32_t)sizeof(State22),
-		   mstrerror(g_errno));
-		   log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-	       us->sendErrorReply ( slot , g_errno );
-	       return;
-       }
-       mnew ( st , sizeof(State22) , "Msg22" );
-       
-       // store ptr to the msg22request
-       st->m_r = r;
-       // save for sending back reply
-       st->m_slot = slot;
-
-       // then tell slot not to free it since m_r references it!
-       // so we'll have to free it when we destroy State22
-       st->m_slotAllocSize = slot->m_readBufMaxSize;
-       st->m_slotReadBuf   = slot->m_readBuf;
-       slot->m_readBuf = NULL;
-
-       // . make the keys for getting recs from tfndb
-       // . url recs map docid to the title file # that contains the titleRec
-       //key_t uk1 ;
-       //key_t uk2 ;
-       // . if docId was explicitly specified...
-       // . we may get multiple tfndb recs
-       if ( ! r->m_url[0] ) {
-	       // there are no del bits in tfndb
-	       //uk1 = g_tfndb.makeMinKey ( r->m_docId );
-	       //uk2 = g_tfndb.makeMaxKey ( r->m_docId );
-	       st->m_docId1 = r->m_docId;
-	       st->m_docId2 = r->m_docId;
-       }
-
-       // but if we are requesting an available docid, it might be taken
-       // so try the range
-       if ( r->m_getAvailDocIdOnly ) {
-	       int64_t pd = r->m_docId;
-	       int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
-	       int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
-	       // sanity - bad url with bad subdomain?
-	       if ( pd < d1 || pd > d2 ) { char *xx=NULL;*xx=0; }
-	       // make sure we get a decent sample in titledb then in 
-	       // case the docid we wanted is not available
-	       st->m_docId1 = d1;
-	       st->m_docId2 = d2;
-       }
-
-       // . otherwise, url was given, like from Msg15
-       // . we may get multiple tfndb recs
-       if ( r->m_url[0] ) {
-	       int32_t  dlen = 0;
-	       // this causes ip based urls to be inconsistent with the call
-	       // to getProbableDocId(url) below
-	       char *dom  = getDomFast ( r->m_url , &dlen );
-	       // bogus url?
-	       if ( ! dom ) {
-		       log("msg22: got bad url in request: %s from "
-			   "hostid %"INT32" for msg22 call ",
-			   r->m_url,slot->m_host->m_hostId);
-		       g_errno = EBADURL;
-		       log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
-		       us->sendErrorReply ( slot , g_errno ); 
-		       mdelete ( st , sizeof(State22) , "Msg22" );
-		       delete ( st );
-		       return; 
-	       }
-	       int64_t pd = g_titledb.getProbableDocId (r->m_url,dom,dlen);
-	       int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
-	       int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
-	       // sanity - bad url with bad subdomain?
-	       if ( pd < d1 || pd > d2 ) { char *xx=NULL;*xx=0; }
-	       // there are no del bits in tfndb
-	       //uk1 = g_tfndb.makeMinKey ( d1 );
-	       //uk2 = g_tfndb.makeMaxKey ( d2 );
-	       // store these
-	       st->m_pd     = pd;
-	       st->m_docId1 = d1;
-	       st->m_docId2 = d2;
-	       st->m_uh48   = hash64b ( r->m_url ) & 0x0000ffffffffffffLL;
-       }
-       
-       QUICKPOLL ( r->m_niceness );
-       
-       /*
-       // shortcut
-       Rdb *tdb = g_titledb.getRdb();
-
-       // init this
-       st->m_tfn2 = -1;
-       // skip tfndb lookup if we can. saves some time.
-       if ( g_conf.m_readOnlyMode && 
-	    // must not be a *url* lookup, it must be a docid lookup
-	    ! r->m_url[0] &&
-	    // tree must be empty too i guess
-	    tdb->getTree()->getNumUsedNodes() ==0 ) {
-	       // the RdbBase contains the BigFiles for tfndb
-	       RdbBase *base = tdb->m_bases[r->m_collnum];
-	       // can only have one titledb file
-	       if ( base->getNumFiles() == 1 ) {
-		       // now we can get RdbBase
-		       st->m_tfn2 = base->m_fileIds2[0];
-		       // sanity check
-		       if ( st->m_tfn2 < 0 ) { char *xx = NULL; *xx = 0; }
-	       }
-       }
-
-       // check the tree for this docid
-       RdbTree *tt = tdb->getTree();
-       // make titledb keys
-       key_t startKey = g_titledb.makeFirstKey ( st->m_docId1 );
-       key_t endKey   = g_titledb.makeLastKey  ( st->m_docId2 );
-       int32_t  n        = tt->getNextNode ( r->m_collnum , startKey );
-       
-       // there should only be one match, one titlerec per docid!
-       for ( ; n >= 0 ; n = tt->getNextNode ( n ) ) {
-	       // break if collnum does not match. we exceeded our tree range.
-	       if ( tt->getCollnum ( n ) != r->m_collnum ) break;
-	       // get the key of this node
-	       key_t k = *(key_t *)tt->getKey(n);
-	       // if passed limit, break out, no match
-	       if ( k > endKey ) break;
-	       // if we had a url make sure uh48 matches
-	       if ( r->m_url[0] ) {
-		       // get it
-		       int64_t uh48 = g_titledb.getUrlHash48(&k);
-		       // sanity check
-		       if ( st->m_uh48 == 0 ) { char *xx=NULL;*xx=0; }
-		       // we must match this exactly
-		       if ( uh48 != st->m_uh48 ) continue;
-	       }
-	       // . if we matched a negative key, then skip
-	       // . just break out here and enter the normal logic
-	       // . it should load tfndb and find that it is not in tfndb
-	       //   because when you add a negative key to titledb in
-	       //   Rdb::addList, it adds a negative rec to tfndb immediately
-	       // . NO! because we add the negative key to the tree when we
-	       //   delete the old titledb rec, then we add the new one!
-	       //   when a negative key is added Rdb::addRecord() removes
-	       //   the positive key (and vice versa) from the tree.
-	       if ( KEYNEG((char *)&k) ) continue;
-	       // if just checking for its existence, we are done
-	       if ( r->m_justCheckTfndb ) {
-		       us->sendReply_ass ( NULL,0,NULL,0,slot);
-		       // don't forget to free the state
-		       mdelete ( st , sizeof(State22) , "Msg22" );
-		       delete ( st );
-		       return;
-	       }
-	       // ok, we got a match, return it
-	       char *data     = tt->getData     ( n );
-	       int32_t  dataSize = tt->getDataSize ( n );
-	       // wierd!
-	       if ( dataSize == 0 ) { char *xx=NULL;*xx=0; }
-	       // send the whole rec back
-	       int32_t need = 12 + 4 + dataSize;
-	       // will this copy it? not!
-	       char *buf = (char *)mmalloc ( need , "msg22t" );
-	       if ( ! buf ) {
-		       us->sendErrorReply ( slot , g_errno ); 
-		       mdelete ( st , sizeof(State22) , "Msg22" );
-		       delete ( st );
-		       return; 
-	       }
-	       // log it
-	       if ( g_conf.m_logDebugSpider )
-		       logf(LOG_DEBUG,"spider: found %s in titledb tree",
-			    r->m_url);
-	       // store in the buf for sending
-	       char *p = buf;
-	       // store key
-	       *(key_t *)p = k; p += sizeof(key_t);
-	       // then dataSize
-	       *(int32_t *)p = dataSize; p += 4;
-	       // then the data
-	       gbmemcpy ( p , data , dataSize ); p += dataSize;
-	       // send off the record
-	       us->sendReply_ass (buf, need,buf, need,slot);
-	       // don't forget to free the state
-	       mdelete ( st , sizeof(State22) , "Msg22" );
-	       delete ( st );
-	       return;
-       }
-
-       // if we did not need to consult tfndb cuz we only have one file
-       if ( st->m_tfn2 >= 0 ) {
-	       gotUrlListWrapper ( st , NULL , NULL );
-	       return;
-       }
-
-       // . get the list of url recs for this docid range
-       // . this should not block, tfndb SHOULD all be in memory all the time
-       // . use 500 million for min recsizes to get all in range
-       // . no, using 500MB causes problems for RdbTree::getList, so use
-       //   100k. how many recs can there be?
-       if ( ! st->m_msg5.getList ( RDB_TFNDB         ,
-				   coll              ,
-				   &st->m_ulist      ,
-				   uk1               , // startKey
-				   uk2               , // endKey
-				   // use 0x7fffffff preceisely because it
-				   // will determine eactly how long the
-				   // tree list needs to allocate in Msg5.cpp
-				   0x7fffffff        , // minRecSizes
-				   true              , // includeTree?
-				   false             , // addToCache?
-				   0                 , // max cache age
-				   0                 , // startFileNum
-				   -1                , // numFiles (-1 =all)
-				   st                ,
-				   gotUrlListWrapper ,
-				   r->m_niceness     ,
-				   true              ))// error correction?
-	       return ;
-       // we did not block
-       gotUrlListWrapper ( st , NULL , NULL );
-}
-
-static void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) ;
-
-void gotUrlListWrapper ( void *state , RdbList *list , Msg5 *msg5 ) {
-	// shortcuts
-	State22   *st = (State22 *)state;
-	UdpServer *us = &g_udpServer;
-
-	// bail on error
-	if ( g_errno ) { 
-		log("db: Had error getting info from tfndb: %s.",
-		    mstrerror(g_errno));
-		log("db: uk1.n1=%"INT32" n0=%"INT64" uk2.n1=%"INT32" n0=%"INT64" "
-		    "d1=%"INT64" d2=%"INT64".",
-		    ((key_t *)st->m_msg5.m_startKey)->n1 ,
-		    ((key_t *)st->m_msg5.m_startKey)->n0 ,
-		    ((key_t *)st->m_msg5.m_endKey)->n1   ,
-		    ((key_t *)st->m_msg5.m_endKey)->n0   ,
-		    st->m_docId1 ,
-		    st->m_docId2 );
-		us->sendErrorReply ( st->m_slot , g_errno ); 
-		mdelete ( st , sizeof(State22) , "Msg22" );
-		delete ( st );
-		return;
+	if ( r->m_justCheckTfndb ) {
+		r->m_maxCacheAge = 0;
 	}
 
-	// shortcuts
-	RdbList      *ulist = &st->m_ulist;
-	Msg22Request *r     = st->m_r;
-	char         *coll  = g_collectiondb.getCollName ( r->m_collnum );
-
-	// point to top just in case
-	ulist->resetListPtr();
-
-	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *tbase = getRdbBase(RDB_TITLEDB,coll);
-
-	// set probable docid
-	int64_t pd = 0LL;
-	if ( r->m_url[0] ) {
-		pd = g_titledb.getProbableDocId(r->m_url);
-		// sanity
-		if ( pd != st->m_pd ) { char *xx=NULL;*xx=0; }
-	}
-
-	// . these are both meant to be available docids
-	// . if ad2 gets exhausted we use ad1
-	int64_t ad1 = st->m_docId1;
-	int64_t ad2 = pd;
-
-
-	int32_t tfn = -1;
-	// sanity check. make sure did not load from tfndb if did not need to
-	if ( ! ulist->isExhausted() && st->m_tfn2 >= 0 ) {char *xx=NULL;*xx=0;}
-	// if only one titledb file and none in memory use it
-	if ( st->m_tfn2 >= 0 ) tfn = st->m_tfn2;
-
-	// we may have multiple tfndb recs but we should NEVER have to read
-	// multiple titledb files...
-	for ( ; ! ulist->isExhausted() ; ulist->skipCurrentRecord() ) {
-		// breathe
-		QUICKPOLL ( r->m_niceness );
-		// get first rec
-		key_t k = ulist->getCurrentKey();
-		// . skip negative keys
-		// . seems to happen when we have tfndb in the tree...
-		if ( KEYNEG((char *)&k) ) continue;
-
-		// if we have a url and no docid, we gotta check uh48!
-		if ( r->m_url[0] && g_tfndb.getUrlHash48(&k)!=st->m_uh48){
-			// get docid of that guy
-			int64_t dd = g_tfndb.getDocId(&k);
-			// if matches avail docid, inc it
-			if ( dd == ad1 ) ad1++;
-			if ( dd == ad2 ) ad2++;
-			// try next tfndb key
-			continue;
-		}
-		// . get file num this rec is stored in
-		// . this is updated right after the file num is merged by
-		//   scanning all records in tfndb. this is very quick if all
-		//   of tfndb is in memory, otherwise, it might take a few
-		//   seconds. update call done in RdbMerge::incorporateMerge().
-		tfn = g_tfndb.getTfn ( &k );
-		// i guess we got a good match!
-		break;
-	}
-
-	// sanity check. 255 used to mean in spiderdb or in tree
-	if ( tfn >= 255 ) { char *xx=NULL;*xx=0; }
-
-
-	// maybe no available docid if we breached our range
-	if ( ad1 >= pd           ) ad1 = 0LL;
-	if ( ad2 >  st->m_docId2 ) ad2 = 0LL;
-	// get best
-	int64_t ad = ad2;
-	// but wrap around if we need to
-	if ( ad == 0LL ) ad = ad1;
+	g_titledb.getRdb()->readRequestGet  (requestSize);
 
 	// breathe
 	QUICKPOLL ( r->m_niceness);
 
-	// . log if different
-	// . if our url rec was in there, this could still be different
-	//   if there was another url rec in there with the same docid and
-	//   a diferent extension, but with a tfn of 255, meaning that it
-	//   is just in spiderdb and not in titledb yet. so it hasn't been
-	//   assigned a permanent docid...
-	// . another way "ad" may be different now is from the old bug which
-	//   did not chain the docid properly because it limited the docid
-	//   chaining to one titleRec file. so conceivably we can have 
-	//   different docs sharing the same docids, but with different 
-	//   url hash extensions. for instance, on host #9 we have:
-	//   00f3b2ff63aec3a9 docId=261670033643 e=0x58 tfn=117 clean=0 half=0 
-	//   00f3b2ff63af66c9 docId=261670033643 e=0x6c tfn=217 clean=0 half=0 
-	// . Msg16 will only use the avail docid if the titleRec is not found
-	if ( r->m_url[0] && pd != ad ) {
-		//log(LOG_INFO,"build: Docid %"INT64" collided. %s Changing "
-		//
-		// http://www.airliegardens.org/events.asp?dt=2&date=8/5/2011
-		//
-		// COLLIDES WITH
-		//
-		// http://www.bbonline.com/i/chicago.html
-		//
-		// collision alert!
-		log("spider: Docid %"INT64" collided. %s Changing "
-		    "to %"INT64".", r->m_docId , r->m_url , ad );
-		// debug this for now
-		//char *xx=NULL;*xx=0; 
-	}
+	// sanity check
+	if ( r->m_collnum < 0 ) { char *xx=NULL;*xx=0; }
 
-	// remember it
-	st->m_availDocId = ad;
 
-	// if tfn is -1 then it was not in titledb
-	if ( tfn == -1 ) { 
-		// store docid in reply
-		char *p = st->m_slot->m_tmpBuf;
-		// send back the available docid
-		*(int64_t *)p = ad;
-		// send it
-		us->sendReply_ass ( p , 8 , p , 8 , st->m_slot );
-		// don't forget to free state
-		mdelete ( st , sizeof(State22) , "Msg22" );
-		delete ( st );
+	// make the state now
+	State22 *st ;
+	try { st = new (State22); }
+	catch ( ... ) {
+		g_errno = ENOMEM;
+		log("query: Msg22: new(%"INT32"): %s", (int32_t)sizeof(State22),
+		mstrerror(g_errno));
+		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+		us->sendErrorReply ( slot , g_errno );
 		return;
 	}
+	mnew ( st , sizeof(State22) , "Msg22" );
 
-	// sanity
-	if ( tfn < 0 ) { char *xx=NULL;*xx=0; }
+	// store ptr to the msg22request
+	st->m_r = r;
+	// save for sending back reply
+	st->m_slot = slot;
 
-	// breathe
+	// then tell slot not to free it since m_r references it!
+	// so we'll have to free it when we destroy State22
+	st->m_slotAllocSize = slot->m_readBufMaxSize;
+	st->m_slotReadBuf   = slot->m_readBuf;
+	slot->m_readBuf = NULL;
+
+	// . if docId was explicitly specified...
+	// . we may get multiple tfndb recs
+	if ( ! r->m_url[0] ) {
+	   st->m_docId1 = r->m_docId;
+	   st->m_docId2 = r->m_docId;
+	}
+
+	// but if we are requesting an available docid, it might be taken
+	// so try the range
+	if ( r->m_getAvailDocIdOnly ) {
+	   int64_t pd = r->m_docId;
+	   int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
+	   int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
+	   // sanity - bad url with bad subdomain?
+	   if ( pd < d1 || pd > d2 ) { char *xx=NULL;*xx=0; }
+	   // make sure we get a decent sample in titledb then in
+	   // case the docid we wanted is not available
+	   st->m_docId1 = d1;
+	   st->m_docId2 = d2;
+	}
+
+	// . otherwise, url was given, like from Msg15
+	// . we may get multiple tfndb recs
+	if ( r->m_url[0] ) {
+	   int32_t  dlen = 0;
+	   // this causes ip based urls to be inconsistent with the call
+	   // to getProbableDocId(url) below
+	   char *dom  = getDomFast ( r->m_url , &dlen );
+	   // bogus url?
+	   if ( ! dom ) {
+	       log("msg22: got bad url in request: %s from "
+		   "hostid %"INT32" for msg22 call ",
+		   r->m_url,slot->m_host->m_hostId);
+	       g_errno = EBADURL;
+	       log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+	       us->sendErrorReply ( slot , g_errno );
+	       mdelete ( st , sizeof(State22) , "Msg22" );
+	       delete ( st );
+	       return;
+	   }
+	   int64_t pd = g_titledb.getProbableDocId (r->m_url,dom,dlen);
+	   int64_t d1 = g_titledb.getFirstProbableDocId ( pd );
+	   int64_t d2 = g_titledb.getLastProbableDocId  ( pd );
+	   // sanity - bad url with bad subdomain?
+	   if ( pd < d1 || pd > d2 ) { char *xx=NULL;*xx=0; }
+	   // store these
+	   st->m_pd     = pd;
+	   st->m_docId1 = d1;
+	   st->m_docId2 = d2;
+	   st->m_uh48   = hash64b ( r->m_url ) & 0x0000ffffffffffffLL;
+	}
+
 	QUICKPOLL ( r->m_niceness );
 
-	// ok, if just "checking tfndb" no need to go further
-	if ( r->m_justCheckTfndb ) {
-		// send back a good reply (empty means found!)
-		us->sendReply_ass ( NULL,0,NULL,0,st->m_slot);
-		// don't forget to free the state
-		mdelete ( st , sizeof(State22) , "Msg22" );
-		delete ( st );
-		return;
-	}
-
-	// . compute the file scan range
-	// . tfn is now equivalent to Rdb's id2, a secondary file id, it
-	//   follows the hyphen in "titledb0001-023.dat"
-	// . default to just scan the root file AND the tree, cuz we're
-	//   assuming restrictToRoot was set to true so we did not get a tfndb
-	//   list
-	// . even if a file number is given, always check the tree in case
-	//   it got re-spidered
-	// . shit, but we can still miss it if it gets dumped right after
-	//   our thread is spawned, in which case we'd fall back to the old
-	//   version. no. because if its in the tree now we get it before
-	//   spawning a thread. there is no blocking. TRICKY. so if it is in 
-	//   the tree at this point we'll get it, but may end up scanning the
-	//   file with the older version of the doc... not too bad.
-	int32_t startFileNum = tbase->getFileNumFromId2 ( tfn );
-
-	// if tfn refers to a missing titledb file...
-	if ( startFileNum < 0 ) {
-		if ( r->m_url[0] ) log("db: titledb missing url %s",r->m_url);
-		else        log("db: titledb missing docid %"INT64"", r->m_docId);
-		us->sendErrorReply ( st->m_slot,ENOTFOUND );
-		mdelete ( st , sizeof(State22) , "Msg22" );
-		delete ( st ); 
-		return ;
-	}
-
-	// save this
-	st->m_tfn = tfn;
-	*/
 	// make the cacheKey ourself, since Msg5 would make the key wrong
 	// since it would base it on startFileNum and numFiles
 	key_t cacheKey ; cacheKey.n1 = 0; cacheKey.n0 = r->m_docId;
@@ -879,8 +509,6 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 			g_errno = EBADENGINEER;
 			goto hadError;
 		}
-		// sanity
-		//if ( pd != st->m_pd ) { char *xx=NULL;*xx=0; }
 	}
 
 	// the probable docid is the PREFERRED docid in this case
@@ -890,7 +518,6 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 	// . if ad2 gets exhausted we use ad1
 	int64_t ad1 = st->m_docId1;
 	int64_t ad2 = pd;
-
 
 	bool docIdWasFound = false;
 
@@ -919,10 +546,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 		else if ( r->m_url[0] ) {
 			// get it
 			int64_t uh48 = g_titledb.getUrlHash48(k);
-			// sanity check. MDW: looks like we allow 0 to
-			// be a valid hash. so let this through. i've seen
-			// it core here before.
-			//if ( st->m_uh48 == 0 ) { char *xx=NULL;*xx=0; }
+
 			// make sure our available docids are availble!
 			if ( dd == ad1 ) ad1++;
 			if ( dd == ad2 ) ad2++;
@@ -937,9 +561,6 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 
 		// flag that we matched m_docId
 		docIdWasFound = true;
-
-		// do not set back titlerec if just want avail docid
-		//if ( r->m_getAvailDocIdOnly ) continue;
 
 		// ok, if just "checking tfndb" no need to go further
 		if ( r->m_justCheckTfndb ) {
@@ -983,10 +604,7 @@ void gotTitleList ( void *state , RdbList *list , Msg5 *msg5 ) {
 	int64_t ad = ad2;
 	// but wrap around if we need to
 	if ( ad == 0LL ) ad = ad1;
-	// if "docId" was unmatched that should be the preferred available
-	// docid then...
-	//if(! docIdWasFound && r->m_getAvailDocIdOnly && ad != r->m_docId ) { 
-	//	char *xx=NULL;*xx=0; }
+
 	// remember it. this might be zero if none exist!
 	st->m_availDocId = ad;
 	// note it

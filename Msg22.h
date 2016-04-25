@@ -69,18 +69,11 @@ class Msg22 {
 	// public so C wrappers can call
 	void gotReply ( ) ;
 
-	// this is a hack so Msg38 can store his this ptr here
-	//void *m_parent; // used by Msg38
-	//int32_t  m_slot;   // for resending on same Msg22 slot in array
-	//void *m_dataPtr;// for holding recepient record ptr of TopNode ptr
-
 	char **m_titleRecPtrPtr;
 	int32_t  *m_titleRecSizePtr;
 
 	void    (* m_callback ) (void *state);
 	void     *m_state       ;
-	//void     *m_state2      ;
-	//void     *m_state3      ;
 
 	bool      m_found;
 	int64_t m_availDocId;
