@@ -50,8 +50,7 @@ bool Msg22::getAvailDocIdOnly ( Msg22Request  *r              ,
 			     niceness ,
 			     false    , // addToCache
 			     0        , // maxCacheAge
-			     9999999  , // timeout
-			     false   ); // doLoadBalancing 
+			     9999999  ); // timeout
 }
 
 
@@ -78,8 +77,7 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 			  int32_t           niceness       ,
 			  bool           addToCache     ,
 			  int32_t           maxCacheAge    ,
-			  int32_t           timeout        ,
-			  bool           doLoadBalancing ) {
+			  int32_t           timeout ) {
 
 	m_availDocId = 0;
 
@@ -121,7 +119,6 @@ bool Msg22::getTitleRec ( Msg22Request  *r              ,
 	r->m_niceness        = niceness;
 	r->m_justCheckTfndb  = (bool)justCheckTfndb;
 	r->m_getAvailDocIdOnly   = (bool)getAvailDocIdOnly;
-	r->m_doLoadBalancing = (bool)doLoadBalancing;
 	r->m_collnum         = g_collectiondb.getCollnum ( coll );
 	r->m_addToCache      = false;
 	r->m_maxCacheAge     = 0;
@@ -273,7 +270,7 @@ void Msg22::gotReply ( ) {
 	m_found = true;
 
 	// if just checking tfndb, do not set this, reply will be empty!
-	if ( ! r->m_justCheckTfndb ) { // && ! r->m_getAvailDocIdOnly ) {
+	if ( ! r->m_justCheckTfndb ) {
 		*m_titleRecPtrPtr  = reply;
 		*m_titleRecSizePtr = replySize;
 	}

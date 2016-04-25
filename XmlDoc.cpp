@@ -6557,8 +6557,7 @@ char **XmlDoc::getOldTitleRec ( ) {
 				      m_niceness           , // niceness
 				      addToCache           , // add to cache?
 				      0                    , // max cache age
-				      999999               , // timeout seconds
-				      false                ))// load balancing?
+				      999999               )) // timeout seconds
 		// return -1 if we blocked
 		return (char **)-1;
 	// not really an error
@@ -6619,8 +6618,7 @@ char **XmlDoc::getRootTitleRec ( ) {
 				      m_niceness           , // niceness
 				      addToCache           , // add to cache?
 				      0                    , // max cache age
-				      999999               , // timeout seconds
-				      false                ))// load balancing?
+				      999999               )) // timeout seconds
 		// return -1 if we blocked
 		return (char **)-1;
 	// not really an error
@@ -6769,8 +6767,7 @@ char *XmlDoc::getIsIndexed ( ) {
 				      m_niceness           , // niceness
 				      false                , // add to cache?
 				      0                    , // max cache age
-				      999999               , // timeout seconds
-				      false                )){//load balancing?
+				      999999               )){ // timeout seconds
 		// validate
 		m_calledMsg22e = true;
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, called msg22e.getTitleRec, which blocked. Return -1", __FILE__, __func__, __LINE__);
@@ -7892,8 +7889,7 @@ char *XmlDoc::getIsWWWDup ( ) {
 				      m_niceness           , // niceness
 				      false                , // add to cache?
 				      0                    , // max cache age
-				      999999               , // timeout seconds
-				      false                )){//load balancing?
+				      999999               )){ // timeout seconds
 		// validate
 		m_calledMsg22f = true;
 		// return -1 if we blocked

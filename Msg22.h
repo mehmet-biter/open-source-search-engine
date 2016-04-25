@@ -17,7 +17,6 @@ public:
 	collnum_t m_collnum;
 	unsigned char      m_justCheckTfndb  :1;
 	unsigned char      m_getAvailDocIdOnly:1;
-	unsigned char      m_doLoadBalancing :1;
 	unsigned char      m_addToCache      :1;
 	unsigned char      m_inUse           :1;
 	char      m_url[MAX_URL_LEN+1];
@@ -61,8 +60,7 @@ class Msg22 {
 			   int32_t       niceness       ,
 			   bool       addToCache     ,
 			   int32_t       maxCacheAge    ,
-			   int32_t       timeout        ,
-			   bool       doLoadBalancing = false );
+			   int32_t       timeout );
 
 	int64_t getAvailDocId ( ) { return m_availDocId; };
 
