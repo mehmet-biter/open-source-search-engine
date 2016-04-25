@@ -8471,8 +8471,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, return, error calling getIsSiteRoot", __FILE__,__func__,__LINE__);
 		return (char **)isRoot;
 	}
-	//int8_t *hc = getHopCount();
-	//if ( ! hc || hc == (void *)-1 ) return (char **)hc;
 
 	XmlDoc *od = NULL;
 	if ( ! m_isSpiderProxy &&
@@ -8507,17 +8505,8 @@ char **XmlDoc::getHttpReply2 ( ) {
 		return NULL;
 	}
 
-	// robots.txt and css files etc should have m_isChildDoc as true
-	//if ( ! m_downloadAttempted && ! m_isChildDoc )
-	//	// keep track of spider stats
-	//	cr->m_localCrawlInfo.m_pageDownloadAttempts++;
-
-	// we made an attempt to download, so mark it
-	//m_downloadAttempted = true;
-
 	// if we didn't block getting the lock, keep going
 	setStatus ( "getting web page" );
-
 
 	// sanity check
 	if ( ! m_masterLoop ) { char *xx=NULL;*xx=0; }
@@ -8532,18 +8521,12 @@ char **XmlDoc::getHttpReply2 ( ) {
 
 	bool useTestCache = false;
 	if ( ! strcmp(cr->m_coll,"qatest123") ) useTestCache = true;
-	// unless its the pagesubmit.cpp event submission tool
-	//if ( m_sreqValid && m_sreq.m_isPageSubmit ) useTestCache = false;
-
-	// sanity check
-	//if ( ! m_spideredTimeValid ) { char *xx=NULL;*xx=0; }
 
 	// set parms
 	Msg13Request *r = &m_msg13Request;
 	// clear it first
 	r->reset();
 	// and set the url
-	//strcpy ( r->m_url , cu->getUrl() );
 	r->ptr_url  = cu->getUrl();
 	r->size_url = cu->getUrlLen()+1;
 
@@ -8577,8 +8560,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 	r->m_ifModifiedSince        = 0;
 	r->m_skipHammerCheck        = 0;
 
-	//if ( g_conf.m_qaBuildMode ) r->m_addToTestCache = true;
-	//else                        r->m_addToTestCache = false;
 	r->m_addToTestCache = (bool)useTestCache;
 
 	if ( m_redirCookieBufValid && m_redirCookieBuf.length() ) {
@@ -8638,14 +8619,8 @@ char **XmlDoc::getHttpReply2 ( ) {
 		r->m_compressReply       = true;
 	}
 
-	// are we a robots.txt file?
-	//bool isRobotsTxt = isRobotsTxtFile ( cu->getUrl() , cu->getUrlLen());
-
 	char *td = getTestDir();
 	if ( td ) strncpy ( r->m_testDir, td, 31);
-
-	//r->m_isPageParser = getIsPageParser();
-
 
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: cu->m_url [%s]", __FILE__,__func__,__LINE__, cu->getUrl());
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: m_firstUrl.m_url [%s]", __FILE__,__func__,__LINE__, m_firstUrl.getUrl());
@@ -8695,9 +8670,6 @@ char **XmlDoc::getHttpReply2 ( ) {
 	bool isTestColl = false;
 	if ( ! strcmp(cr->m_coll,"qatest123") ) isTestColl = true;
 
-	//if ( isTestColl && m_contentType == CT_IMAGE )
-	//	isTestColl = false;
-
 	// sanity check. keep injections fast. no downloading!
 	if ( m_wasContentInjected ) {
 		log("xmldoc: url injection failed! error!");
@@ -8721,14 +8693,10 @@ char **XmlDoc::getHttpReply2 ( ) {
 		// return -1 if blocked
 		return (char **)-1;
 	}
-	
-	
+
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, calling gotHttpReply and returning result", __FILE__,__func__,__LINE__);
 	return gotHttpReply ( );
 }
-
-
-
 
 // . this returns false if blocked, true otherwise
 // . sets g_errno on error
@@ -8762,18 +8730,12 @@ char **XmlDoc::gotHttpReply ( ) {
 
 	// sanity check
 	if ( m_httpReplySize > 0 && ! m_httpReply ) { char *xx=NULL;*xx=0; }
-	// what is this for? that makes it into a length not a size!
-	//if ( m_httpReplySize > 0 ) m_httpReplySize--;
-	// . save entire reply length we read from the net so
-	//   SpiderCache
-	//   can use it for its m_avgReplyLen for throttling
-	// . m_bufLen may change due to filtering
-	//m_replyLen  = m_bufLen;
+
 	// . don't let UdpServer free m_buf when socket is
 	//   recycled/closed
 	// . we own it now and are responsible for freeing it
-	//slot->m_readBuf = NULL;
 	m_msg13.m_replyBuf = NULL;
+
 	// relabel mem so we know where it came from
 	relabel( m_httpReply, m_httpReplyAllocSize, "XmlDocHR" );
 
@@ -8895,35 +8857,9 @@ char **XmlDoc::gotHttpReply ( ) {
 		m_httpReplyAllocSize = 0;
 	}
 
-	// if errors were not local, reset g_errno and set m_indexCode
-	//if ( g_errno == ETCPTIMEDOUT ) m_indexCode = ETCPTIMEDOUT;
-	//if ( g_errno == EBADMIME     ) m_indexCode = EBADMIME;
-	// clear g_errno
-	//if ( m_indexCode ) g_errno = 0;
-	// return if cancelled, etc.
-	//if ( g_errno ) return NULL;
-
 	// clear this i guess
 	g_errno = 0;
 
-	/*
-		MDW: 2/8/16 this logic now below in getIsContentTruncated() function
-
-	// shortcut - convert size to length
-	int32_t LEN = m_httpReplySize - 1;
-
-	m_isContentTruncated  = false;
-	// was the content truncated? these might label a doc is truncated
-	// when it really is not... but we only use this for link spam stuff,
-	// so it should not matter too much. it should only happen rarely.
-	//if ( LEN >= cr->m_maxTextDocLen-1  ) m_isContentTruncated = true;
-	//if ( LEN >= cr->m_maxOtherDocLen-1 ) m_isContentTruncated = true;
-	if ( LEN > MAXDOCLEN ) m_isContentTruncated = true;
-	// set this
-	m_isContentTruncated2 = (bool)m_isContentTruncated;
-	// validate it
-	m_isContentTruncatedValid = true;
-	*/
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, returning reply.", __FILE__,__func__,__LINE__);
 	return &m_httpReply;
 }
@@ -9137,22 +9073,6 @@ HttpMime *XmlDoc::getMime () {
 		return &m_mime;
 	}
 
-	// . check the mime status, should be in the 200's for success
-	// . spider should redirect on 3xx codes
-	// . 404 means not found, etc.
-	// . 304 is not modified since
-	// . >= 300 should only happen if redirect chain was too long to follow
-	//int32_t httpStatus = m_mime.getHttpStatus();
-	// sanity check, these must be reserved! no longer, we have
-	// a separate m_httpStatus in the SpiderReply class now
-	//if ( mstrerror(httpStatus) ) { char *xx=NULL;*xx=0; }
-	// sanity check
-	//if ( m_indexCode ) { char *xx=NULL;*xx=0; }
-	// set it
-	//m_indexCode = httpStatus;
-	// clear if it was ok though
-	//if ( m_indexCode == 200 ) m_indexCode = 0;
-	// bail out now
 	return &m_mime;
 }
 
@@ -9216,13 +9136,6 @@ char **XmlDoc::getContent ( ) {
 	// if we were set from a title rec use that we do not have the original
 	// content, and caller should be calling getUtf8Content() anyway!!
 	if ( m_setFromTitleRec ) { char *xx=NULL; *xx=0; }
-
-	// query reindex has m_setFromDocId to true and we WANT to re-download
-	// the content... so why did i have this here? MDW 9/25/2014
-	//if ( m_setFromDocId    ) { char *xx=NULL; *xx=0; }
-
-	// recycle?
-	//if ( m_recycleContent ) { char *xx=NULL; *xx=0; }
 
 	// get the mime first
 	HttpMime *mime = getMime();
@@ -9318,8 +9231,6 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 	// return if we got it
 	if ( m_canonicalRedirUrlValid ) return &m_canonicalRedirUrlPtr;
 
-	//if ( ! m_httpReplyValid ) { char *xx=NULL;*xx=0; }
-
 	// assume none in doc
 	m_canonicalRedirUrlPtr = NULL;
 
@@ -9337,7 +9248,6 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		return &m_canonicalRedirUrlPtr;
 	}
 
-
 	// are we site root page? don't follow canonical url then.
 	char *isRoot = getIsSiteRoot();
 	if ( ! isRoot || isRoot == (char *)-1 ) return (Url **)isRoot;
@@ -9353,7 +9263,6 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 		m_canonicalRedirUrlValid = true;
 		return &m_canonicalRedirUrlPtr;
 	}
-
 
 	uint8_t *ct = getContentType();
 	if ( ! ct ) return NULL;
@@ -9550,9 +9459,7 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		
 		
 	// get ptr to utf8 content
-	//char **u8 = getHttpReply();
-	//if ( ! u8 || u8 == (void *)-1 ) return (Url **)u8;
-	if ( ! m_httpReplyValid ) 
+	if ( ! m_httpReplyValid )
 	{ 
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: DIE, reply not valid.", __FILE__,__func__,__LINE__);
 		char *xx=NULL;*xx=0; 
@@ -9580,10 +9487,6 @@ Url **XmlDoc::getMetaRedirUrl ( ) {
 		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, recycleContent - do not consider meta redirects", __FILE__,__func__,__LINE__);
 		return &m_metaRedirUrlPtr;
 	}
-
-	// will this work in here?
-	//uint8_t *ct = getContentType();
-	//if ( ! ct ) return NULL;
 
 	Url *cu = getCurrentUrl();
 
