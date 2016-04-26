@@ -99,7 +99,7 @@ static inline char *strncasestr( const char *haystack, const char *needle, int32
 char *gb_strcasestr ( char *haystack , const char *needle );
 char *gb_strncasestr ( char *haystack , int32_t haystackSize , const char *needle ) ;
 
-char *strnstr2( char *haystack, int32_t haylen, const char *needle);
+char *strnstr( char *haystack, const char *needle, int32_t len);
 
 // updates our static var, s_adjustment to keep our clock in sync to hostId #0
 void settimeofdayInMillisecondsGlobal ( int64_t newTime ) ;

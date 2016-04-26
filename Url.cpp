@@ -1869,7 +1869,7 @@ bool Url::isDomainUnwantedForIndexing() {
 
 			if( memcmp(domain, "imdb.com", 8) == 0 )
 			{
-				if( strnstr2(path, plen, "/imdb/embed?") )
+				if( strnstr( path, "/imdb/embed?", plen ) )
 				{
 					// http://www.imdb.com/video/imdb/vi706391833/imdb/embed?autoplay=false&width=480
 					return true;

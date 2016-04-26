@@ -25,6 +25,6 @@ TEST(FctypesTest, VerifyStrnstrTrue) {
 	size_t len = sizeof( haystack ) / sizeof( haystack[0] );
 	for ( size_t i = 0; i < len; ++i ) {
 		SCOPED_TRACE( haystack[i] );
-		EXPECT_TRUE( ( strnstr2( haystack[i], strlen( haystack[i] ), needle[i] ) != NULL ) );
+		EXPECT_TRUE( ( strnstr( haystack[i], needle[i], strlen( haystack[i] ) ) != NULL ) );
 	}
 }

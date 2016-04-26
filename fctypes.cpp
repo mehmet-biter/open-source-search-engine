@@ -458,13 +458,13 @@ char *strncasestr( char *haystack, int32_t haylen, const char *needle){
 	return NULL;
 }
 
-char *strnstr2( char *haystack, int32_t haylen, const char *needle) {
+char *strnstr( char *haystack, const char *needle, int32_t len ) {
 	int32_t matchLen = 0;
-	int32_t needleLen = gbstrlen(needle);
-	for (int32_t i = 0; i < haylen; ++i) {
-		char c1 = (haystack[i]);
-		char c2 = (needle[matchLen]);
-		if ( c1 != c2 ){
+	int32_t needleLen = gbstrlen( needle );
+	for ( int32_t i = 0; i < len; ++i ) {
+		char c1 = ( haystack[ i ] );
+		char c2 = ( needle[ matchLen ] );
+		if ( c1 != c2 ) {
 			// no match
 			if (matchLen != 0) {
 				i -= matchLen;
@@ -475,7 +475,7 @@ char *strnstr2( char *haystack, int32_t haylen, const char *needle) {
 
 		// we matched another character
 		matchLen++;
-		if (matchLen < needleLen) {
+		if ( matchLen < needleLen ) {
 			continue;
 		}
 

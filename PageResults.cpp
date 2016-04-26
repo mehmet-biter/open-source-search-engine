@@ -5298,7 +5298,7 @@ static bool printMenu ( SafeBuf *sb , int32_t menuNum , HttpRequest *hr ) {
 		if ( mi->m_menuNum != menuNum ) continue;
 
 		// is it in the url
-		const char *match = strnstr2 ( src , srcLen, mi->m_cgi );
+		const char *match = strnstr ( src, mi->m_cgi, srcLen );
 
 		// or if empty quotes it is the true header like
 		// for 'hide spider log' option

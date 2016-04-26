@@ -606,7 +606,7 @@ bool Title::setTitle ( Xml *xml, Words *words, int32_t maxTitleLen, Query *query
 			char* title_start = words->getWord(start);
 			char* title_end = words->getWord(i);
 			size_t title_size = title_end - title_start;
-			const char* result = strnstr2(title_start, title_size, "/in.");
+			const char* result = strnstr( title_start, "/in.", title_size );
 			if (result != NULL) {
 				char* endp = NULL;
 				// do some further verification to avoid screwing up title
