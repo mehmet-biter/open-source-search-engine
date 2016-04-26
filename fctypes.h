@@ -99,7 +99,7 @@ static inline char *strncasestr( const char *haystack, const char *needle, int32
 char *gb_strcasestr ( char *haystack , const char *needle );
 char *gb_strncasestr ( char *haystack , int32_t haystackSize , const char *needle ) ;
 
-char *strnstr( char *haystack, const char *needle, int32_t len);
+char *strnstr( const char *haystack, const char *needle, int32_t len);
 
 // updates our static var, s_adjustment to keep our clock in sync to hostId #0
 void settimeofdayInMillisecondsGlobal ( int64_t newTime ) ;
@@ -107,9 +107,6 @@ void settimeofdayInMillisecondsGlobal ( int64_t newTime ) ;
 // convert global to local time in milliseconds
 int64_t globalToLocalTimeMilliseconds ( int64_t global ) ;
 int64_t localToGlobalTimeMilliseconds ( int64_t local  ) ;
-// the same thing but in seconds
-int32_t      globalToLocalTimeSeconds      ( int32_t      global ) ;
-int32_t      localToGlobalTimeSeconds      ( int32_t      local  ) ;
 
 // we now default this to local time to avoid jumpiness associated with
 // having to sync with host #0. most routines calling this usually are just
@@ -143,8 +140,6 @@ extern const char g_map_is_alpha[];
 extern const char g_map_is_digit[];
 extern const char g_map_is_hex[];
 extern const char g_map_is_tagname_char[];
-
-//extern bool      g_clockInSync;
 
 bool isClockInSync();
 

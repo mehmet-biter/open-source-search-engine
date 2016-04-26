@@ -333,10 +333,12 @@ bool Profiler::processSymbolTable (FILE * file){
 						strtab+psym->st_name,255);
 					
 					char* end = strnstr( fnInfoTmp.m_fnName, "__", 255 );
-					if(end) 
+					if ( end ) {
 						*end = '\0';
-					else 
-						fnInfoTmp.m_fnName[gbstrlen(strtab+psym->st_name)]='\0';
+					} else {
+						fnInfoTmp.m_fnName[gbstrlen( strtab + psym->st_name )] = '\0';
+					}
+					
 					fnInfoTmp.m_timesCalled=0;
 					fnInfoTmp.m_totalTimeTaken=0;
 					fnInfoTmp.m_maxTimeTaken=0;	
@@ -661,19 +663,6 @@ bool Profiler::endTimer(int32_t address,
 			    timeTaken, 
 			    name,
 			    caller?caller:"");
-
-		/*
-		if(g_conf.m_dynamicPerfGraph) {
-			g_stats.addStat_r ( 0      , 
-					    fnInfo->m_startTime, 
-					    now,
-					    "profiler_stat",
-					    0 , //color will be the hash of 
-					    //the callback
-					    STAT_GENERIC,
-					    name);		
-		}
-		*/
 	}
 
 	for (int32_t i=0;i<11;i++){

@@ -122,12 +122,14 @@ char* getLanguageAbbr ( unsigned char langId ) {
 //   in the url domain. 
 // . s/slen is a full word that is found in our "dictionary" so using
 //   phrases like biglittlestuff probably should not go here.
-bool isAdult( char *s, int32_t slen, char **loc ) {
-	char **p = NULL;
-	char *a = NULL;
-	p = &a;
-	if ( loc ) 
+bool isAdult( char *s, int32_t slen, const char **loc ) {
+	const char *a = NULL;
+	const char **p = &a;
+
+	if ( loc ) {
 		p = loc;
+	}
+
 	// check for naughty words
 	if ( ( *p = strnstr ( s, "upskirt", slen    ) ) ) return true;
 	if ( ( *p = strnstr ( s, "downblouse", slen ) ) ) return true;

@@ -594,9 +594,7 @@ bool Speller::canSplitWords( char *s, int32_t slen, bool *isPorn, char *splitWor
 }
 
 bool Speller::findNext( char *s, char *send, char **nextWord, bool *isPorn, unsigned char langId ) {
-	//char *xx=NULL;*xx=0;
-
-	char *loc = NULL;
+	const char *loc = NULL;
 	int32_t slen = send - s;
 	// check if there is an adult word in there
 	// NOTE: The word 'adult' gives a lot of false positives, so even 

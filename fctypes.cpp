@@ -458,7 +458,7 @@ char *strncasestr( char *haystack, int32_t haylen, const char *needle){
 	return NULL;
 }
 
-char *strnstr( char *haystack, const char *needle, int32_t len ) {
+char *strnstr( const char *haystack, const char *needle, int32_t len ) {
 	int32_t matchLen = 0;
 	int32_t needleLen = gbstrlen( needle );
 	for ( int32_t i = 0; i < len; ++i ) {
@@ -480,7 +480,7 @@ char *strnstr( char *haystack, const char *needle, int32_t len ) {
 		}
 
 		// we've matched the whole string
-		return haystack + i - matchLen + 1;
+		return const_cast<char*>( haystack + i - matchLen + 1 );
 	}
 
 	return NULL;
@@ -1045,33 +1045,12 @@ int32_t urlDecodeNoZeroes ( char *dest , const char *s , int32_t slen ) {
 static int64_t s_adjustment = 0;
 
 int64_t globalToLocalTimeMilliseconds ( int64_t global ) {
-	// sanity check
-	//if ( ! g_clockInSync ) 
-	//	log("gb: Converting global time but clock not in sync.");
 	return global - s_adjustment;
 }
 
 int64_t localToGlobalTimeMilliseconds ( int64_t local ) {
-	// sanity check
-	//if ( ! g_clockInSync ) 
-	//	log("gb: Converting global time but clock not in sync.");
 	return local + s_adjustment;
 }
-
-int32_t globalToLocalTimeSeconds ( int32_t global ) {
-	// sanity check
-	//if ( ! g_clockInSync ) 
-	//	log("gb: Converting global time but clock not in sync.");
-	return global - (s_adjustment/1000);
-}
-
-int32_t localToGlobalTimeSeconds ( int32_t local ) {
-	// sanity check
-	//if ( ! g_clockInSync ) 
-	//	log("gb: Converting global time but clock not in sync.");
-	return local + (s_adjustment/1000);
-}
-
 
 static char s_tafile[1024];
 static bool s_hasFileName = false;
