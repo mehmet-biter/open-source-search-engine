@@ -5,9 +5,6 @@
 #include "hash.h"
 #include "Conf.h"
 
-bool g_recoveryMode = false;
-int32_t g_recoveryLevel = 0;
-
 int main(int argc, char **argv) {
 	// initialize Gigablast
 	g_conf.m_maxMem = 1000000000LL;
