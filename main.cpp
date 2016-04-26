@@ -109,9 +109,9 @@ void dumpLinkdb          ( char *coll,int32_t sfn,int32_t numFiles,bool includeT
 
 void exitWrapper ( void *state ) { exit(0); };
 
-bool g_recoveryMode = false;
+extern bool g_recoveryMode;
 
-int32_t g_recoveryLevel = 0;
+extern int32_t g_recoveryLevel;
 	
 bool isRecoveryFutile ( ) ;
 

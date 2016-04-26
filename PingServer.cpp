@@ -28,8 +28,8 @@ int32_t klogctl( int, char *,int ) { return 0; }
 #define PAGER_BUF_SIZE (10*1024)
 
 // from main.cpp. when keepalive script restarts us this is true
-extern bool g_recoveryMode;
-extern int32_t g_recoveryLevel;
+bool g_recoveryMode = false;
+int32_t g_recoveryLevel = 0;
 
 // a global class extern'd in .h file
 PingServer g_pingServer;
