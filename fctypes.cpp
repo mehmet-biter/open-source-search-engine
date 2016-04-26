@@ -538,16 +538,6 @@ int32_t ulltoa ( char *s , uint64_t n ) {
 	return s - start;
 }
 
-/*
-int32_t atol2 ( const char *s, int32_t len ) {
-	char tmp[32];
-	if ( len > 30 ) len = 30;
-	gbmemcpy ( tmp , s , len );
-	tmp [ len ] = '\0';
-	return atol ( s );
-}
-*/
-
 int32_t atol2 ( const char *s, int32_t len ) {
 	// skip over spaces
 	const char *end = s + len;
@@ -699,21 +689,6 @@ char *strncasestr ( char *haystack , const char *needle ,
 		if ( ! needle[1] ) return &haystack[i];
 		// compare the whole strings now
 		if ( strncasecmp ( &haystack[i] , needle , needleSize ) == 0 ) 
-			return &haystack[i];			
-	}
-	return NULL;
-}
-
-char *strnstr ( char *haystack , char *needle , int32_t haystackSize ) {
-	int32_t needleSize = gbstrlen(needle);
-	int32_t n = haystackSize - needleSize ;
-	for ( int32_t i = 0 ; i <= n ; i++ ) {
-		// keep looping if first chars do not match
-		if ( haystack[i] != needle[0] ) continue;
-		// if needle was only 1 char it's a match
-		if ( ! needle[1] ) return &haystack[i];
-		// compare the whole strings now
-		if ( strncmp ( &haystack[i] , needle , needleSize ) == 0 ) 
 			return &haystack[i];			
 	}
 	return NULL;
@@ -1254,7 +1229,6 @@ int64_t gettimeofdayInMillisecondsSynced() {
 			s_printed++;
 			log("xml: clock not in sync with host #0 yet!!!!!!");
 		}
-		//char *xx = NULL; *xx = 0; }
 	}
 
 	int64_t now;
@@ -1269,14 +1243,12 @@ int64_t gettimeofdayInMillisecondsSynced() {
 }
 
 int64_t gettimeofdayInMillisecondsGlobalNoCore() {
-	// sanity check
-	//if ( ! g_clockInSync ) { char *xx = NULL; *xx = 0; }
-	//if ( ! g_clockInSync ) 
-	//	log("gb: Getting global time but clock not in sync.");
 	// this isn't async signal safe...
 	struct timeval tv;
 	gettimeofday ( &tv , NULL );
+
 	int64_t now=(int64_t)(tv.tv_usec/1000)+((int64_t)tv.tv_sec)*1000;
+
 	// adjust from Msg0x11 time adjustments
 	now += s_adjustment;
 	return now;
@@ -1294,21 +1266,9 @@ uint64_t gettimeofdayInMicroseconds(void) {
 
 // "local" means the time on this machine itself, NOT a timezone thing.
 int64_t gettimeofdayInMilliseconds() {
-	// this isn't async signal safe...
 	struct timeval tv;
 	gettimeofday ( &tv , NULL );
-	int64_t now=(int64_t)(tv.tv_usec/1000)+((int64_t)tv.tv_sec)*1000;
-	// adjust from Msg0x11 time adjustments
-	//now += s_adjustment;
-	// update g_now if it is more accurate
-	// . or don't, bad to update it here because it could be very different
-	//   from what it should be
-	return now;
-}
-
-
-int64_t gettimeofdayInMilliseconds_force ( ) {
-  return gettimeofdayInMilliseconds();
+	return ((int64_t)(tv.tv_usec/1000)+((int64_t)tv.tv_sec)*1000);
 }
 
 time_t getTime () {
