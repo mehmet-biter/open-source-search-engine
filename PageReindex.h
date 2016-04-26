@@ -22,8 +22,7 @@ public:
 			    void (* callback) (void *state ) ) ;
 	
 	bool gotList ( );
-	
-	//char *m_coll;
+
 	collnum_t m_collnum;
 	int32_t m_startNum;
 	int32_t m_endNum;
@@ -33,8 +32,6 @@ public:
 	int32_t m_niceness;
 	Msg39Request m_req;
 	Msg3a m_msg3a;
-	//Msg1 m_msg1;
-	//RdbList m_list2;
 	Msg4 m_msg4;
 	SafeBuf m_sb;
 	int32_t m_numDocIds;

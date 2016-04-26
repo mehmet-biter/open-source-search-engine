@@ -1,5 +1,3 @@
-#include "gb-include.h"
-
 #include "HttpServer.h"
 #include "Msg0.h"
 #include "Msg1.h"
@@ -19,11 +17,6 @@
 #include "PageInject.h" // Msg7
 #include "PageReindex.h"
 
-//static bool printInterface ( SafeBuf *sb , char *q ,//int32_t user ,
-//                              char *username, char *c , char *errmsg ,
-//			      char *qlangStr ) ;
-
-
 class State13 {
 public:
 	Msg1c      m_msg1c;
@@ -37,22 +30,6 @@ static void doneReindexing ( void *state ) ;
 // . query re-index interface
 // . call g_httpServer.sendDynamicPage() to send it
 bool sendPageReindex ( TcpSocket *s , HttpRequest *r ) {
-
-	// if they are NOT submitting a request print the interface
-	// and we're not running, just print the interface
-	// t = r->getString ("action" , &len );
-	// if ( len < 2 ) { // && ! s_isRunning ) {
-	// 	//p = g_pages.printAdminTop ( p , pend , s , r );
-	// 	//p = printInterface ( p , pend,q,username,coll,NULL,qlangStr);
-	// 	//g_pages.printAdminTop ( &sb , s , r );
-	// 	//printInterface ( &sb,q,username,coll,NULL,qlangStr);
-	// 	return g_httpServer.sendDynamicPage (s,
-	// 					     sb.getBufStart(),
-	// 					     sb.length(),
-	// 					     -1,
-	// 					     false);
-	// }		
-
 	// make a state
 	State13 *st ;
 	try { st = new (State13); }
@@ -75,9 +52,7 @@ bool sendPageReindex ( TcpSocket *s , HttpRequest *r ) {
 	// bitch if no collection rec found
 	if ( ! cr ) {
 		g_errno = ENOCOLLREC;
-		//log("build: Injection from %s failed. "
-		//    "Collection \"%s\" does not exist.",
-		//    iptoa(s->m_ip),coll);
+
 		// g_errno should be set so it will return an error response
 		g_httpServer.sendErrorReply(sock,500,mstrerror(g_errno));
 		mdelete ( st , sizeof(State13) , "PageTagdb" );
@@ -104,8 +79,6 @@ bool sendPageReindex ( TcpSocket *s , HttpRequest *r ) {
 		doneReindexing ( st );
 		return true;
 	}
-	
-
 
 	int32_t langId = getLangIdFromAbbr ( gr->m_qlang );
 
@@ -123,27 +96,6 @@ bool sendPageReindex ( TcpSocket *s , HttpRequest *r ) {
 	// no waiting
 	doneReindexing ( st );
 	return true;
-
-	/*
-
-	st->m_updateTags = updateTags;
-
-	  take this our for now. we are using likedb...
-
-	if ( updateTags ) {
-		// let msg1d do all the work now
-		if ( ! st->m_msg1d.updateQuery  ( st->m_query ,
-						  r,
-						  s,
-						  st->m_coll,
-						  startNum ,
-						  endNum   ,
-						  st ,
-						  doneReindexing ) )
-			return false;
-	}
-	else {
-	*/
 }
 
 void doneReindexing ( void *state ) {
@@ -157,22 +109,6 @@ void doneReindexing ( void *state ) {
 		log(LOG_INFO,"admin: Done with query reindex. %s",
 		    mstrerror(g_errno));
 
-	// if no error, send the pre-generated page
-	// this must be under 100 chars or it messes our reply buf up
-	//char mesg[200];
-	//
-	// if we used msg1d, then WHY ARE WE USING m_msg1c.m_numDocIdsAdded 
-	// here?
-	//
-	/*
-	if ( st->m_updateTags )
-		sprintf ( mesg , "<center><font color=red><b>Success. "
-			  "Updated tagrecs and index for %"INT32" docid(s)"
-			  "</b></font></center><br>" , 
-			  st->m_msg1d.m_numDocIds );
-	else
-	*/
-
 	////
 	//
 	// print the html page
@@ -184,7 +120,6 @@ void doneReindexing ( void *state ) {
 	char format = hr->getReplyFormat();
 
 	SafeBuf sb;
-
 
 	char *ct = "text/html";
 	if ( format == FORMAT_JSON ) ct = "application/json";
@@ -207,8 +142,6 @@ void doneReindexing ( void *state ) {
 		delete (st);
 		return;
 	}
-
-		
 
 	if ( format == FORMAT_JSON ) {
 		sb.safePrintf("{\"response\":{\n"
@@ -269,9 +202,6 @@ void doneReindexing ( void *state ) {
 	delete (st);
 }
 
-
-
-
 ////////////////////////////////////////////////////////
 //
 //
@@ -291,7 +221,7 @@ Msg1c::Msg1c() {
 }
 
 bool Msg1c::reindexQuery ( char *query ,
-			   collnum_t collnum ,//char *coll  ,
+			   collnum_t collnum ,
 			   int32_t startNum ,
 			   int32_t endNum ,
 			   bool forceDel ,
@@ -311,24 +241,21 @@ bool Msg1c::reindexQuery ( char *query ,
 	m_niceness = MAX_NICENESS;
 
 	// langunknown?
-	m_qq.set2 ( query , langId , true ); // /*bool flag*/ );
+	m_qq.set2 ( query , langId , true );
 
 	// sanity fix
 	if ( endNum - startNum > MAXDOCIDSTOCOMPUTE )
 		endNum = startNum + MAXDOCIDSTOCOMPUTE;
 
-	//CollectionRec *cr = g_collectiondb.getRec ( coll );
 	// reset again just in case
 	m_req.reset();
+
 	// set our Msg39Request
-	//m_req.ptr_coll                    = coll;
-	//m_req.size_coll                   = gbstrlen(coll)+1;
 	m_req.m_collnum = m_collnum;
 	m_req.m_docsToGet                 = endNum;
 	m_req.m_niceness                  = 0,
 	m_req.m_getDocIdScoringInfo       = false;
 	m_req.m_doSiteClustering          = false;
-	//m_req.m_doIpClustering            = false;
 	m_req.m_doDupContentRemoval       = false;
 	m_req.ptr_query                   = m_qq.m_orig;
 	m_req.size_query                  = m_qq.m_origLen+1;
@@ -344,11 +271,10 @@ bool Msg1c::reindexQuery ( char *query ,
 	g_errno = 0;
 	// . get the docIds
 	// . this sets m_msg3a.m_clusterLevels[] for us
-	if ( ! m_msg3a.getDocIds ( &m_req ,
-				   &m_qq   ,
-				   this   , 
-				   gotDocIdListWrapper ))
+	if ( ! m_msg3a.getDocIds ( &m_req, &m_qq, this, gotDocIdListWrapper )) {
 		return false;
+	}
+
 	// . this returns false if blocks, true otherwise
 	// . sets g_errno on failure
 	return gotList ( );
@@ -357,8 +283,10 @@ bool Msg1c::reindexQuery ( char *query ,
 void gotDocIdListWrapper ( void *state ) {
 	// cast
 	Msg1c *m = (Msg1c *)state;
+
 	// return if this blocked
 	if ( ! m->gotList ( ) ) return;
+
 	// call callback otherwise
 	m->m_callback ( m->m_state );
 }
@@ -387,10 +315,6 @@ bool Msg1c::gotList ( ) {
 	// host #0... 
 	g_conf.m_spideringEnabled = true;
 
-	// make a list big enough to hold all the spider recs that we make
-	// from these docIds
-	//SafeBuf sb;
-
 	int32_t nowGlobal = getTimeGlobal();
 
 	HashTableX dt;
@@ -403,7 +327,7 @@ bool Msg1c::gotList ( ) {
 	GigablastRequest *gr = &st->m_gr;
 
 	m_numDocIdsAdded = 0;
-	//int32_t count = 0;
+
 	// list consists of docIds, loop through each one
  	for(int32_t i = 0; i < numDocIds; i++) {
 		int64_t docId = tmpDocIds[i];
@@ -411,20 +335,13 @@ bool Msg1c::gotList ( ) {
 		if ( dt.isInTable ( &docId ) ) continue;
 		// add it
 		if ( ! dt.addKey ( &docId ) ) return true;
-		// log it if we have 1000 or less of them for now
-		//if ( i <= 100 ) 
-
-		// this causes a sigalarm log msg to wait forever for lock
-		//char *msg = "Reindexing";
-		//if ( m_forceDel ) msg = "Deleting";
-		//logf(LOG_INFO,"build: %s docid #%"INT32"/%"INT32") %"INT64"",
-		//     msg,i,count++,docId);
 
 		SpiderRequest sr;
 		sr.reset();
 
 		// url is a docid!
 		sprintf ( sr.m_url , "%"UINT64"" , docId );
+
 		// make a fake first ip
 		// use only 64k values so we don't stress doledb/waittrees/etc.
 		// for large #'s of docids
@@ -449,19 +366,18 @@ bool Msg1c::gotList ( ) {
 		}
 
 		// 0 is not a legit val. it'll core below.
-		if ( firstIp == 0 ) firstIp = 1;
+		if ( firstIp == 0 ) {
+			firstIp = 1;
+		}
+
 		// use a fake ip
-		sr.m_firstIp        =  firstIp;//nowGlobal;
+		sr.m_firstIp        =  firstIp;
 		// we are not really injecting...
 		sr.m_isInjecting    =  false;//true;
 		sr.m_hopCount       = -1;
 		sr.m_isPageReindex  =  1;
 		sr.m_urlIsDocId     =  1;
 		sr.m_fakeFirstIp    =  1;
-		// for msg12 locking
-		//sr.m_probDocId      = docId;
-		// use test-parser not test-spider
-		//sr.m_useTestSpiderDir = 0;
 		sr.m_parentIsSiteMap = 0;
 		// now you can recycle content instead of re-downloading it
 		// for every docid
@@ -470,14 +386,14 @@ bool Msg1c::gotList ( ) {
 		// dedupSpiderList() if there was a SpiderReply whose
 		// spider time was > 0
 		sr.m_addedTime = nowGlobal;
-		//sr.setDataSize();
-		if ( m_forceDel ) sr.m_forceDelete = 1;
-		else              sr.m_forceDelete = 0;
+	    sr.m_forceDelete = m_forceDel ? 1 : 0;
+
 		// . complete its m_key member
 		// . parentDocId is used to make the key, but only allow one
 		//   page reindex spider request per url... so use "0"
 		// . this will set "uh48" to hash64b(m_url) which is the docid
 		sr.setKey( firstIp, 0LL , false );
+
 		// how big to serialize
 		int32_t recSize = sr.getRecSize();
 
@@ -487,7 +403,7 @@ bool Msg1c::gotList ( ) {
 		if ( ! m_sb.safeMemcpy ( (char *)&sr , recSize ) ) {
 			// g_errno must be set
 			if ( ! g_errno ) { char *xx=NULL;*xx=0; }
-			//s_isRunning = false;
+
 			log(LOG_LOGIC,
 			    "admin: Query reindex size of %"INT32" "
 			    "too big. Aborting. Bad engineer." , 
@@ -499,38 +415,9 @@ bool Msg1c::gotList ( ) {
 	// free "finalBuf" etc. for msg39
 	m_msg3a.reset();
 
-	/*
-	// make it into a list for adding with Msg1
-	key128_t startKey; startKey.setMin();
-	key128_t endKey  ; endKey.setMax();
-	m_list2.set ( sb.getBufStart() ,
-		      sb.length     () ,
-		      sb.getBufStart() ,
-		      sb.getCapacity() ,
-		      (char *)&startKey , 
-		      (char *)&endKey   ,
-		      -1       ,  // fixedDatSize
-		      true     ,  // ownData?
-		      false    , // use half keys?
-		      16 ); // 16 byte keys now
-	// release from sb so it doesn't free it
-	sb.detachBuf();
-	*/
-
-	//g_conf.m_logDebugSpider = 1;
-
 	log("reindex: adding docid list to spiderdb");
 
-	if ( ! m_msg4.addMetaList ( m_sb.getBufStart() ,
-				    m_sb.length() ,
-				    m_collnum ,
-				    this ,
-				    addedListWrapper ,
-				    0 , // niceness
-				    RDB_SPIDERDB ))// spiderdb
-		return false;
-	// if we did not block, go here
-	return true;
+	return m_msg4.addMetaList ( m_sb.getBufStart(), m_sb.length(), m_collnum, this, addedListWrapper, 0, RDB_SPIDERDB );
 }
 
 void addedListWrapper ( void *state ) {
