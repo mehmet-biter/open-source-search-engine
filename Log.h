@@ -85,27 +85,31 @@
 
 #define MAX_LOG_MSGS  1024 // in memory
 
-#ifdef _CHECK_FORMAT_STRING_
-bool log ( int32_t type , const char *formatString , ... )
-	__attribute__ ((format(printf, 2, 3)));
-bool log ( const char *formatString , ... )
-	__attribute__ ((format(printf, 1, 2)));
-bool logf ( int32_t type , const char *formatString , ... )
-	__attribute__ ((format(printf, 2, 3)));
-bool loghex( int32_t type, void const *data, const unsigned int len, const char *formatString , ...)
-	__attribute__ ((format(printf, 4, 5)));
-#else
 // may also syslog and fprintf the msg.
 // ALWAYS returns FALSE (i.e. 0)!!!! so you can say return log.log(...)
-bool log ( int32_t type , const char *formatString , ... ) ;
+bool log ( int32_t type , const char *formatString , ... )
+	__attribute__ ((format(printf, 2, 3)));
+
 // this defaults to type of LOG_WARN
-bool log ( const char *formatString , ... ) ;
+bool log ( const char *formatString , ... )
+	__attribute__ ((format(printf, 1, 2)));
+
 // force it to be logged, even if off on log controls panel
-bool logf ( int32_t type , const char *formatString , ... ) ;
-bool loghex( int32_t type, void const *data, const unsigned int len, const char *formatString , ...);
-#endif
+bool logf ( int32_t type , const char *formatString , ... )
+	__attribute__ ((format(printf, 2, 3)));
 
+bool loghex( int32_t type, void const *data, const unsigned int len, const char *formatString , ...)
+	__attribute__ ((format(printf, 4, 5)));
 
+#define logDebug( condition, ... ) \
+	if ( condition ) { \
+		logf( LOG_DEBUG, __VA_ARGS__ ); \
+	}
+
+#define logTrace( condition, msg, ... ) \
+	if ( condition ) { \
+		logf( LOG_TRACE, "%s:%s:%d: " msg, __FILE__, __func__, __LINE__, ##__VA_ARGS__ ); \
+	}
 
 class Log { 
 
@@ -121,8 +125,7 @@ class Log {
 	// . if "asterisk" is true we print an asterisk to indicate that
 	//   the msg was actually logged earlier but only printed now because
 	//   we were in a signal handler at the time
-	bool logR ( int64_t now, int32_t type, const char *msg, bool asterisk ,
-		    bool forced = false );
+	bool logR ( int64_t now, int32_t type, const char *msg, bool forced = false );
 
 	// returns false if msg should not be logged, true if it should
 	bool shouldLog ( int32_t type , const char *msg ) ;
@@ -164,10 +167,6 @@ class Log {
 	int64_t     m_errorTime     [ MAX_LOG_MSGS ];
 	unsigned char m_errorType     [ MAX_LOG_MSGS ];
 	int           m_numErrors;
-
-	// m_erroMsg's point into this buf.
-	char          m_buf           [ 1024 * 32];  
-	int           m_bufPtr;
 
 	// do we need to print out the msgs we've saved while in sig handler?
 	bool          m_needsPrinting;

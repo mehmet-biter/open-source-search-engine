@@ -68,7 +68,6 @@ static bool renameCurrentLogFile ( ) {
 bool Log::init ( const char *filename ) {
 	// init these
 	m_numErrors =  0;
-	m_bufPtr    =  0;
 	m_fd        = -1;
 	m_disabled  = false;
 
@@ -195,19 +194,16 @@ static bool g_loggingEnabled = true;
 
 // 1GB max log file size
 #define MAXLOGFILESIZE 1000000000
-// for testing:
-//#define MAXLOGFILESIZE 3000
 
-bool Log::logR ( int64_t now , int32_t type , const char *msg , bool asterisk ,
-		 bool forced ) {
-
-	// filter if we should
-	//if ( forced ) goto skipfilter;
-
-	if ( ! g_loggingEnabled )
+bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
+	if ( ! g_loggingEnabled ) {
 		return true;
+	}
+
 	// return true if we should not log this
-	if ( ! forced && ! shouldLog ( type , msg ) ) return true;
+	if ( ! forced && ! shouldLog ( type , msg ) ) {
+		return true;
+	}
 
 	// get "msg"'s length
 	int32_t msgLen = gbstrlen ( msg );
@@ -289,7 +285,7 @@ bool Log::logR ( int64_t now , int32_t type , const char *msg , bool asterisk ,
 	// call sprintf, but first make sure we have room in m_buf and in
 	// the arrays. who know how much room the sprintf is going to need???
 	// NOTE: TODO: this is shaky -- fix it!
-	if ( m_bufPtr + tlen  >= 1024 * 32 ||  m_numErrors  >= MAX_LOG_MSGS){
+	if ( tlen  >= 1024 * 32 ||  m_numErrors  >= MAX_LOG_MSGS){
 		// this sets m_bufPtr to 0
 		if ( ! dumpLog ( ) ) {
 			fprintf(stderr,"Log::log: could not dump to file!\n");
@@ -343,17 +339,20 @@ bool Log::logR ( int64_t now , int32_t type , const char *msg , bool asterisk ,
 }
 
 bool Log::makeNewLogFile ( ) {
-
 	// prevent deadlock. don't log since we are in the middle of logging.
 	// otherwise, safebuf, which is used when renaming files, might
 	// call logR().
 	g_loggingEnabled = false;
+
 	// . rename old log file like log000 to log000-2013_11_04-18:19:32
 	// . returns false on error
 	bool status = renameCurrentLogFile();
+
 	// re-enable logging since nothing below should call logR() indirectly
 	g_loggingEnabled = true;
+
 	if ( ! status ) return false;
+
 	// close old fd
 	if ( m_fd >= 0 ) ::close ( m_fd );
 	// invalidate
@@ -470,14 +469,11 @@ void Log::printBuf ( ) {
 	if ( p < pend ) goto loop;
 }
 
-#include <ctype.h> // isascii()
-
 // . IMPORTANT: should be called while the lock is on!
 // . we just re-write to the file
 bool Log::dumpLog ( ) {
 	// for now don't dump
 	m_numErrors =  0;
-	m_bufPtr    =  0;
 
 	// for now just return true always
 	return true;
@@ -485,70 +481,92 @@ bool Log::dumpLog ( ) {
 
 bool log ( int32_t type , const char *formatString , ...) {
 	if ( g_log.m_disabled ) return false;
+
 	// do not log it if we should not
 	if ( ! g_log.shouldLog ( type , formatString ) ) return false;
-	// do not log it if we should not
-	//if ( type == LOG_WARN && ! g_conf.m_logWarnings ) return false;
+
 	// is it congestion?
 	if ( g_errno == ENOSLOTS && ! g_conf.m_logNetCongestion ) return false;
+
 	// this is the argument list (variable list)
 	va_list   ap;
+
 	// can we log if we're a sig handler? don't take changes
 	// print msg into this buf
 	char buf[1024*10];
+
 	// copy the error into the buffer space
 	va_start ( ap, formatString);
+
 	// print it into our buf now
 	vsnprintf ( buf , 1024*10 , formatString , ap );
+
 	va_end(ap);
+
 	// pass buf to g_log
-	g_log.logR ( 0 , type , buf , false );
+	g_log.logR ( 0, type, buf );
+
 	// always return false
 	return false;
 }
 
 bool log ( const char *formatString , ... ) {
 	if ( g_log.m_disabled ) return false;
+
 	// do not log it if we should not
 	if ( ! g_log.shouldLog ( LOG_WARN , formatString ) ) return false;
+
 	// is it congestion?
 	if ( g_errno == ENOSLOTS && ! g_conf.m_logNetCongestion ) return false;
+
 	// this is the argument list (variable list)
 	va_list   ap;
+
 	// can we log if we're a sig handler? don't take changes
 	// print msg into this buf
 	char buf[1024*10];
+
 	// copy the error into the buffer space
 	va_start ( ap, formatString);
+
 	// print it into our buf now
 	vsnprintf ( buf , 1024*10 , formatString , ap );
+
 	va_end(ap);
 	
 	// pass buf to g_log
 	// ### BR 20151217: Default to DEBUG if no log level given
+	/// @todo ALC shouldn't this be LOG_WARN?
 	g_log.logR ( 0 , LOG_DEBUG , buf , false );
+
 	// always return false
 	return false;
 }
 
 bool logf ( int32_t type , const char *formatString , ...) {
 	if ( g_log.m_disabled ) return false;
-	// do not log it if we should not
-	//if ( type == LOG_WARN && ! g_conf.m_logWarnings ) return false;
+
 	// is it congestion?
 	if ( g_errno == ENOSLOTS && ! g_conf.m_logNetCongestion ) return false;
+
 	// this is the argument list (variable list)
 	va_list   ap;
+
 	// can we log if we're a sig handler? don't take changes
 	// print msg into this buf
 	char buf[1024*10];
+
 	// copy the error into the buffer space
 	va_start ( ap, formatString);
+
 	// print it into our buf now
 	vsnprintf ( buf , 1024*10 , formatString , ap );
+
 	va_end(ap);
+
 	// pass buf to g_log
-	g_log.logR ( 0 , type , buf , false , true /*forced?*/ );
+	g_log.logR ( 0, type, buf, true );
+
 	// always return false
 	return false;
 }
@@ -636,7 +654,6 @@ static void hexdump(void const *data, const unsigned int len, char *dest, const 
 
 
 bool loghex( int32_t type, void const *data, const unsigned int len, const char *formatString , ...) {
-	
 	if ( g_log.m_disabled ) return false;
 		
 	// do not log it if we should not
@@ -658,7 +675,8 @@ bool loghex( int32_t type, void const *data, const unsigned int len, const char 
 	hexdump(data, len, &buf[written], (1024*10)-written);
 	
 	// pass buf to g_log
-	g_log.logR ( 0 , type , buf , false);
+	g_log.logR ( 0 , type , buf );
+
 	// always return false
 	return false;
 }
