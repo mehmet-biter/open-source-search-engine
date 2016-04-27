@@ -523,8 +523,8 @@ int32_t Spiderdb::print( char *srec , SafeBuf *sb ) {
 
 
 bool Spiderdb::init ( ) {
-
 	int32_t maxMem = 200000000;
+
 	// . what's max # of tree nodes?
 	// . assume avg spider rec size (url) is about 45
 	// . 45 + 33 bytes overhead in tree is 78
@@ -545,13 +545,6 @@ bool Spiderdb::init ( ) {
 	char      priority   = 12;
 	int32_t      spiderTime = 0x3fe96610;
 	int64_t urlHash48  = 0x1234567887654321LL & 0x0000ffffffffffffLL;
-	//int64_t pdocid     = 0x567834222LL;
-	//key192_t k = makeOrderKey ( ip,priority,spiderTime,urlHash48,pdocid);
-	//if (getOrderKeyUrlHash48  (&k)!=urlHash48 ){char*xx=NULL;*xx=0;}
-	//if (getOrderKeySpiderTime (&k)!=spiderTime){char*xx=NULL;*xx=0;}
-	//if (getOrderKeyPriority   (&k)!=priority  ){char*xx=NULL;*xx=0;}
-	//if (getOrderKeyIp         (&k)!=ip        ){char*xx=NULL;*xx=0;}
-	//if (getOrderKeyParentDocId(&k)!=pdocid    ){char*xx=NULL;*xx=0;}
 
 	// doledb key test
 	key_t dk = g_doledb.makeKey(priority,spiderTime,urlHash48,false);
@@ -906,7 +899,7 @@ SpiderColl *SpiderCache::getSpiderCollIffNonNull ( collnum_t collnum ) {
 	return cr->m_spiderColl;
 }
 
-bool tryToDeleteSpiderColl ( SpiderColl *sc , char *msg ) {
+bool tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) {
 	// if not being deleted return false
 	if ( ! sc->m_deleteMyself ) return false;
 	// otherwise always return true
@@ -1032,14 +1025,10 @@ SpiderColl *SpiderCache::getSpiderColl ( collnum_t collnum ) {
 	g_conf.m_useQuickpoll = saved;
 
 	// did crawlbottesting delete it right away?
-	if ( tryToDeleteSpiderColl( sc ,"1") ) return NULL;
-	// sanity check
-	//if ( ! cr ) { char *xx=NULL;*xx=0; }
-	// deleted right away?
-	//if ( sc->getCollectionRec() == NULL ) { char *xx=NULL;*xx=0; }
+	if ( tryToDeleteSpiderColl( sc, "1" ) ) return NULL;
+
 	// note it!
-	log(LOG_DEBUG,"spider: adding new spider collection for %s",
-	    cr->m_coll);
+	log(LOG_DEBUG,"spider: adding new spider collection for %s", cr->m_coll);
 	// that was it
 	return sc;
 }
@@ -1983,7 +1972,7 @@ char *getMatchingUrlPattern ( SpiderColl *sc , SpiderRequest *sreq, char *tag);
 // . we must skip certain rules in getUrlFilterNum() when doing to for Msg20
 //   because things like "parentIsRSS" can be both true or false since a url
 //   can have multiple spider recs associated with it!
-int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
+int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 							SpiderReply		*srep,
 							int32_t			nowGlobal,
 							bool			isForMsg20,
@@ -1992,8 +1981,7 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 							bool			isOutlink,
 							HashTableX		*quotaTable,
 							int32_t			langIdArg ) {
-
-	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
 		
 	if ( ! sreq ) {
 		log("spider: sreq is NULL!");
@@ -2030,23 +2018,6 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 	SpiderColl *sc = g_spiderCache.getSpiderColl(cr->m_collnum);
 
 	if ( ! quotaTable ) quotaTable = &sc->m_localTable;
-
-	//if ( strstr(url,"http://www.vault.com/rankings-reviews/company-rankings/law/vault-law-100/.aspx?pg=2" ))
-	//	log("hey");
-
-	//initAggregatorTable();
-
-	//int32_t tldlen2;
-	//char *tld2 = getTLDFast ( sreq->m_url , &tldlen2);
-	//bool bad = true;
-	//if ( tld2[0] == 'c' && tld2[1] == 'o' && tld2[2]=='m' ) bad = false;
-	//if ( tld2[0] == 'o' && tld2[1] == 'r' && tld2[2]=='g' ) bad = false;
-	//if ( tld2[0] == 'u' && tld2[1] == 's' ) bad = false;
-	//if ( tld2[0] == 'g' && tld2[1] == 'o' && tld2[2]=='v' ) bad = false;
-	//if ( tld2[0] == 'e' && tld2[1] == 'd' && tld2[2]=='u' ) bad = false;
-	//if ( tld2[0] == 'i' && tld2[1] == 'n' && tld2[2]=='f' ) bad = false;
-	//if ( bad ) 
-	//	log("hey");
 
 	// shortcut
 	char *ucp = cr->m_diffbotUrlCrawlPattern.getBufStart();
@@ -2127,9 +2098,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 				continue;
 			p += 10;
 			p = strstr(p,"&&");
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2159,9 +2129,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 				continue;
 			p += 10;
 			p = strstr(p,"&&");
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2181,9 +2150,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2192,9 +2160,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 
 		if ( *p=='h' && strncmp(p,"hasreply",8) == 0 ) {
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			// skip for msg20
@@ -2207,9 +2174,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// check for &&
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -2222,9 +2188,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 		// usually temporary condition that warrants a retry
 		if ( *p=='h' && strncmp(p,"hastmperror",11) == 0 ) {
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			// skip for msg20
@@ -2275,9 +2240,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2296,9 +2260,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2316,9 +2279,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2336,9 +2298,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2372,9 +2333,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2393,9 +2353,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2421,9 +2380,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2443,9 +2401,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2462,9 +2419,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2502,9 +2458,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			
@@ -2512,30 +2467,12 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			goto checkNextRule;
 		}
 
-		/*
-		if ( strncmp(p,"isparentindexed",16) == 0 ) {
-			// skip for msg20
-			if ( isForMsg20 ) continue;
-			// if we have no such inlink
-			if ( (bool)sreq->m_wasParentIndexed == val ) continue;
-			// skip
-			p += 16;
-			// skip to next constraint
-			p = strstr(p, "&&");
-			// all done?
-			if ( ! p ) return i;
-			p += 2;
-			goto checkNextRule;
-		}
-		*/
-
 		// we can now handle this guy since we have the latest
 		// SpiderReply, pretty much guaranteed
 		if ( strncmp(p,"isindexed",9) == 0 ) {
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			
@@ -2555,9 +2492,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2580,9 +2516,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2599,9 +2534,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2619,9 +2553,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 				continue;
 			p += 6;
 			p = strstr(p, "&&");
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2635,9 +2568,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			if ( (bool)sreq->m_fakeFirstIp == val ) continue;
 			p += 8;
 			p = strstr(p, "&&");
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2655,9 +2587,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 				continue;
 			p += 6;
 			p = strstr(p, "&&");
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2742,21 +2673,7 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 				     to_lower_a(ext[3]) == 'g' )
 					goto gotOne;
 			}
-			// two letter extensions
-			// .warc.gz and .arc.gz is ok
-			// take this out for now
-			// else if ( ext[1] == '.' ) {
-			// 	if ( to_lower_a(ext[2]) == 'g' &&
-			// 	     to_lower_a(ext[3]) == 'z' )
-			// 		goto gotOne;
-			// }
 
-			// check for ".css?" substring
-			// these two suck up a lot of time:
-			// take them out for now. MDW 2/21/2015
-			//special = strstr(url,".css?");
-			//if ( special ) goto gotOne;
-			//special = strstr(url,"/print/");
 			// try to make detecting .css? super fast
 			if ( ext[0] != '.' &&
 			     ext[1] != '.' &&
@@ -2770,15 +2687,14 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 						goto gotOne;
 				}
 			}
-			//if ( special ) goto gotOne;
+
 			// no match, try the next rule
 			continue;
 		gotOne:
 			p += 7;
 			p = strstr(p, "&&");
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -2788,9 +2704,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 
 		// check for "isrss" aka "rss"
 		if ( strncmp(p,"isrss",5) == 0 ) {
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			// must have a reply
@@ -2802,9 +2717,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// check for &&
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -2821,9 +2735,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// check for &&
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -2835,9 +2748,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 		// a permalink by calling isPermalink() function.
 		if (!strncmp(p,"ispermalink",11) ) {
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			// must have a reply
@@ -2849,11 +2761,11 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// check for &&
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
+
 			// skip the '&&' and go to next rule
 			p += 2;
 			goto checkNextRule;
@@ -2863,13 +2775,16 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 		// be permalinks but might not
 		if (!strncmp(p,"ispermalinkformat",17) ) {
 			// if we are not rss, we do not match this rule
-			if ( (bool)sreq->m_isUrlPermalinkFormat ==val)continue;
+			if ( (bool)sreq->m_isUrlPermalinkFormat == val ) {
+				continue;
+			}
+
 			// check for &&
 			p = strstr(p, "&&");
+
 			// if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -2888,9 +2803,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// check for &&
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -2901,9 +2815,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 		// check for this
 		if ( strncmp(p,"isnewrequest",12) == 0 ) {
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			// skip for msg20
@@ -2921,9 +2834,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// check for &&
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -2934,9 +2846,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 		// kinda like isnewrequest, but has no reply. use hasreply?
 		if ( strncmp(p,"isnew",5) == 0 ) {
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			// skip for msg20
@@ -2948,9 +2859,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// check for &&
 			p = strstr(p, "&&");
 			// if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -2979,9 +2889,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// maybe just have a bit in the spider request
 			// another rule?
 			p = strstr(p,"&&");
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			// skip the '&&'
@@ -2994,9 +2903,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 
 		// . we always match the "default" reg ex
 		// . this line must ALWAYS exist!
-		if ( *p=='d' && ! strcmp(p,"default" ) )
-		{
-			if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+		if ( *p=='d' && ! strcmp(p,"default" ) ) {
+			logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 			return i;
 		}
 
@@ -3027,9 +2935,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// skip to next constraint
 			p = strstr(p, "&&");
 			// all done?
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			p += 2;
@@ -3107,9 +3014,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			if ( sign == SIGN_LE && a >  b ) continue;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3150,9 +3056,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			if ( sign == SIGN_LE && a >  b ) continue;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3195,9 +3100,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			if ( sign == SIGN_LE && a >  b ) continue;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3222,12 +3126,11 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// urls to spiderdb... like XmlDoc.cpp calls
 			// getUrlFtilerNum() to see if doc is banned or
 			// if it should harvest links.
-			if ( ! quotaTable )
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( ! quotaTable ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
-			
+
 			int32_t *valPtr;
 			valPtr=(int32_t*)quotaTable->getValue(&sreq->m_domHash32);
 			// if no count in table, that is strange, i guess
@@ -3246,9 +3149,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			if ( sign == SIGN_LE && a >  b ) continue;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3315,9 +3217,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// we matched, now look for &&
 			p = strstr ( b , "&&" );
 			// if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			
@@ -3331,9 +3232,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 		// lang:en,zh_cn
 		if ( *p=='l' && strncmp(p,"lang",4)==0){
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			
@@ -3385,9 +3285,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// we matched, now look for &&
 			p = strstr ( b , "&&" );
 			// if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -3400,9 +3299,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 		// parentlang=en,zh_cn
 		if ( *p=='p' && strncmp(p,"parentlang",10)==0){
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			// must have a reply
@@ -3453,9 +3351,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// we matched, now look for &&
 			p = strstr ( b , "&&" );
 			// if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			// skip the '&&' and go to next rule
@@ -3482,9 +3379,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			if ( sign == SIGN_LE && a >  b ) continue;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3495,9 +3391,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 		// the last time it was spidered
 		if ( *p=='l' && strncmp(p,"lastspidertime",14) == 0 ) {
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			// skip for msg20
@@ -3524,9 +3419,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			if ( sign == SIGN_LE && a >  b ) continue;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3562,9 +3456,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			if ( sign == SIGN_LE && sreq_age >  argument_age ) continue;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3575,9 +3468,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 
 		if ( *p=='e' && strncmp(p,"errorcount",10) == 0 ) {
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			// skip for msg20
@@ -3599,9 +3491,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			p += 10;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3612,9 +3503,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 		// EBADURL malformed url is ... 32880
 		if ( *p=='e' && strncmp(p,"errorcode",9) == 0 ) {
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			// skip for msg20
@@ -3636,9 +3526,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			p += 9;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3664,9 +3553,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			p += 10;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3705,9 +3593,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			p += 14;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3715,54 +3602,25 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			goto checkNextRule;
 		}
 
-		/*
-		// retryNum >= 2 [&&] ...
-		if ( *p=='r' && strncmp(p, "retrynum", 8) == 0){
-			// shortcut
-			int32_t a = sr->m_retryNum;
-			// make it point to the priority
-			int32_t b = atoi(s);
-			// compare
-			if ( sign == SIGN_EQ && a != b ) continue;
-			if ( sign == SIGN_NE && a == b ) continue;
-			if ( sign == SIGN_GT && a <= b ) continue;
-			if ( sign == SIGN_LT && a >= b ) continue;
-			if ( sign == SIGN_GE && a <  b ) continue;
-			if ( sign == SIGN_LE && a >  b ) continue;
-			p = strstr(s, "&&");
-			//if nothing, else then it is a match
-			if ( ! p ) return i;
-			//skip the '&&' and go to next rule
-			p += 2;
-			goto checkNextRule;
-		}
-		*/
-
 		// how many days have passed since it was last attempted
 		// to be spidered? used in conjunction with percentchanged
 		// to assign when to re-spider it next
 		if ( *p=='s' && strncmp(p, "spiderwaited", 12) == 0){
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1");
 				return -1;
 			}
+
 			// must have a reply
 			if ( ! srep ) continue;
+
 			// skip for msg20
 			if ( isForMsg20 ) continue;
-			// do not match rule if never attempted
-			// if ( srep->m_spideredTime ==  0 ) {
-			// 	char*xx=NULL;*xx=0;}
-			// if ( srep->m_spideredTime == (uint32_t)-1){
-			// 	char*xx=NULL;*xx=0;}
+
 			// shortcut
 			int32_t a = nowGlobal - srep->m_spideredTime;
-			// make into days
-			//af /= (3600.0*24.0);
-			// back to a int32_t, round it
-			//int32_t a = (int32_t)(af + 0.5);
+
 			// make it point to the priority
 			int32_t b = atoi(s);
 			// compare
@@ -3774,9 +3632,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			if ( sign == SIGN_LE && a >  b ) continue;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3787,9 +3644,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 		// percentchanged >= 50 [&&] ...
 		if ( *p=='p' && strncmp(p, "percentchangedperday", 20) == 0){
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			// must have a reply
@@ -3809,9 +3665,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			if ( sign == SIGN_LE && a >  b ) continue;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3822,9 +3677,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 		// httpStatus == 400
 		if ( *p=='h' && strncmp(p, "httpstatus", 10) == 0){
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			// must have a reply
@@ -3842,9 +3696,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			if ( sign == SIGN_LE && a >  b ) continue;
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -3855,9 +3708,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 		// how old is the doc in seconds? age is the pubDate age
 		if ( *p =='a' && strncmp(p, "age", 3) == 0){
 			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+			if ( isOutlink ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
 				return -1;
 			}
 			// must have a reply
@@ -3881,51 +3733,13 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			//if nothing, else then it is a match
 			if ( ! p ) 
 			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
 			p += 2;
 			goto checkNextRule;
 		}
-
-		/*
-		  MDW: i replaced this with 
-		  m_contentHash32 to make spiders faster/smarter so let's
-		  take this out for now
-
-		// how many new inlinkers we got since last spidered time?
-		if ( *p =='n' && strncmp(p, "newinlinks", 10) == 0){
-			// if we do not have enough info for outlink, all done
-			if ( isOutlink ) return -1;
-			// must have a reply
-			if ( ! srep ) continue;
-			// . make it point to the newinlinks.
-			// . # of new SpiderRequests added since 
-			//   srep->m_spideredTime
-			// . m_dupCache insures that the same ip/hostHash
-			//   does not add more than 1 SpiderRequest for the
-			//   same url/outlink
-			int32_t a = srep->m_newRequests;
-			int32_t b = atoi(s);
-			// compare
-			if ( sign == SIGN_EQ && a != b ) continue;
-			if ( sign == SIGN_NE && a == b ) continue;
-			if ( sign == SIGN_GT && a <= b ) continue;
-			if ( sign == SIGN_LT && a >= b ) continue;
-			if ( sign == SIGN_GE && a <  b ) continue;
-			if ( sign == SIGN_LE && a >  b ) continue;
-			// quick
-			p += 10;
-			// look for more
-			p = strstr(s, "&&");
-			//if nothing, else then it is a match
-			if ( ! p ) return i;
-			//skip the '&&' and go to next rule
-			p += 2;
-			goto checkNextRule;
-		}
-		*/
 
 		// our own regex thing (match front of url)
 		if ( *p=='^' ) {
@@ -3952,9 +3766,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 				// another expression follows?
 				p = strstr(s, "&&");
 				//if nothing, else then it is a match
-				if ( ! p ) 
-				{
-					if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+				if ( ! p ) {
+					logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 					return i;
 				}
 				//skip the '&&' and go to next rule
@@ -3995,11 +3808,11 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 				// another expression follows?
 				p = strstr(s, "&&");
 				//if nothing, else then it is a match
-				if ( ! p ) 
-				{
-					if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+				if ( ! p ) {
+					logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 					return i;
 				}
+
 				//skip the '&&' and go to next rule
 				p += 2;
 				goto checkNextRule;
@@ -4054,9 +3867,8 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 			// another expression follows?
 			p = strstr(s, "&&");
 			//if nothing, else then it is a match
-			if ( ! p ) 
-			{
-				if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning i (%"INT32")", __FILE__, __func__, __LINE__, i);
+			if ( ! p ) {
+				logTrace( g_conf.m_logTraceSpider, "END, returning i (%" INT32")", i );
 				return i;
 			}
 			//skip the '&&' and go to next rule
@@ -4065,84 +3877,12 @@ int32_t getUrlFilterNum2 ( 	SpiderRequest	*sreq,
 		}
 
 	}
-	// sanity check ... must be a default rule!
-	//char *xx=NULL;*xx=0;
+
 	// return -1 if no match, caller should use a default
-	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning -1", __FILE__, __func__, __LINE__);
+	logTrace( g_conf.m_logTraceSpider, "END, returning -1" );
+
 	return -1;
 }
-
-
-
-//static bool s_ufnInit = false;
-//static HashTableX s_ufnTable;
-
-//void clearUfnTable ( ) { 
-//	s_ufnTable.clear(); 
-//	s_ufnTree.clear();
-//}
-
-int32_t getUrlFilterNum ( SpiderRequest *sreq       ,
-		       SpiderReply   *srep       ,
-		       int32_t           nowGlobal  ,
-		       bool           isForMsg20 ,
-		       int32_t           niceness   ,
-		       CollectionRec *cr         ,
-		       bool           isOutlink  ,
-			  HashTableX    *quotaTable ,
-			  int32_t langId ) {
-
-	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
-	
-	/*
-	  turn this off for now to save memory on the g0 cluster.
-	  we should nuke this anyway with rankdb
-
-	// init table?
-	if ( ! s_ufnInit ) {
-		s_ufnInit = true;
-		if ( ! s_ufnTable.set(8,
-				      1,
-				      1024*1024*5,
-				      NULL,0,
-				      false,
-				      MAX_NICENESS,
-				      "ufntab") ) { char *xx=NULL;*xx=0; } 
-	}
-
-	// check in cache using date of request and reply and uh48 as the key
-	int64_t key64 = sreq->getUrlHash48();
-	key64 ^= (int64_t)sreq->m_addedTime;
-	if ( srep ) key64 ^= ((int64_t)srep->m_spideredTime)<<32;
-	char *uv = (char *)s_ufnTable.getValue(&key64);
-	if ( uv ) 
-		return *uv;
-	*/
-	char ufn = getUrlFilterNum2 ( sreq,
-				      srep,
-				      nowGlobal,
-				      isForMsg20,
-				      niceness,
-				      cr,
-				      isOutlink,
-				      quotaTable ,
-				      langId );
-
-	/*
-	// is table full? clear it if so
-	if ( s_ufnTable.getNumSlotsUsed() > 2000000 ) {
-		log("spider: resetting ufn table");
-		s_ufnTable.clear();
-	}
-	// cache it
-	s_ufnTable.addKey ( &key64 , &ufn );
-	*/
-
-	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, returning ufn (%"INT32")", __FILE__, __func__, __LINE__, (int32_t)ufn);
-	return (int32_t)ufn;
-}
-
-
 
 // . dedup for spiderdb
 // . TODO: we can still have spider request dups in this if they are
@@ -4154,14 +3894,8 @@ int32_t getUrlFilterNum ( SpiderRequest *sreq       ,
 //   gotSpiderdbList() can assume those to be valid and save time. BUT it does
 //   have siteNumInlinks...
 void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs ) {
+	char *newList = list->m_list;
 
-	//int32_t  need = list->m_listSize;
-	char *newList = list->m_list;//(char *)mmalloc (need,"dslist");
-	//if ( ! newList ) {
-	//	log("spider: could not dedup spiderdb list: %s",
-	//	    mstrerror(g_errno));
-	//	return;
-	//}
 	char *dst          = newList;
 	char *restorePoint = newList;
 	int64_t reqUh48  = 0LL;
@@ -4727,8 +4461,7 @@ int32_t getFakeIpForUrl2 ( Url *url2 ) {
 
 // returns false and sets g_errno on error
 bool SpiderRequest::setFromAddUrl ( char *url ) {
-	
-	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: BEGIN. url [%s]", __FILE__, __func__, __LINE__, url);
+	logTrace( g_conf.m_logTraceSpider, "BEGIN. url [%s]", url );
 		
 	// reset it
 	reset();
@@ -4762,7 +4495,7 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 	// too big?
 	if ( gbstrlen(url) > MAX_URL_LEN ) {
 		g_errno = EURLTOOLONG;
-		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, EURLTOOLONG", __FILE__, __func__, __LINE__);
+		logTrace( g_conf.m_logTraceSpider, "END, EURLTOOLONG" );
 		return false;
 	}
 	// the url! includes \0
@@ -4771,18 +4504,16 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 	setDataSize();
 	// make the key dude -- after setting url
 	setKey ( firstIp , 0LL, false );
-	// need a fake first ip lest we core!
-	//m_firstIp = (pdocId & 0xffffffff);
+
 	// how to set m_firstIp? i guess addurl can be throttled independently
 	// of the other urls???  use the hash of the domain for it!
 	int32_t  dlen;
 	char *dom = getDomFast ( url , &dlen );
-	// fake it for this...
-	//m_firstIp = hash32 ( dom , dlen );
+
 	// sanity
 	if ( ! dom ) {
 		g_errno = EBADURL;
-		if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, EBADURL", __FILE__, __func__, __LINE__);
+		logTrace( g_conf.m_logTraceSpider, "END, EBADURL" );
 		return false;
 		//return sendReply ( st1 , true );
 	}
@@ -4794,7 +4525,7 @@ bool SpiderRequest::setFromAddUrl ( char *url ) {
 	m_siteHash32 = hash32 ( host , hlen );
 	m_hostHash32 = m_siteHash32;
 
-	if( g_conf.m_logTraceSpider ) log(LOG_TRACE,"%s:%s:%d: END, done.", __FILE__, __func__, __LINE__);
+	logTrace( g_conf.m_logTraceSpider, "END, done" );
 	return true;
 }
 

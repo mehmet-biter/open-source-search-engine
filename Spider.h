@@ -76,7 +76,7 @@ extern char s_countsAreValid;
 #define SP_COMPLETED    9 // crawl is done, and no repeatCrawl is scheduled
 #define SP_SEEDSERROR  10 // all seeds had an error preventing crawling
 
-bool tryToDeleteSpiderColl ( SpiderColl *sc , char *msg ) ;
+bool tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) ;
 void spiderRoundIncremented ( class CollectionRec *cr ) ;
 bool testPatterns ( ) ;
 bool hasPositivePattern ( char *content ) ;
@@ -812,9 +812,7 @@ class SpiderRequest {
 //   last unsucessful Y records (only if more recent), and we nuke all the 
 //   other SpiderRecReply records
 class SpiderReply {
-
- public:
-
+public:
 	// we now define the data so we can use this class to cast
 	// a SpiderRec outright
 	key128_t   m_key;
@@ -946,20 +944,15 @@ class SpiderReply {
 	int64_t getParentDocId (){return g_spiderdb.getParentDocId(&m_key);};
 } __attribute__((packed, aligned(4)));
 
-
 // was 1000 but breached, now equals SR_READ_SIZE/sizeof(SpiderReply)
 #define MAX_BEST_REQUEST_SIZE (MAX_URL_LEN+1+sizeof(SpiderRequest))
 #define MAX_DOLEREC_SIZE      (MAX_BEST_REQUEST_SIZE+sizeof(key_t)+4)
 #define MAX_SP_REPLY_SIZE     (sizeof(SpiderReply))
 
-
 // are we responsible for this ip?
 bool isAssignedToUs ( int32_t firstIp ) ;
 
-
 #define SPIDERDBKEY key128_t
-
-
 
 class SpiderCache {
 
@@ -984,15 +977,6 @@ class SpiderCache {
 	void doneSaving ( ) ;
 
 	bool m_isSaving;
-
-	// . we allocate one SpiderColl per collection
-	// . each one stores the collNum of the collection name it represents,
-	//   and has a ptr to it, m_cr, that is updated by sync()
-	//   when the Collectiondb is updated
-	// . NOW, this is a ptr in the CollectionRec.. only new'd if
-	//   in use, and deleted if not being used...
-	//SpiderColl *m_spiderColls [ MAX_COLL_RECS ];
-	//int32_t        m_numSpiderColls;
 };
 
 extern class SpiderCache g_spiderCache;
@@ -1032,19 +1016,14 @@ public:
 	collnum_t m_collnum;
 };
 
-
-
-
-void clearUfnTable ( ) ;
-
 int32_t getUrlFilterNum ( class SpiderRequest *sreq , 
-		       class SpiderReply   *srep , 
-		       int32_t nowGlobal , 
-		       bool isForMsg20 ,
-		       int32_t niceness , 
-		       class CollectionRec *cr ,
-		       bool isOutlink , // = false ,
-			  HashTableX *quotaTable ,//= NULL ) ;
+		       class SpiderReply *srep,
+		       int32_t nowGlobal,
+		       bool isForMsg20,
+		       int32_t niceness,
+		       class CollectionRec *cr,
+		       bool isOutlink,
+			  HashTableX *quotaTable,
 			  int32_t langIdArg );
 
 void parseWinnerTreeKey ( key192_t  *k ,
