@@ -359,10 +359,6 @@ public:
 
 extern int32_t g_unlinkRenameThreads;
 
-extern int64_t g_lastDiskReadStarted;
-extern int64_t g_lastDiskReadCompleted;
-extern bool      g_diskIsStuck;
-
 extern void *readwriteWrapper_r ( void *state , class ThreadEntry *t ) ;
 
 #endif // GB_BIGFILE_H

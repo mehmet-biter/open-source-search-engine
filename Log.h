@@ -85,10 +85,6 @@
 
 #define MAX_LOG_MSGS  1024 // in memory
 
-// this is for printing out how a page is parsed by PageParser.cpp
-extern char *g_dbuf;
-extern int32_t  g_dbufSize;
-
 #ifdef _CHECK_FORMAT_STRING_
 bool log ( int32_t type , const char *formatString , ... )
 	__attribute__ ((format(printf, 2, 3)));

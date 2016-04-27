@@ -30,7 +30,7 @@ char g_repairMode = 0;
 // the global class
 Repair g_repair;
 
-Rdb **getSecondaryRdbs ( int32_t *nsr ) {
+static Rdb **getSecondaryRdbs ( int32_t *nsr ) {
 	static Rdb *s_rdbs[50];
 	static int32_t s_nsr = 0;
 	static bool s_init = false;
@@ -49,7 +49,7 @@ Rdb **getSecondaryRdbs ( int32_t *nsr ) {
 	return s_rdbs;
 }
 
-Rdb **getAllRdbs ( int32_t *nsr ) {
+static Rdb **getAllRdbs ( int32_t *nsr ) {
 	static Rdb *s_rdbs[50];
 	static int32_t s_nsr = 0;
 	static bool s_init = false;
@@ -664,10 +664,6 @@ void loopWrapper ( void *state , RdbList *list , Msg5 *msg5 ) {
 	Repair *THIS = (Repair *)state;
 	THIS->m_msg5InUse = false;
 	THIS->loop(NULL);
-}
-
-void loopWrapper2 ( void *state ) {
-	g_repair.loop(NULL);
 }
 
 //void loopWrapper3 ( void *state ) {
@@ -1300,7 +1296,7 @@ bool Repair::gotScanRecList ( ) {
 	return true;
 }
 
-void doneWithIndexDoc ( XmlDoc *xd ) {
+static void doneWithIndexDoc ( XmlDoc *xd ) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	
 	// preserve
@@ -1332,7 +1328,7 @@ void doneWithIndexDoc ( XmlDoc *xd ) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 }
 
-void doneWithIndexDocWrapper ( void *state ) {
+static void doneWithIndexDocWrapper ( void *state ) {
 	if( g_conf.m_logTraceRepairs ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 	// clean up
 	doneWithIndexDoc ( (XmlDoc *)state );

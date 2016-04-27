@@ -39,32 +39,32 @@ Parms g_parms;
 // new functions to extricate info from parm recs
 //
 
-int32_t getDataSizeFromParmRec ( char *rec ) {
+static int32_t getDataSizeFromParmRec ( char *rec ) {
 	return *(int32_t *)(rec+sizeof(key96_t));
 }
 
-char *getDataFromParmRec ( char *rec ) {
+static char *getDataFromParmRec ( char *rec ) {
 	return rec+sizeof(key96_t)+4;
 }
 
-collnum_t getCollnumFromParmRec ( char *rec ) {
+static collnum_t getCollnumFromParmRec ( char *rec ) {
 	key96_t *k = (key96_t *)rec;
 	return (collnum_t)k->n1;
 }
 
 // for parms that are arrays...
-int16_t getOccNumFromParmRec ( char *rec ) {
+static int16_t getOccNumFromParmRec ( char *rec ) {
 	key96_t *k = (key96_t *)rec;
 	return (int16_t)((k->n0>>16));
 }
 
-Parm *getParmFromParmRec ( char *rec ) {
+static Parm *getParmFromParmRec ( char *rec ) {
 	key96_t *k = (key96_t *)rec;
 	int32_t cgiHash32 = (k->n0 >> 32);
 	return g_parms.getParmFast2 ( cgiHash32 );
 }
 
-int32_t getHashFromParmRec ( char *rec ) {
+static int32_t getHashFromParmRec ( char *rec ) {
 	key96_t *k = (key96_t *)rec;
 	int32_t cgiHash32 = (k->n0 >> 32);
 	return cgiHash32;
@@ -73,7 +73,7 @@ int32_t getHashFromParmRec ( char *rec ) {
 // . occNum is index # for parms that are arrays. it is -1 if not used.
 // . collnum is -1 for g_conf, which is not a collrec
 // . occNUm is -1 for a non-array parm
-key96_t makeParmKey ( collnum_t collnum , Parm *m , int16_t occNum ) {
+static key96_t makeParmKey ( collnum_t collnum , Parm *m , int16_t occNum ) {
 	key96_t k;
 	k.n1 = collnum;
 	k.n0 = (uint32_t)m->m_cgiHash; // 32 bit
@@ -89,7 +89,7 @@ key96_t makeParmKey ( collnum_t collnum , Parm *m , int16_t occNum ) {
 	return k;
 }
 
-bool printUrlExpressionExamples ( SafeBuf *sb ) ;
+static bool printUrlExpressionExamples ( SafeBuf *sb ) ;
 
 
 //////////////////////////////////////////////
@@ -155,7 +155,7 @@ bool CommandUpdateSiteList ( char *rec ) {
 //   we detected records that don't belong to our shard so user knows to
 //   rebalance?
 // . we'll show it in a special msg box on all admin pages if required
-bool CommandRebalance ( char *rec ) {
+static bool CommandRebalance ( char *rec ) {
 	g_rebalance.m_userApproved = true;
 	// force this to on so it goes through
 	g_rebalance.m_numForeignRecs = 1;
@@ -163,7 +163,7 @@ bool CommandRebalance ( char *rec ) {
 	return true;
 }
 
-bool CommandInsertUrlFiltersRow ( char *rec ) {
+static bool CommandInsertUrlFiltersRow ( char *rec ) {
 	// caller must specify collnum
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 	if ( collnum < 0 ) {
@@ -199,7 +199,7 @@ bool CommandInsertUrlFiltersRow ( char *rec ) {
 	return true;
 }
 
-bool CommandRemoveUrlFiltersRow ( char *rec ) {
+static bool CommandRemoveUrlFiltersRow ( char *rec ) {
 	// caller must specify collnum
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 	if ( collnum < 0 ) {
@@ -237,7 +237,7 @@ bool CommandRemoveUrlFiltersRow ( char *rec ) {
 
 #ifndef PRIVACORE_SAFE_VERSION
 // after we add a new coll, or at anytime after we can clone it
-bool CommandCloneColl ( char *rec ) {
+static bool CommandCloneColl ( char *rec ) {
 
 	// the collnum we want to affect.
 	collnum_t dstCollnum = getCollnumFromParmRec ( rec );
@@ -283,7 +283,7 @@ bool CommandCloneColl ( char *rec ) {
 // 2 for bulk job
 // . returns false if blocks true otherwise
 #ifndef PRIVACORE_SAFE_VERSION
-bool CommandAddColl ( char *rec , char customCrawl ) {
+static bool CommandAddColl ( char *rec , char customCrawl ) {
 
 	// caller must specify collnum
 	collnum_t newCollnum = getCollnumFromParmRec ( rec );
@@ -323,20 +323,20 @@ bool CommandAddColl ( char *rec , char customCrawl ) {
 }
 
 // all nodes are guaranteed to add the same collnum for the given name
-bool CommandAddColl0 ( char *rec ) { // regular collection
+static bool CommandAddColl0 ( char *rec ) { // regular collection
 	return CommandAddColl ( rec , 0 );
 }
 
-bool CommandAddColl1 ( char *rec ) { // custom crawl
+static bool CommandAddColl1 ( char *rec ) { // custom crawl
 	return CommandAddColl ( rec , 1 );
 }
 
-bool CommandAddColl2 ( char *rec ) { // bulk job
+static bool CommandAddColl2 ( char *rec ) { // bulk job
 	return CommandAddColl ( rec , 2 );
 }
 #endif
 
-bool CommandResetProxyTable ( char *rec ) {
+static bool CommandResetProxyTable ( char *rec ) {
 	// from SpiderProxy.h
 	return resetProxyStats();
 }
@@ -345,7 +345,7 @@ bool CommandResetProxyTable ( char *rec ) {
 #ifndef PRIVACORE_SAFE_VERSION
 // . returns true and sets g_errno on error
 // . returns false if would block
-bool CommandDeleteColl ( char *rec , WaitEntry *we ) {
+static bool CommandDeleteColl ( char *rec , WaitEntry *we ) {
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 
 	// the delete might block because the tree is saving and we can't
@@ -359,7 +359,7 @@ bool CommandDeleteColl ( char *rec , WaitEntry *we ) {
 
 // . returns true and sets g_errno on error
 // . returns false if would block
-bool CommandDeleteColl2 ( char *rec , WaitEntry *we ) {
+static bool CommandDeleteColl2 ( char *rec , WaitEntry *we ) {
 	char *data = rec + sizeof(key96_t) + 4;
 	char *coll = (char *)data;
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
@@ -380,7 +380,7 @@ bool CommandDeleteColl2 ( char *rec , WaitEntry *we ) {
 
 
 
-bool CommandForceNextSpiderRound ( char *rec ) {
+static bool CommandForceNextSpiderRound ( char *rec ) {
 
 	// caller must specify collnum
 	collnum_t collnum = getCollnumFromParmRec ( rec );
@@ -428,7 +428,7 @@ bool CommandForceNextSpiderRound ( char *rec ) {
 #ifndef PRIVACORE_SAFE_VERSION
 // . returns true and sets g_errno on error
 // . returns false if would block
-bool CommandRestartColl ( char *rec , WaitEntry *we ) {
+static bool CommandRestartColl ( char *rec , WaitEntry *we ) {
 
 	collnum_t newCollnum = getCollnumFromParmRec ( rec );
 
@@ -488,7 +488,7 @@ bool CommandRestartColl ( char *rec , WaitEntry *we ) {
 #ifndef PRIVACORE_SAFE_VERSION
 // . returns true and sets g_errno on error
 // . returns false if would block
-bool CommandResetColl ( char *rec , WaitEntry *we ) {
+static bool CommandResetColl ( char *rec , WaitEntry *we ) {
 
 	collnum_t newCollnum = getCollnumFromParmRec ( rec );
 
@@ -546,7 +546,7 @@ bool CommandResetColl ( char *rec , WaitEntry *we ) {
 #endif
 
 
-bool CommandSpiderTestCont ( char *rec ) {
+static bool CommandSpiderTestCont ( char *rec ) {
 	// enable testing for all other hosts
 	g_conf.m_testSpiderEnabled = 1;
 	// turn spiders on globally
@@ -563,44 +563,44 @@ bool CommandSpiderTestCont ( char *rec ) {
 }
 
 
-bool CommandMergePosdb ( char *rec ) {
+static bool CommandMergePosdb ( char *rec ) {
 	forceMergeAll ( RDB_POSDB ,1);
 	// set this for each posdb base
 	return true;
 }
 
 
-bool CommandMergeTitledb ( char *rec ) {
+static bool CommandMergeTitledb ( char *rec ) {
 	forceMergeAll ( RDB_TITLEDB ,1);
 	//g_titledb.getRdb()->attemptMerge    (1,true);
 	return true;
 }
 
 
-bool CommandMergeSpiderdb ( char *rec ) {
+static bool CommandMergeSpiderdb ( char *rec ) {
 	forceMergeAll ( RDB_SPIDERDB ,1);
 	//g_spiderdb.getRdb()->attemptMerge    (1,true);
 	return true;
 }
 
-bool CommandMergeLinkdb ( char *rec ) {
+static bool CommandMergeLinkdb ( char *rec ) {
         forceMergeAll ( RDB_LINKDB ,1);
         //g_spiderdb.getRdb()->attemptMerge    (1,true);
         return true;
 }
 
 
-bool CommandDiskPageCacheOff ( char *rec ) {
+static bool CommandDiskPageCacheOff ( char *rec ) {
 	g_process.resetPageCaches();
 	return true;
 }
 
-bool CommandForceIt ( char *rec ) {
+static bool CommandForceIt ( char *rec ) {
 	g_conf.m_forceIt = true;
 	return true;
 }
 
-bool CommandDiskDump ( char *rec ) {
+static bool CommandDiskDump ( char *rec ) {
 	g_clusterdb.getRdb()->dumpTree  ( 1 );
 	g_tagdb.getRdb()->dumpTree     ( 1 );  
 	g_spiderdb.getRdb()->dumpTree   ( 1 );
@@ -613,26 +613,26 @@ bool CommandDiskDump ( char *rec ) {
 }
 
 
-bool CommandJustSave ( char *rec ) {
+static bool CommandJustSave ( char *rec ) {
 	// returns false if blocked, true otherwise
 	g_process.save ();
 	// always return true here
 	return true;
 }
 
-bool CommandSaveAndExit ( char *rec ) {
+static bool CommandSaveAndExit ( char *rec ) {
 	// return true if this blocks
 	g_process.shutdown ( false , NULL , NULL );
 	return true;
 }
 
 
-bool CommandClearKernelError ( char *rec ) {
+static bool CommandClearKernelError ( char *rec ) {
 	g_hostdb.m_myHost->m_pingInfo.m_kernelErrors = 0;
 	return true;
 }
 
-bool CommandPowerNotice ( int32_t hasPower ) {
+static bool CommandPowerNotice ( int32_t hasPower ) {
 
 	//int32_t hasPower = r->getLong("haspower",-1);
 	log("powermo: received haspower=%"INT32"",hasPower);
@@ -691,15 +691,15 @@ bool CommandPowerNotice ( int32_t hasPower ) {
 }
 
 
-bool CommandPowerOnNotice ( char *rec ) {
+static bool CommandPowerOnNotice ( char *rec ) {
 	return CommandPowerNotice ( 1 );
 }
 
-bool CommandPowerOffNotice ( char *rec ) {
+static bool CommandPowerOffNotice ( char *rec ) {
 	return CommandPowerNotice ( 0 );
 }
 
-bool CommandInSync ( char *rec ) {
+static bool CommandInSync ( char *rec ) {
 	g_parms.m_inSyncWithHost0 = true;
 	return true;
 }
@@ -1150,7 +1150,7 @@ public:
 	char *m_tld;
 };
 
-DropLangs g_drops[] = {
+static DropLangs g_drops[] = {
 	{"custom",NULL,NULL},
 	{"web",NULL,NULL},
 	{"news",NULL,NULL},
@@ -11895,7 +11895,7 @@ bool Parms::broadcastParmList ( SafeBuf *parmList ,
 	return false;
 }
 
-void tryToCallCallbacks ( ) {
+static void tryToCallCallbacks ( ) {
 
 	ParmNode *pn = s_headNode;
 	int32_t now = getTimeLocal();
@@ -11916,7 +11916,7 @@ void tryToCallCallbacks ( ) {
 	}
 }
 
-void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
+static void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
 
 	// don't let upserver free the send buf! that's the ParmNode parmlist
 	slot->m_sendBufAlloc = NULL;
@@ -12028,7 +12028,7 @@ void gotParmReplyWrapper ( void *state , UdpSlot *slot ) {
 	g_parms.doParmSendingLoop();
 }
 
-void parmLoop ( int fd , void *state ) {
+static void parmLoop ( int fd , void *state ) {
 	g_parms.doParmSendingLoop();
 }
 
@@ -12152,22 +12152,22 @@ bool Parms::doParmSendingLoop ( ) {
 	return true;
 }
 
-void handleRequest3fLoop ( void *weArg ) ;
+static void handleRequest3fLoop ( void *weArg ) ;
 
-void handleRequest3fLoop2 ( void *state , UdpSlot *slot ) {
+static void handleRequest3fLoop2 ( void *state , UdpSlot *slot ) {
 	handleRequest3fLoop(state);
 }
 
 // if a tree is saving while we are trying to delete a collnum (or reset)
 // then the call to updateParm() below returns false and we must re-call
 // in this sleep wrapper here
-void handleRequest3fLoop3 ( int fd , void *state ) {
+static void handleRequest3fLoop3 ( int fd , void *state ) {
 	g_loop.unregisterSleepCallback(state,handleRequest3fLoop3);
 	handleRequest3fLoop(state);	
 }
 
 // . host #0 is requesting that we update some parms
-void handleRequest3fLoop ( void *weArg ) {
+static void handleRequest3fLoop ( void *weArg ) {
 	WaitEntry *we = (WaitEntry *)weArg;
 
 	CollectionRec *cx = NULL;
@@ -12393,7 +12393,7 @@ void tryToSyncWrapper ( int fd , void *state ) {
 // host #0 just sends back an empty reply, but it will hit us with
 // 0x3f parmlist requests. that way it uses the same mechanism and can
 // guarantee ordering of the parm update requests
-void gotReplyFromHost0Wrapper ( void *state , UdpSlot *slot ) {
+static void gotReplyFromHost0Wrapper ( void *state , UdpSlot *slot ) {
 	// ignore his reply unless error?
 	if ( g_errno ) {
 		log("parms: got error syncing with host 0: %s. Retrying.",
@@ -12743,7 +12743,7 @@ bool Parms::addAllParmsToList ( SafeBuf *parmList, collnum_t collnum ) {
 	return true;
 }	
 
-void resetImportLoopFlag () ;
+void resetImportLoopFlag (); //in PageInject.cpp
 
 // . this adds the key if not a cmd key to parmdb rdbtree
 // . this executes cmds
@@ -13089,7 +13089,7 @@ bool Parm::printVal ( SafeBuf *sb , collnum_t collnum , int32_t occNum ) {
 	return false;
 }
 
-bool printUrlExpressionExamples ( SafeBuf *sb ) {
+static bool printUrlExpressionExamples ( SafeBuf *sb ) {
 		sb->safePrintf(
 			       "<style>"
 			       ".poo { background-color:#%s;}\n"

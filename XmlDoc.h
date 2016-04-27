@@ -66,11 +66,6 @@
 #define MAX_SURROUNDING_TEXT_WIDTH 600
 #define MAX_RSSITEM_SIZE  30000
 
-bool setLangVec ( class Words *words , 
-		  class SafeBuf *langBuf , 
-		  class Sections *sections ,
-		  int32_t niceness ) ;
-
 bool getDensityRanks ( int64_t *wids , 
 		       int32_t nw,
 		       //int32_t wordStart , 

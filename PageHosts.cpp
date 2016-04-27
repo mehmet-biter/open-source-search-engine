@@ -23,7 +23,7 @@ static int memUsedSort    ( const void *i1, const void *i2 );
 static int cpuUsageSort   ( const void *i1, const void *i2 );
 static int diskUsageSort  ( const void *i1, const void *i2 );
 
-int32_t generatePingMsg( Host *h, int64_t nowms, char *buffer );
+static int32_t generatePingMsg( Host *h, int64_t nowms, char *buffer );
 
 // . returns false if blocked, true otherwise
 // . sets errno on error
@@ -1553,7 +1553,7 @@ skipReplaceHost:
 						  sb.length() );
 }
 
-int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
+static int32_t generatePingMsg( Host *h, int64_t nowms, char *buf ) {
         int32_t ping = h->m_ping;
         // show ping age first
         int32_t pingAge = nowms- h->m_lastPing;

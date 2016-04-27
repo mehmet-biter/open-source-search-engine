@@ -1182,7 +1182,7 @@ public:
 };
        
 
-int cmpPathBucket (const void *A, const void *B) {
+static int cmpPathBucket (const void *A, const void *B) {
 	const PathBucket *a = *(const PathBucket **)A;
 	const PathBucket *b = *(const PathBucket **)B;
 	if      ( a->m_calledTimes < b->m_calledTimes ) return  1;

@@ -18,8 +18,6 @@
 void resetMsg13Caches ( ) ;
 bool printHammerQueueTable ( SafeBuf *sb ) ;
 
-extern char *g_fakeReply;
-
 class Msg13Request {
 public:
 

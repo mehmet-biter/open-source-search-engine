@@ -86,9 +86,6 @@ private:
 
 class RdbBuckets {
  public:
-	friend void *saveBucketsWrapper      ( void *state , ThreadEntry *t );
-	friend void threadDoneBucketsWrapper ( void *state , ThreadEntry *t );
-
 
 	RdbBuckets( );
 	~RdbBuckets( );

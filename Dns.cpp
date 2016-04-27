@@ -17,7 +17,7 @@
 // a global class extern'd in .h file
 Dns g_dns;
 
-RdbCache g_timedoutCache;
+static RdbCache g_timedoutCache;
 
 static int64_t s_antiLockCount = 1LL;
 

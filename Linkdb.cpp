@@ -590,7 +590,7 @@ bool getLinkInfo ( SafeBuf   *reqBuf              ,
 	return false;
 }
 
-HashTableX g_lineTable;
+static HashTableX g_lineTable;
 
 static void sendReplyWrapper ( void *state ) {
 

@@ -22,8 +22,8 @@
 // a global class extern'd in .h file
 Hostdb g_hostdb;
 
-HashTableX g_hostTableUdp;
-HashTableX g_hostTableTcp;
+static HashTableX g_hostTableUdp;
+static HashTableX g_hostTableTcp;
 
 Host     *g_listHosts [ MAX_HOSTS * 4 ];
 uint32_t  g_listIps   [ MAX_HOSTS * 4 ];
@@ -1483,12 +1483,12 @@ bool Hostdb::saveHostsConf ( ) {
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
-void syncDoneWrapper ( void *state , ThreadEntry * /*t*/ ) {
+static void syncDoneWrapper ( void *state , ThreadEntry * /*t*/ ) {
 	Hostdb *THIS = (Hostdb*)state;
 	THIS->syncDone();
 }
 
-void *syncStartWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
+static void *syncStartWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
 	Hostdb *THIS = (Hostdb*)state;
 	THIS->syncStart_r(true);
 	return NULL;

@@ -57,7 +57,9 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 static void getMetaListWrapper ( void *state ) ;
 
 
-void doneReadingArchiveFileWrapper ( int fd, void *state );
+#if 0
+static void doneReadingArchiveFileWrapper ( int fd, void *state );
+#endif
 
 XmlDoc::XmlDoc() {
 	//clear all fields in the titledb structure (which are the first fileds in this class)
@@ -508,7 +510,7 @@ bool XmlDoc::set3 ( int64_t  docId       ,
 	return true;
 }
 
-void loadFromOldTitleRecWrapper ( void *state ) {
+static void loadFromOldTitleRecWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// make sure has not been freed from under us!
 	if ( THIS->m_freed ) { char *xx=NULL;*xx=0;}
@@ -1323,7 +1325,7 @@ void XmlDoc::setCallback ( void *state, bool (*callback) (void *state) ) {
 
 
 
-void indexDocWrapper ( void *state ) {
+static void indexDocWrapper ( void *state ) {
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 		
 	XmlDoc *THIS = (XmlDoc *)state;
@@ -1368,7 +1370,7 @@ void indexDocWrapper ( void *state ) {
 
 
 // for registerSleepCallback
-void indexDocWrapper2 ( int fd , void *state ) {
+static void indexDocWrapper2 ( int fd , void *state ) {
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
 
 	indexDocWrapper ( state );
@@ -2236,7 +2238,8 @@ bool isRobotsTxtFile ( char *u , int32_t ulen ) {
 	return false;
 }
 
-void doneReadingArchiveFileWrapper ( int fd, void *state ) {
+#if 0
+static void doneReadingArchiveFileWrapper ( int fd, void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// . go back to the main entry function
 	// . make sure g_errno is clear from a msg3a g_errno before calling
@@ -2244,9 +2247,10 @@ void doneReadingArchiveFileWrapper ( int fd, void *state ) {
 
 	THIS->m_masterLoop ( THIS->m_masterState );
 }
+#endif
 
 
-void getTitleRecBufWrapper ( void *state ) {
+static void getTitleRecBufWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// make sure has not been freed from under us!
 	if ( THIS->m_freed ) { char *xx=NULL;*xx=0;}
@@ -4084,10 +4088,10 @@ Xml *XmlDoc::getXml ( ) {
 	return &m_xml;
 }
 
-bool setLangVec ( Words *words ,
-		  SafeBuf *langBuf ,
-		  Sections *ss ,
-		  int32_t niceness ) {
+static bool setLangVec ( Words *words ,
+			 SafeBuf *langBuf ,
+			 Sections *ss ,
+			 int32_t niceness ) {
 
 	int64_t  *wids  = words->getWordIds    ();
 	char      **wptrs = words->m_words;
@@ -8991,7 +8995,7 @@ char **XmlDoc::getHttpReply ( ) {
 	goto loop;
 }
 
-void gotHttpReplyWrapper ( void *state ) {
+static void gotHttpReplyWrapper ( void *state ) {
 	// point to us
 	XmlDoc *THIS = (XmlDoc *)state;
 	// this sets g_errno on error
@@ -10118,8 +10122,8 @@ Url **XmlDoc::getCanonicalRedirUrl ( ) {
 
 
 // returns false if none found
-bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness ,
-			      Url *cu ) {
+static bool setMetaRedirUrlFromTag ( char *p , Url *metaRedirUrl , char niceness ,
+				     Url *cu ) {
 	// limit scan
 	char *limit = p + 30;
 	// skip whitespace
@@ -11272,7 +11276,7 @@ char **XmlDoc::getRawUtf8Content ( ) {
 
 // this is so Msg13.cpp can call getExpandedUtf8Content() to do its
 // iframe expansion logic
-void getExpandedUtf8ContentWrapper ( void *state ) {
+static void getExpandedUtf8ContentWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	char **retVal = THIS->getExpandedUtf8Content();
 	// return if blocked again
@@ -11572,58 +11576,6 @@ static SafeBuf s_cookieBuf;
 
 
 
-
-// Use of ThreadEntry parameter is NOT thread safe
-void *systemStartWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
-
-	XmlDoc *THIS = (XmlDoc *)state;
-
-	char filename[2048];
-	snprintf(filename,2048,"%sgbarchivefile%"UINT32".gz",
-		 g_hostdb.m_dir,
-		 (int32_t)(int64_t)THIS);
-
-	char cmd[MAX_URL_LEN+256];
-	snprintf( cmd,
-		  MAX_URL_LEN+256,
-		  "wget -q --header=\"Cookie: %s\" \"%s\" -O %s" ,
-		  s_cookieBuf.getBufStart() ,
-		  THIS->m_firstUrl.getUrl() ,
-		  filename );
-
-	log("build: wget: %s",cmd );
-
-	int ret;
-
-	ret = system(cmd);
-	if ( ret == -1 )
-		log("build: wget system failed: %s",mstrerror(errno));
-	else
-		log("build: wget system returned %"INT32"",ret);
-
-	// unzip it now
-	snprintf ( cmd , MAX_URL_LEN+256, "gunzip -f %s" , filename );
-
-	log("build: wget begin: %s",cmd );
-
-	ret = system(cmd);
-	if ( ret == -1 )
-		log("build: gunzip system failed: %s",mstrerror(errno));
-	else
-		log("build: gunzip system returned %"INT32"",ret);
-
-
-	log("build: done with gunzip");
-
-	return NULL;
-}
-
-// come back here
-// Use of ThreadEntry parameter is NOT thread safe
-void systemDoneWrapper ( void *state , ThreadEntry * /*t*/ ) {
-	XmlDoc *THIS = (XmlDoc *)state;
-	THIS->m_masterLoop ( THIS->m_masterState );
-}
 
 // . get the final utf8 content of the document
 // . all html entities are replaced with utf8 chars
@@ -12621,7 +12573,7 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 }
 
 // . both "u" and "site" must not start with http:// or https:// or protocol
-bool isSiteRootFunc ( char *u , char *site ) {
+static bool isSiteRootFunc ( char *u , char *site ) {
 	// get length of each
 	int32_t slen = gbstrlen(site);//m_siteLen;
 	int32_t ulen = gbstrlen(u);
@@ -12647,7 +12599,7 @@ bool isSiteRootFunc ( char *u , char *site ) {
 	return false;
 }
 
-bool isSiteRootFunc3 ( char *u , int32_t siteRootHash32 ) {
+static bool isSiteRootFunc3 ( char *u , int32_t siteRootHash32 ) {
 	// get length of each
 	int32_t ulen = gbstrlen(u);
 	// remove trailing /
@@ -18391,7 +18343,7 @@ void XmlDoc::set20 ( Msg20Request *req ) {
 }
 
 
-void getMsg20ReplyWrapper ( void *state ) {
+static void getMsg20ReplyWrapper ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	// make sure has not been freed from under us!
 	if ( THIS->m_freed ) { char *xx=NULL;*xx=0;}
@@ -19716,11 +19668,11 @@ char *XmlDoc::getIsLinkSpam ( ) {
 	return &m_isLinkSpam2;
 }
 
-void *malloc_replace (void *pf , unsigned int nitems , unsigned int size ) {
+static void *malloc_replace (void *pf , unsigned int nitems , unsigned int size ) {
 	return g_mem.gbmalloc(size*nitems,"malloc_replace");
 }
 
-void free_replace   ( void *pf , void *s ) {
+static void free_replace   ( void *pf , void *s ) {
 	// -1 means we don't know the size
 	g_mem.gbfree(s,-1,"free_replace");
 }
@@ -19765,9 +19717,9 @@ int gbuncompress ( unsigned char *dest      ,
 	return err;
 }
 
-void deflateQuickPoll ( ) {
-	QUICKPOLL(1);
-}
+// void deflateQuickPoll ( ) {
+// 	QUICKPOLL(1);
+// }
 
 int gbcompress ( unsigned char *dest      ,
 		 uint32_t *destLen   ,
@@ -20048,7 +20000,7 @@ static SafeBuf *s_wbuf = NULL;
 
 // . this is used by gbsort() above
 // . sorts TermInfos alphabetically by their TermInfo::m_term member
-int cmptp (const void *v1, const void *v2) {
+static int cmptp (const void *v1, const void *v2) {
 	TermDebugInfo *t1 = *(TermDebugInfo **)v1;
 	TermDebugInfo *t2 = *(TermDebugInfo **)v2;
 
@@ -20083,7 +20035,7 @@ int cmptp (const void *v1, const void *v2) {
 
 // . this is used by gbsort() above
 // . sorts TermDebugInfos by their TermDebugInfo::m_wordPos member
-int cmptp2 (const void *v1, const void *v2) {
+static int cmptp2 (const void *v1, const void *v2) {
 	TermDebugInfo *t1 = *(TermDebugInfo **)v1;
 	TermDebugInfo *t2 = *(TermDebugInfo **)v2;
 	// word position first
@@ -20099,7 +20051,7 @@ int cmptp2 (const void *v1, const void *v2) {
 	return 0;
 }
 
-bool printLangBits ( SafeBuf *sb , TermDebugInfo *tp ) {
+static bool printLangBits ( SafeBuf *sb , TermDebugInfo *tp ) {
 
 	char printed = false;
 	if ( tp->m_synSrc ) {
@@ -21991,11 +21943,11 @@ public:
 };
 
 
-int cmpbk ( const void *v1, const void *v2 ) {
-	Binky *b1 = (Binky *)v1;
-	Binky *b2 = (Binky *)v2;
-	return b1->m_score - b2->m_score;
-}
+// static int cmpbk ( const void *v1, const void *v2 ) {
+// 	Binky *b1 = (Binky *)v1;
+// 	Binky *b2 = (Binky *)v2;
+// 	return b1->m_score - b2->m_score;
+// }
 
 char *XmlDoc::getTitleBuf ( ) {
 	if ( m_titleBufValid ) return m_titleBuf;

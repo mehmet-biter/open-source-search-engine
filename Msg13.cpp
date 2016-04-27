@@ -9,7 +9,7 @@
 #include "SpiderProxy.h" // OP_GETPROXY OP_RETPROXY
 #include "zlib.h"
 
-char *g_fakeReply = 
+static char *g_fakeReply = 
 	"HTTP/1.0 200 (OK)\r\n"
 	"Content-Length: 0\r\n"
 	"Connection: Close\r\n"

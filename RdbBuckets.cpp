@@ -1949,8 +1949,6 @@ int64_t RdbBuckets::getListSize ( collnum_t collnum,
 	return retval * m_recSize;
 }
 
-void *saveBucketsWrapper      ( void *state , ThreadEntry *t ) ;
-void threadDoneBucketsWrapper ( void *state , ThreadEntry *t ) ;
 
 // . caller should call f->set() himself
 // . we'll open it here
@@ -1995,39 +1993,6 @@ bool RdbBuckets::fastSave ( char    *dir       ,
 	return true;
 }
 
-
-// Use of ThreadEntry parameter is NOT thread safe
-void *saveBucketsWrapper ( void *state , ThreadEntry * /*t*/ ) {
-	// get this class
-	RdbBuckets *THIS = (RdbBuckets *)state;
-	// this returns false and sets g_errno on error
-	THIS->fastSave_r();
-	// now exit the thread, bogus return
-	return NULL;
-}
-
-// we come here after thread exits
-// Use of ThreadEntry parameter is NOT thread safe
-void threadDoneBucketsWrapper ( void *state , ThreadEntry * /*t*/ ) {
-	// get this class
-	RdbBuckets *THIS = (RdbBuckets *)state;
-	// store save error into g_errno
-	g_errno = THIS->m_saveErrno;
-	// . resume adding to the tree
-	// . this will also allow other threads to be queued
-	// . if we did this at the end of the thread we could end up with
-	//   an overflow of queued SAVETHREADs
-	THIS->m_isSaving = false;
-	// we do not need to be saved now?
-	THIS->m_needsSave = false;
-	// g_errno should be preserved from the thread so if fastSave_r()
-	// had an error it will be set
-	if ( g_errno )
-		log("db: Had error saving tree to disk for %s: %s.",
-		    THIS->m_dbname,mstrerror(g_errno));
-	// . call callback
-	if ( THIS->m_callback ) THIS->m_callback ( THIS->m_state );
-}
 
 // . returns false and sets g_errno on error
 // . NO USING g_errno IN A DAMN THREAD!!!!!!!!!!!!!!!!!!!!!!!!!

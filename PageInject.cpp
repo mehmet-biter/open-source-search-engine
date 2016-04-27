@@ -185,7 +185,7 @@ Host *getHostToHandleInjection ( char *url ) {
 // 	THIS->m_callback ( THIS->m_state );
 // }
 
-void gotUdpReplyWrapper ( void *state , UdpSlot *slot ) {
+static void gotUdpReplyWrapper ( void *state , UdpSlot *slot ) {
 	Msg7 *THIS = (Msg7 *)state;
 	THIS->gotUdpReply(slot);
 }

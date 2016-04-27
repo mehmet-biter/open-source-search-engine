@@ -18,9 +18,7 @@
 // can complete
 int32_t g_unlinkRenameThreads = 0;
 
-int64_t g_lastDiskReadStarted = 0LL;
-int64_t g_lastDiskReadCompleted = 0LL;
-bool      g_diskIsStuck = false;
+static int64_t g_lastDiskReadCompleted = 0LL;
 
 static void  doneWrapper        ( void *state , ThreadEntry * /*t*/ ) ;
 static bool  readwrite_r        ( FileState *fstate , ThreadEntry * /*t*/ ) ;
@@ -46,9 +44,7 @@ BigFile::BigFile () {
 	m_lastModified = -1;
 	m_numThreads = 0;
 	m_isClosing = false;
-	g_lastDiskReadStarted = 0;
 	g_lastDiskReadCompleted = 0;
-	g_diskIsStuck = false;
 
 	// init rest to avoid logging junk
 	m_isUnlink=false;	
@@ -101,10 +97,8 @@ void BigFile::logAllData(int32_t log_type)
 	loghex( log_type, m_newBaseFilename.getBufStart(), m_newBaseFilename.getBufUsed(),      "m_newBaseFilename......: (hex dump)");
 	loghex( log_type, m_newBaseFilenameDir.getBufStart(), m_newBaseFilenameDir.getBufUsed(),"m_newBaseFilenameDir...: (hex dump)");
 	
-	log(log_type, "g_lastDiskReadStarted..: %"INT64"", g_lastDiskReadStarted);
 	log(log_type, "g_lastDiskReadCompleted: %"INT64"", g_lastDiskReadCompleted);
 	log(log_type, "g_unlinkRenameThreads..: %"INT32"", g_unlinkRenameThreads);
-	log(log_type, "g_diskIsStuck..........: [%s]", g_diskIsStuck?"true":"false");
 }
 
 
@@ -818,12 +812,6 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_vfd         = m_vfd;
 	// if hitDisk was false we only check the page cache!
 	if ( ! hitDisk ) return true;
-	// if disk stuck, forget about it! but make the spider disk reads
-	// wait until it is unstuck. just don't want to screw up the queries..
-	if ( g_diskIsStuck && niceness == 0 && ! doWrite ) {
-		g_errno = fstate->m_errno = EDISKSTUCK;
-		return true;
-	}
 
 	int32_t saved;
 
@@ -1252,12 +1240,6 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	int64_t time_start = gettimeofdayInMilliseconds();
 	int64_t time_took;
 
-	// if we were queued and now we are launching stuck, just return now
-	//if ( g_diskIsStuck ) {
-	//	t->m_errno = EDISKSTUCK;
-	//	return NULL;
-	//}
-
 	// extract our class
 	FileState *fstate = (FileState *)state;
 
@@ -1452,11 +1434,6 @@ bool readwrite_r ( FileState *fstate , ThreadEntry *t ) {
 		log(LOG_LOGIC, "disk: fd < 0. Bad engineer.");
 		return false; //log("disk::readwrite_r: fd is negative");
 	}
-
-	// only set this now if we are the first one
-	// if ( g_threads.m_threadQueues[THREAD_TYPE_DISK].m_hiReturned ==
-	//      g_threads.m_threadQueues[THREAD_TYPE_DISK].m_hiLaunched ) 
-	// 	g_lastDiskReadStarted = fstate->m_startTime;
 
 	// fake it out
 	//static int32_t s_poo = 0;

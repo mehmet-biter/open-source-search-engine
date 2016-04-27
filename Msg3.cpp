@@ -49,7 +49,7 @@ key192_t makeCacheKey ( int64_t vfd ,
 	return k;
 }
 
-RdbCache g_rdbCaches[5];
+static RdbCache g_rdbCaches[5];
 
 class RdbCache *getDiskPageCache ( char rdbId ) {
 

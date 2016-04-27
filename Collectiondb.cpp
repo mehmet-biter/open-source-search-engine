@@ -17,8 +17,6 @@
 #include "Repair.h"
 #include "Parms.h"
 
-void testRegex ( ) ;
-
 static HashTableX g_collTable;
 
 // a global class extern'd in .h file
@@ -2701,7 +2699,7 @@ bool CollectionRec::save ( ) {
 	return true;
 }
 
-bool expandRegExShortcuts ( SafeBuf *sb ) ;
+static bool expandRegExShortcuts ( SafeBuf *sb ) ;
 void nukeDoledb ( collnum_t collnum );
 
 // rebuild the regexes related to diffbot, such as the one for the URL pattern
@@ -3312,7 +3310,7 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 
 // for some reason the libc we use doesn't support these shortcuts,
 // so expand them to something it does support
-bool expandRegExShortcuts ( SafeBuf *sb ) {
+static bool expandRegExShortcuts ( SafeBuf *sb ) {
 	if ( ! sb->safeReplace3 ( "\\d" , "[0-9]" ) ) return false;
 	if ( ! sb->safeReplace3 ( "\\D" , "[^0-9]" ) ) return false;
 	if ( ! sb->safeReplace3 ( "\\l" , "[a-z]" ) ) return false;
@@ -3323,51 +3321,6 @@ bool expandRegExShortcuts ( SafeBuf *sb ) {
 	return true;
 }
 
-
-void testRegex ( ) {
-
-	//
-	// TEST
-	//
-
-	char *rx;
-
-	//rx = "(http://)?(www.)?vault.com/rankings-reviews/company-rankings/law/vault-law-100/\\.aspx\\?pg=\\d";
-
-	//rx = "(http://)?(www.)?vault.com/rankings-reviews/company-rankings/law/vault-law-100/\\.aspx\\?pg=[0-9]";
-
-	rx = ".*?article[0-9]*?.html";
-
-	regex_t ucr;
-	int32_t err;
-
-	if ( ( err = regcomp ( &ucr , rx ,
-			       REG_ICASE
-			       |REG_EXTENDED
-			       //|REG_NEWLINE
-			       //|REG_NOSUB
-			       ) ) ) {
-		// error!
-		char errbuf[1024];
-		regerror(err,&ucr,errbuf,1000);
-		log("xmldoc: regcomp %s failed: %s. "
-		    "Ignoring.",
-		    rx,errbuf);
-	}
-
-	logf(LOG_DEBUG,"db: compiled '%s' for crawl pattern",rx);
-
-	//char *url = "http://www.vault.com/rankings-reviews/company-rankings/law/vault-law-100/.aspx?pg=2";
-	char *url = "http://staticpages.diffbot.com/testCrawl/regex/article1.html";
-
-	if ( regexec(&ucr,url,0,NULL,0) )
-		logf(LOG_DEBUG,"db: failed to match %s on %s",
-		     url,rx);
-	else
-		logf(LOG_DEBUG,"db: MATCHED %s on %s",
-		     url,rx);
-	exit(0);
-}
 
 int64_t CollectionRec::getNumDocsIndexed() {
 	RdbBase *base = getBase(RDB_TITLEDB);//m_bases[RDB_TITLEDB];

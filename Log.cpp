@@ -17,9 +17,6 @@ Log g_log;
 // the thread lock
 static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;
 
-char      *g_dbuf          = NULL;
-int32_t       g_dbufSize       = 0;
-
 
 Log::Log () { 
 	m_fd = -1; 
@@ -39,15 +36,10 @@ Log::~Log () {
 void Log::reset ( ) {
 	// comment this out otherwise we dont log the memleaks in Mem.cpp!!
 	//if ( m_fd >= 0 ) ::close ( m_fd );
-#ifdef DEBUG
-	if (g_dbuf)
-		mfree(g_dbuf,g_dbufSize,"Log: DebugBuffer");
-	g_dbuf = NULL;
-#endif
 }
 
 // for example, RENAME log000 to log000-20131104-181932
-bool renameCurrentLogFile ( ) {
+static bool renameCurrentLogFile ( ) {
 	File f;
 	char tmp[16];
 	sprintf(tmp,"log%03"INT32"",g_hostdb.m_hostId);
@@ -80,12 +72,6 @@ bool Log::init ( const char *filename ) {
 	m_bufPtr    =  0;
 	m_fd        = -1;
 	m_disabled  = false;
-
-#ifdef DEBUG
-	g_dbufSize = 4096;
-	g_dbuf = (char*)mmalloc(g_dbufSize,"Log: DebugBuffer");
-	if (!g_dbuf) fprintf(stderr, "Unable to init debug buffer");
-#endif
 
 	// is there a filename to log our errors to?
 	m_filename = filename;
@@ -206,7 +192,7 @@ bool Log::shouldLog ( int32_t type , const char *msg ) {
 	return true;
 }
 
-bool g_loggingEnabled = true;
+static bool g_loggingEnabled = true;
 
 // 1GB max log file size
 #define MAXLOGFILESIZE 1000000000
@@ -570,7 +556,7 @@ bool logf ( int32_t type , const char *formatString , ...) {
 
 
 
-void hexdump(void const *data, const unsigned int len, char *dest, const int dest_len)
+static void hexdump(void const *data, const unsigned int len, char *dest, const int dest_len)
 {
 	unsigned int i;
 	unsigned int r,c;

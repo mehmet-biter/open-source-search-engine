@@ -175,9 +175,9 @@ typedef enum {
 } install_flag_konst_t;
 
 static int install_file(const char *file);
-int install ( install_flag_konst_t installFlag , int32_t hostId , 
-	      char *dir = NULL , char *coll = NULL , int32_t hostId2 = -1 , 
-	      char *cmd = NULL );
+static int install ( install_flag_konst_t installFlag , int32_t hostId , 
+		     char *dir = NULL , char *coll = NULL , int32_t hostId2 = -1 , 
+		     char *cmd = NULL );
 int scale   ( char *newhostsconf , bool useShotgunIp );
 int collinject ( char *newhostsconf );
 int collcopy ( char *newHostsConf , char *coll , int32_t collnum ) ;
@@ -3001,8 +3001,8 @@ static int install_file(const char *file)
 
 // installFlag is 1 if we are really installing, 2 if just starting up gb's
 // installFlag should be a member of the ifk_ enum defined above
-int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir , 
-	      char *coll , int32_t hostId2 , char *cmd ) {
+static int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir , 
+		     char *coll , int32_t hostId2 , char *cmd ) {
 
 	// use hostId2 to indicate the range hostId-hostId2, but if it is -1
 	// then it was not given, so restrict to just hostId
