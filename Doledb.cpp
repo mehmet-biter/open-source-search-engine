@@ -128,8 +128,7 @@ void nukeDoledb ( collnum_t collnum ) {
 		sc->m_doleIpTable.clear();
 		// need to recompute this!
 		//sc->m_ufnMapValid = false;
-		// reset this cache
-		//clearUfnTable();
+
 		// log it
 		log("spider: rebuilding %s from doledb nuke",
 		    sc->getCollName());
@@ -143,9 +142,6 @@ void nukeDoledb ( collnum_t collnum ) {
 		// kick off the spiderdb scan to rep waiting tree and doledb
 		sc->populateWaitingTreeFromSpiderdb(false);
 	}
-
-	// nuke this state
-	//mfree ( we , sizeof(WaitEntry) , "waitet" );
 
 	// note it
 	log("spider: finished nuking doledb for coll (%"INT32")",
