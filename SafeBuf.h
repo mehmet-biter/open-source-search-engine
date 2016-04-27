@@ -100,12 +100,9 @@ public:
 	};
 
 	//MUTATORS
-#ifdef _CHECK_FORMAT_STRING_
 	bool  safePrintf(const char *formatString, ...)
 		__attribute__ ((format(printf, 2, 3)));
-#else
-	bool  safePrintf(const char *formatString, ...);
-#endif
+
 	bool  safeMemcpy(const void *s, int32_t len){return safeMemcpy((const char*)s,len);}
 	bool  safeMemcpy(const char *s, int32_t len);
 	bool  safeMemcpy_nospaces(const char *s, int32_t len);

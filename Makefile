@@ -74,7 +74,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	Url.o UrlParser.o UrlComponent.o \
 
 # common flags
-DEFS = -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I.
+DEFS = -D_REENTRANT_ -I.
 CPPFLAGS = -g -Wall -fno-stack-protector -DPTHREADS -Wstrict-aliasing=0
 CPPFLAGS+= -std=c++11
 
@@ -186,7 +186,7 @@ static: vclean $(OBJS) main.o $(LIBFILES)
 # 7. DEVEL > git: Distributed version control system
 # 8. EDITORS > emacs
 cygwin:
-	make DEFS="-DCYGWIN -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I." LIBS=" -lz -lm -lpthread -lssl -lcrypto -liconv" gb
+	make DEFS="-DCYGWIN -D_REENTRANT_ -I." LIBS=" -lz -lm -lpthread -lssl -lcrypto -liconv" gb
 
 
 gb32:
