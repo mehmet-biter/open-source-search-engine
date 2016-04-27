@@ -1224,17 +1224,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 	// . do not call this for every rec if we do not have to
 	if ( rdbId != lastRdbId ) {
 		rdb = getRdbFromId ( (char) rdbId );
-		// skip RDBFAKEDB
-		//if ( rdbId == RDB_FAKEDB ) {
-		//	// do special handler process
-		//	processSpecialSignal ( collnum , p );
-		//	// skip the fakedb record
-		//	p += recSize;
-		//	// drop it for now!!
-		//	if ( p < pend ) goto loop;
-		//	// all done
-		//	return true;
-		//}
+
 		// an uninitialized secondary rdb? it will have a keysize
 		// of 0 if its never been intialized from the repair page.
 		// don't core any more, we probably restarted this shard
@@ -1256,6 +1246,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 				//char *xx=NULL;*xx=0;
 			}
 		}
+
 		if ( ! rdb ) {
 			if ( slot ) 
 				log("msg4: rdbId of %"INT32" unrecognized "
@@ -1267,18 +1258,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 				    "dropping WHOLE request", (int32_t)rdbId);
 			g_errno = ETRYAGAIN;
 			return false;
-			// drop it for now!!
-			//if ( p < pend ) goto loop;
-			// all done
-			//return true;
-			//char *xx=NULL;*xx=0;
-			// silently drop it, the WHOLE thing, it seems 
-			// corrupted!!!
-			//return true;
-			//g_errno = EBADENGINEER;
-			//return false;
 		}
-		//if ( ! rdb ) return false;
 	}
 
 	// . if already in addList and we are quickpoll interruptint, try again
