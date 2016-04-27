@@ -3226,12 +3226,15 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 
 void dumpWaitingTree (char *coll ) {
 	RdbTree wt;
-	if (!wt.set(0,-1,true,20000000,true,"waittree2",
-		    false,"waitingtree",sizeof(key_t)))return;
+	if (!wt.set(0,-1,true,20000000,true,"waittree2", false,"waitingtree",sizeof(key_t))) {
+		return;
+	}
+
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	// make dir
 	char dir[500];
-	sprintf(dir,"%scoll.%s.%"INT32"",g_hostdb.m_dir,coll,(int32_t)collnum);
+	sprintf(dir, "%scoll.%s.%"INT32"", g_hostdb.m_dir, coll, (int32_t)collnum);
+
 	// load in the waiting tree, IPs waiting to get into doledb
 	BigFile file;
 	file.set ( dir , "waitingtree-saved.dat" , NULL );
