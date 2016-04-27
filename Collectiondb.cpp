@@ -679,15 +679,6 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 		return false;
 	}
 
-	// spiders off
-	//if ( cr->m_spiderColl &&
-	//     cr->m_spiderColl->getTotalOutstandingSpiders() > 0 ) {
-	//	log("admin: Can not delete collection while "
-	//	    "spiders are oustanding for collection. Turn off "
-	//	    "spiders and wait for them to exit.");
-	//	return false;
-	//}
-
 	char *coll = cr->m_coll;
 
 	// note it
@@ -696,17 +687,6 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 
 	// we need a save
 	m_needsSave = true;
-
-	// nuke doleiptable and waintree and waitingtable
-	/*
-	SpiderColl *sc = g_spiderCache.getSpiderColl ( collnum );
-	sc->m_waitingTree.clear();
-	sc->m_waitingTable.clear();
-	sc->m_doleIpTable.clear();
-	g_spiderLoop.m_lockTable.clear();
-	g_spiderLoop.m_lockCache.clear(0);
-	sc->m_lastDownloadCache.clear(collnum);
-	*/
 
 	// CAUTION: tree might be in the middle of saving
 	// we deal with this in Process.cpp now
@@ -727,25 +707,18 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 	if ( sc ) {
 		// remove locks from lock table:
 		sc->clearLocks();
-		//sc->m_collnum = newCollnum;
-		//sc->reset();
+
 		// you have to set this for tryToDeleteSpiderColl to
 		// actually have a shot at deleting it
 		sc->m_deleteMyself = true;
-		// cr will be invalid shortly after this
-		// MDW: this is causing the core...
-		// use fake ptrs for easier debugging
-		//sc->m_cr = (CollectionRec *)0x99999;//NULL;
-		//sc->m_cr = NULL;
+
 		sc->setCollectionRec ( NULL );
 		// this will put it on "death row" so it will be deleted
 		// once Msg5::m_waitingForList/Merge is NULL
-		tryToDeleteSpiderColl ( sc ,"10");
-		//mdelete ( sc, sizeof(SpiderColl),"nukecr2");
-		//delete ( sc );
+		tryToDeleteSpiderColl ( sc , "10" );
+
 		// don't let cr reference us anymore, sc is on deathrow
 		// and "cr" is delete below!
-		//cr->m_spiderColl = (SpiderColl *)0x8888;//NULL;
 		cr->m_spiderColl = NULL;
 	}
 
@@ -939,25 +912,7 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 
 // . returns false if we need a re-call, true if we completed
 // . returns true with g_errno set on error
-bool Collectiondb::resetColl2( collnum_t oldCollnum,
-			       collnum_t newCollnum,
-			       //WaitEntry *we,
-			       bool purgeSeeds){
-
-	// save parms in case we block
-	//we->m_purgeSeeds = purgeSeeds;
-
-	// now must be "qatest123" only for now
-	//if ( strcmp(coll,"qatest123") ) { char *xx=NULL;*xx=0; }
-	// no spiders can be out. they may be referencing the CollectionRec
-	// in XmlDoc.cpp... quite likely.
-	//if ( g_conf.m_spideringEnabled ||
-	//     g_spiderLoop.m_numSpidersOut > 0 ) {
-	//	log("admin: Can not delete collection while "
-	//	    "spiders are enabled or active.");
-	//	return false;
-	//}
-
+bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool purgeSeeds ) {
 	// do not allow this if in repair mode
 	if ( g_repair.isRepairActive() && g_repair.m_collnum == oldCollnum ) {
 		log("admin: Can not delete collection while in repair mode.");
@@ -980,39 +935,16 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum,
 	cr->m_globalCrawlInfo.reset();
 	cr->m_localCrawlInfo.reset();
 
-	//collnum_t oldCollnum = cr->m_collnum;
-	//collnum_t newCollnum = m_numRecs;
-
-	// in case of bulk job, be sure to save list of spots
-	// copy existing list to a /tmp, where they will later be transferred back to the new folder
-	// now i just store in the root working dir... MDW
-	/*
-	char oldbulkurlsname[1036];
-	snprintf(oldbulkurlsname, 1036, "%scoll.%s.%"INT32"/bulkurls.txt",g_hostdb.m_dir,cr->m_coll,(int32_t)oldCollnum);
-	char newbulkurlsname[1036];
-	snprintf(newbulkurlsname, 1036, "%scoll.%s.%"INT32"/bulkurls.txt",g_hostdb.m_dir,cr->m_coll,(int32_t)newCollnum);
-	char tmpbulkurlsname[1036];
-	snprintf(tmpbulkurlsname, 1036, "/tmp/coll.%s.%"INT32".bulkurls.txt",cr->m_coll,(int32_t)oldCollnum);
-
-	if (cr->m_isCustomCrawl == 2)
-	    mv( oldbulkurlsname , tmpbulkurlsname );
-	*/
-
 	// reset spider info
 	SpiderColl *sc = g_spiderCache.getSpiderCollIffNonNull(oldCollnum);
 	if ( sc ) {
 		// remove locks from lock table:
 		sc->clearLocks();
-		// don't do this anymore, just nuke it in case
-		// m_populatingDoledb was true etc. there are too many
-		// flags to worry about
-		//sc->m_collnum = newCollnum;
-		//sc->reset();
+
 		// this will put it on "death row" so it will be deleted
 		// once Msg5::m_waitingForList/Merge is NULL
-		tryToDeleteSpiderColl ( sc,"11" );
-		//mdelete ( sc, sizeof(SpiderColl),"nukecr2");
-		//delete ( sc );
+		tryToDeleteSpiderColl ( sc, "11" );
+
 		cr->m_spiderColl = NULL;
 	}
 
@@ -1453,14 +1385,7 @@ void CollectionRec::reset() {
 	sc->m_deleteMyself = true;
 
 	// if not currently being accessed nuke it now
-	tryToDeleteSpiderColl ( sc ,"12");
-
-	// if ( ! sc->m_msg5.m_waitingForList &&
-	//      ! sc->m_msg5b.m_waitingForList &&
-	//      ! sc->m_msg1.m_mcast.m_inUse ) {
-	// 	mdelete ( sc, sizeof(SpiderColl),"nukecr2");
-	// 	delete ( sc );
-	// }
+	tryToDeleteSpiderColl ( sc , "12" );
 }
 
 // . load this data from a conf file
