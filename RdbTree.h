@@ -62,20 +62,7 @@ class RdbTree {
 	bool is90PercentFull ( ) {
 		// . m_memOccupied is amount of alloc'd mem that data occupies
 		// . now we /90 and /100 since multiplying overflowed
-		//if ( m_memOccupied /90 >= m_maxMem  /100 ) return true;
-		if ( m_numUsedNodes/90 >= m_numNodes/100 ) return true;
-		return false;
-		// if we have data-less records (just keys) then we're not
-		// full so return false
-		//if ( m_fixedDataSize == 0 ) return false;
-		// how much space does avg rec take up?
-		//int32_t avgDataSize ;
-		//avgDataSize = m_memAlloced - ( m_numUsedNodes * m_overhead );
-		//avgDataSize / m_numUsedNodes;
-		// how much space is left
-		// are we at 90% capacity?
-		// otherwise we should check mem alloc'd as well
-		//if ( m_memAlloced *100 >= m_maxMem  *90 ) return true;
+		return ( m_numUsedNodes/90 >= m_numNodes/100 );
 	};
 
 	bool isFull ( ) { return (m_numUsedNodes >= m_numNodes); };
@@ -155,15 +142,15 @@ class RdbTree {
 	int32_t getFirstNode2 ( collnum_t collnum );
 
 	// . get the node whose key is <= "key"
-        int32_t getPrevNode ( collnum_t collnum, const char *key );
-        int32_t getPrevNode ( collnum_t collnum , key_t &key ) {
+    int32_t getPrevNode ( collnum_t collnum, const char *key );
+    int32_t getPrevNode ( collnum_t collnum , key_t &key ) {
 		return getPrevNode(collnum,(const char *)&key);
 	}
 
 	// . get the prev node # whose key is <= to key of node #i
 	int32_t getPrevNode ( int32_t i ) ;
 
-        // returns the node # with the lowest key, -1 if no nodes in tree
+    // returns the node # with the lowest key, -1 if no nodes in tree
 	int32_t getLowestNode ( ) ;
 
 	// . returns true  iff was found and deleted

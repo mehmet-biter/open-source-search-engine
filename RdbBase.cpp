@@ -101,14 +101,7 @@ bool RdbBase::init ( char  *dir            ,
 		     char  *dbname         ,
 		     bool   dedup          ,
 		     int32_t   fixedDataSize  ,
-		     //uint32_t groupMask      ,
-		     //uint32_t groupId        ,
 		     int32_t   minToMergeArg     ,
-		     //int32_t   maxTreeMem     ,
-		     //int32_t   maxTreeNodes   ,
-		     //bool   isTreeBalanced ,
-		     //int32_t   maxCacheMem    ,
-		     //int32_t   maxCacheNodes  ,
 		     bool   useHalfKeys    ,
 		     char           keySize ,
 		     int32_t           pageSize,
@@ -512,8 +505,7 @@ bool RdbBase::setFiles ( ) {
 	// . we now put a '*' at end of "*.dat*" since we may be reading in
 	//   some headless BigFiles left over froma killed merge
 	char *filename;
-	// did we rename any files for titledb?
-	bool converting = false;
+
 	// getNextFilename() writes into this
 	char pattern[8]; strcpy ( pattern , "*.dat*" );
 	while ( ( filename = m_dir.getNextFilename ( pattern ) ) ) {
@@ -603,8 +595,9 @@ bool RdbBase::setFiles ( ) {
 		// . MUST be in order of fileId for merging purposes
 		// . we assume older files come first so newer can override
 		//   in RdbList::merge() routine
-		if (addFile(id,false/*newFile?*/,mergeNum,id2,converting) < 0) 
+		if ( addFile( id, false, mergeNum, id2 ) < 0 ) {
 			return false;
+		}
 	}
 
 	// everyone should start with file 0001.dat or 0000.dat
@@ -657,37 +650,12 @@ bool RdbBase::setFiles ( ) {
 	// ensure files are sharded correctly
 	verifyFileSharding();
 
-	if ( ! converting ) return true;
-
-	// now if we are converting old titledb names to new...
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		// . get the actual secondary to correspond with tfndb
-		// . generate secondary id from primary id
-		m_fileIds2[i] = (m_fileIds[i] - 1)/ 2;
-		// . titledbRebuild? use m_dbname
-		// . rename it
-		char buf1[1024];
-		sprintf ( buf1, "%s%04"INT32".dat", m_dbname,m_fileIds[i] );
-		BigFile f;
-		f.set ( g_hostdb.m_dir , buf1 );
-		char buf2[1024];
-		sprintf ( buf2 , "%s%04"INT32"-%03"INT32".dat",
-			  m_dbname, m_fileIds[i] , m_fileIds2[i] );
-		// log it
-		log(LOG_INFO,"db: Renaming %s to %s",buf1,buf2);
-		if ( ! f.rename ( buf2 ) )
-			return log("db: Rename had error: %s.",
-				   mstrerror(g_errno));
-	}
-	// otherwise, success
-	return log("db: Rename succeeded.");
+	return true;
 }
 
 // return the fileNum we added it to in the array
 // reutrn -1 and set g_errno on error
-int32_t RdbBase::addFile ( int32_t id , bool isNew , int32_t mergeNum , 
-			   int32_t id2 , bool converting ) {
-
+int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2 ) {
 	int32_t n = m_numFiles;
 	// can't exceed this
 	if ( n >= MAX_RDB_FILES ) { 
@@ -760,13 +728,6 @@ int32_t RdbBase::addFile ( int32_t id , bool isNew , int32_t mergeNum ,
 
 	CollectionRec *cr = NULL;
 
-	// if we're converting, just add to m_filesIds and m_fileIds2
-	if ( converting ) {
-	       log("*-*-*-* Converting titledb files to new file name format");
-	       goto skip;
-	}
-
-
 	// debug help
 	if ( isNew )
 		log("rdb: adding new file %s/%s",// m_numFiles=%"INT32"",
@@ -804,8 +765,7 @@ int32_t RdbBase::addFile ( int32_t id , bool isNew , int32_t mergeNum ,
 		log("db: Attempting to generate map file for data "
 		    "file %s* of %"INT64" bytes. May take a while.",
 		    f->getFilename(), f->getFileSize() );
-		// debug hack for now
-		//exit(-1);
+
 		// this returns false and sets g_errno on error
 		if ( ! m->generateMap ( f ) ) {
 			log("db: Map generation failed.");
@@ -858,7 +818,7 @@ int32_t RdbBase::addFile ( int32_t id , bool isNew , int32_t mergeNum ,
 		else
 			f->open ( O_RDWR | O_NONBLOCK | O_ASYNC , NULL );//pc
 	}
- skip:
+
 	// find the position to add so we maintain order by fileId
 	int32_t i ;
 	for ( i = 0 ; i < m_numFiles ; i++ ) if ( m_fileIds[i] >= id ) break;
@@ -913,15 +873,15 @@ int32_t RdbBase::addFile ( int32_t id , bool isNew , int32_t mergeNum ,
 }
 
 int32_t RdbBase::addNewFile ( int32_t id2 ) {
-
 	int32_t fileId = 0;
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ )
 		if ( m_fileIds[i] >= fileId ) fileId = m_fileIds[i] + 1;
 	// . if not odd number then add one
 	// . we like to keep even #'s for merge file names
 	if ( (fileId & 0x01) == 0 ) fileId++;
+
 	// otherwise, set it
-	return addFile(fileId,true/*a new file?*/,-1 /*mergeNum*/,id2 );
+	return addFile( fileId, true, -1, id2 );
 }
 
 static void doneWrapper ( void *state ) ;
@@ -2023,7 +1983,7 @@ void RdbBase::gotTokenForMerge ( ) {
 	// . this now also sets m_mergeStartFileNum for us... but we override
 	//   below anyway. we have to set it there in case we startup and
 	//   are resuming a merge.
-	mergeFileNum = addFile ( mergeFileId , true/*new file?*/ , n , id2 ) ;
+	mergeFileNum = addFile ( mergeFileId , true, n, id2 ) ;
 	if ( mergeFileNum < 0 ) {
 		log(LOG_LOGIC,"merge: attemptMerge: Could not add new file."); 
 		g_errno = 0;

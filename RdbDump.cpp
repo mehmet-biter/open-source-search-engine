@@ -40,9 +40,6 @@ bool RdbDump::set ( //char     *coll          ,
 		log(LOG_LOGIC,"db: RdbDump does not support non-ordered.");
 		char *xx = NULL; *xx = 0;
 	}
-	//if ( ! coll &&
-	//if ( ! coll && rdb->m_isCollectionLess )
-	//	strcpy(m_coll,rdb->m_dbname);
 
 	m_collnum = collnum;
 

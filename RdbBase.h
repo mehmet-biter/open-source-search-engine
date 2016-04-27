@@ -66,14 +66,7 @@ class RdbBase {
 		    char  *dbname          , // "indexdb","tagdb",...
 		    bool   dedup           , //= true ,
 		    int32_t   fixedDataSize   , //= -1   ,
-		    //uint32_t   groupMask       , //=  0   ,
-		    //uint32_t   groupId         , //=  0   ,
 		    int32_t   minToMerge      , //, //=  2   ,
-		    //int32_t   maxTreeMem      , //=  1024*1024*32 ,
-		    //int32_t   maxTreeNodes    ,
-		    //bool   isTreeBalanced  ,
-		    //int32_t   maxCacheMem     , //=  1024*1024*5 );
-		    //int32_t   maxCacheNodes   ,
 		    bool   useHalfKeys     ,
 		    char   keySize         ,
 		    int32_t   pageSize        ,
@@ -271,8 +264,7 @@ class RdbBase {
 	// . add a (new) file to the m_files/m_maps/m_fileIds arrays
 	// . both return array position we added it to
 	// . both return -1 and set errno on error
-	int32_t addFile     ( int32_t fileId, bool isNew, int32_t mergeNum, int32_t id2 ,
-			   bool converting = false ) ;
+	int32_t addFile     ( int32_t fileId, bool isNew, int32_t mergeNum, int32_t id2 ) ;
 	int32_t addNewFile  ( int32_t id2 ) ;
 	//int32_t getAvailId2 ( ); // used only by titledb
 

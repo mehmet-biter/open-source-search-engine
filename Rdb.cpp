@@ -125,7 +125,6 @@ bool Rdb::init ( const char     *dir                  ,
 		  int32_t           maxCacheNodes        ,
 		  bool           useHalfKeys          ,
 		  bool           loadCacheFromDisk    ,
-		 //DiskPageCache *pc                   ,
 		 void *pc ,
 		  bool           isTitledb            ,
 		  bool           preloadDiskPageCache ,
@@ -179,12 +178,9 @@ bool Rdb::init ( const char     *dir                  ,
 	m_minToMerge = minToMerge;
 		
 	m_useTree = true;
-	if (//g_conf.m_useBuckets &&
-	    (
-	     m_rdbId == RDB_POSDB      ||
-	     m_rdbId == RDB2_POSDB2     
-	     ))
+	if ( m_rdbId == RDB_POSDB || m_rdbId == RDB2_POSDB2 ) {
 		m_useTree = false;
+	}
 
 	sprintf(m_treeName,"tree-%s",m_dbname);
 
@@ -257,18 +253,6 @@ bool Rdb::init ( const char     *dir                  ,
 	// load any saved tree
 	if ( ! loadTree ( ) ) return false;
 
-	// i prefer to put these into Statsdb::init() etc.
-	// rather than here because then if we disable an rdb we don't
-	// have to mess with code here as well:
-
-	// we now call g_*db.addColl(NULL) for Statsdb::init() ... directly
-	//if ( g_statsdb.getRdb() == this ) 
-	//	return g_statsdb.addColl ( NULL );
-	//else if ( g_accessdb.getRdb() == this ) 
-	//	return g_accessdb.addColl ( NULL );
-	//else if ( g_facebookdb.getRdb() == this ) 
-	//	return g_facebookdb.addColl ( NULL );
-
 	m_initialized = true;
 
 	// success
@@ -299,22 +283,19 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 	// make the trash dir if not there
 	sprintf ( dstDir , "%s/trash/" , g_hostdb.m_dir );
 	int32_t status = ::mkdir ( dstDir , getDirCreationFlags() );
-				// S_IRUSR | S_IWUSR | S_IXUSR | 
-				// S_IRGRP | S_IWGRP | S_IXGRP | 
-				// S_IROTH | S_IXOTH ) ;
+
 	// we have to create it
 	sprintf ( dstDir , "%s/trash/rebuilt%"UINT32"/" , g_hostdb.m_dir , t );
 	status = ::mkdir ( dstDir , getDirCreationFlags() );
-				// S_IRUSR | S_IWUSR | S_IXUSR | 
-				// S_IRGRP | S_IWGRP | S_IXGRP | 
-				// S_IROTH | S_IXOTH ) ;
 	if ( status && errno != EEXIST ) {
 		g_errno = errno;
 		return log("repair: Could not mkdir(%s): %s",dstDir,
 			   mstrerror(errno));
 	}
+
 	// clear it in case it existed
-        g_errno = 0; 
+	g_errno = 0;
+
 	// if some things need to be saved, how did that happen?
 	// we saved everything before we entered repair mode and did not
 	// allow anything more to be added... and we do not allow any
@@ -568,9 +549,6 @@ bool makeTrashDir() {
 	char trash[1024];
 	sprintf(trash, "%strash/",g_hostdb.m_dir);
 	if ( ::mkdir ( trash , getDirCreationFlags() ) ) {
-		       // S_IRUSR | S_IWUSR | S_IXUSR | 
-		       // S_IRGRP | S_IWGRP | S_IXGRP | 
-		       // S_IROTH | S_IXOTH ) == -1 ) {
 		if ( errno != EEXIST ) {
 			log("dir: mkdir %s had error: %s",
 			    trash,mstrerror(errno));
@@ -584,9 +562,6 @@ bool makeTrashDir() {
 
 
 bool Rdb::deleteColl ( collnum_t collnum , collnum_t newCollnum ) {
-
-	//char *coll = g_collectiondb.m_recs[collnum]->m_coll;
-
 	// remove these collnums from tree
 	if(m_useTree) m_tree.delColl    ( collnum );
 	else          m_buckets.delColl ( collnum );
@@ -902,6 +877,7 @@ bool Rdb::saveTree ( bool useThread ) {
 	char *dbn = m_dbname;
 	if ( ! dbn ) dbn = "unknown";
 	if ( ! dbn[0] ) dbn = "unknown";
+
 	// note it
 	//if ( m_useTree && m_tree.m_needsSave )
 	//	log("db: saving tree %s",dbn);
@@ -1227,19 +1203,23 @@ bool Rdb::dumpCollLoop ( ) {
 
  loop:
 	// if no more, we're done...
-	if ( m_dumpCollnum >= getNumBases() ) return true;
+	if ( m_dumpCollnum >= getNumBases() ) {
+		return true;
+	}
+
 	// the only was g_errno can be set here is from a previous dump
 	// error?
 	if ( g_errno ) {
 	hadError:
 		// if swapped out, this will be NULL, so skip it
 		RdbBase *base = NULL;
-		CollectionRec *cr = NULL;
-		if ( m_dumpCollnum>=0 ) 
-			cr = g_collectiondb.m_recs[m_dumpCollnum];
-		if ( cr ) 
-			base = cr->getBasePtr(m_rdbId);
-		//RdbBase *base = getBase(m_dumpCollnum);
+		if ( m_dumpCollnum >= 0 ) {
+			CollectionRec *cr = g_collectiondb.m_recs[m_dumpCollnum];
+			if ( cr ) {
+				base = cr->getBasePtr( m_rdbId );
+			}
+		}
+
 		log("build: Error dumping collection: %s.",mstrerror(g_errno));
 		// . if we wrote nothing, remove the file
 		// . if coll was deleted under us, base will be NULL!
@@ -1256,6 +1236,7 @@ bool Rdb::dumpCollLoop ( ) {
 		s_lastTryTime = getTime();
 		return true;
 	}
+
 	// advance for next round
 	m_dumpCollnum++;
 
@@ -1263,25 +1244,24 @@ bool Rdb::dumpCollLoop ( ) {
 	// we end up swapping them in
 	for ( ; m_dumpCollnum < getNumBases() ; m_dumpCollnum++ ) {
 		// collection rdbs like statsdb are ok to process
-		if ( m_isCollectionLess ) break;
+		if ( m_isCollectionLess ) {
+			break;
+		}
+
 		// otherwise get the coll rec now
-		CollectionRec *cr = g_collectiondb.m_recs[m_dumpCollnum];
-		// skip if empty
-		if ( ! cr ) continue;
-		// skip if no recs in tree
-		// this is maybe causing us not to dump out all recs
-		// so comment this out
-		//if ( cr->m_treeCount == 0 ) continue;
+		if ( !g_collectiondb.m_recs[m_dumpCollnum] ) {
+			// skip if empty
+			continue;
+		}
+
 		// ok, it's good to dump
 		break;
 	}
 
 	// if no more, we're done...
-	if ( m_dumpCollnum >= getNumBases() ) return true;
-
-	// base is null if swapped out. skip it then. is that correct?
-	// probably not!
-	//RdbBase *base = cr->getBasePtr(m_rdbId);//m_dumpCollnum);
+	if ( m_dumpCollnum >= getNumBases() ) {
+		return true;
+	}
 
 	// swap it in for dumping purposes if we have to
 	// "cr" is NULL potentially for collectionless rdbs, like statsdb,
@@ -1290,22 +1270,20 @@ bool Rdb::dumpCollLoop ( ) {
 
 	// hwo can this happen? error swappingin?
 	if ( ! base ) { 
-		log("rdb: dumpcollloop base was null for cn=%"INT32"",
-		    (int32_t)m_dumpCollnum);
+		log("rdb: dumpcollloop base was null for cn=%"INT32"", (int32_t)m_dumpCollnum);
 		goto hadError;
 	}
 
 	// before we create the file, see if tree has anything for this coll
-	//key_t k; k.setMin();
 	if(m_useTree) {
 		char *k = KEYMIN();
 		int32_t nn = m_tree.getNextNode ( m_dumpCollnum , k );
 		if ( nn < 0 ) goto loop;
 		if ( m_tree.m_collnums[nn] != m_dumpCollnum ) goto loop;
-	}
-	else {
+	} else {
 		if(!m_buckets.collExists(m_dumpCollnum)) goto loop;
 	}
+
 	// . MDW ADDING A NEW FILE SHOULD BE IN RDBDUMP.CPP NOW... NO!
 	// . get the biggest fileId
 	int32_t id2 = -1;
@@ -1344,9 +1322,6 @@ bool Rdb::dumpCollLoop ( ) {
 	    base->m_files[m_fn]->getDir(),
 	    base->m_files[m_fn]->getFilename() , 
 	    g_collectiondb.getCollName ( m_dumpCollnum ) );
-	// . append it to "sync" state we have in memory
-	// . when host #0 sends a OP_SYNCTIME signal we dump to disk
-	//g_sync.addOp ( OP_OPEN , base->m_files[m_fn] , 0 );
 
 	// turn this shit off for now, it's STILL taking forever when dumping
 	// spiderdb -- like 2 secs sometimes!
@@ -1367,6 +1342,7 @@ bool Rdb::dumpCollLoop ( ) {
 		numRecs = m_buckets.getNumKeys();
 		avgSize = m_buckets.getRecSize();
 	}
+
 	// . it really depends on the rdb, for small rec rdbs 200k is too big
 	//   because when getting an indexdb list from tree of 200k that's
 	//   a lot more recs than for titledb!! by far.
@@ -1519,15 +1495,18 @@ void Rdb::doneDumping ( ) {
 	//    m_dbname,m_files[n]->getFilename(),n,mstrerror(g_errno));
 	log(LOG_INFO,"db: Done dumping %s: %s.",m_dbname,
 	    mstrerror(m_dumpErrno));
-	// give the token back so someone else can dump or merge
-	//g_msg35.releaseToken();
+
 	// free mem in the primary buffer
-	if ( ! m_dumpErrno ) m_mem.freeDumpedMem( &m_tree );
+	if ( ! m_dumpErrno ) {
+		m_mem.freeDumpedMem( &m_tree );
+	}
+
 	// . tell RdbDump it is done
 	// . we have to set this here otherwise RdbMem's memory ring buffer
 	//   will think the dumping is no longer going on and use the primary
 	//   memory for allocating new titleRecs and such and that is not good!
 	m_inDumpLoop = false;
+
 	// . on g_errno the dumped file will be removed from "sync" file and
 	//   from m_files and m_maps
 	// . TODO: move this logic into RdbDump.cpp
@@ -1692,10 +1671,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 		g_errno = ETRYAGAIN; 
 		return false;
 	}
-	// if ( m_inDumpLoop ) {
-	// 	g_errno = ETRYAGAIN;
-	// 	return false;
-	// }
 
 	// if we are well into repair mode, level 2, do not add anything
 	// to spiderdb or titledb... that can mess up our titledb scan.
@@ -1705,10 +1680,10 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	if ( g_repair.isRepairActive() &&
 	     // but only check for collection we are repairing/rebuilding
 	     collnum == g_repair.m_collnum &&
-	     //! g_repair.m_fullRebuild  && 
-	     //! g_conf.m_rebuildNoSplits &&
-	     //! g_conf.m_removeBadPages &&
-	     ( m_rdbId == RDB_TITLEDB    ||
+		// exception, spider status docs can be deleted from titledb
+		// if user turns off 'index spider replies' before doing
+		// the rebuild, when not rebuilding titledb.
+	     ((m_rdbId == RDB_TITLEDB && list->m_listSize != 12 )    ||
 	       m_rdbId == RDB_PLACEDB    ||
 	       m_rdbId == RDB_TFNDB      ||
 	       m_rdbId == RDB_POSDB      ||
@@ -1717,22 +1692,11 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	       m_rdbId == RDB_DOLEDB     ||
 	       m_rdbId == RDB_SPIDERDB   ) ) {
 
-		// exception, spider status docs can be deleted from titledb
-		// if user turns off 'index spider replies' before doing
-		// the rebuild, when not rebuilding titledb.
-		if ( m_rdbId == RDB_TITLEDB && 
-		     list->m_listSize == 12 )
-			goto exception;
-
 		// allow banning of sites still
-		//m_rdbId == RDB_TAGDB     ) ) {
-		log("db: How did an add come in while in repair mode?"
-		    " rdbId=%"INT32"",(int32_t)m_rdbId);
+		log("db: How did an add come in while in repair mode? rdbId=%"INT32"",(int32_t)m_rdbId);
 		g_errno = EREPAIRING;
 		return false;
 	}
-
- exception:
 
 	// if we are currently in a quickpoll, make sure we are not in
 	// RdbTree::getList(), because we could mess that loop up by adding
@@ -1751,8 +1715,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	}
 	// lock it
 	m_inAddList = true;
-
-	//log("msg1: in addlist niceness=%"INT32"",niceness);
 
 	// . if we don't have enough room to store list, initiate a dump and
 	//   return g_errno of ETRYAGAIN
@@ -1779,12 +1741,7 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 		// return false since we didn't add the list
 		return false;
 	}
-	// . if we're adding sorted, dataless keys do it this fast way
-	// . this will also do positive/negative key annihilations for us
-	// . should return false and set g_errno on error
-	//if ( list->getFixedDataSize() == 0 && isSorted ) {
-	//	return m_tree.addSortedKeys( (key_t *)list->getList() ,
-	//				     size / sizeof(key_t)     );
+
 	// otherwise, add one record at a time
 	// unprotect tree from writes
 	if ( m_tree.m_useProtection ) m_tree.unprotect ( );
@@ -1792,163 +1749,79 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	// set this for event interval records
 	m_nowGlobal = 0;//getTimeGlobal();
 
- loop:
+	do {
+		char key[MAX_KEY_BYTES];
+		list->getCurrentKey(key);
+		int32_t  dataSize;
+		char *data;
 
-	//key_t key      = list->getCurrentKey();
-	char key[MAX_KEY_BYTES];
-	list->getCurrentKey(key);
-	int32_t  dataSize ;
-	char *data     ;
-	// negative keys have no data
-	if ( ! KEYNEG(key) ) {
-		dataSize = list->getCurrentDataSize();
-		data     = list->getCurrentData();
-	}
-	else {
-		dataSize = 0;
-		data     = NULL;
-	}
-
-/* DEBUG CODE
-	if ( m_rdbId == RDB_TITLEDB ) {
-		char *s = "adding";
-		if ( KEYNEG(key) ) s = "removing";
-		// get the titledb docid
-		int64_t d = g_titledb.getDocIdFromKey ( (key_t *)key );
-		logf(LOG_DEBUG,"tfndb: %s docid %"INT64" to titledb.",s,d);
-	}
-*/
-
-	if ( ! addRecord ( collnum , key , data , dataSize, niceness ) ) {
-		// bitch
-		static int32_t s_last = 0;
-		int32_t now = time(NULL);
-		// . do not log this more than once per second to stop log spam
-		// . i think this can really lockup the cpu, too
-		if ( now - s_last != 0 ) 
-			log(LOG_INFO,"db: Had error adding data to %s: %s.", 
-			    m_dbname,mstrerror(g_errno));
-		s_last = now;
-		// force initiate the dump now if addRecord failed for no mem
-		if ( g_errno == ENOMEM ) {
-			// start dumping the tree to disk so we have room 4 add
-			if ( niceness != 0 ) dumpTree( 1/*niceness*/ );
-			// tell caller to try again later (1 second or so)
-			g_errno = ETRYAGAIN;
+		// negative keys have no data
+		if ( ! KEYNEG(key) ) {
+			dataSize = list->getCurrentDataSize();
+			data     = list->getCurrentData();
 		}
-		// reprotect tree from writes
-		if ( m_tree.m_useProtection ) m_tree.protect ( );
-		// stop it
-		m_inAddList = false;
-		// discontinue adding any more of the list
-		return false;
-	}
+		else {
+			dataSize = 0;
+			data     = NULL;
+		}
 
+		if ( ! addRecord ( collnum , key , data , dataSize, niceness ) ) {
+			// bitch
+			static int32_t s_last = 0;
+			int32_t now = time(NULL);
 
+			// . do not log this more than once per second to stop log spam
+			// . i think this can really lockup the cpu, too
+			if ( now - s_last != 0 ) {
+				log( LOG_INFO, "db: Had error adding data to %s: %s.", m_dbname, mstrerror( g_errno ));
+			}
 
+			s_last = now;
 
-/* DEBUG CODE
-	// verify we added it right
-	if ( m_rdbId == RDB_TITLEDB ) { // && KEYPOS(key) ) {
-		// get the titledb docid
-		int64_t d = g_titledb.getDocIdFromKey ( (key_t *)key );
-	// check the tree for this docid
-	RdbTree *tt = g_titledb.m_rdb.getTree();
-	// make titledb keys
-	key_t startKey = g_titledb.makeFirstTitleRecKey ( d );
-	key_t endKey   = g_titledb.makeLastTitleRecKey  ( d );
-	int32_t  n        = tt->getNextNode ( collnum , startKey );
-	// sanity check -- make sure url is NULL terminated
-	//if ( ulen > 0 && st->m_url[st->m_ulen] ) { char*xx=NULL;*xx=0; }
-	// Tfndb::makeExtQuick masks the host hash with TFNDB_EXTMASK
-	uint32_t mask1 = (uint32_t)TFNDB_EXTMASK;
-	// but use the smalles of these
-	uint32_t mask2 = (uint32_t)TITLEDB_HOSTHASHMASK;
-	// pick the min
-	uint32_t min ;
-	if ( mask1 < mask2 ) min = mask1;
-	else                 min = mask2;
-	// if url provided, set "e"
-	//int32_t e; if ( ulen > 0 ) e = g_tfndb.makeExtQuick ( st->m_url ) & min;
-	// there should only be one match, one titlerec per docid!
-	char *sss = "did not find";
-	for ( ; n >= 0 ; n = tt->getNextNode ( n ) ) {
-		// break if collnum does not match. we exceeded our tree range.
-		if ( tt->getCollnum ( n ) != collnum ) break;
-		// get the key of this node
-		key_t k = *(key_t *)tt->getKey(n);
-		// if passed limit, break out, no match
-		if ( k > endKey ) break;
-		// get the extended hash (aka extHash, aka hostHash)
-		//int32_t e2 = g_titledb.getHostHash ( k ) & min;
-		// if a url was provided and not a docid, must match the exts
-		//if ( ulen > 0 && e != e2 ) continue;
-		// . if we matched a negative key, then ENOTFOUND
-		// . just break out here and enter the normal logic
-		// . it should load tfndb and find that it is not in tfndb
-		//   because when you add a negative key to titledb in
-		//   Rdb::addList, it adds a negative rec to tfndb immediately
-		if ( KEYNEG((char *)&k) ) continue;//break;
-		// we got it
-		sss = "found";
-		break;
-	}
-	if ( KEYPOS(key) )
-		logf(LOG_DEBUG,"tfndb: %s docid %"INT64" at node %"INT32"",sss,d,n);
-	}
-*/
+			// force initiate the dump now if addRecord failed for no mem
+			if ( g_errno == ENOMEM ) {
+				// start dumping the tree to disk so we have room 4 add
+				if ( niceness != 0 ) dumpTree( 1/*niceness*/ );
+				// tell caller to try again later (1 second or so)
+				g_errno = ETRYAGAIN;
+			}
 
+			// reprotect tree from writes
+			if ( m_tree.m_useProtection ) m_tree.protect ( );
 
-	// on success, if it was a titledb delete, delete from tfndb too
-	/*
-	if ( m_rdbId == RDB_TITLEDB && KEYNEG(key) ) {
-		// make the tfndb record
-		int64_t docId = g_titledb.getDocIdFromKey ((key_t *) key );
-		int64_t uh48  = g_titledb.getUrlHash48 ((key_t *)key);
-		// . tfn=0 delete=true
-		// . use a tfn of 0 because RdbList::indexMerge_r() ignores
-		//   the "tfn bits" when merging/comparing two tfndb keys
-		//   (HACK)
-		key_t tk = g_tfndb.makeKey ( docId ,uh48,0, true );
-		// add this negative key to tfndb
-		Rdb *tdb = g_tfndb.getRdb();
-		// debug log
-		//logf(LOG_DEBUG,"tfndb: REMOVING tfndb docid %"INT64".",docId);
-		// if no room, bail. caller should dump tfndb and retry later.
-		if ( ! tdb->addRecord(collnum,(char *)&tk,NULL,0,niceness) ) {
-			// if it is OOM... dump it!
-			if ( g_errno == ENOMEM && niceness != 0 ) 
-				tdb->dumpTree(1);
-			// and tell the title add to try again!
-			g_errno = ETRYAGAIN;
 			// stop it
 			m_inAddList = false;
+
+			// discontinue adding any more of the list
 			return false;
 		}
-	}
-	*/
 
-	QUICKPOLL((niceness));
-	// skip to next record, returns false on end of list
-	if ( list->skipCurrentRecord() ) goto loop;
+		QUICKPOLL((niceness));
+	} while ( list->skipCurrentRecord() ); // skip to next record, returns false on end of list
+
 	// reprotect tree from writes
 	if ( m_tree.m_useProtection ) m_tree.protect ( );
+
 	// stop it
 	m_inAddList = false;
+
 	// if tree is >= 90% full dump it
 	if ( m_dump.isDumping() ) return true;
+
 	// return true if not ready for dump yet
 	if ( ! needsDump () ) return true;
-	// bad?
-	//log("rdb: dumptree niceness=%"INT32"",niceness);
+
 	// if dump started ok, return true
 	if ( niceness != 0 ) if ( dumpTree( 1/*niceness*/ ) ) return true;
+
 	// technically, since we added the record, it is not an error
 	g_errno = 0;
+
 	// . otherwise, bitch and return false with g_errno set
 	// . usually this is because it is waiting for an unlink/rename
 	//   operation to complete... so make it LOG_INFO
 	log(LOG_INFO,"db: Failed to dump data to disk for %s.",m_dbname);
+
 	return true;
 }
 
