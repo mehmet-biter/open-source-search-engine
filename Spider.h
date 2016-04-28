@@ -78,7 +78,7 @@ extern char s_countsAreValid;
 
 bool tryToDeleteSpiderColl ( SpiderColl *sc , const char *msg ) ;
 void spiderRoundIncremented ( class CollectionRec *cr ) ;
-bool testPatterns ( ) ;
+
 bool hasPositivePattern ( char *content ) ;
 bool doesStringContainPattern ( char *content , char *pattern ) ;
 
@@ -439,48 +439,40 @@ class Spiderdb {
 	// this rdb holds urls waiting to be spidered or being spidered
 	Rdb m_rdb;
 
-	int64_t getUrlHash48 ( key128_t *k ) {
-		return (((k->n1)<<16) | k->n0>>(64-16)) & 0xffffffffffffLL; };
+	int64_t getUrlHash48( key128_t *k ) {
+		return (((k->n1)<<16) | k->n0>>(64-16)) & 0xffffffffffffLL;
+	}
 	
-	bool isSpiderRequest ( key128_t *k ) {
-		return (k->n0>>(64-17))&0x01; };
-	bool isSpiderReply   ( key128_t *k ) {
-		return ((k->n0>>(64-17))&0x01)==0x00; };
+	bool isSpiderRequest( key128_t *k ) {
+		return (k->n0>>(64-17))&0x01;
+	}
 
-	int64_t getParentDocId ( key128_t *k ) {return (k->n0>>9)&DOCID_MASK;};
+	bool isSpiderReply( key128_t *k ) {
+		return ((k->n0>>(64-17))&0x01)==0x00;
+	}
+
+	int64_t getParentDocId( key128_t *k ) {
+		return (k->n0>>9)&DOCID_MASK;
+	}
+
 	// same as above
-	int64_t getDocId ( key128_t *k ) {return (k->n0>>9)&DOCID_MASK;};
+	int64_t getDocId( key128_t *k ) {
+		return (k->n0>>9)&DOCID_MASK;
+	}
 
-	int32_t getFirstIp ( key128_t *k ) { return (k->n1>>32); }
+	int32_t getFirstIp( key128_t *k ) {
+		return (k->n1>>32);
+	}
 	
-	key128_t makeKey ( int32_t      firstIp     ,
-			   int64_t urlHash48   ,
-			   bool      isRequest   ,
-			   int64_t parentDocId ,
-			   bool      isDel       ) ;
+	key128_t makeKey( int32_t firstIp, int64_t urlHash48, bool isRequest, int64_t parentDocId, bool isDel );
 
-	key128_t makeFirstKey ( int32_t firstIp ) {
-		return makeKey ( firstIp,0LL,false,0LL,true); };
-	key128_t makeLastKey ( int32_t firstIp ) {
-		return makeKey ( firstIp,0xffffffffffffLL,true,
-				 MAX_DOCID,false); };
+	key128_t makeFirstKey( int32_t firstIp ) {
+		return makeKey( firstIp, 0LL, false, 0LL, true );
+	}
 
-	key128_t makeFirstKey2 ( int32_t firstIp , int64_t uh48 ) {
-		return makeKey ( firstIp,uh48,false,0LL,true); };
-	key128_t makeLastKey2 ( int32_t firstIp  , int64_t uh48 ) {
-		return makeKey ( firstIp,uh48,true,MAX_DOCID,false); };
-
-	// what groupId (shardid) spiders this url?
-	/*
-	inline uint32_t getShardNum ( int32_t firstIp ) {
-		// must be valid
-		if ( firstIp == 0 || firstIp == -1 ) {char *xx=NULL;*xx=0; }
-		// mix it up
-		uint32_t h = (uint32_t)hash32h ( firstIp, 0x123456 );
-		// get it
-		return h % g_hostdb.m_numShards;
-	};
-	*/
+	key128_t makeLastKey( int32_t firstIp ) {
+		return makeKey( firstIp, 0xffffffffffffLL, true, MAX_DOCID, false );
+	}
 
 	// print the spider rec
 	int32_t print( char *srec , SafeBuf *sb = NULL );
@@ -492,8 +484,7 @@ extern class Spiderdb g_spiderdb;
 extern class Spiderdb g_spiderdb2;
 
 class SpiderRequest {
-
- public:
+public:
 
 	// we now define the data so we can use this class to cast
 	// a SpiderRec outright
@@ -512,7 +503,6 @@ class SpiderRequest {
 	// even if the ip changes later on. this also increases performance 
 	// since we do a lot fewer dns lookups on the outlinks.
 	int32_t    m_firstIp;
-	//int32_t getFirstIp ( ) { return g_spiderdb.getFirstIp(&m_key); };
 
 	int32_t    m_hostHash32;
 	int32_t    m_domHash32;
@@ -536,7 +526,6 @@ class SpiderRequest {
 	// spidered (when m_url was not an outlink on its parent page)
 	uint32_t  m_parentPrevSpiderTime; // time_t
 
-	//int32_t    m_parentFirstIp;
 	// # of spider requests from different c-blocks. capped at 255.
 	// taken from the # of SpiderRequests.
 	uint8_t    m_pageNumInlinks;
@@ -555,10 +544,6 @@ class SpiderRequest {
 	// when we scan all of the SpiderRequests it has.
 	int32_t m_discoveryTime;
 
-	// the PROBABLE DOCID. if there is a collision with another docid
-	// then we increment the last 8 bits or so. see Msg22.cpp.
-	//int64_t m_probDocId;
-	//int32_t m_reservedc1;
 	int32_t m_reservedc2;
 
 	// . replace this with something we need for smart compression
@@ -575,35 +560,17 @@ class SpiderRequest {
 	// typically a chinese page will link to another chinese page,
 	// though not always of course. this is the primary language of
 	// the parent.
-	uint8_t m_parentLangId;//reserved1;
+	uint8_t m_parentLangId;
 
-	// the new add url control will allow user to control link spidering
-	// on each url they add. they can also specify file:// instead of
-	// http:// to index local files. so we have to allow file://
-	/* unsigned char    m_onlyAddSameDomainLinks        :1; */
-	/* unsigned char    m_onlyAddSameSubdomainLinks     :1; */
-	/* unsigned char    m_onlyDoNotAddLinksLinks        :1; // max hopcount 1 */
-	/* unsigned char    m_onlyDoNotAddLinksLinksLinks   :1; // max hopcount 2 */
-	unsigned char    m_ignoreDocUnchangedError:1;//reserved2a:1;
-	unsigned char    m_recycleContent:1;//m_reserved2b:1;
-	unsigned char    m_hasMediaExtension:1; // reserved2c:1;
+	unsigned char    m_ignoreDocUnchangedError:1;
+	unsigned char    m_recycleContent:1;
+	unsigned char    m_hasMediaExtension:1;
 	unsigned char    m_hasMediaExtensionValid:1;
 
 	unsigned char    m_reserved2e:1;
 	unsigned char    m_reserved2f:1;
 	unsigned char    m_reserved2g:1;
 	unsigned char    m_reserved2h:1;
-
-
-	//int32_t    m_hopCount;
-
-	// . this is now computed dynamically often based on the latest
-	//   m_addedTime and m_percentChanged of all the SpideRec *replies*.
-	//   we may decide to change some url filters
-	//   that affect this computation. so SpiderCache always changes
-	//   this value before adding any SpiderRec *request* to the 
-	//   m_orderTree, etc.
-	//time_t  m_spiderTime;
 
 	//
 	// our bit flags
@@ -671,8 +638,8 @@ class SpiderRequest {
 	// these bits also in SpiderReply
 	//
 
-	// was it in google's index?
 	unsigned    m_reserved3h:1;
+
 	// expires after a certain time or if ownership changed
 	// did it have an inlink from a really nice site?
 	unsigned    m_hasAuthorityInlink :1;
@@ -741,9 +708,11 @@ class SpiderRequest {
 
 	int32_t getRecSize () { return m_dataSize + 4 + sizeof(key128_t); }
 
-	int32_t getUrlLen() { return m_dataSize -
-				   // subtract the \0
-				   ((char *)m_url-(char *)&m_firstIp) - 1;};
+	int32_t getUrlLen() {
+		return m_dataSize -
+		       // subtract the \0
+		       ((char *)m_url-(char *)&m_firstIp) - 1;
+	}
 
 	char *getUrlPath() {
 		char *p = m_url;
@@ -762,14 +731,9 @@ class SpiderRequest {
 		if ( *p != '/' ) return NULL;
 		// return root path of / if there.
 		return p;
-	};		
+	}
 
-	//int32_t getUrlLen() { return gbstrlen(m_url); };
-
-	void setKey ( int32_t firstIp ,
-		      int64_t parentDocId , 
-		      int64_t uh48 , 
-		      bool isDel ) ;
+	void setKey ( int32_t firstIp, int64_t parentDocId, int64_t uh48, bool isDel ) ;
 
 	void setKey ( int32_t firstIp, int64_t parentDocId , bool isDel ) { 
 		int64_t uh48 = hash64b ( m_url );
@@ -778,19 +742,22 @@ class SpiderRequest {
 
 	void setDataSize ( );
 
-	int64_t  getUrlHash48  () {return g_spiderdb.getUrlHash48(&m_key); };
-	int64_t getParentDocId (){return g_spiderdb.getParentDocId(&m_key);};
+	int64_t  getUrlHash48() {
+		return g_spiderdb.getUrlHash48( &m_key );
+	}
+
+	int64_t getParentDocId() {
+		return g_spiderdb.getParentDocId( &m_key );
+	}
 
 	int32_t print( class SafeBuf *sb );
 
-	int32_t printToTable     ( SafeBuf *sb , const char *status ,
-				class XmlDoc *xd , int32_t row ) ;
+	int32_t printToTable( SafeBuf *sb, const char *status, class XmlDoc *xd, int32_t row ) ;
+
 	// for diffbot...
-	int32_t printToTableSimple     ( SafeBuf *sb , const char *status ,
-				      class XmlDoc *xd , int32_t row ) ;
-	static int32_t printTableHeader ( SafeBuf *sb , bool currentlSpidering ) ;
-	static int32_t printTableHeaderSimple ( SafeBuf *sb , 
-					     bool currentlSpidering ) ;
+	int32_t printToTableSimple( SafeBuf *sb, const char *status, class XmlDoc *xd, int32_t row ) ;
+	static int32_t printTableHeader ( SafeBuf *sb, bool currentlSpidering ) ;
+	static int32_t printTableHeaderSimple ( SafeBuf *sb, bool currentlSpidering ) ;
 
 	// returns false and sets g_errno on error
 	bool setFromAddUrl ( char *url ) ;
@@ -822,42 +789,42 @@ public:
 
 	// for calling getHostIdToDole()
 	int32_t    m_firstIp;
-	//int32_t getFirstIp ( ) { return g_spiderdb.getFirstIp(&m_key); };
 
 	// we need this too in case it changes!
 	int32_t    m_siteHash32;
+
 	// and this for updating crawl delay in m_cdTable
 	int32_t    m_domHash32;
+
 	// since the last successful SpiderRecReply
 	float   m_percentChangedPerDay;
+
 	// when we attempted to spider it
 	uint32_t  m_spideredTime; // time_t
+
 	// . value of g_errno/m_indexCode. 0 means successfully indexed.
 	// . might be EDOCBANNED or EDOCFILTERED
 	int32_t    m_errCode;
+
 	// this is fresher usually so we can use it to override 
 	// SpiderRequest's m_siteNumLinks
 	int32_t    m_siteNumInlinks;
-	// how many inlinks does this particular page have?
-	//int32_t    m_pageNumInlinks;
+
 	// the actual pub date we extracted (0 means none, -1 unknown)
 	int32_t    m_pubDate;
-	// . SpiderRequests added to spiderdb since m_spideredTime
-	// . XmlDoc.cpp's ::getUrlFilterNum() uses this as "newinlinks" arg
-	//int32_t    m_newRequests;
-	// . replaced m_newRequests
+
 	// . this is zero if none or invalid
 	int32_t    m_contentHash32;
+
 	// in milliseconds, from robots.txt (-1 means none)
-	// TODO: store in tagdb, lookup when we lookup tagdb recs for all
-	// out outlinks
-	int32_t    m_crawlDelayMS; 
+	// TODO: store in tagdb, lookup when we lookup tagdb recs for all out outlinks
+	int32_t    m_crawlDelayMS;
+
 	// . when we basically finished DOWNLOADING it
 	// . use 0 if we did not download at all
 	// . used by Spider.cpp to space out urls using sameIpWait
 	int64_t  m_downloadEndTime;
-	// how many errors have we had in a row?
-	//int32_t    m_retryNum;
+
 	// . like "404" etc. "200" means successfully downloaded
 	// . we can still successfully index pages that are 404 or permission
 	//   denied, because we might have link text for them.
@@ -879,12 +846,13 @@ public:
 	//unsigned char    m_isSpam:1; 
 	// was the page in rss format?
 	unsigned    m_isRSS:1;
+
 	// was the page a permalink?
 	unsigned    m_isPermalink:1;
+
 	// are we a pingserver page?
 	unsigned    m_isPingServer:1;
-	// did we delete the doc from the index?
-	//unsigned    m_deleted:1;
+
 	// was it in the index when we were done?
 	unsigned    m_isIndexed:1;
 
@@ -892,10 +860,11 @@ public:
 	// these bits also in SpiderRequest
 	//
 
-	// was it in google's index?
 	unsigned    m_reserved3:1;
+
 	// did it have an inlink from a really nice site?
 	unsigned    m_hasAuthorityInlink:1;
+
 	unsigned    m_reserved002   :1;
 	unsigned    m_reserved001   :1;
 	unsigned    m_reserved5     :1;
@@ -914,16 +883,19 @@ public:
 	unsigned    m_reserved007             :1;
 	unsigned    m_reserved2               :1;
 	unsigned    m_siteNumInlinksValid     :1;
+
 	// was the request an injection request
 	unsigned    m_fromInjectionRequest    :1;
-	// did we TRY to send it to the diffbot backend filter? might be err?
-	unsigned    m_reserved008             :1; //was:m_sentToDiffbotThisTime
-	unsigned    m_reserved009             :1; //was:m_hadDiffbotError
+
+	unsigned    m_reserved008             :1;
+	unsigned    m_reserved009             :1;
+
 	// . was it in the index when we started?
 	// . we use this with m_isIndexed above to adjust quota counts for
 	//   this m_siteHash32 which is basically just the subdomain/host
 	//   for SpiderColl::m_quotaTable
 	unsigned    m_wasIndexed              :1;
+
 	// this also pertains to m_isIndexed as well:
 	unsigned    m_wasIndexedValid         :1;
 
@@ -933,15 +905,17 @@ public:
 	// clear all
 	void reset() { memset ( this , 0 , sizeof(SpiderReply) ); };
 
-	void setKey ( int32_t firstIp,
-		      int64_t parentDocId , 
-		      int64_t uh48 , 
-		      bool isDel ) ;
+	void setKey ( int32_t firstIp, int64_t parentDocId, int64_t uh48, bool isDel ) ;
 
 	int32_t print ( class SafeBuf *sbarg );
 
-	int64_t  getUrlHash48  () {return g_spiderdb.getUrlHash48(&m_key); };
-	int64_t getParentDocId (){return g_spiderdb.getParentDocId(&m_key);};
+	int64_t  getUrlHash48  () {
+		return g_spiderdb.getUrlHash48(&m_key);
+	}
+
+	int64_t getParentDocId (){
+		return g_spiderdb.getParentDocId(&m_key);
+	}
 } __attribute__((packed, aligned(4)));
 
 // was 1000 but breached, now equals SR_READ_SIZE/sizeof(SpiderReply)
@@ -953,6 +927,8 @@ public:
 bool isAssignedToUs ( int32_t firstIp ) ;
 
 #define SPIDERDBKEY key128_t
+
+class SpiderColl;
 
 class SpiderCache {
 
