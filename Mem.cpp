@@ -39,26 +39,8 @@ bool freeCacheMem();
 
 
 
-// if we alloc too much in one call, pthread_create() fails for some reason
-//#define MAXMEMPERCALL (256*1024*1024-1)
-
-//[mwells@lenny c]$ echo "inuse on" > .psrc
-//[mwells@lenny c]$ ./slowleak
-//** Insure messages will be written to insra **
-//[mwells@lenny c]$ tca -X
-
 // the thread lock
 //static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;
-
-// make it big for production machines
-//#define DMEMTABLESIZE (1024*602)
-// there should not be too many mallocs any more
-// i boosted from 300k to 600k so we can get summaries for 150k results
-// for the csv download...
-//#define DMEMTABLESIZE (1024*600)
-//#define DMEMTABLESIZE (1024*202)
-// and small for local machine
-//#define DMEMTABLESIZE (1024*50)
 
 // a table used in debug to find mem leaks
 static void **s_mptrs ;
@@ -97,28 +79,7 @@ void Mem::delnew ( void *ptr , int32_t size , const char *note ) {
 	// s_sizes[]. and the delete() operator is overriden below to
 	// catch this.
 	return;
-	/*
-	// don't let electric fence zap us
-	//if ( size == 0 && ptr==(void *)0x7fffffff) return;
-	if ( size == 0 ) return;
-	// watch out for bad sizes
-	if ( size < 0 ) {
-		log(LOG_LOGIC,"mem: delete(%"INT32"): Bad size.", size );
-		return;
-	}
-	// debug
-	if ( size > MINMEM )
-		log(LOG_INFO,"mem: delete(%"INT32"): %s.",size,note);
-	// count it
-	if ( size > 0 ) {
-		m_used -= size;
-		m_numAllocated--;
-	}
-	*/
 }
-
-// this must be defined for newer libc++
-//int bad_alloc ( ) { return 1; };
 
 // . global override of new and delete operators
 // . seems like constructor and destructor are still called
@@ -214,9 +175,7 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 	//	// return NULL; }
 	//} 
 	
-	// hack so hostid #0 can use more mem
 	int64_t max = g_conf.m_maxMem;
-	//if ( g_hostdb.m_hostId == 0 )  max += 2000000000;
 
 	// don't go over max
 	if ( g_mem.m_used + (int32_t)size >= max &&
@@ -278,7 +237,7 @@ Mem::Mem() {
 	m_maxAlloc = 0;
 	m_maxAllocBy = "";
 	m_maxAlloced = 0;
-	m_memtablesize = 0;//DMEMTABLESIZE;
+	m_memtablesize = 0;
 	// shared mem used
 	m_sharedUsed = 0LL;
 	// count how many allocs/news failed
@@ -287,66 +246,16 @@ Mem::Mem() {
 
 Mem::~Mem() {
 	if ( getUsedMem() == 0 ) return;
-	//log(LOG_INIT,"mem: Memory allocated now: %"INT32".\n", getUsedMem() );
-	// this is now called from main.cpp::allExit() because it freezes
-	// up in printMem()'s call to sysmalloc() for some reason
-	//	printMem();
 }
 
-//int32_t Mem::getUsedMem    () { return 0; }; //return mallinfo().usmblks; };
 int64_t Mem::getAvailMem   () { return 0; };
-//int64_t Mem::getMaxAlloced () { return 0; };
 int64_t Mem::getMaxMem     () { return g_conf.m_maxMem; }
 int32_t Mem::getNumChunks  () { return 0; };
 
 
-bool Mem::init  ( ) { // int64_t maxMem ) { 
-	// . don't swap our memory out, man...
-	// . damn, linux 2.4.17 seems to crash the kernel sometimes w/ this
-	//if ( mlockall( MCL_CURRENT | MCL_FUTURE ) == -1 ) {
-	//	log("Mem::init: mlockall: %s" , strerror(errno) );
-	//	errno = 0;
-	//}
-	//m_maxMem  = maxMem;
-	// set it 
-	//struct rlimit lim;
-	//lim.rlim_max = maxMem;
-	//setrlimit ( RLIMIT_AS , &lim ); // ulimit -v
-	// note
-	//log(LOG_INIT,"mem: Max memory usage set to %"INT64" bytes.", maxMem);
-	// warning msg
+bool Mem::init  ( ) {
 	if ( g_conf.m_detectMemLeaks )
 		log(LOG_INIT,"mem: Memory leak checking is enabled.");
-
-	/*
-	  take this out for now it seems to hang the OS when running
-	  as root
-
-#ifndef TITAN
-	// if we can't alloc 3gb exit and retry
-	int64_t start = gettimeofdayInMilliseconds();
-	char *pools[30];
-	int64_t count = 0LL;
-	int64_t chunk = 100000000LL; // 100MB chunks
-	int64_t need = 3000000000LL; // 3GB
-	int32_t i = 0; for ( i = 0 ; i < 30 ; i++ ) {
-		pools[i] = (char *)mmalloc(chunk,"testmem");
-		count += chunk;
-		if ( pools[i] ) continue;
-		count -= chunk;
-		log("mem: could only alloc %"INT64" bytes of the "
-		    "%"INT64" required to run gigablast. exiting.",
-		    count , need );
-	}
-	for ( int32_t j = 0 ; j < i ; j++ )
-		mfree ( pools[j] , chunk , "testmem" );
-	int64_t now = gettimeofdayInMilliseconds();
-	int64_t took = now - start;
-	if ( took > 20 ) log("mem: took %"INT64" ms to check memory ceiling",took);
-	// return if could not alloc the full 3GB
-	if ( i < 30 ) return false;
-#endif
-	*/
 
 	// reset this, our max mem used over time ever because we don't
 	// want the mem test we did above to count towards it
@@ -359,29 +268,12 @@ bool Mem::init  ( ) { // int64_t maxMem ) {
 	return true;
 }
 
-//bool  Mem::reserveMem ( int64_t bytesToReserve ) {
-	// TODO: use sbrk()?
-//	char *s = (char *) malloc ( bytesToReserve );
-//	if ( s ) { free ( s ); return true; }
-	// TODO: try smaller blocks
-//	return false;
-//}
 
 // this is called by C++ classes' constructors to register mem
 void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 
-	// enforce safebuf::setLabel being called
-	//if ( size>=100000 && note && strcmp(note,"SafeBuf")==0 ) {
-	//	char *xx=NULL;*xx=0; }
-
 	//validate();
 
-	 // if ( note && note[0] == 'S' && note[1] == 'a' &&
-	 //      note[2] == 'f' && size == 1179 )
-	 // 	log("mem: got mystery safebuf");
-
-
-        //m_memtablesize = 0;//DMEMTABLESIZE;
 	  // 4G/x = 600*1024 -> x = 4000000000.0/(600*1024) = 6510
 	// crap, g_hostdb.init() is called inmain.cpp before
 	// g_conf.init() which is needed to set g_conf.m_maxMem...
@@ -403,19 +295,9 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 		}
 	}
 
-	// debug msg (mdw)
-	//char bb[100];
-	//bb[0]=0;
-	//if ( strcmp(note,"UdpSlot")== 0 ) {
-	//	unsigned char c = (*(unsigned char *)mem) & 0x3f;
-	//	sprintf(bb," msgType=0x%"XINT32"",(int32_t)c);
-	//}
 	if ( g_conf.m_logDebugMem )
 		log("mem: add %08"PTRFMT" %"INT32" bytes (%"INT64") (%s)",
 		    (PTRTYPE)mem,size,m_used,note);
-
-	//if ( strcmp(note,"RdbList") == 0 ) 
-	//	log("mem: freelist%08"XINT32" %"INT32"bytes (%s)",(int32_t)mem,size,note);
 
 	// check for breech after every call to alloc or free in order to
 	// more easily isolate breeching code.. this slows things down a lot
@@ -424,8 +306,6 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 
 	// copy the magic character, iff not a new() call
 	if ( size == 0 ) { char *xx = NULL; *xx = 0; }
-	// don't add 0 bytes
-	//if ( size == 0 ) return;
 	// sanity check
 	if ( size < 0 ) {
 		log("mem: addMem: Negative size.");
@@ -720,9 +600,6 @@ bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 		log("mem: free %08"PTRFMT" %"INT32"bytes (%s)",
 		    (PTRTYPE)mem,size,note);
 
-	//if ( strcmp(note,"RdbList") == 0 ) 
-	//	log("mem: freelist%08"XINT32" %"INT32"bytes (%s)",(int32_t)mem,size,note);
-
 	// check for breech after every call to alloc or free in order to
 	// more easily isolate breeching code.. this slows things down a lot
 	// though.
@@ -978,35 +855,6 @@ int Mem::printBreech ( int32_t i , char core ) {
 	// need this
 	if ( ! bp ) { char *xx=NULL;*xx=0; }
 
-	/*
-	//
-	// check for freed memory re-use
-	//
-	FreeInfo *fi  = s_cursor;
-	FreeInfo *end = s_cursorEnd;
-	if ( ! s_looped ) end = s_cursor;
-	for ( ; ; ) {
-		// decrement
-		fi--;
-		// wrap?
-		if ( fi < s_cursorStart ) {
-			// do not wrap if did not loop though!
-			if ( ! s_looped ) break;
-			// otherwise, wrap back to top
-			fi = s_cursorEnd - 1;
-		}
-		// see if contains an overwritten magic char
-		if ( bp >= (char *)fi->m_ptr &&
-		     bp <  (char *)fi->m_ptr + fi->m_size ) {
-			log("mem: reused freed buffer note=%s",
-			    fi->m_note);
-			break;
-		}
-		// all done?
-		if ( fi == s_cursor ) break;
-	}
-	*/
-
 	if ( flag && core ) { char *xx = NULL; *xx = 0; }
 	return 1;
 }
@@ -1101,30 +949,10 @@ void *Mem::gbmalloc ( int size , const char *note ) {
 
 	g_inMemFunction = true;
 
-	// to find bug that cores on malloc do this
-	//printBreeches(true);
-	//g_errno=ENOMEM;return (void *)log("Mem::malloc: reached mem limit");}
-
 	mem = (void *)sysmalloc ( size + UNDERPAD + OVERPAD );
 
 	g_inMemFunction = false;
 
-	// initialization debug
-	//char *pend = (char *)mem + UNDERPAD + size;
-	//for ( char *p = (char *)mem + UNDERPAD ; p < pend ; p++ )
-	//	*p = (char )(rand() % 256);
-	// test mem fragmentation email
-	//static int32_t s_count = 0;
-	//s_count++;
-	//if ( s_count > 1500 && (rand() % 100) < 2 ) { 
-	//	log("mem: malloc-system(%i,%s): %s",size,note,
-	//	    mstrerror(g_errno));
-	//	mem = NULL;
-	//} 
-	// special log
-	//if ( size > 1000000 ) 
-	//	log("allocated %i. (%s) current=%"INT64"",size,note,m_used);
-	//void *mem = s_pool.malloc ( size ); 
 	int32_t memLoop = 0;
 mallocmemloop:
 	if ( ! mem && size > 0 ) {
@@ -1223,13 +1051,6 @@ void *Mem::gbrealloc ( void *ptr , int oldSize , int newSize ,
 		gbfree ( ptr , oldSize , note );
 		return (void *)0x7fffffff;
 	}
-	// don't do more than 128M at a time, it hurts pthread_create
-	//if ( newSize > MAXMEMPERCALL ) {
-	//	g_errno = ENOMEM;
-	//	log("Mem::realloc(%i): can only alloc %"INT32" bytes per call",
-	//	    newSize,MAXMEMPERCALL);
-	//	return NULL;
-	//}
  retry:
 
 	// hack so hostid #0 can use more mem
@@ -1287,9 +1108,7 @@ void *Mem::gbrealloc ( void *ptr , int oldSize , int newSize ,
 	memmove ( mem , ptr , oldSize );
 	// we already called rmMem() so don't double call
 	sysfree ( (char *)ptr - UNDERPAD );	
-	// free the old. this was coring because it was double calling rmMem()
-	//mfree ( ptr , oldSize , note );
-	// mmalloc() and mfree() should have taken care of it
+
 	return mem;
 }
 
@@ -1306,9 +1125,6 @@ void Mem::gbfree ( void *ptr , int size , const char *note ) {
 	if ( size == 0 ) return;
 	// huh?
 	if ( ! ptr ) return;
-
-	//if ( size==65536 && strcmp(note,"UdpServer")==0)
-	//	log("hey");
 
 	// . get how much it was from the mem table
 	// . this is used for alloc/free wrappers for zlib because it does
@@ -1333,57 +1149,6 @@ void Mem::gbfree ( void *ptr , int size , const char *note ) {
 	else         sysfree ( (char *)ptr - UNDERPAD );
 	g_inMemFunction = false;
 }
-
-
-// . TODO: avoid byteCopy by copying remnant bytes
-// . ass = async signal safe, dumb ass
-// . NOTE: src/dest should not overlap in this version of gbmemcpy
-// . MDW: i replaced this is a #define bcopy in gb-include.h
-/*
-void memcpy_ass ( register void *dest2, register const void *src2, int32_t len ) {
-	// for now keep it simple!!
-	len--;
-	while ( len >= 0 ) { 
-		((char *)dest2)[len] = ((char *)src2)[len]; 
-		len--; 
-	}
-*/
-	/*
-	// debug test
-	//gbmemcpy ( dest2 , src2 , len );
-	//return;
-	// the end for the fast copy by word with partially unrolled loop
-	register int32_t *dest = (int32_t *)dest2;
-	register int32_t *src  = (int32_t *)src2 ;
-	register int32_t *end  = dest + (len >> 2);
-	int32_t *oldEnd = end;
-	//int64_t start = gettimeofdayInMilliseconds();
-	//fprintf(stderr,"ln=%"INT32",dest=%"INT32",src=%"INT32"\n",len,(int32_t)dest,(int32_t)src);
-	if ((len&0x03)!=0 || ((int32_t)dest&0x03)!=0 || ((int32_t)src&0x03)!=0 ) 
-		goto byteCopy;
-	// truncate n so we can unroll this loop
-	end = (int32_t *)  ( (int32_t)end & 0x07 );
-	while ( dest < end ) { 
-		dest[0] = src[0]; 
-		dest[1] = src[1]; 
-		dest[2] = src[2]; 
-		dest[3] = src[3]; 
-		dest[4] = src[4]; 
-		dest[5] = src[5]; 
-		dest[6] = src[6]; 
-		dest[7] = src[7]; 
-		dest += 8;
-		src  += 8;
-	}
-	// copy remaining 7 or less int32_ts
-	while ( dest < oldEnd ) { *dest = *src; dest++; src++; }
-	//fprintf(stderr,"t=%"INT32"\n",(int32_t)(gettimeofdayInMilliseconds()-start));
-	return;
- byteCopy:
-	len--;
-	while ( len >= 0 ) { dest2[len] = src2[len]; len--; }
-	*/
-//}
 
 
 #include "Msg20.h"
