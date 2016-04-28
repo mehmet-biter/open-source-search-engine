@@ -268,10 +268,6 @@ bool Rdb::init ( const char     *dir                  ,
 	//else if ( g_facebookdb.getRdb() == this ) 
 	//	return g_facebookdb.addColl ( NULL );
 
-	// set this for use below
-	//*(int64_t *)m_gbcounteventsTermId =
-	//	hash64n("gbeventcount")&TERMID_MASK;
-
 	m_initialized = true;
 
 	// success
@@ -2330,27 +2326,6 @@ bool Rdb::addRecord ( collnum_t collnum,
 		// return if all data is in the tree
 		if ( getBase(collnum)->m_numFiles == 0 ) return true;
 		// . otherwise, assume we match a positive...
-		// . datedb special counting of events
-		// . check termid quickly
-		// . NO! now use the sortbydatetable
-		//if ( m_rdbId == RDB_DATEDB &&
-		//     key[15] == m_gbcounteventsTermId[5] &&
-		//     key[14] == m_gbcounteventsTermId[4] &&
-		//     key[13] == m_gbcounteventsTermId[3] &&
-		//     key[12] == m_gbcounteventsTermId[2] &&
-		//     key[11] == m_gbcounteventsTermId[1] &&
-		//     key[10] == m_gbcounteventsTermId[0] ) {
-		//	// get coll rec
-		//	CollectionRec *cr = g_collectiondb.m_recs[collnum];
-		//	// count
-		//	unsigned score = ((unsigned char *)key)[5];
-		//	// complement
-		//	score = 255 - score;
-		//	// increment event count
-		//	cr->m_numEventsOnHost -= score;
-		//	// and all colls
-		//	g_collectiondb.m_numEventsAllColls -= score;
-		//}
 	}
 
 	// if we did not find an oppKey and are tfndb, flag this
@@ -2378,31 +2353,6 @@ bool Rdb::addRecord ( collnum_t collnum,
 	if ( !m_useTree ) {
 		// debug indexdb
 		if ( m_buckets.addNode ( collnum , key , data , dataSize )>=0){
-			// sanity test
-			//int64_t tid = g_datedb.getTermId((key128_t *)key);
-			//if ( tid == *(int64_t *)m_gbcounteventsTermId )
-			//	log("ghey");
-			// . datedb special counting of events
-			// . check termid quickly
-			//if ( m_rdbId == RDB_DATEDB &&
-			//     key[15] == m_gbcounteventsTermId[5] &&
-			//     key[14] == m_gbcounteventsTermId[4] &&
-			//     key[13] == m_gbcounteventsTermId[3] &&
-			//     key[12] == m_gbcounteventsTermId[2] &&
-			//     key[11] == m_gbcounteventsTermId[1] &&
-			//     key[10] == m_gbcounteventsTermId[0] ) {
-			//	// get coll rec
-			//	CollectionRec *cr ;
-			//	cr = g_collectiondb.m_recs[collnum];
-			//	// count
-			//	unsigned score = ((unsigned char *)key)[5];
-			//	// complement
-			//	score = 255 - score;
-			//	// increment event count
-			//	cr->m_numEventsOnHost += score;
-			//	// and all colls
-			//	g_collectiondb.m_numEventsAllColls += score;
-			//}
 			return true;
 		}
 	}

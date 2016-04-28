@@ -186,8 +186,6 @@ private:
 	
 	char m_calledOpen;
 	char m_calledSet;
-
-	int32_t   m_st_size;   // file size
 };
 
 #endif // GB_FILE_H

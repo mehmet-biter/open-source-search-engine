@@ -110,11 +110,6 @@ class TcpSocket {
 	// is it in incoming request socket?
 	char        m_isIncoming;
 
-	// . is the tcp socket originating from a compression proxy?
-	// . 0x01 means we need to compress the reply to send back to 
-	//   a query compression proxy
-	char        m_flags;
-
 	// timeout (ms) relative to m_lastActionTime (last read or write)
 	int32_t        m_timeout;
 

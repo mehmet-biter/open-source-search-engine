@@ -44,22 +44,6 @@ enum {
 
 int32_t *getLocalIps ( ) ;
 
-class EventStats {
-public:
-	int32_t m_expired;
-	int32_t m_active;
-
-	// these are all active
-	int32_t m_experimental;
-	int32_t m_resultSet1;
-	int32_t m_resultSetOther;
-	int32_t m_facebook;
-	int32_t m_badGeocoder;
-
-	void clear ( ) { memset ( this , 0 , sizeof(EventStats) ); };
-};
-
-
 class PingInfo {
  public:
 	// m_lastPing MUST be on top for now...
@@ -120,9 +104,6 @@ public:
 	uint16_t m_externalHttpPort;
 	uint16_t m_externalHttpsPort;
 
-	// used by Process.cpp to do midnight stat dumps and emails
-	EventStats m_eventStats;
-
 	uint16_t m_port ;          // Mattster Protocol (MP) UDP port
 	uint16_t m_httpPort ;      // http port
 	uint16_t m_httpsPort;
@@ -135,14 +116,8 @@ public:
 	// the first time we went OOM (out of mem, i.e. >= 99% mem used)
 	int64_t      m_firstOOMTime;
 
-	int32_t          m_urlsIndexed;
-	int32_t          m_eventsIndexed;
-
 	// did gb log system errors that were given in g_conf.m_errstr ?
 	bool           m_kernelErrorReported;
-
-	// used be SEO pipeline in xmldoc.cpp
-	int32_t           m_numOutstandingRequests;
 
 	// last time g_hostdb.ping(i) was called for this host in milliseconds.
 	int64_t      m_lastPing;
@@ -174,8 +149,6 @@ public:
 	// . -4 means we are currently in progress sending an email for him
 	// . -5 means he went down before host we alerted admin about revived
 	int32_t           m_emailCode;
-	// . ide channel
-	int32_t           m_ideChannel;
 	// 0 means no, 1 means yes, 2 means unknown
 	char           m_syncStatus;
 
@@ -207,8 +180,6 @@ public:
 	// now include a note for every host
 	char           m_note[128];
 	char           m_doingSync;
-	char           m_switchId;
-	char           m_onProperSwitch;
 
 	bool           m_isProxy;
 
@@ -242,7 +213,6 @@ public:
 
 	// Syncdb.cpp uses these
 	char           m_inSync ;
-	char           m_isPermanentOutOfSync ;
 
 	// . used by Parms.cpp for broadcasting parm change requests
 	// . each parm change request has an id

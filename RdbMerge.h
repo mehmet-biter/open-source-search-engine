@@ -71,8 +71,6 @@ class RdbMerge {
 		     char       keySize      );
 
 	bool isMerging ( ) { return m_isMerging; };
-	// if we are merging, use this to see what rdb we are merging for
-	//class RdbBase *getRdbBase    ( ) { return m_base; };
 
 	// suspend the merging until resumeMerge() is called
 	void suspendMerge ( ) ;
@@ -109,20 +107,12 @@ class RdbMerge {
 	//void filterList    ( RdbList *list ) ;
 
 	// . we get the units from the master and the mergees from the units
-	class RdbBase  *m_base;
 	int32_t        m_startFileNum;
 	int32_t        m_numFiles;
 	bool        m_dedup;
 	int32_t        m_fixedDataSize;
 	BigFile    *m_target;
 	RdbMap     *m_targetMap;
-
-	// these are used by truncateList()
-	//key_t       m_truncationMask;
-	//key_t       m_lastMaskedKey;
-	char        m_truncationMask[MAX_KEY_BYTES];
-	char        m_lastMaskedKey[MAX_KEY_BYTES];
-	int32_t        m_lastNumRecs;
 
 	//key_t       m_startKey;
 	//key_t       m_endKey;

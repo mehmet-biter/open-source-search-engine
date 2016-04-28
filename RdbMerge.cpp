@@ -154,18 +154,6 @@ void getLockWrapper ( int fd , void *state ) {
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
 bool RdbMerge::gotLock ( ) {
-	// get total recSizes of files we're merging
-	//int32_t totalSize = 0;
-	//for ( int32_t i=m_startFileNum ; i < m_startFileNum + m_numFiles ; i++ )
-	//totalSize += m_base->m_files[i]->getSize();
-	// . grow the map now so it doesn't have to keep growing dynamically
-	//   which wastes memory
-	// . setMapSize() returns false and sets g_errno on error
-	// . we return true if it had an error
-	//if ( ! m_targetMap->setMapSizeFromFileSize ( totalSize ) ) {
-	//log("RdbMerge::getLockFile: targetMap setMapSize failed");
-	//return true;
-	//}
 
 	// . get last mapped offset
 	// . this may actually be smaller than the file's actual size
@@ -210,7 +198,7 @@ bool RdbMerge::gotLock ( ) {
 		     m_ks         ,
 		     NULL,//m_pc         ,
 		     m_maxTargetFileSize ,
-		     NULL                ); // set m_base::m_needsToSave? no.
+		     NULL                );
 	// what kind of error?
 	if ( g_errno ) {
 		log("db: gotLock: %s.", mstrerror(g_errno) );

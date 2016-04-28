@@ -416,14 +416,6 @@ skipReplaceHost:
 		//if ( g_hostdb.m_indexSplits > 1 )
 		//	switchGroup = h->m_group%g_hostdb.m_indexSplits;
 
-		// the switch id match
-		//char tmpN[256];
-		//if ( ! h->m_onProperSwitch )
-		//	sprintf(tmpN, "<font color=#ff0000><b>%"INT32"</b></font>",
-		//		(int32_t)h->m_switchId);
-		//else
-		//	sprintf(tmpN, "%"INT32"", (int32_t)h->m_switchId);
-
 		// host can have 2 ip addresses, get the one most
 		// similar to that of the requester
 		int32_t eip = g_hostdb.getBestIp ( h , s->m_ip );
@@ -900,7 +892,6 @@ skipReplaceHost:
 			  //"<td>%"INT32"</td>" // token group num
 			  //"<td>%"INT32"</td>" // switch group
 			  //"<td>%s</td>" // tmpN
-			  //"<td>%"INT32"</td>" // ide channel
 
 			  // hd temps
 			  // no, this is gb version now
@@ -974,7 +965,6 @@ skipReplaceHost:
 			  //h->m_tokenGroupNum,
 			  //switchGroup ,
 			  //tmpN,
-			  //h->m_ideChannel,
 			  vbuf1,
 			  vbuf,//hdbuf,
 			  vbuf2,
@@ -1091,7 +1081,6 @@ skipReplaceHost:
 						   //"<td>%hi</td>"
 						   "<td>%hi</td>"
 						   //"<td>%i</td>" // switch id
-						   //"<td>%"INT32"</td>" // ide channel
 						   "<td>%s</td>"
 						   "</tr>" , 
 						   LIGHT_BLUE,
@@ -1104,7 +1093,6 @@ skipReplaceHost:
 						   //h->m_dnsClientPort ,
 						   h->m_httpPort ,
 						   //h->m_switchId,
-						   //h->m_ideChannel ,
 						   h->m_note );
 		}
 		sb.safePrintf ( "</table><br>" );

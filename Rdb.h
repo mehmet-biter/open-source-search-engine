@@ -334,8 +334,6 @@ class Rdb {
 
 	// Msg22 needs the merge info so if the title file # of a read we are
 	// doing is being merged, we have to include the start merge file num
-	//int32_t      getMergeStartFileNum ( ) { return m_mergeStartFileNum; };
-	//int32_t      getMergeNumFiles     ( ) { return m_numFilesToMerge; };
 
 	// used by Sync.cpp to convert a file name to a file number in m_files
 	//int32_t getFileNumFromName ( char *filename );
@@ -405,7 +403,6 @@ class Rdb {
 	BigFile   m_saveFile; // for saving the tree
 	bool      m_isClosing; 
 	bool      m_isClosed;
-	bool      m_haveSavedFile; // we only unlink this file when we dump
 	bool      m_preloadCache;
 	bool      m_biasDiskPageCache;
 
@@ -416,15 +413,10 @@ class Rdb {
 	int32_t      m_maxTreeMem ; // max mem tree can use, dump at 90% of this
 
 	int32_t      m_minToMerge;  // need at least this many files b4 merging
-	int32_t      m_numFilesToMerge   ;
-	int32_t      m_mergeStartFileNum ;
 
 	int32_t m_dumpErrno;
 
 	// a dummy data string for deleting records when m_fixedDataSize > 0
-	char     *m_dummy;
-	int32_t      m_dummySize ; // size of that dummy data
-	int32_t      m_delRecSize; // size of the whole delete record
 
 	// for keeping stats
 	int64_t m_numSeeks;
@@ -441,18 +433,12 @@ class Rdb {
 	int64_t m_numRepliesAdd ; 
 	int64_t m_numNetSentAdd ;
 
-	// should our next merge in waiting force itself?
-	bool      m_nextMergeForced;
-
 	// do we need to dump to disk?
 	//bool      m_needsSave;
 
 	// . when we dump list to an rdb file, can we use short keys?
 	// . currently exclusively used by indexdb
 	bool      m_useHalfKeys;
-
-	// are we waiting on another merge/dump to complete before our turn?
-	bool      m_inWaiting;
 
 	// . is our merge urgent? (if so, it will starve spider disk reads)
 	// . also see Threads.cpp for the starvation
@@ -485,13 +471,8 @@ class Rdb {
 
 	bool m_isTitledb;
 
-	bool m_isUnlinking;
-
 	int32_t  m_fn;
 	
-	// filename of merge file for passing to g_sync to unlink it from there
-	char m_oldname [ 256 ];
-
 	char m_treeName [64];
 	char m_memName  [64];
 
@@ -513,8 +494,6 @@ class Rdb {
 	int32_t m_pageSize;
 
 	bool m_initialized;
-
-	int8_t m_gbcounteventsTermId[8];
 
 	// timedb support
 	time_t            m_nowGlobal;

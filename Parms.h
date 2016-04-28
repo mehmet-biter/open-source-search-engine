@@ -366,9 +366,6 @@ class Parms {
 	Parm *m_searchParms [ MAX_PARMS ];
 	int32_t m_numSearchParms;
 
-	// for holding default.conf file for collection recs for OBJ_COLL
-	char m_buf [ MAX_XML_CONF ];
-
 	// for parsing default.conf file for collection recs for OBJ_COLL
 	Xml m_xml2;
 };

@@ -1373,7 +1373,6 @@ bool Hostdb::replaceHost ( int32_t origHostId, int32_t spareHostId ) {
 	oldHost->m_loadAvg             = 0;
 	oldHost->m_firstOOMTime        = 0;
 	oldHost->m_pingInfo.m_totalDocsIndexed         = 0;
-	oldHost->m_eventsIndexed       = 0;
 	oldHost->m_kernelErrorReported = false;
 	oldHost->m_ping                = g_conf.m_deadHostTimeout;
 	oldHost->m_pingShotgun         = g_conf.m_deadHostTimeout;

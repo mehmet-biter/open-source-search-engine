@@ -15,8 +15,6 @@ public:
 	// ptr is < linkPos
 	char  m_isSection; 
 	int32_t  m_count;
-	char *m_stringSave;
-	char  m_stringSizeSave;
 	char *m_firstMatch;
 };
 
