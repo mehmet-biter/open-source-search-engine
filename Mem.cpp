@@ -35,7 +35,7 @@ static const char MAGICCHAR = (char)0xda;
 
 class Mem g_mem;
 
-bool freeCacheMem();
+static bool freeCacheMem();
 
 
 
@@ -238,8 +238,6 @@ Mem::Mem() {
 	m_maxAllocBy = "";
 	m_maxAlloced = 0;
 	m_memtablesize = 0;
-	// shared mem used
-	m_sharedUsed = 0LL;
 	// count how many allocs/news failed
 	m_outOfMems = 0;
 }
@@ -248,9 +246,7 @@ Mem::~Mem() {
 	if ( getUsedMem() == 0 ) return;
 }
 
-int64_t Mem::getAvailMem   () { return 0; };
 int64_t Mem::getMaxMem     () { return g_conf.m_maxMem; }
-int32_t Mem::getNumChunks  () { return 0; };
 
 
 bool Mem::init  ( ) {
@@ -1151,98 +1147,13 @@ void Mem::gbfree ( void *ptr , int size , const char *note ) {
 }
 
 
-#include "Msg20.h"
+//#include "Msg20.h"
 
-bool freeCacheMem() {
+static bool freeCacheMem() {
 	// returns true if it did free some stuff
 	//if ( resetMsg20Cache() ) {
 	//	log("mem: freed cache mem.");
 	//	return true;
 	//}
 	return false;
-}
-
-#define MAXBEST 50
-
-// scan all allocated memory, assume each byte is starting a character ptr,
-// and find such ptrs closes to "target"
-int32_t Mem::findPtr ( void *target ) {
-	if ( ! s_mptrs ) return 0;
-	PTRTYPE maxDelta = (PTRTYPE)-1;
-	PTRTYPE topDelta[MAXBEST];
-	PTRTYPE topOff  [MAXBEST];
-	PTRTYPE topi    [MAXBEST];
-	int32_t nt = 0;
-	int32_t minnt = 0;
-	int32_t i;
-	// loop through the whole mem table
-	for ( i = 0 ; i < (int32_t)m_memtablesize ; i++ ) {
-		// only check if non-empty
-		if ( ! s_mptrs[i] ) continue;
-		// get size to scan
-		char *p    = (char *)s_mptrs[i];
-		int32_t  size = s_sizes[i];
-		char *pend = p + size;
-		PTRTYPE bestDelta = (PTRTYPE)-1;
-		PTRTYPE bestOff   = (PTRTYPE)-1;
-		char *note = &s_labels[i*16];
-		// skip thread stack
-		if ( strcmp(note,"ThreadStack") == 0 ) 
-			continue;
-		// scan that
-		for ( ; p +sizeof(char *) < pend ; p++ ) {
-			// get ptr it might have
-			//char *pp = (char *)(*(int32_t *)p);
-			char *pp = *(char **)p;
-			// delta from target
-			PTRTYPE delta = (PTRTYPE)pp - (PTRTYPE)target;
-			// make positive
-			if ( delta < 0 ) delta *= -1;
-			// is it a min?
-			//if ( delta > 100 ) continue;
-			// get top 10
-			if ( delta < bestDelta ) {
-				bestDelta = delta;
-				bestOff   = (PTRTYPE)p - (PTRTYPE)(s_mptrs[i]);
-			}
-		}
-		// bail if not good enough
-		if ( bestDelta >= maxDelta ) continue;
-		if ( bestDelta > 50000 ) continue;
-		// add to top list
-		if ( nt < MAXBEST ) {
-			topDelta[nt] = bestDelta;
-			topOff  [nt] = bestOff;
-			topi    [nt] = i;
-			nt++;
-		}
-		else {
-			topDelta[minnt] = bestDelta;
-			topOff  [minnt] = bestOff;
-			topi    [minnt] = i;
-		}
-		// compute minnt
-		minnt = 0;
-		for ( int32_t j = 1 ; j < nt ; j++ )
-			if ( topDelta[j] > topDelta[minnt] )
-				minnt = j;
-	}
-	// print out top MAXBEST. "note" is the note attached to the allocated 
-	// memory the suspicious write ptr is in
-	for ( int32_t j = 0 ; j < nt ; j++ ) {
-		// get it
-		PTRTYPE bi = topi[j];
-		char *note = (char *)&s_labels[bi*16];
-		if ( ! note ) note = "unknown";
-		PTRTYPE *x = (PTRTYPE *)((char *)s_mptrs[bi] + topOff[j]);
-		log("mem: topdelta=%"PTRFMT" bytes away from corrupted mem. "
-		    "note=%s "
-		    "memblock=%"PTRFMT" and memory of ptr is %"PTRFMT" "
-		    "bytes into that "
-		    "memblock. and ptr is pointing to 0x%"PTRFMT"(%"PTRFMT")",
-		    topDelta[j],
-		    note,bi,topOff[j], *x,*x);
-	}
-
-	return 0;
 }

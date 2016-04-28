@@ -119,14 +119,11 @@ bool sendPageStats ( TcpSocket *s , HttpRequest *r ) {
 			      "</td><td>%"INT64"</td></tr>\n"
 			      "<tr class=poo><td><b>max memory limit</b>"
 			      "</td><td>%"INT64"</td></tr>\n" 
-			      //"<tr class=poo><td>mem available</td>"
-			      //"<td>%"INT64"</td></tr>\n"
 			      "<tr class=poo><td>max allocated</td>"
 			      "<td>%"INT64"</td></tr>\n",
 			      TABLE_STYLE ,
 			      g_mem.getUsedMem() ,
 			      g_mem.getMaxMem() ,
-			      //g_mem.getAvailMem(),
 			      g_mem.getMaxAlloced()
 			      );
 		p.safePrintf (
