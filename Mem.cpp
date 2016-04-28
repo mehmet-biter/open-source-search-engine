@@ -12,40 +12,15 @@
 //#include "Stats.h"
 #include "Pages.h"
 
-// uncomment this #define to electric fence just on umsg00 buffers:
-//#define SPECIAL
-
-// put me back
-//#define EFENCE
-//#define EFENCE_SIZE 50000
-
-// uncomment this for EFENCE to do underflow checks instead of the
-// default overflow checks
-//#define CHECKUNDERFLOW
-
 // only Mem.cpp should call ::malloc, everyone else must call mmalloc() so
 // we can keep tabs on memory usage.
 
 bool g_inMemFunction = false;
 
-// from malloc.c (dlmalloc)
-//void *dlmalloc(size_t);
-//void  dlfree(void*);
-//void* dlcalloc(size_t, size_t);
-//void* dlrealloc(void*, size_t);
-//#include "malloc.c"
-
 #define sysmalloc ::malloc
 #define syscalloc ::calloc
 #define sysrealloc ::realloc
 #define sysfree ::free
-/*
-// try using dlmalloc to see how it cores
-#define sysmalloc dlmalloc
-#define syscalloc dlcalloc
-#define sysrealloc dlrealloc
-#define sysfree dlfree
-*/
 
 // allocate an extra space before and after the allocated memory to try
 // to catch sequential buffer underruns and overruns. if the write is way
@@ -53,13 +28,8 @@ bool g_inMemFunction = false;
 // there because it will hit a different PAGE, to be more sure we could
 // make UNDERPAD and OVERPAD PAGE bytes, although the overrun could still write
 // to another allocated area of memory and we can never catch it.
-#if defined(EFENCE) || defined(EFENCE_SIZE)
-#define UNDERPAD 0
-#define OVERPAD  0
-#else
 #define UNDERPAD 4
 #define OVERPAD  4
-#endif
 
 static const char MAGICCHAR = (char)0xda;
 
@@ -67,10 +37,6 @@ class Mem g_mem;
 
 bool freeCacheMem();
 
-#if defined(EFENCE) || defined(EFENCE_SIZE) || defined(SPECIAL)
-static void *getElecMem ( int32_t size ) ;
-static void  freeElecMem ( void *p  ) ;
-#endif
 
 
 // if we alloc too much in one call, pthread_create() fails for some reason
@@ -192,18 +158,7 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 
 	g_inMemFunction = true;
 
-#ifdef EFENCE
-	void *mem = getElecMem(size);
-#elif EFENCE_SIZE
-	void *mem;
-	if ( size > EFENCE_SIZE )
-		mem = getElecMem(size);
-	else
-		mem = sysmalloc ( size );
-#else
-	//void *mem = dlmalloc ( size );
 	void *mem = sysmalloc ( size );
-#endif
 
 	g_inMemFunction = false;
 
@@ -219,21 +174,13 @@ newmemloop:
 		//return NULL;
 	}
 	if ( (PTRTYPE)mem < 0x00010000 ) {
-#ifdef EFENCE
-		void *remem = getElecMem(size);
-#else
 		void *remem = sysmalloc(size);
-#endif
 		log ( LOG_WARN, "mem: Caught low memory allocation "
 		      "at %08"PTRFMT", "
 		      "reallocated to %08"PTRFMT, 
 		      (PTRTYPE)mem,
 		      (PTRTYPE)remem );
-#ifdef EFENCE
-		freeElecMem (mem);
-#else
 		sysfree(mem);
-#endif
 		mem = remem;
 		if ( memLoop > 100 ) {
 			log ( LOG_WARN, "mem: Attempted to reallocate low "
@@ -281,18 +228,7 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 
 	g_inMemFunction = true;
 
-#ifdef EFENCE
-	void *mem = getElecMem(size);
-#elif EFENCE_SIZE
-	void *mem;
-	if ( size > EFENCE_SIZE )
-		mem = getElecMem(size);
-	else
-		mem = sysmalloc ( size );
-#else
-	//void *mem = dlmalloc ( size );
 	void *mem = sysmalloc ( size );
-#endif
 
 	g_inMemFunction = false;
 
@@ -310,20 +246,12 @@ newmemloop:
 		//return NULL;
 	}
 	if ( (PTRTYPE)mem < 0x00010000 ) {
-#ifdef EFENCE
-		void *remem = getElecMem(size);
-#else
 		void *remem = sysmalloc(size);
-#endif
 		log ( LOG_WARN, "mem: Caught low memory allocation at "
 		      "%08"PTRFMT", "
 				"reallocated to %08"PTRFMT"", 
 		      (PTRTYPE)mem, (PTRTYPE)remem );
-#ifdef EFENCE
-		freeElecMem (mem);
-#else
 		sysfree(mem);
-#endif
 		mem = remem;
 		if ( memLoop > 100 ) {
 			log ( LOG_WARN, "mem: Attempted to reallocate low "
@@ -389,10 +317,6 @@ bool Mem::init  ( ) { // int64_t maxMem ) {
 	// warning msg
 	if ( g_conf.m_detectMemLeaks )
 		log(LOG_INIT,"mem: Memory leak checking is enabled.");
-
-#if defined(EFENCE) || defined(EFENCE_SIZE)
-	log(LOG_INIT,"mem: using electric fence!!!!!!!");
-#endif
 
 	/*
 	  take this out for now it seems to hang the OS when running
@@ -520,15 +444,6 @@ void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 
 	// umsg00
 	bool useElectricFence = false;
-#ifdef SPECIAL
-	if ( note[0] == 'u' &&
-	     note[1] == 'm' &&
-	     note[2] == 's' &&
-	     note[3] == 'g' &&
-	     note[4] == '0' &&
-	     note[5] == '0' )
-		useElectricFence = true;
-#endif
 	if ( ! isnew && ! useElectricFence ) {
 		for ( int32_t i = 0 ; i < UNDERPAD ; i++ )
 			((char *)mem)[0-i-1] = MAGICCHAR;
@@ -667,12 +582,6 @@ bool Mem::printMemBreakdownTable ( SafeBuf* sb,
 				   char *lightblue, 
 				   char *darkblue) {
 	char *ss = "";
-
-	// make sure the admin viewing this table knows that there will be
-	// frees in here that are delayed if electric fence is enabled.
-#ifdef EFENCE
-	ss = " <font color=red>*DELAYED FREES ENABLED*</font>";
-#endif
 
 	sb->safePrintf (
 		       "<table>"
@@ -982,18 +891,6 @@ int Mem::printBreech ( int32_t i , char core ) {
 	if ( s_labels[i*16+0] == 'T' &&
 	     s_labels[i*16+1] == 'h' &&
 	     !strcmp(&s_labels[i*16  ],"ThreadStack" ) ) return 0;
-#ifdef SPECIAL
-	// for now this is efence. umsg00
-	bool useElectricFence = false;
-	if ( s_labels[i*16+0] == 'u' &&
-	     s_labels[i*16+1] == 'm' &&
-	     s_labels[i*16+2] == 's' &&
-	     s_labels[i*16+3] == 'g' &&
-	     s_labels[i*16+4] == '0' &&
-	     s_labels[i*16+5] == '0' )
-		useElectricFence = true;
-	if ( useElectricFence ) return 0;
-#endif
 	char flag = 0;
 	// check for underruns
 	char *mem = (char *)s_mptrs[i];
@@ -1207,38 +1104,8 @@ void *Mem::gbmalloc ( int size , const char *note ) {
 	// to find bug that cores on malloc do this
 	//printBreeches(true);
 	//g_errno=ENOMEM;return (void *)log("Mem::malloc: reached mem limit");}
-#ifdef EFENCE
-	mem = getElecMem(size+UNDERPAD+OVERPAD);
 
-	// conditional electric fence?
-#elif EFENCE_SIZE
-	if ( size >= EFENCE_SIZE )
-		mem = getElecMem(size+0+0);
-	else
-		mem = (void *)sysmalloc ( size + UNDERPAD + OVERPAD );
-#else		
-
-#ifdef SPECIAL	
-	// debug where tagrec in xmldoc.cpp's msge0 tag list is overrunning
-	// for umsg00
-	bool useElectricFence = false;
-	if ( note[0] == 'u' &&
-	     note[1] == 'm' &&
-	     note[2] == 's' &&
-	     note[3] == 'g' &&
-	     note[4] == '0' &&
-	     note[5] == '0' ) 
-		useElectricFence = true;
-	if ( useElectricFence ) {
-		mem = getElecMem(size+0+0);
-		addMem ( (char *)mem + 0 , size , note , 0 );
-		return (char *)mem + 0;
-	}
-#endif
-
-	//void *mem = dlmalloc ( size );
 	mem = (void *)sysmalloc ( size + UNDERPAD + OVERPAD );
-#endif
 
 	g_inMemFunction = false;
 
@@ -1313,20 +1180,12 @@ mallocmemloop:
 		return NULL;
 	}
 	if ( (PTRTYPE)mem < 0x00010000 ) {
-#ifdef EFENCE
-		void *remem = getElecMem(size);
-#else
 		void *remem = sysmalloc(size);
-#endif
 		log ( LOG_WARN, "mem: Caught low memory allocation "
 		      "at %08"PTRFMT", "
 		      "reallocated to %08"PTRFMT"",
 		      (PTRTYPE)mem, (PTRTYPE)remem );
-#ifdef EFENCE
-		freeElecMem (mem);
-#else
 		sysfree(mem);
-#endif
 		mem = remem;
 		memLoop++;
 		if ( memLoop > 100 ) {
@@ -1389,48 +1248,6 @@ void *Mem::gbrealloc ( void *ptr , int oldSize , int newSize ,
 	if ( oldSize == 0 ) return gbmalloc ( newSize , note );
 
 	char *mem;
-
-	// even though size may be < 100k for EFENCE_SIZE, do it this way
-	// for simplicity...
-#if defined(EFENCE) || defined(EFENCE_SIZE)
-	mem = (char *)mmalloc ( newSize , note );
-	if ( ! mem ) return NULL;
-	// copy over to it
-	memcpy ( mem , ptr , oldSize );
-	// free the old
-	mfree ( ptr , oldSize , note );
-	// done
-	return mem;
-#endif
-
-
-#ifdef SPECIAL
-	int32_t slot = g_mem.getMemSlot ( ptr );
-	// debug where tagrec in xmldoc.cpp's msge0 tag list is overrunning
-	// for umsg00
-	if ( slot >= 0 ) {
-		char *label = &s_labels[slot*16];
-		bool useElectricFence = false;
-		if ( label[0] == 'u' &&
-		     label[1] == 'm' &&
-		     label[2] == 's' &&
-		     label[3] == 'g' &&
-		     label[4] == '0' &&
-		     label[5] == '0' ) 
-			useElectricFence = true;
-		if ( useElectricFence ) {
-			// just make a new buf
-			mem = (char *)mmalloc ( newSize , note );
-			if ( ! mem ) return NULL;
-			// copy over to it
-			memcpy ( mem , ptr , oldSize );
-			// free the old
-			mfree ( ptr , oldSize , note );
-			return mem;
-		}
-	}
-#endif
-
 	// assume it will be successful. we can't call rmMem() after
 	// calling sysrealloc() because it will mess up our MAGICCHAR buf
 	rmMem  ( ptr , oldSize , note );
@@ -1507,45 +1324,6 @@ void Mem::gbfree ( void *ptr , int size , const char *note ) {
 	}
 
 	bool isnew = s_isnew[slot];
-
-#ifdef EFENCE
-	// this does a delayed free so do not call rmMem() just yet
-	freeElecMem ((char *)ptr - UNDERPAD );
-	return;
-#endif
-
-#ifdef EFENCE_SIZE
-	if ( size == -1 ) size = s_sizes[slot];
-	if ( size >= EFENCE_SIZE ) {
-		freeElecMem ((char *)ptr - 0 );
-		return;
-	}
-#endif	
-
-
-#ifdef SPECIAL
-	g_inMemFunction = true;
-	// debug where tagrec in xmldoc.cpp's msge0 tag list is overrunning
-	// for umsg00
-	bool useElectricFence = false;
-	char *label = &s_labels[slot*16];
-	if ( label[0] == 'u' &&
-	     label[1] == 'm' &&
-	     label[2] == 's' &&
-	     label[3] == 'g' &&
-	     label[4] == '0' &&
-	     label[5] == '0' ) 
-		useElectricFence = true;
-	if ( useElectricFence ) {
-		// this calls rmMem() itself
-		freeElecMem ((char *)ptr - 0 );
-		g_inMemFunction = false;
-		// if this returns false it was an unbalanced free
-		//if ( ! rmMem ( ptr , size , note ) ) return;
-		return;
-	}
-	g_inMemFunction = false;
-#endif
 
 	// if this returns false it was an unbalanced free
 	if ( ! rmMem ( ptr , size , note ) ) return;
@@ -1702,246 +1480,4 @@ int32_t Mem::findPtr ( void *target ) {
 	}
 
 	return 0;
-}
-
-//#include <limits.h>    /* for MEMPAGESIZE */
-#define MEMPAGESIZE ((uint32_t)(8*1024))
-
-void *getElecMem ( int32_t size ) {
-	// a page above OR a page below
-	// let's go below this time since that seems to be the problem
-
-#ifdef CHECKUNDERFLOW
-	// how much to alloc
-	// . assume sysmalloc returs one byte above a page, so we need
-	//   MEMPAGESIZE-1 bytes to move p up to page boundary, another
-	//   MEMPAGESIZE bytes for protected page, then the actual mem,
-	//   THEN possibly another MEMPAGESIZE-1 bytes to hit the next page
-	//   boundary for protecting the "freed" mem below, but can get
-	//   by with (MEMPAGESIZE-(size%MEMPAGESIZE)) more
-	int32_t need = size + sizeof(char *)*2 + MEMPAGESIZE + MEMPAGESIZE ;
-	// want to end on a page boundary too!
-	need += (MEMPAGESIZE-(size%MEMPAGESIZE));
-	// get that
-	char *realMem = (char *)sysmalloc ( need );	
-	if ( ! realMem ) return NULL;
-	// set it all to 0x11
-	memset ( realMem , 0x11 , need );
-	// use this
-	char *realMemEnd = realMem + need;
-	// parser
-	char *p = realMem;
-	// align p DOWN to nearest 8k boundary
-	int32_t remainder = (uint64_t)realMem % MEMPAGESIZE;
-	// complement
-	remainder = MEMPAGESIZE - remainder;
-	// and add to ptr to be aligned on 8k boundary
-	p += remainder;
-	// save that
-	char *protMem = p;
-	// skip that
-	p += MEMPAGESIZE;
-	// save this
-	char *returnMem = p;
-	// store the ptrs
-	*(char **)(returnMem- sizeof(char *)) = realMem;
-	*(char **)(returnMem- sizeof(char *)*2) = realMemEnd;
-	//log("protect2 0x%"PTRFMT"\n",(PTRTYPE)protMem);
-	// protect that after we wrote our ptr
-	if ( mprotect ( protMem , MEMPAGESIZE , PROT_NONE) < 0 )
-		log("mem: mprotect failed: %s",mstrerror(errno));
-	// advance over user data
-	p += size;
-	// now when we free this it should all be protected, so make sure
-	// we have enough room on top
-	int32_t leftover = MEMPAGESIZE  - ((uint64_t)p % MEMPAGESIZE);
-	// skip that
-	p += leftover;
-	// inefficient?
-	if ( realMemEnd - p > (int32_t)MEMPAGESIZE ) { char *xx=NULL;*xx=0;}
-	// ensure we do not breach
-	if ( p > realMemEnd ) { char *xx=NULL;*xx=0; }
-	// test it, this should core
-	//protmem[0] = 32;
-	// return that for them
-	return returnMem;
-#else
-	// how much to alloc
-	int32_t need = size + MEMPAGESIZE + MEMPAGESIZE + MEMPAGESIZE;
-	need += sizeof(char *)*2;
-	// get that
-	char *realMem = (char *)sysmalloc ( need );	
-	if ( ! realMem ) return NULL;
-	// set it all to 0x11
-	memset ( realMem , 0x11 , need );
-	// use this
-	char *realMemEnd = realMem + need;
-	// get the end of it
-	char *end = realMemEnd;
-	// back down from what we need
-	end -= MEMPAGESIZE;
-	// get remainder from that
-	int32_t remainder = (PTRTYPE)end % MEMPAGESIZE;
-	// back down to that
-	char *protMem = end - remainder;
-	// get return mem
-	char *returnMem = protMem - size;
-	// back beyond that
-	int32_t leftover = (PTRTYPE)returnMem % MEMPAGESIZE;
-	// back up
-	char *p = returnMem - leftover;
-	// we are now on a page boundary, so we can protect this mem
-	// after we "free" it below
-	if ( p < realMem ) { char *xx=NULL;*xx=0; }
-	// store mem ptrs before protecting
-	*(char **)(returnMem- sizeof(char *)  ) = realMem;
-	*(char **)(returnMem- sizeof(char *)*2) = realMemEnd;
-	// sanity
-	if ( returnMem - sizeof(char *)*2 < realMem ) { char *xx=NULL;*xx=0; }
-	//log("protect3 0x%"PTRFMT"\n",(PTRTYPE)protMem);
-	// protect that after we wrote our ptr
-	if ( mprotect ( protMem , MEMPAGESIZE , PROT_NONE) < 0 )
-		log("mem: mprotect failed: %s",mstrerror(errno));
-	// test it, this should core
-	//protmem[0] = 32;
-	// return that for them
-	return returnMem;
-#endif
-}
-
-// stuff for detecting if a class frees memory and then re-uses it after
-// freeing it...
-class FreeInfo {
-public:
-	char *m_fakeMem;
-	int32_t  m_fakeSize;
-	char *m_note;
-	char *m_realMem;
-	int32_t  m_realSize;
-	char *m_protMem;
-	int32_t  m_protSize;
-};
-static FreeInfo s_freeBuf[4000];
-static FreeInfo *s_cursor      = &s_freeBuf[0];
-static FreeInfo *s_cursorEnd   = &s_freeBuf[4000];
-static FreeInfo *s_cursorStart = &s_freeBuf[0];
-static bool      s_looped = false;
-static FreeInfo *s_freeCursor  = &s_freeBuf[0];
-static int64_t s_totalInRing = 0LL;
-
-// . now we must unprotect before freeing
-// . let's do delayed freeing because i think the nasty bug that is
-//   corrupting malloc's space is overruning a freed buffer perhaps?
-void freeElecMem ( void *fakeMem ) {
-	// cast it
-	char *cp = (char *)fakeMem;
-
-	// get mem info from the hash table
-	int32_t h = g_mem.getMemSlot ( cp );
-	if ( h < 0 ) { 
-		log("mem: unbalanced free ptr");
-		char *xx=NULL;*xx=0;
-	}
-	char *label    = &s_labels[((uint32_t)h)*16];
-	int32_t  fakeSize =  s_sizes[h];
-
-#ifdef CHECKUNDERFLOW
-	char *oldProtMem = cp - MEMPAGESIZE;
-#else
-	char *oldProtMem = cp + fakeSize;
-#endif
-
-	// hack
-	//oldProtMem -= 4;
-	//log("unprotect1 0x%"PTRFMT"\n",(PTRTYPE)oldProtMem);
-	// unprotect it
-	if ( mprotect ( oldProtMem , MEMPAGESIZE, PROT_READ|PROT_WRITE) < 0 )
-		log("mem: munprotect failed: %s",mstrerror(errno));
-
-	// now original memptr is right before "p" and we can
-	// read it now that we are unprotected
-	char *realMem    = *(char **)(cp-sizeof(char *));
-	// set real mem end (no!?)
-	char *realMemEnd = *(char **)(cp-sizeof(char *)*2);
-
-	// set it all to 0x99
-	memset ( realMem , 0x99 , realMemEnd - realMem );
-
-	// ok, back up to page boundary before us
-	char *protMem = realMem + (MEMPAGESIZE - 
-				   (((PTRTYPE)realMem) % MEMPAGESIZE));
-	// get end point
-	char *protEnd = realMemEnd - ((PTRTYPE)realMemEnd % MEMPAGESIZE);
-	// sanity
-	if ( protMem < realMem ) { char *xx=NULL;*xx=0; }
-	if ( protMem - realMem > (int32_t)MEMPAGESIZE) { char *xx=NULL;*xx=0; }
-	//log("protect1 0x%"PTRFMT"\n",(PTRTYPE)protMem);
-	// before adding it into the ring, protect it
-	if ( mprotect ( protMem , protEnd-protMem, PROT_NONE) < 0 )
-		log("mem: mprotect2 failed: %s",mstrerror(errno));
-
-	// add our freed memory to the freed ring
-	if ( s_cursor > s_cursorEnd ) { char *xx=NULL;*xx=0; }
-
-	// to avoid losing free info by eating our own tail
-	if ( s_cursor == s_freeCursor && s_looped ) {
-		// free it
-		g_mem.rmMem ( s_freeCursor->m_fakeMem,
-			      s_freeCursor->m_fakeSize,
-			      s_freeCursor->m_note );
-		// log("unprotect2 0x%"PTRFMT"\n",
-		//     (PTRTYPE)s_freeCursor->m_protMem);
-		// unprotect it
-		if ( mprotect (s_freeCursor->m_protMem,
-			       s_freeCursor->m_protSize,
-			       PROT_READ|PROT_WRITE) < 0 )
-			log("mem: munprotect2 failed: %s",mstrerror(errno));
-		// get the original mem and nuke
-		sysfree ( s_freeCursor->m_realMem );
-		// dec count. use fake mem size
-		s_totalInRing -= s_freeCursor->m_realSize;
-		// wrap it if we need to
-		if ( ++s_freeCursor == s_cursorEnd ) 
-			s_freeCursor = s_cursorStart;
-	}
-
-
-	s_cursor->m_fakeMem  = cp;
-	s_cursor->m_fakeSize = fakeSize;
-	s_cursor->m_note     = label;
-	s_cursor->m_realSize = realMemEnd - realMem;
-	s_cursor->m_realMem  = realMem;
-	s_cursor->m_protMem  = protMem;
-	s_cursor->m_protSize = protEnd - protMem;
-
-	// keep tabs on how much unfreed mem we need to free
-	s_totalInRing += s_cursor->m_realSize;
-
-	if ( ++s_cursor == s_cursorEnd ) {
-		s_looped = true;
-		s_cursor = s_cursorStart;
-	}
-
-
-	// now free begining at s_freeCursor 
-	for ( ; s_freeCursor != s_cursor && s_totalInRing > 150000000 ; ) {
-		// free it
-		g_mem.rmMem ( s_freeCursor->m_fakeMem,
-			      s_freeCursor->m_fakeSize,
-			      s_freeCursor->m_note );
-		// log("unprotect3 0x%"PTRFMT"\n",
-		//     (PTRTYPE)s_freeCursor->m_protMem);
-		// unprotect it
-		if ( mprotect (s_freeCursor->m_protMem,
-			       s_freeCursor->m_protSize,
-			       PROT_READ|PROT_WRITE) < 0 )
-			log("mem: munprotect2 failed: %s",mstrerror(errno));
-		// get the original mem and nuke
-		sysfree ( s_freeCursor->m_realMem );
-		// dec count. use fake mem size
-		s_totalInRing -= s_freeCursor->m_realSize;
-		// wrap it if we need to
-		if ( ++s_freeCursor == s_cursorEnd ) 
-			s_freeCursor = s_cursorStart;
-	}
 }
