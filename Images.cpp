@@ -7,6 +7,7 @@
 #include "XmlDoc.h"
 #include "Threads.h"
 #include "Hostdb.h"
+#include <pthread.h>
 
 // TODO: image is bad if repeated on same page, check for that
 
@@ -891,7 +892,7 @@ void Images::thumbStart_r ( bool amThread ) {
 
 	// get thread id. pthread_t is 64 bit and pid_t is 32 bit on
 	// 64 bit oses
-	pthread_t id = getpidtid();
+	pthread_t id = pthread_self();
 
 	// pass the input to the program through this file
 	// rather than a pipe, since popen() seems broken.

@@ -38,6 +38,7 @@
 #include "BitOperations.h"
 #include "Robots.h"
 #include "Threads.h"
+#include <pthread.h>
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -10934,7 +10935,7 @@ void *filterStartWrapper_r ( void *state , ThreadEntry * /*te*/ ) {
 // sets m_errno on error
 void XmlDoc::filterStart_r ( bool amThread ) {
 	// get thread id
-	pthread_t id = getpidtid();
+	pthread_t id = pthread_self();
 	// sanity check
 	if ( ! m_contentTypeValid ) { char *xx=NULL;*xx=0; }
 	// shortcut
