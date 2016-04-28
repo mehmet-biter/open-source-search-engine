@@ -2045,8 +2045,7 @@ bool XmlDoc::indexDoc2 ( ) {
 
 	// do this before we increment pageDownloadAttempts below so that
 	// john's smoke tests, which use those counts, are not affected
-	if ( m_sreqValid &&
-	     m_sreq.m_fakeFirstIp &&
+	if ( m_sreqValid && m_sreq.m_fakeFirstIp &&
 	     // only do for add url, not for injects. injects expect
 	     // the doc to be indexed while the browser waits. add url
 	     // is really just adding the spider request and returning
@@ -2207,14 +2206,6 @@ bool XmlDoc::indexDoc2 ( ) {
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, all done. Returning %s", __FILE__, __func__, __LINE__, rc2?"true":"false");
 	
 	return rc2;
-}
-
-
-
-bool isRobotsTxtFile ( char *u , int32_t ulen ) {
-	if ( ulen > 12 && ! strncmp ( u + ulen - 11 , "/robots.txt" , 11 ) )
-		return true;
-	return false;
 }
 
 #if 0
@@ -7552,7 +7543,8 @@ bool XmlDoc::isFirstUrlRobotsTxt ( ) {
 	if ( m_isRobotsTxtUrlValid )
 		return m_isRobotsTxtUrl;
 	Url *fu = getFirstUrl();
-	m_isRobotsTxtUrl = isRobotsTxtFile ( fu->getUrl() , fu->getUrlLen() );
+
+	m_isRobotsTxtUrl = ( fu->getUrlLen() > 12 && ! strncmp ( fu->getUrl() + fu->getUrlLen() - 11 , "/robots.txt" , 11 ) );
 	m_isRobotsTxtUrlValid = true;
 	return m_isRobotsTxtUrl;
 }
