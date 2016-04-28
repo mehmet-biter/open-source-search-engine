@@ -666,12 +666,6 @@ bool BigFile::readwrite ( void         *buf      ,
 	// . need this up here in case it is a cache hit from a re-call
 	//   due to a EFILECLOSED error
 	//fstate->m_errno = 0;
-	// offset to read into "buf"
-	int32_t bufOff = 0;
-	// point to start of space allocated to hold what we read. "buf"
-	// should be >= allocBuf + allocOff, depending on value of bufOff
-	char *allocBuf = NULL;
-	int32_t  allocSize;
 	// reset this
 	fstate->m_errno = 0;
 	fstate->m_inPageCache = false;
@@ -683,10 +677,10 @@ bool BigFile::readwrite ( void         *buf      ,
 	// buf may be NULL if caller passed in a NULL "buf" and it did not hit 
 	// the disk page cache. Threads.cpp will have to allocate it right
 	// before it launches the thread.
-	fstate->m_buf         = (char *)buf + bufOff;
+	fstate->m_buf         = (char *)buf;
 	// if getPages() allocates a buf, this will point to it
-	fstate->m_allocBuf    = allocBuf;
-	fstate->m_allocSize   = allocSize;
+	fstate->m_allocBuf    = NULL;
+	fstate->m_allocSize   = 0;
 	// when buf is passed in as NULL we allocate it in Threads.cpp right 
 	// before we launch it to save memory.
 	// we have to know where to start storing
