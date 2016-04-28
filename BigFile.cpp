@@ -37,7 +37,6 @@ BigFile::BigFile () {
 	//for ( int32_t i = 0 ; i < MAX_PART_FILES ; i++ ) m_files[i] = NULL;
 	m_maxParts = 0;
 	m_numParts = 0;
-	//m_pc  = NULL;
 	m_vfd = -1;
 	//m_vfdAllowed = false;
 	m_fileSize = -1;
@@ -421,7 +420,6 @@ bool BigFile::open ( int flags ,
 		     int permissions ) {
 
         m_flags       = flags;
-	//m_pc          = pc;
 	//m_permissions = permissions;
 	m_isClosing   = false;
 	// this is true except when parsing big warc files
@@ -609,7 +607,6 @@ bool BigFile::write ( void       *buf    ,
 		return true;
 	}
 	g_errno = 0;
-	//if ( m_pc && m_pc->m_isOverriden ) allowPageCache = false;
 	return readwrite ( buf , size , offset , true/*doWrite?*/ , 
 			   fs  , state, callback , niceness , allowPageCache ,
 			   true , 0 );
@@ -678,48 +675,9 @@ bool BigFile::readwrite ( void         *buf      ,
 	// reset this
 	fstate->m_errno = 0;
 	fstate->m_inPageCache = false;
-	// . try to get as much as we can from page cache first
-	// . the vfd of the big file will be the vfd of its last File class
-	/*
-	if ( ! doWrite && m_pc && allowPageCache ) {
-		//int32_t oldOff  = offset;
-		// we have to set these so RdbScan doesn't freak out if we
-		// have it all cached and return without hitting disk
-		fstate->m_bytesDone = size;
-		fstate->m_bytesToGo = size;
-		// sanity
-		if ( m_vfd == -1 ) { char *xx=NULL;*xx=0; }
-		//log("getting pages off=%"INT64" size=%"INT32"",offset,size);
-		// now we pass in a ptr to the buf ptr, because if buf is NULL
-		// this will allocate one for us if it has some pages in the
-		// cache that we can use.
-		char *readBuf = m_pc->getPages ( m_vfd, offset, size );
-		//log("got     pages off=%"INT64" size=%"INT32"",offset,size);
-		//bufOff = offset - oldOff;
-		// comment out for test
-		if ( readBuf ) {
-			// let caller/RdbScan know about the newly alloc'd buf
-			fstate->m_buf         = (char *)readBuf;
-			fstate->m_allocBuf    = readBuf;
-			fstate->m_allocSize   = size;
-			fstate->m_allocOff    = 0;
-			fstate->m_inPageCache = true;
-			return true;
-		}
-		// check
-		//if ( m_pc->m_isOverriden && size < 0 ) {
-		//	fstate->m_bytesDone += size;
-		//	fstate->m_bytesToGo += size;
-		//	return true;
-		//}
-	}
-	*/
 	// sanity check. if you set hitDisk to false, you must allow
 	// us to check the page cache! silly bean!
 	if ( ! allowPageCache && ! hitDisk ) { char*xx=NULL;*xx=0; }
-	//if ( m_pc && m_pc->m_isOverriden )
-	//	log ( LOG_INFO, "bigfile: HITTING DISK!! %"INT32"",
-	//			(int32_t)allowPageCache );
 	// set up fstate
 	fstate->m_this        = this;
 	// buf may be NULL if caller passed in a NULL "buf" and it did not hit 
@@ -730,8 +688,8 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_allocBuf    = allocBuf;
 	fstate->m_allocSize   = allocSize;
 	// when buf is passed in as NULL we allocate it in Threads.cpp right 
-	// before we launch it to save memory. it may also be allocated in 
-	// DiskPageCache.cpp. we have to know where to start storing
+	// before we launch it to save memory.
+	// we have to know where to start storing
 	// the read into it for RdbScan, it is not immediately at the 
 	// beginning of the allocated buffer because RdbScan may have to 
 	// turn the first key from a 6 byte half key into a 12 byte key so it
@@ -806,9 +764,6 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_errno       = 0;
 	fstate->m_errno2      = 0;
 	fstate->m_startTime   = gettimeofdayInMilliseconds();
-	//fstate->m_pc          = NULL;//m_pc;
-	// if ( ! allowPageCache )
-	// 	fstate->m_pc = NULL;
 	fstate->m_vfd         = m_vfd;
 	// if hitDisk was false we only check the page cache!
 	if ( ! hitDisk ) return true;
@@ -1041,13 +996,6 @@ bool BigFile::readwrite ( void         *buf      ,
 	//		    now,
 	//		    fstate->m_bytesDone);
 
-	// store read/written pages into page cache
-	// if ( ! g_errno && fstate->m_pc )
-	// 	fstate->m_pc->addPages ( fstate->m_vfd       ,
-	// 				 fstate->m_offset    ,
-	// 				 fstate->m_bytesDone ,
-	// 				 fstate->m_buf       ,
-	// 				 fstate->m_niceness  );
 	// now log our stuff here
 	if ( g_errno && g_errno != EBADENGINEER ) 
 		log("disk: readwrite: %s", mstrerror(g_errno));
@@ -1128,14 +1076,6 @@ void doneWrapper ( void *state , ThreadEntry *t ) {
 	g_errno = fstate->m_errno;
 	// might have had the file renamed/unlinked from under us
 	if ( ! g_errno ) g_errno = fstate->m_errno2;
-	// fstate has his own m_pc in case BigFile got deleted, we cannot
-	// reference it...
-	// if ( ! g_errno && fstate->m_pc )
-	// 	fstate->m_pc->addPages ( fstate->m_vfd       ,
-	// 				 fstate->m_offset    ,
-	// 				 fstate->m_bytesDone ,
-	// 				 fstate->m_buf       ,
-	// 				 fstate->m_niceness  );
 
 	// add the stat
 	if ( ! g_errno ) {
@@ -1876,12 +1816,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		doneRoutine  ( f , NULL );
 	}
 
-	// remove pages from DiskPageCache if all files unlinked
 	if ( m_isUnlink && part == -1 ) {
-		// release it first, cuz the removeThreads() below
-		// may call QUICKPOLL() and we end up reading from same file!
-		// this is no longer needed since we use rdbcache basically now
-		//if ( m_pc ) m_pc->rmVfd ( m_vfd );
 		// remove all queued threads that point to us that have not
 		// yet been launched
 		g_threads.removeThreadsForBigfile(this);
@@ -2241,13 +2176,6 @@ bool BigFile::close ( ) {
 	}
 	m_numParts   = 0;
 	m_maxParts   = 0;
-
-	// save vfd and pc because removeThreads() actually ends up calling 
-	// the done wrapper, sending back an error reply, shutting down the 
-	// udp server, calling main.cpp::resetAll(), which resets the Rdb and
-	// free this big file
-	//DiskPageCache *pc  = m_pc;
-	//int32_t           vfd = m_vfd;
 
 	// remove all queued threads that point to us that have not
 	// yet been launched

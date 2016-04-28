@@ -80,7 +80,7 @@ public:
 	int64_t       m_startTime;
 	int64_t       m_doneTime;
 	bool 			m_usePartFiles;
-	// this is just used for accessing the DiskPageCache, m_pc, it is
+	// it is
 	// a "virtual fd" for this whole file
 	int64_t            m_vfd;
 	// test parms
@@ -95,7 +95,7 @@ public:
 	//char m_baseFilename[32];
 	int32_t m_flags;	
 	// when we are given a NULL buffer to read into we must allocate
-	// it either in DiskPageCache.cpp or in Threads.cpp right before the
+	// in Threads.cpp right before the
 	// thread is launched. this will stop us from having 19000 unlaunched
 	// threads each hogging up 32KB of memory waiting to read tfndb.
 	// m_allocBuf points to what we allocated.
@@ -134,7 +134,6 @@ class BigFile {
 	// . waits for a read/write operation before doing that
 	// . if you set maxFileSize to -1 we set it to BigFile::getFileSize()
 	// . if you are opening a new file for writing, you need to provide it
-	//   if you pass in a DiskPageCache ptr
 	bool open  ( int flags , 
 		     void *pc = NULL ,
 		     int64_t maxFileSize = -1 ,
@@ -234,7 +233,6 @@ class BigFile {
 
 	//int64_t m_currentOffset;
 
-	//DiskPageCache *getDiskPageCache ( ) { return m_pc;  };
 	int32_t       getVfd       ( ) { return m_vfd; };
 
 	// WARNING: some may have been unlinked from call to chopHead()

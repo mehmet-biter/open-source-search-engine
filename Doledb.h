@@ -39,8 +39,6 @@ class Doledb {
 
 	bool addColl ( char *coll, bool doVerify = true );
 
-	//DiskPageCache *getDiskPageCache() { return &m_pc; };
-
 	// . see "overview of spidercache" below for key definition
 	// . these keys when hashed are clogging up the hash table
 	//   so i am making the 7 reserved bits part of the urlhash48...
@@ -121,8 +119,6 @@ class Doledb {
 	Rdb *getRdb() { return &m_rdb;};
 
 	Rdb m_rdb;
-
-	//DiskPageCache m_pc;
 };
 
 extern class Doledb g_doledb;
