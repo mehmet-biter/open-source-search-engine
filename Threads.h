@@ -35,7 +35,7 @@ public:
 	bool         m_isOccupied               ; // is thread waiting/going?
 	bool         m_isLaunched               ; // has it been launched?
 	bool         m_isDone                   ; // is it done running?
-	int32_t         m_bytesToGo             ; // for memory alloc and stats
+	int32_t         m_bytesToGo             ; // for stats
 	int64_t    m_queuedTime               ; // when call() was called
 	int64_t    m_launchedTime             ; // when thread was launched
 	int64_t    m_preExitTime              ; // when thread was about done

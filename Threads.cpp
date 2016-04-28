@@ -1351,8 +1351,8 @@ bool ThreadQueue::launchThreadForReals ( ThreadEntry **headPtr ,
 	bool allocated = false;
 	if ( m_threadType == THREAD_TYPE_DISK && fs && ! fs->m_doWrite ) {
 		// allocate the read buffer here!
-		if ( ! fs->m_doWrite && ! fs->m_buf && t->m_bytesToGo > 0 ) {
-			int32_t need = t->m_bytesToGo + fs->m_allocOff;
+		if ( ! fs->m_doWrite && ! fs->m_buf && fs->m_bytesToGo > 0 ) {
+			int32_t need = fs->m_bytesToGo + fs->m_allocOff;
 			char *p = (char *) mmalloc ( need , "ThreadReadBuf" );
 			if ( p ) {
 				fs->m_buf       = p + fs->m_allocOff;
