@@ -6,10 +6,6 @@
 
 #include "Threads.h"
 #include "SafeBuf.h"
-#include "PingServer.h"
-//#include "MemPoolVar.h"
-//#include "malloc.h"
-//#include "Stats.h"
 #include "Pages.h"
 
 // only Mem.cpp should call ::malloc, everyone else must call mmalloc() so
