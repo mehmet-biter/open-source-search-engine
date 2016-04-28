@@ -114,7 +114,7 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) ;
 // from PageBasic.cpp:
 bool updateSiteListBuf(collnum_t collnum,bool addSeeds,char *siteListArg);
 
-bool CommandUpdateSiteList ( char *rec ) {
+static bool CommandUpdateSiteList ( char *rec ) {
 	// caller must specify collnum
 	collnum_t collnum = getCollnumFromParmRec ( rec );
 	if ( collnum < 0 ) {

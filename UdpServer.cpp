@@ -662,7 +662,7 @@ void UdpServer::sendReply_ass ( char    *msg        ,
 // . this wrapper is called when m_sock is ready for writing
 // . should only be called by Loop.cpp since it calls callbacks
 // . should only be called if in an interrupt or interrupts are off!!
-void sendPollWrapper_ass ( int fd , void *state ) { 
+static void sendPollWrapper_ass ( int fd , void *state ) { 
 	UdpServer *THIS  = (UdpServer *)state;
 	// begin the read/send/callback loop
 	THIS->sendPoll_ass ( true , gettimeofdayInMilliseconds() );

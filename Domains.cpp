@@ -4,6 +4,8 @@
 #include "Domains.h"
 #include "Mem.h"
 
+static bool isTLD ( char *tld, int32_t tldLen );
+
 char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen ) {
 	// get host length
 	//int32_t hostLen = gbstrlen(host);
@@ -94,7 +96,7 @@ char *getTLD ( char *host , int32_t hostLen ) {
 
 //static TermTable  s_table(false);
 static HashTableX s_table;
-bool isTLD ( char *tld , int32_t tldLen ) {
+static bool isTLD ( char *tld , int32_t tldLen ) {
 
 	int32_t pcount = 0;
 	// now they are random!

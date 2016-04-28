@@ -15,7 +15,4 @@ char *getDomainOfIp ( char *host , int32_t hostLen , int32_t *dlen );
 // used by getDomain() above
 char *getTLD ( char *host , int32_t hostLen ) ;
 
-// used by getTLD() above
-bool isTLD ( char *tld , int32_t tldLen ) ;
-
 #endif // GB_DOMAINS_H

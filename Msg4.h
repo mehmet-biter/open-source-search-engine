@@ -13,7 +13,6 @@ bool hasAddsInQueue     ( ) ;
 
 //#include "RdbList.h"
 
-bool addMetaList ( const char *p , class UdpSlot *slot = NULL ) ;
 
 bool isInMsg4LinkedList ( class Msg4 *msg4 ) ;
 

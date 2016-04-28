@@ -35,11 +35,11 @@
 
 // we have up to this many outstanding Multicasts to send add requests to hosts
 #define MAX_MCASTS 128
-Multicast  s_mcasts[MAX_MCASTS];
-Multicast *s_mcastHead = NULL;
-Multicast *s_mcastTail = NULL;
-int32_t       s_mcastsOut = 0;
-int32_t       s_mcastsIn  = 0;
+static Multicast  s_mcasts[MAX_MCASTS];
+static Multicast *s_mcastHead = NULL;
+static Multicast *s_mcastTail = NULL;
+static int32_t       s_mcastsOut = 0;
+static int32_t       s_mcastsIn  = 0;
 
 // we have one buffer for each host in the cluster
 static char *s_hostBufs     [MAX_HOSTS];
@@ -60,6 +60,7 @@ static Msg4 *s_msg4Tail = NULL;
 // . also, need to update spiderdb rec for the url in Msg14 using Msg4 too!
 // . need to add support for passing in array of lists for Msg14
 
+static bool       addMetaList ( const char *p , class UdpSlot *slot = NULL );
 static void       gotReplyWrapper4 ( void    *state   , void *state2   ) ;
 static void       storeLineWaiters ( ) ;
 static void       handleRequest4   ( UdpSlot *slot    , int32_t  niceness ) ;
