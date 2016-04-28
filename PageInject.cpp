@@ -1539,7 +1539,8 @@ bool ImportState::importLoop ( ) {
 			     mcast , // state
 			     NULL , // state2
 			     gotMulticastReplyWrapper ,
-			     multicast_infinite_send_timeout ) ) { // timeout
+			     multicast_infinite_send_timeout,
+			     MAX_NICENESS ) ) {
 		log("import: import mcast had error: %s",mstrerror(g_errno));
 		m_numIn++;
 	}

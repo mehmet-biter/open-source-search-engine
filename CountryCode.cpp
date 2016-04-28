@@ -4,6 +4,7 @@
 #include "Threads.h"
 #include "HashTableX.h"
 #include "Lang.h"
+#include "max_niceness.h"
 #include <sys/types.h>
 
 

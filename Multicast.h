@@ -20,7 +20,6 @@
 #include "Hostdb.h"  // getGroup(), getTimes(), stampHost()
 #include "UdpServer.h"        // sendRequest()
 #include "Loop.h"         // registerSleepCallback()
-#include "Threads.h" // MAX_NICENESS
 
 #define MAX_HOSTS_PER_GROUP 10
 
@@ -89,7 +88,7 @@ class Multicast {
 		    void       *state2          , // callback state
 		    void      (*callback)(void *state,void *state2),
 		    int64_t        totalTimeout    , //relative timeout in milliseconds
-		    int32_t        niceness        = MAX_NICENESS ,
+		    int32_t        niceness        ,
 		    int32_t        firstHostId     = -1 ,// first host to try
 		    char       *replyBuf        = NULL ,
 		    int32_t        replyBufMaxSize = 0 ,

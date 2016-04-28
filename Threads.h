@@ -28,8 +28,6 @@ enum
 };
 
 
-#define MAX_NICENESS     2
-
 // . a ThreadQueue has a list of thread entries
 // . each thread entry represents a thread in progress or waiting to be created
 class ThreadEntry {

@@ -5,6 +5,7 @@
 #include "Profiler.h"
 #include "PingServer.h"
 #include "Hostdb.h"
+#include "max_niceness.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif

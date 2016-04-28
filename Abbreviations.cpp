@@ -4,7 +4,7 @@
 
 #include "StopWords.h"
 #include "HashTableX.h"
-#include "Threads.h"
+#include "max_niceness.h"
 
 class Abbr {
 public:

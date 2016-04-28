@@ -2,6 +2,7 @@
 #include "SafeBuf.h"
 #include "HttpServer.h"
 #include "Posdb.h"
+#include "Threads.h"
 
 TcpSocket *g_qaSock = NULL;
 SafeBuf g_qaOutput;

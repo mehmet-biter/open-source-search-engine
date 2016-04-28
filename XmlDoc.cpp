@@ -37,6 +37,7 @@
 #include "PageRoot.h"
 #include "BitOperations.h"
 #include "Robots.h"
+#include "Threads.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>

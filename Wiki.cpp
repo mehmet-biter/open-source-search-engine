@@ -3,7 +3,7 @@
 #include "Query.h"
 #include "Words.h"
 #include "Titledb.h"
-#include "Threads.h"
+#include "max_niceness.h"
 
 // the global instance
 Wiki g_wiki;

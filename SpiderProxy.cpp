@@ -4,6 +4,7 @@
 #include "TcpSocket.h"
 #include "HttpServer.h"
 #include "SpiderProxy.h"
+#include "max_niceness.h"
 
 //#define LOADPOINT_EXPIRE_MS (10*60*1000)
 // make it 15 seconds not 10 minutes otherwise it gets too full with dup
