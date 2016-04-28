@@ -3442,45 +3442,43 @@ void addUStat2 ( SpiderReply *srep , int32_t now ) {
 }
 
 
-int32_t dumpSpiderdb ( char *coll,
-		    int32_t startFileNum , int32_t numFiles , bool includeTree ,
-		    char printStats ,
-		    int32_t firstIp ) {
+int32_t dumpSpiderdb ( char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char printStats,
+                       int32_t firstIp ) {
 	if ( startFileNum < 0 ) {
 		log(LOG_LOGIC,"db: Start file number is < 0. Must be >= 0.");
 		return -1;
 	}		
 
 	if ( printStats == 1 ) {
-		//g_conf.m_maxMem = 2000000000LL; // 2G
-		//g_mem.m_maxMem  = 2000000000LL; // 2G
-		if ( ! g_ut.set ( 4, sizeof(UStat), 10000000, NULL,
-				  0,0,false,"utttt") )
+		if ( ! g_ut.set ( 4, sizeof(UStat), 10000000, NULL, 0, 0, false, "utttt") ) {
 			return -1;
+		}
 	}
 
-	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
-	//g_conf.m_spiderdbMaxDiskPageCacheMem   = 0;
 	g_spiderdb.init ();
-	//g_collectiondb.init(true);
 	g_spiderdb.getRdb()->addRdbBase1(coll );
-	key128_t startKey ;
-	key128_t endKey   ;
-	startKey.setMin();
-	endKey.setMax();
+
+	key128_t startKey;
+	key128_t endKey;
+
 	// start based on firstip if non-zero
 	if ( firstIp ) {
 		startKey = g_spiderdb.makeFirstKey ( firstIp );
 		endKey  = g_spiderdb.makeLastKey ( firstIp );
+	} else {
+		startKey.setMin();
+		endKey.setMax();
 	}
-	//int32_t t1 = 0;
-	//int32_t t2 = 0x7fffffff;
+
 	// turn off threads
 	g_jobScheduler.disallow_new_jobs();
+
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
+
 	Msg5 msg5;
 	RdbList list;
+
 	// clear before calling Msg5
 	g_errno = 0;
 
@@ -3488,16 +3486,21 @@ int32_t dumpSpiderdb ( char *coll,
 	int32_t negRecs   = 0;
 	int32_t emptyRecs = 0;
 	int32_t uniqDoms  = 0;
+
 	// count urls per domain in "domTable"
 	HashTable domTable;
 	domTable.set ( 1024*1024 );
+
 	// count every uniq domain per ip in ipDomTable (uses dup keys)
 	HashTableX ipDomTable;
+
 	// allow dups? true!
 	ipDomTable.set ( 4,4,5000000 , NULL, 0, true ,0, "ipdomtbl");
+
 	// count how many unique domains per ip
 	HashTable ipDomCntTable;
 	ipDomCntTable.set ( 1024*1024 );
+
 	// buffer for holding the domains
 	int32_t  bufSize = 1024*1024;
 	char *buf     = (char *)mmalloc(bufSize,"spiderstats");
@@ -3539,48 +3542,58 @@ int32_t dumpSpiderdb ( char *coll,
 	now = getTimeLocal();
 
 	// loop over entries in list
-	for ( list.resetListPtr() ; ! list.isExhausted() ;
-	      list.skipCurrentRecord() ) {
+	for ( list.resetListPtr(); !list.isExhausted(); list.skipCurrentRecord() ) {
+		// print a counter
+		if ( ((count++) % 100000) == 0 ) {
+			fprintf( stderr, "Processed %"INT32" records.\n", count - 1 );
+		}
 
 		// get it
 		char *srec = list.getCurrentRec();
 
 		// save it
 		int64_t curOff = offset;
+
 		// and advance
 		offset += list.getCurrentRecSize();
 
 		// must be a request -- for now, for stats
-		if ( ! g_spiderdb.isSpiderRequest((key128_t *)srec) ) {
+		if ( g_spiderdb.isSpiderReply((key128_t *)srec) ) {
 			// print it
 			if ( ! printStats ) {
 				printf( "offset=%"INT64" ",curOff);
 				g_spiderdb.print ( srec );
 				printf("\n");
 			}
+
 			// its a spider reply
 			SpiderReply *srep = (SpiderReply *)srec;
+			++countReplies;
+
 			// store it
 			s_lastRepUh48 = srep->getUrlHash48();
 			s_lastErrCode = srep->m_errCode;
 			s_lastErrCount = srep->m_errCount;
-			countReplies++;
+
 			// get firstip
-			if ( printStats == 1 ) addUStat2 ( srep , now );
+			if ( printStats == 1 ) {
+				addUStat2( srep, now );
+			}
 			continue;
 		}
 
 		// cast it
 		SpiderRequest *sreq = (SpiderRequest *)srec;
-
-		countRequests++;
+		++countRequests;
 
 		int64_t uh48 = sreq->getUrlHash48();
 		// count how many requests had replies and how many did not
 		bool hadReply = ( uh48 == s_lastRepUh48 );
 
 		// get firstip
-		if ( printStats == 1 ) addUStat1 ( sreq , hadReply , now );
+		if ( printStats == 1 ) {
+			addUStat1( sreq, hadReply, now );
+		}
 
 		// print it
 		if ( ! printStats ) {
@@ -3592,27 +3605,24 @@ int32_t dumpSpiderdb ( char *coll,
 
 			printf(" errcount=%"INT32"",(int32_t)s_lastErrCount);
 
-			if ( s_lastErrCode )
-				printf(" errcode=%"INT32"(%s)",(int32_t)s_lastErrCode,
-				       mstrerror(s_lastErrCode));
-			else
-				printf(" errcode=%"INT32"",(int32_t)s_lastErrCode);
+			if ( s_lastErrCode ) {
+				printf( " errcode=%"INT32"(%s)", ( int32_t ) s_lastErrCode, mstrerror( s_lastErrCode ) );
+			} else {
+				printf( " errcode=%"INT32"", ( int32_t ) s_lastErrCode );
+			}
 
-			// we haven't loaded hosts.conf so g_hostdb.m_map
-			// is not set right... so this is useless
-			//printf(" shard=%"INT32"\n",
-			//     (int32_t)g_hostdb.getShardNum(RDB_SPIDERDB,sreq));
 			printf("\n");
 		}
 
-		// print a counter
-		if ( ((count++) % 100000) == 0 ) 
-			fprintf(stderr,"Processed %"INT32" records.\n",count-1);
-
-		if ( printStats != 2 ) continue;
+		if ( printStats != 2 ) {
+			continue;
+		}
 
 		// skip negatives
-		if ( (sreq->m_key.n0 & 0x01) == 0x00 ) continue;
+		if ( (sreq->m_key.n0 & 0x01) == 0x00 ) {
+			++negRecs;
+			continue;
+		}
 
 		// skip bogus shit
 		if ( sreq->m_firstIp == 0 || sreq->m_firstIp==-1 ) continue;
@@ -3648,11 +3658,6 @@ int32_t dumpSpiderdb ( char *coll,
 			bufSize = newBufSize;
 		}
 
-		// otherwise add it, it is a new never-before-seen domain
-		//char poo[999];
-		//gbmemcpy ( poo , dom , domLen );
-		//poo[domLen]=0;
-		//fprintf(stderr,"new dom %s hash=%"INT32"\n",dom,domHash);
 		// store the count of urls followed by the domain
 		char *ptr = buf + bufOff;
 		*(int32_t *)ptr = 1;
@@ -3662,36 +3667,49 @@ int32_t dumpSpiderdb ( char *coll,
 		*ptr = '\0';
 		// use an ip of 1 if it is 0 so it hashes right
 		int32_t useip = sreq->m_firstIp; // ip;
-		// can't use 1 because it all clumps up!!
-		//if ( ip == 0 ) useip = domHash ;
+
 		// this table counts how many urls per domain, as
 		// well as stores the domain
 		if ( ! domTable.addKey (domHash , bufOff) ) return -1;
+
 		// . if this is the first time we've seen this domain,
 		//   add it to the ipDomTable
 		// . this hash table must support dups.
 		// . we need to print out all the domains for each ip
 		if ( ! ipDomTable.addKey ( &useip , &bufOff ) ) return -1;
+
 		// . this table counts how many unique domains per ip
 		// . it is kind of redundant since we have ipDomTable
 		int32_t ipCnt = ipDomCntTable.getValue ( useip );
-		if ( ipCnt < 0 ) ipCnt = 0;
-		if ( ! ipDomCntTable.addKey ( useip, ipCnt+1) ) return -1;
+
+		if ( ipCnt < 0 ) {
+			ipCnt = 0;
+		}
+
+		if ( ! ipDomCntTable.addKey ( useip, ipCnt+1) ) {
+			return -1;
+		}
+
 		// advance to next empty spot
 		bufOff += 4 + domLen + 1;
+
 		// count unque domains
-		uniqDoms++;
+		++uniqDoms;
 	}
 
 	startKey = *(key128_t *)list.getLastKey();
 	startKey += (uint32_t) 1;
+
 	// watch out for wrap around
-	if ( startKey >= *(key128_t *)list.getLastKey() ) goto loop;
+	if ( startKey >= *(key128_t *)list.getLastKey() ) {
+		goto loop;
+	}
 
  done:
 	// print out the stats
-	if ( ! printStats ) return 0;
-
+	if ( ! printStats ) {
+		return 0;
+	}
 
 	// print UStats now
 	if ( printStats == 1 ) {
@@ -3792,21 +3810,24 @@ int32_t dumpSpiderdb ( char *coll,
 		ipDomCntTable.removeKey(ip);
 	}
 
-	if ( negRecs )
-		fprintf(stderr,"There are %"INT32" total negative records.\n",
-			negRecs);
-	if ( emptyRecs ) 
-		fprintf(stderr,"There are %"INT32" total negative records.\n",
-			emptyRecs);
+	if ( negRecs ) {
+		fprintf( stderr, "There are %" INT32" total negative records.\n", negRecs );
+	}
 
-	//fprintf(stderr,"There are %"INT32" total urls.\n",count);
-	fprintf(stderr,"There are %"INT32" total records.\n",count);
-	fprintf(stderr,"There are %"INT32" total request records.\n",countRequests);
-	fprintf(stderr,"There are %"INT32" total replies records.\n",countReplies);
+	if ( emptyRecs ) {
+		fprintf( stderr, "There are %" INT32" total negative records.\n", emptyRecs );
+	}
+
+	fprintf(stderr,"There are %" INT32" total records.\n", count);
+	fprintf(stderr,"There are %" INT32" total request records.\n", countRequests);
+	fprintf(stderr,"There are %" INT32" total replies records.\n", countReplies);
+
 	// end with total uniq domains
-	fprintf(stderr,"There are %"INT32" unique domains.\n",uniqDoms);
+	fprintf(stderr,"There are %" INT32" unique domains.\n", uniqDoms);
+
 	// and with total uniq ips in this priority
-	fprintf(stderr,"There are %"INT32" unique IPs.\n",uniqIps);
+	fprintf(stderr,"There are %" INT32" unique IPs.\n", uniqIps);
+
 	return 0;
 }
 
