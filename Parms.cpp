@@ -3616,16 +3616,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_NOAPI;
 	m++;
 
-	m->m_title = "max vector cache mem";
-	m->m_desc  = "Max memory for dup vector cache.";
-	m->m_off   = offsetof(Conf,m_maxVectorCacheMem);
-	m->m_def   = "10000000";
-	m->m_type  = TYPE_LONG;
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "statsdb max tree mem";
 	m->m_desc  = "";
 	m->m_off   = offsetof(Conf,m_statsdbMaxTreeMem);

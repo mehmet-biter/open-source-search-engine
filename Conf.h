@@ -132,9 +132,6 @@ class Conf {
 	int32_t  m_linkdbMaxTreeMem;
 	int32_t  m_linkdbMinFilesToMerge;
 
-	// dup vector cache max mem
-	int32_t  m_maxVectorCacheMem;
-
 	int32_t  m_maxCpuThreads;
 	int32_t  m_maxIOThreads;
 	int32_t  m_maxExternalThreads;
