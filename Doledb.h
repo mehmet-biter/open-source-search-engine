@@ -42,10 +42,7 @@ class Doledb {
 	// . see "overview of spidercache" below for key definition
 	// . these keys when hashed are clogging up the hash table
 	//   so i am making the 7 reserved bits part of the urlhash48...
-	key_t makeKey ( int32_t      priority   ,
-			uint32_t    spiderTime , // time_t
-			int64_t urlHash48  ,
-			bool      isDelete   ) {
+	key_t makeKey ( int32_t priority, uint32_t spiderTime, int64_t urlHash48, bool isDelete ) {
 		// sanity checks
 		if ( priority  & 0xffffff00           ) { char *xx=NULL;*xx=0;}
 		if ( urlHash48 & 0xffff000000000000LL ) { char *xx=NULL;*xx=0;}
