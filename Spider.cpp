@@ -45,15 +45,12 @@ char s_countsAreValid = 1;
 /////////////////////////      SPIDEREC
 /////////////////////////
 
-void SpiderRequest::setKey (int32_t firstIp,
-			    int64_t parentDocId,
-			    int64_t uh48,
-			    bool isDel) {
+void SpiderRequest::setKey (int32_t firstIp, int64_t parentDocId, int64_t uh48, bool isDel) {
 
 	// sanity
 	if ( firstIp == 0 || firstIp == -1 ) { char *xx=NULL;*xx=0; }
 
-	m_key = g_spiderdb.makeKey ( firstIp,uh48,true,parentDocId , isDel );
+	m_key = g_spiderdb.makeKey ( firstIp, uh48, true, parentDocId, isDel );
 	// set dataSize too!
 	setDataSize();
 }
@@ -65,15 +62,10 @@ void SpiderRequest::setDataSize ( ) {
 }
 
 int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
-
-	SafeBuf *sb = sbarg;
 	SafeBuf tmp;
-	if ( ! sb ) sb = &tmp;
+	SafeBuf *sb = sbarg ?: &tmp;
 
-	//sb->safePrintf("k.n1=0x%"XINT64" ",m_key.n1);
-	//sb->safePrintf("k.n0=0x%"XINT64" ",m_key.n0);
-	sb->safePrintf("k=%s ",KEYSTR(this,
-				      getKeySizeFromRdbId(RDB_SPIDERDB)));
+	sb->safePrintf("k=%s ", KEYSTR( this, getKeySizeFromRdbId( RDB_SPIDERDB ) ) );
 
 	// indicate it's a request not a reply
 	sb->safePrintf("REQ ");
@@ -154,7 +146,6 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	if ( m_parentIsSiteMap ) sb->safePrintf("PARENTISSITEMAP ");
 	if ( m_isMenuOutlink ) sb->safePrintf("MENUOUTLINK ");
 
-	//if ( m_fromSections ) sb->safePrintf("FROMSECTIONS ");
 	if ( m_hasAuthorityInlink ) sb->safePrintf("HASAUTHORITYINLINK ");
 
 	if ( m_isWWWSubdomain  ) sb->safePrintf("WWWSUBDOMAIN ");
@@ -163,23 +154,20 @@ int32_t SpiderRequest::print ( SafeBuf *sbarg ) {
 	//if ( m_inOrderTree ) sb->safePrintf("INORDERTREE ");
 	//if ( m_doled ) sb->safePrintf("DOLED ");
 
-	//uint32_t gid = g_spiderdb.getGroupId(m_firstIp);
-	int32_t shardNum = g_hostdb.getShardNum(RDB_SPIDERDB,this);
+	int32_t shardNum = g_hostdb.getShardNum( RDB_SPIDERDB, this );
 	sb->safePrintf("shardnum=%"UINT32" ",(uint32_t)shardNum);
 
 	sb->safePrintf("url=%s",m_url);
 
-	if ( ! sbarg ) 
-		printf("%s",sb->getBufStart() );
+	if ( ! sbarg ) {
+		printf( "%s", sb->getBufStart() );
+	}
 
 	return sb->length();
 }
 
-void SpiderReply::setKey (int32_t firstIp,
-			  int64_t parentDocId,
-			  int64_t uh48,
-			  bool isDel) {
-	m_key = g_spiderdb.makeKey ( firstIp,uh48,false,parentDocId , isDel );
+void SpiderReply::setKey ( int32_t firstIp, int64_t parentDocId, int64_t uh48, bool isDel ) {
+	m_key = g_spiderdb.makeKey ( firstIp, uh48, false, parentDocId, isDel );
 	// set dataSize too!
 	m_dataSize = sizeof(SpiderReply) - sizeof(key128_t) - 4;
 }
@@ -529,19 +517,7 @@ bool Spiderdb::init ( ) {
 	// . assume avg spider rec size (url) is about 45
 	// . 45 + 33 bytes overhead in tree is 78
 	int32_t maxTreeNodes  = maxMem  / 78;
-	// . really we just cache the first 64k of each priority list
-	// . used only by SpiderLoop
-	//int32_t maxCacheNodes = 32;
-	// we use the same disk page size as indexdb (for rdbmap.cpp)
-	//int32_t pageSize = GB_INDEXDB_PAGE_SIZE;
-	// disk page cache mem, 100MB on gk0 now
-	//int32_t pcmem = 20000000;//g_conf.m_spiderdbMaxDiskPageCacheMem;
-	// keep this low if we are the tmp cluster
-	//if ( g_hostdb.m_useTmpCluster ) pcmem = 0;
-	// turn off to prevent blocking up cpu
-	//pcmem = 0;
-	// key parser checks
-	//int32_t      ip         = 0x1234;
+
 	char      priority   = 12;
 	int32_t      spiderTime = 0x3fe96610;
 	int64_t urlHash48  = 0x1234567887654321LL & 0x0000ffffffffffffLL;
@@ -556,7 +532,7 @@ bool Spiderdb::init ( ) {
 	// spiderdb key test
 	int64_t docId = 123456789;
 	int32_t firstIp = 0x23991688;
-	key128_t sk = g_spiderdb.makeKey ( firstIp,urlHash48,1,docId,false);
+	key128_t sk = g_spiderdb.makeKey ( firstIp, urlHash48, 1, docId, false );
 	if ( ! g_spiderdb.isSpiderRequest (&sk) ) { char *xx=NULL;*xx=0; }
 	if ( g_spiderdb.getUrlHash48(&sk) != urlHash48){char *xx=NULL;*xx=0;}
 	if ( g_spiderdb.getFirstIp(&sk) != firstIp) {char *xx=NULL;*xx=0;}
@@ -3905,14 +3881,10 @@ void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs )
 	char *lastKey     = NULL;
 	char *prevLastKey = NULL;
 
-	// save list ptr in case of re-read?
-	//char *saved = list->m_listPtr;
 	// reset it
 	list->resetListPtr();
 
 	for ( ; ! list->isExhausted() ; ) {
-		// breathe. NO! assume in thread!!
-		//QUICKPOLL(niceness);
 		// get rec
 		char *rec = list->getCurrentRec();
 
