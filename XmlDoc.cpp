@@ -1570,11 +1570,7 @@ void XmlDoc::getRevisedSpiderRequest ( SpiderRequest *revisedReq ) {
 
 	// set the key properly to reflect the new "first ip" since
 	// we shard spiderdb by that.
-	revisedReq->m_key = g_spiderdb.makeKey ( m_firstIp,
-						 uh48,
-						 true, // is request?
-						 parentDocId ,
-						 false );// isDel );
+	revisedReq->m_key = g_spiderdb.makeKey ( m_firstIp, uh48, true, parentDocId, false );
 	revisedReq->setDataSize();
 }
 
@@ -1636,11 +1632,7 @@ void XmlDoc::getRebuiltSpiderRequest ( SpiderRequest *sreq ) {
 	long long uh48 = fu->getUrlHash48();
 	// set the key properly to reflect the new "first ip"
 	// since we shard spiderdb by that.
-	sreq->m_key = g_spiderdb.makeKey ( m_firstIp,//ip,
-					   uh48,
-					   true,//is req?
-					   0LL, // parentDocId ,
-					   false );//isDel
+	sreq->m_key = g_spiderdb.makeKey ( m_firstIp, uh48, true, 0LL, false );
 	sreq->setDataSize();
 }
 
@@ -14084,8 +14076,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// but if doing a rebuild operation then do not get it, we'll rebuild
 	// it since it will have its own titlerec
 	if ( ! m_useSecondaryRdbs ) {
-		spiderStatusDocMetaList =
-			getSpiderStatusDocMetaList (newsr,forDelete);
+		spiderStatusDocMetaList = getSpiderStatusDocMetaList (newsr,forDelete);
 		if ( ! spiderStatusDocMetaList ) {
 			log("build: ss doc metalist null. bad!");
 			
@@ -15353,18 +15344,16 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	int64_t parentDocId = 0LL;
 	if ( m_sreqValid )
 		parentDocId = m_sreq.getParentDocId();
-	//else { char *xx=NULL;*xx=0; }
 
 	// for docid based urls from PageReindex.cpp we have to make
 	// sure to set the urlhash48 correctly from that.
 	if ( m_sreqValid ) uh48 = m_sreq.getUrlHash48();
 
 	// note it
-	if ( g_conf.m_logDebugSpider )
-		log("xmldoc: uh48=%"UINT64" parentdocid=%"UINT64"",uh48,parentDocId);
+	logDebug( g_conf.m_logDebugSpider, "xmldoc: uh48=%" UINT64" parentdocid=%" UINT64, uh48, parentDocId );
 
 	// set the key, m_srep.m_key
-	m_srep.setKey (  firstIp, parentDocId , uh48 , false );
+	m_srep.setKey (  firstIp, parentDocId, uh48, false );
 
 	// . did we download a page? even if indexcode is set we might have
 	// . if this is non-zero that means its valid
@@ -15959,9 +15948,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	int32_t redirDomHash32  = 0;
 	int32_t redirHostHash32 = 0;
 	//int32_t redirSiteHash32 = 0;
-	if ( //cr->m_isCustomCrawl == 1 &&
-	     //isInSeedBuf(cr,m_firstUrl.getUrl(),m_firstUrl.getUrlLen() ) &&
-	     m_hopCount == 0 &&
+	if ( m_hopCount == 0 &&
 	     m_redirUrlValid &&
 	     ptr_redirUrl &&
 	     //m_redirUrlPtr && (this gets reset to NULL as being LAST redir)
@@ -15971,8 +15958,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		redirDomHash32  = m_redirUrl.getDomainHash32();
 		redirHostHash32 = m_redirUrl.getHostHash32();
 	}
-
-
 
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Handling %"INT32" links", __FILE__, __func__, __LINE__, n);
 
@@ -15985,52 +15970,51 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// grab our info
 		TagRec *gr        = (*grv)[i];
 		int32_t    firstIp   = (*ipv)[i];
-		//char    isIndexed = (*iiv)[i];
-		//int32_t    hc        = hcv[i];
+
 		// ip lookup failed? do not add to spiderdb then
 		if ( firstIp == 0 || firstIp == -1 ) continue;
 
-		// if firstIp is in the SpiderColl::m_overflowFirstIps list
-		// then do not add any more links to it. it already has
-		// more than 500MB worth.
-		// this was moved to Rdb.cpp's addRecord()
-		// if ( sc && sc->isFirstIpInOverflowList ( firstIp ) ) {
-		// 	m_linkOverflows++;
-		// 	g_stats.m_totalOverflows++;
-		// 	continue;
-		// }
-
-		// sanity check
-		//if ( firstIp == 0x03 ) {char *xx=NULL;*xx=0; }
 		// get flags
 		linkflags_t flags = links->m_linkFlags[i];
+
 		// . skip if we are rss page and this link is an <a href> link
 		// . we only harvest <link> urls from rss feeds, not href links
 		// . or in the case of feedburner, those orig tags
 		if ( isParentRSS && (flags & LF_AHREFTAG) ) continue;
+
 		// if we have a <feedburner:origLink> tag, then ignore <link>
 		// tags and only get the links from the original links
 		if ( links->m_isFeedBurner && !(flags & LF_FBTAG) ) continue;
+
 		// do not add self links, pointless
 		if ( flags & LF_SELFLINK ) continue;
+
 		// do not add if no follow
 		if ( flags & LF_NOFOLLOW ) continue;
+
 		// point to url
 		char *s    = links->getLink   (i);
 		int32_t  slen = links->getLinkLen(i);
+
 		// breathe
 		QUICKPOLL(m_niceness);
+
 		// get hash
 		int32_t uh = hash32 ( s , slen );
+
 		// it does not like keys of 0, that means empty slot
 		if ( uh == 0 ) uh = 1;
+
 		// skip if dup
 		if ( ht.isInTable ( &uh ) ) continue;
+
 		// add it, returns false and sets g_errno on error
 		if ( ! ht.addKey ( &uh ) ) return NULL;
+
 		// we now supports HTTPS
 		if ( strncmp(s,"http://",7) && strncmp(s,"https://",8) )
 			continue;
+
 		// . do not add if "old"
 		// . Links::set() calls flagOldOutlinks()
 		// . that just means we probably added it the last time
@@ -16057,9 +16041,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Unwanted for indexing [%s]", __FILE__, __func__, __LINE__, url.getUrl());
 			continue;			
 		}
-
-
-
 
 		// are we a new outlink from a ? i.e. a "hot link"? assume so
 		bool newOutlink = true;
@@ -16091,28 +16072,14 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if ( min >= 0 && ksni < min )
 			ksni = min;
 
-		//if ( ! m_siteNumInlinksValid ) { char *xx=NULL;*xx=0; }
-		//int32_t ksni = m_siteNumInlinks;
-
-		// . get possible pub date from url (.../2008/09/23/page.htm)
-		// . this returns 0 if none found
-		//int32_t urlPubDate = parseDateFromUrl(s);
-
-		// use zero for the timestamp so SiteGetter does not recompute
-		// any tags in the tagRec thereby blocking!
-		//SiteGetter sg;
-		//sg.getSite ( s , gr , 0, m_coll, m_niceness,false,NULL,NULL);
 		// get this
 		bool issiteroot = isSiteRootFunc3 ( s , linkSiteHashes[i] );
-		//int32_t siteHash32 = hash32n ( linkSite );
 
 		// get it quick
 		bool ispingserver = url.isPingServer();
 		int32_t domHash32    = url.getDomainHash32();
 
 		// is link rss?
-		//bool isrss = false;
-		//if (slen>6 && !strncasecmp(s+slen-4,".rss",4)) isrss = true;
 		bool isRSSExt = false;
 		const char *ext = url.getExtension();
 		if ( ext && strcasecmp(ext,"rss" ) == 0 ) isRSSExt = true;
@@ -16123,8 +16090,10 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
 		// make the spider request rec for it
 		SpiderRequest ksr;
+
 		// to defaults (zero out)
 		ksr.reset();
+
 		// set other fields besides key
 		ksr.m_firstIp          = firstIp;
 		ksr.m_hostHash32       = hostHash32;
@@ -16133,20 +16102,11 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		ksr.m_siteNumInlinks   = ksni;
 		ksr.m_siteNumInlinksValid = true;
 		ksr.m_isRSSExt            = isRSSExt;
-		// continue using "test-spider" subdir to cache web pages
-		// if our parent was using that
-		//ksr.m_useTestSpiderDir = useTestSpiderDir;
+
 		ksr.m_parentIsSiteMap = parentIsSiteMap;
 
 		ksr.m_hasMediaExtension = url.hasMediaExtension();
 		ksr.m_hasMediaExtensionValid = 1;
-
-		// now we need this so we can share Msg12 spider locks with
-		// query reindex docid-based spider requests. that way
-		// we do not spider the same document at the same time.
-		//ksr.m_probDocId = g_titledb.getProbableDocId(&url);
-
-		//ksr.m_pageNumInlinks = 0;
 
 		// hop count is now 16 bits so do not wrap that around
 		int32_t hc = m_hopCount + 1;
@@ -16165,12 +16125,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			if ( ispingserver ) ksr.m_hopCount = 0;
 			//if ( isrss        ) ksr.m_hopCount = 0;
 		}
-
-		// log("ksr: url=%s hc=%i (isr=%i ips=%i icv=%i ic=%i mhc=%i)",
-		//     url.getUrl(),(int)ksr.m_hopCount,
-		//     (int)issiteroot,(int)ispingserver,(int)m_indexCodeValid,
-		//     (int)m_indexCode,(int)m_hopCount
-		//     );
 
 		// validate it
 		ksr.m_hopCountValid = true;
@@ -16225,8 +16179,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 			ksr.m_sameDom  = 1;
 		if ( hostHash32 == redirHostHash32 && redirHostHash32 )
 			ksr.m_sameHost = 1;
-		// if ( linkSiteHashes[i]==redirSiteHash32 && redirSiteHash32)
-		// 	ksr.m_sameSite = 1;
 
 		// set parent based info
 		if ( domHash32  == m_domHash32   ) ksr.m_sameDom  = 1;
@@ -16254,9 +16206,9 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		if ( m_oldDocValid && m_oldDoc ) {
 			int32_t oldSpideredTime = m_oldDoc->getSpideredTime();
 			ksr.m_parentPrevSpiderTime = oldSpideredTime;
-		}
-		else
+		} else {
 			ksr.m_parentPrevSpiderTime = 0;
+		}
 
 		//
 		// . inherit manual add bit if redirecting to simplified url
@@ -16278,17 +16230,9 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// focussing the search engine on a particular set of langs
 		ksr.m_parentLangId = *langId;
 
-		// don't forget this one!
-		//ksr.m_spiderTime = nowGlobal;
-
-		// . is it "spam"? XmlDoc.cpp::isSpam()
-		// . we need to make that root quality into site root quality!
-		// . let's put spam detection logic into url filters
-		//if ( isSpam ( s,gr,m_spideredTime,true ) )
-		//	// set the bit flag
-		//	ksr.m_isSpam = 1;
 		// copy the url into SpiderRequest::m_url buffer
 		strcpy(ksr.m_url,s);
+
 		// this must be valid
 		if ( ! m_docIdValid ) { char *xx=NULL;*xx=0; }
 
@@ -16299,10 +16243,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		// our original hopcount of 0 with this guy that has a
 		// hopcount of 1. that sux... so don't do it.
 		if ( ksr.getUrlHash48() == myUh48 ) continue;
-
-		// if we've recently added this url to spiderdb in Spider.cpp, skip it
-		//if ( sc && sc->isInDupCache ( &ksr , false ) )
-		//	continue;
 
 		// . technically speaking we do not have any reply so we
 		//   should not be calling this! cuz we don't have all the info
@@ -16329,10 +16269,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 		//	return NULL;
 		//}
 
-		//int32_t priority = -1;
-		//if ( ufn >= 0 )
-		//	priority = cr->m_spiderPriorities[ufn];
-
 		// debug
 		if ( g_conf.m_logDebugUrlAttempts ) {
 			// print the tag rec out into sb2
@@ -16356,10 +16292,7 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 
 		// serialize into the buffer
 		int32_t need = ksr.getRecSize();
-		// is that what we thought it would be?
-		//int32_t thought = links->m_linkLens[i] + 1 + hsize;
-		// sanity check
-		//if ( need + 12 + 4 > thought ) { char *xx=NULL;*xx=0; }
+
 		// sanity check
 		if ( p + 1 + need > m_pend ) { char *xx=NULL;*xx=0; }
 		// store the rdbId
@@ -16384,20 +16317,18 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	}
 
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Added %"INT32" links", __FILE__, __func__, __LINE__, numAdded);
-	// . this is just how many urls we tried to index
-	// . move into Spider::addSpiderRequest()
-	//cr->m_localCrawlInfo.m_urlsHarvested += numAdded;
-	//cr->m_globalCrawlInfo.m_urlsHarvested += numAdded;
-	//cr->m_needsSave = true;
 
 	// save it
 	m_numOutlinksAdded      = numAdded;
 	m_numOutlinksAddedValid = true;
 	m_numOutlinksAddedFromSameDomain = numAddedFromSameDomain;
+
 	// update end of list once we have successfully added all spider recs
 	m_p = p;
+
 	// return current ptr
 	if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: END, all done.", __FILE__, __func__, __LINE__);
+
 	return m_p ;
 }
 
@@ -16603,8 +16534,7 @@ bool XmlDoc::addTable224 ( HashTableX *tt1 ) {
 //   are fielded by gberrorstr, gberrornum or gbisreply.
 // . normally we might use a separate xmldoc class for this but i wanted
 //   something more lightweight
-SafeBuf *XmlDoc::getSpiderStatusDocMetaList ( SpiderReply *reply ,
-					      bool forDelete ) {
+SafeBuf *XmlDoc::getSpiderStatusDocMetaList ( SpiderReply *reply, bool forDelete ) {
 
 	// set status for this
 	setStatus ( "getting spider reply meta list");
