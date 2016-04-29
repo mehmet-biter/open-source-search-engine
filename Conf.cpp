@@ -323,35 +323,20 @@ void Conf::setRootIps ( ) {
 
 // . parameters can be changed on the fly so we must save Conf
 bool Conf::save ( ) {
-	if ( ! m_save ) return true;
+	if ( ! m_save ) {
+		return true;
+	}
+
 	// always reset this before saving
 	bool keep = g_conf.m_testMem ;
 	g_conf.m_testMem = false;
-	//char fname[1024];
-	//sprintf ( fname , "%sgb.conf.saving", g_hostdb.m_dir );
+
 	// fix so if we core in malloc/free we can still save conf
 	char fnbuf[1024];
 	SafeBuf fn(fnbuf,1024);
 	fn.safePrintf("%sgb.conf",g_hostdb.m_dir);
-	bool status = g_parms.saveToXml ( (char *)this , 
-					  fn.getBufStart(),
-					  OBJ_CONF);
-	/*
-	if ( status ) {
-		char fname2[1024];
-		char *local = "";
-		if ( m_isLocal ) local = "local";
-		sprintf( fname2 , "%s%sgb.conf" , g_hostdb.m_dir , local );
-		if(access(fname2, F_OK) == 0) unlink(fname2);
-		if(link(fname, fname2) == 0) {
-			unlink(fname);
-			log(LOG_INFO,"admin: Saved %s.",fname2);
-		} else {
-			log(LOG_INFO,"admin: Unable to save %s:%s",
-					fname, strerror(errno));
-		}
-	}
-	*/
+	bool status = g_parms.saveToXml ( (char *)this , fn.getBufStart(), OBJ_CONF );
+
 	// restore
 	g_conf.m_testMem = keep;
 	return status;
