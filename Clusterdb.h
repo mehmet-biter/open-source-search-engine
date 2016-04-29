@@ -67,9 +67,6 @@ public:
 		return makeClusterRecKey ( docId, true, 0xff, 0xffffffff,
 					   false, true ); };
 
-	// convert a titlerec key into a clusterec key
-	key_t convertTitleRecKey ( key_t titleKey );
-
 	// NOTE: THESE NOW USE THE REAL CLUSTERDB REC
 	// // docId occupies the most significant bytes of the key
 	// now docId occupies the bits after the first 23

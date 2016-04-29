@@ -106,8 +106,6 @@ public:
 	RdbList *m_lists;
 
 
-	// used for getting component lists if compound list is empty
-	void mergeLists_r();
 	class Query *m_query;
 	class QueryTerm *m_qterms;
 	//char     m_cacheKeys[MAX_NUM_LISTS * MAX_KEY_BYTES];

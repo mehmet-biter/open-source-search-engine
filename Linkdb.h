@@ -160,13 +160,6 @@ class Linkdb {
 	bool verify  ( char *coll );
 	bool addColl ( char *coll, bool doVerify = true );
 
-	bool setMetaList ( char    *metaList        ,
-			   char    *metaListEnd     ,
-			   class XmlDoc  *oldDoc          ,
-			   class XmlDoc  *newDoc          ,
-			   int32_t     niceness        ,
-			   int32_t    *numBytesWritten ) ;
-
 	// this makes a "url" key
 	key224_t makeKey_uk ( uint32_t  linkeeSiteHash32 ,
 			      uint64_t  linkeeUrlHash64  ,
@@ -651,9 +644,6 @@ class LinkInfo {
 	int32_t   getNumGoodInlinks   ( ) { 
 		if ( this == NULL ) return 0; return m_numGoodInlinks; }
 
-	// update them for each Inlink. calls for each Inlink.
-	void   updateStringPtrs ( );
-
 	class Inlink *getNextInlink ( class Inlink *k ) ;
 
 	bool getItemXml ( Xml *xml , int32_t niceness ) ;
@@ -732,11 +722,6 @@ class Inlink {
 			  char *userBuf     ,
 			  int32_t  userBufSize ,
 			  bool  makePtrsRefNewBuf ) ;
-
-	//int32_t updateStringPtrs ( char *buf );
-
-	// returns a ptr into a static buffer
-	char *getLinkTextAsUtf8 ( int32_t *len = NULL ) ;
 
 	int32_t       m_ip                  ; //0
 	int64_t  m_docId               ; // 4
@@ -1100,8 +1085,6 @@ public:
 	int32_t           getDomHash32  ( int32_t i ) { return m_domHashes[i]; }
 	int32_t           getNodeNum    ( int32_t i ) { return m_linkNodes[i];  }
 	bool hasRelNoFollow() { return m_hasRelNoFollow; }
-
-	char *getLinkHost ( int32_t i , int32_t *hostLen ) ;
 
 	int32_t findLinkNum(char* url, int32_t urlLen);
 
