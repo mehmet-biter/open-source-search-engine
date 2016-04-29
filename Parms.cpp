@@ -9154,18 +9154,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_COLL;
 	m++;
 
-	m->m_title = "allow HTTPS pages using SSL";
-	m->m_desc  = "If this is true, spiders will read "
-		     "HTTPS pages using SSL Protocols.";
-	m->m_cgi   = "ahttps";
-	m->m_off   = offsetof(CollectionRec,m_allowHttps);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
     m->m_title = "max text doc length";
     m->m_desc  = "Gigablast will not download, index or "
             "store more than this many bytes of an HTML or text "
