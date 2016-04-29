@@ -53,16 +53,6 @@ public:
 
 	Rdb *getRdb  ( ) { return &m_rdb; };
 
-	// make the cluster rec
-	void makeRecFromTitleRec ( char     *rec,
-				   class TitleRec *titleRec,
-				   bool      isDelKey );
-
-	// make the cluster rec
-	void makeRecFromTitleRecKey ( char *rec,
-				      char *key,
-				      bool  isDelKey );
-
 	// make the cluster rec key
 	key_t makeClusterRecKey ( int64_t     docId,
 				  bool          familyFilter,

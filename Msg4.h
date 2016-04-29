@@ -58,13 +58,6 @@ class Msg4 {
 	// why wasn't this saved in addsinprogress.dat file?
 	~Msg4() { if ( m_inUse ) log("BAD: MSG4 in use!!!!!!"); };
 
-	// injecting into the "test" collection likes to flush the buffers
-	// after each injection to make sure the data is available for
-	// following injections
-	bool flush ( void *state                    ,
-		     void (* callback)(void *state) ,
-		     int32_t  niceness                 );
-
 	// private:
 
 	void         (*m_callback ) ( void *state );
