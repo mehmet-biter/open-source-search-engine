@@ -2713,29 +2713,6 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 	}
 
 
-	if ( ! g_conf.m_useThreadsForDisk ) { // || g_threads.m_disabled ) {
-		if ( adds ) mb->safePrintf("<br>");
-		adds++;
-		mb->safePrintf("%s",box);
-		mb->safePrintf("Threads are Disabled for disk. Hurts "
-			       "performance mostly on non-SSD systems. "
-			       "Enable threads in the master controls.");
-		mb->safePrintf("%s",boxEnd);
-	}
-
-	if ( ! g_conf.m_useThreadsForSystemCalls ) {
-		if ( adds ) mb->safePrintf("<br>");
-		adds++;
-		mb->safePrintf("%s",box);
-		mb->safePrintf("Threads for system calls are disabled. "
-			       "Might hurt performance because these "
-			       "are calls to "
-			       "3rd party executables and "
-			       "can take a long time to run, "
-			       "like pdf2html. Enable in master controls.");
-		mb->safePrintf("%s",boxEnd);
-	}
-
 	mb->safePrintf("</div>");
 
 	return (bool)adds;

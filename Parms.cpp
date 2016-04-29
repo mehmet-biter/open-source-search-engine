@@ -7018,78 +7018,14 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	// turn off for now. after seeing how SLOOOOOW brian's merge op was
-	// when all 16 shards on a 16-core machine were merging (even w/ SSDs)
-	// i turned threads off and it was over 100x faster. so until we have
-	// pooling or something turn these off
-	m->m_title = "use threads for disk";
-	m->m_desc  = "If enabled, Gigablast will use threads for disk ops. "
-		"Now that Gigablast uses pthreads more effectively, "
-		"leave this enabled for optimal performance in all cases.";
-	//"Until pthreads is any good leave this off. If you have "
-	//"SSDs performance can be as much as 100x better.";
-	m->m_cgi   = "utfd";
-	m->m_off   = offsetof(Conf,m_useThreadsForDisk);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_flags = 0;//PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "use threads for intersects and merges";
-	m->m_desc  = "If enabled, Gigablast will use threads for these ops. "
-		"Default is now on in the event you have simultaneous queries "
-		"so one query does not hold back the other. There seems "
-		"to be a bug so leave this ON for now.";
-	        //"Until pthreads is any good leave this off.";
-	m->m_cgi   = "utfio";
-	m->m_off   = offsetof(Conf,m_useThreadsForIndexOps);
-	m->m_type  = TYPE_BOOL;
-	// enable this in the event of multiple cores available and
-	// large simultaneous queries coming in
-	m->m_def   = "1";
-	m->m_flags = 0;//PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m->m_group = false;
-	m++;
-
-	m->m_title = "use threads for system calls";
-	m->m_desc  = "Gigablast does not make too many system calls so "
-		"leave this on in case the system call is slow.";
-	m->m_cgi   = "utfsc";
-	m->m_off   = offsetof(Conf,m_useThreadsForSystemCalls);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_flags = 0;//PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m->m_group = false;
-	m++;
-
-
-	m->m_title = "max total threads";
-	m->m_desc  = "Maximum number of threads to use per Gigablast process.";
-	m->m_cgi   = "max_threads";
-	m->m_off   = offsetof(Conf,m_max_threads);
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "20";
-	m->m_units = "threads";
-	m->m_min   = 1;
-	m->m_flags = 0;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m->m_group = false;
-	m++;
 
 	m->m_title = "max cpu threads";
 	m->m_desc  = "Maximum number of threads to use per Gigablast process "
-		"for intersecting docid lists.";
+		"for merging and intersecting.";
 	m->m_cgi   = "mct";
 	m->m_off   = offsetof(Conf,m_maxCpuThreads);
 	m->m_type  = TYPE_LONG;
-	m->m_def   = "1";
+	m->m_def   = "2";
 	m->m_units = "threads";
 	m->m_min   = 1;
 	m->m_flags = 0;
@@ -7098,13 +7034,13 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	m->m_title = "max cpu merge threads";
+	m->m_title = "max IO threads";
 	m->m_desc  = "Maximum number of threads to use per Gigablast process "
-		"for merging lists read from disk.";
-	m->m_cgi   = "mcmt";
-	m->m_off   = offsetof(Conf,m_maxCpuMergeThreads);
+		"for doing file I/O.";
+	m->m_cgi   = "max_io_threads";
+	m->m_off   = offsetof(Conf,m_maxIOThreads);
 	m->m_type  = TYPE_LONG;
-	m->m_def   = "1";
+	m->m_def   = "10";
 	m->m_units = "threads";
 	m->m_min   = 1;
 	m->m_flags = 0;
@@ -7113,21 +7049,21 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	m->m_title = "max write threads";
+	m->m_title = "max external threads";
 	m->m_desc  = "Maximum number of threads to use per Gigablast process "
-		"for writing data to the disk. "
-		"Keep low to reduce file interlace effects and impact "
-		"on query response time.";
-	m->m_cgi   = "mwt";
-	m->m_off   = offsetof(Conf,m_maxWriteThreads);
+		"for doing external calss with system() or similar..";
+	m->m_cgi   = "max_ext_threads";
+	m->m_off   = offsetof(Conf,m_maxExternalThreads);
 	m->m_type  = TYPE_LONG;
-	m->m_def   = "1";
+	m->m_def   = "2";
 	m->m_units = "threads";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_min   = 1;
+	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
 	m++;
+
 
 	m->m_title = "flush disk writes";
 	m->m_desc  = "If enabled then all writes will be flushed to disk. "
@@ -7171,37 +7107,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
-	m++;
-
-	m->m_title = "max spider read threads";
-	m->m_desc  = "Maximum number of threads to use per Gigablast process "
-		"for accessing the disk "
-		"for index-building purposes. Keep low to reduce impact "
-		"on query response time. Increase for fast disks or when "
-		"preferring build speed over lower query latencies";
-	m->m_cgi   = "smdt";
-	m->m_off   = offsetof(Conf,m_spiderMaxDiskThreads);
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "20";
-	m->m_units = "threads";
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m->m_group = false;
-	m++;
-
-	m->m_title = "separate disk reads";
-	m->m_desc  = "If enabled then we will not launch a low priority "
-		"disk read or write while a high priority is outstanding. "
-		"Help improve query response time at the expense of "
-		"spider performance.";
-	m->m_cgi   = "sdt";
-	m->m_off   = offsetof(Conf,m_separateDiskReads);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_flags = 0;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
 	m++;
 
 	m->m_title = "min popularity for speller";

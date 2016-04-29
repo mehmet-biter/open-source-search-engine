@@ -1930,7 +1930,7 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
-	if ( ! g_jobScheduler.initialize(2,10,2,wakeupPollLoop)) {
+	if ( ! g_jobScheduler.initialize(g_conf.m_maxCpuThreads, g_conf.m_maxIOThreads, g_conf.m_maxExternalThreads, wakeupPollLoop)) {
 		log("db: JobScheduler init failed." );
 		return 1;
 	}

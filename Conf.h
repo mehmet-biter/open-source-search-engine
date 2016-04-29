@@ -141,9 +141,9 @@ class Conf {
 	// dup vector cache max mem
 	int32_t  m_maxVectorCacheMem;
 
-	int32_t  m_max_threads;         //global limit / max stacks
 	int32_t  m_maxCpuThreads;
-	int32_t  m_maxCpuMergeThreads;
+	int32_t  m_maxIOThreads;
+	int32_t  m_maxExternalThreads;
 
 	int32_t  m_deadHostTimeout;
 	int32_t  m_sendEmailTimeout;
@@ -159,12 +159,6 @@ class Conf {
 
 	char	m_useHighFrequencyTermCache;
 	
-	// the spiderdb holds url records for spidering, when to spider, etc..
-	int32_t  m_maxWriteThreads ;
-	int32_t  m_spiderMaxDiskThreads    ;
-
-	char m_separateDiskReads;
-
 	int32_t m_statsdbMaxTreeMem;
 	int32_t m_statsdbMaxCacheMem;
 	bool m_useStatsdb;
@@ -354,10 +348,6 @@ class Conf {
 
 	bool   m_splitTwins;
 	bool   m_useThreads;
-
-	bool   m_useThreadsForDisk;
-	bool   m_useThreadsForIndexOps;
-	bool   m_useThreadsForSystemCalls;
 
 	bool   m_useSHM;
 	bool   m_useQuickpoll;
