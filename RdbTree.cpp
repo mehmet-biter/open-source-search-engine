@@ -6,7 +6,7 @@
 
 #include "RdbTree.h"
 #include "Loop.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "Linkdb.h"
 #include "Spider.h"
 
@@ -2400,8 +2400,8 @@ int32_t RdbTree::getBalancePercent() {
 
 #define BLOCK_SIZE 10000
 
-static void *saveWrapper      ( void *state , ThreadEntry * /*t*/ ) ;
-static void threadDoneWrapper ( void *state , ThreadEntry * /*t*/ ) ;
+static void saveWrapper       ( void *state );
+static void threadDoneWrapper ( void *state, job_exit_t exit_type );
 
 // . caller should call f->set() himself
 // . we'll open it here
@@ -2437,13 +2437,14 @@ bool RdbTree::fastSave ( const char *dir,
 	// skip thread call if we should
 	if ( ! useThread ) goto skip;
 	// make this a thread now
-	if ( g_threads.call ( THREAD_TYPE_SAVETREE   , // threadType
-			      1                 , // niceness
-			      this              , // top 4 bytes must be cback
-			      threadDoneWrapper ,
-			      saveWrapper   ) ) return false;
+	if ( g_jobScheduler.submit(saveWrapper,
+	                           threadDoneWrapper,
+				   this,
+				   thread_type_unspecified_io,
+				   1/*niceness*/) )
+		return false;
 	// if it failed
-	if ( g_threads.areThreadsEnabled() ) 
+	if ( g_jobScheduler.are_new_jobs_allowed() ) 
 		log("db: Thread creation failed. Blocking while saving tree. "
 		    "Hurts performance.");
  skip:
@@ -2460,18 +2461,16 @@ bool RdbTree::fastSave ( const char *dir,
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
-void *saveWrapper ( void *state , ThreadEntry * /*t*/ ) {
+void saveWrapper ( void *state ) {
 	// get this class
 	RdbTree *THIS = (RdbTree *)state;
 	// this returns false and sets g_errno on error
 	THIS->fastSave_r();
-	// now exit the thread, bogus return
-	return NULL;
 }
 
 // we come here after thread exits
 // Use of ThreadEntry parameter is NOT thread safe
-void threadDoneWrapper ( void *state , ThreadEntry * /*t*/ ) {
+void threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 	// get this class
 	RdbTree *THIS = (RdbTree *)state;
 	// store save error into g_errno

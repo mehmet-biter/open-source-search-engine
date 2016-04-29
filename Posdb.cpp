@@ -4,7 +4,7 @@
 
 #include "Url.h"
 #include "Clusterdb.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "Posdb.h"
 #include "Rebalance.h"
 #include "ScalingFunctions.h"
@@ -552,7 +552,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 	if ( qaTest ) {
 		Msg5 msg5;
 		RdbList list;
-		g_threads.disableThreads();
+		g_jobScheduler.disallow_new_jobs();
 		msg5.getList ( RDB_POSDB   ,
 			       collnum      ,
 			      &list         ,
@@ -576,7 +576,7 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 			       NULL        , // msg5b ptr
 			       true          );
 		// re-enable threads
-		g_threads.enableThreads();
+		g_jobScheduler.allow_new_jobs();
 		//int64_t numBytes = list.getListSize();
 		// see how many diff docids we have... easier to debug this
 		// loop over entries in list

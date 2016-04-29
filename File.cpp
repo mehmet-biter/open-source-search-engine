@@ -5,7 +5,6 @@
 #include "gb-include.h"
 
 #include "File.h"
-#include "Threads.h"
 #include "Process.h"
 
 // THE FOLLOWING IS ALL STATIC 'CUZ IT'S THE FD POOL

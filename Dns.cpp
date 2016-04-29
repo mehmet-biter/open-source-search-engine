@@ -2,7 +2,6 @@
 
 #include "Dns.h"
 #include "HashTableT.h"
-//#include "Threads.h"
 
 // comment out the following line to disable DNS TLD caching
 // TLD caching seems to give about 15% performance increase over not caching.

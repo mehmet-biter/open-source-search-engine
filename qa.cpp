@@ -2,7 +2,7 @@
 #include "SafeBuf.h"
 #include "HttpServer.h"
 #include "Posdb.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 
 TcpSocket *g_qaSock = NULL;
 SafeBuf g_qaOutput;
@@ -883,7 +883,7 @@ bool qainject1 ( ) {
 		startKey.setMin();
 		endKey.setMax();
 		CollectionRec *cr = g_collectiondb.getRec("qatest123");
-		g_threads.disableThreads();
+		g_jobScheduler.disallow_new_jobs();
 		if ( ! msg5.getList ( RDB_POSDB  ,
 				      cr->m_collnum  ,
 				      &list         ,
@@ -909,7 +909,7 @@ bool qainject1 ( ) {
 			log("qa: HEY! it did not block");
 			char *xx=NULL;*xx=0;
 		}
-		g_threads.enableThreads();
+		g_jobScheduler.allow_new_jobs();
 		if ( list.m_listSize ) {
 			log("qa: failed qa test of posdb0001.dat. "
 			    "has %i bytes of positive keys! coring.",

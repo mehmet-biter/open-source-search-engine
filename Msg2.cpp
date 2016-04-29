@@ -4,7 +4,6 @@
 #include "Stats.h"
 #include "RdbList.h"
 #include "Rdb.h"
-#include "Threads.h"
 #include "Posdb.h" // getTermId()
 #include "Msg3a.h" // DEFAULT_POSDB_READ_SIZE
 #include "HighFrequencyTermShortcuts.h"

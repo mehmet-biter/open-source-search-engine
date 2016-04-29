@@ -1,8 +1,8 @@
 #include "gb-include.h"
 
 #include "Clusterdb.h"
-#include "Threads.h"
 #include "Rebalance.h"
+#include "JobScheduler.h"
 
 // a global class extern'd in .h file
 Clusterdb g_clusterdb;
@@ -75,7 +75,7 @@ bool Clusterdb::init2 ( int32_t treeMem ) {
 
 bool Clusterdb::verify ( char *coll ) {
 	log ( LOG_DEBUG, "db: Verifying Clusterdb for coll %s...", coll );
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 
 	Msg5 msg5;
 	Msg5 msg5b;
@@ -109,7 +109,7 @@ bool Clusterdb::verify ( char *coll ) {
 			      -1LL          ,
 			      &msg5b        ,
 			      true          )) {
-		g_threads.enableThreads();
+		g_jobScheduler.allow_new_jobs();
 		return log("db: HEY! it did not block");
 	}
 
@@ -137,13 +137,13 @@ bool Clusterdb::verify ( char *coll ) {
 					   "data in the right directory? "
 					   "Exiting.");
 		log ( "db: Exiting due to Clusterdb inconsistency." );
-		g_threads.enableThreads();
+		g_jobScheduler.allow_new_jobs();
 		return g_conf.m_bypassValidation;
 	}
 	log ( LOG_DEBUG, "db: Clusterdb passed verification successfully for "
 			"%"INT32" recs.", count );
 	// DONE
-	g_threads.enableThreads();
+	g_jobScheduler.allow_new_jobs();
 	return true;
 }
 

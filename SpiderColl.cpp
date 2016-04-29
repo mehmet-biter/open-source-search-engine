@@ -13,7 +13,7 @@
 #include "CountryCode.h"
 #include "DailyMerge.h"
 #include "Process.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "XmlDoc.h"
 #include "HttpServer.h"
 #include "Pages.h"
@@ -218,9 +218,9 @@ bool SpiderColl::makeDoleIPTable ( ) {
 	key_t endKey   ; endKey.setMax();
 	key_t lastKey  ; lastKey.setMin();
 	// turn off threads for this so it blocks
-	bool enabled = g_threads.areThreadsEnabled();
+	bool enabled = g_jobScheduler.are_new_jobs_allowed();
 	// turn off regardless
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
@@ -287,7 +287,7 @@ bool SpiderColl::makeDoleIPTable ( ) {
  done:
 	log(LOG_DEBUG,"spider: making dole ip table done.");
 	// re-enable threads
-	if ( enabled ) g_threads.enableThreads();
+	if ( enabled ) g_jobScheduler.allow_new_jobs();
 	// we wrapped, all done
 	return true;
 }
@@ -315,9 +315,9 @@ bool SpiderColl::makeWaitingTree ( ) {
 	key128_t endKey   ; endKey.setMax();
 	key128_t lastKey  ; lastKey.setMin();
 	// turn off threads for this so it blocks
-	bool enabled = g_threads.areThreadsEnabled();
+	bool enabled = g_jobScheduler.are_new_jobs_allowed();
 	// turn off regardless
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
@@ -405,7 +405,7 @@ bool SpiderColl::makeWaitingTree ( ) {
  done:
 	log(LOG_DEBUG,"spider: making waiting tree done.");
 	// re-enable threads
-	if ( enabled ) g_threads.enableThreads();
+	if ( enabled ) g_jobScheduler.allow_new_jobs();
 	// we wrapped, all done
 	return true;
 }

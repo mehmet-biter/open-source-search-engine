@@ -4,9 +4,9 @@
 #include <sys/time.h>      // setrlimit()
 #include <sys/resource.h>  // setrlimit()
 
-#include "Threads.h"
 #include "SafeBuf.h"
 #include "Pages.h"
+#include "ScopedLock.h"
 
 // only Mem.cpp should call ::malloc, everyone else must call mmalloc() so
 // we can keep tabs on memory usage.
@@ -35,8 +35,7 @@ static bool freeCacheMem();
 
 
 
-// the thread lock
-//static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;
 
 // a table used in debug to find mem leaks
 static void **s_mptrs ;
@@ -263,6 +262,8 @@ bool Mem::init  ( ) {
 
 // this is called by C++ classes' constructors to register mem
 void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
+
+	ScopedLock sl(s_lock);
 
 	//validate();
 
@@ -585,6 +586,8 @@ bool Mem::lblMem( void *mem, int32_t size, const char *note ) {
 // this is called by C++ classes' destructors to unregister mem
 bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 
+	ScopedLock sl(s_lock);
+	
 	//validate();
 
 	// debug msg (mdw)

@@ -1246,8 +1246,6 @@ int64_t gettimeofdayInMillisecondsGlobal() {
 	return gettimeofdayInMillisecondsSynced();
 }
 
-#include "Threads.h"
-
 int64_t gettimeofdayInMillisecondsSynced() {
 	// sanity check
 	if ( ! isClockInSync() ) { 

@@ -5,7 +5,7 @@
 #include "Words.h"
 #include "Sections.h"
 #include "XmlDoc.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "Hostdb.h"
 #include <pthread.h>
 
@@ -13,7 +13,7 @@
 
 //static void gotTermFreqWrapper ( void *state ) ;
 static void gotTermListWrapper ( void *state ) ;
-static void *thumbStartWrapper_r ( void *state , ThreadEntry * /*te*/ );
+static void thumbStartWrapper_r ( void *state );
 static void getImageInfo ( char *buf, int32_t size, int32_t *dx, int32_t *dy, int32_t *it);
 
 Images::Images ( ) {
@@ -695,7 +695,7 @@ bool Images::downloadImage ( ) {
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
-static void makeThumbWrapper ( void *state , ThreadEntry * /*t*/ ) {
+static void makeThumbWrapper ( void *state, job_exit_t exit_type ) {
 	Images *THIS = (Images *)state;
 	// control loop
 	if ( ! THIS->downloadImages() ) return;
@@ -855,22 +855,22 @@ bool Images::makeThumb ( ) {
 	// reset this since filterStart_r() will set it on error
 	m_errno = 0;
 	// callThread returns true on success, in which case we block
-	if ( g_threads.call ( THREAD_TYPE_FILTER,
-			      MAX_NICENESS         ,
-			      this                 ,
-			      makeThumbWrapper    ,
-			      thumbStartWrapper_r ) ) return false;
+	if ( g_jobScheduler.submit(thumbStartWrapper_r,
+	                           makeThumbWrapper,
+				   this,
+				   thread_type_generate_thumbnail,
+				   MAX_NICENESS) )
+		return false;
 	// threads might be off
 	logf ( LOG_DEBUG, "image: Calling thumbnail gen without thread.");
-	thumbStartWrapper_r ( this , NULL );
+	thumbStartWrapper_r ( this );
 	return true;
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
-void *thumbStartWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
+void thumbStartWrapper_r ( void *state ) {
 	Images *THIS = (Images *)state;
 	THIS->thumbStart_r ( true /* am thread?*/ );
-	return NULL;
 }
 
 void Images::thumbStart_r ( bool amThread ) {

@@ -184,7 +184,6 @@ public:
 	Msg39();
 	~Msg39();
 
-private:
 	void reset();
 	void reset2();
 	// register our request handler for Msg39's
@@ -257,11 +256,6 @@ private:
 	void        estimateHitsAndSendReply   ();
 	bool        setClusterRecs ();
 	bool        gotClusterRecs ();
-
-	friend void handleRequest39 ( UdpSlot *slot , int32_t netnice );
-	friend void Msg39_controlLoopWrapper2 ( void *state , ThreadEntry *t );
-	friend void Msg39_controlLoopWrapper ( void *state );
-	friend void *Msg39_addListsWrapper ( void *state , ThreadEntry *t );
 
 public:
 	//debugging aid

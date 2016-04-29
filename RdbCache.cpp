@@ -3,7 +3,7 @@
 #undef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 500
 #include <unistd.h>
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "RdbCache.h"
 #include "Collectiondb.h"
 #include "Loop.h"
@@ -1331,8 +1331,8 @@ bool RdbCache::load ( ) {
 	return load ( m_dbname );
 }
 
-static void *saveWrapper      ( void *state , ThreadEntry * /*te*/ ) ;
-static void threadDoneWrapper ( void *state , ThreadEntry * /*te*/ ) ;
+static void saveWrapper       ( void *state );
+static void threadDoneWrapper ( void *state, job_exit_t exit_type );
 
 // . just like RdbTree::fastSave()
 // . returns false if blocked and is saving
@@ -1355,14 +1355,14 @@ bool RdbCache::save ( bool useThreads ) {
 		m_isSaving = true;
 		// make a thread. returns true on success, in which case
 		// we return false to indicate we blocked.
-		if ( g_threads.call ( THREAD_TYPE_SAVETREE   ,
-				      1                 , // niceness
-				      this              , // state
-				      threadDoneWrapper , // callback
-				      saveWrapper       ) )
+		if ( g_jobScheduler.submit(saveWrapper,
+		                           threadDoneWrapper,
+					   this,
+					   thread_type_unspecified_io,
+					   1/*niceness*/) )
 			return false;
 		// crap had an error spawning thread
-		if ( g_threads.areThreadsEnabled() )
+		if ( g_jobScheduler.are_new_jobs_allowed() )
 			log("db: Error spawning cache write thread. "
 			    "Not using threads.");
 	}
@@ -1374,7 +1374,7 @@ bool RdbCache::save ( bool useThreads ) {
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
-void threadDoneWrapper ( void *state , ThreadEntry * /*te*/ ) {
+void threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 	if (state) {
 		RdbCache *THIS = (RdbCache *)state;
 		THIS->threadDone ( );
@@ -1393,15 +1393,14 @@ void RdbCache::threadDone ( ) {
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
-void *saveWrapper ( void *state , ThreadEntry * /*te*/ ) {
+void saveWrapper ( void *state ) {
 	RdbCache *THIS = (RdbCache *)state;
 	// assume no error
 	THIS->m_saveError = 0;
 	// do it
-	if ( THIS->save_r () ) return NULL;
+	if ( THIS->save_r () ) return;
 	// we got an error, save it
 	THIS->m_saveError = errno;
-	return NULL;
 }
 
 // returns false withe rrno set on error

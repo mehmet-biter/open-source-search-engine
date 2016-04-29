@@ -5,7 +5,7 @@
 
 #include "HashTableX.h"
 #include "SafeBuf.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "Mem.h"     // for mcalloc and mmalloc
 #include "BitOperations.h"
 #include "Loop.h"
@@ -527,7 +527,7 @@ bool HashTableX::load ( const char *dir, const char *filename, char **tbuf, int3
 // . so Process.cpp's call to g_spiderCache.save() can save the doleiptable
 //   without blocking...
 //
-static void *saveWrapper ( void *state , class ThreadEntry * /*t*/ ) {
+static void saveWrapper ( void *state ) {
 	// get this class
 	HashTableX *THIS = (HashTableX *)state;
 	// this returns false and sets g_errno on error
@@ -536,11 +536,10 @@ static void *saveWrapper ( void *state , class ThreadEntry * /*t*/ ) {
 		    THIS->m_tbuf ,
 		    THIS->m_tsize );
 	// now exit the thread, bogus return
-	return NULL;
 }
 
 // we come here after thread exits
-static void threadDoneWrapper ( void *state , class ThreadEntry * /*t*/ ) {
+static void threadDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	// get this class
 	HashTableX *THIS = (HashTableX *)state;
 	// store save error into g_errno
@@ -597,13 +596,14 @@ bool HashTableX::fastSave ( bool useThread ,
 	// skip thread call if we should
 	if ( ! useThread ) goto skip;
 	// make this a thread now
-	if ( g_threads.call ( THREAD_TYPE_SAVETREE   , // threadType
-			      1                 , // niceness
-			      this              , // top 4 bytes must be cback
-			      threadDoneWrapper ,
-			      saveWrapper   ) ) return false;
+	if ( g_jobScheduler.submit(saveWrapper,
+	                           threadDoneWrapper,
+				   this,
+				   thread_type_spider_write,
+				   1/*niceness*/) )
+		return false;
 	// if it failed
-	if ( g_threads.areThreadsEnabled() ) 
+	if ( g_jobScheduler.are_new_jobs_allowed() ) 
 		log("db: Thread creation failed. Blocking while saving tree. "
 		    "Hurts performance.");
  skip:

@@ -1,0 +1,604 @@
+#include "JobScheduler.h"
+#include "ScopedLock.h"
+#include "BigFile.h" //for FileState definition
+#include <pthread.h>
+#include <vector>
+#include <list>
+#include <algorithm>
+#include <stdexcept>
+#include <assert.h>
+#include <sys/time.h>
+
+
+#include <stdio.h>
+
+namespace {
+
+
+//return current time expressed as milliseconds since 1970
+static uint64_t now_ms() {
+	struct timeval tv;
+	gettimeofday(&tv,0);
+	return tv.tv_sec*1000 + tv.tv_usec/1000;
+}
+
+
+
+
+//A job (queued, running or finished)
+struct JobEntry {
+	start_routine_t   start_routine;
+	finish_routine_t  finish_callback;
+	void             *state;
+	
+	bool              is_io_job;
+	
+	//for scheduling:
+	uint64_t          start_deadline;     //latest time when this job must be started
+	bool              is_io_write_job;    //valid for I/O jobs: mostly read or mostly write?
+	int               initial_priority;   //priority when queued
+	
+	//for statistics:
+	uint64_t          queue_enter_time;   //when this job was queued
+	uint64_t          start_time;	      //when this job started running
+	uint64_t          stop_time;	      //when this job stopped running
+	uint64_t          exit_time;	      //when this job was finished, including finish-callback
+};
+
+
+
+
+//a set of jobs, prioritized
+class JobQueue : public std::vector<JobEntry> {
+public:
+	pthread_cond_t cond_not_empty;
+
+	JobQueue()
+	  : vector(),
+	    cond_not_empty PTHREAD_COND_INITIALIZER
+	{
+	}
+	
+	~JobQueue() {
+		pthread_cond_destroy(&cond_not_empty);
+	}
+	
+	void add(const JobEntry &e) {
+		push_back(e);
+		pthread_cond_signal(&cond_not_empty);
+	}
+	
+	JobEntry pop_top_priority();
+	
+	
+};
+
+
+JobEntry JobQueue::pop_top_priority()
+{
+	assert(!empty());
+	//todo: age old entries
+	std::vector<JobEntry>::iterator best_iter = begin();
+	std::vector<JobEntry>::iterator iter = best_iter;
+	++iter;
+	for( ; iter!=end(); ++iter)
+		if(iter->initial_priority<best_iter->initial_priority)
+			best_iter = iter;
+	JobEntry tmp = *best_iter;
+	erase(best_iter);
+	return tmp;
+}
+
+
+
+typedef std::vector<std::pair<JobEntry,job_exit_t>> ExitSet;
+typedef std::list<JobEntry> RunningSet;
+
+
+//parameters given to a pool thread
+struct PoolThreadParameters {
+	JobQueue          *job_queue;                 //queue to fetch jobs from
+	RunningSet        *running_set;               //set to store the job in while executing it
+	ExitSet           *exit_set;                  //set to store the finished job+exit-cause in
+	unsigned          *num_io_write_jobs_running; //global counter for scheduling
+	pthread_mutex_t   *mtx;                       //mutex covering above 3 containers
+	job_done_notify_t job_done_notify;            //notifycation callback whenever a job returns
+	bool              stop;
+};
+
+
+extern "C" {
+static void *job_pool_thread_function(void *pv) {
+	PoolThreadParameters *ptp= static_cast<PoolThreadParameters*>(pv);
+	pthread_mutex_lock(ptp->mtx);
+	while(!ptp->stop) {
+		if(ptp->job_queue->empty())
+			pthread_cond_wait(&ptp->job_queue->cond_not_empty,ptp->mtx);
+		if(ptp->stop)
+			break;
+		if(ptp->job_queue->empty()) //spurious wakeup
+			continue;
+		
+		//take the top-priority job and move it into the running set
+		RunningSet::iterator iter = ptp->running_set->insert(ptp->running_set->begin(),ptp->job_queue->pop_top_priority());
+		if(iter->is_io_job && iter->is_io_write_job)
+			++*(ptp->num_io_write_jobs_running);
+		pthread_mutex_unlock(ptp->mtx);
+		
+		job_exit_t job_exit;
+		uint64_t now = now_ms();
+		iter->start_time = now;
+		if(iter->start_deadline==0 || iter->start_deadline>now) {
+			iter->start_routine(iter->state);
+			iter->stop_time = now_ms();
+			job_exit = job_exit_normal;
+		} else {
+			job_exit = job_exit_deadline;
+		}
+		
+		pthread_mutex_lock(ptp->mtx);
+		if(iter->is_io_job && iter->is_io_write_job)
+			--*(ptp->num_io_write_jobs_running);
+		//copy+delete it into the exit queue
+		ptp->exit_set->push_back(std::make_pair(*iter,job_exit));
+		ptp->running_set->erase(iter);
+		pthread_mutex_unlock(ptp->mtx);
+		
+		(ptp->job_done_notify)();
+		
+		pthread_mutex_lock(ptp->mtx);
+	}
+	
+	pthread_mutex_unlock(ptp->mtx);
+	return 0;
+}
+}
+
+
+static void job_done_notify_noop() {
+}
+
+
+class ThreadPool {
+public:
+	ThreadPool(unsigned num_threads,
+	           JobQueue *job_queue, RunningSet *running_set, ExitSet *exit_set,
+		   unsigned *num_io_write_jobs_running,
+		   pthread_mutex_t *mtx,
+		   job_done_notify_t job_done_notify_);
+	void initiate_stop();
+	void join_all();
+	~ThreadPool();
+	
+private:
+	PoolThreadParameters ptp;
+	std::vector<pthread_t> tid;
+	job_done_notify_t job_done_notify;
+};
+
+
+ThreadPool::ThreadPool(unsigned num_threads,
+                       JobQueue *job_queue, RunningSet *running_set, ExitSet *exit_set,
+		       unsigned *num_io_write_jobs_running,
+		       pthread_mutex_t *mtx,
+                       job_done_notify_t job_done_notify_)
+  : tid(num_threads)
+{
+	ptp.job_queue = job_queue;
+	ptp.running_set = running_set;
+	ptp.exit_set = exit_set;
+	ptp.num_io_write_jobs_running = num_io_write_jobs_running;
+	ptp.mtx = mtx;
+	ptp.job_done_notify = job_done_notify_?job_done_notify_:job_done_notify_noop;
+	ptp.stop = false;
+	for(unsigned i=0; i<tid.size(); i++) {
+		int rc = pthread_create(&tid[i], NULL, job_pool_thread_function, &ptp);
+		if(rc!=0)
+			throw std::runtime_error("pthread_create() failed");
+	}
+}
+
+
+void ThreadPool::initiate_stop()
+{
+	for(unsigned i=0; i<tid.size(); i++)
+		ptp.stop = true;
+}
+
+void ThreadPool::join_all()
+{
+	for(unsigned i=0; i<tid.size(); i++)
+		pthread_join(tid[i],NULL);
+	tid.clear();
+}
+
+ThreadPool::~ThreadPool()
+{
+	join_all();
+}
+
+} //anonymous namespace
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// JobScheduler implementation
+
+class JobScheduler_impl {
+	mutable pthread_mutex_t mtx;
+	
+	JobQueue   cpu_job_queue;
+	JobQueue   io_job_queue;
+	JobQueue   external_job_queue;
+	
+	RunningSet running_set;
+	
+	ExitSet    exit_set;
+	
+	unsigned   num_io_write_jobs_running;
+	
+	ThreadPool cpu_thread_pool;
+	ThreadPool io_thread_pool;
+	ThreadPool external_thread_pool;
+	
+	bool new_jobs_allowed;
+	
+	bool submit(thread_type_t thread_type, JobEntry &e);
+public:
+	JobScheduler_impl(unsigned num_cpu_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify)
+	  : mtx PTHREAD_MUTEX_INITIALIZER,
+	    cpu_job_queue(),
+	    io_job_queue(),
+	    external_job_queue(),
+	    running_set(),
+	    exit_set(),
+	    num_io_write_jobs_running(0),
+	    cpu_thread_pool(num_cpu_threads,&cpu_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
+	    io_thread_pool(num_io_threads,&io_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
+	    external_thread_pool(num_external_threads,&external_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
+	    new_jobs_allowed(true)
+	{
+	}
+	
+	~JobScheduler_impl() {
+		cpu_thread_pool.initiate_stop();
+		io_thread_pool.initiate_stop();
+		external_thread_pool.initiate_stop();
+		
+		pthread_cond_broadcast(&cpu_job_queue.cond_not_empty);
+		pthread_cond_broadcast(&io_job_queue.cond_not_empty);
+		pthread_cond_broadcast(&external_job_queue.cond_not_empty);
+		
+		cpu_thread_pool.join_all();
+		io_thread_pool.join_all();
+		external_thread_pool.join_all();
+		
+		pthread_mutex_destroy(&mtx);
+	}
+	
+	bool submit(start_routine_t   start_routine,
+	            finish_routine_t  finish_callback,
+		    void             *state,
+		    thread_type_t     thread_type,
+		    int               priority,
+		    uint64_t          start_deadline=0);
+	bool submit_io(start_routine_t   start_routine,
+	               finish_routine_t  finish_callback,
+		       FileState        *fstate,
+		       thread_type_t     thread_type,
+		       int               priority,
+		       bool              is_write_job,
+		       uint64_t          start_deadline=0);
+	
+	bool are_io_write_jobs_running() const;
+	void cancel_file_read_jobs(const BigFile *bf);
+	//void nice page for html and administation()
+	bool is_reading_file(const BigFile *bf);
+	
+	void allow_new_jobs() {
+		new_jobs_allowed = true;
+	}
+	void disallow_new_jobs() {
+		new_jobs_allowed = false;
+	}
+	bool are_new_jobs_allowed() const {
+		return new_jobs_allowed;
+	}
+	
+	unsigned num_queued_jobs() const;
+	
+	void cleanup_finished_jobs();
+};
+
+
+
+bool JobScheduler_impl::submit(thread_type_t thread_type, JobEntry &e)
+{
+	if(!new_jobs_allowed) //note: unprotected read
+		return false;
+	
+	//Determine which queue to put the job into
+	//i/o jobs should have the is_io_job=true, but if they don't we will
+	//just treat them as CPU-bound. All this looks over-engineered but we
+	//need some flexibility to make experiments.
+	JobQueue *job_queue;
+	if(e.is_io_job)
+		job_queue = &io_job_queue;
+	else {
+		switch(thread_type) {
+			case thread_type_query_read:         job_queue = &cpu_job_queue;      break;
+			case thread_type_query_constrain:    job_queue = &cpu_job_queue;      break;
+			case thread_type_query_merge:        job_queue = &cpu_job_queue;      break;
+			case thread_type_query_intersect:    job_queue = &cpu_job_queue;      break;
+			case thread_type_query_summary:      job_queue = &cpu_job_queue;      break;
+			case thread_type_spider_read:        job_queue = &cpu_job_queue;      break;
+			case thread_type_spider_write:       job_queue = &cpu_job_queue;      break;
+			case thread_type_spider_filter:      job_queue = &external_job_queue; break;
+			case thread_type_spider_query:       job_queue = &cpu_job_queue;      break;
+			case thread_type_replicate_write:    job_queue = &cpu_job_queue;      break;
+			case thread_type_replicate_read:     job_queue = &cpu_job_queue;      break;
+			case thread_type_file_merge:         job_queue = &cpu_job_queue;      break;
+			case thread_type_file_meta_data:     job_queue = &cpu_job_queue;      break;
+			case thread_type_statistics:         job_queue = &cpu_job_queue;      break;
+			case thread_type_unspecified_io:     job_queue = &cpu_job_queue;      break;
+			case thread_type_unlink:             job_queue = &cpu_job_queue;      break;
+			case thread_type_twin_sync:          job_queue = &cpu_job_queue;      break;
+			case thread_type_hdtemp:             job_queue = &cpu_job_queue;      break;
+			case thread_type_generate_thumbnail: job_queue = &external_job_queue; break;
+			default:
+				assert(false);
+
+		}
+	}
+	
+	e.queue_enter_time = now_ms();
+	ScopedLock sl(mtx);
+	job_queue->add(e);
+	return true;
+}
+
+
+bool JobScheduler_impl::submit(start_routine_t   start_routine,
+                               finish_routine_t  finish_callback,
+                               void             *state,
+                               thread_type_t     thread_type,
+                               int               priority,
+                               uint64_t          start_deadline)
+{
+	JobEntry e;
+	e.start_routine = start_routine;
+	e.finish_callback = finish_callback;
+	e.state = state;
+	e.is_io_job = false;
+	e.start_deadline = start_deadline;
+	e.is_io_write_job = false;
+	e.initial_priority = priority;
+	return submit(thread_type,e);
+}
+
+bool JobScheduler_impl::submit_io(start_routine_t   start_routine,
+                                  finish_routine_t  finish_callback,
+                                  FileState        *fstate,
+                                  thread_type_t     thread_type,
+                                  int               priority,
+                                  bool              is_write_job,
+                                  uint64_t          start_deadline)
+{
+	JobEntry e;
+	e.start_routine = start_routine;
+	e.finish_callback = finish_callback;
+	e.state = fstate;
+	e.is_io_job = true;
+	e.start_deadline = start_deadline;
+	e.is_io_write_job = is_write_job;
+	e.initial_priority = priority;
+	return submit(thread_type,e);
+}
+
+
+
+
+bool JobScheduler_impl::are_io_write_jobs_running() const
+{
+	ScopedLock sl(mtx);
+	return num_io_write_jobs_running != 0;
+}
+
+
+
+void JobScheduler_impl::cancel_file_read_jobs(const BigFile *bf)
+{
+	ScopedLock sl(mtx);
+	for(JobQueue::iterator iter = io_job_queue.begin(); iter!=io_job_queue.end(); ) {
+		if(iter->is_io_job && !iter->is_io_write_job) {
+			const FileState *fstate = reinterpret_cast<const FileState*>(iter->state);
+			if(fstate->m_this==bf) {
+				exit_set.push_back(std::make_pair(*iter,job_exit_cancelled));
+				iter = io_job_queue.erase(iter);
+				continue;
+			}
+		}
+		++iter;
+	}
+}
+
+
+bool JobScheduler_impl::is_reading_file(const BigFile *bf)
+{
+	//The old thread stuff tested explicitly if the start_routine was
+	//readwriteWrapper_r() in BigFile.cpp but that is fragile. Besides,
+	//we have the 'is_io_write_job' field.
+	ScopedLock sl(mtx);
+	for(const auto &e : io_job_queue) {
+		if(e.is_io_job && !e.is_io_write_job) {
+			const FileState *fstate = reinterpret_cast<const FileState*>(e.state);
+			if(fstate->m_this==bf)
+				return true;
+		}
+	}
+	for(const auto &e : running_set) {
+		if(e.is_io_job && !e.is_io_write_job) {
+			const FileState *fstate = reinterpret_cast<const FileState*>(e.state);
+			if(fstate->m_this==bf)
+				return true;
+		}
+	}
+	return false;
+}
+
+
+
+unsigned JobScheduler_impl::num_queued_jobs() const
+{
+	ScopedLock sl(mtx);
+	return cpu_job_queue.size() + io_job_queue.size() + external_job_queue.size();
+}
+
+void JobScheduler_impl::cleanup_finished_jobs()
+{
+	ExitSet es;
+	ScopedLock sl(mtx);
+	es.swap(exit_set);
+	sl.unlock();
+	
+	for(auto e : es) {
+		if(e.first.finish_callback)
+			e.first.finish_callback(e.first.state,e.second);
+		e.first.exit_time = now_ms();
+		//todo. register statistics
+	}
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// bridge
+
+JobScheduler::JobScheduler()
+  : impl(0)
+{
+}
+
+
+JobScheduler::~JobScheduler()
+{
+	delete impl;
+}
+
+
+bool JobScheduler::initialize(unsigned num_cpu_threads, unsigned num_io_threads, unsigned num_external_threads, job_done_notify_t job_done_notify)
+{
+	assert(!impl);
+	impl = new JobScheduler_impl(num_cpu_threads,num_io_threads,num_external_threads,job_done_notify);
+	return true;
+}
+
+
+void JobScheduler::finalize()
+{
+	assert(impl);
+	delete impl;
+	impl = 0;
+}
+
+
+bool JobScheduler::submit(start_routine_t   start_routine,
+                          finish_routine_t  finish_callback,
+                          void             *state,
+                          thread_type_t     thread_type,
+                          int               priority,
+                          uint64_t          start_deadline)
+{
+	if(impl)
+		return impl->submit(start_routine,finish_callback,state,thread_type,priority,start_deadline);
+	else
+		return false;
+}
+
+bool JobScheduler::submit_io(start_routine_t   start_routine,
+                          finish_routine_t  finish_callback,
+                          FileState        *fstate,
+                          thread_type_t     thread_type,
+                          int               priority,
+                          bool              is_write_job,
+                          uint64_t          start_deadline)
+{
+	if(impl)
+		return impl->submit_io(start_routine,finish_callback,fstate,thread_type,priority,is_write_job,start_deadline);
+	else
+		return false;
+}
+
+
+bool JobScheduler::are_io_write_jobs_running() const
+{
+	if(impl)
+		return impl->are_io_write_jobs_running();
+	else
+		return false;
+}
+
+
+void JobScheduler::cancel_file_read_jobs(const BigFile *bf)
+{
+	if(impl)
+		impl->cancel_file_read_jobs(bf);
+}
+
+
+//void nice page for html and administation()
+
+
+bool JobScheduler::is_reading_file(const BigFile *bf)
+{
+	if(impl)
+		return impl->is_reading_file(bf);
+	else
+		return false;
+}
+
+
+void JobScheduler::allow_new_jobs()
+{
+	if(impl)
+		impl->allow_new_jobs();
+}
+
+void JobScheduler::disallow_new_jobs()
+{
+	if(impl)
+		impl->disallow_new_jobs();
+}
+
+bool JobScheduler::are_new_jobs_allowed() const
+{
+	if(impl)
+		return impl->are_new_jobs_allowed();
+	else
+		return false;
+}
+
+
+unsigned JobScheduler::num_queued_jobs() const
+{
+	if(impl)
+		return impl->num_queued_jobs();
+	else
+		return 0;
+}
+
+
+void JobScheduler::cleanup_finished_jobs()
+{
+	if(impl)
+		impl->cleanup_finished_jobs();
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// The global one-and-only scheduler
+
+JobScheduler g_jobScheduler;

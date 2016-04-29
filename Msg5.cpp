@@ -4,7 +4,7 @@
 #include "RdbBase.h"
 #include "Rdb.h"
 #include "Stats.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "Msg0.h"
 #include "PingServer.h"
 
@@ -601,8 +601,8 @@ static void gotListWrapper ( void *state ) {
 	THIS->m_callback ( THIS->m_state , THIS->m_list , THIS );
 }
 
-static void  threadDoneWrapper   ( void *state , ThreadEntry * /*t*/ ) ;
-static void *mergeListsWrapper_r ( void *state , ThreadEntry * /*t*/ ) ;
+static void threadDoneWrapper   ( void *state, job_exit_t exit_type );
+static void mergeListsWrapper_r ( void *state );
 
 
 
@@ -907,11 +907,11 @@ bool Msg5::gotList2 ( ) {
 		// . if size is big, make a thread
 		// . let's always make niceness 0 since it wasn't being very
 		//   aggressive before
-		if ( g_threads.call ( THREAD_TYPE_MERGE   , // threadType
-				      m_niceness          , // m_niceness
-				      this                , // state data for callback
-				      threadDoneWrapper   ,
-				      mergeListsWrapper_r ) ) 
+		if ( g_jobScheduler.submit(mergeListsWrapper_r,
+		                           threadDoneWrapper,
+					   this,
+					   thread_type_query_merge,
+					   m_niceness) )
 			return false;
 
 		//m_waitingForMerge = false;
@@ -939,7 +939,7 @@ bool Msg5::gotList2 ( ) {
 
 // thread will run this first
 // Use of ThreadEntry parameter is NOT thread safe
-void *mergeListsWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
+void mergeListsWrapper_r ( void *state ) {
 	// we're in a thread now!
 	Msg5 *THIS = (Msg5 *)state;
 	// debug msg
@@ -949,15 +949,12 @@ void *mergeListsWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
 	// do the merge
 	THIS->mergeLists_r();
 	// now cleanUp wrapper will call it
-	//pthread_exit ( NULL );
-	// bogus return
-	return NULL;
 }
 
 // . now we're done merging
 // . when the thread is done we get control back here, in the main process
 // Use of ThreadEntry parameter is NOT thread safe
-void threadDoneWrapper ( void *state , ThreadEntry * /*t*/ ) {
+static void threadDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	// we MAY be in a thread now
 	Msg5 *THIS = (Msg5 *)state;
 	// debug msg

@@ -28,7 +28,7 @@
 #include "CountryCode.h"
 #include "DailyMerge.h"
 #include "Process.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "XmlDoc.h"
 #include "HttpServer.h"
 #include "Pages.h"
@@ -632,7 +632,7 @@ bool Spiderdb::init2 ( int32_t treeMem ) {
 bool Spiderdb::verify ( char *coll ) {
 	//return true;
 	log ( LOG_DEBUG, "db: Verifying Spiderdb for coll %s...", coll );
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 
 	Msg5 msg5;
 	Msg5 msg5b;
@@ -666,7 +666,7 @@ bool Spiderdb::verify ( char *coll ) {
 			      -1LL          ,
 			      &msg5b        ,
 			      true          )) {
-		g_threads.enableThreads();
+		g_jobScheduler.allow_new_jobs();
 		return log("db: HEY! it did not block");
 	}
 
@@ -694,13 +694,13 @@ bool Spiderdb::verify ( char *coll ) {
 					   "data in the right directory? "
 					   "Exiting.");
 		log ( "db: Exiting due to Spiderdb inconsistency." );
-		g_threads.enableThreads();
+		g_jobScheduler.allow_new_jobs();
 		return g_conf.m_bypassValidation;
 	}
 	log (LOG_DEBUG,"db: Spiderdb passed verification successfully for %"INT32" "
 	      "recs.", count );
 	// DONE
-	g_threads.enableThreads();
+	g_jobScheduler.allow_new_jobs();
 	return true;
 }
 

@@ -2,6 +2,7 @@
 
 #include "RdbScan.h"
 #include "Rdb.h"
+//#include "Threads.h"
 
 void gotListWrapper ( void *state ) ;
 
@@ -199,7 +200,6 @@ void gotListWrapper ( void *state ) {
 	THIS->m_callback ( THIS->m_state );
 }
 
-#include "Threads.h"
 
 void RdbScan::gotList ( ) {
 	char *allocBuf  = m_fstate.m_allocBuf;

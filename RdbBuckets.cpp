@@ -4,7 +4,6 @@
 #include "gb-include.h"
 #include "sort.h"
 #include "SafeBuf.h"
-#include "Threads.h"
 #include <unistd.h>
 #include "Loop.h"
 #include "Rdb.h"

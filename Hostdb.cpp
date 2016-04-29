@@ -7,7 +7,8 @@
 #include "Hostdb.h"
 #include "HashTableT.h"
 #include "UdpServer.h"
-#include "Threads.h"
+#include "JobScheduler.h"
+#include "max_niceness.h"
 #include "Process.h"
 #include <sched.h>
 #include <sys/types.h>
@@ -1482,15 +1483,14 @@ bool Hostdb::saveHostsConf ( ) {
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
-static void syncDoneWrapper ( void *state , ThreadEntry * /*t*/ ) {
+static void syncDoneWrapper ( void *state, job_exit_t exit_type ) {
 	Hostdb *THIS = (Hostdb*)state;
 	THIS->syncDone();
 }
 
-static void *syncStartWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
+static void syncStartWrapper_r ( void *state ) {
 	Hostdb *THIS = (Hostdb*)state;
 	THIS->syncStart_r(true);
-	return NULL;
 }
 
 // sync a host with its twin
@@ -1552,11 +1552,12 @@ bool Hostdb::syncHost ( int32_t syncHostId, bool useSecondaryIps ) {
         m_syncSecondaryIps = useSecondaryIps;
         h->m_doingSync = 1;
 	// start the sync in a thread, complete when it's done
-	if ( g_threads.call ( THREAD_TYPE_GENERIC     ,
-			      MAX_NICENESS       ,
-			      this               ,
-			      syncDoneWrapper    ,
-			      syncStartWrapper_r ) ) return true;
+	if ( g_jobScheduler.submit(syncStartWrapper_r,
+	                           syncDoneWrapper,
+				   this,
+				   thread_type_twin_sync,
+				   MAX_NICENESS) )
+		return true;
 	// error
         h->m_doingSync = 0;
 	m_syncHost = NULL;

@@ -1333,7 +1333,6 @@ collnum_t Collectiondb::reserveCollNum ( ) {
 //#include "Collectiondb.h"
 #include "HttpServer.h"     // printColors2()
 #include "Msg5.h"
-#include "Threads.h"
 #include "Spider.h"
 #include "Process.h"
 

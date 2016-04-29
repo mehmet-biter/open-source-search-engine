@@ -1,5 +1,5 @@
 #include "Linkdb.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "Titledb.h"
 #include "linkspam.h"
 #include "sort.h"
@@ -170,7 +170,7 @@ bool Linkdb::init2 ( int32_t treeMem ) {
 
 bool Linkdb::verify ( char *coll ) {
 	log ( LOG_DEBUG, "db: Verifying Linkdb for coll %s...", coll );
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 
 	Msg5 msg5;
 	Msg5 msg5b;
@@ -204,7 +204,7 @@ bool Linkdb::verify ( char *coll ) {
 			      -1LL          ,
 			      &msg5b        ,
 			      true          )) {
-		g_threads.enableThreads();
+		g_jobScheduler.allow_new_jobs();
 		return log("db: HEY! it did not block");
 	}
 
@@ -234,13 +234,13 @@ bool Linkdb::verify ( char *coll ) {
 				    "data in the right directory? "
 				    "Exiting.");
 		log ( "db: Exiting due to inconsistency.");
-		g_threads.enableThreads();
+		g_jobScheduler.allow_new_jobs();
 		return g_conf.m_bypassValidation;
 	}
 	log ( LOG_DEBUG, "db: Linkdb passed verification successfully for "
 	      "%"INT32" recs.", count );
 	// DONE
-	g_threads.enableThreads();
+	g_jobScheduler.allow_new_jobs();
 	return true;
 }
 

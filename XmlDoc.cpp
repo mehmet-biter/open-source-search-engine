@@ -37,8 +37,8 @@
 #include "PageRoot.h"
 #include "BitOperations.h"
 #include "Robots.h"
-#include "Threads.h"
 #include <pthread.h>
+#include "JobScheduler.h"
 
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
@@ -10748,8 +10748,8 @@ uint16_t *XmlDoc::getCharset ( ) {
 
 
 // declare these two routines for using threads
-static void  filterDoneWrapper    ( void *state , ThreadEntry * /*te*/ ) ;
-static void *filterStartWrapper_r ( void *state , ThreadEntry * /*te*/ ) ;
+static void filterDoneWrapper    ( void *state, job_exit_t exit_type );
+static void filterStartWrapper_r ( void *state );
 
 // filters m_content if its pdf, word doc, etc.
 char **XmlDoc::getFilteredContent ( ) {
@@ -10865,11 +10865,11 @@ char **XmlDoc::getFilteredContent ( ) {
 	if ( ! m_mimeValid ) { char *xx=NULL;*xx=0; }
 
 	// do it
-	if ( g_threads.call ( THREAD_TYPE_FILTER,
-			      MAX_NICENESS         ,
-			      this                 ,
-			      filterDoneWrapper    ,
-			      filterStartWrapper_r ) )
+	if ( g_jobScheduler.submit(filterStartWrapper_r,
+	                           filterDoneWrapper,
+				   this,
+				   thread_type_spider_filter,
+				   MAX_NICENESS) )
 		// return -1 if blocked
 		return (char **)-1;
 	// clear error!
@@ -10904,7 +10904,7 @@ skip:
 
 // come back here
 // Use of ThreadEntry parameter is NOT thread safe
-void filterDoneWrapper ( void *state , ThreadEntry * /*te*/ ) {
+static void filterDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	// jump back into the brawl
 	XmlDoc *THIS = (XmlDoc *)state;
 
@@ -10925,10 +10925,9 @@ void filterDoneWrapper ( void *state , ThreadEntry * /*te*/ ) {
 
 // thread starts here
 // Use of ThreadEntry parameter is NOT thread safe
-void *filterStartWrapper_r ( void *state , ThreadEntry * /*te*/ ) {
+static void filterStartWrapper_r ( void *state ) {
 	XmlDoc *THIS = (XmlDoc *)state;
 	THIS->filterStart_r ( true ); // am thread?
-	return NULL;
 }
 
 

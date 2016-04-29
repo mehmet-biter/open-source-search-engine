@@ -2,7 +2,6 @@
 
 #include "Msg3.h"
 #include "Rdb.h"
-#include "Threads.h"
 #include "Stats.h"     // for timing and graphing merge time
 //#include "Sync.h"      // incremental syncing
 //#include "Tfndb.h"     // makeMaxKey()

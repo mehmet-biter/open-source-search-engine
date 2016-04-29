@@ -13,6 +13,7 @@
 #include "Collectiondb.h"
 #include "Repair.h"
 #include "Rebalance.h"
+#include "JobScheduler.h"
 
 // how many rdbs are in "urgent merge" mode?
 int32_t g_numUrgentMerges = 0;
@@ -1209,7 +1210,7 @@ void RdbBase::doneWrapper4 ( ) {
 	bool wait = false;
 	for ( int32_t i = a ; i < b ; i++ ) {
 		BigFile *bf = m_files[i];
-		if ( g_threads.isHittingFile(bf) ) wait = true;
+		if ( g_jobScheduler.is_reading_file(bf) ) wait = true;
 	}
 	if ( wait ) {
 		log("db: waiting for read thread to exit on unlinked file");
@@ -2420,7 +2421,7 @@ bool RdbBase::verifyFileSharding ( ) {
 	if ( s_count >= 50 ) 
 		return true;
 
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 
 	Msg5 msg5;
 	//Msg5 msg5b;
@@ -2461,7 +2462,7 @@ bool RdbBase::verifyFileSharding ( ) {
 			      -1LL          ,
 			      NULL          , // &msg5b        ,
 			      true          )) {
-		g_threads.enableThreads();
+		g_jobScheduler.allow_new_jobs();
 		return log("db: HEY! it did not block");
 	}
 
@@ -2496,7 +2497,7 @@ bool RdbBase::verifyFileSharding ( ) {
 		      shardNum);
 	}
 
-	g_threads.enableThreads();
+	g_jobScheduler.allow_new_jobs();
 
 	//if ( got ) 
 	//	log("db: verified %"INT32" recs for %s in coll %s",
@@ -2516,7 +2517,6 @@ bool RdbBase::verifyFileSharding ( ) {
 	//		    "right data in the right directory? ");
 
 	//log ( "db: Exiting due to Posdb inconsistency." );
-	g_threads.enableThreads();
 	return true;//g_conf.m_bypassValidation;
 
 	//log(LOG_DEBUG, "db: Posdb passed verification successfully for %"INT32" "

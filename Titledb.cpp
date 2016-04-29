@@ -1,7 +1,7 @@
 #include "gb-include.h"
 
 #include "Titledb.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "Rebalance.h"
 
 Titledb g_titledb;
@@ -139,7 +139,7 @@ bool Titledb::addColl ( char *coll, bool doVerify ) {
 */
 bool Titledb::verify ( char *coll ) {
 	log ( LOG_DEBUG, "db: Verifying Titledb for coll %s...", coll );
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 
 	Msg5 msg5;
 	Msg5 msg5b;
@@ -173,7 +173,7 @@ bool Titledb::verify ( char *coll ) {
 			      -1LL          , // sync point
 			      &msg5b        ,
 			      false         )) {
-		g_threads.enableThreads();
+		g_jobScheduler.allow_new_jobs();
 		return log("db: HEY! it did not block");
 	}
 
@@ -212,7 +212,7 @@ bool Titledb::verify ( char *coll ) {
 			log("db: docid=%"INT64" shard=%"INT32"",
 			    getDocId(&k),shardNum);
 		}
-		g_threads.enableThreads();
+		g_jobScheduler.allow_new_jobs();
 		//if ( g_conf.m_bypassValidation ) return true;
 		//if ( g_conf.m_allowScale ) return true;
 		// don't exit any more, allow it, but do not delete
@@ -226,7 +226,7 @@ bool Titledb::verify ( char *coll ) {
 	log ( LOG_DEBUG, "db: Titledb passed verification successfully for %"INT32""
 			" recs.", count );
 	// DONE
-	g_threads.enableThreads();
+	g_jobScheduler.allow_new_jobs();
 	return true;
 }
 

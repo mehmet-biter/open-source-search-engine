@@ -1,7 +1,6 @@
 #include "CountryCode.h"
 #include "HashTable.h"
 #include "LanguageIdentifier.h"
-#include "Threads.h"
 #include "HashTableX.h"
 #include "Lang.h"
 #include "max_niceness.h"

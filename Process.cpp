@@ -13,7 +13,7 @@
 #include "SpiderLoop.h"
 #include "Doledb.h"
 #include "Statsdb.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "PingServer.h"
 #include "Dns.h"
 #include "Repair.h"
@@ -34,6 +34,7 @@
 #include "Timezone.h"
 #include "CountryCode.h"
 #include <sys/statvfs.h>
+#include <pthread.h>
 
 bool g_inAutoSave;
 
@@ -54,6 +55,9 @@ Process g_process;
 
 //static int32_t s_flag = 1;
 static int32_t s_nextTime = 0;
+
+static pthread_t s_mainThreadTid;
+
 
 static const char * const g_files[] = {
 	//"gb.conf",
@@ -225,9 +229,9 @@ bool Process::checkFiles ( const char *dir ) {
 	return true;
 }
 
-static void  hdtempWrapper        ( int fd , void *state ) ;
-static void  hdtempDoneWrapper    ( void *state , ThreadEntry * /*t*/ ) ;
-static void *hdtempStartWrapper_r ( void *state , ThreadEntry * /*t*/ ) ;
+static void hdtempWrapper        ( int fd , void *state ) ;
+static void hdtempDoneWrapper    ( void *state, job_exit_t exit_type );
+static void hdtempStartWrapper_r ( void *state );
 static void heartbeatWrapper    ( int fd , void *state ) ;
 static void processSleepWrapper ( int fd , void *state ) ;
 
@@ -240,6 +244,7 @@ Process::Process ( ) {
 
 bool Process::init ( ) {
 	g_inAutoSave = false;
+	s_mainThreadTid = pthread_self();
 	// -1 means unknown
 	m_diskUsage = -1.0;
 	m_diskAvail = -1LL;
@@ -360,11 +365,12 @@ void hdtempWrapper ( int fd , void *state ) {
 	g_process.m_threadOut = true;
 	// . call thread to call popen
 	// . callThread returns true on success, in which case we block
-	if ( g_threads.call ( THREAD_TYPE_FILTER,
-			      MAX_NICENESS         ,
-			      NULL                 , // this
-			      hdtempDoneWrapper    ,
-			      hdtempStartWrapper_r ) ) return;
+	if ( g_jobScheduler.submit(hdtempStartWrapper_r,
+	                           hdtempDoneWrapper,
+				   NULL,
+				   thread_type_hdtemp,
+				   MAX_NICENESS) )
+		return;
 	// back
 	g_process.m_threadOut = false;
 	// . call it directly
@@ -384,7 +390,7 @@ void hdtempWrapper ( int fd , void *state ) {
 
 // come back here
 // Use of ThreadEntry parameter is NOT thread safe
-void hdtempDoneWrapper ( void *state , ThreadEntry * /*t*/ ) {
+void hdtempDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	// we are back
 	g_process.m_threadOut = false;
 	// current local time
@@ -448,13 +454,12 @@ static float getDiskUsage ( int64_t *diskAvail ) {
 // . sets m_errno on error
 // . taken from Msg16.cpp
 // Use of ThreadEntry parameter is NOT thread safe
-void *hdtempStartWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
+void hdtempStartWrapper_r ( void *state ) {
 
 	// run the df -ka cmd
 	g_process.m_diskUsage = getDiskUsage( &g_process.m_diskAvail );
 
 	// ignore temps now. ssds don't have it
-	return NULL;
 }
 
 void Process::callHeartbeat () {
@@ -703,7 +708,8 @@ bool Process::save2 ( ) {
 	//g_loop.disableTimer();
 
 	// only the main process can call this
-	if ( g_threads.amThread() ) return true;
+	if ( pthread_self()!=s_mainThreadTid )
+		return true;
 
 	// . wait for any dump to complete
 	// . when merging titldb, it sets Rdb::m_dump.m_isDumping to true
@@ -752,7 +758,7 @@ bool Process::save2 ( ) {
 	// returns false, so call it with checking the return value.
 	if ( ! g_process.m_powerIsOn ) saveBlockingFiles2() ;
 	// for Test.cpp parser test we want to save the waitingtree.dat
-	else if ( g_threads.areThreadsDisabled() ) saveBlockingFiles2() ;
+	else if ( g_jobScheduler.are_new_jobs_allowed() ) saveBlockingFiles2() ;
 
 	// until all caches have saved, disable them
 	g_cacheWritesEnabled = false;
@@ -786,7 +792,8 @@ bool Process::shutdown2 ( ) {
 	g_loop.disableQuickpollTimer();
 
 	// only the main process can call this
-	if ( g_threads.amThread() ) return true;
+	if ( pthread_self()!=s_mainThreadTid )
+		return true;
 
 	if ( m_urgent ) {
 		log(LOG_INFO,"gb: Shutting down urgently. Timed try #%"INT32".", m_try++);
@@ -802,11 +809,11 @@ bool Process::shutdown2 ( ) {
 	// turn off statsdb so it does not try to add records for these writes
 	g_statsdb.m_disabled = true;
 
-	if ( g_threads.areThreadsEnabled () ) {
+	if ( g_jobScheduler.are_new_jobs_allowed () ) {
 		log("gb: disabling threads");
 		// now disable threads so we don't exit while threads are 
 		// outstanding
-		g_threads.disableThreads();
+		g_jobScheduler.disallow_new_jobs();
 	}
 
 	// . suspend all merges
@@ -817,15 +824,15 @@ bool Process::shutdown2 ( ) {
 	// they were already queued
 	if ( m_urgent ) {
 		// turn off all threads just in case
-		g_threads.disableThreads();
+		g_jobScheduler.disallow_new_jobs();
 	}
 
 	static bool s_printed = false;
 
 	// wait for all threads to return
-	int32_t n = g_threads.getNumWriteThreadsOut();
-	if ( n != 0 && ! m_urgent ) {
-		log(LOG_INFO,"gb: Has %"INT32" write threads out. Waiting for them to finish.", n);
+	bool b = g_jobScheduler.are_io_write_jobs_running();
+	if ( b && ! m_urgent ) {
+		log(LOG_INFO,"gb: Has write threads out. Waiting for them to finish.");
 		return false;
 	} else if ( ! s_printed && ! m_urgent ) {
 		s_printed = true;
@@ -939,10 +946,10 @@ bool Process::shutdown2 ( ) {
 	// . will return true if no rdb cache needs a save
 	//if ( ! saveRdbCaches ( useThreads ) ) return false;
 
-	// always diable threads at this point so g_threads.call() will
-	// always return false and we do not queue any new threads for
+	// always diable threads at this point so g_jobScheduler.submit() will
+	// always return false and we do not queue any new jobs for
 	// spawning
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 
 	// urgent means we need to dump core, SEGV or something
 	if ( m_urgent ) {
@@ -973,7 +980,7 @@ bool Process::shutdown2 ( ) {
 
 
 	// cleanup threads, this also launches them too
-	g_threads.timedCleanUp(0x7fffffff,MAX_NICENESS);
+	g_jobScheduler.cleanup_finished_jobs();
 
 
 	//ok, resetAll will close httpServer's socket so now is the time to 
@@ -1316,7 +1323,7 @@ void Process::resetAll ( ) {
 	g_loop            .reset();
 	g_speller         .reset();
 	g_spiderCache     .reset();
-	g_threads         .reset();
+	g_jobScheduler    .finalize();
 	g_ucUpperMap      .reset();
 	g_ucLowerMap      .reset();
 	g_ucProps         .reset();

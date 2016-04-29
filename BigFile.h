@@ -357,6 +357,4 @@ public:
 
 extern int32_t g_unlinkRenameThreads;
 
-extern void *readwriteWrapper_r ( void *state , class ThreadEntry *t ) ;
-
 #endif // GB_BIGFILE_H

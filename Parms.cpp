@@ -11,7 +11,6 @@
 #include "HttpMime.h"      // atotime()
 #include "SearchInput.h"
 #include "Unicode.h"
-#include "Threads.h"
 #include "Spider.h" // MAX_SPIDER_PRIORITIES
 #include "SpiderColl.h"
 #include "SpiderLoop.h"
@@ -7014,17 +7013,6 @@ void Parms::init ( ) {
 	m->m_def   = "999999.0";
 	m->m_units = "pages/second";
 	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "use threads";
-	m->m_desc  = "If enabled, Gigablast will use threads.";
-	m->m_cgi   = "ut";
-	m->m_off   = offsetof(Conf,m_useThreads);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;

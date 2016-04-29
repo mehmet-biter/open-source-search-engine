@@ -20,7 +20,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	linkspam.o ip.o sort.o \
 	fctypes.o XmlNode.o XmlDoc.o XmlDoc_Indexing.o Xml.o \
 	Words.o Url.o UdpServer.o \
-	Threads.o Titledb.o HashTable.o \
+	Titledb.o HashTable.o \
 	TcpServer.o Summary.o \
 	Spider.o SpiderColl.o SpiderLoop.o Doledb.o Msg12.o \
 	RdbTree.o RdbScan.o RdbMerge.o RdbMap.o RdbMem.o RdbBuckets.o \
@@ -69,11 +69,13 @@ OBJS =  UdpSlot.o Rebalance.o \
 	SummaryCache.o \
 	ScalingFunctions.o \
 	RobotRule.o Robots.o \
+	JobScheduler.o \
 
 
 # common flags
 DEFS = -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I.
 CPPFLAGS = -g -Wall -fno-stack-protector -DPTHREADS -Wstrict-aliasing=0
+CPPFLAGS+= -std=c++11
 
 # optimization
 ifeq ($(config),debug)
@@ -101,6 +103,7 @@ endif
 ifeq ($(CXX), g++)
 CPPFLAGS += -Wno-write-strings -Wno-uninitialized -Wno-unused-but-set-variable
 CPPFLAGS += -Wno-invalid-offsetof
+CPPFLAGS += -Wno-literal-suffix
 else ifeq ($(CXX), clang++)
 CPPFLAGS += -Weverything
 # disable offsetof warnings

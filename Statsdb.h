@@ -14,7 +14,6 @@
 #include "Msg4.h"
 #include "SafeBuf.h"
 #include "Hostdb.h"
-#include "Threads.h"
 #include "Process.h"
 #include "HashTableX.h"
 #include "SafeBuf.h"

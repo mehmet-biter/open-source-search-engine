@@ -2,7 +2,7 @@
 
 #include "Msg39.h"
 #include "Stats.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "TopTree.h"
 #include "UdpServer.h"
 #include "SearchInput.h"
@@ -21,7 +21,7 @@ static void  sendReply         ( UdpSlot *slot         ,
 				 int32_t     replyMaxSize ,
 				 bool     hadError     );
 // thread wrappers
-void *Msg39_addListsWrapper   ( void *state , ThreadEntry * /*t*/ );
+static void Msg39_addListsWrapper   ( void *state );
 
 //bool Msg39::registerHandler ( ) {
 //	// . register ourselves with the udp server
@@ -259,7 +259,7 @@ void Msg39::getDocIds2 ( Msg39Request *req ) {
 
 
 // Use of ThreadEntry parameter is NOT thread safe
-void Msg39_controlLoopWrapper2 ( void *state , ThreadEntry * /*t*/ ) {
+void Msg39_controlLoopWrapper2 ( void *state, job_exit_t exit_type ) {
 	Msg39 *THIS = (Msg39 *)state;
 	THIS->controlLoop();
 }
@@ -787,11 +787,11 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 	// . create the thread
 	// . only one of these type of threads should be launched at a time
 	if ( ! m_debug &&
-	     g_threads.call ( THREAD_TYPE_INTERSECT, // threadType
-			      m_r->m_niceness   ,
-			      this              , // top 4 bytes must be cback
-			      Msg39_controlLoopWrapper2,
-			      Msg39_addListsWrapper   ) ) {
+	     g_jobScheduler.submit(Msg39_addListsWrapper,
+	                           Msg39_controlLoopWrapper2,
+				   this,
+				   thread_type_query_intersect,
+				   m_r->m_niceness) ) {
 		return false;
 	}
 	// if it failed
@@ -813,7 +813,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 }
 
 // Use of ThreadEntry parameter is NOT thread safe
-void *Msg39_addListsWrapper ( void *state , ThreadEntry * /*t*/ ) {
+static void Msg39_addListsWrapper ( void *state ) {
 	// we're in a thread now!
 	Msg39 *THIS = (Msg39 *)state;
 	// . do the add
@@ -827,8 +827,6 @@ void *Msg39_addListsWrapper ( void *state , ThreadEntry * /*t*/ ) {
 	// . top 4 bytes of "state" ptr should be our done callback
 	// . threadDoneWrapper will be called by g_loop when he gets the 
 	//   thread's termination signal, sig niceness is m_niceness
-	// . bogus return
-	return NULL;
 }
 
 // . set the clusterdb recs in the top tree

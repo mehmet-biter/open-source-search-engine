@@ -6,7 +6,7 @@
 
 #include "BigFile.h"
 #include "Dir.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "Stats.h"
 #include "Statsdb.h"
 
@@ -20,8 +20,10 @@ int32_t g_unlinkRenameThreads = 0;
 
 static int64_t g_lastDiskReadCompleted = 0LL;
 
-static void  doneWrapper        ( void *state , ThreadEntry * /*t*/ ) ;
-static bool  readwrite_r        ( FileState *fstate , ThreadEntry * /*t*/ ) ;
+static void readwriteWrapper_r  ( void *state );
+
+static void  doneWrapper        ( void *state, job_exit_t exit_type );
+static bool  readwrite_r        ( FileState *fstate );
 
 BigFile::~BigFile () {
 	close();
@@ -767,7 +769,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	// . if we're blocking then do it now
 	// . this should return false and set g_errno on error, true otherwise
 	if ( ! isNonBlocking ) 	goto skipThread;
-	if ( g_threads.areThreadsDisabled() ) goto skipThread;
+	if ( ! g_jobScheduler.are_new_jobs_allowed() ) goto skipThread;
 	if ( ! g_conf.m_useThreads ) goto skipThread;
 
 
@@ -779,8 +781,13 @@ bool BigFile::readwrite ( void         *buf      ,
 	// . this returns false and sets g_errno on error, true on success
 	// . we should return false cuz we blocked
 	// . thread will add signal to g_loop on completion to call
-	if ( g_threads.call ( THREAD_TYPE_DISK, niceness , fstate ,
-			      doneWrapper , readwriteWrapper_r) ) return false;
+	if ( g_jobScheduler.submit_io(readwriteWrapper_r,
+	                              doneWrapper,
+	                              fstate,
+				      thread_type_unspecified_io,
+				      niceness,
+				      doWrite) )
+		return false;
 
 	saved = g_errno;
 
@@ -812,7 +819,7 @@ bool BigFile::readwrite ( void         *buf      ,
 	g_errno = 0;
 	// if threads are manually disabled don't print these msgs because
 	// we redbox the fact above the controls in Pages.cpp
-	if ( saved ) { // g_conf.m_useThreads && ! g_threads.m_disabled ) {
+	if ( saved ) { // g_jobScheduler.are_new_jobs_allowed() ) {
 		static int32_t s_lastTime = 0;
 		int32_t now = getTime();
 		if ( now - s_lastTime >= 1 ) {
@@ -940,7 +947,7 @@ bool BigFile::readwrite ( void         *buf      ,
 
 	// . this returns false and sets errno on error
 	// . set g_errno to the errno
-	if ( ! readwrite_r ( fstate , NULL ) ) g_errno = errno;
+	if ( ! readwrite_r ( fstate ) ) g_errno = errno;
 	// exit write mode
 	if ( doWrite ) {
 		//File *f1 = m_files [ fstate->m_filenum1 ];
@@ -1027,7 +1034,7 @@ bool BigFile::readwrite ( void         *buf      ,
 
 // . this should be called from the main process after getting our call OUR callback here
 // Use of ThreadEntry parameter is NOT thread safe
-void doneWrapper ( void *state , ThreadEntry *t ) {
+void doneWrapper ( void *state, job_exit_t exit_type ) {
 
 	FileState *fstate = (FileState *)state;
 
@@ -1035,9 +1042,6 @@ void doneWrapper ( void *state , ThreadEntry *t ) {
 	// "tmp" FileState class on the stack, so now we have the real deal
 	// we can update all this junk.
 	fstate->m_bytesDone = fstate->m_bytesToGo;
-
-	// @todo. BR: Use of ThreadEntry parameter is NOT thread safe :-/	
-	fstate->m_doneTime  = t->m_exitTime; // set in Threads.cpp
 
 	// exit write mode
 	if ( fstate->m_doWrite ) {
@@ -1166,8 +1170,7 @@ void doneWrapper ( void *state , ThreadEntry *t ) {
 }
 
 
-// Use of ThreadEntry parameter is NOT thread safe
-void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
+static void readwriteWrapper_r ( void *state ) {
 	// debug msg
 	//log("disk: this thread id = %"INT32"",(int32_t)pthread_self());
 
@@ -1177,6 +1180,26 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	// extract our class
 	FileState *fstate = (FileState *)state;
 
+	if( !fstate->m_doWrite && !fstate->m_buf && fstate->m_bytesToGo>0 ) {
+		int32_t need = fstate->m_allocOff + fstate->m_bytesToGo;
+		char *p = (char *) mmalloc ( need , "ThreadReadBuf" );
+		if ( p ) {
+			fstate->m_buf       = p + fstate->m_allocOff;
+			fstate->m_allocBuf  = p;
+			fstate->m_allocSize = need;
+		} else
+			log("thread: read buf alloc failed for %"INT32" bytes.",need);
+	}
+	fstate->m_fd1 = fstate->m_this->getfd (fstate->m_filenum1,!fstate->m_doWrite);
+	fstate->m_fd1 = fstate->m_this->getfd (fstate->m_filenum2,!fstate->m_doWrite);
+	// is this bad?
+	if ( fstate->m_fd1 < 0 )
+		log("disk: fd1 is %i for %s", fstate->m_fd1,fstate->m_this->getFilename());
+	if ( fstate->m_fd2 < 0 )
+		log("disk: fd2 is %i for %s", fstate->m_fd2,fstate->m_this->getFilename());
+	fstate->m_closeCount1 = getCloseCount_r ( fstate->m_fd1 );
+	fstate->m_closeCount2 = getCloseCount_r ( fstate->m_fd2 );
+	
 	// get THIS
 	//BigFile *THIS = fstate->m_this;
 	// clear thread's errno
@@ -1196,7 +1219,7 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 	// . if this gets a cancel signal in the read() it will stop blocking
 	//   and errno will be EINTR
  again:
-	bool status = readwrite_r ( fstate , t ) ;
+	bool status = readwrite_r ( fstate );
 	// set errno
 	if ( ! status ) fstate->m_errno = errno;
 	// test again here
@@ -1305,8 +1328,7 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 		log(LOG_WARN, "Disk read of %"INT64" bytes took %"INT64" ms", fstate->m_bytesDone, gettimeofdayInMilliseconds() - time_start);
 	}
 	
-	// bogus return
-	return NULL;
+	fstate->m_doneTime = gettimeofdayInMilliseconds();
 }
 
 
@@ -1315,7 +1337,7 @@ void *readwriteWrapper_r ( void *state , ThreadEntry *t ) {
 // . if we receive a cancel sig while in pread/pwrite it will return -1
 //   and set errno to EINTR
 // Use of ThreadEntry parameter is NOT thread safe
-bool readwrite_r ( FileState *fstate , ThreadEntry *t ) {
+bool readwrite_r ( FileState *fstate ) {
 	// if no buffer to read into the alloc in Threads.cpp failed
 	if ( ! fstate->m_buf ) {
 		errno = EBUFTOOSMALL;
@@ -1601,10 +1623,10 @@ bool BigFile::chopHead(int32_t part, void (*callback)(void *state), void *state)
 
 
 
-static void *renameWrapper_r   ( void *state , ThreadEntry *t ) ;
-static void *unlinkWrapper_r   ( void *state , ThreadEntry *t ) ;
-static void  doneRenameWrapper ( void *state , ThreadEntry *t ) ;
-static void  doneUnlinkWrapper ( void *state , ThreadEntry *t ) ;
+static void renameWrapper_r   ( void *state );
+static void unlinkWrapper_r   ( void *state );
+static void doneRenameWrapper ( void *state, job_exit_t exit_type );
+static void doneUnlinkWrapper ( void *state, job_exit_t exit_type );
 
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
@@ -1710,8 +1732,8 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	// . this should be -1 to unlink all at once
 	m_part = part;
 	// the state varies
-	void *(*startRoutine)(void *state,ThreadEntry *t);
-	void  (*doneRoutine )(void *state,ThreadEntry *t);
+	void (*startRoutine)(void *state);
+	void (*doneRoutine )(void *state, job_exit_t exit_type);
 
 	int32_t i = 0;
 	if ( m_part >= 0 ) 
@@ -1771,8 +1793,11 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		// . returns true on successful spawning
 		// . we can't make a disk thread cuz Threads.cpp checks its
 		//   FileState member for readSize for thread throttling
-		if ( g_threads.call (THREAD_TYPE_UNLINK,1/*niceness*/,
-				     f , doneRoutine , startRoutine ) )
+		if ( g_jobScheduler.submit(startRoutine,
+		                           doneRoutine,
+					   f,
+					   thread_type_unlink,
+					   1/*niceness*/) )
 		{
 			if( g_conf.m_logTraceBigFile ) {
 				log(LOG_TRACE,"%s:%s:%d: Thread function called OK", __FILE__, __func__, __LINE__);
@@ -1798,7 +1823,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		errno = 0;
 		
 		// these are normally called from a thread
-		startRoutine ( f , NULL );
+		startRoutine ( f );
 		
 		// copy errno over to g_errno
 		if ( errno ) 
@@ -1807,13 +1832,13 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		}
 			
 		// wrap it up
-		doneRoutine  ( f , NULL );
+		doneRoutine  ( f , job_exit_normal );
 	}
 
 	if ( m_isUnlink && part == -1 ) {
 		// remove all queued threads that point to us that have not
 		// yet been launched
-		g_threads.removeThreadsForBigfile(this);
+		g_jobScheduler.cancel_file_read_jobs(this);
 	}
 	// close em up
 	//close();
@@ -1838,8 +1863,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	return true;
 }
 
-// Use of ThreadEntry parameter is NOT thread safe
-void *renameWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
+static void renameWrapper_r ( void *state ) {
 	
 	if( g_conf.m_logTraceBigFile ) {
 		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
@@ -1896,7 +1920,7 @@ void *renameWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
 		if( g_conf.m_logTraceBigFile ) {
 			log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 		}
-		return NULL;
+		return;
 	}
 	
 	// we must close the file descriptor in the thread otherwise the
@@ -1913,12 +1937,11 @@ void *renameWrapper_r ( void *state , ThreadEntry * /*t*/ ) {
 	if( g_conf.m_logTraceBigFile ) {
 		log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 	}
-	return NULL;
+	return;
 }
 
 
-// Use of ThreadEntry parameter is NOT thread safe
-void *unlinkWrapper_r ( void *state , ThreadEntry * /*t*/ ) 
+static void unlinkWrapper_r ( void *state )
 {
 	if( g_conf.m_logTraceBigFile ) {
 		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
@@ -1946,12 +1969,12 @@ void *unlinkWrapper_r ( void *state , ThreadEntry * /*t*/ )
 	if( g_conf.m_logTraceBigFile ) {
 		log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
 	}
-	return NULL;
+	return;
 }
 
 
 // Use of ThreadEntry parameter is NOT thread safe 
-void doneRenameWrapper ( void *state , ThreadEntry * /*t*/ ) 
+static void doneRenameWrapper ( void *state, job_exit_t /*exit_type*/ )
 {
 	if( g_conf.m_logTraceBigFile ) {
 		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
@@ -2039,7 +2062,7 @@ void doneRenameWrapper ( void *state , ThreadEntry * /*t*/ )
 
 
 // Use of ThreadEntry parameter is NOT thread safe 
-void doneUnlinkWrapper ( void *state , ThreadEntry * /*t*/ ) {
+static void doneUnlinkWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 
 	if( g_conf.m_logTraceBigFile ) {
 		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
@@ -2173,7 +2196,7 @@ bool BigFile::close ( ) {
 
 	// remove all queued threads that point to us that have not
 	// yet been launched
-	g_threads.removeThreadsForBigfile(this);
+	g_jobScheduler.cancel_file_read_jobs(this);
 	return true;
 }
 

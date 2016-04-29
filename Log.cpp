@@ -8,7 +8,6 @@
 #include "Loop.h"
 #include "Conf.h"
 #include "Process.h"
-#include "Threads.h" // getpidtid()
 
 // a global class extern'd in Log.h
 Log g_log;

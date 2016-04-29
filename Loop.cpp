@@ -1,13 +1,12 @@
 #include "gb-include.h"
 
 #include "Loop.h"
-#include "Threads.h"    // g_threads.launchThreads()
+#include "JobScheduler.h"
 #include "UdpServer.h"  // g_udpServer2.makeCallbacks()
 #include "HttpServer.h" // g_httpServer.m_tcp.m_numQueued
 #include "Profiler.h"
 #include "Process.h"
 #include "PageParser.h"
-#include "Threads.h"
 
 #include "Stats.h"
 
@@ -493,8 +492,6 @@ void sigHandlerQueue_r ( int x , siginfo_t *info , void *v ) {
 	if ( info->si_code == SI_QUEUE ) {
 		g_numSigQueues++;
 		//log("admin: got sigqueue");
-		// the thread is done
-		g_threads.notifyThreadCleanupNeeded();
 		return;
 	}
 
@@ -900,12 +897,10 @@ void Loop::doPoll ( ) {
 			// if shutting down was it a sigterm ?
 			if ( m_shutdown ) goto again;
 			// handle returned threads for niceness 0
-			//if ( g_threads.m_needsCleanup )
-			g_threads.timedCleanUp(-3,0); // 3 ms
+			g_jobScheduler.cleanup_finished_jobs();
 			if ( m_inQuickPoll ) goto again;
 			// high niceness threads
-			//if ( g_threads.m_needsCleanup )
-			g_threads.timedCleanUp(-4,MAX_NICENESS); //3 ms
+			g_jobScheduler.cleanup_finished_jobs();
 
 			goto again;
 		}
@@ -942,7 +937,7 @@ void Loop::doPoll ( ) {
 	Slot *s;
 
 	// handle returned threads for niceness 0
-	g_threads.timedCleanUp(-3,0); // 3 ms
+	g_jobScheduler.cleanup_finished_jobs();
 
 
 	bool calledOne = false;
@@ -987,7 +982,7 @@ void Loop::doPoll ( ) {
 	}
 
 	// handle returned threads for niceness 0
-	g_threads.timedCleanUp(-3,0); // 3 ms
+	g_jobScheduler.cleanup_finished_jobs();
 
 	//
 	// the stuff below is not super urgent, do not do if in quickpoll
@@ -1026,7 +1021,7 @@ void Loop::doPoll ( ) {
 	}
 
 	// handle returned threads for all other nicenesses
-	g_threads.timedCleanUp(-4,MAX_NICENESS); // 4 ms
+	g_jobScheduler.cleanup_finished_jobs();
 
 	// call sleepers if they need it
 	// call this every (about) 1 second
@@ -1040,7 +1035,7 @@ void Loop::doPoll ( ) {
 		// note the last time we called them
 		s_lastTime = gettimeofdayInMilliseconds();
 		// handle returned threads for all other nicenesses
-		g_threads.timedCleanUp(-4,MAX_NICENESS); // 4 ms
+		g_jobScheduler.cleanup_finished_jobs();
 	}
 	// debug msg
 	if ( g_conf.m_logDebugLoop ) log(LOG_DEBUG,"loop: Exited doPoll.");
@@ -1143,7 +1138,6 @@ void Loop::disableQuickpollTimer() {
 
 
 void Loop::wakeupPollLoop() {
-	g_threads.notifyThreadCleanupNeeded();
 	char dummy='d';
 	(void)write(m_pipeFd[1],&dummy,1);
 }

@@ -9,7 +9,6 @@
 #include "Statsdb.h"
 #include "Hostdb.h"
 #include "SafeBuf.h"
-#include "Threads.h"
 
 class StateStatsdb {
  public:

@@ -13,7 +13,7 @@
 #include "Version.h" // getVersion()
 #include "Mem.h"
 #include "Conf.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "Hostdb.h"
 #include "Posdb.h"
 #include "Titledb.h"
@@ -144,6 +144,10 @@ bool memTest();
 bool cacheTest();
 bool ramdiskTest();
 void countdomains( char* coll, int32_t numRecs, int32_t verb, int32_t output );
+
+static void wakeupPollLoop() {
+	g_loop.wakeupPollLoop();
+}
 
 UdpProtocol g_dp; // Default Proto
 
@@ -1055,7 +1059,6 @@ int main2 ( int argc , char *argv[] ) {
 			log("qa::HttpServer init failed" ); return 0; }
 		// set our new pid
 		g_mem.setPid();
-		g_threads.setPid();
 		g_log.setPid();
 		//
 		// beging the qaloop
@@ -1139,7 +1142,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( ! g_loop.init() ) {
 			log("db: Loop init failed." ); return 1; }
 
-		//if ( ! g_threads.init()     ) {
+		//if ( ! g_jobScheduler.initialize()     ) {
 		//	log("db: Threads init failed." ); return 1; }
 
 		g_process.init();
@@ -1927,6 +1930,11 @@ int main2 ( int argc , char *argv[] ) {
 		return 1;
 	}
 
+	if ( ! g_jobScheduler.initialize(2,10,2,wakeupPollLoop)) {
+		log("db: JobScheduler init failed." );
+		return 1;
+	}
+	
 	//if ( ! g_hostdb.validateIps ( &g_conf ) ) {
 	//	log("db: Failed to validate ips." ); return 1;}
 	//if ( ! g_hostdb2.validateIps ( &g_conf ) ) {
@@ -1958,7 +1966,7 @@ int main2 ( int argc , char *argv[] ) {
 
 	// avoid logging threads msgs to stderr if not actually starting up
 	// a gb daemon...
-	//if(cmd && cmd[0] && ! is_digit(cmd[0]) && ! g_threads.init()     ) {
+	//if(cmd && cmd[0] && ! is_digit(cmd[0]) && ! g_jobScheduler.initialize()     ) {
 	//if ( ! g_threads.init()     ) {
 	//	log("db: Threads init failed." ); return 1; }
 
@@ -2284,8 +2292,6 @@ int main2 ( int argc , char *argv[] ) {
 		sid = setsid();
 		if ( sid < 0 ) exit(EXIT_FAILURE);
 		//fprintf(stderr,"done\n");
-		// set our new pid
-		g_threads.setPid();
 
 		// if we do not do this we don't get sigalarms or quickpolls
 		// when running as 'gb -d'
@@ -2294,7 +2300,7 @@ int main2 ( int argc , char *argv[] ) {
 
 	// initialize threads down here now so it logs to the logfile and
 	// not stderr
-	//if ( ( ! cmd || !cmd[0]) && ! g_threads.init()     ) {
+	//if ( ( ! cmd || !cmd[0]) && ! g_jobScheduler.initialize()     ) {
 	//	log("db: Threads init failed." ); return 1; }
 
 	// log the version
@@ -3704,7 +3710,6 @@ bool mainShutdown ( bool urgent ) {
 
 #include "Rdb.h"
 #include "Xml.h"
-#include "Threads.h"
 
 //
 // dump routines here now
@@ -3738,7 +3743,7 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 	lastKey.setMin();
 	startKey = g_titledb.makeFirstKey ( docid );
 	// turn off threads
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
@@ -4030,7 +4035,7 @@ void dumpDoledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTr
 	startKey.setMin();
 	endKey.setMax();
 	// turn off threads
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
@@ -4233,7 +4238,7 @@ int32_t dumpSpiderdb ( char *coll,
 	//int32_t t1 = 0;
 	//int32_t t2 = 0x7fffffff;
 	// turn off threads
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
@@ -4687,7 +4692,7 @@ bool hashtest ( ) {
 bool thrutest ( char *testdir , int64_t fileSize ) {
 
 	// always block
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 
 	// a read/write buffer of 30M
 	int32_t bufSize = 30000000;  // 30M
@@ -4794,9 +4799,7 @@ bool thrutest ( char *testdir , int64_t fileSize ) {
 #include <sys/stat.h>
 #include <fcntl.h>
 
-//static pthread_attr_t s_attr;
-//static int startUp ( void *state ) ;
-static void *startUp ( void *state , ThreadEntry * /*t*/ ) ;
+static void startUp ( void *state );
 static int32_t s_count = 0;
 static int64_t s_filesize = 0;
 //static int32_t s_lock = 1;
@@ -4813,7 +4816,7 @@ void seektest ( char *testdir, int32_t numThreads, int32_t maxReadSize ,
 		char *filename ) {
 
 	g_loop.init();
-	g_threads.init();
+	g_jobScheduler.initialize(numThreads,numThreads,numThreads);
 	s_numThreads = numThreads;
 	s_maxReadSize = maxReadSize;
 	if ( s_maxReadSize <= 0 ) s_maxReadSize = 1;
@@ -4856,7 +4859,7 @@ skip:
 	s_filesize = s_f.getFileSize();
 	log ( LOG_INIT, "admin: file size = %"INT64".",s_filesize);
 	// always block
-	//g_threads.disableThreads();
+	//g_jobScheduler.disallow_new_jobs();
 	// seed rand
 	srand(time(NULL));
 
@@ -4871,8 +4874,11 @@ skip:
 	//int pid;
 	for ( int32_t i = 0 ; i < s_numThreads ; i++ ) {
 		//int err = pthread_create ( &tid1,&s_attr,startUp,(void *)i) ;
-		if (!g_threads.call(THREAD_TYPE_GENERIC,0,
-				    (void *)(PTRTYPE)i,NULL,startUp)){
+		if ( !g_jobScheduler.submit(startUp,
+		                            NULL,
+					    (void *)(PTRTYPE)i,
+					    thread_type_unspecified_io,
+					    0)){
 			log("test: Thread launch failed."); return; }
 		log(LOG_INIT,"test: Launched thread #%"INT32".",i);
 	}
@@ -4884,13 +4890,13 @@ skip:
 
 
 // Use of ThreadEntry parameter is NOT thread safe
-void *startUp ( void *state , ThreadEntry * /*t*/ ) {
+void startUp ( void *state ) {
 	int32_t id = (int32_t) (PTRTYPE)state;
 	// read buf
 	char *buf = (char *) malloc ( s_maxReadSize );
 	if ( ! buf ) { 
 		fprintf(stderr,"MALLOC FAILED in thread\n");
-		return 0; // NULL;
+		return;
 	}
 	// we got ourselves
 	// msg
@@ -4921,9 +4927,6 @@ void *startUp ( void *state , ThreadEntry * /*t*/ ) {
 			(int32_t)(now - start) , 
 			sps );
 	}
-
-	// dummy return
-	return 0; //NULL;
 }
 
 void dumpTagdb( char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char req, int32_t rdbId,
@@ -4947,7 +4950,7 @@ void dumpTagdb( char *coll, int32_t startFileNum, int32_t numFiles, bool include
 	}
 
 	// turn off threads
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
@@ -5131,7 +5134,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	g_titledb.getRdb()->addRdbBase1 ( coll );
 	log(LOG_INIT, "build: Testing parse speed of html docId %"INT64".",docId);
 	// get a title rec
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 	RdbList tlist;
 	key_t startKey = g_titledb.makeFirstKey ( docId );
 	key_t endKey   = g_titledb.makeLastKey  ( docId );
@@ -5483,7 +5486,7 @@ void dumpPosdb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeTre
 		printf("endkey=%s\n",KEYSTR(&endKey,sizeof(POSDBKEY)));
 	}
 	// turn off threads
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 
@@ -5672,7 +5675,7 @@ void dumpClusterdb ( char *coll,
 	startKey.setMin();
 	endKey.setMax();
 	// turn off threads
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 
@@ -5772,7 +5775,7 @@ void dumpLinkdb ( char *coll,
 		endKey   = g_linkdb.makeEndKey_uk   ( h32 , uh64 );
 	}
 	// turn off threads
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 
@@ -6215,7 +6218,7 @@ int injectFile ( char *filename , char *ips , char *coll ) {
 		if ( ! g_loop.init() ) {
 			log("db: Loop init failed." ); exit(0); }
 		// set up the threads, might need g_conf
-		if ( ! g_threads.init() ) {
+		if ( ! g_jobScheduler.initialize(2,4,2) ) {
 			log("db: Threads init failed." ); exit(0); }
 		s_injectTitledb = true;
 		s_titledbKey.setMin();
@@ -7954,7 +7957,7 @@ void countdomains( char* coll, int32_t numRecs, int32_t verbosity, int32_t outpu
 	int64_t time_start = gettimeofdayInMilliseconds_force();
 
 	// turn off threads
-	g_threads.disableThreads();
+	g_jobScheduler.disallow_new_jobs();
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;

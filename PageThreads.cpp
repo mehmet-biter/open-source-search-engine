@@ -2,7 +2,7 @@
 
 #include "TcpServer.h"
 #include "Pages.h"
-#include "Threads.h"
+#include "JobScheduler.h"
 #include "SafeBuf.h"
 #include "Profiler.h"
 
@@ -12,6 +12,7 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 	SafeBuf p(buf, 64*1024);
 	g_pages.printAdminTop ( &p , s , r );
 	
+#if 0
 	int64_t now = gettimeofdayInMilliseconds();
 
 	for ( int32_t i = 0 ; i < g_threads.getNumThreadQueues(); i++ ) {
@@ -145,6 +146,7 @@ bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 		p.safePrintf("</table><br><br>"); 
 
 	}
+#endif
 
 
 	return g_httpServer.sendDynamicPage ( s , (char*) p.getBufStart() ,
