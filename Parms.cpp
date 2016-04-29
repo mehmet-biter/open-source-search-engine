@@ -149,6 +149,7 @@ static bool CommandUpdateSiteList ( char *rec ) {
 	return true;
 }
 
+#ifndef PRIVACORE_SAFE_VERSION
 // . require user manually execute this to prevent us fucking up the data
 //   at first initially because of a bad hosts.conf file!!!
 // . maybe put a red 'A' in the hosts table on the web page to indicate
@@ -162,6 +163,7 @@ static bool CommandRebalance ( char *rec ) {
 	g_rebalance.m_needsRebalanceValid = false;
 	return true;
 }
+#endif
 
 static bool CommandInsertUrlFiltersRow ( char *rec ) {
 	// caller must specify collnum
