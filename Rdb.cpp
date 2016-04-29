@@ -1894,10 +1894,7 @@ bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
 // . if RdbMem, m_mem, has no mem, sets g_errno to ETRYAGAIN and returns false
 //   because dump should complete soon and free up some mem
 // . this overwrites dups
-bool Rdb::addRecord ( collnum_t collnum, 
-		      //key_t &key , char *data , int32_t dataSize ){
-		      char *key , char *data , int32_t dataSize,
-		      int32_t niceness){
+bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSize, int32_t niceness) {
 	if ( ! getBase(collnum) ) {
 		g_errno = EBADENGINEER;
 		log(LOG_LOGIC,"db: addRecord: collection #%i is gone.",
@@ -1949,7 +1946,7 @@ bool Rdb::addRecord ( collnum_t collnum,
 	// sanity check
 	if ( KEYNEG(key) ) {
 		if ( (dataSize > 0 && data) ) {
-			log("db: Got data for a negative key.");
+			log( LOG_WARN, "db: Got data for a negative key." );
 			char *xx=NULL;*xx=0;
 		}
 	}
@@ -1991,13 +1988,14 @@ bool Rdb::addRecord ( collnum_t collnum,
 	if ( data ) {
 		// save orig
 		orig = data;
+
 		// sanity check
 		if ( m_fixedDataSize == 0 && dataSize > 0 ) {
 			g_errno = EBADENGINEER;
-			log(LOG_LOGIC,"db: addRecord: Data is present. "
-			    "Should not be");
+			log(LOG_LOGIC,"db: addRecord: Data is present. Should not be");
 			return false;
 		}
+
 		data = (char *) m_mem.dupData ( key, data, dataSize, collnum);
 		if ( ! data ) { 
 			g_errno = ETRYAGAIN; 
@@ -2005,20 +2003,6 @@ bool Rdb::addRecord ( collnum_t collnum,
 				   "data to %s. Retrying.",dataSize,m_dbname);
 		}
 	}
-	// sanity check
-	//else if ( m_fixedDataSize != 0 ) {
-	//	g_errno = EBADENGINEER;
-	//	log(LOG_LOGIC,"db: addRecord: Data is required for rdb rec.");
-	//	char *xx=NULL;*xx=0;
-	//}
-	// sanity check
-	//if ( m_fixedDataSize >= 0 && dataSize != m_fixedDataSize ) {
-	//	g_errno = EBADENGINEER;
-	//	log(LOG_LOGIC,"db: addRecord: DataSize is %"INT32" should "
-	//	    "be %"INT32"", dataSize,m_fixedDataSize );
-	//	char *xx=NULL;*xx=0;
-	//	return false;
-	//}
 
 	// . TODO: save this tree-walking state for adding the node!!!
 	// . TODO: use somethin like getNode(key,&lastNode)
@@ -2057,8 +2041,6 @@ bool Rdb::addRecord ( collnum_t collnum,
 			     g_doledb.getUrlHash48(&doleKey));
 		}
 		else {
-			// what collection?
-			//SpiderColl *sc = g_spiderCache.getSpiderColl(collnum)
 			// do not overflow!
 			// log debug
 			SpiderRequest *sreq = (SpiderRequest *)data;
@@ -2176,7 +2158,6 @@ bool Rdb::addRecord ( collnum_t collnum,
 
 	// if we have no files on disk for this db, don't bother
 	// preserving a a negative rec, it just wastes tree space
-	//if ( key.isNegativeKey () ) {
 	if ( KEYNEG(key) && m_useTree ) {
 		// . or if our rec size is 0 we don't need to keep???
 		// . is this going to be a problem?
@@ -2202,9 +2183,6 @@ bool Rdb::addRecord ( collnum_t collnum,
 		if ( getBase(collnum)->m_numFiles == 0 ) return true;
 		// . otherwise, assume we match a positive...
 	}
-
-	// if we did not find an oppKey and are tfndb, flag this
-	//if ( n<0 && m_rdbId == RDB_TFNDB ) s_tfndbHadOppKey = false;
 
  //addIt:
 	// mark as changed
@@ -2232,29 +2210,33 @@ bool Rdb::addRecord ( collnum_t collnum,
 		}
 	}
 
-	// . cancel any spider request that is a dup in the dupcache to save 
-	//   disk space
-	// . twins might have different dupcaches so they might have different
-	//   dups, but it shouldn't be a big deal because they are dups!
+	// . cancel any spider request that is a dup in the dupcache to save disk space
+	// . twins might have different dupcaches so they might have different dups,
+	//   but it shouldn't be a big deal because they are dups!
 	if ( m_rdbId == RDB_SPIDERDB && ! KEYNEG(key) ) {
 		// . this will create it if spiders are on and its NULL
 		// . even if spiders are off we need to create it so 
 		//   that the request can adds its ip to the waitingTree
 		SpiderColl *sc = g_spiderCache.getSpiderColl(collnum);
+
 		// skip if not there
-		if ( ! sc ) return true;
-		SpiderRequest *sreq=(SpiderRequest *)(orig-4-sizeof(key128_t));
+		if ( ! sc ) {
+			return true;
+		}
+
+		SpiderRequest *sreq = (SpiderRequest *)( orig - 4 - sizeof(key128_t) );
+
 		// is it really a request and not a SpiderReply?
-		char isReq = g_spiderdb.isSpiderRequest ( &sreq->m_key );
+		bool isReq = g_spiderdb.isSpiderRequest ( &( sreq->m_key ) );
+
 		// skip if in dup cache. do NOT add to cache since 
 		// addToWaitingTree() in Spider.cpp will do that when called 
 		// from addSpiderRequest() below
 		if ( isReq && sc->isInDupCache ( sreq , false ) ) {
-			if ( g_conf.m_logDebugSpider )
-				log("spider: adding spider req %s is dup. "
-				    "skipping.",sreq->m_url);
+			logDebug( g_conf.m_logDebugSpider, "spider: adding spider req %s is dup. skipping.", sreq->m_url );
 			return true;
 		}
+
 		// if we are overflowing...
 		if ( isReq &&
 		     ! sreq->m_isAddUrl &&
@@ -2262,9 +2244,7 @@ bool Rdb::addRecord ( collnum_t collnum,
 		     ! sreq->m_urlIsDocId &&
 		     ! sreq->m_forceDelete &&
 		     sc->isFirstIpInOverflowList ( sreq->m_firstIp ) ) {
-			if ( g_conf.m_logDebugSpider )
-				log("spider: skipping for overflow url %s ",
-				    sreq->m_url);
+			logDebug( g_conf.m_logDebugSpider, "spider: skipping for overflow url %s ", sreq->m_url );
 			g_stats.m_totalOverflows++;
 			return true;
 		}
