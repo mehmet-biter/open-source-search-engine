@@ -6443,26 +6443,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	// . this will leak the shared mem if the process is Ctrl+C'd
-	// . that is expected behavior
-	// . you can clean up the leaks using 'gb freecache 20000000'
-	//   and use 'ipcs -m' to see what leaks you got
-	// . generally, only the main gb should use shared mem, so
-	//   keep this off for teting
-	m->m_title = "use shared mem";
-	m->m_desc  = "If enabled, Gigablast will use shared memory. "
-		"Should really only be used on the live cluster, "
-		"keep this on the testing cluster since it can "
-		"leak easily.";
-	m->m_cgi   = "ushm";
-	m->m_off   = offsetof(Conf,m_useSHM);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "posdb disk cache size";
 	m->m_desc  = "How much file cache size to use in bytes? Posdb is "
 		"the index.";
@@ -6618,20 +6598,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
-	m++;
-
-	m->m_title = "scan all if not found";
-	m->m_desc  = "Scan all titledb files if rec not found. You should "
-		"keep this on to avoid corruption. Do not turn it off unless "
-		"you are Matt Wells.";
-	m->m_cgi   = "sainf";
-	m->m_off   = offsetof(Conf,m_scanAllIfNotFound);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "1";
-	m->m_units = "";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
 	m++;
 
 	m->m_title = "interface machine";
@@ -6948,76 +6914,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "directory collection";
-	m->m_desc  = "Collection to be used for directory searching and "
-		"display of directory topic pages.";
-	m->m_cgi   = "dircn";
-	m->m_off   = offsetof(Conf,m_dirColl);
-	m->m_type  = TYPE_STRING;
-	m->m_size  = MAX_COLL_LEN+1;
-	m->m_def   = "main";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "directory hostname";
-	m->m_desc  = "Hostname of the server providing the directory. "
-		     "Leave empty to use this host.";
-	m->m_cgi   = "dirhn";
-	m->m_off   = offsetof(Conf,m_dirHost);
-	m->m_type  = TYPE_STRING;
-	m->m_size  = MAX_URL_LEN;
-	m->m_def   = "";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "max incoming bandwidth for spider";
-	m->m_desc  = "Total incoming bandwidth used by all spiders should "
-		"not exceed this many kilobits per second. ";
-	m->m_cgi   = "mkbps";
-	m->m_off   = offsetof(Conf,m_maxIncomingKbps);
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "999999.0";
-	m->m_units = "Kbps";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "max 1-minute sliding-window loadavg";
-	m->m_desc  = "Spiders will shed load when their host exceeds this "
-		"value for the 1-minute load average in /proc/loadavg. "
-		"The value 0.0 disables this feature.";
-	m->m_cgi   = "mswl";
-	m->m_off   = offsetof(Conf,m_maxLoadAvg);
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "0.0";
-	m->m_units = "";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "max pages per second";
-	m->m_desc  = "Maximum number of pages to index or delete from index "
-		"per second for all hosts combined.";
-	m->m_cgi   = "mpps";
-	m->m_off   = offsetof(Conf,m_maxPagesPerSecond);
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = "999999.0";
-	m->m_units = "pages/second";
-	m->m_group = false;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 
 	m->m_title = "max cpu threads";
 	m->m_desc  = "Maximum number of threads to use per Gigablast process "
@@ -7109,20 +7005,6 @@ void Parms::init ( ) {
 	m->m_group = false;
 	m++;
 
-	m->m_title = "min popularity for speller";
-	m->m_desc  = "Word or phrase must be present in this percent "
-		"of documents in order to qualify as a spelling "
-		"recommendation.";
-	m->m_cgi   = "mps";
-	m->m_off   = offsetof(Conf,m_minPopForSpeller);
-	m->m_type  = TYPE_FLOAT;
-	m->m_def   = ".01";
-	m->m_units = "%%";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "weights.cpp slider parm (tmp)";
 	m->m_desc  = "Percent of how much to use words to phrase ratio weights.";
 	m->m_cgi   = "wsp";
@@ -7130,21 +7012,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "90";
 	m->m_units = "%%";
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "maximum serialized query size";
-	m->m_desc  = "When passing queries around the network, send the raw "
-		"string instead of the serialized query if the required "
-		"buffer is bigger than this. Smaller values decrease network "
-		"traffic for large queries at the expense of processing time.";
-	m->m_cgi   = "msqs";
-	m->m_off   = offsetof(Conf,m_maxSerializedQuerySize);
-	m->m_type  = TYPE_LONG;
-	m->m_def   = "8192";
-	m->m_units = "bytes";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -9509,17 +9376,6 @@ void Parms::init ( ) {
 	m->m_flags = PF_REQUIRED;// | PF_COLLDEFAULT;//| PF_NOHTML;
 	m++;
 
-	m->m_title = "rebuild ALL collections";
-	m->m_desc  = "If enabled, gigablast will rebuild all collections.";
-	m->m_cgi   = "rac";
-	m->m_off   = offsetof(Conf,m_rebuildAllCollections);
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_REPAIR;
-	m->m_obj   = OBJ_CONF;
-	m->m_def   = "0";
-	m->m_group = false;
-	m++;
-
 
 	m->m_title = "memory to use for rebuild";
 	m->m_desc  = "In bytes.";
@@ -10068,15 +9924,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "log debug seo insert messages";
-	m->m_cgi   = "ldsi";
-	m->m_off   = offsetof(Conf,m_logDebugSEOInserts);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "log debug seo messages";
 	m->m_cgi   = "ldseo";
 	m->m_off   = offsetof(Conf,m_logDebugSEO);
@@ -10149,15 +9996,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "log debug facebook";
-	m->m_cgi   = "ldfb";
-	m->m_off   = offsetof(Conf,m_logDebugFacebook);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "log debug tagdb messages";
 	m->m_cgi   = "ldtm";
 	m->m_off   = offsetof(Conf,m_logDebugTagdb);
@@ -10197,15 +10035,6 @@ void Parms::init ( ) {
 	m->m_title = "log debug title messages";
 	m->m_cgi   = "ldti";
 	m->m_off   = offsetof(Conf,m_logDebugTitle);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "log debug timedb messages";
-	m->m_cgi   = "ldtim";
-	m->m_off   = offsetof(Conf,m_logDebugTimedb);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;

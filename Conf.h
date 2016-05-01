@@ -70,9 +70,6 @@ class Conf {
 	//   no match defaults to default collection
 	char *getDefaultColl ( char *hostname, int32_t hostnameLen );
 
-	// hold the filename of this conf file
-	char        m_confFilename[256];
-
 	// max amount of memory we can use
 	int64_t        m_maxMem;
 
@@ -91,8 +88,6 @@ class Conf {
 	char m_stripeDir[256];
 
 	char m_defaultColl [ MAX_COLL_LEN + 1 ];
-	char m_dirColl [ MAX_COLL_LEN + 1];
-	char m_dirHost [ MAX_URL_LEN ];
 
 	char m_clusterName[32];
 
@@ -117,7 +112,6 @@ class Conf {
 	char  m_askRootNameservers;
 	int32_t  m_numRns;
 	int32_t  m_rnsIps[MAX_RNSIPS];
-	int16_t m_rnsPorts[MAX_RNSIPS];
 
 	// used to limit all rdb's to one merge per machine at a time
 	int32_t  m_mergeBufSize;
@@ -230,10 +224,6 @@ class Conf {
 	bool   m_sendEmailAlerts;
 	//should we delay when only 1 host goes down out of twins till 9 30 am?
 	bool   m_delayNonCriticalEmailAlerts;
-	//delay emails after
-	char   m_delayEmailsAfter[6];
-	//delay emails before
-	char   m_delayEmailsBefore[6];
 	bool   m_sendEmailAlertsToSysadmin;
 
 	bool   m_sendEmailAlertsToEmail1;
@@ -273,19 +263,6 @@ class Conf {
 	int32_t  m_numQueryTimes;
 	int32_t m_maxCorruptLists;
 
-	// limit to how big a serialized query can be before just storing
-	// the raw string instead, keeps network traffic down at the expense
-	// of processing time, used by Msg serialization
-	int32_t  m_maxSerializedQuerySize;
-
-	// the spider won't go if this bandiwdth rate is currently exceeded
-	float  m_maxIncomingKbps;
-
-	// max pgs/sec to index and delete from index. guards resources.
-	float  m_maxPagesPerSecond;
-
-	float  m_maxLoadAvg;
-
 	bool   m_useCollectionPasswords;
 
 	bool   m_allowCloudUsers;
@@ -296,8 +273,6 @@ class Conf {
 
 	// if this is true we use /etc/hosts for hostname lookup before dns
 	bool   m_useEtcHosts;
-
-	bool   m_useMergeToken;
 
 	// . should we always read data from local machine if available?
 	// . if your network is not gigabit, this may be a good idea
@@ -325,18 +300,6 @@ class Conf {
 
 	bool   m_forceIt;
 
-	// new syncing information
-	bool   m_syncEnabled;
-	bool   m_syncIndexdb;
-	bool   m_syncTitledb;
-	bool   m_syncSpiderdb;
-	bool   m_syncSitedb;
-	bool   m_syncLogging;
-	bool   m_syncDoUnion;
-	bool   m_syncDryRun;
-	char   m_syncHostIds [ 256 ]; // restrict syncing to these host ids
-	int32_t   m_syncBytesPerSecond;  // limit disk activity for syncing
-
 	// if this is true we do not add indexdb keys that *should* already
 	// be in indexdb. but if you recently upped the m_truncationLimit
 	// then you can set this to false to add all indexdb keys.
@@ -349,7 +312,6 @@ class Conf {
 	bool   m_splitTwins;
 	bool   m_useThreads;
 
-	bool   m_useSHM;
 	bool   m_useQuickpoll;
 
 	int64_t m_posdbFileCacheSize;
@@ -371,9 +333,6 @@ class Conf {
 	bool   m_testMem;
 	bool   m_doConsistencyTesting;
 
-	// scan all titledb files if we can't find the rec where it should be
-	bool   m_scanAllIfNotFound;
-	
 	// defaults to "Gigabot/1.0"
 	char m_spiderUserAgent [ USERAGENTMAXSIZE ];
 
@@ -403,7 +362,6 @@ class Conf {
 	int32_t  m_logDiskReadTimeThreshold;
 	
 	bool  m_logQueryReply;
-	bool  m_logQueryDebug;
 	// log what gets into the index
 	bool  m_logSpideredUrls;
 	// log informational messages, they are not indicative of any error.
@@ -423,7 +381,6 @@ class Conf {
 	bool  m_logDebugDiskPageCache;
 	bool  m_logDebugDns     ;
 	bool  m_logDebugDownloads;
-	bool  m_logDebugFacebook;
 	bool  m_logDebugHttp    ;
 	bool  m_logDebugImage   ;
 	bool  m_logDebugLoop    ;
@@ -433,7 +390,6 @@ class Conf {
 	bool  m_logDebugMemUsage;
 	bool  m_logDebugMerge   ;
 	bool  m_logDebugNet     ;
-	bool  m_logDebugPQR     ; // post query rerank
 	bool  m_logDebugProxies ;
 	bool  m_logDebugQuery   ;
 	bool  m_logDebugQuota   ;
@@ -443,7 +399,6 @@ class Conf {
 	bool  m_logDebugTagdb   ;
 	bool  m_logDebugSections;
 	bool  m_logDebugSEO;
-	bool  m_logDebugSEOInserts;
 	bool  m_logDebugStats   ;
 	bool  m_logDebugSummary ;
 	bool  m_logDebugSpider  ;
@@ -452,7 +407,6 @@ class Conf {
 	bool  m_logDebugTcp     ;
 	bool  m_logDebugTcpBuf  ;
 	bool  m_logDebugThread  ;
-	bool  m_logDebugTimedb  ;
 	bool  m_logDebugTitle   ;
 	bool  m_logDebugTopDocs ;
 	bool  m_logDebugUdp     ;
@@ -505,15 +459,11 @@ class Conf {
 	char m_timeSyncProxy;
 
 	Xml   m_xml;
-	char  m_buf[10*1024];
-	int32_t  m_bufSize;
 
 	// . for specifying if this is an interface machine
 	//   messages are rerouted from this machine to the main
 	//   cluster set in the hosts.conf.
 	bool m_interfaceMachine;
-
-	float m_minPopForSpeller; // 0% to 100%
 
 	// allow scaling up of hosts by removing recs not in the correct
 	// group. otherwise a sanity check will happen.
@@ -535,7 +485,6 @@ class Conf {
 	int32_t  m_maxRepairSpiders  ;
 	int64_t  m_repairMem;
 	SafeBuf m_collsToRepair;
-	char  m_rebuildAllCollections;
 	char  m_fullRebuild       ;
 	char  m_rebuildAddOutlinks;
 	char  m_rebuildRecycleLinkInfo  ;
@@ -544,8 +493,6 @@ class Conf {
 	char  m_rebuildClusterdb  ;
 	char  m_rebuildSpiderdb   ;
 	char  m_rebuildLinkdb     ;
-	char  m_rebuildTimedb     ;
-	char  m_rebuildSectiondb  ;
 	char  m_rebuildRoots      ;
 	char  m_rebuildNonRoots   ;
 };
