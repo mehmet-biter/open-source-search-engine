@@ -1961,7 +1961,7 @@ int32_t *getLocalIps ( ) {
 		// avoid possible core dump
 		if ( ! p->ifa_addr ) continue;
 		//break; // mdw hack...
-		struct sockaddr_in *xx = (sockaddr_in *)p->ifa_addr;
+		struct sockaddr_in *xx = (sockaddr_in *)(void*)p->ifa_addr;
 		int32_t ip = xx->sin_addr.s_addr;
 		// skip if loopback we stored above
 		if ( ip == loopback ) continue;

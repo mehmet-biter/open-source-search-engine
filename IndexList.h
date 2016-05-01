@@ -40,7 +40,7 @@ class IndexList : public RdbList {
 		return ((*(uint64_t *)(rec)) >> 2) & DOCID_MASK; };
 	int64_t getDocId6 ( char *rec ) {
 		int64_t docid;
-		*(int32_t *)(&docid) = *(int32_t *)rec;
+		*(int32_t *)(&docid) = *(int32_t *)(void*)rec;
 		((char *)&docid)[4] = rec[4];
 		docid >>= 2;
 		return docid & DOCID_MASK;

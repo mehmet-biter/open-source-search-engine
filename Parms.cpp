@@ -2140,7 +2140,8 @@ bool Parms::printParm ( SafeBuf* sb,
 		// time is stored as int32_t
 		int32_t ct = *(int32_t *)s;
 		// get the time struct
-		struct tm *tp = gmtime ( (time_t *)&ct ) ;
+		time_t tmp_ct = ct;
+		struct tm *tp = gmtime ( &tmp_ct );
 		// set the "selected" month for the drop down
 		char *ss[12];
 		for ( int32_t i = 0 ; i < 12 ; i++ ) ss[i]="";
@@ -3328,7 +3329,8 @@ bool Parms::getParmHtmlEncoded ( SafeBuf *sb , Parm *m , char *s ) {
 		// time is stored as int32_t
 		int32_t ct = *(int32_t *)s;
 		// get the time struct
-		struct tm *tp = localtime ( (time_t *)&ct ) ;
+		time_t tmp_ct = ct;
+		struct tm *tp = localtime ( &tmp_ct );
 		// set the "selected" month for the drop down
 		char tmp[100];
 		strftime ( tmp , 100 , "%d %b %Y %H:%M UTC" , tp );

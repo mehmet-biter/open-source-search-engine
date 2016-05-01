@@ -4589,7 +4589,7 @@ bool treetest ( ) {
 	// make list of one million random keys
 	key_t *k = (key_t *)mmalloc ( sizeof(key_t) * numKeys , "main" );
 	if ( ! k ) return log("speedtest: malloc failed");
-	int32_t *r = (int32_t *)k;
+	int32_t *r = (int32_t *)(void*)k;
 	int32_t size = 0;
 	int32_t first = 0;
 	for ( int32_t i = 0 ; i < numKeys * 3 ; i++ ) {
@@ -4658,7 +4658,7 @@ bool hashtest ( ) {
 	// make list of one million random keys
 	key_t *k = (key_t *)mmalloc ( sizeof(key_t) * numKeys , "main" );
 	if ( ! k ) return log("speedtest: malloc failed");
-	int32_t *r = (int32_t *)k;
+	int32_t *r = (int32_t *)(void*)k;
 	for ( int32_t i = 0 ; i < numKeys * 3 ; i++ ) r[i] = rand();
 	// init the tree
 	//HashTableT<int32_t,int32_t> ht;
@@ -5882,7 +5882,7 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 		return log("net: pingtest: setsockopt: %s.", 
 			   strerror(errno));
         // bind this name to the socket
-        if ( bind ( sock, (struct sockaddr *)&name, sizeof(name)) < 0) {
+        if ( bind ( sock, (struct sockaddr *)(void*)&name, sizeof(name)) < 0) {
                close ( sock );
                return log("net: pingtest: Bind on port %hu: %s.",
 			  clientPort,strerror(errno));
@@ -5942,14 +5942,14 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	up->setHeader ( dgram, msgSize, 0x11, dnum, transId, true, false , 0 );
 	int32_t size = up->getHeaderSize(0) + msgSize;
 	int64_t start = gettimeofdayInMilliseconds_force();
-	n = sendto(sock,dgram,size,0,(struct sockaddr *)&to,sizeof(to));
+	n = sendto(sock,dgram,size,0,(struct sockaddr *)(void*)&to,sizeof(to));
 	if ( n != size ) return log("net: pingtest: sendto returned "
 				    "%i "
 				    "(should have returned %"INT32")",n,size);
 	sends++;
  readLoop2:
 	// loop until we read something
-	n = recvfrom (sock,dgram,DGRAM_SIZE,0,(sockaddr *)&from, &fromLen);
+	n = recvfrom (sock,dgram,DGRAM_SIZE,0,(sockaddr *)(void*)&from, &fromLen);
 	if (gettimeofdayInMilliseconds_force() - start>2000) {lost++; goto sendLoop;}
 	if ( n <= 0 ) goto readLoop2; // { sched_yield(); goto readLoop2; }
 	// for what transId?
@@ -5978,7 +5978,7 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	replies++;
 	// send back an ack
 	size = up->makeAck ( dgram, dnum, transId , true/*weinit?*/ , false );
-	n = sendto(sock,dgram,size,0,(struct sockaddr *)&to,sizeof(to));
+	n = sendto(sock,dgram,size,0,(struct sockaddr *)(void*)&to,sizeof(to));
 	// mark our first read
 	goto sendLoop;
 }
@@ -7540,7 +7540,7 @@ bool shutdownOldGB ( int16_t port ) {
 	log("db: Connecting to port %hu.",port);
 	// connect to the socket. This should block until it does
  again:
-	if ( ::connect ( sd, (sockaddr *)&to, sizeof(to) ) != 0 ) {
+	if ( ::connect ( sd, (sockaddr *)(void*)&to, sizeof(to) ) != 0 ) {
 		if ( errno == EINTR ) goto again;
 		return log("admin: Got connect error: %s.",mstrerror(errno));
 	}
