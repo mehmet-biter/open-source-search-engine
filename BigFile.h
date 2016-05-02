@@ -32,12 +32,10 @@ ssize_t gbpwrite(int fd, const void *buf, size_t count, off_t offset);
 
 class FileState {
 public:
-	// this is where we go after the thread has exited
-	//void          (*m_threadDone) ( void *state ) ;
 	// callback must be top 4 bytes of the state class we give to g_loop
 	// callback must be first X bytes
 	class BigFile  *m_this;
-	//struct aiocb   m_aiostate;
+
 	char           *m_buf;
 	int64_t            m_bytesToGo;
 	int64_t       m_offset;
@@ -72,20 +70,17 @@ public:
 	int64_t       m_startTime;
 	int64_t       m_doneTime;
 	bool 			m_usePartFiles;
+
 	// it is
 	// a "virtual fd" for this whole file
 	int64_t            m_vfd;
-	// test parms
-	//int32_t  m_osize;
-	//char *m_obuf;
+
 	// for avoiding unlink/reopens while doing a threaded read
 	int32_t m_closeCount1 ;
 	int32_t m_closeCount2 ;
-	//int32_t m_vfd1;
-	//int32_t m_vfd2;
 
-	//char m_baseFilename[32];
-	int32_t m_flags;	
+	int32_t m_flags;
+
 	// when we are given a NULL buffer to read into we must allocate
 	// in Threads.cpp right before the
 	// thread is launched. this will stop us from having 19000 unlaunched
@@ -211,19 +206,12 @@ class BigFile {
 	// just close all the fds of the part files, used by RdbMap.cpp.
 	bool closeFds ( ) ;
 
-	//int getfdByOffset ( int64_t offset );
-
 	// what part (little File) of this BigFile has offset "offset"?
 	int getPartNum ( int64_t offset ) { return offset / MAX_PART_SIZE; };
 
 	// . opens the nth file if necessary to get it's fd
 	// . returns -1 if none, >=0 on success
 	int getfd ( int32_t n , bool forReading );//, int32_t *vfd = NULL );
-
-	// public for wrapper to call
-	//bool readwrite_r ( FileState *fstate );
-
-	//int64_t m_currentOffset;
 
 	int32_t       getVfd       ( ) { return m_vfd; };
 
@@ -304,14 +292,15 @@ private:
 
 public:
 	// our most important the directory and filename
-	SafeBuf m_dir      ;//    [256];
-	SafeBuf m_baseFilename ;//[256];
+	SafeBuf m_dir      ;
+	SafeBuf m_baseFilename ;
 
 	// rename stores the new name here so we can rename the m_files[i] 
 	// after the rename has completed and the rename thread returns
-	SafeBuf m_newBaseFilename ;//   [256];
+	SafeBuf m_newBaseFilename ;
+
 	// if first char in this dir is 0 then use m_dir
-	SafeBuf m_newBaseFilenameDir ;//[256];
+	SafeBuf m_newBaseFilenameDir ;
 
 	File *getFile2 ( int32_t n ) { 
 		if ( n >= m_maxParts ) return NULL;
@@ -330,7 +319,6 @@ public:
 	int32_t      m_maxParts;
 
 	int32_t             m_vfd;
-	//bool             m_vfdAllowed;
 
 	// prevent circular calls to BigFile::close() with this
 	bool m_isClosing;
