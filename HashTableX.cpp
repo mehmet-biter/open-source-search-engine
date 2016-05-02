@@ -13,24 +13,6 @@
 #include "Conf.h"
 
 
-void HashTableX::constructor() {
-	m_buf   = NULL;
-	m_allocName = NULL;
-	m_doFree = false;
-	m_isWritable = true;
-	m_txtBuf = NULL;
-	m_useKeyMagic = false;
-	m_ks = 0;
-	m_ds = 0;
-	m_allowGrowth = true;
-	m_numSlots = 0;
-	m_numSlotsUsed = 0;
-}
-
-void HashTableX::destructor() {
-	reset();
-}
-
 HashTableX::HashTableX () {
 	m_buf   = NULL;
 	m_allocName = NULL;
@@ -102,7 +84,6 @@ void HashTableX::reset ( ) {
 	m_numSlotsUsed = 0;
 	m_addIffNotUnique = false;
 	m_maskKeyOffset = 0;
-	m_allowGrowth = true;
 	//m_useKeyMagic = false;
 	// we should free it in reset()
 	if ( m_doFree && m_txtBuf ) {
@@ -199,12 +180,6 @@ bool HashTableX::addKey ( const void *key , const void *val , int32_t *slot ) {
 	}
 	// never got initialized? call HashTableX::init()
 	if ( m_ks <= 0 ){ char *xx=NULL; *xx=0; }
-
-	if ( ! m_allowGrowth && m_numSlotsUsed + 1 > m_numSlots ) {
-		log("hashtable: hit max ceiling of hashtable of %"INT32" slots. "
-		    "and can not grow because in thread.",m_numSlotsUsed);
-		return false;
-	}
 
 	// check to see if we should grow the table. now we grow
 	// when 25% full to make operations faster so getLongestString()
@@ -522,102 +497,6 @@ bool HashTableX::load ( const char *dir, const char *filename, char **tbuf, int3
         return true;
 }
 
-//
-// . new code for saving hashtablex in a thread
-// . so Process.cpp's call to g_spiderCache.save() can save the doleiptable
-//   without blocking...
-//
-static void saveWrapper ( void *state ) {
-	// get this class
-	HashTableX *THIS = (HashTableX *)state;
-	// this returns false and sets g_errno on error
-	THIS->save( THIS->m_dir , 
-		    THIS->m_filename , 
-		    THIS->m_tbuf ,
-		    THIS->m_tsize );
-	// now exit the thread, bogus return
-}
-
-// we come here after thread exits
-static void threadDoneWrapper ( void *state, job_exit_t /*exit_type*/ ) {
-	// get this class
-	HashTableX *THIS = (HashTableX *)state;
-	// store save error into g_errno
-	//g_errno = THIS->m_saveErrno;
-	// log it
-	log("db: done saving %s/%s",THIS->m_dir,THIS->m_filename);
-	// . resume adding to the hashtable
-	// . this will also allow other threads to be queued
-	// . if we did this at the end of the thread we could end up with
-	//   an overflow of queued SAVETHREADs
-	THIS->m_isSaving = false;
-	// we do not need to be saved now?
-	THIS->m_needsSave = false;
-	// g_errno should be preserved from the thread so if threadSave()
-	// had an error it will be set
-	if ( g_errno )
-		log("db: Had error saving hashtable to disk for %s: %s.",
-		    THIS->m_allocName,mstrerror(g_errno));
-	// . call callback
-	if ( THIS->m_callback ) THIS->m_callback ( THIS->m_state );
-}
-
-
-bool HashTableX::fastSave ( bool useThread ,
-			    const char *dir , 
-			    const char *filename , 
-			    const char *tbuf, 
-			    int32_t tsize ,
-			    void *state ,
-			    void (* callback)(void *state) ) {
-	if ( g_conf.m_readOnlyMode ) return true;
-	// we do not need a save
-	if ( ! m_needsSave ) return true;
-	// return true if already in the middle of saving
-	if ( m_isSaving ) return false;
-
-	// mark it early to avoid reentries
-	m_isSaving = true;
-
-	logf(LOG_INFO,"db: Saving %s/%s",dir,filename);
-
-	// save parms
-	strcpy ( m_dir , dir );
-	strcpy ( m_filename , filename );
-	m_tbuf     = tbuf;
-	m_tsize    = tsize;
-	m_state    = state;
-	m_callback = callback;
-	// assume no error
-	//m_saveErrno = 0;
-	// no adding to the hashtable now
-	//m_isSaving = true;
-	//useThread = false;
-	// skip thread call if we should
-	if ( ! useThread ) goto skip;
-	// make this a thread now
-	if ( g_jobScheduler.submit(saveWrapper,
-	                           threadDoneWrapper,
-				   this,
-				   thread_type_spider_write,
-				   1/*niceness*/) )
-		return false;
-	// if it failed
-	if ( g_jobScheduler.are_new_jobs_allowed() ) 
-		log("db: Thread creation failed. Blocking while saving tree. "
-		    "Hurts performance.");
- skip:
-	// this returns false and sets g_errno on error
-	save ( dir, filename , tbuf , tsize );
-	// store save error into g_errno
-	//g_errno = m_saveErrno;
-	// resume adding to the tree
-	// we do not need to be saved now?
-	m_needsSave = false;
-	m_isSaving = false;
-	// we did not block
-	return true;
-}
 
 bool HashTableX::save ( const char *dir , 
 			const char *filename , 
@@ -691,182 +570,6 @@ bool HashTableX::save ( const char *dir ,
 	return true;
 }
 
-// how many bytes are required to serialize this hash table?
-int32_t HashTableX::getStoredSize() const {
-	// see serialize() function below to explain this
-	return 4 + 4 + 1 + 2 + 1 + m_numSlotsUsed*(m_ks+m_ds);
-}
-
-// . returns # bytes written into "buf"
-// . returns ptr to buf used
-// . set size of buf allocated and used
-// . returns -1 on error
-char *HashTableX::serialize ( int32_t *bufSize ) const {
-	int32_t need = getStoredSize();
-	char *buf = (char *)mmalloc ( need , m_allocName );
-	if ( ! buf ) return (char *)-1;
-	int32_t used = serialize ( buf , need );
-	// ensure it matches
-	if ( used != need ) { char *xx=NULL;*xx=0; }
-	// store it
-	*bufSize = used;
-	return buf;
-}
-
-// shortcut
-int32_t HashTableX::serialize ( SafeBuf *sb ) const {
-	int32_t nb = serialize ( sb->getBuf() , sb->getAvail() );
-	// update sb
-	sb->incrementLength ( nb );
-	return nb;
-}
-
-// returns # bytes written into "buf"
-int32_t HashTableX::serialize ( char *buf , int32_t bufSize ) const {
-	// shortcuts
-	char *p    = buf;
-	//char *pend = buf + bufSize;
-	// how much for table?
-	int32_t need = m_numSlotsUsed * (m_ks+m_ds);
-	// and # of slots
-	need += 4;
-	// and # of slots used
-	need += 4;
-	// and key size
-	need += 1;
-	// and data size
-	need += 2;
-	// flags (allowDups)
-	need += 1;
-	// sanity check
-	if ( need > bufSize ) { char *xx=NULL;*xx=0; }
-	// sanity check -- i guess placedb hashtable in XmlDoc.cpp uses 512!
-	if ( m_ks > 127 || m_ds > 512 ) { char *xx=NULL;*xx=0; }
-
-	// store # slots total
-	*(int32_t *)p = m_numSlots; p += 4;	
-	// store # slots
-	*(int32_t *)p = m_numSlotsUsed; p += 4;
-	// store key size
-	*(char *)p = m_ks; p += 1;
-	// store data size
-	*(int16_t *)p = m_ds; p += 2;
-	// flags
-	*(char *)p = m_allowDups; p += 1;	
-	// sanity check
-	int32_t used = 0;
-	// store keys that are valid
-	for ( int32_t i = 0 ; i < m_numSlots ; i++ ) {
-		// skip if empty
-		if ( m_flags[i] == 0 ) continue;
-		// sanity check count
-		used++;
-		// store key
-		gbmemcpy ( p , m_keys + i * m_ks , m_ks );
-		// advance
-		p += m_ks;
-	}
-	// sanity check
-	if ( used != m_numSlotsUsed ) { char *xx=NULL; *xx=0; }
-	// store data that is valid
-	for ( int32_t i = 0 ; i < m_numSlots ; i++ ) {
-		// skip if empty
-		if ( m_flags[i] == 0 ) continue;
-		// store key
-		gbmemcpy ( p , m_vals + i * m_ds , m_ds );
-		// advance
-		p += m_ds;
-	}
-	// return bytes stored
-	return p - buf;
-}
-
-// inflate it. returns false with g_errno set on error
-bool HashTableX::deserialize ( const char *buf , int32_t bufSize , int32_t niceness ) {
-	// clear it
-	reset();
-
-	// shortcuts
-	const char *p    = buf;
-	//char *pend = buf + bufSize;
-
-	// get stuff
-	int32_t numSlots = *(int32_t *)p; p += 4;
-	// how may slots to add?
-	int32_t numSlotsUsed = *(int32_t *)p; p += 4;
-	// key size
-	int32_t ks = *(const char *)p; p += 1;
-	// data size
-	int32_t ds = *(int16_t *)p; p += 2;
-	// flags (allowDups)
-	bool allowDups = *(const char *)p; p += 1;
-
-	// init it
-	if ( ! set ( ks , ds , numSlots , NULL , 0 , allowDups , niceness,
-		     "htxdeserial") )
-		return false;
-
-	// sanity check
-	if ( m_numSlots != numSlots ) { char *xx=NULL;*xx=0; }
-	
-	// add keys etc. now
-	const char *kp = p;
-	const char *dpstart = p + ks * numSlotsUsed;
-	const char *dp      = dpstart;
-	// loop over all keys
-	for ( ; kp < dpstart ; kp += ks , dp += ds ) 
-		// add this pair. should NEVER fail
-		if ( ! addKey ( kp , dp ) ) { char *xx=NULL;*xx=0; }
-
-	// sanity check
-	if ( m_numSlotsUsed != numSlotsUsed ) { char *xx=NULL;*xx=0; }
-
-	// sanity check
-	if ( bufSize >= 0 && dp > buf + bufSize ) { char *xx=NULL;*xx=0; }
-
-	// success
-	return true;
-}
-
-// . see how optimal the hashtable is
-// . return max number of consectuive filled slots/buckets
-int32_t HashTableX::getLongestString () const {
-	int32_t count = 0;
-	int32_t max = 0;
-	for ( int32_t i = 0 ; i < m_numSlots ; i++ ) {
-		if ( ! m_flags[i] ) { count = 0; continue; }
-		// inc it
-		count++;
-		if ( count > max ) max = count;
-	}
-	return max;
-}
-		
-// . how many keys are dups
-// . returns -1 on error
-int32_t HashTableX::getNumDups() const {
-	if ( ! m_allowDups ) return 0;
-	HashTableX tmp;
-	if ( ! tmp.set ( m_ks, 0, m_numSlots, NULL , 0 , false , m_niceness,
-			 "htxtmp") )
-		return -1;
-	// put into that table
-	for ( int32_t i = 0 ; i < m_numSlots ; i++ ) {
-		// skip empty bucket
-		if ( ! m_flags[i] ) continue;
-		// get the key
-		const char *kp = (const char *)getKeyFromSlot(i);
-		// add to new table
-		if ( ! tmp.addKey ( kp ) ) return -1;
-	}
-	// the unqieus
-	int32_t uniques = tmp.m_numSlotsUsed;
-	// the dups
-	int32_t dups = m_numSlotsUsed - uniques;
-	// that's it
-	return dups;
-}
-
 // return 32-bit checksum of keys in table
 int32_t HashTableX::getKeyChecksum32 () const {
 	int32_t checksum = 0;
@@ -905,21 +608,4 @@ int32_t HashTableX::getKeyChecksum32 () const {
 		char *xx=NULL;*xx=0;
 	}
 	return checksum;
-}
-
-// print as text into sb for debugging
-void HashTableX::print ( class SafeBuf *sb ) const {
-	for ( int32_t i = 0 ; i < m_numSlots ; i++ ) {
-		// skip empty bucket
-		if ( ! m_flags[i] ) continue;
-		// get the key
-		const char *kp = (const char *)getKeyFromSlot(i);
-		//char *dp = (char *)getValFromSlot(i);
-		// show key in hex
-		const char *kstr = KEYSTR ( kp , m_ks );
-		//char *dstr = KEYSTR ( kp , m_ds );
-		// show key
-		//sb->safePrintf("\n%s -> %s", kstr , dstr );
-		sb->safePrintf("KEY %s\n", kstr );
-	}
 }
