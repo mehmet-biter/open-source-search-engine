@@ -92,21 +92,12 @@ class GigablastRequest {
 
 	///////////
 	//
-	// /admin/import parms
-	//
-	///////////
-	char *m_importDir; // TYPE_CHARPTR
-	int32_t  m_importInjects;
-
-
-	///////////
-	//
 	// /get parms (for getting cached web pages)
 	//
 	///////////
 	int64_t m_docId;
-	int32_t      m_strip;
-	char      m_includeHeader;
+	int32_t m_strip;
+	char m_includeHeader;
 
 	///////////
 	//
@@ -114,7 +105,7 @@ class GigablastRequest {
 	//
 	///////////
 	char *m_urlsBuf;
-	char  m_stripBox;
+	char m_stripBox;
 	char  m_harvestLinks;
 	SafeBuf m_listBuf;
 	Msg4 m_msg4;
@@ -128,14 +119,14 @@ class GigablastRequest {
 	int32_t  m_srn;
 	int32_t  m_ern;
 	char *m_qlang;
-        bool  m_forceDel;
+	bool  m_forceDel;
 	char  m_recycleContent;
 };
 
 // values for Parm::m_flags
 #define PF_COOKIE  0x01  // store in cookie?
 #define PF_REDBOX  0x02  // redbox constraint on search results
-#define PF_SUBMENU_HEADER  0x04
+//#define PF_UNUSED  0x04
 #define PF_WIDGET_PARM     0x08
 #define PF_API             0x10
 #define PF_REBUILDURLFILTERS 0x20
@@ -192,7 +183,6 @@ class Parm {
 	char  m_rowid; // id of row controls are in, if any
 	char  m_rdonly;// if in read-only mode, blank out this control?
 	char  m_hdrs;  // print headers for row or print title/desc for single?
-	char  m_perms; // 0 means same as WebPages' m_perms
 	int32_t  m_flags;
 	int32_t  m_parmNum; // slot # in the m_parms[] array that we are
 	bool (*m_func)(char *parmRec);

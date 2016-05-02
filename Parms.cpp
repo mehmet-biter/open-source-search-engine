@@ -3384,7 +3384,6 @@ void Parms::init ( ) {
 		m_parms[i].m_addin  =  0 ; // add insert row command?
 		m_parms[i].m_rdonly =  0 ; // is command off in read-only mode?
 		m_parms[i].m_hdrs   =  1 ; // assume to always print headers
-		m_parms[i].m_perms  =  0 ; // same as containing WebPages perms
 		m_parms[i].m_plen   = -1 ; // offset for strings length
 		m_parms[i].m_group  =  true      ; // start of a new group of controls?
 		m_parms[i].m_save   =  1 ; // save to xml file?
