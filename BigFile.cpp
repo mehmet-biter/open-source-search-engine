@@ -188,6 +188,7 @@ bool BigFile::addParts ( const char *dirname ) {
 	// . get the directory entry and find out what parts we have
 	Dir dir;
 	dir.set ( dirname );
+
 	// set our directory class
 	if ( !dir.open() ) {
 		log( LOG_ERROR, "disk: openDir ('%s') failed", dirname );
@@ -197,8 +198,10 @@ bool BigFile::addParts ( const char *dirname ) {
 	// match files with this pattern in the directory
 	char pattern[256];
 	sprintf(pattern,"%s*", m_baseFilename.getBufStart() );
+
 	// length of the base filename
 	int32_t blen = gbstrlen ( m_baseFilename.getBufStart() );
+
 	// . set our m_files array
 	// . addFile() will return false on problems
 	// . the lower the fileId the older the file (w/ exception of #0)
@@ -660,14 +663,11 @@ bool BigFile::readwrite ( void         *buf      ,
 	//   back this fd
 	// . fd1 and fd1 are now set in Threads.cpp since we only want to do
 	//   the open right before we actually launch the thread.
-	//fstate->m_fd1         = getfd ( fstate->m_filenum1 , !doWrite , 
-	//				&fstate->m_vfd1);
-	//fstate->m_fd2         = getfd ( fstate->m_filenum2 , !doWrite , 
-	//				&fstate->m_vfd2);
+	//fstate->m_fd1         = getfd ( fstate->m_filenum1 , !doWrite , &fstate->m_vfd1);
+	//fstate->m_fd2         = getfd ( fstate->m_filenum2 , !doWrite , &fstate->m_vfd2);
 	fstate->m_fd1  = -3;
 	fstate->m_fd2  = -3;
-	// fstate->m_vfd1 = -3;
-	// fstate->m_vfd2 = -3;
+
 	// . if we are writing, prevent these fds from being closed on us
 	//   by File::closedLeastUsed(), because the fd could then be re-opened
 	//   by someone else doing a write and we end up writing to THAT FILE!
@@ -678,13 +678,14 @@ bool BigFile::readwrite ( void         *buf      ,
 		// can prevent the fds from being closed on us
 		fstate->m_fd1 = getfd ( fstate->m_filenum1 , !doWrite);
 		fstate->m_fd2 = getfd ( fstate->m_filenum2 , !doWrite);
-		//File *f1 = m_files [ fstate->m_filenum1 ];
-		//File *f2 = m_files [ fstate->m_filenum2 ];
+
 		enterWriteMode( fstate->m_fd1 );
 		enterWriteMode( fstate->m_fd2 );
+
 		fstate->m_closeCount1 = getCloseCount_r ( fstate->m_fd1 );
 		fstate->m_closeCount2 = getCloseCount_r ( fstate->m_fd2 );
 	}
+
 	// get the close counts after calling getfd() since if getfd() calls
 	// File::open() that will inc the counts
 	// closeCount1 and 2 are now set in Threads.cpp since we want to only 
