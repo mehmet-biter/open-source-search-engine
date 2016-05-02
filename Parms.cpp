@@ -2772,9 +2772,7 @@ void Parms::setToDefault ( char *THIS , char objType , CollectionRec *argcr ) {
 			    "OBJ_COLL not OBJ_CONF");
 			char *xx = NULL; *xx = 0;
 		}
-		//if ( m->m_page == PAGE_PRIORITIES )
-		//	log("hey");
-		// or
+
 		if ( m->m_page > PAGE_API && // CGIPARMS &&
 		     m->m_page != PAGE_NONE &&
 		     m->m_obj == OBJ_CONF ) {
@@ -2794,8 +2792,6 @@ void Parms::setToDefault ( char *THIS , char objType , CollectionRec *argcr ) {
 		}
 		// leave arrays empty, set everything else to default
 		if ( m->m_max <= 1 ) {
-			//if ( i == 282 )  // "query" parm
-			//	log("hey");
 			//if ( ! m->m_def ) { char *xx=NULL;*xx=0; }
 			setParm ( THIS , m, i, 0, m->m_def, false/*not enc.*/,
 				  false );

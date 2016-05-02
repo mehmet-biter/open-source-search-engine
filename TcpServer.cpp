@@ -1489,9 +1489,7 @@ int32_t TcpServer::readSocket ( TcpSocket *s ) {
 	if ( avail >= 0 ) s->m_readBuf [ s->m_readOffset ] = '\0';
 	// update last action time stamp
 	s->m_lastActionTime = gettimeofdayInMilliseconds();
-	// debug point
-	//if ( s->m_tunnelMode == 1 )
-	//	log("hey");
+
 	// . if we don't know yet, try to determine the total msg size
 	// . it will try to set s->m_totalToRead
 	// . it will look for the end of the mime on requests and look for
@@ -2551,9 +2549,7 @@ TcpSocket *TcpServer::acceptSocket ( ) {
 	if ( newsd == 0 ) {
 		log("tcp: accept gave sd = 0, strange, that's stdin! "
 		    "allowing to pass through for now.");
-		//int32_t nn = ::send ( 0,"hey",3,0);
-		//log("tcp: send = %"INT32"",nn);
-		//return NULL;
+
 		// so calling close(0) seems to really close it...???
 		//if ( ::close (0) == -1 )
 		//	log("tcp: close3(%"INT32") = %s",(int32_t)0,mstrerror(errno));

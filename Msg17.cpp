@@ -453,10 +453,6 @@ bool Msg17::storeInCache ( char   cacheId ,
 	// now start the rec that will go into the cache
 	char *cacheRec = p;
 
-	// debug point
-	//if ( key.n0 == 0x6ff1ee0116d9cfebLL )
-	//	log("hey");
-
 	if ( g_genericCacheCompress[(int)m_cacheId] ) {
 		// uncompressed size
 		*(int32_t *)p = recSize; p += 4;

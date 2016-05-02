@@ -151,8 +151,7 @@ bool RdbScan::setRead ( BigFile  *file         ,
 	//m_fstate.m_usePartFiles = true;
 	// debug msg
 	//log("diskOff=%"INT64" nb=%"INT32"",offset,bytesToRead);
-	//if ( offset == 16386 && bytesToRead == 16386 )
-	//	log("hey");
+
 	// . do a threaded, non-blocking read 
 	// . we now pass in a NULL buffer so Threads.cpp will do the
 	//   allocation right before launching the thread so we don't waste

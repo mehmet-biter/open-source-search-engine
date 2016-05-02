@@ -841,10 +841,6 @@ void StateCD::printSpiderdbList ( RdbList *list,SafeBuf *sb,char **lastKeyPtr){
 		bool isProcessed = false;
 		if ( srep ) isProcessed = false;
 
-		// debug point
-		//if ( strstr(sreq->m_url,"chief") )
-		//	log("hey");
-
 		// 1 means spidered, 0 means not spidered, -1 means error
 		int32_t status = 1;
 		// if unspidered, then we don't match the prev reply

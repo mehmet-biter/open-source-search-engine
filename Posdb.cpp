@@ -2217,8 +2217,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		// in the bestScores array we have to beat it and then
 		// we have to replace that. we can only have one per,
 		// except for linktext!
-		//if ( m_docId == 52648678438LL )
-		//	log("hey");
+
 		bro = -1;
 		for ( int32_t k = 0 ; k < numTop ; k++ ) {
 			if ( bestmhg1[k]==mhg1 && hg1 !=HASHGROUP_INLINKTEXT ){
@@ -2384,8 +2383,7 @@ float PosdbTable::getTermPairScoreForAny ( int32_t i, int32_t j,
 		// in the bestScores array we have to beat it and then
 		// we have to replace that. we can only have one per,
 		// except for linktext!
-		//if ( m_docId == 52648678438LL )
-		//	log("hey");
+
 		bro = -1;
 		for ( int32_t k = 0 ; k < numTop ; k++ ) {
 			if ( bestmhg1[k]==mhg1 && hg1 !=HASHGROUP_INLINKTEXT ){

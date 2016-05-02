@@ -2663,9 +2663,7 @@ bool SpiderColl::scanListForWinners ( ) {
 				    (int32_t)m_collnum);
 				m_cr->m_spiderCorruptCount++;
 				//srep = NULL;
-				// if ( tmp->getUrlHash48() == 
-				//      271713196158770LL )
-				// 	log("hey");
+
 				continue;
 			}
 

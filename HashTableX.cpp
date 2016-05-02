@@ -386,8 +386,7 @@ bool HashTableX::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 	if ( startTime ) {
 		const char *name ="";
 		if ( m_allocName ) name = m_allocName;
-		//if ( name && strcmp(name,"HashTableX")==0 )
-		//	log("hey");
+
 		int64_t now = gettimeofdayInMilliseconds();
 		logf(LOG_DEBUG,"table: grewtable %s from %"INT32" to %"INT32" slots "
 		     "in %"INT64" ms (this=0x%"PTRFMT") (used=%"INT32")",  

@@ -235,8 +235,7 @@ char *getMatches2 ( Needle *needles          ,
 	for ( ; p < pend ; p++ ) {
 		// breathe
 		QUICKPOLL(niceness);
-		//if ( (char *)p - (char *)haystack >= 12508 )
-		//	log("hey");
+
 		// analytics...
 		
 		// is this a possible match? (this should be VERY fast)
@@ -373,8 +372,7 @@ char *getMatches2 ( Needle *needles          ,
 	for ( ; p < pend ; p++ ) {
 		// breathe
 		QUICKPOLL(niceness);
-		//if ( (char *)p - (char *)haystack >= 12508 )
-		//	log("hey");
+
 		// is this a possible match? (this should be VERY fast)
 		mask  = s0[*(p+0)];
 		if ( ! mask ) continue;

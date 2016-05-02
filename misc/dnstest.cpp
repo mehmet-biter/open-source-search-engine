@@ -141,8 +141,7 @@ void dnsWrapper ( void *state , int32_t ip ) {
 	int64_t time = gettimeofdayInMilliseconds() - st->m_time ;
 	fprintf ( stderr,"Response: %"INT64"ms %s %s (%s)\n", time, 
 			st->m_buf , iptoa(ip) , mstrerror(g_errno));
-	//if ( g_errno == ETRYAGAIN )
-	//	log("hey");
+
 	mfree ( st , sizeof(StateT), "dnstest" );
 	s_count--;
 }

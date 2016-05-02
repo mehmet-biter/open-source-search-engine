@@ -977,10 +977,6 @@ bool Wiktionary::generateHashTableFromWiktionaryTxt ( int32_t sizen ) {
 	// and skip
 	wp++;
 
-	// debug point
-	//if ( strcmp(word,"haves")== 0 )
-	//	log("hey");
-
 	int32_t flag = 0;
 	uint8_t langId = langUnknown;
 
@@ -1726,13 +1722,6 @@ bool Wiktionary::addWord ( char *word ,
 		if ( ! m_debugMap.addKey ( &baseForm , &len ) ) return false;
 	}
 
-	//if ( wid == hash64n("fled",0) )
-	//	log("hey");
-	//if ( formOf != word && fh64 == hash64n("of",0) )
-	//	log("hey");
-	//if ( (uint64_t)wid == 17808519984823939745ULL ) 
-	//	log("stratocumulus");
-
 	// hash in langid
 	fh64 ^= g_hashtab[0][langId];
 	// include POS flag too i guess
@@ -1980,8 +1969,7 @@ bool Wiktionary::compile ( ) {
 			if ( stripLen > 0 ) a[stripLen] = 0;
 			//if ( stripLen > 0 ) 
 			//	log("wikt: %"INT32") %s->%s",i,word,a);
-			//if ( i==5133265 )
-			//	log("hey");
+
 			// if same as original word, ignore it
 			if ( stripLen > 0 ) {
 				int32_t wlen = gbstrlen(word);

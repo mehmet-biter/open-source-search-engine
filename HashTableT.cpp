@@ -273,9 +273,6 @@ bool HashTableT<Key_t, Val_t>::setTableSize ( int32_t n, char *buf, int32_t bufS
 	// don't change size if we do not need to
 	if ( n == m_numSlots ) return true;
 
-	//log("hey");
-	//sleep(3);
-
 	// set the bufSize
 	Key_t *newKeys = (Key_t *)NULL;
 	Val_t *newVals = (Val_t *)NULL;

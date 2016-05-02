@@ -720,9 +720,7 @@ bool qainject1 ( ) {
 			sb.urlEncode ( s_urlPtrs[s_flags[20]] );
 			// the content
 			sb.safePrintf("&hasmime=1");
-			// sanity
-			//if ( strstr(s_urlPtrs[s_flags[20]],"wdc.htm") )
-			//	log("hey");
+
 			sb.safePrintf("&content=");
 			sb.urlEncode(s_contentPtrs[s_flags[20]] );
 			sb.nullTerm();
@@ -2071,9 +2069,7 @@ bool qareindex() {
 			sb.urlEncode ( s_urlPtrs[s_flags[20]] );
 			// the content
 			sb.safePrintf("&hasmime=1");
-			// sanity
-			//if ( strstr(s_urlPtrs[s_flags[20]],"wdc.htm") )
-			//	log("hey");
+
 			sb.safePrintf("&content=");
 			sb.urlEncode(s_contentPtrs[s_flags[20]] );
 			sb.nullTerm();

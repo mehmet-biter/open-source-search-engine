@@ -612,8 +612,7 @@ bool RdbList::growList ( int32_t newSize ) {
 	//     (PTRTYPE)this,m_allocSize , newSize );
 	// make a new buffer
 	char *tmp =(char *) mrealloc ( m_alloc,m_allocSize,newSize,"RdbList");
-	//if ( (int32_t)tmp == 0x904dbd0 )
-	//	log("hey");
+
 	// debug msg
 	//log("tmp=%"XINT32"", (int32_t)tmp);
 	// debug msg
