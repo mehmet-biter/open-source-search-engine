@@ -56,8 +56,6 @@ class HashTableX {
 		else                                 *val = *val + score;
 		return true;
 	};
-	bool addTerm64 ( const int64_t *wid , int32_t score = 1 ) {
-		return addTerm(wid,score); }
 	// a replacement for TermTable.cpp
 	uint32_t getScore ( const int64_t *wid ) const {
 		int32_t slot = getSlot ( wid );
@@ -68,11 +66,6 @@ class HashTableX {
 	uint64_t getScore64FromSlot ( int32_t slot ) const {
 		return *(const uint64_t *)getValueFromSlot ( slot ); };
 
-
-	bool addTerm32 ( const char *str ) {
-		uint32_t wid32 = hash32n ( str );
-		return addTerm32 ( &wid32 );
-	};
 
 	bool addTerm32 ( const int32_t *wid , int32_t score = 1 ) {
 		int32_t slot = getSlot ( wid );
@@ -96,11 +89,6 @@ class HashTableX {
 		return addTerm32 ( key , score ); 
 	};
 	uint32_t getScore32 ( const int32_t *wid ) const {
-		int32_t slot = getSlot ( wid );
-		if ( slot < 0 ) return 0;
-		return *(const uint32_t *)getValueFromSlot ( slot );
-	};
-	uint32_t getScore32 ( const uint32_t *wid ) const {
 		int32_t slot = getSlot ( wid );
 		if ( slot < 0 ) return 0;
 		return *(const uint32_t *)getValueFromSlot ( slot );
