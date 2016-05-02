@@ -22,9 +22,6 @@ int32_t g_numThreads = 0;
 
 char g_dumpMode = 0;
 
-//static void doneDumpingWrapper  ( void *state );
-//static void attemptMergeWrapper ( int fd , void *state ) ;
-
 // since we only do one merge at a time, keep this class static
 class RdbMerge g_merge;
 
@@ -38,9 +35,9 @@ RdbBase::RdbBase ( ) {
 	m_nextMergeForced = false;
 	m_dbname[0] = '\0';
 	m_dbnameLen = 0;
+
 	// use bogus collnum just in case
 	m_collnum = -1;
-	//m_dummy = NULL;
 	reset();
 }
 
@@ -58,32 +55,8 @@ void RdbBase::reset ( ) {
 	}
 	m_numFiles  = 0;
 	m_files [ m_numFiles ] = NULL;
-	//m_isClosing = false;
-	//m_isClosed  = false;
-	//m_isSaving  = false;
-	// reset tree and cache
-	//m_tree.reset();
-	//m_cache.reset();
-	// free the dummy record used for delete recs (negative recs)
-	//if ( m_dummy ) mfree ( m_dummy , m_fixedDataSize ,"Rdb");
-	//m_dummy     = NULL;
-	// reset stats
-	//m_numSeeks   = 0 ;
-	//m_numRead    = 0 ;
-	// reset net stats
-	//m_numReqsGet    = 0 ;
-	//m_numNetReadGet = 0 ;
-	//m_numRepliesGet = 0 ; 
-	//m_numNetSentGet = 0 ;
-	//m_numReqsAdd    = 0 ;
-	//m_numNetReadAdd = 0 ;
-	//m_numRepliesAdd = 0 ; 
-	//m_numNetSentAdd = 0 ;
-	// we no longer need to be saved
-	//m_needsSave = false;
 	// we're not in urgent merge mode yet
 	m_mergeUrgent = false;
-	//m_waitingForTokenForDump  = false;
 	m_waitingForTokenForMerge = false;
 	m_isMerging = false;
 	m_hasMergeFile = false;
@@ -136,11 +109,8 @@ bool RdbBase::init ( char  *dir            ,
 	    "adding new base for dir=%s coll=%s collnum=%"INT32" db=%s",
 	    dir,coll,(int32_t)collnum,dbname);
 
-	// catdb is collection independent
-
 	// make a special subdir to store the map and data files in if
-	// the db is not associated with a collection. /statsdb /accessdb
-	// /facebookdb etc.
+	// the db is not associated with a collection. /statsdb etc.
 	if ( rdb->m_isCollectionLess ) {
 		if ( collnum != (collnum_t) 0 ) {
 			log("db: collnum not zero for catdb.");
@@ -157,58 +127,6 @@ bool RdbBase::init ( char  *dir            ,
 				   tmp,mstrerror(errno));
 	}
 
-	/*
-	if ( strcmp ( dbname , "catdb" ) == 0 ) {
-	// if ( strcmp ( dbname , "catdb1" ) == 0 ||
-	//      strcmp ( dbname , "catdb2" ) == 0 ) {
-		// sanity check, ensure we're zero
-		if ( collnum != (collnum_t) 0 ) {
-			log("db: collnum not zero for catdb.");
-			char *xx = NULL; *xx = 0;
-		}
-		// make a special "cat" dir for it if we need to
-		sprintf ( tmp , "%scat" , dir );
-		if ( ::mkdir ( tmp ,
-			       // S_IRUSR | S_IWUSR | S_IXUSR | 
-			       // S_IRGRP | S_IWGRP | S_IXGRP | 
-			       // S_IROTH | S_IXOTH ) == -1 && errno != EEXIST )
-			return log("db: Failed to make directory %s: %s.",
-				   tmp,mstrerror(errno));
-	}
-	// statsdb is collection independent
-	else if ( strcmp ( dbname , "statsdb" ) == 0 ) {
-		// sanity check, statsdb should always be zero
-		if ( collnum != (collnum_t) 0 ) {
-			log ( "db: collnum not zero for statsdb." );
-			char *xx = NULL; *xx = 0;
-		}
-		// make a special "stats" dir for it if necessary
-		sprintf ( tmp , "%sstats" , dir );
-		if ( ::mkdir ( tmp ,
-			       // S_IRUSR | S_IWUSR | S_IXUSR | 
-			       // S_IRGRP | S_IWGRP | S_IXGRP | 
-			       // S_IROTH | S_IXOTH ) == -1 && errno != EEXIST )
-			return log( "db: Failed to make directory %s: %s.",
-				    tmp, mstrerror( errno ) );
-	}
-	// statsdb is collection independent
-	else if ( strcmp ( dbname , "accessdb" ) == 0 ) {
-		// sanity check, accessdb should always be zero
-		if ( collnum != (collnum_t) 0 ) {
-			log ( "db: collnum not zero for accessdb." );
-			char *xx = NULL; *xx = 0;
-		}
-		// make a special "stats" dir for it if necessary
-		sprintf ( tmp , "%saccess" , dir );
-		if ( ::mkdir ( tmp ,
-			       // S_IRUSR | S_IWUSR | S_IXUSR | 
-			       // S_IRGRP | S_IWGRP | S_IXGRP | 
-			       // S_IROTH | S_IXOTH ) == -1 && errno != EEXIST )
-			return log( "db: Failed to make directory %s: %s.",
-				    tmp, mstrerror( errno ) );
-	}
-	*/
-
 	//m_dir.set ( dir , coll );
 	m_dir.set ( tmp );
 	m_coll    = coll;
@@ -222,10 +140,6 @@ bool RdbBase::init ( char  *dir            ,
 	m_dbnameLen = gbstrlen ( dbname );
 	gbmemcpy ( m_dbname , dbname , m_dbnameLen );
 	m_dbname [ m_dbnameLen ] = '\0';
-	// set up the dummy file
-	//char filename[256];
-	//sprintf(filename,"%s-saved.dat",m_dbname);
-	//m_dummyFile.set ( getDir() , filename );
 	// store the other parameters
 	m_dedup            = dedup;
 	m_fixedDataSize    = fixedDataSize;
@@ -281,28 +195,7 @@ bool RdbBase::init ( char  *dir            ,
 	// . the wait here is in ms, MIN_WAIT is in seconds
 	// . call this every now and then to quickly scan our memory to
 	//   prevent swap out
-	/*
-	static bool s_firstTime = true;
-	if ( !g_loop.registerSleepCallback(MIN_WAIT*1000,this,scanMemWrapper)){
-		log("RdbMem::init: register sleep callback for scan failed. "
-		     "Warning. Mem may be swapped out.");
-		g_errno = 0;
-	}
-	else if ( s_firstTime ) {
-		s_firstTime = false;
-		log("RdbMem::init: scanning mem every %"INT32" secs with "
-		    "PAGE_SIZE = %"INT32"" , MIN_WAIT , PAGE_SIZE );
-	}	
-	*/
-	// create a dummy data string for deleting nodes
-	//if ( m_fixedDataSize > 0 ) {
-	//	m_dummy = (char *) mmalloc ( m_fixedDataSize ,"RdbDummy" );
-	//	m_dummySize = sizeof(key_t);
-	//	if ( ! m_dummy ) return false;
-	//}
-	//m_delRecSize = sizeof(key_t);
-	//if ( m_fixedDataSize == -1 ) m_delRecSize += m_dummySize + 4;
-	//if ( m_fixedDataSize  >  0 ) m_delRecSize += m_dummySize;
+
 	// load any saved tree
 	//if ( ! loadTree ( ) ) return false;
 
@@ -386,13 +279,7 @@ bool RdbBase::init ( char  *dir            ,
 
 	// now m_minToMerge might have changed so try to do a merge
 	//attemptMerge ( );
-	// debug test
-	//BigFile f;
-	//f.set ( "/gigablast3" , "tmp" );
-	//f.open ( O_RDWR | O_CREAT );
-	//char buf[128*1024*5+10];
-	//int32_t n = f.write ( buf , 128*1024*5+10 , 0 );
-	//fprintf(stderr,"n=%"INT32"\n",n);
+
 	return true;
 	*/
 }
@@ -408,8 +295,6 @@ bool RdbBase::moveToTrash ( char *dstDir ) {
 		// . rename the map file
 		// . get the "base" filename, does not include directory
 		BigFile *f ;
-		//char dstDir      [1024];
-		//sprintf ( dstDir      , "%s" , subdir );
 		char dstFilename [1024];
 		f = m_maps[i]->getFile();
 		sprintf ( dstFilename , "%s" , f->getFilename());
@@ -658,11 +543,11 @@ bool RdbBase::setFiles ( ) {
 int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2 ) {
 	int32_t n = m_numFiles;
 	// can't exceed this
-	if ( n >= MAX_RDB_FILES ) { 
-		g_errno = ETOOMANYFILES; 
-		log(LOG_LOGIC,
-		    "db: Can not have more than %"INT32" files. File add "
-		    "failed.",(int32_t)MAX_RDB_FILES);
+	if ( n >= MAX_RDB_FILES ) {
+		g_errno = ETOOMANYFILES;
+		log( LOG_LOGIC,
+		     "db: Can not have more than %"INT32" files. File add "
+				     "failed.", ( int32_t ) MAX_RDB_FILES );
 		return -1;
 	}
 
@@ -671,38 +556,34 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 	// never get freed up.
 	int64_t mm = g_conf.m_maxMem;
 	g_conf.m_maxMem = 0x0fffffffffffffffLL;
-	BigFile *f ;
+	BigFile *f;
 	try { f = new (BigFile); }
-	catch ( ...  ) { 
+	catch ( ... ) {
 		g_conf.m_maxMem = mm;
 		g_errno = ENOMEM;
-		log("RdbBase: new(%i): %s", 
-		    (int)sizeof(BigFile),mstrerror(g_errno));
-		return -1; 
+		log( "RdbBase: new(%i): %s",
+		     ( int ) sizeof( BigFile ), mstrerror( g_errno ) );
+		return -1;
 	}
-	mnew ( f , sizeof(BigFile) , "RdbBFile" );
+	mnew( f, sizeof( BigFile ), "RdbBFile" );
 
 	// set the data file's filename
 	char name[512];
-	if      ( mergeNum <= 0 && m_isTitledb )
-		snprintf(name,511,"%s%04"INT32"-%03"INT32".dat",
-			 m_dbname,id,id2 );
-	else if ( mergeNum <= 0 )
-		snprintf ( name ,511,"%s%04"INT32".dat"      , m_dbname, id );
-	else if ( m_isTitledb )
-		snprintf ( name ,511,"%s%04"INT32"-%03"INT32".%03"INT32".dat",
-			  m_dbname, id , id2, mergeNum );
-	else
-		snprintf(name,511,"%s%04"INT32".%03"INT32".dat",
-			m_dbname,id,mergeNum);
+	if ( mergeNum <= 0 && m_isTitledb ) {
+		snprintf( name, 511, "%s%04" INT32"-%03" INT32".dat", m_dbname, id, id2 );
+	} else if ( mergeNum <= 0 ) {
+		snprintf( name, 511, "%s%04" INT32".dat", m_dbname, id );
+	} else if ( m_isTitledb ) {
+		snprintf( name, 511, "%s%04" INT32"-%03" INT32".%03" INT32".dat", m_dbname, id, id2, mergeNum );
+	} else {
+		snprintf( name, 511, "%s%04" INT32".%03" INT32".dat", m_dbname, id, mergeNum );
+	}
 
 	f->set ( getDir() , name , NULL ); // getStripeDir() );
 
 	// if new insure does not exist
 	if ( isNew && f->doesExist() ) {
-		log("rdb: creating NEW file %s/%s which already exists!",
-		    f->getDir(),
-		    f->getFilename());
+		log( LOG_WARN, "rdb: creating NEW file %s/%s which already exists!", f->getDir(), f->getFilename() );
 		mdelete ( f , sizeof(BigFile),"RdbBFile");
 		delete (f); 
 		return -1;
@@ -714,8 +595,7 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 	catch ( ... ) { 
 		g_conf.m_maxMem = mm;
 		g_errno = ENOMEM;
-		log("RdbBase: new(%i): %s", 
-		    (int)sizeof(RdbMap),mstrerror(g_errno));
+		log( LOG_WARN, "RdbBase: new(%i): %s", (int)sizeof(RdbMap), mstrerror(g_errno) );
 		mdelete ( f , sizeof(BigFile),"RdbBFile");
 		delete (f); 
 		return -1; 
@@ -729,9 +609,9 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 	CollectionRec *cr = NULL;
 
 	// debug help
-	if ( isNew )
-		log("rdb: adding new file %s/%s",// m_numFiles=%"INT32"",
-		    f->getDir(),f->getFilename());//,m_numFiles);
+	if ( isNew ) {
+		log( "rdb: adding new file %s/%s", f->getDir(), f->getFilename() );
+	}
 
 	// if not a new file sanity check it
 	for ( int32_t j = 0 ; ! isNew && j < f->m_maxParts - 1 ; j++ ) {
@@ -739,7 +619,7 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 		File *ff = f->getFile2(j);//m_files[j];
 		if ( ! ff ) continue;
 		if ( ff->getFileSize() == MAX_PART_SIZE ) continue;
-		log ( "db: File %s %s has length %"INT64", but it should be %"INT64". "
+		log ( LOG_WARN, "db: File %s %s has length %" INT64", but it should be %" INT64". "
 		      "You should move it to a temporary directory "
 		      "and restart. It probably happened when the power went "
 		      "out and a file delete operation failed to complete.",
@@ -752,18 +632,18 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 
 	// set the map file's  filename
 	sprintf ( name , "%s%04"INT32".map", m_dbname, id );
-	m->set ( getDir() , name , m_fixedDataSize , m_useHalfKeys , m_ks ,
-		 m_pageSize );
+	m->set ( getDir(), name, m_fixedDataSize, m_useHalfKeys, m_ks, m_pageSize );
 	if ( ! isNew && ! m->readMap ( f ) ) { 
 		// if out of memory, do not try to regen for that
 		if ( g_errno == ENOMEM ) return -1;
 		g_errno = 0;
 		log("db: Could not read map file %s",name);
+
 		// if 'gb dump X collname' was called, bail, we do not
 		// want to write any data
-		if ( g_dumpMode ) return -1; 
-		log("db: Attempting to generate map file for data "
-		    "file %s* of %"INT64" bytes. May take a while.",
+		if ( g_dumpMode ) return -1;
+
+		log("db: Attempting to generate map file for data file %s* of %" INT64" bytes. May take a while.",
 		    f->getFilename(), f->getFileSize() );
 
 		// this returns false and sets g_errno on error
@@ -785,11 +665,6 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 			log("db: %s",cmd.getBufStart() );
 			gbsystem ( cmd.getBufStart() );
 			exit(0);
-			//mdelete ( f , sizeof(BigFile),"RdbBase");
-			//delete (f); 
-			//mdelete ( m , sizeof(RdbMap),"RdbBase");
-			//delete (m); 
-			//return -1; 
 		}
 		log("db: Map generation succeeded.");
 		// . save it
@@ -806,8 +681,10 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 		if ( ! status ) return log("db: Save failed.");
 	}
 
-	if ( ! isNew ) log(LOG_DEBUG,"db: Added %s for collnum=%"INT32" pages=%"INT32"",
-			    name ,(int32_t)m_collnum,m->getNumPages());
+	if ( ! isNew ) {
+		log( LOG_DEBUG, "db: Added %s for collnum=%" INT32" pages=%" INT32,
+		     name, ( int32_t ) m_collnum, m->getNumPages() );
+	}
 
 	// open this big data file for reading only
 	if ( ! isNew ) {
@@ -1232,37 +1109,34 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	logTrace( g_conf.m_logTraceRdbBase, "BEGIN. minToMergeOverride: %"INT32"", minToMergeOverride);
 
 	// don't do merge if we're in read only mode
-	if ( g_conf.m_readOnlyMode ) 
-	{
+	if ( g_conf.m_readOnlyMode ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, in read-only mode" );
 		return false;
 	}
 	
 	// or if we are copying our files to a new host
 	//if ( g_hostdb.m_syncHost == g_hostdb.m_myHost ) return;
+
 	// nor if EITHER of the merge classes are suspended
-	if ( g_merge.m_isSuspended  ) 
-	{
+	if ( g_merge.m_isSuspended  ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, is suspended" );
 		return false;
 	}
 	
-	if ( g_merge2.m_isSuspended ) 
-	{
+	if ( g_merge2.m_isSuspended ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, is suspended (2)" );
 		return false;
 	}
 
 	// shutting down? do not start another merge then
-	if ( g_process.m_mode == EXIT_MODE ) 
-	{
+	if ( g_process.m_mode == EXIT_MODE ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, shutting down" );
 		return false;
 	}
 	
 
 	// sanity checks
-	if (   g_loop.m_inQuickPoll ) { 
+	if ( g_loop.m_inQuickPoll ) {
 		logTrace( g_conf.m_logTraceRdbBase, "END, in QuickPoll (?)" );
 		log("rdb: cant attempt merge in quickpoll");
 		return false;
@@ -1530,10 +1404,7 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	m_doLog = doLog;
 	//if ( m_mergeUrgent ) priority = 2;
 	//else                 priority = 0;
-	// tfndb doesn't need token, since titledb merge writes tfndb recs
-	// if ( //m_rdb != g_tfndb.getRdb() &&
-	//      ! g_msg35.getToken ( this , gotTokenForMergeWrapper, priority))
-	// 	return ;
+
 	// bitch if we got token because there was an error somewhere
 	if ( g_errno ) {
 		log(LOG_LOGIC,"merge: attemptMerge: %s failed: %s",
@@ -1545,30 +1416,9 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 		// we don't have the token, so we're fucked...
 		return false;
 	}
-	// debug msg
-	//if ( doLog )
-	//log(LOG_INFO,"merge: Got merge token for %s without blocking.",
-	//    m_dbname);
-	// if did not block
-/*
-	gotTokenForMerge ( );
-}
 
-void gotTokenForMergeWrapper ( void *state ) {
-	RdbBase *THIS = (RdbBase *)state;
-	THIS->gotTokenForMerge();
-}
-
-void RdbBase::gotTokenForMerge ( ) {
-*/
-	// debug mg
-	//log("RdbBase::gotTokenForMerge: for %s",m_dbname);
 	// don't repeat
 	m_waitingForTokenForMerge = false;
-	// if a dump is happening it will always be the last file, do not
-	// include it in the merge
-	//int32_t numFiles = m_numFiles;
-	//if ( numFiles > 0 && m_dump->isDumping() ) numFiles--;
 
 	// . if we are significantly over our m_minToMerge limit
 	//   then set m_mergeUrgent to true so merge disk operations will
@@ -1584,9 +1434,7 @@ void RdbBase::gotTokenForMerge ( ) {
 		    m_dbname,m_coll);
 		g_numUrgentMerges++;
 	}
-	// tfndb has his own merge class since titledb merges write tfndb recs
-	//RdbMerge *m = &g_merge;
-	//if ( m_rdb == g_tfndb.getRdb() ) m = &g_merge2;
+
 	// sanity check
 	if ( m_isMerging || m->isMerging() ) {
 		//if ( m_doLog )
@@ -1621,23 +1469,11 @@ void RdbBase::gotTokenForMerge ( ) {
 	int32_t      mini ;
 	bool      minOld ;
 	int32_t      id2  = -1;
-	//int32_t      minToMerge;
 	bool      overide = false;
-	//int32_t      smini = - 1;
-	//int32_t      sn ;
-	//int64_t tfndbSize = 0;
 	int32_t      nowLocal = getTimeLocal();
 
-	// but if niceness is 0 merge ALL files
-	//if ( niceness == 0 ) {
-	//	n = m_numFiles;
-	//	i = -1;
-	//	goto skip;
-	//}
-
-	//char rdbId = getIdFromRdb ( m_rdb );
-
 	logTrace( g_conf.m_logTraceRdbBase, "Checking files" );
+
 	// if one file is even #'ed then we were merging into that, but
 	// got interrupted and restarted. maybe the power went off or maybe
 	// gb saved and exited w/o finishing the merge.
@@ -1667,7 +1503,6 @@ void RdbBase::gotTokenForMerge ( ) {
 		if ( n <= 1 ) {
 			log(LOG_LOGIC,"merge: attemptMerge: Resuming. bad "
 			    "engineer for %s coll=%s",m_dbname,m_coll);
-			//g_msg35.releaseToken();
 			if ( m_mergeUrgent ) {
 				log("merge: leaving urgent merge mode");
 				g_numUrgentMerges--;
@@ -1783,11 +1618,7 @@ void RdbBase::gotTokenForMerge ( ) {
 	// . files must be consecutive, however
 	// . but ALWAYS make sure file i-1 is bigger than file i
 	n = numFiles - minToMerge + 2 ;
-	// . limit for posdb since more than about 8 gets abnormally slow
-	// . no this was a ruse, the spider was evaluating firstips in the
-	//   bg slowing the posdb merge down.
-	//if ( m_rdb && m_rdb->m_rdbId == RDB_POSDB && n > 8 )
-	//	n = 8;
+
 	// titledb should always merge at least 50 files no matter what though
 	// cuz i don't want it merging its huge root file and just one
 	// other file... i've seen that happen... but don't know why it didn't
@@ -1802,16 +1633,10 @@ void RdbBase::gotTokenForMerge ( ) {
 	// NEVER merge more than this many files, our current merge routine
 	// does not scale well to many files
 	if ( m_absMaxFiles > 0 && n > m_absMaxFiles ) n = m_absMaxFiles;
-	//smini = -1;
+
 	// but if we are forcing then merge ALL, except one being dumped
 	if ( m_nextMergeForced ) n = numFiles;
-	// or if doing relabalncing, merge them all. tight merge
-	//if ( g_rebalance.m_isScanning && g_rebalance.m_collnum == m_collnum) 
-	//	n = numFiles;
-	//else if ( m_isTitledb ) {
-	//	RdbBase *base = g_tfndb.getRdb()->m_bases[m_collnum];
-	//	tfndbSize = base->getDiskSpaceUsed();
-	//}
+
 	//tryAgain:
 	minr = 99999999999.0;
 	mint = 0x7fffffffffffffffLL ;
@@ -1927,50 +1752,20 @@ void RdbBase::gotTokenForMerge ( ) {
 		mini   = i;
 		minOld = old;
 	}
-	// . if titledb, merge at least enough titledb recs to equal the size
-	//   of tfndb times three if we can, without going too far overboard
-	//   because we have to read the *entire* tfndb just to merge two
-	//   titledb files... for now at least
-	// . save the settings that work in case we have to pop them
-	// . times 6 is better than times 3 because reading from tfndb can
-	//   be cpu intensive if we have to merge in the list from the rdb tree
-	//if ( m_isTitledb && mint<6*tfndbSize && mini>=0 && n<numFiles ) {
-	//	smini = mini;
-	//	sn    = n;
-	//	// but try increasing n unti we bust
-	//	n++;
-	//	goto tryAgain;
-	//}
-	// bring back saved if we should
-	//if ( smini >= 0 ) {
-	//	mini = smini;
-	//	n    = sn;
-	//}
+
 	// if no valid range, bail
 	if ( mini == -1 ) { 
-		log(LOG_LOGIC,"merge: gotTokenForMerge: Bad engineer. mini "
-		    "is -1.");
-		//g_msg35.releaseToken(); 
+		log(LOG_LOGIC,"merge: gotTokenForMerge: Bad engineer. mini is -1.");
 		return false; 
 	}
 	// . merge from file #mini through file #(mini+n)
 	// . these files should all have ODD fileIds so we can sneak a new
 	//   mergeFileId in there
 	mergeFileId = m_fileIds[mini] - 1;
+
 	// get new id, -1 on error
-	id2 = -1;
-	if ( m_isTitledb ) {
-		//id2 = getAvailId2 ( );
-		// this is obsolete, make 000 for now
-		id2 = 000;
-		if ( id2 < 0 ) {
-			log(LOG_LOGIC,"merge: attemptMerge: could not add "
-			    "new file for titledb. No avail ids."); 
-			g_errno = 0;
-			//g_msg35.releaseToken();
-			return false; 
-		}
-	}
+	id2 = m_isTitledb ? 0 : -1;
+
 	// . make a filename for the merge
 	// . always starts with file #0
 	// . merge targets are named like "indexdb0000.dat.002"
@@ -1982,7 +1777,6 @@ void RdbBase::gotTokenForMerge ( ) {
 	if ( mergeFileNum < 0 ) {
 		log(LOG_LOGIC,"merge: attemptMerge: Could not add new file."); 
 		g_errno = 0;
-		//g_msg35.releaseToken();
 		return false; 
 	}
 	
@@ -1997,8 +1791,7 @@ void RdbBase::gotTokenForMerge ( ) {
  startMerge:
 	// sanity check
 	if ( n <= 1 && ! overide ) {
-	       log(LOG_LOGIC,"merge: gotTokenForMerge: Not merging %"INT32" files.", n);
-	       //g_msg35.releaseToken(); 
+		log(LOG_LOGIC,"merge: gotTokenForMerge: Not merging %"INT32" files.", n);
 		return false; 
 	}
 
@@ -2007,7 +1800,6 @@ void RdbBase::gotTokenForMerge ( ) {
 	m_numFilesToMerge   = n  ; // numFiles - 1;
 	m_mergeStartFileNum = mergeFileNum + 1; // 1
 
-	//CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
 	char *coll = "";
 	if ( cr ) coll = cr->m_coll;
 
@@ -2081,8 +1873,7 @@ void RdbBase::gotTokenForMerge ( ) {
 		log("merge: Had error getting merge token for %s: %s.",
 		    m_dbname,mstrerror(g_errno));
 	g_errno = 0;
-	// give token back
-	//g_msg35.releaseToken();
+
 	// try again
 	//m_rdb->attemptMerge( m_niceness, false , true );
 	// how did this happen?
@@ -2130,20 +1921,16 @@ int64_t RdbBase::getListSize ( char *startKey , char *endKey , char *max ,
 		// . minKey2 may be bigger than the actual minKey for this
 		//   range, likewise, maxKey2 may be smaller than the actual
 		//   maxKey, but should be good estimates
-		int64_t maxBytes = m_maps[i]->getMaxRecSizes ( pg1     ,
-							    pg2     ,
-							    startKey,
-							    endKey  ,
-							    true    );//subtrct
+		int64_t maxBytes = m_maps[i]->getMaxRecSizes ( pg1, pg2, startKey, endKey, true );//subtrct
+
 		// get the min as well
-		int64_t minBytes = m_maps[i]->getMinRecSizes ( pg1     ,
-							    pg2     ,
-							    startKey,
-							    endKey  ,
-							    true    );//subtrct
+		int64_t minBytes = m_maps[i]->getMinRecSizes ( pg1, pg2, startKey, endKey, true );//subtrct
+
 		int64_t avg = (maxBytes + minBytes) / 2LL;
+
 		// use that
 		totalBytes += avg;
+
 		// if not too many pages then don't even bother setting "max"
 		// since it is used only for interpolating if this term is
 		// truncated. if only a few pages then it might be way too
@@ -2258,55 +2045,6 @@ int64_t RdbBase::getDiskSpaceUsed ( ) {
 	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) 
 		count += m_files[i]->getFileSize();
 	return count;
-}
-
-// . convert a tfn (title file num)(encoded in tfndb recs) to a real file num
-// . used by Msg22
-// . tfndb maps a docid to a tfn (tfndb is like an RdbMap but fatter)
-// . if id2 is not present, it is because of our old bug: some middle files
-//   got merged and the file nums changed, so all the old tfns are mapping to
-//   an older file than they should!  so if 2 merges happened, if the merge 
-//   above the other merge
-// . IMPORTANT: de-compensate for merge file inserted before us
-int32_t RdbBase::getFileNumFromId2 ( int32_t id2 ) {
-	int32_t prev = -1;
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		if ( m_fileIds2[i] == id2 ) {
-			if ( m_hasMergeFile && i >= m_mergeStartFileNum ) i--;
-			return i;
-		}
-		if ( m_fileIds2[i] < id2 ) prev = i;
-	}
-	// if not there, must have been merged below, use prev
-	if ( m_hasMergeFile && prev >= m_mergeStartFileNum ) prev--;
-	// debug msg
-	//log("Rdb:getFileNumFromId2: id2 of %"INT32" is invalid. returning "
-	//    "startFileNum of %"INT32".",id2,prev,id2);
-	log("db: titledb*-%"INT32".dat file in collection \"%s\" "
-	    "is referenced but no longer exists. "
-	    "To fix this do a tight merge on titledb; you may have to delete "
-	    "tfndb* and regenerate it using the 'gb gendbs' command after the "
-	    "tight merge completes if the document is indeed missing. Cause "
-	    "may have been an improper shutdown, or not saving tfndb or "
-	    "titledb, or a missing document in titledb.",id2,m_coll);
-	//log("DISK: titledb*-%"INT32".dat file is referenced but no longer exists."
-	//  " See section on Database Repair in overview.html to fix it.",id2);
-	return -1; // prev;
-}
-
-// . used by Sync.cpp to convert a sync point to a list of file nums
-//   to read from for syncing
-// . if it is m_savedFile then return -2
-// . if it is not found   then return -1
-int32_t RdbBase::getFileNumFromName ( char *fname ) {
-	// this is a special case
-	if ( strstr ( fname , "-sav" ) ) return -2;
-	// scan our current files
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
-		char *ff = m_files[i]->getFilename();
-		if ( strcmp ( ff , fname ) == 0 ) return i;
-	}
-	return -1;
 }
 
 void RdbBase::closeMaps ( bool urgent ) {
@@ -2438,12 +2176,7 @@ bool RdbBase::verifyFileSharding ( ) {
 
 	g_jobScheduler.allow_new_jobs();
 
-	//if ( got ) 
-	//	log("db: verified %"INT32" recs for %s in coll %s",
-	//	    got,m_dbname,m_coll);
-       
 	if ( got == count ) {
-		//log("db: passed on %"INT32" recs (count=%"INT32")",got,count);
 		return true;
 	}
 
@@ -2451,17 +2184,9 @@ bool RdbBase::verifyFileSharding ( ) {
 	g_rebalance.m_numForeignRecs += count - got;
 	log ("db: Out of first %"INT32" records in %s for %s.%"INT32", only %"INT32" belong "
 	     "to our group.",count,m_dbname,m_coll,(int32_t)m_collnum,got);
-	// exit if NONE, we probably got the wrong data
-	//if ( got == 0 ) log("db: Are you sure you have the "
-	//		    "right data in the right directory? ");
 
 	//log ( "db: Exiting due to Posdb inconsistency." );
 	return true;//g_conf.m_bypassValidation;
-
-	//log(LOG_DEBUG, "db: Posdb passed verification successfully for %"INT32" "
-	//		"recs.", count );
-	// DONE
-	//return true;
 }
 
 float RdbBase::getPercentNegativeRecsOnDisk ( int64_t *totalArg ) {

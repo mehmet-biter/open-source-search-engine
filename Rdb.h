@@ -10,7 +10,6 @@
 #include "RdbMem.h"
 #include "RdbCache.h"
 #include "RdbDump.h"
-//#include "Dir.h"
 #include "RdbBuckets.h"
 
 bool makeTrashDir() ;
@@ -20,7 +19,6 @@ void addCollnumToLinkedListOfMergeCandidates ( collnum_t dumpCollnum ) ;
 
 // . each Rdb instance has an ID
 // . these ids are also return values for getIdFromRdb()
-#define	RDB_START 1
 enum {
 	RDB_NONE = 0, //       0
 	RDB_TAGDB,
@@ -66,27 +64,30 @@ enum {
 // get the RdbBase class for an rdbId and collection name
 class RdbBase *getRdbBase ( uint8_t rdbId, const char *coll );
 class RdbBase *getRdbBase ( uint8_t rdbId , collnum_t collnum );
+
 // maps an rdbId to an Rdb
 class Rdb *getRdbFromId ( uint8_t rdbId ) ;
+
 // the reverse of the above
 char getIdFromRdb ( class Rdb *rdb ) ;
 char isSecondaryRdb ( uint8_t rdbId ) ;
+
 // get the dbname
 char *getDbnameFromId ( uint8_t rdbId ) ;
-// get cache by rdbId. Used by MsgB.cpp.
-//RdbCache *getCache ( uint8_t rdbId ) ;
+
 // size of keys
 char getKeySizeFromRdbId  ( uint8_t rdbId );
+
 // and this is -1 if dataSize is variable
 int32_t getDataSizeFromRdbId ( uint8_t rdbId );
 void forceMergeAll ( char rdbId , char niceness ) ;
+
 // main.cpp calls this
 void attemptMergeAll ( int fd , void *state ) ;
 void attemptMergeAll2 ( );
 
 class Rdb {
-
- public:
+public:
 
 	 Rdb ( );
 	~Rdb ( );
@@ -164,24 +165,13 @@ class Rdb {
 	// calls addList above
 	bool addList ( const char *coll , RdbList *list, int32_t niceness );
 
-	// . add a record without any data, just a key (faster)
-	// . returns the node # in the tree it added the record to
-	//int32_t addKey ( collnum_t collnum , key_t &key );
-	int32_t addKey ( collnum_t collnum , char *key );
-
-	// . uses the bogus data pointed to by "m_dummy" for record's data
-	// . we clear the key low bit to signal a delete
-	// . returns false and sets errno on error
-	//bool deleteRecord ( collnum_t collnum , key_t &key ) ;
-	bool deleteRecord ( collnum_t collnum , char *key );
-
 	bool isSecondaryRdb () {
-		return ::isSecondaryRdb((unsigned char)m_rdbId); };
+		return ::isSecondaryRdb((unsigned char)m_rdbId);
+	}
 	
 	bool isInitialized () { return m_initialized; };
 
 	// get the directory name where this rdb stores it's files
-	//char *getDir       ( ) { return m_dir.getDirname(); };
 	char *getDir       ( ) { return g_hostdb.m_dir; };
 	char *getStripeDir ( ) { return g_conf.m_stripeDir; };
 
@@ -221,13 +211,15 @@ class Rdb {
 
 	// returns -1 if variable (variable dataSize)
 	int32_t getRecSize ( ) {
-		if ( m_fixedDataSize == -1 ) return -1;
-		//return sizeof(key_t) + m_fixedDataSize; };
-		return m_ks + m_fixedDataSize; };
+		if ( m_fixedDataSize == -1 ) {
+			return -1;
+		}
+
+		return m_ks + m_fixedDataSize;
+	}
 
 	// use the maps and tree to estimate the size of this list
 	int64_t getListSize ( collnum_t collnum,
-			   //key_t startKey ,key_t endKey , key_t *maxKey ,
 			   char *startKey ,char *endKey , char *maxKey ,
 			   int64_t oldTruncationLimit ) ;
 
@@ -241,8 +233,6 @@ class Rdb {
 	int64_t getNumTotalRecs ( bool useCache = false ) ;
 
 	int64_t getCollNumTotalRecs ( collnum_t collnum );
-
-	int64_t getNumRecsOnDisk ( );
 
 	int64_t getNumGlobalRecs ( );
 
@@ -279,15 +269,6 @@ class Rdb {
 	int64_t getLastWriteTime   ( ) { return m_lastWrite; };
 	
 	// private:
-
-	//void attemptMerge ( int32_t niceness , bool forceMergeAll ,
-	//		    bool doLog = true );
-
-	bool gotTokenForDump  ( ) ;
-	//void gotTokenForMerge ( ) ;
-
-	// called after merge completed
-	//bool incorporateMerge ( );
 
 	// . you'll lose your data in this class if you call this
 	void reset();
@@ -326,65 +307,27 @@ class Rdb {
 	// rebuilt files, pointed to by rdb2.
 	bool updateToRebuildFiles ( Rdb *rdb2 , char *coll ) ;
 
-	//bool hasMergeFile ( ) { return m_hasMergeFile; };
-
-	// used for translating titledb file # 255 (as read from new tfndb)
-	// into the real file number
-	//int32_t getNewestFileNum ( ) { return m_numFiles - 1; };
-
-	// Msg22 needs the merge info so if the title file # of a read we are
-	// doing is being merged, we have to include the start merge file num
-
-	// used by Sync.cpp to convert a file name to a file number in m_files
-	//int32_t getFileNumFromName ( char *filename );
-
-	//void doneWrapper2 ( ) ;
-	//void doneWrapper4 ( ) ;
-	//int32_t m_x;
-	//int32_t m_a;
-
-	// keep a copy of these here so merge can use them to kick out
-	// records whose key when, ANDed w/ m_groupMask, equals
-	// m_groupId
-	//uint32_t  m_groupMask;
-	//uint32_t  m_groupId;
-
-	// . we try to minimize the number of files to minimize disk seeks
-	// . records that end up as not found will hit all these files
-	// . when we get "m_minToMerge" or more files a merge kicks in
-	// . TODO: merge should combine just the smaller files... kinda
-	// . files are sorted by fileId
-	// . older files are listed first (lower fileIds)
-	// . filenames should include the directory (full filenames)
-	// . TODO: RdbMgr should control what rdb gets merged?
-	//BigFile  *m_files     [ MAX_RDB_FILES ];
-	//int32_t      m_fileIds   [ MAX_RDB_FILES ];
-	//int32_t      m_fileIds2  [ MAX_RDB_FILES ]; // for titledb/tfndb linking
-	//RdbMap   *m_maps      [ MAX_RDB_FILES ];
-	//int32_t      m_numFiles;
-
-	// just put this into CollectionRec so we are not limited to MAX_COLLS
-	//class RdbBase *m_bases [ MAX_COLLS ];
-	//int32_t       m_numBases;
-
 	bool      m_dedup;
 	int32_t      m_fixedDataSize;
 
-	//Dir       m_dir;
 	char      m_dbname [32];
 	int32_t      m_dbnameLen;
 
 	bool      m_isCollectionLess;
+
 	// for g_statsdb, etc.
 	RdbBase *m_collectionlessBase;
 
 	//RdbCache  m_cache;
+
 	// for storing records in memory
 	RdbTree    m_tree;  
 	RdbBuckets m_buckets;
 	bool       m_useTree;
+
 	// for dumping a table to an rdb file
-	RdbDump   m_dump;  
+	RdbDump   m_dump;
+
 	// memory for us to use to avoid calling malloc()/mdup()/...
 	RdbMem    m_mem;
 
@@ -394,11 +337,6 @@ class Rdb {
 	bool m_inAddList;
 
 	int32_t m_numMergesOut;
-
-	// . this is now static in Rdb.cpp
-	// . for merging many rdb files into one 
-	// . no we brought it back so tfndb can merge while titledb is merging
-	//RdbMerge  m_merge; 
 
 	BigFile   m_saveFile; // for saving the tree
 	bool      m_isClosing; 
@@ -422,49 +360,31 @@ class Rdb {
 	int64_t m_numSeeks;
 	int64_t m_numReSeeks;
 	int64_t m_numRead;
+
 	// network request/reply info for get requests
 	int64_t m_numReqsGet    ;
 	int64_t m_numNetReadGet ;
 	int64_t m_numRepliesGet ; 
 	int64_t m_numNetSentGet ;
+
 	// network request/reply info for add requests
 	int64_t m_numReqsAdd    ;
 	int64_t m_numNetReadAdd ;
 	int64_t m_numRepliesAdd ; 
 	int64_t m_numNetSentAdd ;
 
-	// do we need to dump to disk?
-	//bool      m_needsSave;
-
 	// . when we dump list to an rdb file, can we use short keys?
 	// . currently exclusively used by indexdb
 	bool      m_useHalfKeys;
 
-	// . is our merge urgent? (if so, it will starve spider disk reads)
-	// . also see Threads.cpp for the starvation
-	// . this is now exclusively in RdbBase.h
-	//bool      m_mergeUrgent;
-
 	// are we saving the tree urgently? like we cored...
 	bool      m_urgent;
+
 	// after saving the tree in call to Rdb::close() should the tree
 	// remain closed to writes?
 	bool      m_isReallyClosing;
 
 	bool      m_niceness;
-
-	//bool      m_waitingForTokenForDump ;
-	//bool      m_waitingForTokenForMerge;
-
-	// we now determine when in merge mode
-	//bool      m_isMerging;
-
-	// have we create the merge file?
-	//bool      m_hasMergeFile;
-
-	// rec counts for files being merged
-	//int64_t m_numPos ;
-	//int64_t m_numNeg ;
 
 	// so only one save thread launches at a time
 	bool m_isSaving;
@@ -475,8 +395,6 @@ class Rdb {
 	
 	char m_treeName [64];
 	char m_memName  [64];
-
-	BigFile m_dummyFile;
 
 	int64_t m_lastWrite;
 

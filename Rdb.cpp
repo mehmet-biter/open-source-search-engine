@@ -1049,15 +1049,6 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	//      return true;
 	// if ( m_rdbId == RDB_TITLEDB && g_spiderdb.m_rdb.m_inDumpLoop )
 	//      return true;
-	// ok, seems to happen if we are dumping any two rdbs at the same
-	// time. we end up missing tree nodes or something.
-	// for ( int32_t i = RDB_START ; i < RDB_PLACEDB  ; i++ ) {
-	//      Rdb *rdb = getRdbFromId ( i );
-	//      if ( ! rdb )
-	//              continue;
-	//      if ( rdb->m_inDumpLoop )
-	//              return true;
-	// }
 
 	// . if tree is saving do not dump it, that removes things from tree
 	// . i think this caused a problem messing of RdbMem before when
@@ -2108,13 +2099,7 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		     KEYCMP(oppKey,m_dump.getLastKeyInQueue (),m_ks)<=0   ) 
 			goto addIt;
 		*/
-		// BEFORE we delete it, save it. this is a special hack
-		// so we can UNDO this deleteNode() should the titledb rec
-		// add fail.
-		//if ( m_rdbId == RDB_TFNDB ) {
-		//	s_tfndbHadOppKey = true;
-		//	s_tfndbOppKey    = *(key_t *)oppKey;
-		//}
+
 		// . otherwise, we can REPLACE oppKey 
 		// . we NO LONGER annihilate with him. why?
 		// . freeData should be true, the tree doesn't own the data

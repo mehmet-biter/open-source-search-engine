@@ -429,49 +429,6 @@ bool Msge1::addTag ( int32_t i ) {
 
 	// now let xmldoc add the firstip tags of each outlink!
 	return doneAddingTag ( i );
-
-	/*
-	// store it
-	//strncpy ( domBuf , dom , dlen );
-	strncpy ( hostBuf , host , hlen );
-	// NULL term it
-	//domBuf[dlen] = '\0';
-	hostBuf[hlen] = '\0';
-
-	// get time now synced with host #0
-	//int32_t nowGlobal = getTimeGlobal();
-	// put in buf
-	char ipbuf[32];
-	sprintf(ipbuf,"%s",iptoa(ip) );
-	// . make the tag rec to add
-	// . msg9a copies it into a request buffer, so no need to be persistent
-	TagRec gr;
-	// returns false and sets g_errno on error
-	if ( !gr.addTag("firstip",m_nowGlobal,"msge1",ip,ipbuf,gbstrlen(ipbuf))){
-		// should never have error
-		char *xx=NULL;*xx=0; }
-
-	// shortcut
-	Msg9a *m9 = &m_msg9as[i];
-	// . now add to "firstip" in tagdb
-	// . borrow the ith msg9a (only 40 bytes each)
-	// . this should only return control to us once it is safely in tagdb!
-	if ( ! m9->addTags ( NULL                 , 
-			     //&domBuf            ,
-			     &hostBuf             ,
-			     1                    ,
-			     m_coll               ,
-			     m                    , // state
-			     doneAddingTagWrapper ,
-			     m_niceness           ,
-			     &gr                  ,
-			     false                ,
-			     &ip                  ))
-		// we blocked
-		return false;
-
-	return doneAddingTag ( i );
-	*/
 }
 
 void doneAddingTagWrapper ( void *state ) {

@@ -1080,10 +1080,6 @@ void Msg5::mergeLists_r ( ) {
 	//if ( m_prevKey >= m_fileStartKey ) m_prevCount = 0;
 	if ( KEYCMP(m_prevKey,m_fileStartKey,m_ks)>=0 ) m_prevCount = 0;
 
-	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	//RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) {
-	//	log("No collection found."); return; }
-
 	int32_t niceness = m_niceness;
 	if ( niceness > 0  ) niceness = 2;
 	if ( m_isRealMerge ) niceness = 1;

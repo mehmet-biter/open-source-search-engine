@@ -365,44 +365,6 @@ bool RdbMerge::getAnotherList ( ) {
 	char newEndKey[MAX_KEY_BYTES];
 	KEYSET(newEndKey,m_endKey,m_ks);
 
-	//CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
-	//char *coll = cr->m_coll;
-
-	/*
-	if ( m_rdbId == RDB_TITLEDB ) { // && m_rdbId == RDB_TFNDB ) {
-		//int64_t docId1 = g_titledb.getDocIdFromKey ( m_startKey );
-	       int64_t docId1=g_titledb.getDocIdFromKey((key_t *)m_startKey);
-		//int64_t docId2 = g_titledb.getDocIdFromKey ( m_endKey );
-		// tfndb is pretty much uniformly distributed
-		RdbBase *ubase = getRdbBase(RDB_TFNDB,m_coll);
-		if ( ! ubase ) return true;
-		int64_t space    = ubase->getDiskSpaceUsed();
-		//int64_t readSize = (space * (docId2-docId1)) / DOCID_MASK;
-		int64_t bufSize  = g_conf.m_mergeBufSize;
-		// for now force to 100k
-		bufSize = 100000;
-		if ( bufSize > space ) bufSize = space;
-		int64_t docId3   = (int64_t) (((double)bufSize /
-						  (double)space) *
-			(double)DOCID_MASK  + docId1);
-		// constrain newEndKey based on docId3
-		if ( docId3 < 0 ) docId3 = DOCID_MASK;
-		//if ( docId3 >= DOCID_MASK ) newEndKey.setMax();
-		if ( docId3 >= DOCID_MASK ) KEYMAX(newEndKey,m_ks);
-		//else newEndKey = g_titledb.makeLastKey ( docId3 );
-		else {
-			key_t nk = g_titledb.makeLastKey(docId3);
-			KEYSET(newEndKey,(char *)&nk,m_ks);
-		}
-		//log(LOG_DEBUG,"build: remapping endkey from %"XINT32".%"XINT64" to "
-		//    "%"XINT32".%"XINT64" to avoid big tfndb read.",
-		//    m_endKey.n1,m_endKey.n0, newEndKey.n1,newEndKey.n0);
-		log(LOG_DEBUG,"build: remapping endkey from %"XINT64".%"XINT64" to "
-		    "%"XINT64".%"XINT64" to avoid big tfndb read.",
-		    KEY1(m_endKey,m_ks),KEY0(m_endKey),
-		    KEY1(newEndKey,m_ks),KEY0(newEndKey));
-	}
-	*/
 	// . this returns false if blocked, true otherwise
 	// . sets g_errno on error
 	// . we return false if it blocked

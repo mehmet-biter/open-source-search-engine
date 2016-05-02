@@ -641,9 +641,6 @@ bool SpiderColl::addSpiderReply ( SpiderReply *srep ) {
 		     srep->getUrlHash48(),
 		     lockKey );
 
-	// test it
-	//if ( m_nowGlobal == 0 && lock )
-	//	m_nowGlobal = getTimeGlobal();
 	// we do it this way rather than remove it ourselves
 	// because a lock request for this guy
 	// might be currently outstanding, and it will end up

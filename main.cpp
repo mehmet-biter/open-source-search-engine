@@ -179,7 +179,6 @@ void membustest ( int32_t nb , int32_t loops , bool readf ) ;
 //void tryMergingWrapper ( int fd , void *state ) ;
 
 void saveRdbs ( int fd , void *state ) ;
-bool shutdownOldGB ( int16_t port ) ;
 //void resetAll ( );
 //void spamTest ( ) ;
 
@@ -580,7 +579,6 @@ int main2 ( int argc , char *argv[] ) {
 			"\t<db> is W to dump tagdb for wget.\n"
 			"\t<db> is x to dump doledb.\n"
 			"\t<db> is w to dump waiting tree.\n"
-			"\t<db> is C to dump catdb.\n"
 			"\t<db> is l to dump clusterdb.\n"
 			"\t<db> is z to dump statsdb all keys.\n"
 			"\t<db> is Z to dump statsdb all keys and "
@@ -1756,8 +1754,6 @@ int main2 ( int argc , char *argv[] ) {
 			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'G' );
 		} else if ( argv[cmdarg+1][0] == 'W' ) {
 			dumpTagdb( coll, startFileNum, numFiles, includeTree );
-		} else if ( argv[cmdarg+1][0] == 'C' ) {
-			dumpTagdb( coll, startFileNum, numFiles, includeTree, 0, RDB_CATDB );
 		} else if ( argv[cmdarg+1][0] == 'l' )
 			dumpClusterdb (coll,startFileNum,numFiles,includeTree);
 		//else if ( argv[cmdarg+1][0] == 'z' )
@@ -6770,53 +6766,6 @@ void saveRdbs ( int fd , void *state ) {
 	last = rdb->getLastWriteTime();
 	if ( now - last > delta )
 		if ( ! rdb->close(NULL,NULL,false,false)) return;
-}
-
-bool shutdownOldGB ( int16_t port ) {
-	log("db: Saving and shutting down the other gb process." );
-	// now make a new socket descriptor
-	int sd = socket ( AF_INET , SOCK_STREAM , 0 ) ;
-	// return NULL and set g_errno on failure
-	if ( sd <  0 ) {
-		// copy errno to g_errno
-		g_errno = errno;
-		log("tcp: Failed to create new socket: %s.",
-		    mstrerror(g_errno));
-		return false;
-	}
-	struct sockaddr_in to;
-	memset(&to,0,sizeof(to));
-	to.sin_family = AF_INET;
-	// our ip's are always in network order, but ports are in host order
-	to.sin_addr.s_addr =  atoip("127.0.0.1",9);
-	to.sin_port        =  htons((uint16_t)port);
-	// note it
-	log("db: Connecting to port %hu.",port);
-	// connect to the socket. This should block until it does
- again:
-	if ( ::connect ( sd, (sockaddr *)(void*)&to, sizeof(to) ) != 0 ) {
-		if ( errno == EINTR ) goto again;
-		return log("admin: Got connect error: %s.",mstrerror(errno));
-	}
-	// note it
-	log("db: Connected. Issuing shutdown command.");
-	// send the message
-	char *msg = "GET /master?usave=1 HTTP/1.0\r\n\r\n";
-	write ( sd , msg , gbstrlen(msg) );
-	// wait for him to shut down the socket
-	char rbuf [5000];
-	int32_t n;
- readmore:
-	errno = 0;
-	n = read ( sd , rbuf, 5000 );
-	if ( n == -1 && errno == EINTR ) goto readmore;
-	if ( n == -1 )
-		return log("db: Got error reading reply: %s.",
-			   mstrerror(errno));
-	// success...
-	close(sd);
-	log("db: Received reply from old gb process.");
-	return true;
 }
 
 bool memTest() {

@@ -75,11 +75,9 @@ public:
 	// point to next url in "urlBuf" to process
 	char *m_nextPtr;
 
-	//Url   m_urls        [ MAX_OUTSTANDING_MSGE1 ]; 
 	int32_t    m_ns          [ MAX_OUTSTANDING_MSGE1 ]; 
 	char    m_used        [ MAX_OUTSTANDING_MSGE1 ]; 
 	MsgC    m_msgCs       [ MAX_OUTSTANDING_MSGE1 ]; // ips
-	//Msg9a   m_msg9as      [ MAX_OUTSTANDING_MSGE1 ]; // adding "firstip"
 
 	// vector of TagRec ptrs
 	TagRec **m_grv;

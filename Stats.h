@@ -67,16 +67,7 @@ class Stats {
 	// due to the MAX_POINTS limit
 	//int64_t m_minWindowStartTime;
 
-	// . conglomerate scores
-	// . # seeks is estimated since we don't know the disk fragmentation
-	//int64_t m_numSeeks;
-	// sum of these 2 should equal m_numSeeks
-	//int64_t m_numReads;
-	//int64_t m_numWrites;
-	// total bytes read and written since server was started
-	//int64_t m_bytesRead;
-	//int64_t m_bytesWritten;
-	void addPoint ( StatPoint **points    , 
+	void addPoint ( StatPoint **points    ,
 			int32_t        *numPoints ,
 			StatPoint   *p         ) ;
 

@@ -84,59 +84,6 @@ class RdbBase {
 	void closeMaps ( bool urgent );
 	void saveMaps  ();
 
-	// . frees up all the memory and closes all files
-	// . suspends any current merge (saves state to disk)
-	// . calls reset() for each file
-	// . will cause any open map files to dump
-	// . will dump tables to backup or store 
-	// . calls close on each file
-	// . returns false if blocked, true otherwise
-	// . sets errno on error
-	//bool close ( void *state , 
-	//	     void (* callback)(void *state ) ,
-	//	     bool urgent ,
-	//	     bool exitAfterClosing );
-	//bool close ( ) { return close ( NULL , NULL ); };
-	// used by PageMaster.cpp to check to see if all rdb's are closed yet
-	//bool isClosed ( ) { return m_isClosed; };
-
-	// . returns false and sets g_errno on error
-	// . caller should retry later on g_errno of ENOMEM or ETRYAGAIN
-	// . returns the node # in the tree it added the record to
-	// . key low bit must be set (otherwise it indicates a delete)
-	//bool addRecord ( key_t &key, char *data, int32_t dataSize );
-
-	// returns false if no room in tree or m_mem for a list to add
-	//bool hasRoom ( RdbList *list );
-
-	// . returns false on error and sets errno
-	// . return true on success
-	// . if we can't handle all records in list we don't add any and
-	//   set errno to ETRYAGAIN or ENOMEM
-	// . we copy all data so you can free your list when we're done
-	//bool addList ( RdbList *list );
-
-	// . add a record without any data, just a key (faster)
-	// . returns the node # in the tree it added the record to
-	//int32_t addKey ( key_t &key );
-
-	// . uses the bogus data pointed to by "m_dummy" for record's data
-	// . we clear the key low bit to signal a delete
-	// . returns false and sets errno on error
-	//bool deleteRecord ( key_t &key ) ;
-
-	// TODO: this needs to support
-	// . we split our data over rdbs across the network based on masks
-	// . we now just use g_conf.m_groupMask, g_hostdb.m_groupId, ...
-	//int32_t getGroupId ( key_t &key ) { return (key.n1 & m_groupMask); };
-	//uint32_t getGroupMask ( ) { return m_groupMask; };
-	//uint32_t getGroupId   ( ) { return m_groupId  ; };
-
-	// . when a slot's key is ANDed with "groupMask" the result must equal
-	//   "groupId" in order to be in this database
-	// . used to split data across multiple rdbs
-	//void setMask ( uint32_t groupMask , uint32_t groupId );
-
 	// get the directory name where this rdb stores it's files
 	char *getDir ( ) { return m_dir.getDirname(); };
 	char *getStripeDir ( ) { return g_conf.m_stripeDir; };
@@ -155,9 +102,6 @@ class RdbBase {
 	int32_t       getFileId ( int32_t n ) { return m_fileIds [n]; };
 	int32_t       getFileId2( int32_t n ) { return m_fileIds2[n]; };
 	RdbMap    *getMap    ( int32_t n ) { return m_maps    [n]; };
-
-	int32_t getFileNumFromId  ( int32_t id  ) ; // for converting old titledbs
-	int32_t getFileNumFromId2 ( int32_t id2 ) ; // map tfn to real file num (rfn)
 
 	//RdbMem    *getRdbMem () { return &m_mem; };
 
@@ -186,37 +130,9 @@ class RdbBase {
 	// positive minus negative
 	int64_t getNumTotalRecs ( ) ;
 
-	int64_t getNumRecsOnDisk ( );
-
 	int64_t getNumGlobalRecs ( );
 
 	/*
-	// used for keeping track of stats
-	void      didSeek       (            ) { m_numSeeks++; };
-	void      didRead       ( int32_t bytes ) { m_numRead += bytes; };
-	int64_t getNumSeeks   (            ) { return m_numSeeks; };
-	int64_t getNumRead    (            ) { return m_numRead ; };
-
-	// net stats for "get" requests
-	void      readRequestGet ( int32_t bytes ) { 
-		m_numReqsGet++    ; m_numNetReadGet += bytes; };
-	void      sentReplyGet     ( int32_t bytes ) {
-		m_numRepliesGet++ ; m_numNetSentGet += bytes; };
-	int64_t getNumRequestsGet ( ) { return m_numReqsGet;    };
-	int64_t getNetReadGet     ( ) { return m_numNetReadGet; };
-	int64_t getNumRepliesGet  ( ) { return m_numRepliesGet; };
-	int64_t getNetSentGet     ( ) { return m_numNetSentGet; };
-
-	// net stats for "add" requests
-	void      readRequestAdd ( int32_t bytes ) { 
-		m_numReqsAdd++    ; m_numNetReadAdd += bytes; };
-	void      sentReplyAdd     ( int32_t bytes ) {
-		m_numRepliesAdd++ ; m_numNetSentAdd += bytes; };
-	int64_t getNumRequestsAdd ( ) { return m_numReqsAdd;    };
-	int64_t getNetReadAdd     ( ) { return m_numNetReadAdd; };
-	int64_t getNumRepliesAdd  ( ) { return m_numRepliesAdd; };
-	int64_t getNetSentAdd     ( ) { return m_numNetSentAdd; };
-
 	// used by main.cpp to periodically save us if we haven't dumped
 	// in a while
 	int64_t getLastWriteTime   ( ) { return m_lastWrite; };
@@ -230,9 +146,6 @@ class RdbBase {
 			    bool doLog = true ,
 			    // -1 means to not override it
 			    int32_t minToMergeOverride = -1 );
-
-	//bool gotTokenForDump  ( ) ;
-	//void gotTokenForMerge ( ) ;
 
 	// called after merge completed
 	bool incorporateMerge ( );
@@ -290,9 +203,6 @@ class RdbBase {
 	// doing is being merged, we have to include the start merge file num
 	int32_t      getMergeStartFileNum ( ) { return m_mergeStartFileNum; };
 	int32_t      getMergeNumFiles     ( ) { return m_numFilesToMerge; };
-
-	// used by Sync.cpp to convert a file name to a file number in m_files
-	int32_t getFileNumFromName ( char *filename );
 
 	// bury m_files[] in [a,b)
 	void buryFiles ( int32_t a , int32_t b );
@@ -385,22 +295,6 @@ class RdbBase {
 	//char     *m_dummy;
 	//int32_t      m_dummySize ; // size of that dummy data
 	//int32_t      m_delRecSize; // size of the whole delete record
-
-	/*
-	// for keeping stats
-	int64_t m_numSeeks;
-	int64_t m_numRead;
-	// network request/reply info for get requests
-	int64_t m_numReqsGet    ;
-	int64_t m_numNetReadGet ;
-	int64_t m_numRepliesGet ; 
-	int64_t m_numNetSentGet ;
-	// network request/reply info for add requests
-	int64_t m_numReqsAdd    ;
-	int64_t m_numNetReadAdd ;
-	int64_t m_numRepliesAdd ; 
-	int64_t m_numNetSentAdd ;
-	*/
 
 	// should our next merge in waiting force itself?
 	bool      m_nextMergeForced;

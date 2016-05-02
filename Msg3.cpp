@@ -420,33 +420,6 @@ bool Msg3::readList  ( char           rdbId         ,
 	if ( KEYNEG(m_constrainKey) )
 		KEYSUB(m_constrainKey,m_ks);
 
-	// if m_endKey splits some keys that should be together, we need to
-	// decrease it so such a split doesn't happen. 
-	//if ( m_endKey != m_endKeyOrig && m_rdbId==RDB_TFNDB && numFiles > 0){
-	/*
-	if ( KEYCMP(m_endKey,m_endKeyOrig,m_ks)!=0 && m_rdbId==RDB_TFNDB && 
-	     numFiles > 0 ) {
-		// . drop the docid down one and max out the tfn...
-		// . we may lose some recs when we call constrain, but at least
-		//   we are guaranteed not to split a sequence with the same
-		//   docid but different tfns... thus the disk merge will
-		//   then work correctly. before we were splitting these
-		//   sequence between successive disk reads and they were not
-		//   getting annihilated together in the call to indexMerge_r()
-		int64_t d = g_tfndb.getDocId ( (key_t *)&m_endKey );
-		if ( d > 0 ) d = d - 1LL;
-		//m_constrainKey = g_tfndb.makeMaxKey(d);
-		*(key_t *)m_constrainKey = g_tfndb.makeMaxKey(d);
-		// set the half bit on
-		//m_constrainKey.n0 |= 0x02;
-		*m_constrainKey |= 0x02;
-		// note it
-		//logf(LOG_DEBUG,"oldukey.n1=%"XINT32" n0=%"XINT64" new.n1=%"XINT32" n0=%"XINT64"",
-		//     m_endKey.n1,m_endKey.n0,
-		//     m_constrainKey.n1,m_constrainKey.n0);
-	}
-	*/
-
 	// Msg5 likes to get the endkey for getting the list from the tree
 	if ( justGetEndKey ) return true;
 

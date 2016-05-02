@@ -461,14 +461,6 @@ skip:
 	// store the list after coll
 	gbmemcpy ( p , listData , listSize );
  	QUICKPOLL(m_niceness);
-	// debug msg
-	//if ( ! m_waitForReply ) // (m_rdbId == RDB_SPIDERDB || 
-	//m_rdbId == RDB_TFNDB)  )
-	//	// if we don't get here we lose it!!!!!!!!!!!!!!!!!!!!!
-	//	log("using mcast=%"UINT32" rdbId=%"INT32" listData=%"UINT32" listSize=%"UINT32" "
-	//	    "gid=%"UINT32"",
-	//	   (int32_t)&m_mcast,(int32_t)m_rdbId,(int32_t)listData,(int32_t)listSize,
-	//	    groupId);
 	// for small packets
 	//int32_t niceness = 2;
 	//if ( requestLen < TMPBUFSIZE - 32 ) niceness = 0;

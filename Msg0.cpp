@@ -248,17 +248,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	if ( ! preferLocalReads ) isLocal = false;
 
 	/*
-	m_numSplit = 1;
-	if ( g_hostdb.m_indexSplits > 1 &&
-	     ( rdbId == RDB_POSDB || rdbId==RDB_DATEDB)&&
-	     ! forceLocalIndexdb && doIndexdbSplit ) {
-		isLocal  = false;
-		//m_numSplit = INDEXDB_SPLIT;
-		m_numSplit = g_hostdb.m_indexSplits;
-		char *xx=NULL;*xx=0;
-	}
-	*/
-	/*
 	int64_t singleDocIdQuery = 0LL;
 	if ( rdbId == RDB_POSDB ) {
 		int64_t d1 = g_posdb.getDocId(m_startKey);
