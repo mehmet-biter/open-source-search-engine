@@ -17,19 +17,11 @@ ssize_t gbpwrite(int fd, const void *buf, size_t count, off_t offset);
 // . use 512 disk megs per part file
 // . at a GB_PAGE_SIZE of 16k this is 32k RdbMap pages (512k) per part file
 // . let's use 2GB now to conserve file descriptors
-//#define MAX_PART_SIZE  (2000LL*1000LL*1000LL-1414144LL)
 #define MAX_PART_SIZE  (1920LL*1024LL*1024LL)
+
 // debug define
 //#define MAX_PART_SIZE  (32LL*1024LL*1024LL)
 
-// have enough part files to do a 2048gig file
-//#define MAX_PART_FILES (((2048LL*1000LL*1000LL*1000LL)/MAX_PART_SIZE)+1LL)
-
-// HACK to save mem. support a 128GB file
-//#define MAX_PART_FILES (((128LL*1000LL*1000LL*1000LL)/MAX_PART_SIZE)+1LL)
-
-// debug define
-//#define MAX_PART_FILES 100
 
 #define LITTLEBUFSIZE sizeof(File)
 
@@ -267,9 +259,6 @@ class BigFile {
 
 	// enough mem for our first File so we can avoid a malloc
 	char m_littleBuf[LITTLEBUFSIZE];
-
-	// ptrs to the part files
-	//File *m_files ;//[ MAX_PART_FILES ];
 
 	// private: 
 

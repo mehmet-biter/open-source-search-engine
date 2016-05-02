@@ -35,8 +35,6 @@ BigFile::BigFile () {
 	//m_permissions = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH ;
 	m_flags       = O_RDWR ; // | O_DIRECT;
 	m_usePartFiles = true;
-	// NULLify all ptrs to files
-	//for ( int32_t i = 0 ; i < MAX_PART_FILES ; i++ ) m_files[i] = NULL;
 	m_maxParts = 0;
 	m_numParts = 0;
 	m_vfd = -1;
@@ -108,7 +106,7 @@ void BigFile::logAllData(int32_t log_type)
 // . return false and set g_errno on error
 bool BigFile::set ( const char *dir, const char *baseFilename, const char *stripeDir ) {
 
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. dir [%s] baseFilename [%s] stripeDir [%s]", __FILE__, __func__, __LINE__,dir, baseFilename, stripeDir);
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN. dir [%s] baseFilename [%s] stripeDir [%s]",dir, baseFilename, stripeDir);
 
 	// reset filsize
 	m_fileSize = -1;
@@ -130,13 +128,13 @@ bool BigFile::set ( const char *dir, const char *baseFilename, const char *strip
 
 	if ( ! m_dir.safeStrcpy          ( dir          ) ) 
 	{
-		if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: END. Return false, m_dir.safeStrcpy failed", __FILE__, __func__, __LINE__);
+		logTrace( g_conf.m_logTraceBigFile, "END. Return false, m_dir.safeStrcpy failed" );
 		return false;
 	}
 	
 	if ( ! m_baseFilename.safeStrcpy ( baseFilename ) ) 
 	{
-		if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: END. Return false, m_baseFilename.safeStrcpy failed", __FILE__, __func__, __LINE__);
+		logTrace( g_conf.m_logTraceBigFile, "END. Return false, m_baseFilename.safeStrcpy failed" );
 		return false;
 	}
 
@@ -155,13 +153,13 @@ bool BigFile::set ( const char *dir, const char *baseFilename, const char *strip
 	// now add parts from both directories
 	if ( ! addParts ( dir       ) ) 
 	{
-		log(LOG_WARN,"%s:%s:%d: END. addParts failed", __FILE__, __func__, __LINE__);
+		log(LOG_WARN,"%s:%s:%d: END. addParts failed", __FILE__, __func__, __LINE__ );
 		return false;
 	}
 	
 	//if ( ! addParts ( m_stripeDir ) ) return false;
 	
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: END. Return true - OK", __FILE__, __func__, __LINE__);
+	logTrace( g_conf.m_logTraceBigFile, "END. Return true - OK" );
 	return true;
 }
 
@@ -192,12 +190,12 @@ bool BigFile::reset ( ) {
 	
 
 bool BigFile::addParts ( const char *dirname ) {
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. dirname [%s]", __FILE__, __func__, __LINE__, dirname);
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN. dirname [%s]", dirname);
 	
 	// if dirname is NULL return true
 	if ( ! dirname || ! dirname[0] ) 
 	{
-		if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: END - No dirname", __FILE__, __func__, __LINE__);
+		logTrace( g_conf.m_logTraceBigFile, "END - No dirname" );
 		return true;
 	}
 	
@@ -221,12 +219,12 @@ bool BigFile::addParts ( const char *dirname ) {
 	// . addFile() will return false on problems
 	// . the lower the fileId the older the file (w/ exception of #0)
 	
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: Look for [%s]", __FILE__, __func__, __LINE__, pattern);
+	logTrace( g_conf.m_logTraceBigFile, "Look for [%s]", pattern);
 	
 	char *filename;
 	while ( ( filename = dir.getNextFilename ( pattern ) ) ) 
 	{
-		if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d:   Checking [%s]", __FILE__, __func__, __LINE__, filename);
+		logTrace( g_conf.m_logTraceBigFile, "  Checking [%s]", filename);
 		
 		// if filename len is exactly blen it's part 0
 		int32_t flen = gbstrlen(filename);
@@ -236,12 +234,12 @@ bool BigFile::addParts ( const char *dirname ) {
 			 part = 0;
 			// some files have the same first X chars, like 
 			// indexdb.store-info-bak but are not part files
-			if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d:   Default to part 0", __FILE__, __func__, __LINE__);
+			logTrace( g_conf.m_logTraceBigFile, "  Default to part 0" );
 		}
 		else 
 		if ( flen > blen && strncmp(filename+blen,".part",5)!=0) 
 		{
-			if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d:   No good.", __FILE__, __func__, __LINE__);
+			logTrace( g_conf.m_logTraceBigFile, "  No good." );
 			continue;
 			// otherwise must end in .part%i
 
@@ -257,28 +255,18 @@ bool BigFile::addParts ( const char *dirname ) {
 		else 
 		{
 			part = atoi ( filename + blen + 5 );
-			if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d:   Detected part %"INT32"", __FILE__, __func__, __LINE__, part);
+			logTrace( g_conf.m_logTraceBigFile, "  Detected part %"INT32"", part);
 		}
-		
-		// ensure not too big
-		// if ( part >= MAX_PART_FILES ) {
-		// 	log ("disk: Part number of %"INT32" is too big for "
-		// 	     "\"%s\". Should be less than %"INT32".", 
-		// 	     (int32_t)part,filename,(int32_t)MAX_PART_FILES);
-		// 	continue;
-		// }
+
 		// make this part file
 		if( !addPart(part) ) 
 		{
-			 log(LOG_ERROR,"%s:%s:%d: END. addPart failed, returning false.", __FILE__, __func__, __LINE__);
+			 log(LOG_ERROR,"%s:%s:%d: END. addPart failed, returning false.", __FILE__, __func__, __LINE__ );
 			return false;
 		}
 	}
-	
-	// now set the names of all our files
-	//for ( int32_t n = 0 ; n < MAX_PART_FILES ; n++ ) 
-	//m_files[n].set ( makeFilename ( n, m_baseFilename ) );
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: END - OK", __FILE__, __func__, __LINE__);
+
+	logTrace( g_conf.m_logTraceBigFile, "END - OK" );
 	return true;
 }
 
@@ -289,11 +277,8 @@ bool BigFile::addParts ( const char *dirname ) {
 // and realloc on that.
 bool BigFile::addPart ( int32_t n ) 
 {
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN n [%"INT32"] filename [%s]", __FILE__, __func__, __LINE__, n, getFilename());
-	
-	// if ( n >= MAX_PART_FILES ) 
-	// 	return log("disk: Part number %"INT32" > %"INT32".",
-	// 		   n,(int32_t)MAX_PART_FILES);
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN n [%"INT32"] filename [%s]", n, getFilename());
+
 	// . grow our dynamic array and return ptr to last element
 	// . n's come in NOT necessarily in order!!!
 	int32_t need = (n+1) * sizeof(File *);
@@ -348,7 +333,7 @@ bool BigFile::addPart ( int32_t n )
 		f = (File *)m_littleBuf;
 		if ( LITTLEBUFSIZE < sizeof(File) ) 
 		{
-			log(LOG_ERROR, "%s:%s:%d: LITTLEBUFSIZE too small", __FILE__, __func__, __LINE__);
+			log(LOG_ERROR, "%s:%s:%d: LITTLEBUFSIZE too small", __FILE__, __func__, __LINE__ );
 			logAllData(LOG_ERROR);
 			char *xx=NULL;*xx=0; 
 		}
@@ -365,7 +350,7 @@ bool BigFile::addPart ( int32_t n )
 			g_errno = ENOMEM;
 
 			//### BR 20151217: Fix. Previously returned the return code from log(...)
-			log(LOG_ERROR, "%s:%s:%d: new failed. size: %i, err [%s]", __FILE__, __func__, __LINE__, (int)sizeof(File), mstrerror(g_errno)); 
+			log(LOG_ERROR, "%s:%s:%d: new failed. size: %i, err [%s]", __FILE__, __func__, __LINE__, (int)sizeof(File), mstrerror(g_errno));
 			logAllData(LOG_ERROR);
 			return false;
 		}
@@ -381,14 +366,12 @@ bool BigFile::addPart ( int32_t n )
 	filePtrs [ n ] = f;
 	m_numParts++;
 	// set maxPart
-	if ( n+1 > m_maxParts ) 
-	{
+	if ( n+1 > m_maxParts ) {
 		m_maxParts = n+1;
-		
-		if( g_conf.m_logTraceBigFile ) log(LOG_TRACE, "%s:%s:%d: New m_maxParts: %"INT32"", __FILE__, __func__, __LINE__, m_maxParts);
+		logTrace( g_conf.m_logTraceBigFile, "New m_maxParts: %" INT32, m_maxParts );
 	}
 	
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: END - OK. New File object prepared. returning true", __FILE__, __func__, __LINE__);
+	logTrace( g_conf.m_logTraceBigFile, "END - OK. New File object prepared. returning true" );
 	return true;
 }
 
@@ -400,7 +383,6 @@ bool BigFile::doesExist ( ) {
 
 // if we can open it with a valid fd, then it exists
 bool BigFile::doesPartExist ( int32_t n ) {
-	//if ( n >= MAX_PART_FILES ) return false;
 	if ( n >= m_maxParts ) return false;
 	// f will be null if part does not exist
 	File *f = getFile2(n);
@@ -1390,12 +1372,6 @@ bool readwrite_r ( FileState *fstate ) {
 		return false; //log("disk::readwrite_r: fd is negative");
 	}
 
-	// fake it out
-	//static int32_t s_poo = 0;
-	//s_poo++;
-	//if ( s_poo > 1125 )sleep(5);
-	//log("disk: spoo=%"INT32"",s_poo);
-
 	// reset this
 	errno = 0;
 
@@ -1524,12 +1500,12 @@ bool BigFile::unlink ( )
 {
 	bool rc;
 	
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. filename [%s]", __FILE__, __func__, __LINE__, getFilename());
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s]", getFilename());
 	
 	rc=unlinkRename( NULL , -1 , false, NULL, NULL );
 	// rc indicates blocked/unblocked
 
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: END. returning [%s]", __FILE__, __func__, __LINE__, rc?"true":"false");
+	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
 	return rc;
 }
 
@@ -1539,12 +1515,12 @@ bool BigFile::move ( const char *newDir )
 {
 	bool rc;
 	
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. filename [%s] newDir [%s]", __FILE__, __func__, __LINE__, getFilename(), newDir);
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s] newDir [%s]", getFilename(), newDir);
 
 	rc = rename( m_baseFilename.getBufStart() , newDir );
 	// rc indicates blocked/unblocked
 	
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: END. returning [%s]", __FILE__, __func__, __LINE__, rc?"true":"false");
+	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
 	return rc;
 }
 
@@ -1553,12 +1529,12 @@ bool BigFile::rename(const char *newBaseFilename, const char *newBaseFilenameDir
 {
 	bool rc;
 
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. newBaseFilename [%s] newBaseFilenameDir [%s]", __FILE__, __func__, __LINE__, newBaseFilename, newBaseFilenameDir);
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN. newBaseFilename [%s] newBaseFilenameDir [%s]", newBaseFilename, newBaseFilenameDir);
 	
 	rc=unlinkRename ( newBaseFilename, -1, false, NULL, NULL, newBaseFilenameDir );
 	// rc indicates blocked/unblocked
 	
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: END. returning [%s]", __FILE__, __func__, __LINE__, rc?"true":"false");
+	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
 	return rc;
 }
 
@@ -1567,12 +1543,12 @@ bool BigFile::chopHead(int32_t part )
 {
 	bool rc;
 
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. part %"INT32"", __FILE__, __func__, __LINE__, part);
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN. part %"INT32"", part);
 	
 	rc=unlinkRename ( NULL, part, false, NULL, NULL );
 	// rc indicates blocked/unblocked
 	
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: END. returning [%s]", __FILE__, __func__, __LINE__, rc?"true":"false");
+	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
 	return rc;
 }
 
@@ -1581,12 +1557,12 @@ bool BigFile::unlink(void (* callback) ( void *state ) , void *state )
 {
 	bool rc;
 
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN.", __FILE__, __func__, __LINE__);
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN." );
 
 	rc=unlinkRename ( NULL , -1 , true, callback , state );
 	// rc indicates blocked/unblocked
 	
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: END. returning [%s]", __FILE__, __func__, __LINE__, rc?"true":"false");
+	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
 	return rc;
 }
 
@@ -1595,12 +1571,12 @@ bool BigFile::rename(const char *newBaseFilename, void (*callback)(void *state),
 {
 	bool rc;
 
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. filename [%s] newBaseFilename [%s]", __FILE__, __func__, __LINE__, getFilename(), newBaseFilename);
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN. filename [%s] newBaseFilename [%s]", getFilename(), newBaseFilename);
 
 	rc=unlinkRename ( newBaseFilename, -1, true, callback, state);
 	// rc indicates blocked/unblocked
 	
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: END. returning [%s]", __FILE__, __func__, __LINE__, rc?"true":"false");
+	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
 	return rc;
 }
 
@@ -1609,14 +1585,14 @@ bool BigFile::chopHead(int32_t part, void (*callback)(void *state), void *state)
 {
 	bool rc;
 
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: BEGIN. part %"INT32"", __FILE__, __func__, __LINE__, part);
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN. part %"INT32"", part);
 
 	//for ( int32_t i = 0 ; i < part ; i++ ) 
 	// set return value to false if we blocked somewhere
 	rc=unlinkRename ( NULL, part, true, callback, state );
 	// rc indicates blocked/unblocked
 	
-	if( g_conf.m_logTraceBigFile ) log(LOG_TRACE,"%s:%s:%d: END. returning [%s]", __FILE__, __func__, __LINE__, rc?"true":"false");
+	logTrace( g_conf.m_logTraceBigFile, "END. returning [%s]", rc?"true":"false");
 	return rc;
 }
 
@@ -1640,11 +1616,8 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 			     void (* callback) ( void *state ) , 
 			     void *state                       ,
 			     const char *newBaseFilenameDir          ) {
-			     	
-	if( g_conf.m_logTraceBigFile ) {
-		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
-	}
-		
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
+
 	// fail in read only mode
 	if ( g_conf.m_readOnlyMode ) {
 		g_errno = EBADENGINEER;
@@ -1658,7 +1631,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	if ( m_numThreads > 0 && 
 	     ( callback != m_callback || state != m_state ) ) {
 		g_errno = EBADENGINEER;
-		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__);
+		log(LOG_ERROR, "%s:%s:%d: END. Unlink/rename threads already in progress. ", __FILE__, __func__, __LINE__ );
 		return true;
 	}
 	
@@ -1668,8 +1641,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		// well, now Rdb.cpp's moveToTrash() moves an old rdb file
 		// into the trash subdir, so we must preserve the full path
 		const char *s ;
-		while( (s=strchr(newBaseFilename,'/'))) 
-		{
+		while( (s=strchr(newBaseFilename,'/'))) {
 			newBaseFilename = s+1;
 		}
 
@@ -1682,14 +1654,14 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 
 		if ( ! m_newBaseFilename.safeStrcpy ( newBaseFilename ) )
 		{
-			log(LOG_ERROR,"%s:%s:%d: set m_newBaseFilename failed", __FILE__, __func__, __LINE__);
+			log(LOG_ERROR,"%s:%s:%d: set m_newBaseFilename failed", __FILE__, __func__, __LINE__ );
 			logAllData(LOG_ERROR);
 			return false;
 		}
 		
 		if ( ! m_newBaseFilenameDir.safeStrcpy ( newBaseFilenameDir ) )
 		{
-			log(LOG_ERROR,"%s:%s:%d: set m_newBaseFilenameDir failed", __FILE__, __func__, __LINE__);
+			log(LOG_ERROR,"%s:%s:%d: set m_newBaseFilenameDir failed", __FILE__, __func__, __LINE__ );
 			logAllData(LOG_ERROR);
 			return false;
 		}
@@ -1699,52 +1671,37 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		
 		// close all files -- they close themselves when we call rename
 		// close ();
-		// . set a new base filename for us
-		// . readwriteWrapper_r() will retry a read if a rename is
-		//   going on and a read fails. after each rename thread is
-		//   done (doneWrapper) it will call File::set.
-		// . when all renames have completed then 
-		//   m_bigFile::m_baseFilename will be set to m_newBaseFilename
-		//strcpy ( m_newBaseFilename , newBaseFilename );
-		// save this guy
-		//if ( newBaseFilenameDir )
-		//	strcpy ( m_newBaseFilenameDir , newBaseFilenameDir );
-		//else 
-		//	m_newBaseFilenameDir[0] = '\0';
+
 		// set the op flag
 		m_isUnlink = false;
-		if( g_conf.m_logTraceBigFile ) {
-			log(LOG_TRACE,"%s:%s:%d: Rename mode", __FILE__, __func__, __LINE__);
-		}
+
+		logTrace( g_conf.m_logTraceBigFile, "Rename mode" );
 	}
-	else  
-	{
+	else {
 		m_isUnlink = true;
-		if( g_conf.m_logTraceBigFile ) {
-			log(LOG_TRACE,"%s:%s:%d: Unlink mode", __FILE__, __func__, __LINE__);
-		}
+		logTrace( g_conf.m_logTraceBigFile, "Unlink mode" );
 	}
 
 	// close all files
 	//close ();
+
 	// . unlink likes to sometimes just unlink one part at a time
 	// . this should be -1 to unlink all at once
 	m_part = part;
+
 	// the state varies
 	void (*startRoutine)(void *state);
 	void (*doneRoutine )(void *state, job_exit_t exit_type);
 
 	int32_t i = 0;
-	if ( m_part >= 0 ) 
-	{
+	if ( m_part >= 0 ) {
 		i = m_part;
 	}
 
 	// how many parts have we done?
 	m_partsRemaining = m_maxParts;
 	// is it only 1 to be unlinked?
-	if ( m_part >= 0 ) 
-	{
+	if ( m_part >= 0 ) {
 		m_partsRemaining = 1;
 	}
 
@@ -1758,14 +1715,12 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 			m_partsRemaining--;
 			continue;
 		}
+
 		// remove it from disk
-		if (  m_isUnlink ) 
-		{
+		if (  m_isUnlink ) {
 			startRoutine = unlinkWrapper_r ;
 			doneRoutine  = doneUnlinkWrapper ;
-		}
-		else 
-		{
+		} else {
 			startRoutine = renameWrapper_r ;
 			doneRoutine  = doneRenameWrapper ;
 		}
@@ -1779,8 +1734,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		g_unlinkRenameThreads++;
 		
 		// skip thread?
-		if ( ! useThread ) 
-		{
+		if ( ! useThread ) {
 			goto skipThread;
 		}
 			
@@ -1792,16 +1746,8 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 		// . returns true on successful spawning
 		// . we can't make a disk thread cuz Threads.cpp checks its
 		//   FileState member for readSize for thread throttling
-		if ( g_jobScheduler.submit(startRoutine,
-		                           doneRoutine,
-					   f,
-					   thread_type_unlink,
-					   1/*niceness*/) )
-		{
-			if( g_conf.m_logTraceBigFile ) {
-				log(LOG_TRACE,"%s:%s:%d: Thread function called OK", __FILE__, __func__, __LINE__);
-			}
-			
+		if ( g_jobScheduler.submit(startRoutine, doneRoutine, f, thread_type_unlink, 1/*niceness*/) ) {
+			logTrace( g_conf.m_logTraceBigFile, "Thread function called OK" );
 			continue;
 		}
 		
@@ -1842,19 +1788,14 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	// close em up
 	//close();
 	// if one blocked, we block, but never return false if !useThread
-	if ( m_numThreads > 0 && useThread ) 
-	{
-		if( g_conf.m_logTraceBigFile ) {
-			log(LOG_TRACE,"%s:%s:%d: m_numThreads [%"INT32"] && useThread", __FILE__, __func__, __LINE__, m_numThreads);
-		}
+	if ( m_numThreads > 0 && useThread ) {
+		logTrace( g_conf.m_logTraceBigFile, "m_numThreads [%" INT32"] && useThread", m_numThreads );
 
 		return false;
 	}
 	
 	// . if we launched no threads update OUR base filename right now
-	//if ( ! m_isUnlink ) strcpy ( m_baseFilename , m_newBaseFilename );
-	if ( ! m_isUnlink ) 
-	{
+	if ( ! m_isUnlink ) {
 		m_baseFilename.set ( m_newBaseFilename.getBufStart() );
 	}
 		
@@ -1863,11 +1804,8 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 }
 
 static void renameWrapper_r ( void *state ) {
-	
-	if( g_conf.m_logTraceBigFile ) {
-		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
-	}
-	
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
+
 	// extract our class
 	File *f = (File *)state;
 	// . by getting the inode in the cache space the call to f->close()
@@ -1916,9 +1854,8 @@ static void renameWrapper_r ( void *state ) {
 			   __FILE__, __func__, __LINE__,oldFilename,newFilename,mstrerror(errno));
 			THIS->logAllData(LOG_ERROR);
 		}
-		if( g_conf.m_logTraceBigFile ) {
-			log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
-		}
+
+		logTrace( g_conf.m_logTraceBigFile, "END" );
 		return;
 	}
 	
@@ -1933,19 +1870,14 @@ static void renameWrapper_r ( void *state ) {
 	// . but we do it right after the thread exits now
 	//THIS->m_files[i]->set ( THIS->m_newBaseFilename );
 
-	if( g_conf.m_logTraceBigFile ) {
-		log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
-	}
+	logTrace( g_conf.m_logTraceBigFile, "END" );
 	return;
 }
 
 
-static void unlinkWrapper_r ( void *state )
-{
-	if( g_conf.m_logTraceBigFile ) {
-		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
-	}
-	
+static void unlinkWrapper_r ( void *state ) {
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
+
 	// get ourselves
 	File *f = (File *)state;
 	// . by getting the inode in the cache space the call to delete(f) 
@@ -1964,20 +1896,15 @@ static void unlinkWrapper_r ( void *state )
 	// when i gdb gb during its slow unlink on morph it is in the
 	// sync() function, so let's take this out...
 	//sync();
-	
-	if( g_conf.m_logTraceBigFile ) {
-		log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
-	}
+
+	logTrace( g_conf.m_logTraceBigFile, "END" );
 	return;
 }
 
 
 // Use of ThreadEntry parameter is NOT thread safe 
-static void doneRenameWrapper ( void *state, job_exit_t /*exit_type*/ )
-{
-	if( g_conf.m_logTraceBigFile ) {
-		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
-	}
+static void doneRenameWrapper ( void *state, job_exit_t /*exit_type*/ ) {
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
 	// extract our class
 	File *f = (File *)state;
@@ -2033,11 +1960,8 @@ static void doneRenameWrapper ( void *state, job_exit_t /*exit_type*/ )
 	THIS->m_partsRemaining--;
 	
 	// return if more to do
-	if ( THIS->m_partsRemaining > 0 ) 
-	{
-		if( g_conf.m_logTraceBigFile ) {
-			log(LOG_TRACE,"%s:%s:%d: END - still more parts", __FILE__, __func__, __LINE__);
-		}
+	if ( THIS->m_partsRemaining > 0 ) {
+		logTrace( g_conf.m_logTraceBigFile, "END - still more parts" );
 		return;
 	}
 		
@@ -2053,19 +1977,14 @@ static void doneRenameWrapper ( void *state, job_exit_t /*exit_type*/ )
 	{
 		THIS->m_callback ( THIS->m_state );
 	}
-	
-	if( g_conf.m_logTraceBigFile ) {
-		log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
-	}
+
+	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
 
 
 // Use of ThreadEntry parameter is NOT thread safe 
 static void doneUnlinkWrapper ( void *state, job_exit_t /*exit_type*/ ) {
-
-	if( g_conf.m_logTraceBigFile ) {
-		log(LOG_TRACE,"%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
-	}
+	logTrace( g_conf.m_logTraceBigFile, "BEGIN" );
 
 	// extract our class
 	File *f = (File *)state;
@@ -2097,17 +2016,14 @@ static void doneUnlinkWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 	}
 	else 
 	{
-		log(LOG_ERROR, "%s:%s:%d: doneUnlinkWrapper. unlink had bad file ptr.", __FILE__, __func__, __LINE__);
+		log(LOG_ERROR, "%s:%s:%d: doneUnlinkWrapper. unlink had bad file ptr.", __FILE__, __func__, __LINE__ );
 		THIS->logAllData(LOG_ERROR);
 
 	}
 	
 	// bail if more to do
-	if ( THIS->m_numThreads > 0 ) 
-	{
-		if( g_conf.m_logTraceBigFile ) {
-			log(LOG_TRACE,"%s:%s:%d: END - still more threads", __FILE__, __func__, __LINE__);
-		}
+	if ( THIS->m_numThreads > 0 ) {
+		logTrace( g_conf.m_logTraceBigFile, "END - still more threads" );
 		return;
 	}
 		
@@ -2121,9 +2037,7 @@ static void doneUnlinkWrapper ( void *state, job_exit_t /*exit_type*/ ) {
 		THIS->m_callback ( THIS->m_state );
 	}
 
-	if( g_conf.m_logTraceBigFile ) {
-		log(LOG_TRACE,"%s:%s:%d: END", __FILE__, __func__, __LINE__);
-	}
+	logTrace( g_conf.m_logTraceBigFile, "END" );
 }
 
 
