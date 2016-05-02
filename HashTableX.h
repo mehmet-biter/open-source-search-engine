@@ -306,8 +306,6 @@ class HashTableX {
 	bool save ( const char *dir, const char *filename , 
 		    const char  *tbuf = NULL , int32_t  tsize = 0);
 
-	bool load ( const char *dir, const char *filename,  SafeBuf *fillBuf );
-
 	bool setTableSize ( int32_t numSlots , char *buf , int32_t bufSize );
 
 	void disableWrites () { m_isWritable = false; };
@@ -346,13 +344,6 @@ class HashTableX {
 
 	bool m_isSaving;
 	bool m_needsSave;
-
-	char  m_dir[100];
-	char  m_filename[64];
-	void *m_state    ;
-	void (* m_callback) ( void *state);
-	const char *m_tbuf     ;
-	int32_t  m_tsize    ;
 
 	// limits growing to this # of slots total
 	int64_t  m_maxSlots;

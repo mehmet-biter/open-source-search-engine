@@ -404,16 +404,6 @@ bool HashTableX::setTableSize ( int32_t oldn , char *buf , int32_t bufSize ) {
 	return true;
 }
 
-bool HashTableX::load ( const char *dir, const char *filename,  SafeBuf *fillBuf ) {
-	char *tbuf = NULL;
-	int32_t  tsize = 0;
-	bool status = load ( dir , filename , &tbuf, &tsize );
-	if ( ! status ) return false;
-	// assign to safebuf. own buf = true
-	fillBuf->setBuf ( tbuf , tsize , tsize , true , csUTF8 );
-	return true;
-}
-
 // both return false and set g_errno on error, true otherwise
 bool HashTableX::load ( const char *dir, const char *filename, char **tbuf, int32_t *tsize ) {
 	File f;
