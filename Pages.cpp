@@ -76,6 +76,10 @@ static WebPage s_pages[] = {
 	  "master controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_MASTERADMIN|PG_ACTIVE},
 
+	{ PAGE_DATAFILE   , "admin/datafile"   , 0 , "datafile controls" ,1, 0,
+	  "datafile controls", sendPageGeneric  , 0 ,NULL,NULL,
+	  PG_ACTIVE},
+
 	// use POST for html head/tail and page root html. might be large.
 	{ PAGE_SEARCH    , "admin/search"   , 0 , "search controls" ,1,M_POST,
 	  "search controls", sendPageGeneric  , 0 ,NULL,NULL,

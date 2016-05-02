@@ -973,19 +973,22 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 		page = PAGE_COLLPASSWORDS;
 
 	// print the start of the table
-	char *tt = "None";
+	const char *tt = "None";
+
 	if ( page == PAGE_LOG        ) tt = "Log Controls";
-	if ( page == PAGE_MASTER     ) tt = "Master Controls";
-	if ( page == PAGE_INJECT     ) tt = "Inject Url";
-	if ( page == PAGE_MASTERPASSWORDS ) tt = "Master Passwords";
-	if ( page == PAGE_ADDURL2    ) tt = "Add Urls";
-	if ( page == PAGE_SPIDER     ) tt = "Spider Controls";
-	if ( page == PAGE_SEARCH     ) tt = "Search Controls";
-	if ( page == PAGE_FILTERS    ) tt = "Url Filters";
-	if ( page == PAGE_BASIC_SETTINGS ) tt = "Settings";
-	if ( page == PAGE_COLLPASSWORDS ) tt = "Collection Passwords";
+	else if ( page == PAGE_MASTER     ) tt = "Master Controls";
+	else if ( page == PAGE_INJECT     ) tt = "Inject Url";
+	else if ( page == PAGE_MASTERPASSWORDS ) tt = "Master Passwords";
+	else if ( page == PAGE_ADDURL2    ) tt = "Add Urls";
+	else if ( page == PAGE_DATAFILE   ) tt = "Datafile Controls";
+	else if ( page == PAGE_RANKING    ) tt = "Ranking Controls";
+	else if ( page == PAGE_SPIDER     ) tt = "Spider Controls";
+	else if ( page == PAGE_SEARCH     ) tt = "Search Controls";
+	else if ( page == PAGE_FILTERS    ) tt = "Url Filters";
+	else if ( page == PAGE_BASIC_SETTINGS ) tt = "Settings";
+	else if ( page == PAGE_COLLPASSWORDS ) tt = "Collection Passwords";
 #ifndef PRIVACORE_SAFE_VERSION
-	if ( page == PAGE_REPAIR     ) tt = "Rebuild Controls";
+	else if ( page == PAGE_REPAIR     ) tt = "Rebuild Controls";
 #endif
 
 	// special messages for spider controls
@@ -3513,92 +3516,10 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	// just a comment in the conf file
-	m->m_desc  =
-    "Below the various Gigablast databases are configured.\n"
-    "<*dbMaxTreeMem>          - mem used for holding new recs\n"
-    "<*dbMaxDiskPageCacheMem> - disk page cache mem for this db\n"
-    "<*dbMaxCacheMem>         - cache mem for holding single recs\n"
-//"<*dbMinFilesToMerge>     - required # files to trigger merge\n"
-    "<*dbSaveCache>           - save the rec cache on exit?\n"
-    "<*dbMaxCacheAge>         - max age (seconds) for recs in rec cache\n"
-		"See that Stats page for record counts and stats.\n";
-	m->m_type  = TYPE_COMMENT;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "dns max cache mem";
 	m->m_desc  = "How many bytes should be used for caching DNS replies?";
 	m->m_off   = offsetof(Conf,m_dnsMaxCacheMem);
 	m->m_def   = "128000";
-	m->m_type  = TYPE_LONG;
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "tagdb max tree mem";
-	m->m_desc  = "A tagdb record "
-		"assigns a url or site to a ruleset. Each tagdb record is "
-		"about 100 bytes or so.";
-	m->m_off   = offsetof(Conf,m_tagdbMaxTreeMem);
-	m->m_def   = "1028000";
-	m->m_type  = TYPE_LONG;
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "clusterdb max tree mem";
-	m->m_desc  = "Clusterdb caches small records for site clustering "
-		"and deduping.";
-	m->m_off   = offsetof(Conf,m_clusterdbMaxTreeMem);
-	m->m_def   = "1000000";
-	m->m_type  = TYPE_LONG;
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	// this is overridden by collection
-	m->m_title = "clusterdb min files to merge";
-	m->m_desc  = "";
-	m->m_cgi   = "cmftm";
-	m->m_off   = offsetof(Conf,m_clusterdbMinFilesToMerge);
-	m->m_def   = "-1"; // -1 means to use collection rec
-	m->m_type  = TYPE_LONG;
-	m->m_save  = 0;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m->m_flags = PF_NOAPI;
-	m++;
-
-	m->m_title = "clusterdb save cache";
-	m->m_desc  = "";
-	m->m_cgi   = "cdbsc";
-	m->m_off   = offsetof(Conf,m_clusterdbSaveCache);
-	m->m_def   = "0";
-	m->m_type  = TYPE_BOOL;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m->m_flags = PF_NOAPI;
-	m++;
-
-	m->m_title = "statsdb max tree mem";
-	m->m_desc  = "";
-	m->m_off   = offsetof(Conf,m_statsdbMaxTreeMem);
-	m->m_def   = "5000000";
-	m->m_type  = TYPE_LONG;
-	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_NONE;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "statsdb max cache mem";
-	m->m_desc  = "";
-	m->m_off   = offsetof(Conf,m_statsdbMaxCacheMem);
-	m->m_def   = "0";
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
 	m->m_page  = PAGE_NONE;
@@ -6446,79 +6367,6 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "posdb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? Posdb is "
-		"the index.";
-	m->m_cgi   = "dpcsp";
-	m->m_off   = offsetof(Conf,m_posdbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
-	m->m_def   = "30000000";
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "tagdb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? Tagdb is "
-		"consulted at spider time and query time to determine "
-		"if a url or outlink is banned or what its siterank is, etc.";
-	m->m_cgi   = "dpcst";
-	m->m_off   = offsetof(Conf,m_tagdbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
-	m->m_def   = "30000000";
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m->m_group = false;
-	m++;
-
-	m->m_title = "clusterdb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? "
-	        "Gigablast does a "
-		"lookup in clusterdb for each search result at query time to "
-		"get its site information for site clustering. If you "
-		"disable site clustering in the search controls then "
-		"clusterdb will not be consulted.";
-	m->m_cgi   = "dpcsc";
-	m->m_off   = offsetof(Conf,m_clusterdbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
-	m->m_def   = "30000000";
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m->m_group = false;
-	m++;
-
-	m->m_title = "titledb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? Titledb "
-		"holds the cached web pages, compressed. Gigablast consults "
-		"it to generate a summary for a search result, or to see if "
-		"a url Gigablast is spidering is already in the index.";
-	m->m_cgi   = "dpcsx";
-	m->m_off   = offsetof(Conf,m_titledbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
-	m->m_def   = "30000000";
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m->m_group = false;
-	m++;
-
-	m->m_title = "spiderdb disk cache size";
-	m->m_desc  = "How much file cache size to use in bytes? Titledb "
-		"holds the cached web pages, compressed. Gigablast consults "
-		"it to generate a summary for a search result, or to see if "
-		"a url Gigablast is spidering is already in the index.";
-	m->m_cgi   = "dpcsy";
-	m->m_off   = offsetof(Conf,m_spiderdbFileCacheSize);
-	m->m_type  = TYPE_LONG_LONG;
-	m->m_def   = "30000000";
-	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_MASTER;
-	m->m_obj   = OBJ_CONF;
-	m->m_group = false;
-	m++;
-
 	m->m_title = "stable-summary cache size";
 	m->m_desc  = "How much memory to use for stable summaries, viz. generated from meta tags and the same for all users and queries";
 	m->m_cgi   = "stablesumcachemem";
@@ -8428,6 +8276,263 @@ void Parms::init ( ) {
 	m++;
 
 	///////////////////////////////////////////
+	// PAGE DATAFILE CONTROLS
+	///////////////////////////////////////////
+
+	// just a comment in the conf file
+	m->m_desc  = "Below the various Gigablast databases are configured.\n"
+	             "<*dbMaxTreeMem>          - mem used for holding new recs\n"
+	             "<*dbMaxDiskPageCacheMem> - disk page cache mem for this db\n"
+	             "<*dbMaxCacheMem>         - cache mem for holding single recs\n"
+	             "<*dbMinFilesToMerge>     - required # files to trigger merge\n"
+	             "<*dbSaveCache>           - save the rec cache on exit?\n"
+	             "<*dbMaxCacheAge>         - max age (seconds) for recs in rec cache\n"
+	             "See that Stats page for record counts and stats.\n";
+	m->m_type  = TYPE_COMMENT;
+	m->m_page  = PAGE_NONE;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	////////////////////
+	// clusterdb settings
+	////////////////////
+
+	m->m_title = "clusterdb disk cache size";
+	m->m_desc  = "How much file cache size to use in bytes? "
+	             "Gigablast does a lookup in clusterdb for each search result at query time to "
+	             "get its site information for site clustering. If you "
+	             "disable site clustering in the search controls then "
+	             "clusterdb will not be consulted.";
+	m->m_cgi   = "dpcsc";
+	m->m_off   = offsetof(Conf,m_clusterdbFileCacheSize);
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_def   = "30000000";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_DATAFILE;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m++;
+
+	m->m_title = "clusterdb max tree mem";
+	m->m_desc  = "Clusterdb caches small records for site clustering and deduping.";
+	m->m_off   = offsetof(Conf,m_clusterdbMaxTreeMem);
+	m->m_def   = "1000000";
+	m->m_type  = TYPE_LONG;
+	m->m_flags = PF_NOSYNC|PF_NOAPI;
+	m->m_page  = PAGE_NONE;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
+	// this is overridden by collection
+	m->m_title = "clusterdb min files to merge";
+	m->m_desc  = "";
+	m->m_cgi   = "cmftm";
+	m->m_off   = offsetof(Conf,m_clusterdbMinFilesToMerge);
+	m->m_def   = "-1"; // -1 means to use collection rec
+	m->m_type  = TYPE_LONG;
+	m->m_save  = 0;
+	m->m_page  = PAGE_NONE;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_NOAPI;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "clusterdb save cache";
+	m->m_desc  = "";
+	m->m_cgi   = "cdbsc";
+	m->m_off   = offsetof(Conf,m_clusterdbSaveCache);
+	m->m_def   = "0";
+	m->m_type  = TYPE_BOOL;
+	m->m_page  = PAGE_NONE;
+	m->m_obj   = OBJ_CONF;
+	m->m_flags = PF_NOAPI;
+	m->m_group = false;
+	m++;
+
+	////////////////////
+	// linkdb settings
+	////////////////////
+
+	m->m_title = "linkdb min files needed to trigger to merge";
+	m->m_desc  = "Merge is triggered when this many linkdb data files "
+	             "are on disk. Raise this when initially growing an index "
+	             "in order to keep merging down.";
+	m->m_cgi   = "mlkftm";
+	m->m_off   = offsetof(CollectionRec,m_linkdbMinFilesToMerge);
+	m->m_def   = "6";
+	m->m_type  = TYPE_LONG;
+	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_DATAFILE;
+	m->m_obj   = OBJ_COLL;
+	m->m_group = true;
+	m++;
+
+	////////////////////
+	// posdb settings
+	////////////////////
+
+	m->m_title = "posdb disk cache size";
+	m->m_desc  = "How much file cache size to use in bytes? Posdb is the index.";
+	m->m_cgi   = "dpcsp";
+	m->m_off   = offsetof(Conf,m_posdbFileCacheSize);
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_def   = "30000000";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_DATAFILE;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m++;
+
+	m->m_title = "posdb min files needed to trigger to merge";
+	m->m_desc  = "Merge is triggered when this many posdb data files "
+	             "are on disk. Raise this while doing massive injections "
+	             "and not doing much querying. Then when done injecting "
+	             "keep this low to make queries fast.";
+	m->m_cgi   = "mpftm";
+	m->m_off   = offsetof(CollectionRec,m_posdbMinFilesToMerge);
+	m->m_def   = "6";
+	m->m_type  = TYPE_LONG;
+	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_DATAFILE;
+	m->m_obj   = OBJ_COLL;
+	m->m_group = false;
+	m++;
+
+	////////////////////
+	// statdb settings
+	////////////////////
+
+	m->m_title = "statsdb max tree mem";
+	m->m_desc  = "";
+	m->m_off   = offsetof(Conf,m_statsdbMaxTreeMem);
+	m->m_def   = "5000000";
+	m->m_type  = TYPE_LONG;
+	m->m_flags = PF_NOSYNC|PF_NOAPI;
+	m->m_page  = PAGE_NONE;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m++;
+
+	m->m_title = "statsdb max cache mem";
+	m->m_desc  = "";
+	m->m_off   = offsetof(Conf,m_statsdbMaxCacheMem);
+	m->m_def   = "0";
+	m->m_type  = TYPE_LONG;
+	m->m_flags = PF_NOSYNC|PF_NOAPI;
+	m->m_page  = PAGE_NONE;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
+	////////////////////
+	// spiderdb settings
+	////////////////////
+
+	m->m_title = "spiderdb disk cache size";
+	m->m_desc  = "How much file cache size to use in bytes? Titledb "
+	             "holds the cached web pages, compressed. Gigablast consults "
+	             "it to generate a summary for a search result, or to see if "
+	             "a url Gigablast is spidering is already in the index.";
+	m->m_cgi   = "dpcsy";
+	m->m_off   = offsetof(Conf,m_spiderdbFileCacheSize);
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_def   = "30000000";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_DATAFILE;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m++;
+
+	m->m_title = "spiderdb min files needed to trigger to merge";
+	m->m_desc  = "Merge is triggered when this many spiderdb data files are on disk.";
+	m->m_cgi   = "msftm";
+	m->m_off   = offsetof(CollectionRec,m_spiderdbMinFilesToMerge);
+	m->m_def   = "2";
+	m->m_type  = TYPE_LONG;
+	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_DATAFILE;
+	m->m_obj   = OBJ_COLL;
+	m->m_group = false;
+	m++;
+
+	////////////////////
+	// tagdb settings
+	////////////////////
+
+	m->m_title = "tagdb disk cache size";
+	m->m_desc  = "How much file cache size to use in bytes? Tagdb is "
+	             "consulted at spider time and query time to determine "
+	             "if a url or outlink is banned or what its siterank is, etc.";
+	m->m_cgi   = "dpcst";
+	m->m_off   = offsetof(Conf,m_tagdbFileCacheSize);
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_def   = "30000000";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_DATAFILE;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m++;
+
+	m->m_title = "tagdb min files to merge";
+	m->m_desc  = "Merge is triggered when this many linkdb data files are on disk.";
+	m->m_cgi   = "mtftgm";
+	m->m_off   = offsetof(CollectionRec,m_tagdbMinFilesToMerge);
+	m->m_def   = "2";
+	m->m_type  = TYPE_LONG;
+	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_DATAFILE;
+	m->m_obj   = OBJ_COLL;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "tagdb max tree mem";
+	m->m_desc  = "A tagdb record assigns a url or site to a ruleset. Each tagdb record is about 100 bytes or so.";
+	//m->m_cgi   = "mtmt";
+	m->m_off   = offsetof(Conf,m_tagdbMaxTreeMem);
+	m->m_def   = "101028000";
+	m->m_type  = TYPE_LONG;
+	m->m_flags = PF_NOSYNC|PF_NOAPI;
+	m->m_page  = PAGE_DATAFILE; //PAGE_NONE;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = false;
+	m++;
+
+	////////////////////
+	// titledb settings
+	////////////////////
+
+	m->m_title = "titledb disk cache size";
+	m->m_desc  = "How much file cache size to use in bytes? Titledb "
+			"holds the cached web pages, compressed. Gigablast consults "
+			"it to generate a summary for a search result, or to see if "
+			"a url Gigablast is spidering is already in the index.";
+	m->m_cgi   = "dpcsx";
+	m->m_off   = offsetof(Conf,m_titledbFileCacheSize);
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_def   = "30000000";
+	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_DATAFILE;
+	m->m_obj   = OBJ_CONF;
+	m->m_group = true;
+	m++;
+
+	// this is overridden by collection
+	m->m_title = "titledb min files needed to trigger to merge";
+	m->m_desc  = "Merge is triggered when this many titledb data files are on disk.";
+	m->m_cgi   = "mtftm";
+	m->m_off   = offsetof(CollectionRec,m_titledbMinFilesToMerge);
+	m->m_def   = "6";
+	m->m_type  = TYPE_LONG;
+	//m->m_save  = 0;
+	m->m_flags = PF_HIDDEN | PF_NOSAVE;
+	m->m_page  = PAGE_DATAFILE;
+	m->m_obj   = OBJ_COLL;
+	m->m_group = false;
+	m++;
+
+
+	///////////////////////////////////////////
 	// PAGE SPIDER CONTROLS
 	///////////////////////////////////////////
 
@@ -8900,62 +9005,6 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "linkdb min files needed to trigger to merge";
-	m->m_desc  = "Merge is triggered when this many linkdb data files "
-		"are on disk. Raise this when initially growing an index "
-		"in order to keep merging down.";
-	m->m_cgi   = "mlkftm";
-	m->m_off   = offsetof(CollectionRec,m_linkdbMinFilesToMerge);
-	m->m_def   = "6";
-	m->m_type  = TYPE_LONG;
-	m->m_group = false;
-	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "tagdb min files to merge";
-	m->m_desc  = "Merge is triggered when this many linkdb data files "
-		"are on disk.";
-	m->m_cgi   = "mtftgm";
-	m->m_off   = offsetof(CollectionRec,m_tagdbMinFilesToMerge);
-	m->m_def   = "2";
-	m->m_type  = TYPE_LONG;
-	m->m_group = false;
-	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	// this is overridden by collection
-	m->m_title = "titledb min files needed to trigger to merge";
-	m->m_desc  = "Merge is triggered when this many titledb data files "
-		"are on disk.";
-	m->m_cgi   = "mtftm";
-	m->m_off   = offsetof(CollectionRec,m_titledbMinFilesToMerge);
-	m->m_def   = "6";
-	m->m_type  = TYPE_LONG;
-	//m->m_save  = 0;
-	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_SPIDER;
-	m->m_obj   = OBJ_COLL;
-	m++;
-
-	m->m_title = "posdb min files needed to trigger to merge";
-	m->m_desc  = "Merge is triggered when this many posdb data files "
-		"are on disk. Raise this while doing massive injections "
-		"and not doing much querying. Then when done injecting "
-		"keep this low to make queries fast.";
-	m->m_cgi   = "mpftm";
-	m->m_off   = offsetof(CollectionRec,m_posdbMinFilesToMerge);
-	m->m_def   = "6";
-	m->m_type  = TYPE_LONG;
-	m->m_group = false;
-	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
 	m->m_page  = PAGE_SPIDER;
 	m->m_obj   = OBJ_COLL;
 	m++;

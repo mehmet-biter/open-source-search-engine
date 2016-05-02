@@ -386,6 +386,7 @@ class CollectionRec {
 	int32_t m_titledbMinFilesToMerge ;
 	int32_t m_linkdbMinFilesToMerge ;
 	int32_t m_tagdbMinFilesToMerge ;
+	int32_t m_spiderdbMinFilesToMerge;
 
 	char  m_dedupResultsByDefault   ;
 	char  m_doTagdbLookups        ;

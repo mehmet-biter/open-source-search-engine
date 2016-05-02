@@ -183,7 +183,8 @@ enum {
 
 	// master admin pages
 	PAGE_HOSTS       ,
-	PAGE_MASTER      , 
+	PAGE_MASTER      ,
+	PAGE_DATAFILE    ,
 	PAGE_SEARCH      ,
 	PAGE_RANKING     ,
 	PAGE_SPIDER      , 

@@ -1349,33 +1349,29 @@ bool RdbBase::attemptMerge ( int32_t niceness, bool forceMergeAll, bool doLog ,
 	if ( cr && m_minToMerge > 0 ) cr = NULL;
 
 	// if cr is non-NULL use its value now
-	if ( cr && m_rdb == g_posdb.getRdb() ) 
-	{
-		m_minToMerge = cr->m_posdbMinFilesToMerge;
-		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: posdb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
-	}
-	if ( cr && m_rdb == g_titledb.getRdb() ) 
-	{
-		m_minToMerge = cr->m_titledbMinFilesToMerge;
-		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: titledb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
-	}
-	//if ( cr && m_rdb == g_spiderdb.getRdb() ) 
-	//	m_minToMerge = cr->m_spiderdbMinFilesToMerge;
-	//if ( cr && m_rdb == g_clusterdb.getRdb() )
-	//	m_minToMerge = cr->m_clusterdbMinFilesToMerge;
-	//if ( cr && m_rdb == g_statsdb.getRdb() )
-	//if ( m_rdb == g_statsdb.getRdb() )
-	//	m_minToMerge = g_conf.m_statsdbMinFilesToMerge;
-	if ( cr && m_rdb == g_linkdb.getRdb() )
-	{
-		m_minToMerge = cr->m_linkdbMinFilesToMerge;
-		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: linkdb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
-	}
-
-	if ( cr && m_rdb == g_tagdb.getRdb() )
-	{
-		m_minToMerge = cr->m_tagdbMinFilesToMerge;
-		if( g_conf.m_logTraceRdbBase ) log(LOG_TRACE,"%s:%s:%d: tagdb. m_minToMerge: %"INT32"", __FILE__,__func__,__LINE__, m_minToMerge);
+	if ( cr ) {
+		if ( m_rdb == g_posdb.getRdb() ) {
+			m_minToMerge = cr->m_posdbMinFilesToMerge;
+			logTrace( g_conf.m_logTraceRdbBase, "posdb. m_minToMerge: %" INT32, m_minToMerge );
+		} else if ( m_rdb == g_titledb.getRdb() ) {
+			m_minToMerge = cr->m_titledbMinFilesToMerge;
+			logTrace( g_conf.m_logTraceRdbBase, "titledb. m_minToMerge: %" INT32, m_minToMerge );
+		} else if ( m_rdb == g_spiderdb.getRdb() ) {
+		    m_minToMerge = cr->m_spiderdbMinFilesToMerge;
+			logTrace( g_conf.m_logTraceRdbBase, "spiderdb. m_minToMerge: %" INT32, m_minToMerge );
+		//} else if ( m_rdb == g_clusterdb.getRdb() ) {
+		//	m_minToMerge = cr->m_clusterdbMinFilesToMerge;
+		//  logTrace( g_conf.m_logTraceRdbBase, "clusterdb. m_minToMerge: %" INT32, m_minToMerge );
+		//} else if ( m_rdb == g_statsdb.getRdb() )
+		//	m_minToMerge = g_conf.m_statsdbMinFilesToMerge;
+		//  logTrace( g_conf.m_logTraceRdbBase, "statdb. m_minToMerge: %" INT32, m_minToMerge );
+		} else if ( m_rdb == g_linkdb.getRdb() ) {
+			m_minToMerge = cr->m_linkdbMinFilesToMerge;
+			logTrace( g_conf.m_logTraceRdbBase, "linkdb. m_minToMerge: %" INT32, m_minToMerge );
+		} else if ( m_rdb == g_tagdb.getRdb() ) {
+			m_minToMerge = cr->m_tagdbMinFilesToMerge;
+			logTrace( g_conf.m_logTraceRdbBase, "tagdb. m_minToMerge: %" INT32, m_minToMerge );
+		}
 	}
 
 	// always obey the override
