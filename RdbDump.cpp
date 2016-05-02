@@ -235,9 +235,6 @@ void RdbDump::doneDumping ( ) {
 			   true                 );// justVerify?
 	}
 #endif
-	// . append it to "sync" state we have in memory
-	// . when host #0 sends a OP_SYNCTIME signal we dump to disk
-	//g_sync.addOp ( OP_CLOSE , m_file , 0 );
 }
 
 static void tryAgainWrapper2 ( int fd , void *state ) ;

@@ -2252,9 +2252,6 @@ int main2 ( int argc , char *argv[] ) {
 
 	log("db: gb is now ready");
 
-	// sync loop
-	//if ( ! g_sync.init() ) {
-	//	log("db: Sync init failed." ); return 1; } 
 	// . now start g_loops main interrupt handling loop
 	// . it should block forever
 	// . when it gets a signal it dispatches to a server or db to handle it

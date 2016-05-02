@@ -874,11 +874,17 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 
 int32_t RdbBase::addNewFile ( int32_t id2 ) {
 	int32_t fileId = 0;
-	for ( int32_t i = 0 ; i < m_numFiles ; i++ )
-		if ( m_fileIds[i] >= fileId ) fileId = m_fileIds[i] + 1;
+	for ( int32_t i = 0 ; i < m_numFiles ; i++ ) {
+		if ( m_fileIds[i] >= fileId ) {
+			fileId = m_fileIds[ i ] + 1;
+		}
+	}
+
 	// . if not odd number then add one
 	// . we like to keep even #'s for merge file names
-	if ( (fileId & 0x01) == 0 ) fileId++;
+	if ( (fileId & 0x01) == 0 ) {
+		++fileId;
+	}
 
 	// otherwise, set it
 	return addFile( fileId, true, -1, id2 );
@@ -1030,9 +1036,6 @@ bool RdbBase::incorporateMerge ( ) {
 	m_x = x;
 	m_a = a;
 
-	// save the merge file name so we can unlink from sync table later
-	strncpy ( m_oldname , m_files[x]->getFilename() , 254 );
-
 	// wait for the above unlinks to finish before we do this rename
 	// otherwise, we might end up doing this rename first and deleting
 	// it!
@@ -1093,8 +1096,6 @@ void RdbBase::doneWrapper2 ( ) {
 	}
 
 	if ( ! m_isTitledb ) {
-		// we are kind opening this up now for writing
-		//g_sync.addOp ( OP_OPEN  , m_files[a]->getFilename() , 0 );
 		// debug statement
 		log(LOG_INFO,"db: Renaming %s of size %"INT64" to %s",
 		    m_files[x]->getFilename(),fs , m_files[a]->getFilename());
@@ -1109,8 +1110,7 @@ void RdbBase::doneWrapper2 ( ) {
 		// use m_dbname in case its titledbRebuild
 		sprintf ( buf , "%s%04"INT32"-%03"INT32".dat" , 
 			  m_dbname, m_fileIds[a], m_fileIds2[x] );
-		// we are kind opening this up now for writing
-		//g_sync.addOp ( OP_OPEN  , buf , 0 );
+
 		// rename it, this may block
 		if ( ! m_files   [ x ]->rename ( buf , doneWrapper3, this ) ) {
 			m_numThreads++; g_numThreads++; }
@@ -1985,8 +1985,6 @@ void RdbBase::gotTokenForMerge ( ) {
 		//g_msg35.releaseToken();
 		return false; 
 	}
-	// we just opened a new file
-	//g_sync.addOp ( OP_OPEN , m_files[mergeFileNum] , 0 );
 	
 	// is it a force?
 	if ( m_nextMergeForced ) log(LOG_INFO,

@@ -885,7 +885,6 @@ void handleRequest11 ( UdpSlot *slot , int32_t niceness ) {
 		reply     = NULL;
 		replySize = 0;
 	}
-	//	g_sync.addOp ( OP_SYNCPT , "" , *(int64_t *)request );
 	// otherwise, unknown request size
 	else {
 		log(LOG_LOGIC,"net: pingserver: Unknown request size of "

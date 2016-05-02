@@ -452,11 +452,6 @@ class RdbBase {
 	int32_t m_numThreads;
 
 	bool m_isUnlinking;
-	
-	// filename of merge file for passing to g_sync to unlink it from there
-	char m_oldname [ 256 ];
-
-	//BigFile m_dummyFile;
 
 	char m_doLog;
 };

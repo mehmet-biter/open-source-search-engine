@@ -826,9 +826,7 @@ void Rdb::doneSaving ( ) {
 		m_isSaving = false;
 		return;
 	}
-	// . let sync file know this rdb was saved to disk here
-	// . only append this if we are truly 100% sync'ed on disk
-	//if ( ! m_needsSave ) g_sync.addOp ( OP_CLOSE , &m_dummyFile , 0 );
+
 	// a temp fix
 	//if ( strstr ( m_saveFile.getFilename() , "saved" ) ) {
 	//	m_needsSave = true;
@@ -836,6 +834,7 @@ void Rdb::doneSaving ( ) {
 	//	     m_saveFile.getFilename());
 	//	return;
 	//}
+
 	// sanity
 	if ( m_dbname == NULL || m_dbname[0]=='\0' ) {
 		char *xx=NULL;*xx=0; }
@@ -1286,18 +1285,7 @@ bool Rdb::dumpCollLoop ( ) {
 
 	// . MDW ADDING A NEW FILE SHOULD BE IN RDBDUMP.CPP NOW... NO!
 	// . get the biggest fileId
-	int32_t id2 = -1;
-	if ( m_isTitledb ) {
-		//id2 = base->getAvailId2 ( );
-		// this is obsolete, make it always 000 now
-		id2 = 000;
-		// only allow 254 for the merge routine so we can merge into
-		// another file...
-		if ( id2 < 0 || id2 >= 254 ) 
-			return log(LOG_LOGIC,"db: rdb: Could not get "
-				   "available secondary id for titledb: %s." , 
-				   mstrerror(g_errno) );
-	}
+	int32_t id2 = m_isTitledb ? 0 : -1;
 
 	// if we add to many files then we can not merge, because merge op
 	// needs to add a file and it calls addNewFile() too
@@ -1314,9 +1302,9 @@ bool Rdb::dumpCollLoop ( ) {
 
 	// this file must not exist already, we are dumping the tree into it
 	m_fn = base->addNewFile ( id2 ) ;
-	if ( m_fn < 0 ) return log(LOG_LOGIC,"db: rdb: Failed to add new file "
-				"to dump %s: %s." , 
-				m_dbname,mstrerror(g_errno) );
+	if ( m_fn < 0 ) {
+		return log( LOG_LOGIC, "db: rdb: Failed to add new file to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
+	}
 
 	log(LOG_INFO,"build: Dumping to %s/%s for coll \"%s\".",
 	    base->m_files[m_fn]->getDir(),
@@ -1360,29 +1348,31 @@ bool Rdb::dumpCollLoop ( ) {
 	if ( bufSize2 < bufSize ) bufSize  = bufSize2;
 	if(!m_useTree) bufSize *= 4; //buckets are much faster at getting lists
 
-	//if ( this == g_titledb.getRdb   () ) bufSize = 300*1024;
-	// when not adding new links spiderdb typically consists of just
-	// negative recs, so it is like indexdb...
-	//if ( this == g_spiderdb.getRdb  () ) bufSize = 20*1024;
 	// how big will file be? upper bound.
 	int64_t maxFileSize;
+
 	// . NOTE: this is NOT an upper bound, stuff can be added to the
 	//         tree WHILE we are dumping. this causes a problem because
 	//         the DiskPageCache, BigFile::m_pc, allocs mem when you call
 	//         BigFile::open() based on "maxFileSize" so it can end up 
 	//         breaching its buffer! since this is somewhat rare i will
 	//         just modify DiskPageCache.cpp to ignore breaches. 
-	if(m_useTree) maxFileSize = m_tree.getMemOccupiedForList ();
-	else          maxFileSize = m_buckets.getMemOccupied();
+	if ( m_useTree ) {
+		maxFileSize = m_tree.getMemOccupiedForList();
+	} else {
+		maxFileSize = m_buckets.getMemOccupied();
+	}
+
 	// sanity
 	if ( maxFileSize < 0 ) { char *xx=NULL;*xx=0; }
+
 	// because we are actively spidering the list we dump ends up
 	// being more, by like 20% or so, otherwise we do not make a
 	// big enough diskpagecache and it logs breach msgs... does not
 	// seem to happen with buckets based stuff... hmmm...
-	if ( m_useTree ) maxFileSize = ((int64_t)maxFileSize) * 120LL/100LL;
-	//if(m_niceness) g_loop.quickPoll(m_niceness, 
-	//__PRETTY_FUNCTION__, __LINE__);
+	if ( m_useTree ) {
+		maxFileSize = ( ( int64_t ) maxFileSize ) * 120LL / 100LL;
+	}
 
 	RdbBuckets *buckets = NULL;
 	RdbTree    *tree = NULL;
@@ -1395,7 +1385,7 @@ bool Rdb::dumpCollLoop ( ) {
 	if ( ! m_dump.set (  base->m_collnum   ,
 			     base->m_files[m_fn]  ,
 			     id2            , // to set tfndb recs for titledb
-			     m_isTitledb,// tdb2? this == g_titledb.getRdb() ,
+			     m_isTitledb,
 			     buckets       ,
 			     tree          ,
 			     base->m_maps[m_fn], // RdbMap
@@ -1438,7 +1428,6 @@ bool Rdb::dumpCollLoop ( ) {
 
 static CollectionRec *s_mergeHead = NULL;
 static CollectionRec *s_mergeTail = NULL;
-static bool s_needsBuild = true;
 
 void addCollnumToLinkedListOfMergeCandidates ( collnum_t dumpCollnum ) {
 	// add this collection to the linked list of merge candidates
@@ -1553,8 +1542,7 @@ void forceMergeAll ( char rdbId , char niceness ) {
 		log(LOG_INFO,"%s:%s:%d: coll %"INT32" - Set next merge to Forced", __FILE__,__func__,__LINE__,i);
 		base->m_nextMergeForced = true;
 	}
-	// rebuild the linked list
-	s_needsBuild = true;
+
 	// and try to merge now
 	attemptMergeAll2 ();
 }
@@ -1835,14 +1823,6 @@ bool Rdb::needsDump ( ) {
 	// keys on disk to make it easier to read a doledb list
 	if ( m_rdbId != RDB_DOLEDB ) return false;
 
-	// set this if not valid
-	//static int32_t s_lastDumpTryTime = -1;
-	//if ( s_lastDumpTryTime == -1 )
-	//	s_lastDumpTryTime = getTimeLocal();
-	// try to dump doledb every 24 hrs
-	//int32_t now = getTimeLocal();
-	//if ( now - s_lastDumpTryTime >= 3600*24 ) return true;
-
 	// or dump doledb if a ton of negative recs...
 	if ( m_tree.getNumNegativeKeys() > 50000 ) return true;
 
@@ -1934,14 +1914,6 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 
 	// bail if we're closing
 	if ( m_isClosing ) { g_errno = ECLOSING; return false; }
-	// . if we are syncing, we might have to record the key so the sync
-	//   loop ignores this key since it is new
-	// . actually we should not add any new data while a sync is going on
-	//   because the sync may incorrectly override it
-	//if(g_sync.m_isSyncing ) { //&& g_sync.m_base == m_bases[collnum] ) {
-	//	g_errno = ETRYAGAIN;
-	//	return false;
-	//}
 
 	// sanity check
 	if ( KEYNEG(key) ) {
@@ -2151,8 +2123,6 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 		// mark as changed
 		//if ( ! m_needsSave ) {
 		//	m_needsSave = true;
-		//	// add the "gotData" line to sync file
-		//	g_sync.addOp ( OP_OPEN , &m_dummyFile , 0 );
 		//}
 	}
 
@@ -2188,17 +2158,8 @@ bool Rdb::addRecord ( collnum_t collnum, char *key , char *data , int32_t dataSi
 	// mark as changed
 	//if ( ! m_needsSave ) {
 	//	m_needsSave = true;
-	//	// add the "gotData" line to sync file
-	//	g_sync.addOp ( OP_OPEN , &m_dummyFile , 0 );
 	//}
-	// . if we are syncing, we might have to record the key so the sync
-	//   loop ignores this key since it is new
-	// . actually we should not add any new data while a sync is going on
-	//   because the sync may incorrectly override it
-	//if ( g_sync.m_isSyncing){ //&& g_sync.m_base == m_bases[collnum] ) {
-	//	g_errno = ETRYAGAIN;
-	//	return false;
-	//}
+
 	// . TODO: add using "lastNode" as a start node for the insertion point
 	// . should set g_errno if failed
 	// . caller should retry on g_errno of ETRYAGAIN or ENOMEM
