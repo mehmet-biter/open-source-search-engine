@@ -214,10 +214,6 @@ class Parm {
 	int32_t  m_hash;  // hash of "title"
 	int32_t  m_cgiHash; // hash of m_cgi
 
-	bool   getValueAsBool   ( class SearchInput *si ) ;
-	int32_t   getValueAsLong   ( class SearchInput *si ) ;
-	char * getValueAsString ( class SearchInput *si ) ;
-
 	int32_t getNumInArray ( collnum_t collnum ) ;
 
 	bool printVal ( class SafeBuf *sb , collnum_t collnum , int32_t occNum ) ;

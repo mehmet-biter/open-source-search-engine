@@ -3204,10 +3204,10 @@ skip2:
 		const char *dend;
 		const char *last;
 		const char *start;
+
 		// just print tag if it has no description
 		if ( ! *d ) goto skip;
-		//if ( p + gbstrlen(d)+5 >= pend ) goto hadError;
-		//if ( p > buf ) *p++='\n';
+
 		if ( sb.length() ) sb.pushChar('\n');
 	loop:
 		dend  = d + 77;
@@ -3220,20 +3220,17 @@ skip2:
 			d++;
 		}
 		if ( ! *d ) last = d;
-		//gbmemcpy ( p , "# " , 2 );
-		//p += 2;
+
 		sb.safeMemcpy("# ",2);
-		//gbmemcpy ( p , start , last - start );
-		//p += last - start;
+
 		sb.safeMemcpy(start,last-start);
-		//*p++='\n';
+
 		sb.pushChar('\n');
 		d = last + 1;
 		if ( d < END && *d ) goto loop;
+
 		// bail if comment
 		if ( m->m_type == TYPE_COMMENT ) {
-			//sprintf ( p , "\n" );
-			//p += gbstrlen ( p );
 			continue;
 		}
 		if ( m->m_type == TYPE_MONOD2  ) continue;
@@ -3243,68 +3240,41 @@ skip2:
 
 		// loop over all in this potential array
 		for ( j = 0 ; j < count ; j++ ) {
-			// the xml
-			//if ( p + gbstrlen(m->m_xml) >= pend ) goto hadError;
 			if ( g_errno ) goto hadError;
-			//sprintf ( p , "<%s>" , m->m_xml );
-			//p += gbstrlen ( p );
+
 			sb.safePrintf("<%s>" , m->m_xml );
 			// print CDATA if string
 			if ( m->m_type == TYPE_STRING         ||
 			     m->m_type == TYPE_STRINGBOX      ||
 			     m->m_type == TYPE_SAFEBUF        ||
 			     m->m_type == TYPE_STRINGNONEMPTY   ) {
-				//sprintf ( p , "<![CDATA[" );
-				//p += gbstrlen ( p );
 				sb.safeStrcpy( "<![CDATA[" );
 			}
-			// break point
-			//if (strcmp ( m->m_xml , "filterRulesetDefault")==0)
-			//	log("got it");
+
 			// . represent it in ascii form
 			// . this escapes out <'s and >'s
 			// . this ALSO encodes #'s (xml comment indicators)
-			//p = getParmHtmlEncoded(p,pend,m,s);
 			getParmHtmlEncoded(&sb,m,s);
+
 			// print CDATA if string
 			if ( m->m_type == TYPE_STRING         ||
 			     m->m_type == TYPE_STRINGBOX      ||
 			     m->m_type == TYPE_SAFEBUF        ||
 			     m->m_type == TYPE_STRINGNONEMPTY   ) {
-				//sprintf ( p , "]]>" );
-				//p += gbstrlen ( p );
 				sb.safeStrcpy("]]>" );
 			}
-			// this is NULL if it ran out of room
-			//if ( ! p ) goto hadError;
+
 			if ( g_errno ) goto hadError;
+
 			// advance to next element in array, if it is one
 			s = s + m->m_size;
+
 			// close the xml tag
-			//if ( p + 4 >= pend ) goto hadError;
-			//sprintf ( p , "</>\n" );
-			//p += gbstrlen ( p );
 			sb.safeStrcpy("</>\n" );
 			if ( g_errno ) goto hadError;
 		}
 	}
-	//*p = '\0';
 	sb.nullTerm();
-
-	//ff.set ( f );
-	//if ( ! ff.open ( O_RDWR | O_CREAT | O_TRUNC ) )
-	//	return log("db: Could not open %s : %s",
-	//		   ff.getFilename(),mstrerror(g_errno));
-
-	// save the parm to the file
-	//int32_t len = gbstrlen(buf);
-	// len = sb.length();
-	// use -1 for offset so we do not use pwrite() so it will not leave
-	// garbage at end of file
-	//n    = ff.write ( buf , len , -1 );
-	//n    = ff.write ( sb.getBufStart() , len , -1 );
-	//ff.close();
-	//if ( n == len ) return true;
 
 	// save to filename "f". returns # of bytes written. -1 on error.
 	if ( sb.safeSave ( f ) >= 0 )
@@ -10528,13 +10498,10 @@ void Parms::init ( ) {
 			    i,m_parms[i].m_title);
 			exit(-1);
 		}
-		//if ( ! m_parms[i].m_title[0] ) {
-		//	log(LOG_LOGIC,"conf: Parm #%"INT32" \"%s\" has no title.",
-		//	    i,m_parms[i].m_cgi);
-		//	exit(-1);
-		//}
+
 		// continue if already have the xml name
 		if ( m_parms[i].m_xml ) continue;
+
 		// set xml based on title
 		const char *tt = m_parms[i].m_title;
 		if ( p + gbstrlen(tt) >= pend ) {
@@ -10542,12 +10509,15 @@ void Parms::init ( ) {
 			    "tag name in buffer.");
 			exit(-1);
 		}
+
 		m_parms[i].m_xml = p;
+
 		for ( int32_t k = 0 ; tt[k] ; k++ ) {
 			if ( ! is_alnum_a(tt[k]) ) continue;
 			if ( k > 0 && tt[k-1]==' ') *p++ = to_upper_a(tt[k]);
 			else                        *p++ = tt[k];
 		}
+
 		*p++ = '\0';
 	}
 
@@ -10762,25 +10732,6 @@ void Parms::overlapTest ( char step ) {
 	log("conf: failed overlap test. exiting.");
 	exit(-1);
 
-}
-
-
-bool Parm::getValueAsBool ( SearchInput *si ) {
-	if ( m_obj != OBJ_SI ) { char *xx=NULL;*xx=0; }
-	char *p = (char *)si + m_off;
-	return *(bool *)p;
-}
-
-int32_t Parm::getValueAsLong ( SearchInput *si ) {
-	if ( m_obj != OBJ_SI ) { char *xx=NULL;*xx=0; }
-	char *p = (char *)si + m_off;
-	return *(int32_t *)p;
-}
-
-char *Parm::getValueAsString ( SearchInput *si ) {
-	if ( m_obj != OBJ_SI ) { char *xx=NULL;*xx=0; }
-	char *p = (char *)si + m_off;
-	return *(char **)p;
 }
 
 /////////
