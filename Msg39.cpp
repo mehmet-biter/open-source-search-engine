@@ -786,8 +786,7 @@ bool Msg39::intersectLists ( ) { // bool updateReadInfo ) {
 
 	// . create the thread
 	// . only one of these type of threads should be launched at a time
-	if ( ! m_debug &&
-	     g_jobScheduler.submit(Msg39_addListsWrapper,
+	if ( g_jobScheduler.submit(Msg39_addListsWrapper,
 	                           Msg39_controlLoopWrapper2,
 				   this,
 				   thread_type_query_intersect,
