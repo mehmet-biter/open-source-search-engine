@@ -376,7 +376,6 @@ void XmlDoc::reset ( ) {
 	m_useSpiderdb  = true;
 	m_useTitledb   = true;
 	m_useTagdb     = true;
-	m_usePlacedb   = true;
 	m_useSecondaryRdbs = false;
 
 	// used by Msg13.cpp only. kinda a hack.
@@ -14207,24 +14206,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	needLinkdb += kt1.m_numSlotsUsed * (sizeof(key224_t)+1);
 	need += needLinkdb;
 
-	// PLACEDB
-	HashTableX pt1;
-	//HashTableX pt2;
-	// . set key/data size
-	// . limit every address to 512 bytes
-	pt1.set(sizeof(key128_t),512,0,NULL,0,false,m_niceness,"placedb-indx");
-
-	setStatus("hashing place info");
-	int32_t needPlacedb = 0;
-	// . +1 for rdbId
-	// . up to 512 bytes per address
-	needPlacedb += pt1.m_numSlotsUsed * (sizeof(key128_t)+1+512);
-	//needPlacedb += pt2.m_numSlotsUsed * (sizeof(key128_t)+1+512);
-	need += needPlacedb;
-	// sanity check -- coring here because we respider the page and
-	// the address is gone so it tries to delete it!
-	//if ( ! od && m_skipIndexing && needPlacedb ) { char *xx=NULL;*xx=0; }
-
 	// we add a negative key to doledb usually (include datasize now)
 	int32_t needDoledb = sizeof(key_t) + 1 ; // + 4;
 	if ( forDelete ) needDoledb = 0;
@@ -14504,29 +14485,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( m_p - saved > needLinkdb ) { char *xx=NULL;*xx=0; }
 	// all done
 	kt1.reset();
-
-	// sanity check
-	verifyMetaList( m_metaList , m_p , forDelete );
-
-	//
-	// . ADD ADDRESSES TO NAMEDB/PLACEDB
-	// . key is basically a hash of the address (excluding place name
-	//   and street indicators)
-	//
-	setStatus ( "adding to placedb" );
-	// checkpoint
-	saved = m_p;
-	// add that table to the metalist
-	if ( m_usePlacedb && ! addTable128 ( &pt1, RDB_PLACEDB,forDelete))
-	{
-		logTrace( g_conf.m_logTraceXmlDoc, "addTable128 failed" );
-		return NULL;
-	}
-
-	// sanity check
-	if ( m_p - saved > needPlacedb ) { char *xx=NULL;*xx=0; }
-	// free mem
-	pt1.reset();
 
 	// sanity check
 	verifyMetaList( m_metaList , m_p , forDelete );
@@ -16283,89 +16241,6 @@ char *XmlDoc::addOutlinkSpiderRecsToMetaList ( ) {
 	logTrace( g_conf.m_logTraceXmlDoc, "END, all done." );
 
 	return m_p ;
-}
-
-bool XmlDoc::addTable128 ( HashTableX *tt1     , // T <key128_t,char> *tt1
-			   uint8_t     rdbId   ,
-			   bool        forDelete ) {
-
-	// sanity check
-	if ( rdbId == 0 ) { char *xx=NULL;*xx=0; }
-
-	bool useRdb2 = m_useSecondaryRdbs;//g_repair.isRepairActive();
-	//if ( g_repair.m_fullRebuild            ) useRdb2 = false;
-	//if ( g_repair.m_removeBadPages         ) useRdb2 = false;
-
-	// store this rdbId into the list
-	char useRdbId = rdbId;
-	//if ( useRdb2 && rdbId == RDB_CLUSTERDB ) useRdbId = RDB2_CLUSTERDB2;
-	if ( useRdb2 && rdbId == RDB_LINKDB    ) useRdbId = RDB2_LINKDB2;
-	if ( useRdb2 && rdbId == RDB_DATEDB    ) useRdbId = RDB2_DATEDB2;
-	if ( useRdb2 && rdbId == RDB_PLACEDB   ) useRdbId = RDB2_PLACEDB2;
-
-	// sanity checks
-	if ( tt1->m_ks != 16 ) { char *xx=NULL;*xx=0; }
-	if ( rdbId == RDB_PLACEDB ) {
-		if ( tt1->m_ds !=  512 ) { char *xx=NULL;*xx=0; }
-	}
-	else {
-		if ( tt1->m_ds !=  0 ) { char *xx=NULL;*xx=0; }
-	}
-
-	int32_t count = 0;
-
-	// store terms from "tt1" table
-	for ( int32_t i = 0 ; i < tt1->m_numSlots ; i++ ) {
-		// skip if empty
-		if ( tt1->m_flags[i] == 0 ) continue;
-		// breathe
-		QUICKPOLL(m_niceness);
-		// get its key
-		key128_t *k = (key128_t *)tt1->getKey ( i );
-		// no key is allowed to have the del bit clear at this point
-		// because we reserve that for making negative keys!
-		if ( ! ( k->n0 & 0x0000000000000001LL ) ){char*xx=NULL;*xx=0;}
-		// store rdbid
-		*m_p++ = useRdbId; // (useRdbId | f);
-		// store it
-		// *(key128_t *)m_p = *k; does this work?
-		gbmemcpy ( m_p , k , sizeof(key128_t) );
-		// all keys must be positive at this point
-		if ( ! ( m_p[0] & 0x01 ) ) { char *xx=NULL;*xx=0; }
-		// or if getting for incremental indexing and this is
-		// from the "oldList"
-		//if ( forDelete ) *m_p = *m_p & 0xfe;
-		// skip key
-		m_p += sizeof(key128_t);
-		// count it
-		count++;
-		// do not add the data if deleting
-		if ( forDelete ) continue;
-		// skip if not sectiondb or placedb
-		if ( rdbId != RDB_PLACEDB ) continue;
-		// ok test it out (MDW)
-		//logf(LOG_DEBUG,"doc: UNDO ME!!!!!!!!"); // this below
-		//if ( count > 1 ) continue;
-		// get the data value
-		char *val = (char *)tt1->getValue ( k );
-		// get the size of the data to store. assume Sectiondb vote.
-		int32_t ds = sizeof(SectionVote);
-		// placedb is special even. include the \0 terminator
-		if ( rdbId == RDB_PLACEDB ) {
-			// "ds" is how many bytes we store as data
-			ds = gbstrlen(val)+1;
-			// store dataSize first
-			*(int32_t *)m_p = ds;
-			// skip it
-			m_p += 4;
-		}
-		// store possible accompanying date of the rdb record
-		gbmemcpy (m_p,val, ds );
-		// skip it
-		m_p += ds;
-	}
-	//if(rdbId==RDB_LINKDB    ) log("doc: added %"INT32" linkdb keys"   ,count);
-	return true;
 }
 
 int32_t XmlDoc::getSiteRank ( ) {

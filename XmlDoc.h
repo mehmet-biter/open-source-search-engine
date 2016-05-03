@@ -511,10 +511,6 @@ public:
 
 	bool addTable224 ( HashTableX *tt1 ) ;
 
-	bool addTable128 ( class HashTableX *tt1     , // T <key128_t,char>*tt1
-                           uint8_t     rdbId   ,
-			   bool        forDelete ) ;
-
 	bool hashNoSplit ( class HashTableX *tt ) ;
 	char *hashAll ( class HashTableX *table ) ;
 	bool hashMetaTags ( class HashTableX *table ) ;
@@ -1129,7 +1125,6 @@ public:
 	bool m_useSpiderdb  ;
 	bool m_useTitledb   ;
 	bool m_useTagdb     ;
-	bool m_usePlacedb   ;
 	bool m_useSecondaryRdbs ;
 
 	SafeBuf *m_pbuf;
