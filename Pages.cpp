@@ -76,8 +76,8 @@ static WebPage s_pages[] = {
 	  "master controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_MASTERADMIN|PG_ACTIVE},
 
-	{ PAGE_DATAFILE   , "admin/datafile"   , 0 , "datafile controls" ,1, 0,
-	  "datafile controls", sendPageGeneric  , 0 ,NULL,NULL,
+	{ PAGE_RDB   , "admin/rdb"   , 0 , "rdb controls" ,1, 0,
+	  "rdb controls", sendPageGeneric  , 0 ,NULL,NULL,
 	  PG_ACTIVE},
 
 	// use POST for html head/tail and page root html. might be large.

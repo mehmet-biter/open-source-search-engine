@@ -116,21 +116,39 @@ class Conf {
 	// used to limit all rdb's to one merge per machine at a time
 	int32_t  m_mergeBufSize;
 
-	// tagdb parameters
+	// rdb settings
+	// posdb
+	int64_t m_posdbFileCacheSize;
+
+	// tagdb
+	int64_t m_tagdbFileCacheSize;
 	int32_t  m_tagdbMaxTreeMem;
 
 	// clusterdb for site clustering, each rec is 16 bytes
-	int32_t  m_clusterdbMaxTreeMem; 
+	int64_t m_clusterdbFileCacheSize;
+	int32_t  m_clusterdbMaxTreeMem;
 	int32_t  m_clusterdbMinFilesToMerge;
 	bool  m_clusterdbSaveCache;
 
-	// are we doing a command line thing like 'gb 0 dump s ....' in
-	// which case we do not want to log certain things
-	bool m_doingCommandLine;
+	// titledb
+	int64_t m_titledbFileCacheSize;
+
+	// spiderdb
+	int64_t m_spiderdbFileCacheSize;
+	int32_t  m_spiderdbMaxTreeMem;
 
 	// linkdb for storing linking relations
 	int32_t  m_linkdbMaxTreeMem;
 	int32_t  m_linkdbMinFilesToMerge;
+
+	// statdb
+	int32_t m_statsdbMaxTreeMem;
+	int32_t m_statsdbMaxCacheMem;
+	bool m_useStatsdb;
+
+	// are we doing a command line thing like 'gb 0 dump s ....' in
+	// which case we do not want to log certain things
+	bool m_doingCommandLine;
 
 	int32_t  m_maxCpuThreads;
 	int32_t  m_maxIOThreads;
@@ -149,10 +167,6 @@ class Conf {
 	int64_t  m_msg3a_msg39_network_overhead; //additional latency/overhead of sending reqeust+response over network.
 
 	char	m_useHighFrequencyTermCache;
-	
-	int32_t m_statsdbMaxTreeMem;
-	int32_t m_statsdbMaxCacheMem;
-	bool m_useStatsdb;
 
 	bool  m_spideringEnabled     ;
 	bool  m_injectionsEnabled     ;
@@ -312,11 +326,6 @@ class Conf {
 
 	bool   m_useQuickpoll;
 
-	int64_t m_posdbFileCacheSize;
-	int64_t m_tagdbFileCacheSize;
-	int64_t m_clusterdbFileCacheSize;
-	int64_t m_titledbFileCacheSize;
-	int64_t m_spiderdbFileCacheSize;
 	int64_t m_stableSummaryCacheSize;
 	int64_t m_stableSummaryCacheMaxAge;
 	int64_t m_unstableSummaryCacheSize;

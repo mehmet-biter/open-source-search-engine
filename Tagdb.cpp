@@ -1057,9 +1057,6 @@ bool Tagdb::setHashTable ( ) {
 }
 
 bool Tagdb::init ( ) {
-	// force it now
-	g_conf.m_tagdbMaxTreeMem = 101028000;
-
 	// . what's max # of tree nodes?
 	// . assume avg tagdb rec size (siteUrl) is about 82 bytes we get:
 	// . NOTE: 32 bytes of the 82 are overhead

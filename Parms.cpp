@@ -980,7 +980,7 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 	else if ( page == PAGE_INJECT     ) tt = "Inject Url";
 	else if ( page == PAGE_MASTERPASSWORDS ) tt = "Master Passwords";
 	else if ( page == PAGE_ADDURL2    ) tt = "Add Urls";
-	else if ( page == PAGE_DATAFILE   ) tt = "Datafile Controls";
+	else if ( page == PAGE_RDB   ) tt = "Rdb Controls";
 	else if ( page == PAGE_RANKING    ) tt = "Ranking Controls";
 	else if ( page == PAGE_SPIDER     ) tt = "Spider Controls";
 	else if ( page == PAGE_SEARCH     ) tt = "Search Controls";
@@ -8304,7 +8304,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG_LONG;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_DATAFILE;
+	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
 	m->m_group = true;
 	m++;
@@ -8359,7 +8359,7 @@ void Parms::init ( ) {
 	m->m_def   = "6";
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_DATAFILE;
+	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
 	m->m_group = true;
 	m++;
@@ -8375,7 +8375,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG_LONG;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_DATAFILE;
+	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
 	m->m_group = true;
 	m++;
@@ -8390,7 +8390,7 @@ void Parms::init ( ) {
 	m->m_def   = "6";
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_DATAFILE;
+	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
 	m->m_group = false;
 	m++;
@@ -8435,7 +8435,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG_LONG;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_DATAFILE;
+	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
 	m->m_group = true;
 	m++;
@@ -8447,8 +8447,20 @@ void Parms::init ( ) {
 	m->m_def   = "2";
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_DATAFILE;
+	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
+	m->m_group = false;
+	m++;
+
+	m->m_title = "spiderdb max tree mem";
+	m->m_desc  = "";
+	//m->m_cgi   = "msmt";
+	m->m_off   = offsetof(Conf,m_spiderdbMaxTreeMem);
+	m->m_def   = "200000000";
+	m->m_type  = TYPE_LONG;
+	m->m_flags = PF_NOSYNC|PF_NOAPI;
+	m->m_page  = PAGE_RDB; //PAGE_NONE;
+	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
 	m++;
 
@@ -8465,7 +8477,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG_LONG;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_DATAFILE;
+	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
 	m->m_group = true;
 	m++;
@@ -8477,7 +8489,7 @@ void Parms::init ( ) {
 	m->m_def   = "2";
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_CLONE;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_DATAFILE;
+	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
 	m->m_group = false;
 	m++;
@@ -8489,7 +8501,7 @@ void Parms::init ( ) {
 	m->m_def   = "101028000";
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_DATAFILE; //PAGE_NONE;
+	m->m_page  = PAGE_RDB; //PAGE_NONE;
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
 	m++;
@@ -8508,7 +8520,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG_LONG;
 	m->m_def   = "30000000";
 	m->m_flags = 0;//PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_DATAFILE;
+	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
 	m->m_group = true;
 	m++;
@@ -8522,7 +8534,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	//m->m_save  = 0;
 	m->m_flags = PF_HIDDEN | PF_NOSAVE;
-	m->m_page  = PAGE_DATAFILE;
+	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_COLL;
 	m->m_group = false;
 	m++;

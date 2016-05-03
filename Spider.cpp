@@ -511,12 +511,10 @@ int32_t Spiderdb::print( char *srec , SafeBuf *sb ) {
 
 
 bool Spiderdb::init ( ) {
-	int32_t maxMem = 200000000;
-
 	// . what's max # of tree nodes?
 	// . assume avg spider rec size (url) is about 45
 	// . 45 + 33 bytes overhead in tree is 78
-	int32_t maxTreeNodes  = maxMem  / 78;
+	int32_t maxTreeNodes  = g_conf.m_spiderdbMaxTreeMem  / 78;
 
 	char      priority   = 12;
 	int32_t      spiderTime = 0x3fe96610;
@@ -556,7 +554,7 @@ bool Spiderdb::init ( ) {
 			    // MDW: it seems to slow performance when not tightly merged
 			    // so put this back to "2"...
 			    2,//g_conf.m_spiderdbMinFilesToMerge , mintomerge
-			    maxMem,//g_conf.m_spiderdbMaxTreeMem ,
+			    g_conf.m_spiderdbMaxTreeMem ,
 			    maxTreeNodes                ,
 			    true                        , // balance tree?
 			    0,//g_conf.m_spiderdbMaxCacheMem,
