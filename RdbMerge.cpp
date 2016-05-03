@@ -46,7 +46,11 @@ bool RdbMerge::merge ( char     rdbId        ,
 	m_rdbId = rdbId;
 	Rdb *rdb = getRdbFromId ( rdbId );
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base; if (!(base=getRdbBase(m_rdbId,collnum))) return true;
+	RdbBase *base = getRdbBase( m_rdbId, collnum );
+	if ( ! base ) {
+		return true;
+	}
+
 	// don't breech the max
 	//if ( numFiles > m_maxFilesToMerge ) numFiles = m_maxFilesToMerge;
 	// reset this map! it's m_crcs needs to be reset
@@ -172,7 +176,10 @@ bool RdbMerge::gotLock ( ) {
 	else                   KEYMIN(prevLastKey,m_ks);
 
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) return true;
+	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
+	if ( ! base ) {
+		return true;
+	}
 
 	// . set up a a file to dump the records into
 	// . returns false and sets g_errno on error
@@ -290,7 +297,7 @@ bool RdbMerge::getNextList ( ) {
 	// no chop threads
 	m_numThreads = 0;
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base = getRdbBase(m_rdbId,m_collnum);
+	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
 	if ( ! base ) {
 		// hmmm it doesn't set g_errno so we set it here now
 		// otherwise we do an infinite loop sometimes if a collection
@@ -358,7 +365,10 @@ bool RdbMerge::getAnotherList ( ) {
 	// clear it up in case it was already set
 	g_errno = 0;
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) return true;
+	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
+	if ( ! base ) {
+		return true;
+	}
 	// if merging titledb files, we must adjust m_endKey so we do
 	// not have to read a huge 200MB+ tfndb list
 	//key_t newEndKey = m_endKey;
@@ -588,7 +598,10 @@ void RdbMerge::doneMerging ( ) {
 	}
 
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) return;
+	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
+	if ( ! base ) {
+		return;
+	}
 	// pass g_errno on to incorporate merge so merged file can be unlinked
 	base->incorporateMerge ( );
 	// nuke the lock so others can merge

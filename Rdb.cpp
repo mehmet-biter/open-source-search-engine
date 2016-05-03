@@ -928,7 +928,7 @@ bool Rdb::treeFileExists ( ) {
 	char filename[256];
 	sprintf(filename,"%s-saved.dat",m_dbname);
 	BigFile file;
-	file.set ( getDir() , filename , NULL ); // getStripeDir() );
+	file.set ( getDir() , filename , NULL ); // g_conf.m_stripeDir );
 	return file.doesExist() > 0;
 }
 
@@ -945,7 +945,7 @@ bool Rdb::loadTree ( ) {
 	// set a BigFile to this filename
 	BigFile file;
 	char *dir = getDir();
-	file.set ( dir , filename , NULL ); // getStripeDir() );
+	file.set ( dir , filename , NULL ); // g_conf.m_stripeDir );
 	bool treeExists = file.doesExist() > 0;
 	bool status = false ;
 	if ( treeExists ) {

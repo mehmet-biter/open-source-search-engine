@@ -216,7 +216,10 @@ bool Msg3::readList  ( char           rdbId         ,
 	int32_t max ;
 
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) return true;
+	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
+	if ( ! base ) {
+		return true;
+	}
 
 	// store the file numbers in the array, these are the files we read
 	m_numFileNums = 0;
@@ -726,7 +729,7 @@ void doneScanningWrapper ( void *state ) {
 	// if we had an error, remember it
 	if ( g_errno ) { 
 		// get base, returns NULL and sets g_errno to ENOCOLLREC on err
-		RdbBase *base; base=getRdbBase(THIS->m_rdbId,THIS->m_collnum);
+		RdbBase *base = getRdbBase( THIS->m_rdbId, THIS->m_collnum );
 		char *dbname = "NOT FOUND";
 		if ( base ) dbname = base->m_dbname;
 		int32_t tt = LOG_WARN;
@@ -843,7 +846,10 @@ bool Msg3::doneScanning ( ) {
 	}
 
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) return true;
+	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
+	if ( ! base ) {
+		return true;
+	}
 
 	// this really slows things down because it blocks the cpu so
 	// leave it out for now

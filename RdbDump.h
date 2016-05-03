@@ -163,19 +163,6 @@ class RdbDump {
 	// are we dumping a list of TitleRecs?
 	bool m_isTitledb;
 
-	// for scanning db to dedup m_tmp
-	//key_t m_startKey;
-	// when the scanning is done
-	//bool m_done;
-	// use this to scan tfndb
-	//Msg5 m_msg5;
-	// scan the tfndb into ehre
-	//RdbList m_ulist;
-
-	// store tfndb key in here for updateTfndbLoop()
-	//key_t m_tkey;
-	char m_tkey[MAX_KEY_BYTES];
-
 	// for setting m_rdb->m_needsSave after deleting list from tree
 	class Rdb *m_rdb;
 

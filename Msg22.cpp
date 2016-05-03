@@ -328,11 +328,9 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 	}
 
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *tbase; 
-	if ( ! (tbase=getRdbBase(RDB_TITLEDB,r->m_collnum) ) ) {
-		log("db: Could not get title rec in collection # %"INT32" "
-		    "because rdbbase is null.",
-		    (int32_t)r->m_collnum);
+	RdbBase *tbase = getRdbBase( RDB_TITLEDB, r->m_collnum );
+	if ( ! tbase ) {
+		log("db: Could not get title rec in collection # %" INT32" because rdbbase is null.", (int32_t)r->m_collnum);
 		g_errno = EBADENGINEER;
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , g_errno ); 

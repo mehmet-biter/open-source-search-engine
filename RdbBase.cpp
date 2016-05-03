@@ -579,7 +579,7 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 		snprintf( name, 511, "%s%04" INT32".%03" INT32".dat", m_dbname, id, mergeNum );
 	}
 
-	f->set ( getDir() , name , NULL ); // getStripeDir() );
+	f->set ( getDir() , name , NULL ); // g_conf.m_stripeDir );
 
 	// if new insure does not exist
 	if ( isNew && f->doesExist() ) {

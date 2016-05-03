@@ -114,8 +114,6 @@ class RdbMerge {
 	BigFile    *m_target;
 	RdbMap     *m_targetMap;
 
-	//key_t       m_startKey;
-	//key_t       m_endKey;
 	char        m_startKey[MAX_KEY_BYTES];
 	char        m_endKey[MAX_KEY_BYTES];
 

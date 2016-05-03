@@ -86,14 +86,10 @@ class RdbBase {
 
 	// get the directory name where this rdb stores it's files
 	char *getDir ( ) { return m_dir.getDirname(); };
-	char *getStripeDir ( ) { return g_conf.m_stripeDir; };
 
 	int32_t getFixedDataSize ( ) { return m_fixedDataSize; };
 
 	bool useHalfKeys ( ) { return m_useHalfKeys; };
-
-	//RdbTree    *getTree    ( ) { return &m_tree; };
-	//RdbCache   *getCache   ( ) { return &m_cache; };
 
 	RdbMap   **getMaps  ( ) { return m_maps; };
 	BigFile  **getFiles ( ) { return m_files; };
@@ -102,8 +98,6 @@ class RdbBase {
 	int32_t       getFileId ( int32_t n ) { return m_fileIds [n]; };
 	int32_t       getFileId2( int32_t n ) { return m_fileIds2[n]; };
 	RdbMap    *getMap    ( int32_t n ) { return m_maps    [n]; };
-
-	//RdbMem    *getRdbMem () { return &m_mem; };
 
 	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) ;
 
@@ -131,12 +125,6 @@ class RdbBase {
 	int64_t getNumTotalRecs ( ) ;
 
 	int64_t getNumGlobalRecs ( );
-
-	/*
-	// used by main.cpp to periodically save us if we haven't dumped
-	// in a while
-	int64_t getLastWriteTime   ( ) { return m_lastWrite; };
-	*/
 	
 	// private:
 
@@ -153,22 +141,8 @@ class RdbBase {
 	// . you'll lose your data in this class if you call this
 	void reset();
 
-	// . load the tree named "saved.dat", keys must be out of order because
-	//   tree is not balanced
-	//bool loadTree ( ) ;
-
-	// . write out tree to a file with keys in order
-	// . only shift.cpp/reindex.cpp programs set niceness to 0
-	//bool dumpTree ( int32_t niceness ); //= MAX_NICENESS );
-
 	// . set the m_files, m_fileMaps, m_fileIds arrays and m_numFiles
 	bool setFiles ( ) ;
-
-	// . called when done saving a tree to disk (keys not ordered)
-	//void doneSaving ( ) ;
-
-	// . called when we've dumped the tree to disk w/ keys ordered
-	//void doneDumping ( );
 
 	void verifyDiskPageCache ( );
 
@@ -179,7 +153,6 @@ class RdbBase {
 	// . both return -1 and set errno on error
 	int32_t addFile     ( int32_t fileId, bool isNew, int32_t mergeNum, int32_t id2 ) ;
 	int32_t addNewFile  ( int32_t id2 ) ;
-	//int32_t getAvailId2 ( ); // used only by titledb
 
 	// used by the high priority udp server to suspend merging for ALL
 	// rdb's since we share a common merge class, s_merge
@@ -225,12 +198,6 @@ class RdbBase {
 	bool removeRebuildFromFilenames ( ) ;
 	bool removeRebuildFromFilename  ( BigFile *f ) ;
 
-	// keep a copy of these here so merge can use them to kick out
-	// records whose key when, ANDed w/ m_groupMask, equals
-	// m_groupId
-	//uint32_t  m_groupMask;
-	//uint32_t  m_groupId;
-
 	// . we try to minimize the number of files to minimize disk seeks
 	// . records that end up as not found will hit all these files
 	// . when we get "m_minToMerge" or more files a merge kicks in
@@ -266,22 +233,6 @@ class RdbBase {
 	RdbBuckets *m_buckets;  
 	// for dumping a table to an rdb file
 	RdbDump    *m_dump;  
-	// memory for us to use to avoid calling malloc()/mdup()/...
-	//RdbMem    m_mem;
-
-	// . this is now static in Rdb.cpp
-	// . for merging many rdb files into one 
-	// . no we brought it back so tfndb can merge while titledb is merging
-	//RdbMerge  m_merge; 
-
-	//BigFile   m_saveFile; // for saving the tree
-	//bool      m_isClosing; 
-	//bool      m_isClosed;
-	//bool      m_haveSavedFile; // we only unlink this file when we dump
-
-	// this callback called when close is complete
-	//void     *m_closeState; 
-	//void    (* m_closeCallback) (void *state );
 
 	int32_t      m_maxTreeMem ; // max mem tree can use, dump at 90% of this
 
@@ -290,11 +241,6 @@ class RdbBase {
 	int32_t      m_absMaxFiles;
 	int32_t      m_numFilesToMerge   ;
 	int32_t      m_mergeStartFileNum ;
-
-	// a dummy data string for deleting records when m_fixedDataSize > 0
-	//char     *m_dummy;
-	//int32_t      m_dummySize ; // size of that dummy data
-	//int32_t      m_delRecSize; // size of the whole delete record
 
 	// should our next merge in waiting force itself?
 	bool      m_nextMergeForced;
@@ -317,15 +263,8 @@ class RdbBase {
 	// . also see Threads.cpp for the starvation
 	bool      m_mergeUrgent;
 
-	// are we saving the tree urgently? like we cored...
-	//bool      m_urgent;
-	// after saving the tree in call to Rdb::close() should the tree
-	// remain closed to writes?
-	//bool      m_isReallyClosing;
-
 	bool      m_niceness;
 
-	//bool      m_waitingForTokenForDump ;
 	bool      m_waitingForTokenForMerge;
 
 	// we now determine when in merge mode
@@ -337,9 +276,6 @@ class RdbBase {
 	// rec counts for files being merged
 	int64_t m_numPos ;
 	int64_t m_numNeg ;
-
-	// so only one save thread launches at a time
-	//bool m_isSaving;
 
 	bool m_isTitledb;
 

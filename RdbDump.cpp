@@ -6,7 +6,6 @@
 #include "Tagdb.h"
 #include "Statsdb.h"
 
-
 void doneReadingForVerifyWrapper ( void *state ) ;
 //void gotTfndbListWrapper ( void *state , RdbList *list, Msg5 *msg5 ) ;
 

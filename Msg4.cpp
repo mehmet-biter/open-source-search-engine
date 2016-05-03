@@ -559,11 +559,7 @@ bool Msg4::addMetaList2 ( ) {
 			dataSize = *(int32_t *)p;
 			// sanity check
 			if ( dataSize < 0 ) { char *xx=NULL;*xx=0; }
-			// sanity check
-			//if ( rdbId == RDB_DOLEDB && 
-			//     (*key & 0x01) == 0x01 && // positive key
-			//     dataSize <= 0 ) {
-			//	char *xx=NULL;*xx=0; }
+
 			// skip dataSize
 			p += 4;
 
@@ -601,21 +597,13 @@ bool Msg4::addMetaList2 ( ) {
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(key,p-key);
 #endif
-		if ( storeRec ( m_collnum, 
-				rdbId, 
-				shardNum,//gid, 
-				hostId, 
-				key, // start of rec, 
-				p - key , // recSize
-				m_niceness )) {
+		if ( storeRec ( m_collnum, rdbId, shardNum, hostId, key, p - key, m_niceness )) {
 			// . point to next record
 			// . will point past records if no more left!
 			m_currentPtr = p; // += recSize;
 			// debug log
 			// int off = (int)(m_currentPtr-m_metaList);
 			// log("msg4: cpoff=%i",off);
-			// if ( off == 5271931 )
-			// 	log("msg4: hey");
 			// debug
 			// get next rec
 			continue;

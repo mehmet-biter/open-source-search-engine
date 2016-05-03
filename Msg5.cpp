@@ -168,7 +168,11 @@ bool Msg5::getList ( char     rdbId         ,
 	m_allowPageCache     = allowPageCache;
 
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) return true;
+	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
+	if ( ! base ) {
+		return true;
+	}
+
 	// . these 2 vars are used for error correction
 	// . doRemoteLookup is -2 if it's up to us to decide
 	m_doErrorCorrection = doErrorCorrection;
@@ -230,7 +234,11 @@ bool Msg5::getList ( char     rdbId         ,
 // . loops until m_minRecSizes is satisfied OR m_endKey is reached
 bool Msg5::readList ( ) {
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) return true;
+	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
+	if ( ! base ) {
+		return true;
+	}
+
  readMore:
 	// . reset our tree list
 	// . sets fixedDataSize here in case m_includeTree is false because
@@ -706,7 +714,10 @@ bool Msg5::gotList2 ( ) {
 	}
 	
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) return true;
+	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
+	if ( ! base ) {
+		return true;
+	}
 
 	// if not enough lists, use a dummy list to trigger merge so tfndb
 	// filter happens and we have a chance to weed out old titleRecs
@@ -1145,7 +1156,10 @@ bool Msg5::doneMerging ( ) {
 	//m_waitingForMerge = false;
 
 	// get base, returns NULL and sets g_errno to ENOCOLLREC on error
-	RdbBase *base; if (!(base=getRdbBase(m_rdbId,m_collnum))) return true;
+	RdbBase *base = getRdbBase( m_rdbId, m_collnum );
+	if ( ! base ) {
+		return true;
+	}
 
 	// . if there was a merge error, bitch about it
 	// . Thread class should propagate g_errno when it was set in a thread
