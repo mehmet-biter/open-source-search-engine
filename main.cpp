@@ -1247,38 +1247,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	// . gb removedocids <coll> <docIdsFilename> [hostid1-hostid2]
-	// . if hostid not there, ssh to all using install()
-	// . use removedocids below if only running locally
-	// . cmdarg+3 can be 4 or 5, depending if [hostid1-hostid2] is present
-	// . argc is 5 if [hostid1-hostid2] is present, 4 if not
-	if ( strcmp ( cmd, "removedocids" ) == 0 && cmdarg + 3 >= 4 ) {
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 3 < argc ) hostId = atoi ( argv[cmdarg+3] );
-		// might have a range
-		if ( cmdarg + 3 < argc ) {
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+3],"%"INT32"-%"INT32"",&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return install ( ifk_removedocids , 
-						 h1, 
-						 argv[cmdarg+2], // filename
-						 argv[cmdarg+1], // coll
-						 h2            );
-		}
-		// if we had no hostid given, cast to all
-		if ( hostId == -1 )
-			return install ( ifk_removedocids , 
-					 -1            ,  // hostid1
-					 argv[cmdarg+2], // filename
-					 argv[cmdarg+1], // coll
-					 -1            ); // hostid2
-		// otherwise, a hostid was given and we will call
-		// removedocids() directly below
-	}
-
 	// gb ping [hostId] [clientPort]
 	if ( strcmp ( cmd , "ping" ) == 0 ) {
 		int32_t hostId = 0;
@@ -3076,30 +3044,6 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 			// execute it
 			system ( tmp );
 			continue;
-		}
-
-		// removedocids logic
-		else if ( installFlag == ifk_removedocids ) {
-			sprintf(tmp,
-				"ssh %s \"cd %s ; "
-				"cp -f gb gb.oldsave ; "
-				"mv -f gb.installed gb ; "
-				// hostid is now inferred from path
-				"./gb "//%"INT32" "
-				"removedocids %s %s %"INT32" "
-				">& ./removelog%03"INT32" &\" &",
-				iptoa(h2->m_ip),
-				h2->m_dir      ,
-				//h2->m_dir      ,
-				//h2->m_hostId   ,
-				coll           ,
-				dir            , // really docidsFile
-				h2->m_hostId   ,
-				h2->m_hostId   );
-			// log it
-			log(LOG_INIT,"admin: %s", tmp);
-			// execute it
-			system ( tmp );
 		}
 
 		char *dir = "./";
