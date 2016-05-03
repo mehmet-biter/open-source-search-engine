@@ -7,149 +7,136 @@
 #include "Profiler.h"
 
 
+static const char *thread_type_name(thread_type_t tt) {
+	switch(tt) {
+		case thread_type_query_read:         return "query-read";
+		case thread_type_query_constrain:    return "query-constrain";
+		case thread_type_query_merge:        return "query-merge";
+		case thread_type_query_intersect:    return "query-intersect";
+		case thread_type_query_summary:      return "query-summary";
+		case thread_type_spider_read:        return "spider-read";
+		case thread_type_spider_write:       return "spider-write";
+		case thread_type_spider_filter:      return "spider-filter";
+		case thread_type_spider_query:       return "spider-query";
+		case thread_type_replicate_write:    return "replicate-write";
+		case thread_type_replicate_read:     return "replicate-read";
+		case thread_type_file_merge:         return "file-merge";
+		case thread_type_file_meta_data:     return "file-meta-data";
+		case thread_type_statistics:         return "statistis";
+		case thread_type_unspecified_io:     return "unspecified IO";
+		case thread_type_unlink:             return "unlink()";
+		case thread_type_twin_sync:          return "twin-sync";
+		case thread_type_hdtemp:             return "hdtemp";
+		case thread_type_generate_thumbnail: return "generate-thumbnail";
+		default: return "?";
+	}
+}
+
+
 bool sendPageThreads ( TcpSocket *s , HttpRequest *r ) {
 	char  buf [ 64*1024 ];
 	SafeBuf p(buf, 64*1024);
 	g_pages.printAdminTop ( &p , s , r );
 	
-#if 0
+	
+	std::vector<JobDigest> job_digests = g_jobScheduler.query_job_digests();
 	int64_t now = gettimeofdayInMilliseconds();
-
-	for ( int32_t i = 0 ; i < g_threads.getNumThreadQueues(); i++ ) {
-		const ThreadQueue* q = g_threads.getThreadQueue(i);
-
-		int32_t total = q->m_launched - q->m_returned;
-		
-		p.safePrintf ( "<table %s>"
-			       "<tr class=hdrow><td colspan=\"11\">"
-			       //"<center>"
-				//"<font size=+1>"
-				"<b>Thread Type: %s"
-				" (launched: %"INT32" "
-			       "returned: %"INT32" "
-			       "total: %"INT32" maxpossibleout: %i)</td></tr>",
-			       TABLE_STYLE,
-				q->getThreadType(), 
-			       (int32_t)q->m_launched,
-			       (int32_t)q->m_returned,
-			       total,
-			       (int)g_conf.m_max_threads);
-
-
-		p.safePrintf ("<tr bgcolor=#%s>"
-			      "<td><b>Status</b></td>"
-			      "<td><b>Niceness</b></td>"
-			      "<td><b>Queued Time</b></td>"
-			      "<td><b>Run Time</b></td>"
-			      "<td><b>Wait for Cleanup</b></td>"
-			      "<td><b>Time So Far</b></td>"
-			      "<td><b>Callback</b></td>"
-			      "<td><b>Routine</b></td>"
-			      "<td><b>Bytes Done</b></td>"
-			      "<td><b>Megabytes/Sec</b></td>"
-			      "<td><b>Read|Write</b></td>"
-			      "</tr>"
-			      , LIGHT_BLUE
-			      );
-
-		for ( int32_t j = 0 ; j < q->m_maxEntries ; j++ ) {
-			ThreadEntry *t = &q->m_entries[j];
-			if(!t->m_isOccupied) continue;
-
-			FileState *fs = (FileState *)t->m_state;
-			bool diskThread = false;
-			if(q->m_threadType == THREAD_TYPE_DISK && fs) 
-				diskThread = true;
-
-			// might have got pre-called from EDISKSTUCK
-			if ( ! t->m_callback ) fs = NULL;
-
-			p.safePrintf("<tr bgcolor=#%s>", DARK_BLUE ); 
-			
-			if(t->m_isDone) {
-				p.safePrintf("<td><font color='red'><b>done</b></font></td>");
-				p.safePrintf("<td>%"INT32"</td>", t->m_niceness);
-				p.safePrintf("<td>%"INT64"ms</td>", t->m_launchedTime - t->m_queuedTime); //queued
-				p.safePrintf("<td>%"INT64"ms</td>", t->m_exitTime - t->m_launchedTime); //run time
-				p.safePrintf("<td>%"INT64"ms</td>", now - t->m_exitTime); //cleanup
-				p.safePrintf("<td>%"INT64"ms</td>", now - t->m_queuedTime); //total
-				p.safePrintf("<td>%s</td>",  g_profiler.getFnName((PTRTYPE)t->m_callback));
-				p.safePrintf("<td>%s</td>",  g_profiler.getFnName((PTRTYPE)t->m_startRoutine));
-				if(diskThread && fs) {
-					int64_t took = (t->m_exitTime - t->m_launchedTime);
-					char *sign = "";
-					if(took <= 0) {sign=">";took = 1;}
-					p.safePrintf("<td>%"INT32"/%"INT32""
-						     "</td>", 
-						     t->m_bytesToGo, 
-						     t->m_bytesToGo);
-					p.safePrintf("<td>%s%.2f MB/s</td>", 
-						     sign,
-						     (float)t->m_bytesToGo/
-						     (1024.0*1024.0)/
-						     ((float)took/1000.0));
-					p.safePrintf("<td>%s</td>",
-						     t->m_doWrite? 
-						     "<font color=red>"
-						     "Write</font>":"Read");
+	
+	
+	//print summary and count per thread type
+	
+	p.safePrintf("<table %s>", TABLE_STYLE);
+	p.safePrintf("  <tr class=hdrow>\n");
+	p.safePrintf("    <td colspan=\"1\"><b>Job type</b></td>\n");
+	p.safePrintf("    <td colspan=\"6\"><b>State</b></td>\n");
+	p.safePrintf("  </tr>\n");
+	p.safePrintf("  <tr class=hdrow>\n");
+	p.safePrintf("    <td colspan=\"1\"></td>\n");
+	p.safePrintf("    <td colspan=\"2\"><b>Queued</b></td>\n");
+	p.safePrintf("    <td colspan=\"2\"><b>Running</b></td>\n");
+	p.safePrintf("    <td colspan=\"2\"><b>Stopped</b></td>\n");
+	p.safePrintf("  </tr>\n");
+	p.safePrintf("  <tr class=hdrow>\n");
+	p.safePrintf("    <td colspan=\"1\"></td>\n");
+	p.safePrintf("    <td colspan=\"1\"><b>Count</b></td>\n");
+	p.safePrintf("    <td colspan=\"1\"><b>Avg. time</b></td>\n");
+	p.safePrintf("    <td colspan=\"1\"><b>Count</b></td>\n");
+	p.safePrintf("    <td colspan=\"1\"><b>Avg time</b></td>\n");
+	p.safePrintf("    <td colspan=\"1\"><b>Count</b></td>\n");
+	p.safePrintf("    <td colspan=\"1\"><b>Avg time</b></td>\n");
+	p.safePrintf("  </tr>\n");
+	
+	for(int thread_type=thread_type_query_read; thread_type<=thread_type_generate_thumbnail; thread_type++) {
+		int queued_count=0;
+		uint64_t queued_time=0;
+		int running_count=0;
+		uint64_t running_time=0;
+		int stopped_count=0;
+		uint64_t stopped_time=0;
+		for(const auto &jd : job_digests) {
+			if(jd.thread_type==thread_type) {
+				if(jd.job_state==JobDigest::job_state_queued) {
+					queued_count++;
+					queued_time += (now-jd.queue_enter_time);
 				}
-				else {
-					p.safePrintf("<td>--</td>");
-					p.safePrintf("<td>--</td>");
-					p.safePrintf("<td>--</td>");
+				if(jd.job_state==JobDigest::job_state_running) {
+					running_count++;
+					running_time += (now-jd.start_time);
+				}
+				if(jd.job_state==JobDigest::job_state_stopped) {
+					stopped_count++;
+					stopped_time += (now-jd.stop_time);
 				}
 			}
-			else if(t->m_isLaunched) {
-				p.safePrintf("<td><font color='red'><b>running</b></font></td>");
-				p.safePrintf("<td>%"INT32"</td>", t->m_niceness);
-				p.safePrintf("<td>%"INT64"</td>", t->m_launchedTime - t->m_queuedTime);
-				p.safePrintf("<td>--</td>");
-				p.safePrintf("<td>--</td>");
-				p.safePrintf("<td>%"INT64"</td>", now - t->m_queuedTime);
-				p.safePrintf("<td>%s</td>",  g_profiler.getFnName((PTRTYPE)t->m_callback));
-				p.safePrintf("<td>%s</td>",  g_profiler.getFnName((PTRTYPE)t->m_startRoutine));
-				if(diskThread && fs ) {
-					int64_t took = (now - t->m_launchedTime);
-					if(took <= 0) took = 1;
-					p.safePrintf("<td>%c%c%c/%"INT32"</td>", '?','?','?',t->m_bytesToGo);
-					p.safePrintf("<td>%.2f MB/s</td>", 0.0);//(float)fs->m_bytesDone/took);
-					p.safePrintf("<td>%s</td>",t->m_doWrite? "Write":"Read");
-				}
-				else {
-					p.safePrintf("<td>--</td>");
-					p.safePrintf("<td>--</td>");
-					p.safePrintf("<td>--</td>");
-				}
-			}
-			else {
-				p.safePrintf("<td><font color='red'><b>queued</b></font></td>");
-				p.safePrintf("<td>%"INT32"</td>", t->m_niceness);
-				p.safePrintf("<td>--</td>");
-				p.safePrintf("<td>--</td>");
-				p.safePrintf("<td>--</td>");
-				p.safePrintf("<td>%"INT64"</td>", now - t->m_queuedTime);
-				p.safePrintf("<td>%s</td>",  g_profiler.getFnName((PTRTYPE)t->m_callback));
-				p.safePrintf("<td>%s</td>",  g_profiler.getFnName((PTRTYPE)t->m_startRoutine));
-				if(diskThread && fs) {
-					p.safePrintf("<td>0/%"INT32"</td>", t->m_bytesToGo);
-					p.safePrintf("<td>--</td>");
-					p.safePrintf("<td>%s</td>",t->m_doWrite? "Write":"Read");
-				}
-				else {
-					p.safePrintf("<td>--</td>");
-					p.safePrintf("<td>--</td>");
-					p.safePrintf("<td>--</td>");
-				}
-			}
-			p.safePrintf("</tr>"); 
 		}
-		p.safePrintf("</table><br><br>"); 
-
+		
+		p.safePrintf("  <tr bgcolor=#%s>\n",LIGHT_BLUE);
+		p.safePrintf("    <td>%s</td>\n", thread_type_name((thread_type_t)thread_type));
+		if(queued_count)
+			p.safePrintf("    <td>%d</td><td>%"PRIu64"</td>\n", queued_count, queued_time/queued_count);
+		else
+			p.safePrintf("    <td>-</td><td>-</td>\n");
+		if(running_count)
+			p.safePrintf("    <td>%d</td><td>%"PRIu64"</td>\n", running_count, running_time/running_count);
+		else
+			p.safePrintf("    <td>-</td><td>-</td>\n");
+		if(stopped_count)
+			p.safePrintf("    <td>%d</td><td>%"PRIu64"</td>\n", stopped_count, stopped_time/stopped_count);
+		else
+			p.safePrintf("    <td>-</td><td>-</td>\n");
 	}
-#endif
-
+	
+	p.safePrintf("</table><br><br>");
+	
+	
+	// print details per job
+	
+	p.safePrintf("<table %s>", TABLE_STYLE);
+	p.safePrintf("  <tr class=hdrow>\n");
+	p.safePrintf("    <td><b>Job type</b></td>\n");
+	p.safePrintf("    <td><b>Routine</b></td>\n");
+	p.safePrintf("    <td><b>Queued time</b></td>\n");
+	p.safePrintf("    <td><b>Running time</b></td>\n");
+	p.safePrintf("    <td><b>Stopped time</b></td>\n");
+	p.safePrintf("   </tr>\n");
+	for(const auto &jd : job_digests) {
+		p.safePrintf("  <tr bgcolor=#%s>\n",LIGHT_BLUE);
+		p.safePrintf("    <td>%s</td>", thread_type_name(jd.thread_type));
+		p.safePrintf("    <td>%s</td>", g_profiler.getFnName((PTRTYPE)jd.start_routine));
+		p.safePrintf("    <td>%"PRIu64"</td>", now-jd.queue_enter_time);
+		if(jd.job_state==JobDigest::job_state_running || jd.job_state==JobDigest::job_state_stopped)
+			p.safePrintf("    <td>%"PRIu64"</td>", now-jd.start_time);
+		else
+			p.safePrintf("    <td></td>");
+		if(jd.job_state==JobDigest::job_state_stopped)
+			p.safePrintf("    <td>%"PRIu64"</td>", now-jd.stop_time);
+		else
+			p.safePrintf("    <td></td>");
+		p.safePrintf("   </tr>\n");
+	}
+	
+	p.safePrintf("</table><br><br>");
 
 	return g_httpServer.sendDynamicPage ( s , (char*) p.getBufStart() ,
 						p.length() );
-
 }

@@ -2,6 +2,8 @@
 #define JOBSCEHDULER_H_
 
 #include <inttypes.h>
+#include <vector>
+
 
 class BigFile;
 class FileState;
@@ -39,6 +41,24 @@ enum thread_type_t {
 	thread_type_twin_sync,
 	thread_type_hdtemp,
 	thread_type_generate_thumbnail,
+};
+
+
+
+//A digest of a job in the scheduler. For statistics and display purposes
+struct JobDigest {
+	thread_type_t     thread_type;
+	start_routine_t   start_routine;
+	finish_routine_t  finish_callback;
+	enum job_state_t {
+		job_state_queued,
+		job_state_running,
+		job_state_stopped
+	}                 job_state;
+	uint64_t          start_deadline;     //latest time when this job must be started
+	uint64_t          queue_enter_time;   //when this job was queued
+	uint64_t          start_time;	      //when this job started running
+	uint64_t          stop_time;	      //when this job stopped running
 };
 
 
@@ -83,6 +103,8 @@ public:
 	
 	void cleanup_finished_jobs();
 	
+	std::vector<JobDigest> query_job_digests() const;
+
 private:
 	JobScheduler_impl *impl;
 };

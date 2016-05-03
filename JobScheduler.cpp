@@ -39,6 +39,7 @@ struct JobEntry {
 	int               initial_priority;   //priority when queued
 	
 	//for statistics:
+	thread_type_t     thread_type;
 	uint64_t          queue_enter_time;   //when this job was queued
 	uint64_t          start_time;	      //when this job started running
 	uint64_t          stop_time;	      //when this job stopped running
@@ -310,6 +311,8 @@ public:
 	unsigned num_queued_jobs() const;
 	
 	void cleanup_finished_jobs();
+	
+	std::vector<JobDigest> query_job_digests() const;
 };
 
 
@@ -318,6 +321,7 @@ bool JobScheduler_impl::submit(thread_type_t thread_type, JobEntry &e)
 {
 	if(!new_jobs_allowed) //note: unprotected read
 		return false;
+	e.thread_type = thread_type;
 	
 	//Determine which queue to put the job into
 	//i/o jobs should have the is_io_job=true, but if they don't we will
@@ -472,6 +476,40 @@ void JobScheduler_impl::cleanup_finished_jobs()
 }
 
 
+static JobDigest job_entry_to_job_digest(const JobEntry& je, JobDigest::job_state_t job_state)
+{
+	JobDigest jd;
+	jd.thread_type = je.thread_type;
+	jd.start_routine = je.start_routine;
+	jd.finish_callback = je.finish_callback;
+	jd.job_state = job_state;
+	jd.start_deadline = je.start_deadline;
+	jd.queue_enter_time = je.queue_enter_time;
+	jd.start_time = je.start_time;
+	jd.stop_time = je.stop_time;
+	return jd;
+}
+
+
+std::vector<JobDigest> JobScheduler_impl::query_job_digests() const
+{
+	std::vector<JobDigest> v;
+	ScopedLock sl(mtx);
+	//v.reserve(cpu_job_queue.size() + io_job_queue.size() + external_job_queue.size() + running_set().size() + exit_set().size());
+	for(const auto &je : cpu_job_queue)
+		v.push_back(job_entry_to_job_digest(je,JobDigest::job_state_queued));
+	for(const auto &je : io_job_queue)
+		v.push_back(job_entry_to_job_digest(je,JobDigest::job_state_queued));
+	for(const auto &je : external_job_queue)
+		v.push_back(job_entry_to_job_digest(je,JobDigest::job_state_queued));
+	for(const auto &je : running_set)
+		v.push_back(job_entry_to_job_digest(je,JobDigest::job_state_running));
+	for(const auto &je : exit_set)
+		v.push_back(job_entry_to_job_digest(je.first,JobDigest::job_state_stopped));
+	return v;
+	
+}
+
 
 
 
@@ -598,6 +636,14 @@ void JobScheduler::cleanup_finished_jobs()
 		impl->cleanup_finished_jobs();
 }
 
+
+std::vector<JobDigest> JobScheduler::query_job_digests() const
+{
+	if(impl)
+		return impl->query_job_digests();
+	else
+		return std::vector<JobDigest>();
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
