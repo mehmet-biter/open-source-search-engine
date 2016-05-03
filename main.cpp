@@ -698,11 +698,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "-l" ) == 0 ) g_conf.m_logToFile = true;
 	if ( strcmp ( cmd2 , "-l" ) == 0 ) g_conf.m_logToFile = true;
 
-	if ( strcmp ( cmd , "distributeC" ) == 0 ) {
-		// ensure we got a collection name after the cmd
-		if ( cmdarg + 2 >  argc ) goto printHelp;
-	}
-
 	if( (strcmp( cmd, "countdomains" ) == 0) &&  (argc >= (cmdarg + 2)) ) {
 		uint32_t tmp = atoi( argv[cmdarg+2] );
 		if( (tmp * 10) > g_mem.m_memtablesize )
@@ -1250,12 +1245,6 @@ int main2 ( int argc , char *argv[] ) {
 		// disable any further logging so final log msg is clear
 		g_log.m_disabled = true;
 		return 0;
-	}
-
-	// g_conf.init was here
-
-	if( strcmp(cmd, "distributeC") == 0 && cmdarg +2 == argc ) {
-		return install ( ifk_distributeC, -1, NULL, argv[cmdarg+1] );
 	}
 
 	// . gb removedocids <coll> <docIdsFilename> [hostid1-hostid2]
