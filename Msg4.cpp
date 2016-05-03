@@ -494,23 +494,14 @@ bool Msg4::addMetaList2 ( ) {
 		// get the key of the current record
 		const char *key = p; 
 		// negative key?
-		bool del ;
-		if ( *p & 0x01 ) del = false;
-		else             del = true;
-
+		bool del = !( *p & 0x01 );
 
 		if( g_conf.m_logTraceMsg ) {
 			log(LOG_TRACE,"%s:%s:   Negative key: %s", __FILE__,__func__, del?"true":"false");
 		}
 
-
-		// tmp debug
-		//if ( del ) { char *xx=NULL;*xx=0;}
 		// get the key size. a table lookup in Rdb.cpp.
-		int32_t ks ;
-		if      ( rdbId == RDB_POSDB || rdbId == RDB2_POSDB2) ks = 18;
-		else if ( rdbId == RDB_DATEDB  ) ks = 16;
-		else ks = getKeySizeFromRdbId ( rdbId );
+		int32_t ks = getKeySizeFromRdbId ( rdbId );
 			
 		if( g_conf.m_logTraceMsg ) {
 			log(LOG_TRACE,"%s:%s: Key size: %"INT32"", __FILE__,__func__, ks);

@@ -1029,8 +1029,7 @@ bool Repair::dumpLoop ( ) {
 	Rdb **rdbs = getSecondaryRdbs ( &nsr );
 	for ( int32_t i = 0 ; i < nsr ; i++ ) {
 		Rdb *rdb = rdbs[i];
-		// don't dump tfndb...
-		if ( rdb->m_rdbId == RDB2_TFNDB2 ) continue;
+
 		// use niceness of 1
 		rdb->dumpTree ( 1 );
 	}
@@ -1045,8 +1044,6 @@ bool Repair::dumpsCompleted ( ) {
 	Rdb **rdbs = getSecondaryRdbs ( &nsr );
 	for ( int32_t i = 0 ; i < nsr ; i++ ) {
 		Rdb *rdb = rdbs[i];
-		// we don't dump tfndb...
-		if ( rdb->m_rdbId == RDB2_TFNDB2 ) continue;
 		// anything in tree/buckets?
 		if ( rdb->getNumUsedNodes() ) return false;
 		// still dumping?

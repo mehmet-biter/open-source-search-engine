@@ -1532,9 +1532,6 @@ void RdbList::merge_r ( RdbList **lists         ,
 			bool      removeNegRecs ,
 			char      rdbId         ,
 			int32_t      niceness      ) {
-	// tfndb merging should always use indexMerge_r() now
-	if ( rdbId == RDB_TFNDB || rdbId == RDB2_TFNDB2 ) {
-		char *xx = NULL; *xx = 0; }
 	// sanity
 	if ( ! m_ownData ) {
 		log("list: merge_r data not owned");

@@ -1365,13 +1365,6 @@ bool Msg5::getRemoteList ( ) {
 		//log("Msg5::gotRemoteList: no twins. data unpatchable.");
 		return true;
 	}
-	// tfndb is not shareable, since it has tfns
-	if ( m_rdbId == RDB_TFNDB ) {
-		g_errno = EBADENGINEER;
-		log("net: Cannot patch tfndb data from twin because it is "
-		    "not interchangable. Tfndb must be regenerated.");
-		return true;
-	}
 	if ( m_rdbId == RDB_STATSDB ) {
 		g_errno = EBADENGINEER;
 		log("net: Cannot patch statsdb data from twin because it is "

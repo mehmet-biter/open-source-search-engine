@@ -169,7 +169,6 @@ bool Rdb::init ( const char     *dir                  ,
 	if ( m_rdbId == RDB_SPIDERDB   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_DOLEDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_SPIDERDB2 ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
-	if ( m_rdbId == RDB_SERPDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_LINKDB     ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 	if ( m_rdbId == RDB2_LINKDB2   ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
 
@@ -1061,21 +1060,6 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	// if it has been less than 3 seconds since our last failed attempt
 	// do not try again to avoid flooding our log
 	if ( getTime() - s_lastTryTime < 3 ) return true;
-
-	// do not dump if a tfndb merge is going on, because the tfndb will
-	// lose its page cache and all the "adding links" will hog up all our
-	// memory.
-	if ( g_merge2.isMerging() && g_merge2.m_rdbId == RDB_TFNDB ) {
-		s_lastTryTime = getTime();
-		log(LOG_INFO,"db: Can not dump while tfndb is being merged.");
-		return true;
-	}
-
-	// don't dump tfndb
-	if ( m_rdbId == RDB2_TFNDB2 || m_rdbId == RDB_TFNDB ) {
-		log("db: not dumping tfndb");
-		return true;
-	}
 
 	// don't dump if not 90% full
 	if ( ! needsDump() ) {

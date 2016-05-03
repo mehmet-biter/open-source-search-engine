@@ -1129,10 +1129,7 @@ void Multicast::gotReply1 ( UdpSlot *slot ) {
 		// cached stuff can make us slightly out of sync
 		//if ( g_errno == ENOTFOUND )
 		//	sendToTwin = false;
-		// or a problem with a tfndb lookup, those are different for
-		// each twin right now
-		if ( m_msgType == 0x00 && m_rdbId == RDB_TFNDB )
-			sendToTwin = false;
+
 		// do not send to twin if we are out of time
 		time_t now           = getTime();
 		int32_t   timeRemaining = m_startTime + m_totalTimeout - now;

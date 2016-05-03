@@ -13020,9 +13020,8 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 		rdbId &= 0x7f;
 
 		// negative key?
-		bool del ;
-		if ( *p & 0x01 ) del = false;
-		else             del = true;
+		bool del = !( *p & 0x01 );
+
 		// must always be negative if deleteing
 		// spiderdb is exempt because we add a spiderreply that is
 		// positive and a spiderdoc
@@ -13030,10 +13029,10 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 		// replies to the index when deleting or rejecting a doc.
 		//if ( m_deleteFromIndex && ! del && rdbId != RDB_SPIDERDB) {
 		//	char *xx=NULL;*xx=0; }
+
 		// get the key size. a table lookup in Rdb.cpp.
-		int32_t ks ;
-		if      ( rdbId == RDB_POSDB || rdbId == RDB2_POSDB2 ) {
-			ks = 18;
+		int32_t ks = getKeySizeFromRdbId ( rdbId );
+		if ( rdbId == RDB_POSDB || rdbId == RDB2_POSDB2 ) {
 			// no compress bits set!
 			if ( p[0] & 0x06 ) { char*xx=NULL;*xx=0; }
 			// alignment bit set or cleared
@@ -13041,24 +13040,11 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 			if (   ( p[7] & 0x02 ) ) { char *xx=NULL;*xx=0; }
 			int64_t docId = g_posdb.getDocId(p);
 			if ( docId != m_docId && !cr->m_indexSpiderReplies) {
-				log("xmldoc: %"INT64" != %"INT64""
-				    , docId
-				    , m_docId );
+				log( LOG_WARN, "xmldoc: %" INT64" != %" INT64, docId, m_docId );
 				char *xx=NULL;*xx=0;
 			}
-			// else
-			// 	log("xmldoc: %"INT64" == %"INT64""
-			// 	    , docId
-			// 	    , m_docId );
-
-			// uint64_t termId = g_posdb.getTermId(p);
-			// if ( termId == 59194288760543LL ) {
-			// 	log("xmldoc: debug");
-			// 	//char *xx=NULL;*xx=0;
-			// }
 		}
-		else if ( rdbId == RDB_DATEDB  ) ks = 16;
-		else ks = getKeySizeFromRdbId ( rdbId );
+
 		// sanity
 		if ( ks < 12 ) { char *xx=NULL;*xx=0; }
 		if ( ks > MAX_KEY_BYTES ) { char *xx=NULL;*xx=0; }
@@ -13067,14 +13053,6 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 		if ( ! rdb ) { char *xx=NULL;*xx=0; }
 		if ( rdb->m_ks < 12 || rdb->m_ks > MAX_KEY_BYTES ) {
 			char *xx=NULL;*xx=0;}
-
-		// special linkdb check
-		//if ( rdbId == RDB_LINKDB ) {
-		//	// parse it up
-		//	key192_t *k = (key192_t *)p;
-		//	unsigned char hc = g_linkdb.getLinkerHopCount_uk(k);
-		//	if ( hc != 0 ){ char *xx=NULL;*xx=0; }
-		//}
 
 		char *rec = p;
 
@@ -13091,12 +13069,8 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 		// . tfndb now is like titledb(top 32 bits are top 32 of docId)
 		//uint32_t gid = getGroupId ( rdbId , key , split );
 		// get the record, is -1 if variable. a table lookup.
-		int32_t dataSize;
-		if      ( rdbId == RDB_POSDB || rdbId==RDB2_POSDB2)dataSize=0;
-		else if ( rdbId == RDB_DATEDB  ) dataSize = 0;
-		else if ( rdbId == RDB2_POSDB2  ) dataSize = 0;
-		else if ( rdbId == RDB2_DATEDB2   ) dataSize = 0;
-		else dataSize = getDataSizeFromRdbId ( rdbId );
+		int32_t dataSize = getDataSizeFromRdbId ( rdbId );
+
 		// . for delete never stores the data
 		// . you can have positive keys without any dataSize member
 		//   when they normally should have one, like titledb
