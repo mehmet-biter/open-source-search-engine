@@ -1725,9 +1725,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	// unprotect tree from writes
 	if ( m_tree.m_useProtection ) m_tree.unprotect ( );
 
-	// set this for event interval records
-	m_nowGlobal = 0;//getTimeGlobal();
-
 	do {
 		char key[MAX_KEY_BYTES];
 		list->getCurrentKey(key);

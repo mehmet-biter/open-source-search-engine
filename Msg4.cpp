@@ -536,19 +536,12 @@ bool Msg4::addMetaList2 ( ) {
 		if( g_conf.m_logTraceMsg ) {
 			log(LOG_TRACE,"%s:%s:   shardNum: %"INT32"", __FILE__,__func__, shardNum);
 		}
-			
-			
-			
-		// get the record, is -1 if variable. a table lookup.
-		int32_t dataSize;
-		if      ( rdbId==RDB_POSDB || rdbId==RDB2_POSDB2) dataSize = 0;
-		else if ( rdbId == RDB_DATEDB  ) dataSize = 0;
-		else dataSize = getDataSizeFromRdbId ( rdbId );
 
+		// get the record, is -1 if variable. a table lookup.
 		// . negative keys have no data
 		// . this unfortunately is not true according to RdbList.cpp
-		if ( del ) dataSize = 0;
-			
+		int32_t dataSize = del ? 0 : getDataSizeFromRdbId ( rdbId );
+
 		if( g_conf.m_logTraceMsg ) {
 			log(LOG_TRACE,"%s:%s:   dataSize: %"INT32"", __FILE__,__func__, dataSize);
 		}
@@ -576,7 +569,7 @@ bool Msg4::addMetaList2 ( ) {
 			
 		// i fixed UdpServer.cpp to NOT call msg4 handlers when in
 		// a quickpoll, in case we receive a niceness 0 msg4 request
- 		QUICKPOLL(m_niceness); // MAX_NICENESS);
+		QUICKPOLL(m_niceness);
  		
 		// convert the gid to the hostid of the first host in this
 		// group. uses a quick hash table.

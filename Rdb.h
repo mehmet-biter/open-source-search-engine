@@ -173,7 +173,6 @@ public:
 
 	// get the directory name where this rdb stores it's files
 	char *getDir       ( ) { return g_hostdb.m_dir; };
-	char *getStripeDir ( ) { return g_conf.m_stripeDir; };
 
 	int32_t getFixedDataSize ( ) { return m_fixedDataSize; };
 
@@ -412,9 +411,6 @@ public:
 	int32_t m_pageSize;
 
 	bool m_initialized;
-
-	// timedb support
-	time_t            m_nowGlobal;
 
 	// used for deduping spiderdb tree
 	Msg5 m_msg5;

@@ -13018,8 +13018,7 @@ bool XmlDoc::verifyMetaList ( char *p , char *pend , bool forDelete ) {
 		uint8_t rdbId = *p++;
 		// mask off rdbId
 		rdbId &= 0x7f;
-		// get the key of the current record
-		//char *key = p;
+
 		// negative key?
 		bool del ;
 		if ( *p & 0x01 ) del = false;
@@ -13186,9 +13185,7 @@ bool XmlDoc::hashMetaList ( HashTableX *ht        ,
 
 		// set our rec size, includes key/dataSize/data
 		int32_t recSize = p - rec;
-		// debug point
-		//if ( *(uint64_t *)k == 4828936067112479745LL )
-		//	log("hey");
+
 		// if just adding, do it
 		if ( ! checkList ) {
 			// we now store ptr to the rec, not hash!
@@ -13352,8 +13349,7 @@ void getMetaListWrapper ( void *state ) {
 char *XmlDoc::getMetaList ( bool forDelete ) {
 
 	logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
-	if ( m_metaListValid )
-	{
+	if ( m_metaListValid ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "END, already valid" );
 		return m_metaList;
 	}
@@ -13728,11 +13724,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		m_addedStatusDocSizeValid = true;
 		//}
 
-		// doledb key?
-		//if ( m_doledbKey.n0 || m_doledbKey.n1 )
-		//	needx += 1 + sizeof(key_t); // + 4;
-		// the FAKEDB unlock key for msg12 in spider.cpp
-		//needx += 1 + sizeof(key_t); // FAKEDB
 		// make the buffer
 		m_metaList = (char *)mmalloc ( needx , "metalist");
 		if ( ! m_metaList ) return NULL;
@@ -13747,9 +13738,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 
 		// first store spider reply "document"
 		if ( spiderStatusDocMetaList ) {
-			gbmemcpy ( m_p,
-				 spiderStatusDocMetaList->getBufStart(),
-				 spiderStatusDocMetaList->length() );
+			gbmemcpy ( m_p, spiderStatusDocMetaList->getBufStart(), spiderStatusDocMetaList->length() );
 			m_p += spiderStatusDocMetaList->length();
 		}
 
@@ -13794,9 +13783,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	if ( od ) {
 		od->m_useSpiderdb = false;
 		od->m_useTagdb    = false;
-		// do not use diffbot for old doc since we call
-		//od->m_diffbotApiNum = DBA_NONE;
-		//log("break it here. shit this is not getting the list!!!");
+
 		// if we are doing diffbot stuff, we are still indexing this
 		// page, so we need to get the old doc meta list
 		oldList = od->getMetaList ( true );
@@ -14043,12 +14030,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		return (char *)sh32;
 	}
 
-	// set ptr_clockCandidatesData
-	// if ( nd ) {
-	// 	HashTableX *cct = nd->getClockCandidatesTable();
-	// 	if ( ! cct || cct==(void *)-1) return (char *)cct;
-	// }
-
 	if ( m_useLinkdb && ! m_deleteFromIndex ) {
 		int32_t *linkSiteHashes = getLinkSiteHashes();
 		if ( ! linkSiteHashes || linkSiteHashes == (void *)-1 )
@@ -14176,7 +14157,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// space for indexdb AND DATEDB! +2 for rdbids
 	int32_t needIndexdb = 0;
 	needIndexdb +=tt1.m_numSlotsUsed*(sizeof(key144_t)+2+sizeof(key128_t));
-	//needIndexdb+=tt2.m_numSlotsUsed * (sizeof(key_t)+2+sizeof(key128_t));
 	need += needIndexdb;
 
 	setStatus ( "hashing sectiondb keys" );
@@ -14481,7 +14461,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	// checkpoint
 	saved = m_p;
 
-	//if(! addTable128 (&st2,&st1, RDB_SECTIONDB,true ,true))return NULL;
 	// sanity check
 	if ( m_p - saved > needSectiondb ) { char *xx=NULL;*xx=0; }
 	// free mem
@@ -14546,7 +14525,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		logTrace( g_conf.m_logTraceXmlDoc, "addTable224 failed" );
 		return NULL;
 	}
-	//if(add2&&!addTable128(&kt2,&kt1,RDB_LINKDB, false))return NULL;
+
 	// sanity check
 	if ( m_p - saved > needLinkdb ) { char *xx=NULL;*xx=0; }
 	// all done
@@ -18894,7 +18873,9 @@ int gbcompress ( unsigned char *dest      ,
 
 // is it a custom error page? ppl do not always use status 404!
 char *XmlDoc::getIsErrorPage ( ) {
-	if ( m_isErrorPageValid ) return &m_isErrorPage;
+	if ( m_isErrorPageValid ) {
+		return &m_isErrorPage;
+	}
 
 	setStatus ( "getting is error page");
 
@@ -18912,7 +18893,6 @@ char *XmlDoc::getIsErrorPage ( ) {
 	//we have to be more sophisticated with longer pages because they
 	//are could actually be talking about an error message.
 	//if(xml->getContentLen() > 4096) return false;
-
 
 	// assume not
 	m_isErrorPage      = false;
