@@ -318,14 +318,6 @@ int main2 ( int argc , char *argv[] ) {
 			"\tLike above but do not use a keepalive loop. So "
 			"if gb crashes it will not auto-resstart.\n\n"
 
-			/*
-			"kstart [hostId]\n"
-			"\tstart the gb process on all hosts or just on "
-			"[hostId] if specified using an ssh command and "
-			"if the gb process cores then restart it. k stands "
-			"for keepalive.\n\n"
-			*/
-
 			"stop [hostId]\n"
 			"\tSaves and exits for all gb hosts or "
 			"just on [hostId], if specified.\n\n"
@@ -579,14 +571,6 @@ int main2 ( int argc , char *argv[] ) {
 			"dictionary used for spellchecker "
 			"from titledb files in collection <coll>. Use "
 			"first [numWordsToDump] words.\n\n"
-			//"gendbs <coll> [hostId]\n\tgenerate missing spiderdb "
-			//"files from titledb files.\n\n"
-
-			//"genclusterdb <coll> [hostId]\n\tgenerate missing "
-			//"clusterdb.\n\n"
-
-			//"gendaterange <coll> [hostId]\n\tgenerate missing "
-			//"date range terms in all title recs.\n\n"
 
 			//"update\tupdate titledb0001.dat\n\n"
 			"treetest\n\ttree insertion speed test\n\n"
@@ -714,16 +698,9 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "-l" ) == 0 ) g_conf.m_logToFile = true;
 	if ( strcmp ( cmd2 , "-l" ) == 0 ) g_conf.m_logToFile = true;
 
-	// gb gendbs, preset the hostid at least
-	if ( //strcmp ( cmd , "gendbs"   ) == 0 ||
-	     //strcmp ( cmd , "gencatdb" ) == 0 ||
-	     //strcmp ( cmd , "genclusterdb" ) == 0 ||
-	     //strcmp ( cmd , "gendaterange" ) == 0 || 
-	     strcmp ( cmd , "distributeC" ) == 0 ) {
+	if ( strcmp ( cmd , "distributeC" ) == 0 ) {
 		// ensure we got a collection name after the cmd
 		if ( cmdarg + 2 >  argc ) goto printHelp;
-		// may also have an optional hostid
-		//if ( cmdarg + 3 == argc ) hostId = atoi ( argv[cmdarg+2] );
 	}
 
 	if( (strcmp( cmd, "countdomains" ) == 0) &&  (argc >= (cmdarg + 2)) ) {
@@ -1277,18 +1254,9 @@ int main2 ( int argc , char *argv[] ) {
 
 	// g_conf.init was here
 
-	// now that we have init'd g_hostdb and g_log, call this for an ssh
-	//if ( strcmp ( cmd , "gendbs" ) == 0 && cmdarg + 2 == argc )
-	//	return install ( ifk_gendbs , -1 , NULL , 
-	//			 argv[cmdarg+1] ); // coll
-
 	if( strcmp(cmd, "distributeC") == 0 && cmdarg +2 == argc ) {
 		return install ( ifk_distributeC, -1, NULL, argv[cmdarg+1] );
 	}
-
-	//if ( strcmp ( cmd, "genclusterdb" ) == 0 && cmdarg + 2 == argc )
-	//	return install ( ifk_genclusterdb , -1 , NULL ,
-	//			 argv[cmdarg+1] ); // coll
 
 	// . gb removedocids <coll> <docIdsFilename> [hostid1-hostid2]
 	// . if hostid not there, ssh to all using install()
@@ -1359,41 +1327,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	/*
-	// gb inject <file> <ip:port> [startdocid]
-	// gb inject titledb <newhosts.conf> [startdocid]
-	if ( strcmp ( cmd , "inject"  ) == 0 ) {
-		if ( argc != cmdarg+3 && 
-		     argc != cmdarg+4 &&
-		     argc != cmdarg+5 ) 
-			goto printHelp;
-		char *file = argv[cmdarg+1];
-		char *ips  = argv[cmdarg+2];
-		int64_t startDocId = 0LL;
-		int64_t endDocId   = DOCID_MASK;
-		if ( cmdarg+3 < argc ) startDocId = atoll(argv[cmdarg+3]);
-		if ( cmdarg+4 < argc ) endDocId   = atoll(argv[cmdarg+4]);
-		injectFile ( file , ips , startDocId , endDocId , false );
-		return 0;
-	}
-	*/
-	/*
-	if ( strcmp ( cmd , "reject"  ) == 0 ) {
-		if ( argc != cmdarg+3 && 
-		     argc != cmdarg+4 &&
-		     argc != cmdarg+5 ) 
-			goto printHelp;
-		char *file = argv[cmdarg+1];
-		char *ips  = argv[cmdarg+2];
-		int64_t startDocId = 0LL;
-		int64_t endDocId   = DOCID_MASK;
-		//if ( cmdarg+3 < argc ) startDocId = atoll(argv[cmdarg+3]);
-		//if ( cmdarg+4 < argc ) endDocId   = atoll(argv[cmdarg+4]);
-		injectFile ( file , ips , startDocId , endDocId , true );
-		return 0;
-	}
-	*/
-
 	// gb dsh
 	if ( strcmp ( cmd , "dsh" ) == 0 ) {	
 		if ( cmdarg+1 >= argc ) {
@@ -1405,9 +1338,7 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	// gb dsh2
-	if ( strcmp ( cmd , "dsh2" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		//int32_t hostId = -1;
+	if ( strcmp ( cmd , "dsh2" ) == 0 ) {
 		if ( cmdarg+1 >= argc ) goto printHelp;
 		char *cmd = argv[cmdarg+1];
 		return install ( ifk_dsh2 , -1,NULL,NULL,-1, cmd );
@@ -2191,9 +2122,6 @@ int main2 ( int argc , char *argv[] ) {
 	char tmp[128];
 	SafeBuf cleanFileName(tmp,128);
 
-	//if ( strcmp ( cmd , "gendbs"       ) == 0 ) goto jump;
-	if ( strcmp ( cmd , "gencatdb"     ) == 0 ) goto jump;
-	//if ( strcmp ( cmd , "genclusterdb" ) == 0 ) goto jump;
 	//	if ( cmd && ! is_digit(cmd[0]) ) goto printHelp;
 
 	// if pid file is there then do not start up
@@ -2412,7 +2340,6 @@ int main2 ( int argc , char *argv[] ) {
 	// the wiki titles
 	if ( ! g_wiki.load() ) return 1;
 
- jump:
 	// force give up on dead hosts to false
 	g_conf.m_giveupOnDeadHosts = 0;
 
@@ -2452,15 +2379,6 @@ int main2 ( int argc , char *argv[] ) {
 	// the spider cache used by SpiderLoop
 	if ( ! g_spiderCache.init() ) {
 		log("db: SpiderCache init failed." ); return 1; }
-
-	// ensure clusterdb tree is big enough for quicker generation
-	//if ( strcmp ( cmd, "genclusterdb" ) == 0 ) {
-	//	g_conf.m_clusterdbMinFilesToMerge = 20;
-	//	// set up clusterdb
-	//	g_conf.m_clusterdbMaxTreeMem = 50000000; // 50M
-	//	g_conf.m_maxMem = 2000000000LL; // 2G
-	//	g_mem.m_maxMem  = 2000000000LL; // 2G
-	//}
 
 	// site clusterdb
 	if ( ! g_clusterdb.init()   ) {
@@ -3320,39 +3238,14 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 
 			log(LOG_INIT,"admin: %s", tmp);
 			system ( tmp );
-			// sprintf(tmp,
-			// 	"scp %shosts.conf %s:%shosts.conf &",
-			// 	dir ,
-			// 	iptoa(h2->m_ip),
-			// 	h2->m_dir);
-			// log(LOG_INIT,"admin: %s", tmp);
-			// system ( tmp );
-			// sprintf(tmp,
-			// 	"scp %shosts2.conf %s:%shosts2.conf &",
-			// 	dir ,
-			// 	iptoa(h2->m_ip),
-			// 	h2->m_dir);
-			// log(LOG_INIT,"admin: %s", tmp);
-			// system ( tmp );
 		}
 		else if ( installFlag == ifk_start ) {
-			// . save old log now, too
-			//char tmp2[1024];
-			//tmp2[0]='\0';
-			// let's do this for everyone now
-			//if ( h2->m_hostId == 0 )
-			//sprintf(tmp2,
-			//	"mv ./log%03"INT32" ./log%03"INT32"-`date '+"
-			//	"%%Y_%%m_%%d-%%H:%%M:%%S'` ; " ,
-			//	h2->m_hostId   ,
-			//	h2->m_hostId   );
 			// . assume conf file name gbHID.conf
 			// . assume working dir ends in a '/'
 			sprintf(tmp,
 				"ssh %s \"cd %s ; ulimit -c unlimited; "
 				"cp -f gb gb.oldsave ; "
 				"mv -f gb.installed gb ; " // %s"
-				//"./gb %"INT32" >& ./log%03"INT32" &\" %s",
 				// without "sleep 1" ssh seems to exit
 				// bash before it can start gb and gb does
 				// not start up.
@@ -3360,13 +3253,8 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 				"./gb & sleep 1\" %s",
 				iptoa(h2->m_ip),
 				h2->m_dir      ,
-				//tmp2           ,
-				//h2->m_dir      ,
-				//h2->m_hostId   ,
-				//h2->m_hostId   ,
 				amp);
 			// log it
-			//log(LOG_INIT,"admin: %s", tmp);
 			fprintf(stdout,"admin: %s\n", tmp);
 			// execute it
 			system ( tmp );
@@ -3396,19 +3284,6 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 			char *extraBreak = "";
 			if ( installFlag == ifk_dstart )
 			        extraBreak = "break;";
-			//keepalive
-			// . save old log now, too
-			//char tmp2[1024];
-			//tmp2[0]='\0';
-			// let's do this for everyone now
-			//if ( h2->m_hostId == 0 )
-			// we do not run as daemon so keepalive loop will
-			// work properly...
-			//sprintf(tmp2,
-			//      "mv ./log%03"INT32" ./log%03"INT32"-`date '+"
-			//      "%%Y_%%m_%%d-%%H:%%M:%%S'` ; " ,
-			//      h2->m_hostId   ,
-			//      h2->m_hostId   );
 			// . assume conf file name gbHID.conf
 			// . assume working dir ends in a '/'
 			//to test add: ulimit -t 10; to the ssh cmd
@@ -3418,48 +3293,15 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 				"cp -f gb gb.oldsave ; "
 				"ADDARGS='' "
 				"INC=1 "
-				//"EXITSTATUS=1 "
 				" ; "
 				 "while true; do "
-				//"{ "
-
-				// if gb still running, then do not try to
-				// run it again. we
-				// probably double-called './gb start'.
-				// so see if the port is bound to.
-				// "./gb isportinuse %i ; "
-				// "if [ \\$? -eq 1 ] ; then "
-				// "echo \"gb or something else "
-				// "is already running on "
-				// "port %i. Not starting.\" ; "
-				// "exit 0; "
-				// "fi ; "
-
-				// ok, the port is available
-				//"echo \"Starting gb\"; "
-
-				//"exit 0; "
-
-				// if pidfile exists then gb is already
-				// running so do not move its log file!
-				// "if [ -f \"./pidfile\" ]; then  "
-				// "echo \"./pidfile exists. can not start "
-				// "gb\" >& /dev/stdout; break; fi;"
 
 				// in case gb was updated...
 				"mv -f gb.installed gb ; "
 
-				// move the log file
-				// "mv ./log%03"INT32" ./log%03"INT32"-\\`date '+"
-				// "%%Y_%%m_%%d-%%H:%%M:%%S'\\` ; "
-
 				// indicate -l so we log to a logfile
-				"./gb -l "//%"INT32" "
+				"./gb -l "
 				"\\$ADDARGS "
-
-				// no longer log to stderr so we can
-				// do log file rotation
-				//" >& ./log%03"INT32""
 				" ;"
 
 				// this doesn't always work so use
@@ -3481,135 +3323,19 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 				"%s"
 				"ADDARGS='-r'\\$INC ; "
 				"INC=\\$((INC+1));"
-				//"} "
 				"done > /dev/null 2>&1 & \" %s",
-				//"done & \" %s",
-				//"done & \" %s",
-
-
-				//"done & \" %s",
-				//"\" %s",
 				iptoa(h2->m_ip),
 				h2->m_dir      ,
-
-				// for ./gb isportinuse %i
-				// h2->m_httpPort ,
-				// h2->m_httpPort ,
-
-				// for moving log file
-				 // h2->m_hostId   ,
-				 // h2->m_hostId   ,
-
-				//h2->m_dir      ,
 				extraBreak ,
-				// hostid is now inferred from path
-				//h2->m_hostId   ,
 				amp );
 
 			// log it
-			//log(LOG_INIT,"admin: %s", tmp);
 			fprintf(stdout,"admin: %s\n", tmp);
-			// execute it
-			system ( tmp );
-		}
-		/*
-		else if ( installFlag == ifk_dstart ) {
-			//keepalive
-			// . save old log now, too
-			//char tmp2[1024];
-			//tmp2[0]='\0';
-			// let's do this for everyone now
-			//if ( h2->m_hostId == 0 )
-			// we do not run as daemon so keepalive loop will
-			// work properly...
-			//sprintf(tmp2,
-			//	"mv ./log%03"INT32" ./log%03"INT32"-`date '+"
-			//	"%%Y_%%m_%%d-%%H:%%M:%%S'` ; " ,
-			//	h2->m_hostId   ,
-			//	h2->m_hostId   );
-			// . assume conf file name gbHID.conf
-			// . assume working dir ends in a '/'
-			amp = "&";
-			//if ( i > 0 && (i%5) == 0 ) amp = "";
-			//to test add: ulimit -t 10; to the ssh cmd
-			sprintf(tmp,
-				"ssh %s \"cd %s ; ulimit -c unlimited; "
-				"export MALLOC_CHECK_=0;"
-				"cp -f gb gb.oldsave ; "
-				"mv -f gb.installed gb ; "
-				//"ADDARGS='' ; "
-				//"EXITSTATUS=1 ; "
-				// "while [ \\$EXITSTATUS != 0 ]; do "
- 				// "{ "
-
-				// move the log file
-				//"mv ./log%03"INT32" ./log%03"INT32"-\\`date '+"
-				//"%%Y_%%m_%%d-%%H:%%M:%%S'\\` ; "
-
-				"./gb -d "//%"INT32" "
-				//"\\$ADDARGS "
-				//" ;"
-				//" >& ./log%03"INT32" ;"
-
-				//"EXITSTATUS=\\$? ; "
-				//"ADDARGS='-r' ; "
-				//"} "
- 				//"done >& /dev/null & \" %s",
-				"\" %s",
-				iptoa(h2->m_ip),
-				h2->m_dir      ,
-
-				// for moving log file
-				// h2->m_hostId   ,
-				// h2->m_hostId   ,
-
-				//h2->m_dir      ,
-
-				// hostid is now inferred from path
-				//h2->m_hostId   ,
-				amp );
-
-			// log it
-			//log(LOG_INIT,"admin: %s", tmp);
-			fprintf(stdout,"admin: %s\n", tmp);
-			// execute it
-			system ( tmp );
-		}
-		*/
-		else if ( installFlag == ifk_genclusterdb ) {
-			// . save old log now, too
-			char tmp2[1024];
-			tmp2[0]='\0';
-			// let's do this for everyone now
-			//if ( h2->m_hostId == 0 )
-			//sprintf(tmp2,
-			//	"mv ./log%03"INT32" ./log%03"INT32"-`date '+"
-			//	"%%Y_%%m_%%d-%%H:%%M:%%S'` ; " ,
-			//	h2->m_hostId   ,
-			//	h2->m_hostId   );
-			// . assume conf file name gbHID.conf
-			// . assume working dir ends in a '/'
-			sprintf(tmp,
-				"ssh %s \"cd %s ;"
-				//"%s"
-				"./gb genclusterdb %s %"INT32" >&"
-				"./log%03"INT32"-genclusterdb &\" &",
-				iptoa(h2->m_ip),
-				h2->m_dir      ,
-				//h2->m_dir      ,
-				//tmp2           ,
-				coll           ,
-				h2->m_hostId   ,
-				h2->m_hostId   );
-			// log it
-			log(LOG_INIT,"admin: %s", tmp);
 			// execute it
 			system ( tmp );
 		}
 		// dsh
 		else if ( installFlag == ifk_dsh ) {
-			// don't copy to ourselves
-			//if ( h2->m_hostId == h->m_hostId ) continue;
 			sprintf(tmp,
 				"ssh %s 'cd %s ; %s' %s",
 				iptoa(h2->m_ip),
@@ -3621,12 +3347,6 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 		}
 		// dsh2
 		else if ( installFlag == ifk_dsh2 ) {
-			// don't copy to ourselves
-			//if ( h2->m_hostId == h->m_hostId ) continue;
-			//sprintf(tmp,
-			//	"ssh %s '%s' &",
-			//	iptoa(h2->m_ipShotgun),
-			//	cmd );
 			sprintf(tmp,
 				"ssh %s 'cd %s ; %s'",
 				iptoa(h2->m_ip),
@@ -3637,18 +3357,14 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 		}
 		// installconf2
 		else if ( installFlag == ifk_installconf2 ) {
-			// don't copy to ourselves
-			//if ( h2->m_hostId == h->m_hostId ) continue;
 			sprintf(tmp,
 				"rcp %sgb.conf %shosts.conf %shosts2.conf "
 				"%s:%s &",
 				dir ,
 				dir ,
 				dir ,
-				//h->m_hostId ,
 				iptoa(h2->m_ipShotgun),
 				h2->m_dir);
-				//h2->m_hostId);
 			log(LOG_INIT,"admin: %s", tmp);
 			system ( tmp );
 		}
