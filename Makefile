@@ -113,7 +113,7 @@ CPPFLAGS += -Wno-invalid-offsetof -Wno-extended-offsetof
 CPPFLAGS += -Wno-cast-align -Wno-padded -Wno-c++11-long-long -Wno-tautological-undefined-compare -Wno-c++11-compat-reserved-user-defined-literal -Wno-zero-length-array -Wno-float-equal -Wno-c99-extensions -Wno-weak-vtables -Wno-global-constructors -Wno-exit-time-destructors
 CPPFLAGS += -Wno-shadow -Wno-conversion -Wno-extra-semi -Wno-sign-conversion -Wno-old-style-cast -Wno-shorten-64-to-32 -Wno-unused-parameter -Wno-missing-prototypes -Wno-c++11-compat-deprecated-writable-strings
 CPPFLAGS += -Wno-sometimes-uninitialized -Wno-conditional-uninitialized
-CPPFLAGS += -Wno-invalid-source-encoding
+CPPFLAGS += -Wno-invalid-source-encoding -Wno-packed
 endif
 
 LIBS = -lm -lpthread -lssl -lcrypto -lz
