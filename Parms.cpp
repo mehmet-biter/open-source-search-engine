@@ -712,10 +712,7 @@ static bool CommandInSync ( char *rec ) {
 //////////////////////
 
 
-static bool printDropDown   ( int32_t n , SafeBuf* sb, char *name,
-			      int32_t selet ,
-			      bool includeMinusOne ,
-			      bool includeMinusTwo ) ;
+static bool printDropDown   ( int32_t n , SafeBuf* sb, char *name, int32_t selet ) ;
 
 extern bool closeAll ( void *state, void (* callback)(void *state) );
 extern bool allExit ( ) ;
@@ -1114,44 +1111,23 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 	return true;
 }
 
-bool printDropDown ( int32_t n , SafeBuf* sb, char *name, int32_t select,
-		     bool includeMinusOne ,
-		     bool includeMinusTwo ) {	// begin the drop down menu
+bool printDropDown ( int32_t n , SafeBuf* sb, char *name, int32_t select ) {	// begin the drop down menu
 	sb->safePrintf ( "<select name=%s>", name );
-	char *s;
-	int32_t i = -1;
-	if ( includeMinusOne ) i = -1;
-	// . by default, minus 2 includes minus 3, the new "FILTERED" priority
-	// . it is link "BANNED" but does not mean the url is low quality necessarily
-	if ( includeMinusTwo ) i = -3;
-
-	// no more DELETE, etc.
-	i = 0;
 	if ( select < 0 ) select = 0;
 
-	for ( ; i < n ; i++ ) {
-		if ( i == select ) s = " selected";
-		else               s = "";
-		if      ( i == -3 )
-			sb->safePrintf ("<option value=%"INT32"%s>DELETE",i,s);
-		else if ( i == -2 )
-			//sb->safePrintf ("<option value=%"INT32"%s>BANNED",i,s);
-			continue;
-		else if ( i == -1 )
-			//sb->safePrintf ("<option value=%"INT32"%s>undefined",i,s);
-			continue;
-		else
-			sb->safePrintf ("<option value=%"INT32"%s>%"INT32"",i,s,i);
+	for ( int32_t i = 0 ; i < n ; ++i ) {
+		sb->safePrintf( "<option value=%" INT32"%s>%" INT32, i, ( i == select ) ? "selected" : "", i );
 	}
+
 	sb->safePrintf ( "</select>" );
 	return true;
 }
 
 class DropLangs {
 public:
-	char *m_title;
-	char *m_lang;
-	char *m_tld;
+	const char *m_title;
+	const char *m_lang;
+	const char *m_tld;
 };
 
 static DropLangs g_drops[] = {
@@ -1904,16 +1880,14 @@ bool Parms::printParm ( SafeBuf* sb,
 	/*	else if ( t == TYPE_CHAR2 )
 		sprintf (p,"<input type=text name=%s value=\"%"INT32"\" "
 		"size=3>",cgi,*(char*)s);*/
-	else if ( t == TYPE_PRIORITY )
-		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s ,
-				false , false );
+	else if ( t == TYPE_PRIORITY ) 
+		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s );
 	else if ( t == TYPE_PRIORITY2 ) {
 		// just show the parm name and value if printing in json
 		// if ( format==FORMAT_JSON) // isJSON )
 		// 	sb->safePrintf("\"%s\":%"INT32",\n",cgi,(int32_t)*(char *)s);
 		// else
-		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s ,
-				true , true );
+		printDropDown ( MAX_SPIDER_PRIORITIES , sb , cgi , *s );
 	}
 	// this url filters parm is an array of SAFEBUFs now, so each is
 	// a string and that string is the diffbot api url to use.
@@ -1939,8 +1913,8 @@ bool Parms::printParm ( SafeBuf* sb,
 		  ! isCollAdmin )
 		return true;
 
-	else if ( t == TYPE_RETRIES    )
-		printDropDown ( 4 , sb , cgi , *s , false , false );
+	else if ( t == TYPE_RETRIES    ) 
+		printDropDown ( 4 , sb , cgi , *s );
 	else if ( t == TYPE_FILEUPLOADBUTTON    ) {
 		sb->safePrintf("<input type=file name=%s>",cgi);
 	}
