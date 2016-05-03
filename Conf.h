@@ -310,7 +310,6 @@ class Conf {
 	bool   m_indexDeletes;
 
 	bool   m_splitTwins;
-	bool   m_useThreads;
 
 	bool   m_useQuickpoll;
 

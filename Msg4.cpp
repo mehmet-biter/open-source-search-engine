@@ -10,6 +10,7 @@
 #include "Profiler.h"
 #include "Repair.h"
 #include "Multicast.h"
+#include "JobScheduler.h"
 #ifdef _VALGRIND_
 #include <valgrind/memcheck.h>
 #endif
@@ -397,7 +398,7 @@ bool Msg4::addMetaList ( const char      *metaList                 ,
 		// we are the new tail
 		s_msg4Tail = this;
 		// debug log. seems to happen a lot if not using threads..
-		if ( g_conf.m_useThreads )
+		if ( g_jobScheduler.are_new_jobs_allowed() )
 			log("msg4: queueing body msg4=0x%"PTRFMT"",(PTRTYPE)this);
 		// mark it
 		m_inUse = true;
@@ -427,7 +428,7 @@ bool Msg4::addMetaList ( const char      *metaList                 ,
 
 	// . spider hang bug
 	// . debug log. seems to happen a lot if not using threads..
-	if ( g_conf.m_useThreads )
+	if ( g_jobScheduler.are_new_jobs_allowed() )
 		logf(LOG_DEBUG,"msg4: queueing head msg4=0x%"PTRFMT"",(PTRTYPE)this);
 
 	// mark it
@@ -1038,7 +1039,7 @@ void storeLineWaiters ( ) {
 	// . we no longer do that so callback should never be null now
 	if ( ! msg4->m_callback ) { char *xx=NULL;*xx=0; }
 	// log this now i guess. seems to happen a lot if not using threads
-	if ( g_conf.m_useThreads )
+	if ( g_jobScheduler.are_new_jobs_allowed() )
 		logf(LOG_DEBUG,"msg4: calling callback for msg4=0x%"PTRFMT"",
 		     (PTRTYPE)msg4);
 	// release it

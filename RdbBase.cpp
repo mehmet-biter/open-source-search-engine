@@ -772,20 +772,6 @@ int32_t RdbBase::addFile ( int32_t id , bool isNew , int32_t mergeNum ,
 		log("rdb: adding new file %s/%s",// m_numFiles=%"INT32"",
 		    f->getDir(),f->getFilename());//,m_numFiles);
 
-	// rename bug fix?
-	/*
-	if ( ! isNew && id != 1 && m_isTitledb && m_rdb->m_rdbId == RDB_TITLEDB ) {
-		char newf[10245];
-		sprintf(newf,"%s%04"INT32"-%03"INT32".dat",
-			"titledbRebuild",id,id2);
-		log("cmd: f->rename(%s%04"INT32"-%03"INT32".dat,%s)",m_dbname,id,id2,newf);
-		g_conf.m_useThreads = 0;
-		f->rename ( newf );
-		g_conf.m_useThreads = 1;
-		exit(-1);
-	}
-	*/
-
 	// if not a new file sanity check it
 	for ( int32_t j = 0 ; ! isNew && j < f->m_maxParts - 1 ; j++ ) {
 		// might be headless

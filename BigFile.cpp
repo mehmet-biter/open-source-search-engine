@@ -770,7 +770,6 @@ bool BigFile::readwrite ( void         *buf      ,
 	// . this should return false and set g_errno on error, true otherwise
 	if ( ! isNonBlocking ) 	goto skipThread;
 	if ( ! g_jobScheduler.are_new_jobs_allowed() ) goto skipThread;
-	if ( ! g_conf.m_useThreads ) goto skipThread;
 
 
 #ifdef ASYNCIO

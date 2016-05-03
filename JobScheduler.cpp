@@ -241,6 +241,7 @@ class JobScheduler_impl {
 	ThreadPool io_thread_pool;
 	ThreadPool external_thread_pool;
 	
+	bool no_threads;
 	bool new_jobs_allowed;
 	
 	bool submit(thread_type_t thread_type, JobEntry &e);
@@ -256,6 +257,7 @@ public:
 	    cpu_thread_pool(num_cpu_threads,&cpu_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
 	    io_thread_pool(num_io_threads,&io_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
 	    external_thread_pool(num_external_threads,&external_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
+	    no_threads(num_cpu_threads==0 && num_io_write_jobs_running==0 && num_external_threads==0),
 	    new_jobs_allowed(true)
 	{
 	}
@@ -302,7 +304,7 @@ public:
 		new_jobs_allowed = false;
 	}
 	bool are_new_jobs_allowed() const {
-		return new_jobs_allowed;
+		return new_jobs_allowed && !no_threads;
 	}
 	
 	unsigned num_queued_jobs() const;

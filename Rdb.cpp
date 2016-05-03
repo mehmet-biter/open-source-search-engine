@@ -16,6 +16,7 @@
 #include "SpiderColl.h"
 #include "Doledb.h"
 #include "hash.h"
+#include "JobScheduler.h"
 
 void attemptMergeAll ( int fd , void *state ) ;
 
@@ -1025,10 +1026,11 @@ bool Rdb::loadTree ( ) {
 				char newFilename[256];
 				sprintf(newFilename,"%s-%"INT32".old",
 					filename, (int32_t)getTime());
-				bool usingThreads = g_conf.m_useThreads;
-				g_conf.m_useThreads = false;
+				bool usingThreads = g_jobScheduler.are_new_jobs_allowed();
+				g_jobScheduler.disallow_new_jobs();
 				file.rename(newFilename);
-				g_conf.m_useThreads = usingThreads;
+				if(usingThreads)
+					g_jobScheduler.allow_new_jobs();
 				m_tree.reset  ( );
 			}
 			file.close();

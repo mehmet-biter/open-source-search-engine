@@ -4870,7 +4870,7 @@ skip:
 	int32_t bufsize = stksize * s_numThreads ;
 	char *buf = (char *)malloc ( bufsize );
 	if ( ! buf ) { log("test: malloc of %"INT32" failed.",bufsize); return; }
-	g_conf.m_useThreads = true;
+	g_jobScheduler.allow_new_jobs();
 	//int pid;
 	for ( int32_t i = 0 ; i < s_numThreads ; i++ ) {
 		//int err = pthread_create ( &tid1,&s_attr,startUp,(void *)i) ;
@@ -6343,7 +6343,7 @@ void doInject ( int fd , void *state ) {
 	}
 	
 	// turn off threads so this happens right away
-	g_conf.m_useThreads = false;
+	g_jobScheduler.disallow_new_jobs();
 
 	int64_t fsize ;
 	if ( ! s_injectTitledb ) fsize = s_file.getFileSize();
@@ -6370,7 +6370,7 @@ void doInject ( int fd , void *state ) {
 	// if reading from our titledb and injecting into another cluster
 	if ( s_injectTitledb ) {
 		// turn off threads so this happens right away
-		g_conf.m_useThreads = false;
+		g_jobScheduler.disallow_new_jobs();
 		key_t endKey; //endKey.setMax();
 		endKey = g_titledb.makeFirstKey(s_endDocId);
 		RdbList list;
@@ -6411,7 +6411,7 @@ void doInject ( int fd , void *state ) {
 		// skip negative keys!
 		if ( (rec[0] & 0x01) == 0x00 ) goto loop;
 		// re-enable threads i guess
-		g_conf.m_useThreads = true;
+		g_jobScheduler.allow_new_jobs();
 		// set and uncompress
 		XmlDoc xd;
 		if ( ! xd.set2 ( rec , 
