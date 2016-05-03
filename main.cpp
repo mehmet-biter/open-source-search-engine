@@ -1496,25 +1496,6 @@ int main2 ( int argc , char *argv[] ) {
 			       false );//sendtoproxies
 	}
 
-	// gb start2 [hostId]
-	if ( strcmp ( cmd , "start2" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
-		if ( cmdarg + 1 < argc ) {
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return install ( ifk_start2 , h1, 
-						 NULL,NULL,h2 );
-		}
-		// if it is us, do it
-		//if ( hostId != -1 ) goto mainStart;
-		return install ( ifk_start2 , hostId );
-	}
-
 	//keep alive start... not!
 	if ( strcmp ( cmd , "dstart" ) == 0 ) {	
 		int32_t hostId = -1;
