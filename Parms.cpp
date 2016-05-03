@@ -992,8 +992,8 @@ bool Parms::printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r ) {
 #endif
 
 	// special messages for spider controls
-	char *e1 = "";
-	char *e2 = "";
+	const char *e1 = "";
+	const char *e2 = "";
 	if ( page == PAGE_SPIDER && ! g_conf.m_spideringEnabled )
 		e1 = "<tr><td colspan=20><font color=#ff0000><b><center>"
 			"Spidering is temporarily disabled in Master Controls."
