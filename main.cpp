@@ -1392,27 +1392,8 @@ int main2 ( int argc , char *argv[] ) {
 						 NULL,NULL,h2 );
 		}
 
-		// default to keepalive start for now!! (was ifk_start)
+		// default to keepalive start for now!!
 		return install ( ifk_kstart , hostId );
-	}
-
-	// gb astart [hostId] (non-keepalive start)
-	if ( strcmp ( cmd , "nstart" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
-		if ( cmdarg + 1 < argc ) {
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return install ( ifk_start , h1, 
-						 NULL,NULL,h2 );
-		}
-		// if it is us, do it
-		//if ( hostId != -1 ) goto mainStart;
-		return install ( ifk_start , hostId );
 	}
 
 	// gb tmpstart [hostId]
@@ -3151,26 +3132,6 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 				amp);
 
 			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-		}
-		else if ( installFlag == ifk_start ) {
-			// . assume conf file name gbHID.conf
-			// . assume working dir ends in a '/'
-			sprintf(tmp,
-				"ssh %s \"cd %s ; ulimit -c unlimited; "
-				"cp -f gb gb.oldsave ; "
-				"mv -f gb.installed gb ; " // %s"
-				// without "sleep 1" ssh seems to exit
-				// bash before it can start gb and gb does
-				// not start up.
-				// hostid is now inferred from path.
-				"./gb & sleep 1\" %s",
-				iptoa(h2->m_ip),
-				h2->m_dir      ,
-				amp);
-			// log it
-			fprintf(stdout,"admin: %s\n", tmp);
-			// execute it
 			system ( tmp );
 		}
 		// start up a dummy cluster using hosts.conf ports + 1
