@@ -16,7 +16,7 @@ class Process {
 
  public:
 
-	bool getFilesToCopy ( char *srcDir , class SafeBuf *buf ) ;
+	bool getFilesToCopy ( const char *srcDir , class SafeBuf *buf ) ;
 	bool checkFiles ( const char *dir );
 
 	// . the big save command

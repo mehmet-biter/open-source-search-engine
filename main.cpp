@@ -171,9 +171,8 @@ typedef enum {
 } install_flag_konst_t;
 
 static int install_file(const char *file);
-static int install ( install_flag_konst_t installFlag , int32_t hostId , 
-		     char *dir = NULL , char *coll = NULL , int32_t hostId2 = -1 , 
-		     char *cmd = NULL );
+static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir = NULL,
+                     int32_t hostId2 = -1, char *cmd = NULL );
 int scale   ( char *newhostsconf , bool useShotgunIp );
 int collinject ( char *newhostsconf );
 int collcopy ( char *newHostsConf , char *coll , int32_t collnum ) ;
@@ -1283,14 +1282,14 @@ int main2 ( int argc , char *argv[] ) {
 		}
 
 		char *cmd = argv[cmdarg+1];
-		return install ( ifk_dsh , -1, NULL, NULL, -1, cmd );
+		return install ( ifk_dsh, -1, NULL, -1, cmd );
 	}
 
 	// gb dsh2
 	if ( strcmp ( cmd , "dsh2" ) == 0 ) {
 		if ( cmdarg+1 >= argc ) goto printHelp;
 		char *cmd = argv[cmdarg+1];
-		return install ( ifk_dsh2 , -1,NULL,NULL,-1, cmd );
+		return install ( ifk_dsh2, -1, NULL, -1, cmd );
 	}
 
 	// gb copyfiles, like gb install but takes a dir not a host #
@@ -1309,7 +1308,7 @@ int main2 ( int argc , char *argv[] ) {
 		// might have a range
 		if (cmdarg + 1 < argc && strstr(argv[cmdarg+1],"-") )
 			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
-		return install ( ifk_install , h1 , NULL , NULL , h2 );
+		return install ( ifk_install, h1, NULL, h2 );
 	}
 
 	// gb installgb
@@ -1362,18 +1361,17 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "start" ) == 0 ) {	
 		// get hostId to install TO (-1 means all)
 		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
+		if ( cmdarg + 1 < argc ) {
+			hostId = atoi( argv[ cmdarg + 1 ] );
+		}
+
 		// might have a range
 		if ( cmdarg + 1 < argc ) {
 			int32_t h1 = -1;
 			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
+			sscanf( argv[cmdarg+1], "%"INT32"-%"INT32"", &h1, &h2 );
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				//
-				// default to keepalive start for now!!
-				//
-				return install ( ifk_kstart , h1, 
-						 NULL,NULL,h2 );
+				return install ( ifk_kstart, h1, NULL, h2 );
 		}
 
 		// default to keepalive start for now!!
@@ -1391,11 +1389,8 @@ int main2 ( int argc , char *argv[] ) {
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return install ( ifk_tmpstart , h1, 
-						 NULL,NULL,h2 );
+				return install ( ifk_tmpstart, h1, NULL, h2 );
 		}
-		// if it is us, do it
-		//if ( hostId != -1 ) goto mainStart;
 		return install ( ifk_tmpstart, hostId );
 	}
 
@@ -1408,14 +1403,9 @@ int main2 ( int argc , char *argv[] ) {
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd ( "save=1" , h1 , "master" , 
-					       true , //sendtohosts
-					       false,//sendtoproxies
-					       h2 );
+				return doCmd( "save=1", h1, "master", true, false, h2 );
 		}
-		return doCmd ( "save=1" , hostId , "master" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( "save=1", hostId, "master", true, false );
 	}
 
 	if ( strcmp ( cmd , "kstop" ) == 0 ) {	
@@ -1428,45 +1418,39 @@ int main2 ( int argc , char *argv[] ) {
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd ( "save=1" , h1 , "master" , 
-					       true , //sendtohosts
-					       false,//sendtoproxies
-					       h2 );
+				return doCmd( "save=1", h1, "master", true, false, h2 );
 		}
-		return doCmd ( "save=1" , hostId , "master" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
-
+		return doCmd( "save=1", hostId, "master", true, false );
 	}
 
 	// gb backupcopy [hostId] <backupSubdirName>
 	if ( strcmp ( cmd , "backupcopy" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
-		return install ( ifk_backupcopy , -1 , argv[cmdarg+1] );
+		return install( ifk_backupcopy , -1 , argv[cmdarg+1] );
 	}
 
 	// gb backupmove [hostId] <backupSubdirName>
 	if ( strcmp ( cmd , "backupmove" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
-		return install ( ifk_backupmove , -1 , argv[cmdarg+1] );
+		return install( ifk_backupmove , -1 , argv[cmdarg+1] );
 	}
 
 	// gb backupmove [hostId] <backupSubdirName>
 	if ( strcmp ( cmd , "backuprestore" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
-		return install ( ifk_backuprestore, -1 , argv[cmdarg+1] );
+		return install( ifk_backuprestore, -1 , argv[cmdarg+1] );
 	}
 
 	// gb scale <hosts.conf>
 	if ( strcmp ( cmd , "scale" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
-		return scale ( argv[cmdarg+1] , true );
+		return scale( argv[cmdarg+1] , true );
 	}
 
 	// gb collinject
 	if ( strcmp ( cmd , "collinject" ) == 0 ) {	
 		if ( cmdarg + 1 >= argc ) goto printHelp;
-		return collinject ( argv[cmdarg+1] );
+		return collinject( argv[cmdarg+1] );
 	}
 
 	// gb collcopy <hosts.conf> <coll> <collnum>>
@@ -2812,12 +2796,13 @@ static int install_file(const char *file)
 
 // installFlag is 1 if we are really installing, 2 if just starting up gb's
 // installFlag should be a member of the ifk_ enum defined above
-static int install ( install_flag_konst_t installFlag , int32_t hostId , char *dir , 
-		     char *coll , int32_t hostId2 , char *cmd ) {
+static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir, int32_t hostId2, char *cmd ) {
 
 	// use hostId2 to indicate the range hostId-hostId2, but if it is -1
 	// then it was not given, so restrict to just hostId
-	if ( hostId2 == -1 ) hostId2 = hostId;
+	if ( hostId2 == -1 ) {
+		hostId2 = hostId;
+	}
 
 	char tmp[1024];
 
@@ -2830,8 +2815,7 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 			// . save old log now, too
 			char tmp2[1024];
 			tmp2[0]='\0';
-			// let's do this for everyone now
-			//if ( h2->m_hostId == 0 )
+
 			sprintf(tmp2,
 				"mv ./proxylog ./proxylog-bak`date '+"
 				"%%Y%%m%%d-%%H%%M%%S'` ; " );
@@ -2860,21 +2844,12 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 		}
 		return 0;
 	}
-
-	if ( installFlag == ifk_proxy_kstart ) {
+	else if ( installFlag == ifk_proxy_kstart ) {
 		for ( int32_t i = 0; i < g_hostdb.m_numProxyHosts; i++ ) {
 			Host *h2 = g_hostdb.getProxy(i);
 			// limit install to this hostId if it is >= 0
 			if ( hostId >= 0 && h2->m_hostId != hostId ) continue;
 
-			// . save old log now, too
-			//char tmp2[1024];
-			//tmp2[0]='\0';
-			// let's do this for everyone now
-			//if ( h2->m_hostId == 0 )
-			//sprintf(tmp2,
-			//	"mv ./proxylog ./proxylog-`date '+"
-			//	"%%Y_%%m_%%d-%%H:%%M:%%S'` ; " );
 			// . assume conf file name gbHID.conf
 			// . assume working dir ends in a '/'
 			//to test add: ulimit -t 10; to the ssh cmd
@@ -2887,8 +2862,6 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 				"EXITSTATUS=1 ; "
 				"while [ \\$EXITSTATUS != 0 ]; do "
  				"{ "
-				//"mv ./proxylog ./proxylog-\\`date '+"
-				//"%%Y_%%m_%%d-%%H:%%M:%%S'\\` ; " 
 				"./gb proxy load %"INT32" " // mdw
 				"\\$ADDARGS "
 				" >& ./proxylog ;"
@@ -2922,37 +2895,34 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 
 	// this is a big scp so only do two at a time...
 	if  ( installFlag == ifk_install ) maxOut = 1;
-
-	// same with this. takes too long on gk144, jams up
 	if  ( installFlag == ifk_installgb ) maxOut = 4;
-
 	if  ( installFlag == ifk_installgbrcp ) maxOut = 4;
-
-	//int32_t maxOutPerIp = 6;
 
 	// go through each host
 	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
 		Host *h2 = g_hostdb.getHost(i);
 
-		char *amp = " ";
+		const char *amp = " ";
 
 		// if i is NOT multiple of maxOut then use '&'
 		// even if all all different machines (IPs) scp chokes and so
 		// does rcp a little. so restrict to maxOut at a time.
-		if ( (i+1) % maxOut ) amp = "&";
+		if ( (i+1) % maxOut ) {
+			amp = "&";
+		}
 
 		// limit install to this hostId if it is >= 0
 		//if ( hostId >= 0 && h2->m_hostId != hostId ) continue;
 		if ( hostId >= 0 && hostId2 == -1 ) {
-			if ( h2->m_hostId != hostId ) continue;
+			if ( h2->m_hostId != hostId )
+				continue;
 		}
 		// if doing a range of hostid, hostId2 is >= 0
 		else if ( hostId >= 0 && hostId2 >= 0 ) {
-			if ( h2->m_hostId < hostId  ) continue;
-			if ( h2->m_hostId > hostId2 ) continue;
+			if ( h2->m_hostId < hostId || h2->m_hostId > hostId2 )
+				continue;
 		}
-		// do not install to self
-		//if ( h2->m_hostId == g_hostdb.m_hostId ) continue;
+
 		// backupcopy
 		if ( installFlag == ifk_backupcopy ) {
 			sprintf(tmp,
@@ -2968,7 +2938,7 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 			continue;
 		}
 		// backupmove
-		if ( installFlag == ifk_backupmove ) {
+		else if ( installFlag == ifk_backupmove ) {
 			sprintf(tmp,
 				"ssh %s \"cd %s ; "
 				"mkdir %s ; "
@@ -2982,7 +2952,7 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 			continue;
 		}
 		// backuprestore
-		if ( installFlag == ifk_backuprestore ) {
+		else if ( installFlag == ifk_backuprestore ) {
 			sprintf(tmp,
 				"ssh %s \"cd %s ; cd %s ; "
 				"mv -i *.dat* *.map gb.conf "
@@ -2995,20 +2965,13 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 			continue;
 		}
 
-		char *dir = "./";
+		const char *dir = "./";
 		// install to it
-		if      ( installFlag == ifk_install ) {
-			// don't copy to ourselves
-			//if ( h2->m_hostId == h->m_hostId ) continue;
-
-			char *srcDir = "./";
+		if ( installFlag == ifk_install ) {
+			const char *srcDir = "./";
 			SafeBuf fileListBuf;
 			g_process.getFilesToCopy ( srcDir , &fileListBuf );
 
-			// include this one as well for install
-			//fileListBuf.safePrintf(" %shosts.conf",srcDir);
-			// the dmoz data dir if there
-			fileListBuf.safePrintf(" %scat",srcDir);
 			fileListBuf.safePrintf(" %shosts.conf",srcDir);
 			fileListBuf.safePrintf(" %sgb.conf",srcDir);
 
@@ -3032,11 +2995,8 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 			system ( tmp );
 		}
 		else if ( installFlag == ifk_installgb ) {
-			// don't copy to ourselves
-			//if ( h2->m_hostId == h->m_hostId ) continue;
-
 			File f;
-			char *target = "gb.new";
+			const char *target = "gb.new";
 			f.set(g_hostdb.m_myHost->m_dir,target);
 			if ( ! f.doesExist() ) target = "gb";
 
@@ -3053,11 +3013,8 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 			system ( tmp );
 		}
 		else if ( installFlag == ifk_installgbrcp ) {
-			// don't copy to ourselves
-			//if ( h2->m_hostId == h->m_hostId ) continue;
-
 			File f;
-			char *target = "gb.new";
+			const char *target = "gb.new";
 			f.set(g_hostdb.m_myHost->m_dir,target);
 			if ( ! f.doesExist() ) target = "gb";
 
@@ -3074,8 +3031,6 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 			system ( tmp );
 		}
 		else if ( installFlag == ifk_installtmpgb ) {
-			// don't copy to ourselves
-			//if ( h2->m_hostId == h->m_hostId ) continue;
 			sprintf(tmp,
 				"scp -p "
 				"%sgb.new "
@@ -3087,8 +3042,6 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 			system ( tmp );
 		}
 		else if ( installFlag == ifk_installconf ) {
-			// don't copy to ourselves
-			//if ( h2->m_hostId == h->m_hostId ) continue;
 			sprintf(tmp,
 				"scp -p %sgb.conf %shosts.conf %s:%s %s",
 				dir ,
@@ -8427,7 +8380,7 @@ char *getcwd2 ( char *arg2 ) {
 ///////
 int copyFiles ( char *dstDir ) {
 
-	char *srcDir = "./";
+	const char *srcDir = "./";
 	SafeBuf fileListBuf;
 	g_process.getFilesToCopy ( srcDir , &fileListBuf );
 

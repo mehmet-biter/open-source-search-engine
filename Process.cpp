@@ -158,7 +158,7 @@ static const char * const g_files[] = {
 // so do not include hosts.conf or gb.conf
 //
 ///////
-bool Process::getFilesToCopy ( char *srcDir , SafeBuf *buf ) {
+bool Process::getFilesToCopy ( const char *srcDir , SafeBuf *buf ) {
 
 	// sanirty
 	int32_t slen = gbstrlen(srcDir);
