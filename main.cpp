@@ -1859,39 +1859,6 @@ int main2 ( int argc , char *argv[] ) {
 
 	int32_t *ips;
 
-	// char tmp[64];
-	// SafeBuf pidFile(tmp,64);
-	char tmp[128];
-	SafeBuf cleanFileName(tmp,128);
-
-	//	if ( cmd && ! is_digit(cmd[0]) ) goto printHelp;
-
-	// if pid file is there then do not start up
-	// g_pidFileName.safePrintf("%spidfile",g_hostdb.m_dir );
-	// if ( doesFileExist ( g_pidFileName.getBufStart() ) ) {
-	//      fprintf(stderr,"pidfile %s exists. Either another gb "
-	//              "is already running in this directory or "
-	//              "it exited uncleanly. Can not start up if that "
-	//              "file exists.",
-	//              g_pidFileName.getBufStart() );
-	//      // if we return 0 then main() should not delete the pidfile
-	//      return 0;
-	// }
-	// // make a new pidfile
-	// pidFile.safePrintf("%i\n",getpid());
-	// if ( ! pidFile.save ( g_pidFileName.getBufStart() ) ) {
-	//      log("db: could not save %s",g_pidFileName.getBufStart());
-	//      return 1;
-	// }
-	// // ok, now if we exit SUCCESSFULLY then delete it. we return an
-	// // exit status of 0
-	// g_createdPidFile = true;
-
-	// remove the file called 'cleanexit' so if we get killed suddenly
-	// the bashloop will know we did not exit cleanly
-	cleanFileName.safePrintf("%s/cleanexit",g_hostdb.m_dir);
-	::unlink ( cleanFileName.getBufStart() );
-
 	// move the log file name logxxx to logxxx-2016_03_16-14:59:24
 	// we did the test bind so no gb process is bound on the port yet
 	// TODO: probably should bind on the port before doing this
@@ -2889,51 +2856,11 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 			system ( tmp );
 		}
 		else if ( installFlag == ifk_start ) {
-			// . assume conf file name gbHID.conf
-			// . assume working dir ends in a '/'
-			//to test add: ulimit -t 10; to the ssh cmd
-			sprintf(tmp,
-				"ssh %s \"cd %s ; ulimit -c unlimited; "
-				"export MALLOC_CHECK_=0;"
-				"cp -f gb gb.oldsave ; "
-				"ADDARGS='' "
-				"INC=1 "
-				" ; "
-				 "while true; do "
-
-				// in case gb was updated...
-				"mv -f gb.installed gb ; "
-
-				// indicate -l so we log to a logfile
-				"./gb -l "
-				"\\$ADDARGS "
-				" ;"
-
-				// this doesn't always work so use
-				// the cleanexit file approach.
-				// but if we run a second gb accidentally
-				// it would write a ./cleanexit file
-				// to get out of its loop and it wouldn't
-				// be deleted! crap. so try this again
-				// for this short cases when we exit right
-				// away.
-				"EXITSTATUS=\\$? ; "
-				// if gb does exit(0) then stop
-				"if [ \\$EXITSTATUS = 0 ]; then break; fi;"
-
-				// also stop if ./cleanexit is there
-				// because the above exit(0) does not always
-				// work for some strange reasons
-				"if [ -f \"./cleanexit\" ]; then  break; fi;"
-				"ADDARGS='-r'\\$INC ; "
-				"INC=\\$((INC+1));"
-				"done > /dev/null 2>&1 & \" %s",
-				iptoa(h2->m_ip),
-				h2->m_dir      ,
-				amp );
+			sprintf( tmp, "ssh %s '%sgbstart.sh' %s", iptoa(h2->m_ip), h2->m_dir, amp );
 
 			// log it
 			fprintf(stdout,"admin: %s\n", tmp);
+
 			// execute it
 			system ( tmp );
 		}

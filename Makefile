@@ -208,8 +208,8 @@ dist: all
 	pstotext \
 	gb.pem \
 	gb \
+	gbstart.sh \
 	gbconvert.sh \
-	gbcheck.sh \
 	libcld2_full.so \
 	pnmscale \
 	libnetpbm.so.10 \

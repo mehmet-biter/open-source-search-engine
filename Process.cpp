@@ -71,8 +71,8 @@ static const char * const g_files[] = {
 	"ucdata/properties.dat",
 	"ucdata/scripts.dat",
 	"ucdata/uppermap.dat",
-	
-	"gbcheck.sh",
+
+	"gbstart.sh",
 	"gbconvert.sh",
 
 	"antiword" ,  // msword
@@ -214,16 +214,6 @@ bool Process::checkFiles ( const char *dir ) {
 	if ( needsFiles ) {
 		log(LOG_ERROR, "db: Missing files. See above. Exiting.");
 		return false;
-	}
-
-	{
-		char cmd[2048] = {};
-		snprintf(cmd, 2047, "%sgbcheck.sh", dir);
-		int ret = gbsystem ( cmd );
-		if ( WEXITSTATUS(ret) != 0 ) {
-			log(LOG_ERROR, "db: gbcheck failed with status=%d", WEXITSTATUS(ret));
-			return false;
-		}
 	}
 
 	return true;
@@ -1002,15 +992,6 @@ bool Process::shutdown2 ( ) {
 
 
 	log("gb. EXITING GRACEFULLY.");
-
-	// from main.cpp:
-	// extern SafeBuf g_pidFileName;
-	// extern bool g_createdPidFile;
-	// // first remove the pid file on graceful exit
-	// // remove pid file if we created it
-	// // take from main.cpp
-	// if ( g_createdPidFile && g_pidFileName.length() )
-	//      ::unlink ( g_pidFileName.getBufStart() );
 
 	// make a file called 'cleanexit' so bash keep alive loop will stop
 	// because bash does not get the correct exit code, 0 in this case,
