@@ -710,19 +710,6 @@ int main2 ( int argc , char *argv[] ) {
 		return 0;
 	}
 
-	if ( strcmp ( cmd , "booltest" ) == 0 ){
-		// init our table for doing zobrist hashing
-		if ( ! hashinit() ) {
-			log("db: Failed to init hashtable." ); return 1; }
-		if (!ucInit(g_hostdb.m_dir)) {
-			log("Unicode initialization failed!");
-			return 1;
-		}
-		//testBoolean();
-		return 0;
-		
-	}
-
 	/*
 	if ( strcmp ( cmd , "querytest" ) == 0){
 		if ( ! g_hostdb.init(hostsConf, hostId) ) {
