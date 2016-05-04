@@ -155,7 +155,6 @@ UdpProtocol g_dp; // Default Proto
 typedef enum {
 	ifk_install = 1,
 	ifk_installgb ,
-	ifk_installgbrcp ,
 	ifk_installconf ,
 	ifk_dsh ,
 	ifk_dsh2 ,
@@ -413,10 +412,6 @@ int main2 ( int argc , char *argv[] ) {
 
 			"installgb [hostId]\n"
 			"\tLike above, but install just the gb executable.\n\n"
-
-			"installgbrcp [hostId]\n"
-			"\tLike above, but install just the gb executable "
-			"and using rcp.\n\n"
 
 			"installfile <file>\n"
 			"\tInstalls the specified file on all hosts\n\n"
@@ -1309,14 +1304,6 @@ int main2 ( int argc , char *argv[] ) {
 		int32_t hostId = -1;
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
 		return install ( ifk_installgb , hostId );
-	}
-
-	// gb installgbrcp
-	if ( strcmp ( cmd , "installgbrcp" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installgbrcp , hostId );
 	}
 
 	// gb installfile
@@ -2834,7 +2821,6 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 	// this is a big scp so only do two at a time...
 	if  ( installFlag == ifk_install ) maxOut = 1;
 	if  ( installFlag == ifk_installgb ) maxOut = 4;
-	if  ( installFlag == ifk_installgbrcp ) maxOut = 4;
 
 	// go through each host
 	for ( int32_t i = 0 ; i < g_hostdb.getNumHosts() ; i++ ) {
@@ -2940,24 +2926,6 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 
 			sprintf(tmp,
 				"scp -p " // blowfish is faster
-				"%s%s "
-				"%s:%s/gb.installed%s",
-				dir,
-				target,
-				iptoa(h2->m_ip),
-				h2->m_dir,
-				amp);
-			log(LOG_INIT,"admin: %s", tmp);
-			system ( tmp );
-		}
-		else if ( installFlag == ifk_installgbrcp ) {
-			File f;
-			const char *target = "gb.new";
-			f.set(g_hostdb.m_myHost->m_dir,target);
-			if ( ! f.doesExist() ) target = "gb";
-
-			sprintf(tmp,
-				"rcp "
 				"%s%s "
 				"%s:%s/gb.installed%s",
 				dir,
