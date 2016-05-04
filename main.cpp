@@ -73,7 +73,6 @@
 
 // call this to shut everything down
 bool mainShutdown ( bool urgent ) ;
-//bool mainShutdown2 ( bool urgent ) ;
 
 bool registerMsgHandlers ( ) ;
 bool registerMsgHandlers1 ( ) ;
@@ -129,10 +128,6 @@ bool hashtest    ( ) ;
 bool parseTest ( char *coll , int64_t docId , char *query );
 bool summaryTest1   ( char *rec, int32_t listSize, char *coll , int64_t docId ,
 		      char *query );
-//bool summaryTest2   ( char *rec, int32_t listSize, char *coll , int64_t docId ,
-//		      char *query );
-//bool summaryTest3   ( char *rec, int32_t listSize, char *coll , int64_t docId ,
-//		      char *query );
 
 // time a big write, read and then seeks
 bool thrutest ( char *testdir , int64_t fileSize ) ;
@@ -178,11 +173,7 @@ int collcopy ( char *newHostsConf , char *coll , int32_t collnum ) ;
 
 bool doCmd ( const char *cmd , int32_t hostId , const char *filename , bool sendToHosts,
 	     bool sendToProxies, int32_t hostId2=-1 );
-int injectFile ( char *filename , char *ips , 
-		 //int64_t startDocId ,
-		 //int64_t endDocId ,
-		 //bool isDelete ) ;
-		 char *coll );
+int injectFile ( char *filename , char *ips , char *coll );
 int injectFileTest ( int32_t  reqLen  , int32_t hid ); // generates the file
 void membustest ( int32_t nb , int32_t loops , bool readf ) ;
 
@@ -207,21 +198,12 @@ extern void tryToSyncWrapper ( int fd , void *state ) ;
 
 int main2 ( int argc , char *argv[] ) ;
 
-// SafeBuf g_pidFileName;
-// bool g_createdPidFile = false;
-
 int main ( int argc , char *argv[] ) {
-	//fprintf(stderr,"Starting gb.\n");
-
 	int ret = main2 ( argc , argv );
 
 	// returns 1 if failed, 0 on successful/graceful exit
 	if ( ret )
 	        fprintf(stderr,"Failed to start gb. Exiting.\n");
-
-	// remove pid file if we created it
-	// if ( g_createdPidFile && ret == 0 && g_pidFileName.length() )
-	//      ::unlink ( g_pidFileName.getBufStart() );
 }
 
 int main2 ( int argc , char *argv[] ) {
@@ -235,14 +217,8 @@ int main2 ( int argc , char *argv[] ) {
 	mlockall(MCL_CURRENT|MCL_FUTURE);
 #endif
 
-	//g_timedb.makeStartKey ( 0 );
-
 	// record time for uptime
 	g_stats.m_uptimeStart = time(NULL);
-
-	// malloc test for efence
-	//char *ff = (char *)mmalloc(100,"efence");
-	//ff[100] = 1;
 
 	if (argc < 0) {
 	printHelp:
@@ -303,10 +279,6 @@ int main2 ( int argc , char *argv[] ) {
 			"start <hostId1-hostId2>\n"
 			"\tLike above but just start gb on the supplied "
 			"range of hostIds.\n\n"
-
-			"dstart [hostId]\n"
-			"\tLike above but do not use a keepalive loop. So "
-			"if gb crashes it will not auto-resstart.\n\n"
 
 			"stop [hostId]\n"
 			"\tSaves and exits for all gb hosts or "
@@ -640,13 +612,13 @@ int main2 ( int argc , char *argv[] ) {
 	// get command
 
 	// it might not be there, might be a simple "./gb" 
-	char *cmd = "";
+	const char *cmd = "";
 	if ( argc >= 2 ) {
 		cmdarg = 1;
 		cmd = argv[1];
 	}
 
-	char *cmd2 = "";
+	const char *cmd2 = "";
 	if ( argc >= 3 )
 		cmd2 = argv[2];
 
@@ -654,7 +626,10 @@ int main2 ( int argc , char *argv[] ) {
 	if ( sizeof(char *) == 4 ) arch = 32;
 
 	// help
-	if ( strcmp ( cmd , "-h" ) == 0 ) goto printHelp;
+	if ( strcmp ( cmd , "-h" ) == 0 ) {
+		goto printHelp;
+	}
+
 	// version
 	if ( strcmp ( cmd , "-v" ) == 0 ) {
 		printVersion();
@@ -664,7 +639,7 @@ int main2 ( int argc , char *argv[] ) {
 	//send an email on startup for -r, like if we are recovering from an
 	//unclean shutdown.
 	g_recoveryMode = false;
-	char *cc = NULL;
+	const char *cc = NULL;
 	if ( strncmp ( cmd , "-r" ,2 ) == 0 ) cc = cmd;
 	if ( strncmp ( cmd2 , "-r",2 ) == 0 ) cc = cmd2;
 	if ( cc ) {
@@ -675,28 +650,19 @@ int main2 ( int argc , char *argv[] ) {
 	}
 
 	// run as daemon? then we have to fork
-	if ( strcmp ( cmd , "-d" ) == 0 ) g_conf.m_runAsDaemon = true;
-	if ( strcmp ( cmd2 , "-d" ) == 0 ) g_conf.m_runAsDaemon = true;
+	if ( ( strcmp ( cmd , "-d" ) == 0 ) || ( strcmp ( cmd2 , "-d" ) == 0 ) ) {
+		g_conf.m_runAsDaemon = true;
+	}
 
-	if ( strcmp ( cmd , "-l" ) == 0 ) g_conf.m_logToFile = true;
-	if ( strcmp ( cmd2 , "-l" ) == 0 ) g_conf.m_logToFile = true;
+	if ( ( strcmp ( cmd , "-l" ) == 0 ) || ( strcmp ( cmd2 , "-l" ) == 0 ) ) {
+		g_conf.m_logToFile = true;
+	}
 
 	if( (strcmp( cmd, "countdomains" ) == 0) &&  (argc >= (cmdarg + 2)) ) {
 		uint32_t tmp = atoi( argv[cmdarg+2] );
 		if( (tmp * 10) > g_mem.m_memtablesize )
 		g_mem.m_memtablesize = tmp * 10;
 	}
-
-	// set it for g_hostdb and for logging
-	//g_hostdb.m_hostId = hostId;
-
-	// these tests do not need a hosts.conf
-	/*
-	if ( strcmp ( cmd , "trietest" ) == 0 ) {
-		trietest();
-		return 0;
-	}
-	*/
 
 	// these tests do not need a hosts.conf
 	if ( strcmp ( cmd , "treetest" ) == 0 ) {
