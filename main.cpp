@@ -157,7 +157,6 @@ typedef enum {
 	ifk_installgb ,
 	ifk_installgbrcp ,
 	ifk_installconf ,
-	ifk_installgb2 ,
 	ifk_dsh ,
 	ifk_dsh2 ,
 	ifk_backupcopy ,
@@ -1333,14 +1332,6 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "installfile" ) == 0 ) {	
 		if(cmdarg+1 < argc)
 			return install_file ( argv[cmdarg+1] );
-	}
-
-	// gb installgb
-	if ( strcmp ( cmd , "installgb2" ) == 0 ) {	
-		// get hostId to install TO (-1 means all)
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return install ( ifk_installgb2 , hostId );
 	}
 
 	// gb installtmpgb
