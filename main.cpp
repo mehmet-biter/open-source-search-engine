@@ -156,7 +156,6 @@ typedef enum {
 	ifk_backupcopy ,
 	ifk_backupmove ,
 	ifk_backuprestore ,
-	ifk_proxy_start ,
 	ifk_installconf2 ,
 	ifk_kstart ,
 	ifk_tmpstart ,
@@ -1001,12 +1000,8 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg+2 < argc ) proxyId = atoi ( argv[cmdarg+2] );
 		
 		if ( strcmp ( argv[cmdarg+1] , "start" ) == 0 ) {
-			return install ( ifk_proxy_start , proxyId );
-		}
-		if ( strcmp ( argv[cmdarg+1] , "dstart" ) == 0 ) {
 			return install ( ifk_proxy_kstart , proxyId );
 		}
-
 		else if ( strcmp ( argv[cmdarg+1] , "stop" ) == 0 ) {
 			g_proxy.m_proxyRunning = true;
 			return doCmd ( "save=1" , proxyId , "master" , false, true );
@@ -1034,8 +1029,6 @@ int main2 ( int argc , char *argv[] ) {
 		uint16_t httpsPort = h->m_httpsPort;
 		//we need udpserver for addurl and udpserver2 for pingserver
 		uint16_t udpPort  = h->m_port;
-		//uint16_t udpPort2 = h->m_port2;
-		// g_conf.m_maxMem = 2000000000;
 
 		if ( ! g_conf.init ( h->m_dir ) ) { // , h->m_hostId ) ) {
 			log("db: Conf init failed." ); return 1; }
@@ -2683,46 +2676,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 	}
 
 	char tmp[1024];
-
-	if ( installFlag == ifk_proxy_start ) {
-		for ( int32_t i = 0; i < g_hostdb.m_numProxyHosts; i++ ) {
-			Host *h2 = g_hostdb.getProxy(i);
-			// limit install to this hostId if it is >= 0
-			if ( hostId >= 0 && h2->m_hostId != hostId ) continue;
-
-			// . save old log now, too
-			char tmp2[1024];
-			tmp2[0]='\0';
-
-			sprintf(tmp2,
-				"mv ./proxylog ./proxylog-bak`date '+"
-				"%%Y%%m%%d-%%H%%M%%S'` ; " );
-			// . assume conf file name gbHID.conf
-			// . assume working dir ends in a '/'
-			sprintf(tmp,
-				"ssh %s \"cd %s ; "
-				"cp -f gb gb.oldsave ; "
-				"mv -f gb.installed gb ; %s"
-				"./gb proxy load %"INT32" >& ./proxylog &\" &",
-				iptoa(h2->m_ip),
-				h2->m_dir      ,
-				tmp2           ,
-				i);
-			// log it
-			log(LOG_INIT,"%s", tmp);
-			// execute it
-			int32_t ret = system ( tmp );
-			if ( ret < 0 ) {
-				fprintf(stderr,"Error loading proxy: %s\n",
-					mstrerror(errno));
-				exit(-1);
-			}
-			fprintf(stderr,"If proxy does not start, make sure "
-				"its ip is correct in hosts.conf\n");
-		}
-		return 0;
-	}
-	else if ( installFlag == ifk_proxy_kstart ) {
+	if ( installFlag == ifk_proxy_kstart ) {
 		for ( int32_t i = 0; i < g_hostdb.m_numProxyHosts; i++ ) {
 			Host *h2 = g_hostdb.getProxy(i);
 			// limit install to this hostId if it is >= 0
