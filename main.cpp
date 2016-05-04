@@ -177,7 +177,7 @@ int scale   ( char *newhostsconf , bool useShotgunIp );
 int collinject ( char *newhostsconf );
 int collcopy ( char *newHostsConf , char *coll , int32_t collnum ) ;
 
-bool doCmd ( const char *cmd , int32_t hostId , char *filename , bool sendToHosts,
+bool doCmd ( const char *cmd , int32_t hostId , const char *filename , bool sendToHosts,
 	     bool sendToProxies, int32_t hostId2=-1 );
 int injectFile ( char *filename , char *ips , 
 		 //int64_t startDocId ,
@@ -422,14 +422,11 @@ int main2 ( int argc , char *argv[] ) {
 			"\tInstalls the specified file on all hosts\n\n"
 
 			/*
-			"installgb2 [hostId]\n"
-			"\tlike above, but use the secondary IPs in the "
-			"hosts.conf.\n\n"
-
 			"installtmpgb [hostId]\n"
 			"\tlike above, but install just the gb executable "
 			"as tmpgb (for tmpstart).\n\n"
 			*/
+
 			"installconf [hostId]\n"
 			"\tlike above, but install hosts.conf and gb.conf\n\n"
 			/*
@@ -1064,9 +1061,7 @@ int main2 ( int argc , char *argv[] ) {
 
 		else if ( strcmp ( argv[cmdarg+1] , "stop" ) == 0 ) {
 			g_proxy.m_proxyRunning = true;
-			return doCmd ( "save=1" , proxyId , "master" ,
-				       false,//sendtohosts 
-				       true);//sendtoproxies
+			return doCmd ( "save=1" , proxyId , "master" , false, true );
 		}
 
 		else if ( strcmp ( argv[cmdarg+1] , "replacehost" ) == 0 ) {
@@ -1078,11 +1073,8 @@ int main2 ( int argc , char *argv[] ) {
 			if ( cmdarg + 2 < argc ) 
 				spareId = atoi ( argv[cmdarg+3] );
 			char replaceCmd[256];
-			sprintf(replaceCmd, "replacehost=1&rhost=%"INT32"&rspare=%"INT32"",
-				hostId, spareId);
-			return doCmd ( replaceCmd, -1, "admin/hosts" ,
-				       false,//sendtohosts 
-				       true);//sendtoproxies
+			sprintf(replaceCmd, "replacehost=1&rhost=%"INT32"&rspare=%"INT32"", hostId, spareId);
+			return doCmd ( replaceCmd, -1, "admin/hosts", false, true);
 		}
 
 		else if ( proxyId == -1 || strcmp ( argv[cmdarg+1] , "load" ) != 0 ) {
@@ -1472,14 +1464,9 @@ int main2 ( int argc , char *argv[] ) {
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd ( "save=1" , h1 , "master" , 
-					       true , //sendtohosts
-					       false,//sendtoproxies
-					       h2 );
+				return doCmd ( "save=1" , h1 , "master" , true, false, h2 );
 		}
-		return doCmd ( "save=1" , hostId , "master" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( "save=1", hostId, "master", true, false );
 	}
 
 	// gb save [hostId]
@@ -1492,41 +1479,30 @@ int main2 ( int argc , char *argv[] ) {
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd ( "js=1" , h1 , "master" , 
-					       true , //sendtohosts
-					       false,//sendtoproxies
-					       h2 );
+				return doCmd ( "js=1", h1, "master", true, false, h2 );
 		}
-		return doCmd ( "js=1" , hostId , "master" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( "js=1", hostId, "master", true, false );
 	}
 
 	// gb spidersoff [hostId]
 	if ( strcmp ( cmd , "spidersoff" ) == 0 ) {	
 		int32_t hostId = -1;
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return doCmd ( "se=0" , hostId , "master" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( "se=0", hostId, "master", true, false );
 	}
 
 	// gb spiderson [hostid]
 	if ( strcmp ( cmd , "spiderson" ) == 0 ) {	
 		int32_t hostId = -1;
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return doCmd ( "se=1" , hostId , "master" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( "se=1", hostId, "master", true, false );
 	}
 
 	// gb cacheoff [hostId]
 	if ( strcmp ( cmd , "cacheoff" ) == 0 ) {	
 		int32_t hostId = -1;
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return doCmd ( "dpco=1" , hostId , "master" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( "dpco=1", hostId, "master", true, false );
 	}
 
 	// gb freecache [hostId]
@@ -1541,9 +1517,7 @@ int main2 ( int argc , char *argv[] ) {
 	if ( strcmp ( cmd , "ddump" ) == 0 ) {	
 		int32_t hostId = -1;
 		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		return doCmd ( "dump=1" , hostId , "master" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( "dump=1", hostId, "master", true, false );
 	}
 
 	// gb pmerge [hostId]
@@ -1556,14 +1530,9 @@ int main2 ( int argc , char *argv[] ) {
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd ( "pmerge=1",h1,"master",
-					       true , //sendtohosts
-					       false ,//sendtoproxiesh2
-					       h2 );
+				return doCmd( "pmerge=1", h1, "master", true, false, h2 );
 		}
-		return doCmd ( "pmerge=1" , hostId , "master" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( "pmerge=1", hostId, "master", true, false );
 	}
 
 	// gb smerge [hostId]
@@ -1576,14 +1545,9 @@ int main2 ( int argc , char *argv[] ) {
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd ( "smerge=1",h1,"master",
-					       true , //sendtohosts
-					       false ,//sendtoproxies
-					       h2 );
+				return doCmd( "smerge=1", h1, "master", true, false, h2 );
 		}
-		return doCmd ( "smerge=1" , hostId , "master" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( "smerge=1", hostId, "master", true, false );
 	}
 
 	// gb tmerge [hostId]
@@ -1596,14 +1560,9 @@ int main2 ( int argc , char *argv[] ) {
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd ( "tmerge=1",h1,"master",
-					       true , //sendtohosts
-					       false, //sendtoproxies
-					       h2);
+				return doCmd( "tmerge=1", h1, "master", true, false, h2 );
 		}
-		return doCmd ( "tmerge=1" , hostId , "master" , 
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( "tmerge=1", hostId, "master", true, false );
 	}
 
 	// gb merge [hostId]
@@ -1616,14 +1575,9 @@ int main2 ( int argc , char *argv[] ) {
 			int32_t h2 = -1;
 			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return doCmd ( "merge=1",h1,"master",
-					       true , //sendtohosts
-					       false,//sendtoproxies
-					       h2);
+				return doCmd( "merge=1", h1, "master", true, false, h2 );
 		}
-		return doCmd ( "merge=1" , hostId , "master" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( "merge=1", hostId, "master", true, false );
 	}
 
 	// gb setnote <hostid> <note>
@@ -1640,9 +1594,7 @@ int main2 ( int argc , char *argv[] ) {
 		char setnoteCmd[256];
 		sprintf(setnoteCmd, "setnote=1&host=%"INT32"&note=%s",
 				    hostId, urlnote);
-		return doCmd ( setnoteCmd, -1, "admin/hosts" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( setnoteCmd, -1, "admin/hosts", true, false );
 	}
 
 	// gb setsparenote <spareid> <note>
@@ -1659,9 +1611,7 @@ int main2 ( int argc , char *argv[] ) {
 		char setnoteCmd[256];
 		sprintf(setnoteCmd, "setsparenote=1&spare=%"INT32"&note=%s",
 				    spareId, urlnote);
-		return doCmd ( setnoteCmd, -1, "admin/hosts" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( setnoteCmd, -1, "admin/hosts" , true, false );
 	}
 
 	// gb replacehost <hostid> <spareid>
@@ -1673,9 +1623,7 @@ int main2 ( int argc , char *argv[] ) {
 		char replaceCmd[256];
 		sprintf(replaceCmd, "replacehost=1&rhost=%"INT32"&rspare=%"INT32"",
 				    hostId, spareId);
-		return doCmd ( replaceCmd, -1, "admin/hosts" ,
-			       true , //sendtohosts
-			       true );//sendtoproxies
+		return doCmd( replaceCmd, -1, "admin/hosts", true, true );
 	}
 
 	// gb synchost <hostid>
@@ -1685,9 +1633,7 @@ int main2 ( int argc , char *argv[] ) {
 		else return false;
 		char syncCmd[256];
 		sprintf(syncCmd, "synchost=1&shost=%"INT32"", hostId);
-		return doCmd ( syncCmd, g_hostdb.m_hostId, "admin/hosts" ,
-			       true , //sendtohosts
-			       false );//sendtoproxies
+		return doCmd( syncCmd, g_hostdb.m_hostId, "admin/hosts", true, false );
 	}
 	if ( strcmp ( cmd, "synchost2" ) == 0 ) {
 		int32_t hostId = -1;
@@ -1695,17 +1641,8 @@ int main2 ( int argc , char *argv[] ) {
 		else return false;
 		char syncCmd[256];
 		sprintf(syncCmd, "synchost=2&shost=%"INT32"", hostId);
-		return doCmd ( syncCmd, g_hostdb.m_hostId, "admin/hosts" ,
-		true, //sendToHosts
-		false );// sendtoproxies
+		return doCmd( syncCmd, g_hostdb.m_hostId, "admin/hosts" , true, false );
 	}
-
-	// gb [-h hostsConf] <hid>
-	// mainStart:
-
-	// get host info for this host
-	//Host *h = g_hostdb.getHost ( hostId );
-	//if ( ! h ) { log("db: No host has id %"INT32".",hostId); return 1;}
 
 	// once we are in recoverymode, that means we are being restarted
 	// from having cored, so to prevent immediate core and restart
@@ -1717,7 +1654,6 @@ int main2 ( int argc , char *argv[] ) {
 		// keep alive loop to not restart us and exit himself.
 		exit (0);
 	}
-
 
 	// HACK: enable logging for Conf.cpp, etc.
 	g_process.m_powerIsOn = true;
@@ -1883,12 +1819,14 @@ int main2 ( int argc , char *argv[] ) {
 		else if ( argv[cmdarg+1][0] == 'S' ) {
 			char *site = NULL;
 			if ( cmdarg+6 < argc ) {
-				site = argv[cmdarg+6];
+				site = argv[ cmdarg + 6 ];
 			}
 			dumpTagdb( coll, startFileNum, numFiles, includeTree, 0, RDB_TAGDB, site );
 		} else if ( argv[cmdarg+1][0] == 'z' ) {
 			char *site = NULL;
-			if ( cmdarg+6 < argc ) site = argv[cmdarg+6];
+			if ( cmdarg+6 < argc ) {
+				site = argv[ cmdarg + 6 ];
+			}
 			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'z', RDB_TAGDB, site );
 		} else if ( argv[cmdarg+1][0] == 'A' ) {
 			dumpTagdb( coll, startFileNum, numFiles, includeTree, 'A' );
@@ -2462,7 +2400,7 @@ static       int32_t  s_hostId;
 static       int32_t  s_hostId2;
 static       char  s_buffer[128];
 static HttpRequest s_r;
-bool doCmd ( const char *cmd , int32_t hostId , char *filename , 
+bool doCmd ( const char *cmd , int32_t hostId , const char *filename ,
 	     bool sendToHosts , bool sendToProxies , int32_t hostId2 ) {
 	// need loop to work
 	if ( ! g_loop.init() ) return log("db: Loop init failed." ); 
@@ -4437,9 +4375,7 @@ void startUp ( void *state ) {
 
 void dumpTagdb( char *coll, int32_t startFileNum, int32_t numFiles, bool includeTree, char req, int32_t rdbId,
 				char *siteArg ) {
-	//g_conf.m_spiderdbMaxTreeMem = 1024*1024*30;
 	g_tagdb.init ();
-	//g_collectiondb.init(true);
 
 	if ( rdbId == RDB_TAGDB ) {
 		g_tagdb.getRdb()->addRdbBase1(coll );
