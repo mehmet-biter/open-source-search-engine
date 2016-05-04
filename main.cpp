@@ -2856,7 +2856,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 			system ( tmp );
 		}
 		else if ( installFlag == ifk_start ) {
-			sprintf( tmp, "ssh %s '%sgbstart.sh' %s", iptoa(h2->m_ip), h2->m_dir, amp );
+			sprintf( tmp, "ssh %s '%sgbstart.sh %" PRId32"' %s", iptoa(h2->m_ip), h2->m_dir, h2->m_hostId, amp );
 
 			// log it
 			fprintf(stdout,"admin: %s\n", tmp);
