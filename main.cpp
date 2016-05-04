@@ -154,13 +154,9 @@ UdpProtocol g_dp; // Default Proto
 // installFlag konstants 
 typedef enum {
 	ifk_install = 1,
-	ifk_start ,
 	ifk_installgb ,
 	ifk_installgbrcp ,
 	ifk_installconf ,
-	ifk_gendbs ,
-	ifk_genclusterdb ,
-	ifk_distributeC ,
 	ifk_installgb2 ,
 	ifk_dsh ,
 	ifk_dsh2 ,
@@ -170,12 +166,9 @@ typedef enum {
 	ifk_proxy_start ,
 	ifk_installconf2 ,
 	ifk_kstart ,
-	ifk_dstart ,
-	ifk_removedocids ,
 	ifk_tmpstart ,
 	ifk_installtmpgb ,
-	ifk_proxy_kstart ,
-	ifk_start2 	
+	ifk_proxy_kstart
 } install_flag_konst_t;
 
 static int install_file(const char *file);
@@ -1432,22 +1425,6 @@ int main2 ( int argc , char *argv[] ) {
 		return doCmd ( "save=1" , hostId , "master" ,
 			       true , //sendtohosts
 			       false );//sendtoproxies
-	}
-
-	//keep alive start... not!
-	if ( strcmp ( cmd , "dstart" ) == 0 ) {	
-		int32_t hostId = -1;
-		if ( cmdarg + 1 < argc ) hostId = atoi ( argv[cmdarg+1] );
-		// might have a range
-		if ( cmdarg + 1 < argc ) {
-			int32_t h1 = -1;
-			int32_t h2 = -1;
-			sscanf ( argv[cmdarg+1],"%"INT32"-%"INT32"",&h1,&h2);
-			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return install ( ifk_dstart , h1, 
-						 NULL,NULL,h2 );
-		}
-		return install ( ifk_dstart , hostId );
 	}
 
 	if ( strcmp ( cmd , "kstop" ) == 0 ) {	
@@ -3154,11 +3131,7 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 			// execute it
 			system ( tmp );
 		}
-		else if ( installFlag == ifk_kstart ||
-		          installFlag == ifk_dstart ) {
-			char *extraBreak = "";
-			if ( installFlag == ifk_dstart )
-			        extraBreak = "break;";
+		else if ( installFlag == ifk_kstart ) {
 			// . assume conf file name gbHID.conf
 			// . assume working dir ends in a '/'
 			//to test add: ulimit -t 10; to the ssh cmd
@@ -3195,13 +3168,11 @@ static int install ( install_flag_konst_t installFlag , int32_t hostId , char *d
 				// because the above exit(0) does not always
 				// work for some strange reasons
 				"if [ -f \"./cleanexit\" ]; then  break; fi;"
-				"%s"
 				"ADDARGS='-r'\\$INC ; "
 				"INC=\\$((INC+1));"
 				"done > /dev/null 2>&1 & \" %s",
 				iptoa(h2->m_ip),
 				h2->m_dir      ,
-				extraBreak ,
 				amp );
 
 			// log it
