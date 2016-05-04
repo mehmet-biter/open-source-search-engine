@@ -157,10 +157,10 @@ typedef enum {
 	ifk_backupmove ,
 	ifk_backuprestore ,
 	ifk_installconf2 ,
-	ifk_kstart ,
+	ifk_start ,
 	ifk_tmpstart ,
 	ifk_installtmpgb ,
-	ifk_proxy_kstart
+	ifk_proxy_start
 } install_flag_konst_t;
 
 static int install_file(const char *file);
@@ -1000,7 +1000,7 @@ int main2 ( int argc , char *argv[] ) {
 		if ( cmdarg+2 < argc ) proxyId = atoi ( argv[cmdarg+2] );
 		
 		if ( strcmp ( argv[cmdarg+1] , "start" ) == 0 ) {
-			return install ( ifk_proxy_kstart , proxyId );
+			return install ( ifk_proxy_start , proxyId );
 		}
 		else if ( strcmp ( argv[cmdarg+1] , "stop" ) == 0 ) {
 			g_proxy.m_proxyRunning = true;
@@ -1296,11 +1296,11 @@ int main2 ( int argc , char *argv[] ) {
 			int32_t h2 = -1;
 			sscanf( argv[cmdarg+1], "%"INT32"-%"INT32"", &h1, &h2 );
 			if ( h1 != -1 && h2 != -1 && h1 <= h2 )
-				return install ( ifk_kstart, h1, NULL, h2 );
+				return install ( ifk_start, h1, NULL, h2 );
 		}
 
 		// default to keepalive start for now!!
-		return install ( ifk_kstart , hostId );
+		return install ( ifk_start , hostId );
 	}
 
 	// gb tmpstart [hostId]
@@ -2676,7 +2676,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 	}
 
 	char tmp[1024];
-	if ( installFlag == ifk_proxy_kstart ) {
+	if ( installFlag == ifk_proxy_start ) {
 		for ( int32_t i = 0; i < g_hostdb.m_numProxyHosts; i++ ) {
 			Host *h2 = g_hostdb.getProxy(i);
 			// limit install to this hostId if it is >= 0
@@ -2888,7 +2888,7 @@ static int install ( install_flag_konst_t installFlag, int32_t hostId, char *dir
 			// execute it
 			system ( tmp );
 		}
-		else if ( installFlag == ifk_kstart ) {
+		else if ( installFlag == ifk_start ) {
 			// . assume conf file name gbHID.conf
 			// . assume working dir ends in a '/'
 			//to test add: ulimit -t 10; to the ssh cmd
