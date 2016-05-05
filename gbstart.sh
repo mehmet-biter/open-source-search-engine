@@ -73,7 +73,7 @@ while true; do
 
 	# if gb does exit(0) then stop
 	# also stop if ./cleanexit is there because exit(0) does not always work for some strange reasons
-	if [ $EXITSTATUS = 0 || -f "cleanexit" ]; then
+	if [ $EXITSTATUS = 0 ] || [ -f "cleanexit" ]; then
 		break
 	fi
 
