@@ -2535,16 +2535,8 @@ bool SpiderColl::scanListForWinners ( ) {
 	int64_t nowGlobalMS = gettimeofdayInMillisecondsGlobal();//Local();
 	uint32_t nowGlobal   = nowGlobalMS / 1000;
 
-	//SpiderRequest *winReq      = NULL;
-	//int32_t           winPriority = -10;
-	//uint64_t       winTimeMS   = 0xffffffffffffffffLL;
-	//int32_t           winMaxSpidersPerIp = 9999;
 	SpiderReply   *srep        = NULL;
 	int64_t      srepUh48 = 0;
-
-	// for getting the top MAX_NODES nodes
-	//int32_t           tailPriority = -10;
-	//uint64_t       tailTimeMS   = 0xffffffffffffffffLL;
 
 	// if we are continuing from another list...
 	if ( m_lastReplyValid ) {
@@ -2613,7 +2605,7 @@ bool SpiderColl::scanListForWinners ( ) {
 
 			if ( tmp->m_spideredTime > nowGlobal + 1 ) {
 				if ( m_cr->m_spiderCorruptCount == 0 ) {
-					log("spider: got corrupt time "
+					log( LOG_WARN, "spider: got corrupt time "
 						"spiderReply in "
 						"scan "
 						"uh48=%"INT64" "
@@ -2636,7 +2628,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			//   in the qatest123 doc cache... so turn off for that
 			if ( tmp->m_httpStatus >= 1000 ) {
 				if ( m_cr->m_spiderCorruptCount == 0 ) {
-					log("spider: got corrupt 3 "
+					log(LOG_WARN, "spider: got corrupt 3 "
 					    "spiderReply in "
 					    "scan "
 					    "uh48=%"INT64" "
@@ -2655,7 +2647,7 @@ bool SpiderColl::scanListForWinners ( ) {
 			}
 			// bad langid?
 			if ( ! getLanguageAbbr (tmp->m_langId) ) {
-				log("spider: got corrupt 4 spiderReply in "
+				log(LOG_WARN, "spider: got corrupt 4 spiderReply in "
 				    "scan uh48=%"INT64" "
 				    "langid=%"INT32" (cn=%"INT32")",
 				    tmp->getUrlHash48(),
@@ -2666,26 +2658,6 @@ bool SpiderColl::scanListForWinners ( ) {
 
 				continue;
 			}
-
-			// reset reply stats if beginning a new url
-			// these don't work because we only store one reply
-			// which overwrites any older reply. that's how the 
-			// key is. we can change the key to use the timestamp 
-			// and not parent docid in makeKey() for spider 
-			// replies later.
-			// if ( srepUh48 != tmp->getUrlHash48() ) {
-			// 	m_numSuccessReplies = 0;
-			// 	m_numFailedReplies  = 0;
-			// }
-
-			// inc stats
-			// these don't work because we only store one reply
-			// which overwrites any older reply. that's how the 
-			// key is. we can change the key to use the timestamp 
-			// and not parent docid in makeKey() for spider 
-			// replies later.
-			// if ( tmp->m_errCode == 0 ) m_numSuccessReplies++;
-			// else                       m_numFailedReplies ++;
 
 			// if we are corrupt, skip us
 			if ( tmp->getRecSize() > (int32_t)MAX_SP_REPLY_SIZE )
@@ -2704,27 +2676,17 @@ bool SpiderColl::scanListForWinners ( ) {
 		SpiderRequest *sreq = (SpiderRequest *)rec;
 
 		// skip if our twin or another shard should handle it
-		if ( ! isAssignedToUs ( sreq->m_firstIp ) )
+		if ( ! isAssignedToUs ( sreq->m_firstIp ) ) {
 			continue;
+		}
 
 		int64_t uh48 = sreq->getUrlHash48();
 
-		// reset reply stats if beginning a new url
-		// these don't work because we only store one reply
-		// which overwrites any older reply. that's how the key is.
-		// we can change the key to use the timestamp and not
-		// parent docid in makeKey() for spider replies later.
-		// if ( ! srep ) {
-		// 	m_numSuccessReplies = 0;
-		// 	m_numFailedReplies  = 0;
-		// }
-
-		// . skip if our twin should add it to doledb
-		// . waiting tree only has firstIps assigned to us so
-		//   this should not be necessary
-		//if ( ! isAssignedToUs ( sreq->m_firstIp ) ) continue;
 		// null out srep if no match
-		if ( srep && srepUh48 != uh48 ) srep = NULL;
+		if ( srep && srepUh48 != uh48 ) {
+			srep = NULL;
+		}
+
 		// if we are doing parser test, ignore all but initially
 		// injected requests. NEVER DOLE OUT non-injected urls
 		// when doing parser test
@@ -2747,12 +2709,11 @@ bool SpiderColl::scanListForWinners ( ) {
 		}
 
 		// if a replie-less new url spiderrequest count it
-		if ( ! srep && m_lastSreqUh48 != uh48 &&
-		     // avoid counting query reindex requests
-		     ! sreq->m_fakeFirstIp )
+		// avoid counting query reindex requests
+		if ( ! srep && m_lastSreqUh48 != uh48 && ! sreq->m_fakeFirstIp ) {
 			m_totalNewSpiderRequests++;
+		}
 
-		//int32_t  ipdom ( int32_t ip ) { return ip & 0x00ffffff; };
 		int32_t cblock = ipdom ( sreq->m_firstIp );
 
 		bool countIt = true;
@@ -2763,24 +2724,27 @@ bool SpiderColl::scanListForWinners ( ) {
 			m_lastCBlockIp = 0;
 		}
 
-		if ( cblock == m_lastCBlockIp )
-			countIt = false;
 
-		// do not count manually added spider requests
-		if ( (sreq->m_isAddUrl || sreq->m_isInjecting) )
+		if ( cblock == m_lastCBlockIp ||
+		     // do not count manually added spider requests
+		     sreq->m_isAddUrl || sreq->m_isInjecting ||
+		     // 20 is good enough
+		     m_pageNumInlinks >= 20 ) {
 			countIt = false;
-
-		// 20 is good enough
-		if ( m_pageNumInlinks >= 20 )
-			countIt = false;
+		}
 
 		if ( countIt ) {
 			int32_t ca;
-			for ( ca = 0 ; ca < m_pageNumInlinks ; ca++ ) 
-				if ( m_cblocks[ca] == cblock ) break;
+			for ( ca = 0 ; ca < m_pageNumInlinks ; ca++ ) {
+				if ( m_cblocks[ ca ] == cblock ) {
+					break;
+				}
+			}
+
 			// if found in our list, do not count it, already did
-			if ( ca < m_pageNumInlinks )
+			if ( ca < m_pageNumInlinks ) {
 				countIt = false;
+			}
 		}
 
 		if ( countIt ) {
@@ -2803,18 +2767,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		// on the # of pages indexed per ip or subdomain/site then
 		// we have to maintain a page count table. sitepages.
 		//
-		if ( m_countingPagesIndexed ) { //&& sreq->m_fakeFirstIp ) {
-			// get request url hash48 (jez= 220459274533043 )
-			//int64_t uh48 = sreq->getUrlHash48();
-			// do not repeatedly page count if we just have
-			// a single fake firstip request. this just adds
-			// an entry to the table that will end up in
-			// m_pageCountTable so we avoid doing this count
-			// again over and over. also gives url filters
-			// table a zero-entry...
-			//m_localTable.addScore(&sreq->m_firstIp,0);
-			//m_localTable.addScore(&sreq->m_siteHash32,0);
-			//m_localTable.addScore(&sreq->m_domHash32,0);
+		if ( m_countingPagesIndexed ) {
 			// only add dom/site hash seeds if it is
 			// a fake firstIp to avoid double counting seeds
 			if ( sreq->m_fakeFirstIp ) continue;
@@ -2996,8 +2949,7 @@ bool SpiderColl::scanListForWinners ( ) {
 						-1);
 		// sanity check
 		if ( ufn == -1 ) { 
-			log("spider: failed to match url filter for "
-			    "url = %s coll=%s", sreq->m_url,m_cr->m_coll);
+			log( LOG_WARN, "spider: failed to match url filter for url='%s' coll='%s'", sreq->m_url, m_cr->m_coll );
 			g_errno = EBADENGINEER;
 			return true;
 		}

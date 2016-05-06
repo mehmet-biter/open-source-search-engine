@@ -432,8 +432,6 @@ class Spiderdb {
 
 	bool verify ( char *coll );
 
-	bool addColl ( char *coll, bool doVerify = true );
-
 	Rdb *getRdb  ( ) { return &m_rdb; };
 
 	// this rdb holds urls waiting to be spidered or being spidered
@@ -478,7 +476,7 @@ class Spiderdb {
 	int32_t print( char *srec , SafeBuf *sb = NULL );
 };
 
-void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs );
+void dedupSpiderdbList ( RdbList *list, bool removeNegRecs );
 
 extern class Spiderdb g_spiderdb;
 extern class Spiderdb g_spiderdb2;

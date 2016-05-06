@@ -1940,7 +1940,7 @@ void RdbList::merge_r ( RdbList **lists         ,
 
 	// dedup for spiderdb
 	//if ( rdbId == RDB_SPIDERDB )
-	//	dedupSpiderdbList ( this , niceness , removeNegRecs );
+	//	dedupSpiderdbList ( this , removeNegRecs );
 
 	/*
 	if ( rdbId  == RDB_POSDB ) {

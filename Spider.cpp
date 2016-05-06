@@ -3867,7 +3867,7 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 //   with the date now, so if url filters do not change then 
 //   gotSpiderdbList() can assume those to be valid and save time. BUT it does
 //   have siteNumInlinks...
-void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs ) {
+void dedupSpiderdbList ( RdbList *list, bool removeNegRecs ) {
 	char *newList = list->m_list;
 
 	char *dst          = newList;
@@ -3909,22 +3909,24 @@ void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs )
 		if ( g_spiderdb.isSpiderReply ( (key128_t *)rec ) ) {
 			// cast it
 			SpiderReply *srep = (SpiderReply *)rec;
+
 			// shortcut
 			int64_t uh48 = srep->getUrlHash48();
+
 			// crazy?
 			if ( ! uh48 ) { 
 				//uh48 = hash64b ( srep->m_url );
 				uh48 = 12345678;
-				log("spider: got uh48 of zero for spider req. "
-				    "computing now.");
+				log("spider: got uh48 of zero for spider req. computing now.");
 			}
+
 			// does match last reply?
 			if ( repUh48 == uh48 ) {
 				// if he's a later date than us, skip us!
-				if ( oldRep->m_spideredTime >=
-				     srep->m_spideredTime )
+				if ( oldRep->m_spideredTime >= srep->m_spideredTime ) {
 					// skip us!
 					continue;
+				}
 				// otherwise, erase him
 				dst     = restorePoint;
 				lastKey = prevLastKey;
@@ -3953,11 +3955,10 @@ void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs )
 		int64_t uh48 = sreq->getUrlHash48();
 
 		// crazy?
-		if ( ! uh48 ) { 
+		if ( ! uh48 ) {
 			//uh48 = hash64b ( sreq->m_url );
 			uh48 = 12345678;
-			log("spider: got uh48 of zero for spider req. "
-			    "computing now.");
+			log("spider: got uh48 of zero for spider req. computing now.");
 		}
 
 		// update request with SpiderReply if newer, because ultimately
@@ -4005,15 +4006,6 @@ void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs )
 			continue;
 		}
 
-		// try to kinda grab the min hop count as well
-		// do not alter spiderdb!
-		// if ( sreq->m_hopCountValid && oldReq->m_hopCountValid ) {
-		// 	if ( oldReq->m_hopCount < sreq->m_hopCount )
-		// 		sreq->m_hopCount = oldReq->m_hopCount;
-		// 	else
-		// 		oldReq->m_hopCount = sreq->m_hopCount;
-		// }
-
 		// if he's essentially different input parms but for the
 		// same url, we want to keep him because he might map the
 		// url to a different url priority!
@@ -4021,10 +4013,7 @@ void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs )
 		     oldReq->m_isNewOutlink  != sreq->m_isNewOutlink  ||
 		     //  use hopcount now too!
 		     oldReq->m_hopCount      != sreq->m_hopCount      ||
-		     // makes a difference as far a m_minPubDate goes, because
-		     // we want to make sure not to delete that request that
-		     // has m_parentPrevSpiderTime
-		     // no no, we prefer the most recent spider request
+		     // we prefer the most recent spider request
 		     // from thsi site in the logic above, so this is not
 		     // necessary. mdw commented out.
 		     //oldReq->m_wasParentIndexed != sreq->m_wasParentIndexed||
@@ -4046,28 +4035,21 @@ void dedupSpiderdbList ( RdbList *list , int32_t niceness , bool removeNegRecs )
 		goto addIt;
 	}
 
-	// free the old list
-	//char *oldbuf  = list->m_alloc;
-	//int32_t  oldSize = list->m_allocSize;
-
 	// sanity check
 	if ( dst < list->m_list || dst > list->m_list + list->m_listSize ) {
-		char *xx=NULL;*xx=0; }
+		char *xx=NULL;*xx=0;
+	}
 
 	// and stick our newly filtered list in there
-	//list->m_list      = newList;
 	list->m_listSize  = dst - newList;
 	// set to end i guess
 	list->m_listPtr   = dst;
-	//list->m_allocSize = need;
-	//list->m_alloc     = newList;
 	list->m_listEnd   = list->m_list + list->m_listSize;
 	list->m_listPtrHi = NULL;
-	//KEYSET(list->m_lastKey,lastKey,list->m_ks);
 
-	if ( lastKey ) KEYSET(list->m_lastKey,lastKey,list->m_ks);
-
-	//mfree ( oldbuf , oldSize, "oldspbuf");
+	if ( lastKey ) {
+		KEYSET( list->m_lastKey, lastKey, list->m_ks );
+	}
 }
 
 
