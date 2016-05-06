@@ -12503,7 +12503,11 @@ int32_t *XmlDoc::getUrlFilterNum ( ) {
 
 	// need language i guess
 	uint8_t *langId = getLangId();
-	if ( ! langId || langId == (uint8_t *)-1 ) return (int32_t *)langId;
+	if ( ! langId || langId == (uint8_t *)-1 ) {
+//		log("build: failed to get url filter for xmldoc %s - could not get language id",
+//		    m_firstUrl.getUrl());
+		return (int32_t *)langId;
+	}
 
 
 	// make a fake one for now
@@ -18491,17 +18495,21 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 				      false, // isOutlink?
 				      NULL ,
 				      langIdArg);
-		// sanity check
-		if ( ufn < 0 ) {
-			log("msg20: bad url filter for url %s", sreq.m_url);
-		}
+
 
 		// get spider priority if ufn is valid
 		int32_t pr = 0;
 
-		if ( cr->m_forceDelete[ufn] ) {
-			pr = -3;
+		// sanity check
+		if ( ufn < 0 ) {
+			log("msg20: bad url filter for url [%s], langIdArg=%"INT32"", sreq.m_url, langIdArg);
 		}
+		else {
+			if ( cr->m_forceDelete[ufn] ) {
+				pr = -3;
+			}
+		}
+
 
 		// this is an automatic ban!
 		if ( gr && gr->getLong("manualban",0))
