@@ -1101,23 +1101,23 @@ int32_t Hostdb::getHostId ( uint32_t ip , uint16_t port ) {
 }
 
 Host *Hostdb::getHostByIp ( uint32_t ip ) {
-	return getHostFromTable ( 1 , ip , 0 );	
+	return getHostFromTable ( true , ip , 0 );	
 }
 
 Host *Hostdb::getHost ( uint32_t ip , uint16_t port ) {
-	return getHostFromTable ( 1 , ip , port );
+	return getHostFromTable ( true , ip , port );
 }	
 
 // . get Host entry from ip/port
 // . port defaults to 0 for no port
 Host *Hostdb::getUdpHost ( uint32_t ip , uint16_t port ) {
-	return getHostFromTable ( 1 , ip , port );
+	return getHostFromTable ( true , ip , port );
 }	
 
 // . get Host entry from ip/port
 // . port defaults to 0 for no port
 Host *Hostdb::getTcpHost ( uint32_t ip , uint16_t port ) {
-	return getHostFromTable ( 0 , ip , port );
+	return getHostFromTable ( false , ip , port );
 }	
 
 bool Hostdb::isIpInNetwork ( uint32_t ip ) {
