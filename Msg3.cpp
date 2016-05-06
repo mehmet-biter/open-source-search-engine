@@ -61,7 +61,7 @@ class RdbCache *getDiskPageCache ( char rdbId ) {
 		rpc = &g_rdbCaches[0];
 		maxSizePtr = &g_conf.m_posdbFileCacheSize;
 		maxMem = *maxSizePtr;
-		maxRecs = maxMem / 9; //best guess
+		maxRecs = maxMem / 5000;
 		dbname = "posdbcache";
 	}
 	if ( rdbId == RDB_TAGDB ) {
