@@ -6925,7 +6925,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "2";
 	m->m_units = "threads";
-	m->m_min   = 1;
+	m->m_min   = 0;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6940,7 +6940,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "10";
 	m->m_units = "threads";
-	m->m_min   = 1;
+	m->m_min   = 0;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -6955,7 +6955,7 @@ void Parms::init ( ) {
 	m->m_type  = TYPE_LONG;
 	m->m_def   = "2";
 	m->m_units = "threads";
-	m->m_min   = 1;
+	m->m_min   = 0;
 	m->m_flags = 0;
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;

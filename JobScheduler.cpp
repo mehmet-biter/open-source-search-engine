@@ -53,10 +53,12 @@ struct JobEntry {
 class JobQueue : public std::vector<JobEntry> {
 public:
 	pthread_cond_t cond_not_empty;
+	unsigned potential_worker_threads;
 
 	JobQueue()
 	  : vector(),
-	    cond_not_empty PTHREAD_COND_INITIALIZER
+	    cond_not_empty PTHREAD_COND_INITIALIZER,
+	    potential_worker_threads(0)
 	{
 	}
 	
@@ -185,6 +187,7 @@ ThreadPool::ThreadPool(unsigned num_threads,
                        job_done_notify_t job_done_notify_)
   : tid(num_threads)
 {
+	job_queue->potential_worker_threads += num_threads;
 	ptp.job_queue = job_queue;
 	ptp.running_set = running_set;
 	ptp.exit_set = exit_set;
@@ -258,7 +261,7 @@ public:
 	    cpu_thread_pool(num_cpu_threads,&cpu_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
 	    io_thread_pool(num_io_threads,&io_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
 	    external_thread_pool(num_external_threads,&external_job_queue,&running_set,&exit_set,&num_io_write_jobs_running,&mtx,job_done_notify),
-	    no_threads(num_cpu_threads==0 && num_io_write_jobs_running==0 && num_external_threads==0),
+	    no_threads(num_cpu_threads==0 && num_io_threads==0 && num_external_threads==0),
 	    new_jobs_allowed(true)
 	{
 	}
@@ -356,6 +359,9 @@ bool JobScheduler_impl::submit(thread_type_t thread_type, JobEntry &e)
 
 		}
 	}
+	
+	if(job_queue->potential_worker_threads==0)
+		return false;
 	
 	e.queue_enter_time = now_ms();
 	ScopedLock sl(mtx);
@@ -525,6 +531,7 @@ JobScheduler::JobScheduler()
 JobScheduler::~JobScheduler()
 {
 	delete impl;
+	impl = 0;
 }
 
 
