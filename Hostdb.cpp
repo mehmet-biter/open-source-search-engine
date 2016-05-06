@@ -93,7 +93,6 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	char *dir = "./";
 	if ( cwd ) dir = cwd;
 
-	// try localhosts.conf first
 	char *filename = "hosts.conf";
 
 	// for now we autodetermine

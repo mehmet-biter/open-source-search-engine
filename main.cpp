@@ -234,17 +234,6 @@ int main2 ( int argc , char *argv[] ) {
 			      "the directory and IP address listed in the "
 			      "hosts.conf file it loaded. Things in []'s "
 			      "are optional.");
-		/*
-		sb.safePrintf(
-			      "\n\t"
-			 "[hostsConf] is the hosts.conf config file as "
-			 "described in overview.html. If not provided then "
-			 "it is assumed to be ./hosts.conf. If "
-			      "./localhosts.conf exists then that will be "
-			      "used instead of ./hosts.conf. That is "
-			      "convenient to use since it will not be "
-			      "overwritten from git pulls.\n\n" );
-		*/
 		sb.safePrintf(
 			"[CMD] can have the following values:\n\n"
 

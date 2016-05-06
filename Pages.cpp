@@ -2623,7 +2623,7 @@ bool printRedBox ( SafeBuf *mb , TcpSocket *sock , HttpRequest *hr ) {
 		if ( adds ) mb->safePrintf("<br>");
 		adds++;
 		mb->safePrintf("%s",box);
-		mb->safePrintf("The hosts.conf or localhosts.conf file "
+		mb->safePrintf("The hosts.conf file "
 			      "is not the same over all hosts.");
 		mb->safePrintf("%s",boxEnd);
 	}

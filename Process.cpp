@@ -62,7 +62,6 @@ static pthread_t s_mainThreadTid;
 static const char * const g_files[] = {
 	//"gb.conf",
 
-	// might have localhosts.conf
 	//"hosts.conf",
 
 	"ucdata/kd_data.dat",
