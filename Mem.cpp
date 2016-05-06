@@ -46,7 +46,6 @@ static int32_t   s_n = 0;
 static bool   s_initialized = 0;
 
 // our own memory manager
-//static MemPoolVar s_pool;
 void operator delete (void *ptr) throw () {
 	// now just call this
 	g_mem.gbfree ( (char *)ptr , -1 , NULL );
@@ -58,10 +57,7 @@ void operator delete [] ( void *ptr ) throw () {
 }
 
 #define MINMEM 6000000
-//#define MINMEM 0
 
-// caution -- put {}'s around the "new"
-//#define new(X) new X; g_mem.addMem(X,sizeof(*X),"new");
 
 void Mem::addnew ( void *ptr , int32_t size , const char *note ) {
 	// 1 --> isnew
@@ -120,7 +116,6 @@ void * operator new (size_t size) throw (std::bad_alloc) {
 
 	int32_t  memLoop = 0;
 newmemloop:
-	//void *mem = s_pool.malloc ( size );
 	if ( ! mem && size > 0 ) {
 		g_mem.m_outOfMems++;
 		g_errno = errno;
@@ -189,7 +184,6 @@ void * operator new [] (size_t size) throw (std::bad_alloc) {
 
 	int32_t  memLoop = 0;
 newmemloop:
-	//void *mem = s_pool.malloc ( size );
 	if ( ! mem && size > 0 ) {
 		g_errno = errno;
 		g_mem.m_outOfMems++;
@@ -260,7 +254,7 @@ bool Mem::init  ( ) {
 }
 
 
-// this is called by C++ classes' constructors to register mem
+// this is called after a memory block has been allocated and needs to be registered
 void Mem::addMem ( void *mem , int32_t size , const char *note , char isnew ) {
 
 	ScopedLock sl(s_lock);
@@ -583,7 +577,7 @@ bool Mem::lblMem( void *mem, int32_t size, const char *note ) {
 	return true;
 }
 
-// this is called by C++ classes' destructors to unregister mem
+// this is called just before a memory block is freed and needs to be deregistered
 bool Mem::rmMem  ( void *mem , int32_t size , const char *note ) {
 
 	ScopedLock sl(s_lock);
