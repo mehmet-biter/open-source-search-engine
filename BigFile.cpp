@@ -412,10 +412,8 @@ void BigFile::makeFilename_r ( char *baseFilename    ,
 int BigFile::getfd ( int32_t n , bool forReading ) { 
 
 	// boundary check
-	if ( n >= m_maxParts && ! addPart ( n ) ) 
-	{
-		log(LOG_ERROR, "disk: Part number %"INT32" > %"INT32". fd not available.",
-		    n, m_maxParts);
+	if ( n >= m_maxParts && ! addPart ( n ) ) {
+		log(LOG_ERROR, "disk: Part number %"INT32" > %"INT32". fd not available.", n, m_maxParts);
 		    
 		// return -1 to indicate can't do it
 		return -1;
@@ -908,32 +906,26 @@ bool BigFile::readwrite ( void         *buf      ,
 		    fstate->m_bytesDone,took,rate);
 		g_stats.m_slowDiskReads++;
 	}
+
 	// default graph color is black
 	int color = 0x00000000; 
-	char *label = "disk_read";
-	// use red for writes, though
+
 	if ( fstate->m_doWrite ) {
+		// use red for writes, though
 		color = 0x00ff0000;
-		label = "disk_write";
+	} else if ( fstate->m_niceness > 0 ) {
+		// but gray for low priority reads
+		color = 0x00808080;
 	}
-	// but gray for low priority reads
-	else if ( fstate->m_niceness > 0 ) color = 0x00808080;
+
 	// add the stat
-	g_stats.addStat_r ( fstate->m_bytesDone          ,
-			    fstate->m_startTime          ,
-			    now                          ,
-			    //label                        ,
-			    color                        );
-	// add to statsdb as well
-	//g_statsdb.addStat ( fstate->m_niceness,
-	//		    label,
-	//		    fstate->m_startTime,
-	//		    now,
-	//		    fstate->m_bytesDone);
+	g_stats.addStat_r ( fstate->m_bytesDone, fstate->m_startTime, now, color );
 
 	// now log our stuff here
-	if ( g_errno && g_errno != EBADENGINEER ) 
-		log("disk: readwrite: %s", mstrerror(g_errno));
+	if ( g_errno && g_errno != EBADENGINEER ) {
+		log( LOG_WARN, "disk: readwrite: %s", mstrerror(g_errno));
+	}
+
 	// . this EBADENGINEER can happen right after a merge if
 	//   the file is renamed because the fd may have changed from
 	//   under us
