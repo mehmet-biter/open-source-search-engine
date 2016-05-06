@@ -272,12 +272,6 @@ class Hostdb {
 	bool           amProxy         ( ) { return m_myHost->isProxy(); };
 	Host          *getMyShard      ( ) { return m_myShard; };
 	int32_t getMyShardNum ( ) { return m_myHost->m_shardNum; };
-	bool           isMyIp ( uint32_t ip ) {
-		if ( ip == m_myIp        ) return true;
-		if ( ip == m_myIpShotgun ) return true;
-		if ( ip == 0x0100007f    ) return true;
-		return false;
-	};
 
 	// . one machine may have several hosts
 	// . get the machine # the hostId resides on

@@ -19,6 +19,7 @@
 #include "Spider.h"
 #include "Clusterdb.h"
 #include "Dns.h"
+#include "IPAddressChecks.h"
 
 // a global class extern'd in .h file
 Hostdb g_hostdb;
@@ -608,8 +609,8 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		if ( wdir[wdirlen-1]=='/' ) wdir[--wdirlen]='\0';
 
 		// get real path (no symlinks symbolic links)
-		// only if on same IP!!!!
-		if ( isMyIp ( h->m_ip ) ) {
+		// only if on same host, which we determine based on the IP-address.
+		if ( ip_distance(h->m_ip)==ip_distance_ourselves ) {
 			char tmp[256];
 			int32_t tlen = readlink ( wdir , tmp , 250 );
 			// if we got the actual path, copy that over
