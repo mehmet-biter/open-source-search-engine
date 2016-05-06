@@ -797,8 +797,6 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 	else                   g_stats.m_packetsOut[m_msgType][1]++;
 	// keep stats
 	if ( m_host ) m_host->m_dgramsTo++;
-	// sending to loopback, 127.0.0.1?
-	else if ( ip == 0x0100007f ) g_hostdb.getMyHost()->m_dgramsTo++;
 	// keep track of dgrams sent outside of our cluster
 	//else          g_stats.m_dgramsToStrangers++;
 	// get time now
@@ -1077,8 +1075,6 @@ int32_t UdpSlot::sendAck ( int sock , int64_t now ,
 	else                   g_stats.m_acksOut[m_msgType][1]++;
 	// keep stats
 	if ( m_host ) m_host->m_dgramsTo++;
-	// sending to loopback, 127.0.0.1?
-	else if ( ip == 0x0100007f ) g_hostdb.getMyHost()->m_dgramsTo++;
 	if ( ! isOn ( dgramNum , m_sentAckBits2 ) ) {
 		// mark this ack as sent
 		setBit ( dgramNum , m_sentAckBits2 );
@@ -1227,8 +1223,6 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 		readAck ( sock, dgramNum , now ); 
 		// keep stats
 		if ( m_host ) m_host->m_dgramsFrom++;
-		// reading from loopback, 127.0.0.1?
-		else if (m_ip==0x0100007f)g_hostdb.getMyHost()->m_dgramsFrom++;
 		return true;
 	}
 	// . now we have a regular dgram to process
@@ -1529,8 +1523,6 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 		}
 		// keep stats
 		if ( m_host ) m_host->m_dgramsFrom++;
-		// reading from loopback, 127.0.0.1?
-		else if (m_ip==0x0100007f)g_hostdb.getMyHost()->m_dgramsFrom++;
 		// keep track of dgrams sent outside of our cluster
 		//else          g_stats.m_dgramsFromStrangers++;
 		// it's new to us, set the read bits
@@ -1567,10 +1559,6 @@ bool UdpSlot::readDatagramOrAck ( int        sock    ,
 	}
 	// keep stats
 	if ( m_host ) m_host->m_dgramsFrom++;
-	// . reading from loopback, 127.0.0.1?
-	// . monitor.cpp has NULL for g_hostdb.m_myHost
-	else if ( m_ip == 0x0100007f && g_hostdb.getMyHost() )
-		g_hostdb.getMyHost()->m_dgramsFrom++;
 	// keep track of dgrams sent outside of our cluster
 	//else          g_stats.m_dgramsFromStrangers++;
 	// let caller know how much we read for stats purposes
