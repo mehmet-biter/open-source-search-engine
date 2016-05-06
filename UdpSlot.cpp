@@ -116,7 +116,6 @@ int32_t g_cancelAcksRead = 0;
 // see comment above for why we put this back from 12 to 4
 #define ACK_WINDOW_SIZE_LB    4
 
-static char s_shotgunBit = 0;
 
 // i add this to resend time to jiggle it so it doesn't collide as much
 //static int32_t s_incDelay = 0;
@@ -701,40 +700,15 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 	struct sockaddr_in to;
 	memset(&to,0,sizeof(to));
 	to.sin_family      = AF_INET;
-	// never use shotgun network if turned off...
-	if ( ! g_conf.m_useShotgun ) s_shotgunBit = 0;
-	// i am turning this flip flop stuff off for now and using the
-	// shotgun network as an emergency back up (see below for "shotgun")
-	// because now since we are fully split we have no need for huge
-	// amount of internal bandwidth and besides that it was very cpu
-	// intensive to send dgrams because the kernel sucks for that! MDW
-	s_shotgunBit = 0;
-	//to.sin_addr.s_addr = htonl ( (uint32_t ) (m_ip  ) );
+	//to.sin_addr.s_addr = .... more complicated than that
+	to.sin_port        = htons ( m_port );
 	// are we sending to loopback? if so, treat as eth0.
-	if ( ip == 0x0100007f ) { // "127.0.0.1"
+	if ( ip_distance(ip) == ip_distance_ourselves ) {
 		to.sin_addr.s_addr = ip;
-		to.sin_port        = htons ( m_port );
 		// update stats, just put them all in g_udpServer
 		g_udpServer.m_eth0PacketsOut += 1;
 		g_udpServer.m_eth0BytesOut   += dgramSize;
 	}
-	// . shotgun toggle this 
-	// . do not do shotgun if sending to host in hosts2.conf
-	else if ( m_host && s_shotgunBit && m_host->m_hostdb == &g_hostdb ) {
-		to.sin_addr.s_addr = m_host->m_ipShotgun;
-		to.sin_port        = htons ( m_port );
-
-		// don't fuck with it if we are ping though, because that
-		// needs to specify the exact ip!
-		if ( m_msgType == 0x11 ) to.sin_addr.s_addr = ip;
-
-		//m_host->m_shotgunBit = 0;
-		s_shotgunBit = 0;
-		// update stats, just put them all in g_udpServer
-		g_udpServer.m_eth1PacketsOut += 1;
-		g_udpServer.m_eth1BytesOut   += dgramSize;
-	}
-	// do not do shotgun if sending to host in hosts2.conf
 	else if ( m_host && m_host->m_hostdb == &g_hostdb ) {
 		// we now pick ip based on this. if we fail to get a timely ACK
 		// then we set switch eth preferences. helps when a switch
@@ -748,11 +722,7 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		// needs to specify the exact ip!
 		if ( m_msgType == 0x11 ) to.sin_addr.s_addr = ip;
 
-		to.sin_port        = htons ( m_port );
 		//if ( m_host ) m_host->m_shotgunBit = 1;
-		//if ( m_host ) s_shotgunBit = 1;
-		// flip the network every other packet we send
-		s_shotgunBit = 1;
 		// update stats, just put them all in g_udpServer
 		g_udpServer.m_eth0PacketsOut += 1;
 		g_udpServer.m_eth0BytesOut   += dgramSize;
@@ -761,7 +731,6 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 		// count packets to/from hosts outside the cluster separately
 		// these guys are importing link text usually
 		to.sin_addr.s_addr = ip;
-		to.sin_port        = htons ( m_port );
 		g_udpServer.m_outsiderPacketsOut += 1;
 		g_udpServer.m_outsiderBytesOut   += dgramSize;
 	}
@@ -848,7 +817,6 @@ int32_t UdpSlot::sendDatagramOrAck ( int sock, bool allowResends, int64_t now ){
 	// log network info
 	if ( g_conf.m_logDebugUdp ) {
 		//int32_t shotgun = 0;
-		//if ( g_conf.m_useShotgun && ! s_shotgunBit ) shotgun = 1;
 		//if ( g_conf.m_useShotgun &&   s_useShotgunIp ) shotgun = 1;
 		int32_t eth = 1;
 		if ( m_host && m_host->m_ip == to.sin_addr.s_addr ) eth = 0;
