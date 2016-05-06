@@ -870,7 +870,8 @@ int main2 ( int argc , char *argv[] ) {
 	// . it will determine our hostid based on the directory path of this
 	//   gb binary and the ip address of this server
 	if ( ! g_hostdb.init(-1, NULL, isProxy, useTmpCluster, workingDir)) {
-		log("db: hostdb init failed." ); return 1;
+		log( LOG_ERROR, "db: hostdb init failed." );
+		return 1;
 	}
 
 	Host *h9 = g_hostdb.m_myHost;
@@ -888,7 +889,7 @@ int main2 ( int argc , char *argv[] ) {
 
 	// init our table for doing zobrist hashing
 	if ( ! hashinit() ) {
-		log("db: Failed to init hashtable." );
+		log( LOG_ERROR, "db: Failed to init hashtable." );
 		return 1;
 	}
 
@@ -1018,23 +1019,31 @@ int main2 ( int argc , char *argv[] ) {
 		uint16_t udpPort  = h->m_port;
 
 		if ( ! g_conf.init ( h->m_dir ) ) { // , h->m_hostId ) ) {
-			log("db: Conf init failed." ); return 1; }
+			log( LOG_ERROR, "db: Conf init failed." );
+			return 1;
+		}
 
 		// init the loop before g_process since g_process
 		// registers a sleep callback!
 		if ( ! g_loop.init() ) {
-			log("db: Loop init failed." ); return 1; }
+			log( LOG_ERROR, "db: Loop init failed." );
+			return 1;
+		}
 
 		//if ( ! g_jobScheduler.initialize()     ) {
 		//	log("db: Threads init failed." ); return 1; }
 
 		g_process.init();
 
-		if ( ! g_process.checkNTPD() ) 
-			return log("db: ntpd not running on proxy");
+		if ( ! g_process.checkNTPD() ) {
+			log( LOG_ERROR, "db: ntpd not running on proxy" );
+			return 1;
+		}
 
-		if ( !ucInit(g_hostdb.m_dir))
-			return log("db: Unicode initialization failed!");
+		if ( !ucInit(g_hostdb.m_dir)) {
+			log( LOG_ERROR, "db: Unicode initialization failed!" );
+			return 1;
+		}
 
 		// load speller unifiedDict for spider compression proxy
 		//if ( g_hostdb.m_myHost->m_type & HT_SCPROXY )
@@ -1047,22 +1056,30 @@ int main2 ( int argc , char *argv[] ) {
 					 20       ,   // pollTime in ms
 					 3500     , // max udp slots
 					 false    )){ // is dns?
-			log("db: UdpServer init failed." ); return 1; }
+			log( LOG_ERROR, "db: UdpServer init failed." );
+			return 1;
+		}
 
 
-		if (!g_proxy.initProxy (proxyId, udpPort, 0, &g_dp))
-			return log("proxy: init failed");
+		if (!g_proxy.initProxy (proxyId, udpPort, 0, &g_dp)) {
+			log( LOG_ERROR, "proxy: init failed" );
+			return 1;
+		}
 
 		// then statsdb
 		if ( ! g_statsdb.init() ) {
-			log("db: Statsdb init failed." ); return 1; }
+			log( LOG_ERROR, "db: Statsdb init failed." );
+			return 1;
+		}
 
 		// init our table for doing zobrist hashing
 		if ( ! hashinit() ) {
-			log("db: Failed to init hashtable." ); return 1; }
+			log( LOG_ERROR, "db: Failed to init hashtable." );
+			return 1;
+		}
 
 		if ( ! g_proxy.initHttpServer( httpPort, httpsPort ) ) {
-			log("db: HttpServer init failed. Another gb "
+			log( LOG_ERROR, "db: HttpServer init failed. Another gb "
 			    "already running? If not, try editing "
 			    "./hosts.conf to "
 			    "change the port from %"INT32" to something bigger. "
@@ -1077,7 +1094,7 @@ int main2 ( int argc , char *argv[] ) {
 		g_conf.m_save = true;
 
 		if ( ! g_loop.runLoop()    ) {
-			log("db: runLoop failed." ); 
+			log( LOG_ERROR, "db: runLoop failed." );
 			return 1; 
 		}
 
@@ -1584,12 +1601,12 @@ int main2 ( int argc , char *argv[] ) {
 	// . now that hosts.conf has more of the burden, all gbHID.conf files
 	//   can be identical
 	if ( ! g_conf.init ( h9->m_dir ) ) {
-		log("db: Conf init failed." );
+		log( LOG_ERROR, "db: Conf init failed." );
 		return 1;
 	}
 
 	if ( ! g_jobScheduler.initialize(g_conf.m_maxCpuThreads, g_conf.m_maxIOThreads, g_conf.m_maxExternalThreads, wakeupPollLoop)) {
-		log("db: JobScheduler init failed." );
+		log( LOG_ERROR, "db: JobScheduler init failed." );
 		return 1;
 	}
 	
@@ -1610,7 +1627,7 @@ int main2 ( int argc , char *argv[] ) {
 
 	// init the loop, needs g_conf
 	if ( ! g_loop.init() ) {
-		log("db: Loop init failed." );
+		log( LOG_ERROR, "db: Loop init failed." );
 		return 1;
 	}
 
@@ -1950,7 +1967,7 @@ int main2 ( int argc , char *argv[] ) {
 
 
 	if (!ucInit(g_hostdb.m_dir)) {
-		log("Unicode initialization failed!");
+		log( LOG_ERROR, "Unicode initialization failed!" );
 		return 1;
 	}
 
@@ -2023,8 +2040,15 @@ int main2 ( int argc , char *argv[] ) {
 
 	// the wiktionary for lang identification and alternate word forms/
 	// synonyms
-	if ( ! g_wiktionary.load() ) return 1;
-	if ( ! g_wiktionary.test() ) return 1;
+	if ( ! g_wiktionary.load() ) {
+		log( LOG_ERROR, "Wiktionary initialization failed!" );
+		return 1;
+	}
+
+	if ( ! g_wiktionary.test() ) {
+		log( LOG_ERROR, "Wiktionary test failed!" );
+		return 1;
+	}
 
 	// . load synonyms, synonym affinity, and stems
 	// . now we are using g_synonyms
@@ -2032,7 +2056,10 @@ int main2 ( int argc , char *argv[] ) {
 	//g_synonyms.init();
 
 	// the wiki titles
-	if ( ! g_wiki.load() ) return 1;
+	if ( ! g_wiki.load() ) {
+		log( LOG_ERROR, "Wiki initialization failed!" );
+		return 1;
+	}
 
 	// force give up on dead hosts to false
 	g_conf.m_giveupOnDeadHosts = 0;
@@ -2045,41 +2072,65 @@ int main2 ( int argc , char *argv[] ) {
 	// . do this up here so RdbTree::fixTree() can fix RdbTree::m_collnums
 	// . this is a fake init, cuz we pass in "true"
 	if ( ! g_collectiondb.loadAllCollRecs() ) {
-		log("db: Collectiondb load failed." ); return 1; }
+		log( LOG_ERROR, "db: Collectiondb load failed." );
+		return 1;
+	}
 
 	// then statsdb
 	if ( ! g_statsdb.init() ) {
-		log("db: Statsdb init failed." ); return 1; }
+		log( LOG_ERROR, "db: Statsdb init failed." );
+		return 1;
+	}
 
 	// allow adds to statsdb rdb tree
 	g_process.m_powerIsOn = true;
 
-	//	log("db: Indexdb init failed." ); return 1; }
 	if ( ! g_posdb.init()    ) {
-		log("db: Posdb init failed." ); return 1; }
+		log( LOG_ERROR, "db: Posdb init failed." );
+		return 1;
+	}
+
 	// then titledb
 	if ( ! g_titledb.init()    ) {
-		log("db: Titledb init failed." ); return 1; }
+		log( LOG_ERROR, "db: Titledb init failed." );
+		return 1;
+	}
+
 	// then tagdb
 	if ( ! g_tagdb.init()     ) {
-		log("db: Tagdb init failed." ); return 1; }
+		log( LOG_ERROR, "db: Tagdb init failed." );
+		return 1;
+	}
 
 	// then spiderdb
 	if ( ! g_spiderdb.init()   ) {
-		log("db: Spiderdb init failed." ); return 1; }
+		log( LOG_ERROR, "db: Spiderdb init failed." );
+		return 1;
+	}
+
 	// then doledb
 	if ( ! g_doledb.init()   ) {
-		log("db: Doledb init failed." ); return 1; }
+		log( LOG_ERROR, "db: Doledb init failed." );
+		return 1;
+	}
+
 	// the spider cache used by SpiderLoop
 	if ( ! g_spiderCache.init() ) {
-		log("db: SpiderCache init failed." ); return 1; }
+		log( LOG_ERROR, "db: SpiderCache init failed." );
+		return 1;
+	}
 
 	// site clusterdb
 	if ( ! g_clusterdb.init()   ) {
-		log("db: Clusterdb init failed." ); return 1; }
+		log( LOG_ERROR, "db: Clusterdb init failed." );
+		return 1;
+	}
+
 	// linkdb
 	if ( ! g_linkdb.init()     ) {
-		log("db: Linkdb init failed."   ); return 1; }
+		log( LOG_ERROR, "db: Linkdb init failed." );
+		return 1;
+	}
 
 	// now clean the trees since all rdbs have loaded their rdb trees
 	// from disk, we need to remove bogus collection data from teh trees

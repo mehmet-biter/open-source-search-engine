@@ -1430,35 +1430,51 @@ bool RdbTree::growTree ( int32_t nn , int32_t niceness ) {
 	// do the reallocs
 	int32_t cs = sizeof(collnum_t);
 	cp =(collnum_t *)mrealloc (m_collnums, on*cs,nn*cs,m_allocName);
-	if ( ! cp ) goto error;
+	if ( ! cp ) {
+		goto error;
+	}
 	QUICKPOLL(niceness);
 	kp = (char  *) mrealloc ( m_keys    , on*k , nn*k , m_allocName );
-	if ( ! kp ) goto error;
+	if ( ! kp ) {
+		goto error;
+	}
 	QUICKPOLL(niceness);
 	lp = (int32_t  *) mrealloc ( m_left    , on*4 , nn*4 , m_allocName );
-	if ( ! lp ) goto error;
+	if ( ! lp ) {
+		goto error;
+	}
 	QUICKPOLL(niceness);
 	rp = (int32_t  *) mrealloc ( m_right   , on*4 , nn*4 , m_allocName );
-	if ( ! rp ) goto error;
+	if ( ! rp ) {
+		goto error;
+	}
 	QUICKPOLL(niceness);
 	pp = (int32_t  *) mrealloc ( m_parents , on*4 , nn*4 , m_allocName );
-	if ( ! pp ) goto error;
+	if ( ! pp ) {
+		goto error;
+	}
 	QUICKPOLL(niceness);
 
 	// deal with data, sizes and depth arrays on a basis of need
 	if ( m_fixedDataSize !=  0 ) {
 		dp =(char **)mrealloc (m_data  , on*d,nn*d,m_allocName);
-		if ( ! dp ) goto error;
+		if ( ! dp ) {
+			goto error;
+		}
 		QUICKPOLL(niceness);
 	}
 	if ( m_fixedDataSize == -1 ) {
 		sp =(int32_t  *)mrealloc (m_sizes , on*4,nn*4,m_allocName);
-		if ( ! sp ) goto error;
+		if ( ! sp ) {
+			goto error;
+		}
 		QUICKPOLL(niceness);
 	}
 	if ( m_doBalancing         ) {
 		tp =(char  *)mrealloc (m_depth , on  ,nn  ,m_allocName);
-		if ( ! tp ) goto error;
+		if ( ! tp ) {
+			goto error;
+		}
 		QUICKPOLL(niceness);
 	}
 
@@ -1476,10 +1492,11 @@ bool RdbTree::growTree ( int32_t nn , int32_t niceness ) {
 	m_memAlloced -= m_overhead * on;
 	m_memAlloced += m_overhead * nn;
 	// bitch an exit if too much
-	if ( m_memAlloced > m_maxMem )
-		return log("db: Trying to grow tree for %s to %"INT32", but max is "
-			   "%"INT32". Consider changing gb.conf.",
-			   m_dbname,m_memAlloced , m_maxMem );
+	if ( m_memAlloced > m_maxMem ) {
+		log( LOG_ERROR, "db: Trying to grow tree for %s to %" INT32", but max is %" INT32". Consider changing gb.conf.",
+		     m_dbname, m_memAlloced, m_maxMem );
+		return false;
+	}
 	// base mem is mem that cannot be freed
 	m_baseMem = m_overhead * nn ;
 	// and the new # of nodes we have
@@ -1547,8 +1564,9 @@ bool RdbTree::growTree ( int32_t nn , int32_t niceness ) {
 		QUICKPOLL(niceness);
 	}
 
-	return log("db: Failed to grow tree for %s from %"INT32" to %"INT32" bytes: %s.",
-		   m_dbname,on,nn,mstrerror(g_errno));
+	log( LOG_ERROR, "db: Failed to grow tree for %s from %"INT32" to %"INT32" bytes: %s.",
+	     m_dbname, on, nn, mstrerror(g_errno) );
+	return false;
 }
 
 void RdbTree::protect ( int prot ) {
@@ -2663,17 +2681,26 @@ int32_t RdbTree::fastSaveBlock_r ( int fd , int32_t start , int64_t offset ) {
 // . we'll open it here
 // . returns false and sets g_errno on error (sometimes g_errno not set)
 bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
-	// msg
-	log(LOG_INIT,"db: Loading %s.",f->getFilename());
+	log( LOG_INIT, "db: Loading %s.", f->getFilename() );
+
 	// open it up
-	if ( ! f->open ( O_RDONLY ) ) return log("db: open failed");
+	if ( ! f->open ( O_RDONLY ) ) {
+		log( LOG_ERROR, "db: open failed" );
+		return false;
+	}
+
 	int32_t fsize = f->getFileSize();
 	// init offset
 	int64_t offset = 0;
 	// 16 byte header
 	int32_t header = 4*6 + sizeof(m_doBalancing) + sizeof(m_ownData);
 	// file size must be a min of "header"
-	if ( fsize < header ) { f->close(); g_errno=EBADFILE; return false; }
+	if ( fsize < header ) {
+		f->close();
+		g_errno=EBADFILE;
+		log( LOG_ERROR, "db: file size smaller than header" );
+		return false;
+	}
 
 	// note it
 	m_isLoading = true;
@@ -2694,16 +2721,22 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	f->read  ( &ownData        , sizeof(m_ownData    ) , offset ) ; 
 	offset += sizeof(m_ownData);
 	// return false on read error
-	if ( g_errno ) { f->close(); m_isLoading = false; return false; }
+	if ( g_errno ) {
+		f->close();
+		m_isLoading = false;
+		log( LOG_ERROR, "db: read error: %s", mstrerrno( g_errno ) );
+		return false;
+	}
 	// parms check
 	if ( m_fixedDataSize != fixedDataSize || 
 	     m_doBalancing   != doBalancing   ||
 	     m_ownData       != ownData        ) {
 		f->close();
 		m_isLoading = false;
-		return log(LOG_LOGIC,"db: rdbtree: fastload: Bad parms. File "
+		log(LOG_LOGIC,"db: rdbtree: fastload: Bad parms. File "
 			   "may be corrupt or a key attribute was changed in "
 			   "the code and is not reflected in this file.");
+		return false;
 	}
 	// make sure size it right again
 	int32_t nodeSize    = (sizeof(collnum_t)+m_ks+4+4+4);
@@ -2714,10 +2747,8 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	// if no data, sizes much match exactly
 	if ( fixedDataSize == 0 && fsize != minFileSize ) {
 		g_errno = EBADFILE;
-		log(
-		    "db: File size of %s is %"INT32", should be %"INT32". File may be "
-		    "corrupted.",
-		    f->getFilename(),fsize,minFileSize);
+		log( LOG_ERROR, "db: File size of %s is %" INT32", should be %" INT32". File may be corrupted.",
+		     f->getFilename(),fsize,minFileSize);
 		f->close();
 		m_isLoading = false;
 		return false;
@@ -2725,23 +2756,21 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	// does it fit?
 	if ( fsize < minFileSize ) {
 		g_errno = EBADFILE;
-		log(
-		    "db: File size of %s is %"INT32", should >= %"INT32". File may be "
-		    "corrupted.",
-		    f->getFilename(),fsize,minFileSize);
+		log( LOG_ERROR, "db: File size of %s is %" INT32", should >= %" INT32". File may be corrupted.",
+		     f->getFilename(),fsize,minFileSize);
 		f->close();
 		m_isLoading = false;
 		return false;
 	}
+
 	// make room if we don't have any
 	if ( m_numNodes < minUnusedNode ) {
-		log(LOG_INIT,
-		    "db: Growing tree to make room for %s",f->getFilename());
+		log( LOG_INIT, "db: Growing tree to make room for %s", f->getFilename() );
 		if ( ! growTree ( minUnusedNode , 0 ) ) {
 			f->close();
 			m_isLoading = false;
-			return log("db: Failed to grow tree: %s.",
-				   mstrerror(g_errno));
+			log( LOG_ERROR, "db: Failed to grow tree" );
+			return false;
 		}
 	}
 	// we'll read this many
@@ -2757,16 +2786,13 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 		// . returns next place to start scan
 		// . incs m_numPositive/NegativeKeys and m_numUsedNodes 
 		// . incs m_memAlloced and m_memOccupied
-		int32_t bytesRead =  fastLoadBlock ( f             , 
-						  start         , 
-						  minUnusedNode , 
-						  stack         ,
-						  offset        ) ;
+		int32_t bytesRead =  fastLoadBlock ( f, start, minUnusedNode, stack, offset ) ;
 		if ( bytesRead < 0 ) {
 			f->close();
-			if ( m_useProtection ) protect();
+			if ( m_useProtection ) {
+				protect();
+			}
 			g_errno = errno;
-			log("db: bytesRead = %"INT32"",bytesRead);
 			m_isLoading = false;
 			return false;
 		}
@@ -2827,11 +2853,7 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 
 // . return bytes loaded
 // . returns -1 and sets g_errno on error
-int32_t RdbTree::fastLoadBlock ( BigFile   *f          , 
-			      int32_t       start      , 
-			      int32_t       totalNodes , 
-			      RdbMem    *stack      ,
-			      int64_t  offset     ) {
+int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, RdbMem *stack, int64_t offset ) {
 	// set # ndoes to read
 	int32_t n = totalNodes - start;
 	if ( n > BLOCK_SIZE ) n = BLOCK_SIZE;
@@ -2857,8 +2879,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile   *f          ,
 		f->read ( &m_data[start] , n * 4 , offset); offset += n * 4; }
 	// return false on read error
 	if ( g_errno ) {
-		log("db: Failed to read %s: %s.",
-		    f->getFilename(),mstrerror(g_errno));
+		log( LOG_ERROR, "db: Failed to read %s: %s.", f->getFilename(), mstrerror(g_errno) );
 		return -1;
 	}
 	// get valid collnum ranges
@@ -2923,11 +2944,11 @@ int32_t RdbTree::fastLoadBlock ( BigFile   *f          ,
 	char *dummy = NULL;
 	char *buf = (char *) stack->allocData ( dummy , bufSize , 0 );
 	if ( ! buf ) {
-	        log("db: Failed to allocate %"INT32" bytes to read %s. "
-		    "Increase tree size for it in gb.conf.",
-		    bufSize,f->getFilename());
+	        log( LOG_ERROR, "db: Failed to allocate %" INT32" bytes to read %s. Increase tree size for it in gb.conf.",
+	             bufSize,f->getFilename());
 		return -1;
 	}
+
 	// debug
 	//log("reading %"INT32" bytes of raw rec data", bufSize );
 	// establish end point
@@ -2949,9 +2970,8 @@ int32_t RdbTree::fastLoadBlock ( BigFile   *f          ,
 		// ensure we have the room
 		if ( buf + size > bufEnd ) {
 			g_errno = EBADFILE;
-			log("db: Encountered record with corrupted "
-			    "size parameter of %"INT32" in %s.", 
-			    size,f->getFilename());
+			log( LOG_ERROR, "db: Encountered record with corrupted size parameter of %" INT32" in %s.",
+			     size, f->getFilename() );
 			return -1;
 		}
 		m_data[i]  = buf;

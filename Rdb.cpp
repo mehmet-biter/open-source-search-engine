@@ -133,16 +133,18 @@ bool Rdb::init ( const char     *dir                  ,
 		 bool            isCollectionLess ) {
 	// reset all
 	reset();
+
 	// sanity
 	if ( ! dir ) { char *xx=NULL;*xx=0; }
-	// this is the working dir, all collection repositiories are subdirs
-	//m_dir.set ( dir );
-	// catdb, statsdb, accessdb, facebookdb, syncdb
+
+	// statsdb
 	m_isCollectionLess = isCollectionLess;
+
 	// save the dbname NULL terminated into m_dbname/m_dbnameLen
 	m_dbnameLen = gbstrlen ( dbname );
 	gbmemcpy ( m_dbname , dbname , m_dbnameLen );
 	m_dbname [ m_dbnameLen ] = '\0';
+
 	// store the other parameters for initializing each Rdb
 	m_dedup            = dedup;
 	m_fixedDataSize    = fixedDataSize;
@@ -154,12 +156,18 @@ bool Rdb::init ( const char     *dir                  ,
 	m_biasDiskPageCache = biasDiskPageCache;
 	m_ks               = keySize;
 	m_inDumpLoop       = false;
+
 	// set our id
 	m_rdbId = getIdFromRdb ( this );
-	if ( m_rdbId <= 0 ) 
-		return log(LOG_LOGIC,"db: dbname of %s is invalied.",dbname);
+
+	if ( m_rdbId <= 0 ) {
+		log( LOG_LOGIC, "db: dbname of %s is invalid.", dbname );
+		return false;
+	}
+
 	// sanity check
 	if ( m_ks != getKeySizeFromRdbId(m_rdbId) ) { char*xx=NULL;*xx=0;}
+
 	// get page size
 	m_pageSize = GB_TFNDB_PAGE_SIZE;
 	if ( m_rdbId == RDB_POSDB    ) m_pageSize = GB_INDEXDB_PAGE_SIZE;
@@ -190,20 +198,11 @@ bool Rdb::init ( const char     *dir                  ,
 		int32_t rdbId = m_rdbId;
 		// statsdb is collectionless really so pass on to tree
 		if ( rdbId == RDB_STATSDB ) rdbId = -1;
-		if ( ! m_tree.set ( fixedDataSize  , 
-			    maxTreeNodes   , // max # nodes in tree
-			    isTreeBalanced , 
-			    maxTreeMem     ,
-			    false          , // own data?
-			    m_treeName     , // allocname
-			    false          , // dataInPtrs?
-			    m_dbname       ,
-			    m_ks           ,
-			    // make useProtection true for debugging
-				    false          , // use protection?
-				    false , // alowdups?
-				    rdbId ) )
+		if ( ! m_tree.set ( fixedDataSize  , maxTreeNodes, isTreeBalanced, maxTreeMem, false, m_treeName, false,
+		                    m_dbname, m_ks, false, false, rdbId ) ) {
+			log( LOG_ERROR, "db: Failed to set tree." );
 			return false;
+		}
 	}
 	else {
 		if(treeFileExists()) {
@@ -223,34 +222,29 @@ bool Rdb::init ( const char     *dir                  ,
 		}
 		// set this then
 		sprintf(m_treeName,"buckets-%s",m_dbname);
-		if( ! m_buckets.set ( fixedDataSize, 
-			      maxTreeMem,
-			      false, //own data
-			      m_treeName, // allocName
-				      m_rdbId,
-			      false, //data in ptrs
-			      m_dbname,
-			      m_ks,
-			      false)) { //use protection
+		if( ! m_buckets.set ( fixedDataSize, maxTreeMem, false, m_treeName, m_rdbId, false, m_dbname, m_ks, false ) ) {
+			log( LOG_ERROR, "db: Failed to set buckets." );
 			return false;
 		}
 	}
 
 	// now get how much mem the tree is using (not including stored recs)
 	int32_t dataMem;
-	if(m_useTree) dataMem = maxTreeMem - m_tree.getTreeOverhead();
+	if (m_useTree) dataMem = maxTreeMem - m_tree.getTreeOverhead();
 	else          dataMem = maxTreeMem - m_buckets.getMemOccupied( );
 
 	sprintf(m_memName,"mem-%s",m_dbname);
 
-	//if ( fixedDataSize != 0 && ! m_mem.init ( &m_dump , dataMem ) ) 
-	if ( fixedDataSize != 0 && ! m_mem.init ( this , dataMem , m_ks ,
-						  m_memName ) ) 
-		return log("db: Failed to initialize memory: %s.", 
-			   mstrerror(g_errno));
+	if ( fixedDataSize != 0 && ! m_mem.init ( this , dataMem , m_ks , m_memName ) ) {
+		log( LOG_ERROR, "db: Failed to initialize memory: %s.", mstrerror( g_errno ) );
+		return false;
+	}
 
 	// load any saved tree
-	if ( ! loadTree ( ) ) return false;
+	if ( ! loadTree ( ) ) {
+		log( LOG_ERROR, "db: Failed to load tree." );
+		return false;
+	}
 
 	m_initialized = true;
 
@@ -937,10 +931,9 @@ bool Rdb::loadTree ( ) {
 	// get the filename of the saved tree
 	char filename[256];
 	sprintf(filename,"%s-saved.dat",m_dbname);
-	// set this to false
-	//m_needsSave = false;
-	// msg
+
 	//log (0,"Rdb::loadTree: loading %s",filename);
+
 	// set a BigFile to this filename
 	BigFile file;
 	char *dir = getDir();
@@ -953,59 +946,50 @@ bool Rdb::loadTree ( ) {
 		// we close it now instead of him
 	}
 	
-	if(m_useTree) {
-		//if ( ! status ) {
-		//log("Rdb::loadTree: could not load tree fast.Trying way 1.");
-		//	status =  m_tree.oldLoad ( &file , &m_mem );
-		//	m_needsSave = true;
-		//}
-		// this lost my freakin data after i reduced tfndbMaxTreeMem
-		// and was unable to load!!
-		//if ( ! status ) {
-		//log("Rdb::loadTree: could not load tree fast.Trying way 2.");
-		//status =m_dump.load ( this , m_fixedDataSize , &file , m_pc);
-		//	m_needsSave = true;
-		//}
+	if ( m_useTree ) {
 		file.close();
-		if ( ! status && treeExists) 
-			return log("db: Could not load saved tree.");
+		if ( !status && treeExists ) {
+			log( LOG_ERROR, "db: Could not load saved tree." );
+			return false;
+		}
 
 	}
 	else {
-		if(!m_buckets.loadBuckets(m_dbname))
-			return log("db: Could not load saved buckets.");
+		if ( !m_buckets.loadBuckets( m_dbname ) ) {
+			log( LOG_ERROR, "db: Could not load saved buckets." );
+			return false;
+		}
+
 		int32_t numKeys = m_buckets.getNumKeys();
 		
 		// log("db: Loaded %"INT32" recs from %s's buckets on disk.",
 		//     numKeys, m_dbname);
 		
 		if(!m_buckets.testAndRepair()) {
-			log("db: unrepairable buckets, "
-			    "remove and restart.");
+			log( LOG_ERROR, "db: unrepairable buckets, remove and restart." );
 			char *xx = NULL; *xx = 0;
 		}
 
 		
 		if(treeExists) {
-			m_buckets.addTree(&m_tree);
-			if(m_buckets.getNumKeys() - numKeys > 0) {
-				log("db: Imported %"INT32" recs from %s's tree to "
-				    "buckets.",
-				    m_buckets.getNumKeys()-numKeys, m_dbname);
+			m_buckets.addTree( &m_tree );
+			if ( m_buckets.getNumKeys() - numKeys > 0 ) {
+				log( LOG_ERROR, "db: Imported %" INT32" recs from %s's tree to buckets.",
+				     m_buckets.getNumKeys()-numKeys, m_dbname);
 			}
-			if(g_conf.m_readOnlyMode) {
+
+			if ( g_conf.m_readOnlyMode ) {
 				m_buckets.setNeedsSave(false);
-			}
-			else {
+			} else {
 				char newFilename[256];
-				sprintf(newFilename,"%s-%"INT32".old",
-					filename, (int32_t)getTime());
+				sprintf(newFilename,"%s-%"INT32".old", filename, (int32_t)getTime());
 				bool usingThreads = g_jobScheduler.are_new_jobs_allowed();
 				g_jobScheduler.disallow_new_jobs();
 				file.rename(newFilename);
-				if(usingThreads)
+				if ( usingThreads ) {
 					g_jobScheduler.allow_new_jobs();
-				m_tree.reset  ( );
+				}
+				m_tree.reset();
 			}
 			file.close();
 
@@ -1688,12 +1672,10 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 		// if tree is empty, list will never fit!!!
 		if ( m_useTree && m_tree.getNumUsedNodes() <= 0 ) {
 			g_errno = ELISTTOOBIG;
-			return log("db: Tried to add a record that is "
-				   "simply too big (%"INT32" bytes) to ever fit in "
-				   "the memory "
-				   "space for %s. Please increase the max "
-				   "memory for %s in gb.conf.",
-				   list->m_listSize,m_dbname,m_dbname);
+			log( LOG_WARN, "db: Tried to add a record that is simply too big (%" INT32" bytes) to ever fit in "
+				   "the memory space for %s. Please increase the max memory for %s in gb.conf.",
+				   list->m_listSize, m_dbname, m_dbname );
+			return false;
 		}
 
 		// force initiate the dump now, but not if we are niceness 0

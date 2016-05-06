@@ -1143,8 +1143,8 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 	}
 
 	// this returns false with g_errno set on error
-   if ( ! addMetaList ( readBuf , slot ) ) {
-   		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
+	if ( ! addMetaList ( readBuf , slot ) ) {
+		log( LOG_ERROR, "%s:%s:%d: call sendErrorReply. error='%s'", __FILE__, __func__, __LINE__, mstrerrno( g_errno ) );
 		us->sendErrorReply(slot,g_errno);
 		
 		if( g_conf.m_logTraceMsg ) {
@@ -1209,10 +1209,8 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 			static time_t s_lastTime = 0;
 			if ( currentTime > s_lastTime + 10 ) {
 				s_lastTime = currentTime;
-				log("msg4: oops. got an rdbId key for a "
-				    "secondary "
-				    "rdb and not in repair mode. waiting to "
-				    "be in repair mode.");
+				log( LOG_WARN, "msg4: oops. got an rdbId key for a secondary "
+				    "rdb and not in repair mode. waiting to be in repair mode.");
 				g_errno = ETRYAGAIN;
 				return false;
 				//char *xx=NULL;*xx=0;
@@ -1221,12 +1219,12 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 
 		if ( ! rdb ) {
 			if ( slot ) 
-				log("msg4: rdbId of %"INT32" unrecognized "
+				log( LOG_WARN, "msg4: rdbId of %"INT32" unrecognized "
 				    "from hostip=%s. "
 				    "dropping WHOLE request", (int32_t)rdbId,
 				    iptoa(slot->m_ip));
 			else
-				log("msg4: rdbId of %"INT32" unrecognized. "
+				log( LOG_WARN, "msg4: rdbId of %"INT32" unrecognized. "
 				    "dropping WHOLE request", (int32_t)rdbId);
 			g_errno = ETRYAGAIN;
 			return false;
@@ -1241,7 +1239,11 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 	}
 
 	// sanity check
-	if ( p + recSize > pend ) { g_errno = ECORRUPTDATA; return false; }
+	if ( p + recSize > pend ) {
+		g_errno = ECORRUPTDATA;
+		return false;
+	}
+
 	// reset g_errno
 	g_errno = 0;
 	// . make a list from this data
@@ -1250,7 +1252,7 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 	RdbList list;
 	// sanity check
 	if ( rdb->getKeySize() == 0 ) {
-		log("seems like a stray /e/repair-addsinprogress.dat file "
+		log(LOG_WARN, "seems like a stray /e/repair-addsinprogress.dat file "
 		    "rdbId=%"INT32". waiting to be in repair mode."
 		    ,(int32_t)rdbId);
 		    //not in repair mode. dropping.",(int32_t)rdbId);
