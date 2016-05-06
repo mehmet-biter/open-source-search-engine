@@ -8428,12 +8428,12 @@ void Parms::init ( ) {
 
 	m->m_title = "spiderdb max tree mem";
 	m->m_desc  = "";
-	//m->m_cgi   = "msmt";
+	m->m_cgi   = "msmt";
 	m->m_off   = offsetof(Conf,m_spiderdbMaxTreeMem);
 	m->m_def   = "200000000";
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_RDB; //PAGE_NONE;
+	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
 	m++;
@@ -8470,12 +8470,12 @@ void Parms::init ( ) {
 
 	m->m_title = "tagdb max tree mem";
 	m->m_desc  = "A tagdb record assigns a url or site to a ruleset. Each tagdb record is about 100 bytes or so.";
-	//m->m_cgi   = "mtmt";
+	m->m_cgi   = "mtmt";
 	m->m_off   = offsetof(Conf,m_tagdbMaxTreeMem);
 	m->m_def   = "101028000";
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
-	m->m_page  = PAGE_RDB; //PAGE_NONE;
+	m->m_page  = PAGE_RDB;
 	m->m_obj   = OBJ_CONF;
 	m->m_group = false;
 	m++;
