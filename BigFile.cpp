@@ -1190,7 +1190,7 @@ static void readwriteWrapper_r ( void *state ) {
 			log("thread: read buf alloc failed for %"INT32" bytes.",need);
 	}
 	fstate->m_fd1 = fstate->m_this->getfd (fstate->m_filenum1,!fstate->m_doWrite);
-	fstate->m_fd1 = fstate->m_this->getfd (fstate->m_filenum2,!fstate->m_doWrite);
+	fstate->m_fd2 = fstate->m_this->getfd (fstate->m_filenum2,!fstate->m_doWrite);
 	// is this bad?
 	if ( fstate->m_fd1 < 0 )
 		log("disk: fd1 is %i for %s", fstate->m_fd1,fstate->m_this->getFilename());
