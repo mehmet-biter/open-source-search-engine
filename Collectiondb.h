@@ -88,10 +88,10 @@ class Collectiondb  {
 
 	bool addExistingColl ( char *coll, collnum_t collnum );
 
-	bool addNewColl ( char *coll , 
+	bool addNewColl ( char *coll ,
 			  char customCrawl ,
-			  char *cpc , 
-			  int32_t cpclen , 
+			  char *cpc ,
+			  int32_t cpclen ,
 			  bool saveIt ,
 			  collnum_t newCollnum ) ;
 
@@ -103,15 +103,15 @@ class Collectiondb  {
 	bool growRecPtrBuf ( collnum_t collnum ) ;
 	bool setRecPtr ( collnum_t collnum , CollectionRec *cr ) ;
 
-	// returns false if blocked, true otherwise. 
+	// returns false if blocked, true otherwise.
 	bool deleteRec2 ( collnum_t collnum );//, WaitEntry *we ) ;
 
 	//void deleteSpiderColl ( class SpiderColl *sc );
 
-	// returns false if blocked, true otherwise. 
+	// returns false if blocked, true otherwise.
 	bool resetColl2 ( collnum_t oldCollnum,
 			  collnum_t newCollnum,
-			  //WaitEntry *we , 
+			  //WaitEntry *we ,
 			  bool purgeSeeds );
 
 	// . keep up to 128 of them, these reference into m_list
@@ -125,7 +125,7 @@ class Collectiondb  {
 
 	int32_t            m_numRecs;
 	int32_t            m_numRecsUsed;
-	
+
 	int32_t m_wrapped;
 
 	int32_t m_numCollsSwappedOut;
@@ -138,7 +138,7 @@ extern class Collectiondb g_collectiondb;
 
 // Matt Wells, copyright Feb 2002
 
-// . a collection record specifies the spider/index/search parms of a 
+// . a collection record specifies the spider/index/search parms of a
 //   collection of web pages
 // . there's a Msg class to send an update signal to all the hosts once
 //   we've used Msg1 to add a new rec or delete an old.  The update signal
@@ -265,7 +265,7 @@ class CollectionRec {
 
 	// for regular crawls
 	bool rebuildUrlFilters2();
-  
+
 	// for diffbot crawl or bulk jobs
 	bool rebuildUrlFiltersDiffbot();
 
@@ -274,6 +274,7 @@ class CollectionRec {
 
 	bool rebuildLangRules( char *lang , char *tld );
 
+	bool rebuildPrivacoreRules();
 	bool rebuildShallowRules();
 
 	bool m_urlFiltersHavePageCounts;
@@ -408,10 +409,10 @@ class CollectionRec {
 
 	char m_getDocIdScoringInfo;
 
-  /***** 
+  /*****
    * !! Start Diffbot paramamters !! *
    *****/
-  
+
   SafeBuf m_diffbotToken;
 	SafeBuf m_diffbotCrawlName;
 	// email for emailing when crawl limit hit
@@ -432,7 +433,7 @@ class CollectionRec {
 	SafeBuf m_diffbotUrlProcessPattern;
 	// only CRAWL urls that match this pattern
 	SafeBuf m_diffbotUrlCrawlPattern;
-  
+
 	// regex support
 	SafeBuf m_diffbotUrlCrawlRegEx;
 	SafeBuf m_diffbotUrlProcessRegEx;
@@ -440,8 +441,8 @@ class CollectionRec {
 	regex_t m_upr;
 	bool m_hasucr;
 	bool m_hasupr;
-  
-	// only crawl pages within hopcount of a seed. 0 for no limit 
+
+	// only crawl pages within hopcount of a seed. 0 for no limit
 	int32_t m_diffbotMaxHops;
 
 	char    m_diffbotOnlyProcessIfNewUrl;
@@ -463,7 +464,7 @@ class CollectionRec {
 	// holds the latest CrawlInfo for each host for this collrec
 	SafeBuf m_crawlInfoBuf;
 
-  /***** 
+  /*****
    * !! End of Diffbot paramamters !! *
    *****/
 
@@ -478,35 +479,37 @@ class CollectionRec {
 	// . if a url matches we use that tagdb rec #
 	// . if it doesn't match any of the patterns, we use the default site #
 	// . just one regexp per Pattern
-	// . all of these arrays should be the same size, but we need to 
+	// . all of these arrays should be the same size, but we need to
 	//   include a count because Parms.cpp expects a count before each
 	//   array since it handle them each individually
-	int32_t      m_numRegExs  ;
+
+	int32_t      m_numRegExs;
 	// make this now use g_collectiondb.m_stringBuf safebuf and
 	// make Parms.cpp use that stringbuf rather than store into here...
-	SafeBuf   m_regExs           [ MAX_FILTERS ];
+	SafeBuf		m_regExs[ MAX_FILTERS ];
 
-	int32_t      m_numRegExs2 ; // useless, just for Parms::setParm()
-	float     m_spiderFreqs      [ MAX_FILTERS ];
+	int32_t		m_numSpiderFreqs;	// useless, just for Parms::setParm()
+	float		m_spiderFreqs[ MAX_FILTERS ];
 
-	int32_t      m_numRegExs3 ; // useless, just for Parms::setParm()
-	char      m_spiderPriorities [ MAX_FILTERS ];
+	int32_t		m_numSpiderPriorities;	// useless, just for Parms::setParm()
+	char		m_spiderPriorities[ MAX_FILTERS ];
 
-	int32_t      m_numRegExs10 ; // useless, just for Parms::setParm()
-	int32_t      m_maxSpidersPerRule [ MAX_FILTERS ];
+	int32_t		m_numMaxSpidersPerRule;	// useless, just for Parms::setParm()
+	int32_t		m_maxSpidersPerRule[ MAX_FILTERS ];
 
 	// same ip waits now here instead of "page priority"
-	int32_t      m_numRegExs5 ; // useless, just for Parms::setParm()
-	int32_t      m_spiderIpWaits    [ MAX_FILTERS ];
+	int32_t		m_numSpiderIpWaits;	// useless, just for Parms::setParm()
+	int32_t		m_spiderIpWaits[ MAX_FILTERS ];
+
 	// same goes for max spiders per ip
-	int32_t      m_numRegExs6;
-	int32_t      m_spiderIpMaxSpiders [ MAX_FILTERS ];
+	int32_t		m_numSpiderIpMaxSpiders;
+	int32_t		m_spiderIpMaxSpiders [ MAX_FILTERS ];
 
-	int32_t      m_numRegExs8;
-	char      m_harvestLinks     [ MAX_FILTERS ];
+	int32_t		m_numHarvestLinks;
+	char		m_harvestLinks[ MAX_FILTERS ];
 
-	int32_t      m_numRegExs7;
-	char      m_forceDelete  [ MAX_FILTERS ];
+	int32_t		m_numForceDelete;
+	char		m_forceDelete[ MAX_FILTERS ];
 
 	// dummy?
 	int32_t      m_numRegExs9;

@@ -42,7 +42,7 @@ void Collectiondb::reset() {
 	log(LOG_INFO,"db: resetting collectiondb.");
 	for ( int32_t i = 0 ; i < m_numRecs ; i++ ) {
 		if ( ! m_recs[i] ) continue;
-		mdelete ( m_recs[i], sizeof(CollectionRec), "CollectionRec" ); 
+		mdelete ( m_recs[i], sizeof(CollectionRec), "CollectionRec" );
 		delete ( m_recs[i] );
 		m_recs[i] = NULL;
 	}
@@ -56,24 +56,30 @@ extern bool g_inAutoSave;
 // . save to disk
 // . returns false if blocked, true otherwise
 bool Collectiondb::save ( ) {
-	if ( g_conf.m_readOnlyMode ) return true;
-
-	if ( g_inAutoSave && m_numRecsUsed > 20 && g_hostdb.m_hostId != 0 )
+	if ( g_conf.m_readOnlyMode ) {
 		return true;
+	}
+
+	if ( g_inAutoSave && m_numRecsUsed > 20 && g_hostdb.m_hostId != 0 ) {
+		return true;
+	}
 
 	// which collection rec needs a save
 	for ( int32_t i = 0 ; i < m_numRecs ; i++ ) {
 		if ( ! m_recs[i]              ) continue;
 		// temp debug message
 		//logf(LOG_DEBUG,"admin: SAVING collection #%"INT32" ANYWAY",i);
-		if ( ! m_recs[i]->m_needsSave ) continue;
-
-		// if we core in malloc we won't be able to save the 
-		// coll.conf files
-		if ( m_recs[i]->m_isCustomCrawl && 
-		     g_inMemFunction &&
-		     g_hostdb.m_hostId != 0 )
+		if ( ! m_recs[i]->m_needsSave ) {
 			continue;
+		}
+
+		// if we core in malloc we won't be able to save the
+		// coll.conf files
+		if ( m_recs[i]->m_isCustomCrawl &&
+		     g_inMemFunction &&
+		     g_hostdb.m_hostId != 0 ) {
+			continue;
+		}
 
 		//log(LOG_INFO,"admin: Saving collection #%"INT32".",i);
 		m_recs[i]->save ( );
@@ -81,6 +87,8 @@ bool Collectiondb::save ( ) {
 	// oh well
 	return true;
 }
+
+
 
 ///////////
 //
@@ -94,7 +102,7 @@ bool Collectiondb::loadAllCollRecs ( ) {
 	char dname[1024];
 	// MDW: sprintf ( dname , "%s/collections/" , g_hostdb.m_dir );
 	sprintf ( dname , "%s" , g_hostdb.m_dir );
-	Dir d; 
+	Dir d;
 	d.set ( dname );
 	if ( ! d.open ()) return log("admin: Could not load collection config "
 				     "files.");
@@ -144,7 +152,7 @@ bool Collectiondb::loadAllCollRecs ( ) {
 		log("admin: adding main collection.");
 		addNewColl ( "main",
 			     0 , // customCrawl ,
-			     NULL, 
+			     NULL,
 			     0 ,
 			     true , // bool saveIt ,
 			     // Parms.cpp reserves this so it can be sure
@@ -216,11 +224,11 @@ bool Collectiondb::addExistingColl ( char *coll, collnum_t collnum ) {
 
 	// create the record in memory
 	CollectionRec *cr = new (CollectionRec);
-	if ( ! cr ) 
+	if ( ! cr )
 		return log("admin: Failed to allocated %"INT32" bytes for new "
 			   "collection record for \"%s\".",
 			   (int32_t)sizeof(CollectionRec),coll);
-	mnew ( cr , sizeof(CollectionRec) , "CollectionRec" ); 
+	mnew ( cr , sizeof(CollectionRec) , "CollectionRec" );
 
 	// set collnum right for g_parms.setToDefault() call just in case
 	// because before it was calling CollectionRec::reset() which
@@ -245,7 +253,7 @@ bool Collectiondb::addExistingColl ( char *coll, collnum_t collnum ) {
 
 	// load coll.conf file
 	if ( ! cr->load ( coll , i ) ) {
-		mdelete ( cr, sizeof(CollectionRec), "CollectionRec" ); 
+		mdelete ( cr, sizeof(CollectionRec), "CollectionRec" );
 		log("admin: Failed to load coll.%s.%"INT32"/coll.conf",coll,i);
 		delete ( cr );
 		if ( m_recs ) m_recs[i] = NULL;
@@ -265,7 +273,7 @@ bool Collectiondb::addExistingColl ( char *coll, collnum_t collnum ) {
 		// limit each shard to 5 spiders per collection to prevent
 		// ppl from spidering the web and hogging up resources
 		cr->m_maxNumSpiders = 5;
-		
+
  		// diffbot download docs up to 50MB so we don't truncate
 		// things like sitemap.xml. but keep regular html pages
 		// 1MB
@@ -288,10 +296,10 @@ bool Collectiondb::addExistingColl ( char *coll, collnum_t collnum ) {
 //   code is. like for instance, posdb.
 // . "customCrawl" is 0 for a regular collection, 1 for a simple crawl
 //   2 for a bulk job. diffbot terminology.
-bool Collectiondb::addNewColl ( char *coll , 
+bool Collectiondb::addNewColl ( char *coll ,
 				char customCrawl ,
-				char *cpc , 
-				int32_t cpclen , 
+				char *cpc ,
+				int32_t cpclen ,
 				bool saveIt ,
 				// Parms.cpp reserves this so it can be sure
 				// to add the same collnum to every shard
@@ -332,7 +340,7 @@ bool Collectiondb::addNewColl ( char *coll ,
 			   "max of %"INT32" chars.",coll,gbstrlen(coll),
 			   (int32_t)MAX_COLL_LEN);
 	}
-		
+
 	// ensure does not already exist in memory
 	if ( getCollnum ( coll ) >= 0 ) {
 		g_errno = EEXIST;
@@ -355,12 +363,12 @@ bool Collectiondb::addNewColl ( char *coll ,
 
 	// create the record in memory
 	CollectionRec *cr = new (CollectionRec);
-	if ( ! cr ) 
+	if ( ! cr )
 		return log("admin: Failed to allocated %"INT32" bytes for new "
 			   "collection record for \"%s\".",
 			   (int32_t)sizeof(CollectionRec),coll);
 	// register the mem
-	mnew ( cr , sizeof(CollectionRec) , "CollectionRec" ); 
+	mnew ( cr , sizeof(CollectionRec) , "CollectionRec" );
 
 	// get the default.conf from working dir if there
 	g_parms.setToDefault( (char *)cr , OBJ_COLL , cr );
@@ -388,7 +396,7 @@ bool Collectiondb::addNewColl ( char *coll ,
 	char *crawl = NULL;
 	SafeBuf tmp;
 	// . return true with g_errno set on error
-	// . if we fail to set a parm right we should force ourselves 
+	// . if we fail to set a parm right we should force ourselves
 	//   out sync
 	if ( customCrawl ) {
 		if ( ! tmp.safeStrcpy ( coll ) ) return true;
@@ -398,7 +406,7 @@ bool Collectiondb::addNewColl ( char *coll ,
 		if ( ! h ) {
 			log("crawlbot: bad custom collname");
 			g_errno = EBADENGINEER;
-			mdelete ( cr, sizeof(CollectionRec), "CollectionRec" ); 
+			mdelete ( cr, sizeof(CollectionRec), "CollectionRec" );
 			delete ( cr );
 			return true;
 		}
@@ -406,7 +414,7 @@ bool Collectiondb::addNewColl ( char *coll ,
 		crawl = h + 1;
 		if ( ! crawl[0] ) {
 			log("crawlbot: bad custom crawl name");
-			mdelete ( cr, sizeof(CollectionRec), "CollectionRec" ); 
+			mdelete ( cr, sizeof(CollectionRec), "CollectionRec" );
 			delete ( cr );
 			g_errno = EBADENGINEER;
 			return true;
@@ -414,7 +422,7 @@ bool Collectiondb::addNewColl ( char *coll ,
 		// or if too big!
 		if ( gbstrlen(crawl) > 30 ) {
 			log("crawlbot: crawlbot crawl NAME is over 30 chars");
-			mdelete ( cr, sizeof(CollectionRec), "CollectionRec" ); 
+			mdelete ( cr, sizeof(CollectionRec), "CollectionRec" );
 			delete ( cr );
 			g_errno = EBADENGINEER;
 			return true;
@@ -440,10 +448,10 @@ bool Collectiondb::addNewColl ( char *coll ,
 		cr->m_diffbotPageProcessPattern.set ( "" );
 		cr->m_diffbotUrlCrawlRegEx.set ( "" );
 		cr->m_diffbotUrlProcessRegEx.set ( "" );
-		cr->m_diffbotMaxHops = -1; 
+		cr->m_diffbotMaxHops = -1;
 
 		cr->m_spiderStatus = SP_INITIALIZING;
-		// do not spider more than this many urls total. 
+		// do not spider more than this many urls total.
 		// -1 means no max.
 		cr->m_maxToCrawl = 100000;
 		// do not process more than this. -1 means no max.
@@ -454,10 +462,10 @@ bool Collectiondb::addNewColl ( char *coll ,
 		// things like sitemap.xml
 		cr->m_maxTextDocLen  = 1024*1024 * 5;
 		cr->m_maxOtherDocLen = 1024*1024 * 10;
-		// john want's deduping on by default to avoid 
+		// john want's deduping on by default to avoid
 		// processing similar pgs
 		cr->m_dedupingEnabled = true;
-		// show the ban links in the search results. the 
+		// show the ban links in the search results. the
 		// collection name is cryptographic enough to show that
 		cr->m_isCustomCrawl = customCrawl;
 		cr->m_diffbotOnlyProcessIfNewUrl = true;
@@ -474,7 +482,7 @@ bool Collectiondb::addNewColl ( char *coll ,
 	//   back up host #0's parms.cpp told it to add a new coll
 	cr->m_diffbotCrawlStartTime = getTimeGlobalNoCore();
 	cr->m_diffbotCrawlEndTime   = 0;
-	
+
 	// . just the basics on these for now
 	// . if certain parms are changed then the url filters
 	//   must be rebuilt, as well as possibly the waiting tree!!!
@@ -497,7 +505,7 @@ bool Collectiondb::addNewColl ( char *coll ,
 	cr->m_localCrawlInfo.m_hasUrlsReadyToSpider = 1;
 	cr->m_globalCrawlInfo.m_hasUrlsReadyToSpider = 1;
 
-	// set some defaults. max spiders for all priorities in this 
+	// set some defaults. max spiders for all priorities in this
 	// collection. NO, default is in Parms.cpp.
 	//cr->m_maxNumSpiders = 10;
 
@@ -519,13 +527,13 @@ bool Collectiondb::addNewColl ( char *coll ,
  retry22:
 	if ( ::mkdir ( dname ,
 		       getDirCreationFlags() ) ) {
-		       // S_IRUSR | S_IWUSR | S_IXUSR | 
-		       // S_IRGRP | S_IWGRP | S_IXGRP | 
+		       // S_IRUSR | S_IWUSR | S_IXUSR |
+		       // S_IRGRP | S_IWGRP | S_IXGRP |
 		       // S_IROTH | S_IXOTH ) ) {
 		// valgrind?
 		if ( errno == EINTR ) goto retry22;
 		g_errno = errno;
-		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" ); 
+		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" );
 		delete ( cr );
 		return log("admin: Creating directory %s had error: "
 			   "%s.", dname,mstrerror(g_errno));
@@ -533,7 +541,7 @@ bool Collectiondb::addNewColl ( char *coll ,
 
 	// save it into this dir... might fail!
 	if ( saveIt && ! cr->save() ) {
-		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" ); 
+		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" );
 		delete ( cr );
 		return log("admin: Failed to save file %s: %s",
 			   dname,mstrerror(g_errno));
@@ -630,7 +638,7 @@ bool Collectiondb::addRdbBasesForCollRec ( CollectionRec *cr ) {
 	//log ( LOG_INFO, "db: verified collection \"%s\" (%"INT32").",
 	//      coll,(int32_t)cr->m_collnum);
 
-	// tell SpiderCache about this collection, it will create a 
+	// tell SpiderCache about this collection, it will create a
 	// SpiderCollection class for it.
 	//g_spiderCache.reset1();
 
@@ -745,7 +753,7 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 	// the bulk urls file too i guess
 	if ( cr->m_isCustomCrawl == 2 && g_hostdb.m_hostId == 0 ) {
 		SafeBuf bu;
-		bu.safePrintf("%sbulkurls-%s.txt", 
+		bu.safePrintf("%sbulkurls-%s.txt",
 			      g_hostdb.m_dir , cr->m_coll );
 		File bf;
 		bf.set ( bu.getBufStart() );
@@ -763,10 +771,10 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 	setRecPtr ( cr->m_collnum , NULL );
 
 	// free it
-	mdelete ( cr, sizeof(CollectionRec),  "CollectionRec" ); 
+	mdelete ( cr, sizeof(CollectionRec),  "CollectionRec" );
 	delete ( cr );
 
-	// do not do this here in case spiders were outstanding 
+	// do not do this here in case spiders were outstanding
 	// and they added a new coll right away and it ended up getting
 	// recs from the deleted coll!!
 	//while ( ! m_recs[m_numRecs-1] ) m_numRecs--;
@@ -793,9 +801,9 @@ bool Collectiondb::resetColl ( char *coll ,  bool purgeSeeds) {
 	CollectionRec *cr = getRec ( coll ); // "qatest123" );
 
 	// must be there. if not, we create test i guess
-	if ( ! cr ) { 
+	if ( ! cr ) {
 		log("db: could not get coll rec \"%s\" to reset", coll);
-		char *xx=NULL;*xx=0; 
+		char *xx=NULL;*xx=0;
 	}
 
 	return resetColl2 ( cr->m_collnum, purgeSeeds);
@@ -902,7 +910,7 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 	int64_t h64 = hash64n(cr->m_coll);
 	// debug
 	//log("coll: adding key %"INT64" for %s",h64,cr->m_coll);
-	if ( ! g_collTable.addKey ( &h64 , &collnum ) ) 
+	if ( ! g_collTable.addKey ( &h64 , &collnum ) )
 		return false;
 
 	// ensure last is NULL
@@ -1070,8 +1078,8 @@ bool Collectiondb::resetColl2( collnum_t oldCollnum,
 	}
 	if ( ::mkdir ( dname ,
 		       getDirCreationFlags() ) ) {
-		       // S_IRUSR | S_IWUSR | S_IXUSR | 
-		       // S_IRGRP | S_IWGRP | S_IXGRP | 
+		       // S_IRUSR | S_IWUSR | S_IXUSR |
+		       // S_IRGRP | S_IWGRP | S_IXGRP |
 		       // S_IROTH | S_IXOTH ) ) {
 		// valgrind?
 		//if ( errno == EINTR ) goto retry22;
@@ -1205,10 +1213,10 @@ CollectionRec *Collectiondb::getRec ( const char *coll , int32_t collLen ) {
 	if ( ! coll ) coll = "";
 	collnum_t collnum = getCollnum ( coll , collLen );
 	if ( collnum < 0 ) return NULL;
-	return m_recs [ (int32_t)collnum ]; 
+	return m_recs [ (int32_t)collnum ];
 }
 
-CollectionRec *Collectiondb::getRec ( collnum_t collnum) { 
+CollectionRec *Collectiondb::getRec ( collnum_t collnum) {
 	if ( collnum >= m_numRecs || collnum < 0 ) {
 		// Rdb::resetBase() gets here, so don't always log.
 		// it is called from CollectionRec::reset() which is called
@@ -1218,7 +1226,7 @@ CollectionRec *Collectiondb::getRec ( collnum_t collnum) {
 		//    (int32_t)collnum,(int32_t)m_numRecs);
 		return NULL;
 	}
-	return m_recs[collnum]; 
+	return m_recs[collnum];
 }
 
 
@@ -1270,7 +1278,7 @@ collnum_t Collectiondb::getCollnum ( const char *coll , int32_t clen ) {
 	// not associated with any collection. Is this
 	// necessary for Catdb?
 	if ( coll[0]=='s' && coll[1] =='t' &&
-	     strcmp ( "statsdb\0", coll ) == 0) 
+	     strcmp ( "statsdb\0", coll ) == 0)
 		return 0;
 
 	// because diffbot may have thousands of crawls/collections
@@ -1364,9 +1372,9 @@ CollectionRec::CollectionRec() {
 
 	// clear these out so Parms::calcChecksum can work:
 	memset( m_spiderFreqs, 0, MAX_FILTERS*sizeof(*m_spiderFreqs) );
-	//for ( int i = 0; i < MAX_FILTERS ; i++ ) 
+	//for ( int i = 0; i < MAX_FILTERS ; i++ )
 	//	m_spiderQuotas[i] = -1;
-	memset( m_spiderPriorities, 0, 
+	memset( m_spiderPriorities, 0,
 		MAX_FILTERS*sizeof(*m_spiderPriorities) );
 	memset ( m_harvestLinks,0,MAX_FILTERS);
 	memset ( m_forceDelete,0,MAX_FILTERS);
@@ -1585,19 +1593,17 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	// tell spider loop to update active list
 	g_spiderLoop.m_activeListValid = false;
 
-
 	bool rebuild = true;
-	if ( m_numRegExs == 0 ) 
+	if ( m_numRegExs == 0 )
 		rebuild = true;
 	// don't touch it if not supposed to as int32_t as we have some already
 	//if ( m_urlFiltersProfile != UFP_NONE )
 	//	rebuild = true;
 	// never for custom crawls however
-	if ( m_isCustomCrawl ) 
+	if ( m_isCustomCrawl )
 		rebuild = false;
 
 	char *s = m_urlFiltersProfile.getBufStart();
-
 
 	// support the old UFP_CUSTOM, etc. numeric values
 	if ( !strcmp(s,"0" ) )
@@ -1615,11 +1621,15 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	if ( !strcmp(s,"custom" ) )
 		rebuild = false;
 
-	
+
 
 	//if ( m_numRegExs > 0 && strcmp(m_regExs[m_numRegExs-1],"default") )
 	//	addDefault = true;
 	if ( ! rebuild ) return true;
+
+
+	if ( !strcmp(s,"privacore" ) )
+		return rebuildPrivacoreRules();
 
 
 	if ( !strcmp(s,"shallow" ) )
@@ -1651,9 +1661,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 
 	if ( !strcmp(s,"romantic") )
 		return rebuildLangRules("en,de,fr,nl,es,sv,no,it,fi,pt",
-
 					"de,fr,nl,es,sv,no,it,fi,pt,"
-
 					"com,gov,org"
 					);
 
@@ -1703,7 +1711,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	m_maxSpidersPerRule  [n] = 99; // max spiders
 	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
 	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 100; 
+	m_spiderPriorities   [n] = 100;
 	m_forceDelete        [n] = 1;
 	n++;
 
@@ -1951,17 +1959,6 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 		n++;
 	}
 
-	/*
-	m_regExs[n].set("isnew");
-	m_harvestLinks       [n] = 1;
-	m_spiderFreqs        [n] = resp4;
-	m_maxSpidersPerRule  [n] = 9; // max spiders
-	m_spiderIpMaxSpiders [n] = 1; // max spiders per ip
-	m_spiderIpWaits      [n] = 1000; // same ip wait
-	m_spiderPriorities   [n] = 2;
-	n++;
-	*/
-
 	m_regExs[n].set("default");
 	m_harvestLinks       [n] = 1;
 	m_spiderFreqs        [n] = 60;
@@ -1976,28 +1973,232 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	n++;
 
 
-	m_numRegExs   = n;
-	m_numRegExs2  = n;
-	m_numRegExs3  = n;
-	m_numRegExs10 = n;
-	m_numRegExs5  = n;
-	m_numRegExs6  = n;
-	m_numRegExs8  = n;
-	m_numRegExs7  = n;
-
-	// more rules
-
-
-
-
-	//m_spiderDiffbotApiNum[n] = 1;
-	//m_numRegExs11++;
-	//m_spiderDiffbotApiUrl[n].set("");
-	//m_spiderDiffbotApiUrl[n].nullTerm();
-	//m_numRegExs11++;
+	m_numRegExs				= n;
+	m_numSpiderFreqs		= n;
+	m_numSpiderPriorities	= n;
+	m_numMaxSpidersPerRule	= n;
+	m_numSpiderIpWaits		= n;
+	m_numSpiderIpMaxSpiders	= n;
+	m_numHarvestLinks		= n;
+	m_numForceDelete		= n;
 
 	return true;
 }
+
+
+
+bool CollectionRec::rebuildPrivacoreRules () {
+	const char *langWhitelistStr = "xx,en,bg,sr,ca,cs,da,et,fi,fr,de,el,hu,is,ga,it,lv,lt,lb,nl,pl,pt,ro,es,sv,no,vv";
+	const char *tldBlacklistStr = "cn,vn,kr,my,in,pk,ru,ua,jp,th";
+
+	// max spiders per ip
+	int32_t ipms = 7;
+
+	int32_t n = 0;
+
+	m_regExs[n].set("isreindex");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 0; 		// 0 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 80;
+	n++;
+
+	m_regExs[n].set("ismedia");
+	m_harvestLinks       [n] = 0;
+	m_spiderFreqs        [n] = 0; 		// 0 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 100;
+	m_forceDelete        [n] = 1;		// delete!
+	n++;
+
+	m_regExs[n].reset();
+	m_regExs[n].safePrintf("lang!=%s", langWhitelistStr);
+	m_harvestLinks       [n] = 0;
+	m_spiderFreqs        [n] = 0; 		// 0 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 100;
+	m_forceDelete        [n] = 1;		// delete!
+	n++;
+
+	m_regExs[n].reset();
+	m_regExs[n].safePrintf("tld==%s", tldBlacklistStr);
+	m_harvestLinks       [n] = 0;
+	m_spiderFreqs        [n] = 0; 		// 0 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 100;
+	m_forceDelete        [n] = 1;		// delete!
+	n++;
+
+
+
+
+	// 3 or more non-temporary errors - delete it
+	m_regExs[n].set("errorcount>=3 && !hastmperror");
+	m_harvestLinks       [n] = 0;
+	m_spiderFreqs        [n] = 0; 		// 1 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 100;
+	m_forceDelete        [n] = 1;		// delete!
+	n++;
+
+	// 3 or more temporary errors - slow down retries a bit
+	m_regExs[n].set("errorcount>=3 && hastmperror");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 3; 		// 1 days default
+	m_maxSpidersPerRule  [n] = 1; 		// max spiders
+	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 45;
+	n++;
+
+	// 1 or more temporary errors - retry in a day
+	m_regExs[n].set("errorcount>=1 && hastmperror");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 1; 		// 1 days default
+	m_maxSpidersPerRule  [n] = 1; 		// max spiders
+	m_spiderIpMaxSpiders [n] = 1; 		// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 45;
+	n++;
+
+
+	m_regExs[n].set("isaddurl");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 7; 		// 7 days default
+	m_maxSpidersPerRule  [n] = 99; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 85;
+	n++;
+
+	m_regExs[n].set("hopcount==0 && iswww && isnew");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 7; 		// 7 days default
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 50;
+	n++;
+
+	m_regExs[n].set("hopcount==0 && iswww");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 7.0; 	// 7 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 48;
+	n++;
+
+	m_regExs[n].set("hopcount==0 && isnew");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 7.0;		// 7 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 18;
+	n++;
+
+	m_regExs[n].set("hopcount==0");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 10.0;	// 10 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 17;
+	n++;
+
+
+	m_regExs[n].set("hopcount==1 && isnew");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 20.0;	// 20 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 16;
+	n++;
+
+	m_regExs[n].set("hopcount==1");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 20.0;	// 20 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 15;
+	n++;
+
+
+	m_regExs[n].set("hopcount==2 && isnew");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 40;		// 40 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 14;
+	n++;
+
+	m_regExs[n].set("hopcount==2");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 40;		// 40 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 13;
+	n++;
+
+
+
+	m_regExs[n].set("hopcount>=3 && isnew");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 60;		// 60 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 12;
+	n++;
+
+	m_regExs[n].set("hopcount>=3");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 60;		// 60 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 11;
+	n++;
+
+
+	m_regExs[n].set("default");
+	m_harvestLinks       [n] = 1;
+	m_spiderFreqs        [n] = 60;		// 60 days before respider
+	m_maxSpidersPerRule  [n] = 9; 		// max spiders
+	m_spiderIpMaxSpiders [n] = ipms; 	// max spiders per ip
+	m_spiderIpWaits      [n] = 1000; 	// same ip wait
+	m_spiderPriorities   [n] = 1;
+	n++;
+
+
+	m_numRegExs				= n;
+	m_numSpiderFreqs		= n;
+	m_numSpiderPriorities	= n;
+	m_numMaxSpidersPerRule	= n;
+	m_numSpiderIpWaits		= n;
+	m_numSpiderIpMaxSpiders	= n;
+	m_numHarvestLinks		= n;
+	m_numForceDelete		= n;
+
+	return true;
+}
+
+
 
 
 bool CollectionRec::rebuildLangRules ( char *langStr , char *tldStr ) {
@@ -2398,14 +2599,14 @@ bool CollectionRec::rebuildLangRules ( char *langStr , char *tldStr ) {
 	m_spiderPriorities   [n] = 1;
 	n++;
 
-	m_numRegExs   = n;
-	m_numRegExs2  = n;
-	m_numRegExs3  = n;
-	m_numRegExs10 = n;
-	m_numRegExs5  = n;
-	m_numRegExs6  = n;
-	m_numRegExs8  = n;
-	m_numRegExs7  = n;
+	m_numRegExs				= n;
+	m_numSpiderFreqs		= n;
+	m_numSpiderPriorities	= n;
+	m_numMaxSpidersPerRule	= n;
+	m_numSpiderIpWaits		= n;
+	m_numSpiderIpMaxSpiders	= n;
+	m_numHarvestLinks		= n;
+	m_numForceDelete		= n;
 
 	// done rebuilding CHINESE rules
 	return true;
@@ -2623,14 +2824,14 @@ bool CollectionRec::rebuildShallowRules ( ) {
 	m_spiderPriorities   [n] = 1;
 	n++;
 
-	m_numRegExs   = n;
-	m_numRegExs2  = n;
-	m_numRegExs3  = n;
-	m_numRegExs10 = n;
-	m_numRegExs5  = n;
-	m_numRegExs6  = n;
-	m_numRegExs8  = n;
-	m_numRegExs7  = n;
+	m_numRegExs				= n;
+	m_numSpiderFreqs		= n;
+	m_numSpiderPriorities	= n;
+	m_numMaxSpidersPerRule	= n;
+	m_numSpiderIpWaits		= n;
+	m_numSpiderIpMaxSpiders	= n;
+	m_numHarvestLinks		= n;
+	m_numForceDelete		= n;
 
 	// done rebuilding SHALLOW rules
 	return true;
@@ -2638,7 +2839,10 @@ bool CollectionRec::rebuildShallowRules ( ) {
 
 // returns false on failure and sets g_errno, true otherwise
 bool CollectionRec::save ( ) {
-	if ( g_conf.m_readOnlyMode ) return true;
+	if ( g_conf.m_readOnlyMode ) {
+		return true;
+	}
+
 	//File f;
 	char tmp[1024];
 	//sprintf ( tmp , "%scollections/%"INT32".%s/c.conf",
@@ -2647,9 +2851,11 @@ bool CollectionRec::save ( ) {
 	//if ( m_collLen == 0 )
 	//	sprintf ( tmp , "%scoll.main/coll.conf", g_hostdb.m_dir);
 	//else
-	snprintf ( tmp , 1023, "%scoll.%s.%"INT32"/coll.conf", 
+	snprintf ( tmp , 1023, "%scoll.%s.%"INT32"/coll.conf",
 		  g_hostdb.m_dir , m_coll , (int32_t)m_collnum );
-	if ( ! g_parms.saveToXml ( (char *)this , tmp ,OBJ_COLL)) return false;
+	if ( ! g_parms.saveToXml ( (char *)this , tmp ,OBJ_COLL)) {
+		return false;
+	}
 	// log msg
 	//log (LOG_INFO,"db: Saved %s.",tmp);//f.getFilename());
 
@@ -2912,7 +3118,7 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 	m_spiderPriorities   [i] = 70;
 	i++;
 
-	// 2nd default url 
+	// 2nd default url
 	m_regExs[i].set("ismedia && !ismanualadd");
 	m_maxSpidersPerRule  [i] = 0;
 	m_spiderPriorities   [i] = 100; // delete!
@@ -2936,8 +3142,8 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 
 		// transform long to string
 		char numstr[21]; // enough to hold all numbers up to 64-bits
-		sprintf(numstr, "%"INT32"", (int32_t)m_diffbotMaxHops); 
-    
+		sprintf(numstr, "%"INT32"", (int32_t)m_diffbotMaxHops);
+
 		// form regEx like: hopcount>3
 		char hopcountStr[30];
 		strcpy(hopcountStr, "hopcount>");
@@ -2946,13 +3152,13 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 		m_regExs[i].set(hopcountStr);
 
 		// means DELETE :
-		m_spiderPriorities   [i] = 0;//SPIDER_PRIORITY_FILTERED; 
+		m_spiderPriorities   [i] = 0;//SPIDER_PRIORITY_FILTERED;
 
 		//  just don't spider
 		m_maxSpidersPerRule[i] = 0;
 
 		// compatibility with m_spiderRoundStartTime:
-		m_spiderFreqs[i] = 0.0; 
+		m_spiderFreqs[i] = 0.0;
 		i++;
 	}
 
@@ -3192,16 +3398,14 @@ bool CollectionRec::rebuildUrlFiltersDiffbot() {
 	}
 
  done:
-	m_numRegExs   = i;
-	m_numRegExs2  = i;
-	m_numRegExs3  = i;
-	m_numRegExs10 = i;
-	m_numRegExs5  = i;
-	m_numRegExs6  = i;
-	//m_numRegExs7  = i;
-	m_numRegExs8  = i;
-	m_numRegExs7  = i;
-	//m_numRegExs11 = i;
+	m_numRegExs				= i;
+	m_numSpiderFreqs		= i;
+	m_numSpiderPriorities	= i;
+	m_numMaxSpidersPerRule	= i;
+	m_numSpiderIpWaits		= i;
+	m_numSpiderIpMaxSpiders	= i;
+	m_numHarvestLinks		= i;
+	m_numForceDelete		= i;
 
 
 	//char *x = "http://staticpages.diffbot.com/testCrawl/article1.html";
@@ -3226,7 +3430,7 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 	//	setUrlFiltersToDefaults();
 	//}
 
-	// if not a custom crawl then set the url filters based on 
+	// if not a custom crawl then set the url filters based on
 	// the url filter profile, if any
 	if ( ! m_isCustomCrawl )
 		rebuildUrlFilters2();
@@ -3255,7 +3459,7 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 
 	// . do not do this at startup
 	// . this essentially resets doledb
-	if ( g_doledb.m_rdb.m_initialized && 
+	if ( g_doledb.m_rdb.m_initialized &&
 	     // somehow this is initialized before we set m_recs[m_collnum]
 	     // so we gotta do the two checks below...
 	     sc &&
@@ -3266,21 +3470,21 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 
 		log("coll: resetting doledb for %s (%li)",m_coll,
 		    (long)m_collnum);
-		
+
 		// clear doledb recs from tree
 		//g_doledb.getRdb()->deleteAllRecs ( m_collnum );
 		nukeDoledb ( m_collnum );
-		
+
 		// add it back
-		//if ( ! g_doledb.getRdb()->addRdbBase2 ( m_collnum ) ) 
+		//if ( ! g_doledb.getRdb()->addRdbBase2 ( m_collnum ) )
 		//	log("coll: error re-adding doledb for %s",m_coll);
-		
+
 		// just start this over...
 		// . MDW left off here
 		//tryToDelete ( sc );
 		// maybe this is good enough
 		//if ( sc ) sc->m_waitingTreeNeedsRebuild = true;
-		
+
 		//CollectionRec *cr = sc->m_cr;
 
 		// . rebuild sitetable? in PageBasic.cpp.
@@ -3289,8 +3493,8 @@ bool CollectionRec::rebuildUrlFilters ( ) {
 		// . no, don't do this now because we call updateSiteList()
 		//   when we have &sitelist=xxxx in the request which will
 		//   handle updating those tables
-		//updateSiteListTables ( m_collnum , 
-		//		       true , 
+		//updateSiteListTables ( m_collnum ,
+		//		       true ,
 		//		       cr->m_siteListBuf.getBufStart() );
 	}
 

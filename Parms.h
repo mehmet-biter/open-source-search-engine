@@ -1,7 +1,7 @@
 // Matt Wells, copyright Feb 2002
 
 // Ideally, CollectionRec.h and SearchInput.h should be automatically generated
-// from Parms.cpp. But Parms need to be marked if they contribute to 
+// from Parms.cpp. But Parms need to be marked if they contribute to
 // SearchInput::makeKey() for caching the SERPS.
 
 #ifndef GB_PARMS_H
@@ -166,20 +166,23 @@ class Parm {
 
 	const char *m_xml;   // default to rendition of m_title if NULL
 	int32_t  m_off;   // this variable's offset into the CollectionRec class
+	int32_t	m_arrayCountOffset;	// Arrays element count offset into the CollectionRec class
+
+
 	char  m_colspan;
 	char  m_type;  // TYPE_BOOL, TYPE_LONG, ...
 	int32_t  m_page;  // PAGE_MASTER, PAGE_SPIDER, ... see Pages.h
 	char  m_obj;   // OBJ_CONF or OBJ_COLL
 	// the maximum number of elements supported in the array.
 	// this is 1 if NOT an array (i.e. array of only one parm).
-	// in such cases a "count" is NOT stored before the parm in 
+	// in such cases a "count" is NOT stored before the parm in
 	// CollectionRec.h or Conf.h.
 	bool isArray() { return (m_max>1); };
 
 	int32_t  m_max;   // max elements in the array
 	// if array is fixed size, how many elements in it?
 	// this is 0 if not a FIXED size array.
-	int32_t  m_fixed; 
+	int32_t  m_fixed;
 	int32_t  m_size;  // max string size
 	const char *m_def;   // default value of this variable if not in either conf
 	int32_t  m_defOff; // if default value points to a collectionrec parm!
@@ -213,7 +216,7 @@ class Parm {
 
 	bool   getValueAsBool   ( class SearchInput *si ) ;
 	int32_t   getValueAsLong   ( class SearchInput *si ) ;
-	char * getValueAsString ( class SearchInput *si ) ;	
+	char * getValueAsString ( class SearchInput *si ) ;
 
 	int32_t getNumInArray ( collnum_t collnum ) ;
 
@@ -234,17 +237,17 @@ class Parms {
 	Parms();
 
 	void init();
-	
+
 	bool sendPageGeneric ( class TcpSocket *s, class HttpRequest *r );
 
 	bool printParmTable ( SafeBuf *sb , TcpSocket *s , HttpRequest *r );
 
 	bool printParms (SafeBuf* sb, TcpSocket *s , HttpRequest *r );
 
-	bool printParms2 (SafeBuf* sb, 
+	bool printParms2 (SafeBuf* sb,
 			  int32_t page,
 			  CollectionRec *cr,
-			  int32_t nc , 
+			  int32_t nc ,
 			  int32_t pd ,
 			  bool isCrawlbot ,
 			  char format, //bool isJSON,
@@ -255,7 +258,7 @@ class Parms {
 
 	bool printParm ( SafeBuf* sb,
 			  char *username,
-			  Parm *m    , 
+			  Parm *m    ,
 			  int32_t  mm   , // m = &m_parms[mm]
 			  int32_t  j    ,
 			  int32_t  jend ,
@@ -279,18 +282,18 @@ class Parms {
 			      class CollectionRec *newcr ,
 			      char *THIS ,
 			      int32_t objType );
-	
+
 	bool insertParm ( int32_t i , int32_t an , char *THIS ) ;
 	bool removeParm ( int32_t i , int32_t an , char *THIS ) ;
 
 	void setParm ( char *THIS, Parm *m, int32_t mm, int32_t j, const char *def,
 		       bool isHtmlEncoded , bool fromRequest ) ;
-	
+
 	void setToDefault ( char *THIS , char objType ,
 			    CollectionRec *argcr );//= NULL ) ;
 
-	bool setFromFile ( void *THIS        , 
-			   char *filename    , 
+	bool setFromFile ( void *THIS        ,
+			   char *filename    ,
 			   char *filenameDef ,
 			   char  objType ) ;
 
@@ -321,13 +324,13 @@ class Parms {
 				 int32_t  occNum ,
 				 char *parmName ) ;
 	bool addNewParmToList2 ( SafeBuf *parmList ,
-				 collnum_t collnum , 
+				 collnum_t collnum ,
 				 char *parmValString ,
 				 int32_t occNum ,
 				 Parm *m ) ;
 
 	bool addCurrentParmToList2 ( SafeBuf *parmList ,
-				     collnum_t collnum , 
+				     collnum_t collnum ,
 				     int32_t occNum ,
 				     Parm *m ) ;
 	bool convertHttpRequestToParmList (HttpRequest *hr,SafeBuf *parmList,
@@ -358,7 +361,7 @@ class Parms {
 	bool m_triedToSync;
 
 	bool m_isDefaultLoaded;
-	
+
 	Parm m_parms [ MAX_PARMS ];
 	int32_t m_numParms;
 
