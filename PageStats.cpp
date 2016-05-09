@@ -20,6 +20,7 @@
 #include "Sections.h"
 #include "Msg13.h"
 #include "Msg3.h"
+#include "Msg17.h"
 
 bool printNumAbbr ( SafeBuf &p, int64_t vvv ) {
 	float val = (float)vvv;

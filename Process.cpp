@@ -25,6 +25,7 @@
 #include "Profiler.h"
 #include "Msg4.h"
 #include "Msg5.h"
+#include "Msg17.h"
 #include "Wiki.h"
 #include "Wiktionary.h"
 #include "Proxy.h"
