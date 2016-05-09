@@ -3381,6 +3381,7 @@ void Inlink::setMsg20Reply ( Msg20Reply *r ) {
 	r->m_language            = m_language;
 	r->m_siteRank            = m_siteRank;
 	r->m_hopcount            = m_hopcount;
+	r->m_isAdult             = false;       //appears to be irrelevant when dealing with links
 	
 	r->ptr_ubuf              = getUrl();//ptr_urlBuf;
 	r->ptr_linkText          = getLinkText();//ptr_linkText;

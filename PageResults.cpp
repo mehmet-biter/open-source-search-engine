@@ -2866,6 +2866,7 @@ bool printResult ( State0 *st, int32_t ix , int32_t *numPrintedSoFar ) {
 		sb->safePrintf("\t\t\"docId\":%"INT64",\n",mr->m_docId );
 		sb->safePrintf("\t\t\"docScore\":%f,\n",docScore);
 		sb->safePrintf("\t\t\"cacheAvailable\":%s,\n", printCached?"true":"false");
+		sb->safePrintf("\t\t\"isAdult\":%s,\n", mr->m_isAdult?"true":"false");
 	}
 
 	if ( si->m_format == FORMAT_JSON && mr->m_contentType != CT_STATUS ) {

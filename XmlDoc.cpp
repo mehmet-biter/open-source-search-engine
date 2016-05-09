@@ -18750,6 +18750,7 @@ Msg20Reply *XmlDoc::getMsg20Reply ( ) {
 	reply->m_country          = *getCountryId();
 	reply->m_hopcount         = m_hopCount;
 	reply->m_siteRank         = getSiteRank();
+	reply->m_isAdult          = m_isAdult; //QQQ getIsAdult()? hmmm
 
 	reply->ptr_ubuf             = getFirstUrl()->getUrl();
 	reply->ptr_rubuf            = ru;

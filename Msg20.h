@@ -150,6 +150,7 @@ public:
 	char       m_recycled            ;
 	uint8_t    m_language            ;
 	uint16_t   m_country             ;
+	bool       m_isAdult             ;
 
 	int32_t       m_contentLen          ; // was m_docLen
 	int32_t       m_contentHash32       ;  // for deduping diffbot json objects streaming
