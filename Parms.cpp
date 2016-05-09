@@ -8456,6 +8456,18 @@ void Parms::init ( ) {
 	m->m_flags = 0;
 	m++;
 
+	m->m_title = "Results validity time";
+	m->m_desc  = "Default validity time of a a search result. Currently static but will be more dynamic in the future.";
+	m->m_cgi   = "qresultsvaliditytime";
+	m->m_off   = offsetof(Conf,m_defaultQueryResultsValidityTime);
+	m->m_type  = TYPE_LONG;
+	m->m_page  = PAGE_SEARCH;
+	m->m_obj   = OBJ_CONF;
+	m->m_def   = "1800";
+	m->m_units = "seconds";
+	m->m_flags = 0;
+	m++;
+
 	///////////////////////////////////////////
 	// PAGE SPIDER CONTROLS
 	///////////////////////////////////////////

@@ -910,6 +910,17 @@ bool printSearchResultsHeader ( State0 *st ) {
 			   (uint32_t)(globalNowMS/1000));
 	}
 
+	// show result validity time
+	if ( si->m_format == FORMAT_XML ) {
+		int32_t expireTimeUTC = nowMS/1000 + g_conf.m_defaultQueryResultsValidityTime;
+		sb->safePrintf("\t<expireTimeUTC>%"UINT32"</expireTimeUTC>\n",
+			      expireTimeUTC);
+	} else if ( st->m_header && si->m_format == FORMAT_JSON ) {
+		int32_t expireTimeUTC = nowMS/1000 + g_conf.m_defaultQueryResultsValidityTime;
+		sb->safePrintf("\"expireTimeUTC\":%"UINT32",\n",
+			   expireTimeUTC);
+	}
+
 	// show response time if not doing Quality Assurance
 	if ( si->m_format == FORMAT_XML )
 		sb->safePrintf("\t<responseTimeMS>%"INT64"</responseTimeMS>\n",

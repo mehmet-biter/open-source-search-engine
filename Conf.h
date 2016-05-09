@@ -263,6 +263,8 @@ class Conf {
 	int32_t  m_numQueryTimes;
 	int32_t m_maxCorruptLists;
 
+	int32_t m_defaultQueryResultsValidityTime; //in seconds
+	
 	bool   m_useCollectionPasswords;
 
 	bool   m_allowCloudUsers;
