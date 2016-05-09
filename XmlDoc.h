@@ -106,8 +106,6 @@ bool isSimilar_sorted ( int32_t   *vec0 ,
 			int32_t percentSimilar,
 			int32_t    niceness ) ;
 
-int32_t getDirtyPoints ( char *s , int32_t len , int32_t niceness , char *logUrl ) ;
-
 
 // tell zlib to use our malloc/free functions
 int gbuncompress ( unsigned char *dest      ,

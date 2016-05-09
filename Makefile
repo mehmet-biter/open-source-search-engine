@@ -70,7 +70,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	ScalingFunctions.o \
 	RobotRule.o Robots.o \
 	JobScheduler.o \
-
+	AdultCheck.o \
 
 # common flags
 DEFS = -D_REENTRANT_ -D_CHECK_FORMAT_STRING_ -I.

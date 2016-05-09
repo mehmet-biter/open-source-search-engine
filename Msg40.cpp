@@ -12,6 +12,7 @@
 #include "HttpServer.h"
 #include "PageResults.h"
 #include "HashTable.h"
+#include "AdultCheck.h"
 
 // increasing this doesn't seem to improve performance any on a single
 // node cluster....
@@ -233,7 +234,7 @@ bool Msg40::prepareToGetDocIds ( ) {
 	//   number of results to 0, and set the m_queryClen flag to true
 	// . m_qbuf1 should be the advanced/composite query
 	if ( m_si->m_familyFilter && 
-	     getDirtyPoints ( m_si->m_sbuf1.getBufStart() , 
+	     getAdultPoints ( m_si->m_sbuf1.getBufStart() , 
 			      m_si->m_sbuf1.length() , 
 			      0 ,
 			      NULL ) ) {
