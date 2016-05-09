@@ -8084,9 +8084,9 @@ void Parms::init ( ) {
 
 		"<td valign=top>\n"
 		"<nobr>\n"
-		"<input type=\"text\" name=\"q\" size=\"60\" value=\"\%q\"> "
+		"<input type=\"text\" name=\"q\" size=\"60\" value=\"%q\"> "
 		// %D is the number of results drop down menu
-		"\%D"
+		"%D"
 		"<input type=\"submit\" value=\"Blast It!\" border=\"0\">\n"
 		"</nobr>\n"
 		// family filter

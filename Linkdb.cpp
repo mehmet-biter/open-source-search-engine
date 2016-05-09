@@ -2156,7 +2156,7 @@ bool Msg25::gotLinkText ( Msg20Request *req ) { // LinkTextReply *linkText ) {
 		}
 	}
 
-	time_t ttt;
+	time_t ttt = 0;
 	struct tm *timeStruct = localtime ( &ttt );
 	m_lastUpdateTime = ttt;
 	char buf[64];
