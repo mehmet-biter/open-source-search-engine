@@ -227,7 +227,10 @@ static Needle s_dirtyWords []  = {
 	{"booboo"      ,0,-1,0,0,NULL},
 
 	// shit
-	{"shitak"      ,0,-2,0,0,NULL}
+	{"shitak"      ,0,-2,0,0,NULL},
+	
+	// scunthorpe (north lincolnshire)
+	{"scunthorpe"  ,0,-2,0,0,NULL},
 };
 
 ////
