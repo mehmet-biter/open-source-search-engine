@@ -1468,9 +1468,6 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 						      false ,
 						      ct ,
 						      200 ); // http status
-		//log("crawlbot: no crawl name given");
-		//char *msg = "invalid or missing name";
-		//return sendErrorReply2 (socket,fmt,msg);
 	}
 
 
@@ -1570,7 +1567,7 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 	if ( st->m_seedBank.length() && ! seeds )
 		seeds = st->m_seedBank.getBufStart();
 
-	char *coll = "NONE";
+	const char *coll = "NONE";
 	if ( cr ) coll = cr->m_coll;
 
 	if ( seeds )
@@ -1635,27 +1632,18 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 			g_errno = EREPAIRING;
 			return sendErrorReply2(socket,fmt,mstrerror(g_errno));
 		}
-		// . avoid spidering links for these urls? i would say
-		// . default is to NOT spider the links...
-		// . support camel case and all lower case
-		//int32_t spiderLinks = hr->getLong("spiderLinks",1);
-		//spiderLinks      = hr->getLong("spiderlinks",spiderLinks);
-		//bool spiderLinks = false;
-		// make a list of spider requests from these urls
-		//SafeBuf listBuf;
+
 		// this returns NULL with g_errno set
 		bool status = true;
-		if ( ! getSpiderRequestMetaList ( seeds,
-						  &st->m_listBuf ,
-						  true , // spiderLinks?
-						  cr ) )
+		if ( ! getSpiderRequestMetaList ( seeds, &st->m_listBuf, true, cr ) ) {
 			status = false;
+		}
+
 		// do not spider links for spots
-		if ( ! getSpiderRequestMetaList ( spots,
-						  &st->m_listBuf ,
-						  false , // spiderLinks?
-						  NULL ) )
+		if ( ! getSpiderRequestMetaList ( spots, &st->m_listBuf, false, NULL ) ) {
 			status = false;
+		}
+
 		// empty?
 		int32_t size = st->m_listBuf.length();
 		// error?
@@ -3205,12 +3193,10 @@ int32_t isInSeedBuf ( CollectionRec *cr , const char *url, int len ) {
 
 // just use "fakeips" based on the hash of each url hostname/subdomain
 // so we don't waste time doing ip lookups.
-bool getSpiderRequestMetaList ( const char *doc ,
-				SafeBuf *listBuf ,
-				bool spiderLinks ,
-				CollectionRec *cr ) {
-
-	if ( ! doc ) return true;
+bool getSpiderRequestMetaList ( const char *doc, SafeBuf *listBuf, bool spiderLinks, CollectionRec *cr ) {
+	if ( ! doc ) {
+		return true;
+	}
 
 	// . scan the list of urls
 	// . assume separated by white space \n \t or space
@@ -3222,28 +3208,39 @@ bool getSpiderRequestMetaList ( const char *doc ,
 	while ( true ) {
 		// skip white space (\0 is not a whitespace)
 		for ( ; is_wspace_a(*p) ; p++ );
+
 		// all done?
 		if ( ! *p ) break;
+
 		// save it
 		const char *saved = p;
+
 		// advance to next white space
 		for ( ; ! is_wspace_a(*p) && *p ; p++ );
+
 		// set end
 		const char *end = p;
+
 		// get that url
 		Url url;
 		url.set( saved, end - saved );
+
 		// if not legit skip
 		if ( url.getUrlLen() <= 0 ) continue;
+
 		// need this
 		int64_t probDocId = g_titledb.getProbableDocId(&url);
+
 		// make it
 		SpiderRequest sreq;
 		sreq.reset();
 		sreq.m_firstIp = url.getHostHash32(); // fakeip!
+
 		// avoid ips of 0 or -1
-		if ( sreq.m_firstIp == 0 || sreq.m_firstIp == -1 )
+		if ( sreq.m_firstIp == 0 || sreq.m_firstIp == -1 ) {
 			sreq.m_firstIp = 1;
+		}
+
 		sreq.m_hostHash32 = url.getHostHash32();
 		sreq.m_domHash32  = url.getDomainHash32();
 		sreq.m_siteHash32 = url.getHostHash32();
@@ -3263,8 +3260,9 @@ bool getSpiderRequestMetaList ( const char *doc ,
 		sreq.m_isAddUrl = 1;
 
 		// spider links?
-		if ( ! spiderLinks )
+		if ( ! spiderLinks ) {
 			sreq.m_avoidSpiderLinks = 1;
+		}
 
 		// save the url!
 		strcpy ( sreq.m_url , url.getUrl() );
@@ -3274,43 +3272,57 @@ bool getSpiderRequestMetaList ( const char *doc ,
 		int32_t oldBufSize = listBuf->getCapacity();
 		int32_t need = listBuf->getLength() + 100 + sreq.getRecSize();
 		int32_t newBufSize = 0;
-		if ( need > oldBufSize ) newBufSize = oldBufSize + 100000;
-		if ( newBufSize && ! listBuf->reserve ( newBufSize ) )
+
+		if ( need > oldBufSize ) {
+			newBufSize = oldBufSize + 100000;
+		}
+
+		if ( newBufSize && ! listBuf->reserve ( newBufSize ) ) {
 			// return false with g_errno set
 			return false;
+		}
 
 		// store rdbid first
-		if ( ! listBuf->pushChar(RDB_SPIDERDB) )
+		if ( ! listBuf->pushChar(RDB_SPIDERDB) ) {
 			// return false with g_errno set
 			return false;
-		// store it
-		if ( ! listBuf->safeMemcpy ( &sreq , sreq.getRecSize() ) )
-			// return false with g_errno set
-			return false;
+		}
 
-		if ( ! cr ) continue;
+		// store it
+		if ( ! listBuf->safeMemcpy ( &sreq , sreq.getRecSize() ) ) {
+			// return false with g_errno set
+			return false;
+		}
+
+		if ( ! cr ) {
+			continue;
+		}
 
 		// do not add dups into m_diffbotSeeds safebuf
 		int32_t status = isInSeedBuf ( cr , saved , end - saved );
 
 		// error?
 		if ( status == -1 ) {
-			log ( "crawlbot: error adding seed to table: %s",
-			      mstrerror(g_errno) );
+			log ( LOG_WARN, "crawlbot: error adding seed to table: %s", mstrerror(g_errno) );
 			return true;
 		}
 
 		// already in buf
-		if ( status == 1 ) continue;
+		if ( status == 1 ) {
+			continue;
+		}
 
 		// add url into m_diffbotSeeds, \n separated list
-		if ( cr->m_diffbotSeeds.length() )
+		if ( cr->m_diffbotSeeds.length() ) {
 			// make it space not \n so it looks better in the
 			// json output i guess
-			cr->m_diffbotSeeds.pushChar(' '); // \n
+			cr->m_diffbotSeeds.pushChar( ' ' ); // \n
+		}
+
 		cr->m_diffbotSeeds.safeMemcpy (url.getUrl(), url.getUrlLen());
 		cr->m_diffbotSeeds.nullTerm();
 	}
+
 	// all done
 	return true;
 }
