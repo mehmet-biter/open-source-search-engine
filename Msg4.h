@@ -11,9 +11,6 @@ bool loadAddsInProgress ( const char *filenamePrefix );
 // used by Repair.cpp to make sure we are not adding any more data ("writing")
 bool hasAddsInQueue     ( ) ;
 
-//#include "RdbList.h"
-
-
 bool isInMsg4LinkedList ( class Msg4 *msg4 ) ;
 
 #include "SafeBuf.h"

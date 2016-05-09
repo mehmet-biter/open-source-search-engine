@@ -27,7 +27,6 @@
 //   5s to spider a url after adding it.
 //
 //////////////
-//#define MSG4_WAIT 500
 
 // article1.html and article11.html are dups but they are being spidered
 // within 500ms of another
@@ -69,9 +68,7 @@ static void       sleepCallback4   ( int bogusfd      , void *state    ) ;
 static bool       sendBuffer       ( int32_t hostId , int32_t niceness ) ;
 static Multicast *getMulticast     ( ) ;
 static void       returnMulticast  ( Multicast *mcast ) ;
-//static void processSpecialSignal ( collnum_t collnum , char *p ) ;
-//static bool storeList2 ( RdbList *list , char rdbId , collnum_t collnum,
-//			 bool forceLocal, bool splitList , int32_t niceness );
+
 static bool storeRec   ( collnum_t      collnum , 
 			 char           rdbId   ,
 			 uint32_t  gid     ,
@@ -110,12 +107,6 @@ bool registerHandler4 ( ) {
 	// nobody is waiting in line
 	s_msg4Head = NULL;
 	s_msg4Tail = NULL;
-
-	// spider hang bug
-	//logf(LOG_DEBUG,"msg4: registering handler.");
-
-	// for now skip it
-	//return true;
 
 	// . restore state from disk
 	// . false means repair is not active
@@ -158,9 +149,6 @@ void flushLocal ( ) {
 		sendBuffer ( i , MAX_NICENESS );
 	g_errno = 0;
 }
-
-//static void (* s_flushCallback) ( void *state ) = NULL ;
-//static void  * s_flushState = NULL;
 
 // for holding flush callback data
 static SafeBuf s_callbackBuf;
@@ -256,11 +244,6 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 	// now will be >= each slot's m_startTime.
 	cb->m_timestamp = max;
 
-	// can we sometimes flush without blocking? maybe...
-	//if ( ! hasAddsInQueue () ) return true;
-	// assign it
-	//s_flushState    = state;
-	//s_flushCallback = callback;
 	// we are waiting now
 	if( g_conf.m_logTraceMsg ) {
 		log(LOG_TRACE,"%s:%s: END - returning false", __FILE__,__func__);
