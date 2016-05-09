@@ -10190,6 +10190,15 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "log trace info for Msg4";
+	m->m_cgi   = "ltrc_msg4";
+	m->m_off   = offsetof(Conf,m_logTraceMsg4);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "log trace info for XmlDoc";
 	m->m_cgi   = "ltrc_xmldoc";
 	m->m_off   = offsetof(Conf,m_logTraceXmlDoc);
@@ -10207,16 +10216,6 @@ void Parms::init ( ) {
 	m->m_page  = PAGE_LOG;
 	m->m_obj   = OBJ_CONF;
 	m++;
-
-	m->m_title = "log trace info for network messages (excessive!)";
-	m->m_cgi   = "trcmsg";
-	m->m_off   = offsetof(Conf,m_logTraceMsg);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 
 	m->m_title = "log timing messages for build";
 	m->m_desc  = "Log various timing related messages.";

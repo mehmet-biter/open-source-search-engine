@@ -518,8 +518,6 @@ bool Rebalance::gotList ( ) {
 		m_negMetaList.safeMemcpy ( key , ks );
 	}
 
-	//log("rebal: done reading list");
-
 	//  update nextkey
 	//if ( last ) {
 	if ( ! m_list.isEmpty() ) {
@@ -533,30 +531,14 @@ bool Rebalance::gotList ( ) {
 		if ( KEYCMP ( m_nextKey , KEYMAX() , ks ) != 0 )
 			KEYADD ( m_nextKey , ks );
 	}
-	//else {
-	//	log("rebal: got empty list");
-	//}
 
-	if ( ! m_msg4a.addMetaList ( &m_posMetaList ,
-				     m_collnum ,
-				     this ,
-				     doneAddingMetaWrapper ,
-				     MAX_NICENESS ,
-				     rdb->m_rdbId ,
-				     -1 ) ) // shard override, not!
-		m_blocked++;
+	if ( ! m_msg4a.addMetaList( &m_posMetaList, m_collnum, this, doneAddingMetaWrapper, MAX_NICENESS, rdb->m_rdbId, -1 ) ) { // shard override, not!
+		++m_blocked;
+	}
 
+	if ( ! m_msg4b.addMetaList( &m_negMetaList, m_collnum, this, doneAddingMetaWrapper, MAX_NICENESS, rdb->m_rdbId, myShard ) ) { // shard override, not!
+		++m_blocked;
+	}
 
-	if ( ! m_msg4b.addMetaList ( &m_negMetaList ,
-				     m_collnum ,
-				     this ,
-				     doneAddingMetaWrapper ,
-				     MAX_NICENESS ,
-				     rdb->m_rdbId ,
-				     myShard ) ) // shard override, not!
-		m_blocked++;
-
-	if ( m_blocked ) return false;
-
-	return true;
+	return ( m_blocked == 0 );
 }

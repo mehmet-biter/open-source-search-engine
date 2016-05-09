@@ -21,35 +21,15 @@ class Msg4 {
 	// meta list format =
 	// (rdbId | 0x08) then rdb record [if nosplit]
 	// (rdbId | 0x00) then rdb record [if split  ]
-	bool addMetaList ( const char *metaList                 ,
-			   int32_t  metaListSize             ,
-			   char *coll                     ,
-			   void *state                    ,
-			   void (* callback)(void *state) ,
-			   int32_t  niceness                 ,
-			   char  rdbId = -1               );
-
-
-	bool addMetaList ( class SafeBuf *sb ,
-			   collnum_t  collnum                  ,
-			   void      *state                    ,
-			   void      (* callback)(void *state) ,
-			   int32_t       niceness                 ,
-			   char       rdbId = -1               ,
-			   int32_t       shardOverride = -1       );
+	bool addMetaList( class SafeBuf *sb, collnum_t collnum, void *state,
+	                  void (* callback)(void *state), int32_t niceness, char rdbId = -1, int32_t shardOverride = -1 );
 
 	// this one is faster...
 	// returns false if blocked
-	bool addMetaList ( const char      *metaList                 ,
-			   int32_t       metaListSize             ,
-			   collnum_t  collnum                  ,
-			   void      *state                    ,
-			   void      (* callback)(void *state) ,
-			   int32_t       niceness                 ,
-			   char       rdbId = -1               ,
-			   int32_t       shardOverride = -1       );
+	bool addMetaList( const char *metaList, int32_t metaListSize, collnum_t collnum, void *state,
+	                  void (* callback)(void *state), int32_t niceness, char rdbId = -1, int32_t shardOverride = -1 );
 
-	bool addMetaList2 ( );
+	bool addMetaList2();
 
 	Msg4() { m_inUse = false; };
 	// why wasn't this saved in addsinprogress.dat file?

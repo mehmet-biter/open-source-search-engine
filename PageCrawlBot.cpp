@@ -1661,15 +1661,11 @@ bool sendPageCrawlbot ( TcpSocket *socket , HttpRequest *hr ) {
 			return sendErrorReply2(socket,fmt,"no urls found");
 		}
 		// add to spiderdb
-		if ( ! st->m_msg4.addMetaList( st->m_listBuf.getBufStart() ,
-					       st->m_listBuf.length(),
-					       cr->m_coll,
-					       st ,
-					       addedUrlsToSpiderdbWrapper,
-					       0 // niceness
-					       ) )
+		if ( ! st->m_msg4.addMetaList( &( st->m_listBuf ), cr->m_collnum, st, addedUrlsToSpiderdbWrapper, 0 ) ) {
 			// blocked!
 			return false;
+		}
+
 		// did not block, print page!
 		addedUrlsToSpiderdbWrapper(st);
 		return true;

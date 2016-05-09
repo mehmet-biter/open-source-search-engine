@@ -95,13 +95,7 @@ bool sendPageAddUrl2 ( TcpSocket *sock , HttpRequest *hr ) {
 	}
 
 	// add to spiderdb
-	if ( ! gr->m_msg4.addMetaList( gr->m_listBuf.getBufStart() ,
-				       gr->m_listBuf.length(),
-				       cr->m_coll,
-				       gr ,
-				       addedUrlsToSpiderdbWrapper,
-				       0 // niceness
-				       ) ) {
+	if ( ! gr->m_msg4.addMetaList( &(gr->m_listBuf), cr->m_collnum, gr, addedUrlsToSpiderdbWrapper, 0 ) ) {
 		// blocked!
 		return false;
 	}

@@ -79,15 +79,11 @@ static bool storeRec   ( collnum_t      collnum ,
 
 // all these parameters should be preset
 bool registerHandler4 ( ) {
-	
-	if( g_conf.m_logTraceMsg ) {
-		log(LOG_TRACE,"%s:%s: BEGIN", __FILE__,__func__);
-	}
+	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 	
 	// register ourselves with the udp server
-	if ( ! g_udpServer.registerHandler ( 0x04, handleRequest4 ) )
-	{
-		log(LOG_ERROR,"%s:%s: Could not register with UDP server!", __FILE__,__func__);
+	if ( ! g_udpServer.registerHandler ( 0x04, handleRequest4 ) ) {
+		log(LOG_ERROR,"%s:%s: Could not register with UDP server!", __FILE__, __func__ );
 		return false;
 	}
 
@@ -122,10 +118,8 @@ bool registerHandler4 ( ) {
 	// . returns false on failure
 	bool rc = g_loop.registerSleepCallback(MSG4_WAIT,NULL,sleepCallback4 );
 
-	if( g_conf.m_logTraceMsg ) {
-		log(LOG_TRACE,"%s:%s: END - returning %s", __FILE__,__func__, rc?"true":"false");
-	}
-	
+	logTrace( g_conf.m_logTraceMsg4, "END - returning %s", rc?"true":"false");
+
 	return rc;
 }
 
@@ -165,17 +159,12 @@ public:
 // . injecting into the "qatest123" coll flushes after each inject
 // . returns false if blocked and callback will be called
 bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
-	if( g_conf.m_logTraceMsg ) {
-		log(LOG_TRACE,"%s:%s: BEGIN", __FILE__,__func__);
-	}
+	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
-	
 	// if all empty, return true now
 	if ( ! hasAddsInQueue () ) 
 	{
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s: END - nothing queued, returning true", __FILE__,__func__);
-		}
+		logTrace( g_conf.m_logTraceMsg4, "END - nothing queued, returning true" );
 		return true;
 	}
 
@@ -186,7 +175,7 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 		// make big
 		if ( ! s_callbackBuf.reserve ( 300 * cbackSize ) ) {
 			// return true with g_errno set on error
-			log(LOG_ERROR,"%s:%s: END - error allocating space for flush callback, returning true", __FILE__,__func__);
+			log(LOG_ERROR,"%s:%s: END - error allocating space for flush callback, returning true", __FILE__, __func__ );
 			return true;
 		}
 
@@ -245,110 +234,56 @@ bool flushMsg4Buffers ( void *state , void (* callback) (void *) ) {
 	cb->m_timestamp = max;
 
 	// we are waiting now
-	if( g_conf.m_logTraceMsg ) {
-		log(LOG_TRACE,"%s:%s: END - returning false", __FILE__,__func__);
-	}
+	logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 	return false;
 }
 
 
 // used by Repair.cpp to make sure we are not adding any more data ("writing")
 bool hasAddsInQueue   ( ) {
-	if( g_conf.m_logTraceMsg ) {
-		log(LOG_TRACE,"%s:%s: BEGIN", __FILE__,__func__);
-	}
-	
+	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
+
 	// if there is an outstanding multicast...
-	if ( s_mcastsOut > s_mcastsIn ) 
-	{
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s: END - multicast waiting, returning true", __FILE__,__func__);
-		}
+	if ( s_mcastsOut > s_mcastsIn ) {
+		logTrace( g_conf.m_logTraceMsg4, "END - multicast waiting, returning true" );
 		return true;
 	}
 	
 	// if we have a msg4 waiting in line...
-	if ( s_msg4Head               ) 
-	{
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s: END - msg4 waiting, returning true", __FILE__,__func__);
-		}
+	if ( s_msg4Head ) {
+		logTrace( g_conf.m_logTraceMsg4, "END - msg4 waiting, returning true" );
 		return true;
 	}
 		
 	// if we have a host buf that has something in it...
 	for ( int32_t i = 0 ; i < s_numHostBufs ; i++ ) {
-		if ( ! s_hostBufs[i] ) 
-		{
+		if ( ! s_hostBufs[i] ) {
 			continue;
 		}
 			
-		if ( *(int32_t *)s_hostBufs[i] > 4 ) 
-		{
-			if( g_conf.m_logTraceMsg ) {
-				log(LOG_TRACE,"%s:%s: END - hostbuf waiting, returning true", __FILE__,__func__);
-			}
+		if ( *(int32_t *)s_hostBufs[i] > 4 ) {
+			logTrace( g_conf.m_logTraceMsg4, "END - hostbuf waiting, returning true" );
 			return true;
 		}
 	}
 
 	// otherwise, we have nothing queued up to add
-	if( g_conf.m_logTraceMsg ) {
-		log(LOG_TRACE,"%s:%s: END - nothing queued, returning false", __FILE__,__func__);
-	}
+	logTrace( g_conf.m_logTraceMsg4, "END - nothing queued, returning false" );
 	return false;
 }
 
-
-// returns false if blocked
-bool Msg4::addMetaList ( const char  *metaList                , 
-			 int32_t   metaListSize            ,
-			 char  *coll                    ,
-			 void  *state                   ,
-			 void (* callback)(void *state) ,
-			 int32_t   niceness                ,
-			 char   rdbId                   ) {
-
-	collnum_t collnum = g_collectiondb.getCollnum ( coll );
-	return addMetaList ( metaList     ,
-			     metaListSize ,
-			     collnum      ,
-			     state        ,
-			     callback     ,
-			     niceness     ,
-			     rdbId        );
+bool Msg4::addMetaList ( SafeBuf *sb, collnum_t collnum, void *state, void (* callback)(void *state),
+                         int32_t niceness, char rdbId, int32_t shardOverride ) {
+	return addMetaList ( sb->getBufStart(), sb->length(), collnum, state, callback, niceness, rdbId, shardOverride );
 }
 
-bool Msg4::addMetaList ( SafeBuf *sb ,
-			 collnum_t  collnum                  ,
-			 void      *state                    ,
-			 void      (* callback)(void *state) ,
-			 int32_t       niceness                 ,
-			 char       rdbId                    ,
-			 int32_t       shardOverride ) {
-	return addMetaList ( sb->getBufStart() ,
-			     sb->length() ,
-			     collnum ,
-			     state ,
-			     callback ,
-			     niceness ,
-			     rdbId ,
-			     shardOverride );
-}
-
-
-bool Msg4::addMetaList ( const char      *metaList                 , 
-			 int32_t       metaListSize             ,
-			 collnum_t  collnum                  ,
-			 void      *state                    ,
-			 void      (* callback)(void *state) ,
-			 int32_t       niceness                 ,
-			 char       rdbId                    ,
-			 // Rebalance.cpp needs to add negative keys to
-			 // remove foreign records from where they no
-			 // longer belong because of a new hosts.conf file.
-			 // This will be -1 if not be overridden.
-			 int32_t       shardOverride ) {
+bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t collnum, void *state,
+                         void (* callback)(void *state), int32_t niceness, char rdbId,
+                         // Rebalance.cpp needs to add negative keys to
+                         // remove foreign records from where they no
+                         // longer belong because of a new hosts.conf file.
+                         // This will be -1 if not be overridden.
+                         int32_t       shardOverride ) {
 
 	// not in progress
 	m_inUse = false;
@@ -357,7 +292,6 @@ bool Msg4::addMetaList ( const char      *metaList                 ,
 	if ( metaListSize == 0 ) return true;
 
 	// sanity
-	//if ( collnum < 0 || collnum > 1000 ) { char *xx=NULL;*xx=0; }
 	if ( collnum < 0 ) { char *xx=NULL;*xx=0; }
 
 	// if first time set this
@@ -405,14 +339,14 @@ bool Msg4::addMetaList ( const char      *metaList                 ,
 	//   with any of this stuff.
 	//if ( s_msg4Head || s_msg4Tail ) { char *xx=NULL; *xx=0; }
 	if ( s_msg4Head || s_msg4Tail ) {
-		log("msg4: got unexpected head"); // :)
+		log( LOG_WARN, "msg4: got unexpected head");
 		goto retry;
 	}
 
 	// . spider hang bug
 	// . debug log. seems to happen a lot if not using threads..
 	if ( g_jobScheduler.are_new_jobs_allowed() )
-		logf(LOG_DEBUG,"msg4: queueing head msg4=0x%"PTRFMT"",(PTRTYPE)this);
+		log( LOG_DEBUG, "msg4: queueing head msg4=0x%" PTRFMT, (PTRTYPE)this );
 
 	// mark it
 	m_inUse = true;
@@ -441,22 +375,14 @@ bool isInMsg4LinkedList ( Msg4 *msg4 ) {
 }
 
 bool Msg4::addMetaList2 ( ) {
-	if( g_conf.m_logTraceMsg ) {
-		log(LOG_TRACE,"%s:%s: BEGIN", __FILE__,__func__);
-	}
-
+	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
 	const char *p = m_currentPtr;
-
-	// get the collnum
-	//collnum_t collnum = g_collectiondb.getCollnum ( m_coll );
-
 	const char *pend = m_metaList + m_metaListSize;
 
 #ifdef _VALGRIND_
 	VALGRIND_CHECK_MEM_IS_DEFINED(p,pend-p);
 #endif
-	//if ( m_collnum < 0 || m_collnum > 1000 ) { char *xx=NULL;*xx=0; }
 	if ( m_collnum < 0 ) { char *xx=NULL;*xx=0; }
 
 	// store each record in the list into the send buffers
@@ -464,62 +390,41 @@ bool Msg4::addMetaList2 ( ) {
 		// first is rdbId
 		char rdbId = m_rdbId;
 		if ( rdbId < 0 ) rdbId = *p++;
-		// get nosplit
-		//bool nosplit = ( rdbId & 0x80 ) ;
 		// mask off rdbId
 		rdbId &= 0x7f;
 
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s:   rdbId: %02x", __FILE__,__func__, rdbId);
-		}
-
+		logTrace( g_conf.m_logTraceMsg4, "  rdbId: %02x", rdbId);
 
 		// get the key of the current record
 		const char *key = p; 
 		// negative key?
 		bool del = !( *p & 0x01 );
 
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s:   Negative key: %s", __FILE__,__func__, del?"true":"false");
-		}
+		logTrace( g_conf.m_logTraceMsg4, "  Negative key: %s", del?"true":"false");
 
 		// get the key size. a table lookup in Rdb.cpp.
 		int32_t ks = getKeySizeFromRdbId ( rdbId );
 			
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s: Key size: %"INT32"", __FILE__,__func__, ks);
-		}
-			
+		logTrace( g_conf.m_logTraceMsg4, "Key size: %"INT32"", ks);
 			
 		// skip key
 		p += ks;
 		// set this
-		//bool split = true; if ( nosplit ) split = false;
-		// . if key belongs to same group as firstKey then continue
-		// . titledb now uses last bits of docId to determine groupId
-		// . but uses the top 32 bits of key still
-		// . spiderdb uses last 64 bits to determine groupId
-		// . tfndb now is like titledb(top 32 bits are top 32 of docId)
-		//uint32_t gid = getGroupId ( rdbId , key , split );
 		uint32_t shardNum = getShardNum( rdbId , key );
 
 		// override it from Rebalance.cpp for redistributing records
 		// after updating hosts.conf?
 		if ( m_shardOverride >= 0 ) shardNum = m_shardOverride;
 			
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s:   shardNum: %"INT32"", __FILE__,__func__, shardNum);
-		}
+		logTrace( g_conf.m_logTraceMsg4, "  shardNum: %"INT32"", shardNum);
 
 		// get the record, is -1 if variable. a table lookup.
 		// . negative keys have no data
 		// . this unfortunately is not true according to RdbList.cpp
 		int32_t dataSize = del ? 0 : getDataSizeFromRdbId ( rdbId );
 
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s:   dataSize: %"INT32"", __FILE__,__func__, dataSize);
-		}
-			
+		logTrace( g_conf.m_logTraceMsg4, "  dataSize: %"INT32"", dataSize);
+
 		// if variable read that in
 		if ( dataSize == -1 ) {
 			// -1 means to read it in
@@ -530,9 +435,7 @@ bool Msg4::addMetaList2 ( ) {
 			// skip dataSize
 			p += 4;
 
-			if( g_conf.m_logTraceMsg ) {
-				log(LOG_TRACE,"%s:%s:   dataSize: %"INT32" (variable size read)", __FILE__,__func__, dataSize);
-			}
+			logTrace( g_conf.m_logTraceMsg4, "  dataSize: %"INT32" (variable size read)", dataSize);
 		}
 
 		// skip over the data, if any
@@ -550,9 +453,9 @@ bool Msg4::addMetaList2 ( ) {
 		//int32_t hostId = g_hostdb.makeHostIdFast ( gid );
 		Host *hosts = g_hostdb.getShard ( shardNum );
 		int32_t hostId = hosts[0].m_hostId;
-		
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s:   hostId: %"INT32"", __FILE__,__func__, hostId);
+
+		logTrace( g_conf.m_logTraceMsg4, "  hostId: %"INT32"", hostId);
+		if( g_conf.m_logTraceMsg4 ) {
 			loghex(LOG_TRACE, key, ks, "Key: (hexdump)");
 		}
 		
@@ -603,10 +506,7 @@ bool Msg4::addMetaList2 ( ) {
 	// in case this was being used to hold the data, free it
 	m_tmpBuf.purge();
 
-	if( g_conf.m_logTraceMsg ) {
-		log(LOG_TRACE,"%s:%s: END - OK, true", __FILE__,__func__);
-	}
-
+	logTrace( g_conf.m_logTraceMsg4, "END - OK, true" );
 	return true;
 }
 
@@ -1017,10 +917,7 @@ void storeLineWaiters ( ) {
 // . NOTE: Must always call g_udpServer::sendReply or sendErrorReply() so
 //   read/send bufs can be freed
 void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
-
-	if( g_conf.m_logTraceMsg ) {
-		log(LOG_TRACE,"%s:%s: BEGIN", __FILE__,__func__);
-	}
+	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
 	// easy var
 	UdpServer *us = &g_udpServer;
@@ -1034,7 +931,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , g_errno );
 		
-		log(LOG_WARN,"%s:%s: END - hostsConfInDisagreement", __FILE__,__func__);
+		log(LOG_WARN,"%s:%s: END - hostsConfInDisagreement", __FILE__, __func__ );
 		return;
 	}
 
@@ -1047,7 +944,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 			us->sendErrorReply ( slot , g_errno );
 			
-			log(LOG_WARN,"%s:%s: END - EWAITINGTOSYNCHOSTCONF", __FILE__,__func__);
+			log(LOG_WARN,"%s:%s: END - EWAITINGTOSYNCHOSTCONF", __FILE__, __func__ );
 			return;
 		}
 		
@@ -1058,7 +955,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 			log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 			us->sendErrorReply ( slot , g_errno );
 			
-			log(LOG_WARN,"%s:%s: END - EBADHOSTSCONF", __FILE__,__func__);
+			log(LOG_WARN,"%s:%s: END - EBADHOSTSCONF", __FILE__, __func__ );
 			return;
 		}
 	}
@@ -1075,7 +972,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , g_errno );
 		
-		log(LOG_ERROR,"%s:%s: END - EREQUESTTOOSHORT", __FILE__,__func__);
+		log(LOG_ERROR,"%s:%s: END - EREQUESTTOOSHORT", __FILE__, __func__ );
 		return;
 	}
 	
@@ -1100,7 +997,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		us->sendReply_ass ( NULL , 0 , NULL , 0 , slot ) ;
 		//us->sendErrorReply(slot,ECORRUPTDATA);return;}
 		
-		log(LOG_ERROR,"%s:%s: END", __FILE__,__func__);
+		log(LOG_ERROR,"%s:%s: END", __FILE__, __func__ );
 		return;
 	}
 
@@ -1119,9 +1016,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply(slot,g_errno);
 		
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s: END - ETRYAGAIN. Waiting to sync with host #0", __FILE__,__func__);
-		}
+		logTrace( g_conf.m_logTraceMsg4, "END - ETRYAGAIN. Waiting to sync with host #0" );
 		return; 
 	}
 
@@ -1130,18 +1025,14 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		log( LOG_ERROR, "%s:%s:%d: call sendErrorReply. error='%s'", __FILE__, __func__, __LINE__, mstrerrno( g_errno ) );
 		us->sendErrorReply(slot,g_errno);
 		
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s: END - addMetaList returned false. g_errno=%d", __FILE__,__func__, g_errno);
-		}
-		return; 
+		logTrace( g_conf.m_logTraceMsg4, "END - addMetaList returned false. g_errno=%d", g_errno);
+		return;
 	}
 
 	// good to go
 	us->sendReply_ass ( NULL , 0 , NULL , 0 , slot ) ;
 
-	if( g_conf.m_logTraceMsg ) {
-		log(LOG_TRACE,"%s:%s: END - OK", __FILE__,__func__);
-	}
+	logTrace( g_conf.m_logTraceMsg4, "END - OK" );
 }
 
 
@@ -1405,16 +1296,10 @@ bool saveAddsInProgress ( const char *prefix ) {
 // . returns false on an unrecoverable error, true otherwise
 // . sets g_errno on error
 bool loadAddsInProgress ( const char *prefix ) {
+	logTrace( g_conf.m_logTraceMsg4, "BEGIN" );
 
-	if( g_conf.m_logTraceMsg ) {
-		log(LOG_TRACE,"%s:%s: BEGIN", __FILE__,__func__);
-	}
-
-	if ( g_conf.m_readOnlyMode ) 
-	{
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s: END - Read-only mode. Returning true", __FILE__,__func__);
-		}
+	if ( g_conf.m_readOnlyMode ) {
+		logTrace( g_conf.m_logTraceMsg4, "END - Read-only mode. Returning true" );
 		return true;
 	}
 
@@ -1427,22 +1312,16 @@ bool loadAddsInProgress ( const char *prefix ) {
 	// . if we saved the add state while in repair mode when we exited
 	//   then we need to restore just that
 	if ( ! prefix ) prefix = "";
-	sprintf ( filename, "%s%saddsinprogress.dat",
-		  g_hostdb.m_dir , prefix );
+	sprintf ( filename, "%s%saddsinprogress.dat", g_hostdb.m_dir , prefix );
 
-	if( g_conf.m_logTraceMsg ) {
-		log(LOG_TRACE,"%s:%s: filename [%s]", __FILE__,__func__, filename);
-	}
+	logTrace( g_conf.m_logTraceMsg4, "filename [%s]", filename);
 
 	// if file does not exist, return true, not really an error
 	struct stat stats;
 	stats.st_size = 0;
 	int status = stat ( filename , &stats );
-	if ( status != 0 && errno == ENOENT ) 
-	{
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s: END - not found, returning true", __FILE__,__func__);
-		}
+	if ( status != 0 && errno == ENOENT ) {
+		logTrace( g_conf.m_logTraceMsg4, "END - not found, returning true" );
 		return true;
 	}
 
@@ -1454,10 +1333,8 @@ bool loadAddsInProgress ( const char *prefix ) {
 	if ( fd < 0 ) {
 		log(LOG_ERROR, "%s:%s: Failed to open %s for reading: %s",__FILE__,__func__,filename,strerror(errno));
 		g_errno = errno;
-		
-		if( g_conf.m_logTraceMsg ) {
-			log(LOG_TRACE,"%s:%s: END - returning false", __FILE__,__func__);
-		}
+
+		logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 		return false;
 	}
 
@@ -1471,8 +1348,7 @@ bool loadAddsInProgress ( const char *prefix ) {
 	if ( numHostBufs != s_numHostBufs ) {
 		g_errno = EBADENGINEER;
 
-		log(LOG_ERROR,"%s:%s: build: addsinprogress.dat has wrong number of host bufs.",
-			__FILE__,__func__);
+		log( LOG_ERROR, "%s:%s: build: addsinprogress.dat has wrong number of host bufs.", __FILE__, __func__ );
 		return false;
 	}
 
@@ -1500,9 +1376,7 @@ bool loadAddsInProgress ( const char *prefix ) {
 			log(LOG_ERROR,"build: Could not alloc %"INT32" bytes for "
 					"reading %s",allocSize,filename);
 
-			if( g_conf.m_logTraceMsg ) {
-				log(LOG_TRACE,"%s:%s: END - returning false", __FILE__,__func__);
-			}
+			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 			return false;
 		}
 		
@@ -1517,9 +1391,7 @@ bool loadAddsInProgress ( const char *prefix ) {
 			log(LOG_ERROR,"%s:%s: error reading addsinprogress.dat: %s", 
 				__FILE__,__func__,mstrerror(errno));
 				   
-			if( g_conf.m_logTraceMsg ) {
-				log(LOG_TRACE,"%s:%s: END - returning false", __FILE__,__func__);
-			}
+			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 			return false;
 		}
 		// skip over it
@@ -1550,9 +1422,7 @@ bool loadAddsInProgress ( const char *prefix ) {
 			close (fd);
 			log(LOG_ERROR, "%s:%s: bad msg4 hostid %"INT32"",__FILE__,__func__,hostId);
 
-			if( g_conf.m_logTraceMsg ) {
-				log(LOG_TRACE,"%s:%s: END - returning false", __FILE__,__func__);
-			}
+			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 			return false;
 		}
 		// host many bytes
@@ -1565,9 +1435,7 @@ bool loadAddsInProgress ( const char *prefix ) {
 			close ( fd );
 			log(LOG_ERROR, "%s:%s: could not alloc msg4 buf",__FILE__,__func__);
 			
-			if( g_conf.m_logTraceMsg ) {
-				log(LOG_TRACE,"%s:%s: END - returning false", __FILE__,__func__);
-			}
+			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 			return false;
 		}
 		
@@ -1575,11 +1443,9 @@ bool loadAddsInProgress ( const char *prefix ) {
 		int32_t nb = read ( fd , buf , numBytes );
 		if ( nb != numBytes ) {
 			close ( fd );
-			log(LOG_ERROR,"%s:%s: build: bad msg4 buf read", __FILE__,__func__);
+			log(LOG_ERROR,"%s:%s: build: bad msg4 buf read", __FILE__, __func__ );
 
-			if( g_conf.m_logTraceMsg ) {
-				log(LOG_TRACE,"%s:%s: END - returning false", __FILE__,__func__);
-			}
+			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 			return false;
 		}
 		p += numBytes;
@@ -1600,9 +1466,7 @@ bool loadAddsInProgress ( const char *prefix ) {
 			log(LOG_WARN, "%s:%s: could not resend reload buf: %s",
 				   __FILE__,__func__,mstrerror(g_errno));
 
-			if( g_conf.m_logTraceMsg ) {
-				log(LOG_TRACE,"%s:%s: END - returning false", __FILE__,__func__);
-			}
+			logTrace( g_conf.m_logTraceMsg4, "END - returning false" );
 			return false;
 		}
 	}
@@ -1611,9 +1475,7 @@ bool loadAddsInProgress ( const char *prefix ) {
 	// all done
 	close ( fd );
 
-	if( g_conf.m_logTraceMsg ) {
-		log(LOG_TRACE,"%s:%s: END - OK, returning true", __FILE__,__func__);
-	}
+	logTrace( g_conf.m_logTraceMsg4, "END - OK, returning true" );
 	return true;
 }
 

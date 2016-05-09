@@ -391,31 +391,13 @@ bool updateSiteListBuf ( collnum_t collnum ,
 	// go back to a high niceness
 	dt->m_niceness = MAX_NICENESS;
 
-	//int32_t siteListLen = gbstrlen(siteList);
-	//cr->m_siteListBuf.safeMemcpy ( siteList , siteListLen + 1 );
-
 	if ( ! addSeeds ) return true;
 
-	log("spider: adding %"INT32" seed urls",added);
+	log( "spider: adding %" INT32" seed urls", added );
 
 	// use spidercoll to contain this msg4 but if in use it
 	// won't be able to be deleted until it comes back..
-	if ( ! sc->m_msg4x.addMetaList ( spiderReqBuf ,
-					 sc->m_collnum ,
-					 // no need for callback since m_msg4x
-					 // should set msg4::m_inUse to false
-					 // when it comes back.
-					 // crap if we don't have a callback
-					 // Msg4.cpp::storeLineWaiters()
-					 // will core
-					 sc , // state
-					 doneAddingSeedsWrapper, // callback 
-					 MAX_NICENESS ,
-					 RDB_SPIDERDB
-					 ) )
-		return false;
-
-	return true;
+	return sc->m_msg4x.addMetaList ( spiderReqBuf, sc->m_collnum, sc, doneAddingSeedsWrapper, MAX_NICENESS, RDB_SPIDERDB );
 }
 
 // . Spider.cpp calls this to see if a url it wants to spider is
