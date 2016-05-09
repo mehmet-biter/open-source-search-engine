@@ -1631,8 +1631,6 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 		// if user turns off 'index spider replies' before doing
 		// the rebuild, when not rebuilding titledb.
 	     ((m_rdbId == RDB_TITLEDB && list->m_listSize != 12 )    ||
-	       m_rdbId == RDB_PLACEDB    ||
-	       m_rdbId == RDB_TFNDB      ||
 	       m_rdbId == RDB_POSDB      ||
 	       m_rdbId == RDB_CLUSTERDB  ||
 	       m_rdbId == RDB_LINKDB     ||
@@ -2469,7 +2467,6 @@ Rdb *getRdbFromId ( uint8_t rdbId ) {
 		s_table9 [ RDB_CLUSTERDB ] = g_clusterdb.getRdb();
 		s_table9 [ RDB_LINKDB    ] = g_linkdb.getRdb();
 		s_table9 [ RDB_STATSDB   ] = g_statsdb.getRdb();
-		s_table9 [ RDB_PARMDB    ] = NULL;
 
 		s_table9 [ RDB2_POSDB2     ] = g_posdb2.getRdb();
 		s_table9 [ RDB2_TITLEDB2   ] = g_titledb2.getRdb();
@@ -2500,18 +2497,15 @@ char getIdFromRdb ( Rdb *rdb ) {
 	if ( rdb == g_linkdb2.getRdb    () ) return RDB2_LINKDB2;
 
 	log(LOG_LOGIC,"db: getIdFromRdb: no rdbId for %s.",rdb->m_dbname);
-	return 0;
+	return RDB_NONE;
 }
 
 char isSecondaryRdb ( uint8_t rdbId ) {
 	switch ( rdbId ) {
-        case RDB2_CATDB2     : return true;
 		case RDB2_POSDB2   : return true;
 		case RDB2_TAGDB2     : return true;
 		case RDB2_TITLEDB2   : return true;
-		case RDB2_PLACEDB2   : return true;
 		case RDB2_SPIDERDB2  : return true;
-		case RDB2_TFNDB2     : return true;
 		case RDB2_CLUSTERDB2 : return true;
 		case RDB2_LINKDB2 : return true;
 	}
@@ -2525,27 +2519,28 @@ char getKeySizeFromRdbId ( uint8_t rdbId ) {
 	if ( s_flag ) {
 		// only stock the table once
 		s_flag = false;
+
 		// sanity check. do not breach s_table1[]!
 		if ( RDB_END >= 50 ) { char *xx=NULL;*xx=0; }
+
 		// . loop over all possible rdbIds
 		// . RDB_NONE is 0!
 		for ( int32_t i = 1 ; i < RDB_END ; i++ ) {
 			// assume 12
 			int32_t ks = 12;
+
 			// only these are 16 as of now
-			if ( //i == RDB_DATEDB    ||
-			     i == RDB_SPIDERDB  ||
+			if ( i == RDB_SPIDERDB  ||
 			     i == RDB_TAGDB     ||
-			     i == RDB_SYNCDB    ||
-			     i == RDB_PLACEDB   ||
 			     i == RDB2_SPIDERDB2  ||
-			     i == RDB2_TAGDB2     ||
-			     i == RDB2_PLACEDB2   )
+			     i == RDB2_TAGDB2     ) {
 				ks = 16;
-			if ( i == RDB_POSDB || i == RDB2_POSDB2 )
-				ks = sizeof(key144_t);
-			if ( i == RDB_LINKDB || i == RDB2_LINKDB2 )
-				ks = sizeof(key224_t);
+			} else if ( i == RDB_POSDB || i == RDB2_POSDB2 ) {
+				ks = sizeof( key144_t );
+			} else if ( i == RDB_LINKDB || i == RDB2_LINKDB2 ) {
+				ks = sizeof( key224_t );
+			}
+
 			// set the table
 			s_table1[i] = ks;
 		}
@@ -2573,36 +2568,23 @@ int32_t getDataSizeFromRdbId ( uint8_t rdbId ) {
 			int32_t ds = 0;
 			// only these are 16 as of now
 			if ( i == RDB_POSDB ||
-			     i == RDB_TFNDB ||
 			     i == RDB_CLUSTERDB ||
-			     i == RDB_DATEDB ||
 			     i == RDB_LINKDB )
 				ds = 0;
 			else if ( i == RDB_TITLEDB ||
-				  i == RDB_SYNCDB ||
-				  i == RDB_CACHEDB ||
-				  i == RDB_SERPDB ||
-				  i == RDB_MONITORDB ||
 				  i == RDB_TAGDB   ||
-				  i == RDB_PARMDB ||
 				  i == RDB_SPIDERDB ||
-				  i == RDB_DOLEDB ||
-				  i == RDB_CATDB ||
-				  i == RDB_PLACEDB )
+				  i == RDB_DOLEDB )
 				ds = -1;
 			else if ( i == RDB_STATSDB )
 				ds = sizeof(StatData);
 			else if ( i == RDB2_POSDB2 ||
-				  i == RDB2_TFNDB2 ||
 				  i == RDB2_CLUSTERDB2 ||
-				  i == RDB2_LINKDB2 ||
-				  i == RDB2_DATEDB2 )
+				  i == RDB2_LINKDB2 )
 				ds = 0;
 			else if ( i == RDB2_TITLEDB2 ||
 				  i == RDB2_TAGDB2   ||
-				  i == RDB2_CATDB2   ||
-				  i == RDB2_SPIDERDB2 ||
-				  i == RDB2_PLACEDB2 )
+				  i == RDB2_SPIDERDB2 )
 				ds = -1;
 			else {
 				continue;
