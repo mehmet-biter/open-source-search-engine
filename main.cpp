@@ -6877,10 +6877,10 @@ void membustest ( int32_t nb , int32_t loops , bool readf ) {
 	int32_t n = nb ; //* 1024 * 1024 ;
 
 	int32_t bufSize = 50*1024*1024;
-	register char *buf = (char *) mmalloc ( bufSize , "main" );
+	char *buf = (char *) mmalloc ( bufSize , "main" );
 	if ( ! buf ) return;
 	char *bufStart = buf;
-	register char *bufEnd = buf + n;
+	char *bufEnd = buf + n;
 
 	// pre-read it so sbrk() can do its thing
 	for ( int32_t i = 0 ; i < n ; i++ ) buf[i] = 1;
@@ -6898,7 +6898,7 @@ void membustest ( int32_t nb , int32_t loops , bool readf ) {
 	//   movl	4(%eax), %eax
 	//   ...
  loop:
-	register int32_t c;
+	int32_t c;
 
 	if ( readf ) {
 		while ( buf < bufEnd ) {

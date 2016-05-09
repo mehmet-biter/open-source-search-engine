@@ -1247,5 +1247,4 @@ class TermDebugInfo {
 
 extern uint8_t score32to8 ( uint32_t score ) ;
 
-
 #endif // GB_XMLDOC_H
