@@ -1163,8 +1163,10 @@ static DropLangs g_drops[] = {
 	{"spanish","es","es"},
 	{"italian","it","it"},
 	{"romantic","en,de,fr,nl,es,it","com,us.gov,org,de,fr,nl,es,it"},
-#endif
 	{"privacore",NULL,NULL}
+#else
+	{"privacore",NULL,NULL}
+#endif
 };
 
 // "url filters profile" values. used to set default crawl rules
@@ -10982,7 +10984,11 @@ bool Parms::addCurrentParmToList2 ( SafeBuf *parmList ,
 		data = sb->getBufStart();
 		dataSize = sb->length();
 		// sanity
-		if ( dataSize > 0 && !data[dataSize-1]){char *xx=NULL;*xx=0;}
+		if ( dataSize > 0 && !data[dataSize-1]){
+			char *xx=NULL;*xx=0;
+		}
+			
+			
 		// include the \0 since we do it for strings above
 		if ( dataSize > 0 ) dataSize++;
 		// empty? make it \0 then to be like strings i guess
@@ -12435,8 +12441,10 @@ int32_t Parm::getNumInArray ( collnum_t collnum ) {
 		if ( ! cr ) return -1;
 		obj = (char *)cr;
 	}
-	// # in array is before it
-	return *(int32_t *)(obj+m_off-4);
+	
+	// beautiful pragma pack(4)/32-bit dependent original code. return *(int32_t *)(obj+m_off-4);
+	return *(int32_t *)(obj + m_arrayCountOffset);
+
 }
 
 // . we use this for syncing parms between hosts
@@ -13511,8 +13519,10 @@ bool Parms::cloneCollRec ( char *dstCR , char *srcCR ) {
 		//
 
 		// for arrays only
-		int32_t *srcNum = (int32_t *)(src-4);
-		int32_t *dstNum = (int32_t *)(dst-4);
+//		int32_t *srcNum = (int32_t *)(src-4);
+//		int32_t *dstNum = (int32_t *)(dst-4);
+		int32_t *srcNum = (int32_t *)(srcCR + m->m_arrayCountOffset);
+		int32_t *dstNum = (int32_t *)(dstCR + m->m_arrayCountOffset);
 
 		// array can have multiple values
 		for ( int32_t j = 0 ; j < *srcNum ; j++ ) {
