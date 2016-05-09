@@ -7,7 +7,6 @@
 #include "RdbCache.h"
 #include "Collectiondb.h"
 #include "Loop.h"
-#include "Msg17.h"
 #include "Msg13.h"
 #include "Dns.h"
 #include "BigFile.h"
@@ -93,7 +92,6 @@ bool RdbCache::init ( int32_t  maxMem        ,
 	// do not use some cache if we are the tmp cluster
 	RdbCache *th = NULL;
 	if ( g_hostdb.m_useTmpCluster ) th = this;
-	//if ( th == &g_genericCache[SITEQUALITY_CACHEID] ) maxMem = 0;
 	if ( th ==  g_dns.getCache      ()              ) maxMem = 0;
 	if ( th ==  g_dns.getCacheLocal ()              ) maxMem = 0;
 	if ( th ==  robots                              ) maxMem = 0;
@@ -537,7 +535,6 @@ bool RdbCache::getRecord ( collnum_t collnum   ,
 	// i do this for all caches now... what are the downsides? i forget.
 	//
 	bool check = true;//false;
-	//if ( this == &g_genericCache[SITEQUALITY_CACHEID] ) check = true;
 	if ( this ==  g_dns.getCache      ()              ) check = true;
 	if ( this ==  g_dns.getCacheLocal ()              ) check = true;
 	if ( this ==  robots                              ) check = true;

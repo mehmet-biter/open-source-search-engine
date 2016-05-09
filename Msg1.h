@@ -25,12 +25,6 @@
 
 #define MSG1_BUF_SIZE 64
 
-// . used to add rec to tfndb after adding a rec to titledb or spiderdb
-// . called in Msg1.cpp for when injecting a title rec
-// . called in Sync.cpp for when adding a new title rec or spider rec that
-//   the remote host has but the local does not
-//bool updateTfndb(char *coll , RdbList *list , bool isTitledb, int32_t niceness);
-
 class Msg1 {
 
  public:

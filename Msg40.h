@@ -13,7 +13,6 @@
 #include "Query.h"      // Query::set()
 #include "Msg39.h"      // getTermFreqs()
 #include "Msg20.h"      // for getting summary from docId
-#include "Msg17.h"      // a distributed cache of serialized/compressed Msg40s
 #include "Msg3a.h"
 #include "HashTableT.h"
 

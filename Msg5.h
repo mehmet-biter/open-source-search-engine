@@ -11,8 +11,6 @@
 
 extern int32_t g_numCorrupt;
 
-extern HashTableX g_waitingTable;
-
 extern int32_t g_isDumpingRdbFromMain;
 
 

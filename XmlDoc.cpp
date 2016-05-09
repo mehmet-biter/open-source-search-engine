@@ -14822,30 +14822,6 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 			// we indexed this doc? if so, inherit its discovery
 			// date.
 			if ( slot >= 0 && rdbId == RDB_LINKDB ) {
-				/*
-				// get old key from last time
-				char *oldk=*(char**)dt8.getValueFromSlot(slot);
-				// skip rdbid
-				oldk++;
-				// sanity
-				if(g_linkdb.getLinkerDocId_uk((key224_t *)oldk)
-				   !=m_docId){
-					char *xx=NULL;*xx=0; }
-				// copy rdbid into new meta list
-				*nptr++ = byte;
-				// point to where key will be stored in new lst
-				char *nk = nptr;
-				// store the new key in the new meta list
-				gbmemcpy ( nptr , key , ks );
-				// advance ptr
-				nptr += ks;
-				// get disocvery time of old key from last time
-				int32_t dd = g_linkdb.getDiscoveryDate_uk(oldk);
-				// sanity
-				if ( dd < 0 ) { char *xx=NULL;*xx=0; }
-				// but mod the new key's discovery time
-				g_linkdb.setDiscoveryDate_uk ( nk, dd );
-				*/
 				// . no need to deal with this any further
 				// . yeah, because there could be dups!
 				//   so don't delete it just yet
@@ -15278,12 +15254,6 @@ SpiderReply *XmlDoc::getNewSpiderReply ( ) {
 	// can be injecting a url too, content not necessarily implied
 	if ( m_sreqValid && m_sreq.m_isInjecting )
 		m_srep.m_fromInjectionRequest = 1;
-
-	// sanity. if being called directly from indexDoc() because of
-	// an error like out of memory, then we do not know if it is
-	// indexed or not or was indexed...
-	//if ( ! m_wasInIndexValid ) { char *xx=NULL;*xx=0; }
-	//if ( ! m_isInIndexValid  ) { char *xx=NULL;*xx=0; }
 
 	// were we already in titledb before we started spidering?
 	m_srep.m_wasIndexed = m_wasInIndex;

@@ -16,7 +16,6 @@
 #include "SpiderLoop.h"
 #include "Statsdb.h"
 #include "Sections.h"
-#include "Msg17.h"
 #include "Process.h"
 #include "Repair.h"
 #include "PingServer.h"
