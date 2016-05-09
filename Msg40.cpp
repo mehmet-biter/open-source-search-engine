@@ -1395,6 +1395,10 @@ bool Msg40::gotSummary ( ) {
 			logf(LOG_DEBUG,"query: msg 20 reply was null.");
 			m->m_errno = ENOHOSTS;
 		}
+		if ( m_si->m_familyFilter && mr && mr->m_isAdult) {
+			logf(LOG_DEBUG,"query: msg20.is_adult and family filter is on.");
+			m->m_errno = EDOCADULT;
+		}
 		// if any msg20 has m_errno set, then set ours so at least the
 		// xml feed will know there was a problem even though it may 
 		// have gotten search results.

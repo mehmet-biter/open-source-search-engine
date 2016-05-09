@@ -554,18 +554,6 @@ bool SearchInput::setQueryBuffers ( HttpRequest *hr ) {
 		m_sbuf1.safePrintf("filetype:%s",ft);
 	}
 
-	if ( m_familyFilter ) {
-	 	if ( m_sbuf1.length() ) m_sbuf1.pushChar(' ');
-	 	m_sbuf1.safePrintf( "+gbisadult:0");
-		if ( ! boolq ) {
-			m_sbuf1.safeStrcpy(" |");
-		}
-		else {
-			m_sbuf1.safeStrcpy(" AND ");
-		}
-
-	}
-
 	// PRE-pend gblang: term
 	int32_t gblang = hr->getLong("gblang",-1);
 	if( gblang >= 0 ) {
