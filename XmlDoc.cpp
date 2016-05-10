@@ -53,8 +53,7 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 					  int64_t   pid2 ,
 					  int64_t   wid2 , // post word
 					  float      *ww   ,
-					  HashTableX *tt1  ,
-					  int32_t        titleRecVersion ) ;
+					  HashTableX *tt1);
 
 static void getMetaListWrapper ( void *state ) ;
 
@@ -22037,8 +22036,7 @@ bool getDiversityVec( Words *words, Phrases *phrases, HashTableX *countTable, Sa
 					      pid      ,
 					      nextWid  ,
 					      &ww2     ,
-					      countTable ,
-					      1);
+					      countTable);
 		// 0 to 1.0
 		if ( ww2 < 0 || ww2 > 1.0 ) { char *xx=NULL;*xx=0; }
 		// save the last phrase id
@@ -22319,7 +22317,6 @@ char *XmlDoc::getFragVec ( ) {
 	return ff;
 }
 
-static float g_wtab[30][30];
 
 // . inline this for speed
 // . if a word repeats in different phrases, promote the word
@@ -22334,14 +22331,14 @@ static float g_wtab[30][30];
 //   wid2 is "good"
 // . we store sliderParm in titleRec so we can update it along
 //   with title and header weights on the fly from the spider controls
-void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
-				   int64_t   wid1 ,
-				   int64_t   pid2 ,
-				   int64_t   wid2 , // post word
-				   float      *retww   ,
-				   HashTableX *tt1  ,
-				   int32_t        titleRecVersion ) {
+static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
+					  int64_t   wid1 ,
+					  int64_t   pid2 ,
+					  int64_t   wid2 , // post word
+					  float      *retww   ,
+					  HashTableX *tt1) {
 
+	static float g_wtab[30][30];
 	static float s_fsp;
 	// from 0 to 100
 	char sliderParm = g_conf.m_sliderParm;
@@ -22364,84 +22361,84 @@ void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 		// i is the word count, how many times a particular word
 		// occurs in the document
 		for ( int32_t i = 0 ; i < 30 ; i++ ) {
-		// . k is the phrase count, how many times a particular phrase
-		//   occurs in the document
-		// . k can be GREATER than i because we index only phrase terms
-		//   sometimes when indexing neighborhoods, and not the
-		//   single words that compose them
-		for ( int32_t k = 0 ; k < 30 ; k++ ) {
-			// do not allow phrase count to be greater than
-			// word count, even though it can happen since we
-			// add imported neighborhood pwids to the count table
-			int32_t j = k;
-			if ( k > i ) j = i;
-			// get ratio
-			//float ratio = (float)phrcount / (float)wrdcount;
-			float ratio = (float)j/(float)i;
-			// it should be impossible that this can be over 1.0
-			// but might happen due to hash collisions
-			if ( ratio > 1.0 ) ratio = 1.0;
-			// restrict the range we can weight a word or phrase
-			// based on the word count
-			//float r = 1.0;
-			//if      ( i >= 20 ) r = 2.1;
-			//else if ( i >= 10 ) r = 1.8;
-			//else if ( i >=  4 ) r = 1.5;
-			//else                r = 1.3;
-			//g_ptab[i][k] = 1.00;
-			g_wtab[i][k] = 1.00;
-			if ( i <= 1 ) continue;
-			// . we used to have a sliding bar between 0.0 and 1.0.
-			//   word is weighted (1.0 - x) and phrase is weighted
-			//   by (x). however, x could go all the way to 1.0
-			//   even when i = 2, so we need to restrict x.
-			// . x is actually "ratio"
-			// . when we have 8 or less word occurences, do not
-			//   remove more than 80% of its score, a 1/5 penalty
-			//   is good enough for now. but for words that occur
-			//   a lot in the link text or pwids, go to town...
-			if      ( i <=  2 && ratio >= .50 ) ratio = .50;
-			else if ( i <=  4 && ratio >= .60 ) ratio = .60;
-			else if ( i <=  8 && ratio >= .80 ) ratio = .80;
-			else if ( i <= 12 && ratio >= .95 ) ratio = .95;
-			// round up, so many "new mexico" phrases but only
-			// make it up to 95%...
-			if ( ratio >= .95 ) ratio = 1.00;
-			// if word's phrase is repeated 3 times or more then
-			// is a pretty good indication that we should weight
-			// the phrase more and the word itself less
-			//if ( k >= 3 && ratio < .90 ) ratio = .90;
-			// compute the weights
-			//float pw = 2.0 * ratio;
-			//float ww = 2.0 * (1.0 - ratio);
-			float ww = (1.0 - ratio);
+			// . k is the phrase count, how many times a particular phrase
+			//   occurs in the document
+			// . k can be GREATER than i because we index only phrase terms
+			//   sometimes when indexing neighborhoods, and not the
+			//   single words that compose them
+			for ( int32_t k = 0 ; k < 30 ; k++ ) {
+				// do not allow phrase count to be greater than
+				// word count, even though it can happen since we
+				// add imported neighborhood pwids to the count table
+				int32_t j = k;
+				if ( k > i ) j = i;
+				// get ratio
+				//float ratio = (float)phrcount / (float)wrdcount;
+				float ratio = (float)j/(float)i;
+				// it should be impossible that this can be over 1.0
+				// but might happen due to hash collisions
+				if ( ratio > 1.0 ) ratio = 1.0;
+				// restrict the range we can weight a word or phrase
+				// based on the word count
+				//float r = 1.0;
+				//if      ( i >= 20 ) r = 2.1;
+				//else if ( i >= 10 ) r = 1.8;
+				//else if ( i >=  4 ) r = 1.5;
+				//else                r = 1.3;
+				//g_ptab[i][k] = 1.00;
+				g_wtab[i][k] = 1.00;
+				if ( i <= 1 ) continue;
+				// . we used to have a sliding bar between 0.0 and 1.0.
+				//   word is weighted (1.0 - x) and phrase is weighted
+				//   by (x). however, x could go all the way to 1.0
+				//   even when i = 2, so we need to restrict x.
+				// . x is actually "ratio"
+				// . when we have 8 or less word occurences, do not
+				//   remove more than 80% of its score, a 1/5 penalty
+				//   is good enough for now. but for words that occur
+				//   a lot in the link text or pwids, go to town...
+				if      ( i <=  2 && ratio >= .50 ) ratio = .50;
+				else if ( i <=  4 && ratio >= .60 ) ratio = .60;
+				else if ( i <=  8 && ratio >= .80 ) ratio = .80;
+				else if ( i <= 12 && ratio >= .95 ) ratio = .95;
+				// round up, so many "new mexico" phrases but only
+				// make it up to 95%...
+				if ( ratio >= .95 ) ratio = 1.00;
+				// if word's phrase is repeated 3 times or more then
+				// is a pretty good indication that we should weight
+				// the phrase more and the word itself less
+				//if ( k >= 3 && ratio < .90 ) ratio = .90;
+				// compute the weights
+				//float pw = 2.0 * ratio;
+				//float ww = 2.0 * (1.0 - ratio);
+				float ww = (1.0 - ratio);
 
-			// . punish words a little more
-			// . if we got 50% ratio, words should not get as much
-			//   weight as the phrase
-			//ww *= .45;
-			// do not weight to 0, no less than .15
-			if ( ww < 0.0001 ) ww = 0.0001;
-			//if ( pw < 0.0001 ) pw = 0.0001;
-			// do not overpromote either
-			//if ( ww > 2.50 ) ww = 2.50;
-			//if ( pw > 2.50 ) pw = 2.50;
-			// . do a sliding weight of the weight
-			// . a "ww" of 1.0 means to do no weight
-			// . can't do this for ww cuz we use "mod" below
-			//float newWW = s_fsp*ww + (1.0-s_fsp)*1.00;
-			//float newPW = s_fsp*pw + (1.0-s_fsp)*1.00;
-			// limit how much we promote a word because it
-			// may occur 30 times total, but have a phrase count
-			// of only 1. however, the other 29 times it occurs it
-			// is in the same phrase, just not this particular
-			// phrase.
-			//if ( ww > 2.0 ) ww = 2.0;
-			g_wtab[i][k] = ww;
-			//g_ptab[i][k] = newPW;
-			//logf(LOG_DEBUG,"build: wc=%"INT32" pc=%"INT32" ww=%.2f "
-			//"pw=%.2f",i,k,g_wtab[i][k],g_ptab[i][k]);
-		}
+				// . punish words a little more
+				// . if we got 50% ratio, words should not get as much
+				//   weight as the phrase
+				//ww *= .45;
+				// do not weight to 0, no less than .15
+				if ( ww < 0.0001 ) ww = 0.0001;
+				//if ( pw < 0.0001 ) pw = 0.0001;
+				// do not overpromote either
+				//if ( ww > 2.50 ) ww = 2.50;
+				//if ( pw > 2.50 ) pw = 2.50;
+				// . do a sliding weight of the weight
+				// . a "ww" of 1.0 means to do no weight
+				// . can't do this for ww cuz we use "mod" below
+				//float newWW = s_fsp*ww + (1.0-s_fsp)*1.00;
+				//float newPW = s_fsp*pw + (1.0-s_fsp)*1.00;
+				// limit how much we promote a word because it
+				// may occur 30 times total, but have a phrase count
+				// of only 1. however, the other 29 times it occurs it
+				// is in the same phrase, just not this particular
+				// phrase.
+				//if ( ww > 2.0 ) ww = 2.0;
+				g_wtab[i][k] = ww;
+				//g_ptab[i][k] = newPW;
+				//logf(LOG_DEBUG,"build: wc=%"INT32" pc=%"INT32" ww=%.2f "
+				//"pw=%.2f",i,k,g_wtab[i][k],g_ptab[i][k]);
+			}
 		}
 	}
 
