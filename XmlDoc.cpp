@@ -22253,12 +22253,12 @@ bool XmlDoc::setSpam ( const int32_t *profile, int32_t plen , int32_t numWords ,
 			unsigned char *spam ) {
 	// don't bother detecting spam if 2 or less occurences of the word
 	if ( plen < 3 ) return false;
-	int32_t i;
 	// if we have more than 10 words and this word is 20% or more of
 	// them then all but the first occurence is spammed
 	//log(LOG_INFO,"setSpam numRepeatSpam = %f", m_numRepeatSpam);
 	if (numWords > 10 && (plen*100)/numWords >= m_numRepeatSpam) {
-		for (i=1; i<plen; i++) spam[profile[i]] = 100;
+		for (int32_t i=1; i<plen; i++)
+			spam[profile[i]] = 100;
 		return true ;
 	}
 
@@ -22267,7 +22267,8 @@ bool XmlDoc::setSpam ( const int32_t *profile, int32_t plen , int32_t numWords ,
 	if ( plen > 50 ) { // && m_version >= 93 ) {
 		// . set all but the last 50 to a spam of 100%
 		// . the last 50 actually occur as the first 50 in the doc
-		for (i=0; i<plen-50;i++) spam[profile[i]] = 100;
+		for (int32_t i=0; i<plen-50;i++)
+			spam[profile[i]] = 100;
 		// we now have only 50 occurences
 		plen = 50;
 		// we want to skip the first plen-50 because they actually
@@ -22291,17 +22292,16 @@ bool XmlDoc::setSpam ( const int32_t *profile, int32_t plen , int32_t numWords ,
 	int32_t maxStep = plen / 4;
 	if ( maxStep > 4 ) maxStep = 4;
 	// . loop through all possible tuples
-	int32_t window, wlen, step, prob;
-	 for ( step = 1 ; step <= maxStep ; step++ ) {
-		for ( window = 0 ; window + 3 < plen ; window+=1) {
-			for (wlen = 3; window+wlen <= plen ; wlen+=1) {
+	for ( int32_t step = 1 ; step <= maxStep ; step++ ) {
+		for ( int32_t window = 0 ; window + 3 < plen ; window+=1) {
+			for (int32_t wlen = 3; window+wlen <= plen ; wlen+=1) {
 				// continue if step isn't aligned with window
 				// length
 				if (wlen % step != 0) continue;
 				// . get probability that this tuple is spam
 				// . returns 0 to 100
-				prob = getProbSpam ( profile + window ,
-						     wlen , step);
+				int32_t prob = getProbSpam ( profile + window ,
+						             wlen , step);
 				// printf("(%i,%i,%i)=%i\n",step,window,
 				// wlen,prob);
 				// . if the probability is too low continue
@@ -22309,7 +22309,7 @@ bool XmlDoc::setSpam ( const int32_t *profile, int32_t plen , int32_t numWords ,
 				if ( prob <= 20 ) continue;
 				// set the spammed words spam to "prob"
 				// only if it's bigger than their current spam
-				for (i=window; i<window+wlen;i++) {
+				for (int32_t i=window; i<window+wlen;i++) {
 					// first occurences can have immunity
 					// due to doc quality being high
 					if ( i >= plen - off ) break;
@@ -22323,9 +22323,13 @@ bool XmlDoc::setSpam ( const int32_t *profile, int32_t plen , int32_t numWords ,
 	 }
 	 // was this word spammed at all?
 	 bool hadSpam = false;
-	 for (i=0;i<plen;i++) if ( spam[profile[i]] > 20 ) hadSpam = true;
+	 for (int32_t i=0; i<plen; i++)
+		 if ( spam[profile[i]] > 20 )
+			 hadSpam = true;
 	 // make sure at least one word survives
-	 for (i=0;i<plen;i++) if ( spam[profile[i]] == 0)  return hadSpam;
+	 for (int32_t i=0; i<plen; i++)
+		 if ( spam[profile[i]] == 0)
+			return hadSpam;
 	 // clear the spam level on this guy
 	 spam[profile[0]] = 0;
 	 // return true if we had spam, false if not
