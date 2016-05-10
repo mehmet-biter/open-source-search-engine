@@ -22352,7 +22352,7 @@ bool getWordPosVec ( Words *words ,
 	char **wptrs = words->getWords();
 	int32_t nw = words->getNumWords();
 
-	if ( ! wpos->reserve ( nw * 4 ) ) return false;
+	if ( ! wpos->reserve ( nw * sizeof(int32_t) ) ) return false;
 	int32_t *wposvec = (int32_t *)wpos->getBufStart();
 
 
@@ -22515,7 +22515,7 @@ bool getDiversityVec( Words *words, Phrases *phrases, HashTableX *countTable, Sa
 	// . make the vector
 	// . it will be diversity ranks, so one float per word for now
 	//   cuz we convert to rank below though, one byte rank
-	if ( ! sbWordVec  ->reserve ( nw*4 ) ) return false;
+	if ( ! sbWordVec  ->reserve ( nw*sizeof(float) ) ) return false;
 
 	// get it
 	float *ww = (float *)sbWordVec  ->getBufStart();
