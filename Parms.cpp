@@ -10191,7 +10191,7 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "log trace info for Msg4";
-	m->m_cgi   = "ltrc_msg4";
+	m->m_cgi   = "ltrc_msgfour";
 	m->m_off   = offsetof(Conf,m_logTraceMsg4);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
