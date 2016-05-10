@@ -22351,26 +22351,24 @@ int32_t XmlDoc::getProbSpam(const int32_t *profile, int32_t plen, int32_t step) 
 	// if our step is bigger than the profile return 0
 	if ( step == plen ) return 0;
 
-	register int32_t avgSpacing, stdDevSpacing;
-	int32_t d,dev=0;
-	register int32_t i;
+	int32_t dev=0;
 	
 	for (int32_t j = 0; j < step; j++) {
 
 		// find avg. of gaps between consecutive tokens in subprofile
 		// TODO: isn't profile[i] < profile[i+1]??
 		int32_t istop = plen-1;
-		avgSpacing = 0;
-		for (i=0; i < istop; i += step )
+		int32_t avgSpacing = 0;
+		for (int32_t i=0; i < istop; i += step )
 			avgSpacing += ( profile[i] - profile[i+1] );
 		// there's 1 less spacing than positions in the profile
 		// so we divide by plen-1
 		avgSpacing = (avgSpacing * 256) / istop;
 
 		// compute standard deviation of the gaps in this sequence
-		stdDevSpacing = 0;
-		for (i = 0 ; i < istop; i += step ) {
-			d = (( profile[i] - profile[i+1]) * 256 ) - avgSpacing;
+		int32_t stdDevSpacing = 0;
+		for (int32_t i = 0 ; i < istop; i += step ) {
+			int32_t d = (( profile[i] - profile[i+1]) * 256 ) - avgSpacing;
 			if ( d < 0 ) stdDevSpacing -= d;
 			else         stdDevSpacing += d;
 		}
