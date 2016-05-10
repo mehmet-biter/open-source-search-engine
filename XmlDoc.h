@@ -1189,9 +1189,9 @@ public:
 
 	// word spam detection
 	char *getWordSpamVec ( );
-	bool setSpam ( int32_t *profile, int32_t plen , int32_t numWords , 
+	bool setSpam ( const int32_t *profile, int32_t plen , int32_t numWords ,
 		       unsigned char *spam );
-	int32_t  getProbSpam  ( int32_t *profile, int32_t plen , int32_t step );
+	int32_t  getProbSpam  ( const int32_t *profile, int32_t plen , int32_t step );
 	bool m_isRepeatSpammer;
 	int32_t m_numRepeatSpam;
 
@@ -1268,7 +1268,7 @@ extern uint8_t score32to8 ( uint32_t score ) ;
 // . if "step" is 1 we look at every       word position in the profile
 // . if "step" is 2 we look at every other word position 
 // . if "step" is 3 we look at every 3rd   word position, etc...
-inline int32_t XmlDoc::getProbSpam(int32_t *profile, int32_t plen, int32_t step) {
+inline int32_t XmlDoc::getProbSpam(const int32_t *profile, int32_t plen, int32_t step) {
 
 	// you can spam 2 or 1 letter words all you want to
 	if ( plen <= 2 ) return 0;

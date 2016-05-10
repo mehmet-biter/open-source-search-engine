@@ -22249,7 +22249,7 @@ char *XmlDoc::getWordSpamVec ( ) {
 //   many subProfiles
 // . so after the first 25 words, it's automatically considered spam
 // . return true if one word was spammed w/ probability > 20%
-bool XmlDoc::setSpam ( int32_t *profile, int32_t plen , int32_t numWords ,
+bool XmlDoc::setSpam ( const int32_t *profile, int32_t plen , int32_t numWords ,
 			unsigned char *spam ) {
 	// don't bother detecting spam if 2 or less occurences of the word
 	if ( plen < 3 ) return false;
