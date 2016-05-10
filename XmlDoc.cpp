@@ -5579,47 +5579,14 @@ Url **XmlDoc::getRedirUrl() {
 	mime.addCookiesIntoBuffer ( &m_redirCookieBuf );
 	m_redirCookieBufValid = true;
 
-
-	/*
-	// get cookie for redirect to fix nyt.com
-	const char *cookie = mime.getCookie();
-	// find end of cookie at the semicolon
-	const char *s = cookie;
-	for ( ; s && *s && *s != ';' ; s++ );
-	if ( s && *s == ';' ) {
-		// do not include ;
-		int32_t clen = s - cookie;
-		m_redirCookieBuf.reset();
-		m_redirCookieBuf.safeMemcpy ( cookie , clen );
-		m_redirCookieBuf.nullTerm();
-
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Found redir cookie [%s]", __FILE__,__func__,__LINE__, m_redirCookieBuf.getBufStart());
-
-		m_redirCookieBufValid = true;
-	}
-	*/
-
-	// mdw23
-	//log("http: reply=%s",m_httpReply);
-
-	// a hack for removing session ids already in there. for
-	// brilliantshopper's bs4 collection and gk0 cluster
-	//bool forceRedirect = false;
-	if ( // must not have an actual redirect url in there
-	     ! loc &&
-	     // must be a valid http status
-	     httpStatus == 200 &&
-	    (gb_strcasestr( cu->getUrl(), "sessionid") ||
-	     gb_strcasestr( cu->getUrl(), "oscsid")   ) ) {
-		//@todo BR improve this!
-	     	
-		if( g_conf.m_logTraceXmlDoc ) log(LOG_TRACE,"%s:%s:%d: Found session id", __FILE__,__func__,__LINE__);
+	// a hack for removing session ids already in there
+	// must not have an actual redirect url in there & must be a valid http status
+	if ( !loc && httpStatus == 200 ) {
 		Url *tt = &m_redirUrl;
-		tt->set( cu->getUrl(), cu->getUrlLen(), true, true );
-			  
-		// if it no longer has the session id, force redirect it
-		if ( ! gb_strcasestr( tt->getUrl(), "sessionid") &&
-		     ! gb_strcasestr( tt->getUrl(), "oscsid")   )  {
+		tt->set( cu->getUrl(), cu->getUrlLen(), false, true );
+
+		// if url changes, force redirect it
+		if ( strcmp ( cu->getUrl(), tt->getUrl() ) != 0 ) {
 			m_redirUrlValid = true;
 			m_redirUrlPtr   = &m_redirUrl;
 
