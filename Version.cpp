@@ -35,9 +35,14 @@ char *getVersion ( ) {
 #define GIT_COMMIT_ID unknown
 #endif
 
+#ifndef BUILD_CONFIG
+#define BUILD_CONFIG unknown
+#endif
+
 void printVersion() {
-	fprintf(stdout,"Gigablast Version    : %s\n", getVersion());
-	fprintf(stdout,"Gigablast Git commit : %s\n", TO_STRING(GIT_COMMIT_ID));
+	fprintf(stdout,"Gigablast Version      : %s\n", getVersion());
+	fprintf(stdout,"Gigablast Build config : %s\n", TO_STRING(BUILD_CONFIG));
+	fprintf(stdout,"Gigablast Git commit   : %s\n", TO_STRING(GIT_COMMIT_ID));
 }
 
 #undef STRINGIFY

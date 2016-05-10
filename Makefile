@@ -462,7 +462,7 @@ sort.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 Version.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) -DGIT_COMMIT_ID=$(GIT_VERSION) -c $*.cpp
+	$(CXX) $(DEFS) $(CPPFLAGS) -DGIT_COMMIT_ID=$(GIT_VERSION) -DBUILD_CONFIG=$(config) -c $*.cpp
 
 install:
 # gigablast will copy over the necessary files. it has a list of the
