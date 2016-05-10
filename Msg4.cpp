@@ -325,7 +325,9 @@ bool Msg4::addMetaList ( const char *metaList, int32_t metaListSize, collnum_t c
 	}
 
 	// then do it
-	if ( addMetaList2 ( ) ) return true;
+	if ( addMetaList2 ( ) ) {
+		return true;
+	}
 
 	// . sanity check
 	// . we sometimes get called with niceness 0 from possibly
@@ -396,17 +398,18 @@ bool Msg4::addMetaList2 ( ) {
 		logTrace( g_conf.m_logTraceMsg4, "  rdbId: %02x", rdbId);
 
 		// get the key of the current record
-		const char *key = p; 
-		// negative key?
-		bool del = !( *p & 0x01 );
-
-		logTrace( g_conf.m_logTraceMsg4, "  Negative key: %s", del?"true":"false");
+		const char *key = p;
 
 		// get the key size. a table lookup in Rdb.cpp.
 		int32_t ks = getKeySizeFromRdbId ( rdbId );
-			
+
+		logTrace( g_conf.m_logTraceMsg4, "  Key: %s", KEYSTR(key, ks) );
 		logTrace( g_conf.m_logTraceMsg4, "  Key size: %"INT32"", ks);
-			
+
+		// negative key?
+		bool del = !( *key & 0x01 );
+		logTrace( g_conf.m_logTraceMsg4, "  Negative key: %s", del?"true":"false");
+
 		// skip key
 		p += ks;
 		// set this
@@ -414,7 +417,9 @@ bool Msg4::addMetaList2 ( ) {
 
 		// override it from Rebalance.cpp for redistributing records
 		// after updating hosts.conf?
-		if ( m_shardOverride >= 0 ) shardNum = m_shardOverride;
+		if ( m_shardOverride >= 0 ) {
+			shardNum = m_shardOverride;
+		}
 			
 		logTrace( g_conf.m_logTraceMsg4, "  shardNum: %"INT32"", shardNum);
 
@@ -452,11 +457,7 @@ bool Msg4::addMetaList2 ( ) {
 		// group. uses a quick hash table.
 		Host *hosts = g_hostdb.getShard ( shardNum );
 		int32_t hostId = hosts[0].m_hostId;
-
 		logTrace( g_conf.m_logTraceMsg4, "  hostId: %"INT32"", hostId);
-		if( g_conf.m_logTraceMsg4 ) {
-			loghex(LOG_TRACE, key, ks, "Key: (hexdump)");
-		}
 		
 		
 		// . add that rec to this groupId, gid, includes the key
@@ -469,11 +470,8 @@ bool Msg4::addMetaList2 ( ) {
 		if ( storeRec ( m_collnum, rdbId, shardNum, hostId, key, p - key, m_niceness )) {
 			// . point to next record
 			// . will point past records if no more left!
-			m_currentPtr = p; // += recSize;
-			// debug log
-			// int off = (int)(m_currentPtr-m_metaList);
-			// log("msg4: cpoff=%i",off);
-			// debug
+			m_currentPtr = p;
+
 			// get next rec
 			continue;
 		}
@@ -481,8 +479,7 @@ bool Msg4::addMetaList2 ( ) {
 		// g_errno is not set if the store rec could not send the
 		// buffer because no multicast was available
 		if ( g_errno ) {
-			log(LOG_ERROR, "%s:%s: build: Msg4 storeRec had error: %s.",
-			    __FILE__, __func__, mstrerror(g_errno));
+			log( LOG_ERROR, "%s:%s: build: Msg4 storeRec had error: %s.", __FILE__, __func__, mstrerror(g_errno) );
 		}
 
 		// clear this just in case
@@ -506,7 +503,7 @@ bool Msg4::addMetaList2 ( ) {
 // . store these requests in the buffer just like that
 bool storeRec ( collnum_t      collnum , 
 		char           rdbId   ,
-		uint32_t  shardNum, //gid
+		uint32_t  shardNum,
 		int32_t           hostId  ,
 		const char          *rec     ,
 		int32_t           recSize ,
@@ -995,8 +992,7 @@ void handleRequest4 ( UdpSlot *slot , int32_t netnice ) {
 		int32_t now = getTimeLocal();
 		if ( now - s_lastTime >= 1 ) {
 			s_lastTime = now;
-			log("msg4: waiting to sync with "
-			    "host #0 before accepting data");
+			log("msg4: waiting to sync with host #0 before accepting data");
 		}
 		// tell send to try again shortly
 		g_errno = ETRYAGAIN;
@@ -1119,12 +1115,6 @@ bool addMetaList ( const char *p , UdpSlot *slot ) {
 		    //not in repair mode. dropping.",(int32_t)rdbId);
 		g_errno = ETRYAGAIN;
 		return false;
-		//char *xx=NULL;*xx=0;
-		// drop it for now!!
-		//p += recSize;
-		//if ( p < pend ) goto loop;
-		// all done
-		//return true;
 	}
 	// set the list
 	list.set ( (char*)p                , //todo: dodgy cast. RdbList should be fixed
