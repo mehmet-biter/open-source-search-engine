@@ -1988,16 +1988,7 @@ logTrace( g_conf.m_logTraceXmlDoc, "BEGIN" );
 
 	// "cr" might have been deleted by calling indexDoc() above i think
 	// so use collnum here, not "cr"
-	if ( ! m_msg4.addMetaList ( m_metaList2.getBufStart()     ,
-				    m_metaList2.length() ,
-				    m_collnum,//cr->m_coll         ,
-				    m_masterState  , // state
-				    m_masterLoop   ,
-				    m_niceness     ) ) {
-		// spider hang bug
-		//if ( g_conf.m_testSpiderEnabled )
-		//	logf(LOG_DEBUG,"build: msg4 meta add3 blocked"
-		//	     "msg4=0x%"XINT32"" ,(int32_t)&m_msg4);
+	if ( ! m_msg4.addMetaList ( &m_metaList2, m_collnum, m_masterState, m_masterLoop, m_niceness ) ) {
 		m_msg4Waiting = true;
 		logTrace( g_conf.m_logTraceXmlDoc, "END, return false, m_msg4.addMetaList returned false" );
 		return false;
@@ -2121,16 +2112,10 @@ bool XmlDoc::indexDoc2 ( ) {
 		// show it for now
 		//printMetaList(m_metaList , m_metaList + m_metaListSize,NULL);
 		// test it
-		verifyMetaList ( m_metaList ,
-				 m_metaList + m_metaListSize ,
-				 false );
+		verifyMetaList ( m_metaList , m_metaList + m_metaListSize , false );
+
 		// do it
-		if ( ! m_msg4.addMetaList ( m_metaList     ,
-					    m_metaListSize ,
-					    m_collnum,//cr->m_coll         ,
-					    m_masterState  , // state
-					    m_masterLoop   ,
-					    m_niceness     ) ) {
+		if ( ! m_msg4.addMetaList( m_metaList, m_metaListSize, m_collnum, m_masterState, m_masterLoop, m_niceness ) ) {
 			// spider hang bug
 			if ( g_conf.m_testSpiderEnabled )
 				logf(LOG_DEBUG,"build: msg4 meta add blocked"
@@ -2139,6 +2124,7 @@ bool XmlDoc::indexDoc2 ( ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, return false. addMetaList blocked" );
 			return false;
 		}
+
 		// error with msg4? bail
 		if ( g_errno )
 		{

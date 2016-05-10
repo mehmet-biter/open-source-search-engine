@@ -104,8 +104,11 @@ bool Collectiondb::loadAllCollRecs ( ) {
 	sprintf ( dname , "%s" , g_hostdb.m_dir );
 	Dir d;
 	d.set ( dname );
-	if ( ! d.open ()) return log("admin: Could not load collection config "
-				     "files.");
+	if ( ! d.open ()) {
+		log( LOG_WARN, "admin: Could not load collection config files." );
+		return false;
+	}
+
 	int32_t count = 0;
 	char *f;
 	while ( ( f = d.getNextFilename ( "*" ) ) ) {
@@ -119,8 +122,10 @@ bool Collectiondb::loadAllCollRecs ( ) {
 
 	// reset directory for another scan
 	d.set ( dname );
-	if ( ! d.open ()) return log("admin: Could not load collection config "
-				     "files.");
+	if ( ! d.open ()) {
+		log( LOG_WARN, "admin: Could not load collection config files." );
+		return false;
+	}
 
 	// note it
 	//log(LOG_INFO,"db: loading collection config files.");
@@ -150,14 +155,7 @@ bool Collectiondb::loadAllCollRecs ( ) {
 	// if no existing recs added... add coll.main.0 always at startup
 	if ( m_numRecs == 0 ) {
 		log("admin: adding main collection.");
-		addNewColl ( "main",
-			     0 , // customCrawl ,
-			     NULL,
-			     0 ,
-			     true , // bool saveIt ,
-			     // Parms.cpp reserves this so it can be sure
-			     // to add the same collnum to every shard
-			     0 );
+		addNewColl ( "main", 0, true, 0 );
 	}
 
 	m_initializing = false;
@@ -296,16 +294,10 @@ bool Collectiondb::addExistingColl ( char *coll, collnum_t collnum ) {
 //   code is. like for instance, posdb.
 // . "customCrawl" is 0 for a regular collection, 1 for a simple crawl
 //   2 for a bulk job. diffbot terminology.
-bool Collectiondb::addNewColl ( char *coll ,
-				char customCrawl ,
-				char *cpc ,
-				int32_t cpclen ,
-				bool saveIt ,
+bool Collectiondb::addNewColl ( char *coll, char customCrawl, bool saveIt,
 				// Parms.cpp reserves this so it can be sure
 				// to add the same collnum to every shard
 				collnum_t newCollnum ) {
-
-
 	//do not send add/del coll request until we are in sync with shard!!
 	// just return ETRYAGAIN for the parmlist...
 
@@ -319,8 +311,7 @@ bool Collectiondb::addNewColl ( char *coll ,
 	}
 	if ( *p ) {
 		g_errno = EBADENGINEER;
-		log("admin: \"%s\" is a malformed collection name because it "
-		    "contains the '%c' character.",coll,*p);
+		log( LOG_WARN, "admin: '%s' is a malformed collection name because it contains the '%c' character.",coll,*p);
 		return false;
 	}
 	if ( newCollnum < 0 ) { char *xx=NULL;*xx=0; }
@@ -328,28 +319,27 @@ bool Collectiondb::addNewColl ( char *coll ,
 	// if empty... bail, no longer accepted, use "main"
 	if ( ! coll || !coll[0] ) {
 		g_errno = EBADENGINEER;
-		return log("admin: Trying to create a new collection "
-			   "but no collection name provided. Use the \"c\" "
-			   "cgi parameter to specify it.");
+		log( LOG_WARN, "admin: Trying to create a new collection but no collection name provided. "
+		     "Use the 'c' cgi parameter to specify it.");
+		return false;
 	}
 	// or if too big
 	if ( gbstrlen(coll) > MAX_COLL_LEN ) {
 		g_errno = ENOBUFS;
-		return log("admin: Trying to create a new collection "
-			   "whose name \"%s\" of %i chars is longer than the "
-			   "max of %"INT32" chars.",coll,gbstrlen(coll),
-			   (int32_t)MAX_COLL_LEN);
+		log( LOG_WARN, "admin: Trying to create a new collection whose name '%s' of %i chars is longer than the "
+		     "max of %" INT32" chars.", coll, gbstrlen(coll), (int32_t)MAX_COLL_LEN );
+		return false;
 	}
 
 	// ensure does not already exist in memory
 	if ( getCollnum ( coll ) >= 0 ) {
 		g_errno = EEXIST;
-		log("admin: Trying to create collection \"%s\" but "
-		    "already exists in memory.",coll);
+		log( LOG_WARN, "admin: Trying to create collection '%s' but already exists in memory.",coll);
 		// just let it pass...
 		g_errno = 0 ;
 		return true;
 	}
+
 	// MDW: ensure not created on disk since time of last load
 	char dname[512];
 	sprintf(dname, "%scoll.%s.%"INT32"/",g_hostdb.m_dir,coll,(int32_t)newCollnum);
@@ -357,16 +347,18 @@ bool Collectiondb::addNewColl ( char *coll ,
 	if ( dir ) closedir ( dir );
 	if ( dir ) {
 		g_errno = EEXIST;
-		return log("admin: Trying to create collection %s but "
-			   "directory %s already exists on disk.",coll,dname);
+		log(LOG_WARN, "admin: Trying to create collection %s but directory %s already exists on disk.",coll,dname);
+		return false;
 	}
 
 	// create the record in memory
 	CollectionRec *cr = new (CollectionRec);
-	if ( ! cr )
-		return log("admin: Failed to allocated %"INT32" bytes for new "
-			   "collection record for \"%s\".",
-			   (int32_t)sizeof(CollectionRec),coll);
+	if ( ! cr ) {
+		log( LOG_WARN, "admin: Failed to allocated %"INT32" bytes for new collection record for '%s'.",
+		     ( int32_t ) sizeof( CollectionRec ), coll );
+		return false;
+	}
+
 	// register the mem
 	mnew ( cr , sizeof(CollectionRec) , "CollectionRec" );
 
@@ -404,7 +396,7 @@ bool Collectiondb::addNewColl ( char *coll ,
 		// diffbot coll name format is <token>-<crawlname>
 		char *h = strchr ( tmp.getBufStart() , '-' );
 		if ( ! h ) {
-			log("crawlbot: bad custom collname");
+			log( LOG_WARN, "crawlbot: bad custom collname");
 			g_errno = EBADENGINEER;
 			mdelete ( cr, sizeof(CollectionRec), "CollectionRec" );
 			delete ( cr );
@@ -413,7 +405,7 @@ bool Collectiondb::addNewColl ( char *coll ,
 		*h = '\0';
 		crawl = h + 1;
 		if ( ! crawl[0] ) {
-			log("crawlbot: bad custom crawl name");
+			log( LOG_WARN, "crawlbot: bad custom crawl name");
 			mdelete ( cr, sizeof(CollectionRec), "CollectionRec" );
 			delete ( cr );
 			g_errno = EBADENGINEER;
@@ -421,7 +413,7 @@ bool Collectiondb::addNewColl ( char *coll ,
 		}
 		// or if too big!
 		if ( gbstrlen(crawl) > 30 ) {
-			log("crawlbot: crawlbot crawl NAME is over 30 chars");
+			log( LOG_WARN, "crawlbot: crawlbot crawl NAME is over 30 chars");
 			mdelete ( cr, sizeof(CollectionRec), "CollectionRec" );
 			delete ( cr );
 			g_errno = EBADENGINEER;
@@ -525,37 +517,29 @@ bool Collectiondb::addNewColl ( char *coll ,
 
 	// MDW: create the new directory
  retry22:
-	if ( ::mkdir ( dname ,
-		       getDirCreationFlags() ) ) {
-		       // S_IRUSR | S_IWUSR | S_IXUSR |
-		       // S_IRGRP | S_IWGRP | S_IXGRP |
-		       // S_IROTH | S_IXOTH ) ) {
+	if ( ::mkdir ( dname, getDirCreationFlags() ) ) {
 		// valgrind?
 		if ( errno == EINTR ) goto retry22;
 		g_errno = errno;
 		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" );
 		delete ( cr );
-		return log("admin: Creating directory %s had error: "
-			   "%s.", dname,mstrerror(g_errno));
+		return log( LOG_WARN, "admin: Creating directory %s had error: %s.", dname,mstrerror(g_errno));
 	}
 
 	// save it into this dir... might fail!
 	if ( saveIt && ! cr->save() ) {
 		mdelete ( cr , sizeof(CollectionRec) , "CollectionRec" );
 		delete ( cr );
-		return log("admin: Failed to save file %s: %s",
-			   dname,mstrerror(g_errno));
+		return log( LOG_WARN, "admin: Failed to save file %s: %s", dname,mstrerror(g_errno));
 	}
 
 
-	if ( ! registerCollRec ( cr , true ) )
+	if ( ! registerCollRec ( cr , true ) ) {
 		return false;
+	}
 
 	// add the rdbbases for this coll, CollectionRec::m_bases[]
-	if ( ! addRdbBasesForCollRec ( cr ) )
-		return false;
-
-	return true;
+	return addRdbBasesForCollRec ( cr );
 }
 
 void CollectionRec::setBasePtr ( char rdbId , class RdbBase *base ) {
@@ -586,12 +570,8 @@ RdbBase *CollectionRec::getBase ( char rdbId ) {
 
 // . called only by addNewColl() and by addExistingColl()
 bool Collectiondb::registerCollRec ( CollectionRec *cr ,  bool isNew ) {
-
 	// add m_recs[] and to hashtable
-	if ( ! setRecPtr ( cr->m_collnum , cr ) )
-		return false;
-
-	return true;
+	return setRecPtr ( cr->m_collnum , cr );
 }
 
 // swap it in
@@ -646,7 +626,7 @@ bool Collectiondb::addRdbBasesForCollRec ( CollectionRec *cr ) {
 	return true;
 
  hadError:
-	log("db: error registering coll: %s",mstrerror(g_errno));
+	log(LOG_WARN, "db: error registering coll: %s",mstrerror(g_errno));
 	return false;
 }
 
@@ -654,7 +634,7 @@ bool Collectiondb::addRdbBasesForCollRec ( CollectionRec *cr ) {
 bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 	// do not allow this if in repair mode
 	if ( g_repair.isRepairActive() && g_repair.m_collnum == collnum ) {
-		log("admin: Can not delete collection while in repair mode.");
+		log(LOG_WARN, "admin: Can not delete collection while in repair mode.");
 		g_errno = EBADENGINEER;
 		return true;
 	}
@@ -667,7 +647,7 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 	}
 	CollectionRec *cr = m_recs [ collnum ];
 	if ( ! cr ) {
-		log("admin: Collection id problem. Delete failed.");
+		log(LOG_WARN, "admin: Collection id problem. Delete failed.");
 		g_errno = ENOTFOUND;
 		return true;
 	}
@@ -758,31 +738,6 @@ bool Collectiondb::deleteRec2 ( collnum_t collnum ) { //, WaitEntry *we ) {
 	return true;
 }
 
-/*
-// . reset a collection
-// . returns false if blocked and will call callback
-bool Collectiondb::resetColl ( char *coll ,  bool purgeSeeds) {
-
-	// ensure it's not NULL
-	if ( ! coll ) {
-		log(LOG_LOGIC,"admin: Collection name to delete is NULL.");
-		g_errno = ENOCOLLREC;
-		return true;
-	}
-
-	// get the CollectionRec for "qatest123"
-	CollectionRec *cr = getRec ( coll ); // "qatest123" );
-
-	// must be there. if not, we create test i guess
-	if ( ! cr ) {
-		log("db: could not get coll rec \"%s\" to reset", coll);
-		char *xx=NULL;*xx=0;
-	}
-
-	return resetColl2 ( cr->m_collnum, purgeSeeds);
-}
-*/
-
 // ensure m_recs[] is big enough for m_recs[collnum] to be a ptr
 bool Collectiondb::growRecPtrBuf ( collnum_t collnum ) {
 
@@ -802,7 +757,7 @@ bool Collectiondb::growRecPtrBuf ( collnum_t collnum ) {
 	// . true here means to clear the new space to zeroes
 	// . this shit works based on m_length not m_capacity
 	if ( ! m_recPtrBuf.reserve ( need2 ,NULL, true ) ) {
-		log("admin: error growing rec ptr buf2.");
+		log( LOG_WARN, "admin: error growing rec ptr buf2.");
 		return false;
 	}
 
@@ -831,9 +786,9 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 
 	// first time init hashtable that maps coll to collnum
 	if ( g_collTable.m_numSlots == 0 &&
-	     ! g_collTable.set(8,sizeof(collnum_t), 256,NULL,0,
-			       false,0,"nhshtbl"))
+	     ! g_collTable.set(8,sizeof(collnum_t), 256,NULL,0, false,0,"nhshtbl")) {
 		return false;
+	}
 
 	// sanity
 	if ( collnum < 0 ) { char *xx=NULL;*xx=0; }
@@ -873,8 +828,9 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 	}
 
 	// ensure m_recs[] is big enough for m_recs[collnum] to be a ptr
-	if ( ! growRecPtrBuf ( collnum ) )
+	if ( ! growRecPtrBuf ( collnum ) ) {
 		return false;
+	}
 
 	// sanity
 	if ( cr->m_collnum != collnum ) { char *xx=NULL;*xx=0; }
@@ -904,9 +860,6 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 		if ( m_recs[j]->m_collnum == 1 ) continue;
 	}
 
-	// update the time
-	//updateTime();
-
 	return true;
 }
 
@@ -915,7 +868,7 @@ bool Collectiondb::setRecPtr ( collnum_t collnum , CollectionRec *cr ) {
 bool Collectiondb::resetColl2( collnum_t oldCollnum, collnum_t newCollnum, bool purgeSeeds ) {
 	// do not allow this if in repair mode
 	if ( g_repair.isRepairActive() && g_repair.m_collnum == oldCollnum ) {
-		log("admin: Can not delete collection while in repair mode.");
+		log(LOG_WARN, "admin: Can not delete collection while in repair mode.");
 		g_errno = EBADENGINEER;
 		return true;
 	}

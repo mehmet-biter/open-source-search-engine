@@ -382,7 +382,7 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 
 // . returns false and sets g_errno on error, returns true on success
 // . if this rdb is collectionless we set m_collectionlessBase in addBase()
-bool Rdb::addRdbBase1 ( const char *coll ) { // addColl()
+bool Rdb::addRdbBase1 ( const char *coll ) {
 	collnum_t collnum = g_collectiondb.getCollnum ( coll );
 	return addRdbBase2 ( collnum );
 }

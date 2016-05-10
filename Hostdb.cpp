@@ -148,10 +148,11 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	// read in the file
 	numRead = f.read ( m_buf , m_bufSize , 0 /*offset*/ );
 	// ensure g_errno is now set if numRead != m_bufSize
-	if ( numRead != m_bufSize ) 
-		return log(
-			   "conf: Error reading "
-			   "%s : %s." , filename,mstrerror(g_errno));
+	if ( numRead != m_bufSize ) {
+		log( LOG_WARN, "conf: Error reading %s : %s.", filename, mstrerror( g_errno ) );
+		return false;
+	}
+
 	// NULL terminate what we read
 	m_buf [ m_bufSize ] = '\0';
 
@@ -194,7 +195,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 				m_numProxyHosts++;
 
 			else
-				return log("conf: %s is malformed. First "
+				return log( LOG_WARN, "conf: %s is malformed. First "
 					   "item of each non-comment line "
 					   "must be a NUMERIC hostId, "
 					   "SPARE or PROXY. line=%s",filename,
@@ -211,15 +212,14 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	// set g_errno, log and return false if no hosts found in the file
 	if ( i == 0 ) { 
 		g_errno = ENOHOSTS; 
-		log("conf: No host entries found in %s.",filename);
+		log( LOG_WARN, "conf: No host entries found in %s.",filename);
 		goto createFile;
 	}
 	// alloc space for this many Hosts structures
 	// save buffer size
 	m_allocSize = sizeof(Host) * i;
 	m_hosts = (Host *) mcalloc ( m_allocSize ,"Hostdb");
-	if ( ! m_hosts ) return log(
-				    "conf: Memory allocation failed.");
+	if ( ! m_hosts ) return log( LOG_WARN, "conf: Memory allocation failed.");
 
 	int32_t numGrunts = 0;
 
@@ -383,7 +383,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		// limit
 		if ( hlen > 15 ) {
 			g_errno = EBADENGINEER;
-			log("admin: hostname too long in hosts.conf");
+			log(LOG_WARN, "admin: hostname too long in hosts.conf");
 			return false;
 		}
 		// copy it
@@ -404,7 +404,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		// still bad?
 		if ( ! ip ) {
 			g_errno = EBADENGINEER;
-			log("admin: no ip for hostname \"%s\" in "
+			log(LOG_WARN, "admin: no ip for hostname \"%s\" in "
 			    "hosts.conf in /etc/hosts",
 			    h->m_hostname);
 			return false;
@@ -443,7 +443,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		// limit
 		if ( hlen2 > 15 ) {
 			g_errno = EBADENGINEER;
-			log("admin: hostname too long in hosts.conf");
+			log(LOG_WARN, "admin: hostname too long in hosts.conf");
 			return false;
 		}
 		// a direct ip address?
@@ -459,7 +459,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 			key_t k = hash96 ( h->m_hostname2 , hlen2 );
 			// get eth1 ip of hostname in /etc/hosts
 			if ( ! g_dns.isInFile ( k , &ip2 ) ) {
-				log("admin: secondary host %s in hosts.conf "
+				log(LOG_WARN, "admin: secondary host %s in hosts.conf "
 				    "not in /etc/hosts. Using secondary "
 				    "ethernet (eth1) ip "
 				    "of %s",hostname2,iptoa(ip));
@@ -501,8 +501,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 			// sanity
 			if ( ip == 0 || port == 0 ) {
 				g_errno = EBADENGINEER;
-				log("admin: bad qcproxy line. must "
-				    "have ip:port after hostname.");
+				log(LOG_WARN, "admin: bad qcproxy line. must have ip:port after hostname.");
 				return false;
 			}
 			h->m_forwardIp   = ip;
@@ -528,8 +527,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		
 		if ( ! wdir ) {
 			g_errno = EBADENGINEER;
-			log("admin: need working-dir for host "
-			    "in hosts.conf line %"INT32"",line);
+			log(LOG_WARN, "admin: need working-dir for host in hosts.conf line %"INT32"",line);
 			return false;
 		}
 
@@ -577,30 +575,28 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 		// ensure they're in proper order without gaps
 		if ( h->m_type==HT_GRUNT && h->m_hostId != i ) {
 		     g_errno = EBADHOSTID; 
-		     return log(
-				"conf: Unordered hostId of %"INT32", should be %"INT32" "
-				"in %s line %"INT32".",
-				h->m_hostId,i,filename,line);
+		     return log(LOG_WARN, "conf: Unordered hostId of %"INT32", should be %"INT32" in %s line %"INT32".",
+		                h->m_hostId,i,filename,line);
 		}
 
 		// and working dir
 		if ( wdirlen > 127 ) {
 		      g_errno = EBADENGINEER;
-		      return log(
-				 "conf: Host working dir too long in "
+		      return log(LOG_WARN,
+		                 "conf: Host working dir too long in "
 				 "%s line %"INT32".",filename,line);
 		}
 		if ( wdirlen <= 0 ) {
 		      g_errno = EBADENGINEER;
-		      return log(
-				 "conf: No working dir supplied in "
+		      return log(LOG_WARN,
+		                 "conf: No working dir supplied in "
 				 "%s line %"INT32".",filename,line);
 		}
 		// make sure it is legit
 		if ( wdir[0] != '/' ) {
 		      g_errno = EBADENGINEER;
-		      return log(
-				 "conf: working dir must start "
+		      return log(LOG_WARN,
+		                 "conf: working dir must start "
 				 "with / in %s line %"INT32"",filename,line);
 		}
 
@@ -708,7 +704,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 
 	// assign spare hosts
 	if ( m_numSpareHosts > MAX_SPARES ) {
-		log ( "conf: Number of spares (%"INT32") exceeds max of %i, "
+		log ( LOG_WARN, "conf: Number of spares (%"INT32") exceeds max of %i, "
 		      "truncating.", m_numSpareHosts, MAX_SPARES );
 		m_numSpareHosts = MAX_SPARES;
 	}
@@ -718,7 +714,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	
 	// assign proxy hosts
 	if ( m_numProxyHosts > MAX_PROXIES ) {
-		log ( "conf: Number of proxies (%"INT32") exceeds max of %i, "
+		log ( LOG_WARN, "conf: Number of proxies (%"INT32") exceeds max of %i, "
 		      "truncating.", m_numProxyHosts, MAX_PROXIES );
 		char *xx=NULL;*xx=0;
 		m_numProxyHosts = MAX_PROXIES;
@@ -739,7 +735,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	// must be exact fit
 	if ( hostsPerShard * m_numShards != m_numHosts ) {
 		g_errno = EBADENGINEER;
-		return log("conf: Bad number of hosts for %"INT32" shards "
+		return log(LOG_WARN, "conf: Bad number of hosts for %"INT32" shards "
 			   "in hosts.conf.",m_numShards);
 	}
 	// count number of hosts in each shard
@@ -750,7 +746,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 				count++;
 		if ( count != hostsPerShard ) {
 			g_errno = EBADENGINEER;
-			return log("conf: Number of hosts in each shard "
+			return log(LOG_WARN, "conf: Number of hosts in each shard "
 				   "in %s is not equal.",filename);
 		}
 	}
@@ -827,7 +823,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	// get IPs of this server. last entry is 0.
 	int32_t *localIps = getLocalIps();
 	if ( ! localIps )
-		return log("conf: Failed to get local IP address. Exiting.");
+		return log(LOG_WARN, "conf: Failed to get local IP address. Exiting.");
 
 	// if no cwd, then probably calling 'gb inject foo.warc <hosts.conf>'
 	if ( ! cwd ) {
@@ -842,7 +838,7 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	if ( proxyHost )
 		host = getProxy2 ( cwd , localIps ); //hostId );
 	if ( ! host ) 
-		return log("conf: Could not find host with path %s and "
+		return log(LOG_WARN, "conf: Could not find host with path %s and "
 			   "local ip in %s",cwd,filename);
 	m_myIp         = host->m_ip;    // internal IP
 	m_myIpShotgun  = host->m_ipShotgun;
@@ -893,8 +889,8 @@ bool Hostdb::init ( int32_t hostIdArg , char *netName ,
 	Host *h = getHost ( m_hostId );
 	if ( proxyHost )
 		h = getProxy ( m_hostId );
-	if ( ! h ) return log(
-			      "conf: HostId %"INT32" not found in %s.",
+	if ( ! h ) return log(LOG_WARN,
+	                      "conf: HostId %"INT32" not found in %s.",
 			      m_hostId,filename);
 	// set m_dir to THIS host's working dir
 	strcpy ( m_dir , h->m_dir );

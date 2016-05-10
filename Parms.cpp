@@ -309,13 +309,7 @@ static bool CommandAddColl ( char *rec , char customCrawl ) {
 	}
 
 	// this saves it to disk! returns false and sets g_errno on error.
-	if ( ! g_collectiondb.addNewColl ( collName,
-					   customCrawl ,
-					   NULL ,  // copy from
-					   0  , // copy from len
-					   true , // save?
-					   newCollnum
-					   ) )
+	if ( ! g_collectiondb.addNewColl ( collName, customCrawl, true, newCollnum ) )
 		// error! g_errno should be set
 		return true;
 

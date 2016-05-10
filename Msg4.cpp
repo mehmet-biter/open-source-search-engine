@@ -405,7 +405,7 @@ bool Msg4::addMetaList2 ( ) {
 		// get the key size. a table lookup in Rdb.cpp.
 		int32_t ks = getKeySizeFromRdbId ( rdbId );
 			
-		logTrace( g_conf.m_logTraceMsg4, "Key size: %"INT32"", ks);
+		logTrace( g_conf.m_logTraceMsg4, "  Key size: %"INT32"", ks);
 			
 		// skip key
 		p += ks;
@@ -450,7 +450,6 @@ bool Msg4::addMetaList2 ( ) {
  		
 		// convert the gid to the hostid of the first host in this
 		// group. uses a quick hash table.
-		//int32_t hostId = g_hostdb.makeHostIdFast ( gid );
 		Host *hosts = g_hostdb.getShard ( shardNum );
 		int32_t hostId = hosts[0].m_hostId;
 
@@ -481,8 +480,7 @@ bool Msg4::addMetaList2 ( ) {
 
 		// g_errno is not set if the store rec could not send the
 		// buffer because no multicast was available
-		if ( g_errno ) 
-		{
+		if ( g_errno ) {
 			log(LOG_ERROR, "%s:%s: build: Msg4 storeRec had error: %s.",
 			    __FILE__, __func__, mstrerror(g_errno));
 		}
@@ -495,14 +493,6 @@ bool Msg4::addMetaList2 ( ) {
 		return false;
 	}
 
-	// . send out all bufs
-	// . before we were caching to reduce packet traffic, but
-	//   since we don't use the network for sending termlists let's
-	//   try going back to making it even more real-time
-	//if ( ! isClockInSync() ) return true;
-	// flush them buffers
-	//flushLocal();
-			       
 	// in case this was being used to hold the data, free it
 	m_tmpBuf.purge();
 
@@ -531,9 +521,6 @@ bool storeRec ( collnum_t      collnum ,
 	// loop back up here if you have to flush the buffer
  retry:
 
-	// sanity check
-	//if ( recSize==16 && rdbId==RDB_SPIDERDB && *(int32_t *)(rec+12)!=0 ) {
-	//	char *xx=NULL; *xx=0; }
 	// . how many bytes do we need to store the request?
 	// . USED(4 bytes)/collnum/rdbId(1)/recSize(4bytes)/recData
 	// . "USED" is only used for mallocing new slots really

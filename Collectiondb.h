@@ -88,12 +88,7 @@ class Collectiondb  {
 
 	bool addExistingColl ( char *coll, collnum_t collnum );
 
-	bool addNewColl ( char *coll ,
-			  char customCrawl ,
-			  char *cpc ,
-			  int32_t cpclen ,
-			  bool saveIt ,
-			  collnum_t newCollnum ) ;
+	bool addNewColl( char *coll, char customCrawl, bool saveIt, collnum_t newCollnum ) ;
 
 	bool registerCollRec ( CollectionRec *cr ,  bool isNew ) ;
 

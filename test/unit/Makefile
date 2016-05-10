@@ -36,6 +36,7 @@ CPPFLAGS += -g
 CPPFLAGS += -Wno-write-strings
 CPPFLAGS += -Wl,-rpath=. -Wl,-rpath=$(BASE_DIR)
 CPPFLAGS += -I$(BASE_DIR) -I$(GTEST_DIR)/include
+CPPFLAGS+= -std=c++11
 
 LIBS += -L./ -lgtest 
 LIBS += $(BASE_DIR)/libgb.a -lz -lpthread -lssl -lcrypto

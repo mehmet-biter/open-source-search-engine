@@ -1371,7 +1371,7 @@ bool readwrite_r ( FileState *fstate ) {
 	if (n==0 && len > 0 ) {
 		// MDW: don't access m_this in case bigfile was deleted
 		// since we are in a thread
-		log("disk: Read of %"INT32" bytes at offset %"INT64" "
+		log(LOG_WARN, "disk: Read of %"INT32" bytes at offset %"INT64" "
 		    " failed because file is too short for that "
 		    "offset? Our fd was probably stolen from us by another "
 		    "thread. fd1=%i fd2=%i len=%i filenum=%i "
@@ -1566,7 +1566,7 @@ bool BigFile::unlinkRename ( // non-NULL for renames, NULL for unlinks
 	// fail in read only mode
 	if ( g_conf.m_readOnlyMode ) {
 		g_errno = EBADENGINEER;
-		log("disk: cannot unlink or rename files in read only mode");
+		log(LOG_WARN, "disk: cannot unlink or rename files in read only mode");
 		return true;
 	}
 

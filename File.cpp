@@ -294,7 +294,7 @@ int File::write ( void *buf             ,
 	int fd = getfd();
 	if ( fd < 0 ) {
 		g_errno = EBADENGINEER;
-		log("disk: write: fd is negative");
+		log(LOG_WARN, "disk: write: fd is negative");
 		return -1;
 	}
 	// write it
@@ -324,7 +324,7 @@ int File::read ( void *buf            ,
 	int fd = getfd();
 	if ( fd < 0 ) {
 		g_errno = EBADENGINEER;
-		log("disk: read: fd is negative");
+		log(LOG_WARN, "disk: read: fd is negative");
 		return -1;
 	}
 	// do the read
