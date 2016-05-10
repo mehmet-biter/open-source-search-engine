@@ -66,13 +66,11 @@
 #define MAX_SURROUNDING_TEXT_WIDTH 600
 #define MAX_RSSITEM_SIZE  30000
 
-bool getDensityRanks ( int64_t *wids , 
+bool getDensityRanks ( const int64_t *wids,
 		       int32_t nw,
-		       //int32_t wordStart , 
-		       //int32_t wordEnd ,
 		       int32_t hashGroup ,
 		       SafeBuf *densBuf ,
-		       Sections *sections ,
+		       const Sections *sections,
 		       int32_t niceness );
 
 // diversity vector

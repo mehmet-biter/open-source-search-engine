@@ -22405,16 +22405,14 @@ int32_t XmlDoc::getProbSpam(const int32_t *profile, int32_t plen, int32_t step) 
 
 
 bool getWordPosVec ( Words *words ,
-		     Sections *sections,
-		     //int32_t wordStart,
-		     //int32_t wordEnd,
-		     int32_t startDist, // m_dist
-		     char *fragVec,
+		     const Sections *sections,
+		     int32_t startDist,
+		     const char *fragVec,
 		     int32_t niceness ,
 		     SafeBuf *wpos ) {
 
 	int32_t dist = startDist; // 0;
-	Section *lastsx = NULL;
+	const Section *lastsx = NULL;
 	int32_t tagDist = 0;
 	Section **sp = NULL;
 	if ( sections ) sp = sections->m_sectionPtrs;
@@ -22465,7 +22463,7 @@ bool getWordPosVec ( Words *words ,
 		if ( fragVec && i<MAXFRAGWORDS && fragVec[i] == 0 ) {
 			dist++; continue; }
 
-		Section *sx = NULL;
+		const Section *sx = NULL;
 		if ( sp ) {
 			sx = sp[i];
 			// ignore if in style tag, etc. and do not
@@ -22500,11 +22498,11 @@ bool getWordPosVec ( Words *words ,
 	return true;
 }
 
-bool getDensityRanks ( int64_t *wids ,
+bool getDensityRanks ( const int64_t *wids ,
 		       int32_t nw ,
 		       int32_t hashGroup ,
 		       SafeBuf *densBuf ,
-		       Sections *sections ,
+		       const Sections *sections ,
 		       int32_t niceness ) {
 
 	//int32_t nw = wordEnd - wordStart;
