@@ -137,14 +137,12 @@ uint16_t getCharsetFast ( class HttpMime *mime,
 			  int32_t slen , 
 			  int32_t niceness );
 
-bool getWordPosVec ( Words *words ,
-			    Sections *sections,
-			    //int32_t wordStart,
-			    //int32_t wordEnd,
-			    int32_t startDist,
-			    char *fragVec,
-			    int32_t niceness ,
-			    SafeBuf *wpos ) ;
+bool getWordPosVec ( Words *words,
+		     const Sections *sections,
+		     int32_t startDist,
+		     const char *fragVec,
+		     int32_t niceness,
+		     SafeBuf *wpos );
 
 
 #define ROOT_TITLE_BUF_MAX 512
