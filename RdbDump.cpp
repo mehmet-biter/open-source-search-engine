@@ -263,24 +263,20 @@ void        tryAgainWrapper2 ( int fd , void *state ) {
 //   deleting it from the tree to keep the cache in sync. NO we do NOT!
 // . called again by writeBuf() when it's done writing the whole list
 bool RdbDump::dumpTree ( bool recall ) {
+	if( g_conf.m_logTraceRdbDump ) {
+		logTrace( g_conf.m_logTraceRdbDump, "BEGIN" );
+		logTrace( g_conf.m_logTraceRdbDump, "recall.: %s", recall ? "true" : "false" );
 
-	if( g_conf.m_logDebugDetailed ) {
-		log(LOG_DEBUG,"%s:%s: BEGIN", __FILE__,__func__);
-		log(LOG_DEBUG,"%s:%s: recall.: %s", __FILE__,__func__, recall?"true":"false");
-		char *s = "none";
-		if ( m_rdb )
-		{
-			s = getDbnameFromId(m_rdb->m_rdbId);
-			log(LOG_DEBUG,"%s:%s: m_rdbId: %02x", __FILE__,__func__, m_rdb->m_rdbId);
+		const char *s = "none";
+		if ( m_rdb ) {
+			s = getDbnameFromId( m_rdb->m_rdbId );
+			logTrace( g_conf.m_logTraceRdbDump, "m_rdbId: %02x", m_rdb->m_rdbId );
 		}
-		log(LOG_DEBUG,"%s:%s: name...: [%s]", __FILE__,__func__, s);
+
+		logTrace( g_conf.m_logTraceRdbDump, "name...: [%s]", s );
 	}
 
-
 	// set up some vars
-	//int32_t  nextNode;
-	//key_t maxEndKey;
-	//maxEndKey.setMax();
 	char maxEndKey[MAX_KEY_BYTES];
 	KEYMAX(maxEndKey,m_ks);
 	// if dumping statsdb, we can only dump records 30 seconds old or
@@ -305,20 +301,14 @@ bool RdbDump::dumpTree ( bool recall ) {
 
  loop:
 	// if the lastKey was the max end key last time then we're done
-	if ( m_rolledOver     )
-	{
-		if( g_conf.m_logDebugDetailed ) {
-			log(LOG_DEBUG,"%s:%s: END - m_rolledOver, returning true", __FILE__,__func__);
-		}
+	if ( m_rolledOver ) {
+		logTrace( g_conf.m_logTraceRdbDump, "END - m_rolledOver, returning true" );
 		return true;
 	}
 
 	// this is set to -1 when we're done with our unordered dump
-	if ( m_nextNode == -1 )
-	{
-		if( g_conf.m_logDebugDetailed ) {
-			log(LOG_DEBUG,"%s:%s: END - m_nextNode, returning true", __FILE__,__func__);
-		}
+	if ( m_nextNode == -1 ) {
+		logTrace( g_conf.m_logTraceRdbDump, "END - m_nextNode, returning true" );
 		return true;
 	}
 
@@ -347,11 +337,8 @@ bool RdbDump::dumpTree ( bool recall ) {
 		// debug msg
 		//log("RdbDump:: getting list");
 		m_t1 = gettimeofdayInMilliseconds();
-		if(m_tree)
-		{
-			if( g_conf.m_logDebugDetailed ) {
-				log(LOG_DEBUG,"%s:%s: m_tree", __FILE__,__func__);
-			}
+		if(m_tree) {
+			logTrace( g_conf.m_logTraceRdbDump, "m_tree" );
 
 			status = m_tree->getList ( m_collnum       ,
 					   m_nextKey     ,
@@ -363,12 +350,8 @@ bool RdbDump::dumpTree ( bool recall ) {
 					   m_useHalfKeys ,
 						   niceness );
 		}
-		else
-		if(m_buckets)
-		{
-			if( g_conf.m_logDebugDetailed ) {
-				log(LOG_DEBUG,"%s:%s: m_buckets", __FILE__,__func__);
-			}
+		else if(m_buckets) {
+			logTrace( g_conf.m_logTraceRdbDump, "m_buckets" );
 
 			status = m_buckets->getList ( m_collnum,
 					   m_nextKey     ,
@@ -380,10 +363,7 @@ bool RdbDump::dumpTree ( bool recall ) {
 					   m_useHalfKeys );
 		}
 
-		if( g_conf.m_logDebugDetailed ) {
-			log(LOG_DEBUG,"%s:%s: status: %s", __FILE__,__func__, status?"true":"false");
-		}
-
+		logTrace( g_conf.m_logTraceRdbDump, "status: %s", status ? "true" : "false" );
 
 		// don't dump out any neg recs if it is our first time dumping
 		// to a file for this rdb/coll. TODO: implement this later.
@@ -478,29 +458,22 @@ bool RdbDump::dumpTree ( bool recall ) {
 		//log("RdbDump::getList: sleeping and retrying");
 
 		// retry for the remaining two types of errors
-		if (!g_loop.registerSleepCallback(1000,this,tryAgainWrapper2))
-		{
-			log("db: Retry failed. Could not register callback.");
+		if (!g_loop.registerSleepCallback(1000,this,tryAgainWrapper2)) {
+			log( LOG_WARN, "db: Retry failed. Could not register callback.");
 
-			if( g_conf.m_logDebugDetailed ) {
-				log(LOG_DEBUG,"%s:%s: END - retry failed, returning true", __FILE__,__func__);
-			}
+			logTrace( g_conf.m_logTraceRdbDump, "END - retry failed, returning true" );
 			return true;
 		}
 
-		if( g_conf.m_logDebugDetailed ) {
-			log(LOG_DEBUG,"%s:%s: END - returning false", __FILE__,__func__);
-		}
+		logTrace( g_conf.m_logTraceRdbDump, "END - returning false" );
+
 		// wait for sleep
 		return false;
 	}
 
 	// if list is empty, we're done!
-	if ( m_list->isEmpty() )
-	{
-		if( g_conf.m_logDebugDetailed ) {
-			log(LOG_DEBUG,"%s:%s: END - list empty, returning true", __FILE__,__func__);
-		}
+	if ( m_list->isEmpty() ) {
+		logTrace( g_conf.m_logTraceRdbDump, "END - list empty, returning true" );
 		return true;
 	}
 
@@ -519,21 +492,14 @@ bool RdbDump::dumpTree ( bool recall ) {
 	// . sets g_errno on error
 
 	// . if this blocks it should call us (dumpTree() back)
-	if ( ! dumpList ( m_list , m_niceness , false ) )
-	{
-		if( g_conf.m_logDebugDetailed ) {
-			log(LOG_DEBUG,"%s:%s: END - after dumpList, returning false", __FILE__,__func__);
-		}
+	if ( ! dumpList ( m_list , m_niceness , false ) ) {
+		logTrace( g_conf.m_logTraceRdbDump, "END - after dumpList, returning false" );
 		return false;
 	}
 
 	// close up shop on a write/dumpList error
-	if ( g_errno )
-	{
-		if( g_conf.m_logDebugDetailed ) {
-			log(LOG_DEBUG,"%s:%s: END - g_errno set [%"INT32"], returning true", __FILE__,__func__, g_errno);
-		}
-
+	if ( g_errno ) {
+		logTrace( g_conf.m_logTraceRdbDump, "END - g_errno set [%" PRId32"], returning true", g_errno );
 		return true;
 	}
 
@@ -740,16 +706,14 @@ bool RdbDump::dumpList ( RdbList *list , int32_t niceness , bool recall ) {
 // . delete list from tree, incorporate list into cache, add to map
 // . returns false if blocked, true otherwise, sets g_errno on error
 bool RdbDump::doneDumpingList ( bool addToMap ) {
-	if( g_conf.m_logDebugDetailed ) {
-		log(LOG_DEBUG,"%s:%s: BEGIN", __FILE__,__func__);
-	}
-
+	logTrace( g_conf.m_logTraceRdbDump, "BEGIN" );
 
 	// we can get suspended when gigablast is shutting down, in which
 	// case the map may have been deleted. only RdbMerge suspends its
 	// m_dump class, not Rdb::m_dump. return false so caller nevers
 	// gets called back. we can not resume from this suspension!
 	//if ( m_isSuspended ) return false;
+
 	// . if error was EFILECLOSE (file got closed before we wrote to it)
 	//   then try again. file can close because fd pool needed more fds
 	// . we cannot do this retry in BigFile.cpp because the BigFile
@@ -778,9 +742,7 @@ bool RdbDump::doneDumpingList ( bool addToMap ) {
 		//log("RdbDump::doneDumpingList: retrying.");
 		bool rc = dumpList ( m_list , m_niceness , true );
 
-		if( g_conf.m_logDebugDetailed ) {
-			log(LOG_DEBUG,"%s:%s: END. Returning %s", __FILE__,__func__, rc?"true":"false");
-		}
+		logTrace( g_conf.m_logTraceRdbDump, "END. Returning %s", rc ? "true" : "false" );
 		return rc;
 	}
 
@@ -791,9 +753,7 @@ bool RdbDump::doneDumpingList ( bool addToMap ) {
 
 		//log("RdbDump::doneDumpingList: %s",mstrerror(g_errno));
 
-		if( g_conf.m_logDebugDetailed ) {
-			log(LOG_DEBUG,"%s:%s: END - returning true", __FILE__,__func__);
-		}
+		logTrace( g_conf.m_logTraceRdbDump, "END - returning true" );
 		return true;
 	}
 
@@ -801,12 +761,8 @@ bool RdbDump::doneDumpingList ( bool addToMap ) {
 	// . we only dump unordered lists when we do a save
 	// . it saves time not having to delete the list and it also allows
 	//   us to do saves without deleting our data! good!
-	if ( ! m_orderedDump )
-	{
-		if( g_conf.m_logDebugDetailed ) {
-			log(LOG_DEBUG,"%s:%s: END - not m_orderedDump. Returning true", __FILE__,__func__);
-		}
-
+	if ( ! m_orderedDump ) {
+		logTrace( g_conf.m_logTraceRdbDump, "END - not m_orderedDump. Returning true" );
 		return true; //--turn this off until save works
 	}
 
@@ -840,16 +796,10 @@ bool RdbDump::doneDumpingList ( bool addToMap ) {
 					     this           ,
 					     doneReadingForVerifyWrapper ,
 					     m_niceness      );
-		// debug msg
-		//log("RdbDump dumped %"INT32" bytes, done=%"INT32"\n",
-		//	m_bytesToWrite,isDone);
-		// return false if it blocked
-		if ( ! isDone )
-		{
-			if( g_conf.m_logDebugDetailed ) {
-				log(LOG_DEBUG,"%s:%s: END - isDone is false. returning false", __FILE__,__func__);
-			}
 
+		// return false if it blocked
+		if ( ! isDone ) {
+			logTrace( g_conf.m_logTraceRdbDump, "END - isDone is false. returning false" );
 			return false;
 		}
 	}
@@ -857,9 +807,7 @@ bool RdbDump::doneDumpingList ( bool addToMap ) {
 
 	bool rc=doneReadingForVerify();
 
-	if( g_conf.m_logDebugDetailed ) {
-		log(LOG_DEBUG,"%s:%s: END - after doneReadingForVerify. Returning %s", __FILE__,__func__, rc?"true":"false");
-	}
+	logTrace( g_conf.m_logTraceRdbDump, "END - after doneReadingForVerify. Returning %s", rc ? "true" : "false" );
 	return rc;
 }
 
@@ -876,9 +824,7 @@ void doneReadingForVerifyWrapper ( void *state ) {
 
 
 bool RdbDump::doneReadingForVerify ( ) {
-	if( g_conf.m_logDebugDetailed ) {
-		log(LOG_DEBUG,"%s:%s: BEGIN", __FILE__,__func__);
-	}
+	logTrace( g_conf.m_logTraceRdbDump, "BEGIN" );
 
 	// if someone reset/deleted the collection we were dumping...
 	CollectionRec *cr = g_collectiondb.getRec ( m_collnum );
@@ -912,9 +858,7 @@ bool RdbDump::doneReadingForVerify ( ) {
 		// try writing again
 		bool rc=dumpList ( m_list , m_niceness , true );
 
-		if( g_conf.m_logDebugDetailed ) {
-			log(LOG_DEBUG,"%s:%s: END - after retrying dumpList. Returning %s", __FILE__,__func__, rc?"true":"false");
-		}
+		logTrace( g_conf.m_logTraceRdbDump, "END - after retrying dumpList. Returning %s", rc ? "true" : "false" );
 		return rc;
 	}
 
@@ -924,10 +868,7 @@ bool RdbDump::doneReadingForVerify ( ) {
 	// start timing on first call only
 	if ( m_addToMap ) t = gettimeofdayInMilliseconds();
 	// sanity check
-	if ( m_list->m_ks != m_ks )
-	{
-//		char *xx = NULL; *xx = 0;
-
+	if ( m_list->m_ks != m_ks ) {
 		log(LOG_ERROR,"%s:%s: Sanity check failed. m_list->m_ks [%02x]!= m_ks [%02x]",
 			__FILE__,__func__, m_list->m_ks, m_ks);
 		g_process.shutdownAbort(false);
@@ -1061,11 +1002,8 @@ bool RdbDump::doneReadingForVerify ( ) {
 	//if ( m_orderedDump ) m_list->checkList_r ( false , true );
 
 	// if we're NOT dumping a tree then return control to RdbMerge
-	if ( ! m_tree && !m_buckets )
-	{
-		if( g_conf.m_logDebugDetailed ) {
-			log(LOG_DEBUG,"%s:%s: END - !m_tree && !m_buckets, returning true", __FILE__,__func__);
-		}
+	if ( ! m_tree && !m_buckets ) {
+		logTrace( g_conf.m_logTraceRdbDump, "END - !m_tree && !m_buckets, returning true" );
 		return true;
 	}
 
@@ -1133,10 +1071,7 @@ bool RdbDump::doneReadingForVerify ( ) {
 	int64_t t2 = gettimeofdayInMilliseconds();
 	log(LOG_TIMING,"db: dump: deleteList: took %"INT64"",t2-t1);
 
-	if( g_conf.m_logDebugDetailed ) {
-		log(LOG_DEBUG,"%s:%s: END - OK, returning true", __FILE__,__func__);
-	}
-
+	logTrace( g_conf.m_logTraceRdbDump, "END - OK, returning true" );
 	return true;
 }
 
