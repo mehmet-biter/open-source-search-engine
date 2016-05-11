@@ -413,7 +413,7 @@ int BigFile::getfd ( int32_t n , bool forReading ) {
 
 	// boundary check
 	if ( n >= m_maxParts && ! addPart ( n ) ) {
-		log(LOG_ERROR, "disk: Part number %"INT32" > %"INT32". fd not available.", n, m_maxParts);
+		log( LOG_ERROR, "disk: Part number %" PRId32" > %" PRId32". fd not available.", n, m_maxParts );
 		    
 		// return -1 to indicate can't do it
 		return -1;
@@ -424,25 +424,33 @@ int BigFile::getfd ( int32_t n , bool forReading ) {
 	// if part does not exist then create it! addPart(n) will do that?
 	if ( ! f ) {
 		// don't create File if we're getting it for reading
-		if ( forReading    ) return -1;
-		if ( ! addPart (n) ) return -1;
-	}
-	// open it if not opened
-	if ( ! f->calledOpen() ) {
-		if ( ! f->open ( m_flags , getFileCreationFlags() ) ) {
-			log("disk: Failed to open file part #%"INT32".",n);
+		if ( forReading ) {
+			log( LOG_WARN, "disk: Don't create file when we're getting it for reading" );
+			return -1;
+		}
+
+		if ( ! addPart( n ) ) {
+			log( LOG_WARN, "disk: Unable to add part %" PRId32, n );
 			return -1;
 		}
 	}
-	// set it virtual fd, too
-	//if ( vfd ) *vfd = f->m_vfd;
+
+	// open it if not opened
+	if ( ! f->calledOpen() ) {
+		if ( ! f->open ( m_flags , getFileCreationFlags() ) ) {
+			log( LOG_WARN, "disk: Failed to open file part #%" PRId32".", n );
+			return -1;
+		}
+	}
+
 	// get it's file descriptor
 	int fd = f->getfd ( ) ;
 	if ( fd >= -1 ) return fd;
 
 	// otherwise, fd is -2 and it's never been opened?!?!
 	g_errno = EBADENGINEER;
-	log(LOG_LOGIC,"disk: fd is -2.");
+	log( LOG_LOGIC, "disk: fd is -2." );
+
 	return -1;
 }
 
@@ -637,8 +645,10 @@ bool BigFile::readwrite ( void         *buf      ,
 	fstate->m_flags       = m_flags;
 	fstate->m_usePartFiles = m_usePartFiles;
 	// sanity
-	if ( fstate->m_bytesToGo > 150000000 )
-		log("file: huge read of %"INT64" bytes",(int64_t)size);
+	if ( fstate->m_bytesToGo > 150000000 ) {
+		log( LOG_WARN, "file: huge read of %"INT64" bytes", ( int64_t ) size );
+	}
+
 	// . set our fd's before entering the thread in case RdbMerge
 	//   calls our unlinkPart() 
 	// . it's thread-UNsafe to call getfd() from within the thread
@@ -661,8 +671,6 @@ bool BigFile::readwrite ( void         *buf      ,
 	//   back this fd
 	// . fd1 and fd1 are now set in Threads.cpp since we only want to do
 	//   the open right before we actually launch the thread.
-	//fstate->m_fd1         = getfd ( fstate->m_filenum1 , !doWrite , &fstate->m_vfd1);
-	//fstate->m_fd2         = getfd ( fstate->m_filenum2 , !doWrite , &fstate->m_vfd2);
 	fstate->m_fd1  = -3;
 	fstate->m_fd2  = -3;
 
@@ -879,7 +887,10 @@ bool BigFile::readwrite ( void         *buf      ,
 
 	// . this returns false and sets errno on error
 	// . set g_errno to the errno
-	if ( ! readwrite_r ( fstate ) ) g_errno = errno;
+	if ( ! readwrite_r ( fstate ) ) {
+		g_errno = errno;
+	}
+
 	// exit write mode
 	if ( doWrite ) {
 		//File *f1 = m_files [ fstate->m_filenum1 ];
@@ -1315,7 +1326,7 @@ bool readwrite_r ( FileState *fstate ) {
 	// return -1 on error 
 	if ( fd < 0 ) {
 		errno = EBADENGINEER;
-		log(LOG_LOGIC, "disk: fd < 0. Bad engineer.");
+		log( LOG_LOGIC, "disk: fd < 0 for filenum %d. Bad engineer.", filenum );
 		return false;
 	}
 

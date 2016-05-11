@@ -200,8 +200,9 @@ int main ( int argc , char *argv[] ) {
 	int ret = main2 ( argc , argv );
 
 	// returns 1 if failed, 0 on successful/graceful exit
-	if ( ret )
-	        fprintf(stderr,"Failed to start gb. Exiting.\n");
+	if ( ret ) {
+		fprintf( stderr, "Failed to start gb. Exiting.\n" );
+	}
 }
 
 int main2 ( int argc , char *argv[] ) {
