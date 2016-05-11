@@ -45,7 +45,12 @@
 // . mapping 320 gigs, at 16k pages is half that
 // . mapping 640 gigs, at 16k pages is 686 megabytes of RAM (w/ crc)
 // . mapping 640 gigs, at 32k pages is 343 megabytes of RAM (w/ crc)
+#ifndef PRIVACORE_TEST_VERSION
 #define GB_INDEXDB_PAGE_SIZE (32*1024)
+#else
+#define GB_INDEXDB_PAGE_SIZE (1*1024)
+#endif
+
 #define GB_TFNDB_PAGE_SIZE   ( 1*1024)
 //#define PAGE_SIZE (16*1024)
 //#define PAGE_SIZE (8*1024)
@@ -56,7 +61,11 @@
 // . the BigFile's MAX_PART_SIZE should be evenly divisible by PAGES_PER_SEG
 // . that way, when a part file is removed we can remove an even amount of
 //   segments (we chop the leading Files of a BigFile during merges)
+#ifndef PRIVACORE_TEST_VERSION
 #define PAGES_PER_SEGMENT (2*1024)
+#else
+#define PAGES_PER_SEGMENT (1*1024)
+#endif
 #define PAGES_PER_SEG     (PAGES_PER_SEGMENT)
 // MAX_SEGMENTS of 16*1024 allows for 32 million pages = 256gigs of disk data
 //#define MAX_SEGMENTS      (16*1024)  

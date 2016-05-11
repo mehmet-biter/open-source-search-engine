@@ -76,14 +76,14 @@ OBJS =  UdpSlot.o Rebalance.o \
 # common flags
 DEFS = -D_REENTRANT_ -I.
 CPPFLAGS = -g -Wall -fno-stack-protector -DPTHREADS -Wstrict-aliasing=0
-CPPFLAGS+= -std=c++11
+CPPFLAGS += -std=c++11
 
 # optimization
-ifeq ($(config),debug)
+ifeq ($(config),$(filter $(config),debug test))
 O1 =
 O2 =
 O3 =
-else
+else ifeq ($(config),release)
 O1 = -O1
 O2 = -O2
 O3 = -O3
@@ -94,8 +94,12 @@ endif
 
 endif
 
+# defines
 ifeq ($(config),debug)
 DEFS += -D_VALGRIND_
+else ifeq ($(config),test)
+DEFS += -D_VALGRIND_
+DEFS += -DPRIVACORE_TEST_VERSION
 else ifeq ($(config),release)
 # if defined, UI options that can damage our production index will be disabled
 DEFS += -DPRIVACORE_SAFE_VERSION

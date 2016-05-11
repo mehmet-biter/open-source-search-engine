@@ -14,14 +14,14 @@
 
 ssize_t gbpwrite(int fd, const void *buf, size_t count, off_t offset);
 
+#ifndef PRIVACORE_TEST_VERSION
 // . use 512 disk megs per part file
 // . at a GB_PAGE_SIZE of 16k this is 32k RdbMap pages (512k) per part file
 // . let's use 2GB now to conserve file descriptors
 #define MAX_PART_SIZE  (1920LL*1024LL*1024LL)
-
-// debug define
-//#define MAX_PART_SIZE  (32LL*1024LL*1024LL)
-
+#else
+#define MAX_PART_SIZE  (2LL*1024LL*1024LL)
+#endif
 
 #define LITTLEBUFSIZE sizeof(File)
 
