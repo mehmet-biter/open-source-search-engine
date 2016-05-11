@@ -546,7 +546,7 @@ bool Pages::printAdminTop (SafeBuf     *sb   ,
 			   TcpSocket   *s    ,
 			   HttpRequest *r    ,
 			   const char  *qs   ,
-			   char* bodyJavascript) {
+			   const char* bodyJavascript) {
 	int32_t  page   = getDynamicPageNumber ( r );
 	const char *coll = g_collectiondb.getDefaultColl(r);
 	bool status = true;
@@ -1056,7 +1056,7 @@ bool Pages::printTail ( SafeBuf* sb, bool isLocal ) {
 	return true ;
 }
 
-bool Pages::printColors ( SafeBuf *sb, char* bodyJavascript ) {
+bool Pages::printColors ( SafeBuf *sb, const char* bodyJavascript ) {
 	// print font and color stuff
 	sb->safePrintf (
 		  "<body text=#000000 bgcolor=#ffffff"

@@ -1175,7 +1175,7 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 
 bool HttpServer::sendReply2 ( char *mime, 
 			      int32_t  mimeLen ,
-			      char *content  ,
+			      const char *content  ,
 			      int32_t  contentLen ,
 			      TcpSocket *s ,
 			      bool alreadyCompressed ,
@@ -2292,8 +2292,8 @@ bool HttpServer::hasPermission ( int32_t ip , HttpRequest *r ,
 // . sets g_errno on error
 // . cacheTime default is 0, which tells browser to use local caching rules
 // . status should be 200 for all replies except POST which is 201
-bool HttpServer::sendDynamicPage ( TcpSocket *s, char *page, int32_t pageLen, int32_t cacheTime,
-                                   bool POSTReply, char *contentType, int32_t httpStatus,
+bool HttpServer::sendDynamicPage ( TcpSocket *s, const char *page, int32_t pageLen, int32_t cacheTime,
+                                   bool POSTReply, const char *contentType, int32_t httpStatus,
                                    char *cookie, char *charset, HttpRequest *hr) {
 	// how big is the TOTAL page?
 	int32_t contentLen = pageLen; // headerLen + pageLen + tailLen;
@@ -2306,7 +2306,7 @@ bool HttpServer::sendDynamicPage ( TcpSocket *s, char *page, int32_t pageLen, in
 	}
 
 	// guess contentype
-	char *ct = contentType;
+	const char *ct = contentType;
 	if ( ! ct ) {
 		if ( page && (pageLen > 10) && (strncmp(page, "<?xml", 5) == 0)) {
 			ct = "text/xml";

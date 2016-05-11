@@ -121,9 +121,9 @@ class HttpServer {
 	// . a cacheTime of -1 means browser should not cache when user
 	//   is clicking forward, but caching when clicking back button is ok
 	// . a cacheTime of  0 tells browser to use local caching rules
-	bool sendDynamicPage  ( TcpSocket *s , char *page , int32_t pageLen ,
+	bool sendDynamicPage  ( TcpSocket *s , const char *page , int32_t pageLen ,
 				int32_t cacheTime = -1 , bool POSTReply = false ,
-				char *contentType = NULL,
+				const char *contentType = NULL,
 				int32_t httpStatus = -1,
 				char *cookie = NULL,
 				char *charset = NULL ,
@@ -169,7 +169,7 @@ class HttpServer {
 
 	bool sendReply2 ( char *mime, 
 			  int32_t  mimeLen ,
-			  char *content  ,
+			  const char *content  ,
 			  int32_t  contentLen ,
 			  TcpSocket *s ,
 			  bool alreadyCompressed = false ,

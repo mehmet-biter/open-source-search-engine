@@ -860,7 +860,7 @@ bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 	if ( ! g_conf.m_allowCloudUsers &&
 	     ! isMasterAdmin &&
 	     ! isCollAdmin ) {
-		char *msg = "NO PERMISSION";
+		const char *msg = "NO PERMISSION";
 		return g_httpServer.sendDynamicPage (s, msg,gbstrlen(msg));
 	}
 
@@ -893,7 +893,7 @@ bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 	// so we need to call those functions here...
 	//
 
-	char *bodyjs = NULL;
+	const char *bodyjs = NULL;
 	if ( page == PAGE_BASIC_SETTINGS )
 		bodyjs =" onload=document.getElementById('tabox').focus();";
 
@@ -902,7 +902,7 @@ bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 		g_pages.printAdminTop ( sb , s , r , NULL , bodyjs );
 
 	// xml/json header
-	char *res = NULL;
+	const char *res = NULL;
 	if ( format == FORMAT_XML )
 		res = "<response>\n"
 			"\t<statusCode>0</statusCode>\n"
@@ -933,7 +933,7 @@ bool Parms::sendPageGeneric ( TcpSocket *s , HttpRequest *r ) {
 
 	bool POSTReply = g_pages.getPage ( page )->m_usePost;
 
-	char *ct = "text/html";
+	const char *ct = "text/html";
 	if ( format == FORMAT_XML ) ct = "text/xml";
 	if ( format == FORMAT_JSON ) ct = "application/json";
 

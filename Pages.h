@@ -133,7 +133,7 @@ class Pages {
 					 TcpSocket   *s    ,
 					 HttpRequest *r    ,
 					 const char  *qs = NULL,
-					 char* bodyJavascript = "" );
+					 const char* bodyJavascript = "" );
 
 	void printFormTop(  SafeBuf *sb, HttpRequest *r );
 	void printFormData( SafeBuf *sb, TcpSocket *s, HttpRequest *r );
@@ -144,7 +144,7 @@ class Pages {
 	bool  printTail                ( SafeBuf* sb, bool isLocal );
 	bool printSubmit ( SafeBuf *sb ) ;
 
-	bool  printColors              ( SafeBuf *sb , char* bodyJavascript = "" ) ;
+	bool  printColors              ( SafeBuf *sb , const char* bodyJavascript = "" ) ;
 	bool  printLogo                ( SafeBuf *sb, const char *coll ) ;
 	bool  printHostLinks (SafeBuf *sb, int32_t  page, const char *coll, int32_t fromIp, const char *qs) ;
 
