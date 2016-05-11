@@ -897,9 +897,8 @@ int32_t File::doesExist ( ) {
 }
 
 
-bool File::unlink ( )
-{
-	if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: BEGIN. filename [%s]", __FILE__,__FUNCTION__, getFilename());
+bool File::unlink() {
+	logTrace( g_conf.m_logTraceFile, "BEGIN. filename [%s]", getFilename() );
 
 	// safety catch!
 	if ( g_conf.m_readOnlyMode ) {
@@ -913,32 +912,28 @@ bool File::unlink ( )
 	// avoid unneccessary unlinking
 	int32_t status = doesExist();
 	// return true if we don't exist anyway
-	if ( status == 0 )
-	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END - file did not exist. Return true.", __FILE__,__FUNCTION__);
+	if ( status == 0 ) {
+		logTrace( g_conf.m_logTraceFile, "END - file did not exist. Return true." );
 		return true;
 	}
 
 	// return false and set g_errno on error
-	if ( status  < 0 )
-	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END - Error %"INT32" calling doesExists. Return false.", __FILE__,__FUNCTION__, status);
+	if ( status  < 0 ) {
+		logTrace( g_conf.m_logTraceFile, "END - Error %" PRId32" calling doesExists. Return false.", status );
 		return false;
 	}
 
 
 	// . log it so we can see what happened to timedb!
 	// . don't log startup unlinks of "tmpfile"
-	if ( ! strstr(getFilename(),"tmpfile") )
-	{
+	if ( ! strstr(getFilename(),"tmpfile") ) {
 		log(LOG_INFO,"disk: unlinking %s", getFilename() );
 	}
 
 
 	// remove ourselves from the disk
-	if ( ::unlink ( getFilename() ) == 0 )
-	{
-		if( g_conf.m_logDebugDetailed ) log(LOG_DEBUG,"%s:%s: END - OK, returning true.", __FILE__,__FUNCTION__);
+	if ( ::unlink ( getFilename() ) == 0 ) {
+		logTrace( g_conf.m_logTraceFile, "END - OK, returning true." );
 		return true;
 	}
 

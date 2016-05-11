@@ -8032,7 +8032,7 @@ void Parms::init ( ) {
         static SafeBuf s_tmpBuf2;
 	s_tmpBuf2.setLabel("stmpb2");
 	s_tmpBuf2.safePrintf("Html to display before the search results. ");
-	char *fff = "Leave empty for default. "
+	const char *fff = "Leave empty for default. "
 		"Convenient "
 		"for changing colors and displaying logos. Use "
 		"the variable, "
@@ -10117,10 +10117,49 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	////////////////////
+	// log trace
+	////////////////////
 
 	m->m_title = "log trace info for BigFile";
 	m->m_cgi   = "ltrc_bf";
 	m->m_off   = offsetof(Conf,m_logTraceBigFile);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "log trace info for Dns";
+	m->m_cgi   = "ltrc_bf";
+	m->m_off   = offsetof(Conf,m_logTraceDns);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "log trace info for File";
+	m->m_cgi   = "ltrc_bf";
+	m->m_off   = offsetof(Conf,m_logTraceFile);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "log trace info for Msg0";
+	m->m_cgi   = "ltrc_msgzero";
+	m->m_off   = offsetof(Conf,m_logTraceMsg0);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "log trace info for Msg4";
+	m->m_cgi   = "ltrc_msgfour";
+	m->m_off   = offsetof(Conf,m_logTraceMsg4);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;
@@ -10172,6 +10211,15 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "log trace info for Robots";
+	m->m_cgi   = "ltrc_robots";
+	m->m_off   = offsetof(Conf,m_logTraceRobots);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "log trace info for Spider";
 	m->m_cgi   = "ltrc_sp";
 	m->m_off   = offsetof(Conf,m_logTraceSpider);
@@ -10181,36 +10229,9 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
-	m->m_title = "log trace info for Msg0";
-	m->m_cgi   = "ltrc_msgzero";
-	m->m_off   = offsetof(Conf,m_logTraceMsg0);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "log trace info for Msg4";
-	m->m_cgi   = "ltrc_msgfour";
-	m->m_off   = offsetof(Conf,m_logTraceMsg4);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
 	m->m_title = "log trace info for XmlDoc";
 	m->m_cgi   = "ltrc_xmldoc";
 	m->m_off   = offsetof(Conf,m_logTraceXmlDoc);
-	m->m_type  = TYPE_BOOL;
-	m->m_def   = "0";
-	m->m_page  = PAGE_LOG;
-	m->m_obj   = OBJ_CONF;
-	m++;
-
-	m->m_title = "log trace info for Robots";
-	m->m_cgi   = "ltrc_robots";
-	m->m_off   = offsetof(Conf,m_logTraceRobots);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;

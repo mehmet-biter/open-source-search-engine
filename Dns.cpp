@@ -2436,30 +2436,23 @@ key_t Dns::getKey ( char *hostname , int32_t hostnameLen ) {
 // . MsgC uses this to see which host is responsible for this key
 //   which is just a hash96() of the hostname (see getKey() above)
 // . returns -1 if not host available to send request to
-Host *Dns::getResponsibleHost ( key_t key ) 
-{
-	if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: BEGIN", __FILE__,__func__, __LINE__);
+Host *Dns::getResponsibleHost ( key_t key ) {
+	logTrace( g_conf.m_logTraceDns, "BEGIN" );
 
 	// just keep this on this cluster now
 	Hostdb *hostdb = &g_hostdb;
 	// get the hostNum that should handle this
 	int32_t hostId = key.n1 % hostdb->getNumHosts();
 
-
-	if( g_conf.m_logDebugDetailed ) 
-	{
-		log("%s:%s:%d: numHosts: %"UINT32"", __FILE__,__func__, __LINE__, hostdb->getNumHosts());
-		log("%s:%s:%d: key.n1: %"UINT32"", __FILE__,__func__, __LINE__, key.n1);
-		log("%s:%s:%d: hostId: %"UINT32"", __FILE__,__func__, __LINE__, hostId);
-	}
-	
+	logTrace( g_conf.m_logTraceDns, "numHosts: %" PRIu32, hostdb->getNumHosts() );
+	logTrace( g_conf.m_logTraceDns, "key.n1: %" PRIu32, key.n1 );
+	logTrace( g_conf.m_logTraceDns, "hostId: %" PRIu32, hostId );
 
 	// return it if it is alive
 	Host* h = hostdb->getHost ( hostId );
 	
-	if ( h->m_spiderEnabled && ! hostdb->isDead ( hostId ) ) 
-	{
-		if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: END. Spidering enabled and not dead. Returning.", __FILE__,__func__, __LINE__);
+	if ( h->m_spiderEnabled && ! hostdb->isDead ( hostId ) ) {
+		logTrace( g_conf.m_logTraceDns, "END. Spidering enabled and not dead. Returning." );
 		return h;
 	}
 		
@@ -2468,64 +2461,48 @@ Host *Dns::getResponsibleHost ( key_t key )
 	// how many are up?
 	int32_t numAlive = hostdb->getNumHostsAlive();
 
-	if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: Above is dead. numAlive: %"UINT32"", __FILE__,__func__, __LINE__, numAlive);
-
+	logTrace( g_conf.m_logTraceDns, "Above is dead. numAlive: %" PRIu32, numAlive );
 
 	// NULL if none
-	if ( numAlive == 0 ) 
-	{
-		if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: None alive. return NULL", __FILE__,__func__, __LINE__);
+	if ( numAlive == 0 ) {
+		logTrace( g_conf.m_logTraceDns, "END. None alive. return NULL" );
 		return NULL;
 	}
 	
 	// try another hostNum
 	int32_t hostNum = key.n1 % numAlive;
-
-	if( g_conf.m_logDebugDetailed ) 
-	{
-		log("%s:%s:%d: hostNum: %"INT32"", __FILE__,__func__, __LINE__, hostNum);
-		log("%s:%s:%d: m_numHosts: %"INT32"", __FILE__,__func__, __LINE__,  hostdb->m_numHosts);
-	}
-	
-	
+	logTrace( g_conf.m_logTraceDns, "hostNum: %" PRIu32, hostNum );
 	
 	// otherwise, chain to him
 	int32_t count = 0;
-	for ( int32_t i = 0 ; i < hostdb->m_numHosts ; i++ ) 
-	{
+	for ( int32_t i = 0 ; i < hostdb->m_numHosts ; i++ ) {
 		// get the ith host
 		Host *host = &hostdb->m_hosts[i];
-		if ( !host->m_spiderEnabled )  
-		{
-			if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: i: %"INT32" - spidering disabled", __FILE__,__func__, __LINE__, i);
+		if ( !host->m_spiderEnabled ) {
+			logTrace( g_conf.m_logTraceDns, "i: %" PRId32" - spidering disabled", i );
 			continue;
 		}
 		
 		// skip him if he is dead
-		if ( hostdb->isDead ( host ) ) 
-		{
-			if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: i: %"INT32" - dead", __FILE__,__func__, __LINE__, i);
+		if ( hostdb->isDead ( host ) ) {
+			logTrace( g_conf.m_logTraceDns, "i: %" PRId32" - dead", i );
 			continue;
 		}
 			
 		// count it if alive, continue if not our number
-		if ( count++ != hostNum ) 
-		{
-			if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: i: %"INT32" - not our host (%"INT32")", __FILE__,__func__, __LINE__, i, hostNum);
-			
+		if ( count++ != hostNum ) {
+			logTrace( g_conf.m_logTraceDns, "i: %" PRId32" - not our host (% " PRId32")", i, hostNum );
 			continue;
 		}
+
 		// we got a match, we cannot use hostNum as the hostId now
 		// because the host with that hostId might be dead
-		
-		if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: END. i: %"INT32" - Match!", __FILE__,__func__, __LINE__, i);
+		logTrace( g_conf.m_logTraceDns, "END. i: %" PRId32" - Match!", i );
 		
 		return host;
 	}
-	
 
-	if( g_conf.m_logDebugDetailed ) log("%s:%s:%d: END. Return EHOSTDEAD. None found", __FILE__,__func__, __LINE__ );
-
+	logTrace( g_conf.m_logTraceDns, "END. Return EHOSTDEAD. None found" );
 	g_errno = EHOSTDEAD;
 	return NULL;
 }

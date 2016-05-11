@@ -421,17 +421,20 @@ class Conf {
 	bool  m_logDebugRepair  ;
 	bool  m_logDebugDate    ;
 	bool  m_logDebugDetailed;
-	bool  m_logTraceRdbBase;
-	bool  m_logTraceRdbDump;
-	bool  m_logTraceRdbMap;
-	bool  m_logTraceBigFile;
-	bool  m_logTracePosdb;
-	bool  m_logTraceRepairs;
-	bool  m_logTraceSpider;
-	bool  m_logTraceXmlDoc;
-	bool  m_logTraceMsg0;
-	bool  m_logTraceMsg4;
-	bool  m_logTraceRobots;
+
+	bool m_logTraceBigFile;
+	bool m_logTraceDns;
+	bool m_logTraceFile;
+	bool m_logTraceMsg0;
+	bool m_logTraceMsg4;
+	bool m_logTracePosdb;
+	bool m_logTraceRdbBase;
+	bool m_logTraceRdbDump;
+	bool m_logTraceRdbMap;
+	bool m_logTraceRepairs;
+	bool m_logTraceRobots;
+	bool m_logTraceSpider;
+	bool m_logTraceXmlDoc;
 
 	// expensive timing messages
 	bool m_logTimingAddurl  ;
