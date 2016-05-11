@@ -36,7 +36,7 @@ class Process {
 	 *
 	 * @param save_on_abort Save data to disk on abort
 	 */
-	void shutdownAbort ( bool save_on_abort = false );
+	[[ noreturn ]] void shutdownAbort ( bool save_on_abort = false );
 
 	bool checkNTPD();
 

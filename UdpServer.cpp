@@ -17,7 +17,7 @@
 
 int32_t g_dropped = 0;
 int32_t g_corruptPackets = 0;
-int32_t g_consecutiveOOMErrors = 0;
+static int32_t g_consecutiveOOMErrors = 0;
 bool g_inHandler = false;
 
 // . making a hot udp server (realtime signal based)

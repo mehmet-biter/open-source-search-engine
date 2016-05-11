@@ -34,8 +34,8 @@ int32_t g_recoveryLevel = 0;
 // a global class extern'd in .h file
 PingServer g_pingServer;
 
-char s_kernelRingBuf[4097];
-int32_t s_kernelRingBufLen = 0;
+static char s_kernelRingBuf[4097];
+static int32_t s_kernelRingBufLen = 0;
 
 static void sleepWrapper ( int fd , void *state ) ;
 static void checkKernelErrors( int fd, void *state );

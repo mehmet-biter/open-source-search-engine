@@ -1006,11 +1006,6 @@ bool Process::shutdown2 ( ) {
 
 	// exit abruptly
 	exit(0);
-	
-	// let's return control to Loop.cpp?
-
-	// keep compiler happy
-	return true;
 }
 
 

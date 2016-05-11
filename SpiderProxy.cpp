@@ -226,8 +226,8 @@ bool buildProxyTable ( ) {
 }
 
 static bool s_init = true;
-HashTableX s_proxyBannedTable;
-HashTableX s_banCountTable;
+static HashTableX s_proxyBannedTable;
+static HashTableX s_banCountTable;
 
 bool initProxyTables ( ) {
 	// initialize proxy/urlip ban table?

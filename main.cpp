@@ -135,7 +135,7 @@ static void wakeupPollLoop() {
 	g_loop.wakeupPollLoop();
 }
 
-UdpProtocol g_dp; // Default Proto
+static UdpProtocol g_dp; // Default Proto
 
 // installFlag konstants 
 typedef enum {
@@ -2364,7 +2364,7 @@ bool doCmd ( const char *cmd , int32_t hostId , const char *filename ,
 	return true;
 }
 
-void doneCmdAll ( void *state ) {
+[[ noreturn ]] void doneCmdAll ( void *state ) {
 	log("cmd: completed command");
 	exit ( 0 );
 }

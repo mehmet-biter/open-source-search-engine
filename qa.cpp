@@ -4,10 +4,10 @@
 #include "Posdb.h"
 #include "JobScheduler.h"
 
-TcpSocket *g_qaSock = NULL;
-SafeBuf g_qaOutput;
-bool g_qaInProgress = false;
-int32_t g_numErrors;
+static TcpSocket *g_qaSock = NULL;
+static SafeBuf g_qaOutput;
+static bool g_qaInProgress = false;
+static int32_t g_numErrors;
 
 static int32_t s_checkCRC = 0;
 
@@ -553,7 +553,7 @@ static void gotReplyWrapper ( void *state , TcpSocket *sock ) {
 }
 
 // returns false if blocked, true otherwise, like on quick connect error
-bool getUrl( char *path , int32_t checkCRC = 0 , char *post = NULL ,
+bool getUrl( const char *path , int32_t checkCRC = 0 , char *post = NULL ,
              char* expect = NULL, char** ignore = NULL) {
 
 	SafeBuf sb;
@@ -1372,7 +1372,7 @@ typedef enum {
     EXAMINE_RESULTS2 = 22,
     EXAMINE_RESULTS3 = 24
 } TimeAxisFlags;
-char* g_timeAxisIgnore[3] = {"Bad IP", "Doc is error page", NULL};
+static char* g_timeAxisIgnore[3] = {"Bad IP", "Doc is error page", NULL};
 
 
 bool qaTimeAxis ( ) {

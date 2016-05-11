@@ -499,8 +499,6 @@ bool RdbMap::verifyMap2 ( ) {
 
 		// make the bash shell restart us by returning a 1 error code
 		g_process.shutdownAbort(false);
-		exit(1);
-
 
 #if 0
 		//char *xx=NULL;*xx=0;

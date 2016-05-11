@@ -872,7 +872,6 @@ bool RdbDump::doneReadingForVerify ( ) {
 		log(LOG_ERROR,"%s:%s: Sanity check failed. m_list->m_ks [%02x]!= m_ks [%02x]",
 			__FILE__,__func__, m_list->m_ks, m_ks);
 		g_process.shutdownAbort(false);
-		return false;
 	}
 
 	bool triedToFix = false;
@@ -897,25 +896,17 @@ bool RdbDump::doneReadingForVerify ( ) {
 			}
 
 			//if ( m_buckets ) m_buckets->fixBuckets();
-			if ( m_buckets )
-			{
+			if ( m_buckets ) {
 				log(LOG_ERROR,"%s:%s: Contains buckets, cannot fix this yet", __FILE__, __func__);
 
 				m_list->printList(LOG_ERROR);	//@@@@@@ EXCESSIVE
-
-				// char *xx=NULL;*xx=0; 			//### <<<<  BR 20151218: CORE SEEN HERE
 				g_process.shutdownAbort(false);
-				return false;
 			}
 
 
-			if ( triedToFix )
-			{
+			if ( triedToFix ) {
 				log(LOG_ERROR,"%s:%s: already tried to fix, exiting hard", __FILE__, __func__);
-
-				// char *xx=NULL;*xx=0;
 				g_process.shutdownAbort(false);
-				return false;
 			}
 
 			triedToFix = true;
@@ -931,9 +922,6 @@ bool RdbDump::doneReadingForVerify ( ) {
 
 		log(LOG_ERROR,"%s:%s: Failed to add data to map, exiting hard", __FILE__, __func__);
 		g_process.shutdownAbort(false);
-
-//		char *xx = NULL; *xx = 0;
-		return true;
 	}
 
 

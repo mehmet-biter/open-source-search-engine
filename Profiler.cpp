@@ -21,14 +21,10 @@ Profiler g_profiler;
 #include "sort.h"
 Profiler g_profiler;
 
-uint32_t *keyTable;
-uint64_t *valueTableUll;
-float *valueTableF;
-//HashTableT<uint32_t, uint64_t> realTimeProfilerData;
 #include "HashTableX.h"
-HashTableX realTimeProfilerData;
-PTRTYPE lastQuickPollAddress = 0;
-uint64_t lastQuickPollTime = 0;
+static HashTableX realTimeProfilerData;
+static PTRTYPE lastQuickPollAddress = 0;
+static uint64_t lastQuickPollTime = 0;
 
 Profiler::Profiler() : 
 	m_realTimeProfilerRunning(false),
@@ -214,8 +210,6 @@ uint32_t Profiler::getByte (unsigned char * field,int size){
 		char *xx=NULL; xx=0;
 		return 0;
 	}
-	//NOTREACHED
-	return 0;
 }
 
 

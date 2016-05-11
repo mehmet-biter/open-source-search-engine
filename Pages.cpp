@@ -1510,7 +1510,7 @@ bool sendPageAPI ( TcpSocket *s , HttpRequest *r ) {
 			     );
 	}
 
-	p.safePrintf("</ul>");//</div>\n");
+	p.safePrintf("</ul>");
 
 	p.safePrintf("<hr>\n");
 

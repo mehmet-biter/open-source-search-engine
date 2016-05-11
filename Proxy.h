@@ -27,11 +27,11 @@ class Proxy {
 
 	bool handleRequest ( TcpSocket *s );
 
-	bool forwardRequest ( class StateControl *stC );
+	bool forwardRequest ( struct StateControl *stC );
 
 	void gotReplyPage ( void *state, class UdpSlot *slot );
 	
-	Host *pickBestHost ( class StateControl *stC );
+	Host *pickBestHost ( struct StateControl *stC );
 
 	bool isProxyRunning () {return m_proxyRunning;}
 	// are we a proxy?

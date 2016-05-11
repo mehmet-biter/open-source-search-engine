@@ -741,7 +741,7 @@ void sighupHandler ( int x , siginfo_t *info , void *y ) {
 
 // . keep a timestamp for the last time we called the sleep callbacks
 // . we have to call those every 1 second
-int64_t s_lastTime = 0;
+static int64_t s_lastTime = 0;
 
 bool Loop::runLoop ( ) {
 
@@ -810,9 +810,6 @@ bool Loop::runLoop ( ) {
 		//
 		doPoll();
 	}
-
- 	//NOTREACHED
- 	return 0;
 }
 
 //--- TODO: flush the signal queue after polling until done
