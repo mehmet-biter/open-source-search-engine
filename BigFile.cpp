@@ -1267,12 +1267,11 @@ bool readwrite_r ( FileState *fstate ) {
 	// if no buffer to read into the alloc in Threads.cpp failed
 	if ( ! fstate->m_buf ) {
 		errno = EBUFTOOSMALL;
-		return log( "disk: read buf is NULL. malloc failed?");
+		return log( LOG_WARN, "disk: read buf is NULL. malloc failed?");
 	}
-	
-	
+
 	// how many total bytes to write?
-	int32_t       bytesToGo = fstate->m_bytesToGo; //- fstate->m_bytesDone;
+	int32_t       bytesToGo = fstate->m_bytesToGo;
 	// how many bytes we've written so far
 	int32_t       bytesDone = fstate->m_bytesDone;
 	// get current offset
@@ -1284,37 +1283,40 @@ bool readwrite_r ( FileState *fstate ) {
  loop:
 	// return here if done
 	if ( bytesDone >= bytesToGo ) return true;
-	// rand segv test (test how new cloned children handle it
-	//if ( g_threads.amThread() && (rand() % 10) == 1 ) { 
-	//	log("FORCING SEG FAULT");
-	//	char *xx = NULL; *xx = 0; 
-	//}
+
 	// translate offset to a filenum and offset
 	int32_t filenum     = offset / MAX_PART_SIZE;
 	int32_t localOffset = offset % MAX_PART_SIZE;
+
 	// how many bytes to read/write to first little file?
 	int32_t avail = MAX_PART_SIZE - localOffset;
+
 	// how may bytes do we have left to read/write
 	int32_t len   = bytesToGo - bytesDone;
+
 	// how many bytes can we write to it now
 	if ( len > avail ) len = avail;
+
 	// hack for reading warc files
 	if ( ! fstate->m_usePartFiles ) {
 		filenum = 0;
 		localOffset = offset;
 		len = bytesToGo - bytesDone;
 	}
+
 	// get the fd for this filenum
 	int fd = -1;
-	if      ( filenum == fstate->m_filenum1 ) fd = fstate->m_fd1;
-	else if ( filenum == fstate->m_filenum2 ) fd = fstate->m_fd2;
-	// this old way wasn't thread safe since unlinkPart() could be called
-	// fd = getfd ( filenum , !doWrite );
+	if ( filenum == fstate->m_filenum1 ) {
+		fd = fstate->m_fd1;
+	} else if ( filenum == fstate->m_filenum2 ) {
+		fd = fstate->m_fd2;
+	}
+
 	// return -1 on error 
 	if ( fd < 0 ) {
 		errno = EBADENGINEER;
 		log(LOG_LOGIC, "disk: fd < 0. Bad engineer.");
-		return false; //log("disk::readwrite_r: fd is negative");
+		return false;
 	}
 
 	// reset this
@@ -1330,16 +1332,16 @@ bool readwrite_r ( FileState *fstate ) {
 
 	// debug msg
 	if ( g_conf.m_logDebugDisk ) {
-		char *s = "read";
+		const char *s = "read";
 		if ( fstate->m_doWrite ) s = "wrote";
-		char *t = "no";	// are we blocking?
+		const char *t = "no";	// are we blocking?
 		if ( fstate->m_flags & O_NONBLOCK ) t = "yes";
 		// this is bad for real-time threads cuz our unlink() routine 
 		// may have been called by RdbMerge and our m_files may be 
 		// altered 
 		// MDW: don't access m_this in case bigfile was deleted
 		// since we are in a thread
-		log("disk::readwrite: %s %i bytes of %i @ offset %i "
+		log(LOG_DEBUG, "disk::readwrite: %s %i bytes of %i @ offset %i "
 		    //"from BASEfile=%s "
 		    "(nonBlock=%s) "
 		    "fd %i "
@@ -1389,25 +1391,13 @@ bool readwrite_r ( FileState *fstate ) {
 		errno = EBADENGINEER;
 		return false; // log("disk::read/write: offset too big");
 	}
-	// return bytes we did if we blocked ( and reset errno )
-	//if ( n < 0 && errno == EAGAIN ) { errno = 0; return false; }
-	// . for some reason we sometimes get interrupted, so just try again
-	// . we should block all signals a thread can get, but it seems
-	//   if the parent process gets a signal the thread gets it too!
-	// . this could be a thread cancel signal!!!!!!
-	//if ( n < 0 && errno == EINTR ) { 
-	//	//log("disk::readWrite_r: %s",mstrerror(errno));
-	//	errno = 0; 
-	//	goto loop; 
-	//}
+
 	// on other errno, return -1
 	if ( n < 0 ) { 
 		log("disk::readwrite_r: %s",mstrerror(errno));
 		return false; 
 	}
-	// bitch if didn't read what we wanted
-	//if ( n != len )
-	//	log("disk::readwrite_r: only did %"INT32", needed %"INT32"",n,len);
+
 	// . flush the write
 	// . linux's write cache may be messing with my data!
 	// . no, turns out write errors (garbage written) happens anyway...
@@ -1420,7 +1410,7 @@ bool readwrite_r ( FileState *fstate ) {
 	     doWrite                && 
 	     (fstate->m_flags & O_NONBLOCK) && 
 	     fdatasync ( fd ) < 0  ) {
-		log("disk: fdatasync: %s", mstrerror(errno));
+		log( LOG_WARN, "disk: fdatasync: %s", mstrerror(errno));
 		// ignore an error here
 		errno = 0;
 	}
