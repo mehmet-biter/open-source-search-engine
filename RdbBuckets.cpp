@@ -2112,8 +2112,7 @@ bool RdbBuckets::loadBuckets ( char* dbname) {
 	file.set ( dir , filename , NULL ); 
 	if ( file.doesExist() <= 0 ) return true;
 	// load the table with file named "THISDIR/saved"
-	bool status = false ;
-	status = fastLoad ( &file , dbname ) ;
+	bool status = fastLoad ( &file , dbname ) ;
 	file.close();
 	return status;
 }
@@ -2132,8 +2131,7 @@ bool RdbBuckets::fastLoad ( BigFile *f , char* dbname) {
 	offset = fastLoadColl(f, dbname, offset);
 
 	if ( offset < 0 ) {
-		log("db: Failed to load buckets for %s: %s.",
-		    m_dbname,mstrerror(g_errno));
+		log( LOG_ERROR, "db: Failed to load buckets for %s: %s.", m_dbname, mstrerror(g_errno) );
 		return false;
 	}
 	return true;
@@ -2149,11 +2147,9 @@ int64_t RdbBuckets::fastLoadColl( BigFile *f,
 
 	f->read  ( &version,sizeof(int32_t), offset ); 
 	offset += sizeof(int32_t);
-	if(version > SAVE_VERSION) {
-		log("db: Failed to load buckets for %s: "
-		    "saved version is in the future or is corrupt, "
-		    "please restart old executable and do a ddump.",
-		    m_dbname);
+	if( version > SAVE_VERSION ) {
+		log( LOG_ERROR, "db: Failed to load buckets for %s: saved version is in the future or is corrupt, "
+		     "please restart old executable and do a ddump.", m_dbname);
 		return -1;
 	}
 
@@ -2187,10 +2183,8 @@ int64_t RdbBuckets::fastLoadColl( BigFile *f,
 
 
 	if(bucketSize != BUCKET_SIZE) {
-		log("db: It appears you have changed the bucket size "
-		    "please restart the old executable and dump "
-		    "buckets to disk. old=%"INT32" new=%"INT32"", 
-		    bucketSize, (int32_t)BUCKET_SIZE);
+		log( LOG_ERROR, "db: It appears you have changed the bucket size please restart the old executable and dump "
+		     "buckets to disk. old=%"INT32" new=%"INT32"", bucketSize, (int32_t)BUCKET_SIZE);
 		char *xx = NULL; *xx = 0;
 	}
 
