@@ -9,13 +9,6 @@
 #include "Titledb.h"
 #include "HttpMime.h"
 #include "SiteGetter.h"
-//#include "Tfndb.h"
-//#include "Msg50.h"
-//#include "Msg16.h"
-
-bool mainShutdown ( bool urgent ) { return true; }
-bool closeAll ( void *state , void (* callback)(void *state) ) {return true;}
-bool allExit ( ) { return true; }
 
 bool g_recoveryMode = false;
 int32_t g_recoveryLevel = 0;

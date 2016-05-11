@@ -24,10 +24,6 @@ int32_t time_parser(void (*)(char*,int,bool,char*), char*, int, bool doHash=fals
 //void PrintTokens(UChar **tokens, int num_tokens, int32_t *toklen, bool ascii=false, bool html=false);
 // Read unicode from a file and parse into words
 
-// fake shutdown for Loop and Parms
-bool mainShutdown(bool urgent);
-bool mainShutdown(bool urgent){return true;}
-
 bool doFilterSpaces = false;
 
 int main(int argc, char *argv[])

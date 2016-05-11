@@ -9,15 +9,10 @@
 #include "Dns.h"
 #include "Url.h"
 
-bool allExit ( ) { return true; }
-bool closeAll ( void *state , void (* callback)(void *state) ) {return true;}
-
 static void timeWrapper ( int fd , void *state ) ;
 static void dnsWrapper ( void *state , int32_t ip ) ;
 
 static int32_t s_max = 10;
-
-bool mainShutdown ( bool urgent ) { return true; }
 
 int main ( int argc , char *argv[] ) {
 

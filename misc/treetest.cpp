@@ -7,8 +7,6 @@
 
 static int cmp ( const void *h1 , const void *h2 ) ;
 
-bool mainShutdown ( bool urgent ) { return true; }
-
 int32_t speedtest ( int32_t numNodes , bool balanced ) ;
 int32_t sanitytest () ;
 

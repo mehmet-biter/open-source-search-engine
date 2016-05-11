@@ -24,8 +24,6 @@ int32_t s_n = 0;
 
 int64_t s_startTime;
 
-bool mainShutdown ( bool urgent ) { return true; }
-
 int main ( int argc , char *argv[] ) {
 
 	// ip/port to ask for the file from

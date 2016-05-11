@@ -8,8 +8,6 @@
 
 static void  doneScanningWrapper ( void *state ) ;
 
-//bool mainShutdown ( bool urgent );
-
 int32_t g_numIOErrors = 0;
 
 Msg3::Msg3() {
@@ -1203,7 +1201,6 @@ void  Msg3::setPageRanges ( RdbBase *base ,
 		g_merge2.m_isMerging = false;
 		// to complete
 		// shutdown with urgent=true so threads are disabled.
-		//mainShutdown(true);
 		g_process.shutdown(true);
 		//g_numCorrupt++;
 		// sleep for now until we make sure this works

@@ -3,9 +3,6 @@
 #include "Unicode.h"
 
 int32_t elapsed_usec(const timeval* tv1, const timeval *tv2);
-bool mainShutdown(bool urgent){return true;}
-bool closeAll ( void *state , void (* callback)(void *state) ){return true;}
-bool allExit ( ) {return true;}
 
 int main(int argc, char **argv){
 	if (argc < 2) {

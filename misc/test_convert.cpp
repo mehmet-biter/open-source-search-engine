@@ -9,11 +9,6 @@
 
 static int32_t test_count = 10000;
 int32_t elapsed_usec(const timeval* tv1, const timeval *tv2);
-// fake shutdown for Loop and Parms
-bool mainShutdown(bool urgent);
-bool mainShutdown(bool urgent){return true;}
-bool closeAll ( void *state , void (* callback)(void *state) ) { return true; }
-bool allExit ( ) { return true; }
 
 int main (int argc, char **argv) {
 	char * filename = argv[1];

@@ -8,8 +8,6 @@ void test1 ( int arg ) ;
 void test2 ( int arg , int removeNegRecs ) ;
 static int cmp (const void *p1, const void *p2) ;
 
-bool mainShutdown ( bool urgent ) { return true; }
-
 main ( int argc , char *argv[] ) {
 	test2 ( atoi ( argv[1] ) , atoi ( argv[2] ) );
 	//test1 ( atoi ( argv[1] ) );

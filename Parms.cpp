@@ -707,9 +707,6 @@ static bool CommandInSync ( char *rec ) {
 
 static bool printDropDown   ( int32_t n , SafeBuf* sb, char *name, int32_t selet ) ;
 
-extern bool closeAll ( void *state, void (* callback)(void *state) );
-extern bool allExit ( ) ;
-
 Parms::Parms ( ) {
 	m_isDefaultLoaded = false;
 	m_inSyncWithHost0 = false;

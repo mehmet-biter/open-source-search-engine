@@ -71,17 +71,10 @@
 #include "SpiderProxy.h"
 #include "HashTable.h"
 
-// call this to shut everything down
-bool mainShutdown ( bool urgent ) ;
-
 bool registerMsgHandlers ( ) ;
 bool registerMsgHandlers1 ( ) ;
 bool registerMsgHandlers2 ( ) ;
 bool registerMsgHandlers3 ( ) ;
-// makes a default conf file and saves into confFilename
-//void makeNewConf ( int32_t hostId , char *confFilename );
-
-void allExitWrapper ( int fd , void *state ) ;
 
 void rmTest();
 
@@ -105,8 +98,6 @@ void dumpClusterdb       ( char *coll,int32_t sfn,int32_t numFiles,bool includeT
 			   
 void dumpLinkdb          ( char *coll,int32_t sfn,int32_t numFiles,bool includeTree,
 			   char *url );
-
-void exitWrapper ( void *state ) { exit(0); };
 
 extern bool g_recoveryMode;
 
@@ -2982,10 +2973,6 @@ bool registerMsgHandlers3(){
 	Msg17 msg17;    if ( ! msg17.registerHandler () ) return false;
 	if ( ! Msg40::registerHandler() ) return false;
 	return true;
-}
-
-bool mainShutdown ( bool urgent ) {
-	return g_process.shutdown(urgent);
 }
 
 #include "Rdb.h"

@@ -36,11 +36,6 @@ static int32_t  s_numRandWords = 0;
 int32_t getRandomWords(char *buf, char *bufend, int32_t numWords);
 bool getWords();
 
-
-bool mainShutdown ( bool urgent ) { return true; }
-bool closeAll ( void *state , void (* callback)(void *state) ) {return true;}
-bool allExit ( ) {return true;}
-
 int main ( int argc , char *argv[] ) {
 	// let's ensure our core file can dump
 	struct rlimit lim;

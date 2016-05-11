@@ -4,14 +4,6 @@
 #include "UCPropTable.h"
 #include "Unicode.h"
 
-bool mainShutdown(bool urgent);
-bool mainShutdown(bool urgent){return true;}
-// JAB: this program has not been run in a int32_t time and required these...
-bool closeAll(void*, void(*)(void *)) {return true;}
-bool allExit(void) {return true;}
-
-
-
 bool loadUnidataProps(char *s, void (*handler)(u_int32_t, char**, u_int32_t));
 
 void handleUnicodeData(u_int32_t, char **col, u_int32_t colCount);
