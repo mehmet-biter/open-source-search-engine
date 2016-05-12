@@ -53,7 +53,7 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 					  int64_t   pid2 ,
 					  int64_t   wid2 , // post word
 					  float      *ww   ,
-					  HashTableX *tt1);
+					  const HashTableX *tt1);
 
 static void getMetaListWrapper ( void *state ) ;
 
@@ -22336,7 +22336,7 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 					  int64_t   pid2 ,
 					  int64_t   wid2 , // post word
 					  float      *retww   ,
-					  HashTableX *tt1) {
+					  const HashTableX *tt1) {
 
 	static float g_wtab[30][30];
 	static float s_fsp;
