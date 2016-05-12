@@ -171,7 +171,7 @@ void Bits::setInUrlBits ( int32_t niceness ) {
 
 // . if we're a stop word and previous word was an apostrophe
 //   then set D_CAN_APOSTROPHE_PRECEED to true and PERIOD_PRECEED to false
-wbit_t Bits::getAlnumBits( int32_t i ) {
+wbit_t Bits::getAlnumBits( int32_t i ) const {
 	// this is not case sensitive -- all non-stop words can start phrases
 	if ( ! ::isStopWord ( m_words->getWord( i ) , m_words->getWordLen( i ) , m_words->getWordId( i ) ) )
 		return (D_CAN_BE_IN_PHRASE) ;

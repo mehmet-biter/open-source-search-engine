@@ -101,15 +101,15 @@ public:
 
 	void reset();
 
-	bool isStopWord( int32_t i ) {
+	bool isStopWord( int32_t i ) const {
 		return m_bits[i] & D_IS_STOPWORD;
 	}
 
-	bool canBeInPhrase( int32_t i ) {
+	bool canBeInPhrase( int32_t i ) const {
 		return m_bits[i] & D_CAN_BE_IN_PHRASE;
 	}
 
-	bool canPairAcross( int32_t i ) {
+	bool canPairAcross( int32_t i ) const {
 		return m_bits[i] & D_CAN_PAIR_ACROSS;
 	}
 
@@ -138,7 +138,7 @@ public:
 	char m_localBuf [ BITS_LOCALBUFSIZE ];
 
 	// get bits for the ith word
-	wbit_t getAlnumBits( int32_t i );
+	wbit_t getAlnumBits( int32_t i ) const;
 };
 
 #endif // GB_BITS_H
