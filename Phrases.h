@@ -29,6 +29,9 @@ public:
 	int64_t *getPhraseIds2() {
 		return m_phraseIds2;
 	}
+	const int64_t *getPhraseIds2() const {
+		return m_phraseIds2;
+	}
 
 	// . store phrase that starts with word #i into "dest"
 	// . we also NULL terminated it in "dest"
@@ -36,6 +39,9 @@ public:
 	char *getPhrase(int32_t i, int32_t *phrLen);
 
 	int32_t getNumWordsInPhrase2( int32_t i ) {
+		return m_numWordsTotal2[i];
+	}
+	const int32_t getNumWordsInPhrase2( int32_t i ) const {
 		return m_numWordsTotal2[i];
 	}
 

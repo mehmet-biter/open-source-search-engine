@@ -21995,11 +21995,11 @@ bool getDensityRanks ( const int64_t *wids ,
 // . string is usually the document body or inlink text of an inlinker or
 //   perhaps meta keywords. it could be anything. so we need to create this
 //   vector based on that string, which is represented by words/phrases here.
-bool getDiversityVec( Words *words, Phrases *phrases, HashTableX *countTable, SafeBuf *sbWordVec,
+bool getDiversityVec( const Words *words, const Phrases *phrases, HashTableX *countTable, SafeBuf *sbWordVec,
 					  int32_t niceness ) {
-	int64_t  *wids  = words->getWordIds ();
+	const int64_t  *wids  = words->getWordIds ();
 	int32_t        nw    = words->getNumWords();
-	int64_t  *pids  = phrases->getPhraseIds2();
+	const int64_t  *pids  = phrases->getPhraseIds2();
 
 	// . make the vector
 	// . it will be diversity ranks, so one float per word for now

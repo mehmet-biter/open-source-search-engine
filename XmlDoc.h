@@ -74,8 +74,8 @@ bool getDensityRanks ( const int64_t *wids,
 		       int32_t niceness );
 
 // diversity vector
-bool getDiversityVec ( class Words *words ,
-		       class Phrases *phrases ,
+bool getDiversityVec ( const Words *words ,
+		       const Phrases *phrases ,
 		       class HashTableX *countTable ,
 		       class SafeBuf *sbWordVec ,
 		       //class SafeBuf *sbPhraseVec ,

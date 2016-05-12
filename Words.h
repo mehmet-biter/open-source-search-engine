@@ -190,7 +190,8 @@ class Words {
 	char      **getWords   () { return m_words; }
 	char      **getWordPtrs() { return m_words; }
 	int32_t       *getWordLens() { return m_wordLens; }
-	int64_t  *getWordIds () { return m_wordIds; }
+	int64_t        *getWordIds ()       { return m_wordIds; }
+	const int64_t  *getWordIds () const { return m_wordIds; }
 
 	// 2 types of "words": punctuation and alnum
 	// isPunct() will return true on tags, too, so they are "punct"
