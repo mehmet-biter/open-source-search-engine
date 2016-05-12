@@ -233,8 +233,10 @@ bool isAbbr ( int64_t h , bool *hasWordAfter ) {
 		HashTableX *t = &s_abbrTable;
 		// set up the hash table
 		int32_t n = ((int32_t)sizeof(s_abbrs99))/ ((int32_t)sizeof(Abbr));
-		if ( ! t->set ( 8,4,n*4, NULL,0,false,MAX_NICENESS,"abbrtbl")) 
-			return log("build: Could not init abbrev table.");
+		if ( ! t->set ( 8,4,n*4, NULL,0,false,MAX_NICENESS,"abbrtbl")) {
+			log( LOG_ERROR, "build: Could not init abbrev table." );
+			return false;
+		}
 		// now add in all the stop words
 		for ( int32_t i = 0 ; i < n ; i++ ) {
 			char      *sw    = s_abbrs99[i].m_str;

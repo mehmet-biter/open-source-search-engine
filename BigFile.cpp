@@ -224,7 +224,7 @@ bool BigFile::addParts ( const char *dirname ) {
 			logTrace( g_conf.m_logTraceBigFile, "  No good." );
 			continue;
 		} else if (flen - blen < 6 ) {
-			log("disk: Part extension too small for '%s'. Must end in .partN to be valid.", filename);
+			log( LOG_WARN, "disk: Part extension too small for '%s'. Must end in .partN to be valid.", filename );
 			continue;
 		} else {
 			part = atoi ( filename + blen + 5 );
@@ -233,7 +233,7 @@ bool BigFile::addParts ( const char *dirname ) {
 
 		// make this part file
 		if( !addPart( part ) ) {
-			log(LOG_ERROR,"%s:%s:%d: END. addPart failed, returning false.", __FILE__, __func__, __LINE__ );
+			log( LOG_ERROR,"%s:%s:%d: END. addPart failed, returning false.", __FILE__, __func__, __LINE__ );
 			return false;
 		}
 	}
@@ -792,10 +792,9 @@ bool BigFile::readwrite ( void         *buf      ,
 			fs->m_buf       = p + fs->m_allocOff;
 			fs->m_allocBuf  = p;
 			fs->m_allocSize = need;
+		} else {
+			log( LOG_WARN, "disk: read buf alloc failed for %" PRId32" bytes.", need );
 		}
-		else 
-			log("disk: read buf alloc failed for %"INT32" "
-			    "bytes.",need);
 	}
 
 	//
@@ -1066,16 +1065,9 @@ void doneWrapper ( void *state, job_exit_t exit_type ) {
 		     );
 	// someone is closing our fd without setting File::s_vfds[fd] to -1
 	if ( g_errno && g_errno != EDISKSTUCK ) {
-		//int fd1  = fstate->m_fd1;
-		//int fd2  = fstate->m_fd2;
-		//int vfd1 = fstate->m_vfd1;
-		//int vfd2 = fstate->m_vfd2;
-		//int ofd1 = getfdFromVfd(vfd1);
-		//int ofd2 = getfdFromVfd(vfd2);
-		//log(tt,"disk: vfd1=%i s_fds[%i].",vfd1,vfd1);//,ofd1);
-		//log(tt,"disk: vfd2=%i s_fds[%i].",vfd2,vfd2);//,ofd2);
-		log("disk: nondstuckerr=%s",mstrerror(g_errno));
+		log( LOG_WARN, "disk: nondstuckerr=%s", mstrerror(g_errno) );
 	}
+
 	// . this EBADENGINEER can happen right after a merge if
 	//   the file is renamed because the fd may have changed from
 	//   under us
@@ -1124,16 +1116,21 @@ static void readwriteWrapper_r ( void *state ) {
 			fstate->m_buf       = p + fstate->m_allocOff;
 			fstate->m_allocBuf  = p;
 			fstate->m_allocSize = need;
-		} else
-			log("thread: read buf alloc failed for %"INT32" bytes.",need);
+		} else {
+			log( LOG_WARN, "thread: read buf alloc failed for %" PRId32" bytes.", need );
+		}
 	}
 	fstate->m_fd1 = fstate->m_this->getfd (fstate->m_filenum1,!fstate->m_doWrite);
 	fstate->m_fd2 = fstate->m_this->getfd (fstate->m_filenum2,!fstate->m_doWrite);
 	// is this bad?
-	if ( fstate->m_fd1 < 0 )
-		log("disk: fd1 is %i for %s", fstate->m_fd1,fstate->m_this->getFilename());
-	if ( fstate->m_fd2 < 0 )
-		log("disk: fd2 is %i for %s", fstate->m_fd2,fstate->m_this->getFilename());
+	if ( fstate->m_fd1 < 0 ) {
+		log( LOG_WARN, "disk: fd1 is %i for %s", fstate->m_fd1, fstate->m_this->getFilename() );
+	}
+
+	if ( fstate->m_fd2 < 0 ) {
+		log( LOG_WARN, "disk: fd2 is %i for %s", fstate->m_fd2, fstate->m_this->getFilename() );
+	}
+
 	fstate->m_closeCount1 = getCloseCount_r ( fstate->m_fd1 );
 	fstate->m_closeCount2 = getCloseCount_r ( fstate->m_fd2 );
 	
@@ -1188,25 +1185,14 @@ static void readwriteWrapper_r ( void *state ) {
 	// might have been deleted or closed on us, i saw this before.
 	int32_t cc1 = getCloseCount_r ( fstate->m_fd1 );
 	int32_t cc2 = getCloseCount_r ( fstate->m_fd2 );
-	if ( //! f1 || 
-	     //! f2 ||
-	     cc1 != fstate->m_closeCount1 || 
+	if ( cc1 != fstate->m_closeCount1 ||
 	     cc2 != fstate->m_closeCount2  ) {
-		// int32_t cc1 = -1;
-		// int32_t cc2 = -1;
-		// if ( f1 ) cc1 = f1->m_closeCount;
-		// if ( f2 ) cc2 = f2->m_closeCount;
-		log("file: c1a=%"INT32" c1b=%"INT32" "
-		    "c2a=%"INT32" c2b=%"INT32"",
-		    cc1,fstate->m_closeCount1,
-		    cc2,fstate->m_closeCount2);
-		    
-		if ( ! fstate->m_doWrite ) 
-		{
+		log( LOG_WARN, "file: c1a=%" PRId32" c1b=%" PRId32" c2a=%" PRId32" c2b=%" PRId32,
+		    cc1, fstate->m_closeCount1, cc2, fstate->m_closeCount2 );
+
+		if ( ! fstate->m_doWrite ) {
 			fstate->m_errno = EFILECLOSED;
-		}
-		else 
-		{
+		} else {
 			// we use s_writing[] locks in File.cpp to prevent a write
 			// operation's fd from being closed under him
 			log(LOG_ERROR,"PANIC: fd closed on us while writing. This should "
@@ -1220,40 +1206,18 @@ static void readwriteWrapper_r ( void *state ) {
 		fstate->m_errno = 0;
 		goto again; 
 	}
-	
+
 	// turn off the cancel-ability of this thread
 	//pthread_setcancelstate ( PTHREAD_CANCEL_DISABLE , NULL );
 	// set done time even if errno set
 	// - mdw, can't set this here now because fstate might be invalid...
 	//int64_t now = gettimeofdayInMilliseconds() ;
 	//fstate->m_doneTime = now;
-	/*
-	// add the stat
-	if ( ! errno ) {
-		// default graph color is black
-		int color = 0x00000000; 
-		char *label = "disk_read";
-		// use red for writes, though
-		if ( fstate->m_doWrite ) {
-			color = 0x00ff0000;
-			label = "disk_write";
-		}
-		// but gray for low priority reads
-		else if ( fstate->m_niceness > 0 ) color = 0x00808080;
-		// add it
-		g_stats.addStat_r ( fstate->m_bytesDone          ,
-				    fstate->m_startTime          ,
-				    now                          ,
-				    label                        ,
-				    color                        );
-	}
-	*/
-	// debug msg
-	//fprintf(stderr,"BigFile exiting thread, state=%"UINT32"\n",(int32_t)fstate);
+
 	// . we're all done, tell g_threads
 	// . this never returns
 	// . the state must be unique per thread so we know what thread this is
-	// . i tried using pthread_self() but we'd have to store it in 
+	// . i tried using pthread_self() but we'd have to store it in
 	//   g_thread's ThreadEntry ourselves, as a thread
 	// . the thread's cleanUp handler should call g_threads.exit(fstate)
 	//g_threads.exit ( fstate );
@@ -1400,12 +1364,12 @@ bool readwrite_r ( FileState *fstate ) {
 		    fstate->m_usePartFiles,
 		    mstrerror(errno));
 		errno = EBADENGINEER;
-		return false; // log("disk::read/write: offset too big");
+		return false;
 	}
 
 	// on other errno, return -1
 	if ( n < 0 ) { 
-		log("disk::readwrite_r: %s",mstrerror(errno));
+		log( LOG_WARN, "disk::readwrite_r: %s", mstrerror( errno ) );
 		return false; 
 	}
 

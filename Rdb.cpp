@@ -109,10 +109,6 @@ void Rdb::addBase ( collnum_t collnum , RdbBase *base ) {
 	      (PTRTYPE)base);
 }
 
-
-// JAB: warning abatement
-//static bool g_init = false;
-
 bool Rdb::init ( const char     *dir                  ,
 		  const char    *dbname               ,
 		  bool           dedup                ,
