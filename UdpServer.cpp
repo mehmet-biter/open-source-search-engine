@@ -1022,16 +1022,17 @@ int32_t UdpServer::readSock_ass ( UdpSlot **slotPtr , int64_t now ) {
 	// cancel silly g_errnos and return 0 since we blocked
 	if ( peekSize < 0 ) {
 		g_errno = errno;
-		if ( g_errno == EAGAIN || g_errno == 0 ) { 
-			// if ( s_ss++ == 100 ) {
-			// 	log("foo");char *xx=NULL;*xx=0; }
-			// log("udp: EAGAIN");
-			g_errno = 0; return 0; }
-		if ( g_errno == EILSEQ ) { 
-			g_errno = 0; return 0; }
+
+		if ( g_errno == 0 || g_errno == EILSEQ || g_errno == EAGAIN ) {
+			g_errno = 0;
+			return 0;
+		}
+
 		// Interrupted system call (4) (from valgrind)
-		return log("udp: readDgram: %s (%d).",mstrerror(g_errno), g_errno) - 1;
+		log( LOG_WARN, "udp: readDgram: %s (%d).", mstrerror( g_errno ), g_errno );
+		return -1;
 	}
+
 	// the discard buffer, for reading dgram into
 	char tmpbuf [DGRAM_SIZE_CEILING];
 	uint32_t ip2 ;

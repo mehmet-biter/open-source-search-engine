@@ -1803,7 +1803,8 @@ int32_t getMsgPiece ( TcpSocket *s ) {
 	// . in that case just return 0
 	if ( ! f ) {
 		g_errno = EBADENGINEER;
-		return log(LOG_LOGIC,"http: No file ptr.") - 1;
+		log( LOG_LOGIC, "http: No file ptr." );
+		return -1;
 	}
 	// if the we've sent the entire buffer already we should reset it
 	if ( s->m_sendBufUsed == s->m_sendOffset ) {
