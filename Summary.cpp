@@ -593,7 +593,7 @@ int64_t Summary::getBestWindow ( Matches *matches, int32_t mm, int32_t *lasta,
 	int32_t *pos = m->m_pos->m_pos;
 
 	// use "m_swbits" not "m_bits", that is what Bits::setForSummary() uses
-	swbit_t *bb = m->m_bits->m_swbits;
+	const swbit_t *bb = m->m_bits->m_swbits;
 
 	// shortcut
 	if ( m->m_sections ) {

@@ -22338,13 +22338,10 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 					  float      *retww   ,
 					  const HashTableX *tt1) {
 
-	static float g_wtab[30][30];
+	static float s_wtab[30][30];
 	static float s_fsp;
 	// from 0 to 100
 	char sliderParm = g_conf.m_sliderParm;
-	// i'm not too keen on putting this as a parm in the CollectionRec
-	// because it is so cryptic...
-	//static char sliderParm = 25;
 
 	// . to support RULE #15 (word to phrase ratio)
 	// . these weights are based on the ratio of word to phrase count
@@ -22386,7 +22383,7 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 				//else if ( i >=  4 ) r = 1.5;
 				//else                r = 1.3;
 				//g_ptab[i][k] = 1.00;
-				g_wtab[i][k] = 1.00;
+				s_wtab[i][k] = 1.00;
 				if ( i <= 1 ) continue;
 				// . we used to have a sliding bar between 0.0 and 1.0.
 				//   word is weighted (1.0 - x) and phrase is weighted
@@ -22434,10 +22431,10 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 				// is in the same phrase, just not this particular
 				// phrase.
 				//if ( ww > 2.0 ) ww = 2.0;
-				g_wtab[i][k] = ww;
+				s_wtab[i][k] = ww;
 				//g_ptab[i][k] = newPW;
 				//logf(LOG_DEBUG,"build: wc=%"INT32" pc=%"INT32" ww=%.2f "
-				//"pw=%.2f",i,k,g_wtab[i][k],g_ptab[i][k]);
+				//"pw=%.2f",i,k,s_wtab[i][k],g_ptab[i][k]);
 			}
 		}
 	}
@@ -22446,7 +22443,7 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 	int32_t phrcount2 = 0;
 	int32_t wrdcount1 = 0;
 	int32_t wrdcount2 = 0;
-	if ( tt1->m_numSlotsUsed > 0 ) {
+	if ( !tt1->isTableEmpty() ) {
 		if (pid1) phrcount1 = tt1->getScore(&pid1);
 		if (pid2) phrcount2 = tt1->getScore(&pid2);
 		if (wid1) wrdcount1 = tt1->getScore(&wid1);
@@ -22479,7 +22476,7 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 	else if ( phrcountMax <= 15 ) mod = 0.03;
 	else                          mod = 0.01;
 
-	// scale wrdcount1/phrcountMax down for the g_wtab table
+	// scale wrdcount1/phrcountMax down for the s_wtab table
 	if ( wrdcount1 > 29 ) {
 		float ratio = (float)phrcountMax / (float)wrdcount1;
 		phrcountMax = (int32_t)((29.0 * ratio) + 0.5);
@@ -22498,7 +22495,7 @@ static void getWordToPhraseRatioWeights ( int64_t   pid1 , // pre phrase
 	//if ( phrcount2 > wrdcount2 ) { char *xx = NULL; *xx = 0; }
 
 	// apply the weights from the table we computed above
-	*retww = mod   *   g_wtab[wrdcount1][phrcountMax];
+	*retww = mod   *   s_wtab[wrdcount1][phrcountMax];
 
 	// slide it
 	*retww = s_fsp*(*retww) + (1.0-s_fsp)*1.00;
