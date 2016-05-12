@@ -829,8 +829,6 @@ int64_t getFileSize_cygwin ( char *filename ) {
 	return fileSize;
 }
 
-
-
 // . returns -2 on error
 // . returns -1 if does not exist
 // . otherwise returns file size in bytes
@@ -876,22 +874,37 @@ bool doesFileExist ( const char *filename ) {
 int32_t File::doesExist ( ) {
 	// preserve g_errno
 	int old_errno = g_errno;
+
 	// allow the substitution of another filename
 	struct stat stats;
+
 	// return true if it exists
-	if ( stat ( getFilename() , &stats ) == 0 ) return 1;
+	if ( stat ( getFilename() , &stats ) == 0 ) {
+		return 1;
+	}
+
 	// copy errno to g_errno
 	g_errno = errno;
+
 	// return 0 if it just does not exist and reset g_errno
-	if ( g_errno == ENOENT ) { g_errno = old_errno; return 0; }
+	if ( g_errno == ENOENT ) {
+		g_errno = old_errno;
+		return 0;
+	}
+
 	// resource temporarily unavailable (for newer libc)
-	if ( g_errno == EAGAIN ) { g_errno = old_errno; return 0; }
+	if ( g_errno == EAGAIN ) {
+		g_errno = old_errno;
+		return 0;
+	}
+
 	// log & return -1 on any other error
 	if ( ! g_errno ) {
 		log(LOG_ERROR, "process: you tried to overload __errno_location() "
 		    "but were unsuccessful. you need to be using pthreads.");
 		char *xx=NULL;*xx=0;
 	}
+
 	log( LOG_ERROR, "disk: error stat3(%s): %s", getFilename() , strerror(g_errno));
 	return -1;
 }
