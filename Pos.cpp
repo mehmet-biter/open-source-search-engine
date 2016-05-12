@@ -309,7 +309,7 @@ int32_t Pos::filter( Words *words, int32_t a, int32_t b, bool addEllipsis, char 
 						}
 
 						lastSpace = true;
-						gbmemcpy ( f , "... " , 4 );
+						memcpy ( f, " \342\200\246", 4 ); //horizontal ellipsis, code point 0x2026
 						f += 4;
 
 						lastEllipsis = f;

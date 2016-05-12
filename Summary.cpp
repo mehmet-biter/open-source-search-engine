@@ -516,7 +516,7 @@ bool Summary::setSummary ( Xml *xml, Words *words, Sections *sections, Pos *pos,
 		// to add an ellipsis
 		if ( needEllipsis ) {
 			if ( p + 4 + 2 > pend ) break;
-			gbmemcpy ( p , " ..." , 4 );
+			memcpy ( p, " \342\200\246", 4 ); //horizontal ellipsis, code point 0x2026
 			p += 4;
 		}
 
