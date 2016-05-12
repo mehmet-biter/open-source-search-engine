@@ -227,38 +227,12 @@ bool Posdb::init ( ) {
 	int32_t nodeSize      = (sizeof(key144_t)+12+4) + sizeof(collnum_t);
 	int32_t maxTreeNodes = maxTreeMem  / nodeSize ;
 
-	//int32_t pageSize = GB_INDEXDB_PAGE_SIZE;
-	// we now use a disk page cache as opposed to the
-	// old rec cache. i am trying to do away with the Rdb::m_cache rec
-	// cache in favor of cleverly used disk page caches, because
-	// the rec caches are not real-time and get stale. 
-	//int32_t pcmem    = 30000000; // 30MB
-	// make sure at least 30MB
-	//if ( pcmem < 30000000 ) pcmem = 30000000;
-	// keep this low if we are the tmp cluster, 30MB
-	//if ( g_hostdb.m_useTmpCluster && pcmem > 30000000 ) pcmem = 30000000;
-	// do not use any page cache if doing tmp cluster in order to
-	// prevent swapping
-	//if ( g_hostdb.m_useTmpCluster ) pcmem = 0;
-	// save more mem!!! allow os to cache it i guess...
-	// let's go back to using it
-	//pcmem = 0;
-	// disable for now... for rebuild
-	//pcmem = 0;
-	// . init the page cache
-	// . MDW: "minimize disk seeks" not working otherwise i'd enable it!
-	// if ( ! m_pc.init ( "posdb",
-	// 		   RDB_POSDB,
-	// 		   pcmem    ,
-	// 		   pageSize ))
-	// 	return log("db: Posdb init failed.");
-
 	// . set our own internal rdb
 	// . max disk space for bin tree is same as maxTreeMem so that we
 	//   must be able to fit all bins in memory
 	// . we do not want posdb's bin tree to ever hit disk since we
 	//   dump it to rdb files when it is 90% full (90% of bins in use)
-	if ( !m_rdb.init ( g_hostdb.m_dir              ,
+	return m_rdb.init ( g_hostdb.m_dir              ,
 			   "posdb"                   ,
 			   true                        , // dedup same keys?
 			   0                           , // fixed data size
@@ -280,10 +254,8 @@ bool Posdb::init ( ) {
 			   false , // istitledb?
 			   false , // preloaddiskpagecache?
 			   sizeof(key144_t)
-			   ) )
-		return false;
+			   );
 
-	return true;
 	// validate posdb
 	//return verify();
 }
@@ -302,7 +274,7 @@ bool Posdb::init2 ( int32_t treeMem ) {
 	//   must be able to fit all bins in memory
 	// . we do not want posdb's bin tree to ever hit disk since we
 	//   dump it to rdb files when it is 90% full (90% of bins in use)
-	if ( ! m_rdb.init ( g_hostdb.m_dir              ,
+	return m_rdb.init ( g_hostdb.m_dir              ,
 			    "posdbRebuild"            ,
 			    true                        , // dedup same keys?
 			    0                           , // fixed data size
@@ -320,9 +292,7 @@ bool Posdb::init2 ( int32_t treeMem ) {
 			    NULL                        , // s_pc
 			    false ,
 			    false ,
-			    sizeof(key144_t) ) )
-		return false;
-	return true;
+			    sizeof(key144_t) );
 }
 
 

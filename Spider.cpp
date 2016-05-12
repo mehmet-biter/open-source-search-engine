@@ -511,11 +511,6 @@ int32_t Spiderdb::print( char *srec , SafeBuf *sb ) {
 
 
 bool Spiderdb::init ( ) {
-	// . what's max # of tree nodes?
-	// . assume avg spider rec size (url) is about 45
-	// . 45 + 33 bytes overhead in tree is 78
-	int32_t maxTreeNodes  = g_conf.m_spiderdbMaxTreeMem  / 78;
-
 	char      priority   = 12;
 	int32_t      spiderTime = 0x3fe96610;
 	int64_t urlHash48  = 0x1234567887654321LL & 0x0000ffffffffffffLL;
@@ -537,12 +532,10 @@ bool Spiderdb::init ( ) {
 
 	testWinnerTreeKey();
 
-	// we now use a page cache
-	// if ( ! m_pc.init ( "spiderdb", 
-	// 		   RDB_SPIDERDB ,
-	// 		   pcmem     ,
-	// 		   pageSize  ))
-	// 	return log(LOG_INIT,"spiderdb: Init failed.");
+	// . what's max # of tree nodes?
+	// . assume avg spider rec size (url) is about 45
+	// . 45 + 33 bytes overhead in tree is 78
+	int32_t maxTreeNodes  = g_conf.m_spiderdbMaxTreeMem  / 78;
 
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir ,

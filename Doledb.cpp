@@ -36,23 +36,9 @@ bool Doledb::init ( ) {
 	// . use 5MB for the tree
 	int32_t maxTreeMem    = 150000000; // 150MB
 	int32_t maxTreeNodes  = maxTreeMem / 78;
-	// we use the same disk page size as indexdb (for rdbmap.cpp)
-	//int32_t pageSize = GB_INDEXDB_PAGE_SIZE;
-	// disk page cache mem, hard code to 5MB
-	// int32_t pcmem = 5000000; // g_conf.m_spiderdbMaxDiskPageCacheMem;
-	// keep this low if we are the tmp cluster
-	// if ( g_hostdb.m_useTmpCluster ) pcmem = 0;
-	// we no longer dump doledb to disk, Rdb::dumpTree() does not allow it
-	// pcmem = 0;
-	// we now use a page cache
-	// if ( ! m_pc.init ( "doledb"  , 
-	// 		   RDB_DOLEDB ,
-	// 		   pcmem     ,
-	// 		   pageSize  ))
-	// 	return log(LOG_INIT,"doledb: Init failed.");
 
 	// initialize our own internal rdb
-	if ( ! m_rdb.init ( g_hostdb.m_dir              ,
+	return m_rdb.init ( g_hostdb.m_dir              ,
 			    "doledb"                    ,
 			    true                        , // dedup
 			    -1                          , // fixedDataSize
@@ -64,24 +50,8 @@ bool Doledb::init ( ) {
 			    0                           , // maxCacheNodes 
 			    false                       , // half keys?
 			    false                       , // save cache?
-			    NULL))//&m_pc                       ))
-		return false;
-	return true;
+			    NULL);
 }
-/*
-bool Doledb::addColl ( char *coll, bool doVerify ) {
-	if ( ! m_rdb.addColl ( coll ) ) return false;
-	//if ( ! doVerify ) return true;
-	// verify
-	//if ( verify(coll) ) return true;
-	// if not allowing scale, return false
-	//if ( ! g_conf.m_allowScale ) return false;
-	// otherwise let it go
-	//log ( "db: Verify failed, but scaling is allowed, passing." );
-	return true;
-}
-*/
-
 
 //
 // remove all recs from doledb for the given collection

@@ -1958,8 +1958,10 @@ bool RdbBuckets::fastSave ( char    *dir       ,
 			    void    *state     ,
 			    void    (* callback) (void *state) ) {
 	if ( g_conf.m_readOnlyMode ) return true;
+
 	// we do not need a save
 	if ( ! m_needsSave ) return true;
+
 	// return true if already in the middle of saving
 	if ( m_isSaving ) return false;
 
@@ -1996,7 +1998,10 @@ bool RdbBuckets::fastSave ( char    *dir       ,
 // . returns false and sets g_errno on error
 // . NO USING g_errno IN A DAMN THREAD!!!!!!!!!!!!!!!!!!!!!!!!!
 bool RdbBuckets::fastSave_r() {
-	if ( g_conf.m_readOnlyMode ) return true;
+	if ( g_conf.m_readOnlyMode ) {
+		return true;
+	}
+
 	// recover the file
 	//BigFile *f = m_saveFile;
 	// open it up
@@ -2007,18 +2012,16 @@ bool RdbBuckets::fastSave_r() {
 	//char *s = m_saveFile->getFilename();
 	char s[1024];
 	sprintf ( s , "%s/%s-buckets-saving.dat", m_dir , m_dbname );
-	int fd = ::open ( s , 
-			  O_RDWR | O_CREAT | O_TRUNC ,
-			  getFileCreationFlags() );
-			  // S_IRUSR | S_IWUSR | 
-			  // S_IRGRP | S_IWGRP | S_IROTH);
+	int fd = ::open ( s , O_RDWR | O_CREAT | O_TRUNC , getFileCreationFlags() );
 	if ( fd < 0 ) {
 		m_saveErrno = errno;
-		return log("db: Could not open %s for writing: %s.",
-			   s,mstrerror(errno));
+		log( LOG_ERROR, "db: Could not open %s for writing: %s.", s, mstrerror( errno ) );
+		return false;
 	}
+
 	// clear our own errno
 	errno = 0;
+
 	// . save the header
 	// . force file head to the 0 byte in case offset was elsewhere
 	int64_t offset = 0;
@@ -2031,9 +2034,8 @@ bool RdbBuckets::fastSave_r() {
 	char s2[1024];
 	sprintf ( s2 , "%s/%s-buckets-saved.dat", m_dir , m_dbname );
 	::rename ( s , s2 ) ; //fuck yeah!
-	// info
-	log("db RdbBuckets saved %"INT32" keys, %"INT64" bytes for %s",
-	    getNumKeys(), offset, m_dbname);
+
+	log( LOG_DEBUG, "db: RdbBuckets saved %" PRId32" keys, %" PRId64" bytes for %s", getNumKeys(), offset, m_dbname);
 
 	return offset >= 0;
 }
@@ -2068,10 +2070,6 @@ int64_t RdbBuckets::fastSaveColl_r(int fd, int64_t offset) {
 	if ( pwrite ( fd , &tmp, sizeof(int32_t) , offset ) != 4 ) err=errno;
 	offset += sizeof(int32_t);
 
-	// 	int32_t len = gbstrlen(m_dbname) + 1;
-	// 	pwrite ( fd , &m_dbname, len , offset ); 
-	// 	offset += len;
-
 	// set it
 	if ( err ) errno = err;
 
@@ -2079,10 +2077,10 @@ int64_t RdbBuckets::fastSaveColl_r(int fd, int64_t offset) {
 	if ( errno ) {
 		m_saveErrno = errno;
 		close ( fd );
-		log("db: Failed to save buckets for %s: %s.",
-		    m_dbname,mstrerror(errno));
+		log( LOG_ERROR, "db: Failed to save buckets for %s: %s.", m_dbname, mstrerror( errno ) );
 		return -1;
 	}
+
 	// position to store into m_keys, ...
 	for (int32_t i = 0; i < m_numBuckets; i++ ) {
 		offset = m_buckets[i]->fastSave_r(fd, offset);
@@ -2090,21 +2088,17 @@ int64_t RdbBuckets::fastSaveColl_r(int fd, int64_t offset) {
 		if ( offset < 0 ) {
 			close ( fd );
 			m_saveErrno = errno;
-			log("db: Failed to save buckets for %s: %s.",
-			    m_dbname,mstrerror(errno));
+			log( LOG_ERROR, "db: Failed to save buckets for %s: %s.", m_dbname, mstrerror( errno ) );
 			return -1;
 		}
 	}
 	return offset;
 }
 
-
 bool RdbBuckets::loadBuckets ( char* dbname) {
 	char filename[256];
 	sprintf(filename,"%s-buckets-saved.dat",dbname);
-	// set this to false
-	// msg
-	//log (0,"Rdb::loadTree: loading %s",filename);
+
 	// set a BigFile to this filename
 	BigFile file;//g_hostdb.m_dir
 	char *dir = g_hostdb.m_dir;

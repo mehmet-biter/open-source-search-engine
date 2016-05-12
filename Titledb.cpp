@@ -38,43 +38,19 @@ bool Titledb::init ( ) {
 	if ( dlen1 != dlen2 ) { char *xx=NULL;*xx=0; }
 
 
-	int64_t maxMem = 200000000; // 200MB
+	int64_t maxMem = 200000000;
 
 	// . what's max # of tree nodes?
 	// . assume avg TitleRec size (compressed html doc) is about 1k we get:
 	// . NOTE: overhead is about 32 bytes per node
 	int32_t maxTreeNodes  = maxMem  / (1*1024);
 
-	// . we now use a disk page cache for titledb as opposed to the
-	//   old rec cache. i am trying to do away with the Rdb::m_cache rec
-	//   cache in favor of cleverly used disk page caches, because
-	//   the rec caches are not real-time and get stale.
-	// . just hard-code 30MB for now
-	int32_t pcmem    = 30000000; // = g_conf.m_titledbMaxDiskPageCacheMem;
-	// fuck that we need all the mem!
-	//pcmem = 0;
-	// do not use any page cache if doing tmp cluster in order to
-	// prevent swapping
-	if ( g_hostdb.m_useTmpCluster ) pcmem = 0;
-	//int32_t pageSize = GB_INDEXDB_PAGE_SIZE;
-	// init the page cache
-	// . MDW: "minimize disk seeks" not working otherwise i'd enable it!
-	// if ( ! m_pc.init ( "titledb",
-	// 		   RDB_TITLEDB,
-	// 		   pcmem    ,
-	// 		   pageSize ) )
-	// 	return log("db: Titledb init failed.");
-
-	// each entry in the cache is usually just a single record, no lists
-	//int32_t maxCacheNodes = g_conf.m_titledbMaxCacheMem / (10*1024);
 	// initialize our own internal rdb
-	if ( ! m_rdb.init ( g_hostdb.m_dir              ,
+	return m_rdb.init ( g_hostdb.m_dir              ,
 			    "titledb"                   ,
 			    true                        , // dedup same keys?
 			    -1                          , // fixed record size
-			    //g_hostdb.m_groupMask          ,
-			    //g_hostdb.m_groupId            ,
-			    //g_conf.m_titledbMinFilesToMerge , 
+			    //g_conf.m_titledbMinFilesToMerge ,
 			    // this should not really be changed...
 			    -1,//3,//230  minfilestomerge mintomerge
 			    maxMem, // g_conf.m_titledbMaxTreeMem  ,
@@ -90,9 +66,8 @@ bool Titledb::init ( ) {
 			    false                       ,// half keys?
 			    false                       ,// g_conf.m_titledbSav
 			    NULL,//&m_pc               , // page cache ptr
-			    true                        ) )// is titledb?
-		return false;
-	return true;
+			    true                        ); // is titledb?
+
 	// validate
 	//return verify ( );
 }
@@ -104,7 +79,7 @@ bool Titledb::init2 ( int32_t treeMem ) {
 	// . NOTE: overhead is about 32 bytes per node
 	int32_t maxTreeNodes  = treeMem / (1*1024);
 	// initialize our own internal rdb
-	if ( ! m_rdb.init ( g_hostdb.m_dir              ,
+	return m_rdb.init ( g_hostdb.m_dir              ,
 			    "titledbRebuild"            ,
 			    true                        , // dedup same keys?
 			    -1                          , // fixed record size
@@ -118,9 +93,8 @@ bool Titledb::init2 ( int32_t treeMem ) {
 			    false                       , // half keys?
 			    false                       , // titledbSaveCache
 			    NULL                        , // page cache ptr
-			    true                        ) )// is titledb?
-		return false;
-	return true;
+			    true                        ); // is titledb?
+
 	// validate
 	//return verify ( );
 }

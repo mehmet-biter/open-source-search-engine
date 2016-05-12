@@ -323,18 +323,17 @@ bool Rdb::updateToRebuildFiles ( Rdb *rdb2 , char *coll ) {
 		sprintf ( dst , "%s/%s-buckets-saved.dat", dstDir , m_dbname );
 	}
 
-	char *structName = "tree";
-	if(!m_useTree) structName = "buckets";
-	
+	const char *structName = m_useTree ? "tree" : "buckets";
 	char cmd[2048+32];
 	sprintf ( cmd , "mv %s %s",src,dst);
 
 	logf(LOG_INFO,"repair: Moving *-saved.dat %s. %s", structName, cmd);
 
 	errno = 0;
-	if ( gbsystem ( cmd ) == -1 )
-		return log("repair: Moving saved %s had error: %s.",
-			   structName, mstrerror(errno));
+	if ( gbsystem ( cmd ) == -1 ) {
+		log( LOG_ERROR, "repair: Moving saved %s had error: %s.", structName, mstrerror( errno ) );
+		return false;
+	}
 
 	log("repair: Moving saved %s: %s",structName, mstrerror(errno));
 
@@ -863,31 +862,28 @@ bool Rdb::isSavingTree ( ) {
 
 bool Rdb::saveTree ( bool useThread ) {
 	char *dbn = m_dbname;
-	if ( ! dbn ) dbn = "unknown";
-	if ( ! dbn[0] ) dbn = "unknown";
+	if ( ! dbn || ! dbn[0] ) {
+		dbn = "unknown";
+	}
 
 	// note it
-	//if ( m_useTree && m_tree.m_needsSave )
-	//	log("db: saving tree %s",dbn);
-	if ( ! m_useTree && m_buckets.needsSave() )
-		log("db: saving buckets %s",dbn);
+	if ( m_useTree && m_tree.m_needsSave ) {
+		log( LOG_DEBUG, "db: saving tree %s", dbn );
+	}
+
+	if ( ! m_useTree && m_buckets.needsSave() ) {
+		log( LOG_DEBUG, "db: saving buckets %s", dbn );
+	}
+
 	// . if RdbTree::m_needsSave is false this will return true
 	// . if RdbTree::m_isSaving  is true this will return false
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
-	if(m_useTree) {
-		return m_tree.fastSave ( getDir()    ,
-				 m_dbname    , // &m_saveFile ,
-				 useThread   ,
-				 NULL        , // state
-				 NULL        );// callback
+	if ( m_useTree ) {
+		return m_tree.fastSave ( getDir(), m_dbname, useThread, NULL, NULL );
 	}
 	else {
-		return m_buckets.fastSave ( getDir()    ,
-				 useThread   ,
-				 NULL        , // state
-				 NULL        );// callback
-
+		return m_buckets.fastSave ( getDir(), useThread, NULL, NULL );
 	}
 }
 

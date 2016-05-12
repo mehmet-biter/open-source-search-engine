@@ -431,8 +431,7 @@ int32_t RdbTree::getLowestNode ( ) {
 // . negative dataSizes should be interpreted as 0
 // . probably about 120 cycles per add means we can add 2 million per sec
 // . NOTE: does not check to see if it will exceed m_maxMem
-int32_t RdbTree::addNode ( collnum_t collnum , 
-			const char *key , char *data , int32_t dataSize ) {
+int32_t RdbTree::addNode ( collnum_t collnum , const char *key , char *data , int32_t dataSize ) {
 	// cannot add if saving, tell them to try again later
 	if ( m_isSaving ) { g_errno = ETRYAGAIN; return -1; }
 	// nor if not writable
@@ -500,8 +499,8 @@ int32_t RdbTree::addNode ( collnum_t collnum ,
 	// debug msg
 	//if ( m_dbname && m_dbname[0]=='t' && dataSize >= 4 )
 	//	logf(LOG_DEBUG,
-	//	     "adding node #%"INT32" with data ptr at %"XINT32" "
-	//	     "and data size of %"INT32" into a list.",
+	//	     "adding node #%" PRId32" with data ptr at %" PRIx32" "
+	//	     "and data size of %" PRId32" into a list.",
 	//	     i,data,dataSize);
 	// if we're the first node we become the head node and our parent is -1
 	if ( m_numUsedNodes == 0 ) {
@@ -620,7 +619,7 @@ int32_t RdbTree::addNode ( collnum_t collnum ,
 		}
 	}
 	// debug2 msg
-	// fprintf(stderr,"+ #%"INT32" %"INT64" %"INT32"\n",i,key.n0,iparent);
+	// fprintf(stderr,"+ #%" PRId32" %" PRId64" %" PRId32"\n",i,key.n0,iparent);
 	// if we don't have to balance return i now
 	if ( m_doBalancing ) {
 		// our depth is now 1 since we're a leaf node
@@ -670,7 +669,7 @@ int32_t RdbTree::addNode ( collnum_t collnum ,
 int32_t RdbTree::deleteNode  ( collnum_t collnum, const char *key, bool freeData ) {
 	int32_t node = getNode ( collnum , key );
 	// debug
-	//log("db: deleting n1=%"XINT64" n0=%"XINT64" node=%"INT32".",
+	//log("db: deleting n1=%" PRIx64" n0=%" PRIx64" node=%" PRId32".",
 	//    *(int64_t *)(key+8), *(int64_t *)(key+0),node);
 	if ( node == -1 ) return -1;
 	deleteNode3(node,freeData); 
@@ -835,7 +834,7 @@ void RdbTree::deleteNode3 ( int32_t i , bool freeData ) {
 	// debug step -- check chain from iparent down making sure that
 	//printTree();
 	// debug2 msg
-	//fprintf(stderr,"- #%"INT32" %"INT64" %"INT32"\n",i,m_keys[i].n0,iparent);
+	//fprintf(stderr,"- #%" PRId32" %" PRId64" %" PRId32"\n",i,m_keys[i].n0,iparent);
 	// . reset the depths starting at iparent and going up until unchanged
 	// . will balance at pivot nodes that need it
 	if ( m_doBalancing ) setDepths ( iparent );
@@ -949,7 +948,7 @@ void RdbTree::deleteNode3 ( int32_t i , bool freeData ) {
 	// all kids don't have -2 for their parent... seems to be a rare bug
 	//printTree();
 	// debug msg
-	//fprintf(stderr,"- #%"INT32" %"INT64" %"INT32"\n",i,m_keys[i].n0,iparent);
+	//fprintf(stderr,"- #%" PRId32" %" PRId64" %" PRId32"\n",i,m_keys[i].n0,iparent);
 	// return if we don't have to balance
 	if ( ! m_doBalancing ) {
 		// protect it all from writes again
@@ -960,7 +959,7 @@ void RdbTree::deleteNode3 ( int32_t i , bool freeData ) {
 	// up to i decreases the total depth, in which case setDepths() fixes
 	m_depth [ j ] = m_depth [ i ];
 	// debug msg
-	//fprintf(stderr,"... replaced %"INT32" it with %"INT32" (-1 means none)\n",i,j);
+	//fprintf(stderr,"... replaced %" PRId32" it with %" PRId32" (-1 means none)\n",i,j);
 	// . recalculate depths starting at old parent of j
 	// . stops at the first node to have the correct depth
 	// . will balance at pivot nodes that need it
@@ -1110,8 +1109,8 @@ bool RdbTree::fixTree ( ) {
 	// on error, fix the linked list
 	//log("RdbTree::fixTree: tree was corrupted on disk?");
 	log("db: Trying to fix tree for %s.",m_dbname);
-	log("db: %"INT32" occupied nodes and %"INT32" empty "
-	    "of top %"INT32" nodes.",
+	log("db: %" PRId32" occupied nodes and %" PRId32" empty "
+	    "of top %" PRId32" nodes.",
 	    m_numUsedNodes , m_minUnusedNode - m_numUsedNodes ,
 	    m_minUnusedNode );
 
@@ -1127,7 +1126,7 @@ bool RdbTree::fixTree ( ) {
 	m_minUnusedNode =  0; 
 	//CollectionRec *recs = g_collectiondb.m_recs;
 	int32_t           max  = g_collectiondb.m_numRecs;
-	log("db: Valid collection numbers range from 0 to %"INT32".",max);
+	log("db: Valid collection numbers range from 0 to %" PRId32".",max);
 	
 	bool isTitledb = false;
 	if ( !strcmp(m_dbname,"titledb" ) ) isTitledb = true;
@@ -1139,7 +1138,7 @@ bool RdbTree::fixTree ( ) {
 	for ( int32_t i = 0 ; i < n ; i++ ) {
 		// speed update
 		if ( (i % 100000) == 0 ) 
-			log("db: Fixing node #%"INT32" of %"INT32".",i,n);
+			log("db: Fixing node #%" PRId32" of %" PRId32".",i,n);
 		// skip if empty
 		if ( m_parents[i] <= -2 ) continue;
 			
@@ -1189,7 +1188,7 @@ bool RdbTree::fixTree ( ) {
 		count++;
 	}
 
-	log("db: Fix tree removed %"INT32" nodes for %s.",n - count,m_dbname);
+	log("db: Fix tree removed %" PRId32" nodes for %s.",n - count,m_dbname);
 	// esure it is still good
 	if ( ! checkTree ( false , true ) )
 		return log("db: Fix tree failed.");
@@ -1290,14 +1289,14 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 				   "db: Tree left kid < -1.");
 		if ( m_left[i] >= m_numNodes )
 			return log(
-				   "db: Tree left kid is %"INT32" >= %"INT32".",
+				   "db: Tree left kid is %" PRId32" >= %" PRId32".",
 				   m_left[i],m_numNodes);
 		if ( m_right[i] < -1 )
 			return log(
 				   "db: Tree right kid < -1.");
 		if ( m_right[i] >= m_numNodes )
 			return log(
-				   "db: Tree left kid is %"INT32" >= %"INT32".",
+				   "db: Tree left kid is %" PRId32" >= %" PRId32".",
 				   m_right[i],m_numNodes);
 		// check left kid
 		if ( m_left[i] >= 0 && m_parents[m_left[i]] != i ) 
@@ -1330,11 +1329,11 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 		//g_loop.quickPoll(1, __PRETTY_FUNCTION__, __LINE__);
 	}
 	if ( hkp > 0 ) 
-	       return log("db: Had %"INT32" half key bits on for %s.",hkp,m_dbname);
+	       return log("db: Had %" PRId32" half key bits on for %s.",hkp,m_dbname);
 	// now return if we aren't doing active balancing
 	if ( ! m_depth ) return true;
 	// debug -- just always return now
-	if ( printMsgs )logf(LOG_DEBUG,"***m_headNode=%"INT32", m_numUsedNodes=%"INT32"",
+	if ( printMsgs )logf(LOG_DEBUG,"***m_headNode=%" PRId32", m_numUsedNodes=%" PRId32"",
 			      m_headNode,m_numUsedNodes);
 	//CollectionRec *recs = g_collectiondb.m_recs;
 	int32_t           max  = g_collectiondb.m_numRecs;
@@ -1352,15 +1351,15 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 		// we do not want to delete these nodes from the tree yet
 		// in case the collection was accidentally removed.
 		//if ( ! recs[cn] )
-		//	return log("db: Got bad collnum tree. %"INT32".",cn);
+		//	return log("db: Got bad collnum tree. %" PRId32".",cn);
 		int32_t P = m_parents [i];
 		if ( P == -2 ) continue; // deleted node
 		if ( P == -1 && i != m_headNode ) 
-			return log("db: Tree node %"INT32" has "
+			return log("db: Tree node %" PRId32" has "
 				   "no parent.",i);
 		// check kids
 		if ( P>=0 && m_left[P] != i && m_right[P] != i ) 
-			return log("db: Tree kids of node # %"INT32" "
+			return log("db: Tree kids of node # %" PRId32" "
 				    "disowned him.",i);
 		//g_loop.quickPoll(1, __PRETTY_FUNCTION__, __LINE__);
 		// speedy tests continue
@@ -1377,12 +1376,12 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 		}
 		if ( j != m_headNode ) 
 			return log(
-				   "db: Node # %"INT32" does not lead back to "
+				   "db: Node # %" PRId32" does not lead back to "
 				   "head node.",i);
 		if ( printMsgs ) {
 		        char *k = &m_keys[i*m_ks];
-			logf(LOG_DEBUG,"***node=%"INT32" left=%"INT32" rght=%"INT32" "
-			    "prnt=%"INT32", depth=%"INT32" c=%"INT32" key=%s",
+			logf(LOG_DEBUG,"***node=%" PRId32" left=%" PRId32" rght=%" PRId32" "
+			    "prnt=%" PRId32", depth=%" PRId32" c=%" PRId32" key=%s",
 			    i,m_left[i],m_right[i],m_parents[i],
 			    (int32_t)m_depth[i],(int32_t)m_collnums[i],
 			     KEYSTR(k,m_ks));
@@ -1394,8 +1393,8 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 		//ensure depth
 		int32_t newDepth = computeDepth ( i );
 		if ( m_depth[i] != newDepth ) 
-			return log("db: Tree node # %"INT32"'s depth "
-				   "should be %"INT32".",i,newDepth);
+			return log("db: Tree node # %" PRId32"'s depth "
+				   "should be %" PRId32".",i,newDepth);
 	}
 	if ( printMsgs ) logf(LOG_DEBUG,"---------------");
 	// no problems found
@@ -1493,7 +1492,7 @@ bool RdbTree::growTree ( int32_t nn , int32_t niceness ) {
 	m_memAlloced += m_overhead * nn;
 	// bitch an exit if too much
 	if ( m_memAlloced > m_maxMem ) {
-		log( LOG_ERROR, "db: Trying to grow tree for %s to %" INT32", but max is %" INT32". Consider changing gb.conf.",
+		log( LOG_ERROR, "db: Trying to grow tree for %s to %" PRId32", but max is %" PRId32". Consider changing gb.conf.",
 		     m_dbname, m_memAlloced, m_maxMem );
 		return false;
 	}
@@ -1564,7 +1563,7 @@ bool RdbTree::growTree ( int32_t nn , int32_t niceness ) {
 		QUICKPOLL(niceness);
 	}
 
-	log( LOG_ERROR, "db: Failed to grow tree for %s from %"INT32" to %"INT32" bytes: %s.",
+	log( LOG_ERROR, "db: Failed to grow tree for %s from %" PRId32" to %" PRId32" bytes: %s.",
 	     m_dbname, on, nn, mstrerror(g_errno) );
 	return false;
 }
@@ -1595,11 +1594,11 @@ void RdbTree::gbmprotect ( void *p , int32_t size , int prot ) {
 	int32_t nsize = size & (~(8*1024-1));
 	if ( nsize <= 0 ) return;
 	if ( mprotect ( np , nsize , prot ) == -1 )
-		log("db: mprotect (size=%"INT32"): %s.",nsize,mstrerror(errno));
+		log("db: mprotect (size=%" PRId32"): %s.",nsize,mstrerror(errno)); 
 	//if ( prot == (PROT_READ | PROT_WRITE) )
-	//	log("db: unprotect: 0x%"XINT32" size=%"INT32"",(int32_t)np,nsize);
+	//	log("db: unprotect: 0x%" PRIx32" size=%" PRId32"",(int32_t)np,nsize);
 	//else
-	//	log("db: protect: 0x%"XINT32" size=%"INT32"",(int32_t)np,nsize);
+	//	log("db: protect: 0x%" PRIx32" size=%" PRId32"",(int32_t)np,nsize);
 }
 
 int32_t RdbTree::getMemOccupiedForList2 ( collnum_t collnum  ,
@@ -1745,12 +1744,12 @@ bool RdbTree::getList ( collnum_t collnum ,
 	//}
 	// debug msg
 	//if ( growth > 1000 )
-	//	log (LOG_DEBUG,"db: RdbTree::getList: growth=%"INT32". "
-	//	     "minRecSizes=%"INT32" db=%s.",growth,minRecSizes,m_dbname);
+	//	log (LOG_DEBUG,"db: RdbTree::getList: growth=%" PRId32". "
+	//	     "minRecSizes=%" PRId32" db=%s.",growth,minRecSizes,m_dbname);
 
 	// grow the list now
 	if ( ! list->growList ( growth ) ) 
-		return log("db: Failed to grow list to %"INT32" bytes for storing "
+		return log("db: Failed to grow list to %" PRId32" bytes for storing "
 			   "records from tree: %s.",growth,mstrerror(g_errno));
 	// similar to above algorithm but we have data along with the keys
 	int32_t dataSize;
@@ -1791,7 +1790,7 @@ bool RdbTree::getList ( collnum_t collnum ,
 
 			// node #1518 and #1565 are the key ones
 			//if ( m_ks == 18 ) {
-			//	log("tree: adding node %"INT32" k=%s",node,
+			//	log("tree: adding node %" PRId32" k=%s",node,
 			//	    KEYSTR((unsigned char *)&m_keys[node*m_ks],
 			//		   m_ks));
 			//}
@@ -1854,8 +1853,8 @@ bool RdbTree::getList ( collnum_t collnum ,
 				Tag *tag = (Tag *)rec;
 				logf(LOG_DEBUG,
 				     "tree: "
-				     "getting node #%"INT32" with data ptr at %"UINT32" "
-				     "and data size of %"INT32" into a list.",
+				     "getting node #%" PRId32" with data ptr at %"U PRId32" "
+				     "and data size of %" PRId32" into a list.",
 				     node,(int32_t)m_data[node],dataSize);
 				// detect tagdb corruption
 				if ( tag->m_bufSize < 0 ||
@@ -1964,7 +1963,7 @@ bool RdbTree::getListUnordered ( int32_t startNode , int32_t minRecSizes ,
 	if ( minRecSizes < growth ) growth = minRecSizes;
 	// grow the list now
 	if ( ! list->growList ( growth ) ) 
-		return log("db: Failed to grow list to %"INT32" bytes for storing "
+		return log("db: Failed to grow list to %" PRId32" bytes for storing "
 			   "records from tree: %s.",growth,mstrerror(g_errno));
 	// mdw fixed, this. it was node = 0 so we couldn't dump all of tree!!!
 	int32_t node = startNode ;
@@ -2137,7 +2136,7 @@ void RdbTree::setDepths ( int32_t i ) {
 		// . i may have change if we rotated, but same logic applies
 		if ( m_depth[i] == oldDepth ) break;
 		// debug msg
-		//fprintf (stderr,"changed node %"INT32"'s depth from %"INT32" to %"INT32"\n",
+		//fprintf (stderr,"changed node %" PRId32"'s depth from %" PRId32" to %" PRId32"\n",
 		//i,oldDepth,newDepth);
 		// get his parent to continue the ascension
 		i = m_parents [ i ];
@@ -2181,13 +2180,13 @@ void RdbTree::setDepths ( int32_t i ) {
 // . return the node # that replaced A so the balance() routine can continue
 // . TODO: check our depth modifications below
 int32_t RdbTree::rotateRight ( int32_t i ) {
-	//fprintf(stderr,"rotateRight: pivot = %"INT32"\n",i);
+	//fprintf(stderr,"rotateRight: pivot = %" PRId32"\n",i);
 	return rotate ( i , m_left , m_right );
 }
 
 // . i just swapped left with m_right
 int32_t RdbTree::rotateLeft ( int32_t i ) {
-	//fprintf(stderr,"rotateLeft: pivot = %"INT32"\n",i);
+	//fprintf(stderr,"rotateLeft: pivot = %" PRId32"\n",i);
 	return rotate ( i , m_right , m_left );
 }
 
@@ -2211,8 +2210,8 @@ int32_t RdbTree::rotate ( int32_t i , int32_t *left , int32_t *right ) {
 	if ( W >= 0 ) Wdepth = m_depth[W];
 	if ( X >= 0 ) Xdepth = m_depth[X];
 	// debug msg
-	//fprintf(stderr,"A=%"INT32" AP=%"INT32" N=%"INT32" W=%"INT32" X=%"INT32" Q=%"INT32" T=%"INT32" "
-	//"Wdepth=%"INT32" Xdepth=%"INT32"\n",A,AP,N,W,X,Q,T,Wdepth,Xdepth);
+	//fprintf(stderr,"A=%" PRId32" AP=%" PRId32" N=%" PRId32" W=%" PRId32" X=%" PRId32" Q=%" PRId32" T=%" PRId32" "
+	//"Wdepth=%" PRId32" Xdepth=%" PRId32"\n",A,AP,N,W,X,Q,T,Wdepth,Xdepth);
 	// goto Xdeeper if X is deeper
 	if ( Wdepth < Xdepth ) goto Xdeeper;
 	// N's parent becomes A's parent
@@ -2228,7 +2227,7 @@ int32_t RdbTree::rotate ( int32_t i , int32_t *left , int32_t *right ) {
 	}
 	// if A had no parent, it was the headNode
 	else {
-		//fprintf(stderr,"changing head node from %"INT32" to %"INT32"\n",
+		//fprintf(stderr,"changing head node from %" PRId32" to %" PRId32"\n",
 		//m_headNode,N);
 		m_headNode = N;
 	}
@@ -2264,7 +2263,7 @@ int32_t RdbTree::rotate ( int32_t i , int32_t *left , int32_t *right ) {
 	}
 	// if A had no parent, it was the headNode
 	else {
-		//fprintf(stderr,"changing head node2 from %"INT32" to %"INT32"\n",
+		//fprintf(stderr,"changing head node2 from %" PRId32" to %" PRId32"\n",
 		//m_headNode,X);
 		m_headNode = X;
 	}
@@ -2425,55 +2424,69 @@ static void threadDoneWrapper ( void *state, job_exit_t exit_type );
 // . we'll open it here
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool RdbTree::fastSave ( const char *dir,
-			 const char *dbname,
-			 bool     useThread ,
-			 void    *state     ,
-			 void    (* callback) (void *state) ) {
-	if ( g_conf.m_readOnlyMode ) return true;
+bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, void *state, void (* callback) (void *state) ) {
+	if ( g_conf.m_readOnlyMode ) {
+		return true;
+	}
+
 	// we do not need a save
-	if ( ! m_needsSave ) return true;
+	if ( ! m_needsSave ) {
+		return true;
+	}
+
 	// return true if already in the middle of saving
-	if ( m_isSaving ) return false;
+	if ( m_isSaving ) {
+		return false;
+	}
+
 	// note it
 	logf(LOG_INFO,"db: Saving %s/%s-saved.dat",dir,dbname);
+
 	// save parms
 	//m_saveFile = f;
 	strcpy ( m_dir , dir );
-	//m_dbname   = dbname;
+
 	// sanity check
 	if ( dbname && strcmp(dbname,m_dbname) ) {
-		log("db: tree dbname mismatch.");
+		log( LOG_ERROR, "db: tree dbname mismatch." );
 		char *xx=NULL;*xx=0;
 	}
+
 	m_state    = state;
 	m_callback = callback;
+
 	// assume no error
 	m_saveErrno = 0;
+
 	// no adding to the tree now
 	m_isSaving = true;
-	// skip thread call if we should
-	if ( ! useThread ) goto skip;
-	// make this a thread now
-	if ( g_jobScheduler.submit(saveWrapper,
-	                           threadDoneWrapper,
-				   this,
-				   thread_type_unspecified_io,
-				   1/*niceness*/) )
-		return false;
-	// if it failed
-	if ( g_jobScheduler.are_new_jobs_allowed() ) 
-		log("db: Thread creation failed. Blocking while saving tree. "
-		    "Hurts performance.");
- skip:
+
+	if ( useThread ) {
+		// make this a thread now
+		if ( g_jobScheduler.submit( saveWrapper, threadDoneWrapper, this, thread_type_unspecified_io, 1/*niceness*/) ) {
+			return false;
+		}
+
+		// if it failed
+		if ( g_jobScheduler.are_new_jobs_allowed() ) {
+			log( LOG_WARN, "db: Thread creation failed. Blocking while saving tree. Hurts performance." );
+		}
+	}
+
+	// no threads
+
 	// this returns false and sets g_errno on error
 	fastSave_r ();
+
 	// store save error into g_errno
 	g_errno = m_saveErrno;
+
 	// resume adding to the tree
 	m_isSaving = false;
+
 	// we do not need to be saved now?
 	m_needsSave = false;
+
 	// we did not block
 	return true;
 }
@@ -2482,6 +2495,7 @@ bool RdbTree::fastSave ( const char *dir,
 void saveWrapper ( void *state ) {
 	// get this class
 	RdbTree *THIS = (RdbTree *)state;
+
 	// this returns false and sets g_errno on error
 	THIS->fastSave_r();
 }
@@ -2491,24 +2505,28 @@ void saveWrapper ( void *state ) {
 void threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 	// get this class
 	RdbTree *THIS = (RdbTree *)state;
+
 	// store save error into g_errno
 	g_errno = THIS->m_saveErrno;
+
 	// . resume adding to the tree
 	// . this will also allow other threads to be queued
 	// . if we did this at the end of the thread we could end up with
 	//   an overflow of queued SAVETHREADs
 	THIS->m_isSaving = false;
+
 	// we do not need to be saved now?
 	THIS->m_needsSave = false;
+
 	// g_errno should be preserved from the thread so if fastSave_r()
 	// had an error it will be set
-	if ( g_errno )
-		log("db: Had error saving tree to disk for %s: %s.",
-		    THIS->m_dbname,mstrerror(g_errno));
-	else
+	if ( g_errno ) {
+		log( LOG_ERROR, "db: Had error saving tree to disk for %s: %s.", THIS->m_dbname, mstrerror( g_errno ) );
+	} else {
 		// log it
-		log("db: Done saving %s/%s-saved.dat (wrote %"INT64" bytes)",
-		    THIS->m_dir,THIS->m_dbname,THIS->m_bytesWritten);
+		log( LOG_INFO, "db: Done saving %s/%s-saved.dat (wrote %" PRId64" bytes)",
+		     THIS->m_dir, THIS->m_dbname, THIS->m_bytesWritten );
+	}
 	// . call callback
 	if ( THIS->m_callback ) THIS->m_callback ( THIS->m_state );
 }
@@ -2517,6 +2535,7 @@ void threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 // . NO USING g_errno IN A DAMN THREAD!!!!!!!!!!!!!!!!!!!!!!!!!
 bool RdbTree::fastSave_r() {
 	if ( g_conf.m_readOnlyMode ) return true;
+
 	// recover the file
 	//BigFile *f = m_saveFile;
 	// open it up
@@ -2527,15 +2546,11 @@ bool RdbTree::fastSave_r() {
 	//char *s = m_saveFile->getFilename();
 	char s[1024];
 	sprintf ( s , "%s/%s-saving.dat", m_dir , m_dbname );
-	int fd = ::open ( s , 
-			  O_RDWR | O_CREAT | O_TRUNC ,
-			  getFileCreationFlags() );
-			  // S_IRUSR | S_IWUSR | 
-			  // S_IRGRP | S_IWGRP | S_IROTH);
+	int fd = ::open ( s , O_RDWR | O_CREAT | O_TRUNC , getFileCreationFlags() );
 	if ( fd < 0 ) {
 		m_saveErrno = errno;
-		return log("db: Could not open %s for writing: %s.",
-			   s,mstrerror(errno));
+		log( LOG_ERROR, "db: Could not open %s for writing: %s.", s, mstrerror( errno ) );
+		return false;
 	}
 
  redo:
@@ -2602,7 +2617,7 @@ bool RdbTree::fastSave_r() {
 	sprintf ( s2 , "%s/%s-saved.dat", m_dir , m_dbname );
 	::rename ( s , s2 ) ;
 	// info
-	//log(0,"RdbTree::fastSave: saved %"INT32" nodes", m_numUsedNodes );
+	//log(0,"RdbTree::fastSave: saved %" PRId32" nodes", m_numUsedNodes );
 	return true;
 }
 
@@ -2617,7 +2632,7 @@ int32_t RdbTree::fastSaveBlock_r ( int fd , int32_t start , int64_t offset ) {
 	// don't over do it
 	if ( start + n > m_minUnusedNode ) n = m_minUnusedNode - start;
 	// debug msg
-	//log("writing block at %"INT64", %"INT32" nodes",
+	//log("writing block at %" PRId64", %" PRId32" nodes",
 	//     f->m_currentOffset, n);
 	errno = 0;
 	int64_t br = 0;
@@ -2638,7 +2653,7 @@ int32_t RdbTree::fastSaveBlock_r ( int fd , int32_t start , int64_t offset ) {
 		br +=pwrite(fd,&m_data[start],n * 4 , offset ); offset +=n*4;}
 	// bitch on error
 	if ( br != offset - oldOffset ) 
-	  return log("db: Failed to save tree3 for %s (%"INT64"!=%"INT64"): %s.",
+	  return log( LOG_WARN, "db: Failed to save tree3 for %s (%" PRId64"!=%" PRId64"): %s.",
 				m_dbname,
 		     br,offset,
 		     mstrerror(errno)) - 1;
@@ -2666,7 +2681,7 @@ int32_t RdbTree::fastSaveBlock_r ( int fd , int32_t start , int64_t offset ) {
 		offset += m_fixedDataSize;
 	}
 	// debug
-	//log("wrote %"INT32" bytes of raw rec data", count);
+	//log("wrote %" PRId32" bytes of raw rec data", count);
 	// . don't close cuz needs to stay open for the rename
 	//   from *-saving.dat to *-saved.dat
 	// . close it
@@ -2674,8 +2689,6 @@ int32_t RdbTree::fastSaveBlock_r ( int fd , int32_t start , int64_t offset ) {
 	// return bytes written
 	return offset - oldOffset;
 }
-
-#include "Spider.h"
 
 // . caller should call f->set() himself
 // . we'll open it here
@@ -2747,7 +2760,7 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	// if no data, sizes much match exactly
 	if ( fixedDataSize == 0 && fsize != minFileSize ) {
 		g_errno = EBADFILE;
-		log( LOG_ERROR, "db: File size of %s is %" INT32", should be %" INT32". File may be corrupted.",
+		log( LOG_ERROR, "db: File size of %s is %" PRId32", should be %" PRId32". File may be corrupted.",
 		     f->getFilename(),fsize,minFileSize);
 		f->close();
 		m_isLoading = false;
@@ -2756,7 +2769,7 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	// does it fit?
 	if ( fsize < minFileSize ) {
 		g_errno = EBADFILE;
-		log( LOG_ERROR, "db: File size of %s is %" INT32", should >= %" INT32". File may be corrupted.",
+		log( LOG_ERROR, "db: File size of %s is %" PRId32", should >= %" PRId32". File may be corrupted.",
 		     f->getFilename(),fsize,minFileSize);
 		f->close();
 		m_isLoading = false;
@@ -2805,9 +2818,9 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	m_isLoading = false;
 
 	// print corruption
-	if ( m_corrupt ) 
-		log("admin: Loaded %"INT32" corrupted recs in tree for %s.",
-		    m_corrupt,m_dbname);
+	if ( m_corrupt ) {
+		log( LOG_WARN, "admin: Loaded %" PRId32" corrupted recs in tree for %s.", m_corrupt, m_dbname );
+	}
 
 	// re-enable protection
 	if ( m_useProtection ) protect();
@@ -2818,7 +2831,7 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 	m_nextNode      = nextNode;
 	m_minUnusedNode = minUnusedNode;
 	// info
-	//log(0,"RdbTree::fastLoad: loaded %"INT32" nodes", m_numUsedNodes );
+	//log(0,"RdbTree::fastLoad: loaded %" PRId32" nodes", m_numUsedNodes );
 	// close it
 	//f->close();
 	// check it
@@ -2841,7 +2854,7 @@ bool RdbTree::fastLoad ( BigFile *f , RdbMem *stack ) {
 			//deleteNode3 ( i , true ); // freeData?
 			//goto again;
 		}
-		log("REMOVED %"INT32"",count);
+		log("REMOVED %" PRId32"",count);
 		if ( ! checkTree( false ) ) return fixTree ( );
 	}
 	*/
@@ -2858,7 +2871,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 	int32_t n = totalNodes - start;
 	if ( n > BLOCK_SIZE ) n = BLOCK_SIZE;
 	// debug msg
-	//log("reading block at %"INT64", %"INT32" nodes",
+	//log("reading block at %" PRId64", %" PRId32" nodes",
 	//     f->m_currentOffset, n );
 	int64_t oldOffset = offset;
 	// . copy them in
@@ -2944,13 +2957,13 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 	char *dummy = NULL;
 	char *buf = (char *) stack->allocData ( dummy , bufSize , 0 );
 	if ( ! buf ) {
-	        log( LOG_ERROR, "db: Failed to allocate %" INT32" bytes to read %s. Increase tree size for it in gb.conf.",
+	        log( LOG_ERROR, "db: Failed to allocate %" PRId32" bytes to read %s. Increase tree size for it in gb.conf.",
 	             bufSize,f->getFilename());
 		return -1;
 	}
 
 	// debug
-	//log("reading %"INT32" bytes of raw rec data", bufSize );
+	//log("reading %" PRId32" bytes of raw rec data", bufSize );
 	// establish end point
 	char *bufEnd = buf + bufSize;
 	// . read all into that buf
@@ -2970,7 +2983,7 @@ int32_t RdbTree::fastLoadBlock ( BigFile *f, int32_t start, int32_t totalNodes, 
 		// ensure we have the room
 		if ( buf + size > bufEnd ) {
 			g_errno = EBADFILE;
-			log( LOG_ERROR, "db: Encountered record with corrupted size parameter of %" INT32" in %s.",
+			log( LOG_ERROR, "db: Encountered record with corrupted size parameter of %" PRId32" in %s.",
 			     size, f->getFilename() );
 			return -1;
 		}
@@ -3020,7 +3033,7 @@ void RdbTree::cleanTree ( ) { // char **bases ) {
 
 	// print it
 	if ( count == 0 ) return;
-	log(LOG_LOGIC,"db: Removed %"INT32" records from %s tree for invalid "
+	log(LOG_LOGIC,"db: Removed %" PRId32" records from %s tree for invalid "
 	    "collection number %i.",count,m_dbname,collnum);
 	//log(LOG_LOGIC,"db: Records not actually removed for safety. Except "
 	//    "for those with negative colnums.");
