@@ -45,7 +45,6 @@ class RdbList {
  public:
 
 	// IndexList sees keys as termId/score/docId tuples
-	friend class IndexList; // this class is derived from RdbList
 	friend class RdbScan;   // for hacking to make first key read 12 bytes
 	friend class RdbDump;   // for hacking m_listPtrHi/m_listPtr
 	friend class RdbMap;    // for call to RdbList::setListPtr()

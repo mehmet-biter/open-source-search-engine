@@ -97,8 +97,6 @@ public:
 		return 0;
 	};
 
-	char getSampleSimilarity ( char *vec0 , char *vec1 , int32_t size );
-
 private:
 	// this rdb holds urls waiting to be spidered or being spidered
 	Rdb m_rdb;
