@@ -10131,7 +10131,7 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "log trace info for Dns";
-	m->m_cgi   = "ltrc_bf";
+	m->m_cgi   = "ltrc_dns";
 	m->m_off   = offsetof(Conf,m_logTraceDns);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
@@ -10140,7 +10140,7 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "log trace info for File";
-	m->m_cgi   = "ltrc_bf";
+	m->m_cgi   = "ltrc_file";
 	m->m_off   = offsetof(Conf,m_logTraceFile);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
