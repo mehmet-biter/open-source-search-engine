@@ -922,11 +922,14 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 			gbmemcpy( encodedDomStart, "xn--", 4 );
 			encodedDomStart += 4;
 
+			encodedLen = MAX_URL_LEN - (encodedDomStart - encoded);
 			punycode_status status = punycode_encode( tmpLen, tmpBuf, NULL, &encodedLen, encodedDomStart );
 
 			if ( status != 0 ) {
 				// Give up? try again?
-				log( "build: Bad Engineer, failed to punycode international url %s", t );
+				log("build: Bad Engineer, failed to "
+				    "punycode international url %s (%" PRId32 ")",
+				    t, (int32_t)status);
 				return;
 			}
 
