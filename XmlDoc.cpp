@@ -22083,7 +22083,7 @@ char *XmlDoc::getFragVec ( ) {
 
 	setStatus("getting frag vec");
 
-	Words *words = getWords();
+	const Words *words = getWords();
 	if ( ! words || words == (Words *)-1 ) return (char *)words;
 	Bits *bits = getBits();
 	if ( ! bits ) return NULL;
@@ -22091,7 +22091,7 @@ char *XmlDoc::getFragVec ( ) {
 	m_fragBuf.purge();
 
 	// ez vars
-	int64_t  *wids  = words->getWordIds ();
+	const int64_t *wids  = words->getWordIds ();
 	int32_t        nw    = words->getNumWords();
 
 	// if no words, nothing to do
