@@ -5,6 +5,8 @@
 #include "Msg0.h"
 #include "Msg1.h"
 
+class SearchInput;
+
 // 90MB for 32 nodes we got now with about 1.3B docs
 #define DEFAULT_POSDB_READSIZE 90000000
 
@@ -38,6 +40,7 @@ public:
 	// . this might ADJUST m_si->m_q.m_termFreqs[] to be more accurate
 	// . NOTE: Msg39Request MUST NOT BE ON THE STACK! keep it persistent!
 	bool getDocIds ( Msg39Request *r          ,
+			 const SearchInput *si,
 			 Query        *q          ,
 			 void         *state      ,
 			 void        (* callback) ( void *state ) ,

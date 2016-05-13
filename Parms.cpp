@@ -4070,6 +4070,18 @@ void Parms::init ( ) {
 	m->m_flags = PF_API;
 	m++;
 
+	m->m_title = "ask other shards";
+	m->m_desc  = "Ask othre shards. if disabled only results from the local shard will be returned.";
+	m->m_cgi   = "aos";
+	m->m_off   = offsetof(SearchInput,m_askOtherShards);
+	m->m_type  = TYPE_BOOL;
+	m->m_page  = PAGE_RESULTS;
+	m->m_obj   = OBJ_SI;
+	m->m_def   = "1";
+	m->m_group = false;
+	m->m_flags = PF_API;
+	m++;
+
 
 	m->m_title = "dedup results";
 	m->m_desc  = "Should duplicate search results be removed? This is "

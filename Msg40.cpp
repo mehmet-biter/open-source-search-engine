@@ -389,7 +389,7 @@ bool Msg40::federatedLoop ( ) {
 		// and Msg40::m_si points to that. so State0's destructor
 		// should call SearchInput's destructor which calls
 		// Query's destructor to destroy &m_si->m_q here when done.
-		if(!mp->getDocIds(&mp->m_rrr,&m_si->m_q,this,gotDocIdsWrapper))
+		if(!mp->getDocIds(&mp->m_rrr,m_si,&m_si->m_q,this,gotDocIdsWrapper))
 			continue;
 		if ( g_errno && ! m_errno ) 
 			m_errno = g_errno;

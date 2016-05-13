@@ -6,6 +6,8 @@
 
 #include "Stats.h"
 #include "HashTableT.h"
+#include "SearchInput.h"
+
 
 static void gotReplyWrapper3a     ( void *state , void *state2 ) ;
 
@@ -134,6 +136,7 @@ static key_t makeKey ( int64_t termId, unsigned char score, uint64_t docId, bool
 //   Msg16::computeQuality(), but rather deserialize it from the TitleRec.
 //   Computing the link info takes a lot of time as well.
 bool Msg3a::getDocIds ( Msg39Request *r          ,
+			const SearchInput *si,
 			Query        *q          ,
 			void         *state      ,
 			void        (* callback) ( void *state ),
@@ -329,6 +332,7 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 	// only send to one host?
 	if ( ! m_q->isSplit() ) totalNumHosts = 1;
 
+
 	// now we run it over ALL hosts that are up!
 	for ( int32_t i = 0; i < totalNumHosts ; i++ ) { // m_indexdbSplit; i++ ) {
 		// get that host
@@ -391,6 +395,10 @@ bool Msg3a::getDocIds ( Msg39Request *r          ,
 			continue;
 		}
 
+		if ( si && !si->m_askOtherShards && h!=g_hostdb.getMyHost()) {
+			m_numReplies++;
+			continue;
+		}
 
 		// . send out a msg39 request to each shard
 		// . multicasts to a host in group "groupId"

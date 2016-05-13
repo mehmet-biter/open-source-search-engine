@@ -152,6 +152,8 @@ public:
 
 	char   m_hideAllClustered;
 
+	char   m_askOtherShards;
+	
 	// ranking algos
 	char   m_doMaxScoreAlgo;
 
