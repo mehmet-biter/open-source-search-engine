@@ -1003,15 +1003,15 @@ int64_t RdbMap::getRecSizes ( int32_t startPage ,
 
 // if page has relative offset of -1, use the next page
 int64_t RdbMap::getAbsoluteOffset ( int32_t page ) {
- top:
-	if ( page >= m_numPages ) return m_offset; // fileSize
-	int64_t offset =
-		(int64_t)getOffset(page) +
-		(int64_t)m_pageSize * (int64_t)page;
-	if ( getOffset(page) != -1 ) return offset + m_fileStartOffset;
-	// just use end of page if in the middle of a record
-	while ( page < m_numPages && getOffset(page) == -1 ) page++;
-	goto top;
+	for(;;) {
+		if ( page >= m_numPages ) return m_offset; // fileSize
+		int64_t offset = (int64_t)getOffset(page) +
+		                 (int64_t)m_pageSize * (int64_t)page;
+		if ( getOffset(page) != -1 ) return offset + m_fileStartOffset;
+		// just use end of page if in the middle of a record
+		while ( page < m_numPages && getOffset(page) == -1 )
+			page++;
+	}
 }
 
 // . get offset of next known key after the one in page
@@ -1724,25 +1724,25 @@ bool RdbMap::truncateFile ( BigFile *f )
 	char buf [100000];
 	int64_t off = m_offset;
 	
- loop:
-	int32_t readSize = fileSize - off;
-	if ( readSize > 100000 ) readSize = 100000;
+	do {
+		int32_t readSize = fileSize - off;
+		if ( readSize > 100000 ) readSize = 100000;
+
+		f->read ( buf , readSize , off );
+		if ( ! f->read ( buf , readSize , off ) )
+		{
+			log(LOG_ERROR,"%s:%s:%d: Failed to read %"INT32" bytes of [%s] at offset=%"INT64".",
+				__FILE__, __func__, __LINE__, readSize, f->getFilename(), off);
+			return false;
+		}
 		
-	f->read ( buf , readSize , off );
-	if ( ! f->read ( buf , readSize , off ) ) 
-	{
-		log(LOG_ERROR,"%s:%s:%d: Failed to read %"INT32" bytes of [%s] at offset=%"INT64".",
-			   __FILE__, __func__, __LINE__, readSize, f->getFilename(), off);
-		return false;
-	}
-	
-	// count the zero bytes
-	for ( int32_t i = 0 ; i < readSize ; i++ )
-		if ( buf[i] == 0 ) count++;
-			
-	// read more if we can
-	off += readSize;
-	if ( off < fileSize ) goto loop;
+		// count the zero bytes
+		for ( int32_t i = 0 ; i < readSize ; i++ )
+			if ( buf[i] == 0 ) count++;
+				
+		// read more if we can
+		off += readSize;
+	} while( off < fileSize );
 		
 	// remove those from the size of the tail
 	tail -= count;
