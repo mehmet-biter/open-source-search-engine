@@ -38,10 +38,7 @@ public:
 	// . return length
 	char *getPhrase(int32_t i, int32_t *phrLen);
 
-	int32_t getNumWordsInPhrase2( int32_t i ) {
-		return m_numWordsTotal2[i];
-	}
-	const int32_t getNumWordsInPhrase2( int32_t i ) const {
+	int32_t getNumWordsInPhrase2( int32_t i ) const {
 		return m_numWordsTotal2[i];
 	}
 
