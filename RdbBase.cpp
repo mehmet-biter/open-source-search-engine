@@ -579,12 +579,30 @@ int32_t RdbBase::addFile ( int32_t id, bool isNew, int32_t mergeNum, int32_t id2
 
 	f->set ( getDir() , name , NULL ); // g_conf.m_stripeDir );
 
-	// if new insure does not exist
+	// if new ensure does not exist
 	if ( isNew && f->doesExist() ) {
-		log( LOG_WARN, "rdb: creating NEW file %s/%s which already exists!", f->getDir(), f->getFilename() );
-		mdelete ( f , sizeof(BigFile),"RdbBFile");
-		delete (f); 
-		return -1;
+		log(LOG_WARN, "rdb: creating NEW file %s/%s which already exists!",
+		    f->getDir(),
+		    f->getFilename());
+		// if length is NOT 0 then that sucks, just return
+		if ( f->getFileSize() != 0 ) {
+			mdelete ( f, sizeof(BigFile), "RdbBFile");
+			delete f; 
+			return -1;
+			char *xx=NULL;*xx=0;
+		}
+		// otherwise, move it to the trash
+		SafeBuf cmd;
+		cmd.safePrintf("mv %s/%s %s/trash/",
+			       f->getDir(),
+			       f->getFilename(),
+			       g_hostdb.m_dir);
+		log("rdb: %s",cmd.getBufStart() );
+		gbsystem ( cmd.getBufStart() );
+		// ok, now re-set it since it is no longer there
+		f->reset();
+		// and set it again
+		f->set ( getDir() , name , NULL );
 	}
 
 
