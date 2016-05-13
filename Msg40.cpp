@@ -305,6 +305,7 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_doDupContentRemoval       = m_si->m_doDupContentRemoval ;
 	mr.m_queryExpansion            = m_si->m_queryExpansion; 
 	mr.m_familyFilter              = m_si->m_familyFilter        ;
+	mr.m_allowHighFrequencyTermCache = m_si->m_allowHighFrequencyTermCache;
 	mr.m_language                  = (unsigned char)m_si->m_queryLangId;
 	mr.ptr_query                   = m_si->m_q.m_orig;
 	mr.size_query                  = m_si->m_q.m_origLen+1;

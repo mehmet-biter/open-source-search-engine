@@ -104,6 +104,7 @@ class Msg39Request {
 	char    m_realMaxTop;
 	char    m_stripe;
 	char    m_useQueryStopWords;
+	char    m_allowHighFrequencyTermCache;
 	char    m_doMaxScoreAlgo;
 
 	collnum_t m_collnum;

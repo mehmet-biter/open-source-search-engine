@@ -4918,6 +4918,16 @@ void Parms::init ( ) {
 	m->m_cgi   = "ff";
 	m++;
 
+	m->m_title = "Use high-freq term cache";
+	m->m_desc  = "Remove objectionable results if this is enabled.";
+	m->m_cgi   = "highfreqtermcache";
+	m->m_def   = "1";
+	m->m_off   = offsetof(SearchInput,m_allowHighFrequencyTermCache);
+	m->m_type  = TYPE_BOOL;
+	m->m_page  = PAGE_RESULTS;
+	m->m_obj   = OBJ_SI;
+	m++;
+
 
 	m->m_title = "highlight query terms in summaries";
 	m->m_desc  = "Use to disable or enable "

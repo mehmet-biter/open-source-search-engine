@@ -145,6 +145,7 @@ public:
 	char   m_showBanned;
 	int32_t   m_includeCachedCopy;
 	char   m_familyFilter;            // msg40
+	char   m_allowHighFrequencyTermCache;
 	char   m_showErrors;
 	char   m_doSiteClustering;        // msg40
 	char   m_doDupContentRemoval;     // msg40
