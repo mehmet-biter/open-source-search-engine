@@ -997,26 +997,38 @@ static void doneDumpingCollWrapper ( void *state ) ;
 // . start dumping the tree
 // . returns false and sets g_errno on error
 bool Rdb::dumpTree ( int32_t niceness ) {
+	logTrace( g_conf.m_logTraceRdb, "BEGIN %s", m_dbname );
+
 	if ( m_useTree ) {
-		if (m_tree.getNumUsedNodes() <= 0 ) return true;
+		if (m_tree.getNumUsedNodes() <= 0 ) {
+			logTrace( g_conf.m_logTraceRdb, "END. %s: No used tree nodes. Returning true", m_dbname );
+			return true;
+		}
+	} else if (m_buckets.getNumKeys() <= 0 ) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: No bucket keys. Returning true", m_dbname );
+		return true;
 	}
-	else if (m_buckets.getNumKeys() <= 0 ) return true;
 
 	// never dump doledb any more. it's rdbtree only.
-	if ( m_rdbId == RDB_DOLEDB )
+	if ( m_rdbId == RDB_DOLEDB ) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: Rdb is doledb. Returning true", m_dbname );
 		return true;
+	}
 
 	// if we are in a quickpoll do not initiate dump.
 	// we might have been called by handleRequest4 with a niceness of 0
 	// which was niceness converted from 1
-	if ( g_loop.m_inQuickPoll ) return true;
-
-	// sanity checks
-	if (   g_loop.m_inQuickPoll ) { char *xx=NULL;*xx=0; }
+	if ( g_loop.m_inQuickPoll ) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: In quick poll. Returning true", m_dbname );
+		return true;
+	}
 	
 	// bail if already dumping
 	//if ( m_dump.isDumping() ) return true;
-	if ( m_inDumpLoop ) return true;
+	if ( m_inDumpLoop ) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: Already dumping. Returning true", m_dbname );
+		return true;
+	}
 
 	// don't allow spiderdb and titledb to dump at same time
 	// it seems to cause corruption in rdbmem for some reason
@@ -1028,30 +1040,37 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	// . if tree is saving do not dump it, that removes things from tree
 	// . i think this caused a problem messing of RdbMem before when
 	//   both happened at once
-	if ( m_useTree) { if(m_tree.m_isSaving ) return true; }
-	else if(m_buckets.isSaving()) return true;
+	if ( m_useTree ) {
+		if( m_tree.m_isSaving ) {
+			logTrace( g_conf.m_logTraceRdb, "END. %s: Rdb tree is saving. Returning true", m_dbname );
+			return true;
+		}
+	} else if( m_buckets.isSaving() ) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: Rdb bucket is saving. Returning true", m_dbname );
+		return true;
+	}
+
 	// . if Process is saving, don't start a dump
-	if ( g_process.m_mode == SAVE_MODE ) return true;
+	if ( g_process.m_mode == SAVE_MODE ) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: Process is in save mode. Returning true", m_dbname );
+		return true;
+	}
 
 	// if it has been less than 3 seconds since our last failed attempt
 	// do not try again to avoid flooding our log
-	if ( getTime() - s_lastTryTime < 3 ) return true;
+	if ( getTime() - s_lastTryTime < 3 ) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: Less than 3 seconds since last attempt. Returning true", m_dbname );
+		return true;
+	}
 
 	// don't dump if not 90% full
 	if ( ! needsDump() ) {
-		log(LOG_INFO,
-		    "db: %s tree not 90 percent full but dumping.",m_dbname);
+		log(LOG_INFO, "db: %s tree not 90 percent full but dumping.",m_dbname);
 		//return true;
 	}
 
 	// reset g_errno -- don't forget!
 	g_errno = 0;
-
-	// get max number of files
-	int32_t max = MAX_RDB_FILES - 2;
-
-	// but less if titledb, because it uses a tfn
-	if ( m_isTitledb && max > 240 ) max = 240;
 
 	// . wait for all unlinking and renaming activity to flush out
 	// . we do not want to dump to a filename in the middle of being
@@ -1063,14 +1082,17 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 		// get the process killed
 		s_lastTryTime = getTime();
 		// now log a message
-		if ( g_numThreads > 0 )
-		      log(LOG_INFO,"db: Waiting for previous unlink/rename "
-			  "operations to finish before dumping %s.",m_dbname);
-		else
-		      log("db: Failed to dump %s: %s.",
-			  m_dbname,mstrerror(g_errno));
+		if ( g_numThreads > 0 ) {
+			log( LOG_INFO, "db: Waiting for previous unlink/rename operations to finish before dumping %s.", m_dbname );
+		} else {
+			log( LOG_WARN, "db: Failed to dump %s: %s.", m_dbname, mstrerror( g_errno ) );
+		}
+
+		logTrace( g_conf.m_logTraceRdb, "END. %s: g_error=%s or g_numThreads=%d. Returning false",
+		          m_dbname, mstrerrno( g_errno), g_numThreads );
 		return false;
 	}
+
 	// remember niceness for calling setDump()
 	m_niceness = niceness;
 
@@ -1085,21 +1107,21 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 
 	// do not do chain testing because that is too slow
 	if ( m_useTree && ! m_tree.checkTree ( false /* printMsgs?*/, false/*chain?*/) ) {
-		log("db: %s tree was corrupted in memory. Trying to fix. "
-		    "Your memory is probably bad. Please replace it.",
-		    m_dbname);
+		log( LOG_ERROR, "db: %s tree was corrupted in memory. Trying to fix. Your memory is probably bad. "
+		     "Please replace it.", m_dbname);
 
 		// if fix failed why even try to dump?
 		if ( ! m_tree.fixTree() ) {
 			// only try to dump every 3 seconds
 			s_lastTryTime = getTime();
-			return log("db: Could not fix in memory data for %s. "
-				   "Abandoning dump.",m_dbname);
+			log( LOG_ERROR, "db: Could not fix in memory data for %s. Abandoning dump.", m_dbname );
+			logTrace( g_conf.m_logTraceRdb, "END. %s: Unable to fix tree. Returning false", m_dbname );
+			return false;
 		}
 	}
-	log(LOG_INFO,
-	    "db: Checking validity of in memory data of %s before dumping, "
-	    "took %"INT64" ms.",m_dbname,gettimeofdayInMilliseconds()-start);
+
+	log( LOG_INFO, "db: Checking validity of in memory data of %s before dumping, "
+	     "took %"INT64" ms.",m_dbname,gettimeofdayInMilliseconds()-start );
 
 	////
 	//
@@ -1117,19 +1139,25 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 		// now scan the rdbtree and inc treecount where appropriate
 		for ( int32_t i = 0 ; i < m_tree.m_minUnusedNode ; i++ ) {
 			// skip node if parents is -2 (unoccupied)
-			if ( m_tree.m_parents[i] == -2 ) continue;
+			if ( m_tree.m_parents[i] == -2 ) {
+				continue;
+			}
+
 			// get rec from tree collnum
 			cr = g_collectiondb.m_recs[m_tree.m_collnums[i]];
-			if ( cr ) cr->m_treeCount++;
+			if ( cr ) {
+				cr->m_treeCount++;
+			}
 		}
-	}
-	else {
+	} else {
 		for(int32_t i = 0; i < m_buckets.m_numBuckets; i++) {
 			RdbBucket *b = m_buckets.m_buckets[i];
 			collnum_t cn = b->getCollnum();
 			int32_t nk = b->getNumKeys();
 			cr = g_collectiondb.m_recs[cn];
-			if ( cr ) cr->m_treeCount += nk;
+			if ( cr ) {
+				cr->m_treeCount += nk;
+			}
 		}
 	}
 
@@ -1139,21 +1167,34 @@ bool Rdb::dumpTree ( int32_t niceness ) {
 	g_errno = 0;
 	m_dumpErrno = 0;
 	m_fn = -1000;
+
 	// this returns false if blocked, which means we're ok, so we ret true
-	if ( ! dumpCollLoop ( ) ) return true;
+	if ( ! dumpCollLoop ( ) ) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: dumpCollLoop blocked. Returning true", m_dbname );
+		return true;
+	}
+
 	// if it returns true with g_errno set, there was an error
-	if ( g_errno ) return false;
+	if ( g_errno ) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: dumpCollLoop g_error=%s. Returning false", m_dbname, mstrerrno( g_errno) );
+		return false;
+	}
+
 	// otherwise, it completed without blocking
 	doneDumping();
+
+	logTrace( g_conf.m_logTraceRdb, "END. %s: Done dumping. Returning true", m_dbname );
 	return true;
 }
 
 // returns false if blocked, true otherwise
 bool Rdb::dumpCollLoop ( ) {
+	logTrace( g_conf.m_logTraceRdb, "BEGIN %s", m_dbname );
 
  loop:
 	// if no more, we're done...
 	if ( m_dumpCollnum >= getNumBases() ) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: No more. Returning true", m_dbname );
 		return true;
 	}
 
@@ -1170,20 +1211,23 @@ bool Rdb::dumpCollLoop ( ) {
 			}
 		}
 
-		log("build: Error dumping collection: %s.",mstrerror(g_errno));
+		log( LOG_ERROR, "build: Error dumping collection: %s.",mstrerror(g_errno));
 		// . if we wrote nothing, remove the file
 		// . if coll was deleted under us, base will be NULL!
 		if ( base &&   (! base->m_files[m_fn]->doesExist() ||
 		      base->m_files[m_fn]->getFileSize() <= 0) ) {
-			log("build: File %s is zero bytes, removing from "
-			    "memory.",base->m_files[m_fn]->getFilename());
+			log("build: File %s is zero bytes, removing from memory.",base->m_files[m_fn]->getFilename());
 			base->buryFiles ( m_fn , m_fn+1 );
 		}
+
 		// game over, man
 		doneDumping();
 		// update this so we don't try too much and flood the log
 		// with error messages
 		s_lastTryTime = getTime();
+
+		logTrace( g_conf.m_logTraceRdb, "END. %s: Done dumping with g_errno=%s. Returning true",
+		          m_dbname, mstrerrno( g_errno ) );
 		return true;
 	}
 
@@ -1220,7 +1264,7 @@ bool Rdb::dumpCollLoop ( ) {
 
 	// hwo can this happen? error swappingin?
 	if ( ! base ) { 
-		log("rdb: dumpcollloop base was null for cn=%"INT32"", (int32_t)m_dumpCollnum);
+		log( LOG_WARN, "rdb: dumpcollloop base was null for cn=%"INT32"", (int32_t)m_dumpCollnum);
 		goto hadError;
 	}
 
@@ -1243,7 +1287,7 @@ bool Rdb::dumpCollLoop ( ) {
 	static int32_t s_flag = 0;
 	if ( base->m_numFiles + 1 >= MAX_RDB_FILES ) {
 		if ( s_flag < 10 )
-			log("db: could not dump tree to disk for cn="
+			log( LOG_WARN, "db: could not dump tree to disk for cn="
 			    "%i %s because it has %"INT32" files on disk. "
 			    "Need to wait for merge operation.",
 			    (int)m_dumpCollnum,m_dbname,base->m_numFiles);
@@ -1276,8 +1320,7 @@ bool Rdb::dumpCollLoop ( ) {
 		numRecs = m_tree.getNumUsedNodes(); 
 		if ( numRecs <= 0 ) numRecs = 1;
 		avgSize = m_tree.getMemOccupiedForList() / numRecs;
-	} 
-	else {
+	} else {
 		numRecs = m_buckets.getNumKeys();
 		avgSize = m_buckets.getRecSize();
 	}
@@ -1356,6 +1399,7 @@ bool Rdb::dumpCollLoop ( ) {
 			     NULL,
 			     maxFileSize    ,
 			     this           )) {// for setting m_needsToSave
+		logTrace( g_conf.m_logTraceRdb, "END. %s: RdbDump blocked. Returning false", m_dbname );
 		return false;
 	}
 
@@ -1421,8 +1465,13 @@ void doneDumpingCollWrapper ( void *state ) {
 	//RdbBase *base = THIS->getBase(THIS->m_dumpCollnum);
 	//if ( base ) base->m_checkedForMerge = false;
 
+	logTrace( g_conf.m_logTraceRdb, "%s", THIS->m_dbname );
+
 	// return if the loop blocked
-	if ( ! THIS->dumpCollLoop() ) return;
+	if ( ! THIS->dumpCollLoop() ) {
+		return;
+	}
+
 	// otherwise, call big wrapper
 	THIS->doneDumping();
 }
@@ -1590,8 +1639,7 @@ void attemptMergeAll2 ( ) {
 
 // . return false and set g_errno on error
 // . TODO: speedup with m_tree.addSortedKeys() already partially written
-bool Rdb::addList ( collnum_t collnum , RdbList *list,
-		    int32_t niceness/*, bool isSorted*/ ) {
+bool Rdb::addList ( collnum_t collnum , RdbList *list, int32_t niceness/*, bool isSorted*/ ) {
 	// pick it
 	if ( collnum < 0 || collnum > getNumBases() || ! getBase(collnum) ) {
 		g_errno = ENOCOLLREC;
@@ -1670,16 +1718,23 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 
 		// force initiate the dump now, but not if we are niceness 0
 		// because then we can't be interrupted with quickpoll!
-		if ( niceness != 0 ) dumpTree( 1/*niceness*/ );
+		if ( niceness != 0 ) {
+			logTrace( g_conf.m_logTraceRdb, "%s: Not enough room. Calling dumpTree", m_dbname );
+			dumpTree( 1/*niceness*/ );
+		}
+
 		// set g_errno after intiating the dump!
-		g_errno = ETRYAGAIN; 
+		g_errno = ETRYAGAIN;
+
 		// return false since we didn't add the list
 		return false;
 	}
 
 	// otherwise, add one record at a time
 	// unprotect tree from writes
-	if ( m_tree.m_useProtection ) m_tree.unprotect ( );
+	if ( m_tree.m_useProtection ) {
+		m_tree.unprotect ( );
+	}
 
 	do {
 		char key[MAX_KEY_BYTES];
@@ -1713,7 +1768,10 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 			// force initiate the dump now if addRecord failed for no mem
 			if ( g_errno == ENOMEM ) {
 				// start dumping the tree to disk so we have room 4 add
-				if ( niceness != 0 ) dumpTree( 1/*niceness*/ );
+				if ( niceness != 0 ) {
+					logTrace( g_conf.m_logTraceRdb, "%s: Not enough memory. Calling dumpTree", m_dbname );
+					dumpTree( 1/*niceness*/ );
+				}
 				// tell caller to try again later (1 second or so)
 				g_errno = ETRYAGAIN;
 			}
@@ -1738,13 +1796,24 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 	m_inAddList = false;
 
 	// if tree is >= 90% full dump it
-	if ( m_dump.isDumping() ) return true;
+	if ( m_dump.isDumping() ) {
+		logTrace( g_conf.m_logTraceRdb, "END. %s: is already dumping. Returning true", m_dbname );
+		return true;
+	}
 
 	// return true if not ready for dump yet
-	if ( ! needsDump () ) return true;
+	if ( ! needsDump () ) {
+		//logTrace( g_conf.m_logTraceRdb, "END. %s: doesn't need dump. Returning true", m_dbname );
+		return true;
+	}
 
 	// if dump started ok, return true
-	if ( niceness != 0 ) if ( dumpTree( 1/*niceness*/ ) ) return true;
+	if ( niceness != 0 ) {
+		if ( dumpTree( 1/*niceness*/ ) ) {
+			logTrace( g_conf.m_logTraceRdb, "END. %s: dumped tree. Returning true", m_dbname );
+			return true;
+		}
+	}
 
 	// technically, since we added the record, it is not an error
 	g_errno = 0;
@@ -1758,20 +1827,30 @@ bool Rdb::addList ( collnum_t collnum , RdbList *list,
 }
 
 bool Rdb::needsDump ( ) {
-	if ( m_mem.is90PercentFull () ) return true;
-	if ( m_useTree) {if(m_tree.is90PercentFull() ) return true;}
-	else            if(m_buckets.needsDump() )     return true;
+	if ( m_mem.is90PercentFull () ) {
+		return true;
+	}
+
+	if ( m_useTree ) {
+		if ( m_tree.is90PercentFull() ) {
+			return true;
+		}
+	} else {
+		if ( m_buckets.needsDump() ) {
+			return true;
+		}
+	}
 
 	// if adding to doledb and it has been > 1 day then force a dump
 	// so that all the negative keys in the tree annihilate with the
 	// keys on disk to make it easier to read a doledb list
-	if ( m_rdbId != RDB_DOLEDB ) return false;
+	if ( m_rdbId != RDB_DOLEDB ) {
+		return false;
+	}
 
 	// or dump doledb if a ton of negative recs...
-	if ( m_tree.getNumNegativeKeys() > 50000 ) return true;
-
 	// otherwise, no need to dump doledb just yet
-	return false;
+	return ( m_tree.getNumNegativeKeys() > 50000 );
 }
 
 bool Rdb::hasRoom ( RdbList *list , int32_t niceness ) {
