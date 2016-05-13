@@ -69,7 +69,7 @@ class Words {
 
 	// . size of string from word #a up to and NOT including word #b
 	// . "b" can be m_numWords to mean up to the end of the doc
-	int32_t getStringSize( int32_t a, int32_t b ) {
+	int32_t getStringSize( int32_t a, int32_t b ) const {
 		// do not let it exceed this
 		if ( b >= m_numWords ) {
 			b = m_numWords;
@@ -101,18 +101,18 @@ class Words {
 		return m_wordIds [n];
 	}
 
-	bool isStopWord ( int32_t n ) {
+	bool isStopWord ( int32_t n ) const {
 		return ::isStopWord( m_words[n], m_wordLens[n], m_wordIds[n] );
 	}
 
-	bool isQueryStopWord ( int32_t n , int32_t langId ) {
+	bool isQueryStopWord ( int32_t n , int32_t langId ) const {
 		return ::isQueryStopWord( m_words[n], m_wordLens[n], m_wordIds[n], langId );
 	}
 
 	// . how many quotes in the nth word?
 	// . how many plusses in the nth word?
 	// . used exclusively by Query class for parsing query syntax
-	int32_t getNumQuotes( int32_t n ) {
+	int32_t getNumQuotes( int32_t n ) const {
 		int32_t count = 0;
 		for ( int32_t i = 0; i < m_wordLens[n]; i++ ) {
 			if ( m_words[n][i] == '\"' ) {
@@ -126,7 +126,7 @@ class Words {
 	// . do we have a ' ' 't' '\n' or '\r' in this word?
 	// . caller should not call this is isPunct(n) is false, pointless.
 
-	bool hasSpace( int32_t n ) {
+	bool hasSpace( int32_t n ) const {
 		for ( int32_t i = 0; i < m_wordLens[n]; i++ ) {
 			if ( is_wspace_utf8( &m_words[n][i] ) ) {
 				return true;
@@ -146,7 +146,7 @@ class Words {
 		return false;
 	}
 
-	bool isSpaces( int32_t n, int32_t starti = 0 ) {
+	bool isSpaces( int32_t n, int32_t starti = 0 ) const {
 		for ( int32_t i = starti; i < m_wordLens[n]; i++ ) {
 			if ( !is_wspace_utf8( &m_words[n][i] ) ) {
 				return false;
@@ -156,7 +156,7 @@ class Words {
 	}
 
 	// if this is set from xml, every word is either a word or an xml node
-	nodeid_t getTagId( int32_t n ) {
+	nodeid_t getTagId( int32_t n ) const {
 		if ( !m_tagIds ) {
 			return 0;
 		}
@@ -164,7 +164,7 @@ class Words {
 		return ( m_tagIds[n] & BACKBITCOMP );
 	}
 
-	bool isBackTag( int32_t n ) {
+	bool isBackTag( int32_t n ) const {
 		if ( !m_tagIds ) {
 			return false;
 		}
@@ -184,12 +184,16 @@ class Words {
 	// want the pure tagid!!!!
 	//
 	// CAUTION!!!
-	nodeid_t   *getTagIds  () { return m_tagIds; }
-	char      **getWords   () { return m_words; }
-	char      **getWordPtrs() { return m_words; }
-	int32_t       *getWordLens() { return m_wordLens; }
-	int64_t        *getWordIds ()       { return m_wordIds; }
-	const int64_t  *getWordIds () const { return m_wordIds; }
+	nodeid_t       *getTagIds()       { return m_tagIds; }
+	const nodeid_t *getTagIds() const { return m_tagIds; }
+	char           *       *getWords()       { return m_words; }
+	const char     * const *getWords() const { return (const char*const*)m_words; }
+	char           *       *getWordPtrs()       { return m_words; }
+	const char     * const *getWordPtrs() const { return (const char*const*)m_words; }
+	int32_t        *getWordLens()       { return m_wordLens; }
+	const int32_t  *getWordLens() const { return m_wordLens; }
+	int64_t        *getWordIds()       { return m_wordIds; }
+	const int64_t  *getWordIds() const { return m_wordIds; }
 
 	// 2 types of "words": punctuation and alnum
 	// isPunct() will return true on tags, too, so they are "punct"
@@ -201,7 +205,7 @@ class Words {
 		return true;
 	}
 
-	int32_t getAsLong ( int32_t n ) {
+	int32_t getAsLong ( int32_t n ) const {
 		// skip if no digit
 		if ( ! is_digit ( m_words[n][0] ) ) return -1;
 		return atol2(m_words[n],m_wordLens[n]); 
@@ -217,7 +221,7 @@ class Words {
 	}
 
 	// . are all alpha char capitalized?
-	bool      isUpper  ( int32_t n ) {
+	bool      isUpper  ( int32_t n ) const {
 		// skip if not alnum...
 		if ( m_wordIds[n] == 0LL ) {
 			return false;
@@ -240,7 +244,7 @@ class Words {
 		return true;
 	}
 
-	bool isCapitalized( int32_t n ) {
+	bool isCapitalized( int32_t n ) const {
 		if ( !is_alpha_utf8( m_words[n] ) ) {
 			return false;
 		}

@@ -163,7 +163,7 @@ bool initWordTable( HashTableX *table, char *words[],
 	return true;
 }
 
-bool isStopWord ( char *s , int32_t len , int64_t h ) {
+bool isStopWord ( const char *s , int32_t len , int64_t h ) {
 	if ( ! s_stopWordsInitialized ) {
 		s_stopWordsInitialized = 
 			initWordTable(&s_stopWordTable, s_stopWords, 
@@ -1983,7 +1983,7 @@ static bool       s_queryStopWordsInitialized = false;
 
 static char **s_queryStopWords2[MAXLANGID+1];
 
-bool isQueryStopWord ( char *s , int32_t len , int64_t h , int32_t langId ) {
+bool isQueryStopWord ( const char *s , int32_t len , int64_t h , int32_t langId ) {
 
 	// include a bunch of foreign prepositions so they don't get required
 	// by the bitScores in IndexTable.cpp
