@@ -8,16 +8,9 @@
 #include "Loop.h"
 #include "Rdb.h"
 
-//#define BUCKET_SIZE 64
-//#define BUCKET_SIZE 1024
-//#define BUCKET_SIZE 2048
-//#define BUCKET_SIZE 4096
 #define BUCKET_SIZE 8192
-//#define BUCKET_SIZE 16384
-//#define BUCKET_SIZE 1638400
 #define INIT_SIZE 4096
 #define SAVE_VERSION 0
-
 
 inline int KEYCMP12 ( const void *a, const void *b ) {
 	char* k1 = (char*)a;
@@ -32,8 +25,6 @@ inline int KEYCMP12 ( const void *a, const void *b ) {
 	if ( k1n0 > k2n0 ) return  1;
 	return 0;
 }
-
-
 
 inline int KEYCMP16 ( const void *a, const void *b ) {
 	char* k1 = (char*)a;
@@ -152,11 +143,9 @@ int32_t RdbBuckets::getMemOccupied() {
 		BUCKET_SIZE * m_recSize; //swapbuf
 }
 
-
 int32_t RdbBuckets::getMemAvailable() {
 	return m_maxMem - getMemOccupied();
 }
-
 
 bool RdbBuckets::is90PercentFull() {
 	return getMemOccupied () > m_maxMem * .9;
@@ -175,18 +164,12 @@ bool RdbBuckets::needsDump() {
 //add the whole list again.
 bool RdbBuckets::hasRoom ( int32_t numRecs ) {
 	int32_t numBucketsRequired = (((numRecs / BUCKET_SIZE)+1) * 2);
-	if(m_maxBucketsCapacity - m_numBuckets < numBucketsRequired) 
-		return false;
-	return true;
+	return ( m_maxBucketsCapacity - m_numBuckets >= numBucketsRequired );
 }
 
-
-
 bool RdbBucket::sort() {
-
 	//m_lastSorted = 0;//for debugging
 	if(m_lastSorted == m_numKeys) return true;
-
 
 	if(m_numKeys < 2) {
 		m_lastSorted = m_numKeys;
@@ -217,8 +200,7 @@ bool RdbBucket::sort() {
 	//we will be in while sorting
 	// MDW: this no longer disables it since it is based on g_niceness
 	// now, but what is the point, does it use static vars or what?
-	//bool canQuickpoll = g_loop.m_canQuickPoll;
-	//g_loop.m_canQuickPoll = false;
+
 	//sort the unsorted portion
 	// turn off this way
 	int32_t saved = g_niceness;
@@ -228,10 +210,8 @@ bool RdbBucket::sort() {
 	// . now we pass in a buffer to merge into, otherwise one is malloced,
 	// . which can fail.  It falls back on qsort which is not stable.
 	if(!m_parent->getSortBuf()) {char *xx = NULL; *xx = 0;}
-	gbmergesort (list2, numUnsorted , recSize , cmpfn, 0,
-		     m_parent->getSortBuf(), m_parent->getSortBufSize()); 
-	
-	//g_loop.m_canQuickPoll = canQuickpoll;
+	gbmergesort (list2, numUnsorted , recSize , cmpfn, 0, m_parent->getSortBuf(), m_parent->getSortBufSize());
+
 	g_niceness = saved;
 
 	char *p  = mergeBuf;
@@ -341,15 +321,12 @@ bool RdbBucket::sort() {
 //addKey assumes that the *this bucket retains the lower half of the keys
 //returns a new bucket with the remaining upper half.
 RdbBucket* RdbBucket::split(RdbBucket* newBucket) {
-
 	//	log(LOG_WARN, "splitting bucket");
 	int32_t b1NumKeys = m_numKeys >> 1; //m_numkeys / 2
 	int32_t b2NumKeys = m_numKeys - b1NumKeys;
 	int32_t recSize = m_parent->getRecSize();
 	//configure the new bucket
-	gbmemcpy(newBucket->m_keys, 
-	       m_keys + (b1NumKeys*recSize),
-	       b2NumKeys * recSize);
+	gbmemcpy(newBucket->m_keys, m_keys + (b1NumKeys*recSize), b2NumKeys * recSize);
 	newBucket->m_numKeys = b2NumKeys;
 	newBucket->m_lastSorted = b2NumKeys;
 	newBucket->m_endKey = newBucket->m_keys + ((b2NumKeys - 1) * recSize);
@@ -365,7 +342,6 @@ RdbBucket* RdbBucket::split(RdbBucket* newBucket) {
 
 
 bool RdbBucket::addKey(const char *key , char *data , int32_t dataSize) {
-
 	uint8_t ks = m_parent->getKeySize();
 	int32_t recSize = m_parent->getRecSize();
 	bool isNeg = KEYNEG(key);
@@ -388,8 +364,7 @@ bool RdbBucket::addKey(const char *key , char *data , int32_t dataSize) {
 	else {
 		// . minor optimization: if we are almost sorted, then
 		// . see if we can't maintain that state.
-		char v = KEYCMPNEGEQ(key, m_endKey, ks); 
-		//char v = KEYCMP(key, m_endKey, ks);
+		char v = KEYCMPNEGEQ(key, m_endKey, ks);
 		if(v == 0) {
 			// . just replace the old key if we were the same,
 			// . don't inc num keys
@@ -414,8 +389,7 @@ bool RdbBucket::addKey(const char *key , char *data , int32_t dataSize) {
 	return true;
 }
 
-char* RdbBucket::getKeyVal ( const char *key , char **data , int32_t* dataSize ) {
-
+char* RdbBucket::getKeyVal( const char *key , char **data , int32_t* dataSize ) {
 	sort();
 	int32_t i = getKeyNumExact(key);
 	if(i < 0) return NULL;
@@ -433,7 +407,6 @@ char* RdbBucket::getKeyVal ( const char *key , char **data , int32_t* dataSize )
 }
 
 int32_t RdbBucket::getKeyNumExact(const char* key) {
-
 	uint8_t ks = m_parent->getKeySize();
 	int32_t recSize = m_parent->getRecSize();
 	int32_t i = 0;
@@ -449,19 +422,15 @@ int32_t RdbBucket::getKeyNumExact(const char* key) {
 		if(v < 0) {
 			high = i - 1;
 			continue;
-		}
-		else if(v > 0) {
+		} else if(v > 0) {
 			low = i + 1;
 			continue;
+		} else {
+			return i;
 		}
-		else return i;
 	}
 	return -1;
 }
-
-
-
-
 
 bool RdbBucket::selfTest (char* prevKey) {
 	sort();
@@ -571,13 +540,14 @@ bool RdbBuckets::set( int32_t fixedDataSize , int32_t maxMem, bool ownData, cons
 	int32_t avail = m_maxMem - overhead;
 
 	m_maxBucketsCapacity = avail / perBucket;
+
 	if(m_maxBucketsCapacity <= 0) {
 		log( LOG_ERROR, "db: max memory for %s's buckets is way too small to accomodate even 1 bucket, "
 		     "reduce bucket size(%" PRId32") or increase max mem(%" PRId32")", m_dbname, (int32_t)BUCKET_SIZE, m_maxMem);
 		char *xx = NULL; *xx = 0;
 	}
 
-	if(!resizeTable(INIT_SIZE)) {
+	if( !resizeTable( INIT_SIZE ) ) {
 		g_errno = ENOMEM;
 		return false;
 	}
@@ -691,6 +661,8 @@ RdbBucket* RdbBuckets::bucketFactory() {
 }
 
 bool RdbBuckets::resizeTable( int32_t numNeeded ) {
+	logTrace( g_conf.m_logTraceRdbBuckets, "BEGIN. numNeeded=%" PRId32, numNeeded );
+
 	if ( numNeeded == m_maxBuckets ) {
 		return true;
 	}
@@ -1590,7 +1562,6 @@ int RdbBucket::getListSizeExact (const char* startKey, const char* endKey ) {
 		else break;
 	}
 
-
 	//keep track of our negative a positive recs
 	//int32_t numNeg = 0;
 	//int32_t numPos = 0;
@@ -1613,12 +1584,12 @@ int RdbBucket::getListSizeExact (const char* startKey, const char* endKey ) {
 	}
 
 	char* lastKey = NULL;
-	for(int32_t i = start; 
-	    i <= end ; //&& list->getListSize() < minRecSizes; 
+	for(int32_t i = start;
+	    i <= end ; //&& list->getListSize() < minRecSizes;
 	    i++, currKey += recSize) {
 		// if ( fixedDataSize == 0 ) {
 		// 	numRecs++;
-		// } 
+		// }
 		// else {
 		int32_t dataSize = fixedDataSize;
 		if ( fixedDataSize == -1 ) 
@@ -1682,8 +1653,8 @@ bool RdbBuckets::deleteList(collnum_t collnum, RdbList *list) {
 	//did we delete the whole darn thing?  
 	if(m_numBuckets == 0) {
 		if(m_numKeysApprox != 0) {
-			log("db: bucket's number of keys is getting off by %" PRId32""
-			    " after deleting a list", m_numKeysApprox);
+			log( LOG_ERROR, "db: bucket's number of keys is getting off by %" PRId32" after deleting a list",
+			     m_numKeysApprox );
 			char *xx = NULL; *xx = 0;
 		}
 		m_firstOpenSlot = 0;
@@ -1795,13 +1766,19 @@ void RdbBuckets::cleanBuckets ( ) {
 		RdbBucket *b = m_buckets[i];
 		collnum_t collnum = b->getCollnum();
 		CollectionRec *cr = NULL;
-		if ( collnum < g_collectiondb.m_numRecs ) 
-			cr = g_collectiondb.m_recs[collnum];
-		if ( cr ) continue;
+		if ( collnum < g_collectiondb.m_numRecs ) {
+			cr = g_collectiondb.m_recs[ collnum ];
+		}
+		if ( cr ) {
+			continue;
+		}
+
 		// count # deleted
 		count += b->getNumKeys();
+
 		// delete that coll
 		delColl ( collnum );
+
 		// restart
 		goto top;
 		/*
@@ -1815,18 +1792,11 @@ void RdbBuckets::cleanBuckets ( ) {
 	}
 
 	// print it
-	if ( count == 0 ) return;
-	log(LOG_LOGIC,"db: Removed %" PRId32" records from %s buckets "
-	    "for invalid collection numbers.",count,m_dbname);
-	//log(LOG_LOGIC,"db: Records not actually removed for safety. Except "
-	//    "for those with negative colnums.");
-	// static bool s_print = true;
-	// if ( ! s_print ) return;
-	// s_print = false;
-	// log (LOG_LOGIC,"db: This is bad. Did you remove a collection "
-	//      "subdirectory? Don't do that, you should use the \"delete "
-	//      "collections\" interface because it also removes records from "
-	//      "memory, too.");
+	if ( count == 0 ) {
+		return;
+	}
+
+	log( LOG_LOGIC, "db: Removed %" PRId32" records from %s buckets for invalid collection numbers.", count, m_dbname );
 }
 
 

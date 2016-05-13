@@ -5360,7 +5360,11 @@ void Parms::init ( ) {
 	m->m_cgi   = "asf";
 	m->m_off   = offsetof(Conf,m_autoSaveFrequency);
 	m->m_type  = TYPE_LONG;
+#ifndef PRIVACORE_TEST_VERSION
 	m->m_def   = "5";
+#else
+	m->m_def   = "1";
+#endif
 	m->m_units = "mins";
 	m->m_page  = PAGE_MASTER;
 	m->m_obj   = OBJ_CONF;
@@ -8370,7 +8374,7 @@ void Parms::init ( ) {
 #ifndef PRIVACORE_TEST_VERSION
 	m->m_def   = "350000000";
 #else
-	m->m_def   = "1000000";
+	m->m_def   = "20000000";
 #endif
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
@@ -8459,7 +8463,7 @@ void Parms::init ( ) {
 #ifndef PRIVACORE_TEST_VERSION
 	m->m_def   = "200000000";
 #else
-	m->m_def   = "1000000";
+	m->m_def   = "20000000";
 #endif
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
@@ -8509,7 +8513,7 @@ void Parms::init ( ) {
 #ifndef PRIVACORE_TEST_VERSION
 	m->m_def   = "101028000";
 #else
-	m->m_def   = "1000000";
+	m->m_def   = "20000000";
 #endif
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
@@ -8562,7 +8566,7 @@ void Parms::init ( ) {
 #ifndef PRIVACORE_TEST_VERSION
 	m->m_def   = "200000000";
 #else
-	m->m_def   = "1000000";
+	m->m_def   = "20000000";
 #endif
 	m->m_type  = TYPE_LONG;
 	m->m_flags = PF_NOSYNC|PF_NOAPI;
@@ -10258,6 +10262,15 @@ void Parms::init ( ) {
 	m->m_title = "log trace info for RdbBase";
 	m->m_cgi   = "ltrc_rb";
 	m->m_off   = offsetof(Conf,m_logTraceRdbBase);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
+	m->m_title = "log trace info for RdbBuckets";
+	m->m_cgi   = "ltrc_rbkts";
+	m->m_off   = offsetof(Conf,m_logTraceRdbBuckets);
 	m->m_type  = TYPE_BOOL;
 	m->m_def   = "0";
 	m->m_page  = PAGE_LOG;

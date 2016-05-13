@@ -20,7 +20,7 @@ ssize_t gbpwrite(int fd, const void *buf, size_t count, off_t offset);
 // . let's use 2GB now to conserve file descriptors
 #define MAX_PART_SIZE  (1920LL*1024LL*1024LL)
 #else
-#define MAX_PART_SIZE  (2LL*1024LL*1024LL)
+#define MAX_PART_SIZE  (20LL*1024LL*1024LL)
 #endif
 
 #define LITTLEBUFSIZE sizeof(File)
