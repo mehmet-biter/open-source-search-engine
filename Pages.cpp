@@ -244,7 +244,7 @@ static WebPage s_pages[] = {
 	{ PAGE_HEALTHCHECK, "health-check"   , 0 , "healthcheck" ,  0 , 0 ,
 	  "health check",
 	  sendPageHealthCheck  , 0 ,NULL,NULL,
-	  PG_NOAPI},
+	  PG_NOAPI|PG_ACTIVE},
 
 };
 
@@ -333,6 +333,7 @@ bool Pages::sendDynamicReply ( TcpSocket *s , HttpRequest *r , int32_t page ) {
 	if ( page == PAGE_ADDURL ) publicPage = true;
 	if ( page == PAGE_GET ) publicPage = true;
 	if ( page == PAGE_CRAWLBOT ) publicPage = true;
+	if ( page == PAGE_HEALTHCHECK ) publicPage = true;
 
 	// now use this...
 	bool isMasterAdmin = g_conf.isMasterAdmin ( s , r );
