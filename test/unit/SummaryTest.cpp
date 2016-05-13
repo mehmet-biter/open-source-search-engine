@@ -82,5 +82,5 @@ TEST (SummaryTest, StripSamePunct) {
 	Summary summary;
 	generateSummary(summary, input, "jesse budge", "http://www.example.com/");
 
-	EXPECT_STREQ("CANDRA BUDGE | $22.00 | ... | JESSE NICLEY | $34.00 ...", summary.getSummary());
+	EXPECT_STREQ("CANDRA BUDGE | $22.00 | … | JESSE NICLEY | $34.00 …", summary.getSummary());
 }
