@@ -1085,14 +1085,7 @@ int main2 ( int argc , char *argv[] ) {
 		//we should save gb.conf right ?
 		g_conf.m_save = true;
 
-		if ( ! g_loop.runLoop()    ) {
-			log( LOG_ERROR, "db: runLoop failed." );
-			return 1; 
-		}
-
-		// disable any further logging so final log msg is clear
-		g_log.m_disabled = true;
-		return 0;
+		g_loop.runLoop();
 	}
 
   	if ( strcmp ( cmd , "blaster" ) == 0 ) {
@@ -2294,13 +2287,7 @@ int main2 ( int argc , char *argv[] ) {
 	// . now start g_loops main interrupt handling loop
 	// . it should block forever
 	// . when it gets a signal it dispatches to a server or db to handle it
-	if ( ! g_loop.runLoop() ) {
-		log("db: runLoop failed." );
-		return 1;
-	}
-
-	// dummy return (0-->normal exit status for the shell)
-	return 0;
+	g_loop.runLoop();
 }
 
 int32_t checkDirPerms ( char *dir ) {
@@ -2361,10 +2348,9 @@ bool doCmd ( const char *cmd , int32_t hostId , const char *filename ,
 	// do not do sig alarms! for now just set this to null so
 	// the sigalarmhandler doesn't core
 	//g_hostdb.m_myHost = NULL;
+
 	// run the loop
-	if ( ! g_loop.runLoop() ) 
-		return log("INJECT: loop run failed.");
-	return true;
+	g_loop.runLoop();
 }
 
 [[ noreturn ]] void doneCmdAll ( void *state ) {
@@ -5624,13 +5610,7 @@ int injectFile ( char *filename , char *ips , char *coll ) {
 	}
 
 	// run the loop
-	if ( ! g_loop.runLoop() ) {
-		log( "build: inject: Loop run failed." );
-		return -1;
-	}
-
-	// dummy return
-	return 0;
+	g_loop.runLoop();
 }
 
 void doInject ( int fd , void *state ) {

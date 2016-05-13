@@ -743,7 +743,7 @@ void sighupHandler ( int x , siginfo_t *info , void *y ) {
 // . we have to call those every 1 second
 static int64_t s_lastTime = 0;
 
-bool Loop::runLoop ( ) {
+void Loop::runLoop ( ) {
 
 	// set of signals to watch for
 	sigset_t sigs0;

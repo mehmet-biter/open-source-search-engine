@@ -274,10 +274,7 @@ void Blaster::runBlaster(char *file1,char *file2,
 	// . now start g_loops main interrupt handling loop
 	// . it should block forever
 	// . when it gets a signal it dispatches to a server or db to handle it
-	if ( ! g_loop.runLoop()    ) {
-		log("blaster::runLoop failed" ); return; }
-	// dummy return (0-->normal exit status for the shell)
-	return;
+	g_loop.runLoop();
 }
 
 static void sleepWrapper ( int fd , void *state ) {

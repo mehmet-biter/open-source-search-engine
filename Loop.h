@@ -101,7 +101,7 @@ class Loop {
 	
 	// . call this to begin polling/selecting of all registed fds
 	// . returns false on error
-	bool runLoop();
+	[[ noreturn ]] void runLoop();
 
 	// . register this "fd" with "callback"
 	// . "callback" will be called when fd is ready for reading
