@@ -119,6 +119,7 @@ class Conf {
 	// rdb settings
 	// posdb
 	int64_t m_posdbFileCacheSize;
+	int32_t  m_posdbMaxTreeMem;
 
 	// tagdb
 	int64_t m_tagdbFileCacheSize;
@@ -132,6 +133,7 @@ class Conf {
 
 	// titledb
 	int64_t m_titledbFileCacheSize;
+	int32_t  m_titledbMaxTreeMem;
 
 	// spiderdb
 	int64_t m_spiderdbFileCacheSize;

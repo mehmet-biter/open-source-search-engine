@@ -37,13 +37,10 @@ bool Titledb::init ( ) {
 	d2 = getDomFast ( url , &dlen2 );
 	if ( dlen1 != dlen2 ) { char *xx=NULL;*xx=0; }
 
-
-	int64_t maxMem = 200000000;
-
 	// . what's max # of tree nodes?
 	// . assume avg TitleRec size (compressed html doc) is about 1k we get:
 	// . NOTE: overhead is about 32 bytes per node
-	int32_t maxTreeNodes  = maxMem  / (1*1024);
+	int32_t maxTreeNodes  = g_conf.m_titledbMaxTreeMem / (1*1024);
 
 	// initialize our own internal rdb
 	return m_rdb.init ( g_hostdb.m_dir              ,
@@ -52,15 +49,14 @@ bool Titledb::init ( ) {
 			    -1                          , // fixed record size
 			    //g_conf.m_titledbMinFilesToMerge ,
 			    // this should not really be changed...
-			    -1,//3,//230  minfilestomerge mintomerge
-			    maxMem, // g_conf.m_titledbMaxTreeMem  ,
+			    -1,
+			    g_conf.m_titledbMaxTreeMem  ,
 			    maxTreeNodes                ,
 			    // now we balance so Sync.cpp can ordered huge list
 			    true                        , // balance tree?
 			    // turn off cache for now because the page cache
 			    // is just as fast and does not get out of date
 			    // so bad??
-			    //0                         ,
 			    0,//g_conf.m_titledbMaxCacheMem ,
 			    0,//maxCacheNodes               ,
 			    false                       ,// half keys?
