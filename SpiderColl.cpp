@@ -224,7 +224,6 @@ bool SpiderColl::makeDoleIPTable ( ) {
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
-	Msg5 msg5b;
 	RdbList list;
  loop:
 	// use msg5 to get the list, should ALWAYS block since no threads
@@ -247,8 +246,7 @@ bool SpiderColl::makeDoleIPTable ( ) {
 			      0             , // retry num
 			      -1            , // maxRetries
 			      true          , // compensate for merge
-			      -1LL          , // sync point
-			      &msg5b        )){
+			      -1LL          )){ // sync point
 		log(LOG_LOGIC,"spider: getList did not block.");
 		return false;
 	}
@@ -321,7 +319,6 @@ bool SpiderColl::makeWaitingTree ( ) {
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
-	Msg5 msg5b;
 	RdbList list;
  loop:
 	// use msg5 to get the list, should ALWAYS block since no threads
@@ -344,8 +341,7 @@ bool SpiderColl::makeWaitingTree ( ) {
 			      0             , // retry num
 			      -1            , // maxRetries
 			      true          , // compensate for merge
-			      -1LL          , // sync point
-			      &msg5b        )){
+			      -1LL          )){ // sync point
 		log(LOG_LOGIC,"spider: getList did not block.");
 		return false;
 	}

@@ -1103,8 +1103,7 @@ bool Repair::scanRecs ( ) {
 			      0                , // retry num
 			      -1               , // maxRetries
 			      true             , // compensate for merge
-			      -1LL             , // sync point
-			      &m_msg5b         ))
+			      -1LL             )) // sync point
 		return true;
 	m_msg5InUse = true;
 	return false;

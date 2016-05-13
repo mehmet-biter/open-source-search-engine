@@ -5153,7 +5153,6 @@ RdbList *XmlDoc::getDupList ( ) {
 				-1 , // syncpoint
 				-1 , // preferlocal reads
 				NULL, // msg5
-				NULL, // msg5b
 				false , // isRealMerge
 				true , // allow page cache
 				false , // forcelocalindexdb

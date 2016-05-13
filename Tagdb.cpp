@@ -1093,7 +1093,6 @@ bool Tagdb::verify ( char *coll ) {
 	g_jobScheduler.disallow_new_jobs();
 
 	Msg5 msg5;
-	Msg5 msg5b;
 	RdbList list;
 	key128_t startKey;
 	key128_t endKey;
@@ -1121,7 +1120,6 @@ bool Tagdb::verify ( char *coll ) {
 			      -1            ,
 			      true          ,
 			      -1LL          ,
-			      &msg5b        ,
 			      true          )) {
 		g_jobScheduler.allow_new_jobs();
 		return log("tagdb: HEY! it did not block");

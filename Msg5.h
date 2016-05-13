@@ -57,7 +57,6 @@ class Msg5 {
 		       int32_t       maxRetries   = -1  ,
 		       bool       compensateForMerge = true ,
 		       int64_t      syncPoint = -1 ,
-		       class Msg5 *msg5b = NULL ,
 		       bool        isRealMerge = false ,
 		       bool        allowPageCache = true );
 
@@ -83,7 +82,6 @@ class Msg5 {
 		       int32_t       maxRetries   = -1  ,
 		       bool       compensateForMerge = true ,
 		       int64_t      syncPoint = -1 ,
-		       class Msg5 *msg5b = NULL ,
 		       bool        isRealMerge = false ,
 		       bool        allowPageCache = true ) {
 		return getList ( rdbId         ,
@@ -106,7 +104,6 @@ class Msg5 {
 				 maxRetries    ,
 				 compensateForMerge ,
 				 syncPoint     ,
-				 msg5b         ,
 				 isRealMerge   ,
 				 allowPageCache ); }
 

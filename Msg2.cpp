@@ -220,7 +220,6 @@ bool Msg2::getLists ( ) {
 					   -1, // maxretries
 					   true, // compensateformerge?
 					   -1, // syncpoint
-					   NULL, // msg5b
 					   false, // isrealmerge?
 					   true) ) { // allow disk page cache?
 			m_numRequests++;
@@ -331,7 +330,6 @@ bool Msg2::getLists ( ) {
 					   -1, // maxretries
 					   true, // compensateformerge?
 					   -1, // syncpoint
-					   NULL, // msg5b
 					   false, // isrealmerge?
 					   true ) ) { // allow disk page cache?
 			m_numRequests++;

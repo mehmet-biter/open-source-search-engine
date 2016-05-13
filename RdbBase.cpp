@@ -2101,7 +2101,6 @@ bool RdbBase::verifyFileSharding ( ) {
 	g_jobScheduler.disallow_new_jobs();
 
 	Msg5 msg5;
-	//Msg5 msg5b;
 	RdbList list;
 	char startKey[MAX_KEY_BYTES];
 	char endKey[MAX_KEY_BYTES];
@@ -2137,7 +2136,6 @@ bool RdbBase::verifyFileSharding ( ) {
 			      -1            ,
 			      true          ,
 			      -1LL          ,
-			      NULL          , // &msg5b        ,
 			      true          )) {
 		g_jobScheduler.allow_new_jobs();
 		return log("db: HEY! it did not block");

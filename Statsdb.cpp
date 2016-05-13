@@ -590,8 +590,7 @@ bool Statsdb::gifLoop ( ) {
 				    0		, // # retries
 				    -1		, // max # retries
 				    true	, // compensate for merge?
-				    -1		, // sync point
-				    NULL	) ) // msg5b
+				    -1		) ) // sync point
 			return false;
 		// . process list
 		// . returns false with g_errno set on error

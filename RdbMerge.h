@@ -126,7 +126,6 @@ class RdbMerge {
 
 	// a Msg5 for getting RdbLists from disk/cache
 	Msg5        m_msg5;
-	Msg5        m_msg5b;
 
 	RdbList     m_list;
 

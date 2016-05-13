@@ -314,7 +314,6 @@ bool Posdb::verify ( const char *coll ) {
 	g_threads.disableThreads();
 
 	Msg5 msg5;
-	Msg5 msg5b;
 	RdbList list;
 	key144_t startKey;
 	key144_t endKey;
@@ -343,7 +342,6 @@ bool Posdb::verify ( const char *coll ) {
 			      -1            ,
 			      true          ,
 			      -1LL          ,
-			      &msg5b        ,
 			      true          )) {
 		g_threads.enableThreads();
 		return log("db: HEY! it did not block");
@@ -540,7 +538,6 @@ int64_t Posdb::getTermFreq ( collnum_t collnum, int64_t termId ) {
 			      -1            ,
 			      true          ,
 			      -1LL          ,
-			       NULL        , // msg5b ptr
 			       true          );
 		// re-enable threads
 		g_jobScheduler.allow_new_jobs();

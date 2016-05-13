@@ -3003,7 +3003,6 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
-	Msg5 msg5b;
 	RdbList list;
 	int64_t prevId = 0LL;
 	int32_t count = 0;
@@ -3048,8 +3047,7 @@ void dumpTitledb (char *coll,int32_t startFileNum,int32_t numFiles,bool includeT
 			      0             , // retry num
 			      -1            , // maxRetries
 			      true          , // compensate for merge
-			      -1LL          , // sync point
-			      &msg5b        )){
+			      -1LL          )){ // sync point
 		log(LOG_LOGIC,"db: getList did not block.");
 		return;
 	}
@@ -4418,7 +4416,6 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	key_t endKey   = g_titledb.makeLastKey  ( docId );
 	// a niceness of 0 tells it to block until it gets results!!
 	Msg5 msg5;
-	Msg5 msg5b;
 
 	CollectionRec *cr = g_collectiondb.getRec(coll);
 	if ( ! msg5.getList ( RDB_TITLEDB    ,
@@ -4440,8 +4437,7 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 			      0              , // retry num
 			      -1             , // maxRetries
 			      true           , // compensate for merge
-			      -1LL           , // sync point
-			      &msg5b         ))
+			      -1LL           )) // sync point
 		return log(LOG_LOGIC,"build: getList did not block.");
 	// get the title rec
 	if ( tlist.isEmpty() ) 
@@ -5653,7 +5649,6 @@ void doInject ( int fd , void *state ) {
 		endKey = g_titledb.makeFirstKey(s_endDocId);
 		RdbList list;
 		Msg5 msg5;
-		Msg5 msg5b;
 		char *coll = "main";
 		CollectionRec *cr = g_collectiondb.getRec(coll);
 		msg5.getList ( RDB_TITLEDB ,
@@ -5675,8 +5670,7 @@ void doInject ( int fd , void *state ) {
 			       0              , // retry num
 			       -1             , // maxRetries
 			       true           , // compensate for merge
-			       -1LL           , // sync point
-			       &msg5b         );
+			       -1LL           ); // sync point
 		// all done if empty
 		if ( list.isEmpty() ) { g_loop.reset();  exit(0); }
 		// loop over entries in list
@@ -7192,7 +7186,6 @@ void countdomains( char* coll, int32_t numRecs, int32_t verbosity, int32_t outpu
 	// get a meg at a time
 	int32_t minRecSizes = 1024*1024;
 	Msg5 msg5;
-	Msg5 msg5b;
 	RdbList list;
 	int32_t countDocs = 0;
 	int32_t countIp = 0;
@@ -7229,8 +7222,7 @@ void countdomains( char* coll, int32_t numRecs, int32_t verbosity, int32_t outpu
 			      0             , // retry num
 			      -1            , // maxRetries
 			      true          , // compensate for merge
-			      -1LL          , // sync point
-			      &msg5b        )){
+			      -1LL          )){ // sync point
 		log(LOG_LOGIC,"db: getList did not block.");
 		return;
 	}

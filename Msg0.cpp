@@ -110,7 +110,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     bool      forceLocalIndexdb ,
 		     bool      noSplit , // doIndexdbSplit    ,
 		     int32_t      forceParitySplit  ) {
-	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN. hostId: %"INT64", rdbId: %d", __FILE__,__func__, __LINE__, hostId, (int)rdbId);
+	logTrace( g_conf.m_logTraceMsg0, "BEGIN. hostId: %" PRId64", rdbId: %d", hostId, (int)rdbId );
 
 	// this is obsolete! mostly, but we need it for PageIndexdb.cpp to
 	// show a "termlist" for a given query term in its entirety so you
@@ -316,7 +316,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 					 -1   , // maxRetries
 					 true , // compensateForMerge
 					 syncPoint ,
-					 NULL,//m_msg5b   ,
 					 m_isRealMerge ,
 					 m_allowPageCache ) ) return false;
 		// nuke it
@@ -795,7 +794,6 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 				     2    , // maxRetries
 				     true , // compensateForMerge
 				     syncPoint ,
-				     NULL,//&st0->m_msg5b ,
 				     false,
 				     allowPageCache ) )
 	{

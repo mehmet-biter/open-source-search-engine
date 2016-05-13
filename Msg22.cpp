@@ -293,7 +293,6 @@ public:
 	int64_t  m_docId2;
 	RdbList    m_tlist;
 	Msg5       m_msg5;
-	Msg5       m_msg5b;
 	int64_t  m_availDocId;
 	int64_t  m_uh48;
 	class Msg22Request *m_r;
@@ -461,8 +460,8 @@ void handleRequest22 ( UdpSlot *slot , int32_t netnice ) {
 				    0                 , // retry num
 				    -1                , // maxRetries
 				    true              , // compensate for merge
-				    -1LL              , // sync point
-				    &st->m_msg5b      ) ) return ;
+				    -1LL              ) ) // sync point
+		return ;
 
 	// we did not block, nice... in cache?
 	gotTitleList ( st , NULL , NULL );

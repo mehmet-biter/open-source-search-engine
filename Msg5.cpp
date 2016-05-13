@@ -70,13 +70,11 @@ bool Msg5::getList ( char     rdbId         ,
 					    Msg5    *msg5  ) ,
 		     int32_t     niceness      ,
 		     bool     doErrorCorrection ,
-		     //key_t   *cacheKeyPtr   , // NULL if none
 		     char    *cacheKeyPtr   , // NULL if none
 		     int32_t     retryNum      ,
 		     int32_t     maxRetries    ,
 		     bool     compensateForMerge ,
 		     int64_t syncPoint ,
-		     class Msg5 *msg5b   ,
 		     bool        isRealMerge ,
 		     bool        allowPageCache ) {
 	const char *startKey = static_cast<const char*>(startKey_);

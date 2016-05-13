@@ -425,7 +425,6 @@ bool RdbMerge::getAnotherList ( ) {
 				nn + 75        , // max retries (mk it high)
 				false          , // compensate for merge?
 				-1LL           , // sync point
-				&m_msg5b       ,
 				true           , // isRealMerge? absolutely!
 				usePageCache   );
 }

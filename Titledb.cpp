@@ -112,7 +112,6 @@ bool Titledb::verify ( char *coll ) {
 	g_jobScheduler.disallow_new_jobs();
 
 	Msg5 msg5;
-	Msg5 msg5b;
 	RdbList list;
 	key_t startKey;
 	key_t endKey;
@@ -141,7 +140,6 @@ bool Titledb::verify ( char *coll ) {
 			      -1            , // maxRetries
 			      true          , // compensate for merge
 			      -1LL          , // sync point
-			      &msg5b        ,
 			      false         )) {
 		g_jobScheduler.allow_new_jobs();
 		return log("db: HEY! it did not block");

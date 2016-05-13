@@ -71,68 +71,6 @@ class Msg0 {
 		       bool        noSplit           = false , // MDW ????
 		       int32_t        forceParitySplit = -1    );
 
-	bool getList ( int64_t hostId      , // -1 if unspecified
-		       int32_t      ip          , // info on hostId
-		       int16_t     port        ,
-		       int32_t      maxCacheAge , // max cached age in seconds
-		       bool      addToCache  , // add net recv'd list to cache?
-		       char      rdbId       , // specifies the rdb
-		       collnum_t collnum ,
-		       class RdbList  *list  ,
-		       key_t     startKey    , 
-		       key_t     endKey      , 
-		       int32_t      minRecSizes , // Positive values only 
-		       void     *state       ,
-		       //void (* callback)(void *state , class RdbList *list),
-		       void    (* callback)(void *state ),
-		       int32_t      niceness    ,
-		       bool      doErrorCorrection = true ,
-		       bool      includeTree       = true ,
-		       bool      doMerge           = true ,
-		       int32_t      firstHostId       = -1   ,
-		       int32_t      startFileNum      =  0   ,
-		       int32_t      numFiles          = -1   ,
-		       int64_t      timeout           = 30000   ,
-		       int64_t syncPoint         = -1   ,
-		       int32_t      preferLocalReads  = -1   , // -1=use g_conf
-		       class Msg5 *msg5            = NULL ,
-		       bool        isRealMerge     = false, // file merge?
-		       bool        allowPageCache  = true ,
-		       bool        forceLocalIndexdb = false,
-		       // default for this should be false, because true
-		       // means to send a msg0 to every indexdb split!
-		       bool        doIndexdbSplit    = false ) {
-
-		return getList ( hostId      , 
-				 ip          ,
-				 port        ,
-				 maxCacheAge ,
-				 addToCache  ,
-				 rdbId       ,
-				 collnum     ,
-				 list  ,
-				 (const char *)&startKey    ,
-				 (const char *)&endKey      ,
-				 minRecSizes ,
-				 state       ,
-				 callback    ,
-				 niceness    ,
-				 doErrorCorrection ,
-				 includeTree       ,
-				 doMerge           ,
-				 firstHostId       ,
-				 startFileNum      ,
-				 numFiles          ,
-				 timeout           ,
-				 syncPoint         ,
-				 preferLocalReads  ,
-				 msg5            ,
-				 isRealMerge     ,
-				 allowPageCache  ,
-				 forceLocalIndexdb ,
-				 doIndexdbSplit  ); }
-
-
 	// . YOU NEED NOT CALL routines below here
 	// . private:
 

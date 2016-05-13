@@ -902,7 +902,6 @@ bool qainject1 ( ) {
 				      -1            ,
 				      true          ,
 				      -1LL          ,
-				      NULL , // &msg5b        ,
 				      true          )) {
 			log("qa: HEY! it did not block");
 			char *xx=NULL;*xx=0;
