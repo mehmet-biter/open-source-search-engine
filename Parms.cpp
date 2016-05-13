@@ -4071,7 +4071,7 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "ask other shards";
-	m->m_desc  = "Ask othre shards. if disabled only results from the local shard will be returned.";
+	m->m_desc  = "Ask other shards. if disabled only results from the local shard will be returned.";
 	m->m_cgi   = "aos";
 	m->m_off   = offsetof(SearchInput,m_askOtherShards);
 	m->m_type  = TYPE_BOOL;
