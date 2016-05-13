@@ -163,9 +163,11 @@ bool RdbBuckets::is90PercentFull() {
 }
 
 bool RdbBuckets::needsDump() {
-	if(m_numBuckets + 1 < m_maxBuckets) return false;
-	if(m_maxBuckets == m_maxBucketsCapacity) return true;
-	return false;
+	if ( m_numBuckets + 1 < m_maxBuckets ) {
+		return false;
+	}
+
+	return ( m_maxBuckets == m_maxBucketsCapacity );
 }
 
 //be very conservative with this because if we say we can fit it
@@ -539,14 +541,8 @@ RdbBuckets::RdbBuckets() {
 
 
 
-bool RdbBuckets::set ( int32_t fixedDataSize , int32_t maxMem, 
-		       bool ownData ,
-		       const char *allocName,
-		       char rdbId,
-		       bool dataInPtrs  ,
-		       const char *dbname,
-		       char keySize ,
-		       bool useProtection ) {
+bool RdbBuckets::set( int32_t fixedDataSize , int32_t maxMem, bool ownData, const char *allocName, char rdbId,
+                      bool dataInPtrs, const char *dbname, char keySize, bool useProtection ) {
 	m_numBuckets = 0;
 	m_ks = keySize;
 	m_rdbId = rdbId;
@@ -570,12 +566,8 @@ bool RdbBuckets::set ( int32_t fixedDataSize , int32_t maxMem,
 	m_masterPtr =  NULL;
 	m_maxMem = maxMem;
 
-	int32_t perBucket = sizeof(RdbBucket*) + 
-		sizeof(RdbBucket)
-		+ BUCKET_SIZE * m_recSize;
-	int32_t overhead = m_sortBufSize +
-		BUCKET_SIZE * m_recSize + //swapbuf
-		sizeof(RdbBuckets); //thats us, silly
+	int32_t perBucket = sizeof(RdbBucket*) + sizeof(RdbBucket) + BUCKET_SIZE * m_recSize;
+	int32_t overhead = m_sortBufSize + BUCKET_SIZE * m_recSize + sizeof(RdbBuckets); //thats us, silly
 	int32_t avail = m_maxMem - overhead;
 
 	m_maxBucketsCapacity = avail / perBucket;
@@ -678,38 +670,40 @@ void RdbBuckets::clear() {
 
 
 RdbBucket* RdbBuckets::bucketFactory() {
-
-	if(m_numBuckets == m_maxBuckets - 1) {
-		if(!resizeTable(m_maxBuckets * 2)) return NULL;
+	if( m_numBuckets == m_maxBuckets - 1 ) {
+		if( !resizeTable( m_maxBuckets * 2 ) ) {
+			return NULL;
+		}
 	}
-	
+
 	RdbBucket *b;
-	if(m_firstOpenSlot > m_numBuckets) {
+	if( m_firstOpenSlot > m_numBuckets ) {
 		int32_t i = 0;
-		for(; i < m_numBuckets; i++) {
-			if(m_bucketsSpace[i].getNumKeys() == 0) break;
+		for( ; i < m_numBuckets; i++ ) {
+			if( m_bucketsSpace[i].getNumKeys() == 0 ) {
+				break;
+			}
 		}
 		b = &m_bucketsSpace[i];
-	}
-	else {
+	} else {
 		b = &m_bucketsSpace[m_firstOpenSlot];
 		m_firstOpenSlot++;
 	}
 	return b;
 }
 
+bool RdbBuckets::resizeTable( int32_t numNeeded ) {
+	if ( numNeeded == m_maxBuckets ) {
+		return true;
+	}
 
+	if ( numNeeded < INIT_SIZE) {
+		numNeeded = INIT_SIZE;
+	}
 
-
-bool RdbBuckets::resizeTable(int32_t numNeeded) {
-	if(numNeeded == m_maxBuckets) return true;
-
-	if(numNeeded < INIT_SIZE) numNeeded = INIT_SIZE;
-
-	if(numNeeded > m_maxBucketsCapacity) {
-		if(m_maxBucketsCapacity <= m_maxBuckets) {
-			log(LOG_INFO,
-			    "db: could not resize buckets currently have %"INT32" "
+	if( numNeeded > m_maxBucketsCapacity ) {
+		if( m_maxBucketsCapacity <= m_maxBuckets ) {
+			log(LOG_INFO, "db: could not resize buckets currently have %"INT32" "
 			    "buckets, asked for %"INT32", max number of buckets"
 			    " for %"INT32" bytes with keysize %"INT32" is %"INT32"",
 			    m_maxBuckets, numNeeded, m_maxMem, (int32_t)m_ks,
@@ -717,6 +711,7 @@ bool RdbBuckets::resizeTable(int32_t numNeeded) {
 			g_errno = ENOMEM;
 			return false;
 		}
+
 		// log(LOG_INFO,
 		//     "db: scaling down request for buckets.  "
 		//     "Currently have %"INT32" "
@@ -785,7 +780,10 @@ bool RdbBuckets::resizeTable(int32_t numNeeded) {
 // 	    "oldMemUsed = %"INT32"", 
 // 	    numNeeded, m_maxBuckets, newMasterSize, m_masterSize);
 
-	if(m_masterPtr) mfree(m_masterPtr, m_masterSize, m_allocName);
+	if ( m_masterPtr ) {
+		mfree( m_masterPtr, m_masterSize, m_allocName );
+	}
+
 	m_masterPtr = tmpMasterPtr;
 	m_masterSize = newMasterSize;
 	m_buckets = tmpBucketPtrs;
@@ -1953,10 +1951,7 @@ int64_t RdbBuckets::getListSize ( collnum_t collnum,
 // . we'll open it here
 // . returns false if blocked, true otherwise
 // . sets g_errno on error
-bool RdbBuckets::fastSave ( char    *dir       ,
-			    bool     useThread ,
-			    void    *state     ,
-			    void    (* callback) (void *state) ) {
+bool RdbBuckets::fastSave ( char *dir, bool useThread, void *state, void (* callback) (void *state) ) {
 	if ( g_conf.m_readOnlyMode ) return true;
 
 	// we do not need a save
@@ -1964,6 +1959,9 @@ bool RdbBuckets::fastSave ( char    *dir       ,
 
 	// return true if already in the middle of saving
 	if ( m_isSaving ) return false;
+
+	// note it
+	logf( LOG_INFO,"db: Saving %s%s-buckets-saved.dat", dir, m_dbname );
 
 	// do not use thread for now!! test it to make sure that was
 	// not the problem
@@ -1990,6 +1988,7 @@ bool RdbBuckets::fastSave ( char    *dir       ,
 	m_isSaving = false;
 	// we do not need to be saved now?
 	m_needsSave = false;
+
 	// we did not block
 	return true;
 }
@@ -2035,7 +2034,7 @@ bool RdbBuckets::fastSave_r() {
 	sprintf ( s2 , "%s/%s-buckets-saved.dat", m_dir , m_dbname );
 	::rename ( s , s2 ) ; //fuck yeah!
 
-	log( LOG_DEBUG, "db: RdbBuckets saved %" PRId32" keys, %" PRId64" bytes for %s", getNumKeys(), offset, m_dbname);
+	log( LOG_INFO, "db: RdbBuckets saved %" PRId32" keys, %" PRId64" bytes for %s", getNumKeys(), offset, m_dbname);
 
 	return offset >= 0;
 }
@@ -2112,29 +2111,32 @@ bool RdbBuckets::loadBuckets ( char* dbname) {
 }
 
 bool RdbBuckets::fastLoad ( BigFile *f , char* dbname) {
-	// msg
 	log(LOG_INIT,"db: Loading %s.",f->getFilename());
+
 	// open it up
-	if ( ! f->open ( O_RDONLY ) ) return false;
+	if ( ! f->open ( O_RDONLY ) ) {
+		return false;
+	}
+
 	int32_t fsize = f->getFileSize();
-	if ( fsize == 0 ) return true;
+	if ( fsize == 0 ) {
+		return true;
+	}
 
 	// init offset
 	int64_t offset = 0;
 
-	offset = fastLoadColl(f, dbname, offset);
-
+	offset = fastLoadColl( f, dbname, offset );
 	if ( offset < 0 ) {
 		log( LOG_ERROR, "db: Failed to load buckets for %s: %s.", m_dbname, mstrerror(g_errno) );
 		return false;
 	}
+
 	return true;
 }
 
 
-int64_t RdbBuckets::fastLoadColl( BigFile *f,
-				    char *dbname,
-				    int64_t offset ) {
+int64_t RdbBuckets::fastLoadColl( BigFile *f, char *dbname, int64_t offset ) {
 	int32_t maxBuckets;
 	int32_t numBuckets;
 	int32_t version;
@@ -2254,8 +2256,6 @@ int64_t RdbBucket::fastSave_r(int fd, int64_t offset) {
 }
 
 int64_t RdbBucket::fastLoad(BigFile *f, int64_t offset) {
-	//errno = 0;
-
 	f->read  ( &m_collnum,sizeof(collnum_t), offset ); 
 	offset += sizeof(collnum_t);
 

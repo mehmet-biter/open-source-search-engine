@@ -2065,7 +2065,7 @@ void RdbBase::saveMaps() {
 		}
 
 		bool status = m_maps[i]->writeMap ( false );
-		if (!status) {
+		if ( !status ) {
 			// unable to write, let's abort
 			g_process.shutdownAbort();
 		}

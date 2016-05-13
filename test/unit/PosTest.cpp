@@ -74,18 +74,18 @@ TEST( PosTest, FilterEnding ) {
 
 	const char *expected_output[] = {
 	    "\"So computers are tools of the devil?\" thought Newt. He had no problem believing it. Computers "
-		"had to be the tools of somebody, and all he knew for certain ...",
+		"had to be the tools of somebody, and all he knew for certain …",
 
 	    "Computers make excellent and efficient servants, but I have no wish to serve under them. Captain, a "
-		"starship also runs on loyalty to one man, and nothing can ...",
+		"starship also runs on loyalty to one man, and nothing can …",
 
 	    "Applications programming is a race between software engineers, who strive to produce idiot-proof "
 		"programs, and the universe which strives to produce bigger idiots.",
 
 	    "Computer programming is tremendous fun. Like music, it is a skill that derives from an unknown "
-		"blend of innate talent and constant practice. Like drawing, ...",
+		"blend of innate talent and constant practice. Like drawing, …",
 
-		"No matter how slick the demo is in rehearsal, when you do it in front of a live audience, ...",
+		"No matter how slick the demo is in rehearsal, when you do it in front of a live audience, …",
 
 	    "The best book on programming for the layman is Alice in Wonderland, but that's because it's the "
 		"best book on anything for the layman.",
@@ -96,10 +96,10 @@ TEST( PosTest, FilterEnding ) {
 		"Premature optimization is the root of all evil.",
 
 		"As soon as we started programming, we found to our surprise that it wasn't as easy to get programs "
-		"right as we had thought. Debugging had to be discovered. I can remember the ...",
+		"right as we had thought. Debugging had to be discovered. I can remember the …",
 
 		"Preparations for the Titan mission have the unintended consequence of turning the local Eureka "
-		"environment into Titan's. Meanwhile, Eureka couples struggle to come to terms ..."
+		"environment into Titan's. Meanwhile, Eureka couples struggle to come to terms …"
 	};
 
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),
@@ -170,8 +170,8 @@ TEST( PosTest, FilterSamePunct ) {
 	};
 
 	const char *expected_output[] = {
-	    "| ADAM RASMUSSON | $40.00 | ... | BRIAN AUSTIN | $40.00 | ... | DAN IALACCI | $40.00 | ",
-	    "| ADAM RASMUSSON | $40.00 |+ ... +| BRIAN AUSTIN | $40.00 |+ ... +| DAN IALACCI | $40.00 |"
+	    "| ADAM RASMUSSON | $40.00 | … | BRIAN AUSTIN | $40.00 | … | DAN IALACCI | $40.00 | ",
+	    "| ADAM RASMUSSON | $40.00 |+ … +| BRIAN AUSTIN | $40.00 |+ … +| DAN IALACCI | $40.00 |"
 	};
 
 	ASSERT_EQ( sizeof( input_strs ) / sizeof( input_strs[0] ),

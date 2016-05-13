@@ -1328,8 +1328,12 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 		}
 		//g_loop.quickPoll(1, __PRETTY_FUNCTION__, __LINE__);
 	}
-	if ( hkp > 0 ) 
-	       return log("db: Had %" PRId32" half key bits on for %s.",hkp,m_dbname);
+
+	if ( hkp > 0 ) {
+		log( "db: Had %" PRId32" half key bits on for %s.", hkp, m_dbname );
+		return false;
+	}
+
 	// now return if we aren't doing active balancing
 	if ( ! m_depth ) return true;
 	// debug -- just always return now
@@ -1344,23 +1348,34 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 		QUICKPOLL(MAX_NICENESS);
 		// verify collnum
 		collnum_t cn = m_collnums[i];
-		if ( cn < 0 )
-			return log("db: Got bad collnum in tree, %i.",cn);
-		if ( cn > max )
-			return log("db: Got too big collnum in tree. %i.",cn);
+		if ( cn < 0 ) {
+			log( LOG_WARN, "db: Got bad collnum in tree, %i.", cn );
+			return false;
+		}
+		if ( cn > max ) {
+			log( LOG_WARN, "db: Got too big collnum in tree. %i.", cn );
+			return false;
+		}
+
 		// we do not want to delete these nodes from the tree yet
 		// in case the collection was accidentally removed.
 		//if ( ! recs[cn] )
 		//	return log("db: Got bad collnum tree. %" PRId32".",cn);
+
 		int32_t P = m_parents [i];
 		if ( P == -2 ) continue; // deleted node
-		if ( P == -1 && i != m_headNode ) 
-			return log("db: Tree node %" PRId32" has "
-				   "no parent.",i);
+
+		if ( P == -1 && i != m_headNode ) {
+			log( LOG_WARN, "db: Tree node %" PRId32" has no parent.", i );
+			return false;
+		}
+
 		// check kids
-		if ( P>=0 && m_left[P] != i && m_right[P] != i ) 
-			return log("db: Tree kids of node # %" PRId32" "
-				    "disowned him.",i);
+		if ( P>=0 && m_left[P] != i && m_right[P] != i ) {
+			log( LOG_WARN, "db: Tree kids of node # %" PRId32" disowned him.", i );
+			return false;
+		}
+
 		//g_loop.quickPoll(1, __PRETTY_FUNCTION__, __LINE__);
 		// speedy tests continue
 		if ( ! doChainTest ) continue;
@@ -1368,16 +1383,22 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 		int32_t j = i;
 		int32_t loopCount = 0;
 		while ( j >= 0 ) { 
-			if ( j == m_headNode ) break;
+			if ( j == m_headNode ) {
+				break;
+			}
 			// sanity -- loop check
-			if ( ++loopCount > 10000 ) 
-				return log("db: tree had loop");
+			if ( ++loopCount > 10000 ) {
+				log( LOG_WARN, "db: tree had loop" );
+				return false;
+			}
 			j = m_parents[j];
 		}
-		if ( j != m_headNode ) 
-			return log(
-				   "db: Node # %" PRId32" does not lead back to "
-				   "head node.",i);
+
+		if ( j != m_headNode ) {
+			log( LOG_WARN, "db: Node # %" PRId32" does not lead back to head node.", i );
+			return false;
+		}
+
 		if ( printMsgs ) {
 		        char *k = &m_keys[i*m_ks];
 			logf(LOG_DEBUG,"***node=%" PRId32" left=%" PRId32" rght=%" PRId32" "
@@ -1392,9 +1413,10 @@ bool RdbTree::checkTree2 ( bool printMsgs , bool doChainTest ) {
 		}
 		//ensure depth
 		int32_t newDepth = computeDepth ( i );
-		if ( m_depth[i] != newDepth ) 
-			return log("db: Tree node # %" PRId32"'s depth "
-				   "should be %" PRId32".",i,newDepth);
+		if ( m_depth[i] != newDepth ) {
+			log( LOG_WARN, "db: Tree node # %" PRId32"'s depth should be %" PRId32".", i, newDepth );
+			return false;
+		}
 	}
 	if ( printMsgs ) logf(LOG_DEBUG,"---------------");
 	// no problems found
@@ -2440,7 +2462,7 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 	}
 
 	// note it
-	logf(LOG_INFO,"db: Saving %s/%s-saved.dat",dir,dbname);
+	logf(LOG_INFO,"db: Saving %s%s-saved.dat",dir,dbname);
 
 	// save parms
 	//m_saveFile = f;
@@ -2524,7 +2546,7 @@ void threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 		log( LOG_ERROR, "db: Had error saving tree to disk for %s: %s.", THIS->m_dbname, mstrerror( g_errno ) );
 	} else {
 		// log it
-		log( LOG_INFO, "db: Done saving %s/%s-saved.dat (wrote %" PRId64" bytes)",
+		log( LOG_INFO, "db: Done saving %s%s-saved.dat (wrote %" PRId64" bytes)",
 		     THIS->m_dir, THIS->m_dbname, THIS->m_bytesWritten );
 	}
 	// . call callback

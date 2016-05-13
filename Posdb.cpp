@@ -217,7 +217,6 @@ bool Posdb::init ( ) {
 	char *xx=NULL;*xx=0;
 	*/
 
-	int64_t  maxTreeMem = 350000000; // 350MB
 	// make it lower now for debugging
 	//maxTreeMem = 5000000;
 	// . what's max # of tree nodes?
@@ -225,36 +224,34 @@ bool Posdb::init ( ) {
 	// . but has 12 bytes of tree overhead (m_left/m_right/m_parents)
 	// . this is UNUSED for bin trees!!
 	int32_t nodeSize      = (sizeof(key144_t)+12+4) + sizeof(collnum_t);
-	int32_t maxTreeNodes = maxTreeMem  / nodeSize ;
+	int32_t maxTreeNodes = g_conf.m_posdbMaxTreeMem / nodeSize ;
 
 	// . set our own internal rdb
 	// . max disk space for bin tree is same as maxTreeMem so that we
 	//   must be able to fit all bins in memory
 	// . we do not want posdb's bin tree to ever hit disk since we
 	//   dump it to rdb files when it is 90% full (90% of bins in use)
-	return m_rdb.init ( g_hostdb.m_dir              ,
-			   "posdb"                   ,
-			   true                        , // dedup same keys?
-			   0                           , // fixed data size
-			   // -1 means look in 
-			   // CollectionRec::m_posdbMinFilesToMerge
-			   -1,//g_conf.m_posdbMinFilesToMerge ,  // 6...
-			   maxTreeMem , // g_conf.m_posdbMaxTreeMem  ,
-			   maxTreeNodes                ,
-			   // now we balance so Sync.cpp can ordered huge lists
-			   true                        , // balance tree?
-			   0 , // g_conf.m_posdbMaxCacheMem ,
-			   0 , // maxCacheNodes 	       ,
-			   true                        , // use half keys?
-			   false                       , // g_conf.m_posdbSav
-			   // newer systems have tons of ram to use
-			   // for their disk page cache. it is slower than
-			   // ours but the new engine has much slower things
-			   NULL,//&m_pc                       ,
-			   false , // istitledb?
-			   false , // preloaddiskpagecache?
-			   sizeof(key144_t)
-			   );
+	return m_rdb.init ( g_hostdb.m_dir,
+	                    "posdb",
+	                    true, // dedup same keys?
+	                    0, // fixed data size
+	                    // -1 means look in CollectionRec::m_posdbMinFilesToMerge
+	                    -1,
+	                    g_conf.m_posdbMaxTreeMem, // g_conf.m_posdbMaxTreeMem  ,
+	                    maxTreeNodes                ,
+	                    // now we balance so Sync.cpp can ordered huge lists
+                        true                        , // balance tree?
+                        0 , // g_conf.m_posdbMaxCacheMem ,
+                        0 , // maxCacheNodes 	       ,
+                        true                        , // use half keys?
+                        false                       , // g_conf.m_posdbSav
+	                    // newer systems have tons of ram to use
+	                    // for their disk page cache. it is slower than
+	                    // ours but the new engine has much slower things
+			            NULL,//&m_pc                       ,
+			            false , // istitledb?
+			            false , // preloaddiskpagecache?
+			            sizeof(key144_t) );
 
 	// validate posdb
 	//return verify();

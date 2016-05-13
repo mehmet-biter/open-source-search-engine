@@ -2294,8 +2294,11 @@ int main2 ( int argc , char *argv[] ) {
 	// . now start g_loops main interrupt handling loop
 	// . it should block forever
 	// . when it gets a signal it dispatches to a server or db to handle it
-	if ( ! g_loop.runLoop()    ) {
-		log("db: runLoop failed." ); return 1; }
+	if ( ! g_loop.runLoop() ) {
+		log("db: runLoop failed." );
+		return 1;
+	}
+
 	// dummy return (0-->normal exit status for the shell)
 	return 0;
 }
@@ -5615,11 +5618,17 @@ int injectFile ( char *filename , char *ips , char *coll ) {
 	if ( ! s_coll ) s_coll = "main";
 
 	// register sleep callback to get started
-	if ( ! g_loop.registerSleepCallback(1, NULL, doInject) )
-		return log("build: inject: Loop init failed.")-1;
+	if ( ! g_loop.registerSleepCallback(1, NULL, doInject) ) {
+		log( "build: inject: Loop init failed." );
+		return -1;
+	}
+
 	// run the loop
-	if ( ! g_loop.runLoop() ) return log("build: inject: Loop "
-					     "run failed.")-1;
+	if ( ! g_loop.runLoop() ) {
+		log( "build: inject: Loop run failed." );
+		return -1;
+	}
+
 	// dummy return
 	return 0;
 }
