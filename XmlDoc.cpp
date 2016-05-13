@@ -21823,7 +21823,7 @@ int32_t XmlDoc::getProbSpam(const int32_t *profile, int32_t plen, int32_t step) 
 }
 
 
-bool getWordPosVec ( Words *words ,
+bool getWordPosVec ( const Words *words ,
 		     const Sections *sections,
 		     int32_t startDist,
 		     const char *fragVec,
@@ -21835,10 +21835,10 @@ bool getWordPosVec ( Words *words ,
 	int32_t tagDist = 0;
 	Section **sp = NULL;
 	if ( sections ) sp = sections->m_sectionPtrs;
-	nodeid_t *tids = words->m_tagIds;
-	int64_t *wids = words->m_wordIds;
-	int32_t *wlens = words->getWordLens();
-	char **wptrs = words->getWords();
+	const nodeid_t *tids = words->m_tagIds;
+	const int64_t *wids = words->m_wordIds;
+	const int32_t *wlens = words->getWordLens();
+	const char *const*wptrs = words->getWords();
 	int32_t nw = words->getNumWords();
 
 	if ( ! wpos->reserve ( nw * sizeof(int32_t) ) ) return false;

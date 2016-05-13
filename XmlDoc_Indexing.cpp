@@ -2098,7 +2098,7 @@ bool XmlDoc::hashWords ( HashInfo   *hi ) {
 }
 
 // . this now uses posdb exclusively
-bool XmlDoc::hashWords3( HashInfo *hi, Words *words, Phrases *phrases, Sections *sectionsArg, HashTableX *countTable,
+bool XmlDoc::hashWords3( HashInfo *hi, const Words *words, Phrases *phrases, Sections *sectionsArg, HashTableX *countTable,
                          char *fragVec, char *wordSpamVec, char *langVec, HashTableX *wts, SafeBuf *wbuf,
                          int32_t niceness ) {
 	Sections *sections = sectionsArg;
@@ -2106,8 +2106,8 @@ bool XmlDoc::hashWords3( HashInfo *hi, Words *words, Phrases *phrases, Sections 
 	if ( ! hi->m_useSections ) sections = NULL;
 
 	// shortcuts
-	uint64_t *wids    = (uint64_t *)words->getWordIds();
-	uint64_t *pids2   = (uint64_t *)phrases->getPhraseIds2();
+	const uint64_t *wids    = reinterpret_cast<const uint64_t*>(words->getWordIds());
+	const uint64_t *pids2   = reinterpret_cast<const uint64_t*>(phrases->getPhraseIds2());
 
 	HashTableX *dt = hi->m_tt;
 
@@ -2127,8 +2127,8 @@ bool XmlDoc::hashWords3( HashInfo *hi, Words *words, Phrases *phrases, Sections 
 	if ( hi->m_hashGroup < 0 ) { char *xx=NULL;*xx=0; }
 
 	// handy
-	char **wptrs = words->getWordPtrs();
-	int32_t  *wlens = words->getWordLens();
+	const char *const*wptrs = words->getWordPtrs();
+	const int32_t  *wlens = words->getWordLens();
 
 	// hash in the prefix
 	uint64_t prefixHash = 0LL;
@@ -2632,15 +2632,15 @@ bool XmlDoc::hashFieldMatchTerm ( char *val , int32_t vlen , HashInfo *hi ) {
 // . the binary representation of floating point numbers is ordered in the
 //   same order as the floating points themselves! so we are lucky and can
 //   keep our usually KEYCMP sorting algos to keep the floats in order.
-bool XmlDoc::hashNumberForSorting ( char *beginBuf ,
-			  char *buf ,
+bool XmlDoc::hashNumberForSorting ( const char *beginBuf ,
+			  const char *buf ,
 			  int32_t bufLen ,
 			  HashInfo *hi ) {
 
 	if ( ! is_digit(buf[0]) ) return true;
 
-	char *p = buf;
-	char *bufEnd = buf + bufLen;
+	const char *p = buf;
+	const char *bufEnd = buf + bufLen;
 
 	// back-up over any .
 	if ( p > beginBuf && p[-1] == '.' ) p--;

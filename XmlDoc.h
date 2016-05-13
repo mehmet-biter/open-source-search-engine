@@ -135,7 +135,7 @@ uint16_t getCharsetFast ( class HttpMime *mime,
 			  int32_t slen , 
 			  int32_t niceness );
 
-bool getWordPosVec ( Words *words,
+bool getWordPosVec ( const Words *words,
 		     const Sections *sections,
 		     int32_t startDist,
 		     const char *fragVec,
@@ -556,7 +556,7 @@ public:
 	bool hashSingleTerm( const char *s, int32_t slen, class HashInfo *hi );
 	bool hashString( char *s, int32_t slen, class HashInfo *hi );
 
-	bool hashWords3( class HashInfo *hi, class Words *words, class Phrases *phrases,
+	bool hashWords3( class HashInfo *hi, const Words *words, class Phrases *phrases,
 					 class Sections *sections, class HashTableX *countTable, char *fragVec, char *wordSpamVec,
 					 char *langVec, class HashTableX *wts, class SafeBuf *wbuf, int32_t niceness );
 
@@ -567,8 +567,8 @@ public:
 	// gbfieldmatch:
 	bool hashFieldMatchTerm ( char *val, int32_t vlen, class HashInfo *hi);
 
-	bool hashNumberForSorting( char *beginBuf ,
-			  char *buf , 
+	bool hashNumberForSorting( const char *beginBuf ,
+			  const char *buf , 
 			  int32_t bufLen , 
 			  class HashInfo *hi ) ;
 
