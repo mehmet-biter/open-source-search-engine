@@ -2462,7 +2462,7 @@ bool RdbTree::fastSave ( const char *dir, const char *dbname, bool useThread, vo
 	}
 
 	// note it
-	logf(LOG_INFO,"db: Saving %s/%s-saved.dat",dir,dbname);
+	logf(LOG_INFO,"db: Saving %s%s-saved.dat",dir,dbname);
 
 	// save parms
 	//m_saveFile = f;
@@ -2546,7 +2546,7 @@ void threadDoneWrapper ( void *state, job_exit_t exit_type ) {
 		log( LOG_ERROR, "db: Had error saving tree to disk for %s: %s.", THIS->m_dbname, mstrerror( g_errno ) );
 	} else {
 		// log it
-		log( LOG_INFO, "db: Done saving %s/%s-saved.dat (wrote %" PRId64" bytes)",
+		log( LOG_INFO, "db: Done saving %s%s-saved.dat (wrote %" PRId64" bytes)",
 		     THIS->m_dir, THIS->m_dbname, THIS->m_bytesWritten );
 	}
 	// . call callback
