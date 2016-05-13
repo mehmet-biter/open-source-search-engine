@@ -30,7 +30,7 @@ void Bits::reset() {
 // . set bits for each word
 // . these bits are used for phrasing and by spam detector
 // . returns false and sets errno on error
-bool Bits::set(Words *words, int32_t niceness) {
+bool Bits::set(const Words *words, int32_t niceness) {
 	reset();
 
 	// save words so printBits works
@@ -60,8 +60,8 @@ bool Bits::set(Words *words, int32_t niceness) {
 	// breathe
 	QUICKPOLL ( m_niceness );
 
-	nodeid_t *tagIds = words->getTagIds();
-	char **w = words->getWords();
+	const nodeid_t *tagIds = words->getTagIds();
+	const char *const*w = words->getWords();
 
 	int32_t brcount = 0;
 
@@ -127,9 +127,9 @@ void Bits::setInLinkBits ( Sections *ss ) {
 void Bits::setInUrlBits ( int32_t niceness ) {
 	if ( m_inUrlBitsSet ) return;
 	m_inUrlBitsSet = true;
-	nodeid_t *tids  = m_words->getTagIds();
-	int64_t *wids = m_words->getWordIds();
-	char **wptrs    = m_words->getWords();
+	const nodeid_t *tids  = m_words->getTagIds();
+	const int64_t *wids = m_words->getWordIds();
+	const char *const*wptrs    = m_words->getWords();
 	int32_t nw = m_words->getNumWords();
 	for ( int32_t i = 0 ; i < nw; i++ ) {
 		// breathe
@@ -190,7 +190,7 @@ static nodeid_t s_bt [ 1000 ];
 // . set bits for each word
 // . these bits are used for phrasing and by spam detector
 // . returns false and sets errno on error
-bool Bits::setForSummary ( Words *words ) {
+bool Bits::setForSummary ( const Words *words ) {
 	// clear the mem
 	reset();
 
@@ -247,10 +247,10 @@ bool Bits::setForSummary ( Words *words ) {
 	// D_STARTS_SENTENCE
 	// D_STARTS_FRAGMENT
 
-	nodeid_t *tagIds = words->getTagIds();
-	char **w = words->getWords();
-	int32_t *wlens = words->getWordLens();
-	int64_t *wids = words->getWordIds();
+	const nodeid_t *tagIds = words->getTagIds();
+	const char *const*w = words->getWords();
+	const int32_t *wlens = words->getWordLens();
+	const int64_t *wids = words->getWordIds();
 
 	char startSent = 1;
 	char startFrag = 1;
@@ -258,7 +258,7 @@ bool Bits::setForSummary ( Words *words ) {
 	char inParens = 0;
 
 	int32_t wlen;
-	char *wp;
+	const char *wp;
 
 	// the ongoing accumulation flag we apply to each word
 	swbit_t flags = 0;

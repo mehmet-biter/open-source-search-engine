@@ -96,8 +96,8 @@ public:
 	~Bits();
 
 	// . returns false and sets errno on error
-	bool set( Words *words, int32_t niceness );
-	bool setForSummary( Words *words );
+	bool set( const Words *words, int32_t niceness );
+	bool setForSummary( const Words *words );
 
 	void reset();
 
@@ -129,7 +129,7 @@ public:
  private:
 	int32_t m_niceness;
 
-	Words *m_words;
+	const Words *m_words;
 
 	bool m_inLinkBitsSet;
 	bool m_inUrlBitsSet;
