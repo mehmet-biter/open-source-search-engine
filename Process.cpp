@@ -692,14 +692,10 @@ bool Process::shutdown ( bool urgent, void  *state, void (*callback) (void *stat
 
 // return false if blocked/waiting
 bool Process::save2 ( ) {
-
-	// MDW: why was this here? i commented it out. we need to do 
-	//      quickpolls when autosaving for sure.
-	//g_loop.disableTimer();
-
 	// only the main process can call this
-	if ( pthread_self()!=s_mainThreadTid )
+	if ( pthread_self() != s_mainThreadTid ) {
 		return true;
+	}
 
 	// . wait for any dump to complete
 	// . when merging titldb, it sets Rdb::m_dump.m_isDumping to true
@@ -708,7 +704,9 @@ bool Process::save2 ( ) {
 	//   possible because Rdb/RdbDump checks g_process.m_mode == SAVE_MODE,
 	//   and do not allow dumps to begin if that is true! so we end up in 
 	//   deadlock! the save can not complete 
-	if ( isRdbDumping() ) return false;
+	if ( isRdbDumping() ) {
+		return false;
+	}
 
 	// ok, now nobody is dumping, etc. make it so no dumps can start.
 	// Rdb.cpp/RdbDump.cpp check for this and will not dump if it is 
@@ -727,7 +725,9 @@ bool Process::save2 ( ) {
 
 	// . tell all rdbs to save trees
 	// . will return true if no rdb tree needs a save
-	if ( ! saveRdbTrees ( useThreads , false ) ) return false;
+	if ( ! saveRdbTrees ( useThreads , false ) ) {
+		return false;
+	}
 
 	// . save all rdb maps if they need it
 	// . will return true if no rdb map needs a save
@@ -746,9 +746,11 @@ bool Process::save2 ( ) {
 	// one time we are called from power going off... since we do not
 	// do autosave when the power is off. this just blocks and never
 	// returns false, so call it with checking the return value.
-	if ( ! g_process.m_powerIsOn ) saveBlockingFiles2() ;
-	// for Test.cpp parser test we want to save the waitingtree.dat
-	else if ( g_jobScheduler.are_new_jobs_allowed() ) saveBlockingFiles2() ;
+	if ( ! g_process.m_powerIsOn ) {
+		saveBlockingFiles2() ;
+	} else if ( g_jobScheduler.are_new_jobs_allowed() ) {
+		saveBlockingFiles2() ;
+	}
 
 	// until all caches have saved, disable them
 	g_cacheWritesEnabled = false;
@@ -778,12 +780,13 @@ bool Process::save2 ( ) {
 
 // . return false if blocked/waiting
 // . this is the SAVE BEFORE EXITING
-bool Process::shutdown2 ( ) {
+bool Process::shutdown2() {
 	g_loop.disableQuickpollTimer();
 
 	// only the main process can call this
-	if ( pthread_self()!=s_mainThreadTid )
+	if ( pthread_self() != s_mainThreadTid ) {
 		return true;
+	}
 
 	if ( m_urgent ) {
 		log(LOG_INFO,"gb: Shutting down urgently. Timed try #%"INT32".", m_try++);
@@ -840,20 +843,6 @@ bool Process::shutdown2 ( ) {
 
 	//g_conf.m_injectionEnabled = false;
 
-	// make sure they are in a saveable state. we need to make sure
-	// they have dumped out the latest merged list and updated the 
-	// appropriate RdbMap so we can save it below.
-	bool wait = false;
-	if ( g_merge.m_isMerging  && ! g_merge.m_isReadyToSave  ) wait = true;
-	if ( g_merge2.m_isMerging && ! g_merge2.m_isReadyToSave ) wait = true;
-	// wait for any dump to complete
-	if ( isRdbDumping() ) wait = true;
-	// . wait for the merge or dump to complete
-	// . but NOT if urgent...
-	// . this stuff holds everything up too long, take out, we already
-	//   wait for write threads to complete, that should be good enough
-	//if ( wait && ! m_urgent ) return false;
-
 	// . disable adds/deletes on all rdb trees
 	// . Msg1 requests will get ECLOSING error msgs
 	// . this is instantaneous because all tree mods happen in this
@@ -882,7 +871,9 @@ bool Process::shutdown2 ( ) {
 	}
 
 	int64_t now = gettimeofdayInMillisecondsLocal();
-	if ( m_firstShutdownTime == 0 ) m_firstShutdownTime = now;
+	if ( m_firstShutdownTime == 0 ) {
+		m_firstShutdownTime = now;
+	}
 
 	// these udp servers will not read in new requests or allow
 	// new requests to be sent. they will timeout any outstanding
@@ -909,14 +900,15 @@ bool Process::shutdown2 ( ) {
 	if ( ! m_sentShutdownNote && ! m_urgent ) {
 		log(LOG_INFO,"gb: Broadcasting shutdown notice.");
 		m_sentShutdownNote = true;
-		g_pingServer.broadcastShutdownNotes ( false , //sendEmailAlert?
-						      NULL  , 
-						      NULL  );
+		g_pingServer.broadcastShutdownNotes ( false, NULL, NULL );
 	}
-	//broadcastShutdownNotes uses g_udpServer so we do this last.
-	if ( ! g_udpServer.shutdown ( udpUrgent ) )
-		if ( ! udpUrgent ) return false;
 
+	//broadcastShutdownNotes uses g_udpServer so we do this last.
+	if ( ! g_udpServer.shutdown ( udpUrgent ) ) {
+		if ( !udpUrgent ) {
+			return false;
+		}
+	}
 
 	g_profiler.stopRealTimeProfiler(false);
 	g_profiler.cleanup();
@@ -924,8 +916,9 @@ bool Process::shutdown2 ( ) {
 	// save the conf files and caches. these block the cpu.
 	if ( m_blockersNeedSave ) {
 		m_blockersNeedSave = false;
-		if (!g_conf.m_readOnlyMode)
-			logf(LOG_INFO,"gb: Saving miscellaneous data files.");
+		if ( !g_conf.m_readOnlyMode ) {
+			logf( LOG_INFO, "gb: Saving miscellaneous data files." );
+		}
 		saveBlockingFiles1() ;
 		saveBlockingFiles2() ;
 	}
@@ -936,15 +929,14 @@ bool Process::shutdown2 ( ) {
 	// . will return true if no rdb cache needs a save
 	//if ( ! saveRdbCaches ( useThreads ) ) return false;
 
-	// always diable threads at this point so g_jobScheduler.submit() will
-	// always return false and we do not queue any new jobs for
-	// spawning
+	// always disable threads at this point so g_jobScheduler.submit() will
+	// always return false and we do not queue any new jobs for spawning
 	g_jobScheduler.disallow_new_jobs();
 
 	// urgent means we need to dump core, SEGV or something
 	if ( m_urgent ) {
 		// log it
-		log("gb: Dumping core after saving.");
+		log( LOG_WARN, "gb: Dumping core after saving." );
 
 		// at least destroy the page caches that have shared memory
 		// because they seem to not clean it up
@@ -954,7 +946,7 @@ bool Process::shutdown2 ( ) {
 		struct rlimit lim;
 		lim.rlim_cur = lim.rlim_max = RLIM_INFINITY;
 		if ( setrlimit(RLIMIT_CORE, &lim) ) {
-			log("gb: setrlimit: %s.", mstrerror(errno) );
+			log( LOG_WARN, "gb: setrlimit: %s.", mstrerror(errno) );
 		}
 
 		// this is the trick: it will trigger the core dump by
@@ -975,7 +967,9 @@ bool Process::shutdown2 ( ) {
 
 	//ok, resetAll will close httpServer's socket so now is the time to 
 	//call the callback.
-	if(m_callbackState) (*m_callback)(m_callbackState);
+	if ( m_callbackState ) {
+		( *m_callback )( m_callbackState );
+	}
 
 	// tell Mutlicast::reset() not to destroy all the slots! that cores!
 	m_exiting = true;
@@ -987,8 +981,9 @@ bool Process::shutdown2 ( ) {
 	g_mem.printMem();
 
 	// kill any outstanding hd temp thread?
-	if ( g_process.m_threadOut ) 
-		log(LOG_INFO,"gb: still has hdtemp thread");
+	if ( g_process.m_threadOut ) {
+		log( LOG_INFO, "gb: still has hdtemp thread" );
+	}
 
 
 	log("gb. EXITING GRACEFULLY.");
@@ -1001,8 +996,9 @@ bool Process::shutdown2 ( ) {
 	cleanFileName.safePrintf("%s/cleanexit",g_hostdb.m_dir);
 	SafeBuf nothing;
 	// returns # of bytes written, -1 if could not create file
-	if ( nothing.save ( cleanFileName.getBufStart() ) == -1 )
-		log("gb: could not create %s",cleanFileName.getBufStart());
+	if ( nothing.save ( cleanFileName.getBufStart() ) == -1 ) {
+		log( LOG_WARN, "gb: could not create %s", cleanFileName.getBufStart() );
+	}
 
 	// exit abruptly
 	exit(0);
@@ -1025,7 +1021,9 @@ void Process::disableTreeWrites ( bool shuttingDown ) {
 	// disable all spider trees and tables
 	for ( int32_t i = 0 ; i < g_collectiondb.m_numRecs ; i++ ) {
 		SpiderColl *sc = g_spiderCache.getSpiderCollIffNonNull(i);
-		if ( ! sc ) continue;
+		if ( ! sc ) {
+			continue;
+		}
 		sc->m_waitingTree .disableWrites();
 		sc->m_waitingTable.disableWrites();
 		sc->m_doleIpTable .disableWrites();
@@ -1076,31 +1074,38 @@ bool Process::isRdbMerging ( ) {
 bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 	// never if in read only mode
 	if ( g_conf.m_readOnlyMode ) return true;
+
 	// no thread if shutting down
 	if ( shuttingDown ) useThread = false;
+
 	// debug note
 	if ( shuttingDown ) log("gb: trying to shutdown");
+
 	// turn off statsdb until everyone is done
 	//g_statsdb.m_disabled = true;
+
 	// loop over all Rdbs and save them
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
 		if ( m_calledSave ) {
 			log("gb: already saved trees, skipping.");
 			break;
 		}
+
 		Rdb *rdb = m_rdbs[i];
+
 		// if we save doledb while spidering it screws us up
 		// because Spider.cpp can not directly write into the
 		// rdb tree and it expects that to always be available!
-		if ( ! shuttingDown && rdb->m_rdbId == RDB_DOLEDB )
+		if ( ! shuttingDown && rdb->m_rdbId == RDB_DOLEDB ) {
 			continue;
+		}
+
 		// note it
-		if ( ! rdb->m_dbname || ! rdb->m_dbname[0] )
-			log("gb: calling save tree for rdbid %i",
-			    (int)rdb->m_rdbId);
-		else
-			log("gb: calling save tree for %s",
-			    rdb->m_dbname);
+		if ( ! rdb->m_dbname || ! rdb->m_dbname[0] ) {
+			log( "gb: calling save tree for rdbid %i", ( int ) rdb->m_rdbId );
+		} else {
+			log( "gb: calling save tree for %s", rdb->m_dbname );
+		}
 
 		rdb->saveTree ( useThread );
 	}
@@ -1123,19 +1128,28 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 	//if ( ! g_statsdb.m_rdb.needsSave() ) g_statsdb.m_disabled = false;
 	// check if any need to finish saving
 	for ( int32_t i = 0 ; i < m_numRdbs ; i++ ) {
-		Rdb *rdb = m_rdbs[i];
 		// do not return until all saved if we are shutting down
-		if ( shuttingDown ) break;
+		if ( shuttingDown ) {
+			break;
+		}
+
+		Rdb *rdb = m_rdbs[i];
+
 		//if ( rdb->needsSave ( ) ) return false;
+
 		// we disable the tree while saving so we can't really add recs
 		// to one rdb tree while saving, but for crawlbot
 		// we might have added or deleted collections.
-		if ( rdb->isSavingTree ( ) ) return false;
+		if ( rdb->isSavingTree ( ) ) {
+			return false;
+		}
 	}
 
 	// only save spiderdb based trees if shutting down so we can
 	// still write to them without writes being disabled
-	if ( ! shuttingDown ) return true;
+	if ( ! shuttingDown ) {
+		return true;
+	}
 
 	// . check spider cache files (doleiptable waitingtree etc.)
 	// . this should return true if it still has some files that haven't
@@ -1145,6 +1159,7 @@ bool Process::saveRdbTrees ( bool useThread , bool shuttingDown ) {
 
 	// reset for next call
 	m_calledSave = false;
+
 	// everyone is done saving
 	return true;
 }
@@ -1249,35 +1264,18 @@ bool Process::saveBlockingFiles2 ( ) {
 		}
 	}
 
-	// save dead wait cache
-	//if ( g_deadWaitCache.useDisk     () ) 
-	//	g_deadWaitCache    .save ();
-	//if ( g_forcedCache.useDisk       () ) 
-	//	g_forcedCache      .save ( false ); // use threads?
-	//if ( g_alreadyAddedCache.useDisk () ) 
-	//	g_alreadyAddedCache.save ( false ); // use threads?
-
 	// save dns caches
 	RdbCache *c = g_dns.getCache();
 	if (c && c->useDisk()) {
 		c->save( false ); // use threads?
 	}
 
-	// save quota cache
-	//c = &g_qtable;
-        //if ( c->useDisk() ) c->save( false ); // use threads?
 	// save current spidering process, "spiderrestore.dat"
 	//g_spiderLoop.saveCurrentSpidering();
 
 	// if doing titlerec imports in PageInject.cpp, save cursors,
 	// i.e. file offsets
 	saveImportStates();
-
-	// this one too
-	//      g_classifier.save();
-	
-	// save the turk url cache, urls and user states
-	//g_pageTurk.saveCache();
 
 	return true;
 }
