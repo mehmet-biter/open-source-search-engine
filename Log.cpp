@@ -20,7 +20,6 @@ static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;
 Log::Log () { 
 	m_fd = -1; 
 	m_filename = NULL; 
-	m_needsPrinting = false; 
 	m_disabled = false;
 	m_logTimestamps = true;
 	m_logReadableTimestamps = true;
@@ -67,7 +66,6 @@ static bool renameCurrentLogFile ( ) {
 
 bool Log::init ( const char *filename ) {
 	// init these
-	m_numErrors =  0;
 	m_fd        = -1;
 	m_disabled  = false;
 
@@ -282,17 +280,6 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
 	// the total length, not including the \0
 	int32_t tlen = p - tt;
 
-	// call sprintf, but first make sure we have room in m_buf and in
-	// the arrays. who know how much room the sprintf is going to need???
-	// NOTE: TODO: this is shaky -- fix it!
-	if ( tlen  >= 1024 * 32 ||  m_numErrors  >= MAX_LOG_MSGS){
-		// this sets m_bufPtr to 0
-		if ( ! dumpLog ( ) ) {
-			fprintf(stderr,"Log::log: could not dump to file!\n");
-			pthread_mutex_unlock ( &s_lock );
-			return false;
-		}
-	}
 	// . filter out nasty chars from the message
 	// . replace with ~'s
 	char cs;
@@ -324,14 +311,6 @@ bool Log::logR ( int64_t now, int32_t type, const char *msg, bool forced ) {
 	}
 
 
-
-	// set the stuff in the array
-	m_errorMsg      [m_numErrors] = msg;
-	m_errorMsgLen   [m_numErrors] = msgLen;
-	m_errorTime     [m_numErrors] = now;
-	m_errorType     [m_numErrors] = type;
-	// increase the # of errors
-	m_numErrors++;
 
 	// unlock for threads
 	pthread_mutex_unlock ( &s_lock );
@@ -372,112 +351,6 @@ bool Log::makeNewLogFile ( ) {
 	return false;
 }
 
-// keep a special buf
-static char  s_buf[1024*64];
-static char *s_ptr      = s_buf;
-static bool  s_overflow = false;
-static char  s_problem  = '\0';
-
-// once we're no longer in a sig handler this is called by Loop.cpp
-// if g_log.needsPrinting() is true
-void Log::printBuf ( ) {
-	// was there a problem?
-	if ( s_problem  ) fprintf(stderr,"Log::printBuf: had problem. '%c'\n",
-				  s_problem);
-	// or overflow?
-	if ( s_overflow ) fprintf(stderr,"Log::printBuf: had overflow.\n");
-	// point to the buf
-	char *p    = s_buf;
-	char *pend = s_ptr;
-	// reset everything
-	s_overflow      = false;
-	s_problem       = '\0';
-	m_needsPrinting = false;
-	// bail if nothing to print, maybe first msg overflowed?
-	if ( s_buf == s_ptr ) return;
-	// reset buffer here
-	s_ptr           = s_buf;
-	// now print all log msgs we got while in a signal handler
- loop:
-	// sanity check
-	if ( p + 8 > pend ) {
-		fprintf(stderr,"Had error in Log.cpp: breech of log buffer4.");
-		s_ptr = s_buf;
-		return;
-	}
-	// first 4 bytes are the size of the string arguments
-	int32_t stringSizes;
-	gbmemcpy ( (char *)&stringSizes , p , 4 );
-	p += 4;
-	// then the type of the msg
-	int32_t type;
-	gbmemcpy ( (char *)&type , p , 4 );
-	p += 4;
-	// then the format string
-	char *format = p;
-	// its length including the \0
-	//int32_t flen = gbstrlen ( format ) + 1;
-	int32_t flen = 0;
-	char *q = format;
-	while ( q < pend && *q ) q++;
-	if ( q >= pend ) {
-		fprintf(stderr,"Had error in Log.cpp: breech of log buffer3.");
-		s_ptr = s_buf;
-		return;
-	}
-	flen = q - p + 1;
-	p += flen;
-	// skip the string arguments now
-	p += stringSizes;
-	// sanity check
-	if ( p + 8 + 4 > pend || p < s_buf ) {
-		fprintf(stderr,"Had error in Log.cpp: breech of log buffer2.");
-		s_ptr = s_buf;
-		return;
-	}
-	// get time
-	int64_t now ;
-	gbmemcpy ( (char *)&now , p , 8 );
-	p += 8;
-	// get size of args
-	int32_t apsize ;
-	gbmemcpy ( (char *)&apsize , p , 4 );
-	p += 4;
-	// dword align
-	int32_t rem = ((PTRTYPE)p) % 4;
-	if ( rem > 0 ) p +=  4 - rem;
-	// get va_list... needs to be word aligned!!
-	va_list ap ;
-	// MDW FIX ME
-	//ap = (char *)(void*)p;
-	p += apsize;
-	// . sanity check
-	// . i've seen this happen a lot lately since i started logging cancel
-	//   acks perhaps?
-	if ( p > pend || p < s_buf ) {
-		fprintf(stderr,"Had error in Log.cpp: breech of log buffer.");
-		s_ptr = s_buf;
-		return;
-	}
-	// print msg into this buf
-	char buf[1024*4];
-	// print it into our buf now
-	vsnprintf ( buf , 1024*4 , format , ap );
-	// pass buf to g_log
-	logR ( now , type , buf , true );
-	// if not done loop back
-	if ( p < pend ) goto loop;
-}
-
-// . IMPORTANT: should be called while the lock is on!
-// . we just re-write to the file
-bool Log::dumpLog ( ) {
-	// for now don't dump
-	m_numErrors =  0;
-
-	// for now just return true always
-	return true;
-}
 
 bool log ( int32_t type , const char *formatString , ...) {
 	if ( g_log.m_disabled ) return false;

@@ -137,13 +137,7 @@ class Log {
 	void reset ( );
 
 	// save before exiting
-	void close () { dumpLog();  };
-
-	// do we need to print out the msgs we've saved while in sig handler?
-	bool needsPrinting ( ) { return m_needsPrinting; };
-
-	// print the stuff that needs printing
-	void printBuf ( );
+	void close () { }
 
 	bool          m_disabled;
 
@@ -154,22 +148,11 @@ class Log {
 
  private:
 
-	bool dumpLog ( ); // make room for the new ones
-
 	const char *m_filename;
 	int     m_fd;
 
 	int64_t m_logFileSize;
 	bool makeNewLogFile ( );
-
-	const char  *m_errorMsg      [ MAX_LOG_MSGS ];
-	int16_t     m_errorMsgLen   [ MAX_LOG_MSGS ];
-	int64_t     m_errorTime     [ MAX_LOG_MSGS ];
-	unsigned char m_errorType     [ MAX_LOG_MSGS ];
-	int           m_numErrors;
-
-	// do we need to print out the msgs we've saved while in sig handler?
-	bool          m_needsPrinting;
 };
 
 extern class Log g_log;

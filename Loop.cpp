@@ -830,8 +830,6 @@ void Loop::doPoll ( ) {
 	// debug msg
 	//if ( g_conf.m_logDebugLoop ) log(LOG_DEBUG,"loop: Entered doPoll.");
 	if ( g_conf.m_logDebugLoop) log(LOG_DEBUG,"loop: Entered doPoll.");
-	// print log
-	if ( g_log.needsPrinting() ) g_log.printBuf();
 
 	if(g_udpServer.needBottom()) g_udpServer.makeCallbacks_ass ( 1 );
 
