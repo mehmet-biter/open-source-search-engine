@@ -78,6 +78,7 @@ typedef uint64_t qvec_t;
 //#define FIELD_UNUSED      48
 #define FIELD_GBPERMALINK      49
 //#define FIELD_UNUSED         50
+#define FIELD_GBTERMID         50
 #define FIELD_GBSECTIONHASH    51
 #define FIELD_GBDOCID          52
 #define FIELD_GBCONTENTHASH    53 // for deduping at spider time

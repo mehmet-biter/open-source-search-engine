@@ -264,6 +264,12 @@ bool Query::set2 ( const char *query        ,
 	for ( int32_t i = 0 ; i < m_numTerms && ! m_isBoolean ; i++ ) {
 		// get it
 		QueryTerm *qt = &m_qterms[i];
+
+		if( qt->m_fieldCode == FIELD_GBTERMID ) {
+			char *ds = m_qterms[i].m_term + 9; // strlen("gbtermid:")
+			qt->m_termId = atoll(ds);
+		}
+
 		// gbdocid:?
 		if ( qt->m_fieldCode != FIELD_GBDOCID ) continue;
 		// get docid
@@ -2767,6 +2773,14 @@ struct QueryField g_fields[] = {
 	 false,
 	 "gbdocid:123456",
 	 "Matches the document with the docid 123456",
+	 NULL,
+	 0},
+
+	{"gbtermid",
+	 FIELD_GBTERMID,
+	 false,
+	 "gbtermid:123456",
+	 "Matches the documents for the term with termid 123456",
 	 NULL,
 	 0},
 
