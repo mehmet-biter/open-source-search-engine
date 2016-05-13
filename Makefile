@@ -15,6 +15,7 @@ OBJS =  UdpSlot.o Rebalance.o \
 	PageAddUrl.o PageRoot.o PageSockets.o PageStats.o \
 	PageTitledb.o \
 	PageAddColl.o \
+	PageHealthCheck.o \
 	hash.o Domains.o \
 	Collectiondb.o \
 	linkspam.o ip.o sort.o \

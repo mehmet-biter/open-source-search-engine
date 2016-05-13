@@ -240,6 +240,12 @@ static WebPage s_pages[] = {
 	  "add/remove/get tags for sites/urls",
 	  sendPageTagdb ,  0 ,NULL,NULL,
 	  PG_NOAPI|PG_COLLADMIN|PG_ACTIVE},	  
+
+	{ PAGE_HEALTHCHECK, "health-check"   , 0 , "healthcheck" ,  0 , 0 ,
+	  "health check",
+	  sendPageHealthCheck  , 0 ,NULL,NULL,
+	  PG_NOAPI},
+
 };
 
 WebPage *Pages::getPage ( int32_t page ) {
@@ -1206,6 +1212,9 @@ bool  Pages::printAdminLinks ( SafeBuf *sb,
 		if ( i == PAGE_SEARCHBOX ) continue;
 		if ( i == PAGE_TITLEDB ) continue;
 		if ( i == PAGE_IMPORT ) continue;
+		if ( i == PAGE_HEALTHCHECK ) continue;
+		
+
 
 		// move these links to the coll nav bar on the left
 #ifndef PRIVACORE_SAFE_VERSION

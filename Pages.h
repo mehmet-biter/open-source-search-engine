@@ -67,6 +67,8 @@ bool sendPageAPI        ( TcpSocket *s , HttpRequest *r );
 bool sendPageHelp       ( TcpSocket *s , HttpRequest *r );
 bool sendPageGraph      ( TcpSocket *s , HttpRequest *r );
 bool sendPageQA ( TcpSocket *sock , HttpRequest *hr ) ;
+bool sendPageHealthCheck ( TcpSocket *sock , HttpRequest *hr ) ;
+
 
 // values for m_usePost:
 #define M_GET   0x00
@@ -225,6 +227,7 @@ enum {
 	PAGE_SEARCHBOX   ,
 	PAGE_PARSER      ,
 	PAGE_SITEDB      ,
+	PAGE_HEALTHCHECK ,
 	PAGE_NONE     	};
 	
 
