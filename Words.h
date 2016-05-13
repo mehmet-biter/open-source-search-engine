@@ -14,8 +14,6 @@
 // make sure it does not slow us down!!
 #define WORDS_LOCALBUFSIZE 80
 
-int32_t printstring ( char *s , int32_t len ) ;
-
 char *getFieldValue ( char *s ,int32_t  slen, char *field , int32_t *valueLen ) ;
 
 unsigned char getCharacterLanguage ( const char *utf8Char ) ;
@@ -254,9 +252,6 @@ class Words {
 	 Words     ( );
 	~Words     ( );
 	void reset ( ); 
-
-	void print ( );
-	void printWord ( int32_t i );
 
 	// returns -1 and sets g_errno on error
 	int32_t getLanguage ( class Sections *sections = NULL ,

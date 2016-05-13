@@ -480,33 +480,6 @@ bool Words::allocateWordBuffers(int32_t count, bool tagIds) {
 	return true;
 }
 
-void Words::print( ) {
-	for (int32_t i=0;i<m_numWords;i++) {
-		printWord(i);
-		printf("\n");
-	}
-}
-
-void Words::printWord ( int32_t i ) {
-	fprintf(stderr,"#%05"INT32" ",i);
-	fprintf(stderr,"%020"UINT64" ",m_wordIds[i]);
-	// print the word
-	printstring(m_words[i],m_wordLens[i]);
-}
-
-int32_t printstring ( char *s , int32_t len ) {
-	// filter out \n's and \r's
-	int32_t olen = 0;
-	for ( int32_t i = 0 ; i < len && olen < 17 ; i++ ) {
-		if ( s[i] == '\n' || s[i] =='\r' ) continue;
-		olen++;
-		fprintf(stderr,"%c",s[i]);
-	}
-	if ( olen == 17 ) fprintf(stderr,"...");
-	//while ( olen < 20 ) { fprintf(stderr," "); olen++; }
-	return olen;
-}
-
 static uint8_t s_findMaxIndex(int64_t *array, int num, int *wantmax = NULL) {
 	if(!array || num < 2 || num > 255) return(0);
 	int64_t max, oldmax;
