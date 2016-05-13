@@ -543,7 +543,7 @@ unsigned char Words::isBounded(int wordi) {
 	return(false);
 }
 
-unsigned char getCharacterLanguage ( char *utf8Char ) {
+unsigned char getCharacterLanguage ( const char *utf8Char ) {
 	// romantic?
 	char cs = getUtf8CharSize ( utf8Char );
 	// can't say what language it is

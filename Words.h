@@ -18,7 +18,7 @@ int32_t printstring ( char *s , int32_t len ) ;
 
 char *getFieldValue ( char *s ,int32_t  slen, char *field , int32_t *valueLen ) ;
 
-unsigned char getCharacterLanguage ( char *utf8Char ) ;
+unsigned char getCharacterLanguage ( const char *utf8Char ) ;
 
 #include "Xml.h"
 #include "SafeBuf.h"
