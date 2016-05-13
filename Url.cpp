@@ -1256,8 +1256,7 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 		m_path[0] = '/';
 		m_plen    = 1;
 		m_url[ ++m_ulen ]='\0';
-		// debug change
-		goto done;
+		return;
 	}
 
 	// . get the m_path and m_path length
@@ -1353,20 +1352,6 @@ void Url::set( const char *t, int32_t tlen, bool addWWW, bool stripParams, bool 
 		gbmemcpy(&m_url[m_ulen+1], &t[anchorPos], anchorLen);
 		m_url[m_ulen+1+anchorLen] = '\0';
 	}
-
-done:
-	// check for iterative stablization
-	static int32_t flag = 0;
-	if ( flag == 1 ) return;
-	Url u2;
-	flag = 1;
-	// Must not use defaults!
-	u2.set( m_url, m_ulen, addWWW, stripParams, stripPound, stripCommonFile, titledbVersion );
-		 
-	if ( strcmp(u2.getUrl(),m_url) != 0 ) {
-		log( LOG_WARN, "url: not stable. original='%s' check='%s'", m_url, u2.getUrl() );
-	}
-	flag = 0;
 }
 
 // hostname must also be www or NULL to be a root url
