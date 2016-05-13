@@ -1427,7 +1427,6 @@ bool Msg5::getRemoteList ( ) {
 				 -1                   , // syncPoint
 				 -1                   , // preferLocalReads
 				 NULL                 , // msg5
-				 NULL                 , // msg5b
 				 m_isRealMerge        , // merging files?
 				 m_allowPageCache     , // allow page cache?
 				 false                , // force local Indexdb

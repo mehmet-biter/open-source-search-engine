@@ -309,7 +309,6 @@ bool SiteGetter::getSiteList ( ) {
 				         -1,  // syncPoint
 				         -1,  // preferLocalReads
 				         NULL,  // msg5
-				         NULL,  // msg5b
 				         false,  // isrealmerge?
 				         true,  // allowpagecache?
 				         false,  // forceLocalIndexdb?

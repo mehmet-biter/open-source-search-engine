@@ -53,7 +53,6 @@ class Msg0 {
 		       const char     *endKey      ,
 		       int32_t      minRecSizes ,  // Positive values only
 		       void     *state       ,
-		       //void  (* callback)(void *state , class RdbList *list),
 		       void  (* callback)(void *state ),
 		       int32_t      niceness    ,
 		       bool      doErrorCorrection = true ,
@@ -66,7 +65,6 @@ class Msg0 {
 		       int64_t syncPoint         = -1   ,
 		       int32_t      preferLocalReads  = -1   , // -1=use g_conf
 		       class Msg5 *msg5            = NULL ,
-		       class Msg5 *msg5b           = NULL ,
 		       bool        isRealMerge     = false , // file merge?
 		       bool        allowPageCache  = true ,
 		       bool        forceLocalIndexdb = false,
@@ -98,7 +96,6 @@ class Msg0 {
 		       int64_t syncPoint         = -1   ,
 		       int32_t      preferLocalReads  = -1   , // -1=use g_conf
 		       class Msg5 *msg5            = NULL ,
-		       class Msg5 *msg5b           = NULL ,
 		       bool        isRealMerge     = false, // file merge?
 		       bool        allowPageCache  = true ,
 		       bool        forceLocalIndexdb = false,
@@ -130,7 +127,6 @@ class Msg0 {
 				 syncPoint         ,
 				 preferLocalReads  ,
 				 msg5            ,
-				 msg5b           ,
 				 isRealMerge     ,
 				 allowPageCache  ,
 				 forceLocalIndexdb ,
@@ -140,19 +136,8 @@ class Msg0 {
 	// . YOU NEED NOT CALL routines below here
 	// . private:
 
-	bool gotLoadReply ( ) ;
-
-	bool getList ( int32_t firstHostId ) ;
-
 	// gotta keep this handler public so the C wrappers can call them
 	void gotReply   ( char *reply , int32_t replySize , int32_t replyMaxSize );
-	void gotSplitReply ( );
-
-	// maps an rdbId to an Rdb
-	class Rdb *getRdb ( char rdbId ) ;
-
-	// the opposite of getRdb() above
-	char getRdbId ( class Rdb *rdb );
 
 	// callback info
 	void    (*m_callback ) ( void *state );//, class RdbList *list );
@@ -163,8 +148,6 @@ class Msg0 {
 	int32_t      m_ip;
 	int16_t     m_port;
 
-	// group we sent RdbList request to
-	//uint32_t  m_groupId;    
 	uint32_t  m_shardNum;
 
 	UdpSlot  *m_slot;
@@ -209,9 +192,7 @@ class Msg0 {
 	collnum_t m_collnum;
 
 	class Msg5  *m_msg5 ;
-	class Msg5  *m_msg5b;
 	bool         m_deleteMsg5;
-	bool         m_deleteMsg5b;
 	bool         m_isRealMerge;
 
 	// for timing the get

@@ -345,7 +345,6 @@ bool Images::getThumbnail ( char *pageSite ,
 				-1    , // syncpoint
 				-1    , // preferlocalreads
 				NULL  , // msg5
-				NULL  , // msg5b
 				false , // isRealMerge?
 				true  , // allow pg cache
 				false , // focelocalindexdb
@@ -438,7 +437,6 @@ bool Images::launchRequests ( ) {
 					-1    , // syncpoint
 					-1    , // preferlocalreads
 					NULL  , // msg5
-					NULL  , // msg5b
 					false , // isRealMerge?
 					true  , // allow pg cache
 					false , // focelocalindexdb

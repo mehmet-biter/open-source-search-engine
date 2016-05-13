@@ -24,7 +24,6 @@ Msg0::Msg0 ( ) {
 
 void Msg0::constructor ( ) {
 	m_msg5  = NULL;
-	m_msg5b = NULL;
 	m_mcast.constructor();
 	m_mcasts      = NULL;
 	m_numRequests = 0;
@@ -44,15 +43,11 @@ Msg0::~Msg0 ( ) {
 
 void Msg0::reset ( ) {
 	if ( m_msg5  && m_deleteMsg5  ) {
-		mdelete ( m_msg5 , sizeof(Msg5) , "Msg0" );
+		mdelete ( m_msg5 , sizeof(Msg5) , "Msg0::Msg5" );
 		delete ( m_msg5  );
 	}
-	if ( m_msg5b && m_deleteMsg5b ) {
-		mdelete ( m_msg5b , sizeof(Msg5) , "Msg0" );
-		delete ( m_msg5b );
-	}
 	m_msg5  = NULL;
-	m_msg5b = NULL;
+
 	if ( m_replyBuf )
 		mfree ( m_replyBuf, m_replyBufSize, "Msg0" );
 	m_replyBuf = NULL;
@@ -110,7 +105,6 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     int64_t syncPoint     ,
 		     int32_t      preferLocalReads ,
 		     Msg5     *msg5             ,
-		     Msg5     *msg5b            ,
 		     bool      isRealMerge      ,
 		     bool      allowPageCache    ,
 		     bool      forceLocalIndexdb ,
@@ -280,11 +274,9 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// . Msg5::getList() returns false if blocked, true otherwise
 	// . Msg5::getList() sets g_errno on error
 	// . don't do this if m_hostId was specified
-	if ( isLocal ) 
-	{ 
-		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: isLocal", __FILE__, __func__, __LINE__);
-		
-		
+	if ( isLocal ) {
+		logTrace( g_conf.m_logTraceMsg0, "isLocal" );
+
 		if ( msg5 ) {
 			m_msg5 = msg5;
 			m_deleteMsg5 = false;
@@ -299,31 +291,10 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 				    getDbnameFromId(m_rdbId));
 				goto skip;
 			}
-			mnew ( m_msg5 , sizeof(Msg5) , "Msg0" );
+			mnew ( m_msg5 , sizeof(Msg5) , "Msg0::Msg5" );
 			m_deleteMsg5 = true;
 		}
 
-		QUICKPOLL(m_niceness);
-		// same for msg5b
-		if ( msg5b ) {
-			m_msg5b = msg5b;
-			m_deleteMsg5b = false;
-		}
-		/*
-		else if ( m_rdbId == RDB_TITLEDB ) {
-			try { m_msg5b = new ( Msg5 ); } 
-			catch ( ... ) {
-				g_errno = ENOMEM;
-				log("net: Local alloc for disk read failed "
-				    "while tring to read data for %s. "
-				    "Trying remote request. 2.",
-				    getDbnameFromId(m_rdbId));
-				goto skip;
-			}
-			mnew ( m_msg5b , sizeof(Msg5) , "Msg0b" );
-			m_deleteMsg5b = true;
-		}
-		*/
 		QUICKPOLL(m_niceness);
 		if ( ! m_msg5->getList ( rdbId,
 					 m_collnum ,
@@ -677,7 +648,6 @@ void Msg0::gotReply ( char *reply , int32_t replySize , int32_t replyMaxSize )
 class State00 {
 public:
 	Msg5       m_msg5;
-	//Msg5       m_msg5b;
 	RdbList    m_list;
 	UdpSlot   *m_slot;
 	int64_t  m_startTime;
