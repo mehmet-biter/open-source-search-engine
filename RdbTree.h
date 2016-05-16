@@ -107,7 +107,7 @@ class RdbTree {
 		return addNode ( 0,(const char *)key,NULL,0);
 	}
 	int32_t addNode ( collnum_t collnum , const char *key, char *data, int32_t dataSize );
-	int32_t addNode ( collnum_t collnum , key_t key, char *data, int32_t dataSize ) {
+	int32_t addNode ( collnum_t collnum , const key_t &key, char *data, int32_t dataSize ) {
 		return addNode(collnum,(const char *)&key,data,dataSize);
 	}
 	int32_t addNode ( collnum_t collnum , const char *key ) {
@@ -117,7 +117,7 @@ class RdbTree {
 	// . returns -1 if not found
 	// . otherwise return the node #
 	int32_t getNode ( collnum_t collnum, const char *key );
-	int32_t getNode ( collnum_t collnum , key_t &key ) {
+	int32_t getNode ( collnum_t collnum , const key_t &key ) {
 		return getNode(collnum,(const char *)&key);
 	}
 
@@ -127,7 +127,7 @@ class RdbTree {
         // . get the node whose key is >= key 
         // . much much slower than getNextNode() below
         int32_t getNextNode ( collnum_t collnum, const char *key );
-        int32_t getNextNode ( collnum_t collnum , key_t &key ) {
+        int32_t getNextNode ( collnum_t collnum , const key_t &key ) {
 		return getNextNode ( collnum, (const char *)&key);
 	}
 
@@ -143,7 +143,7 @@ class RdbTree {
 
 	// . get the node whose key is <= "key"
     int32_t getPrevNode ( collnum_t collnum, const char *key );
-    int32_t getPrevNode ( collnum_t collnum , key_t &key ) {
+    int32_t getPrevNode ( collnum_t collnum , const key_t &key ) {
 		return getPrevNode(collnum,(const char *)&key);
 	}
 
@@ -158,17 +158,16 @@ class RdbTree {
 	// . frees m_data[node] if freeIt is true
 	void deleteNode3  ( int32_t  node , bool freeData );
 	int32_t deleteNode  ( collnum_t collnum, const char *key, bool freeData );
-	int32_t deleteNode  ( collnum_t collnum , key_t &key , bool freeData) {
-		return deleteNode ( collnum , (char *)&key , freeData ); };
+	int32_t deleteNode  ( collnum_t collnum , const key_t &key , bool freeData) {
+		return deleteNode ( collnum , (const char *)&key , freeData ); };
 
 	// delete all nodes with keys in [startKey,endKey]
 	void deleteNodes ( collnum_t collnum ,
-			   key_t startKey , key_t endKey , bool freeData ) {
-		deleteNodes(collnum,(char *)&startKey,(char *)&endKey,
+			   const key_t &startKey, const key_t &endKey, bool freeData ) {
+		deleteNodes(collnum,(const char *)&startKey,(const char *)&endKey,
 			    freeData); };
 
 	void deleteNodes ( collnum_t collnum ,
-			   //key_t startKey , key_t endKey , bool freeData );
 			   const char *startKey, const char *endKey, bool freeData );
 
 	// . delete all records in this list from the tree
@@ -230,8 +229,6 @@ class RdbTree {
 	// . like getMemOccupied() above but does not include left/right/parent
 	// . only includes occupied keys/sizes and the dataSizes themself
 	int32_t getMemOccupiedForList2 ( collnum_t collnum  ,
-				      //key_t     startKey ,
-				      //key_t     endKey   ,
 				      const char     *startKey,
 				      const char     *endKey  ,
 				      int32_t      minRecSizes ,
@@ -264,8 +261,8 @@ class RdbTree {
 		       int32_t     niceness = 0 );
 
 	bool getList ( collnum_t collnum    ,
-		       key_t    startKey    , 
-		       key_t    endKey      , 
+		       const key_t    &startKey    ,
+		       const key_t    &endKey      ,
 		       int32_t     minRecSizes ,
 		       RdbList *list        ,
 		       int32_t    *numPosRecs  ,
