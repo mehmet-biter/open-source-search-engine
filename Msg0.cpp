@@ -108,23 +108,12 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 		     bool      isRealMerge      ,
 		     bool      allowPageCache    ,
 		     bool      forceLocalIndexdb ,
-		     bool      noSplit , // doIndexdbSplit    ,
+		     bool      noSplit ,
 		     int32_t      forceParitySplit  ) {
 	logTrace( g_conf.m_logTraceMsg0, "BEGIN. hostId: %" PRId64", rdbId: %d", hostId, (int)rdbId );
 
-	// this is obsolete! mostly, but we need it for PageIndexdb.cpp to
-	// show a "termlist" for a given query term in its entirety so you
-	// don't have to check each machine in the network. if this is true it
-	// means to query each split and merge the results together into a
-	// single unified termlist. only applies to indexdb/datedb.
-	//if ( doIndexdbSplit ) { char *xx = NULL; *xx = 0; }
-	// note this because if caller is wrong it hurts performance major!!
-	//if ( doIndexdbSplit )
-	//	logf(LOG_DEBUG,"net: doing msg0 with indexdb split true");
 	// warning
 	if ( collnum < 0 ) log(LOG_LOGIC,"net: NULL collection. msg0.");
-
-	//if ( doIndexdbSplit ) { char *xx=NULL;*xx=0; }
 
 	// reset the list they passed us
 	list->reset();
@@ -135,10 +124,9 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 //	{
 //		log("%s:%s:%d: rdbId. [%d]", __FILE__,__func__,__LINE__, (int)rdbId);
 //		log("%s:%s:%d: m_ks.. [%d]", __FILE__,__func__,__LINE__, (int)m_ks);
-//		log("%s:%s:%d: hostId [%"INT64"]", __FILE__,__func__,__LINE__, hostId);
+//		log("%s:%s:%d: hostId [%" PRId64"]", __FILE__,__func__,__LINE__, hostId);
 //	}
-	
-	
+
 	// if startKey > endKey, don't read anything
 	//if ( startKey > endKey ) return true;
 	if ( KEYCMP(startKey,endKey,m_ks)>0 ) { char *xx=NULL;*xx=0; }//rettrue
@@ -201,7 +189,7 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	if ( forceLocalIndexdb ) m_shardNum = getMyShardNum();
 
 
-//	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: shardNum [%"INT32"]", __FILE__,__func__, __LINE__, m_shardNum);
+//	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: shardNum [%" PRId32"]", __FILE__,__func__, __LINE__, m_shardNum);
 
 
 	// . store these parameters
@@ -217,9 +205,10 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// . Msg2 does this when checking for a cached compound list.
 	//   compound lists do not actually exist, they are merges of smaller
 	//   UOR'd lists.
-	if ( maxCacheAge != 0 && ! addToCache && (numFiles > 0 || includeTree))
-		log(LOG_LOGIC,"net: msg0: "
-		    "Weird. check but don't add... rdbid=%"INT32".",(int32_t)m_rdbId);
+	if ( maxCacheAge != 0 && ! addToCache && (numFiles > 0 || includeTree)) {
+		log( LOG_LOGIC, "net: msg0: Weird. check but don't add... rdbid=%" PRId32".", ( int32_t ) m_rdbId );
+	}
+
 	// set this here since we may not call msg5 if list not local
 	//m_list->setFixedDataSize ( m_fixedDataSize );
 
@@ -317,20 +306,24 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 					 true , // compensateForMerge
 					 syncPoint ,
 					 m_isRealMerge ,
-					 m_allowPageCache ) ) return false;
+					 m_allowPageCache ) ) {
+			logTrace( g_conf.m_logTraceMsg0, "END, return false" );
+			return false;
+		}
+
 		// nuke it
 		reset();
-		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END", __FILE__, __func__, __LINE__);
+		logTrace( g_conf.m_logTraceMsg0, "END, return true" );
 		return true;
 	}
 skip:
 	// debug msg
 	if ( g_conf.m_logDebugQuery )
 		log(LOG_DEBUG,"net: msg0: Sending request for data to "
-		    "shard=%"UINT32" "
-		    "listPtr=%"PTRFMT" minRecSizes=%"INT32" termId=%"UINT64" "
-		    //"startKey.n1=%"XINT32",n0=%"XINT64" (niceness=%"INT32")",
-		    "startKey.n1=%"XINT64",n0=%"XINT64" (niceness=%"INT32")",
+		    "shard=%" PRIu32" "
+		    "listPtr=%"PTRFMT" minRecSizes=%" PRId32" termId=%" PRIu64" "
+		    //"startKey.n1=%" PRIx32",n0=%" PRIx64" (niceness=%" PRId32")",
+		    "startKey.n1=%" PRIx64",n0=%" PRIx64" (niceness=%" PRId32")",
 		    //g_hostdb.makeHostId ( m_groupId ) ,
 		    m_shardNum,
 		    (PTRTYPE)m_list,
@@ -342,41 +335,6 @@ skip:
 	char *replyBuf = NULL;
 	int32_t  replyBufMaxSize = 0;
 	bool  freeReply = true;
-
-	// adjust niceness for net transmission
-	bool realtime = false;
-	//if ( minRecSizes + 32 < TMPBUFSIZE ) realtime = true;
-
-	// if we're niceness 0 we need to pre-allocate for reply since it
-	// might be received within the asynchronous signal handler which
-	// cannot call mmalloc()
-	if ( realtime ) { // niceness <= 0 || netnice == 0 ) {
-		// . we should not get back more than minRecSizes bytes since 
-		//   we are now performing merges
-		// . it should not slow things down too much since the hashing
-		//   is 10 times slower than merging anyhow...
-		// . CAUTION: if rdb is not fixed-datasize then this will
-		//            not work for us! it can exceed m_minRecSizes.
-		replyBufMaxSize = m_minRecSizes ;
-		// . get a little extra to fix the error where we ask for 64 
-		//   but get 72
-		// . where is that coming from?
-		// . when getting titleRecs we often exceed the minRecSizes 
-		// . ?Msg8? was having trouble. was int16_t 32 bytes sometimes.
-		replyBufMaxSize += 36;
-		// make a buffer to hold the reply
-		replyBuf = (char *) mmalloc(replyBufMaxSize , "Msg0");
-		// g_errno is set and we return true if it failed
-		if ( ! replyBuf ) {
-			log("net: Failed to pre-allocate %"INT32" bytes to hold "
-			    "data read remotely from %s: %s.",
-			    replyBufMaxSize,getDbnameFromId(m_rdbId),
-			    mstrerror(g_errno));
-			    
-			if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END, return true. Could not allocate memory.", __FILE__, __func__, __LINE__);
-			return true;
-		}
-	}
 
 	// . make a request with the info above (note: not in network order)
 	// . IMPORTANT!!!!! if you change this change 
@@ -409,9 +367,8 @@ skip:
 		Host *h = g_hostdb.getHost ( m_hostId );
 		if ( ! h ) { 
 			g_errno = EBADHOSTID; 
-			log(LOG_LOGIC,"net: msg0: Bad hostId of %"INT64".",
-			    m_hostId);
-			if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END, retruen true. Bad hostId", __FILE__, __func__, __LINE__);
+			log(LOG_LOGIC,"net: msg0: Bad hostId of %" PRId64".", m_hostId);
+			logTrace( g_conf.m_logTraceMsg0, "END, return true. Bad hostId" );
 			return true;
 		}
 		
@@ -419,10 +376,7 @@ skip:
 		UdpServer *us ;
 		uint16_t port;
 		QUICKPOLL(m_niceness);
-		//if ( niceness <= 0 || netnice == 0 ) { 
-		//if ( realtime ) {
-		//	us = &g_udpServer2; port = h->m_port2; }
-		//else                 { 
+
 		us = &g_udpServer ; port = h->m_port ; 
 		// . returns false on error and sets g_errno, true otherwise
 		// . calls callback when reply is received (or error)
@@ -441,14 +395,13 @@ skip:
 					 -1            , // maxwait
 					 replyBuf      ,
 					 replyBufMaxSize ,
-					 m_niceness     ) ) // cback niceness
-		{
-			if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END, return true. Request sent.", __FILE__, __func__, __LINE__);
+					 m_niceness     ) ) { // cback niceness
+			logTrace( g_conf.m_logTraceMsg0, "END, return true. Request sent" );
 			return true;
 		}
 		
 		// return false cuz it blocked
-		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END, return false. sendRequest blocked", __FILE__, __func__, __LINE__);
+		logTrace( g_conf.m_logTraceMsg0, "END, return false. sendRequest blocked" );
 		return false;
 	}
 	// timing debug
@@ -510,40 +463,39 @@ skip:
 			      minRecSizes     ) ) 
 	{
 		log(LOG_ERROR, "net: Failed to send request for data from %s in shard "
-		    "#%"UINT32" over network: %s.",
+		    "#%" PRIu32" over network: %s.",
 		    getDbnameFromId(m_rdbId),m_shardNum, mstrerror(g_errno));
 		// but speed it up
 		m_errno = g_errno;
 		m->reset();
-		if ( m_numRequests > 0 )
-		{
-			if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END - returning false", __FILE__, __func__, __LINE__);
+		if ( m_numRequests > 0 ) {
+			logTrace( g_conf.m_logTraceMsg0, "END - returning false" );
 			
 			return false;
 		}
-		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END - returning true", __FILE__, __func__, __LINE__);
+
+		logTrace( g_conf.m_logTraceMsg0, "END - returning true" );
 		return true;
 	}
 
 	m_numRequests++;
 
 	// we blocked
-	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END - returning false, blocked", __FILE__, __func__, __LINE__);
+	logTrace( g_conf.m_logTraceMsg0, "END - returning false, blocked" );
 	return false;
 }
 
 
 // . this is called when we got a local RdbList
 // . we need to call it to call the original caller callback
-void gotListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) 
-{
-	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+void gotListWrapper2 ( void *state , RdbList *list , Msg5 *msg5 ) {
+	logTrace( g_conf.m_logTraceMsg0, "BEGIN" );
 
 	Msg0 *THIS = (Msg0 *) state;
 	THIS->reset(); // delete m_msg5
 	THIS->m_callback ( THIS->m_state );//, THIS->m_list );
 
-	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END. rdbId=%d", __FILE__, __func__, __LINE__, (int)THIS->m_rdbId);
+	logTrace( g_conf.m_logTraceMsg0, "END. rdbId=%d", (int)THIS->m_rdbId );
 }
 
 
@@ -564,9 +516,8 @@ void gotSingleReplyWrapper ( void *state , UdpSlot *slot ) {
 	THIS->m_callback ( THIS->m_state );// THIS->m_list );
 }
 
-void gotMulticastReplyWrapper0 ( void *state , void *state2 ) 
-{
-	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+void gotMulticastReplyWrapper0 ( void *state , void *state2 ) {
+	logTrace( g_conf.m_logTraceMsg0, "BEGIN" );
 
 	Msg0 *THIS = (Msg0 *)state;
 
@@ -580,20 +531,18 @@ void gotMulticastReplyWrapper0 ( void *state , void *state2 )
 		THIS->gotReply( reply , replySize , replyMaxSize ) ;
 	}
 	THIS->m_callback ( THIS->m_state );
-	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END", __FILE__, __func__, __LINE__);
+	logTrace( g_conf.m_logTraceMsg0, "END" );
 }
 
 // . returns false and sets g_errno on error
 // . we are responsible for freeing reply/replySize
-void Msg0::gotReply ( char *reply , int32_t replySize , int32_t replyMaxSize ) 
-{
-	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
-	
-	
+void Msg0::gotReply ( char *reply , int32_t replySize , int32_t replyMaxSize ) {
+	logTrace( g_conf.m_logTraceMsg0, "BEGIN" );
+
 	// timing debug
 	if ( g_conf.m_logTimingNet && m_rdbId==RDB_POSDB && m_startTime > 0 )
-		log(LOG_TIMING,"net: msg0: Got termlist, termId=%"UINT64". "
-		    "Took %"INT64" ms, replySize=%"INT32" (niceness=%"INT32").",
+		log(LOG_TIMING,"net: msg0: Got termlist, termId=%" PRIu64". "
+		    "Took %" PRId64" ms, replySize=%" PRId32" (niceness=%" PRId32").",
 		    g_posdb.getTermId ( m_startKey ) ,
 		    gettimeofdayInMilliseconds()-m_startTime,
 		    replySize,m_niceness);
@@ -639,7 +588,7 @@ void Msg0::gotReply ( char *reply , int32_t replySize , int32_t replyMaxSize )
 	//cache->addList ( m_startKey , m_list ) ;
 	// reset g_errno -- we don't care if cache coulnd't add it
 	//g_errno = 0;
-	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END", __FILE__, __func__, __LINE__);
+	logTrace( g_conf.m_logTraceMsg0, "END" );
 }
 
 
@@ -659,9 +608,7 @@ public:
 // . MUST call g_udpServer::sendReply or sendErrorReply() so slot can
 //   be destroyed
 void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
-
-
-	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN. Got request for an RdbList", __FILE__, __func__, __LINE__);
+	logTrace( g_conf.m_logTraceMsg0, "BEGIN. Got request for an RdbList" );
 
 	// if niceness is 0, use the higher priority udpServer
 	UdpServer *us = &g_udpServer;
@@ -671,8 +618,8 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	int32_t  requestSize = slot->m_readBufSize;
 	// collection is now stored in the request, so i commented this out
 	//if ( requestSize != MSG0_REQ_SIZE ) {
-	//	log("net: Received bad data request size of %"INT32" bytes. "
-	//	    "Should be %"INT32".", requestSize ,(int32_t)MSG0_REQ_SIZE);
+	//	log("net: Received bad data request size of %" PRId32" bytes. "
+	//	    "Should be %" PRId32".", requestSize ,(int32_t)MSG0_REQ_SIZE);
 	//	us->sendErrorReply ( slot , EBADREQUESTSIZE );
 	//	return;
 	//}
@@ -697,26 +644,22 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	char ks = getKeySizeFromRdbId ( rdbId );
 	char     *startKey           = p; p+=ks;
 	char     *endKey             = p; p+=ks;
-	// then null terminated collection
-	//char     *coll               = p;
 	collnum_t collnum = *(collnum_t *)p; p += sizeof(collnum_t);
 
 	CollectionRec *xcr = g_collectiondb.getRec ( collnum );
 	if ( ! xcr ) g_errno = ENOCOLLREC;
-	
-	if( g_conf.m_logTraceMsg0 )	
-	{
-		log("%s:%s:%d: rdbId....... %d", __FILE__,__func__, __LINE__, (int)rdbId);
-		log("%s:%s:%d: key size.... %d", __FILE__,__func__, __LINE__, (int)ks);
-		log("%s:%s:%d: startFileNum %"INT32"", __FILE__,__func__, __LINE__,startFileNum);
-		log("%s:%s:%d: numFiles.... %"INT32"", __FILE__,__func__, __LINE__, numFiles);
+
+	if( g_conf.m_logTraceMsg0 ) {
+		logTrace( g_conf.m_logTraceMsg0, "rdbId....... %d", (int)rdbId );
+		logTrace( g_conf.m_logTraceMsg0, "key size.... %d", (int)ks );
+		logTrace( g_conf.m_logTraceMsg0, "startFileNum %" PRId32, startFileNum );
+		logTrace( g_conf.m_logTraceMsg0, "numFiles.... %" PRId32, numFiles );
 	}
-	
+
 	// error set from XmlDoc::cacheTermLists()?
-	if ( g_errno ) 
-	{
-		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END. Invalid collection", __FILE__, __func__, __LINE__);
-			
+	if ( g_errno ) {
+		logTrace( g_conf.m_logTraceMsg0, "END. Invalid collection" );
+
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , EBADRDBID ); 
 		return;
@@ -727,9 +670,8 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	//Msg0 msg0;
 	//Rdb *rdb = msg0.getRdb ( rdbId );
 	Rdb *rdb = getRdbFromId ( rdbId );
-	if ( ! rdb ) 
-	{ 
-		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END. Invalid rdbId", __FILE__, __func__, __LINE__);
+	if ( ! rdb ) {
+		logTrace( g_conf.m_logTraceMsg0, "END. Invalid rdbId" );
 		
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
 		us->sendErrorReply ( slot , EBADRDBID ); 
@@ -745,7 +687,7 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	try { st0 = new (State00); }
 	catch ( ... ) { 
 		g_errno = ENOMEM;
-		log("Msg0: new(%"INT32"): %s", 
+		log("Msg0: new(%" PRId32"): %s", 
 		    (int32_t)sizeof(State00),mstrerror(g_errno));
 		    
 		log(LOG_ERROR,"%s:%s:%d: call sendErrorReply.", __FILE__, __func__, __LINE__);
@@ -767,9 +709,10 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 	QUICKPOLL(niceness);
 
 	// debug msg
-	if ( maxCacheAge != 0 && ! addToCache )
-		log(LOG_LOGIC,"net: msg0: check but don't add... rdbid=%"INT32".",
-		    (int32_t)rdbId);
+	if ( maxCacheAge != 0 && ! addToCache ) {
+		log( LOG_LOGIC, "net: msg0: check but don't add... rdbid=%" PRId32".", ( int32_t ) rdbId );
+	}
+
 	// . if this request came over on the high priority udp server
 	//   make sure the priority gets passed along
 	// . return if this blocks
@@ -795,27 +738,25 @@ void handleRequest0 ( UdpSlot *slot , int32_t netnice ) {
 				     true , // compensateForMerge
 				     syncPoint ,
 				     false,
-				     allowPageCache ) )
-	{
-		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END. m_msg5.getList returned false", __FILE__, __func__, __LINE__);
+				     allowPageCache ) ) {
+		logTrace( g_conf.m_logTraceMsg0, "END. m_msg5.getList returned false" );
 		return;
 	}
 
 	// call wrapper ouselves
-	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: Calling gotListWrapper", __FILE__, __func__, __LINE__);
+	logTrace( g_conf.m_logTraceMsg0, "Calling gotListWrapper" );
 
 	gotListWrapper ( st0 , NULL , NULL );
 
-	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END", __FILE__, __func__, __LINE__);
+	logTrace( g_conf.m_logTraceMsg0, "END" );
 }
 
 #include "Sections.h" // SectionVote
 
 // . slot should be auto-nuked upon transmission or error
 // . TODO: ensure if this sendReply() fails does it really nuke the slot?
-void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) 
-{
-	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: BEGIN", __FILE__, __func__, __LINE__);
+void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx ) {
+	logTrace( g_conf.m_logTraceMsg0, "BEGIN" );
 	
 	// get the state
 	State00 *st0 = (State00 *)state;
@@ -824,31 +765,24 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx )
 	RdbList   *list = &st0->m_list;
 	Msg5      *msg5 = &st0->m_msg5;
 	UdpServer *us   =  st0->m_us;
-	// sanity check -- ensure they match
-	//if ( niceness != st0->m_niceness )
-	//	log("Msg0: niceness mismatch");
-	// debug msg
-	//if ( niceness != 0 ) 
-	//	log("HEY! niceness is not 0");
+
 	// timing debug
 	if ( g_conf.m_logTimingNet || g_conf.m_logDebugNet ) {
-		//log("Msg0:hndled request %"UINT64"",gettimeofdayInMilliseconds());
+		//log("Msg0:hndled request %" PRIu64"",gettimeofdayInMilliseconds());
 		int32_t size = -1;
 		if ( list ) size     = list->getListSize();
 		log(LOG_TIMING|LOG_DEBUG,
 		    "net: msg0: Handled request for data. "
-		    "Now sending data termId=%"UINT64" size=%"INT32""
-		    " transId=%"INT32" ip=%s port=%i took=%"INT64" "
-		    "(niceness=%"INT32").",
+		    "Now sending data termId=%" PRIu64" size=%" PRId32""
+		    " transId=%" PRId32" ip=%s port=%i took=%" PRId64" "
+		    "(niceness=%" PRId32").",
 		    g_posdb.getTermId(msg5->m_startKey),
 		    size,slot->m_transId,
 		    iptoa(slot->m_ip),slot->m_port,
 		    gettimeofdayInMilliseconds() - st0->m_startTime ,
 		    st0->m_niceness );
 	}
-	// debug
-	//if ( ! msg5->m_includeTree )
-	//	log("hotit\n");
+
 	// on error nuke the list and it's data
 	if ( g_errno ) {
 		mdelete ( st0 , sizeof(State00) , "Msg0" );
@@ -885,8 +819,8 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx )
 	     // do not annoy me with these linkdb msgs
 	     dataSize > newSize+100 ) 
 		log(LOG_LOGIC,"net: msg0: Sending more data than what was "
-		    "requested. Ineffcient. Bad engineer. dataSize=%"INT32" "
-		    "minRecSizes=%"INT32".",dataSize,oldSize);
+		    "requested. Ineffcient. Bad engineer. dataSize=%" PRId32" "
+		    "minRecSizes=%" PRId32".",dataSize,oldSize);
 		    
 	//
 	// for linkdb lists, remove all the keys that have the same IP32
@@ -941,7 +875,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx )
 	}
 
 
-	//log("sending replySize=%"INT32" min=%"INT32"",dataSize,msg5->m_minRecSizes);
+	//log("sending replySize=%" PRId32" min=%" PRId32"",dataSize,msg5->m_minRecSizes);
 	// . TODO: dataSize may not equal list->getListMaxSize() so
 	//         Mem class may show an imblanace
 	// . now g_udpServer is responsible for freeing data/dataSize
@@ -949,7 +883,7 @@ void gotListWrapper ( void *state , RdbList *listb , Msg5 *msg5xx )
 	//   if need be
 	st0->m_us->sendReply_ass( data, dataSize, alloc, allocSize, slot, st0, doneSending_ass, -1, -1, true );
 
-	if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END", __FILE__, __func__, __LINE__);
+	logTrace( g_conf.m_logTraceMsg0, "END" );
 }	
 
 
@@ -969,8 +903,8 @@ void doneSending_ass ( void *state , UdpSlot *slot ) {
 		double mbps ;
 		mbps = (((double)slot->m_sendBufSize) * 8.0 / (1024.0*1024.0))/
 			(((double)slot->m_startTime)/1000.0);
-		log("net: msg0: Sent %"INT32" bytes of data in %"INT64" ms (%3.1fMbps) "
-		      "(niceness=%"INT32").",
+		log("net: msg0: Sent %" PRId32" bytes of data in %" PRId64" ms (%3.1fMbps) "
+		      "(niceness=%" PRId32").",
 		      slot->m_sendBufSize , now - slot->m_startTime , mbps ,
 		      st0->m_niceness );
 	}
