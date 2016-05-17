@@ -28,8 +28,8 @@ UrlParser::UrlParser( const char *url, size_t urlLen )
 	, m_urlLen( urlLen )
 	, m_scheme( NULL )
 	, m_schemeLen( 0 )
-	, m_domain( NULL )
-	, m_domainLen( 0 )
+	, m_hostName( NULL )
+	, m_hostNameLen( 0 )
 	, m_paths()
 	, m_pathEndChar('\0')
 	, m_pathsDeleteCount( 0 )
@@ -46,18 +46,18 @@ void UrlParser::parse() {
 	const char *urlEnd = m_url + m_urlLen;
 	const char *currentPos = m_url;
 
-	m_domain = static_cast<const char*>( memmem( currentPos, urlEnd - currentPos, "://", 3 ) );
-	if ( m_domain != NULL ) {
-		m_domain += 3;
-		currentPos = m_domain;
+	m_hostName = static_cast<const char*>( memmem( currentPos, urlEnd - currentPos, "://", 3 ) );
+	if ( m_hostName != NULL ) {
+		m_hostName += 3;
+		currentPos = m_hostName;
 	}
 
 	const char *pathPos = static_cast<const char*>( memchr( currentPos, '/', urlEnd - currentPos ) );
 	if ( pathPos != NULL ) {
-		m_domainLen = pathPos - m_domain;
+		m_hostNameLen = pathPos - m_hostName;
 		currentPos = pathPos + 1;
 	} else {
-		m_domainLen = urlEnd - m_domain;
+		m_hostNameLen = urlEnd - m_hostName;
 
 		// nothing else to process
 		return;
@@ -136,7 +136,7 @@ const char* UrlParser::unparse() {
 	m_urlParsed.clear();
 
 	// domain
-	m_urlParsed.append( m_url, ( m_domain - m_url ) + m_domainLen );
+	m_urlParsed.append( m_url, ( m_hostName - m_url ) + m_hostNameLen );
 
 	bool isFirst = true;
 	for ( std::vector<UrlComponent>::const_iterator it = m_paths.begin(); it != m_paths.end(); ++it ) {

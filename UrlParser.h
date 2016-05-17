@@ -47,8 +47,8 @@ private:
 	const char *m_scheme;
 	size_t m_schemeLen;
 
-	const char *m_domain; // including port (for now)
-	size_t m_domainLen;
+	const char *m_hostName; // including port (for now)
+	size_t m_hostNameLen;
 
 	std::vector<UrlComponent> m_paths;
 	char m_pathEndChar;
