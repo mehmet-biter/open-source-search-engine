@@ -989,18 +989,21 @@ bool Hostdb::hashHosts ( ) {
 	for ( int32_t i = 0 ; i < m_numHosts ; i++ ) {
 		// get the ith host
 		Host *h = &m_hosts[i];
-		Host *h2 ;
-		h2 = getUdpHost ( h->m_ip , h->m_port );
-		if ( h != h2 ) 
-			return log("db: Host lookup failed for hostId %i.",
-				   h->m_hostId);
+		Host *h2 = getUdpHost ( h->m_ip , h->m_port );
+		if ( h != h2 ) {
+			log( LOG_WARN, "db: Host lookup failed for hostId %i.", h->m_hostId );
+			return false;
+		}
+
 		h2 = getUdpHost ( h->m_ipShotgun , h->m_port );
-		if ( h != h2 ) 
-			return log("db: Host lookup2 failed for hostId %"INT32".",
-				   h->m_hostId);
-		if ( ! isIpInNetwork ( h->m_ip ) )
-			return log("db: Host lookup5 failed for hostId %"INT32".",
-				   h->m_hostId);
+		if ( h != h2 ) {
+			log( LOG_WARN, "db: Host lookup2 failed for hostId %"INT32".", h->m_hostId );
+			return false;
+		}
+		if ( ! isIpInNetwork ( h->m_ip ) ) {
+			log( LOG_WARN, "db: Host lookup5 failed for hostId %"INT32".", h->m_hostId );
+			return false;
+		}
 	}
 
 	// verify g_hostTableTcp
@@ -1009,14 +1012,16 @@ bool Hostdb::hashHosts ( ) {
 		Host *h = &m_hosts[i];
 		Host *h2 ;
 		h2 = getTcpHost ( h->m_ip , h->m_httpPort );
-		if ( h != h2 ) 
-			return log("db: Host lookup3 failed for hostId %"INT32". "
-				   "ip=%s port=%hu",
-				   h->m_hostId,iptoa(h->m_ip),h->m_httpPort);
+		if ( h != h2 ) {
+			log( LOG_WARN, "db: Host lookup3 failed for hostId %"INT32". ip=%s port=%hu",
+			     h->m_hostId, iptoa( h->m_ip ), h->m_httpPort );
+			return false;
+		}
 		h2 = getTcpHost ( h->m_ip , h->m_httpsPort );
-		if ( h != h2 ) 
-			return log("db: Host lookup4 failed for hostId %"INT32".",
-				   h->m_hostId);
+		if ( h != h2 ) {
+			log( LOG_WARN, "db: Host lookup4 failed for hostId %"INT32".", h->m_hostId );
+			return false;
+		}
 	}
 
 	return true;
