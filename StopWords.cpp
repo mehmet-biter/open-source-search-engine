@@ -325,7 +325,7 @@ static char *s_queryStopWordsUnknown[] = {
 	"til",		// to/at/for/until/against/by/of/into,
 	//"er",		// present
 	//"som",		// who,
-	"pЕ",		// on/upon/in/on/at/to/after/of/with/for,
+	"pц╔",		// on/upon/in/on/at/to/after/of/with/for,
 	//"de",		// they
 	//"med",		// with/by/in,
 	//"han",		// he
@@ -368,8 +368,8 @@ static char *s_queryStopWordsUnknown[] = {
 	//"blev",		// past
 	//"kunne",	// could
 	//"ind",		// in
-	//"nЕr",	// when
-	//"vФre",	// present
+	//"nц╔r",	// when
+	//"vц╕re",	// present
 	//"dog",	// however/yet/after
 	//"noget",	// something
 	//"ville",	// would
@@ -382,7 +382,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"end",	// than
 	//"dette",	// this
 	//"mit",	// my/mine
-	//"ogsЕ",		// also
+	//"ogsц╔",		// also
 	//"ogsa",		// also
 	//"under",	// under/beneath/below/during,
 	//"have",		// have
@@ -406,11 +406,11 @@ static char *s_queryStopWordsUnknown[] = {
 	//"ad",		// by/through
 	//"bliver",	// present
 	//"hendes",	// her/hers
-	//"vФret",	// be
+	//"vц╕ret",	// be
 	//"vaeret",	// be
 	"thi",		// for
 	//"jer",		// you
-	//"sЕdan",	// such,
+	//"sц╔dan",	// such,
 
 	// dutch stop words
 	"de",		// the
@@ -539,7 +539,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"ma",		// my
 	//"mais",		// but
 	//"me",		// me
-	//"mЙme",		// same;
+	//"mц╙me",		// same;
 	//"mes",		// me
 	//"moi",		// me
 	//"mon",		// my
@@ -609,7 +609,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"dem",		// 
 	//"die",		// 
 	"das",		// 
-	//"daъ",		// that
+	//"daц÷",		// that
 	"derselbe",	// the
 	"derselben",	// 
 	"denselben",	// 
@@ -664,7 +664,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"euren",	// 
 	//"eurer",	// 
 	//"eures",	// 
-	"fЭr",		// for
+	"fц╪r",		// for
 	//"gegen",	// towards
 	//"gewesen",	// p.p.
 	//"hab",		// have
@@ -709,8 +709,8 @@ static char *s_queryStopWordsUnknown[] = {
 	//"keinen",	// 
 	//"keiner",	// 
 	//"keines",	// 
-	//"kЖnnen",	// can
-	//"kЖnnte",	// could
+	//"kц╤nnen",	// can
+	//"kц╤nnte",	// could
 	//"machen",	// do
 	//"man",		// one
 	//"manche",	// some,
@@ -758,7 +758,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"sollte",	// should
 	//"sondern",	// but
 	//"sonst",	// else
-	//"Эber",		// over
+	//"ц╪ber",		// over
 	//"um",		// about,
 	//"und",		// and
 	//"uns",		// us
@@ -772,7 +772,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"vom",		// von
 	"von",		// from
 	//"vor",		// before
-	//"wДhrend",	// while
+	//"wц╓hrend",	// while
 //		"war",		// was
 	//"waren",	// were
 	//"warst",	// wast
@@ -797,8 +797,8 @@ static char *s_queryStopWordsUnknown[] = {
 	//"wo",		// where
 	//"wollen",	// want
 	//"wollte",	// wanted
-	//"wЭrde",	// would
-	//"wЭrden",	// would
+	//"wц╪rde",	// would
+	//"wц╪rden",	// would
 	"zu",		// to
 	"zum",		// zu
 	"zur",		// zu
@@ -901,7 +901,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"ma",		// but
 	"ed",		// and
 	//"se",		// if
-	//"perchИ",	// why,
+	//"perchц╘",	// why,
 	//"anche",	// also
 //		"come",		// how
 	//"dov",		// where
@@ -910,7 +910,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"chi",		// who
 	//"cui",		// whom
 	//"non",		// not
-	//"piЫ",		// more
+	//"piц╧",		// more
 	//"quale",	// who,
 	//"quanto",	// how
 	//"quanti",	// 
@@ -945,7 +945,7 @@ static char *s_queryStopWordsUnknown[] = {
 	"til",		// to
 	//"er",		// is
 	//"som",		// who/that
-	"pЕ",		// on
+	"pц╔",		// on
 	//"de",		// they
 	//"med",		// with
 	//"han",		// he
@@ -953,7 +953,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"ikke",		// not
 	//"inte",		// not
 	//"der",		// there
-	//"sЕ",		// so
+	//"sц╔",		// so
 	//"var",		// was
 	//"meg",		// me
 	//"seg",		// you
@@ -968,7 +968,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"hade",		// had
 	//"hu",		// she
 	//"hun",		// she
-	//"nЕ",		// now
+	//"nц╔",		// now
 	//"over",		// over
 	//"da",		// when/as
 	//"ved",		// by/know
@@ -987,7 +987,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"hva",		// what
 	//"skal",		// shall/must
 	//"selv",		// self
-	//"sjЬl",		// self
+	//"sjц╦l",		// self
 	//"her",		// here
 	//"alle",		// all
 	//"vil",		// will
@@ -997,8 +997,8 @@ static char *s_queryStopWordsUnknown[] = {
 	//"blitt",	// have
 	//"kunne",	// could
 	//"inn",		// in
-	//"nЕr",		// when
-	//"vФre",		// be
+	//"nц╔r",		// when
+	//"vц╕re",		// be
 	//"kom",		// come
 	//"noen",		// some
 	//"noe",		// some
@@ -1019,7 +1019,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"sine",		// hers/his
 	//"sitt",		// hers/his
 	//"mot",		// against
-	"Е",		// to
+	"ц╔",		// to
 	//"meget",	// much
 	//"hvorfor",	// why
 	//"sia",		// since
@@ -1037,18 +1037,18 @@ static char *s_queryStopWordsUnknown[] = {
 	//"samme",	// same
 	//"hvilken",	// which
 	//"hvilke",	// which
-	//"sЕnn",		// such
+	//"sц╔nn",		// such
 	//"inni",		// inside/within
 	//"mellom",	// between
-	//"vЕr",		// our
+	//"vц╔r",		// our
 	//"hver",		// each
 	//"hvem",		// who
 	//"vors",		// us/ours
 	//"dere",		// their
 	//"deres",	// theirs
 	//"hvis",		// whose
-	//"bЕde",		// both
-	//"bЕe",		// both
+	//"bц╔de",		// both
+	//"bц╔e",		// both
 	//"begge",	// both
 	//"siden",	// since
 	//"dykk",		// your
@@ -1058,7 +1058,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"deires",	// theirs
 	//"deim",		// them
 	//"di",		// your
-	//"dЕ",		// as/when
+	//"dц╔",		// as/when
 	"eg",		// I
 	"ein",		// a/an
 	"ei",		// a/an
@@ -1066,7 +1066,7 @@ static char *s_queryStopWordsUnknown[] = {
 	"eitt",		// a/an
 	"elles",	// or
 	//"honom",	// he
-	"hjЕ",		// at
+	"hjц╔",		// at
 	//"ho",		// she
 	//"hoe",		// she
 	//"henne",	// her
@@ -1113,9 +1113,9 @@ static char *s_queryStopWordsUnknown[] = {
 	//"varte",	// became
 	//"vart",		// became
 	//"er",		// am
-	"vФre",		// to
+	"vц╕re",		// to
 	//"var",		// was
-	"Е",		// on
+	"ц╔",		// on
 
 
 	// portuguese stop words
@@ -1130,7 +1130,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"um",		// a
 	"para",		// for
 	"com",		// with
-	//"nЦo",		// not,
+	//"nцёo",		// not,
 	"uma",		// a
 	//"os",		// the;
 	//"no",		// em  "hurts us too much in queries"
@@ -1145,20 +1145,20 @@ static char *s_queryStopWordsUnknown[] = {
 	"ao",		// a
 	//"ele",		// he
 	"das",		// de
-	//"Ю",		// a
+	//"ц═",		// a
 	//"seu",		// his
 	//"sua",		// her
 	//"ou",		// or
 	//"quando",	// when
 	//"muito",	// much
 	"nos",		// em
-	//"jА",		// already,
+	//"jц║",		// already,
 	//"eu",		// I
-	//"tambИm",	// also
-	//"sС",		// only,
+	//"tambц╘m",	// also
+	//"sц║",		// only,
 	//"pelo",		// per
 	//"pela",		// per
-	//"atИ",		// up
+	//"atц╘",		// up
 	//"isso",		// that
 	//"ela",		// he
 	//"entre",	// between
@@ -1172,19 +1172,19 @@ static char *s_queryStopWordsUnknown[] = {
 	//"me",		// me
 	//"esse",		// that
 	//"eles",		// they
-	//"vocЙ",		// you
+	//"vocц╙",		// you
 	//"essa",		// that
 	"num",		// em
 	//"nem",		// nor
 	//"suas",		// her
 	//"meu",		// my
-	"Юs",		// a
+	"ц═s",		// a
 	//"minha",	// my
 	"numa",		// em
 	//"pelos",	// per
 	//"elas",		// they
 	//"qual",		// which
-	//"nСs",		// we
+	//"nцЁs",		// we
 	"lhe",		// to
 	//"deles",	// of them
 	//"essas",	// those
@@ -1194,7 +1194,7 @@ static char *s_queryStopWordsUnknown[] = {
 	"dele",		// of
 	//"tu",		// thou
 	//"te",		// thee
-	//"vocЙs",	// you
+	//"vocц╙s",	// you
 	//"vos",		// you
 	"lhes",		// to
 	//"meus",		// my
@@ -1219,188 +1219,188 @@ static char *s_queryStopWordsUnknown[] = {
 	//"isto",		// this
 	//"aquilo",	// that
 	//"estou",	// 
-	//"estА",		// 
+	//"estц║",		// 
 	//"estamos",	// 
-	//"estЦo",	// 
+	//"estцёo",	// 
 	//"estive",	// 
 	//"esteve",	// 
 	//"estivemos",	// 
 	//"estiveram",	// 
 	//"estava",	// 
-	//"estАvamos",	// 
+	//"estц║vamos",	// 
 	//"estavam",	// 
 	//"estivera",	// 
-	//"estivИramos",	// 
+	//"estivц╘ramos",	// 
 	//"esteja",	// 
 	//"estejamos",	// 
 	//"estejam",	// 
 	//"estivesse",	// 
-	//"estivИssemos",	// 
+	//"estivц╘ssemos",	// 
 	//"estivessem",	// 
 	//"estiver",	// 
 	//"estivermos",	// 
 	//"estiverem",	// 
 
 	// russian stop words
-	"и",		// and
-	"в",		// in/into
-	"во",		// alternative
-	//"не",		// not
-	//"что",		// what/that
-	//"он",		// he
-	"на",		// on/onto
-	"я",		// i
-	"с",		// from
-	"со",		// alternative
-	//"как",		// how
-	//"а",		// milder
-	"то",		// conjunction
-	//"все",		// all
-	//"она",		// she
-	//"так",		// so,
-	//"его",		// him
-	//"но",		// but
-	//"да",		// yes/and
-	//"ты",		// thou
-	"к",		// towards,
-	"у",		// around,
-	//"же",		// intensifier
-	//"вы",		// you
-	//"за",		// beyond,
-	//"бы",		// conditional/subj.
-	//"по",		// up
-	//"только",	// only
-	//"ее",		// her
-	"мне",		// to
-	"было",		// it
-	//"вот",		// here
-	//"от",		// away
-	//"меня",		// me
-	//"еще",		// still,
-	//"нет",		// no,
-	"о",		// about
-	//"из",		// out
-	"ему",		// to
-	//"теперь",	// now
-	//"когда",	// when
-	//"даже",		// even
-	//"ну",		// so,
-	//"вдруг",	// suddenly
-	//"ли",		// interrogative
-	//"если",		// if
-	//"уже",		// already,
-	"или",		// or
-	//"ни",		// neither
-	"быть",		// to
-	//"был",		// he
-	//"него",		// prepositional
-	//"до",		// up
-	//"вас",		// you
-	//"нибудь",	// indef.
-	//"опять",	// again
-	//"уж",		// already,
-	"вам",		// to
-	//"сказал",	// he
-	//"ведь",		// particle
-	//"там",		// there
-	//"потом",	// then
-	//"себя",		// oneself
-	//"ничего",	// nothing
-	"ей",		// to
-	//"может",	// usually
-	//"они",		// they
-	//"тут",		// here
-	//"где",		// where
-	//"есть",		// there
-	//"надо",		// got
-	//"ней",		// prepositional
-	"для",		// for
-	//"мы",		// we
-	//"тебя",		// thee
-	//"их",		// them,
-	//"чем",		// than
-	//"была",		// she
-	//"сам",		// self
-	"чтоб",		// in
-	//"без",		// without
-	//"будто",	// as
-	//"человек",	// man,
-	//"чего",		// genitive
-	//"раз",		// once
-	//"тоже",		// also
-	"себе",		// to
-	//"под",		// beneath
-	//"жизнь",	// life
-	//"будет",	// will
-	//"ж",		// int16_t
-	//"тогда",	// then
-	//"кто",		// who
-	//"этот",		// this
-	//"говорил",	// was
-	//"того",		// genitive
-	"потому",	// for
-	//"этого",	// genitive
-	//"какой",	// which
-	//"совсем",	// altogether
-	//"ним",		// prepositional
-	//"здесь",	// here
-	//"этом",		// prepositional
-	//"один",		// one
-	//"почти",	// almost
-	//"мой",		// my
-	//"тем",		// instrumental/dative
-	//"чтобы",	// full
-	//"нее",		// her
-	"кажется",	// it
-	//"сейчас",	// now
-	//"были",		// they
-	//"куда",		// where
-	//"зачем",	// why
-	"сказать",	// to
-	//"всех",		// all
-	//"никогда",	// never
-	//"сегодня",	// today
-	//"можно",	// possible,
-	"при",		// by
-	//"наконец",	// finally
-	//"два",		// two
-	//"об",		// alternative
-	//"другой",	// another
-	//"хоть",		// even
-	//"после",	// after
-	//"над",		// above
-	//"больше",	// more
-	//"тот",		// that
-	//"через",	// across,
-	//"эти",		// these
-	//"нас",		// us
-	//"про",		// about
-	"всего",	// in
-	//"них",		// prepositional
-	//"какая",	// which,
-	//"много",	// lots
-	//"разве",	// interrogative
-	//"сказала",	// she
-	//"три",		// three
-	//"эту",		// this,
-	//"моя",		// my,
-	//"впрочем",	// moreover,
-	//"хорошо",	// good
-	//"свою",		// ones
-	//"этой",		// oblique
-	"перед",	// in
-	//"иногда",	// sometimes
-	//"лучше",	// better
-	"чуть",		// a
-	//"том",		// preposn.
-	//"нельзя",	// one
-	//"такой",	// such
-	"им",		// to
-	//"более",	// more
-	//"всегда",	// always
-	"конечно",	// of
-	//"всю",		// acc.
-	//"между",	// between
+	"п╦",		// and
+	"п╡",		// in/into
+	"п╡п╬",		// alternative
+	//"п╫п╣",		// not
+	//"я┤я┌п╬",		// what/that
+	//"п╬п╫",		// he
+	"п╫п╟",		// on/onto
+	"я▐",		// i
+	"я│",		// from
+	"я│п╬",		// alternative
+	//"п╨п╟п╨",		// how
+	//"п╟",		// milder
+	"я┌п╬",		// conjunction
+	//"п╡я│п╣",		// all
+	//"п╬п╫п╟",		// she
+	//"я┌п╟п╨",		// so,
+	//"п╣пЁп╬",		// him
+	//"п╫п╬",		// but
+	//"п╢п╟",		// yes/and
+	//"я┌я▀",		// thou
+	"п╨",		// towards,
+	"я┐",		// around,
+	//"п╤п╣",		// intensifier
+	//"п╡я▀",		// you
+	//"п╥п╟",		// beyond,
+	//"п╠я▀",		// conditional/subj.
+	//"п©п╬",		// up
+	//"я┌п╬п╩я▄п╨п╬",	// only
+	//"п╣п╣",		// her
+	"п╪п╫п╣",		// to
+	"п╠я▀п╩п╬",		// it
+	//"п╡п╬я┌",		// here
+	//"п╬я┌",		// away
+	//"п╪п╣п╫я▐",		// me
+	//"п╣я┴п╣",		// still,
+	//"п╫п╣я┌",		// no,
+	"п╬",		// about
+	//"п╦п╥",		// out
+	"п╣п╪я┐",		// to
+	//"я┌п╣п©п╣я─я▄",	// now
+	//"п╨п╬пЁп╢п╟",	// when
+	//"п╢п╟п╤п╣",		// even
+	//"п╫я┐",		// so,
+	//"п╡п╢я─я┐пЁ",	// suddenly
+	//"п╩п╦",		// interrogative
+	//"п╣я│п╩п╦",		// if
+	//"я┐п╤п╣",		// already,
+	"п╦п╩п╦",		// or
+	//"п╫п╦",		// neither
+	"п╠я▀я┌я▄",		// to
+	//"п╠я▀п╩",		// he
+	//"п╫п╣пЁп╬",		// prepositional
+	//"п╢п╬",		// up
+	//"п╡п╟я│",		// you
+	//"п╫п╦п╠я┐п╢я▄",	// indef.
+	//"п╬п©я▐я┌я▄",	// again
+	//"я┐п╤",		// already,
+	"п╡п╟п╪",		// to
+	//"я│п╨п╟п╥п╟п╩",	// he
+	//"п╡п╣п╢я▄",		// particle
+	//"я┌п╟п╪",		// there
+	//"п©п╬я┌п╬п╪",	// then
+	//"я│п╣п╠я▐",		// oneself
+	//"п╫п╦я┤п╣пЁп╬",	// nothing
+	"п╣п╧",		// to
+	//"п╪п╬п╤п╣я┌",	// usually
+	//"п╬п╫п╦",		// they
+	//"я┌я┐я┌",		// here
+	//"пЁп╢п╣",		// where
+	//"п╣я│я┌я▄",		// there
+	//"п╫п╟п╢п╬",		// got
+	//"п╫п╣п╧",		// prepositional
+	"п╢п╩я▐",		// for
+	//"п╪я▀",		// we
+	//"я┌п╣п╠я▐",		// thee
+	//"п╦я┘",		// them,
+	//"я┤п╣п╪",		// than
+	//"п╠я▀п╩п╟",		// she
+	//"я│п╟п╪",		// self
+	"я┤я┌п╬п╠",		// in
+	//"п╠п╣п╥",		// without
+	//"п╠я┐п╢я┌п╬",	// as
+	//"я┤п╣п╩п╬п╡п╣п╨",	// man,
+	//"я┤п╣пЁп╬",		// genitive
+	//"я─п╟п╥",		// once
+	//"я┌п╬п╤п╣",		// also
+	"я│п╣п╠п╣",		// to
+	//"п©п╬п╢",		// beneath
+	//"п╤п╦п╥п╫я▄",	// life
+	//"п╠я┐п╢п╣я┌",	// will
+	//"п╤",		// int16_t
+	//"я┌п╬пЁп╢п╟",	// then
+	//"п╨я┌п╬",		// who
+	//"я█я┌п╬я┌",		// this
+	//"пЁп╬п╡п╬я─п╦п╩",	// was
+	//"я┌п╬пЁп╬",		// genitive
+	"п©п╬я┌п╬п╪я┐",	// for
+	//"я█я┌п╬пЁп╬",	// genitive
+	//"п╨п╟п╨п╬п╧",	// which
+	//"я│п╬п╡я│п╣п╪",	// altogether
+	//"п╫п╦п╪",		// prepositional
+	//"п╥п╢п╣я│я▄",	// here
+	//"я█я┌п╬п╪",		// prepositional
+	//"п╬п╢п╦п╫",		// one
+	//"п©п╬я┤я┌п╦",	// almost
+	//"п╪п╬п╧",		// my
+	//"я┌п╣п╪",		// instrumental/dative
+	//"я┤я┌п╬п╠я▀",	// full
+	//"п╫п╣п╣",		// her
+	"п╨п╟п╤п╣я┌я│я▐",	// it
+	//"я│п╣п╧я┤п╟я│",	// now
+	//"п╠я▀п╩п╦",		// they
+	//"п╨я┐п╢п╟",		// where
+	//"п╥п╟я┤п╣п╪",	// why
+	"я│п╨п╟п╥п╟я┌я▄",	// to
+	//"п╡я│п╣я┘",		// all
+	//"п╫п╦п╨п╬пЁп╢п╟",	// never
+	//"я│п╣пЁп╬п╢п╫я▐",	// today
+	//"п╪п╬п╤п╫п╬",	// possible,
+	"п©я─п╦",		// by
+	//"п╫п╟п╨п╬п╫п╣я├",	// finally
+	//"п╢п╡п╟",		// two
+	//"п╬п╠",		// alternative
+	//"п╢я─я┐пЁп╬п╧",	// another
+	//"я┘п╬я┌я▄",		// even
+	//"п©п╬я│п╩п╣",	// after
+	//"п╫п╟п╢",		// above
+	//"п╠п╬п╩я▄я┬п╣",	// more
+	//"я┌п╬я┌",		// that
+	//"я┤п╣я─п╣п╥",	// across,
+	//"я█я┌п╦",		// these
+	//"п╫п╟я│",		// us
+	//"п©я─п╬",		// about
+	"п╡я│п╣пЁп╬",	// in
+	//"п╫п╦я┘",		// prepositional
+	//"п╨п╟п╨п╟я▐",	// which,
+	//"п╪п╫п╬пЁп╬",	// lots
+	//"я─п╟п╥п╡п╣",	// interrogative
+	//"я│п╨п╟п╥п╟п╩п╟",	// she
+	//"я┌я─п╦",		// three
+	//"я█я┌я┐",		// this,
+	//"п╪п╬я▐",		// my,
+	//"п╡п©я─п╬я┤п╣п╪",	// moreover,
+	//"я┘п╬я─п╬я┬п╬",	// good
+	//"я│п╡п╬я▌",		// ones
+	//"я█я┌п╬п╧",		// oblique
+	"п©п╣я─п╣п╢",	// in
+	//"п╦п╫п╬пЁп╢п╟",	// sometimes
+	//"п╩я┐я┤я┬п╣",	// better
+	"я┤я┐я┌я▄",		// a
+	//"я┌п╬п╪",		// preposn.
+	//"п╫п╣п╩я▄п╥я▐",	// one
+	//"я┌п╟п╨п╬п╧",	// such
+	"п╦п╪",		// to
+	//"п╠п╬п╩п╣п╣",	// more
+	//"п╡я│п╣пЁп╢п╟",	// always
+	"п╨п╬п╫п╣я┤п╫п╬",	// of
+	//"п╡я│я▌",		// acc.
+	//"п╪п╣п╤п╢я┐",	// between
 
 	// spanish stop words
 	"de",		// from,
@@ -1424,14 +1424,14 @@ static char *s_queryStopWordsUnknown[] = {
 	//"al",		// a
 	//"lo",		// him
 	//"como",		// how
-	//"mАs",		// more
+	//"mц║s",		// more
 	//"pero",		// pero
 	//"sus",		// su
 	"le",		// to
 	//"ya",		// already
 	"o",		// or
 	//"este",		// this
-	//"sМ",		// himself
+	//"sц╜",		// himself
 	//"porque",	// because
 	//"esta",		// this
 	//"entre",	// between
@@ -1439,7 +1439,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"muy",		// very
 	//"sin",		// without
 	//"sobre",	// on
-	//"tambiИn",	// also
+	//"tambiц╘n",	// also
 	//"me",		// me
 	//"hasta",	// until
 	//"hay",		// there
@@ -1461,16 +1461,16 @@ static char *s_queryStopWordsUnknown[] = {
 	//"ellos",	// they
 	"e",		// and
 	//"esto",		// this
-	//"mМ",		// me
+	//"mц╜",		// me
 	//"antes",	// before
 	//"algunos",	// some
-	//"quИ",		// what?
+	//"quц╘",		// what?
 	"unos",		// a
 	"yo",		// I
 	//"otro",		// other
 	//"otras",	// other
 	//"otra",		// other
-	//"Иl",		// he
+	//"ц╘l",		// he
 	//"tanto",	// so
 	//"esa",		// that
 	//"estos",	// these
@@ -1488,7 +1488,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"nosotros",	// we
 	//"mi",		// me
 	//"mis",		// mi
-	//"tЗ",		// thou
+	//"tц╨",		// thou
 	//"te",		// thee
 	//"ti",		// thee
 	//"tu",		// thy
@@ -1498,10 +1498,10 @@ static char *s_queryStopWordsUnknown[] = {
 	//"vosostros",	// you
 	//"vosostras",	// you
 	//"os",		// you
-	//"mМo",		// mine
-	//"mМa",		// 
-	//"mМos",		// 
-	//"mМas",		// 
+	//"mц╜o",		// mine
+	//"mц╜a",		// 
+	//"mц╜os",		// 
+	//"mц╜as",		// 
 	//"tuyo",		// thine
 	//"tuya",		// 
 	//"tuyos",	// 
@@ -1521,30 +1521,30 @@ static char *s_queryStopWordsUnknown[] = {
 	//"esos",		// those
 	//"esas",		// those
 	//"estoy",	// 
-	//"estАs",	// 
-	//"estА",		// 
+	//"estц║s",	// 
+	//"estц║",		// 
 	//"estamos",	// 
-	//"estАis",	// 
-	//"estАn",	// 
-	//"estИ",		// 
-	//"estИs",	// 
+	//"estп░is",	// 
+	//"estц║n",	// 
+	//"estц╘",		// 
+	//"estц╘s",	// 
 	//"estemos",	// 
-	//"estИis",	// 
-	//"estИn",	// 
-	//"estarИ",	// 
-	//"estarАs",	// 
-	//"estarА",	// 
+	//"estц╘is",	// 
+	//"estц╘n",	// 
+	//"estarц╘",	// 
+	//"estarц║s",	// 
+	//"estarц║",	// 
 	//"estaremos",	// 
-	//"estarИis",	// 
-	//"estarАn",	// 
-	//"estarМa",	// 
-	//"estarМas",	// 
-	//"estarМamos",	// 
-	//"estarМais",	// 
-	//"estarМan",	// 
+	//"estarц╘is",	// 
+	//"estarц║n",	// 
+	//"estarц╜a",	// 
+	//"estarц╜as",	// 
+	//"estarц╜amos",	// 
+	//"estarц╜ais",	// 
+	//"estarц╜an",	// 
 	//"estaba",	// 
 	//"estabas",	// 
-	//"estАbamos",	// 
+	//"estц║bamos",	// 
 	//"estabais",	// 
 	//"estaban",	// 
 	//"estuve",	// 
@@ -1555,12 +1555,12 @@ static char *s_queryStopWordsUnknown[] = {
 	//"estuvieron",	// 
 	//"estuviera",	// 
 	//"estuvieras",	// 
-	//"estuviИramos",	// 
+	//"estuviц╘ramos",	// 
 	//"estuvierais",	// 
 	//"estuvieran",	// 
 	//"estuviese",	// 
 	//"estuvieses",	// 
-	//"estuviИsemos",	// 
+	//"estuviц╘semos",	// 
 	//"estuvieseis",	// 
 	//"estuviesen",	// 
 	//"estando",	// 
@@ -1580,15 +1580,15 @@ static char *s_queryStopWordsUnknown[] = {
 	//"hon",		// she
 	//"som",		// who,
 	//"han",		// he
-	"pЕ",		// on
+	"pц╔",		// on
 	//"den",		// it,
 	//"med",		// with
 	//"var",		// where,
 	//"sig",		// him(self)
-	//"fЖr",		// for (valgrind does not like, bad utf8?)
-	//"sЕ",		// so
+	//"fц╤r",		// for (valgrind does not like, bad utf8?)
+	//"sц╔",		// so
 	"till",		// to
-	"Дr",		// is
+	"ц╓r",		// is
 	//"men",		// but
 	"ett",		// a
 	//"om",		// if;
@@ -1599,7 +1599,7 @@ static char *s_queryStopWordsUnknown[] = {
 	//"mig",		// me
 	//"du",		// you
 	//"henne",	// her
-	//"dЕ",		// then,
+	//"dц╔",		// then,
 	//"sin",		// his
 	//"nu",		// now
 	//"har",		// have
@@ -1608,42 +1608,42 @@ static char *s_queryStopWordsUnknown[] = {
 	//"honom",	// him
 	//"skulle",	// 'sake'
 	//"hennes",	// her
-	//"dДr",		// there
+	//"dц╓r",		// there
 	//"min",		// my
 	//"man",		// one
 	//"ej",		// nor
 	"vid",		// at,
 	//"kunde",	// could
-	//"nЕgot",	// some
-	"frЕn",		// from,
+	//"nц╔got",	// some
+	"frц╔n",		// from,
 	//"ut",		// out
-	//"nДr",		// when
+	//"nц╓r",		// when
 	//"efter",	// after,
 	//"upp",		// up
 	//"vi",		// we
 	//"dem",		// them
 	//"vara",		// be
 	//"vad",		// what
-	//"Жver",		// over
-	//"Дn",		// than
+	//"ц╤ver",		// over
+	//"ц╓n",		// than
 	//"dig",		// you
 	//"kan",		// can
 	//"sina",		// his
-	//"hДr",		// here
+	//"hц╓r",		// here
 	//"ha",		// have
 	//"mot",		// towards
 	//"alla",		// all
 	//"under",	// under
-	//"nЕgon",	// some
+	//"nц╔gon",	// some
 	"eller",	// or
 	//"allt",		// all
 	//"mycket",	// much
 	//"sedan",	// since
 	//"ju",		// why
 	//"denna",	// this/that
-	//"sjДlv",	// myself,
+	//"sjц╓lv",	// myself,
 	//"detta",	// this/that
-	"Еt",		// to
+	"ц╔t",		// to
 	//"utan",		// without
 	//"varit",	// was
 	//"hur",		// how
@@ -1655,33 +1655,33 @@ static char *s_queryStopWordsUnknown[] = {
 	//"oss",		// us
 	//"din",		// thy
 	//"dessa",	// these/those
-	//"nЕgra",	// some
+	//"nц╔gra",	// some
 	//"deras",	// their
 	"blir",		// from
 	//"mina",		// my
 	"samma",	// (the)
 	//"vilken",	// who,
 	//"er",		// you,
-	//"sЕdan",	// such
-	//"vЕr",		// our
+	//"sц╔dan",	// such
+	//"vц╔r",		// our
 	"blivit", 	// from
 	//"dess",		// its
 	//"inom",		// within
 	//"mellan",	// between
-	//"sЕdant",	// such
-	//"varfЖr",	// why (valgrind does not like, bad utf8?)
+	//"sц╔dant",	// such
+	//"varfц╤r",	// why (valgrind does not like, bad utf8?)
 	//"varje",	// each
 	//"vilka",	// who,
 	//"ditt",		// thy
 	//"vem",		// who
 	//"vilket",	// who,
 	//"sitta",	// his
-	//"sЕdana",	// such
+	//"sц╔dana",	// such
 	//"vart",		// each
 	//"dina",		// thy
 	//"vars",		// whose
-	//"vЕrt",		// our
-	//"vЕra",		// our
+	//"vц╔rt",		// our
+	//"vц╔ra",		// our
 	//"ert",		// your
 	//"era",		// your
 	//"vilkas",	// whose
@@ -1779,7 +1779,7 @@ static char *s_queryStopWordsGerman[] = {
 	"dem",		// 
 	"die",		// 
 	"das",		// 
-	//"daъ",		// that
+	//"daя┼",		// that
 	"derselbe",	// the
 	"derselben",	// 
 	"denselben",	// 
@@ -1834,7 +1834,7 @@ static char *s_queryStopWordsGerman[] = {
 	//"euren",	// 
 	//"eurer",	// 
 	//"eures",	// 
-	"fЭr",		// for
+	"fп╜r",		// for
 	//"gegen",	// towards
 	//"gewesen",	// p.p.
 	//"hab",		// have
@@ -1879,8 +1879,8 @@ static char *s_queryStopWordsGerman[] = {
 	//"keinen",	// 
 	//"keiner",	// 
 	//"keines",	// 
-	//"kЖnnen",	// can
-	//"kЖnnte",	// could
+	//"kп√nnen",	// can
+	//"kп√nnte",	// could
 	//"machen",	// do
 	//"man",		// one
 	//"manche",	// some,
@@ -1928,7 +1928,7 @@ static char *s_queryStopWordsGerman[] = {
 	//"sollte",	// should
 	//"sondern",	// but
 	//"sonst",	// else
-	"Эber",		// over
+	"п╜ber",		// over
 	//"um",		// about,
 	"und",		// and
 	//"uns",		// us
@@ -1942,7 +1942,7 @@ static char *s_queryStopWordsGerman[] = {
 	//"vom",		// von
 	"von",		// from
 	//"vor",		// before
-	//"wДhrend",	// while
+	//"wп■hrend",	// while
 	//"war",		// was
 	//"waren",	// were
 	//"warst",	// wast
@@ -1967,8 +1967,8 @@ static char *s_queryStopWordsGerman[] = {
 	//"wo",		// where
 	//"wollen",	// want
 	//"wollte",	// wanted
-	//"wЭrde",	// would
-	//"wЭrden",	// would
+	//"wп╜rde",	// would
+	//"wп╜rden",	// would
 	"zu",		// to
 	"zum",		// zu
 	"zur",	// zu
@@ -2437,7 +2437,7 @@ static char      *s_commonWords[] = {
 	"til",		// to/at/for/until/against/by/of/into,
 	"er",		// present
 	"som",		// who,
-	"pЕ",		// on/upon/in/on/at/to/after/of/with/for,
+	"pп∙",		// on/upon/in/on/at/to/after/of/with/for,
 	"de",		// they
 	"med",		// with/by/in,
 	"han",		// he
@@ -2480,8 +2480,8 @@ static char      *s_commonWords[] = {
 	"blev",		// past
 	"kunne",	// could
 	"ind",		// in
-	"nЕr",	// when
-	"vФre",	// present
+	"nп∙r",	// when
+	"vп╓re",	// present
 	"dog",	// however/yet/after
 	"noget",	// something
 	"ville",	// would
@@ -2494,7 +2494,7 @@ static char      *s_commonWords[] = {
 	"end",	// than
 	"dette",	// this
 	"mit",	// my/mine
-	"ogsЕ",		// also
+	"ogsп∙",		// also
 	"ogsa",		// also
 	"under",	// under/beneath/below/during,
 	"have",		// have
@@ -2518,11 +2518,11 @@ static char      *s_commonWords[] = {
 	"ad",		// by/through
 	"bliver",	// present
 	"hendes",	// her/hers
-	"vФret",	// be
+	"vп╓ret",	// be
 	"vaeret",	// be
 	"thi",		// for
 	"jer",		// you
-	"sЕdan",	// such,
+	"sп∙dan",	// such,
 
 	// dutch stop words
 	"de",		// the
@@ -2650,7 +2650,7 @@ static char      *s_commonWords[] = {
 	"ma",		// my
 	"mais",		// but
 	"me",		// me
-	"mЙme",		// same;
+	"mп≥me",		// same;
 	"mes",		// me
 	"moi",		// me
 	"mon",		// my
@@ -2720,7 +2720,7 @@ static char      *s_commonWords[] = {
 	"dem",		// 
 	"die",		// 
 	"das",		// 
-	"daъ",		// that
+	"daя┼",		// that
 	"derselbe",	// the
 	"derselben",	// 
 	"denselben",	// 
@@ -2775,7 +2775,7 @@ static char      *s_commonWords[] = {
 	"euren",	// 
 	"eurer",	// 
 	"eures",	// 
-	"fЭr",		// for
+	"fп╜r",		// for
 	"gegen",	// towards
 	"gewesen",	// p.p.
 	"hab",		// have
@@ -2820,8 +2820,8 @@ static char      *s_commonWords[] = {
 	"keinen",	// 
 	"keiner",	// 
 	"keines",	// 
-	"kЖnnen",	// can
-	"kЖnnte",	// could
+	"kп√nnen",	// can
+	"kп√nnte",	// could
 	"machen",	// do
 	"man",		// one
 	"manche",	// some,
@@ -2869,7 +2869,7 @@ static char      *s_commonWords[] = {
 	"sollte",	// should
 	"sondern",	// but
 	"sonst",	// else
-	"Эber",		// over
+	"п╜ber",		// over
 	"um",		// about,
 	"und",		// and
 	"uns",		// us
@@ -2883,7 +2883,7 @@ static char      *s_commonWords[] = {
 	"vom",		// von
 	"von",		// from
 	"vor",		// before
-	"wДhrend",	// while
+	"wп■hrend",	// while
 //		"war",		// was
 	"waren",	// were
 	"warst",	// wast
@@ -2908,8 +2908,8 @@ static char      *s_commonWords[] = {
 	"wo",		// where
 	"wollen",	// want
 	"wollte",	// wanted
-	"wЭrde",	// would
-	"wЭrden",	// would
+	"wп╜rde",	// would
+	"wп╜rden",	// would
 	"zu",		// to
 	"zum",		// zu
 	"zur",		// zu
@@ -3012,7 +3012,7 @@ static char      *s_commonWords[] = {
 	"ma",		// but
 	"ed",		// and
 	"se",		// if
-	"perchИ",	// why,
+	"perchп≤",	// why,
 	"anche",	// also
 //		"come",		// how
 	"dov",		// where
@@ -3021,7 +3021,7 @@ static char      *s_commonWords[] = {
 	"chi",		// who
 	"cui",		// whom
 	"non",		// not
-	"piЫ",		// more
+	"piп╚",		// more
 	"quale",	// who,
 	"quanto",	// how
 	"quanti",	// 
@@ -3056,7 +3056,7 @@ static char      *s_commonWords[] = {
 	"til",		// to
 	"er",		// is
 	"som",		// who/that
-	"pЕ",		// on
+	"pп∙",		// on
 	"de",		// they
 	"med",		// with
 	"han",		// he
@@ -3064,7 +3064,7 @@ static char      *s_commonWords[] = {
 	"ikke",		// not
 	"inte",		// not
 	"der",		// there
-	"sЕ",		// so
+	"sп∙",		// so
 	"var",		// was
 	"meg",		// me
 	"seg",		// you
@@ -3079,7 +3079,7 @@ static char      *s_commonWords[] = {
 	"hade",		// had
 	"hu",		// she
 	"hun",		// she
-	"nЕ",		// now
+	"nп∙",		// now
 	"over",		// over
 	"da",		// when/as
 	"ved",		// by/know
@@ -3098,7 +3098,7 @@ static char      *s_commonWords[] = {
 	"hva",		// what
 	"skal",		// shall/must
 	"selv",		// self
-	"sjЬl",		// self
+	"sjп╛l",		// self
 	"her",		// here
 	"alle",		// all
 	"vil",		// will
@@ -3108,8 +3108,8 @@ static char      *s_commonWords[] = {
 	"blitt",	// have
 	"kunne",	// could
 	"inn",		// in
-	"nЕr",		// when
-	"vФre",		// be
+	"nп∙r",		// when
+	"vп╓re",		// be
 	"kom",		// come
 	"noen",		// some
 	"noe",		// some
@@ -3130,7 +3130,7 @@ static char      *s_commonWords[] = {
 	"sine",		// hers/his
 	"sitt",		// hers/his
 	"mot",		// against
-	"Е",		// to
+	"п∙",		// to
 	"meget",	// much
 	"hvorfor",	// why
 	"sia",		// since
@@ -3148,18 +3148,18 @@ static char      *s_commonWords[] = {
 	"samme",	// same
 	"hvilken",	// which
 	"hvilke",	// which
-	"sЕnn",		// such
+	"sп∙nn",		// such
 	"inni",		// inside/within
 	"mellom",	// between
-	"vЕr",		// our
+	"vп∙r",		// our
 	"hver",		// each
 	"hvem",		// who
 	"vors",		// us/ours
 	"dere",		// their
 	"deres",	// theirs
 	"hvis",		// whose
-	"bЕde",		// both
-	"bЕe",		// both
+	"bп∙de",		// both
+	"bп∙e",		// both
 	"begge",	// both
 	"siden",	// since
 	"dykk",		// your
@@ -3169,7 +3169,7 @@ static char      *s_commonWords[] = {
 	"deires",	// theirs
 	"deim",		// them
 	"di",		// your
-	"dЕ",		// as/when
+	"dп∙",		// as/when
 	"eg",		// I
 	"ein",		// a/an
 	"ei",		// a/an
@@ -3177,7 +3177,7 @@ static char      *s_commonWords[] = {
 	"eitt",		// a/an
 	"elles",	// or
 	"honom",	// he
-	"hjЕ",		// at
+	"hjп∙",		// at
 	"ho",		// she
 	"hoe",		// she
 	"henne",	// her
@@ -3224,9 +3224,9 @@ static char      *s_commonWords[] = {
 	"varte",	// became
 	"vart",		// became
 	"er",		// am
-	"vФre",		// to
+	"vп╓re",		// to
 	"var",		// was
-	"Е",		// on
+	"п∙",		// on
 
 
 	// portuguese stop words
@@ -3241,7 +3241,7 @@ static char      *s_commonWords[] = {
 	"um",		// a
 	"para",		// for
 	//"com",		// with
-	"nЦo",		// not,
+	"nп╕o",		// not,
 	"uma",		// a
 	"os",		// the;
 	"no",		// em
@@ -3256,20 +3256,20 @@ static char      *s_commonWords[] = {
 	"ao",		// a
 	"ele",		// he
 	"das",		// de
-	//"Ю",		// a
+	//"п╝",		// a
 	"seu",		// his
 	"sua",		// her
 	"ou",		// or
 	"quando",	// when
 	"muito",	// much
 	"nos",		// em
-	"jА",		// already,
+	"jп░",		// already,
 	"eu",		// I
-	"tambИm",	// also
-	"sС",		// only,
+	"tambп≤m",	// also
+	"sп║",		// only,
 	"pelo",		// per
 	"pela",		// per
-	"atИ",		// up
+	"atп≤",		// up
 	"isso",		// that
 	"ela",		// he
 	"entre",	// between
@@ -3283,19 +3283,19 @@ static char      *s_commonWords[] = {
 	"me",		// me
 	"esse",		// that
 	"eles",		// they
-	"vocЙ",		// you
+	"vocп≥",		// you
 	"essa",		// that
 	"num",		// em
 	"nem",		// nor
 	"suas",		// her
 	"meu",		// my
-	"Юs",		// a
+	"п╝s",		// a
 	"minha",	// my
 	"numa",		// em
 	"pelos",	// per
 	"elas",		// they
 	"qual",		// which
-	"nСs",		// we
+	"nп║s",		// we
 	"lhe",		// to
 	"deles",	// of them
 	"essas",	// those
@@ -3305,7 +3305,7 @@ static char      *s_commonWords[] = {
 	"dele",		// of
 	"tu",		// thou
 	"te",		// thee
-	"vocЙs",	// you
+	"vocп≥s",	// you
 	"vos",		// you
 	"lhes",		// to
 	"meus",		// my
@@ -3330,188 +3330,188 @@ static char      *s_commonWords[] = {
 	"isto",		// this
 	"aquilo",	// that
 	"estou",	// 
-	"estА",		// 
+	"estп░",		// 
 	"estamos",	// 
-	"estЦo",	// 
+	"estп╕o",	// 
 	"estive",	// 
 	"esteve",	// 
 	"estivemos",	// 
 	"estiveram",	// 
 	"estava",	// 
-	"estАvamos",	// 
+	"estп░vamos",	// 
 	"estavam",	// 
 	"estivera",	// 
-	"estivИramos",	// 
+	"estivп≤ramos",	// 
 	"esteja",	// 
 	"estejamos",	// 
 	"estejam",	// 
 	"estivesse",	// 
-	"estivИssemos",	// 
+	"estivп≤ssemos",	// 
 	"estivessem",	// 
 	"estiver",	// 
 	"estivermos",	// 
 	"estiverem",	// 
 
 	// russian stop words
-	"и",		// and
-	"в",		// in/into
-	"во",		// alternative
-	"не",		// not
-	"что",		// what/that
-	"он",		// he
-	"на",		// on/onto
-	"я",		// i
-	"с",		// from
-	"со",		// alternative
-	"как",		// how
-	"а",		// milder
-	"то",		// conjunction
-	"все",		// all
-	"она",		// she
-	"так",		// so,
-	"его",		// him
-	"но",		// but
-	"да",		// yes/and
-	"ты",		// thou
-	"к",		// towards,
-	"у",		// around,
-	"же",		// intensifier
-	"вы",		// you
-	"за",		// beyond,
-	"бы",		// conditional/subj.
-	"по",		// up
-	"только",	// only
-	"ее",		// her
-	"мне",		// to
-	"было",		// it
-	"вот",		// here
-	"от",		// away
-	"меня",		// me
-	"еще",		// still,
-	"нет",		// no,
-	"о",		// about
-	"из",		// out
-	"ему",		// to
-	"теперь",	// now
-	"когда",	// when
-	"даже",		// even
-	"ну",		// so,
-	"вдруг",	// suddenly
-	"ли",		// interrogative
-	"если",		// if
-	"уже",		// already,
-	"или",		// or
-	"ни",		// neither
-	"быть",		// to
-	"был",		// he
-	"него",		// prepositional
-	"до",		// up
-	"вас",		// you
-	"нибудь",	// indef.
-	"опять",	// again
-	"уж",		// already,
-	"вам",		// to
-	"сказал",	// he
-	"ведь",		// particle
-	"там",		// there
-	"потом",	// then
-	"себя",		// oneself
-	"ничего",	// nothing
-	"ей",		// to
-	"может",	// usually
-	"они",		// they
-	"тут",		// here
-	"где",		// where
-	"есть",		// there
-	"надо",		// got
-	"ней",		// prepositional
-	"для",		// for
-	"мы",		// we
-	"тебя",		// thee
-	"их",		// them,
-	"чем",		// than
-	"была",		// she
-	"сам",		// self
-	"чтоб",		// in
-	"без",		// without
-	"будто",	// as
-	"человек",	// man,
-	"чего",		// genitive
-	"раз",		// once
-	"тоже",		// also
-	"себе",		// to
-	"под",		// beneath
-	"жизнь",	// life
-	"будет",	// will
-	"ж",		// int16_t
-	"тогда",	// then
-	"кто",		// who
-	"этот",		// this
-	"говорил",	// was
-	"того",		// genitive
-	"потому",	// for
-	"этого",	// genitive
-	"какой",	// which
-	"совсем",	// altogether
-	"ним",		// prepositional
-	"здесь",	// here
-	"этом",		// prepositional
-	"один",		// one
-	"почти",	// almost
-	"мой",		// my
-	"тем",		// instrumental/dative
-	"чтобы",	// full
-	"нее",		// her
-	"кажется",	// it
-	"сейчас",	// now
-	"были",		// they
-	"куда",		// where
-	"зачем",	// why
-	"сказать",	// to
-	"всех",		// all
-	"никогда",	// never
-	"сегодня",	// today
-	"можно",	// possible,
-	"при",		// by
-	"наконец",	// finally
-	"два",		// two
-	"об",		// alternative
-	"другой",	// another
-	"хоть",		// even
-	"после",	// after
-	"над",		// above
-	"больше",	// more
-	"тот",		// that
-	"через",	// across,
-	"эти",		// these
-	"нас",		// us
-	"про",		// about
-	"всего",	// in
-	"них",		// prepositional
-	"какая",	// which,
-	"много",	// lots
-	"разве",	// interrogative
-	"сказала",	// she
-	"три",		// three
-	"эту",		// this,
-	"моя",		// my,
-	"впрочем",	// moreover,
-	"хорошо",	// good
-	"свою",		// ones
-	"этой",		// oblique
-	"перед",	// in
-	"иногда",	// sometimes
-	"лучше",	// better
-	"чуть",		// a
-	"том",		// preposn.
-	"нельзя",	// one
-	"такой",	// such
-	"им",		// to
-	"более",	// more
-	"всегда",	// always
-	"конечно",	// of
-	"всю",		// acc.
-	"между",	// between
+	"п╦",		// and
+	"п╡",		// in/into
+	"п╡п╬",		// alternative
+	"п╫п╣",		// not
+	"я┤я┌п╬",		// what/that
+	"п╬п╫",		// he
+	"п╫п╟",		// on/onto
+	"я▐",		// i
+	"я│",		// from
+	"я│п╬",		// alternative
+	"п╨п╟п╨",		// how
+	"п╟",		// milder
+	"я┌п╬",		// conjunction
+	"п╡я│п╣",		// all
+	"п╬п╫п╟",		// she
+	"я┌п╟п╨",		// so,
+	"п╣пЁп╬",		// him
+	"п╫п╬",		// but
+	"п╢п╟",		// yes/and
+	"я┌я▀",		// thou
+	"п╨",		// towards,
+	"я┐",		// around,
+	"п╤п╣",		// intensifier
+	"п╡я▀",		// you
+	"п╥п╟",		// beyond,
+	"п╠я▀",		// conditional/subj.
+	"п©п╬",		// up
+	"я┌п╬п╩я▄п╨п╬",	// only
+	"п╣п╣",		// her
+	"п╪п╫п╣",		// to
+	"п╠я▀п╩п╬",		// it
+	"п╡п╬я┌",		// here
+	"п╬я┌",		// away
+	"п╪п╣п╫я▐",		// me
+	"п╣я┴п╣",		// still,
+	"п╫п╣я┌",		// no,
+	"п╬",		// about
+	"п╦п╥",		// out
+	"п╣п╪я┐",		// to
+	"я┌п╣п©п╣я─я▄",	// now
+	"п╨п╬пЁп╢п╟",	// when
+	"п╢п╟п╤п╣",		// even
+	"п╫я┐",		// so,
+	"п╡п╢я─я┐пЁ",	// suddenly
+	"п╩п╦",		// interrogative
+	"п╣я│п╩п╦",		// if
+	"я┐п╤п╣",		// already,
+	"п╦п╩п╦",		// or
+	"п╫п╦",		// neither
+	"п╠я▀я┌я▄",		// to
+	"п╠я▀п╩",		// he
+	"п╫п╣пЁп╬",		// prepositional
+	"п╢п╬",		// up
+	"п╡п╟я│",		// you
+	"п╫п╦п╠я┐п╢я▄",	// indef.
+	"п╬п©я▐я┌я▄",	// again
+	"я┐п╤",		// already,
+	"п╡п╟п╪",		// to
+	"я│п╨п╟п╥п╟п╩",	// he
+	"п╡п╣п╢я▄",		// particle
+	"я┌п╟п╪",		// there
+	"п©п╬я┌п╬п╪",	// then
+	"я│п╣п╠я▐",		// oneself
+	"п╫п╦я┤п╣пЁп╬",	// nothing
+	"п╣п╧",		// to
+	"п╪п╬п╤п╣я┌",	// usually
+	"п╬п╫п╦",		// they
+	"я┌я┐я┌",		// here
+	"пЁп╢п╣",		// where
+	"п╣я│я┌я▄",		// there
+	"п╫п╟п╢п╬",		// got
+	"п╫п╣п╧",		// prepositional
+	"п╢п╩я▐",		// for
+	"п╪я▀",		// we
+	"я┌п╣п╠я▐",		// thee
+	"п╦я┘",		// them,
+	"я┤п╣п╪",		// than
+	"п╠я▀п╩п╟",		// she
+	"я│п╟п╪",		// self
+	"я┤я┌п╬п╠",		// in
+	"п╠п╣п╥",		// without
+	"п╠я┐п╢я┌п╬",	// as
+	"я┤п╣п╩п╬п╡п╣п╨",	// man,
+	"я┤п╣пЁп╬",		// genitive
+	"я─п╟п╥",		// once
+	"я┌п╬п╤п╣",		// also
+	"я│п╣п╠п╣",		// to
+	"п©п╬п╢",		// beneath
+	"п╤п╦п╥п╫я▄",	// life
+	"п╠я┐п╢п╣я┌",	// will
+	"п╤",		// int16_t
+	"я┌п╬пЁп╢п╟",	// then
+	"п╨я┌п╬",		// who
+	"я█я┌п╬я┌",		// this
+	"пЁп╬п╡п╬я─п╦п╩",	// was
+	"я┌п╬пЁп╬",		// genitive
+	"п©п╬я┌п╬п╪я┐",	// for
+	"я█я┌п╬пЁп╬",	// genitive
+	"п╨п╟п╨п╬п╧",	// which
+	"я│п╬п╡я│п╣п╪",	// altogether
+	"п╫п╦п╪",		// prepositional
+	"п╥п╢п╣я│я▄",	// here
+	"я█я┌п╬п╪",		// prepositional
+	"п╬п╢п╦п╫",		// one
+	"п©п╬я┤я┌п╦",	// almost
+	"п╪п╬п╧",		// my
+	"я┌п╣п╪",		// instrumental/dative
+	"я┤я┌п╬п╠я▀",	// full
+	"п╫п╣п╣",		// her
+	"п╨п╟п╤п╣я┌я│я▐",	// it
+	"я│п╣п╧я┤п╟я│",	// now
+	"п╠я▀п╩п╦",		// they
+	"п╨я┐п╢п╟",		// where
+	"п╥п╟я┤п╣п╪",	// why
+	"я│п╨п╟п╥п╟я┌я▄",	// to
+	"п╡я│п╣я┘",		// all
+	"п╫п╦п╨п╬пЁп╢п╟",	// never
+	"я│п╣пЁп╬п╢п╫я▐",	// today
+	"п╪п╬п╤п╫п╬",	// possible,
+	"п©я─п╦",		// by
+	"п╫п╟п╨п╬п╫п╣я├",	// finally
+	"п╢п╡п╟",		// two
+	"п╬п╠",		// alternative
+	"п╢я─я┐пЁп╬п╧",	// another
+	"я┘п╬я┌я▄",		// even
+	"п©п╬я│п╩п╣",	// after
+	"п╫п╟п╢",		// above
+	"п╠п╬п╩я▄я┬п╣",	// more
+	"я┌п╬я┌",		// that
+	"я┤п╣я─п╣п╥",	// across,
+	"я█я┌п╦",		// these
+	"п╫п╟я│",		// us
+	"п©я─п╬",		// about
+	"п╡я│п╣пЁп╬",	// in
+	"п╫п╦я┘",		// prepositional
+	"п╨п╟п╨п╟я▐",	// which,
+	"п╪п╫п╬пЁп╬",	// lots
+	"я─п╟п╥п╡п╣",	// interrogative
+	"я│п╨п╟п╥п╟п╩п╟",	// she
+	"я┌я─п╦",		// three
+	"я█я┌я┐",		// this,
+	"п╪п╬я▐",		// my,
+	"п╡п©я─п╬я┤п╣п╪",	// moreover,
+	"я┘п╬я─п╬я┬п╬",	// good
+	"я│п╡п╬я▌",		// ones
+	"я█я┌п╬п╧",		// oblique
+	"п©п╣я─п╣п╢",	// in
+	"п╦п╫п╬пЁп╢п╟",	// sometimes
+	"п╩я┐я┤я┬п╣",	// better
+	"я┤я┐я┌я▄",		// a
+	"я┌п╬п╪",		// preposn.
+	"п╫п╣п╩я▄п╥я▐",	// one
+	"я┌п╟п╨п╬п╧",	// such
+	"п╦п╪",		// to
+	"п╠п╬п╩п╣п╣",	// more
+	"п╡я│п╣пЁп╢п╟",	// always
+	"п╨п╬п╫п╣я┤п╫п╬",	// of
+	"п╡я│я▌",		// acc.
+	"п╪п╣п╤п╢я┐",	// between
 
 	// spanish stop words
 	"de",		// from,
@@ -3535,14 +3535,14 @@ static char      *s_commonWords[] = {
 	"al",		// a
 	"lo",		// him
 	"como",		// how
-	"mАs",		// more
+	"mп░s",		// more
 	"pero",		// pero
 	"sus",		// su
 	"le",		// to
 	"ya",		// already
 	"o",		// or
 	"este",		// this
-	"sМ",		// himself
+	"sп°",		// himself
 	"porque",	// because
 	"esta",		// this
 	"entre",	// between
@@ -3550,7 +3550,7 @@ static char      *s_commonWords[] = {
 	"muy",		// very
 	"sin",		// without
 	"sobre",	// on
-	"tambiИn",	// also
+	"tambiп≤n",	// also
 	"me",		// me
 	"hasta",	// until
 	"hay",		// there
@@ -3572,16 +3572,16 @@ static char      *s_commonWords[] = {
 	"ellos",	// they
 	"e",		// and
 	"esto",		// this
-	"mМ",		// me
+	"mп°",		// me
 	"antes",	// before
 	"algunos",	// some
-	"quИ",		// what?
+	"quп≤",		// what?
 	"unos",		// a
 	"yo",		// I
 	"otro",		// other
 	"otras",	// other
 	"otra",		// other
-	"Иl",		// he
+	"п≤l",		// he
 	"tanto",	// so
 	"esa",		// that
 	"estos",	// these
@@ -3599,7 +3599,7 @@ static char      *s_commonWords[] = {
 	"nosotros",	// we
 	"mi",		// me
 	"mis",		// mi
-	"tЗ",		// thou
+	"tп≈",		// thou
 	"te",		// thee
 	"ti",		// thee
 	"tu",		// thy
@@ -3609,10 +3609,10 @@ static char      *s_commonWords[] = {
 	"vosostros",	// you
 	"vosostras",	// you
 	"os",		// you
-	"mМo",		// mine
-	"mМa",		// 
-	"mМos",		// 
-	"mМas",		// 
+	"mп°o",		// mine
+	"mп°a",		// 
+	"mп°os",		// 
+	"mп°as",		// 
 	"tuyo",		// thine
 	"tuya",		// 
 	"tuyos",	// 
@@ -3632,30 +3632,30 @@ static char      *s_commonWords[] = {
 	"esos",		// those
 	"esas",		// those
 	"estoy",	// 
-	"estАs",	// 
-	"estА",		// 
+	"estп░s",	// 
+	"estп░",		// 
 	"estamos",	// 
-	"estАis",	// 
-	"estАn",	// 
-	"estИ",		// 
-	"estИs",	// 
+	"estп░is",	// 
+	"estп░n",	// 
+	"estп≤",		// 
+	"estп≤s",	// 
 	"estemos",	// 
-	"estИis",	// 
-	"estИn",	// 
-	"estarИ",	// 
-	"estarАs",	// 
-	"estarА",	// 
+	"estп≤is",	// 
+	"estп≤n",	// 
+	"estarп≤",	// 
+	"estarп░s",	// 
+	"estarп░",	// 
 	"estaremos",	// 
-	"estarИis",	// 
-	"estarАn",	// 
-	"estarМa",	// 
-	"estarМas",	// 
-	"estarМamos",	// 
-	"estarМais",	// 
-	"estarМan",	// 
+	"estarп≤is",	// 
+	"estarп░n",	// 
+	"estarп°a",	// 
+	"estarп°as",	// 
+	"estarп°amos",	// 
+	"estarп°ais",	// 
+	"estarп°an",	// 
 	"estaba",	// 
 	"estabas",	// 
-	"estАbamos",	// 
+	"estп░bamos",	// 
 	"estabais",	// 
 	"estaban",	// 
 	"estuve",	// 
@@ -3666,12 +3666,12 @@ static char      *s_commonWords[] = {
 	"estuvieron",	// 
 	"estuviera",	// 
 	"estuvieras",	// 
-	"estuviИramos",	// 
+	"estuviп≤ramos",	// 
 	"estuvierais",	// 
 	"estuvieran",	// 
 	"estuviese",	// 
 	"estuvieses",	// 
-	"estuviИsemos",	// 
+	"estuviп≤semos",	// 
 	"estuvieseis",	// 
 	"estuviesen",	// 
 	"estando",	// 
@@ -3691,15 +3691,15 @@ static char      *s_commonWords[] = {
 	"hon",		// she
 	"som",		// who,
 	"han",		// he
-	"pЕ",		// on
+	"pп∙",		// on
 	"den",		// it,
 	"med",		// with
 	"var",		// where,
 	"sig",		// him(self)
-	//"fЖr",		// for
-	"sЕ",		// so
+	//"fп√r",		// for
+	"sп∙",		// so
 	"till",		// to
-	"Дr",		// is
+	"п■r",		// is
 	"men",		// but
 	"ett",		// a
 	"om",		// if;
@@ -3710,7 +3710,7 @@ static char      *s_commonWords[] = {
 	"mig",		// me
 	"du",		// you
 	"henne",	// her
-	"dЕ",		// then,
+	"dп∙",		// then,
 	"sin",		// his
 	"nu",		// now
 	"har",		// have
@@ -3719,42 +3719,42 @@ static char      *s_commonWords[] = {
 	"honom",	// him
 	"skulle",	// 'sake'
 	"hennes",	// her
-	"dДr",		// there
+	"dп■r",		// there
 	"min",		// my
 	"man",		// one
 	"ej",		// nor
 	"vid",		// at,
 	"kunde",	// could
-	"nЕgot",	// some
-	"frЕn",		// from,
+	"nп∙got",	// some
+	"frп∙n",		// from,
 	"ut",		// out
-	"nДr",		// when
+	"nп■r",		// when
 	"efter",	// after,
 	"upp",		// up
 	"vi",		// we
 	"dem",		// them
 	"vara",		// be
 	"vad",		// what
-	"Жver",		// over
-	"Дn",		// than
+	"п√ver",		// over
+	"п■n",		// than
 	"dig",		// you
 	"kan",		// can
 	"sina",		// his
-	"hДr",		// here
+	"hп■r",		// here
 	"ha",		// have
 	"mot",		// towards
 	"alla",		// all
 	"under",	// under
-	"nЕgon",	// some
+	"nп∙gon",	// some
 	"eller",	// or
 	"allt",		// all
 	"mycket",	// much
 	"sedan",	// since
 	"ju",		// why
 	"denna",	// this/that
-	"sjДlv",	// myself,
+	"sjп■lv",	// myself,
 	"detta",	// this/that
-	"Еt",		// to
+	"п∙t",		// to
 	"utan",		// without
 	"varit",	// was
 	"hur",		// how
@@ -3766,33 +3766,33 @@ static char      *s_commonWords[] = {
 	"oss",		// us
 	"din",		// thy
 	"dessa",	// these/those
-	"nЕgra",	// some
+	"nп∙gra",	// some
 	"deras",	// their
 	"blir",		// from
 	"mina",		// my
 	"samma",	// (the)
 	"vilken",	// who,
 	"er",		// you,
-	"sЕdan",	// such
-	"vЕr",		// our
+	"sп∙dan",	// such
+	"vп∙r",		// our
 	"blivit",	// from
 	"dess",		// its
 	"inom",		// within
 	"mellan",	// between
-	"sЕdant",	// such
-	//"varfЖr",	// why
+	"sп∙dant",	// such
+	//"varfп√r",	// why
 	"varje",	// each
 	"vilka",	// who,
 	"ditt",		// thy
 	"vem",		// who
 	"vilket",	// who,
 	"sitta",	// his
-	"sЕdana",	// such
+	"sп∙dana",	// such
 	"vart",		// each
 	"dina",		// thy
 	"vars",		// whose
-	"vЕrt",		// our
-	"vЕra",		// our
+	"vп∙rt",		// our
+	"vп∙ra",		// our
 	"ert",		// your
 	"era",		// your
 	"vilkas",	// whose
@@ -3838,8 +3838,8 @@ int32_t isCommonWord ( int64_t h ) {
 			if ( ! s_commonWordTable.addTerm ( &swh,i+1 ) )
 				return false;
 			// . add w/o accent marks too!
-			// . skip "fЭr" though because fur is an eng. word
-			//if ( *sw=='f' && *(sw+1)=='Э' &&
+			// . skip "fп╜r" though because fur is an eng. word
+			//if ( *sw=='f' && *(sw+1)=='п╜' &&
 			//     *(sw+2)=='r' && swlen == 3 ) continue;
 			//swh   = hash64AsciiLower ( sw , swlen );
 			//s_commonWordTable.addTerm (swh,i+1,i+1,true);
