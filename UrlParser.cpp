@@ -2,6 +2,7 @@
 #include "Log.h"
 #include "fctypes.h"
 #include <string.h>
+#include <iterator>
 
 static const char* strnpbrk( const char *str1, size_t len, const char *str2 ) {
 	const char *haystack = str1;
@@ -117,7 +118,7 @@ void UrlParser::parse() {
 			bool isAmpersand = ( !urlPart.hasValue() && urlPart.getKey() == "amp" );
 			if ( !key.empty() && !isAmpersand ) {
 				// we don't cater for case sensitive query parameter (eg: parm, Parm, PARM is assumed to be the same)
-				std::map<std::string, size_t>::const_iterator it = m_queriesMap.find( key );
+				auto it = m_queriesMap.find( key );
 				if (it == m_queriesMap.end()) {
 					m_queries.push_back( urlPart );
 					m_queriesMap[key] = m_queries.size() - 1;
@@ -139,7 +140,7 @@ const char* UrlParser::unparse() {
 	m_urlParsed.append( m_url, ( m_hostName - m_url ) + m_hostNameLen );
 
 	bool isFirst = true;
-	for ( std::vector<UrlComponent>::const_iterator it = m_paths.begin(); it != m_paths.end(); ++it ) {
+	for ( auto it = m_paths.begin(); it != m_paths.end(); ++it ) {
 		if ( !it->isDeleted() ) {
 			if ( isFirst ) {
 				isFirst = false;
@@ -158,7 +159,7 @@ const char* UrlParser::unparse() {
 	}
 
 	isFirst = true;
-	for ( std::vector<UrlComponent>::const_iterator it = m_queries.begin(); it != m_queries.end(); ++it ) {
+	for ( auto it = m_queries.begin(); it != m_queries.end(); ++it ) {
 		if ( !it->isDeleted() ) {
 			if ( isFirst ) {
 				isFirst = false;
@@ -195,7 +196,7 @@ void UrlParser::deleteComponent( UrlComponent *urlComponent ) {
 bool UrlParser::removeComponent( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator ) {
 	bool hasRemoval = false;
 
-	for ( std::vector<UrlComponent*>::const_iterator it = urlComponents.begin(); it != urlComponents.end(); ++it ) {
+	for ( auto it = urlComponents.begin(); it != urlComponents.end(); ++it ) {
 		if ( (*it)->isDeleted() ) {
 			continue;
 		}
@@ -218,15 +219,13 @@ std::vector<std::pair<UrlComponent*, UrlComponent*> > UrlParser::matchPath( cons
 		return result;
 	}
 
-	for ( std::vector<UrlComponent>::iterator it = m_paths.begin(); it != m_paths.end(); ++it ) {
+	for ( auto it = m_paths.begin(); it != m_paths.end(); ++it ) {
 		if ( it->isDeleted() ) {
 			continue;
 		}
 
 		if ( !it->hasValue() && matcher.isMatching( *it ) ) {
-			std::vector<UrlComponent>::iterator valueIt = it;
-			std::advance( valueIt, 1 ); /// @todo change to std::next (c++11)
-
+			auto valueIt = std::next( it, 1 );
 			result.push_back( std::make_pair( &( *it ), ( valueIt != m_paths.end() ? &( *valueIt ) : NULL ) ) );
 		}
 	}
@@ -237,8 +236,7 @@ std::vector<std::pair<UrlComponent*, UrlComponent*> > UrlParser::matchPath( cons
 bool UrlParser::removePath( const std::vector<std::pair<UrlComponent*, UrlComponent*> > &urlComponents,
                             const UrlComponent::Validator &validator ) {
 	bool hasRemoval = false;
-	std::vector<std::pair<UrlComponent*, UrlComponent*> >::const_iterator it;
-	for ( it = urlComponents.begin(); it != urlComponents.end(); ++it ) {
+	for ( auto it = urlComponents.begin(); it != urlComponents.end(); ++it ) {
 		if ( it->second == NULL ) {
 			if ( validator.allowEmptyValue() ) {
 				hasRemoval = true;
@@ -270,7 +268,7 @@ std::vector<UrlComponent*> UrlParser::matchPathParam( const UrlComponent::Matche
 		return result;
 	}
 
-	for ( std::vector<UrlComponent>::iterator it = m_paths.begin(); it != m_paths.end(); ++it ) {
+	for ( auto it = m_paths.begin(); it != m_paths.end(); ++it ) {
 		if ( it->isDeleted() ) {
 			continue;
 		}
@@ -302,12 +300,12 @@ std::vector<UrlComponent*> UrlParser::matchQueryParam( const UrlComponent::Match
 	}
 
 	if ( matcher.getMatchCriteria() == MATCH_DEFAULT ) {
-		std::map<std::string, size_t>::const_iterator it = m_queriesMap.find( matcher.getParam() );
+		auto it = m_queriesMap.find( matcher.getParam() );
 		if ( it != m_queriesMap.end() ) {
 			result.push_back( &(m_queries[ it->second ]) );
 		}
 	} else {
-		for (std::vector<UrlComponent>::iterator it = m_queries.begin(); it != m_queries.end(); ++it) {
+		for ( auto it = m_queries.begin(); it != m_queries.end(); ++it ) {
 			if ( it->isDeleted() ) {
 				continue;
 			}
@@ -323,9 +321,8 @@ std::vector<UrlComponent*> UrlParser::matchQueryParam( const UrlComponent::Match
 
 bool UrlParser::removeQueryParam( const char *param ) {
 	static const UrlComponent::Validator s_validator( 0, 0, true, ALLOW_ALL, MANDATORY_NONE );
-	UrlComponent::Matcher matcher( param );
 
-	return removeQueryParam( matcher, s_validator );
+	return removeQueryParam( UrlComponent::Matcher( param ), s_validator );
 }
 
 bool UrlParser::removeQueryParam( const std::vector<UrlComponent*> &urlComponents, const UrlComponent::Validator &validator ) {
@@ -333,7 +330,5 @@ bool UrlParser::removeQueryParam( const std::vector<UrlComponent*> &urlComponent
 }
 
 bool UrlParser::removeQueryParam( const UrlComponent::Matcher &matcher, const UrlComponent::Validator &validator ) {
-	std::vector<UrlComponent*> matches = matchQueryParam( matcher );
-
-	return removeComponent( matches, validator );
+	return removeComponent( matchQueryParam( matcher ), validator );
 }
