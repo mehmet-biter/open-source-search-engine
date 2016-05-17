@@ -78,10 +78,8 @@ void UrlParser::parse() {
 
 	const char *queryEnd = anchorPos ?: urlEnd;
 
-	const char *prevPos = NULL;
-
 	// path
-	prevPos = pathPos + 1;
+	const char *prevPos = pathPos + 1;
 	while ( prevPos && ( prevPos <= pathEnd ) ) {
 		size_t len = pathEnd - prevPos;
 		currentPos = strnpbrk( prevPos, len, "/;&" );
