@@ -1,4 +1,4 @@
-// Matt Wells, copyright Jul 2001
+﻿// Matt Wells, copyright Jul 2001
 
 #include "gb-include.h"
 
