@@ -405,8 +405,8 @@ static time_t atotime4 ( const char *s ) {
 	while ( *s && ! isdigit (*s) ) s++;
 	// YEAR
 	t.tm_year = atol ( s ) - 1900 ; // # of years since 1900
-	while ( isdigit (*s) ) s++;
-	while ( isspace (*s) ) s++;	
+	while ( *s && isdigit (*s) ) s++;
+	while ( *s && isspace (*s) ) s++;
 	// TIME
 	getTime ( s , &t.tm_sec , &t.tm_min , &t.tm_hour );
 	// unknown if we're in  daylight savings time
@@ -415,13 +415,15 @@ static time_t atotime4 ( const char *s ) {
 	time_t global = timegm ( &t );
 
 	// skip HH:MM:SS
-	while ( ! isspace (*s) ) s++;	
+	while ( *s && !isspace (*s) ) s++;
 	// skip spaces
-	while ( isspace (*s) ) s++;
+	while ( *s && isspace (*s) ) s++;
 	// convert local time to "utc" or whatever timezone "s" points to,
 	// which is usually gmt or utc
-	int32_t tzoff = getTimeZone ( s ) ;
-	if ( tzoff != BADTIMEZONE ) global += tzoff;
+	if( *s ) {
+		int32_t tzoff = getTimeZone ( s ) ;
+		if ( tzoff != BADTIMEZONE ) global += tzoff;
+	}
 	return global;
 }
 
