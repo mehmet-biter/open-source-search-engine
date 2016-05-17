@@ -14044,8 +14044,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 	int32_t need4 = nw * 4 + 5000;
 	if ( nd && index1 && m_usePosdb ) {
 		if ( ! tt1.set ( 18 , 4 , need4,NULL,0,false,m_niceness,
-				 "posdb-indx"))
-		{
+				 "posdb-indx")) {
 			logTrace( g_conf.m_logTraceXmlDoc, "tt1.set failed" );
 			return NULL;
 		}
@@ -14062,8 +14061,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		// you can't block here because if we are re-called we lose tt1
 		if ( nod == (char *)-1 ) { char *xx=NULL;*xx=0; }
 		// error?
-		if ( ! nod )
-		{
+		if ( ! nod ) {
 			logTrace( g_conf.m_logTraceXmlDoc, "END, hashAll failed" );
 			return NULL;
 		}
@@ -14229,12 +14227,10 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		     // fix for import log spam
 		     ! m_isImporting &&
 		     m_metaListCheckSum8 != currentMetaListCheckSum8 ) {
-			log("xmldoc: checksum parsing inconsistency for %s "
-			    "(old)%i != %i(new). Uncomment tt1.print() "
-			    "above to debug.",
-			    m_firstUrl.getUrl(),
-			    (int)m_metaListCheckSum8,
-			    (int)currentMetaListCheckSum8);
+			log( LOG_WARN, "xmldoc: checksum parsing inconsistency for %s (old)%i != %i(new). "
+			     "Uncomment tt1.print() above to debug.",
+			     m_firstUrl.getUrl(), (int)m_metaListCheckSum8, (int)currentMetaListCheckSum8 );
+
 			// if doing qa test drop core
 			CollectionRec *cr = getCollRec();
 			if ( cr && strcmp(cr->m_coll,"qatest123") == 0 ) {
@@ -14242,6 +14238,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 				sleep(1000);
 				exit(0);}//char *xx=NULL;*xx=0; }
 		}
+
 		// assign the new one, getTitleRecBuf() call below needs this
 		m_metaListCheckSum8 = currentMetaListCheckSum8;
 		m_metaListCheckSum8Valid = true;
