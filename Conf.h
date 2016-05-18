@@ -427,6 +427,7 @@ class Conf {
 	bool m_logTraceBigFile;
 	bool m_logTraceDns;
 	bool m_logTraceFile;
+	bool m_logTraceMem;
 	bool m_logTraceMsg0;
 	bool m_logTraceMsg4;
 	bool m_logTracePosdb;

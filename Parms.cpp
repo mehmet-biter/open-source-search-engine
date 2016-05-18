@@ -10245,6 +10245,15 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_CONF;
 	m++;
 
+	m->m_title = "log trace info for Mem";
+	m->m_cgi   = "ltrc_mem";
+	m->m_off   = offsetof(Conf,m_logTraceMem);
+	m->m_type  = TYPE_BOOL;
+	m->m_def   = "0";
+	m->m_page  = PAGE_LOG;
+	m->m_obj   = OBJ_CONF;
+	m++;
+
 	m->m_title = "log trace info for Msg0";
 	m->m_cgi   = "ltrc_msgzero";
 	m->m_off   = offsetof(Conf,m_logTraceMsg0);
