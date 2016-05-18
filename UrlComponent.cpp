@@ -150,7 +150,7 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 				}
 
 				if ( c >= 'A' && c <= 'F' ) {
-					hasAlphaNoHexUpper = true;
+					hasAlphaHexUpper = true;
 					continue;
 				}
 
