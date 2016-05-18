@@ -136,12 +136,10 @@ bool Msg0::getList ( int64_t hostId      , // host to ask (-1 if none)
 	// no longer accept negative minrecsize
 	if ( minRecSizes < 0 ) {
 		g_errno = EBADENGINEER;
-		if( g_conf.m_logTraceMsg0 ) log("%s:%s:%d: END", __FILE__, __func__, __LINE__);
+		logTrace( g_conf.m_logTraceMsg0, "END" );
 
-		log(LOG_LOGIC,
-		    "net: msg0: Negative minRecSizes no longer supported.");
+		log(LOG_LOGIC, "net: msg0: Negative minRecSizes no longer supported.");
 		char *xx=NULL;*xx=0;
-		return true;
 	}
 
 	// remember these
