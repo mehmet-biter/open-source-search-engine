@@ -2,98 +2,63 @@
 
 #include "Url.h"
 #include "SafeBuf.h"
+#include <tuple>
 
 TEST( UrlTest, SetNonAsciiValid ) {
-	const char* input_urls[] = {
-	    "http://topbeskæring.dk/velkommen",
-	    "www.Alliancefrançaise.nu",
-	    "française.Alliance.nu",
-	    "française.Alliance.nu/asdf",
-	    "http://française.Alliance.nu/asdf",
-	    "http://française.Alliance.nu/",
-	    "幸运.龍.com",
-	    "幸运.龍.com/asdf/运/abc",
-	    "幸运.龍.com/asdf",
-	    "http://幸运.龍.com/asdf",
-	    "http://Беларуская.org/Акадэмічная",
-	    "https://hi.Български.com",
-	    "https://fakedomain.中文.org/asdf",
-	    "https://gigablast.com/abc/文/efg",
-	    "https://gigablast.com/?q=文",
-	    "http://www.example.сайт",
-	    "http://genocidearchiverwanda.org.rw/index.php/Category:Official_Communiqués",
-	    "http://www.example.com/xn--fooled-you-into-trying-to-decode-this",
-	    "http://www.example.сайт/xn--fooled-you-into-trying-to-decode-this",
-	    "http://腕時計通販.jp/",
-	    "http://сацминэнерго.рф/robots.txt",
-	    "http://faß.de/",
-	    "http://βόλος.com/",
-	    "http://ශ්‍රී.com/",
-	    "http://نامه‌ای.com/"
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		std::make_tuple( "http://topbeskæring.dk/velkommen", "http://xn--topbeskring-g9a.dk/velkommen" ),
+		std::make_tuple( "www.Alliancefrançaise.nu", "http://www.xn--alliancefranaise-npb.nu/" ),
+		std::make_tuple( "française.Alliance.nu", "http://xn--franaise-v0a.alliance.nu/" ),
+		std::make_tuple( "française.Alliance.nu/asdf", "http://xn--franaise-v0a.alliance.nu/asdf" ),
+		std::make_tuple( "http://française.Alliance.nu/asdf", "http://xn--franaise-v0a.alliance.nu/asdf" ),
+		std::make_tuple( "http://française.Alliance.nu/", "http://xn--franaise-v0a.alliance.nu/" ),
+		std::make_tuple( "幸运.龍.com", "http://xn--lwt711i.xn--mi7a.com/" ),
+		std::make_tuple( "幸运.龍.com/asdf/运/abc", "http://xn--lwt711i.xn--mi7a.com/asdf/%E8%BF%90/abc" ),
+		std::make_tuple( "幸运.龍.com/asdf", "http://xn--lwt711i.xn--mi7a.com/asdf" ),
+		std::make_tuple( "http://幸运.龍.com/asdf", "http://xn--lwt711i.xn--mi7a.com/asdf" ),
+		std::make_tuple( "http://Беларуская.org/Акадэмічная",
+		                 "http://xn--d0a6das0ae0bir7j.org/%D0%90%D0%BA%D0%B0%D0%B4%D1%8D%D0%BC%D1%96%D1%87%D0%BD%D0%B0%D1%8F" ),
+		std::make_tuple( "https://hi.Български.com", "https://hi.xn--d0a6divjd1bi0f.com/" ),
+		std::make_tuple( "https://fakedomain.中文.org/asdf", "https://fakedomain.xn--fiq228c.org/asdf" ),
+		std::make_tuple( "https://gigablast.com/abc/文/efg", "https://gigablast.com/abc/%E6%96%87/efg" ),
+		std::make_tuple( "https://gigablast.com/?q=文", "https://gigablast.com/?q=%E6%96%87" ),
+		std::make_tuple( "http://www.example.сайт", "http://www.example.xn--80aswg/" ),
+		std::make_tuple( "http://genocidearchiverwanda.org.rw/index.php/Category:Official_Communiqués",
+		                 "http://genocidearchiverwanda.org.rw/index.php/Category:Official_Communiqu%C3%A9s" ),
+		std::make_tuple( "http://www.example.com/xn--fooled-you-into-trying-to-decode-this",
+		                 "http://www.example.com/xn--fooled-you-into-trying-to-decode-this" ),
+		std::make_tuple( "http://www.example.сайт/xn--fooled-you-into-trying-to-decode-this",
+		                 "http://www.example.xn--80aswg/xn--fooled-you-into-trying-to-decode-this" ),
+		std::make_tuple( "http://腕時計通販.jp/", "http://xn--kjvp61d69f6wc3zf.jp/" ),
+		std::make_tuple( "http://сацминэнерго.рф/robots.txt", "http://xn--80agflthakqd0d1e.xn--p1ai/robots.txt" ),
+		std::make_tuple( "http://faß.de/", "http://xn--fa-hia.de/" ),
+		std::make_tuple( "http://βόλος.com/", "http://xn--nxasmm1c.com/" ),
+		std::make_tuple( "http://ශ්‍රී.com/", "http://xn--10cl1a0b660p.com/" ),
+		std::make_tuple( "http://نامه‌ای.com/", "http://xn--mgba3gch31f060k.com/" )
 	};
 
-	const char *expected_normalized[] = {
-		"http://xn--topbeskring-g9a.dk/velkommen",
-		"http://www.xn--alliancefranaise-npb.nu/",
-		"http://xn--franaise-v0a.alliance.nu/",
-		"http://xn--franaise-v0a.alliance.nu/asdf",
-		"http://xn--franaise-v0a.alliance.nu/asdf",
-		"http://xn--franaise-v0a.alliance.nu/",
-		"http://xn--lwt711i.xn--mi7a.com/",
-		"http://xn--lwt711i.xn--mi7a.com/asdf/%E8%BF%90/abc",
-		"http://xn--lwt711i.xn--mi7a.com/asdf",
-		"http://xn--lwt711i.xn--mi7a.com/asdf",
-		"http://xn--d0a6das0ae0bir7j.org/%D0%90%D0%BA%D0%B0%D0%B4%D1%8D%D0%BC%D1%96%D1%87%D0%BD%D0%B0%D1%8F",
-		"https://hi.xn--d0a6divjd1bi0f.com/",
-		"https://fakedomain.xn--fiq228c.org/asdf",
-		"https://gigablast.com/abc/%E6%96%87/efg",
-		"https://gigablast.com/?q=%E6%96%87",
-		"http://www.example.xn--80aswg/",
-		"http://genocidearchiverwanda.org.rw/index.php/Category:Official_Communiqu%C3%A9s",
-		"http://www.example.com/xn--fooled-you-into-trying-to-decode-this",
-		"http://www.example.xn--80aswg/xn--fooled-you-into-trying-to-decode-this",
-		"http://xn--kjvp61d69f6wc3zf.jp/",
-	    "http://xn--80agflthakqd0d1e.xn--p1ai/robots.txt",
-		"http://xn--fa-hia.de/",
-		"http://xn--nxasmm1c.com/",
-		"http://xn--10cl1a0b660p.com/",
-		"http://xn--mgba3gch31f060k.com/"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-			   sizeof( expected_normalized ) / sizeof( expected_normalized[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
+	for ( auto it = test_cases.begin(); it != test_cases.end(); ++it ) {
 		Url url;
-		url.set( input_urls[i] );
+		url.set( std::get<0>( *it ) );
 
-		EXPECT_STREQ(expected_normalized[i], (const char*)url.getUrl());
+		EXPECT_STREQ( std::get<1>( *it ), ( const char * ) url.getUrl() );
 	}
 }
 
-TEST( UrlTest, SetNonAsciiInValid ) {
-	const char* input_urls[] = {
-		"http://www.fas.org/blog/ssp/2009/08/securing-venezuela\032s-arsenals.php",
-		"https://pypi.python\n\n\t\t\t\t.org/packages/source/p/pyramid/pyramid-1.5.tar.gz",
-		"http://undocs.org/ru/A/C.3/68/\vSR.48"
+TEST( UrlTest, SetNonAsciiInvalid ) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		std::make_tuple( "http://www.fas.org/blog/ssp/2009/08/securing-venezuela\032s-arsenals.php",
+		                 "http://www.fas.org/blog/ssp/2009/08/securing-venezuela%1As-arsenals.php" ),
+		std::make_tuple( "https://pypi.python\n\n\t\t\t\t.org/packages/source/p/pyramid/pyramid-1.5.tar.gz",
+		                 "https://pypi.python/" ),
+		std::make_tuple( "http://undocs.org/ru/A/C.3/68/\vSR.48", "http://undocs.org/ru/A/C.3/68/%0BSR.48" )
 	};
 
-	const char *expected_normalized[] = {
-		"http://www.fas.org/blog/ssp/2009/08/securing-venezuela%1As-arsenals.php",
-		"https://pypi.python/",
-		"http://undocs.org/ru/A/C.3/68/%0BSR.48"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-			   sizeof( expected_normalized ) / sizeof( expected_normalized[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
+	for ( auto it = test_cases.begin(); it != test_cases.end(); ++it ) {
 		Url url;
-		url.set( input_urls[i] );
+		url.set( std::get<0>( *it ) );
 
-		EXPECT_STREQ(expected_normalized[i], (const char*)url.getUrl());
+		EXPECT_STREQ( std::get<1>( *it ), ( const char * ) url.getUrl() );
 	}
 }
 
@@ -296,225 +261,143 @@ TEST( UrlTest, StripParamsV122 ) {
 	}
 }
 
-TEST( UrlTest, StripParamsSid ) {
-	const char *input_urls[] = {
-		// sid
-		"http://astraklubpolska.pl/viewtopic.php?f=149&t=829138&sid=1d5e1e9ba356dc2f848f6223d914ca19&start=10",
-	    "http://jx3.net/tdg/forum/viewtopic.php?f=74&t=2860&sid=0b721aa1c34b75fcf41e17304537d965&start=0",
-		"http://www.classicbabygift.com/cgi-bin/webc.cgi/st_main.html?p_catid=3&sid=3KnGJS3ga7ae891-33115175851.04",
-	    "http://order.bephoto.be/?langue=nl&step=2&sid=v0uqho4nv0mnghv4ap3ieeqp94&check=AzEBNVg6BGQBagM",
-	    "http://www02.ktzhk.com/plugin_midi.php?action=list&midi_type=2&tids=49&sid=K6FYyt",
+static void strip_param_tests( const std::vector<std::tuple<const char *, const char *>> &test_cases ) {
+	for ( auto it = test_cases.begin(); it != test_cases.end(); ++it ) {
+		const char *input_url = std::get<0>( *it );
 
-		// sid (no strip)
-		"http://www.fibsry.fi/fi/component/sobipro/?pid=146&sid=203:Bank4Hope",
-	    "http://www.bzga.de/?sid=1366",
-	    "http://tw.school.uschoolnet.com/?id=es00000113&mode=news&key=134726811289359&sid=detail&news=141981074080101"
-	};
-
-	const char *expected_urls[] = {
-		// sid
-		"http://astraklubpolska.pl/viewtopic.php?f=149&t=829138&start=10",
-		"http://jx3.net/tdg/forum/viewtopic.php?f=74&t=2860&start=0",
-		"http://www.classicbabygift.com/cgi-bin/webc.cgi/st_main.html?p_catid=3",
-		"http://order.bephoto.be/?langue=nl&step=2&check=AzEBNVg6BGQBagM",
-		"http://www02.ktzhk.com/plugin_midi.php?action=list&midi_type=2&tids=49",
-
-		// sid (no strip)
-		"http://www.fibsry.fi/fi/component/sobipro/?pid=146&sid=203:Bank4Hope",
-	    "http://www.bzga.de/?sid=1366",
-		"http://tw.school.uschoolnet.com/?id=es00000113&mode=news&key=134726811289359&sid=detail&news=141981074080101"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
 		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
+		url.set( input_url, strlen( input_url ), false, true, 123 );
 
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
+		EXPECT_STREQ( std::get<1>( *it ), ( const char * ) url.getUrl() );
 	}
+}
+
+TEST( UrlTest, StripParamsSid ) {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
+		// sid
+		std::make_tuple( "http://astraklubpolska.pl/viewtopic.php?f=149&t=829138&sid=1d5e1e9ba356dc2f848f6223d914ca19&start=10",
+		                 "http://astraklubpolska.pl/viewtopic.php?f=149&t=829138&start=10" ),
+		std::make_tuple( "http://jx3.net/tdg/forum/viewtopic.php?f=74&t=2860&sid=0b721aa1c34b75fcf41e17304537d965&start=0",
+		                 "http://jx3.net/tdg/forum/viewtopic.php?f=74&t=2860&start=0" ),
+		std::make_tuple( "http://www.classicbabygift.com/cgi-bin/webc.cgi/st_main.html?p_catid=3&sid=3KnGJS3ga7ae891-33115175851.04",
+		                 "http://www.classicbabygift.com/cgi-bin/webc.cgi/st_main.html?p_catid=3" ),
+		std::make_tuple( "http://order.bephoto.be/?langue=nl&step=2&sid=v0uqho4nv0mnghv4ap3ieeqp94&check=AzEBNVg6BGQBagM",
+		                 "http://order.bephoto.be/?langue=nl&step=2&check=AzEBNVg6BGQBagM" ),
+		std::make_tuple( "http://www02.ktzhk.com/plugin_midi.php?action=list&midi_type=2&tids=49&sid=K6FYyt",
+		                 "http://www02.ktzhk.com/plugin_midi.php?action=list&midi_type=2&tids=49" ),
+
+		// sid (no strip)
+		std::make_tuple( "http://www.fibsry.fi/fi/component/sobipro/?pid=146&sid=203:Bank4Hope",
+		                 "http://www.fibsry.fi/fi/component/sobipro/?pid=146&sid=203:Bank4Hope" ),
+		std::make_tuple( "http://www.bzga.de/?sid=1366",
+		                 "http://www.bzga.de/?sid=1366" ),
+		std::make_tuple( "http://tw.school.uschoolnet.com/?id=es00000113&mode=news&key=134726811289359&sid=detail&news=141981074080101",
+		                 "http://tw.school.uschoolnet.com/?id=es00000113&mode=news&key=134726811289359&sid=detail&news=141981074080101" )
+	};
+
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsPhpSessId ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// phpsessid
-		"http://www.emeraldgrouppublishing.com/authors/guides/index.htm?PHPSESSID=gan1vvu81as0nnkc08fg38c3i2",
-		"http://www.buf.fr/philosophy/?PHPSESSID=29ba61ff4f47064d4062e261eeab5d85",
-		"http://www.toz-penkala.hr/proizvodi-skolski-pribor?phpsessid=v5bhoda67mhutnqv382q86l4l4",
-		"http://web.burza.hr/?PHPSESSID",
-		"http://www.dursthoff.de/book.php?PHPSESSID=068bd453c94c3c4c0b7ccca9a581597d&m=3&aid=28&bid=50",
-		"http://www.sapro.cz/ftp/index.php?directory=HD-BOX&PHPSESSID=",
-		"http://forum.keepemcookin.com/index.php?PHPSESSID=eoturno2s9rsrs6ru3k8j362l5&amp;action=profile;u=58995"
+		std::make_tuple( "http://www.emeraldgrouppublishing.com/authors/guides/index.htm?PHPSESSID=gan1vvu81as0nnkc08fg38c3i2",
+		                 "http://www.emeraldgrouppublishing.com/authors/guides/index.htm" ),
+		std::make_tuple( "http://www.buf.fr/philosophy/?PHPSESSID=29ba61ff4f47064d4062e261eeab5d85",
+		                 "http://www.buf.fr/philosophy/" ),
+		std::make_tuple( "http://www.toz-penkala.hr/proizvodi-skolski-pribor?phpsessid=v5bhoda67mhutnqv382q86l4l4",
+		                 "http://www.toz-penkala.hr/proizvodi-skolski-pribor" ),
+		std::make_tuple( "http://web.burza.hr/?PHPSESSID",
+		                 "http://web.burza.hr/" ),
+		std::make_tuple( "http://www.dursthoff.de/book.php?PHPSESSID=068bd453c94c3c4c0b7ccca9a581597d&m=3&aid=28&bid=50",
+		                 "http://www.dursthoff.de/book.php?m=3&aid=28&bid=50" ),
+		std::make_tuple( "http://www.sapro.cz/ftp/index.php?directory=HD-BOX&PHPSESSID=",
+		                 "http://www.sapro.cz/ftp/index.php?directory=HD-BOX" ),
+		std::make_tuple( "http://forum.keepemcookin.com/index.php?PHPSESSID=eoturno2s9rsrs6ru3k8j362l5&amp;action=profile;u=58995",
+		                 "http://forum.keepemcookin.com/index.php?action=profile;u=58995" ),
 	};
 
-	const char *expected_urls[] = {
-		// phpsessid
-		"http://www.emeraldgrouppublishing.com/authors/guides/index.htm",
-		"http://www.buf.fr/philosophy/",
-		"http://www.toz-penkala.hr/proizvodi-skolski-pribor",
-		"http://web.burza.hr/",
-		"http://www.dursthoff.de/book.php?m=3&aid=28&bid=50",
-		"http://www.sapro.cz/ftp/index.php?directory=HD-BOX",
-		"http://forum.keepemcookin.com/index.php?action=profile;u=58995"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsOsCommerce ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// osCommerce
-		"http://www.nailcosmetics.pl/?osCAdminID=70b4c843a51204ec897136bc04282462&osCAdminID=70b4c843a51204ec897136bc04282462&osCAdminID=70b4c843a51204ec897136bc04282462&osCAdminID=70b4c843a51204ec897136bc04282462",
-		"http://ezofit.sk/obchod/admin/categories.php?cPath=205&action=new_product&osCAdminID=dogjdaa5ogukr5vdtnld0o80r4",
-		"http://calisonusa.com/specials.html?osCAdminID=a401c1738f8e361728c7f61e9dd23a31",
-		"http://www.silversites.net/sweetheart-tree.php?osCsid=4c7154c9159ec1aadfc788a3525e61dd"
+		std::make_tuple( "http://www.nailcosmetics.pl/?osCAdminID=70b4c843a51204ec897136bc04282462&osCAdminID=70b4c843a51204ec897136bc04282462&osCAdminID=70b4c843a51204ec897136bc04282462&osCAdminID=70b4c843a51204ec897136bc04282462",
+		                 "http://www.nailcosmetics.pl/" ),
+		std::make_tuple( "http://ezofit.sk/obchod/admin/categories.php?cPath=205&action=new_product&osCAdminID=dogjdaa5ogukr5vdtnld0o80r4",
+		                 "http://ezofit.sk/obchod/admin/categories.php?cPath=205&action=new_product" ),
+		std::make_tuple( "http://calisonusa.com/specials.html?osCAdminID=a401c1738f8e361728c7f61e9dd23a31",
+		                 "http://calisonusa.com/specials.html" ),
+		std::make_tuple( "http://www.silversites.net/sweetheart-tree.php?osCsid=4c7154c9159ec1aadfc788a3525e61dd",
+		                 "http://www.silversites.net/sweetheart-tree.php" )
 	};
 
-	const char *expected_urls[] = {
-		// osCommerce
-		"http://www.nailcosmetics.pl/",
-		"http://ezofit.sk/obchod/admin/categories.php?cPath=205&action=new_product",
-		"http://calisonusa.com/specials.html",
-		"http://www.silversites.net/sweetheart-tree.php"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsXTCommerce ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// XT-commerce
-		"http://www.unitedloneliness.com/index.php/XTCsid/d929e97581813396ed8f360e7f186eab",
-		"http://www.extrovert.de/Maitre?XTCsid=fgkp6js6p23gcfhl7u4g223no6",
-		"https://bravisshop.eu/index.php/cPath/1/category/Professional---Hardware/XTCsid/"
+		std::make_tuple( "http://www.unitedloneliness.com/index.php/XTCsid/d929e97581813396ed8f360e7f186eab",
+		                 "http://www.unitedloneliness.com/index.php" ),
+		std::make_tuple( "http://www.extrovert.de/Maitre?XTCsid=fgkp6js6p23gcfhl7u4g223no6",
+		                 "http://www.extrovert.de/Maitre" ),
+		std::make_tuple( "https://bravisshop.eu/index.php/cPath/1/category/Professional---Hardware/XTCsid/",
+		                 "https://bravisshop.eu/index.php/cPath/1/category/Professional---Hardware/" )
 	};
 
-	const char *expected_urls[] = {
-		// XT-commerce
-		"http://www.unitedloneliness.com/index.php",
-		"http://www.extrovert.de/Maitre",
-		"https://bravisshop.eu/index.php/cPath/1/category/Professional---Hardware/"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsPostNuke ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// postnuke
-		"http://eeagrants.org/News?POSTNUKESID=c9965f0db1606c402015743d1cda55f5",
-		"http://www.bkamager.dk/modules.php?op=modload&name=News&file=article&sid=166&mode=thread&order=0&thold=0&POSTNUKESID=78ac739940c636f94bf9b3fac3afb4d2",
-	    "http://zspieszyce.nazwa.pl/modules.php?set_albumName=pieszyce-schortens&op=modload&name=gallery&file=index&include=view_album.php&POSTNUKESID=549178d5035b622229a39cd5baf75d2a",
-	    "http://myrealms.net/PostNuke/html/print.php?sid=2762&POSTNUKESID=4ed3b0a832d4687020b05ce70"
+		std::make_tuple( "http://eeagrants.org/News?POSTNUKESID=c9965f0db1606c402015743d1cda55f5",
+		                 "http://eeagrants.org/News" ),
+		std::make_tuple( "http://www.bkamager.dk/modules.php?op=modload&name=News&file=article&sid=166&mode=thread&order=0&thold=0&POSTNUKESID=78ac739940c636f94bf9b3fac3afb4d2",
+				         "http://www.bkamager.dk/modules.php?op=modload&name=News&file=article&sid=166&mode=thread&order=0&thold=0" ),
+		std::make_tuple( "http://zspieszyce.nazwa.pl/modules.php?set_albumName=pieszyce-schortens&op=modload&name=gallery&file=index&include=view_album.php&POSTNUKESID=549178d5035b622229a39cd5baf75d2a",
+		                 "http://zspieszyce.nazwa.pl/modules.php?set_albumName=pieszyce-schortens&op=modload&name=gallery&file=index&include=view_album.php" ),
+		std::make_tuple( "http://myrealms.net/PostNuke/html/print.php?sid=2762&POSTNUKESID=4ed3b0a832d4687020b05ce70",
+		                 "http://myrealms.net/PostNuke/html/print.php?sid=2762" )
 	};
 
-	const char *expected_urls[] = {
-		// postnuke
-		"http://eeagrants.org/News",
-		"http://www.bkamager.dk/modules.php?op=modload&name=News&file=article&sid=166&mode=thread&order=0&thold=0",
-		"http://zspieszyce.nazwa.pl/modules.php?set_albumName=pieszyce-schortens&op=modload&name=gallery&file=index&include=view_album.php",
-		"http://myrealms.net/PostNuke/html/print.php?sid=2762"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsColdFusion ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// coldfusion
-		"http://www.vineyard2door.com/web/clubs_browse.cfm?CFID=3843950&CFTOKEN=cfd5b9e083fb3e24-03C2F487-DAB8-1365-521658E43AB8A0DC&jsessionid=22D5211D9EB291522DE9A4258ECB94D2.cfusion",
-		"http://www.liquidhighwaycarwash.com/category/1118&CFID=11366594&CFTOKEN=9178789d30437e83-FD850740-F9A2-39F0-AA850FED06D46D4B/employment.htm",
-	    "http://shop.arslonga.ch/index.cfm/shop/homestyle/site/article/id/16834/CFID/3458787/CFTOKEN/e718cd6cc29050df-8051DC1E-C29B-554E-6DFF6B5D2704A9A5",
-		"http://www.lifeguide-augsburg.de/index.cfm/fuseaction/themen/theID/7624/ml1/7624/zg/0/cfid/43537465/cftoken/92566684.html",
-	    "https://www.mutualscrew.com/cart/cart.cfm?cftokenPass=CFID%3D31481352%26CFTOKEN%3D6aac7a0fc9fa6be0%2DBF3514D1%2D155D%2D8226%2D0EF8291F836B567D%26jsessionid%3D175051907615629E4C2CB4BFC8297FF3%2Ecfusion"
+		std::make_tuple( "http://www.vineyard2door.com/web/clubs_browse.cfm?CFID=3843950&CFTOKEN=cfd5b9e083fb3e24-03C2F487-DAB8-1365-521658E43AB8A0DC&jsessionid=22D5211D9EB291522DE9A4258ECB94D2.cfusion",
+		                 "http://www.vineyard2door.com/web/clubs_browse.cfm" ),
+		std::make_tuple( "http://www.liquidhighwaycarwash.com/category/1118&CFID=11366594&CFTOKEN=9178789d30437e83-FD850740-F9A2-39F0-AA850FED06D46D4B/employment.htm",
+		                 "http://www.liquidhighwaycarwash.com/category/1118/employment.htm" ),
+		std::make_tuple( "http://shop.arslonga.ch/index.cfm/shop/homestyle/site/article/id/16834/CFID/3458787/CFTOKEN/e718cd6cc29050df-8051DC1E-C29B-554E-6DFF6B5D2704A9A5",
+		                 "http://shop.arslonga.ch/index.cfm/shop/homestyle/site/article/id/16834" ),
+		std::make_tuple( "http://www.lifeguide-augsburg.de/index.cfm/fuseaction/themen/theID/7624/ml1/7624/zg/0/cfid/43537465/cftoken/92566684.html",
+		                 "http://www.lifeguide-augsburg.de/index.cfm/fuseaction/themen/theID/7624/ml1/7624/zg/0" ),
+		std::make_tuple( "https://www.mutualscrew.com/cart/cart.cfm?cftokenPass=CFID%3D31481352%26CFTOKEN%3D6aac7a0fc9fa6be0%2DBF3514D1%2D155D%2D8226%2D0EF8291F836B567D%26jsessionid%3D175051907615629E4C2CB4BFC8297FF3%2Ecfusion",
+		                 "https://www.mutualscrew.com/cart/cart.cfm" )
 	};
 
-	const char *expected_urls[] = {
-		// coldfusion
-		"http://www.vineyard2door.com/web/clubs_browse.cfm",
-		"http://www.liquidhighwaycarwash.com/category/1118/employment.htm",
-		"http://shop.arslonga.ch/index.cfm/shop/homestyle/site/article/id/16834",
-		"http://www.lifeguide-augsburg.de/index.cfm/fuseaction/themen/theID/7624/ml1/7624/zg/0",
-		"https://www.mutualscrew.com/cart/cart.cfm"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsAtlassian ) {
-	const char *input_urls[] = {
+	std::vector<std::tuple<const char *, const char *>> test_cases = {
 		// atlassian
-		"https://track.systrends.com/secure/IssueNavigator.jspa?mode=show&atl_token=CUqRyjtmwj",
-		"https://jira.kansalliskirjasto.fi/secure/WorkflowUIDispatcher.jspa?id=76139&action=51&atl_token=B12X-5XYK-TDON-8SC7|9724becbc02f07cdd6217c60b7662fe0b6c6f6d2|lout",
-		"https://support.highwinds.com/login.action?os_destination=%2Fdisplay%2FDOCS%2FUser%2BAPI&atl_token=56c1bb338d5ad3ac262dd4e97bda482efc151f30",
-	    "https://bugs.dlib.indiana.edu/secure/IssueNavigator.jspa?mode=hide&atl_token=AT3D-YZ9T-9TL1-ICW1%7C06900f3197f333cf03f196af7a36c63767c4e8fb%7Clout&requestId=10606"
+		std::make_tuple( "https://track.systrends.com/secure/IssueNavigator.jspa?mode=show&atl_token=CUqRyjtmwj",
+		                 "https://track.systrends.com/secure/IssueNavigator.jspa?mode=show" ),
+		std::make_tuple( "https://jira.kansalliskirjasto.fi/secure/WorkflowUIDispatcher.jspa?id=76139&action=51&atl_token=B12X-5XYK-TDON-8SC7|9724becbc02f07cdd6217c60b7662fe0b6c6f6d2|lout",
+		                 "https://jira.kansalliskirjasto.fi/secure/WorkflowUIDispatcher.jspa?id=76139&action=51" ),
+		std::make_tuple( "https://support.highwinds.com/login.action?os_destination=%2Fdisplay%2FDOCS%2FUser%2BAPI&atl_token=56c1bb338d5ad3ac262dd4e97bda482efc151f30",
+		                 "https://support.highwinds.com/login.action?os_destination=%2Fdisplay%2FDOCS%2FUser%2BAPI" ),
+		std::make_tuple( "https://bugs.dlib.indiana.edu/secure/IssueNavigator.jspa?mode=hide&atl_token=AT3D-YZ9T-9TL1-ICW1%7C06900f3197f333cf03f196af7a36c63767c4e8fb%7Clout&requestId=10606",
+		                 "https://bugs.dlib.indiana.edu/secure/IssueNavigator.jspa?mode=hide&requestId=10606" )
 	};
 
-	const char *expected_urls[] = {
-		// atlassian
-		"https://track.systrends.com/secure/IssueNavigator.jspa?mode=show",
-		"https://jira.kansalliskirjasto.fi/secure/WorkflowUIDispatcher.jspa?id=76139&action=51",
-		"https://support.highwinds.com/login.action?os_destination=%2Fdisplay%2FDOCS%2FUser%2BAPI",
-		"https://bugs.dlib.indiana.edu/secure/IssueNavigator.jspa?mode=hide&requestId=10606"
-	};
-
-	ASSERT_EQ( sizeof( input_urls ) / sizeof( input_urls[0] ),
-	           sizeof( expected_urls ) / sizeof( expected_urls[0] ) );
-
-	size_t len = sizeof( input_urls ) / sizeof( input_urls[0] );
-	for ( size_t i = 0; i < len; i++ ) {
-		Url url;
-		url.set( input_urls[i], strlen( input_urls[i] ), false, true, 123 );
-
-		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
-	}
+	strip_param_tests( test_cases );
 }
 
 TEST( UrlTest, StripParamsJSessionId ) {
@@ -1069,4 +952,5 @@ TEST( UrlTest, Normalization ) {
 
 		EXPECT_STREQ( expected_urls[i], (const char*)url.getUrl() );
 	}
+
 }
