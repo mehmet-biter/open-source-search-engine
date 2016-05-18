@@ -398,8 +398,8 @@ bool Rebalance::scanRdb ( ) {
 				m_endKey         , // should be maxed!
 				100024             , // min rec sizes
 				true             , // include tree?
-				false            , // includeCache
 				false            , // addToCache
+				0                , // maxCacheAge
 				0                , // startFileNum
 				-1               , // m_numFiles   
 				this             , // state 
@@ -410,8 +410,7 @@ bool Rebalance::scanRdb ( ) {
 				0                , // retry num
 				-1               , // maxRetries
 				true             , // compensate for merge
-				-1LL             , // sync point
-				NULL         ))
+				-1LL         ))    // sync point
 		return false;
 
 	//
