@@ -59,10 +59,10 @@ public:
 
 	// . returns bytes written to file, 0 is acceptable if m_length == 0
 	// . returns -1 on error and sets g_errno
-	int32_t saveToFile ( char *dir , char *filename ) ;
-	int32_t dumpToFile(char *filename);
-	int32_t save ( char *dir, char *fname){return saveToFile(dir,fname); };
-	int32_t save ( char *fullFilename ) ;
+	int32_t saveToFile ( const char *dir, const char *filename );
+	int32_t dumpToFile(const char *filename);
+	int32_t save ( const char *dir, const char *fname) {return saveToFile(dir,fname); }
+	int32_t save ( const char *fullFilename ) ;
 	// saves to tmp file and if that succeeds then renames to orig filename
 	int32_t safeSave (char *filename );
 

@@ -341,17 +341,17 @@ bool SafeBuf::reserve2x(int32_t i, const char *label) {
 	else return true;
 }
 
-int32_t SafeBuf::saveToFile ( char *dir , char *filename ) {
+int32_t SafeBuf::saveToFile ( const char *dir, const char *filename ) {
 	char buf[1024];
 	snprintf(buf,1024,"%s/%s",dir,filename);
 	return dumpToFile ( buf );
 }
 
-int32_t SafeBuf::save ( char *fullFilename ) {
+int32_t SafeBuf::save ( const char *fullFilename ) {
 	return dumpToFile ( fullFilename );
 }
 
-int32_t SafeBuf::dumpToFile(char *filename ) {
+int32_t SafeBuf::dumpToFile(const char *filename ) {
  retry22:
 	int32_t fd = open ( filename , O_CREAT | O_WRONLY | O_TRUNC ,
 			    getFileCreationFlags() );
