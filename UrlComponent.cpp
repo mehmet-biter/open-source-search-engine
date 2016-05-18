@@ -140,7 +140,7 @@ bool UrlComponent::Validator::isValid( const UrlComponent &urlPart ) const {
 	for ( size_t i = 0; i < valueLen; ++i ) {
 		char c = value[i];
 
-		if ( !hasAlphaNoHexLower || !hasAlphaNoHexUpper || !hasAlphaHexLower || !hasAlphaNoHexUpper ) {
+		if ( !hasAlphaNoHexLower || !hasAlphaNoHexUpper || !hasAlphaHexLower || !hasAlphaHexUpper ) {
 			if ( is_alpha_a( c ) ) {
 				hasAlpha = true;
 
