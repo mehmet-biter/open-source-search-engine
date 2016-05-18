@@ -343,8 +343,11 @@ linkspam.o:
 Url.o:
 	$(CXX) $(DEFS) $(CPPFLAGS) -c $*.cpp
 
-Catdb.o:
-	$(CXX) $(DEFS) $(CPPFLAGS) $(O2) -c $*.cpp
+UrlParser.o:
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
+
+UrlComponent.o:
+	$(CXX) $(DEFS) $(CPPFLAGS) $(O3) -c $*.cpp
 
 # when making a new file, add the recs to the map fast
 RdbMap.o:
