@@ -267,7 +267,7 @@ class CollectionRec {
 	// rebuild the regexes related to diffbot, such as the one for the URL pattern
 	bool rebuildDiffbotRegexes();
 
-	bool rebuildLangRules( char *lang , char *tld );
+	bool rebuildLangRules( const char *lang , const char *tld );
 
 	bool rebuildPrivacoreRules();
 	bool rebuildShallowRules();

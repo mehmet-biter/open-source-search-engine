@@ -85,7 +85,7 @@ public:
 	void truncLen ( int32_t newLen ) {
 		if ( m_length > newLen ) m_length = newLen; };
 
-	bool set ( char *str ) {
+	bool set ( const char *str ) {
 		purge();
 		if ( ! str ) return true;
 		// puts a \0 at the end, but does not include it in m_length:

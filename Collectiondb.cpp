@@ -1481,7 +1481,7 @@ bool CollectionRec::rebuildUrlFilters2 ( ) {
 	if ( m_isCustomCrawl )
 		rebuild = false;
 
-	char *s = m_urlFiltersProfile.getBufStart();
+	const char *s = m_urlFiltersProfile.getBufStart();
 
 	// support the old UFP_CUSTOM, etc. numeric values
 	if ( !strcmp(s,"0" ) )
@@ -2079,7 +2079,7 @@ bool CollectionRec::rebuildPrivacoreRules () {
 
 
 
-bool CollectionRec::rebuildLangRules ( char *langStr , char *tldStr ) {
+bool CollectionRec::rebuildLangRules ( const char *langStr , const char *tldStr ) {
 
 	// max spiders per ip
 	int32_t ipms = 7;
