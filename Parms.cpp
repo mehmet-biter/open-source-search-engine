@@ -109,7 +109,7 @@ static bool printUrlExpressionExamples ( SafeBuf *sb ) ;
 ////////
 
 
-// from PageBasic.cpp:
+// from Spider.cpp:
 bool updateSiteListBuf(collnum_t collnum,bool addSeeds,char *siteListArg);
 
 static bool CommandUpdateSiteList ( char *rec ) {
@@ -1374,7 +1374,6 @@ bool Parms::printParms2 ( SafeBuf* sb ,
 			      k < m_numParms &&
 				      m_parms[k].m_rowid == rowid;
 			      k++ ) {
-
 				status &=printParm(sb,NULL,&m_parms[k],k,
 					    newj,jend,(char *)THIS,coll,NULL,
 						   bg,nc,pd, j==size-1,
@@ -6994,7 +6993,7 @@ void Parms::init ( ) {
 	m->m_off   = offsetof(CollectionRec,m_urlFiltersProfile);
 	m->m_colspan = 3;
 	m->m_type  = TYPE_SAFEBUF;//UFP;// 1 byte dropdown menu
-	m->m_def   = "web"; // UFP_WEB
+	m->m_def   = "privacore";
 	m->m_flags = PF_REBUILDURLFILTERS | PF_CLONE;
 	m->m_page  = PAGE_FILTERS;
 	m->m_obj   = OBJ_COLL;
