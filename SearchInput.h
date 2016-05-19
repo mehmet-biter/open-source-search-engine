@@ -146,6 +146,7 @@ public:
 	int32_t   m_includeCachedCopy;
 	char   m_familyFilter;            // msg40
 	char   m_allowHighFrequencyTermCache;
+	int64_t m_minMsg3aTimeout;
 	char   m_showErrors;
 	char   m_doSiteClustering;        // msg40
 	char   m_doDupContentRemoval;     // msg40

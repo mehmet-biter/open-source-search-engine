@@ -319,6 +319,9 @@ bool Msg40::federatedLoop ( ) {
 	mr.m_maxSerpScore              = m_si->m_maxSerpScore;
 	mr.m_sameLangWeight            = m_si->m_sameLangWeight;
 
+	if ( mr.m_timeout < m_si->m_minMsg3aTimeout )
+		mr.m_timeout = m_si->m_minMsg3aTimeout;
+	
 	//
 	// how many docid splits should we do to avoid going OOM?
 	//

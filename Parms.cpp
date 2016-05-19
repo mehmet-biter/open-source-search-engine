@@ -4928,6 +4928,16 @@ void Parms::init ( ) {
 	m->m_obj   = OBJ_SI;
 	m++;
 
+	m->m_title = "Min msg3a timeout";
+	m->m_desc  = "Minimum msg3a timeout. Only useful for programs.";
+	m->m_cgi   = "minmsgthreeatimeout";
+	m->m_def   = "";
+	m->m_off   = offsetof(SearchInput,m_minMsg3aTimeout);
+	m->m_type  = TYPE_LONG_LONG;
+	m->m_page  = PAGE_RESULTS;
+	m->m_obj   = OBJ_SI;
+	m++;
+
 
 	m->m_title = "highlight query terms in summaries";
 	m->m_desc  = "Use to disable or enable "
