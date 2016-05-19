@@ -39,7 +39,7 @@ bool printNumAbbr ( SafeBuf &p, int64_t vvv ) {
 bool printUptime ( SafeBuf &sb ) {
 	int32_t uptime = time(NULL) - g_stats.m_uptimeStart ;
 	// sanity check... wtf?
-	if ( uptime < 0 ) { uptime = 0; };
+	if ( uptime < 0 ) { uptime = 0; }
 
 	int32_t days  = uptime / 86400; uptime -= days  * 86400;
 	int32_t hours = uptime /  3600; uptime -= hours * 3600;

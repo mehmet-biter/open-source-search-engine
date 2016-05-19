@@ -1143,7 +1143,7 @@ char *Mem::dup ( const void *data , int32_t dataSize , const char *note ) {
 
 	// keep it simple
 	char *mem = (char *)mmalloc ( dataSize , note );
-	logTrace( g_conf.m_logTraceMem, "mem=%p data=%p dataSize=%" PRId32" note='%s'", mem, data, dataSize, note );
+	logTrace( g_conf.m_logTraceMem, "mem=%p data=%p dataSize=%" PRId32" note='%s'", (void*)mem, data, dataSize, note );
 
 	if ( mem ) memcpy ( mem , data , dataSize );
 	return mem;

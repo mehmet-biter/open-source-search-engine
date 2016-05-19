@@ -1427,14 +1427,6 @@ int main2 ( int argc , char *argv[] ) {
 		return doCmd( "dpco=1", hostId, "master", true, false );
 	}
 
-	// gb freecache [hostId]
-	if ( strcmp ( cmd , "freecache" ) == 0 ) {	
-		int32_t max = 7000000;
-		if ( cmdarg + 1 < argc ) max = atoi ( argv[cmdarg+1] );
-		//freeAllSharedMem( max );
-		return true;
-	}
-
 	// gb ddump [hostId]
 	if ( strcmp ( cmd , "ddump" ) == 0 ) {	
 		int32_t hostId = -1;
@@ -4643,14 +4635,6 @@ bool parseTest ( char *coll , int64_t docId , char *query ) {
 	    "for docId %"INT64".", 
 	    (double)(e - t)/100.0,words.m_numWords,docId);
 
-
-
-	bool isPreformattedText ;
-	int32_t contentType = xd.m_contentType;//tr.getContentType();
-	if ( contentType == CT_TEXT ) isPreformattedText = true;
-	else                          isPreformattedText = false;
-
-
 	char *buf = (char *)mmalloc(contentLen*2+1,"main");
 	t = gettimeofdayInMilliseconds();
 	for ( int32_t i = 0 ; i < 100 ; i++ )
@@ -5173,7 +5157,6 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	struct sockaddr_in to;
 	sockaddr_in from;
 	socklen_t fromLen;
-	int64_t startTime;
 
 	// make the dgram
 	UdpProtocol *up = &g_dp; // udpServer2.getProtocol();
@@ -5189,7 +5172,6 @@ bool pingTest ( int32_t hid , uint16_t clientPort ) {
 	int32_t ip = h->m_ip;
 	ip = atoip("127.0.0.1",9);
 
-	startTime = gettimeofdayInMilliseconds();
 	memset(&to,0,sizeof(to));
 	to.sin_family      = AF_INET;
 	to.sin_addr.s_addr = h->m_ip;

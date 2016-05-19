@@ -37,7 +37,7 @@ public:
 		m_createSortByForNumbers= false;
 		m_hashNumbers			= true;
 		m_hashCommonWebWords	= true;
-	};
+	}
 	class HashTableX *m_tt;
 	const char		*m_prefix;
 	// "m_desc" should detail the algorithm

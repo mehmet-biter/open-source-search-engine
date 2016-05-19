@@ -304,7 +304,7 @@ public:
 		if ( m_slotReadBuf )
 			mfree(m_slotReadBuf,m_slotAllocSize,"st22");
 		m_slotReadBuf = NULL;
-	};
+	}
 		
 };
 

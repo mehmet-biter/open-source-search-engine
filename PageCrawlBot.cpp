@@ -59,7 +59,7 @@ bool setSpiderParmsFromHtmlRequest ( TcpSocket *socket ,
 // use this as a state while dumping out spiderdb for a collection
 class StateCD {
 public:
-	StateCD () { m_needsMime = true; };
+	StateCD () { m_needsMime = true; }
 	void sendBackDump2 ( ) ;
 	bool readDataFromRdb ( ) ;
 	bool sendList ( ) ;

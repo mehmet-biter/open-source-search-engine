@@ -3162,8 +3162,8 @@ void Query::dumpToLog() const
 		log("  m_rawTermId=%"PRId64, qt.m_rawTermId);
 		log("  m_term='%*.*s'", (int)qt.m_termLen, (int)qt.m_termLen, qt.m_term);
 		log("  m_isWikiHalfStopBigram=%s", qt.m_isWikiHalfStopBigram?"true":"false");
-		log("  m_leftPhraseTermNum=%d, m_leftPhraseTerm=%p", qt.m_leftPhraseTermNum, qt.m_leftPhraseTerm);
-		log("  m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, qt.m_rightPhraseTerm);
+		log("  m_leftPhraseTermNum=%d, m_leftPhraseTerm=%p", qt.m_leftPhraseTermNum, (void*)qt.m_leftPhraseTerm);
+		log("  m_rightPhraseTermNum=%d, m_rightPhraseTerm=%p", qt.m_rightPhraseTermNum, (void*)qt.m_rightPhraseTerm);
 	}
 }
 

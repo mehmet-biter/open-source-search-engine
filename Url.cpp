@@ -2380,32 +2380,49 @@ char *getTLDFast ( char *url , int32_t *tldLen , bool hasHttp ) {
 	}
 	// point "uhost" to hostname right away
 	char *uhost = pp;
+
 	// advance "pp" till we hit a / or :<port> or \0
 	while ( *pp && *pp !='/' && *pp !=':' ) pp++;
-	// are we a root? assume so.
-	char isRoot = true;
+
 	// advance "pe" over the port
 	char *pe = pp;
-	if ( *pp == ':' )
-		while ( *pe && *pe != '/' ) pe++;
-	// but not if something follows the '/'
-	if ( *pe == '/' && *(pe+1) ) isRoot = false;
+	if ( *pp == ':' ) {
+		while ( *pe && *pe != '/' ) {
+			pe++;
+		}
+	}
+
 	// set length of host
 	int32_t uhostLen = pp - uhost;
 	// . is the hostname just an IP address?
 	// . if it is an ip based url make domain the hostname
 	char *ss = uhost;
 	bool isIp = true;
-	for ( ; *ss && ss<pp ; ss++ )
-		if ( is_alpha_a(*ss) ) { isIp = false; break; }
+	for ( ; *ss && ss<pp ; ss++ ) {
+		if ( is_alpha_a( *ss ) ) {
+			isIp = false;
+			break;
+		}
+	}
+
 	// if ip, no tld
-	if ( isIp ) return NULL;
+	if ( isIp ) {
+		return NULL;
+	}
+
 	// get the tld
 	char *tld = ::getTLD ( uhost , uhostLen );
+
 	// if none, done
-	if ( ! tld ) return NULL;
+	if ( ! tld ) {
+		return NULL;
+	}
+
 	// set length
-	if ( tldLen ) *tldLen = pp - tld;
+	if ( tldLen ) {
+		*tldLen = pp - tld;
+	}
+
 	// return it
 	return tld;
 }
@@ -2490,14 +2507,12 @@ char *getDomFast ( char *url , int32_t *domLen , bool hasHttp ) {
 	char *uhost = pp;
 	// advance "pp" till we hit a / or :<port>
 	while ( *pp && *pp !='/' && *pp !=':' ) pp++;
-	// are we a root? assume so.
-	char isRoot = true;
+
 	// advance "pe" over the port
 	char *pe = pp;
 	if ( *pp == ':' )
 		while ( *pe && *pe != '/' ) pe++;
-	// but not if something follows the '/'
-	if ( *pe == '/' && *(pe+1) ) isRoot = false;
+
 	// set length
 	int32_t uhostLen = pp - uhost;
 	// get end

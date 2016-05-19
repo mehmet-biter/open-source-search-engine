@@ -68,7 +68,7 @@ BigFile::BigFile () {
 
 void BigFile::logAllData(int32_t log_type)
 {
-	log(log_type, "Dumping BigFile at %p", this);
+	log(log_type, "Dumping BigFile at %p", (void*)this);
 
 	struct tm *stm = localtime(&m_lastModified);
 	
