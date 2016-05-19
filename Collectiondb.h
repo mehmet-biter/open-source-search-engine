@@ -56,7 +56,7 @@ class Collectiondb  {
 	collnum_t getCollnum ( const char *coll ); // coll is NULL terminated here
 
 	char *getCollName ( collnum_t collnum );
-	char *getColl     ( collnum_t collnum ) {return getCollName(collnum);};
+	char *getColl     ( collnum_t collnum ) {return getCollName(collnum);}
 
 	// get coll rec specified in the HTTP request
 	class CollectionRec *getRec ( class HttpRequest *r ,
@@ -81,7 +81,7 @@ class Collectiondb  {
 
 	// . how many collections we have in here
 	// . only counts valid existing collections
-	int32_t getNumRecsUsed() { return m_numRecsUsed; };
+	int32_t getNumRecsUsed() { return m_numRecsUsed; }
 
 	// what collnum will be used the next time a coll is added?
 	collnum_t reserveCollNum ( ) ;
@@ -224,7 +224,7 @@ class CrawlInfo {
 	int64_t m_pageProcessSuccessesThisRound;
 
 
-	void reset() { memset ( this , 0 , sizeof(CrawlInfo) ); };
+	void reset() { memset ( this , 0 , sizeof(CrawlInfo) ); }
 } __attribute__((packed, aligned(4)));
 
 

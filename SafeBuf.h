@@ -55,7 +55,7 @@ public:
 	int32_t getLength() { return m_length; }
 	int32_t getBufUsed() { return m_length; }
 	void print() { 
-	  if ( write(1,m_buf,m_length) != m_length) { char*xx=NULL;*xx=0;}; }
+	  if ( write(1,m_buf,m_length) != m_length) { char*xx=NULL;*xx=0;} }
 
 	// . returns bytes written to file, 0 is acceptable if m_length == 0
 	// . returns -1 on error and sets g_errno
@@ -83,21 +83,21 @@ public:
 	bool safeDecodeJSONToUtf8 ( const char *json, int32_t jsonLen, int32_t niceness);
 
 	void truncLen ( int32_t newLen ) {
-		if ( m_length > newLen ) m_length = newLen; };
+		if ( m_length > newLen ) m_length = newLen; }
 
 	bool set ( const char *str ) {
 		purge();
 		if ( ! str ) return true;
 		// puts a \0 at the end, but does not include it in m_length:
 		return safeStrcpy ( str );
-	};
+	}
 
 	void removeLastChar ( char lastChar ) {
 		if ( m_length <= 0 ) return;
 		if ( m_buf[m_length-1] != lastChar ) return;
 		m_length--;
 		m_buf[m_length] = '\0';
-	};
+	}
 
 	//MUTATORS
 	bool  safePrintf(const char *formatString, ...)
@@ -144,7 +144,7 @@ public:
 		m_length += i; 
 		// watch out for negative i's
 		if ( m_length < 0 ) m_length = 0; 
-	};
+	}
 	void  setLength(int32_t i) { m_length = i; }
 	char *getNextLine ( char *p ) ;
 	int32_t  catFile(const char *filename) ;
@@ -242,7 +242,7 @@ public:
 			return false;
 		m_buf[m_length] = '\0';
 		return true;
-	};
+	}
 
 	int32_t indexOf(char c);
 
@@ -258,7 +258,7 @@ public:
 		// doing a realloc!! sux...
 		//m_buf[m_length] = '\0';
 		return true;
-	};
+	}
 
 
 	// hack off trailing 0's
@@ -291,10 +291,10 @@ public:
 	bool  operator += (uint16_t i);
 	bool  operator += (uint8_t  i);
 
-	//bool  operator += (int64_t  i) { return *this += (uint64_t)i; };
-	bool  operator += (int32_t  i) { return *this += (uint32_t)i; };
-	bool  operator += (int16_t  i) { return *this += (uint16_t)i; };
-	bool  operator += (int8_t   i) { return *this += (uint8_t)i;  };
+	//bool  operator += (int64_t  i) { return *this += (uint64_t)i; }
+	bool  operator += (int32_t  i) { return *this += (uint32_t)i; }
+	bool  operator += (int16_t  i) { return *this += (uint16_t)i; }
+	bool  operator += (int8_t   i) { return *this += (uint8_t)i;  }
 
 	//return a reference so we can use on lhs and rhs.
 	char& operator[](int32_t i);

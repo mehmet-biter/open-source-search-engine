@@ -24,9 +24,9 @@ public:
 	Msg22Request();
 	
 	int32_t getSize () {
-		return (m_url - (char *)&m_docId) + 1+gbstrlen(m_url); };
+		return (m_url - (char *)&m_docId) + 1+gbstrlen(m_url); }
 	int32_t getMinSize() {
-		return (m_url - (char *)&m_docId) + 1; };
+		return (m_url - (char *)&m_docId) + 1; }
 };
 
 class Msg22 {
@@ -62,7 +62,7 @@ class Msg22 {
 			   int32_t       maxCacheAge    ,
 			   int32_t       timeout );
 
-	int64_t getAvailDocId ( ) { return m_availDocId; };
+	int64_t getAvailDocId ( ) { return m_availDocId; }
 
 	// public so C wrappers can call
 	void gotReply ( ) ;

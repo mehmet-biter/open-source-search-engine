@@ -181,27 +181,27 @@ class Posdb {
 
 	// set the word position bits et al to this float
 	static void setFloat ( void *vkp , float f ) {
-		*(float *)(((char *)vkp) + 2) = f; };
+		*(float *)(((char *)vkp) + 2) = f; }
 
 	static void setInt ( void *vkp , int32_t x ) {
-		*(int32_t *)(((char *)vkp) + 2) = x; };
+		*(int32_t *)(((char *)vkp) + 2) = x; }
 
 	// and read the float as well
 	static float getFloat ( const void *vkp ) {
-		return *(const float *)(((char *)vkp) + 2); };
+		return *(const float *)(((char *)vkp) + 2); }
 
 	static int32_t getInt ( const void *vkp ) {
-		return *(const int32_t *)(((char *)vkp) + 2); };
+		return *(const int32_t *)(((char *)vkp) + 2); }
 
 	static void setAlignmentBit ( void *vkp , char val ) {
 		char *p = (char *)vkp;
 		if ( val ) p[1] = p[1] | 0x02;
 		else       p[1] = p[1] & 0xfd;
-	};
+	}
 
 	static bool isAlignmentBitClear ( const void *vkp ) {
 		return ( ( ((const char *)vkp)[1] & 0x02 ) == 0x00 );
-	};
+	}
 
 	static void makeStartKey ( void *kp, int64_t termId , 
 			    int64_t docId=0LL){
@@ -219,7 +219,7 @@ class Posdb {
 				 0, // issynonym/etc.
 				 true ,  // isdelkey
 				 false ); // shardbytermid?
-	};
+	}
 
 	static void makeEndKey  ( void *kp,int64_t termId, 
 			   int64_t docId = MAX_DOCID ) {
@@ -237,14 +237,14 @@ class Posdb {
 				 true, // issynonym/etc.
 				 false, // isdelkey
 				 true);// shard by termid?
-	};
+	}
 
 	// we got two compression bits!
 	static unsigned char getKeySize ( const void *key ) {
 		if ( (((const char *)key)[0])&0x04 ) return 6;
 		if ( (((const char *)key)[0])&0x02 ) return 12;
 		return 18;
-	};
+	}
 
 	// PosdbTable uses this to skip from one docid to the next docid
 	// in a posdblist
@@ -262,7 +262,7 @@ class Posdb {
 
 	static int64_t getTermId ( const void *key ) {
 		return ((const key144_t *)key)->n2 >> 16;
-	};
+	}
 
 	static int64_t getDocId ( const void *key ) {
 		uint64_t d;
@@ -275,28 +275,28 @@ class Posdb {
 		//d <<= 22;
 		//d |= ((key144_t *)key)->n1 >> (32+8+2);
 		//return d;
-	};
+	}
 
 	static unsigned char getSiteRank ( const void *key ) {
 		return (((const key144_t *)key)->n1 >> 37) & MAXSITERANK;
-	};
+	}
 
 	static unsigned char getLangId ( const void *key ) {
 		if ( ((const char *)key)[0] & 0x08 )
 			return ((((const key144_t *)key)->n1 >> 32) & 0x1f) | 0x20;
 		else
 			return ((((const key144_t *)key)->n1 >> 32) & 0x1f) ;
-	};
+	}
 
 	static unsigned char getHashGroup ( const void *key ) {
 		//return (((key144_t *)key)->n1 >> 10) & MAXHASHGROUP;
 		return ((((const unsigned char *)key)[3]) >>2) & MAXHASHGROUP;
-	};
+	}
 
 	static int32_t getWordPos ( const void *key ) {
 		//return (((key144_t *)key)->n1 >> 14) & MAXWORDPOS;
 		return (*((const uint32_t *)((unsigned char *)key+2))) >> (8+6);
-	};
+	}
 
 	static inline void setWordPos ( char *key , uint32_t wpos ) {
 		// truncate
@@ -308,29 +308,29 @@ class Posdb {
 		wpos >>= 2;
 		key[4] = ((char *)&wpos)[0];
 		key[5] = ((char *)&wpos)[1];
-	};
+	}
 
 	static unsigned char getWordSpamRank ( const void *key ) {
 		//return (((const key144_t *)key)->n1 >> 6) & MAXWORDSPAMRANK;
 		return ((((const uint16_t *)key)[1]) >>6) & MAXWORDSPAMRANK;
-	};
+	}
 
 	static unsigned char getDiversityRank ( const void *key ) {
 		//return (((const key144_t *)key)->n1 >> 2) & MAXDIVERSITYRANK;
 		return ((((const unsigned char *)key)[2]) >>2) & MAXDIVERSITYRANK;
-	};
+	}
 
 	static unsigned char getIsSynonym ( const void *key ) {
 		return (((const key144_t *)key)->n1 ) & 0x03;
-	};
+	}
 
 	static unsigned char getIsHalfStopWikiBigram ( const void *key ) {
 		return ((const char *)key)[2] & 0x01;
-	};
+	}
 
 	static unsigned char getDensityRank ( const void *key ) {
 		return ((*(const uint16_t *)key) >> 11) & MAXDENSITYRANK;
-	};
+	}
 
 	static inline void setDensityRank ( char *key , unsigned char dr ) {
 		// shift up
@@ -339,22 +339,22 @@ class Posdb {
 		key[1] &= 0x07;
 		// or in
 		key[1] |= dr;
-	};
+	}
 
 	static char isShardedByTermId ( const void *key ) {return ((const char *)key)[1] & 0x01; }
 
 	static void setShardedByTermIdBit ( void *key ) { 
 		char *k = (char *)key;
 		k[1] |= 0x01;
-	};
+	}
 
 	static unsigned char getMultiplier ( const void *key ) {
-		return ((*(const uint16_t *)key) >> 4) & MAXMULTIPLIER; };
+		return ((*(const uint16_t *)key) >> 4) & MAXMULTIPLIER; }
 
 	int64_t getTermFreq ( collnum_t collnum, int64_t termId ) ;
 
-	//RdbCache *getCache ( ) { return &m_rdb.m_cache; };
-	Rdb      *getRdb   ( ) { return &m_rdb; };
+	//RdbCache *getCache ( ) { return &m_rdb.m_cache; }
+	Rdb      *getRdb   ( ) { return &m_rdb; }
 
 private:
 	Rdb m_rdb;
@@ -673,7 +673,7 @@ class DocIdScore {
 
 	void reset ( ) {
 		memset(this,0,sizeof(*this));
-	};
+	}
 
 	// we use QueryChange::getDebugDocIdScore() to "deserialize" per se
 	bool serialize   ( class SafeBuf *sb );

@@ -24,8 +24,8 @@ public:
 
 	bool setRecognizedSite ( );
 
-	char *getSite    ( ) { return m_site   ; };
-	int32_t  getSiteLen ( ) { return m_siteLen; };
+	char *getSite    ( ) { return m_site   ; }
+	int32_t  getSiteLen ( ) { return m_siteLen; }
 
 	bool getSiteList ( ) ;
 	bool gotSiteList ( ) ;

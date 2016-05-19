@@ -37,9 +37,9 @@ class Dir {
 	int64_t   getNewId       ( char *pattern  ) ;
 	int64_t   getFileId      ( char *filename ) ;
 
-	char *getDir     ( ) { return m_dirname; };
-	char *getDirName ( ) { return m_dirname; };
-	char *getDirname ( ) { return m_dirname; };
+	char *getDir     ( ) { return m_dirname; }
+	char *getDirName ( ) { return m_dirname; }
+	char *getDirname ( ) { return m_dirname; }
 	char *getFullName ( char *filename ); // prepends path
 
 	 Dir     ( );

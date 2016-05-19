@@ -183,35 +183,35 @@ class UdpSlot {
 	bool makeReadBuf ( int32_t msgSize , int32_t numDgrams );
 
 	bool hasDgramsToRead ( ) {
-		return ( m_readBitsOn < m_dgramsToRead ); };
+		return ( m_readBitsOn < m_dgramsToRead ); }
 
 	bool hasDgramsToSend ( ) {
-		return ( m_sentBitsOn < m_dgramsToSend ); };
+		return ( m_sentBitsOn < m_dgramsToSend ); }
 
 	bool hasAcksToSend ( ) {
 		if ( ! m_proto->useAcks()  ) return false;
-		return ( m_sentAckBitsOn  < m_dgramsToRead ) ; };
+		return ( m_sentAckBitsOn  < m_dgramsToRead ) ; }
 
 	bool hasAcksToRead ( ) {
 		if ( ! m_proto->useAcks()    ) return false;
-		return ( m_readAckBitsOn < m_dgramsToSend ); };
+		return ( m_readAckBitsOn < m_dgramsToSend ); }
 
-	int32_t getNumDgramsRead () { return m_readBitsOn;    };
-	int32_t getNumDgramsSent () { return m_sentBitsOn;    };
-	int32_t getNumAcksRead   () { return m_readAckBitsOn; };
-	int32_t getNumAcksSent   () { return m_sentAckBitsOn; };
+	int32_t getNumDgramsRead () { return m_readBitsOn;    }
+	int32_t getNumDgramsSent () { return m_sentBitsOn;    }
+	int32_t getNumAcksRead   () { return m_readAckBitsOn; }
+	int32_t getNumAcksSent   () { return m_sentAckBitsOn; }
 
 	// this does not include ACKs to read
 	bool isDoneReading ( ) { 
 		if ( m_dgramsToRead == 0 ) return false;
 		if ( hasDgramsToRead()   ) return false;
-		return true; };
+		return true; }
 
 	// this does not include ACKs to send
 	bool isDoneSending ( ) { 
 		if ( m_dgramsToSend == 0 ) return false;
 		if ( hasDgramsToSend()   ) return false;
-		return true; };
+		return true; }
 
 	bool isTransactionComplete ( ) {
 		if ( ! isDoneReading ()  ) return false;
@@ -219,13 +219,13 @@ class UdpSlot {
 		if (   hasAcksToRead ()  ) return false;
 		if (   hasAcksToSend ()  ) return false;
 		return true;
-	};
+	}
 
-	unsigned char  getMsgType ( ) { return m_msgType; };
+	unsigned char  getMsgType ( ) { return m_msgType; }
 
 	key_t getKey ( ) { return m_proto->makeKey ( m_ip, m_port , 
 						     m_transId ,
-						 m_callback/*weInitaited?*/);};
+						 m_callback/*weInitaited?*/);}
 	// . for internal use
 	// . set a window bit
 	void setBit ( int32_t dgramNum , unsigned char *bits ) {
@@ -238,7 +238,7 @@ class UdpSlot {
 			m_numBitsInitialized += 8;
 		}
 		bits [ dgramNum >> 3 ] |= (1 << (dgramNum & 0x07)); 
-	};
+	}
 	// clear a window bit
 	void clrBit ( int32_t dgramNum , unsigned char *bits ) {
 		// lazy initialize,since initializing all bits is too expensive
@@ -250,7 +250,7 @@ class UdpSlot {
 			m_numBitsInitialized += 8;
 		}
 		bits [ dgramNum >> 3 ] &= ~(1 << (dgramNum & 0x07)); 
-	};
+	}
 	// get value of a window bit
 	bool isOn   ( int32_t dgramNum , unsigned char *bits ) {
 		// lazy initialize,since initializing all bits is too expensive
@@ -262,18 +262,18 @@ class UdpSlot {
 			m_numBitsInitialized += 8;
 		}
 		return bits [ dgramNum >> 3 ] & (1 << (dgramNum & 0x07)); 
-	};
+	}
 
 	// clear all the bits
 	//void clrAllBits ( unsigned char *bits , int32_t numBits ) {
-	//	memset ( bits , 0 , (numBits >> 3) + 1 ); };
+	//	memset ( bits , 0 , (numBits >> 3) + 1 ); }
 
 	// set the time we first sent this dgram
 	//void      setSendTime ( int32_t dgramNum , int64_t now ) {
-	//	m_sendTimes [ dgramNum ] = (now - m_startTime); };
+	//	m_sendTimes [ dgramNum ] = (now - m_startTime); }
 	// get the time we first sent this dgram
 	//int64_t getSendTime ( int32_t dgramNum ) {
-	//	return (int64_t)m_sendTimes [ dgramNum ] + m_startTime ; };
+	//	return (int64_t)m_sendTimes [ dgramNum ] + m_startTime ; }
 
 	// . get the first lit bit position after bit #i
 	// . returns numBits if no bits AFTER i are lit
@@ -281,7 +281,7 @@ class UdpSlot {
 		for ( int32_t j = i + 1 ; j < numBits ; j++ ) 
 			if ( isOn ( j , bits ) ) return j; 
 		return numBits;
-	};
+	}
 
 	// . get the first unlit bit position after bit #i
 	// . returns numBits if no bits AFTER i are unlit
@@ -289,7 +289,7 @@ class UdpSlot {
 		for ( int32_t j = i + 1 ; j < numBits ; j++ ) 
 			if ( ! isOn ( j , bits ) ) return j; 
 		return numBits;
-	};
+	}
 
 	// . for sending purposes, the max scoring UdpSlot sends first
 	// . return < 0 if nothing to send
@@ -298,7 +298,7 @@ class UdpSlot {
 	int32_t getScore ( int64_t now );
 
 	// what is our niceness level?
-	int32_t getNiceness ( ) { return m_niceness; };
+	int32_t getNiceness ( ) { return m_niceness; }
 
 	void fixSlot ( ) ;
 

@@ -22,10 +22,10 @@ class ThumbnailInfo {
 	int32_t  m_urlSize;
 	int32_t  m_dataSize;
 	char  m_buf[];
-	char *getUrl() { return m_buf; };
-	char *getData() { return m_buf + m_urlSize; };
-	int32_t  getDataSize() { return m_dataSize; };
-	int32_t  getSize () { return sizeof(ThumbnailInfo)+m_urlSize+m_dataSize;};
+	char *getUrl() { return m_buf; }
+	char *getData() { return m_buf + m_urlSize; }
+	int32_t  getDataSize() { return m_dataSize; }
+	int32_t  getSize () { return sizeof(ThumbnailInfo)+m_urlSize+m_dataSize;}
 
 	// make sure neither the x or y side is > maxSize
 	bool printThumbnailInHtml ( SafeBuf *sb , 
@@ -47,7 +47,7 @@ class ThumbnailArray {
 	// list of ThumbnailInfos
 	char m_buf[];
 
-	int32_t getNumThumbnails() { return m_numThumbnails;};
+	int32_t getNumThumbnails() { return m_numThumbnails;}
 
 	ThumbnailInfo *getThumbnailInfo ( int32_t x ) {
 		if ( x >= m_numThumbnails ) return NULL;
@@ -58,7 +58,7 @@ class ThumbnailArray {
 			p += ti->getSize();
 		}
 		return NULL;
-	};
+	}
 } __attribute__((packed, aligned(4)));
 
 class Images {
@@ -99,9 +99,9 @@ class Images {
 			    void   *state ,
 			    void   (*callback)(void *state) );
 
-	//char *getImageData    () { return m_imgData; };
-	//int32_t  getImageDataSize() { return m_imgDataSize; };
-	//int32_t  getImageType    () { return m_imageType; };
+	//char *getImageData    () { return m_imgData; }
+	//int32_t  getImageDataSize() { return m_imgDataSize; }
+	//int32_t  getImageType    () { return m_imageType; }
 
 	SafeBuf m_imageBuf;
 	bool m_imageBufValid;

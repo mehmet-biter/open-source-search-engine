@@ -187,8 +187,8 @@ public:
 	// network to save on local loop bandwidth costs
 	char           m_type;
 
-	bool isProxy() { return (m_type == HT_PROXY); };
-	bool isGrunt() { return (m_type == HT_GRUNT); };
+	bool isProxy() { return (m_type == HT_PROXY); }
+	bool isGrunt() { return (m_type == HT_GRUNT); }
 
 	// for m_type == HT_QCPROXY, we forward the query to the regular proxy
 	// at this Ip:Port. we should receive a compressed 0xfd reply and
@@ -263,22 +263,22 @@ class Hostdb {
 	~Hostdb();
 	void reset();
 
-	uint32_t  getMyIp         ( ) { return m_myIp; };
-	uint16_t getMyPort       ( ) { return m_myPort; };
-	int32_t           getMyHostId     ( ) { return m_hostId; };
-	int32_t           getMyMachineNum ( ) { return m_myMachineNum; };
-	uint32_t  getLoopbackIp   ( ) { return m_loopbackIp; };
-	Host          *getMyHost       ( ) { return m_myHost; };
-	bool           amProxy         ( ) { return m_myHost->isProxy(); };
-	Host          *getMyShard      ( ) { return m_myShard; };
-	int32_t getMyShardNum ( ) { return m_myHost->m_shardNum; };
+	uint32_t  getMyIp         ( ) { return m_myIp; }
+	uint16_t getMyPort       ( ) { return m_myPort; }
+	int32_t           getMyHostId     ( ) { return m_hostId; }
+	int32_t           getMyMachineNum ( ) { return m_myMachineNum; }
+	uint32_t  getLoopbackIp   ( ) { return m_loopbackIp; }
+	Host          *getMyHost       ( ) { return m_myHost; }
+	bool           amProxy         ( ) { return m_myHost->isProxy(); }
+	Host          *getMyShard      ( ) { return m_myShard; }
+	int32_t getMyShardNum ( ) { return m_myHost->m_shardNum; }
 
 	// . one machine may have several hosts
 	// . get the machine # the hostId resides on
 	int32_t getMachineNum ( int32_t hostId ) {
-		return getHost(hostId)->m_machineNum; };
+		return getHost(hostId)->m_machineNum; }
 
-	int32_t getNumMachines ( ) { return m_numMachines; };
+	int32_t getNumMachines ( ) { return m_numMachines; }
 
 	// we consider the host dead if we didn't get a ping reply back
 	// after 10 seconds
@@ -288,7 +288,7 @@ class Hostdb {
 
 	bool hasDeadHost ( );
 
-	bool kernelErrors (Host *h) { return h->m_pingInfo.m_kernelErrors; };
+	bool kernelErrors (Host *h) { return h->m_pingInfo.m_kernelErrors; }
 
 	int64_t getNumGlobalRecs ( );
 
@@ -315,7 +315,7 @@ class Hostdb {
 	Host *getShard ( uint32_t shardNum , int32_t *numHosts = NULL ) {
 		if ( numHosts ) *numHosts = m_numHostsPerShard;
 		return &m_hosts[shardNum * m_numHostsPerShard]; 
-	};
+	}
 
 	// get the host that has this path/ip
 	Host *getHost2 ( char *cwd , int32_t *localIps ) ;
@@ -325,33 +325,33 @@ class Hostdb {
 	Host *getHost ( int32_t hostId ) {
 		if ( hostId < 0 ) { char *xx=NULL;*xx=0; }
 		return m_hostPtrs[hostId]; 
-	};
+	}
 
 	Host *getSpare ( int32_t spareId ) {
-		return m_spareHosts[spareId]; };
+		return m_spareHosts[spareId]; }
 
 	Host *getProxy ( int32_t proxyId ) {
-		return m_proxyHosts[proxyId]; };
+		return m_proxyHosts[proxyId]; }
 
-	int32_t  getNumHosts ( ) { return m_numHosts; };
-	int32_t  getNumProxy ( ) { return m_numProxyHosts; };
-	int32_t getNumProxies ( ) { return m_numProxyHosts; };
-	int32_t getNumGrunts  ( ) { return m_numHosts; };
+	int32_t  getNumHosts ( ) { return m_numHosts; }
+	int32_t  getNumProxy ( ) { return m_numProxyHosts; }
+	int32_t getNumProxies ( ) { return m_numProxyHosts; }
+	int32_t getNumGrunts  ( ) { return m_numHosts; }
 	// how many of the hosts are non-dead?
-	int32_t  getNumHostsAlive ( ) { return m_numHostsAlive; };
-	int32_t  getNumProxyAlive ( ) { return m_numProxyAlive; };
-	int32_t  getNumShards () { return m_numShards; };
-	int32_t  getNumIndexSplits() { return m_indexSplits; };
+	int32_t  getNumHostsAlive ( ) { return m_numHostsAlive; }
+	int32_t  getNumProxyAlive ( ) { return m_numProxyAlive; }
+	int32_t  getNumShards () { return m_numShards; }
+	int32_t  getNumIndexSplits() { return m_indexSplits; }
 
 	// how many hosts in this group?
-	int32_t  getNumHostsPerShard ( ) { return m_numHostsPerShard; };
+	int32_t  getNumHostsPerShard ( ) { return m_numHostsPerShard; }
 
 	// goes with Host::m_stripe
 	int32_t  getNumStripes ( ) { 
 		// BR 20160316: Make sure noquery hosts are not used when dividing
 		// docIds for querying (Msg39)
 		return m_numStripeHostsPerShard; 
-	};
+	}
 
 	// hash the hosts into the hash tables for lookup
 	bool  hashHosts();
@@ -485,14 +485,14 @@ extern int32_t      g_listNumTotal;
 
 inline uint32_t getShardNum ( char rdbId, const void *key ) {
 	return g_hostdb.getShardNum ( rdbId , key );
-};
+}
 
 inline uint32_t getMyShardNum ( ) { 
 	return g_hostdb.m_myHost->m_shardNum; 
-};
+}
 
 inline uint32_t getShardNumFromDocId ( int64_t d ) {
 	return g_hostdb.getShardNumFromDocId ( d );
-};
+}
 
 #endif // GB_HOSTDB_H

@@ -63,11 +63,11 @@ class Msg17 {
 	key_t makeKey ( class Msg40 *msg40 ) ;
 
 	// call this after getFromCache() is done to see if it set your Msg40
-	bool wasFound ( ) { return m_found; };
+	bool wasFound ( ) { return m_found; }
 
 	// at what time was this entry cached?
-	time_t getCachedTime      ( ) { return getTime() - m_cachedTimeDelta ;};
-	time_t getCachedTimeDelta ( ) { return m_cachedTimeDelta ; };
+	time_t getCachedTime      ( ) { return getTime() - m_cachedTimeDelta ;}
+	time_t getCachedTimeDelta ( ) { return m_cachedTimeDelta ; }
 
 	// . get the host responsible for caching the record with key "k"
 	// . skips over dead hosts uniformly

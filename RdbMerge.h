@@ -70,7 +70,7 @@ class RdbMerge {
 		     int64_t maxTargetFileSize ,
 		     char       keySize      );
 
-	bool isMerging ( ) { return m_isMerging; };
+	bool isMerging ( ) { return m_isMerging; }
 
 	// suspend the merging until resumeMerge() is called
 	void suspendMerge ( ) ;

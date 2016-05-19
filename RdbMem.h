@@ -43,12 +43,12 @@ class RdbMem {
 		return m_ptr1 - m_ptr2 - 1;
 	}
 
-	int32_t getTotalMem() { return m_memSize; };
+	int32_t getTotalMem() { return m_memSize; }
 
-	int32_t getUsedMem() { return m_memSize - getAvailMem(); };
+	int32_t getUsedMem() { return m_memSize - getAvailMem(); }
 
 	// used to determine when to dump
-	bool is90PercentFull () { return m_is90PercentFull; };
+	bool is90PercentFull () { return m_is90PercentFull; }
 
 	// . when a dump completes we free the primary mem space and make
 	//   the secondary mem space the new primary mem space

@@ -130,9 +130,9 @@ public:
 		     void (* callback)(void *state ) ,
 		     bool urgent ,
 		     bool exitAfterClosing );
-	//bool close ( ) { return close ( NULL , NULL ); };
+	//bool close ( ) { return close ( NULL , NULL ); }
 	// used by PageMaster.cpp to check to see if all rdb's are closed yet
-	bool isClosed ( ) { return m_isClosed; };
+	bool isClosed ( ) { return m_isClosed; }
 	bool needsSave();
 
 	// . returns false and sets g_errno on error
@@ -147,7 +147,7 @@ public:
 			 int32_t niceness);
 	bool addRecord (const char *coll , key_t &key, char *data, int32_t dataSize,
 			int32_t niceness) {
-		return addRecord(coll,(char *)&key,data,dataSize, niceness);};
+		return addRecord(coll,(char *)&key,data,dataSize, niceness);}
 
 	// returns false if no room in tree or m_mem for a list to add
 	bool hasRoom ( RdbList *list , int32_t niceness );
@@ -169,20 +169,20 @@ public:
 		return ::isSecondaryRdb((unsigned char)m_rdbId);
 	}
 	
-	bool isInitialized () { return m_initialized; };
+	bool isInitialized () { return m_initialized; }
 
 	// get the directory name where this rdb stores it's files
-	char *getDir       ( ) { return g_hostdb.m_dir; };
+	char *getDir       ( ) { return g_hostdb.m_dir; }
 
-	int32_t getFixedDataSize ( ) { return m_fixedDataSize; };
+	int32_t getFixedDataSize ( ) { return m_fixedDataSize; }
 
-	bool useHalfKeys ( ) { return m_useHalfKeys; };
-	char getKeySize  ( ) { return m_ks; };
+	bool useHalfKeys ( ) { return m_useHalfKeys; }
+	char getKeySize  ( ) { return m_ks; }
 
-	RdbTree    *getTree    ( ) { if(!m_useTree) return NULL; return &m_tree; };
-	//RdbCache   *getCache   ( ) { return &m_cache; };
-	RdbMem     *getRdbMem  ( ) { return &m_mem; };
-	bool       useTree     ( ) { return m_useTree;};
+	RdbTree    *getTree    ( ) { if(!m_useTree) return NULL; return &m_tree; }
+	//RdbCache   *getCache   ( ) { return &m_cache; }
+	RdbMem     *getRdbMem  ( ) { return &m_mem; }
+	bool       useTree     ( ) { return m_useTree;}
 
 	int32_t       getNumUsedNodes ( );
 	int32_t       getMaxTreeMem();
@@ -195,7 +195,7 @@ public:
 	bool isWritable ( ) ;
 
 	RdbBase *getBase ( collnum_t collnum ) ;
-	int32_t getNumBases ( ) { 	return g_collectiondb.m_numRecs; };
+	int32_t getNumBases ( ) { 	return g_collectiondb.m_numRecs; }
 	void addBase ( collnum_t collnum , class RdbBase *base ) ;
 
 
@@ -226,7 +226,7 @@ public:
 			   key_t startKey ,key_t endKey , key_t *maxKey ,
 			   int64_t oldTruncationLimit ) {
 		return getListSize(collnum,(char *)&startKey,(char *)&endKey,
-				   (char *)maxKey,oldTruncationLimit);};
+				   (char *)maxKey,oldTruncationLimit);}
 
 	// positive minus negative
 	int64_t getNumTotalRecs ( bool useCache = false ) ;
@@ -236,36 +236,36 @@ public:
 	int64_t getNumGlobalRecs ( );
 
 	// used for keeping track of stats
-	void      didSeek       (            ) { m_numSeeks++; };
-	void      didRead       ( int32_t bytes ) { m_numRead += bytes; };
-	void      didReSeek     (            ) { m_numReSeeks++; };
-	int64_t getNumSeeks   (            ) { return m_numSeeks; };
-	int64_t getNumReSeeks (            ) { return m_numReSeeks; };
-	int64_t getNumRead    (            ) { return m_numRead ; };
+	void      didSeek       (            ) { m_numSeeks++; }
+	void      didRead       ( int32_t bytes ) { m_numRead += bytes; }
+	void      didReSeek     (            ) { m_numReSeeks++; }
+	int64_t getNumSeeks   (            ) { return m_numSeeks; }
+	int64_t getNumReSeeks (            ) { return m_numReSeeks; }
+	int64_t getNumRead    (            ) { return m_numRead ; }
 
 	// net stats for "get" requests
 	void      readRequestGet ( int32_t bytes ) { 
-		m_numReqsGet++    ; m_numNetReadGet += bytes; };
+		m_numReqsGet++    ; m_numNetReadGet += bytes; }
 	void      sentReplyGet     ( int32_t bytes ) {
-		m_numRepliesGet++ ; m_numNetSentGet += bytes; };
-	int64_t getNumRequestsGet ( ) { return m_numReqsGet;    };
-	int64_t getNetReadGet     ( ) { return m_numNetReadGet; };
-	int64_t getNumRepliesGet  ( ) { return m_numRepliesGet; };
-	int64_t getNetSentGet     ( ) { return m_numNetSentGet; };
+		m_numRepliesGet++ ; m_numNetSentGet += bytes; }
+	int64_t getNumRequestsGet ( ) { return m_numReqsGet;    }
+	int64_t getNetReadGet     ( ) { return m_numNetReadGet; }
+	int64_t getNumRepliesGet  ( ) { return m_numRepliesGet; }
+	int64_t getNetSentGet     ( ) { return m_numNetSentGet; }
 
 	// net stats for "add" requests
 	void      readRequestAdd ( int32_t bytes ) { 
-		m_numReqsAdd++    ; m_numNetReadAdd += bytes; };
+		m_numReqsAdd++    ; m_numNetReadAdd += bytes; }
 	void      sentReplyAdd     ( int32_t bytes ) {
-		m_numRepliesAdd++ ; m_numNetSentAdd += bytes; };
-	int64_t getNumRequestsAdd ( ) { return m_numReqsAdd;    };
-	int64_t getNetReadAdd     ( ) { return m_numNetReadAdd; };
-	int64_t getNumRepliesAdd  ( ) { return m_numRepliesAdd; };
-	int64_t getNetSentAdd     ( ) { return m_numNetSentAdd; };
+		m_numRepliesAdd++ ; m_numNetSentAdd += bytes; }
+	int64_t getNumRequestsAdd ( ) { return m_numReqsAdd;    }
+	int64_t getNetReadAdd     ( ) { return m_numNetReadAdd; }
+	int64_t getNumRepliesAdd  ( ) { return m_numRepliesAdd; }
+	int64_t getNetSentAdd     ( ) { return m_numNetSentAdd; }
 
 	// used by main.cpp to periodically save us if we haven't dumped
 	// in a while
-	int64_t getLastWriteTime   ( ) { return m_lastWrite; };
+	int64_t getLastWriteTime   ( ) { return m_lastWrite; }
 	
 	// private:
 
@@ -299,7 +299,7 @@ public:
 
 	// these are used for computing load on a machine
 	bool isMerging ( ) ;
-	bool isDumping ( ) { return m_dump.isDumping(); };
+	bool isDumping ( ) { return m_dump.isDumping(); }
 
 	// PageRepair.cpp calls this when it is done rebuilding an rdb
 	// and wants to tell the primary rdb to reload itself using the newly

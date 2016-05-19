@@ -51,7 +51,7 @@ public:
 
 	bool addColl ( char *coll, bool doVerify = true );
 
-	Rdb *getRdb  ( ) { return &m_rdb; };
+	Rdb *getRdb  ( ) { return &m_rdb; }
 
 	// make the cluster rec key
 	key_t makeClusterRecKey ( int64_t     docId,
@@ -62,10 +62,10 @@ public:
 				  bool          isHalfKey = false );
 
 	key_t makeFirstClusterRecKey ( int64_t docId ) {
-		return makeClusterRecKey ( docId, false, 0, 0, true ); };
+		return makeClusterRecKey ( docId, false, 0, 0, true ); }
 	key_t makeLastClusterRecKey  ( int64_t docId ) {
 		return makeClusterRecKey ( docId, true, 0xff, 0xffffffff,
-					   false, true ); };
+					   false, true ); }
 
 	// NOTE: THESE NOW USE THE REAL CLUSTERDB REC
 	// // docId occupies the most significant bytes of the key
@@ -76,17 +76,17 @@ public:
 		int64_t docId = (((const key_t *)k)->n0) >> 35;
 		docId |= ( ((uint64_t)(((const key_t *)k)->n1)) << 29 );
 		return docId;
-	};
+	}
 
 	uint32_t getSiteHash26 ( const char *r ) {
-		//return g_titledb.getSiteHash ( (key_t *)r ); };
+		//return g_titledb.getSiteHash ( (key_t *)r ); }
 		return ((uint32_t)(((const key_t*)r)->n0 >> 2) & 0x03FFFFFF);
-	};
+	}
 
 	uint32_t hasAdultContent ( const char *r ) {
-		//return g_titledb.hasAdultContent ( *(key_t *)r ); };
+		//return g_titledb.hasAdultContent ( *(key_t *)r ); }
 		return ((uint32_t)(((const key_t*)r)->n0 >> 34) & 0x00000001);
-	};
+	}
 
 	unsigned char getLanguage ( const char *r ) {
 		return ((unsigned char)(((const key_t*)r)->n0 >> 28) & 0x0000003F);
@@ -95,7 +95,7 @@ public:
 	char getFamilyFilter ( const char *r ) {
 		if ( (*(const int64_t *)r) & 0x0000000400000000LL ) return 1;
 		return 0;
-	};
+	}
 
 private:
 	// this rdb holds urls waiting to be spidered or being spidered

@@ -168,7 +168,7 @@ class Parm {
 	// this is 1 if NOT an array (i.e. array of only one parm).
 	// in such cases a "count" is NOT stored before the parm in
 	// CollectionRec.h or Conf.h.
-	bool isArray() { return (m_max>1); };
+	bool isArray() { return (m_max>1); }
 
 	int32_t  m_max;   // max elements in the array
 	// if array is fixed size, how many elements in it?

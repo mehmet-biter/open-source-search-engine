@@ -70,20 +70,20 @@ class HttpMime {
 
 	// these 2 sets are used to dress up a fake mime for passing
 	// to TitleRec::set() called from Msg16 getDoc() routine
-	void setLastModifiedDate ( time_t date ) { m_lastModifiedDate = date;};
-	void setContentType      ( int32_t   t    ) { m_contentType      = t; };
-	void setHttpStatus       ( int32_t status ) { m_status        = status; };
+	void setLastModifiedDate ( time_t date ) { m_lastModifiedDate = date;}
+	void setContentType      ( int32_t   t    ) { m_contentType      = t; }
+	void setHttpStatus       ( int32_t status ) { m_status        = status; }
 
 	// http status: 404, 200, etc.
-	int32_t   getHttpStatus      () { return m_status;           };
-	char  *getContent         () { return m_content; };
-	int32_t   getContentLen      () { return m_contentLen;       };
-	time_t getLastModifiedDate() { return m_lastModifiedDate; };
-	int32_t   getContentType     () { return m_contentType;      };
-	bool   isEmpty            () { return ( m_status == -1); };
-	Url   *getLocationUrl     () { return &m_locUrl;    };
-	const char *getCookie     () { return m_cookie; };
-	int32_t   getCookieLen       () { return m_cookieLen; };
+	int32_t   getHttpStatus      () { return m_status;           }
+	char  *getContent         () { return m_content; }
+	int32_t   getContentLen      () { return m_contentLen;       }
+	time_t getLastModifiedDate() { return m_lastModifiedDate; }
+	int32_t   getContentType     () { return m_contentType;      }
+	bool   isEmpty            () { return ( m_status == -1); }
+	Url   *getLocationUrl     () { return &m_locUrl;    }
+	const char *getCookie     () { return m_cookie; }
+	int32_t   getCookieLen       () { return m_cookieLen; }
 
 	// new stuff for Msg13.cpp to use
 	char *getLocationField    () { return m_locationField; }
@@ -119,13 +119,13 @@ class HttpMime {
 
 	bool addCookiesIntoBuffer ( class SafeBuf *sb ) ;
 
-	char *getMime    ( ) { return m_buf; };
+	char *getMime    ( ) { return m_buf; }
 	// does this include the last \r\n\r\n? yes!
-	int32_t  getMimeLen ( ) { return m_bufLen; };
-	int32_t  getBoundaryLen ( ) { return m_boundaryLen; };
+	int32_t  getMimeLen ( ) { return m_bufLen; }
+	int32_t  getBoundaryLen ( ) { return m_boundaryLen; }
 
-	char *getCharset    ( ) { return m_charset   ; };
-	int32_t  getCharsetLen ( ) { return m_charsetLen; };
+	char *getCharset    ( ) { return m_charset   ; }
+	int32_t  getCharsetLen ( ) { return m_charsetLen; }
 
 	int32_t  getContentEncoding () {return m_contentEncoding;}
 	char *getContentEncodingPos() {return m_contentEncodingPos;}

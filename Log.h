@@ -144,7 +144,7 @@ class Log {
 	bool m_logTimestamps;
 	bool m_logReadableTimestamps;
 
-	const char *getFilename() { return m_filename; };
+	const char *getFilename() { return m_filename; }
 
  private:
 

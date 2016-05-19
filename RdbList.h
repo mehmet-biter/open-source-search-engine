@@ -95,46 +95,46 @@ class RdbList {
 	void setStartKey ( const char *startKey ){KEYSET(m_startKey,startKey,m_ks);}
 	void setEndKey   ( const char *endKey   ){KEYSET(m_endKey  ,endKey  ,m_ks);}
 
-	void setUseHalfKeys ( bool use ) { m_useHalfKeys = use; };
+	void setUseHalfKeys ( bool use ) { m_useHalfKeys = use; }
 
 	// if you don't want data to be freed on destruction then don't own it
-	void setOwnData ( bool ownData ) { m_ownData = ownData; };
+	void setOwnData ( bool ownData ) { m_ownData = ownData; }
 
 	void setFixedDataSize ( int32_t fixedDataSize ) { 
-		m_fixedDataSize = fixedDataSize; };
+		m_fixedDataSize = fixedDataSize; }
 
-	char *getStartKey        () { return m_startKey; };
-	char *getEndKey          () { return m_endKey;   };
-	int32_t  getFixedDataSize   () { return m_fixedDataSize; };
-	bool  getOwnData         () { return m_ownData; };
+	char *getStartKey        () { return m_startKey; }
+	char *getEndKey          () { return m_endKey;   }
+	int32_t  getFixedDataSize   () { return m_fixedDataSize; }
+	bool  getOwnData         () { return m_ownData; }
 
-	void  getStartKey        ( char *k ) { KEYSET(k,m_startKey,m_ks);};
-	void  getEndKey          ( char *k ) { KEYSET(k,m_endKey  ,m_ks);};
+	void  getStartKey        ( char *k ) { KEYSET(k,m_startKey,m_ks);}
+	void  getEndKey          ( char *k ) { KEYSET(k,m_endKey  ,m_ks);}
 
 	void  getLastKey         ( char *k ) { 
 		if ( ! m_lastKeyIsValid ) { char *xx=NULL;*xx=0; }
-		KEYSET(k,getLastKey(),m_ks);};
+		KEYSET(k,getLastKey(),m_ks);}
 
 	// will scan through each record if record size is variable
 	int32_t  getNumRecs         () ;
 
 	// these operate on the whole list
-	char *getList            () { return m_list; };
+	char *getList            () { return m_list; }
 	int32_t  getListSize        () const { return m_listSize; }
-	char *getListEnd         () { return m_list + m_listSize; };
+	char *getListEnd         () { return m_list + m_listSize; }
 
 
 	// often these equal m_list/m_listSize, but they may encompass
-	char *getAlloc           () { return m_alloc; };
+	char *getAlloc           () { return m_alloc; }
 	int32_t  getAllocSize       () const { return m_allocSize; }
 
 	// . skip over the current record and point to the next one
 	// . returns false if we skipped into a black hole (end of list)
 	bool skipCurrentRecord ( ) { 
-		return skipCurrentRec ( getRecSize ( m_listPtr ) ); };
+		return skipCurrentRec ( getRecSize ( m_listPtr ) ); }
 
 	bool skipCurrentRec ( ) { 
-		return skipCurrentRec ( getRecSize ( m_listPtr ) ); };
+		return skipCurrentRec ( getRecSize ( m_listPtr ) ); }
 
 	// this is specially-made for RdbMap's processing of IndexLists
 	bool skipCurrentRec ( int32_t recSize ) {
@@ -156,18 +156,18 @@ class RdbList {
 		if ( m_useHalfKeys && ! isHalfBitOn ( m_listPtr ) ) 
 			m_listPtrHi = m_listPtr + (m_ks-6);
 		return true;
-	};
+	}
 
 	bool  isExhausted        () const { return (m_listPtr >= m_listEnd); }
 	key_t getCurrentKey      () const { 
 		key_t key ; getKey ( m_listPtr,(char *)&key ); return key; }
-	void  getCurrentKey      (void *key) const { getKey(m_listPtr,(char *)key);};
+	void  getCurrentKey      (void *key) const { getKey(m_listPtr,(char *)key);}
 	int32_t  getCurrentDataSize () const { return getDataSize ( m_listPtr );}
-	char *getCurrentData     () { return getData     ( m_listPtr );};
+	char *getCurrentData     () { return getData     ( m_listPtr );}
 	int32_t  getCurrentRecSize  () const { return getRecSize  ( m_listPtr );}
 	int32_t  getCurrentSize     () const { return m_listEnd - m_listPtr; }
-	char *getCurrentRec      () { return m_listPtr; };
-	char *getListPtr         () { return m_listPtr; };
+	char *getCurrentRec      () { return m_listPtr; }
+	char *getListPtr         () { return m_listPtr; }
 	void  resetListPtr       () ;
 
 	// are there any records in the list?
@@ -241,7 +241,7 @@ class RdbList {
 		if ( (rec[0] & 0x01) == 0 ) return m_ks;
 		if (m_fixedDataSize >  0) return m_ks+m_fixedDataSize;
 		return *(int32_t *)(rec + m_ks) + m_ks + 4 ;
-	};
+	}
 
 	// . is the format bit set? that means it's a 12-byte key
 	// . used exclusively for index lists (indexdb)
@@ -260,9 +260,9 @@ class RdbList {
 	void  setLastKey  ( const char *k );
 	// sometimes we don't have a valid m_lastKey because it is only
 	// set in calls to constrain(), merge_r() and indexMerge_r()
-	bool  isLastKeyValid () const { return m_lastKeyIsValid; };
+	bool  isLastKeyValid () const { return m_lastKeyIsValid; }
 
-	char *getFirstKey ( ) { return m_list; };
+	char *getFirstKey ( ) { return m_list; }
 
 
 	bool growList ( int32_t newSize ) ;
@@ -282,9 +282,9 @@ class RdbList {
 	int printList ( int32_t logtype=LOG_INFO);
 	int printPosdbList ( int32_t logtype );
 
-	void  setListPtrs ( char *p , char *hi ) {m_listPtr=p;m_listPtrHi=hi;};
+	void  setListPtrs ( char *p , char *hi ) {m_listPtr=p;m_listPtrHi=hi;}
 
-	void setListSize ( int32_t size ) { m_listSize = size; };
+	void setListSize ( int32_t size ) { m_listSize = size; }
 
 	// private:
 

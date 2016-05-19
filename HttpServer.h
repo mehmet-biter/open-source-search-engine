@@ -145,7 +145,7 @@ class HttpServer {
 	// cancel the transaction that had this state
 	void cancel ( void *state ) {
 		m_tcp.cancel ( state );
-	};
+	}
 
 	int32_t m_maxOpenSockets;
 
@@ -158,7 +158,7 @@ class HttpServer {
 			return (float)m_uncompressedBytes/m_bytesDownloaded;
 		else
 			return 0.0;
-	};
+	}
 
 	bool processSquidProxyRequest ( TcpSocket *sock, HttpRequest *hr);
 

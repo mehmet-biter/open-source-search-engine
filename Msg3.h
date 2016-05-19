@@ -69,8 +69,8 @@ class Msg3 {
 			 bool           hitDisk        = true );
 
 	// for retrieving unmerged lists
-	RdbList *getList       ( int32_t i ) {return &m_lists[i];};
-	int32_t     getNumLists   (        ) {return m_numScansCompleted; };
+	RdbList *getList       ( int32_t i ) {return &m_lists[i];}
+	int32_t     getNumLists   (        ) {return m_numScansCompleted; }
 
 	// keep public for doneScanningWrapper to use
 	bool      doneScanning    ( );

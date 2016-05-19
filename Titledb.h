@@ -56,14 +56,14 @@ class Titledb {
 		// OR in the hash
 		probableDocId |= h;
 		return probableDocId;
-	};
+	}
 
 	// a different way to do it
 	uint64_t getProbableDocId ( char *url  ) {
 		Url u;
 		u.set( url );
 		return getProbableDocId ( &u ); 
-	};
+	}
 
 	// a different way to do it
 	uint64_t getProbableDocId(char *url,char *dom,int32_t domLen) {
@@ -77,15 +77,15 @@ class Titledb {
 		// OR in the hash
 		probableDocId |= h;
 		return probableDocId;
-	};
+	}
 
 	// turn off the last 6 bits
 	uint64_t getFirstProbableDocId ( int64_t d ) {
-		return d & 0xffffffffffffffc0LL; };
+		return d & 0xffffffffffffffc0LL; }
 
 	// turn on the last 6 bits for the end docId
 	uint64_t getLastProbableDocId  ( int64_t d ) {
-		return d | 0x000000000000003fLL; };
+		return d | 0x000000000000003fLL; }
 
 	// . the top NUMDOCIDBITs of "key" are the docId
 	// . we use the top X bits of the keys to partition the records
@@ -96,16 +96,16 @@ class Titledb {
 		docId = ((uint64_t)key->n1)<<(NUMDOCIDBITS - 32);
 		docId|=                      key->n0 >>(64-(NUMDOCIDBITS-32));
 		return docId;
-	};
-	int64_t getDocId ( key_t *key ) { return getDocIdFromKey(key); };
+	}
+	int64_t getDocId ( key_t *key ) { return getDocIdFromKey(key); }
 	int64_t getDocIdFromKey ( key_t  key ) {
-		return getDocIdFromKey(&key);};
+		return getDocIdFromKey(&key);}
 
 	uint8_t getDomHash8FromDocId (int64_t d) {
 		return (d & ~0xffffffffffffc03fULL) >> 6; }
 
 	int64_t getUrlHash48 ( key_t *k ) {
-		return ((k->n0 >> 10) & 0x0000ffffffffffffLL); };
+		return ((k->n0 >> 10) & 0x0000ffffffffffffLL); }
 
 	// . dptr is a char ptr to the docid
 	// . used by IndexTable2.cpp
@@ -119,9 +119,9 @@ class Titledb {
 	// does this key/docId/url have it's titleRec stored locally?
 	bool isLocal ( int64_t docId );
 	bool isLocal ( Url *url ) {
-		return isLocal ( getProbableDocId(url) ); };
+		return isLocal ( getProbableDocId(url) ); }
 	bool isLocal ( key_t key ) { 
-		return isLocal (getDocIdFromKey(&key));};
+		return isLocal (getDocIdFromKey(&key));}
 
 
 	Rdb *getRdb() { return &m_rdb; }
@@ -132,20 +132,20 @@ class Titledb {
 	key_t makeKey ( int64_t docId, int64_t uh48, bool isDel );
 
 	key_t makeFirstKey ( int64_t docId ) {
-		return makeKey ( docId , 0, true ); };
+		return makeKey ( docId , 0, true ); }
 
 	key_t makeLastKey  ( int64_t docId ) {
-		return makeKey ( docId , 0xffffffffffffLL, false ); };
+		return makeKey ( docId , 0xffffffffffffLL, false ); }
 
 	// . this is an estimate of the number of docs in the WHOLE db network
 	// . we assume each group/cluster has about the same # of docs as us
 	int64_t getGlobalNumDocs ( ) { 
 		return m_rdb.getNumTotalRecs()*
-			(int64_t)g_hostdb.m_numShards;};
+			(int64_t)g_hostdb.m_numShards;}
 
-	int32_t getLocalNumDocs () { return m_rdb.getNumTotalRecs(); };
-	int32_t getNumDocsInMem () { return m_rdb.m_tree.getNumUsedNodes(); };
-	int32_t getMemUsed      () { return m_rdb.m_tree.getMemOccupied(); };
+	int32_t getLocalNumDocs () { return m_rdb.getNumTotalRecs(); }
+	int32_t getNumDocsInMem () { return m_rdb.m_tree.getNumUsedNodes(); }
+	int32_t getMemUsed      () { return m_rdb.m_tree.getMemOccupied(); }
 
 	// holds binary format title entries
 	Rdb m_rdb;

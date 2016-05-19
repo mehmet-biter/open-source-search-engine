@@ -65,8 +65,8 @@ class File {
 	// returns false and sets errno on error, returns true on success
 	bool rename ( const char *newFilename );
 
-	bool calledOpen () { return m_calledOpen; };
-	bool calledSet  () { return m_calledSet; };
+	bool calledOpen () { return m_calledOpen; }
+	bool calledSet  () { return m_calledSet; }
 
 	bool isNonBlocking () ;
 
@@ -145,8 +145,8 @@ class File {
 	// . must call open() before calling this
 	int   getfd          ( ) ;
 
-	//char *getFilename ( ) { return m_filename.getBufStart(); };
-	char *getFilename ( ) { return m_filename; };
+	//char *getFilename ( ) { return m_filename.getBufStart(); }
+	char *getFilename ( ) { return m_filename; }
 
 	// our filename allocated with strdup
 	// we publicize for ease of use

@@ -114,21 +114,21 @@ class Msg51 {
 	// see Clusterdb.h for this bitmap. we store the lower 64 bits of
 	// the clusterdb key into the "clusterRecs" array
 	bool isFamilyBitOn ( uint64_t clusterRec ) {
-		return g_clusterdb.hasAdultContent((char *)&clusterRec); };
+		return g_clusterdb.hasAdultContent((char *)&clusterRec); }
 	char     getLangId     ( uint64_t clusterRec ) {
-		return g_clusterdb.getLanguage((char *)&clusterRec); };
+		return g_clusterdb.getLanguage((char *)&clusterRec); }
 	uint32_t getSiteHash26   ( uint64_t clusterRec ) {
-		return g_clusterdb.getSiteHash26((char *)&clusterRec); };
+		return g_clusterdb.getSiteHash26((char *)&clusterRec); }
 
 
-        key_t getClusterRec ( int32_t i ) { return m_clusterRecs[i]; };
+        key_t getClusterRec ( int32_t i ) { return m_clusterRecs[i]; }
 
 	/*
 	bool isDocIdVisible ( int32_t i ) {
 		if ( m_clusterRecs[i] == 0     ) return false;
 		if ( m_clusterRecs[i] <= CR_OK ) return true;
 		return false;
-	};
+	}
 	*/
 
 	bool sendRequests   ( int32_t k );

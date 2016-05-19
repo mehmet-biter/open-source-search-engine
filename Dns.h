@@ -178,8 +178,8 @@ class Dns {
 	// . keep public so gotIpWrapper() can use it to destroy the slot
 	UdpServer m_udpServer;
 
-	RdbCache *getCache () { return &m_rdbCache; };
-	RdbCache *getCacheLocal () { return &m_rdbCacheLocal; };
+	RdbCache *getCache () { return &m_rdbCache; }
+	RdbCache *getCacheLocal () { return &m_rdbCacheLocal; }
 
 	// . pull the hostname out of a dns reply packet's query resource rec.
 	bool extractHostname ( char *dgram    , 

@@ -36,15 +36,15 @@ class HashTable {
 	int32_t getValue ( int32_t key );
 
 	// value of 0 means empty
-	bool isEmpty ( int32_t key ) { return (getValue(key) == 0); };
+	bool isEmpty ( int32_t key ) { return (getValue(key) == 0); }
 
-	int32_t getKey ( int32_t n ) { return m_keys[n]; };
+	int32_t getKey ( int32_t n ) { return m_keys[n]; }
 
-	int32_t getSlot ( int32_t key ) { return getOccupiedSlotNum ( key ); };
+	int32_t getSlot ( int32_t key ) { return getOccupiedSlotNum ( key ); }
 
-	void setValue ( int32_t n , int32_t val ) { m_vals[n] = val; };
+	void setValue ( int32_t n , int32_t val ) { m_vals[n] = val; }
 
-	int32_t getValueFromSlot ( int32_t n ) { return m_vals[n]; };
+	int32_t getValueFromSlot ( int32_t n ) { return m_vals[n]; }
 
 	// frees the used memory, etc.
 	void  reset  ( );

@@ -14,8 +14,8 @@ static void dumpListWrapper ( void *state ) ;
 static void gotListWrapper  ( void *state , RdbList *list , Msg5 *msg5 ) ;
 static void tryAgainWrapper ( int fd , void *state ) ;
 
-RdbMerge::RdbMerge   () {}; 
-RdbMerge::~RdbMerge  () {}; 
+RdbMerge::RdbMerge   () {}
+RdbMerge::~RdbMerge  () {}
 void RdbMerge::reset () { m_isMerging = false; m_isSuspended = false; }
 
 // . buffer is used for reading and writing

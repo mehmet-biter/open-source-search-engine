@@ -22,7 +22,7 @@ class SafeBuf;
 inline int gbstrlen ( const char *s ) {
 	if ( ! s ) { char *xx=NULL;*xx=0; }
 	return strlen(s);
-};
+}
 
 class Mem {
 
@@ -40,22 +40,22 @@ class Mem {
 	void  gbfree    ( void *ptr , int size , const char *note);
 	char *dup     ( const void *data , int32_t dataSize , const char *note);
 	char *strdup  ( const char *string , const char *note ) {
-		return dup ( string , gbstrlen ( string ) + 1 , note ); };
+		return dup ( string , gbstrlen ( string ) + 1 , note ); }
 
 	int32_t validate();
 
 	// this one does not include new/delete mem, only *alloc()/free() mem
-	int64_t getUsedMem () { return m_used; };
+	int64_t getUsedMem () { return m_used; }
 	// the max mem ever alloced
-	int64_t getMaxAlloced() { return m_maxAlloced; };
-	int64_t getMaxAlloc  () { return m_maxAlloc; };
-	const char *getMaxAllocBy() { return m_maxAllocBy; };
+	int64_t getMaxAlloced() { return m_maxAlloced; }
+	int64_t getMaxAlloc  () { return m_maxAlloc; }
+	const char *getMaxAllocBy() { return m_maxAllocBy; }
 	// the max mem we can use!
 	int64_t getMaxMem () ;
 
-	int32_t getNumAllocated() { return m_numAllocated; };
+	int32_t getNumAllocated() { return m_numAllocated; }
 
-	int64_t getNumTotalAllocated() { return m_numTotalAllocated; };
+	int64_t getNumTotalAllocated() { return m_numTotalAllocated; }
 
 	// who underan/overran their buffers?
 	int  printBreech   ( int32_t i , char core ) ;
@@ -96,24 +96,24 @@ extern class Mem g_mem;
 //#define mfree(ptr,size,note) free(ptr)
 //#define mrealloc(oldPtr,oldSize,newSize,note) realloc(oldPtr,newSize)
 inline void *mmalloc ( int size , const char *note ) { 
-	return g_mem.gbmalloc(size,note); };
+	return g_mem.gbmalloc(size,note); }
 inline void *mcalloc ( int size , const char *note ) { 
-	return g_mem.gbcalloc(size,note); };
+	return g_mem.gbcalloc(size,note); }
 inline void *mrealloc (void *oldPtr, int oldSize, int newSize,
 			const char *note) {
-	return g_mem.gbrealloc(oldPtr,oldSize,newSize,note);};
+	return g_mem.gbrealloc(oldPtr,oldSize,newSize,note);}
 inline void  mfree    ( void *ptr , int size , const char *note) {
-	return g_mem.gbfree(ptr,size,note);};
+	return g_mem.gbfree(ptr,size,note);}
 inline char *mdup     ( const void *data , int32_t dataSize , const char *note) {
-	return g_mem.dup(data,dataSize,note);};
+	return g_mem.dup(data,dataSize,note);}
 inline char *mstrdup  ( const char *string , const char *note ) {
-	return g_mem.strdup(string,note);};
+	return g_mem.strdup(string,note);}
 inline void mnew ( void *ptr , int32_t size , const char *note ) {
-	return g_mem.addnew ( ptr , size , note );};
+	return g_mem.addnew ( ptr , size , note );}
 inline void mdelete ( void *ptr , int32_t size , const char *note ) {
-	return g_mem.delnew ( ptr , size , note ); };
+	return g_mem.delnew ( ptr , size , note ); }
 inline bool relabel   ( void *ptr , int32_t size , const char *note ) {
-	return g_mem.lblMem( ptr, size, note ); };
+	return g_mem.lblMem( ptr, size, note ); }
 
 
 

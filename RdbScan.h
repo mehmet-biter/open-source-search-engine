@@ -46,10 +46,10 @@ class RdbScan {
 		       bool       hitDisk        ); // = true );
 
 	// RdbGet likes to get our list
-	RdbList *getList ( ) { return m_list; };
+	RdbList *getList ( ) { return m_list; }
 
 	// was buffer shifted down 6 bytes to turn first key into a 12 byter?
-	bool wasShifted () { return m_shifted; };
+	bool wasShifted () { return m_shifted; }
 
 
 	void gotList ( );

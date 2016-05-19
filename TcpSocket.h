@@ -41,19 +41,19 @@ class TcpSocket {
  public:
 
 	// some handy little thingies...
-	bool isAvailable     ( ) { return ( m_sockState == ST_AVAILABLE  ); };
-	bool isConnecting    ( ) { return ( m_sockState == ST_CONNECTING ); };
-	//bool isClosed      ( ) { return ( m_sockState == ST_CLOSED     ); };
+	bool isAvailable     ( ) { return ( m_sockState == ST_AVAILABLE  ); }
+	bool isConnecting    ( ) { return ( m_sockState == ST_CONNECTING ); }
+	//bool isClosed      ( ) { return ( m_sockState == ST_CLOSED     ); }
 	bool isReading       ( ) { return ( m_sockState == ST_READING ||
-					    m_sockState == ST_SSL_ACCEPT ); };
-	bool isSending       ( ) { return ( m_sockState == ST_WRITING    ); };
-	bool isReadingReply  ( ) { return ( isReading() && m_sendBuf); };
-	bool isSendingReply  ( ) { return ( isSending() &&   m_readBuf); };
-	bool isSendingRequest( ) { return ( isSending() && ! m_readBuf); };
-	bool sendCompleted   ( ) { return ( m_totalSent == m_totalToSend ); };
-	bool readCompleted   ( ) { return ( m_totalRead == m_totalToRead ); };
+					    m_sockState == ST_SSL_ACCEPT ); }
+	bool isSending       ( ) { return ( m_sockState == ST_WRITING    ); }
+	bool isReadingReply  ( ) { return ( isReading() && m_sendBuf); }
+	bool isSendingReply  ( ) { return ( isSending() &&   m_readBuf); }
+	bool isSendingRequest( ) { return ( isSending() && ! m_readBuf); }
+	bool sendCompleted   ( ) { return ( m_totalSent == m_totalToSend ); }
+	bool readCompleted   ( ) { return ( m_totalRead == m_totalToRead ); }
 
-	void setTimeout   (int32_t timeout ) { m_timeout = timeout; };
+	void setTimeout   (int32_t timeout ) { m_timeout = timeout; }
 
 
 	// . call m_callback when on transcation completion, error or timeout

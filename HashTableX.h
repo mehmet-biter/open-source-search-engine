@@ -22,7 +22,7 @@ class HashTableX {
 		   bool  useKeyMagic = false );
 
 	// key size is 0 if UNinitialized
-	bool isInitialized ( ) const { return (m_ks != 0); };
+	bool isInitialized ( ) const { return (m_ks != 0); }
 
 	 HashTableX       ( );
 	~HashTableX       ( );
@@ -40,7 +40,7 @@ class HashTableX {
 	bool removeKey  ( const void *key );
 
 	// same as remove
-	bool deleteSlot ( int32_t n ) { return removeSlot(n); };
+	bool deleteSlot ( int32_t n ) { return removeSlot(n); }
 
 	// like removeKey. returns false and sets g_errno on error.
 	bool removeSlot ( int32_t n );
@@ -55,16 +55,16 @@ class HashTableX {
 		if ( *val + (uint32_t)score < *val ) *val = 0xffffffff;
 		else                                 *val = *val + score;
 		return true;
-	};
+	}
 	// a replacement for TermTable.cpp
 	uint32_t getScore ( const int64_t *wid ) const {
 		int32_t slot = getSlot ( wid );
 		if ( slot < 0 ) return 0;
 		return *(const uint32_t *)getValueFromSlot ( slot );
-	};
+	}
 	// a replacement for TermTable.cpp
 	uint64_t getScore64FromSlot ( int32_t slot ) const {
-		return *(const uint64_t *)getValueFromSlot ( slot ); };
+		return *(const uint64_t *)getValueFromSlot ( slot ); }
 
 
 	bool addTerm32 ( const int32_t *wid , int32_t score = 1 ) {
@@ -75,7 +75,7 @@ class HashTableX {
 		if ( *val + (uint32_t)score < *val ) *val = 0xffffffff;
 		else                                 *val = *val + score;
 		return true;
-	};
+	}
 	bool addTerm32 ( const uint32_t *wid , int32_t score = 1 ) {
 		int32_t slot = getSlot ( wid );
                 if ( slot<0 ) return addKey( wid ,&score,&slot);
@@ -84,15 +84,15 @@ class HashTableX {
 		if ( *val + (uint32_t)score < *val ) *val = 0xffffffff;
 		else                                 *val = *val + score;
 		return true;
-	};
+	}
 	bool addScore ( const int32_t *key , int32_t score = 1 ) {
 		return addTerm32 ( key , score ); 
-	};
+	}
 	uint32_t getScore32 ( const int32_t *wid ) const {
 		int32_t slot = getSlot ( wid );
 		if ( slot < 0 ) return 0;
 		return *(const uint32_t *)getValueFromSlot ( slot );
-	};
+	}
 
 
 	bool addTerm144 ( const key144_t *kp , int32_t score = 1 ) {
@@ -150,7 +150,7 @@ class HashTableX {
 		log("hash: table is full!");
 		char *xx=NULL;*xx=0;
 		return true;
-	};
+	}
 
 	// return 32-bit checksum of keys in table
 	int32_t getKeyChecksum32 () const;
@@ -166,7 +166,7 @@ class HashTableX {
 		int32_t n = getOccupiedSlotNum ( key );
 		if ( n < 0 ) return NULL;
 		return &m_vals[n*m_ds];
-	};
+	}
 
 	// . specialized for 32-bit keys for speed
 	// . returns NULL if not in table
@@ -200,7 +200,7 @@ class HashTableX {
 			if ( ++n == m_numSlots ) n = 0;
 		}
 		return NULL;
-	};
+	}
 
 	// . specialized for 64-bit keys for speed
 	// . returns NULL if not in table
@@ -233,26 +233,26 @@ class HashTableX {
 			if ( ++n == m_numSlots ) n = 0;
 		}
 		return NULL;
-	};
+	}
 
 	// value of 0 means empty
-	bool isEmpty ( const void *key ) const { return (getSlot(key) < 0); };
+	bool isEmpty ( const void *key ) const { return (getSlot(key) < 0); }
 
-	bool isInTable ( const void *key ) const { return (getSlot(key) >= 0); };
+	bool isInTable ( const void *key ) const { return (getSlot(key) >= 0); }
 
-	bool isEmpty ( int32_t n ) const { return (m_flags[n] == 0); };
+	bool isEmpty ( int32_t n ) const { return (m_flags[n] == 0); }
 
-	bool isTableEmpty ( ) const { return (m_numSlotsUsed == 0); };
+	bool isTableEmpty ( ) const { return (m_numSlotsUsed == 0); }
 
-	void *      getKey ( int32_t n )       { return m_keys + n * m_ks; };
-	const void *getKey ( int32_t n ) const { return m_keys + n * m_ks; };
-	void *      getKeyFromSlot ( int32_t n )       { return m_keys + n * m_ks; };
-	const void *getKeyFromSlot ( int32_t n ) const { return m_keys + n * m_ks; };
+	void *      getKey ( int32_t n )       { return m_keys + n * m_ks; }
+	const void *getKey ( int32_t n ) const { return m_keys + n * m_ks; }
+	void *      getKeyFromSlot ( int32_t n )       { return m_keys + n * m_ks; }
+	const void *getKeyFromSlot ( int32_t n ) const { return m_keys + n * m_ks; }
 
 	int64_t getKey64FromSlot ( int32_t n ) const {
 		return *(int64_t *)(m_keys+n*m_ks); }
 
-	int32_t getSlot ( const void *key ) const { return getOccupiedSlotNum ( key ); };
+	int32_t getSlot ( const void *key ) const { return getOccupiedSlotNum ( key ); }
 
 	int32_t getNextSlot ( int32_t slot, const void *key ) const;
 
@@ -263,12 +263,12 @@ class HashTableX {
 		if      (m_ds == 4) ((int32_t *)m_vals)[n] = *(const int32_t *)val;
 		else if (m_ds == 8) ((int64_t *)m_vals)[n] = *(const int64_t *)val;
 		else                gbmemcpy(m_vals+n*m_ds,val,m_ds);
-	};
+	}
 
-	void *      getValueFromSlot ( int32_t n )       { return m_vals + n * m_ds; };
-	const void *getValueFromSlot ( int32_t n ) const { return m_vals + n * m_ds; };
-	void *      getDataFromSlot  ( int32_t n )       { return m_vals + n * m_ds; };
-	const void *getDataFromSlot  ( int32_t n ) const { return m_vals + n * m_ds; };
+	void *      getValueFromSlot ( int32_t n )       { return m_vals + n * m_ds; }
+	const void *getValueFromSlot ( int32_t n ) const { return m_vals + n * m_ds; }
+	void *      getDataFromSlot  ( int32_t n )       { return m_vals + n * m_ds; }
+	const void *getDataFromSlot  ( int32_t n ) const { return m_vals + n * m_ds; }
 
 	// frees the used memory, etc.
 	void  reset  ( );
@@ -277,15 +277,15 @@ class HashTableX {
 	void  clear  ( );
 
 	// how many are occupied?
-	int32_t getNumSlotsUsed ( ) const { return m_numSlotsUsed; };
-	int32_t getNumUsedSlots ( ) const { return m_numSlotsUsed; };
+	int32_t getNumSlotsUsed ( ) const { return m_numSlotsUsed; }
+	int32_t getNumUsedSlots ( ) const { return m_numSlotsUsed; }
 
 	bool isEmpty() const { 
 		if ( m_numSlotsUsed == 0 ) return true;
-		return false; };
+		return false; }
 
 	// how many are there total? used and unused.
-	int32_t getNumSlots ( ) const { return m_numSlots; };
+	int32_t getNumSlots ( ) const { return m_numSlots; }
 
 	// both return false and set g_errno on error, true otherwise
 	bool load ( const char *dir, const char *filename , 
@@ -296,8 +296,8 @@ class HashTableX {
 
 	bool setTableSize ( int32_t numSlots , char *buf , int32_t bufSize );
 
-	void disableWrites () { m_isWritable = false; };
-	void enableWrites  () { m_isWritable = true ; };
+	void disableWrites () { m_isWritable = false; }
+	void enableWrites  () { m_isWritable = true ; }
 	bool m_isWritable;
 
  private:

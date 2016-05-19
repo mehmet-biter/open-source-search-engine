@@ -42,7 +42,7 @@ class Wiktionary {
 		uint8_t *data = (uint8_t *)m_langTable.getDataFromSlot(slot);
 		// langid is lower 8 bits i think
 		return *data;
-	};
+	}
 
 	uint8_t getPosFlags ( int64_t *wid , uint8_t langId ) {
 		int32_t slot = m_langTable.getSlot ( wid );
@@ -54,7 +54,7 @@ class Wiktionary {
 		uint8_t *data = (uint8_t *)m_langTable.getDataFromSlot(slot);
 		// langid is lower 8 bits i think
 		return *data;
-	};
+	}
 	*/
 
 	// returns a line like:
@@ -85,7 +85,7 @@ class Wiktionary {
 		//if ( ! offPtr ) return NULL;
 		//if ( *offPtr < 0 ) { char *xx=NULL;*xx=0; }
 		//return m_synBuf.getBufStart() + *offPtr;
-	};
+	}
 
 	char *getNextSynSet ( int64_t wid , uint8_t langId , char *prev ) {
 		// hash it up like we did when adding to m_tmp table
@@ -115,7 +115,7 @@ class Wiktionary {
 		      if ( ptr == prev ) gotIt = true;
 		}
 		return NULL;
-	};
+	}
 
 
 	//WikiEntry *getWiktionaryEntry ( uint64_t wid ) {

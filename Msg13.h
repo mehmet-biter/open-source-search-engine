@@ -25,7 +25,7 @@ public:
 	// the top portion of Msg13Request is sent to handleRequest54()
 	// in SpiderProxy.cpp to get and return proxies, as well as to
 	// ban proxies.
-	int32_t getProxyRequestSize() { return (char *)&m_lastHack-(char *)this;};
+	int32_t getProxyRequestSize() { return (char *)&m_lastHack-(char *)this;}
 	int32_t  m_urlIp;
 	int32_t  m_lbId; // loadbucket id
 	// the http proxy to use to download
@@ -138,7 +138,7 @@ public:
 		m_maxOtherDocLen = -1; // no limit
 		m_crawlDelayMS   = -1; // unknown or none
 		m_collnum = (collnum_t)-1;
-	};
+	}
 };
 
 class Msg13 {

@@ -19,7 +19,7 @@
 class Msg20Request {
  public:
 
-	Msg20Request() { reset(); };
+	Msg20Request() { reset(); }
 
 	// zero ourselves out
 	void reset() { 
@@ -31,7 +31,7 @@ class Msg20Request {
 		m_docId              = -1LL; // set docid to "invalid"
 		m_titleMaxLen        = 80  ;
 		m_summaryMaxLen      = 180 ;
-	};
+	}
 
 	int32_t  getStoredSize ( );
 	char *serialize     ( int32_t *sizePtr );
@@ -105,7 +105,7 @@ public:
 	void destructor();
 
 	// zero ourselves out
-	void reset() { memset ( (char *)this,0,sizeof(Msg20Reply) ); };
+	void reset() { memset ( (char *)this,0,sizeof(Msg20Reply) ); }
 
 	// how many bytes if we had to serialize it?
 	int32_t getStoredSize() ;
@@ -268,7 +268,7 @@ public:
 	// set if we had an error
 	int32_t   m_errno;
 
-	int64_t getRequestDocId () { return m_requestDocId; };
+	int64_t getRequestDocId () { return m_requestDocId; }
 	int64_t m_requestDocId;
 
 	int32_t getStoredSize ( ) { 
@@ -291,8 +291,8 @@ public:
 	// Msg40 caches each Msg20Reply when it caches the page of results, so,
 	// to keep the size of the cached Msg40 down, we do not cache certain
 	// things. so we have to "clear" these guys out before caching.
-	void clearLinks     () { if ( m_r ) m_r->clearOutlinks (); };
-	void clearVectors   () { if ( m_r ) m_r->clearVectors  (); };
+	void clearLinks     () { if ( m_r ) m_r->clearOutlinks (); }
+	void clearVectors   () { if ( m_r ) m_r->clearVectors  (); }
 	// copy "src" to ourselves
 	void copyFrom ( class Msg20 *src ) ;
 

@@ -27,7 +27,7 @@ class Statsdb {
 	//~Statsdb();
 
 	// reset m_rdb
-	void reset() { m_rdb.reset(); };
+	void reset() { m_rdb.reset(); }
 
 	class Label *getLabel ( int32_t graphHash );
 
@@ -189,10 +189,10 @@ class StatData {
 	float      m_newVal;
 
 	// set the m_key members based on the data members
-	float     getOldVal () { return m_totalQuantity; }; // aliased
-	float     getNewVal () { return m_newVal ; };
-	bool      isStatusChange() { return (m_totalOps==0); };
-	bool      isEvent       () { return (m_totalOps==0); };
+	float     getOldVal () { return m_totalQuantity; } // aliased
+	float     getNewVal () { return m_newVal ; }
+	bool      isStatusChange() { return (m_totalOps==0); }
+	bool      isEvent       () { return (m_totalOps==0); }
 } __attribute__((packed, aligned(4)));
 
 #endif // GB_STATSDB_H

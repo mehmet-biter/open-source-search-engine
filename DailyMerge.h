@@ -14,7 +14,7 @@ public:
 	bool init();
 
 	// is the scan active and adding recs to the secondary rdbs?
-	bool isMergeActive() { return (m_mergeMode >= 1); };
+	bool isMergeActive() { return (m_mergeMode >= 1); }
 
 	void dailyMergeLoop ( ) ;
 

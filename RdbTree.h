@@ -63,12 +63,12 @@ class RdbTree {
 		// . m_memOccupied is amount of alloc'd mem that data occupies
 		// . now we /90 and /100 since multiplying overflowed
 		return ( m_numUsedNodes/90 >= m_numNodes/100 );
-	};
+	}
 
-	bool isFull ( ) { return (m_numUsedNodes >= m_numNodes); };
+	bool isFull ( ) { return (m_numUsedNodes >= m_numNodes); }
 
 	bool hasRoomForKeys ( int32_t nk ) {
-		return (m_numUsedNodes + nk <= m_numNodes); };
+		return (m_numUsedNodes + nk <= m_numNodes); }
 
 	// . a fixedDataSize of -1 means each node has data of a variable size
 	// . set maxMem to -1 for no max 
@@ -159,13 +159,13 @@ class RdbTree {
 	void deleteNode3  ( int32_t  node , bool freeData );
 	int32_t deleteNode  ( collnum_t collnum, const char *key, bool freeData );
 	int32_t deleteNode  ( collnum_t collnum , const key_t &key , bool freeData) {
-		return deleteNode ( collnum , (const char *)&key , freeData ); };
+		return deleteNode ( collnum , (const char *)&key , freeData ); }
 
 	// delete all nodes with keys in [startKey,endKey]
 	void deleteNodes ( collnum_t collnum ,
 			   const key_t &startKey, const key_t &endKey, bool freeData ) {
 		deleteNodes(collnum,(const char *)&startKey,(const char *)&endKey,
-			    freeData); };
+			    freeData); }
 
 	void deleteNodes ( collnum_t collnum ,
 			   const char *startKey, const char *endKey, bool freeData );
@@ -189,30 +189,30 @@ class RdbTree {
 				 RdbList *list , bool doBalancing ); //= true);
 
 	// since our arrays aren't public
-	char *getData      ( int32_t node ) { return m_data    [node]; };
-	int32_t  getDataSize  ( int32_t node ) { return m_sizes   [node]; };
-	//key_t getKey       ( int32_t node ) { return m_keys    [node]; };
-	char *getKey       ( int32_t node ) { return &m_keys   [node*m_ks]; };
-	int32_t  getParentNum ( int32_t node ) { return m_parents [node]; };
+	char *getData      ( int32_t node ) { return m_data    [node]; }
+	int32_t  getDataSize  ( int32_t node ) { return m_sizes   [node]; }
+	//key_t getKey       ( int32_t node ) { return m_keys    [node]; }
+	char *getKey       ( int32_t node ) { return &m_keys   [node*m_ks]; }
+	int32_t  getParentNum ( int32_t node ) { return m_parents [node]; }
 
-	collnum_t getCollnum ( int32_t node ) { return m_collnums [node];};
+	collnum_t getCollnum ( int32_t node ) { return m_collnums [node];}
 
-	bool  isEmpty      ( int32_t node ) { return (m_parents [ node ] == -2);};
+	bool  isEmpty      ( int32_t node ) { return (m_parents [ node ] == -2);}
 
 	// an upper bound on the # of used nodes
-	int32_t  getNumNodes  ( ) { return m_minUnusedNode; };
+	int32_t  getNumNodes  ( ) { return m_minUnusedNode; }
 
-	int32_t  getNumUsedNodes  ( ) { return m_numUsedNodes; };
+	int32_t  getNumUsedNodes  ( ) { return m_numUsedNodes; }
 
-	bool  isEmpty ( ) { return (m_numUsedNodes == 0); };
+	bool  isEmpty ( ) { return (m_numUsedNodes == 0); }
 
-	int32_t  getNumAvailNodes ( ) { return m_numNodes - m_numUsedNodes; };
+	int32_t  getNumAvailNodes ( ) { return m_numNodes - m_numUsedNodes; }
 
-	int32_t  getNumTotalNodes ( ) { return m_numNodes; };
+	int32_t  getNumTotalNodes ( ) { return m_numNodes; }
 
 	// negative and postive counts
-	int32_t  getNumNegativeKeys ( ) { return m_numNegativeKeys; };
-	int32_t  getNumPositiveKeys ( ) { return m_numPositiveKeys; };
+	int32_t  getNumNegativeKeys ( ) { return m_numNegativeKeys; }
+	int32_t  getNumPositiveKeys ( ) { return m_numPositiveKeys; }
 
 	int32_t  getNumNegativeKeys ( collnum_t collnum ) ;
 	int32_t  getNumPositiveKeys ( collnum_t collnum ) ;
@@ -220,11 +220,11 @@ class RdbTree {
 	void setNumKeys ( class CollectionRec *cr ) ;
 
 	// how much mem, including data, is used by this class?
-	int32_t getMemAlloced       ( ) { return m_memAlloced;  };
+	int32_t getMemAlloced       ( ) { return m_memAlloced;  }
 	// . how much of the alloc'd mem is actually in use holding data
 	// . includes the tree infrastructure as well as the data itself
-	int32_t getMemOccupied      ( ) { return m_memOccupied; };
-	int32_t getMaxMem           ( ) { return m_maxMem; };
+	int32_t getMemOccupied      ( ) { return m_memOccupied; }
+	int32_t getMaxMem           ( ) { return m_maxMem; }
 
 	// . like getMemOccupied() above but does not include left/right/parent
 	// . only includes occupied keys/sizes and the dataSizes themself
@@ -239,7 +239,7 @@ class RdbTree {
 
 	// . how much mem does this tree use, not including stored data
 	// . this will be the same as getMemAlloced() if fixedDataSize is 0
-	int32_t getTreeOverhead() { return m_overhead * m_numNodes; };
+	int32_t getTreeOverhead() { return m_overhead * m_numNodes; }
 
 	// . throw all the records in this range into this list
 	// . used for dumping to an rdb file permanently
@@ -270,7 +270,7 @@ class RdbTree {
 		       bool     useHalfKeys ) {  // = false 
 		return getList(collnum,(const char *)&startKey,(const char *)&endKey,
 			       minRecSizes,list,numPosRecs,numNegRecs,
-			       useHalfKeys);};
+			       useHalfKeys);}
 
  	// . don't order by keys, order by node #
 	// . used for saving a tree to disk temporarily so it can be re-loaded
@@ -307,17 +307,17 @@ class RdbTree {
 	// this is called by a thread
 	bool fastSave_r() ;
 
-	int32_t getMinUnusedNode () { return m_minUnusedNode; };
+	int32_t getMinUnusedNode () { return m_minUnusedNode; }
 
 	bool checkTree  ( bool printMsgs , bool doChainTest );
 	bool checkTree2 ( bool printMsgs , bool doChainTest );
 	bool fixTree    ( );
 
 	// all except the data: the keys,dataPtr,size,left,right,parents,depth
-	int32_t  getRecOverhead () { return m_overhead; };
+	int32_t  getRecOverhead () { return m_overhead; }
 
-	void disableWrites () { m_isWritable = false; };
-	void enableWrites  () { m_isWritable = true ; };
+	void disableWrites () { m_isWritable = false; }
+	void enableWrites  () { m_isWritable = true ; }
 
 	// can we write to the tree?
 	bool    m_isWritable;
@@ -344,8 +344,8 @@ class RdbTree {
 	void     *m_state; 
 	void    (* m_callback) (void *state );
 
-	int64_t getBytesWritten ( ) { return m_bytesWritten; };
-	int64_t getBytesRead    ( ) { return m_bytesRead   ; };
+	int64_t getBytesWritten ( ) { return m_bytesWritten; }
+	int64_t getBytesRead    ( ) { return m_bytesRead   ; }
 
 	// private:
 
@@ -434,11 +434,11 @@ class RdbTree {
 	void protect   () { 
 		if ( m_isProtected ) return;
 		m_isProtected = true; 
-		protect ( PROT_READ ); };
+		protect ( PROT_READ ); }
 	void unprotect () { 
 		if ( ! m_isProtected ) return;
 		m_isProtected = false; 
-		protect ( PROT_READ | PROT_WRITE ); };
+		protect ( PROT_READ | PROT_WRITE ); }
 	void protect   ( int prot );
 	void gbmprotect ( void *p , int32_t size , int prot );
 

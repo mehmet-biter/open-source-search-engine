@@ -30,8 +30,8 @@ bool isTagTypeIndexable ( int32_t tt ) ;
 class Tag {
  public:
 
-	int32_t  getSize    ( ) { return sizeof(key128_t) + 4 + m_recDataSize; };
-	int32_t  getRecSize ( ) { return sizeof(key128_t) + 4 + m_recDataSize; };
+	int32_t  getSize    ( ) { return sizeof(key128_t) + 4 + m_recDataSize; }
+	int32_t  getRecSize ( ) { return sizeof(key128_t) + 4 + m_recDataSize; }
 
 	void set ( const char *site, const char *tagname, int32_t  timestamp, const char *user,
 	           int32_t ip, const char *data, int32_t  dataSize );
@@ -54,14 +54,14 @@ class Tag {
 
 	// skip of the username, whose size (including \0) is encoded
 	// as the first byte in the m_recData buffer
-	char *getTagData     ( ) {return m_buf + *m_buf + 1;};
-	int32_t  getTagDataSize ( ) {return m_bufSize - *m_buf - 1; };
+	char *getTagData     ( ) {return m_buf + *m_buf + 1;}
+	int32_t  getTagDataSize ( ) {return m_bufSize - *m_buf - 1; }
 
 	// what user added this tag?
-	char *getUser ( ) { return m_buf + 1;};
+	char *getUser ( ) { return m_buf + 1;}
 
 	// remove the terminating \0 which is included as part of the size
-	int32_t  getUserLen ( ) { return *m_buf - 1; };
+	int32_t  getUserLen ( ) { return *m_buf - 1; }
 
 	// used to determine if one Tag should overwrite the other! if they
 	// have the same dedup hash... then yes...
@@ -168,7 +168,7 @@ class Tagdb  {
 	bool addColl ( char *coll, bool doVerify = true );
 
 	// used by ../rdb/Msg0 and ../rdb/Msg1
-	Rdb *getRdb ( ) { return &m_rdb; };
+	Rdb *getRdb ( ) { return &m_rdb; }
 
 	key128_t makeStartKey ( char *site );//Url *u ) ;
 	key128_t makeEndKey   ( char *site );//Url *u ) ;

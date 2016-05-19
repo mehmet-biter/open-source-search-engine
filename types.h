@@ -41,28 +41,28 @@ class u_int96_t {
 	uint64_t n0; // the low  int64_t
 	uint32_t      n1; // the high int32_t 
 
-	u_int96_t (                ) { };
-	u_int96_t ( uint32_t i ) {	n0 = i; n1 = 0; };
+	u_int96_t (                ) { }
+	u_int96_t ( uint32_t i ) {	n0 = i; n1 = 0; }
 
 	bool isNegativeKey ( ) { 
-		return ( (   ((int32_t)n0) & ((int32_t)0x01)  ) == 0x00 ); };
+		return ( (   ((int32_t)n0) & ((int32_t)0x01)  ) == 0x00 ); }
 
 	void setMin ( ) { n0 = 0LL; n1 = 0; }
 
 	void setToMin ( ) { n0 = 0LL; n1 = 0; }
 
-	void setMax ( ) { n0 = 0xffffffffffffffffLL; n1 = 0xffffffff; };
+	void setMax ( ) { n0 = 0xffffffffffffffffLL; n1 = 0xffffffff; }
 
-	void setToMax ( ) { n0 = 0xffffffffffffffffLL; n1 = 0xffffffff;	};
+	void setToMax ( ) { n0 = 0xffffffffffffffffLL; n1 = 0xffffffff;	}
 
-	int32_t getHighLong ( ) { return n1; };
+	int32_t getHighLong ( ) { return n1; }
 
 	bool operator == ( u_int96_t i ) { 
-		return ( i.n0 == n0 && i.n1 == n1);};
+		return ( i.n0 == n0 && i.n1 == n1);}
 	bool operator != ( u_int96_t i ) { 
-		return ( i.n0 != n0 || i.n1 != n1);};
+		return ( i.n0 != n0 || i.n1 != n1);}
 	void operator =  ( u_int96_t i ) {
-		n0 = i.n0; n1 = i.n1; };
+		n0 = i.n0; n1 = i.n1; }
 
 	u_int96_t  operator |  ( u_int96_t i ) {
 		n0 |= i.n0; n1 |= i.n1; return *this; }
@@ -71,31 +71,31 @@ class u_int96_t {
 	u_int96_t operator &  ( u_int96_t i ) {
 		n0 &= i.n0; n1 &= i.n1; return *this; }
 	u_int96_t  operator ~  ( ) {
-		n0 = ~n0; n1 = ~n1;  return *this; };
+		n0 = ~n0; n1 = ~n1;  return *this; }
 
 	bool operator != ( uint32_t i ) { 
-		return ( i    != n0 ); };
+		return ( i    != n0 ); }
 	void operator =  ( uint32_t i ) {
-		n0 = i; n1 = 0; };
+		n0 = i; n1 = 0; }
 	int32_t operator &  ( uint32_t i ) {
-		return n0 & i; };
+		return n0 & i; }
 
 	//void operator += ( uint64_t i ) { // watch out for carry
 	//if ( n0 + i < n0 ) n1++;
-	//n0 += i; };
+	//n0 += i; }
 
 	/*
 	void operator += ( u_int96_t i ) {
 		if ( n0 + i.n0  < n0 ) n1++;
 		n0 += i.n0;
 		n1 += i.n1;
-	};
+	}
 	*/
 
 	void operator |= ( u_int96_t i ) {
 		n0 |= i.n0;
 		n1 |= i.n1;
-	};
+	}
 
 	// NOTE: i must be bigger than j!?
 	/*
@@ -105,7 +105,7 @@ class u_int96_t {
 		if ( n0 < oldn0 ) n1++; // carry
 		n1 += i.n1;
 		return *this;
-	};
+	}
 	*/
 
 	// . NOTE: i must be bigger than j!
@@ -116,7 +116,7 @@ class u_int96_t {
 		if ( n0 < i.n0 ) { n1--; n0++; } // carry
 		n1 = n1 - i.n1;
 		return *this;
-	};
+	}
 
 	// NOTE: i must be bigger than j!?
 	/*
@@ -124,24 +124,24 @@ class u_int96_t {
 		if ( n0 + i < n0 ) n1++;
 		n0 += i; 
 		return *this;
-	};
+	}
 
 	key_t operator - ( uint32_t i ) {
 		if ( n0 - i > n0 ) n1--;
 		n0 -= i; 
 		return *this;
-	};
+	}
 	*/
 
 	// NOTE: i must be bigger than j!?
 	void operator -= ( uint32_t i ) {
 		if ( n0 - i > n0 ) n1--;
 		n0 -= i;
-	};
+	}
 
 	void operator += ( uint32_t i ) { // watch out for carry
 		if ( n0 + i < n0 ) n1++;
-		n0 += i; };
+		n0 += i; }
 
 	// TODO: make this more efficient
 	u_int96_t operator >> ( int32_t i ) {
@@ -152,7 +152,7 @@ class u_int96_t {
 			if ( carry ) n0 |= 0x8000000000000000LL;
 		}
 		return *this;
-	};
+	}
 	// TODO: make this more efficient
 	u_int96_t operator << ( int32_t i ) {
 		for ( int32_t j = 0 ; j < i ; j++ ) {
@@ -162,37 +162,37 @@ class u_int96_t {
 			if ( carry ) n1 |= 0x01;
 		}
 		return *this;
-	};
+	}
 
 	bool operator >  ( u_int96_t i ) {
 		if ( n1 > i.n1 ) return true;
 		if ( n1 < i.n1 ) return false;
 		if ( n0 > i.n0 ) return true;
 		return false;
-	};
+	}
 	bool operator <  ( u_int96_t i ) {
 		if ( n1 < i.n1 ) return true;
 		if ( n1 > i.n1 ) return false;
 		if ( n0 < i.n0 ) return true;
 		return false;
-	};
+	}
 	bool operator <= ( u_int96_t i ) {
 		if ( n1 < i.n1 ) return true;
 		if ( n1 > i.n1 ) return false;
 		if ( n0 < i.n0 ) return true;
 		if ( n0 > i.n0 ) return false;
 		return true;
-	};
+	}
 	bool operator >= ( u_int96_t i ) {
 		if ( n1 > i.n1 ) return true;
 		if ( n1 < i.n1 ) return false;
 		if ( n0 > i.n0 ) return true;
 		if ( n0 < i.n0 ) return false;
 		return true;
-	};
+	}
 	// TODO: should we fix this?
 	int32_t operator %  ( uint32_t mod ) { 
-		return n0 % mod; };
+		return n0 % mod; }
 
 } __attribute__((packed, aligned(4)));
 
@@ -203,28 +203,28 @@ class u_int128_t {
 	uint64_t n0; // the low  int64_t
 	uint64_t n1; // the high int32_t 
 
-	u_int128_t (                ) { };
-	u_int128_t ( uint32_t i ) {	n0 = i; n1 = 0; };
+	u_int128_t (                ) { }
+	u_int128_t ( uint32_t i ) {	n0 = i; n1 = 0; }
 
 	bool isNegativeKey ( ) { 
-		return ( (   ((int32_t)n0) & ((int32_t)0x01)  ) == 0x00 ); };
+		return ( (   ((int32_t)n0) & ((int32_t)0x01)  ) == 0x00 ); }
 
 	void setMin ( ) { n0 = 0LL; n1 = 0LL; }
 
 	void setToMin ( ) { n0 = 0LL; n1 = 0LL; }
 
-	void setMax ( ) { n0=0xffffffffffffffffLL; n1=0xffffffffffffffffLL;};
+	void setMax ( ) { n0=0xffffffffffffffffLL; n1=0xffffffffffffffffLL;}
 
-	void setToMax ( ) { n0=0xffffffffffffffffLL; n1=0xffffffffffffffffLL;};
+	void setToMax ( ) { n0=0xffffffffffffffffLL; n1=0xffffffffffffffffLL;}
 
-	int32_t getHighLong ( ) { return n1; };
+	int32_t getHighLong ( ) { return n1; }
 
 	bool operator == ( u_int128_t i ) { 
-		return ( i.n0 == n0 && i.n1 == n1);};
+		return ( i.n0 == n0 && i.n1 == n1);}
 	bool operator != ( u_int128_t i ) { 
-		return ( i.n0 != n0 || i.n1 != n1);};
+		return ( i.n0 != n0 || i.n1 != n1);}
 	void operator =  ( u_int128_t i ) {
-		n0 = i.n0; n1 = i.n1; };
+		n0 = i.n0; n1 = i.n1; }
 
 	u_int128_t  operator |  ( u_int128_t i ) {
 		n0 |= i.n0; n1 |= i.n1; return *this; }
@@ -233,19 +233,19 @@ class u_int128_t {
 	u_int128_t operator &  ( u_int128_t i ) {
 		n0 &= i.n0; n1 &= i.n1; return *this; }
 	u_int128_t  operator ~  ( ) {
-		n0 = ~n0; n1 = ~n1;  return *this; };
+		n0 = ~n0; n1 = ~n1;  return *this; }
 
 	bool operator != ( uint32_t i ) { 
-		return ( i    != n0 ); };
+		return ( i    != n0 ); }
 	void operator =  ( uint32_t i ) {
-		n0 = i; n1 = 0; };
+		n0 = i; n1 = 0; }
 	int32_t operator &  ( uint32_t i ) {
-		return n0 & i; };
+		return n0 & i; }
 
 	void operator |= ( u_int128_t i ) {
 		n0 |= i.n0;
 		n1 |= i.n1;
-	};
+	}
 
 	// . NOTE: i must be bigger than j!
 	// . this is used by RdbCache only and doesn't need to be exact
@@ -255,17 +255,17 @@ class u_int128_t {
 		if ( n0 < i.n0 ) { n1--; n0++; } // carry
 		n1 = n1 - i.n1;
 		return *this;
-	};
+	}
 
 	// NOTE: i must be bigger than j!?
 	void operator -= ( uint32_t i ) {
 		if ( n0 - i > n0 ) n1--;
 		n0 -= i;
-	};
+	}
 
 	void operator += ( uint32_t i ) { // watch out for carry
 		if ( n0 + i < n0 ) n1++;
-		n0 += i; };
+		n0 += i; }
 
 	// TODO: make this more efficient
 	u_int128_t operator >> ( int32_t i ) {
@@ -276,7 +276,7 @@ class u_int128_t {
 			if ( carry ) n0 |= 0x8000000000000000LL;
 		}
 		return *this;
-	};
+	}
 	// TODO: make this more efficient
 	u_int128_t operator << ( int32_t i ) {
 		for ( int32_t j = 0 ; j < i ; j++ ) {
@@ -286,37 +286,37 @@ class u_int128_t {
 			if ( carry ) n1 |= 0x01;
 		}
 		return *this;
-	};
+	}
 
 	bool operator >  ( u_int128_t i ) {
 		if ( n1 > i.n1 ) return true;
 		if ( n1 < i.n1 ) return false;
 		if ( n0 > i.n0 ) return true;
 		return false;
-	};
+	}
 	bool operator <  ( u_int128_t i ) {
 		if ( n1 < i.n1 ) return true;
 		if ( n1 > i.n1 ) return false;
 		if ( n0 < i.n0 ) return true;
 		return false;
-	};
+	}
 	bool operator <= ( u_int128_t i ) {
 		if ( n1 < i.n1 ) return true;
 		if ( n1 > i.n1 ) return false;
 		if ( n0 < i.n0 ) return true;
 		if ( n0 > i.n0 ) return false;
 		return true;
-	};
+	}
 	bool operator >= ( u_int128_t i ) {
 		if ( n1 > i.n1 ) return true;
 		if ( n1 < i.n1 ) return false;
 		if ( n0 > i.n0 ) return true;
 		if ( n0 < i.n0 ) return false;
 		return true;
-	};
+	}
 	// TODO: should we fix this?
 	int32_t operator %  ( uint32_t mod ) { 
-		return n0 % mod; };
+		return n0 % mod; }
 
 } __attribute__((packed, aligned(4)));
 
@@ -339,7 +339,7 @@ class key192_t {
 		return ( i.n0 == n0 && 
 			 i.n1 == n1 && 
 			 i.n2 == n2 
-			 );};
+			 );}
 
 	void operator += ( uint32_t i ) { // watch out for carry
 		if ( n0 + i < n0 ) {
@@ -348,7 +348,7 @@ class key192_t {
 			n1 += i;
 		}
 		n0 += i; 
-	};
+	}
 
 	bool operator <  ( key192_t i ) {
 		if ( n2 < i.n2 ) return true;
@@ -357,7 +357,7 @@ class key192_t {
 		if ( n1 > i.n1 ) return false;
 		if ( n0 < i.n0 ) return true;
 		return false;
-	};
+	}
 	void setMin ( ) { n0 = 0LL; n1 = 0LL; n2 = 0LL; }
 
 
@@ -365,7 +365,7 @@ class key192_t {
 		n0=0xffffffffffffffffLL; 
 		n1=0xffffffffffffffffLL;
 		n2=0xffffffffffffffffLL;
-	};
+	}
 
 
 } __attribute__((packed, aligned(4)));
@@ -390,7 +390,7 @@ class key224_t {
 			 i.n1 == n1 && 
 			 i.n2 == n2 &&
 			 i.n3 == n3
-			 );};
+			 );}
 
 	void operator += ( uint32_t i ) { // watch out for carry
 		if ( n0 + i > n0 ) { n0 += i; return; }
@@ -416,7 +416,7 @@ class key224_t {
 		if ( n1 > i.n1 ) return false;
 		if ( n0 < i.n0 ) return true;
 		return false;
-	};
+	}
 	void setMin ( ) { n0 = 0; n1 = 0LL; n2 = 0LL; n3 = 0LL; }
 
 
@@ -425,7 +425,7 @@ class key224_t {
 		n1=0xffffffffffffffffLL; 
 		n2=0xffffffffffffffffLL;
 		n3=0xffffffffffffffffLL;
-	};
+	}
 
 
 } __attribute__((packed, aligned(4)));
@@ -441,13 +441,13 @@ class key144_t {
 		return ( i.n0 == n0 && 
 			 i.n1 == n1 && 
 			 i.n2 == n2 
-			 );};
+			 );}
 
 	void operator += ( uint32_t i ) { // watch out for carry
 		if ( (uint16_t)(n0+i) > n0 ) { n0 += i; return; }
 		if ( n1 + 1 > n1 ) { n1 += 1; n0 += i; return; }
 		n2 += 1; n1 += 1; n0 += i; return;
-	};
+	}
 
 	// NOTE: i must be bigger than j!?
 	void operator -= ( uint32_t i ) {
@@ -463,7 +463,7 @@ class key144_t {
 		if ( n1 > i.n1 ) return false;
 		if ( n0 < i.n0 ) return true;
 		return false;
-	};
+	}
 	void setMin ( ) { n0 = 0; n1 = 0LL; n2 = 0LL; }
 
 
@@ -471,7 +471,7 @@ class key144_t {
 		n0=0xffff;
 		n1=0xffffffffffffffffLL;
 		n2=0xffffffffffffffffLL;
-	};
+	}
 
 
 } __attribute__((packed, aligned(2)));
@@ -865,7 +865,7 @@ static inline char *KEYMIN() { return  "\0\0\0\0"
 			 "\0\0\0\0"
 			 "\0\0\0\0"
 			 "\0\0\0\0"
-			 "\0\0\0\0"; };
+			 "\0\0\0\0"; }
 static inline char *KEYMAX() {
 	static int s_foo[] = {
 		(int)0xffffffff ,

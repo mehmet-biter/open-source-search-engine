@@ -57,7 +57,7 @@ class JsonItem {
 		// otherwie return the string which is stored decoded
 		// after this object in the same buffer
 		return (char *)this + sizeof(JsonItem);
-	};
+	}
 
 	// convert numbers and bools to strings for this one
 	char *getValueAsString ( int32_t *valueLen ) ;
@@ -80,7 +80,7 @@ class Json {
 
 	JsonItem *addNewItem ();
 
-	Json() { m_stackPtr = 0; m_prev = NULL; };
+	Json() { m_stackPtr = 0; m_prev = NULL; }
 	
 	static bool prependKey(SafeBuf& jsonString, char* newKey);
 
@@ -89,7 +89,7 @@ class Json {
 	JsonItem *m_stack[MAXJSONPARENTS];
 	int32_t m_stackPtr;
 	class JsonItem *m_prev;
-	void reset() { m_sb.purge(); };
+	void reset() { m_sb.purge(); }
 };
 
 #endif // GB_JSON_H

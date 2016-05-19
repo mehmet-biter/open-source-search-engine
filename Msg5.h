@@ -108,7 +108,7 @@ class Msg5 {
 				 allowPageCache ); }
 
 	// need niceness to pass on to others
-	int32_t getNiceness ( ) { return m_niceness; };
+	int32_t getNiceness ( ) { return m_niceness; }
 
 	// frees m_treeList, m_diskList (can be quite a lot of mem 2+ megs)
 	void reset();

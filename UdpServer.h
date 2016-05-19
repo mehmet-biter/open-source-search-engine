@@ -159,9 +159,9 @@ class UdpServer {
 	// . his callback will be called with errno set to "errnum"
 	void sendErrorReply( UdpSlot *slot, int32_t errnum );
 
-	int32_t getNumUsedSlots  () { return m_numUsedSlots; };
+	int32_t getNumUsedSlots  () { return m_numUsedSlots; }
 
-	int32_t getNumUsedSlotsIncoming  () { return m_numUsedSlotsIncoming; };
+	int32_t getNumUsedSlotsIncoming  () { return m_numUsedSlotsIncoming; }
 	
 
 	// . when a request/msg of type "msgType" is received we call the
@@ -226,7 +226,7 @@ class UdpServer {
 
 	bool needBottom         () { return m_needBottom; }   
 
-	UdpSlot *getUdpSlotNum   ( int32_t  i ) { return &m_slots[i]; };
+	UdpSlot *getUdpSlotNum   ( int32_t  i ) { return &m_slots[i]; }
 
 	// try calling makeCallback() on all slots
 	bool makeCallbacks_ass ( int32_t niceness );
@@ -238,7 +238,7 @@ class UdpServer {
 
 	bool m_writeRegistered;
 
-	UdpSlot *getActiveHead ( ) { return m_head2; };
+	UdpSlot *getActiveHead ( ) { return m_head2; }
 
 	// callback linked list functions (m_head3)
 	void addToCallbackLinkedList ( UdpSlot *slot ) ;
@@ -278,7 +278,7 @@ class UdpServer {
 		m_nextTransId++;
 		if ( m_nextTransId >= UDP_MAX_TRANSID ) m_nextTransId = 0; 
 		return tid;
-	};
+	}
 
 	// . send as many dgrams as you can from slot's m_sendBuf
 	// . returns false and sets errno on error, true otherwise

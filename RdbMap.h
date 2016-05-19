@@ -96,9 +96,9 @@ class RdbMap {
 		return m_file.rename ( newMapFilename , callback , state );
 	}
 
-	char *getFilename ( ) { return m_file.getFilename(); };
+	char *getFilename ( ) { return m_file.getFilename(); }
 
-	BigFile *getFile  ( ) { return &m_file; };
+	BigFile *getFile  ( ) { return &m_file; }
 
 	// . writes the map to disk if any slot was added
 	// . returns false if File::close() returns false
@@ -110,7 +110,7 @@ class RdbMap {
 
 	// . we store the fixed dataSize in the map file
 	// . if it's -1 then each record's data is of variable size
-	int32_t getFixedDataSize() { return m_fixedDataSize; };
+	int32_t getFixedDataSize() { return m_fixedDataSize; }
 
 	void reduceMemFootPrint();
 
@@ -138,14 +138,14 @@ class RdbMap {
 	//	bool addKey  ( key_t &key );
 
 	// get the number of non-deleted records in the data file we map
-	int64_t getNumPositiveRecs  ( ) { return m_numPositiveRecs; };
+	int64_t getNumPositiveRecs  ( ) { return m_numPositiveRecs; }
 	// get the number of "delete" records in the data file we map
-	int64_t getNumNegativeRecs  ( ) { return m_numNegativeRecs; };
+	int64_t getNumNegativeRecs  ( ) { return m_numNegativeRecs; }
 	// total
 	int64_t getNumRecs          ( ) { return m_numPositiveRecs +
-						    m_numNegativeRecs; };
+						    m_numNegativeRecs; }
 	// get the size of the file we are mapping
-	int64_t getFileSize () { return m_offset; };
+	int64_t getFileSize () { return m_offset; }
 
 	int64_t findNextFullPosdbKeyOffset ( char *buf, int32_t bufSize ) ;
 
@@ -204,9 +204,9 @@ class RdbMap {
 	int64_t getNextAbsoluteOffset ( int32_t page ) ;
 
 
-	//key_t getLastKey ( ) { return m_lastKey; };
-	//char *getLastKey ( ) { return m_lastKey; };
-	void  getLastKey ( char *key ) { KEYSET(key,m_lastKey,m_ks); };
+	//key_t getLastKey ( ) { return m_lastKey; }
+	//char *getLastKey ( ) { return m_lastKey; }
+	void  getLastKey ( char *key ) { KEYSET(key,m_lastKey,m_ks); }
 
 	// . these functions operate on one page
 	// . get the first key wholly on page # "page"
@@ -225,7 +225,7 @@ class RdbMap {
 		if ( page >= m_numPages ) return m_lastKey;
 		return &m_keys[page/PAGES_PER_SEG][(page%PAGES_PER_SEG)*m_ks];
 	}
-	//	return getKey ( page ); };
+	//	return getKey ( page ); }
 	// if page >= m_numPages return 0
 	int16_t getOffset           ( int32_t page ) { 
 		if ( page >= m_numPages ) {
@@ -233,7 +233,7 @@ class RdbMap {
 			return 0;
 		}
 		return m_offsets [page/PAGES_PER_SEG][page%PAGES_PER_SEG]; 
-	};
+	}
 	//void setKey               ( int32_t page , key_t &k ) { 
 	void setKey ( int32_t page, const char *k ) {
 		//#ifdef GBSANITYCHECK
@@ -241,18 +241,18 @@ class RdbMap {
 			char *xx = NULL; *xx = 0;
 			log(LOG_LOGIC,"RdbMap::setKey: bad engineer");return; }
 		//#endif
-		//m_keys[page/PAGES_PER_SEG][page%PAGES_PER_SEG] = k; };
+		//m_keys[page/PAGES_PER_SEG][page%PAGES_PER_SEG] = k; }
 		KEYSET(&m_keys[page/PAGES_PER_SEG][(page%PAGES_PER_SEG)*m_ks],
 		       k,m_ks);
-	};
+	}
 
 	void setOffset            ( int32_t page , int16_t offset ) {
-		m_offsets[page/PAGES_PER_SEG][page%PAGES_PER_SEG] = offset;};
+		m_offsets[page/PAGES_PER_SEG][page%PAGES_PER_SEG] = offset;}
 
 	// . total recSizes = positive + negative rec sizes
 	// . used to read all the recs in Msg3 and RdbScan
 	//int32_t  getRecSizes         ( int32_t page ) {
-	//return getRecSizes         ( page , page + 1 ); };
+	//return getRecSizes         ( page , page + 1 ); }
 	
 	// . returns true on success
 	// . returns false on i/o error.
@@ -268,12 +268,12 @@ class RdbMap {
 	bool verifyMap   ( BigFile *dataFile );
 	bool verifyMap2  ( );
 
-	bool unlink ( ) { return m_file.unlink ( ); };
+	bool unlink ( ) { return m_file.unlink ( ); }
 
 	bool unlink ( void (* callback)(void *state) , void *state ) { 
-		return m_file.unlink ( callback , state ); };
+		return m_file.unlink ( callback , state ); }
 
-	int32_t getNumPages ( ) { return m_numPages; };
+	int32_t getNumPages ( ) { return m_numPages; }
 
 	// . return first page #, "N",  to read to get the record w/ this key
 	//   if it exists
@@ -318,7 +318,7 @@ class RdbMap {
 	// . returns false if map size would be exceed by adding this slot
 	bool addRecord ( char *key, char *rec , int32_t recSize );
 	bool addRecord ( key_t &key, char *rec , int32_t recSize ) {
-		return addRecord((char *)&key,rec,recSize);};
+		return addRecord((char *)&key,rec,recSize);}
 
 	bool truncateFile ( BigFile *f ) ;
 

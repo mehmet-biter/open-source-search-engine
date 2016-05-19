@@ -85,26 +85,26 @@ class RdbBase {
 	void saveMaps  ();
 
 	// get the directory name where this rdb stores it's files
-	char *getDir ( ) { return m_dir.getDirname(); };
+	char *getDir ( ) { return m_dir.getDirname(); }
 
-	int32_t getFixedDataSize ( ) { return m_fixedDataSize; };
+	int32_t getFixedDataSize ( ) { return m_fixedDataSize; }
 
-	bool useHalfKeys ( ) { return m_useHalfKeys; };
+	bool useHalfKeys ( ) { return m_useHalfKeys; }
 
-	RdbMap   **getMaps  ( ) { return m_maps; };
-	BigFile  **getFiles ( ) { return m_files; };
+	RdbMap   **getMaps  ( ) { return m_maps; }
+	BigFile  **getFiles ( ) { return m_files; }
 
-	BigFile   *getFile   ( int32_t n ) { return m_files   [n]; };
-	int32_t       getFileId ( int32_t n ) { return m_fileIds [n]; };
-	int32_t       getFileId2( int32_t n ) { return m_fileIds2[n]; };
-	RdbMap    *getMap    ( int32_t n ) { return m_maps    [n]; };
+	BigFile   *getFile   ( int32_t n ) { return m_files   [n]; }
+	int32_t       getFileId ( int32_t n ) { return m_fileIds [n]; }
+	int32_t       getFileId2( int32_t n ) { return m_fileIds2[n]; }
+	RdbMap    *getMap    ( int32_t n ) { return m_maps    [n]; }
 
 	float getPercentNegativeRecsOnDisk ( int64_t *totalArg ) ;
 
 	// how much mem is alloced for our maps?
 	int64_t getMapMemAlloced ();
 
-	int32_t       getNumFiles ( ) { return m_numFiles; };
+	int32_t       getNumFiles ( ) { return m_numFiles; }
 
 	// sum of all parts of all big files
 	int32_t      getNumSmallFiles ( ) ;
@@ -113,8 +113,8 @@ class RdbBase {
 	// returns -1 if variable (variable dataSize)
 	int32_t getRecSize ( ) {
 		if ( m_fixedDataSize == -1 ) return -1;
-		//return sizeof(key_t) + m_fixedDataSize; };
-		return m_ks + m_fixedDataSize; };
+		//return sizeof(key_t) + m_fixedDataSize; }
+		return m_ks + m_fixedDataSize; }
 
 	// use the maps and tree to estimate the size of this list
 	//int32_t getListSize ( key_t startKey ,key_t endKey , key_t *maxKey ,
@@ -163,19 +163,19 @@ class RdbBase {
 	//bool needsDump ( );
 
 	// these are used for computing load on a machine
-	bool isMerging ( ) { return m_isMerging; };
-	bool isDumping ( ) { return m_dump->isDumping(); };
+	bool isMerging ( ) { return m_isMerging; }
+	bool isDumping ( ) { return m_dump->isDumping(); }
 
-	bool hasMergeFile ( ) { return m_hasMergeFile; };
+	bool hasMergeFile ( ) { return m_hasMergeFile; }
 
 	// used for translating titledb file # 255 (as read from new tfndb)
 	// into the real file number
-	int32_t getNewestFileNum ( ) { return m_numFiles - 1; };
+	int32_t getNewestFileNum ( ) { return m_numFiles - 1; }
 
 	// Msg22 needs the merge info so if the title file # of a read we are
 	// doing is being merged, we have to include the start merge file num
-	int32_t      getMergeStartFileNum ( ) { return m_mergeStartFileNum; };
-	int32_t      getMergeNumFiles     ( ) { return m_numFilesToMerge; };
+	int32_t      getMergeStartFileNum ( ) { return m_mergeStartFileNum; }
+	int32_t      getMergeNumFiles     ( ) { return m_numFilesToMerge; }
 
 	// bury m_files[] in [a,b)
 	void buryFiles ( int32_t a , int32_t b );
@@ -188,7 +188,7 @@ class RdbBase {
 	// PageRepair indirectly calls this to move the map and data of this
 	// rdb into the trash subdir after renaming them, because they will
 	// be replaced by the rebuilt files.
-	bool moveToDir   ( char *dstDir ) { return moveToTrash ( dstDir ); };
+	bool moveToDir   ( char *dstDir ) { return moveToTrash ( dstDir ); }
 	bool moveToTrash ( char *dstDir ) ;
 	// PageRepair indirectly calls this to rename the map and data files
 	// of a secondary/rebuilt rdb to the filenames of the primary rdb.

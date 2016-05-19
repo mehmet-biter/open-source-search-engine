@@ -129,21 +129,21 @@ class BigFile {
 
 	void logAllData(int32_t log_type);
 
-	int getFlags() { return m_flags; };
+	int getFlags() { return m_flags; }
 
-	void setBlocking    ( ) { m_flags &= ~((int32_t)O_NONBLOCK); };
-	void setNonBlocking ( ) { m_flags |=         O_NONBLOCK ; };
+	void setBlocking    ( ) { m_flags &= ~((int32_t)O_NONBLOCK); }
+	void setNonBlocking ( ) { m_flags |=         O_NONBLOCK ; }
 
 	// . return -2 on error
 	// . return -1 if does not exist
 	// . otherwise return the big file's complete file size (can b >2gb)
 	int64_t getFileSize ( );
-	int64_t getSize     ( ) { return getFileSize(); };
+	int64_t getSize     ( ) { return getFileSize(); }
 
 	// use the base filename as our filename
-	char *getFilename() { return m_baseFilename.getBufStart(); };
+	char *getFilename() { return m_baseFilename.getBufStart(); }
 
-	char *getDir() { return m_dir.getBufStart(); };
+	char *getDir() { return m_dir.getBufStart(); }
 
 	// . returns false if blocked, true otherwise
 	// . sets g_errno on error
@@ -207,16 +207,16 @@ class BigFile {
 	bool closeFds ( ) ;
 
 	// what part (little File) of this BigFile has offset "offset"?
-	int getPartNum ( int64_t offset ) { return offset / MAX_PART_SIZE; };
+	int getPartNum ( int64_t offset ) { return offset / MAX_PART_SIZE; }
 
 	// . opens the nth file if necessary to get it's fd
 	// . returns -1 if none, >=0 on success
 	int getfd ( int32_t n , bool forReading );//, int32_t *vfd = NULL );
 
-	int32_t       getVfd       ( ) { return m_vfd; };
+	int32_t       getVfd       ( ) { return m_vfd; }
 
 	// WARNING: some may have been unlinked from call to chopHead()
-	int32_t getNumParts ( ) { return m_numParts; };
+	int32_t getNumParts ( ) { return m_numParts; }
 
 	// makes the filename of part file #n
 	void makeFilename_r ( char *baseFilename    , 
@@ -309,7 +309,7 @@ public:
 		//if ( ! f ->calledSet() ) return NULL;
 		// this will be NULL if addPart(n) never called
 		return f;
-	};
+	}
 
 	bool reset ( );
 

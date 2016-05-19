@@ -35,16 +35,16 @@ class IndexList : public RdbList {
 	int64_t getCurrentDocId () {
 		if ( isHalfBitOn ( m_listPtr ) ) return getDocId6 (m_listPtr);
 		else                             return getDocId12(m_listPtr);
-	};
+	}
 	int64_t getDocId12 ( char *rec ) {
-		return ((*(uint64_t *)(rec)) >> 2) & DOCID_MASK; };
+		return ((*(uint64_t *)(rec)) >> 2) & DOCID_MASK; }
 	int64_t getDocId6 ( char *rec ) {
 		int64_t docid;
 		*(int32_t *)(&docid) = *(int32_t *)(void*)rec;
 		((char *)&docid)[4] = rec[4];
 		docid >>= 2;
 		return docid & DOCID_MASK;
-	};
+	}
 };
 
 #endif // GB_INDEXLIST_H

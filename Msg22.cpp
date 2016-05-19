@@ -299,7 +299,7 @@ public:
 	// free slot request here too
 	char *m_slotReadBuf;
 	int32_t  m_slotAllocSize;
-	State22() {m_slotReadBuf = NULL;};
+	State22() {m_slotReadBuf = NULL;}
 	~State22() {
 		if ( m_slotReadBuf )
 			mfree(m_slotReadBuf,m_slotAllocSize,"st22");

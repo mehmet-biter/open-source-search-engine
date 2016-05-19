@@ -94,14 +94,14 @@ class PingServer {
 		// m_minRepairMode could be -1 if uninitialized
 		if ( g_hostdb.getNumHosts() != 1    ) return m_minRepairMode;
 		return g_repairMode;
-	};
+	}
 	int32_t    getMaxRepairMode ( ) {
 		// is it us?
 		if ( g_repairMode > m_maxRepairMode ) return g_repairMode;
 		// m_maxRepairMode could be -1 if uninitialized
 		if ( g_hostdb.getNumHosts() != 1    ) return m_maxRepairMode;
 		return g_repairMode;
-	};
+	}
 	// we do not tally ourselves when computing m_numHostsInRepairMode7
 	int32_t    getMinRepairModeBesides0 ( ) {
 		// is it us?
@@ -111,7 +111,7 @@ class PingServer {
 		if ( g_hostdb.getNumHosts() != 1    ) 
 			return m_minRepairModeBesides0;
 		return g_repairMode;
-	};
+	}
 
 	void sendEmailMsg ( int32_t *lastTimeStamp , char *msg ) ;
 

@@ -63,7 +63,7 @@ class Doledb {
 		// we are positive or not? setting this means we are positive
 		if ( ! isDelete ) k.n0 |= 0x01;
 		return k;
-	};
+	}
 
 	// . use this for a query reindex
 	// . a docid-based spider request
@@ -72,7 +72,7 @@ class Doledb {
 			       uint32_t spiderTime , // time_t
 			       int64_t docId ,
 			       bool isDelete ) {
-		return makeKey ( priority,spiderTime,docId,isDelete); };
+		return makeKey ( priority,spiderTime,docId,isDelete); }
 
 
 	key_t makeFirstKey2 ( int32_t priority ) { 
@@ -82,7 +82,7 @@ class Doledb {
 		k.n1 = (255 - priority);
 		k.n1 <<= 24;
 		return k;
-	};
+	}
 
 
 	key_t makeLastKey2 ( int32_t priority ) { 
@@ -93,27 +93,27 @@ class Doledb {
 		k.n1 <<= 24;
 		k.n1 |= 0x00ffffff;
 		return k;
-	};
+	}
 
 	int32_t getPriority  ( key_t *k ) {
-		return 255 - ((k->n1 >> 24) & 0xff); };
+		return 255 - ((k->n1 >> 24) & 0xff); }
 	int32_t getSpiderTime ( key_t *k ) {
 		uint32_t spiderTime = (k->n1) & 0xffffff;
 		spiderTime <<= 8;
 		// upper 8 bits of k.n0 are lower 8 bits of spiderTime
 		spiderTime |= (uint32_t)((k->n0) >> (64-8));
 		return (int32_t)spiderTime;
-	};
+	}
 	int32_t getIsDel     ( key_t *k ) {
 		if ( (k->n0 & 0x01) ) return 0;
-		return 1; };
+		return 1; }
 	int64_t getUrlHash48 ( key_t *k ) {
 		return (k->n0>>8)&0x0000ffffffffffffLL; }
 
-	key_t makeFirstKey ( ) { key_t k; k.setMin(); return k;};
-	key_t makeLastKey  ( ) { key_t k; k.setMax(); return k;};
+	key_t makeFirstKey ( ) { key_t k; k.setMin(); return k;}
+	key_t makeLastKey  ( ) { key_t k; k.setMax(); return k;}
 
-	Rdb *getRdb() { return &m_rdb;};
+	Rdb *getRdb() { return &m_rdb;}
 
 	Rdb m_rdb;
 };

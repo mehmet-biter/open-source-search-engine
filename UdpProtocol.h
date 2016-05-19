@@ -81,7 +81,7 @@ class UdpProtocol {
 	}
 
 	// peek ahead for header (12 bytes) then 4 bytes for possible errno
-	//virtual int32_t getMaxPeekSize ( ) { return 24; };
+	//virtual int32_t getMaxPeekSize ( ) { return 24; }
 	// add 1 so we can get RDBIDOFFSET from msg 0x00 requests
 	virtual int32_t getMaxPeekSize() {
 		return 25;
@@ -255,7 +255,7 @@ class UdpProtocol {
 		*(int32_t *)(buf + 8) = htonl ( msgSize );
 		// return the total dgramSize
 		//return size + 12;   
-	};
+	}
 };
 
 #endif // GB_UDPPROTOCOL_H

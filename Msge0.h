@@ -26,7 +26,7 @@ public:
 			  void         *state        ,
 			  void (*callback)(void *state) ) ;
 
-	TagRec *getTagRec   ( int32_t i ) { return m_tagRecPtrs[i]; };
+	TagRec *getTagRec   ( int32_t i ) { return m_tagRecPtrs[i]; }
 
 	bool launchRequests ( int32_t starti ) ;
 	bool sendMsg8a      ( int32_t i );

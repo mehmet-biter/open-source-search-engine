@@ -22,11 +22,11 @@ class RdbDump {
 
  public:
 
-        RdbDump() { m_isDumping = false; };
+        RdbDump() { m_isDumping = false; }
 
 	void reset ( ) ;
 
-	bool isDumping () { return m_isDumping; };
+	bool isDumping () { return m_isDumping; }
 
 	// . set up for a dump of rdb records to a file
 	// . returns false and sets errno on error
@@ -55,7 +55,7 @@ class RdbDump {
 		    class Rdb    *rdb        );
 
 	// a niceness of 0 means to block on the dumping
-	int32_t getNiceness() { return m_niceness; };
+	int32_t getNiceness() { return m_niceness; }
 
 	// . dump the tree to the file
 	// . returns false if blocked, true otherwise
@@ -86,10 +86,10 @@ class RdbDump {
 	// called when we've finished writing an RdbList to the file
 	bool doneDumpingList ( bool addToMap ) ;
 
-	//key_t getFirstKeyInQueue () { return m_firstKeyInQueue; };
-	//key_t getLastKeyInQueue  () { return m_lastKeyInQueue; };
-	char *getFirstKeyInQueue () { return m_firstKeyInQueue; };
-	char *getLastKeyInQueue  () { return m_lastKeyInQueue; };
+	//key_t getFirstKeyInQueue () { return m_firstKeyInQueue; }
+	//key_t getLastKeyInQueue  () { return m_lastKeyInQueue; }
+	char *getFirstKeyInQueue () { return m_firstKeyInQueue; }
+	char *getLastKeyInQueue  () { return m_lastKeyInQueue; }
 
 	// this is called only when dumping TitleRecs
 	bool updateTfndbLoop ( );

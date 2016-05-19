@@ -67,7 +67,7 @@ class RdbCache {
 	bool isInitialized () { 
 		if ( m_ptrs ) return true; 
 		return false;
-	};
+	}
 
 	// . we are allowed to keep a min mem of "minCacheSize"
 	// . a fixedDataSize of -1 means the dataSize varies from rec to rec
@@ -151,7 +151,7 @@ class RdbCache {
 			 bool     promoteRecord = true) {
 		return getRecord (collnum,(char *)&cacheKey,rec,recSize,doCopy,
 				  maxAge,incCounts,cachedTime, promoteRecord);
-	};
+	}
 
 	bool getRecord ( char    *coll       ,
 			 key_t    cacheKey   ,
@@ -164,7 +164,7 @@ class RdbCache {
 			 bool     promoteRecord = true) {
 		return getRecord (coll,(char *)&cacheKey,rec,recSize,doCopy,
 				  maxAge,incCounts,cachedTime, promoteRecord);
-	};
+	}
 
 	bool setTimeStamp ( collnum_t  collnum      ,
 			    key_t      cacheKey     ,
@@ -172,7 +172,7 @@ class RdbCache {
 		return setTimeStamp ( collnum           ,
 				      (char *)&cacheKey ,
 				      newTimeStamp      );
-	};
+	}
 
 	bool setTimeStamp ( collnum_t  collnum      ,
 			    char      *cacheKey     ,
@@ -270,7 +270,7 @@ class RdbCache {
 	int32_t getNumUsedNodes  () { return m_numPtrsUsed; }
 	int32_t getNumTotalNodes () { return m_numPtrsMax ; }
 
-	bool useDisk ( ) { return m_useDisk; };
+	bool useDisk ( ) { return m_useDisk; }
 	bool load ( char *dbname );
 	bool save ( bool useThreads );
 	bool save_r ( );
@@ -287,7 +287,7 @@ class RdbCache {
 			      char *startKey,
 			      char *endKey );
 
-	char *getDbname () { return m_dbname ; };
+	char *getDbname () { return m_dbname ; }
 
 	char *m_dbname;
 

@@ -71,7 +71,7 @@ class TopTree {
 	bool setNumNodes ( int32_t docsWanted , bool doSiteClustering );
 	// . add a node
 	// . get an empty first, fill it in and call addNode(t)
-	int32_t getEmptyNode ( ) { return m_emptyNode; };
+	int32_t getEmptyNode ( ) { return m_emptyNode; }
 	// . you can add a new node
 	// . it will NOT overwrite a node with same bscore/score/docid
 	// . it will NOT add if bscore/score/docid < m_tail node
@@ -79,7 +79,7 @@ class TopTree {
 	//   m_numNodes == m_numUsedNodes
 	bool addNode ( TopNode *t , int32_t tnn );
 
-	int32_t getLowNode  ( ) { return m_lowNode ; };
+	int32_t getLowNode  ( ) { return m_lowNode ; }
 	// . this is computed and stored on demand
 	// . WARNING: only call after all nodes have been added!
 	int32_t getHighNode ( ) ;

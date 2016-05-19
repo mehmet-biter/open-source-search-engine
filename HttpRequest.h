@@ -62,7 +62,7 @@ class HttpRequest {
 	bool    m_reqBufValid;
 
 	// get the request length
-	int32_t getRequestLen() { return m_reqBuf.length(); };//m_bufLen; };
+	int32_t getRequestLen() { return m_reqBuf.length(); }//m_bufLen; }
 
 	// . get the outgoing request we made by calling set() above
 	// . OR get the first line of an incoming request
@@ -70,19 +70,19 @@ class HttpRequest {
 		if ( m_reqBufValid ) return m_reqBuf.getBufStart();
 		else return NULL;
 		//return m_buf;
-	};
+	}
 
 	// FORMAT_HTML FORMAT_JSON FORMAT_XML
-	char getFormat() { return getReplyFormat(); };
+	char getFormat() { return getReplyFormat(); }
 	char getReplyFormat();
 	bool m_replyFormatValid;
 	char m_replyFormat;
 
 	// get the referer field of the MIME header
-	char *getReferer () { return m_ref; };
+	char *getReferer () { return m_ref; }
 
 	// this is NULL terminated too
-	char *getUserAgent () { return m_userAgent; };
+	char *getUserAgent () { return m_userAgent; }
 
 	// just does a simply gbmemcpy() operation, since it should be pointing
 	// into the TcpSocket's buffer which is safe until after reply is sent
@@ -109,20 +109,20 @@ class HttpRequest {
 	int32_t m_squidProxiedUrlLen;
 
 	// is it this type of request?
-	bool isGETRequest  () { return (m_requestType == 0); };
-	bool isHEADRequest () { return (m_requestType == 1); };
-	bool isPOSTRequest () { return (m_requestType == 2); };
+	bool isGETRequest  () { return (m_requestType == 0); }
+	bool isHEADRequest () { return (m_requestType == 1); }
+	bool isPOSTRequest () { return (m_requestType == 2); }
 
-	char *getFilename    () { return m_filename; };
-	int32_t  getFilenameLen () { return m_filenameLen; };
-	int32_t  getFileOffset  () { return m_fileOffset; };
-	int32_t  getFileSize    () { return m_fileSize; };
+	char *getFilename    () { return m_filename; }
+	int32_t  getFilenameLen () { return m_filenameLen; }
+	int32_t  getFileOffset  () { return m_fileOffset; }
+	int32_t  getFileSize    () { return m_fileSize; }
 
-	char *getHost        () { return m_host;    };
-	int32_t  getHostLen     () { return m_hostLen; };
-	//bool  isLocal        () { return m_isLocal; };
-	//bool  isAdmin        () { return m_isMasterAdmin; };
-	bool  isLocal        () { return m_isLocal; };
+	char *getHost        () { return m_host;    }
+	int32_t  getHostLen     () { return m_hostLen; }
+	//bool  isLocal        () { return m_isLocal; }
+	//bool  isAdmin        () { return m_isMasterAdmin; }
+	bool  isLocal        () { return m_isLocal; }
 
 	// is this the admin of a collection?
 	//bool isCollAdmin () { return m_isCollAdmin; }
@@ -130,8 +130,8 @@ class HttpRequest {
 	// . the &ucontent= cgi var does not get its value decoded
 	//   because it's already decoded
 	// . this is so Mark doesn't have to url encode his injected content
-	char *getUnencodedContent    ( ) { return m_ucontent; };
-	int32_t  getUnencodedContentLen ( ) { return m_ucontentLen; };
+	char *getUnencodedContent    ( ) { return m_ucontent; }
+	int32_t  getUnencodedContentLen ( ) { return m_ucontentLen; }
 	
 	// . for parsing the terms in a cgi url
 	// . the returned string is NOT NULL terminated
@@ -155,18 +155,18 @@ class HttpRequest {
 	bool hasField ( const char *field );
 
 	// are we a redir? if so return non-NULL
-	char      *getRedir    ( ) { return m_redir;    };
-	int32_t       getRedirLen ( ) { return m_redirLen; };
+	char      *getRedir    ( ) { return m_redir;    }
+	int32_t       getRedirLen ( ) { return m_redirLen; }
 
 	HttpRequest();
 	HttpRequest( const HttpRequest &a );
 	~HttpRequest();
 	void reset();
 
-	char *getPath    ( ) { return m_path; };
-	int32_t  getPathLen ( ) { return m_plen; };
+	char *getPath    ( ) { return m_path; }
+	int32_t  getPathLen ( ) { return m_plen; }
 
-	bool isMSIE ( ) { return m_isMSIE; };
+	bool isMSIE ( ) { return m_isMSIE; }
 
 	// private:
 
@@ -178,11 +178,11 @@ class HttpRequest {
 	char *getValue ( int32_t i, int32_t *len = NULL);
 
 	// get the ith cgi parameter name, return NULL if none
-	int32_t  getNumFields   ( ) { return m_numFields; };
+	int32_t  getNumFields   ( ) { return m_numFields; }
 	char *getField    ( int32_t i ) {
-		if ( i >= m_numFields ) return NULL; return m_fields[i]; };
+		if ( i >= m_numFields ) return NULL; return m_fields[i]; }
 	int32_t  getFieldLen ( int32_t i ) {
-		if ( i >= m_numFields ) return 0   ; return m_fieldLens[i]; };
+		if ( i >= m_numFields ) return 0   ; return m_fieldLens[i]; }
 
 	// . s is a cgi string
 	// . either the stuff after the '?' in a url
@@ -250,10 +250,10 @@ class HttpRequest {
 	int32_t  m_fieldLens   [ MAX_CGI_PARMS ];
 	char *m_fieldValues [ MAX_CGI_PARMS ];
 	int32_t  m_numFields;
-	//int32_t  getNumCgiParms ( ) { return m_numFields; };
+	//int32_t  getNumCgiParms ( ) { return m_numFields; }
 	//char *getCgiParm     ( int32_t i , int32_t *len ) { 
-	//	*len = m_fieldLens[i]; return m_fields[i]; };
-	//char *getCgiValue    ( int32_t i ) { return m_fieldValues[i]; };
+	//	*len = m_fieldLens[i]; return m_fields[i]; }
+	//char *getCgiValue    ( int32_t i ) { return m_fieldValues[i]; }
 
 	int32_t m_userIP;
 	bool m_isSSL;

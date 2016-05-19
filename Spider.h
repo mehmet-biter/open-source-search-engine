@@ -432,7 +432,7 @@ class Spiderdb {
 
 	bool verify ( char *coll );
 
-	Rdb *getRdb  ( ) { return &m_rdb; };
+	Rdb *getRdb  ( ) { return &m_rdb; }
 
 	// this rdb holds urls waiting to be spidered or being spidered
 	Rdb m_rdb;
@@ -699,10 +699,10 @@ public:
 		m_priority = -1;
 		// this happens to be zero already, but just in case it changes
 		m_parentLangId = langUnknown;
-	};
+	}
 
 	static int32_t getNeededSize ( int32_t urlLen ) {
-		return sizeof(SpiderRequest) - (int32_t)MAX_URL_LEN + urlLen; };
+		return sizeof(SpiderRequest) - (int32_t)MAX_URL_LEN + urlLen; }
 
 	int32_t getRecSize () { return m_dataSize + 4 + sizeof(key128_t); }
 
@@ -901,7 +901,7 @@ public:
 	int32_t getRecSize () { return m_dataSize + 4 + sizeof(key128_t); }
 
 	// clear all
-	void reset() { memset ( this , 0 , sizeof(SpiderReply) ); };
+	void reset() { memset ( this , 0 , sizeof(SpiderReply) ); }
 
 	void setKey ( int32_t firstIp, int64_t parentDocId, int64_t uh48, bool isDel ) ;
 

@@ -81,13 +81,13 @@ public:
 	// compare another url to us
 	bool equals ( Url *u ) {
 		return ( m_ulen == u->m_ulen && strcmp( m_url, u->m_url ) == 0 );
-	};
+	}
 
 	// is the url's hostname actually in ip in disguise ("a.b.c.d")
 	bool isIp   (); 
 
 	bool isRoot              ();
-	bool isCgi               () { return m_query ; };
+	bool isCgi               () { return m_query ; }
 
 	//returns True if the extension is in the list of 
 	//badExtensions - extensions not to be parsed
@@ -174,7 +174,7 @@ public:
 	// is our hostname "www" ?
 	bool isHostWWW ( ) ;
 
-	bool hasSubdomain() { return (m_dlen != m_hlen); };
+	bool hasSubdomain() { return (m_dlen != m_hlen); }
 
 	// is it xxx.com/* or www.xxx.com/* (CAUTION: www.xxx.yyy.com)
 	bool isSimpleSubdomain();

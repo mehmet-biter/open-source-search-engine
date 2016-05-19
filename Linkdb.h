@@ -1072,7 +1072,7 @@ public:
 		return 0;
 		//return m_allocBuf?m_bufPtr-m_allocBuf:0; 
 	}
-	//uint32_t *getLinkHashes () { return m_linkHashes; };
+	//uint32_t *getLinkHashes () { return m_linkHashes; }
 	int32_t           getNumLinks   () { return m_numLinks; }
 
 	int32_t           getLinkLen    ( int32_t i ) { return m_linkLens  [i]; }
