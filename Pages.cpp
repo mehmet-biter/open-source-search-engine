@@ -249,6 +249,10 @@ static WebPage s_pages[] = {
 };
 
 WebPage *Pages::getPage ( int32_t page ) {
+	if ( page < PAGE_ROOT || page >= PAGE_NONE ) {
+		return NULL;
+	}
+
 	return &s_pages[page];
 }
 
@@ -275,26 +279,44 @@ void Pages::init ( ) {
 
 // return the PAGE_* number thingy
 int32_t Pages::getDynamicPageNumber ( HttpRequest *r ) {
-	char *path    = r->getFilename();
+	const char *path    = r->getFilename();
 	int32_t  pathLen = r->getFilenameLen();
-	if ( pathLen > 0 && path[0]=='/' ) { path++; pathLen--; }
+	if ( pathLen > 0 && path[0]=='/' ) {
+		path++;
+		pathLen--;
+	}
+
 	// historical backwards compatibility fix
 	if ( pathLen == 9 && strncmp ( path , "cgi/0.cgi" , 9 ) == 0 ) {
-		path = "search"; pathLen = gbstrlen(path); }
+		path = "search";
+		pathLen = gbstrlen(path);
+	}
 	if ( pathLen == 9 && strncmp ( path , "cgi/1.cgi" , 9 ) == 0 ) {
-		path = "addurl"; pathLen = gbstrlen(path); }
+		path = "addurl";
+		pathLen = gbstrlen(path);
+	}
 	if ( pathLen == 6 && strncmp ( path , "inject" , 6 ) == 0 ) {
-		path = "admin/inject"; pathLen = gbstrlen(path); }
+		path = "admin/inject";
+		pathLen = gbstrlen(path);
+	}
 	if ( pathLen == 9 && strncmp ( path , "index.php" , 9 ) == 0 ) {
-		path = "search"; pathLen = gbstrlen(path); }
+		path = "search";
+		pathLen = gbstrlen(path);
+	}
 	if ( pathLen == 10 && strncmp ( path , "search.csv" , 10 ) == 0 ) {
-		path = "search"; pathLen = gbstrlen(path); }
+		path = "search";
+		pathLen = gbstrlen(path);
+	}
 
 	// go down the list comparing the pathname to dynamic page names
 	for ( int32_t i = 0 ; i < s_numPages ; i++ ) {
-		if ( pathLen != s_pages[i].m_flen ) continue;
-		if ( strncmp ( path , s_pages[i].m_filename , pathLen ) == 0 )
+		if ( pathLen != s_pages[i].m_flen ) {
+			continue;
+		}
+
+		if ( strncmp ( path , s_pages[i].m_filename , pathLen ) == 0 ) {
 			return i;
+		}
 	}
 
 	// not found in our list of dynamic page filenames

@@ -840,8 +840,9 @@ bool HttpServer::sendReply ( TcpSocket  *s , HttpRequest *r , bool isAdmin) {
 	// . we got a request for
 	//   POST /%3Fid%3D19941846627.3030756329856867809/trackback
 	//   which ended up calling sendPageEvents() on the proxy!!
-	if ( isProxy && ( n == PAGE_RESULTS || n == PAGE_ROOT ) )
+	if ( isProxy && ( n == PAGE_RESULTS || n == PAGE_ROOT ) ) {
 		n = -1;
+	}
 
 	//////////
 	//
