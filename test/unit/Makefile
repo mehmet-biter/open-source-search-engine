@@ -51,7 +51,7 @@ check: test
 
 .PHONY: test
 test: all ucdata
-	$(TARGET_PRE) ./$(TARGET) $(TEST_ARGS)
+	-$(TARGET_PRE) ./$(TARGET) $(TEST_ARGS)
 
 .PHONY: clean
 clean:
