@@ -107,7 +107,7 @@ DEFS += -DPRIVACORE_SAFE_VERSION
 endif
 
 ifeq ($(CXX), g++)
-CPPFLAGS += -Wno-write-strings -Wno-uninitialized -Wno-unused-but-set-variable
+CPPFLAGS += -Wno-write-strings -Wno-maybe-uninitialized -Wno-unused-but-set-variable
 CPPFLAGS += -Wno-invalid-offsetof
 CPPFLAGS += -Wno-literal-suffix
 else ifeq ($(CXX), clang++)
