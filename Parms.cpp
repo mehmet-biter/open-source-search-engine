@@ -4919,7 +4919,7 @@ void Parms::init ( ) {
 	m++;
 
 	m->m_title = "Use high-freq term cache";
-	m->m_desc  = "Remove objectionable results if this is enabled.";
+	m->m_desc  = "Use high-frequency term cache to avoid scanning through huge posdb lists.";
 	m->m_cgi   = "highfreqtermcache";
 	m->m_def   = "1";
 	m->m_off   = offsetof(SearchInput,m_allowHighFrequencyTermCache);
