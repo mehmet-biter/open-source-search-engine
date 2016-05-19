@@ -1773,7 +1773,7 @@ bool SafeBuf::printTimeAgo ( int32_t ago , int32_t now , bool shorthand ) {
 	int32_t secs = 1000;
 	int32_t mins = 1000;
 	int32_t hrs  = 1000;
-	int32_t days ;
+	int32_t days = 0;
 	if ( ago > 0 ) {
 		secs = (int32_t)((ago)/1);
 		mins = (int32_t)((ago)/60);
