@@ -1930,8 +1930,577 @@ bool sendPage ( State11 *st ) {
 #define SIGN_GE 5
 #define SIGN_LE 6
 
-// from PageBasic.cpp
-char *getMatchingUrlPattern ( SpiderColl *sc , SpiderRequest *sreq, char *tag);
+
+class PatternData {
+public:
+	// hash of the subdomain or domain for this line in sitelist
+	int32_t m_thingHash32;
+	// ptr to the line in CollectionRec::m_siteListBuf
+	int32_t m_patternStrOff;
+	// offset of the url path in the pattern, 0 means none
+	int16_t m_pathOff;
+	int16_t m_pathLen;
+	// offset into buffer. for 'tag:shallow site:walmart.com' type stuff
+	int32_t  m_tagOff;
+	int16_t m_tagLen;
+};
+
+void doneAddingSeedsWrapper ( void *state ) {
+	// note it
+	log("basic: done adding seeds using msg4");
+}
+
+// . Collectiondb.cpp calls this when any parm flagged with
+//   PF_REBUILDURLFILTERS is updated
+// . it only adds sites via msg4 that are in "siteListArg" but NOT in the
+//   current CollectionRec::m_siteListBuf
+// . updates SpiderColl::m_siteListDomTable to see what doms we can spider
+// . updates SpiderColl::m_negSubstringBuf and m_posSubStringBuf to
+//   see what substrings in urls are disallowed/allowable for spidering
+// . this returns false if it blocks
+// . returns true and sets g_errno on error
+// . uses msg4 to add seeds to spiderdb if necessary if "siteListArg"
+//   has new urls that are not currently in cr->m_siteListBuf
+// . only adds seeds for the shard we are on iff we are responsible for
+//   the fake firstip!!! that way only one shard does the add.
+bool updateSiteListBuf ( collnum_t collnum ,
+                         bool addSeeds ,
+                         char *siteListArg ) {
+
+	CollectionRec *cr = g_collectiondb.getRec ( collnum );
+	if ( ! cr ) return true;
+
+	// tell spiderloop to update the active list in case this
+	// collection suddenly becomes active
+	g_spiderLoop.m_activeListValid = false;
+
+	// this might make a new spidercoll...
+	SpiderColl *sc = g_spiderCache.getSpiderColl ( cr->m_collnum );
+
+	// sanity. if in use we should not even be here
+	if ( sc->m_msg4x.m_inUse ) {
+		log( LOG_WARN, "basic: trying to update site list while previous update still outstanding.");
+		g_errno = EBADENGINEER;
+		return true;
+	}
+
+	// when sitelist is update Parms.cpp should invalidate this flag!
+	//if ( sc->m_siteListTableValid ) return true;
+
+	// hash current sitelist entries, each line so we don't add
+	// dup requests into spiderdb i guess...
+	HashTableX dedup;
+	if ( ! dedup.set ( 4,0,1024,NULL,0,false,0,"sldt") ) {
+		return true;
+	}
+
+	// this is a safebuf PARM in Parms.cpp now HOWEVER, not really
+	// because we set it here from a call to CommandUpdateSiteList()
+	// because it requires all this computational crap.
+	char *op = cr->m_siteListBuf.getBufStart();
+
+	// scan and hash each line in it
+	for ( ; ; ) {
+		// done?
+		if ( ! *op ) break;
+		// skip spaces
+		if ( is_wspace_a(*op) ) op++;
+		// done?
+		if ( ! *op ) break;
+		// get end
+		char *s = op;
+		// skip to end of line marker
+		for ( ; *op && *op != '\n' ; op++ ) ;
+		// keep it simple
+		int32_t h32 = hash32 ( s , op - s );
+		// for deduping
+		if ( ! dedup.addKey ( &h32 ) ) {
+			return true;
+		}
+	}
+
+	// get the old sitelist Domain Hash to PatternData mapping table
+	// which tells us what domains, subdomains or paths we can or
+	// can not spider...
+	HashTableX *dt = &sc->m_siteListDomTable;
+
+	// reset it
+	if ( ! dt->set ( 4 ,
+	                 sizeof(PatternData),
+	                 1024 ,
+	                 NULL ,
+	                 0 ,
+	                 true , // allow dup keys?
+	                 0 , // niceness - at least for now
+	                 "sldt" ) ) {
+		return true;
+	}
+
+
+	// clear old shit
+	sc->m_posSubstringBuf.purge();
+	sc->m_negSubstringBuf.purge();
+
+	// we can now free the old site list methinks
+	//cr->m_siteListBuf.purge();
+
+	// reset flags
+	//sc->m_siteListAsteriskLine = NULL;
+	sc->m_siteListHasNegatives = false;
+	sc->m_siteListIsEmpty = true;
+
+	sc->m_siteListIsEmptyValid = true;
+
+	// use this so it will be free automatically when msg4 completes!
+	SafeBuf *spiderReqBuf = &sc->m_msg4x.m_tmpBuf;
+
+	//char *siteList = cr->m_siteListBuf.getBufStart();
+
+	// scan the list
+	char *pn = siteListArg;
+
+	// completely empty?
+	if ( ! pn ) return true;
+
+	int32_t lineNum = 1;
+
+	int32_t added = 0;
+
+	Url u;
+
+	for ( ; *pn ; lineNum++ ) {
+
+		// get end
+		char *s = pn;
+		// skip to end of line marker
+		for ( ; *pn && *pn != '\n' ; pn++ ) ;
+
+		// point to the pattern (skips over "tag:xxx " if there)
+		char *patternStart = s;
+
+		// back p up over spaces in case ended in spaces
+		char *pe = pn;
+		for ( ; pe > s && is_wspace_a(pe[-1]) ; pe-- );
+
+		// skip over the \n so pn points to next line for next time
+		if ( *pn == '\n' ) pn++;
+
+		// make hash of the line
+		int32_t h32 = hash32 ( s , pe - s );
+
+		bool seedMe = true;
+		bool isUrl = true;
+		bool isNeg = false;
+		bool isFilter = true;
+
+		// skip spaces at start of line
+		for ( ; *s && *s == ' ' ; s++ );
+
+		// comment?
+		if ( *s == '#' ) continue;
+
+		// empty line?
+		if ( s[0] == '\r' && s[1] == '\n' ) { s++; continue; }
+
+		// empty line?
+		if ( *s == '\n' ) continue;
+
+		// all?
+		//if ( *s == '*' ) {
+		//	sc->m_siteListAsteriskLine = start;
+		//	continue;
+		//}
+
+		char *tag = NULL;
+		int32_t tagLen = 0;
+
+		innerLoop:
+
+		// skip spaces
+		for ( ; *s && *s == ' ' ; s++ );
+
+
+		// exact:?
+		//if ( strncmp(s,"exact:",6) == 0 ) {
+		//	s += 6;
+		//	goto innerLoop;
+		//}
+
+		// these will be manual adds and should pass url filters
+		// because they have the "ismanual" directive override
+		if ( strncmp(s,"seed:",5) == 0 ) {
+			s += 5;
+			isFilter = false;
+			goto innerLoop;
+		}
+
+
+		// does it start with "tag:xxxxx "?
+		if ( *s == 't' &&
+		     s[1] == 'a' &&
+		     s[2] == 'g' &&
+		     s[3] == ':' ) {
+			tag = s+4;
+			for ( ; *s && ! is_wspace_a(*s) ; s++ );
+			tagLen = s - tag;
+			// skip over white space after tag:xxxx so "s"
+			// point to the url or contains: or whatever
+			for ( ; *s && is_wspace_a(*s) ; s++ );
+			// set pattern start to AFTER the tag stuff
+			patternStart = s;
+		}
+
+		if ( *s == '-' ) {
+			sc->m_siteListHasNegatives = true;
+			isNeg = true;
+			s++;
+		}
+
+		if ( strncmp(s,"site:",5) == 0 ) {
+			s += 5;
+			seedMe = false;
+			goto innerLoop;
+		}
+
+		if ( strncmp(s,"contains:",9) == 0 ) {
+			s += 9;
+			seedMe = false;
+			isUrl = false;
+			goto innerLoop;
+		}
+
+		int32_t slen = pe - s;
+
+		// empty line?
+		if ( slen <= 0 )
+			continue;
+
+		// add to string buffers
+		if ( ! isUrl && isNeg ) {
+			if ( !sc->m_negSubstringBuf.safeMemcpy(s,slen))
+				return true;
+			if ( !sc->m_negSubstringBuf.pushChar('\0') )
+				return true;
+			if ( ! tagLen ) continue;
+			// append tag
+			if ( !sc->m_negSubstringBuf.safeMemcpy("tag:",4))
+				return true;
+			if ( !sc->m_negSubstringBuf.safeMemcpy(tag,tagLen) )
+				return true;
+			if ( !sc->m_negSubstringBuf.pushChar('\0') )
+				return true;
+		}
+		if ( ! isUrl ) {
+			// add to string buffers
+			if ( ! sc->m_posSubstringBuf.safeMemcpy(s,slen) )
+				return true;
+			if ( ! sc->m_posSubstringBuf.pushChar('\0') )
+				return true;
+			if ( ! tagLen ) continue;
+			// append tag
+			if ( !sc->m_posSubstringBuf.safeMemcpy("tag:",4))
+				return true;
+			if ( !sc->m_posSubstringBuf.safeMemcpy(tag,tagLen) )
+				return true;
+			if ( !sc->m_posSubstringBuf.pushChar('\0') )
+				return true;
+			continue;
+		}
+
+
+		u.set( s, slen );
+
+		// error? skip it then...
+		if ( u.getHostLen() <= 0 ) {
+			log("basic: error on line #%"INT32" in sitelist",lineNum);
+			continue;
+		}
+
+		// is fake ip assigned to us?
+		int32_t firstIp = getFakeIpForUrl2 ( &u );
+
+		if ( ! isAssignedToUs( firstIp ) ) continue;
+
+		// see if in existing table for existing site list
+		if ( addSeeds &&
+		     // a "site:" directive mean no seeding
+		     // a "contains:" directive mean no seeding
+		     seedMe &&
+		     // do not seed stuff after tag:xxx directives
+		     // no, we need to seed it to avoid confusion. if
+		     // they don't want it seeded they can use site: after
+		     // the tag:
+		     //! tag &&
+		     ! dedup.isInTable ( &h32 ) ) {
+			// make spider request
+			SpiderRequest sreq;
+			sreq.setFromAddUrl ( u.getUrl() );
+			if (
+				// . add this url to spiderdb as a spiderrequest
+				// . calling msg4 will be the last thing we do
+					!spiderReqBuf->safeMemcpy(&sreq,sreq.getRecSize()))
+				return true;
+			// count it
+			added++;
+
+		}
+
+		// if it is a "seed: xyz.com" thing it is seed only
+		// do not use it for a filter rule
+		if ( ! isFilter ) continue;
+
+
+		// make the data node used for filtering urls during spidering
+		PatternData pd;
+		// hash of the subdomain or domain for this line in sitelist
+		pd.m_thingHash32 = u.getHostHash32();
+		// . ptr to the line in CollectionRec::m_siteListBuf.
+		// . includes pointing to "exact:" too i guess and tag: later.
+		// . store offset since CommandUpdateSiteList() passes us
+		//   a temp buf that will be freed before copying the buf
+		//   over to its permanent place at cr->m_siteListBuf
+		pd.m_patternStrOff = patternStart - siteListArg;
+		// offset of the url path in the pattern, 0 means none
+		pd.m_pathOff = 0;
+		// did we have a tag?
+		if ( tag ) {
+			pd.m_tagOff = tag - siteListArg;
+			pd.m_tagLen = tagLen;
+		}
+		else {
+			pd.m_tagOff = -1;
+			pd.m_tagLen = 0;
+		}
+		// scan url pattern, it should start at "s"
+		char *x = s;
+		// go all the way to the end
+		for ( ; *x && x < pe ; x++ ) {
+			// skip ://
+			if ( x[0] == ':' && x[1] =='/' && x[2] == '/' ) {
+				x += 2;
+				continue;
+			}
+			// stop if we hit another /, that is path start
+			if ( x[0] != '/' ) continue;
+			x++;
+			// empty path besides the /?
+			if (  x >= pe   ) break;
+			// ok, we got something here i think
+			// no, might be like http://xyz.com/?poo
+			//if ( u.getPathLen() <= 1 ) { char *xx=NULL;*xx=0; }
+			// calc length from "start" of line so we can
+			// jump to the path quickly for compares. inc "/"
+			pd.m_pathOff = (x-1) - patternStart;
+			pd.m_pathLen = pe - (x-1);
+			break;
+		}
+
+		// add to new dt
+		int32_t domHash32 = u.getDomainHash32();
+		if ( ! dt->addKey ( &domHash32 , &pd ) )
+			return true;
+
+		// we have some patterns in there
+		sc->m_siteListIsEmpty = false;
+	}
+
+	// go back to a high niceness
+	dt->m_niceness = MAX_NICENESS;
+
+	if ( ! addSeeds ) return true;
+
+	log( "spider: adding %" INT32" seed urls", added );
+
+	// use spidercoll to contain this msg4 but if in use it
+	// won't be able to be deleted until it comes back..
+	return sc->m_msg4x.addMetaList ( spiderReqBuf, sc->m_collnum, sc, doneAddingSeedsWrapper, MAX_NICENESS, RDB_SPIDERDB );
+}
+
+// . Spider.cpp calls this to see if a url it wants to spider is
+//   in our "site list"
+// . we should return the row of the FIRST match really
+// . the url patterns all contain a domain now, so this can use the domain
+//   hash to speed things up
+// . return ptr to the start of the line in case it has "tag:" i guess
+char *getMatchingUrlPattern ( SpiderColl *sc, SpiderRequest *sreq, char *tagArg ) { // tagArg can be NULL
+	logTrace( g_conf.m_logTraceSpider, "BEGIN" );
+
+	// if it has * and no negatives, we are in!
+	//if ( sc->m_siteListAsteriskLine && ! sc->m_siteListHasNegatives )
+	//	return sc->m_siteListAsteriskLine;
+
+	// if it is just a bunch of comments or blank lines, it is empty
+	if ( sc->m_siteListIsEmptyValid && sc->m_siteListIsEmpty ) {
+		logTrace( g_conf.m_logTraceSpider, "END. Empty. Returning NULL" );
+		return NULL;
+	}
+
+	// if we had a list of contains: or regex: directives in the sitelist
+	// we have to linear scan those
+	char *nb = sc->m_negSubstringBuf.getBufStart();
+	char *nbend = nb + sc->m_negSubstringBuf.getLength();
+	for ( ; nb && nb < nbend ; ) {
+		// return NULL if matches a negative substring
+		if ( strstr ( sreq->m_url , nb ) ) {
+			logTrace( g_conf.m_logTraceSpider, "END. Matches negative substring. Returning NULL" );
+			return NULL;
+		}
+		// skip it
+		nb += strlen(nb) + 1;
+	}
+
+
+	char *myPath = NULL;
+
+	// check domain specific tables
+	HashTableX *dt = &sc->m_siteListDomTable;
+
+	// get this
+	CollectionRec *cr = sc->getCollectionRec();
+
+	// need to build dom table for pattern matching?
+	if ( dt->getNumSlotsUsed() == 0 && cr ) {
+		// do not add seeds, just make siteListDomTable, etc.
+		updateSiteListBuf ( sc->m_collnum ,
+		                    false , // add seeds?
+		                    cr->m_siteListBuf.getBufStart() );
+	}
+
+	if ( dt->getNumSlotsUsed() == 0 ) {
+		// empty site list -- no matches
+		logTrace( g_conf.m_logTraceSpider, "END. No slots. Returning NULL" );
+		return NULL;
+		//char *xx=NULL;*xx=0; }
+	}
+
+	// this table maps a 32-bit domain hash of a domain to a
+	// patternData class. only for those urls that have firstIps that
+	// we handle.
+	int32_t slot = dt->getSlot ( &sreq->m_domHash32 );
+
+	char *buf = cr->m_siteListBuf.getBufStart();
+
+	// loop over all the patterns that contain this domain and see
+	// the first one we match, and if we match a negative one.
+	for ( ; slot >= 0 ; slot = dt->getNextSlot(slot,&sreq->m_domHash32)) {
+		// get pattern
+		PatternData *pd = (PatternData *)dt->getValueFromSlot ( slot );
+		// point to string
+		char *patternStr = buf + pd->m_patternStrOff;
+		// is it negative? return NULL if so so url will be ignored
+		//if ( patternStr[0] == '-' )
+		//	return NULL;
+		// otherwise, it has a path. skip if we don't match path ptrn
+		if ( pd->m_pathOff ) {
+			if ( ! myPath ) myPath = sreq->getUrlPath();
+			if ( strncmp (myPath, patternStr + pd->m_pathOff, pd->m_pathLen ) ) {
+				continue;
+			}
+		}
+
+		// for entries like http://domain.com/ we have to match
+		// protocol and url can NOT be like www.domain.com to match.
+		// this is really like a regex like ^http://xyz.com/poo/boo/
+		if ( (patternStr[0]=='h' ||
+		      patternStr[0]=='H') &&
+		     ( patternStr[1]=='t' ||
+		       patternStr[1]=='T' ) &&
+		     ( patternStr[2]=='t' ||
+		       patternStr[2]=='T' ) &&
+		     ( patternStr[3]=='p' ||
+		       patternStr[3]=='P' ) ) {
+			char *x = patternStr+4;
+			// is it https:// ?
+			if ( *x == 's' || *x == 'S' ) x++;
+			// watch out for subdomains like http.foo.com
+			if ( *x != ':' ) {
+				goto nomatch;
+			}
+			// ok, we have to substring match exactly. like
+			// ^http://xyssds.com/foobar/
+			char *a = patternStr;
+			char *b = sreq->m_url;
+			for ( ; ; a++, b++ ) {
+				// stop matching when pattern is exhausted
+				if ( is_wspace_a(*a) || ! *a ) {
+					logTrace( g_conf.m_logTraceSpider, "END. Pattern is exhausted. Returning '%s'", patternStr );
+					return patternStr;
+				}
+				if ( *a != *b ) {
+					break;
+				}
+			}
+			// we failed to match "pd" so try next line
+			continue;
+		}
+
+		nomatch:
+		// if caller also gave a tag we'll want to see if this
+		// "pd" has an entry for this domain that has that tag
+		if ( tagArg ) {
+			// skip if entry has no tag
+			if ( pd->m_tagLen <= 0 ) {
+				continue;
+			}
+
+			// skip if does not match domain or host
+			if ( pd->m_thingHash32 != sreq->m_domHash32 &&
+			     pd->m_thingHash32 != sreq->m_hostHash32 ) {
+				continue;
+			}
+
+			// compare tags
+			char *pdtag = pd->m_tagOff + buf;
+			if ( strncmp(tagArg,pdtag,pd->m_tagLen) ) {
+				continue;
+			}
+
+			// must be nothing after
+			if ( is_alnum_a(tagArg[pd->m_tagLen]) ) {
+				continue;
+			}
+
+			// that's a match
+			logTrace( g_conf.m_logTraceSpider, "END. Match tag. Returning '%s'", patternStr );
+			return patternStr;
+		}
+
+		// was the line just a domain and not a subdomain?
+		if ( pd->m_thingHash32 == sreq->m_domHash32 ) {
+			// this will be false if negative pattern i guess
+			logTrace( g_conf.m_logTraceSpider, "END. Match domain. Returning '%s'", patternStr );
+			return patternStr;
+		}
+
+		// was it just a subdomain?
+		if ( pd->m_thingHash32 == sreq->m_hostHash32 ) {
+			// this will be false if negative pattern i guess
+			logTrace( g_conf.m_logTraceSpider, "END. Match subdomain. Returning '%s'", patternStr );
+			return patternStr;
+		}
+	}
+
+
+	// if we had a list of contains: or regex: directives in the sitelist
+	// we have to linear scan those
+	char *pb = sc->m_posSubstringBuf.getBufStart();
+	char *pend = pb + sc->m_posSubstringBuf.length();
+	for ( ; pb && pb < pend ; ) {
+		// return NULL if matches a negative substring
+		if ( strstr ( sreq->m_url , pb ) ) {
+			logTrace( g_conf.m_logTraceSpider, "END. Match. Returning '%s'", pb );
+			return pb;
+		}
+		// skip it
+		pb += strlen(pb) + 1;
+	}
+
+
+	// is there an '*' in the patterns?
+	//if ( sc->m_siteListAsteriskLine ) return sc->m_siteListAsteriskLine;
+
+	return NULL;
+}
 
 // . this is called by SpiderCache.cpp for every url it scans in spiderdb
 // . we must skip certain rules in getUrlFilterNum() when doing to for Msg20
@@ -2019,7 +2588,7 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 		//char *p = cr->m_regExs[i];
 		char *p = sb->getBufStart();
 
-	checkNextRule:
+checkNextRule:
 
 		// skip leading whitespace
 		while ( *p && isspace(*p) ) p++;
@@ -2273,26 +2842,28 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 
 		// is it in the big list of sites?
 		if ( strncmp(p,"insitelist",10) == 0 ) {
-			// skip for msg20
-			//if ( isForMsg20 ) continue;
-			// if only seeds in the sitelist and no
+			// rebuild site list
+			if ( !sc->m_siteListIsEmptyValid ) {
+				updateSiteListBuf( sc->m_collnum, false, cr->m_siteListBuf.getBufStart() );
+			}
 
 			// if there is no domain or url explicitly listed
 			// then assume user is spidering the whole internet
 			// and we basically ignore "insitelist"
-			if ( sc->m_siteListIsEmptyValid &&
-			     sc->m_siteListIsEmpty ) {
+			if ( sc->m_siteListIsEmptyValid && sc->m_siteListIsEmpty ) {
 				// use a dummy row match
 				row = (char *)1;
-			}
-			else if ( ! checkedRow ) {
+			} else if ( ! checkedRow ) {
 				// only do once for speed
 				checkedRow = true;
 				// this function is in PageBasic.cpp
 				row = getMatchingUrlPattern ( sc, sreq ,NULL);
 			}
+
 			// if we are not submitted from the add url api, skip
-			if ( (bool)row == val ) continue;
+			if ( (bool)row == val ) {
+				continue;
+			}
 			// skip
 			p += 10;
 			// skip to next constraint
@@ -2882,11 +3453,9 @@ int32_t getUrlFilterNum ( 	SpiderRequest	*sreq,
 			// if there is no domain or url explicitly listed
 			// then assume user is spidering the whole internet
 			// and we basically ignore "insitelist"
-			if ( sc->m_siteListIsEmpty &&
-			     sc->m_siteListIsEmptyValid ) {
+			if ( sc->m_siteListIsEmpty && sc->m_siteListIsEmptyValid ) {
 				row = NULL;// no row
-			}
-			else if ( ! checkedRow ) {
+			} else if ( ! checkedRow ) {
 				// only do once for speed
 				checkedRow = true;
 				// this function is in PageBasic.cpp

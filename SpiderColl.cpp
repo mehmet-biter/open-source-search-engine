@@ -2958,7 +2958,7 @@ bool SpiderColl::scanListForWinners ( ) {
 		//if ( priority == -1 ) { char *xx=NULL;*xx=0; }
 		if ( priority >= MAX_SPIDER_PRIORITIES) {char *xx=NULL;*xx=0;}
 
-		logDebug( g_conf.m_logDebugSpider, "spider: got ufn=%" INT32" for %s (%" INT64")",
+		logDebug( g_conf.m_logDebugSpider, "spider: got ufn=%" PRId32" for %s (%" PRId64")",
 		          ufn, sreq->m_url, sreq->getUrlHash48() )
 
 		if ( srep )
@@ -2979,9 +2979,11 @@ bool SpiderColl::scanListForWinners ( ) {
 		// temp debug
 		//char *xx=NULL;*xx=0;
 
-		if ( m_cr->m_forceDelete[ufn] )
+		if ( m_cr->m_forceDelete[ufn] ) {
+			logDebug( g_conf.m_logDebugSpider, "spider: force delete ufn=%" PRId32" url='%s'", ufn, sreq->m_url );
 			// force it to a delete
 			sreq->m_forceDelete = true;
+		}
 
 		int64_t spiderTimeMS;
 		spiderTimeMS = getSpiderTimeMS ( sreq,ufn,srep,nowGlobalMS );
