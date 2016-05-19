@@ -13387,7 +13387,7 @@ char *XmlDoc::getMetaList ( bool forDelete ) {
 		m_httpStatusValid = true;
 		m_httpStatus = 200;
 		m_siteValid = true;
-		ptr_site = "www.poopoo.com";
+		ptr_site = "";
 		size_site = gbstrlen(ptr_site)+1;
 		m_isSiteRootValid = true;
 		m_isSiteRoot2 = 1;
